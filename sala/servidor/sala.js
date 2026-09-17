@@ -346,6 +346,8 @@ const revuelto = (t) => {
    búsqueda copiada es el defecto `renombrar-de-un-lado` esperando a pasar. */
 import { buscar as buscarNeuronas, vecinas, CAMPOS, claseDe } from '../../cerebro/buscador.mjs';
 import { generarVapid, empujarATodos } from './push.mjs';
+import { MOTORES, preguntar, motoresVivos, motoresApagados,
+         PAPEL_SILLA, PAPEL_RESUMEN } from './modelos.js';
 
 const ahora = () => Date.now();
 
@@ -1177,6 +1179,135 @@ export class Sala {
   }
 
   /* ── el hilo ────────────────────────────────────────────────────────── */
+  /* ══════════════════════════════════════════════════════════════════════════
+     LAS SILLAS · IAs que se sientan en la mesa y contestan solas
+     ──────────────────────────────────────────────────────────────────────────
+     Carlos, textual: «quiero poder hablar con estas guías cuando tú no estás…
+     quiero que él solito le responda, vayan avanzando», y «muchas veces tengo
+     dudas de lo que está pasando en el chat y tengo que leerme 700 mensajes
+     para entender el contexto».
+
+     UNA SILLA NO ES UN AGENTE QUE SE CONECTA: es un lugar que el propio
+     servidor ocupa. La diferencia importa y es justo la que Carlos necesitaba:
+     un agente que se conecta sólo existe mientras alguien lo tenga corriendo,
+     y por eso cuando yo no estoy la sala se queda muda. Una silla vive en el
+     servidor, así que contesta a las tres de la mañana sin que nadie la
+     encienda.
+
+     SE LE HABLA COMO A CUALQUIERA: `a:"groq"` en `/decir`, o una nota dirigida
+     a ella. Nada de comandos raros.
+     ═════════════════════════════════════════════════════════════════════════*/
+
+  /** ¿Este evento le habla a una silla? Devuelve el motor, o null.
+   *  La nota manda sobre el destinatario: es el «oye, tú» del final. */
+  sillaDestino(evento){
+    const quien = (evento.nota && evento.nota.a) || evento.a;
+    if(!quien) return null;
+    const id = String(quien).toLowerCase();
+    if(!MOTORES[id]) return null;
+    /* Se comprueba la llave AHORA, no al arrancar: un secreto puede aparecer
+       o desaparecer sin que se despliegue nada. */
+    return (this.env && this.env[MOTORES[id].llave]) ? id : null;
+  }
+
+  /** Que la silla exista en el censo. Se sienta sola la primera vez que le
+   *  hablan — pedirle a Carlos que la dé de alta sería una ceremonia inútil. */
+  sentar(motorId){
+    const M = MOTORES[motorId];
+    if(!this.gente[motorId]){
+      this.gente[motorId] = {
+        id: motorId, cuenta: 'sala', nombre: M.nombre,
+        tipo: 'agente', motor: M.modelo, figura: M.figura,
+        /* `silla:true` es lo que deja distinguirla en la mesa de un agente que
+           alguien trae corriendo: una silla nunca se «desconecta». */
+        silla: true,
+        visto: ahora(),
+      };
+    }
+    this.gente[motorId].visto = ahora();
+    return this.gente[motorId];
+  }
+
+  /** ¿Le están pidiendo que lea el hilo y cuente qué pasó?
+   *  Se detecta por lo que uno diría de verdad, no por un comando. */
+  esPeticionDeResumen(texto){
+    /* ⚠ LA PRIMERA VERSIÓN DE ESTO NO SERVÍA Y LAS PRUEBAS LO CACHARON.
+       Era una sola expresión con `\b` y con las vocales acentuadas metidas en
+       clases de caracteres, y fallaba por DOS razones a la vez:
+
+         · `\b` en JavaScript se calcula sobre [A-Za-z0-9_]. Una letra
+           acentuada NO cuenta como letra, así que en «resúmeme» el motor ve
+           un borde donde no lo hay y no ve uno donde sí. Poner [uú] dentro
+           del patrón no arregla nada: el problema son los BORDES, no la vocal.
+         · Y «resúmeme» no es «resume»: lleva el pronombre pegado. Un `\b`
+           después exigía que la palabra terminara ahí, y nunca termina ahí.
+
+       Lo que sí funciona: quitarle los acentos primero y buscar pedazos, sin
+       bordes. Es más tosco y acierta más — y aquí acertar importa, porque el
+       costo de equivocarse es mandarle 400 mensajes a un modelo para que
+       conteste «sí». */
+    const t = String(texto || '')
+      .toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '');   // fuera acentos
+    return ['resume', 'resumen', 'resumeme', 'que ha pasado', 'que paso',
+            'ponme al dia', 'al dia', 'me perdi', 'en que vamos',
+            'que me perdi', 'contexto', 'que onda con'].some(p => t.includes(p));
+  }
+
+  /** El hilo en el formato que entiende `preguntar()`. */
+  hiloParaModelo(motorId, cuantos){
+    return this.hilo
+      .filter(e => e.tipo !== 'sistema' && e.tipo !== 'limite' && (e.texto || '').trim())
+      .slice(-cuantos)
+      .map(e => ({
+        de: (e.de && e.de.id) === motorId ? 'yo' : 'otro',
+        /* Se le dice QUIÉN habló. Sin el nombre, un resumen no puede decir
+           «Carlos pidió X» — que es exactamente lo que él pidió que dijera. */
+        texto: ((e.de && e.de.nombre) || 'alguien') + ': ' + e.texto,
+      }));
+  }
+
+  /** Contestar. Corre FUERA de la respuesta a quien escribió (`luego`), porque
+   *  un modelo tarda segundos y nadie debe esperar a que piense para que su
+   *  propio mensaje se dé por entregado. */
+  async responderSilla(motorId, evento){
+    const M = MOTORES[motorId];
+    const silla = this.sentar(motorId);
+
+    const resumiendo = this.esPeticionDeResumen(
+      (evento.nota && evento.nota.texto) || evento.texto);
+
+    /* Un resumen necesita el hilo entero; una respuesta normal, el hilo
+       reciente. Mandar 700 mensajes para contestar «sí» es tirar cuota. */
+    const mensajes = this.hiloParaModelo(motorId, resumiendo ? 400 : 24);
+    const sistema  = resumiendo ? PAPEL_RESUMEN : PAPEL_SILLA(M.nombre);
+
+    /* La marca de «está escribiendo» se enciende ANTES de preguntar. No es
+       adorno: desde la mesa, una silla pensando doce segundos y una silla
+       muerta se ven idénticas. */
+    silla.escribeHasta = ahora() + 60_000;
+    this.avisarEscribiendo();
+
+    const r = await preguntar(motorId, this.env, sistema, mensajes,
+                              { tope: resumiendo ? 1400 : 700 });
+
+    silla.escribeHasta = 0;
+
+    /* ⚠ UN FALLO SE PUBLICA, NO SE TRAGA. Si el modelo no contesta y la sala
+       se queda callada, desde afuera eso es idéntico a que la silla ignore a
+       Carlos — y él se queda esperando a alguien que no va a llegar. Se dice
+       qué pasó y se dice como `sistema`, que no cuenta como vuelta. */
+    await this.publicar(r.bien
+      ? { de: this.tarjeta(silla), a: (evento.de && evento.de.id) || null,
+          tipo: resumiendo ? 'resumen' : 'mensaje', texto: r.texto,
+          nota: null, adjuntos: [], proyecto: evento.proyecto || null }
+      : { de: this.tarjeta(silla), a: (evento.de && evento.de.id) || null,
+          tipo: 'sistema', texto: '⚠ ' + r.error,
+          nota: null, adjuntos: [], proyecto: null });
+
+    this.avisarEscribiendo();
+  }
+
   async publicar(evento){
     evento.id = `e${++this.serie}`;
     evento.ts = ahora();
@@ -1572,7 +1703,17 @@ export class Sala {
          una cuenta entera (`@amigo`), que sirve para «que conteste
          cualquiera de los suyos, el que esté libre». */
       const a = c.a ? String(c.a).slice(0, 60) : null;
-      if(a && !a.startsWith('@') && !this.gente[a]){
+      /* ⚠ UNA SILLA TODAVÍA NO ESTÁ SENTADA LA PRIMERA VEZ QUE LE HABLAN, y
+         esta comprobación corría ANTES de que pudiera sentarse: el primer
+         «oye, groq» se rechazaba con «no hay nadie con ese id», y la silla no
+         llegaba a existir nunca. Se cazó porque la prueba de «una silla
+         contesta sola» salió roja; leyendo el código no salta, porque las dos
+         piezas están a cuatrocientas líneas de distancia y cada una es
+         correcta por su cuenta.
+         Una silla con llave puesta SÍ está en la sala, aunque todavía no se
+         haya sentado. Sin llave no, y ahí el 400 es el correcto: decirle a
+         Carlos «no hay nadie con ese id» es justo lo que pasa. */
+      if(a && !a.startsWith('@') && !this.gente[a] && !this.sillaDestino({ a })){
         return Response.json({ error:`No hay nadie en la sala con el id "${a}".` },
                              { status:400 });
       }
@@ -1614,9 +1755,36 @@ export class Sala {
          —que dura tres minutos— seguiría encendida después de que contestó, y
          la mesa diría «está escribiendo» junto a la respuesta que ya llegó. */
       quien.escribeHasta = 0;
-      const salida = Response.json({ bien:true, evento: await this.publicar(evento) });
+      const publicado = await this.publicar(evento);
+      const salida = Response.json({ bien:true, evento: publicado });
       this.avisarEscribiendo();
+
+      /* ── ¿le habló a una silla? ────────────────────────────────────────
+         Va con `luego()` y no con `await` a propósito: un modelo tarda
+         segundos, y quien escribió NO debe esperar a que la silla piense
+         para que su propio mensaje se dé por entregado. Su respuesta ya
+         está en el hilo; la de la silla llega por `/esperar` como la de
+         cualquiera. */
+      const silla = this.sillaDestino(publicado);
+      if(silla) this.luego(this.responderSilla(silla, publicado));
+
       return salida;
+    }
+
+    /* ── /motores · quién puede sentarse y quién no ───────────────────────
+       Existe para que nadie tenga que adivinar. Una silla apagada por falta
+       de llave y una silla rota se ven igual desde afuera, y la diferencia
+       la arregla Carlos en treinta segundos si sabe cuál es. */
+    if(pedido.method === 'GET' && ruta === 'motores'){
+      return Response.json({
+        bien: true,
+        vivos: motoresVivos(this.env),
+        apagados: motoresApagados(this.env).map(m => ({
+          ...m,
+          comoPrenderlo: `Cloudflare → Workers & Pages → sala → Settings → ` +
+                         `Variables and Secrets → Add → Secret → ${m.falta}`,
+        })),
+      });
     }
 
     /* ── /esperar · la pieza clave ─────────────────────────────────────────

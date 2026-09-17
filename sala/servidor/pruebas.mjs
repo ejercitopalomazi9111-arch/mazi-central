@@ -46,7 +46,26 @@ function hacerCtx(){
       async getAlarm(){ return datos.get('__alarma') ?? null; },
     },
     blockConcurrencyWhile: (f) => f(),
+    /* ⚠ ANTES NO HABÍA `waitUntil` Y ESO HACÍA INVISIBLE MEDIA CLASE DE
+       DEFECTOS. `luego()` usa `waitUntil` donde existe y si no deja correr la
+       promesa al aire — que en producción está bien, pero en una prueba
+       significa que todo lo que pasa EN SEGUNDO PLANO (las sillas contestando,
+       los avisos) ocurría después de que la prueba ya había terminado de
+       mirar. O sea: no se podía probar.
+       Ahora se recogen y `asentar()` las espera. */
+    waitUntil: (pr) => { enVuelo.push(Promise.resolve(pr).catch(() => {})); },
   };
+}
+
+/* Lo que quedó corriendo en segundo plano. */
+const enVuelo = [];
+/** Espera a que el segundo plano termine. Se llama cuando una prueba necesita
+ *  mirar algo que otro proceso iba a escribir. */
+async function asentar(vueltas = 6){
+  for(let i = 0; i < vueltas && enVuelo.length; i++){
+    const lote = enVuelo.splice(0);
+    await Promise.all(lote);
+  }
 }
 
 /* ESPERA_MS bajo: dos de las pruebas de /esperar se agotan a propósito, y con
@@ -611,6 +630,126 @@ console.log('\n· El freno, con el valor de verdad');
     { id:'c-2', nombre:'otro', tipo:'agente' }));
   ok('con SIN_FRENO no hay techo de ninguna clase',
      r3.tope === null || r3.tope === Infinity || !isFinite(r3.tope), String(r3.tope));
+}
+
+/* ══ 11-ter · LAS SILLAS · IAs que contestan solas ════════════════════════ */
+console.log('\n· Las sillas');
+{
+  /* El `fetch` de mentiras: ninguna prueba llama a Groq ni a Google de verdad.
+     Una prueba que gasta cuota es una prueba que se deja de correr, y además
+     lo que hay que probar aquí no es que el modelo conteste bonito —eso es de
+     él— sino que la SALA haga bien su parte: sentarlo, darle el hilo correcto,
+     publicar su respuesta, y no callarse cuando falla. */
+  const original = globalThis.fetch;
+  let visto = null;
+  const responder = (cuerpo, estado = 200) => {
+    globalThis.fetch = async (url, op) => {
+      visto = { url: String(url), cuerpo: JSON.parse(op.body) };
+      return { ok: estado < 300, status: estado,
+               json: async () => cuerpo, text: async () => JSON.stringify(cuerpo) };
+    };
+  };
+  const LLAVES = { GROQ_API_KEY: 'x-groq', GEMINI_API_KEY: 'x-gemini' };
+
+  /* ── contesta cuando le hablan ────────────────────────────────────────── */
+  {
+    responder({ choices: [{ message: { content: 'va, yo le entro' } }] });
+    const s = nueva(LLAVES);
+    await entrar(s, 'carlos', 'humano');
+    await leer(await pedir(s, 'POST', 'decir',
+      { de:'carlos', tipo:'mensaje', a:'groq', texto:'oye, ¿me ayudas?' }));
+    await asentar();
+    const [, h] = await leer(await pedir(s, 'GET', 'hilo'));
+    const suya = h.hilo.find(e => e.de && e.de.id === 'groq');
+    ok('una silla contesta sola cuando le hablan', !!suya && suya.texto === 'va, yo le entro',
+       JSON.stringify(suya && suya.texto));
+    ok('y se sienta sola: no hay que darla de alta',
+       !!h.gente?.groq || !!(await leer(await pedir(s, 'GET', 'estado')))[1].gente?.groq);
+    ok('le contesta A QUIEN le habló, no al aire', !!suya && suya.a === 'carlos');
+  }
+
+  /* ── el hilo que le manda ─────────────────────────────────────────────── */
+  {
+    responder({ choices: [{ message: { content: 'ok' } }] });
+    const s = nueva(LLAVES);
+    await entrar(s, 'carlos', 'humano');
+    await leer(await pedir(s, 'POST', 'decir', { de:'carlos', tipo:'mensaje', texto:'primero esto' }));
+    await leer(await pedir(s, 'POST', 'decir',
+      { de:'carlos', tipo:'mensaje', a:'groq', texto:'¿y luego?' }));
+    await asentar();
+    const dichos = visto.cuerpo.messages.map(m => m.content).join(' | ');
+    ok('le manda el hilo, no sólo el último mensaje', /primero esto/.test(dichos), dichos.slice(0,120));
+    ok('y le dice QUIÉN dijo cada cosa — sin eso un resumen no puede citar a nadie',
+       /carlos:/i.test(dichos), dichos.slice(0,120));
+  }
+
+  /* ── el resumen que pidió Carlos ──────────────────────────────────────── */
+  {
+    responder({ choices: [{ message: { content: 'esto es lo que pasó' } }] });
+    const s = nueva(LLAVES);
+    await entrar(s, 'carlos', 'humano');
+    await leer(await pedir(s, 'POST', 'decir',
+      { de:'carlos', tipo:'mensaje', a:'groq', texto:'resúmeme qué ha pasado' }));
+    await asentar();
+    ok('«resúmeme qué ha pasado» se reconoce como petición de resumen',
+       /esperando a Carlos/.test(visto.cuerpo.messages[0].content),
+       visto.cuerpo.messages[0].content.slice(0, 60));
+    const [, h] = await leer(await pedir(s, 'GET', 'hilo'));
+    ok('y el resumen entra al hilo marcado como tal',
+       h.hilo.some(e => e.tipo === 'resumen' && e.texto === 'esto es lo que pasó'));
+  }
+  {
+    responder({ choices: [{ message: { content: 'ok' } }] });
+    const s = nueva(LLAVES);
+    await entrar(s, 'carlos', 'humano');
+    await leer(await pedir(s, 'POST', 'decir',
+      { de:'carlos', tipo:'mensaje', a:'groq', texto:'pásame el archivo' }));
+    await asentar();
+    ok('una pregunta normal NO se trata como resumen',
+       !/esperando a Carlos/.test(visto.cuerpo.messages[0].content));
+  }
+
+  /* ── lo que más importa: cuando el modelo falla ───────────────────────── */
+  {
+    responder({ error: 'tronó' }, 500);
+    const s = nueva(LLAVES);
+    await entrar(s, 'carlos', 'humano');
+    await leer(await pedir(s, 'POST', 'decir',
+      { de:'carlos', tipo:'mensaje', a:'groq', texto:'hola' }));
+    await asentar();
+    const [, h] = await leer(await pedir(s, 'GET', 'hilo'));
+    const aviso = h.hilo.find(e => e.de && e.de.id === 'groq');
+    /* ⚠ SI ESTO SE TRAGARA, desde fuera sería IDÉNTICO a que la silla ignore a
+       Carlos: él se queda esperando a alguien que no va a llegar. */
+    ok('si el modelo falla, la silla lo DICE en la sala en vez de callarse',
+       !!aviso && aviso.tipo === 'sistema' && /⚠/.test(aviso.texto), JSON.stringify(aviso && aviso.texto));
+  }
+
+  /* ── sin llave no hay silla ───────────────────────────────────────────── */
+  {
+    responder({ choices: [{ message: { content: 'no debería' } }] });
+    const s = nueva();                       // sin llaves
+    await entrar(s, 'carlos', 'humano');
+    const [c] = await leer(await pedir(s, 'POST', 'decir',
+      { de:'carlos', tipo:'mensaje', a:'groq', texto:'hola' }));
+    await asentar();
+    ok('sin llave, hablarle a una silla se rechaza como cualquier id que no está',
+       c === 400, String(c));
+  }
+
+  /* ── /motores ─────────────────────────────────────────────────────────── */
+  {
+    const s = nueva(LLAVES);
+    const [, r] = await leer(await pedir(s, 'GET', 'motores'));
+    ok('/motores dice quién está prendido', r.vivos.length === 2 && r.apagados.length === 0);
+    const s2 = nueva({ GROQ_API_KEY: 'x' });
+    const [, r2] = await leer(await pedir(s2, 'GET', 'motores'));
+    ok('y del apagado dice EXACTAMENTE dónde se prende',
+       r2.apagados.length === 1 && /Variables and Secrets/.test(r2.apagados[0].comoPrenderlo),
+       JSON.stringify(r2.apagados[0]));
+  }
+
+  globalThis.fetch = original;
 }
 
 /* ══ 12 · cualquier IA, no sólo Claude ════════════════════════════════════ */
