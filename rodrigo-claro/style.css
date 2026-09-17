@@ -28,8 +28,8 @@
      cambia es el suelo: antes noche, ahora papel. Los nombres dicen lo que
      son (antes --paper era el color del TEXTO, que no habia por donde
      cogerlo). */
-  --fondo:#F7F5F0;        /* papel calido: el blanco puro deslumbra */
-  --fondo-2:#EFEBE3;
+  --fondo:#F1EEE7;        /* papel, no folio: el blanco brillante cansa */
+  --fondo-2:#E7E2D8;
   --tinta:#12171C;
   --tinta-2:#2B333A;
   --ink:#12171C;
@@ -44,8 +44,8 @@
   --muted-2:#5A6774;
   --blue:#1F5F8B;
   --blue-deep:#123A55;
-  --grid-line:rgba(31,95,139,.13);
-  --grid-line-strong:rgba(31,95,139,.20);
+  --grid-line:rgba(31,95,139,.16);
+  --grid-line-strong:rgba(31,95,139,.26);
 
   --disp:'Space Grotesk','Segoe UI',system-ui,sans-serif;
   --body:'Jost','Segoe UI',system-ui,sans-serif;
@@ -191,7 +191,7 @@ body.loading .hero__stage>*{visibility:hidden}
    ========================================================= */
 .site-header{position:fixed;top:0;left:0;width:100%;z-index:100;padding:1.3rem 0;
   transition:background .4s var(--ease),padding .4s var(--ease),box-shadow .4s var(--ease)}
-.site-header.scrolled{background:rgba(247,245,240,.97);padding:.85rem 0;box-shadow:0 1px 0 rgba(18,23,28,.055)}
+.site-header.scrolled{background:rgba(241,238,231,.97);padding:.85rem 0;box-shadow:0 1px 0 rgba(18,23,28,.055)}
 .nav{display:flex;align-items:center;justify-content:space-between;gap:2rem}
 .brand{display:flex;align-items:center;gap:.75rem;color:var(--tinta)}
 .brand__mark{height:26px;width:auto;filter:brightness(0);transition:filter .4s var(--ease)}
@@ -249,7 +249,7 @@ body.no-scroll{overflow:hidden}
 
 /* ---------- Cartucho (ficha técnica de la portada) ---------- */
 .hero__ficha{
-  position:relative;border:1px solid rgba(18,23,28,.2);background:rgba(247,245,240,.88);
+  position:relative;border:1px solid rgba(18,23,28,.2);background:rgba(241,238,231,.88);
   padding:.9rem .9rem 1.4rem;display:grid;gap:.9rem;align-self:end;
   clip-path:inset(0 0 100% 0);transition:clip-path 1.1s var(--ease-out) .35s;
 }
@@ -336,7 +336,7 @@ body.no-scroll{overflow:hidden}
 .wpanel--intro{width:min(80vw,620px)}
 .wpanel--intro h2{font-family:var(--disp);font-weight:600;text-transform:uppercase;font-size:clamp(2.4rem,6vw,4.6rem);line-height:1;letter-spacing:-.01em}
 .wpanel--intro h2 em{font-style:normal;color:transparent;-webkit-text-stroke:1.2px var(--tinta)}
-.wpanel--intro p{color:#4E5A66;margin-top:1.4rem;max-width:40ch}
+.wpanel--intro p{color:var(--muted);margin-top:1.4rem;max-width:40ch}
 .wpanel--intro .eyebrow{color:#1C5E8A}
 .wpanel--intro .eyebrow::before{background:#1C5E8A}
 .wpanel__media{position:relative;overflow:hidden;cursor:pointer}
@@ -348,10 +348,10 @@ body.no-scroll{overflow:hidden}
 .wpanel:hover .wpanel__media img{transform:scale(1.08);filter:grayscale(0)}
 .wpanel__media::after{content:"";position:absolute;inset:0;border:1px solid rgba(18,23,28,.12);pointer-events:none}
 .wpanel__num{position:absolute;top:1rem;left:1.1rem;font-family:var(--disp);font-size:.66rem;letter-spacing:.3em;color:var(--blue);z-index:2;
-  background:rgba(247,245,240,.93);padding:.3rem .6rem}
+  background:rgba(241,238,231,.93);padding:.3rem .6rem}
 .wpanel__info{display:flex;justify-content:space-between;align-items:baseline;margin-top:1rem;gap:1rem}
 .wpanel__info h3{font-family:var(--disp);font-weight:500;font-size:1.15rem;letter-spacing:.02em}
-.wpanel__info span{font-family:var(--disp);font-size:.62rem;letter-spacing:.3em;text-transform:uppercase;color:#5A6774}
+.wpanel__info span{font-family:var(--disp);font-size:.62rem;letter-spacing:.3em;text-transform:uppercase;color:var(--muted-2)}
 .wpanel--cta{width:min(70vw,480px);text-align:center}
 .wpanel--cta h3{font-family:var(--disp);font-weight:600;font-size:clamp(1.6rem,3.4vw,2.5rem);line-height:1.2;margin-bottom:1.8rem}
 .works__progress{position:absolute;left:max(4vw,2rem);right:max(4vw,2rem);bottom:2.2rem;height:1px;background:rgba(18,23,28,.14)}
@@ -375,7 +375,7 @@ body.no-scroll{overflow:hidden}
 .pcard:hover img{filter:grayscale(0);transform:scale(1.045)}
 .pcard::after{content:"";position:absolute;inset:0;border:1px solid rgba(18,23,28,.12);pointer-events:none}
 .pcard .tag{position:absolute;left:1rem;bottom:1rem;font-family:var(--disp);font-size:.6rem;letter-spacing:.3em;
-  text-transform:uppercase;color:var(--tinta);background:rgba(247,245,240,.93);padding:.35rem .7rem}
+  text-transform:uppercase;color:var(--tinta);background:rgba(241,238,231,.93);padding:.35rem .7rem}
 .pcard--a{grid-column:1/span 8}
 .pcard--a img{aspect-ratio:4/2.9;object-position:center 46%}
 .people__nota{grid-column:10/span 3;align-self:end;color:var(--muted);font-size:1rem;margin-bottom:.4rem}
@@ -386,7 +386,7 @@ body.no-scroll{overflow:hidden}
 /* Suelo del texto: si el texto va encima, el fondo lo pone el diseño, no la
    foto. Medido contra la foto más clara del carrete, no contra ésta. */
 .pano::after{content:"";position:absolute;inset:0;
-  background:linear-gradient(180deg,rgba(247,245,240,.84),rgba(247,245,240,.9))}
+  background:linear-gradient(180deg,rgba(241,238,231,.84),rgba(241,238,231,.9))}
 .pano__quote{position:relative;z-index:2;height:100%;display:grid;place-items:center;text-align:center;color:var(--tinta);padding:0 6vw}
 .pano__quote blockquote{font-family:var(--disp);font-weight:500;font-size:clamp(1.5rem,4vw,3rem);line-height:1.25;max-width:26ch}
 .pano__quote cite{display:block;font-style:normal;font-family:var(--disp);font-size:.66rem;letter-spacing:.4em;text-transform:uppercase;color:var(--blue);margin-top:1.6rem}
@@ -409,13 +409,13 @@ body.no-scroll{overflow:hidden}
 }
 .biglink:last-child{border-bottom:1px solid #D7DEE5}
 .biglink:hover{padding-left:1.2rem}
-.biglink small{font-size:.62rem;letter-spacing:.34em;text-transform:uppercase;color:#5A6774;min-width:110px}
+.biglink small{font-size:.62rem;letter-spacing:.34em;text-transform:uppercase;color:var(--muted-2);min-width:110px}
 .biglink b{font-weight:500;font-size:clamp(1.15rem,3.2vw,2rem);letter-spacing:.01em;color:var(--tinta);position:relative}
 .biglink b::after{content:"";position:absolute;left:0;bottom:-4px;width:0;height:1px;background:var(--blue);transition:width .5s var(--ease)}
 .biglink:hover b::after{width:100%}
 .biglink .arr{margin-left:auto;font-size:1.4rem;color:var(--blue);transform:translateX(-8px);opacity:0;transition:.4s var(--ease)}
 .biglink:hover .arr{transform:none;opacity:1}
-.contact__foot{margin-top:3rem;display:flex;justify-content:space-between;gap:1.5rem;flex-wrap:wrap;color:#5A6774;font-size:.9rem}
+.contact__foot{margin-top:3rem;display:flex;justify-content:space-between;gap:1.5rem;flex-wrap:wrap;color:var(--muted-2);font-size:.9rem}
 
 /* =========================================================
    FOOTER
@@ -461,7 +461,7 @@ body.no-scroll{overflow:hidden}
 .lb-close{top:2vh;right:2vw}
 .lb-prev{left:1vw;top:50%;transform:translateY(-50%)}
 .lb-next{right:1vw;top:50%;transform:translateY(-50%)}
-.lb-cap{position:absolute;bottom:2.5vh;left:0;width:100%;text-align:center;color:#2B333A;
+.lb-cap{position:absolute;bottom:2.5vh;left:0;width:100%;text-align:center;color:var(--tinta-2);
   font-family:var(--disp);font-size:.72rem;letter-spacing:.28em;text-transform:uppercase}
 
 /* =========================================================
@@ -502,7 +502,7 @@ body.no-scroll{overflow:hidden}
   padding:1.05rem 0 .65rem;outline:none;resize:vertical;transition:border-color .35s var(--ease);
 }
 .cf-field label{
-  position:absolute;left:0;top:1rem;color:#5A6774;font-size:.95rem;pointer-events:none;
+  position:absolute;left:0;top:1rem;color:var(--muted-2);font-size:.95rem;pointer-events:none;
   transition:transform .35s var(--ease),font-size .35s,letter-spacing .35s,color .35s;transform-origin:0 0;
 }
 .cf-field input:focus,.cf-field textarea:focus{border-color:#1C5E8A}
@@ -512,7 +512,7 @@ body.no-scroll{overflow:hidden}
 }
 .cf-actions{display:flex;align-items:center;gap:1.6rem;flex-wrap:wrap}
 .cf-actions .btn[disabled]{opacity:.5;pointer-events:none}
-.cf-note{font-size:.86rem;color:#4E5A66;letter-spacing:.04em}
+.cf-note{font-size:.86rem;color:var(--muted);letter-spacing:.04em}
 .cf-note:empty{display:none}
 /* El aviso dice qué pasó también por color, pero el color nunca es lo único:
    el texto se entiende igual en escala de grises. */
@@ -650,3 +650,47 @@ html:not(.js) .works__track{flex-wrap:wrap}
   .marquee__track{animation:none}
   .cursor,.cursor-dot,.cursor__label{display:none}
 }
+
+/* =========================================================
+   LAS DOS ANCLAS OSCURAS
+   Ni noche entera ni folio en blanco. La pagina es papel, y dos bloques
+   —la obra y el cajetin— van sobre tinta: uno para que las fotografias
+   sean lo unico que brilla, otro para cerrar la lamina con peso.
+   Se hace redefiniendo los tokens DENTRO del bloque, no duplicando reglas:
+   todo lo de dentro ya los usa, asi que se da la vuelta solo.
+   ========================================================= */
+.works,
+.footer{
+  --tinta:#F0EEE9;
+  --tinta-2:#C2CAD2;
+  --ink:#F0EEE9;
+  --ink-soft:#C2CAD2;
+  --muted:#9EABB7;
+  --muted-2:#93A1AE;
+  --stone:#8B95A0;
+  --blue-soft:#93BDD9;
+  --blue:#8FBDD9;
+  --blue-line:#3D6E90;
+  --line:rgba(240,238,233,.16);
+  --fondo:#12181E;
+  --fondo-2:#171E25;
+  background:#12181E;
+  color:var(--tinta);
+}
+/* Los bordes finos de dentro se escribieron como tinta sobre papel; aqui
+   el papel esta del otro lado. */
+.works .pcard::after,
+.works .wpanel__media::after{border-color:rgba(240,238,233,.14)}
+.works .wpanel__num{color:#0F151A;background:rgba(240,238,233,.9)}
+.works .pcard .tag{color:#0F151A;background:rgba(240,238,233,.9)}
+.footer{border-top:none}
+.footer .brand__mark{filter:none}
+.cajetin{border-color:rgba(240,238,233,.2)}
+.cajetin__datos>div,
+.cajetin__nav,
+.cajetin__pie{border-color:rgba(240,238,233,.2)}
+
+/* La lupa es la tercera superficie oscura, y tiene su propio pie de foto.
+   Como esta cerrada, ningun medidor automatico la ve: se fija a mano. */
+.lightbox{--tinta-2:#C2CAD2;--muted:#9EABB7}
+.lb-cap{color:var(--tinta-2)}
