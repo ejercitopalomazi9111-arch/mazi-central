@@ -1398,8 +1398,25 @@ export class Mundo {
           if(cadena.length > 3000) break;
         }
 
-        /* 2 · el amarre */
-        let amarre = -1;
+        /* 2 · los amarres · TODOS, no el primero.
+           ⚠ ANTES SE QUEDABA CON EL PRIMERO QUE ENCONTRABA, y por eso un
+           tendedero clavado de los dos extremos se comportaba EXACTAMENTE
+           igual que uno clavado de uno: el segundo clavo no existía para el
+           motor. Se vio porque las dos pruebas daban el mismo número hasta el
+           decimal —y dos experimentos distintos que dan el mismo número no
+           están de acuerdo, están midiendo lo mismo. */
+        /* ⚠ Y UN CLAVO DE VERDAD NO ES LO MISMO QUE ALGO QUE SE SOSTIENE, que
+           es lo que costó dos pruebas del péndulo. Juntando los dos en la
+           misma bolsa, LA PIEDRA COLGADA DE LA PUNTA se contaba como amarre —
+           está apoyada y es sólida— y el peso dejaba de ser peso para
+           convertirse en el otro extremo del tendedero: se quedaba clavado en
+           el aire y ya no volvía nunca.
+           Con un amarre solo el defecto no existía por accidente: se tomaba
+           el primero en orden de barrido, que es el de arriba.
+           Así que hay dos clases, y las fijas mandan: si la cuerda toca algo
+           fijo, ÉSOS son sus clavos. Lo apoyado sólo sirve cuando no hay
+           ninguno, que es el caso de una cuerda amarrada a una caja. */
+        const fijos = [], apoyados = [];
         for(const k of cadena){
           const cx = k % an, cy = (k / an) | 0;
           for(const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
@@ -1407,11 +1424,12 @@ export class Mundo {
             if(nx < 0 || ny < 0 || nx >= an || ny >= al) continue;
             const k2 = ny * an + nx;
             if(t[k2] === VACIO || ES_CUERDA[t[k2]]) continue;
-            if(EL[t[k2]].fijo || (sop[k2] && this.estadoDe(k2) === 'solido')){ amarre = k; break; }
+            if(EL[t[k2]].fijo){ fijos.push(k); break; }
+            if(sop[k2] && this.estadoDe(k2) === 'solido'){ apoyados.push(k); break; }
           }
-          if(amarre >= 0) break;
         }
-        if(amarre < 0){ for(const k of cadena) this.suelto[k] = 1; continue; }
+        const amarres = fijos.length ? fijos : apoyados.slice(0, 1);
+        if(!amarres.length){ for(const k of cadena) this.suelto[k] = 1; continue; }
 
         /* 3 · cada eslabón con su padre, desde el amarre.
            ⚠ Y EL PADRE SE GUARDA COMO PUESTO EN LA CADENA, NO COMO CELDA. Con
@@ -1421,9 +1439,13 @@ export class Mundo {
            la cuerda se quedaba estirada, tiesa, sin volver nunca. Otra vez la
            casilla confundida con la cosa, esta vez dentro del mismo paso. */
         for(const k of cadena) padres[k] = -1;
-        const orden = [amarre];
-        const dePadre = [0];
-        padres[amarre] = amarre;
+        /* Recorrido a lo ancho desde TODOS los amarres a la vez: así cada
+           eslabón queda colgado del clavo que le queda más cerca, que es lo
+           que hace que el centro de un tendedero se pandee y las orillas no. */
+        const orden = amarres.slice();
+        const dePadre = amarres.map((_, i) => i);
+        const anclaDe = amarres.slice();
+        for(const a0 of amarres) padres[a0] = a0;
         for(let i = 0; i < orden.length; i++){
           const k = orden[i];
           const cx = k % an, cy = (k / an) | 0;
@@ -1434,7 +1456,7 @@ export class Mundo {
             const k2 = ny * an + nx;
             if(!ES_CUERDA[t[k2]]) continue;
             if(padres[k2] !== -1) continue;
-            padres[k2] = k; dePadre.push(i); orden.push(k2);
+            padres[k2] = k; dePadre.push(i); anclaDe.push(anclaDe[i]); orden.push(k2);
           }
         }
 
@@ -1444,18 +1466,20 @@ export class Mundo {
         /* cuántos eslabones hay entre éste y el amarre: ÉSA es su cuerda, y
            por eso no se calcula con el puesto en la lista —la búsqueda es a lo
            ancho y en una cuerda con ramas el puesto no es la profundidad— */
-        const prof = [0];
-        for(let i = 1; i < orden.length; i++) prof.push(prof[dePadre[i]] + 1);
-        sop[amarre] = 1; this.flotante[amarre] = 1;
-        this.vy[amarre] = 0; this.vx[amarre] = 0;
-        for(let i = 1; i < orden.length; i++){
+        const prof = amarres.map(() => 0);
+        for(let i = amarres.length; i < orden.length; i++) prof.push(prof[dePadre[i]] + 1);
+        for(const a0 of amarres){
+          sop[a0] = 1; this.flotante[a0] = 1;
+          this.vy[a0] = 0; this.vx[a0] = 0;
+        }
+        for(let i = amarres.length; i < orden.length; i++){
           const k = pos[i];
           this.flotante[k] = 1;
           this.gravedadEn(k % an, (k / an) | 0, k);
           this.vy[k] = Math.max(-VMAX, Math.min(this.vy[k] + this._gy, VMAX));
           this.vx[k] = Math.max(-VMAX, Math.min(this.vx[k] + this._gx, VMAX));
           this.arrastra(k, EL[t[k]]);
-          pos[i] = this.tensa(k, pos[dePadre[i]], amarre, prof[i]);
+          pos[i] = this.tensa(k, pos[dePadre[i]], anclaDe[i], prof[i]);
         }
 
         /* 5 · lo que cuelga de la cuerda se queda colgando: eso es AMARRAR.
@@ -1499,7 +1523,10 @@ export class Mundo {
             this.vy[k2] = Math.max(-VMAX, Math.min(this.vy[k2] + this._gy, VMAX));
             this.vx[k2] = Math.max(-VMAX, Math.min(this.vx[k2] + this._gx, VMAX));
             this.arrastra(k2, EL[t[k2]]);
-            this.tensa(k2, k, amarre, prof[i] + 1);   /* la carga se sujeta al último eslabón */
+            /* la carga se sujeta al último eslabón, y al clavo del que ESE
+               eslabón cuelga — no al primero de la cuerda, que desde que hay
+               varios amarres puede estar del otro lado del tendedero */
+            this.tensa(k2, k, anclaDe[i], prof[i] + 1);
           }
         }
       }
@@ -1585,6 +1612,57 @@ export class Mundo {
         kk = kd; x = kk % an; y = (kk / an) | 0;
         movido = true;
         break;
+      }
+    }
+    /* ── Y SI NO PUDO CAER RECTO, SE DESLIZA ────────────────────────────
+       Aquí estaba «las cuerdas horizontales no bajan», y es la regla que
+       faltaba, no una que sobrara. Un eslabón sólo puede pisar donde siga
+       pegado a su padre Y dentro del radio de su amarre. Las dos están bien.
+       Pero con sólo esas dos, la ÚNICA fuerza es la gravedad —vertical—, así
+       que ningún eslabón se mueve nunca hacia adentro: la cuerda puede bajar
+       y no puede JUNTARSE. Tendida en horizontal se convierte en una
+       escalerita y se para a las dos celdas.
+
+       Una cadena colgando no baja recto: resbala sobre su propio radio. Así
+       que cuando la caída recta queda prohibida se busca, entre las ocho
+       vecinas legales, la MÁS BAJA — que es lo mismo que decir que el eslabón
+       busca su energía más baja sin estirar la cuerda. De ahí sale la curva
+       de una cuerda colgada, sin una línea que diga «catenaria».
+
+       Medido con una cuerda de 21 clavada de un extremo: antes se quedaba en
+       y=21.9 con la punta en y=24 después de 80 pasos. */
+    /* ⚠ SÓLO CUANDO SE ESTÁ ASENTANDO, NO CUANDO SE COLUMPIA, y esto costó
+       dos pruebas del péndulo. El deslizamiento mueve el eslabón de lado sin
+       que esa velocidad exista: para una cuerda que cuelga eso es correcto —el
+       trabajo lo hace la gravedad— pero en un péndulo en pleno vuelo es un
+       empujón de la nada, y el peso se soltaba y dejaba de volver.
+       La distinción es física y se lee en una línea: `dx` es la velocidad
+       HORIZONTAL propia del eslabón. Si vale cero, lo único que actúa es la
+       gravedad y la cadena está buscando su forma. Si no, va columpiándose y
+       aquí no se le toca. */
+    if(!movido && dy > 0 && dx === 0){
+      let mejorK = -1, mejorY = y, mejorX = x;
+      for(let ddy = -1; ddy <= 1; ddy++) for(let ddx = -1; ddx <= 1; ddx++){
+        if(!ddx && !ddy) continue;
+        const nx = x + ddx, ny = y + ddy;
+        if(ny <= mejorY) continue;                   /* sólo hacia abajo */
+        if(Math.max(Math.abs(nx - px), Math.abs(ny - py)) > 1) continue;
+        if(lejosDelAmarre(nx, ny)) continue;
+        if(!this.dentro(nx, ny)) continue;
+        const kd = this.i(nx, ny);
+        if(kd === padre) continue;
+        if(this.t[kd] !== VACIO){
+          const ed = EL[this.t[kd]];
+          const est = this.estadoDe(kd);
+          if(est === 'solido' || est === 'polvo' || ed.fijo) continue;
+          if((ed.dens || 0) >= (EL[this.t[kk]].dens || 1)) continue;
+        }
+        mejorK = kd; mejorY = ny; mejorX = nx;
+      }
+      if(mejorK >= 0){
+        this.intercambia(kk, mejorK);
+        kk = mejorK; x = mejorX; y = mejorY;
+        movido = true;
       }
     }
     const bloqueado = (dx || dy) && !movido;

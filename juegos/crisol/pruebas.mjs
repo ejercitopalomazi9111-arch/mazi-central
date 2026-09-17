@@ -2805,5 +2805,66 @@ seccion('6 · la cuerda UNE, no arranca');
   }
 }
 
+seccion('cuerdas · los tres reclamos de Carlos');
+{
+  /* Carlos, textual: «si las pongo horizontales no bajan y a veces se quedan
+     oscilando por siempre y en general no sirven bien».
+
+     Los tres experimentos, escritos antes de tocar el motor. Medido entonces:
+       · horizontal clavada de un extremo → y 20.0 → 21.9 en 80 pasos, o sea
+         TIESA EN EL AIRE. Debía colgar.
+       · clavada de los DOS extremos → 21.9 y punta en 24: EL MISMO NÚMERO
+         HASTA EL DECIMAL que con un solo clavo. Dos experimentos distintos que
+         dan el mismo número no están de acuerdo: están midiendo lo mismo. El
+         motor sólo reconocía UN amarre por cuerda. */
+  const AN = 60, AL = 60;
+  const sala = () => {
+    const m = mundo(AN, AL, 7);
+    for(let x = 0; x < AN; x++) m.pon(x, AL - 1, IDX.muro);
+    for(let y = 0; y < AL; y++){ m.pon(0, y, IDX.muro); m.pon(AN - 1, y, IDX.muro); }
+    return m;
+  };
+  const deCuerda = (m) => { const a = []; for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.cuerda) a.push(k); return a; };
+  const yMed = (m) => { const c = deCuerda(m); return c.length ? c.reduce((s, k) => s + ((k / AN) | 0), 0) / c.length : NaN; };
+  const yMax = (m) => { const c = deCuerda(m); return c.length ? Math.max.apply(null, c.map(k => (k / AN) | 0)) : NaN; };
+
+  {
+    const m = sala();
+    for(let x = 20; x <= 40; x++) m.pon(x, 20, IDX.cuerda);
+    for(let i = 0; i < 60; i++) m.paso();
+    ok('una cuerda horizontal SIN amarre se cae como cualquier cosa',
+       yMed(m) > 50, 'acabó en y=' + yMed(m).toFixed(1));
+  }
+  {
+    const m = sala();
+    for(let y = 10; y <= 20; y++) m.pon(19, y, IDX.muro);
+    for(let x = 20; x <= 40; x++) m.pon(x, 20, IDX.cuerda);
+    for(let i = 0; i < 80; i++) m.paso();
+    /* un eslabón sólo puede pisar donde siga pegado a su padre y dentro del
+       radio de su clavo; sin una regla de DESLIZAR, la única fuerza es la
+       gravedad —vertical— y la cuerda nunca se junta hacia adentro */
+    ok('clavada de un extremo, CUELGA en vez de quedarse tiesa',
+       yMed(m) > 25 && yMax(m) > 30,
+       'centro y=' + yMed(m).toFixed(1) + ' · punta y=' + yMax(m));
+  }
+  {
+    const m = sala();
+    for(let y = 10; y <= 20; y++){ m.pon(19, y, IDX.muro); m.pon(41, y, IDX.muro); }
+    for(let x = 20; x <= 40; x++) m.pon(x, 20, IDX.cuerda);
+    for(let i = 0; i < 80; i++) m.paso();
+    const c2 = yMed(m);
+    const m1 = sala();
+    for(let y = 10; y <= 20; y++) m1.pon(19, y, IDX.muro);
+    for(let x = 20; x <= 40; x++) m1.pon(x, 20, IDX.cuerda);
+    for(let i = 0; i < 80; i++) m1.paso();
+    /* ⚠ LA COMPARACIÓN ES LA PRUEBA, no el número suelto. Con un solo amarre
+       reconocido los dos montajes daban exactamente lo mismo, y un umbral
+       cualquiera sobre uno de ellos habría pasado igual de verde. */
+    ok('un tendedero de DOS clavos se pandea MENOS que uno de un clavo',
+       c2 < yMed(m1) - 2,
+       'dos clavos y=' + c2.toFixed(1) + ' · un clavo y=' + yMed(m1).toFixed(1));
+  }
+}
+
 console.log('\n' + (mal ? '✗' : '✓') + '  ' + bien + ' pasan · ' + mal + ' fallan');
 process.exit(mal ? 1 : 0);

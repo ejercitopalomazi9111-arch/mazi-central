@@ -844,6 +844,26 @@
       ],
       "salioDe": "CRISOL, el filtro del damero, 17 de septiembre de 2026. Mata la onda infinita en aire y en agua, y a cambio un recipiente cerrado se propulsa 2 celdas y una carga desintegra una tapa que no debía. 241·15 en los dos lados.",
       "vecinas": []
+    },
+    {
+      "id": "dos-experimentos-mismo-numero",
+      "titulo": "Dos experimentos distintos que dan el mismo número",
+      "gravedad": "alta",
+      "sintoma": "Dos montajes que deberían comportarse distinto entregan el mismo resultado hasta el decimal.",
+      "causa": "Lo que los diferencia no existe para el código. Aquí: una cuerda clavada de un extremo y otra clavada de los dos daban 21.9 las dos, porque el motor se quedaba con el PRIMER amarre que encontraba y el segundo clavo no existía.",
+      "porque": "Un umbral suelto sobre uno solo de los dos montajes pasa verde igual, así que la prueba no lo caza: sólo lo caza compararlos entre sí.",
+      "arreglo": "La prueba compara los dos montajes en vez de medir uno contra un número. Y el código recoge TODOS los anclajes, no el primero.",
+      "comoCazarlo": "Cuando dos casos que deberían diferir den el mismo valor exacto, no es coincidencia: es que están tomando el mismo camino.",
+      "consejo": "Y al recoger «todos» hay que distinguir clases: juntar lo fijo con lo meramente apoyado hizo que el PESO colgado de un péndulo se contara como clavo, y el peso se quedó tieso en el aire. Un clavo es lo fijo; lo apoyado sólo vale si no hay ninguno.",
+      "senales": [
+        "los dos casos dan lo mismo",
+        "cambié el montaje y no cambió nada",
+        "el segundo no hace nada"
+      ],
+      "salioDe": "CRISOL, las cuerdas, 17 de septiembre de 2026. Reporte de Carlos: «si las pongo horizontales no bajan… y en general no sirven bien».",
+      "vecinas": [
+        "arreglo-que-empata-en-el-marcador"
+      ]
     }
   ]
 }
