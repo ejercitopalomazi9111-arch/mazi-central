@@ -3,8 +3,28 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Grupo Mazi — construimos la base y todo lo que se levanta sobre ella</title>
+<title>Si no existe la herramienta, se construye la herramienta</title>
 <meta name="theme-color" content="#100A18">
+<!-- ⚠ SIN MARCA, A PETICIÓN DE CARLOS · septiembre de 2026.
+     Textual: «necesito que no pongas ninguna referencia a Grupo Mazi en ello,
+     nada más en el link por ahora, porque todavía no está acabado», y al
+     preguntarle hasta dónde: «todo, y sin paloma tampoco».
+
+     O sea que mientras el sitio esté a medias NO debe poder atribuirse a la
+     empresa. Eso son tres cosas, no una:
+       · el nombre no se escribe en ningún lado que lea una persona;
+       · no se escribe en ningún lado que lea una MÁQUINA (título, tarjeta de
+         WhatsApp, ficha de Google) — que es donde más daño haría, porque eso
+         se queda cacheado aunque la página cambie mañana;
+       · y no se indexa, que es la línea de abajo.
+
+     PARA DEVOLVERLE LA MARCA cuando esté terminado: se quita el `noindex`,
+     se descomenta la ficha de Google más abajo y se buscan en este archivo los
+     comentarios que empiezan con «SIN MARCA». Están todos marcados igual.
+
+     La dirección sí sigue diciendo `mazi-central`: eso él ya lo sabe y lo dio
+     por bueno («nada más en el link por ahora»). -->
+<meta name="robots" content="noindex, nofollow">
 <meta name="description" content="Diseñamos, desarrollamos y conectamos tecnología, herramientas y estrategias para que todo tu negocio funcione como un solo ecosistema. Querétaro.">
 <!-- LA DIRECCIÓN DE VERDAD. Estaba puesta en `github.io`, que es OTRA dirección
      viva: eso le dice a Google y a WhatsApp «la versión buena está allá», y
@@ -20,18 +40,17 @@
      tenemos y estuvo roto desde el primer día. La imagen es absoluta a
      propósito: WhatsApp, Facebook y X no resuelven rutas relativas. -->
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Grupo Mazi">
 <meta property="og:locale" content="es_MX">
 <meta property="og:url" content="https://mazi-central.palomazi9111.workers.dev/sitio/">
-<meta property="og:title" content="Grupo Mazi — si no existe la herramienta, se construye la herramienta">
+<meta property="og:title" content="Si no existe la herramienta, se construye la herramienta">
 <meta property="og:description" content="Web, software, marketing, video, gestión y tiempos y movimientos. Entramos a tu operación y nos quedamos. Querétaro.">
 <meta property="og:image" content="https://mazi-central.palomazi9111.workers.dev/sitio/img/og.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:type" content="image/jpeg">
-<meta property="og:image:alt" content="Grupo Mazi — si no existe la herramienta, se construye la herramienta">
+<meta property="og:image:alt" content="Si no existe la herramienta, se construye la herramienta">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Grupo Mazi — si no existe la herramienta, se construye la herramienta">
+<meta name="twitter:title" content="Si no existe la herramienta, se construye la herramienta">
 <meta name="twitter:description" content="Web, software, marketing, video, gestión y tiempos y movimientos. Entramos a tu operación y nos quedamos. Querétaro.">
 <meta name="twitter:image" content="https://mazi-central.palomazi9111.workers.dev/sitio/img/og.jpg">
 
@@ -43,6 +62,11 @@
      Esto es lo que lee Google para decidir si aparecemos cuando alguien busca
      "desarrollo de software Querétaro". Antes "Querétaro" sólo existía en el
      meta description y debajo del reloj: para el buscador, no existíamos. -->
+<!-- SIN MARCA · la ficha de Google va COMPLETA aquí adentro, comentada.
+     Traía nombre, correo, teléfono, dirección y el logo — o sea, la identidad
+     entera en el formato que Google guarda y tarda semanas en soltar. Se
+     descomenta tal cual el día que el sitio se termine y se le devuelva el
+     nombre; no hay que reescribirla.
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -72,6 +96,7 @@
   }
 }
 </script>
+-->
 
 <!--
   EL SITIO · BLOQUE 1 — armazón, portada y contacto.
@@ -186,6 +211,13 @@
   .barra .casa img { width:26px; height:auto; display:block; }
   .barra .casa span { font-family:var(--mazi); font-size:15px; line-height:1;
     padding-top:2px; }
+  /* SIN MARCA · el piloto que sustituye a la paloma en la barra. Un LED
+     encendido dice «esto está vivo», que es lo mismo que decía el ave, y no
+     dice de quién es. Late despacio: a ritmo de respiración, no de alarma. */
+  .barra .casa .led { width:8px; height:8px; border-radius:50%; flex:0 0 auto;
+    background:var(--violeta); box-shadow:0 0 10px #AC27FFcc;
+    animation:late 3.4s ease-in-out infinite; }
+  @keyframes late { 0%,100% { opacity:1 } 50% { opacity:.34 } }
   .barra nav { margin-left:auto; display:flex; align-items:center; gap:4px; }
   .barra nav a.menu { display:none; }
   @media (min-width:820px) {
@@ -237,6 +269,11 @@
     font-size:clamp(38px,13.5vw,92px); line-height:.92; letter-spacing:-.008em;
   }
   .logotipo { position:relative; }
+  /* SIN MARCA · el display ya no enciende un nombre de cuatro letras sino dos
+     frases de doce. A 13.5vw se salía de un teléfono de 390 px por el borde
+     derecho, así que esta variante baja la escala y aprieta el interletrado.
+     Medido a 390, a 430 y a 1440 antes de dejarlo. */
+  .logotipo.lema { font-size:clamp(25px,8.2vw,60px); letter-spacing:-.018em; }
   .logotipo .l2 { display:block; color:var(--violeta); }
   .logotipo .seg { display:inline-block; }
   /* La capa del destello: una copia del logotipo en violeta, encima, que sólo
@@ -540,10 +577,35 @@
     /* A toda velocidad el deslizamiento de 14 px sobra: no se lee como
        entrada, se lee como que la página tiembla. */
     .prisa .revela { transform:none; }
+
+    /* ── ESCALONADO ────────────────────────────────────────────────────
+       «que carguen las OPCIONES al mismo ritmo que el scroll» — Carlos.
+       El contenedor no se desvanece (si lo hiciera, encima del de los
+       hijos, sería un fundido doble y se vería sucio): lo que entra son
+       sus hijos, uno tras otro. `--i` lo pone `ritmo.js` al montar.
+
+       El escalón se multiplica por `--ritmo` como todo lo demás, así que
+       bajando rápido los cuatro entran a la vez. Un escalonado a toda
+       velocidad no se lee como ritmo: se lee como que la página va
+       cargando a pedazos, que es justo la queja. */
+    .revela[data-escalona] { opacity:1; transform:none; }
+    .revela[data-escalona] > * {
+      opacity:0; transform:translateY(12px);
+      transition:opacity   calc(.5s * var(--ritmo)) ease
+                           calc(var(--i,0) * .07s * var(--ritmo)),
+                 transform calc(.5s * var(--ritmo)) cubic-bezier(.22,.8,.3,1)
+                           calc(var(--i,0) * .07s * var(--ritmo)); }
+    .revela[data-escalona].dentro > * { opacity:1; transform:none; }
+    .prisa .revela[data-escalona] > * { transform:none; }
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation:none!important; transition:none!important; }
     .arranca .ave, .arranca .frase, .arranca .seis, .arranca .acciones,
+    /* Los hijos escalonados también, con tirantes y cinturón: sus reglas
+       viven dentro de `no-preference`, así que aquí ya estarían visibles —
+       pero si alguien las mueve de bloque, esto evita que el contenido se
+       quede escondido para quien pidió menos movimiento. */
+    .revela[data-escalona] > *,
     .revela { opacity:1!important; transform:none!important; }
     .arranca .logotipo { color:var(--hueso)!important; text-shadow:none!important; }
     .arranca .logotipo .l2 { color:var(--violeta)!important; }
@@ -1114,9 +1176,12 @@ html.sin-marco .adentro { padding:0; }
   <div class="barra-in">
     <!-- El logo de la intro ATERRIZA aquí. `data-logo-destino` es la caja que
          se mide para calcular el viaje; no se toca su acomodo. -->
-    <a class="casa" href="#arriba" data-logo-destino>
-      <img src="../marca/logo/paloma-simple.svg" alt="" width="26" height="16">
-      <span>GRUPO MAZI</span>
+    <!-- SIN MARCA · aquí iban la paloma y el nombre. Queda el indicador de
+         encendido, que es donde ATERRIZA el logotipo de la portada: esa caja
+         se mide para calcular el viaje, así que no puede desaparecer. -->
+    <a class="casa" href="#arriba" data-logo-destino aria-label="Ir al inicio">
+      <span class="led" aria-hidden="true"></span>
+      <span>INICIO</span>
     </a>
     <nav>
       <a class="menu" href="#sistema">QUÉ HACEMOS</a>
@@ -1140,12 +1205,14 @@ html.sin-marco .adentro { padding:0; }
 
   <!-- 1 · EL DISPLAY -->
   <div class="display" id="display">
-    <div class="ave-caja">
-      <canvas data-liquido="../marca/logo/paloma.svg" aria-hidden="true"></canvas>
-      <img class="ave" src="../marca/logo/paloma.svg" alt="Grupo Mazi" width="104" height="61">
-    </div>
+    <!-- SIN MARCA · aquí iba la paloma, con su versión líquida en canvas. -->
 
-    <h1 class="logotipo">GRUPO<span class="l2">MAZI</span></h1>
+    <!-- El display de LED se queda —es lo mejor que tiene la portada— pero
+         enciende el LEMA en vez del nombre. Dos líneas de largo casi igual a
+         propósito: el bloque queda cuadrado y la segunda, en violeta, cae como
+         la respuesta de la primera. Y dice lo que hacemos sin decir quiénes
+         somos, que es justo lo que se pidió. -->
+    <h1 class="logotipo lema">SI NO EXISTE<span class="l2">SE CONSTRUYE</span></h1>
 
     <p class="frase">
       <span class="suave">Todo gran proyecto comienza con una base sólida.</span>
@@ -1179,7 +1246,7 @@ html.sin-marco .adentro { padding:0; }
        cuerda. Ese acelerón-freno es todo el oficio: una cámara a velocidad
        constante se siente barata aunque el espacio sea impecable.
 
-       LO QUE SE ENSEÑA ES SÓLO NUESTRO. Ligas Mazi corriendo, la fábrica de
+       LO QUE SE ENSEÑA ES SÓLO NUESTRO. La plataforma deportiva corriendo, la fábrica de
        tipografías, la paloma vectorizada y el explorador. Torre Infinita NO
        entra: lo decidió Carlos el 30 de julio y el motivo sigue vivo — arte de
        Nintendo, y además las mecánicas quedaron expuestas por el pleito de
@@ -1203,7 +1270,7 @@ html.sin-marco .adentro { padding:0; }
         <div class="mundo" data-mundo>
 
           <figure class="pantalla-flota" data-est data-abanico="0" data-mira
-                  data-info="Ligas Mazi · cuentas reales">
+                  data-info="Plataforma deportiva · cuentas reales">
             <img src="img/pantallas/entrada.jpg" alt="Cuentas reales, con privacidad de menores"
                  width="780" height="1688" loading="lazy" decoding="async">
             <i class="barrido"></i>
@@ -1227,7 +1294,7 @@ html.sin-marco .adentro { padding:0; }
           </div>
 
           <figure class="pantalla-flota" data-est data-abanico="5" data-mira
-                  data-info="Ligas Mazi · el tablero">
+                  data-info="Plataforma deportiva · el tablero">
             <img src="img/pantallas/hub.jpg" alt="El tablero del aficionado"
                  width="780" height="1688" loading="lazy" decoding="async">
             <i class="barrido"></i>
@@ -1255,7 +1322,7 @@ html.sin-marco .adentro { padding:0; }
           </div>
 
           <figure class="pantalla-flota" data-est data-abanico="2" data-mira
-                  data-info="Ligas Mazi · dirigir el partido">
+                  data-info="Plataforma deportiva · dirigir el partido">
             <img src="img/pantallas/mesa.jpg" alt="La mesa de control de un partido"
                  width="780" height="1688" loading="lazy" decoding="async">
             <i class="barrido"></i>
@@ -1272,8 +1339,8 @@ html.sin-marco .adentro { padding:0; }
           </div>
 
           <figure class="pantalla-flota" data-est data-abanico="3" data-mira
-                  data-info="Ligas Mazi · marcador en vivo">
-            <img src="img/pantallas/marcador.jpg" alt="Marcador en vivo de Ligas Mazi"
+                  data-info="Plataforma deportiva · marcador en vivo">
+            <img src="img/pantallas/marcador.jpg" alt="Marcador en vivo de la plataforma deportiva"
                  width="780" height="1688" loading="lazy" decoding="async">
             <i class="barrido"></i>
             <figcaption>Marcador en vivo</figcaption>
@@ -1300,7 +1367,7 @@ html.sin-marco .adentro { padding:0; }
                 aria-hidden="true">A</span>
 
           <figure class="pantalla-flota" data-est data-abanico="1" data-mira
-                  data-info="Ligas Mazi · la liga completa">
+                  data-info="Plataforma deportiva · la liga completa">
             <img src="img/pantallas/liga.jpg" alt="Administración de una liga completa"
                  width="780" height="1688" loading="lazy" decoding="async">
             <i class="barrido"></i>
@@ -1324,7 +1391,7 @@ html.sin-marco .adentro { padding:0; }
           </div>
 
           <figure class="pantalla-flota" data-est data-abanico="4" data-mira
-                  data-info="Ligas Mazi · las reglas del torneo">
+                  data-info="Plataforma deportiva · las reglas del torneo">
             <img src="img/pantallas/perillas.jpg" alt="Las reglas del torneo, configurables"
                  width="780" height="1688" loading="lazy" decoding="async">
             <i class="barrido"></i>
@@ -1352,7 +1419,7 @@ html.sin-marco .adentro { padding:0; }
         </div>
         <div class="cap" data-cap data-de=".82" data-a="1">
           <h2>Seis pantallas. Un solo sistema.</h2>
-          <p><b>Ligas Mazi</b> — cuentas reales, pagos, la mesa de control y el
+          <p><b>Una plataforma deportiva completa</b> — cuentas reales, pagos, la mesa de control y el
              marcador en vivo. Una liga entera en un teléfono.</p>
         </div>
       </div>
@@ -1361,7 +1428,7 @@ html.sin-marco .adentro { padding:0; }
 
   <!-- ═══ LOS JUGUETES · la demostración ═══════════════════════════════════
        Cada uno prueba una capacidad distinta y ninguno es decorativo. -->
-  <section class="juguetes" id="juguetes">
+  <section class="juguetes revela" id="juguetes" data-escalona>
     <p class="rot">TÓCALO</p>
     <h2 style="margin:0 0 8px;font-family:var(--titulo);font-weight:700;letter-spacing:-.022em;
                font-size:clamp(21px,5.6vw,38px);line-height:1.04;text-wrap:balance">
@@ -1435,8 +1502,10 @@ html.sin-marco .adentro { padding:0; }
       <div class="pc">
         <div class="tapa">
           <div class="vidrio">
-            <img class="ave" src="../marca/logo/paloma-simple.svg" alt="" width="120" height="74">
-            <span class="rot">Grupo Mazi</span>
+            <!-- SIN MARCA · aquí iban la paloma y el nombre en la pantalla
+                 del portátil. Queda el cursor parpadeando, que además dice
+                 mejor lo que es: una máquina encendida y esperando. -->
+            <span class="rot" aria-hidden="true">_</span>
           </div>
         </div>
         <div class="base"></div>
@@ -1503,7 +1572,7 @@ html.sin-marco .adentro { padding:0; }
   </section>
 
   <!-- 5 · CÓMO TRABAJAMOS -->
-  <section id="trabajamos" class="revela">
+  <section id="trabajamos" class="revela" data-escalona>
     <p class="rot">CÓMO TRABAJAMOS</p>
     <div class="rx" data-rayos-x>
       <h2>No nos contratas: nos integras.</h2>
@@ -1520,8 +1589,8 @@ html.sin-marco .adentro { padding:0; }
   </section>
 
   <!-- CONTACTO -->
-  <section id="contacto" class="revela">
-    <div class="dos">
+  <section id="contacto">
+    <div class="dos revela" data-escalona>
       <div>
         <p class="rot"><span data-eco>CONTACTO</span></p>
         <h2>Cuéntanos qué se está rompiendo.</h2>
@@ -1535,8 +1604,12 @@ html.sin-marco .adentro { padding:0; }
           <a class="dato" href="https://wa.me/524428833786" target="_blank" rel="noopener">
             <span><span class="et">WhatsApp</span><span class="vl">442 883 3786</span></span>
           </a>
+          <!-- SIN MARCA · la dirección tiene el nombre dentro, así que no se
+               escribe a la vista. El enlace sigue funcionando: quien le dé,
+               abre su correo con el destinatario puesto. Es lo más lejos que
+               se puede llegar sin dejar de ser contactable. -->
           <a class="dato" href="mailto:grupomazi.oficial@gmail.com">
-            <span><span class="et">Correo</span><span class="vl">grupomazi.oficial@gmail.com</span></span>
+            <span><span class="et">Correo</span><span class="vl">Escríbenos</span></span>
           </a>
         </div>
         <p class="cierre" style="margin-top:22px">¿QUIERES TRABAJAR CON NOSOTROS?</p>
@@ -1552,7 +1625,8 @@ html.sin-marco .adentro { padding:0; }
   </section>
 
   <footer>
-    <span>GRUPO MAZI</span>
+    <!-- SIN MARCA · aquí iba el nombre. -->
+    <span>SI NO EXISTE, SE CONSTRUYE</span>
     <span class="sep"></span>
     <a href="https://wa.me/524428833786" target="_blank" rel="noopener">442 883 3786</a>
     <a href="mailto:grupomazi.oficial@gmail.com">CORREO</a>
@@ -1569,7 +1643,7 @@ html.sin-marco .adentro { padding:0; }
 <div class="marco" data-marco aria-hidden="true">
   <i class="arr"></i><i class="aba"></i><i class="izq"></i><i class="der"></i>
   <span class="ojo"></span>
-  <span class="pie">Grupo Mazi</span>
+  <span class="pie"><!-- SIN MARCA -->&nbsp;</span>
 </div>
 
 <button class="acercar" data-acercar type="button" aria-pressed="false">
@@ -1594,15 +1668,15 @@ html.sin-marco .adentro { padding:0; }
      El logotipo se parte en <span> por carácter para que cada uno prenda con su
      propio retardo — como un display de segmentos que se enciende de izquierda
      a derecha. Se hace en JS y no en el HTML a propósito: el HTML se queda con
-     el texto limpio, así que un buscador y un lector de pantalla leen
-     "GRUPO MAZI" y no once letras sueltas. Si esto no corre, el logotipo sigue
+     el texto limpio, así que un buscador y un lector de pantalla leen la
+     frase entera y no veinticuatro letras sueltas. Si esto no corre, el logotipo sigue
      ahí completo y la animación vieja (de bloque) toma su lugar sola. */
   const logo = display.querySelector('.logotipo');
   if (logo) {
     // Se reconstruye el logotipo con un <span> por letra. Cada uno lleva su
     // índice en `--i`, y de ahí sale el retardo de su encendido.
     logo.textContent = '';
-    logo.setAttribute('aria-label', 'Grupo Mazi');
+    logo.setAttribute('aria-label', 'Si no existe, se construye');
     const armar = (texto, clase, desde) => {
       const cont = document.createElement('span');
       if (clase) cont.className = clase;
@@ -1610,21 +1684,30 @@ html.sin-marco .adentro { padding:0; }
         const sp = document.createElement('span');
         sp.className = 'seg';
         sp.style.setProperty('--i', i + desde);
-        sp.textContent = ch;
+        /* ⚠ EL ESPACIO SE PIERDE si se pone tal cual: cada letra es un
+           `inline-block` y un espacio suelto dentro de uno colapsa. Con el
+           nombre de la marca nunca se notó porque no tenía espacios — GRUPO y
+           MAZI iban en dos <span> separados. Con el lema salía "SINOEXISTE /
+           SECONSTRUYE", pegado, y se veía en la captura antes que en el
+           código. Va un espacio duro, que sí ocupa su ancho. */
+        sp.textContent = ch === ' ' ? ' ' : ch;
         sp.setAttribute('aria-hidden', 'true');
         cont.appendChild(sp);
       });
       logo.appendChild(cont);
     };
-    armar('GRUPO', '', 0);
-    armar('MAZI', 'l2', 5);
+    /* SIN MARCA · antes decía GRUPO / MAZI. El espacio va DENTRO de su
+       propio <span> como los demás para que el ritmo del encendido no se
+       salte un tiempo justo en medio de la línea. */
+    armar('SI NO EXISTE', '', 0);
+    armar('SE CONSTRUYE', 'l2', 12);
 
     // El destello de autoprueba: una copia encima que prende y se apaga en
     // medio segundo. No se lee, se siente — es lo que hace un LED al encender.
     const flash = document.createElement('span');
     flash.className = 'autoprueba';
     flash.setAttribute('aria-hidden', 'true');
-    flash.textContent = 'GRUPO';
+    flash.textContent = 'SI NO EXISTE';
     logo.appendChild(flash);
   }
 
