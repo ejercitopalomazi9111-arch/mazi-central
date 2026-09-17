@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Currículum</title>
+<meta name="description" content="Currículum que se llena en el teléfono y se imprime. Los datos personales se quedan en el teléfono, nunca en el repositorio.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>📄</text></svg>">
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════
+   CURRÍCULUM · se llena en el teléfono, se imprime como documento
+   ---------------------------------------------------------------------------
+   ⚠ LO PERSONAL NO VIVE EN ESTE ARCHIVO, Y ES A PROPÓSITO. Teléfono, correo,
+   fecha de nacimiento y los años de cada trabajo son HUECOS: se escriben en el
+   teléfono y se guardan sólo ahí. Este repositorio es público, y la fecha de
+   nacimiento y el historial laboral de una persona de diecisiete años no tienen
+   por qué estar en él para que el documento funcione.
+
+   Va POR ÁREAS y no por fechas, también a propósito. Doce trabajos cortos en
+   orden cronológico se leen como inestabilidad; los mismos doce agrupados por
+   oficio se leen como alguien que ha hecho de todo y aprende rápido. Es la
+   misma verdad contada bien, y es el formato funcional de toda la vida.
+
+   Estructura simple, sin columnas raras dentro de la experiencia: muchos
+   filtros automáticos de reclutamiento leen mal las tablas.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --papel:#ffffff; --tinta:#16181d; --tenue:#5c636e; --linea:#d7dbe0;
+  --acento:#1d4ed8; --hueco:#b45309; --huecoFondo:#fff7ed;
+}
+:root:not([data-theme="light"]){
+  @media (prefers-color-scheme: dark){
+    --papel:#14161a; --tinta:#e8eaee; --tenue:#9aa2ad; --linea:#2c3138;
+    --acento:#7ea2ff; --hueco:#f0a34a; --huecoFondo:#231a10;
+  }
+}
+:root[data-theme="dark"]{
+  --papel:#14161a; --tinta:#e8eaee; --tenue:#9aa2ad; --linea:#2c3138;
+  --acento:#7ea2ff; --hueco:#f0a34a; --huecoFondo:#231a10;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--papel); color:var(--tinta);
+  font:15.5px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  padding:0 18px 90px;
+}
+.hoja{max-width:740px;margin:0 auto}
+
+.mando{
+  position:sticky;top:0;z-index:5;margin:0 -18px 18px;padding:10px 18px;
+  padding-top:max(10px,env(safe-area-inset-top));
+  background:var(--papel);border-bottom:1px solid var(--linea);
+  display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+}
+.mando .sep{flex:1 1 auto}
+button{
+  font:600 15px/1 inherit;color:#fff;background:var(--acento);border:0;
+  border-radius:9px;min-height:44px;padding:0 18px;cursor:pointer;
+}
+button.liso{background:transparent;color:var(--acento);border:1px solid var(--linea)}
+button:active{transform:translateY(1px)}
+.aviso{
+  font:13px/1.5 inherit;color:var(--tenue);background:var(--huecoFondo);
+  border:1px solid var(--linea);border-radius:10px;padding:10px 12px;margin:0 0 24px;
+}
+.aviso b{color:var(--tinta)}
+
+h1{font-size:clamp(26px,7vw,36px);line-height:1.1;margin:8px 0 4px;letter-spacing:-.02em}
+.oficio{color:var(--acento);font-weight:600;font-size:clamp(15px,3.8vw,17px);margin:0 0 10px}
+.contacto{color:var(--tenue);font-size:14.5px;margin:0 0 4px}
+
+h2{
+  font-size:13px;letter-spacing:.09em;text-transform:uppercase;color:var(--tenue);
+  margin:30px 0 10px;padding-bottom:5px;border-bottom:1px solid var(--linea);
+}
+h3{font-size:16px;margin:16px 0 1px}
+.donde{color:var(--tenue);font-size:14px;margin:0 0 5px}
+p{margin:0 0 10px}
+ul{margin:0 0 10px;padding-left:1.15em}
+li{margin:0 0 4px}
+.perfil{font-size:16px;line-height:1.6}
+.dosCol{display:grid;grid-template-columns:1fr;gap:0 30px}
+@media (min-width:600px){ .dosCol{grid-template-columns:1fr 1fr} }
+
+/* ── los huecos: en línea, porque casi todos son una fecha o un dato corto ── */
+.h{
+  display:inline-block; min-width:5.5em; padding:1px 7px; border-radius:6px;
+  background:var(--huecoFondo); border:1px dashed var(--hueco); outline:none;
+  color:inherit;
+}
+.h:focus{border-style:solid;box-shadow:0 0 0 3px rgba(180,83,9,.18)}
+.h:empty::before{content:attr(data-vacio);color:var(--hueco);font-style:italic;opacity:.85}
+.h.ancho{min-width:11em}
+.sp{font-style:normal}
+
+@media print{
+  @page{size:A4;margin:15mm 14mm}
+  body{background:#fff;color:#000;padding:0;font-size:10.5pt;line-height:1.42}
+  .mando,.aviso,.nada-impreso{display:none !important}
+  h1{font-size:23pt} .oficio{font-size:11.5pt;color:#1d4ed8}
+  h2{font-size:9pt;color:#444;border-color:#bbb;margin:14pt 0 5pt}
+  h3{font-size:11pt;margin:9pt 0 0}
+  a{color:#000;text-decoration:none}
+  h2,h3{break-after:avoid}
+  li,p{break-inside:avoid}
+  /* ⚠ un hueco IMPRESO no lleva caja ni línea de puntos: es texto y ya. Y si
+     se quedó vacío se imprime en blanco, no con el letrero de ayuda — un CV
+     que dice «pon aquí tu teléfono» no se entrega. */
+  .h{border:0;background:transparent;padding:0;min-width:0;display:inline}
+  .h:empty::before{content:""}
+  .h:empty{display:none}
+  /* ⚠ EL SEPARADOR SE VA CON SU DATO. Puesto aparte pasaban las dos cosas
+     feas a la vez, y las dos salieron imprimiendo el PDF lleno y vacío:
+     apagándolo siempre salía «Querétaro, México2 de febrero» y «Hotel
+     caninoPatitas»; dejándolo siempre, un « · » colgando al final de una
+     línea sin dato. Por eso el separador vive DENTRO de `.op`, junto al
+     hueco, y el envoltorio entero se apaga cuando el hueco está vacío. */
+  .op:has(.h:empty){display:none}
+  .op-off{display:none !important}
+  .sp{font-style:normal}
+  .sp-off{display:none !important}
+}
+</style>
+</head>
+<body>
+<div class="hoja">
+
+<div class="mando nada-impreso">
+  <button id="bImprimir">Imprimir o guardar en PDF</button>
+  <span class="sep"></span>
+  <button class="liso" id="bLimpiar">Vaciar</button>
+</div>
+
+<p class="aviso nada-impreso">
+  Los recuadros naranjas se llenan aquí, con el pulgar, y <b>se guardan sólo en este
+  teléfono</b> — no se suben a ningún lado. Por eso el teléfono, el correo, la fecha de
+  nacimiento y los años no están escritos en el archivo: este repositorio es público.
+  <br><br>
+  <b>Lo que se quede vacío no se imprime</b>, así que si un dato no lo tienes, déjalo así y el
+  documento sale limpio. Pero las fechas sí conviene ponerlas: un currículum sin una sola fecha
+  levanta sospecha.
+</p>
+
+<h1>Carlos Eduardo Gutiérrez Guevara</h1>
+<p class="oficio">Desarrollo de software · Emprendimiento · Ventas y organización de eventos</p>
+<p class="contacto">Querétaro, México<span class="op"><i class="sp"> · </i><span class="h" contenteditable data-vacio="fecha de nacimiento"></span></span></p>
+<p class="contacto"><span class="op"><span class="h" contenteditable data-vacio="teléfono"></span></span><span class="op"><i class="sp"> · </i><span class="h ancho" contenteditable data-vacio="correo"></span></span></p>
+
+<h2>Perfil</h2>
+<p class="perfil">
+  Desarrollador de software en formación con experiencia real de trabajo desde temprano: dos
+  emprendimientos propios, venta y representación de marca, y coordinación de eventos. Actualmente
+  construyo software empresarial, sitios y aplicaciones web y móviles, y estudio el bachillerato
+  técnico en programación. Acostumbrado a tratar con el cliente de frente, a resolver con lo que
+  hay y a aprender rápido lo que haga falta.
+</p>
+
+<h2>Experiencia</h2>
+
+<h3>Desarrollo de software y proyectos</h3>
+<p class="donde">Grupo Mazi · <span class="h" contenteditable data-vacio="desde…">actualmente</span></p>
+<ul>
+  <li>Software empresarial, sitios web y aplicaciones web y móviles.</li>
+  <li>Organización de proyectos y gestión de negocios: alcance, tiempos y seguimiento.</li>
+  <li>Trato directo con el cliente, desde el levantamiento hasta la entrega.</li>
+</ul>
+
+<h3>Emprendimientos propios</h3>
+<p class="donde">Fundador y responsable de la operación<span class="op"> · <span class="h" contenteditable data-vacio="años"></span></span></p>
+<ul>
+  <li><b>Hotel canino<span class="op"> <span class="h" contenteditable data-vacio="nombre"></span></span></b> — hospedaje y cuidado de perros. Clientes, agenda, cuidado y cobro.</li>
+  <li><b>Repostería<span class="op"> <span class="h" contenteditable data-vacio="nombre"></span></span></b> — producción y venta. Costos, producción, venta y entrega.</li>
+  <li>Los dos operaron con ingresos mensuales constantes.</li>
+</ul>
+
+<h3>Ventas y representación de marca</h3>
+<ul>
+  <li><b>Soluciones Alimenticias</b><span class="op"> <span class="h" contenteditable data-vacio="años"></span></span> — venta de alimento
+      balanceado para perro y representación de la marca <b>Biomaxcota</b>.</li>
+  <li><b>Soluciones y Estrategias de Calidad</b><span class="op"> <span class="h ancho" contenteditable data-vacio="qué significa SIES"></span></span><span class="op"> · <span class="h" contenteditable data-vacio="años"></span></span>.</li>
+  <li>Atención y venta de mostrador en distintas tiendas.</li>
+</ul>
+
+<h3>Eventos, banquetes y servicio</h3>
+<ul>
+  <li>Organización y coordinación de eventos.</li>
+  <li>Montaje de carpas y estructuras para eventos.</li>
+  <li>Banquetes: preparación, montaje y servicio de platos.</li>
+  <li>Bartender.</li>
+  <li><b>Chilaquiero</b><span class="op"> <span class="h" contenteditable data-vacio="años"></span></span> — restaurante. Cocina y atención.</li>
+  <li>Heladería<span class="op"> <span class="h" contenteditable data-vacio="nombre"></span></span> — atención y preparación.</li>
+</ul>
+
+<h3>Otros trabajos</h3>
+<ul>
+  <li>Apoyo administrativo en empresas pequeñas.</li>
+  <li>Pintura de casas.</li>
+  <li>Paseo de perros.</li>
+</ul>
+
+<h2>Formación</h2>
+
+<h3>Bachillerato técnico en Programación</h3>
+<p class="donde">Instituto Rembrandt de Querétaro · en curso<span class="op"> · egreso <span class="h" contenteditable data-vacio="año"></span></span></p>
+<ul><li>Especialidad en desarrollo de emprendimiento.</li></ul>
+
+<h3>Atención Médica Prehospitalaria</h3>
+<p class="donde"><span class="op"><span class="h" contenteditable data-vacio="institución"></span> · </span>un año de práctica · estudios en pausa</p>
+
+<h3>Curso de extracción vehicular</h3>
+<p class="donde">Rescate en accidentes · aplicable a atención prehospitalaria y a bomberos<span class="op"> · <span class="h ancho" contenteditable data-vacio="quién lo impartió y cuándo"></span></span></p>
+
+<div class="dosCol">
+<div>
+<h2>Idiomas</h2>
+<ul>
+  <li><b>Español</b> — lengua materna.</li>
+  <li><b>Inglés</b> — B2 en estudio, sin certificar. Sostengo una conversación, entiendo
+      el contexto y me expreso correctamente.</li>
+</ul>
+</div>
+<div>
+<h2>Habilidades</h2>
+<ul>
+  <li>Programación: web, móvil y software de negocio.</li>
+  <li>Ventas y trato con el cliente.</li>
+  <li>Coordinación de proyectos y de eventos.</li>
+  <li>Buena dicción y facilidad de palabra.</li>
+  <li>Primeros auxilios y atención prehospitalaria.</li>
+  <li>Aprendizaje rápido, puntualidad y honestidad.</li>
+</ul>
+</div>
+</div>
+
+</div>
+
+<script>
+/* Se guarda solo, en este teléfono y nada más. Los huecos se identifican por su
+   posición entre los huecos; si algún día se REORDENAN las secciones hay que
+   subirle la versión para invalidar lo guardado a propósito. */
+(function(){
+  var VER = 'cv-carlos-v1';
+  var huecos = Array.prototype.slice.call(document.querySelectorAll('.h'));
+
+  function leer(){ try{ return JSON.parse(localStorage.getItem(VER) || '{}'); }catch(e){ return {}; } }
+  function guardar(){
+    var d = {};
+    huecos.forEach(function(h, i){ if(h.dataset.tocado) d[i] = h.textContent; });
+    try{ localStorage.setItem(VER, JSON.stringify(d)); }catch(e){}
+  }
+
+  var d = leer();
+  huecos.forEach(function(h, i){
+    if(d[i] !== undefined){ h.textContent = d[i]; h.dataset.tocado = '1'; }
+    h.addEventListener('input', function(){ h.dataset.tocado = '1'; guardar(); });
+    /* pegar texto con formato dentro de un dato corto deja HTML ajeno en medio
+       del documento: se acepta sólo el texto */
+    h.addEventListener('paste', function(ev){
+      ev.preventDefault();
+      var t = (ev.clipboardData || window.clipboardData).getData('text');
+      document.execCommand('insertText', false, t.replace(/\s+/g, ' ').trim());
+    });
+  });
+
+  /* Respaldo para navegadores sin `:has()`, y de paso el único caso que el CSS
+     no puede ver: si el teléfono se queda vacío y el correo no, el separador
+     del correo quedaría ABRIENDO la línea. Se resuelve mirando, antes de
+     imprimir, si el envoltorio es lo primero visible de su renglón. */
+  function antesDeImprimir(){
+    document.querySelectorAll('.op').forEach(function(op){
+      var h = op.querySelector('.h');
+      op.classList.toggle('op-off', !!h && !h.textContent.trim());
+    });
+    /* y al primero que sobreviva de cada renglón de contacto se le quita el
+       separador de apertura: si el teléfono se queda vacío, el « · » del correo
+       abriría la línea. Esto el CSS no lo puede ver, porque `:has()` mira hacia
+       dentro y hacia delante, nunca hacia atrás. */
+    document.querySelectorAll('.contacto').forEach(function(linea){
+      var vivos = Array.prototype.filter.call(linea.querySelectorAll('.op'),
+        function(op){ return !op.classList.contains('op-off'); });
+      linea.querySelectorAll('.sp').forEach(function(sp){ sp.classList.remove('sp-off'); });
+      if(vivos.length && !linea.firstChild.textContent.trim()){
+        var sp = vivos[0].querySelector('.sp');
+        if(sp) sp.classList.add('sp-off');
+      }
+    });
+  }
+  function despuesDeImprimir(){
+    document.querySelectorAll('.op').forEach(function(op){ op.classList.remove('op-off'); });
+    document.querySelectorAll('.sp').forEach(function(sp){ sp.classList.remove('sp-off'); });
+  }
+  addEventListener('beforeprint', antesDeImprimir);
+  addEventListener('afterprint', despuesDeImprimir);
+
+  document.getElementById('bImprimir').addEventListener('click', function(){
+    antesDeImprimir(); print();
+  });
+  document.getElementById('bLimpiar').addEventListener('click', function(){
+    if(!confirm('¿Borrar tus datos de este teléfono? El currículum se queda, sólo se vacían los recuadros.')) return;
+    try{ localStorage.removeItem(VER); }catch(e){}
+    location.reload();
+  });
+})();
+</script>
+</body>
+</html>

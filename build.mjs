@@ -28,7 +28,7 @@ const VA = [
   '_headers', 'kernel-lock.html',
   'fadori', 'sitio', 'marca', 'explorador', 'reportes', 'evaluaciones', 'avisos',
   'sala', 'campana', 'cerebro', 'entorno', 'bodega', 'demo', 'laboratorio',
-  'jabonera',
+  'jabonera', 'cv',
   'juegos',
   'ligas-mazi', 'pacto-roto', 'romero', 'inkwell', 'vitallink', 'life-connect',
   'manzanilla', 'herramientas',
