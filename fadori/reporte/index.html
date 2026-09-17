@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Fadori · Modelo de reporte</title>
+<meta name="description" content="Modelo de reporte del Proyecto Sin Filas. Se llena en el teléfono y se imprime o se guarda en PDF.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>📋</text></svg>">
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════
+   MODELO DE REPORTE · Fadori, Proyecto Sin Filas
+   ---------------------------------------------------------------------------
+   Dos vidas en un archivo:
+     · EN PANTALLA es un formulario que se llena con el pulgar y se guarda solo.
+     · AL IMPRIMIR es un documento: sin botones, sin cajas, sin ayudas.
+   Por eso casi cada regla de color y de borde tiene su gemela en @media print
+   apagándola. Si se agrega un adorno nuevo, se apaga ahí también o sale
+   impreso.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --crema:#FDF8F0; --papel:#FFFDF9; --masa:#F6EADA; --corteza:#E6D5BE;
+  --tinta:#2E1B10; --tenue:#7A5A42;
+  --naranja:#C2410C; --rescoldo:#FFE8D6; --dorado:#8A6212;
+  --hierba:#3F6B23; --chile:#A62B1B;
+}
+:root:not([data-theme="light"]){
+  @media (prefers-color-scheme: dark){
+    --crema:#1A0F0A; --papel:#26160E; --masa:#26160E; --corteza:#3D2618;
+    --tinta:#F5E9DA; --tenue:#C4A98F; --naranja:#FF8A3D; --rescoldo:#3A2013;
+    --dorado:#E0A93C;
+  }
+}
+:root[data-theme="dark"]{
+  --crema:#1A0F0A; --papel:#26160E; --masa:#26160E; --corteza:#3D2618;
+  --tinta:#F5E9DA; --tenue:#C4A98F; --naranja:#FF8A3D; --rescoldo:#3A2013;
+  --dorado:#E0A93C;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--crema); color:var(--tinta);
+  font:16px/1.6 ui-serif,Cambria,"Times New Roman",serif;
+  padding:0 16px 96px;
+}
+.hoja{max-width:760px;margin:0 auto}
+
+/* ── la barra de arriba ─────────────────────────────────────────────────── */
+.mando{
+  position:sticky; top:0; z-index:5; margin:0 -16px 20px; padding:10px 16px;
+  background:var(--crema); border-bottom:1px solid var(--corteza);
+  display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+  padding-top:max(10px,env(safe-area-inset-top));
+}
+.mando .sep{flex:1 1 auto}
+button{
+  font:600 15px/1 ui-sans-serif,system-ui,sans-serif; color:var(--papel);
+  background:var(--naranja); border:0; border-radius:10px;
+  min-height:44px; padding:0 16px; cursor:pointer;
+}
+button.liso{background:transparent;color:var(--naranja);border:1px solid var(--corteza)}
+button:active{transform:translateY(1px)}
+.aviso{
+  font:13px/1.5 ui-sans-serif,system-ui,sans-serif; color:var(--tenue);
+  background:var(--masa); border:1px solid var(--corteza); border-radius:10px;
+  padding:10px 12px; margin:0 0 22px;
+}
+
+/* ── el encabezado institucional ────────────────────────────────────────── */
+.membrete{
+  display:grid; grid-template-columns:56px minmax(0,1fr); gap:14px;
+  align-items:center; border-bottom:2px solid var(--dorado);
+  padding-bottom:12px; margin-bottom:22px;
+}
+.membrete img{width:56px;height:auto;display:block}
+.membrete .esc{font:700 13px/1.35 ui-sans-serif,system-ui,sans-serif;color:var(--tenue);
+  letter-spacing:.02em;text-transform:uppercase}
+h1{font-size:clamp(24px,6.4vw,34px);line-height:1.15;margin:.2em 0 .1em;letter-spacing:-.01em}
+.sub{color:var(--tenue);font-size:15px;margin:0 0 28px}
+
+h2{
+  font-size:clamp(18px,4.6vw,22px); margin:34px 0 10px; padding-bottom:6px;
+  border-bottom:1px solid var(--corteza);
+}
+h2 .num{color:var(--dorado);font-variant-numeric:tabular-nums;margin-right:.45em}
+h3{font-size:16px;margin:20px 0 6px}
+p{margin:0 0 12px}
+ul,ol{margin:0 0 14px;padding-left:1.25em}
+li{margin:0 0 5px}
+
+/* ── la pista: qué va en cada hueco. NO se imprime ──────────────────────── */
+.pista{
+  font:13px/1.5 ui-sans-serif,system-ui,sans-serif; color:var(--tenue);
+  background:var(--masa); border-left:3px solid var(--dorado);
+  border-radius:0 8px 8px 0; padding:8px 12px; margin:0 0 12px;
+}
+.pista b{color:var(--tinta)}
+
+/* ── los huecos que él llena ────────────────────────────────────────────── */
+[contenteditable]{
+  display:block; background:var(--papel); border:1px solid var(--corteza);
+  border-radius:10px; padding:10px 12px; margin:0 0 14px; min-height:44px;
+  outline:none;
+}
+[contenteditable]:focus{border-color:var(--naranja);box-shadow:0 0 0 3px var(--rescoldo)}
+[contenteditable]:empty::before{
+  content:attr(data-vacio); color:var(--naranja); opacity:.75;
+  font:italic 15px/1.5 ui-sans-serif,system-ui,sans-serif;
+}
+/* Lo YA SABIDO va sin caja: no es un hueco, es dato del proyecto. */
+.sabido{background:transparent;border:0;padding:0}
+
+/* ── tablas ─────────────────────────────────────────────────────────────── */
+table{width:100%;border-collapse:collapse;margin:0 0 16px;font-size:15px}
+th,td{border:1px solid var(--corteza);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--masa);font:600 14px/1.4 ui-sans-serif,system-ui,sans-serif}
+/* ⚠ `display:table-cell` NO es adorno: la regla de arriba pone `display:block`
+   a todo lo editable, y un `<td>` en bloque deja de ser celda — la fila se
+   apila en una sola columna y las de la derecha quedan vacías. En pantalla a
+   390 px se veía casi bien y sólo salió al imprimir el PDF de verdad. */
+td[contenteditable]{display:table-cell;border-radius:0;margin:0;min-height:0;background:var(--papel)}
+.cifra{font-variant-numeric:tabular-nums;white-space:nowrap}
+
+.firma{margin-top:44px;display:grid;grid-template-columns:1fr;gap:34px}
+.firma div{border-top:1px solid var(--tinta);padding-top:6px;font-size:14px;color:var(--tenue)}
+@media (min-width:560px){ .firma{grid-template-columns:1fr 1fr;gap:34px 28px} }
+
+/* ═══ AL IMPRIMIR ES UN DOCUMENTO, NO UN FORMULARIO ═══════════════════════ */
+@media print{
+  @page{size:A4;margin:18mm 16mm}
+  body{background:#fff;color:#000;padding:0;font-size:11.5pt;line-height:1.5}
+  .mando,.pista,.aviso,.nada-impreso{display:none !important}
+  [contenteditable]{background:transparent;border:0;padding:0;margin:0 0 10px;min-height:0}
+  [contenteditable]:empty::before{content:none}
+  /* Un hueco vacío se imprime como RENGLONES, no como una rayita: este
+     documento también se entrega en papel y a mano. Tres renglones del mismo
+     alto que la letra, dibujados con un degradado repetido — así ocupan todo
+     el ancho de la hoja y no hay que escribir apretado en 24 guiones bajos. */
+  [contenteditable]:empty{
+    min-height:calc(3 * 1.5em);
+    background-image:repeating-linear-gradient(to bottom,
+      transparent 0, transparent calc(1.5em - 1px),
+      #b9b9b9 calc(1.5em - 1px), #b9b9b9 1.5em);
+  }
+  /* pero dentro de una tabla no: ahí el recuadro ya es el renglón */
+  /* ⚠ y hay que DEVOLVERLE el borde: la regla de arriba le pone `border:0` a
+     todo lo editable, y eso dejaba las tablas sin un solo renglón interior —
+     sólo se veían las líneas de las columnas que NO son editables. */
+  td[contenteditable]{padding:6px 8px;background:transparent;border:1px solid #8a8a8a}
+  td[contenteditable]:empty{min-height:0;background-image:none;height:2.4em}
+  /* ⚠ el color de línea de pantalla (#E6D5BE, corteza) es casi blanco EN PAPEL:
+     la tabla salía como un rectángulo beige sin un solo renglón dentro. En la
+     pantalla se ve bien porque hay contraste de fondo; impresa desaparece. */
+  th,td{border-color:#8a8a8a}
+  th{background:#ececec;color:#000}
+  .membrete{border-color:#000}
+  h2{border-color:#999;break-after:avoid}
+  h3{break-after:avoid}
+  table,.firma{break-inside:avoid}
+  a{color:#000;text-decoration:none}
+}
+</style>
+</head>
+<body>
+
+<div class="hoja">
+
+<div class="mando nada-impreso">
+  <button id="bImprimir">Imprimir o guardar en PDF</button>
+  <button class="liso" id="bPistas">Ocultar las ayudas</button>
+  <span class="sep"></span>
+  <button class="liso" id="bLimpiar">Vaciar</button>
+</div>
+
+<p class="aviso nada-impreso">
+  Esto se llena aquí mismo, con el pulgar. <b>Se guarda solo en este teléfono</b> cada vez que
+  escribes, así que puedes cerrarlo y volver. Lo que sale impreso es sólo el documento: estas
+  ayudas de color no se imprimen. <br>
+  <b>Lo que ya está escrito sin caja es dato del proyecto</b> y no hace falta que lo toques; lo
+  que tiene caja naranja es lo que sólo tú puedes contestar.
+</p>
+
+<div class="membrete">
+  <img src="escudo-rembrandt.png" alt="Escudo del Instituto Rembrandt de Querétaro">
+  <div class="esc">
+    Instituto Rembrandt de Querétaro<br>
+    Instituto Tecnológico en Programación · Bachillerato
+  </div>
+</div>
+
+<h1>Proyecto Sin Filas · Fadori</h1>
+<p class="sub">Reporte de avance · modalidad STEAM · grupo 3.1 · ciclo agosto – diciembre 2026</p>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<h2><span class="num">1</span>Datos del reporte</h2>
+
+<table>
+  <tr><th style="width:38%">Número de reporte</th><td contenteditable data-vacio="1, 2, 3…"></td></tr>
+  <tr><th>Periodo que cubre</th><td contenteditable data-vacio="del … al … de …"></td></tr>
+  <tr><th>Fecha de entrega</th><td contenteditable data-vacio="día de mes de 2026"></td></tr>
+  <tr><th>Elaboró</th><td contenteditable class="sabido">Carlos Eduardo Gutiérrez Guevara</td></tr>
+  <tr><th>Equipo</th><td contenteditable data-vacio="los cinco nombres, como los pide la rúbrica"></td></tr>
+  <tr><th>Dirigido a</th><td contenteditable data-vacio="nombre del profesor o profesora"></td></tr>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<h2><span class="num">2</span>Resumen</h2>
+<p class="pista nada-impreso">
+  <b>Cinco renglones y se acabó.</b> Qué se hizo en este periodo, qué número se movió y qué
+  sigue. Quien lea nada más esto tiene que entender el reporte completo. Se escribe
+  <b>al final</b>, cuando ya sabes qué dice el resto.
+</p>
+<div contenteditable data-vacio="En este periodo se… El indicador que se movió fue… Lo que sigue es…"></div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<h2><span class="num">3</span>El problema</h2>
+
+<div class="sabido" contenteditable>
+<p>El recreo dura <b>30 minutos</b>. La fila de la cooperativa se come entre <b>15 y 20</b>, o
+sea del <b>50 al 67 %</b> del recreo.</p>
+<p>El problema no se queda en la fila. La cadena medida es ésta:</p>
+<ol>
+  <li>La fila se come el recreo.</li>
+  <li>Los que esperan no tienen dónde estar y se quedan parados en el pasillo.</li>
+  <li>El pasillo bloqueado impide a la prefecta hacer su ronda.</li>
+  <li>Sin ronda, se pierde la supervisión de los alumnos que están lejos.</li>
+  <li>Nadie sabe cuándo está listo su pedido, así que no se van.</li>
+  <li>Los alumnos no alcanzan a comer ni a despejarse.</li>
+  <li>Regresan al salón con energía sin gastar: más desorden y más destrozos.</li>
+</ol>
+<p>El efecto final —el comportamiento en el salón— está a cuatro pasos de la causa. Eso es lo
+que hace que esto sea una intervención en un sistema y no una app por hacer una app.</p>
+</div>
+
+<h3>Lo que cambió del problema en este periodo</h3>
+<p class="pista nada-impreso">
+  Sólo si cambió. Si el problema sigue igual que en el reporte pasado, se escribe «sin cambios»
+  y ya. <b>Inventar un cambio para llenar el hueco es lo que hace que un reporte no valga.</b>
+</p>
+<div contenteditable data-vacio="Sin cambios · o qué se descubrió que antes no sabíamos"></div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<h2><span class="num">4</span>Qué se hizo en este periodo</h2>
+<p class="pista nada-impreso">
+  Hechos, con fecha. «Se instaló la pantalla en el pasillo el 14 de octubre» sirve;
+  «se avanzó en el desarrollo» no dice nada y se nota.
+</p>
+<table>
+  <tr><th style="width:26%">Fecha</th><th>Qué se hizo</th><th style="width:22%">Quién</th></tr>
+  <tr><td contenteditable></td><td contenteditable></td><td contenteditable></td></tr>
+  <tr><td contenteditable></td><td contenteditable></td><td contenteditable></td></tr>
+  <tr><td contenteditable></td><td contenteditable></td><td contenteditable></td></tr>
+  <tr><td contenteditable></td><td contenteditable></td><td contenteditable></td></tr>
+  <tr><td contenteditable></td><td contenteditable></td><td contenteditable></td></tr>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<h2><span class="num">5</span>Las mediciones</h2>
+<p class="pista nada-impreso">
+  <b>Ésta es la sección que sostiene el reporte entero.</b> Sin números aquí, todo lo demás es
+  una opinión. Las cuatro primeras filas son las metas que el proyecto se puso desde el
+  arranque; no se cambian aunque salgan mal — que salgan mal <b>también</b> es un resultado, y
+  uno que la rúbrica premia si se explica.
+</p>
+<table>
+  <tr>
+    <th style="width:34%">Qué se mide</th>
+    <th class="cifra">Antes</th>
+    <th class="cifra">Meta</th>
+    <th class="cifra">Ahora</th>
+  </tr>
+  <tr>
+    <td>Minutos en fila por alumno<br><span style="color:var(--tenue);font-size:13px">cronómetro · 20 alumnos al azar · 3 días</span></td>
+    <td class="cifra" contenteditable>~17 min</td>
+    <td class="cifra" contenteditable>&lt; 5 min</td>
+    <td class="cifra" contenteditable data-vacio="—"></td>
+  </tr>
+  <tr>
+    <td>Personas paradas frente a la cooperativa<br><span style="color:var(--tenue);font-size:13px">conteo cada 5 min durante el recreo</span></td>
+    <td class="cifra" contenteditable data-vacio="—"></td>
+    <td class="cifra" contenteditable>la mitad</td>
+    <td class="cifra" contenteditable data-vacio="—"></td>
+  </tr>
+  <tr>
+    <td>¿La prefecta pudo hacer su ronda completa?<br><span style="color:var(--tenue);font-size:13px">sí / no, diario</span></td>
+    <td class="cifra" contenteditable>casi nunca</td>
+    <td class="cifra" contenteditable>casi siempre</td>
+    <td class="cifra" contenteditable data-vacio="—"></td>
+  </tr>
+  <tr>
+    <td>Pedidos atendidos por recreo<br><span style="color:var(--tenue);font-size:13px">tiene que <b>subir</b>, no bajar</span></td>
+    <td class="cifra" contenteditable data-vacio="—"></td>
+    <td class="cifra" contenteditable>que suba</td>
+    <td class="cifra" contenteditable data-vacio="—"></td>
+  </tr>
+  <tr>
+    <td contenteditable data-vacio="otra medición"></td>
+    <td class="cifra" contenteditable></td>
+    <td class="cifra" contenteditable></td>
+    <td class="cifra" contenteditable></td>
+  </tr>
+</table>
+
+<p class="pista nada-impreso">
+  <b>De dónde salen estos números sin contarlos a mano.</b> La pantalla del medidor
+  (<code>medidor.html</code>) baja dos archivos de Excel:
+  <br>· <b>pedidos</b> — trae <code>espera_seg</code> (lo que el alumno esperó de punta a punta)
+  y <code>despacho_seg</code> (lo que tardó la cooperativa). El promedio de <code>espera_seg</code>
+  entre 60 son los minutos de fila.
+  <br>· <b>conteos</b> — trae cuánta gente había parada, con su hora.
+  <br>Los pedidos por recreo se cuentan solos: son los renglones del archivo de pedidos.
+</p>
+
+<h3>Qué dicen esos números</h3>
+<p class="pista nada-impreso">
+  Un número sin lectura no es un resultado. Y si un número salió mal, <b>aquí se dice por qué</b>
+  — una explicación honesta de un mal resultado vale más que un buen resultado sin explicar.
+</p>
+<div contenteditable data-vacio="El tiempo de fila bajó de … a … porque… El de pedidos por recreo no se movió porque…"></div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<h2><span class="num">6</span>Lo que salió mal</h2>
+<p class="pista nada-impreso">
+  <b>No se salta.</b> Un reporte sin problemas no lo cree nadie, y la rúbrica de STEAM pide
+  justamente que se vea el proceso. Fallas técnicas, cosas que la cooperativa no quiso usar,
+  alumnos que no entendieron la pantalla, lo que sea.
+</p>
+<table>
+  <tr><th style="width:44%">Qué falló</th><th>Qué se hizo o se va a hacer</th></tr>
+  <tr><td contenteditable></td><td contenteditable></td></tr>
+  <tr><td contenteditable></td><td contenteditable></td></tr>
+  <tr><td contenteditable></td><td contenteditable></td></tr>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<h2><span class="num">7</span>Lo que sigue</h2>
+<table>
+  <tr><th style="width:52%">Qué falta</th><th style="width:26%">Para cuándo</th><th>Quién</th></tr>
+  <tr><td contenteditable></td><td contenteditable></td><td contenteditable></td></tr>
+  <tr><td contenteditable></td><td contenteditable></td><td contenteditable></td></tr>
+  <tr><td contenteditable></td><td contenteditable></td><td contenteditable></td></tr>
+</table>
+
+<h3>Lo que hace falta de la escuela</h3>
+<p class="pista nada-impreso">
+  Permisos, un enchufe, un lugar donde colgar la pantalla, media hora de la cooperativa.
+  <b>Escribirlo aquí es lo que convierte un pretexto en una petición</b> — y si no se concede,
+  queda constancia de que se pidió.
+</p>
+<div contenteditable data-vacio="Autorización para… · un lugar para colgar la pantalla en… · tiempo de la cooperativa para…"></div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<h2><span class="num">8</span>Conclusión</h2>
+<p class="pista nada-impreso">
+  Tres renglones: ¿el proyecto va bien, va mal o hay que cambiarle algo? Y contestar de frente
+  la pregunta que importa: <b>¿bajó la fila sin que bajaran las ventas?</b> Si las ventas
+  bajaron, la cooperativa va a apagar la app y el proyecto se acaba — así que ése es el número
+  que hay que cuidar.
+</p>
+<div contenteditable data-vacio="El proyecto…"></div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<h2><span class="num">9</span>Anexos</h2>
+<p class="pista nada-impreso">
+  Se listan, no se pegan. Capturas de la app, los dos archivos de Excel del medidor, fotos del
+  pasillo antes y después.
+</p>
+<div contenteditable data-vacio="1. Capturas de las cuatro pantallas. 2. pedidos.csv del … 3. conteos.csv del …"></div>
+
+<div class="firma">
+  <div>Carlos Eduardo Gutiérrez Guevara<br>elaboró</div>
+  <div>&nbsp;<br>recibió</div>
+</div>
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   Se guarda solo, en este teléfono y nada más.
+   Cada hueco se identifica por su POSICIÓN entre los huecos, no por un id: así
+   no hay que ponerle nombre a los cincuenta y tantos, y agregar uno en medio
+   sólo recorre los de abajo. El precio de eso es que si se REORDENAN las
+   secciones, lo guardado se descoloca — por eso va también la versión, para
+   poder invalidar a propósito el día que se reordene.
+   ═══════════════════════════════════════════════════════════════════════════*/
+(function(){
+  var VER = 'fadori-reporte-v1';
+  var huecos = Array.prototype.slice.call(document.querySelectorAll('[contenteditable]'));
+
+  /* localStorage puede no existir, puede estar lleno y puede tronar en una
+     ventana privada. Ninguna de las tres puede dejar el documento en blanco. */
+  function leer(){
+    try{ return JSON.parse(localStorage.getItem(VER) || '{}'); }catch(e){ return {}; }
+  }
+  function guardar(){
+    var d = {};
+    huecos.forEach(function(h, i){
+      /* lo que ya venía escrito no se guarda si no lo tocaron: así el texto
+         del proyecto puede corregirse en el archivo y llegarle al teléfono */
+      if(h.dataset.tocado) d[i] = h.innerHTML;
+    });
+    try{ localStorage.setItem(VER, JSON.stringify(d)); }catch(e){}
+  }
+
+  var d = leer();
+  huecos.forEach(function(h, i){
+    if(d[i] !== undefined){ h.innerHTML = d[i]; h.dataset.tocado = '1'; }
+    h.addEventListener('input', function(){ h.dataset.tocado = '1'; guardar(); });
+  });
+
+  document.getElementById('bImprimir').addEventListener('click', function(){ print(); });
+
+  var bP = document.getElementById('bPistas'), ocultas = false;
+  bP.addEventListener('click', function(){
+    ocultas = !ocultas;
+    document.querySelectorAll('.pista, .aviso').forEach(function(p){
+      p.style.display = ocultas ? 'none' : '';
+    });
+    bP.textContent = ocultas ? 'Ver las ayudas' : 'Ocultar las ayudas';
+  });
+
+  document.getElementById('bLimpiar').addEventListener('click', function(){
+    if(!confirm('¿Vaciar todo lo que escribiste en este reporte? No se puede deshacer.')) return;
+    try{ localStorage.removeItem(VER); }catch(e){}
+    location.reload();
+  });
+})();
+</script>
+</body>
+</html>
