@@ -28,24 +28,24 @@
      cambia es el suelo: antes noche, ahora papel. Los nombres dicen lo que
      son (antes --paper era el color del TEXTO, que no habia por donde
      cogerlo). */
-  --fondo:#F1EEE7;        /* papel, no folio: el blanco brillante cansa */
-  --fondo-2:#E7E2D8;
+  --fondo:#DBD5C9;        /* piedra caliente: ni noche ni folio */
+  --fondo-2:#CFC8BA;
   --tinta:#12171C;
   --tinta-2:#2B333A;
   --ink:#12171C;
   --ink-soft:#3C454D;
   --stone:#6E7580;
-  --line:rgba(18,23,28,.13);
+  --line:rgba(18,23,28,.16);
   /* Sobre papel, los azules claros de antes no se leen: se bajan de tono.
      Medido con el mismo criterio de antes, contra el peor caso. */
   --blue-soft:#1C5E8A;
   --blue-line:#9CBBD2;
   --muted:#4E5A66;
-  --muted-2:#5A6774;
+  --muted-2:#4A5561;   /* sobre piedra, el gris de antes daba 3.96 */
   --blue:#1F5F8B;
   --blue-deep:#123A55;
-  --grid-line:rgba(31,95,139,.16);
-  --grid-line-strong:rgba(31,95,139,.26);
+  --grid-line:rgba(31,95,139,.20);
+  --grid-line-strong:rgba(31,95,139,.32);
 
   --disp:'Space Grotesk','Segoe UI',system-ui,sans-serif;
   --body:'Jost','Segoe UI',system-ui,sans-serif;
@@ -191,7 +191,7 @@ body.loading .hero__stage>*{visibility:hidden}
    ========================================================= */
 .site-header{position:fixed;top:0;left:0;width:100%;z-index:100;padding:1.3rem 0;
   transition:background .4s var(--ease),padding .4s var(--ease),box-shadow .4s var(--ease)}
-.site-header.scrolled{background:rgba(241,238,231,.97);padding:.85rem 0;box-shadow:0 1px 0 rgba(18,23,28,.055)}
+.site-header.scrolled{background:rgba(237,233,224,.97);padding:.85rem 0;box-shadow:0 1px 0 rgba(18,23,28,.055)}
 .nav{display:flex;align-items:center;justify-content:space-between;gap:2rem}
 .brand{display:flex;align-items:center;gap:.75rem;color:var(--tinta)}
 .brand__mark{height:26px;width:auto;filter:brightness(0);transition:filter .4s var(--ease)}
@@ -249,7 +249,7 @@ body.no-scroll{overflow:hidden}
 
 /* ---------- Cartucho (ficha técnica de la portada) ---------- */
 .hero__ficha{
-  position:relative;border:1px solid rgba(18,23,28,.2);background:rgba(241,238,231,.88);
+  position:relative;border:1px solid rgba(18,23,28,.2);background:rgba(238,234,225,.92);
   padding:.9rem .9rem 1.4rem;display:grid;gap:.9rem;align-self:end;
   clip-path:inset(0 0 100% 0);transition:clip-path 1.1s var(--ease-out) .35s;
 }
@@ -348,7 +348,7 @@ body.no-scroll{overflow:hidden}
 .wpanel:hover .wpanel__media img{transform:scale(1.08);filter:grayscale(0)}
 .wpanel__media::after{content:"";position:absolute;inset:0;border:1px solid rgba(18,23,28,.12);pointer-events:none}
 .wpanel__num{position:absolute;top:1rem;left:1.1rem;font-family:var(--disp);font-size:.66rem;letter-spacing:.3em;color:var(--blue);z-index:2;
-  background:rgba(241,238,231,.93);padding:.3rem .6rem}
+  background:rgba(240,236,228,.95);padding:.3rem .6rem}
 .wpanel__info{display:flex;justify-content:space-between;align-items:baseline;margin-top:1rem;gap:1rem}
 .wpanel__info h3{font-family:var(--disp);font-weight:500;font-size:1.15rem;letter-spacing:.02em}
 .wpanel__info span{font-family:var(--disp);font-size:.62rem;letter-spacing:.3em;text-transform:uppercase;color:var(--muted-2)}
@@ -375,7 +375,7 @@ body.no-scroll{overflow:hidden}
 .pcard:hover img{filter:grayscale(0);transform:scale(1.045)}
 .pcard::after{content:"";position:absolute;inset:0;border:1px solid rgba(18,23,28,.12);pointer-events:none}
 .pcard .tag{position:absolute;left:1rem;bottom:1rem;font-family:var(--disp);font-size:.6rem;letter-spacing:.3em;
-  text-transform:uppercase;color:var(--tinta);background:rgba(241,238,231,.93);padding:.35rem .7rem}
+  text-transform:uppercase;color:var(--tinta);background:rgba(240,236,228,.95);padding:.35rem .7rem}
 .pcard--a{grid-column:1/span 8}
 .pcard--a img{aspect-ratio:4/2.9;object-position:center 46%}
 .people__nota{grid-column:10/span 3;align-self:end;color:var(--muted);font-size:1rem;margin-bottom:.4rem}
@@ -386,7 +386,7 @@ body.no-scroll{overflow:hidden}
 /* Suelo del texto: si el texto va encima, el fondo lo pone el diseño, no la
    foto. Medido contra la foto más clara del carrete, no contra ésta. */
 .pano::after{content:"";position:absolute;inset:0;
-  background:linear-gradient(180deg,rgba(241,238,231,.84),rgba(241,238,231,.9))}
+  background:linear-gradient(180deg,rgba(238,234,225,.88),rgba(240,236,228,.94))}
 .pano__quote{position:relative;z-index:2;height:100%;display:grid;place-items:center;text-align:center;color:var(--tinta);padding:0 6vw}
 .pano__quote blockquote{font-family:var(--disp);font-weight:500;font-size:clamp(1.5rem,4vw,3rem);line-height:1.25;max-width:26ch}
 .pano__quote cite{display:block;font-style:normal;font-family:var(--disp);font-size:.66rem;letter-spacing:.4em;text-transform:uppercase;color:var(--blue);margin-top:1.6rem}
