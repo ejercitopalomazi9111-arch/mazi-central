@@ -278,6 +278,7 @@ input[type=range]{flex:1 1 90px;min-width:80px;accent-color:var(--violeta);heigh
     <button class="icono" id="bMide" aria-label="Termómetro" title="Termómetro: material, temperatura y cambios de estado">🌡</button>
     <button class="icono" id="bGrav" aria-label="Gravedad" title="Gravedad: global, por zona, por objeto y puntos que atraen o repelen">🌍</button>
     <button class="icono" id="bSolda" aria-label="Soldar estructura" title="Soldar: pinta encima lo que quieras que sea UNA pieza. Vuelve a tocarlo con el botón para despegarlo">🔗</button>
+    <button class="icono" id="bNido" aria-label="Poner un hormiguero" title="Hormiguero: toca para poner un nido. Vuelve a tocar el botón para cambiar de raza">🐜</button>
     <button class="icono on" id="bRigido" aria-label="Cuerpos rígidos" title="Cuerpos rígidos: lo que está pegado cae junto. Apágalo y vuelve a ser grano por grano">🧱</button>
     <button class="icono" id="bMas" aria-label="Acercar">＋</button>
     <button class="icono" id="bMenos" aria-label="Alejar">－</button>
@@ -288,6 +289,7 @@ input[type=range]{flex:1 1 90px;min-width:80px;accent-color:var(--violeta);heigh
 
 <script type="module">
 import { Mundo, IDS, IDX, EL, VACIO, AMBIENTE } from './motor.js';
+import { instalaHormigas, RAZAS, NOMBRES } from './hormigas.js';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    LA PANTALLA
@@ -311,6 +313,9 @@ const $ = id => document.getElementById(id);
    porque es la misma imagen mirada más de cerca. */
 const SALA_AN = 320, SALA_AL = 480;
 let M, img, datos, an = SALA_AN, al = SALA_AL;
+let HOR = null;                       /* la colonia de hormigas */
+let razaNido = 'negra';               /* cuál se suelta al tocar */
+let nidoPuesto = false;               /* un nido por trazo, no uno por celda */
 let lienzoMundo = null, ctxMundo = null;
 /* la ventana: qué trozo del mundo se ve */
 const vista = { x:0, y:0, esc:4 };
@@ -333,6 +338,9 @@ function medir(){
   if(M){ limitaVista(); return; }
   const nuevo = new Mundo(an, al);
   M = nuevo;
+  /* Las hormigas se cuelgan del mundo desde fuera: si `hormigas.js` no
+     cargara, todo lo demás seguiría igual. */
+  HOR = instalaHormigas(M);
   /* El mundo se dibuja completo aquí, y la pantalla sólo recorta. Al girar el
      teléfono no se pierde nada porque el mundo no cambia de tamaño: cambia la
      ventana. */
@@ -445,6 +453,29 @@ function pinta(){
      ve y evita tener que recorrer la sala dos veces. */
   picoVista = picoVista * 0.88 + picoAhora * 0.12;
   if(picoAhora > picoVista) picoVista = picoAhora;
+  /* ── LAS HORMIGAS, ENCIMA DE TODO ───────────────────────────────────────
+     Se escriben directo en los píxeles del mundo, no con `fillRect` sobre el
+     lienzo de la ventana: así crecen con el zoom como cualquier celda, en vez
+     de quedarse de un tamaño fijo y desaparecer al alejarse. Y por eso miden
+     uno o dos píxeles de verdad — el tamaño es el que pidió, no un adorno.
+     La que va cargando comida lleva un punto claro encima: sin él no hay
+     forma de ver que el acarreo existe, que es media función. */
+  if(HOR && HOR.hormigas.length){
+    for(const h of HOR.hormigas){
+      if(!h.viva) continue;
+      const R = RAZAS[h.raza], col = RGB_RAZA[h.raza];
+      for(let dy = 0; dy < R.talla; dy++) for(let dx = 0; dx < R.talla; dx++){
+        const nx = h.x + dx, ny = h.y + dy;
+        if(nx < 0 || ny < 0 || nx >= an || ny >= al) continue;
+        const p = ((ny * an + nx) << 2);
+        datos[p] = col[0]; datos[p+1] = col[1]; datos[p+2] = col[2];
+      }
+      if(h.carga && h.y - 1 >= 0){
+        const p = (((h.y - 1) * an + h.x) << 2);
+        datos[p] = 236; datos[p+1] = 226; datos[p+2] = 150;
+      }
+    }
+  }
   ctxMundo.putImageData(img, 0, 0);
 
   /* y ahora la ventana. `imageSmoothingEnabled` en falso o el zoom se ve
@@ -525,6 +556,14 @@ function paleta(){
     };
     c.appendChild(b);
   }
+}
+
+/* el color de cada raza pasado a números UNA vez: convertir '#23232B' a RGB
+   dentro del bucle de pintado sería hacerlo por hormiga y por cuadro */
+const RGB_RAZA = {};
+for(const n of NOMBRES){
+  const c = RAZAS[n].col;
+  RGB_RAZA[n] = [parseInt(c.slice(1,3),16), parseInt(c.slice(3,5),16), parseInt(c.slice(5,7),16)];
 }
 
 let avisoT = 0;
@@ -661,6 +700,7 @@ cv.addEventListener('pointerdown', ev => {
     return;
   }
   if(modo === 'soldar') grupoSolda = 0;   /* cada trazo, una estructura */
+  nidoPuesto = false;                    /* y cada trazo, un solo nido */
   if(modo === 'agarrar'){
     agarre = { cx:x, cy:y, fx:x, fy:y };
     dedos.get(ev.pointerId).pintando = false;
@@ -682,6 +722,18 @@ cv.addEventListener('pointerdown', ev => {
   }
   if(modo === 'gobjeto'){
     M.pintaGravedad(x, y, Math.max(1, tam - 1), parseFloat($('gMul').value));
+    dedos.get(ev.pointerId).pintando = false;
+    return;
+  }
+  if(modo === 'nido'){
+    /* ⚠ UN NIDO POR TRAZO. Sin el cerrojo, arrastrar el dedo dejaba un nido
+       por celda tocada: cincuenta colonias de la misma raza peleando entre
+       ellas que no son, y el tope de población lleno en dos segundos. */
+    if(!nidoPuesto){
+      HOR.nido(x, y, razaNido, 8);
+      avisa('Nido ' + razaNido + ' · ' + HOR.hormigas.length + ' hormigas en la sala');
+      nidoPuesto = true;
+    }
     dedos.get(ev.pointerId).pintando = false;
     return;
   }
@@ -877,7 +929,7 @@ $('tam').oninput = e => { tam = +e.target.value; $('tamN').textContent = tam; };
    botón se encargaba de apagar a los otros a mano, y con cinco herramientas
    eso son veinte líneas que se contradicen entre sí a la primera distracción. */
 let grupoSolda = 0;
-const BOTON_MODO = { calor:'bCalor', frio:'bFrio', navegar:'bMano', agarrar:'bAgarra', medir:'bMide', soldar:'bSolda' };
+const BOTON_MODO = { calor:'bCalor', frio:'bFrio', navegar:'bMano', agarrar:'bAgarra', medir:'bMide', soldar:'bSolda', nido:'bNido' };
 const MODOS_GRAVEDAD = ['zona', 'punto', 'gobjeto'];
 function ponModo(m){
   modo = (modo === m) ? 'pintar' : m;
@@ -899,6 +951,23 @@ $('bMano').onclick   = () => ponModo('navegar');
 $('bAgarra').onclick = () => ponModo('agarrar');
 $('bMide').onclick   = () => ponModo('medir');
 $('bSolda').onclick  = () => { grupoSolda = 0; ponModo('soldar'); };
+/* El mismo botón sirve de selector: si ya está armado, la siguiente pulsación
+   cambia de raza en vez de apagarlo. Tres botones para tres razas se comen el
+   ancho de un teléfono, y el emoji cambia de color para que se vea cuál va. */
+const EMOJI_RAZA = { negra:'🐜', roja:'🔴', verde:'🟢' };
+$('bNido').onclick = () => {
+  if(modo === 'nido'){
+    const i = NOMBRES.indexOf(razaNido);
+    razaNido = NOMBRES[(i + 1) % NOMBRES.length];
+    $('bNido').textContent = EMOJI_RAZA[razaNido];
+    avisa('Hormiguero ' + razaNido + ' · toca la sala para ponerlo');
+    return;
+  }
+  nidoPuesto = false;
+  ponModo('nido');
+  $('bNido').textContent = EMOJI_RAZA[razaNido];
+  if(modo === 'nido') avisa('Hormiguero ' + razaNido + ' · toca la sala para ponerlo');
+};
 /* el interruptor que pidió Carlos por su nombre: «que decidir si se tratan
    como partículas separadas sea un toggle» */
 $('bRigido').onclick = () => {
@@ -1085,7 +1154,7 @@ function cuadro(ms){
     const g = M.agarra(agarre.cx, agarre.cy, agarre.fx, agarre.fy, Math.max(2, tam - 1));
     agarre.cx = g.cx; agarre.cy = g.cy;
   }
-  if(!pausado) M.paso();
+  if(!pausado){ M.paso(); if(HOR) HOR.paso(); }
   pinta();
   $('escala').textContent = '×' + vista.esc.toFixed(1);
   cuadros++; acum += dt;

@@ -767,6 +767,26 @@
       "vecinas": [
         "prueba-que-nace-muerta"
       ]
+    },
+    {
+      "id": "checkout-no-restaura-lo-que-no-esta-versionado",
+      "titulo": "Deshacer una mutación con git en un archivo que git no conoce",
+      "gravedad": "alta",
+      "sintoma": "Se mete un defecto a mano para comprobar que la prueba lo caza, se hace `git checkout <archivo>` para deshacerlo, y las pruebas siguen en rojo. El mutante sigue puesto.",
+      "causa": "`git checkout` restaura desde el índice. Un archivo NUEVO que nunca se ha commiteado no está en el índice, así que el comando no tiene de dónde restaurar — y no falla: no hace nada, calladito.",
+      "porque": "La prueba de mutación se hace justo cuando el archivo acaba de nacer, que es cuando más ganas hay de comprobar si sus pruebas sirven. Ése es exactamente el momento en que `git checkout` no puede ayudar.",
+      "arreglo": "Deshacer la mutación con la misma herramienta con la que se metió —el reemplazo de texto inverso— y volver a correr las pruebas DESPUÉS de deshacerla, mirando el verde con los ojos.",
+      "comoCazarlo": "Si tras deshacer la mutación el total de rojos no vuelve al de antes, la mutación sigue ahí. Y `git status` delata el archivo como no seguido.",
+      "consejo": "Es la hermana de «el verde de antes del commit sigue valiendo». Aquella era olvidarse de restaurar; ésta es creer que se restauró. La segunda es peor porque uno ya ejecutó el comando y se quedó tranquilo.",
+      "senales": [
+        "hice checkout y sigue igual",
+        "las pruebas no vuelven a verde",
+        "deshice el cambio y nada"
+      ],
+      "salioDe": "CRISOL, las hormigas, 17 de septiembre de 2026. Mutación de «las verdes rompen el muro»: el muro pasó de 198 a 17 celdas, la prueba la cazó, y el `git checkout` posterior no deshizo nada porque `hormigas.js` era nuevo.",
+      "vecinas": [
+        "pruebas-que-no-prueban-nada"
+      ]
     }
   ]
 }
