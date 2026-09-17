@@ -108,6 +108,13 @@
   }
 
   :root {
+    /* EL RITMO DEL SCROLL · lo publica `ritmo.js` cuadro a cuadro.
+       1 = el visitante va leyendo → se ve la coreografía completa.
+       ~0.06 = viene en caída libre → las animaciones se encogen a un
+       parpadeo y el contenido simplemente ESTÁ, que es lo único que sirve
+       cuando la pieza sólo va a estar en pantalla 90 ms.
+       Nace en 1: si el JS no carga, el sitio se comporta como siempre. */
+    --ritmo:1;
     --vacio:#100A18; --superficie:#1E1428; --linea:#2A2036;
     --hueso:#E9E4E4; --apagado:#8B8296; --violeta:#AC27FF; --fosforo:#E8232A;
     --mazi:"Mazi", system-ui, sans-serif;
@@ -518,9 +525,21 @@
       55%  { color:#AC27FF66; }
       100% { color:var(--violeta); }
     }
+    /* ── REVELAR AL RITMO DEL SCROLL ────────────────────────────────
+       `--ritmo` lo publica `ritmo.js`: 1 cuando vas leyendo, ~0.06 cuando
+       vienes en caída libre. Multiplicar la duración por él es lo que hace
+       que bajando rápido el contenido simplemente ESTÉ en vez de llegar
+       medio segundo tarde — que es el defecto que reportó Carlos y que
+       medimos en 202 piezas. El valor lo SELLA el JS en cada pieza al
+       entrar, así que una transición nunca cambia de duración en vuelo.
+       Si `ritmo.js` no carga, `--ritmo` vale 1 y esto es lo de antes. */
     .revela { opacity:0; transform:translateY(14px);
-      transition:opacity .55s ease, transform .55s cubic-bezier(.22,.8,.3,1); }
+      transition:opacity calc(.55s * var(--ritmo)) ease,
+                 transform calc(.55s * var(--ritmo)) cubic-bezier(.22,.8,.3,1); }
     .revela.dentro { opacity:1; transform:none; }
+    /* A toda velocidad el deslizamiento de 14 px sobra: no se lee como
+       entrada, se lee como que la página tiembla. */
+    .prisa .revela { transform:none; }
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation:none!important; transition:none!important; }
@@ -713,25 +732,41 @@ html.encendiendo body { overflow:hidden; }
   background:linear-gradient(90deg,transparent,#AC27FF,transparent);
   box-shadow:0 0 22px #AC27FFcc; pointer-events:none;
 }
-.pantalla-flota img { transition:opacity .5s ease .25s, filter .6s ease .25s; }
+/* Todo lo de aquí abajo se multiplica por `--ritmo`. Era el peor foco del
+   defecto que reportó Carlos: la pieza LLEGA con el scroll (bien) pero su
+   contenido tardaba hasta 680 ms en quedar legible — y a 7 000 px/s, en 680 ms
+   ya te moviste 4 760 px. O sea que la tarjeta cruzaba la pantalla ENTERA en
+   blanco y aparecía cuando ya nadie la estaba viendo. */
+.pantalla-flota img { transition:opacity calc(.5s * var(--ritmo)) ease calc(.25s * var(--ritmo)),
+                                 filter calc(.6s * var(--ritmo)) ease calc(.25s * var(--ritmo)); }
 .pantalla-flota:not(.enfocado) img { opacity:.34; filter:grayscale(.7) brightness(.7); }
 @keyframes barre { 0%{ top:0; opacity:0 } 12%{ opacity:1 } 88%{ opacity:1 } 100%{ top:100%; opacity:0 } }
 .pantalla-flota.enfocado .barrido { animation:barre .75s ease-out both; }
 .pantalla-flota figcaption { opacity:0; transform:translateY(8px);
-  transition:opacity .4s ease .5s, transform .4s cubic-bezier(.22,.8,.3,1) .5s; }
+  transition:opacity calc(.4s * var(--ritmo)) ease calc(.5s * var(--ritmo)),
+             transform calc(.4s * var(--ritmo)) cubic-bezier(.22,.8,.3,1) calc(.5s * var(--ritmo)); }
 .pantalla-flota.enfocado figcaption { opacity:1; transform:none; }
+.prisa .pantalla-flota figcaption { transform:none; }
 /* El marco se prende al enfocarse. */
-.pantalla-flota { transition:border-color .5s ease, box-shadow .5s ease; }
+.pantalla-flota { transition:border-color calc(.5s * var(--ritmo)) ease,
+                             box-shadow calc(.5s * var(--ritmo)) ease; }
 .pantalla-flota.enfocado { border-color:#AC27FF66;
   box-shadow:0 30px 70px #000000aa, 0 0 44px #AC27FF33; }
 
 /* Una TARJETA se abre: el rótulo entra, el título sube, el texto detrás. */
 .tarj .n, .tarj h3, .tarj p { opacity:0; transform:translateY(12px);
-  transition:opacity .45s ease, transform .45s cubic-bezier(.22,.8,.3,1); }
-.tarj.enfocado .n { opacity:1; transform:none; transition-delay:.05s; }
-.tarj.enfocado h3 { opacity:1; transform:none; transition-delay:.14s; }
-.tarj.enfocado p  { opacity:1; transform:none; transition-delay:.23s; }
-.tarj { transition:border-color .5s ease, box-shadow .5s ease; }
+  transition:opacity calc(.45s * var(--ritmo)) ease,
+             transform calc(.45s * var(--ritmo)) cubic-bezier(.22,.8,.3,1); }
+/* El escalonado —rótulo, título, texto— es lo que hace que una tarjeta se
+   SIENTA que se abre en vez de encenderse. Pero escalonar cuesta tiempo, y el
+   tiempo es justo lo que no hay bajando rápido. Así que el escalón también se
+   multiplica: a toda velocidad los tres entran juntos. */
+.tarj.enfocado .n { opacity:1; transform:none; transition-delay:calc(.05s * var(--ritmo)); }
+.tarj.enfocado h3 { opacity:1; transform:none; transition-delay:calc(.14s * var(--ritmo)); }
+.tarj.enfocado p  { opacity:1; transform:none; transition-delay:calc(.23s * var(--ritmo)); }
+.prisa .tarj .n, .prisa .tarj h3, .prisa .tarj p { transform:none; }
+.tarj { transition:border-color calc(.5s * var(--ritmo)) ease,
+                   box-shadow calc(.5s * var(--ritmo)) ease; }
 .tarj.enfocado { border-color:#AC27FF55; box-shadow:0 24px 60px #00000088, 0 0 40px #AC27FF22; }
 
 /* ── LOS LETREROS COLGADOS ─────────────────────────────────────────────────
@@ -1613,18 +1648,27 @@ html.sin-marco .adentro { padding:0; }
   };
   tic(); setInterval(tic, 15000);
 
-  /* Revelar al entrar en pantalla. UNA vez: algo que se re-anima cada que pasas
-     por encima es lo que agota (PLAN.md §8, regla 2). */
-  if ('IntersectionObserver' in window) {
-    const ojo = new IntersectionObserver(es => {
-      es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('dentro'); ojo.unobserve(e.target); } });
-    }, { rootMargin: '0px 0px -12% 0px' });
-    document.querySelectorAll('.revela').forEach(n => ojo.observe(n));
-  } else {
-    document.querySelectorAll('.revela').forEach(n => n.classList.add('dentro'));
-  }
+  /* ⚠ AQUÍ VIVÍA EL DEFECTO QUE REPORTÓ CARLOS, y se quitó a propósito.
+     Había un IntersectionObserver revelando `.revela`. El umbral estaba bien;
+     el problema es que sus avisos NO se entregan en el cuadro — durante un
+     fling en un teléfono llegan «cuando se pueda», o sea después de que la
+     pieza ya pasó. Ahora lo hace `ritmo.js`, que barre por POSICIÓN dentro
+     del mismo requestAnimationFrame que mide la velocidad, así que no puede
+     llegar tarde.
+
+     El seguro de abajo sólo dispara si `ritmo.js` NO se anunció. Sin esa
+     condición destaparía la página entera a los 1.4 s y no habría revelado
+     que valiera la pena. */
+  setTimeout(() => {
+    if (document.documentElement.dataset.ritmo === 'vivo') return;
+    document.querySelectorAll('.revela:not(.dentro)').forEach(n => n.classList.add('dentro'));
+  }, 1400);
 })();
 </script>
+<!-- EL RITMO DEL SCROLL. Va PRIMERO y sin `type=module` a propósito: es lo
+     único de esta página que decide si el contenido se ve o no cuando alguien
+     baja rápido, así que no puede depender de la cola de módulos. -->
+<script src="ritmo.js" defer></script>
 <!-- anime.js v3.2.2, MIT, VENDORIZADA. Nada de CDN: LA REGLA §2. -->
 <script src="anime.min.js" defer></script>
 <script src="efectos.js" defer></script>

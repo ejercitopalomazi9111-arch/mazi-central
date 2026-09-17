@@ -53,6 +53,33 @@ const rebote = x => 1 + 2.2 * Math.pow(x - 1, 3) + 1.2 * Math.pow(x - 1, 2);
 
 const menosMovimiento = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+/* ── ¿ESTÁ EN PANTALLA? · se MIDE, no se pregunta ──────────────────────────
+   ⚠ ESTO ERA UN INTERSECTIONOBSERVER Y ERA EL DEFECTO QUE REPORTÓ CARLOS:
+   «si bajo rápido no carga en el momento en el que bajo».
+
+   Tres coreografías de este archivo sólo se dibujan cuando su sección está en
+   pantalla — bien, dibujar veinte nodos transformados que nadie ve es batería
+   tirada. El problema era CÓMO se enteraban: un IntersectionObserver.
+
+   Sus avisos no se entregan en el cuadro, se entregan «cuando el navegador
+   pueda», y durante un fling en un teléfono eso son varios cuadros tarde.
+   Bajando rápido pasaba esto, medido a 390×844: entrabas a la sección, el
+   aviso todavía no llegaba, `vivo` seguía en falso, la coreografía NO pintaba
+   — y veías las pantallas y los letreros con la opacidad que traían de antes,
+   o sea cero. Llegando al MISMO punto despacio se veían completos. Ésa es
+   exactamente la queja, y no se ve leyendo el código: se ve comparando la
+   misma posición a dos velocidades.
+
+   Ahora se mide con la caja, dentro del mismo cuadro que ya la pide para
+   calcular el avance. Cuesta cero extra y no puede llegar tarde.
+
+   El margen es generoso a propósito: empieza a dibujar antes de que la
+   sección asome, para que cuando asome ya esté puesta. */
+const enCuadro = (el, margen = 400) => {
+  const r = el.getBoundingClientRect();
+  return r.bottom > -margen && r.top < innerHeight + margen;
+};
+
 /* ── EL PULSO ────────────────────────────────────────────────────────────── */
 const tareas = new Set();
 let pulsando = false;
@@ -363,7 +390,7 @@ export function montarViaje(raiz) {
   const NA = delAbanico.length;
   const DE_ABANICO = .84;
 
-  let ultimoFoco = -1, vivo = false;
+  let ultimoFoco = -1;
 
   /* La cifra que corre al enfocarse. Arranca desde 0 y frena al llegar —
      `salida()` es lo que hace que se sienta un contador y no una barra de
@@ -382,11 +409,6 @@ export function montarViaje(raiz) {
     requestAnimationFrame(paso);
   }
 
-  if ('IntersectionObserver' in window) {
-    new IntersectionObserver(es => { vivo = es[0].isIntersecting; }, { rootMargin: '300px 0px' })
-      .observe(raiz);
-  } else vivo = true;
-
   const avance = () => {
     const r = raiz.getBoundingClientRect();
     const rec = raiz.offsetHeight - innerHeight;
@@ -394,7 +416,9 @@ export function montarViaje(raiz) {
   };
 
   cada(() => {
-    if (!vivo) return;
+    /* Se mide en el cuadro. Antes lo decía un IntersectionObserver y llegaba
+       tarde bajando rápido — ver `enCuadro` arriba. */
+    if (!enCuadro(raiz, 300)) return;
     const t = avance();
     if (cielo) cielo.style.setProperty('--caida', t.toFixed(3));
 
@@ -609,14 +633,14 @@ export function montarCaida(raiz) {
     return recorrido <= 0 ? 0 : lim(-r.top / recorrido, 0, 1);
   };
 
-  let vivo = false;
-  if ('IntersectionObserver' in window) {
-    new IntersectionObserver(es => { vivo = es[0].isIntersecting; }, { rootMargin: '250px 0px' })
-      .observe(raiz);
-  } else vivo = true;
-
   cada(() => {
-    if (!vivo) return;
+    /* ⚠ AQUÍ ESTABA EL PEOR. Ésta es LA CAÍDA: las pantallas, los letreros y
+       las tarjetas que Carlos ve pasar en blanco cuando baja rápido. Medido
+       comparando el mismo punto del scroll a dos velocidades, siete piezas
+       llegaban a opacidad 0 yendo rápido y a 1 yendo despacio. No era la
+       animación: era que el aviso de «ya entraste» llegaba tarde y esto ni
+       siquiera pintaba. Ver `enCuadro` arriba. */
+    if (!enCuadro(raiz, 250)) return;
     const t = avance();
 
     // El sonido marca la caída cada sexto de recorrido: un tono que sube.
@@ -896,14 +920,13 @@ export function montarComputadora(raiz) {
   const boton = document.querySelector('[data-acercar]');
   if (!marco) return;
 
-  let vivo = false, sono = false;
-  if ('IntersectionObserver' in window) {
-    new IntersectionObserver(es => { vivo = es[0].isIntersecting; }, { rootMargin: '400px 0px' })
-      .observe(raiz);
-  } else vivo = true;
+  let sono = false;
 
   cada(() => {
-    if (!vivo) return;
+    /* Medido en el cuadro, no avisado. Éste manda el grosor del marco del
+       portátil: si llega tarde, entras a la máquina con el marco todavía en
+       la posición de «lejos» y se ve un salto. Ver `enCuadro` arriba. */
+    if (!enCuadro(raiz, 400)) return;
     const r = raiz.getBoundingClientRect();
     const recorrido = raiz.offsetHeight - innerHeight;
     const t = recorrido <= 0 ? 0 : lim(-r.top / recorrido, 0, 1);
