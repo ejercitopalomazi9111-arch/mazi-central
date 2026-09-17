@@ -2494,5 +2494,316 @@ seccion('la pistola');
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   LOS SEIS DEFECTOS QUE TENÍAN BLOQUEADO A CARLOS
+   ---------------------------------------------------------------------------
+   Cada prueba de esta sección es el EXPERIMENTO QUE ÉL DESCRIBIÓ, escrito tal
+   cual antes de tocar el motor. No son «pruebas de que el arreglo funciona»:
+   son la reproducción del reporte, y las seis estaban en rojo cuando se
+   escribieron. Si alguna vuelve a ponerse roja, el defecto volvió.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+seccion('1 · la onda expansiva EMPUJA · «las pistolas no funcionan»');
+{
+  /* Carlos, textual: «Pon nitroglicerina en el piso y tírale un diamante o un
+     cemento, un material que aguante la explosión. Deja que caiga y a media
+     caída enciende la nitroglicerina, porque vas a ver que la onda expansiva
+     no lo empuja. No le pone fuerza hacia arriba suficiente como para que
+     salga volando.»
+
+     Se mide la velocidad vertical del bloque ANTES de encender y la más
+     negativa —o sea, la más hacia arriba— DESPUÉS. Antes del arreglo el
+     bloque de diamante caía a +2.66 y lo más que subía era −0.62: la onda
+     apenas le rascaba. El bloque además perdía 20 de sus 25 celdas, porque el
+     cráter lo alcanzaba desde cuarenta celdas de distancia cruzando aire. */
+  const tiro = (mat, filas) => {
+    const AN = 60, AL = 70, m = mundo(AN, AL, 7);
+    for(let x = 0; x < AN; x++) m.pon(x, AL - 1, IDX.muro);
+    for(let y = 0; y < AL; y++){ m.pon(0, y, IDX.muro); m.pon(AN - 1, y, IDX.muro); }
+    /* una tina, o el charco se escurre por toda la sala y no hay experimento */
+    for(let y = AL - 5; y <= AL - 1; y++){ m.pon(25, y, IDX.muro); m.pon(35, y, IDX.muro); }
+    for(let x = 26; x <= 34; x++) for(let y = AL - 1 - filas; y <= AL - 2; y++) m.pon(x, y, IDX.nitro);
+    for(let x = 28; x <= 32; x++) for(let y = 20; y <= 24; y++) m.pon(x, y, IDX[mat]);
+    const vel = () => { let s = 0, n = 0; for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX[mat]){ s += m.vy[k]; n++; } return n ? s / n : 0; };
+    const cel = () => { let n = 0; for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX[mat]) n++; return n; };
+    let vAntes = 0, nAntes = 0, vArriba = 9;
+    for(let i = 0; i < 100; i++){
+      m.paso();
+      if(i === 10){ vAntes = vel(); nAntes = cel();
+        /* a media caída: se enciende el charco entero */
+        for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.nitro) m.temp[k] = 400; }
+      if(i > 10){ const v = vel(); if(v < vArriba) vArriba = v; }
+    }
+    return { vAntes, vArriba, nAntes, nFin: cel() };
+  };
+  for(const mat of ['diamante', 'concreto']){
+    const r = tiro(mat, 1);
+    ok('un bloque de ' + mat + ' cayendo SALE VOLANDO con la nitro debajo',
+       r.vArriba < -2 && r.vAntes > 2,
+       'caía a ' + r.vAntes.toFixed(2) + ' y lo más que subió fue ' + r.vArriba.toFixed(2));
+    ok('y el bloque de ' + mat + ' AGUANTA la explosión, no se deshace',
+       r.nFin >= r.nAntes * 0.8, r.nAntes + ' celdas → ' + r.nFin);
+  }
+}
+
+seccion('2 · las explosiones se sienten explosiones');
+{
+  /* Carlos: «La explosión de la pólvora es sumamente débil. Solamente la de la
+     nitroglicerina puede catalogarse como explosión.» Y: «El gas LP no
+     explota, solamente se quema rápido y ya. Creo que el hidrógeno explota
+     mejor que ese gas.»
+
+     Se mide en piedras rotas y en la velocidad más alta que reparte, con la
+     MISMA cantidad de material (25 celdas) sobre el mismo suelo de piedra. */
+  const bum = (id, n) => {
+    const AN = 120, AL = 120, m = mundo(AN, AL, 7);
+    for(let y = 60; y < AL; y++) for(let x = 0; x < AN; x++) m.pon(x, y, IDX.piedra);
+    const lado = Math.round(Math.sqrt(n));
+    for(let dy = 0; dy < lado; dy++) for(let dx = 0; dx < lado; dx++)
+      m.pon(60 + dx - (lado >> 1), 59 - dy, IDX[id]);
+    const piedra0 = cuantos(m, 'piedra');
+    for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX[id]) m.temp[k] = 900;
+    let vmax = 0;
+    for(let i = 0; i < 60; i++){ m.paso();
+      for(let k = 0; k < m.t.length; k++){ const s = Math.abs(m.vx[k]) + Math.abs(m.vy[k]); if(s > vmax) vmax = s; } }
+    return { rotas: piedra0 - cuantos(m, 'piedra'), vmax };
+  };
+  const polv = bum('polvora', 25);
+  ok('25 de pólvora rompen al menos 25 piedras (era 5: una fogata)',
+     polv.rotas >= 25, 'rompió ' + polv.rotas + ' a ' + polv.vmax.toFixed(1) + ' celdas/paso');
+  const gas = bum('gasnat', 25);
+  ok('25 de gas LP acumulado DETONAN, no sólo arden (era 0 roturas)',
+     gas.rotas >= 8, 'rompió ' + gas.rotas);
+  const h = bum('hidrogeno', 25);
+  ok('y el hidrógeno explota MEJOR que el gas LP, como dijo Carlos',
+     h.rotas > gas.rotas, 'hidrógeno ' + h.rotas + ' vs gas ' + gas.rotas);
+  const nit = bum('nitro', 25);
+  ok('y la nitro sigue siendo la reina', nit.rotas > polv.rotas,
+     'nitro ' + nit.rotas + ' vs pólvora ' + polv.rotas);
+}
+
+seccion('3 · EL DAMERO · la onda que no se acaba nunca');
+{
+  /* Carlos: «Las ondas expansivas muchas veces llegan a hacer este patrón como
+     cuadriculado… eso se vuelve una onda expansiva infinita y es muy molesto,
+     tienes que esperar hasta que se acabe sola y no se acaba rápido.»
+
+     Es un defecto NUMÉRICO con nombre: el modo de Nyquist de la ecuación de
+     onda en una rejilla —el patrón que cambia de signo de una celda a la
+     siguiente—. El amortiguamiento del motor multiplicaba la velocidad por un
+     número FIJO, igual para todas las frecuencias, así que el damero se
+     apagaba tan despacio como la onda buena… sólo que la onda buena se va
+     viajando y el damero se queda parado donde está.
+
+     La prueba lo siembra a propósito y mide la CORRELACIÓN entre celdas
+     vecinas: +1 es una onda suave, −1 es damero puro. Medido antes del
+     arreglo: a los 400 pasos quedaba el 0.37% de la energía con correlación
+     −0.99 — o sea, la sala entera en damero y todavía sonando. La onda suave
+     de la misma amplitud, en cambio, ya no existía al paso 50. */
+  const dameria = m => {
+    const { an, al, pres } = m;
+    let num = 0, den = 0;
+    for(let y = 1; y < al - 1; y++) for(let x = 1; x < an - 1; x++){
+      const k = y * an + x;
+      num += pres[k] * pres[k + 1] + pres[k] * pres[k + an];
+      den += pres[k] * pres[k];
+    }
+    return den > 1e-9 ? num / (2 * den) : 0;
+  };
+  const energia = m => { let s = 0; for(let k = 0; k < m.pres.length; k++) s += m.pres[k] * m.pres[k]; return s; };
+  const sala = (medio) => {
+    const AN = 80, AL = 80, m = mundo(AN, AL, 7);
+    crisol(m, 0, 0, AN - 1, AL - 1);
+    if(medio) for(let y = 1; y < AL - 1; y++) for(let x = 1; x < AN - 1; x++) m.pon(x, y, IDX[medio]);
+    return m;
+  };
+  for(const medio of [null, 'agua']){
+    const m = sala(medio);
+    for(let y = 20; y <= 60; y++) for(let x = 20; x <= 60; x++) m.pres[m.i(x, y)] = ((x + y) & 1) ? 60 : -60;
+    m.picoOnda = 120; m.despierta(40, 40, 40);
+    const e0 = energia(m);
+    corre(m, 120);
+    const q = energia(m) / e0;
+    ok('el damero sembrado en ' + (medio || 'aire') + ' se muere en 120 pasos',
+       q < 1e-4, 'queda el ' + (q * 100).toFixed(3) + '% con correlación ' + dameria(m).toFixed(2));
+  }
+  {
+    /* y la contraparte que impide arreglarlo a lo bruto: si se sube el
+       amortiguamiento a ciegas, la onda BUENA también se muere y el juego se
+       queda sin explosiones. Así que la onda de verdad tiene que seguir
+       viajando lo mismo que antes. */
+    const m = sala(null);
+    for(let dy = -1; dy <= 1; dy++) for(let dx = -1; dx <= 1; dx++) m.pon(40 + dx, 40 + dy, IDX.nitro);
+    for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.nitro) m.temp[k] = 400;
+    corre(m, 22);
+    let lejos = 0;
+    for(let y = 1; y < 79; y++) for(let x = 1; x < 79; x++)
+      if(m.pres[m.i(x, y)] > 8){ const d = Math.hypot(x - 40, y - 40); if(d > lejos) lejos = d; }
+    ok('y la onda BUENA sigue viajando: el frente pasa de 20 celdas en 22 pasos',
+       lejos > 20, 'el frente llegó a ' + lejos.toFixed(1) + ' celdas');
+  }
+}
+
+seccion('4 · la presión SÍ sube dentro de una cámara');
+{
+  /* Carlos: «Con los sistemas de presión no están jalando. No puedo aumentar
+     la presión dentro de un cuerpo aunque mantenga pulsado, con el mismo gas o
+     con otro, no crece.»
+
+     Reproducido: cámara sellada de muro, se pinta gas en la misma celda cada
+     paso —que es «mantener pulsado»— y se mide la presión de la cámara cada
+     40 pasos. Antes: 59.7 · 59.7 · 59.7 · 59.7 · 59.7. Se clavaba, porque los
+     moles se amontonaban en UNA celda hasta el tope y ahí se acababa. */
+  const bombea = (gas, otro) => {
+    const AN = 40, AL = 40, m = mundo(AN, AL, 7);
+    crisol(m, 10, 10, 25, 25);
+    for(let y = 11; y <= 24; y++) for(let x = 11; x <= 24; x++) m.pon(x, y, IDX[gas]);
+    const reg = [];
+    for(let i = 0; i < 200; i++){
+      m.pon(18, 18, IDX[otro || gas]);
+      m.paso();
+      if(i % 40 === 39) reg.push(m.camaraP[0] || 0);
+    }
+    return reg;
+  };
+  for(const [gas, otro] of [['hidrogeno', null], ['hidrogeno', 'eHe']]){
+    const reg = bombea(gas, otro);
+    let sube = true;
+    for(let i = 1; i < reg.length; i++) if(reg[i] <= reg[i - 1] * 1.05) sube = false;
+    ok('meter ' + (otro ? 'otro gas' : 'el mismo gas') + ' sostenido SUBE la presión sin parar',
+       sube && reg[reg.length - 1] > 400,
+       reg.map(v => v.toFixed(0)).join(' · '));
+  }
+  {
+    /* y lo que se pide a cambio: que llegue a reventar el recipiente */
+    const AN = 40, AL = 40, m = mundo(AN, AL, 7);
+    crisol(m, 0, 0, AN - 1, AL - 1);
+    for(let x = 12; x <= 24; x++){ m.pon(x, 12, IDX.vidrio); m.pon(x, 24, IDX.vidrio); }
+    for(let y = 12; y <= 24; y++){ m.pon(12, y, IDX.vidrio); m.pon(24, y, IDX.vidrio); }
+    for(let y = 13; y <= 23; y++) for(let x = 13; x <= 23; x++) m.pon(x, y, IDX.hidrogeno);
+    const v0 = cuantos(m, 'vidrio');
+    for(let i = 0; i < 300; i++){ m.pon(18, 18, IDX.hidrogeno); m.paso(); }
+    ok('y al final REVIENTA el frasco de vidrio', cuantos(m, 'vidrio') < v0,
+       v0 + ' celdas de vidrio → ' + cuantos(m, 'vidrio'));
+  }
+}
+
+seccion('5 · el helio LEVANTA lo que tiene encima');
+{
+  /* Carlos: «El helio y otros gases que deberían subir no están subiendo. O
+     sea, sí suben hacia arriba, pero si les pongo un techo que baje, aunque
+     tengan un chingo de gas abajo, no sube… Un gramo de concreto de huevos que
+     flota con un chingo de helio. No me vayas a decir que no.»
+
+     Tiene razón y la prueba es suya: una placa de concreto sobre una bolsa de
+     helio tiene que subir. Antes: la placa se quedaba EXACTAMENTE donde
+     estaba, y=30.5 en los 200 pasos. El gas subía y no ejercía ninguna fuerza
+     sobre el sólido de encima. */
+  const bolsa = (gas, alto) => {
+    const AN = 60, AL = 60, m = mundo(AN, AL, 7);
+    for(let x = 0; x < AN; x++) m.pon(x, AL - 1, IDX.muro);
+    for(let y = 0; y < AL; y++){ m.pon(0, y, IDX.muro); m.pon(AN - 1, y, IDX.muro); }
+    const techo = AL - 1 - alto;
+    for(let y = techo; y < AL - 1; y++){ m.pon(18, y, IDX.muro); m.pon(42, y, IDX.muro); }
+    for(let y = techo + 2; y < AL - 1; y++) for(let x = 19; x <= 41; x++) m.pon(x, y, IDX[gas]);
+    for(let x = 19; x <= 41; x++) for(let y = techo; y <= techo + 1; y++) m.pon(x, y, IDX.concreto);
+    const alturaMedia = () => { let s = 0, n = 0; for(let k = 0; k < m.t.length; k++)
+      if(m.t[k] === IDX.concreto){ s += (k / AN) | 0; n++; } return n ? s / n : NaN; };
+    const y0 = alturaMedia();
+    corre(m, 200);
+    return { y0, y1: alturaMedia(), celdas: cuantos(m, 'concreto') };
+  };
+  const he = bolsa('eHe', 28);
+  ok('una placa de concreto sobre una bolsa GRANDE de helio SUBE',
+     he.y1 < he.y0 - 3, 'empezó en y=' + he.y0.toFixed(1) + ' y acabó en y=' + he.y1.toFixed(1));
+  ok('y la placa sigue entera', he.celdas === 46, 'quedaron ' + he.celdas + ' de 46');
+  const poco = bolsa('eHe', 4);
+  ok('con POCO helio no le alcanza: la placa se queda',
+     poco.y1 > poco.y0 - 1.5, 'de y=' + poco.y0.toFixed(1) + ' a y=' + poco.y1.toFixed(1));
+  const ox = bolsa('oxigeno', 28);
+  ok('y con un gas MÁS PESADO que el aire no levanta nada',
+     ox.y1 > ox.y0 - 1.5, 'de y=' + ox.y0.toFixed(1) + ' a y=' + ox.y1.toFixed(1));
+}
+
+seccion('6 · la cuerda UNE, no arranca');
+{
+  /* Carlos: «La cuerda no está jalando, está ejerciendo un chingo de fuerza
+     hacia el centro, por lo que me arranca los píxeles de los que está
+     agarrada, pero no une dos piezas… Debería poder caer hasta hacer una línea
+     vertical perfecta, pero se mantiene en diagonal cuando cae… no une dos
+     cosas, sino que las arranca y las pega y se hace una bola horrible.»
+
+     Y el experimento, también suyo: «pon dos cubos de concreto, únelos con una
+     cuerda. Pon uno arriba de un muro para que no caiga y el otro que sí
+     caiga, y vas a ver que la cuerda se va a hacer pedazos, no los va a cargar
+     bien, o se va a volver súper rígida.» */
+  {
+    /* 6a · una cuerda dibujada EN DIAGONAL tiene que caer a la vertical.
+       Antes no podía: el presupuesto de longitud contaba UN eslabón por
+       celda, y un tramo en diagonal mide 1.41 — así que una cuerda diagonal
+       nacía pasada de su propia longitud y CUALQUIER movimiento le quedaba
+       prohibido. Se quedaba tiesa en diagonal para siempre. */
+    const m = mundo(40, 40, 7);
+    repisa(m, 39);
+    for(let x = 0; x < 40; x++) m.pon(x, 3, IDX.muro);
+    for(let i = 0; i < 12; i++) m.pon(14 + i, 4 + i, IDX.cuerda);
+    corre(m, 200);
+    let anchoX = 0, x0 = 99, x1 = -1;
+    for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.cuerda){ const x = k % 40; if(x < x0) x0 = x; if(x > x1) x1 = x; }
+    anchoX = x1 - x0;
+    ok('una cuerda dibujada en diagonal CAE a la vertical', anchoX <= 2,
+       'se quedó ocupando ' + (anchoX + 1) + ' columnas');
+  }
+  {
+    /* 6b · el experimento entero: dos cubos y una cuerda */
+    const AN = 60, AL = 60, m = mundo(AN, AL, 7);
+    for(let x = 0; x < AN; x++) m.pon(x, AL - 1, IDX.muro);
+    for(let y = 20; y < AL - 1; y++) m.pon(20, y, IDX.muro);
+    for(let x = 0; x <= 20; x++) m.pon(x, 20, IDX.muro);
+    /* cubo A posado en el muro */
+    for(let x = 15; x <= 18; x++) for(let y = 16; y <= 19; y++) m.pon(x, y, IDX.concreto);
+    /* la cuerda, del cubo A hacia fuera */
+    for(let i = 0; i < 12; i++) m.pon(19 + i, 16 + i, IDX.cuerda);
+    /* cubo B colgando de la punta */
+    for(let x = 31; x <= 34; x++) for(let y = 28; y <= 31; y++) m.pon(x, y, IDX.concreto);
+    const cuboB = () => { let x0 = 99, x1 = -1, y1 = -1, n = 0;
+      for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.concreto){
+        const x = k % AN, y = (k / AN) | 0;
+        if(x > 25){ if(x < x0) x0 = x; if(x > x1) x1 = x; if(y > y1) y1 = y; n++; } }
+      return { ancho: x1 - x0 + 1, hondo: y1, n }; };
+    corre(m, 200);
+    const b = cuboB();
+    ok('la cuerda no arranca celdas: siguen los 32 de concreto y los 12 de cuerda',
+       cuantos(m, 'concreto') === 32 && cuantos(m, 'cuerda') === 12,
+       cuantos(m, 'concreto') + ' de concreto y ' + cuantos(m, 'cuerda') + ' de cuerda');
+    ok('el cubo colgado NO llega al suelo: la cuerda lo carga',
+       b.hondo < AL - 2, 'su celda más baja quedó en y=' + b.hondo);
+    ok('y sigue siendo un CUBO, no una bola desparramada',
+       b.ancho <= 5 && b.n === 16, 'mide ' + b.ancho + ' columnas y tiene ' + b.n + ' celdas');
+  }
+  {
+    /* 6c · y la flexibilidad se puede cambiar, que lo pidió por su nombre */
+    const cae = flex => {
+      const m = mundo(40, 40, 7);
+      for(let x = 0; x < 40; x++) m.pon(x, 3, IDX.muro);
+      repisa(m, 39);
+      m.flexCuerda = flex;
+      for(let y = 4; y < 16; y++) m.pon(20, y, IDX.cuerda);
+      for(let x = 19; x <= 21; x++) for(let y = 16; y <= 18; y++) m.pon(x, y, IDX.concreto);
+      /* un empujón lateral y se mira cuánto se estira */
+      corre(m, 30);
+      for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.concreto) m.vx[k] = 4;
+      let lejos = 0;
+      for(let i = 0; i < 80; i++){ m.paso();
+        for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.concreto){
+          const d = Math.hypot(k % 40 - 20, ((k / 40) | 0) - 3); if(d > lejos) lejos = d; } }
+      return lejos;
+    };
+    const tiesa = cae(0), floja = cae(1);
+    ok('una cuerda FLOJA deja llegar más lejos que una tiesa',
+       floja > tiesa, 'tiesa ' + tiesa.toFixed(1) + ' · floja ' + floja.toFixed(1));
+  }
+}
+
 console.log('\n' + (mal ? '✗' : '✓') + '  ' + bien + ' pasan · ' + mal + ' fallan');
 process.exit(mal ? 1 : 0);
