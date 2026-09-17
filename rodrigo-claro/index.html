@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>document.documentElement.className += ' js';</script>
+<title>Rodrigo Cabrera · Arquitecto</title>
+<meta name="description" content="Rodrigo Cabrera, arquitecto. Proyecta y construye espacios residenciales en México donde la piedra, la madera y la luz conviven. Fundador de ARCO Arquitectura & Construcción.">
+<link rel="icon" href="assets/img/favicon.png">
+<link rel="stylesheet" href="assets/css/style.css?v=8">
+</head>
+<body class="loading">
+
+<!-- ============ LOADER ============ -->
+<div class="loader" aria-hidden="true">
+  <div class="bp-grid"></div>
+  <div class="loader__inner">
+    <img class="loader__logo" src="assets/img/logo.png" alt="">
+    <div class="loader__name">
+      <span style="animation-delay:.05s">R</span><span style="animation-delay:.1s">O</span><span style="animation-delay:.15s">D</span><span style="animation-delay:.2s">R</span><span style="animation-delay:.25s">I</span><span style="animation-delay:.3s">G</span><span style="animation-delay:.35s">O</span><span style="animation-delay:.4s">&nbsp;</span><span style="animation-delay:.45s">C</span><span style="animation-delay:.5s">A</span><span style="animation-delay:.55s">B</span><span style="animation-delay:.6s">R</span><span style="animation-delay:.65s">E</span><span style="animation-delay:.7s">R</span><span style="animation-delay:.75s">A</span>
+    </div>
+    <div class="loader__sub"><span>Arquitecto</span></div>
+  </div>
+  <span class="loader__bar"></span>
+</div>
+
+<!-- ============ CURSOR ============ -->
+<div class="cursor" aria-hidden="true"></div>
+<div class="cursor-dot" aria-hidden="true"></div>
+<span class="cursor__label" aria-hidden="true"></span>
+
+<!-- ============ FONDO GLOBAL: PLANO ANIMADO ============ -->
+<div class="bg-plan" aria-hidden="true">
+  <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+    <!-- muros exteriores -->
+    <g class="bgp bgp--1">
+      <path pathLength="1" d="M180 140 H1180 V800 H180 Z" stroke-width="1.7" />
+      <path pathLength="1" d="M194 154 H1166 V786 H194 Z" />
+    </g>
+    <!-- muros interiores y puertas -->
+    <g class="bgp bgp--2">
+      <path pathLength="1" d="M620 154 V400 M634 154 V400 M620 400 H634" />
+      <path pathLength="1" d="M194 520 H450 M194 534 H450 M450 520 V534" />
+      <path pathLength="1" d="M900 786 V560 M914 786 V560 M900 560 H914" />
+      <path pathLength="1" d="M620 520 H1166 M620 534 H780 M860 534 H1166" />
+      <path pathLength="1" d="M620 440 V520 M634 440 V520" />
+      <path pathLength="1" d="M634 460 A42 42 0 0 1 676 418" />
+      <path pathLength="1" d="M480 520 H450 M480 520 A38 38 0 0 0 442 482" />
+      <path pathLength="1" d="M860 534 A52 52 0 0 1 808 586" />
+      <path pathLength="1" d="M960 786 H1030 M960 786 A70 70 0 0 1 1030 716" />
+    </g>
+    <!-- ventanas y mobiliario -->
+    <g class="bgp bgp--3">
+      <line pathLength="1" x1="300" y1="147" x2="520" y2="147" stroke-width="2.4" />
+      <line pathLength="1" x1="700" y1="147" x2="980" y2="147" stroke-width="2.4" />
+      <line pathLength="1" x1="1173" y1="240" x2="1173" y2="420" stroke-width="2.4" />
+      <line pathLength="1" x1="1173" y1="580" x2="1173" y2="720" stroke-width="2.4" />
+      <line pathLength="1" x1="187" y1="600" x2="187" y2="740" stroke-width="2.4" />
+      <rect pathLength="1" x="260" y="220" width="240" height="150" rx="4" />
+      <line pathLength="1" x1="260" y1="258" x2="500" y2="258" />
+      <rect pathLength="1" x="720" y="220" width="190" height="90" rx="45" />
+      <circle pathLength="1" cx="815" cy="265" r="27" />
+      <rect pathLength="1" x="960" y="580" width="170" height="140" rx="4" />
+      <circle pathLength="1" cx="330" cy="660" r="46" />
+      <line pathLength="1" x1="330" y1="614" x2="330" y2="706" />
+      <line pathLength="1" x1="284" y1="660" x2="376" y2="660" />
+      <rect pathLength="1" x="1000" y="180" width="130" height="52" />
+    </g>
+    <!-- ejes, cotas y textos -->
+    <g class="bgp bgp--4">
+      <line pathLength="1" x1="620" y1="80" x2="620" y2="860" opacity=".5" />
+      <line pathLength="1" x1="100" y1="520" x2="1340" y2="520" opacity=".5" />
+      <circle pathLength="1" cx="620" cy="80" r="17" />
+      <circle pathLength="1" cx="100" cy="520" r="17" />
+      <text x="620" y="85">B</text>
+      <text x="100" y="525">2</text>
+      <line pathLength="1" x1="180" y1="840" x2="1180" y2="840" />
+      <line pathLength="1" x1="180" y1="830" x2="180" y2="850" />
+      <line pathLength="1" x1="620" y1="830" x2="620" y2="850" />
+      <line pathLength="1" x1="1180" y1="830" x2="1180" y2="850" />
+      <text x="400" y="833">11.00</text>
+      <text x="900" y="833">14.00</text>
+      <line pathLength="1" x1="1250" y1="140" x2="1250" y2="800" />
+      <line pathLength="1" x1="1240" y1="140" x2="1260" y2="140" />
+      <line pathLength="1" x1="1240" y1="800" x2="1260" y2="800" />
+      <text x="1280" y="470">16.50</text>
+    </g>
+    <!-- brújula (gira sola) -->
+    <g class="bg-compass">
+      <circle cx="1310" cy="108" r="34" />
+      <circle cx="1310" cy="108" r="3" />
+      <path d="M1310 134 L1310 82 L1297 118 L1310 110 L1323 118 Z" />
+    </g>
+  </svg>
+  <i class="bg-scan"></i>
+</div>
+
+<!-- ============ HEADER ============ -->
+<header class="site-header">
+  <div class="wrap nav">
+    <a href="#inicio" class="brand" aria-label="Rodrigo Cabrera — inicio">
+      <img class="brand__mark" src="assets/img/logo.png" alt="" aria-hidden="true">
+      <span class="brand__txt">Rodrigo Cabrera<small>Arquitecto</small></span>
+    </a>
+    <nav class="nav__links" aria-label="Principal">
+      <a href="#obra">Obra</a>
+      <a href="#vision">Visión</a>
+      <a href="#arquitecto">El arquitecto</a>
+      <a href="#contacto" class="nav__cta">Contacto</a>
+    </nav>
+    <button class="nav__toggle" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<!-- ============ HERO ============ -->
+<section class="hero" id="inicio">
+  <div class="bp-grid"></div>
+
+  <!-- Plano en planta (vista del cielo) — se dibuja con el scroll -->
+  <div class="hero__plan" aria-hidden="true">
+    <svg class="bp" viewBox="0 0 920 700" fill="none">
+      <!-- ejes estructurales -->
+      <line class="thin" data-draw x1="150" y1="30" x2="150" y2="670" />
+      <line class="thin" data-draw x1="450" y1="30" x2="450" y2="670" />
+      <line class="thin" data-draw x1="740" y1="30" x2="740" y2="670" />
+      <line class="thin" data-draw x1="60" y1="120" x2="880" y2="120" />
+      <line class="thin" data-draw x1="60" y1="390" x2="880" y2="390" />
+      <line class="thin" data-draw x1="60" y1="620" x2="880" y2="620" />
+      <circle class="thin" data-draw cx="150" cy="45" r="14" />
+      <circle class="thin" data-draw cx="450" cy="45" r="14" />
+      <circle class="thin" data-draw cx="740" cy="45" r="14" />
+      <circle class="thin" data-draw cx="75" cy="120" r="14" />
+      <circle class="thin" data-draw cx="75" cy="390" r="14" />
+      <circle class="thin" data-draw cx="75" cy="620" r="14" />
+      <text x="150" y="49" fill="#3F7CA6" opacity=".55" font-size="12" text-anchor="middle">A</text>
+      <text x="450" y="49" fill="#3F7CA6" opacity=".55" font-size="12" text-anchor="middle">B</text>
+      <text x="740" y="49" fill="#3F7CA6" opacity=".55" font-size="12" text-anchor="middle">C</text>
+      <text x="75" y="124" fill="#3F7CA6" opacity=".55" font-size="12" text-anchor="middle">1</text>
+      <text x="75" y="394" fill="#3F7CA6" opacity=".55" font-size="12" text-anchor="middle">2</text>
+      <text x="75" y="624" fill="#3F7CA6" opacity=".55" font-size="12" text-anchor="middle">3</text>
+
+      <!-- muro exterior (doble línea) -->
+      <path data-draw d="M150 120 H740 V620 H150 Z" stroke-width="1.6" />
+      <path data-draw d="M160 130 H730 V610 H160 Z" />
+
+      <!-- muros interiores -->
+      <path data-draw d="M450 130 V300 M460 130 V300 M450 300 H460" />
+      <path data-draw d="M160 390 H320 M160 400 H320 M320 390 V400" />
+      <path data-draw d="M560 610 V470 M570 610 V470 M560 470 H570" />
+      <path data-draw d="M450 390 H730 M450 400 H560 M620 400 H730" />
+
+      <!-- puertas (abatimiento) -->
+      <path class="thin" data-draw d="M450 330 V300 M450 330 A30 30 0 0 1 480 300" />
+      <path class="thin" data-draw d="M350 390 H320 M350 390 A30 30 0 0 0 320 360" />
+      <path class="thin" data-draw d="M620 400 A45 45 0 0 1 575 445" />
+      <path class="thin" data-draw d="M660 620 H720 M660 620 A60 60 0 0 1 720 560" />
+
+      <!-- ventanas -->
+      <line data-draw x1="220" y1="125" x2="380" y2="125" stroke-width="2.2" />
+      <line data-draw x1="500" y1="125" x2="690" y2="125" stroke-width="2.2" />
+      <line data-draw x1="735" y1="200" x2="735" y2="340" stroke-width="2.2" />
+      <line data-draw x1="735" y1="440" x2="735" y2="560" stroke-width="2.2" />
+      <line data-draw x1="155" y1="460" x2="155" y2="580" stroke-width="2.2" />
+      <line data-draw x1="230" y1="615" x2="420" y2="615" stroke-width="2.2" />
+
+      <!-- mobiliario -->
+      <rect class="thin" data-draw x="200" y="180" width="180" height="120" rx="3" />
+      <line class="thin" data-draw x1="200" y1="210" x2="380" y2="210" />
+      <rect class="thin" data-draw x="520" y="180" width="150" height="76" rx="38" />
+      <circle class="thin" data-draw cx="595" cy="218" r="22" />
+      <rect class="thin" data-draw x="500" y="450" width="180" height="120" rx="3" />
+      <line class="thin" data-draw x1="500" y1="480" x2="680" y2="480" />
+      <circle class="thin" data-draw cx="255" cy="500" r="38" />
+      <line class="thin" data-draw x1="255" y1="462" x2="255" y2="538" />
+      <line class="thin" data-draw x1="217" y1="500" x2="293" y2="500" />
+      <rect class="thin" data-draw x="620" y="140" width="100" height="40" />
+
+      <!-- cotas -->
+      <line class="thin" data-draw x1="150" y1="655" x2="740" y2="655" />
+      <line class="thin" data-draw x1="150" y1="646" x2="150" y2="664" />
+      <line class="thin" data-draw x1="450" y1="646" x2="450" y2="664" />
+      <line class="thin" data-draw x1="740" y1="646" x2="740" y2="664" />
+      <text x="300" y="649" fill="#3F7CA6" opacity=".55" font-size="12" text-anchor="middle">7.50</text>
+      <text x="595" y="649" fill="#3F7CA6" opacity=".55" font-size="12" text-anchor="middle">7.25</text>
+      <line class="thin" data-draw x1="800" y1="120" x2="800" y2="620" />
+      <line class="thin" data-draw x1="791" y1="120" x2="809" y2="120" />
+      <line class="thin" data-draw x1="791" y1="390" x2="809" y2="390" />
+      <line class="thin" data-draw x1="791" y1="620" x2="809" y2="620" />
+      <text x="815" y="255" fill="#3F7CA6" opacity=".55" font-size="12">6.75</text>
+      <text x="815" y="505" fill="#3F7CA6" opacity=".55" font-size="12">5.75</text>
+
+      <!-- norte -->
+      <circle class="thin" data-draw cx="860" cy="70" r="26" />
+      <path class="thin" data-draw d="M860 90 L860 50 L850 78 L860 71 L870 78 Z" />
+      <text x="860" y="40" fill="#3F7CA6" opacity=".55" font-size="12" text-anchor="middle">N</text>
+    </svg>
+  </div>
+
+  <div class="hero__stage">
+    <div class="hero__texto">
+      <h1 aria-label="Rodrigo Cabrera — arquitecto">
+        <span class="ln"><span data-letters>RODRIGO</span></span>
+        <span class="ln"><span data-letters>CABRERA</span></span>
+      </h1>
+      <p class="hero__tag">Proyecta y construye espacios residenciales donde la piedra, la madera y la luz conviven. Fundador de ARCO Arquitectura&nbsp;&amp;&nbsp;Construcción.</p>
+      <div class="hero__actions">
+        <a class="btn" href="#obra"><span>Ver la obra</span><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg></a>
+        <a class="btn btn--blue" href="#contacto"><span>Hablemos</span><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+      </div>
+    </div>
+
+    <!-- Cartucho: el bloque de datos que todo plano lleva en su esquina.
+         Sustituye a la fila suelta de metadatos, que en móvil se partía. -->
+    <aside class="hero__ficha" aria-label="Ficha del arquitecto">
+      <figure class="hero__retrato">
+        <img src="assets/img/r1c.jpg" alt="Rodrigo Cabrera, arquitecto">
+      </figure>
+      <dl class="ficha__filas">
+        <div class="ficha__fila">
+          <dt class="ficha__rot">Estudio</dt>
+          <dd class="ficha__dato">ARCO</dd>
+        </div>
+        <div class="ficha__fila">
+          <dt class="ficha__rot">Ubicación</dt>
+          <dd class="ficha__dato">Ciudad de México</dd>
+        </div>
+        <div class="ficha__fila">
+          <dt class="ficha__rot">Estudio desde</dt>
+          <dd class="ficha__dato">2008</dd>
+        </div>
+        <div class="ficha__fila">
+          <dt class="ficha__rot">Proyectos</dt>
+          <dd class="ficha__dato">110+</dd>
+        </div>
+      </dl>
+      <span class="ficha__pie" aria-hidden="true">ESC. 1:1 · CDMX</span>
+    </aside>
+  </div>
+  <span class="hero__scroll" aria-hidden="true">Desliza</span>
+</section>
+
+<!-- ============ MARQUESINA ============ -->
+<div class="marquee" aria-hidden="true">
+  <div class="marquee__track">
+    <span>Arquitectura</span><span>Construcción</span><span>Interiorismo</span><span>Diseño</span><span>Remodelación</span>
+    <span>Arquitectura</span><span>Construcción</span><span>Interiorismo</span><span>Diseño</span><span>Remodelación</span>
+  </div>
+</div>
+
+<!-- ============ VISIÓN / MANIFIESTO ============ -->
+<section class="section manifesto" id="vision">
+  <div class="bp-grid"></div>
+  <div class="wrap">
+    <span class="eyebrow reveal">Visión</span>
+    <p class="statement" data-split>La arquitectura no se dibuja: <em>se habita.</em> Proyectar es escuchar al sitio, a la luz y a quien despierta ahí todos los días.</p>
+    <p class="manifesto__sub reveal" data-d="1">Cada muro guarda una manera de vivir; cada vano, una forma de mirar. El lujo verdadero no es el mármol: es la proporción correcta y la luz a la hora correcta.</p>
+    <div class="dimline" aria-hidden="true">
+      <svg class="bp" viewBox="0 0 760 60" fill="none">
+        <line data-draw x1="10" y1="30" x2="750" y2="30" />
+        <line data-draw x1="10" y1="18" x2="10" y2="42" />
+        <line data-draw x1="380" y1="18" x2="380" y2="42" />
+        <line data-draw x1="750" y1="18" x2="750" y2="42" />
+        <path class="thin" data-draw d="M10 30 l14 -5 v10 Z M750 30 l-14 -5 v10 Z" />
+        <text x="195" y="22" fill="#3F7CA6" opacity=".6" font-size="12" text-anchor="middle">IDEA — 9.00</text>
+        <text x="565" y="22" fill="#3F7CA6" opacity=".6" font-size="12" text-anchor="middle">OBRA — 9.00</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ============ OBRA (scroll horizontal) ============ -->
+<section class="works" id="obra">
+  <div class="works__pin">
+    <!-- Cabecera fija del carril: antes esta franja superior era aire
+         muerto (medio viewport en blanco al entrar a la sección). -->
+    <div class="works__cab">
+      <span class="eyebrow">Obra selecta</span>
+      <span class="works__cuenta"><b data-obra-actual>01</b> / <span data-obra-total>08</span></span>
+    </div>
+    <div class="works__track">
+      <div class="wpanel wpanel--intro">
+        <h2>Construido,<br><em>no prometido.</em></h2>
+        <p>Una selección de residencias, interiores y obra ejecutada. Desliza — cada proyecto se recorre como se recorre una casa: sin prisa.</p>
+      </div>
+
+      <div class="wpanel">
+        <div class="wpanel__media" data-title="Villa Horizonte — Casa" data-cursor="Ver">
+          <span class="wpanel__num">01</span>
+          <img src="assets/img/obra/serie/G18.jpg" alt="Villa Horizonte: cocina abierta al comedor con piso de madera" loading="lazy" width="1600" height="1200">
+        </div>
+        <div class="wpanel__info"><h3>Villa Horizonte</h3><span>Casa</span></div>
+      </div>
+      <div class="wpanel">
+        <div class="wpanel__media" data-title="Patio de Luz — Interiorismo" data-cursor="Ver">
+          <span class="wpanel__num">02</span>
+          <img src="assets/img/obra/serie/G11.jpg" alt="Patio de Luz: sala que abre a un patio ajardinado" loading="lazy" width="1600" height="1200">
+        </div>
+        <div class="wpanel__info"><h3>Patio de Luz</h3><span>Interiorismo</span></div>
+      </div>
+      <div class="wpanel">
+        <div class="wpanel__media" data-title="Pabellón Piedra — Construcción" data-cursor="Ver">
+          <span class="wpanel__num">03</span>
+          <img src="assets/img/obra/serie/G10.jpg" alt="Pabellón Piedra: patio de piedra con ventanal y celosía de madera" loading="lazy" width="1600" height="1200">
+        </div>
+        <div class="wpanel__info"><h3>Pabellón Piedra</h3><span>Construcción</span></div>
+      </div>
+      <div class="wpanel">
+        <div class="wpanel__media" data-title="Residencia Poniente — Casa" data-cursor="Ver">
+          <span class="wpanel__num">04</span>
+          <img src="assets/img/obra/serie/G12.jpg" alt="Residencia Poniente: muro texturizado con mueble de televisión integrado" loading="lazy" width="1600" height="1200">
+        </div>
+        <div class="wpanel__info"><h3>Residencia Poniente</h3><span>Casa</span></div>
+      </div>
+      <div class="wpanel">
+        <div class="wpanel__media" data-title="Cocina Nogal — Interiorismo" data-cursor="Ver">
+          <span class="wpanel__num">05</span>
+          <img src="assets/img/obra/serie/G2.jpg" alt="Cocina Nogal: cocina con barra y alacena de piso a techo" loading="lazy" width="1600" height="1200">
+        </div>
+        <div class="wpanel__info"><h3>Cocina Nogal</h3><span>Interiorismo</span></div>
+      </div>
+      <div class="wpanel">
+        <div class="wpanel__media" data-title="Casa Ladera — Construcción" data-cursor="Ver">
+          <span class="wpanel__num">06</span>
+          <img src="assets/img/obra/serie/G17.jpg" alt="Casa Ladera: desayunador con banca corrida de obra" loading="lazy" width="1280" height="958">
+        </div>
+        <div class="wpanel__info"><h3>Casa Ladera</h3><span>Construcción</span></div>
+      </div>
+      <div class="wpanel">
+        <div class="wpanel__media" data-title="Villa Encinos — Casa" data-cursor="Ver">
+          <span class="wpanel__num">07</span>
+          <img src="assets/img/obra/serie/G9.jpg" alt="Villa Encinos: terraza con mesa larga de madera y jardineras" loading="lazy" width="1152" height="648">
+        </div>
+        <div class="wpanel__info"><h3>Villa Encinos</h3><span>Casa</span></div>
+      </div>
+
+      <div class="wpanel wpanel--cta">
+        <h3>El portafolio completo<br>vive en ARCO.</h3>
+        <a class="btn btn--light" href="https://bigtigermx.github.io/arco-rc/proyectos.html" target="_blank" rel="noopener"><span>Ver portafolio</span><svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg></a>
+      </div>
+    </div>
+    <div class="works__progress"><i></i></div>
+  </div>
+</section>
+
+<!-- ============ EL ARQUITECTO ============ -->
+<section class="section people" id="arquitecto">
+  <div class="orn-door" aria-hidden="true">
+    <svg viewBox="0 0 260 220" fill="none">
+      <path class="jamb" d="M10 190 H30 M230 190 H250" />
+      <line class="leaf" x1="30" y1="190" x2="230" y2="190" />
+      <path class="arc" pathLength="1" d="M230 190 A200 200 0 0 0 30 -10 L30 190" opacity=".5" />
+    </svg>
+  </div>
+  <div class="wrap">
+    <span class="eyebrow reveal">El arquitecto</span>
+    <h2 class="sec-title reveal" data-d="1">Fuera del <em>plano.</em></h2>
+    <!-- Dos piezas, no tres: el retrato de cerca subió a la portada y
+         repetirlo aquí abarataba la sección. -->
+    <div class="people__grid">
+      <figure class="pcard pcard--a reveal-img" data-cursor="Rodrigo">
+        <img src="assets/img/r3.jpg" alt="Rodrigo Cabrera leyendo el territorio en la sierra">
+        <figcaption class="tag">Leer el territorio</figcaption>
+      </figure>
+      <p class="people__nota reveal" data-d="2">Fuera del despacho, el oficio sigue: un sitio se camina, se mira a contraluz y se mide con el cuerpo antes de dibujarlo.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BANDA PANORÁMICA + CITA ============ -->
+<div class="pano">
+  <div class="pano__img" style="background-image:url('assets/img/obra/serie/G19.jpg')"></div>
+  <div class="pano__quote">
+    <blockquote data-split>«Una casa está terminada cuando envejece mejor que sus planos.»
+      <cite>Rodrigo Cabrera</cite>
+    </blockquote>
+  </div>
+</div>
+
+<!-- ============ CONTACTO ============ -->
+<section class="section section--night contact" id="contacto">
+  <div class="bp-grid"></div>
+  <div class="contact__plan" aria-hidden="true">
+    <svg class="bp" viewBox="0 0 300 300" fill="none">
+      <circle class="thin" data-draw cx="150" cy="150" r="120" />
+      <circle class="thin" data-draw cx="150" cy="150" r="4" />
+      <line class="thin" data-draw x1="150" y1="10" x2="150" y2="290" />
+      <line class="thin" data-draw x1="10" y1="150" x2="290" y2="150" />
+      <path class="thin" data-draw d="M150 60 L138 105 L150 96 L162 105 Z" />
+      <text x="150" y="40" fill="#3F7CA6" opacity=".7" font-size="13" text-anchor="middle">N</text>
+      <text x="150" y="285" fill="#3F7CA6" opacity=".55" font-size="11" text-anchor="middle" letter-spacing="1.5">19°26′ N · 99°08′ O</text>
+    </svg>
+  </div>
+  <div class="wrap">
+    <span class="eyebrow reveal">Contacto</span>
+    <h2 class="reveal" data-d="1">Hablemos de<br><em>tu proyecto.</em></h2>
+
+    <div class="contact__links reveal" data-d="2">
+      <a class="biglink" href="mailto:arquitecto@rodrigo-cabrera.com">
+        <small>Correo</small><b>arquitecto@rodrigo-cabrera.com</b><span class="arr">→</span>
+      </a>
+      <a class="biglink" href="tel:+525567832622">
+        <small>Tel / WhatsApp</small><b>+52 55 6783 2622</b><span class="arr">→</span>
+      </a>
+      <a class="biglink" href="https://bigtigermx.github.io/arco-rc/" target="_blank" rel="noopener">
+        <small>Estudio</small><b>ARCO Arquitectura &amp; Construcción</b><span class="arr">→</span>
+      </a>
+    </div>
+
+    <!-- La solicitud va dentro de una hoja: antes los campos flotaban
+         sueltos sobre el fondo y las líneas del plano los cruzaban por
+         encima, que es justo lo que hace que un formulario parezca roto. -->
+    <div class="hoja reveal" data-d="2">
+      <div class="hoja__cab">
+        <span class="hoja__rot">Solicitud de proyecto</span>
+        <span class="hoja__folio">FORM&nbsp;·&nbsp;01</span>
+      </div>
+      <div class="hoja__cuerpo">
+        <form class="contact__form" action="https://formsubmit.co/arquitecto@rodrigo-cabrera.com" method="POST" novalidate>
+          <div class="cf-row">
+            <div class="cf-field">
+              <input id="c-n" name="Nombre" type="text" placeholder=" " required autocomplete="name" maxlength="80">
+              <label for="c-n">Nombre</label>
+            </div>
+            <div class="cf-field">
+              <input id="c-e" name="Correo" type="email" placeholder=" " required autocomplete="email" inputmode="email" maxlength="120">
+              <label for="c-e">Correo</label>
+            </div>
+          </div>
+          <div class="cf-field">
+            <textarea id="c-m" name="Mensaje" rows="4" placeholder=" " required maxlength="1200"></textarea>
+            <label for="c-m">Cuéntame tu proyecto</label>
+          </div>
+          <input type="text" name="_honey" class="cf-trampa" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <!-- Ajustes del servicio de correo para el envío SIN JavaScript (el
+               formulario se manda de verdad, no por fetch). Con JS estos
+               mismos valores viajan en el cuerpo de la petición.
+               _next es la URL publicada, comprobada contra el sitio en vivo:
+               sin ella, quien envíe sin JS acaba en la página genérica del
+               servicio en vez de volver aquí. -->
+          <input type="hidden" name="_subject" value="Nuevo mensaje desde rodrigo-cabrera.com">
+          <input type="hidden" name="_template" value="table">
+          <input type="hidden" name="_captcha" value="false">
+          <input type="hidden" name="_next" value="https://bigtigermx.github.io/rodrigo-cabrera/#contacto">
+          <div class="cf-actions">
+            <button class="btn btn--light" type="submit"><span>Enviar mensaje</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+            <p class="cf-note" role="status" aria-live="polite"></p>
+          </div>
+        </form>
+        <aside class="hoja__lado">
+          <div class="hoja__dato">
+            <span class="hoja__rot">Atención</span>
+            <p>Ciudad de México — con cita previa.</p>
+          </div>
+          <div class="hoja__dato">
+            <span class="hoja__rot">Respuesta</span>
+            <p>Menos de 24 horas.</p>
+          </div>
+          <div class="hoja__dato">
+            <span class="hoja__rot">Directo</span>
+            <p><a href="mailto:arquitecto@rodrigo-cabrera.com">arquitecto@rodrigo-cabrera.com</a></p>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="footer">
+  <!-- Cajetín: la página se cierra con el mismo recurso con que abre. Lo que
+       dice es verdad sobre la lámina, no sobre el negocio. -->
+  <div class="wrap cajetin">
+    <a href="#inicio" class="brand cajetin__marca">
+      <img class="brand__mark" src="assets/img/logo.png" alt="" aria-hidden="true">
+      <span class="brand__txt">Rodrigo Cabrera<small>Arquitecto</small></span>
+    </a>
+
+    <dl class="cajetin__datos">
+      <div><dt>Proyecto</dt><dd>Sitio personal</dd></div>
+      <div><dt>Escala</dt><dd>1:1</dd></div>
+      <div><dt>Lámina</dt><dd>01 / 01</dd></div>
+      <div><dt>Fecha</dt><dd><span class="year">2026</span></dd></div>
+    </dl>
+
+    <nav class="cajetin__nav" aria-label="Pie de página">
+      <a href="#obra">Obra</a>
+      <a href="#vision">Visión</a>
+      <a href="#arquitecto">El arquitecto</a>
+      <a href="#contacto">Contacto</a>
+      <a href="https://bigtigermx.github.io/arco-rc/" target="_blank" rel="noopener">ARCO Arquitectura &amp; Construcción ↗</a>
+    </nav>
+
+    <div class="cajetin__pie">
+      <p>© <span class="year">2026</span> Rodrigo Cabrera · Todos los derechos reservados</p>
+      <a class="cajetin__arriba" href="#inicio">Volver al inicio <span aria-hidden="true">↑</span></a>
+    </div>
+  </div>
+</footer>
+
+<!-- ============ LIGHTBOX ============ -->
+<div class="lightbox" aria-hidden="true">
+  <img alt="">
+  <button class="lb-btn lb-close" aria-label="Cerrar">×</button>
+  <button class="lb-btn lb-prev" aria-label="Anterior">‹</button>
+  <button class="lb-btn lb-next" aria-label="Siguiente">›</button>
+  <div class="lb-cap"></div>
+</div>
+
+<script src="assets/js/main.js?v=8"></script>
+</body>
+</html>
