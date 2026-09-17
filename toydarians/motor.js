@@ -61,27 +61,126 @@
       n.classList.remove('s-rev', 's-caja', 's-dentro');
       n.style.removeProperty('--s-i');
     };
-    var ojoS = new IntersectionObserver(function(es){
-      es.forEach(function(e){
-        if (!e.isIntersecting) return;
-        var n = e.target;
-        n.classList.add('s-dentro');
-        ojoS.unobserve(n);
-        var listo = false;
-        var fin = function(ev){
-          if (listo || (ev && ev.target !== n)) return;
-          listo = true;
-          n.removeEventListener('transitionend', fin);
-          soltar(n);
-        };
-        n.addEventListener('transitionend', fin);
-        /* El plazo existe porque `transitionend` NO dispara si el elemento ya
-           entro en su posicion final. Sin el, justo esos quedarian clavados. */
-        setTimeout(fin, 1400);
-      });
-    }, { rootMargin: '0px 0px -8% 0px', threshold: .08 });
-    document.querySelectorAll('.s-rev').forEach(function(n){ ojoS.observe(n); });
+    /* ══ EL RITMO DEL SCROLL ══════════════════════════════════════════════
+       ⚠ AQUI HABIA UN INTERSECTIONOBSERVER Y ERA EL DEFECTO QUE REPORTO
+       CARLOS: «si bajo rapido no carga en el momento en el que bajo… el
+       chiste es que carguen las opciones al mismo ritmo que el scroll.
+       Basate mas que nada en telefono, porque es donde la gente mas suele
+       bajar rapido.»
+
+       MEDIDO a 390×844, comparando el MISMO punto del scroll bajando rapido
+       y bajando despacio: **48 fichas de la vitrina estaban en opacidad 0
+       yendo rapido y en 1 yendo despacio.** O sea el catalogo entero.
+
+       Son dos latencias que se suman, y ninguna se ve leyendo:
+
+       1 · LA ENTRADA TARDA HASTA 960 ms. La ficha se funde en 400 ms, pero
+           antes espera su escalon: hasta 8 × 70 = 560 ms. Bajando rapido una
+           ficha esta en pantalla unos 100 ms. Nunca le da tiempo de existir.
+
+       2 · EL AVISO LLEGA TARDE. IntersectionObserver no entrega en el cuadro,
+           entrega «cuando el navegador pueda» — y en un telefono a media
+           inercia eso es varios cuadros despues de que la ficha ya paso.
+
+       EL ARREGLO son las dos cosas juntas:
+
+       · Se REVELA POR POSICION, aqui dentro del rAF, contra una linea al 92 %
+         de la pantalla. Es el «pequeño limite» que pidio Carlos y no puede
+         llegar tarde porque corre en el mismo cuadro que lo mide.
+
+       · Se MIDE LA PRISA y se publica como `--ritmo`: 1 cuando vas leyendo,
+         0.06 cuando vienes en caida libre. El CSS multiplica por el la
+         duracion Y el escalon, asi que a toda velocidad las fichas no entran
+         «mas rapido»: entran YA, y todas juntas. Escalonar cuesta tiempo, y
+         el tiempo es justo lo que no hay bajando rapido.
+
+       · El ritmo se SELLA en cada ficha al entrar. Si se dejara leer la
+         variable global, frenar el dedo a media transicion le cambiaria la
+         duracion en pleno vuelo y el navegador reinicia el tiempo: se ve un
+         tiron. Sellada al entrar, cada una termina como empezo.
+
+       El `soltar()` de arriba se conserva TAL CUAL y no es un detalle: sin el,
+       `.s-rev.s-dentro{transform:none}` empata con `.pieza:hover` y la mata. */
+    var raizH = document.documentElement;
+    var CALMA = 700, RAPIDO = 2400, PISO = 0.06, LINEA = 0.92;
+    var pend = [].slice.call(document.querySelectorAll('.s-rev'));
+    var yAnt = window.scrollY, tAnt = performance.now(), vel = 0, prisa = 0, ritmo = 1;
+
+    var entra = function(n, r){
+      /* El sello. Ver el comentario de arriba. */
+      n.style.setProperty('--ritmo', r.toFixed(3));
+      n.classList.add('s-dentro');
+      var listo = false;
+      var fin = function(ev){
+        if (listo || (ev && ev.target !== n)) return;
+        listo = true;
+        n.removeEventListener('transitionend', fin);
+        soltar(n);
+      };
+      n.addEventListener('transitionend', fin);
+      /* El plazo existe porque `transitionend` NO dispara si el elemento ya
+         entro en su posicion final. Sin el, justo esos quedarian clavados.
+         Se acorta con el ritmo: a toda velocidad la transicion dura un
+         parpadeo, y esperar 1.4 s para soltarla dejaria el hover muerto todo
+         ese rato sobre fichas que el visitante ya tiene enfrente. */
+      setTimeout(fin, 200 + 1200 * r);
+    };
+
+    var barrer = function(r){
+      if (!pend.length) return;
+      var linea = window.innerHeight * LINEA, quedan = [];
+      for (var i = 0; i < pend.length; i++) {
+        if (pend[i].getBoundingClientRect().top < linea) entra(pend[i], r);
+        else quedan.push(pend[i]);
+      }
+      pend = quedan;
+    };
+
+    /* La PRIMERA pasada es instantanea: lo que ya quedo arriba de la pantalla
+       —porque alguien llego con un enlace o recargo a media vitrina— nunca se
+       vio entrar, y animar algo que el visitante ya se perdio es puro retraso. */
+    barrer(0);
+
+    (function pulso(ahora){
+      var dt = ahora - tAnt;
+      /* Cada ~8 ms y no cada cuadro: a 120 Hz el delta es tan chico que el
+         redondeo de `scrollY` se vuelve velocidad inventada. */
+      if (dt >= 8) {
+        var y = window.scrollY;
+        vel += (Math.abs(y - yAnt) / (dt / 1000) - vel) * 0.35;
+        yAnt = y; tAnt = ahora;
+        var quiere = vel <= CALMA ? 0
+                   : Math.min(1, (vel - CALMA) / (RAPIDO - CALMA));
+        /* Sube de golpe, baja despacio: al soltar el dedo el scroll sigue por
+           inercia, y si la calma volviera de inmediato las fichas que entran
+           durante la inercia se tomarian medio segundo cada una mientras
+           todavia vuelan. */
+        prisa = quiere > prisa ? quiere : prisa + (quiere - prisa) * 0.10;
+        var r = 1 - prisa * (1 - PISO);
+        /* Solo se escribe cuando de verdad cambio: tocar una custom property
+           invalida estilo en todo el arbol, y hacerlo sesenta veces por segundo
+           con el dedo quieto es bateria tirada. */
+        if (Math.abs(r - ritmo) > 0.004) {
+          ritmo = r;
+          raizH.style.setProperty('--ritmo', r.toFixed(3));
+        }
+        /* La clase es para lo que no se puede expresar multiplicando una
+           duracion: el empujon de 34 px, que a toda velocidad se lee como que
+           la vitrina tiembla. */
+        raizH.classList.toggle('prisa', prisa > 0.5);
+        barrer(r);
+      }
+      requestAnimationFrame(pulso);
+    })(performance.now());
+
+    /* Imagenes y tipografias cambian el alto despues de cargar: una ficha que
+       estaba debajo de la linea puede quedar encima sin que nadie haya hecho
+       scroll, y sin esto se quedaria escondida para siempre. */
+    addEventListener('load', function(){ barrer(0); }, { once: true });
+    addEventListener('resize', function(){ barrer(ritmo); }, { passive: true });
+
     TOY.s.revelados = vistos.size;
+    TOY.s.ritmo = function(){ return ritmo; };   // para poder medirlo desde fuera
   }
   /* ══════════════════ /S ══════════════════ */
 
