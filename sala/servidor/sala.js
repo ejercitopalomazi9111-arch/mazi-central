@@ -391,6 +391,9 @@ export class Sala {
       /* Las neuronas que proponen los agentes, esperando entrar al repo. */
       this.propuestas = await ctx.storage.get('propuestas') || [];
       this.vigilias  = await ctx.storage.get('vigilias')  || {};
+      /* Los mensajes que alguien dejó para más tarde. Carlos: «también que
+         pueda yo programar que mande un mensaje a cierta hora o después». */
+      this.programados = await ctx.storage.get('programados') || [];
       /* El retrato de cada CUENTA. Por cuenta y no por sesión a propósito:
          las sesiones de un agente nacen y mueren todo el día, pero la cara de
          una persona no. Con la clave puesta en el id de sesión, Carlos
@@ -563,6 +566,13 @@ export class Sala {
   async armar(){
     const cuandos = [this._olvidoEn || (ahora() + OLVIDO)];
     for(const v of Object.values(this.vigilias || {})) if(v && v.cuando) cuandos.push(v.cuando);
+    /* ⚠ SIN ESTA LÍNEA UN MENSAJE PROGRAMADO NO SUENA NUNCA. Un Durable Object
+       tiene UNA sola alarma, y `armar()` la pone en lo que venza primero. Si
+       los programados no entran en la cuenta, la alarma se queda puesta en el
+       olvido —a treinta días— y el mensaje de las nueve de la mañana sale el
+       mes que viene. Guardar el mensaje y no armar la alarma se ve idéntico a
+       que funcione: el `POST` contesta bien y el hilo queda limpio. */
+    for(const m of (this.programados || [])) if(m && m.cuando) cuandos.push(m.cuando);
     const cuando = Math.min(...cuandos);
     /* Escribir la alarma escribe en almacenamiento y esto corre en CADA
        petición, así que si la puesta ya sirve no se toca: medio minuto de
@@ -718,6 +728,15 @@ export class Sala {
   }
 
   async alarm(){
+    /* ── LO PROGRAMADO, PRIMERO Y MIDIENDO ────────────────────────────────
+       Va arriba y no pregunta «¿sonó por mí?»: MIDE cuáles ya vencieron. Es la
+       misma lección que está escrita treinta líneas abajo y que costó la sala
+       de Carlos dos veces — con UNA sola alarma compartida entre el olvido, la
+       vigilia y esto, adivinar de quién fue el disparo es como se borró una
+       jornada entera. Un disparo de más cuesta un `get`; adivinar mal cuesta
+       el trabajo de un día. */
+    await this.soltarProgramados();
+
     /* Primero lo que vence antes. La vigilia se revisa SIEMPRE, aunque no
        toque el olvido, porque las dos comparten la única alarma que hay. */
     const seguir = await this.revisarVigilias();
@@ -1308,6 +1327,51 @@ export class Sala {
     this.avisarEscribiendo();
   }
 
+  /* ══════════════════════════════════════════════════════════════════════════
+     LO PROGRAMADO · «que mande un mensaje a cierta hora o después»
+     ──────────────────────────────────────────────────────────────────────────
+     Carlos: «también que pueda yo programar por decir, no sé, que mande un
+     mensaje a cierta hora o después, mamadas así. ¿Por qué? Porque son
+     funciones que yo sí uso, porque pues no siempre está disponible.»
+
+     Vive en el servidor, no en un agente corriendo: ése es el punto. Un
+     recordatorio que depende de que alguien esté conectado no es un
+     recordatorio.
+     ═════════════════════════════════════════════════════════════════════════*/
+
+  /** Entrega lo que ya venció. Devuelve cuántos salieron. */
+  async soltarProgramados(){
+    const lista = this.programados || [];
+    if(!lista.length) return 0;
+    const hoy = ahora();
+    const vencidos = lista.filter(m => m.cuando <= hoy);
+    if(!vencidos.length) return 0;
+
+    /* Se quitan de la lista ANTES de publicarlos, y se guarda. Si se
+       publicaran primero y el worker muriera a media faena, al volver
+       seguirían pendientes y saldrían otra vez — un recordatorio duplicado a
+       las tres de la mañana es peor que ninguno. */
+    this.programados = lista.filter(m => m.cuando > hoy);
+    await this.ctx.storage.put({ programados: this.programados });
+
+    for(const m of vencidos){
+      const quien = this.gente[m.de] || { id: m.de, nombre: m.de, tipo: 'agente', cuenta: 'sala' };
+      const evento = await this.publicar({
+        de: this.tarjeta(quien),
+        a: m.a || null,
+        tipo: 'programado',
+        texto: m.texto,
+        nota: null, adjuntos: [], proyecto: m.proyecto || null,
+      });
+      /* Y si iba dirigido a una silla, la silla contesta. Es la combinación que
+         Carlos va a querer de verdad: «cada mañana pregúntale a Groq qué pasó
+         en la noche». */
+      const silla = this.sillaDestino(evento);
+      if(silla) this.luego(this.responderSilla(silla, evento));
+    }
+    return vencidos.length;
+  }
+
   async publicar(evento){
     evento.id = `e${++this.serie}`;
     evento.ts = ahora();
@@ -1769,6 +1833,83 @@ export class Sala {
       if(silla) this.luego(this.responderSilla(silla, publicado));
 
       return salida;
+    }
+
+    /* ── /programar · dejar un mensaje para más tarde ─────────────────────
+       Se acepta `cuando` (hora absoluta, ms) o `en` (minutos desde ahora).
+       Los dos porque las dos formas son naturales: «a las 9» y «en media
+       hora», y obligar a convertir una en la otra desde el teléfono es pedirle
+       a alguien que haga cuentas para poner un recordatorio. */
+    if(pedido.method === 'POST' && ruta === 'programar'){
+      const c = await pedido.json().catch(() => ({}));
+      const de = String(c.de || '').slice(0, 60);
+      if(!de || !this.gente[de]){
+        return Response.json({ error:'Hay que entrar a la sala antes de programar nada.' },
+                             { status:400 });
+      }
+      const texto = String(c.texto || '').trim().slice(0, TOPE_TEXTO);
+      if(!texto) return Response.json({ error:'Falta el texto.' }, { status:400 });
+
+      let cuando = null;
+      if(c.en !== undefined && c.en !== null && c.en !== ''){
+        const min = Number(c.en);
+        if(!isFinite(min) || min <= 0){
+          return Response.json({ error:'`en` son minutos desde ahora, y tiene que ser mayor que cero.' },
+                               { status:400 });
+        }
+        cuando = ahora() + min * 60_000;
+      } else if(c.cuando){
+        /* Se acepta número (ms) o texto ISO. Un `Date` inválido da NaN y NaN
+           pasa calladito cualquier comparación —sería un mensaje que nunca
+           suena y nadie sabría por qué—, así que se comprueba. */
+        const t = typeof c.cuando === 'number' ? c.cuando : Date.parse(String(c.cuando));
+        if(!isFinite(t)){
+          return Response.json({ error:'No entendí `cuando`. Manda milisegundos o una fecha ISO.' },
+                               { status:400 });
+        }
+        cuando = t;
+      } else {
+        return Response.json({ error:'Falta `cuando` (hora) o `en` (minutos).' }, { status:400 });
+      }
+
+      if(cuando <= ahora()){
+        return Response.json({ error:'Esa hora ya pasó.' }, { status:400 });
+      }
+
+      const a = c.a ? String(c.a).slice(0, 60) : null;
+      if(a && !a.startsWith('@') && !this.gente[a] && !this.sillaDestino({ a })){
+        return Response.json({ error:`No hay nadie en la sala con el id "${a}".` }, { status:400 });
+      }
+
+      const cita = { id:`p${++this.serie}`, de, a, texto, cuando,
+                     proyecto: c.proyecto ? String(c.proyecto).slice(0,60) : null,
+                     puesto: ahora() };
+      this.programados = [...(this.programados || []), cita]
+        .sort((x, y) => x.cuando - y.cuando);
+      await this.ctx.storage.put({ programados: this.programados, serie: this.serie });
+      /* Rearmar es OBLIGATORIO aquí: si no, la alarma se queda donde estaba
+         —probablemente en el olvido, a treinta días— y esto no suena. */
+      await this.armar();
+      return Response.json({ bien:true, cita, faltan: cuando - ahora() });
+    }
+
+    /* ── /programados · qué hay pendiente ─────────────────────────────────── */
+    if(pedido.method === 'GET' && ruta === 'programados'){
+      return Response.json({ bien:true, programados: this.programados || [] });
+    }
+
+    /* ── /cancelar · quitar uno ───────────────────────────────────────────── */
+    if(pedido.method === 'POST' && ruta === 'cancelar'){
+      const c = await pedido.json().catch(() => ({}));
+      const id = String(c.id || '');
+      const antes = (this.programados || []).length;
+      this.programados = (this.programados || []).filter(m => m.id !== id);
+      if(this.programados.length === antes){
+        return Response.json({ error:`No hay nada programado con el id "${id}".` }, { status:404 });
+      }
+      await this.ctx.storage.put({ programados: this.programados });
+      await this.armar();
+      return Response.json({ bien:true, quedan: this.programados.length });
     }
 
     /* ── /motores · quién puede sentarse y quién no ───────────────────────

@@ -632,6 +632,91 @@ console.log('\n· El freno, con el valor de verdad');
      r3.tope === null || r3.tope === Infinity || !isFinite(r3.tope), String(r3.tope));
 }
 
+/* ══ 11-quater · LO PROGRAMADO ═══════════════════════════════════════════ */
+console.log('\n· Mensajes programados');
+{
+  const s = nueva();
+  await entrar(s, 'carlos', 'humano');
+
+  /* ── las dos formas de decir cuándo ───────────────────────────────────── */
+  const [c1, r1] = await leer(await pedir(s, 'POST', 'programar',
+    { de:'carlos', texto:'acuérdate del pago', en: 30 }));
+  ok('se programa «en N minutos»', c1 === 200 && r1.cita.cuando > Date.now(), JSON.stringify(r1).slice(0,90));
+  const [c2, r2] = await leer(await pedir(s, 'POST', 'programar',
+    { de:'carlos', texto:'junta', cuando: new Date(Date.now() + 7200_000).toISOString() }));
+  ok('y se programa con una fecha ISO', c2 === 200 && r2.cita.cuando > Date.now());
+
+  /* ── lo que NO se acepta ──────────────────────────────────────────────── */
+  const [c3, r3] = await leer(await pedir(s, 'POST', 'programar',
+    { de:'carlos', texto:'tarde', cuando: Date.now() - 1000 }));
+  ok('una hora que ya pasó se rechaza', c3 === 400 && /ya pas/i.test(r3.error));
+  const [c4, r4] = await leer(await pedir(s, 'POST', 'programar',
+    { de:'carlos', texto:'x', cuando:'el jueves que viene tipo tarde' }));
+  /* ⚠ SIN ESTA COMPROBACIÓN, `Date.parse` devuelve NaN, NaN pasa calladito
+     cualquier comparación, y el mensaje NUNCA suena. El `POST` habría
+     contestado 200 y nadie se enteraría hasta que el recordatorio no llegó. */
+  ok('una fecha que no se entiende se rechaza en vez de guardar un NaN',
+     c4 === 400 && /no entend/i.test(r4.error), JSON.stringify(r4));
+  const [c5] = await leer(await pedir(s, 'POST', 'programar',
+    { de:'fantasma', texto:'x', en:5 }));
+  ok('no se puede programar sin haber entrado', c5 === 400);
+
+  /* ── verlos y cancelarlos ─────────────────────────────────────────────── */
+  const [, r6] = await leer(await pedir(s, 'GET', 'programados'));
+  ok('se pueden ver los pendientes', r6.programados.length === 2);
+  ok('y salen ordenados por hora, el más cercano primero',
+     r6.programados[0].cuando <= r6.programados[1].cuando);
+  const [c7] = await leer(await pedir(s, 'POST', 'cancelar', { id: r1.cita.id }));
+  const [, r8] = await leer(await pedir(s, 'GET', 'programados'));
+  ok('se puede cancelar uno', c7 === 200 && r8.programados.length === 1);
+  const [c9] = await leer(await pedir(s, 'POST', 'cancelar', { id:'p-que-no-existe' }));
+  ok('cancelar algo que no existe lo dice, no finge', c9 === 404);
+}
+
+{
+  /* ── QUE DE VERDAD SALGA CUANDO TOCA ──────────────────────────────────── */
+  const s = nueva();
+  await entrar(s, 'carlos', 'humano');
+  await leer(await pedir(s, 'POST', 'programar',
+    { de:'carlos', texto:'ya es hora', en: 0.001 }));   // 60 ms
+  await new Promise(r => setTimeout(r, 120));
+  await s.alarm();
+  await asentar();
+  const [, h] = await leer(await pedir(s, 'GET', 'hilo'));
+  ok('cuando suena la alarma, el mensaje programado SALE al hilo',
+     h.hilo.some(e => e.tipo === 'programado' && e.texto === 'ya es hora'),
+     JSON.stringify(h.hilo.map(e => e.tipo)));
+  const [, r] = await leer(await pedir(s, 'GET', 'programados'));
+  ok('y deja de estar pendiente', r.programados.length === 0);
+
+  /* ⚠ LO QUE MÁS IMPORTA: que no salga DOS veces. Se quita de la lista ANTES
+     de publicarlo justo por esto — un recordatorio duplicado a las tres de la
+     mañana es peor que ninguno. */
+  await s.alarm();
+  await asentar();
+  const [, h2] = await leer(await pedir(s, 'GET', 'hilo'));
+  ok('y NO se repite si la alarma vuelve a sonar',
+     h2.hilo.filter(e => e.tipo === 'programado').length === 1,
+     String(h2.hilo.filter(e => e.tipo === 'programado').length));
+}
+
+{
+  /* ── la alarma tiene que APUNTAR al programado ────────────────────────── */
+  const ctx = hacerCtx();
+  const s = new Sala(ctx, { ESPERA_MS: 250 });
+  await entrar(s, 'carlos', 'humano');
+  await leer(await pedir(s, 'POST', 'programar', { de:'carlos', texto:'x', en: 10 }));
+  const puesta = await ctx.storage.getAlarm();
+  /* ⚠ SIN ESTO EL MENSAJE SE GUARDA Y NO SUENA NUNCA, y se ve igual que si
+     funcionara: el POST contesta bien y el hilo queda limpio. Un Durable
+     Object tiene UNA alarma; si `armar()` no cuenta a los programados, se
+     queda puesta en el olvido —treinta días— y el recordatorio de dentro de
+     diez minutos sale el mes que viene. */
+  ok('programar DEJA LA ALARMA puesta para dentro de ~10 min, no a 30 días',
+     puesta !== null && puesta - Date.now() < 11 * 60_000,
+     'faltan ' + Math.round(((puesta || 0) - Date.now()) / 60_000) + ' min');
+}
+
 /* ══ 11-ter · LAS SILLAS · IAs que contestan solas ════════════════════════ */
 console.log('\n· Las sillas');
 {
