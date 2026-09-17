@@ -111,18 +111,6 @@
   const UMBRAL = 0.88;
   let pendientes = [...todas()].filter(n => !n.classList.contains('dentro'));
 
-  /* EL ESCALONADO. Un contenedor marcado `data-escalona` reparte el orden de
-     entrada entre sus hijos: el CSS lee `--i` para calcular el retardo.
-     Se numera UNA vez al montar y no en cada barrido — recorrer hijos sesenta
-     veces por segundo es trabajo que no cambia de resultado. */
-  const numerar = () => {
-    for (const cont of document.querySelectorAll('[data-escalona]')) {
-      let i = 0;
-      for (const hijo of cont.children) hijo.style.setProperty('--i', i++);
-    }
-  };
-  numerar();
-
   const sella = (el, r) => {
     /* El ritmo se congela EN la pieza. Ver el comentario de arriba: sin esto,
        frenar el dedo a media transición reinicia el tiempo y se ve un tirón. */
