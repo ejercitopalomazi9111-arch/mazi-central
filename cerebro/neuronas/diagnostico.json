@@ -925,6 +925,46 @@
       "vecinas": [
         "el-motor-sabia-hacerlo-y-nadie-podia-hacerlo"
       ]
+    },
+    {
+      "id": "el-blanco-de-soltar-era-del-once-por-ciento",
+      "titulo": "«Deslizar no es fácil» era un blanco del 11 % al final de 200 px",
+      "gravedad": "alta",
+      "sintoma": "Carlos: «sigue muy roto y deslizar no es fácil».",
+      "causa": "La única zona donde valía soltar una carta medía 93 px de alto —el 11 % de una pantalla de 844— y el dedo recorría 200 px para llegar. La franja muerta entre esa zona y la mano medía 39 px: más ancha que un dedo. Soltar ahí no hacía nada Y NO DECÍA NADA. Encima el recuadro de destino se encendía desde el primer píxel del arrastre y seguía encendido hasta soltar, así que decía «suéltala aquí» también mientras ibas a fallar.",
+      "porque": "El destino se escribió como «el elemento de la mesa», que es lo que se lee natural en el código, y nadie midió cuánto ocupa eso en un teléfono.",
+      "arreglo": "Vale soltar en cualquier punto por encima de la mano: si soltaste la carta arriba, querías jugarla. El blanco pasa de 93 px a unos 330. El recuadro se enciende sólo donde cuenta, y fallar lo dice.",
+      "comoCazarlo": "Ante un «no es fácil», medir el blanco en píxeles y el recorrido en píxeles antes de opinar. Y probar soltar en varios sitios, no sólo en el centro.",
+      "consejo": "Un indicador que siempre dice que sí no es un indicador: no se puede aprender de él dónde sí funciona.",
+      "senales": [
+        "no es fácil",
+        "no me responde",
+        "se regresa la carta"
+      ],
+      "salioDe": "Guerra de Puercos, 18 de septiembre de 2026.",
+      "vecinas": [
+        "la-prueba-de-un-gesto-no-mide-el-resultado-del-gesto"
+      ]
+    },
+    {
+      "id": "reasignar-cv-width-borra-el-lienzo",
+      "titulo": "Asignar cv.width borra el lienzo aunque sea el mismo número",
+      "gravedad": "alta",
+      "sintoma": "Carlos: «cuando crisol está procesando la pantalla parpadea entre las cosas que están y una sala vacía».",
+      "causa": "Cuatro eslabones. El letrero de arriba se reescribe cada 500 ms con celdas, grados y bares; con números largos se iba a tres renglones y la barra pasaba de 74 px de alto a 89; la zona del lienzo es `flex:1 1 auto` y encogía; el ResizeObserver disparaba `medir()`, que reasignaba `cv.width`. Y asignar `cv.width` borra el lienzo aunque el valor sea idéntico.",
+      "porque": "`medir()` se escribió para el caso en que el tamaño CAMBIA, y se llama también cuando no cambia.",
+      "arreglo": "Comparar antes de asignar, y además darle alto fijo y cifras de ancho fijo al letrero para que no mueva la barra. Los dos eslabones, porque tapar uno deja el defecto a una línea de volver.",
+      "comoCazarlo": "Si algo parpadea «cuando trabaja», sospechar de lo que se reescribe periódicamente y de quién observa el tamaño. Medir el alto del elemento con textos de distinto largo.",
+      "consejo": "Aparecía justo «cuando está procesando» porque son las dos cosas a la vez: los números se mueven Y los cuadros tardan, así que el cuadro en blanco se queda puesto lo bastante para verse.",
+      "senales": [
+        "parpadea",
+        "se ve y se deja de ver",
+        "se pone en negro un instante"
+      ],
+      "salioDe": "CRISOL, 18 de septiembre de 2026.",
+      "vecinas": [
+        "el-blanco-de-soltar-era-del-once-por-ciento"
+      ]
     }
   ]
 }

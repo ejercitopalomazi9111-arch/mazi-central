@@ -40,7 +40,16 @@ body{
   background:var(--sup);flex:0 0 auto;
 }
 #barra b{font-size:15px;letter-spacing:.06em}
-#datos{margin-left:auto;font-size:11.5px;color:#9C93AB;text-align:right;line-height:1.3}
+/* ⚠ ALTO FIJO Y SIN REACOMODO. Este letrero cambia cada 500 ms, y si al
+   cambiar mueve el alto de la barra, arrastra a `#zona` y dispara el
+   ResizeObserver: ésa es la mitad de arriba del parpadeo. Dos renglones
+   reservados, sin partir palabras, y cifras de ancho fijo para que «22°» y
+   «1498°» ocupen lo mismo y los números no bailen al leerse. */
+#datos{
+  margin-left:auto;font-size:11.5px;color:#9C93AB;text-align:right;
+  line-height:1.3;height:2.6em;white-space:nowrap;overflow:hidden;
+  font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;
+}
 .icono{
   border:0;background:var(--sup2);color:var(--hueso);border-radius:11px;
   width:44px;height:44px;font-size:17px;cursor:pointer;flex:0 0 auto;
@@ -348,7 +357,29 @@ function limitaVista(){
 function medir(){
   const z = document.getElementById('zona').getBoundingClientRect();
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  cv.width = Math.round(z.width * dpr); cv.height = Math.round(z.height * dpr);
+  const w = Math.round(z.width * dpr), h = Math.round(z.height * dpr);
+  /* ⚠ ASIGNAR cv.width BORRA EL LIENZO, AUNQUE SEA EL MISMO NÚMERO.
+     Aquí estaba el parpadeo que reportó Carlos: «cuando crisol está
+     procesando la pantalla parpadea entre las cosas que están y una sala
+     vacía». No era la física ni el doble búfer: era esta línea corriendo
+     sola muchas veces por segundo.
+
+     La cadena completa, medida y no supuesta:
+       · el letrero de arriba se reescribe cada 500 ms con celdas, grados y
+         bares;
+       · con números largos ese texto se va a TRES renglones y la barra pasa
+         de 74 px de alto a 89;
+       · `#zona` es `flex:1 1 auto`, así que encoge — y el ResizeObserver que
+         vigila `#zona` dispara `medir()`;
+       · `medir()` reasigna `cv.width` y el navegador deja el lienzo en negro.
+     Con el mundo lleno, esos números bailan cada medio segundo, y a 13 fps el
+     cuadro en blanco se queda puesto lo suficiente para verse. Por eso el
+     parpadeo aparecía justo «cuando está procesando»: es cuando los números
+     se mueven y cuando los cuadros tardan.
+
+     Comparar antes de asignar lo mata: un redimensionado que no redimensiona
+     no toca el lienzo. */
+  if(cv.width !== w || cv.height !== h){ cv.width = w; cv.height = h; }
   cv.style.width = z.width + 'px'; cv.style.height = z.height + 'px';
   if(M){ limitaVista(); return; }
   const nuevo = new Mundo(an, al);
@@ -1513,7 +1544,7 @@ window.CRISOL = { M, EL, IDX, get mundo(){ return M; }, guardado, vista, zoom, a
                   /* para las pruebas de pantalla: la lista de armas puestas y
                      el modo, que es lo único que no se ve leyendo el lienzo */
                   get pistolas(){ return pistolas; }, get modo(){ return modo; },
-                  get SER(){ return SER; }, get HOR(){ return HOR; },
+                  get SER(){ return SER; }, get HOR(){ return HOR; }, medir,
                   PIEZAS };
 </script>
 </body>
