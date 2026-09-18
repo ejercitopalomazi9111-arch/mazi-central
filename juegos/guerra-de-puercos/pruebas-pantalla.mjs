@@ -871,6 +871,23 @@ console.log('\n── Deslizar la carta a la mesa ──');
      Lo que hay que probar es la FRANJA MUERTA de antes: el hueco entre el
      borde de abajo de la mesa y el borde de arriba de la mano. Ahí es donde
      soltar no hacía nada, y ahí es donde tiene que funcionar ahora. */
+  /* Sondea hasta que la jugada se resuelva —la mano baja o sale el resumen—
+     o hasta el tope. Devuelve lo que vio, haya pasado o no. */
+  const esperarJugada = async (manoAntes) => {
+    const tope = Date.now() + 8000;
+    let d;
+    do {
+      d = await page.evaluate(() => ({
+        mano: document.querySelectorAll('#mMano .carta').length,
+        seguir: !!(document.querySelector('#bSeguir') && document.querySelector('#bSeguir').offsetParent),
+        aviso: (document.querySelector('#mAviso')||{}).textContent || '',
+      }));
+      if(d.mano < manoAntes || d.seguir) return d;
+      await page.waitForTimeout(120);
+    } while(Date.now() < tope);
+    return d;
+  };
+
   const arrastrarA = async (donde) => {
     const st = await page.evaluate((d) => {
       const c = [...document.querySelectorAll('#mMano .carta')].find(x => !x.dataset.esp);
@@ -891,14 +908,22 @@ console.log('\n── Deslizar la carta a la mesa ──');
     for(let i=1;i<=8;i++)
       await page.mouse.move(st.cx + (st.dx-st.cx)*i/8, st.cy + (st.dy-st.cy)*i/8);
     await page.mouse.up();
-    await page.waitForTimeout(400);
-    const d = await page.evaluate(() => ({
-      mano: document.querySelectorAll('#mMano .carta').length,
-      seguir: !!(document.querySelector('#bSeguir') && document.querySelector('#bSeguir').offsetParent),
-      aviso: (document.querySelector('#mAviso')||{}).textContent || '',
-    }));
+    /* ⚠ SE ESPERA LA CONDICIÓN, NO EL RELOJ. Con un `waitForTimeout(400)` fijo
+       esta prueba salía intermitente: 4 rojas de 12 corridas, y las 12 sola en
+       la máquina. No era el juego — era que con la máquina cargada la ronda
+       tarda más de 400 ms en resolverse y la prueba miraba antes de tiempo.
+       Un sondeo con tope dice lo mismo cuando va rápido y no miente cuando va
+       lento. La regla general: si una prueba depende de cuánto tarda el
+       aparato, mide el aparato, no el programa. */
+    const d = await esperarJugada(st.mano);
     const jugo = d.mano < st.mano || d.seguir;
-    if(d.seguir){ await page.click('#bSeguir'); await page.waitForTimeout(350); }
+    if(d.seguir){
+      await page.click('#bSeguir');
+      await page.waitForFunction(() => {
+        const b = document.querySelector('#bSeguir');
+        return !b || !b.offsetParent;
+      }, null, { timeout: 8000 }).catch(()=>{});
+    }
     return { jugo, aviso:d.aviso, franja:st.franja };
   };
 
