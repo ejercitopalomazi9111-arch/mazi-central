@@ -1894,6 +1894,10 @@ const esc = (t) => String(t == null ? '' : t)
   .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
 let sala = null, yo = null, gente = {}, hilo = [], ws = null, demo = false;
+/* Las sillas que NO se pueden sentar porque les falta su llave. Las dice
+   `/motores`, y la mesa nunca lo llamaba: por eso desde el teléfono «no está
+   ni Gemini ni groq» y ni una pista de por qué. */
+let sillasApagadas = [];
 /* Los retratos de las cuentas, `cuenta → data:image/…`. Llegan en el `hola` y
    se pisan enteros cuando alguien cambia el suyo. */
 let retratos = {};
@@ -1984,6 +1988,18 @@ function recibirEscribiendo(ids){
   if(nuevos.length) vibrar([22]);
 }
 
+/* Quién PODRÍA sentarse y no puede. Un fallo aquí no rompe nada: la lista se
+   queda vacía y la mesa se ve como antes. */
+async function cargarMotores(){
+  try{
+    const r = await fetch(`${SERVIDOR}/api/sala/${sala}/motores`, { headers: conLlave() });
+    if(!r.ok) return;
+    const d = await r.json();
+    sillasApagadas = d.apagados || [];
+    pintarGente();
+  }catch(e){ /* sin internet la mesa ya tiene problemas más grandes */ }
+}
+
 function pintarGente(){
   const lista = Object.values(gente);
 
@@ -2042,7 +2058,23 @@ function pintarGente(){
            `</span></button>`;
   };
 
-  $('gente').innerHTML = lista.length ? orden.map(casa => {
+  /* Las sillas APAGADAS se pintan aparte y no como gente: no están en la
+     sala, pero existen y se prenden en treinta segundos. Antes no se decían
+     en ningún lado —sólo las sabía `/motores`, que la mesa nunca llamaba— y
+     desde el teléfono eso se veía como «no está ni Gemini ni groq», sin más
+     pista. Una silla apagada y una silla rota se ven igual: la diferencia es
+     lo único que hay que enseñar. */
+  const apagadas = sillasApagadas.length
+    ? `<div class="casa-tit" style="color:var(--tenue)">Sillas apagadas — ` +
+      `${sillasApagadas.length}</div>` +
+      sillasApagadas.map(m =>
+        `<span class="quien" style="opacity:.62"><span class="quien-txt">` +
+        `<span class="nom-quien">${esc(m.nombre)} · apagada</span>` +
+        `<span class="quien-sub">Le falta ${esc(m.falta)} — ${esc(m.comoPrenderlo || '')}` +
+        `</span></span></span>`).join('')
+    : '';
+
+  $('gente').innerHTML = (lista.length ? orden.map(casa => {
     const suyos = casas.get(casa);
     const color = tonoDe(credencial(suyos[0]));
     const nombre = casa === mia ? 'Tu casa' : `Casa de ${casa}`;
@@ -2050,7 +2082,7 @@ function pintarGente(){
            `${esc(nombre)} — ${suyos.length}</div>` +
            suyos.map(ficha).join('');
   }).join('') : '<span class="quien"><span class="quien-txt">' +
-    '<span class="nom-quien">Nadie más todavía</span></span></span>';
+    '<span class="nom-quien">Nadie más todavía</span></span></span>') + apagadas;
 
   /* El número al lado del icono: CUÁNTOS ESTÁN EN LA SALA, no cuántos están
      despiertos. Se intentó lo segundo y salía vacío con cuatro adentro —
@@ -3754,6 +3786,9 @@ async function entrar(codigo, nombre){
 
   const h = await (await fetch(`${base}/hilo`, { headers: conLlave() })).json();
   hilo = h.hilo || []; gente = h.gente || {};
+  /* Se pide ANTES de pintar y sin `await` bloqueante: si tarda o falla, la
+     mesa se pinta igual y las apagadas aparecen en el siguiente repintado. */
+  cargarMotores();
   pintarGente(); pintarHilo();
   /* `yoSoy` lo dice el SERVIDOR a partir de la llave, no el navegador: es el
      único que sabe de quién es. Por eso el aviso se pinta aquí y no al cargar. */

@@ -965,6 +965,27 @@
       "vecinas": [
         "el-blanco-de-soltar-era-del-once-por-ciento"
       ]
+    },
+    {
+      "id": "para-aparecer-habia-que-hablarle",
+      "titulo": "Las sillas no salían en la mesa: para aparecer había que hablarles, y para hablarles había que aparecer",
+      "gravedad": "alta",
+      "sintoma": "Carlos: «ayúdame porque no está ni Gemini ni groq». En la mesa no aparecían por ningún lado y el menú de destinatario no las ofrecía.",
+      "causa": "Dos piezas correctas cada una por su cuenta. `sentar()` metía la silla al censo la primera vez que alguien le hablaba —para no pedirle a Carlos que la diera de alta—, y la mesa arma el menú de «¿a quién le hablas?» leyendo el censo. O sea: para entrar al censo había que hablarle, y para hablarle había que escogerla del menú que se arma con el censo. Encima el worker no tenía NINGUNA llave de modelo puesta, y `poner-llaves.sh` decía en su encabezado que las de modelo «NO van aquí… el worker no las usa» — cierto antes de que existieran las sillas, falso desde ese día.",
+      "porque": "«Se sienta sola cuando le hablan» es perezoso y suena bien, pero sólo funciona si hay una vía de hablarle que no dependa del censo. Desde el teléfono no la hay.",
+      "arreglo": "`sentarSillasVivas()` al entrar a `fetch()`: toda silla con llave está en el censo antes de que nadie diga nada, y la que perdió su llave SALE (una silla de adorno que no contesta es peor que no tenerla). El 400 de `/decir` pasó a nombrar la silla, el secreto que le falta y dónde se pone. Y la mesa llama a `/motores` y pinta las apagadas.",
+      "comoCazarlo": "Preguntar por el censo ANTES de hablarle a nadie. Leyendo el código no salta: las dos piezas están a cuatrocientas líneas de distancia.",
+      "consejo": "Cuando algo «no aparece», preguntar de dónde sale la lista y qué mete cosas en ella. Si la única vía de entrar pasa por la propia lista, es un círculo y no un bug de pintado.",
+      "senales": [
+        "no está",
+        "no aparece",
+        "no sale en la lista",
+        "no lo puedo escoger"
+      ],
+      "salioDe": "La Sala, 18 de septiembre de 2026.",
+      "vecinas": [
+        "el-apunte-que-avisa-de-estados-viejos-y-esta-viejo"
+      ]
     }
   ]
 }
