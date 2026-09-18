@@ -1961,7 +1961,14 @@ const INSTITUCIONES = {
     compuesta: { logo:'fadori/logo-fadori.png', lema:'Proyecto Sin Filas · Instituto Rembrandt',
                  clase:'fadori' },
     pie:'Fadori · Proyecto Sin Filas · Instituto Rembrandt de Querétaro',
-    agua:{ logo:'fadori/logo-fadori.png', ancho:104,
+    /* ⚠ 165 mm Y NO 104, y el número salió MEDIDO por la prueba, no a ojo.
+       Lo que tiene que quedar parejo entre las cinco marcas de agua no es el
+       ancho declarado sino la TINTA que cae en el papel: el logo de Fadori es
+       apaisado —la hamburguesa más la palabra— así que al mismo ancho pintaba
+       189 px de alto contra los 290-322 de las otras. Se veía un tercio más
+       chica. Es la misma lección que ya estaba escrita para la estrella de
+       GERALDMED, y volvió a aparecer con el primer logo nuevo. */
+    agua:{ logo:'fadori/logo-fadori.png', ancho:165,
            leyenda:'FADORI · PROYECTO SIN FILAS' },
     tinta:'#2E1B10', acento:'#C2410C',
     tope:40, fondo:30,
@@ -2454,6 +2461,14 @@ function armaHoja(f, primera){
     if(f.agua === 'paloma' || f.agua === 'solo'){
       const p = document.createElement('img');
       p.src = marca.logo; p.alt = '';
+      /* ⚠ DE QUIÉN ES LA MARCA, GUARDADO APARTE. `oscurecerAgua` hornea la
+         imagen en un lienzo y le reemplaza el `src` por un `data:`, así que
+         después del horneado NO HAY FORMA de saber qué logo salió en la hoja
+         — ni mirando el DOM, ni desde una prueba, ni depurando a mano. Cuatro
+         pruebas de impresión llevaban tiempo en rojo por esto y NO era que la
+         marca de agua estuviera mal: estaba bien y no se podía comprobar.
+         Un atributo con la ruta original y se acabó. */
+      p.dataset.de = marca.logo;
       p.style.width = marca.ancho + 'mm'; p.style.transform = 'rotate(-21deg)';
       p.style.opacity = (f.opacidad/100);
       /* ⚠ AQUÍ IBA `filter: grayscale(1) brightness(.35)` Y SALÍA UN RECUADRO

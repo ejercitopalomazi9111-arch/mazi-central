@@ -829,6 +829,27 @@
         "la-prueba-mide-despues-de-que-aquello-murio",
         "pruebas-que-no-prueban-nada"
       ]
+    },
+    {
+      "id": "la-prueba-no-puede-ver-lo-que-el-codigo-transforma",
+      "titulo": "La prueba compara contra algo que el código ya transformó",
+      "gravedad": "alta",
+      "sintoma": "Cuatro pruebas llevan tiempo en rojo, la función está perfecta, y cada rojo nuevo se suma sin que nadie los mire.",
+      "causa": "El código cambia el dato ANTES de que la prueba lo lea. Aquí: la marca de agua se hornea en un lienzo —para esquivar un recuadro negro del PDF de Safari— y eso reemplaza el `src` por un `data:image/png;base64,…`. La prueba comparaba ese `data:` contra la ruta del archivo. No podía salir bien nunca.",
+      "porque": "La transformación se agregó después de la prueba, por una razón buena, y nadie volvió a mirar qué dejaba de ser legible.",
+      "arreglo": "Que el código GUARDE de dónde vino, en un atributo aparte, y la prueba lea eso. No es un parche para la prueba: después del horneado tampoco un humano podía saber qué logo salió en la hoja.",
+      "comoCazarlo": "Cuando varias pruebas de la misma familia fallan a la vez y la función se ve bien en pantalla, sospechar de la LECTURA antes que del comportamiento. Mirar el valor que recibe la prueba, entero.",
+      "consejo": "Unos rojos permanentes son peores que ninguna prueba: enseñan a no mirar el marcador. Y en cuanto se arreglaron, la quinta prueba de la misma familia cazó de verdad un defecto mío — la marca nueva pintaba 189 px de tinta contra los 290-322 de las otras.",
+      "senales": [
+        "esa prueba siempre ha estado en rojo",
+        "pero si funciona",
+        "trae un data: en vez de la ruta"
+      ],
+      "salioDe": "Reportes, las marcas de agua, 18 de septiembre de 2026.",
+      "vecinas": [
+        "pruebas-que-no-prueban-nada",
+        "preguntarle-a-quien-camina-donde-acabo"
+      ]
     }
   ]
 }
