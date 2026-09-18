@@ -279,6 +279,7 @@ input[type=range]{flex:1 1 90px;min-width:80px;accent-color:var(--violeta);heigh
     <button class="icono" id="bGrav" aria-label="Gravedad" title="Gravedad: global, por zona, por objeto y puntos que atraen o repelen">🌍</button>
     <button class="icono" id="bSolda" aria-label="Soldar estructura" title="Soldar: pinta encima lo que quieras que sea UNA pieza. Vuelve a tocarlo con el botón para despegarlo">🔗</button>
     <button class="icono" id="bNido" aria-label="Poner un hormiguero" title="Hormiguero: toca para poner un nido. Vuelve a tocar el botón para cambiar de raza">🐜</button>
+    <button class="icono" id="bSer" aria-label="Poner una personita" title="Personitas: toca para soltar una. Vuelve a tocar el botón para cambiar entre persona y bicho">🚶</button>
     <button class="icono on" id="bRigido" aria-label="Cuerpos rígidos" title="Cuerpos rígidos: lo que está pegado cae junto. Apágalo y vuelve a ser grano por grano">🧱</button>
     <button class="icono" id="bMas" aria-label="Acercar">＋</button>
     <button class="icono" id="bMenos" aria-label="Alejar">－</button>
@@ -290,6 +291,7 @@ input[type=range]{flex:1 1 90px;min-width:80px;accent-color:var(--violeta);heigh
 <script type="module">
 import { Mundo, IDS, IDX, EL, VACIO, AMBIENTE } from './motor.js';
 import { instalaHormigas, RAZAS, NOMBRES } from './hormigas.js';
+import { instalaVida } from './vida.js';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    LA PANTALLA
@@ -314,6 +316,9 @@ const $ = id => document.getElementById(id);
 const SALA_AN = 320, SALA_AL = 480;
 let M, img, datos, an = SALA_AN, al = SALA_AL;
 let HOR = null;                       /* la colonia de hormigas */
+let SER = null;                       /* las personitas y los bichos */
+let quienSer = 'persona';             /* cuál se suelta al tocar */
+let serPuesto = false;
 let razaNido = 'negra';               /* cuál se suelta al tocar */
 let nidoPuesto = false;               /* un nido por trazo, no uno por celda */
 let lienzoMundo = null, ctxMundo = null;
@@ -341,6 +346,8 @@ function medir(){
   /* Las hormigas se cuelgan del mundo desde fuera: si `hormigas.js` no
      cargara, todo lo demás seguiría igual. */
   HOR = instalaHormigas(M);
+  /* las personitas y los bichos, también colgados desde fuera */
+  SER = instalaVida(M);
   /* El mundo se dibuja completo aquí, y la pantalla sólo recorta. Al girar el
      teléfono no se pierde nada porque el mundo no cambia de tamaño: cambia la
      ventana. */
@@ -488,7 +495,64 @@ function pinta(){
   const anVis = (cv.width / dpr) / vista.esc, alVis = (cv.height / dpr) / vista.esc;
   ctx.drawImage(lienzoMundo, vista.x, vista.y, anVis, alVis,
                 0, 0, cv.width, cv.height);
+  pintaSeres(dpr);
   pintaFlechas();
+}
+
+/* ── LAS PERSONITAS ───────────────────────────────────────────────────────
+   ⚠ ÉSTAS NO SE PINTAN EN LOS PÍXELES DEL MUNDO, y es la diferencia con las
+   hormigas. Una hormiga ES una casilla; un monigote son huesos con
+   articulaciones a media casilla de precisión, y metido en la rejilla se
+   convertiría en una mancha de cinco píxeles. Van sobre el lienzo de la
+   VENTANA, con líneas de verdad, y por eso hay que pasar sus coordenadas de
+   celdas a píxeles de pantalla a mano.
+
+   `postura()` ya devuelve el esqueleto entero —caderas, hombros, cuello,
+   cabeza, dos o cuatro patas, brazos y dónde va lo que carga—, así que aquí
+   no se decide ninguna pose: sólo se traza lo que el módulo calculó. */
+function pintaSeres(dpr){
+  if(!SER || !SER.seres.length) return;
+  const e = vista.esc * dpr;
+  const aX = (wx) => (wx - vista.x) * e;
+  const aY = (wy) => (wy - vista.y) * e;
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  for(const s of SER.seres){
+    const P = SER.postura(s);
+    /* el grosor del trazo va con la talla Y con el zoom: si fuera fijo, de
+       lejos serían garabatos gordos y de cerca alambres */
+    const gr = Math.max(1.1, P.T * e * 0.30);
+    /* el que sufre se pone rojo, el muerto gris. Sale de `mal`, que ya mezcla
+       quemadura, dolor, choque y salud. */
+    const mal = P.mal;
+    const piel = P.muerto ? '#6b6b73'
+      : 'rgb(' + Math.round(232 + mal * 20) + ',' + Math.round(206 - mal * 120)
+        + ',' + Math.round(180 - mal * 130) + ')';
+    ctx.strokeStyle = piel; ctx.fillStyle = piel; ctx.lineWidth = gr;
+
+    ctx.beginPath();
+    for(const q of P.patas){
+      ctx.moveTo(aX(q.ox), aY(q.oy)); ctx.lineTo(aX(q.rx), aY(q.ry)); ctx.lineTo(aX(q.fx), aY(q.fy));
+    }
+    for(const b of P.brazos){
+      ctx.moveTo(aX(b.ox), aY(b.oy)); ctx.lineTo(aX(b.cx), aY(b.cy)); ctx.lineTo(aX(b.mx), aY(b.my));
+    }
+    ctx.moveTo(aX(P.cadX), aY(P.cadY)); ctx.lineTo(aX(P.homX), aY(P.homY));
+    ctx.lineTo(aX(P.cueX), aY(P.cueY));
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(aX(P.cabX), aY(P.cabY), Math.max(1.4, P.cabR * e), 0, 6.2832);
+    ctx.fill();
+
+    /* lo que lleva en las manos se pinta del color de SU material: si no, un
+       monigote cargando lava y otro cargando hielo se ven igual */
+    if(P.carga){
+      const c = RGB[P.carga.tipo] || [200, 200, 200];
+      ctx.fillStyle = 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')';
+      const l = Math.max(2, P.carga.lado * e);
+      ctx.fillRect(aX(P.carga.x) - l / 2, aY(P.carga.y) - l / 2, l, l);
+    }
+  }
 }
 
 /* ── la paleta y la mochila ─────────────────────────────────────────────── */
@@ -701,6 +765,7 @@ cv.addEventListener('pointerdown', ev => {
   }
   if(modo === 'soldar') grupoSolda = 0;   /* cada trazo, una estructura */
   nidoPuesto = false;                    /* y cada trazo, un solo nido */
+  serPuesto = false;                     /* y una sola personita */
   if(modo === 'agarrar'){
     agarre = { cx:x, cy:y, fx:x, fy:y };
     dedos.get(ev.pointerId).pintando = false;
@@ -722,6 +787,19 @@ cv.addEventListener('pointerdown', ev => {
   }
   if(modo === 'gobjeto'){
     M.pintaGravedad(x, y, Math.max(1, tam - 1), parseFloat($('gMul').value));
+    dedos.get(ev.pointerId).pintando = false;
+    return;
+  }
+  if(modo === 'ser'){
+    /* ⚠ UNA POR TOQUE, no una por celda arrastrada. Es el mismo cerrojo que
+       el del nido y por la misma razón: sin él, un dedo que se mueve suelta
+       cuarenta monigotes y el tope de población se llena de un trazo. */
+    if(!serPuesto){
+      const s2 = quienSer === 'bicho' ? SER.bicho(x, y) : SER.persona(x, y);
+      avisa(s2 ? (quienSer === 'bicho' ? 'Bicho' : 'Personita') + ' · ' + SER.seres.length + ' en la sala'
+               : 'Ya no caben más');
+      serPuesto = true;
+    }
     dedos.get(ev.pointerId).pintando = false;
     return;
   }
@@ -929,7 +1007,7 @@ $('tam').oninput = e => { tam = +e.target.value; $('tamN').textContent = tam; };
    botón se encargaba de apagar a los otros a mano, y con cinco herramientas
    eso son veinte líneas que se contradicen entre sí a la primera distracción. */
 let grupoSolda = 0;
-const BOTON_MODO = { calor:'bCalor', frio:'bFrio', navegar:'bMano', agarrar:'bAgarra', medir:'bMide', soldar:'bSolda', nido:'bNido' };
+const BOTON_MODO = { calor:'bCalor', frio:'bFrio', navegar:'bMano', agarrar:'bAgarra', medir:'bMide', soldar:'bSolda', nido:'bNido', ser:'bSer' };
 const MODOS_GRAVEDAD = ['zona', 'punto', 'gobjeto'];
 function ponModo(m){
   modo = (modo === m) ? 'pintar' : m;
@@ -955,6 +1033,19 @@ $('bSolda').onclick  = () => { grupoSolda = 0; ponModo('soldar'); };
    cambia de raza en vez de apagarlo. Tres botones para tres razas se comen el
    ancho de un teléfono, y el emoji cambia de color para que se vea cuál va. */
 const EMOJI_RAZA = { negra:'🐜', roja:'🔴', verde:'🟢' };
+const EMOJI_SER = { persona:'🚶', bicho:'🐛' };
+$('bSer').onclick = () => {
+  if(modo === 'ser'){
+    quienSer = quienSer === 'persona' ? 'bicho' : 'persona';
+    $('bSer').textContent = EMOJI_SER[quienSer];
+    avisa((quienSer === 'persona' ? 'Personita' : 'Bicho') + ' · toca la sala para soltarla');
+    return;
+  }
+  serPuesto = false;
+  ponModo('ser');
+  $('bSer').textContent = EMOJI_SER[quienSer];
+  if(modo === 'ser') avisa((quienSer === 'persona' ? 'Personita' : 'Bicho') + ' · toca la sala para soltarla');
+};
 $('bNido').onclick = () => {
   if(modo === 'nido'){
     const i = NOMBRES.indexOf(razaNido);
@@ -1154,7 +1245,7 @@ function cuadro(ms){
     const g = M.agarra(agarre.cx, agarre.cy, agarre.fx, agarre.fy, Math.max(2, tam - 1));
     agarre.cx = g.cx; agarre.cy = g.cy;
   }
-  if(!pausado){ M.paso(); if(HOR) HOR.paso(); }
+  if(!pausado){ M.paso(); if(HOR) HOR.paso(); if(SER) SER.paso(); }
   pinta();
   $('escala').textContent = '×' + vista.esc.toFixed(1);
   cuadros++; acum += dt;
