@@ -848,6 +848,92 @@ console.log('\n── La tienda ──');
      await page.evaluate(() => [...document.querySelectorAll('.sobre')].every(b => b.disabled)));
 }
 
+console.log('\n── Deslizar la carta a la mesa ──');
+{
+  /* Carlos: «deslizar no es fácil». Medido antes de tocar nada, a 390×844:
+     `#mMesa` mide 93 px de alto —el 11 % de la pantalla— y el dedo recorre
+     200 px para llegar. Soltar a medio camino no hacía NADA, y sin decirlo.
+     Un blanco del 11 % al final de 200 px es puntería, no un gesto.
+
+     Ahora vale soltar en cualquier sitio por encima de la mano. Estas pruebas
+     comprueban las tres cosas que eso significa, porque arreglar una sola
+     deja el gesto igual de difícil. */
+  await page.goto(BASE + '/juegos/guerra-de-puercos/', { waitUntil:'networkidle' });
+  await page.waitForTimeout(350);
+  await page.click('[data-modo="maquina"]');
+  await page.waitForTimeout(500);
+
+  /* ⚠ EL PUNTO DE SUELTA SE MIDE, NO SE ELIGE CON UN NÚMERO FIJO.
+     Primero lo escribí como «70 px por debajo del centro de la mesa» y salió
+     INTERMITENTE: desde la ronda 2 aparece la fila de golpes (−15 · −7), todo
+     baja, y esos 70 px caen DENTRO de la mano — donde soltar no debe jugar
+     nada, y con razón. La prueba llamaba defecto a la regla.
+     Lo que hay que probar es la FRANJA MUERTA de antes: el hueco entre el
+     borde de abajo de la mesa y el borde de arriba de la mano. Ahí es donde
+     soltar no hacía nada, y ahí es donde tiene que funcionar ahora. */
+  const arrastrarA = async (donde) => {
+    const st = await page.evaluate((d) => {
+      const c = [...document.querySelectorAll('#mMano .carta')].find(x => !x.dataset.esp);
+      if(!c) return null;
+      const b = c.getBoundingClientRect();
+      const m = document.querySelector('#mMesa').getBoundingClientRect();
+      const h = document.querySelector('#mMano').getBoundingClientRect();
+      const destinoY = d === 'mesa' ? m.y + m.height/2
+                     : (m.bottom + h.top) / 2;          /* justo en la franja muerta */
+      return { cx:Math.round(b.x+b.width/2), cy:Math.round(b.y+b.height/2),
+               dx:Math.round(m.x+m.width/2), dy:Math.round(destinoY),
+               franja: Math.round(h.top - m.bottom),
+               mano: document.querySelectorAll('#mMano .carta').length };
+    }, donde);
+    if(!st) return null;
+    await page.mouse.move(st.cx, st.cy);
+    await page.mouse.down();
+    for(let i=1;i<=8;i++)
+      await page.mouse.move(st.cx + (st.dx-st.cx)*i/8, st.cy + (st.dy-st.cy)*i/8);
+    await page.mouse.up();
+    await page.waitForTimeout(400);
+    const d = await page.evaluate(() => ({
+      mano: document.querySelectorAll('#mMano .carta').length,
+      seguir: !!(document.querySelector('#bSeguir') && document.querySelector('#bSeguir').offsetParent),
+      aviso: (document.querySelector('#mAviso')||{}).textContent || '',
+    }));
+    const jugo = d.mano < st.mano || d.seguir;
+    if(d.seguir){ await page.click('#bSeguir'); await page.waitForTimeout(350); }
+    return { jugo, aviso:d.aviso, franja:st.franja };
+  };
+
+  const centro = await arrastrarA('mesa');
+  ok('soltar en el centro de la mesa juega la carta', centro && centro.jugo);
+  const medio = await arrastrarA('franja');
+  ok('y soltar EN LA FRANJA entre la mesa y la mano también',
+     medio && medio.jugo, 'se quedó sin jugar (la franja mide ' + (medio && medio.franja) + ' px)');
+
+  /* y soltar DENTRO de la mano no juega nada: ahí uno está acomodando */
+  const enLaMano = await page.evaluate(async () => {
+    const c = [...document.querySelectorAll('#mMano .carta')].find(x => !x.dataset.esp);
+    if(!c) return null;
+    const b = c.getBoundingClientRect();
+    const m = document.querySelector('#mMano').getBoundingClientRect();
+    return { cx:Math.round(b.x+b.width/2), cy:Math.round(b.y+b.height/2),
+             destinoY:Math.round(m.bottom - 10), mano:document.querySelectorAll('#mMano .carta').length };
+  });
+  if(enLaMano){
+    await page.mouse.move(enLaMano.cx, enLaMano.cy);
+    await page.mouse.down();
+    for(let i=1;i<=6;i++) await page.mouse.move(enLaMano.cx + 40*i/6, enLaMano.cy + (enLaMano.destinoY-enLaMano.cy)*i/6);
+    await page.mouse.up();
+    await page.waitForTimeout(350);
+    const d = await page.evaluate(() => ({
+      mano: document.querySelectorAll('#mMano .carta').length,
+      aviso: (document.querySelector('#mAviso')||{}).textContent || '',
+    }));
+    ok('soltar DENTRO de la mano no juega nada', d.mano === enLaMano.mano,
+       'se jugó sola: pasó de ' + enLaMano.mano + ' a ' + d.mano);
+    ok('y cuando se falla, la pantalla lo DICE en vez de callarse',
+       /más arriba/i.test(d.aviso), 'el aviso decía «' + d.aviso.slice(0,50) + '»');
+  }
+}
+
 ok('la página no tiró ningún error', errores.length === 0, errores[0] || '');
 
 await b.close();

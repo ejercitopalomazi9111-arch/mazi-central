@@ -1819,6 +1819,28 @@ let toques = 0;              /* cuántas veces seguidas se tocó la elegida */
 const PARA_JUGAR = 3;        /* la de seleccionar y dos más */
 const arrastre = { hubo:false, fantasma:null, carta:null, x0:0, y0:0, activo:false };
 
+/* ── DÓNDE VALE SOLTAR UNA CARTA ──────────────────────────────────────────
+   Carlos: «deslizar no es fácil». Lo medí antes de tocar nada, en un teléfono
+   de 390×844:
+
+     · `#mMesa` mide 93 px de alto. Eso es el 11 % de la pantalla.
+     · el dedo tiene que recorrer 200 px desde la carta hasta ese centro.
+     · soltar 70 px por debajo del centro —o sea a medio camino, todavía
+       subiendo— no hacía absolutamente nada, y sin decir nada.
+
+   Un blanco del 11 % al final de un recorrido de 200 px es puntería, no un
+   gesto. Así que la zona buena pasa a ser TODO lo que está por encima de la
+   mano: si soltaste la carta arriba, querías jugarla — no hay nada más ahí
+   que puedas haber querido. El blanco pasa de 93 px a ~330. */
+function zonaDeSoltar(x, y){
+  const sobre = document.elementFromPoint(x, y);
+  if(sobre && sobre.closest('#mMesa')) return true;
+  const m = $('#mMano');
+  if(!m) return false;
+  const r = m.getBoundingClientRect();
+  return y < r.top + 8;
+}
+
 function atarArrastre(b, c){
   b.addEventListener('pointerdown', (e) => {
     if(e.button && e.button !== 0) return;
@@ -1842,9 +1864,15 @@ function atarArrastre(b, c){
         + 'width:' + r.width + 'px; left:' + r.left + 'px; top:' + r.top + 'px;';
       document.body.appendChild(f);
       arrastre.fantasma = f;
-      $('#mSlotA').classList.add('apuntado');
     }
     arrastre.fantasma.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(1.06)';
+    /* ⚠ EL RECUADRO SE ENCIENDE DONDE DE VERDAD VALE, NO DESDE EL PRIMER PÍXEL.
+       Antes se encendía al arrancar el arrastre y se quedaba encendido hasta
+       soltar, dijera lo que dijera el dedo. O sea que decía «suéltala aquí»
+       también mientras ibas a fallar, y al fallar no pasaba nada y no había
+       forma de aprender dónde sí. Un indicador que siempre dice que sí no es
+       un indicador. */
+    $('#mSlotA').classList.toggle('apuntado', zonaDeSoltar(e.clientX, e.clientY));
   });
   const soltar = (e) => {
     if(arrastre.carta !== c) return;
@@ -1855,8 +1883,13 @@ function atarArrastre(b, c){
     if(!activo) return;
     arrastre.hubo = true;                 /* que el `click` de después no cuente */
     setTimeout(() => { arrastre.hubo = false; }, 60);
-    const sobre = document.elementFromPoint(e.clientX, e.clientY);
-    if(!sobre || !sobre.closest('#mMesa')) return;
+    if(!zonaDeSoltar(e.clientX, e.clientY)){
+      /* ⚠ Y SE DICE. Antes fallar el tiro no hacía absolutamente nada: la
+         carta volvía a su sitio en silencio y quien juega concluye que el
+         arrastre no sirve. Carlos: «deslizar no es fácil». */
+      avisar('Suéltala más arriba, sobre la mesa.');
+      return;
+    }
     /* Se soltó en el campo. Si es una especial, se pone encima de lo elegido;
        si es una carta, se elige y se juega de una vez — que es lo que quiere
        decir el gesto de empujarla a la mesa. */
