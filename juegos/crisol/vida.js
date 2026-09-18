@@ -33,12 +33,20 @@ import { EL, IDX, VACIO, AMBIENTE } from './motor.js';
    del 6 pinta un disco de radio 5 y pico, o sea unas once celdas de lado a
    lado. Un monigote de once de alto es lo que cuadra, y por eso estas cifras
    no son gusto: están medidas contra la herramienta que ya existe. */
+/* ⚠ LAS PROPORCIONES SE CORRIGIERON MIRANDO LA PANTALLA, no el código.
+   Antes la cabeza tenía radio 1.45 —2.9 de diámetro— y los hombros 1.55: la
+   cabeza era MÁS ANCHA QUE EL CUERPO ENTERO, y la persona medía 3.7 cabezas
+   de alto cuando una de verdad mide siete y media. De lejos se leía como un
+   alfiler con una bola encima, que es justo lo que Carlos llamó feo.
+   Ahora: cabeza más chica, hombros más anchos que la cabeza y cadera con
+   cuerpo. Sale una figura de 5 cabezas — todavía de caricatura, que es lo que
+   queremos a este tamaño, pero ya se lee como una persona. */
 export const CUERPO = {
-  cabeza:   1.45,   /* radio */
-  cuello:   0.55,
+  cabeza:   1.05,   /* radio */
+  cuello:   0.25,   /* con 0.55 y la cabeza chica quedaba una jirafa */
   torso:    3.40,   /* cadera → hombro */
-  hombro:   1.55,   /* ancho de hombros, completo */
-  cadera:   1.05,
+  hombro:   2.10,   /* ancho de hombros, completo */
+  cadera:   1.40,
   muslo:    2.00,
   espinilla:2.00,
   brazo:    1.55,
@@ -763,7 +771,11 @@ export class Vida {
                 lado: Math.max(0.9, T * 1.05) };
     }
     return { cadX, cadY, homX, homY, cueX, cueY, cabX, cabY, cabR,
-             patas, brazos, carga, mira: [mx, my], mal, T, muerto };
+             patas, brazos, carga, mira: [mx, my], mal, T, muerto,
+             /* para que la pantalla pueda vestirlos: el id da una paleta
+                estable —el mismo monigote con la misma camisa siempre— y
+                `mirando` dice de qué lado va la cara */
+             id: s.id, mirando: s.mirando, bicho: n === 4 };
   }
 
   /* ruido barato y estable por ser, para el temblor */

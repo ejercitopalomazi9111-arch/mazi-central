@@ -346,6 +346,57 @@ seccion('deshacer, guardar y no borrar sin querer');
      (await pg.evaluate(() => !!(JSON.parse(localStorage.getItem('crisol.v1') || '{}').salas || {})['1'])));
 }
 
+seccion('LAS PERSONITAS SE PINTAN DE VERDAD');
+{
+  /* ⚠ ESTA SECCIÓN EXISTE POR UN DEFECTO QUE ESTAS MISMAS PRUEBAS NO VEÍAN.
+     Al vestir a las personitas metí `h >> 3` donde iba `h >>> 3`: con un
+     entero sin signo de 32 bits eso da NEGATIVO la mitad de las veces, el
+     índice de la paleta salía `undefined` y el dibujo reventaba CADA CUADRO.
+     Y la prueba de más abajo seguía diciendo «ni un error de consola en toda
+     la sesión» — porque en toda la sesión no se ponía una sola personita.
+     Una prueba que no provoca la pantalla no la está mirando. */
+  await pg.evaluate(() => { document.getElementById('bBorra').click();
+                            document.getElementById('bBorra').click(); });
+  await pg.waitForTimeout(150);
+  const antes = errores.length;
+  await pg.evaluate(() => {
+    const C = window.CRISOL, M = C.mundo;
+    for(let x = 0; x < M.an; x++) for(let y = M.al - 6; y < M.al; y++) M.pon(x, y, C.IDX.tierra);
+    for(let i = 0; i < 8; i++) C.SER.persona(8 + i * 3, M.al - 8);
+    for(let i = 0; i < 3; i++) C.SER.bicho(12 + i * 9, M.al - 7);
+  });
+  /* y la cámara se apunta a ellos: la vista arranca arriba de la sala y una
+     prueba que mira donde no hay nadie no prueba nada */
+  await pg.evaluate(() => {
+    const C = window.CRISOL, v = C.vista, cv = document.getElementById('mundo');
+    v.esc = 11;
+    v.x = 4; v.y = C.mundo.al - cv.clientHeight / v.esc + 2;
+  });
+  await pg.waitForTimeout(900);
+  ok('38 · hay personitas y bichos en la sala',
+     (await pg.evaluate(() => window.CRISOL.SER.seres.length)) === 11);
+  ok('39 · y pintarlas NO tira un solo error', errores.length === antes,
+     errores.slice(antes, antes + 2).join(' | '));
+  /* y que de verdad se PINTEN: los monigotes van sobre el lienzo de la
+     ventana, después de putImageData, así que no salen en `datos` */
+  ok('40 · y se ven: hay tinta suya sobre el lienzo', await pg.evaluate(() => {
+       const cv = document.getElementById('mundo');
+       const g = cv.getContext('2d');
+       const d = g.getImageData(0, 0, cv.width, cv.height).data;
+       /* los colores de camisa son saturados y no existen en la tierra: se
+          busca azul o verde fuertes, que ningún material del suelo tiene */
+       for(let i = 0; i < d.length; i += 4){
+         const r = d[i], v = d[i+1], a = d[i+2];
+         if(a > 120 && a > r + 60 && a > v + 40) return true;   /* camisa azul */
+         if(v > 110 && v > r + 50 && v > a + 40) return true;   /* camisa verde */
+       }
+       return false;
+     }), 'no apareció ni una camisa: se están pintando invisibles');
+  /* cada quien con su ropa, siempre la misma: el id no cambia */
+  ok('41 · cada personita tiene su propia paleta, no todas la misma',
+     (await pg.evaluate(() => new Set(window.CRISOL.SER.seres.map(s => s.id)).size)) === 11);
+}
+
 seccion('LA PISTOLA · con el dedo, no armada a mano');
 {
   /* Carlos, cuatro veces: «aún no logro crear una pistola y ya probé muchas

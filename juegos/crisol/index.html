@@ -518,6 +518,41 @@ function pinta(){
    `postura()` ya devuelve el esqueleto entero —caderas, hombros, cuello,
    cabeza, dos o cuatro patas, brazos y dónde va lo que carga—, así que aquí
    no se decide ninguna pose: sólo se traza lo que el módulo calculó. */
+/* ── LAS PERSONITAS, VESTIDAS ─────────────────────────────────────────────
+   Carlos: «prioriza desde aquí hacer más estéticas las personitas».
+
+   Antes eran un alambre de un solo color: mismo tono para piernas, torso,
+   brazos y cabeza, sin contorno. A tamaño de teléfono eso se lee como un
+   garabato, y veinte de ellos se leen como el MISMO garabato veinte veces.
+
+   Lo que cambia, y por qué cada cosa:
+
+     · CONTORNO OSCURO DEBAJO. Un trazo más gordo y oscuro por detrás del
+       dibujo. Es lo que hace que la figura se vea sobre lava, sobre agua y
+       sobre tierra sin cambiar de color: sin él, un monigote de piel clara
+       desaparece encima de la arena.
+     · ROPA. Pantalón en las piernas, camisa en el torso y los brazos, piel
+       sólo en cabeza y manos. Es lo que convierte un alambre en una persona.
+     · PALETA POR PERSONA, sacada de su id. Cinco camisas, cuatro pantalones,
+       cuatro pelos, cuatro pieles: una multitud deja de parecer clonada, y
+       cada quien conserva su ropa toda la vida porque el id no cambia.
+     · CARA. Un ojo del lado al que mira y pelo encima. Con eso se lee hacia
+       dónde va sin dibujar una expresión.
+     · Y EL QUE SUFRE SIGUE PONIÉNDOSE ROJO, que es lo que ya había y funciona:
+       la piel vira, la ropa se apaga, y el muerto se va entero a gris. */
+const CAMISAS   = ['#C2410C', '#1D4ED8', '#15803D', '#7C3AED', '#B91C1C'];
+const PANTALONES = ['#334155', '#3F3F46', '#1E3A5F', '#44403C'];
+const PELOS     = ['#2B2118', '#4A3524', '#12100F', '#6B4423'];
+const PIELES    = [[236, 200, 168], [214, 168, 128], [176, 128, 92], [122, 84, 58]];
+
+/* el gris al que todo tiende cuando el ser muere, y el apagado del que sufre */
+const mezcla = (hex, r2, g2, b2, t) => {
+  const n = parseInt(hex.slice(1), 16);
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return 'rgb(' + Math.round(r + (r2 - r) * t) + ',' + Math.round(g + (g2 - g) * t)
+       + ',' + Math.round(b + (b2 - b) * t) + ')';
+};
+
 function pintaSeres(dpr){
   if(!SER || !SER.seres.length) return;
   const e = vista.esc * dpr;
@@ -529,35 +564,154 @@ function pintaSeres(dpr){
     /* el grosor del trazo va con la talla Y con el zoom: si fuera fijo, de
        lejos serían garabatos gordos y de cerca alambres */
     const gr = Math.max(1.1, P.T * e * 0.30);
-    /* el que sufre se pone rojo, el muerto gris. Sale de `mal`, que ya mezcla
-       quemadura, dolor, choque y salud. */
-    const mal = P.mal;
-    const piel = P.muerto ? '#6b6b73'
-      : 'rgb(' + Math.round(232 + mal * 20) + ',' + Math.round(206 - mal * 120)
-        + ',' + Math.round(180 - mal * 130) + ')';
-    ctx.strokeStyle = piel; ctx.fillStyle = piel; ctx.lineWidth = gr;
+    const mal = P.mal, muerto = P.muerto;
 
-    ctx.beginPath();
-    for(const q of P.patas){
-      ctx.moveTo(aX(q.ox), aY(q.oy)); ctx.lineTo(aX(q.rx), aY(q.ry)); ctx.lineTo(aX(q.fx), aY(q.fy));
-    }
-    for(const b of P.brazos){
-      ctx.moveTo(aX(b.ox), aY(b.oy)); ctx.lineTo(aX(b.cx), aY(b.cy)); ctx.lineTo(aX(b.mx), aY(b.my));
-    }
-    ctx.moveTo(aX(P.cadX), aY(P.cadY)); ctx.lineTo(aX(P.homX), aY(P.homY));
-    ctx.lineTo(aX(P.cueX), aY(P.cueY));
-    ctx.stroke();
+    /* la paleta de ESTE ser, estable de por vida */
+    /* ⚠ `>>>` Y NO `>>`, y esto reventaba CADA CUADRO. `h` es un entero sin
+       signo de 32 bits, así que pasa de 2³¹ la mitad de las veces; `h >> 3`
+       lo lee CON signo y devuelve un número NEGATIVO. Índice negativo →
+       `undefined` → `undefined.slice` dentro de `mezcla`. Y el nuevo renglón
+       de la tabla de «lo que recuerdo»: las pruebas de pantalla decían «ni un
+       error de consola» y era verdad — nunca ponían una personita. Una prueba
+       que no provoca la pantalla no la está mirando. */
+    const h = (P.id * 2654435761) >>> 0;
+    const camisa = CAMISAS[h % CAMISAS.length];
+    const pantalon = PANTALONES[(h >>> 3) % PANTALONES.length];
+    const pelo = PELOS[(h >>> 6) % PELOS.length];
+    const pl = PIELES[(h >>> 9) % PIELES.length];
 
+    /* el que sufre se acalora y el muerto se va a gris: un solo mando para
+       los tres colores, para que no se descoordinen */
+    const gris = muerto ? 0.85 : 0;
+    const piel = muerto ? '#6b6b73'
+      : 'rgb(' + Math.round(pl[0] + mal * (255 - pl[0]) * 0.45) + ','
+        + Math.round(pl[1] - mal * pl[1] * 0.42) + ','
+        + Math.round(pl[2] - mal * pl[2] * 0.52) + ')';
+    const cRopa = mezcla(camisa, 107, 107, 115, Math.max(gris, mal * 0.35));
+    const cPant = mezcla(pantalon, 107, 107, 115, Math.max(gris, mal * 0.35));
+    const cPelo = mezcla(pelo, 107, 107, 115, gris);
+
+    /* ── 1 · el contorno, debajo de todo ──────────────────────────────── */
+    const trazaPatas = () => {
+      ctx.beginPath();
+      for(const q of P.patas){
+        ctx.moveTo(aX(q.ox), aY(q.oy)); ctx.lineTo(aX(q.rx), aY(q.ry)); ctx.lineTo(aX(q.fx), aY(q.fy));
+      }
+      ctx.stroke();
+    };
+    const trazaBrazos = () => {
+      ctx.beginPath();
+      for(const b of P.brazos){
+        ctx.moveTo(aX(b.ox), aY(b.oy)); ctx.lineTo(aX(b.cx), aY(b.cy)); ctx.lineTo(aX(b.mx), aY(b.my));
+      }
+      ctx.stroke();
+    };
+    /* ⚠ EL TORSO ES UNA FORMA, NO UNA RAYA. Dibujado como una línea de cadera
+       a hombro, el monigote se ve como una flecha: dos piernas, dos brazos y
+       nada en medio. Con un trapecio de hombros a cadera —ancho arriba,
+       estrecho abajo— aparece un cuerpo, y ES lo que convierte el alambre en
+       persona. Los bichos no lo llevan: ellos tienen caparazón. */
+    const trazaTronco = (engorda) => {
+      const dx = P.homX - P.cadX, dy = P.homY - P.cadY;
+      const L = Math.hypot(dx, dy) || 1;
+      const nx = -dy / L, ny = dx / L;          /* perpendicular al torso */
+      const ah = (P.bicho ? 0.9 : 1) * 0.5 * P.T * 2.10 + engorda;   /* medio hombro */
+      const ac = (P.bicho ? 0.9 : 1) * 0.5 * P.T * 1.40 + engorda;   /* media cadera */
+      ctx.beginPath();
+      ctx.moveTo(aX(P.homX + nx * ah), aY(P.homY + ny * ah));
+      ctx.lineTo(aX(P.homX - nx * ah), aY(P.homY - ny * ah));
+      ctx.lineTo(aX(P.cadX - nx * ac), aY(P.cadY - ny * ac));
+      ctx.lineTo(aX(P.cadX + nx * ac), aY(P.cadY + ny * ac));
+      ctx.closePath();
+      ctx.fill();
+      /* el cuello, que si no la cabeza flota */
+      ctx.beginPath();
+      ctx.moveTo(aX(P.homX), aY(P.homY)); ctx.lineTo(aX(P.cueX), aY(P.cueY));
+      ctx.lineWidth = Math.max(1, P.T * e * 0.34) + engorda * e * 1.4;
+      ctx.stroke();
+    };
+
+    ctx.strokeStyle = 'rgba(10,8,14,.72)'; ctx.fillStyle = 'rgba(10,8,14,.72)';
+    ctx.lineWidth = gr + Math.max(1, gr * 0.7);
+    trazaPatas(); trazaBrazos();
+    trazaTronco(P.T * 0.16);
     ctx.beginPath();
-    ctx.arc(aX(P.cabX), aY(P.cabY), Math.max(1.4, P.cabR * e), 0, 6.2832);
-    ctx.fill();
+    ctx.arc(aX(P.cabX), aY(P.cabY), Math.max(1.4, P.cabR * e) + Math.max(1, gr * 0.5), 0, 6.2832);
+    ctx.fillStyle = 'rgba(10,8,14,.72)'; ctx.fill();
+
+    /* ── 2 · la ropa ──────────────────────────────────────────────────── */
+    /* ⚠ EL ORDEN IMPORTA: primero piernas, luego tronco, luego brazos. Con los
+       brazos antes del tronco, el relleno del torso se los comía enteros y la
+       figura salía manca — se veía en la captura y no se ve leyendo. */
+    ctx.lineWidth = gr;
+    ctx.strokeStyle = P.bicho ? cPelo : cPant;  trazaPatas();
+    /* zapatos: una pisada corta y oscura en la punta de cada pata. Es un
+       detalle de dos renglones y es lo que asienta la figura en el suelo */
+    if(!P.bicho){
+      ctx.strokeStyle = '#1B1720'; ctx.lineWidth = gr * 1.25;
+      ctx.beginPath();
+      for(const q of P.patas){
+        const vx = q.fx - q.rx, vy = q.fy - q.ry, L = Math.hypot(vx, vy) || 1;
+        ctx.moveTo(aX(q.fx - vy / L * 0.10), aY(q.fy + vx / L * 0.10));
+        ctx.lineTo(aX(q.fx + P.mirando * 0.55), aY(q.fy));
+      }
+      ctx.stroke();
+      ctx.lineWidth = gr;
+    }
+    /* ⚠ LOS BRAZOS VAN DETRÁS DEL TORSO MIENTRAS NO CARGUE NADA. Pintados
+       siempre delante, el antebrazo colgando cae justo por el centro del pecho
+       y se lee como una franja de piel encima de la camisa — se ve en la
+       captura, no en el código. Sólo pasan al frente cuando llevan algo, que
+       es cuando de verdad están por delante del cuerpo. */
+    const brazosDelante = !!P.carga;
+    const pintaBrazos = () => {
+      ctx.lineWidth = gr * 0.85;
+      ctx.strokeStyle = P.bicho ? cPelo : piel;   trazaBrazos();
+      /* la manga: el brazo va de piel, pero el trozo de arriba es camisa */
+      if(!P.bicho){
+        ctx.strokeStyle = cRopa; ctx.lineWidth = gr * 1.05;
+        ctx.beginPath();
+        for(const b of P.brazos){ ctx.moveTo(aX(b.ox), aY(b.oy)); ctx.lineTo(aX(b.cx), aY(b.cy)); }
+        ctx.stroke();
+      }
+      ctx.lineWidth = gr;
+    };
+    if(!brazosDelante) pintaBrazos();
+    ctx.fillStyle = P.bicho ? cPelo : cRopa;
+    ctx.strokeStyle = P.bicho ? cPelo : piel;
+    trazaTronco(0);
+    if(brazosDelante) pintaBrazos();
+
+    /* ── 3 · la cabeza: piel, pelo y un ojo ───────────────────────────── */
+    const R = Math.max(1.4, P.cabR * e);
+    const hx = aX(P.cabX), hy = aY(P.cabY);
+    ctx.beginPath(); ctx.arc(hx, hy, R, 0, 6.2832);
+    ctx.fillStyle = piel; ctx.fill();
+    if(!P.bicho && R > 2.2){
+      /* el pelo es media luna por arriba, girada hacia donde mira: así la nuca
+         queda del lado de atrás y se lee la dirección aunque no haya cara */
+      const g = Math.atan2(P.mira[1], P.mira[0]);
+      ctx.beginPath();
+      ctx.arc(hx, hy, R * 0.98, g + 0.55, g + Math.PI + 0.95);
+      ctx.fillStyle = cPelo; ctx.fill();
+    }
+    if(!muerto && R > 3){
+      /* un ojo, del lado al que va. Dos ojos a este tamaño se convierten en
+         una mancha; uno se lee como una cara de perfil, que es lo que es. */
+      ctx.beginPath();
+      ctx.arc(hx + P.mira[0] * R * 0.45, hy + P.mira[1] * R * 0.45,
+              Math.max(0.8, R * 0.20), 0, 6.2832);
+      ctx.fillStyle = '#12100F'; ctx.fill();
+    }
 
     /* lo que lleva en las manos se pinta del color de SU material: si no, un
        monigote cargando lava y otro cargando hielo se ven igual */
     if(P.carga){
       const c = RGB[P.carga.tipo] || [200, 200, 200];
-      ctx.fillStyle = 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')';
       const l = Math.max(2, P.carga.lado * e);
+      ctx.fillStyle = 'rgba(10,8,14,.72)';
+      ctx.fillRect(aX(P.carga.x) - l / 2 - 1, aY(P.carga.y) - l / 2 - 1, l + 2, l + 2);
+      ctx.fillStyle = 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')';
       ctx.fillRect(aX(P.carga.x) - l / 2, aY(P.carga.y) - l / 2, l, l);
     }
   }
@@ -1343,6 +1497,7 @@ window.CRISOL = { M, EL, IDX, get mundo(){ return M; }, guardado, vista, zoom, a
                   /* para las pruebas de pantalla: la lista de armas puestas y
                      el modo, que es lo único que no se ve leyendo el lienzo */
                   get pistolas(){ return pistolas; }, get modo(){ return modo; },
+                  get SER(){ return SER; }, get HOR(){ return HOR; },
                   PIEZAS };
 </script>
 </body>
