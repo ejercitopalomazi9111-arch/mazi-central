@@ -346,6 +346,68 @@ seccion('deshacer, guardar y no borrar sin querer');
      (await pg.evaluate(() => !!(JSON.parse(localStorage.getItem('crisol.v1') || '{}').salas || {})['1'])));
 }
 
+seccion('LA PANTALLA NO PARPADEA MIENTRAS PROCESA');
+{
+  /* Carlos: «cuando crisol está procesando la pantalla parpadea entre las
+     cosas que están y una sala vacía».
+
+     No era la física ni el doble búfer. Era una cadena de cuatro eslabones,
+     medida entera antes de tocar nada:
+       · el letrero de arriba se reescribe cada 500 ms con celdas, grados y bares;
+       · con números largos ese texto se iba a TRES renglones y la barra pasaba
+         de 74 px de alto a 89;
+       · `#zona` es `flex:1 1 auto`, así que encogía, y el ResizeObserver que
+         la vigila disparaba `medir()`;
+       · `medir()` reasignaba `cv.width` — y asignar `cv.width` BORRA el
+         lienzo, aunque sea el mismo número.
+     Con el mundo lleno esos números bailan cada medio segundo, y a 13 fps el
+     cuadro en blanco se queda puesto lo bastante para verse. Por eso aparecía
+     justo «cuando está procesando».
+
+     Se prueban los dos eslabones que se pueden romper, porque arreglar uno
+     solo deja el defecto a una línea de volver. */
+  await pg.evaluate(() => { document.getElementById('bBorra').click();
+                            document.getElementById('bBorra').click(); });
+  await pg.waitForTimeout(150);
+  await pg.evaluate(() => {
+    const C = window.CRISOL, M = C.mundo;
+    for(let x = 0; x < M.an; x++) for(let y = M.al - 40; y < M.al; y++) M.pon(x, y, C.IDX.tierra);
+  });
+  await pg.waitForTimeout(400);
+  const tinta = () => pg.evaluate(() => {
+    const cv = document.getElementById('mundo');
+    const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
+    let n = 0;
+    for(let i = 0; i < d.length; i += 4) if(d[i] || d[i+1] || d[i+2]) n++;
+    return n;
+  });
+  const antes = await tinta();
+  ok('46 · con la sala llena, el lienzo tiene tinta', antes > 10000, antes + ' píxeles');
+  /* el camino de verdad: lo que corre el ResizeObserver */
+  const despues = await pg.evaluate(() => { window.CRISOL.medir();
+    const cv = document.getElementById('mundo');
+    const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
+    let n = 0;
+    for(let i = 0; i < d.length; i += 4) if(d[i] || d[i+1] || d[i+2]) n++;
+    return n;
+  });
+  ok('47 · y un medir() SIN cambio de tamaño NO lo borra', despues === antes,
+     'pasó de ' + antes + ' a ' + despues + ' píxeles con tinta');
+  /* y el otro eslabón: el letrero no puede mover el alto de la barra */
+  const alturas = await pg.evaluate(() => {
+    const d = document.getElementById('datos'), b = document.getElementById('barra');
+    const h = [];
+    for(const t of ['320×480 · 60 fps<br>0 celdas · 22° · 0 bar',
+                    '320×480 · 13 fps<br>19203 celdas · 1498° · 12 bar',
+                    '320×480 · 7 fps<br>153600 celdas · 1200° · 300 bar']){
+      d.innerHTML = t; h.push(Math.round(b.getBoundingClientRect().height));
+    }
+    return h;
+  });
+  ok('48 · y el letrero de arriba no le mueve el alto a la barra',
+     new Set(alturas).size === 1, 'la barra midió ' + alturas.join(' · ') + ' px');
+}
+
 seccion('el mando de la cuerda');
 {
   /* Carlos pidió la flexibilidad de la cuerda por su nombre, y durante semanas
