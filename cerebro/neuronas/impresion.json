@@ -147,6 +147,26 @@
         "editable-en-bloque-mata-la-tabla",
         "saltos-de-pagina-en-mitad-de-todo"
       ]
+    },
+    {
+      "id": "dos-cosas-en-una-linea-de-62-milimetros",
+      "titulo": "Etiqueta y dato en la misma línea, en una columna de 62 mm",
+      "gravedad": "media",
+      "sintoma": "En el navegador se veía bien; en el PDF salía «Ventas y trato con — 5 AÑOS — el cliente»: la etiqueta partida en dos renglones con el dato flotando en medio del primero.",
+      "causa": "Un `justify-content:space-between` con la etiqueta a la izquierda y el dato a la derecha. En la pantalla la columna es ancha y cabe; en papel la columna lateral mide 62 mm y ahí no caben dos cosas en la misma línea.",
+      "porque": "El ancho de la columna lateral en pantalla y en papel son distintos, y la maqueta se prueba casi siempre en pantalla.",
+      "arreglo": "Apilar: etiqueta arriba, dato debajo en versalitas. Nunca parte nada y se lee igual de rápido.",
+      "comoCazarlo": "Renderizar el PDF y mirarlo, no mirar la pantalla. Cualquier fila de dos columnas dentro de una banda estrecha es sospechosa.",
+      "consejo": "Y de paso se fueron las barras de porcentaje, que las quitó Carlos: «se ven raras». Tenía razón por dos motivos — además de verse raras, una barra al 62 % es un número que nadie midió.",
+      "senales": [
+        "se parte el texto",
+        "se ve bien en el navegador",
+        "en el PDF sale raro"
+      ],
+      "salioDe": "El currículum de Carlos, 18 de septiembre de 2026.",
+      "vecinas": [
+        "la-prueba-no-puede-ver-lo-que-el-codigo-transforma"
+      ]
     }
   ]
 }
