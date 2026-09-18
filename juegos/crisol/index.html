@@ -271,6 +271,8 @@ input[type=range]{flex:1 1 90px;min-width:80px;accent-color:var(--violeta);heigh
   <div id="herr">
     <label>Pincel <span id="tamN">4</span></label>
     <input type="range" id="tam" min="1" max="14" value="4">
+    <label id="flexL" hidden>Cuerda <span id="flexN">tiesa</span></label>
+    <input type="range" id="flex" min="0" max="100" value="0" hidden>
     <button class="icono" id="bCalor" aria-label="Calentar" title="Calentar">🔥</button>
     <button class="icono" id="bFrio" aria-label="Enfriar" title="Enfriar">❄️</button>
     <button class="icono" id="bMano" aria-label="Mover la vista" title="Mover la vista: arrastra con un dedo">🖐</button>
@@ -778,6 +780,7 @@ function paleta(){
       $('ficha').classList.remove('va');
       if(e.ayuda) avisa(e.nom + ' · ' + e.ayuda);
       $('qual').textContent = e.nom;
+      mandoCuerda();
       paleta();
     };
     c.appendChild(b);
@@ -1201,6 +1204,19 @@ function pintaSalas(){
 $('bGuarda').onclick = () => { pintaSalas(); $('salas').classList.toggle('va'); };
 $('salasX').onclick = () => $('salas').classList.remove('va');
 $('tam').oninput = e => { tam = +e.target.value; $('tamN').textContent = tam; };
+/* ── QUÉ TAN FLOJA ES LA CUERDA ────────────────────────────────────────────
+   Carlos lo pidió por su nombre y el mando sólo aparece cuando tienes la
+   cuerda elegida: un deslizador más, visible siempre, es un deslizador que
+   estorba el 95% del tiempo en un teléfono. */
+$('flex').oninput = e => {
+  M.flexCuerda = (+e.target.value) / 100;
+  $('flexN').textContent = M.flexCuerda < 0.2 ? 'tiesa'
+                         : M.flexCuerda < 0.6 ? 'normal' : 'floja';
+};
+function mandoCuerda(){
+  const va = EL[elSel] && EL[elSel].cuerda;
+  $('flexL').hidden = !va; $('flex').hidden = !va;
+}
 /* ── LAS HERRAMIENTAS ──────────────────────────────────────────────────────
    Un solo sitio decide qué modo está activo y apaga los demás. Antes cada
    botón se encargaba de apagar a los otros a mano, y con cinco herramientas

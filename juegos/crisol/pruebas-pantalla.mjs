@@ -346,6 +346,48 @@ seccion('deshacer, guardar y no borrar sin querer');
      (await pg.evaluate(() => !!(JSON.parse(localStorage.getItem('crisol.v1') || '{}').salas || {})['1'])));
 }
 
+seccion('el mando de la cuerda');
+{
+  /* Carlos pidió la flexibilidad de la cuerda por su nombre, y durante semanas
+     `flexCuerda` EXISTIÓ SÓLO EN UNA PRUEBA del motor: ningún mando lo movía y
+     el motor tampoco lo leía. Esto comprueba las dos mitades — que el mando
+     aparece con la cuerda elegida, y que mover el deslizador CAMBIA EL MOTOR. */
+  await pg.evaluate(() => {
+    for(const b of document.querySelectorAll('.pes')) if(/estructura|básico|vida|todo/i.test(b.textContent)) b.click();
+  });
+  await pg.waitForTimeout(150);
+  const hay = await pg.evaluate(() => {
+    for(const b of document.querySelectorAll('#lista button'))
+      if(b.textContent.includes('Cuerda')){ b.click(); return true; }
+    /* si no está en esta pestaña, se busca en todas */
+    for(const p of document.querySelectorAll('.pes')){
+      p.click();
+      for(const b of document.querySelectorAll('#lista button'))
+        if(b.textContent.includes('Cuerda')){ b.click(); return true; }
+    }
+    return false;
+  });
+  await pg.waitForTimeout(200);
+  ok('42 · la cuerda se puede elegir en la paleta', hay);
+  ok('43 · y con ella elegida aparece el mando de flexibilidad',
+     await pg.evaluate(() => !document.getElementById('flex').hidden));
+  await pg.evaluate(() => {
+    const f = document.getElementById('flex');
+    f.value = '100'; f.dispatchEvent(new Event('input', { bubbles:true }));
+  });
+  ok('44 · y moverlo CAMBIA EL MOTOR, no sólo el letrero',
+     (await pg.evaluate(() => window.CRISOL.mundo.flexCuerda)) === 1,
+     'flexCuerda quedó en ' + (await pg.evaluate(() => window.CRISOL.mundo.flexCuerda)));
+  /* y con otro material se esconde: un deslizador visible siempre estorba */
+  await pg.evaluate(() => {
+    for(const b of document.querySelectorAll('#lista button'))
+      if(!b.textContent.includes('Cuerda')){ b.click(); return; }
+  });
+  await pg.waitForTimeout(150);
+  ok('45 · y con otro material se esconde',
+     await pg.evaluate(() => document.getElementById('flex').hidden));
+}
+
 seccion('LAS PERSONITAS SE PINTAN DE VERDAD');
 {
   /* ⚠ ESTA SECCIÓN EXISTE POR UN DEFECTO QUE ESTAS MISMAS PRUEBAS NO VEÍAN.
