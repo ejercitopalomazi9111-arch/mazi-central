@@ -917,6 +917,16 @@ console.log('\n── Deslizar la carta a la mesa ──');
        aparato, mide el aparato, no el programa. */
     const d = await esperarJugada(st.mano);
     const jugo = d.mano < st.mano || d.seguir;
+    /* ⚠ LO QUE SE PRUEBA AQUÍ ES EL PUNTO DE SUELTA, NO SI LA CARTA ES LEGAL.
+       Sin esta distinción la prueba salió intermitente 2 de 12: agarra la
+       primera carta no-especial, y a veces esa carta NO SE PUEDE JUGAR —ya se
+       gastaron las combinaciones, o el nivel se repite—. Entonces el arrastre
+       llega perfecto a la mesa, las reglas dicen que no, y la prueba lo
+       apuntaba como «el arrastre falló». Otra vez llamando defecto a la regla.
+       La señal correcta es el aviso: si dice «suéltala más arriba», el punto
+       de suelta no contó; cualquier otra cosa significa que SÍ llegó a la mesa
+       y lo que habló fue el reglamento. */
+    const llego = jugo || !/más arriba/i.test(d.aviso);
     if(d.seguir){
       await page.click('#bSeguir');
       await page.waitForFunction(() => {
@@ -924,14 +934,17 @@ console.log('\n── Deslizar la carta a la mesa ──');
         return !b || !b.offsetParent;
       }, null, { timeout: 8000 }).catch(()=>{});
     }
-    return { jugo, aviso:d.aviso, franja:st.franja };
+    return { jugo, llego, aviso:d.aviso, franja:st.franja };
   };
 
   const centro = await arrastrarA('mesa');
-  ok('soltar en el centro de la mesa juega la carta', centro && centro.jugo);
+  ok('soltar en el centro de la mesa cuenta como jugada', centro && centro.llego,
+     'el aviso decía «' + (centro && centro.aviso || '').slice(0,50) + '»');
   const medio = await arrastrarA('franja');
-  ok('y soltar EN LA FRANJA entre la mesa y la mano también',
-     medio && medio.jugo, 'se quedó sin jugar (la franja mide ' + (medio && medio.franja) + ' px)');
+  ok('y soltar EN LA FRANJA entre la mesa y la mano también cuenta',
+     medio && medio.llego,
+     'la franja mide ' + (medio && medio.franja) + ' px y el aviso decía «'
+     + (medio && medio.aviso || '').slice(0,50) + '»');
 
   /* y soltar DENTRO de la mano no juega nada: ahí uno está acomodando */
   const enLaMano = await page.evaluate(async () => {
