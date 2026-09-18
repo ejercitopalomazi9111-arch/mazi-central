@@ -205,6 +205,14 @@ export class Mundo {
     this._pres2 = new Float32Array(n);
     this._trans = new Float32Array(n);
     this._amort = new Float32Array(n);
+    /* La velocidad del paso anterior, congelada. Hace falta para la viscosidad
+       que mata el damero: sin una copia, las vecinas de arriba y de la
+       izquierda ya estarían actualizadas y las de abajo y la derecha no, y una
+       viscosidad asimétrica empuja la onda hacia un lado. */
+    this._v0 = new Float32Array(n);
+    /* Los dos laplacianos intermedios del filtro biarmónico. */
+    this._lapP = new Float32Array(n);
+    this._lapV = new Float32Array(n);
     /* ── SOSTÉN ESTRUCTURAL ────────────────────────────────────────────
        Ahora que los sólidos caen hace falta saber cuáles NO deben caerse, o
        el techo de cualquier caja se desploma hacia dentro en el primer paso.
@@ -278,6 +286,10 @@ export class Mundo {
        deja el suyo a ceros al terminar. Compartirlo le borraría al recorrido
        de cuerpos las marcas de por dónde ya pasó, en medio del recorrido. */
     this._vistoChoque = new Uint8Array(n);
+    /* uno propio para la carga que lleva una cuerda: `piezaDe` marca y
+       desmarca su memoria, y compartirla con otro barrido en curso le borra
+       las marcas a medio recorrido. Es la misma trampa de `_vistoCuerpo`. */
+    this._vistoCarga = new Uint8Array(n);
     this._colaCuerpo = new Int32Array(n);
     /* qué celdas soldó el jugador en una estructura: mismo número = misma
        pieza, aunque sean materiales distintos */
@@ -285,6 +297,17 @@ export class Mundo {
     this.soldadoN = 0;
     /* el interruptor que pidió Carlos: apagado, cada celda vuelve a ser suya */
     this.rigido = true;
+    /* ── QUÉ TAN FLOJA ES UNA CUERDA ─────────────────────────────────────
+       Lo pidió Carlos por su nombre —«que la flexibilidad se pueda cambiar»—
+       y llevaba semanas EXISTIENDO SÓLO EN UNA PRUEBA: había un test que le
+       ponía `m.flexCuerda = 1` y comparaba contra `0`, y el motor no leía ese
+       campo en ningún sitio. Por eso los dos casos daban 39.8 hasta el
+       decimal: dos experimentos distintos que dan el mismo número no están de
+       acuerdo, están midiendo lo mismo.
+       0 = tiesa, la cuerda mide justo lo que tiene. 1 = floja, se le concede
+       un tercio más de alcance, que es lo que deja al peso llegar más lejos
+       sin que la cuerda se rompa. */
+    this.flexCuerda = 0;
     this.enCuerpo = new Uint8Array(n);
     /* ── EL VOLTAJE ─────────────────────────────────────────────────────
        Carlos: «la resistencia debe poder tener más poder (producir más calor)
@@ -1390,8 +1413,36 @@ export class Mundo {
           if(cadena.length > 3000) break;
         }
 
-        /* 2 · el amarre */
-        let amarre = -1;
+        /* 2 · los amarres · TODOS, no el primero.
+           ⚠ ANTES SE QUEDABA CON EL PRIMERO QUE ENCONTRABA, y por eso un
+           tendedero clavado de los dos extremos se comportaba EXACTAMENTE
+           igual que uno clavado de uno: el segundo clavo no existía para el
+           motor. Se vio porque las dos pruebas daban el mismo número hasta el
+           decimal —y dos experimentos distintos que dan el mismo número no
+           están de acuerdo, están midiendo lo mismo. */
+        /* ⚠ Y UN CLAVO DE VERDAD NO ES LO MISMO QUE ALGO QUE SE SOSTIENE, que
+           es lo que costó dos pruebas del péndulo. Juntando los dos en la
+           misma bolsa, LA PIEDRA COLGADA DE LA PUNTA se contaba como amarre —
+           está apoyada y es sólida— y el peso dejaba de ser peso para
+           convertirse en el otro extremo del tendedero: se quedaba clavado en
+           el aire y ya no volvía nunca.
+           Con un amarre solo el defecto no existía por accidente: se tomaba
+           el primero en orden de barrido, que es el de arriba.
+           Así que hay dos clases, y las fijas mandan: si la cuerda toca algo
+           fijo, ÉSOS son sus clavos. Lo apoyado sólo sirve cuando no hay
+           ninguno, que es el caso de una cuerda amarrada a una caja. */
+        /* ⚠ Y SE APUNTA DE QUÉ ESTÁ COLGADA, no sólo por dónde.
+           Aquí estaba el defecto que tenía a Carlos con «la cuerda no carga
+           nada»: en el paso 5 cada eslabón busca sólidos alrededor para
+           colgárselos, y el primer eslabón tiene alrededor LA CAJA DE LA QUE
+           CUELGA LA CUERDA. Así que la caja se colgaba de su propia cuerda:
+           `sop = 0`, `flotante = 1`, y una caja que ya no está apoyada se cae
+           — con la cuerda y con todo lo que llevaba puesto.
+           El experimento de Carlos —dos cubos, uno sobre un muro— caía entero
+           al suelo por esto, y las pruebas de tendedero no lo veían porque
+           están clavadas a MURO, que sí se excluye por ser `fijo`.
+           Colgarse de algo no es lo mismo que cargarlo, y son dos renglones. */
+        const fijos = [], apoyados = [], soportes = new Set();
         for(const k of cadena){
           const cx = k % an, cy = (k / an) | 0;
           for(const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
@@ -1399,11 +1450,27 @@ export class Mundo {
             if(nx < 0 || ny < 0 || nx >= an || ny >= al) continue;
             const k2 = ny * an + nx;
             if(t[k2] === VACIO || ES_CUERDA[t[k2]]) continue;
-            if(EL[t[k2]].fijo || (sop[k2] && this.estadoDe(k2) === 'solido')){ amarre = k; break; }
+            if(EL[t[k2]].fijo){ fijos.push(k); break; }
+            if(sop[k2] && this.estadoDe(k2) === 'solido'){
+              apoyados.push(k); soportes.add(k2); break; }
           }
-          if(amarre >= 0) break;
         }
-        if(amarre < 0){ for(const k of cadena) this.suelto[k] = 1; continue; }
+        const amarres = fijos.length ? fijos : apoyados.slice(0, 1);
+        /* si el clavo es de verdad —algo fijo—, lo apoyado vuelve a ser carga
+           normal: un tendedero clavado a dos muros sí puede cargar una caja */
+        let cuelgaDe = null;
+        if(!fijos.length && soportes.size){
+          /* ⚠ Y NO BASTA CON LA CELDA DE CONTACTO: ES LA CAJA ENTERA.
+             Con sólo la celda, el eslabón de al lado agarraba la MISMA caja
+             por otro ladrillo y se la colgaba igual; la caja se quedaba sin
+             sostén y se caía con cuerda y carga. Uno no se cuelga de una caja
+             y además la carga. */
+          cuelgaDe = new Set();
+          for(const ks of soportes)
+            for(const kp of this.piezaDe([ks], TOPE_MANO_PIEZA, this._vistoCarga))
+              cuelgaDe.add(kp);
+        }
+        if(!amarres.length){ for(const k of cadena) this.suelto[k] = 1; continue; }
 
         /* 3 · cada eslabón con su padre, desde el amarre.
            ⚠ Y EL PADRE SE GUARDA COMO PUESTO EN LA CADENA, NO COMO CELDA. Con
@@ -1413,9 +1480,13 @@ export class Mundo {
            la cuerda se quedaba estirada, tiesa, sin volver nunca. Otra vez la
            casilla confundida con la cosa, esta vez dentro del mismo paso. */
         for(const k of cadena) padres[k] = -1;
-        const orden = [amarre];
-        const dePadre = [0];
-        padres[amarre] = amarre;
+        /* Recorrido a lo ancho desde TODOS los amarres a la vez: así cada
+           eslabón queda colgado del clavo que le queda más cerca, que es lo
+           que hace que el centro de un tendedero se pandee y las orillas no. */
+        const orden = amarres.slice();
+        const dePadre = amarres.map((_, i) => i);
+        const anclaDe = amarres.slice();
+        for(const a0 of amarres) padres[a0] = a0;
         for(let i = 0; i < orden.length; i++){
           const k = orden[i];
           const cx = k % an, cy = (k / an) | 0;
@@ -1426,7 +1497,7 @@ export class Mundo {
             const k2 = ny * an + nx;
             if(!ES_CUERDA[t[k2]]) continue;
             if(padres[k2] !== -1) continue;
-            padres[k2] = k; dePadre.push(i); orden.push(k2);
+            padres[k2] = k; dePadre.push(i); anclaDe.push(anclaDe[i]); orden.push(k2);
           }
         }
 
@@ -1436,18 +1507,20 @@ export class Mundo {
         /* cuántos eslabones hay entre éste y el amarre: ÉSA es su cuerda, y
            por eso no se calcula con el puesto en la lista —la búsqueda es a lo
            ancho y en una cuerda con ramas el puesto no es la profundidad— */
-        const prof = [0];
-        for(let i = 1; i < orden.length; i++) prof.push(prof[dePadre[i]] + 1);
-        sop[amarre] = 1; this.flotante[amarre] = 1;
-        this.vy[amarre] = 0; this.vx[amarre] = 0;
-        for(let i = 1; i < orden.length; i++){
+        const prof = amarres.map(() => 0);
+        for(let i = amarres.length; i < orden.length; i++) prof.push(prof[dePadre[i]] + 1);
+        for(const a0 of amarres){
+          sop[a0] = 1; this.flotante[a0] = 1;
+          this.vy[a0] = 0; this.vx[a0] = 0;
+        }
+        for(let i = amarres.length; i < orden.length; i++){
           const k = pos[i];
           this.flotante[k] = 1;
           this.gravedadEn(k % an, (k / an) | 0, k);
           this.vy[k] = Math.max(-VMAX, Math.min(this.vy[k] + this._gy, VMAX));
           this.vx[k] = Math.max(-VMAX, Math.min(this.vx[k] + this._gx, VMAX));
           this.arrastra(k, EL[t[k]]);
-          pos[i] = this.tensa(k, pos[dePadre[i]], amarre, prof[i]);
+          pos[i] = this.tensa(k, pos[dePadre[i]], anclaDe[i], prof[i]);
         }
 
         /* 5 · lo que cuelga de la cuerda se queda colgando: eso es AMARRAR.
@@ -1470,6 +1543,14 @@ export class Mundo {
            eslabón de más arriba que tocara: se trepaba por la cuerda hasta el
            techo y se quedaba colgado del amarre con un eslabón de correa. Lo
            que uno amarra, lo amarra a la PUNTA. */
+        /* ⚠ Y LA CUERDA NO ES PARTE DE LA CARGA, aunque `piezaDe` la vea como
+           sólida —lo es: `cuerda` tiene `estado:'solido'`—. Sin marcarla, la
+           pieza crecía desde el peso hacia el eslabón que lo sujeta y de ahí
+           por la cuerda entera: el «cuerpo» pasaba a ser peso MÁS cuerda, y un
+           cuerpo así no cabe en ningún sitio, así que el péndulo se quedaba
+           clavado. Dos pruebas del péndulo se pusieron rojas de golpe y ésa
+           fue la pista. */
+        for(const kk2 of pos) this._vistoCarga[kk2] = 1;
         for(let i = pos.length - 1; i >= 0; i--){
           const k = pos[i];
           const cx = k % an, cy = (k / an) | 0;
@@ -1485,23 +1566,61 @@ export class Mundo {
               if(this.nudo[k2] < this.paso_ - 1) continue;
             }
             if(this.estadoDe(k2) !== 'solido') continue;
+            if(cuelgaDe && cuelgaDe.has(k2)) continue; /* de eso CUELGA: no lo carga */
             if(this.flotante[k2]) continue;            /* ya lo lleva otra cuerda */
-            sop[k2] = 0; this.flotante[k2] = 1; this.nudo[k2] = this.paso_;
-            this.gravedadEn(nx, ny, k2);
-            this.vy[k2] = Math.max(-VMAX, Math.min(this.vy[k2] + this._gy, VMAX));
-            this.vx[k2] = Math.max(-VMAX, Math.min(this.vx[k2] + this._gx, VMAX));
-            this.arrastra(k2, EL[t[k2]]);
-            this.tensa(k2, k, amarre, prof[i] + 1);   /* la carga se sujeta al último eslabón */
+            /* ⚠ LA CARGA ES UN CUERPO, NO UNA CELDA. Sin esto la cuerda se
+               llevaba colgando sólo las tres o cuatro celdas que tenía al
+               alcance y las demás seguían cayendo: el cubo se desgajaba en el
+               aire, que es «se hace una bola horrible» palabra por palabra.
+               Todas las celdas de la pieza se marcan a la vez —si no, el
+               eslabón siguiente vuelve a agarrar la misma caja por otro lado y
+               la parte en dos otra vez— y la restricción se aplica UNA vez,
+               sobre la pieza entera. */
+            const carga = this.piezaDe([k2], TOPE_MANO_PIEZA, this._vistoCarga);
+            for(const kc of carga){
+              sop[kc] = 0; this.flotante[kc] = 1; this.nudo[kc] = this.paso_;
+              this.gravedadEn(kc % an, (kc / an) | 0, kc);
+              this.vy[kc] = Math.max(-VMAX, Math.min(this.vy[kc] + this._gy, VMAX));
+              this.vx[kc] = Math.max(-VMAX, Math.min(this.vx[kc] + this._gx, VMAX));
+              this.arrastra(kc, EL[t[kc]]);
+            }
+            /* la carga se sujeta al último eslabón, y al clavo del que ESE
+               eslabón cuelga — no al primero de la cuerda, que desde que hay
+               varios amarres puede estar del otro lado del tendedero */
+            this.tensa(k2, k, anclaDe[i], prof[i] + 1, carga);
+            /* y toda la pieza comparte la velocidad del punto amarrado: es UN
+               cuerpo, así que no puede llevar dieciséis velocidades distintas */
+            const vcx = this.vx[k2], vcy = this.vy[k2];
+            for(const kc of carga){ this.vx[kc] = vcx; this.vy[kc] = vcy; }
           }
         }
+        for(const kk2 of pos) this._vistoCarga[kk2] = 0;   /* se deja limpio */
       }
     }
   }
 
   /* Mueve un eslabón hacia donde apunta su velocidad y luego lo obliga a
      seguir pegado a su padre. Esa corrección es la TENSIÓN. */
-  tensa(k, padre, ancla = -1, alcance = 0){
+  tensa(k, padre, ancla = -1, alcance = 0, cuerpo = null){
     const { an } = this;
+    /* ⚠ SI LO QUE CUELGA ES UN CUERPO, SE MUEVE EL CUERPO ENTERO O NINGUNO.
+       Aquí estaba, literal, el reclamo de Carlos: «me arranca los píxeles de
+       los que está agarrada… no une dos cosas, sino que las arranca y las pega
+       y se hace una bola horrible». Y era exacto: la cuerda agarraba CELDAS.
+       De un cubo de 16 se llevaba las tres o cuatro que tenía al alcance y las
+       otras doce seguían cayendo solas — el cubo se desgajaba en el aire.
+       Mover la pieza completa o no moverla es lo que separa un cuerpo de un
+       montón de píxeles, y ya estaba escrito para los sólidos que caen; lo que
+       faltaba era que la cuerda usara la misma ley. */
+    const mueve = (desde, hasta) => {
+      if(!cuerpo || cuerpo.length <= 1){ this.intercambia(desde, hasta); return true; }
+      const ddx = (hasta % an) - (desde % an);
+      const ddy = ((hasta / an) | 0) - ((desde / an) | 0);
+      if(!this.mueveCuerpo(cuerpo, ddx, ddy)) return false;
+      const off = ddy * an + ddx;
+      for(let i = 0; i < cuerpo.length; i++) cuerpo[i] += off;
+      return true;
+    };
     /* devuelve DÓNDE QUEDÓ, para que el eslabón siguiente sepa dónde está su
        padre de verdad y no dónde estaba al empezar el paso */
     let x = k % an, y = (k / an) | 0;
@@ -1518,7 +1637,9 @@ export class Mundo {
     /* medio celda de holgura: una rejilla no tiene puntos a distancia exacta 9,
        y sin ella el peso de un péndulo tenso se quedaba clavado —CUALQUIER
        casilla vecina se pasaba del tope por centésimas */
-    const tope = (alcance + 0.5) * (alcance + 0.5);
+    /* medio celda de holgura SIEMPRE, más la que le dé la flexibilidad */
+    const largo = alcance + 0.5 + alcance * (this.flexCuerda || 0) * 0.35;
+    const tope = largo * largo;
     const lejosDelAmarre = (nx, ny) => ancla >= 0 &&
       (nx - ax0) * (nx - ax0) + (ny - ay0) * (ny - ay0) > tope;
 
@@ -1573,10 +1694,60 @@ export class Mundo {
           if(est === 'solido' || est === 'polvo' || ed.fijo) continue;
           if((ed.dens || 0) >= (EL[this.t[kk]].dens || 1)) continue;
         }
-        this.intercambia(kk, kd);
+        if(!mueve(kk, kd)) continue;
         kk = kd; x = kk % an; y = (kk / an) | 0;
         movido = true;
         break;
+      }
+    }
+    /* ── Y SI NO PUDO CAER RECTO, SE DESLIZA ────────────────────────────
+       Aquí estaba «las cuerdas horizontales no bajan», y es la regla que
+       faltaba, no una que sobrara. Un eslabón sólo puede pisar donde siga
+       pegado a su padre Y dentro del radio de su amarre. Las dos están bien.
+       Pero con sólo esas dos, la ÚNICA fuerza es la gravedad —vertical—, así
+       que ningún eslabón se mueve nunca hacia adentro: la cuerda puede bajar
+       y no puede JUNTARSE. Tendida en horizontal se convierte en una
+       escalerita y se para a las dos celdas.
+
+       Una cadena colgando no baja recto: resbala sobre su propio radio. Así
+       que cuando la caída recta queda prohibida se busca, entre las ocho
+       vecinas legales, la MÁS BAJA — que es lo mismo que decir que el eslabón
+       busca su energía más baja sin estirar la cuerda. De ahí sale la curva
+       de una cuerda colgada, sin una línea que diga «catenaria».
+
+       Medido con una cuerda de 21 clavada de un extremo: antes se quedaba en
+       y=21.9 con la punta en y=24 después de 80 pasos. */
+    /* ⚠ SÓLO CUANDO SE ESTÁ ASENTANDO, NO CUANDO SE COLUMPIA, y esto costó
+       dos pruebas del péndulo. El deslizamiento mueve el eslabón de lado sin
+       que esa velocidad exista: para una cuerda que cuelga eso es correcto —el
+       trabajo lo hace la gravedad— pero en un péndulo en pleno vuelo es un
+       empujón de la nada, y el peso se soltaba y dejaba de volver.
+       La distinción es física y se lee en una línea: `dx` es la velocidad
+       HORIZONTAL propia del eslabón. Si vale cero, lo único que actúa es la
+       gravedad y la cadena está buscando su forma. Si no, va columpiándose y
+       aquí no se le toca. */
+    if(!movido && dy > 0 && dx === 0){
+      let mejorK = -1, mejorY = y, mejorX = x;
+      for(let ddy = -1; ddy <= 1; ddy++) for(let ddx = -1; ddx <= 1; ddx++){
+        if(!ddx && !ddy) continue;
+        const nx = x + ddx, ny = y + ddy;
+        if(ny <= mejorY) continue;                   /* sólo hacia abajo */
+        if(Math.max(Math.abs(nx - px), Math.abs(ny - py)) > 1) continue;
+        if(lejosDelAmarre(nx, ny)) continue;
+        if(!this.dentro(nx, ny)) continue;
+        const kd = this.i(nx, ny);
+        if(kd === padre) continue;
+        if(this.t[kd] !== VACIO){
+          const ed = EL[this.t[kd]];
+          const est = this.estadoDe(kd);
+          if(est === 'solido' || est === 'polvo' || ed.fijo) continue;
+          if((ed.dens || 0) >= (EL[this.t[kk]].dens || 1)) continue;
+        }
+        mejorK = kd; mejorY = ny; mejorX = nx;
+      }
+      if(mejorK >= 0 && mueve(kk, mejorK)){
+        kk = mejorK; x = mejorX; y = mejorY;
+        movido = true;
       }
     }
     const bloqueado = (dx || dy) && !movido;
@@ -1597,7 +1768,25 @@ export class Mundo {
         const d = (nx - x) * (nx - x) + (ny - y) * (ny - y);
         if(d < mejorD){ mejorD = d; mejor = kd; }
       }
-      if(mejor >= 0){ this.intercambia(kk, mejor); kk = mejor; }
+      /* ⚠ UN CUERPO NO SE TELETRANSPORTA: SE ACERCA UNA CELDA POR PASO.
+         Aquí se soltaba la carga de una cuerda dibujada en diagonal. La cuerda
+         se recoge hacia la vertical —correcto: 12 eslabones no abarcan 17
+         celdas— y el último eslabón puede saltar ocho celdas de golpe en ese
+         recogido. La carga intentaba seguirlo de un brinco, `mueveCuerpo`
+         decía que no cabe, y la cuerda se quedaba sin nada colgando: el cubo
+         caía al suelo con la cuerda intacta arriba.
+         Un eslabón sí puede brincar —es una celda suelta—; una caja de
+         dieciséis, no. Así que se le da el paso que sí cabe, en la dirección
+         correcta, y el resto en los pasos siguientes. */
+      if(mejor >= 0){
+        if(!cuerpo || cuerpo.length <= 1){ if(mueve(kk, mejor)) kk = mejor; }
+        else {
+          const mx = mejor % an, my = (mejor / an) | 0;
+          const ux = Math.sign(mx - x), uy = Math.sign(my - y);
+          const uno = this.i(x + ux, y + uy);
+          if((ux || uy) && this.dentro(x + ux, y + uy) && mueve(kk, uno)) kk = uno;
+        }
+      }
     }
     /* ── EL TIRÓN VIAJA HACIA ARRIBA ────────────────────────────────────
        Y aquí estaba el péndulo que no era péndulo. Con la restricción sola,
@@ -2643,11 +2832,15 @@ export class Mundo {
        la onda crecía sin techo hasta arrasar la sala. Y llevaba ahí desde que
        se escribió la ecuación de onda — todas las pruebas la miraban en el
        aire. */
+    /* Se declara AQUÍ y no abajo con `tr` y `am`: el recorrido de copia que
+       viene enseguida ya lo usa, y declararlo después daba un ReferenceError
+       en la primera prueba que tocara una onda. */
+    const v0 = this._v0, _lp = this._lapP, _lv = this._lapV;
     const cx0 = Math.max(0, x0 - 1), cx1 = Math.min(an - 1, x1 + 1);
     const cy0 = Math.max(0, y0 - 1), cy1 = Math.min(al - 1, y1 + 1);
     for(let y = cy0; y <= cy1; y++){
       const f = y * an;
-      for(let x = cx0; x <= cx1; x++) p0[f + x] = pres[f + x];
+      for(let x = cx0; x <= cx1; x++){ const k = f + x; p0[k] = pres[k]; v0[k] = pv[k]; }
     }
     /* transmisión por celda, calculada UNA vez y usada cinco: la miran sus
        cuatro vecinas y ella misma */
@@ -2689,6 +2882,10 @@ export class Mundo {
        se lee como una onda. Pasarse de ½ no da «más rápido»: da números que
        llegan a infinito en cuatro pasos. */
     const C2 = 0.48;
+    /* Cuánta difusión se le suma a la velocidad. Es lo que mata el damero sin
+       tocar la onda buena — ver el comentario largo abajo, en el bucle.
+       El número se midió, no se eligió: ver la tabla en el commit. */
+    const VISC = 0.004;
     /* el techo baja solo: una explosión de hace diez segundos ya no autoriza
        nada. Sin esta caída, el primer petardo de la partida dejaría permiso
        para siempre. Se lee DESPUÉS del recorrido de arriba, que es donde los
@@ -2713,6 +2910,43 @@ export class Mundo {
         if(x === 0)      lap -= pk; else { const c = tc < tr[k-1] ? tc : tr[k-1]; if(c) lap += (p0[k-1] - pk) * c; }
         if(x === an - 1) lap -= pk; else { const c = tc < tr[k+1] ? tc : tr[k+1]; if(c) lap += (p0[k+1] - pk) * c; }
 
+        /* ⚠ EL DAMERO · el patrón cuadriculado que reportó Carlos.
+           «Las ondas expansivas muchas veces llegan a hacer este patrón como
+           cuadriculado… eso se vuelve una onda expansiva infinita y es muy
+           molesto, tienes que esperar hasta que se acabe sola y no se acaba
+           rápido.»
+
+           Tiene nombre: es el MODO DE NYQUIST de la ecuación de onda en una
+           rejilla — el patrón que cambia de signo de una celda a la siguiente,
+           la frecuencia espacial más alta que la rejilla puede representar.
+
+           POR QUÉ NO SE MORÍA: `am[k]` es un número FIJO, el mismo para todas
+           las frecuencias. Así que el damero se apagaba tan despacio como la
+           onda buena… sólo que la onda buena SE VA VIAJANDO y el damero no:
+           su velocidad de grupo es cero, se queda parado donde nació. A los
+           120 pasos quedaba el 51 % de la energía, con correlación −0.99 entre
+           vecinas: la sala entera en damero y todavía sonando.
+
+           Y NO SE ARREGLA SUBIENDO `am`: eso mata también la onda de verdad y
+           el juego se queda sin explosiones. Hay una prueba que lo vigila.
+
+           EL ARREGLO es un amortiguamiento que DEPENDA DE LA FRECUENCIA, y
+           sale gratis porque `lap` ya está calculado. Sumarle `VISC * lap` a
+           la velocidad es difusión, y la difusión ataca por curvatura: el
+           laplaciano de una onda suave es casi cero —no la toca— y el de un
+           damero vale −8 veces su amplitud, o sea el máximo posible. Cada
+           paso le quita un 8·VISC.
+
+           Un término, una multiplicación, y sólo le pega a lo que sobra.
+
+           ⚠ Y VA SOBRE LA VELOCIDAD, NO SOBRE LA PRESIÓN. Mi primer intento
+           fue sumarle `VISC * lap` —el laplaciano de la PRESIÓN— y salió PEOR:
+           el damero pasó del 51 % al 144 %, o sea que creció. La razón es que
+           `C2 * lap` YA ES la fuerza de restitución del oscilador, así que
+           sumarle más de lo mismo no amortigua: ENDURECE. Subió ω²dt² de 3.84
+           a 4.32, por encima del 4 que es el límite de estabilidad, y la cosa
+           se puso a crecer sola.
+           Amortiguar es rozamiento, y el rozamiento va contra la VELOCIDAD. */
         let v = (pv[k] + C2 * lap) * am[k];
         let p = pk + v;
         const tk = t[k];
@@ -2753,6 +2987,105 @@ export class Mundo {
       }
     }
     caja.x0 = nx0; caja.x1 = nx1; caja.y0 = ny0; caja.y1 = ny1;
+
+    /* ══ EL FILTRO DEL DAMERO · segunda pasada ═══════════════════════════
+       Aquí abajo y no dentro del bucle, y costó tres intentos entender por
+       qué. Lo que se filtra es el campo YA ACTUALIZADO:
+
+         · Intento 1 — sumarle `VISC·∇²p` a la velocidad DENTRO del paso.
+           Peor: 51 % → 144 %. `C2·∇²p` ya es la fuerza de restitución, así
+           que sumar más de lo mismo no amortigua, ENDURECE: sube ω²dt² de
+           3.84 a 4.32, por encima del 4 que es el límite, y crece sola.
+         · Intento 2 — el rozamiento contra la velocidad, `VISC·∇²v`, dentro
+           del paso. También peor: 151 %. Sobreamortiguar un esquema
+           explícito lo desestabiliza igual que subamortiguarlo — las raíces
+           dejan de ser complejas y una se sale del círculo unidad.
+         · Intento 3 — filtrar después, pero usando el laplaciano de la
+           presión VIEJA. Peor otra vez: 144 %. Y la razón es preciosa: el
+           damero cambia de signo CADA PASO, así que la presión vieja tiene
+           el signo contrario a la nueva, y el filtro en vez de restar sumaba.
+
+       Lo que sí funciona: tomar una foto del campo nuevo y filtrar contra
+       ella. Para una onda suave el laplaciano es casi cero y no la toca; para
+       el damero vale −8 veces su amplitud —el máximo que permite la rejilla—
+       así que cada paso le quita 8·VISC. Y como se aplica por igual a la
+       presión y a la velocidad, es atenuación pura: no mueve la frecuencia,
+       no puede desestabilizar nada, sólo baja la amplitud del modo que sobra. */
+    if(VISC > 0 && nx1 >= nx0){
+      const fx0 = Math.max(1, nx0), fx1 = Math.min(an - 2, nx1);
+      const fy0 = Math.max(1, ny0), fy1 = Math.min(al - 2, ny1);
+      for(let y = fy0; y <= fy1; y++){
+        const f = y * an;
+        for(let x = fx0; x <= fx1; x++){ const k = f + x; p0[k] = pres[k]; v0[k] = pv[k]; }
+      }
+      /* ⚠ Y EL FILTRO ES BIARMÓNICO —el laplaciano DOS VECES—, no simple.
+         Con uno solo (difusión normal) el damero sí se moría… y se llevaba
+         por delante SIETE pruebas que pasaban: la difracción al doblar una
+         esquina, la detonación simpática, la presión de la cámara del cohete,
+         el carbón que se vuelve diamante. O sea que curaba al enfermo matándolo.
+
+         La razón es la selectividad. Un laplaciano atenúa por λ, y λ vale −8
+         para el damero pero también −1 o −2 para una onda de media frecuencia
+         — que es justo donde viven la difracción y la presión de una recámara.
+         Aplicado dos veces atenúa por λ², o sea 64 contra 1: SESENTA Y CUATRO
+         VECES más duro con el damero que con una onda de verdad.
+
+         Cuesta dos recorridos más sobre la caja activa. Se paga con gusto:
+         lo otro era elegir entre el damero y la mitad de la física. */
+      for(let y = fy0; y <= fy1; y++){
+        const f = y * an;
+        for(let x = fx0; x <= fx1; x++){
+          const k = f + x;
+          /* ⚠ LA PARED ES UN ESPEJO, NO UN CERO. Una celda de muro tiene la
+             presión clavada en 0, así que leerla tal cual convierte la pared
+             en un escalón y el biarmónico convierte el escalón en un empujón.
+             Reflejando —la vecina de muro vale lo mismo que uno— el
+             laplaciano contra la pared da cero y no se inventa nada, que es
+             justo lo que hace una pared rígida con una onda de verdad. */
+          const w = tr[k - 1] === 0 ? p0[k] : p0[k - 1];
+          const e_ = tr[k + 1] === 0 ? p0[k] : p0[k + 1];
+          const n_ = tr[k - an] === 0 ? p0[k] : p0[k - an];
+          const s_ = tr[k + an] === 0 ? p0[k] : p0[k + an];
+          _lp[k] = w + e_ + n_ + s_ - 4 * p0[k];
+          const wv = tr[k - 1] === 0 ? v0[k] : v0[k - 1];
+          const ev = tr[k + 1] === 0 ? v0[k] : v0[k + 1];
+          const nv = tr[k - an] === 0 ? v0[k] : v0[k - an];
+          const sv = tr[k + an] === 0 ? v0[k] : v0[k + an];
+          _lv[k] = wv + ev + nv + sv - 4 * v0[k];
+        }
+      }
+      const gx0 = fx0 + 1, gx1 = fx1 - 1, gy0 = fy0 + 1, gy1 = fy1 - 1;
+      for(let y = gy0; y <= gy1; y++){
+        const f = y * an;
+        for(let x = gx0; x <= gx1; x++){
+          const k = f + x;
+          /* ⚠ NI EL MURO NI SUS VECINAS. Filtrar pegado a una pared inventa
+             fuerzas que no existen: la celda de muro tiene la presión clavada
+             en 0, así que para el laplaciano es un escalón, y el biarmónico
+             —que es el laplaciano del laplaciano— convierte ese escalón en un
+             empujón. Se vio en dos pruebas de un golpe: un recipiente CERRADO
+             se propulsaba solo (−2 celdas) y una carga que no debía romper la
+             tapa la desintegraba. Las dos son de paredes, y las dos se
+             arreglaron confinando el filtro al aire abierto.
+             No se pierde nada: el damero vive en el aire, no en el muro. */
+          if(tr[k] === 0) continue;                    /* el muro no se filtra */
+          const bv = (tr[k-1]===0?_lv[k]:_lv[k-1]) + (tr[k+1]===0?_lv[k]:_lv[k+1])
+                   + (tr[k-an]===0?_lv[k]:_lv[k-an]) + (tr[k+an]===0?_lv[k]:_lv[k+an])
+                   - 4 * _lv[k];
+          /* ⚠ LOS DOS CAMPOS, y probado que tiene que ser así. Filtrar SÓLO
+             la velocidad —que parecía lo prudente, porque la presión es la
+             que empuja cuerpos— dejó el damero en 144 %, o sea creciendo, y
+             empeoró el recipiente de −2 a −6 celdas. La presión y la
+             velocidad son las dos mitades del mismo oscilador: atenuar una
+             sola las desbalancea y lo que sobra vuelve por la otra. */
+          const bp = (tr[k-1]===0?_lp[k]:_lp[k-1]) + (tr[k+1]===0?_lp[k]:_lp[k+1])
+                   + (tr[k-an]===0?_lp[k]:_lp[k-an]) + (tr[k+an]===0?_lp[k]:_lp[k+an])
+                   - 4 * _lp[k];
+          pres[k] -= VISC * bp;
+          pv[k]   -= VISC * bv;
+        }
+      }
+    }
   }
 
   /* La presión a la que TIENDE un gas por estar caliente y encerrado. Ley de

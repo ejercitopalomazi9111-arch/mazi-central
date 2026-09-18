@@ -519,6 +519,13 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
 .hoja .membrete-sup.compuesto.presidencia img{height:19mm}
 
 .hoja .membrete-sup.compuesto.geraldmed img{height:22mm}
+/* Fadori: el logo es una hamburguesa y necesita aire; el nombre va con menos
+   letra espaciada que el de Mazi porque «Proyecto Sin Filas» es largo. */
+.hoja .membrete-sup.compuesto.fadori{
+  background:#FDF8F0; border-bottom:3mm solid #C2410C;
+}
+.hoja .membrete-sup.compuesto.fadori img{height:18mm}
+.hoja .membrete-sup.compuesto.fadori .quien span{letter-spacing:.10em}
 
 /* Marca de agua. Cada institución trae la suya: la imagen, su ancho y su
    leyenda salen de INSTITUCIONES, no de aquí. El ancho tiene que ser por
@@ -1307,6 +1314,7 @@ El día ...
         <option value="rembrandt" selected>Instituto Rembrandt · membrete oficial</option>
         <option value="presidencia">Presidencia · Sociedad de Alumnos</option>
         <option value="geraldmed">GERALDMED · atención prehospitalaria</option>
+        <option value="fadori">Fadori · Proyecto Sin Filas</option>
       </select></label>
     <p class="aviso" id="avisoPapel"></p>
 
@@ -1493,6 +1501,92 @@ escribe "sin antecedentes".
 
 > Este reporte se levanta con carácter informativo para prefectura y queda a
 > disposición de la dirección académica.` },
+
+  /* ── EL PROYECTO SIN FILAS ───────────────────────────────────────────────
+     Lo que ya se sabe viene ESCRITO: el problema, los treinta minutos de
+     recreo, la cadena de siete consecuencias y las cuatro metas con su modo de
+     medirse salen de `fadori/PROYECTO.md` y no hay que redactarlos cada vez.
+     Eso es el acta de arranque del proyecto, no un dato del reporte.
+
+     Y las metas NO se cambian aunque salgan mal: que salgan mal también es un
+     resultado, y uno que la rúbrica premia si se explica. */
+  { area:'fadori', id:'fadori-avance', nombre:'Avance del proyecto',
+    etiqueta:'Reporte de avance · modalidad STEAM',
+    titulo:'Proyecto Sin Filas · Fadori — reporte de avance', para:'',
+    cuerpo:
+`## Resumen
+Cinco renglones: qué se hizo en este periodo, qué número se movió y qué sigue.
+Se escribe al final, cuando ya sabes qué dice el resto.
+
+## El problema
+El recreo dura **30 minutos**. La fila de la cooperativa se come entre **15 y
+20**, o sea del **50 al 67 %** del recreo. Y no se queda en la fila:
+
+1. La fila se come el recreo.
+2. Los que esperan no tienen dónde estar y se quedan parados en el pasillo.
+3. El pasillo bloqueado impide a la prefecta hacer su ronda.
+4. Sin ronda, se pierde la supervisión de los alumnos que están lejos.
+5. Nadie sabe cuándo está listo su pedido, así que no se van.
+6. Los alumnos no alcanzan a comer ni a despejarse.
+7. Regresan al salón con energía sin gastar: más desorden y más destrozos.
+
+El efecto final está a cuatro pasos de la causa. Eso es lo que hace que esto
+sea una intervención en un sistema y no una app por hacer una app.
+
+**Lo que cambió del problema en este periodo:** 
+
+## Qué se hizo en este periodo
+Hechos, con fecha. "Se instaló la pantalla el 14 de octubre" sirve; "se avanzó
+en el desarrollo" no dice nada y se nota.
+
+| Fecha | Qué se hizo | Quién |
+|---|---|---|
+|  |  |  |
+|  |  |  |
+
+## Las mediciones
+Ésta es la sección que sostiene el reporte entero. Sin números aquí, todo lo
+demás es una opinión.
+
+| Qué se mide | Antes | Meta | Ahora |
+|---|---|---|---|
+| Minutos en fila por alumno | ~17 min | menos de 5 |  |
+| Personas paradas frente a la cooperativa |  | la mitad |  |
+| ¿La prefecta pudo hacer su ronda completa? | casi nunca | casi siempre |  |
+| Pedidos atendidos por recreo |  | que suba |  |
+
+De dónde salen sin contarlos a mano: la pantalla del medidor baja dos archivos.
+El de **pedidos** trae \`espera_seg\` —lo que el alumno esperó de punta a punta—
+y su promedio entre 60 son los minutos de fila; sus renglones son los pedidos
+por recreo. El de **conteos** trae cuánta gente había parada, con su hora.
+
+**Qué dicen esos números:** 
+
+## Lo que salió mal
+No se salta. Un reporte sin problemas no lo cree nadie, y la rúbrica pide que
+se vea el proceso.
+
+| Qué falló | Qué se hizo o se va a hacer |
+|---|---|
+|  |  |
+
+## Lo que sigue
+| Qué falta | Para cuándo | Quién |
+|---|---|---|
+|  |  |  |
+
+**Lo que hace falta de la escuela:** permisos, un lugar donde colgar la
+pantalla, tiempo de la cooperativa. Escribirlo aquí convierte un pretexto en
+una petición, y si no se concede queda constancia de que se pidió.
+
+## Conclusión
+¿El proyecto va bien, va mal o hay que cambiarle algo? Y de frente la pregunta
+que importa: **¿bajó la fila sin que bajaran las ventas?** Si las ventas
+bajaron, la cooperativa va a apagar la app y el proyecto se acaba.
+
+## Anexos
+Se listan, no se pegan. Capturas de las cuatro pantallas, los dos archivos del
+medidor, fotos del pasillo antes y después.` },
 
   { area:'jefe', id:'semanal', nombre:'Semanal de grupo', etiqueta:'Reporte semanal de grupo',
     titulo:'Reporte semanal del grupo 3.1', para:'Prefectura',
@@ -1853,6 +1947,33 @@ const INSTITUCIONES = {
     tope:40, fondo:30,
   },
 
+  /* ── 5 · FADORI · el proyecto de la escuela ─────────────────────────────
+     Carlos: «el coso de reportes ponlo en la herramienta que ya tenemos como
+     cambio de membrete y de marca de agua». Y tiene razón: el reporte del
+     Proyecto Sin Filas era una página suelta que repetía la maquetación, la
+     paginación y el impreso que esta herramienta ya hace. Aquí no hace falta
+     nada de eso — sólo decir de quién es el papel.
+
+     Los colores son los de `fadori/ESTETICA.md`, medidos y no escogidos:
+     café tinta #2E1B10 y naranja horneado #C2410C. */
+  fadori: {
+    nombre: 'Fadori',
+    compuesta: { logo:'fadori/logo-fadori.png', lema:'Proyecto Sin Filas · Instituto Rembrandt',
+                 clase:'fadori' },
+    pie:'Fadori · Proyecto Sin Filas · Instituto Rembrandt de Querétaro',
+    /* ⚠ 165 mm Y NO 104, y el número salió MEDIDO por la prueba, no a ojo.
+       Lo que tiene que quedar parejo entre las cinco marcas de agua no es el
+       ancho declarado sino la TINTA que cae en el papel: el logo de Fadori es
+       apaisado —la hamburguesa más la palabra— así que al mismo ancho pintaba
+       189 px de alto contra los 290-322 de las otras. Se veía un tercio más
+       chica. Es la misma lección que ya estaba escrita para la estrella de
+       GERALDMED, y volvió a aparecer con el primer logo nuevo. */
+    agua:{ logo:'fadori/logo-fadori.png', ancho:165,
+           leyenda:'FADORI · PROYECTO SIN FILAS' },
+    tinta:'#2E1B10', acento:'#C2410C',
+    tope:40, fondo:30,
+  },
+
   /* ── 4 · GERALDMED ─────────────────────────────────────────────────────
      Trae su logo, no un membrete. Los colores se MIDIERON del PNG que mandó
      Carlos —turquesa #92D9CF y azul #454C78—, no se escogieron a ojo: un logo
@@ -1882,7 +2003,7 @@ const INSTITUCIONES = {
    no una regla: el selector manda siempre. Se pone porque escoger dos veces lo
    mismo —el tipo y luego su papel— es trabajo que la herramienta puede hacer
    sola casi siempre. */
-const PAPEL_POR_AREA = { jefe:'mazi', sociedad:'presidencia', general:'rembrandt' };
+const PAPEL_POR_AREA = { jefe:'mazi', sociedad:'presidencia', general:'rembrandt', fadori:'fadori' };
 
 
 const LLAVE = 'reportes_mazi_v1';
@@ -2340,6 +2461,14 @@ function armaHoja(f, primera){
     if(f.agua === 'paloma' || f.agua === 'solo'){
       const p = document.createElement('img');
       p.src = marca.logo; p.alt = '';
+      /* ⚠ DE QUIÉN ES LA MARCA, GUARDADO APARTE. `oscurecerAgua` hornea la
+         imagen en un lienzo y le reemplaza el `src` por un `data:`, así que
+         después del horneado NO HAY FORMA de saber qué logo salió en la hoja
+         — ni mirando el DOM, ni desde una prueba, ni depurando a mano. Cuatro
+         pruebas de impresión llevaban tiempo en rojo por esto y NO era que la
+         marca de agua estuviera mal: estaba bien y no se podía comprobar.
+         Un atributo con la ruta original y se acabó. */
+      p.dataset.de = marca.logo;
       p.style.width = marca.ancho + 'mm'; p.style.transform = 'rotate(-21deg)';
       p.style.opacity = (f.opacidad/100);
       /* ⚠ AQUÍ IBA `filter: grayscale(1) brightness(.35)` Y SALÍA UN RECUADRO
@@ -3631,7 +3760,8 @@ function nota(txt, malo){
 /* ══════════════════════════════════════════════════════════════════════════
    6 · LA PANTALLA
    ═════════════════════════════════════════════════════════════════════════ */
-const AREAS = [['jefe','Jefe de grupo'], ['sociedad','Sociedad de alumnos'], ['general','Cualquiera']];
+const AREAS = [['jefe','Jefe de grupo'], ['sociedad','Sociedad de alumnos'],
+               ['fadori','Fadori · Proyecto Sin Filas'], ['general','Cualquiera']];
 function pintarTipos(){
   $('#tipos').innerHTML = AREAS.map(([a, nombre]) => {
     const míos = TIPOS.filter(t => (t.area||'general') === a);

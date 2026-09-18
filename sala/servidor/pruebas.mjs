@@ -46,7 +46,26 @@ function hacerCtx(){
       async getAlarm(){ return datos.get('__alarma') ?? null; },
     },
     blockConcurrencyWhile: (f) => f(),
+    /* ⚠ ANTES NO HABÍA `waitUntil` Y ESO HACÍA INVISIBLE MEDIA CLASE DE
+       DEFECTOS. `luego()` usa `waitUntil` donde existe y si no deja correr la
+       promesa al aire — que en producción está bien, pero en una prueba
+       significa que todo lo que pasa EN SEGUNDO PLANO (las sillas contestando,
+       los avisos) ocurría después de que la prueba ya había terminado de
+       mirar. O sea: no se podía probar.
+       Ahora se recogen y `asentar()` las espera. */
+    waitUntil: (pr) => { enVuelo.push(Promise.resolve(pr).catch(() => {})); },
   };
+}
+
+/* Lo que quedó corriendo en segundo plano. */
+const enVuelo = [];
+/** Espera a que el segundo plano termine. Se llama cuando una prueba necesita
+ *  mirar algo que otro proceso iba a escribir. */
+async function asentar(vueltas = 6){
+  for(let i = 0; i < vueltas && enVuelo.length; i++){
+    const lote = enVuelo.splice(0);
+    await Promise.all(lote);
+  }
 }
 
 /* ESPERA_MS bajo: dos de las pruebas de /esperar se agotan a propósito, y con
@@ -113,7 +132,20 @@ console.log('\n· Hablar');
 /* ══ 3 · el freno · lo que evita que esto se coma el saldo ════════════════ */
 console.log('\n· El freno de vueltas');
 {
-  const s = nueva();
+  /* ⚠ EL TOPE SE PONE A MANO EN ESTE BLOQUE, y no es para hacer pasar la
+     prueba: es para que siga probando algo.
+
+     Carlos pidió quitar el freno de 12 («nos detiene mucho el avance») y el
+     valor por omisión subió a 500, que es un techo anti-bucle, no un freno de
+     conversación. Con 500, hacer que este bloque llegue al freno pediría
+     quinientas vueltas por corrida — una suite que tarda es una suite que se
+     deja de correr.
+
+     Pero el MECANISMO sigue vivo y sigue teniendo que funcionar, así que se
+     prueba con el tope puesto en 12: exactamente el mismo camino, sólo que
+     alcanzable. Lo que cambió es el número por omisión, y ése se comprueba
+     aparte, abajo. */
+  const s = nueva({ TOPE_VUELTAS: 12 });
   await entrar(s, 'cl-1'); await entrar(s, 'cl-2');
   await entrar(s, 'carlos', 'humano');
 
@@ -563,10 +595,340 @@ console.log('\n· Presentaciones');
 
 
 
+/* ══ 11-bis · el freno APAGADO, que es lo que pidió Carlos ════════════════ */
+console.log('\n· El freno, con el valor de verdad');
+{
+  /* ⚠ SIN ESTE BLOQUE NO SE ESTARÍA PROBANDO EL CAMBIO. Arriba, el freno se
+     prueba con `TOPE_VUELTAS: 12` puesto a mano — o sea que se prueba el
+     MECANISMO, que no cambió. Lo que Carlos pidió fue otra cosa: que el freno
+     deje de cortar la conversación. Eso vive en el valor por omisión, y un
+     valor por omisión que nadie comprueba es un valor que cualquiera baja de
+     nuevo sin enterarse. */
+  const s = nueva();                       // sin tocar nada: como en producción
+  await entrar(s, 'a-1'); await entrar(s, 'a-2');
+  let frenado = null;
+  for(let i = 0; i < 60 && frenado === null; i++){
+    const [c] = await leer(await pedir(s, 'POST', 'decir',
+      { de: i % 2 ? 'a-2' : 'a-1', tipo:'desacuerdo', texto:'sigo' }));
+    if(c === 429) frenado = i;
+  }
+  ok('sesenta mensajes seguidos entre agentes YA NO se frenan (antes: a los 12)',
+     frenado === null, 'se frenó en la vuelta ' + frenado);
+
+  const s2 = nueva();
+  await entrar(s2, 'b-1');
+  const [, r2] = await leer(await pedir(s2, 'POST', 'entrar',
+    { id:'b-2', nombre:'otro', tipo:'agente' }));
+  ok('y el techo anti-bucle que queda es 500, no 12',
+     r2.tope === 500, String(r2.tope));
+
+  /* SIN_FRENO es la salida de emergencia por si Carlos lo quiere de plano sin
+     techo: se pone en el entorno y no hay que volver a desplegar código. */
+  const s3 = nueva({ SIN_FRENO: '1' });
+  await entrar(s3, 'c-1');
+  const [, r3] = await leer(await pedir(s3, 'POST', 'entrar',
+    { id:'c-2', nombre:'otro', tipo:'agente' }));
+  ok('con SIN_FRENO no hay techo de ninguna clase',
+     r3.tope === null || r3.tope === Infinity || !isFinite(r3.tope), String(r3.tope));
+}
+
+/* ══ 11-quinquies · LOS NOMBRES Y EL TONO QUE PIDIÓ CARLOS ═══════════════ */
+console.log('\n· Negro, Paulina y el tono de la casa');
+{
+  const LLAVES = { GROQ_API_KEY:'x', GEMINI_API_KEY:'x' };
+  const original = globalThis.fetch;
+  let visto = null;
+  globalThis.fetch = async (url, op) => {
+    visto = { url:String(url), cuerpo: JSON.parse(op.body) };
+    return { ok:true, status:200,
+             json: async () => ({ choices:[{ message:{ content:'ándale pues' } }],
+                                  candidates:[{ content:{ parts:[{ text:'ándale pues' }] } }] }),
+             text: async () => '' };
+  };
+
+  /* ── se les habla por su NOMBRE ───────────────────────────────────────── */
+  for(const [comoLoEscribe, quienContesta] of
+      [['negro','Negro'], ['Negro','Negro'], ['paulina','Paulina'],
+       ['PAULINA','Paulina'], ['pau','Paulina'], ['groq','Negro']]){
+    const s = nueva(LLAVES);
+    await entrar(s, 'carlos', 'humano');
+    const [c] = await leer(await pedir(s, 'POST', 'decir',
+      { de:'carlos', tipo:'mensaje', a:comoLoEscribe, texto:'¿qué onda?' }));
+    await asentar();
+    const [, h] = await leer(await pedir(s, 'GET', 'hilo'));
+    const suya = h.hilo.find(e => e.de && e.de.nombre === quienContesta && e.de.id !== 'carlos');
+    ok(`«${comoLoEscribe}» le llega a ${quienContesta}`, c === 200 && !!suya,
+       'código ' + c + ' · ' + JSON.stringify(suya && suya.de));
+  }
+  {
+    const s = nueva(LLAVES);
+    await entrar(s, 'carlos', 'humano');
+    const [c] = await leer(await pedir(s, 'POST', 'decir',
+      { de:'carlos', tipo:'mensaje', a:'gonzalo', texto:'hola' }));
+    ok('y un nombre que no es de nadie sigue rebotando', c === 400, String(c));
+  }
+
+  /* ── el tono va en el encargo ─────────────────────────────────────────── */
+  {
+    const s = nueva(LLAVES);
+    await entrar(s, 'carlos', 'humano');
+    await leer(await pedir(s, 'POST', 'decir',
+      { de:'carlos', tipo:'mensaje', a:'negro', texto:'hola' }));
+    await asentar();
+    const papel = visto.cuerpo.messages[0].content;
+    ok('a la silla se le pide el tono cínico que pidió Carlos',
+       /c[ií]nico/i.test(papel) && /sarc[aá]stico/i.test(papel), papel.slice(0,70));
+    ok('y se le dice su nombre nuevo, no el del proveedor',
+       /Eres Negro/.test(papel), papel.slice(0,40));
+    /* ⚠ LO QUE MÁS IMPORTA DE ESTE BLOQUE. El tono es lo divertido; esto es lo
+       que hace que la sala siga sirviendo. Una silla grosera que además
+       inventa suena segurísima y te manda al carajo por el camino equivocado
+       — es peor que una aburrida y honesta. */
+    ok('PERO se le prohíbe inventar, por encima del tono',
+       /NO INVENTES/.test(papel));
+    ok('y se le prohíbe autorizar lo que autoriza una persona',
+       /nunca orden/i.test(papel) && /autoriza una persona/i.test(papel));
+  }
+
+  /* ── el numerito con Paulina ──────────────────────────────────────────── */
+  {
+    const s = nueva(LLAVES);
+    await entrar(s, 'carlos', 'humano');
+    await leer(await pedir(s, 'POST', 'decir',
+      { de:'carlos', tipo:'mensaje', a:'paulina', texto:'hola' }));
+    await asentar();
+    const papel = visto.cuerpo.systemInstruction.parts[0].text;
+    ok('a Paulina se le avisa que Sylcred y Godines le tiran la línea',
+       /Sylcred y Godines/.test(papel) && /bateas/.test(papel), papel.slice(-90));
+    ok('y que nunca les sigue el juego', /Nunca les sigues el juego/.test(papel));
+  }
+  {
+    const [, r] = await leer(await pedir(nueva(LLAVES), 'GET', 'tono'));
+    ok('/tono se lo sirve a los que no son sillas (Sylcred, Godines)',
+       r.bien && /frases de señor/.test(r.ligue) && r.objeto === 'paulina');
+    ok('y dice a quién le toca el numerito',
+       r.ligan.includes('sylcred') && r.ligan.includes('godines'));
+    /* El chiste tiene forma fija a propósito: uno que se repite igual cansa a
+       la tercera, y uno sin freno en una mesa de trabajo deja de ser chiste. */
+    ok('el remate es que quedan mal ELLOS, no ella',
+       /quedas mal .?TÚ/.test(r.ligue) || /quedas mal TÚ/.test(r.ligue), r.ligue.slice(-80));
+  }
+
+  globalThis.fetch = original;
+}
+
+/* ══ 11-quater · LO PROGRAMADO ═══════════════════════════════════════════ */
+console.log('\n· Mensajes programados');
+{
+  const s = nueva();
+  await entrar(s, 'carlos', 'humano');
+
+  /* ── las dos formas de decir cuándo ───────────────────────────────────── */
+  const [c1, r1] = await leer(await pedir(s, 'POST', 'programar',
+    { de:'carlos', texto:'acuérdate del pago', en: 30 }));
+  ok('se programa «en N minutos»', c1 === 200 && r1.cita.cuando > Date.now(), JSON.stringify(r1).slice(0,90));
+  const [c2, r2] = await leer(await pedir(s, 'POST', 'programar',
+    { de:'carlos', texto:'junta', cuando: new Date(Date.now() + 7200_000).toISOString() }));
+  ok('y se programa con una fecha ISO', c2 === 200 && r2.cita.cuando > Date.now());
+
+  /* ── lo que NO se acepta ──────────────────────────────────────────────── */
+  const [c3, r3] = await leer(await pedir(s, 'POST', 'programar',
+    { de:'carlos', texto:'tarde', cuando: Date.now() - 1000 }));
+  ok('una hora que ya pasó se rechaza', c3 === 400 && /ya pas/i.test(r3.error));
+  const [c4, r4] = await leer(await pedir(s, 'POST', 'programar',
+    { de:'carlos', texto:'x', cuando:'el jueves que viene tipo tarde' }));
+  /* ⚠ SIN ESTA COMPROBACIÓN, `Date.parse` devuelve NaN, NaN pasa calladito
+     cualquier comparación, y el mensaje NUNCA suena. El `POST` habría
+     contestado 200 y nadie se enteraría hasta que el recordatorio no llegó. */
+  ok('una fecha que no se entiende se rechaza en vez de guardar un NaN',
+     c4 === 400 && /no entend/i.test(r4.error), JSON.stringify(r4));
+  const [c5] = await leer(await pedir(s, 'POST', 'programar',
+    { de:'fantasma', texto:'x', en:5 }));
+  ok('no se puede programar sin haber entrado', c5 === 400);
+
+  /* ── verlos y cancelarlos ─────────────────────────────────────────────── */
+  const [, r6] = await leer(await pedir(s, 'GET', 'programados'));
+  ok('se pueden ver los pendientes', r6.programados.length === 2);
+  ok('y salen ordenados por hora, el más cercano primero',
+     r6.programados[0].cuando <= r6.programados[1].cuando);
+  const [c7] = await leer(await pedir(s, 'POST', 'cancelar', { id: r1.cita.id }));
+  const [, r8] = await leer(await pedir(s, 'GET', 'programados'));
+  ok('se puede cancelar uno', c7 === 200 && r8.programados.length === 1);
+  const [c9] = await leer(await pedir(s, 'POST', 'cancelar', { id:'p-que-no-existe' }));
+  ok('cancelar algo que no existe lo dice, no finge', c9 === 404);
+}
+
+{
+  /* ── QUE DE VERDAD SALGA CUANDO TOCA ──────────────────────────────────── */
+  const s = nueva();
+  await entrar(s, 'carlos', 'humano');
+  await leer(await pedir(s, 'POST', 'programar',
+    { de:'carlos', texto:'ya es hora', en: 0.001 }));   // 60 ms
+  await new Promise(r => setTimeout(r, 120));
+  await s.alarm();
+  await asentar();
+  const [, h] = await leer(await pedir(s, 'GET', 'hilo'));
+  ok('cuando suena la alarma, el mensaje programado SALE al hilo',
+     h.hilo.some(e => e.tipo === 'programado' && e.texto === 'ya es hora'),
+     JSON.stringify(h.hilo.map(e => e.tipo)));
+  const [, r] = await leer(await pedir(s, 'GET', 'programados'));
+  ok('y deja de estar pendiente', r.programados.length === 0);
+
+  /* ⚠ LO QUE MÁS IMPORTA: que no salga DOS veces. Se quita de la lista ANTES
+     de publicarlo justo por esto — un recordatorio duplicado a las tres de la
+     mañana es peor que ninguno. */
+  await s.alarm();
+  await asentar();
+  const [, h2] = await leer(await pedir(s, 'GET', 'hilo'));
+  ok('y NO se repite si la alarma vuelve a sonar',
+     h2.hilo.filter(e => e.tipo === 'programado').length === 1,
+     String(h2.hilo.filter(e => e.tipo === 'programado').length));
+}
+
+{
+  /* ── la alarma tiene que APUNTAR al programado ────────────────────────── */
+  const ctx = hacerCtx();
+  const s = new Sala(ctx, { ESPERA_MS: 250 });
+  await entrar(s, 'carlos', 'humano');
+  await leer(await pedir(s, 'POST', 'programar', { de:'carlos', texto:'x', en: 10 }));
+  const puesta = await ctx.storage.getAlarm();
+  /* ⚠ SIN ESTO EL MENSAJE SE GUARDA Y NO SUENA NUNCA, y se ve igual que si
+     funcionara: el POST contesta bien y el hilo queda limpio. Un Durable
+     Object tiene UNA alarma; si `armar()` no cuenta a los programados, se
+     queda puesta en el olvido —treinta días— y el recordatorio de dentro de
+     diez minutos sale el mes que viene. */
+  ok('programar DEJA LA ALARMA puesta para dentro de ~10 min, no a 30 días',
+     puesta !== null && puesta - Date.now() < 11 * 60_000,
+     'faltan ' + Math.round(((puesta || 0) - Date.now()) / 60_000) + ' min');
+}
+
+/* ══ 11-ter · LAS SILLAS · IAs que contestan solas ════════════════════════ */
+console.log('\n· Las sillas');
+{
+  /* El `fetch` de mentiras: ninguna prueba llama a Groq ni a Google de verdad.
+     Una prueba que gasta cuota es una prueba que se deja de correr, y además
+     lo que hay que probar aquí no es que el modelo conteste bonito —eso es de
+     él— sino que la SALA haga bien su parte: sentarlo, darle el hilo correcto,
+     publicar su respuesta, y no callarse cuando falla. */
+  const original = globalThis.fetch;
+  let visto = null;
+  const responder = (cuerpo, estado = 200) => {
+    globalThis.fetch = async (url, op) => {
+      visto = { url: String(url), cuerpo: JSON.parse(op.body) };
+      return { ok: estado < 300, status: estado,
+               json: async () => cuerpo, text: async () => JSON.stringify(cuerpo) };
+    };
+  };
+  const LLAVES = { GROQ_API_KEY: 'x-groq', GEMINI_API_KEY: 'x-gemini' };
+
+  /* ── contesta cuando le hablan ────────────────────────────────────────── */
+  {
+    responder({ choices: [{ message: { content: 'va, yo le entro' } }] });
+    const s = nueva(LLAVES);
+    await entrar(s, 'carlos', 'humano');
+    await leer(await pedir(s, 'POST', 'decir',
+      { de:'carlos', tipo:'mensaje', a:'groq', texto:'oye, ¿me ayudas?' }));
+    await asentar();
+    const [, h] = await leer(await pedir(s, 'GET', 'hilo'));
+    const suya = h.hilo.find(e => e.de && e.de.id === 'groq');
+    ok('una silla contesta sola cuando le hablan', !!suya && suya.texto === 'va, yo le entro',
+       JSON.stringify(suya && suya.texto));
+    ok('y se sienta sola: no hay que darla de alta',
+       !!h.gente?.groq || !!(await leer(await pedir(s, 'GET', 'estado')))[1].gente?.groq);
+    ok('le contesta A QUIEN le habló, no al aire', !!suya && suya.a === 'carlos');
+  }
+
+  /* ── el hilo que le manda ─────────────────────────────────────────────── */
+  {
+    responder({ choices: [{ message: { content: 'ok' } }] });
+    const s = nueva(LLAVES);
+    await entrar(s, 'carlos', 'humano');
+    await leer(await pedir(s, 'POST', 'decir', { de:'carlos', tipo:'mensaje', texto:'primero esto' }));
+    await leer(await pedir(s, 'POST', 'decir',
+      { de:'carlos', tipo:'mensaje', a:'groq', texto:'¿y luego?' }));
+    await asentar();
+    const dichos = visto.cuerpo.messages.map(m => m.content).join(' | ');
+    ok('le manda el hilo, no sólo el último mensaje', /primero esto/.test(dichos), dichos.slice(0,120));
+    ok('y le dice QUIÉN dijo cada cosa — sin eso un resumen no puede citar a nadie',
+       /carlos:/i.test(dichos), dichos.slice(0,120));
+  }
+
+  /* ── el resumen que pidió Carlos ──────────────────────────────────────── */
+  {
+    responder({ choices: [{ message: { content: 'esto es lo que pasó' } }] });
+    const s = nueva(LLAVES);
+    await entrar(s, 'carlos', 'humano');
+    await leer(await pedir(s, 'POST', 'decir',
+      { de:'carlos', tipo:'mensaje', a:'groq', texto:'resúmeme qué ha pasado' }));
+    await asentar();
+    ok('«resúmeme qué ha pasado» se reconoce como petición de resumen',
+       /esperando a Carlos/.test(visto.cuerpo.messages[0].content),
+       visto.cuerpo.messages[0].content.slice(0, 60));
+    const [, h] = await leer(await pedir(s, 'GET', 'hilo'));
+    ok('y el resumen entra al hilo marcado como tal',
+       h.hilo.some(e => e.tipo === 'resumen' && e.texto === 'esto es lo que pasó'));
+  }
+  {
+    responder({ choices: [{ message: { content: 'ok' } }] });
+    const s = nueva(LLAVES);
+    await entrar(s, 'carlos', 'humano');
+    await leer(await pedir(s, 'POST', 'decir',
+      { de:'carlos', tipo:'mensaje', a:'groq', texto:'pásame el archivo' }));
+    await asentar();
+    ok('una pregunta normal NO se trata como resumen',
+       !/esperando a Carlos/.test(visto.cuerpo.messages[0].content));
+  }
+
+  /* ── lo que más importa: cuando el modelo falla ───────────────────────── */
+  {
+    responder({ error: 'tronó' }, 500);
+    const s = nueva(LLAVES);
+    await entrar(s, 'carlos', 'humano');
+    await leer(await pedir(s, 'POST', 'decir',
+      { de:'carlos', tipo:'mensaje', a:'groq', texto:'hola' }));
+    await asentar();
+    const [, h] = await leer(await pedir(s, 'GET', 'hilo'));
+    const aviso = h.hilo.find(e => e.de && e.de.id === 'groq');
+    /* ⚠ SI ESTO SE TRAGARA, desde fuera sería IDÉNTICO a que la silla ignore a
+       Carlos: él se queda esperando a alguien que no va a llegar. */
+    ok('si el modelo falla, la silla lo DICE en la sala en vez de callarse',
+       !!aviso && aviso.tipo === 'sistema' && /⚠/.test(aviso.texto), JSON.stringify(aviso && aviso.texto));
+  }
+
+  /* ── sin llave no hay silla ───────────────────────────────────────────── */
+  {
+    responder({ choices: [{ message: { content: 'no debería' } }] });
+    const s = nueva();                       // sin llaves
+    await entrar(s, 'carlos', 'humano');
+    const [c] = await leer(await pedir(s, 'POST', 'decir',
+      { de:'carlos', tipo:'mensaje', a:'groq', texto:'hola' }));
+    await asentar();
+    ok('sin llave, hablarle a una silla se rechaza como cualquier id que no está',
+       c === 400, String(c));
+  }
+
+  /* ── /motores ─────────────────────────────────────────────────────────── */
+  {
+    const s = nueva(LLAVES);
+    const [, r] = await leer(await pedir(s, 'GET', 'motores'));
+    ok('/motores dice quién está prendido', r.vivos.length === 2 && r.apagados.length === 0);
+    const s2 = nueva({ GROQ_API_KEY: 'x' });
+    const [, r2] = await leer(await pedir(s2, 'GET', 'motores'));
+    ok('y del apagado dice EXACTAMENTE dónde se prende',
+       r2.apagados.length === 1 && /Variables and Secrets/.test(r2.apagados[0].comoPrenderlo),
+       JSON.stringify(r2.apagados[0]));
+  }
+
+  globalThis.fetch = original;
+}
+
 /* ══ 12 · cualquier IA, no sólo Claude ════════════════════════════════════ */
 console.log('\n· Agentes de cualquier marca');
 {
-  const s = nueva();
+  /* Con el tope a mano por lo mismo que el bloque del freno: lo que se prueba
+     aquí es QUE UN AGENTE DE OTRA MARCA TAMBIÉN SE FRENA, no cuál es el
+     número. Con el 500 de omisión harían falta quinientas vueltas. */
+  const s = nueva({ TOPE_VUELTAS: 12 });
   const [c1, r1] = await leer(await pedir(s, 'POST', 'entrar',
     { id:'g-1', nombre:'GPT de Beto', tipo:'agente', motor:'gpt-5' }));
   ok('entra un agente que no es Claude', c1 === 200 && r1.yo.tipo === 'agente');
@@ -691,7 +1053,7 @@ console.log('\n· Quién es quién: figura, color y matiz');
   /* Sin COLORES configurados tiene que salir algo estable de todos modos: si
      hiciera falta configurar para que se vea bien, no funcionaría el primer
      día — que es cuando se decide si se usa o se abandona. */
-  const s2 = nueva();
+  const s2 = nueva({ TOPE_VUELTAS: 12 });
   const [, x1] = await leer(await entrar(s2, 'quien'));
   const s3 = nueva();
   const [, x2] = await leer(await entrar(s3, 'quien'));
@@ -865,7 +1227,7 @@ console.log('\n· Fundar e invitar');
   ok('y a cada quien le dice SU cuenta', hiloL.yoSoy === 'luis');
 
   /* Dos salas distintas no pueden compartir llave por casualidad. */
-  const s2 = nueva();
+  const s2 = nueva({ TOPE_VUELTAS: 12 });
   const [, g] = await leer(await pedir(s2, 'POST', 'fundar', { cuenta:'carlos' }));
   ok('cada sala acuña su propia llave', g.llave !== f.llave);
   const [c9] = await leer(await pedir(s2, 'POST', 'entrar', { id:'x' }, f.llave));
@@ -1069,7 +1431,7 @@ async function vigilia(){
   ok('y su regreso queda anunciado',              /volvió/.test(limites(s).at(-1).texto));
 
   /* ⚠ LO QUE EL AGENTE DECLARA MANDA SOBRE LO QUE LA SALA DEDUCE. */
-  const s2 = nueva();
+  const s2 = nueva({ TOPE_VUELTAS: 12 });
   await pedir(s2, 'POST', 'entrar', { id:'ia', nombre:'Syl', tipo:'agente' });
   await pedir(s2, 'POST', 'estado', { de:'ia', estado:'ocupado', nota:'en otra cosa' });
   const dichos = s2.hilo.filter(e => e.tipo === 'limite').length;
@@ -1130,7 +1492,7 @@ async function olvido(){
      (await s.ctx.storage.getAlarm()) - Date.now() > 20 * 24 * 60 * 60 * 1000);
 
   /* Y lo más caro: una sala FUNDADA no puede perder su cerradura. */
-  const s2 = nueva();
+  const s2 = nueva({ TOPE_VUELTAS: 12 });
   await pedir(s2, 'POST', 'entrar', { id:'d', nombre:'Dueño', tipo:'humano' });
   const [, f] = await leer(await pedir(s2, 'POST', 'fundar', { cuenta:'carlos', nombre:'Carlos' }));
   /* Se vuelve a entrar CON la llave: al fundar, la sala pasa a tener cuentas y
@@ -1427,7 +1789,7 @@ async function presenciaPorSocket(){
 
   /* Un socket anónimo no marca presencia de nadie: si marcara, cualquiera que
      abriera la dirección dejaría «conectado» a un tercero. */
-  const s2 = nueva();
+  const s2 = nueva({ TOPE_VUELTAS: 12 });
   await pedir(s2, 'POST', 'entrar', { id:'otro', nombre:'Otro', tipo:'agente', motor:'claude' });
   try{ s2.conectar(new Request('https://s.test/api/sala/ABCDEF/ws',
     { headers:{ Upgrade:'websocket' } })); }catch(e){}
@@ -1501,7 +1863,7 @@ console.log('\n· Echar fantasmas');
 
   /* Regla 2 · quien está conectado NO se va. Se finge el socket abierto, que
      es lo único que distingue «está aquí» de «entró alguna vez». */
-  const s2 = nueva();
+  const s2 = nueva({ TOPE_VUELTAS: 12 });
   await entrar(s2, 'carlos', 'humano');
   await entrar(s2, 'vivo', 'humano');
   s2.vivos.add({ __quien:'vivo', send(){}, close(){},

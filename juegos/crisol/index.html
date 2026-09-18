@@ -271,6 +271,8 @@ input[type=range]{flex:1 1 90px;min-width:80px;accent-color:var(--violeta);heigh
   <div id="herr">
     <label>Pincel <span id="tamN">4</span></label>
     <input type="range" id="tam" min="1" max="14" value="4">
+    <label id="flexL" hidden>Cuerda <span id="flexN">tiesa</span></label>
+    <input type="range" id="flex" min="0" max="100" value="0" hidden>
     <button class="icono" id="bCalor" aria-label="Calentar" title="Calentar">🔥</button>
     <button class="icono" id="bFrio" aria-label="Enfriar" title="Enfriar">❄️</button>
     <button class="icono" id="bMano" aria-label="Mover la vista" title="Mover la vista: arrastra con un dedo">🖐</button>
@@ -278,6 +280,9 @@ input[type=range]{flex:1 1 90px;min-width:80px;accent-color:var(--violeta);heigh
     <button class="icono" id="bMide" aria-label="Termómetro" title="Termómetro: material, temperatura y cambios de estado">🌡</button>
     <button class="icono" id="bGrav" aria-label="Gravedad" title="Gravedad: global, por zona, por objeto y puntos que atraen o repelen">🌍</button>
     <button class="icono" id="bSolda" aria-label="Soldar estructura" title="Soldar: pinta encima lo que quieras que sea UNA pieza. Vuelve a tocarlo con el botón para despegarlo">🔗</button>
+    <button class="icono" id="bNido" aria-label="Poner un hormiguero" title="Hormiguero: toca para poner un nido. Vuelve a tocar el botón para cambiar de raza">🐜</button>
+    <button class="icono" id="bSer" aria-label="Poner una personita" title="Personitas: toca para soltar una. Vuelve a tocar el botón para cambiar entre persona y bicho">🚶</button>
+    <button class="icono" id="bPistola" aria-label="Poner una pistola" title="Pistola: toca para ponerla armada y cargada. Tócala otra vez para disparar. Vuelve a tocar el botón para voltearla o cambiarle el cañón">🔫</button>
     <button class="icono on" id="bRigido" aria-label="Cuerpos rígidos" title="Cuerpos rígidos: lo que está pegado cae junto. Apágalo y vuelve a ser grano por grano">🧱</button>
     <button class="icono" id="bMas" aria-label="Acercar">＋</button>
     <button class="icono" id="bMenos" aria-label="Alejar">－</button>
@@ -288,6 +293,9 @@ input[type=range]{flex:1 1 90px;min-width:80px;accent-color:var(--violeta);heigh
 
 <script type="module">
 import { Mundo, IDS, IDX, EL, VACIO, AMBIENTE } from './motor.js';
+import { instalaHormigas, RAZAS, NOMBRES } from './hormigas.js';
+import { instalaVida } from './vida.js';
+import * as PIEZAS from './piezas.js';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    LA PANTALLA
@@ -311,6 +319,18 @@ const $ = id => document.getElementById(id);
    porque es la misma imagen mirada más de cerca. */
 const SALA_AN = 320, SALA_AL = 480;
 let M, img, datos, an = SALA_AN, al = SALA_AL;
+let HOR = null;                       /* la colonia de hormigas */
+let SER = null;                       /* las personitas y los bichos */
+let quienSer = 'persona';             /* cuál se suelta al tocar */
+let serPuesto = false;
+let razaNido = 'negra';               /* cuál se suelta al tocar */
+let nidoPuesto = false;               /* un nido por trazo, no uno por celda */
+/* Las pistolas puestas, con su chispa. Sin esta lista no hay gatillo: una
+   pistola de la que no se sabe dónde tiene la culata es un adorno. */
+let pistolas = [];
+let pistolaPuesta = false;            /* una por trazo, no una por celda */
+let miraPistola = 1;                  /* hacia dónde apunta la siguiente */
+let canonPistola = 'metal';
 let lienzoMundo = null, ctxMundo = null;
 /* la ventana: qué trozo del mundo se ve */
 const vista = { x:0, y:0, esc:4 };
@@ -333,6 +353,11 @@ function medir(){
   if(M){ limitaVista(); return; }
   const nuevo = new Mundo(an, al);
   M = nuevo;
+  /* Las hormigas se cuelgan del mundo desde fuera: si `hormigas.js` no
+     cargara, todo lo demás seguiría igual. */
+  HOR = instalaHormigas(M);
+  /* las personitas y los bichos, también colgados desde fuera */
+  SER = instalaVida(M);
   /* El mundo se dibuja completo aquí, y la pantalla sólo recorta. Al girar el
      teléfono no se pierde nada porque el mundo no cambia de tamaño: cambia la
      ventana. */
@@ -445,6 +470,29 @@ function pinta(){
      ve y evita tener que recorrer la sala dos veces. */
   picoVista = picoVista * 0.88 + picoAhora * 0.12;
   if(picoAhora > picoVista) picoVista = picoAhora;
+  /* ── LAS HORMIGAS, ENCIMA DE TODO ───────────────────────────────────────
+     Se escriben directo en los píxeles del mundo, no con `fillRect` sobre el
+     lienzo de la ventana: así crecen con el zoom como cualquier celda, en vez
+     de quedarse de un tamaño fijo y desaparecer al alejarse. Y por eso miden
+     uno o dos píxeles de verdad — el tamaño es el que pidió, no un adorno.
+     La que va cargando comida lleva un punto claro encima: sin él no hay
+     forma de ver que el acarreo existe, que es media función. */
+  if(HOR && HOR.hormigas.length){
+    for(const h of HOR.hormigas){
+      if(!h.viva) continue;
+      const R = RAZAS[h.raza], col = RGB_RAZA[h.raza];
+      for(let dy = 0; dy < R.talla; dy++) for(let dx = 0; dx < R.talla; dx++){
+        const nx = h.x + dx, ny = h.y + dy;
+        if(nx < 0 || ny < 0 || nx >= an || ny >= al) continue;
+        const p = ((ny * an + nx) << 2);
+        datos[p] = col[0]; datos[p+1] = col[1]; datos[p+2] = col[2];
+      }
+      if(h.carga && h.y - 1 >= 0){
+        const p = (((h.y - 1) * an + h.x) << 2);
+        datos[p] = 236; datos[p+1] = 226; datos[p+2] = 150;
+      }
+    }
+  }
   ctxMundo.putImageData(img, 0, 0);
 
   /* y ahora la ventana. `imageSmoothingEnabled` en falso o el zoom se ve
@@ -457,7 +505,218 @@ function pinta(){
   const anVis = (cv.width / dpr) / vista.esc, alVis = (cv.height / dpr) / vista.esc;
   ctx.drawImage(lienzoMundo, vista.x, vista.y, anVis, alVis,
                 0, 0, cv.width, cv.height);
+  pintaSeres(dpr);
   pintaFlechas();
+}
+
+/* ── LAS PERSONITAS ───────────────────────────────────────────────────────
+   ⚠ ÉSTAS NO SE PINTAN EN LOS PÍXELES DEL MUNDO, y es la diferencia con las
+   hormigas. Una hormiga ES una casilla; un monigote son huesos con
+   articulaciones a media casilla de precisión, y metido en la rejilla se
+   convertiría en una mancha de cinco píxeles. Van sobre el lienzo de la
+   VENTANA, con líneas de verdad, y por eso hay que pasar sus coordenadas de
+   celdas a píxeles de pantalla a mano.
+
+   `postura()` ya devuelve el esqueleto entero —caderas, hombros, cuello,
+   cabeza, dos o cuatro patas, brazos y dónde va lo que carga—, así que aquí
+   no se decide ninguna pose: sólo se traza lo que el módulo calculó. */
+/* ── LAS PERSONITAS, VESTIDAS ─────────────────────────────────────────────
+   Carlos: «prioriza desde aquí hacer más estéticas las personitas».
+
+   Antes eran un alambre de un solo color: mismo tono para piernas, torso,
+   brazos y cabeza, sin contorno. A tamaño de teléfono eso se lee como un
+   garabato, y veinte de ellos se leen como el MISMO garabato veinte veces.
+
+   Lo que cambia, y por qué cada cosa:
+
+     · CONTORNO OSCURO DEBAJO. Un trazo más gordo y oscuro por detrás del
+       dibujo. Es lo que hace que la figura se vea sobre lava, sobre agua y
+       sobre tierra sin cambiar de color: sin él, un monigote de piel clara
+       desaparece encima de la arena.
+     · ROPA. Pantalón en las piernas, camisa en el torso y los brazos, piel
+       sólo en cabeza y manos. Es lo que convierte un alambre en una persona.
+     · PALETA POR PERSONA, sacada de su id. Cinco camisas, cuatro pantalones,
+       cuatro pelos, cuatro pieles: una multitud deja de parecer clonada, y
+       cada quien conserva su ropa toda la vida porque el id no cambia.
+     · CARA. Un ojo del lado al que mira y pelo encima. Con eso se lee hacia
+       dónde va sin dibujar una expresión.
+     · Y EL QUE SUFRE SIGUE PONIÉNDOSE ROJO, que es lo que ya había y funciona:
+       la piel vira, la ropa se apaga, y el muerto se va entero a gris. */
+const CAMISAS   = ['#C2410C', '#1D4ED8', '#15803D', '#7C3AED', '#B91C1C'];
+const PANTALONES = ['#334155', '#3F3F46', '#1E3A5F', '#44403C'];
+const PELOS     = ['#2B2118', '#4A3524', '#12100F', '#6B4423'];
+const PIELES    = [[236, 200, 168], [214, 168, 128], [176, 128, 92], [122, 84, 58]];
+
+/* el gris al que todo tiende cuando el ser muere, y el apagado del que sufre */
+const mezcla = (hex, r2, g2, b2, t) => {
+  const n = parseInt(hex.slice(1), 16);
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return 'rgb(' + Math.round(r + (r2 - r) * t) + ',' + Math.round(g + (g2 - g) * t)
+       + ',' + Math.round(b + (b2 - b) * t) + ')';
+};
+
+function pintaSeres(dpr){
+  if(!SER || !SER.seres.length) return;
+  const e = vista.esc * dpr;
+  const aX = (wx) => (wx - vista.x) * e;
+  const aY = (wy) => (wy - vista.y) * e;
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  for(const s of SER.seres){
+    const P = SER.postura(s);
+    /* el grosor del trazo va con la talla Y con el zoom: si fuera fijo, de
+       lejos serían garabatos gordos y de cerca alambres */
+    const gr = Math.max(1.1, P.T * e * 0.30);
+    const mal = P.mal, muerto = P.muerto;
+
+    /* la paleta de ESTE ser, estable de por vida */
+    /* ⚠ `>>>` Y NO `>>`, y esto reventaba CADA CUADRO. `h` es un entero sin
+       signo de 32 bits, así que pasa de 2³¹ la mitad de las veces; `h >> 3`
+       lo lee CON signo y devuelve un número NEGATIVO. Índice negativo →
+       `undefined` → `undefined.slice` dentro de `mezcla`. Y el nuevo renglón
+       de la tabla de «lo que recuerdo»: las pruebas de pantalla decían «ni un
+       error de consola» y era verdad — nunca ponían una personita. Una prueba
+       que no provoca la pantalla no la está mirando. */
+    const h = (P.id * 2654435761) >>> 0;
+    const camisa = CAMISAS[h % CAMISAS.length];
+    const pantalon = PANTALONES[(h >>> 3) % PANTALONES.length];
+    const pelo = PELOS[(h >>> 6) % PELOS.length];
+    const pl = PIELES[(h >>> 9) % PIELES.length];
+
+    /* el que sufre se acalora y el muerto se va a gris: un solo mando para
+       los tres colores, para que no se descoordinen */
+    const gris = muerto ? 0.85 : 0;
+    const piel = muerto ? '#6b6b73'
+      : 'rgb(' + Math.round(pl[0] + mal * (255 - pl[0]) * 0.45) + ','
+        + Math.round(pl[1] - mal * pl[1] * 0.42) + ','
+        + Math.round(pl[2] - mal * pl[2] * 0.52) + ')';
+    const cRopa = mezcla(camisa, 107, 107, 115, Math.max(gris, mal * 0.35));
+    const cPant = mezcla(pantalon, 107, 107, 115, Math.max(gris, mal * 0.35));
+    const cPelo = mezcla(pelo, 107, 107, 115, gris);
+
+    /* ── 1 · el contorno, debajo de todo ──────────────────────────────── */
+    const trazaPatas = () => {
+      ctx.beginPath();
+      for(const q of P.patas){
+        ctx.moveTo(aX(q.ox), aY(q.oy)); ctx.lineTo(aX(q.rx), aY(q.ry)); ctx.lineTo(aX(q.fx), aY(q.fy));
+      }
+      ctx.stroke();
+    };
+    const trazaBrazos = () => {
+      ctx.beginPath();
+      for(const b of P.brazos){
+        ctx.moveTo(aX(b.ox), aY(b.oy)); ctx.lineTo(aX(b.cx), aY(b.cy)); ctx.lineTo(aX(b.mx), aY(b.my));
+      }
+      ctx.stroke();
+    };
+    /* ⚠ EL TORSO ES UNA FORMA, NO UNA RAYA. Dibujado como una línea de cadera
+       a hombro, el monigote se ve como una flecha: dos piernas, dos brazos y
+       nada en medio. Con un trapecio de hombros a cadera —ancho arriba,
+       estrecho abajo— aparece un cuerpo, y ES lo que convierte el alambre en
+       persona. Los bichos no lo llevan: ellos tienen caparazón. */
+    const trazaTronco = (engorda) => {
+      const dx = P.homX - P.cadX, dy = P.homY - P.cadY;
+      const L = Math.hypot(dx, dy) || 1;
+      const nx = -dy / L, ny = dx / L;          /* perpendicular al torso */
+      const ah = (P.bicho ? 0.9 : 1) * 0.5 * P.T * 2.10 + engorda;   /* medio hombro */
+      const ac = (P.bicho ? 0.9 : 1) * 0.5 * P.T * 1.40 + engorda;   /* media cadera */
+      ctx.beginPath();
+      ctx.moveTo(aX(P.homX + nx * ah), aY(P.homY + ny * ah));
+      ctx.lineTo(aX(P.homX - nx * ah), aY(P.homY - ny * ah));
+      ctx.lineTo(aX(P.cadX - nx * ac), aY(P.cadY - ny * ac));
+      ctx.lineTo(aX(P.cadX + nx * ac), aY(P.cadY + ny * ac));
+      ctx.closePath();
+      ctx.fill();
+      /* el cuello, que si no la cabeza flota */
+      ctx.beginPath();
+      ctx.moveTo(aX(P.homX), aY(P.homY)); ctx.lineTo(aX(P.cueX), aY(P.cueY));
+      ctx.lineWidth = Math.max(1, P.T * e * 0.34) + engorda * e * 1.4;
+      ctx.stroke();
+    };
+
+    ctx.strokeStyle = 'rgba(10,8,14,.72)'; ctx.fillStyle = 'rgba(10,8,14,.72)';
+    ctx.lineWidth = gr + Math.max(1, gr * 0.7);
+    trazaPatas(); trazaBrazos();
+    trazaTronco(P.T * 0.16);
+    ctx.beginPath();
+    ctx.arc(aX(P.cabX), aY(P.cabY), Math.max(1.4, P.cabR * e) + Math.max(1, gr * 0.5), 0, 6.2832);
+    ctx.fillStyle = 'rgba(10,8,14,.72)'; ctx.fill();
+
+    /* ── 2 · la ropa ──────────────────────────────────────────────────── */
+    /* ⚠ EL ORDEN IMPORTA: primero piernas, luego tronco, luego brazos. Con los
+       brazos antes del tronco, el relleno del torso se los comía enteros y la
+       figura salía manca — se veía en la captura y no se ve leyendo. */
+    ctx.lineWidth = gr;
+    ctx.strokeStyle = P.bicho ? cPelo : cPant;  trazaPatas();
+    /* zapatos: una pisada corta y oscura en la punta de cada pata. Es un
+       detalle de dos renglones y es lo que asienta la figura en el suelo */
+    if(!P.bicho){
+      ctx.strokeStyle = '#1B1720'; ctx.lineWidth = gr * 1.25;
+      ctx.beginPath();
+      for(const q of P.patas){
+        const vx = q.fx - q.rx, vy = q.fy - q.ry, L = Math.hypot(vx, vy) || 1;
+        ctx.moveTo(aX(q.fx - vy / L * 0.10), aY(q.fy + vx / L * 0.10));
+        ctx.lineTo(aX(q.fx + P.mirando * 0.55), aY(q.fy));
+      }
+      ctx.stroke();
+      ctx.lineWidth = gr;
+    }
+    /* ⚠ LOS BRAZOS VAN DETRÁS DEL TORSO MIENTRAS NO CARGUE NADA. Pintados
+       siempre delante, el antebrazo colgando cae justo por el centro del pecho
+       y se lee como una franja de piel encima de la camisa — se ve en la
+       captura, no en el código. Sólo pasan al frente cuando llevan algo, que
+       es cuando de verdad están por delante del cuerpo. */
+    const brazosDelante = !!P.carga;
+    const pintaBrazos = () => {
+      ctx.lineWidth = gr * 0.85;
+      ctx.strokeStyle = P.bicho ? cPelo : piel;   trazaBrazos();
+      /* la manga: el brazo va de piel, pero el trozo de arriba es camisa */
+      if(!P.bicho){
+        ctx.strokeStyle = cRopa; ctx.lineWidth = gr * 1.05;
+        ctx.beginPath();
+        for(const b of P.brazos){ ctx.moveTo(aX(b.ox), aY(b.oy)); ctx.lineTo(aX(b.cx), aY(b.cy)); }
+        ctx.stroke();
+      }
+      ctx.lineWidth = gr;
+    };
+    if(!brazosDelante) pintaBrazos();
+    ctx.fillStyle = P.bicho ? cPelo : cRopa;
+    ctx.strokeStyle = P.bicho ? cPelo : piel;
+    trazaTronco(0);
+    if(brazosDelante) pintaBrazos();
+
+    /* ── 3 · la cabeza: piel, pelo y un ojo ───────────────────────────── */
+    const R = Math.max(1.4, P.cabR * e);
+    const hx = aX(P.cabX), hy = aY(P.cabY);
+    ctx.beginPath(); ctx.arc(hx, hy, R, 0, 6.2832);
+    ctx.fillStyle = piel; ctx.fill();
+    if(!P.bicho && R > 2.2){
+      /* el pelo es media luna por arriba, girada hacia donde mira: así la nuca
+         queda del lado de atrás y se lee la dirección aunque no haya cara */
+      const g = Math.atan2(P.mira[1], P.mira[0]);
+      ctx.beginPath();
+      ctx.arc(hx, hy, R * 0.98, g + 0.55, g + Math.PI + 0.95);
+      ctx.fillStyle = cPelo; ctx.fill();
+    }
+    if(!muerto && R > 3){
+      /* un ojo, del lado al que va. Dos ojos a este tamaño se convierten en
+         una mancha; uno se lee como una cara de perfil, que es lo que es. */
+      ctx.beginPath();
+      ctx.arc(hx + P.mira[0] * R * 0.45, hy + P.mira[1] * R * 0.45,
+              Math.max(0.8, R * 0.20), 0, 6.2832);
+      ctx.fillStyle = '#12100F'; ctx.fill();
+    }
+
+    /* lo que lleva en las manos se pinta del color de SU material: si no, un
+       monigote cargando lava y otro cargando hielo se ven igual */
+    if(P.carga){
+      const c = RGB[P.carga.tipo] || [200, 200, 200];
+      const l = Math.max(2, P.carga.lado * e);
+      ctx.fillStyle = 'rgba(10,8,14,.72)';
+      ctx.fillRect(aX(P.carga.x) - l / 2 - 1, aY(P.carga.y) - l / 2 - 1, l + 2, l + 2);
+      ctx.fillStyle = 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')';
+      ctx.fillRect(aX(P.carga.x) - l / 2, aY(P.carga.y) - l / 2, l, l);
+    }
+  }
 }
 
 /* ── la paleta y la mochila ─────────────────────────────────────────────── */
@@ -521,10 +780,19 @@ function paleta(){
       $('ficha').classList.remove('va');
       if(e.ayuda) avisa(e.nom + ' · ' + e.ayuda);
       $('qual').textContent = e.nom;
+      mandoCuerda();
       paleta();
     };
     c.appendChild(b);
   }
+}
+
+/* el color de cada raza pasado a números UNA vez: convertir '#23232B' a RGB
+   dentro del bucle de pintado sería hacerlo por hormiga y por cuadro */
+const RGB_RAZA = {};
+for(const n of NOMBRES){
+  const c = RAZAS[n].col;
+  RGB_RAZA[n] = [parseInt(c.slice(1,3),16), parseInt(c.slice(3,5),16), parseInt(c.slice(5,7),16)];
 }
 
 let avisoT = 0;
@@ -661,6 +929,9 @@ cv.addEventListener('pointerdown', ev => {
     return;
   }
   if(modo === 'soldar') grupoSolda = 0;   /* cada trazo, una estructura */
+  nidoPuesto = false;                    /* y cada trazo, un solo nido */
+  serPuesto = false;                     /* y una sola personita */
+  pistolaPuesta = false;                 /* y una sola pistola */
   if(modo === 'agarrar'){
     agarre = { cx:x, cy:y, fx:x, fy:y };
     dedos.get(ev.pointerId).pintando = false;
@@ -682,6 +953,62 @@ cv.addEventListener('pointerdown', ev => {
   }
   if(modo === 'gobjeto'){
     M.pintaGravedad(x, y, Math.max(1, tam - 1), parseFloat($('gMul').value));
+    dedos.get(ev.pointerId).pintando = false;
+    return;
+  }
+  if(modo === 'ser'){
+    /* ⚠ UNA POR TOQUE, no una por celda arrastrada. Es el mismo cerrojo que
+       el del nido y por la misma razón: sin él, un dedo que se mueve suelta
+       cuarenta monigotes y el tope de población se llena de un trazo. */
+    if(!serPuesto){
+      const s2 = quienSer === 'bicho' ? SER.bicho(x, y) : SER.persona(x, y);
+      avisa(s2 ? (quienSer === 'bicho' ? 'Bicho' : 'Personita') + ' · ' + SER.seres.length + ' en la sala'
+               : 'Ya no caben más');
+      serPuesto = true;
+    }
+    dedos.get(ev.pointerId).pintando = false;
+    return;
+  }
+  if(modo === 'pistola'){
+    /* ⚠ UNA POR TOQUE, igual que el nido y la personita.
+       Y el orden importa: PRIMERO se mira si el toque cayó sobre una pistola
+       ya puesta, porque si no, tocarla para dispararle le pinta otra encima y
+       quien juega acaba con una torre de armas y ningún tiro. */
+    if(!pistolaPuesta){
+      pistolaPuesta = true;
+      dedos.get(ev.pointerId).pintando = false;
+      const p = pistolas.find(q => PIEZAS.tocada(q, x, y, 1));
+      if(p){
+        if(PIEZAS.dispara(M, p)) avisa('¡Pum!');
+        else { PIEZAS.recarga(M, p); PIEZAS.dispara(M, p); avisa('Recargada · ¡Pum!'); }
+        return;
+      }
+      /* la culata va donde cae el dedo, corrida media pieza para que el arma
+         quede centrada en el toque y no colgando de él */
+      const cx = x - Math.round(PIEZAS.RECETA.canon / 2) * miraPistola;
+      const cy = y - Math.floor(PIEZAS.ALTO / 2);
+      if(!PIEZAS.cabe(M, cx, cy, miraPistola)){
+        avisa('Aquí no cabe: apunta hacia dentro de la sala');
+        return;
+      }
+      const mat = PIEZAS.MATERIALES.includes(EL[elSel].id) ? EL[elSel].id : 'metal';
+      pistolas.push(PIEZAS.pistola(M, cx, cy, miraPistola, mat));
+      avisa('Pistola de ' + mat + ' apuntando a la ' +
+            (miraPistola > 0 ? 'derecha' : 'izquierda') + ' · tócala para disparar');
+      return;
+    }
+    dedos.get(ev.pointerId).pintando = false;
+    return;
+  }
+  if(modo === 'nido'){
+    /* ⚠ UN NIDO POR TRAZO. Sin el cerrojo, arrastrar el dedo dejaba un nido
+       por celda tocada: cincuenta colonias de la misma raza peleando entre
+       ellas que no son, y el tope de población lleno en dos segundos. */
+    if(!nidoPuesto){
+      HOR.nido(x, y, razaNido, 8);
+      avisa('Nido ' + razaNido + ' · ' + HOR.hormigas.length + ' hormigas en la sala');
+      nidoPuesto = true;
+    }
     dedos.get(ev.pointerId).pintando = false;
     return;
   }
@@ -828,6 +1155,11 @@ $('bBorra').onclick = () => {
   $('bBorra').classList.remove('on');
   apunta();                       /* vaciar también se puede deshacer */
   M.limpia();
+  /* ⚠ Y SE OLVIDAN LAS PISTOLAS. Sin esta línea, la lista guarda armas que ya
+     no están pintadas: tocar ese hueco «dispara» un arma invisible, o peor,
+     recarga pólvora en medio del aire. Es el mismo defecto de siempre —algo
+     que informa un estado y está en otro—, ahora en una lista. */
+  pistolas = [];
   avisa('Sala vacía · el botón ↩ la trae de vuelta');
 };
 
@@ -872,12 +1204,25 @@ function pintaSalas(){
 $('bGuarda').onclick = () => { pintaSalas(); $('salas').classList.toggle('va'); };
 $('salasX').onclick = () => $('salas').classList.remove('va');
 $('tam').oninput = e => { tam = +e.target.value; $('tamN').textContent = tam; };
+/* ── QUÉ TAN FLOJA ES LA CUERDA ────────────────────────────────────────────
+   Carlos lo pidió por su nombre y el mando sólo aparece cuando tienes la
+   cuerda elegida: un deslizador más, visible siempre, es un deslizador que
+   estorba el 95% del tiempo en un teléfono. */
+$('flex').oninput = e => {
+  M.flexCuerda = (+e.target.value) / 100;
+  $('flexN').textContent = M.flexCuerda < 0.2 ? 'tiesa'
+                         : M.flexCuerda < 0.6 ? 'normal' : 'floja';
+};
+function mandoCuerda(){
+  const va = EL[elSel] && EL[elSel].cuerda;
+  $('flexL').hidden = !va; $('flex').hidden = !va;
+}
 /* ── LAS HERRAMIENTAS ──────────────────────────────────────────────────────
    Un solo sitio decide qué modo está activo y apaga los demás. Antes cada
    botón se encargaba de apagar a los otros a mano, y con cinco herramientas
    eso son veinte líneas que se contradicen entre sí a la primera distracción. */
 let grupoSolda = 0;
-const BOTON_MODO = { calor:'bCalor', frio:'bFrio', navegar:'bMano', agarrar:'bAgarra', medir:'bMide', soldar:'bSolda' };
+const BOTON_MODO = { calor:'bCalor', frio:'bFrio', navegar:'bMano', agarrar:'bAgarra', medir:'bMide', soldar:'bSolda', nido:'bNido', ser:'bSer', pistola:'bPistola' };
 const MODOS_GRAVEDAD = ['zona', 'punto', 'gobjeto'];
 function ponModo(m){
   modo = (modo === m) ? 'pintar' : m;
@@ -899,6 +1244,53 @@ $('bMano').onclick   = () => ponModo('navegar');
 $('bAgarra').onclick = () => ponModo('agarrar');
 $('bMide').onclick   = () => ponModo('medir');
 $('bSolda').onclick  = () => { grupoSolda = 0; ponModo('soldar'); };
+/* El mismo botón sirve de selector: si ya está armado, la siguiente pulsación
+   cambia de raza en vez de apagarlo. Tres botones para tres razas se comen el
+   ancho de un teléfono, y el emoji cambia de color para que se vea cuál va. */
+const EMOJI_RAZA = { negra:'🐜', roja:'🔴', verde:'🟢' };
+const EMOJI_SER = { persona:'🚶', bicho:'🐛' };
+$('bSer').onclick = () => {
+  if(modo === 'ser'){
+    quienSer = quienSer === 'persona' ? 'bicho' : 'persona';
+    $('bSer').textContent = EMOJI_SER[quienSer];
+    avisa((quienSer === 'persona' ? 'Personita' : 'Bicho') + ' · toca la sala para soltarla');
+    return;
+  }
+  serPuesto = false;
+  ponModo('ser');
+  $('bSer').textContent = EMOJI_SER[quienSer];
+  if(modo === 'ser') avisa((quienSer === 'persona' ? 'Personita' : 'Bicho') + ' · toca la sala para soltarla');
+};
+/* El mismo botón sirve de veleta: si ya está armado, la siguiente pulsación
+   voltea el arma. El cañón NO lleva botón aparte — lo decide el material que
+   tengas elegido en la paleta, que es una cosa menos que explicar y una menos
+   que estorbar en el ancho de un teléfono. */
+$('bPistola').onclick = () => {
+  if(modo === 'pistola'){
+    miraPistola = -miraPistola;
+    $('bPistola').style.transform = miraPistola > 0 ? '' : 'scaleX(-1)';
+    avisa('Pistola apuntando a la ' + (miraPistola > 0 ? 'derecha' : 'izquierda'));
+    return;
+  }
+  pistolaPuesta = false;
+  ponModo('pistola');
+  $('bPistola').style.transform = miraPistola > 0 ? '' : 'scaleX(-1)';
+  if(modo === 'pistola')
+    avisa('Toca la sala para poner la pistola · tócala otra vez para disparar');
+};
+$('bNido').onclick = () => {
+  if(modo === 'nido'){
+    const i = NOMBRES.indexOf(razaNido);
+    razaNido = NOMBRES[(i + 1) % NOMBRES.length];
+    $('bNido').textContent = EMOJI_RAZA[razaNido];
+    avisa('Hormiguero ' + razaNido + ' · toca la sala para ponerlo');
+    return;
+  }
+  nidoPuesto = false;
+  ponModo('nido');
+  $('bNido').textContent = EMOJI_RAZA[razaNido];
+  if(modo === 'nido') avisa('Hormiguero ' + razaNido + ' · toca la sala para ponerlo');
+};
 /* el interruptor que pidió Carlos por su nombre: «que decidir si se tratan
    como partículas separadas sea un toggle» */
 $('bRigido').onclick = () => {
@@ -1085,7 +1477,7 @@ function cuadro(ms){
     const g = M.agarra(agarre.cx, agarre.cy, agarre.fx, agarre.fy, Math.max(2, tam - 1));
     agarre.cx = g.cx; agarre.cy = g.cy;
   }
-  if(!pausado) M.paso();
+  if(!pausado){ M.paso(); if(HOR) HOR.paso(); if(SER) SER.paso(); }
   pinta();
   $('escala').textContent = '×' + vista.esc.toFixed(1);
   cuadros++; acum += dt;
@@ -1117,7 +1509,12 @@ if(window.ResizeObserver) new ResizeObserver(() => medir()).observe($('zona'));
 medir(); pestanas(); paleta();
 requestAnimationFrame(cuadro);
 window.CRISOL = { M, EL, IDX, get mundo(){ return M; }, guardado, vista, zoom, apunta,
-                  pon:(x,y,id)=>M.pon(x,y,IDX[id]) };
+                  pon:(x,y,id)=>M.pon(x,y,IDX[id]),
+                  /* para las pruebas de pantalla: la lista de armas puestas y
+                     el modo, que es lo único que no se ve leyendo el lienzo */
+                  get pistolas(){ return pistolas; }, get modo(){ return modo; },
+                  get SER(){ return SER; }, get HOR(){ return HOR; },
+                  PIEZAS };
 </script>
 </body>
 </html>

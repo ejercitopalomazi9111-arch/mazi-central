@@ -47,6 +47,21 @@ const JUEGO = {
              fus:[1700,'vidrio'], dureza:.2, grupo:'tierra' },
   tierra:  { nom:'Tierra',  col:'#6B4A2F', estado:'polvo',  dens:15, cond:.10,
              dureza:.2, grupo:'tierra' },
+  /* ── TIERRA APISONADA ────────────────────────────────────────────────────
+     La hace la hormiga, y no es un capricho de diseño: un túnel cavado en
+     tierra suelta SE DERRUMBA SOLO, porque la tierra es un polvo y un polvo
+     cae. Medido antes de existir esto: el plano del hormiguero se cumplía
+     —331 de 346 celdas cavadas— y el hueco bajo tierra daba CERO, o sea que
+     se excavaba y el techo se venía encima en el acto.
+     Las hormigas de verdad resuelven eso igual: cementan la pared de la
+     galería. Aquí, apisonar convierte el polvo en sólido, así que el techo
+     se sostiene con el mismo sostén estructural que ya existe.
+     Sigue siendo blanda (0.3, por debajo del umbral de las razas normales):
+     una galería derrumbada se puede volver a abrir, y un pico o una explosión
+     la tumban igual. */
+  tierraap:{ nom:'Tierra apisonada', col:'#54402E', estado:'solido', dens:17,
+             cond:.11, dureza:.3, grupo:'tierra',
+             ayuda:'Tierra compactada. No se cae como el polvo: con ella se sostienen los túneles' },
   piedra:  { nom:'Piedra',  col:'#7C7687', estado:'solido', dens:25, cond:.20, friccion:.65,
              fus:[1200,'lava'], dureza:.6, grupo:'tierra' },
   grava:   { nom:'Grava',   col:'#8A8496', estado:'polvo',  dens:20, cond:.18,
@@ -325,6 +340,13 @@ const JUEGO = {
   /* ── vida, apenas la semilla de lo que viene ──────────────────────────── */
   planta:  { nom:'Planta',  col:'#3FA83F', estado:'solido', dens:18, cond:.15,
              arde:.6, ignicion:105, calorArde:500, crece:true, dureza:.1, grupo:'vida' },
+  /* ── FRUTA ───────────────────────────────────────────────────────────────
+     Lo que da un árbol maduro. Es del grupo «vida», y eso no es etiquetado:
+     las hormigas comen lo del grupo vida, así que un árbol que fructifica
+     alimenta un hormiguero sin una sola línea que los conecte. */
+  fruta:   { nom:'Fruta',   col:'#D2402E', estado:'polvo',  dens:14, cond:.16,
+             arde:.5, ignicion:120, calorArde:420, dureza:.08, grupo:'vida',
+             ayuda:'La da un árbol maduro. Se cae sola y las hormigas se la llevan' },
   semilla: { nom:'Semilla', col:'#8FBF4A', estado:'polvo',  dens:13, cond:.15,
              arde:.5, ignicion:105, calorArde:400, germina:true, dureza:.05, grupo:'vida' },
 };
@@ -602,7 +624,7 @@ const ICONOS = {
   reloj:'⏳', valvula:'🚰', repetidor:'📶', observador:'👁', piston:'🔨', resorte:'🌀', pila:'🔋',
   estRoja:'🎆', estVerde:'🎆', estAzul:'🎆', estOro:'🎆', mecha:'🧵', chispa:'✨',
   gAND:'🔀', gOR:'🔀', gNOT:'🔁', diodo:'➡️', nand:'🔀', nor:'🔀', xor:'⊕', xnor:'⊜',
-  acido:'🧪', hidronio:'⚗️', uranio:'☢️', planta:'🌱', semilla:'🌰',
+  acido:'🧪', hidronio:'⚗️', uranio:'☢️', planta:'🌱', semilla:'🌰', fruta:'🍎',
 };
 const ICONO_FAMILIA = {
   '⚛ no metal':'🔬', '⚛ noble':'🎈', '⚛ alcalino':'⚡', '⚛ alcalinotérreo':'🧱',

@@ -193,6 +193,48 @@
       "vecinas": [
         "prueba-que-aprueba-por-accidente"
       ]
+    },
+    {
+      "id": "todataurl-devuelve-png-calladito",
+      "titulo": "Creer que mandas webp y estar mandando PNG",
+      "gravedad": "alta",
+      "sintoma": "La compresión «funciona», las pruebas pasan, y las imágenes siguen pesando una barbaridad.",
+      "causa": "`canvas.toDataURL('image/webp')` en un navegador que no conoce ese tipo NO falla ni avisa: devuelve un PNG con toda tranquilidad.",
+      "porque": "La firma no tiene forma de decir que no. Devuelve una cadena, y una cadena de PNG se ve igual de sana que una de webp desde el código.",
+      "arreglo": "Detectar el soporte una vez: pintar un canvas de 1×1, pedir `image/webp` y comprobar que lo devuelto empieza con `data:image/webp`. Si no, caer a `image/jpeg` a propósito. Y guardar el tipo REAL que salió, no el que se pidió.",
+      "comoCazarlo": "En la prueba, leer el prefijo del data URL, no el tipo que uno pidió. `ok(mime === 'image/webp' || mime === 'image/jpeg')` con el valor medido.",
+      "consejo": "Es la misma familia que «pasa todo y no sirve»: todas las demás comprobaciones —que pesa menos, que cabe en el presupuesto, que trae miniatura— salen verdes con un PNG disfrazado.",
+      "senales": [
+        "mandé webp y pesa muchísimo",
+        "la compresión no comprime",
+        "toDataURL no falla"
+      ],
+      "salioDe": "Compresión de imágenes de La Sala, 17 de septiembre de 2026. `sala/pruebas-imagenes.mjs`, la comprobación marcada como la que más importa del archivo.",
+      "vecinas": [
+        "formato-viejo-por-costumbre",
+        "grano-que-pesa-mas-que-la-foto"
+      ]
+    },
+    {
+      "id": "comprimir-un-gif-lo-deja-en-un-cuadro",
+      "titulo": "Comprimir un GIF animado lo convierte en foto fija",
+      "gravedad": "media",
+      "sintoma": "El GIF que mandaron llega quieto. No está roto, no dio error: es una imagen de un solo cuadro.",
+      "causa": "Dibujar un GIF en un canvas pinta UN cuadro, el primero. De ahí sale la compresión, y la animación se perdió en el camino.",
+      "porque": "La tubería de compresión trata a todas las imágenes igual porque desde el tipo MIME todas se ven igual de comprimibles.",
+      "arreglo": "GIF y SVG se pasan tal cual y se marcan como intactos. El GIF porque perdería la animación; el SVG porque ya es texto ligero y rasterizarlo lo engorda y encima le quita la escala.",
+      "comoCazarlo": "Mandar un GIF de 1×1 por la tubería y comprobar que sale con su tipo original y con la marca de intacta.",
+      "consejo": "Entregar una animación convertida en foto fija SIN avisar es peor que no comprimirla: el que la mandó cree que llegó y no llegó.",
+      "senales": [
+        "el gif no se mueve",
+        "se quedó en el primer cuadro",
+        "el svg salió pixeleado"
+      ],
+      "salioDe": "Compresión de imágenes de La Sala, 17 de septiembre de 2026. `sala/index.html`, la lista `intocable`.",
+      "vecinas": [
+        "todataurl-devuelve-png-calladito",
+        "animar-el-svg-y-perder-el-texto"
+      ]
     }
   ]
 }

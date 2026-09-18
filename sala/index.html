@@ -157,6 +157,13 @@ button:active, .fila-lado:active{ transform:scale(.965); }
 a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
 .btn:hover{color:var(--hueso); border-color:var(--violeta)}
 .btn:focus-visible,.codigo:focus-visible{outline:2px solid var(--verde); outline-offset:2px}
+/* El «o» entre entrar y crear. Una raya a cada lado para que se lea como una
+   bifurcación y no como un tercer campo del formulario. */
+.o-bien{display:grid; gap:8px; margin-top:14px}
+.o-bien span{display:flex; align-items:center; gap:10px;
+  font:600 11px/1 var(--dato); letter-spacing:.22em; text-transform:uppercase;
+  color:var(--apagado)}
+.o-bien span::before,.o-bien span::after{content:''; flex:1; height:1px; background:var(--linea)}
 
 /* ── las pestañas de vista ── */
 .pestanas{
@@ -1732,6 +1739,20 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
     <label for="nombreIn">Tu nombre</label>
     <input id="nombreIn" maxlength="40" autocomplete="off" placeholder="Carlos">
     <button class="enviar" id="bEntrar" style="width:100%">Entrar</button>
+
+    <!-- ⚠ EL BOTÓN DE SALA NUEVA. Lo pidió Carlos: «quiero que la sala tenga un
+         botón para crear nuevas salas más fácilmente».
+
+         Antes SÍ se podían crear —cualquier código de 6 letras que no existiera
+         nacía como sala— pero había que INVENTARSE el código uno mismo y
+         teclearlo. Eso tiene dos problemas: hay que pensar seis letras, y si
+         uno pone algo adivinable (SALA01, PRUEBA) acaba metiéndose sin querer
+         a una que ya existe. El servidor ya sabía generar códigos buenos
+         (`/api/sala/codigo`); lo que faltaba era un botón que los pidiera. -->
+    <div class="o-bien">
+      <span>o</span>
+      <button class="btn ancho" id="bSalaNueva" type="button">✦ Crear una sala nueva</button>
+    </div>
     </div>
     <div class="error" id="error"></div>
 
@@ -3974,34 +3995,131 @@ function marcarVivo(ok, razon){
    Entonces se encoge AQUÍ antes de mandarla: si se mandara tal cual, el
    servidor la rechazaría y el usuario nada más vería un error sin saber qué
    hacer. Encoger es la diferencia entre «no se pudo» y que funcione. */
-const TOPE_LADO = 1600;
+/* ⚠ EL LADO BAJÓ DE 1600 A 1280, y es el ahorro más grande de todos porque
+   el peso va con el ÁREA: 1280 contra 1600 son 36 % menos píxeles antes de
+   comprimir nada. 1280 sigue sobrando para cualquier teléfono y para mirar
+   una captura en la mesa; nadie hace zoom a una foto del chat. */
+const TOPE_LADO = 1280;
+/* A cuántos bytes queremos dejar una imagen. 180 KB de base64 son ~135 KB de
+   archivo: una captura de teléfono se ve perfecta ahí. El tope duro del
+   servidor es 1.5 MB, o sea que esto deja ocho veces de margen — y el hilo
+   entero topa a 1.4 MB, así que caben siete fotos en vez de una. */
+const META_BYTES = 180_000;
+/* La miniatura que se ve ANTES que la foto. 32 px de ancho pesan ~700 bytes y
+   se pintan en el mismo cuadro en que llega el mensaje. */
+const LADO_MINI = 32;
 const pegados = [];
 
+/* ¿Sabe este navegador escribir WebP? Se PREGUNTA, no se supone: `toDataURL`
+   con un tipo que no conoce NO falla — devuelve un PNG tan tranquilo. O sea
+   que pedir webp y no mirar qué volvió es la forma perfecta de mandar PNGs
+   gigantes creyendo que mandas webp. */
+let _webp = null;
+function haceWebp(){
+  if(_webp !== null) return _webp;
+  const c = document.createElement('canvas');
+  c.width = c.height = 1;
+  _webp = c.toDataURL('image/webp').startsWith('data:image/webp');
+  return _webp;
+}
+
+/* ══ COMPRIMIR ═══════════════════════════════════════════════════════════
+   Carlos: «necesito que hagas que las imágenes de la sala se compriman de
+   algún modo para poder guardarlas en ese servidor como texto liviano y que
+   se carguen en la sala más económicamente para que yo pueda verlas».
+
+   Se hace AQUÍ, en el navegador, antes de que salga un solo byte a la red. No
+   es capricho: un Worker de Cloudflare no puede decodificar una imagen —no
+   hay canvas del otro lado— y aunque pudiera, ya habría pagado el viaje de la
+   foto de cuatro megas. Comprimir en el origen ahorra la subida, el
+   almacenamiento Y la bajada de todos los demás.
+
+   Tres cosas, en orden de cuánto ahorran:
+     1. ENCOGER a 1280 de lado. El peso va con el área: es el ahorro grande.
+     2. WEBP en vez de JPEG. Entre 25 y 35 % menos con la misma pinta.
+     3. BUSCAR LA CALIDAD que cabe en el presupuesto, en vez de una fija. Una
+        calidad fija deja las capturas de pantalla pesadísimas (mucho detalle
+        de bordes duros) y las fotos borrosas más ligeras de lo necesario.
+   Y una cuarta que no ahorra bytes pero SÍ hace que se vea rápido: la
+   MINIATURA, que va en el mismo mensaje y se pinta al instante mientras la
+   grande termina de llegar. */
 function encoger(archivo){
   return new Promise((listo, falla) => {
+    /* Un GIF animado se queda como está: dibujarlo en un canvas lo aplasta a
+       UN cuadro, y entregar una animación convertida en foto fija sin avisar
+       es peor que no comprimirla. Igual con SVG, que ya es texto: rasterizarlo
+       lo hace más pesado y le quita la escala. */
+    const intocable = /^image\/(gif|svg\+xml)$/.test(archivo.type || '');
+
     const lector = new FileReader();
     lector.onerror = () => falla(new Error('No se pudo leer la imagen.'));
     lector.onload = () => {
       const img = new Image();
       img.onerror = () => falla(new Error('Ese archivo no es una imagen que se pueda abrir.'));
       img.onload = () => {
+        if(intocable){
+          const crudo = String(lector.result);
+          listo({ clase:'imagen', mime: archivo.type,
+                  nombre: archivo.name || 'imagen',
+                  datos: crudo.split(',')[1], ancho: img.width, alto: img.height,
+                  vista: crudo, intacta: true });
+          return;
+        }
+
+        /* Nunca se AGRANDA: `Math.min(1, …)`. Estirar una imagen chica no
+           mejora nada y multiplica los bytes por el cuadrado del estirón. */
         const f = Math.min(1, TOPE_LADO / Math.max(img.width, img.height));
         const c = document.createElement('canvas');
-        c.width = Math.round(img.width * f); c.height = Math.round(img.height * f);
-        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-        /* PNG sólo si es chica; si no, JPEG, que para una captura o una foto
-           pesa una fracción y no se nota. */
-        let datos = c.toDataURL('image/jpeg', .82);
-        let mime = 'image/jpeg';
-        if(datos.length > 1_400_000) datos = c.toDataURL('image/jpeg', .6);
-        listo({ clase:'imagen', mime, nombre: archivo.name || 'imagen',
-                datos: datos.split(',')[1], ancho:c.width, alto:c.height, vista:datos });
+        c.width = Math.max(1, Math.round(img.width * f));
+        c.height = Math.max(1, Math.round(img.height * f));
+        const cx = c.getContext('2d');
+        cx.drawImage(img, 0, 0, c.width, c.height);
+
+        const tipo = haceWebp() ? 'image/webp' : 'image/jpeg';
+
+        /* Búsqueda binaria de la calidad que cabe en el presupuesto. Ocho
+           pasos bastan para clavarlo dentro de un 1 %, y cada paso es un
+           `toDataURL` sobre una imagen ya encogida: barato.
+           ⚠ Se guarda SIEMPRE el mejor candidato que cupo, no el último
+           probado: la búsqueda termina donde termina, y el último paso puede
+           ser uno que se pasó. */
+        let lo = 0.35, hi = 0.92, mejor = null;
+        for(let i = 0; i < 8; i++){
+          const q = (lo + hi) / 2;
+          const d = c.toDataURL(tipo, q);
+          if(d.length <= META_BYTES){ mejor = d; lo = q; } else { hi = q; }
+        }
+        /* Si ni con la calidad más baja cabe, se acepta la más baja igual:
+           una imagen fea que se ve vale más que un error. */
+        if(!mejor) mejor = c.toDataURL(tipo, 0.35);
+
+        /* La miniatura. 32 px de ancho, calidad baja: se ve como un vitral y
+           es justo lo que se quiere — da el color y la forma al instante y
+           desaparece en cuanto llega la buena. */
+        const m = document.createElement('canvas');
+        const fm = Math.min(1, LADO_MINI / Math.max(c.width, c.height));
+        m.width = Math.max(1, Math.round(c.width * fm));
+        m.height = Math.max(1, Math.round(c.height * fm));
+        m.getContext('2d').drawImage(c, 0, 0, m.width, m.height);
+        const mini = m.toDataURL(tipo, 0.45);
+
+        listo({ clase:'imagen', mime: tipo, nombre: archivo.name || 'imagen',
+                datos: mejor.split(',')[1], ancho: c.width, alto: c.height,
+                mini: mini.split(',')[1],
+                vista: mejor });
       };
       img.src = lector.result;
     };
     lector.readAsDataURL(archivo);
   });
 }
+
+/* Para poder medirla desde una prueba en un navegador de verdad. Sin esto no
+   hay forma de comprobar cuánto ahorra: el número sale de comprimir, no de
+   leer el código. */
+window.SALA = window.SALA || {};
+window.SALA.encoger = encoger;
+window.SALA.topes = { TOPE_LADO, META_BYTES, LADO_MINI };
 
 async function pegar(archivos){
   for(const a of [...archivos].slice(0, 6)){
@@ -5004,6 +5122,49 @@ $('listaSalas').addEventListener('click', (e) => {
   entrar(guardada.codigo, guardada.nombre || 'Alguien')
     .then(() => { $('error').textContent = ''; })
     .catch(err => { $('error').textContent = err.message; });
+});
+
+/* ── CREAR UNA SALA NUEVA ───────────────────────────────────────────────────
+   Pide un código al servidor, lo pone en el campo y entra. No abre ningún
+   diálogo ni pregunta nada: el único dato que hace falta es el nombre, y ése
+   ya está ahí arriba — o lo recuerda de la última vez.
+
+   ⚠ Y NO SE INVENTA EL CÓDIGO EN EL NAVEGADOR aunque sean seis letras al azar
+   y se vea trivial. El servidor es el que sabe qué alfabeto usa (el suyo se
+   salta las letras que se confunden leídas en voz alta) y el que puede
+   garantizar que no choque. Un código generado aquí con otro alfabeto se ve
+   igual de bien y manda a la gente a salas equivocadas. */
+$('bSalaNueva').addEventListener('click', async () => {
+  const b = $('bSalaNueva');
+  const nombre = $('nombreIn').value.trim() || nombreRecordado('');
+  if(!nombre){
+    $('error').textContent = 'Escribe tu nombre y le damos.';
+    $('nombreIn').focus();
+    return;
+  }
+  b.disabled = true;
+  const decia = b.textContent;
+  b.textContent = 'Creando…';
+  $('error').textContent = '';
+  try{
+    const r = await fetch(`${SERVIDOR}/api/sala/codigo`, { headers: conLlave() });
+    if(!r.ok) throw new Error('El servidor no quiso dar código (' + r.status + ').');
+    const { codigo } = await r.json();
+    if(!codigo || codigo.length !== 6) throw new Error('El servidor mandó un código raro.');
+    $('codigoIn').value = codigo;
+    await entrar(codigo, nombre);
+    $('error').textContent = '';
+    $('pegarLlave').hidden = true;
+  }catch(e){
+    /* Se dice qué pasó y se deja el botón usable. Un botón que se queda
+       «Creando…» para siempre es peor que uno que falla: no se sabe si
+       esperar o volver a picarle. */
+    $('error').textContent = e.message || 'No se pudo crear la sala.';
+    asomarPegarLlave(e);
+  }finally{
+    b.disabled = false;
+    b.textContent = decia;
+  }
 });
 
 $('bOtraSala').addEventListener('click', () => {

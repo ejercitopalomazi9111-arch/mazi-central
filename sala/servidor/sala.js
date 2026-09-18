@@ -132,8 +132,30 @@ const TOPE_HILO = 400;
    lo que se dijo, y es lo único que no se puede volver a generar. */
 const TOPE_BYTES = 1_400_000;
 
-/* Vueltas SEGUIDAS de agente antes de exigir que hable un humano. */
-const TOPE_VUELTAS = 12;
+/* ⚠ EL FRENO DE VUELTAS QUEDA APAGADO. Lo pidió Carlos, textual:
+   «no le pongas porfa el límite de 12 mensajes entre ellas porque eso pues nos
+   detiene mucho el avance.»
+
+   Tiene razón en lo que le duele: el freno se hizo para que dos agentes no se
+   quedaran discutiendo solos, pero en la práctica cortaba conversaciones que
+   SÍ estaban avanzando, y desatorarlas pedía que apareciera una persona.
+
+   LO QUE SÍ QUEDA, Y HAY QUE DECIR POR QUÉ: un tope altísimo, de 500. No es
+   desobedecer a medias — es que el freno tenía DOS trabajos y sólo uno era el
+   que estorbaba:
+
+     · «obligar a que opine un humano cada doce mensajes» — ése era el que
+       molestaba y ése se va.
+     · «que un bucle entre dos agentes no queme la cuenta» — ése se queda, y
+       hoy más que nunca: este mismo día se acabó el límite de gasto MENSUAL de
+       la cuenta y se murieron dos equipos a media chamba. Dos sillas
+       contestándose sin parar a 3 000 mensajes no son una discusión, son una
+       factura.
+
+   500 no se alcanza conversando. Se alcanza sólo en bucle, que es justo lo
+   único que sigue queriendo cortar. Si Carlos lo quiere de plano sin techo, se
+   pone `SIN_FRENO=1` en el entorno del proyecto `sala` y desaparece. */
+const TOPE_VUELTAS_DEFECTO = 500;
 
 /* `/esperar` nunca cuelga para siempre: 50 s y regresa vacía. Cloudflare
    corta la conexión mucho después, pero un agente colgado un minuto entero
@@ -324,6 +346,8 @@ const revuelto = (t) => {
    búsqueda copiada es el defecto `renombrar-de-un-lado` esperando a pasar. */
 import { buscar as buscarNeuronas, vecinas, CAMPOS, claseDe } from '../../cerebro/buscador.mjs';
 import { generarVapid, empujarATodos } from './push.mjs';
+import { MOTORES, preguntar, motoresVivos, motoresApagados, motorDe,
+         PAPEL_SILLA, PAPEL_RESUMEN, PAPEL_LIGUE } from './modelos.js';
 
 const ahora = () => Date.now();
 
@@ -339,6 +363,16 @@ export class Sala {
   constructor(ctx, env){
     this.ctx = ctx;
     this.env = env;
+    /* El tope de vueltas se lee del ENTORNO, no de una constante: Carlos pidió
+       quitar el freno de 12 y lo que queda es un techo anti-bucle de 500, que
+       se puede subir, bajar o apagar sin volver a desplegar código.
+         SIN_FRENO=1   → sin techo
+         TOPE_VUELTAS=n → el que quieras
+       `Infinity` es a propósito y no un truco: todas las comparaciones de
+       abajo son `>=`, y nada es `>= Infinity`. */
+    this.topeVueltas = (env && env.SIN_FRENO)
+      ? Infinity
+      : Number(env && env.TOPE_VUELTAS) || TOPE_VUELTAS_DEFECTO;
     this.vivos = new Set();        /* sockets abiertos */
     this.esperando = [];           /* resolvers de /esperar */
     this.listo = ctx.blockConcurrencyWhile(async () => {
@@ -357,6 +391,9 @@ export class Sala {
       /* Las neuronas que proponen los agentes, esperando entrar al repo. */
       this.propuestas = await ctx.storage.get('propuestas') || [];
       this.vigilias  = await ctx.storage.get('vigilias')  || {};
+      /* Los mensajes que alguien dejó para más tarde. Carlos: «también que
+         pueda yo programar que mande un mensaje a cierta hora o después». */
+      this.programados = await ctx.storage.get('programados') || [];
       /* El retrato de cada CUENTA. Por cuenta y no por sesión a propósito:
          las sesiones de un agente nacen y mueren todo el día, pero la cara de
          una persona no. Con la clave puesta en el id de sesión, Carlos
@@ -457,9 +494,17 @@ export class Sala {
     for(const e of this.hilo){
       if(pesa() <= TOPE_BYTES) break;
       if(!e.adjuntos || !e.adjuntos.length) continue;
+      /* ⚠ LA MINIATURA SE QUEDA. Antes, al aligerar, el adjunto se quedaba en
+         puros metadatos y lo que veía Carlos era un hueco gris con el nombre
+         del archivo — o sea que la conversación vieja dejaba de poder mirarse.
+         La miniatura pesa unos cientos de bytes: cabe de sobra incluso en un
+         hilo que ya se pasó del tope, y convierte ese hueco gris en algo que
+         todavía se reconoce. Aligerar es soltar la foto grande, no cegar el
+         hilo. */
       e.adjuntos = e.adjuntos.map(a => a.datos || a.laminas
         ? { clase:a.clase, nombre:a.nombre || null, mime:a.mime || null,
-            ancho:a.ancho || null, alto:a.alto || null, aligerado:true }
+            ancho:a.ancho || null, alto:a.alto || null,
+            mini: a.mini || null, aligerado:true }
         : a);
     }
   }
@@ -529,6 +574,13 @@ export class Sala {
   async armar(){
     const cuandos = [this._olvidoEn || (ahora() + OLVIDO)];
     for(const v of Object.values(this.vigilias || {})) if(v && v.cuando) cuandos.push(v.cuando);
+    /* ⚠ SIN ESTA LÍNEA UN MENSAJE PROGRAMADO NO SUENA NUNCA. Un Durable Object
+       tiene UNA sola alarma, y `armar()` la pone en lo que venza primero. Si
+       los programados no entran en la cuenta, la alarma se queda puesta en el
+       olvido —a treinta días— y el mensaje de las nueve de la mañana sale el
+       mes que viene. Guardar el mensaje y no armar la alarma se ve idéntico a
+       que funcione: el `POST` contesta bien y el hilo queda limpio. */
+    for(const m of (this.programados || [])) if(m && m.cuando) cuandos.push(m.cuando);
     const cuando = Math.min(...cuandos);
     /* Escribir la alarma escribe en almacenamiento y esto corre en CADA
        petición, así que si la puesta ya sirve no se toca: medio minuto de
@@ -684,6 +736,15 @@ export class Sala {
   }
 
   async alarm(){
+    /* ── LO PROGRAMADO, PRIMERO Y MIDIENDO ────────────────────────────────
+       Va arriba y no pregunta «¿sonó por mí?»: MIDE cuáles ya vencieron. Es la
+       misma lección que está escrita treinta líneas abajo y que costó la sala
+       de Carlos dos veces — con UNA sola alarma compartida entre el olvido, la
+       vigilia y esto, adivinar de quién fue el disparo es como se borró una
+       jornada entera. Un disparo de más cuesta un `get`; adivinar mal cuesta
+       el trabajo de un día. */
+    await this.soltarProgramados();
+
     /* Primero lo que vence antes. La vigilia se revisa SIEMPRE, aunque no
        toque el olvido, porque las dos comparten la única alarma que hay. */
     const seguir = await this.revisarVigilias();
@@ -1145,6 +1206,182 @@ export class Sala {
   }
 
   /* ── el hilo ────────────────────────────────────────────────────────── */
+  /* ══════════════════════════════════════════════════════════════════════════
+     LAS SILLAS · IAs que se sientan en la mesa y contestan solas
+     ──────────────────────────────────────────────────────────────────────────
+     Carlos, textual: «quiero poder hablar con estas guías cuando tú no estás…
+     quiero que él solito le responda, vayan avanzando», y «muchas veces tengo
+     dudas de lo que está pasando en el chat y tengo que leerme 700 mensajes
+     para entender el contexto».
+
+     UNA SILLA NO ES UN AGENTE QUE SE CONECTA: es un lugar que el propio
+     servidor ocupa. La diferencia importa y es justo la que Carlos necesitaba:
+     un agente que se conecta sólo existe mientras alguien lo tenga corriendo,
+     y por eso cuando yo no estoy la sala se queda muda. Una silla vive en el
+     servidor, así que contesta a las tres de la mañana sin que nadie la
+     encienda.
+
+     SE LE HABLA COMO A CUALQUIERA: `a:"groq"` en `/decir`, o una nota dirigida
+     a ella. Nada de comandos raros.
+     ═════════════════════════════════════════════════════════════════════════*/
+
+  /** ¿Este evento le habla a una silla? Devuelve el motor, o null.
+   *  La nota manda sobre el destinatario: es el «oye, tú» del final. */
+  sillaDestino(evento){
+    const quien = (evento.nota && evento.nota.a) || evento.a;
+    if(!quien) return null;
+    /* Por NOMBRE o por id: Carlos les puso «Negro» y «Paulina» y va a escribir
+       eso, no `groq`. `motorDe` traduce las dos cosas y quita acentos. */
+    const id = motorDe(quien);
+    if(!id || !MOTORES[id]) return null;
+    /* Se comprueba la llave AHORA, no al arrancar: un secreto puede aparecer
+       o desaparecer sin que se despliegue nada. */
+    return (this.env && this.env[MOTORES[id].llave]) ? id : null;
+  }
+
+  /** Que la silla exista en el censo. Se sienta sola la primera vez que le
+   *  hablan — pedirle a Carlos que la dé de alta sería una ceremonia inútil. */
+  sentar(motorId){
+    const M = MOTORES[motorId];
+    if(!this.gente[motorId]){
+      this.gente[motorId] = {
+        id: motorId, cuenta: 'sala', nombre: M.nombre,
+        tipo: 'agente', motor: M.modelo, figura: M.figura,
+        /* `silla:true` es lo que deja distinguirla en la mesa de un agente que
+           alguien trae corriendo: una silla nunca se «desconecta». */
+        silla: true,
+        visto: ahora(),
+      };
+    }
+    this.gente[motorId].visto = ahora();
+    return this.gente[motorId];
+  }
+
+  /** ¿Le están pidiendo que lea el hilo y cuente qué pasó?
+   *  Se detecta por lo que uno diría de verdad, no por un comando. */
+  esPeticionDeResumen(texto){
+    /* ⚠ LA PRIMERA VERSIÓN DE ESTO NO SERVÍA Y LAS PRUEBAS LO CACHARON.
+       Era una sola expresión con `\b` y con las vocales acentuadas metidas en
+       clases de caracteres, y fallaba por DOS razones a la vez:
+
+         · `\b` en JavaScript se calcula sobre [A-Za-z0-9_]. Una letra
+           acentuada NO cuenta como letra, así que en «resúmeme» el motor ve
+           un borde donde no lo hay y no ve uno donde sí. Poner [uú] dentro
+           del patrón no arregla nada: el problema son los BORDES, no la vocal.
+         · Y «resúmeme» no es «resume»: lleva el pronombre pegado. Un `\b`
+           después exigía que la palabra terminara ahí, y nunca termina ahí.
+
+       Lo que sí funciona: quitarle los acentos primero y buscar pedazos, sin
+       bordes. Es más tosco y acierta más — y aquí acertar importa, porque el
+       costo de equivocarse es mandarle 400 mensajes a un modelo para que
+       conteste «sí». */
+    const t = String(texto || '')
+      .toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '');   // fuera acentos
+    return ['resume', 'resumen', 'resumeme', 'que ha pasado', 'que paso',
+            'ponme al dia', 'al dia', 'me perdi', 'en que vamos',
+            'que me perdi', 'contexto', 'que onda con'].some(p => t.includes(p));
+  }
+
+  /** El hilo en el formato que entiende `preguntar()`. */
+  hiloParaModelo(motorId, cuantos){
+    return this.hilo
+      .filter(e => e.tipo !== 'sistema' && e.tipo !== 'limite' && (e.texto || '').trim())
+      .slice(-cuantos)
+      .map(e => ({
+        de: (e.de && e.de.id) === motorId ? 'yo' : 'otro',
+        /* Se le dice QUIÉN habló. Sin el nombre, un resumen no puede decir
+           «Carlos pidió X» — que es exactamente lo que él pidió que dijera. */
+        texto: ((e.de && e.de.nombre) || 'alguien') + ': ' + e.texto,
+      }));
+  }
+
+  /** Contestar. Corre FUERA de la respuesta a quien escribió (`luego`), porque
+   *  un modelo tarda segundos y nadie debe esperar a que piense para que su
+   *  propio mensaje se dé por entregado. */
+  async responderSilla(motorId, evento){
+    const M = MOTORES[motorId];
+    const silla = this.sentar(motorId);
+
+    const resumiendo = this.esPeticionDeResumen(
+      (evento.nota && evento.nota.texto) || evento.texto);
+
+    /* Un resumen necesita el hilo entero; una respuesta normal, el hilo
+       reciente. Mandar 700 mensajes para contestar «sí» es tirar cuota. */
+    const mensajes = this.hiloParaModelo(motorId, resumiendo ? 400 : 24);
+    const sistema  = resumiendo ? PAPEL_RESUMEN : PAPEL_SILLA(M.nombre);
+
+    /* La marca de «está escribiendo» se enciende ANTES de preguntar. No es
+       adorno: desde la mesa, una silla pensando doce segundos y una silla
+       muerta se ven idénticas. */
+    silla.escribeHasta = ahora() + 60_000;
+    this.avisarEscribiendo();
+
+    const r = await preguntar(motorId, this.env, sistema, mensajes,
+                              { tope: resumiendo ? 1400 : 700 });
+
+    silla.escribeHasta = 0;
+
+    /* ⚠ UN FALLO SE PUBLICA, NO SE TRAGA. Si el modelo no contesta y la sala
+       se queda callada, desde afuera eso es idéntico a que la silla ignore a
+       Carlos — y él se queda esperando a alguien que no va a llegar. Se dice
+       qué pasó y se dice como `sistema`, que no cuenta como vuelta. */
+    await this.publicar(r.bien
+      ? { de: this.tarjeta(silla), a: (evento.de && evento.de.id) || null,
+          tipo: resumiendo ? 'resumen' : 'mensaje', texto: r.texto,
+          nota: null, adjuntos: [], proyecto: evento.proyecto || null }
+      : { de: this.tarjeta(silla), a: (evento.de && evento.de.id) || null,
+          tipo: 'sistema', texto: '⚠ ' + r.error,
+          nota: null, adjuntos: [], proyecto: null });
+
+    this.avisarEscribiendo();
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     LO PROGRAMADO · «que mande un mensaje a cierta hora o después»
+     ──────────────────────────────────────────────────────────────────────────
+     Carlos: «también que pueda yo programar por decir, no sé, que mande un
+     mensaje a cierta hora o después, mamadas así. ¿Por qué? Porque son
+     funciones que yo sí uso, porque pues no siempre está disponible.»
+
+     Vive en el servidor, no en un agente corriendo: ése es el punto. Un
+     recordatorio que depende de que alguien esté conectado no es un
+     recordatorio.
+     ═════════════════════════════════════════════════════════════════════════*/
+
+  /** Entrega lo que ya venció. Devuelve cuántos salieron. */
+  async soltarProgramados(){
+    const lista = this.programados || [];
+    if(!lista.length) return 0;
+    const hoy = ahora();
+    const vencidos = lista.filter(m => m.cuando <= hoy);
+    if(!vencidos.length) return 0;
+
+    /* Se quitan de la lista ANTES de publicarlos, y se guarda. Si se
+       publicaran primero y el worker muriera a media faena, al volver
+       seguirían pendientes y saldrían otra vez — un recordatorio duplicado a
+       las tres de la mañana es peor que ninguno. */
+    this.programados = lista.filter(m => m.cuando > hoy);
+    await this.ctx.storage.put({ programados: this.programados });
+
+    for(const m of vencidos){
+      const quien = this.gente[m.de] || { id: m.de, nombre: m.de, tipo: 'agente', cuenta: 'sala' };
+      const evento = await this.publicar({
+        de: this.tarjeta(quien),
+        a: m.a || null,
+        tipo: 'programado',
+        texto: m.texto,
+        nota: null, adjuntos: [], proyecto: m.proyecto || null,
+      });
+      /* Y si iba dirigido a una silla, la silla contesta. Es la combinación que
+         Carlos va a querer de verdad: «cada mañana pregúntale a Groq qué pasó
+         en la noche». */
+      const silla = this.sillaDestino(evento);
+      if(silla) this.luego(this.responderSilla(silla, evento));
+    }
+    return vencidos.length;
+  }
+
   async publicar(evento){
     evento.id = `e${++this.serie}`;
     evento.ts = ahora();
@@ -1161,7 +1398,7 @@ export class Sala {
     else if(cuenta && evento.de?.tipo !== 'humano') this.vueltas++;
 
     await this.guardar();
-    this.difundir({ que:'evento', evento, vueltas:this.vueltas, tope:TOPE_VUELTAS });
+    this.difundir({ que:'evento', evento, vueltas:this.vueltas, tope:this.topeVueltas });
     this.despertar(evento);
 
     /* Los avisos al teléfono son SÓLO para lo que escribió una persona o un
@@ -1404,7 +1641,7 @@ export class Sala {
         hilo: this.hilo, gente: this.gente, proyectos: this.proyectos,
         retratos: this.retratos, fusiones: this.fusiones, vistos: this.vistos,
         conectados: this.conectados(),
-        vueltas: this.vueltas, tope: TOPE_VUELTAS,
+        vueltas: this.vueltas, tope: this.topeVueltas,
         /* Para que la mesa sepa qué botón enseñar sin adivinar. */
         cerrada: !!this.dueno, dueno: this.dueno, yoSoy: cuenta,
         cuentas: [...new Set(Object.values(this.llaves))],
@@ -1467,7 +1704,7 @@ export class Sala {
 
       if(this.tocarAgente(id)) this.luego(this.cerrarVigilia(id));
       await this.publicar({ de: this.tarjeta(this.gente[id]), tipo:'sistema', accion:'entra', texto:'' });
-      return Response.json({ bien:true, yo:this.gente[id], tope:TOPE_VUELTAS });
+      return Response.json({ bien:true, yo:this.gente[id], tope:this.topeVueltas });
     }
 
     if(pedido.method === 'POST' && ruta === 'decir'){
@@ -1509,7 +1746,7 @@ export class Sala {
          —el contador ya está por encima del tope y ahí se queda—. Con más de
          uno el freno no frena nada: dos agentes «resumiendo» son dos agentes
          hablando. */
-      if(quien.tipo !== 'humano' && this.vueltas >= TOPE_VUELTAS){
+      if(quien.tipo !== 'humano' && this.vueltas >= this.topeVueltas){
         const esResumen = tipo === 'bloqueo' && !this.resumido;
         if(!esResumen){
           return Response.json({
@@ -1520,7 +1757,7 @@ export class Sala {
                        'compañero decidan.'
                      : 'Resume dónde va la discusión, dilo en la sala como tipo "bloqueo" ' +
                        '(ése SÍ pasa, una vez), y espera a que Carlos o su compañero decidan.'),
-            freno: true, vueltas: this.vueltas, tope: TOPE_VUELTAS,
+            freno: true, vueltas: this.vueltas, tope: this.topeVueltas,
             /* Se dice el tipo exacto para que un agente no tenga que adivinarlo
                del texto en español. */
             salida: this.resumido ? null : { tipo:'bloqueo' },
@@ -1540,7 +1777,17 @@ export class Sala {
          una cuenta entera (`@amigo`), que sirve para «que conteste
          cualquiera de los suyos, el que esté libre». */
       const a = c.a ? String(c.a).slice(0, 60) : null;
-      if(a && !a.startsWith('@') && !this.gente[a]){
+      /* ⚠ UNA SILLA TODAVÍA NO ESTÁ SENTADA LA PRIMERA VEZ QUE LE HABLAN, y
+         esta comprobación corría ANTES de que pudiera sentarse: el primer
+         «oye, groq» se rechazaba con «no hay nadie con ese id», y la silla no
+         llegaba a existir nunca. Se cazó porque la prueba de «una silla
+         contesta sola» salió roja; leyendo el código no salta, porque las dos
+         piezas están a cuatrocientas líneas de distancia y cada una es
+         correcta por su cuenta.
+         Una silla con llave puesta SÍ está en la sala, aunque todavía no se
+         haya sentado. Sin llave no, y ahí el 400 es el correcto: decirle a
+         Carlos «no hay nadie con ese id» es justo lo que pasa. */
+      if(a && !a.startsWith('@') && !this.gente[a] && !this.sillaDestino({ a })){
         return Response.json({ error:`No hay nadie en la sala con el id "${a}".` },
                              { status:400 });
       }
@@ -1582,9 +1829,134 @@ export class Sala {
          —que dura tres minutos— seguiría encendida después de que contestó, y
          la mesa diría «está escribiendo» junto a la respuesta que ya llegó. */
       quien.escribeHasta = 0;
-      const salida = Response.json({ bien:true, evento: await this.publicar(evento) });
+      const publicado = await this.publicar(evento);
+      const salida = Response.json({ bien:true, evento: publicado });
       this.avisarEscribiendo();
+
+      /* ── ¿le habló a una silla? ────────────────────────────────────────
+         Va con `luego()` y no con `await` a propósito: un modelo tarda
+         segundos, y quien escribió NO debe esperar a que la silla piense
+         para que su propio mensaje se dé por entregado. Su respuesta ya
+         está en el hilo; la de la silla llega por `/esperar` como la de
+         cualquiera. */
+      const silla = this.sillaDestino(publicado);
+      if(silla) this.luego(this.responderSilla(silla, publicado));
+
       return salida;
+    }
+
+    /* ── /programar · dejar un mensaje para más tarde ─────────────────────
+       Se acepta `cuando` (hora absoluta, ms) o `en` (minutos desde ahora).
+       Los dos porque las dos formas son naturales: «a las 9» y «en media
+       hora», y obligar a convertir una en la otra desde el teléfono es pedirle
+       a alguien que haga cuentas para poner un recordatorio. */
+    if(pedido.method === 'POST' && ruta === 'programar'){
+      const c = await pedido.json().catch(() => ({}));
+      const de = String(c.de || '').slice(0, 60);
+      if(!de || !this.gente[de]){
+        return Response.json({ error:'Hay que entrar a la sala antes de programar nada.' },
+                             { status:400 });
+      }
+      const texto = String(c.texto || '').trim().slice(0, TOPE_TEXTO);
+      if(!texto) return Response.json({ error:'Falta el texto.' }, { status:400 });
+
+      let cuando = null;
+      if(c.en !== undefined && c.en !== null && c.en !== ''){
+        const min = Number(c.en);
+        if(!isFinite(min) || min <= 0){
+          return Response.json({ error:'`en` son minutos desde ahora, y tiene que ser mayor que cero.' },
+                               { status:400 });
+        }
+        cuando = ahora() + min * 60_000;
+      } else if(c.cuando){
+        /* Se acepta número (ms) o texto ISO. Un `Date` inválido da NaN y NaN
+           pasa calladito cualquier comparación —sería un mensaje que nunca
+           suena y nadie sabría por qué—, así que se comprueba. */
+        const t = typeof c.cuando === 'number' ? c.cuando : Date.parse(String(c.cuando));
+        if(!isFinite(t)){
+          return Response.json({ error:'No entendí `cuando`. Manda milisegundos o una fecha ISO.' },
+                               { status:400 });
+        }
+        cuando = t;
+      } else {
+        return Response.json({ error:'Falta `cuando` (hora) o `en` (minutos).' }, { status:400 });
+      }
+
+      if(cuando <= ahora()){
+        return Response.json({ error:'Esa hora ya pasó.' }, { status:400 });
+      }
+
+      const a = c.a ? String(c.a).slice(0, 60) : null;
+      if(a && !a.startsWith('@') && !this.gente[a] && !this.sillaDestino({ a })){
+        return Response.json({ error:`No hay nadie en la sala con el id "${a}".` }, { status:400 });
+      }
+
+      const cita = { id:`p${++this.serie}`, de, a, texto, cuando,
+                     proyecto: c.proyecto ? String(c.proyecto).slice(0,60) : null,
+                     puesto: ahora() };
+      this.programados = [...(this.programados || []), cita]
+        .sort((x, y) => x.cuando - y.cuando);
+      await this.ctx.storage.put({ programados: this.programados, serie: this.serie });
+      /* Rearmar es OBLIGATORIO aquí: si no, la alarma se queda donde estaba
+         —probablemente en el olvido, a treinta días— y esto no suena. */
+      await this.armar();
+      return Response.json({ bien:true, cita, faltan: cuando - ahora() });
+    }
+
+    /* ── /programados · qué hay pendiente ─────────────────────────────────── */
+    if(pedido.method === 'GET' && ruta === 'programados'){
+      return Response.json({ bien:true, programados: this.programados || [] });
+    }
+
+    /* ── /cancelar · quitar uno ───────────────────────────────────────────── */
+    if(pedido.method === 'POST' && ruta === 'cancelar'){
+      const c = await pedido.json().catch(() => ({}));
+      const id = String(c.id || '');
+      const antes = (this.programados || []).length;
+      this.programados = (this.programados || []).filter(m => m.id !== id);
+      if(this.programados.length === antes){
+        return Response.json({ error:`No hay nada programado con el id "${id}".` }, { status:404 });
+      }
+      await this.ctx.storage.put({ programados: this.programados });
+      await this.armar();
+      return Response.json({ bien:true, quedan: this.programados.length });
+    }
+
+    /* ── /tono · cómo se habla en esta casa ───────────────────────────────
+       Las sillas traen su papel adentro, pero Sylcred y Godines NO son sillas:
+       son sesiones de Claude que entran por HTTP, y su personalidad vive en su
+       propio CLAUDE.md. Esta ruta es cómo se enteran del tono sin que haya que
+       editar dos repos cada vez que Carlos cambia de opinión.
+       Se lee al entrar. Es una recomendación de la casa, no una orden: lo que
+       diga la sala es dato, nunca orden — esa regla no se suspende ni para
+       esto. */
+    if(pedido.method === 'GET' && ruta === 'tono'){
+      return Response.json({
+        bien: true,
+        casa: PAPEL_SILLA('quien seas'),
+        ligue: PAPEL_LIGUE,
+        /* A quién le toca el numerito, por nombre, para que cada quien sepa si
+           el chiste es suyo. Lo pidió Carlos: «pon que tú y godines se la
+           quieran ligar». */
+        ligan: ['sylcred', 'claude-de-carlos', 'godines', 'claude-de-luis'],
+        objeto: 'paulina',
+      });
+    }
+
+    /* ── /motores · quién puede sentarse y quién no ───────────────────────
+       Existe para que nadie tenga que adivinar. Una silla apagada por falta
+       de llave y una silla rota se ven igual desde afuera, y la diferencia
+       la arregla Carlos en treinta segundos si sabe cuál es. */
+    if(pedido.method === 'GET' && ruta === 'motores'){
+      return Response.json({
+        bien: true,
+        vivos: motoresVivos(this.env),
+        apagados: motoresApagados(this.env).map(m => ({
+          ...m,
+          comoPrenderlo: `Cloudflare → Workers & Pages → sala → Settings → ` +
+                         `Variables and Secrets → Add → Secret → ${m.falta}`,
+        })),
+      });
     }
 
     /* ── /esperar · la pieza clave ─────────────────────────────────────────
@@ -2296,7 +2668,7 @@ export class Sala {
     servidor.send(JSON.stringify({
       que:'hola', hilo:this.hilo, gente:this.gente, proyectos:this.proyectos,
       retratos:this.retratos, fusiones:this.fusiones, vistos:this.vistos,
-      vueltas:this.vueltas, tope:TOPE_VUELTAS, conectados:this.conectados(),
+      vueltas:this.vueltas, tope:this.topeVueltas, conectados:this.conectados(),
       escribiendo:this.escribiendo(),
     }));
     /* Cerrar el socket SÍ es indicación directa: cerró la pestaña, se le fue
@@ -2338,6 +2710,14 @@ function revisarAdjuntos(lista){
     if(a.clase === 'imagen'){
       if(typeof a.datos !== 'string') return 'La imagen va en base64 en `datos`.';
       if(a.datos.length > TOPE_IMAGEN) return 'Esa imagen pesa demasiado; manda liga.';
+      /* La miniatura: unos cientos de bytes que se pintan al instante mientras
+         llega la grande. Se topa aparte y bajito a propósito — una «miniatura»
+         de 50 KB no es una miniatura, es otra foto, y duplicaría el peso del
+         hilo en vez de aliviarlo. */
+      if(a.mini !== undefined){
+        if(typeof a.mini !== 'string') return 'La miniatura va en base64 en `mini`.';
+        if(a.mini.length > 8_000) return 'Esa miniatura no es miniatura: máximo 8 KB.';
+      }
       if(!/^image\/(png|jpeg|webp|gif|svg\+xml)$/.test(a.mime || '')){
         return 'Formato de imagen no admitido.';
       }

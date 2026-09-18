@@ -105,6 +105,48 @@
         "en pantalla se ve bien"
       ],
       "salioDe": "Carlos, guardando en PDF desde Safari. El PDF de Chromium salía correcto, así que el defecto no se pudo reproducir aquí."
+    },
+    {
+      "id": "editable-en-bloque-mata-la-tabla",
+      "titulo": "Una regla de formulario que destruye las tablas del documento",
+      "gravedad": "alta",
+      "sintoma": "La fila de la tabla se apila en una sola columna y las celdas de la derecha salen vacías. Y las tablas pierden todos sus renglones interiores.",
+      "causa": "Un selector ancho como `[contenteditable]{display:block;border:0}` alcanza también a los `<td>`. Un `<td>` en bloque deja de ser celda, y `border:0` le quita las líneas que la tabla sí dibujaba.",
+      "porque": "La regla se escribe pensando en los huecos grandes de texto, y las celdas editables entran en el mismo selector sin que nadie lo note.",
+      "arreglo": "Devolverle a la celda lo suyo: `td[contenteditable]{display:table-cell;border:1px solid …}`. El selector con etiqueta gana en especificidad al del atributo solo.",
+      "comoCazarlo": "Renderizar el documento A PAPEL —PDF con `media:print`— y mirar cada hoja. En pantalla estrecha las columnas apiladas se ven casi bien.",
+      "consejo": "Familia de «un selector sin apellido alcanza a quien no debía». Cualquier regla que ponga `display` o `border` a un atributo suelto hay que probarla dentro de una tabla.",
+      "senales": [
+        "la tabla se desarmó al imprimir",
+        "las columnas de la derecha salen vacías",
+        "la tabla no tiene líneas en papel"
+      ],
+      "salioDe": "Modelo de reporte de Fadori, 17 de septiembre de 2026. Los dos defectos salieron en el mismo PDF y ninguno se veía en el teléfono.",
+      "vecinas": [
+        "colores-que-en-papel-desaparecen",
+        "la-pagina-que-no-se-puede-imprimir"
+      ]
+    },
+    {
+      "id": "hueco-vacio-impreso-como-rayita",
+      "titulo": "Un formulario impreso sin dónde escribir",
+      "gravedad": "media",
+      "sintoma": "El documento se entrega en papel y los huecos son una rayita corta de guiones bajos: no cabe la respuesta.",
+      "causa": "El texto de ayuda del hueco vacío se sustituye por una cadena fija de guiones, que mide lo que mide sin importar el ancho de la hoja ni lo largo de la respuesta.",
+      "porque": "En pantalla el hueco crece con lo que se escribe, así que vacío no estorba; en papel es el tamaño definitivo.",
+      "arreglo": "Renglones de verdad: alto mínimo de varias líneas y un `repeating-linear-gradient` que dibuja una raya por renglón, a todo el ancho. Dentro de una tabla no —ahí el recuadro ya es el renglón.",
+      "comoCazarlo": "Imprimir el formulario VACÍO y preguntarse si cabría la respuesta escrita a mano.",
+      "consejo": "Un formulario que sólo se probó lleno no se probó: el caso de uso real es entregarlo en blanco.",
+      "senales": [
+        "no cabe lo que tengo que escribir",
+        "los huecos salen chiquitos",
+        "lo voy a llenar a mano"
+      ],
+      "salioDe": "Modelo de reporte de Fadori, 17 de septiembre de 2026.",
+      "vecinas": [
+        "editable-en-bloque-mata-la-tabla",
+        "saltos-de-pagina-en-mitad-de-todo"
+      ]
     }
   ]
 }

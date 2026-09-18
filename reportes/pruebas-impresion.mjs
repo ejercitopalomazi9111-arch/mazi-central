@@ -341,8 +341,15 @@ console.log('\n── La escala vieja que se quedó guardada en el reporte ─�
       /* La marca de agua: de quién es la imagen, qué tan grande se pinta, y
          qué dice la leyenda. Se lee del DOM ya pintado, no de la
          configuración: lo que importa es lo que sale en el papel. */
+      /* ⚠ SE LEE `data-de`, NO EL `src`. La app HORNEA la marca de agua en un
+         lienzo para esquivar el recuadro negro del PDF de Safari, y el `src`
+         acaba siendo un `data:image/png;base64,…`. Comparar eso contra una
+         ruta no puede salir bien nunca: estas cuatro pruebas llevaban tiempo
+         en rojo y la marca de agua estaba perfecta. La app guarda la ruta
+         original aparte justamente para poder contestar esta pregunta. */
       aguaSrc: (() => { const i = h.querySelector('.agua img');
-                        return i ? new URL(i.src).pathname : null; })(),
+                        if(!i) return null;
+                        return i.dataset.de || new URL(i.src).pathname; })(),
       /* El ALTO DE LA TINTA, no el de la caja. Un logo con aire alrededor de
          su dibujo se pinta más chico que otro del mismo ancho declarado, y
          midiendo el elemento eso no se ve: los dos reportan lo mismo. Así que
@@ -399,6 +406,8 @@ console.log('\n── La escala vieja que se quedó guardada en el reporte ─�
        cabecera: la hoja no debe repetir la misma imagen dos veces. */
     geraldmed:   { firma:/geraldmed/i,    imagen:false, agua:/logo-estrella\.png$/,
                    leyenda:/geraldmed/i },
+    fadori:      { firma:/fadori/i,       imagen:false, agua:/logo-fadori\.png$/,
+                   leyenda:/proyecto sin filas/i },
   };
   const altos = {};
   for(const [cual, esp] of Object.entries(ESPERADO)){

@@ -142,8 +142,33 @@ h1,h2,h3{font-family:var(--display);font-weight:400;text-transform:uppercase;
    se mira esto. Sube a 44 de suelo y 12vw de pendiente: 46.8 px reales en 390.
    El `min(...,16cqw)` se queda: es el freno que impide que Bungee, que es muy
    ancha, se salga de su columna. */
+/* ⚠ Y EL FRENO ESTABA PUESTO PERO NO FRENABA. Decia `16cqw` «para que Bungee
+   no se salga de su columna», y medido no impedia nada: el titular de la
+   portada se salia por la derecha EN TODOS LOS ANCHOS hasta 1440.
+
+     ancho   fuente   «coleccionistas»   cabe en   se sale
+      360     44 px       384 px          324 px    60 px
+      390     46.8        404             354       50
+      430     51.6        448             394       54
+      768     92.2        799             703       96
+     1440    106          918            1152       ✓
+
+   La causa: `16cqw` sólo gana cuando el contenedor es angosto, y a 390 daba
+   56.6 px — mas que los 46.8 del clamp, asi que nunca entraba. El freno
+   existia y estaba flojo.
+
+   El numero bueno se mide, no se estima. «COLECCIONISTAS» mide 8.67 veces su
+   tamano de fuente (comprobado en los cinco anchos: 384/44, 404/46.8, 448/51.6,
+   799/92.2, 918/106 — todos dan 8.66-8.73). Para que quepa:
+       fuente <= 100cqw / 8.67 = 11.53cqw
+   Se deja en 11.3 por margen: la tipografia puede cargar tarde y medir distinto
+   un instante, y un titular cortado medio segundo tambien se ve.
+
+   El precio es honesto y hay que decirlo: en un telefono el titular baja de
+   46.8 a 40 px. Es mas chico, pero antes NO SE LEIA la ultima palabra, y una
+   portada a la que le falta una letra no se ve grande, se ve rota. */
 h1{font-size:clamp(44px,12vw,106px)}
-h1{font-size:min(clamp(44px,12vw,106px),16cqw)}
+h1{font-size:min(clamp(44px,12vw,106px),11.3cqw)}
 h2{font-size:clamp(21px,3.4vw,44px)}
 h2{font-size:min(clamp(21px,3.4vw,44px),10cqw)}
 h3{font-size:clamp(14px,1.6vw,18px);letter-spacing:-.035em}
@@ -276,7 +301,16 @@ p strong{color:var(--hueso);font-weight:500}
   height:clamp(260px,38vw,520px);object-fit:contain;object-position:bottom;
   filter:drop-shadow(0 24px 30px rgba(0,0,0,.75))}
 .figura{transform:translate3d(calc((var(--px) - .5) * -20px),calc((var(--py) - .5) * -9px),0)}
+/* ⚠ `flex-shrink:0` NO SOBRA. Sin él, en un teléfono de 390 los dos botones se
+   APRETABAN en vez de bajar uno debajo del otro, y el segundo se comía su
+   propia palabra: la caja medía 58 px y el texto «Categorías» 79. Se leía
+   «Categorí». Tiene `flex-wrap:wrap`, sí — pero envolver es lo último que hace
+   un flex: primero encoge lo que puede, y `white-space:nowrap` de `.b` impedía
+   que el texto se partiera, así que lo que se partió fue lo visible.
+   Con esto no encogen, así que cuando no caben se van al renglón de abajo, que
+   es lo que el `wrap` prometía desde el principio. */
 .acciones{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.acciones>.b{flex:0 0 auto}
 .b{display:inline-flex;align-items:center;gap:9px;text-decoration:none;
   font:700 11.5px/1 var(--dato);letter-spacing:.16em;text-transform:uppercase;
   padding:15px 22px;border:2px solid var(--amarillo);color:#0A0A0B;white-space:nowrap;
@@ -408,11 +442,26 @@ p strong{color:var(--hueso);font-weight:500}
 .reng .t{font:700 clamp(13.5px,1.4vw,15px)/1.2 var(--texto);text-transform:uppercase;
   overflow-wrap:anywhere}
 .reng .s{font:400 11px/1.3 var(--dato);color:var(--gris-tenue);overflow-wrap:anywhere}
-.hueco{display:grid;grid-template-columns:58px minmax(0,1fr) auto;gap:12px;
+/* ⚠ DOS COSAS DISTINTAS SE LLAMABAN IGUAL, y la de abajo se comía a la otra.
+   Esto es un renglón de tres columnas. Pero `.b.hueco` —la variante fantasma
+   del botón de la portada— también lleva `hueco`, así que ESTA regla le caía
+   encima: le ponía `display:grid` con una primera columna de **58 px**, y el
+   botón, que mide 100, encerraba un texto de 79. Se leía «Categorí».
+
+   Cómo se vio: midiendo `scrollWidth` contra `clientWidth` del <span>. Leyendo
+   el CSS no aparece — hay que tener las dos reglas enfrente a la vez y caer en
+   que comparten palabra. Y hay 1 232 líneas entre una y otra.
+
+   Comprobado en las tres páginas (index, funko, 3d-print) recorriendo el DOM ya
+   montado: **el único elemento con la clase `hueco` es el botón.** O sea que
+   este renglón de tres columnas no lo usa nadie y su único efecto real era
+   romper lo otro. Se deja —por si el componente se construye algún día— pero
+   se le prohíbe tocar botones. Si alguien lo estrena, que le ponga otro nombre. */
+.hueco:not(.b){display:grid;grid-template-columns:58px minmax(0,1fr) auto;gap:12px;
   align-items:center;break-inside:avoid;padding:8px 7px;
   border-bottom:1px solid var(--linea);font:400 9.5px/1 var(--dato);
   letter-spacing:.2em;text-transform:uppercase;color:var(--gris-tenue)}
-.hueco .raya{height:1px;opacity:.55;
+.hueco:not(.b) .raya{height:1px;opacity:.55;
   background:repeating-linear-gradient(90deg,var(--amarillo-hondo) 0 4px,transparent 4px 10px)}
 
 
@@ -1169,14 +1218,30 @@ footer{background:transparent;border-top:1px solid var(--linea);
      contraste roto mientras dura. La opacidad se reserva para cajas con foto.
      ⚠ EL TOPE DEL ESCALONADO ES A PROPOSITO: sin el, 47 fichas pondrian la
      ultima tres segundos despues de entrar en pantalla. Se corta en 8. */
+  /* ⚠ TODO SE MULTIPLICA POR `--ritmo`, y ahi estaba el defecto que reporto
+     Carlos. La ficha tardaba hasta 960 ms en existir: 400 de fundido MAS
+     hasta 560 de escalon (8 × 70). Bajando rapido una ficha esta en pantalla
+     unos 100 ms — nunca le daba tiempo, y medido salieron 48 fichas en
+     opacidad 0 yendo rapido contra 1 yendo despacio.
+
+     `--ritmo` lo publica el motor: 1 cuando vas leyendo, 0.06 cuando vienes
+     en caida libre. El ESCALON tambien se multiplica, no solo la duracion: a
+     toda velocidad las fichas de un renglon no entran una tras otra, entran
+     juntas. Escalonar cuesta tiempo y el tiempo es lo que no hay.
+
+     Nace en 1: si el JavaScript no corre, esto se comporta como siempre. */
   .s-rev{transform:translate3d(0,34px,0);
-    transition:transform 640ms cubic-bezier(.2,1.3,.32,1);
-    transition-delay:calc(var(--s-i,0) * 70ms)}
+    transition:transform calc(640ms * var(--ritmo,1)) cubic-bezier(.2,1.3,.32,1);
+    transition-delay:calc(var(--s-i,0) * 70ms * var(--ritmo,1))}
   .s-rev.s-dentro{transform:none}
   .s-rev.s-caja{opacity:.001;transform:translate3d(0,34px,0) scale(.975);
-    transition:transform 640ms cubic-bezier(.2,1.3,.32,1),opacity 400ms ease-out;
-    transition-delay:calc(var(--s-i,0) * 70ms)}
+    transition:transform calc(640ms * var(--ritmo,1)) cubic-bezier(.2,1.3,.32,1),
+               opacity calc(400ms * var(--ritmo,1)) ease-out;
+    transition-delay:calc(var(--s-i,0) * 70ms * var(--ritmo,1))}
   .s-rev.s-caja.s-dentro{opacity:1;transform:none}
+  /* A toda velocidad el empujon de 34 px sobra: no se lee como entrada, se lee
+     como que la vitrina tiembla. Se queda solo el fundido. */
+  .prisa .s-rev,.prisa .s-rev.s-caja{transform:none}
   /* ══════════════════ /S ══════════════════ */
   .revelar.dentro{transform:none}
   .pieza-eje{transform:translateX(-1px) scaleY(0);transform-origin:bottom}
@@ -1204,4 +1269,65 @@ footer{background:transparent;border-top:1px solid var(--linea);
   .pieza:active,.b:active,.pieza:hover .foto img,
   .pieza:hover .mas,.pieza:focus-visible .mas{transform:none!important}
   /* ══════ /S ══════ */
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   EL PULGAR · objetivos tactiles de 44 px
+   ----------------------------------------------------------------------------
+   Carlos ve esta pagina en un iPhone, y medido a 390x844 habia DIECISEIS
+   controles por debajo del minimo de 44 px:
+
+     .saltar        78x32      .g-abrir       59x31
+     .logo         119x20      .g-carro-btn   45x41
+     .g-idioma      35x28      .g-chapa (x11) ~28 de alto
+
+   44 px no es un capricho de norma: es el ancho real de la yema de un pulgar.
+   Por debajo de eso el dedo tapa el boton antes de tocarlo y se falla el tiro —
+   y en la tira de categorias, que son once seguidos, fallar significa filtrar
+   por la serie equivocada.
+
+   LA TECNICA, y por que no es «hacer los botones mas grandes»: los controles de
+   la cabecera son chicos A PROPOSITO — una barra compacta es parte del diseno,
+   y estirarla a 44 px de alto empujaria la portada hacia abajo. Asi que se
+   separan las dos cosas: **el dibujo se queda igual y el AREA QUE RECIBE EL
+   TOQUE crece por debajo**, con un pseudo-elemento centrado que no pinta nada.
+   El boton se ve idéntico y se deja tocar el doble de bien.
+
+   Las chapas de categoria SI crecen de verdad a 44: ahi no hay barra que
+   apretar, son el filtro principal de la vitrina y se usan con el pulgar en
+   movimiento sobre un carrusel. Es el unico sitio donde el tamano real importa
+   mas que la compacidad. */
+.saltar, .barra .logo, .g-idioma, .g-abrir, .g-carro-btn,
+.fila-pie a { position:relative; }
+.saltar::after, .barra .logo::after, .g-idioma::after,
+.g-abrir::after, .g-carro-btn::after, .fila-pie a::after {
+  content:''; position:absolute; left:50%; top:50%;
+  translate:-50% -50%;
+  width:max(100%, 44px); height:max(100%, 44px);
+  /* No pinta ni estorba al de al lado: sólo recibe el toque. */
+  background:transparent; pointer-events:auto;
+  /* ⚠ SIN ESTE `z-index` EL AREA EXISTE Y NO SIRVE, que es la peor clase de
+     arreglo: el medidor dice 44x44 y el dedo se sigue perdiendo.
+
+     Se cazó tocando, no leyendo. Picando 3 px arriba del borde del botón, quien
+     recibía el toque era `canvas.cielo` — el fondo estrellado, que va DESPUES en
+     el documento y tambien es `position:absolute` con `z-index:auto`. Entre dos
+     posicionados sin z-index gana el ultimo del documento, asi que el cielo se
+     pintaba encima justo en el pedazo que le crecio al boton. El dibujo del
+     boton si respondia; el area nueva, no.
+
+     Leyendo el CSS todo se veia bien: 44x44, `pointer-events:auto`, sin
+     `overflow:hidden` en ningun padre. Sólo salió al tocar. */
+  z-index:3;
+}
+/* La tira de categorias si crece. `align-items:center` mantiene el texto donde
+   estaba, asi que crece el area y no se mueve el dibujo. */
+.g-chapa { min-height:44px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Acuse de recibo al toque. Un control de 44 px que no responde se siente
+     roto aunque haya funcionado: el dedo TAPA el boton, asi que la unica
+     confirmacion posible es la que se ve cuando lo levantas. */
+  .g-chapa { transition:transform .12s ease; }
+  .g-chapa:active { transform:scale(.96); }
 }

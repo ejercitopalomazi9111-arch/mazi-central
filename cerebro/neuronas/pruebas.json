@@ -706,6 +706,192 @@
         "pruebas-que-no-prueban-nada",
         "el-comentario-no-es-el-codigo"
       ]
+    },
+    {
+      "id": "prueba-que-nace-muerta",
+      "titulo": "Un `ok(...)` cuyo segundo argumento no es un booleano ya calculado siempre pasa",
+      "gravedad": "alta",
+      "sintoma": "La prueba está verde con el código roto a propósito, y de paso infla el marcador.",
+      "causa": "El segundo argumento no era un booleano: era `(a, b, true) && true` —que evalúa true— o una PROMESA, que siempre es verdadera.",
+      "porque": "Al escribir una prueba con `await` dentro se cuela un operador coma o un `.then()`, y el resultado se ve razonable. Nadie mira lo que VALE la expresión, sólo lo que dice el texto de al lado.",
+      "arreglo": "El booleano se calcula ANTES, en su propia línea, y se le pasa ya hecho. Si hace falta await, se hace fuera del `ok(...)`.",
+      "comoCazarlo": "Rompe el código a propósito. Y revisa cada `ok(` cuyo segundo argumento tenga una coma, un `&&` sospechoso, un `.then(` o una función que se invoca a sí misma.",
+      "consejo": "Cuando el marcador suba y no sepas qué prueba se agregó, desconfía. Dos pruebas que no prueban nada valen menos que ninguna: dan permiso para no mirar.",
+      "salioDe": "sala/servidor/pruebas-modelos.mjs · dos de 32 pasaban con el adaptador destruido",
+      "senales": [
+        "pasa siempre",
+        "la prueba no falla nunca",
+        "verde con todo roto"
+      ],
+      "vecinas": [
+        "prueba-que-revienta-en-vez-de-fallar",
+        "pruebas-que-no-prueban-nada"
+      ]
+    },
+    {
+      "id": "prueba-que-revienta-en-vez-de-fallar",
+      "titulo": "Una prueba que truena no informa: hay que dejarla llegar a decir ✗",
+      "gravedad": "alta",
+      "sintoma": "Al meter el bug a propósito, la suite no imprime una prueba roja: no imprime NADA. Leyendo por encima se ve igual que «todo bien».",
+      "causa": "La condición leía una cadena de propiedades (`x.y.parts[0].text`) y al faltar una, el TypeError mató el proceso antes del marcador.",
+      "porque": "Uno escribe la condición pensando en el caso bueno, donde la cadena existe. El caso malo es justo aquel en el que no existe — o sea que la prueba se rompe exactamente cuando tenía que hablar.",
+      "arreglo": "Encadenamiento opcional en toda la condición, y en el `extra` se enseña lo que sí venía para saber qué faltó.",
+      "comoCazarlo": "Corre la mutación y mira la SALIDA COMPLETA, no sólo el grep de ✗. Si no hay marcador final, la suite murió y no te enteraste.",
+      "consejo": "Un `grep ✗` sobre una suite que reventó devuelve vacío, igual que una suite verde. Comprueba siempre que salga el renglón del marcador.",
+      "salioDe": "sala/servidor/pruebas-modelos.mjs · quitarle `systemInstruction` a Gemini mataba la suite en vez de ponerla roja",
+      "senales": [
+        "no imprime nada",
+        "la suite se muere",
+        "salida vacía"
+      ],
+      "vecinas": [
+        "prueba-que-nace-muerta"
+      ]
+    },
+    {
+      "id": "decorado-sin-waituntil",
+      "titulo": "Sin `waitUntil` en el decorado, todo el segundo plano es invisible para las pruebas",
+      "gravedad": "alta",
+      "sintoma": "La funcionalidad corre bien a mano y ninguna prueba la ve. El hilo sale vacío aunque el código sí publica.",
+      "causa": "El envoltorio usa `ctx.waitUntil` si existe y si no deja la promesa al aire. El doble de pruebas no lo traía, así que lo diferido ocurría DESPUÉS de que la prueba terminó de mirar.",
+      "porque": "En producción está bien: la plataforma lo espera. En un doble, «al aire» significa «fuera del alcance del `await` de la prueba», y eso no se ve en ninguna línea del código de producción.",
+      "arreglo": "El doble recoge las promesas en una lista y se expone un `asentar()` que las espera. Entonces sí se puede probar lo diferido.",
+      "comoCazarlo": "Si una prueba de algo que corre en segundo plano falla «por poquito», mira si tu doble tiene `waitUntil`. Sin él NUNCA va a pasar.",
+      "consejo": "Un doble que no implementa lo que el código usa no es un doble incompleto: es un doble que aprueba lo que no probó.",
+      "salioDe": "sala/servidor/pruebas.mjs · las sillas enteras eran invisibles para la suite",
+      "senales": [
+        "no se ve el efecto",
+        "el hilo sale vacío",
+        "funciona a mano y no en la prueba"
+      ],
+      "vecinas": [
+        "prueba-que-nace-muerta"
+      ]
+    },
+    {
+      "id": "checkout-no-restaura-lo-que-no-esta-versionado",
+      "titulo": "Deshacer una mutación con git en un archivo que git no conoce",
+      "gravedad": "alta",
+      "sintoma": "Se mete un defecto a mano para comprobar que la prueba lo caza, se hace `git checkout <archivo>` para deshacerlo, y las pruebas siguen en rojo. El mutante sigue puesto.",
+      "causa": "`git checkout` restaura desde el índice. Un archivo NUEVO que nunca se ha commiteado no está en el índice, así que el comando no tiene de dónde restaurar — y no falla: no hace nada, calladito.",
+      "porque": "La prueba de mutación se hace justo cuando el archivo acaba de nacer, que es cuando más ganas hay de comprobar si sus pruebas sirven. Ése es exactamente el momento en que `git checkout` no puede ayudar.",
+      "arreglo": "Deshacer la mutación con la misma herramienta con la que se metió —el reemplazo de texto inverso— y volver a correr las pruebas DESPUÉS de deshacerla, mirando el verde con los ojos.",
+      "comoCazarlo": "Si tras deshacer la mutación el total de rojos no vuelve al de antes, la mutación sigue ahí. Y `git status` delata el archivo como no seguido.",
+      "consejo": "Es la hermana de «el verde de antes del commit sigue valiendo». Aquella era olvidarse de restaurar; ésta es creer que se restauró. La segunda es peor porque uno ya ejecutó el comando y se quedó tranquilo.",
+      "senales": [
+        "hice checkout y sigue igual",
+        "las pruebas no vuelven a verde",
+        "deshice el cambio y nada"
+      ],
+      "salioDe": "CRISOL, las hormigas, 17 de septiembre de 2026. Mutación de «las verdes rompen el muro»: el muro pasó de 198 a 17 celdas, la prueba la cazó, y el `git checkout` posterior no deshizo nada porque `hormigas.js` era nuevo.",
+      "vecinas": [
+        "pruebas-que-no-prueban-nada"
+      ]
+    },
+    {
+      "id": "la-prueba-mide-despues-de-que-aquello-murio",
+      "titulo": "La prueba mide después de que aquello que medía se acabó",
+      "gravedad": "media",
+      "sintoma": "Una prueba que pasaba se pone roja al añadir una función nueva, y el código nuevo está bien.",
+      "causa": "La prueba fijaba un número de pasos cuando lo medido duraba para siempre. Al darle un CICLO DE VIDA, a ese mismo número de pasos la cosa ya se murió.",
+      "porque": "Un «corre 900 pasos y mide» está pensado para un mundo donde nada termina. En cuanto algo nace, madura y muere, el cuándo pasa a ser parte de la prueba.",
+      "arreglo": "Medir en la fase que la afirmación describe. «Un árbol adulto tiene copa» se comprueba a los 340 pasos, no a los 900, cuando ya fructificó y se marchitó entero.",
+      "comoCazarlo": "Si una prueba se pone roja al agregar algo que no toca lo que ella mide, mirar CUÁNDO mide antes de mirar qué.",
+      "consejo": "Pasó tres veces seguidas el mismo día: la copa, el crecimiento gradual y la colonia con jardín finito. El patrón es «el experimento termina después de que se acabó lo que medía».",
+      "senales": [
+        "se puso roja y no toqué eso",
+        "antes pasaba",
+        "el número de pasos"
+      ],
+      "salioDe": "CRISOL, el ciclo de vida de las plantas, 18 de septiembre de 2026.",
+      "vecinas": [
+        "pruebas-que-no-prueban-nada",
+        "checkout-no-restaura-lo-que-no-esta-versionado"
+      ]
+    },
+    {
+      "id": "preguntarle-a-quien-camina-donde-acabo",
+      "titulo": "Preguntarle a alguien que camina dónde acabó",
+      "gravedad": "media",
+      "sintoma": "Una prueba lleva tiempo en rojo y todo el mundo da por hecho que la función no está hecha.",
+      "causa": "La prueba mira la posición FINAL de algo que se mueve solo. Aquí: «sube un escalón» comprobaba dónde estaba el monigote a los 500 pasos. Sí subía —al paso 60 estaba encima— y luego seguía paseando, se daba la vuelta y se bajaba; acababa en x=1.0.",
+      "porque": "Es la forma más corta de escribirla, y con algo quieto funciona. En cuanto lo medido tiene voluntad propia, el final deja de significar nada.",
+      "arreglo": "Comprobar si LLEGÓ A PASAR, no dónde quedó: se recorre el bucle vigilando la condición y se guarda que ocurrió una vez.",
+      "comoCazarlo": "Si la prueba de una cosa que se mueve fija un número de pasos y mira el estado final, sospechar de la prueba antes que del código. Imprimir la trayectoria lo resuelve en un minuto.",
+      "consejo": "Y hay que comprobarlo con una mutación: se rompe el trepado a propósito y las dos pruebas tienen que ponerse rojas. Si no, la nueva versión tampoco prueba nada.",
+      "senales": [
+        "esa prueba siempre ha estado en rojo",
+        "no sube escalones",
+        "acabó donde no debía"
+      ],
+      "salioDe": "CRISOL, las personitas, 18 de septiembre de 2026. Dos pruebas rojas de mucho tiempo, y el código estaba bien desde siempre.",
+      "vecinas": [
+        "la-prueba-mide-despues-de-que-aquello-murio",
+        "pruebas-que-no-prueban-nada"
+      ]
+    },
+    {
+      "id": "la-prueba-no-puede-ver-lo-que-el-codigo-transforma",
+      "titulo": "La prueba compara contra algo que el código ya transformó",
+      "gravedad": "alta",
+      "sintoma": "Cuatro pruebas llevan tiempo en rojo, la función está perfecta, y cada rojo nuevo se suma sin que nadie los mire.",
+      "causa": "El código cambia el dato ANTES de que la prueba lo lea. Aquí: la marca de agua se hornea en un lienzo —para esquivar un recuadro negro del PDF de Safari— y eso reemplaza el `src` por un `data:image/png;base64,…`. La prueba comparaba ese `data:` contra la ruta del archivo. No podía salir bien nunca.",
+      "porque": "La transformación se agregó después de la prueba, por una razón buena, y nadie volvió a mirar qué dejaba de ser legible.",
+      "arreglo": "Que el código GUARDE de dónde vino, en un atributo aparte, y la prueba lea eso. No es un parche para la prueba: después del horneado tampoco un humano podía saber qué logo salió en la hoja.",
+      "comoCazarlo": "Cuando varias pruebas de la misma familia fallan a la vez y la función se ve bien en pantalla, sospechar de la LECTURA antes que del comportamiento. Mirar el valor que recibe la prueba, entero.",
+      "consejo": "Unos rojos permanentes son peores que ninguna prueba: enseñan a no mirar el marcador. Y en cuanto se arreglaron, la quinta prueba de la misma familia cazó de verdad un defecto mío — la marca nueva pintaba 189 px de tinta contra los 290-322 de las otras.",
+      "senales": [
+        "esa prueba siempre ha estado en rojo",
+        "pero si funciona",
+        "trae un data: en vez de la ruta"
+      ],
+      "salioDe": "Reportes, las marcas de agua, 18 de septiembre de 2026.",
+      "vecinas": [
+        "pruebas-que-no-prueban-nada",
+        "preguntarle-a-quien-camina-donde-acabo"
+      ]
+    },
+    {
+      "id": "la-prueba-de-pantalla-que-no-provoca-la-pantalla",
+      "titulo": "«Ni un error de consola» era verdad, y no significaba nada",
+      "gravedad": "alta",
+      "sintoma": "Un dibujo reventaba en CADA cuadro y las 61 pruebas de pantalla seguían en verde, incluida la que dice «ni un error de consola en toda la sesión».",
+      "causa": "Esa prueba no mentía: en toda la sesión no se ponía una sola personita, así que el código que reventaba no llegaba a correr nunca. La cobertura era de la INTERFAZ —botones, paneles, zoom— y no de lo que la interfaz dibuja.",
+      "porque": "Un escucha de errores da una sensación de red completa que no tiene: sólo caza lo que alguien haya hecho ocurrir.",
+      "arreglo": "Pruebas que PROVOCAN cada cosa que se pinta: poner ocho personas y tres bichos, apuntar la cámara a ellos y comprobar que hay tinta suya en el lienzo. Comprobado con mutación: devolviendo el defecto, se ponen rojas.",
+      "comoCazarlo": "Ante un verde sospechoso, preguntar qué código NO corrió. Si una función de dibujo no aparece en ninguna prueba, el escucha de errores no la cubre.",
+      "consejo": "Y apuntar la cámara es parte de la prueba: la vista arranca arriba de la sala, y una prueba que mira donde no hay nadie no prueba nada aunque no falle.",
+      "senales": [
+        "pasan todas y está roto",
+        "no hay errores de consola",
+        "nunca se probó eso"
+      ],
+      "salioDe": "CRISOL, las personitas vestidas, 18 de septiembre de 2026.",
+      "vecinas": [
+        "pruebas-que-no-prueban-nada",
+        "la-prueba-no-puede-ver-lo-que-el-codigo-transforma"
+      ]
+    },
+    {
+      "id": "dos-casos-que-dan-el-mismo-numero",
+      "titulo": "Dos experimentos distintos que dan el mismo número están midiendo lo mismo",
+      "gravedad": "media",
+      "sintoma": "Una prueba comparaba cuerda tiesa contra cuerda floja: 39.8 y 39.8. Se reescribió: 67.4 y 67.4. Y otra vez: 15.0 y 15.0.",
+      "causa": "Las tres veces el montaje tapaba lo que se quería medir. Primero el empujón era la velocidad máxima del motor en una sala chica, así que el peso se estampaba en la esquina y se medía la diagonal de la sala. Después el peso era un bloque de 3×3, que colgado de una cuerda no se columpia: se medía un peso parado. Y encima el campo que la prueba cambiaba —la flexibilidad— no lo leía el motor en ningún sitio: existía sólo en la prueba.",
+      "porque": "Al escribir la prueba uno piensa en la magnitud y no en si el montaje deja que esa magnitud cambie.",
+      "arreglo": "Peso de una celda y el mismo empujón de la prueba de péndulo que sí funciona. Y el campo, implementado de verdad en el motor.",
+      "comoCazarlo": "Cuando dos condiciones dan el MISMO número hasta el decimal, no es que se parezcan: es que la diferencia no llega al medidor. Es la tercera vez en este repo.",
+      "consejo": "Antes de escribir la comparación, comprobar que el caso base se MUEVE. Si la variable A y la variable B dan lo mismo, el montaje es sospechoso antes que el código.",
+      "senales": [
+        "los dos dan igual",
+        "no cambia nada al cambiarlo",
+        "hasta el decimal"
+      ],
+      "salioDe": "CRISOL, la flexibilidad de la cuerda, 18 de septiembre de 2026.",
+      "vecinas": [
+        "pruebas-que-no-prueban-nada",
+        "la-prueba-de-pantalla-que-no-provoca-la-pantalla"
+      ]
     }
   ]
 }

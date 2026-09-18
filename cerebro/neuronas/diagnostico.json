@@ -826,6 +826,105 @@
       "vecinas": [
         "comprobacion-en-la-capa-equivocada"
       ]
+    },
+    {
+      "id": "arreglo-que-empata-en-el-marcador",
+      "titulo": "El arreglo que deja el mismo número de pruebas verdes",
+      "gravedad": "alta",
+      "sintoma": "Un arreglo pasa de 241 verdes a 241 verdes. El total dice que da igual, y no da igual: cambiaron CUÁLES.",
+      "causa": "Mirar el total en vez de la LISTA. Dos pruebas que se curan y dos que se rompen se ven idénticas a no haber hecho nada.",
+      "porque": "El resumen de una tanda de pruebas está hecho para decir «pasa o no pasa», no para comparar dos versiones. Y el total es lo único que uno alcanza a leer sin esfuerzo.",
+      "arreglo": "Guardar la lista de rojos de las DOS versiones y sacarles el diff, quitándole los números de cada renglón —que cambian solos— antes de comparar. Ahí aparece el intercambio de verdad y se puede decidir con él.",
+      "comoCazarlo": "`diff <(sed 's/ *→.*//' rojos-antes) <(sed 's/ *→.*//' rojos-despues)`. Si el diff no está vacío, hubo intercambio aunque el total no se haya movido.",
+      "consejo": "Y con el intercambio en la mano la decisión cambia de dueño: no es «cuántas pasan» sino «cuáles le duelen más a quien lo usa». Aquí se cambiaba una molestia por dos defectos en el sistema que él estaba construyendo esa semana, y por eso no se fusionó.",
+      "senales": [
+        "el mismo número de pruebas",
+        "el arreglo no cambió nada",
+        "¿lo subo o no?"
+      ],
+      "salioDe": "CRISOL, el filtro del damero, 17 de septiembre de 2026. Mata la onda infinita en aire y en agua, y a cambio un recipiente cerrado se propulsa 2 celdas y una carga desintegra una tapa que no debía. 241·15 en los dos lados.",
+      "vecinas": []
+    },
+    {
+      "id": "dos-experimentos-mismo-numero",
+      "titulo": "Dos experimentos distintos que dan el mismo número",
+      "gravedad": "alta",
+      "sintoma": "Dos montajes que deberían comportarse distinto entregan el mismo resultado hasta el decimal.",
+      "causa": "Lo que los diferencia no existe para el código. Aquí: una cuerda clavada de un extremo y otra clavada de los dos daban 21.9 las dos, porque el motor se quedaba con el PRIMER amarre que encontraba y el segundo clavo no existía.",
+      "porque": "Un umbral suelto sobre uno solo de los dos montajes pasa verde igual, así que la prueba no lo caza: sólo lo caza compararlos entre sí.",
+      "arreglo": "La prueba compara los dos montajes en vez de medir uno contra un número. Y el código recoge TODOS los anclajes, no el primero.",
+      "comoCazarlo": "Cuando dos casos que deberían diferir den el mismo valor exacto, no es coincidencia: es que están tomando el mismo camino.",
+      "consejo": "Y al recoger «todos» hay que distinguir clases: juntar lo fijo con lo meramente apoyado hizo que el PESO colgado de un péndulo se contara como clavo, y el peso se quedó tieso en el aire. Un clavo es lo fijo; lo apoyado sólo vale si no hay ninguno.",
+      "senales": [
+        "los dos casos dan lo mismo",
+        "cambié el montaje y no cambió nada",
+        "el segundo no hace nada"
+      ],
+      "salioDe": "CRISOL, las cuerdas, 17 de septiembre de 2026. Reporte de Carlos: «si las pongo horizontales no bajan… y en general no sirven bien».",
+      "vecinas": [
+        "arreglo-que-empata-en-el-marcador"
+      ]
+    },
+    {
+      "id": "la-prueba-medida-de-tres-formas-distintas",
+      "titulo": "Tres formas de medir lo mismo y sólo una contesta la pregunta",
+      "gravedad": "alta",
+      "sintoma": "La prueba dice que el arreglo no funciona, y el arreglo funciona: lo que está mal es qué se está contando.",
+      "causa": "El número elegido no distingue el caso. Aquí, para «¿el derrumbe incomunica a la colonia?»: el total alcanzable estaba dominado por el CIELO ABIERTO (3060 → 3010); las celdas del hormiguero no bajaban porque la reina queda del lado bueno de la losa (342 → 288); y contar hormigas fuera daba 0 porque a esas alturas ya estaban todas dentro.",
+      "porque": "Se escoge la magnitud que es fácil de sacar del código, no la que responde a la frase que pidió quien lo pidió.",
+      "arreglo": "Volver a la frase original —«todas buscarán cómo llegar a la reina»— y medir eso: hormigas separadas de su reina que se abren paso. Y montarlo a mano en vez de esperar a que el mundo lo produzca solo.",
+      "comoCazarlo": "Si hay que afinar el escenario para que el número se mueva, el número está mal elegido. Afinar el mundo hasta que la prueba salga dramática es hacerle trampa a la prueba.",
+      "consejo": "Y un montaje a mano también obedece la física: la cámara que cavé para la reina se derrumbó sola por no apisonarla, y la prueba culpó al código de no ir hacia una reina que mi propio montaje había enterrado.",
+      "senales": [
+        "la prueba dice que no funciona y sí funciona",
+        "el número no se mueve",
+        "no sé qué medir"
+      ],
+      "salioDe": "CRISOL, las galerías de las hormigas, 18 de septiembre de 2026.",
+      "vecinas": [
+        "dos-experimentos-mismo-numero",
+        "arreglo-que-empata-en-el-marcador"
+      ]
+    },
+    {
+      "id": "el-motor-sabia-hacerlo-y-nadie-podia-hacerlo",
+      "titulo": "El motor sabía disparar y él no lograba armar una pistola",
+      "gravedad": "alta",
+      "sintoma": "Carlos, cuatro veces: «aún no logro crear una pistola y ya probé muchas cosas». Y tres pruebas verdes del motor armaban una y la disparaban.",
+      "causa": "Las dos cosas eran ciertas. Las pruebas construían la geometría exacta llamando a funciones; él la dibujaba con el dedo. La receta que funciona tiene ventanas estrechas que no se adivinan: barridas una a una, el ánima dispara con 2, 3 y 4 celdas de alto y no con 1 ni con 6; la recámara de muro con 8 y 12 y no con 4, 2 ni 0; la pólvora de 3 a 6 y no con 2 ni con 8. Dibujando a mano se cae fuera casi siempre, y la pantalla no da ni una pista.",
+      "porque": "Una prueba que construye el caso perfecto demuestra que el motor PUEDE, no que alguien pueda llegar ahí.",
+      "arreglo": "Entregar la pieza armada: un botón que la pone completa y cargada, y una prueba que la pone TOCANDO LA PANTALLA, que es lo único que él puede hacer.",
+      "comoCazarlo": "Cuando alguien reporta que algo «no funciona» y la prueba dice que sí, preguntar cómo lo hizo él. Casi siempre la diferencia es el camino, no el resultado.",
+      "consejo": "Lo que quería no era el derecho a descubrir la receta: era disparar.",
+      "senales": [
+        "ya probé muchas cosas",
+        "a mí no me sale",
+        "pero si la prueba pasa"
+      ],
+      "salioDe": "CRISOL, la pistola de un toque, 18 de septiembre de 2026.",
+      "vecinas": [
+        "la-prueba-de-pantalla-que-no-provoca-la-pantalla"
+      ]
+    },
+    {
+      "id": "la-cuerda-agarraba-celdas-no-cuerpos",
+      "titulo": "«Me arranca los píxeles de los que está agarrada»",
+      "gravedad": "alta",
+      "sintoma": "Carlos: «no une dos cosas, sino que las arranca y las pega y se hace una bola horrible». Un cubo de 16 celdas colgado se desgajaba en el aire y terminaba en el suelo.",
+      "causa": "Cuatro defectos encadenados. La cuerda se colgaba de la caja de la que ella misma cuelga —le quitaba el sostén y se la llevaba—; agarraba CELDAS y no cuerpos, así que se llevaba las tres que tenía al alcance y las otras trece seguían cayendo; al agarrar el cuerpo se tragaba la cuerda entera, porque el elemento cuerda es sólido y el buscador de piezas la veía como parte del peso; y al recogerse teletransportaba la carga, que para una caja de dieciséis es imposible.",
+      "porque": "Cada regla se escribió para un caso —el tendedero clavado a muro— y ese caso esquivaba los cuatro por accidente.",
+      "arreglo": "Excluir la PIEZA de la que cuelga, mover el cuerpo entero o ninguno, marcar la cuerda para que no entre en la pieza, y acercar la carga una celda por paso.",
+      "comoCazarlo": "Medir el experimento que reporta la persona, entero, y contar celdas: si el cuerpo pierde forma, es que se está moviendo a trozos.",
+      "consejo": "Lo que separa un cuerpo de un montón de píxeles es que se mueve entero o no se mueve. Ya estaba escrito para los sólidos que caen; faltaba que la cuerda usara la misma ley.",
+      "senales": [
+        "se hace una bola",
+        "me arranca los píxeles",
+        "no carga nada"
+      ],
+      "salioDe": "CRISOL, la cuerda, 18 de septiembre de 2026.",
+      "vecinas": [
+        "el-motor-sabia-hacerlo-y-nadie-podia-hacerlo"
+      ]
     }
   ]
 }

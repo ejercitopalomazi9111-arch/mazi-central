@@ -17,3 +17,9 @@ __pycache__/
 # Intermedio del taller de Toydarians: `armar.py` lo regenera y lo que se
 # publica es `toydarians/index.html`. Commitearlo duplicaría el estado.
 toydarians/taller/sitio.html
+
+# Los bancos de trabajo de los subagentes. Cada uno es un `git worktree` con
+# una copia ENTERA del repo: commitearlo metería el repo dentro del repo y
+# duplicaría todo en cada rama. Lo que hace un agente llega por su propia rama,
+# no por esta carpeta, y git la borra sola cuando el agente termina.
+.claude/worktrees/
