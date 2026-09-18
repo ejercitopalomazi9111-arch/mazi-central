@@ -280,6 +280,7 @@ input[type=range]{flex:1 1 90px;min-width:80px;accent-color:var(--violeta);heigh
     <button class="icono" id="bSolda" aria-label="Soldar estructura" title="Soldar: pinta encima lo que quieras que sea UNA pieza. Vuelve a tocarlo con el botón para despegarlo">🔗</button>
     <button class="icono" id="bNido" aria-label="Poner un hormiguero" title="Hormiguero: toca para poner un nido. Vuelve a tocar el botón para cambiar de raza">🐜</button>
     <button class="icono" id="bSer" aria-label="Poner una personita" title="Personitas: toca para soltar una. Vuelve a tocar el botón para cambiar entre persona y bicho">🚶</button>
+    <button class="icono" id="bPistola" aria-label="Poner una pistola" title="Pistola: toca para ponerla armada y cargada. Tócala otra vez para disparar. Vuelve a tocar el botón para voltearla o cambiarle el cañón">🔫</button>
     <button class="icono on" id="bRigido" aria-label="Cuerpos rígidos" title="Cuerpos rígidos: lo que está pegado cae junto. Apágalo y vuelve a ser grano por grano">🧱</button>
     <button class="icono" id="bMas" aria-label="Acercar">＋</button>
     <button class="icono" id="bMenos" aria-label="Alejar">－</button>
@@ -292,6 +293,7 @@ input[type=range]{flex:1 1 90px;min-width:80px;accent-color:var(--violeta);heigh
 import { Mundo, IDS, IDX, EL, VACIO, AMBIENTE } from './motor.js';
 import { instalaHormigas, RAZAS, NOMBRES } from './hormigas.js';
 import { instalaVida } from './vida.js';
+import * as PIEZAS from './piezas.js';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    LA PANTALLA
@@ -321,6 +323,12 @@ let quienSer = 'persona';             /* cuál se suelta al tocar */
 let serPuesto = false;
 let razaNido = 'negra';               /* cuál se suelta al tocar */
 let nidoPuesto = false;               /* un nido por trazo, no uno por celda */
+/* Las pistolas puestas, con su chispa. Sin esta lista no hay gatillo: una
+   pistola de la que no se sabe dónde tiene la culata es un adorno. */
+let pistolas = [];
+let pistolaPuesta = false;            /* una por trazo, no una por celda */
+let miraPistola = 1;                  /* hacia dónde apunta la siguiente */
+let canonPistola = 'metal';
 let lienzoMundo = null, ctxMundo = null;
 /* la ventana: qué trozo del mundo se ve */
 const vista = { x:0, y:0, esc:4 };
@@ -766,6 +774,7 @@ cv.addEventListener('pointerdown', ev => {
   if(modo === 'soldar') grupoSolda = 0;   /* cada trazo, una estructura */
   nidoPuesto = false;                    /* y cada trazo, un solo nido */
   serPuesto = false;                     /* y una sola personita */
+  pistolaPuesta = false;                 /* y una sola pistola */
   if(modo === 'agarrar'){
     agarre = { cx:x, cy:y, fx:x, fy:y };
     dedos.get(ev.pointerId).pintando = false;
@@ -799,6 +808,37 @@ cv.addEventListener('pointerdown', ev => {
       avisa(s2 ? (quienSer === 'bicho' ? 'Bicho' : 'Personita') + ' · ' + SER.seres.length + ' en la sala'
                : 'Ya no caben más');
       serPuesto = true;
+    }
+    dedos.get(ev.pointerId).pintando = false;
+    return;
+  }
+  if(modo === 'pistola'){
+    /* ⚠ UNA POR TOQUE, igual que el nido y la personita.
+       Y el orden importa: PRIMERO se mira si el toque cayó sobre una pistola
+       ya puesta, porque si no, tocarla para dispararle le pinta otra encima y
+       quien juega acaba con una torre de armas y ningún tiro. */
+    if(!pistolaPuesta){
+      pistolaPuesta = true;
+      dedos.get(ev.pointerId).pintando = false;
+      const p = pistolas.find(q => PIEZAS.tocada(q, x, y, 1));
+      if(p){
+        if(PIEZAS.dispara(M, p)) avisa('¡Pum!');
+        else { PIEZAS.recarga(M, p); PIEZAS.dispara(M, p); avisa('Recargada · ¡Pum!'); }
+        return;
+      }
+      /* la culata va donde cae el dedo, corrida media pieza para que el arma
+         quede centrada en el toque y no colgando de él */
+      const cx = x - Math.round(PIEZAS.RECETA.canon / 2) * miraPistola;
+      const cy = y - Math.floor(PIEZAS.ALTO / 2);
+      if(!PIEZAS.cabe(M, cx, cy, miraPistola)){
+        avisa('Aquí no cabe: apunta hacia dentro de la sala');
+        return;
+      }
+      const mat = PIEZAS.MATERIALES.includes(EL[elSel].id) ? EL[elSel].id : 'metal';
+      pistolas.push(PIEZAS.pistola(M, cx, cy, miraPistola, mat));
+      avisa('Pistola de ' + mat + ' apuntando a la ' +
+            (miraPistola > 0 ? 'derecha' : 'izquierda') + ' · tócala para disparar');
+      return;
     }
     dedos.get(ev.pointerId).pintando = false;
     return;
@@ -958,6 +998,11 @@ $('bBorra').onclick = () => {
   $('bBorra').classList.remove('on');
   apunta();                       /* vaciar también se puede deshacer */
   M.limpia();
+  /* ⚠ Y SE OLVIDAN LAS PISTOLAS. Sin esta línea, la lista guarda armas que ya
+     no están pintadas: tocar ese hueco «dispara» un arma invisible, o peor,
+     recarga pólvora en medio del aire. Es el mismo defecto de siempre —algo
+     que informa un estado y está en otro—, ahora en una lista. */
+  pistolas = [];
   avisa('Sala vacía · el botón ↩ la trae de vuelta');
 };
 
@@ -1007,7 +1052,7 @@ $('tam').oninput = e => { tam = +e.target.value; $('tamN').textContent = tam; };
    botón se encargaba de apagar a los otros a mano, y con cinco herramientas
    eso son veinte líneas que se contradicen entre sí a la primera distracción. */
 let grupoSolda = 0;
-const BOTON_MODO = { calor:'bCalor', frio:'bFrio', navegar:'bMano', agarrar:'bAgarra', medir:'bMide', soldar:'bSolda', nido:'bNido', ser:'bSer' };
+const BOTON_MODO = { calor:'bCalor', frio:'bFrio', navegar:'bMano', agarrar:'bAgarra', medir:'bMide', soldar:'bSolda', nido:'bNido', ser:'bSer', pistola:'bPistola' };
 const MODOS_GRAVEDAD = ['zona', 'punto', 'gobjeto'];
 function ponModo(m){
   modo = (modo === m) ? 'pintar' : m;
@@ -1045,6 +1090,23 @@ $('bSer').onclick = () => {
   ponModo('ser');
   $('bSer').textContent = EMOJI_SER[quienSer];
   if(modo === 'ser') avisa((quienSer === 'persona' ? 'Personita' : 'Bicho') + ' · toca la sala para soltarla');
+};
+/* El mismo botón sirve de veleta: si ya está armado, la siguiente pulsación
+   voltea el arma. El cañón NO lleva botón aparte — lo decide el material que
+   tengas elegido en la paleta, que es una cosa menos que explicar y una menos
+   que estorbar en el ancho de un teléfono. */
+$('bPistola').onclick = () => {
+  if(modo === 'pistola'){
+    miraPistola = -miraPistola;
+    $('bPistola').style.transform = miraPistola > 0 ? '' : 'scaleX(-1)';
+    avisa('Pistola apuntando a la ' + (miraPistola > 0 ? 'derecha' : 'izquierda'));
+    return;
+  }
+  pistolaPuesta = false;
+  ponModo('pistola');
+  $('bPistola').style.transform = miraPistola > 0 ? '' : 'scaleX(-1)';
+  if(modo === 'pistola')
+    avisa('Toca la sala para poner la pistola · tócala otra vez para disparar');
 };
 $('bNido').onclick = () => {
   if(modo === 'nido'){
@@ -1277,7 +1339,11 @@ if(window.ResizeObserver) new ResizeObserver(() => medir()).observe($('zona'));
 medir(); pestanas(); paleta();
 requestAnimationFrame(cuadro);
 window.CRISOL = { M, EL, IDX, get mundo(){ return M; }, guardado, vista, zoom, apunta,
-                  pon:(x,y,id)=>M.pon(x,y,IDX[id]) };
+                  pon:(x,y,id)=>M.pon(x,y,IDX[id]),
+                  /* para las pruebas de pantalla: la lista de armas puestas y
+                     el modo, que es lo único que no se ve leyendo el lienzo */
+                  get pistolas(){ return pistolas; }, get modo(){ return modo; },
+                  PIEZAS };
 </script>
 </body>
 </html>

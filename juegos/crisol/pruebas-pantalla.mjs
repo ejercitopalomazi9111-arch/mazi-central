@@ -346,6 +346,86 @@ seccion('deshacer, guardar y no borrar sin querer');
      (await pg.evaluate(() => !!(JSON.parse(localStorage.getItem('crisol.v1') || '{}').salas || {})['1'])));
 }
 
+seccion('LA PISTOLA · con el dedo, no armada a mano');
+{
+  /* Carlos, cuatro veces: «aún no logro crear una pistola y ya probé muchas
+     cosas», y al final «la más importante QUE UNA PISTOLA FUNCIONE».
+
+     ⚠ ESTA PRUEBA ES LA QUE IMPORTA, y es distinta de las del motor y de las
+     de piezas.js. Aquéllas arman la pistola llamando a una función; ésta la
+     pone TOCANDO LA PANTALLA, que es lo único que Carlos puede hacer. Ya nos
+     pasó: el motor llevaba días sabiendo disparar mientras él no lograba
+     armar una, y ninguna prueba veía la diferencia. */
+  await pg.evaluate(() => { document.getElementById('bBorra').click();
+                            document.getElementById('bBorra').click(); });
+  await pg.waitForTimeout(200);
+  const caja2 = await pg.locator('#mundo').boundingBox();
+  await pg.click('#bPistola'); await pg.waitForTimeout(150);
+  ok('29 · el botón 🔫 enciende su modo',
+     (await pg.evaluate(() => window.CRISOL.modo)) === 'pistola');
+
+  await pg.mouse.click(caja2.x + caja2.width * 0.35, caja2.y + caja2.height * 0.4);
+  await pg.waitForTimeout(250);
+  const p = await pg.evaluate(() => window.CRISOL.pistolas[0] || null);
+  ok('30 · tocar la sala pone una pistola', !!p, 'la lista quedó vacía');
+  ok('31 · y queda CARGADA: hay pólvora en la chispa', !!p && await pg.evaluate(c => {
+       const M = window.CRISOL.mundo;
+       return M.t[M.i(c.x, c.y)] === window.CRISOL.IDX.polvora; }, p.chispa));
+
+  /* el tiro. Se mide DURANTE, no al final: la bala se sale de cuadro o se
+     estrella, y medir al final es medir un cadáver. */
+  const disparo = await pg.evaluate(async c => {
+    const M = window.CRISOL.mundo, IDX = window.CRISOL.IDX;
+    const boca = c.dir > 0 ? c.x1 : c.x0;
+    window.CRISOL.PIEZAS.dispara(M, c);
+    let avance = 0, vmax = 0;
+    for(let i = 0; i < 200; i++){
+      M.paso();
+      for(let k = 0; k < M.t.length; k++) if(M.t[k] === IDX.metal){
+        avance = Math.max(avance, ((k % M.an) - boca) * c.dir);
+        vmax = Math.max(vmax, Math.abs(M.vx[k]));
+      }
+    }
+    return { avance, vmax };
+  }, p);
+  ok('32 · Y DISPARA: la bala sale por la boca', disparo.avance > 20,
+     'avanzó ' + disparo.avance + ' celdas más allá de la boca');
+  ok('33 · a velocidad de bala', disparo.vmax > 1.5,
+     disparo.vmax.toFixed(2) + ' celdas/paso');
+
+  /* el gatillo por toque, que es como lo va a usar de verdad */
+  await pg.evaluate(() => { document.getElementById('bBorra').click();
+                            document.getElementById('bBorra').click(); });
+  await pg.waitForTimeout(150);
+  ok('34 · vaciar la sala OLVIDA las pistolas',
+     (await pg.evaluate(() => window.CRISOL.pistolas.length)) === 0,
+     'quedaron armas fantasma en la lista');
+
+  await pg.mouse.click(caja2.x + caja2.width * 0.35, caja2.y + caja2.height * 0.4);
+  await pg.waitForTimeout(200);
+  const p2 = await pg.evaluate(() => window.CRISOL.pistolas[0]);
+  /* tocarla OTRA VEZ tiene que dispararla, no pintarle otra encima */
+  await pg.mouse.click(caja2.x + caja2.width * 0.35, caja2.y + caja2.height * 0.4);
+  await pg.waitForTimeout(200);
+  ok('35 · tocarla otra vez NO pone una segunda encima',
+     (await pg.evaluate(() => window.CRISOL.pistolas.length)) === 1,
+     'se apilaron ' + (await pg.evaluate(() => window.CRISOL.pistolas.length)));
+  ok('36 · tocarla otra vez la DISPARA: la chispa dejó de ser pólvora',
+     await pg.evaluate(c => { const M = window.CRISOL.mundo;
+       return M.t[M.i(c.x, c.y)] !== window.CRISOL.IDX.polvora; }, p2.chispa));
+
+  /* la veleta */
+  await pg.click('#bPistola'); await pg.waitForTimeout(120);
+  await pg.evaluate(() => { document.getElementById('bBorra').click();
+                            document.getElementById('bBorra').click(); });
+  await pg.waitForTimeout(150);
+  await pg.mouse.click(caja2.x + caja2.width * 0.6, caja2.y + caja2.height * 0.5);
+  await pg.waitForTimeout(200);
+  ok('37 · volver a tocar el botón la VOLTEA',
+     (await pg.evaluate(() => window.CRISOL.pistolas[0]?.dir)) === -1,
+     'sigue apuntando a la derecha');
+}
+
 seccion('sin errores al final');
 ok('ni un error de consola en toda la sesión', errores.length === 0, errores.slice(0,3).join(' | '));
 
