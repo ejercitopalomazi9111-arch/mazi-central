@@ -892,6 +892,48 @@
         "pruebas-que-no-prueban-nada",
         "la-prueba-de-pantalla-que-no-provoca-la-pantalla"
       ]
+    },
+    {
+      "id": "la-prueba-de-un-gesto-no-mide-el-resultado-del-gesto",
+      "titulo": "Una prueba de GESTO que mide el resultado llama defecto a la regla",
+      "gravedad": "alta",
+      "sintoma": "La prueba del arrastre salía roja 2 de cada 12 corridas, siempre la misma línea, sin tocar nada entre corridas.",
+      "causa": "Comprobaba «soltar aquí JUEGA la carta». Pero agarra la primera carta de la mano y a veces esa carta no se puede jugar —ya se gastaron las combinaciones, o el nivel se repite—. El arrastre llegaba perfecto, hablaba el reglamento, y la prueba lo apuntaba como fallo del arrastre.",
+      "porque": "Al escribir la prueba uno piensa en el efecto que quiere ver, no en de cuántas cosas depende ese efecto.",
+      "arreglo": "Medir la señal PROPIA del gesto. Aquí: el aviso. Si dice «suéltala más arriba», el punto de suelta no contó; cualquier otra cosa significa que sí llegó y quien habló fue el reglamento.",
+      "comoCazarlo": "Ante una intermitente, preguntar de cuántas cosas depende lo que se mide. Si depende de dos, la prueba no puede decir cuál de las dos falló.",
+      "consejo": "Va con la de los dos números iguales: las dos son el mismo error de puntería, una por medir de más y otra por medir de menos.",
+      "senales": [
+        "falla a veces",
+        "sin tocar nada",
+        "pero si el gesto se ve bien"
+      ],
+      "salioDe": "Guerra de Puercos, el arrastre a la mesa, 18 de septiembre de 2026.",
+      "vecinas": [
+        "dos-casos-que-dan-el-mismo-numero",
+        "pruebas-que-no-prueban-nada"
+      ]
+    },
+    {
+      "id": "la-prueba-que-espera-el-reloj-mide-la-maquina",
+      "titulo": "Si la prueba espera un tiempo fijo, está midiendo el aparato",
+      "gravedad": "media",
+      "sintoma": "Cuatro rojas de doce corridas, y las doce con la máquina para ella sola.",
+      "causa": "`waitForTimeout(400)` después de soltar la carta. Con el aparato cargado la ronda tarda más de 400 ms en resolverse y la prueba miraba antes de tiempo.",
+      "porque": "Un tiempo fijo funciona el día que se escribe, en la máquina en la que se escribe.",
+      "arreglo": "Sondear la condición —la mano bajó, o salió el resumen— con un tope generoso. Dice lo mismo cuando va rápido y no miente cuando va lento.",
+      "comoCazarlo": "Buscar los `waitForTimeout` en cualquier prueba intermitente: casi siempre está ahí.",
+      "consejo": "Y el silencio también engaña: durante esta caza leí ocho corridas «sin ✗» como ocho verdes, y eran ocho CAÍDAS — el servidor de pruebas estaba muerto y la página ni abría. Una corrida sin fallos y una corrida que no corrió se ven igual si sólo se mira lo que falló. Hay que exigir que aparezca el marcador.",
+      "senales": [
+        "a veces pasa y a veces no",
+        "en mi máquina sí",
+        "no salió ningún error"
+      ],
+      "salioDe": "Guerra de Puercos, el arrastre a la mesa, 18 de septiembre de 2026.",
+      "vecinas": [
+        "la-prueba-de-un-gesto-no-mide-el-resultado-del-gesto",
+        "pruebas-que-no-prueban-nada"
+      ]
     }
   ]
 }
