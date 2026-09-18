@@ -885,6 +885,46 @@
         "dos-experimentos-mismo-numero",
         "arreglo-que-empata-en-el-marcador"
       ]
+    },
+    {
+      "id": "el-motor-sabia-hacerlo-y-nadie-podia-hacerlo",
+      "titulo": "El motor sabía disparar y él no lograba armar una pistola",
+      "gravedad": "alta",
+      "sintoma": "Carlos, cuatro veces: «aún no logro crear una pistola y ya probé muchas cosas». Y tres pruebas verdes del motor armaban una y la disparaban.",
+      "causa": "Las dos cosas eran ciertas. Las pruebas construían la geometría exacta llamando a funciones; él la dibujaba con el dedo. La receta que funciona tiene ventanas estrechas que no se adivinan: barridas una a una, el ánima dispara con 2, 3 y 4 celdas de alto y no con 1 ni con 6; la recámara de muro con 8 y 12 y no con 4, 2 ni 0; la pólvora de 3 a 6 y no con 2 ni con 8. Dibujando a mano se cae fuera casi siempre, y la pantalla no da ni una pista.",
+      "porque": "Una prueba que construye el caso perfecto demuestra que el motor PUEDE, no que alguien pueda llegar ahí.",
+      "arreglo": "Entregar la pieza armada: un botón que la pone completa y cargada, y una prueba que la pone TOCANDO LA PANTALLA, que es lo único que él puede hacer.",
+      "comoCazarlo": "Cuando alguien reporta que algo «no funciona» y la prueba dice que sí, preguntar cómo lo hizo él. Casi siempre la diferencia es el camino, no el resultado.",
+      "consejo": "Lo que quería no era el derecho a descubrir la receta: era disparar.",
+      "senales": [
+        "ya probé muchas cosas",
+        "a mí no me sale",
+        "pero si la prueba pasa"
+      ],
+      "salioDe": "CRISOL, la pistola de un toque, 18 de septiembre de 2026.",
+      "vecinas": [
+        "la-prueba-de-pantalla-que-no-provoca-la-pantalla"
+      ]
+    },
+    {
+      "id": "la-cuerda-agarraba-celdas-no-cuerpos",
+      "titulo": "«Me arranca los píxeles de los que está agarrada»",
+      "gravedad": "alta",
+      "sintoma": "Carlos: «no une dos cosas, sino que las arranca y las pega y se hace una bola horrible». Un cubo de 16 celdas colgado se desgajaba en el aire y terminaba en el suelo.",
+      "causa": "Cuatro defectos encadenados. La cuerda se colgaba de la caja de la que ella misma cuelga —le quitaba el sostén y se la llevaba—; agarraba CELDAS y no cuerpos, así que se llevaba las tres que tenía al alcance y las otras trece seguían cayendo; al agarrar el cuerpo se tragaba la cuerda entera, porque el elemento cuerda es sólido y el buscador de piezas la veía como parte del peso; y al recogerse teletransportaba la carga, que para una caja de dieciséis es imposible.",
+      "porque": "Cada regla se escribió para un caso —el tendedero clavado a muro— y ese caso esquivaba los cuatro por accidente.",
+      "arreglo": "Excluir la PIEZA de la que cuelga, mover el cuerpo entero o ninguno, marcar la cuerda para que no entre en la pieza, y acercar la carga una celda por paso.",
+      "comoCazarlo": "Medir el experimento que reporta la persona, entero, y contar celdas: si el cuerpo pierde forma, es que se está moviendo a trozos.",
+      "consejo": "Lo que separa un cuerpo de un montón de píxeles es que se mueve entero o no se mueve. Ya estaba escrito para los sólidos que caen; faltaba que la cuerda usara la misma ley.",
+      "senales": [
+        "se hace una bola",
+        "me arranca los píxeles",
+        "no carga nada"
+      ],
+      "salioDe": "CRISOL, la cuerda, 18 de septiembre de 2026.",
+      "vecinas": [
+        "el-motor-sabia-hacerlo-y-nadie-podia-hacerlo"
+      ]
     }
   ]
 }

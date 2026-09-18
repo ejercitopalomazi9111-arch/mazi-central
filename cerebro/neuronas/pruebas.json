@@ -850,6 +850,48 @@
         "pruebas-que-no-prueban-nada",
         "preguntarle-a-quien-camina-donde-acabo"
       ]
+    },
+    {
+      "id": "la-prueba-de-pantalla-que-no-provoca-la-pantalla",
+      "titulo": "«Ni un error de consola» era verdad, y no significaba nada",
+      "gravedad": "alta",
+      "sintoma": "Un dibujo reventaba en CADA cuadro y las 61 pruebas de pantalla seguían en verde, incluida la que dice «ni un error de consola en toda la sesión».",
+      "causa": "Esa prueba no mentía: en toda la sesión no se ponía una sola personita, así que el código que reventaba no llegaba a correr nunca. La cobertura era de la INTERFAZ —botones, paneles, zoom— y no de lo que la interfaz dibuja.",
+      "porque": "Un escucha de errores da una sensación de red completa que no tiene: sólo caza lo que alguien haya hecho ocurrir.",
+      "arreglo": "Pruebas que PROVOCAN cada cosa que se pinta: poner ocho personas y tres bichos, apuntar la cámara a ellos y comprobar que hay tinta suya en el lienzo. Comprobado con mutación: devolviendo el defecto, se ponen rojas.",
+      "comoCazarlo": "Ante un verde sospechoso, preguntar qué código NO corrió. Si una función de dibujo no aparece en ninguna prueba, el escucha de errores no la cubre.",
+      "consejo": "Y apuntar la cámara es parte de la prueba: la vista arranca arriba de la sala, y una prueba que mira donde no hay nadie no prueba nada aunque no falle.",
+      "senales": [
+        "pasan todas y está roto",
+        "no hay errores de consola",
+        "nunca se probó eso"
+      ],
+      "salioDe": "CRISOL, las personitas vestidas, 18 de septiembre de 2026.",
+      "vecinas": [
+        "pruebas-que-no-prueban-nada",
+        "la-prueba-no-puede-ver-lo-que-el-codigo-transforma"
+      ]
+    },
+    {
+      "id": "dos-casos-que-dan-el-mismo-numero",
+      "titulo": "Dos experimentos distintos que dan el mismo número están midiendo lo mismo",
+      "gravedad": "media",
+      "sintoma": "Una prueba comparaba cuerda tiesa contra cuerda floja: 39.8 y 39.8. Se reescribió: 67.4 y 67.4. Y otra vez: 15.0 y 15.0.",
+      "causa": "Las tres veces el montaje tapaba lo que se quería medir. Primero el empujón era la velocidad máxima del motor en una sala chica, así que el peso se estampaba en la esquina y se medía la diagonal de la sala. Después el peso era un bloque de 3×3, que colgado de una cuerda no se columpia: se medía un peso parado. Y encima el campo que la prueba cambiaba —la flexibilidad— no lo leía el motor en ningún sitio: existía sólo en la prueba.",
+      "porque": "Al escribir la prueba uno piensa en la magnitud y no en si el montaje deja que esa magnitud cambie.",
+      "arreglo": "Peso de una celda y el mismo empujón de la prueba de péndulo que sí funciona. Y el campo, implementado de verdad en el motor.",
+      "comoCazarlo": "Cuando dos condiciones dan el MISMO número hasta el decimal, no es que se parezcan: es que la diferencia no llega al medidor. Es la tercera vez en este repo.",
+      "consejo": "Antes de escribir la comparación, comprobar que el caso base se MUEVE. Si la variable A y la variable B dan lo mismo, el montaje es sospechoso antes que el código.",
+      "senales": [
+        "los dos dan igual",
+        "no cambia nada al cambiarlo",
+        "hasta el decimal"
+      ],
+      "salioDe": "CRISOL, la flexibilidad de la cuerda, 18 de septiembre de 2026.",
+      "vecinas": [
+        "pruebas-que-no-prueban-nada",
+        "la-prueba-de-pantalla-que-no-provoca-la-pantalla"
+      ]
     }
   ]
 }
