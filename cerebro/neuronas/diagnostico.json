@@ -864,6 +864,27 @@
       "vecinas": [
         "arreglo-que-empata-en-el-marcador"
       ]
+    },
+    {
+      "id": "la-prueba-medida-de-tres-formas-distintas",
+      "titulo": "Tres formas de medir lo mismo y sólo una contesta la pregunta",
+      "gravedad": "alta",
+      "sintoma": "La prueba dice que el arreglo no funciona, y el arreglo funciona: lo que está mal es qué se está contando.",
+      "causa": "El número elegido no distingue el caso. Aquí, para «¿el derrumbe incomunica a la colonia?»: el total alcanzable estaba dominado por el CIELO ABIERTO (3060 → 3010); las celdas del hormiguero no bajaban porque la reina queda del lado bueno de la losa (342 → 288); y contar hormigas fuera daba 0 porque a esas alturas ya estaban todas dentro.",
+      "porque": "Se escoge la magnitud que es fácil de sacar del código, no la que responde a la frase que pidió quien lo pidió.",
+      "arreglo": "Volver a la frase original —«todas buscarán cómo llegar a la reina»— y medir eso: hormigas separadas de su reina que se abren paso. Y montarlo a mano en vez de esperar a que el mundo lo produzca solo.",
+      "comoCazarlo": "Si hay que afinar el escenario para que el número se mueva, el número está mal elegido. Afinar el mundo hasta que la prueba salga dramática es hacerle trampa a la prueba.",
+      "consejo": "Y un montaje a mano también obedece la física: la cámara que cavé para la reina se derrumbó sola por no apisonarla, y la prueba culpó al código de no ir hacia una reina que mi propio montaje había enterrado.",
+      "senales": [
+        "la prueba dice que no funciona y sí funciona",
+        "el número no se mueve",
+        "no sé qué medir"
+      ],
+      "salioDe": "CRISOL, las galerías de las hormigas, 18 de septiembre de 2026.",
+      "vecinas": [
+        "dos-experimentos-mismo-numero",
+        "arreglo-que-empata-en-el-marcador"
+      ]
     }
   ]
 }
