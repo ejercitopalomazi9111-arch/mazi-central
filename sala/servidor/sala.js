@@ -351,6 +351,13 @@ import { MOTORES, preguntar, motoresVivos, motoresApagados, motorDe,
 
 const ahora = () => Date.now();
 
+/* Dónde se prende una silla apagada. Una sola frase, en un solo lugar: lo dice
+   `/motores` y lo dice el 400 de `/decir`, y si viven separadas una se queda
+   vieja sin que nadie se entere. */
+const dondePrender = (secreto) =>
+  `Cloudflare → Workers & Pages → sala → Settings → Variables and Secrets → ` +
+  `Add → Secret → ${secreto}`;
+
 /* Una llave de sala. 32 caracteres de azar de verdad —`crypto`, no `Math.random`—
    porque esto es lo único que separa la mesa de trabajo del internet entero.
    Sin guiones ni símbolos: va a viajar dentro de un link por WhatsApp. */
@@ -1225,6 +1232,24 @@ export class Sala {
      a ella. Nada de comandos raros.
      ═════════════════════════════════════════════════════════════════════════*/
 
+  /** La silla existe pero le falta su llave: devuelve el motor, o null.
+   *  ⚠ ESTO NO ES UN DETALLE DE REDACCIÓN. El 400 decía «no hay nadie en la
+   *  sala con el id "groq"», y desde el lado de Carlos eso es mentira: la
+   *  silla existe, lo que falta es un secreto en Cloudflare. El mensaje lo
+   *  mandaba a buscar el problema en el lugar equivocado. */
+  sillaSinLlave(quien){
+    const id = motorDe(quien);
+    if(!id || !MOTORES[id]) return null;
+    return (this.env && this.env[MOTORES[id].llave]) ? null : id;
+  }
+
+  /** El 400 que sí sirve: quién es, qué le falta y dónde se pone. */
+  faltaLlave(id){
+    const M = MOTORES[id];
+    return `${M.nombre} sí tiene silla en la mesa, pero está apagada: falta su ` +
+           `llave ${M.llave}. Se prende en ${dondePrender(M.llave)}.`;
+  }
+
   /** ¿Este evento le habla a una silla? Devuelve el motor, o null.
    *  La nota manda sobre el destinatario: es el «oye, tú» del final. */
   sillaDestino(evento){
@@ -1255,6 +1280,29 @@ export class Sala {
     }
     this.gente[motorId].visto = ahora();
     return this.gente[motorId];
+  }
+
+  /** Que el CENSO diga la verdad sobre las sillas, en cada petición.
+   *
+   *  ⚠ EL CÍRCULO VICIOSO QUE REPORTÓ CARLOS («no está ni Gemini ni groq»).
+   *  Antes una silla entraba al censo sólo cuando alguien le hablaba, y desde
+   *  la mesa se le habla escogiéndola de un menú que se arma CON EL CENSO. O
+   *  sea: para aparecer había que hablarle, y para hablarle había que
+   *  aparecer. Con las llaves puestas seguían siendo invisibles desde el
+   *  teléfono, y nada estaba «roto» — las dos piezas eran correctas por
+   *  separado.
+   *
+   *  Se recalcula en cada petición y no una vez al arrancar, por lo mismo que
+   *  `sillaDestino` comprueba la llave al vuelo: un secreto puede aparecer o
+   *  desaparecer sin que se despliegue nada. Y una silla cuya llave se cayó
+   *  SALE del censo: dejarla puesta sería ofrecer en el menú a alguien que no
+   *  va a contestar, que es peor que no ofrecer nada. */
+  sentarSillasVivas(){
+    for(const id of Object.keys(MOTORES)){
+      const viva = !!(this.env && this.env[MOTORES[id].llave]);
+      if(viva) this.sentar(id);
+      else if(this.gente[id] && this.gente[id].silla) delete this.gente[id];
+    }
   }
 
   /** ¿Le están pidiendo que lea el hilo y cuente qué pasó?
@@ -1432,6 +1480,10 @@ export class Sala {
 
   async fetch(pedido){
     await this.listo;
+    /* Antes de contestar nada: que las sillas con llave estén en el censo.
+       Va aquí y no en el arranque porque el censo lo leen media docena de
+       endpoints y ninguno debería tener que acordarse. */
+    this.sentarSillasVivas();
     const url = new URL(pedido.url);
     const ruta = url.pathname.split('/').pop();
     /* La sala no sabía cómo se llama: nunca le había hecho falta. Ahora sí,
@@ -1788,7 +1840,9 @@ export class Sala {
          haya sentado. Sin llave no, y ahí el 400 es el correcto: decirle a
          Carlos «no hay nadie con ese id» es justo lo que pasa. */
       if(a && !a.startsWith('@') && !this.gente[a] && !this.sillaDestino({ a })){
-        return Response.json({ error:`No hay nadie en la sala con el id "${a}".` },
+        const apagada = this.sillaSinLlave(a);
+        return Response.json({ error: apagada ? this.faltaLlave(apagada)
+                                              : `No hay nadie en la sala con el id "${a}".` },
                              { status:400 });
       }
 
@@ -1888,7 +1942,10 @@ export class Sala {
 
       const a = c.a ? String(c.a).slice(0, 60) : null;
       if(a && !a.startsWith('@') && !this.gente[a] && !this.sillaDestino({ a })){
-        return Response.json({ error:`No hay nadie en la sala con el id "${a}".` }, { status:400 });
+        const apagada = this.sillaSinLlave(a);
+        return Response.json({ error: apagada ? this.faltaLlave(apagada)
+                                              : `No hay nadie en la sala con el id "${a}".` },
+                             { status:400 });
       }
 
       const cita = { id:`p${++this.serie}`, de, a, texto, cuando,
@@ -1953,8 +2010,7 @@ export class Sala {
         vivos: motoresVivos(this.env),
         apagados: motoresApagados(this.env).map(m => ({
           ...m,
-          comoPrenderlo: `Cloudflare → Workers & Pages → sala → Settings → ` +
-                         `Variables and Secrets → Add → Secret → ${m.falta}`,
+          comoPrenderlo: dondePrender(m.falta),
         })),
       });
     }
