@@ -808,6 +808,27 @@
         "pruebas-que-no-prueban-nada",
         "checkout-no-restaura-lo-que-no-esta-versionado"
       ]
+    },
+    {
+      "id": "preguntarle-a-quien-camina-donde-acabo",
+      "titulo": "Preguntarle a alguien que camina dónde acabó",
+      "gravedad": "media",
+      "sintoma": "Una prueba lleva tiempo en rojo y todo el mundo da por hecho que la función no está hecha.",
+      "causa": "La prueba mira la posición FINAL de algo que se mueve solo. Aquí: «sube un escalón» comprobaba dónde estaba el monigote a los 500 pasos. Sí subía —al paso 60 estaba encima— y luego seguía paseando, se daba la vuelta y se bajaba; acababa en x=1.0.",
+      "porque": "Es la forma más corta de escribirla, y con algo quieto funciona. En cuanto lo medido tiene voluntad propia, el final deja de significar nada.",
+      "arreglo": "Comprobar si LLEGÓ A PASAR, no dónde quedó: se recorre el bucle vigilando la condición y se guarda que ocurrió una vez.",
+      "comoCazarlo": "Si la prueba de una cosa que se mueve fija un número de pasos y mira el estado final, sospechar de la prueba antes que del código. Imprimir la trayectoria lo resuelve en un minuto.",
+      "consejo": "Y hay que comprobarlo con una mutación: se rompe el trepado a propósito y las dos pruebas tienen que ponerse rojas. Si no, la nueva versión tampoco prueba nada.",
+      "senales": [
+        "esa prueba siempre ha estado en rojo",
+        "no sube escalones",
+        "acabó donde no debía"
+      ],
+      "salioDe": "CRISOL, las personitas, 18 de septiembre de 2026. Dos pruebas rojas de mucho tiempo, y el código estaba bien desde siempre.",
+      "vecinas": [
+        "la-prueba-mide-despues-de-que-aquello-murio",
+        "pruebas-que-no-prueban-nada"
+      ]
     }
   ]
 }

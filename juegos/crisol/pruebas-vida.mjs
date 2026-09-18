@@ -95,16 +95,32 @@ seccion('el pathfinding de enfrente · escalones, muros y hoyos');
   for(let x = 30; x < 60; x++) m.pon(x, 39, IDX.muro);
   const v = instalaVida(m, 5);
   const s = v.persona(20, 30); s.mirando = 1;
-  corre(m, v, 500);
-  ok('sube un escalón de una celda', s.x > 32, 'llegó a x=' + s.x.toFixed(1));
+  /* ⚠ SE MIRA SI LLEGÓ A SUBIR, NO DÓNDE ACABÓ. Esto llevaba tiempo en rojo y
+     el defecto era de la prueba: el monigote SÍ sube —medido, al paso 60 está
+     en x=43.8 con la cadera en y=35, y en el suelo estaría en y=36— y luego
+     sigue paseando, se da la vuelta y se baja. A los 500 pasos había acabado
+     en x=1.0. Preguntarle a alguien que camina «¿dónde estás al final?» no es
+     preguntarle si supo subir un escalón. */
+  let subio = false;
+  for(let i = 0; i < 500; i++){
+    m.paso(); v.paso();
+    if(s.x > 31 && s.x < 58 && s.enSuelo && s.y < 35.5) subio = true;
+  }
+  ok('sube un escalón de una celda', subio,
+     'nunca se paró encima; acabó en x=' + s.x.toFixed(1) + ' y=' + s.y.toFixed(1));
 
   /* DOS CELDAS: también */
   const m2 = mundo(); piso(m2, 40);
   for(let x = 30; x < 60; x++){ m2.pon(x, 39, IDX.muro); m2.pon(x, 38, IDX.muro); }
   const v2 = instalaVida(m2, 5);
   const s2 = v2.persona(20, 30); s2.mirando = 1;
-  corre(m2, v2, 600);
-  ok('y uno de dos', s2.x > 32, 'llegó a x=' + s2.x.toFixed(1));
+  let subio2 = false;
+  for(let i = 0; i < 600; i++){
+    m2.paso(); v2.paso();
+    if(s2.x > 31 && s2.x < 58 && s2.enSuelo && s2.y < 34.5) subio2 = true;
+  }
+  ok('y uno de dos', subio2,
+     'nunca se paró encima; acabó en x=' + s2.x.toFixed(1) + ' y=' + s2.y.toFixed(1));
 
   /* CUATRO CELDAS: NO. Se topa y se da la vuelta — que es el comportamiento,
      no un fallo. Sin esta prueba, «sube escalones» podría querer decir «se
