@@ -333,7 +333,11 @@ seccion('LAS PLANTAS · con tronco y ramas, que era la queja');
   ok('la siembra arranca un árbol', !!a);
   /* agua cerca: sin ella no crece, y eso lo comprueba el bloque de abajo */
   for(let x = 40; x < 50; x++) m.pon(x, 67, IDX.agua);
-  for(let i = 0; i < 900; i++) v.pasoArboles();
+  /* ⚠ SE MIRA AL ÁRBOL EN SU MADUREZ, no a los 900 pasos. Desde que las
+     plantas tienen ciclo de vida, a los 900 el árbol YA SE MURIÓ DE VIEJO y
+     no le queda una hoja: la prueba decía «no tiene copa» de un árbol que
+     había vivido, fructificado y marchitado entero. 340 pasos es adulto. */
+  for(let i = 0; i < 340; i++) v.pasoArboles();
 
   let madera = 0, planta = 0, altoMin = 99, xs = new Set();
   for(let k = 0; k < m.t.length; k++){
@@ -361,16 +365,22 @@ seccion('LAS PLANTAS · con tronco y ramas, que era la queja');
   for(let k = 0; k < seco.t.length; k++) if(seco.t[k] === IDX.madera || seco.t[k] === IDX.planta) celdas++;
   ok('sin agua cerca, no crece', celdas < 6, celdas + ' celdas en un desierto');
 
-  /* dos árboles de semillas distintas no son el mismo árbol */
-  const a1 = (() => { const w = mundo(60,60); piso(w,50); for(let x=0;x<60;x++) w.pon(x,49,IDX.agua);
-    const vv = instalaVida(w, 1234); vv.siembra(30, 48);
-    for(let i=0;i<600;i++) vv.pasoArboles();
-    let c=0; for(let k=0;k<w.t.length;k++) if(w.t[k]===IDX.madera) c++; return c; })();
-  const a2 = (() => { const w = mundo(60,60); piso(w,50); for(let x=0;x<60;x++) w.pon(x,49,IDX.agua);
-    const vv = instalaVida(w, 999999); vv.siembra(30, 48);
-    for(let i=0;i<600;i++) vv.pasoArboles();
-    let c=0; for(let k=0;k<w.t.length;k++) if(w.t[k]===IDX.madera) c++; return c; })();
-  ok('dos árboles no salen idénticos', a1 !== a2, a1 + ' y ' + a2 + ' celdas de tronco');
+  /* dos árboles de semillas distintas no son el mismo árbol.
+     ⚠ SE COMPARA LA FORMA, NO CUÁNTAS CELDAS. Contando celdas, dos árboles
+     completamente distintos daban 38 y 38 y la prueba los llamaba idénticos:
+     un número no es una silueta. Se compara la lista de casillas ocupadas. */
+  const silueta = (semilla) => {
+    const w = mundo(60, 60); piso(w, 50);
+    for(let x = 0; x < 60; x++) w.pon(x, 49, IDX.agua);
+    const vv = instalaVida(w, semilla); vv.siembra(30, 48);
+    for(let i = 0; i < 600; i++) vv.pasoArboles();
+    const c = [];
+    for(let k = 0; k < w.t.length; k++) if(w.t[k] === IDX.madera) c.push(k);
+    return c.join(',');
+  };
+  const s1 = silueta(1234), s2 = silueta(999999);
+  ok('dos árboles no salen idénticos', s1 !== s2,
+     'siluetas de ' + s1.split(',').length + ' y ' + s2.split(',').length + ' celdas');
 }
 
 seccion('el enganche no le toca una coma al motor');
@@ -424,6 +434,99 @@ seccion('lo que cuesta, medido');
   const vacio = (performance.now() - t1) / 120;
   console.log('    · la misma sala sin un solo ser: ' + vacio.toFixed(4) + ' ms por paso');
   ok('sin seres no cuesta prácticamente nada', vacio < 0.1, vacio.toFixed(4) + ' ms');
+}
+
+
+seccion('EL CICLO DE VIDA · «que el agua las nutra, den frutos, se marchiten y vuelvan»');
+{
+  /* Carlos, textual: «quiero ciclo de vida correcto para las plantas, que el
+     agua pueda nutrirlas, que estas crezcan poco a poco, que den frutos, que
+     se marchiten, dejen la semilla y vuelvan a crecer, quiero todo». */
+  const conAgua = (semilla = 77) => {
+    const w = mundo(90, 70, semilla); piso(w, 68);
+    for(let x = 0; x < 90; x++) w.pon(x, 67, IDX.agua);
+    const vv = instalaVida(w, semilla);
+    return { w, vv, a: vv.siembra(45, 66) };
+  };
+  const cuenta = (w, id) => { let n = 0; for(let k = 0; k < w.t.length; k++) if(w.t[k] === IDX[id]) n++; return n; };
+
+  /* 1 · el agua se BEBE, no sólo se mira */
+  {
+    const { w, vv } = conAgua();
+    const agua0 = cuenta(w, 'agua');
+    for(let i = 0; i < 700; i++) vv.pasoArboles();
+    ok('el árbol se BEBE el agua: queda menos que al empezar',
+       cuenta(w, 'agua') < agua0, agua0 + ' → ' + cuenta(w, 'agua'));
+  }
+
+  /* 2 · crece POCO A POCO, no de un golpe */
+  {
+    const { w, vv } = conAgua();
+    /* ⚠ SE MIDE DURANTE LA FASE DE CRECER, no a lo largo de toda la vida.
+       Con ventanas de 20/60/140 la tercera caía —9 → 62 → 53— porque a esas
+       alturas el árbol YA SE ESTABA MARCHITANDO y soltando hojas. Medir el
+       crecimiento de algo que ya empezó a morirse no mide el crecimiento. */
+    const tam = [];
+    for(const n of [15, 30, 45]){
+      for(let i = 0; i < n; i++) vv.pasoArboles();
+      tam.push(cuenta(w, 'madera') + cuenta(w, 'planta'));
+    }
+    ok('crece poco a poco: cada rato es más grande que el anterior',
+       tam[0] < tam[1] && tam[1] < tam[2], tam.join(' → '));
+  }
+
+  /* 3 · da FRUTOS */
+  {
+    const { w, vv, a } = conAgua(31);
+    let pasos = 0;
+    while(pasos < 3000 && cuenta(w, 'fruta') === 0){ vv.pasoArboles(); pasos++; }
+    ok('un árbol maduro da fruta', cuenta(w, 'fruta') > 0,
+       cuenta(w, 'fruta') + ' frutas al paso ' + pasos);
+    /* ⚠ Y LA FRUTA ES COMIDA PARA LAS HORMIGAS sin una línea que los conecte:
+       las dos cosas cuelgan del grupo «vida» de `elementos.js`. */
+    ok('y la fruta es del grupo vida, o sea comida para un hormiguero',
+       EL[IDX.fruta].grupo === 'vida');
+  }
+
+  /* 4 · se MARCHITA y deja SEMILLA */
+  {
+    const { w, vv, a } = conAgua(53);
+    let pasos = 0;
+    while(pasos < 6000 && vv.arboles.includes(a)){ vv.pasoArboles(); pasos++; }
+    ok('el árbol termina muriéndose de viejo', !vv.arboles.includes(a),
+       'murió al paso ' + pasos);
+    ok('y al morir DEJA SU SEMILLA', cuenta(w, 'semilla') > 0,
+       cuenta(w, 'semilla') + ' semillas');
+    /* ⚠ y las hojas se fueron ANTES de morir: marchitarse es algo que se ve
+       pasar, no un borrado de golpe */
+    ok('sin una hoja encima: se marchitó de verdad', cuenta(w, 'planta') === 0,
+       cuenta(w, 'planta') + ' de hoja');
+  }
+
+  /* 5 · y VUELVE A CRECER. Esto cierra el ciclo y es lo que pidió con todas
+     sus letras. No hay código de «volver a crecer»: hay una semilla, y el
+     mundo ya sabía qué hacer con una semilla en cuanto hay agua. */
+  {
+    const w = mundo(60, 60, 7); piso(w, 50);
+    for(let x = 0; x < 60; x++){ w.pon(x, 49, IDX.tierra); w.pon(x, 48, IDX.agua); }
+    const vv = instalaVida(w, 7);
+    w.pon(30, 47, IDX.semilla);
+    let pasos = 0;
+    while(pasos < 4000 && !vv.arboles.length){ w.paso(); vv.pasoArboles(); pasos++; }
+    ok('una semilla con agua se convierte en árbol nuevo', vv.arboles.length > 0,
+       'brotó al paso ' + pasos);
+  }
+
+  /* 6 · pero NO en un desierto */
+  {
+    const w = mundo(60, 60, 7); piso(w, 50);
+    for(let x = 0; x < 60; x++) w.pon(x, 49, IDX.tierra);
+    const vv = instalaVida(w, 7);
+    w.pon(30, 47, IDX.semilla);
+    for(let i = 0; i < 2000; i++){ w.paso(); vv.pasoArboles(); }
+    ok('y sin agua, la semilla se queda semilla', vv.arboles.length === 0,
+       vv.arboles.length + ' árboles en el desierto');
+  }
 }
 
 console.log('\n' + (mal ? '✗' : '✓') + '  ' + bien + ' pasan · ' + mal + ' fallan');

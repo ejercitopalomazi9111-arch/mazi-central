@@ -787,6 +787,27 @@
       "vecinas": [
         "pruebas-que-no-prueban-nada"
       ]
+    },
+    {
+      "id": "la-prueba-mide-despues-de-que-aquello-murio",
+      "titulo": "La prueba mide después de que aquello que medía se acabó",
+      "gravedad": "media",
+      "sintoma": "Una prueba que pasaba se pone roja al añadir una función nueva, y el código nuevo está bien.",
+      "causa": "La prueba fijaba un número de pasos cuando lo medido duraba para siempre. Al darle un CICLO DE VIDA, a ese mismo número de pasos la cosa ya se murió.",
+      "porque": "Un «corre 900 pasos y mide» está pensado para un mundo donde nada termina. En cuanto algo nace, madura y muere, el cuándo pasa a ser parte de la prueba.",
+      "arreglo": "Medir en la fase que la afirmación describe. «Un árbol adulto tiene copa» se comprueba a los 340 pasos, no a los 900, cuando ya fructificó y se marchitó entero.",
+      "comoCazarlo": "Si una prueba se pone roja al agregar algo que no toca lo que ella mide, mirar CUÁNDO mide antes de mirar qué.",
+      "consejo": "Pasó tres veces seguidas el mismo día: la copa, el crecimiento gradual y la colonia con jardín finito. El patrón es «el experimento termina después de que se acabó lo que medía».",
+      "senales": [
+        "se puso roja y no toqué eso",
+        "antes pasaba",
+        "el número de pasos"
+      ],
+      "salioDe": "CRISOL, el ciclo de vida de las plantas, 18 de septiembre de 2026.",
+      "vecinas": [
+        "pruebas-que-no-prueban-nada",
+        "checkout-no-restaura-lo-que-no-esta-versionado"
+      ]
     }
   ]
 }

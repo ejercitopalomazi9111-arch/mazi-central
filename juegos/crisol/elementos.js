@@ -340,6 +340,13 @@ const JUEGO = {
   /* ── vida, apenas la semilla de lo que viene ──────────────────────────── */
   planta:  { nom:'Planta',  col:'#3FA83F', estado:'solido', dens:18, cond:.15,
              arde:.6, ignicion:105, calorArde:500, crece:true, dureza:.1, grupo:'vida' },
+  /* ── FRUTA ───────────────────────────────────────────────────────────────
+     Lo que da un árbol maduro. Es del grupo «vida», y eso no es etiquetado:
+     las hormigas comen lo del grupo vida, así que un árbol que fructifica
+     alimenta un hormiguero sin una sola línea que los conecte. */
+  fruta:   { nom:'Fruta',   col:'#D2402E', estado:'polvo',  dens:14, cond:.16,
+             arde:.5, ignicion:120, calorArde:420, dureza:.08, grupo:'vida',
+             ayuda:'La da un árbol maduro. Se cae sola y las hormigas se la llevan' },
   semilla: { nom:'Semilla', col:'#8FBF4A', estado:'polvo',  dens:13, cond:.15,
              arde:.5, ignicion:105, calorArde:400, germina:true, dureza:.05, grupo:'vida' },
 };
@@ -617,7 +624,7 @@ const ICONOS = {
   reloj:'⏳', valvula:'🚰', repetidor:'📶', observador:'👁', piston:'🔨', resorte:'🌀', pila:'🔋',
   estRoja:'🎆', estVerde:'🎆', estAzul:'🎆', estOro:'🎆', mecha:'🧵', chispa:'✨',
   gAND:'🔀', gOR:'🔀', gNOT:'🔁', diodo:'➡️', nand:'🔀', nor:'🔀', xor:'⊕', xnor:'⊜',
-  acido:'🧪', hidronio:'⚗️', uranio:'☢️', planta:'🌱', semilla:'🌰',
+  acido:'🧪', hidronio:'⚗️', uranio:'☢️', planta:'🌱', semilla:'🌰', fruta:'🍎',
 };
 const ICONO_FAMILIA = {
   '⚛ no metal':'🔬', '⚛ noble':'🎈', '⚛ alcalino':'⚡', '⚛ alcalinotérreo':'🧱',

@@ -823,12 +823,38 @@ export class Vida {
        árbol. Resultado: cinco celdas de tronco, cero hojas y cuatro de alto,
        o sea EXACTAMENTE la queja de Carlos, pero por otro motivo. Un árbol
        que se mata solo se ve igual que un árbol que no sabe crecer. */
-    const vigor = this.entre(10, 19);
+    /* ⚠ EL VIGOR ESTÁ MEDIDO, NO PUESTO A OJO, y de él salen el alto, las
+       ramas y la copa de un tirón. Barrido con seis semillas a 340 pasos:
+           10-19 → 21 madera · 11 hoja ·  6.2 columnas · 15.7 de alto
+           16-26 → 29 · 32 ·  9.5 · 20.0
+           22-34 → 42 · 45 · 11.0 · 26.3   ← éste
+           28-44 → 51 · 89 · 15.2 · 30.7   (no cabe en una sala de 70)
+       Con 10-19 salía la queja de Carlos: «no están creciendo alto, no me
+       están sacando ramas». No era el algoritmo, era el número. */
+    const vigor = this.entre(22, 34);
     const kr = M.i(x, y);
     const tr = M.t[kr];
     if(tr === VACIO || tr === IDX.planta || tr === IDX.semilla) M.pon(x, y, IDX.madera);
     const arbol = {
       rx: x, ry: y, edad: 0, vivo: true,
+      /* ── EL CICLO DE VIDA ────────────────────────────────────────────────
+         Carlos: «quiero ciclo de vida correcto para las plantas, que el agua
+         pueda nutrirlas, que crezcan poco a poco, que den frutos, que se
+         marchiten, dejen la semilla y vuelvan a crecer, quiero todo».
+         Cuatro fases y una moneda: el AGUA. Crecer cuesta agua, fructificar
+         cuesta más, y sin agua no pasa ninguna de las dos — el árbol se
+         queda parado hasta que llueva. */
+      fase: 'crece',
+      /* ⚠ ARRANCA EN CERO, y por eso una semilla en el desierto no da NADA.
+         Con una reserva de salida crecía siete celdas antes de secarse, y la
+         prueba «sin agua cerca, no crece» seguía en rojo con otro número. */
+      agua: 0,                   /* lo que lleva bebido y no ha gastado */
+      sed: 0,                    /* pasos seguidos sin encontrar agua */
+      frutos: 0,
+      /* cuánto vive ya maduro antes de marchitarse. Con vigor entra el
+         tamaño: un árbol grande dura más, como debe ser. */
+      aguanta: Math.round(this.entre(260, 520) + vigor * 14),
+      maduro: 0,
       puntas: [{ x, y, ang: -Math.PI / 2 + this.entre(-0.18, 0.18),
                  vigor, grosor: 1 + vigor / 13, gen: 0, choques: 0 }],
     };
@@ -847,13 +873,141 @@ export class Vida {
         const t = k < 0 ? -1 : M.t[k];
         if(t !== IDX.madera && t !== IDX.planta && t !== IDX.semilla) a.vivo = false;
       }
-      if(!a.vivo || !a.puntas.length){ this.arboles.splice(i, 1); continue; }
-      /* un árbol sin agua cerca se para. La regla ya estaba en el motor y se
-         conserva: una planta que crece en el vacío es un adorno */
-      if(a.edad % 16 === 0 && !this.hayAgua(a.rx, a.ry)) continue;
-      if(this.rnd() > 0.34) continue;
-      this.creceArbol(a);
+      if(!a.vivo){ this.siembraSemilla(a); this.arboles.splice(i, 1); continue; }
+
+      /* ── BEBER ───────────────────────────────────────────────────────────
+         ⚠ Y AQUÍ ESTABA «sin agua cerca, no crece» EN ROJO. La comprobación
+         era `a.edad % 16 === 0 && !hayAgua(...)`: o sea que se miraba el agua
+         UN PASO DE CADA DIECISÉIS y los otros quince crecía en pleno
+         desierto. Medido: 32 celdas de árbol sin una gota. Ahora se bebe cada
+         paso, y beber GASTA el agua — el árbol se la lleva. */
+      this.bebe(a);
+
+      if(a.fase === 'crece'){
+        if(!a.puntas.length){ a.fase = 'fructifica'; continue; }
+        if(a.agua < 1){ a.sed++; continue; }        /* seco: se para y espera */
+        if(this.rnd() > 0.34) continue;
+        a.agua -= 1;                                 /* crecer cuesta */
+        this.creceArbol(a);
+        continue;
+      }
+
+      a.maduro++;
+      if(a.fase === 'fructifica'){
+        /* dar fruta cuesta más que crecer: por eso un árbol sediento crece
+           raquítico pero no da nada */
+        if(a.agua >= 3 && this.rnd() < 0.05){ a.agua -= 3; this.daFruta(a); }
+        if(a.maduro > a.aguanta) a.fase = 'marchita';
+        continue;
+      }
+
+      if(a.fase === 'marchita'){
+        this.marchita(a);
+        continue;
+      }
     }
+  }
+
+  /* ── BEBER ────────────────────────────────────────────────────────────────
+     Busca agua alrededor de la raíz y se la lleva: una celda cada tantos
+     pasos. Que el agua SE GASTE es la mitad del encargo —«que el agua pueda
+     nutrirlas»—: si no se gastara, un charco alimentaría un bosque infinito y
+     regar no significaría nada. */
+  bebe(a){
+    const M = this.M;
+    if(a.agua > 14) return;                  /* lleno: no sorbe más */
+    let k = -1;
+    for(let dy = -2; dy <= 6 && k < 0; dy++) for(let dx = -5; dx <= 5; dx++){
+      const nx = a.rx + dx, ny = a.ry + dy;
+      if(!M.dentro(nx, ny)) continue;
+      const kk = M.i(nx, ny);
+      const t = M.t[kk];
+      if(t === IDX.agua || t === IDX.salada){ k = kk; break; }
+    }
+    if(k < 0){ a.sed++; return; }
+    a.sed = 0;
+    /* ⚠ CUÁNTO SE BEBE ESTÁ MEDIDO CONTRA LO QUE CUESTA CRECER, no puesto a
+       ojo. Crecer gasta 1 y pasa en el 34% de los pasos: 0.34 por paso. Con un
+       trago de celda entera al 12% el árbol se bebía el charco en un suspiro y
+       salía raquítico —las pruebas de copa y ramas se pusieron en rojo—. Al 3%
+       el balance queda en 0.68 contra 0.34: crece bien y aun así un charco se
+       nota bajar, que es lo que hay que ver. */
+    if(this.rnd() < 0.03){ M.cambia(k, VACIO); a.agua += 6; }
+    else a.agua += 0.5;
+  }
+
+  /* ── DAR FRUTA ───────────────────────────────────────────────────────────
+     La fruta sale en una hoja, no en el aire: se busca una celda de planta de
+     la copa y se convierte. Es polvo, así que en cuanto la hoja de debajo se
+     cae, la fruta se cae también — y se la llevan las hormigas, porque es del
+     grupo «vida». */
+  daFruta(a){
+    const M = this.M;
+    const R = 14;
+    for(let i = 0; i < 30; i++){
+      const nx = a.rx + ((this.rnd() * R * 2) | 0) - R;
+      const ny = a.ry - ((this.rnd() * R * 1.6) | 0);
+      if(!M.dentro(nx, ny)) continue;
+      const k = M.i(nx, ny);
+      if(M.t[k] !== IDX.planta) continue;
+      /* y con hueco abajo o al lado: una fruta enterrada en la copa no se ve */
+      M.cambia(k, IDX.fruta);
+      a.frutos++;
+      return true;
+    }
+    return false;
+  }
+
+  /* ── MARCHITARSE ─────────────────────────────────────────────────────────
+     Las hojas se van cayendo hasta que no queda ninguna, y entonces el árbol
+     muere y deja su semilla. No se borra de golpe: marchitarse es algo que se
+     ve pasar. */
+  marchita(a){
+    const M = this.M;
+    const R = 15;
+    /* ⚠ SE RECORRE LA COPA ENTERA, NO 26 POSICIONES AL AZAR. Con muestreo,
+       «no vi ninguna hoja» se confundía con «no queda ninguna»: el árbol se
+       daba por muerto y dejaba TRECE hojas colgando en el aire para siempre.
+       Un muestreo contesta «probablemente» y aquí hace falta un sí o un no.
+       Cuesta un recorrido de una caja de 30×24, y sólo mientras se marchita. */
+    let quedan = 0;
+    const x0 = Math.max(0, a.rx - R), x1 = Math.min(M.an - 1, a.rx + R);
+    const y0 = Math.max(0, a.ry - Math.round(R * 1.6)), y1 = Math.min(M.al - 1, a.ry + 1);
+    for(let y = y0; y <= y1; y++) for(let x = x0; x <= x1; x++){
+      const k = M.i(x, y);
+      if(M.t[k] !== IDX.planta && M.t[k] !== IDX.fruta) continue;
+      /* ⚠ SÓLO LAS HOJAS DECIDEN SI SIGUE VIVO. Contando también la fruta, el
+         árbol NO SE MORÍA NUNCA: la fruta se suelta pero no se borra, así que
+         `quedan` no llegaba a cero jamás — 6000 pasos y seguía marchitándose.
+         Una fruta caída ya no es parte del árbol. */
+      if(M.t[k] === IDX.planta) quedan++;
+      /* poquito por paso: marchitarse es algo que se ve pasar, no un borrado
+         de golpe. La fruta madura se CAE en vez de desaparecer — ya es polvo,
+         así que en cuanto se suelta obedece la gravedad y se la llevan. */
+      if(this.rnd() < 0.04){
+        if(M.t[k] === IDX.fruta) M.suelto[k] = 1;
+        else M.cambia(k, VACIO);
+      }
+    }
+    if(!quedan) a.vivo = false;              /* sin una hoja: se acabó */
+  }
+
+  /* ── LA SEMILLA ──────────────────────────────────────────────────────────
+     Lo que cierra el ciclo. Cae al pie del árbol, y el gancho `germina` que ya
+     existe la convierte en árbol nuevo EN CUANTO HAYA AGUA. Por eso no hace
+     falta código de «volver a crecer»: vuelve a crecer porque hay una semilla
+     y el mundo ya sabe qué hacer con una semilla. */
+  siembraSemilla(a){
+    const M = this.M;
+    for(let i = 0; i < 12; i++){
+      const nx = a.rx + ((this.rnd() * 7) | 0) - 3;
+      const ny = a.ry - 1 - ((this.rnd() * 3) | 0);
+      if(!M.dentro(nx, ny)) continue;
+      if(M.t[M.i(nx, ny)] !== VACIO) continue;
+      M.pon(nx, ny, IDX.semilla);
+      return true;
+    }
+    return false;
   }
 
   hayAgua(x, y){
