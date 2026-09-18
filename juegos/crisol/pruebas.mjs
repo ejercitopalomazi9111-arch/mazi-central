@@ -2782,21 +2782,82 @@ seccion('6 · la cuerda UNE, no arranca');
        b.ancho <= 5 && b.n === 16, 'mide ' + b.ancho + ' columnas y tiene ' + b.n + ' celdas');
   }
   {
+    /* 6b-bis · EL MISMO EXPERIMENTO CON LA CUERDA DIBUJADA RECTA.
+       Existe porque separa dos cosas que llevaban semanas confundidas en una
+       sola prueba roja:
+
+         · «la cuerda no carga nada y desgaja la caja» — ESO YA NO PASA, y
+           esta prueba es la que lo demuestra. Antes la cuerda agarraba CELDAS:
+           de un cubo de 16 se llevaba las tres que tenía al alcance y las
+           otras trece seguían cayendo. Ahora agarra la PIEZA.
+         · «una cuerda dibujada en DIAGONAL suelta su carga» — eso sigue
+           pasando y es la de arriba, que se queda en rojo a propósito.
+
+       La diferencia entre las dos es geométrica y vale la pena escribirla: 12
+       eslabones en diagonal abarcan 17 celdas, y el motor sólo les concede 12.
+       O sea que una cuerda diagonal NACE pasada de su propia longitud, se
+       recoge a la vertical en un solo barrido —los eslabones se persiguen en
+       cascada dentro del mismo paso— y en ese tirón suelta lo que lleve. */
+    const AN = 60, AL = 60, m = mundo(AN, AL, 7);
+    for(let x = 0; x < AN; x++) m.pon(x, AL - 1, IDX.muro);
+    for(let x = 0; x <= 24; x++) m.pon(x, 20, IDX.muro);
+    for(let x = 18; x <= 21; x++) for(let y = 16; y <= 19; y++) m.pon(x, y, IDX.concreto);
+    for(let y = 17; y <= 28; y++) m.pon(22, y, IDX.cuerda);
+    for(let x = 21; x <= 24; x++) for(let y = 29; y <= 32; y++) m.pon(x, y, IDX.concreto);
+    const abajo = () => { let x0 = 99, x1 = -1, y1 = -1, n = 0;
+      for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.concreto){
+        const x = k % AN, y = (k / AN) | 0;
+        if(y > 25){ if(x < x0) x0 = x; if(x > x1) x1 = x; if(y > y1) y1 = y; n++; } }
+      return { ancho: x1 - x0 + 1, hondo: y1, n }; };
+    corre(m, 300);
+    const c = abajo();
+    ok('con la cuerda RECTA, el cubo colgado se queda colgando',
+       c.hondo < AL - 2, 'su celda más baja quedó en y=' + c.hondo);
+    ok('y llega entero: 16 celdas y 4 columnas, no una bola',
+       c.n === 16 && c.ancho === 4, 'mide ' + c.ancho + ' columnas y tiene ' + c.n + ' celdas');
+    ok('y la cuerda sigue completa', cuantos(m, 'cuerda') === 12,
+       cuantos(m, 'cuerda') + ' eslabones');
+  }
+  {
     /* 6c · y la flexibilidad se puede cambiar, que lo pidió por su nombre */
+    /* ⚠ ESTA PRUEBA ESTABA MAL ESCRITA DOS VECES SEGUIDAS, y las dos veces
+       el síntoma fue el mismo: los dos casos daban EL MISMO NÚMERO hasta el
+       decimal —39.8 primero, 67.4 después—, que es la firma de que no se está
+       midiendo lo que dice la frase.
+
+         · la primera: el empujón era `vx = 4`, la velocidad máxima del motor,
+           en una sala de 40×40. El peso se soltaba y se estampaba contra la
+           esquina en los dos casos: lo medido era la diagonal de la sala.
+         · la segunda: el peso era un bloque de 3×3. Un cuerpo de nueve celdas
+           colgado de una cuerda no se columpia — se queda quieto—, así que los
+           dos casos medían un peso parado.
+
+       Ahora el peso es UNA celda, como en la prueba del péndulo que sí
+       funciona, y el empujón es el mismo 2.5 de aquélla. Lo que se mide es lo
+       que la frase promete: cuánto se aleja del clavo.
+
+       Y `flexCuerda` tampoco existía: había este test poniéndolo y el motor no
+       leía ese campo en ningún sitio. Ahora sí. */
     const cae = flex => {
-      const m = mundo(40, 40, 7);
-      for(let x = 0; x < 40; x++) m.pon(x, 3, IDX.muro);
+      const m = mundo(60, 40, 7);
+      for(let x = 0; x < 60; x++) m.pon(x, 3, IDX.muro);
       repisa(m, 39);
       m.flexCuerda = flex;
-      for(let y = 4; y < 16; y++) m.pon(20, y, IDX.cuerda);
-      for(let x = 19; x <= 21; x++) for(let y = 16; y <= 18; y++) m.pon(x, y, IDX.concreto);
-      /* un empujón lateral y se mira cuánto se estira */
+      for(let y = 4; y < 20; y++) m.pon(30, y, IDX.cuerda);
       corre(m, 30);
-      for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.concreto) m.vx[k] = 4;
+      /* el peso, UNA celda, colgado de la punta */
+      let punta = 4;
+      for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.cuerda)
+        punta = Math.max(punta, (k / 60) | 0);
+      m.pon(30, punta + 1, IDX.metal);
+      corre(m, 30);
+      let rx = 30, ry = punta + 1;
+      for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.metal){ rx = k % 60; ry = (k / 60) | 0; }
+      m.vx[m.i(rx, ry)] = 2.5;
       let lejos = 0;
-      for(let i = 0; i < 80; i++){ m.paso();
-        for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.concreto){
-          const d = Math.hypot(k % 40 - 20, ((k / 40) | 0) - 3); if(d > lejos) lejos = d; } }
+      for(let i = 0; i < 140; i++){ m.paso();
+        for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.metal){
+          const d = Math.hypot(k % 60 - 30, ((k / 60) | 0) - 3); if(d > lejos) lejos = d; } }
       return lejos;
     };
     const tiesa = cae(0), floja = cae(1);

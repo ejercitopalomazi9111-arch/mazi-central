@@ -286,6 +286,10 @@ export class Mundo {
        deja el suyo a ceros al terminar. Compartirlo le borraría al recorrido
        de cuerpos las marcas de por dónde ya pasó, en medio del recorrido. */
     this._vistoChoque = new Uint8Array(n);
+    /* uno propio para la carga que lleva una cuerda: `piezaDe` marca y
+       desmarca su memoria, y compartirla con otro barrido en curso le borra
+       las marcas a medio recorrido. Es la misma trampa de `_vistoCuerpo`. */
+    this._vistoCarga = new Uint8Array(n);
     this._colaCuerpo = new Int32Array(n);
     /* qué celdas soldó el jugador en una estructura: mismo número = misma
        pieza, aunque sean materiales distintos */
@@ -293,6 +297,17 @@ export class Mundo {
     this.soldadoN = 0;
     /* el interruptor que pidió Carlos: apagado, cada celda vuelve a ser suya */
     this.rigido = true;
+    /* ── QUÉ TAN FLOJA ES UNA CUERDA ─────────────────────────────────────
+       Lo pidió Carlos por su nombre —«que la flexibilidad se pueda cambiar»—
+       y llevaba semanas EXISTIENDO SÓLO EN UNA PRUEBA: había un test que le
+       ponía `m.flexCuerda = 1` y comparaba contra `0`, y el motor no leía ese
+       campo en ningún sitio. Por eso los dos casos daban 39.8 hasta el
+       decimal: dos experimentos distintos que dan el mismo número no están de
+       acuerdo, están midiendo lo mismo.
+       0 = tiesa, la cuerda mide justo lo que tiene. 1 = floja, se le concede
+       un tercio más de alcance, que es lo que deja al peso llegar más lejos
+       sin que la cuerda se rompa. */
+    this.flexCuerda = 0;
     this.enCuerpo = new Uint8Array(n);
     /* ── EL VOLTAJE ─────────────────────────────────────────────────────
        Carlos: «la resistencia debe poder tener más poder (producir más calor)
@@ -1416,7 +1431,18 @@ export class Mundo {
            Así que hay dos clases, y las fijas mandan: si la cuerda toca algo
            fijo, ÉSOS son sus clavos. Lo apoyado sólo sirve cuando no hay
            ninguno, que es el caso de una cuerda amarrada a una caja. */
-        const fijos = [], apoyados = [];
+        /* ⚠ Y SE APUNTA DE QUÉ ESTÁ COLGADA, no sólo por dónde.
+           Aquí estaba el defecto que tenía a Carlos con «la cuerda no carga
+           nada»: en el paso 5 cada eslabón busca sólidos alrededor para
+           colgárselos, y el primer eslabón tiene alrededor LA CAJA DE LA QUE
+           CUELGA LA CUERDA. Así que la caja se colgaba de su propia cuerda:
+           `sop = 0`, `flotante = 1`, y una caja que ya no está apoyada se cae
+           — con la cuerda y con todo lo que llevaba puesto.
+           El experimento de Carlos —dos cubos, uno sobre un muro— caía entero
+           al suelo por esto, y las pruebas de tendedero no lo veían porque
+           están clavadas a MURO, que sí se excluye por ser `fijo`.
+           Colgarse de algo no es lo mismo que cargarlo, y son dos renglones. */
+        const fijos = [], apoyados = [], soportes = new Set();
         for(const k of cadena){
           const cx = k % an, cy = (k / an) | 0;
           for(const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
@@ -1425,10 +1451,25 @@ export class Mundo {
             const k2 = ny * an + nx;
             if(t[k2] === VACIO || ES_CUERDA[t[k2]]) continue;
             if(EL[t[k2]].fijo){ fijos.push(k); break; }
-            if(sop[k2] && this.estadoDe(k2) === 'solido'){ apoyados.push(k); break; }
+            if(sop[k2] && this.estadoDe(k2) === 'solido'){
+              apoyados.push(k); soportes.add(k2); break; }
           }
         }
         const amarres = fijos.length ? fijos : apoyados.slice(0, 1);
+        /* si el clavo es de verdad —algo fijo—, lo apoyado vuelve a ser carga
+           normal: un tendedero clavado a dos muros sí puede cargar una caja */
+        let cuelgaDe = null;
+        if(!fijos.length && soportes.size){
+          /* ⚠ Y NO BASTA CON LA CELDA DE CONTACTO: ES LA CAJA ENTERA.
+             Con sólo la celda, el eslabón de al lado agarraba la MISMA caja
+             por otro ladrillo y se la colgaba igual; la caja se quedaba sin
+             sostén y se caía con cuerda y carga. Uno no se cuelga de una caja
+             y además la carga. */
+          cuelgaDe = new Set();
+          for(const ks of soportes)
+            for(const kp of this.piezaDe([ks], TOPE_MANO_PIEZA, this._vistoCarga))
+              cuelgaDe.add(kp);
+        }
         if(!amarres.length){ for(const k of cadena) this.suelto[k] = 1; continue; }
 
         /* 3 · cada eslabón con su padre, desde el amarre.
@@ -1502,6 +1543,14 @@ export class Mundo {
            eslabón de más arriba que tocara: se trepaba por la cuerda hasta el
            techo y se quedaba colgado del amarre con un eslabón de correa. Lo
            que uno amarra, lo amarra a la PUNTA. */
+        /* ⚠ Y LA CUERDA NO ES PARTE DE LA CARGA, aunque `piezaDe` la vea como
+           sólida —lo es: `cuerda` tiene `estado:'solido'`—. Sin marcarla, la
+           pieza crecía desde el peso hacia el eslabón que lo sujeta y de ahí
+           por la cuerda entera: el «cuerpo» pasaba a ser peso MÁS cuerda, y un
+           cuerpo así no cabe en ningún sitio, así que el péndulo se quedaba
+           clavado. Dos pruebas del péndulo se pusieron rojas de golpe y ésa
+           fue la pista. */
+        for(const kk2 of pos) this._vistoCarga[kk2] = 1;
         for(let i = pos.length - 1; i >= 0; i--){
           const k = pos[i];
           const cx = k % an, cy = (k / an) | 0;
@@ -1517,26 +1566,61 @@ export class Mundo {
               if(this.nudo[k2] < this.paso_ - 1) continue;
             }
             if(this.estadoDe(k2) !== 'solido') continue;
+            if(cuelgaDe && cuelgaDe.has(k2)) continue; /* de eso CUELGA: no lo carga */
             if(this.flotante[k2]) continue;            /* ya lo lleva otra cuerda */
-            sop[k2] = 0; this.flotante[k2] = 1; this.nudo[k2] = this.paso_;
-            this.gravedadEn(nx, ny, k2);
-            this.vy[k2] = Math.max(-VMAX, Math.min(this.vy[k2] + this._gy, VMAX));
-            this.vx[k2] = Math.max(-VMAX, Math.min(this.vx[k2] + this._gx, VMAX));
-            this.arrastra(k2, EL[t[k2]]);
+            /* ⚠ LA CARGA ES UN CUERPO, NO UNA CELDA. Sin esto la cuerda se
+               llevaba colgando sólo las tres o cuatro celdas que tenía al
+               alcance y las demás seguían cayendo: el cubo se desgajaba en el
+               aire, que es «se hace una bola horrible» palabra por palabra.
+               Todas las celdas de la pieza se marcan a la vez —si no, el
+               eslabón siguiente vuelve a agarrar la misma caja por otro lado y
+               la parte en dos otra vez— y la restricción se aplica UNA vez,
+               sobre la pieza entera. */
+            const carga = this.piezaDe([k2], TOPE_MANO_PIEZA, this._vistoCarga);
+            for(const kc of carga){
+              sop[kc] = 0; this.flotante[kc] = 1; this.nudo[kc] = this.paso_;
+              this.gravedadEn(kc % an, (kc / an) | 0, kc);
+              this.vy[kc] = Math.max(-VMAX, Math.min(this.vy[kc] + this._gy, VMAX));
+              this.vx[kc] = Math.max(-VMAX, Math.min(this.vx[kc] + this._gx, VMAX));
+              this.arrastra(kc, EL[t[kc]]);
+            }
             /* la carga se sujeta al último eslabón, y al clavo del que ESE
                eslabón cuelga — no al primero de la cuerda, que desde que hay
                varios amarres puede estar del otro lado del tendedero */
-            this.tensa(k2, k, anclaDe[i], prof[i] + 1);
+            this.tensa(k2, k, anclaDe[i], prof[i] + 1, carga);
+            /* y toda la pieza comparte la velocidad del punto amarrado: es UN
+               cuerpo, así que no puede llevar dieciséis velocidades distintas */
+            const vcx = this.vx[k2], vcy = this.vy[k2];
+            for(const kc of carga){ this.vx[kc] = vcx; this.vy[kc] = vcy; }
           }
         }
+        for(const kk2 of pos) this._vistoCarga[kk2] = 0;   /* se deja limpio */
       }
     }
   }
 
   /* Mueve un eslabón hacia donde apunta su velocidad y luego lo obliga a
      seguir pegado a su padre. Esa corrección es la TENSIÓN. */
-  tensa(k, padre, ancla = -1, alcance = 0){
+  tensa(k, padre, ancla = -1, alcance = 0, cuerpo = null){
     const { an } = this;
+    /* ⚠ SI LO QUE CUELGA ES UN CUERPO, SE MUEVE EL CUERPO ENTERO O NINGUNO.
+       Aquí estaba, literal, el reclamo de Carlos: «me arranca los píxeles de
+       los que está agarrada… no une dos cosas, sino que las arranca y las pega
+       y se hace una bola horrible». Y era exacto: la cuerda agarraba CELDAS.
+       De un cubo de 16 se llevaba las tres o cuatro que tenía al alcance y las
+       otras doce seguían cayendo solas — el cubo se desgajaba en el aire.
+       Mover la pieza completa o no moverla es lo que separa un cuerpo de un
+       montón de píxeles, y ya estaba escrito para los sólidos que caen; lo que
+       faltaba era que la cuerda usara la misma ley. */
+    const mueve = (desde, hasta) => {
+      if(!cuerpo || cuerpo.length <= 1){ this.intercambia(desde, hasta); return true; }
+      const ddx = (hasta % an) - (desde % an);
+      const ddy = ((hasta / an) | 0) - ((desde / an) | 0);
+      if(!this.mueveCuerpo(cuerpo, ddx, ddy)) return false;
+      const off = ddy * an + ddx;
+      for(let i = 0; i < cuerpo.length; i++) cuerpo[i] += off;
+      return true;
+    };
     /* devuelve DÓNDE QUEDÓ, para que el eslabón siguiente sepa dónde está su
        padre de verdad y no dónde estaba al empezar el paso */
     let x = k % an, y = (k / an) | 0;
@@ -1553,7 +1637,9 @@ export class Mundo {
     /* medio celda de holgura: una rejilla no tiene puntos a distancia exacta 9,
        y sin ella el peso de un péndulo tenso se quedaba clavado —CUALQUIER
        casilla vecina se pasaba del tope por centésimas */
-    const tope = (alcance + 0.5) * (alcance + 0.5);
+    /* medio celda de holgura SIEMPRE, más la que le dé la flexibilidad */
+    const largo = alcance + 0.5 + alcance * (this.flexCuerda || 0) * 0.35;
+    const tope = largo * largo;
     const lejosDelAmarre = (nx, ny) => ancla >= 0 &&
       (nx - ax0) * (nx - ax0) + (ny - ay0) * (ny - ay0) > tope;
 
@@ -1608,7 +1694,7 @@ export class Mundo {
           if(est === 'solido' || est === 'polvo' || ed.fijo) continue;
           if((ed.dens || 0) >= (EL[this.t[kk]].dens || 1)) continue;
         }
-        this.intercambia(kk, kd);
+        if(!mueve(kk, kd)) continue;
         kk = kd; x = kk % an; y = (kk / an) | 0;
         movido = true;
         break;
@@ -1659,8 +1745,7 @@ export class Mundo {
         }
         mejorK = kd; mejorY = ny; mejorX = nx;
       }
-      if(mejorK >= 0){
-        this.intercambia(kk, mejorK);
+      if(mejorK >= 0 && mueve(kk, mejorK)){
         kk = mejorK; x = mejorX; y = mejorY;
         movido = true;
       }
@@ -1683,7 +1768,25 @@ export class Mundo {
         const d = (nx - x) * (nx - x) + (ny - y) * (ny - y);
         if(d < mejorD){ mejorD = d; mejor = kd; }
       }
-      if(mejor >= 0){ this.intercambia(kk, mejor); kk = mejor; }
+      /* ⚠ UN CUERPO NO SE TELETRANSPORTA: SE ACERCA UNA CELDA POR PASO.
+         Aquí se soltaba la carga de una cuerda dibujada en diagonal. La cuerda
+         se recoge hacia la vertical —correcto: 12 eslabones no abarcan 17
+         celdas— y el último eslabón puede saltar ocho celdas de golpe en ese
+         recogido. La carga intentaba seguirlo de un brinco, `mueveCuerpo`
+         decía que no cabe, y la cuerda se quedaba sin nada colgando: el cubo
+         caía al suelo con la cuerda intacta arriba.
+         Un eslabón sí puede brincar —es una celda suelta—; una caja de
+         dieciséis, no. Así que se le da el paso que sí cabe, en la dirección
+         correcta, y el resto en los pasos siguientes. */
+      if(mejor >= 0){
+        if(!cuerpo || cuerpo.length <= 1){ if(mueve(kk, mejor)) kk = mejor; }
+        else {
+          const mx = mejor % an, my = (mejor / an) | 0;
+          const ux = Math.sign(mx - x), uy = Math.sign(my - y);
+          const uno = this.i(x + ux, y + uy);
+          if((ux || uy) && this.dentro(x + ux, y + uy) && mueve(kk, uno)) kk = uno;
+        }
+      }
     }
     /* ── EL TIRÓN VIAJA HACIA ARRIBA ────────────────────────────────────
        Y aquí estaba el péndulo que no era péndulo. Con la restricción sola,
