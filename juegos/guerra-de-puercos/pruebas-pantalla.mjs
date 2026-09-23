@@ -45,6 +45,10 @@ const jugarUna = (p) => p.evaluate(() => {
   return true;
 });
 
+/* 30 de colección + 5 de bono + 5 de castigo. Se escribe aquí una vez para
+   que cambiar el tamaño del mazo no obligue a perseguir números sueltos. */
+const MAZO_ESPERADO = 40;
+
 const b = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium' });
 const ctx = await b.newContext({ viewport:{ width:390, height:844 } });
 const page = await ctx.newPage();
@@ -970,6 +974,73 @@ console.log('\n── Deslizar la carta a la mesa ──');
     ok('y cuando se falla, la pantalla lo DICE en vez de callarse',
        /más arriba/i.test(d.aviso), 'el aviso decía «' + d.aviso.slice(0,50) + '»');
   }
+}
+
+/* ══ ABRIR EL JUEGO POR PRIMERA VEZ ════════════════════════════════════════
+   Carlos: «al abrirlo inicies con súper poquitas cartas». Eso sólo se ve con
+   el almacenamiento LIMPIO, que es justo el estado que nadie prueba porque
+   hace falta provocarlo: en cuanto abres el juego una vez, ya no vuelve a
+   pasar nunca en ese teléfono.
+
+   ⚠ Y HAY UN CANDADO QUE SE CIERRA SOLO ESCONDIDO AQUÍ. Sin el regalo, un
+   jugador nuevo tiene cero cartas → sin cartas no hay mazo → sin mazo la única
+   forma de conseguir cartas es la tienda → la tienda cobra monedas → las
+   monedas se ganan jugando. El juego pediría jugar para poder jugar, y no se
+   vería como un error: se vería como una tienda cara. */
+console.log('\n── Abrir el juego por primera vez ──');
+{
+  const limpio = await b.newContext({ viewport:{ width:390, height:844 } });
+  const p2 = await limpio.newPage();
+  const rotos = [];
+  p2.on('pageerror', e => rotos.push(String(e)));
+  const listo = () => p2.waitForFunction(
+    /* ⚠ `typeof CAT` Y NO `window.CAT`. `const CAT` en un <script> clásico vive
+       en el ámbito del script y NO cuelga de `window`, así que `window.CAT` es
+       undefined SIEMPRE y la espera se iba de largo sin esperar nada. Pasaba
+       igual porque `networkidle` alcanzaba, que es peor: habría seguido en
+       verde el día que dejara de alcanzar. */
+    () => typeof CAT !== 'undefined' && CAT.listo, null, { timeout:8000 });
+
+  await p2.goto(BASE + '/juegos/guerra-de-puercos/', { waitUntil:'networkidle' });
+  await listo();
+  const cuantas = await p2.evaluate(() => Object.keys(CARTERA.tengo).length);
+  ok('un jugador nuevo arranca con cartas de regalo, no con cero',
+     cuantas === 8, String(cuantas));
+  ok('y son poquitas y malas: ninguna de nivel S ni A',
+     await p2.evaluate(() => misCartas().every(c => 'BCD'.includes(c.nivel))),
+     JSON.stringify(await p2.evaluate(() => misCartas().map(c => c.nivel))));
+  await p2.reload({ waitUntil:'networkidle' });
+  await listo();
+  ok('el regalo no se vuelve a dar al recargar',
+     await p2.evaluate(() => Object.keys(CARTERA.tengo).length) === 8);
+
+  /* ── y el mazo de la partida SALE de ese regalo ─────────────────────── */
+  /* Ésta es la prueba que le da sentido a la tienda. Antes la colección no
+     entraba a la mesa: se repartían siempre las mismas 110 cartas, así que
+     juntar el álbum no cambiaba nada. */
+  await p2.click('[data-modo="maquina"]');
+  await p2.waitForSelector('#mMano .carta', { timeout:8000 });
+  const total = await p2.evaluate(() => J.a.mazo.length + J.a.mano.length);
+  ok('contra la máquina se juega con TU mazo, no con las 110 de siempre',
+     total === MAZO_ESPERADO, String(total));
+  ok('y tu mano sale de tus cartas de regalo',
+     await p2.evaluate(() => {
+       const mias = new Set(misCartas().map(c => c.nivel + ':' + c.valor));
+       return J.a.mano.filter(c => c.nivel !== 'ESP')
+                      .every(c => mias.has(c.nivel + ':' + c.valor));
+     }));
+  ok('la máquina trae un mazo PAREJO, no el álbum entero',
+     await p2.evaluate(() => J.b.mazo.length + J.b.mano.length) === MAZO_ESPERADO);
+
+  /* ── la tienda dice para qué sirven las monedas ─────────────────────── */
+  await p2.click('#bSalir');
+  await p2.click('#bTienda');
+  const dice = await p2.textContent('#tLlevas');
+  ok('la tienda dice que con pocas cartas el mazo REPITE — la razón de comprar',
+     /repiten/.test(dice), dice);
+
+  ok('ninguna página nueva tiró error', rotos.length === 0, rotos[0] || '');
+  await limpio.close();
 }
 
 ok('la página no tiró ningún error', errores.length === 0, errores[0] || '');

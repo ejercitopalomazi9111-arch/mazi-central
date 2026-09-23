@@ -222,6 +222,89 @@ ok('y no lo mandan a esperar como si fuera otra persona',
 
 ok('ninguna de las dos páginas tiró error', fallos.length === 0, fallos[0] || '');
 
+/* ══ LA COLECCIÓN EN LÍNEA ═════════════════════════════════════════════════
+   Lo que pidió Carlos: que el mazo salga de tu colección. En línea eso tiene
+   una parte que NO se puede probar con un solo navegador ni leyendo el código:
+   que el mazo de cada quien LLEGUE, y que llegue el suyo y no el del otro.
+
+   ⚠ Y AQUÍ ESTUVO EL DEFECTO QUE ME COMÍ: mandar el mazo en un mensaje después
+   de conectarse llega tarde, porque el servidor reparte en cuanto la sala se
+   llena. El primero en entrar jugaba con su colección y el segundo con la
+   baraja de siempre — las dos páginas sin un error, el marcador normal y las
+   cartas normales. Sólo se ve contando los niveles de cada mano. */
+console.log('\n── La colección viaja a la partida ──');
+{
+  const ctxA = await b.newContext({ viewport:{width:390,height:844} });
+  const ctxB = await b.newContext({ viewport:{width:390,height:844} });
+  const pA = await ctxA.newPage(), pB = await ctxB.newPage();
+  const rotos = [];
+  for(const [n2, p2] of [['A', pA], ['B', pB]]) p2.on('pageerror', e => rotos.push(n2 + ': ' + e));
+
+  for(const p2 of [pA, pB])
+    await p2.addInitScript((s2) => { try{ localStorage.setItem('puercos_servidor', s2); }catch(e){} }, SERVIDOR);
+
+  await pA.goto(BASE + '/juegos/guerra-de-puercos/', { waitUntil:'networkidle' });
+  await pB.goto(BASE + '/juegos/guerra-de-puercos/', { waitUntil:'networkidle' });
+  /* Colecciones REALES sacadas del catálogo que ya cargó la página: una carta
+     inventada no tendría nivel y no armaría mazo. A sólo nivel D, B sólo S,
+     para reconocer el mazo de cada quien de un vistazo. */
+  const ponAlbum = (p2, nivel, cuantas) => p2.evaluate(([niv, n3]) => {
+    const suyas = CAT.todas.filter(f => f.nivel === niv).slice(0, n3);
+    const o = {}; for(const f of suyas) o[f.nombre + '·' + f.puntos] = 1;
+    localStorage.setItem('puercos_tengo', JSON.stringify(o));
+    localStorage.setItem('puercos_arranque', 'si');
+    return suyas.length;
+  }, [nivel, cuantas]);
+  const cuantasA = await ponAlbum(pA, 'D', 4);
+  const cuantasB = await ponAlbum(pB, 'S', 4);
+  ok('las dos páginas tienen colección puesta', cuantasA === 4 && cuantasB === 4,
+     cuantasA + '/' + cuantasB);
+
+  await pA.reload({ waitUntil:'networkidle' });
+  await pB.reload({ waitUntil:'networkidle' });
+  await esperar(500);
+
+  await pA.click('#bLinea'); await pA.click('#bCrear');
+  await esperar(1500);
+  const cod2 = (await pA.textContent('#codigoTexto')).trim();
+  await pB.click('#bLinea'); await pB.fill('#fCodigo', cod2); await pB.click('#bEntrar');
+  await esperar(2200);
+
+  const nivelesDe = (p2) => p2.evaluate(() =>
+    [...document.querySelectorAll('#mMano .carta .niv')].map(e => e.textContent));
+  const nA = await nivelesDe(pA), nB = await nivelesDe(pB);
+  ok('A juega con SU mazo: puras D (y sus especiales)',
+     nA.length > 0 && nA.every(x => x === 'D' || x === 'BONO' || x === 'CASTIGO'), nA.join(','));
+  /* ⚠ ÉSTA ES LA QUE CAZA LA CARRERA. Si el mazo se mandara por mensaje, B
+     —el segundo en entrar— saldría con cartas de todos los niveles. */
+  ok('y B también con el suyo: puras S — el segundo en entrar NO se queda con la baraja de siempre',
+     nB.length > 0 && nB.every(x => x === 'S' || x === 'BONO' || x === 'CASTIGO'), nB.join(','));
+
+  const mazoA = await pA.evaluate(() => (LINEA.vista && LINEA.vista.yo.mazo) || 0);
+  ok('y el mazo es el de la colección, no las 110 de siempre',
+     mazoA > 0 && mazoA < 40, String(mazoA));
+
+  /* ── el tramposo ───────────────────────────────────────────────────────
+     El mazo lo declara el teléfono, así que se puede editar. Lo único que el
+     servidor puede garantizar —y garantiza— es que ninguna carta sea
+     imposible. Se comprueba mandándole basura a mano. */
+  const tramposo = await pA.evaluate((srv) => new Promise((res) => {
+    const u = srv.replace(/^http/, 'ws') + '/api/puercos/sala/ZZZZ?mazo=' +
+              encodeURIComponent('S999.Z50.D20');
+    const ws = new WebSocket(u);
+    ws.addEventListener('message', (ev) => {
+      const m = JSON.parse(ev.data);
+      if(m.tipo === 'sentado'){ res('sentado'); try{ ws.close(); }catch(e){} }
+    });
+    setTimeout(() => res('sin respuesta'), 2500);
+  }), SERVIDOR);
+  ok('un mazo con cartas imposibles no tumba la sala: se limpia y se entra igual',
+     tramposo === 'sentado', String(tramposo));
+
+  ok('ninguna de las dos páginas tiró error', rotos.length === 0, rotos[0] || '');
+  await ctxA.close(); await ctxB.close();
+}
+
 await b.close();
 console.log('\n' + bien + ' bien · ' + mal + ' mal');
 process.exit(mal ? 1 : 0);
