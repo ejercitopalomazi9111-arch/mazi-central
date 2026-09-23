@@ -1,0 +1,289 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   BARBERÍA · estilo
+   ──────────────────────────────────────────────────────────────────────────
+   Claro por defecto a propósito: con la edad baja el contraste que se alcanza
+   a distinguir, y tinta oscura sobre papel claro es lo que mejor se lee al sol
+   — que es donde el repartidor usa la app. El tema oscuro va después y como
+   sistema, no invirtiendo esto.
+
+   Tamaños medidos contra la investigación con adultos mayores (PLAN.md §1-bis):
+   cuerpo grande, y ningún control de menos de 48 × 48.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+:root{
+  --fondo:        #F7F3EC;
+  --superficie:   #FFFFFF;
+  --hundido:      #EFE9DF;
+  --tinta:        #1B1714;
+  --tinta-suave:  #5B524A;   /* 7.3:1 sobre --fondo */
+  --linea:        #E2D9CC;
+  --linea-fuerte: #C9BCAA;
+  --acento:       #8E1B1B;   /* rojo de barbería, hondo: 9:1 con blanco */
+  --acento-hondo: #6E1212;
+  --acento-suave: #F6E7E4;
+  --laton:        #8A5F16;   /* 5.6:1 sobre blanco */
+  --verde:        #1E6A43;
+  --sombra: 0 1px 2px rgb(27 23 20 / .06), 0 4px 14px rgb(27 23 20 / .06);
+
+  --letra: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --cuerpo: 18px;
+  --toque: 48px;             /* mínimo de cualquier cosa que se toca */
+  --radio: 14px;
+  --menu-ancho: 280px;
+  --menu-riel: 76px;
+  --arriba: 64px;
+}
+
+*{ box-sizing: border-box; }
+html{ -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body{
+  margin: 0; background: var(--fondo); color: var(--tinta);
+  font: 400 var(--cuerpo)/1.5 var(--letra);
+  -webkit-font-smoothing: antialiased;
+}
+img{ display: block; max-width: 100%; }
+button, input{ font: inherit; color: inherit; }
+button{ cursor: pointer; }
+a{ color: inherit; }
+:focus-visible{ outline: 3px solid var(--acento); outline-offset: 2px; border-radius: 6px; }
+.ico{ width: 24px; height: 24px; flex: none; }
+.oculto{ position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ── Presentación ──────────────────────────────────────────────────────── */
+.presentacion{
+  position: fixed; inset: 0; z-index: 100;
+  display: grid; place-items: center; background: var(--tinta); color: var(--fondo);
+  transition: opacity .45s ease;
+}
+.presentacion.sale{ opacity: 0; pointer-events: none; }
+.presentacion .marca{ display: grid; justify-items: center; gap: 18px; }
+.presentacion .sello{
+  width: 104px; height: 104px; border-radius: 50%;
+  display: grid; place-items: center;
+  border: 2px solid var(--laton); color: var(--fondo);
+  animation: entra .7s cubic-bezier(.2,.8,.2,1) both;
+}
+.presentacion .sello .ico{ width: 46px; height: 46px; stroke-width: 1.5; }
+.presentacion .nombre{
+  font-size: 34px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  animation: entra .7s .15s cubic-bezier(.2,.8,.2,1) both;
+}
+.presentacion .toca{
+  position: absolute; bottom: 36px; font-size: 15px; opacity: .6;
+  animation: entra .6s .6s both;
+}
+@keyframes entra{ from{ opacity: 0; transform: translateY(12px) scale(.96); } }
+
+/* ── Armazón ───────────────────────────────────────────────────────────── */
+.app{ min-height: 100dvh; }
+.velo{
+  position: fixed; inset: 0; z-index: 30; background: rgb(27 23 20 / .45);
+  opacity: 0; pointer-events: none; transition: opacity .25s ease;
+}
+.app.menu-abierto .velo{ opacity: 1; pointer-events: auto; }
+
+/* El menú lateral: en teléfono es un cajón que sale de la orilla. */
+.lateral{
+  position: fixed; inset: 0 auto 0 0; z-index: 40; width: min(86vw, var(--menu-ancho));
+  background: var(--superficie); border-right: 1px solid var(--linea);
+  display: flex; flex-direction: column;
+  transform: translateX(-102%); transition: transform .28s cubic-bezier(.2,.8,.2,1);
+}
+.app.menu-abierto .lateral{ transform: none; }
+.lateral .cabeza{
+  display: flex; align-items: center; gap: 12px; min-height: var(--arriba);
+  padding: 0 12px 0 18px; border-bottom: 1px solid var(--linea);
+}
+.lateral .cabeza .marca{ display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-size: 16px; flex: 1; min-width: 0; }
+.lateral .cabeza .marca .ico{ color: var(--acento); }
+.lateral nav{ overflow-y: auto; padding: 10px 10px 24px; flex: 1; }
+
+.grupo{ margin-bottom: 6px; }
+.grupo > summary{
+  list-style: none; display: flex; align-items: center; gap: 12px;
+  min-height: var(--toque); padding: 0 12px; border-radius: 10px;
+  font-weight: 700; font-size: 15px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--tinta-suave); cursor: pointer; user-select: none;
+}
+.grupo > summary::-webkit-details-marker{ display: none; }
+.grupo > summary:hover{ background: var(--hundido); }
+.grupo > summary .gira{ margin-left: auto; transition: transform .2s ease; }
+.grupo[open] > summary .gira{ transform: rotate(180deg); }
+.grupo ul{ list-style: none; margin: 2px 0 8px; padding: 0; }
+.grupo a{
+  display: flex; align-items: center; gap: 14px;
+  min-height: var(--toque); padding: 0 12px 0 14px; margin: 2px 0;
+  border-radius: 10px; text-decoration: none; font-size: 17px;
+}
+.grupo a:hover{ background: var(--hundido); }
+.grupo a[aria-current="page"]{ background: var(--acento-suave); color: var(--acento-hondo); font-weight: 650; }
+.grupo a .etq{ flex: 1; min-width: 0; }
+.grupo a .obra{ font-size: 12px; color: var(--tinta-suave); border: 1px solid var(--linea-fuerte); border-radius: 99px; padding: 1px 8px; }
+
+/* Barra de arriba */
+.arriba{
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: 6px;
+  min-height: var(--arriba); padding: 0 8px;
+  background: rgb(247 243 236 / .94); backdrop-filter: saturate(1.2) blur(8px);
+  border-bottom: 1px solid var(--linea);
+}
+.arriba h1{ flex: 1; min-width: 0; margin: 0 4px; font-size: 20px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.boton-ico{
+  width: var(--toque); height: var(--toque); flex: none;
+  display: grid; place-items: center; border: 0; border-radius: 12px; background: transparent;
+  position: relative;
+}
+.boton-ico:hover{ background: var(--hundido); }
+.boton-ico .cuenta{
+  position: absolute; top: 5px; right: 3px; min-width: 22px; height: 22px; padding: 0 6px;
+  border-radius: 99px; background: var(--acento); color: #fff;
+  font-size: 13px; font-weight: 700; line-height: 22px; text-align: center;
+}
+
+.contenido{ padding: 16px 16px 72px; max-width: 1180px; margin: 0 auto; }
+
+/* En tableta y computadora el menú se queda, y se puede hacer riel. */
+@media (min-width: 900px){
+  .app{ display: grid; grid-template-columns: var(--menu-ancho) minmax(0, 1fr); }
+  .app.riel{ grid-template-columns: var(--menu-riel) minmax(0, 1fr); }
+  .lateral{ position: sticky; top: 0; height: 100dvh; width: auto; transform: none; }
+  .velo, .solo-telefono{ display: none; }
+  .app.riel .lateral .cabeza .marca span,
+  .app.riel .grupo > summary span,
+  .app.riel .grupo > summary .gira,
+  .app.riel .grupo a .etq,
+  .app.riel .grupo a .obra{ display: none; }
+  .app.riel .grupo > summary, .app.riel .grupo a{ justify-content: center; padding: 0; }
+  .app.riel .lateral .cabeza{ padding: 0; justify-content: center; }
+  .contenido{ padding: 24px 32px 80px; }
+}
+@media (max-width: 899px){ .solo-escritorio{ display: none; } }
+
+/* ── Piezas ────────────────────────────────────────────────────────────── */
+.seccion{ margin: 28px 0 0; }
+.seccion > header{ display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px; }
+.seccion h2{ margin: 0; font-size: 22px; line-height: 1.25; flex: 1; }
+.seccion .ver-todo{ font-size: 16px; color: var(--acento); font-weight: 600; text-decoration: none; min-height: var(--toque); display: inline-flex; align-items: center; }
+.nota{ color: var(--tinta-suave); font-size: 16px; margin: -4px 0 12px; }
+
+.buscador{
+  display: flex; align-items: center; gap: 10px;
+  min-height: 56px; padding: 0 16px; border-radius: 16px;
+  background: var(--superficie); border: 2px solid var(--linea-fuerte);
+  text-decoration: none; color: var(--tinta-suave); font-size: 18px;
+}
+.buscador:focus-within{ border-color: var(--acento); }
+.buscador input{ flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font-size: 18px; color: var(--tinta); min-height: 52px; }
+
+/* Categorías: íconos grandes en una tira que se desliza. */
+.tira{
+  display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x proximity;
+  margin: 0 -16px; padding: 4px 16px 10px; scrollbar-width: none;
+}
+.tira::-webkit-scrollbar{ display: none; }
+.cat{
+  scroll-snap-align: start; flex: none; width: 108px;
+  display: grid; justify-items: center; gap: 8px; text-align: center;
+  text-decoration: none; font-size: 15px; line-height: 1.25; font-weight: 600;
+}
+.cat .circulo{
+  width: 72px; height: 72px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--superficie); border: 1px solid var(--linea); box-shadow: var(--sombra);
+  color: var(--acento);
+}
+.cat .circulo .ico{ width: 30px; height: 30px; stroke-width: 1.6; }
+@media (min-width: 900px){ .tira{ flex-wrap: wrap; overflow: visible; margin: 0; padding: 4px 0; } }
+
+/* Tarjetas de producto: una foto, un nombre, un precio. Nada más. */
+.rejilla{ display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 640px){ .rejilla{ grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1100px){ .rejilla{ grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.carril{ display: grid; grid-auto-flow: column; grid-auto-columns: minmax(168px, 44%); gap: 12px; overflow-x: auto; margin: 0 -16px; padding: 0 16px 8px; scroll-snap-type: x proximity; scrollbar-width: none; }
+.carril::-webkit-scrollbar{ display: none; }
+.carril > *{ scroll-snap-align: start; }
+@media (min-width: 900px){ .carril{ grid-auto-columns: minmax(200px, 23%); margin: 0; padding: 0 0 8px; } }
+
+.tarjeta{
+  display: flex; flex-direction: column; background: var(--superficie);
+  border: 1px solid var(--linea); border-radius: var(--radio); overflow: hidden;
+  text-decoration: none; box-shadow: var(--sombra);
+  transition: transform .15s ease;
+}
+.tarjeta:active{ transform: scale(.985); }
+.tarjeta .foto{ position: relative; aspect-ratio: 1; background: #fff; }
+.tarjeta .foto img{ width: 100%; height: 100%; object-fit: contain; padding: 10px; }
+.tarjeta .cuerpo{ padding: 10px 12px 12px; display: grid; gap: 2px; flex: 1; align-content: start; }
+.tarjeta .m{ font-size: 13px; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .05em; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tarjeta .n{ font-size: 16px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.6em; }
+.precio{ display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; margin-top: 4px; }
+.precio .ahora{ font-size: 21px; font-weight: 750; font-variant-numeric: tabular-nums; }
+.precio .antes{ font-size: 15px; color: var(--tinta-suave); text-decoration: line-through; font-variant-numeric: tabular-nums; }
+.etiqueta{
+  position: absolute; top: 8px; left: 8px;
+  font-size: 13px; font-weight: 700; padding: 3px 9px; border-radius: 99px;
+}
+.etiqueta.oferta{ background: var(--acento); color: #fff; }
+.etiqueta.agotado{ background: var(--tinta); color: #fff; }
+.tarjeta.sin .foto img{ opacity: .45; }
+
+/* Botones */
+.boton{
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: 52px; padding: 0 22px; border-radius: 14px; border: 2px solid transparent;
+  font-size: 18px; font-weight: 650; text-decoration: none;
+}
+.boton.principal{ background: var(--acento); color: #fff; }
+.boton.principal:hover{ background: var(--acento-hondo); }
+.boton.principal:disabled{ background: var(--linea-fuerte); color: var(--tinta-suave); cursor: not-allowed; }
+.boton.secundario{ background: var(--superficie); border-color: var(--linea-fuerte); }
+.boton.secundario:hover{ border-color: var(--tinta-suave); }
+.boton.ancho{ width: 100%; }
+.botones{ display: flex; flex-wrap: wrap; gap: 10px; }
+
+/* Ficha */
+.ficha{ display: grid; gap: 20px; }
+@media (min-width: 900px){ .ficha{ grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; align-items: start; } }
+.ficha .foto-grande{ background: #fff; border: 1px solid var(--linea); border-radius: 18px; aspect-ratio: 1; }
+.ficha .foto-grande img{ width: 100%; height: 100%; object-fit: contain; padding: 18px; }
+.ficha h2{ font-size: 26px; line-height: 1.25; margin: 4px 0 8px; }
+.ficha .precio .ahora{ font-size: 32px; }
+.disponible{ display: inline-flex; align-items: center; gap: 8px; font-weight: 650; margin: 12px 0 18px; }
+.disponible.si{ color: var(--verde); }
+.disponible.no{ color: var(--acento); }
+.disponible::before{ content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+
+/* Carrito */
+.renglon{ display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 12px; padding: 12px; background: var(--superficie); border: 1px solid var(--linea); border-radius: var(--radio); }
+.renglon + .renglon{ margin-top: 10px; }
+.renglon img{ width: 76px; height: 76px; object-fit: contain; background: #fff; border-radius: 10px; }
+.renglon .n{ font-size: 16px; line-height: 1.3; }
+.cantidad{ display: inline-flex; align-items: center; border: 2px solid var(--linea-fuerte); border-radius: 12px; margin-top: 8px; }
+.cantidad button{ width: var(--toque); height: 44px; border: 0; background: transparent; display: grid; place-items: center; }
+.cantidad output{ min-width: 36px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+.resumen{
+  position: sticky; bottom: 0; margin: 20px -16px -72px; padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+  background: var(--superficie); border-top: 1px solid var(--linea);
+  display: grid; gap: 10px;
+}
+.resumen .total{ display: flex; justify-content: space-between; align-items: baseline; font-size: 18px; }
+.resumen .total strong{ font-size: 26px; font-variant-numeric: tabular-nums; }
+
+/* Pantalla en obra, y pantalla que no existe: nunca un callejón. */
+.aviso{
+  max-width: 560px; margin: 8vh auto 0; text-align: center;
+  display: grid; justify-items: center; gap: 14px;
+}
+.aviso .circulo{ width: 88px; height: 88px; border-radius: 50%; display: grid; place-items: center; background: var(--acento-suave); color: var(--acento); }
+.aviso .circulo .ico{ width: 40px; height: 40px; }
+.aviso h2{ margin: 6px 0 0; font-size: 26px; }
+.aviso p{ margin: 0; font-size: 18px; color: var(--tinta-suave); }
+.aviso .bloque{ font-size: 15px; color: var(--laton); font-weight: 650; letter-spacing: .03em; }
+.aviso .botones{ justify-content: center; margin-top: 10px; }
+
+.vacio{ text-align: center; padding: 40px 12px; color: var(--tinta-suave); }
+
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{ animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
