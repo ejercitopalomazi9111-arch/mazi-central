@@ -14,4 +14,5 @@ import '../guerra-de-puercos/motor.js';
 const API = globalThis.MOTOR;
 export const { NIVELES, PV_INICIAL, MANO, DANO_TOPE, COMBOS_POR_JUGADOR, ESPECIALES,
   azar, revolver, armarMazo, nivelDe, sePuedeCombinar,
-  puntuar, porQueNoSeVale, danoEntre, repartir, jugarRonda, jugadasPosibles } = API;
+  puntuar, porQueNoSeVale, danoEntre, repartir, jugarRonda, jugadasPosibles,
+  TAM_MAZO, limpiarCartas, mazoDeColeccion, mazoParejo } = API;
