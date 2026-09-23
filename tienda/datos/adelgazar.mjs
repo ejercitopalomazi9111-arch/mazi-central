@@ -46,6 +46,30 @@ export const CATEGORIAS = [
 const NO_ES_BARBERIA = /u[ñn]as|manicur|pedicur|maquilla|pesta[ñn]|cejas|depila|fundidor|cosm[eé]tic|piel|acetona|removedor|mascota|l[aá]mpara|pulidora|corporal/i;
 export const esDeBarberia = (p) => !NO_ES_BARBERIA.test(p.tipo || '');
 
+/* Los campos que lleva cada categoría. Esto es lo que hace que el segundo giro
+   no toque código: ahí las tazas llevan «capacidad» y aquí nadie se entera.
+   Tipos: texto · opcion (con `opciones`) · si_no · numero. */
+export const PLANTILLAS = {
+  maquinas:   [{ clave: 'tipo', etiqueta: 'Tipo', tipo: 'opcion', opciones: ['Cortadora', 'Recortadora', 'Rasuradora', 'Patillera'] },
+               { clave: 'inalambrica', etiqueta: 'Inalámbrica', tipo: 'si_no' },
+               { clave: 'garantia', etiqueta: 'Garantía', tipo: 'texto' }],
+  corte:      [{ clave: 'material', etiqueta: 'Material', tipo: 'texto' },
+               { clave: 'medida', etiqueta: 'Medida', tipo: 'texto' }],
+  barba:      [{ clave: 'contenido', etiqueta: 'Contenido', tipo: 'texto' },
+               { clave: 'uso', etiqueta: 'Para', tipo: 'opcion', opciones: ['Antes de afeitar', 'Después de afeitar', 'Diario'] }],
+  peinado:    [{ clave: 'fijacion', etiqueta: 'Fijación', tipo: 'opcion', opciones: ['Ligera', 'Media', 'Fuerte', 'Extra fuerte'] },
+               { clave: 'acabado', etiqueta: 'Acabado', tipo: 'opcion', opciones: ['Mate', 'Natural', 'Brillo'] },
+               { clave: 'contenido', etiqueta: 'Contenido', tipo: 'texto' }],
+  cuidado:    [{ clave: 'contenido', etiqueta: 'Contenido', tipo: 'texto' },
+               { clave: 'cabello', etiqueta: 'Tipo de cabello', tipo: 'texto' }],
+  color:      [{ clave: 'tono', etiqueta: 'Tono', tipo: 'texto' },
+               { clave: 'volumen', etiqueta: 'Volumen', tipo: 'texto' },
+               { clave: 'contenido', etiqueta: 'Contenido', tipo: 'texto' }],
+  aparatos:   [{ clave: 'potencia', etiqueta: 'Potencia', tipo: 'texto' },
+               { clave: 'temperatura', etiqueta: 'Temperatura máxima', tipo: 'texto' }],
+  accesorios: [],
+};
+
 export function categoriaDe(p){
   const texto = [p.tipo, p.nombre, ...(p.etiquetas || [])].join(' ');
   return CATEGORIAS.find(c => c.reglas.test(texto)).id;
@@ -71,7 +95,7 @@ if(import.meta.url === `file://${process.argv[1]}`){
     }));
   const salida = {
     aviso: 'MUESTRA. Productos reales de odara.mx para diseñar. No se publica fuera del taller.',
-    categorias: CATEGORIAS.map(({ id, nombre, icono }) => ({ id, nombre, icono })),
+    categorias: CATEGORIAS.map(({ id, nombre, icono }) => ({ id, nombre, icono, plantilla: PLANTILLAS[id] || [] })),
     productos,
   };
   writeFileSync(join(AQUI, '..', 'muestra', 'catalogo.json'), JSON.stringify(salida));
