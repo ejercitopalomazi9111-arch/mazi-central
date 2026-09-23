@@ -74,7 +74,7 @@ if(import.meta.url === `file://${process.argv[1]}`){
     categorias: CATEGORIAS.map(({ id, nombre, icono }) => ({ id, nombre, icono })),
     productos,
   };
-  writeFileSync(join(AQUI, '..', 'catalogo.json'), JSON.stringify(salida));
+  writeFileSync(join(AQUI, '..', 'muestra', 'catalogo.json'), JSON.stringify(salida));
   const cuenta = {};
   for(const p of productos) cuenta[p.c] = (cuenta[p.c] || 0) + 1;
   console.log(productos.length + ' productos');
