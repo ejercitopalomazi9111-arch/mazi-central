@@ -335,6 +335,7 @@ dependemos.
    | una tienda probada + una colección probada + un motor probado es un juego de colección probado | faltaba el PUENTE: `repartir()` armaba siempre el mismo mazo de 110, así que `CARTERA.tengo` **no se leía en ningún lado más que para contarlo** | se compraban sobres de una colección que nunca entraba a la mesa. Por cada cosa que el jugador acumula, preguntar **dónde se lee** |
    | un rival «del mismo nivel» es un rival parejo | dentro de un nivel caben veinte valores: el regalo es el SUELO del D (16-23) y el azar del rival cae en 25 | el mazo de arranque perdió **300 de 300**. No se ve jugando —se siente mala suerte— ni leyendo: salió de simular trescientas y contar |
    | si un archivo generado choca en el rebase, es que los dos lo cambiaron | `todo.json` traía la **hora de armado**, que nadie leía y cambiaba en cada corrida: dos ramas daban bytes distintos con contenido idéntico | el conflicto se pagó **dos veces** —el #112 y la rama de Godines— y «se resolvía» regenerando, así que volvía siempre |
+   | una lista de qué se publica protege de publicar de más | comprueba en UN solo sentido: listada-y-ausente grita «falta y se salta», presente-y-no-listada no la mira nadie | tres enlaces entregados que daban **404** —`lamina`, `luz`, `guias`—, confesados uno por uno en los comentarios del propio `build.mjs` sin que nadie pusiera la compuerta |
 
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 

@@ -53,6 +53,34 @@ const VA = [
   'toydarians',
 ];
 
+/* ── Lo que tiene sitio adentro y NO se publica, dicho a propósito ──────────
+   Tres veces pasó lo mismo, y está confesado tres veces en los comentarios de
+   arriba —`lamina`, `luz`, `guias`—: la carpeta existe en el repo, no está en
+   VA, y el enlace que se le pasa a alguien da 404. La causa es una asimetría
+   de este archivo: si algo está en VA y falta, avisa («falta y se salta»); si
+   existe y no está en VA, nadie dice nada.
+
+   Pero «no está en VA» NO significa «se olvidó», y por eso hay DOS listas en
+   vez de una compuerta que grite. Las tres carpetas de aquí abajo están fuera
+   a propósito: son material de paso hacia el repo del cliente, y el enlace que
+   se entrega sale de allá. Una compuerta que sólo dijera «te falta» se
+   «arreglaría» publicando el sitio a medias de un cliente desde nuestro
+   dominio — que es peor que el 404 que vino a evitar.
+
+   Entonces la regla es: una carpeta con `index.html` adentro está en VA **o**
+   está aquí con su razón. Si no está en ninguna, el armado se para y la
+   nombra. */
+const NO_SE_PUBLICA = {
+  'rodrigo-claro':
+    'material de paso hacia BigTigerMX/rodrigo-cabrera. Sus rutas apuntan a '
+    + 'assets/, que aquí no existe: publicarla serviría una página rota.',
+  'j5data-propuestas':
+    'las dos propuestas de rediseño de J5 Data. Se publican en '
+    + 'BigTigerMX/j5data y leen ../assets/ y ../casos.html, que viven allá.',
+  'j5data-vercel':
+    'la misma pareja de propuestas empaquetada para el despliegue del cliente.',
+};
+
 /* Lo que NO va, aunque esté dentro de algo que sí va. Los .md son notas de
    trabajo… MENOS los créditos: hay arte con licencia CC BY-SA y esa licencia
    obliga a dar crédito. Si el archivo no se publica, estaríamos usando el
@@ -125,6 +153,56 @@ const NO_VA = (ruta) => {
   if(/^\.wrangler$|^node_modules$|^\.git$/.test(f)) return true;
   return false;
 };
+
+/* La compuerta. Va ANTES de tocar `dist/`: si se para, no deja la carpeta a
+   medias, y el mensaje dice qué hacer en vez de sólo qué pasó. */
+const SALTA_AL_BUSCAR = new Set(['.git', 'node_modules', 'dist', '.wrangler']);
+
+/* ¿Hay un `index.html` en algún lado de esta carpeta? Devuelve DÓNDE, no un
+   sí/verdadero: el mensaje de error tiene que poder señalar el archivo, porque
+   «j5data-propuestas tiene un sitio» no se entiende y
+   «j5data-propuestas/propuesta-a/index.html» sí.
+   El fondo está a 4 niveles a propósito: `guias/istqb-ctfl/entrenamiento/` está
+   a 3, así que 4 alcanza para lo que hay y para un nivel más, y no recorre las
+   2,945 carpetas de la bodega buscando algo que no está. */
+async function dondeHaySitio(dir, prof = 1){
+  if(prof > 4) return null;
+  let hijos;
+  try { hijos = await readdir(dir, { withFileTypes: true }); }
+  catch { return null; }
+  for(const h of hijos)
+    if(h.isFile() && h.name === 'index.html') return join(dir, 'index.html');
+  for(const h of hijos){
+    if(!h.isDirectory() || h.name.startsWith('.') || SALTA_AL_BUSCAR.has(h.name)) continue;
+    const donde = await dondeHaySitio(join(dir, h.name), prof + 1);
+    if(donde) return donde;
+  }
+  return null;
+}
+
+const sinDecidir = [];
+for(const d of await readdir(RAIZ, { withFileTypes: true })){
+  if(!d.isDirectory() || d.name.startsWith('.') || SALTA_AL_BUSCAR.has(d.name)) continue;
+  if(VA.includes(d.name)) continue;
+  /* `hasOwnProperty` y no `d.name in NO_SE_PUBLICA`: con `in`, una carpeta
+     llamada `constructor` o `toString` pasaría sola por herencia del objeto. */
+  if(Object.prototype.hasOwnProperty.call(NO_SE_PUBLICA, d.name)) continue;
+  const donde = await dondeHaySitio(join(RAIZ, d.name));
+  if(donde) sinDecidir.push([d.name, donde.slice(RAIZ.length + 1)]);
+}
+
+if(sinDecidir.length){
+  console.error('\n✗ el armado se para: hay sitio que nadie decidió publicar o no.\n');
+  for(const [carpeta, donde] of sinDecidir)
+    console.error('   ' + carpeta + '  →  ' + donde);
+  console.error('\n  Cada una va en UNA de las dos listas de build.mjs:\n'
+    + '  · `VA`            si se publica → queda en mazi-central.palomazi9111.workers.dev/<carpeta>/\n'
+    + '  · `NO_SE_PUBLICA` si no, CON la razón en el mismo renglón\n\n'
+    + '  No se adivina: publicar la carpeta de un cliente que no ha aprobado, o\n'
+    + '  un sitio cuyas rutas viven en otro repo, sirve una página rota desde\n'
+    + '  nuestro dominio. Si no sabes cuál es, se pregunta.\n');
+  process.exit(1);
+}
 
 await rm(DIST, { recursive: true, force: true });
 await mkdir(DIST, { recursive: true });
