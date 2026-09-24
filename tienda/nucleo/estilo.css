@@ -175,7 +175,11 @@ a{ color: inherit; }
 .lateral .cabeza .marca .sello{ width: 36px; height: 36px; border-radius: 50%; background: var(--acento); color: var(--sobre-acento); display: grid; place-items: center; flex: none; }
 .lateral .cabeza .marca .sello .ico{ width: 20px; height: 20px; }
 .lateral nav{ overflow-y: auto; padding: var(--e2) var(--e2) var(--e5); flex: 1; overscroll-behavior: contain; }
-.lateral .pie{ border-top: 1px solid var(--linea); padding: var(--e3) var(--e4); display: grid; gap: var(--e2); }
+.lateral .pie{ border-top: 1px solid var(--linea); padding: var(--e2) var(--e3) calc(var(--e2) + env(safe-area-inset-bottom)); display: grid; gap: var(--e1); }
+.lateral .pie .como{ padding: 0 var(--e2); }
+.botones-pie{ display: flex; gap: var(--e1); }
+.boton-ico[aria-pressed="true"]{ background: var(--acento-suave); color: var(--acento-hondo); }
+.columna{ min-width: 0; }
 
 .grupo{ margin-bottom: var(--e1); }
 .grupo > summary{
@@ -223,6 +227,8 @@ a{ color: inherit; }
   .app.riel .grupo > summary span, .app.riel .grupo > summary .gira,
   .app.riel .grupo a .etq, .app.riel .grupo a .obra, .app.riel .lateral .pie .etq{ display: none; }
   .app.riel .grupo > summary, .app.riel .grupo a{ justify-content: center; padding: 0; }
+  .app.riel .lateral .pie .como{ display: none; }
+  .app.riel .botones-pie{ flex-direction: column; align-items: center; }
   .app.riel .lateral .cabeza{ padding: 0; justify-content: center; }
   .contenido{ padding: var(--e5) var(--e6) var(--e8); }
 }

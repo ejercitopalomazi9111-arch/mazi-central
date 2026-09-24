@@ -21,21 +21,21 @@ import { dirname, join } from 'node:path';
 const AQUI = dirname(new URL(import.meta.url).pathname);
 
 export const CATEGORIAS = [
-  { id:'color',      nombre:'Color y tinte',          icono:'gota',
+  { id:'color',      nombre:'Color y tinte',          icono:'color',
     reglas:/tint|per[oó]xid|aclarant|decolor|oxidant|coloraci|\bcolor\b|matiz|revelador/i },
-  { id:'maquinas',   nombre:'Máquinas y cortadoras',  icono:'maquina',
+  { id:'maquinas',   nombre:'Máquinas y cortadoras',  icono:'maquinas',
     reglas:/m[aá]quina|recortad|cortador|trimmer|clipper|shaver|cuchilla|patillera|rasuradora/i },
-  { id:'barba',      nombre:'Barba y afeitado',       icono:'navaja',
+  { id:'barba',      nombre:'Barba y afeitado',       icono:'barba',
     reglas:/barb[ae](?!r[ií]a y corte)|afeitad|after ?shave|navaja|rasurad|bigote/i },
-  { id:'corte',      nombre:'Tijeras y corte',        icono:'tijera',
+  { id:'corte',      nombre:'Tijeras y corte',        icono:'corte',
     reglas:/tijera|barber[ií]a y corte|peine|capa|brocha|atomizador|cepillo/i },
-  { id:'peinado',    nombre:'Ceras, geles y peinado', icono:'tarro',
+  { id:'peinado',    nombre:'Ceras, geles y peinado', icono:'peinado',
     reglas:/cera|gel|pomad|fijador|spray|laca|mousse|crema para peinar|estiliz|acabado|texturi/i },
-  { id:'cuidado',    nombre:'Shampoo y tratamiento',  icono:'botella',
+  { id:'cuidado',    nombre:'Shampoo y tratamiento',  icono:'cuidado',
     reglas:/shamp|acondicion|tratamient|mascarill|ampolleta|serum|s[eé]rum|aceite|cabello|capilar|keratin|ritual|nutri|repara/i },
-  { id:'aparatos',   nombre:'Secadoras y planchas',   icono:'secadora',
+  { id:'aparatos',   nombre:'Secadoras y planchas',   icono:'aparatos',
     reglas:/secador|plancha|rizador|tenaza|ondulad|cepillo el[eé]ctric|difusor/i },
-  { id:'accesorios', nombre:'Accesorios',             icono:'caja',
+  { id:'accesorios', nombre:'Accesorios',             icono:'accesorios',
     reglas:/./ },
 ];
 

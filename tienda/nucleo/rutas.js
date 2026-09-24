@@ -18,7 +18,7 @@
 
    Campos:
      ruta      el patrón. `:nombre` es un parámetro («/p/:id»).
-     apartado  'cliente' | 'repartidor' | 'admin'
+     apartado  'cliente' | 'repartidor' | 'venta' | 'admin'
      titulo    lo que dice arriba y en el menú
      icono     de iconos.js
      menu      true si sale en el menú lateral. Las de parámetro no salen: se
@@ -31,10 +31,15 @@
      ejemplo   para las de parámetro: un valor real con que probarla
    ═════════════════════════════════════════════════════════════════════════ */
 
+/* `roles`: quién puede entrar. `null` = cualquiera, sin cuenta (es la tienda).
+   En el negocio de muestra, entrar a un apartado cambia solo la sesión al rol
+   de prueba que toca — así Carlos recorre los cuatro sin contraseñas. En un
+   negocio real, el menú sólo enseña lo que tu rol puede abrir. */
 export const APARTADOS = [
-  { id: 'cliente',    nombre: 'Cliente',        icono: 'cliente' },
-  { id: 'repartidor', nombre: 'Repartidor',     icono: 'camion' },
-  { id: 'admin',      nombre: 'Administrativo', icono: 'admin' },
+  { id: 'cliente',    nombre: 'Cliente',        icono: 'cliente', roles: null },
+  { id: 'repartidor', nombre: 'Repartidor',     icono: 'camion',  roles: ['repartidor'] },
+  { id: 'venta',      nombre: 'Punto de venta', icono: 'venta',   roles: ['cajero', 'admin'] },
+  { id: 'admin',      nombre: 'Administrativo', icono: 'admin',   roles: ['admin'] },
 ];
 
 export const RUTAS = [
@@ -78,11 +83,21 @@ export const RUTAS = [
   { ruta: '/r/historial',   apartado: 'repartidor', titulo: 'Historial',  icono: 'historial', menu: true,  pantalla: 'obra',      bloque: 7,
     promesa: 'Las entregas de días pasados.' },
 
+  /* ── Punto de venta ──────────────────────────────────────────────────── */
+  { ruta: '/v',             apartado: 'venta', titulo: 'Cobrar',          icono: 'venta',     menu: true,  pantalla: 'obra',      bloque: 5,
+    promesa: 'Escanear o buscar, cobrar y dar cambio. Hecho para tableta de pie.' },
+  { ruta: '/v/caja',        apartado: 'venta', titulo: 'Caja',            icono: 'efectivo',  menu: true,  pantalla: 'obra',      bloque: 5,
+    promesa: 'Abrir con el fondo, cerrar y cuadrar: lo que debería haber contra lo que hay.' },
+  { ruta: '/v/ventas',      apartado: 'venta', titulo: 'Ventas de hoy',   icono: 'reportes',  menu: true,  pantalla: 'obra',      bloque: 5,
+    promesa: 'Cuánto va, a qué hora se vende más y qué se lleva la gente.' },
+  { ruta: '/v/devolucion',  apartado: 'venta', titulo: 'Devoluciones',    icono: 'deshacer',  menu: true,  pantalla: 'obra',      bloque: 5,
+    promesa: 'Regresar una venta con su ticket: la pieza vuelve al inventario y el dinero sale de caja.' },
+
   /* ── Administrativo ──────────────────────────────────────────────────── */
   { ruta: '/a',             apartado: 'admin', titulo: 'Tablero',         icono: 'tablero',   menu: true,  pantalla: 'obra',      bloque: 6,
     promesa: 'En vivo: ventas de hoy, pedidos en curso, repartidores en el mapa y lo que se acaba.' },
-  { ruta: '/a/venta',       apartado: 'admin', titulo: 'Punto de venta',  icono: 'venta',     menu: true,  pantalla: 'obra',      bloque: 5,
-    promesa: 'Cobrar en el local: escanear, cobrar, dar cambio. Hecho para tableta.' },
+  { ruta: '/a/productos',   apartado: 'admin', titulo: 'Productos',       icono: 'caja',      menu: true,  pantalla: 'obra',      bloque: 3,
+    promesa: 'Dar de alta, cambiar precio y fotos, y sacar el código QR o de barras de cada uno.' },
   { ruta: '/a/inventario',  apartado: 'admin', titulo: 'Inventario',      icono: 'inventario',menu: true,  pantalla: 'obra',      bloque: 3,
     promesa: 'Existencias, y el ajuste rápido para lo que se vendió fuera del sistema.' },
   { ruta: '/a/producto/:id',apartado: 'admin', titulo: 'Editar producto', icono: 'caja',      menu: false, pantalla: 'obra',      bloque: 3,
