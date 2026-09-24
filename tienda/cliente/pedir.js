@@ -12,7 +12,7 @@
 import { enlace } from '../nucleo/rutas.js';
 import { icono } from '../nucleo/iconos.js';
 import { esc, pesos, plural, estado, hoja, fecha } from '../nucleo/piezas.js';
-import { negocio, catalogo, carrito, miFicha, pedirTienda, misPedidos, cambiarEstado } from '../nucleo/datos.js';
+import { negocio, catalogo, carrito, miFicha, pedirTienda, misPedidos, cambiarEstado, totalConEnvio } from '../nucleo/datos.js';
 import { negocioPedido } from '../config.js';
 import { aCentavos, aPesos, sugerirPagos } from '../nucleo/dinero.js';
 
@@ -259,7 +259,7 @@ async function pedidos(){
     const piezas = p.renglones.reduce((t, r) => t + r.cantidad, 0);
     return `<li class="tarjeta pedido-cliente">
       <header><div><h2>Pedido #${p.folio}</h2><p class="nota">${esc(fecha(p.creado))} · ${plural(piezas, 'pieza', 'piezas')}</p></div>
-        <strong class="total-pedido">${pesos(p.total + Number(p.direccion?.envio || 0))}</strong></header>
+        <strong class="total-pedido">${pesos(totalConEnvio(p))}</strong></header>
       ${progreso(p)}
       <p class="dice">${esc(ESTADOS[p.estado].dice)}${p.estado === 'cancelado' || p.estado === 'no_entregado' ? (p.eventos_pedido?.slice(-1)[0]?.por_que ? ` Motivo: ${esc(p.eventos_pedido.slice(-1)[0].por_que)}.` : '') : ''}</p>
       <div class="botones">
@@ -289,11 +289,11 @@ async function pedidos(){
           if(puestos) ir('/carrito');
         }
         if(b.dataset.detalle){
-          const envio = Number(p.direccion?.envio || 0);
+          const envio = Number(p.envio) || Number(p.direccion?.envio || 0);
           hoja({ titulo: `Pedido #${p.folio}`, cuerpo: `
             ${progreso(p)}
             <ul class="resumen-lista">${p.renglones.map((r) => `<li><span>${r.cantidad} × ${esc(r.nombre)}</span><b>${pesos(r.importe)}</b></li>`).join('')}</ul>
-            <dl class="cuentas">${envio ? `<dt>Envío</dt><dd>${pesos(envio)}</dd>` : ''}<dt class="total">Total</dt><dd class="total">${pesos(p.total + envio)}</dd></dl>
+            <dl class="cuentas">${envio ? `<dt>Envío</dt><dd>${pesos(envio)}</dd>` : ''}<dt class="total">Total</dt><dd class="total">${pesos(totalConEnvio(p))}</dd></dl>
             <p class="nota">${p.direccion?.recoge ? 'Pasas a recoger.' : p.direccion ? `A: ${esc([p.direccion.calle, p.direccion.colonia].filter(Boolean).join(', '))}` : ''}</p>
             <p class="nota">${esc({ efectivo: 'Efectivo al recibir', tarjeta: 'Tarjeta al recibir', transferencia: 'Transferencia' }[p.direccion?.pago?.forma] || '')}${p.pagado ? ' · pagado' : ''}</p>
             <h3>Historia</h3>

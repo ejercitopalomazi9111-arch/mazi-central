@@ -522,6 +522,9 @@ export async function pedirTienda({ renglones, nombre, telefono, direccion, mome
     p_direccion: direccion ? { ...direccion, pago } : { recoge: true, pago },
     p_notas: notas || '',
   });
+  // El envío lo calcula el servidor (0010). Si esa función aún no existe en
+  // la base, el pedido queda con el envío anotado en la dirección.
+  try{ v.envio = Number(await llamar('poner_envio', { p_pedido: v.id })); }catch(e){ v.envio = null; }
   // La dirección se guarda en su ficha para la próxima (RLS: cli_editar, la suya).
   if(direccion){
     const f = await miFicha();
@@ -535,7 +538,7 @@ export async function pedirTienda({ renglones, nombre, telefono, direccion, mome
 export async function misPedidos(){
   const f = await miFicha(); if(!f) return [];
   const r = await db.from('pedidos')
-    .select('id, folio, estado, total, forma_pago, momento_pago, pagado, direccion, notas, creado, renglones(producto_id, nombre, precio, cantidad, importe), eventos_pedido(a, por_que, cuando)')
+    .select('id, folio, estado, envio, total, forma_pago, momento_pago, pagado, direccion, notas, creado, renglones(producto_id, nombre, precio, cantidad, importe), eventos_pedido(a, por_que, cuando)')
     .eq('cliente_id', f.id).order('creado', { ascending: false }).limit(50);
   if(r.error) throw new ErrorDeDatos('No se pudieron leer tus pedidos', r.error);
   return r.data.map((p) => ({ ...p, total: Number(p.total) }));
@@ -547,3 +550,43 @@ export async function cambiarEstado(pedido, a, porQue){
   if(a === 'cancelado') olvidarCatalogo();
   return r;
 }
+
+/* ══ PEDIDOS DEL NEGOCIO Y TABLERO (Bloque 6) ═══════════════════════════════ */
+const SELECT_PEDIDO = 'id, folio, canal, estado, subtotal, envio, total, forma_pago, momento_pago, pagado, direccion, notas, creado, actualizado, repartidor_id, '
+  + 'cliente:clientes(nombre, telefono), repartidor:perfiles!pedidos_repartidor_id_fkey(nombre), renglones(producto_id, nombre, precio, cantidad, importe)';
+
+export async function pedidosNegocio({ desde, estados } = {}){
+  const n = await negocio();
+  let q = db.from('pedidos').select(SELECT_PEDIDO).eq('negocio_id', n.id).neq('canal', 'pos');
+  if(desde) q = q.gte('creado', desde.toISOString());
+  if(estados?.length) q = q.in('estado', estados);
+  const r = await q.order('creado', { ascending: false }).limit(300);
+  if(r.error) throw new ErrorDeDatos('No se pudieron leer los pedidos', r.error);
+  return r.data.map((p) => ({ ...p, total: Number(p.total) }));
+}
+
+export async function repartidores(){
+  const n = await negocio();
+  const r = await db.from('perfiles').select('id, nombre, activo').eq('negocio_id', n.id).eq('rol', 'repartidor').eq('activo', true).order('nombre');
+  if(r.error) throw new ErrorDeDatos('No se pudo leer a los repartidores', r.error);
+  return r.data;
+}
+export const asignarRepartidor = (pedido, repartidor) => llamar('asignar_repartidor', { p_pedido: pedido, p_repartidor: repartidor });
+
+/* Tiempo real: avisa cuando cambia un pedido del negocio. Si el canal no
+   conecta (tabla fuera de la publicación, red caída), la pantalla sigue
+   funcionando con su propio reloj: `alCambiar` se llama igual cada 30 s. */
+export async function escucharPedidos(alCambiar){
+  const n = await negocio();
+  let vivo = false;
+  const canal = db.channel('pedidos-' + n.id)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos', filter: `negocio_id=eq.${n.id}` }, (e) => alCambiar(e))
+    .subscribe((estado) => { vivo = estado === 'SUBSCRIBED'; });
+  const reloj = setInterval(() => { if(document.visibilityState === 'visible') alCambiar(null); }, 30000);
+  return { vivo: () => vivo, cerrar(){ clearInterval(reloj); db.removeChannel(canal); } };
+}
+export const cobrarEntrega = (pedido, metodo, recibido) => llamar('cobrar_entrega', { p_pedido: pedido, p_metodo: metodo, p_recibido: recibido ?? null });
+
+/* Con 0010 aplicada, `envio` ya va dentro de `total`. Sin ella, el envío se
+   quedó anotado en la dirección y hay que sumarlo para cobrar. */
+export const totalConEnvio = (p) => Number(p.envio) > 0 ? Number(p.total) : Number(p.total) + Number(p.direccion?.envio || 0);
