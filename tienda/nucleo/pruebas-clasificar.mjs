@@ -59,6 +59,8 @@ const compuertas = (m) => ({
 console.log(`\n· ${todos.length} productos · aprende de ${aprende.length} · adivina ${prueba.length}`);
 
 console.log('\n· Palabras');
+ok('«peine» y «peines» son la misma palabra, y «colores» es «color»', palabras('peine peines').every((w) => w === palabras('peine')[0]) && palabras('colores')[0] === palabras('color')[0],
+   JSON.stringify(palabras('peine peines colores color')));
 ok('quita acentos, plurales y relleno', JSON.stringify(palabras('Tijeras de Acero 6.5" para Barbería 500 ml')) === JSON.stringify(['tijera', 'acero', 'barberia']),
    JSON.stringify(palabras('Tijeras de Acero 6.5" para Barbería 500 ml')));
 
@@ -75,6 +77,17 @@ console.log('\n· Con el «tipo» del proveedor también');
 const modelo2 = entrenar(aprende.map((p) => ({ texto: `${p.nombre} ${p.marca} ${p.tipo}`, categoria: p.categoria })), cats);
 const m2 = medir((t) => predecir(modelo2, t), (p) => `${p.nombre} ${p.marca} ${p.tipo}`);
 ok(`acierta ${pct(m2.acierto)}, y no peor que sin él`, m2.acierto >= m1.acierto - 0.01);
+
+console.log('\n· Una marca que nunca había visto no mueve la respuesta');
+{
+  let igual = 0;
+  for(const p of prueba){
+    const a = predecir(modelo, `${p.nombre}`).orden[0]?.categoria;
+    const b = predecir(modelo, `${p.nombre} Marca Nuevecita Zqx`).orden[0]?.categoria;
+    if(a === b) igual++;
+  }
+  ok(`misma categoría con y sin la marca desconocida (${igual} de ${prueba.length})`, igual === prueba.length);
+}
 
 console.log('\n· Negocio vacío: sólo los nombres de las categorías');
 const vacio = entrenar([], cats);

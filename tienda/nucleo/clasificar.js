@@ -24,13 +24,16 @@ const VACIAS = new Set(('de del la las el los y e o u en con sin para por a al x
 export const sinAcentos = (t) => String(t ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
 /* Palabras con peso: sin acentos, sin números sueltos, sin «de/para/ml», y con
-   un plural ingenuo quitado («tijeras» y «tijera» cuentan igual). */
+   el plural quitado («tijeras» y «tijera» cuentan igual). */
 export function palabras(texto){
   const salida = [];
   for(let w of sinAcentos(texto).split(/[^a-z0-9ñ]+/)){
     if(w.length < 3 || VACIAS.has(w) || /^\d+$/.test(w)) continue;
-    if(w.length > 4 && w.endsWith('es') && !w.endsWith('ces')) w = w.slice(0, -2);
-    else if(w.length > 3 && w.endsWith('s')) w = w.slice(0, -1);
+    // Singular y plural tienen que caer en lo mismo: se quita la «s» y luego
+    // una «e» final. «peines»→«pein» y «peine»→«pein»; «colores»→«color».
+    // Antes «peines» daba «pein» y «peine» se quedaba igual: dos palabras.
+    if(w.length > 3 && w.endsWith('s')) w = w.slice(0, -1);
+    if(w.length > 4 && w.endsWith('e')) w = w.slice(0, -1);
     salida.push(w);
   }
   return salida;
@@ -59,12 +62,16 @@ export function entrenar(ejemplos, categorias = []){
     sumar(e.categoria, ws);
   }
   const docs = [...cats.values()].reduce((t, c) => t + c.docs, 0);
-  return { cats, vocab: vocab.size, docs };
+  return { cats, vocab: vocab.size, conocidas: vocab, docs };
 }
 
 /* → [{ categoria, prob }] de la más probable a la menos, y la confianza. */
 export function predecir(modelo, texto){
-  const ws = [...new Set(palabras(texto))];
+  // Sólo cuentan las palabras que el catálogo ya vio. Una palabra nueva (una
+  // marca que nunca había entrado) NO es evidencia: con el suavizado, empujaba
+  // todo hacia la categoría más chica — el importador mandó 9 de 11 productos
+  // nuevos a «Barba y afeitado» porque todos traían «Marca Prueba Importador».
+  const ws = [...new Set(palabras(texto))].filter((w) => modelo.conocidas.has(w));
   const V = Math.max(1, modelo.vocab);
   const puntos = [];
   for(const [id, c] of modelo.cats){

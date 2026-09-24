@@ -1,5 +1,6 @@
 -- ════════════════════════════════════════════════════════════════════════
 -- 0009 · IMPORTAR UN CATÁLOGO, Y PODER DESHACERLO
+-- ⚠️ ESTADO: escrita, SIN APLICAR (ver tienda/PENDIENTES.md). La app importa sin ella.
 -- ────────────────────────────────────────────────────────────────────────
 -- Bloque 4. El dueño sube su Excel y la app lo convierte en productos. Tres
 -- cosas que no pueden ser inserts sueltos desde el teléfono:

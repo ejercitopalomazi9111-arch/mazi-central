@@ -18,6 +18,7 @@ ok('«Descripción» sin columna de nombre se toma como el nombre', m.nombre ===
 ok('«P. Público» es el precio', m.precio === 3, JSON.stringify(m));
 ok('«Clave» es el SKU', m.sku === 0, JSON.stringify(m));
 ok('«Marca» es la marca', m.marca === 2);
+ok('«Exist.» son las existencias (así venía en la prueba de punta a punta y no se leía)', m.existencias === 4, JSON.stringify(m));
 const m2 = mapear(['Producto', 'Descripción', 'Precio venta', 'Precio lista', 'Código de barras', 'Stock', 'Categoría']);
 ok('con «Producto» y «Descripción», cada una va a lo suyo', m2.nombre === 0 && m2.descripcion === 1, JSON.stringify(m2));
 ok('«Precio lista» es el precio de antes, no el precio', m2.precio === 2 && m2.precio_antes === 3, JSON.stringify(m2));

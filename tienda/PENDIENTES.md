@@ -17,3 +17,10 @@ qué hace la app **mientras tanto**, para que nada se detenga por él.
 ## Preguntas que surgieron construyendo
 
 _(se agregan aquí conforme salgan; ninguna detiene el trabajo)_
+
+- **La migración 0009 está escrita y SIN aplicar.** Guardaría en el servidor el historial de
+  importaciones y el archivo original. Al aplicarla se quedó esperando un permiso que nadie
+  puede dar desde el teléfono. **La app no depende de ella:** el importador guarda con lo
+  que ya está permitido, en tandas que entran completas o no entran, y deshace igual. Lo
+  único que se pierde sin ella: el historial de importaciones vive en el teléfono donde se
+  importó, no en todos.

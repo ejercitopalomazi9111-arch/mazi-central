@@ -25,7 +25,7 @@ export const CAMPOS = [
     nombres: /(codigo de barras|cod\.? ?barras|^ean|^upc|barcode|^cb$|^gtin)/ },
   { id: 'sku', etiqueta: 'SKU o clave', nombres: /^(sku|clave|cve|codigo|cod|codigo interno|id|no\.? ?parte|numero de parte|modelo|referencia|ref)\b/ },
   { id: 'existencias', etiqueta: 'Existencias',
-    nombres: /^(existencia|existencias|stock|inventario|cantidad|piezas|pzas|disponible|disponibles|unidades|cant)\b/ },
+    nombres: /^(exist(encias?)?|exis|stock|inventario|inv|cantidad|piezas|pzas|pz|disponibles?|unidades|cant|qty)\b/ },
   { id: 'descripcion', etiqueta: 'Descripción', nombres: /^(descripcion|detalle|detalles|caracteristicas|notas)\b/ },
 ];
 

@@ -212,6 +212,46 @@
       "vecinas": [
         "el-parametro-parecido-que-devuelve-200-y-otra-cosa"
       ]
+    },
+    {
+      "id": "el-clasificador-aprende-los-errores-de-la-regla",
+      "titulo": "El importador mandaba las tijeras a «Barba» porque así se lo enseñó el catálogo",
+      "gravedad": "media",
+      "sintoma": "Una «Tijera de corte» nueva caía en Barba y afeitado con 82 % de confianza, sin marcarla para revisar.",
+      "causa": "El clasificador aprende del catálogo que ya existe, y el catálogo de muestra lo había acomodado una regla con un error: /barb[ae]/ atrapaba «barbero», así que toda «Tijera para barbero» quedó en Barba. El clasificador copió el error con toda seguridad.",
+      "porque": "Un modelo que aprende de ejemplos hereda sus errores, y con confianza alta: para él son la verdad. La prueba de acierto tampoco lo veía, porque medía contra las mismas etiquetas equivocadas.",
+      "arreglo": "Regla de barba con borde de palabra (\\bbarbas?\\b|afeit…), 14 productos re-acomodados en la base, y la prueba corrige a mano las etiquetas que la regla tenía mal (LA_REGLA_SE_EQUIVOCABA en pruebas-clasificar.mjs).",
+      "comoCazarlo": "Probar el importador con nombres INVENTADOS, no sacados del catálogo: «Tijera de corte», «Shampoo anticaspa». Los del catálogo aciertan porque son los mismos datos. Así salió.",
+      "consejo": "Cuando algo aprende de tus datos, un error suyo es primero un error de los datos. Busca ahí antes de tocar el modelo.",
+      "senales": [
+        "el importador pone mal la categoría",
+        "las tijeras salen en barba",
+        "clasificador seguro y equivocado",
+        "aprende mal del catálogo"
+      ],
+      "salioDe": "el Bloque 4 de la tienda, 24 de septiembre de 2026.",
+      "vecinas": []
+    },
+    {
+      "id": "la-palabra-nueva-empuja-a-la-categoria-chica",
+      "titulo": "Una marca desconocida mandaba 9 de 11 productos nuevos a la misma categoría",
+      "gravedad": "media",
+      "sintoma": "Al importar productos de una marca que no estaba en el catálogo, casi todos caían en la categoría con menos productos, sin importar el nombre.",
+      "causa": "Bayes ingenuo con suavizado: una palabra nunca vista vale (0+α)/(total+αV) en cada categoría, y ese valor es MAYOR donde el total es chico. Tres palabras de la marca nueva sumaban más que el nombre del producto.",
+      "porque": "El suavizado existe para no dividir entre cero, pero convierte la ausencia en evidencia a favor de las categorías pequeñas.",
+      "arreglo": "En predecir(), sólo cuentan las palabras que el catálogo ya vio (modelo.conocidas). Prueba: agregar «Marca Nuevecita Zqx» a los 102 casos no cambia ni una respuesta.",
+      "comoCazarlo": "Repetir la prueba con una marca inventada pegada al nombre: si la respuesta cambia, las palabras desconocidas están votando.",
+      "consejo": "Lo que no sabes no es evidencia. Quítalo antes de sumar.",
+      "senales": [
+        "todo cae en la misma categoría",
+        "marca nueva cambia la categoría",
+        "naive bayes palabras desconocidas",
+        "suavizado laplace"
+      ],
+      "salioDe": "el Bloque 4 de la tienda, 24 de septiembre de 2026.",
+      "vecinas": [
+        "el-clasificador-aprende-los-errores-de-la-regla"
+      ]
     }
   ]
 }
