@@ -18,3 +18,14 @@ Los productos de `catalogo.json` son de **Odara Professional** (odara.mx), tomad
 de su catálogo público para diseñar con datos reales. Nombres, marcas y fotos son
 de sus dueños. **Es muestra**: no se publica fuera del taller y se reemplaza con el
 catálogo del cliente.
+
+## Librerías en `nucleo/vendor/`
+
+Copiadas tal cual, sin tocar, con su licencia al lado. No hay CDN: la app abre
+aunque ese servicio desaparezca (regla §2).
+
+| Archivo | Qué hace | Licencia |
+|---|---|---|
+| `supabase-2.57.4.js` | cliente de la base | MIT · `LICENCIA-supabase-js.txt` |
+| `qrcode-generator-2.0.4.mjs` | los QR de las etiquetas | MIT, Kazuhiko Arase · `LICENCIA-qrcode-generator.txt` |
+| `jsbarcode-3.12.3.min.js` | los códigos de barras de las etiquetas | MIT, Johan Lindell · `LICENCIA-jsbarcode.txt` |

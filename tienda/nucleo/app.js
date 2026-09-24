@@ -10,8 +10,9 @@ import { icono } from './iconos.js';
 import { esc, pesos, plural, inicioDe, obra, noexiste, sinPermiso, fallo, cargando } from './piezas.js';
 import { negocio, yo, verComo, carrito, catalogo } from './datos.js';
 import { PANTALLAS as CLIENTE } from '../cliente/pantallas.js';
+import { PANTALLAS as ADMIN } from '../admin/pantallas.js';
 
-const PANTALLAS = { ...CLIENTE, obra, noexiste };
+const PANTALLAS = { ...CLIENTE, ...ADMIN, obra, noexiste };
 
 const $app = document.getElementById('app');
 const $avisos = document.getElementById('avisos');

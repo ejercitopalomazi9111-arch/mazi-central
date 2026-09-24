@@ -182,3 +182,99 @@ export async function llamar(funcion, args){
   }
   return data;
 }
+
+/* ══ ADMINISTRACIÓN DEL CATÁLOGO (Bloque 3) ═════════════════════════════════
+   Lo que escribe el admin. RLS (0002) ya exige que sea admin de ESTE negocio:
+   aquí no se revisa rol, se deja que la base diga que no y se traduce el error.
+   Inventario NUNCA se escribe directo: pasa por ajustar_inventario / poner_minimo. */
+
+function revisa({ data, error }, que){
+  if(error) throw new ErrorDeDatos(que, error);
+  return data;
+}
+
+/* Todo el catálogo, activos y no activos, con existencias crudas. */
+export async function catalogoAdmin(){
+  const n = await negocio();
+  const [cats, prods, exist] = await Promise.all([
+    todo(() => db.from('categorias').select('*').eq('negocio_id', n.id).order('orden')),
+    todo(() => db.from('productos').select('*').eq('negocio_id', n.id).order('nombre')),
+    todo(() => db.from('existencias').select('producto_id, cantidad, apartado, minimo, actualizado').eq('negocio_id', n.id)),
+  ]);
+  const hay = new Map(exist.map((e) => [e.producto_id, e]));
+  const productos = prods.map((p) => ({ ...p, precio: Number(p.precio), precio_antes: p.precio_antes == null ? null : Number(p.precio_antes),
+    existencia: hay.get(p.id) || { cantidad: 0, apartado: 0, minimo: 0 } }));
+  return { negocio: n, categorias: cats, productos, porId: new Map(productos.map((p) => [p.id, p])) };
+}
+
+/* Alta o cambio. Sólo se mandan los campos que el formulario conoce. */
+const CAMPOS_PRODUCTO = ['nombre', 'marca', 'descripcion', 'precio', 'precio_antes', 'sku', 'codigo_barras', 'categoria_id', 'campos', 'fotos', 'activo'];
+export async function guardarProducto(id, datos){
+  const n = await negocio();
+  const fila = Object.fromEntries(CAMPOS_PRODUCTO.filter((k) => k in datos).map((k) => [k, datos[k]]));
+  const r = id
+    ? await db.from('productos').update(fila).eq('id', id).select('id').single()
+    : await db.from('productos').insert({ ...fila, negocio_id: n.id }).select('id').single();
+  olvidarCatalogo();
+  if(r.error?.code === '23505') throw new ErrorDeDatos('Ese código de barras ya lo tiene otro producto.', r.error);
+  return revisa(r, 'No se pudo guardar el producto').id;
+}
+
+export async function ajustarInventario(id, delta, nota){
+  const r = await llamar('ajustar_inventario', { p_producto: id, p_delta: delta, p_nota: nota });
+  olvidarCatalogo(); return r;
+}
+export async function contarInventario(id, hay, nota){
+  const r = await llamar('contar_inventario', { p_producto: id, p_hay: hay, p_nota: nota });
+  olvidarCatalogo(); return r;
+}
+export async function ponerMinimo(id, minimo){
+  const r = await llamar('poner_minimo', { p_producto: id, p_minimo: minimo });
+  olvidarCatalogo(); return r;
+}
+
+export async function movimientosDe(id, cuantos = 30){
+  return revisa(await db.from('movimientos').select('delta, motivo, canal, nota, cuando, quien:perfiles(nombre)')
+    .eq('producto_id', id).order('cuando', { ascending: false }).limit(cuantos), 'No se pudo leer el historial');
+}
+
+export async function guardarCategoria(id, datos){
+  const n = await negocio();
+  const r = id
+    ? await db.from('categorias').update(datos).eq('id', id).select('id').single()
+    : await db.from('categorias').insert({ ...datos, negocio_id: n.id }).select('id').single();
+  olvidarCatalogo();
+  if(r.error?.code === '23505') throw new ErrorDeDatos('Ya hay una categoría con ese nombre.', r.error);
+  return revisa(r, 'No se pudo guardar la categoría').id;
+}
+
+/* Sólo se borra una categoría vacía; con productos adentro, se oculta. La base
+   pondría categoria_id en null y dejaría productos huérfanos sin avisar. */
+export async function borrarCategoria(id){
+  const { count, error } = await db.from('productos').select('id', { count: 'exact', head: true }).eq('categoria_id', id);
+  if(error) throw new ErrorDeDatos('No se pudo revisar la categoría', error);
+  if(count) throw new ErrorDeDatos(`Tiene ${count} productos: muévelos o mejor ocúltala.`, { code: 'con_productos' });
+  revisa(await db.from('categorias').delete().eq('id', id), 'No se pudo borrar la categoría');
+  olvidarCatalogo();
+}
+
+export async function guardarNegocio(cambios){
+  const n = await negocio();
+  const r = await db.from('negocios').update(cambios).eq('id', n.id).select('id, slug, nombre, giro, marca, ajustes').single();
+  _negocio = Promise.resolve(revisa(r, 'No se pudieron guardar los ajustes'));
+  return _negocio;
+}
+
+/* Fotos: se reducen EN EL TELÉFONO antes de subir. Una foto de cámara pesa
+   4 MB; la tienda la enseña a 480 px. Se sube a 1200 px en WebP (≈150 KB). */
+export async function subirFoto(archivo){
+  const n = await negocio();
+  const img = await createImageBitmap(archivo);
+  const lado = Math.min(1, 1200 / Math.max(img.width, img.height));
+  const lienzo = new OffscreenCanvas(Math.round(img.width * lado), Math.round(img.height * lado));
+  lienzo.getContext('2d').drawImage(img, 0, 0, lienzo.width, lienzo.height);
+  const blob = await lienzo.convertToBlob({ type: 'image/webp', quality: 0.85 });
+  const ruta = `${n.id}/${crypto.randomUUID()}.webp`;
+  revisa(await db.storage.from('fotos').upload(ruta, blob, { contentType: 'image/webp', cacheControl: '31536000' }), 'No se pudo subir la foto');
+  return db.storage.from('fotos').getPublicUrl(ruta).data.publicUrl;
+}

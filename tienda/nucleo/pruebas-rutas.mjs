@@ -130,7 +130,7 @@ if(process.argv.includes('--frio')) fin();
 
 /* ── En un navegador de verdad ─────────────────────────────────────────── */
 const { chromium, request } = await import('/opt/node22/lib/node_modules/playwright/index.mjs');
-const TIPOS = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.woff2': 'font/woff2', '.png': 'image/png', '.svg': 'image/svg+xml' };
+const TIPOS = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.woff2': 'font/woff2', '.png': 'image/png', '.svg': 'image/svg+xml' };
 const servidor = createServer((req, res) => {
   const ruta = join(TIENDA, decodeURIComponent(req.url.split('?')[0]).replace(/^\/+/, '') || 'index.html');
   if(!ruta.startsWith(TIENDA)){ res.writeHead(403).end(); return; }

@@ -79,3 +79,45 @@ export function cargando(){
     <div class="rejilla" style="margin-top:32px">${'<div class="esqueleto" style="aspect-ratio:3/4"></div>'.repeat(4)}</div>
   </div>`;
 }
+
+/* ── Hoja: sube desde abajo en teléfono, diálogo al centro en pantalla ancha.
+   Devuelve el <dialog> ya abierto; al cerrarse se quita solo del documento.
+   Esc y el velo la cierran (lo hace <dialog> por sí mismo, más el clic afuera). */
+export function hoja({ titulo, cuerpo, clase = '' }){
+  const d = document.createElement('dialog');
+  d.className = 'hoja ' + clase;
+  d.setAttribute('aria-label', titulo);
+  d.innerHTML = `<div class="hoja-cabeza"><h2>${esc(titulo)}</h2>
+      <button class="boton-ico" data-cerrar-hoja aria-label="Cerrar">${icono('cerrar')}</button></div>
+    <div class="hoja-cuerpo">${cuerpo}</div>`;
+  d.addEventListener('click', (e) => {
+    if(e.target === d || e.target.closest('[data-cerrar-hoja]')) d.close();
+  });
+  d.addEventListener('close', () => d.remove());
+  document.body.append(d);
+  d.showModal();
+  return d;
+}
+
+/* Números como los escribe la gente: «$1,250.50», «1250», « 80 ». */
+export function numero(texto){
+  const t = String(texto ?? '').replace(/[$\s,]/g, '');
+  if(t === '') return null;
+  const n = Number(t);
+  return Number.isFinite(n) ? n : NaN;
+}
+
+const FECHA = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+export const fecha = (d) => FECHA.format(new Date(d));
+
+/* Descargar una tabla como CSV que Excel abre bien: BOM para los acentos y
+   punto y coma NO — Excel en español de México lee coma. */
+export function descargarCSV(nombre, filas){
+  const celda = (v) => { const s = String(v ?? ''); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  const texto = '﻿' + filas.map((f) => f.map(celda).join(',')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([texto], { type: 'text/csv;charset=utf-8' }));
+  a.download = nombre;
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
