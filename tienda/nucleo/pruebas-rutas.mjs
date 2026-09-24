@@ -153,7 +153,8 @@ const direccion = (r) => r.ruta.replace(/:(\w+)/g, () => (r.ejemplo === '@primer
 
 for(const [ancho, alto] of [[390, 844], [1280, 800]]){
   console.log(`\n· En un navegador a ${ancho} × ${alto}`);
-  const ctx = await navegador.newContext({ viewport: { width: ancho, height: alto } });
+  // Sin trabajador de fondo: aquí se prueban las pantallas, y el modo sin red va en pruebas-sin-red.mjs.
+  const ctx = await navegador.newContext({ viewport: { width: ancho, height: alto }, serviceWorkers: 'block' });
   // El websocket del tiempo real no pasa por ctx.route y el Chromium de aquí no
   // confía en el proxy: se contesta con un socket mudo. La pantalla lo ve
   // «conectando» y se queda con su reloj de 30 s, que es justo lo que haría

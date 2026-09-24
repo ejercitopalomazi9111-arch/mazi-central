@@ -16,7 +16,7 @@ import { icono } from '../nucleo/iconos.js';
 import { esc, pesos, quitaAcentos, plural, estado, hoja, numero, fecha, descargarCSV } from '../nucleo/piezas.js';
 import {
   negocio, catalogo, olvidarCatalogo, miCaja, abrirCaja, cerrarCaja, cobrosDeCaja,
-  venderMostrador, ventasDesde, cajasCerradas, yo, efectivoDevueltoEnCaja,
+  venderMostrador, ventasDesde, cajasCerradas, yo, efectivoDevueltoEnCaja, filaMostrador, subirVentasPendientes,
 } from '../nucleo/datos.js';
 import { negocioPedido } from '../config.js';
 import { aCentavos, aPesos, sugerirPagos, desglose, contar, BILLETES, MONEDAS } from '../nucleo/dinero.js';
@@ -321,18 +321,19 @@ async function cobrar(){
           const vendidos = renglones.map((x) => ({ ...x, nombre: porId.get(x.id).n, precio: porId.get(x.id).p }));
           $ok.setAttribute('aria-busy', 'true'); $ok.disabled = true;
           try{
-            const v = await venderMostrador({ renglones, caja: caja.id, cobro: { metodo, recibido: aPesos(r) } });
+            const v = await venderMostrador({ renglones: vendidos, caja: caja.id, cobro: { metodo, recibido: aPesos(r) } });
             // Lo vendido sale de lo que se ve, sin esperar a recargar.
             vendidos.forEach((x) => { const p = porId.get(x.id); p.q -= x.cantidad; p.x = p.q <= 0; });
             renglones = []; pintar();
             const venta = { folio: v.folio, total: Number(v.total), metodo, recibido: aPesos(r), cambio: v.cambio == null ? 0 : Number(v.cambio),
               renglones: vendidos.map((x) => ({ ...x, importe: x.precio * x.cantidad })), cuando: Date.now() };
             const c = aCentavos(venta.cambio), dz = desglose(c);
-            d.querySelector('.hoja-cabeza h2').textContent = `Venta #${v.folio}`;
+            d.querySelector('.hoja-cabeza h2').textContent = v.pendiente ? `Venta ${v.folio} · sin red` : `Venta #${v.folio}`;
             d.querySelector('.hoja-cuerpo').innerHTML = `<div class="venta-hecha">
               <span class="circulo">${icono('listo')}</span>
               <p class="cambio-grande"><span>${c ? 'Cambio' : 'Cobrado'}</span><strong>${c ? pesosC(c) : pesos(venta.total)}</strong></p>
               ${c ? `<p class="nota">Da: ${dz.piezas.map((x) => `${x.piezas} de ${pesosC(x.valor)}`).join(', ')}${dz.resto ? ` y ${dz.resto} centavos` : ''}</p>` : ''}
+              ${v.pendiente ? `<p class="aviso-linea">${icono('info')}<span>No hay internet: la venta quedó guardada en este teléfono y se sube sola en cuanto vuelva la red. No cierres sesión ni borres los datos del navegador mientras tanto.</span></p>` : ''}
               <div class="botones">
                 <button class="boton secundario" data-imprimir>${icono('imprimir')}Imprimir ticket</button>
                 <button class="boton principal" data-cerrar-hoja>${icono('agregar')}Nueva venta</button></div></div>`;
@@ -381,7 +382,26 @@ async function cajaPantalla(){
         <span class="chip ${dif === 0 ? 'bien' : dif > 0 ? 'ojo' : 'mal'}">${dif === 0 ? 'Cuadró' : dif > 0 ? `+${pesosC(dif)}` : `−${pesosC(-dif)}`}</span></li>`;
     }).join('')}</ul></section>` : '';
 
-  if(!caja) return { html: abrirCajaHTML() + histHTML, alMontar($c, ctx){ montarAbrirCaja($c, { ...ctx, alAbrir: ctx.recargar }); } };
+  // Lo vendido sin red que todavía no llega al servidor (nucleo/fila.js).
+  const pend = filaMostrador.pendientes(), rech = filaMostrador.rechazadas();
+  const filaHTML = pend.length || rech.length ? `<section class="seccion"><header><h2>Ventas hechas sin internet</h2></header>
+    ${pend.length ? `<p class="aviso-linea">${icono('reloj')}<span>${plural(pend.length, 'venta espera', 'ventas esperan')} a que vuelva la red (${pesos(pend.reduce((t, v) => t + v.total, 0))}). Se suben solas; el corte no las cuenta hasta entonces.</span></p>
+      <div class="botones"><button class="boton secundario" data-subir>${icono('actualizar')}Intentar subir ahora</button></div>` : ''}
+    ${rech.length ? `<p class="nota">El servidor no aceptó ${rech.length === 1 ? 'una' : rech.length} (casi siempre porque la última pieza se vendió en línea mientras no había red). No se borran: cóbralas o ajusta el inventario a mano.</p>
+      <ul class="lista">${rech.map((v) => `<li class="fila"><span class="texto"><strong>${esc(v.folio)} · ${pesos(v.total)}</strong>
+        <small>${esc(fecha(v.cuando))} · ${esc(v.renglones.map((r) => `${r.cantidad} × ${r.nombre}`).join(', '))}</small><small>${esc(v.error)}</small></span>
+        <button class="boton secundario" data-descartar="${esc(v.id)}">Ya lo resolví</button></li>`).join('')}</ul>` : ''}
+  </section>` : '';
+  const montarFila = ($c, { aviso, recargar }) => $c.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-subir], [data-descartar]'); if(!b) return;
+    if(b.dataset.descartar){ if(confirm('¿Ya la cobraste o ajustaste el inventario? Se quita de esta lista.')){ filaMostrador.quitar(b.dataset.descartar); recargar(); } return; }
+    b.setAttribute('aria-busy', 'true'); b.disabled = true;
+    const r = await subirVentasPendientes().catch((err) => ({ subidas: [], rechazadas: [], cortada: true, err }));
+    aviso(r.cortada && !r.subidas.length ? 'Todavía no hay red' : `Se ${r.subidas.length === 1 ? 'subió 1' : `subieron ${r.subidas.length}`}`, r.cortada && !r.subidas.length ? 'mal' : undefined);
+    recargar();
+  });
+
+  if(!caja) return { html: abrirCajaHTML() + filaHTML + histHTML, alMontar($c, ctx){ montarAbrirCaja($c, { ...ctx, alAbrir: ctx.recargar }); montarFila($c, ctx); } };
 
   const [cobros, devuelto] = await Promise.all([cobrosDeCaja(caja.id), efectivoDevueltoEnCaja(caja).catch((e) => { console.error(e); return 0; })]);
   const por = (m) => cobros.filter((c) => c.metodo === m).reduce((t, c) => t + aCentavos(c.monto), 0);
@@ -417,9 +437,11 @@ async function cajaPantalla(){
           <button type="submit" class="boton principal grande ancho">${icono('listo')}Cerrar caja</button>
         </form>
       </section>
+      ${filaHTML}
       ${histHTML}`,
 
-    alMontar($c, { aviso }){
+    alMontar($c, { aviso, recargar }){
+      montarFila($c, { aviso, recargar });
       $c.querySelector('[data-abrir-cajon]').addEventListener('click', async (e) => {
         try{ await abrirCajon(); aviso('Cajón abierto'); }catch(err){ aviso(err.message, 'mal'); }
       });
@@ -441,6 +463,8 @@ async function cajaPantalla(){
       $f.addEventListener('submit', async (e) => {
         e.preventDefault();
         const total = contar(conteo());
+        const faltan = filaMostrador.pendientes().length;
+        if(faltan && !confirm(`Hay ${plural(faltan, 'venta hecha', 'ventas hechas')} sin internet que todavía no se suben: el corte no las va a contar. ¿Cerrar de todos modos?`)) return;
         if(!total && !confirm('Contaste $0. ¿Cerrar así?')) return;
         const b = $f.querySelector('[type=submit]'); b.setAttribute('aria-busy', 'true'); b.disabled = true;
         try{

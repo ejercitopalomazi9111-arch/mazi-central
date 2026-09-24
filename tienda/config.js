@@ -18,10 +18,14 @@ export const SUPABASE_URL = 'https://volqtipyprkhylzjpbir.supabase.co';
 export const SUPABASE_LLAVE_PUBLICABLE = 'sb_publishable_WH9MHV7wiYCmI8aHyroIVQ_psIMx1Gj';
 export const NEGOCIO_POR_DEFECTO = 'barberia';
 
+/* Se recuerda el último: la app instalada en el teléfono abre en index.html
+   sin el ?negocio=…, y tiene que caer en SU tienda, no en la de muestra. */
 export function negocioPedido(){
   try{
     const n = new URLSearchParams(location.search).get('negocio');
-    if(n && /^[a-z0-9-]{2,40}$/.test(n)) return n;
+    if(n && /^[a-z0-9-]{2,40}$/.test(n)){ try{ localStorage.setItem('tienda-negocio', n); }catch(e){} return n; }
+    const guardado = localStorage.getItem('tienda-negocio');
+    if(guardado && /^[a-z0-9-]{2,40}$/.test(guardado)) return guardado;
   }catch(e){}
   return NEGOCIO_POR_DEFECTO;
 }

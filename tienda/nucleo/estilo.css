@@ -1125,3 +1125,12 @@ dialog.hoja .hoja-cuerpo{ padding: var(--e5); overflow-y: auto; max-height: calc
 .foto-grande .sin-foto .ico{ width: 30%; height: 30%; opacity: .5; }
 .mios .sin-foto, .renglon .sin-foto{ display: grid; place-items: center; width: 56px; height: 56px; border-radius: 8px; background: var(--hundido); color: var(--tinta-suave); flex: none; }
 .renglon .sin-foto{ width: 76px; height: 76px; }
+
+/* ══ SIN RED (Bloque 14) ══════════════════════════════════════════════════ */
+.franja-sin-red{ position: fixed; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 8px); z-index: 60;
+  display: flex; gap: var(--e2); align-items: center; max-width: min(560px, calc(100vw - 32px)); padding: var(--e2) var(--e4);
+  border-radius: 999px; background: var(--tinta); color: var(--fondo, #fff); font-size: var(--t-chica); font-weight: 700; box-shadow: var(--elev-2); }
+.franja-sin-red .ico{ width: 18px; height: 18px; flex: none; }
+.franja-sin-red[hidden]{ display: none; }
+.pasos-instalar{ margin: 0 0 var(--e4); padding-left: var(--e5); display: grid; gap: var(--e3); font-size: 17px; }
+.pasos-instalar .ico{ width: 18px; height: 18px; vertical-align: -3px; }

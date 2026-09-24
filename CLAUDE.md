@@ -342,6 +342,9 @@ dependemos.
    | `x ??= f()` marca todos los errores | con `x` ya puesto **ni llama a `f`**: sólo se marcaba el primer campo que faltaba | el formulario de pago decía «falta tu nombre» y callaba teléfono, calle y colonia |
    | `git checkout -B rama origin/main` sólo mueve la rama | también le cambia el **upstream** a `origin/main`: el siguiente `git push` sin nombre quiere empujar a main y lo rechaza | se arregla con `git branch --set-upstream-to=origin/<rama>` justo después de realinear |
    | `function f(s = {})` cubre al que no manda nada | cubre `undefined`, **no `null`**: `f(null)` llega como `null` y `s.nombre` truena | «Nuevo sorteo» no abría la hoja y no se veía nada en pantalla, sólo el error en consola. Si un llamador pasa `null` a propósito («nuevo»), se normaliza adentro: `s = s \|\| {}` |
+   | si existe `navigator`, existe `navigator.onLine` | Node 21+ trae `navigator` **sin** `onLine`: `!navigator.onLine` da `true` y todo parece «sin red» | la fila de ventas sin red marcaba como caída de internet un «ya no alcanzan» de verdad. Se lee `navigator?.onLine ?? true` |
+   | `page.waitForFunction(() => promesa)` espera a que la promesa diga que sí | una promesa **es un objeto, y es verdadero**: regresa al instante | la prueba sin red leía la fila antes de que la venta se subiera y salía rojo con el código sano. Se revisa a mano en un ciclo |
+   | `ctx.route` ve todo lo que pide la página | **no ve lo que pide el trabajador de fondo** (service worker): esas peticiones salen solas y aquí no hay internet | las 93 pruebas de rutas salieron rojas el día que la tienda tuvo `sw.js`. Las de pantallas corren con `serviceWorkers: 'block'`, y la de sin red con `PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS=1` |
 
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 

@@ -16,6 +16,7 @@
 import { SUPABASE_URL, SUPABASE_LLAVE_PUBLICABLE, negocioPedido } from '../config.js';
 import * as DEV from './devolucion.js';
 import * as OF from './ofertas.js';
+import { crearFila, subir, sinRed } from './fila.js';
 
 const SLUG = negocioPedido();
 
@@ -466,14 +467,40 @@ export async function cobrosDeCaja(cajaId){
   return r.data.map((c) => ({ ...c, monto: Number(c.monto) }));
 }
 
-export async function venderMostrador({ renglones, cobro, caja }){
+/* Ventas de mostrador hechas sin red, esperando subir (nucleo/fila.js). */
+export const filaMostrador = crearFila(typeof localStorage === 'undefined' ? { getItem: () => null, setItem(){} } : localStorage, 'tienda-fila-' + SLUG);
+
+async function venderEnServidor({ renglones, cobro, caja }){
   const n = await negocio();
-  const r = await llamar('vender', {
+  return llamar('vender', {
     p_negocio: n.id, p_canal: 'pos', p_caja: caja,
     p_renglones: renglones.map(({ id, cantidad }) => ({ producto_id: id, cantidad })),
     p_cobro: cobro,
   });
-  olvidarCatalogo();
+}
+
+/* renglones: [{ id, cantidad, precio?, nombre? }]. Sin red, la venta se guarda
+   en la fila con folio provisional y total calculado aquí (con los precios que
+   se ven); el servidor la cobra con los suyos al subir. */
+export async function venderMostrador({ renglones, cobro, caja }){
+  try{
+    const r = await venderEnServidor({ renglones, cobro, caja });
+    olvidarCatalogo();
+    return r;
+  }catch(err){
+    if(!sinRed(err)) throw err;
+    const total = renglones.reduce((t, x) => t + Math.round(Number(x.precio || 0) * 100) * x.cantidad, 0) / 100;
+    const item = filaMostrador.agregar({ renglones: renglones.map(({ id, cantidad, precio, nombre }) => ({ id, cantidad, precio, nombre })), cobro, caja, total });
+    const recibido = Number(cobro?.recibido ?? total);
+    return { folio: item.folio, total, cambio: cobro?.metodo === 'efectivo' ? Math.max(0, recibido - total) : 0, pendiente: true };
+  }
+}
+
+/* Sube lo que se vendió sin red. Lo llama la app al volver la red y al abrir. */
+export async function subirVentasPendientes(){
+  if(!filaMostrador.pendientes().length) return { subidas: [], rechazadas: [], cortada: false };
+  const r = await subir(filaMostrador, (v) => venderEnServidor(v));
+  if(r.subidas.length) olvidarCatalogo();
   return r;
 }
 

@@ -63,7 +63,8 @@ const PALABRAS_DE_OTRO_GIRO = /\b(barber[ií]a|cera|navaja|shampoo|tinte|wahl|pe
 
 for(const [ancho, alto] of [[390, 844], [1280, 800]]){
   console.log(`\n· Mercancía variada a ${ancho} × ${alto}`);
-  const ctx = await navegador.newContext({ viewport: { width: ancho, height: alto } });
+  // Sin trabajador de fondo: aquí se prueban las pantallas, y el modo sin red va en pruebas-sin-red.mjs.
+  const ctx = await navegador.newContext({ viewport: { width: ancho, height: alto }, serviceWorkers: 'block' });
   await ctx.routeWebSocket(/^wss:\/\//, () => {});
   await ctx.route(/^https:\/\//, (r) => {
     const url = r.request().url();

@@ -83,3 +83,10 @@ _(se agregan aquí conforme salgan; ninguna detiene el trabajo)_
   completa con esa configuración y el código no cambió ni una línea. **Para que exista en la
   base** alguien con acceso al panel de Supabase corre `select sembrar_negocio('<el JSON>')`
   en el editor SQL; después se abre con `?negocio=variada` y el catálogo entra por el importador.
+
+- **La app ya se instala y el mostrador vende sin internet.** Las ventas hechas sin red se
+  guardan en el teléfono con folio provisional («L1», «L2»…) y se suben solas al volver la red.
+  Dos cosas que conviene saber: la venta sin red cobra con los precios que el teléfono tenía, y
+  si mientras tanto alguien compró en línea la última pieza, esa venta queda marcada en Caja
+  para resolverla a mano (no se pierde). Sin red **no** se puede cerrar caja, ni hacer pedidos
+  en línea, ni cobrar entregas: eso necesita al servidor.

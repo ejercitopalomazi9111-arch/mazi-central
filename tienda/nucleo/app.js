@@ -7,8 +7,8 @@
    ═════════════════════════════════════════════════════════════════════════ */
 import { APARTADOS, RUTAS, emparejar, enlace } from './rutas.js';
 import { icono } from './iconos.js';
-import { esc, pesos, plural, inicioDe, obra, noexiste, sinPermiso, fallo, cargando } from './piezas.js';
-import { negocio, yo, verComo, carrito, catalogo } from './datos.js';
+import { esc, pesos, plural, inicioDe, obra, noexiste, sinPermiso, fallo, cargando, hoja } from './piezas.js';
+import { negocio, yo, verComo, carrito, catalogo, subirVentasPendientes } from './datos.js';
 import { PANTALLAS as CLIENTE } from '../cliente/pantallas.js';
 import { PANTALLAS as ADMIN } from '../admin/pantallas.js';
 import { PANTALLAS as IMPORTAR } from '../admin/importar.js';
@@ -107,6 +107,7 @@ function pintarArmazon(persona){
         <div class="botones-pie">
           <button class="boton-ico" data-tema aria-label="Cambiar a tema oscuro">${icono('luna')}</button>
           <button class="boton-ico" data-letra aria-label="Letra más grande" aria-pressed="false">${icono('letra')}</button>
+          <button class="boton-ico" data-instalar aria-label="Instalar la app en el teléfono" title="Instalar la app"${instalada() ? ' hidden' : ''}>${icono('abajo')}</button>
         </div>
       </div>
     </aside>
@@ -287,6 +288,7 @@ $app.addEventListener('click', (e) => {
     t.setAttribute('aria-pressed', riel);
     t.setAttribute('aria-label', riel ? 'Abrir menú' : 'Hacer menú angosto');
   }
+  else if(t.matches('[data-instalar]')) instalar();
   else if(t.matches('[data-tema]')){
     const nuevo = temaActual() === 'oscuro' ? 'claro' : 'oscuro';
     document.documentElement.dataset.tema = nuevo;
@@ -332,4 +334,58 @@ carrito.alCambiar(pintarInsignia);
   pintarArmazon(await yo().catch(() => null));
   pintarComo();
   navegar();
+  instalarFondo();
+  avisoDeRed();
+  subirPendientes();
 })();
+
+/* ── Instalar en el teléfono ─────────────────────────────────────────────
+   Android y computadora: el aviso del propio navegador. iPhone no tiene ese
+   aviso: se enseñan los dos toques (Compartir → Agregar a inicio). */
+let avisoInstalar = null;
+window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); avisoInstalar = e; });
+window.addEventListener('appinstalled', () => { $app.querySelector('[data-instalar]')?.setAttribute('hidden', ''); aviso('Listo: ya está en tu pantalla de inicio'); });
+function instalada(){ return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; }
+async function instalar(){
+  if(avisoInstalar){ avisoInstalar.prompt(); await avisoInstalar.userChoice.catch(() => null); avisoInstalar = null; return; }
+  const iphone = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  hoja({ titulo: 'Instalar la app', cuerpo: iphone
+    ? `<ol class="pasos-instalar"><li>Toca <b>Compartir</b> ${icono('adelante')} (el cuadrito con la flecha, abajo en Safari).</li>
+        <li>Baja y toca <b>Agregar a inicio</b>.</li><li>Toca <b>Agregar</b>. Queda como una app más, y abre aunque no haya internet.</li></ol>
+       <p class="nota">Tiene que ser en <b>Safari</b>: desde otro navegador del iPhone no sale la opción.</p>`
+    : `<ol class="pasos-instalar"><li>Abre el menú del navegador (los tres puntos).</li><li>Toca <b>Instalar app</b> o <b>Agregar a la pantalla principal</b>.</li></ol>
+       <p class="nota">Queda como una app más, y abre aunque no haya internet.</p>` });
+}
+
+/* ── Sin red ─────────────────────────────────────────────────────────────
+   El trabajador de fondo (sw.js) guarda la app y el catálogo; aquí se le
+   pasa la lista de lo que ya bajó en esta primera visita, para que la
+   siguiente abra aunque no haya internet. */
+function instalarFondo(){
+  if(!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.register('sw.js').then(async () => {
+    const listo = await navigator.serviceWorker.ready;
+    const urls = [...new Set([new URL('index.html', location.href).href,
+      ...performance.getEntriesByType('resource').map((r) => r.name).filter((u) => u.startsWith(location.origin))])];
+    listo.active?.postMessage({ tipo: 'guardar', urls });
+  }).catch((e) => console.error('trabajador de fondo', e));
+}
+
+/* Una franja que dice que no hay red y qué pasa mientras (sin asustar). */
+function avisoDeRed(){
+  const franja = document.createElement('div');
+  franja.className = 'franja-sin-red'; franja.setAttribute('role', 'status');
+  franja.innerHTML = `${icono('alerta')}<span>Sin internet. La app sigue: el mostrador vende y las ventas se suben solas al volver la red.</span>`;
+  const pinta = () => { franja.hidden = navigator.onLine !== false; };
+  document.body.append(franja); pinta();
+  window.addEventListener('offline', pinta);
+  window.addEventListener('online', () => { pinta(); subirPendientes(); });
+}
+
+async function subirPendientes(){
+  try{
+    const r = await subirVentasPendientes();
+    if(r.subidas.length) aviso(`Volvió la red: se ${r.subidas.length === 1 ? 'subió 1 venta' : `subieron ${r.subidas.length} ventas`} hechas sin internet`);
+    if(r.rechazadas.length) aviso(`${plural(r.rechazadas.length, 'venta sin red no se pudo', 'ventas sin red no se pudieron')} subir. Revísalas en Caja.`, 'mal');
+  }catch(e){ console.error(e); }
+}

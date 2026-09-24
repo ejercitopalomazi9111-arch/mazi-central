@@ -33,7 +33,7 @@ await Promise.all([web, impresoraRed, puente].map((x) => new Promise((r) => x.li
 const BASE = `http://localhost:${web.address().port}/index.html`;
 const api = await request.newContext({ proxy: process.env.HTTPS_PROXY ? { server: process.env.HTTPS_PROXY } : undefined });
 const nav = await chromium.launch();
-const ctx = await nav.newContext({ viewport: { width: 1024, height: 900 } });
+const ctx = await nav.newContext({ viewport: { width: 1024, height: 900 }, serviceWorkers: 'block' });
 await ctx.routeWebSocket(/^wss:\/\//, () => {});
 await ctx.route(/^https:\/\//, async (r) => { try{ await r.fulfill({ response: await api.fetch(r.request()) }); }catch{ await r.abort(); } });
 const epson = [];

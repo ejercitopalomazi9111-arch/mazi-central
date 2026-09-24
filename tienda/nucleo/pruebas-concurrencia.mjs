@@ -29,7 +29,7 @@ const api = await request.newContext({ proxy: process.env.HTTPS_PROXY ? { server
 const nav = await chromium.launch();
 
 async function caja(){
-  const ctx = await nav.newContext();
+  const ctx = await nav.newContext({ serviceWorkers: 'block' });   // el modo sin red se prueba aparte (pruebas-sin-red.mjs)
   await ctx.route(/^https:\/\//, async (r) => { try{ await r.fulfill({ response: await api.fetch(r.request()) }); }catch{ await r.abort(); } });
   await ctx.routeWebSocket(/^wss:\/\//, () => {});
   await ctx.addInitScript(() => { try{ sessionStorage.setItem('tienda-presentacion', '1'); }catch(e){} });
