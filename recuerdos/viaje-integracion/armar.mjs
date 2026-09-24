@@ -1,6 +1,6 @@
 // Arma la tarjeta del viaje de integración:
-//   salida/frente.png · salida/reverso.png   una tarjeta, 52 × 75 mm a 300 ppp
-//   salida/imprimir.pdf                      carta horizontal, 10 por cara (5 × 2), hoja 1 frente y hoja 2 reverso
+//   salida/frente.png · salida/reverso.png   una tarjeta, 44 × 63.6 mm a 300 ppp
+//   salida/imprimir.pdf                      carta horizontal, 15 por cara (5 × 3): frente, reverso, frente, reverso
 // Uso:  node recuerdos/viaje-integracion/armar.mjs
 // Necesita foto.jpg junto a este archivo (no está en el repo a propósito).
 import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';

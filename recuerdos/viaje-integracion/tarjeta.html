@@ -12,10 +12,13 @@
   papel crema, esquinas de acuarela pastel, título de rotulador, cinta, foto con
   cintas adhesivas, palabras de color y un recuadro rosa para la firma.
 
-  52 × 75 mm, frente y reverso: se diseña en 90 × 130 y se reduce con `zoom`
-  (imprime 27 y pidió que cupieran 10 por hoja). `armar.mjs` saca:
+  44 × 63.6 mm, frente y reverso: se diseña en 90 × 130 y se reduce con `zoom`.
+  Imprime 27: van 15 por hoja (5 × 3) con 5 mm de separación y 1.5 mm de
+  sangrado del color del papel, para que un corte chueco no deje orilla blanca.
+  `armar.mjs` saca:
     · frente.png y reverso.png a 300 ppp, una tarjeta cada una;
-    · imprimir.pdf: carta horizontal, 10 por cara (5 × 2), lista para doble cara.
+    · imprimir.pdf: 4 páginas carta horizontal — frente, reverso, frente,
+      reverso —: se imprime UNA vez a doble cara y salen las 30.
 
   Letras: Chewy, Fredoka, Nunito y Caveat (OFL). Íconos: Lucide (ISC). El escudo
   y el pie salen del formato institucional de la escuela (reportes/formato).
@@ -31,7 +34,8 @@
 @font-face{ font-family: Caveat; src: url(letra/caveat-latin-700-normal.woff2); font-weight: 700; }
 
 :root{
-  --z: .5778;   /* 90 mm → 52 mm */
+  --z: .48889;  /* 90 mm → 44 mm */
+  --sangrado: 3.07mm;  /* 1.5 mm impresos, antes del zoom */
   --tinta: #26335F;      /* marino suave, el de las letras */
   --turquesa: #1F7A91;   /* el del «PARAMÉDICO» de la referencia */
   --rosa: #E0748C; --rosa-cinta: #EBA0AF;
@@ -83,15 +87,15 @@ body{ font-family: Nunito, sans-serif; color: var(--tinta); -webkit-print-color-
 
 .deseo{ margin-top: 2.6mm; font-family: Fredoka; font-weight: 600; font-size: 11.4pt; line-height: 1.15; white-space: nowrap; }
 .deseo .r{ color: var(--rosa); } .deseo .t{ color: var(--turquesa); } .deseo .c{ color: var(--celeste); }
-.cuando{ margin-top: 1.2mm; font-family: Nunito; font-weight: 800; font-size: 7pt; letter-spacing: .02em; white-space: nowrap; text-transform: uppercase; color: var(--lila); }
+.cuando{ margin-top: 1.2mm; font-family: Nunito; font-weight: 800; font-size: 9pt; letter-spacing: .02em; white-space: nowrap; text-transform: uppercase; color: var(--lila); }
 
 .firma-rosa{
   margin-top: auto; background: rgb(247 211 219 / .75); border-radius: 3mm; padding: 1.4mm 8mm 1.6mm;
   display: grid; justify-items: center; position: relative;
 }
-.firma-rosa .con{ font-family: Fredoka; font-weight: 600; font-size: 10.5pt; line-height: 1; }
+.firma-rosa .con{ font-family: Fredoka; font-weight: 600; font-size: 11.5pt; line-height: 1; }
 .firma-rosa .nombre{ font-family: Caveat; font-weight: 700; font-size: 23pt; line-height: .85; color: var(--rosa); }
-.firma-rosa .quien{ font-family: Nunito; font-weight: 800; font-size: 8pt; color: var(--tinta); opacity: .8; margin-top: .6mm; }
+.firma-rosa .quien{ font-family: Nunito; font-weight: 800; font-size: 9.6pt; color: var(--tinta); opacity: .8; margin-top: .6mm; }
 .firma-rosa .corazon{ position: absolute; right: 1.6mm; top: 50%; translate: 0 -50%; width: 5mm; height: 5mm; color: var(--rosa); }
 .firma-rosa .corazon svg{ width: 100%; height: 100%; }
 
@@ -106,34 +110,37 @@ body{ font-family: Nunito, sans-serif; color: var(--tinta); -webkit-print-color-
 .reverso{ padding: 5mm 6mm 0; display: flex; flex-direction: column; }
 .reverso > *, .frente > *{ flex-shrink: 0; }
 .cabeza{ display: flex; align-items: center; gap: 3mm; }
-.cabeza img{ width: 15.5mm; height: auto; filter: drop-shadow(0 .5mm .8mm rgb(0 0 0 / .18)); }
-.cabeza .inst{ font-family: Nunito; font-weight: 800; font-size: 8.6pt; letter-spacing: .08em; text-transform: uppercase; color: var(--rojo-rembrandt); line-height: 1.1; }
-.cabeza .inst span{ display: block; color: var(--tinta); font-size: 7.4pt; letter-spacing: .04em; }
-.cabeza h2{ font-family: Chewy; font-weight: 400; font-size: 19pt; line-height: .95; color: var(--turquesa); margin-top: .8mm; }
+.cabeza img{ width: 12.5mm; height: auto; filter: drop-shadow(0 .5mm .8mm rgb(0 0 0 / .18)); }
+.cabeza .inst{ font-family: Nunito; font-weight: 800; font-size: 9.4pt; letter-spacing: .08em; text-transform: uppercase; color: var(--rojo-rembrandt); line-height: 1.1; }
+.cabeza .inst span{ display: block; color: var(--tinta); font-size: 8.4pt; letter-spacing: .04em; }
+.cabeza h2{ font-family: Chewy; font-weight: 400; font-size: 16pt; line-height: .95; color: var(--turquesa); margin-top: .8mm; }
 .cabeza h2 span{ color: var(--rosa); }
 
 .hoja-carta{
-  margin-top: 3mm; background: rgb(255 255 255 / .82); border-radius: 3mm; padding: 3mm 3.4mm 3.2mm;
+  margin-top: 2.4mm; background: rgb(255 255 255 / .82); border-radius: 3mm; padding: 3mm 3.4mm 3.2mm;
   box-shadow: 0 .4mm 1.2mm rgb(0 0 0 / .08); position: relative; overflow: hidden;
 }
 .hoja-carta .marca-agua{ position: absolute; right: -8mm; bottom: -10mm; width: 44mm; opacity: .07; z-index: 0; }
-.hoja-carta p{ position: relative; z-index: 1; font-size: 9.7pt; line-height: 1.27; font-weight: 700; }
-.hoja-carta p + p{ margin-top: 1.6mm; }
+.hoja-carta p{ position: relative; z-index: 1; font-size: 10.6pt; line-height: 1.24; font-weight: 700; }
+.hoja-carta p + p{ margin-top: 1.3mm; }
 .hoja-carta .r{ color: var(--rosa); } .hoja-carta .t{ color: var(--turquesa); } .hoja-carta .c{ color: var(--celeste); }
 
-.firma-atras{ margin-top: 2.4mm; display: flex; align-items: center; justify-content: flex-end; gap: 2mm; padding-right: 1mm; }
-.firma-atras .con{ font-family: Fredoka; font-weight: 600; font-size: 9pt; text-align: right; line-height: 1.05; }
+.firma-atras{ margin-top: 1.4mm; display: flex; align-items: center; justify-content: flex-end; gap: 2mm; padding-right: 1mm; }
+.firma-atras .con{ font-family: Fredoka; font-weight: 600; font-size: 10pt; text-align: right; line-height: 1.05; }
 .firma-atras .nombre{ font-family: Caveat; font-weight: 700; font-size: 20pt; color: var(--rosa); line-height: .8; display: block; }
 .firma-atras .corazon{ width: 5mm; height: 5mm; color: var(--rosa); }
 .firma-atras .corazon svg{ width: 100%; height: 100%; fill: currentColor; stroke: none; }
 
 .pie{ margin: auto -6mm 0; mix-blend-mode: multiply; }
-.pie img{ display: block; width: 100%; height: auto; }
+/* Sólo la franja de abajo del membrete: el blanco de arriba no dice nada. */
+.pie img{ display: block; width: 100%; height: 7.5mm; object-fit: cover; object-position: 50% 100%; }
 
 /* ── Hoja para imprimir: carta horizontal, 5 × 2, centrada ──────────────── */
 @page{ size: 279.4mm 215.9mm; margin: 0; }
-.hoja{ width: 279.4mm; height: 215.9mm; position: relative; background: #fff; page-break-after: always; }
-.hoja .rejilla{ position: absolute; left: 9.7mm; top: 32.89mm; display: grid; grid-template-columns: repeat(5, 52mm); grid-template-rows: repeat(2, 75.11mm); }
+.hoja{ width: 279.4mm; height: 215.9mm; position: relative; background: #fff; page-break-after: always; overflow: hidden; }
+.hoja .celda{ position: absolute; }
+/* El sangrado: una orilla del color del papel por fuera del corte. */
+.hoja .cara{ box-shadow: 0 0 0 var(--sangrado) var(--papel); overflow: hidden; }
 .corte{ position: absolute; background: #777; }
 .corte.v{ width: .15mm; height: 5mm; }
 .corte.h{ height: .15mm; width: 5mm; }
@@ -169,7 +176,7 @@ body{ font-family: Nunito, sans-serif; color: var(--tinta); -webkit-print-color-
       <img src="foto.jpg" alt="El 3.1">
     </figure>
     <p class="deseo">Que nunca nos falten las <span class="r">risas</span>,<br>la <span class="t">confianza</span> y las <span class="c">ganas</span><br>de seguir juntos.</p>
-    <p class="cuando">Viaje de integración · 25 de septiembre de 2026</p>
+    <p class="cuando">Viaje de integración · 25 sep 2026</p>
     <div class="firma-rosa">
       <span class="con">Con cariño,</span>
       <span class="nombre">Carlos</span>
@@ -196,7 +203,7 @@ body{ font-family: Nunito, sans-serif; color: var(--tinta); -webkit-print-color-
       <img src="escudo-rembrandt.png" alt="Escudo del Instituto Rembrandt">
       <div>
         <p class="inst">Instituto Rembrandt<span>Grupo 3.1 · Programación</span></p>
-        <h2>Para ustedes,<br><span>con cariño</span></h2>
+        <h2>Para ustedes, <span>con cariño</span></h2>
       </div>
     </div>
 
@@ -230,19 +237,33 @@ const ICONOS = {
 const svg = (n) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${ICONOS[n]}</svg>`;
 const cara = (id) => document.getElementById(id).innerHTML.replace(/@(bus|heart|star|sparkles|leaf|smile)\b/g, (_, n) => svg(n));
 
-/* Marcas de corte en las orillas de la rejilla, por fuera de las tarjetas. */
+/* La hoja: 5 × 3 tarjetas de 44 × 63.56 mm con 5 mm entre ellas, centradas en
+   carta horizontal. Centrada = simétrica, así que el reverso cae detrás de su
+   frente al voltear la hoja, sin espejear nada. Marcas de corte en cada
+   esquina, por fuera del sangrado y sin pisar el de la vecina. */
+const HOJA = { W: 279.4, H: 215.9, cols: 5, filas: 3, w: 44, h: 63.556, sep: 5, sangrado: 1.5 };
 function hoja(id){
-  const X = [0, 1, 2, 3, 4, 5].map((k) => 9.7 + k * 52), Y = [0, 1, 2].map((k) => 32.89 + k * 75.11);
-  let marcas = '';
-  for(const x of X){ marcas += `<i class="corte v" style="left:${x - .075}mm;top:${Y[0] - 6}mm"></i><i class="corte v" style="left:${x - .075}mm;top:${Y[Y.length - 1] + 1}mm"></i>`; }
-  for(const y of Y){ marcas += `<i class="corte h" style="top:${y - .075}mm;left:${X[0] - 6}mm"></i><i class="corte h" style="top:${y - .075}mm;left:${X[X.length - 1] + 1}mm"></i>`; }
-  return `<div class="hoja"><div class="rejilla">${cara(id).repeat(10)}</div>${marcas}</div>`;
+  const { W, H, cols, filas, w, h, sep, sangrado } = HOJA;
+  const x0 = (W - (cols * w + (cols - 1) * sep)) / 2, y0 = (H - (filas * h + (filas - 1) * sep)) / 2;
+  const desde = sangrado + .2, largo = Math.min(1.6, sep - 2 * sangrado - .4);
+  let celdas = '', marcas = '';
+  for(let f = 0; f < filas; f++) for(let c = 0; c < cols; c++){
+    const x = x0 + c * (w + sep), y = y0 + f * (h + sep);
+    celdas += `<div class="celda" style="left:${x}mm;top:${y}mm">${cara(id)}</div>`;
+    for(const [cx, sx] of [[x, -1], [x + w, 1]]) for(const [cy, sy] of [[y, -1], [y + h, 1]]){
+      // raya vertical, por arriba o por abajo de la esquina
+      marcas += `<i class="corte v" style="left:${cx - .075}mm;top:${sy < 0 ? cy - desde - largo : cy + desde}mm;height:${largo}mm"></i>`;
+      // raya horizontal, a la izquierda o a la derecha
+      marcas += `<i class="corte h" style="top:${cy - .075}mm;left:${sx < 0 ? cx - desde - largo : cx + desde}mm;width:${largo}mm"></i>`;
+    }
+  }
+  return `<div class="hoja">${celdas}${marcas}</div>`;
 }
 
 const pide = new URLSearchParams(location.search).get('ver') || 'ambas';
 const lienzo = document.getElementById('lienzo');
 if(pide === 'frente' || pide === 'reverso'){ lienzo.innerHTML = cara(pide); }
-else if(pide === 'hojas'){ lienzo.innerHTML = hoja('frente') + hoja('reverso'); }
+else if(pide === 'hojas'){ lienzo.innerHTML = (hoja('frente') + hoja('reverso')).repeat(2); }
 else{ lienzo.style.cssText = 'display:flex;gap:10mm;padding:10mm;flex-wrap:wrap'; lienzo.innerHTML = cara('frente') + cara('reverso'); }
 </script>
 </body>
