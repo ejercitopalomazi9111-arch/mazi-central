@@ -159,6 +159,8 @@ for(const [ancho, alto] of [[390, 844], [1280, 800]]){
   // «conectando» y se queda con su reloj de 30 s, que es justo lo que haría
   // en producción si el tiempo real se cae.
   await ctx.routeWebSocket(/^wss:\/\//, () => {});
+  // Los mosaicos del mapa no se bajan en las pruebas: un PNG transparente.
+  await ctx.route(/tile\.openstreetmap\.org/, (r) => r.fulfill({ contentType: 'image/png', body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64') }));
   await ctx.route(/^https:\/\//, async (route) => {
     try{ await route.fulfill({ response: await api.fetch(route.request()) }); }catch{ await route.abort(); }
   });

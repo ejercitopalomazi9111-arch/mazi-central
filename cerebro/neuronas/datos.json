@@ -252,6 +252,25 @@
       "vecinas": [
         "el-clasificador-aprende-los-errores-de-la-regla"
       ]
+    },
+    {
+      "id": "el-gps-que-brinca-parece-exceso",
+      "titulo": "El repartidor aparecía a 200 km/h",
+      "gravedad": "media",
+      "sintoma": "En el mapa del dueño un repartidor salía marcado en rojo por exceso de velocidad (200 km/h) andando en ciudad.",
+      "causa": "Sin velocidad del GPS, se calculaba distancia/tiempo entre los dos últimos puntos. Al recuperar señal el GPS «brinca» decenas o cientos de metros en un par de segundos: la cuenta da velocidades imposibles.",
+      "porque": "Un error de 100 m dividido entre 2 s son 180 km/h. Mientras más cerca están los puntos en el tiempo, más pesa el error de posición.",
+      "arreglo": "En nucleo/rastreo.js la velocidad calculada sólo con 10 s o más entre puntos, y cualquier lectura arriba de 150 km/h se descarta (null). La del GPS, si viene, se usa tal cual.",
+      "comoCazarlo": "En la prueba con GPS simulado, mover el punto de golpe (setGeolocation) y ver qué velocidad reporta el panel.",
+      "consejo": "Una alarma que acusa a una persona (exceso de velocidad) no puede salir de un dato ruidoso. Mejor callar que acusar en falso.",
+      "senales": [
+        "velocidad imposible",
+        "exceso de velocidad falso",
+        "gps brinca",
+        "200 km/h"
+      ],
+      "salioDe": "el mapa de repartidores de la tienda, 24 de septiembre de 2026.",
+      "vecinas": []
     }
   ]
 }

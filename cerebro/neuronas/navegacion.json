@@ -235,6 +235,27 @@
       "vecinas": [
         "ir-a-donde-ya-estas-no-hace-nada"
       ]
+    },
+    {
+      "id": "el-mapa-que-nace-en-una-pantalla-cerrada",
+      "titulo": "«_leaflet_pos» al salir de una pantalla con mapa antes de que cargara",
+      "gravedad": "media",
+      "sintoma": "Pasar rápido de Repartidores a Horas y días tronaba con «Cannot read properties of undefined (reading '_leaflet_pos')» en la pantalla NUEVA.",
+      "causa": "El mapa se crea después de un await (bajar Leaflet). Para entonces la pantalla ya había cambiado: Leaflet se montaba en una caja que ya no estaba en la página, y su animación de encuadre corría sobre nada.",
+      "porque": "Todo lo que se monta tras un await puede llegar tarde. El armazón limpia lo que la pantalla le devolvió, pero una pantalla async todavía no devolvía nada.",
+      "arreglo": "crearMapa() revisa el.isConnected después de cargar y se niega ('pantalla cerrada'); destruir() para animaciones y apaga el ResizeObserver; encuadrar sin animación. El armazón acepta que alMontar devuelva una promesa y, si llega tarde, limpia en el acto.",
+      "comoCazarlo": "La prueba de rutas recorre todas las pantallas seguidas y rápido: así salió. Una prueba que abre cada pantalla con calma no lo ve.",
+      "consejo": "Después de cada await en código de pantalla, preguntar: ¿sigo en la pantalla?",
+      "senales": [
+        "_leaflet_pos",
+        "error al cambiar de pantalla",
+        "mapa truena",
+        "leaflet undefined"
+      ],
+      "salioDe": "los mapas de la tienda, 24 de septiembre de 2026.",
+      "vecinas": [
+        "el-contenedor-reciclado-junta-oyentes"
+      ]
     }
   ]
 }

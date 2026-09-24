@@ -255,6 +255,11 @@ a{ color: inherit; }
 .boton.peligro{ background: var(--mal-suave); color: var(--mal); border-color: color-mix(in oklab, var(--mal) 30%, transparent); }
 .boton:disabled{ background: var(--hundido); color: var(--tinta-suave); border-color: transparent; cursor: not-allowed; }
 .boton.ancho{ width: 100%; }
+/* Un botón a todo lo ancho puede partir su texto en dos renglones: si no,
+   un texto largo empuja la página hacia un lado en un teléfono angosto. */
+.boton.ancho, .boton.grande{ white-space: normal; text-align: center; line-height: 1.25; padding-block: var(--e2); }
+.boton{ max-width: 100%; }
+.bloque-form .boton, .en-linea .boton{ white-space: normal; text-align: center; }
 .boton.grande{ min-height: 64px; font-size: var(--t-sub); border-radius: 16px; }
 /* Cargando: el botón NO se deshabilita en silencio — dice que está trabajando. */
 .boton[aria-busy="true"]{ position: relative; color: transparent !important; pointer-events: none; }
@@ -849,7 +854,11 @@ a.cifra-caja{ text-decoration: none; }
 .checar label{ display: flex; align-items: center; gap: var(--e3); min-height: 52px; padding: 0 var(--e2); border-radius: var(--radio); cursor: pointer; font-size: 17px; }
 .checar label:has(input:checked){ background: var(--bien-suave); }
 .checar label:has(input:checked) span:last-child{ text-decoration: line-through; color: var(--tinta-suave); }
-.checar input{ width: 28px; height: 28px; flex: none; accent-color: var(--bien); margin: 0; }
+.checar input{ appearance: none; -webkit-appearance: none; width: 44px; height: 44px; flex: none; margin: 0; position: relative; cursor: pointer; background: transparent; }
+.checar input::before{ content: ""; position: absolute; inset: 8px; border: 2px solid var(--linea-fuerte); border-radius: 8px; background: var(--superficie); }
+.checar input:checked::before{ background: var(--bien); border-color: var(--bien); }
+.checar input:checked::after{ content: ""; position: absolute; left: 17px; top: 12px; width: 8px; height: 15px; border: solid #fff; border-width: 0 3px 3px 0; transform: rotate(45deg); }
+.checar input:focus-visible::before{ outline: 3px solid var(--acento-suave); outline-offset: 2px; }
 .checar .cant{ min-width: 36px; height: 36px; border-radius: 8px; display: grid; place-items: center; background: var(--hundido); font-weight: 800; }
 .parada-acciones{ justify-content: space-between; }
 .parada-acciones .grande{ flex: 1; }

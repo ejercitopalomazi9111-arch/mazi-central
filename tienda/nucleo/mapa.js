@@ -36,12 +36,16 @@ const pin = (L, { texto = '', clase = '' } = {}) => L.divIcon({
 
 export async function crearMapa(el, { centro = { lat: 20.5888, lng: -100.3899 }, zoom = 13, mosaicos } = {}){
   const L = await cargar();
+  // Si mientras cargaba se cambió de pantalla, la caja ya no está en la
+  // página: crear el mapa ahí truena por dentro de Leaflet (_leaflet_pos).
+  if(!el.isConnected) throw new Error('pantalla cerrada');
   const m = mosaicos || MOSAICOS;
   const mapa = L.map(el, { zoomControl: true, attributionControl: true }).setView([centro.lat, centro.lng], zoom);
   L.tileLayer(m.url, { maxZoom: m.max || 19, attribution: m.atribucion }).addTo(mapa);
   const capas = L.layerGroup().addTo(mapa);
   // El mapa se crea antes de que su caja tenga tamaño final: se le avisa.
-  const ro = new ResizeObserver(() => mapa.invalidateSize());
+  let vivo = true;
+  const ro = new ResizeObserver(() => { if(vivo && el.isConnected) mapa.invalidateSize(); });
   ro.observe(el);
   return {
     marcador(p, opciones = {}){
@@ -52,10 +56,11 @@ export async function crearMapa(el, { centro = { lat: 20.5888, lng: -100.3899 },
     linea(puntos){ return L.polyline(puntos.map((p) => [p.lat, p.lng]), { color: getComputedStyle(el).getPropertyValue('--acento') || '#8E1B1B', weight: 4, opacity: .75, dashArray: '8 8' }).addTo(capas); },
     encuadrar(puntos){
       const ps = puntos.filter((p) => Number.isFinite(p?.lat));
-      if(ps.length === 1) mapa.setView([ps[0].lat, ps[0].lng], 15);
-      else if(ps.length) mapa.fitBounds(ps.map((p) => [p.lat, p.lng]), { padding: [36, 36] });
+      if(!vivo || !el.isConnected) return;
+      if(ps.length === 1) mapa.setView([ps[0].lat, ps[0].lng], 15, { animate: false });
+      else if(ps.length) mapa.fitBounds(ps.map((p) => [p.lat, p.lng]), { padding: [36, 36], animate: false });
     },
     limpiar: () => capas.clearLayers(),
-    destruir(){ ro.disconnect(); mapa.remove(); },
+    destruir(){ vivo = false; ro.disconnect(); try{ mapa.stop(); mapa.remove(); }catch(e){} },
   };
 }

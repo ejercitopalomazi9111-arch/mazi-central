@@ -31,7 +31,11 @@ export const rastreo = {
       const km = ultimo ? distancia(ultimo, punto) : Infinity;
       if(ultimo && ahora - ultimo.cuando < CADA_MS && km < CADA_KM) return;
       let velocidad = Number.isFinite(c.speed) && c.speed >= 0 ? c.speed : null;
-      if(velocidad == null && ultimo && ahora > ultimo.cuando) velocidad = (km * 1000) / ((ahora - ultimo.cuando) / 1000);
+      // Calculada entre puntos sólo con 10 s o más de separación: el GPS
+      // «brinca» decenas de metros al recuperar señal, y en dos segundos eso
+      // parece 200 km/h. Lo imposible en ciudad (>150 km/h) se descarta.
+      if(velocidad == null && ultimo && ahora - ultimo.cuando >= 10000) velocidad = (km * 1000) / ((ahora - ultimo.cuando) / 1000);
+      if(velocidad != null && velocidad > 150 / 3.6) velocidad = null;
       try{
         await mandarUbicacion(turno, { latitude: c.latitude, longitude: c.longitude, accuracy: c.accuracy, heading: c.heading, speed: velocidad });
         ultimo = { ...punto, velocidad, precision: c.accuracy }; estado = 'compartiendo';

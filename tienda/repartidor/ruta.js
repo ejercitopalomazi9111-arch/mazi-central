@@ -72,7 +72,7 @@ async function miRuta(){
           <div class="cifra-caja"><span class="valor">${r.km ? (r.km * 1.35).toFixed(1) + ' km' : '—'}</span><span class="etq">aprox. por calle</span></div>
           <div class="cifra-caja"><span class="valor">${r.minutos ? `${Math.floor(r.minutos / 60) ? Math.floor(r.minutos / 60) + ' h ' : ''}${r.minutos % 60} min` : '—'}</span><span class="etq">con las entregas</span></div>
         </div>
-        ${url ? `<a class="boton principal grande ancho" href="${url}" target="_blank" rel="noopener">${icono('ruta')}Abrir toda la ruta en Google Maps</a>` : ''}
+        ${url ? `<a class="boton principal grande ancho" href="${url}" target="_blank" rel="noopener">${icono('ruta')}Abrir la ruta en Google Maps</a>` : ''}
         ${!origen ? `<p class="nota">No supe dónde estás: la ruta empieza en la primera parada.</p>` : ''}
         ${r.sinLugar.length ? `<p class="aviso-linea">${icono('alerta')}<span>${plural(r.sinLugar.length, 'parada no tiene', 'paradas no tienen')} ubicación en el mapa: van al final. Revisa la dirección.</span></p>` : ''}`;
       $c.querySelector('#ruta-lista').innerHTML = r.orden.map((x, i) => `<li><a class="parada-tarjeta" href="${enlace('/r/parada/:id', { id: x.p.id })}">
@@ -87,7 +87,7 @@ async function miRuta(){
         paraMaps.forEach((x) => mapa.marcador(x, { texto: String(r.orden.indexOf(x) + 1), titulo: x.p.cliente?.nombre }));
         mapa.linea([origen, ...paraMaps].filter(Boolean));
         mapa.encuadrar([origen, ...paraMaps].filter(Boolean));
-      }catch(e){ console.error(e); $c.querySelector('#mapa')?.classList.add('sin-mapa'); }
+      }catch(e){ if(e.message !== 'pantalla cerrada') console.error(e); $c.querySelector('#mapa')?.classList.add('sin-mapa'); }
       return () => { quitar(); mapa?.destruir(); };
     },
   };
@@ -128,7 +128,7 @@ async function repartidoresVivo(){
           globo: `<b>${esc(g.quien?.nombre || '')}</b><br>${kmh(g.puntos[0].velocidad) ?? '—'} km/h · ${hace(g.puntos[0].cuando)}` }));
         enCamino.forEach((p) => { const l = lugarDe(p); if(l) mapa.marcador(l, { texto: '#', clase: 'destino', titulo: `#${p.folio} ${p.cliente?.nombre || ''}` }); });
         mapa.encuadrar([...puntos, ...destinos, tienda].filter(Boolean));
-      }catch(e){ console.error(e); $c.querySelector('#mapa')?.classList.add('sin-mapa'); }
+      }catch(e){ if(e.message !== 'pantalla cerrada') console.error(e); $c.querySelector('#mapa')?.classList.add('sin-mapa'); }
       const reloj = setInterval(() => { if(document.visibilityState === 'visible') recargar(); }, 30000);
       return () => { clearInterval(reloj); mapa?.destruir(); };
     },
@@ -166,7 +166,7 @@ async function seguimiento({ params }){
       try{
         mapa = await crearMapa($c.querySelector('#mapa'), { centro: destinoL || undefined, mosaicos: n.ajustes?.mapa?.mosaicos });
         if(destinoL) mapa.marcador(destinoL, { texto: '⌂', clase: 'destino', titulo: 'Tu dirección' });
-      }catch(e){ console.error(e); $c.querySelector('#mapa')?.classList.add('sin-mapa'); }
+      }catch(e){ if(e.message !== 'pantalla cerrada') console.error(e); $c.querySelector('#mapa')?.classList.add('sin-mapa'); }
       const vivo = async () => {
         const $v = $c.querySelector('#seg-vivo'); if(!$v) return;
         let d;
