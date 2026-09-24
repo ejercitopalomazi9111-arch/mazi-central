@@ -439,3 +439,56 @@ export async function deshacerImportacion(id, avance = () => {}){
   olvidarCatalogo();
   return { borrados: borrar.length, ocultos: ocultar.length, restaurados: r.antes.length };
 }
+
+/* ══ PUNTO DE VENTA (Bloque 5) ══════════════════════════════════════════════
+   Vender pasa SIEMPRE por vender() del servidor (0003/0006): bloquea las
+   existencias, exige el cobro en mostrador y deja rastro. La pantalla nunca
+   descuenta nada por su cuenta. */
+
+/* La caja abierta de quien está en la pantalla, o null. */
+export async function miCaja(){
+  const p = await yo();
+  if(!p) return null;
+  const r = await db.from('cajas').select('id, abierta, fondo').eq('perfil_id', p.id).is('cerrada', null).maybeSingle();
+  if(r.error) throw new ErrorDeDatos('No se pudo revisar la caja', r.error);
+  return r.data;
+}
+export const abrirCaja = (fondo) => llamar('abrir_caja', { p_fondo: fondo });
+export const cerrarCaja = (contado, nota) => llamar('cerrar_caja', { p_contado: contado, p_nota: nota || null });
+
+/* Lo cobrado en una caja, por forma de pago, en pesos. */
+export async function cobrosDeCaja(cajaId){
+  const r = await db.from('cobros').select('metodo, monto, cambio, cuando, pedido_id').eq('caja_id', cajaId);
+  if(r.error) throw new ErrorDeDatos('No se pudo leer lo cobrado', r.error);
+  return r.data.map((c) => ({ ...c, monto: Number(c.monto) }));
+}
+
+export async function venderMostrador({ renglones, cobro, caja }){
+  const n = await negocio();
+  const r = await llamar('vender', {
+    p_negocio: n.id, p_canal: 'pos', p_caja: caja,
+    p_renglones: renglones.map(({ id, cantidad }) => ({ producto_id: id, cantidad })),
+    p_cobro: cobro,
+  });
+  olvidarCatalogo();
+  return r;
+}
+
+/* Las ventas de un día (00:00 de hoy en el teléfono, hasta ahora). */
+export async function ventasDesde(desde){
+  const n = await negocio();
+  const r = await db.from('pedidos')
+    .select('id, folio, canal, estado, total, forma_pago, pagado, creado, renglones(producto_id, nombre, precio, cantidad, importe), cobros(metodo, monto, recibido, cambio)')
+    .eq('negocio_id', n.id).gte('creado', desde.toISOString()).neq('estado', 'cancelado')
+    .order('creado', { ascending: false }).limit(1000);
+  if(r.error) throw new ErrorDeDatos('No se pudieron leer las ventas', r.error);
+  return r.data.map((p) => ({ ...p, total: Number(p.total) }));
+}
+
+export async function cajasCerradas(cuantas = 10){
+  const n = await negocio();
+  const r = await db.from('cajas').select('id, abierta, cerrada, fondo, esperado, contado, nota, quien:perfiles(nombre)')
+    .eq('negocio_id', n.id).not('cerrada', 'is', null).order('cerrada', { ascending: false }).limit(cuantas);
+  if(r.error) throw new ErrorDeDatos('No se pudo leer el historial de caja', r.error);
+  return r.data;
+}
