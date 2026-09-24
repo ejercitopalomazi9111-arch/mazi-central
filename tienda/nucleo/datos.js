@@ -174,6 +174,8 @@ const DICCIONARIO = {
   no_a_ti_mismo: 'No puedes cambiarte el rol a ti mismo.',
   otro_negocio: 'Eso es de otro negocio.',
   devolucion_excede: 'Eso ya se devolvió completo:',
+  falta_nombre: 'Falta su nombre.',
+  telefono_invalido: 'Un WhatsApp son 10 números.',
 };
 export async function llamar(funcion, args){
   const { data, error } = await db.rpc(funcion, args);
@@ -470,10 +472,10 @@ export async function cobrosDeCaja(cajaId){
 /* Ventas de mostrador hechas sin red, esperando subir (nucleo/fila.js). */
 export const filaMostrador = crearFila(typeof localStorage === 'undefined' ? { getItem: () => null, setItem(){} } : localStorage, 'tienda-fila-' + SLUG);
 
-async function venderEnServidor({ renglones, cobro, caja }){
+async function venderEnServidor({ renglones, cobro, caja, cliente }){
   const n = await negocio();
   return llamar('vender', {
-    p_negocio: n.id, p_canal: 'pos', p_caja: caja,
+    p_negocio: n.id, p_canal: 'pos', p_caja: caja, p_cliente: cliente || null,
     p_renglones: renglones.map(({ id, cantidad }) => ({ producto_id: id, cantidad })),
     p_cobro: cobro,
   });
@@ -482,15 +484,15 @@ async function venderEnServidor({ renglones, cobro, caja }){
 /* renglones: [{ id, cantidad, precio?, nombre? }]. Sin red, la venta se guarda
    en la fila con folio provisional y total calculado aquí (con los precios que
    se ven); el servidor la cobra con los suyos al subir. */
-export async function venderMostrador({ renglones, cobro, caja }){
+export async function venderMostrador({ renglones, cobro, caja, cliente }){
   try{
-    const r = await venderEnServidor({ renglones, cobro, caja });
+    const r = await venderEnServidor({ renglones, cobro, caja, cliente });
     olvidarCatalogo();
     return r;
   }catch(err){
     if(!sinRed(err)) throw err;
     const total = renglones.reduce((t, x) => t + Math.round(Number(x.precio || 0) * 100) * x.cantidad, 0) / 100;
-    const item = filaMostrador.agregar({ renglones: renglones.map(({ id, cantidad, precio, nombre }) => ({ id, cantidad, precio, nombre })), cobro, caja, total });
+    const item = filaMostrador.agregar({ renglones: renglones.map(({ id, cantidad, precio, nombre }) => ({ id, cantidad, precio, nombre })), cobro, caja, cliente: cliente || null, total });
     const recibido = Number(cobro?.recibido ?? total);
     return { folio: item.folio, total, cambio: cobro?.metodo === 'efectivo' ? Math.max(0, recibido - total) : 0, pendiente: true };
   }
@@ -771,6 +773,31 @@ export async function clientesNegocio(){
     .eq('negocio_id', n.id).order('creado', { ascending: false }).limit(1000);
   if(r.error) throw new ErrorDeDatos('No se pudieron leer los clientes', r.error);
   return r.data.map((c) => ({ ...c, pedidos: (c.pedidos || []).map((p) => ({ ...p, total: Number(p.total) })) }));
+}
+
+/* Para «¿a nombre de quién?» en la caja: sólo lo que hace falta para buscar,
+   una vez por visita a Cobrar (son cientos, no miles). RLS: cli_ver. */
+export async function clientesMostrador(){
+  const n = await negocio();
+  const r = await db.from('clientes').select('id, nombre, telefono').eq('negocio_id', n.id).order('nombre').limit(3000);
+  if(r.error) throw new ErrorDeDatos('No se pudieron leer los clientes', r.error);
+  return r.data;
+}
+
+/* Alta desde la caja (0013). Sin la función en el servidor se dice claro qué
+   hacer mientras, y no se vuelve a preguntar en la sesión. */
+let _sinAltaEnServidor = false;
+export const altaEnServidor = () => !_sinAltaEnServidor;
+export async function altaCliente({ nombre, telefono }){
+  const sinAlta = () => new ErrorDeDatos('Dar de alta desde la caja todavía no está encendido. Por ahora, que haga su cuenta en la tienda y luego lo eliges aquí.', { code: 'sin_alta' });
+  if(_sinAltaEnServidor) throw sinAlta();
+  const n = await negocio();
+  try{ return await llamar('alta_cliente', { p_negocio: n.id, p_nombre: nombre, p_telefono: telefono }); }
+  catch(e){
+    if(e.causa?.code !== 'PGRST202') throw e;
+    _sinAltaEnServidor = true;
+    throw sinAlta();
+  }
 }
 
 /* Notas del admin sobre un cliente («pide factura», «sólo por la tarde»). RLS: cli_editar. */

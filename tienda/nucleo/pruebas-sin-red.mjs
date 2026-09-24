@@ -59,7 +59,7 @@ await p.reload(); await listo(); await p.waitForTimeout(800);
 ok('la app abre en el mostrador', (await p.$eval('h1', (e) => e.textContent).catch(() => '')) === 'Cobrar');
 ok('con sus productos', (await p.$$('.pos-prod')).length > 10);
 ok('y la franja dice que no hay internet', await p.$eval('.franja-sin-red', (e) => !e.hidden).catch(() => false));
-await p.click('.pos-prod >> nth=0'); await p.click('[data-cobrar]');
+await p.click('.pos-prod:not(.sin) >> nth=0'); await p.click('[data-cobrar]');   // el primero con piezas: la demo se va agotando con las pruebas
 await p.waitForSelector('dialog.hoja[open] [data-confirmar]'); await p.click('dialog.hoja[open] [data-confirmar]');
 await p.waitForSelector('dialog.hoja[open] .venta-hecha', { timeout: 15000 }).catch(() => {});
 const titulo = await p.$eval('dialog.hoja[open] .hoja-cabeza h2', (e) => e.textContent).catch(() => '');

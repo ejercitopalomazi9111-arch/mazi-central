@@ -70,6 +70,16 @@ _(se agregan aquí conforme salgan; ninguna detiene el trabajo)_
   «Apartados» sigue marcado «en obra» en el menú: una pantalla que no puede guardar sería
   mentir. En cuanto 0012 esté puesta, la pantalla es corta de hacer.
 
+- **La migración 0013 (cliente en la venta de mostrador) está escrita y sin aplicar.** Ya
+  funciona sin ella: la caja pone la venta a nombre de un cliente que ya existe, y esa compra
+  cuenta para «le toca surtirse» y para el sorteo. Lo que falta es **dar de alta a alguien
+  nuevo desde la caja**: hoy la app dice «todavía no está encendido» y que haga su cuenta en la
+  tienda. 0013 también impide que una venta quede a nombre de un cliente de otro negocio.
+- **La ficha del mostrador y la cuenta de la tienda no se juntan solas.** Si a Pedro lo dan de
+  alta en la caja y luego abre su cuenta en la tienda, quedan dos fichas. Juntarlas por el
+  número sería fácil, pero le enseñaría las compras de Pedro a cualquiera que escriba su
+  número: antes hay que verificar el número con un código por WhatsApp.
+
 - **Las ofertas vencidas regresan su precio cuando el admin abre la app** (el tablero o
   Descuentos), no a la hora exacta. Para que pase a la hora exacta hace falta una tarea
   programada en el servidor.

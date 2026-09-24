@@ -16,8 +16,9 @@ import { icono } from '../nucleo/iconos.js';
 import { esc, pesos, quitaAcentos, plural, estado, hoja, numero, fecha, descargarCSV } from '../nucleo/piezas.js';
 import {
   negocio, catalogo, olvidarCatalogo, miCaja, abrirCaja, cerrarCaja, cobrosDeCaja,
-  venderMostrador, ventasDesde, cajasCerradas, yo, efectivoDevueltoEnCaja, filaMostrador, subirVentasPendientes,
+  venderMostrador, ventasDesde, cajasCerradas, yo, efectivoDevueltoEnCaja, filaMostrador, subirVentasPendientes, clientesMostrador,
 } from '../nucleo/datos.js';
+import { montarANombre } from './a-nombre.js';
 import { negocioPedido } from '../config.js';
 import { aCentavos, aPesos, sugerirPagos, desglose, contar, BILLETES, MONEDAS } from '../nucleo/dinero.js';
 import { imprimir, leerConf, abrirCajon } from '../nucleo/impresion/impresora.js';
@@ -152,6 +153,11 @@ async function cobrar(){
     alMontar($c, { aviso, recargar }){
       const f = { q: '', cat: '' };
       let cuantos = PAGINA, ultimo = null;
+      /* ¿A nombre de quién? — vale para el ticket en curso y se borra al cobrar.
+         La lista se pide al entrar: si luego se va la red, sigue en memoria. */
+      const aNombre = { cliente: null };
+      const listaClientes = clientesMostrador();
+      listaClientes.catch(() => {});
       const $rej = $c.querySelector('#pos-rejilla'), $mas = $c.querySelector('#pos-mas'), $q = $c.querySelector('#pos-q');
       const $ticket = $c.querySelector('#pos-ticket'), $barra = $c.querySelector('#pos-barra');
 
@@ -275,6 +281,7 @@ async function cobrar(){
         let metodo = 'efectivo';
         const d = hoja({ titulo: `Cobrar ${pesosC(total)}`, clase: 'hoja-cobro', cuerpo: `
           <form data-cobro novalidate>
+            <div class="cobro-cliente" data-a-nombre></div>
             <p class="cobro-total"><span>Total</span><strong>${pesosC(total)}</strong></p>
             <div class="segmentos" role="group" aria-label="Forma de pago">${['efectivo', 'tarjeta', 'transferencia'].map((m) =>
               `<button type="button" data-metodo="${m}" aria-pressed="${m === metodo}">${icono(m)}${METODOS[m]}</button>`).join('')}</div>
@@ -288,6 +295,7 @@ async function cobrar(){
             <p class="nota" data-otro hidden>Cobra en la terminal o revisa la transferencia, y confirma aquí cuando haya pasado.</p>
             <button type="submit" class="boton principal grande ancho" data-confirmar>${icono('listo')}Cobrar ${pesosC(total)}</button>
           </form>` });
+        montarANombre(d.querySelector('[data-a-nombre]'), { lista: () => listaClientes, estado: aNombre, aviso });
         const $r = d.querySelector('#recibi'), $cambio = d.querySelector('[data-cambio]'), $ok = d.querySelector('[data-confirmar]');
         const recibido = () => { const n = numero($r.value); return n == null ? total : Number.isNaN(n) ? NaN : aCentavos(n); };
         const repintar = () => {
@@ -321,18 +329,21 @@ async function cobrar(){
           const vendidos = renglones.map((x) => ({ ...x, nombre: porId.get(x.id).n, precio: porId.get(x.id).p }));
           $ok.setAttribute('aria-busy', 'true'); $ok.disabled = true;
           try{
-            const v = await venderMostrador({ renglones: vendidos, caja: caja.id, cobro: { metodo, recibido: aPesos(r) } });
+            const cliente = aNombre.cliente;
+            const v = await venderMostrador({ renglones: vendidos, caja: caja.id, cliente: cliente?.id, cobro: { metodo, recibido: aPesos(r) } });
+            aNombre.cliente = null;
             // Lo vendido sale de lo que se ve, sin esperar a recargar.
             vendidos.forEach((x) => { const p = porId.get(x.id); p.q -= x.cantidad; p.x = p.q <= 0; });
             renglones = []; pintar();
             const venta = { folio: v.folio, total: Number(v.total), metodo, recibido: aPesos(r), cambio: v.cambio == null ? 0 : Number(v.cambio),
-              renglones: vendidos.map((x) => ({ ...x, importe: x.precio * x.cantidad })), cuando: Date.now() };
+              renglones: vendidos.map((x) => ({ ...x, importe: x.precio * x.cantidad })), cuando: Date.now(), cliente: cliente?.nombre || null };
             const c = aCentavos(venta.cambio), dz = desglose(c);
             d.querySelector('.hoja-cabeza h2').textContent = v.pendiente ? `Venta ${v.folio} · sin red` : `Venta #${v.folio}`;
             d.querySelector('.hoja-cuerpo').innerHTML = `<div class="venta-hecha">
               <span class="circulo">${icono('listo')}</span>
               <p class="cambio-grande"><span>${c ? 'Cambio' : 'Cobrado'}</span><strong>${c ? pesosC(c) : pesos(venta.total)}</strong></p>
               ${c ? `<p class="nota">Da: ${dz.piezas.map((x) => `${x.piezas} de ${pesosC(x.valor)}`).join(', ')}${dz.resto ? ` y ${dz.resto} centavos` : ''}</p>` : ''}
+              ${cliente ? `<p class="nota a-nombre">${icono('cliente')}A nombre de <b>${esc(cliente.nombre || 'cliente')}</b></p>` : ''}
               ${v.pendiente ? `<p class="aviso-linea">${icono('info')}<span>No hay internet: la venta quedó guardada en este teléfono y se sube sola en cuanto vuelva la red. No cierres sesión ni borres los datos del navegador mientras tanto.</span></p>` : ''}
               <div class="botones">
                 <button class="boton secundario" data-imprimir>${icono('imprimir')}Imprimir ticket</button>

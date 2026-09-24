@@ -703,6 +703,10 @@ body:has(.pos-barra:not([hidden])) .avisos{ bottom: calc(96px + env(safe-area-in
 .cobro-total strong{ font-size: var(--t-grande); font-variant-numeric: tabular-nums; }
 .hoja-cobro .segmentos button{ display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 52px; }
 .hoja-cobro .segmentos .ico{ width: 20px; height: 20px; }
+/* «Transferencia» con su ícono no cabía en un tercio de 390 px y se salía por
+   la derecha: en teléfono angosto el nombre basta, el ícono se va. */
+.hoja-cobro .segmentos button{ min-width: 0; padding-inline: var(--e2); }
+@media (max-width: 440px){ .hoja-cobro .segmentos .ico{ display: none; } .hoja-cobro .segmentos button{ font-size: 15px; } }
 .billetes{ margin-bottom: var(--e3); }
 .billetes .chip-boton{ min-width: 72px; font-size: 16px; font-variant-numeric: tabular-nums; }
 .cambio-grande{ display: flex; justify-content: space-between; align-items: baseline; padding: var(--e3) var(--e4); border-radius: var(--radio); background: var(--bien-suave); color: var(--bien); margin: 0 0 var(--e2); }
@@ -1143,3 +1147,37 @@ dialog.hoja .hoja-cuerpo{ padding: var(--e5); overflow-y: auto; max-height: calc
 .pasos-manual li::before{ content: counter(paso); position: absolute; left: var(--e3); top: var(--e3); width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--acento-suave); color: var(--acento-hondo); font-weight: 800; }
 .pasos-manual p{ margin: var(--e1) 0 0; }
 .pasos-manual a{ font-weight: 700; }
+
+/* ── ¿A nombre de quién? (venta/a-nombre.js) ─────────────────────────── */
+.cobro-cliente{ margin: 0 0 var(--e4); }
+.fila-opcion{ display: flex; align-items: center; gap: var(--e3); width: 100%; min-height: var(--toque); padding: var(--e2) var(--e3);
+  border: 1px solid var(--linea); border-radius: var(--radio); background: var(--superficie); color: var(--tinta); text-align: left; font: inherit; cursor: pointer; }
+.fila-opcion:hover{ border-color: var(--linea-fuerte); }
+.fila-opcion:focus-visible{ outline: 3px solid var(--acento); outline-offset: 2px; }
+.fila-opcion > .ico{ width: 22px; height: 22px; flex: none; color: var(--acento-hondo); }
+.fila-opcion .texto{ display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.fila-opcion .texto strong{ overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fila-opcion .texto small{ color: var(--tinta-suave); font-size: var(--t-chica); }
+.fila-opcion.abrir-cliente{ border-style: dashed; }
+.fila-opcion.nuevo{ margin-top: var(--e2); border-style: dashed; }
+.lista-opciones{ list-style: none; margin: var(--e2) 0 0; padding: 0; display: grid; gap: var(--e2); max-height: 40vh; overflow-y: auto; }
+.buscar-cliente-cabeza{ display: flex; gap: var(--e2); align-items: center; }
+.buscar-cliente-cabeza .buscador{ flex: 1; min-width: 0; }
+.buscar-cliente [data-resultados] > .nota, .buscar-cliente [data-resultados] > .falta{ margin: var(--e2) 0 0; }
+.buscar-cliente .falta, .alta-cliente .falta{ color: var(--mal); font-weight: 700; }
+.cliente-elegido{ display: flex; align-items: center; gap: var(--e1); padding: var(--e1);
+  border-radius: var(--radio); background: var(--acento-suave); }
+.elegido-cuerpo{ display: flex; align-items: center; gap: var(--e3); flex: 1; min-width: 0; min-height: var(--toque); padding: var(--e1) var(--e2);
+  border: 0; border-radius: calc(var(--radio) - 4px); background: transparent; color: var(--tinta); font: inherit; text-align: left; cursor: pointer; }
+.elegido-cuerpo:hover{ background: color-mix(in srgb, var(--acento) 8%, transparent); }
+.elegido-cuerpo:focus-visible{ outline: 3px solid var(--acento); outline-offset: 2px; }
+.elegido-cuerpo > .ico{ width: 22px; height: 22px; flex: none; color: var(--acento-hondo); }
+.cliente-elegido .tel{ white-space: nowrap; font-variant-numeric: tabular-nums; }
+.cliente-elegido .texto{ display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.cliente-elegido .texto small{ color: var(--tinta-suave); font-size: var(--t-chica); }
+.cliente-elegido .texto strong{ overflow-wrap: anywhere; }   /* se parte en dos renglones antes que cortarse: es el nombre que se confirma */
+.alta-cliente{ border: 1px solid var(--linea); border-radius: var(--radio); padding: var(--e3); margin: 0; display: grid; gap: var(--e3); }
+.alta-cliente legend{ font-weight: 700; padding: 0 var(--e1); }
+.alta-cliente .botones{ justify-content: flex-end; }
+.venta-hecha .a-nombre{ display: inline-flex; align-items: center; gap: var(--e1); }
+.venta-hecha .a-nombre .ico{ width: 18px; height: 18px; }

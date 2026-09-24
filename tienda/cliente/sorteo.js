@@ -40,7 +40,7 @@ async function sorteoPantalla(){
   return { html: `${tarjetaSorteo(s, a, { enlazar: false })}
     <section class="seccion"><header><h2>Las bases</h2></header>
       <ul class="bases">
-        <li>Entra quien compre ${pesos(s.minimo_mensual)} o más entre el primer y el último día del mes, con sus pedidos en esta tienda en línea.</li>
+        <li>Entra quien compre ${pesos(s.minimo_mensual)} o más entre el primer y el último día del mes, con lo que compre a su nombre: en línea o en el mostrador (ahí, pide que la cuenta vaya a tu nombre).</li>
         <li>Lo cancelado o no entregado no cuenta.</li>
         <li>El ganador sale al azar entre todos los que llegaron al mínimo, y se le avisa por WhatsApp.</li>
         <li>Permiso de la Secretaría de Gobernación: <b>${esc(s.permiso_segob)}</b>. Aviso a PROFECO del ${esc(s.aviso_profeco)}.</li>
