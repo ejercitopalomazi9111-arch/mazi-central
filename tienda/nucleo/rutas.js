@@ -71,16 +71,16 @@ export const RUTAS = [
     promesa: 'Tus datos, tus direcciones y cuándo te toca volver a surtirte.' },
 
   /* ── Repartidor ──────────────────────────────────────────────────────── */
-  { ruta: '/r',             apartado: 'repartidor', titulo: 'Hoy',        icono: 'camion',    menu: true,  pantalla: 'obra',      bloque: 7,
+  { ruta: '/r',             apartado: 'repartidor', titulo: 'Hoy',        icono: 'camion',    menu: true,  pantalla: 'repartoHoy',      bloque: 7,
     promesa: 'Cuántas entregas, cuánto camino y cuál es la primera.' },
   { ruta: '/r/ruta',        apartado: 'repartidor', titulo: 'Mi ruta',    icono: 'ruta',      menu: true,  pantalla: 'obra',      bloque: 8,
     promesa: 'El orden de las paradas ya resuelto, y el mapa.' },
-  { ruta: '/r/parada/:id',  apartado: 'repartidor', titulo: 'Parada',     icono: 'parada',    menu: false, pantalla: 'obra',      bloque: 7,
+  { ruta: '/r/parada/:id',  apartado: 'repartidor', titulo: 'Parada',     icono: 'parada',    menu: false, pantalla: 'parada',      bloque: 7,
     ejemplo: 'demo',
     promesa: 'Qué entregas, cuántas piezas, cuánto cobras y cuánto cambio das.' },
-  { ruta: '/r/turno',       apartado: 'repartidor', titulo: 'Mi turno',   icono: 'turno',     menu: true,  pantalla: 'obra',      bloque: 7,
+  { ruta: '/r/turno',       apartado: 'repartidor', titulo: 'Mi turno',   icono: 'turno',     menu: true,  pantalla: 'miTurno',      bloque: 7,
     promesa: 'Entrada, salida y pausas. Tus horas del día y de la semana.' },
-  { ruta: '/r/historial',   apartado: 'repartidor', titulo: 'Historial',  icono: 'historial', menu: true,  pantalla: 'obra',      bloque: 7,
+  { ruta: '/r/historial',   apartado: 'repartidor', titulo: 'Historial',  icono: 'historial', menu: true,  pantalla: 'historial',      bloque: 7,
     promesa: 'Las entregas de días pasados.' },
 
   /* ── Punto de venta ──────────────────────────────────────────────────── */
@@ -113,7 +113,7 @@ export const RUTAS = [
     promesa: 'Todos los pedidos y en qué paso va cada uno.' },
   { ruta: '/a/repartidores',apartado: 'admin', titulo: 'Repartidores',    icono: 'repartidores', menu: true, pantalla: 'obra',    bloque: 8,
     promesa: 'Dónde va cada uno, su ruta y a qué velocidad. Sólo con turno abierto.' },
-  { ruta: '/a/turnos',      apartado: 'admin', titulo: 'Horas y días',    icono: 'turnos',    menu: true,  pantalla: 'obra',      bloque: 7,
+  { ruta: '/a/turnos',      apartado: 'admin', titulo: 'Horas y días',    icono: 'turnos',    menu: true,  pantalla: 'horas',      bloque: 7,
     promesa: 'Horas trabajadas por repartidor, por día, semana y quincena.' },
   { ruta: '/a/clientes',    apartado: 'admin', titulo: 'Clientes',        icono: 'clientes',  menu: true,  pantalla: 'obra',      bloque: 9,
     promesa: 'Cada cuándo compra cada quien, y a quién le toca volver a pedir.' },
