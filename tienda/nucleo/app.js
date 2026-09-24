@@ -14,8 +14,9 @@ import { PANTALLAS as ADMIN } from '../admin/pantallas.js';
 import { PANTALLAS as IMPORTAR } from '../admin/importar.js';
 import { PANTALLAS as VENTA } from '../venta/pantallas.js';
 import { PANTALLAS as PEDIR } from '../cliente/pedir.js';
+import { PANTALLAS as PEDIDOS } from '../admin/pedidos.js';
 
-const PANTALLAS = { ...CLIENTE, ...PEDIR, ...ADMIN, ...IMPORTAR, ...VENTA, obra, noexiste };
+const PANTALLAS = { ...CLIENTE, ...PEDIR, ...ADMIN, ...IMPORTAR, ...VENTA, ...PEDIDOS, obra, noexiste };
 
 const $app = document.getElementById('app');
 const $avisos = document.getElementById('avisos');

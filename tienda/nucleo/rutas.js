@@ -94,7 +94,7 @@ export const RUTAS = [
     promesa: 'Regresar una venta con su ticket: la pieza vuelve al inventario y el dinero sale de caja.' },
 
   /* ── Administrativo ──────────────────────────────────────────────────── */
-  { ruta: '/a',             apartado: 'admin', titulo: 'Tablero',         icono: 'tablero',   menu: true,  pantalla: 'obra',      bloque: 6,
+  { ruta: '/a',             apartado: 'admin', titulo: 'Tablero',         icono: 'tablero',   menu: true,  pantalla: 'tablero',      bloque: 6,
     promesa: 'En vivo: ventas de hoy, pedidos en curso, repartidores en el mapa y lo que se acaba.' },
   { ruta: '/a/productos',   apartado: 'admin', titulo: 'Productos',       icono: 'caja',      menu: true,  pantalla: 'productos',      bloque: 3,
     promesa: 'Dar de alta, cambiar precio y fotos, y sacar el código QR o de barras de cada uno.' },
@@ -109,7 +109,7 @@ export const RUTAS = [
     promesa: 'Sube un Excel, PDF o Word con tus productos y la app los deja listos.' },
   { ruta: '/a/categorias',  apartado: 'admin', titulo: 'Categorías',      icono: 'categorias',menu: true,  pantalla: 'categorias',      bloque: 3,
     promesa: 'Crear, renombrar y ordenar categorías, y qué campos lleva cada una.' },
-  { ruta: '/a/pedidos',     apartado: 'admin', titulo: 'Pedidos',         icono: 'lista',     menu: true,  pantalla: 'obra',      bloque: 6,
+  { ruta: '/a/pedidos',     apartado: 'admin', titulo: 'Pedidos',         icono: 'lista',     menu: true,  pantalla: 'pedidosAdmin',      bloque: 6,
     promesa: 'Todos los pedidos y en qué paso va cada uno.' },
   { ruta: '/a/repartidores',apartado: 'admin', titulo: 'Repartidores',    icono: 'repartidores', menu: true, pantalla: 'obra',    bloque: 8,
     promesa: 'Dónde va cada uno, su ruta y a qué velocidad. Sólo con turno abierto.' },

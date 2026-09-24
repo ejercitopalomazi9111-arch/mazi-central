@@ -802,6 +802,33 @@ body:has(.pos-barra:not([hidden])) .avisos{ bottom: calc(96px + env(safe-area-in
 .pasos-pedido li.ahora .punto{ border-color: var(--acento); color: var(--acento-hondo); background: var(--acento-suave); }
 .pasos-pedido li.ahora{ color: var(--tinta); }
 
+
+/* ══ Tablero y pedidos del negocio (Bloque 6) ═══════════════════════════ */
+.saludo{ font-size: var(--t-sub); font-weight: 700; margin: 0 0 var(--e3); }
+a.cifra-caja{ text-decoration: none; }
+.tablero-cols{ display: grid; gap: var(--e5); margin-top: var(--e5); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1000px){ .tablero-cols{ grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); align-items: start; } }
+.en-vivo{ display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-chica); color: var(--tinta-suave); font-weight: 650; }
+.en-vivo .ico{ width: 16px; height: 16px; }
+.punto-vivo{ width: 10px; height: 10px; border-radius: 50%; background: var(--bien); box-shadow: 0 0 0 0 var(--bien); animation: late 2s infinite; }
+@keyframes late{ 70%{ box-shadow: 0 0 0 8px transparent; } }
+.vacio-linea{ display: flex; gap: var(--e2); align-items: center; color: var(--tinta-suave); padding: var(--e4); border: 1px dashed var(--linea-fuerte); border-radius: var(--radio); }
+.vacio-linea .ico{ color: var(--bien); }
+.pedidos-admin{ list-style: none; margin: 0 0 var(--e3); padding: 0; display: grid; gap: var(--e3); }
+.pedido-admin{ padding: var(--e4); display: grid; gap: var(--e3); }
+.pedido-admin.tarde{ border-color: var(--mal); box-shadow: 0 0 0 1px var(--mal); }
+.pedido-admin header{ display: flex; justify-content: space-between; gap: var(--e3); align-items: flex-start; }
+.pedido-admin h3{ font-size: 18px; margin: 0; }
+.pedido-admin .nota{ margin: 2px 0 0; }
+.pedido-admin .lado{ display: grid; justify-items: end; gap: 4px; flex: none; }
+.pedido-admin .lado strong{ font-size: 20px; font-variant-numeric: tabular-nums; }
+.pedido-admin .campo{ max-width: 320px; }
+.pago-linea{ display: flex; flex-wrap: wrap; gap: var(--e2); align-items: center; margin: 0; }
+.pago-linea .nota{ margin: 0; }
+.segmentos.desliza{ overflow-x: auto; scrollbar-width: none; margin-bottom: var(--e4); }
+.segmentos.desliza button{ white-space: nowrap; flex: none; padding: 0 var(--e3); }
+.cuenta-chica{ display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 99px; background: var(--acento); color: var(--sobre-acento); font-size: 12px; margin-left: 4px; }
+
 /* ── Capas: hoja inferior, modal, aviso ────────────────────────────────── */
 /* Hoja que sube desde abajo: en teléfono es donde está el pulgar. En pantalla
    ancha se vuelve un diálogo al centro. */
