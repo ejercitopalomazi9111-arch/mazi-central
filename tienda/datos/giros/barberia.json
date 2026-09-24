@@ -1,0 +1,262 @@
+{
+  "_que": "Configuración del giro barbería. Lo que distingue a un giro de otro vive AQUÍ, no en el código: categorías con sus campos, y cómo le dicen los clientes a las cosas. El catálogo se siembra aparte (catalogo-muestra.json) o se importa.",
+  "slug": "barberia",
+  "giro": "barbería",
+  "categorias": [
+    {
+      "id": "color",
+      "nombre": "Color y tinte",
+      "icono": "color",
+      "plantilla": [
+        {
+          "tipo": "texto",
+          "clave": "tono",
+          "etiqueta": "Tono"
+        },
+        {
+          "tipo": "texto",
+          "clave": "volumen",
+          "etiqueta": "Volumen"
+        },
+        {
+          "tipo": "texto",
+          "clave": "contenido",
+          "etiqueta": "Contenido"
+        }
+      ]
+    },
+    {
+      "id": "maquinas",
+      "nombre": "Máquinas y cortadoras",
+      "icono": "maquinas",
+      "plantilla": [
+        {
+          "tipo": "opcion",
+          "clave": "tipo",
+          "etiqueta": "Tipo",
+          "opciones": [
+            "Cortadora",
+            "Recortadora",
+            "Rasuradora",
+            "Patillera"
+          ]
+        },
+        {
+          "tipo": "si_no",
+          "clave": "inalambrica",
+          "etiqueta": "Inalámbrica"
+        },
+        {
+          "tipo": "texto",
+          "clave": "garantia",
+          "etiqueta": "Garantía"
+        }
+      ]
+    },
+    {
+      "id": "barba",
+      "nombre": "Barba y afeitado",
+      "icono": "barba",
+      "plantilla": [
+        {
+          "tipo": "texto",
+          "clave": "contenido",
+          "etiqueta": "Contenido"
+        },
+        {
+          "tipo": "opcion",
+          "clave": "uso",
+          "etiqueta": "Para",
+          "opciones": [
+            "Antes de afeitar",
+            "Después de afeitar",
+            "Diario"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "aparatos",
+      "nombre": "Secadoras y planchas",
+      "icono": "aparatos",
+      "plantilla": [
+        {
+          "tipo": "texto",
+          "clave": "potencia",
+          "etiqueta": "Potencia"
+        },
+        {
+          "tipo": "texto",
+          "clave": "temperatura",
+          "etiqueta": "Temperatura máxima"
+        }
+      ]
+    },
+    {
+      "id": "corte",
+      "nombre": "Tijeras, peines y cepillos",
+      "icono": "corte",
+      "plantilla": [
+        {
+          "tipo": "texto",
+          "clave": "material",
+          "etiqueta": "Material"
+        },
+        {
+          "tipo": "texto",
+          "clave": "medida",
+          "etiqueta": "Medida"
+        }
+      ]
+    },
+    {
+      "id": "peinado",
+      "nombre": "Ceras, geles y peinado",
+      "icono": "peinado",
+      "plantilla": [
+        {
+          "tipo": "opcion",
+          "clave": "fijacion",
+          "etiqueta": "Fijación",
+          "opciones": [
+            "Ligera",
+            "Media",
+            "Fuerte",
+            "Extra fuerte"
+          ]
+        },
+        {
+          "tipo": "opcion",
+          "clave": "acabado",
+          "etiqueta": "Acabado",
+          "opciones": [
+            "Mate",
+            "Natural",
+            "Brillo"
+          ]
+        },
+        {
+          "tipo": "texto",
+          "clave": "contenido",
+          "etiqueta": "Contenido"
+        }
+      ]
+    },
+    {
+      "id": "cuidado",
+      "nombre": "Shampoo y tratamiento",
+      "icono": "cuidado",
+      "plantilla": [
+        {
+          "tipo": "texto",
+          "clave": "contenido",
+          "etiqueta": "Contenido"
+        },
+        {
+          "tipo": "texto",
+          "clave": "cabello",
+          "etiqueta": "Tipo de cabello"
+        }
+      ]
+    },
+    {
+      "id": "accesorios",
+      "nombre": "Accesorios",
+      "icono": "accesorios",
+      "plantilla": []
+    }
+  ],
+  "ajustes": {
+    "bot": {
+      "sinonimos": [
+        [
+          "cera",
+          "wax",
+          "pomada",
+          "pomade",
+          "paste",
+          "modelador",
+          "modeladora"
+        ],
+        [
+          "mate",
+          "matte",
+          "mat",
+          "opaco"
+        ],
+        [
+          "navaja",
+          "blade",
+          "cuchilla",
+          "razor",
+          "rastrillo",
+          "hoja"
+        ],
+        [
+          "shampoo",
+          "champu",
+          "champo"
+        ],
+        [
+          "tinte",
+          "color",
+          "coloracion",
+          "colorante"
+        ],
+        [
+          "aceite",
+          "oil"
+        ],
+        [
+          "secadora",
+          "secador",
+          "dryer"
+        ],
+        [
+          "plancha",
+          "alaciadora",
+          "flat"
+        ],
+        [
+          "maquina",
+          "cortadora",
+          "clipper",
+          "recortadora",
+          "trimmer",
+          "patillera",
+          "rasuradora",
+          "shaver"
+        ],
+        [
+          "tijera",
+          "scissor",
+          "shear"
+        ],
+        [
+          "cepillo",
+          "brush"
+        ],
+        [
+          "crema",
+          "cream"
+        ],
+        [
+          "laca",
+          "spray",
+          "fijador"
+        ],
+        [
+          "oxidante",
+          "peroxido",
+          "developer",
+          "revelador"
+        ],
+        [
+          "acondicionador",
+          "conditioner",
+          "enjuague"
+        ]
+      ]
+    }
+  }
+}

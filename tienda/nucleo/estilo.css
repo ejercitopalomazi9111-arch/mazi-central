@@ -1118,3 +1118,10 @@ dialog.hoja .hoja-cuerpo{ padding: var(--e5); overflow-y: auto; max-height: calc
 .pub{ padding: var(--e3) var(--e4); border: 1px solid var(--linea); border-radius: var(--radio); background: var(--superficie); display: grid; gap: var(--e2); }
 .pub-cabeza{ display: flex; flex-wrap: wrap; gap: var(--e2); align-items: center; }
 .pub p{ margin: 0; overflow-wrap: anywhere; }
+
+/* Producto sin foto en la tienda: recuadro con ícono, nunca una imagen rota. */
+.producto .foto .sin-foto, .foto-grande .sin-foto{ display: grid; place-items: center; width: 100%; aspect-ratio: 1; background: var(--hundido); color: var(--tinta-suave); }
+.producto .foto .sin-foto .ico{ width: 40%; height: 40%; opacity: .5; }
+.foto-grande .sin-foto .ico{ width: 30%; height: 30%; opacity: .5; }
+.mios .sin-foto, .renglon .sin-foto{ display: grid; place-items: center; width: 56px; height: 56px; border-radius: 8px; background: var(--hundido); color: var(--tinta-suave); flex: none; }
+.renglon .sin-foto{ width: 76px; height: 76px; }

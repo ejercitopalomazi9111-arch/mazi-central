@@ -329,8 +329,8 @@ async function importar(){
         const b = e.target.closest('button'); if(!b) return;
         if(b.matches('[data-plantilla]')) descargarCSV('plantilla-productos.csv', [
           ['Nombre', 'Marca', 'Categoría', 'Precio', 'Precio antes', 'SKU', 'Código de barras', 'Existencias', 'Descripción'],
-          ['Cera mate fijación fuerte 100 g', 'Mi marca', categorias[0]?.nombre || '', '250', '', 'CER-001', '', '12', ''],
-          ['Tijera de acero 6 pulgadas', 'Otra marca', '', '480', '560', 'TIJ-006', '7501234567890', '3', 'Filo de navaja'],
+          ['Producto de ejemplo · borra este renglón', 'Mi marca', categorias[0]?.nombre || '', '250', '', 'EJE-001', '', '12', ''],
+          ['Otro producto de ejemplo', 'Otra marca', '', '480', '560', 'EJE-002', '7501234567890', '3', 'Una descripción corta'],
         ]);
         if(b.matches('[data-otro]')){ s.paso = 'elegir'; s.fotos.clear(); pintar(); }
         if(b.matches('[data-columnas]')){ s.paso = 'columnas'; pintar(); }

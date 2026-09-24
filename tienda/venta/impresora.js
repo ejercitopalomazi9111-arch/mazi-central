@@ -26,7 +26,7 @@ const ayudaAparato = () => {
 
 const EJEMPLO = {
   folio: 128, cuando: Date.now(), cajero: 'Caja 1',
-  renglones: [{ nombre: 'Cera mate fijación fuerte 100 g', cantidad: 2, precio: 125, importe: 250 }, { nombre: 'Navaja clásica', cantidad: 1, precio: 180, importe: 180 }],
+  renglones: [{ nombre: 'Producto de ejemplo', cantidad: 2, precio: 125, importe: 250 }, { nombre: 'Otro producto', cantidad: 1, precio: 180, importe: 180 }],
   total: 430, metodo: 'efectivo', recibido: 500, cambio: 70, qr: location.origin + location.pathname,
 };
 

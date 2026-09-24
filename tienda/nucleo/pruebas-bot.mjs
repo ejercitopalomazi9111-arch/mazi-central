@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 /* Pruebas del bot · `node tienda/nucleo/pruebas-bot.mjs`
    Lo que no se negocia: nunca inventa precio ni existencia, y si no sabe, pasa a una persona. */
-import { responder, buscar, cantidad, intencion } from './bot.js';
+import { responder, buscar as buscarBase, cantidad, intencion, sinonimosATexto, textoASinonimos } from './bot.js';
+import { readFileSync } from 'node:fs';
+// Los sinónimos son del giro (datos/giros/barberia.json), no del código.
+const BARBERIA = JSON.parse(readFileSync(new URL('../datos/giros/barberia.json', import.meta.url))).ajustes.bot.sinonimos;
+const buscar = (t, ps, cs = [], extra = BARBERIA) => buscarBase(t, ps, cs, extra);
 let bien = 0, mal = 0;
 const ok = (t, c, d = '') => { c ? bien++ : mal++; console.log(`  ${c ? '✓' : '✗'} ${t}${c || !d ? '' : ` — ${d}`}`); };
 const productos = [
@@ -13,7 +17,7 @@ const productos = [
   { id: 'm1', n: 'Máquina Wahl Magic Clip', m: 'Wahl', c: 'maquinas', p: 2450, a: null, q: 6, x: false },
 ];
 const categorias = [{ id: 'peinado', nombre: 'Peinado' }, { id: 'barba', nombre: 'Barba y afeitado' }, { id: 'cuidado', nombre: 'Cuidado' }, { id: 'maquinas', nombre: 'Máquinas' }];
-const completo = { nombre: 'Surtido', marca: { nombre_corto: 'Surtido' }, ajustes: {
+const completo = { nombre: 'Surtido', marca: { nombre_corto: 'Surtido' }, ajustes: { bot: { sinonimos: BARBERIA },
   envio: { costo: 60, gratis_desde: 1000, zona: 'Querétaro y Corregidora', tiempo: 'el mismo día', recoger: true },
   pagos: { efectivo: true, tarjeta: false, transferencia: true, banco: 'BBVA', clabe: '012180001234567895', titular: 'Surtido SA' },
   contacto: { horario: 'lunes a sábado de 9 a 7', direccion: 'Hidalgo 10, Centro' } } };
@@ -55,7 +59,8 @@ const reales = [
 ok('«cera mate» encuentra «Matte Paste» (sinónimos del proveedor en inglés)', buscar('cera mate', reales)[0]?.id === 'r1', buscar('cera mate', reales).map((p) => p.n).join());
 ok('«cera» no es «cerámica»', !buscar('cera', reales).some((p) => p.id === 'r2'));
 ok('«navajas» encuentra «Blade»', buscar('navajas', reales)[0]?.id === 'r4');
-ok('sinónimos del negocio: «termo» → «tumbler»', buscar('termo', [{ id: 'z', n: 'Tumbler Stanley 40 oz', m: '', c: '', p: 1 }], [], [['termo', 'tumbler']]).length === 1);
+ok('sinónimos de otro giro: «termo» → «tumbler»', buscar('termo', [{ id: 'z', n: 'Tumbler Stanley 40 oz', m: '', c: '', p: 1 }], [], [['termo', 'tumbler']]).length === 1);
+ok('sin sinónimos del giro, «cera» NO encuentra «Matte Paste» (no hay atajos escondidos en el código)', buscarBase('cera', [{ id: 'r1', n: 'Pacinos Matte Paste 118 ml', m: '', c: '', p: 1 }], [], []).length === 0);
 const par = buscar('cera brillo', reales);
 ok('si sólo coincide la mitad, sale marcado como parcial', par.parcial === true, JSON.stringify(par.map((p) => p.id)));
 console.log('\n· Precio y existencias: sólo del catálogo');
@@ -114,5 +119,9 @@ ok('a la segunda, pasa a una persona', confuso[1].accion === 'persona');
 const [fac] = charla(['necesito factura']);
 ok('factura va con una persona (no la hace el bot)', fac.accion === 'persona');
 
+console.log('\n· Sinónimos editables en Ajustes');
+ok('ida y vuelta sin perder nada', JSON.stringify(textoASinonimos(sinonimosATexto(BARBERIA))) === JSON.stringify(BARBERIA));
+const t = textoASinonimos('Termo = Tumbler, BOTELLA\n\nsólo\ntaza: mug, mug');
+ok('mayúsculas y acentos fuera, renglones de una palabra se ignoran, repetidos se juntan', JSON.stringify(t) === JSON.stringify([['termo', 'tumbler', 'botella'], ['taza', 'mug']]), JSON.stringify(t));
 console.log(`\n${bien} pasan · ${mal} fallan\n`);
 process.exit(mal ? 1 : 0);

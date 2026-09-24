@@ -18,7 +18,13 @@ import { negocio, catalogo, carrito, conversaciones, tomarConversacion } from '.
 import { responder } from '../nucleo/bot.js';
 
 const LLAVE = 'tienda-simulador-bot';
-const SUGERENCIAS = ['Hola', '¿Tienen cera?', '¿Cuánto es el envío?', 'Quiero 2 navajas', '¿Qué ofertas hay?', '¿A qué hora abren?', 'Es todo', 'Quiero hablar con una persona'];
+/* Lo que se le pregunta de prueba sale del catálogo de ESTE negocio (una
+   categoría y un producto con existencias), no de un giro escrito a mano. */
+function sugerencias(productos, categorias){
+  const corto = productos.filter((p) => !p.x).sort((a, b) => a.n.length - b.n.length)[0];
+  return ['Hola', categorias[0] && `¿Qué tienen de ${categorias[0].nombre.toLowerCase()}?`, '¿Cuánto es el envío?',
+    corto && `Quiero 2 ${corto.n}`, '¿Qué ofertas hay?', '¿A qué hora abren?', 'Es todo', 'Quiero hablar con una persona'].filter(Boolean);
+}
 const HORA = new Intl.DateTimeFormat('es-MX', { hour: 'numeric', minute: '2-digit' });
 
 const leer = () => { try{ return JSON.parse(sessionStorage.getItem(LLAVE)) || null; }catch(e){ return null; } };
@@ -70,7 +76,7 @@ async function conversacionesPantalla(){
             <p class="nota">Escríbele como lo haría un cliente por WhatsApp. Contesta con tu catálogo y tus ajustes de hoy. No se manda nada a ningún lado.</p></div>
             <button class="boton-ico" data-reiniciar aria-label="Empezar otra conversación" title="Empezar otra">${icono('actualizar')}</button></header>
           <ol class="chat" id="chat" aria-live="polite"></ol>
-          <div class="chips-elegir sugerencias" data-sugerencias>${SUGERENCIAS.map((s) => `<button type="button" class="chip-boton" data-decir="${esc(s)}">${esc(s)}</button>`).join('')}</div>
+          <div class="chips-elegir sugerencias" data-sugerencias>${sugerencias(productos, categorias).map((s) => `<button type="button" class="chip-boton" data-decir="${esc(s)}">${esc(s)}</button>`).join('')}</div>
           <form class="escribir" id="escribir" autocomplete="off">
             <label class="oculto" for="texto">Mensaje</label>
             <input id="texto" maxlength="300" placeholder="Escribe como cliente…" enterkeyhint="send">

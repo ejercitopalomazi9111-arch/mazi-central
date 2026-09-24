@@ -21,6 +21,7 @@ import {
   ponerMinimo, movimientosDe, guardarCategoria, borrarCategoria, guardarNegocio, asignarCodigos,
 } from '../nucleo/datos.js';
 import { negocioPedido } from '../config.js';
+import { sinonimosATexto, textoASinonimos } from '../nucleo/bot.js';
 
 const PAGINA = 60;
 const MAX_FOTOS = 8;
@@ -627,7 +628,7 @@ async function inventario(){
 
 /* Iconos que tienen sentido para una categoría (no los de la navegación). */
 const ICONOS_CATEGORIA = ['caja', 'color', 'maquinas', 'barba', 'corte', 'peinado', 'cuidado', 'aparatos', 'accesorios',
-  'tienda', 'fuego', 'sol', 'luna', 'descuentos', 'sorteo', 'apartados', 'carrito', 'lugar', 'reloj', 'ticket', 'efectivo', 'tarjeta']
+  'tienda', 'fuego', 'sol', 'luna', 'descuentos', 'sorteo', 'apartados', 'carrito', 'lugar', 'reloj', 'ticket', 'efectivo', 'tarjeta', 'ropa', 'termo', 'taza', 'regalo']
   .filter((n) => ICONOS[n]);
 const TIPOS = [['texto', 'Texto'], ['numero', 'Número'], ['opcion', 'Lista de opciones'], ['si_no', 'Sí o no']];
 
@@ -648,7 +649,7 @@ async function categoriasPantalla(){
 
   return {
     html: `
-      <p class="nota">El orden de aquí es el orden en la tienda. Cada categoría dice qué datos lleva su producto — una tijera, medida; un tinte, tono.</p>
+      <p class="nota">El orden de aquí es el orden en la tienda. Cada categoría dice qué datos lleva su producto: talla, color, contenido, lo que le toque.</p>
       <div class="botones"><button class="boton principal" data-nueva>${icono('agregar')}Nueva categoría</button></div>
       <ul class="lista categorias-lista" id="lista">${categorias.map(filaCat).join('')}</ul>
       ${cuenta.get(null) ? `<p class="nota">${plural(cuenta.get(null), 'producto está', 'productos están')} sin categoría: no se ven en la tienda por categoría.</p>` : ''}`,
@@ -964,10 +965,17 @@ async function ajustes(){
         <section class="tarjeta bloque-form">
           <h2>El ticket</h2>
           <p class="nota">Lo que dice cada ticket impreso. La impresora se configura en cada caja: Punto de venta → Impresora.</p>
-          ${campo('ticket_encabezado', 'Debajo del nombre', ticket.encabezado || '', 'maxlength="120" placeholder="Distribuidora de productos para barbería"')}
+          ${campo('ticket_encabezado', 'Debajo del nombre', ticket.encabezado || '', 'maxlength="120" placeholder="Lo que vendes, en una línea"')}
           ${campo('ticket_rfc', 'RFC (opcional)', ticket.rfc || '', 'maxlength="13" autocapitalize="characters"')}
           ${campo('ticket_pie', 'Al final', ticket.pie || '', 'maxlength="160" placeholder="¡Gracias por tu compra!"')}
           ${casilla('ticket_qr', 'Código QR para volver a pedir', 'El cliente lo escanea y cae en la tienda en línea.', ticket.qr !== false)}
+        </section>
+
+        <section class="tarjeta bloque-form">
+          <h2>Cómo le dicen tus clientes</h2>
+          <p class="nota">El buscador y el bot entienden estas palabras como la misma cosa. Sirve cuando el catálogo viene en inglés o con otro nombre: si alguien busca «tenis», también encuentra «sneakers». Un grupo por renglón.</p>
+          <label class="campo" for="sinonimos"><span class="oculto">Palabras que significan lo mismo</span>
+            <textarea id="sinonimos" name="sinonimos" rows="6" placeholder="termo = tumbler, botella&#10;playera = camiseta, t-shirt">${esc(sinonimosATexto(a.bot?.sinonimos))}</textarea></label>
         </section>
 
         <section class="tarjeta bloque-form">
@@ -1052,6 +1060,7 @@ async function ajustes(){
             contacto: { ...contacto, whatsapp: tel, horario: v('horario'), direccion: v('direccion') },
             ...(tienda ? { tienda } : {}),
             ticket: { ...ticket, encabezado: v('ticket_encabezado'), rfc: v('ticket_rfc').toUpperCase(), pie: v('ticket_pie'), qr: si('ticket_qr') },
+            bot: { ...(a.bot || {}), sinonimos: textoASinonimos($f.elements.sinonimos.value) },
           },
         };
         try{

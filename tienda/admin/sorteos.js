@@ -27,7 +27,7 @@ function formulario(s){
     <label class="campo" for="s-nombre"><span class="etiqueta-campo">Nombre</span>
       <input id="s-nombre" maxlength="80" value="${esc(s.nombre || '')}" placeholder="Sorteo de septiembre"></label>
     <label class="campo" for="s-premio"><span class="etiqueta-campo">Premio</span>
-      <input id="s-premio" maxlength="120" value="${esc(s.premio || '')}" placeholder="Una máquina Wahl Magic Clip"></label>
+      <input id="s-premio" maxlength="120" value="${esc(s.premio || '')}" placeholder="Un producto de tu tienda"></label>
     <label class="campo" for="s-minimo"><span class="etiqueta-campo">Compra mínima en el mes</span>
       <input id="s-minimo" inputmode="decimal" value="${s.minimo_mensual ?? ''}" placeholder="1500"><span class="ayuda">Quien compre esto o más dentro del mes, entra.</span></label>
     <label class="campo" for="s-mes"><span class="etiqueta-campo">Mes</span>

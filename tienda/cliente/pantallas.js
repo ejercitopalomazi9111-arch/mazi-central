@@ -29,11 +29,17 @@ const POCAS = 5;
 
 /* ── Piezas que se repiten ─────────────────────────────────────────────── */
 
+/* La foto, o un recuadro con ícono cuando no hay: un catálogo recién importado
+   casi nunca trae fotos, y una imagen rota se ve a tienda abandonada. */
+const foto = (p, w, h, extra = '') => p.f
+  ? `<img src="${esc(p.f)}" alt="" width="${w}" height="${h}" ${extra}>`
+  : `<span class="sin-foto" role="img" aria-label="Sin foto">${icono('caja')}</span>`;
+
 function tarjeta(p){
   const oferta = p.a ? Math.round((1 - p.p / p.a) * 100) : 0;
   return `<a class="producto${p.x ? ' sin' : ''}" href="${enlace('/p/:id', { id: p.id })}">
     <div class="foto">
-      <img src="${esc(p.f)}" alt="" width="480" height="480" loading="lazy" decoding="async">
+      ${foto(p, 480, 480, 'loading="lazy" decoding="async"')}
       ${p.x ? '<span class="marca-foto agotado">Agotado</span>'
             : oferta >= 5 ? `<span class="marca-foto oferta">−${oferta}%</span>` : ''}
     </div>
@@ -76,7 +82,7 @@ function existencia(p){
 /* Un renglón con foto para las secciones que son de ESTE cliente. */
 function renglonMio(p, { cantidad, razon, boton }){
   return `<li class="mio${p.x ? ' sin' : ''}">
-    <a href="${enlace('/p/:id', { id: p.id })}"><img src="${esc(p.f)}" alt="" width="64" height="64" loading="lazy"></a>
+    <a href="${enlace('/p/:id', { id: p.id })}">${foto(p, 64, 64, 'loading="lazy"')}</a>
     <div class="texto"><a class="n" href="${enlace('/p/:id', { id: p.id })}">${cantidad > 1 ? `${cantidad} × ` : ''}${esc(p.n)}</a>
       <small>${p.x ? 'Agotado por ahora' : esc(razon)}</small></div>
     ${p.x ? '' : boton}
@@ -162,6 +168,11 @@ export async function buscar(){
   // coinciden por categoría («algo para la barba») van después.
   const indice = productos.map((p) => ({ p, propio: ' ' + quitaAcentos(`${p.n} ${p.m} ${p.sku || ''}`), cat: ' ' + quitaAcentos(nombreCat.get(p.c) || '') }));
   const n = await negocio();
+  // Los ejemplos salen del catálogo de ESTE negocio: dos categorías y la marca
+  // que más tiene. Escribirlos a mano los amarraba a un solo giro.
+  const cuenta = new Map(); for(const p of productos) if(p.m) cuenta.set(p.m, (cuenta.get(p.m) || 0) + 1);
+  const marca = [...cuenta.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+  const ejemplos = [categorias[0], marca, categorias[1]].map((x) => typeof x === 'string' ? x : x?.nombre.split(/\s+/)[0]).filter(Boolean).map((x) => x.toLowerCase());
   const grupos = [...SINONIMOS, ...(n.ajustes?.bot?.sinonimos || [])].map((g) => g.map(quitaAcentos));
   return {
     html: `
@@ -176,7 +187,7 @@ export async function buscar(){
       const pinta = () => {
         const palabras = quitaAcentos(q.value).split(/\s+/).filter(Boolean);
         if(!palabras.length){
-          res.innerHTML = `<p class="nota">Escribe lo que buscas. Por ejemplo: <b>cera</b>, <b>Wahl</b> o <b>barba</b>.</p>`;
+          res.innerHTML = `<p class="nota">Escribe lo que buscas${ejemplos.length ? `. Por ejemplo: ${ejemplos.map((x) => `<b>${esc(x)}</b>`).join(', ').replace(/, ([^,]*)$/, ' o $1')}` : ''}.</p>`;
           return;
         }
         // Cada palabra vale por sus sinónimos: el catálogo del proveedor viene
@@ -271,7 +282,7 @@ export async function producto({ params }){
     html: `
       <div class="ficha">
         <div>
-          <div class="foto-grande"><img id="foto" src="${esc(p.f)}" alt="${esc(p.n)}" width="480" height="480" decoding="async"></div>
+          <div class="foto-grande">${p.f ? `<img id="foto" src="${esc(p.f)}" alt="${esc(p.n)}" width="480" height="480" decoding="async">` : foto(p, 480, 480)}</div>
           ${p.fotos.length > 1 ? `<div class="miniaturas">${p.fotos.map((f, i) => `<button type="button" data-foto="${esc(f)}" aria-label="Foto ${i + 1}" aria-pressed="${i === 0}"><img src="${esc(f)}" alt="" width="64" height="64" loading="lazy"></button>`).join('')}</div>` : ''}
         </div>
         <div>
@@ -354,7 +365,7 @@ export async function carritoPantalla(){
           + '<div class="carrito-rejilla"><div class="renglones">' + renglones.map(([id, n]) => {
             const p = porId.get(id); total += p.p * n;
             return `<div class="renglon">
-              <a href="${enlace('/p/:id', { id })}"><img src="${esc(p.f)}" alt="" width="76" height="76" loading="lazy"></a>
+              <a href="${enlace('/p/:id', { id })}">${foto(p, 76, 76, 'loading="lazy"')}</a>
               <div>
                 <a class="n" href="${enlace('/p/:id', { id })}">${esc(p.n)}</a>
                 <div class="precio"><span class="ahora">${pesos(p.p * n)}</span>${n > 1 ? `<span class="nota chica">${pesos(p.p)} c/u</span>` : ''}</div>

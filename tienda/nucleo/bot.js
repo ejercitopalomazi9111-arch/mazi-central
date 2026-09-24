@@ -50,25 +50,18 @@ const raiz = (w) => w.length > 4 ? w.replace(/(es|s)$/, '') : w;
 const palabras = (t) => normal(t).split(' ').filter((w) => w && !RELLENO.has(w) && !/^\d+$/.test(w) && w.length > 1);
 
 /* Cómo le dice la gente vs. cómo viene en el catálogo (que llega mitad en
-   inglés del proveedor). Cada negocio puede sumar las suyas en
-   ajustes.bot.sinonimos: [["termo", "vaso", "tumbler"], …]. */
-export const SINONIMOS = [
-  ['cera', 'wax', 'pomada', 'pomade', 'paste', 'modelador', 'modeladora'],   // «pasta» no: en tintes es decolorante
-  ['mate', 'matte', 'mat', 'opaco'],
-  ['navaja', 'blade', 'cuchilla', 'razor', 'rastrillo', 'hoja'],
-  ['shampoo', 'champu', 'champo'],
-  ['tinte', 'color', 'coloracion', 'colorante'],
-  ['aceite', 'oil'],
-  ['secadora', 'secador', 'dryer'],
-  ['plancha', 'alaciadora', 'flat'],
-  ['maquina', 'cortadora', 'clipper', 'recortadora', 'trimmer', 'patillera', 'rasuradora', 'shaver'],
-  ['tijera', 'scissor', 'shear'],
-  ['cepillo', 'brush'],
-  ['crema', 'cream'],
-  ['laca', 'spray', 'fijador'],
-  ['oxidante', 'peroxido', 'developer', 'revelador'],
-  ['acondicionador', 'conditioner', 'enjuague'],
-];
+   inglés del proveedor). Son DEL GIRO, no del código: viven en los ajustes de
+   cada negocio (ajustes.bot.sinonimos: [["cera", "wax", "paste"], …]), se
+   siembran desde tienda/datos/giros/<giro>.json y se editan en Ajustes. Aquí
+   no queda ninguno a propósito: la prueba de giros revienta si vuelven. */
+export const SINONIMOS = [];
+
+/* Para editarlos en Ajustes: un grupo por renglón, «cera = wax, pomada, paste». */
+export const sinonimosATexto = (grupos = []) => grupos.filter((g) => g?.length >= 2).map(([a, ...r]) => `${a} = ${r.join(', ')}`).join('\n');
+export function textoASinonimos(texto){
+  return String(texto || '').split(/\n+/).map((l) => l.split(/[=,:;]/).map((w) => normal(w)).filter(Boolean))
+    .map((g) => [...new Set(g)]).filter((g) => g.length >= 2).slice(0, 200);
+}
 function variantes(w, grupos){
   const r = raiz(w), salida = new Set([r]);
   for(const g of grupos) if(g.some((x) => raiz(x) === r)) g.forEach((x) => salida.add(raiz(x)));

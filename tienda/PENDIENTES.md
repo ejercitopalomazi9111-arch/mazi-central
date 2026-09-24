@@ -76,3 +76,10 @@ _(se agregan aquí conforme salgan; ninguna detiene el trabajo)_
 
 - **Cupones** («con el código BUENFIN te hago 10 %») necesitan que el servidor aplique el
   descuento al cobrar. Las ofertas de hoy cambian el precio de todos; un cupón es para uno.
+
+- **El segundo giro (mercancía variada) está listo como configuración**, en
+  `tienda/datos/giros/variada.json`: categorías (ropa, termos, tazas, gorras, regalos) con sus
+  campos, marca provisional y cómo le dicen los clientes a las cosas. Ya se probó la tienda
+  completa con esa configuración y el código no cambió ni una línea. **Para que exista en la
+  base** alguien con acceso al panel de Supabase corre `select sembrar_negocio('<el JSON>')`
+  en el editor SQL; después se abre con `?negocio=variada` y el catálogo entra por el importador.
