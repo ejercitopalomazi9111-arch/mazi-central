@@ -82,6 +82,8 @@ export const RUTAS = [
     promesa: 'Entrada, salida y pausas. Tus horas del día y de la semana.' },
   { ruta: '/r/historial',   apartado: 'repartidor', titulo: 'Historial',  icono: 'historial', menu: true,  pantalla: 'historial',      bloque: 7,
     promesa: 'Las entregas de días pasados.' },
+  { ruta: '/r/ayuda',       apartado: 'repartidor', titulo: 'Cómo repartir', icono: 'info',   menu: true,  pantalla: 'manualRepartidor', bloque: 14,
+    promesa: 'Tu día en seis pasos: turno, ruta, paradas, cobro y cierre.' },
 
   /* ── Punto de venta ──────────────────────────────────────────────────── */
   { ruta: '/v',             apartado: 'venta', titulo: 'Cobrar',          icono: 'venta',     menu: true,  pantalla: 'cobrar',      bloque: 5,
@@ -94,6 +96,8 @@ export const RUTAS = [
     promesa: 'Qué impresora de tickets tienes, cómo está conectada, y una hoja de prueba.' },
   { ruta: '/v/devolucion',  apartado: 'venta', titulo: 'Devoluciones',    icono: 'deshacer',  menu: true,  pantalla: 'devolucion',      bloque: 5,
     promesa: 'Regresar una venta con su ticket: la pieza vuelve al inventario y el dinero sale de caja.' },
+  { ruta: '/v/ayuda',       apartado: 'venta', titulo: 'Cómo cobrar',     icono: 'info',      menu: true,  pantalla: 'manualCaja', bloque: 14,
+    promesa: 'Abrir caja, cobrar, devolver, vender sin internet y cerrar.' },
 
   /* ── Administrativo ──────────────────────────────────────────────────── */
   { ruta: '/a',             apartado: 'admin', titulo: 'Tablero',         icono: 'tablero',   menu: true,  pantalla: 'tablero',      bloque: 6,
@@ -131,6 +135,8 @@ export const RUTAS = [
     promesa: 'Calendario y cola de publicaciones.' },
   { ruta: '/a/reportes',    apartado: 'admin', titulo: 'Reportes',        icono: 'reportes',  menu: true,  pantalla: 'reportes',      bloque: 12,
     promesa: 'Los números, tipo Fadori.' },
+  { ruta: '/a/manual',      apartado: 'admin', titulo: 'Manual',          icono: 'lista',     menu: true,  pantalla: 'manualAdmin', bloque: 14,
+    promesa: 'Cómo se usa todo, por rol, para enseñarle a tu gente.' },
   { ruta: '/a/ajustes',     apartado: 'admin', titulo: 'Ajustes',         icono: 'ajustes',   menu: true,  pantalla: 'ajustes',      bloque: 3,
     promesa: 'Todo lo que cambia con el negocio, sin tocar código.' },
 ];

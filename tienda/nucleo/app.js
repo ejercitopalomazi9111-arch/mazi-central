@@ -27,8 +27,9 @@ import { PANTALLAS as SORTEO } from '../cliente/sorteo.js';
 import { PANTALLAS as DESCUENTOS } from '../admin/descuentos.js';
 import { PANTALLAS as REPORTES } from '../admin/reportes.js';
 import { PANTALLAS as REDES } from '../admin/redes.js';
+import { PANTALLAS as MANUAL } from '../admin/manual.js';
 
-const PANTALLAS = { ...CLIENTE, ...PEDIR, ...ADMIN, ...IMPORTAR, ...VENTA, ...PEDIDOS, ...REPARTO, ...RUTA, ...IMPRESORA, ...CLIENTES, ...CUENTA, ...DEVOLUCION, ...CONVERSACIONES, ...SORTEOS, ...SORTEO, ...DESCUENTOS, ...REPORTES, ...REDES, obra, noexiste };
+const PANTALLAS = { ...CLIENTE, ...PEDIR, ...ADMIN, ...IMPORTAR, ...VENTA, ...PEDIDOS, ...REPARTO, ...RUTA, ...IMPRESORA, ...CLIENTES, ...CUENTA, ...DEVOLUCION, ...CONVERSACIONES, ...SORTEOS, ...SORTEO, ...DESCUENTOS, ...REPORTES, ...REDES, ...MANUAL, obra, noexiste };
 
 const $app = document.getElementById('app');
 const $avisos = document.getElementById('avisos');

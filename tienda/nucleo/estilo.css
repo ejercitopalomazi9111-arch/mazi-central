@@ -1134,3 +1134,12 @@ dialog.hoja .hoja-cuerpo{ padding: var(--e5); overflow-y: auto; max-height: calc
 .franja-sin-red[hidden]{ display: none; }
 .pasos-instalar{ margin: 0 0 var(--e4); padding-left: var(--e5); display: grid; gap: var(--e3); font-size: 17px; }
 .pasos-instalar .ico{ width: 18px; height: 18px; vertical-align: -3px; }
+
+/* ══ MANUAL (Bloque 14) ═══════════════════════════════════════════════════ */
+.manual h2{ display: flex; gap: var(--e2); align-items: center; }
+.manual h2 .ico{ width: 24px; height: 24px; color: var(--acento); }
+.pasos-manual{ margin: 0; padding: 0; list-style: none; counter-reset: paso; display: grid; gap: var(--e3); max-width: 70ch; }
+.pasos-manual li{ counter-increment: paso; position: relative; padding: var(--e3) var(--e4) var(--e3) 56px; border: 1px solid var(--linea); border-radius: var(--radio); background: var(--superficie); }
+.pasos-manual li::before{ content: counter(paso); position: absolute; left: var(--e3); top: var(--e3); width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--acento-suave); color: var(--acento-hondo); font-weight: 800; }
+.pasos-manual p{ margin: var(--e1) 0 0; }
+.pasos-manual a{ font-weight: 700; }
