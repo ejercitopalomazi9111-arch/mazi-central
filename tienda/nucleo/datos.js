@@ -590,3 +590,52 @@ export const cobrarEntrega = (pedido, metodo, recibido) => llamar('cobrar_entreg
 /* Con 0010 aplicada, `envio` ya va dentro de `total`. Sin ella, el envío se
    quedó anotado en la dirección y hay que sumarlo para cobrar. */
 export const totalConEnvio = (p) => Number(p.envio) > 0 ? Number(p.total) : Number(p.total) + Number(p.direccion?.envio || 0);
+
+/* ══ REPARTIDOR Y TURNOS (Bloque 7) ═════════════════════════════════════════ */
+export async function miTurno(){
+  const p = await yo(); if(!p) return null;
+  const r = await db.from('turnos').select('id, inicio, fin, pausas(inicio, fin)').eq('perfil_id', p.id).is('fin', null).maybeSingle();
+  if(r.error) throw new ErrorDeDatos('No se pudo revisar tu turno', r.error);
+  return r.data;
+}
+export async function misTurnos(desde){
+  const p = await yo(); if(!p) return [];
+  const r = await db.from('turnos').select('id, inicio, fin, efectivo_esperado, efectivo_entregado, pausas(inicio, fin)')
+    .eq('perfil_id', p.id).gte('inicio', desde.toISOString()).order('inicio', { ascending: false });
+  if(r.error) throw new ErrorDeDatos('No se pudieron leer tus turnos', r.error);
+  return r.data;
+}
+export const abrirTurno = () => llamar('abrir_turno', {});
+export const pausarTurno = (pausar) => llamar('pausar_turno', { p_pausar: pausar });
+export const cerrarTurno = (entregado) => llamar('cerrar_turno', { p_entregado: entregado });
+
+export async function cobrosDeTurno(turnoId){
+  const r = await db.from('cobros').select('metodo, monto, cambio, cuando, pedido_id').eq('turno_id', turnoId);
+  if(r.error) throw new ErrorDeDatos('No se pudo leer lo cobrado', r.error);
+  return r.data.map((c) => ({ ...c, monto: Number(c.monto) }));
+}
+
+/* Lo asignado a mí. `desde` para el historial; sin él, lo que sigue pendiente. */
+export async function misEntregas({ desde } = {}){
+  const [n, p] = await Promise.all([negocio(), yo()]); if(!p) return [];
+  let q = db.from('pedidos').select(SELECT_PEDIDO + ', eventos_pedido(a, por_que, cuando)').eq('negocio_id', n.id).eq('repartidor_id', p.id);
+  q = desde ? q.gte('creado', desde.toISOString()) : q.in('estado', ['recibido', 'preparando', 'en_camino', 'no_entregado']);
+  const r = await q.order('creado', { ascending: true }).limit(200);
+  if(r.error) throw new ErrorDeDatos('No se pudieron leer tus entregas', r.error);
+  return r.data.map((x) => ({ ...x, total: Number(x.total) }));
+}
+
+export async function pedidoPorId(id){
+  const r = await db.from('pedidos').select(SELECT_PEDIDO + ', eventos_pedido(a, por_que, cuando)').eq('id', id).maybeSingle();
+  if(r.error) throw new ErrorDeDatos('No se pudo leer el pedido', r.error);
+  return r.data ? { ...r.data, total: Number(r.data.total) } : null;
+}
+
+/* Admin: turnos de todo el personal de reparto, para horas y nómina. */
+export async function turnosNegocio(desde){
+  const n = await negocio();
+  const r = await db.from('turnos').select('id, perfil_id, inicio, fin, efectivo_esperado, efectivo_entregado, pausas(inicio, fin), quien:perfiles(nombre, rol)')
+    .eq('negocio_id', n.id).gte('inicio', desde.toISOString()).order('inicio', { ascending: false }).limit(1000);
+  if(r.error) throw new ErrorDeDatos('No se pudieron leer los turnos', r.error);
+  return r.data;
+}

@@ -29,8 +29,3 @@ _(se agregan aquí conforme salgan; ninguna detiene el trabajo)_
   Mientras, el envío va anotado en el pedido y la app lo suma al cobrar (`totalConEnvio`).
   Lo único que no cuadra sin ella: el cobro que registra el repartidor guarda el total sin
   el envío, así que el corte de caja del repartidor sale corto por lo que costó el envío.
-- **El tablero en vivo** necesita que la tabla `pedidos` esté en la publicación de tiempo
-  real de Supabase (se activa en el panel: Database → Publications). Sin eso el tablero
-  funciona igual, pero se refresca cada 30 segundos en lugar de al instante; lo dice
-  arriba («Cada 30 s» o «En vivo»).
-
