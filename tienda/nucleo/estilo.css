@@ -960,3 +960,23 @@ dialog.hoja .hoja-cuerpo{ padding: var(--e5); overflow-y: auto; max-height: calc
   .app{ display: block; }
   body{ background: #fff; }
 }
+
+/* ══ CLIENTES Y RECOMPRA (Bloque 9) ══════════════════════════════════════ */
+.vistas-clientes{ flex-wrap: wrap; }   /* las cinco a la vista: una pestaña cortada a la mitad no se lee */
+.vistas-clientes button{ white-space: nowrap; padding: 0 var(--e3); min-height: 44px; flex: 1 1 auto; }
+.resumen-lista li small{ display: block; color: var(--tinta-suave); font-size: var(--t-chica); }
+.datos-cliente{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e3); margin: var(--e4) 0; }
+@media (min-width: 700px){ .datos-cliente{ grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.datos-cliente > div{ padding: var(--e3); border: 1px solid var(--linea); border-radius: var(--radio); background: var(--superficie); min-width: 0; }
+.datos-cliente dt{ font-size: var(--t-chica); color: var(--tinta-suave); font-weight: 650; }
+.datos-cliente dd{ margin: 2px 0 0; font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.datos-cliente dd small{ font-size: var(--t-chica); font-weight: 650; color: var(--tinta-suave); }
+.recompras{ list-style: none; margin: 0 0 var(--e4); padding: 0; display: grid; gap: var(--e3); }
+.recompras li{ padding: var(--e3) var(--e4); border: 1px solid var(--linea); border-radius: var(--radio); background: var(--superficie); }
+.recompra-cabeza{ display: flex; justify-content: space-between; align-items: flex-start; gap: var(--e3); }
+.recompra-cabeza strong{ min-width: 0; overflow-wrap: anywhere; }
+.recompra-cabeza .chip{ flex: none; }
+.recompras .nota{ margin: var(--e2) 0 0; }
+.hoja-cliente h3{ margin-top: var(--e5); }
+.hoja-cliente form.campo{ margin-top: var(--e5); }
+.hoja-cliente form.campo .boton{ justify-self: start; }

@@ -507,7 +507,7 @@ export async function sesionDeCliente(){
 export async function miFicha(){
   const p = await yo(); if(!p) return null;
   const n = await negocio();
-  const r = await db.from('clientes').select('id, nombre, telefono, direcciones, pago_preferido').eq('negocio_id', n.id).eq('perfil_id', p.id).maybeSingle();
+  const r = await db.from('clientes').select('id, nombre, telefono, correo, direcciones, pago_preferido, creado').eq('negocio_id', n.id).eq('perfil_id', p.id).maybeSingle();
   return r.data || null;
 }
 
@@ -549,6 +549,34 @@ export async function cambiarEstado(pedido, a, porQue){
   const r = await llamar('cambiar_estado', { p_pedido: pedido, p_a: a, p_por_que: porQue || null });
   if(a === 'cancelado') olvidarCatalogo();
   return r;
+}
+
+/* ══ CLIENTES Y RECOMPRA (Bloque 9) ═════════════════════════════════════════
+   El cálculo vive en recompra.js (puro y probado); aquí sólo se leen los
+   pedidos de cada cliente. Las ventas de mostrador sin cliente no entran: no
+   hay a quién avisarle. */
+export async function clientesNegocio(){
+  const n = await negocio();
+  const r = await db.from('clientes')
+    .select('id, nombre, telefono, correo, direcciones, pago_preferido, notas, creado, '
+      + 'pedidos(id, folio, creado, estado, total, envio, forma_pago, momento_pago, canal, direccion, renglones(producto_id, nombre, cantidad, precio))')
+    .eq('negocio_id', n.id).order('creado', { ascending: false }).limit(1000);
+  if(r.error) throw new ErrorDeDatos('No se pudieron leer los clientes', r.error);
+  return r.data.map((c) => ({ ...c, pedidos: (c.pedidos || []).map((p) => ({ ...p, total: Number(p.total) })) }));
+}
+
+/* Notas del admin sobre un cliente («pide factura», «sólo por la tarde»). RLS: cli_editar. */
+export async function guardarNotasCliente(id, notas){
+  const d = revisa(await db.from('clientes').update({ notas }).eq('id', id).select('id'), 'No se guardaron las notas');
+  // RLS no da error cuando filtra: contesta «cero filas». Eso también es no.
+  if(!d?.length) throw new ErrorDeDatos('No se guardaron las notas', { code: 'no_autorizado' });
+}
+
+/* El cliente edita lo suyo (RLS: cli_editar, perfil_id = auth.uid()). */
+export async function guardarMiFicha(cambios){
+  const f = await miFicha(); if(!f) throw new ErrorDeDatos('Todavía no tienes cuenta', null);
+  const d = revisa(await db.from('clientes').update(cambios).eq('id', f.id).select('id'), 'No se guardaron tus datos');
+  if(!d?.length) throw new ErrorDeDatos('No se guardaron tus datos', { code: 'no_autorizado' });
 }
 
 /* ══ PEDIDOS DEL NEGOCIO Y TABLERO (Bloque 6) ═══════════════════════════════ */

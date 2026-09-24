@@ -117,7 +117,7 @@ export const RUTAS = [
     promesa: 'Dónde va cada uno, su ruta y a qué velocidad. Sólo con turno abierto.' },
   { ruta: '/a/turnos',      apartado: 'admin', titulo: 'Horas y días',    icono: 'turnos',    menu: true,  pantalla: 'horas',      bloque: 7,
     promesa: 'Horas trabajadas por repartidor, por día, semana y quincena.' },
-  { ruta: '/a/clientes',    apartado: 'admin', titulo: 'Clientes',        icono: 'clientes',  menu: true,  pantalla: 'obra',      bloque: 9,
+  { ruta: '/a/clientes',    apartado: 'admin', titulo: 'Clientes',        icono: 'clientes',  menu: true,  pantalla: 'clientes',      bloque: 9,
     promesa: 'Cada cuándo compra cada quien, y a quién le toca volver a pedir.' },
   { ruta: '/a/descuentos',  apartado: 'admin', titulo: 'Descuentos',      icono: 'descuentos',menu: true,  pantalla: 'obra',      bloque: 11,
     promesa: 'Promociones y cupones, y se actualizan en todos lados a la vez.' },
