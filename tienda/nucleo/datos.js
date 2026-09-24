@@ -522,9 +522,9 @@ export async function pedirTienda({ renglones, nombre, telefono, direccion, mome
     p_direccion: direccion ? { ...direccion, pago } : { recoge: true, pago },
     p_notas: notas || '',
   });
-  // El envío lo calcula el servidor (0010). Si esa función aún no existe en
-  // la base, el pedido queda con el envío anotado en la dirección.
-  try{ v.envio = Number(await llamar('poner_envio', { p_pedido: v.id })); }catch(e){ v.envio = null; }
+  // El envío va anotado en la dirección y totalConEnvio() lo suma. Cuando
+  // 0010 esté aplicada, aquí va `await llamar('poner_envio', …)` y el servidor
+  // lo mete en el total. Llamarla antes deja un 404 en cada pedido.
   // La dirección se guarda en su ficha para la próxima (RLS: cli_editar, la suya).
   if(direccion){
     const f = await miFicha();
