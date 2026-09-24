@@ -30,3 +30,10 @@ aunque ese servicio desaparezca (regla §2).
 | `qrcode-generator-2.0.4.mjs` | los QR de las etiquetas | MIT, Kazuhiko Arase · `LICENCIA-qrcode-generator.txt` |
 | `jsbarcode-3.12.3.min.js` | los códigos de barras de las etiquetas | MIT, Johan Lindell · `LICENCIA-jsbarcode.txt` |
 | `xlsx-0.20.3.core.min.js` | leer Excel (.xlsx, .xls) y CSV en el importador | Apache-2.0, SheetJS · `LICENCIA-sheetjs.txt`. Bajada de cdn.sheetjs.com: la de npm se quedó en 0.18.5, con fallas conocidas |
+| `leaflet-1.9.4/` | el mapa del repartidor, del dueño y del seguimiento | BSD-2-Clause, Volodymyr Agafonkin · `LICENCIA-leaflet.txt`. Sin sus imágenes de marcador: los marcadores son nuestros (divIcon) |
+
+## Mapas
+
+Los mosaicos del mapa salen de OpenStreetMap (© colaboradores de OpenStreetMap, ODbL), con
+la atribución puesta en cada mapa. Su política no permite uso intensivo en producción: el
+proveedor se cambia en `nucleo/mapa.js`, en un solo lugar.
