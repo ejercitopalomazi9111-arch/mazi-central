@@ -64,3 +64,15 @@ _(se agregan aquí conforme salgan; ninguna detiene el trabajo)_
   corridas en `/a/repartidores` (el mapa) el 24 de septiembre; las otras 6 salieron 93/93. El
   motivo se imprime en el renglón SIGUIENTE al ✗; la vez que falló se filtró con `grep` y se
   perdió. La próxima: `grep -A1 "✗"`.
+
+- **La migración 0012 (apartados con abonos) está escrita y sin aplicar.** Las tablas ya
+  existen, pero nadie puede escribir en ellas hasta que se apliquen las funciones. Por eso
+  «Apartados» sigue marcado «en obra» en el menú: una pantalla que no puede guardar sería
+  mentir. En cuanto 0012 esté puesta, la pantalla es corta de hacer.
+
+- **Las ofertas vencidas regresan su precio cuando el admin abre la app** (el tablero o
+  Descuentos), no a la hora exacta. Para que pase a la hora exacta hace falta una tarea
+  programada en el servidor.
+
+- **Cupones** («con el código BUENFIN te hago 10 %») necesitan que el servidor aplique el
+  descuento al cobrar. Las ofertas de hoy cambian el precio de todos; un cupón es para uno.
