@@ -1,6 +1,6 @@
 // Arma la tarjeta del viaje de integración:
-//   salida/frente.png · salida/reverso.png   una tarjeta, 90 × 130 mm a 300 ppp
-//   salida/imprimir.pdf                      carta, 4 por cara, hoja 1 frente y hoja 2 reverso
+//   salida/frente.png · salida/reverso.png   una tarjeta, 52 × 75 mm a 300 ppp
+//   salida/imprimir.pdf                      carta horizontal, 10 por cara (5 × 2), hoja 1 frente y hoja 2 reverso
 // Uso:  node recuerdos/viaje-integracion/armar.mjs
 // Necesita foto.jpg junto a este archivo (no está en el repo a propósito).
 import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
@@ -41,7 +41,7 @@ const hojas = await navegador.newPage();
 await hojas.goto(url('hojas'));
 await hojas.evaluate(() => document.fonts.ready);
 await hojas.waitForFunction(() => [...document.images].every((i) => i.complete && i.naturalWidth > 0));
-await hojas.pdf({ path: path.join(salida, 'imprimir.pdf'), width: '215.9mm', height: '279.4mm', printBackground: true, preferCSSPageSize: true });
+await hojas.pdf({ path: path.join(salida, 'imprimir.pdf'), width: '279.4mm', height: '215.9mm', printBackground: true, preferCSSPageSize: true });
 console.log('✓ imprimir.pdf');
 await navegador.close();
 
