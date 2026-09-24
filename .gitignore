@@ -23,3 +23,9 @@ toydarians/taller/sitio.html
 # duplicaría todo en cada rama. Lo que hace un agente llega por su propia rama,
 # no por esta carpeta, y git la borra sola cuando el agente termina.
 .claude/worktrees/
+
+# Recuerdos impresos: la foto es de compañeros menores de edad y el repo es
+# público. Se queda en el teléfono y en la imprenta, no aquí. Lo mismo lo que
+# sale con la foto puesta.
+recuerdos/**/foto.jpg
+recuerdos/**/salida/

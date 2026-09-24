@@ -79,6 +79,9 @@ const NO_SE_PUBLICA = {
     + 'BigTigerMX/j5data y leen ../assets/ y ../casos.html, que viven allá.',
   'j5data-vercel':
     'la misma pareja de propuestas empaquetada para el despliegue del cliente.',
+  'tienda':
+    'en obra: el armazón existe pero las pantallas del cliente todavía no se '
+    + 'adaptan a la base. Pasa a VA al cerrar el Bloque 1, con sus pruebas.',
 };
 
 /* Lo que NO va, aunque esté dentro de algo que sí va. Los .md son notas de

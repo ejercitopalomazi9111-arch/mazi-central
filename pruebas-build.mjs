@@ -52,7 +52,7 @@ try {
     ok('el armado termina en 0 sin carpetas inventadas', r.codigo === 0,
        'salió ' + r.codigo + ' · ' + r.texto.trim().split('\n').slice(-6).join(' / '));
     ok('y dice que armó dist/', /dist\/ armado/.test(r.texto));
-    ok('las tres de NO_SE_PUBLICA no lo paran',
+    ok('las de NO_SE_PUBLICA no lo paran',
        !/rodrigo-claro|j5data-propuestas|j5data-vercel/.test(r.texto));
   }
 
@@ -130,7 +130,10 @@ try {
          un build.mjs que tenía las tres razones puestas. */
       const entradas = bloque[1].split(/\n(?=\s{2}')/).filter((t) => t.trim());
       const claves = entradas.map((t) => t.match(/'([^']+)':/)[1]);
-      ok('tiene las tres de hoy', claves.length === 3, 'son ' + claves.join(', '));
+      /* La lista crece a propósito (la tienda entró el 24 de septiembre mientras
+         está en obra): se exige que estén las conocidas, no un número fijo. */
+      const conocidas = ['rodrigo-claro', 'j5data-propuestas', 'j5data-vercel', 'tienda'];
+      ok('tiene las de hoy', conocidas.every((c) => claves.includes(c)), 'son ' + claves.join(', '));
       /* Una entrada de una carpeta que ya no existe es un apunte que informa un
          estado y está en otro — el defecto favorito de esta casa. */
       for(const c of claves)
