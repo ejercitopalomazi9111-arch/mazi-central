@@ -263,7 +263,8 @@ async function pedidos(){
       ${progreso(p)}
       <p class="dice">${esc(ESTADOS[p.estado].dice)}${p.estado === 'cancelado' || p.estado === 'no_entregado' ? (p.eventos_pedido?.slice(-1)[0]?.por_que ? ` Motivo: ${esc(p.eventos_pedido.slice(-1)[0].por_que)}.` : '') : ''}</p>
       <div class="botones">
-        <button class="boton principal" data-repetir="${p.id}">${icono('repetir')}Volver a pedir</button>
+        ${p.estado === 'en_camino' ? `<a class="boton principal" href="${enlace('/pedido/:id', { id: p.id })}">${icono('parada')}¿Por dónde va?</a>` : ''}
+        <button class="boton ${p.estado === 'en_camino' ? 'secundario' : 'principal'}" data-repetir="${p.id}">${icono('repetir')}Volver a pedir</button>
         <button class="boton secundario" data-detalle="${p.id}">${icono('ver')}Detalle</button>
         ${p.estado === 'recibido' ? `<button class="boton fantasma" data-cancelar="${p.id}">Cancelar</button>` : ''}
       </div></li>`;

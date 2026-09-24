@@ -858,6 +858,30 @@ a.cifra-caja{ text-decoration: none; }
 .turno-reloj .etq{ margin: 0; font-weight: 700; color: var(--tinta-suave); }
 .turno-reloj .valor{ margin: 0; font-size: var(--t-enorme); font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
 
+
+/* ══ Mapas y seguimiento (Bloque 8) ═════════════════════════════════════ */
+.mapa{ height: 320px; border-radius: var(--radio); border: 1px solid var(--linea); overflow: hidden; margin: var(--e4) 0; background: var(--hundido); z-index: 0; }
+@media (min-width: 900px){ .mapa{ height: 440px; } }
+.mapa.sin-mapa{ display: grid; place-items: center; height: 80px; }
+.mapa.sin-mapa::after{ content: "El mapa no cargó. Todo lo demás funciona igual."; color: var(--tinta-suave); font-size: var(--t-chica); }
+.pin-mapa span{ width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--acento); color: #fff; font-weight: 800; font-size: 15px; border: 3px solid #fff; box-shadow: 0 2px 6px rgb(0 0 0 / .35); font-family: inherit; }
+.pin-mapa.yo span{ background: #1F6FEB; }
+.pin-mapa.tienda span{ background: #1B1714; }
+.pin-mapa.destino span{ background: #fff; color: var(--acento); border-color: var(--acento); }
+.pin-mapa.rep span{ background: #1D6B4F; }
+.leaflet-container{ font: inherit; }
+.rastreo{ display: flex; align-items: center; gap: var(--e2); font-size: var(--t-chica); font-weight: 650; color: var(--tinta-suave); margin: 0 0 var(--e3); }
+.rastreo .ico{ width: 18px; height: 18px; }
+.rastreo.compartiendo{ color: var(--bien); }
+.rastreo.sin-permiso, .rastreo.rechazado, .rastreo.sin-señal{ color: var(--ojo); }
+.ruta-cabeza{ display: grid; gap: var(--e3); }
+.ruta-cabeza .cifras{ grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; }
+.rep-fila .lado{ display: grid; justify-items: end; gap: 4px; }
+.seguimiento{ display: grid; gap: var(--e4); max-width: 720px; }
+.seguimiento h2{ font-size: var(--t-sub); margin: 0; }
+.llega{ font-size: var(--t-sub); margin: 0; }
+.llega strong{ font-size: var(--t-titulo); color: var(--acento-hondo); }
+
 /* ── Capas: hoja inferior, modal, aviso ────────────────────────────────── */
 /* Hoja que sube desde abajo: en teléfono es donde está el pulgar. En pantalla
    ancha se vuelve un diálogo al centro. */

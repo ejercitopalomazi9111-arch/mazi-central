@@ -639,3 +639,28 @@ export async function turnosNegocio(desde){
   if(r.error) throw new ErrorDeDatos('No se pudieron leer los turnos', r.error);
   return r.data;
 }
+
+/* ══ UBICACIÓN Y SEGUIMIENTO (Bloque 8) ═════════════════════════════════════
+   El repartidor manda su punto SÓLO con turno abierto: la política ubic_mandar
+   de la base lo rechaza si no. El cliente nunca lee ubicaciones: donde_va()
+   le da el último punto de SU repartidor y sólo mientras su pedido va en camino. */
+export async function mandarUbicacion(turnoId, c){
+  const [n, p] = await Promise.all([negocio(), yo()]);
+  const r = await db.from('ubicaciones').insert({ negocio_id: n.id, perfil_id: p.id, turno_id: turnoId,
+    lat: c.latitude, lng: c.longitude, velocidad: c.speed ?? null, precision: c.accuracy ?? null, rumbo: c.heading ?? null });
+  if(r.error) throw new ErrorDeDatos('No se pudo mandar la ubicación', r.error);
+}
+export const dondeVa = (pedido) => llamar('donde_va', { p_pedido: pedido });
+
+/* Admin: el último punto de cada quien con turno abierto. */
+export async function repartidoresEnTurno(){
+  const n = await negocio();
+  const t = await db.from('turnos').select('id, perfil_id, inicio, pausas(inicio, fin), quien:perfiles(nombre)').eq('negocio_id', n.id).is('fin', null);
+  if(t.error) throw new ErrorDeDatos('No se pudo leer quién está en turno', t.error);
+  const salida = [];
+  for(const x of t.data){
+    const u = await db.from('ubicaciones').select('lat, lng, velocidad, precision, cuando').eq('turno_id', x.id).order('cuando', { ascending: false }).limit(2);
+    salida.push({ ...x, puntos: u.data || [] });
+  }
+  return salida;
+}

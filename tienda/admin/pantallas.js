@@ -966,6 +966,10 @@ async function ajustes(){
           ${campo('whatsapp', 'WhatsApp', contacto.whatsapp || '', 'inputmode="tel" maxlength="16" placeholder="442 123 4567"', '10 dígitos. Es el botón de «escríbenos».')}
           ${campo('horario', 'Horario', contacto.horario || '', 'maxlength="120" placeholder="Lunes a sábado, 10 a 7"')}
           ${campo('direccion', 'Dirección del local', contacto.direccion || '', 'maxlength="200"')}
+          <div class="en-linea">
+            <button type="button" class="boton secundario" data-ubicar-tienda>${icono('lugar')}<span data-tienda-texto>${a.tienda?.lat ? 'Ubicación guardada · tomarla otra vez' : 'Estoy en la tienda: tomar su ubicación'}</span></button>
+          </div>
+          <p class="nota con-margen">De ahí salen las rutas de los repartidores y el mapa del tablero.</p>
         </section>
 
         <div class="barra-guardar">
@@ -992,6 +996,19 @@ async function ajustes(){
       $f.addEventListener('change', (e) => {
         marcar();
         if(e.target.id === 'pago_transferencia') $c.querySelector('#datos-banco').hidden = !e.target.checked;
+      });
+      let tienda = a.tienda || null;
+      $c.querySelector('[data-ubicar-tienda]').addEventListener('click', (e) => {
+        const b = e.currentTarget;
+        if(!navigator.geolocation){ aviso('Este aparato no da ubicación', 'mal'); return; }
+        b.setAttribute('aria-busy', 'true');
+        navigator.geolocation.getCurrentPosition((pos) => {
+          tienda = { lat: +pos.coords.latitude.toFixed(6), lng: +pos.coords.longitude.toFixed(6) };
+          b.removeAttribute('aria-busy'); marcar();
+          $c.querySelector('[data-tienda-texto]').textContent = 'Ubicación tomada · falta Guardar';
+          aviso(`Ubicación tomada (±${Math.round(pos.coords.accuracy)} m)`);
+        }, (err) => { b.removeAttribute('aria-busy'); aviso(err.code === 1 ? 'Sin permiso de ubicación' : 'No se pudo tomar la ubicación', 'mal'); },
+        { enableHighAccuracy: true, timeout: 15000 });
       });
       $acento.addEventListener('input', probarColor);
       $c.querySelectorAll('[data-color]').forEach((b) => b.addEventListener('click', () => { $acento.value = b.dataset.color; probarColor(); marcar(); }));
@@ -1024,6 +1041,7 @@ async function ajustes(){
             pagos: { ...pagos, efectivo: si('pago_efectivo'), tarjeta: si('pago_tarjeta'), transferencia: si('pago_transferencia'),
               banco: v('banco'), clabe, titular: v('titular') },
             contacto: { ...contacto, whatsapp: tel, horario: v('horario'), direccion: v('direccion') },
+            ...(tienda ? { tienda } : {}),
           },
         };
         try{

@@ -20,6 +20,7 @@ import {
 import { ESTADOS } from '../cliente/pedir.js';
 import { aCentavos, aPesos, sugerirPagos, desglose } from '../nucleo/dinero.js';
 import { trabajado, porDia, entre, lunes, quincena, duracion, enPausa } from '../nucleo/horas.js';
+import { rastreo, TEXTO_RASTREO } from '../nucleo/rastreo.js';
 
 const HORA = new Intl.DateTimeFormat('es-MX', { hour: 'numeric', minute: '2-digit' });
 const DIA = new Intl.DateTimeFormat('es-MX', { weekday: 'long', day: 'numeric', month: 'short' });
@@ -71,6 +72,7 @@ async function hoy(){
   return {
     html: `
       <p class="saludo">${esc(persona?.nombre?.split(' ')[0] || 'Hola')}, ${pendientes.length ? `tienes ${plural(pendientes.length, 'entrega', 'entregas')}` : 'por ahora no tienes entregas'}.</p>
+      <p class="rastreo" data-rastreo>${icono('lugar')}<span>${TEXTO_RASTREO[rastreo.estado]}</span></p>
       ${enPausa(turno) ? `<p class="aviso-linea">${icono('reloj')}<span>Estás en pausa. <a href="${enlace('/r/turno')}">Regresar al turno</a></span></p>` : ''}
       <div class="cifras">
         <div class="cifra-caja"><span class="valor">${pendientes.length}</span><span class="etq">por entregar</span></div>
@@ -81,10 +83,13 @@ async function hoy(){
       ${pendientes.length ? `<section class="seccion"><header><h2>Tus paradas</h2></header><ol class="paradas">${pendientes.map(tarjeta).join('')}</ol></section>`
         : `<p class="vacio-linea">${icono('listo')}Cuando te asignen un pedido aparece aquí. Esta pantalla se actualiza sola.</p>`}`,
     alMontar($c, { recargar }){
+      // Con el turno abierto, la ubicación se comparte (y sólo entonces).
+      rastreo.iniciar(turno.id);
+      const quitar = rastreo.alCambiar((e) => { const el = $c.querySelector('[data-rastreo]'); if(el){ el.className = 'rastreo ' + e; el.lastChild.textContent = TEXTO_RASTREO[e]; } });
       // Sin tiempo real para el repartidor todavía: se refresca cada minuto
       // mientras la pantalla está a la vista (lo asignado le llega solo).
       const reloj = setInterval(() => { if(document.visibilityState === 'visible' && !document.querySelector('dialog[open]')) recargar(); }, 60000);
-      return () => clearInterval(reloj);
+      return () => { clearInterval(reloj); quitar(); };
     },
   };
 }
@@ -273,6 +278,7 @@ async function turnoPantalla(){
         const b = e.submitter; b.setAttribute('aria-busy', 'true'); b.disabled = true;
         try{
           const r = await cerrarTurno(v);
+          rastreo.detener();
           const dif = aCentavos(Number(r.diferencia));
           $c.innerHTML = estado({ icono: 'turno', titulo: 'Turno terminado',
             texto: `Trabajaste ${duracion(trabajado({ ...turno, fin: new Date() }))}.`,

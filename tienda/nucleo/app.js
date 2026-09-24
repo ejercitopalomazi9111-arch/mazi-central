@@ -16,8 +16,9 @@ import { PANTALLAS as VENTA } from '../venta/pantallas.js';
 import { PANTALLAS as PEDIR } from '../cliente/pedir.js';
 import { PANTALLAS as PEDIDOS } from '../admin/pedidos.js';
 import { PANTALLAS as REPARTO } from '../repartidor/pantallas.js';
+import { PANTALLAS as RUTA } from '../repartidor/ruta.js';
 
-const PANTALLAS = { ...CLIENTE, ...PEDIR, ...ADMIN, ...IMPORTAR, ...VENTA, ...PEDIDOS, ...REPARTO, obra, noexiste };
+const PANTALLAS = { ...CLIENTE, ...PEDIR, ...ADMIN, ...IMPORTAR, ...VENTA, ...PEDIDOS, ...REPARTO, ...RUTA, obra, noexiste };
 
 const $app = document.getElementById('app');
 const $avisos = document.getElementById('avisos');
@@ -244,7 +245,10 @@ async function navegar(){
   // ruta no sirve: el hash no cambia y no pasa nada (así se quedó colgada la
   // caja recién abierta, y Categorías no enseñaba la que acababas de guardar).
   const r = vista.alMontar?.($nuevo, { aviso, ir, ruta, recargar: () => navegar() });
+  // alMontar puede ser async (las pantallas con mapa): su limpieza llega
+  // después. Si para entonces ya se cambió de pantalla, se limpia en el acto.
   if(typeof r === 'function') desmontar = r;
+  else if(r?.then) r.then((f) => { if(typeof f !== 'function') return; if(mio === turno) desmontar = f; else f(); }).catch((e) => console.error(e));
   // El foco va al título al cambiar de pantalla (no en la primera carga): quien
   // navega con lector de pantalla oye dónde llegó.
   if(!primera) $t.focus({ preventScroll: true });
