@@ -29,3 +29,5 @@ toydarians/taller/sitio.html
 # sale con la foto puesta.
 recuerdos/**/foto.jpg
 recuerdos/**/salida/
+# La lista del grupo: nombres de compañeros menores. Vive en la máquina, no aquí.
+recuerdos/**/nombres.txt

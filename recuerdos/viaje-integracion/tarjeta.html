@@ -8,23 +8,27 @@
   El grupo le invitó el viaje a Carlos; esto es lo que les regala de vuelta, como
   amigo y compañero (NO como jefe de grupo: lo corrigió él).
 
-  El estilo sigue la tarjeta del Día del Paramédico que mandó de referencia:
-  papel crema, esquinas de acuarela pastel, título de rotulador, cinta, foto con
-  cintas adhesivas, palabras de color y un recuadro rosa para la firma.
+  Dos versiones, las dos con el nombre de quien la recibe:
+    · compañeras — la de la tarjeta del Día del Paramédico que mandó de
+      referencia: crema, acuarela pastel, cinta rosa, recuadro para la firma;
+    · compañeros — «más rudo, más fútbol, testosterona, gym»: fondo carbón,
+      letra condensada de marcador deportivo, placa naranja con el nombre.
+  El reverso lleva el mismo mensaje en las dos, cada uno con su ropa.
 
-  44 × 63.6 mm, frente y reverso: se diseña en 90 × 130 y se reduce con `zoom`.
-  Imprime 27: van 15 por hoja (5 × 3) con 5 mm de separación y 1.5 mm de
-  sangrado del color del papel, para que un corte chueco no deje orilla blanca.
-  `armar.mjs` saca:
-    · frente.png y reverso.png a 300 ppp, una tarjeta cada una;
-    · imprimir.pdf: 4 páginas carta horizontal — frente, reverso, frente,
-      reverso —: se imprime UNA vez a doble cara y salen las 30.
+  44 × 63.6 mm, se diseña en 90 × 130 y se reduce con `zoom`. 15 por hoja
+  (5 × 3) con 5 mm entre tarjetas y 1.5 mm de sangrado del color de su fondo.
+  Cada hoja es de UNA versión y todos sus reversos son iguales, así que el
+  reverso cae detrás de su frente sin importar cómo voltee la impresora.
 
-  Letras: Chewy, Fredoka, Nunito y Caveat (OFL). Íconos: Lucide (ISC). El escudo
-  y el pie salen del formato institucional de la escuela (reportes/formato).
-  La foto NO está en el repo: son compañeros menores de edad (.gitignore).
+  Los NOMBRES no viven aquí: son compañeros menores de edad y el repo es público.
+  `armar.mjs` los lee de nombres.txt (en .gitignore) y los inyecta al armar.
+  La foto tampoco está en el repo, por lo mismo.
+
+  Letras: Anton, Chewy, Fredoka, Nunito y Caveat (OFL). Íconos: Lucide (ISC) y
+  el balón de Tabler (MIT). Escudo y pie: formato institucional de la escuela.
 -->
 <style>
+@font-face{ font-family: Anton; src: url(letra/anton-latin-400-normal.woff2); }
 @font-face{ font-family: Chewy; src: url(letra/chewy-latin-400-normal.woff2); }
 @font-face{ font-family: Fredoka; src: url(letra/fredoka-latin-600-normal.woff2); font-weight: 600; }
 @font-face{ font-family: Fredoka; src: url(letra/fredoka-latin-700-normal.woff2); font-weight: 700; }
@@ -34,161 +38,179 @@
 @font-face{ font-family: Caveat; src: url(letra/caveat-latin-700-normal.woff2); font-weight: 700; }
 
 :root{
-  --z: .48889;  /* 90 mm → 44 mm */
+  --z: .48889;         /* 90 mm → 44 mm */
   --sangrado: 3.07mm;  /* 1.5 mm impresos, antes del zoom */
-  --tinta: #26335F;      /* marino suave, el de las letras */
-  --turquesa: #1F7A91;   /* el del «PARAMÉDICO» de la referencia */
-  --rosa: #E0748C; --rosa-cinta: #EBA0AF;
-  --celeste: #5B8FD6; --menta: #7FC6B4; --amarillo: #F1C24B; --lila: #A994DB; --hoja: #6FAE5E;
-  --rojo-rembrandt: #C00000;
-  --papel: #FFFBF3;
 }
 *{ box-sizing: border-box; margin: 0; padding: 0; }
 html, body{ background: #d9d6cf; }
-body{ font-family: Nunito, sans-serif; color: var(--tinta); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body{ font-family: Nunito, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
-/* ── La tarjeta ─────────────────────────────────────────────────────────── */
 .cara{
   position: relative; width: 90mm; height: 130mm; overflow: hidden; zoom: var(--z);
-  background: var(--papel);
+  background: var(--papel); color: var(--tinta);
 }
-/* Esquinas de acuarela, como la referencia: cuatro manchas pastel difuminadas */
-.mancha{ position: absolute; border-radius: 50%; filter: blur(4.5mm); opacity: .7; z-index: 0; }
-.cara > :not(.mancha){ position: relative; z-index: 1; }
-.cara > .adorno, .cara > .punto{ position: absolute; }
-
-.adorno{ z-index: 2; width: 5mm; height: 5mm; }
+.cara > *{ flex-shrink: 0; }
+.adorno{ position: absolute; z-index: 2; width: 5mm; height: 5mm; }
 .adorno svg{ width: 100%; height: 100%; display: block; }
 .adorno.relleno svg{ fill: currentColor; stroke: none; }
-.punto{ z-index: 2; width: 1.5mm; height: 1.5mm; border-radius: 50%; }
+.punto{ position: absolute; z-index: 2; width: 1.5mm; height: 1.5mm; border-radius: 50%; }
+.mancha{ position: absolute; border-radius: 50%; filter: blur(4.5mm); opacity: .7; z-index: 0; }
+.cara > :not(.mancha):not(.adorno):not(.punto):not(.fondo):not(.numero):not(.camion){ position: relative; z-index: 1; }
 
-/* ── Frente ─────────────────────────────────────────────────────────────── */
-.frente{ padding: 6mm 6mm 5mm; display: flex; flex-direction: column; align-items: center; text-align: center; }
-.gracias{ font-family: Chewy; font-weight: 400; font-size: 30pt; line-height: .9; color: var(--tinta); letter-spacing: .01em; }
-.cinta{
+/* ══ COMPAÑERAS ═══════════════════════════════════════════════════════════ */
+.mujer{
+  --papel: #FFFBF3; --tinta: #26335F; --turquesa: #1F7A91;
+  --rosa: #E0748C; --rosa-cinta: #EBA0AF; --celeste: #5B8FD6; --menta: #7FC6B4;
+  --amarillo: #F1C24B; --lila: #A994DB; --hoja: #6FAE5E; --rojo-rembrandt: #C00000;
+}
+.mujer.frente{ padding: 6mm 6mm 5mm; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.mujer .gracias{ font-family: Chewy; font-weight: 400; font-size: 30pt; line-height: .9; letter-spacing: .01em; }
+.mujer .cinta{
   position: relative; margin-top: 1.4mm; padding: .9mm 7mm 1mm; background: var(--rosa-cinta); color: #fff;
-  font-family: Fredoka; font-weight: 700; font-size: 11.5pt; letter-spacing: .06em; text-transform: uppercase;
-  text-shadow: 0 .3mm 0 var(--cinta-sombra, rgb(180 70 95 / .45));
+  font-family: Fredoka; font-weight: 700; font-size: 12pt; letter-spacing: .05em; text-transform: uppercase;
+  text-shadow: 0 .3mm 0 rgb(180 70 95 / .45); white-space: nowrap; min-width: 42mm;
 }
-.cinta::before, .cinta::after{ content: ""; position: absolute; top: 1.3mm; width: 4mm; height: 100%; background: var(--cinta-cola, #D98497); z-index: -1; }
-.cinta::before{ left: -2.8mm; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 45% 50%); }
-.cinta::after{ right: -2.8mm; clip-path: polygon(0 0, 100% 0, 55% 50%, 100% 100%, 0 100%); }
-.a-mi{ font-family: Chewy; font-size: 14pt; color: var(--tinta); margin-top: 1mm; line-height: 1; }
-.grupo{ font-family: Fredoka; font-weight: 700; font-size: 30pt; line-height: .95; color: var(--turquesa); letter-spacing: .01em; }
-
-.marco{
-  margin-top: 2.8mm; width: 74mm; background: #fff; padding: 1.6mm;
-  border-radius: 3mm; box-shadow: 0 .5mm 1.4mm rgb(0 0 0 / .16); position: relative;
-}
-.marco img{ display: block; width: 100%; aspect-ratio: 1.8; object-fit: cover; object-position: 50% 100%; border-radius: 2mm; }
+.mujer .cinta.largo{ font-size: 10.5pt; }
+.mujer .cinta::before, .mujer .cinta::after{ content: ""; position: absolute; top: 1.3mm; width: 4mm; height: 100%; background: #D98497; z-index: -1; }
+.mujer .cinta::before{ left: -2.8mm; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 45% 50%); }
+.mujer .cinta::after{ right: -2.8mm; clip-path: polygon(0 0, 100% 0, 55% 50%, 100% 100%, 0 100%); }
+.mujer .a-mi{ font-family: Chewy; font-size: 14pt; margin-top: 1mm; line-height: 1; }
+.mujer .grupo{ font-family: Fredoka; font-weight: 700; font-size: 30pt; line-height: .95; color: var(--turquesa); letter-spacing: .01em; }
+.mujer .marco{ margin-top: 2.8mm; width: 74mm; background: #fff; padding: 1.6mm; border-radius: 3mm; box-shadow: 0 .5mm 1.4mm rgb(0 0 0 / .16); }
+.mujer .marco img{ display: block; width: 100%; aspect-ratio: 1.8; object-fit: cover; object-position: 50% 100%; border-radius: 2mm; }
 .cinta-adhesiva{ position: absolute; width: 15mm; height: 5mm; z-index: 2; }
-.cinta-adhesiva.a{ top: -2.2mm; left: -3.5mm; transform: rotate(-24deg); background: rgb(95 175 180 / .75); }
-.cinta-adhesiva.b{ bottom: -1.6mm; right: -3mm; transform: rotate(-28deg); background: rgb(241 194 75 / .8); }
+.mujer .cinta-adhesiva.a{ top: -2.2mm; left: -3.5mm; transform: rotate(-24deg); background: rgb(95 175 180 / .75); }
+.mujer .cinta-adhesiva.b{ bottom: -1.6mm; right: -3mm; transform: rotate(-28deg); background: rgb(241 194 75 / .8); }
+.mujer .deseo{ margin-top: 2.6mm; font-family: Fredoka; font-weight: 600; font-size: 11.4pt; line-height: 1.15; white-space: nowrap; }
+.r{ color: var(--rosa); } .t{ color: var(--turquesa); } .c{ color: var(--celeste); }
+.mujer .cuando{ margin-top: 1.2mm; font-weight: 800; font-size: 9pt; letter-spacing: .02em; text-transform: uppercase; color: var(--lila); white-space: nowrap; }
+.mujer .firma-caja{ margin-top: auto; background: rgb(247 211 219 / .75); border-radius: 3mm; padding: 1.4mm 8mm 1.6mm; display: grid; justify-items: center; position: relative; }
+.mujer .firma-caja .con{ font-family: Fredoka; font-weight: 600; font-size: 11.5pt; line-height: 1; }
+.mujer .firma-caja .nombre{ font-family: Caveat; font-weight: 700; font-size: 23pt; line-height: .85; color: var(--rosa); }
+.mujer .firma-caja .quien{ font-weight: 800; font-size: 9.6pt; opacity: .8; margin-top: .6mm; }
+.mujer .firma-caja .corazon{ position: absolute; right: 1.6mm; top: 50%; translate: 0 -50%; width: 5mm; height: 5mm; color: var(--rosa); }
+.corazon svg{ width: 100%; height: 100%; }
+.mujer .camion{ position: absolute; left: 4mm; bottom: 5mm; z-index: 2; width: 11mm; height: 11mm; border-radius: 3mm; background: #fff; color: var(--turquesa); display: grid; place-items: center; box-shadow: 0 .4mm 1mm rgb(0 0 0 / .12); transform: rotate(-6deg); }
+.mujer .camion svg{ width: 7.4mm; height: 7.4mm; }
 
-.deseo{ margin-top: 2.6mm; font-family: Fredoka; font-weight: 600; font-size: 11.4pt; line-height: 1.15; white-space: nowrap; }
-.deseo .r{ color: var(--rosa); } .deseo .t{ color: var(--turquesa); } .deseo .c{ color: var(--celeste); }
-.cuando{ margin-top: 1.2mm; font-family: Nunito; font-weight: 800; font-size: 9pt; letter-spacing: .02em; white-space: nowrap; text-transform: uppercase; color: var(--lila); }
-
-.firma-rosa{
-  margin-top: auto; background: var(--caja-firma, rgb(247 211 219 / .75)); border-radius: 3mm; padding: 1.4mm 8mm 1.6mm;
-  display: grid; justify-items: center; position: relative;
+/* ══ COMPAÑEROS · «más rudo, fútbol, gym» ═════════════════════════════════ */
+.hombre{
+  --papel: #16181C; --tinta: #F4F2EE; --naranja: #FF5A1F; --oro: #F2B632; --gris: #9CA3AF;
+  --rosa: var(--naranja); --turquesa: var(--oro); --celeste: #6FB3FF;
 }
-.firma-rosa .con{ font-family: Fredoka; font-weight: 600; font-size: 11.5pt; line-height: 1; }
-.firma-rosa .nombre{ font-family: Caveat; font-weight: 700; font-size: 23pt; line-height: .85; color: var(--rosa); }
-.firma-rosa .quien{ font-family: Nunito; font-weight: 800; font-size: 9.6pt; color: var(--tinta); opacity: .8; margin-top: .6mm; }
-.firma-rosa .corazon{ position: absolute; right: 1.6mm; top: 50%; translate: 0 -50%; width: 5mm; height: 5mm; color: var(--rosa); }
-.firma-rosa .corazon svg{ width: 100%; height: 100%; }
-
-.camion{
-  position: absolute !important; left: 4mm; bottom: 5mm; z-index: 2; width: 11mm; height: 11mm; border-radius: 3mm;
-  background: #fff; color: var(--turquesa); display: grid; place-items: center; box-shadow: 0 .4mm 1mm rgb(0 0 0 / .12);
-  transform: rotate(-6deg);
+.hombre .fondo{ position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+/* Franjas diagonales en las esquinas, como camiseta de visitante */
+.hombre .fondo::before{
+  content: ""; position: absolute; right: -30mm; top: -18mm; width: 70mm; height: 60mm; transform: rotate(35deg);
+  background: repeating-linear-gradient(90deg, rgb(255 90 31 / .9) 0 3mm, transparent 3mm 6.5mm);
 }
-.camion svg{ width: 7.4mm; height: 7.4mm; }
+.hombre .fondo::after{
+  content: ""; position: absolute; left: -26mm; bottom: -30mm; width: 60mm; height: 50mm; transform: rotate(35deg);
+  background: repeating-linear-gradient(90deg, rgb(242 182 50 / .5) 0 2mm, transparent 2mm 5mm);
+}
+.hombre .numero{ position: absolute; right: -4mm; top: 36mm; font-family: Anton; font-size: 150pt; line-height: 1; color: #fff; opacity: .05; z-index: 0; letter-spacing: -.02em; }
+.hombre.frente{ padding: 5.5mm 6mm 5mm; display: flex; flex-direction: column; align-items: flex-start; }
+.hombre .liga{ display: flex; align-items: center; gap: 2mm; font-family: Anton; font-size: 9.5pt; letter-spacing: .12em; color: var(--oro); }
+.hombre .liga img{ width: 7.4mm; height: auto; background: #fff; padding: .5mm; border-radius: 1.2mm; }
+.hombre .gracias{ font-family: Anton; font-weight: 400; font-size: 40pt; line-height: .92; text-transform: uppercase; margin-top: 1.6mm; letter-spacing: .01em; }
+.hombre .placa{
+  margin-top: 1mm; background: var(--naranja); color: #fff; font-family: Anton; font-size: 20pt; line-height: 1.15;
+  padding: .4mm 4mm .6mm; transform: skewX(-10deg); text-transform: uppercase; letter-spacing: .03em; white-space: nowrap;
+  box-shadow: 1.2mm 1.2mm 0 rgb(0 0 0 / .45);
+}
+.hombre .placa > span{ display: inline-block; transform: skewX(10deg); }
+.hombre .placa.largo{ font-size: 16.5pt; }
+.hombre .placa.vacia > span{ min-width: 44mm; }
+.hombre .equipo{ margin-top: 2mm; font-family: Anton; font-size: 11.5pt; letter-spacing: .08em; color: var(--gris); text-transform: uppercase; line-height: 1.1; }
+.hombre .equipo b{ display: block; font-weight: 400; font-size: 17pt; color: var(--oro); letter-spacing: .04em; }
+.hombre .marco{ margin-top: 2.6mm; width: 78mm; align-self: center; background: #fff; padding: 1.4mm; transform: rotate(-1.8deg); box-shadow: 0 1mm 2.4mm rgb(0 0 0 / .6); }
+.hombre .marco img{ display: block; width: 100%; aspect-ratio: 2; object-fit: cover; object-position: 50% 100%; filter: contrast(1.06) saturate(1.05); }
+.hombre .cinta-adhesiva.a{ top: -2.4mm; left: -3mm; transform: rotate(-30deg); background: rgb(255 90 31 / .85); }
+.hombre .cinta-adhesiva.b{ bottom: -1.8mm; right: -3mm; transform: rotate(-30deg); background: rgb(242 182 50 / .85); }
+.hombre .deseo{ margin-top: 3mm; font-weight: 800; font-size: 10.6pt; line-height: 1.22; }
+.hombre .cuando{ margin-top: 1.2mm; font-family: Anton; font-size: 9pt; letter-spacing: .1em; color: var(--gris); }
+.hombre .firma-caja{
+  margin-top: auto; align-self: stretch; display: flex; align-items: center; gap: 3mm;
+  border-top: .5mm solid rgb(242 182 50 / .6); padding-top: 1.8mm;
+}
+.hombre .firma-caja .balon{ width: 10mm; height: 10mm; color: #fff; flex: none; }
+.hombre .firma-caja .balon svg, .hombre .firma-caja .pesa svg{ width: 100%; height: 100%; }
+.hombre .firma-caja .quien{ font-family: Anton; font-size: 9pt; letter-spacing: .1em; color: var(--oro); line-height: 1; }
+.hombre .firma-caja .nombre{ font-family: Caveat; font-weight: 700; font-size: 25pt; line-height: .8; color: #fff; display: block; margin-top: .6mm; }
+.hombre .firma-caja .pesa{ margin-left: auto; width: 9mm; height: 9mm; color: var(--naranja); }
 
-/* ── Reverso ────────────────────────────────────────────────────────────── */
+/* ══ REVERSO (las dos) ════════════════════════════════════════════════════ */
 .reverso{ padding: 4.4mm 4.4mm 0; display: flex; flex-direction: column; }
-.reverso > *, .frente > *{ flex-shrink: 0; }
 .cabeza{ display: flex; align-items: center; gap: 3mm; }
 .cabeza img{ width: 12.5mm; height: auto; filter: drop-shadow(0 .5mm .8mm rgb(0 0 0 / .18)); }
-.cabeza .inst{ font-family: Nunito; font-weight: 800; font-size: 9.4pt; letter-spacing: .08em; text-transform: uppercase; color: var(--rojo-rembrandt); line-height: 1.1; }
+.cabeza .inst{ font-weight: 800; font-size: 9.4pt; letter-spacing: .08em; text-transform: uppercase; color: #C00000; line-height: 1.1; }
 .cabeza .inst span{ display: block; color: var(--tinta); font-size: 8.4pt; letter-spacing: .04em; }
 .cabeza h2{ font-family: Chewy; font-weight: 400; font-size: 16pt; line-height: .95; color: var(--turquesa); margin-top: .8mm; }
 .cabeza h2 span{ color: var(--rosa); }
-
-.hoja-carta{
+.carta{
   margin-top: 2mm; background: rgb(255 255 255 / .82); border-radius: 3mm; padding: 2.4mm 2.8mm 2.6mm;
   box-shadow: 0 .4mm 1.2mm rgb(0 0 0 / .08); position: relative; overflow: hidden;
 }
-.hoja-carta .marca-agua{ position: absolute; right: -8mm; bottom: -10mm; width: 44mm; opacity: .07; z-index: 0; }
-.hoja-carta p{ position: relative; z-index: 1; font-size: 11pt; line-height: 1.24; font-weight: 700; }
-.hoja-carta p + p{ margin-top: 1.3mm; }
-.hoja-carta .r{ color: var(--rosa); } .hoja-carta .t{ color: var(--turquesa); } .hoja-carta .c{ color: var(--celeste); }
-
+.carta .marca-agua{ position: absolute; right: -8mm; bottom: -10mm; width: 44mm; opacity: .07; z-index: 0; }
+.carta p{ position: relative; z-index: 1; font-size: 11pt; line-height: 1.24; font-weight: 700; }
+.carta p + p{ margin-top: 1.3mm; }
 .firma-atras{ margin-top: 1mm; display: flex; align-items: center; justify-content: flex-end; gap: 2mm; padding-right: 1mm; }
 .firma-atras .con{ font-family: Fredoka; font-weight: 600; font-size: 10pt; text-align: right; line-height: 1.05; }
 .firma-atras .nombre{ font-family: Caveat; font-weight: 700; font-size: 20pt; color: var(--rosa); line-height: .8; display: block; }
 .firma-atras .corazon{ width: 5mm; height: 5mm; color: var(--rosa); }
-.firma-atras .corazon svg{ width: 100%; height: 100%; fill: currentColor; stroke: none; }
-
+.firma-atras .corazon svg{ fill: currentColor; stroke: none; }
 .pie{ margin: auto -4.4mm 0; mix-blend-mode: multiply; }
 /* Sólo la franja de abajo del membrete: el blanco de arriba no dice nada. */
 .pie img{ display: block; width: 100%; height: 6.4mm; object-fit: cover; object-position: 50% 100%; }
 
-/* ── Hoja para imprimir: carta horizontal, 5 × 2, centrada ──────────────── */
+/* Reverso de los compañeros: papel claro (se lee mejor chiquito), cabeza
+   carbón a todo lo ancho, letra de marcador y acentos naranja y oro. */
+.hombre.reverso{ --papel: #F1F0EC; --tinta: #1B1D22; --rosa: #E4572E; --turquesa: #B7791F; --celeste: #1F5FAF; padding-top: 0; }
+.hombre.reverso .cabeza{ margin: 0 -4.4mm; padding: 3.2mm 4.4mm 3mm; background: #16181C; position: relative; overflow: hidden; }
+.hombre.reverso .cabeza::after{ content: ""; position: absolute; right: -14mm; top: -8mm; width: 22mm; height: 30mm; transform: rotate(35deg); background: repeating-linear-gradient(90deg, rgb(255 90 31 / .9) 0 2.4mm, transparent 2.4mm 5mm); }
+.hombre.reverso .cabeza > *{ position: relative; z-index: 1; }
+.hombre.reverso .cabeza .inst{ color: #F2B632; }
+.hombre.reverso .cabeza .inst span{ color: #F4F2EE; }
+.hombre.reverso .cabeza h2{ font-family: Anton; font-size: 16pt; color: #fff; letter-spacing: .03em; text-transform: uppercase; margin-top: .6mm; }
+.hombre.reverso .cabeza h2 span{ color: #F2B632; }
+.hombre.reverso .cabeza img{ background: #fff; padding: .7mm; border-radius: 1.6mm; }
+.hombre.reverso .carta{ background: #fff; border-radius: 1.5mm; margin-top: 2.6mm; }
+.hombre.reverso .firma-atras .con{ font-family: Anton; font-size: 9pt; letter-spacing: .08em; text-transform: uppercase; }
+.hombre.reverso .firma-atras .nombre{ color: var(--tinta); font-size: 21pt; text-transform: none; letter-spacing: 0; margin-top: .8mm; }
+
+/* ── Hoja para imprimir: carta horizontal ───────────────────────────────── */
 @page{ size: 279.4mm 215.9mm; margin: 0; }
 .hoja{ width: 279.4mm; height: 215.9mm; position: relative; background: #fff; page-break-after: always; overflow: hidden; }
 .hoja .celda{ position: absolute; }
-/* El sangrado: una orilla del color del papel por fuera del corte. */
-.hoja .cara{ box-shadow: 0 0 0 var(--sangrado) var(--papel); overflow: hidden; }
+.hoja .cara{ box-shadow: 0 0 0 var(--sangrado) var(--papel); }
 .corte{ position: absolute; background: #777; }
-.corte.v{ width: .15mm; height: 5mm; }
-.corte.h{ height: .15mm; width: 5mm; }
-
-/* ── La versión para los compañeros ────────────────────────────────────────
-   Misma tarjeta, sin lo «girly» (lo pidió Carlos): marino, azul y amarillo en
-   vez de rosa; letra de título firme en vez de la de rotulador; estrellas,
-   rayos y trofeo en vez de corazones. Todo cambia por variables: el acomodo
-   es el mismo, así que lo que cabe en una cabe en la otra. */
-.cara{ --m1: #9FD3D9; --m2: #F5B8C6; --m3: #C9BDF0; --m4: #F7C9D3; }
-.cara.hombre{
-  --rosa: #D9822B;            /* el acento: naranja en vez de rosa */
-  --rosa-cinta: #26335F; --cinta-cola: #172043; --cinta-sombra: rgb(0 0 0 / .35);
-  --caja-firma: rgb(206 219 238 / .8);
-  --m1: #A9C7E8; --m2: #F3DFA2; --m3: #BFD9D2; --m4: #C9D3E6;
-  --adorno: #E0A23B; --hoja: #3E6FB5; --lila: #5A6B8C;
-}
-.cara.hombre .gracias{ font-family: Fredoka; font-weight: 700; font-size: 29pt; letter-spacing: .02em; text-transform: uppercase; }
-.cara.hombre .a-mi{ font-family: Fredoka; font-weight: 600; font-size: 12.5pt; text-transform: uppercase; letter-spacing: .08em; }
-.cara.hombre .cabeza h2{ font-family: Fredoka; font-weight: 700; font-size: 15pt; }
-.cara.hombre .firma-rosa .nombre, .cara.hombre .firma-atras .nombre{ color: var(--tinta); }
-.cara.hombre .firma-rosa .corazon, .cara.hombre .firma-atras .corazon{ color: var(--rosa); }
+.corte.v{ width: .15mm; }
+.corte.h{ height: .15mm; }
 </style>
 </head>
 <body>
-<template id="frente">
-  <section class="cara frente {{clase}}">
-    <i class="mancha" style="width:40mm;height:34mm;top:-16mm;left:-16mm;background:var(--m1)"></i>
-    <i class="mancha" style="width:40mm;height:34mm;top:-16mm;right:-18mm;background:var(--m2)"></i>
-    <i class="mancha" style="width:42mm;height:36mm;bottom:-18mm;left:-18mm;background:var(--m3)"></i>
-    <i class="mancha" style="width:42mm;height:36mm;bottom:-18mm;right:-18mm;background:var(--m4)"></i>
-
-    <span class="adorno relleno" style="top:7mm;left:5mm;width:8mm;height:8mm;color:var(--adorno, #EE8FA3);transform:rotate(-12deg)">@d1</span>
-    <span class="adorno" style="top:8mm;right:6mm;width:6mm;height:6mm;color:var(--celeste)">@d2</span>
-    <span class="adorno" style="top:27mm;left:6mm;color:var(--hoja);transform:rotate(-20deg)">@d3</span>
-    <span class="adorno relleno" style="top:30mm;right:6mm;width:4mm;height:4mm;color:var(--amarillo)">@star</span>
-    <span class="adorno relleno" style="top:90mm;right:3.5mm;width:5.5mm;height:5.5mm;color:var(--celeste);transform:rotate(10deg)">@d4</span>
-    <span class="adorno" style="top:90mm;left:3.5mm;width:5mm;height:5mm;color:var(--rosa)">@d5</span>
-    <span class="adorno" style="bottom:6mm;right:5mm;width:6mm;height:6mm;color:var(--turquesa)">@d6</span>
+<!-- ══ Compañeras ══ -->
+<template id="mujer-frente">
+  <section class="cara frente mujer">
+    <i class="mancha" style="width:40mm;height:34mm;top:-16mm;left:-16mm;background:#9FD3D9"></i>
+    <i class="mancha" style="width:40mm;height:34mm;top:-16mm;right:-18mm;background:#F5B8C6"></i>
+    <i class="mancha" style="width:42mm;height:36mm;bottom:-18mm;left:-18mm;background:#C9BDF0"></i>
+    <i class="mancha" style="width:42mm;height:36mm;bottom:-18mm;right:-18mm;background:#F7C9D3"></i>
+    <span class="adorno relleno" style="top:7mm;left:5mm;width:8mm;height:8mm;color:#EE8FA3;transform:rotate(-12deg)">@heart</span>
+    <span class="adorno" style="top:8mm;right:6mm;width:6mm;height:6mm;color:var(--celeste)">@sparkles</span>
+    <span class="adorno" style="top:27mm;left:5mm;color:var(--hoja);transform:rotate(-20deg)">@leaf</span>
+    <span class="adorno relleno" style="top:30mm;right:5mm;width:4mm;height:4mm;color:var(--amarillo)">@star</span>
+    <span class="adorno relleno" style="top:90mm;right:3.5mm;width:5.5mm;height:5.5mm;color:var(--celeste);transform:rotate(10deg)">@heart</span>
+    <span class="adorno" style="top:90mm;left:3.5mm;width:5mm;height:5mm;color:var(--rosa)">@heart</span>
+    <span class="adorno" style="bottom:6mm;right:5mm;width:6mm;height:6mm;color:var(--turquesa)">@smile</span>
     <span class="punto" style="top:20mm;left:14mm;background:var(--amarillo)"></span>
     <span class="punto" style="top:17mm;right:15mm;background:var(--menta)"></span>
     <span class="punto" style="top:40mm;left:12mm;background:var(--lila)"></span>
-    <span class="punto" style="top:99mm;right:11mm;background:var(--rosa)"></span>
     <span class="punto" style="top:108mm;left:12mm;background:var(--amarillo)"></span>
 
-    <h1 class="gracias">¡Gracias!</h1>
-    <div class="cinta">{{cinta}}</div>
-    <div class="a-mi">{{ami}}</div>
+    <h1 class="gracias">¡Gracias,</h1>
+    <div class="cinta {{largo}}">{{nombre}}</div>
+    <div class="a-mi">por ser parte del</div>
     <div class="grupo">GRUPO 3.1</div>
     <figure class="marco">
       <span class="cinta-adhesiva a"></span><span class="cinta-adhesiva b"></span>
@@ -196,54 +218,102 @@ body{ font-family: Nunito, sans-serif; color: var(--tinta); -webkit-print-color-
     </figure>
     <p class="deseo">Que nunca nos falten las <span class="r">risas</span>,<br>la <span class="t">confianza</span> y las <span class="c">ganas</span><br>de seguir juntos.</p>
     <p class="cuando">Viaje de integración · 25 sep 2026</p>
-    <div class="firma-rosa">
-      <span class="con">{{con}}</span>
+    <div class="firma-caja">
+      <span class="con">Con cariño,</span>
       <span class="nombre">Carlos</span>
       <span class="quien">tu amigo y compañero</span>
-      <span class="corazon">@d7</span>
+      <span class="corazon">@heart</span>
     </div>
     <span class="camion">@bus</span>
   </section>
 </template>
 
-<template id="reverso">
-  <section class="cara reverso {{clase}}">
-    <i class="mancha" style="width:40mm;height:34mm;top:-16mm;left:-18mm;background:var(--m2)"></i>
-    <i class="mancha" style="width:40mm;height:34mm;top:-18mm;right:-16mm;background:var(--m1)"></i>
-    <i class="mancha" style="width:42mm;height:36mm;bottom:-20mm;left:-18mm;background:var(--m4)"></i>
-    <i class="mancha" style="width:42mm;height:36mm;bottom:-20mm;right:-18mm;background:var(--m3)"></i>
-
-    <span class="adorno" style="top:5mm;right:5mm;width:5mm;height:5mm;color:var(--amarillo)">@sparkles</span>
+<template id="mujer-reverso">
+  <section class="cara reverso mujer">
+    <i class="mancha" style="width:40mm;height:34mm;top:-16mm;left:-18mm;background:#F5B8C6"></i>
+    <i class="mancha" style="width:40mm;height:34mm;top:-18mm;right:-16mm;background:#9FD3D9"></i>
+    <i class="mancha" style="width:42mm;height:36mm;bottom:-20mm;left:-18mm;background:#F7C9D3"></i>
+    <i class="mancha" style="width:42mm;height:36mm;bottom:-20mm;right:-18mm;background:#C9BDF0"></i>
+    <span class="adorno" style="top:5mm;right:5mm;color:var(--amarillo)">@sparkles</span>
+    <span class="adorno relleno" style="top:14mm;right:4mm;width:4.4mm;height:4.4mm;color:#EE8FA3">@heart</span>
     <span class="punto" style="top:12mm;right:13mm;background:var(--rosa)"></span>
-    <span class="adorno relleno" style="top:14mm;right:4mm;width:4.4mm;height:4.4mm;color:var(--adorno, #EE8FA3)">@d1</span>
-
     <div class="cabeza">
       <img src="escudo-rembrandt.png" alt="Escudo del Instituto Rembrandt">
       <div>
         <p class="inst">Instituto Rembrandt<span>Grupo 3.1 · Programación</span></p>
-        <h2>{{titulo}}</h2>
+        <h2>Para ustedes, <span>con cariño</span></h2>
       </div>
     </div>
-
-    <div class="hoja-carta">
-      <img class="marca-agua" src="escudo-rembrandt.png" alt="">
-      <p>Cuando el profe comentó que quien quisiera podía apoyar para que yo tuviera un lugar en el viaje, pensé que nadie apoyaría. Me sorprendió el apoyo de tantos, y me da mucha alegría descubrir que en verdad <span class="t">puedo confiar en ustedes</span>.</p>
-      <p>Sé que muchas veces soy castroso, intenso o molesto, que a veces parece que me falta un tornillo (o más de uno) y que me emociono de más y termino dando cátedra en clase. Gracias por su paciencia. Lo hago porque quiero caerles bien y <span class="r">porque me importan</span>.</p>
-      <p><span class="c">Somos el mejor grupo:</span> aun con nuestras peleas, gritos y ruidero, hemos seguido aquí todos, y eso es lo más importante. Disfruto de verdad cada día con ustedes.</p>
-    </div>
-
+    @mensaje
     <div class="firma-atras">
       <span class="con">Gracias por todo,<span class="nombre">Carlos</span></span>
-      <span class="corazon">@d7</span>
+      <span class="corazon">@heart</span>
     </div>
     <div class="pie"><img src="membrete-inferior.png" alt=""></div>
   </section>
 </template>
 
+<!-- ══ Compañeros ══ -->
+<template id="hombre-frente">
+  <section class="cara frente hombre">
+    <div class="fondo"></div>
+    <span class="numero">3.1</span>
+    <span class="adorno" style="top:44mm;right:4mm;width:6mm;height:6mm;color:var(--oro);transform:rotate(12deg)">@flame</span>
+    <span class="adorno relleno" style="top:26mm;right:9mm;color:var(--oro)">@zap</span>
+    <span class="adorno" style="top:98mm;right:4mm;width:6mm;height:6mm;color:var(--gris)">@biceps</span>
+
+    <div class="liga"><img src="escudo-rembrandt.png" alt="">INSTITUTO REMBRANDT · 3.1</div>
+    <h1 class="gracias">¡Gracias,</h1>
+    <div class="placa {{largo}}"><span>{{nombre}}</span></div>
+    <p class="equipo">por ser parte del<b>mejor equipo: el 3.1</b></p>
+    <figure class="marco">
+      <span class="cinta-adhesiva a"></span><span class="cinta-adhesiva b"></span>
+      <img src="foto.jpg" alt="El 3.1">
+    </figure>
+    <p class="deseo">Que nunca nos falten la <span class="r">fuerza</span>, la <span class="t">confianza</span> y las <span class="c">ganas</span> de seguir juntos.</p>
+    <p class="cuando">VIAJE DE INTEGRACIÓN · 25 SEP 2026</p>
+    <div class="firma-caja">
+      <span class="balon">@balon</span>
+      <span><span class="quien">TU AMIGO Y COMPAÑERO</span><span class="nombre">Carlos</span></span>
+      <span class="pesa">@dumbbell</span>
+    </div>
+  </section>
+</template>
+
+<template id="hombre-reverso">
+  <section class="cara reverso hombre">
+    <i class="mancha" style="width:42mm;height:36mm;bottom:-22mm;right:-20mm;background:#FFC9B0"></i>
+    <i class="mancha" style="width:42mm;height:36mm;bottom:-22mm;left:-20mm;background:#D9DDE3"></i>
+    <div class="cabeza">
+      <img src="escudo-rembrandt.png" alt="Escudo del Instituto Rembrandt">
+      <div>
+        <p class="inst">Instituto Rembrandt<span>Grupo 3.1 · Programación</span></p>
+        <h2>Lo que quería <span>decirles</span></h2>
+      </div>
+    </div>
+    @mensaje
+    <div class="firma-atras">
+      <span class="con">Gracias por todo,<span class="nombre">Carlos</span></span>
+      <span class="corazon">@star</span>
+    </div>
+    <div class="pie"><img src="membrete-inferior.png" alt=""></div>
+  </section>
+</template>
+
+<!-- El mensaje, UNO para las dos versiones: si se corrige, se corrige aquí. -->
+<template id="mensaje">
+    <div class="carta">
+      <img class="marca-agua" src="escudo-rembrandt.png" alt="">
+      <p>Cuando el profe comentó que quien quisiera podía apoyar para que yo tuviera un lugar en el viaje, pensé que nadie apoyaría. Me sorprendió el apoyo de tantos, y me da mucha alegría descubrir que en verdad <span class="t">puedo confiar en ustedes</span>.</p>
+      <p>Sé que muchas veces soy castroso, intenso o molesto, que a veces parece que me falta un tornillo (o más de uno) y que me emociono de más y termino dando cátedra en clase. Gracias por su paciencia. Lo hago porque quiero caerles bien y <span class="r">porque me importan</span>.</p>
+      <p><span class="c">Somos el mejor grupo:</span> aun con nuestras peleas, gritos y ruidero, hemos seguido aquí todos, y eso es lo más importante. Disfruto de verdad cada día con ustedes.</p>
+    </div>
+</template>
+
 <div id="lienzo"></div>
 
 <script>
-/* Los íconos se ponen con @nombre dentro de la plantilla (Lucide, ISC). */
+/* Íconos: Lucide (ISC), menos el balón, que es de Tabler (MIT). */
 const ICONOS = {
   bus: '<path d="M8 6v6"/><path d="M15 6v6"/><path d="M2 12h19.6"/><path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"/><circle cx="7" cy="18" r="2"/><path d="M9 18h5"/><circle cx="16" cy="18" r="2"/>',
   heart: '<path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"/>',
@@ -252,62 +322,67 @@ const ICONOS = {
   leaf: '<path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>',
   smile: '<circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/>',
   zap: '<path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>',
-  trophy: '<path d="M10 14.66v1.626a2 2 0 0 1-.976 1.696A5 5 0 0 0 7 21.978"/><path d="M14 14.66v1.626a2 2 0 0 0 .976 1.696A5 5 0 0 1 17 21.978"/><path d="M18 9h1.5a1 1 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"/><path d="M6 9H4.5a1 1 0 0 1 0-5H6"/>',
-  gamepad: '<line x1="6" x2="10" y1="11" y2="11"/><line x1="8" x2="8" y1="9" y2="13"/><line x1="15" x2="15.01" y1="12" y2="12"/><line x1="18" x2="18.01" y1="10" y2="10"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z"/>',
+  flame: '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
+  biceps: '<path d="M12.409 13.017A5 5 0 0 1 22 15c0 3.866-4 7-9 7-4.077 0-8.153-.82-10.371-2.462-.426-.316-.631-.832-.62-1.362C2.118 12.723 2.627 2 10 2a3 3 0 0 1 3 3 2 2 0 0 1-2 2c-1.105 0-1.64-.444-2-1"/><path d="M15 14a5 5 0 0 0-7.584 2"/><path d="M9.964 6.825C8.019 7.977 9.5 13 8 15"/>',
+  dumbbell: '<path d="M17.596 12.768a2 2 0 1 0 2.829-2.829l-1.768-1.767a2 2 0 0 0 2.828-2.829l-2.828-2.828a2 2 0 0 0-2.829 2.828l-1.767-1.768a2 2 0 1 0-2.829 2.829z"/><path d="m2.5 21.5 1.4-1.4"/><path d="m20.1 3.9 1.4-1.4"/><path d="M5.343 21.485a2 2 0 1 0 2.829-2.828l1.767 1.768a2 2 0 1 0 2.829-2.829l-6.364-6.364a2 2 0 1 0-2.829 2.829l1.768 1.767a2 2 0 0 0-2.828 2.829z"/><path d="m9.6 14.4 4.8-4.8"/>',
+  balon: '<path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/><path d="M12 7l4.76 3.45l-1.76 5.55h-6l-1.76 -5.55z"/><path d="M12 7v-4m3 13l2.5 3m-.74 -8.55l3.74 -1.45m-11.44 7.05l-2.56 2.95m.74 -8.55l-3.74 -1.45"/>',
 };
 const svg = (n) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${ICONOS[n]}</svg>`;
-/* Dos versiones, lo pidió Carlos: la «girly» para las compañeras y una más
-   sobria para los compañeros. Cambian textos, íconos y colores (.hombre en el
-   CSS); el acomodo y el mensaje de atrás son los mismos. */
-const VARIANTES = {
-  mujer: { clase: 'mujer', cinta: 'de todo corazón', ami: 'a mi querido', con: 'Con cariño,',
-    titulo: 'Para ustedes, <span>con cariño</span>',
-    d: { d1: 'heart', d2: 'sparkles', d3: 'leaf', d4: 'heart', d5: 'heart', d6: 'smile', d7: 'heart' } },
-  hombre: { clase: 'hombre', cinta: 'de verdad', ami: 'al mejor', con: 'Con aprecio,',
-    titulo: 'Lo que quería <span>decirles</span>',
-    d: { d1: 'star', d2: 'zap', d3: 'trophy', d4: 'zap', d5: 'star', d6: 'gamepad', d7: 'star' } },
-};
-const cara = (id, v = 'mujer') => {
-  const V = VARIANTES[v];
-  return document.getElementById(id).innerHTML
-    .replace(/\{\{(\w+)\}\}/g, (_, k) => V[k] ?? '')
-    .replace(/@(d\d)\b/g, (_, k) => '@' + V.d[k])
-    .replace(/@(bus|heart|star|sparkles|leaf|smile|zap|trophy|gamepad)\b/g, (_, n) => svg(n));
-};
+const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/* Una cara con su nombre. Sin nombre (las de repuesto), queda el espacio para
+   escribirlo a mano. */
+function cara(v, lado, nombre = ''){
+  const n = nombre.trim();
+  return document.getElementById(`${v}-${lado}`).innerHTML
+    .replace('@mensaje', document.getElementById('mensaje').innerHTML)
+    .replace('{{nombre}}', n ? esc(n) : '&nbsp;')
+    .replace('{{largo}}', !n ? 'vacia' : n.length > 13 ? 'largo' : '')
+    .replace(/@(\w+)\b/g, (m, k) => ICONOS[k] ? svg(k) : m);
+}
 
 /* La hoja: 5 × 3 tarjetas de 44 × 63.56 mm con 5 mm entre ellas, centradas en
-   carta horizontal. Centrada = simétrica, así que el reverso cae detrás de su
-   frente al voltear la hoja, sin espejear nada. Marcas de corte en cada
-   esquina, por fuera del sangrado y sin pisar el de la vecina. */
+   carta horizontal. Centrada = simétrica: el reverso cae detrás del frente.
+   Marcas de corte en cada esquina, por fuera del sangrado. */
 const HOJA = { W: 279.4, H: 215.9, cols: 5, filas: 3, w: 44, h: 63.556, sep: 5, sangrado: 1.5 };
-function hoja(id, v){
+function hoja(caras){
   const { W, H, cols, filas, w, h, sep, sangrado } = HOJA;
   const x0 = (W - (cols * w + (cols - 1) * sep)) / 2, y0 = (H - (filas * h + (filas - 1) * sep)) / 2;
   const desde = sangrado + .2, largo = Math.min(1.6, sep - 2 * sangrado - .4);
   let celdas = '', marcas = '';
-  for(let f = 0; f < filas; f++) for(let c = 0; c < cols; c++){
+  caras.forEach((html, i) => {
+    const f = Math.floor(i / cols), c = i % cols;
     const x = x0 + c * (w + sep), y = y0 + f * (h + sep);
-    celdas += `<div class="celda" style="left:${x}mm;top:${y}mm">${cara(id, v)}</div>`;
+    celdas += `<div class="celda" style="left:${x}mm;top:${y}mm">${html}</div>`;
     for(const [cx, sx] of [[x, -1], [x + w, 1]]) for(const [cy, sy] of [[y, -1], [y + h, 1]]){
-      // raya vertical, por arriba o por abajo de la esquina
       marcas += `<i class="corte v" style="left:${cx - .075}mm;top:${sy < 0 ? cy - desde - largo : cy + desde}mm;height:${largo}mm"></i>`;
-      // raya horizontal, a la izquierda o a la derecha
       marcas += `<i class="corte h" style="top:${cy - .075}mm;left:${sx < 0 ? cx - desde - largo : cx + desde}mm;width:${largo}mm"></i>`;
     }
-  }
+  });
   return `<div class="hoja">${celdas}${marcas}</div>`;
 }
 
-/* ?ver=frente|reverso&v=mujer|hombre para una sola, ?ver=hojas para el PDF.
-   Cada hoja es de UNA sola versión: así el reverso de cada tarjeta cae detrás
-   de su frente sin importar cómo voltee la impresora. */
+/* Hojas de una versión: los nombres en orden y, si sobra lugar, de repuesto
+   sin nombre. Los reversos son todos iguales, así que da igual cómo voltee. */
+function hojasDe(v, nombres){
+  const porHoja = HOJA.cols * HOJA.filas, total = Math.max(1, Math.ceil(nombres.length / porHoja)) * porHoja;
+  let salida = '';
+  for(let i = 0; i < total; i += porHoja){
+    salida += hoja(Array.from({ length: porHoja }, (_, k) => cara(v, 'frente', nombres[i + k] || '')));
+    salida += hoja(Array.from({ length: porHoja }, () => cara(v, 'reverso')));
+  }
+  return salida;
+}
+
+/* ?ver=frente|reverso&v=mujer|hombre&nombre=… para una sola; ?ver=hojas para
+   el PDF. Los nombres llegan por window.NOMBRES (los pone armar.mjs). */
 const q = new URLSearchParams(location.search);
 const pide = q.get('ver') || 'ambas', v = q.get('v') || 'mujer';
-const hojasDe = (v, n) => (hoja('frente', v) + hoja('reverso', v)).repeat(n);
+const N = window.NOMBRES || { mujer: [], hombre: [] };
 const lienzo = document.getElementById('lienzo');
-if(pide === 'frente' || pide === 'reverso'){ lienzo.innerHTML = cara(pide, v); }
-else if(pide === 'hojas'){ lienzo.innerHTML = hojasDe('mujer', +(q.get('mujer') || 1)) + hojasDe('hombre', +(q.get('hombre') || 1)); }
-else{ lienzo.style.cssText = 'display:flex;gap:10mm;padding:10mm;flex-wrap:wrap'; lienzo.innerHTML = ['mujer', 'hombre'].map((x) => cara('frente', x) + cara('reverso', x)).join(''); }
+if(pide === 'frente' || pide === 'reverso'){ lienzo.innerHTML = cara(v, pide, q.get('nombre') || ''); }
+else if(pide === 'hojas'){ lienzo.innerHTML = hojasDe('mujer', N.mujer) + hojasDe('hombre', N.hombre); }
+else{ lienzo.style.cssText = 'display:flex;gap:10mm;padding:10mm;flex-wrap:wrap'; lienzo.innerHTML = ['mujer', 'hombre'].map((x) => cara(x, 'frente', 'Nombre') + cara(x, 'reverso')).join(''); }
 </script>
 </body>
 </html>
