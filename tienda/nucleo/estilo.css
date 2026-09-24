@@ -470,6 +470,8 @@ a{ color: inherit; }
 @media (min-width: 900px){ .barra-carrito{ max-width: calc(var(--ancho-max) - 2 * var(--e6)); margin: 0 auto var(--e4); width: calc(100% - 2 * var(--e6)); } }
 /* Con la barra puesta, los avisos flotantes suben para no taparla. */
 .app.con-barra ~ .avisos{ bottom: calc(88px + env(safe-area-inset-bottom)); }
+/* Lo mismo con la barra de cobrar del punto de venta, en teléfono. */
+body:has(.pos-barra:not([hidden])) .avisos{ bottom: calc(96px + env(safe-area-inset-bottom)); }
 
 /* ══ Administración (Bloque 3) ═══════════════════════════════════════════ */
 /* Para trabajar, no para ver: más denso que la tienda, pero con los mismos
@@ -478,7 +480,7 @@ a{ color: inherit; }
 .barra-admin .filtros{ margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e3); }
 .barra-admin .filtros .campo.compacto{ flex: none; min-width: 0; }
 @media (min-width: 900px){ .barra-admin .filtros{ grid-template-columns: repeat(2, 240px); } }
-.cifra-caja .valor{ overflow-wrap: anywhere; }
+.cifra-caja .valor{ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (min-width: 900px){
   .barra-admin{ grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
   .barra-admin .buscador{ grid-column: 1 / -1; }
@@ -639,13 +641,14 @@ a{ color: inherit; }
 
 /* ══ Punto de venta (Bloque 5) ═══════════════════════════════════════════ */
 .solo-lectores{ position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.pos{ display: grid; gap: var(--e4); }
+.pos{ display: grid; gap: var(--e4); grid-template-columns: minmax(0, 1fr); }  /* sin minmax(0,…) la tira de categorías ensancha la columna y todo se sale */
 @media (min-width: 900px){
   .pos{ grid-template-columns: minmax(0, 1fr) 360px; align-items: start; }
   .pos-ticket{ position: sticky; top: calc(var(--arriba) + var(--e3)); max-height: calc(100dvh - var(--arriba) - var(--e6)); overflow-y: auto; }
   .pos-barra{ display: none !important; }
 }
 @media (max-width: 899px){ .pos-ticket{ display: none; } }
+.pos-catalogo{ min-width: 0; }
 .pos-buscar{ display: flex; gap: var(--e2); }
 .pos-buscar .buscador{ flex: 1; min-width: 0; }
 .pos-buscar .boton{ flex: none; }
@@ -685,6 +688,10 @@ a{ color: inherit; }
 .pos-barra{ position: sticky; bottom: calc(var(--e3) + env(safe-area-inset-bottom)); z-index: 15; margin-top: var(--e4); }
 .pos-barra .boton{ justify-content: space-between; box-shadow: var(--elev-2); }
 .pos-barra .boton strong{ font-size: var(--t-sub); font-variant-numeric: tabular-nums; }
+.pos-renglon.recien, .pos-barra.recien .boton{ animation: destello .6s var(--entra); }
+@keyframes destello{ from{ background-color: var(--acento-suave); } }
+.pos-barra.recien .boton{ animation-name: destello-boton; }
+@keyframes destello-boton{ 50%{ transform: scale(1.03); } }
 .pos-quien{ color: var(--tinta-suave); font-size: var(--t-chica); margin-top: var(--e4); }
 
 .cobro-total{ display: flex; justify-content: space-between; align-items: baseline; margin: 0 0 var(--e4); }

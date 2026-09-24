@@ -26,6 +26,9 @@ const LLAVE_TICKET = 'tienda-pos-ticket-' + negocioPedido();
 const HORA = new Intl.DateTimeFormat('es-MX', { hour: 'numeric', minute: '2-digit' });
 const hora = (d) => HORA.format(new Date(d));
 const pesosC = (c) => pesos(aPesos(c));
+/* Para las cifras grandes de resumen: sin centavos. «$8,032.6 / 0» partido en
+   dos renglones no se lee; «$8,033» sí, y el detalle está en los tickets. */
+const pesosR = (c) => '$' + Math.round(c / 100).toLocaleString('es-MX');
 const METODOS = { efectivo: 'Efectivo', tarjeta: 'Tarjeta', transferencia: 'Transferencia', mixto: 'Mixto', pasarela: 'En línea' };
 
 /* ── El ticket en curso, guardado en el teléfono ───────────────────────── */
@@ -129,7 +132,7 @@ function hojaEscaner({ alLeer }){
 
 async function cobrar(){
   const [cat, caja, persona] = await Promise.all([catalogo(), miCaja(), yo()]);
-  if(!caja) return { titulo: 'Cobrar', html: abrirCajaHTML(), alMontar($c, ctx){ montarAbrirCaja($c, { ...ctx, alAbrir: () => ctx.ir('/v') }); } };
+  if(!caja) return { titulo: 'Cobrar', html: abrirCajaHTML(), alMontar($c, ctx){ montarAbrirCaja($c, { ...ctx, alAbrir: ctx.recargar }); } };
 
   const { categorias, productos, porId } = cat;
   let renglones = ticket.leer().filter((r) => porId.has(r.id));
@@ -155,9 +158,9 @@ async function cobrar(){
     <div class="pos-barra" id="pos-barra" hidden></div>
     <p class="pos-quien">${esc(persona?.nombre || 'Caja')} · caja abierta desde las ${hora(caja.abierta)}</p>`,
 
-    alMontar($c, { aviso, ir }){
+    alMontar($c, { aviso, recargar }){
       const f = { q: '', cat: '' };
-      let cuantos = PAGINA;
+      let cuantos = PAGINA, ultimo = null;
       const $rej = $c.querySelector('#pos-rejilla'), $mas = $c.querySelector('#pos-mas'), $q = $c.querySelector('#pos-q');
       const $ticket = $c.querySelector('#pos-ticket'), $barra = $c.querySelector('#pos-barra');
 
@@ -184,7 +187,7 @@ async function cobrar(){
 
       const renglonHTML = (r) => {
         const p = porId.get(r.id);
-        return `<li class="pos-renglon">
+        return `<li class="pos-renglon${r.id === ultimo ? ' recien' : ''}">
           <span class="texto"><strong>${esc(p.n)}</strong><small>${pesos(p.p)} c/u</small></span>
           <span class="cantidad">
             <button type="button" data-menos="${r.id}" aria-label="Una menos de ${esc(p.n)}">${icono(r.cantidad === 1 ? 'borrar' : 'menos')}</button>
@@ -205,11 +208,12 @@ async function cobrar(){
         ticket.guardar(renglones);
         $ticket.innerHTML = ticketHTML();
         $barra.hidden = !renglones.length;
+        $barra.classList.remove('recien'); if(ultimo){ void $barra.offsetWidth; $barra.classList.add('recien'); }
         $barra.innerHTML = renglones.length ? `<button class="boton principal grande ancho" data-ver-ticket>
           <span>${plural(piezas(), 'pieza', 'piezas')}</span><strong>${pesosC(totalC())}</strong><span>Cobrar ${icono('adelante')}</span></button>` : '';
         document.querySelector('.hoja-ticket .hoja-cuerpo')?.replaceChildren(...(() => { const t = document.createElement('div'); t.innerHTML = ticketHTML(); return [...t.childNodes]; })());
       };
-      const pintar = () => { pintarRejilla(); pintarTicket(); };
+      const pintar = () => { pintarRejilla(); pintarTicket(); ultimo = null; };
 
       const agregar = (id, n = 1) => {
         const p = porId.get(id); if(!p) return false;
@@ -217,6 +221,9 @@ async function cobrar(){
         if(ya + n > p.q){ aviso(p.q <= 0 ? `«${p.n}» está agotado` : `Sólo hay ${p.q} de «${p.n}»`, 'mal'); return false; }
         const r = renglones.find((x) => x.id === id);
         if(r) r.cantidad += n; else renglones.push({ id, cantidad: n });
+        // Sin aviso flotante: el ticket ya lo enseña. Un destello en el renglón
+        // (o en la barra, en teléfono) dice «entró» sin tapar nada.
+        ultimo = id;
         pintar();
         return true;
       };
@@ -232,11 +239,11 @@ async function cobrar(){
         e.preventDefault();
         const t = $q.value.trim(); if(!t) return;
         const p = deCodigo(t);
-        if(p){ if(agregar(p.id)) aviso(`+1 ${p.n}`); $q.value = ''; f.q = ''; pintarRejilla(); return; }
+        if(p){ agregar(p.id); $q.value = ''; f.q = ''; pintarRejilla(); return; }
         // Si la búsqueda deja uno solo, Enter lo agrega.
         const q = quitaAcentos(t);
         const uno = productos.filter((x) => quitaAcentos(`${x.n} ${x.m}`).includes(q));
-        if(uno.length === 1){ if(agregar(uno[0].id)) aviso(`+1 ${uno[0].n}`); $q.value = ''; f.q = ''; pintarRejilla(); }
+        if(uno.length === 1){ agregar(uno[0].id); $q.value = ''; f.q = ''; pintarRejilla(); }
         else aviso(uno.length ? `${uno.length} coinciden: toca el que es` : `No hay nada con «${t}»`, uno.length ? '' : 'mal');
       });
       $q.addEventListener('input', () => { f.q = $q.value; cuantos = PAGINA; pintarRejilla(); });
@@ -334,7 +341,7 @@ async function cobrar(){
             d.querySelector('.hoja-cuerpo').innerHTML = `<div class="venta-hecha">
               <span class="circulo">${icono('listo')}</span>
               <p class="cambio-grande"><span>${c ? 'Cambio' : 'Cobrado'}</span><strong>${c ? pesosC(c) : pesos(venta.total)}</strong></p>
-              ${c ? `<p class="nota">Da: ${dz.piezas.map((x) => `${x.piezas} de ${pesosC(x.valor)}`).join(', ')}</p>` : ''}
+              ${c ? `<p class="nota">Da: ${dz.piezas.map((x) => `${x.piezas} de ${pesosC(x.valor)}`).join(', ')}${dz.resto ? ` y ${dz.resto} centavos` : ''}</p>` : ''}
               <div class="botones">
                 <button class="boton secundario" data-imprimir>${icono('imprimir')}Imprimir ticket</button>
                 <button class="boton principal" data-cerrar-hoja>${icono('agregar')}Nueva venta</button></div></div>`;
@@ -344,7 +351,7 @@ async function cobrar(){
             console.error(err);
             aviso(err.message, 'mal');
             $ok.removeAttribute('aria-busy'); $ok.disabled = false;
-            if(/alcanzan|ya no est/i.test(err.message)){ olvidarCatalogo(); d.close(); ir('/v'); }
+            if(/alcanzan|ya no est/i.test(err.message)){ olvidarCatalogo(); d.close(); recargar(); }
           }
         });
       };
@@ -375,7 +382,7 @@ async function cajaPantalla(){
         <span class="chip ${dif === 0 ? 'bien' : dif > 0 ? 'ojo' : 'mal'}">${dif === 0 ? 'Cuadró' : dif > 0 ? `+${pesosC(dif)}` : `−${pesosC(-dif)}`}</span></li>`;
     }).join('')}</ul></section>` : '';
 
-  if(!caja) return { html: abrirCajaHTML() + histHTML, alMontar($c, ctx){ montarAbrirCaja($c, { ...ctx, alAbrir: () => ctx.ir('/v/caja') }); } };
+  if(!caja) return { html: abrirCajaHTML() + histHTML, alMontar($c, ctx){ montarAbrirCaja($c, { ...ctx, alAbrir: ctx.recargar }); } };
 
   const cobros = await cobrosDeCaja(caja.id);
   const por = (m) => cobros.filter((c) => c.metodo === m).reduce((t, c) => t + aCentavos(c.monto), 0);
@@ -393,8 +400,8 @@ async function cajaPantalla(){
       <div class="cifras">
         <div class="cifra-caja"><span class="valor">${hora(caja.abierta)}</span><span class="etq">abrió</span></div>
         <div class="cifra-caja"><span class="valor">${tickets}</span><span class="etq">tickets</span></div>
-        <div class="cifra-caja"><span class="valor">${pesosC(ef)}</span><span class="etq">en efectivo</span></div>
-        <div class="cifra-caja"><span class="valor">${pesosC(por('tarjeta') + por('transferencia'))}</span><span class="etq">tarjeta y transferencia</span></div>
+        <div class="cifra-caja"><span class="valor">${pesosR(ef)}</span><span class="etq">en efectivo</span></div>
+        <div class="cifra-caja"><span class="valor">${pesosR(por('tarjeta') + por('transferencia'))}</span><span class="etq">tarjeta y transferencia</span></div>
       </div>
       <section class="tarjeta bloque-form">
         <h2>Cerrar caja</h2>
@@ -497,9 +504,9 @@ async function ventasHoy(){
 
         $v.innerHTML = `
           <div class="cifras">
-            <div class="cifra-caja"><span class="valor">${pesosC(total)}</span><span class="etq">vendido${vs_ != null ? ` · <b class="${vs_ >= 0 ? 'sube' : 'baja'}">${vs_ >= 0 ? '+' : ''}${vs_} %</b> vs. el ${DIA} pasado` : ''}</span></div>
+            <div class="cifra-caja"><span class="valor">${pesosR(total)}</span><span class="etq">vendido${vs_ != null ? ` · <b class="${vs_ >= 0 ? 'sube' : 'baja'}">${vs_ >= 0 ? '+' : ''}${vs_} %</b> vs. el ${DIA} pasado` : ''}</span></div>
             <div class="cifra-caja"><span class="valor">${vs.length}</span><span class="etq">tickets</span></div>
-            <div class="cifra-caja"><span class="valor">${pesosC(Math.round(total / vs.length))}</span><span class="etq">ticket promedio</span></div>
+            <div class="cifra-caja"><span class="valor">${pesosR(Math.round(total / vs.length))}</span><span class="etq">ticket promedio</span></div>
             <div class="cifra-caja"><span class="valor">${piezas}</span><span class="etq">piezas</span></div>
           </div>
           <section class="seccion"><header><h2>Por hora</h2></header>

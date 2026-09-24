@@ -654,7 +654,7 @@ async function categoriasPantalla(){
       ${cuenta.get(null) ? `<p class="nota">${plural(cuenta.get(null), 'producto está', 'productos están')} sin categoría: no se ven en la tienda por categoría.</p>` : ''}`,
 
     alMontar($c, { aviso, ir }){
-      const recargar = () => ir('/a/categorias');
+
       const mover = async (i, j, boton) => {
         const a = categorias[i], b = categorias[j];
         // Si el orden venía repetido (todo en 0), se numera primero.

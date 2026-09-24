@@ -25,6 +25,11 @@ export function aviso(texto, tipo = ''){
   const el = document.createElement('div');
   el.className = 'aviso-flotante ' + tipo;
   el.innerHTML = icono(tipo === 'mal' ? 'alerta' : 'listo') + `<span>${esc(texto)}</span>`;
+  // Nunca más de dos a la vez: el mismo aviso otra vez reemplaza al anterior,
+  // y si ya hay dos, se va el más viejo. Escaneando diez productos, los avisos
+  // apilados tapaban justo lo que se estaba cobrando.
+  [...$avisos.children].filter((x) => x.textContent === el.textContent).forEach((x) => x.remove());
+  while($avisos.children.length >= 2) $avisos.firstElementChild.remove();
   $avisos.append(el);
   setTimeout(() => el.remove(), tipo === 'mal' ? 6000 : 3200);
 }
@@ -227,7 +232,10 @@ async function navegar(){
   $c.classList.toggle('ancho', !!vista.ancho);
   $c.innerHTML = vista.html;
   window.scrollTo(0, 0);
-  const r = vista.alMontar?.($c, { aviso, ir, ruta });
+  // `recargar` vuelve a pintar la pantalla en la que ya estás. ir() a la misma
+  // ruta no sirve: el hash no cambia y no pasa nada (así se quedó colgada la
+  // caja recién abierta, y Categorías no enseñaba la que acababas de guardar).
+  const r = vista.alMontar?.($c, { aviso, ir, ruta, recargar: () => navegar() });
   if(typeof r === 'function') desmontar = r;
   // El foco va al título al cambiar de pantalla (no en la primera carga): quien
   // navega con lector de pantalla oye dónde llegó.

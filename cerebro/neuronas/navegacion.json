@@ -193,6 +193,27 @@
       "vecinas": [
         "volver-atras-que-no-vuelve"
       ]
+    },
+    {
+      "id": "ir-a-donde-ya-estas-no-hace-nada",
+      "titulo": "«Abrir caja» no cambiaba la pantalla, y Categorías no enseñaba lo recién guardado",
+      "gravedad": "media",
+      "sintoma": "Tras abrir la caja, seguía el formulario de abrir caja (la prueba esperó 20 s el buscador que nunca salió). En Categorías, al guardar una, la lista seguía como antes.",
+      "causa": "Para «volver a pintar» se llamaba ir('/v') estando en /v. Con enrutador por #, asignar el mismo hash no dispara hashchange: no pasa nada, sin error.",
+      "porque": "El navegador sólo avisa cuando la dirección CAMBIA. Pedir ir al mismo lugar es, para él, no pedir nada.",
+      "arreglo": "El armazón pasa a cada pantalla recargar() (= navegar()), que repinta la ruta actual. Se usa en abrir caja, en Categorías y al fallar una venta por existencias.",
+      "comoCazarlo": "Toda acción que termina «y ahora enséñame lo nuevo» en la MISMA pantalla: probarla de punta a punta, no sólo que la llamada al servidor contestó bien. La de Categorías llevaba desde el Bloque 3 sin que nadie la viera.",
+      "consejo": "ir() es para moverse; para refrescar, recargar(). Si alguna vez hace falta ir() a la ruta actual, es un recargar disfrazado.",
+      "senales": [
+        "no se actualiza la pantalla",
+        "hay que salir y volver para ver el cambio",
+        "location.hash igual no navega",
+        "hashchange no dispara"
+      ],
+      "salioDe": "el punto de venta de la tienda, 24 de septiembre de 2026.",
+      "vecinas": [
+        "la-hoja-que-sobrevive-al-atras"
+      ]
     }
   ]
 }
