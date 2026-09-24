@@ -1233,6 +1233,150 @@ function armarMazo(){
   return cartas;
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   LA COLECCIÓN · CON QUÉ MAZO JUEGAS
+   ──────────────────────────────────────────────────────────────────────────
+   Carlos, textual: «al abrirlo inicies con súper poquitas cartas y cada match
+   jugado te haga ganar monedas etc justo como lo hace ligas mazi».
+
+   ⚠ EL AGUJERO QUE TAPA ESTO, Y ERA GRANDE. La tienda, las monedas, los
+   sobres y la colección YA EXISTÍAN… y no servían para nada. `repartir()`
+   armaba SIEMPRE el mismo mazo de 110 cartas para los dos jugadores, así que
+   podías juntar el álbum entero y jugabas exactamente igual que el primer día.
+   Se compraba una colección que no entraba a la mesa.
+
+   No se veía leyendo la tienda —está bien escrita— ni jugando una partida
+   —reparte perfecto—: se ve preguntando «¿y dónde se usa `CARTERA.tengo`?»,
+   y la respuesta era «en ningún lado más que para contarlo».
+
+   CÓMO QUEDA
+
+   · Tu mazo son 30 cartas SACADAS DE TU COLECCIÓN. El número está MEDIDO, no
+     escogido a ojo: 300 partidas simuladas por cada tamaño.
+
+       | mazo | dura      | cómo acaba                        |
+       |------|-----------|-----------------------------------|
+       |  30  | 26 rondas | a los puntos                      |
+       |  45  | 41 rondas | a los puntos                      |
+       |  60  | 56 rondas | mitad y mitad, pero se hace largo |
+
+     Treinta porque 26 rondas ya son una partida larga en un teléfono, y
+     porque con 110 el mazo no se acababa NUNCA: la regla 4.8 del reglamento
+     —«si el mazo se acabó se juega con lo que quede»— era letra muerta.
+     Ahora cuidar el mazo es una decisión de verdad.
+
+     ⚠ Y UN DATO QUE CONVIENE SABER ANTES DE QUE ALGUIEN LO REPORTE COMO BUG:
+     con mazos flojos la partida casi siempre acaba A LOS PUNTOS y no por
+     dejar a nadie en cero. No está roto — sale del propio reglamento: dos
+     mazos de nivel D se hacen cinco o seis de daño por ronda, y bajar 200 PV
+     así pide cuarenta rondas. Los nocauts aparecen cuando las colecciones
+     suben. El marcador de PV no es de adorno: es el desempate.
+
+   · SI TIENES MENOS DE 30, SE REPITEN LAS QUE TIENES. Es lo que deja que el
+     primer día se pueda jugar con ocho cartas sin que el juego se rompa: tu
+     mazo es pobre y repetido, y se va volviendo variado conforme compras. La
+     alternativa —«no puedes jugar hasta juntar 30»— es un juego que no deja
+     jugar, que es la peor forma de empezar.
+
+   · LAS ESPECIALES NO SE COLECCIONAN. El +5 y el −5 los pone el mazo, 5 y 5,
+     como siempre. Si fueran de colección, alguien sin monedas se quedaría sin
+     media regla del juego.
+
+   · Y NADA DE ESTO CAMBIA EL MODO DE SIEMPRE. `repartir(semilla)` sin mazos
+     sigue armando las 110 de toda la vida, que es lo que usan las pruebas y
+     el modo de dos en un teléfono.
+   ═════════════════════════════════════════════════════════════════════════*/
+const TAM_MAZO = 30;
+
+/* ⚠ LA GUARDIA CONTRA LA TRAMPA, y vive aquí y no en el servidor a propósito:
+   el servidor usa ESTE archivo, así que la regla es una sola.
+
+   En línea, el mazo lo declara el teléfono —el servidor no guarda colecciones
+   de nadie— así que un teléfono podría declarar treinta cartas de 999 puntos.
+   Esto lo impide: una carta sólo se acepta si su nivel existe y su valor cae
+   dentro del rango de ESE nivel. Lo que no pasa el filtro no se corrige: se
+   tira, porque adivinar qué quiso decir un cliente que manda basura es cómo
+   se cuelan las cosas raras. */
+function limpiarCartas(lista){
+  if(!Array.isArray(lista)) return [];
+  const buenas = [];
+  for(const c of lista){
+    if(!c || typeof c !== 'object') continue;
+    const n = nivelDe(c.nivel);
+    if(!n) continue;                         /* 'ESP' incluida: no se colecciona */
+    const v = Number(c.valor);
+    if(!Number.isFinite(v) || v < n.de || v > n.a) continue;
+    buenas.push({ valor: Math.round(v), nivel: n.id });
+    if(buenas.length >= 400) break;          /* nadie manda un álbum de 10 mil */
+  }
+  return buenas;
+}
+
+/* Tu colección → tu mazo de 30, más las especiales. Sin azar: el mismo álbum
+   da siempre el mismo mazo, y quien revuelve es `repartir`. */
+function mazoDeColeccion(coleccion){
+  const tengo = limpiarCartas(coleccion);
+  if(!tengo.length) return null;             /* sin colección, mazo de siempre */
+  const cartas = [];
+  let n = 0;
+  /* De mayor a menor para que el mazo sea LO MEJOR que tienes. Y con desempate
+     por nivel y valor —no por el orden en que llegaron— para que dos teléfonos
+     con la misma colección armen el mismo mazo. */
+  const orden = tengo.slice().sort((x, y) => y.valor - x.valor
+                                          || x.nivel.localeCompare(y.nivel));
+  for(let i = 0; i < TAM_MAZO; i++){
+    const f = orden[i % orden.length];       /* se repiten si tienes pocas */
+    cartas.push({ id:'k' + (n++), valor: f.valor, nivel: f.nivel });
+  }
+  for(const clase of ['bono', 'castigo']){
+    for(let i = 0; i < ESPECIALES[clase]; i++){
+      cartas.push({ id:'e' + (n++), valor: 0, nivel:'ESP', esp: clase });
+    }
+  }
+  return cartas;
+}
+
+/* El mazo del rival de la máquina: uno PAREJO al tuyo, no el álbum completo.
+   Sin esto sólo había dos opciones malas: la máquina con las 110 —y tu
+   colección de ocho cartas no gana nunca— o la máquina con tu mismo mazo, que
+   es jugar contra un espejo.
+
+   ⚠ «DEL MISMO NIVEL» NO ES PAREJO, Y LO DICE UN NÚMERO: con la primera
+   versión —mismo nivel, valor sorteado en TODO el rango de ese nivel— el mazo
+   de arranque perdió **300 de 300** partidas simuladas. La razón es de una
+   línea: el regalo son las ocho cartas más baratas de la baraja, o sea el
+   SUELO del nivel D (16 a 23), y un valor sorteado entre 16 y 35 cae en 25 de
+   promedio. Cada ronda se pierde por seis puntos, todas las rondas, siempre.
+
+   Y no se veía jugando una partida —se pierde y uno piensa «me tocó mal»— ni
+   leyendo el código, donde «mismo nivel» suena exactamente a parejo. Salió de
+   simular trescientas y contar. Con el valor igualado: 128 ganadas, 157
+   perdidas, 15 empates.
+
+   Lo parejo de verdad es igualar el VALOR, con un pellizco de ±3 para que no
+   sea un espejo. */
+const PELLIZCO = 3;
+function mazoParejo(mazoTuyo, dado){
+  const cartas = [];
+  let n = 0;
+  for(const c of mazoTuyo || []){
+    if(c.nivel === 'ESP') continue;
+    const niv = nivelDe(c.nivel);
+    if(!niv) continue;
+    const mueve = Math.round((dado() * 2 - 1) * PELLIZCO);
+    /* Sin salirse del nivel: una carta de 34 con +3 sería un 37, que ya es
+       nivel C, y el nivel es lo que decide el bono de la combinación. */
+    const v = Math.min(niv.a, Math.max(niv.de, c.valor + mueve));
+    cartas.push({ id:'m' + (n++), valor: v, nivel: niv.id });
+  }
+  for(const clase of ['bono', 'castigo']){
+    for(let i = 0; i < ESPECIALES[clase]; i++){
+      cartas.push({ id:'x' + (n++), valor: 0, nivel:'ESP', esp: clase });
+    }
+  }
+  return cartas;
+}
+
 /* ⚠ SE LLAMA `esCartaEspecial` Y NO `esCartaEspecial` A PROPÓSITO. `esCartaEspecial` ya
    existe en index.html —filtra la colección por nivel— y el motor se carga en
    el MISMO ámbito global del navegador. Con los dos nombres iguales, el
@@ -1342,8 +1486,24 @@ const jugablesDe = (mano) => mano.filter(c => !esCartaEspecial(c));
 /* ── Repartir ─────────────────────────────────────────────────────────────
    Cada quien su mazo, y las especiales vienen dentro como cualquier otra
    carta. Ya no hay reparto de especiales que hacer: si te salen, te salen. */
-function repartir(semilla){
+function repartir(semilla, mazos){
   const dado = azar(semilla);
+
+  /* ⚠ LOS MAZOS SON OPCIONALES Y ESO NO ES PEREZA. Sin ellos se arma el mazo
+     de 110 de toda la vida, que es lo que usan el modo de dos en un teléfono
+     y las 74 pruebas de este archivo. Con ellos, cada quien juega con SU
+     colección. Añadir el parámetro sin romper a quien ya llamaba con uno solo
+     es lo que deja meter la colección sin reescribir los tres modos a la vez.
+
+     Y se limpian aquí dentro, no en quien llama: en línea el mazo lo declara
+     un teléfono, y el único sitio donde la limpieza no se puede olvidar es
+     éste. */
+  const propio = (lado) => {
+    const m = mazos && mazos[lado];
+    if(!m || !m.length) return null;
+    /* Ya viene armado (de `mazoDeColeccion`) o es una colección cruda. */
+    return m.some(c => c && c.nivel === 'ESP') ? m : mazoDeColeccion(m);
+  };
 
   /* ⚠ UN MAZO POR JUGADOR, y no es un detalle de reparto: lo pidió Carlos
      («haz que cada jugador tenga su mazo») y es lo que hace posible todo lo
@@ -1356,7 +1516,7 @@ function repartir(semilla){
      deja que dos teléfonos repartan igual sin mandarse las cartas. */
   const jugador = (nombre) => ({
     nombre, pv: PV_INICIAL, mano: [], combosUsados: 0,
-    mazo: revolver(armarMazo(), dado),
+    mazo: revolver(propio(nombre) || armarMazo(), dado),
     /* El cementerio: lo que ya se jugó, en orden. La última de arriba. */
     cementerio: [],
   });
@@ -1500,6 +1660,7 @@ const API = {
   NIVELES, PV_INICIAL, MANO, DANO_TOPE, COMBOS_POR_JUGADOR, ESPECIALES,
   azar, revolver, armarMazo, nivelDe, sePuedeCombinar,
   puntuar, porQueNoSeVale, danoEntre, repartir, jugarRonda, jugadasPosibles,
+  TAM_MAZO, limpiarCartas, mazoDeColeccion, mazoParejo,
 };
 
 /* Tres formas de cargarlo, un solo archivo:
@@ -1638,6 +1799,69 @@ const SOBRES = [
 
 function cuantasTengo(){ return Object.keys(CARTERA.tengo).length; }
 
+/* ── EL REGALO DE ARRANQUE ────────────────────────────────────────────────
+   Carlos: «al abrirlo inicies con súper poquitas cartas». OCHO, y malas.
+
+   ⚠ POR QUÉ SE REGALAN Y NO SE EMPIEZA EN CERO. Con cero cartas no hay mazo,
+   y sin mazo no hay primera partida — o sea que el juego pediría monedas para
+   dejar jugar y las monedas se ganan jugando. Es un candado que se cierra
+   solo, y la clase de cosa que no se ve escribiendo la tienda: se ve al abrir
+   el juego por primera vez con el almacenamiento limpio.
+
+   Son las OCHO MÁS BARATAS de la baraja, en orden estable: así dos teléfonos
+   arrancan igual y nadie empieza con un regalo mejor que el de otro. Y malas
+   a propósito — si el regalo fuera bueno, la tienda no haría falta.
+
+   La marca de «ya se regaló» va aparte de la colección: sin ella, alguien que
+   venda todas sus cartas volvería a recibirlas, y con ella vender es una
+   decisión de verdad. */
+const CUANTAS_DE_REGALO = 8;
+
+function yaSeRegalo(){
+  try{ return localStorage.getItem('puercos_arranque') === 'si'; }catch(e){ return false; }
+}
+function regalarArranque(){
+  if(!CAT.listo || !CAT.todas.length) return false;
+  if(yaSeRegalo() || cuantasTengo()) return false;
+  const baratas = CAT.todas
+    .filter(f => 'SABCD'.includes(f.nivel) && f.nivel.length === 1)
+    .slice()
+    .sort((x, y) => x.puntos - y.puntos || x.n - y.n)
+    .slice(0, CUANTAS_DE_REGALO);
+  if(!baratas.length) return false;
+  for(const f of baratas) CARTERA.tengo[f.nombre + '·' + f.puntos] = 1;
+  try{ localStorage.setItem('puercos_arranque', 'si'); }catch(e){}
+  guardarCartera();
+  return true;
+}
+
+/* ── TU COLECCIÓN, EN EL IDIOMA DEL MOTOR ────────────────────────────────
+   La cartera guarda `nombre·puntos` porque eso es lo que identifica una carta
+   del álbum; el motor sólo entiende `{valor, nivel}`. Esta función es el
+   puente, y es donde se nota si el catálogo no cargó: sin catálogo no hay
+   nivel que ponerle a un nombre, así que devuelve vacío y se juega con el
+   mazo de siempre. Que el arte sea una mejora y no un requisito ya estaba
+   decidido arriba; esto lo respeta. */
+function misCartas(){
+  if(!CAT.listo) return [];
+  const fuera = [];
+  for(const clave of Object.keys(CARTERA.tengo)){
+    const corte = clave.lastIndexOf('·');
+    if(corte < 0) continue;
+    const nombre = clave.slice(0, corte), puntos = parseInt(clave.slice(corte + 1), 10);
+    const f = CAT.todas.find(x => x.nombre === nombre && x.puntos === puntos);
+    if(f && 'SABCD'.includes(f.nivel) && f.nivel.length === 1)
+      fuera.push({ valor: f.puntos, nivel: f.nivel });
+  }
+  return fuera;
+}
+
+/* Mi mazo ya armado, o `null` si todavía no hay colección que valga. */
+function miMazo(){
+  const mias = misCartas();
+  return mias.length ? MOTOR.mazoDeColeccion(mias) : null;
+}
+
 function abrirSobre(sobre){
   if(!CAT.listo || !CAT.todas.length) return null;
   if(CARTERA.monedas < sobre.precio) return null;
@@ -1665,8 +1889,17 @@ function pintarTienda(){
   $('#tMonedas').textContent = CARTERA.monedas;
   const n = cuantasTengo();
   const total = CAT.listo ? CAT.todas.length : 100;
-  $('#tLlevas').textContent = n
-    ? 'Llevas ' + n + ' de ' + total + ' cartas de la colección.'
+  /* ⚠ AQUÍ SE DICE PARA QUÉ SIRVEN LAS MONEDAS, y antes no se decía en ningún
+     lado. La tienda contaba cuántas cartas llevabas y ya; con el mazo saliendo
+     de la colección, lo que importa es OTRA cosa: cuántas de tus 30 son
+     distintas. Mientras tengas menos de 30, el mazo repite — y ver ese número
+     bajar es exactamente la razón de comprar el siguiente sobre. */
+  const distintas = Math.min(n, MOTOR.TAM_MAZO);
+  $('#tLlevas').innerHTML = n
+    ? 'Llevas <b>' + n + '</b> de ' + total + ' cartas. Tu mazo son '
+      + MOTOR.TAM_MAZO + (distintas < MOTOR.TAM_MAZO
+        ? ', y como tienes ' + n + ', se repiten para llenarlo.'
+        : ' — ya no repite ninguna.')
     : 'Todavía no tienes ninguna carta en tu colección.';
 
   const caja = $('#tSobres');
@@ -2727,7 +2960,18 @@ function jugar(){
 }
 
 function nuevaPartida(){
-  J = MOTOR.repartir((Math.random() * 0xFFFFFFF) >>> 0);
+  const semilla = (Math.random() * 0xFFFFFFF) >>> 0;
+  /* ⚠ CONTRA LA MÁQUINA JUEGAS CON TU COLECCIÓN; EN «DOS EN ESTE TELÉFONO»,
+     NO. Y no es un olvido: en ese modo hay dos personas y UNA sola colección
+     —la del dueño del teléfono—, así que darle su mazo a los dos, o al que
+     empieza, sería repartir chueco. Ese modo se queda con la baraja completa
+     de siempre, que es la mesa pareja. */
+  let mazos = null;
+  if(modo === 'maquina'){
+    const mio = miMazo();
+    if(mio) mazos = { a: mio, b: MOTOR.mazoParejo(mio, MOTOR.azar(semilla ^ 0x5bf03635)) };
+  }
+  J = MOTOR.repartir(semilla, mazos);
   turnoDe = 'a'; guardadaA = null;
   pantalla('mesa');
   if(modo === 'dos'){
@@ -2761,8 +3005,22 @@ function conectar(codigo){
   const base = servidorSalas();
   const secreto = (() => { try{ return localStorage.getItem(LLAVE_SECRETO + codigo) || ''; }
                            catch(e){ return ''; } })();
+  /* ⚠ EL MAZO VIAJA EN EL LINK, y no en un mensaje de después. El servidor
+     reparte EN CUANTO se llena la sala, así que un mazo mandado tras
+     conectarse llega a una partida ya repartida: el segundo en entrar jugaría
+     con la baraja de siempre mientras el primero trae su colección, y sin un
+     solo error por ningún lado. En el link ya está puesto cuando se sienta.
+     Va corto —`D20.C40.B60`— porque una colección entera en JSON no cabe
+     cómoda en una dirección. Y el servidor lo vuelve a limpiar al recibirlo:
+     esto lo manda un teléfono, y un teléfono se puede editar. */
+  const mazo = (() => {
+    try{
+      return misCartas().slice(0, 120).map(c => c.nivel + c.valor).join('.');
+    }catch(e){ return ''; }
+  })();
   const url = base.replace(/^http/, 'ws') + '/api/puercos/sala/' + codigo
-            + (secreto ? '?secreto=' + encodeURIComponent(secreto) : '');
+            + '?' + (secreto ? 'secreto=' + encodeURIComponent(secreto) + '&' : '')
+            + (mazo ? 'mazo=' + encodeURIComponent(mazo) : '');
   const ws = new WebSocket(url);
   LINEA.ws = ws;
   modo = 'linea';
@@ -2987,8 +3245,15 @@ $('#bSeguir').addEventListener('click', () => {
 cargarCatalogo().then(() => {
   if(!CAT.listo) return;
   document.body.classList.add('hay-arte');
+  /* ⚠ EL REGALO VA AQUÍ Y NO ANTES, y no es una preferencia: las ocho cartas
+     salen del CATÁLOGO, y antes de esta línea el catálogo no existe. Puesto
+     arriba, `regalarArranque()` se iba en vacío, marcaba «ya regalé» y el
+     jugador se quedaba sin mazo para siempre — un candado silencioso que sólo
+     se vería abriendo el juego con el almacenamiento limpio. */
+  try{ regalarArranque(); }catch(e){}
   try{ if(typeof J === 'object' && J && J.a && J.a.mano) pintarMano(); }catch(e){}
   try{ if(!$('#p-cartas').classList.contains('oculto')) pintarColeccion(); }catch(e){}
+  try{ if(!$('#p-tienda').classList.contains('oculto')) pintarTienda(); }catch(e){}
 });
 </script>
 </body>

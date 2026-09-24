@@ -358,5 +358,132 @@ console.log('\n── Que el archivo suelto no se quede viejo ──');
      hay !== null && /splitmix32/.test(hay) && !/<script src="motor\.js">/.test(hay));
 }
 
+console.log('\n── La colección: con qué mazo juegas ──');
+{
+  /* Lo que pidió Carlos: «al abrirlo inicies con súper poquitas cartas y cada
+     match jugado te haga ganar monedas». Lo primero es esto; lo segundo ya
+     existía y no servía de nada, porque la colección NO entraba a la mesa. */
+
+  const album = [ {valor:20,nivel:'D'}, {valor:40,nivel:'C'}, {valor:60,nivel:'B'} ];
+  const mz = M.mazoDeColeccion(album);
+  const puntos = mz.filter(c => c.nivel !== 'ESP');
+  ok('el mazo de una colección son ' + M.TAM_MAZO + ' cartas de puntos',
+     puntos.length === M.TAM_MAZO, String(puntos.length));
+  ok('más las 5 y 5 especiales, que NO se coleccionan',
+     mz.filter(c => c.esp === 'bono').length === 5
+     && mz.filter(c => c.esp === 'castigo').length === 5);
+  /* ⚠ ESTO ES LO QUE HACE QUE EL JUEGO SE PUEDA JUGAR EL PRIMER DÍA. Sin el
+     repetido, una colección de ocho cartas daría un mazo de ocho y la partida
+     se acabaría «por cartas» en cuatro rondas. */
+  ok('con tres cartas se repiten esas tres y nada más',
+     new Set(puntos.map(c => c.nivel + ':' + c.valor)).size === 3,
+     [...new Set(puntos.map(c => c.nivel + ':' + c.valor))].join(','));
+  ok('todas las cartas del mazo llevan id distinto',
+     new Set(mz.map(c => c.id)).size === mz.length);
+
+  const desordenado = [ {valor:60,nivel:'B'}, {valor:20,nivel:'D'}, {valor:40,nivel:'C'} ];
+  const clave = (l) => l.map(c => c.nivel + ':' + c.valor).join('|');
+  ok('el orden del álbum no cambia el mazo — dos teléfonos arman el mismo',
+     clave(M.mazoDeColeccion(album)) === clave(M.mazoDeColeccion(desordenado)));
+  ok('y el mazo lo encabeza lo mejor que tienes',
+     M.mazoDeColeccion(album)[0].valor === 60);
+
+  /* En línea el mazo lo DECLARA el teléfono: el servidor no guarda colecciones
+     de nadie. Sin esta guardia, un teléfono manda treinta cartas de 999. */
+  const basura = M.limpiarCartas([
+    {valor:999,nivel:'S'},              /* fuera del rango de su nivel */
+    {valor:50,nivel:'Z'},               /* nivel que no existe */
+    {valor:'80',nivel:'A'},             /* texto: se acepta, es un 80 de verdad */
+    {valor:0,nivel:'ESP',esp:'bono'},   /* las especiales no se coleccionan */
+    null, 'hola', {},
+    {valor:96,nivel:'S'},
+  ]);
+  ok('se cae la carta de 999 puntos', !basura.some(c => c.valor === 999));
+  ok('se cae el nivel inventado', !basura.some(c => c.nivel === 'Z'));
+  ok('se caen las especiales: no son de colección',
+     !basura.some(c => c.nivel === 'ESP'));
+  ok('se cae la basura que no es ni objeto', basura.length === 2, String(basura.length));
+  ok('y sobreviven las dos buenas, con el valor ya en número',
+     basura.every(c => typeof c.valor === 'number')
+     && basura.some(c => c.valor === 80) && basura.some(c => c.valor === 96));
+  ok('un álbum vacío no da mazo — se juega con el de siempre',
+     M.mazoDeColeccion([]) === null && M.mazoDeColeccion(null) === null);
+  ok('un álbum de pura basura tampoco',
+     M.mazoDeColeccion([{valor:999,nivel:'S'}]) === null);
+
+  const J = M.repartir(12345, { a: album, b: [{valor:96,nivel:'S'}] });
+  const totalA = J.a.mazo.length + J.a.mano.length;
+  const totalB = J.b.mazo.length + J.b.mano.length;
+  ok('repartir con colección da a cada quien SU mazo',
+     totalA === M.TAM_MAZO + 10 && totalB === M.TAM_MAZO + 10,
+     totalA + ' / ' + totalB);
+  ok('y son mazos DISTINTOS: el de B es todo de nivel S',
+     J.b.mazo.concat(J.b.mano).filter(c => c.nivel !== 'ESP').every(c => c.nivel === 'S'));
+  /* ⚠ LO QUE NO DEBE CAMBIAR. El modo de dos en un teléfono y estas mismas
+     pruebas llaman `repartir(semilla)` a secas. */
+  const viejo = M.repartir(12345);
+  ok('sin mazos, repartir sigue dando las 110 de siempre',
+     viejo.a.mazo.length + viejo.a.mano.length === 110);
+  ok('sólo un lado con colección deja al otro con el mazo de siempre',
+     (() => { const K = M.repartir(9, { a: album });
+              return K.a.mazo.length + K.a.mano.length === M.TAM_MAZO + 10
+                  && K.b.mazo.length + K.b.mano.length === 110; })());
+
+  const mio = M.mazoDeColeccion([{valor:20,nivel:'D'}, {valor:30,nivel:'D'}]);
+  const suyo = M.mazoParejo(mio, M.azar(3));
+  ok('la máquina trae un mazo PAREJO: mismos niveles que el tuyo',
+     suyo.filter(c => c.nivel !== 'ESP').every(c => c.nivel === 'D')
+     && suyo.filter(c => c.nivel !== 'ESP').length === M.TAM_MAZO);
+  ok('y con sus propias especiales',
+     suyo.filter(c => c.nivel === 'ESP').length === 10);
+  /* ⚠ PAREJO NO ES UN ESPEJO, ni un rival que te gana siempre. Con «mismo
+     nivel, valor al azar» el mazo de arranque perdía 300 de 300. */
+  ok('el pellizco no se sale del nivel — si se saliera cambiaría el bono del combo',
+     M.mazoParejo(M.mazoDeColeccion([{valor:35,nivel:'D'}]), () => 1)
+      .filter(c => c.nivel !== 'ESP').every(c => c.valor <= 35 && c.nivel === 'D'));
+  ok('ni por abajo',
+     M.mazoParejo(M.mazoDeColeccion([{valor:16,nivel:'D'}]), () => 0)
+      .filter(c => c.nivel !== 'ESP').every(c => c.valor >= 16));
+
+  /* ── y que una partida así SE PUEDA TERMINAR ─────────────────────────── */
+  let K = M.repartir(555, { a: album, b: album });
+  let rondas = 0;
+  while(!K.acabo && rondas < 200){
+    const pA = M.jugadasPosibles(K.a)[0], pB = M.jugadasPosibles(K.b)[0];
+    if(!pA || !pB) break;
+    K = M.jugarRonda(K, pA, pB);
+    rondas++;
+  }
+  ok('una partida con mazos de ' + M.TAM_MAZO + ' termina, y no en dos rondas',
+     !!K.acabo && rondas >= 6, 'acabó=' + K.acabo + ' en ' + rondas + ' rondas');
+
+  /* ── el mazo de arranque contra el parejo: ni barrida ni paliza ──────── */
+  /* ⚠ LA PRUEBA QUE HABRÍA CAZADO EL 300-0. No comprueba que el motor PUEDA:
+     comprueba que un jugador nuevo tenga posibilidades de verdad. */
+  {
+    const arranque = [];
+    for(let v = 16; v <= 23; v++) arranque.push({ valor:v, nivel:'D' });
+    const suMazo = M.mazoDeColeccion(arranque);
+    let gano = 0, jugadas = 0;
+    for(let semilla = 1; semilla <= 60; semilla++){
+      const dado = M.azar(semilla ^ 0x9e37);
+      let P = M.repartir(semilla, { a: suMazo, b: M.mazoParejo(suMazo, dado) });
+      let r = 0;
+      while(!P.acabo && r < 300){
+        const pa = M.jugadasPosibles(P.a), pb = M.jugadasPosibles(P.b);
+        if(!pa.length || !pb.length) break;
+        P = M.jugarRonda(P, pa[Math.floor(dado() * pa.length)],
+                            pb[Math.floor(dado() * pb.length)]);
+        r++;
+      }
+      jugadas++;
+      if(P.acabo === 'a') gano++;
+    }
+    const pct = Math.round(gano / jugadas * 100);
+    ok('con el mazo de arranque se gana entre el 25% y el 75% — ni barrida ni paliza',
+       pct >= 25 && pct <= 75, 'gana el ' + pct + '% de ' + jugadas);
+  }
+}
+
 console.log('\n' + bien + ' bien · ' + mal + ' mal');
 process.exit(mal ? 1 : 0);

@@ -1244,6 +1244,69 @@ const SOBRES = [
 
 function cuantasTengo(){ return Object.keys(CARTERA.tengo).length; }
 
+/* ── EL REGALO DE ARRANQUE ────────────────────────────────────────────────
+   Carlos: «al abrirlo inicies con súper poquitas cartas». OCHO, y malas.
+
+   ⚠ POR QUÉ SE REGALAN Y NO SE EMPIEZA EN CERO. Con cero cartas no hay mazo,
+   y sin mazo no hay primera partida — o sea que el juego pediría monedas para
+   dejar jugar y las monedas se ganan jugando. Es un candado que se cierra
+   solo, y la clase de cosa que no se ve escribiendo la tienda: se ve al abrir
+   el juego por primera vez con el almacenamiento limpio.
+
+   Son las OCHO MÁS BARATAS de la baraja, en orden estable: así dos teléfonos
+   arrancan igual y nadie empieza con un regalo mejor que el de otro. Y malas
+   a propósito — si el regalo fuera bueno, la tienda no haría falta.
+
+   La marca de «ya se regaló» va aparte de la colección: sin ella, alguien que
+   venda todas sus cartas volvería a recibirlas, y con ella vender es una
+   decisión de verdad. */
+const CUANTAS_DE_REGALO = 8;
+
+function yaSeRegalo(){
+  try{ return localStorage.getItem('puercos_arranque') === 'si'; }catch(e){ return false; }
+}
+function regalarArranque(){
+  if(!CAT.listo || !CAT.todas.length) return false;
+  if(yaSeRegalo() || cuantasTengo()) return false;
+  const baratas = CAT.todas
+    .filter(f => 'SABCD'.includes(f.nivel) && f.nivel.length === 1)
+    .slice()
+    .sort((x, y) => x.puntos - y.puntos || x.n - y.n)
+    .slice(0, CUANTAS_DE_REGALO);
+  if(!baratas.length) return false;
+  for(const f of baratas) CARTERA.tengo[f.nombre + '·' + f.puntos] = 1;
+  try{ localStorage.setItem('puercos_arranque', 'si'); }catch(e){}
+  guardarCartera();
+  return true;
+}
+
+/* ── TU COLECCIÓN, EN EL IDIOMA DEL MOTOR ────────────────────────────────
+   La cartera guarda `nombre·puntos` porque eso es lo que identifica una carta
+   del álbum; el motor sólo entiende `{valor, nivel}`. Esta función es el
+   puente, y es donde se nota si el catálogo no cargó: sin catálogo no hay
+   nivel que ponerle a un nombre, así que devuelve vacío y se juega con el
+   mazo de siempre. Que el arte sea una mejora y no un requisito ya estaba
+   decidido arriba; esto lo respeta. */
+function misCartas(){
+  if(!CAT.listo) return [];
+  const fuera = [];
+  for(const clave of Object.keys(CARTERA.tengo)){
+    const corte = clave.lastIndexOf('·');
+    if(corte < 0) continue;
+    const nombre = clave.slice(0, corte), puntos = parseInt(clave.slice(corte + 1), 10);
+    const f = CAT.todas.find(x => x.nombre === nombre && x.puntos === puntos);
+    if(f && 'SABCD'.includes(f.nivel) && f.nivel.length === 1)
+      fuera.push({ valor: f.puntos, nivel: f.nivel });
+  }
+  return fuera;
+}
+
+/* Mi mazo ya armado, o `null` si todavía no hay colección que valga. */
+function miMazo(){
+  const mias = misCartas();
+  return mias.length ? MOTOR.mazoDeColeccion(mias) : null;
+}
+
 function abrirSobre(sobre){
   if(!CAT.listo || !CAT.todas.length) return null;
   if(CARTERA.monedas < sobre.precio) return null;
@@ -1271,8 +1334,17 @@ function pintarTienda(){
   $('#tMonedas').textContent = CARTERA.monedas;
   const n = cuantasTengo();
   const total = CAT.listo ? CAT.todas.length : 100;
-  $('#tLlevas').textContent = n
-    ? 'Llevas ' + n + ' de ' + total + ' cartas de la colección.'
+  /* ⚠ AQUÍ SE DICE PARA QUÉ SIRVEN LAS MONEDAS, y antes no se decía en ningún
+     lado. La tienda contaba cuántas cartas llevabas y ya; con el mazo saliendo
+     de la colección, lo que importa es OTRA cosa: cuántas de tus 30 son
+     distintas. Mientras tengas menos de 30, el mazo repite — y ver ese número
+     bajar es exactamente la razón de comprar el siguiente sobre. */
+  const distintas = Math.min(n, MOTOR.TAM_MAZO);
+  $('#tLlevas').innerHTML = n
+    ? 'Llevas <b>' + n + '</b> de ' + total + ' cartas. Tu mazo son '
+      + MOTOR.TAM_MAZO + (distintas < MOTOR.TAM_MAZO
+        ? ', y como tienes ' + n + ', se repiten para llenarlo.'
+        : ' — ya no repite ninguna.')
     : 'Todavía no tienes ninguna carta en tu colección.';
 
   const caja = $('#tSobres');
@@ -2333,7 +2405,18 @@ function jugar(){
 }
 
 function nuevaPartida(){
-  J = MOTOR.repartir((Math.random() * 0xFFFFFFF) >>> 0);
+  const semilla = (Math.random() * 0xFFFFFFF) >>> 0;
+  /* ⚠ CONTRA LA MÁQUINA JUEGAS CON TU COLECCIÓN; EN «DOS EN ESTE TELÉFONO»,
+     NO. Y no es un olvido: en ese modo hay dos personas y UNA sola colección
+     —la del dueño del teléfono—, así que darle su mazo a los dos, o al que
+     empieza, sería repartir chueco. Ese modo se queda con la baraja completa
+     de siempre, que es la mesa pareja. */
+  let mazos = null;
+  if(modo === 'maquina'){
+    const mio = miMazo();
+    if(mio) mazos = { a: mio, b: MOTOR.mazoParejo(mio, MOTOR.azar(semilla ^ 0x5bf03635)) };
+  }
+  J = MOTOR.repartir(semilla, mazos);
   turnoDe = 'a'; guardadaA = null;
   pantalla('mesa');
   if(modo === 'dos'){
@@ -2367,8 +2450,22 @@ function conectar(codigo){
   const base = servidorSalas();
   const secreto = (() => { try{ return localStorage.getItem(LLAVE_SECRETO + codigo) || ''; }
                            catch(e){ return ''; } })();
+  /* ⚠ EL MAZO VIAJA EN EL LINK, y no en un mensaje de después. El servidor
+     reparte EN CUANTO se llena la sala, así que un mazo mandado tras
+     conectarse llega a una partida ya repartida: el segundo en entrar jugaría
+     con la baraja de siempre mientras el primero trae su colección, y sin un
+     solo error por ningún lado. En el link ya está puesto cuando se sienta.
+     Va corto —`D20.C40.B60`— porque una colección entera en JSON no cabe
+     cómoda en una dirección. Y el servidor lo vuelve a limpiar al recibirlo:
+     esto lo manda un teléfono, y un teléfono se puede editar. */
+  const mazo = (() => {
+    try{
+      return misCartas().slice(0, 120).map(c => c.nivel + c.valor).join('.');
+    }catch(e){ return ''; }
+  })();
   const url = base.replace(/^http/, 'ws') + '/api/puercos/sala/' + codigo
-            + (secreto ? '?secreto=' + encodeURIComponent(secreto) : '');
+            + '?' + (secreto ? 'secreto=' + encodeURIComponent(secreto) + '&' : '')
+            + (mazo ? 'mazo=' + encodeURIComponent(mazo) : '');
   const ws = new WebSocket(url);
   LINEA.ws = ws;
   modo = 'linea';
@@ -2593,8 +2690,15 @@ $('#bSeguir').addEventListener('click', () => {
 cargarCatalogo().then(() => {
   if(!CAT.listo) return;
   document.body.classList.add('hay-arte');
+  /* ⚠ EL REGALO VA AQUÍ Y NO ANTES, y no es una preferencia: las ocho cartas
+     salen del CATÁLOGO, y antes de esta línea el catálogo no existe. Puesto
+     arriba, `regalarArranque()` se iba en vacío, marcaba «ya regalé» y el
+     jugador se quedaba sin mazo para siempre — un candado silencioso que sólo
+     se vería abriendo el juego con el almacenamiento limpio. */
+  try{ regalarArranque(); }catch(e){}
   try{ if(typeof J === 'object' && J && J.a && J.a.mano) pintarMano(); }catch(e){}
   try{ if(!$('#p-cartas').classList.contains('oculto')) pintarColeccion(); }catch(e){}
+  try{ if(!$('#p-tienda').classList.contains('oculto')) pintarTienda(); }catch(e){}
 });
 </script>
 </body>

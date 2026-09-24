@@ -220,6 +220,29 @@
         "verificar-lo-publicado",
         "la-prueba-intermitente-ensena-a-ignorar-los-rojos"
       ]
+    },
+    {
+      "id": "la-lista-avisa-de-lo-que-falta-y-calla-lo-que-sobra",
+      "titulo": "Una lista de qué se publica que sólo avisa al revés: entrega enlaces que dan 404",
+      "gravedad": "alta",
+      "sintoma": "Le pasas a alguien mazi-central.…/<carpeta>/ y da 404. La carpeta está en el repo, con su index.html, y el armado terminó en verde sin decir una palabra.",
+      "causa": "`build.mjs` publica una lista explícita. Si algo está EN la lista y falta en el disco, imprime «falta y se salta». Si está en el disco y no en la lista, no hay nada que lo mire: la comprobación sólo existe en un sentido.",
+      "porque": "La lista nació para no publicar de más —servir la raíz publicaba .claude/ y el CLAUDE.md—, así que se vigiló el lado de sobra-publicado. El lado de falta-publicado no duele hasta que hay un enlace entregado, y entonces ya duele afuera.",
+      "arreglo": "DOS listas y la obligación de estar en una: `VA` si se publica, `NO_SE_PUBLICA` con la razón escrita si no. Lo que no está en ninguna para el armado y se nombra con la ruta del index.html. Y la compuerta corre ANTES del rm(dist), para que un fallo no deje la carpeta a medias.",
+      "comoCazarlo": "Inventar una carpeta con un index.html y armar: tiene que salir en 1. Y con el index.html a TRES niveles, que es donde estaba el de `guias` — una compuerta que sólo mire la raíz de la carpeta no caza uno de los tres casos que la motivaron.",
+      "consejo": "La compuerta ingenua —«si no está en la lista, falla»— es peor que nada: se «arregla» publicando lo que estaba fuera a propósito. Aquí eran tres sitios de clientes en obra. Una carpeta fuera de la lista no es un olvido hasta que se lee por qué está fuera.",
+      "senales": [
+        "el enlace que te mandé da 404",
+        "sí está en el repo pero no en el sitio",
+        "no aparece la carpeta en la página"
+      ],
+      "salioDe": "mazi-central, 23 de septiembre de 2026. Tres veces —lamina, luz, guias— y las tres confesadas en los comentarios del propio build.mjs antes de que alguien pusiera la compuerta.",
+      "vecinas": [
+        "servidor-dentro-del-sitio",
+        "verificar-lo-publicado",
+        "el-apunte-que-avisa-de-estados-viejos-y-esta-viejo",
+        "lista-a-mano-que-se-rompe-con-el-segundo-caso"
+      ]
     }
   ]
 }

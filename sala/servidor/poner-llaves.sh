@@ -7,14 +7,22 @@
 #
 #      bash sala/servidor/poner-llaves.sh
 #
-#  Al servidor sólo le sirven TRES cosas, y por eso sólo esas se suben:
+#  Lo que el servidor SÍ usa:
 #    LLAVES           quién es de qué cuenta
 #    COLORES          de qué color se pinta cada cuenta
 #    TRADUCTOR_LLAVE  para «explícamelo simple»
+#    GROQ_API_KEY     la silla de Negro
+#    GEMINI_API_KEY   la silla de Paulina
 #
-#  Las demás (Gemini, OpenRouter, Cerebras…) NO van aquí, y no es por
-#  seguridad: es que el worker no las usa. El relevo corre donde corre el
-#  agente. Guardarlas aquí sería ponerlas donde nadie las lee.
+#  ⚠ AQUÍ DECÍA, EN NEGRITAS, QUE LAS LLAVES DE MODELO «NO van aquí… el worker
+#  no las usa». Era cierto cuando se escribió y dejó de serlo el día que
+#  nacieron las sillas: una silla la ocupa EL PROPIO SERVIDOR, así que su
+#  llave tiene que vivir en el worker o la silla no existe. Carlos lo reportó
+#  como «no está ni Gemini ni groq», y este archivo fue parte de por qué —
+#  decía que no hacía falta subirlas.
+#
+#  Las que siguen sin ir aquí son las del RELEVO (OpenRouter, Cerebras…): ésas
+#  corren donde corre el agente, no en el worker.
 # ══════════════════════════════════════════════════════════════════════════
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -42,6 +50,12 @@ poner COLORES "${MAZI_COLORES:-carlos:#AC27FF,luis:#FF7A18}"
 # El traductor. Groq porque contesta rápido y su capa gratuita alcanza de
 # sobra para explicar mensajes sueltos.
 poner TRADUCTOR_LLAVE "${GROQ_API_KEY:-}"
+
+# ── Las sillas ────────────────────────────────────────────────────────────
+# Sin esto la mesa las enseña como «apagadas» y no contesta ninguna. Es el
+# único paso que hay que dar para que Negro y Paulina existan.
+poner GROQ_API_KEY   "${GROQ_API_KEY:-}"
+poner GEMINI_API_KEY "${GEMINI_API_KEY:-}"
 
 echo
 echo "  Listo. Para ver qué quedó puesto:   npx wrangler secret list"

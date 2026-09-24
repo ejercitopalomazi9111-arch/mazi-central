@@ -43,6 +43,11 @@ export class Sala {
       this.J        = await ctx.storage.get('J')        || null;
       this.secretos = await ctx.storage.get('secretos') || { a:null, b:null };
       this.pendiente= await ctx.storage.get('pendiente')|| { a:null, b:null };
+      /* Con qué colección juega cada asiento. Se guarda en disco y no sólo en
+         memoria porque el Durable Object se duerme entre rondas: si viviera en
+         memoria, la revancha repartiría con la baraja de siempre y nadie
+         sabría por qué su mazo cambió a media sesión. */
+      this.mazos    = await ctx.storage.get('mazos')    || { a:null, b:null };
       this.tocada   = await ctx.storage.get('tocada')   || Date.now();
     });
   }
@@ -50,7 +55,8 @@ export class Sala {
   async guardar(){
     this.tocada = Date.now();
     await this.ctx.storage.put({ J:this.J, secretos:this.secretos,
-                                 pendiente:this.pendiente, tocada:this.tocada });
+                                 pendiente:this.pendiente, mazos:this.mazos,
+                                 tocada:this.tocada });
   }
 
   async fetch(pedido){
@@ -61,6 +67,7 @@ export class Sala {
        alguien nuevo a una partida de hace tres semanas. */
     if(this.J && Date.now() - this.tocada > OLVIDO){
       this.J = null; this.secretos = { a:null, b:null }; this.pendiente = { a:null, b:null };
+      this.mazos = { a:null, b:null };
     }
 
     if(pedido.headers.get('Upgrade') !== 'websocket'){
@@ -72,7 +79,8 @@ export class Sala {
     const par = new WebSocketPair();
     const [cliente, servidor] = Object.values(par);
     servidor.accept();
-    this.enchufar(servidor, url.searchParams.get('secreto'));
+    this.enchufar(servidor, url.searchParams.get('secreto'),
+                  this.leerMazo(url.searchParams.get('mazo')));
     return new Response(null, { status:101, webSocket:cliente });
   }
 
@@ -81,7 +89,7 @@ export class Sala {
     return ['a','b'].filter(x => !ocupados.has(x)).length;
   }
 
-  enchufar(ws, secretoDado){
+  enchufar(ws, secretoDado, mazoDado){
     /* Sentar a alguien. Primero se le devuelve SU asiento si trae el secreto
        de una sesión anterior: en un teléfono, salir de la app y volver es lo
        más normal del mundo, y perder el asiento por eso sería perder la
@@ -109,6 +117,10 @@ export class Sala {
     }
 
     this.vivos.set(ws, asiento);
+    /* Con partida en curso el mazo ya no se toca: cambiar las cartas con el
+       juego empezado es, literalmente, hacer trampa. Al reconectarse, el que
+       vuelve se encuentra el mazo con el que empezó. */
+    if(!this.J && mazoDado) this.mazos[asiento] = mazoDado;
     ws.send(JSON.stringify({ tipo:'sentado', asiento, secreto:this.secretos[asiento] }));
 
     ws.addEventListener('message', (ev) => this.oir(ws, ev).catch(err => {
@@ -127,10 +139,49 @@ export class Sala {
     if(sentados.size === 2 && !this.J){
       /* La semilla la pone el servidor. Si la pusiera un teléfono, ese
          teléfono sabría el mazo entero antes de empezar. */
-      this.J = MOTOR.repartir((crypto.getRandomValues(new Uint32Array(1))[0]) >>> 0);
+      this.J = MOTOR.repartir((crypto.getRandomValues(new Uint32Array(1))[0]) >>> 0,
+                              this.mazos);
       this.pendiente = { a:null, b:null };
       this.guardar();
     }
+  }
+
+  /* ── EL MAZO QUE DECLARA UN TELÉFONO ─────────────────────────────────────
+     ⚠ VIENE EN EL LINK Y NO EN UN MENSAJE, Y ÉSA ES LA PARTE QUE IMPORTA.
+     Primero lo hice como mensaje («ya me senté, éste es mi mazo») y tenía una
+     carrera que se ve en cuanto se dibuja la secuencia: el servidor reparte
+     EN CUANTO se llena la sala, dentro de `enchufar`, así que el segundo en
+     entrar disparaba el reparto antes de que su propio mensaje llegara. El
+     primero jugaba con su colección y el segundo con la baraja de siempre, sin
+     un solo error por ningún lado. En el link, el mazo ya está aquí cuando se
+     sienta: no hay carrera que resolver, que es mejor que resolverla.
+
+     ⚠ AQUÍ NO HAY FORMA DE COMPROBAR QUE ALGUIEN TENGA DE VERDAD ESAS CARTAS,
+     y conviene decirlo con todas sus letras en vez de fingir que sí: las
+     colecciones viven en cada teléfono —ni cuenta, ni correo, ni servidor, y
+     ésa fue una decisión de privacidad de datos de una menor, no un descuido—
+     así que el servidor no tiene contra qué cotejarlas.
+
+     Lo que SÍ se puede hacer, y se hace, es que ninguna carta sea imposible:
+     `limpiarCartas` tira todo lo que no sea un nivel real con un valor dentro
+     de su rango, y el mazo sale siempre del mismo tamaño. O sea que el peor
+     tramposo posible se arma un mazo de treinta cartas de nivel S — que es
+     exactamente lo que se arma alguien que juntó el álbum, y contra quien el
+     tope de 15 de daño sigue valiendo.
+
+     Lo que queda fuera de alcance necesita cuentas, y las cuentas las decide
+     una persona, no yo. Queda anotado y no disfrazado.
+
+     `D20.C40.B60` → [{valor:20,nivel:'D'}, …]. Corto a propósito: viaja en una
+     dirección, y una colección entera en JSON no cabe cómoda ahí. */
+  leerMazo(texto){
+    if(!texto) return null;
+    const cartas = String(texto).slice(0, 1200).split('.').map(t => {
+      const m = /^([A-Z]+)(\d+)$/.exec(t.trim());
+      return m ? { nivel: m[1], valor: parseInt(m[2], 10) } : null;
+    }).filter(Boolean);
+    const limpio = MOTOR.limpiarCartas(cartas);
+    return limpio.length ? limpio : null;
   }
 
   /* ── LA VISTA · lo único que sale de aquí hacia un teléfono ──────────────
@@ -185,7 +236,8 @@ export class Sala {
     if(m.tipo === 'otra'){
       /* Revancha. Sólo se vale cuando la partida ya acabó. */
       if(this.J && this.J.acabo){
-        this.J = MOTOR.repartir((crypto.getRandomValues(new Uint32Array(1))[0]) >>> 0);
+        this.J = MOTOR.repartir((crypto.getRandomValues(new Uint32Array(1))[0]) >>> 0,
+                                this.mazos);
         this.pendiente = { a:null, b:null };
         await this.guardar(); this.avisarATodos();
       }

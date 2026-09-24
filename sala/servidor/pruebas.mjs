@@ -919,6 +919,54 @@ console.log('\n· Las sillas');
        JSON.stringify(r2.apagados[0]));
   }
 
+  /* ── LAS SILLAS SE SIENTAN SOLAS AL ARRANCAR ──────────────────────────
+     ⚠ ESTE ES EL CÍRCULO VICIOSO QUE REPORTÓ CARLOS: «no está ni Gemini ni
+     groq». Y tenía razón, pero no por lo que parecía.
+
+     La mesa arma el menú de «¿a quién le hablas?» con el CENSO. Una silla
+     entraba al censo sólo cuando alguien le hablaba… y para hablarle había
+     que escogerla del menú. O sea que desde el teléfono eran inalcanzables
+     para siempre, aunque las llaves estuvieran puestas.
+
+     Se ve en cuanto se pregunta por el censo ANTES de hablarle a nadie, y no
+     se ve leyendo: las dos piezas —el menú y `sentar()`— son correctas cada
+     una por su cuenta. */
+  {
+    const s = nueva(LLAVES);
+    await entrar(s, 'carlos', 'humano');
+    const [, e] = await leer(await pedir(s, 'GET', 'hilo'));
+    ok('una silla con llave YA está en el censo, sin que nadie le haya hablado',
+       !!e.gente?.groq && !!e.gente?.gemini, Object.keys(e.gente || {}).join(','));
+    ok('y viene marcada como silla, para que la mesa la distinga de un agente',
+       e.gente?.groq?.silla === true && e.gente?.groq?.nombre === 'Negro');
+  }
+  {
+    /* Y al revés: una llave que desaparece no deja un fantasma en el menú.
+       Una silla en la lista que no contesta es peor que no tenerla. */
+    const s = nueva(LLAVES);
+    await entrar(s, 'carlos', 'humano');
+    await leer(await pedir(s, 'GET', 'hilo'));
+    s.env.GEMINI_API_KEY = '';
+    const [, e] = await leer(await pedir(s, 'GET', 'hilo'));
+    ok('si la llave se cae, la silla sale del censo en vez de quedar de adorno',
+       !!e.gente?.groq && !e.gente?.gemini, Object.keys(e.gente || {}).join(','));
+  }
+
+  /* ── el 400 que mandaba a buscar donde no era ─────────────────────────── */
+  {
+    const s = nueva({ GEMINI_API_KEY: 'x' });
+    await entrar(s, 'carlos', 'humano');
+    const [c, r] = await leer(await pedir(s, 'POST', 'decir',
+      { de:'carlos', tipo:'mensaje', a:'groq', texto:'hola' }));
+    /* Antes decía «No hay nadie en la sala con el id "groq"», que desde el
+       lado de Carlos es MENTIRA: la silla existe, lo que falta es su llave.
+       Y mandaba a buscar el problema en la sala en vez de en Cloudflare. */
+    ok('sin llave, el 400 dice QUÉ silla es y QUÉ secreto le falta',
+       c === 400 && /Negro/.test(r.error) && /GROQ_API_KEY/.test(r.error), JSON.stringify(r));
+    ok('y dice dónde se pone, que es lo único que Carlos puede hacer',
+       /Variables and Secrets/.test(r.error || ''), JSON.stringify(r));
+  }
+
   globalThis.fetch = original;
 }
 

@@ -934,6 +934,29 @@
         "la-prueba-de-un-gesto-no-mide-el-resultado-del-gesto",
         "pruebas-que-no-prueban-nada"
       ]
+    },
+    {
+      "id": "la-prueba-corta-justo-donde-empieza-lo-que-mide",
+      "titulo": "Tres rojas acusando a un archivo que tenía puesto exactamente lo que le pedían",
+      "gravedad": "media",
+      "sintoma": "La prueba decía «`j5data-vercel` no dice POR QUÉ no se publica · la razón mide 0 letras», para las tres entradas. Las tres razones estaban escritas en el archivo, a la vista.",
+      "causa": "Para sacar el valor de cada entrada partía el bloque en el primer salto-de-línea-y-comilla. En un objeto donde el texto arranca en el renglón de ABAJO de su clave, ese corte cae justo antes del texto: el trozo medido queda vacío.",
+      "porque": "Partir por comillas funciona cuando clave y valor van en el mismo renglón, que es como uno los escribe en la cabeza. El envoltorio a dos renglones lo hizo el propio formato de la casa por lo largo de las razones.",
+      "arreglo": "Partir por ENTRADA —`split(/\\n(?=\\s{2}')/)`— y de cada trozo tomar todo lo que va después de sus dos puntos. Así el valor viaja completo aunque ocupe cinco renglones.",
+      "comoCazarlo": "Antes de creerle a una roja, vaciar a mano lo que la prueba dice que falta y ver si el número CAMBIA. Si ya medía cero, la prueba no estaba midiendo eso.",
+      "consejo": "Cuando varias pruebas del mismo tipo salen rojas a la vez y el código señalado se ve bien, la sospecha se voltea: un fallo en común suele estar en lo que las tres comparten, que es la prueba.",
+      "senales": [
+        "dice que falta y sí está",
+        "salieron todas rojas de golpe",
+        "mide cero y hay texto"
+      ],
+      "salioDe": "la compuerta de build.mjs, 23 de septiembre de 2026.",
+      "vecinas": [
+        "comparar-contra-el-html-y-no-contra-lo-que-se-lee",
+        "la-prueba-que-cuenta-de-mas-y-culpa-al-servidor",
+        "prueba-de-texto-que-pasa-con-la-cadena-vacia",
+        "mutacion-sin-restaurar"
+      ]
     }
   ]
 }

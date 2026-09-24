@@ -965,6 +965,85 @@
       "vecinas": [
         "el-blanco-de-soltar-era-del-once-por-ciento"
       ]
+    },
+    {
+      "id": "para-aparecer-habia-que-hablarle",
+      "titulo": "Las sillas no salían en la mesa: para aparecer había que hablarles, y para hablarles había que aparecer",
+      "gravedad": "alta",
+      "sintoma": "Carlos: «ayúdame porque no está ni Gemini ni groq». En la mesa no aparecían por ningún lado y el menú de destinatario no las ofrecía.",
+      "causa": "Dos piezas correctas cada una por su cuenta. `sentar()` metía la silla al censo la primera vez que alguien le hablaba —para no pedirle a Carlos que la diera de alta—, y la mesa arma el menú de «¿a quién le hablas?» leyendo el censo. O sea: para entrar al censo había que hablarle, y para hablarle había que escogerla del menú que se arma con el censo. Encima el worker no tenía NINGUNA llave de modelo puesta, y `poner-llaves.sh` decía en su encabezado que las de modelo «NO van aquí… el worker no las usa» — cierto antes de que existieran las sillas, falso desde ese día.",
+      "porque": "«Se sienta sola cuando le hablan» es perezoso y suena bien, pero sólo funciona si hay una vía de hablarle que no dependa del censo. Desde el teléfono no la hay.",
+      "arreglo": "`sentarSillasVivas()` al entrar a `fetch()`: toda silla con llave está en el censo antes de que nadie diga nada, y la que perdió su llave SALE (una silla de adorno que no contesta es peor que no tenerla). El 400 de `/decir` pasó a nombrar la silla, el secreto que le falta y dónde se pone. Y la mesa llama a `/motores` y pinta las apagadas.",
+      "comoCazarlo": "Preguntar por el censo ANTES de hablarle a nadie. Leyendo el código no salta: las dos piezas están a cuatrocientas líneas de distancia.",
+      "consejo": "Cuando algo «no aparece», preguntar de dónde sale la lista y qué mete cosas en ella. Si la única vía de entrar pasa por la propia lista, es un círculo y no un bug de pintado.",
+      "senales": [
+        "no está",
+        "no aparece",
+        "no sale en la lista",
+        "no lo puedo escoger"
+      ],
+      "salioDe": "La Sala, 18 de septiembre de 2026.",
+      "vecinas": [
+        "el-apunte-que-avisa-de-estados-viejos-y-esta-viejo"
+      ]
+    },
+    {
+      "id": "la-tienda-que-no-entraba-a-la-mesa",
+      "titulo": "Una economía entera —tienda, monedas, sobres, colección— que no tocaba el juego",
+      "gravedad": "alta",
+      "sintoma": "Carlos: «al abrirlo inicies con súper poquitas cartas y cada match jugado te haga ganar monedas». O sea: la progresión no se sentía. Y no se sentía porque no existía.",
+      "causa": "La tienda, las monedas, los sobres y la colección estaban escritos y probados. Lo que faltaba era una línea: `repartir()` armaba SIEMPRE el mismo mazo de 110 para los dos jugadores, así que `CARTERA.tengo` no se leía en ningún lado más que para contarlo. Se compraba una colección que nunca entraba a la mesa.",
+      "porque": "Cada pieza estaba bien hecha y probada por su cuenta. Nadie probó el PUENTE entre la tienda y el reparto, porque nadie escribió ese puente.",
+      "arreglo": "`repartir(semilla, mazos)` acepta el mazo de cada quien; `mazoDeColeccion` arma 30 cartas de lo que tengas, repitiendo si tienes pocas. Ocho cartas de regalo al abrirlo, porque sin cartas no hay mazo y sin mazo no hay monedas: un candado que se cierra solo.",
+      "comoCazarlo": "Por cada cosa que el jugador ACUMULA, preguntar dónde se lee. Si la respuesta es «para pintar el contador», la función no existe. Un `grep` del nombre de la variable lo dice en diez segundos.",
+      "consejo": "Una tienda probada, una colección probada y un motor probado no son un juego de colección probado. El defecto vive en el papel que se pasan.",
+      "senales": [
+        "no sirve de nada",
+        "no se siente que avance",
+        "compro y sigo igual",
+        "para qué junto cartas"
+      ],
+      "salioDe": "Guerra de Puercos, 23 de septiembre de 2026.",
+      "vecinas": []
+    },
+    {
+      "id": "mismo-nivel-no-es-parejo",
+      "titulo": "El rival «parejo» ganaba 300 de 300, y el código decía parejo",
+      "gravedad": "alta",
+      "sintoma": "Con el mazo de regalo no se ganaba nunca contra la máquina. Jugando una partida se siente como mala suerte.",
+      "causa": "`mazoParejo` daba al rival una carta del MISMO NIVEL que la tuya, con el valor sorteado en todo el rango de ese nivel. Pero el regalo son las ocho cartas más baratas de la baraja: el SUELO del nivel D, 16 a 23. Un valor al azar entre 16 y 35 cae en 25 de promedio. Se pierde por seis puntos cada ronda, todas las rondas.",
+      "porque": "«Del mismo nivel» suena exactamente a «parejo» cuando se lee, y el nivel es la palabra que usa el reglamento. La trampa es que dentro de un nivel caben veinte valores.",
+      "arreglo": "Igualar el VALOR con un pellizco de ±3, sin salirse del nivel. Quedó 128 ganadas, 157 perdidas, 15 empates de 300.",
+      "comoCazarlo": "Simular trescientas partidas y contar. No se ve jugando una —se pierde y uno piensa que le tocó mal— ni leyendo el código. Hay prueba de balance: con la mutación puesta da «gana el 0% de 60».",
+      "consejo": "Cuando una dificultad se ajusta «por categoría», comprobar el ancho de la categoría. Un promedio no es un empate.",
+      "senales": [
+        "pierdo siempre",
+        "está muy difícil",
+        "no se puede ganar",
+        "la máquina hace trampa"
+      ],
+      "salioDe": "Guerra de Puercos, 23 de septiembre de 2026.",
+      "vecinas": [
+        "la-tienda-que-no-entraba-a-la-mesa"
+      ]
+    },
+    {
+      "id": "el-mazo-que-llegaba-tarde",
+      "titulo": "Un mensaje mandado al conectarse llega DESPUÉS de que el servidor ya repartió",
+      "gravedad": "media",
+      "sintoma": "En línea, el primero en entrar jugaba con su colección y el segundo con la baraja de siempre. Sin un error, con el marcador normal y las cartas normales.",
+      "causa": "El servidor reparte en cuanto la sala se llena, dentro de `enchufar`. El segundo en entrar dispara ese reparto con su propio mensaje de «éste es mi mazo» todavía en el cable.",
+      "porque": "«Me conecto y entonces le digo quién soy» es la secuencia natural, y funciona para todo lo que no dispare algo al conectarse.",
+      "arreglo": "El mazo viaja en la dirección del websocket, como el secreto de la sesión. Cuando se sienta ya está ahí: no hay carrera que resolver, que es mejor que resolverla.",
+      "comoCazarlo": "Dibujar la secuencia de los DOS clientes, no la de uno. Y una prueba con dos navegadores que mire el mazo del SEGUNDO: con la carrera puesta salen cartas de todos los niveles.",
+      "consejo": "Si al conectarse pasa algo automático, lo que haga falta para ese algo va en la conexión, no después.",
+      "senales": [
+        "al segundo le tocó distinto",
+        "a veces sí y a veces no",
+        "solo le pasa a uno"
+      ],
+      "salioDe": "Guerra de Puercos, 23 de septiembre de 2026.",
+      "vecinas": []
     }
   ]
 }
