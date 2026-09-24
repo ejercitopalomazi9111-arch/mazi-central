@@ -653,6 +653,27 @@ export async function terminarVencidas(){
   return salida;
 }
 
+/* ══ REDES (Bloque 12) ════════════════════════════════════════════════════════
+   Borradores y calendario. Publicar solo necesita el trámite de Meta; por
+   ahora se copia el texto y se abre la red (o se comparte desde el teléfono). */
+export async function publicaciones(){
+  const n = await negocio();
+  const r = await db.from('publicaciones').select('*').eq('negocio_id', n.id).order('programada', { ascending: true, nullsFirst: false }).limit(100);
+  if(r.error) throw new ErrorDeDatos('No se pudieron leer las publicaciones', r.error);
+  return r.data;
+}
+export async function guardarPublicacion(id, datos){
+  const n = await negocio();
+  const q = id ? db.from('publicaciones').update(datos).eq('id', id) : db.from('publicaciones').insert({ ...datos, negocio_id: n.id });
+  const d = revisa(await q.select('id'), 'No se guardó la publicación');
+  if(!d?.length) throw new ErrorDeDatos('No se guardó la publicación', { code: 'no_autorizado' });
+  return d[0].id;
+}
+export async function borrarPublicacion(id){
+  const d = revisa(await db.from('publicaciones').delete().eq('id', id).select('id'), 'No se borró');
+  if(!d?.length) throw new ErrorDeDatos('No se borró', { code: 'no_autorizado' });
+}
+
 /* ══ PEDIR DESDE LA TIENDA (Bloque 6) ═══════════════════════════════════════
    La sesión se crea AQUÍ, al pagar, y nunca antes (invitado sin correo). En el
    negocio de muestra, quien anduvo viendo como admin o caja pasa a «cliente de

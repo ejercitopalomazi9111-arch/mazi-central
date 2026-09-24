@@ -127,7 +127,7 @@ export const RUTAS = [
     promesa: 'El sorteo del mes y sus reglas. No se activa sin el permiso de Gobernación.' },
   { ruta: '/a/conversaciones', apartado: 'admin', titulo: 'Conversaciones', icono: 'conversaciones', menu: true, pantalla: 'conversaciones', bloque: 10,
     promesa: 'Lo que el bot está platicando, y el botón de «lo tomo yo».' },
-  { ruta: '/a/redes',       apartado: 'admin', titulo: 'Redes',           icono: 'redes',     menu: true,  pantalla: 'obra',      bloque: 12,
+  { ruta: '/a/redes',       apartado: 'admin', titulo: 'Redes',           icono: 'redes',     menu: true,  pantalla: 'redes',      bloque: 12,
     promesa: 'Calendario y cola de publicaciones.' },
   { ruta: '/a/reportes',    apartado: 'admin', titulo: 'Reportes',        icono: 'reportes',  menu: true,  pantalla: 'reportes',      bloque: 12,
     promesa: 'Los números, tipo Fadori.' },
