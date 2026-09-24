@@ -171,7 +171,7 @@ a{ color: inherit; }
 }
 .app.menu-abierto .lateral{ transform: none; }
 .lateral .cabeza{ display: flex; align-items: center; gap: var(--e3); min-height: var(--arriba); padding: 0 var(--e2) 0 var(--e4); border-bottom: 1px solid var(--linea); }
-.lateral .cabeza .marca{ flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--e3); font-weight: 750; letter-spacing: .05em; text-transform: uppercase; font-size: var(--t-chica); }
+.lateral .cabeza .marca{ flex: 1; min-width: 0; display: flex; text-decoration: none; align-items: center; gap: var(--e3); font-weight: 750; letter-spacing: .05em; text-transform: uppercase; font-size: var(--t-chica); }
 .lateral .cabeza .marca .sello{ width: 36px; height: 36px; border-radius: 50%; background: var(--acento); color: var(--sobre-acento); display: grid; place-items: center; flex: none; }
 .lateral .cabeza .marca .sello .ico{ width: 20px; height: 20px; }
 .lateral nav{ overflow-y: auto; padding: var(--e2) var(--e2) var(--e5); flex: 1; overscroll-behavior: contain; }
@@ -411,9 +411,32 @@ a{ color: inherit; }
 .campos-producto dt{ color: var(--tinta-suave); font-size: 16px; }
 .campos-producto dd{ margin: 0; font-weight: 650; }
 
+/* Ficha: miniaturas, marca, comprar, descripción */
+.miniaturas{ display: flex; gap: var(--e2); margin-top: var(--e3); overflow-x: auto; scrollbar-width: none; }
+.miniaturas button{ flex: none; width: 64px; height: 64px; padding: 0; border: 2px solid var(--linea); border-radius: 10px; background: #fff; overflow: hidden; }
+.miniaturas button[aria-pressed="true"]{ border-color: var(--acento); }
+.miniaturas img{ width: 100%; height: 100%; object-fit: contain; }
+.marca-producto{ color: var(--tinta-suave); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; font-size: var(--t-chica); }
+.comprar{ display: flex; gap: var(--e3); align-items: stretch; flex-wrap: wrap; }
+.comprar .cantidad{ margin-top: 0; }
+.comprar .cantidad button{ height: 48px; }
+.comprar .boton{ flex: 1; min-width: 180px; }
+.descripcion{ margin-top: var(--e5); max-width: 65ch; }
+.aviso-linea{ display: flex; gap: var(--e2); align-items: flex-start; padding: var(--e3) var(--e4); margin-bottom: var(--e3); border-radius: var(--radio); background: var(--ojo-suave); color: var(--ojo); font-weight: 650; font-size: 16px; }
+.aviso-linea .ico{ width: 20px; height: 20px; margin-top: 2px; }
+
+/* Filtros de categoría: orden en segmentos y marca en un select */
+.filtros{ display: flex; flex-wrap: wrap; gap: var(--e3); align-items: center; margin-bottom: var(--e4); }
+.filtros .segmentos{ flex: 1 1 360px; overflow-x: auto; scrollbar-width: none; }
+.filtros .segmentos button{ white-space: nowrap; padding: 0 var(--e3); min-height: 44px; }
+.campo.compacto{ margin: 0; flex: 0 1 240px; }
+.campo.compacto select{ min-height: 52px; }
+
 /* Carrito */
 .renglon{ display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: var(--e3); padding: var(--e3); background: var(--superficie); border: 1px solid var(--linea); border-radius: var(--radio); }
 .renglon + .renglon{ margin-top: 10px; }
+.renglon .n{ display: block; text-decoration: none; font-weight: 650; line-height: 1.3; }
+.renglon .precio .nota{ margin: 0; }
 .renglon img{ width: 76px; height: 76px; object-fit: contain; background: #fff; border-radius: 10px; }
 .cantidad{ display: inline-flex; align-items: center; border: 2px solid var(--linea-fuerte); border-radius: var(--radio); margin-top: var(--e2); }
 .cantidad button{ width: var(--toque); height: 44px; border: 0; background: transparent; display: grid; place-items: center; }
