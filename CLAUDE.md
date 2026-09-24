@@ -341,6 +341,7 @@ dependemos.
    | `el.innerHTML = …` deja la pantalla limpia | borra los hijos, pero los oyentes colgados de `el` **siguen ahí** y se juntan en cada visita | «volver a pedir» metía el doble tras un repintado; el armazón ahora recrea el contenedor en cada pantalla |
    | `x ??= f()` marca todos los errores | con `x` ya puesto **ni llama a `f`**: sólo se marcaba el primer campo que faltaba | el formulario de pago decía «falta tu nombre» y callaba teléfono, calle y colonia |
    | `git checkout -B rama origin/main` sólo mueve la rama | también le cambia el **upstream** a `origin/main`: el siguiente `git push` sin nombre quiere empujar a main y lo rechaza | se arregla con `git branch --set-upstream-to=origin/<rama>` justo después de realinear |
+   | `function f(s = {})` cubre al que no manda nada | cubre `undefined`, **no `null`**: `f(null)` llega como `null` y `s.nombre` truena | «Nuevo sorteo» no abría la hoja y no se veía nada en pantalla, sólo el error en consola. Si un llamador pasa `null` a propósito («nuevo»), se normaliza adentro: `s = s \|\| {}` |
 
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
