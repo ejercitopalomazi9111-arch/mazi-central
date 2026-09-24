@@ -128,6 +128,9 @@ a{ color: inherit; }
 ::selection{ background: var(--acento-suave); color: var(--tinta); }
 :focus-visible{ outline: 3px solid var(--acento); outline-offset: 2px; border-radius: 6px; }
 .ico{ width: 24px; height: 24px; flex: none; }
+/* El título recibe el foco al cambiar de pantalla (para el lector de pantalla);
+   no necesita anillo: no es un control. */
+#titulo:focus{ outline: none; }
 .oculto{ position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .cifra{ font-variant-numeric: tabular-nums; }
 .suave{ color: var(--tinta-suave); }
@@ -445,6 +448,28 @@ a{ color: inherit; }
 .resumen{ position: sticky; bottom: 0; z-index: 10; margin: var(--e5) calc(-1 * var(--e4)) calc(-1 * var(--e8)); padding: var(--e3) var(--e4) calc(var(--e3) + env(safe-area-inset-bottom)); background: var(--superficie); border-top: 1px solid var(--linea); display: grid; gap: 10px; }
 .resumen .total{ display: flex; justify-content: space-between; align-items: baseline; }
 .resumen .total strong{ font-size: var(--t-titulo); font-variant-numeric: tabular-nums; }
+/* En pantalla ancha, el resumen es una columna al lado que acompaña al bajar. */
+@media (min-width: 900px){
+  .carrito-rejilla{ display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: var(--e5); align-items: start; }
+  .carrito-rejilla .resumen{ position: sticky; top: calc(var(--arriba) + var(--e4)); margin: 0; padding: var(--e4); border: 1px solid var(--linea); border-radius: var(--radio); box-shadow: var(--elev-1); }
+}
+
+/* «Llevas N · $X»: pegada abajo, donde está el pulgar. En pantalla ancha se
+   queda del ancho del contenido, no de la ventana. */
+.barra-carrito{
+  position: sticky; bottom: calc(var(--e3) + env(safe-area-inset-bottom)); z-index: 15;
+  display: flex; align-items: center; gap: var(--e3); min-height: 56px;
+  margin: 0 var(--e4) var(--e3); padding: 0 var(--e4); border-radius: 16px;
+  background: var(--acento); color: var(--sobre-acento); text-decoration: none; font-weight: 700;
+  box-shadow: var(--elev-2); animation: hoja-sube var(--medio) var(--entra);
+}
+.barra-carrito .cuanto{ flex: 1; min-width: 0; font-variant-numeric: tabular-nums; }
+.barra-carrito .ver{ display: inline-flex; align-items: center; gap: var(--e1); white-space: nowrap; }
+.barra-carrito .ver .ico{ width: 20px; height: 20px; }
+@media (max-width: 419px){ .barra-carrito .ver .largo{ display: none; } }
+@media (min-width: 900px){ .barra-carrito{ max-width: calc(var(--ancho-max) - 2 * var(--e6)); margin: 0 auto var(--e4); width: calc(100% - 2 * var(--e6)); } }
+/* Con la barra puesta, los avisos flotantes suben para no taparla. */
+.app.con-barra ~ .avisos{ bottom: calc(88px + env(safe-area-inset-bottom)); }
 
 /* ── Capas: hoja inferior, modal, aviso ────────────────────────────────── */
 /* Hoja que sube desde abajo: en teléfono es donde está el pulgar. En pantalla

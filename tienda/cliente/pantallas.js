@@ -274,7 +274,7 @@ export async function carritoPantalla(){
         }
         let total = 0;
         lista.innerHTML = (quitados.length ? `<p class="aviso-linea">${icono('alerta')}Quitamos ${esc(quitados.join(', '))}: se agotó.</p>` : '')
-          + renglones.map(([id, n]) => {
+          + '<div class="carrito-rejilla"><div class="renglones">' + renglones.map(([id, n]) => {
             const p = porId.get(id); total += p.p * n;
             return `<div class="renglon">
               <a href="${enlace('/p/:id', { id })}"><img src="${esc(p.f)}" alt="" width="76" height="76" loading="lazy"></a>
@@ -287,10 +287,10 @@ export async function carritoPantalla(){
                   <button type="button" data-mas="${esc(id)}" aria-label="Una más" ${n >= p.q ? 'disabled' : ''}>${icono('mas')}</button>
                 </div>
               </div></div>`;
-          }).join('') + `<div class="resumen">
+          }).join('') + `</div><div class="resumen">
             <div class="total"><span>${plural(carrito.piezas(), 'pieza', 'piezas')}</span><strong>${pesos(total)}</strong></div>
             <a class="boton principal ancho grande" href="${enlace('/pagar')}">Continuar</a>
-          </div>`;
+          </div></div>`;
       };
       lista.addEventListener('click', (e) => {
         const mas = e.target.closest('[data-mas]'), menos = e.target.closest('[data-menos]');

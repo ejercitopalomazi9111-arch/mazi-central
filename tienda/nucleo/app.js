@@ -7,8 +7,8 @@
    ═════════════════════════════════════════════════════════════════════════ */
 import { APARTADOS, RUTAS, emparejar, enlace } from './rutas.js';
 import { icono } from './iconos.js';
-import { esc, inicioDe, obra, noexiste, sinPermiso, fallo, cargando } from './piezas.js';
-import { negocio, yo, verComo, carrito } from './datos.js';
+import { esc, pesos, plural, inicioDe, obra, noexiste, sinPermiso, fallo, cargando } from './piezas.js';
+import { negocio, yo, verComo, carrito, catalogo } from './datos.js';
 import { PANTALLAS as CLIENTE } from '../cliente/pantallas.js';
 
 const PANTALLAS = { ...CLIENTE, obra, noexiste };
@@ -98,6 +98,9 @@ function pintarArmazon(persona){
         <a class="boton-ico" id="ir-carrito" href="${enlace('/carrito')}" aria-label="Carrito">${icono('carrito')}<span class="insignia" hidden></span></a>
       </header>
       <main class="contenido" id="contenido"></main>
+      <a class="barra-carrito" id="barra-carrito" href="${enlace('/carrito')}" hidden>
+        ${icono('carrito')}<span class="cuanto"></span><span class="ver">Ver<span class="largo"> carrito</span> ${icono('adelante')}</span>
+      </a>
     </div>`;
   pintarAjustesVista();
   pintarInsignia();
@@ -111,6 +114,27 @@ function pintarInsignia(){
   b.hidden = n === 0;
   b.textContent = n > 99 ? '99+' : n;
   a.setAttribute('aria-label', n ? `Carrito, ${n} ${n === 1 ? 'pieza' : 'piezas'}` : 'Carrito');
+  pintarBarra();
+}
+
+/* «Llevas N · $X» siempre a la vista mientras se compra (PLAN.md §1-bis: la
+   memoria corta es lo primero que falla). No sale donde estorba: en el carrito
+   mismo, al pagar, ni fuera de la tienda. */
+let rutaActual = null;
+async function pintarBarra(){
+  const barra = $app.querySelector('#barra-carrito');
+  if(!barra) return;
+  const n = carrito.piezas();
+  const toca = n > 0 && rutaActual?.apartado === 'cliente' && !['/carrito', '/pagar'].includes(rutaActual.ruta);
+  if(!toca){ barra.hidden = true; $app.classList.remove('con-barra'); return; }
+  let total = 0;
+  try{
+    const { porId } = await catalogo();
+    for(const [id, k] of carrito.renglones()){ const p = porId.get(id); if(p) total += p.p * k; }
+  }catch(e){ /* sin catálogo no hay total, pero sí piezas */ }
+  barra.querySelector('.cuanto').textContent = `Llevas ${plural(n, 'pieza', 'piezas')}${total ? ' · ' + pesos(total) : ''}`;
+  barra.hidden = false;
+  $app.classList.add('con-barra');
 }
 
 function temaActual(){
@@ -162,6 +186,7 @@ async function navegar(){
   $app.querySelector('#ir-buscar').hidden = !enTienda || ruta?.ruta === '/buscar';
   $app.querySelector('#ir-carrito').hidden = !enTienda || ruta?.ruta === '/carrito';
   $app.classList.toggle('en-tienda', enTienda);
+  rutaActual = ruta; pintarBarra();
 
   $t.textContent = ruta ? ruta.titulo : 'No encontrado';
   document.title = `${ruta ? ruta.titulo + ' · ' : ''}${N.marca?.nombre_corto || N.nombre}`;
