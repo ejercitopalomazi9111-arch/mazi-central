@@ -756,6 +756,52 @@ body:has(.pos-barra:not([hidden])) .avisos{ bottom: calc(96px + env(safe-area-in
   .ticket-papel hr{ border: 0; border-top: 1px dashed #000; margin: 1.5mm 0; }
 }
 
+
+/* ══ Pagar y mis pedidos (Bloque 6) ═════════════════════════════════════ */
+.pagar{ display: grid; gap: var(--e4); grid-template-columns: minmax(0, 1fr); }
+.pagar-principal{ display: grid; gap: var(--e4); min-width: 0; }
+@media (min-width: 960px){
+  .pagar{ grid-template-columns: minmax(0, 1fr) 360px; align-items: start; }
+  .pagar-resumen{ position: sticky; top: calc(var(--arriba) + var(--e4)); }
+}
+.pagar-resumen{ padding: var(--e5); display: grid; gap: var(--e3); }
+.pagar-resumen h2{ font-size: var(--t-sub); }
+.con-margen{ margin-top: var(--e3); }
+.nota .ico, .con-margen .ico{ width: 18px; height: 18px; vertical-align: -3px; margin-right: 6px; }
+.segmentos button .ico{ width: 20px; height: 20px; vertical-align: -4px; margin-right: 6px; }
+.opciones-pago{ display: grid; gap: var(--e2); margin-bottom: var(--e4); }
+.opcion-pago{ position: relative; display: flex; align-items: center; gap: var(--e3); min-height: 56px; padding: 0 var(--e4); border: 2px solid var(--linea-fuerte); border-radius: var(--radio); cursor: pointer; font-weight: 650; }
+.opcion-pago input{ position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.opcion-pago:has(input:checked){ border-color: var(--acento); background: var(--acento-suave); color: var(--acento-hondo); }
+.opcion-pago:has(input:focus-visible){ box-shadow: 0 0 0 3px var(--acento-suave); }
+.nota-en-linea{ font-weight: 400; color: var(--tinta-suave); font-size: var(--t-chica); }
+.datos-banco{ display: grid; grid-template-columns: auto 1fr; gap: var(--e2) var(--e4); margin: 0 0 var(--e3); }
+.datos-banco dt{ color: var(--tinta-suave); }
+.datos-banco dd{ margin: 0; font-weight: 700; display: flex; flex-wrap: wrap; align-items: center; gap: var(--e2); }
+.clabe{ font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+.resumen-lista{ list-style: none; margin: 0; padding: 0; display: grid; gap: var(--e2); }
+.resumen-lista li{ display: flex; justify-content: space-between; gap: var(--e3); font-size: 16px; }
+.resumen-lista b{ font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cuentas{ display: grid; grid-template-columns: 1fr auto; gap: var(--e1) var(--e3); margin: 0; padding-top: var(--e3); border-top: 1px solid var(--linea); }
+.cuentas dd{ margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.cuentas .total{ font-size: var(--t-sub); font-weight: 800; padding-top: var(--e2); }
+.centrado{ text-align: center; }
+.total-pedido{ font-size: var(--t-titulo); font-weight: 800; font-variant-numeric: tabular-nums; margin: 0; }
+.pedidos-cliente{ list-style: none; margin: 0; padding: 0; display: grid; gap: var(--e4); max-width: 760px; }
+.pedido-cliente{ padding: var(--e5); display: grid; gap: var(--e3); }
+.pedido-cliente header{ display: flex; justify-content: space-between; align-items: flex-start; gap: var(--e3); }
+.pedido-cliente h2{ font-size: var(--t-sub); }
+.pedido-cliente .total-pedido{ font-size: var(--t-sub); }
+.pedido-cliente .dice{ margin: 0; }
+.pasos-pedido{ list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); position: relative; }
+.pasos-pedido::before{ content: ""; position: absolute; top: 19px; left: 12.5%; right: 12.5%; height: 3px; background: var(--linea); }
+.pasos-pedido li{ position: relative; display: grid; justify-items: center; gap: 6px; text-align: center; font-size: 13px; color: var(--tinta-suave); font-weight: 650; }
+.pasos-pedido .punto{ width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--superficie); border: 3px solid var(--linea); }
+.pasos-pedido .punto .ico{ width: 20px; height: 20px; }
+.pasos-pedido li.hecho .punto{ background: var(--acento); border-color: var(--acento); color: var(--sobre-acento); }
+.pasos-pedido li.ahora .punto{ border-color: var(--acento); color: var(--acento-hondo); background: var(--acento-suave); }
+.pasos-pedido li.ahora{ color: var(--tinta); }
+
 /* ── Capas: hoja inferior, modal, aviso ────────────────────────────────── */
 /* Hoja que sube desde abajo: en teléfono es donde está el pulgar. En pantalla
    ancha se vuelve un diálogo al centro. */

@@ -492,3 +492,58 @@ export async function cajasCerradas(cuantas = 10){
   if(r.error) throw new ErrorDeDatos('No se pudo leer el historial de caja', r.error);
   return r.data;
 }
+
+/* ══ PEDIR DESDE LA TIENDA (Bloque 6) ═══════════════════════════════════════
+   La sesión se crea AQUÍ, al pagar, y nunca antes (invitado sin correo). En el
+   negocio de muestra, quien anduvo viendo como admin o caja pasa a «cliente de
+   prueba»: un pedido de tienda hecho por la caja no es un pedido de tienda. */
+export async function sesionDeCliente(){
+  const n = await negocio();
+  const p = await yo();
+  if(p && p.rol !== 'cliente' && n.ajustes?.demo === true) return verComo('cliente');
+  return asegurarSesion();
+}
+
+export async function miFicha(){
+  const p = await yo(); if(!p) return null;
+  const n = await negocio();
+  const r = await db.from('clientes').select('id, nombre, telefono, direcciones, pago_preferido').eq('negocio_id', n.id).eq('perfil_id', p.id).maybeSingle();
+  return r.data || null;
+}
+
+/* direccion: { calle, colonia, referencias, cp, lat?, lng? } o null si recoge. */
+export async function pedirTienda({ renglones, nombre, telefono, direccion, momento, notas, pago }){
+  await sesionDeCliente();
+  const n = await negocio();
+  const cliente = await llamar('mi_cliente', { p_negocio: n.id, p_nombre: nombre, p_telefono: telefono });
+  const v = await llamar('vender', {
+    p_negocio: n.id, p_canal: 'tienda', p_cliente: cliente, p_momento: momento,
+    p_renglones: renglones.map(({ id, cantidad }) => ({ producto_id: id, cantidad })),
+    p_direccion: direccion ? { ...direccion, pago } : { recoge: true, pago },
+    p_notas: notas || '',
+  });
+  // La dirección se guarda en su ficha para la próxima (RLS: cli_editar, la suya).
+  if(direccion){
+    const f = await miFicha();
+    const otras = (f?.direcciones || []).filter((d) => d.calle !== direccion.calle || d.colonia !== direccion.colonia);
+    await db.from('clientes').update({ direcciones: [direccion, ...otras].slice(0, 5), pago_preferido: momento }).eq('id', cliente);
+  }
+  olvidarCatalogo();
+  return v;
+}
+
+export async function misPedidos(){
+  const f = await miFicha(); if(!f) return [];
+  const r = await db.from('pedidos')
+    .select('id, folio, estado, total, forma_pago, momento_pago, pagado, direccion, notas, creado, renglones(producto_id, nombre, precio, cantidad, importe), eventos_pedido(a, por_que, cuando)')
+    .eq('cliente_id', f.id).order('creado', { ascending: false }).limit(50);
+  if(r.error) throw new ErrorDeDatos('No se pudieron leer tus pedidos', r.error);
+  return r.data.map((p) => ({ ...p, total: Number(p.total) }));
+}
+
+/* Cancelar regresa las piezas al inventario (0003): lo que se ve tiene que saberlo. */
+export async function cambiarEstado(pedido, a, porQue){
+  const r = await llamar('cambiar_estado', { p_pedido: pedido, p_a: a, p_por_que: porQue || null });
+  if(a === 'cancelado') olvidarCatalogo();
+  return r;
+}
