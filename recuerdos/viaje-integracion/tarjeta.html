@@ -5,19 +5,24 @@
 <title>Recuerdo · viaje de integración del 3.1</title>
 <!--
   La tarjeta de agradecimiento del viaje de integración, 25 de septiembre de 2026.
-  El grupo le invitó el viaje a Carlos; esto es lo que les regala de vuelta.
+  El grupo le invitó el viaje a Carlos; esto es lo que les regala de vuelta, como
+  amigo y compañero (NO como jefe de grupo: lo corrigió él).
+
+  El estilo sigue la tarjeta del Día del Paramédico que mandó de referencia:
+  papel crema, esquinas de acuarela pastel, título de rotulador, cinta, foto con
+  cintas adhesivas, palabras de color y un recuadro rosa para la firma.
 
   52 × 75 mm, frente y reverso: se diseña en 90 × 130 y se reduce con `zoom`
-  (Carlos imprime 27 y pidió que cupieran 10 por hoja). `armar.mjs` saca:
+  (imprime 27 y pidió que cupieran 10 por hoja). `armar.mjs` saca:
     · frente.png y reverso.png a 300 ppp, una tarjeta cada una;
     · imprimir.pdf: carta horizontal, 10 por cara (5 × 2), lista para doble cara.
 
-  Colores del formato institucional (reportes/formato/LEEME.md, muestreados del
-  .docx de la escuela): marino #002060, azul #1800AD, rojo #C00000.
-  Letras: Fredoka, Nunito y Caveat (OFL). Íconos: Lucide (ISC).
+  Letras: Chewy, Fredoka, Nunito y Caveat (OFL). Íconos: Lucide (ISC). El escudo
+  y el pie salen del formato institucional de la escuela (reportes/formato).
   La foto NO está en el repo: son compañeros menores de edad (.gitignore).
 -->
 <style>
+@font-face{ font-family: Chewy; src: url(letra/chewy-latin-400-normal.woff2); }
 @font-face{ font-family: Fredoka; src: url(letra/fredoka-latin-600-normal.woff2); font-weight: 600; }
 @font-face{ font-family: Fredoka; src: url(letra/fredoka-latin-700-normal.woff2); font-weight: 700; }
 @font-face{ font-family: Nunito; src: url(letra/nunito-latin-600-normal.woff2); font-weight: 600; }
@@ -26,10 +31,13 @@
 @font-face{ font-family: Caveat; src: url(letra/caveat-latin-700-normal.woff2); font-weight: 700; }
 
 :root{
-  --marino: #002060; --azul: #1800AD; --rojo: #C00000;
-  --papel: #FFFBF4; --tinta: #1D2440;
   --z: .5778;   /* 90 mm → 52 mm */
-  --rosa: #F4C7CF; --celeste: #C9DAF6; --crema: #F6E7C8;
+  --tinta: #26335F;      /* marino suave, el de las letras */
+  --turquesa: #1F7A91;   /* el del «PARAMÉDICO» de la referencia */
+  --rosa: #E0748C; --rosa-cinta: #EBA0AF;
+  --celeste: #5B8FD6; --menta: #7FC6B4; --amarillo: #F1C24B; --lila: #A994DB; --hoja: #6FAE5E;
+  --rojo-rembrandt: #C00000;
+  --papel: #FFFBF3;
 }
 *{ box-sizing: border-box; margin: 0; padding: 0; }
 html, body{ background: #d9d6cf; }
@@ -38,142 +46,171 @@ body{ font-family: Nunito, sans-serif; color: var(--tinta); -webkit-print-color-
 /* ── La tarjeta ─────────────────────────────────────────────────────────── */
 .cara{
   position: relative; width: 90mm; height: 130mm; overflow: hidden; zoom: var(--z);
-  background:
-    radial-gradient(circle at 12% 8%, #fff 0 18%, transparent 19%),
-    var(--papel);
+  background: var(--papel);
 }
-/* Esquinas de color, como la tarjeta de referencia: manchas suaves de acuarela */
-.cara::before, .cara::after{
-  content: ""; position: absolute; width: 46mm; height: 46mm; border-radius: 50%;
-  filter: blur(5mm); opacity: .55; z-index: 0;
-}
-.cara::before{ background: var(--celeste); top: -24mm; left: -22mm; }
-.cara::after{ background: var(--rosa); bottom: -26mm; right: -22mm; }
-.cara > *{ position: relative; z-index: 1; }
+/* Esquinas de acuarela, como la referencia: cuatro manchas pastel difuminadas */
+.mancha{ position: absolute; border-radius: 50%; filter: blur(4.5mm); opacity: .7; z-index: 0; }
+.cara > :not(.mancha){ position: relative; z-index: 1; }
+.cara > .adorno, .cara > .punto{ position: absolute; }
 
-.adorno{ position: absolute; z-index: 1; width: 4.2mm; height: 4.2mm; }
-.adorno svg{ width: 100%; height: 100%; }
-.punto{ position: absolute; z-index: 1; width: 1.4mm; height: 1.4mm; border-radius: 50%; }
+.adorno{ z-index: 2; width: 5mm; height: 5mm; }
+.adorno svg{ width: 100%; height: 100%; display: block; }
+.adorno.relleno svg{ fill: currentColor; stroke: none; }
+.punto{ z-index: 2; width: 1.5mm; height: 1.5mm; border-radius: 50%; }
 
 /* ── Frente ─────────────────────────────────────────────────────────────── */
-.frente{ padding: 5.5mm 6mm 4.5mm; display: flex; flex-direction: column; align-items: center; }
-.escuela{ display: flex; align-items: center; gap: 2mm; align-self: stretch; }
-.escuela img{ width: 10mm; height: auto; }
-.escuela .nombre{ font-family: Nunito; font-weight: 800; font-size: 7.8pt; line-height: 1.12; color: var(--marino); letter-spacing: .01em; text-transform: uppercase; }
-.escuela .nombre b{ color: var(--rojo); display: block; }
-.escuela .grupo{
-  margin-left: auto; font-family: Fredoka; font-weight: 700; font-size: 14pt; color: #fff;
-  background: var(--marino); border-radius: 2.4mm; padding: .6mm 2.4mm; transform: rotate(3deg);
-}
-
-.gracias{ font-family: Fredoka; font-weight: 700; font-size: 27pt; line-height: .95; color: var(--marino); margin-top: 2mm; text-align: center; letter-spacing: -.01em; }
-.gracias span{ color: var(--rojo); }
+.frente{ padding: 6mm 6mm 5mm; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.gracias{ font-family: Chewy; font-weight: 400; font-size: 30pt; line-height: .9; color: var(--tinta); letter-spacing: .01em; }
 .cinta{
-  position: relative; margin-top: 2mm; padding: .8mm 6mm; background: var(--rojo); color: #fff;
-  font-family: Fredoka; font-weight: 600; font-size: 11pt; letter-spacing: .08em; text-transform: uppercase;
+  position: relative; margin-top: 1.4mm; padding: .9mm 7mm 1mm; background: var(--rosa-cinta); color: #fff;
+  font-family: Fredoka; font-weight: 700; font-size: 11.5pt; letter-spacing: .06em; text-transform: uppercase;
+  text-shadow: 0 .3mm 0 rgb(180 70 95 / .45);
 }
-.cinta::before, .cinta::after{ content: ""; position: absolute; top: 1.2mm; width: 3.5mm; height: 100%; background: #8f0000; z-index: -1; }
-.cinta::before{ left: -2.4mm; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 45% 50%); }
-.cinta::after{ right: -2.4mm; clip-path: polygon(0 0, 100% 0, 55% 50%, 100% 100%, 0 100%); }
-.fecha{ font-family: Nunito; font-weight: 800; font-size: 9.4pt; letter-spacing: .08em; color: var(--azul); margin-top: 1.6mm; text-transform: uppercase; }
+.cinta::before, .cinta::after{ content: ""; position: absolute; top: 1.3mm; width: 4mm; height: 100%; background: #D98497; z-index: -1; }
+.cinta::before{ left: -2.8mm; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 45% 50%); }
+.cinta::after{ right: -2.8mm; clip-path: polygon(0 0, 100% 0, 55% 50%, 100% 100%, 0 100%); }
+.a-mi{ font-family: Chewy; font-size: 14pt; color: var(--tinta); margin-top: 1mm; line-height: 1; }
+.grupo{ font-family: Fredoka; font-weight: 700; font-size: 30pt; line-height: .95; color: var(--turquesa); letter-spacing: .01em; }
 
 .marco{
-  margin-top: 3mm; width: 72mm; background: #fff; padding: 1.8mm 1.8mm 2mm;
-  border-radius: 2mm; box-shadow: 0 .6mm 1.6mm rgb(0 0 0 / .18); transform: rotate(-1.4deg);
-  position: relative;
+  margin-top: 2.8mm; width: 74mm; background: #fff; padding: 1.6mm;
+  border-radius: 3mm; box-shadow: 0 .5mm 1.4mm rgb(0 0 0 / .16); position: relative;
 }
-.marco img{ display: block; width: 100%; aspect-ratio: 1.66; object-fit: cover; object-position: 50% 100%; border-radius: 1.2mm; }
-.cinta-adhesiva{ position: absolute; width: 14mm; height: 4.4mm; background: rgb(24 0 173 / .28); }
-.cinta-adhesiva.a{ top: -1.8mm; left: -4mm; transform: rotate(-32deg); }
-.cinta-adhesiva.b{ bottom: -1.4mm; right: -4mm; transform: rotate(-32deg); background: rgb(192 0 0 / .26); }
+.marco img{ display: block; width: 100%; aspect-ratio: 1.8; object-fit: cover; object-position: 50% 100%; border-radius: 2mm; }
+.cinta-adhesiva{ position: absolute; width: 15mm; height: 5mm; z-index: 2; }
+.cinta-adhesiva.a{ top: -2.2mm; left: -3.5mm; transform: rotate(-24deg); background: rgb(95 175 180 / .75); }
+.cinta-adhesiva.b{ bottom: -1.6mm; right: -3mm; transform: rotate(-28deg); background: rgb(241 194 75 / .8); }
 
-.frase{ margin-top: 2.8mm; text-align: center; font-family: Fredoka; font-weight: 600; font-size: 13pt; line-height: 1.18; color: var(--marino); }
-.frase em{ font-style: normal; color: var(--rojo); }
-.firma{ margin-top: auto; display: flex; align-items: flex-end; gap: 2mm; align-self: stretch; justify-content: center; }
-.firma .con{ font-size: 10pt; font-weight: 700; color: var(--tinta); text-align: center; line-height: 1.1; }
-.firma .nombre{ font-family: Caveat; font-weight: 700; font-size: 22pt; color: var(--rojo); line-height: .8; display: block; margin-top: .6mm; }
-.firma .cargo{ font-size: 8.6pt; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--azul); display: block; margin-top: 1mm; }
-.firma .bus{ width: 9mm; height: 9mm; color: var(--marino); margin-bottom: 1mm; }
+.deseo{ margin-top: 2.6mm; font-family: Fredoka; font-weight: 600; font-size: 11.4pt; line-height: 1.15; white-space: nowrap; }
+.deseo .r{ color: var(--rosa); } .deseo .t{ color: var(--turquesa); } .deseo .c{ color: var(--celeste); }
+.cuando{ margin-top: 1.2mm; font-family: Nunito; font-weight: 800; font-size: 7pt; letter-spacing: .02em; white-space: nowrap; text-transform: uppercase; color: var(--lila); }
+
+.firma-rosa{
+  margin-top: auto; background: rgb(247 211 219 / .75); border-radius: 3mm; padding: 1.4mm 8mm 1.6mm;
+  display: grid; justify-items: center; position: relative;
+}
+.firma-rosa .con{ font-family: Fredoka; font-weight: 600; font-size: 10.5pt; line-height: 1; }
+.firma-rosa .nombre{ font-family: Caveat; font-weight: 700; font-size: 23pt; line-height: .85; color: var(--rosa); }
+.firma-rosa .quien{ font-family: Nunito; font-weight: 800; font-size: 8pt; color: var(--tinta); opacity: .8; margin-top: .6mm; }
+.firma-rosa .corazon{ position: absolute; right: 1.6mm; top: 50%; translate: 0 -50%; width: 5mm; height: 5mm; color: var(--rosa); }
+.firma-rosa .corazon svg{ width: 100%; height: 100%; }
+
+.camion{
+  position: absolute !important; left: 4mm; bottom: 5mm; z-index: 2; width: 11mm; height: 11mm; border-radius: 3mm;
+  background: #fff; color: var(--turquesa); display: grid; place-items: center; box-shadow: 0 .4mm 1mm rgb(0 0 0 / .12);
+  transform: rotate(-6deg);
+}
+.camion svg{ width: 7.4mm; height: 7.4mm; }
 
 /* ── Reverso ────────────────────────────────────────────────────────────── */
-.reverso{ padding: 7mm 7mm 0; display: flex; flex-direction: column; }
-.reverso h2{ font-family: Fredoka; font-weight: 700; font-size: 20pt; line-height: 1.02; color: var(--marino); }
-.reverso h2 span{ color: var(--rojo); }
-.carta{ margin-top: 3mm; font-size: 11.6pt; line-height: 1.3; font-weight: 700; }
-.carta p + p{ margin-top: 2mm; }
-.carta b{ font-weight: 800; color: var(--marino); }
-.deseos{ list-style: none; margin-top: 4mm; display: grid; gap: 2.6mm; }
-.deseos li{ display: grid; grid-template-columns: 7.4mm 1fr; gap: 2.4mm; align-items: center; font-size: 11pt; line-height: 1.2; font-weight: 700; }
-.deseos .ico{ width: 7.4mm; height: 7.4mm; border-radius: 50%; display: grid; place-items: center; color: #fff; }
-.deseos .ico svg{ width: 4.2mm; height: 4.2mm; }
-.deseos b{ font-family: Fredoka; font-weight: 600; font-size: 12.6pt; display: block; line-height: 1.05; }
-.para{ margin-top: 4.4mm; display: flex; align-items: baseline; gap: 2mm; }
-.para span{ font-family: Caveat; font-weight: 700; font-size: 19pt; color: var(--rojo); }
-.para i{ flex: 1; border-bottom: .35mm dashed var(--marino); height: 5mm; }
-.cierre{ margin-top: 3.4mm; font-family: Caveat; font-weight: 700; font-size: 17pt; text-wrap: balance; line-height: 1; color: var(--marino); text-align: center; }
-.pie{ margin: auto -7mm 0; }
-.pie{ mix-blend-mode: multiply; }
+.reverso{ padding: 5mm 6mm 0; display: flex; flex-direction: column; }
+.reverso > *, .frente > *{ flex-shrink: 0; }
+.cabeza{ display: flex; align-items: center; gap: 3mm; }
+.cabeza img{ width: 15.5mm; height: auto; filter: drop-shadow(0 .5mm .8mm rgb(0 0 0 / .18)); }
+.cabeza .inst{ font-family: Nunito; font-weight: 800; font-size: 8.6pt; letter-spacing: .08em; text-transform: uppercase; color: var(--rojo-rembrandt); line-height: 1.1; }
+.cabeza .inst span{ display: block; color: var(--tinta); font-size: 7.4pt; letter-spacing: .04em; }
+.cabeza h2{ font-family: Chewy; font-weight: 400; font-size: 19pt; line-height: .95; color: var(--turquesa); margin-top: .8mm; }
+.cabeza h2 span{ color: var(--rosa); }
+
+.hoja-carta{
+  margin-top: 3mm; background: rgb(255 255 255 / .82); border-radius: 3mm; padding: 3mm 3.4mm 3.2mm;
+  box-shadow: 0 .4mm 1.2mm rgb(0 0 0 / .08); position: relative; overflow: hidden;
+}
+.hoja-carta .marca-agua{ position: absolute; right: -8mm; bottom: -10mm; width: 44mm; opacity: .07; z-index: 0; }
+.hoja-carta p{ position: relative; z-index: 1; font-size: 9.7pt; line-height: 1.27; font-weight: 700; }
+.hoja-carta p + p{ margin-top: 1.6mm; }
+.hoja-carta .r{ color: var(--rosa); } .hoja-carta .t{ color: var(--turquesa); } .hoja-carta .c{ color: var(--celeste); }
+
+.firma-atras{ margin-top: 2.4mm; display: flex; align-items: center; justify-content: flex-end; gap: 2mm; padding-right: 1mm; }
+.firma-atras .con{ font-family: Fredoka; font-weight: 600; font-size: 9pt; text-align: right; line-height: 1.05; }
+.firma-atras .nombre{ font-family: Caveat; font-weight: 700; font-size: 20pt; color: var(--rosa); line-height: .8; display: block; }
+.firma-atras .corazon{ width: 5mm; height: 5mm; color: var(--rosa); }
+.firma-atras .corazon svg{ width: 100%; height: 100%; fill: currentColor; stroke: none; }
+
+.pie{ margin: auto -6mm 0; mix-blend-mode: multiply; }
 .pie img{ display: block; width: 100%; height: auto; }
 
-/* ── Hoja para imprimir: carta, 2 × 2, centrada ─────────────────────────── */
+/* ── Hoja para imprimir: carta horizontal, 5 × 2, centrada ──────────────── */
 @page{ size: 279.4mm 215.9mm; margin: 0; }
 .hoja{ width: 279.4mm; height: 215.9mm; position: relative; background: #fff; page-break-after: always; }
 .hoja .rejilla{ position: absolute; left: 9.7mm; top: 32.89mm; display: grid; grid-template-columns: repeat(5, 52mm); grid-template-rows: repeat(2, 75.11mm); }
 .corte{ position: absolute; background: #777; }
 .corte.v{ width: .15mm; height: 5mm; }
 .corte.h{ height: .15mm; width: 5mm; }
-
-.solo{ padding: 0; }
 </style>
 </head>
 <body>
 <template id="frente">
   <section class="cara frente">
-    <span class="adorno" style="top:32mm;left:4mm;color:#E7A93A;transform:rotate(-12deg)">@star</span>
-    <span class="adorno" style="top:29mm;right:5mm;color:var(--azul)">@sparkles</span>
-    <span class="adorno" style="top:112mm;left:5mm;color:var(--rojo);width:3.6mm;height:3.6mm">@heart</span>
-    <span class="punto" style="top:24mm;left:14mm;background:var(--rojo)"></span>
-    <span class="punto" style="top:38mm;right:12mm;background:#E7A93A"></span>
-    <span class="punto" style="top:96mm;right:4mm;background:var(--azul)"></span>
+    <i class="mancha" style="width:40mm;height:34mm;top:-16mm;left:-16mm;background:#9FD3D9"></i>
+    <i class="mancha" style="width:40mm;height:34mm;top:-16mm;right:-18mm;background:#F5B8C6"></i>
+    <i class="mancha" style="width:42mm;height:36mm;bottom:-18mm;left:-18mm;background:#C9BDF0"></i>
+    <i class="mancha" style="width:42mm;height:36mm;bottom:-18mm;right:-18mm;background:#F7C9D3"></i>
 
-    <div class="escuela">
-      <img src="escudo-rembrandt.png" alt="">
-      <span class="nombre">Instituto Rembrandt<b>Bachillerato en Programación</b></span>
-      <span class="grupo">3.1</span>
-    </div>
-    <h1 class="gracias">¡Gracias,<br><span>banda!</span></h1>
-    <div class="cinta">Viaje de integración</div>
-    <div class="fecha">25 de septiembre de 2026</div>
+    <span class="adorno relleno" style="top:7mm;left:5mm;width:8mm;height:8mm;color:#EE8FA3;transform:rotate(-12deg)">@heart</span>
+    <span class="adorno" style="top:8mm;right:6mm;width:6mm;height:6mm;color:var(--celeste)">@sparkles</span>
+    <span class="adorno" style="top:27mm;left:6mm;color:var(--hoja);transform:rotate(-20deg)">@leaf</span>
+    <span class="adorno relleno" style="top:30mm;right:6mm;width:4mm;height:4mm;color:var(--amarillo)">@star</span>
+    <span class="adorno relleno" style="top:90mm;right:3.5mm;width:5.5mm;height:5.5mm;color:var(--celeste);transform:rotate(10deg)">@heart</span>
+    <span class="adorno" style="top:90mm;left:3.5mm;width:5mm;height:5mm;color:var(--rosa)">@heart</span>
+    <span class="adorno" style="bottom:6mm;right:5mm;width:6mm;height:6mm;color:var(--turquesa)">@smile</span>
+    <span class="punto" style="top:20mm;left:14mm;background:var(--amarillo)"></span>
+    <span class="punto" style="top:17mm;right:15mm;background:var(--menta)"></span>
+    <span class="punto" style="top:40mm;left:12mm;background:var(--lila)"></span>
+    <span class="punto" style="top:99mm;right:11mm;background:var(--rosa)"></span>
+    <span class="punto" style="top:108mm;left:12mm;background:var(--amarillo)"></span>
+
+    <h1 class="gracias">¡Gracias!</h1>
+    <div class="cinta">de todo corazón</div>
+    <div class="a-mi">a mi querido</div>
+    <div class="grupo">GRUPO 3.1</div>
     <figure class="marco">
       <span class="cinta-adhesiva a"></span><span class="cinta-adhesiva b"></span>
-      <img src="foto.jpg" alt="El 3.1 el 16 de septiembre">
+      <img src="foto.jpg" alt="El 3.1">
     </figure>
-    <p class="frase">Ustedes me invitaron el viaje.<br>Yo les regalo <em>el recuerdo.</em></p>
-    <div class="firma">
-      <span class="bus">@bus</span>
-      <span class="con">Con cariño,<span class="nombre">Carlos</span><span class="cargo">su jefe de grupo</span></span>
+    <p class="deseo">Que nunca nos falten las <span class="r">risas</span>,<br>la <span class="t">confianza</span> y las <span class="c">ganas</span><br>de seguir juntos.</p>
+    <p class="cuando">Viaje de integración · 25 de septiembre de 2026</p>
+    <div class="firma-rosa">
+      <span class="con">Con cariño,</span>
+      <span class="nombre">Carlos</span>
+      <span class="quien">tu amigo y compañero</span>
+      <span class="corazon">@heart</span>
     </div>
+    <span class="camion">@bus</span>
   </section>
 </template>
 
 <template id="reverso">
   <section class="cara reverso">
-    <span class="adorno" style="top:6mm;right:6mm;color:#E7A93A">@star</span>
-    <span class="adorno" style="top:14mm;right:13mm;color:var(--azul);width:3mm;height:3mm">@sparkles</span>
-    <span class="punto" style="top:22mm;right:5mm;background:var(--rojo)"></span>
+    <i class="mancha" style="width:40mm;height:34mm;top:-16mm;left:-18mm;background:#F5B8C6"></i>
+    <i class="mancha" style="width:40mm;height:34mm;top:-18mm;right:-16mm;background:#9FD3D9"></i>
+    <i class="mancha" style="width:42mm;height:36mm;bottom:-20mm;left:-18mm;background:#F7C9D3"></i>
+    <i class="mancha" style="width:42mm;height:36mm;bottom:-20mm;right:-18mm;background:#C9BDF0"></i>
 
-    <h2>Lo que no les dije<br><span>en el salón</span></h2>
-    <div class="carta">
-      <p>Nos dicen el grupo del relajo, y la neta sí lo somos. Pero cuando a uno le faltó, <b>nadie se hizo a un lado</b>.</p>
-      <p>Gracias por el viaje. Hoy no les toca regaño: <b>me siento orgulloso de ustedes</b>.</p>
+    <span class="adorno" style="top:5mm;right:5mm;width:5mm;height:5mm;color:var(--amarillo)">@sparkles</span>
+    <span class="punto" style="top:12mm;right:13mm;background:var(--rosa)"></span>
+    <span class="adorno relleno" style="top:108.5mm;left:5mm;width:4.4mm;height:4.4mm;color:#EE8FA3">@heart</span>
+    <span class="adorno" style="top:109mm;left:11mm;width:4mm;height:4mm;color:var(--hoja);transform:rotate(-15deg)">@leaf</span>
+
+    <div class="cabeza">
+      <img src="escudo-rembrandt.png" alt="Escudo del Instituto Rembrandt">
+      <div>
+        <p class="inst">Instituto Rembrandt<span>Grupo 3.1 · Programación</span></p>
+        <h2>Para ustedes,<br><span>con cariño</span></h2>
+      </div>
     </div>
-    <ul class="deseos">
-      <li><span class="ico" style="background:var(--azul)">@sparkles</span><span><b>Ganas</b>poquito, pero diario.</span></li>
-      <li><span class="ico" style="background:#E7A93A">@star</span><span><b>Risas</b>que el relajo nunca se acabe.</span></li>
-      <li><span class="ico" style="background:var(--rojo)">@heart</span><span><b>Unión</b>nadie se queda atrás.</span></li>
-    </ul>
-    <div class="para"><span>Para:</span><i></i></div>
-    <p class="cierre">No es el final, es una parada.<br>Lo mejor todavía nos falta.</p>
+
+    <div class="hoja-carta">
+      <img class="marca-agua" src="escudo-rembrandt.png" alt="">
+      <p>Cuando el profe propuso pagarme el viaje me sentí muy inseguro: pensé que nadie iba a aportar. Me sorprendió el apoyo de tantos, y me da mucha alegría descubrir que en verdad <span class="t">puedo confiar en ustedes</span>.</p>
+      <p>Sé que muchas veces soy pesado, intenso o molesto; que a veces pierdo la paciencia, los molesto o me emociono de más y termino dando cátedra en clase. Gracias por su paciencia. Lo hago porque quiero caerles bien, porque me importan y <span class="r">porque los quiero</span>.</p>
+      <p>Aunque a veces seamos un caos y los profes ya no sepan qué hacer con nosotros, <span class="c">somos un grupo</span>. Disfruto de verdad cada día con ustedes.</p>
+    </div>
+
+    <div class="firma-atras">
+      <span class="con">Gracias por todo,<span class="nombre">Carlos</span></span>
+      <span class="corazon">@heart</span>
+    </div>
     <div class="pie"><img src="membrete-inferior.png" alt=""></div>
   </section>
 </template>
@@ -181,15 +218,17 @@ body{ font-family: Nunito, sans-serif; color: var(--tinta); -webkit-print-color-
 <div id="lienzo"></div>
 
 <script>
-/* Los íconos se ponen con @nombre dentro de la plantilla. */
+/* Los íconos se ponen con @nombre dentro de la plantilla (Lucide, ISC). */
 const ICONOS = {
   bus: '<path d="M8 6v6"/><path d="M15 6v6"/><path d="M2 12h19.6"/><path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"/><circle cx="7" cy="18" r="2"/><path d="M9 18h5"/><circle cx="16" cy="18" r="2"/>',
   heart: '<path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"/>',
   star: '<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>',
   sparkles: '<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/>',
+  leaf: '<path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>',
+  smile: '<circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/>',
 };
 const svg = (n) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${ICONOS[n]}</svg>`;
-const cara = (id) => document.getElementById(id).innerHTML.replace(/@(bus|heart|star|sparkles)\b/g, (_, n) => svg(n));
+const cara = (id) => document.getElementById(id).innerHTML.replace(/@(bus|heart|star|sparkles|leaf|smile)\b/g, (_, n) => svg(n));
 
 /* Marcas de corte en las orillas de la rejilla, por fuera de las tarjetas. */
 function hoja(id){
@@ -202,7 +241,7 @@ function hoja(id){
 
 const pide = new URLSearchParams(location.search).get('ver') || 'ambas';
 const lienzo = document.getElementById('lienzo');
-if(pide === 'frente' || pide === 'reverso'){ document.body.className = 'solo'; lienzo.innerHTML = cara(pide); }
+if(pide === 'frente' || pide === 'reverso'){ lienzo.innerHTML = cara(pide); }
 else if(pide === 'hojas'){ lienzo.innerHTML = hoja('frente') + hoja('reverso'); }
 else{ lienzo.style.cssText = 'display:flex;gap:10mm;padding:10mm;flex-wrap:wrap'; lienzo.innerHTML = cara('frente') + cara('reverso'); }
 </script>

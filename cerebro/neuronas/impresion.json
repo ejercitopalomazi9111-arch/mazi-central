@@ -186,6 +186,26 @@
    ],
    "salioDe": "la tarjeta del viaje de integración del 3.1, 24 de septiembre de 2026.",
    "vecinas": []
+  },
+  {
+   "id": "el-flex-que-encoge-la-caja-y-se-come-la-ultima-palabra",
+   "titulo": "Una tarjeta impresa que perdió su última palabra sin que nada «se saliera»",
+   "gravedad": "media",
+   "sintoma": "El mensaje de atrás de la tarjeta terminaba en «Disfruto de verdad cada día con» y la palabra «ustedes.» quedaba cortada a la mitad. La prueba de «nada se sale de la tarjeta» decía que todo estaba bien.",
+   "causa": "La cara es un flex en columna de alto fijo. Al crecer la letra, el flex ENCOGIÓ la caja del mensaje (flex-shrink: 1 por defecto) y la caja tenía overflow: hidden por la marca de agua. El texto no salía de la tarjeta: salía de su caja, y la caja lo recortaba.",
+   "porque": "Una prueba de desborde mira si un elemento cruza el borde de afuera. El recorte por encogimiento pasa adentro, y el elemento recortado sigue «dentro».",
+   "arreglo": "flex-shrink: 0 a los hijos de la cara (mejor que se salga y la prueba lo grite a que se recorte callado), y una segunda compuerta: en toda caja con overflow hidden, ningún texto termina más abajo que la caja. Se mide el texto y no scrollHeight, porque la marca de agua se sale a propósito.",
+   "comoCazarlo": "Mutación: subir la letra o quitar flex-shrink: 0 y ver que armar.mjs diga «queda cortado». Ya está probado así.",
+   "consejo": "En piezas de alto fijo (tarjetas, gafetes, etiquetas), overflow: hidden + flex es una trampa: esconde exactamente el defecto que importa.",
+   "senales": [
+    "se corta la última palabra",
+    "texto cortado a la mitad",
+    "la prueba dice que cabe y no cabe"
+   ],
+   "salioDe": "la tarjeta del viaje de integración del 3.1, 24 de septiembre de 2026.",
+   "vecinas": [
+    "el-multiply-que-no-multiplica-dentro-de-su-caja"
+   ]
   }
  ]
 }

@@ -28,11 +28,19 @@ for(const ver of ['frente', 'reverso']){
   // Nada se sale de la tarjeta: lo que se sale, se corta al imprimir.
   const fuera = await pagina.evaluate(() => {
     const c = document.querySelector('.cara').getBoundingClientRect();
-    return [...document.querySelectorAll('.cara *:not(.adorno):not(.adorno *):not(.punto):not(.cinta-adhesiva):not(.pie):not(.pie *)')]
+    return [...document.querySelectorAll('.cara *:not(.mancha):not(.adorno):not(.adorno *):not(.punto):not(.cinta-adhesiva):not(.pie):not(.pie *):not(.marca-agua):not(.camion):not(.camion *)')]
       .filter((el) => { const r = el.getBoundingClientRect(); return r.width && (r.right > c.right + .5 || r.bottom > c.bottom + .5 || r.left < c.left - .5); })
       .map((el) => el.getAttribute('class') || el.tagName);
   });
   if(fuera.length) errores.push(`${ver}: se sale ${fuera.join(', ')}`);
+  // Y nada queda cortado DENTRO de una caja: un flex que encoge la caja del
+  // mensaje la recorta sin que nada «se salga» (así se perdió el «ustedes.»).
+  const cortado = await pagina.evaluate(() => [...document.querySelectorAll('.cara *')]
+    // Se mide el TEXTO, no scrollHeight: la marca de agua se sale a propósito.
+    .filter((el) => getComputedStyle(el).overflow === 'hidden' && [...el.querySelectorAll('p, span')]
+      .some((t) => t.getBoundingClientRect().bottom > el.getBoundingClientRect().bottom + .5))
+    .map((el) => el.getAttribute('class') || el.tagName));
+  if(cortado.length) errores.push(`${ver}: queda cortado ${cortado.join(', ')}`);
   await pagina.locator('.cara').screenshot({ path: path.join(salida, ver + '.png') });
   console.log('✓', ver + '.png');
 }
