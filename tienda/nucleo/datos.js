@@ -285,3 +285,157 @@ export async function asignarCodigos(ids){
   const r = await llamar('asignar_codigos', { p_ids: ids });
   olvidarCatalogo(); return r;
 }
+
+/* ══ IMPORTAR (Bloque 4) ════════════════════════════════════════════════════
+   Todo o nada, armado desde aquí: los productos nuevos entran en tandas de 500
+   (cada tanda es UNA sentencia, así que entra completa o no entra) y si una
+   tanda falla, se borra lo que ya había entrado. Lo cambiado se guarda antes
+   como estaba, para deshacer. Las existencias pasan por contar_inventario, con
+   su movimiento y su motivo, como cualquier otro ajuste.
+   El historial vive en este teléfono (localStorage). La versión en el servidor
+   está escrita en la migración 0009 y todavía sin aplicar; ver PENDIENTES.md. */
+const LLAVE_IMPORTACIONES = 'tienda-importaciones-' + SLUG;
+export function importacionesGuardadas(){
+  try{ return JSON.parse(localStorage.getItem(LLAVE_IMPORTACIONES) || '[]'); }catch(e){ return []; }
+}
+function guardarImportaciones(lista){
+  try{ localStorage.setItem(LLAVE_IMPORTACIONES, JSON.stringify(lista.slice(0, 20))); }catch(e){}
+}
+const COLUMNAS_PRODUCTO = 'id, negocio_id, categoria_id, nombre, marca, descripcion, precio, precio_antes, sku, codigo_barras, campos, fotos, activo, externo_id';
+const tandas = (lista, n) => Array.from({ length: Math.ceil(lista.length / n) }, (_, i) => lista.slice(i * n, i * n + n));
+
+/* Hace `trabajo` sobre cada elemento, de `a` en `a` a la vez. */
+async function enParalelo(lista, a, trabajo){
+  const salida = new Array(lista.length); let sig = 0;
+  await Promise.all(Array.from({ length: Math.min(a, lista.length) }, async () => {
+    while(sig < lista.length){ const i = sig++; salida[i] = await trabajo(lista[i], i); }
+  }));
+  return salida;
+}
+
+function errorDeImportar(error){
+  if(error?.code === '23505'){
+    const cb = /\)=\([^,]*,\s*([^)]+)\)/.exec(error.details || '')?.[1];
+    return new ErrorDeDatos(cb ? `El código de barras ${cb} ya lo tiene otro producto de la tienda.` : 'Un código de barras del archivo ya lo tiene otro producto.', error);
+  }
+  if(error?.code === '23514') return new ErrorDeDatos('Un precio del archivo está en cero o negativo donde no se puede.', error);
+  return new ErrorDeDatos('No se pudo guardar la importación: ' + (error?.message || 'sin detalle'), error);
+}
+
+async function borrarProductos(ids){
+  for(const t of tandas(ids, 200)) await db.from('productos').delete().in('id', t);
+}
+
+/* nuevos: [{nombre, marca, …, existencias?}] · cambios: [{id, …campos, existencias?}]
+   avance(texto) va diciendo en qué va. */
+export async function importarProductos({ archivo, nuevos, cambios }, avance = () => {}){
+  const n = await negocio();
+  const id = crypto.randomUUID();
+  const sinExist = ({ existencias, ...r }) => r;
+
+  // 1 · Cómo estaba lo que se va a cambiar.
+  avance('Guardando cómo estaba todo, por si hay que deshacer…');
+  const antes = [];
+  for(const t of tandas(cambios.map((c) => c.id), 200)){
+    const [p, e] = await Promise.all([
+      db.from('productos').select(COLUMNAS_PRODUCTO).in('id', t),
+      db.from('existencias').select('producto_id, cantidad').in('producto_id', t),
+    ]);
+    if(p.error || e.error) throw errorDeImportar(p.error || e.error);
+    const cant = new Map(e.data.map((x) => [x.producto_id, x.cantidad]));
+    antes.push(...p.data.map((x) => ({ producto: x, cantidad: cant.get(x.id) ?? 0 })));
+  }
+
+  // 2 · Los nuevos, en tandas; si una falla, fuera lo que ya entró.
+  const creados = [];
+  const filasNuevas = nuevos.map((r, i) => ({ ...sinExist(r), negocio_id: n.id, externo_id: `importacion:${id}:${i}` }));
+  try{
+    for(const [k, t] of tandas(filasNuevas, 500).entries()){
+      avance(`Dando de alta productos… ${Math.min((k + 1) * 500, filasNuevas.length)} de ${filasNuevas.length}`);
+      const r = await db.from('productos').insert(t).select('id, externo_id');
+      if(r.error) throw errorDeImportar(r.error);
+      creados.push(...r.data);
+    }
+  }catch(e){
+    avance('Algo falló: quitando lo que alcanzó a entrar…');
+    await borrarProductos(creados.map((c) => c.id));
+    throw e;
+  }
+
+  // 3 · Los cambios: cada renglón completo, encima de como estaba.
+  const porId = new Map(antes.map((a) => [a.producto.id, a.producto]));
+  const filasCambio = cambios.map((c) => ({ ...porId.get(c.id), ...sinExist(c), activo: true }));
+  try{
+    for(const t of tandas(filasCambio, 500)){
+      avance('Actualizando los que ya tenías…');
+      const r = await db.from('productos').upsert(t, { onConflict: 'id' });
+      if(r.error) throw errorDeImportar(r.error);
+    }
+  }catch(e){
+    avance('Algo falló: regresando todo como estaba…');
+    for(const t of tandas(antes.map((a) => a.producto), 500)) await db.from('productos').upsert(t, { onConflict: 'id' });
+    await borrarProductos(creados.map((c) => c.id));
+    throw e;
+  }
+
+  // 4 · Existencias, con su movimiento. Ya no se deshace todo si una falla:
+  //     se cuenta y se dice cuál.
+  const idDeNuevo = new Map(creados.map((c) => [Number(c.externo_id.split(':')[2]), c.id]));
+  const cantAntes = new Map(antes.map((a) => [a.producto.id, a.cantidad]));
+  const conteos = [
+    ...nuevos.map((r, i) => ({ id: idDeNuevo.get(i), hay: r.existencias, era: 0 })),
+    ...cambios.map((c) => ({ id: c.id, hay: c.existencias, era: cantAntes.get(c.id) ?? 0 })),
+  ].filter((x) => x.id && Number.isInteger(x.hay) && x.hay !== x.era);
+  let hechos = 0; const fallaron = [];
+  await enParalelo(conteos, 6, async (x) => {
+    try{ await llamar('contar_inventario', { p_producto: x.id, p_hay: x.hay, p_nota: 'Importado de ' + archivo }); }
+    catch(e){ fallaron.push(x.id); }
+    avance(`Poniendo existencias… ${++hechos} de ${conteos.length}`);
+  });
+
+  const registro = { id, archivo, cuando: Date.now(), creados: creados.map((c) => c.id), antes, deshecha: null,
+    cuenta: { creados: creados.length, actualizados: cambios.length, existencias: conteos.length - fallaron.length } };
+  guardarImportaciones([registro, ...importacionesGuardadas()]);
+  olvidarCatalogo();
+  return { ...registro.cuenta, id, fallaron };
+}
+
+/* Como Ctrl+Z: sólo la última que siga en pie. Lo creado se borra, salvo lo
+   que ya se vendió (se oculta, para no perder su historia). */
+export async function deshacerImportacion(id, avance = () => {}){
+  const lista = importacionesGuardadas();
+  const r = lista.find((x) => x.id === id);
+  if(!r) throw new ErrorDeDatos('Esa importación no está en este teléfono.', {});
+  if(r.deshecha) throw new ErrorDeDatos('Esa importación ya se había deshecho.', {});
+  if(lista.find((x) => !x.deshecha) !== r) throw new ErrorDeDatos('Primero hay que deshacer la más reciente.', {});
+
+  avance('Revisando qué ya se vendió…');
+  const vendidos = new Set();
+  for(const t of tandas(r.creados, 200)){
+    const v = await db.from('movimientos').select('producto_id').in('producto_id', t).eq('motivo', 'venta');
+    if(v.error) throw errorDeImportar(v.error);
+    v.data.forEach((x) => vendidos.add(x.producto_id));
+  }
+  const ocultar = r.creados.filter((x) => vendidos.has(x)), borrar = r.creados.filter((x) => !vendidos.has(x));
+  avance('Quitando los productos nuevos…');
+  await borrarProductos(borrar);
+  for(const t of tandas(ocultar, 200)) await db.from('productos').update({ activo: false }).in('id', t);
+
+  avance('Regresando los cambiados como estaban…');
+  for(const t of tandas(r.antes.map((a) => a.producto), 500)){
+    const u = await db.from('productos').upsert(t, { onConflict: 'id' });
+    if(u.error) throw errorDeImportar(u.error);
+  }
+  const ahora = new Map();
+  for(const t of tandas(r.antes.map((a) => a.producto.id), 200)){
+    const e = await db.from('existencias').select('producto_id, cantidad').in('producto_id', t);
+    (e.data || []).forEach((x) => ahora.set(x.producto_id, x.cantidad));
+  }
+  await enParalelo(r.antes.filter((a) => ahora.get(a.producto.id) !== a.cantidad), 6, (a) =>
+    llamar('contar_inventario', { p_producto: a.producto.id, p_hay: a.cantidad, p_nota: 'Se deshizo la importación de ' + r.archivo }).catch(() => null));
+
+  r.deshecha = Date.now();
+  guardarImportaciones(lista);
+  olvidarCatalogo();
+  return { borrados: borrar.length, ocultos: ocultar.length, restaurados: r.antes.length };
+}

@@ -11,8 +11,9 @@ import { esc, pesos, plural, inicioDe, obra, noexiste, sinPermiso, fallo, cargan
 import { negocio, yo, verComo, carrito, catalogo } from './datos.js';
 import { PANTALLAS as CLIENTE } from '../cliente/pantallas.js';
 import { PANTALLAS as ADMIN } from '../admin/pantallas.js';
+import { PANTALLAS as IMPORTAR } from '../admin/importar.js';
 
-const PANTALLAS = { ...CLIENTE, ...ADMIN, obra, noexiste };
+const PANTALLAS = { ...CLIENTE, ...ADMIN, ...IMPORTAR, obra, noexiste };
 
 const $app = document.getElementById('app');
 const $avisos = document.getElementById('avisos');

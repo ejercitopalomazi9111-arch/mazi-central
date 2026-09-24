@@ -105,7 +105,7 @@ export const RUTAS = [
     promesa: 'Cambiar nombre, precio, fotos y campos.' },
   { ruta: '/a/etiquetas',   apartado: 'admin', titulo: 'Etiquetas',       icono: 'qr',        menu: false, pantalla: 'etiquetas', bloque: 3,
     promesa: 'Hoja de etiquetas con QR y código de barras, lista para imprimir y recortar.' },
-  { ruta: '/a/importar',    apartado: 'admin', titulo: 'Importar',        icono: 'importar',  menu: true,  pantalla: 'obra',      bloque: 4,
+  { ruta: '/a/importar',    apartado: 'admin', titulo: 'Importar',        icono: 'importar',  menu: true,  pantalla: 'importar',      bloque: 4,
     promesa: 'Sube un Excel, PDF o Word con tus productos y la app los deja listos.' },
   { ruta: '/a/categorias',  apartado: 'admin', titulo: 'Categorías',      icono: 'categorias',menu: true,  pantalla: 'categorias',      bloque: 3,
     promesa: 'Crear, renombrar y ordenar categorías, y qué campos lleva cada una.' },
