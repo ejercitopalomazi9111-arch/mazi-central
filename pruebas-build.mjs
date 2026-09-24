@@ -130,9 +130,9 @@ try {
          un build.mjs que tenía las tres razones puestas. */
       const entradas = bloque[1].split(/\n(?=\s{2}')/).filter((t) => t.trim());
       const claves = entradas.map((t) => t.match(/'([^']+)':/)[1]);
-      /* La lista crece a propósito (la tienda entró el 24 de septiembre mientras
-         está en obra): se exige que estén las conocidas, no un número fijo. */
-      const conocidas = ['rodrigo-claro', 'j5data-propuestas', 'j5data-vercel', 'tienda'];
+      /* La lista cambia a propósito (la tienda estuvo aquí mientras estaba en
+         obra): se exige que estén las conocidas, no un número fijo. */
+      const conocidas = ['rodrigo-claro', 'j5data-propuestas', 'j5data-vercel'];
       ok('tiene las de hoy', conocidas.every((c) => claves.includes(c)), 'son ' + claves.join(', '));
       /* Una entrada de una carpeta que ya no existe es un apunte que informa un
          estado y está en otro — el defecto favorito de esta casa. */

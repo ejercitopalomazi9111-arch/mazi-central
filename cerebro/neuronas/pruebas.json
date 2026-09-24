@@ -1,962 +1,980 @@
 {
-  "area": "pruebas",
-  "nombre": "Pruebas que sí prueban",
-  "que": "El modo más caro de fallar: creer que algo está probado cuando la prueba no puede fallar.",
-  "neuronas": [
-    {
-      "id": "pruebas-que-no-prueban-nada",
-      "titulo": "La prueba pasa igual si rompo el código a propósito",
-      "gravedad": "alta",
-      "sintoma": "Suite en verde y el usuario reportando el bug que esa suite supuestamente cubre.",
-      "causa": "La aserción es vacía: compara algo consigo mismo, o pasa por casualidad, o mide un camino que nunca se recorre.",
-      "porque": "Una prueba se escribe mirando el código bueno, así que se escribe la aserción que ese código cumple — no la que el bug rompería.",
-      "arreglo": "Prueba de mutación: rompe la guarda A PROPÓSITO y comprueba que la suite se pone roja. Si no se pone, la prueba no vale.",
-      "comoCazarlo": "Por cada guarda cara, una mutación. Tres mutaciones tardan un minuto y te dicen si la suite sirve.",
-      "consejo": "Nunca digas «está probado» sin haber visto la prueba fallar al menos una vez.",
-      "salioDe": "sala/servidor · rompí el freno, el filtro de destinatario y el conteo de límites; cayeron 3, 2 y 1",
-      "senales": [
-        "pasa todo y no sirve",
-        "verde pero el bug sigue",
-        "ya lo probé"
-      ],
-      "vecinas": [
-        "renombrar-de-un-lado",
-        "prueba-de-un-solo-caso"
-      ]
-    },
-    {
-      "id": "prueba-de-un-solo-caso",
-      "titulo": "Probé con uno y el bug sólo aparece con tres",
-      "gravedad": "alta",
-      "sintoma": "Funciona en la demo y falla con datos reales.",
-      "causa": "La prueba usa un elemento, un usuario, un archivo. Los bugs de estado compartido, de orden y de índice necesitan al menos tres.",
-      "porque": "Con uno, el índice 0 y el «primero» y el «último» son el mismo elemento, así que tres bugs distintos se ven correctos.",
-      "arreglo": "Tres es el mínimo. Con tres se distingue primero, de en medio y último.",
-      "comoCazarlo": "Pregúntate: «¿y si son cinco?». Esa pregunta caza más bugs que leer el código.",
-      "consejo": "Carlos caza bugs preguntando «¿y si tengo cinco hijos y todos juegan el mismo partido?». Trátalo como caso de prueba, no como charla.",
-      "salioDe": "ligas-mazi · la función devolvía el primer hijo y se salía",
-      "senales": [
-        "con mis datos falla",
-        "en la demo sí funciona",
-        "y si son varios"
-      ],
-      "vecinas": [
-        "bandera-global-primera-vez",
-        "pruebas-que-no-prueban-nada"
-      ]
-    },
-    {
-      "id": "medir-antes-de-suponer",
-      "titulo": "Medí y el problema no era el que yo pensaba",
-      "gravedad": "media",
-      "sintoma": "Se optimiza una cosa y no mejora nada.",
-      "causa": "Se supuso dónde estaba el costo en vez de medirlo.",
-      "porque": "El código que uno acaba de escribir se siente sospechoso, y el que lleva ahí meses se siente inocente. Casi siempre es al revés.",
-      "arreglo": "Medir primero. `time`, contadores, una marca antes y otra después.",
-      "comoCazarlo": "Un número, cualquiera. Un `time` a la suite descubrió un temporizador colgado que ninguna prueba reportaba.",
-      "consejo": "Si vas a optimizar sin medir, no estás optimizando: estás adivinando con más pasos.",
-      "salioDe": "sala/servidor · la suite tardaba 1m40 y nadie lo había notado",
-      "senales": [
-        "tarda mucho",
-        "va lento",
-        "creo que es por"
-      ],
-      "vecinas": [
-        "temporizador-que-nadie-mata"
-      ]
-    },
-    {
-      "id": "reproducir-antes-de-arreglar",
-      "titulo": "Arreglé a ciegas y arreglé otra cosa",
-      "gravedad": "alta",
-      "sintoma": "Se cambia código, se dice que quedó, y el reporte vuelve idéntico.",
-      "causa": "No se reprodujo el fallo antes de tocarlo, así que no hay forma de saber si el cambio hizo algo.",
-      "porque": "Reproducir cuesta tiempo y la causa «se ve obvia». La causa obvia es correcta como la mitad de las veces.",
-      "arreglo": "Primero reproducirlo, luego arreglarlo, luego comprobar que YA NO se reproduce con los mismos pasos.",
-      "comoCazarlo": "Si no puedes describir los pasos exactos que provocan el fallo, todavía no lo entiendes.",
-      "consejo": "Regla de la casa: reproducir el bug antes de arreglarlo. Nada a ciegas.",
-      "salioDe": "CLAUDE.md §3.7",
-      "senales": [
-        "sigue igual",
-        "ya lo arreglé",
-        "creo que era"
-      ],
-      "vecinas": [
-        "sintoma-contra-causa",
-        "ver-la-pantalla"
-      ]
-    },
-    {
-      "id": "probar-contra-una-copia-congelada",
-      "clase": "error",
-      "gravedad": "alta",
-      "titulo": "Las pruebas medían una copia vieja y yo creía que medían mi trabajo",
-      "sintoma": "Cambias el código, corres las pruebas y fallan describiendo EXACTAMENTE el comportamiento viejo. O peor: pasan, y lo que pasó fue otra cosa.",
-      "causa": "Las pruebas apuntan a `dist/`, que es lo que de verdad se publica (`build.mjs`, según `wrangler.jsonc`). Eso está bien. Lo que faltó fue rearmar `dist/` después de editar. Y encima el servidor de pruebas llevaba horas clavado a un `dist/` YA BORRADO —`/proc/<pid>/cwd` decía `(deleted)`— porque `build.mjs` borra y recrea la carpeta: rearmarla no alcanza, hay que reiniciar el servidor.",
-      "porque": "Medir lo publicado y no el archivo propio es lo correcto, así que el arreglo bueno introduce el riesgo: ahora hay dos versiones y hay que acordarse de sincronizar. Y un proceso con la carpeta abierta no se entera de que se la cambiaron debajo.",
-      "arreglo": "`node build.mjs`, reiniciar el servidor de pruebas, y ENTONCES correr las pruebas. Los tres pasos, en ese orden.",
-      "comoCazarlo": "Antes de creerle a una falla, `curl` a la página servida y `grep` de algo que acabas de escribir. Si no aparece, no estás midiendo tu trabajo. Y `ls -l /proc/<pid>/cwd` del servidor: si dice `(deleted)`, está sirviendo un fantasma.",
-      "consejo": "Una prueba que falla describiendo el comportamiento ANTERIOR casi nunca es un error de la prueba: es que no está viendo tu cambio. Revisa eso antes de tocar el código.",
-      "toca": [
-        "build.mjs",
-        "wrangler.jsonc",
-        "reportes/pruebas-impresion.mjs"
-      ],
-      "senales": [
-        "las pruebas fallan y el código está bien",
-        "no ve mis cambios",
-        "sigue con lo viejo",
-        "dist viejo"
-      ],
-      "vecinas": [
-        "editar-en-dist-y-perderlo",
-        "verificar-lo-publicado",
-        "reproducir-antes-de-arreglar"
-      ],
-      "area": "pruebas",
-      "salioDe": "reportes/ · seis pruebas rojas acusando a un código que ya estaba bien"
-    },
-    {
-      "id": "medir-un-bloque-solo-lo-vuelve-el-ultimo",
-      "clase": "error",
-      "gravedad": "alta",
-      "titulo": "Medí cada bloque solo, y solo siempre es el último",
-      "sintoma": "La última línea de casi cada hoja sale partida a la mitad, con el pie de página encima. En pantalla, escribiendo poco, no pasa.",
-      "causa": "El paginador mide cada bloque en una hoja fantasma, de uno en uno. Solito ahí, el bloque es `:last-child` — y la hoja de estilo dice `.doc>*:last-child{margin-bottom:0}`. El hueco de 3.2mm bajo cada bloque se reportaba CERO, siempre. Con ocho bloques por hoja, ~24mm que el paginador creía libres.",
-      "porque": "Aislar algo para medirlo suena a rigor, y le cambia el contexto: los selectores posicionales —`:last-child`, `:first-child`, `:nth-child`, `+`, `~`— dejan de valer lo mismo. La medición sale limpia y equivocada.",
-      "arreglo": "Un testigo de altura cero detrás mientras se mide, para que el bloque deje de ser el último. Mejor que sumar la constante a mano: si un día un bloque lleva otro margen, el testigo sigue bien.",
-      "comoCazarlo": "Comparar el alto del contenedor contra el de su zona (`doc.offsetHeight` vs `zona.clientHeight`). Si el contenido es más alto, lo están recortando aunque se vea entero arriba. Y probar con la página LLENA: con tres párrafos este defecto no existe.",
-      "consejo": "Cuando midas un elemento fuera de su lugar, pregúntate qué regla de CSS depende de sus vecinos. Aquí una sola línea de estilo posicional metió un párrafo de más en cada hoja impresa.",
-      "toca": [
-        "reportes/index.html"
-      ],
-      "senales": [
-        "sale cortado al imprimir",
-        "la última línea se parte",
-        "el pie tapa el texto",
-        "cabe en pantalla y no en papel"
-      ],
-      "vecinas": [
-        "medir-el-texto-pintado",
-        "medir-antes-de-suponer",
-        "prueba-de-un-solo-caso"
-      ],
-      "area": "pruebas",
-      "salioDe": "reportes/ · el documento de la candidatura, impreso y cortado en 7 de 8 hojas"
-    },
-    {
-      "id": "la-prueba-solo-caza-si-falla-la-primera",
-      "titulo": "Pintar A → B → A no caza el residuo si la que ensucia es B",
-      "gravedad": "alta",
-      "sintoma": "Una prueba de «no queda basura de la pantalla anterior» pasa en verde con el defecto puesto.",
-      "causa": "Comparar A antes y después de B sólo detecta el problema si A NO tapa lo que B dejó. Si A pinta un fondo completo, borra la evidencia de B y la comparación sale idéntica — con el defecto intacto.",
-      "porque": "La forma A→B→A se siente exhaustiva porque «vuelve al principio», pero lo que compara es si A es estable, no si B es limpia. Prueba a la testigo, no a la sospechosa.",
-      "arreglo": "Probar cada una CONTRA UN FONDO SUCIO: se embarra el lienzo de un color imposible —magenta puro—, se pinta la pantalla encima, y se cuentan los píxeles del color imposible que sobrevivieron. Uno solo ya es un agujero. Así se prueban una por una y no de a pares.",
-      "comoCazarlo": "Quítale el arreglo al código y corre la prueba. Si sigue verde, la prueba no era del arreglo.",
-      "consejo": "La forma más rápida de saber si una prueba sirve es reintroducir el defecto. Una prueba que nunca se ha visto fallar es una hipótesis, no una prueba.",
-      "salioDe": "entorno/pruebas-mandos.mjs · las pantallas del Taller",
-      "senales": [
-        "la prueba pasa y el bug sigue",
-        "quedan restos de lo anterior",
-        "se ve lo de antes por debajo"
-      ],
-      "vecinas": [
-        "pruebas-que-no-prueban-nada",
-        "la-prueba-se-ensucia-su-premisa"
-      ]
-    },
-    {
-      "id": "la-prueba-se-ensucia-su-premisa",
-      "titulo": "Una prueba que deja el estado movido hace fallar a la siguiente",
-      "gravedad": "media",
-      "sintoma": "Una prueba falla con un mensaje imposible —«no cambió nada» sobre código que sí cambia— y a solas pasa.",
-      "causa": "La prueba anterior dejó al sujeto en el mismo estado que ésta iba a comparar. Se acaba comparando el estado contra sí mismo.",
-      "porque": "Las pruebas de pantalla comparten un objeto vivo —el lienzo, el DOM, el agente— y cada una lo mueve. Lo que en pruebas de función es aislamiento gratis, aquí hay que escribirlo.",
-      "arreglo": "Que cada prueba PONGA su premisa antes de medir, no que la herede. Una función que reponga el estado de partida —`verTrabajo(id)`— cuesta cinco renglones.",
-      "comoCazarlo": "Correr la prueba sola. Si pasa sola y falla en grupo, es contaminación, no un defecto.",
-      "consejo": "Duele el doble porque manda a buscar un defecto que no existe. Es de las pocas fallas que valen la pena arreglar aunque el código esté bien.",
-      "salioDe": "entorno/pruebas-mandos.mjs · el trabajo contra el ocio",
-      "senales": [
-        "pasa sola y falla en grupo",
-        "falla con un mensaje imposible",
-        "no cambió nada y sí cambia"
-      ],
-      "vecinas": [
-        "la-prueba-solo-caza-si-falla-la-primera",
-        "reloj-vivo-hace-fallar-la-prueba"
-      ]
-    },
-    {
-      "id": "reloj-vivo-hace-fallar-la-prueba",
-      "titulo": "Un reloj de verdad dentro del dibujo hace que la prueba falle sola",
-      "gravedad": "media",
-      "sintoma": "Una prueba que compara dos pintadas iguales falla una vez de cada tantas, sin patrón.",
-      "causa": "El dibujo trae la hora. Si el minuto cambia entre las dos capturas, los píxeles difieren y la comparación falla — sin que nada esté roto.",
-      "porque": "Un reloj es lo que hace que una barra se lea como barra de tareas, así que no se puede quitar. Y como falla una vez de cada muchas, se le echa la culpa a otra cosa.",
-      "arreglo": "Una costura para congelarlo: una variable que sólo pone la prueba, y que el dibujo usa si está puesta.",
-      "comoCazarlo": "Si una prueba de imagen falla sin patrón, busca en el dibujo cualquier cosa que dependa del tiempo: hora, fecha, «hace 2 min», una animación.",
-      "consejo": "Una prueba que falla sola se acaba ignorando, y una prueba ignorada es peor que no tenerla — porque además da confianza.",
-      "salioDe": "entorno/index.html · la barra de tareas del Taller",
-      "senales": [
-        "la prueba falla a veces",
-        "falla sin patrón",
-        "pasa si la vuelvo a correr"
-      ],
-      "vecinas": [
-        "la-prueba-se-ensucia-su-premisa"
-      ]
-    },
-    {
-      "id": "mutacion-sin-restaurar",
-      "titulo": "La prueba de mutación se quedó a medias y el defecto se commiteó",
-      "gravedad": "alta",
-      "clase": "error",
-      "sintoma": "Un arreglo que se probó en verde aparece roto después, y el commit que lo subió dice en su mensaje que está arreglado.",
-      "causa": "Para comprobar que una prueba caza un bug se le mete el bug a propósito, se corre, y se restaura. Si el turno se interrumpe entre el «se corre» y el «se restaura», lo que queda en el disco es la versión CON el defecto — y es la que se commitea.",
-      "porque": "El mensaje del commit se escribe pensando en el arreglo, no en lo que hay en el archivo. Suena perfecto y nadie lo contradice: la única prueba que corrió después fue la de la mutación, que por definición estaba en rojo y se dio por buena.",
-      "arreglo": "Volver a correr las pruebas DESPUÉS de restaurar y antes de commitear. Si están en rojo, no se restauró. Mejor todavía: mutar sobre una copia del archivo y no sobre el original.",
-      "comoCazarlo": "Antes de commitear un arreglo que se acaba de mutar, buscar en el archivo la línea del arreglo. Si no está, el commit va a mentir. Y desconfiar de todo commit cuyo mensaje describe algo que no se volvió a verificar después del último cambio de disco.",
-      "consejo": "El verde de antes de la mutación no vale: entre ese verde y el commit pasó una edición deliberada al código. Un commit se firma con lo que hay en el disco, no con lo que uno recuerda haber escrito.",
-      "salioDe": "sala/index.html · el arreglo de la llave que se subió mutado en d997c7b",
-      "senales": [
-        "subí lo que no era",
-        "el commit dice que está arreglado",
-        "volvió a aparecer el bug",
-        "la prueba pasaba y ya no"
-      ],
-      "vecinas": [
-        "la-prueba-solo-caza-si-falla-la-primera"
-      ]
-    },
-    {
-      "id": "puerto-fijo-hereda-la-basura",
-      "titulo": "Una prueba con puerto fijo le habla al servidor de la corrida anterior",
-      "gravedad": "media",
-      "clase": "error",
-      "sintoma": "Una prueba de integración empieza a fallar con números que no cuadran —«esperaba 2 y hay 8»— sin que nadie haya tocado lo que prueba.",
-      "causa": "La suite levanta su servidor en un puerto FIJO. Cuando una corrida truena a media prueba, el `kill` final nunca llega y ese servidor se queda escuchando CON SU ESTADO. La corrida siguiente no puede ocupar el puerto, le habla sin saberlo al viejo, y hereda todo lo que quedó dentro.",
-      "porque": "El fallo apunta al código que se está probando, no a la prueba. Se busca el bug donde no está, y encima desaparece solo cuando el proceso viejo muere por cualquier razón, lo que lo hace parecer intermitente.",
-      "arreglo": "Pedirle al sistema un puerto libre (escuchar en el 0, leer cuál tocó, soltarlo) en vez de fijarlo. Y matar al hijo desde `process.on(exit)` y desde los manejadores de excepción, para que ninguna salida lo deje vivo.",
-      "comoCazarlo": "Si una prueba de integración falla con estado de más, mira si hay un proceso viejo escuchando en su puerto antes de leer una sola línea del código.",
-      "consejo": "⚠ Y NO se arregla con pkill. El primer intento fue `pkill -f \"local.mjs 8799\"` y se mataba a sí mismo: la línea de comandos del propio `sh -c` contiene el texto que pkill está buscando, así que se lleva por delante hasta la prueba que lo llamó. Pedir un puerto libre no tiene ninguno de los dos problemas.",
-      "salioDe": "sala/pruebas-presencia.mjs",
-      "senales": [
-        "la prueba falla con datos de más",
-        "esperaba 2 y hay 8",
-        "falla sin que nadie toque nada",
-        "el puerto está ocupado"
-      ],
-      "vecinas": [
-        "la-prueba-se-ensucia-su-premisa",
-        "reloj-vivo-hace-fallar-la-prueba"
-      ]
-    },
-    {
-      "id": "proceso-huerfano-reportado-muerto",
-      "titulo": "Relanzar algo con & dentro de un comando que ya corre en segundo plano deja un huérfano vivo",
-      "gravedad": "media",
-      "clase": "error",
-      "sintoma": "El sistema reporta el proceso como COMPLETADO y sigue corriendo. Acabas con dos copias del mismo vigilante y la que dabas por muerta no lo está.",
-      "causa": "Se relanzó con `&` DENTRO de un comando que ya estaba en segundo plano. El shell exterior termina al instante —él sí acabó— y eso es lo que se reporta; el hijo queda huérfano y vivo, adoptado por init.",
-      "porque": "El reporte no miente sobre lo que mide: mide al shell, no al proceso que te importa. Y como el huérfano sigue haciendo su trabajo, nada se rompe de inmediato — se rompe cuando los dos escriben, o cuando uno contesta con datos viejos.",
-      "arreglo": "Relanzar desde el nivel de arriba, no dentro de otro comando de fondo. Pero eso arregla EL CASO, no la clase: el arreglo de la clase es que el proceso se NIEGUE A ARRANCAR si ya hay otro vivo, y diga el pid del que ya estaba. Así un descuido al lanzar cuesta un renglón en el registro y no dos copias trabajando.",
-      "comoCazarlo": "Cuenta los procesos, no leas el reporte: `ps -eo pid,etimes,args | grep [t]u-proceso`. Si hay dos donde debía haber uno, ahí está. Hazlo ANTES de creerle a cualquier «completado». Y si el proceso ya muere solo al terminar su trabajo, no lo descartes por eso: el huérfano nace al lanzar, no al vivir.",
-      "consejo": "Lo cazó Godines —el Claude de Luis— contando procesos, no leyendo el reporte. Es de la misma familia que el vigilante sordo y que curl saliendo con 0 en un 401: ALGO QUE REPORTA UN ESTADO Y ESTÁ EN OTRO. Los tres se ven bien, los tres mienten, y ninguno se caza leyendo — se cazan midiendo.\n\n⚠ Y OJO CON LA EXPLICACIÓN FÁCIL, que yo mismo escribí primero y estaba mal: no se arregla haciendo que el proceso muera al entregar. El suyo YA moría al entregar, igual que el mío, y aun así quedó huérfano. El defecto no estaba en el diseño sino en CÓMO SE LANZÓ. Atribuirlo al diseño manda al siguiente a cambiar lo que no es.",
-      "salioDe": "el esperador de Godines · relanzado con & dentro de otro comando de fondo",
-      "senales": [
-        "dice completado y sigue corriendo",
-        "tengo dos corriendo",
-        "el proceso no se murió",
-        "quedó uno viejo"
-      ],
-      "vecinas": [
-        "salida-cero-no-es-exito"
-      ]
-    },
-    {
-      "id": "la-prueba-paso-sin-que-existiera-el-caso",
-      "titulo": "La prueba pasó y la condición que decía probar nunca llegó a existir",
-      "gravedad": "alta",
-      "clase": "error",
-      "sintoma": "Una prueba nueva pasa a la primera y se ve idéntica a un éxito. Meses después el defecto que decía cubrir aparece en producción.",
-      "causa": "El escenario se deshizo antes de que la prueba lo ejerciera. En el caso real: se lanzó un proceso para que un segundo chocara con él, pero el primero había encontrado un mensaje y se había muerto solos segundos antes — así que nunca hubo dos, y la guarda que se estaba probando jamás se ejecutó.",
-      "porque": "El resultado es CORRECTO. La prueba dice «no hubo dos» y de verdad no hubo dos, sólo que por la razón equivocada. Medir el resultado no la delata: hay que preguntarse si la condición existió, que es otra pregunta.",
-      "arreglo": "Forzar el escenario en vez de esperar a que ocurra: en ese caso, apuntar al último evento para que el primero se quede colgado y la condición exista de verdad. Y cuando se pueda, que la prueba AFIRME que el escenario existió —que había dos, que el archivo estaba, que el otro seguía vivo— antes de comprobar el resultado.",
-      "comoCazarlo": "Pregúntate: ¿qué tendría que ser cierto para que esta prueba pudiera fallar? Si no lo puedes afirmar, la prueba no está probando. Y la comprobación barata de siempre: mete el defecto a propósito y mira si se pone roja. Si sigue verde, nunca lo estaba tocando.",
-      "consejo": "Lo trajo Godines, y él mismo casi se la come: «mi primera prueba de la guardia pasó sin probar nada». Da más miedo que un proceso sordo, porque una prueba así no sólo no ayuda — da confianza. Es la misma familia de todo lo de ese día: algo que reporta un estado y está en otro, sólo que aquí lo que miente es el testigo.",
-      "salioDe": "la guarda de un solo esperador · Godines",
-      "senales": [
-        "la prueba pasó a la primera",
-        "pasa pero no estoy seguro",
-        "se ve como éxito",
-        "la prueba no falla nunca"
-      ],
-      "vecinas": [
-        "la-prueba-solo-caza-si-falla-la-primera",
-        "la-prueba-se-ensucia-su-premisa",
-        "proceso-huerfano-reportado-muerto"
-      ]
-    },
-    {
-      "id": "prueba-de-texto-que-pasa-con-la-cadena-vacia",
-      "titulo": "«No dice la mentira» pasaba porque no decía nada",
-      "gravedad": "alta",
-      "sintoma": "Una prueba que comprueba que un letrero NO promete algo queda verde — y el letrero ni siquiera aparece.",
-      "causa": "La comprobación era una negación sobre el texto. Una cadena vacía tampoco contiene la frase prohibida, así que pasa sola.",
-      "porque": "La negación se escribe pensando en el caso malo, y el caso de «no hay nada que leer» no se parece al caso malo.",
-      "arreglo": "Antes de toda negación, una afirmación que establezca la premisa: que el texto EXISTE. Dos líneas, no una.",
-      "comoCazarlo": "Mutar el código para que el elemento no se pinte. Si la negación sigue verde, no estaba probando nada.",
-      "consejo": "Toda prueba en negativo necesita una hermana en positivo, o es una prueba que se cumple por ausencia.",
-      "senales": [
-        "la prueba pasa y el bug está ahí",
-        "verde y no funciona",
-        "no prueba nada"
-      ],
-      "salioDe": "Las pruebas de los avisos de La Sala: la negación pasaba mientras el letrero tronaba con «letrero is not defined»."
-    },
-    {
-      "id": "el-navegador-sin-cabeza-que-no-sabe-de-notificaciones",
-      "titulo": "El Chromium sin cabeza dice `denied` pase lo que pase",
-      "gravedad": "media",
-      "sintoma": "`grantPermissions(['notifications'])` no cambia nada: `Notification.permission` sigue en `denied` y toda la prueba se cae sin explicar por qué.",
-      "causa": "El Chromium sin cabeza no implementa notificaciones. No es que el permiso se niegue: es que no hay a qué concedérselo.",
-      "porque": "El resto de los permisos —cámara, ubicación, portapapeles— sí se conceden así, y nada dice que éste sea distinto.",
-      "arreglo": "Fingir el `Notification` del sistema con `addInitScript` ANTES de que cargue la página, y decir en el encabezado de la prueba que lo fingido es el permiso del APARATO y nada más.",
-      "comoCazarlo": "Un renglón: abrir cualquier página y leer `Notification.permission`. Si dice `denied` sin haber preguntado, es esto.",
-      "consejo": "Fingir el permiso está bien; fingir el código propio no. La frontera se dibuja en el encabezado de la prueba para que se vea qué quedó demostrado.",
-      "senales": [
-        "grantPermissions no funciona",
-        "permission siempre denied",
-        "la prueba de notificaciones no arranca"
-      ],
-      "salioDe": "Se midió en este contenedor con playwright 1.56, en modo normal y con `--headless=new`. Los dos: `denied`."
-    },
-    {
-      "id": "window-innerwidth-no-es-el-ancho-en-telefono",
-      "titulo": "`window.innerWidth` dijo 1200 en una pantalla de 390",
-      "gravedad": "alta",
-      "sintoma": "Una medida de desborde que nunca se dispara: una caja de 1200px en un teléfono de 390 sale como «no desborda».",
-      "causa": "En emulación de teléfono `window.innerWidth` devuelve el ancho VISUAL tras el encogido, no el de la página. El de la página es `document.documentElement.clientWidth`.",
-      "porque": "En escritorio los dos números coinciden exactamente, así que probando ahí la diferencia no existe.",
-      "arreglo": "Medir siempre contra `documentElement.clientWidth`.",
-      "comoCazarlo": "Abrir una página con una caja más ancha que la pantalla en un contexto móvil e imprimir los dos números. Si no coinciden, ahí está.",
-      "consejo": "Es doblemente traicionero porque el medidor equivocado dice «todo bien» justo sobre el defecto más visible que hay.",
-      "senales": [
-        "no detecta el scroll horizontal",
-        "innerWidth sale enorme",
-        "en móvil mide otra cosa"
-      ],
-      "salioDe": "Construyendo `empresa/clases/revisar.mjs`. Medido: 390px de pantalla, `innerWidth` 1200, `clientWidth` 390."
-    },
-    {
-      "id": "contar-rectangulos-no-es-contar-renglones",
-      "titulo": "Un botón de un renglón salió con «cae en 4 renglones»",
-      "gravedad": "media",
-      "sintoma": "Una comprobación de texto partido acusa a botones que caben perfectamente.",
-      "causa": "`Range.getClientRects()` devuelve un rectángulo por elemento y por nodo de texto, no uno por línea. Un botón con icono y etiqueta en dos `span` da cuatro rectángulos en un solo renglón.",
-      "porque": "El nombre del método invita a leerlo como «los renglones», y en el caso simple —un texto pelón— coincide.",
-      "arreglo": "Agrupar los rectángulos por su posición vertical redondeada y contar bandas.",
-      "comoCazarlo": "Imprimir los rectángulos con su `top`. Si varios comparten posición, es un renglón, no cuatro.",
-      "consejo": "Acusar a un elemento bien hecho cuesta más que dejar pasar uno malo: a la segunda vez ya nadie lee el informe.",
-      "senales": [
-        "dice que se parte y no se parte",
-        "getClientRects",
-        "cuenta mal las líneas"
-      ],
-      "salioDe": "El medidor de las clases contra La Sala: `#bAvisos` daba 4 rectángulos con `top` 214, 214, 215, 215."
-    },
-    {
-      "id": "medir-una-pagina-a-media-animacion",
-      "titulo": "Veintiún defectos de contraste que eran un reloj mal puesto",
-      "gravedad": "alta",
-      "sintoma": "Un medidor reporta decenas de fallos en una página que, mirada, se ve bien.",
-      "causa": "Se midió 400 ms después de cargar, con la animación de entrada a medias: el contenedor iba en `opacity: 0.708` y todo lo de dentro salía con menos contraste del que tiene asentado.",
-      "porque": "Esperar a `document.fonts.ready` se siente como esperar a que la página esté lista, y sólo espera a la tipografía.",
-      "arreglo": "Esperar a que se asiente antes de medir. Y como red: si algo sigue con opacidad a medias, reportarlo en amarillo DICIENDO que se midió moviéndose, en vez de acusarlo en rojo.",
-      "comoCazarlo": "Imprimir la opacidad acumulada junto a cada hallazgo. Si sale distinta de 1, se midió en movimiento.",
-      "consejo": "Medir una página que todavía se pinta es medir otra página — la misma familia que el viewport que se inventa una pantalla.",
-      "senales": [
-        "salen muchísimos fallos y se ve bien",
-        "el contraste sale bajísimo",
-        "sólo falla al medir automático"
-      ],
-      "salioDe": "`empresa/clases/revisar.mjs` contra `sitio/`: 21 rojos que al esperar 1800 ms se quedaron en 9, y los 9 son reales."
-    },
-    {
-      "id": "filtro-de-comodidad-que-tapa-justo-el-que-falla",
-      "titulo": "«Sáltate los que tengan hijos» se llevó por delante el único que fallaba",
-      "gravedad": "alta",
-      "sintoma": "Una prueba informa «29 textos cumplen contraste» y el botón principal está a 1.98:1.",
-      "causa": "El bucle pedía `children.length === 0` para no contar dos veces el mismo texto. Un botón con un icono SVG dentro TIENE hijos, así que quedaba fuera de la medida — y era justo el que fallaba.",
-      "porque": "El filtro se pone por una razón buena y chiquita —no duplicar— y nadie vuelve a mirar a quién deja fuera. La cuenta que sale luego suena a cobertura total.",
-      "arreglo": "Mirar los NODOS DE TEXTO propios del elemento, que son los que se pintan con su `color`. Los hijos se miden en su propia vuelta: nada se cuenta dos veces y nada queda fuera.",
-      "comoCazarlo": "Un caso con texto propio Y un icono al lado. Y en general: comparar cuántos elementos hay contra cuántos se midieron.",
-      "consejo": "Todo filtro de comodidad en un medidor es una lista de cosas que dejas de mirar. Vale la pena escribir a quién excluye, no sólo por qué.",
-      "senales": [
-        "dice que todo cumple y no cumple",
-        "la prueba no lo mide",
-        "children.length",
-        "mide de menos"
-      ],
-      "salioDe": "Godines se lo encontró en su plantilla —el botón de WhatsApp, 1.98:1— y me avisó de que si yo filtraba por hijos mirara ahí. Lo tenía igual, copiado de su versión."
-    },
-    {
-      "id": "el-umbral-con-razon-inventada",
-      "titulo": "Puse un número en una prueba y le escribí encima una medición que nunca hice",
-      "gravedad": "media",
-      "sintoma": "Una prueba reprueba un trabajo ajeno que está bien. Al ir a discutirlo, resulta que el umbral no sale de ningún dato: sale de lo que había ese día, con una justificación redactada después.",
-      "causa": "Se elige el número mirando el valor actual —uno un poco por debajo, para que pase— y se le añade un comentario que suena a criterio: «por debajo de esto ya no se lee». Nadie midió si eso es cierto.",
-      "porque": "Un umbral necesita una razón para no parecer arbitrario, y redactar la razón cuesta un renglón mientras que medirla cuesta media hora. El comentario queda convincente y nadie lo vuelve a cuestionar, porque las pruebas se leen menos que el código.",
-      "arreglo": "Medir de verdad y poner en el comentario CÓMO se midió, no la conclusión sola. Y calibrar el umbral donde está el precipicio real, no donde está el valor de hoy: lo que la prueba tiene que cazar es una REGRESIÓN, no un cambio de diseño legítimo.",
-      "comoCazarlo": "Ante cualquier umbral en una prueba, preguntar «¿esto lo midió alguien?». Si el comentario afirma un efecto —se lee, se ve, alcanza— y no dice con qué se comprobó, no está medido. La señal más fuerte: el umbral queda sospechosamente cerca del valor actual.",
-      "consejo": "Duele más cuando el número reprueba a otra persona: uno acaba defendiendo con autoridad prestada algo que inventó. Si el otro pregunta «¿de dónde sale ese número?» y hay que ir a medirlo en ese momento, la respuesta honesta es que el número estaba mal puesto.",
-      "senales": [
-        "¿de dónde sale ese número?",
-        "el umbral me reprueba",
-        "la prueba dice que está mal y se ve bien",
-        "no sé por qué es ese valor"
-      ],
-      "salioDe": "Puse «cada carta ≥95 px» con el comentario «por debajo de eso la frase deja de leerse». No lo medí: elegí 95 por quedar debajo de los 103 que ya había. Godines usaba 92 y preguntó cuál preferíamos. Al pintar la carta a 84, 90, 92, 95 y 104 px con la imagen publicada y a 3× de densidad, el precipicio salió entre 84 y 90, y entre 92 y 95 no hay diferencia visible. Quedó en 88."
-    },
-    {
-      "id": "la-medicion-que-se-mide-a-si-misma",
-      "titulo": "El contraste dio 1.00: estaba midiendo la letra contra la letra",
-      "gravedad": "alta",
-      "sintoma": "Una comprobación de contraste sobre una imagen reprueba casi todo, con varios resultados de exactamente 1.00, mientras la pieza a la vista se lee perfectamente.",
-      "causa": "Se muestrearon los píxeles DENTRO de la caja del texto sobre el render final — donde la letra ya está pintada. El «píxel más claro del fondo» bajo un texto blanco era el propio texto blanco.",
-      "porque": "Sobre un color plano se puede leer el fondo del CSS y ya. Sobre una FOTOGRAFÍA no hay un color de fondo que leer, así que se recurre a muestrear píxeles — y el sitio obvio donde muestrear es justo donde está la letra encima.",
-      "arreglo": "Renderizar DOS veces: una normal y otra con el texto apagado (`color:transparent` en los nodos medidos). El fondo se mide en la segunda. Ahí sí es el fondo.",
-      "comoCazarlo": "Un 1.00 clavado es la firma. Nada en una fotografía da exactamente 1.00 contra una tinta salvo esa misma tinta. Si aparece más de un 1.00 en una tanda, no es la pieza: es el método.",
-      "consejo": "Vale para cualquier medición sobre lo pintado, no sólo el contraste: si lo que quieres medir está TAPADO por lo que estás midiendo, hay que apagar una de las dos capas. Y una comprobación que reprueba casi todo suele estar rota, no descubriendo algo.",
-      "senales": [
-        "da 1.00 de contraste",
-        "reprueba todo y se ve bien",
-        "medir contraste sobre una foto",
-        "el fondo no es un color, es una imagen"
-      ],
-      "salioDe": "Revisando el póster de Xbox de Godines: mi primera pasada dio 11 de 12 textos «cortos», cinco de ellos con 1.00 exacto. Con el texto apagado, los 12 pasan y el peor va a 7.71 contra un piso de 4.5."
-    },
-    {
-      "id": "la-prueba-que-cuenta-de-mas-y-culpa-al-servidor",
-      "titulo": "La prueba contaba lo que ya no era, y el reporte acusaba a otro",
-      "gravedad": "alta",
-      "sintoma": "«Se reparte a los dos → 5 y 6.» El servidor parece estar repartiendo mal, o de más a uno. Y reparte bien.",
-      "causa": "El contenedor cambió de contenido —ahora en la mano viven las cinco jugables MÁS los modificadores— y la prueba siguió contando todos los hijos. Lo que cambió fue la definición de «mano», no el reparto.",
-      "porque": "Una prueba escrita cuando el contenedor tenía una sola clase de cosa no dice cuál cuenta, porque no había otra. Al meter una segunda clase, el selector viejo sigue siendo válido y sigue devolviendo un número — sólo que ahora otro.",
-      "arreglo": "El selector nombra lo que la afirmación quiere contar, con exclusión explícita: `.carta:not([data-esp])`. Y el mensaje de fallo dice el número, para que se vea que son 6 y no 4.",
-      "comoCazarlo": "Cuando una prueba señale a un componente que no tocaste, sospechar primero de la prueba. Y comprobarla con mutación: meter el defecto de verdad (repartir 4) y ver que dé un número DISTINTO al del falso positivo.",
-      "consejo": "Al agregar una clase nueva de elemento a un contenedor, hay que ir a buscar quién lo cuenta. Nadie avisa: los selectores viejos no truenan, contestan otra cosa.",
-      "salioDe": "juegos/guerra-de-puercos · pruebas-linea.mjs, después de meter las especiales al abanico",
-      "senales": [
-        "la prueba culpa al servidor",
-        "dice 5 y 6",
-        "falla algo que no toqué",
-        "cuenta de más"
-      ],
-      "vecinas": [
-        "la-prueba-se-ensucia-su-premisa",
-        "contar-rectangulos-no-es-contar-renglones",
-        "la-mano-que-se-llena-de-lo-que-no-se-juega",
-        "mutacion-sin-restaurar"
-      ]
-    },
-    {
-      "id": "la-prueba-intermitente-ensena-a-ignorar-los-rojos",
-      "titulo": "La prueba que falla 1 de cada 8 es peor que la que falla siempre",
-      "gravedad": "alta",
-      "sintoma": "Una suite da verde, verde, verde, ROJA, verde. Vuelves a correrla y pasa, así que sigues adelante.",
-      "causa": "La afirmación sólo se cumple para el camino común. Un caso poco frecuente —un empate, una mano con la carta rara en cierta posición— cae fuera de lo que la prueba contempla y la pone roja sin que nada esté mal en el producto.",
-      "porque": "Una prueba se escribe corriéndola una vez. Si esa vez tocó el camino común, la premisa queda a medias y nadie lo nota: el rojo llega semanas después, cuando ya se aprendió a volver a correr y seguir.",
-      "arreglo": "Cuando aparezca un rojo que no se repite, NO se vuelve a correr y ya: se corre en ciclo hasta reproducirlo y se imprime el estado que lo causó. Con el caso enfrente se arregla la premisa, y se vuelve a correr DIEZ veces o más para saber que quedó.",
-      "comoCazarlo": "`for i in $(seq 1 12); do … done` contando verdes. Una sola corrida verde no prueba nada de una intermitente — es literalmente el estado en el que ya estaba.",
-      "consejo": "El daño de una intermitente no es el rojo: es que enseña a ignorar los rojos. En cuanto la suite miente una vez, deja de servir para todas las demás.",
-      "salioDe": "juegos/guerra-de-puercos · dos intermitentes distintas en la misma suite, una de 1/5 y otra de 1/8",
-      "senales": [
-        "a veces pasa y a veces no",
-        "vuelvo a correrlo y ya pasó",
-        "falla de vez en cuando",
-        "no lo puedo reproducir"
-      ],
-      "vecinas": [
-        "la-prueba-que-cuenta-de-mas-y-culpa-al-servidor",
-        "prueba-de-un-solo-caso",
-        "reloj-vivo-hace-fallar-la-prueba"
-      ]
-    },
-    {
-      "id": "comparar-contra-el-html-y-no-contra-lo-que-se-lee",
-      "titulo": "Saqué la cadena del archivo fuente y la comparé contra texto plano",
-      "gravedad": "alta",
-      "sintoma": "Arreglé una prueba de texto leyendo el código, y en vez de mejorar empeoró: pasó de fallar 1 de cada 8 a fallar 10 de 12.",
-      "causa": "En el archivo la frase lleva etiquetas —`<b>Recibes</b> el golpe`— y yo copié eso a la expresión. Pero la prueba lee `textContent`, que devuelve el texto YA sin etiquetas, así que el patrón no casaba nunca.",
-      "porque": "Buscar la frase en el código fuente se siente como «ir a la verdad», y por eso no se sospecha. Pero el fuente y lo que la persona lee son dos cadenas distintas, y la prueba compara contra la segunda.",
-      "arreglo": "El patrón se escribe contra lo que devuelve el lector que usa la prueba. Con `textContent`, sin etiquetas; con `innerHTML`, con ellas. Y se comprueba aparte, contra las cadenas literales, antes de correr la suite entera.",
-      "comoCazarlo": "Antes de dar por buena una prueba de texto, pasarle a la expresión las cadenas reales —las cuatro que sí deben casar y dos que no— en un `node -e` de tres renglones. Cuesta diez segundos y no necesita navegador.",
-      "consejo": "«Lo saqué del código» no es garantía de nada si el código guarda una forma y la prueba lee otra. La pregunta correcta es qué devuelve exactamente el lector.",
-      "salioDe": "juegos/guerra-de-puercos · pruebas-pantalla.mjs, arreglando una intermitente y empeorándola",
-      "senales": [
-        "lo arreglé y quedó peor",
-        "lo copié del código y no casa",
-        "la prueba no encuentra un texto que sí está"
-      ],
-      "vecinas": [
-        "la-prueba-intermitente-ensena-a-ignorar-los-rojos",
-        "prueba-de-texto-que-pasa-con-la-cadena-vacia",
-        "la-medicion-que-se-mide-a-si-misma"
-      ]
-    },
-    {
-      "id": "el-generado-que-cambia-solo-y-choca-en-todo-rebase",
-      "titulo": "Un archivo generado con la hora adentro choca en todos los rebases",
-      "gravedad": "media",
-      "clase": "error",
-      "sintoma": "cerebro/todo.json marcaba conflicto en CADA rebase, incluso entre ramas que habían tocado neuronas distintas o ninguna. El conflicto se 'resolvía' regenerando y volvía a aparecer al siguiente rebase.",
-      "causa": "`armar()` escribía `hecho: new Date().toISOString()` dentro del archivo. Nadie lo leía —ni la pantalla, ni el servidor de La Sala, ni las pruebas— pero cambiaba en cada corrida, así que dos ramas producían bytes distintos con contenido idéntico.",
-      "porque": "git compara bytes, no significado. No tiene forma de saber que las únicas dos líneas distintas eran una marca de tiempo que a nadie le importa, así que marca conflicto igual que si se hubiera reescrito medio archivo.",
-      "arreglo": "Quitar el campo. `armar()` quedó determinista: mismas neuronas → mismo archivo byte por byte. Un choque en todo.json vuelve a significar que dos ramas tocaron neuronas de verdad.",
-      "comoCazarlo": "Armar dos veces seguidas y comparar: `node cerebro/cerebro.mjs armar; md5sum cerebro/todo.json` dos veces. Si los md5 difieren con las mismas fuentes, hay algo no determinista adentro. El diff completo son las líneas culpables — aquí eran DOS.",
-      "consejo": "En cualquier artefacto generado que se commitea, la regla es que dos corridas den lo mismo. Fechas de generación, ids aleatorios y recorridos que dependen del orden del sistema de archivos son las tres causas de siempre, y todas se ven igual desde fuera: 'este archivo siempre choca'. La prueba que lo cuida no comprueba el CAMPO sino la PROPIEDAD, porque un nombre se esquiva sin querer y 'dos corridas dan lo mismo' no.",
-      "salioDe": "Iba a meter `armar` dentro de build.mjs para que lo publicado nunca trajera neuronas invisibles. Antes comprobé si era idempotente —no lo era— y ahí apareció la causa de un conflicto que ya se había pagado dos veces: en el rebase del #112 y en la rama de Godines. · SEGUNDA VEZ el 9 de septiembre en jabonera/armar-suelto.mjs, con la fecha de armado en un comentario del HTML: correr las pruebas ensuciaba el repo y el gancho de cierre pedía commitear un archivo cuyo contenido no había cambiado. Que reaparezca en otro generador dice que no es un descuido: es lo que uno escribe por costumbre al generar un archivo.",
-      "senales": [
-        "todo.json siempre choca",
-        "conflicto en un archivo generado",
-        "rebase que choca sin razon",
-        "el mismo conflicto vuelve a aparecer",
-        "armar dos veces da distinto",
-        "archivo generado no determinista"
-      ],
-      "vecinas": [
-        "la-prueba-intermitente-ensena-a-ignorar-los-rojos",
-        "la-prueba-que-cuenta-de-mas-y-culpa-al-servidor"
-      ]
-    },
-    {
-      "id": "suite-que-no-arranca-calla",
-      "titulo": "El suite no reprueba porque ni siquiera arranca",
-      "gravedad": "alta",
-      "sintoma": "Nadie recuerda que esa suite se haya puesto roja. Corres a mano y sale una traza de Node en vez de resultados.",
-      "causa": "Un import que no resuelve —`from 'playwright'` a secas cuando playwright vive sólo en la instalación global— o una ruta absoluta de otra máquina. Revienta ANTES de la primera comprobación.",
-      "porque": "En este contenedor playwright está en /opt/node22/lib/node_modules, no en un node_modules del repo. Y una suite que muere en la línea 1 sale con código 1 sin imprimir un solo ✗: el silencio se lee igual que un verde.",
-      "arreglo": "Buscar en los dos lados: `for (const d of ['/opt/node22/lib/node_modules/playwright/index.mjs','playwright']) try{ chromium=(await import(d)).chromium; if(chromium) break }catch(e){}`.",
-      "comoCazarlo": "Correrla y CONTAR lo que imprime. Si no salen números, no corrió. `node <suite> | tail -1` tiene que decir un resultado, no `Node.js v22`.",
-      "consejo": "Una compuerta que no corre es peor que ninguna: da la confianza sin dar la comprobación.",
-      "salioDe": "toydarians/taller/revisar.mjs, explorador/pruebas.mjs y sitio/pruebas.mjs · el mismo renglón tres veces, y la tercera tapaba una portada que se caía entera",
-      "senales": [
-        "las pruebas nunca fallan",
-        "sale una traza en vez de resultados",
-        "ERR_MODULE_NOT_FOUND",
-        "no encuentra playwright"
-      ],
-      "vecinas": [
-        "pruebas-que-no-prueban-nada",
-        "conexion-rechazada-parece-defecto"
-      ]
-    },
-    {
-      "id": "conexion-rechazada-parece-defecto",
-      "titulo": "Doce suites «rotas» eran doce suites sin servidor",
-      "gravedad": "media",
-      "sintoma": "Media docena de suites revientan a la vez con `net::ERR_CONNECTION_REFUSED`. Parece que algo grande se rompió.",
-      "causa": "Son suites de navegador y piden un puerto concreto, escrito adentro. Sin nada servido ahí, Playwright tira una excepción que mata el proceso antes de la primera comprobación.",
-      "porque": "El puerto no está en un README ni en un script: está enterrado en el `page.goto` de cada suite, así que quien no las corrió nunca no tiene forma de saberlo.",
-      "arreglo": "Levantar los estáticos que piden y correr DESDE LA RAÍZ del repo. En mazi-central: 8791, 8792, 8123 y 8781 sirviendo `dist/`, 8124 sirviendo `empresa/clases`, y wrangler en 8815 para el modo a distancia.",
-      "comoCazarlo": "`node <suite> 2>&1 | grep -m1 'net::'` dice el puerto exacto que le falta. Es una línea y ahí se acaba el misterio.",
-      "consejo": "Antes de declarar rota una suite de navegador, mira qué URL pidió. Casi siempre es un `python3 -m http.server`, no un bug.",
-      "salioDe": "el censo del 9 de septiembre · 12 de 41 suites reventaban por esto y ninguna tenía nada malo",
-      "senales": [
-        "ERR_CONNECTION_REFUSED",
-        "todas las pruebas revientan",
-        "page.goto falló",
-        "no carga la página en las pruebas"
-      ],
-      "vecinas": [
-        "suite-que-no-arranca-calla"
-      ]
-    },
-    {
-      "id": "prueba-que-aprueba-por-accidente",
-      "titulo": "Pasa porque la midió antes de tiempo, no porque esté bien",
-      "gravedad": "media",
-      "sintoma": "La misma comprobación pasa en una configuración y falla en otra, y el código no cambia entre las dos.",
-      "causa": "El selector agarra el PRIMER nodo que coincide, y hay dos: el de la intro y el de la portada. Mientras la intro sigue puesta, el de la intro mide bien y la prueba aprueba — midiendo algo que no es lo que dice medir.",
-      "porque": "La espera de la prueba (2.5 s) es más corta que la intro (3.4 s), así que en el caso normal nunca llega a ver la portada. Con `prefers-reduced-motion` la intro se salta, el nodo mide 0 px de alto y ahí sí falla.",
-      "arreglo": "Anclar el selector a su sección, no al documento: `.portada .ave`, no `.ave`. Y esperar a un estado, no a un número de milisegundos.",
-      "comoCazarlo": "Contar cuántos nodos hace juego el selector: `document.querySelectorAll(sel).length`. Si es más de 1, la prueba está midiendo a la suerte.",
-      "consejo": "Una prueba que pasa en un modo y falla en otro no está reportando dos comportamientos: está reportando que mide mal.",
-      "salioDe": "sitio/pruebas.mjs · «la portada se ve completa» medía el ave de la intro",
-      "senales": [
-        "pasa a veces sí y a veces no",
-        "falla sólo con menos movimiento",
-        "querySelector agarra otro"
-      ],
-      "vecinas": [
-        "pruebas-que-no-prueban-nada",
-        "suite-que-no-arranca-calla"
-      ]
-    },
-    {
-      "id": "la-prueba-ensucia-lo-que-mide",
-      "titulo": "Correr las pruebas deja basura dentro del repo",
-      "gravedad": "media",
-      "sintoma": "`git status` sale sucio después de correr una suite, sin haber tocado nada. Capturas sin seguir, un archivo generado con otra fecha, o el gancho de cierre pidiendo commitear cosas que no son tuyas.",
-      "causa": "La suite escribe con una ruta RELATIVA al directorio actual —`caps/algo.png`— así que el destino depende de desde dónde la corriste, y desde la raíz cae dentro del repo.",
-      "porque": "Al escribirla se corre desde su propia carpeta y ahí el destino queda fuera de la vista. El día que alguien la corre desde la raíz —que es como se corren todas cuando se barre el repo— aterriza adentro.",
-      "arreglo": "Salidas al temporal del sistema: `tmpdir() + '/caps-<loquesea>'`, e imprimir la ruta al final para que se encuentren. Nunca una ruta relativa, y nunca una absoluta de una máquina o una sesión concretas.",
-      "comoCazarlo": "`git status --porcelain` ANTES y DESPUÉS de correr la suite. Si cambia, la suite escribe donde no debe.",
-      "consejo": "Una prueba no ensucia lo que mide. Si deja rastro en el repo, el siguiente que barra las suites va a commitear basura o va a perder tiempo averiguando de quién es.",
-      "salioDe": "sitio/pruebas.mjs dejaba 1.3 MB de PNG en `caps/`, y explorador/pruebas.mjs apuntaba a un scratchpad con el UUID de UNA sesión — funcionaba en la máquina donde se escribió y en ninguna otra",
-      "senales": [
-        "git status sale sucio",
-        "quedaron capturas sin seguir",
-        "la prueba deja archivos",
-        "ruta que sólo existe en una máquina"
-      ],
-      "vecinas": [
-        "el-generado-que-cambia-solo-y-choca-en-todo-rebase",
-        "suite-que-no-arranca-calla",
-        "conexion-rechazada-parece-defecto"
-      ]
-    },
-    {
-      "id": "el-robot-mide-con-la-regla-chueca",
-      "titulo": "La prueba usa la misma función que está probando, y se tuerce con ella",
-      "gravedad": "alta",
-      "sintoma": "Metes el defecto A PROPÓSITO para ver la prueba fallar y la prueba sigue en verde, con el mismo número exacto de antes.",
-      "causa": "La prueba decide QUÉ ESPERAR llamando a la misma función que juzga. Si esa función se desplaza, la expectativa se desplaza igual y las dos siguen coincidiendo.",
-      "porque": "Al escribir la prueba uno reusa lo que ya está a la mano, y lo que está a la mano es el código que quiere probar. Sale una prueba que comprueba que el sistema es consistente consigo mismo — que siempre lo es.",
-      "arreglo": "La prueba se ancla a una VERDAD INDEPENDIENTE, no a una función del sistema. En un juego de ritmo, el instante en que la nota SUENA (reloj del audio) y no el instante que el juego cree; en una API, el contrato escrito y no el serializador.",
-      "comoCazarlo": "Prueba de mutación de verdad: rompe el código y comprueba que se pone ROJO. Si la mutación no la caza, la prueba mide con la regla chueca — y el arreglo es la prueba, no el código.",
-      "consejo": "Si una prueba no puede fallar nunca, no está probando: está acompañando.",
-      "salioDe": "juegos/palomazo · el robot tocaba usando `pasoAhora()`, la misma función del juicio. Con 120 ms de desfase metidos a mano seguía dando 74 perfectas; anclado al reloj del audio, la misma mutación da 0 perfectas y 58 «casi»",
-      "senales": [
-        "metí el bug y la prueba sigue verde",
-        "la mutación no se detecta",
-        "la prueba no falla nunca",
-        "prueba circular"
-      ],
-      "vecinas": [
-        "pruebas-que-no-prueban-nada",
-        "prueba-que-aprueba-por-accidente",
-        "suite-que-no-arranca-calla"
-      ]
-    },
-    {
-      "id": "medir-antes-de-que-acabe",
-      "titulo": "Lo declaré roto y sólo no había terminado",
-      "gravedad": "media",
-      "sintoma": "En la captura o en el volcado, algo está a medio camino y parece atorado. Se abre el código a buscar un bug que no existe.",
-      "causa": "Se mide antes de que el sistema haya llegado a su estado estable. Lo que se ve es un fotograma intermedio, no un resultado.",
-      "porque": "El tiempo de espera se elige a ojo y casi siempre por lo bajo, porque uno tiene prisa. Y un intermedio se parece muchísimo a un atorón.",
-      "arreglo": "Calcular cuánto TARDA de verdad —cuántos pasos, cuántos cuadros— y esperar eso, o mejor esperar a que la magnitud deje de cambiar en vez de a un reloj.",
-      "comoCazarlo": "Antes de abrir el código, volver a medir con el triple de tiempo. Si el síntoma se va, era prisa.",
-      "consejo": "Un sistema a medio camino no es un sistema roto. Y en un día ya casi mando a arreglar tres motores sanos por esto.",
-      "salioDe": "juegos/crisol · la arena se veía flotando en la captura y parecía fallar la gravedad; tenía 138 celdas que caer y yo esperé 900 ms, que dan 54 pasos",
-      "senales": [
-        "se quedó a medias",
-        "parece atorado",
-        "no llega al final",
-        "flota en el aire"
-      ],
-      "vecinas": [
-        "prueba-que-aprueba-por-accidente",
-        "el-robot-mide-con-la-regla-chueca"
-      ]
-    },
-    {
-      "id": "todas-las-pruebas-miden-el-mismo-sentido",
-      "titulo": "Las 57 pruebas pasaban y nada podía salir volando hacia arriba",
-      "gravedad": "alta",
-      "sintoma": "El pistón, el resorte y las explosiones empujaban y la cosa empujada BAJABA una celda. La suite entera en verde.",
-      "causa": "`saltos = Math.max(1, Math.floor(vy))` con vy negativa devuelve 1, y ese 1 se usaba para avanzar HACIA ABAJO. Nunca existió el caso de subir.",
-      "porque": "Todas las pruebas del motor nacieron probando gravedad: arena que cae, agua que baja, lava que escurre. Una suite escrita sobre un solo sentido no puede reprobar el otro — ni siquiera lo visita.",
-      "arreglo": "Rama aparte para vy<0 que sube celda por celda y pone vy=0 al topar techo. Y una prueba por cada sentido, no por cada pieza.",
-      "comoCazarlo": "Por cada eje del sistema, pregúntate cuál es el sentido CONTRARIO y busca la prueba que lo mide. Si no existe, el código de ese sentido nunca corrió.",
-      "consejo": "Verde no quiere decir correcto: quiere decir que lo que se midió salió bien. Cuenta qué NO se midió.",
-      "salioDe": "juegos/crisol/motor.js · 57 pruebas en verde con el vuelo muerto",
-      "senales": [
-        "pasa todo y el bug sigue",
-        "no sube",
-        "empuja y no se mueve",
-        "la prueba no cubre ese caso"
-      ],
-      "vecinas": [
-        "pruebas-que-no-prueban-nada",
-        "prueba-de-un-solo-caso",
-        "medir-antes-de-suponer"
-      ]
-    },
-    {
-      "id": "la-regla-que-no-puede-dispararse",
-      "titulo": "La regla existía, en probabilidad cero, con una nota explicando por qué",
-      "gravedad": "media",
-      "sintoma": "«Puse hidrógeno y oxígeno y no hay forma de volverlo agua.»",
-      "causa": "La reacción estaba escrita con probabilidad 0 y el comentario «sólo con chispa». Esa chispa nunca se implementó.",
-      "porque": "Un `TODO` escrito como código se lee como código: al buscar «¿existe esta regla?» la respuesta es sí, y nadie vuelve a mirarla. Un comentario que describe lo que falta lo hace parecer hecho.",
-      "arreglo": "O se implementa la condición, o la regla no se escribe. Una condición inalcanzable con una nota al lado es deuda camuflada de función.",
-      "comoCazarlo": "Busca constantes que apaguen una rama entera —probabilidad 0, `if(false)`, un umbral inalcanzable— y comprueba si alguna prueba la cubre. Si ninguna, es que no se dispara nunca.",
-      "consejo": "Lo que no se puede disparar no está implementado, por bien documentado que esté.",
-      "salioDe": "juegos/crisol/elementos.js · hidrógeno + oxígeno con `prob: 0`",
-      "senales": [
-        "no pasa nada",
-        "la regla está pero no funciona",
-        "nunca reacciona",
-        "sólo con chispa"
-      ],
-      "vecinas": [
-        "pruebas-que-no-prueban-nada",
-        "el-comentario-no-es-el-codigo"
-      ]
-    },
-    {
-      "id": "prueba-que-nace-muerta",
-      "titulo": "Un `ok(...)` cuyo segundo argumento no es un booleano ya calculado siempre pasa",
-      "gravedad": "alta",
-      "sintoma": "La prueba está verde con el código roto a propósito, y de paso infla el marcador.",
-      "causa": "El segundo argumento no era un booleano: era `(a, b, true) && true` —que evalúa true— o una PROMESA, que siempre es verdadera.",
-      "porque": "Al escribir una prueba con `await` dentro se cuela un operador coma o un `.then()`, y el resultado se ve razonable. Nadie mira lo que VALE la expresión, sólo lo que dice el texto de al lado.",
-      "arreglo": "El booleano se calcula ANTES, en su propia línea, y se le pasa ya hecho. Si hace falta await, se hace fuera del `ok(...)`.",
-      "comoCazarlo": "Rompe el código a propósito. Y revisa cada `ok(` cuyo segundo argumento tenga una coma, un `&&` sospechoso, un `.then(` o una función que se invoca a sí misma.",
-      "consejo": "Cuando el marcador suba y no sepas qué prueba se agregó, desconfía. Dos pruebas que no prueban nada valen menos que ninguna: dan permiso para no mirar.",
-      "salioDe": "sala/servidor/pruebas-modelos.mjs · dos de 32 pasaban con el adaptador destruido",
-      "senales": [
-        "pasa siempre",
-        "la prueba no falla nunca",
-        "verde con todo roto"
-      ],
-      "vecinas": [
-        "prueba-que-revienta-en-vez-de-fallar",
-        "pruebas-que-no-prueban-nada"
-      ]
-    },
-    {
-      "id": "prueba-que-revienta-en-vez-de-fallar",
-      "titulo": "Una prueba que truena no informa: hay que dejarla llegar a decir ✗",
-      "gravedad": "alta",
-      "sintoma": "Al meter el bug a propósito, la suite no imprime una prueba roja: no imprime NADA. Leyendo por encima se ve igual que «todo bien».",
-      "causa": "La condición leía una cadena de propiedades (`x.y.parts[0].text`) y al faltar una, el TypeError mató el proceso antes del marcador.",
-      "porque": "Uno escribe la condición pensando en el caso bueno, donde la cadena existe. El caso malo es justo aquel en el que no existe — o sea que la prueba se rompe exactamente cuando tenía que hablar.",
-      "arreglo": "Encadenamiento opcional en toda la condición, y en el `extra` se enseña lo que sí venía para saber qué faltó.",
-      "comoCazarlo": "Corre la mutación y mira la SALIDA COMPLETA, no sólo el grep de ✗. Si no hay marcador final, la suite murió y no te enteraste.",
-      "consejo": "Un `grep ✗` sobre una suite que reventó devuelve vacío, igual que una suite verde. Comprueba siempre que salga el renglón del marcador.",
-      "salioDe": "sala/servidor/pruebas-modelos.mjs · quitarle `systemInstruction` a Gemini mataba la suite en vez de ponerla roja",
-      "senales": [
-        "no imprime nada",
-        "la suite se muere",
-        "salida vacía"
-      ],
-      "vecinas": [
-        "prueba-que-nace-muerta"
-      ]
-    },
-    {
-      "id": "decorado-sin-waituntil",
-      "titulo": "Sin `waitUntil` en el decorado, todo el segundo plano es invisible para las pruebas",
-      "gravedad": "alta",
-      "sintoma": "La funcionalidad corre bien a mano y ninguna prueba la ve. El hilo sale vacío aunque el código sí publica.",
-      "causa": "El envoltorio usa `ctx.waitUntil` si existe y si no deja la promesa al aire. El doble de pruebas no lo traía, así que lo diferido ocurría DESPUÉS de que la prueba terminó de mirar.",
-      "porque": "En producción está bien: la plataforma lo espera. En un doble, «al aire» significa «fuera del alcance del `await` de la prueba», y eso no se ve en ninguna línea del código de producción.",
-      "arreglo": "El doble recoge las promesas en una lista y se expone un `asentar()` que las espera. Entonces sí se puede probar lo diferido.",
-      "comoCazarlo": "Si una prueba de algo que corre en segundo plano falla «por poquito», mira si tu doble tiene `waitUntil`. Sin él NUNCA va a pasar.",
-      "consejo": "Un doble que no implementa lo que el código usa no es un doble incompleto: es un doble que aprueba lo que no probó.",
-      "salioDe": "sala/servidor/pruebas.mjs · las sillas enteras eran invisibles para la suite",
-      "senales": [
-        "no se ve el efecto",
-        "el hilo sale vacío",
-        "funciona a mano y no en la prueba"
-      ],
-      "vecinas": [
-        "prueba-que-nace-muerta"
-      ]
-    },
-    {
-      "id": "checkout-no-restaura-lo-que-no-esta-versionado",
-      "titulo": "Deshacer una mutación con git en un archivo que git no conoce",
-      "gravedad": "alta",
-      "sintoma": "Se mete un defecto a mano para comprobar que la prueba lo caza, se hace `git checkout <archivo>` para deshacerlo, y las pruebas siguen en rojo. El mutante sigue puesto.",
-      "causa": "`git checkout` restaura desde el índice. Un archivo NUEVO que nunca se ha commiteado no está en el índice, así que el comando no tiene de dónde restaurar — y no falla: no hace nada, calladito.",
-      "porque": "La prueba de mutación se hace justo cuando el archivo acaba de nacer, que es cuando más ganas hay de comprobar si sus pruebas sirven. Ése es exactamente el momento en que `git checkout` no puede ayudar.",
-      "arreglo": "Deshacer la mutación con la misma herramienta con la que se metió —el reemplazo de texto inverso— y volver a correr las pruebas DESPUÉS de deshacerla, mirando el verde con los ojos.",
-      "comoCazarlo": "Si tras deshacer la mutación el total de rojos no vuelve al de antes, la mutación sigue ahí. Y `git status` delata el archivo como no seguido.",
-      "consejo": "Es la hermana de «el verde de antes del commit sigue valiendo». Aquella era olvidarse de restaurar; ésta es creer que se restauró. La segunda es peor porque uno ya ejecutó el comando y se quedó tranquilo.",
-      "senales": [
-        "hice checkout y sigue igual",
-        "las pruebas no vuelven a verde",
-        "deshice el cambio y nada"
-      ],
-      "salioDe": "CRISOL, las hormigas, 17 de septiembre de 2026. Mutación de «las verdes rompen el muro»: el muro pasó de 198 a 17 celdas, la prueba la cazó, y el `git checkout` posterior no deshizo nada porque `hormigas.js` era nuevo.",
-      "vecinas": [
-        "pruebas-que-no-prueban-nada"
-      ]
-    },
-    {
-      "id": "la-prueba-mide-despues-de-que-aquello-murio",
-      "titulo": "La prueba mide después de que aquello que medía se acabó",
-      "gravedad": "media",
-      "sintoma": "Una prueba que pasaba se pone roja al añadir una función nueva, y el código nuevo está bien.",
-      "causa": "La prueba fijaba un número de pasos cuando lo medido duraba para siempre. Al darle un CICLO DE VIDA, a ese mismo número de pasos la cosa ya se murió.",
-      "porque": "Un «corre 900 pasos y mide» está pensado para un mundo donde nada termina. En cuanto algo nace, madura y muere, el cuándo pasa a ser parte de la prueba.",
-      "arreglo": "Medir en la fase que la afirmación describe. «Un árbol adulto tiene copa» se comprueba a los 340 pasos, no a los 900, cuando ya fructificó y se marchitó entero.",
-      "comoCazarlo": "Si una prueba se pone roja al agregar algo que no toca lo que ella mide, mirar CUÁNDO mide antes de mirar qué.",
-      "consejo": "Pasó tres veces seguidas el mismo día: la copa, el crecimiento gradual y la colonia con jardín finito. El patrón es «el experimento termina después de que se acabó lo que medía».",
-      "senales": [
-        "se puso roja y no toqué eso",
-        "antes pasaba",
-        "el número de pasos"
-      ],
-      "salioDe": "CRISOL, el ciclo de vida de las plantas, 18 de septiembre de 2026.",
-      "vecinas": [
-        "pruebas-que-no-prueban-nada",
-        "checkout-no-restaura-lo-que-no-esta-versionado"
-      ]
-    },
-    {
-      "id": "preguntarle-a-quien-camina-donde-acabo",
-      "titulo": "Preguntarle a alguien que camina dónde acabó",
-      "gravedad": "media",
-      "sintoma": "Una prueba lleva tiempo en rojo y todo el mundo da por hecho que la función no está hecha.",
-      "causa": "La prueba mira la posición FINAL de algo que se mueve solo. Aquí: «sube un escalón» comprobaba dónde estaba el monigote a los 500 pasos. Sí subía —al paso 60 estaba encima— y luego seguía paseando, se daba la vuelta y se bajaba; acababa en x=1.0.",
-      "porque": "Es la forma más corta de escribirla, y con algo quieto funciona. En cuanto lo medido tiene voluntad propia, el final deja de significar nada.",
-      "arreglo": "Comprobar si LLEGÓ A PASAR, no dónde quedó: se recorre el bucle vigilando la condición y se guarda que ocurrió una vez.",
-      "comoCazarlo": "Si la prueba de una cosa que se mueve fija un número de pasos y mira el estado final, sospechar de la prueba antes que del código. Imprimir la trayectoria lo resuelve en un minuto.",
-      "consejo": "Y hay que comprobarlo con una mutación: se rompe el trepado a propósito y las dos pruebas tienen que ponerse rojas. Si no, la nueva versión tampoco prueba nada.",
-      "senales": [
-        "esa prueba siempre ha estado en rojo",
-        "no sube escalones",
-        "acabó donde no debía"
-      ],
-      "salioDe": "CRISOL, las personitas, 18 de septiembre de 2026. Dos pruebas rojas de mucho tiempo, y el código estaba bien desde siempre.",
-      "vecinas": [
-        "la-prueba-mide-despues-de-que-aquello-murio",
-        "pruebas-que-no-prueban-nada"
-      ]
-    },
-    {
-      "id": "la-prueba-no-puede-ver-lo-que-el-codigo-transforma",
-      "titulo": "La prueba compara contra algo que el código ya transformó",
-      "gravedad": "alta",
-      "sintoma": "Cuatro pruebas llevan tiempo en rojo, la función está perfecta, y cada rojo nuevo se suma sin que nadie los mire.",
-      "causa": "El código cambia el dato ANTES de que la prueba lo lea. Aquí: la marca de agua se hornea en un lienzo —para esquivar un recuadro negro del PDF de Safari— y eso reemplaza el `src` por un `data:image/png;base64,…`. La prueba comparaba ese `data:` contra la ruta del archivo. No podía salir bien nunca.",
-      "porque": "La transformación se agregó después de la prueba, por una razón buena, y nadie volvió a mirar qué dejaba de ser legible.",
-      "arreglo": "Que el código GUARDE de dónde vino, en un atributo aparte, y la prueba lea eso. No es un parche para la prueba: después del horneado tampoco un humano podía saber qué logo salió en la hoja.",
-      "comoCazarlo": "Cuando varias pruebas de la misma familia fallan a la vez y la función se ve bien en pantalla, sospechar de la LECTURA antes que del comportamiento. Mirar el valor que recibe la prueba, entero.",
-      "consejo": "Unos rojos permanentes son peores que ninguna prueba: enseñan a no mirar el marcador. Y en cuanto se arreglaron, la quinta prueba de la misma familia cazó de verdad un defecto mío — la marca nueva pintaba 189 px de tinta contra los 290-322 de las otras.",
-      "senales": [
-        "esa prueba siempre ha estado en rojo",
-        "pero si funciona",
-        "trae un data: en vez de la ruta"
-      ],
-      "salioDe": "Reportes, las marcas de agua, 18 de septiembre de 2026.",
-      "vecinas": [
-        "pruebas-que-no-prueban-nada",
-        "preguntarle-a-quien-camina-donde-acabo"
-      ]
-    },
-    {
-      "id": "la-prueba-de-pantalla-que-no-provoca-la-pantalla",
-      "titulo": "«Ni un error de consola» era verdad, y no significaba nada",
-      "gravedad": "alta",
-      "sintoma": "Un dibujo reventaba en CADA cuadro y las 61 pruebas de pantalla seguían en verde, incluida la que dice «ni un error de consola en toda la sesión».",
-      "causa": "Esa prueba no mentía: en toda la sesión no se ponía una sola personita, así que el código que reventaba no llegaba a correr nunca. La cobertura era de la INTERFAZ —botones, paneles, zoom— y no de lo que la interfaz dibuja.",
-      "porque": "Un escucha de errores da una sensación de red completa que no tiene: sólo caza lo que alguien haya hecho ocurrir.",
-      "arreglo": "Pruebas que PROVOCAN cada cosa que se pinta: poner ocho personas y tres bichos, apuntar la cámara a ellos y comprobar que hay tinta suya en el lienzo. Comprobado con mutación: devolviendo el defecto, se ponen rojas.",
-      "comoCazarlo": "Ante un verde sospechoso, preguntar qué código NO corrió. Si una función de dibujo no aparece en ninguna prueba, el escucha de errores no la cubre.",
-      "consejo": "Y apuntar la cámara es parte de la prueba: la vista arranca arriba de la sala, y una prueba que mira donde no hay nadie no prueba nada aunque no falle.",
-      "senales": [
-        "pasan todas y está roto",
-        "no hay errores de consola",
-        "nunca se probó eso"
-      ],
-      "salioDe": "CRISOL, las personitas vestidas, 18 de septiembre de 2026.",
-      "vecinas": [
-        "pruebas-que-no-prueban-nada",
-        "la-prueba-no-puede-ver-lo-que-el-codigo-transforma"
-      ]
-    },
-    {
-      "id": "dos-casos-que-dan-el-mismo-numero",
-      "titulo": "Dos experimentos distintos que dan el mismo número están midiendo lo mismo",
-      "gravedad": "media",
-      "sintoma": "Una prueba comparaba cuerda tiesa contra cuerda floja: 39.8 y 39.8. Se reescribió: 67.4 y 67.4. Y otra vez: 15.0 y 15.0.",
-      "causa": "Las tres veces el montaje tapaba lo que se quería medir. Primero el empujón era la velocidad máxima del motor en una sala chica, así que el peso se estampaba en la esquina y se medía la diagonal de la sala. Después el peso era un bloque de 3×3, que colgado de una cuerda no se columpia: se medía un peso parado. Y encima el campo que la prueba cambiaba —la flexibilidad— no lo leía el motor en ningún sitio: existía sólo en la prueba.",
-      "porque": "Al escribir la prueba uno piensa en la magnitud y no en si el montaje deja que esa magnitud cambie.",
-      "arreglo": "Peso de una celda y el mismo empujón de la prueba de péndulo que sí funciona. Y el campo, implementado de verdad en el motor.",
-      "comoCazarlo": "Cuando dos condiciones dan el MISMO número hasta el decimal, no es que se parezcan: es que la diferencia no llega al medidor. Es la tercera vez en este repo.",
-      "consejo": "Antes de escribir la comparación, comprobar que el caso base se MUEVE. Si la variable A y la variable B dan lo mismo, el montaje es sospechoso antes que el código.",
-      "senales": [
-        "los dos dan igual",
-        "no cambia nada al cambiarlo",
-        "hasta el decimal"
-      ],
-      "salioDe": "CRISOL, la flexibilidad de la cuerda, 18 de septiembre de 2026.",
-      "vecinas": [
-        "pruebas-que-no-prueban-nada",
-        "la-prueba-de-pantalla-que-no-provoca-la-pantalla"
-      ]
-    },
-    {
-      "id": "la-prueba-de-un-gesto-no-mide-el-resultado-del-gesto",
-      "titulo": "Una prueba de GESTO que mide el resultado llama defecto a la regla",
-      "gravedad": "alta",
-      "sintoma": "La prueba del arrastre salía roja 2 de cada 12 corridas, siempre la misma línea, sin tocar nada entre corridas.",
-      "causa": "Comprobaba «soltar aquí JUEGA la carta». Pero agarra la primera carta de la mano y a veces esa carta no se puede jugar —ya se gastaron las combinaciones, o el nivel se repite—. El arrastre llegaba perfecto, hablaba el reglamento, y la prueba lo apuntaba como fallo del arrastre.",
-      "porque": "Al escribir la prueba uno piensa en el efecto que quiere ver, no en de cuántas cosas depende ese efecto.",
-      "arreglo": "Medir la señal PROPIA del gesto. Aquí: el aviso. Si dice «suéltala más arriba», el punto de suelta no contó; cualquier otra cosa significa que sí llegó y quien habló fue el reglamento.",
-      "comoCazarlo": "Ante una intermitente, preguntar de cuántas cosas depende lo que se mide. Si depende de dos, la prueba no puede decir cuál de las dos falló.",
-      "consejo": "Va con la de los dos números iguales: las dos son el mismo error de puntería, una por medir de más y otra por medir de menos.",
-      "senales": [
-        "falla a veces",
-        "sin tocar nada",
-        "pero si el gesto se ve bien"
-      ],
-      "salioDe": "Guerra de Puercos, el arrastre a la mesa, 18 de septiembre de 2026.",
-      "vecinas": [
-        "dos-casos-que-dan-el-mismo-numero",
-        "pruebas-que-no-prueban-nada"
-      ]
-    },
-    {
-      "id": "la-prueba-que-espera-el-reloj-mide-la-maquina",
-      "titulo": "Si la prueba espera un tiempo fijo, está midiendo el aparato",
-      "gravedad": "media",
-      "sintoma": "Cuatro rojas de doce corridas, y las doce con la máquina para ella sola.",
-      "causa": "`waitForTimeout(400)` después de soltar la carta. Con el aparato cargado la ronda tarda más de 400 ms en resolverse y la prueba miraba antes de tiempo.",
-      "porque": "Un tiempo fijo funciona el día que se escribe, en la máquina en la que se escribe.",
-      "arreglo": "Sondear la condición —la mano bajó, o salió el resumen— con un tope generoso. Dice lo mismo cuando va rápido y no miente cuando va lento.",
-      "comoCazarlo": "Buscar los `waitForTimeout` en cualquier prueba intermitente: casi siempre está ahí.",
-      "consejo": "Y el silencio también engaña: durante esta caza leí ocho corridas «sin ✗» como ocho verdes, y eran ocho CAÍDAS — el servidor de pruebas estaba muerto y la página ni abría. Una corrida sin fallos y una corrida que no corrió se ven igual si sólo se mira lo que falló. Hay que exigir que aparezca el marcador.",
-      "senales": [
-        "a veces pasa y a veces no",
-        "en mi máquina sí",
-        "no salió ningún error"
-      ],
-      "salioDe": "Guerra de Puercos, el arrastre a la mesa, 18 de septiembre de 2026.",
-      "vecinas": [
-        "la-prueba-de-un-gesto-no-mide-el-resultado-del-gesto",
-        "pruebas-que-no-prueban-nada"
-      ]
-    },
-    {
-      "id": "la-prueba-corta-justo-donde-empieza-lo-que-mide",
-      "titulo": "Tres rojas acusando a un archivo que tenía puesto exactamente lo que le pedían",
-      "gravedad": "media",
-      "sintoma": "La prueba decía «`j5data-vercel` no dice POR QUÉ no se publica · la razón mide 0 letras», para las tres entradas. Las tres razones estaban escritas en el archivo, a la vista.",
-      "causa": "Para sacar el valor de cada entrada partía el bloque en el primer salto-de-línea-y-comilla. En un objeto donde el texto arranca en el renglón de ABAJO de su clave, ese corte cae justo antes del texto: el trozo medido queda vacío.",
-      "porque": "Partir por comillas funciona cuando clave y valor van en el mismo renglón, que es como uno los escribe en la cabeza. El envoltorio a dos renglones lo hizo el propio formato de la casa por lo largo de las razones.",
-      "arreglo": "Partir por ENTRADA —`split(/\\n(?=\\s{2}')/)`— y de cada trozo tomar todo lo que va después de sus dos puntos. Así el valor viaja completo aunque ocupe cinco renglones.",
-      "comoCazarlo": "Antes de creerle a una roja, vaciar a mano lo que la prueba dice que falta y ver si el número CAMBIA. Si ya medía cero, la prueba no estaba midiendo eso.",
-      "consejo": "Cuando varias pruebas del mismo tipo salen rojas a la vez y el código señalado se ve bien, la sospecha se voltea: un fallo en común suele estar en lo que las tres comparten, que es la prueba.",
-      "senales": [
-        "dice que falta y sí está",
-        "salieron todas rojas de golpe",
-        "mide cero y hay texto"
-      ],
-      "salioDe": "la compuerta de build.mjs, 23 de septiembre de 2026.",
-      "vecinas": [
-        "comparar-contra-el-html-y-no-contra-lo-que-se-lee",
-        "la-prueba-que-cuenta-de-mas-y-culpa-al-servidor",
-        "prueba-de-texto-que-pasa-con-la-cadena-vacia",
-        "mutacion-sin-restaurar"
-      ]
-    }
-  ]
+ "area": "pruebas",
+ "nombre": "Pruebas que sí prueban",
+ "que": "El modo más caro de fallar: creer que algo está probado cuando la prueba no puede fallar.",
+ "neuronas": [
+  {
+   "id": "pruebas-que-no-prueban-nada",
+   "titulo": "La prueba pasa igual si rompo el código a propósito",
+   "gravedad": "alta",
+   "sintoma": "Suite en verde y el usuario reportando el bug que esa suite supuestamente cubre.",
+   "causa": "La aserción es vacía: compara algo consigo mismo, o pasa por casualidad, o mide un camino que nunca se recorre.",
+   "porque": "Una prueba se escribe mirando el código bueno, así que se escribe la aserción que ese código cumple — no la que el bug rompería.",
+   "arreglo": "Prueba de mutación: rompe la guarda A PROPÓSITO y comprueba que la suite se pone roja. Si no se pone, la prueba no vale.",
+   "comoCazarlo": "Por cada guarda cara, una mutación. Tres mutaciones tardan un minuto y te dicen si la suite sirve.",
+   "consejo": "Nunca digas «está probado» sin haber visto la prueba fallar al menos una vez.",
+   "salioDe": "sala/servidor · rompí el freno, el filtro de destinatario y el conteo de límites; cayeron 3, 2 y 1",
+   "senales": [
+    "pasa todo y no sirve",
+    "verde pero el bug sigue",
+    "ya lo probé"
+   ],
+   "vecinas": [
+    "renombrar-de-un-lado",
+    "prueba-de-un-solo-caso"
+   ]
+  },
+  {
+   "id": "prueba-de-un-solo-caso",
+   "titulo": "Probé con uno y el bug sólo aparece con tres",
+   "gravedad": "alta",
+   "sintoma": "Funciona en la demo y falla con datos reales.",
+   "causa": "La prueba usa un elemento, un usuario, un archivo. Los bugs de estado compartido, de orden y de índice necesitan al menos tres.",
+   "porque": "Con uno, el índice 0 y el «primero» y el «último» son el mismo elemento, así que tres bugs distintos se ven correctos.",
+   "arreglo": "Tres es el mínimo. Con tres se distingue primero, de en medio y último.",
+   "comoCazarlo": "Pregúntate: «¿y si son cinco?». Esa pregunta caza más bugs que leer el código.",
+   "consejo": "Carlos caza bugs preguntando «¿y si tengo cinco hijos y todos juegan el mismo partido?». Trátalo como caso de prueba, no como charla.",
+   "salioDe": "ligas-mazi · la función devolvía el primer hijo y se salía",
+   "senales": [
+    "con mis datos falla",
+    "en la demo sí funciona",
+    "y si son varios"
+   ],
+   "vecinas": [
+    "bandera-global-primera-vez",
+    "pruebas-que-no-prueban-nada"
+   ]
+  },
+  {
+   "id": "medir-antes-de-suponer",
+   "titulo": "Medí y el problema no era el que yo pensaba",
+   "gravedad": "media",
+   "sintoma": "Se optimiza una cosa y no mejora nada.",
+   "causa": "Se supuso dónde estaba el costo en vez de medirlo.",
+   "porque": "El código que uno acaba de escribir se siente sospechoso, y el que lleva ahí meses se siente inocente. Casi siempre es al revés.",
+   "arreglo": "Medir primero. `time`, contadores, una marca antes y otra después.",
+   "comoCazarlo": "Un número, cualquiera. Un `time` a la suite descubrió un temporizador colgado que ninguna prueba reportaba.",
+   "consejo": "Si vas a optimizar sin medir, no estás optimizando: estás adivinando con más pasos.",
+   "salioDe": "sala/servidor · la suite tardaba 1m40 y nadie lo había notado",
+   "senales": [
+    "tarda mucho",
+    "va lento",
+    "creo que es por"
+   ],
+   "vecinas": [
+    "temporizador-que-nadie-mata"
+   ]
+  },
+  {
+   "id": "reproducir-antes-de-arreglar",
+   "titulo": "Arreglé a ciegas y arreglé otra cosa",
+   "gravedad": "alta",
+   "sintoma": "Se cambia código, se dice que quedó, y el reporte vuelve idéntico.",
+   "causa": "No se reprodujo el fallo antes de tocarlo, así que no hay forma de saber si el cambio hizo algo.",
+   "porque": "Reproducir cuesta tiempo y la causa «se ve obvia». La causa obvia es correcta como la mitad de las veces.",
+   "arreglo": "Primero reproducirlo, luego arreglarlo, luego comprobar que YA NO se reproduce con los mismos pasos.",
+   "comoCazarlo": "Si no puedes describir los pasos exactos que provocan el fallo, todavía no lo entiendes.",
+   "consejo": "Regla de la casa: reproducir el bug antes de arreglarlo. Nada a ciegas.",
+   "salioDe": "CLAUDE.md §3.7",
+   "senales": [
+    "sigue igual",
+    "ya lo arreglé",
+    "creo que era"
+   ],
+   "vecinas": [
+    "sintoma-contra-causa",
+    "ver-la-pantalla"
+   ]
+  },
+  {
+   "id": "probar-contra-una-copia-congelada",
+   "clase": "error",
+   "gravedad": "alta",
+   "titulo": "Las pruebas medían una copia vieja y yo creía que medían mi trabajo",
+   "sintoma": "Cambias el código, corres las pruebas y fallan describiendo EXACTAMENTE el comportamiento viejo. O peor: pasan, y lo que pasó fue otra cosa.",
+   "causa": "Las pruebas apuntan a `dist/`, que es lo que de verdad se publica (`build.mjs`, según `wrangler.jsonc`). Eso está bien. Lo que faltó fue rearmar `dist/` después de editar. Y encima el servidor de pruebas llevaba horas clavado a un `dist/` YA BORRADO —`/proc/<pid>/cwd` decía `(deleted)`— porque `build.mjs` borra y recrea la carpeta: rearmarla no alcanza, hay que reiniciar el servidor.",
+   "porque": "Medir lo publicado y no el archivo propio es lo correcto, así que el arreglo bueno introduce el riesgo: ahora hay dos versiones y hay que acordarse de sincronizar. Y un proceso con la carpeta abierta no se entera de que se la cambiaron debajo.",
+   "arreglo": "`node build.mjs`, reiniciar el servidor de pruebas, y ENTONCES correr las pruebas. Los tres pasos, en ese orden.",
+   "comoCazarlo": "Antes de creerle a una falla, `curl` a la página servida y `grep` de algo que acabas de escribir. Si no aparece, no estás midiendo tu trabajo. Y `ls -l /proc/<pid>/cwd` del servidor: si dice `(deleted)`, está sirviendo un fantasma.",
+   "consejo": "Una prueba que falla describiendo el comportamiento ANTERIOR casi nunca es un error de la prueba: es que no está viendo tu cambio. Revisa eso antes de tocar el código.",
+   "toca": [
+    "build.mjs",
+    "wrangler.jsonc",
+    "reportes/pruebas-impresion.mjs"
+   ],
+   "senales": [
+    "las pruebas fallan y el código está bien",
+    "no ve mis cambios",
+    "sigue con lo viejo",
+    "dist viejo"
+   ],
+   "vecinas": [
+    "editar-en-dist-y-perderlo",
+    "verificar-lo-publicado",
+    "reproducir-antes-de-arreglar"
+   ],
+   "area": "pruebas",
+   "salioDe": "reportes/ · seis pruebas rojas acusando a un código que ya estaba bien"
+  },
+  {
+   "id": "medir-un-bloque-solo-lo-vuelve-el-ultimo",
+   "clase": "error",
+   "gravedad": "alta",
+   "titulo": "Medí cada bloque solo, y solo siempre es el último",
+   "sintoma": "La última línea de casi cada hoja sale partida a la mitad, con el pie de página encima. En pantalla, escribiendo poco, no pasa.",
+   "causa": "El paginador mide cada bloque en una hoja fantasma, de uno en uno. Solito ahí, el bloque es `:last-child` — y la hoja de estilo dice `.doc>*:last-child{margin-bottom:0}`. El hueco de 3.2mm bajo cada bloque se reportaba CERO, siempre. Con ocho bloques por hoja, ~24mm que el paginador creía libres.",
+   "porque": "Aislar algo para medirlo suena a rigor, y le cambia el contexto: los selectores posicionales —`:last-child`, `:first-child`, `:nth-child`, `+`, `~`— dejan de valer lo mismo. La medición sale limpia y equivocada.",
+   "arreglo": "Un testigo de altura cero detrás mientras se mide, para que el bloque deje de ser el último. Mejor que sumar la constante a mano: si un día un bloque lleva otro margen, el testigo sigue bien.",
+   "comoCazarlo": "Comparar el alto del contenedor contra el de su zona (`doc.offsetHeight` vs `zona.clientHeight`). Si el contenido es más alto, lo están recortando aunque se vea entero arriba. Y probar con la página LLENA: con tres párrafos este defecto no existe.",
+   "consejo": "Cuando midas un elemento fuera de su lugar, pregúntate qué regla de CSS depende de sus vecinos. Aquí una sola línea de estilo posicional metió un párrafo de más en cada hoja impresa.",
+   "toca": [
+    "reportes/index.html"
+   ],
+   "senales": [
+    "sale cortado al imprimir",
+    "la última línea se parte",
+    "el pie tapa el texto",
+    "cabe en pantalla y no en papel"
+   ],
+   "vecinas": [
+    "medir-el-texto-pintado",
+    "medir-antes-de-suponer",
+    "prueba-de-un-solo-caso"
+   ],
+   "area": "pruebas",
+   "salioDe": "reportes/ · el documento de la candidatura, impreso y cortado en 7 de 8 hojas"
+  },
+  {
+   "id": "la-prueba-solo-caza-si-falla-la-primera",
+   "titulo": "Pintar A → B → A no caza el residuo si la que ensucia es B",
+   "gravedad": "alta",
+   "sintoma": "Una prueba de «no queda basura de la pantalla anterior» pasa en verde con el defecto puesto.",
+   "causa": "Comparar A antes y después de B sólo detecta el problema si A NO tapa lo que B dejó. Si A pinta un fondo completo, borra la evidencia de B y la comparación sale idéntica — con el defecto intacto.",
+   "porque": "La forma A→B→A se siente exhaustiva porque «vuelve al principio», pero lo que compara es si A es estable, no si B es limpia. Prueba a la testigo, no a la sospechosa.",
+   "arreglo": "Probar cada una CONTRA UN FONDO SUCIO: se embarra el lienzo de un color imposible —magenta puro—, se pinta la pantalla encima, y se cuentan los píxeles del color imposible que sobrevivieron. Uno solo ya es un agujero. Así se prueban una por una y no de a pares.",
+   "comoCazarlo": "Quítale el arreglo al código y corre la prueba. Si sigue verde, la prueba no era del arreglo.",
+   "consejo": "La forma más rápida de saber si una prueba sirve es reintroducir el defecto. Una prueba que nunca se ha visto fallar es una hipótesis, no una prueba.",
+   "salioDe": "entorno/pruebas-mandos.mjs · las pantallas del Taller",
+   "senales": [
+    "la prueba pasa y el bug sigue",
+    "quedan restos de lo anterior",
+    "se ve lo de antes por debajo"
+   ],
+   "vecinas": [
+    "pruebas-que-no-prueban-nada",
+    "la-prueba-se-ensucia-su-premisa"
+   ]
+  },
+  {
+   "id": "la-prueba-se-ensucia-su-premisa",
+   "titulo": "Una prueba que deja el estado movido hace fallar a la siguiente",
+   "gravedad": "media",
+   "sintoma": "Una prueba falla con un mensaje imposible —«no cambió nada» sobre código que sí cambia— y a solas pasa.",
+   "causa": "La prueba anterior dejó al sujeto en el mismo estado que ésta iba a comparar. Se acaba comparando el estado contra sí mismo.",
+   "porque": "Las pruebas de pantalla comparten un objeto vivo —el lienzo, el DOM, el agente— y cada una lo mueve. Lo que en pruebas de función es aislamiento gratis, aquí hay que escribirlo.",
+   "arreglo": "Que cada prueba PONGA su premisa antes de medir, no que la herede. Una función que reponga el estado de partida —`verTrabajo(id)`— cuesta cinco renglones.",
+   "comoCazarlo": "Correr la prueba sola. Si pasa sola y falla en grupo, es contaminación, no un defecto.",
+   "consejo": "Duele el doble porque manda a buscar un defecto que no existe. Es de las pocas fallas que valen la pena arreglar aunque el código esté bien.",
+   "salioDe": "entorno/pruebas-mandos.mjs · el trabajo contra el ocio",
+   "senales": [
+    "pasa sola y falla en grupo",
+    "falla con un mensaje imposible",
+    "no cambió nada y sí cambia"
+   ],
+   "vecinas": [
+    "la-prueba-solo-caza-si-falla-la-primera",
+    "reloj-vivo-hace-fallar-la-prueba"
+   ]
+  },
+  {
+   "id": "reloj-vivo-hace-fallar-la-prueba",
+   "titulo": "Un reloj de verdad dentro del dibujo hace que la prueba falle sola",
+   "gravedad": "media",
+   "sintoma": "Una prueba que compara dos pintadas iguales falla una vez de cada tantas, sin patrón.",
+   "causa": "El dibujo trae la hora. Si el minuto cambia entre las dos capturas, los píxeles difieren y la comparación falla — sin que nada esté roto.",
+   "porque": "Un reloj es lo que hace que una barra se lea como barra de tareas, así que no se puede quitar. Y como falla una vez de cada muchas, se le echa la culpa a otra cosa.",
+   "arreglo": "Una costura para congelarlo: una variable que sólo pone la prueba, y que el dibujo usa si está puesta.",
+   "comoCazarlo": "Si una prueba de imagen falla sin patrón, busca en el dibujo cualquier cosa que dependa del tiempo: hora, fecha, «hace 2 min», una animación.",
+   "consejo": "Una prueba que falla sola se acaba ignorando, y una prueba ignorada es peor que no tenerla — porque además da confianza.",
+   "salioDe": "entorno/index.html · la barra de tareas del Taller",
+   "senales": [
+    "la prueba falla a veces",
+    "falla sin patrón",
+    "pasa si la vuelvo a correr"
+   ],
+   "vecinas": [
+    "la-prueba-se-ensucia-su-premisa"
+   ]
+  },
+  {
+   "id": "mutacion-sin-restaurar",
+   "titulo": "La prueba de mutación se quedó a medias y el defecto se commiteó",
+   "gravedad": "alta",
+   "clase": "error",
+   "sintoma": "Un arreglo que se probó en verde aparece roto después, y el commit que lo subió dice en su mensaje que está arreglado.",
+   "causa": "Para comprobar que una prueba caza un bug se le mete el bug a propósito, se corre, y se restaura. Si el turno se interrumpe entre el «se corre» y el «se restaura», lo que queda en el disco es la versión CON el defecto — y es la que se commitea.",
+   "porque": "El mensaje del commit se escribe pensando en el arreglo, no en lo que hay en el archivo. Suena perfecto y nadie lo contradice: la única prueba que corrió después fue la de la mutación, que por definición estaba en rojo y se dio por buena.",
+   "arreglo": "Volver a correr las pruebas DESPUÉS de restaurar y antes de commitear. Si están en rojo, no se restauró. Mejor todavía: mutar sobre una copia del archivo y no sobre el original.",
+   "comoCazarlo": "Antes de commitear un arreglo que se acaba de mutar, buscar en el archivo la línea del arreglo. Si no está, el commit va a mentir. Y desconfiar de todo commit cuyo mensaje describe algo que no se volvió a verificar después del último cambio de disco.",
+   "consejo": "El verde de antes de la mutación no vale: entre ese verde y el commit pasó una edición deliberada al código. Un commit se firma con lo que hay en el disco, no con lo que uno recuerda haber escrito.",
+   "salioDe": "sala/index.html · el arreglo de la llave que se subió mutado en d997c7b",
+   "senales": [
+    "subí lo que no era",
+    "el commit dice que está arreglado",
+    "volvió a aparecer el bug",
+    "la prueba pasaba y ya no"
+   ],
+   "vecinas": [
+    "la-prueba-solo-caza-si-falla-la-primera"
+   ]
+  },
+  {
+   "id": "puerto-fijo-hereda-la-basura",
+   "titulo": "Una prueba con puerto fijo le habla al servidor de la corrida anterior",
+   "gravedad": "media",
+   "clase": "error",
+   "sintoma": "Una prueba de integración empieza a fallar con números que no cuadran —«esperaba 2 y hay 8»— sin que nadie haya tocado lo que prueba.",
+   "causa": "La suite levanta su servidor en un puerto FIJO. Cuando una corrida truena a media prueba, el `kill` final nunca llega y ese servidor se queda escuchando CON SU ESTADO. La corrida siguiente no puede ocupar el puerto, le habla sin saberlo al viejo, y hereda todo lo que quedó dentro.",
+   "porque": "El fallo apunta al código que se está probando, no a la prueba. Se busca el bug donde no está, y encima desaparece solo cuando el proceso viejo muere por cualquier razón, lo que lo hace parecer intermitente.",
+   "arreglo": "Pedirle al sistema un puerto libre (escuchar en el 0, leer cuál tocó, soltarlo) en vez de fijarlo. Y matar al hijo desde `process.on(exit)` y desde los manejadores de excepción, para que ninguna salida lo deje vivo.",
+   "comoCazarlo": "Si una prueba de integración falla con estado de más, mira si hay un proceso viejo escuchando en su puerto antes de leer una sola línea del código.",
+   "consejo": "⚠ Y NO se arregla con pkill. El primer intento fue `pkill -f \"local.mjs 8799\"` y se mataba a sí mismo: la línea de comandos del propio `sh -c` contiene el texto que pkill está buscando, así que se lleva por delante hasta la prueba que lo llamó. Pedir un puerto libre no tiene ninguno de los dos problemas.",
+   "salioDe": "sala/pruebas-presencia.mjs",
+   "senales": [
+    "la prueba falla con datos de más",
+    "esperaba 2 y hay 8",
+    "falla sin que nadie toque nada",
+    "el puerto está ocupado"
+   ],
+   "vecinas": [
+    "la-prueba-se-ensucia-su-premisa",
+    "reloj-vivo-hace-fallar-la-prueba"
+   ]
+  },
+  {
+   "id": "proceso-huerfano-reportado-muerto",
+   "titulo": "Relanzar algo con & dentro de un comando que ya corre en segundo plano deja un huérfano vivo",
+   "gravedad": "media",
+   "clase": "error",
+   "sintoma": "El sistema reporta el proceso como COMPLETADO y sigue corriendo. Acabas con dos copias del mismo vigilante y la que dabas por muerta no lo está.",
+   "causa": "Se relanzó con `&` DENTRO de un comando que ya estaba en segundo plano. El shell exterior termina al instante —él sí acabó— y eso es lo que se reporta; el hijo queda huérfano y vivo, adoptado por init.",
+   "porque": "El reporte no miente sobre lo que mide: mide al shell, no al proceso que te importa. Y como el huérfano sigue haciendo su trabajo, nada se rompe de inmediato — se rompe cuando los dos escriben, o cuando uno contesta con datos viejos.",
+   "arreglo": "Relanzar desde el nivel de arriba, no dentro de otro comando de fondo. Pero eso arregla EL CASO, no la clase: el arreglo de la clase es que el proceso se NIEGUE A ARRANCAR si ya hay otro vivo, y diga el pid del que ya estaba. Así un descuido al lanzar cuesta un renglón en el registro y no dos copias trabajando.",
+   "comoCazarlo": "Cuenta los procesos, no leas el reporte: `ps -eo pid,etimes,args | grep [t]u-proceso`. Si hay dos donde debía haber uno, ahí está. Hazlo ANTES de creerle a cualquier «completado». Y si el proceso ya muere solo al terminar su trabajo, no lo descartes por eso: el huérfano nace al lanzar, no al vivir.",
+   "consejo": "Lo cazó Godines —el Claude de Luis— contando procesos, no leyendo el reporte. Es de la misma familia que el vigilante sordo y que curl saliendo con 0 en un 401: ALGO QUE REPORTA UN ESTADO Y ESTÁ EN OTRO. Los tres se ven bien, los tres mienten, y ninguno se caza leyendo — se cazan midiendo.\n\n⚠ Y OJO CON LA EXPLICACIÓN FÁCIL, que yo mismo escribí primero y estaba mal: no se arregla haciendo que el proceso muera al entregar. El suyo YA moría al entregar, igual que el mío, y aun así quedó huérfano. El defecto no estaba en el diseño sino en CÓMO SE LANZÓ. Atribuirlo al diseño manda al siguiente a cambiar lo que no es.",
+   "salioDe": "el esperador de Godines · relanzado con & dentro de otro comando de fondo",
+   "senales": [
+    "dice completado y sigue corriendo",
+    "tengo dos corriendo",
+    "el proceso no se murió",
+    "quedó uno viejo"
+   ],
+   "vecinas": [
+    "salida-cero-no-es-exito"
+   ]
+  },
+  {
+   "id": "la-prueba-paso-sin-que-existiera-el-caso",
+   "titulo": "La prueba pasó y la condición que decía probar nunca llegó a existir",
+   "gravedad": "alta",
+   "clase": "error",
+   "sintoma": "Una prueba nueva pasa a la primera y se ve idéntica a un éxito. Meses después el defecto que decía cubrir aparece en producción.",
+   "causa": "El escenario se deshizo antes de que la prueba lo ejerciera. En el caso real: se lanzó un proceso para que un segundo chocara con él, pero el primero había encontrado un mensaje y se había muerto solos segundos antes — así que nunca hubo dos, y la guarda que se estaba probando jamás se ejecutó.",
+   "porque": "El resultado es CORRECTO. La prueba dice «no hubo dos» y de verdad no hubo dos, sólo que por la razón equivocada. Medir el resultado no la delata: hay que preguntarse si la condición existió, que es otra pregunta.",
+   "arreglo": "Forzar el escenario en vez de esperar a que ocurra: en ese caso, apuntar al último evento para que el primero se quede colgado y la condición exista de verdad. Y cuando se pueda, que la prueba AFIRME que el escenario existió —que había dos, que el archivo estaba, que el otro seguía vivo— antes de comprobar el resultado.",
+   "comoCazarlo": "Pregúntate: ¿qué tendría que ser cierto para que esta prueba pudiera fallar? Si no lo puedes afirmar, la prueba no está probando. Y la comprobación barata de siempre: mete el defecto a propósito y mira si se pone roja. Si sigue verde, nunca lo estaba tocando.",
+   "consejo": "Lo trajo Godines, y él mismo casi se la come: «mi primera prueba de la guardia pasó sin probar nada». Da más miedo que un proceso sordo, porque una prueba así no sólo no ayuda — da confianza. Es la misma familia de todo lo de ese día: algo que reporta un estado y está en otro, sólo que aquí lo que miente es el testigo.",
+   "salioDe": "la guarda de un solo esperador · Godines",
+   "senales": [
+    "la prueba pasó a la primera",
+    "pasa pero no estoy seguro",
+    "se ve como éxito",
+    "la prueba no falla nunca"
+   ],
+   "vecinas": [
+    "la-prueba-solo-caza-si-falla-la-primera",
+    "la-prueba-se-ensucia-su-premisa",
+    "proceso-huerfano-reportado-muerto"
+   ]
+  },
+  {
+   "id": "prueba-de-texto-que-pasa-con-la-cadena-vacia",
+   "titulo": "«No dice la mentira» pasaba porque no decía nada",
+   "gravedad": "alta",
+   "sintoma": "Una prueba que comprueba que un letrero NO promete algo queda verde — y el letrero ni siquiera aparece.",
+   "causa": "La comprobación era una negación sobre el texto. Una cadena vacía tampoco contiene la frase prohibida, así que pasa sola.",
+   "porque": "La negación se escribe pensando en el caso malo, y el caso de «no hay nada que leer» no se parece al caso malo.",
+   "arreglo": "Antes de toda negación, una afirmación que establezca la premisa: que el texto EXISTE. Dos líneas, no una.",
+   "comoCazarlo": "Mutar el código para que el elemento no se pinte. Si la negación sigue verde, no estaba probando nada.",
+   "consejo": "Toda prueba en negativo necesita una hermana en positivo, o es una prueba que se cumple por ausencia.",
+   "senales": [
+    "la prueba pasa y el bug está ahí",
+    "verde y no funciona",
+    "no prueba nada"
+   ],
+   "salioDe": "Las pruebas de los avisos de La Sala: la negación pasaba mientras el letrero tronaba con «letrero is not defined»."
+  },
+  {
+   "id": "el-navegador-sin-cabeza-que-no-sabe-de-notificaciones",
+   "titulo": "El Chromium sin cabeza dice `denied` pase lo que pase",
+   "gravedad": "media",
+   "sintoma": "`grantPermissions(['notifications'])` no cambia nada: `Notification.permission` sigue en `denied` y toda la prueba se cae sin explicar por qué.",
+   "causa": "El Chromium sin cabeza no implementa notificaciones. No es que el permiso se niegue: es que no hay a qué concedérselo.",
+   "porque": "El resto de los permisos —cámara, ubicación, portapapeles— sí se conceden así, y nada dice que éste sea distinto.",
+   "arreglo": "Fingir el `Notification` del sistema con `addInitScript` ANTES de que cargue la página, y decir en el encabezado de la prueba que lo fingido es el permiso del APARATO y nada más.",
+   "comoCazarlo": "Un renglón: abrir cualquier página y leer `Notification.permission`. Si dice `denied` sin haber preguntado, es esto.",
+   "consejo": "Fingir el permiso está bien; fingir el código propio no. La frontera se dibuja en el encabezado de la prueba para que se vea qué quedó demostrado.",
+   "senales": [
+    "grantPermissions no funciona",
+    "permission siempre denied",
+    "la prueba de notificaciones no arranca"
+   ],
+   "salioDe": "Se midió en este contenedor con playwright 1.56, en modo normal y con `--headless=new`. Los dos: `denied`."
+  },
+  {
+   "id": "window-innerwidth-no-es-el-ancho-en-telefono",
+   "titulo": "`window.innerWidth` dijo 1200 en una pantalla de 390",
+   "gravedad": "alta",
+   "sintoma": "Una medida de desborde que nunca se dispara: una caja de 1200px en un teléfono de 390 sale como «no desborda».",
+   "causa": "En emulación de teléfono `window.innerWidth` devuelve el ancho VISUAL tras el encogido, no el de la página. El de la página es `document.documentElement.clientWidth`.",
+   "porque": "En escritorio los dos números coinciden exactamente, así que probando ahí la diferencia no existe.",
+   "arreglo": "Medir siempre contra `documentElement.clientWidth`.",
+   "comoCazarlo": "Abrir una página con una caja más ancha que la pantalla en un contexto móvil e imprimir los dos números. Si no coinciden, ahí está.",
+   "consejo": "Es doblemente traicionero porque el medidor equivocado dice «todo bien» justo sobre el defecto más visible que hay.",
+   "senales": [
+    "no detecta el scroll horizontal",
+    "innerWidth sale enorme",
+    "en móvil mide otra cosa"
+   ],
+   "salioDe": "Construyendo `empresa/clases/revisar.mjs`. Medido: 390px de pantalla, `innerWidth` 1200, `clientWidth` 390."
+  },
+  {
+   "id": "contar-rectangulos-no-es-contar-renglones",
+   "titulo": "Un botón de un renglón salió con «cae en 4 renglones»",
+   "gravedad": "media",
+   "sintoma": "Una comprobación de texto partido acusa a botones que caben perfectamente.",
+   "causa": "`Range.getClientRects()` devuelve un rectángulo por elemento y por nodo de texto, no uno por línea. Un botón con icono y etiqueta en dos `span` da cuatro rectángulos en un solo renglón.",
+   "porque": "El nombre del método invita a leerlo como «los renglones», y en el caso simple —un texto pelón— coincide.",
+   "arreglo": "Agrupar los rectángulos por su posición vertical redondeada y contar bandas.",
+   "comoCazarlo": "Imprimir los rectángulos con su `top`. Si varios comparten posición, es un renglón, no cuatro.",
+   "consejo": "Acusar a un elemento bien hecho cuesta más que dejar pasar uno malo: a la segunda vez ya nadie lee el informe.",
+   "senales": [
+    "dice que se parte y no se parte",
+    "getClientRects",
+    "cuenta mal las líneas"
+   ],
+   "salioDe": "El medidor de las clases contra La Sala: `#bAvisos` daba 4 rectángulos con `top` 214, 214, 215, 215."
+  },
+  {
+   "id": "medir-una-pagina-a-media-animacion",
+   "titulo": "Veintiún defectos de contraste que eran un reloj mal puesto",
+   "gravedad": "alta",
+   "sintoma": "Un medidor reporta decenas de fallos en una página que, mirada, se ve bien.",
+   "causa": "Se midió 400 ms después de cargar, con la animación de entrada a medias: el contenedor iba en `opacity: 0.708` y todo lo de dentro salía con menos contraste del que tiene asentado.",
+   "porque": "Esperar a `document.fonts.ready` se siente como esperar a que la página esté lista, y sólo espera a la tipografía.",
+   "arreglo": "Esperar a que se asiente antes de medir. Y como red: si algo sigue con opacidad a medias, reportarlo en amarillo DICIENDO que se midió moviéndose, en vez de acusarlo en rojo.",
+   "comoCazarlo": "Imprimir la opacidad acumulada junto a cada hallazgo. Si sale distinta de 1, se midió en movimiento.",
+   "consejo": "Medir una página que todavía se pinta es medir otra página — la misma familia que el viewport que se inventa una pantalla.",
+   "senales": [
+    "salen muchísimos fallos y se ve bien",
+    "el contraste sale bajísimo",
+    "sólo falla al medir automático"
+   ],
+   "salioDe": "`empresa/clases/revisar.mjs` contra `sitio/`: 21 rojos que al esperar 1800 ms se quedaron en 9, y los 9 son reales."
+  },
+  {
+   "id": "filtro-de-comodidad-que-tapa-justo-el-que-falla",
+   "titulo": "«Sáltate los que tengan hijos» se llevó por delante el único que fallaba",
+   "gravedad": "alta",
+   "sintoma": "Una prueba informa «29 textos cumplen contraste» y el botón principal está a 1.98:1.",
+   "causa": "El bucle pedía `children.length === 0` para no contar dos veces el mismo texto. Un botón con un icono SVG dentro TIENE hijos, así que quedaba fuera de la medida — y era justo el que fallaba.",
+   "porque": "El filtro se pone por una razón buena y chiquita —no duplicar— y nadie vuelve a mirar a quién deja fuera. La cuenta que sale luego suena a cobertura total.",
+   "arreglo": "Mirar los NODOS DE TEXTO propios del elemento, que son los que se pintan con su `color`. Los hijos se miden en su propia vuelta: nada se cuenta dos veces y nada queda fuera.",
+   "comoCazarlo": "Un caso con texto propio Y un icono al lado. Y en general: comparar cuántos elementos hay contra cuántos se midieron.",
+   "consejo": "Todo filtro de comodidad en un medidor es una lista de cosas que dejas de mirar. Vale la pena escribir a quién excluye, no sólo por qué.",
+   "senales": [
+    "dice que todo cumple y no cumple",
+    "la prueba no lo mide",
+    "children.length",
+    "mide de menos"
+   ],
+   "salioDe": "Godines se lo encontró en su plantilla —el botón de WhatsApp, 1.98:1— y me avisó de que si yo filtraba por hijos mirara ahí. Lo tenía igual, copiado de su versión."
+  },
+  {
+   "id": "el-umbral-con-razon-inventada",
+   "titulo": "Puse un número en una prueba y le escribí encima una medición que nunca hice",
+   "gravedad": "media",
+   "sintoma": "Una prueba reprueba un trabajo ajeno que está bien. Al ir a discutirlo, resulta que el umbral no sale de ningún dato: sale de lo que había ese día, con una justificación redactada después.",
+   "causa": "Se elige el número mirando el valor actual —uno un poco por debajo, para que pase— y se le añade un comentario que suena a criterio: «por debajo de esto ya no se lee». Nadie midió si eso es cierto.",
+   "porque": "Un umbral necesita una razón para no parecer arbitrario, y redactar la razón cuesta un renglón mientras que medirla cuesta media hora. El comentario queda convincente y nadie lo vuelve a cuestionar, porque las pruebas se leen menos que el código.",
+   "arreglo": "Medir de verdad y poner en el comentario CÓMO se midió, no la conclusión sola. Y calibrar el umbral donde está el precipicio real, no donde está el valor de hoy: lo que la prueba tiene que cazar es una REGRESIÓN, no un cambio de diseño legítimo.",
+   "comoCazarlo": "Ante cualquier umbral en una prueba, preguntar «¿esto lo midió alguien?». Si el comentario afirma un efecto —se lee, se ve, alcanza— y no dice con qué se comprobó, no está medido. La señal más fuerte: el umbral queda sospechosamente cerca del valor actual.",
+   "consejo": "Duele más cuando el número reprueba a otra persona: uno acaba defendiendo con autoridad prestada algo que inventó. Si el otro pregunta «¿de dónde sale ese número?» y hay que ir a medirlo en ese momento, la respuesta honesta es que el número estaba mal puesto.",
+   "senales": [
+    "¿de dónde sale ese número?",
+    "el umbral me reprueba",
+    "la prueba dice que está mal y se ve bien",
+    "no sé por qué es ese valor"
+   ],
+   "salioDe": "Puse «cada carta ≥95 px» con el comentario «por debajo de eso la frase deja de leerse». No lo medí: elegí 95 por quedar debajo de los 103 que ya había. Godines usaba 92 y preguntó cuál preferíamos. Al pintar la carta a 84, 90, 92, 95 y 104 px con la imagen publicada y a 3× de densidad, el precipicio salió entre 84 y 90, y entre 92 y 95 no hay diferencia visible. Quedó en 88."
+  },
+  {
+   "id": "la-medicion-que-se-mide-a-si-misma",
+   "titulo": "El contraste dio 1.00: estaba midiendo la letra contra la letra",
+   "gravedad": "alta",
+   "sintoma": "Una comprobación de contraste sobre una imagen reprueba casi todo, con varios resultados de exactamente 1.00, mientras la pieza a la vista se lee perfectamente.",
+   "causa": "Se muestrearon los píxeles DENTRO de la caja del texto sobre el render final — donde la letra ya está pintada. El «píxel más claro del fondo» bajo un texto blanco era el propio texto blanco.",
+   "porque": "Sobre un color plano se puede leer el fondo del CSS y ya. Sobre una FOTOGRAFÍA no hay un color de fondo que leer, así que se recurre a muestrear píxeles — y el sitio obvio donde muestrear es justo donde está la letra encima.",
+   "arreglo": "Renderizar DOS veces: una normal y otra con el texto apagado (`color:transparent` en los nodos medidos). El fondo se mide en la segunda. Ahí sí es el fondo.",
+   "comoCazarlo": "Un 1.00 clavado es la firma. Nada en una fotografía da exactamente 1.00 contra una tinta salvo esa misma tinta. Si aparece más de un 1.00 en una tanda, no es la pieza: es el método.",
+   "consejo": "Vale para cualquier medición sobre lo pintado, no sólo el contraste: si lo que quieres medir está TAPADO por lo que estás midiendo, hay que apagar una de las dos capas. Y una comprobación que reprueba casi todo suele estar rota, no descubriendo algo.",
+   "senales": [
+    "da 1.00 de contraste",
+    "reprueba todo y se ve bien",
+    "medir contraste sobre una foto",
+    "el fondo no es un color, es una imagen"
+   ],
+   "salioDe": "Revisando el póster de Xbox de Godines: mi primera pasada dio 11 de 12 textos «cortos», cinco de ellos con 1.00 exacto. Con el texto apagado, los 12 pasan y el peor va a 7.71 contra un piso de 4.5."
+  },
+  {
+   "id": "la-prueba-que-cuenta-de-mas-y-culpa-al-servidor",
+   "titulo": "La prueba contaba lo que ya no era, y el reporte acusaba a otro",
+   "gravedad": "alta",
+   "sintoma": "«Se reparte a los dos → 5 y 6.» El servidor parece estar repartiendo mal, o de más a uno. Y reparte bien.",
+   "causa": "El contenedor cambió de contenido —ahora en la mano viven las cinco jugables MÁS los modificadores— y la prueba siguió contando todos los hijos. Lo que cambió fue la definición de «mano», no el reparto.",
+   "porque": "Una prueba escrita cuando el contenedor tenía una sola clase de cosa no dice cuál cuenta, porque no había otra. Al meter una segunda clase, el selector viejo sigue siendo válido y sigue devolviendo un número — sólo que ahora otro.",
+   "arreglo": "El selector nombra lo que la afirmación quiere contar, con exclusión explícita: `.carta:not([data-esp])`. Y el mensaje de fallo dice el número, para que se vea que son 6 y no 4.",
+   "comoCazarlo": "Cuando una prueba señale a un componente que no tocaste, sospechar primero de la prueba. Y comprobarla con mutación: meter el defecto de verdad (repartir 4) y ver que dé un número DISTINTO al del falso positivo.",
+   "consejo": "Al agregar una clase nueva de elemento a un contenedor, hay que ir a buscar quién lo cuenta. Nadie avisa: los selectores viejos no truenan, contestan otra cosa.",
+   "salioDe": "juegos/guerra-de-puercos · pruebas-linea.mjs, después de meter las especiales al abanico",
+   "senales": [
+    "la prueba culpa al servidor",
+    "dice 5 y 6",
+    "falla algo que no toqué",
+    "cuenta de más"
+   ],
+   "vecinas": [
+    "la-prueba-se-ensucia-su-premisa",
+    "contar-rectangulos-no-es-contar-renglones",
+    "la-mano-que-se-llena-de-lo-que-no-se-juega",
+    "mutacion-sin-restaurar"
+   ]
+  },
+  {
+   "id": "la-prueba-intermitente-ensena-a-ignorar-los-rojos",
+   "titulo": "La prueba que falla 1 de cada 8 es peor que la que falla siempre",
+   "gravedad": "alta",
+   "sintoma": "Una suite da verde, verde, verde, ROJA, verde. Vuelves a correrla y pasa, así que sigues adelante.",
+   "causa": "La afirmación sólo se cumple para el camino común. Un caso poco frecuente —un empate, una mano con la carta rara en cierta posición— cae fuera de lo que la prueba contempla y la pone roja sin que nada esté mal en el producto.",
+   "porque": "Una prueba se escribe corriéndola una vez. Si esa vez tocó el camino común, la premisa queda a medias y nadie lo nota: el rojo llega semanas después, cuando ya se aprendió a volver a correr y seguir.",
+   "arreglo": "Cuando aparezca un rojo que no se repite, NO se vuelve a correr y ya: se corre en ciclo hasta reproducirlo y se imprime el estado que lo causó. Con el caso enfrente se arregla la premisa, y se vuelve a correr DIEZ veces o más para saber que quedó.",
+   "comoCazarlo": "`for i in $(seq 1 12); do … done` contando verdes. Una sola corrida verde no prueba nada de una intermitente — es literalmente el estado en el que ya estaba.",
+   "consejo": "El daño de una intermitente no es el rojo: es que enseña a ignorar los rojos. En cuanto la suite miente una vez, deja de servir para todas las demás.",
+   "salioDe": "juegos/guerra-de-puercos · dos intermitentes distintas en la misma suite, una de 1/5 y otra de 1/8",
+   "senales": [
+    "a veces pasa y a veces no",
+    "vuelvo a correrlo y ya pasó",
+    "falla de vez en cuando",
+    "no lo puedo reproducir"
+   ],
+   "vecinas": [
+    "la-prueba-que-cuenta-de-mas-y-culpa-al-servidor",
+    "prueba-de-un-solo-caso",
+    "reloj-vivo-hace-fallar-la-prueba"
+   ]
+  },
+  {
+   "id": "comparar-contra-el-html-y-no-contra-lo-que-se-lee",
+   "titulo": "Saqué la cadena del archivo fuente y la comparé contra texto plano",
+   "gravedad": "alta",
+   "sintoma": "Arreglé una prueba de texto leyendo el código, y en vez de mejorar empeoró: pasó de fallar 1 de cada 8 a fallar 10 de 12.",
+   "causa": "En el archivo la frase lleva etiquetas —`<b>Recibes</b> el golpe`— y yo copié eso a la expresión. Pero la prueba lee `textContent`, que devuelve el texto YA sin etiquetas, así que el patrón no casaba nunca.",
+   "porque": "Buscar la frase en el código fuente se siente como «ir a la verdad», y por eso no se sospecha. Pero el fuente y lo que la persona lee son dos cadenas distintas, y la prueba compara contra la segunda.",
+   "arreglo": "El patrón se escribe contra lo que devuelve el lector que usa la prueba. Con `textContent`, sin etiquetas; con `innerHTML`, con ellas. Y se comprueba aparte, contra las cadenas literales, antes de correr la suite entera.",
+   "comoCazarlo": "Antes de dar por buena una prueba de texto, pasarle a la expresión las cadenas reales —las cuatro que sí deben casar y dos que no— en un `node -e` de tres renglones. Cuesta diez segundos y no necesita navegador.",
+   "consejo": "«Lo saqué del código» no es garantía de nada si el código guarda una forma y la prueba lee otra. La pregunta correcta es qué devuelve exactamente el lector.",
+   "salioDe": "juegos/guerra-de-puercos · pruebas-pantalla.mjs, arreglando una intermitente y empeorándola",
+   "senales": [
+    "lo arreglé y quedó peor",
+    "lo copié del código y no casa",
+    "la prueba no encuentra un texto que sí está"
+   ],
+   "vecinas": [
+    "la-prueba-intermitente-ensena-a-ignorar-los-rojos",
+    "prueba-de-texto-que-pasa-con-la-cadena-vacia",
+    "la-medicion-que-se-mide-a-si-misma"
+   ]
+  },
+  {
+   "id": "el-generado-que-cambia-solo-y-choca-en-todo-rebase",
+   "titulo": "Un archivo generado con la hora adentro choca en todos los rebases",
+   "gravedad": "media",
+   "clase": "error",
+   "sintoma": "cerebro/todo.json marcaba conflicto en CADA rebase, incluso entre ramas que habían tocado neuronas distintas o ninguna. El conflicto se 'resolvía' regenerando y volvía a aparecer al siguiente rebase.",
+   "causa": "`armar()` escribía `hecho: new Date().toISOString()` dentro del archivo. Nadie lo leía —ni la pantalla, ni el servidor de La Sala, ni las pruebas— pero cambiaba en cada corrida, así que dos ramas producían bytes distintos con contenido idéntico.",
+   "porque": "git compara bytes, no significado. No tiene forma de saber que las únicas dos líneas distintas eran una marca de tiempo que a nadie le importa, así que marca conflicto igual que si se hubiera reescrito medio archivo.",
+   "arreglo": "Quitar el campo. `armar()` quedó determinista: mismas neuronas → mismo archivo byte por byte. Un choque en todo.json vuelve a significar que dos ramas tocaron neuronas de verdad.",
+   "comoCazarlo": "Armar dos veces seguidas y comparar: `node cerebro/cerebro.mjs armar; md5sum cerebro/todo.json` dos veces. Si los md5 difieren con las mismas fuentes, hay algo no determinista adentro. El diff completo son las líneas culpables — aquí eran DOS.",
+   "consejo": "En cualquier artefacto generado que se commitea, la regla es que dos corridas den lo mismo. Fechas de generación, ids aleatorios y recorridos que dependen del orden del sistema de archivos son las tres causas de siempre, y todas se ven igual desde fuera: 'este archivo siempre choca'. La prueba que lo cuida no comprueba el CAMPO sino la PROPIEDAD, porque un nombre se esquiva sin querer y 'dos corridas dan lo mismo' no.",
+   "salioDe": "Iba a meter `armar` dentro de build.mjs para que lo publicado nunca trajera neuronas invisibles. Antes comprobé si era idempotente —no lo era— y ahí apareció la causa de un conflicto que ya se había pagado dos veces: en el rebase del #112 y en la rama de Godines. · SEGUNDA VEZ el 9 de septiembre en jabonera/armar-suelto.mjs, con la fecha de armado en un comentario del HTML: correr las pruebas ensuciaba el repo y el gancho de cierre pedía commitear un archivo cuyo contenido no había cambiado. Que reaparezca en otro generador dice que no es un descuido: es lo que uno escribe por costumbre al generar un archivo.",
+   "senales": [
+    "todo.json siempre choca",
+    "conflicto en un archivo generado",
+    "rebase que choca sin razon",
+    "el mismo conflicto vuelve a aparecer",
+    "armar dos veces da distinto",
+    "archivo generado no determinista"
+   ],
+   "vecinas": [
+    "la-prueba-intermitente-ensena-a-ignorar-los-rojos",
+    "la-prueba-que-cuenta-de-mas-y-culpa-al-servidor"
+   ]
+  },
+  {
+   "id": "suite-que-no-arranca-calla",
+   "titulo": "El suite no reprueba porque ni siquiera arranca",
+   "gravedad": "alta",
+   "sintoma": "Nadie recuerda que esa suite se haya puesto roja. Corres a mano y sale una traza de Node en vez de resultados.",
+   "causa": "Un import que no resuelve —`from 'playwright'` a secas cuando playwright vive sólo en la instalación global— o una ruta absoluta de otra máquina. Revienta ANTES de la primera comprobación.",
+   "porque": "En este contenedor playwright está en /opt/node22/lib/node_modules, no en un node_modules del repo. Y una suite que muere en la línea 1 sale con código 1 sin imprimir un solo ✗: el silencio se lee igual que un verde.",
+   "arreglo": "Buscar en los dos lados: `for (const d of ['/opt/node22/lib/node_modules/playwright/index.mjs','playwright']) try{ chromium=(await import(d)).chromium; if(chromium) break }catch(e){}`.",
+   "comoCazarlo": "Correrla y CONTAR lo que imprime. Si no salen números, no corrió. `node <suite> | tail -1` tiene que decir un resultado, no `Node.js v22`.",
+   "consejo": "Una compuerta que no corre es peor que ninguna: da la confianza sin dar la comprobación.",
+   "salioDe": "toydarians/taller/revisar.mjs, explorador/pruebas.mjs y sitio/pruebas.mjs · el mismo renglón tres veces, y la tercera tapaba una portada que se caía entera",
+   "senales": [
+    "las pruebas nunca fallan",
+    "sale una traza en vez de resultados",
+    "ERR_MODULE_NOT_FOUND",
+    "no encuentra playwright"
+   ],
+   "vecinas": [
+    "pruebas-que-no-prueban-nada",
+    "conexion-rechazada-parece-defecto"
+   ]
+  },
+  {
+   "id": "conexion-rechazada-parece-defecto",
+   "titulo": "Doce suites «rotas» eran doce suites sin servidor",
+   "gravedad": "media",
+   "sintoma": "Media docena de suites revientan a la vez con `net::ERR_CONNECTION_REFUSED`. Parece que algo grande se rompió.",
+   "causa": "Son suites de navegador y piden un puerto concreto, escrito adentro. Sin nada servido ahí, Playwright tira una excepción que mata el proceso antes de la primera comprobación.",
+   "porque": "El puerto no está en un README ni en un script: está enterrado en el `page.goto` de cada suite, así que quien no las corrió nunca no tiene forma de saberlo.",
+   "arreglo": "Levantar los estáticos que piden y correr DESDE LA RAÍZ del repo. En mazi-central: 8791, 8792, 8123 y 8781 sirviendo `dist/`, 8124 sirviendo `empresa/clases`, y wrangler en 8815 para el modo a distancia.",
+   "comoCazarlo": "`node <suite> 2>&1 | grep -m1 'net::'` dice el puerto exacto que le falta. Es una línea y ahí se acaba el misterio.",
+   "consejo": "Antes de declarar rota una suite de navegador, mira qué URL pidió. Casi siempre es un `python3 -m http.server`, no un bug.",
+   "salioDe": "el censo del 9 de septiembre · 12 de 41 suites reventaban por esto y ninguna tenía nada malo",
+   "senales": [
+    "ERR_CONNECTION_REFUSED",
+    "todas las pruebas revientan",
+    "page.goto falló",
+    "no carga la página en las pruebas"
+   ],
+   "vecinas": [
+    "suite-que-no-arranca-calla"
+   ]
+  },
+  {
+   "id": "prueba-que-aprueba-por-accidente",
+   "titulo": "Pasa porque la midió antes de tiempo, no porque esté bien",
+   "gravedad": "media",
+   "sintoma": "La misma comprobación pasa en una configuración y falla en otra, y el código no cambia entre las dos.",
+   "causa": "El selector agarra el PRIMER nodo que coincide, y hay dos: el de la intro y el de la portada. Mientras la intro sigue puesta, el de la intro mide bien y la prueba aprueba — midiendo algo que no es lo que dice medir.",
+   "porque": "La espera de la prueba (2.5 s) es más corta que la intro (3.4 s), así que en el caso normal nunca llega a ver la portada. Con `prefers-reduced-motion` la intro se salta, el nodo mide 0 px de alto y ahí sí falla.",
+   "arreglo": "Anclar el selector a su sección, no al documento: `.portada .ave`, no `.ave`. Y esperar a un estado, no a un número de milisegundos.",
+   "comoCazarlo": "Contar cuántos nodos hace juego el selector: `document.querySelectorAll(sel).length`. Si es más de 1, la prueba está midiendo a la suerte.",
+   "consejo": "Una prueba que pasa en un modo y falla en otro no está reportando dos comportamientos: está reportando que mide mal.",
+   "salioDe": "sitio/pruebas.mjs · «la portada se ve completa» medía el ave de la intro",
+   "senales": [
+    "pasa a veces sí y a veces no",
+    "falla sólo con menos movimiento",
+    "querySelector agarra otro"
+   ],
+   "vecinas": [
+    "pruebas-que-no-prueban-nada",
+    "suite-que-no-arranca-calla"
+   ]
+  },
+  {
+   "id": "la-prueba-ensucia-lo-que-mide",
+   "titulo": "Correr las pruebas deja basura dentro del repo",
+   "gravedad": "media",
+   "sintoma": "`git status` sale sucio después de correr una suite, sin haber tocado nada. Capturas sin seguir, un archivo generado con otra fecha, o el gancho de cierre pidiendo commitear cosas que no son tuyas.",
+   "causa": "La suite escribe con una ruta RELATIVA al directorio actual —`caps/algo.png`— así que el destino depende de desde dónde la corriste, y desde la raíz cae dentro del repo.",
+   "porque": "Al escribirla se corre desde su propia carpeta y ahí el destino queda fuera de la vista. El día que alguien la corre desde la raíz —que es como se corren todas cuando se barre el repo— aterriza adentro.",
+   "arreglo": "Salidas al temporal del sistema: `tmpdir() + '/caps-<loquesea>'`, e imprimir la ruta al final para que se encuentren. Nunca una ruta relativa, y nunca una absoluta de una máquina o una sesión concretas.",
+   "comoCazarlo": "`git status --porcelain` ANTES y DESPUÉS de correr la suite. Si cambia, la suite escribe donde no debe.",
+   "consejo": "Una prueba no ensucia lo que mide. Si deja rastro en el repo, el siguiente que barra las suites va a commitear basura o va a perder tiempo averiguando de quién es.",
+   "salioDe": "sitio/pruebas.mjs dejaba 1.3 MB de PNG en `caps/`, y explorador/pruebas.mjs apuntaba a un scratchpad con el UUID de UNA sesión — funcionaba en la máquina donde se escribió y en ninguna otra",
+   "senales": [
+    "git status sale sucio",
+    "quedaron capturas sin seguir",
+    "la prueba deja archivos",
+    "ruta que sólo existe en una máquina"
+   ],
+   "vecinas": [
+    "el-generado-que-cambia-solo-y-choca-en-todo-rebase",
+    "suite-que-no-arranca-calla",
+    "conexion-rechazada-parece-defecto"
+   ]
+  },
+  {
+   "id": "el-robot-mide-con-la-regla-chueca",
+   "titulo": "La prueba usa la misma función que está probando, y se tuerce con ella",
+   "gravedad": "alta",
+   "sintoma": "Metes el defecto A PROPÓSITO para ver la prueba fallar y la prueba sigue en verde, con el mismo número exacto de antes.",
+   "causa": "La prueba decide QUÉ ESPERAR llamando a la misma función que juzga. Si esa función se desplaza, la expectativa se desplaza igual y las dos siguen coincidiendo.",
+   "porque": "Al escribir la prueba uno reusa lo que ya está a la mano, y lo que está a la mano es el código que quiere probar. Sale una prueba que comprueba que el sistema es consistente consigo mismo — que siempre lo es.",
+   "arreglo": "La prueba se ancla a una VERDAD INDEPENDIENTE, no a una función del sistema. En un juego de ritmo, el instante en que la nota SUENA (reloj del audio) y no el instante que el juego cree; en una API, el contrato escrito y no el serializador.",
+   "comoCazarlo": "Prueba de mutación de verdad: rompe el código y comprueba que se pone ROJO. Si la mutación no la caza, la prueba mide con la regla chueca — y el arreglo es la prueba, no el código.",
+   "consejo": "Si una prueba no puede fallar nunca, no está probando: está acompañando.",
+   "salioDe": "juegos/palomazo · el robot tocaba usando `pasoAhora()`, la misma función del juicio. Con 120 ms de desfase metidos a mano seguía dando 74 perfectas; anclado al reloj del audio, la misma mutación da 0 perfectas y 58 «casi»",
+   "senales": [
+    "metí el bug y la prueba sigue verde",
+    "la mutación no se detecta",
+    "la prueba no falla nunca",
+    "prueba circular"
+   ],
+   "vecinas": [
+    "pruebas-que-no-prueban-nada",
+    "prueba-que-aprueba-por-accidente",
+    "suite-que-no-arranca-calla"
+   ]
+  },
+  {
+   "id": "medir-antes-de-que-acabe",
+   "titulo": "Lo declaré roto y sólo no había terminado",
+   "gravedad": "media",
+   "sintoma": "En la captura o en el volcado, algo está a medio camino y parece atorado. Se abre el código a buscar un bug que no existe.",
+   "causa": "Se mide antes de que el sistema haya llegado a su estado estable. Lo que se ve es un fotograma intermedio, no un resultado.",
+   "porque": "El tiempo de espera se elige a ojo y casi siempre por lo bajo, porque uno tiene prisa. Y un intermedio se parece muchísimo a un atorón.",
+   "arreglo": "Calcular cuánto TARDA de verdad —cuántos pasos, cuántos cuadros— y esperar eso, o mejor esperar a que la magnitud deje de cambiar en vez de a un reloj.",
+   "comoCazarlo": "Antes de abrir el código, volver a medir con el triple de tiempo. Si el síntoma se va, era prisa.",
+   "consejo": "Un sistema a medio camino no es un sistema roto. Y en un día ya casi mando a arreglar tres motores sanos por esto.",
+   "salioDe": "juegos/crisol · la arena se veía flotando en la captura y parecía fallar la gravedad; tenía 138 celdas que caer y yo esperé 900 ms, que dan 54 pasos",
+   "senales": [
+    "se quedó a medias",
+    "parece atorado",
+    "no llega al final",
+    "flota en el aire"
+   ],
+   "vecinas": [
+    "prueba-que-aprueba-por-accidente",
+    "el-robot-mide-con-la-regla-chueca"
+   ]
+  },
+  {
+   "id": "todas-las-pruebas-miden-el-mismo-sentido",
+   "titulo": "Las 57 pruebas pasaban y nada podía salir volando hacia arriba",
+   "gravedad": "alta",
+   "sintoma": "El pistón, el resorte y las explosiones empujaban y la cosa empujada BAJABA una celda. La suite entera en verde.",
+   "causa": "`saltos = Math.max(1, Math.floor(vy))` con vy negativa devuelve 1, y ese 1 se usaba para avanzar HACIA ABAJO. Nunca existió el caso de subir.",
+   "porque": "Todas las pruebas del motor nacieron probando gravedad: arena que cae, agua que baja, lava que escurre. Una suite escrita sobre un solo sentido no puede reprobar el otro — ni siquiera lo visita.",
+   "arreglo": "Rama aparte para vy<0 que sube celda por celda y pone vy=0 al topar techo. Y una prueba por cada sentido, no por cada pieza.",
+   "comoCazarlo": "Por cada eje del sistema, pregúntate cuál es el sentido CONTRARIO y busca la prueba que lo mide. Si no existe, el código de ese sentido nunca corrió.",
+   "consejo": "Verde no quiere decir correcto: quiere decir que lo que se midió salió bien. Cuenta qué NO se midió.",
+   "salioDe": "juegos/crisol/motor.js · 57 pruebas en verde con el vuelo muerto",
+   "senales": [
+    "pasa todo y el bug sigue",
+    "no sube",
+    "empuja y no se mueve",
+    "la prueba no cubre ese caso"
+   ],
+   "vecinas": [
+    "pruebas-que-no-prueban-nada",
+    "prueba-de-un-solo-caso",
+    "medir-antes-de-suponer"
+   ]
+  },
+  {
+   "id": "la-regla-que-no-puede-dispararse",
+   "titulo": "La regla existía, en probabilidad cero, con una nota explicando por qué",
+   "gravedad": "media",
+   "sintoma": "«Puse hidrógeno y oxígeno y no hay forma de volverlo agua.»",
+   "causa": "La reacción estaba escrita con probabilidad 0 y el comentario «sólo con chispa». Esa chispa nunca se implementó.",
+   "porque": "Un `TODO` escrito como código se lee como código: al buscar «¿existe esta regla?» la respuesta es sí, y nadie vuelve a mirarla. Un comentario que describe lo que falta lo hace parecer hecho.",
+   "arreglo": "O se implementa la condición, o la regla no se escribe. Una condición inalcanzable con una nota al lado es deuda camuflada de función.",
+   "comoCazarlo": "Busca constantes que apaguen una rama entera —probabilidad 0, `if(false)`, un umbral inalcanzable— y comprueba si alguna prueba la cubre. Si ninguna, es que no se dispara nunca.",
+   "consejo": "Lo que no se puede disparar no está implementado, por bien documentado que esté.",
+   "salioDe": "juegos/crisol/elementos.js · hidrógeno + oxígeno con `prob: 0`",
+   "senales": [
+    "no pasa nada",
+    "la regla está pero no funciona",
+    "nunca reacciona",
+    "sólo con chispa"
+   ],
+   "vecinas": [
+    "pruebas-que-no-prueban-nada",
+    "el-comentario-no-es-el-codigo"
+   ]
+  },
+  {
+   "id": "prueba-que-nace-muerta",
+   "titulo": "Un `ok(...)` cuyo segundo argumento no es un booleano ya calculado siempre pasa",
+   "gravedad": "alta",
+   "sintoma": "La prueba está verde con el código roto a propósito, y de paso infla el marcador.",
+   "causa": "El segundo argumento no era un booleano: era `(a, b, true) && true` —que evalúa true— o una PROMESA, que siempre es verdadera.",
+   "porque": "Al escribir una prueba con `await` dentro se cuela un operador coma o un `.then()`, y el resultado se ve razonable. Nadie mira lo que VALE la expresión, sólo lo que dice el texto de al lado.",
+   "arreglo": "El booleano se calcula ANTES, en su propia línea, y se le pasa ya hecho. Si hace falta await, se hace fuera del `ok(...)`.",
+   "comoCazarlo": "Rompe el código a propósito. Y revisa cada `ok(` cuyo segundo argumento tenga una coma, un `&&` sospechoso, un `.then(` o una función que se invoca a sí misma.",
+   "consejo": "Cuando el marcador suba y no sepas qué prueba se agregó, desconfía. Dos pruebas que no prueban nada valen menos que ninguna: dan permiso para no mirar.",
+   "salioDe": "sala/servidor/pruebas-modelos.mjs · dos de 32 pasaban con el adaptador destruido",
+   "senales": [
+    "pasa siempre",
+    "la prueba no falla nunca",
+    "verde con todo roto"
+   ],
+   "vecinas": [
+    "prueba-que-revienta-en-vez-de-fallar",
+    "pruebas-que-no-prueban-nada"
+   ]
+  },
+  {
+   "id": "prueba-que-revienta-en-vez-de-fallar",
+   "titulo": "Una prueba que truena no informa: hay que dejarla llegar a decir ✗",
+   "gravedad": "alta",
+   "sintoma": "Al meter el bug a propósito, la suite no imprime una prueba roja: no imprime NADA. Leyendo por encima se ve igual que «todo bien».",
+   "causa": "La condición leía una cadena de propiedades (`x.y.parts[0].text`) y al faltar una, el TypeError mató el proceso antes del marcador.",
+   "porque": "Uno escribe la condición pensando en el caso bueno, donde la cadena existe. El caso malo es justo aquel en el que no existe — o sea que la prueba se rompe exactamente cuando tenía que hablar.",
+   "arreglo": "Encadenamiento opcional en toda la condición, y en el `extra` se enseña lo que sí venía para saber qué faltó.",
+   "comoCazarlo": "Corre la mutación y mira la SALIDA COMPLETA, no sólo el grep de ✗. Si no hay marcador final, la suite murió y no te enteraste.",
+   "consejo": "Un `grep ✗` sobre una suite que reventó devuelve vacío, igual que una suite verde. Comprueba siempre que salga el renglón del marcador.",
+   "salioDe": "sala/servidor/pruebas-modelos.mjs · quitarle `systemInstruction` a Gemini mataba la suite en vez de ponerla roja",
+   "senales": [
+    "no imprime nada",
+    "la suite se muere",
+    "salida vacía"
+   ],
+   "vecinas": [
+    "prueba-que-nace-muerta"
+   ]
+  },
+  {
+   "id": "decorado-sin-waituntil",
+   "titulo": "Sin `waitUntil` en el decorado, todo el segundo plano es invisible para las pruebas",
+   "gravedad": "alta",
+   "sintoma": "La funcionalidad corre bien a mano y ninguna prueba la ve. El hilo sale vacío aunque el código sí publica.",
+   "causa": "El envoltorio usa `ctx.waitUntil` si existe y si no deja la promesa al aire. El doble de pruebas no lo traía, así que lo diferido ocurría DESPUÉS de que la prueba terminó de mirar.",
+   "porque": "En producción está bien: la plataforma lo espera. En un doble, «al aire» significa «fuera del alcance del `await` de la prueba», y eso no se ve en ninguna línea del código de producción.",
+   "arreglo": "El doble recoge las promesas en una lista y se expone un `asentar()` que las espera. Entonces sí se puede probar lo diferido.",
+   "comoCazarlo": "Si una prueba de algo que corre en segundo plano falla «por poquito», mira si tu doble tiene `waitUntil`. Sin él NUNCA va a pasar.",
+   "consejo": "Un doble que no implementa lo que el código usa no es un doble incompleto: es un doble que aprueba lo que no probó.",
+   "salioDe": "sala/servidor/pruebas.mjs · las sillas enteras eran invisibles para la suite",
+   "senales": [
+    "no se ve el efecto",
+    "el hilo sale vacío",
+    "funciona a mano y no en la prueba"
+   ],
+   "vecinas": [
+    "prueba-que-nace-muerta"
+   ]
+  },
+  {
+   "id": "checkout-no-restaura-lo-que-no-esta-versionado",
+   "titulo": "Deshacer una mutación con git en un archivo que git no conoce",
+   "gravedad": "alta",
+   "sintoma": "Se mete un defecto a mano para comprobar que la prueba lo caza, se hace `git checkout <archivo>` para deshacerlo, y las pruebas siguen en rojo. El mutante sigue puesto.",
+   "causa": "`git checkout` restaura desde el índice. Un archivo NUEVO que nunca se ha commiteado no está en el índice, así que el comando no tiene de dónde restaurar — y no falla: no hace nada, calladito.",
+   "porque": "La prueba de mutación se hace justo cuando el archivo acaba de nacer, que es cuando más ganas hay de comprobar si sus pruebas sirven. Ése es exactamente el momento en que `git checkout` no puede ayudar.",
+   "arreglo": "Deshacer la mutación con la misma herramienta con la que se metió —el reemplazo de texto inverso— y volver a correr las pruebas DESPUÉS de deshacerla, mirando el verde con los ojos.",
+   "comoCazarlo": "Si tras deshacer la mutación el total de rojos no vuelve al de antes, la mutación sigue ahí. Y `git status` delata el archivo como no seguido.",
+   "consejo": "Es la hermana de «el verde de antes del commit sigue valiendo». Aquella era olvidarse de restaurar; ésta es creer que se restauró. La segunda es peor porque uno ya ejecutó el comando y se quedó tranquilo.",
+   "senales": [
+    "hice checkout y sigue igual",
+    "las pruebas no vuelven a verde",
+    "deshice el cambio y nada"
+   ],
+   "salioDe": "CRISOL, las hormigas, 17 de septiembre de 2026. Mutación de «las verdes rompen el muro»: el muro pasó de 198 a 17 celdas, la prueba la cazó, y el `git checkout` posterior no deshizo nada porque `hormigas.js` era nuevo.",
+   "vecinas": [
+    "pruebas-que-no-prueban-nada"
+   ]
+  },
+  {
+   "id": "la-prueba-mide-despues-de-que-aquello-murio",
+   "titulo": "La prueba mide después de que aquello que medía se acabó",
+   "gravedad": "media",
+   "sintoma": "Una prueba que pasaba se pone roja al añadir una función nueva, y el código nuevo está bien.",
+   "causa": "La prueba fijaba un número de pasos cuando lo medido duraba para siempre. Al darle un CICLO DE VIDA, a ese mismo número de pasos la cosa ya se murió.",
+   "porque": "Un «corre 900 pasos y mide» está pensado para un mundo donde nada termina. En cuanto algo nace, madura y muere, el cuándo pasa a ser parte de la prueba.",
+   "arreglo": "Medir en la fase que la afirmación describe. «Un árbol adulto tiene copa» se comprueba a los 340 pasos, no a los 900, cuando ya fructificó y se marchitó entero.",
+   "comoCazarlo": "Si una prueba se pone roja al agregar algo que no toca lo que ella mide, mirar CUÁNDO mide antes de mirar qué.",
+   "consejo": "Pasó tres veces seguidas el mismo día: la copa, el crecimiento gradual y la colonia con jardín finito. El patrón es «el experimento termina después de que se acabó lo que medía».",
+   "senales": [
+    "se puso roja y no toqué eso",
+    "antes pasaba",
+    "el número de pasos"
+   ],
+   "salioDe": "CRISOL, el ciclo de vida de las plantas, 18 de septiembre de 2026.",
+   "vecinas": [
+    "pruebas-que-no-prueban-nada",
+    "checkout-no-restaura-lo-que-no-esta-versionado"
+   ]
+  },
+  {
+   "id": "preguntarle-a-quien-camina-donde-acabo",
+   "titulo": "Preguntarle a alguien que camina dónde acabó",
+   "gravedad": "media",
+   "sintoma": "Una prueba lleva tiempo en rojo y todo el mundo da por hecho que la función no está hecha.",
+   "causa": "La prueba mira la posición FINAL de algo que se mueve solo. Aquí: «sube un escalón» comprobaba dónde estaba el monigote a los 500 pasos. Sí subía —al paso 60 estaba encima— y luego seguía paseando, se daba la vuelta y se bajaba; acababa en x=1.0.",
+   "porque": "Es la forma más corta de escribirla, y con algo quieto funciona. En cuanto lo medido tiene voluntad propia, el final deja de significar nada.",
+   "arreglo": "Comprobar si LLEGÓ A PASAR, no dónde quedó: se recorre el bucle vigilando la condición y se guarda que ocurrió una vez.",
+   "comoCazarlo": "Si la prueba de una cosa que se mueve fija un número de pasos y mira el estado final, sospechar de la prueba antes que del código. Imprimir la trayectoria lo resuelve en un minuto.",
+   "consejo": "Y hay que comprobarlo con una mutación: se rompe el trepado a propósito y las dos pruebas tienen que ponerse rojas. Si no, la nueva versión tampoco prueba nada.",
+   "senales": [
+    "esa prueba siempre ha estado en rojo",
+    "no sube escalones",
+    "acabó donde no debía"
+   ],
+   "salioDe": "CRISOL, las personitas, 18 de septiembre de 2026. Dos pruebas rojas de mucho tiempo, y el código estaba bien desde siempre.",
+   "vecinas": [
+    "la-prueba-mide-despues-de-que-aquello-murio",
+    "pruebas-que-no-prueban-nada"
+   ]
+  },
+  {
+   "id": "la-prueba-no-puede-ver-lo-que-el-codigo-transforma",
+   "titulo": "La prueba compara contra algo que el código ya transformó",
+   "gravedad": "alta",
+   "sintoma": "Cuatro pruebas llevan tiempo en rojo, la función está perfecta, y cada rojo nuevo se suma sin que nadie los mire.",
+   "causa": "El código cambia el dato ANTES de que la prueba lo lea. Aquí: la marca de agua se hornea en un lienzo —para esquivar un recuadro negro del PDF de Safari— y eso reemplaza el `src` por un `data:image/png;base64,…`. La prueba comparaba ese `data:` contra la ruta del archivo. No podía salir bien nunca.",
+   "porque": "La transformación se agregó después de la prueba, por una razón buena, y nadie volvió a mirar qué dejaba de ser legible.",
+   "arreglo": "Que el código GUARDE de dónde vino, en un atributo aparte, y la prueba lea eso. No es un parche para la prueba: después del horneado tampoco un humano podía saber qué logo salió en la hoja.",
+   "comoCazarlo": "Cuando varias pruebas de la misma familia fallan a la vez y la función se ve bien en pantalla, sospechar de la LECTURA antes que del comportamiento. Mirar el valor que recibe la prueba, entero.",
+   "consejo": "Unos rojos permanentes son peores que ninguna prueba: enseñan a no mirar el marcador. Y en cuanto se arreglaron, la quinta prueba de la misma familia cazó de verdad un defecto mío — la marca nueva pintaba 189 px de tinta contra los 290-322 de las otras.",
+   "senales": [
+    "esa prueba siempre ha estado en rojo",
+    "pero si funciona",
+    "trae un data: en vez de la ruta"
+   ],
+   "salioDe": "Reportes, las marcas de agua, 18 de septiembre de 2026.",
+   "vecinas": [
+    "pruebas-que-no-prueban-nada",
+    "preguntarle-a-quien-camina-donde-acabo"
+   ]
+  },
+  {
+   "id": "la-prueba-de-pantalla-que-no-provoca-la-pantalla",
+   "titulo": "«Ni un error de consola» era verdad, y no significaba nada",
+   "gravedad": "alta",
+   "sintoma": "Un dibujo reventaba en CADA cuadro y las 61 pruebas de pantalla seguían en verde, incluida la que dice «ni un error de consola en toda la sesión».",
+   "causa": "Esa prueba no mentía: en toda la sesión no se ponía una sola personita, así que el código que reventaba no llegaba a correr nunca. La cobertura era de la INTERFAZ —botones, paneles, zoom— y no de lo que la interfaz dibuja.",
+   "porque": "Un escucha de errores da una sensación de red completa que no tiene: sólo caza lo que alguien haya hecho ocurrir.",
+   "arreglo": "Pruebas que PROVOCAN cada cosa que se pinta: poner ocho personas y tres bichos, apuntar la cámara a ellos y comprobar que hay tinta suya en el lienzo. Comprobado con mutación: devolviendo el defecto, se ponen rojas.",
+   "comoCazarlo": "Ante un verde sospechoso, preguntar qué código NO corrió. Si una función de dibujo no aparece en ninguna prueba, el escucha de errores no la cubre.",
+   "consejo": "Y apuntar la cámara es parte de la prueba: la vista arranca arriba de la sala, y una prueba que mira donde no hay nadie no prueba nada aunque no falle.",
+   "senales": [
+    "pasan todas y está roto",
+    "no hay errores de consola",
+    "nunca se probó eso"
+   ],
+   "salioDe": "CRISOL, las personitas vestidas, 18 de septiembre de 2026.",
+   "vecinas": [
+    "pruebas-que-no-prueban-nada",
+    "la-prueba-no-puede-ver-lo-que-el-codigo-transforma"
+   ]
+  },
+  {
+   "id": "dos-casos-que-dan-el-mismo-numero",
+   "titulo": "Dos experimentos distintos que dan el mismo número están midiendo lo mismo",
+   "gravedad": "media",
+   "sintoma": "Una prueba comparaba cuerda tiesa contra cuerda floja: 39.8 y 39.8. Se reescribió: 67.4 y 67.4. Y otra vez: 15.0 y 15.0.",
+   "causa": "Las tres veces el montaje tapaba lo que se quería medir. Primero el empujón era la velocidad máxima del motor en una sala chica, así que el peso se estampaba en la esquina y se medía la diagonal de la sala. Después el peso era un bloque de 3×3, que colgado de una cuerda no se columpia: se medía un peso parado. Y encima el campo que la prueba cambiaba —la flexibilidad— no lo leía el motor en ningún sitio: existía sólo en la prueba.",
+   "porque": "Al escribir la prueba uno piensa en la magnitud y no en si el montaje deja que esa magnitud cambie.",
+   "arreglo": "Peso de una celda y el mismo empujón de la prueba de péndulo que sí funciona. Y el campo, implementado de verdad en el motor.",
+   "comoCazarlo": "Cuando dos condiciones dan el MISMO número hasta el decimal, no es que se parezcan: es que la diferencia no llega al medidor. Es la tercera vez en este repo.",
+   "consejo": "Antes de escribir la comparación, comprobar que el caso base se MUEVE. Si la variable A y la variable B dan lo mismo, el montaje es sospechoso antes que el código.",
+   "senales": [
+    "los dos dan igual",
+    "no cambia nada al cambiarlo",
+    "hasta el decimal"
+   ],
+   "salioDe": "CRISOL, la flexibilidad de la cuerda, 18 de septiembre de 2026.",
+   "vecinas": [
+    "pruebas-que-no-prueban-nada",
+    "la-prueba-de-pantalla-que-no-provoca-la-pantalla"
+   ]
+  },
+  {
+   "id": "la-prueba-de-un-gesto-no-mide-el-resultado-del-gesto",
+   "titulo": "Una prueba de GESTO que mide el resultado llama defecto a la regla",
+   "gravedad": "alta",
+   "sintoma": "La prueba del arrastre salía roja 2 de cada 12 corridas, siempre la misma línea, sin tocar nada entre corridas.",
+   "causa": "Comprobaba «soltar aquí JUEGA la carta». Pero agarra la primera carta de la mano y a veces esa carta no se puede jugar —ya se gastaron las combinaciones, o el nivel se repite—. El arrastre llegaba perfecto, hablaba el reglamento, y la prueba lo apuntaba como fallo del arrastre.",
+   "porque": "Al escribir la prueba uno piensa en el efecto que quiere ver, no en de cuántas cosas depende ese efecto.",
+   "arreglo": "Medir la señal PROPIA del gesto. Aquí: el aviso. Si dice «suéltala más arriba», el punto de suelta no contó; cualquier otra cosa significa que sí llegó y quien habló fue el reglamento.",
+   "comoCazarlo": "Ante una intermitente, preguntar de cuántas cosas depende lo que se mide. Si depende de dos, la prueba no puede decir cuál de las dos falló.",
+   "consejo": "Va con la de los dos números iguales: las dos son el mismo error de puntería, una por medir de más y otra por medir de menos.",
+   "senales": [
+    "falla a veces",
+    "sin tocar nada",
+    "pero si el gesto se ve bien"
+   ],
+   "salioDe": "Guerra de Puercos, el arrastre a la mesa, 18 de septiembre de 2026.",
+   "vecinas": [
+    "dos-casos-que-dan-el-mismo-numero",
+    "pruebas-que-no-prueban-nada"
+   ]
+  },
+  {
+   "id": "la-prueba-que-espera-el-reloj-mide-la-maquina",
+   "titulo": "Si la prueba espera un tiempo fijo, está midiendo el aparato",
+   "gravedad": "media",
+   "sintoma": "Cuatro rojas de doce corridas, y las doce con la máquina para ella sola.",
+   "causa": "`waitForTimeout(400)` después de soltar la carta. Con el aparato cargado la ronda tarda más de 400 ms en resolverse y la prueba miraba antes de tiempo.",
+   "porque": "Un tiempo fijo funciona el día que se escribe, en la máquina en la que se escribe.",
+   "arreglo": "Sondear la condición —la mano bajó, o salió el resumen— con un tope generoso. Dice lo mismo cuando va rápido y no miente cuando va lento.",
+   "comoCazarlo": "Buscar los `waitForTimeout` en cualquier prueba intermitente: casi siempre está ahí.",
+   "consejo": "Y el silencio también engaña: durante esta caza leí ocho corridas «sin ✗» como ocho verdes, y eran ocho CAÍDAS — el servidor de pruebas estaba muerto y la página ni abría. Una corrida sin fallos y una corrida que no corrió se ven igual si sólo se mira lo que falló. Hay que exigir que aparezca el marcador.",
+   "senales": [
+    "a veces pasa y a veces no",
+    "en mi máquina sí",
+    "no salió ningún error"
+   ],
+   "salioDe": "Guerra de Puercos, el arrastre a la mesa, 18 de septiembre de 2026.",
+   "vecinas": [
+    "la-prueba-de-un-gesto-no-mide-el-resultado-del-gesto",
+    "pruebas-que-no-prueban-nada"
+   ]
+  },
+  {
+   "id": "la-prueba-corta-justo-donde-empieza-lo-que-mide",
+   "titulo": "Tres rojas acusando a un archivo que tenía puesto exactamente lo que le pedían",
+   "gravedad": "media",
+   "sintoma": "La prueba decía «`j5data-vercel` no dice POR QUÉ no se publica · la razón mide 0 letras», para las tres entradas. Las tres razones estaban escritas en el archivo, a la vista.",
+   "causa": "Para sacar el valor de cada entrada partía el bloque en el primer salto-de-línea-y-comilla. En un objeto donde el texto arranca en el renglón de ABAJO de su clave, ese corte cae justo antes del texto: el trozo medido queda vacío.",
+   "porque": "Partir por comillas funciona cuando clave y valor van en el mismo renglón, que es como uno los escribe en la cabeza. El envoltorio a dos renglones lo hizo el propio formato de la casa por lo largo de las razones.",
+   "arreglo": "Partir por ENTRADA —`split(/\\n(?=\\s{2}')/)`— y de cada trozo tomar todo lo que va después de sus dos puntos. Así el valor viaja completo aunque ocupe cinco renglones.",
+   "comoCazarlo": "Antes de creerle a una roja, vaciar a mano lo que la prueba dice que falta y ver si el número CAMBIA. Si ya medía cero, la prueba no estaba midiendo eso.",
+   "consejo": "Cuando varias pruebas del mismo tipo salen rojas a la vez y el código señalado se ve bien, la sospecha se voltea: un fallo en común suele estar en lo que las tres comparten, que es la prueba.",
+   "senales": [
+    "dice que falta y sí está",
+    "salieron todas rojas de golpe",
+    "mide cero y hay texto"
+   ],
+   "salioDe": "la compuerta de build.mjs, 23 de septiembre de 2026.",
+   "vecinas": [
+    "comparar-contra-el-html-y-no-contra-lo-que-se-lee",
+    "la-prueba-que-cuenta-de-mas-y-culpa-al-servidor",
+    "prueba-de-texto-que-pasa-con-la-cadena-vacia",
+    "mutacion-sin-restaurar"
+   ]
+  },
+  {
+   "id": "el-navegador-sale-por-node",
+   "titulo": "El navegador de pruebas no llegaba a la base real, y la salida fácil era apagar TLS",
+   "gravedad": "media",
+   "sintoma": "Chromium lanzado con el proxy del contenedor contestaba ERR_CERT_AUTHORITY_INVALID contra Supabase; sin proxy, ni siquiera salía. Las pruebas de pantalla sólo podían correr con datos inventados.",
+   "causa": "El proxy re-firma el TLS con su propia autoridad. Node la conoce (las variables de CA ya vienen puestas), pero el Chromium de Playwright no la tiene en su almacén.",
+   "porque": "Son dos programas con dos almacenes de certificados: que curl y Node salgan no dice nada del navegador.",
+   "arreglo": "En el contexto del navegador, ctx.route(/^https:\\/\\//) y cada petición se contesta con route.fulfill({ response: await api.fetch(route.request()) }), donde api = request.newContext({ proxy: { server: HTTPS_PROXY } }). La petición la hace Node, que sí confía; el navegador recibe la respuesta. Métodos, cuerpos y encabezados viajan completos (la función entrar de la tienda funciona así).",
+   "comoCazarlo": "Si una prueba de pantalla dice «no hay red», antes de inventar datos probar un goto a la URL real con este reenvío.",
+   "consejo": "Nunca ignoreHTTPSErrors para salir del paso: prueba otra cosa que lo que va a correr en producción.",
+   "senales": [
+    "ERR_CERT_AUTHORITY_INVALID",
+    "el navegador no sale a internet",
+    "probar contra supabase desde playwright"
+   ],
+   "salioDe": "las pruebas de rutas de la tienda, 24 de septiembre de 2026.",
+   "vecinas": []
+  }
+ ]
 }
