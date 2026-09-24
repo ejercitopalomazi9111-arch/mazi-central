@@ -93,7 +93,11 @@ export function hoja({ titulo, cuerpo, clase = '' }){
   d.addEventListener('click', (e) => {
     if(e.target === d || e.target.closest('[data-cerrar-hoja]')) d.close();
   });
-  d.addEventListener('close', () => d.remove());
+  // Cambiar de pantalla con la hoja abierta (el «atrás» del teléfono) la
+  // cierra: si no, se queda flotando encima de la pantalla nueva.
+  const alNavegar = () => d.close();
+  window.addEventListener('hashchange', alNavegar, { once: true });
+  d.addEventListener('close', () => { window.removeEventListener('hashchange', alNavegar); d.remove(); });
   document.body.append(d);
   d.showModal();
   return d;

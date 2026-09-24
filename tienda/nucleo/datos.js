@@ -278,3 +278,10 @@ export async function subirFoto(archivo){
   revisa(await db.storage.from('fotos').upload(ruta, blob, { contentType: 'image/webp', cacheControl: '31536000' }), 'No se pudo subir la foto');
   return db.storage.from('fotos').getPublicUrl(ruta).data.publicUrl;
 }
+
+/* EAN-13 internos (empiezan con 2) para los que no traen código. En lote y en
+   el servidor: son cientos (0008). Devuelve cuántos recibieron código. */
+export async function asignarCodigos(ids){
+  const r = await llamar('asignar_codigos', { p_ids: ids });
+  olvidarCatalogo(); return r;
+}

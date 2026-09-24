@@ -18,7 +18,7 @@ import { icono, ICONOS } from '../nucleo/iconos.js';
 import { esc, pesos, quitaAcentos, plural, estado, hoja, numero, fecha, descargarCSV } from '../nucleo/piezas.js';
 import {
   negocio, catalogoAdmin, guardarProducto, subirFoto, ajustarInventario, contarInventario,
-  ponerMinimo, movimientosDe, guardarCategoria, borrarCategoria, guardarNegocio,
+  ponerMinimo, movimientosDe, guardarCategoria, borrarCategoria, guardarNegocio, asignarCodigos,
 } from '../nucleo/datos.js';
 import { negocioPedido } from '../config.js';
 
@@ -28,9 +28,9 @@ const MAX_FOTOS = 8;
 /* ── Utilidades de esta sección ────────────────────────────────────────── */
 
 /* En un cuadro de la mitad del teléfono no caben ocho cifras: $8.4 M se lee de
-   un vistazo y el número completo queda en el título. */
-const CORTO = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', notation: 'compact', maximumFractionDigits: 1 });
-const pesosCorto = (n) => n >= 100000 ? CORTO.format(n) : pesos(n);
+   un vistazo y el número completo queda en el título. Se arma a mano: el
+   formato «compacto» de cada navegador lo escribe distinto (Chrome daba «8.4 M$»). */
+const pesosCorto = (n) => n >= 1e6 ? `$${(n / 1e6).toFixed(1)} M` : n >= 1e5 ? `$${Math.round(n / 1e3)} mil` : pesos(n);
 
 const disponibles = (p) => p.existencia.cantidad - p.existencia.apartado;
 
@@ -812,7 +812,8 @@ async function etiquetas(){
           <label class="campo compacto"><span class="etiqueta-campo">Copias de cada una</span>
             <input id="copias" inputmode="numeric" value="${f.v.copias}"></label>
         </div>
-        <div class="botones"><button class="boton principal" data-imprimir>${icono('imprimir')}Imprimir</button></div>
+        <div class="botones"><button class="boton principal" data-imprimir>${icono('imprimir')}Imprimir</button>
+          <button class="boton secundario" data-dar-codigos hidden>${icono('agregar')}Darles código</button></div>
         <p class="cuenta" id="cuenta" aria-live="polite"></p>
       </div>
       <div class="pliego" id="pliego"></div>`,
@@ -831,9 +832,13 @@ async function etiquetas(){
         const origen = f.v.cat === '*' ? todos.filter((p) => p.activo) : f.v.cat ? todos.filter((p) => p.categoria_id === f.v.cat) : lista;
         const copias = Math.min(50, Math.max(1, Number.parseInt(f.v.copias, 10) || 1));
         const fmt = f.v.formato;
-        const sinCodigo = fmt !== 'qr' ? origen.filter((p) => !codigo(p)).length : 0;
+        const sinCodigo = fmt !== 'qr' ? origen.filter((p) => !codigo(p)) : [];
         $c.querySelector('#cuenta').textContent = `${plural(origen.length * copias, 'etiqueta', 'etiquetas')}`
-          + (sinCodigo ? ` · ${sinCodigo} sin código de barras (sale sólo el QR o el nombre)` : '');
+          + (sinCodigo.length ? ` · ${sinCodigo.length} sin código de barras` : '');
+        const $dar = $c.querySelector('[data-dar-codigos]');
+        $dar.hidden = !sinCodigo.length;
+        $dar.dataset.ids = JSON.stringify(sinCodigo.map((p) => p.id));
+        $dar.lastChild.textContent = `Darles código a ${sinCodigo.length}`;
         $pliego.className = 'pliego formato-' + fmt;
         $pliego.innerHTML = origen.flatMap((p) => Array(copias).fill(p)).map((p) => `<div class="etiqueta">
             ${fmt !== 'anaquel' ? `<div class="qr">${qr(direccionProducto(p.id))}</div>` : ''}
@@ -857,6 +862,19 @@ async function etiquetas(){
       });
       $c.querySelector('#cat').addEventListener('change', (e) => { f.v.cat = e.target.value; if(f.v.cat) lista = []; pintar(); });
       $c.querySelector('#copias').addEventListener('change', (e) => { f.v.copias = e.target.value; pintar(); });
+      $c.querySelector('[data-dar-codigos]').addEventListener('click', async (e) => {
+        const b = e.currentTarget, ids = JSON.parse(b.dataset.ids || '[]');
+        if(!ids.length || !confirm(`¿Darle código de barras propio a ${plural(ids.length, 'producto', 'productos')}? Empiezan con 2, el rango que es de cada tienda. Los que ya traen código no se tocan.`)) return;
+        try{
+          const n = await ocupado(b, () => asignarCodigos(ids));
+          // Se vuelven a leer para pintar los códigos nuevos.
+          const fresco = await catalogoAdmin();
+          todos.splice(0, todos.length, ...fresco.productos);
+          lista = lista.map((p) => fresco.porId.get(p.id)).filter(Boolean);
+          aviso(`Listo: ${plural(n, 'producto nuevo con código', 'productos nuevos con código')}`);
+          pintar();
+        }catch(err){ console.error(err); aviso(err.message, 'mal'); }
+      });
       $c.querySelector('[data-imprimir]').addEventListener('click', () => {
         if(!$pliego.querySelector('.etiqueta')){ aviso('Primero elige qué etiquetar', 'mal'); return; }
         window.print();

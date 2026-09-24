@@ -172,6 +172,27 @@
         "se pierde el foco al abrir"
       ],
       "salioDe": "La navegación móvil del sitio del Instituto: trampa de foco, cierre con Escape e `inert` sobre el resto."
+    },
+    {
+      "id": "la-hoja-que-sobrevive-al-atras",
+      "titulo": "La ventanita abierta se quedaba flotando encima de la pantalla nueva",
+      "gravedad": "media",
+      "sintoma": "Con una hoja (<dialog>) abierta, el «atrás» del teléfono o un enlace cambiaba la pantalla de abajo, pero la hoja seguía encima, modal, tapando y bloqueando la pantalla nueva.",
+      "causa": "Las hojas se cuelgan de <body>, fuera del contenido que el enrutador reemplaza. Cambiar la dirección no las toca.",
+      "porque": "En una app de un solo documento, «cambiar de pantalla» es cambiar el hash; nada cierra lo que vive fuera del contenedor que se repinta.",
+      "arreglo": "La propia hoja escucha hashchange (una vez) y se cierra; al cerrarse, quita la escucha y se borra del documento. Está en hoja() de tienda/nucleo/piezas.js, así que la heredan todas.",
+      "comoCazarlo": "En la prueba de uso, abrir una hoja y SIN cerrarla navegar a otra ruta: el siguiente clic falla con «subtree intercepts pointer events». Así salió.",
+      "consejo": "Todo lo que se monta fuera del contenedor de pantallas (hojas, menús flotantes, avisos) necesita saber que la pantalla cambió.",
+      "senales": [
+        "el modal se queda abierto al regresar",
+        "la ventana tapa la pantalla nueva",
+        "intercepts pointer events",
+        "dialog abierto tras cambiar de ruta"
+      ],
+      "salioDe": "el Bloque 3 de la tienda, 24 de septiembre de 2026.",
+      "vecinas": [
+        "volver-atras-que-no-vuelve"
+      ]
     }
   ]
 }

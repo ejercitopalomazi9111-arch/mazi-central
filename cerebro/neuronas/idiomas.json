@@ -141,6 +141,27 @@
         "funciona sin acentos"
       ],
       "vecinas": []
+    },
+    {
+      "id": "el-formato-compacto-que-cambia-de-navegador",
+      "titulo": "«$8.4 M» en la prueba y «8.4 M$» en la pantalla",
+      "gravedad": "baja",
+      "sintoma": "El valor del inventario se formateó con Intl notation:'compact'. En Node daba «$8.4 M»; en el Chromium de la prueba de pantalla, «8.4 M$», con el signo al final.",
+      "causa": "Los datos de localización (CLDR/ICU) vienen con cada motor y cada versión: el patrón compacto de moneda en es-MX no es el mismo en todos.",
+      "porque": "Intl promete un formato «correcto para el idioma», no un formato idéntico en todas partes. Lo que se prueba en Node no dice cómo lo pinta el teléfono.",
+      "arreglo": "Para cifras cortas en cuadros chicos se arma el texto a mano (pesosCorto en tienda/admin/pantallas.js): «$8.4 M», «$840 mil». El número completo va en el title.",
+      "comoCazarlo": "Mirar la captura del navegador, no la salida de node -e. Si un formato depende de Intl con opciones raras (compact, unitDisplay), verlo pintado.",
+      "consejo": "Intl sí para lo común (moneda normal, fechas); a mano cuando el ancho importa y el patrón es de nicho.",
+      "senales": [
+        "el signo de pesos sale al final",
+        "formato compacto distinto",
+        "Intl compact M$",
+        "el número se ve raro en el teléfono"
+      ],
+      "salioDe": "el inventario de la tienda, 24 de septiembre de 2026.",
+      "vecinas": [
+        "formato-de-fecha-y-numero-a-mano"
+      ]
     }
   ]
 }
