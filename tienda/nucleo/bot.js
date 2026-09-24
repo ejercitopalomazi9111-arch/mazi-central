@@ -53,7 +53,7 @@ const palabras = (t) => normal(t).split(' ').filter((w) => w && !RELLENO.has(w) 
    inglés del proveedor). Cada negocio puede sumar las suyas en
    ajustes.bot.sinonimos: [["termo", "vaso", "tumbler"], …]. */
 export const SINONIMOS = [
-  ['cera', 'wax', 'pomada', 'pomade', 'paste', 'pasta', 'modelador', 'modeladora'],
+  ['cera', 'wax', 'pomada', 'pomade', 'paste', 'modelador', 'modeladora'],   // «pasta» no: en tintes es decolorante
   ['mate', 'matte', 'mat', 'opaco'],
   ['navaja', 'blade', 'cuchilla', 'razor', 'rastrillo', 'hoja'],
   ['shampoo', 'champu', 'champo'],

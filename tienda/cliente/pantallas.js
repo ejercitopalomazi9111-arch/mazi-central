@@ -12,8 +12,9 @@
 import { enlace } from '../nucleo/rutas.js';
 import { icono } from '../nucleo/iconos.js';
 import { esc, pesos, quitaAcentos, plural, estado } from '../nucleo/piezas.js';
-import { catalogo, carrito, misPedidos } from '../nucleo/datos.js';
+import { catalogo, carrito, misPedidos, negocio } from '../nucleo/datos.js';
 import { pedidoDeSiempre, teToca, validos, diaCorto, dias } from '../nucleo/recompra.js';
+import { SINONIMOS } from '../nucleo/bot.js';
 
 /* Lo que ha comprado quien está viendo. Sin sesión, nada — y NO se crea una:
    la sesión nace al pagar, nunca por mirar la portada. */
@@ -153,7 +154,12 @@ export async function portada(){
 export async function buscar(){
   const { productos, categorias } = await catalogo();
   const nombreCat = new Map(categorias.map((c) => [c.id, c.nombre]));
-  const indice = productos.map((p) => [quitaAcentos(`${p.n} ${p.m} ${nombreCat.get(p.c) || ''} ${p.sku || ''}`), p]);
+  // Dos textos por producto: el suyo (nombre y marca) y el de su categoría.
+  // Salen primero los que traen la palabra en el NOMBRE; los que sólo
+  // coinciden por categoría («algo para la barba») van después.
+  const indice = productos.map((p) => ({ p, propio: ' ' + quitaAcentos(`${p.n} ${p.m} ${p.sku || ''}`), cat: ' ' + quitaAcentos(nombreCat.get(p.c) || '') }));
+  const n = await negocio();
+  const grupos = [...SINONIMOS, ...(n.ajustes?.bot?.sinonimos || [])].map((g) => g.map(quitaAcentos));
   return {
     html: `
       <label class="buscador">${icono('buscar')}
@@ -170,8 +176,15 @@ export async function buscar(){
           res.innerHTML = `<p class="nota">Escribe lo que buscas. Por ejemplo: <b>cera</b>, <b>Wahl</b> o <b>barba</b>.</p>`;
           return;
         }
-        const hallados = indice.filter(([t]) => palabras.every((w) => t.includes(w))).map(([, p]) => p)
-          .sort((a, b) => (a.x || 0) - (b.x || 0));
+        // Cada palabra vale por sus sinónimos: el catálogo del proveedor viene
+        // mitad en inglés, y quien busca «cera» quiere también «Matte Paste».
+        // Lo escrito vale como pedazo («wah» → Wahl); el sinónimo, sólo como
+        // palabra completa si es corto («mat» no es «Matrix») o como inicio si es largo.
+        const sin = (w) => grupos.find((g) => g.some((x) => x === w || x === w.replace(/(es|s)$/, ''))) || [];
+        const esta = (t, w) => t.includes(w) || sin(w).some((x) => x.length >= 5 ? t.includes(' ' + x) : new RegExp(`\\s${x}(s|es)?(\\s|$)`).test(t));
+        const hallados = indice.map((i) => ({ ...i, enNombre: palabras.filter((w) => esta(i.propio, w)).length }))
+          .filter((i) => palabras.every((w) => esta(i.propio, w) || esta(i.cat, w)))
+          .sort((a, b) => (a.p.x || 0) - (b.p.x || 0) || b.enNombre - a.enNombre).map((i) => i.p);
         res.innerHTML = hallados.length
           ? `<p class="nota">${plural(hallados.length, 'producto', 'productos')}</p><div class="rejilla">${hallados.slice(0, 60).map(tarjeta).join('')}</div>`
           : estado({ icono: 'buscar', titulo: `No encontramos «${q.value.trim()}»`,

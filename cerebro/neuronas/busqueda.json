@@ -13,7 +13,11 @@
       "arreglo": "Decir qué se buscó, cuántos filtros están activos y ofrecer una salida concreta: quitar el filtro que más recorta, ver las búsquedas parecidas, o los resultados populares.",
       "comoCazarlo": "Buscar un texto absurdo con dos filtros puestos y mirar la pantalla resultante.",
       "consejo": "Distinguir «no hay nada que coincida» de «hay cosas pero tus filtros las quitaron». Son dos pantallas y sólo se escribe una.",
-      "senales": ["sin resultados", "no encuentra nada", "búsqueda vacía"],
+      "senales": [
+        "sin resultados",
+        "no encuentra nada",
+        "búsqueda vacía"
+      ],
       "salioDe": "Nielsen Norman Group sobre búsqueda y estados de cero resultados."
     },
     {
@@ -26,7 +30,11 @@
       "arreglo": "Normalizar los dos lados: minúsculas y descomposición Unicode quitando los diacríticos antes de comparar.",
       "comoCazarlo": "Buscar cada término del catálogo sin acentos y en minúsculas.",
       "consejo": "En español es obligatorio: la mitad de la gente escribe sin acentos en un buscador, y en el teléfono casi todo el mundo.",
-      "senales": ["no encuentra sin acento", "mayúsculas", "búsqueda estricta"],
+      "senales": [
+        "no encuentra sin acento",
+        "mayúsculas",
+        "búsqueda estricta"
+      ],
       "salioDe": "Normalización Unicode en MDN; el caso se repite en todos los buscadores hechos a mano."
     },
     {
@@ -39,7 +47,11 @@
       "arreglo": "Esperar a que la persona deje de escribir un momento antes de buscar, y cancelar la petición anterior. Al pintar, comprobar que la respuesta corresponde a la consulta actual.",
       "comoCazarlo": "Escribir rápido una palabra larga con la red lenta y mirar si el resultado final corresponde a lo escrito.",
       "consejo": "El defecto feo no es el gasto: es que el resultado que queda pintado sea el de una consulta vieja que llegó tarde.",
-      "senales": ["parpadean los resultados", "una petición por letra", "resultados de otra búsqueda"],
+      "senales": [
+        "parpadean los resultados",
+        "una petición por letra",
+        "resultados de otra búsqueda"
+      ],
       "salioDe": "Patrón conocido de condiciones de carrera en búsqueda incremental."
     },
     {
@@ -52,7 +64,11 @@
       "arreglo": "Mostrar el conteo junto a cada opción, y desactivar —sin esconder— las que darían cero.",
       "comoCazarlo": "Combinar filtros hasta llegar a cero y comprobar si se puede saber cuál sobra.",
       "consejo": "Esconder las opciones que dan cero es peor: la persona busca una opción que sabe que existía y ya no está.",
-      "senales": ["los filtros vacían la lista", "no sé qué filtro quitar", "cuántos hay"],
+      "senales": [
+        "los filtros vacían la lista",
+        "no sé qué filtro quitar",
+        "cuántos hay"
+      ],
       "salioDe": "Nielsen Norman Group sobre navegación facetada."
     },
     {
@@ -65,7 +81,11 @@
       "arreglo": "Resaltar el término dentro del resultado y, si la coincidencia está en un campo oculto, mostrar el fragmento donde ocurrió.",
       "comoCazarlo": "Buscar una palabra que sólo esté en la descripción y ver si el resultado la explica.",
       "consejo": "El resaltado hace además que se perciba más rápido: el ojo salta a lo marcado sin leer todo.",
-      "senales": ["por qué sale esto", "no veo la coincidencia", "resultados raros"],
+      "senales": [
+        "por qué sale esto",
+        "no veo la coincidencia",
+        "resultados raros"
+      ],
       "salioDe": "Nielsen Norman Group sobre resultados de búsqueda."
     },
     {
@@ -78,7 +98,11 @@
       "arreglo": "En sitios donde buscar es la tarea principal, campo visible. El icono solo se justifica cuando la búsqueda es secundaria.",
       "comoCazarlo": "Mirar qué porcentaje de sesiones usa la búsqueda antes y después de mostrarla.",
       "consejo": "Si tiene que esconderse, que el icono lleve la palabra «Buscar» al lado en escritorio: la lupa sola es reconocible pero menos.",
-      "senales": ["nadie usa el buscador", "lupa", "hay que tocar para buscar"],
+      "senales": [
+        "nadie usa el buscador",
+        "lupa",
+        "hay que tocar para buscar"
+      ],
       "salioDe": "Nielsen Norman Group sobre visibilidad de la búsqueda."
     },
     {
@@ -91,7 +115,11 @@
       "arreglo": "Medir el espacio libre y abrir hacia arriba si no cabe; y usar la altura visible real, que con el teclado abierto es mucho menor.",
       "comoCazarlo": "Probar en un teléfono real con el teclado abierto, no en el emulador.",
       "consejo": "`Enter` debe buscar siempre, aunque haya sugerencias abiertas: es la salida cuando el desplegable estorba.",
-      "senales": ["las sugerencias tapan", "no alcanzo el botón", "teclado abierto"],
+      "senales": [
+        "las sugerencias tapan",
+        "no alcanzo el botón",
+        "teclado abierto"
+      ],
       "salioDe": "Revisión en aparato táctil del laboratorio."
     },
     {
@@ -104,7 +132,11 @@
       "arreglo": "Término, filtros y página en la dirección. Así también se puede compartir el enlace de una búsqueda.",
       "comoCazarlo": "Buscar, entrar a un resultado, volver atrás. Y después recargar la página con la búsqueda puesta.",
       "consejo": "El día que alguien quiera mandar por mensaje «mira esto filtrado así», el estado en la URL ya lo resolvió.",
-      "senales": ["se pierde la búsqueda", "al volver se borra", "no puedo compartir el filtro"],
+      "senales": [
+        "se pierde la búsqueda",
+        "al volver se borra",
+        "no puedo compartir el filtro"
+      ],
       "salioDe": "Patrón de estado en la URL; se comprobó en la galería del laboratorio."
     },
     {
@@ -117,7 +149,11 @@
       "arreglo": "Una vez pintada la primera tanda, no reordenar: añadir abajo. Si hay que reordenar, avisar con un botón de «ver resultados nuevos».",
       "comoCazarlo": "Con red lenta, poner el dedo sobre un resultado y esperar a que lleguen los demás.",
       "consejo": "Es el mismo defecto que el contenido que empuja al cargar una imagen sin dimensiones: lo que se movió bajo el dedo.",
-      "senales": ["se abrió otra cosa", "la lista se movió", "cambió el orden"],
+      "senales": [
+        "se abrió otra cosa",
+        "la lista se movió",
+        "cambió el orden"
+      ],
       "salioDe": "Guía de estabilidad visual de web.dev y la revisión del laboratorio."
     },
     {
@@ -130,7 +166,11 @@
       "arreglo": "Flechas para recorrer, Enter para elegir, Escape para cerrar, y los atributos que anuncian a un lector de pantalla cuántas opciones hay y cuál está activa.",
       "comoCazarlo": "Escribir en el campo y recorrer con las flechas sin tocar el ratón.",
       "consejo": "El foco se queda en el campo de texto; lo que se mueve es la opción activa. Mover el foco real a la lista rompe la escritura.",
-      "senales": ["las flechas no bajan", "sugerencias con teclado", "no puedo elegir sin mouse"],
+      "senales": [
+        "las flechas no bajan",
+        "sugerencias con teclado",
+        "no puedo elegir sin mouse"
+      ],
       "salioDe": "Patrón combobox de las prácticas de accesibilidad de la W3C."
     },
     {
@@ -143,7 +183,11 @@
       "arreglo": "Alcances distintos, aspectos distintos: el de la tabla va dentro de la tabla, angosto y con el texto «Filtrar esta lista»; el global va en la cabecera.",
       "comoCazarlo": "Preguntar a alguien qué espera encontrar antes de que escriba.",
       "consejo": "El texto de ejemplo dentro del campo es donde se resuelve barato: «Filtrar 24 clientes» dice el alcance y el tamaño de una vez.",
-      "senales": ["busqué y no salió", "hay dos buscadores", "filtro o búsqueda"],
+      "senales": [
+        "busqué y no salió",
+        "hay dos buscadores",
+        "filtro o búsqueda"
+      ],
       "salioDe": "Nielsen Norman Group sobre alcance de búsqueda."
     },
     {
@@ -156,7 +200,11 @@
       "arreglo": "Un botón propio de limpiar que aparece cuando hay texto, con área táctil suficiente, y que además devuelva el foco al campo.",
       "comoCazarlo": "Escribir algo largo en el teléfono e intentar volver al estado inicial.",
       "consejo": "`Escape` con el campo enfocado debería limpiar también: es gratis y quien usa teclado lo agradece.",
-      "senales": ["borrar letra por letra", "limpiar búsqueda", "volver a la lista completa"],
+      "senales": [
+        "borrar letra por letra",
+        "limpiar búsqueda",
+        "volver a la lista completa"
+      ],
       "salioDe": "Revisión del buscador del laboratorio en aparato táctil."
     },
     {
@@ -169,7 +217,11 @@
       "arreglo": "Coincidencia por subcadena en varios campos y, si el catálogo es grande, una distancia de edición corta para sugerir «¿quisiste decir…?».",
       "comoCazarlo": "Buscar los diez términos más frecuentes con una letra cambiada.",
       "consejo": "En catálogos pequeños basta con partir la consulta en palabras y exigir que todas aparezcan en algún campo. Resuelve la mayoría sin algoritmos.",
-      "senales": ["error de dedo", "quisiste decir", "no encuentra por una letra"],
+      "senales": [
+        "error de dedo",
+        "quisiste decir",
+        "no encuentra por una letra"
+      ],
       "salioDe": "El buscador del departamento de diseño, que usa un puente de sinónimos y ponderación por rareza en vez de coincidencia exacta."
     },
     {
@@ -182,7 +234,11 @@
       "arreglo": "Ponderar por rareza: la palabra que aparece en pocos documentos pesa más. Con eso los empates se rompen solos.",
       "comoCazarlo": "Mirar las puntuaciones. Si varias son idénticas, no hay orden: hay lista.",
       "consejo": "En un corpus en dos idiomas hace falta además un puente de sinónimos, o la consulta en español no toca el contenido en inglés.",
-      "senales": ["todos los resultados igual", "no ordena bien", "el primero no es el mejor"],
+      "senales": [
+        "todos los resultados igual",
+        "no ordena bien",
+        "el primero no es el mejor"
+      ],
       "salioDe": "Medido en el buscador del departamento de diseño: cinco resultados empatados en 4.0 hasta que se añadió ponderación por rareza y el puente español-inglés."
     },
     {
@@ -195,8 +251,34 @@
       "arreglo": "Un indicio inmediato —el campo con estado de carga, o esqueletos donde van los resultados— y mantener visibles los resultados anteriores atenuados en vez de vaciar la lista.",
       "comoCazarlo": "Con red lenta, buscar y contar los segundos hasta que algo cambia en pantalla.",
       "consejo": "Vaciar la lista mientras se busca es lo peor de los dos mundos: se pierde el contexto y no se gana información.",
-      "senales": ["no pasa nada al buscar", "pulsé tres veces", "tarda sin avisar"],
+      "senales": [
+        "no pasa nada al buscar",
+        "pulsé tres veces",
+        "tarda sin avisar"
+      ],
       "salioDe": "Guía de estados de carga de Nielsen Norman Group."
+    },
+    {
+      "id": "el-catalogo-del-proveedor-viene-en-ingles",
+      "titulo": "«¿Tienen cera?» y la tienda decía que no",
+      "gravedad": "alta",
+      "sintoma": "El bot y el buscador contestaban «no encontré cera» o listaban «Plancha Mini Cerámica», teniendo «Pacinos Matte Paste» y «Fixi Wax» en existencia.",
+      "causa": "El catálogo llega como lo nombra el proveedor —mitad en inglés (Paste, Pomade, Blade, Oil)— y el cliente pregunta en español. Además, buscar por prefijo con palabras cortas hace que «cera» encuentre «cerámica».",
+      "porque": "Las pruebas del bot pasaban 43 de 43 con un catálogo inventado en español. El defecto sólo apareció al correr el simulador contra los 552 productos reales.",
+      "arreglo": "Sinónimos por giro en tienda/nucleo/bot.js (SINONIMOS; cada negocio suma los suyos en ajustes.bot.sinonimos); prefijo sólo con 5 letras o más; y cuando no coinciden todas las palabras, el bot dice «no tengo exactamente…». El buscador de la tienda usa los mismos sinónimos y pone primero lo que trae la palabra en el nombre.",
+      "comoCazarlo": "Correr las diez preguntas más comunes contra el catálogo REAL, no contra el de las pruebas: «cera», «navajas», «aceite», «cera mate».",
+      "consejo": "Un sinónimo corto necesita palabra completa: «mat» encontraba «Matrix». Y cuidado con los que cambian de sentido según la categoría: «pasta» en peinado es cera, en tintes es decolorante.",
+      "senales": [
+        "no encuentra cera",
+        "catalogo en ingles",
+        "sinonimos",
+        "busca cera sale ceramica",
+        "matte paste"
+      ],
+      "salioDe": "el simulador del bot de la tienda, 24 de septiembre de 2026.",
+      "vecinas": [
+        "la-busqueda-no-perdona-errores"
+      ]
     }
   ]
 }
