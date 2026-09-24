@@ -1060,3 +1060,11 @@ dialog.hoja .hoja-cuerpo{ padding: var(--e5); overflow-y: auto; max-height: calc
 .ganador .etq{ font-weight: 700; color: var(--acento-hondo); }
 .acta{ white-space: pre-wrap; font-size: 14px; background: var(--hundido); padding: var(--e3); border-radius: var(--radio); overflow-wrap: anywhere; }
 @media (max-width: 420px){ .lista .fila .boton span{ position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }
+
+/* ══ OFERTAS (Bloque 11) ══════════════════════════════════════════════════ */
+.oferta-cuanto{ display: flex; gap: var(--e2); align-items: stretch; }
+.oferta-cuanto .segmentos{ flex: none; }
+.oferta-cuanto .segmentos button{ min-width: 52px; font-size: 20px; font-weight: 800; }
+.oferta-cuanto input{ flex: 1; min-width: 0; }
+.vista-precios{ margin: var(--e2) 0 var(--e4); }
+.vista-precios s{ color: var(--tinta-suave); font-weight: 500; margin-right: 6px; }

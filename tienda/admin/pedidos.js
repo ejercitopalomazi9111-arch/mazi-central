@@ -15,7 +15,7 @@ import { icono } from '../nucleo/iconos.js';
 import { esc, pesos, plural, estado, hoja, fecha } from '../nucleo/piezas.js';
 import {
   negocio, pedidosNegocio, repartidores, asignarRepartidor, cambiarEstado, escucharPedidos,
-  cobrarEntrega, totalConEnvio, ventasDesde, catalogoAdmin, clientesNegocio,
+  cobrarEntrega, totalConEnvio, ventasDesde, catalogoAdmin, clientesNegocio, terminarVencidas,
 } from '../nucleo/datos.js';
 import { conRecompra, LES_TOCA, chip } from './clientes.js';
 import { ESTADOS } from '../cliente/pedir.js';
@@ -252,6 +252,8 @@ async function tablero(){
         </div>
       </div>`,
     alMontar($c, ctx){
+      // Las ofertas vencidas regresan sus precios en cuanto el dueño abre el tablero.
+      terminarVencidas().then((r) => { if(r.length) ctx.aviso(r.map((v) => `«${v.d.nombre}» terminó: regresaron ${v.regresados} precios`).join('. ')); }).catch((e) => console.error(e));
       const vistos = new Set(pedidos.map((p) => p.id));
       const refrescar = async (evento) => {
         try{

@@ -15,6 +15,7 @@
    ═════════════════════════════════════════════════════════════════════════ */
 import { SUPABASE_URL, SUPABASE_LLAVE_PUBLICABLE, negocioPedido } from '../config.js';
 import * as DEV from './devolucion.js';
+import * as OF from './ofertas.js';
 
 const SLUG = negocioPedido();
 
@@ -592,6 +593,54 @@ export async function guardarSorteo(id, datos){
   }
   if(!data?.length) throw new ErrorDeDatos('No se guardó el sorteo', { code: 'no_autorizado' });
   return data[0].id;
+}
+
+/* ══ OFERTAS (Bloque 11) ══════════════════════════════════════════════════════
+   Una oferta cambia el precio de verdad (nucleo/ofertas.js) y queda registrada
+   en `descuentos` con lo que tocó, para poder regresarlo. */
+export async function descuentos(){
+  const n = await negocio();
+  const r = await db.from('descuentos').select('*').eq('negocio_id', n.id).order('inicio', { ascending: false }).limit(50);
+  if(r.error) throw new ErrorDeDatos('No se pudieron leer las ofertas', r.error);
+  return r.data;
+}
+
+/* oferta: { nombre, tipo, valor, alcance: {todo|categorias|marcas}, fin } → aplica y registra. */
+export async function aplicarOferta(oferta, avance = () => {}){
+  const n = await negocio();
+  const { productos } = await catalogoAdmin();
+  const plan = OF.planAplicar(productos, oferta);
+  if(!plan.cambios.length) throw new ErrorDeDatos(plan.saltados.length ? 'Ningún producto cambió: ' + plan.saltados[0].razon + '.' : 'Ningún producto entra en esa oferta.', { code: 'sin_cambio' });
+  // Primero el registro (con lo que VA a tocar): si algo se corta a la mitad,
+  // «Terminar» sabe qué regresar.
+  const aplicado = Object.fromEntries(plan.cambios.map((c) => [c.id, [c.antes, c.ahora]]));
+  const reg = await db.from('descuentos').insert({ negocio_id: n.id, nombre: oferta.nombre, tipo: oferta.tipo, valor: oferta.valor,
+    alcance: { ...oferta.alcance, aplicado }, canales: ['tienda', 'pos', 'bot'], fin: oferta.fin, activo: true }).select('id').single();
+  const id = revisa(reg, 'No se guardó la oferta').id;
+  let hechos = 0;
+  await enParalelo(plan.cambios, 6, async (c) => { await guardarProducto(c.id, { precio: c.ahora, precio_antes: c.antes }); avance(++hechos, plan.cambios.length); });
+  olvidarCatalogo();
+  return { id, cambiados: plan.cambios.length, saltados: plan.saltados };
+}
+
+export async function terminarOferta(d, avance = () => {}){
+  const { productos } = await catalogoAdmin();
+  const plan = OF.planTerminar(productos, d.alcance?.aplicado);
+  let hechos = 0;
+  await enParalelo(plan.restaurar, 6, async (c) => { await guardarProducto(c.id, { precio: c.precio, precio_antes: null }); avance(++hechos, plan.restaurar.length); });
+  revisa(await db.from('descuentos').update({ activo: false, fin: d.fin && new Date(d.fin) < new Date() ? d.fin : new Date().toISOString() }).eq('id', d.id).select('id'), 'No se cerró la oferta');
+  olvidarCatalogo();
+  return { regresados: plan.restaurar.length, saltados: plan.saltados };
+}
+
+/* Las que ya vencieron se terminan solas en cuanto el admin abre la app. Una
+   tarea programada en el servidor lo haría a la hora exacta (PENDIENTES.md). */
+export async function terminarVencidas(){
+  const p = await yo(); if(p?.rol !== 'admin') return [];
+  const venc = OF.vencidas(await descuentos().catch(() => []));
+  const salida = [];
+  for(const d of venc) salida.push({ d, ...(await terminarOferta(d)) });
+  return salida;
 }
 
 /* ══ PEDIR DESDE LA TIENDA (Bloque 6) ═══════════════════════════════════════

@@ -24,8 +24,9 @@ import { PANTALLAS as DEVOLUCION } from '../venta/devolucion.js';
 import { PANTALLAS as CONVERSACIONES } from '../admin/conversaciones.js';
 import { PANTALLAS as SORTEOS } from '../admin/sorteos.js';
 import { PANTALLAS as SORTEO } from '../cliente/sorteo.js';
+import { PANTALLAS as DESCUENTOS } from '../admin/descuentos.js';
 
-const PANTALLAS = { ...CLIENTE, ...PEDIR, ...ADMIN, ...IMPORTAR, ...VENTA, ...PEDIDOS, ...REPARTO, ...RUTA, ...IMPRESORA, ...CLIENTES, ...CUENTA, ...DEVOLUCION, ...CONVERSACIONES, ...SORTEOS, ...SORTEO, obra, noexiste };
+const PANTALLAS = { ...CLIENTE, ...PEDIR, ...ADMIN, ...IMPORTAR, ...VENTA, ...PEDIDOS, ...REPARTO, ...RUTA, ...IMPRESORA, ...CLIENTES, ...CUENTA, ...DEVOLUCION, ...CONVERSACIONES, ...SORTEOS, ...SORTEO, ...DESCUENTOS, obra, noexiste };
 
 const $app = document.getElementById('app');
 const $avisos = document.getElementById('avisos');
