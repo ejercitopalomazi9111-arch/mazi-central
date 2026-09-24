@@ -908,7 +908,7 @@ function clabeValida(c){
 async function ajustes(){
   const n = await negocio();
   const m = n.marca || {}, a = n.ajustes || {};
-  const envio = a.envio || {}, contacto = a.contacto || {}, pagos = a.pagos || {};
+  const envio = a.envio || {}, contacto = a.contacto || {}, pagos = a.pagos || {}, ticket = a.ticket || {};
   const acento = /^#[0-9a-f]{6}$/i.test(m.acento || '') ? m.acento : '#8E1B1B';
 
   const campo = (id, etq, valor, extra = '', ayuda = '') => `<label class="campo" for="${id}"><span class="etiqueta-campo">${etq}</span>
@@ -959,6 +959,15 @@ async function ajustes(){
             ${campo('clabe', 'CLABE', pagos.clabe || '', 'inputmode="numeric" maxlength="18"', '18 dígitos. Se revisa que esté bien copiada.')}
             ${campo('titular', 'A nombre de', pagos.titular || '', 'maxlength="80"')}
           </div>
+        </section>
+
+        <section class="tarjeta bloque-form">
+          <h2>El ticket</h2>
+          <p class="nota">Lo que dice cada ticket impreso. La impresora se configura en cada caja: Punto de venta → Impresora.</p>
+          ${campo('ticket_encabezado', 'Debajo del nombre', ticket.encabezado || '', 'maxlength="120" placeholder="Distribuidora de productos para barbería"')}
+          ${campo('ticket_rfc', 'RFC (opcional)', ticket.rfc || '', 'maxlength="13" autocapitalize="characters"')}
+          ${campo('ticket_pie', 'Al final', ticket.pie || '', 'maxlength="160" placeholder="¡Gracias por tu compra!"')}
+          ${casilla('ticket_qr', 'Código QR para volver a pedir', 'El cliente lo escanea y cae en la tienda en línea.', ticket.qr !== false)}
         </section>
 
         <section class="tarjeta bloque-form">
@@ -1042,6 +1051,7 @@ async function ajustes(){
               banco: v('banco'), clabe, titular: v('titular') },
             contacto: { ...contacto, whatsapp: tel, horario: v('horario'), direccion: v('direccion') },
             ...(tienda ? { tienda } : {}),
+            ticket: { ...ticket, encabezado: v('ticket_encabezado'), rfc: v('ticket_rfc').toUpperCase(), pie: v('ticket_pie'), qr: si('ticket_qr') },
           },
         };
         try{

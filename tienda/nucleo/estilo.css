@@ -893,7 +893,10 @@ a.cifra-caja{ text-decoration: none; }
 
 
 /* ══ Impresora de tickets ═══════════════════════════════════════════════ */
-.config-impresora{ display: grid; gap: var(--e4); max-width: 820px; }
+.config-impresora{ display: grid; gap: var(--e4); max-width: 820px; grid-template-columns: minmax(0, 1fr); }
+/* Un <select> mide lo que su opción más larga: sin tope, un modelo con nombre
+   largo empujaba toda la página hacia un lado. */
+.campo select{ max-width: 100%; min-width: 0; text-overflow: ellipsis; }
 .estado-impresora{ display: flex; gap: var(--e2); align-items: center; margin: 0; padding: var(--e3) var(--e4); border-radius: var(--radio); background: var(--acento-suave); color: var(--acento-hondo); }
 .opcion-pago span{ display: grid; gap: 2px; }
 .opcion-pago small{ font-weight: 400; color: var(--tinta-suave); font-size: var(--t-chica); }

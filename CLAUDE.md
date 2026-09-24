@@ -461,6 +461,7 @@ sin skill que la cubra, ahí sí se propone.
 | `explorador/` | **Los ojos de Carlos en el teléfono.** Todo el GitHub navegable: `.md` con formato, imágenes, código, búsqueda y favoritos | ✅ probada, 44/44 |
 | `reportes/` · modo **Aviso** | **El aviso del grupo, hecho en un minuto.** Carlos es jefe del 3.1: escribe los pendientes y sale una imagen para el chat, con el formato de la escuela e icono por materia y por tipo. **Vive dentro de Reportes desde el 28 de agosto**; `avisos/` quedó de redirección y sigue guardando `datos.js` e `iconos.js`, que son la verdad del horario | ✅ probada, 54/54 |
 | `reportes/pruebas-app.mjs` | **El metro de la pantalla.** Mide las PROPORCIONES en un navegador de verdad, a 390 y a 1100 px: que nada se salga de su panel, que ningún botón parta su nombre en dos renglones, que ningún control quede de menos de 44 px y que **ningún id esté repetido**. Los cinco defectos que cazó la mudanza de Avisos, ninguno se veía leyendo | ✅ 34/34 |
+| `tienda/nucleo/impresion/` + `tienda/puente/` | **Las impresoras de tickets.** ESC/POS y Star con acentos, corte, cajón, QR y modo imagen; por USB, Bluetooth, serie, Epson ePOS, Star WebPRNT, ventana de imprimir o el puente local (red 9100, Windows, CUPS). 33 modelos en catálogo. **Probado con impresoras simuladas, no con aparatos reales** | ✅ 34 + 6 + 18 |
 | auto-guardado | Commit automático de trabajo en curso | pendiente |
 
 ---

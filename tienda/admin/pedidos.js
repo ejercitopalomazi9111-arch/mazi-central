@@ -19,6 +19,8 @@ import {
 } from '../nucleo/datos.js';
 import { ESTADOS } from '../cliente/pedir.js';
 import { aCentavos, aPesos, sugerirPagos } from '../nucleo/dinero.js';
+import { imprimir } from '../nucleo/impresion/impresora.js';
+import { negocioPedido } from '../config.js';
 
 const HORA = new Intl.DateTimeFormat('es-MX', { hour: 'numeric', minute: '2-digit' });
 const hora = (d) => HORA.format(new Date(d));
@@ -115,12 +117,12 @@ function montarPedidos($c, { lista, reps: _reps, aviso, recargar }){
       }catch(err){ console.error(err); aviso(err.message, 'mal'); b.removeAttribute('aria-busy'); b.disabled = false; }
     }
     if(b.matches('[data-cobrar]')) hojaCobrar(p, { aviso, recargar });
-    if(b.matches('[data-detalle]')) (await hojaDetalle(p)).addEventListener('click', manejar);
+    if(b.matches('[data-detalle]')) (await hojaDetalle(p, aviso)).addEventListener('click', manejar);
   };
   $c.addEventListener('click', manejar);
 }
 
-async function hojaDetalle(p){
+async function hojaDetalle(p, aviso){
   const n = await negocio();
   const d = p.direccion || {}, wa = whatsapp(p, n), m = mapa(d);
   const envio = Number(p.envio) || Number(d.envio || 0);
@@ -133,6 +135,7 @@ async function hojaDetalle(p){
       ${wa ? `<a class="boton secundario" href="${wa}" target="_blank" rel="noopener">${icono('conversaciones')}WhatsApp</a>` : ''}
       ${p.cliente?.telefono ? `<a class="boton secundario" href="tel:${esc(telLimpio(p.cliente.telefono))}">${icono('telefono')}Llamar</a>` : ''}
       ${m ? `<a class="boton secundario" href="${m}" target="_blank" rel="noopener">${icono('lugar')}Mapa</a>` : ''}
+      <button class="boton secundario" data-imprimir-pedido>${icono('imprimir')}Imprimir</button>
     </div>
     <p>${d.recoge ? 'Pasa a recoger a la tienda.' : esc([d.calle, d.colonia, d.cp].filter(Boolean).join(', '))}</p>
     ${d.referencias ? `<p class="nota">${esc(d.referencias)}</p>` : ''}
@@ -144,6 +147,15 @@ async function hojaDetalle(p){
       ${puedeFallar ? `<button class="boton peligro" data-paso="no_entregado">${icono('alerta')}No se pudo entregar</button>` : ''}
       ${SIGUIENTE[p.estado] ? `<button class="boton principal" data-paso="${SIGUIENTE[p.estado].a}">${icono(SIGUIENTE[p.estado].icono)}${SIGUIENTE[p.estado].texto}</button>` : ''}
     </div></div>` });
+  // Ticket para surtir y para que viaje con el pedido: con cliente y dirección.
+  h.querySelector('[data-imprimir-pedido]').addEventListener('click', async () => {
+    try{
+      await imprimir({ folio: p.folio, cuando: p.creado, renglones: p.renglones, total: totalConEnvio(p), envio: Number(p.envio) || Number(d.envio || 0),
+        cliente: [p.cliente?.nombre, telLimpio(p.cliente?.telefono)].filter(Boolean).join(' · '),
+        direccion: d.recoge ? 'Pasa a recoger' : [d.calle, d.colonia, d.referencias].filter(Boolean).join(', '),
+        metodo: p.pagado ? p.forma_pago : null, qr: new URL(`?negocio=${negocioPedido()}#/pedido/${p.id}`, location.href).href }, n);
+    }catch(err){ console.error(err); aviso(`No se imprimió: ${err.message}`, 'mal'); }
+  });
   return h;
 }
 
