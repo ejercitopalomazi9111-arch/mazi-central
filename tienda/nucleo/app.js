@@ -12,8 +12,9 @@ import { negocio, yo, verComo, carrito, catalogo } from './datos.js';
 import { PANTALLAS as CLIENTE } from '../cliente/pantallas.js';
 import { PANTALLAS as ADMIN } from '../admin/pantallas.js';
 import { PANTALLAS as IMPORTAR } from '../admin/importar.js';
+import { PANTALLAS as VENTA } from '../venta/pantallas.js';
 
-const PANTALLAS = { ...CLIENTE, ...ADMIN, ...IMPORTAR, obra, noexiste };
+const PANTALLAS = { ...CLIENTE, ...ADMIN, ...IMPORTAR, ...VENTA, obra, noexiste };
 
 const $app = document.getElementById('app');
 const $avisos = document.getElementById('avisos');

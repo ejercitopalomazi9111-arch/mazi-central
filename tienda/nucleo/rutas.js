@@ -84,11 +84,11 @@ export const RUTAS = [
     promesa: 'Las entregas de días pasados.' },
 
   /* ── Punto de venta ──────────────────────────────────────────────────── */
-  { ruta: '/v',             apartado: 'venta', titulo: 'Cobrar',          icono: 'venta',     menu: true,  pantalla: 'obra',      bloque: 5,
+  { ruta: '/v',             apartado: 'venta', titulo: 'Cobrar',          icono: 'venta',     menu: true,  pantalla: 'cobrar',      bloque: 5,
     promesa: 'Escanear o buscar, cobrar y dar cambio. Hecho para tableta de pie.' },
-  { ruta: '/v/caja',        apartado: 'venta', titulo: 'Caja',            icono: 'efectivo',  menu: true,  pantalla: 'obra',      bloque: 5,
+  { ruta: '/v/caja',        apartado: 'venta', titulo: 'Caja',            icono: 'efectivo',  menu: true,  pantalla: 'caja',      bloque: 5,
     promesa: 'Abrir con el fondo, cerrar y cuadrar: lo que debería haber contra lo que hay.' },
-  { ruta: '/v/ventas',      apartado: 'venta', titulo: 'Ventas de hoy',   icono: 'reportes',  menu: true,  pantalla: 'obra',      bloque: 5,
+  { ruta: '/v/ventas',      apartado: 'venta', titulo: 'Ventas de hoy',   icono: 'reportes',  menu: true,  pantalla: 'ventasHoy',      bloque: 5,
     promesa: 'Cuánto va, a qué hora se vende más y qué se lleva la gente.' },
   { ruta: '/v/devolucion',  apartado: 'venta', titulo: 'Devoluciones',    icono: 'deshacer',  menu: true,  pantalla: 'obra',      bloque: 5,
     promesa: 'Regresar una venta con su ticket: la pieza vuelve al inventario y el dinero sale de caja.' },
