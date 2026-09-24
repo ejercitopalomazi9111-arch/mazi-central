@@ -891,6 +891,23 @@ a.cifra-caja{ text-decoration: none; }
 .llega{ font-size: var(--t-sub); margin: 0; }
 .llega strong{ font-size: var(--t-titulo); color: var(--acento-hondo); }
 
+
+/* ══ Impresora de tickets ═══════════════════════════════════════════════ */
+.config-impresora{ display: grid; gap: var(--e4); max-width: 820px; }
+.estado-impresora{ display: flex; gap: var(--e2); align-items: center; margin: 0; padding: var(--e3) var(--e4); border-radius: var(--radio); background: var(--acento-suave); color: var(--acento-hondo); }
+.opcion-pago span{ display: grid; gap: 2px; }
+.opcion-pago small{ font-weight: 400; color: var(--tinta-suave); font-size: var(--t-chica); }
+.opcion-pago.no-disponible{ opacity: .55; cursor: not-allowed; }
+.vista-ticket{ --cols: 48; margin: var(--e3) auto 0; width: calc(var(--cols) * 1ch + 32px); max-width: 100%; overflow-x: auto; padding: 16px; background: #fff; color: #111;
+  font: 12px/1.35 ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; border: 1px solid var(--linea); border-radius: 4px; box-shadow: var(--elev-1); white-space: pre; }
+.vista-ticket .n{ font-weight: 800; }
+.vista-ticket .g{ font-weight: 800; font-size: 2em; line-height: 1.2; }
+.vista-ticket .qr-falso{ display: block; width: 96px; height: 96px; margin: 4px auto; background: repeating-conic-gradient(#111 0 25%, #fff 0 50%) 0 0 / 16px 16px; }
+.pasos-texto{ margin: var(--e2) 0 0; padding-left: 1.4em; display: grid; gap: var(--e2); }
+.pasos-texto code, .nota code{ font-size: .9em; background: var(--hundido); padding: 1px 5px; border-radius: 4px; }
+.botones.fin{ justify-content: flex-end; margin-bottom: var(--e3); }
+@media print{ body.imprimiendo-ticket .ticket-papel{ display: block !important; } body.imprimiendo-ticket .ticket-papel img{ width: 100%; } }
+
 /* ── Capas: hoja inferior, modal, aviso ────────────────────────────────── */
 /* Hoja que sube desde abajo: en teléfono es donde está el pulgar. En pantalla
    ancha se vuelve un diálogo al centro. */

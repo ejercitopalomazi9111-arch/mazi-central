@@ -20,6 +20,7 @@ import {
 } from '../nucleo/datos.js';
 import { negocioPedido } from '../config.js';
 import { aCentavos, aPesos, sugerirPagos, desglose, contar, BILLETES, MONEDAS } from '../nucleo/dinero.js';
+import { imprimir, leerConf, abrirCajon } from '../nucleo/impresion/impresora.js';
 
 const PAGINA = 60;
 const LLAVE_TICKET = 'tienda-pos-ticket-' + negocioPedido();
@@ -66,28 +67,18 @@ function montarAbrirCaja($c, { aviso, alAbrir }){
   });
 }
 
-/* ── Imprimir un ticket (58/80 mm) ─────────────────────────────────────── */
-async function imprimirTicket(v){
-  const n = await negocio();
-  const d = document.createElement('div');
-  d.className = 'ticket-papel';
-  d.innerHTML = `<p class="t-negocio">${esc(n.marca?.nombre_corto || n.nombre)}</p>
-    ${n.ajustes?.contacto?.direccion ? `<p>${esc(n.ajustes.contacto.direccion)}</p>` : ''}
-    <p>${esc(fecha(v.cuando || Date.now()))} · Ticket #${v.folio}</p><hr>
-    <table>${v.renglones.map((r) => `<tr><td>${r.cantidad} × ${esc(r.nombre)}</td><td>${pesos(r.importe ?? r.precio * r.cantidad)}</td></tr>`).join('')}</table><hr>
-    <p class="t-total"><span>Total</span><span>${pesos(v.total)}</span></p>
-    ${v.metodo ? `<p><span>${esc(METODOS[v.metodo] || v.metodo)}</span>${v.recibido != null ? `<span>${pesos(v.recibido)}</span>` : ''}</p>` : ''}
-    ${v.cambio ? `<p><span>Cambio</span><span>${pesos(v.cambio)}</span></p>` : ''}
-    <hr><p class="t-gracias">¡Gracias por tu compra!</p>
-    ${n.ajustes?.contacto?.whatsapp ? `<p>WhatsApp ${esc(n.ajustes.contacto.whatsapp)}</p>` : ''}`;
-  const papel = document.createElement('style');
-  papel.textContent = '@page{ size: 80mm auto; margin: 3mm; }';
-  document.body.append(d, papel);
-  document.body.classList.add('imprimiendo-ticket');
-  const fin = () => { document.body.classList.remove('imprimiendo-ticket'); d.remove(); papel.remove(); };
-  window.addEventListener('afterprint', fin, { once: true });
-  window.print();
-  setTimeout(() => { if(d.isConnected && !matchMedia('print').matches) fin(); }, 1500);
+/* ── Imprimir un ticket ────────────────────────────────────────────────
+   Todo lo de impresoras vive en nucleo/impresion: aquí sólo se le pasa la
+   venta. Si falla, se dice por qué y la venta ya quedó hecha: el ticket se
+   reimprime desde Ventas de hoy. */
+async function imprimirTicket(v, { cajon = false, aviso } = {}){
+  try{
+    const [n, p] = await Promise.all([negocio(), yo()]);
+    await imprimir({ ...v, cajero: v.cajero ?? p?.nombre, qr: v.qr ?? new URL('?negocio=' + negocioPedido() + '#/', location.href).href }, n, { cajon });
+  }catch(err){
+    console.error(err);
+    aviso?.(`No se imprimió: ${err.message}`, 'mal');
+  }
 }
 
 /* ── Escanear con la cámara (donde el navegador sabe) ──────────────────── */
@@ -345,7 +336,11 @@ async function cobrar(){
               <div class="botones">
                 <button class="boton secundario" data-imprimir>${icono('imprimir')}Imprimir ticket</button>
                 <button class="boton principal" data-cerrar-hoja>${icono('agregar')}Nueva venta</button></div></div>`;
-            d.querySelector('[data-imprimir]').addEventListener('click', () => imprimirTicket(venta));
+            d.querySelector('[data-imprimir]').addEventListener('click', () => imprimirTicket(venta, { aviso }));
+            // Configurada para imprimir sola: sale el ticket, y en efectivo se abre el cajón.
+            const conf = leerConf();
+            if(conf.automatico) imprimirTicket(venta, { cajon: metodo === 'efectivo', aviso });
+            else if(conf.cajon && metodo === 'efectivo' && conf.conexion !== 'navegador') abrirCajon(conf).catch((err) => aviso(`El cajón no abrió: ${err.message}`, 'mal'));
             d.addEventListener('close', () => $q.focus(), { once: true });
           }catch(err){
             console.error(err);
@@ -404,6 +399,7 @@ async function cajaPantalla(){
         <div class="cifra-caja"><span class="valor">${pesosR(por('tarjeta') + por('transferencia'))}</span><span class="etq">tarjeta y transferencia</span></div>
       </div>
       <section class="tarjeta bloque-form">
+        <div class="botones fin"><button type="button" class="boton secundario" data-abrir-cajon>${icono('efectivo')}Abrir cajón</button></div>
         <h2>Cerrar caja</h2>
         <p class="nota">Cuenta el cajón por billete y moneda. Primero cuenta y luego compara: así el corte es honesto.</p>
         <form data-cerrar novalidate>
@@ -420,6 +416,9 @@ async function cajaPantalla(){
       ${histHTML}`,
 
     alMontar($c, { aviso }){
+      $c.querySelector('[data-abrir-cajon]').addEventListener('click', async (e) => {
+        try{ await abrirCajon(); aviso('Cajón abierto'); }catch(err){ aviso(err.message, 'mal'); }
+      });
       const $f = $c.querySelector('[data-cerrar]');
       const conteo = () => Object.fromEntries([...$f.querySelectorAll('[data-den]')].map((i) => [i.dataset.den, Number.parseInt(i.value, 10) || 0]));
       const repintar = () => {
@@ -470,7 +469,7 @@ async function ventasHoy(){
   return {
     html: `<div class="segmentos" role="group" aria-label="Canal">${CANALES.map(([k, t]) => `<button data-canal="${k}" aria-pressed="${k === f.canal}">${t}</button>`).join('')}</div>
       <div id="ventas"></div>`,
-    alMontar($c){
+    alMontar($c, { aviso }){
       const $v = $c.querySelector('#ventas');
       const pintar = () => {
         const vs = ventas.filter((v) => f.canal === 'todos' || v.canal === f.canal);
@@ -540,8 +539,8 @@ async function ventasHoy(){
             <p class="cobro-total"><span>Total</span><strong>${pesos(v.total)}</strong></p>
             ${c ? `<p class="nota">${esc(METODOS[c.metodo] || c.metodo)}${c.recibido ? ` · recibió ${pesos(c.recibido)}` : ''}${Number(c.cambio) ? ` · cambio ${pesos(c.cambio)}` : ''}</p>` : '<p class="nota">Por cobrar</p>'}
             <button class="boton secundario ancho" data-reimprimir>${icono('imprimir')}Imprimir ticket</button>` });
-          d.querySelector('[data-reimprimir]').addEventListener('click', () => imprimirTicket({ folio: v.folio, total: v.total, renglones: v.renglones,
-            metodo: c?.metodo, recibido: c?.recibido != null ? Number(c.recibido) : null, cambio: Number(c?.cambio || 0), cuando: v.creado }));
+          d.querySelector('[data-reimprimir]').addEventListener('click', () => imprimirTicket({ folio: v.folio, total: v.total, renglones: v.renglones, reimpresion: true,
+            metodo: c?.metodo, recibido: c?.recibido != null ? Number(c.recibido) : null, cambio: Number(c?.cambio || 0), cuando: v.creado }, { aviso }));
         }
         if(b.matches('[data-csv]')) descargarCSV(`ventas-${new Date().toISOString().slice(0, 10)}.csv`, [
           ['Folio', 'Hora', 'Canal', 'Producto', 'Cantidad', 'Precio', 'Importe', 'Forma de pago', 'Pagado'],

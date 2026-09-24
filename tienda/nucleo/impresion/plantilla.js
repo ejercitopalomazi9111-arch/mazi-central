@@ -22,7 +22,7 @@ export function piezasTicket(venta, negocio, { copia = '' } = {}){
   if(c.direccion) ps.push({ t: 'texto', v: c.direccion, alinear: 'centro' });
   if(c.whatsapp) ps.push({ t: 'texto', v: `WhatsApp ${c.whatsapp}`, alinear: 'centro' });
   if(t.rfc) ps.push({ t: 'texto', v: `RFC ${t.rfc}`, alinear: 'centro' });
-  if(copia) ps.push({ t: 'texto', v: `*** ${copia} ***`, alinear: 'centro', negritas: true });
+  if(copia || venta.reimpresion) ps.push({ t: 'texto', v: `*** ${copia || 'REIMPRESIÓN'} ***`, alinear: 'centro', negritas: true });
   ps.push({ t: 'raya' });
   ps.push({ t: 'par', izq: `Ticket #${venta.folio}`, der: FECHA.format(new Date(venta.cuando || Date.now())) });
   if(venta.cajero) ps.push({ t: 'texto', v: `Atendió: ${venta.cajero}` });
