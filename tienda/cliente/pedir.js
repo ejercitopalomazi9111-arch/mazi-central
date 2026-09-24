@@ -192,14 +192,17 @@ async function pagar(){
         e.preventDefault();
         $f.querySelectorAll('.campo.error').forEach((c) => { c.classList.remove('error'); c.querySelector('.mensaje-error')?.remove(); });
         const tel = v.telefono.replace(/\D/g, '').replace(/^52(?=\d{10}$)/, '');
-        let malo = null;
-        if(!v.nombre.trim()) malo ??= falla('nombre', 'Escribe tu nombre.');
-        if(tel.length !== 10) malo ??= falla('telefono', 'Son 10 dígitos, sin el 52.');
+        // Se marcan TODOS los que faltan, no sólo el primero. (Con `malo ??=
+        // falla(…)` la función ni se llamaba una vez que había uno.)
+        const malos = [];
+        if(!v.nombre.trim()) malos.push(falla('nombre', 'Escribe tu nombre.'));
+        if(tel.length !== 10) malos.push(falla('telefono', 'Son 10 dígitos, sin el 52.'));
         if(v.entrega === 'domicilio'){
-          if(!v.calle.trim()) malo ??= falla('calle', 'Falta la calle y el número.');
-          if(!v.colonia.trim()) malo ??= falla('colonia', 'Falta la colonia.');
-          if(v.cp && !/^\d{5}$/.test(v.cp.trim())) malo ??= falla('cp', 'El código postal tiene 5 dígitos, o déjalo vacío.');
+          if(!v.calle.trim()) malos.push(falla('calle', 'Falta la calle y el número.'));
+          if(!v.colonia.trim()) malos.push(falla('colonia', 'Falta la colonia.'));
+          if(v.cp && !/^\d{5}$/.test(v.cp.trim())) malos.push(falla('cp', 'El código postal tiene 5 dígitos, o déjalo vacío.'));
         }
+        const malo = malos[0];
         if(malo){ malo.focus(); aviso('Revisa lo marcado en rojo', 'mal'); return; }
 
         const $b = $f.querySelector('[data-pedir]'); $b.setAttribute('aria-busy', 'true'); $b.disabled = true;

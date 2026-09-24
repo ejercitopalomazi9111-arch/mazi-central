@@ -230,13 +230,18 @@ async function navegar(){
   if(mio !== turno) return;
 
   if(vista.titulo) $t.textContent = vista.titulo;
-  $c.classList.toggle('ancho', !!vista.ancho);
-  $c.innerHTML = vista.html;
+  // Contenedor NUEVO en cada pantalla: las pantallas se cuelgan de $c con
+  // addEventListener, y un $c reciclado junta oyentes de visitas anteriores —
+  // «volver a pedir» metía el doble después de un recargar().
+  const $nuevo = $c.cloneNode(false);
+  $c.replaceWith($nuevo);
+  $nuevo.classList.toggle('ancho', !!vista.ancho);
+  $nuevo.innerHTML = vista.html;
   window.scrollTo(0, 0);
   // `recargar` vuelve a pintar la pantalla en la que ya estás. ir() a la misma
   // ruta no sirve: el hash no cambia y no pasa nada (así se quedó colgada la
   // caja recién abierta, y Categorías no enseñaba la que acababas de guardar).
-  const r = vista.alMontar?.($c, { aviso, ir, ruta, recargar: () => navegar() });
+  const r = vista.alMontar?.($nuevo, { aviso, ir, ruta, recargar: () => navegar() });
   if(typeof r === 'function') desmontar = r;
   // El foco va al título al cambiar de pantalla (no en la primera carga): quien
   // navega con lector de pantalla oye dónde llegó.

@@ -214,6 +214,27 @@
       "vecinas": [
         "la-hoja-que-sobrevive-al-atras"
       ]
+    },
+    {
+      "id": "el-contenedor-reciclado-junta-oyentes",
+      "titulo": "«Volver a pedir» metía el doble después de cancelar",
+      "gravedad": "alta",
+      "sintoma": "Tras cancelar un pedido (que repinta la pantalla), un toque en «Volver a pedir» agregó 4 y 2 en vez de 2 y 1. En Cobrar, cada vuelta a la pantalla habría sumado productos de más.",
+      "causa": "Las pantallas se cuelgan de #contenido con addEventListener, y #contenido era SIEMPRE el mismo elemento: innerHTML cambia lo de adentro, no los oyentes del contenedor. Cada visita sumaba uno.",
+      "porque": "innerHTML = … borra los hijos y sus oyentes, pero el elemento al que se le asigna sigue vivo con todo lo que se le colgó. Leyendo el código de una pantalla no se ve: el defecto está en el armazón.",
+      "arreglo": "navegar() reemplaza #contenido por un clon vacío (cloneNode(false)) antes de pintar cada pantalla. Lo viejo se va con sus oyentes.",
+      "comoCazarlo": "Hacer la misma acción DOS veces con un repintado en medio (recargar, ir y volver) y contar el efecto, no si «funcionó».",
+      "consejo": "Un contenedor que sobrevive a las pantallas no debe recibir oyentes de las pantallas. O se recrea, o cada pantalla se cuelga de un elemento suyo.",
+      "senales": [
+        "se agrega dos veces",
+        "el clic cuenta doble",
+        "después de volver a la pantalla hace todo repetido",
+        "addEventListener duplicado"
+      ],
+      "salioDe": "Mis pedidos de la tienda, 24 de septiembre de 2026.",
+      "vecinas": [
+        "ir-a-donde-ya-estas-no-hace-nada"
+      ]
     }
   ]
 }
