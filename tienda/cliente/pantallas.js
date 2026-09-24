@@ -15,6 +15,8 @@ import { esc, pesos, quitaAcentos, plural, estado } from '../nucleo/piezas.js';
 import { catalogo, carrito, misPedidos, negocio } from '../nucleo/datos.js';
 import { pedidoDeSiempre, teToca, validos, diaCorto, dias } from '../nucleo/recompra.js';
 import { SINONIMOS } from '../nucleo/bot.js';
+import { sorteoDelMes, tarjetaSorteo } from './sorteo.js';
+import { avance } from '../nucleo/sorteo.js';
 
 /* Lo que ha comprado quien está viendo. Sin sesión, nada — y NO se crea una:
    la sesión nace al pagar, nunca por mirar la portada. */
@@ -68,8 +70,8 @@ function existencia(p){
      1. buscador · 2. su pedido de siempre (o lo básico si es nuevo)
      3. categorías · 4. «te toca surtirte» · 5. ofertas · 6. sorteo
    El 2 y el 4 salen de SUS compras (nucleo/recompra.js) y cada uno dice en qué
-   se basa. El 6 no se pinta hasta que haya un sorteo real con su permiso de
-   Gobernación (Bloque 11): pintar uno que no existe es prometer lo que no hay. */
+   se basa. El 6 sólo sale si hay un sorteo ACTIVO este mes, y uno activo ya
+   trae su permiso de Gobernación: la base no deja activarlo sin él. */
 
 /* Un renglón con foto para las secciones que son de ESTE cliente. */
 function renglonMio(p, { cantidad, razon, boton }){
@@ -89,7 +91,7 @@ function agregarLoQueCabe(p, n){
 }
 
 export async function portada(){
-  const [{ categorias, productos, porId }, mios] = await Promise.all([catalogo(), historial()]);
+  const [{ categorias, productos, porId }, mios, sorteo] = await Promise.all([catalogo(), historial(), sorteoDelMes()]);
   const hay = productos.filter((p) => !p.x);
 
   /* Sin historial no hay «pedido de siempre»: lo honesto es decir lo que es
@@ -128,6 +130,7 @@ export async function portada(){
     ${seccion('Categorías', tiraCategorias(categorias))}
     ${bloqueToca}
     ${ofertas.length ? seccion('Ofertas', `<div class="carril">${ofertas.map(tarjeta).join('')}</div>`) : ''}
+    ${sorteo ? `<section class="seccion">${tarjetaSorteo(sorteo, avance(mios, sorteo))}</section>` : ''}
   `,
   alMontar(raiz, { aviso }){
     raiz.querySelector('[data-siempre]')?.addEventListener('click', () => {

@@ -1038,3 +1038,25 @@ dialog.hoja .hoja-cuerpo{ padding: var(--e5); overflow-y: auto; max-height: calc
 .escribir input:focus{ outline: 0; border-color: var(--acento); box-shadow: 0 0 0 3px var(--acento-suave); }
 .escribir .boton{ width: 52px; min-height: 52px; padding: 0; justify-content: center; border-radius: 999px; flex: none; }
 .lista.sabe .fila{ min-height: 52px; }
+
+/* ══ SORTEOS (Bloque 11) ══════════════════════════════════════════════════ */
+.sorteo-cabeza{ display: flex; gap: var(--e3); align-items: flex-start; justify-content: space-between; }
+.sorteo-cabeza > div{ flex: 1; min-width: 0; }
+.sorteo-cabeza .etq, .sorteo-cliente .etq{ font-size: var(--t-chica); font-weight: 700; color: var(--tinta-suave); margin: 0; }
+.sorteo-cliente{ display: grid; gap: var(--e3); padding: var(--e4); }
+.sorteo-cliente .sorteo-cabeza{ justify-content: flex-start; }
+.sorteo-cliente .sorteo-cabeza > .ico{ width: 40px; height: 40px; padding: 8px; border-radius: 12px; background: var(--acento-suave); color: var(--acento-hondo); flex: none; }
+.sorteo-cliente h3{ margin: 0; font-size: var(--t-sub); overflow-wrap: anywhere; }
+.sorteo-cliente p{ margin: 0; }
+.barra-avance{ height: 14px; border-radius: 999px; background: var(--hundido); overflow: hidden; }
+.barra-avance > span{ display: block; height: 100%; border-radius: inherit; background: var(--acento); transition: width .4s ease-out; }
+.avance-texto{ display: flex; gap: var(--e2); align-items: baseline; flex-wrap: wrap; }
+.avance-texto .ico{ width: 20px; height: 20px; color: var(--bien); align-self: center; }
+.sorteo-actual{ display: grid; gap: var(--e3); }
+.sorteo-actual .cifras{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.bases{ margin: 0 0 var(--e4); padding-left: var(--e5); display: grid; gap: var(--e2); }
+.ganador{ display: grid; justify-items: center; gap: var(--e1); padding: var(--e5); border-radius: var(--radio); background: var(--acento-suave); text-align: center; }
+.ganador strong{ font-size: var(--t-titulo); overflow-wrap: anywhere; }
+.ganador .etq{ font-weight: 700; color: var(--acento-hondo); }
+.acta{ white-space: pre-wrap; font-size: 14px; background: var(--hundido); padding: var(--e3); border-radius: var(--radio); overflow-wrap: anywhere; }
+@media (max-width: 420px){ .lista .fila .boton span{ position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }

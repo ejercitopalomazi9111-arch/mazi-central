@@ -59,3 +59,8 @@ _(se agregan aquí conforme salgan; ninguna detiene el trabajo)_
   siempre esté prendido). Mientras tanto, lo que más le ayuda es llenar en Ajustes el horario, la
   dirección, el envío y las formas de pago: cada dato que falta es una pregunta que el bot le pasa
   a una persona.
+
+- *(Nota técnica, no es para Carlos)* **Prueba intermitente:** `pruebas-rutas.mjs` falló 1 de 7
+  corridas en `/a/repartidores` (el mapa) el 24 de septiembre; las otras 6 salieron 93/93. El
+  motivo se imprime en el renglón SIGUIENTE al ✗; la vez que falló se filtró con `grep` y se
+  perdió. La próxima: `grep -A1 "✗"`.

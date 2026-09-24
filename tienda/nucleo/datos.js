@@ -572,6 +572,28 @@ export async function contestarComoPersona(conversacion, texto){
   revisa(await db.from('mensajes').insert({ conversacion_id: conversacion, negocio_id: n.id, rol: 'persona', texto }), 'No se mandó el mensaje');
 }
 
+/* ══ SORTEOS (Bloque 11) ══════════════════════════════════════════════════════
+   La base NO deja activar uno sin permiso de Gobernación y fecha de aviso a
+   PROFECO (constraint sorteo_legal en 0001). El cliente sólo ve los activos. */
+export async function sorteos(){
+  const n = await negocio();
+  const r = await db.from('sorteos').select('id, nombre, premio, minimo_mensual, mes, permiso_segob, aviso_profeco, activo')
+    .eq('negocio_id', n.id).order('mes', { ascending: false }).limit(24);
+  if(r.error) throw new ErrorDeDatos('No se pudieron leer los sorteos', r.error);
+  return r.data.map((x) => ({ ...x, minimo_mensual: Number(x.minimo_mensual) }));
+}
+export async function guardarSorteo(id, datos){
+  const n = await negocio();
+  const q = id ? db.from('sorteos').update(datos).eq('id', id) : db.from('sorteos').insert({ ...datos, negocio_id: n.id });
+  const { data, error } = await q.select('id');
+  if(error){
+    if(error.code === '23514' && /sorteo_legal/.test(error.message)) throw new ErrorDeDatos('Para activarlo faltan el número de permiso de Gobernación y la fecha del aviso a PROFECO.', error);
+    throw new ErrorDeDatos('No se guardó el sorteo', error);
+  }
+  if(!data?.length) throw new ErrorDeDatos('No se guardó el sorteo', { code: 'no_autorizado' });
+  return data[0].id;
+}
+
 /* ══ PEDIR DESDE LA TIENDA (Bloque 6) ═══════════════════════════════════════
    La sesión se crea AQUÍ, al pagar, y nunca antes (invitado sin correo). En el
    negocio de muestra, quien anduvo viendo como admin o caja pasa a «cliente de
