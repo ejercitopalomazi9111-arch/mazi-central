@@ -125,7 +125,7 @@ export const RUTAS = [
     promesa: 'Los apartados abiertos y lo que debe cada quien.' },
   { ruta: '/a/sorteos',     apartado: 'admin', titulo: 'Sorteos',         icono: 'sorteo',    menu: true,  pantalla: 'obra',      bloque: 11,
     promesa: 'El sorteo del mes y sus reglas. No se activa sin el permiso de Gobernación.' },
-  { ruta: '/a/conversaciones', apartado: 'admin', titulo: 'Conversaciones', icono: 'conversaciones', menu: true, pantalla: 'obra', bloque: 10,
+  { ruta: '/a/conversaciones', apartado: 'admin', titulo: 'Conversaciones', icono: 'conversaciones', menu: true, pantalla: 'conversaciones', bloque: 10,
     promesa: 'Lo que el bot está platicando, y el botón de «lo tomo yo».' },
   { ruta: '/a/redes',       apartado: 'admin', titulo: 'Redes',           icono: 'redes',     menu: true,  pantalla: 'obra',      bloque: 12,
     promesa: 'Calendario y cola de publicaciones.' },

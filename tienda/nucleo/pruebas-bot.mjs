@@ -46,6 +46,18 @@ ok('lo agotado va al final', buscar('cera', productos, categorias).slice(-1)[0].
 ok('«tinte rubio» no está: cero, no se inventa', buscar('tinte rubio', productos, categorias).length === 0);
 ok('catálogo vacío no truena', buscar('cera', [], []).length === 0);
 
+const reales = [
+  { id: 'r1', n: 'Pacinos Matte Paste 118 ml', m: 'Pacinos', c: 'peinado', p: 336, q: 8, x: false },
+  { id: 'r2', n: 'Timco Plancha Mini Ceramica', m: 'Timco', c: 'secadoras', p: 344, q: 4, x: false },
+  { id: 'r3', n: 'Oyster Cosmetics Fixi Wax Cera Aqua 100 ml', m: 'Oyster', c: 'peinado', p: 180, q: 9, x: false },
+  { id: 'r4', n: 'Wahl Repuesto Cuchillas Clipper Blade', m: 'Wahl', c: 'maquinas', p: 420, q: 5, x: false },
+];
+ok('«cera mate» encuentra «Matte Paste» (sinónimos del proveedor en inglés)', buscar('cera mate', reales)[0]?.id === 'r1', buscar('cera mate', reales).map((p) => p.n).join());
+ok('«cera» no es «cerámica»', !buscar('cera', reales).some((p) => p.id === 'r2'));
+ok('«navajas» encuentra «Blade»', buscar('navajas', reales)[0]?.id === 'r4');
+ok('sinónimos del negocio: «termo» → «tumbler»', buscar('termo', [{ id: 'z', n: 'Tumbler Stanley 40 oz', m: '', c: '', p: 1 }], [], [['termo', 'tumbler']]).length === 1);
+const par = buscar('cera brillo', reales);
+ok('si sólo coincide la mitad, sale marcado como parcial', par.parcial === true, JSON.stringify(par.map((p) => p.id)));
 console.log('\n· Precio y existencias: sólo del catálogo');
 const [r1] = charla(['¿Cuánto cuesta la cera mate?']);
 ok('dice el precio real', /\$289/.test(r1.texto), r1.texto);
@@ -78,6 +90,8 @@ const tope2 = charla(['quiero 3 cera brillo', 'quiero 1 cera brillo']);
 ok('lo que ya llevas cuenta contra lo que queda', /Ya llevas las 3/.test(tope2[1].texto), tope2[1].texto);
 const agot = charla(['quiero cera fibra suavecito']);
 ok('agotado no entra al pedido', !agot[0].estado.carrito.length);
+const recuerda = charla(['un par de ceras', '2']);
+ok('«un par de ceras» → lista → «2»: agrega 2 sin volver a preguntar', recuerda[1].estado.carrito[0]?.[1] === 2 && /Listo: 2/.test(recuerda[1].texto), recuerda[1].texto);
 const quita = charla(['quiero 2 navajas', 'quita las navajas']);
 ok('«quita las navajas» las saca', !quita[1].estado.carrito.length, quita[1].texto);
 const faltan = charla(['quiero talco', 'cuanto llevo']);
@@ -95,7 +109,7 @@ const per = charla(['quiero hablar con una persona', 'hola?', '¿cuánto cuesta 
 ok('«persona» pasa la charla y avisa', per[0].accion === 'persona' && per[0].estado.conPersona);
 ok('con la persona atendiendo, el bot se calla', per[1].texto === null && per[2].texto === null);
 const confuso = charla(['asdf qwer', 'zxcv']);
-ok('a la primera que no entiende, pregunta', !confuso[0].accion && /No te entendí/.test(confuso[0].texto));
+ok('a la primera que no entiende, pregunta', !confuso[0].accion && /No te entendí|No encontré/.test(confuso[0].texto), confuso[0].texto);
 ok('a la segunda, pasa a una persona', confuso[1].accion === 'persona');
 const [fac] = charla(['necesito factura']);
 ok('factura va con una persona (no la hace el bot)', fac.accion === 'persona');

@@ -550,6 +550,28 @@ export async function devolver({ venta, renglones, metodo, motivo }){
   return { monto: total / 100, folio: venta.folio, camino: 'admin' };
 }
 
+/* ══ CONVERSACIONES (Bloque 10) ═══════════════════════════════════════════════
+   Las escribe el transporte de WhatsApp con la llave del servidor (el personal
+   no puede crear conversaciones ni escribir como bot: RLS). Desde aquí sólo se
+   leen, se toman («lo tomo yo») y se contesta como persona. */
+export async function conversaciones(){
+  const n = await negocio();
+  const r = await db.from('conversaciones')
+    .select('id, canal, externo, estado, actualizado, tomada_por, cliente:clientes(nombre), quien:perfiles(nombre), mensajes(rol, texto, cuando)')
+    .eq('negocio_id', n.id).order('actualizado', { ascending: false }).limit(50);
+  if(r.error) throw new ErrorDeDatos('No se pudieron leer las conversaciones', r.error);
+  return r.data;
+}
+export async function tomarConversacion(id, tomar = true){
+  const p = await yo();
+  const d = revisa(await db.from('conversaciones').update({ estado: tomar ? 'persona' : 'bot', tomada_por: tomar ? p.id : null }).eq('id', id).select('id'), 'No se pudo tomar la conversación');
+  if(!d?.length) throw new ErrorDeDatos('No se pudo tomar la conversación', { code: 'no_autorizado' });
+}
+export async function contestarComoPersona(conversacion, texto){
+  const n = await negocio();
+  revisa(await db.from('mensajes').insert({ conversacion_id: conversacion, negocio_id: n.id, rol: 'persona', texto }), 'No se mandó el mensaje');
+}
+
 /* ══ PEDIR DESDE LA TIENDA (Bloque 6) ═══════════════════════════════════════
    La sesión se crea AQUÍ, al pagar, y nunca antes (invitado sin correo). En el
    negocio de muestra, quien anduvo viendo como admin o caja pasa a «cliente de

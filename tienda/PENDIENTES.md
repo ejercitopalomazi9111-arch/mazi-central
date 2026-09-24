@@ -52,3 +52,10 @@ _(se agregan aquí conforme salgan; ninguna detiene el trabajo)_
   nota que lleva el reembolso, y el corte de caja lo lee de ahí y lo descuenta. Con 0011: la
   cajera también puede devolver, el servidor pone el precio, y dos devoluciones del mismo ticket
   al mismo tiempo no pueden pasar de lo vendido.
+
+- **El bot ya piensa, pero todavía no habla por WhatsApp.** El cerebro (precios, existencias,
+  envío, pedido, pasar a persona) está hecho y probado, y se prueba desde Conversaciones. Para
+  conectarlo falta un **número dedicado** y **dónde correr el transporte** (un servicio chico que
+  siempre esté prendido). Mientras tanto, lo que más le ayuda es llenar en Ajustes el horario, la
+  dirección, el envío y las formas de pago: cada dato que falta es una pregunta que el bot le pasa
+  a una persona.

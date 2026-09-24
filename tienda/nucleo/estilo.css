@@ -1012,3 +1012,29 @@ dialog.hoja .hoja-cuerpo{ padding: var(--e5); overflow-y: auto; max-height: calc
 .devolucion .mensaje-error{ display: flex; gap: 6px; align-items: flex-start; color: var(--mal); font-weight: 650; }
 .devolucion .mensaje-error .ico, .devolucion > .nota .ico{ width: 20px; height: 20px; flex: none; margin-top: 2px; }
 .devolucion .mensaje-error[hidden]{ display: none; }
+
+/* ══ CONVERSACIONES Y SIMULADOR DEL BOT (Bloque 10) ═══════════════════════ */
+.conversaciones-cols{ display: grid; gap: var(--e5); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1000px){ .conversaciones-cols{ grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: start; } }
+.conversaciones-lado > .seccion:first-child{ margin-top: 0; }
+.simulador{ display: grid; gap: var(--e3); padding: var(--e4); }
+.simulador-cabeza{ display: flex; gap: var(--e3); align-items: flex-start; }
+.simulador-cabeza > div{ flex: 1; min-width: 0; }
+.simulador-cabeza h2{ font-size: var(--t-sub); }
+.chat{ list-style: none; margin: 0; padding: var(--e3); display: flex; flex-direction: column; gap: var(--e2);
+  height: min(48vh, 460px); overflow-y: auto; overscroll-behavior: contain; background: var(--hundido); border-radius: var(--radio); }
+.msj{ max-width: 85%; padding: var(--e2) var(--e3); border-radius: 14px; background: var(--superficie); border: 1px solid var(--linea); align-self: flex-start; }
+.msj p{ margin: 2px 0; overflow-wrap: anywhere; }
+.msj .quien{ font-size: var(--t-chica); font-weight: 700; color: var(--tinta-suave); }
+.msj time{ display: block; text-align: right; font-size: 12px; color: var(--tinta-suave); }
+.msj.cliente{ align-self: flex-end; background: var(--acento-suave); border-color: transparent; }
+.msj.persona{ align-self: flex-end; background: var(--bien-suave); border-color: transparent; }
+.msj.sistema{ align-self: center; max-width: 100%; background: none; border: 0; padding: 0; text-align: center; font-size: var(--t-chica); color: var(--tinta-suave); font-weight: 650; }
+.msj-pedido{ display: grid; gap: var(--e2); margin-top: var(--e2); padding-top: var(--e2); border-top: 1px dashed var(--linea); }
+.sugerencias{ display: flex; gap: var(--e2); overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; padding-bottom: 2px; }
+.sugerencias .chip-boton{ flex: none; white-space: nowrap; }
+.escribir{ display: flex; gap: var(--e2); }
+.escribir input{ flex: 1; min-width: 0; min-height: 52px; padding: 0 var(--e4); border: 1.5px solid var(--linea-fuerte, var(--linea)); border-radius: 999px; background: var(--superficie); font: inherit; color: inherit; }
+.escribir input:focus{ outline: 0; border-color: var(--acento); box-shadow: 0 0 0 3px var(--acento-suave); }
+.escribir .boton{ width: 52px; min-height: 52px; padding: 0; justify-content: center; border-radius: 999px; flex: none; }
+.lista.sabe .fila{ min-height: 52px; }

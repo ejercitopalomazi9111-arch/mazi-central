@@ -49,23 +49,53 @@ export function cantidad(t){
 const raiz = (w) => w.length > 4 ? w.replace(/(es|s)$/, '') : w;
 const palabras = (t) => normal(t).split(' ').filter((w) => w && !RELLENO.has(w) && !/^\d+$/.test(w) && w.length > 1);
 
-/* Busca en el catálogo. Cada palabra tiene que aparecer (por raíz) en el
-   nombre, la marca o la categoría; si ninguno las tiene todas, gana el que
-   tenga más, siempre que sean al menos la mitad. */
-export function buscar(t, productos, categorias = []){
-  const ws = palabras(t).map(raiz);
+/* Cómo le dice la gente vs. cómo viene en el catálogo (que llega mitad en
+   inglés del proveedor). Cada negocio puede sumar las suyas en
+   ajustes.bot.sinonimos: [["termo", "vaso", "tumbler"], …]. */
+export const SINONIMOS = [
+  ['cera', 'wax', 'pomada', 'pomade', 'paste', 'pasta', 'modelador', 'modeladora'],
+  ['mate', 'matte', 'mat', 'opaco'],
+  ['navaja', 'blade', 'cuchilla', 'razor', 'rastrillo', 'hoja'],
+  ['shampoo', 'champu', 'champo'],
+  ['tinte', 'color', 'coloracion', 'colorante'],
+  ['aceite', 'oil'],
+  ['secadora', 'secador', 'dryer'],
+  ['plancha', 'alaciadora', 'flat'],
+  ['maquina', 'cortadora', 'clipper', 'recortadora', 'trimmer', 'patillera', 'rasuradora', 'shaver'],
+  ['tijera', 'scissor', 'shear'],
+  ['cepillo', 'brush'],
+  ['crema', 'cream'],
+  ['laca', 'spray', 'fijador'],
+  ['oxidante', 'peroxido', 'developer', 'revelador'],
+  ['acondicionador', 'conditioner', 'enjuague'],
+];
+function variantes(w, grupos){
+  const r = raiz(w), salida = new Set([r]);
+  for(const g of grupos) if(g.some((x) => raiz(x) === r)) g.forEach((x) => salida.add(raiz(x)));
+  return [...salida];
+}
+
+/* Busca en el catálogo. Cada palabra (o su sinónimo) tiene que aparecer en el
+   nombre, la marca o la categoría. Si ninguno las tiene todas, gana el que
+   tenga más —siempre que sean al menos la mitad— y el resultado sale marcado
+   `parcial` para que el bot no lo presente como si fuera lo que pidieron.
+   Por prefijo sólo con 5 letras o más: «cera» no es «cerámica». */
+export function buscar(t, productos, categorias = [], extra = []){
+  const grupos = [...SINONIMOS, ...(extra || [])].map((g) => g.map(normal));
+  const ws = palabras(t).map((w) => variantes(w, grupos));
   if(!ws.length) return [];
   const cat = new Map(categorias.map((c) => [c.id, normal(c.nombre)]));
   const puntuados = productos.map((p) => {
-    const texto = ' ' + normal(`${p.n} ${p.m || ''} ${cat.get(p.c) || ''} ${p.sku || ''}`) + ' ';
-    const tokens = texto.split(' ').filter(Boolean).map(raiz);
-    const s = ws.filter((w) => tokens.some((k) => k === w || (w.length >= 4 && k.startsWith(w)))).length;
+    const tokens = normal(`${p.n} ${p.m || ''} ${cat.get(p.c) || ''} ${p.sku || ''}`).split(' ').filter(Boolean).map(raiz);
+    const s = ws.filter((vs) => vs.some((w) => tokens.some((k) => k === w || (w.length >= 5 && k.startsWith(w))))).length;
     return { p, s };
   });
   const mejor = Math.max(0, ...puntuados.map((x) => x.s));   // el 0 evita el -Infinity de un catálogo vacío
   if(!mejor || mejor < Math.ceil(ws.length / 2)) return [];
-  return puntuados.filter((x) => x.s === mejor).map((x) => x.p)
+  const salida = puntuados.filter((x) => x.s === mejor).map((x) => x.p)
     .sort((a, b) => (a.x ? 1 : 0) - (b.x ? 1 : 0) || a.n.length - b.n.length);
+  salida.parcial = mejor < ws.length;
+  return salida;
 }
 
 /* Qué tanto hay, en palabras. Nunca un número que no esté en el catálogo. */
@@ -153,6 +183,7 @@ export function responder(texto, { productos = [], categorias = [], negocio = {}
     if(!cabe) return sal(`Ya llevas las ${ya} que me quedan de ${p.n}.`);
     const i = estado.carrito.findIndex(([id]) => id === p.id);
     if(i >= 0) estado.carrito[i] = [p.id, ya + cabe]; else estado.carrito.push([p.id, cabe]);
+    estado.pide = null;
     const r = resumen(estado.carrito, porId);
     const aviso = cabe < cuantas ? `Sólo me quedaban ${cabe}, te las puse. ` : '';
     return sal(`${aviso}Listo: ${cabe} × ${p.n}. Llevas ${pesos(r.total)}.\n¿Algo más? Si es todo, escribe «es todo».`, { estado: { foco: null, opciones: [] } });
@@ -162,7 +193,8 @@ export function responder(texto, { productos = [], categorias = [], negocio = {}
   if(estado.opciones?.length){
     const id = eleccion(texto, estado.opciones);
     if(id && porId.get(id)){
-      const p = porId.get(id), c = cantidad(texto.replace(/^\s*\d{1,2}\b/, ''));
+      // La cantidad pudo venir antes: «un par de navajas» → lista → «el 2».
+      const p = porId.get(id), c = cantidad(texto.replace(/^\s*\d{1,2}\b/, '')) || estado.pide;
       if(c) return agregar(p, c);
       return sal(`${ficha(p)}${p.x ? '' : ' ¿Cuántas te pongo?'}`, { estado: { foco: p.x ? null : p.id, opciones: [] } });
     }
@@ -201,7 +233,8 @@ export function responder(texto, { productos = [], categorias = [], negocio = {}
   }
 
   // De aquí en adelante, habla de productos.
-  const hallados = buscar(texto, productos, categorias);
+  const hallados = buscar(texto, productos, categorias, negocio?.ajustes?.bot?.sinonimos);
+  const casi = hallados.parcial ? `No tengo exactamente «${palabras(texto).join(' ')}», pero tengo esto:\n` : '';
   if(qu === 'quitar'){
     const enCarro = hallados.filter((p) => estado.carrito.some(([id]) => id === p.id));
     if(!enCarro.length) return sal('No encontré eso en lo que llevas. Escribe «mi pedido» para ver qué llevas.');
@@ -210,19 +243,18 @@ export function responder(texto, { productos = [], categorias = [], negocio = {}
   }
   if(hallados.length === 1){
     const p = hallados[0], c = cantidad(texto);
-    if(qu === 'agregar' || c) return agregar(p, c || 1);
-    return sal(`${ficha(p)}${p.x ? '' : ' ¿Te la aparto? Dime cuántas.'}`, { estado: { foco: p.x ? null : p.id, opciones: [], dudas: 0 } });
+    if(!casi && (qu === 'agregar' || c)) return agregar(p, c || 1);
+    return sal(`${casi}${ficha(p)}${p.x ? '' : ' ¿Te la aparto? Dime cuántas.'}`, { estado: { foco: p.x ? null : p.id, opciones: [], dudas: 0 } });
   }
   if(hallados.length > 1){
     const top = hallados.slice(0, 5);
-    const cuantos = hallados.length > 5 ? `Tengo ${hallados.length} que coinciden. Estos son los primeros; si me dices marca o tamaño, te afino:\n` : 'Tengo estos:\n';
-    return sal(`${cuantos}${lista(top)}\n¿Cuál? Dime el número.`, { estado: { opciones: top.map((p) => p.id), foco: null, dudas: 0 } });
+    const cuantos = casi || (hallados.length > 5 ? `Tengo ${hallados.length} que coinciden. Estos son los primeros; si me dices marca o tamaño, te afino:\n` : 'Tengo estos:\n');
+    return sal(`${cuantos}${lista(top)}\n¿Cuál? Dime el número.`, { estado: { opciones: top.map((p) => p.id), foco: null, dudas: 0, pide: cantidad(texto) } });
   }
-  if(palabras(texto).length){
-    if(qu === 'precio' || qu === 'agregar') return sal(`No encontré «${palabras(texto).join(' ')}» en lo que vendemos. ¿Lo buscas con otro nombre o marca? Si prefieres, escribe «persona».`);
-  }
-  // No entendí: a la segunda, pasa a una persona.
+  // No lo encontré o no entendí: a la segunda seguida, pasa a una persona.
   const dudas = (estado.dudas || 0) + 1;
   if(dudas >= 2) return sal(`Creo que no te estoy entendiendo. ${PASAR}`, { accion: 'persona', estado: { conPersona: true, dudas: 0 } });
+  if(palabras(texto).length)
+    return sal(`No encontré «${palabras(texto).join(' ')}» en lo que vendemos. ¿Lo buscas con otro nombre o marca? Si prefieres, escribe «persona».`, { estado: { dudas } });
   return sal('No te entendí bien. Puedo decirte precios, si hay, el envío o armarte tu pedido. ¿Qué buscas?', { estado: { dudas } });
 }

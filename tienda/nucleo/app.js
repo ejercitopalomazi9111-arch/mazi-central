@@ -21,8 +21,9 @@ import { PANTALLAS as IMPRESORA } from '../venta/impresora.js';
 import { PANTALLAS as CLIENTES } from '../admin/clientes.js';
 import { PANTALLAS as CUENTA } from '../cliente/cuenta.js';
 import { PANTALLAS as DEVOLUCION } from '../venta/devolucion.js';
+import { PANTALLAS as CONVERSACIONES } from '../admin/conversaciones.js';
 
-const PANTALLAS = { ...CLIENTE, ...PEDIR, ...ADMIN, ...IMPORTAR, ...VENTA, ...PEDIDOS, ...REPARTO, ...RUTA, ...IMPRESORA, ...CLIENTES, ...CUENTA, ...DEVOLUCION, obra, noexiste };
+const PANTALLAS = { ...CLIENTE, ...PEDIR, ...ADMIN, ...IMPORTAR, ...VENTA, ...PEDIDOS, ...REPARTO, ...RUTA, ...IMPRESORA, ...CLIENTES, ...CUENTA, ...DEVOLUCION, ...CONVERSACIONES, obra, noexiste };
 
 const $app = document.getElementById('app');
 const $avisos = document.getElementById('avisos');
