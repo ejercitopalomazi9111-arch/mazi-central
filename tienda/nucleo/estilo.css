@@ -973,10 +973,26 @@ dialog.hoja .hoja-cuerpo{ padding: var(--e5); overflow-y: auto; max-height: calc
 .datos-cliente dd small{ font-size: var(--t-chica); font-weight: 650; color: var(--tinta-suave); }
 .recompras{ list-style: none; margin: 0 0 var(--e4); padding: 0; display: grid; gap: var(--e3); }
 .recompras li{ padding: var(--e3) var(--e4); border: 1px solid var(--linea); border-radius: var(--radio); background: var(--superficie); }
-.recompra-cabeza{ display: flex; justify-content: space-between; align-items: flex-start; gap: var(--e3); }
+.recompra-cabeza{ display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: var(--e2) var(--e3); }
 .recompra-cabeza strong{ min-width: 0; overflow-wrap: anywhere; }
 .recompra-cabeza .chip{ flex: none; }
 .recompras .nota{ margin: var(--e2) 0 0; }
 .hoja-cliente h3{ margin-top: var(--e5); }
 .hoja-cliente form.campo{ margin-top: var(--e5); }
 .hoja-cliente form.campo .boton{ justify-self: start; }
+
+/* Lo que es de ESTE cliente en la portada: pedido de siempre y «te toca». */
+.mios{ list-style: none; margin: 0 0 var(--e3); padding: 0; border: 1px solid var(--linea); border-radius: var(--radio); background: var(--superficie); overflow: hidden; }
+.mios li{ display: flex; align-items: center; gap: var(--e3); padding: var(--e3); min-height: 64px; }
+.mios li + li{ border-top: 1px solid var(--linea); }
+.mios img{ width: 56px; height: 56px; border-radius: 8px; object-fit: cover; background: var(--hundido); display: block; }
+.mios .texto{ flex: 1; min-width: 0; }
+.mios .n{ display: block; font-weight: 700; text-decoration: none; color: inherit; overflow-wrap: anywhere; }
+.mios small{ display: block; color: var(--tinta-suave); font-size: var(--t-chica); }
+.mios li.sin img{ opacity: .45; }
+.mios .boton{ flex: none; min-height: 48px; padding: 0 var(--e3); }
+@media (max-width: 420px){ .mios .boton span{ position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } .mios .boton{ width: 48px; padding: 0; justify-content: center; } }
+.ultima-vez{ display: flex; gap: var(--e2); align-items: center; color: var(--tinta-suave); font-weight: 650; margin: var(--e2) 0; }
+.ultima-vez .ico{ width: 20px; height: 20px; flex: none; }
+.tablero-lado{ display: grid; gap: var(--e5); min-width: 0; }
+.tablero-lado > .seccion, .tablero-cols > .seccion{ margin-top: 0; }

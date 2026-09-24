@@ -19,8 +19,9 @@ import { PANTALLAS as REPARTO } from '../repartidor/pantallas.js';
 import { PANTALLAS as RUTA } from '../repartidor/ruta.js';
 import { PANTALLAS as IMPRESORA } from '../venta/impresora.js';
 import { PANTALLAS as CLIENTES } from '../admin/clientes.js';
+import { PANTALLAS as CUENTA } from '../cliente/cuenta.js';
 
-const PANTALLAS = { ...CLIENTE, ...PEDIR, ...ADMIN, ...IMPORTAR, ...VENTA, ...PEDIDOS, ...REPARTO, ...RUTA, ...IMPRESORA, ...CLIENTES, obra, noexiste };
+const PANTALLAS = { ...CLIENTE, ...PEDIR, ...ADMIN, ...IMPORTAR, ...VENTA, ...PEDIDOS, ...REPARTO, ...RUTA, ...IMPRESORA, ...CLIENTES, ...CUENTA, obra, noexiste };
 
 const $app = document.getElementById('app');
 const $avisos = document.getElementById('avisos');

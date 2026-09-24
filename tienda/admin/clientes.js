@@ -27,7 +27,7 @@ function recordar(llave, inicial){
 
 /* Lo más urgente de un cliente: el producto que antes le toca; si ninguno
    tiene ritmo todavía, su ritmo de visitas. */
-function urgencia(c){
+export function urgencia(c){
   const r = c.recompras[0];
   if(r) return { m: r.momento, proxima: r.proxima, que: r.nombre };
   if(c.ficha.momento) return { m: c.ficha.momento, proxima: c.ficha.proxima, que: null };
@@ -35,7 +35,7 @@ function urgencia(c){
 }
 
 /* El chip de cada fila, dicho con palabras (nunca sólo color). */
-function chip(u){
+export function chip(u){
   if(!u) return '<span class="chip">Sin ritmo aún</span>';
   const { clave, faltan } = u.m;
   if(clave === 'pronto') return `<span class="chip ojo">${faltan === 0 ? 'Le toca hoy' : `Le toca en ${dias(faltan)}`}</span>`;
@@ -45,7 +45,7 @@ function chip(u){
 }
 
 const VISTAS = [
-  ['toca', 'Les toca', (c) => c.urg && ['pronto', 'toca'].includes(c.urg.m.clave)],
+  ['toca', 'Les toca', (c) => LES_TOCA(c)],
   ['atrasados', 'Atrasados', (c) => c.urg?.m.clave === 'atrasado'],
   ['todos', 'Todos', () => true],
   ['nuevos', 'Una compra', (c) => c.ficha.pedidos === 1],
@@ -64,14 +64,19 @@ function mensajeRecompra(c, n){
 }
 const whatsapp = (c, n) => { const t = telLimpio(c.telefono); return t.length === 10 ? `https://wa.me/52${t}?text=${encodeURIComponent(mensajeRecompra(c, n))}` : ''; };
 
-async function clientes(){
-  const [todos, n] = await Promise.all([clientesNegocio(), negocio()]);
-  const hoy = Date.now();
-  const lista = todos.map((c) => {
+/* Cada cliente con su ficha, sus recompras y lo más urgente. Lo usa también el tablero. */
+export function conRecompra(todos, hoy = Date.now()){
+  return todos.map((c) => {
     const x = { ...c, ficha: ficha(c.pedidos, hoy), recompras: recompras(c.pedidos, hoy) };
     x.urg = urgencia(x);
     return x;
   });
+}
+export const LES_TOCA = (c) => c.urg && ['pronto', 'toca'].includes(c.urg.m.clave);
+
+async function clientes(){
+  const [todos, n] = await Promise.all([clientesNegocio(), negocio()]);
+  const lista = conRecompra(todos);
   const conCompras = lista.filter((c) => c.ficha.pedidos > 0);
   const tocan = lista.filter(VISTAS[0][2]).length, atrasados = lista.filter(VISTAS[1][2]).length;
   const promedio = conCompras.length ? conCompras.reduce((t, c) => t + c.ficha.gastado, 0) / conCompras.reduce((t, c) => t + c.ficha.pedidos, 0) : 0;

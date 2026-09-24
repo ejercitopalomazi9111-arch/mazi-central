@@ -67,7 +67,7 @@ export const RUTAS = [
     promesa: 'Lo que apartaste y lo que te falta por pagar.' },
   { ruta: '/sorteo',        apartado: 'cliente', titulo: 'Sorteo del mes',icono: 'sorteo',    menu: true,  pantalla: 'obra',      bloque: 11,
     promesa: 'Cuánto te falta este mes para entrar al sorteo.' },
-  { ruta: '/cuenta',        apartado: 'cliente', titulo: 'Mi cuenta',     icono: 'cuenta',    menu: true,  pantalla: 'obra',      bloque: 9,
+  { ruta: '/cuenta',        apartado: 'cliente', titulo: 'Mi cuenta',     icono: 'cuenta',    menu: true,  pantalla: 'cuenta',      bloque: 9,
     promesa: 'Tus datos, tus direcciones y cuándo te toca volver a surtirte.' },
 
   /* ── Repartidor ──────────────────────────────────────────────────────── */

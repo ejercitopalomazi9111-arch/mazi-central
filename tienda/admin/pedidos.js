@@ -15,8 +15,9 @@ import { icono } from '../nucleo/iconos.js';
 import { esc, pesos, plural, estado, hoja, fecha } from '../nucleo/piezas.js';
 import {
   negocio, pedidosNegocio, repartidores, asignarRepartidor, cambiarEstado, escucharPedidos,
-  cobrarEntrega, totalConEnvio, ventasDesde, catalogoAdmin,
+  cobrarEntrega, totalConEnvio, ventasDesde, catalogoAdmin, clientesNegocio,
 } from '../nucleo/datos.js';
+import { conRecompra, LES_TOCA, chip } from './clientes.js';
 import { ESTADOS } from '../cliente/pedir.js';
 import { aCentavos, aPesos, sugerirPagos } from '../nucleo/dinero.js';
 import { imprimir } from '../nucleo/impresion/impresora.js';
@@ -205,9 +206,12 @@ function timbre(){
 
 async function tablero(){
   const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
-  const [ventas, enCurso, reps, cat] = await Promise.all([
+  const [ventas, enCurso, reps, cat, clientes] = await Promise.all([
     ventasDesde(hoy), pedidosNegocio({ estados: EN_CURSO }), repartidores().catch(() => []), catalogoAdmin(),
+    clientesNegocio().catch((e) => { console.error(e); return []; }),
   ]);
+  // A quién hablarle hoy: sale de cada cuándo compra cada quien (recompra.js).
+  const tocan = conRecompra(clientes).filter(LES_TOCA).sort((a, b) => a.urg.proxima - b.urg.proxima);
   let pedidos = enCurso;
   const acaban = cat.productos.filter((p) => p.activo && (p.existencia.cantidad - p.existencia.apartado <= 0
     || (p.existencia.minimo > 0 && p.existencia.cantidad - p.existencia.apartado <= p.existencia.minimo)))
@@ -233,6 +237,7 @@ async function tablero(){
       <div class="tablero-cols">
         <section class="seccion"><header><h2>Pedidos por mover</h2><span class="en-vivo" id="en-vivo" title="Se actualiza solo">${icono('reloj')}Conectando…</span></header>
           <div id="t-pedidos">${pintarPedidos()}</div></section>
+        <div class="tablero-lado">
         <section class="seccion"><header><h2>Se está acabando</h2><a class="ver-todo" href="${enlace('/a/inventario')}">Inventario</a></header>
           ${acaban.length ? `<ul class="lista">${acaban.slice(0, 8).map((p) => {
             const q = p.existencia.cantidad - p.existencia.apartado;
@@ -241,6 +246,10 @@ async function tablero(){
               <span class="chip ${q <= 0 ? 'mal' : 'ojo'}">${q <= 0 ? 'Agotado' : `Quedan ${q}`}</span></a></li>`;
           }).join('')}</ul>` : `<p class="vacio-linea">${icono('listo')}Todo con existencias.</p>`}
         </section>
+        ${tocan.length ? `<section class="seccion"><header><h2>Les toca surtirse</h2><a class="ver-todo" href="${enlace('/a/clientes')}">Clientes</a></header>
+          <ul class="lista">${tocan.slice(0, 6).map((c) => `<li><a class="fila" href="${enlace('/a/clientes')}"><span class="texto"><strong>${esc(c.nombre || 'Sin nombre')}</strong>
+            <small>${esc(c.urg.que || 'su visita de siempre')}</small></span>${chip(c.urg)}</a></li>`).join('')}</ul></section>` : ''}
+        </div>
       </div>`,
     alMontar($c, ctx){
       const vistos = new Set(pedidos.map((p) => p.id));

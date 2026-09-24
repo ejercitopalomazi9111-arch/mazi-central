@@ -12,7 +12,12 @@
 import { enlace } from '../nucleo/rutas.js';
 import { icono } from '../nucleo/iconos.js';
 import { esc, pesos, quitaAcentos, plural, estado } from '../nucleo/piezas.js';
-import { catalogo, carrito } from '../nucleo/datos.js';
+import { catalogo, carrito, misPedidos } from '../nucleo/datos.js';
+import { pedidoDeSiempre, teToca, validos, diaCorto, dias } from '../nucleo/recompra.js';
+
+/* Lo que ha comprado quien está viendo. Sin sesión, nada — y NO se crea una:
+   la sesión nace al pagar, nunca por mirar la portada. */
+const historial = () => misPedidos().catch((e) => { console.error(e); return []; });
 
 /* A partir de cuántas se avisa que quedan pocas. Es de la tienda y no del
    producto a propósito: el mínimo del producto es para el admin (reordenar),
@@ -61,32 +66,84 @@ function existencia(p){
 /* En orden de arriba a abajo, decidido en PLAN.md §2:
      1. buscador · 2. su pedido de siempre (o lo básico si es nuevo)
      3. categorías · 4. «te toca surtirte» · 5. ofertas · 6. sorteo
-   El 4 y el 6 NO se pintan todavía, y a propósito: el 4 necesita historial de
-   compras (Bloque 9) y el 6 un sorteo real con su permiso de Gobernación
-   (Bloque 11). Pintar una tarjeta de sorteo que no existe es prometer lo que
-   no hay. */
+   El 2 y el 4 salen de SUS compras (nucleo/recompra.js) y cada uno dice en qué
+   se basa. El 6 no se pinta hasta que haya un sorteo real con su permiso de
+   Gobernación (Bloque 11): pintar uno que no existe es prometer lo que no hay. */
+
+/* Un renglón con foto para las secciones que son de ESTE cliente. */
+function renglonMio(p, { cantidad, razon, boton }){
+  return `<li class="mio${p.x ? ' sin' : ''}">
+    <a href="${enlace('/p/:id', { id: p.id })}"><img src="${esc(p.f)}" alt="" width="64" height="64" loading="lazy"></a>
+    <div class="texto"><a class="n" href="${enlace('/p/:id', { id: p.id })}">${cantidad > 1 ? `${cantidad} × ` : ''}${esc(p.n)}</a>
+      <small>${p.x ? 'Agotado por ahora' : esc(razon)}</small></div>
+    ${p.x ? '' : boton}
+  </li>`;
+}
+
+/* Agrega lo que cabe: si pide 3 y quedan 2, van 2 y se dice. */
+function agregarLoQueCabe(p, n){
+  const cabe = Math.max(0, Math.min(n, p.q - carrito.cuantas(p.id)));
+  if(cabe) carrito.agregar(p.id, cabe);
+  return cabe;
+}
+
 export async function portada(){
-  const { categorias, productos } = await catalogo();
+  const [{ categorias, productos, porId }, mios] = await Promise.all([catalogo(), historial()]);
   const hay = productos.filter((p) => !p.x);
 
-  /* Sin historial todavía no hay «pedido de siempre», ni un «lo más pedido»:
-     no hay ventas de dónde sacarlo. Lo honesto es decir lo que es —lo básico
-     de cada categoría— y elegirlo con una regla a la vista: el de precio medio. */
+  /* Sin historial no hay «pedido de siempre»: lo honesto es decir lo que es
+     —lo básico de cada categoría— y elegirlo con una regla a la vista. */
   const basicos = categorias.map((c) => {
     const suyos = hay.filter((p) => p.c === c.id).sort((a, b) => a.p - b.p);
     return suyos[Math.floor(suyos.length / 2)];
   }).filter(Boolean);
 
+  const siempre = pedidoDeSiempre(mios);
+  const deSiempre = siempre ? siempre.renglones.map((r) => ({ ...r, p: porId.get(r.producto_id) })).filter((r) => r.p) : [];
+  const siempreTotal = deSiempre.filter((r) => !r.p.x).reduce((t, r) => t + r.p.p * Math.min(r.cantidad, r.p.q), 0);
+  const toca = teToca(mios).map((r) => ({ ...r, p: porId.get(r.producto_id) })).filter((r) => r.p);
+
   const ofertas = hay.filter((p) => p.a)
     .sort((a, b) => (1 - b.p / b.a) - (1 - a.p / a.a)).slice(0, 12);
 
+  const bloqueSiempre = deSiempre.length
+    ? seccion(siempre.tipo === 'siempre' ? 'Tu pedido de siempre' : 'Tu último pedido',
+      `<ul class="mios">${deSiempre.map((r) => renglonMio(r.p, { cantidad: r.cantidad,
+          razon: siempre.tipo === 'siempre' ? `Lo has pedido ${r.veces} veces · ${pesos(r.p.p)} c/u` : pesos(r.p.p) + ' c/u', boton: '' })).join('')}</ul>
+       ${siempreTotal ? `<button class="boton principal ancho grande" data-siempre>${icono('repetir')}Pedir ${siempre.tipo === 'siempre' ? 'lo de siempre' : 'lo mismo'} · ${pesos(siempreTotal)}</button>` : ''}`,
+      { nota: siempre.tipo === 'siempre' ? 'Lo que se repite en tus pedidos, en la cantidad que sueles llevar.' : 'Cuando repitas algo, aquí va a salir tu pedido de siempre.' })
+    : seccion('Lo básico', `<div class="carril">${basicos.map(tarjeta).join('')}</div>`,
+      { nota: 'Uno de cada categoría. Cuando compres, aquí va a salir tu pedido de siempre.' });
+
+  const bloqueToca = toca.length ? seccion('Te toca surtirte',
+    `<ul class="mios">${toca.slice(0, 6).map((r) => renglonMio(r.p, {
+        razon: `${r.nivel === 'ritmo' ? `Lo compras cada ${dias(r.cada)}` : `Entre tus 2 compras pasaron ${dias(r.cada)}`} · la última el ${diaCorto(r.ultima)}`,
+        boton: `<button class="boton secundario" data-toca="${esc(r.p.id)}" data-cuantas="${Math.max(1, Math.round(r.tipica))}" aria-label="Agregar ${esc(r.p.n)}">${icono('agregar')}<span>Agregar</span></button>` })).join('')}</ul>`,
+    { verTodo: enlace('/cuenta'), nota: 'Según cada cuándo lo compras. En «Mi cuenta» ves el detalle.' }) : '';
+
   return { html: `
     <a class="buscador" href="${enlace('/buscar')}">${icono('buscar')}<span>¿Qué necesitas?</span></a>
-    ${seccion('Lo básico', `<div class="carril">${basicos.map(tarjeta).join('')}</div>`,
-      { nota: 'Uno de cada categoría. Cuando compres, aquí va a salir tu pedido de siempre.' })}
+    ${bloqueSiempre}
     ${seccion('Categorías', tiraCategorias(categorias))}
+    ${bloqueToca}
     ${ofertas.length ? seccion('Ofertas', `<div class="carril">${ofertas.map(tarjeta).join('')}</div>`) : ''}
-  ` };
+  `,
+  alMontar(raiz, { aviso }){
+    raiz.querySelector('[data-siempre]')?.addEventListener('click', () => {
+      let puestas = 0; const faltaron = [];
+      for(const r of deSiempre){
+        if(r.p.x){ faltaron.push(r.p.n); continue; }
+        const n = agregarLoQueCabe(r.p, r.cantidad);
+        puestas += n; if(n < r.cantidad) faltaron.push(r.p.n);
+      }
+      aviso(faltaron.length ? `Agregamos ${plural(puestas, 'pieza', 'piezas')}. No alcanzó: ${faltaron.join(', ')}` : `Listo · llevas ${plural(carrito.piezas(), 'pieza', 'piezas')}`, faltaron.length ? 'mal' : undefined);
+    });
+    raiz.querySelectorAll('[data-toca]').forEach((b) => b.addEventListener('click', () => {
+      const p = porId.get(b.dataset.toca);
+      const n = agregarLoQueCabe(p, Number(b.dataset.cuantas));
+      aviso(n ? `Agregado · llevas ${plural(carrito.piezas(), 'pieza', 'piezas')}` : 'Ya llevas todas las que hay', n ? undefined : 'mal');
+    }));
+  } };
 }
 
 /* ── Buscar ───────────────────────────────────────────────────────────── */
@@ -178,9 +235,12 @@ export async function categoria({ params }){
 
 /* ── Producto ─────────────────────────────────────────────────────────── */
 export async function producto({ params }){
-  const { categorias, productos, porId } = await catalogo();
+  const [{ categorias, productos, porId }, mios] = await Promise.all([catalogo(), historial()]);
   const p = porId.get(params.id);
   if(!p) return noEncontrado('Este producto ya no está', 'Puede que se haya dejado de vender.');
+  // La última vez que ESTE cliente lo pidió (lo cancelado no cuenta).
+  const ultimaVez = validos(mios).reverse().find((x) => (x.renglones || []).some((r) => r.producto_id === p.id));
+  const cuantasVez = ultimaVez ? ultimaVez.renglones.filter((r) => r.producto_id === p.id).reduce((t, r) => t + r.cantidad, 0) : 0;
   const cat = categorias.find((c) => c.id === p.c);
   /* «Va bien con esto»: de su misma categoría y en un rango de precio parecido;
      si no alcanzan, de otras categorías que se compran junto (la siguiente en
@@ -203,6 +263,7 @@ export async function producto({ params }){
           <h2>${esc(p.n)}</h2>
           <div class="precio"><span class="ahora">${pesos(p.p)}</span>${p.a ? `<span class="antes">${pesos(p.a)}</span>` : ''}</div>
           ${existencia(p)}
+          ${ultimaVez ? `<p class="ultima-vez">${icono('repetir')}<span>La última vez lo pediste el ${diaCorto(ultimaVez.creado)} · ${plural(cuantasVez, 'pieza', 'piezas')}</span></p>` : ''}
           ${p.x ? '' : `<div class="comprar">
             <div class="cantidad" role="group" aria-label="Cantidad">
               <button type="button" data-menos aria-label="Una menos">${icono('menos')}</button>

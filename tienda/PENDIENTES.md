@@ -29,3 +29,20 @@ _(se agregan aquí conforme salgan; ninguna detiene el trabajo)_
   Mientras, el envío va anotado en el pedido y la app lo suma al cobrar (`totalConEnvio`).
   Lo único que no cuadra sin ella: el cobro que registra el repartidor guarda el total sin
   el envío, así que el corte de caja del repartidor sale corto por lo que costó el envío.
+
+- **Los avisos de «te toca surtirte» se calculan en el teléfono, no en el servidor.** La tabla
+  `avisos_recompra` existe desde 0001 pero nadie la llena: una función que la llenara sola
+  pide otra migración, y las migraciones se quedan esperando permiso. El cálculo
+  (`nucleo/recompra.js`, 46 pruebas) es el mismo en los dos lados y cada aviso dice en qué se
+  basa. Lo único que se pierde: nadie le avisa al cliente con la app cerrada.
+
+- **Notificaciones con la app cerrada (Web Push)** necesitan un par de llaves VAPID como
+  secreto de Supabase y una función que mande. Hasta entonces, el aviso de recompra sale en
+  la portada del cliente, en «Mi cuenta», en el tablero del dueño y en Clientes, con el
+  WhatsApp ya escrito para que el dueño lo mande él. En iPhone, además, hay que instalar la
+  app en la pantalla de inicio (iOS 16.4 o más nuevo).
+
+- **La cuenta del cliente vive en su teléfono.** No tiene contraseña: nace con el primer
+  pedido. Si cambia de teléfono, empieza una cuenta nueva (la tienda sí conserva sus
+  pedidos). Para reconocerlo por su WhatsApp hace falta mandar un código por SMS o WhatsApp,
+  y eso pide un proveedor de mensajes. «Mi cuenta» lo dice tal cual.
