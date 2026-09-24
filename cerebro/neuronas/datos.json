@@ -271,6 +271,26 @@
       ],
       "salioDe": "el mapa de repartidores de la tienda, 24 de septiembre de 2026.",
       "vecinas": []
+    },
+    {
+      "id": "la-actualizacion-que-rls-filtra-en-silencio",
+      "titulo": "«Guardado» y no se guardó nada",
+      "gravedad": "alta",
+      "sintoma": "La pantalla dice «Guardado» (notas del cliente, sus datos, sus direcciones) y al recargar sigue lo de antes.",
+      "causa": "Un UPDATE que la política de RLS no deja tocar no da error: PostgREST contesta 204 con cero filas. Sin pedir las filas de vuelta, el cliente no tiene cómo saber que no pasó nada.",
+      "porque": "RLS filtra antes de escribir: para la base, la fila simplemente no existe para ti. «Actualicé cero filas» es un éxito técnico.",
+      "arreglo": "En tienda/nucleo/datos.js (guardarNotasCliente, guardarMiFicha) el update lleva .select('id') y si regresa vacío se lanza ErrorDeDatos: la pantalla dice que no se guardó.",
+      "comoCazarlo": "Guardar con una sesión que NO debería poder (otro rol, otro negocio) y exigir que la pantalla diga que no. Si dice «Guardado», es esto.",
+      "consejo": "Todo update por la llave pública: pedir las filas de vuelta y contar. Cero filas es un «no», aunque no traiga error.",
+      "senales": [
+        "guardado pero no se guardo",
+        "update no hace nada",
+        "rls cero filas",
+        "204 sin cambios",
+        "no da error y no cambia"
+      ],
+      "salioDe": "Clientes y Mi cuenta de la tienda, 24 de septiembre de 2026 (se puso antes de que mordiera: ya había pasado con existencias en el Bloque 0).",
+      "vecinas": []
     }
   ]
 }
