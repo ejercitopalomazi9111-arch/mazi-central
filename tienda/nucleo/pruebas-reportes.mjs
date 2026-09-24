@@ -63,6 +63,9 @@ ok('semana 79 % abajo → alerta con los dos números', cb.some((c) => c.clave =
 const cc = consejos({ ventas: [], productos: [], clientes: [{ urg: { m: { clave: 'toca' } } }, { urg: { m: { clave: 'atrasado' } } }], ahora: AHORA });
 ok('clientes: a 1 le toca, 1 atrasado', cc[0]?.clave === 'clientes' && /A 1 cliente le toca/.test(cc[0].titulo) && /1 atrasado/.test(cc[0].porque), JSON.stringify(cc));
 ok('sin nada, ningún consejo (ni uno de relleno)', consejos({}).length === 0);
+const unDia = []; for(let k = 0; k < 24; k++) unDia.push(V(0, [r('a'), r('b')], { h: 18 }));
+const c1 = consejos({ ventas: unDia, productos: [], clientes: [], ahora: AHORA });
+ok('24 tickets de UN día: ni hora fuerte ni «salen juntos»', !c1.some((c) => ['hora', 'juntos'].includes(c.clave)), JSON.stringify(c1.map((c) => c.clave)));
 
 console.log(`\n${bien} pasan · ${mal} fallan\n`);
 process.exit(mal ? 1 : 0);

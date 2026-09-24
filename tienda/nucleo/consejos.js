@@ -75,19 +75,21 @@ export function consejos({ ventas = [], productos = [], clientes = [], ahora = D
     ? { clave: 'baja', tono: 'alerta', peso: 80, titulo: `Esta semana vas ${-cam} % abajo`, porque: `${pesos(esta.total)} contra ${pesos(antes.total)} de la semana anterior (${esta.tickets} tickets contra ${antes.tickets}).`, accion: { texto: 'Ver reportes', ruta: '/a/reportes' } }
     : { clave: 'sube', tono: 'bien', peso: 40, titulo: `Esta semana vas ${cam} % arriba`, porque: `${pesos(esta.total)} contra ${pesos(antes.total)} de la semana anterior. Lo que cambiaste, funciona.` });
 
-  // 5. La hora fuerte — con 20 tickets o más para decirlo.
-  if(ult28.length >= 20){
+  // 5. La hora fuerte — con 20 tickets y una semana de historia: veinte ventas
+  //    de un solo día dicen cómo fue ESE día, no cómo es el negocio.
+  const lapso = diasDeHistoria >= 28 ? 'últimas 4 semanas' : `últimos ${diasDeHistoria} días`;
+  if(ult28.length >= 20 && diasDeHistoria >= 7){
     const hf = horaFuerte(porHora(ult28)), total = ult28.reduce((t, x) => t + Math.round(Number(x.total) * 100), 0);
     if(hf && total) salida.push({ clave: 'hora', tono: 'idea', peso: 30, titulo: `Tu hora fuerte: de ${hora(hf.desde)} a ${hora(hf.hasta)}`,
-      porque: `Ahí se hace el ${Math.round(hf.total / total * 100)} % de lo que vendes (últimas 4 semanas). Que a esa hora no falte quién cobre ni producto en el mostrador.` });
+      porque: `Ahí se hace el ${Math.round(hf.total / total * 100)} % de lo que vendes (${lapso}). Que a esa hora no falte quién cobre ni producto en el mostrador.` });
   }
 
   // 6. Lo que sale junto — tres tickets o más.
-  const par = juntos(ult28, 3)[0];
+  const par = diasDeHistoria >= 7 ? juntos(ult28, 3)[0] : null;
   if(par){
     const nombre = (id) => productos.find((p) => p.id === id)?.nombre || vendido.get(id)?.nombre || 'un producto';
     salida.push({ clave: 'juntos', tono: 'idea', peso: 25, titulo: `${nombre(par.a)} y ${nombre(par.b)} salen juntos`,
-      porque: `Van en el mismo ticket ${par.veces} veces en las últimas 4 semanas. Ponlos juntos en el mostrador o arma un paquete.` });
+      porque: `Van en el mismo ticket ${par.veces} veces (${lapso}). Ponlos juntos en el mostrador o arma un paquete.` });
   }
 
   return salida.sort((a, b) => b.peso - a.peso);

@@ -1068,3 +1068,32 @@ dialog.hoja .hoja-cuerpo{ padding: var(--e5); overflow-y: auto; max-height: calc
 .oferta-cuanto input{ flex: 1; min-width: 0; }
 .vista-precios{ margin: var(--e2) 0 var(--e4); }
 .vista-precios s{ color: var(--tinta-suave); font-weight: 500; margin-right: 6px; }
+
+/* ══ REPORTES Y CONSEJOS (Bloque 12) ══════════════════════════════════════ */
+.consejos-bloque{ margin-top: 0; }
+.consejos{ list-style: none; margin: 0; padding: 0; display: grid; gap: var(--e3); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px){ .consejos{ grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.consejo{ display: grid; gap: var(--e2); align-content: start; padding: var(--e4); border: 1px solid var(--linea); border-radius: var(--radio); background: var(--superficie); }
+.consejo .chip{ justify-self: start; }
+.consejo strong{ font-size: 18px; overflow-wrap: anywhere; }
+.consejo p{ margin: 0; color: var(--tinta-suave); }
+.consejo.alerta{ border-color: var(--mal-suave); }
+.periodos{ flex-wrap: wrap; margin: var(--e5) 0 var(--e4); }
+.periodos button{ flex: 1 1 auto; white-space: nowrap; min-height: 44px; }
+.cifra-caja .cambio{ font-size: var(--t-chica); font-weight: 700; color: var(--tinta-suave); }
+.cifra-caja .cambio.sube{ color: var(--bien); }
+.cifra-caja .cambio.baja{ color: var(--mal); }
+.reporte-cols{ display: grid; gap: var(--e5); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1000px){ .reporte-cols{ grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); } }
+.reporte-cols .seccion h3{ margin-top: var(--e5); }
+.barras{ display: flex; align-items: flex-end; gap: 3px; height: 180px; padding: var(--e3); background: var(--superficie); border: 1px solid var(--linea); border-radius: var(--radio); overflow-x: auto; }
+.barra{ flex: 1 0 18px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; min-width: 18px; }
+.barra > span{ display: block; width: 100%; min-height: 2px; background: var(--acento); border-radius: 4px 4px 0 0; }
+.barra small{ font-size: 11px; color: var(--tinta-suave); white-space: nowrap; }
+.partes{ list-style: none; margin: 0; padding: 0; display: grid; gap: var(--e3); }
+.partes li{ display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px var(--e3); align-items: baseline; }
+.partes .nombre{ font-weight: 700; }
+.partes .barrita{ grid-column: 1 / -1; height: 8px; border-radius: 999px; background: var(--hundido); overflow: hidden; order: 3; }
+.partes .barrita > span{ display: block; height: 100%; background: var(--acento); }
+.partes small{ grid-column: 2; color: var(--tinta-suave); font-size: var(--t-chica); text-align: right; order: 4; }
+.top-productos{ counter-reset: top; }

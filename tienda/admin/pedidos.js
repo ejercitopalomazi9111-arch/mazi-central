@@ -15,8 +15,10 @@ import { icono } from '../nucleo/iconos.js';
 import { esc, pesos, plural, estado, hoja, fecha } from '../nucleo/piezas.js';
 import {
   negocio, pedidosNegocio, repartidores, asignarRepartidor, cambiarEstado, escucharPedidos,
-  cobrarEntrega, totalConEnvio, ventasDesde, catalogoAdmin, clientesNegocio, terminarVencidas,
+  cobrarEntrega, totalConEnvio, ventasDesde, catalogoAdmin, clientesNegocio, terminarVencidas, ventasReporte,
 } from '../nucleo/datos.js';
+import { consejos } from '../nucleo/consejos.js';
+import { tarjetaConsejo } from './reportes.js';
 import { conRecompra, LES_TOCA, chip } from './clientes.js';
 import { ESTADOS } from '../cliente/pedir.js';
 import { aCentavos, aPesos, sugerirPagos } from '../nucleo/dinero.js';
@@ -206,12 +208,16 @@ function timbre(){
 
 async function tablero(){
   const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
-  const [ventas, enCurso, reps, cat, clientes] = await Promise.all([
+  const [ventas, enCurso, reps, cat, clientes, ventas60] = await Promise.all([
     ventasDesde(hoy), pedidosNegocio({ estados: EN_CURSO }), repartidores().catch(() => []), catalogoAdmin(),
     clientesNegocio().catch((e) => { console.error(e); return []; }),
+    ventasReporte(Date.now() - 60 * 86400000).catch((e) => { console.error(e); return []; }),
   ]);
   // A quién hablarle hoy: sale de cada cuándo compra cada quien (recompra.js).
-  const tocan = conRecompra(clientes).filter(LES_TOCA).sort((a, b) => a.urg.proxima - b.urg.proxima);
+  const conR = conRecompra(clientes);
+  const tocan = conR.filter(LES_TOCA).sort((a, b) => a.urg.proxima - b.urg.proxima);
+  // Los dos consejos que más pesan (nucleo/consejos.js); el resto vive en Reportes.
+  const cs = consejos({ ventas: ventas60, productos: cat.productos, clientes: conR }).filter((c) => c.clave !== 'clientes').slice(0, 2);
   let pedidos = enCurso;
   const acaban = cat.productos.filter((p) => p.activo && (p.existencia.cantidad - p.existencia.apartado <= 0
     || (p.existencia.minimo > 0 && p.existencia.cantidad - p.existencia.apartado <= p.existencia.minimo)))
@@ -234,6 +240,8 @@ async function tablero(){
         <div class="cifra-caja"><span class="valor ${porCobrar ? 'ojo' : ''}">${pesosR(porCobrar)}</span><span class="etq">por cobrar</span></div>
         <a class="cifra-caja boton-cifra" href="${enlace('/a/inventario')}"><span class="valor ${acaban.length ? 'mal' : ''}">${acaban.length}</span><span class="etq">se acaban o agotados</span></a>
       </div>
+      ${cs.length ? `<section class="seccion"><header><h2>Consejos</h2><a class="ver-todo" href="${enlace('/a/reportes')}">Todos</a></header>
+        <ul class="consejos">${cs.map(tarjetaConsejo).join('')}</ul></section>` : ''}
       <div class="tablero-cols">
         <section class="seccion"><header><h2>Pedidos por mover</h2><span class="en-vivo" id="en-vivo" title="Se actualiza solo">${icono('reloj')}Conectando…</span></header>
           <div id="t-pedidos">${pintarPedidos()}</div></section>

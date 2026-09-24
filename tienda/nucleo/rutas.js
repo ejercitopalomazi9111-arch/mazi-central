@@ -129,7 +129,7 @@ export const RUTAS = [
     promesa: 'Lo que el bot está platicando, y el botón de «lo tomo yo».' },
   { ruta: '/a/redes',       apartado: 'admin', titulo: 'Redes',           icono: 'redes',     menu: true,  pantalla: 'obra',      bloque: 12,
     promesa: 'Calendario y cola de publicaciones.' },
-  { ruta: '/a/reportes',    apartado: 'admin', titulo: 'Reportes',        icono: 'reportes',  menu: true,  pantalla: 'obra',      bloque: 12,
+  { ruta: '/a/reportes',    apartado: 'admin', titulo: 'Reportes',        icono: 'reportes',  menu: true,  pantalla: 'reportes',      bloque: 12,
     promesa: 'Los números, tipo Fadori.' },
   { ruta: '/a/ajustes',     apartado: 'admin', titulo: 'Ajustes',         icono: 'ajustes',   menu: true,  pantalla: 'ajustes',      bloque: 3,
     promesa: 'Todo lo que cambia con el negocio, sin tocar código.' },

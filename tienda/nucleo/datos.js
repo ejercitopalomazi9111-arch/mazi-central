@@ -488,6 +488,16 @@ export async function ventasDesde(desde){
   return r.data.map((p) => ({ ...p, total: Number(p.total) }));
 }
 
+/* Para reportes y consejos: todas las ventas desde una fecha, por páginas (un
+   negocio con movimiento pasa de 1000 pedidos en un par de meses). */
+export async function ventasReporte(desde){
+  const n = await negocio();
+  const filas = await todo(() => db.from('pedidos')
+    .select('id, folio, canal, estado, total, forma_pago, creado, renglones(producto_id, nombre, precio, cantidad, importe)')
+    .eq('negocio_id', n.id).gte('creado', new Date(desde).toISOString()).order('creado'));
+  return filas.map((p) => ({ ...p, total: Number(p.total) }));
+}
+
 export async function cajasCerradas(cuantas = 10){
   const n = await negocio();
   const r = await db.from('cajas').select('id, abierta, cerrada, fondo, esperado, contado, nota, quien:perfiles(nombre)')
