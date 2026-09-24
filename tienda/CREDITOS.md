@@ -2,7 +2,7 @@
 
 ## Iconos · Lucide
 
-Los iconos de `iconos.js` son de [Lucide](https://lucide.dev), versión 0.469.0.
+Los iconos de `iconos.js` son de [Lucide](https://lucide.dev), versión 0.469.0 (también `telefono`, el «phone» de Lucide).
 
 > ISC License — Copyright (c) for portions of Lucide are held by Cole Bemis
 > 2013-2022 as part of Feather (MIT). All other copyright (c) for Lucide are held

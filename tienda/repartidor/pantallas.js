@@ -121,7 +121,7 @@ async function parada({ params }){
         <div class="botones-grandes">
           ${!d.recoge ? `<a class="boton principal" href="https://www.google.com/maps/dir/?api=1&destination=${destino(d)}" target="_blank" rel="noopener">${icono('ruta')}Google Maps</a>
             <a class="boton secundario" href="https://waze.com/ul?${d.lat ? `ll=${d.lat},${d.lng}` : `q=${destino(d)}`}&navigate=yes" target="_blank" rel="noopener">${icono('lugar')}Waze</a>` : ''}
-          ${tel ? `<a class="boton secundario" href="tel:${tel}">${icono('cliente')}Llamar</a>
+          ${tel ? `<a class="boton secundario" href="tel:${tel}">${icono('telefono')}Llamar</a>
             <a class="boton secundario" href="https://wa.me/52${tel}?text=${encodeURIComponent(p.estado === 'en_camino' ? msgLlegue : msgCamino)}" target="_blank" rel="noopener">${icono('conversaciones')}${p.estado === 'en_camino' ? 'Ya llegué' : 'Voy en camino'}</a>` : ''}
         </div>
       </section>

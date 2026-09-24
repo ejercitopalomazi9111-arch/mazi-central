@@ -131,7 +131,7 @@ async function hojaDetalle(p){
     <h3>${esc(p.cliente?.nombre || 'Cliente')}</h3>
     <div class="botones">
       ${wa ? `<a class="boton secundario" href="${wa}" target="_blank" rel="noopener">${icono('conversaciones')}WhatsApp</a>` : ''}
-      ${p.cliente?.telefono ? `<a class="boton secundario" href="tel:${esc(telLimpio(p.cliente.telefono))}">${icono('cliente')}Llamar</a>` : ''}
+      ${p.cliente?.telefono ? `<a class="boton secundario" href="tel:${esc(telLimpio(p.cliente.telefono))}">${icono('telefono')}Llamar</a>` : ''}
       ${m ? `<a class="boton secundario" href="${m}" target="_blank" rel="noopener">${icono('lugar')}Mapa</a>` : ''}
     </div>
     <p>${d.recoge ? 'Pasa a recoger a la tienda.' : esc([d.calle, d.colonia, d.cp].filter(Boolean).join(', '))}</p>
