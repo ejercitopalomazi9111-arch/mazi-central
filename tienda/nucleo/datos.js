@@ -14,6 +14,7 @@
    El carrito vive en el teléfono (localStorage) y sobrevive a todo eso.
    ═════════════════════════════════════════════════════════════════════════ */
 import { SUPABASE_URL, SUPABASE_LLAVE_PUBLICABLE, negocioPedido } from '../config.js';
+import * as DEV from './devolucion.js';
 
 const SLUG = negocioPedido();
 
@@ -170,6 +171,7 @@ const DICCIONARIO = {
   no_es_repartidor: 'Esa persona no es repartidor.',
   no_a_ti_mismo: 'No puedes cambiarte el rol a ti mismo.',
   otro_negocio: 'Eso es de otro negocio.',
+  devolucion_excede: 'Eso ya se devolvió completo:',
 };
 export async function llamar(funcion, args){
   const { data, error } = await db.rpc(funcion, args);
@@ -491,6 +493,61 @@ export async function cajasCerradas(cuantas = 10){
     .eq('negocio_id', n.id).not('cerrada', 'is', null).order('cerrada', { ascending: false }).limit(cuantas);
   if(r.error) throw new ErrorDeDatos('No se pudo leer el historial de caja', r.error);
   return r.data;
+}
+
+/* ══ DEVOLUCIONES (Bloque 5) ═════════════════════════════════════════════════
+   Con 0011 aplicada, todo lo hace devolver() en el servidor. Sin ella (hoy),
+   el admin regresa las piezas con ajustar_inventario y la nota lleva el
+   reembolso; la caja lo lee de ahí (nucleo/devolucion.js). */
+export async function ventaPorFolio(folio){
+  const n = await negocio();
+  const r = await db.from('pedidos')
+    .select('id, folio, canal, estado, subtotal, descuento, total, forma_pago, creado, cliente:clientes(nombre), renglones(producto_id, nombre, precio, cantidad, importe)')
+    .eq('negocio_id', n.id).eq('folio', folio).maybeSingle();
+  if(r.error) throw new ErrorDeDatos('No se pudo buscar el ticket', r.error);
+  return r.data ? { ...r.data, total: Number(r.data.total) } : null;
+}
+
+/* Movimientos cuya nota empieza con «Devolución #»: de una venta, o de una caja (desde que abrió, por quien la tiene). */
+async function movsDevolucion({ folio, desde, quien } = {}){
+  const n = await negocio();
+  let q = db.from('movimientos').select('producto_id, delta, nota, cuando, quien').eq('negocio_id', n.id)
+    .like('nota', folio != null ? `Devolución #${folio} · %` : 'Devolución #%');
+  if(desde) q = q.gte('cuando', new Date(desde).toISOString());
+  if(quien) q = q.eq('quien', quien);
+  const r = await q.limit(1000);
+  if(r.error) throw new ErrorDeDatos('No se pudieron leer las devoluciones', r.error);
+  return r.data;
+}
+export const devueltasDe = async (venta) => DEV.devueltasDe(venta.folio, await movsDevolucion({ folio: venta.folio }));
+/* Sin filtrar por quién: la devolución la registra el admin (camino de hoy),
+   pero el efectivo sale del cajón que está abierto. */
+export async function efectivoDevueltoEnCaja(caja){
+  return DEV.efectivoSinDescontar(await movsDevolucion({ desde: caja.abierta }));
+}
+
+/* renglones: [{ producto_id, nombre, precio, cantidad }] — sólo lo que se devuelve. */
+let _sinDevolverEnServidor = false;   // se aprende con el primer 404 y no se vuelve a preguntar en la sesión
+export async function devolver({ venta, renglones, metodo, motivo }){
+  if(!_sinDevolverEnServidor) try{
+    const r = await llamar('devolver', { p_pedido: venta.id, p_renglones: renglones.map(({ producto_id, cantidad }) => ({ producto_id, cantidad })), p_metodo: metodo, p_motivo: motivo });
+    olvidarCatalogo();
+    return { ...r, camino: 'servidor' };
+  }catch(e){
+    // PGRST202 = la función no existe todavía (0011 sin aplicar). Cualquier otro error es de verdad.
+    if(e.causa?.code !== 'PGRST202') throw e;
+    _sinDevolverEnServidor = true;
+  }
+  const p = await yo();
+  if(p?.rol !== 'admin') throw new ErrorDeDatos('Por ahora las devoluciones las registra un admin: la caja podrá cuando se encienda la parte del servidor.', { code: 'no_autorizado' });
+  let total = 0;
+  for(const r of renglones){
+    const centavos = DEV.importe(venta, r.precio, r.cantidad);
+    await ajustarInventario(r.producto_id, r.cantidad, DEV.nota({ folio: venta.folio, metodo, centavos, motivo }));
+    total += centavos;
+  }
+  olvidarCatalogo();
+  return { monto: total / 100, folio: venta.folio, camino: 'admin' };
 }
 
 /* ══ PEDIR DESDE LA TIENDA (Bloque 6) ═══════════════════════════════════════

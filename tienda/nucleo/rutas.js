@@ -92,7 +92,7 @@ export const RUTAS = [
     promesa: 'Cuánto va, a qué hora se vende más y qué se lleva la gente.' },
   { ruta: '/v/impresora',   apartado: 'venta', titulo: 'Impresora',       icono: 'imprimir',  menu: true,  pantalla: 'impresora', bloque: 5,
     promesa: 'Qué impresora de tickets tienes, cómo está conectada, y una hoja de prueba.' },
-  { ruta: '/v/devolucion',  apartado: 'venta', titulo: 'Devoluciones',    icono: 'deshacer',  menu: true,  pantalla: 'obra',      bloque: 5,
+  { ruta: '/v/devolucion',  apartado: 'venta', titulo: 'Devoluciones',    icono: 'deshacer',  menu: true,  pantalla: 'devolucion',      bloque: 5,
     promesa: 'Regresar una venta con su ticket: la pieza vuelve al inventario y el dinero sale de caja.' },
 
   /* ── Administrativo ──────────────────────────────────────────────────── */

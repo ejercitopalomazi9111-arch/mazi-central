@@ -20,8 +20,9 @@ import { PANTALLAS as RUTA } from '../repartidor/ruta.js';
 import { PANTALLAS as IMPRESORA } from '../venta/impresora.js';
 import { PANTALLAS as CLIENTES } from '../admin/clientes.js';
 import { PANTALLAS as CUENTA } from '../cliente/cuenta.js';
+import { PANTALLAS as DEVOLUCION } from '../venta/devolucion.js';
 
-const PANTALLAS = { ...CLIENTE, ...PEDIR, ...ADMIN, ...IMPORTAR, ...VENTA, ...PEDIDOS, ...REPARTO, ...RUTA, ...IMPRESORA, ...CLIENTES, ...CUENTA, obra, noexiste };
+const PANTALLAS = { ...CLIENTE, ...PEDIR, ...ADMIN, ...IMPORTAR, ...VENTA, ...PEDIDOS, ...REPARTO, ...RUTA, ...IMPRESORA, ...CLIENTES, ...CUENTA, ...DEVOLUCION, obra, noexiste };
 
 const $app = document.getElementById('app');
 const $avisos = document.getElementById('avisos');

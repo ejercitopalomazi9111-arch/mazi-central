@@ -996,3 +996,19 @@ dialog.hoja .hoja-cuerpo{ padding: var(--e5); overflow-y: auto; max-height: calc
 .ultima-vez .ico{ width: 20px; height: 20px; flex: none; }
 .tablero-lado{ display: grid; gap: var(--e5); min-width: 0; }
 .tablero-lado > .seccion, .tablero-cols > .seccion{ margin-top: 0; }
+
+/* ══ DEVOLUCIONES ═════════════════════════════════════════════════════════ */
+.barra-folio{ display: flex; gap: var(--e3); align-items: flex-end; flex-wrap: wrap; margin-bottom: var(--e4); }
+.barra-folio .campo{ flex: 1 1 200px; margin: 0; }
+.barra-folio .boton{ flex: none; min-height: 52px; }
+.lineas-devolver{ list-style: none; margin: 0 0 var(--e4); padding: 0; display: grid; gap: var(--e3); }
+.lineas-devolver li{ display: flex; align-items: center; gap: var(--e3); flex-wrap: wrap; padding: var(--e3); border: 1px solid var(--linea); border-radius: var(--radio); background: var(--superficie); }
+.lineas-devolver .texto{ flex: 1 1 180px; min-width: 0; }
+.lineas-devolver .texto strong{ display: block; overflow-wrap: anywhere; }
+.lineas-devolver small{ color: var(--tinta-suave); font-size: var(--t-chica); }
+.devolucion h3{ margin-top: var(--e5); }
+.devolucion .segmentos{ flex-wrap: wrap; }
+.devolucion .segmentos button{ flex: 1 1 auto; }
+.devolucion .mensaje-error{ display: flex; gap: 6px; align-items: flex-start; color: var(--mal); font-weight: 650; }
+.devolucion .mensaje-error .ico, .devolucion > .nota .ico{ width: 20px; height: 20px; flex: none; margin-top: 2px; }
+.devolucion .mensaje-error[hidden]{ display: none; }

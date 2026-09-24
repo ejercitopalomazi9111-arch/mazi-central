@@ -16,7 +16,7 @@ import { icono } from '../nucleo/iconos.js';
 import { esc, pesos, quitaAcentos, plural, estado, hoja, numero, fecha, descargarCSV } from '../nucleo/piezas.js';
 import {
   negocio, catalogo, olvidarCatalogo, miCaja, abrirCaja, cerrarCaja, cobrosDeCaja,
-  venderMostrador, ventasDesde, cajasCerradas, yo,
+  venderMostrador, ventasDesde, cajasCerradas, yo, efectivoDevueltoEnCaja,
 } from '../nucleo/datos.js';
 import { negocioPedido } from '../config.js';
 import { aCentavos, aPesos, sugerirPagos, desglose, contar, BILLETES, MONEDAS } from '../nucleo/dinero.js';
@@ -359,12 +359,16 @@ async function cobrar(){
 
 /* ══ CAJA ═════════════════════════════════════════════════════════════════ */
 
-function cuadreHTML(r){
+/* `devuelto` (centavos): efectivo de devoluciones que el servidor todavía no
+   descuenta solo (0011 sin aplicar). Se resta aquí y se dice. */
+function cuadreHTML(r, devuelto = 0){
+  if(devuelto) r = { ...r, esperado: r.esperado - devuelto / 100, diferencia: undefined };
   const dif = aCentavos(r.diferencia ?? (r.contado - r.esperado));
   const clase = dif === 0 ? 'bien' : dif > 0 ? 'ojo' : 'mal';
   return `<div class="cuadre ${clase}">
     <p class="cuadre-veredicto">${dif === 0 ? 'Cuadró exacto' : dif > 0 ? `Sobran ${pesosC(dif)}` : `Faltan ${pesosC(-dif)}`}</p>
-    <dl><dt>Debía haber</dt><dd>${pesos(r.esperado)}</dd><dt>Contaste</dt><dd>${pesos(r.contado)}</dd></dl></div>`;
+    <dl><dt>Debía haber</dt><dd>${pesos(r.esperado)}</dd><dt>Contaste</dt><dd>${pesos(r.contado)}</dd></dl>
+    ${devuelto ? `<p class="nota">Ya descuenta ${pesosC(devuelto)} que salieron del cajón por devoluciones.</p>` : ''}</div>`;
 }
 
 async function cajaPantalla(){
@@ -379,9 +383,9 @@ async function cajaPantalla(){
 
   if(!caja) return { html: abrirCajaHTML() + histHTML, alMontar($c, ctx){ montarAbrirCaja($c, { ...ctx, alAbrir: ctx.recargar }); } };
 
-  const cobros = await cobrosDeCaja(caja.id);
+  const [cobros, devuelto] = await Promise.all([cobrosDeCaja(caja.id), efectivoDevueltoEnCaja(caja).catch((e) => { console.error(e); return 0; })]);
   const por = (m) => cobros.filter((c) => c.metodo === m).reduce((t, c) => t + aCentavos(c.monto), 0);
-  const ef = por('efectivo'), fondo = aCentavos(caja.fondo), debe = fondo + ef;
+  const ef = por('efectivo'), fondo = aCentavos(caja.fondo), debe = fondo + ef - devuelto;
   const tickets = new Set(cobros.map((c) => c.pedido_id)).size;
 
   const filaConteo = (d) => `<li class="conteo-fila"><span class="denom">${pesosC(d)}</span>
@@ -407,7 +411,7 @@ async function cajaPantalla(){
           <h3>Monedas</h3><ul class="conteo">${MONEDAS.map(filaConteo).join('')}</ul>
           <p class="cobro-total"><span>Contaste</span><strong data-contado>$0</strong></p>
           <details class="plegable"><summary>Ver cuánto debe haber</summary>
-            <p>Fondo ${pesosC(fondo)} + efectivo cobrado ${pesosC(ef)} = <strong>${pesosC(debe)}</strong></p></details>
+            <p>Fondo ${pesosC(fondo)} + efectivo cobrado ${pesosC(ef)}${devuelto ? ` − devoluciones ${pesosC(devuelto)}` : ''} = <strong>${pesosC(debe)}</strong></p></details>
           <label class="campo" for="nota-caja"><span class="etiqueta-campo">Nota (si algo no cuadra, di por qué)</span>
             <input id="nota-caja" maxlength="200" autocomplete="off"></label>
           <button type="submit" class="boton principal grande ancho">${icono('listo')}Cerrar caja</button>
@@ -442,7 +446,7 @@ async function cajaPantalla(){
         try{
           const r = await cerrarCaja(aPesos(total), $f.querySelector('#nota-caja').value.trim());
           const corte = { ...r, esperado: Number(r.esperado), contado: Number(r.contado) };
-          $c.innerHTML = estado({ icono: 'efectivo', titulo: 'Caja cerrada', extra: cuadreHTML(corte),
+          $c.innerHTML = estado({ icono: 'efectivo', titulo: 'Caja cerrada', extra: cuadreHTML(corte, devuelto),
             botones: `<a class="boton principal" href="${enlace('/v/ventas')}">${icono('reportes')}Ver las ventas de hoy</a>
               <a class="boton secundario" href="${enlace('/v/caja')}">Abrir otra caja</a>` });
           aviso('Caja cerrada');

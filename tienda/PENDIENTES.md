@@ -46,3 +46,9 @@ _(se agregan aquí conforme salgan; ninguna detiene el trabajo)_
   pedido. Si cambia de teléfono, empieza una cuenta nueva (la tienda sí conserva sus
   pedidos). Para reconocerlo por su WhatsApp hace falta mandar un código por SMS o WhatsApp,
   y eso pide un proveedor de mensajes. «Mi cuenta» lo dice tal cual.
+
+- **La migración 0011 (devoluciones) está escrita y sin aplicar.** Hoy las devoluciones ya
+  funcionan, pero **sólo desde la cuenta del admin**: regresa las piezas al inventario con una
+  nota que lleva el reembolso, y el corte de caja lo lee de ahí y lo descuenta. Con 0011: la
+  cajera también puede devolver, el servidor pone el precio, y dos devoluciones del mismo ticket
+  al mismo tiempo no pueden pasar de lo vendido.

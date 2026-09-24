@@ -22,12 +22,14 @@ export function piezasTicket(venta, negocio, { copia = '' } = {}){
   if(c.direccion) ps.push({ t: 'texto', v: c.direccion, alinear: 'centro' });
   if(c.whatsapp) ps.push({ t: 'texto', v: `WhatsApp ${c.whatsapp}`, alinear: 'centro' });
   if(t.rfc) ps.push({ t: 'texto', v: `RFC ${t.rfc}`, alinear: 'centro' });
+  if(venta.titulo) ps.push({ t: 'texto', v: `*** ${venta.titulo} ***`, alinear: 'centro', negritas: true });   // «DEVOLUCIÓN»
   if(copia || venta.reimpresion) ps.push({ t: 'texto', v: `*** ${copia || 'REIMPRESIÓN'} ***`, alinear: 'centro', negritas: true });
   ps.push({ t: 'raya' });
   ps.push({ t: 'par', izq: `Ticket #${venta.folio}`, der: FECHA.format(new Date(venta.cuando || Date.now())) });
   if(venta.cajero) ps.push({ t: 'texto', v: `Atendió: ${venta.cajero}` });
   if(venta.cliente) ps.push({ t: 'texto', v: `Cliente: ${venta.cliente}` });
   if(venta.direccion) ps.push({ t: 'texto', v: `Entregar en: ${venta.direccion}` });
+  if(venta.motivo) ps.push({ t: 'texto', v: `Motivo: ${venta.motivo}` });
   ps.push({ t: 'raya' });
   for(const r of venta.renglones){
     ps.push({ t: 'par', izq: `${r.cantidad} ${r.nombre}`, der: pesos(r.importe ?? r.precio * r.cantidad) });
@@ -36,11 +38,11 @@ export function piezasTicket(venta, negocio, { copia = '' } = {}){
   ps.push({ t: 'raya' });
   const piezas = venta.renglones.reduce((s, r) => s + r.cantidad, 0);
   if(venta.envio) ps.push({ t: 'par', izq: 'Envío', der: pesos(venta.envio) });
-  ps.push({ t: 'par', izq: `TOTAL (${piezas} ${piezas === 1 ? 'pieza' : 'piezas'})`, der: pesos(venta.total), negritas: true });
+  ps.push({ t: 'par', izq: `${venta.etiquetaTotal || 'TOTAL'} (${piezas} ${piezas === 1 ? 'pieza' : 'piezas'})`, der: pesos(venta.total), negritas: true });
   if(venta.metodo) ps.push({ t: 'par', izq: METODO[venta.metodo] || venta.metodo, der: venta.recibido != null ? pesos(venta.recibido) : '' });
   if(venta.cambio) ps.push({ t: 'par', izq: 'Cambio', der: pesos(venta.cambio), negritas: true });
   ps.push({ t: 'saltar' });
-  ps.push({ t: 'texto', v: t.pie || '¡Gracias por tu compra!', alinear: 'centro' });
+  ps.push({ t: 'texto', v: venta.pie || t.pie || '¡Gracias por tu compra!', alinear: 'centro' });
   if(c.horario) ps.push({ t: 'texto', v: c.horario, alinear: 'centro' });
   if(venta.qr && t.qr !== false){ ps.push({ t: 'texto', v: t.textoQr || 'Pide otra vez desde aquí:', alinear: 'centro' }); ps.push({ t: 'qr', v: venta.qr }); }
   return ps;
