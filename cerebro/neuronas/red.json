@@ -105,6 +105,24 @@
         "funciona local pero no entre dos"
       ],
       "salioDe": "Guerra de Puercos: pasar de un mazo compartido a un mazo por jugador dejó `this.J.mazo` sin existir, y el modo a distancia llevaba días muerto sin que nadie lo notara."
+    },
+    {
+      "id": "sin-conexion-con-buen-internet",
+      "titulo": "«No hay conexión» con buen internet (el iPhone tira la petición)",
+      "gravedad": "alta",
+      "sintoma": "En el iPhone, Presentaciones dice «No hay conexión con La Sala. Revisa tu internet» con buena señal, mientras la mesa de La Sala sí carga. Desde la compu y desde las pruebas, funciona.",
+      "causa": "El fetch se cae ANTES de salir (TypeError), y el código traducía cualquier TypeError a «revisa tu internet». Todas las formas medidas desde aquí (CORS con y sin llave, vistas previas, 401) estaban bien: la falla es del navegador del teléfono con la petición que lleva cabecera propia (X-Llave), que obliga a un «preflight».",
+      "porque": "Chromium de pruebas no es el Safari de Carlos. Y un mensaje que adivina la causa («tu internet») esconde la verdadera.",
+      "arreglo": "presentaciones/ia.js · llamar(): si la petición normal cae así, se reintenta «sencilla» (llave en ?llave= y cuerpo text/plain: sin preflight) y se queda sencilla en la visita. Si también cae, el aviso trae el error tal cual.",
+      "comoCazarlo": "pruebas-pantalla.mjs aborta toda petición con X-Llave (safariTerco) y exige que el banco abra igual.",
+      "consejo": "Un aviso de error dice lo que pasó, no lo que suponemos que pasó.",
+      "senales": [
+        "no hay conexion con la sala",
+        "dice revisa tu internet y tengo internet",
+        "el banco no abre en el iphone",
+        "load failed"
+      ],
+      "salioDe": "Captura de Carlos, 25 de septiembre, 4:20 pm."
     }
   ]
 }

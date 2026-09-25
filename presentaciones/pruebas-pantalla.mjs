@@ -35,6 +35,7 @@ const PPTX = join(RAIZ, 'fadori/presentacion/Fadori-STEAM.pptx');
 const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAEAAAAAwCAIAAAAuKetIAAAAUklEQVR4nO3PQQ3AIADAQMAM5vHIRPC4LOkpaOfZd/zZ0gGvGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0D7M0QIyKhL5GwAAAABJRU5ErkJggg==';
 
 const b = await chromium.launch();
+let safariTerco = false;
 const pedidos = [];
 async function pagina(ancho, alto){
   const ctx = await b.newContext({ viewport: { width: ancho, height: alto }, acceptDownloads: true, serviceWorkers: 'block' });
@@ -50,6 +51,8 @@ async function pagina(ancho, alto){
   await ctx.route(/sala\.palomazi9111\.workers\.dev/, async (r) => {
     const u = r.request().url(), cuerpo = r.request().postDataJSON?.() || null;
     pedidos.push({ u, cuerpo, llave: r.request().headers()['x-llave'] });
+    // Como el Safari del iPhone de Carlos: toda petición con la cabecera X-Llave muere antes de salir.
+    if(safariTerco && r.request().headers()['x-llave']) return r.abort('failed');
     /* Mis elementos: el servidor DE VERDAD (elementos.js) sobre un almacén en memoria. */
     if(/\/elementos/.test(u)){
       const req = new Request(u, { method: r.request().method(), body: r.request().method() === 'POST' ? r.request().postData() : undefined });
@@ -634,6 +637,15 @@ ok('sin llave pide pegar el link de La Sala', await s.p.getByText('conecta La Sa
 await s.p.locator('#hoja input[placeholder*="link de La Sala"]').fill('https://mazi-central.palomazi9111.workers.dev/sala/?sala=GRUPAZ&llave=abc123');
 await s.p.getByRole('button', { name: 'Conectar' }).click();
 ok('saca la llave del link y la guarda', (await s.p.evaluate(() => localStorage.getItem('salaLlave'))) === 'abc123');
+
+console.log('\n· Cuando el teléfono tira la petición antes de mandarla');
+safariTerco = true;
+const t = await pagina(390, 844);
+await t.p.click('.vistas [data-vista="banco"]');
+await t.p.waitForSelector('#banco:not([hidden]) .banco-cab', { timeout: 10000 }).catch(() => {});
+const lasDeBanco = pedidos.filter((x) => /\/banco/.test(x.u)).slice(-2);
+ok('el banco abre igual: reintenta con la llave en la dirección (sin la cabecera)', await t.p.locator('#banco .banco-cab').count() === 1 && /[?&]llave=llave-de-prueba/.test(lasDeBanco.at(-1)?.u || ''), (await t.p.locator('#banco').textContent()).slice(0, 120));
+safariTerco = false;
 
 console.log('\n· Computadora (1280×800)');
 const c = await pagina(1280, 800);

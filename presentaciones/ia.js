@@ -23,19 +23,42 @@ export function ponerLlave(texto){
   return true;
 }
 
-async function pedir(ruta, cuerpo, { metodo = 'POST', espera = 150000 } = {}){
+/* Dos formas de hablarle a La Sala:
+   · NORMAL: la llave en la cabecera X-Llave. Por ser cabecera propia, el
+     navegador primero PREGUNTA permiso (CORS) y luego manda.
+   · SENCILLA: la llave en la dirección (?llave=) y el cuerpo como texto. Así
+     es una petición «simple»: el navegador no pregunta nada, sólo manda.
+   Carlos vio «No hay conexión con La Sala» en el iPhone con buen internet, y
+   desde aquí la normal funcionaba en todas sus formas: el Safari de su
+   teléfono tiraba la petición ANTES de mandarla. Si la normal falla así, se
+   reintenta sencilla y, si funciona, se queda sencilla en esta visita. Si
+   también falla, el aviso trae el error tal cual lo dijo el navegador. */
+let sencilla = (() => { try{ return sessionStorage.getItem('salaSencilla') === '1'; }catch{ return false; } })();
+export async function llamar(url, { metodo = 'GET', cuerpo, espera = 150000, crudo = false } = {}){
   const k = llave();
-  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), espera);
-  let r;
-  try{
-    r = await fetch(`${SERVIDOR}/api/sala/${SALA}/${ruta}`, {
-      method: metodo, signal: ctl.signal,
-      headers: { ...(cuerpo ? { 'Content-Type': 'application/json' } : {}), ...(k ? { 'X-Llave': k } : {}) },
-      body: cuerpo ? JSON.stringify(cuerpo) : undefined,
-    });
-  }catch(e){
-    throw new Error(e.name === 'AbortError' ? 'La IA tardó demasiado y se cortó. Prueba otra vez.' : 'No hay conexión con La Sala. Revisa tu internet.');
-  }finally{ clearTimeout(t); }
+  const intento = async (simple) => {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), espera);
+    try{
+      const u = simple && k ? `${url}${url.includes('?') ? '&' : '?'}llave=${encodeURIComponent(k)}` : url;
+      return await fetch(u, {
+        method: metodo, signal: ctl.signal,
+        headers: simple ? (cuerpo ? { 'Content-Type': 'text/plain;charset=UTF-8' } : {}) : { ...(cuerpo ? { 'Content-Type': 'application/json' } : {}), ...(k ? { 'X-Llave': k } : {}) },
+        body: cuerpo ? (crudo ? cuerpo : JSON.stringify(cuerpo)) : undefined,
+      });
+    }finally{ clearTimeout(t); }
+  };
+  try{ return await intento(sencilla); }
+  catch(e){
+    if(e.name === 'AbortError') throw new Error('La Sala tardó demasiado y se cortó. Prueba otra vez.');
+    if(!sencilla){
+      try{ const r = await intento(true); sencilla = true; try{ sessionStorage.setItem('salaSencilla', '1'); }catch{} return r; }
+      catch(e2){ if(e2.name === 'AbortError') throw new Error('La Sala tardó demasiado y se cortó. Prueba otra vez.'); e = e2; }
+    }
+    throw new Error(`No hay conexión con La Sala${typeof navigator !== 'undefined' && navigator.onLine === false ? ': este teléfono está sin internet' : ''}. (Detalle para Sylcred: ${e.name}: ${e.message})`);
+  }
+}
+async function pedir(ruta, cuerpo, { metodo = 'POST', espera = 150000 } = {}){
+  const r = await llamar(`${SERVIDOR}/api/sala/${SALA}/${ruta}`, { metodo, cuerpo, espera });
   if(r.status === 401 || r.status === 403){ const e = new Error('Falta la llave de La Sala (o ya no sirve). Pégala en la pestaña IA.'); e.llave = true; throw e; }
   const j = await r.json().catch(() => ({}));
   if(r.status === 404 && !j.error) throw new Error('El servidor de La Sala todavía no tiene esta función. Hay que publicarlo.');
@@ -157,8 +180,7 @@ export const banco = {
   cambiarVarias: async (ids, campos = {}, agregarTemas = '') => (await pedir('banco', { accion: 'cambiarVarias', ids, campos, agregarTemas })).fichas || [],
   borrar: (id) => pedir('banco', { accion: 'borrar', id }),
   async bytes(id, parte = ''){
-    const k = llave();
-    const r = await fetch(`${SERVIDOR}/api/sala/${SALA}/banco?id=${encodeURIComponent(id)}${parte ? '&parte=' + parte : ''}`, { headers: k ? { 'X-Llave': k } : {} });
+    const r = await llamar(`${SERVIDOR}/api/sala/${SALA}/banco?id=${encodeURIComponent(id)}${parte ? '&parte=' + parte : ''}`, { espera: 60000 });
     if(r.status === 401){ const e = new Error('Falta la llave de La Sala.'); e.llave = true; throw e; }
     if(!r.ok) throw new Error('No se pudo bajar la imagen del banco.');
     const b = await r.blob();
