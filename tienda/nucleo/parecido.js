@@ -28,15 +28,25 @@ export function distancia(a, b, max = 2){
   return prev[b.length];
 }
 
+/* Cómo SUENA una palabra: s/c/z, b/v, y/ll, k/qu/c y la h muda se confunden
+   al escribir de oído («seras» por «ceras», «vrocha» por «brocha»,
+   «kera» por «queratina» no: ésa ya es otra palabra). */
+export const sonido = (w) => w.replace(/ch/g, '#').replace(/h/g, '').replace(/#/g, 'ch').replace(/qu/g, 'k').replace(/c(?=[ei])/g, 's').replace(/c/g, 'k')
+  .replace(/z/g, 's').replace(/v/g, 'b').replace(/ll/g, 'y').replace(/(.)\1+/g, '$1');
+const sinPlural = (w) => w.length > 4 ? w.replace(/(es|s)$/, '') : w;
+
 export const tolerancia = (w) => w.length >= 9 ? 2 : w.length >= 5 ? 1 : 0;
 
 /* ¿La palabra buscada `w` está, aunque sea mal escrita, en el texto `t`
    (ya sin acentos y en minúsculas)? Compara contra cada palabra del texto y
    contra su inicio: «kerati» es el principio de «keratin». */
 export function estaParecida(t, w){
-  const tol = tolerancia(w); if(!tol) return false;
+  const tol = tolerancia(w), sw = w.length >= 4 ? sonido(sinPlural(w)) : null;
+  if(!tol && !sw) return false;
   for(const k of t.split(/[^a-z0-9ñ]+/)){
     if(k.length < 4) continue;
+    if(sw){ const sk = sonido(sinPlural(k)); if(sk === sw || (sw.length >= 5 && sk.startsWith(sw))) return true; }   // suena igual
+    if(!tol) continue;
     if(distancia(w, k, tol) <= tol) return true;
     if(k.length > w.length && distancia(w, k.slice(0, w.length), tol) <= tol) return true;     // lo escrito es el principio
     if(w.length > k.length && k.length >= 5 && distancia(w.slice(0, k.length), k, 0) === 0) return true;   // escribió de más: «keratine»

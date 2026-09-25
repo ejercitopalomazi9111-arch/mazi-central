@@ -17,7 +17,8 @@
      → { texto, estado, accion?: 'persona' | 'pedido', pedido?, opciones? }
    `estado` es la memoria de la conversación: { carrito: [[id, n]], opciones: [ids], foco, conPersona, dudas }.
    ═════════════════════════════════════════════════════════════════════════ */
-import { distancia, tolerancia } from './parecido.js';
+import { distancia, tolerancia, sonido } from './parecido.js';
+export { sonido };
 
 export const normal = (t) => String(t ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
   .replace(/[¿?¡!.,;:()"'«»]/g, ' ').replace(/([a-z])\1{2,}/g, '$1').replace(/\s+/g, ' ').trim();
@@ -29,10 +30,6 @@ const DEDO = { ke: 'que', k: 'que', q: 'que', qe: 'que', kiero: 'quiero', kero: 
   aki: 'aqui', tmb: 'tambien', tb: 'tambien', xq: 'porque', pq: 'porque', cuanto: 'cuanto', kuanto: 'cuanto', cnt: 'cuanto', ps: 'pues', pz: 'pz' };
 export const habla = (t) => normal(t).split(' ').map((w) => DEDO[w] || w).join(' ');
 
-/* Cómo SUENA una palabra: s/c/z, b/v, y/ll, k/qu/c y la h muda se confunden
-   al escribir de oído («seras» por «ceras», «vrocha» por «brocha»). */
-export const sonido = (w) => w.replace(/ch/g, '#').replace(/h/g, '').replace(/#/g, 'ch').replace(/qu/g, 'k').replace(/c(?=[ei])/g, 's').replace(/c/g, 'k')
-  .replace(/z/g, 's').replace(/v/g, 'b').replace(/ll/g, 'y').replace(/(.)\1+/g, '$1');
 const pesos = (n) => '$' + Number(n || 0).toLocaleString('es-MX', { minimumFractionDigits: Number(n) % 1 ? 2 : 0, maximumFractionDigits: 2 });
 const piezas = (n) => n === 1 ? '1 pieza' : `${n} piezas`;
 const POCAS = 5;
