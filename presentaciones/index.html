@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Presentaciones · Grupo Mazi</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#100A18">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Presentaciones">
+<meta name="description" content="Abre un PowerPoint y cambia cientos de láminas de un jalón: fondo, letra, colores, imágenes, y con IA.">
+<link rel="icon" href="../icon-192.png">
+<link rel="apple-touch-icon" href="../icon-192.png">
+<!--
+  PRESENTACIONES · herramienta de Carlos, hermana de Reportes.
+  ────────────────────────────────────────────────────────────────────────
+  Pedido: «editarlas rápido, como funciones para cambiar cientos de
+  diapositivas a la vez: cambiar el fondo y así», con Gemini y Groq adentro,
+  y «cambiar muchas imágenes a unas más actuales y bonitas, y rehacer
+  algunas con IA».
+
+  El archivo NO sale de este teléfono: se abre, se cambia y se guarda aquí.
+  Lo único que viaja es lo que se le pide a la IA (textos o una imagen), y
+  eso va a La Sala, que es donde viven las llaves.
+
+  nucleo.js — abrir, cambiar en lote y guardar el .pptx (pruebas-nucleo.mjs)
+  vista.js  — dibujar cada lámina
+  ia.js     — Paulina, Negro, buscar fotos y recortarlas
+  app.js    — esta pantalla (pruebas-pantalla.mjs)
+-->
+<style>
+:root{
+  --vacio:#100A18; --superficie:#1E1428; --superficie-2:#271B34; --superficie-3:#32243F; --linea:#3A2A4C;
+  --hueso:#E9E4E4; --tenue:#A89DB6; --violeta:#AC27FF; --violeta-suave:#C77BFF; --bien:#4FB286; --mal:#FF6B6B;
+  --mazi:"Mazi", system-ui, sans-serif;
+  --ui:"Segoe UI", system-ui, -apple-system, sans-serif;
+  --radio:12px; --dock:calc(68px + env(safe-area-inset-bottom));
+}
+@font-face{font-family:"Mazi"; src:url("../sitio/fuente/mazi.woff2") format("woff2"); font-display:swap}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+html,body{margin:0; padding:0}
+body{
+  background:radial-gradient(120% 70% at 50% -12%, #2E1B45 0%, #1A1028 46%, var(--vacio) 78%), var(--vacio);
+  background-attachment:fixed; color:var(--hueso); font:16px/1.5 var(--ui); -webkit-text-size-adjust:100%;
+  min-height:100dvh;
+}
+[hidden]{display:none !important}
+button,input,select,textarea{font:inherit; color:inherit}
+.oculto{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; top:0; left:0}
+
+/* ── barra ── */
+.barra{position:sticky; top:0; z-index:30; background:rgba(16,10,24,.84); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--linea); padding:max(8px,env(safe-area-inset-top)) 12px 8px}
+.barra-fila{display:flex; align-items:center; gap:8px; min-height:44px; max-width:1400px; margin:0 auto}
+.marca{font-family:var(--mazi); font-size:19px; color:var(--hueso); text-decoration:none; display:flex; align-items:center; gap:8px; white-space:nowrap; min-width:0}
+.marca img{width:26px; height:26px; border-radius:7px}
+.marca b{color:var(--violeta); font-weight:400}
+.crece{flex:1; min-width:0}
+.btn{appearance:none; border:1px solid var(--linea); background:var(--superficie); color:var(--hueso); font-size:15px; font-weight:600;
+  min-height:44px; padding:0 14px; border-radius:11px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px; white-space:nowrap}
+.btn:hover{background:var(--superficie-2)}
+.btn:focus-visible,.chip:focus-visible,.lam:focus-visible{outline:2px solid var(--violeta-suave); outline-offset:2px}
+.btn:disabled{opacity:.45; cursor:default}
+.btn.primario{background:var(--violeta); border-color:var(--violeta); color:#fff}
+.btn.primario:hover{background:#9A1FE6}
+.btn.fantasma{background:transparent}
+.btn.ancho{width:100%}
+.btn svg{width:20px; height:20px; flex:none}
+.btn.icono{padding:0; width:44px}
+@media (max-width:420px){ .btn .tx-largo{display:none} }
+
+/* ── inicio (sin archivo) ── */
+.inicio{max-width:560px; margin:0 auto; padding:40px 16px 120px; text-align:center}
+/* La letra Mazi no trae acentos: el título va en la de sistema («láminas», «jalón»). */
+.inicio h1{font-weight:800; font-size:36px; line-height:1.08; margin:0 0 12px; letter-spacing:-.02em}
+.inicio h1 b{color:var(--violeta-suave); font-weight:800}
+.inicio p{color:var(--tenue); margin:0 0 24px}
+.soltar{display:block; border:1.5px dashed var(--linea); border-radius:18px; padding:40px 16px; background:rgba(30,20,40,.6); cursor:pointer; transition:border-color .15s, background .15s}
+.soltar:hover,.soltar.encima{border-color:var(--violeta); background:rgba(172,39,255,.08)}
+.soltar strong{display:block; font-size:20px; margin-bottom:4px}
+.soltar span{color:var(--tenue); font-size:14px}
+.puntos{list-style:none; padding:0; margin:32px 0 0; display:grid; gap:12px; text-align:left}
+.puntos li{display:flex; gap:12px; align-items:flex-start; color:var(--tenue); font-size:15px}
+.puntos b{color:var(--hueso); font-weight:600}
+.puntos i{flex:none; width:28px; height:28px; border-radius:8px; background:var(--superficie-2); display:grid; place-items:center; font-style:normal; color:var(--violeta-suave)}
+.seguir{margin-top:16px}
+
+/* ── trabajo ── */
+.trabajo{max-width:1400px; margin:0 auto; padding:12px 12px calc(var(--dock) + 24px)}
+.estado{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:4px 0 12px}
+.abrir-otra{display:inline-flex; align-items:center; position:relative; min-height:40px}
+.estado .archivo{font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%}
+.estado .cuantas{color:var(--tenue); font-size:14px}
+.eleccion{display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:8px 8px 8px 14px; border:1px solid var(--linea); border-radius:var(--radio); background:var(--superficie); margin-bottom:12px; font-size:14px}
+.eleccion .que{flex:1; min-width:160px}
+.eleccion .que b{color:var(--violeta-suave)}
+.chip{appearance:none; border:1px solid var(--linea); background:var(--superficie-2); border-radius:999px; min-height:36px; padding:0 12px; font-size:14px; cursor:pointer; color:var(--hueso)}
+.chip[aria-pressed="true"]{background:var(--violeta); border-color:var(--violeta); color:#fff}
+
+.laminas{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px}
+@media (min-width:700px){ .laminas{grid-template-columns:repeat(3, minmax(0,1fr))} }
+@media (min-width:1100px){ .laminas{grid-template-columns:repeat(4, minmax(0,1fr))} }
+.tarjeta{position:relative; min-width:0}
+.lam{appearance:none; display:block; width:100%; padding:0; border:2px solid transparent; border-radius:10px; background:none; cursor:pointer; position:relative}
+.lam[aria-pressed="true"]{border-color:var(--violeta)}
+.marco{position:relative; width:100%; aspect-ratio:var(--proporcion, 16/9); overflow:hidden; border-radius:8px; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.marco .lienzo{transform:scale(var(--k,.2))}
+.num{position:absolute; left:6px; bottom:6px; background:rgba(16,10,24,.86); color:var(--hueso); font-size:12px; font-weight:700; min-width:24px; height:22px; padding:0 6px; border-radius:6px; display:grid; place-items:center}
+.marca-sel{position:absolute; right:6px; top:6px; width:26px; height:26px; border-radius:50%; border:2px solid #fff; background:rgba(16,10,24,.5); display:grid; place-items:center; box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.lam[aria-pressed="true"] .marca-sel{background:var(--violeta); border-color:var(--violeta)}
+.marca-sel svg{width:14px; height:14px; opacity:0}
+.lam[aria-pressed="true"] .marca-sel svg{opacity:1}
+.ver{position:absolute; right:4px; bottom:4px; width:44px; height:44px; border:0; background:none; cursor:pointer; display:grid; place-items:center; padding:0}
+.ver span{width:30px; height:30px; border-radius:8px; background:rgba(16,10,24,.86); display:grid; place-items:center}
+.ver svg{width:17px; height:17px}
+
+/* el lienzo de una lámina (vista.js) */
+.lienzo{position:absolute; left:0; top:0; transform-origin:0 0; overflow:hidden; font-family:Calibri, Carlito, Arial, sans-serif; color:#000}
+.lienzo .forma{position:absolute}
+.lienzo img{display:block; object-fit:fill}
+.lienzo .texto{position:absolute; inset:0; display:flex; flex-direction:column; overflow:hidden; line-height:1.15; overflow-wrap:break-word}
+.lienzo .parrafo{white-space:pre-wrap}
+.lienzo .objeto{border:2px dashed rgba(128,128,128,.6); display:grid; place-items:center}
+.lienzo .objeto .etiqueta{font:600 18px var(--ui); color:rgba(128,128,128,.9)}
+.lienzo .objeto.tabla{display:grid; grid-template-columns:repeat(3,1fr); gap:1px; place-items:stretch; background:rgba(128,128,128,.3)}
+.lienzo .celda{background:rgba(255,255,255,.85); font:14px var(--ui); padding:4px; overflow:hidden}
+
+/* ── menú de abajo ── */
+.dock{position:fixed; left:0; right:0; bottom:0; z-index:30; background:rgba(16,10,24,.92); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  border-top:1px solid var(--linea); padding:6px 8px calc(6px + env(safe-area-inset-bottom))}
+.dock-fila{display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:6px; max-width:640px; margin:0 auto}
+.dock button{appearance:none; border:0; background:none; color:var(--tenue); min-height:56px; border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; font-size:13px; font-weight:600; cursor:pointer}
+.dock button:hover,.dock button[aria-expanded="true"]{background:var(--superficie-2); color:var(--hueso)}
+.dock svg{width:24px; height:24px}
+
+/* ── hojas ── */
+dialog.hoja{border:0; padding:0; margin:auto auto 0; width:100%; max-width:640px; max-height:88dvh; border-radius:20px 20px 0 0; background:var(--superficie); color:var(--hueso); box-shadow:0 -8px 40px rgba(0,0,0,.5)}
+@media (min-width:900px){ dialog.hoja{margin:0 0 0 auto; height:100dvh; max-height:100dvh; max-width:440px; border-radius:0} }
+dialog.hoja::backdrop{background:rgba(8,4,14,.55)}
+.hoja-cab{position:sticky; top:0; z-index:2; background:var(--superficie); display:flex; align-items:center; gap:8px; padding:14px 12px 10px 18px; border-bottom:1px solid var(--linea)}
+.hoja-cab h2{margin:0; font-size:20px; flex:1; min-width:0}
+.hoja-cuerpo{padding:16px 18px 28px; overflow:auto; max-height:calc(88dvh - 64px)}
+@media (min-width:900px){ .hoja-cuerpo{max-height:calc(100dvh - 64px)} }
+.a-quien{font-size:14px; color:var(--tenue); margin:0 0 16px; padding:10px 12px; background:var(--superficie-2); border-radius:10px}
+.a-quien b{color:var(--hueso)}
+.seccion{margin:0 0 24px}
+.seccion h3{font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--tenue); margin:0 0 10px; font-weight:700}
+.fila{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+.fila > *{min-width:0}
+.fila.dos{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.muestras{display:grid; grid-template-columns:repeat(auto-fill, minmax(44px,1fr)); gap:8px; margin-bottom:10px}
+.muestra{appearance:none; aspect-ratio:1; min-height:44px; border-radius:10px; border:2px solid var(--linea); cursor:pointer; padding:0}
+.muestra[aria-pressed="true"]{border-color:#fff; box-shadow:0 0 0 2px var(--violeta)}
+.campo{display:grid; gap:6px; font-size:14px; color:var(--tenue); margin-bottom:10px}
+.campo input,.campo select,.campo textarea,.entrada{width:100%; min-height:48px; padding:10px 12px; border-radius:10px; border:1px solid var(--linea); background:var(--vacio); color:var(--hueso); font-size:16px}
+.campo textarea,textarea.entrada{min-height:96px; resize:vertical; line-height:1.4}
+input[type="color"]{padding:4px; height:48px; cursor:pointer}
+.check{display:flex; gap:10px; align-items:flex-start; font-size:15px; margin:10px 0; cursor:pointer}
+.check input{width:22px; height:22px; margin:1px 0 0; accent-color:var(--violeta); flex:none}
+.segmento{display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0,1fr); gap:4px; padding:4px; background:var(--vacio); border-radius:12px; margin-bottom:14px}
+.segmento button{appearance:none; border:0; background:none; min-height:40px; border-radius:9px; font-size:14px; font-weight:600; color:var(--tenue); cursor:pointer; padding:0 6px}
+.segmento button[aria-pressed="true"]{background:var(--superficie-3); color:var(--hueso)}
+.nota{font-size:13px; color:var(--tenue); margin:6px 0 0}
+
+/* imágenes */
+.rejilla-img{display:grid; grid-template-columns:repeat(auto-fill, minmax(96px,1fr)); gap:10px}
+.img-carta{appearance:none; border:2px solid var(--linea); background:var(--vacio); border-radius:10px; padding:0; cursor:pointer; overflow:hidden; text-align:left; color:var(--hueso); position:relative}
+.img-carta[aria-pressed="true"]{border-color:var(--violeta)}
+.img-carta img{display:block; width:100%; aspect-ratio:4/3; object-fit:contain; background:repeating-conic-gradient(#2a2035 0 25%, #211a2b 0 50%) 0 0/16px 16px}
+.img-carta span{display:block; font-size:12px; padding:6px 8px; color:var(--tenue); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.img-carta .marca-sel{top:6px; right:6px}
+.img-carta[aria-pressed="true"] .marca-sel{background:var(--violeta); border-color:var(--violeta)}
+.img-carta[aria-pressed="true"] .marca-sel svg{opacity:1}
+.grande-img{width:100%; max-height:240px; object-fit:contain; border-radius:10px; background:repeating-conic-gradient(#2a2035 0 25%, #211a2b 0 50%) 0 0/16px 16px; display:block; margin-bottom:12px}
+.fuentes{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px}
+.fuentes .btn{min-height:64px; flex-direction:column; gap:2px; white-space:normal; text-align:center; line-height:1.2}
+.fuentes .btn small{font-weight:400; color:var(--tenue); font-size:12px}
+.resultados{display:grid; grid-template-columns:repeat(auto-fill, minmax(120px,1fr)); gap:8px; margin-top:12px}
+.resultados button{appearance:none; border:2px solid transparent; padding:0; border-radius:8px; overflow:hidden; cursor:pointer; background:var(--vacio); aspect-ratio:4/3}
+.resultados button:hover,.resultados button:focus-visible{border-color:var(--violeta)}
+.resultados img{width:100%; height:100%; object-fit:cover; display:block}
+.credito{font-size:12px; color:var(--tenue); margin-top:8px}
+.progreso{list-style:none; padding:0; margin:12px 0 0; display:grid; gap:6px; font-size:14px}
+.progreso li{display:flex; gap:8px; align-items:center}
+
+/* IA */
+.chat{display:grid; gap:10px; margin-bottom:12px}
+.msj{padding:10px 12px; border-radius:12px; font-size:15px; white-space:pre-wrap; overflow-wrap:anywhere}
+.msj.tu{background:var(--violeta); color:#fff; justify-self:end; max-width:88%}
+.msj.yo{background:var(--superficie-2); max-width:100%}
+.msj.error{background:rgba(255,107,107,.12); border:1px solid rgba(255,107,107,.4)}
+.cambios{list-style:none; padding:0; margin:10px 0 0; display:grid; gap:6px}
+.cambios label{display:flex; gap:10px; align-items:flex-start; padding:8px 10px; border-radius:10px; background:var(--vacio); font-size:14px; cursor:pointer}
+.cambios input{width:20px; height:20px; accent-color:var(--violeta); flex:none; margin:1px 0 0}
+.cambios del{color:var(--tenue)}
+.ejemplos{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px}
+.pensando{display:inline-flex; gap:4px}
+.pensando i{width:7px; height:7px; border-radius:50%; background:var(--tenue); animation:late 1s infinite}
+.pensando i:nth-child(2){animation-delay:.15s} .pensando i:nth-child(3){animation-delay:.3s}
+@keyframes late{50%{opacity:.25}}
+
+/* visor */
+dialog.visor{border:0; padding:0; margin:0; width:100vw; height:100dvh; max-width:none; max-height:none; background:var(--vacio); color:var(--hueso)}
+.visor-cuerpo{max-width:1100px; margin:0 auto; padding:12px 12px 40px; overflow:auto; height:calc(100dvh - 64px)}
+.visor .marco{box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.visor .es-imagen{cursor:pointer; outline:2px dashed transparent}
+.visor .es-imagen:hover{outline-color:var(--violeta)}
+.nav-visor{display:flex; gap:8px; align-items:center; margin:12px 0}
+.textos-lamina{display:grid; gap:10px; margin-top:8px}
+.textos-lamina label{display:grid; gap:4px; font-size:13px; color:var(--tenue)}
+
+/* avisos */
+.avisos{position:fixed; left:50%; transform:translateX(-50%); bottom:calc(var(--dock) + 12px); z-index:60; display:grid; gap:8px; width:min(92vw, 480px); pointer-events:none}
+.aviso{pointer-events:auto; background:var(--superficie-3); border:1px solid var(--linea); border-radius:12px; padding:12px 14px; font-size:15px; box-shadow:0 8px 24px rgba(0,0,0,.4); display:flex; gap:10px; align-items:center; animation:entra .18s ease-out}
+.aviso.mal{border-color:rgba(255,107,107,.6)}
+.aviso.bien{border-color:rgba(79,178,134,.6)}
+.aviso .crece{min-width:0}
+@keyframes entra{from{opacity:0; transform:translateY(8px)}}
+@media (prefers-reduced-motion:reduce){ *{animation:none !important; transition:none !important} }
+.ocupado{position:fixed; inset:0; z-index:70; background:rgba(8,4,14,.6); display:grid; place-items:center; font-size:17px}
+.ocupado div{background:var(--superficie); padding:20px 24px; border-radius:16px; border:1px solid var(--linea); display:flex; gap:12px; align-items:center; max-width:90vw}
+</style>
+</head>
+<body>
+<header class="barra">
+  <div class="barra-fila">
+    <a class="marca" href="../"><img src="../icon-192.png" alt=""><span>Presen<b>taciones</b></span></a>
+    <span class="crece"></span>
+    <button class="btn icono" id="b-deshacer" type="button" disabled hidden aria-label="Deshacer" title="Deshacer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+    </button>
+    <button class="btn primario" id="b-guardar" type="button" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12"/><path d="m7 11 5 5 5-5"/><path d="M4 20h16"/></svg>
+      Guardar
+    </button>
+  </div>
+</header>
+
+<main id="inicio" class="inicio">
+  <h1>Cambia cien láminas <b>de un jalón</b></h1>
+  <p>Abre tu PowerPoint. Nada se sube a ningún lado: se edita aquí y lo guardas cuando quieras.</p>
+  <label class="soltar" id="soltar">
+    <strong>Abrir presentación</strong>
+    <span>Archivo .pptx · de PowerPoint, Google Slides o Canva</span>
+    <input class="oculto" type="file" accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation" data-abrir>
+  </label>
+  <button class="btn ancho seguir" id="b-seguir" type="button" hidden></button>
+  <ul class="puntos">
+    <li><i>1</i><span><b>Fondo, letra y colores</b> en todas las láminas o sólo en las que elijas.</span></li>
+    <li><i>2</i><span><b>Imágenes:</b> cambia una y se cambia en todas donde sale. Busca fotos libres o hazlas con IA.</span></li>
+    <li><i>3</i><span><b>IA:</b> pídele «corrige la ortografía» o «hazla más formal» y te enseña los cambios antes de ponerlos.</span></li>
+  </ul>
+</main>
+
+<main id="trabajo" class="trabajo" hidden>
+  <div class="estado"><span class="archivo" id="archivo"></span><span class="cuantas" id="cuantas"></span><span class="crece"></span>
+    <label class="chip abrir-otra" id="b-abrir" hidden>Abrir otra<input class="oculto" type="file" accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation" data-abrir></label>
+  </div>
+  <div class="eleccion" id="eleccion">
+    <span class="que" id="eleccion-que"></span>
+    <button class="chip" type="button" id="b-todas">Elegir todas</button>
+    <button class="chip" type="button" id="b-ninguna" hidden>Quitar</button>
+  </div>
+  <div class="laminas" id="laminas"></div>
+</main>
+
+<nav class="dock" id="dock" hidden aria-label="Herramientas">
+  <div class="dock-fila">
+    <button type="button" data-panel="fondo" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m3 16 5-5 4 4 3-3 6 6"/></svg>Fondo</button>
+    <button type="button" data-panel="texto" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6V4h14v2"/><path d="M12 4v16"/><path d="M9 20h6"/></svg>Texto</button>
+    <button type="button" data-panel="imagenes" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>Imágenes</button>
+    <button type="button" data-panel="ia" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.9L19 9.7l-5.2 1.8L12 16.4l-1.8-4.9L5 9.7l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>IA</button>
+  </div>
+</nav>
+
+<dialog class="hoja" id="hoja" aria-labelledby="hoja-titulo">
+  <div class="hoja-cab"><h2 id="hoja-titulo"></h2><button class="btn icono fantasma" type="button" data-cerrar aria-label="Cerrar">✕</button></div>
+  <div class="hoja-cuerpo" id="hoja-cuerpo"></div>
+</dialog>
+<dialog class="hoja" id="hoja2" aria-labelledby="hoja2-titulo">
+  <div class="hoja-cab"><h2 id="hoja2-titulo"></h2><button class="btn icono fantasma" type="button" data-cerrar aria-label="Cerrar">✕</button></div>
+  <div class="hoja-cuerpo" id="hoja2-cuerpo"></div>
+</dialog>
+<dialog class="visor" id="visor" aria-labelledby="visor-titulo">
+  <div class="barra"><div class="barra-fila">
+    <button class="btn icono fantasma" type="button" data-cerrar aria-label="Cerrar">✕</button>
+    <h2 id="visor-titulo" class="crece" style="margin:0;font-size:18px"></h2>
+    <button class="btn icono" type="button" id="v-ant" aria-label="Lámina anterior">‹</button>
+    <button class="btn icono" type="button" id="v-sig" aria-label="Lámina siguiente">›</button>
+  </div></div>
+  <div class="visor-cuerpo" id="visor-cuerpo"></div>
+</dialog>
+<div class="avisos" id="avisos" role="status" aria-live="polite"></div>
+<div class="ocupado" id="ocupado" hidden><div><span class="pensando"><i></i><i></i><i></i></span><span id="ocupado-tx"></span></div></div>
+
+<script src="vendor/jszip-3.10.2.min.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

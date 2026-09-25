@@ -56,6 +56,9 @@ const VA = [
      lo dice, y la página lleva noindex. Los datos viven en Supabase: de la
      carpeta no se publican ni el crudo, ni las migraciones, ni la muestra. */
   'tienda',
+  /* Presentaciones: abrir un .pptx y cambiarlo en lote, con IA por La Sala.
+     Las pruebas se quedan fuera solas (pruebas-*.mjs). */
+  'presentaciones',
 ];
 
 /* ── Lo que tiene sitio adentro y NO se publica, dicho a propósito ──────────

@@ -172,6 +172,24 @@
         "el contador brinca de ancho"
       ],
       "salioDe": "Practical Typography, «Grids of numbers», y el uso de `tabular-nums` en el tablero del banco."
+    },
+    {
+      "id": "letra-de-marca-sin-acentos",
+      "titulo": "La letra Mazi se come los acentos sin avisar",
+      "gravedad": "media",
+      "sintoma": "Un título en la letra de la casa dice «laminas» y «jalon» aunque el HTML trae «láminas» y «jalón».",
+      "causa": "sitio/fuente/mazi.woff2 no trae las vocales acentuadas; el navegador pinta la vocal sin acento en vez de caer a otra letra.",
+      "porque": "Se ve en una captura y no en el código: el texto está bien escrito, lo que falta es el dibujo del carácter.",
+      "arreglo": "La letra Mazi sólo para la marca («Presentaciones», «Reportes»). Cualquier frase en español va en la letra de sistema.",
+      "comoCazarlo": "Mirar la captura buscando acentos, no leer el HTML. Si un título lleva á, é, í, ó, ú o ñ, no va en Mazi.",
+      "consejo": "Una letra de marca es para el nombre, no para las frases.",
+      "senales": [
+        "no salen los acentos",
+        "dice jalon",
+        "la letra se come la tilde",
+        "laminas sin acento"
+      ],
+      "salioDe": "presentaciones/index.html, 25 de septiembre: la portada decía «Cambia cien laminas de un jalon»."
     }
   ]
 }
