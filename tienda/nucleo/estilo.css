@@ -812,7 +812,7 @@ body:has(.pos-barra:not([hidden])) .avisos{ bottom: calc(96px + env(safe-area-in
 .cifra-caja .sube{ color: var(--bien); } .cifra-caja .baja{ color: var(--mal); }
 .grafica-horas{ list-style: none; margin: 0; padding: var(--e3) 0 0; display: flex; align-items: flex-end; gap: 4px; height: 180px; }
 .grafica-horas li{ flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; }
-.grafica-horas .barra{ width: 100%; height: var(--alto); min-height: 2px; background: var(--acento); border-radius: 4px 4px 0 0; }
+.grafica-horas .barra{ flex: none; width: 100%; height: var(--alto); min-height: 2px; background: var(--acento); border-radius: 4px 4px 0 0; }   /* flex: none — la .barra de Reportes trae flex: 1 y las estiraba todas al tope */
 .grafica-horas .h{ font-size: 12px; color: var(--tinta-suave); font-variant-numeric: tabular-nums; }
 .dos-col{ display: grid; gap: var(--e4); }
 @media (min-width: 900px){ .dos-col{ grid-template-columns: 1fr 1fr; } }

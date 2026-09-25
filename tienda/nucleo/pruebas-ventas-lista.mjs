@@ -29,7 +29,7 @@ const nav = await chromium.launch();
 const ahora = Date.now();
 const VENTAS = Array.from({ length: 45 }, (_, k) => ({
   id: `00000000-0000-4000-8000-${String(k).padStart(12, '0')}`, folio: 1045 - k, canal: 'pos', estado: 'entregado',
-  total: 100, forma_pago: 'efectivo', pagado: true, creado: new Date(ahora - k * 60000).toISOString(),
+  total: 100, forma_pago: 'efectivo', pagado: true, creado: new Date(ahora - (k < 30 ? k * 60000 : 3 * 3600000 + k * 1000)).toISOString(),
   renglones: [{ producto_id: null, nombre: k === 30 ? 'Navaja Dorada de Prueba' : 'Gel fijador', precio: 100, cantidad: 1, importe: 100 }], cobros: [],
 }));
 
@@ -58,6 +58,15 @@ try{
   ok('«Ver más» agrega 20', (await filas()) === 40);
   await p.click('[data-mas-tickets]');
   ok('al final enseña los 45 y el botón se va', (await filas()) === 45 && !(await p.locator('[data-mas-tickets]').count()));
+
+  console.log('\n· La gráfica por hora');
+  // 30 tickets en la última media hora y 15 hace tres horas: dos horas con
+  // venta y una el doble de la otra. Las barras tienen que medir distinto.
+  const barras = await p.evaluate(() => [...document.querySelectorAll('.grafica-horas li')].map((li) => ({ alto: li.style.getPropertyValue('--alto'), px: li.querySelector('.barra').getBoundingClientRect().height })));
+  const tope = Math.max(...barras.map((b) => b.px)), llenas = barras.filter((b) => b.px > tope * 0.9).length;
+  ok('las barras miden según lo vendido, no todas al tope', llenas <= 2 && barras.some((b) => b.px < 10), JSON.stringify(barras.map((b) => `${b.alto}=${Math.round(b.px)}`)));
+  const b100 = barras.find((b) => b.alto === '100%'), b0 = barras.find((b) => b.alto === '0%');
+  ok('la de 100 % es la más alta y una de 0 % casi no se ve', b100 && b100.px === tope && (!b0 || b0.px <= 4));
 
   console.log('\n· Buscar');
   await p.locator('#q-ticket').pressSequentially('1030');
