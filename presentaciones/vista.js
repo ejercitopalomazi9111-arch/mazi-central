@@ -53,6 +53,13 @@ export function pintar(m){
         for(const p of f.parrafos){ const c = el('div', 'celda'); c.textContent = p.runs[0].t; caja.appendChild(c); }
       }else{ const e = el('span', 'etiqueta'); e.textContent = f.marcador; caja.appendChild(e); }
     }else{
+      // Una línea de PowerPoint mide 0 de alto: se pinta como una barra del grueso de su borde.
+      if(f.geo === 'line' && f.borde){
+        const g = Math.max(1, f.borde.ancho * k);
+        Object.assign(caja.style, { height: g + 'px', marginTop: -g / 2 + 'px', background: rgba(f.borde.color, f.borde.alfa ?? 1), borderRadius: g + 'px' });
+        lienzo.appendChild(caja); if(f.cid != null) caja.dataset.cid = f.cid;
+        continue;
+      }
       caja.style.background = fondoCss(f.relleno);
       if(f.borde) caja.style.border = `${Math.max(1, f.borde.ancho * k)}px solid ${rgba(f.borde.color, f.borde.alfa ?? 1)}`;
       if(f.sombra) caja.style.boxShadow = `0 ${f.sombra.dist * k}px ${f.sombra.blur * k}px rgba(0,0,0,${f.sombra.alfa})`;
@@ -80,6 +87,7 @@ export function pintar(m){
         caja.appendChild(tx);
       }
     }
+    if(f.cid != null) caja.dataset.cid = f.cid;
     lienzo.appendChild(caja);
   }
   return lienzo;

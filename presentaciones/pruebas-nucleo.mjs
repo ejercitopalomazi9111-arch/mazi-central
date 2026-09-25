@@ -280,6 +280,81 @@ try{
   ok(`con recuadros y lámina nueva abre en LibreOffice: ${paginas} páginas`, paginas === rc.releida, String(paginas));
 }catch(e){ ok('con recuadros y lámina nueva abre en LibreOffice', false, e.message.slice(0, 200)); }
 
+console.log('\n· Insertar: formas, iconos, diseños, transiciones y edición');
+const ins = await en(async (N) => {
+  const d = await N.abrir(await (await fetch('/fadori/presentacion/Fadori-STEAM.pptx')).arrayBuffer());
+  const r = {};
+  const W = d.ancho, H = d.alto;
+  // Una forma con texto en la lámina 2.
+  r.forma = await N.operacion(d, 'forma', () => N.insertarForma(d, 1, { geo: 'star5', x: W * 0.4, y: H * 0.4, w: W * 0.2, h: W * 0.2, relleno: '#AC27FF', texto: '¡Hola!', pt: 24, negrita: true, colorTexto: '#FFFFFF' }));
+  // Un icono: PNG de 1×1 + un SVG real.
+  const png = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='), (c) => c.charCodeAt(0));
+  const svg = new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="#AC27FF" fill="none"/></svg>');
+  r.icono = await N.operacion(d, 'icono', () => N.insertarImagen(d, 1, { png: { bytes: png, mime: 'image/png' }, svg: { bytes: svg }, x: W * 0.1, y: H * 0.1, w: H * 0.1, h: H * 0.1, nombre: 'Icono lucide:circle' }));
+  // Los diez diseños, cada uno en la lámina 3.
+  r.disenos = [];
+  for(const [t] of N.DISENOS) r.disenos.push(await N.operacion(d, t, () => N.insertarDiseno(d, 2, t, { color: '#1E88E5' })));
+  // Transición de empujar en todas, y ninguna en la 1.
+  await N.operacion(d, 'tr', () => N.ponerTransicion(d, 'todas', { tipo: 'push', dir: 'u', vel: 'fast', segundos: 5 }));
+  await N.operacion(d, 'tr0', () => N.ponerTransicion(d, [0], { tipo: 'ninguna' }));
+  // Editar: mover, duplicar, ordenar, color y borrar.
+  N.moverForma(d, 1, r.forma, { x: W * 0.1, y: H * 0.6 });
+  r.caja = N.cajaDe(d, 1, r.forma);
+  r.dup = N.duplicarForma(d, 1, r.forma);
+  r.cajaDup = N.cajaDe(d, 1, r.dup);
+  N.ordenForma(d, 1, r.dup, 'atras');
+  r.color = N.colorForma(d, 1, r.forma, '#00AA55');
+  r.colorGrupo = N.colorForma(d, 2, r.disenos[1], '#FF5500');
+  r.textoColor = N.colorTextoForma(d, 1, r.forma, '#111111');
+  r.borrado = N.borrarForma(d, 1, r.dup);
+  // Exportar un diseño y meterlo en OTRA presentación (de otro tamaño).
+  const e = await N.exportarElemento(d, 1, r.icono);
+  const otra = await N.abrir(await (await fetch('/fadori/presentacion/formato-institucional.pptx')).arrayBuffer());
+  r.importado = await N.importarElemento(otra, 0, e);
+  const cajaImp = N.cajaDe(otra, 0, r.importado);
+  r.importadoCentrado = cajaImp && Math.abs(cajaImp.x + cajaImp.w / 2 - otra.ancho / 2) < otra.ancho * 0.01;
+  const guardado = new Uint8Array(await (await N.guardar(d)).arrayBuffer());
+  const otraBytes = new Uint8Array(await (await N.guardar(otra)).arrayBuffer());
+  const d2 = await N.abrir(guardado);
+  const m1 = await N.modelo(d2, 1), m2 = await N.modelo(d2, 2), m0 = await N.modelo(d2, 0);
+  r.m1 = { estrella: m1.formas.some((f) => f.geo === 'star5' && f.relleno?.color === '#00AA55' && f.parrafos?.some((p) => p.runs.some((x) => x.t === '¡Hola!' && x.color === '#111111'))), icono: m1.formas.some((f) => f.tipo === 'pic' && f.cid === r.icono), sinDup: !m1.formas.some((f) => f.cid === r.dup) };
+  r.m2 = { formasGrupo: m2.formas.filter((f) => f.enGrupo).length, naranja: m2.formas.some((f) => f.relleno?.color === '#FF5500'), blancas: m2.formas.filter((f) => f.geo === 'roundRect' && f.relleno?.color === '#FFFFFF').length };
+  r.tr = { l1: m1.transicion, l0: m0.transicion || null };
+  const s2 = await d2.zip.file(d2.laminas[1].ruta).async('string');
+  r.ordenSld = ['<p:cSld', '<p:clrMapOvr', '<p:transition'].map((t) => s2.indexOf(t));
+  r.svgEnZip = Object.keys(d2.zip.files).some((f) => /media\/mazi\d+\.svg$/.test(f));
+  const ct = await d2.zip.file('[Content_Types].xml').async('string');
+  r.ctSvg = /Extension="svg"/.test(ct);
+  const aB = (u) => btoa(Array.from(u, (x) => String.fromCharCode(x)).join(''));
+  r.b64 = aB(guardado); r.b64Otra = aB(otraBytes);
+  return r;
+});
+ok('forma con texto, movida, recoloreada (relleno y letra)', ins.m1.estrella && Math.abs(ins.caja.x / 1) > 0, JSON.stringify(ins.m1));
+ok('duplicar pone la copia un poco corrida, y borrarla la quita', ins.cajaDup && ins.cajaDup.x > ins.caja.x && ins.m1.sinDup);
+ok('icono con PNG y su SVG (y el tipo SVG declarado)', ins.m1.icono && ins.svgEnZip && ins.ctSvg);
+ok('los diez diseños entran como grupos que se eligen enteros', ins.disenos.length === 10 && ins.disenos.every(Boolean) && ins.m2.formasGrupo > 20, String(ins.m2.formasGrupo));
+ok('recolorear un diseño cambia su acento y deja las tarjetas blancas', ins.colorGrupo >= 3 && ins.m2.naranja && ins.m2.blancas >= 3, JSON.stringify({ n: ins.colorGrupo, blancas: ins.m2.blancas }));
+ok('transición «empujar» rápida que avanza sola a los 5 s', ins.tr.l1?.tipo === 'push' && ins.tr.l1.dir === 'u' && ins.tr.l1.vel === 'fast' && ins.tr.l1.segundos === 5 && !ins.tr.l0, JSON.stringify(ins.tr));
+ok('<p:transition> va después de cSld y clrMapOvr', ins.ordenSld[0] < ins.ordenSld[2] && (ins.ordenSld[1] < 0 || ins.ordenSld[1] < ins.ordenSld[2]), JSON.stringify(ins.ordenSld));
+ok('un elemento exportado entra centrado en otra presentación de otro tamaño', ins.importadoCentrado);
+for(const [nom, b64] of [['insertado.pptx', ins.b64], ['importado.pptx', ins.b64Otra], ['acomodada.pptx', null], ['recuadro.pptx', null]]){
+  const ruta = join(TMP, nom);
+  if(b64) writeFileSync(ruta, Buffer.from(b64, 'base64'));
+  if(b64) try{
+    execFileSync('soffice', ['--headless', '--norestore', `-env:UserInstallation=file://${TMP}/ui`, '--convert-to', 'pdf', '--outdir', TMP, ruta], { timeout: 180000, stdio: 'pipe' });
+    const paginas = (readFileSync(ruta.replace(/\.pptx$/, '.pdf')).toString('latin1').match(/\/Type\s*\/Page[^s]/g) || []).length;
+    ok(`${nom} abre en LibreOffice (${paginas} páginas)`, paginas > 5, String(paginas));
+  }catch(e){ ok(`${nom} abre en LibreOffice`, false, e.message.slice(0, 200)); }
+  const VALIDA = '/mnt/skills/public/pptx/scripts/office/validate.py';
+  if(existsSync(VALIDA)){
+    const original = join(RAIZ, 'fadori/presentacion', nom === 'importado.pptx' ? 'formato-institucional.pptx' : 'Fadori-STEAM.pptx');
+    try{
+      const salida = execFileSync('python3', [VALIDA, ruta, '--original', original], { encoding: 'utf8', timeout: 180000, stdio: 'pipe' });
+      ok(`${nom} pasa el validador de PowerPoint`, /All validations PASSED/.test(salida), salida.slice(-400));
+    }catch(e){ ok(`${nom} pasa el validador de PowerPoint`, false, ((e.stdout || '') + (e.stderr || '')).slice(-800)); }
+  }
+}
+
 console.log('\n· Poner texto (para la IA)');
 const tx = await en(async (N) => {
   const d = await N.abrir(await (await fetch('/fadori/presentacion/Fadori-STEAM.pptx')).arrayBuffer());

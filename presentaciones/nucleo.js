@@ -695,7 +695,8 @@ export async function modelo(deck, i){
     const doc = docDe(deck, capa.ruta), arbol = todos(doc.documentElement, NS.p, 'spTree')[0];
     if(arbol) await recorrer(deck, l, capa.ruta, arbol, pal, formas, capa.soloAdorno, (x, y, w, h) => ({ x, y, w, h }));
   }
-  return { ancho: deck.ancho, alto: deck.alto, fondo, formas };
+  const tr = transicionDe(slideDoc);
+  return { ancho: deck.ancho, alto: deck.alto, fondo, formas, ...(tr ? { transicion: tr } : {}) };
 }
 async function leerRelleno(deck, ruta, el, pal){
   if(!el) return null;
@@ -737,7 +738,7 @@ function xfrmHeredado(deck, l, sp){
   return null;
 }
 const num = (el, a) => Number(el?.getAttribute(a)) || 0;
-async function recorrer(deck, l, ruta, arbol, pal, formas, soloAdorno, tx){
+async function recorrer(deck, l, ruta, arbol, pal, formas, soloAdorno, tx, cidGrupo = null){
   for(const el of arbol.children){
     const nombre = el.localName;
     if(nombre === 'grpSp'){
@@ -745,7 +746,8 @@ async function recorrer(deck, l, ruta, arbol, pal, formas, soloAdorno, tx){
       const off = hijo(x, NS.a, 'off'), ext = hijo(x, NS.a, 'ext'), coff = hijo(x, NS.a, 'chOff'), cext = hijo(x, NS.a, 'chExt');
       const sx = num(cext, 'cx') ? num(ext, 'cx') / num(cext, 'cx') : 1, sy = num(cext, 'cy') ? num(ext, 'cy') / num(cext, 'cy') : 1;
       const interno = (X, Y, W, H) => tx(num(off, 'x') + (X - num(coff, 'x')) * sx, num(off, 'y') + (Y - num(coff, 'y')) * sy, W * sx, H * sy);
-      await recorrer(deck, l, ruta, el, pal, formas, soloAdorno, interno);
+      // Lo de adentro de un grupo se elige como el grupo entero: así se mueve junto.
+      await recorrer(deck, l, ruta, el, pal, formas, soloAdorno, interno, cidGrupo ?? (soloAdorno ? null : cidDe(el)));
       continue;
     }
     if(!['sp', 'pic', 'graphicFrame', 'cxnSp'].includes(nombre)) continue;
@@ -758,6 +760,7 @@ async function recorrer(deck, l, ruta, arbol, pal, formas, soloAdorno, tx){
     const off = hijo(x, NS.a, 'off'), ext = hijo(x, NS.a, 'ext');
     const caja = tx(num(off, 'x'), num(off, 'y'), num(ext, 'cx'), num(ext, 'cy'));
     const f = { tipo: nombre, ...caja, rot: num(x, 'rot') / 60000, capa: soloAdorno ? 'plantilla' : 'lamina' };
+    if(!soloAdorno){ f.cid = cidGrupo ?? cidDe(el); if(cidGrupo) f.enGrupo = true; }
     if(nombre === 'pic'){
       const blip = todos(el, NS.a, 'blip')[0], id = blip?.getAttributeNS(NS.r, 'embed');
       const r = id && (await relaciones(deck, ruta)).get(id);
@@ -1473,4 +1476,352 @@ export async function informeDiseno(deck){
     letrasUsadas: top(letras, 6), tamanosDeLetraPt: [...new Set(tamanos)].sort((a, b) => b - a).slice(0, 12),
     coloresDeTexto: top(colores, 6), paletaDelTema: paletaTema(deck), porLamina: laminas,
   };
+}
+
+/* ══ INSERTAR Y EDITAR ELEMENTOS ══════════════════════════════════════════
+   Carlos: «que pueda poner iconos, formas, diseños, elementos visuales,
+   transiciones… y crear los suyos propios». Todo entra como PowerPoint
+   NATIVO: una forma es una forma de PowerPoint (se edita allá igual), un
+   icono es imagen PNG + su SVG (lo mismo que hace PowerPoint al insertar un
+   icono: los que leen SVG lo usan nítido, los demás el PNG), y un diseño es un
+   GRUPO de formas que se mueve junto. Cada elemento se identifica por su id
+   (cNvPr), que es único dentro de la lámina.
+   ═════════════════════════════════════════════════════════════════════════ */
+const MC = 'http://schemas.openxmlformats.org/markup-compatibility/2006';
+const cidDe = (el) => Number(todos(el, NS.p, 'cNvPr')[0]?.getAttribute('id')) || 0;
+const escXml = (t) => String(t ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const R = Math.round;
+function nuevoCid(doc){ return Math.max(1, ...todos(doc.documentElement, NS.p, 'cNvPr').map((c) => Number(c.getAttribute('id')) || 0)) + 1; }
+function arbolDe(deck, l){ return todos(docDe(deck, l.ruta).documentElement, NS.p, 'spTree')[0]; }
+function elementoDe(deck, l, cid){ return [...arbolDe(deck, l).children].find((el) => cidDe(el) === Number(cid)) || null; }
+/* Un fragmento de XML con los prefijos de PowerPoint → nodo del documento de la lámina. */
+function fragmento(doc, xml){
+  const d = new DOMParser().parseFromString(`<raiz xmlns:p="${NS.p}" xmlns:a="${NS.a}" xmlns:r="${NS.r}">${xml}</raiz>`, 'application/xml');
+  if(d.getElementsByTagName('parsererror').length) throw new Error('XML mal armado');
+  return [...d.documentElement.children].map((n) => doc.importNode(n, true));
+}
+const clrXml = (hex, alfa = 1) => `<a:srgbClr val="${hex6(hex) || '000000'}">${alfa < 1 ? `<a:alpha val="${R(alfa * 100000)}"/>` : ''}</a:srgbClr>`;
+const xfrmXml = (x, y, w, h, rot = 0) => `<a:xfrm${rot ? ` rot="${R(rot * 60000)}"` : ''}><a:off x="${R(x)}" y="${R(y)}"/><a:ext cx="${Math.max(1, R(w))}" cy="${Math.max(1, R(h))}"/></a:xfrm>`;
+/* s: { cid, nombre, geo, x, y, w, h, rot, relleno, alfa, borde, bordeAlfa, bordeAncho(pt), sombra, redondeo,
+        texto, pt, negrita, cursiva, colorTexto, alinea, ancla, letra, linea, flecha } */
+function spXml(s){
+  const geo = s.geo || 'rect';
+  if(s.linea){
+    return `<p:cxnSp><p:nvCxnSpPr><p:cNvPr id="${s.cid}" name="${escXml(s.nombre || 'Línea')}"/><p:cNvCxnSpPr/><p:nvPr/></p:nvCxnSpPr>`
+      + `<p:spPr>${xfrmXml(s.x, s.y, s.w, s.h, s.rot)}<a:prstGeom prst="line"><a:avLst/></a:prstGeom>`
+      + `<a:ln w="${R((s.bordeAncho || 3) * EMU_PT)}" cap="rnd"><a:solidFill>${clrXml(s.borde || s.relleno || '#000000', s.bordeAlfa ?? 1)}</a:solidFill>${s.flecha ? '<a:tailEnd type="triangle" w="med" len="med"/>' : ''}</a:ln></p:spPr></p:cxnSp>`;
+  }
+  const adj = s.redondeo != null && /round|Callout/i.test(geo) ? `<a:gd name="adj" fmla="val ${R(s.redondeo * 100000)}"/>` : '';
+  const relleno = s.relleno ? `<a:solidFill>${clrXml(s.relleno, s.alfa ?? 1)}</a:solidFill>` : '<a:noFill/>';
+  const ln = s.borde ? `<a:ln w="${R((s.bordeAncho || 1.5) * EMU_PT)}"><a:solidFill>${clrXml(s.borde, s.bordeAlfa ?? 1)}</a:solidFill></a:ln>` : '<a:ln><a:noFill/></a:ln>';
+  const sombra = s.sombra ? `<a:effectLst><a:outerShdw blurRad="190500" dist="38100" dir="5400000" algn="t" rotWithShape="0">${clrXml('#000000', s.sombra)}</a:outerShdw></a:effectLst>` : '';
+  const texto = s.texto != null ? String(s.texto).split('\n').map((renglon) =>
+    `<a:p><a:pPr algn="${s.alinea || 'ctr'}"/>${renglon ? `<a:r><a:rPr lang="es-MX" sz="${R((s.pt || 18) * 100)}"${s.negrita ? ' b="1"' : ''}${s.cursiva ? ' i="1"' : ''} dirty="0"><a:solidFill>${clrXml(s.colorTexto || '#141018')}</a:solidFill>${s.letra ? `<a:latin typeface="${escXml(s.letra)}"/>` : ''}</a:rPr><a:t>${escXml(renglon)}</a:t></a:r>` : ''}<a:endParaRPr lang="es-MX" sz="${R((s.pt || 18) * 100)}" dirty="0"/></a:p>`).join('') : '';
+  return `<p:sp><p:nvSpPr><p:cNvPr id="${s.cid}" name="${escXml(s.nombre || 'Forma')}"/><p:cNvSpPr${!s.relleno && !s.borde && s.texto != null ? ' txBox="1"' : ''}/><p:nvPr/></p:nvSpPr>`
+    + `<p:spPr>${xfrmXml(s.x, s.y, s.w, s.h, s.rot)}<a:prstGeom prst="${geo}"><a:avLst>${adj}</a:avLst></a:prstGeom>${relleno}${ln}${sombra}</p:spPr>`
+    + (s.texto != null ? `<p:txBody><a:bodyPr wrap="square" lIns="91440" tIns="45720" rIns="91440" bIns="45720" rtlCol="0" anchor="${s.ancla || 'ctr'}"><a:normAutofit/></a:bodyPr><a:lstStyle/>${texto}</p:txBody>` : '')
+    + '</p:sp>';
+}
+function meterEnArbol(deck, l, nodos){
+  const arbol = arbolDe(deck, l);
+  tocar(deck, l.ruta);
+  // Antes de un extLst si lo hay: el spTree no admite nada después de él.
+  const ext = hijo(arbol, NS.p, 'extLst');
+  for(const n of nodos) arbol.insertBefore(n, ext);
+}
+/* Formas de PowerPoint que se ofrecen, con su nombre en español. */
+export const FORMAS = [
+  ['rect', 'Rectángulo'], ['roundRect', 'Redondeado'], ['ellipse', 'Círculo'], ['triangle', 'Triángulo'], ['diamond', 'Rombo'],
+  ['hexagon', 'Hexágono'], ['star5', 'Estrella'], ['heart', 'Corazón'], ['rightArrow', 'Flecha'], ['leftRightArrow', 'Flecha doble'],
+  ['chevron', 'Chevrón'], ['homePlate', 'Etiqueta'], ['wedgeRoundRectCallout', 'Globo de diálogo'], ['cloud', 'Nube'], ['donut', 'Anillo'],
+  ['parallelogram', 'Paralelogramo'], ['plus', 'Cruz'], ['flowChartMagneticDisk', 'Cilindro'], ['line', 'Línea'], ['lineaFlecha', 'Línea con flecha'],
+];
+export function insertarForma(deck, i, s){
+  const l = deck.laminas[i], doc = docDe(deck, l.ruta);
+  const cid = nuevoCid(doc);
+  const esLinea = s.geo === 'line' || s.geo === 'lineaFlecha';
+  const espec = { nombre: `Forma Mazi ${cid}`, ...s, cid, ...(esLinea ? { linea: true, flecha: s.geo === 'lineaFlecha', borde: s.relleno || s.borde, bordeAncho: s.bordeAncho || 3 } : {}) };
+  meterEnArbol(deck, l, fragmento(doc, spXml(espec)));
+  return cid;
+}
+/* Icono o imagen: { png:{bytes}, svg?:{bytes}, x, y, w, h, nombre } */
+export async function insertarImagen(deck, i, { png, svg, x, y, w, h, nombre = 'Imagen' }){
+  const l = deck.laminas[i], doc = docDe(deck, l.ruta);
+  const rutaPng = await medioNuevo(deck, png.bytes, png.mime || 'image/png');
+  const idPng = await relNueva(deck, l.ruta, T_IMAGEN, rutaPng);
+  let ext = '';
+  if(svg){
+    const rutaSvg = await medioNuevo(deck, svg.bytes, 'image/svg+xml');
+    const idSvg = await relNueva(deck, l.ruta, T_IMAGEN, rutaSvg);
+    ext = `<a:extLst><a:ext uri="{96DAC541-7B7A-43D3-8B79-37D633B846F1}"><asvg:svgBlip xmlns:asvg="http://schemas.microsoft.com/office/drawing/2016/SVG/main" r:embed="${idSvg}"/></a:ext></a:extLst>`;
+  }
+  const cid = nuevoCid(doc);
+  meterEnArbol(deck, l, fragmento(doc, `<p:pic><p:nvPicPr><p:cNvPr id="${cid}" name="${escXml(nombre)}"/><p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr>`
+    + `<p:blipFill><a:blip r:embed="${idPng}">${ext}</a:blip><a:stretch><a:fillRect/></a:stretch></p:blipFill>`
+    + `<p:spPr>${xfrmXml(x, y, w, h)}<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`));
+  return cid;
+}
+/* Cambia los archivos de UN icono o imagen de esta lámina (para recolorear un icono). */
+export async function cambiarMediosDe(deck, i, cid, { png, svg }){
+  const l = deck.laminas[i], el = elementoDe(deck, l, cid);
+  const blip = el && todos(el, NS.a, 'blip')[0];
+  if(!blip) return 0;
+  const rutaPng = await medioNuevo(deck, png.bytes, png.mime || 'image/png');
+  tocar(deck, l.ruta);
+  blip.setAttributeNS(NS.r, 'r:embed', await relNueva(deck, l.ruta, T_IMAGEN, rutaPng));
+  const sb = [...blip.getElementsByTagName('*')].find((x) => x.localName === 'svgBlip');
+  if(sb && svg){ const rutaSvg = await medioNuevo(deck, svg.bytes, 'image/svg+xml'); sb.setAttributeNS(NS.r, 'r:embed', await relNueva(deck, l.ruta, T_IMAGEN, rutaSvg)); }
+  return 1;
+}
+
+/* ── Diseños armados: grupos de formas nativas, proporcionales a la lámina ── */
+export const DISENOS = [
+  ['numero', 'Número grande', 'Una cifra que se ve desde el fondo del salón, con su explicación.'],
+  ['tarjetas', 'Tres tarjetas', 'Tres ideas lado a lado, cada una con título.'],
+  ['tiempo', 'Línea de tiempo', 'Cuatro momentos en orden.'],
+  ['pasos', 'Pasos', 'Un proceso de tres pasos con flechas.'],
+  ['comparar', 'Antes y después', 'Dos columnas para comparar.'],
+  ['cita', 'Cita', 'Una frase destacada y quién la dijo.'],
+  ['etiqueta', 'Etiqueta', 'Una píldora para marcar algo: NUEVO, IMPORTANTE…'],
+  ['progreso', 'Barra de avance', 'Cuánto va de algo, en una barra.'],
+  ['circulo', 'Círculo con número', 'Para numerar apartados.'],
+  ['marco', 'Marco', 'Un borde fino alrededor de la lámina.'],
+];
+function especDiseno(tipo, W, H, c){
+  const k = (W / EMU_PT) / 960;                  // letra proporcional al ancho de la lámina
+  const sobreC = contraste('#FFFFFF', c) >= contraste('#141018', c) ? '#FFFFFF' : '#141018';
+  const tinta = '#141018', gris = '#5B5566';
+  const pt = (v) => v * k;
+  switch(tipo){
+    case 'numero': return [
+      { x: W * 0.3, y: H * 0.3, w: W * 0.4, h: H * 0.26, texto: '85%', pt: pt(110), negrita: true, colorTexto: c },
+      { x: W * 0.25, y: H * 0.56, w: W * 0.5, h: H * 0.12, texto: 'de los alumnos ya no hace fila', pt: pt(22), colorTexto: gris }];
+    case 'tarjetas': return [0, 1, 2].flatMap((n) => {
+      const w = W * 0.26, x = W * 0.08 + n * (w + W * 0.04), y = H * 0.3, h = H * 0.44;
+      return [{ geo: 'roundRect', redondeo: 0.08, x, y, w, h, relleno: '#FFFFFF', sombra: 0.18 },
+        { geo: 'ellipse', x: x + w * 0.1, y: y + h * 0.1, w: H * 0.08, h: H * 0.08, relleno: c, texto: String(n + 1), pt: pt(16), negrita: true, colorTexto: sobreC },
+        { x: x + w * 0.06, y: y + h * 0.36, w: w * 0.88, h: h * 0.18, texto: `Idea ${n + 1}`, pt: pt(22), negrita: true, colorTexto: tinta, alinea: 'l' },
+        { x: x + w * 0.06, y: y + h * 0.54, w: w * 0.88, h: h * 0.36, texto: 'Explica aquí en una o dos líneas.', pt: pt(15), colorTexto: gris, alinea: 'l', ancla: 't' }];
+    });
+    case 'tiempo': return [
+      { linea: true, x: W * 0.1, y: H * 0.5, w: W * 0.8, h: 0, borde: c, bordeAncho: 3 * k },
+      ...[0, 1, 2, 3].flatMap((n) => {
+        const cx = W * 0.14 + n * W * 0.24, d = H * 0.05;
+        return [{ geo: 'ellipse', x: cx - d / 2, y: H * 0.5 - d / 2, w: d, h: d, relleno: c, borde: '#FFFFFF', bordeAncho: 2 * k },
+          { x: cx - W * 0.1, y: H * 0.34, w: W * 0.2, h: H * 0.1, texto: String(2023 + n), pt: pt(24), negrita: true, colorTexto: c },
+          { x: cx - W * 0.1, y: H * 0.56, w: W * 0.2, h: H * 0.14, texto: 'Qué pasó', pt: pt(15), colorTexto: gris, ancla: 't' }];
+      })];
+    case 'pasos': return [0, 1, 2].flatMap((n) => [
+      { geo: n ? 'chevron' : 'homePlate', x: W * 0.08 + n * W * 0.28, y: H * 0.4, w: W * 0.3, h: H * 0.2, relleno: c, alfa: 1 - n * 0.18, texto: `Paso ${n + 1}`, pt: pt(22), negrita: true, colorTexto: sobreC }]);
+    case 'comparar': return ['Antes', 'Después'].flatMap((t, n) => {
+      const x = W * 0.08 + n * W * 0.44, w = W * 0.4, y = H * 0.24, h = H * 0.56;
+      return [{ geo: 'roundRect', redondeo: 0.06, x, y, w, h, relleno: n ? c : '#FFFFFF', alfa: n ? 0.12 : 1, borde: n ? c : '#D9D4DE', bordeAncho: 1.5 * k },
+        { x: x + w * 0.06, y: y + h * 0.06, w: w * 0.88, h: h * 0.16, texto: t, pt: pt(28), negrita: true, colorTexto: n ? c : tinta, alinea: 'l' },
+        { x: x + w * 0.06, y: y + h * 0.26, w: w * 0.88, h: h * 0.66, texto: '• Punto uno\n• Punto dos\n• Punto tres', pt: pt(18), colorTexto: gris, alinea: 'l', ancla: 't' }];
+    });
+    case 'cita': return [
+      { x: W * 0.1, y: H * 0.18, w: W * 0.16, h: H * 0.22, texto: '“', pt: pt(160), negrita: true, colorTexto: c, alinea: 'l' },
+      { x: W * 0.14, y: H * 0.36, w: W * 0.72, h: H * 0.28, texto: 'Una frase que valga la pena recordar.', pt: pt(34), cursiva: true, colorTexto: tinta, alinea: 'l' },
+      { x: W * 0.14, y: H * 0.66, w: W * 0.5, h: H * 0.08, texto: '— Quién la dijo', pt: pt(18), colorTexto: gris, alinea: 'l' }];
+    case 'etiqueta': return [{ geo: 'roundRect', redondeo: 0.5, x: W * 0.4, y: H * 0.45, w: W * 0.2, h: H * 0.1, relleno: c, texto: 'NUEVO', pt: pt(18), negrita: true, colorTexto: sobreC }];
+    case 'progreso': return [
+      { x: W * 0.15, y: H * 0.36, w: W * 0.5, h: H * 0.1, texto: 'Avance del proyecto', pt: pt(22), negrita: true, colorTexto: tinta, alinea: 'l' },
+      { x: W * 0.65, y: H * 0.36, w: W * 0.2, h: H * 0.1, texto: '60%', pt: pt(22), negrita: true, colorTexto: c, alinea: 'r' },
+      { geo: 'roundRect', redondeo: 0.5, x: W * 0.15, y: H * 0.48, w: W * 0.7, h: H * 0.05, relleno: c, alfa: 0.18 },
+      { geo: 'roundRect', redondeo: 0.5, x: W * 0.15, y: H * 0.48, w: W * 0.42, h: H * 0.05, relleno: c }];
+    case 'circulo': return [{ geo: 'ellipse', x: W * 0.5 - H * 0.09, y: H * 0.41, w: H * 0.18, h: H * 0.18, relleno: c, texto: '01', pt: pt(40), negrita: true, colorTexto: sobreC, sombra: 0.2 }];
+    case 'marco': return [{ geo: 'roundRect', redondeo: 0.03, x: W * 0.03, y: H * 0.05, w: W * 0.94, h: H * 0.9, borde: c, bordeAncho: 2.5 * k }];
+  }
+  throw new Error('No conozco ese diseño.');
+}
+export function insertarDiseno(deck, i, tipo, { color = '#AC27FF' } = {}){
+  const l = deck.laminas[i], doc = docDe(deck, l.ruta);
+  const specs = especDiseno(tipo, deck.ancho, deck.alto, '#' + (hex6(color) || 'AC27FF'));
+  const gid = nuevoCid(doc);
+  let cid = gid + 1;
+  const hijosXml = specs.map((s) => spXml({ nombre: `Diseño ${tipo} ${cid}`, ...s, cid: cid++ })).join('');
+  const x0 = Math.min(...specs.map((s) => s.x)), y0 = Math.min(...specs.map((s) => s.y));
+  const x1 = Math.max(...specs.map((s) => s.x + s.w)), y1 = Math.max(...specs.map((s) => s.y + Math.max(s.h, 1)));
+  const caja = `<a:off x="${R(x0)}" y="${R(y0)}"/><a:ext cx="${R(x1 - x0)}" cy="${R(y1 - y0)}"/>`;
+  meterEnArbol(deck, l, fragmento(doc, `<p:grpSp><p:nvGrpSpPr><p:cNvPr id="${gid}" name="Diseño ${escXml(tipo)}"/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>`
+    + `<p:grpSpPr><a:xfrm>${caja}<a:chOff x="${R(x0)}" y="${R(y0)}"/><a:chExt cx="${R(x1 - x0)}" cy="${R(y1 - y0)}"/></a:xfrm></p:grpSpPr>${hijosXml}</p:grpSp>`));
+  return gid;
+}
+/* En varias láminas a la vez: la misma inserción en cada una. */
+export async function insertarEn(deck, sel, fn){
+  const ids = [];
+  for(const i of cuales(deck, sel)) ids.push({ lamina: i, cid: await fn(i) });
+  return ids;
+}
+
+/* ── editar un elemento ya puesto ── */
+export function cajaDe(deck, i, cid){
+  const l = deck.laminas[i];
+  const f = formasSueltas(deck, l).find((x) => cidDe(x.el) === Number(cid));
+  if(!f) return null;
+  const nombre = todos(f.el, NS.p, 'cNvPr')[0]?.getAttribute('name') || '';
+  const spPr = hijo(f.el, NS.p, 'spPr');
+  return { x: f.x, y: f.y, w: f.w, h: f.h, tipo: f.tipo, nombre, texto: f.texto, icono: (nombre.match(/^Icono lucide:([\w-]+)/) || [])[1] || null,
+    relleno: !!(spPr && hijo(spPr, NS.a, 'solidFill')), imagen: f.tipo === 'pic', grupo: f.tipo === 'grpSp' };
+}
+export function moverForma(deck, i, cid, c){
+  const l = deck.laminas[i], f = formasSueltas(deck, l).find((x) => cidDe(x.el) === Number(cid));
+  if(!f) return 0;
+  return ponerCaja(deck, l, f, { x: c.x ?? f.x, y: c.y ?? f.y, w: Math.max(1, c.w ?? f.w), h: Math.max(1, c.h ?? f.h) }) ? 1 : 0;
+}
+export function borrarForma(deck, i, cid){
+  const l = deck.laminas[i], el = elementoDe(deck, l, cid);
+  if(!el) return 0;
+  tocar(deck, l.ruta); el.remove(); return 1;
+}
+export function duplicarForma(deck, i, cid){
+  const l = deck.laminas[i], el = elementoDe(deck, l, cid), doc = docDe(deck, l.ruta);
+  if(!el) return null;
+  tocar(deck, l.ruta);
+  const copia = el.cloneNode(true);
+  let id = nuevoCid(doc);
+  const nuevo0 = id;
+  for(const c of todos(copia, NS.p, 'cNvPr')) c.setAttribute('id', String(id++));
+  el.parentNode.insertBefore(copia, el.nextSibling);
+  const f = formasSueltas(deck, l).find((x) => x.el === copia);
+  if(f) ponerCaja(deck, l, f, { x: f.x + deck.ancho * 0.03, y: f.y + deck.alto * 0.03, w: f.w, h: f.h });
+  return nuevo0;
+}
+/* Al frente / atrás del todo (el orden del spTree es el orden en que se pinta). */
+export function ordenForma(deck, i, cid, a){
+  const l = deck.laminas[i], el = elementoDe(deck, l, cid);
+  if(!el) return 0;
+  const arbol = el.parentNode;
+  tocar(deck, l.ruta);
+  if(a === 'frente') arbol.insertBefore(el, hijo(arbol, NS.p, 'extLst'));
+  else{
+    // Detrás del todo, pero después de las propiedades del árbol (nvGrpSpPr, grpSpPr), que van primero.
+    const primero = [...arbol.children].find((x) => !['nvGrpSpPr', 'grpSpPr'].includes(x.localName));
+    arbol.insertBefore(el, primero);
+  }
+  return 1;
+}
+/* Color de un elemento. En una forma suelta, su relleno (o su borde si no
+   tiene relleno). En un GRUPO —los diseños— sólo cambia el color de ACENTO:
+   el que más se repite sin ser blanco, negro ni gris. Recolorear «Tres
+   tarjetas» pintaba de naranja también las tarjetas blancas. */
+const esNeutro = (hex) => { const [, s, l] = aHsl(hex.replace('#', '')); return s < 0.18 || l > 0.93 || l < 0.08; };
+export function colorForma(deck, i, cid, color, { alfa } = {}){
+  const l = deck.laminas[i], el = elementoDe(deck, l, cid), doc = docDe(deck, l.ruta);
+  if(!el) return 0;
+  const nuevoHex = hex6(color);
+  if(!nuevoHex) return 0;
+  let n = 0;
+  const pinta = (srgb) => { tocar(deck, l.ruta); srgb.setAttribute('val', nuevoHex); if(alfa != null){ [...srgb.children].filter((x) => x.localName === 'alpha').forEach((x) => x.remove()); if(alfa < 1) srgb.appendChild(nuevo(doc, NS.a, 'alpha', { val: String(R(alfa * 100000)) })); } n++; };
+  if(el.localName === 'grpSp'){
+    const srgbs = todos(el, NS.a, 'srgbClr').filter((c) => c.parentNode.localName === 'solidFill');
+    const cuenta = new Map();
+    for(const c of srgbs){ const v = c.getAttribute('val').toUpperCase(); if(!esNeutro(v)) cuenta.set(v, (cuenta.get(v) || 0) + 1); }
+    const acento = [...cuenta.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+    if(!acento) return 0;
+    for(const c of srgbs) if(c.getAttribute('val').toUpperCase() === acento) pinta(c);
+    return n;
+  }
+  const pr = hijo(el, NS.p, 'spPr');
+  const sf = pr && hijo(pr, NS.a, 'solidFill');
+  const ln = pr && hijo(pr, NS.a, 'ln');
+  const destino = sf || (ln && hijo(ln, NS.a, 'solidFill'));
+  if(!destino) return 0;
+  tocar(deck, l.ruta);
+  const viejo = destino.firstElementChild;
+  const alfaVieja = viejo && [...viejo.children].find((x) => x.localName === 'alpha');
+  destino.replaceChildren(...fragmento(doc, clrXml(color, alfa ?? (alfaVieja ? Number(alfaVieja.getAttribute('val')) / 100000 : 1))));
+  return 1;
+}
+/* Color del texto de UN elemento (o de todo el grupo). */
+export function colorTextoForma(deck, i, cid, color){
+  const l = deck.laminas[i], el = elementoDe(deck, l, cid), doc = docDe(deck, l.ruta);
+  if(!el) return 0;
+  let n = 0;
+  for(const tb of todos(el, NS.p, 'txBody')) for(const run of corridas(tb)){
+    tocar(deck, l.ruta);
+    const rpr = rPrDe(run);
+    RELLENOS.forEach((k) => hijos(rpr, NS.a, k).forEach((x) => x.remove()));
+    const sf = nuevo(doc, NS.a, 'solidFill'); sf.appendChild(nuevo(doc, NS.a, 'srgbClr', { val: hex6(color) || '000000' }));
+    meterEnOrden(rpr, sf, ORDEN_RPR); n++;
+  }
+  return n;
+}
+/* El XML de un elemento con sus imágenes, para guardarlo en «Mis elementos». */
+export async function exportarElemento(deck, i, cid){
+  const l = deck.laminas[i], el = elementoDe(deck, l, cid);
+  if(!el) return null;
+  const rs = await relaciones(deck, l.ruta);
+  const medios = {};
+  for(const b of [...el.getElementsByTagName('*')].filter((x) => x.getAttributeNS(NS.r, 'embed'))){
+    const id = b.getAttributeNS(NS.r, 'embed'), r = rs.get(id);
+    if(r && !r.externa && !medios[id]){ const bytes = await bytesDe(deck, r.ruta); if(bytes) medios[id] = { mime: mimeDe(r.ruta), bytes }; }
+  }
+  const f = formasSueltas(deck, l).find((x) => x.el === el);
+  return { xml: new XMLSerializer().serializeToString(el), medios, ancho: deck.ancho, alto: deck.alto, caja: f ? { x: f.x, y: f.y, w: f.w, h: f.h } : null };
+}
+/* Y el camino de regreso: meterlo en otra lámina (de otra presentación, quizá
+   de otro tamaño): ids nuevos, imágenes nuevas, y escalado a esta lámina. */
+export async function importarElemento(deck, i, e, { centrar = true } = {}){
+  const l = deck.laminas[i], doc = docDe(deck, l.ruta);
+  const nodo = fragmento(doc, e.xml.replace(/^<\?xml[^>]*>/, ''))[0];
+  const nuevos = {};
+  for(const [id, m] of Object.entries(e.medios || {})){
+    const ruta = await medioNuevo(deck, m.bytes, m.mime);
+    nuevos[id] = await relNueva(deck, l.ruta, T_IMAGEN, ruta);
+  }
+  for(const b of [...nodo.getElementsByTagName('*'), nodo].filter((x) => x.getAttributeNS?.(NS.r, 'embed'))) b.setAttributeNS(NS.r, 'r:embed', nuevos[b.getAttributeNS(NS.r, 'embed')] || b.getAttributeNS(NS.r, 'embed'));
+  let id = nuevoCid(doc);
+  const cid = id;
+  for(const c of [...(nodo.localName === 'grpSp' || nodo.localName === 'sp' || nodo.localName === 'pic' || nodo.localName === 'cxnSp' ? todos(nodo, NS.p, 'cNvPr') : [])]) c.setAttribute('id', String(id++));
+  meterEnArbol(deck, l, [nodo]);
+  const f = formasSueltas(deck, l).find((x) => x.el === nodo);
+  if(f && e.ancho){
+    const k = deck.ancho / e.ancho;
+    const w = f.w * k, h = f.h * k;
+    ponerCaja(deck, l, f, centrar ? { x: (deck.ancho - w) / 2, y: (deck.alto - h) / 2, w, h } : { x: f.x * k, y: f.y * k, w, h });
+  }
+  return cid;
+}
+
+/* ══ TRANSICIONES ═════════════════════════════════════════════════════════ */
+export const TRANSICIONES = [
+  ['ninguna', 'Ninguna'], ['fade', 'Desvanecer'], ['push', 'Empujar'], ['wipe', 'Barrido'], ['cover', 'Cubrir'],
+  ['split', 'Dividir'], ['zoom', 'Acercar'], ['dissolve', 'Disolver'], ['circle', 'Círculo'], ['random', 'Sorpresa'],
+];
+const CON_DIR = new Set(['push', 'wipe', 'cover']);
+const ORDEN_SLD = ['cSld', 'clrMapOvr', 'transition', 'timing', 'extLst'];
+function quitarTransicionDoc(doc){
+  const raiz = doc.documentElement;
+  for(const t of hijos(raiz, NS.p, 'transition')) t.remove();
+  // PowerPoint 2010+ envuelve sus transiciones nuevas en mc:AlternateContent.
+  for(const ac of [...raiz.children].filter((x) => x.namespaceURI === MC && x.localName === 'AlternateContent' && x.getElementsByTagNameNS(NS.p, 'transition').length)) ac.remove();
+}
+export function transicionDe(doc){
+  const raiz = doc.documentElement;
+  const t = hijo(raiz, NS.p, 'transition') || [...raiz.children].filter((x) => x.localName === 'AlternateContent').map((ac) => ac.getElementsByTagNameNS(NS.p, 'transition')[0]).find(Boolean);
+  if(!t) return null;
+  const e = t.firstElementChild;
+  return { tipo: e?.localName || 'cut', dir: e?.getAttribute('dir') || null, vel: t.getAttribute('spd') || 'med', segundos: t.getAttribute('advTm') ? Number(t.getAttribute('advTm')) / 1000 : null };
+}
+/* t: { tipo, dir: 'l'|'r'|'u'|'d', vel: 'fast'|'med'|'slow', segundos: avanzar solo (opcional) } */
+export async function ponerTransicion(deck, sel, t){
+  let n = 0;
+  for(const i of cuales(deck, sel)){
+    const l = deck.laminas[i], doc = docDe(deck, l.ruta);
+    tocar(deck, l.ruta);
+    quitarTransicionDoc(doc);
+    if(t.tipo !== 'ninguna'){
+      const tr = nuevo(doc, NS.p, 'transition', { spd: ['fast', 'med', 'slow'].includes(t.vel) ? t.vel : 'med' });
+      if(t.segundos > 0) tr.setAttribute('advTm', String(R(t.segundos * 1000)));
+      const hijoT = nuevo(doc, NS.p, t.tipo);
+      if(CON_DIR.has(t.tipo)) hijoT.setAttribute('dir', ['l', 'r', 'u', 'd'].includes(t.dir) ? t.dir : 'l');
+      if(t.tipo === 'split'){ hijoT.setAttribute('orient', 'horz'); hijoT.setAttribute('dir', 'out'); }
+      if(t.tipo === 'zoom') hijoT.setAttribute('dir', 'in');
+      tr.appendChild(hijoT);
+      meterEnOrden(doc.documentElement, tr, ORDEN_SLD);
+    }
+    n++;
+  }
+  return n;
 }
