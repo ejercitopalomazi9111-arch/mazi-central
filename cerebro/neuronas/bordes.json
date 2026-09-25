@@ -13,7 +13,11 @@
       "arreglo": "Para separadores finos, usar un color con algo de transparencia en vez de perseguir el grosor exacto: la irregularidad se disimula. Donde importe, `0.5px` con una consulta de resolución.",
       "comoCazarlo": "Ver la lista con `deviceScaleFactor` a 1.25 y a 1.5.",
       "consejo": "Una franja de fondo de 1 px con `linear-gradient` a veces se comporta mejor que un borde, porque no participa del cálculo de la caja.",
-      "senales": ["las líneas se ven irregulares", "borde de 1px", "unas gruesas y otras no"],
+      "senales": [
+        "las líneas se ven irregulares",
+        "borde de 1px",
+        "unas gruesas y otras no"
+      ],
       "salioDe": "Revisión del laboratorio a densidades fraccionarias."
     },
     {
@@ -26,7 +30,11 @@
       "arreglo": "Tener el borde siempre presente en color transparente y sólo cambiar el color. O usar `outline`, que no participa del flujo.",
       "comoCazarlo": "Señalar un elemento de una rejilla y mirar los vecinos, no el señalado.",
       "consejo": "`outline` es la herramienta correcta para marcar sin mover: por definición se dibuja fuera de la caja.",
-      "senales": ["salta al pasar el mouse", "se mueve un pixel", "el borde empuja"],
+      "senales": [
+        "salta al pasar el mouse",
+        "se mueve un pixel",
+        "el borde empuja"
+      ],
       "salioDe": "Revisión del sistema de tarjetas del laboratorio."
     },
     {
@@ -39,7 +47,11 @@
       "arreglo": "Radio interior = radio exterior − relleno. Si el relleno es igual o mayor que el radio, el interior es 0.",
       "comoCazarlo": "Ampliar una esquina al 400 % y mirar si la separación es constante alrededor de la curva.",
       "consejo": "Es una regla de geometría, no de gusto: dos curvas concéntricas mantienen la distancia sólo si sus radios se diferencian en esa distancia.",
-      "senales": ["media luna en la esquina", "el radio no cuadra", "la imagen no encaja"],
+      "senales": [
+        "media luna en la esquina",
+        "el radio no cuadra",
+        "la imagen no encaja"
+      ],
       "salioDe": "Geometría de curvas concéntricas, aplicada en el sistema de tarjetas."
     },
     {
@@ -52,7 +64,11 @@
       "arreglo": "Redondear con `border-radius` en la propia imagen, o con una máscara, en vez de recortar en el contenedor. Si el `overflow` es necesario, mover el `sticky` fuera de él.",
       "comoCazarlo": "Subir por los ancestros buscando el primero con `overflow` distinto de `visible`. Es un diagnóstico mecánico y siempre aparece.",
       "consejo": "También rompe `position: fixed` dentro si hay `transform` o `filter` en un ancestro, por la misma familia de razones.",
-      "senales": ["el sticky no funciona", "overflow hidden", "no se pega la barra"],
+      "senales": [
+        "el sticky no funciona",
+        "overflow hidden",
+        "no se pega la barra"
+      ],
       "salioDe": "MDN sobre position: sticky y sus contextos de contención."
     },
     {
@@ -65,7 +81,11 @@
       "arreglo": "Primero espacio; la línea sólo cuando el espacio no alcanza o cuando hay que apretar mucho la densidad.",
       "comoCazarlo": "Quitar todas las líneas y mirar si algo se vuelve confuso. Casi nunca pasa.",
       "consejo": "Una lista con buen ritmo vertical no necesita rayas. Las rayas son para cuando el ritmo no se puede permitir.",
-      "senales": ["se ve rayado", "muchas líneas", "cansa la vista"],
+      "senales": [
+        "se ve rayado",
+        "muchas líneas",
+        "cansa la vista"
+      ],
       "salioDe": "Práctica editorial y la revisión de densidad del laboratorio."
     },
     {
@@ -78,7 +98,11 @@
       "arreglo": "Contraste de al menos 3:1 entre el borde del control y su fondo, que es lo que piden las pautas para componentes de interfaz. O añadir un relleno de fondo distinto.",
       "comoCazarlo": "Medir el contraste del borde contra el fondo, no sólo el del texto.",
       "consejo": "Es el requisito que más se salta: se mide el texto y se olvida que el borde del control también tiene un mínimo.",
-      "senales": ["no se ven los campos", "borde muy claro", "al sol no se ve"],
+      "senales": [
+        "no se ven los campos",
+        "borde muy claro",
+        "al sol no se ve"
+      ],
       "salioDe": "WCAG 1.4.11 (Non-text Contrast), comprobado en el formulario del laboratorio."
     },
     {
@@ -91,7 +115,11 @@
       "arreglo": "Si se adopta, se aplica con una regla clara —siempre la esquina que mira al contenido, por ejemplo— y en todos los componentes de la familia.",
       "comoCazarlo": "Poner cinco componentes juntos. Si la excepción se repite con regla, se lee como estilo; si es única, como bug.",
       "consejo": "Es el mismo principio que el ángulo diagonal de una identidad: se sostiene o no se usa.",
-      "senales": ["parece un error", "esquina rara", "una esquina distinta"],
+      "senales": [
+        "parece un error",
+        "esquina rara",
+        "una esquina distinta"
+      ],
       "salioDe": "Sistema de la cuña diagonal del Instituto Rembrandt, donde el recurso se repite en cabecera y pie."
     },
     {
@@ -104,7 +132,11 @@
       "arreglo": "`outline-offset: 2px` o 3px, para que quede un respiro entre el borde del elemento y el anillo.",
       "comoCazarlo": "Recorrer con el tabulador un formulario donde todos los campos tengan borde.",
       "consejo": "Un offset negativo sirve cuando el elemento está pegado al canto de la ventana y el anillo se saldría.",
-      "senales": ["no se distingue el foco", "outline pegado", "el anillo se confunde"],
+      "senales": [
+        "no se distingue el foco",
+        "outline pegado",
+        "el anillo se confunde"
+      ],
       "salioDe": "Revisión de accesibilidad por teclado del laboratorio."
     },
     {
@@ -117,7 +149,11 @@
       "arreglo": "`border-collapse: collapse` en la tabla, o bordes sólo en un lado de cada celda.",
       "comoCazarlo": "Comparar el grosor de una línea interior con el de una exterior.",
       "consejo": "Con `collapse`, el radio de esquina de la tabla deja de aplicarse; si se quiere redondear, se usa `separate` con `border-spacing: 0`.",
-      "senales": ["líneas dobles en la tabla", "border-collapse", "bordes gruesos por dentro"],
+      "senales": [
+        "líneas dobles en la tabla",
+        "border-collapse",
+        "bordes gruesos por dentro"
+      ],
       "salioDe": "MDN sobre border-collapse."
     },
     {
@@ -130,7 +166,11 @@
       "arreglo": "`border: 0` y luego `border-top` con el color y el grosor del sistema, o directamente una altura y un fondo.",
       "comoCazarlo": "Mirar el separador ampliado: si tiene dos tonos, es el relieve por defecto.",
       "consejo": "Es un elemento semántico útil —marca un cambio temático— así que conviene estilizarlo, no reemplazarlo por un `div`.",
-      "senales": ["la línea se ve hundida", "hr feo", "separador con relieve"],
+      "senales": [
+        "la línea se ve hundida",
+        "hr feo",
+        "separador con relieve"
+      ],
       "salioDe": "Estilos por defecto del navegador; MDN sobre hr."
     },
     {
@@ -143,7 +183,11 @@
       "arreglo": "`border-image` con el degradado, o dos fondos: uno de contenido con `padding-box` y otro de degradado con `border-box`.",
       "comoCazarlo": "Si el borde sale negro o desaparece, la propiedad rechazó el valor.",
       "consejo": "La técnica de los dos fondos respeta el radio de esquina; `border-image` no lo respeta, y ése es el criterio para elegir.",
-      "senales": ["borde degradado", "no acepta gradiente", "el borde sale negro"],
+      "senales": [
+        "borde degradado",
+        "no acepta gradiente",
+        "el borde sale negro"
+      ],
       "salioDe": "MDN sobre border-image y background-clip."
     },
     {
@@ -156,7 +200,11 @@
       "arreglo": "Dar a la imagen el mismo radio y un `display: block`, y si persiste, escalarla un pelo (`transform: scale(1.002)`) dentro del recorte.",
       "comoCazarlo": "Probar varios anchos de ventana en pasos de 1 px: la línea aparece y desaparece.",
       "consejo": "`display: block` en imágenes resuelve además el espacio fantasma de la línea base, que es la causa hermana de este defecto.",
-      "senales": ["hilo blanco en el canto", "la imagen no llega al borde", "línea en la esquina"],
+      "senales": [
+        "hilo blanco en el canto",
+        "la imagen no llega al borde",
+        "línea en la esquina"
+      ],
       "salioDe": "Revisión del laboratorio a distintos anchos."
     },
     {
@@ -169,7 +217,11 @@
       "arreglo": "Forzar la proporción con `aspect-ratio: 1` y `object-fit: cover`, y entonces el 50 % da un círculo.",
       "comoCazarlo": "Poner un avatar con una imagen apaisada y otra vertical.",
       "consejo": "`object-fit: cover` además evita que la cara salga deformada, que es el defecto que sigue a éste.",
-      "senales": ["el avatar sale ovalado", "border-radius 50%", "la foto se deforma"],
+      "senales": [
+        "el avatar sale ovalado",
+        "border-radius 50%",
+        "la foto se deforma"
+      ],
       "salioDe": "MDN sobre border-radius y object-fit."
     },
     {
@@ -182,7 +234,11 @@
       "arreglo": "Grosor de 2 px y trazos largos. Con `outline-style: dashed` o un `border-image` se controla mejor el patrón.",
       "comoCazarlo": "Alejarse de la pantalla dos metros. El discontinuo debe seguir leyéndose como discontinuo.",
       "consejo": "El discontinuo comunica «aquí falta algo» o «esto se puede soltar aquí». Si no se lee, esa información se pierde entera.",
-      "senales": ["zona de arrastre", "línea punteada borrosa", "se ve gris"],
+      "senales": [
+        "zona de arrastre",
+        "línea punteada borrosa",
+        "se ve gris"
+      ],
       "salioDe": "Revisión de la zona de soltar archivos del laboratorio."
     },
     {
@@ -195,8 +251,31 @@
       "arreglo": "Color más un segundo indicio: un icono, un texto de error y el atributo que lo anuncia a los lectores de pantalla.",
       "comoCazarlo": "Ver la pantalla en escala de grises. Si el error desaparece, no está comunicado.",
       "consejo": "Es la misma prueba que sirve para gráficos: si en gris se pierde la información, faltaba una segunda señal.",
-      "senales": ["sólo en rojo", "daltonismo", "no se ve el error"],
+      "senales": [
+        "sólo en rojo",
+        "daltonismo",
+        "no se ve el error"
+      ],
       "salioDe": "WCAG 1.4.1 (Use of Color) y la revisión del formulario del laboratorio."
+    },
+    {
+      "id": "muesca-que-tapa-la-barra",
+      "titulo": "La hora del iPhone tapa el botón del menú",
+      "gravedad": "alta",
+      "sintoma": "En el iPhone con la app instalada, el botón del menú, el nombre y la franja de arriba quedan debajo de la hora y la muesca. En la compu y en Safari normal se ve bien.",
+      "causa": "viewport-fit=cover deja que la página use toda la pantalla, pero nadie le reservó a la muesca su espacio con env(safe-area-inset-top).",
+      "porque": "Chromium y las pruebas no tienen muesca: env() vale 0 y todo mide perfecto. Sólo aparece en el teléfono, y más con la app instalada.",
+      "arreglo": "La barra pegajosa lleva padding-top: env(safe-area-inset-top); lo que va arriba de ella (franjas, avisos) se baja o suma la muesca; lo que se pega a «--arriba» suma la muesca también.",
+      "comoCazarlo": "En la prueba, reescribir el CSS cambiando env(safe-area-inset-top) por 47px (iPhone 13) y exigir que nada tocable empiece arriba de 47. tienda/nucleo/pruebas-muesca.mjs lo hace.",
+      "consejo": "Si pones viewport-fit=cover, ya te comprometiste a pagar la muesca en cada cosa pegada arriba.",
+      "senales": [
+        "la hora tapa el menu",
+        "se cubre con la camara",
+        "la muesca tapa",
+        "notch",
+        "no se ve lo de arriba en el iphone"
+      ],
+      "salioDe": "Carlos con su iPhone 13 en la tienda, 25 de septiembre."
     }
   ]
 }
