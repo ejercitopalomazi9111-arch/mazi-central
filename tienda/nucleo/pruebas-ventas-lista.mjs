@@ -92,6 +92,27 @@ try{
     const [h, bt] = await Promise.all([p.locator('.cabeza-cierre h2').boundingBox(), cajon.boundingBox()]);
     ok('«Abrir cajón» va en el renglón del título, no flotando arriba', h && bt && Math.abs((h.y + h.height / 2) - (bt.y + bt.height / 2)) < 12, JSON.stringify({ h, bt }));
   }else ok('(la caja de muestra está cerrada: no hay botón que medir)', true);
+  console.log('\n· Atajos del mostrador (F2 · F4 · Esc)');
+  await p.setViewportSize({ width: 1280, height: 800 });
+  await p.goto(BASE + '#/v'); await p.waitForSelector('#pos-q', { timeout: 30000 });
+  const abierta = () => p.evaluate(() => !!document.querySelector('dialog.hoja-cobro[open]'));
+  ok('el letrero de atajos se ve en computadora', await p.locator('.atajos').isVisible());
+  await p.locator('body').click({ position: { x: 5, y: 400 } });
+  await p.keyboard.press('F4'); await p.waitForTimeout(300);
+  ok('F4 con el ticket vacío no abre el cobro y lo dice', !(await abierta()) && /vacío/.test(await p.locator('#avisos').textContent()));
+  await p.locator('#pos-rejilla button[data-id]:not([aria-disabled="true"])').first().click();
+  await p.locator('body').click({ position: { x: 5, y: 400 } });
+  await p.keyboard.press('F2');
+  ok('F2 pone el cursor en el buscador', await p.evaluate(() => document.activeElement?.id === 'pos-q'));
+  await p.keyboard.type('zzz'); await p.keyboard.press('Escape');
+  ok('Esc borra la búsqueda', (await p.inputValue('#pos-q')) === '');
+  await p.keyboard.press('F4'); await p.waitForTimeout(300);
+  ok('F4 abre el cobro', await abierta());
+  await p.keyboard.press('Escape'); await p.waitForTimeout(200);
+  await p.goto(BASE + '#/v/ventas'); await p.waitForSelector('#tickets', { timeout: 30000 });
+  await p.keyboard.press('F4'); await p.waitForTimeout(300);
+  ok('fuera de la caja, F4 ya no hace nada (el atajo se va con la pantalla)', !(await abierta()));
+  await p.setViewportSize({ width: 390, height: 844 });
   ok('ni un error de consola', !errores.length, errores.join(' | '));
 }finally{
   await nav.close(); await api.dispose(); servidor.close();

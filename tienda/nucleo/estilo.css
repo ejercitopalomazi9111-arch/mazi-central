@@ -1612,3 +1612,5 @@ body:has(.app.en-tienda){ background: var(--tienda-fondo); }
    dice cuál manda, a propósito (lo exige pruebas-rutas.mjs). */
 .interruptor.en-linea{ align-items: center; }          /* el «Sólo disponibles» del buscador: centrado con su texto */
 .chips-elegir.sugerencias{ flex-wrap: nowrap; }        /* las sugerencias del simulador se deslizan de lado */
+.atajos{ margin: var(--e2) 0 0; font-size: 13px; color: var(--tinta-suave); }
+.atajos kbd{ display: inline-block; min-width: 24px; padding: 1px 6px; border: 1px solid var(--linea); border-bottom-width: 2px; border-radius: 6px; background: var(--superficie); font: inherit; font-weight: 700; text-align: center; }

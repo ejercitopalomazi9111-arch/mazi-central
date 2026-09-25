@@ -141,9 +141,10 @@ async function cobrar(){
       <section class="pos-catalogo" aria-label="Productos">
         <form class="pos-buscar" data-buscar>
           <label class="buscador">${icono('buscar')}
-            <input id="pos-q" type="search" placeholder="Busca, o escanea con el lector" autocomplete="off" enterkeyhint="done" aria-label="Buscar producto o escanear código"></label>
+            <input id="pos-q" type="search" placeholder="Busca, o escanea con el lector" autocomplete="off" enterkeyhint="done" aria-label="Buscar producto o escanear código" aria-keyshortcuts="F2"></label>
           ${puedeEscanear() ? `<button type="button" class="boton secundario" data-escanear aria-label="Escanear con la cámara">${icono('escanear')}<span class="largo">Cámara</span></button>` : ''}
         </form>
+        <p class="atajos solo-escritorio" aria-hidden="true"><kbd>F2</kbd> buscar · <kbd>F4</kbd> cobrar · <kbd>Esc</kbd> borrar la búsqueda</p>
         <div class="tira-cats" role="group" aria-label="Categoría">
           <button class="chip-boton" data-cat="" aria-pressed="true">Todo</button>
           ${categorias.map((c) => `<button class="chip-boton" data-cat="${esc(c.id)}" aria-pressed="false">${esc(c.nombre)}</button>`).join('')}
@@ -203,7 +204,7 @@ async function cobrar(){
         <header class="pos-ticket-cabeza"><h2>Ticket</h2><button class="boton fantasma" data-vaciar>${icono('borrar')}Vaciar</button></header>
         <ul class="pos-renglones">${renglones.map(renglonHTML).join('')}</ul>
         <div class="pos-total"><span>${plural(piezas(), 'pieza', 'piezas')}</span><strong>${pesosC(totalC())}</strong></div>
-        <button class="boton principal grande ancho" data-cobrar>${icono('efectivo')}Cobrar ${pesosC(totalC())}</button>`
+        <button class="boton principal grande ancho" data-cobrar aria-keyshortcuts="F4">${icono('efectivo')}Cobrar ${pesosC(totalC())}</button>`
         : `<div class="pos-vacio">${icono('ticket')}<p>Toca un producto o escanea su código para empezar.</p></div>`;
 
       const pintarTicket = () => {
@@ -374,6 +375,17 @@ async function cobrar(){
 
       pintar();
       $q.focus({ preventScroll: true });
+
+      // Atajos del mostrador con teclado y lector: sin soltar el teclado se
+      // busca, se cobra y se limpia. Con una hoja abierta las teclas son de la hoja.
+      const atajos = (e) => {
+        if(document.querySelector('dialog[open]')) return;
+        if(e.key === 'F2'){ e.preventDefault(); $q.focus(); $q.select(); }
+        else if(e.key === 'F4'){ e.preventDefault(); if(renglones.length) hojaCobro(); else aviso('El ticket está vacío', 'mal'); }
+        else if(e.key === 'Escape' && document.activeElement === $q && $q.value){ e.preventDefault(); $q.value = ''; f.q = ''; cuantos = PAGINA; pintarRejilla(); }
+      };
+      document.addEventListener('keydown', atajos);
+      return () => document.removeEventListener('keydown', atajos);
     },
   };
 }
