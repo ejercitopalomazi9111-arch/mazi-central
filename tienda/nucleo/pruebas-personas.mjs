@@ -25,8 +25,8 @@ const { chromium, request } = await import('/opt/node22/lib/node_modules/playwri
 
 const TIENDA = join(dirname(fileURLToPath(import.meta.url)), '..');
 let bien = 0, mal = 0;
-const ok = (t, c, d = '') => { c ? bien++ : mal++; console.log(`  ${c ? '✓' : '✗'} ${t}${c || !d ? '' : ` — ${String(d).slice(0, 400)}`}`); };
-const TIPOS = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.woff2': 'font/woff2', '.png': 'image/png', '.svg': 'image/svg+xml' };
+const ok = (t, c, d = '') => { c ? bien++ : mal++; console.log(`  ${c ? '✓' : '✗'} ${t}${c || !d ? '' : ` — ${String(d).slice(0, Number(process.env.DETALLE || 400))}`}`); };
+const TIPOS = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.woff2': 'font/woff2', '.png': 'image/png', '.svg': 'image/svg+xml' };
 const servidor = createServer((req, res) => {
   const ruta = join(TIENDA, decodeURIComponent(req.url.split('?')[0]).replace(/^\/+/, '') || 'index.html');
   if(!ruta.startsWith(TIENDA)){ res.writeHead(403).end(); return; }
@@ -52,7 +52,7 @@ async function telefono(nombre, { ancho = 390, alto = 844, init } = {}){
   ctx.on('page', async (x) => { if(p && x !== p) await x.close().catch(() => {}); });
   p = await ctx.newPage();
   p.errores = [];
-  p.on('pageerror', (e) => p.errores.push(`${nombre}: ${e.message}`));
+  p.on('pageerror', (e) => p.errores.push(`${nombre}: ${e.message} @ ${(e.stack || '').split('\n').slice(1, 3).join(' ').trim()}`));
   p.on('console', (m) => { if(m.type() === 'error' && !/Failed to load resource|ERR_FAILED|ERR_INTERNET_DISCONNECTED/.test(m.text())) p.errores.push(`${nombre}: ${m.text()}`); });
   p.on('dialog', (d) => d.dismiss().catch(() => {}));
   p.listo = () => p.waitForFunction(() => { const c = document.querySelector('#contenido'); return c && !c.querySelector('[aria-busy="true"]') && c.children.length; }, null, { timeout: 30000 });
@@ -111,7 +111,7 @@ if(toca('gato')){
     const s = await p.sano();
     if(!s.h1 || !s.contenido || !s.ancho) rotas.push(`${ruta} → ${s.ruta}: ${JSON.stringify(s)} tras ${huellas.slice(-6).join(' · ')}`);
     // Un diálogo o una hoja abierta no debe dejar a nadie atrapado: Escape la cierra.
-    await p.keyboard.press('Escape'); await p.waitForTimeout(150);
+    for(let k = 0; k < 3; k++){ await p.keyboard.press('Escape'); await p.waitForTimeout(150); }
     const atrapado = await p.evaluate(() => [...document.querySelectorAll('dialog[open]')].map((d) => d.id || d.className));
     if(atrapado.length) rotas.push(`${ruta}: Escape no cerró ${atrapado.join(', ')}`);
   }
@@ -295,6 +295,66 @@ if(toca('carlos')){
   await p.unroute(/rpc\/vender/);
   ok('Carlos no hizo tronar nada', !p.errores.filter((e) => !/ya no alcanzan|sin_existencias|No se pudo/i.test(e)).length, p.errores.slice(0, 6).join(' | '));
   await ctx.close();
+}
+
+/* ══ EL GATO EN EL MOSTRADOR, LA OFICINA Y LA MOTO ═════════════════════════
+   Mismo gato, en las pantallas del personal. Aquí los toques al azar SÍ
+   podrían vender, borrar o cerrar caja de verdad, así que toda escritura a la
+   base se contesta «bloqueado por la prueba»: lo que se mide es que la app
+   aguante —que diga que no se pudo, que no se quede colgada, que no truene—,
+   no que escriba. */
+const ESCRIBE = (u, m) => (m !== 'GET' && m !== 'HEAD' && /\/rest\/v1\/(?!rpc\/donde_va)/.test(u)) ;
+async function bloquearEscrituras(ctx, cuenta){
+  await ctx.route(/\/rest\/v1\//, async (r) => {
+    if(!ESCRIBE(r.request().url(), r.request().method())) return r.fallback();
+    cuenta.push(r.request().url().split('/rest/v1/')[1].split('?')[0]);
+    await r.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ code: 'P0001', message: 'bloqueado por la prueba' }) });
+  });
+}
+if(toca('gato-personal')){
+  console.log(`\n· El gato en el mostrador, la oficina y la moto (semilla ${semilla})`);
+  for(const [rol, apartado] of [['cajero', 'venta'], ['repartidor', 'repartidor'], ['admin', 'admin']].filter(([r]) => !process.env.ROL || process.env.ROL === r)){
+    const escrituras = [];
+    const { ctx, p } = await telefono('gato-' + rol, { ancho: rol === 'cajero' ? 820 : 390, alto: rol === 'cajero' ? 1180 : 844 });
+    await p.ir('/'); await p.datos((d, r) => d.verComo(r), rol);
+    await bloquearEscrituras(ctx, escrituras);
+    const rutas = await p.evaluate(async (a) => (await import('./nucleo/rutas.js')).RUTAS.filter((r) => r.apartado === a && !r.ruta.includes(':')).map((r) => r.ruta), apartado);
+    const rotas = [];
+    for(const ruta of rutas){
+      await p.ir(ruta).catch(() => {});
+      for(let k = 0; k < 20; k++){
+        const que = azar();
+        try{
+          if(que < 0.65){
+            const n = await p.evaluate((r) => {
+              const l = [...document.querySelectorAll('button, a[href], input, select, textarea, label, summary, [role="button"]')]
+                .filter((e) => { const b = e.getBoundingClientRect(); return b.width && b.height && !e.disabled && getComputedStyle(e).visibility !== 'hidden' && !e.closest('[data-salir-app], [data-cerrar-sesion]'); });
+              if(!l.length) return null;
+              const e = l[Math.floor(r * l.length)]; e.setAttribute('data-gato', '1'); return 1;
+            }, azar());
+            if(n) await p.click('[data-gato]', { timeout: 1500, force: true }).catch(() => {});
+            await p.evaluate(() => document.querySelector('[data-gato]')?.removeAttribute('data-gato')).catch(() => {});
+          } else if(que < 0.9) await p.keyboard.press(uno(['Escape', 'Enter', 'Tab', 'Backspace', '5', 'a', ' '])).catch(() => {});
+          else await p.mouse.wheel(0, (azar() - 0.3) * 1500);
+          await p.waitForTimeout(80);
+        }catch(e){}
+      }
+      await p.waitForTimeout(600);
+      if(!p.url().startsWith(BASE.split('#')[0])){ rotas.push(`${ruta}: se salió a ${p.url()}`); await p.ir('/'); continue; }
+      await p.waitForFunction(() => !document.querySelector('#contenido [aria-busy="true"]'), null, { timeout: 15000 }).catch(() => {});
+      const st = await p.sano().catch(() => ({}));
+      if(!st.h1 || !st.contenido || !st.ancho) rotas.push(`${ruta} → ${st.ruta}: ${JSON.stringify(st)}`);
+      // Hasta tres Escape: el primero puede estar cerrando una lista desplegada
+      // que el gato dejó abierta, igual que le pasa a una persona.
+      for(let k = 0; k < 3; k++){ await p.keyboard.press('Escape'); await p.waitForTimeout(150); }
+      const atrapado = await p.evaluate(() => [...document.querySelectorAll('dialog[open]')].map((d) => d.id || d.className)).catch(() => []);
+      if(atrapado.length) rotas.push(`${ruta}: Escape no cerró ${atrapado.join(', ')}`);
+    }
+    ok(`${rol}: ${rutas.length} pantallas pisoteadas, ninguna en blanco, desbordada o atrapada`, !rotas.length, rotas.join(' | '));
+    const errores = p.errores.filter((e) => !/bloqueado por la prueba|Algo falló|ErrorDeDatos: No se (pud|guard)/.test(e));
+    ok(`${rol}: nada tronó (${escrituras.length} escrituras bloqueadas, cada una contestada sin colgarse)`, !errores.length, errores.slice(0, 6).join(' | '));
+    await ctx.close();
+  }
 }
 
 // Limpieza: lo que se pidió de verdad se cancela.

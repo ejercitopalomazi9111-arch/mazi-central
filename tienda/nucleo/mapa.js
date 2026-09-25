@@ -42,6 +42,10 @@ export async function crearMapa(el, { centro = { lat: 20.5888, lng: -100.3899 },
   const m = mosaicos || MOSAICOS;
   const mapa = L.map(el, { zoomControl: true, attributionControl: true }).setView([centro.lat, centro.lng], zoom);
   L.tileLayer(m.url, { maxZoom: m.max || 19, attribution: m.atribucion }).addTo(mapa);
+  // Los créditos del mapa son enlaces a otros sitios. Sin esto se abrían EN la
+  // app: un dedo mal puesto sacaba al repartidor de su ruta y, instalada, ni
+  // botón de regresar había (lo encontró el gato de pruebas-personas.mjs).
+  el.addEventListener('click', (e) => { const a = e.target.closest('.leaflet-control-attribution a[href]'); if(a){ a.target = '_blank'; a.rel = 'noopener'; } }, true);
   const capas = L.layerGroup().addTo(mapa);
   // El mapa se crea antes de que su caja tenga tamaño final: se le avisa.
   let vivo = true;

@@ -654,7 +654,7 @@ async function categoriasPantalla(){
       <ul class="lista categorias-lista" id="lista">${categorias.map(filaCat).join('')}</ul>
       ${cuenta.get(null) ? `<p class="nota">${plural(cuenta.get(null), 'producto está', 'productos están')} sin categoría: no se ven en la tienda por categoría.</p>` : ''}`,
 
-    alMontar($c, { aviso, ir }){
+    alMontar($c, { aviso, recargar }){
 
       const mover = async (i, j, boton) => {
         const a = categorias[i], b = categorias[j];
