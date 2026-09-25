@@ -1537,3 +1537,15 @@ body:has(.app.en-tienda){ background: var(--tienda-fondo); }
    envuelve no llenaba el marco, así que `height: 100%` de la foto no tenía de
    qué ser el 100 % y la foto salía cuadrada dentro de un marco más chato. */
 .ficha .foto-grande .acercar{ height: 100%; }
+/* Carrito, pagar y lo mío: renglones con línea fina en vez de cajas; la foto
+   en su escenario; la acción secundaria en gris, no compitiendo con Pagar. */
+.app.en-tienda .renglon{ background: transparent; border: 0; border-bottom: 1px solid var(--linea); border-radius: 0; padding: var(--e4) 0; }
+.app.en-tienda .renglon + .renglon{ margin-top: 0; }
+.app.en-tienda .renglon img{ background: transparent; mix-blend-mode: multiply; padding: 8px; border-radius: 12px; }  /* el escenario lo pone el enlace: dos escenarios multiplicados hacían marco doble */
+.app.en-tienda .renglon > a:first-child{ border-radius: 12px; background: var(--escenario); align-self: start; isolation: isolate; }
+.app.en-tienda .renglon .n{ font-weight: 550; }
+.app.en-tienda .renglon [data-despues]{ color: var(--tinta-suave); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+.app.en-tienda .renglon [data-despues] .ico{ display: none; }
+.app.en-tienda .mios .mio img{ background: var(--escenario); mix-blend-mode: multiply; border-radius: 10px; }
+.app.en-tienda .bloque-form.tarjeta, .app.en-tienda .pagar-resumen.tarjeta, .app.en-tienda .contacto-ayuda.tarjeta{ background: var(--hundido); border: 0; box-shadow: none; border-radius: calc(var(--radio) + 4px); }
+.app.en-tienda .bloque-form input:not([type=checkbox]):not([type=radio]), .app.en-tienda .bloque-form textarea, .app.en-tienda .bloque-form select{ background: var(--superficie); }
