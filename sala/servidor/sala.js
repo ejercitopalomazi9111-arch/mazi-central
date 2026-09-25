@@ -356,9 +356,13 @@ const ahora = () => Date.now();
 /* Dónde se prende una silla apagada. Una sola frase, en un solo lugar: lo dice
    `/motores` y lo dice el 400 de `/decir`, y si viven separadas una se queda
    vieja sin que nadie se entere. */
+/* OJO con el TIPO: si se agrega como «Text» funciona... hasta el siguiente
+   despliegue desde GitHub, que borra toda variable de texto que no esté en
+   wrangler.jsonc. Sólo las de tipo «Secret» sobreviven (documentación de
+   Wrangler, 25 de septiembre). Por eso Paulina y Negro se «apagaban solos». */
 const dondePrender = (secreto) =>
   `Cloudflare → Workers & Pages → sala → Settings → Variables and Secrets → ` +
-  `Add → Secret → ${secreto}`;
+  `Add → tipo «Secret» (no «Text»: ésas se borran en cada despliegue) → ${secreto}`;
 
 /* Una llave de sala. 32 caracteres de azar de verdad —`crypto`, no `Math.random`—
    porque esto es lo único que separa la mesa de trabajo del internet entero.
