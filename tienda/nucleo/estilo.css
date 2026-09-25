@@ -1561,3 +1561,9 @@ body:has(.app.en-tienda){ background: var(--tienda-fondo); }
 }
 .app.en-tienda .estado:not(.error) .circulo{ background: var(--escenario); color: #111317; }
 .app.en-tienda .estado h2{ letter-spacing: -.02em; }
+/* En oscuro, el escenario claro es para las FOTOS (que traen fondo blanco); los
+   círculos de ícono van en oscuro, o encandilan como faros en la portada. */
+:root{ --circulo-fondo: var(--escenario); --circulo-tinta: #111317; }
+@media (prefers-color-scheme: dark){ :root:not([data-tema="claro"]){ --circulo-fondo: var(--hundido); --circulo-tinta: var(--tinta); } }
+:root[data-tema="oscuro"]{ --circulo-fondo: var(--hundido); --circulo-tinta: var(--tinta); }
+.app.en-tienda .cat .circulo, .app.en-tienda .cats-lista .circulo, .app.en-tienda .estado:not(.error) .circulo{ background: var(--circulo-fondo); color: var(--circulo-tinta); }
