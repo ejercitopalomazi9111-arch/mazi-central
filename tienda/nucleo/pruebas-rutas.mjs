@@ -160,6 +160,10 @@ for(const [ancho, alto] of [[390, 844], [1280, 800]]){
   // «conectando» y se queda con su reloj de 30 s, que es justo lo que haría
   // en producción si el tiempo real se cae.
   await ctx.routeWebSocket(/^wss:\/\//, () => {});
+  // VARIANTE=oscuro y/o VARIANTE=grande (separadas por coma): el mismo recorrido
+  // con tema oscuro y letra grande, que también son de la app y nadie los recorría.
+  const variante = (process.env.VARIANTE || '').split(',');
+  if(variante.some(Boolean)) await ctx.addInitScript((v) => { try{ if(v.includes('oscuro')) localStorage.setItem('tienda-tema', 'oscuro'); if(v.includes('grande')) localStorage.setItem('tienda-letra', 'grande'); }catch(e){} }, variante);
   // Los mosaicos del mapa no se bajan en las pruebas: un PNG transparente.
   await ctx.route(/tile\.openstreetmap\.org/, (r) => r.fulfill({ contentType: 'image/png', body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64') }));
   await ctx.route(/^https:\/\//, async (route) => {
