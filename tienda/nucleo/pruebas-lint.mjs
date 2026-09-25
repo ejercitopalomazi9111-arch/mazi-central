@@ -39,5 +39,6 @@ const eslint = new ESLint({ cwd: TIENDA, overrideConfigFile: true, overrideConfi
 const res = await eslint.lintFiles(archivos);
 const fallas = res.flatMap((r) => r.messages.map((m) => `${relative(TIENDA, r.filePath)}:${m.line} ${m.message}`));
 fallas.forEach((f) => console.log('  ✗ ' + f));
-console.log(`\n${fallas.length ? '✗' : '✓'} ${archivos.length} archivos revisados · ${fallas.length ? `${fallas.length} fallan` : '0 fallan'} (${archivos.length - new Set(fallas.map((f) => f.split(':')[0])).size} pasan)\n`);
+const malos = new Set(fallas.map((f) => f.split(':')[0])).size;
+console.log(`\n${fallas.length ? '✗' : '✓'} ${archivos.length - malos} pasan · ${malos} fallan (${archivos.length} archivos revisados${fallas.length ? `, ${fallas.length} hallazgos` : ''})\n`);
 process.exit(fallas.length ? 1 : 0);

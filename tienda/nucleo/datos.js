@@ -127,16 +127,26 @@ export async function yo(){
 
 /* Pide a la función `entrar` un token de un solo uso y lo canjea por sesión.
    No manda correo: ver supabase/funciones/entrar/index.ts. */
-async function entrar(tipo, rol){
+/* Dos teléfonos entrando a la MISMA cuenta de muestra al mismo tiempo (Carlos
+   y su cliente abriendo «ver como» a la vez): el token nuevo invalida al que
+   todavía no se canjeaba y uno de los dos veía «No pudimos entrar». Se pide
+   otro y se reintenta, con una espera al azar para no volver a chocar. */
+async function entrar(tipo, rol, intento = 0){
   const r = await fetch(SUPABASE_URL + '/functions/v1/entrar', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', apikey: SUPABASE_LLAVE_PUBLICABLE },
     body: JSON.stringify({ tipo, negocio: SLUG, rol }),
   });
   const cuerpo = await r.json().catch(() => ({}));
-  if(!r.ok || !cuerpo.token_hash) throw new ErrorDeDatos('No pudimos entrar', cuerpo);
+  if(!r.ok || !cuerpo.token_hash){
+    if(intento < 2 && r.status >= 500) return new Promise((ok) => setTimeout(ok, 300 + Math.random() * 700)).then(() => entrar(tipo, rol, intento + 1));
+    throw new ErrorDeDatos('No pudimos entrar', cuerpo);
+  }
   const { error } = await db.auth.verifyOtp({ type: 'magiclink', token_hash: cuerpo.token_hash });
-  if(error) throw new ErrorDeDatos('No pudimos entrar', error);
+  if(error){
+    if(intento < 2) return new Promise((ok) => setTimeout(ok, 300 + Math.random() * 700)).then(() => entrar(tipo, rol, intento + 1));
+    throw new ErrorDeDatos('No pudimos entrar', error);
+  }
   _yo = undefined;
   return yo();
 }
@@ -147,12 +157,22 @@ export async function asegurarSesion(){
 }
 
 /* «Ver como» del negocio de muestra. La función se niega en uno real. */
-export async function verComo(rol){
-  const actual = await yo();
-  if(actual?.rol === rol) return actual;
-  await db.auth.signOut({ scope: 'local' });
-  _yo = undefined;
-  return entrar('demo', rol);
+/* En fila: el armazón cambia de rol solo al abrir una pantalla del personal,
+   y si mientras tanto alguien toca «ver como admin», las dos entradas se
+   cruzaban y la que llegaba al último —la automática, de cajero— dejaba al
+   admin sin permisos a media pantalla. Así se hacen una tras otra y gana la
+   última que se pidió (lo cazó pruebas-concurrencia.mjs, 4 de 6 corridas). */
+let _cola = Promise.resolve();
+export function verComo(rol){
+  const t = _cola.then(async () => {
+    const actual = await yo();
+    if(actual?.rol === rol) return actual;
+    await db.auth.signOut({ scope: 'local' });
+    _yo = undefined;
+    return entrar('demo', rol);
+  });
+  _cola = t.catch(() => {});
+  return t;
 }
 
 export async function salir(){
