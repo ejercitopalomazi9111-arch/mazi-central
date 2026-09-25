@@ -1175,6 +1175,13 @@ dialog.hoja .hoja-cuerpo{ padding: var(--e5); overflow-y: auto; max-height: calc
 .consejo.alerta{ border-color: var(--mal-suave); }
 .periodos{ flex-wrap: wrap; margin: var(--e5) 0 var(--e4); }
 .periodos button{ flex: 1 1 auto; white-space: nowrap; min-height: 44px; }
+/* En teléfono, cinco periodos no caben en un renglón y el quinto se caía solo
+   abajo («Mes pasado» huérfano). Dos renglones parejos: 3 arriba, 2 abajo. */
+@media (max-width: 560px){
+  .periodos{ display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .periodos button{ grid-column: span 2; }
+  .periodos button:nth-child(4), .periodos button:nth-child(5){ grid-column: span 3; }
+}
 .cifra-caja .cambio{ font-size: var(--t-chica); font-weight: 700; color: var(--tinta-suave); }
 .cifra-caja .cambio.sube{ color: var(--bien); }
 .cifra-caja .cambio.baja{ color: var(--mal); }
@@ -1208,7 +1215,9 @@ dialog.hoja .hoja-cuerpo{ padding: var(--e5); overflow-y: auto; max-height: calc
 .idea textarea:focus{ outline: 0; border-color: var(--acento); box-shadow: 0 0 0 3px var(--acento-suave); }
 .agendar{ display: grid; gap: var(--e2); padding-top: var(--e2); border-top: 1px dashed var(--linea); }
 .agendar .campo{ margin: 0; }
-@media (max-width: 480px){ .idea{ flex-direction: column; } .idea > img{ width: 100%; height: 160px; } }
+@media (max-width: 480px){ .idea{ flex-direction: column; align-items: stretch; } .idea > img{ width: 100%; height: 160px; }
+  /* «Compartir» y «Para después» no caben lado a lado: uno bajo otro y del mismo ancho. */
+  .idea-cuerpo > .botones{ display: grid; } }
 .dia-cal{ margin: var(--e4) 0 var(--e2); font-size: 16px; color: var(--tinta-suave); }
 .pub{ padding: var(--e3) var(--e4); border: 1px solid var(--linea); border-radius: var(--radio); background: var(--superficie); display: grid; gap: var(--e2); }
 .pub-cabeza{ display: flex; flex-wrap: wrap; gap: var(--e2); align-items: center; }
