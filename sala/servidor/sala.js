@@ -347,6 +347,7 @@ const revuelto = (t) => {
 import { buscar as buscarNeuronas, vecinas, CAMPOS, claseDe } from '../../cerebro/buscador.mjs';
 import { generarVapid, empujarATodos } from './push.mjs';
 import { atenderBanco } from './banco.js';
+import { atenderElementos } from './elementos.js';
 import { MOTORES, preguntar, motoresVivos, motoresApagados, motorDe,
          PAPEL_SILLA, PAPEL_RESUMEN, PAPEL_LIGUE, generarImagen } from './modelos.js';
 
@@ -2009,6 +2010,8 @@ export class Sala {
        desconocido no se gaste el saldo de Carlos. No publican nada en el hilo. */
     /* ── /banco · las imágenes de Carlos para sus presentaciones (banco.js) ── */
     if(ruta === 'banco') return atenderBanco(this.ctx.storage, pedido, url, cuenta);
+    /* ── /elementos · lo que Carlos arma y guarda para reusar (elementos.js) ── */
+    if(ruta === 'elementos') return atenderElementos(this.ctx.storage, pedido, url, cuenta);
 
     if(pedido.method === 'POST' && (ruta === 'ia-texto' || ruta === 'ia-imagen')){
       const crudo = await pedido.text().catch(() => '');
