@@ -93,7 +93,11 @@ export const memoria = crearMemoria(globalThis.localStorage ?? { getItem: () => 
 
 /* ── Carrito ───────────────────────────────────────────────────────────── */
 const LLAVE_CARRITO = 'tienda-carrito-' + SLUG;
-const leer = () => { try{ return new Map(JSON.parse(localStorage.getItem(LLAVE_CARRITO) || '[]')); }catch(e){ return new Map(); } };
+// Sólo renglones sanos: un id de texto y una cantidad entera positiva. Un
+// carrito guardado por otra versión, a mano o a medias no debe poder meter
+// «-4», «mil» o NaN a la cuenta (pruebas-personas.mjs · el niño).
+const sano = (x) => Array.isArray(x) && typeof x[0] === 'string' && Number.isInteger(x[1]) && x[1] > 0;
+const leer = () => { try{ const v = JSON.parse(localStorage.getItem(LLAVE_CARRITO) || '[]'); return new Map(Array.isArray(v) ? v.filter(sano) : []); }catch(e){ return new Map(); } };
 const oyentes = new Set();
 let _carro = leer();
 const guardar = () => {
@@ -101,9 +105,9 @@ const guardar = () => {
   oyentes.forEach((f) => f());
 };
 export const carrito = {
-  agregar(id, n = 1){ _carro.set(id, (_carro.get(id) || 0) + n); guardar(); },
+  agregar(id, n = 1){ n = Math.floor(Number(n)); if(!(n > 0)) return; _carro.set(id, (_carro.get(id) || 0) + n); guardar(); },
   quitar(id){ const v = (_carro.get(id) || 0) - 1; v > 0 ? _carro.set(id, v) : _carro.delete(id); guardar(); },
-  poner(id, n){ n > 0 ? _carro.set(id, n) : _carro.delete(id); guardar(); },
+  poner(id, n){ n = Math.floor(Number(n)); n > 0 ? _carro.set(id, n) : _carro.delete(id); guardar(); },
   cuantas(id){ return _carro.get(id) || 0; },
   renglones(){ return [..._carro]; },
   piezas(){ let t = 0; _carro.forEach((n) => t += n); return t; },

@@ -20,6 +20,16 @@ import { waNegocio, ligaProducto } from './contacto.js';
 import { hojaEscaner, puedeEscanear } from '../venta/pantallas.js';
 import { pedidoDeSiempre, teToca, validos, diaCorto, dias } from '../nucleo/recompra.js';
 import { SINONIMOS } from '../nucleo/bot.js';
+import { estaParecida } from '../nucleo/parecido.js';
+
+/* Lo que se sacó del carrito, dicho una vez y bien: los agotados con su nombre
+   (se guardan para después) y los que ya no se venden, contados. Antes salía
+   «Quitamos un producto, un producto, un producto: se agotó». */
+const corto = (t, n = 40) => t.length > n ? t.slice(0, n - 1) + '…' : t;
+const quitadosTexto = (agotados, yaNo) => [
+  agotados.length ? `Quitamos ${agotados.join(', ')} porque se ${agotados.length === 1 ? 'agotó' : 'agotaron'}: ${agotados.length === 1 ? 'lo dejamos' : 'los dejamos'} en «Guardado para después».` : '',
+  yaNo ? `${yaNo === 1 ? 'Un producto de tu carrito ya no se vende y lo quitamos.' : `${yaNo} productos de tu carrito ya no se venden y los quitamos.`}` : '',
+].filter(Boolean).join(' ');
 import { sorteoDelMes, tarjetaSorteo } from './sorteo.js';
 import { avance } from '../nucleo/sorteo.js';
 
@@ -211,9 +221,20 @@ export async function buscar(){
         // palabra completa si es corto («mat» no es «Matrix») o como inicio si es largo.
         const sin = (w) => grupos.find((g) => g.some((x) => x === w || x === w.replace(/(es|s)$/, ''))) || [];
         const esta = (t, w) => t.includes(w) || sin(w).some((x) => x.length >= 5 ? t.includes(' ' + x) : new RegExp(`\\s${x}(s|es)?(\\s|$)`).test(t));
-        let hallados = indice.map((i) => ({ ...i, enNombre: palabras.filter((w) => esta(i.propio, w)).length }))
-          .filter((i) => palabras.every((w) => esta(i.propio, w) || esta(i.cat, w)))
-          .sort((a, b) => (a.p.x || 0) - (b.p.x || 0) || b.enNombre - a.enNombre).map((i) => i.p);
+        // Tres pasadas, de lo exacto a lo aproximado, como Amazon: primero todas
+        // las palabras tal cual; si nada, todas aunque vengan mal escritas
+        // («shampo», «keratine»); si nada, lo que tenga MÁS de las palabras
+        // («tinte rojo» cuando ningún tinte dice «rojo»), avisando qué se usó.
+        const casi = (t, w) => esta(t, w) || estaParecida(t, w);
+        const juntar = (prueba) => indice.map((i) => ({ ...i, n: palabras.filter((w) => prueba(i.propio, w) || prueba(i.cat, w)).length, enNombre: palabras.filter((w) => prueba(i.propio, w)).length }));
+        const ordenar = (l) => l.sort((a, b) => (a.p.x || 0) - (b.p.x || 0) || b.n - a.n || b.enNombre - a.enNombre).map((i) => i.p);
+        let modo = 'exacto', usadas = palabras;
+        let hallados = ordenar(juntar(esta).filter((i) => i.n === palabras.length));
+        if(!hallados.length){ modo = 'parecido'; hallados = ordenar(juntar(casi).filter((i) => i.n === palabras.length)); }
+        if(!hallados.length && palabras.length > 1){
+          const l = juntar(casi), mejor = Math.max(0, ...l.map((i) => i.n));
+          if(mejor){ modo = 'parcial'; hallados = ordenar(l.filter((i) => i.n === mejor)); usadas = palabras.filter((w) => hallados.some((p) => { const i = indice.find((x) => x.p === p); return casi(i.propio, w) || casi(i.cat, w); })); }
+        }
         const todos = hallados.length;
         if($solo.checked) hallados = hallados.filter((p) => !p.x);
         if($orden.value !== 'sugerido') hallados = [...hallados].sort(ORDENES[$orden.value].f);
@@ -221,9 +242,11 @@ export async function buscar(){
         // Se recuerda lo que se buscó y SÍ encontró algo, cuando se deja de escribir.
         if(todos) guardar = setTimeout(() => memoria.busquedas.guardar(q.value), 1200);
         res.innerHTML = hallados.length
-          ? `<p class="nota">${plural(hallados.length, 'producto', 'productos')}${todos > hallados.length ? ` · ${todos - hallados.length} agotados escondidos` : ''}</p><div class="rejilla">${hallados.slice(0, 60).map(tarjeta).join('')}</div>`
+          ? `${modo === 'parecido' ? `<p class="aviso-linea">${icono('buscar')}<span>No hay nada escrito así; esto es lo que más se parece a «${esc(corto(q.value.trim()))}».</span></p>`
+              : modo === 'parcial' ? `<p class="aviso-linea">${icono('buscar')}<span>Nada tiene todo lo que escribiste. Estos tienen ${usadas.map((w) => `«${esc(w)}»`).join(' y ')}.</span></p>` : ''}
+            <p class="nota">${plural(hallados.length, 'producto', 'productos')}${todos > hallados.length ? ` · ${todos - hallados.length} agotados escondidos` : ''}</p><div class="rejilla">${hallados.slice(0, 60).map(tarjeta).join('')}</div>`
           : todos ? estado({ icono: 'agotado', titulo: 'Todo lo que coincide está agotado', texto: 'Quita «Sólo disponibles» para verlo y saber qué va a volver.' })
-          : estado({ icono: 'buscar', titulo: `No encontramos «${q.value.trim()}»`,
+          : estado({ icono: 'buscar', titulo: `No encontramos «${corto(q.value.trim())}»`,
               texto: 'Prueba con menos palabras, con la marca o con la categoría.',
               botones: `<a class="boton secundario" href="${enlace('/')}">Ver categorías</a>` });
       };
@@ -410,19 +433,24 @@ export async function carritoPantalla(){
               <button class="boton-ico" data-olvidar="${esc(p.id)}" aria-label="Quitar ${esc(p.n)} de guardados">${icono('borrar')}</button></div>
           </li>`).join('')}</ul></section>` : '';
       };
+      let avisoAjuste = null;
       const pinta = () => {
         /* Lo que ya no existe o se agotó sale del carrito con aviso, no en silencio:
            cobrar algo que no hay es peor que decirlo. */
-        const quitados = [];
+        const quitados = [], ajustados = []; let yaNo = 0;
         for(const [id, c] of carrito.renglones()){
           const p = porId.get(id);
-          if(!p || p.x){ quitados.push(p?.n || 'un producto'); carrito.poner(id, 0); if(p) memoria.despues.guardar(id, c); }
-          else if(c > p.q){ carrito.poner(id, p.q); }
+          if(!p){ yaNo++; carrito.poner(id, 0); }
+          else if(p.x){ quitados.push(p.n); carrito.poner(id, 0); memoria.despues.guardar(id, c); }
+          // Más de las que hay: se baja a lo que hay Y SE DICE. En silencio, el
+          // cliente cree que le van a llegar las que pidió.
+          else if(c > p.q){ ajustados.push(`${p.n}: pediste ${c} y sólo ${p.q === 1 ? 'queda 1' : `quedan ${p.q}`}`); carrito.poner(id, p.q); }
         }
+        if(ajustados.length) avisoAjuste = ajustados;
         const renglones = carrito.renglones();
         if(!renglones.length){
           lista.innerHTML = estado({ icono: 'carrito', titulo: 'Tu carrito está vacío',
-            texto: quitados.length ? `Quitamos ${quitados.join(', ')}: se agotó. Lo dejamos en «Guardado para después».` : 'Empieza por lo básico o busca lo que necesitas.',
+            texto: quitados.length || yaNo ? quitadosTexto(quitados, yaNo) : 'Empieza por lo básico o busca lo que necesitas.',
             botones: `<a class="boton principal" href="${enlace('/')}">Ver productos</a><a class="boton secundario" href="${enlace('/favoritos')}">${icono('corazon')}Mis favoritos</a>` }) + despuesHTML();
           return;
         }
@@ -449,7 +477,8 @@ export async function carritoPantalla(){
         const barra = g ? `<div class="envio-gratis${g.listo ? ' listo' : ''}">
             <p>${icono('camion')}<span>${g.listo ? '<b>Tu envío va gratis</b>' : `Te faltan <b>${pesos(g.falta / 100)}</b> para envío gratis`}</span></p>
             <div class="barra-avance" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${g.avance}" aria-label="Avance para envío gratis"><span style="width:${g.avance}%"></span></div></div>` : '';
-        lista.innerHTML = (quitados.length ? `<p class="aviso-linea">${icono('alerta')}Quitamos ${esc(quitados.join(', '))}: se agotó. Lo dejamos en «Guardado para después».</p>` : '')
+        lista.innerHTML = (quitados.length || yaNo ? `<p class="aviso-linea">${icono('alerta')}<span>${esc(quitadosTexto(quitados, yaNo))}</span></p>` : '')
+          + (avisoAjuste ? `<p class="aviso-linea" data-ajuste>${icono('alerta')}<span>Ajustamos a lo que hay: ${esc(avisoAjuste.join(' · '))}.</span></p>` : '')
           + `<div class="carrito-rejilla"><div class="renglones">${filas}</div><div class="resumen">
             ${barra}
             <div class="total"><span>Subtotal · ${plural(carrito.piezas(), 'pieza', 'piezas')}</span><strong>${pesos(total / 100)}</strong></div>

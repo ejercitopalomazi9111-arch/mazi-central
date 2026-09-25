@@ -41,7 +41,7 @@ export function crearMemoria(almacen, slug, ahora = () => Date.now()){
     todas: () => leer('busquedas', []),
     /* Se guarda lo que se buscó y SÍ encontró algo: una búsqueda vacía no se repite. */
     guardar(t){
-      const q = String(t || '').trim().replace(/\s+/g, ' ');
+      const q = String(t || '').trim().replace(/\s+/g, ' ').slice(0, 60);   // 600 letras no son una búsqueda que se repita
       if(q.length < 2) return;
       const k = q.toLowerCase();
       escribir('busquedas', [q, ...leer('busquedas', []).filter((x) => x.toLowerCase() !== k)].slice(0, TOPE_BUSQUEDAS));

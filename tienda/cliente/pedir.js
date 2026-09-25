@@ -13,7 +13,7 @@ import { waNegocio } from './contacto.js';
 import { enlace } from '../nucleo/rutas.js';
 import { icono } from '../nucleo/iconos.js';
 import { esc, pesos, plural, estado, hoja, fecha } from '../nucleo/piezas.js';
-import { negocio, catalogo, carrito, miFicha, pedirTienda, misPedidos, cambiarEstado, totalConEnvio } from '../nucleo/datos.js';
+import { negocio, catalogo, carrito, miFicha, pedirTienda, misPedidos, cambiarEstado, totalConEnvio, olvidarCatalogo } from '../nucleo/datos.js';
 import { negocioPedido } from '../config.js';
 import { aCentavos, aPesos, sugerirPagos } from '../nucleo/dinero.js';
 
@@ -259,6 +259,13 @@ async function pagar(){
         }catch(err){
           console.error(err);
           aviso(err.message || 'No se pudo hacer el pedido', 'mal');
+          // Alguien se llevó las últimas mientras llenaba: el aviso flotante se va
+          // en segundos, éste se queda junto al botón con la salida a la mano.
+          if(/^Ya no alcanzan/.test(err.message || '')){
+            olvidarCatalogo();
+            $f.querySelector('[data-sin-piezas]')?.remove();
+            $f.querySelector('[data-pedir]').insertAdjacentHTML('beforebegin', `<p class="aviso-linea mal" data-sin-piezas role="alert">${icono('alerta')}<span>${esc(err.message)}. Alguien se las llevó mientras pedías. <a href="${enlace('/carrito')}">Revisar mi carrito</a></span></p>`);
+          }
           $bs.forEach(($b) => { $b.removeAttribute('aria-busy'); $b.disabled = false; });
         }
       });

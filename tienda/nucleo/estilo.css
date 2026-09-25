@@ -139,7 +139,12 @@ a{ color: inherit; }
 /* El título recibe el foco al cambiar de pantalla (para el lector de pantalla);
    no necesita anillo: no es un control. */
 #titulo:focus{ outline: none; }
-.oculto{ position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* Arriba a la izquierda de su contenedor, no en su lugar natural: dentro de
+   una fila que se desliza de lado, el lugar natural puede estar 300 px a la
+   derecha, y un absoluto que escapa del recorte ensancha TODA la página (la
+   categoría medía 384 px en un teléfono de 320). */
+.oculto{ position: absolute !important; top: 0; left: 0; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+.tira, .carril, .miniaturas, .filtros, .tira-cats, .segmentos.desliza, .sugerencias, .confianza, .barras{ position: relative; }
 .cifra{ font-variant-numeric: tabular-nums; }
 .suave{ color: var(--tinta-suave); }
 .chica{ font-size: var(--t-chica); }
@@ -439,16 +444,16 @@ a{ color: inherit; }
 .producto .foto{ position: relative; aspect-ratio: 1; background: #fff; }
 .producto .foto img{ width: 100%; height: 100%; object-fit: contain; padding: 12px; }
 .producto .cuerpo{ padding: var(--e2) var(--e3) var(--e3); display: grid; gap: 2px; flex: 1; align-content: start; }
-.producto .m{ font-size: 12px; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .06em; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.producto .m{ font-size: var(--t-mini); color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .06em; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .producto .n{ font-size: 15px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.6em; }
 .producto .precio .ahora{ font-size: 19px; }
 .producto .precio .antes{ font-size: 13px; }
-.producto .quedan{ font-size: 12px; color: var(--ojo); font-weight: 700; }
+.producto .quedan{ font-size: var(--t-mini); color: var(--ojo); font-weight: 700; }
 .producto.sin .foto img{ opacity: .4; }
 .precio{ display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px var(--e2); margin-top: var(--e1); }
 .precio .ahora{ font-size: 21px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .precio .antes{ font-size: 15px; color: var(--tinta-suave); text-decoration: line-through; font-variant-numeric: tabular-nums; }
-.marca-foto{ position: absolute; top: var(--e2); left: var(--e2); font-size: 12px; font-weight: 800; padding: 3px 8px; border-radius: 6px; }
+.marca-foto{ position: absolute; top: var(--e2); left: var(--e2); font-size: var(--t-mini); font-weight: 800; padding: 3px 8px; border-radius: 6px; }
 .marca-foto.oferta{ background: var(--acento); color: var(--sobre-acento); }
 .marca-foto.agotado{ background: #111317; color: #fff; }
 
@@ -489,7 +494,7 @@ a{ color: inherit; }
 .filtros .segmentos button{ white-space: nowrap; padding: 0 var(--e3); min-height: 44px; border-radius: 99px; font-size: 14px; }
 .filtros .interruptor.en-linea{ min-height: 44px; padding: 0 var(--e3) 0 2px; border-radius: 99px; background: var(--superficie); border: 1px solid var(--linea); font-size: 14px; }
 .campo.compacto{ margin: 0; }
-.campo.compacto select{ min-height: 44px; border-radius: 99px; font-size: 14px; font-weight: 650; padding: 0 var(--e5) 0 var(--e4); width: auto; max-width: 220px; }
+.campo.compacto select{ min-height: 44px; border-radius: 99px; font-size: 16px; font-weight: 650; padding: 0 var(--e5) 0 var(--e4); width: auto; max-width: 220px; }
 @media (min-width: 900px){ .filtros{ flex-wrap: wrap; overflow: visible; margin-inline: 0; padding-inline: 0; } }
 
 /* Carrito */
@@ -1103,7 +1108,7 @@ dialog.hoja .hoja-cuerpo{ padding: var(--e5); overflow-y: auto; max-height: calc
 .msj{ max-width: 85%; padding: var(--e2) var(--e3); border-radius: 14px; background: var(--superficie); border: 1px solid var(--linea); align-self: flex-start; }
 .msj p{ margin: 2px 0; overflow-wrap: anywhere; }
 .msj .quien{ font-size: var(--t-chica); font-weight: 700; color: var(--tinta-suave); }
-.msj time{ display: block; text-align: right; font-size: 12px; color: var(--tinta-suave); }
+.msj time{ display: block; text-align: right; font-size: var(--t-mini); color: var(--tinta-suave); }
 .msj.cliente{ align-self: flex-end; background: var(--acento-suave); border-color: transparent; }
 .msj.persona{ align-self: flex-end; background: var(--bien-suave); border-color: transparent; }
 .msj.sistema{ align-self: center; max-width: 100%; background: none; border: 0; padding: 0; text-align: center; font-size: var(--t-chica); color: var(--tinta-suave); font-weight: 650; }
@@ -1338,6 +1343,8 @@ dialog.hoja .hoja-cuerpo{ padding: var(--e5); overflow-y: auto; max-height: calc
 .acercar .lupa .ico{ width: 20px; height: 20px; }
 .hoja-foto .hoja-cuerpo img{ width: 100%; height: auto; max-height: 80vh; object-fit: contain; background: #fff; border-radius: var(--radio); }
 .aviso-linea.bien{ background: var(--bien-suave); color: var(--bien); }
+.aviso-linea.mal{ background: var(--mal-suave); color: var(--mal); }
+.aviso-linea a{ color: inherit; font-weight: 800; }
 .pregunta{ border-top: 1px solid var(--linea); }
 .pregunta summary{ min-height: 52px; display: flex; align-items: center; font-weight: 700; cursor: pointer; list-style: none; padding: var(--e2) 0; }
 .pregunta summary::-webkit-details-marker{ display: none; }
@@ -1408,3 +1415,9 @@ dialog.hoja .hoja-cuerpo{ padding: var(--e5); overflow-y: auto; max-height: calc
 .cats-lista .circulo .ico{ width: 22px; height: 22px; }
 .cats-lista a > .ico{ width: 18px; height: 18px; color: var(--tinta-suave); }
 .cats-lista a:hover{ background: var(--hundido); }
+
+/* El anciano (pruebas-personas.mjs): en iPhone, un campo con letra de menos de
+   16 px hace zoom al tocarlo y deja la página movida. Ninguno baja de ahí. */
+input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea{ font-size: max(16px, 1em); }
+:root[data-letra="grande"] .pestanas a{ font-size: 13px; }
+.estado h2, .estado p, .aviso-linea, .chip-boton{ overflow-wrap: anywhere; }
