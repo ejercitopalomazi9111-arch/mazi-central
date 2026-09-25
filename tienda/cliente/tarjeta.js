@@ -11,7 +11,7 @@
    ═════════════════════════════════════════════════════════════════════════ */
 import { enlace } from '../nucleo/rutas.js';
 import { icono } from '../nucleo/iconos.js';
-import { esc, pesos } from '../nucleo/piezas.js';
+import { esc, pesos, quitaAcentos } from '../nucleo/piezas.js';
 import { memoria } from '../nucleo/datos.js';
 
 export const POCAS = 5;
@@ -38,7 +38,7 @@ export function tarjeta(p){
               : oferta >= 5 ? `<span class="marca-foto oferta">−${oferta}%</span>` : ''}
       </div>
       <div class="cuerpo">
-        ${p.m ? `<span class="m">${esc(p.m)}</span>` : ''}
+        ${p.m && !quitaAcentos(p.n).startsWith(quitaAcentos(p.m).split(' ')[0]) ? `<span class="m">${esc(p.m)}</span>` : ''}
         <span class="n">${esc(p.n)}</span>
         <span class="precio"><span class="ahora">${pesos(p.p)}</span>${p.a ? `<span class="antes">${pesos(p.a)}</span>` : ''}</span>
         ${!p.x && p.q <= POCAS ? `<span class="quedan">${p.q === 1 ? 'Queda 1' : `Quedan ${p.q}`}</span>` : ''}

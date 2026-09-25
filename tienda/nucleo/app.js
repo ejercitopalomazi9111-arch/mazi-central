@@ -118,13 +118,21 @@ function pintarArmazon(persona){
     <div class="columna">
       ${N.ajustes?.muestra ? `<div class="franja-muestra">${icono('info')}<span>${esc(N.ajustes.aviso_muestra || 'Tienda de muestra.')}</span></div>` : ''}
       <header class="arriba">
-        <button class="boton-ico solo-telefono" data-abrir-menu aria-label="Abrir menú" aria-controls="lateral" aria-expanded="false">${icono('menu')}</button>
-        <button class="boton-ico" data-atras aria-label="Regresar" hidden>${icono('atras')}</button>
-        <h1 id="titulo" tabindex="-1"></h1>
-        <a class="boton-ico" id="ir-buscar" href="${enlace('/buscar')}" aria-label="Buscar">${icono('buscar')}</a>
-        <a class="boton-ico" id="ir-carrito" href="${enlace('/carrito')}" aria-label="Carrito">${icono('carrito')}<span class="insignia" hidden></span></a>
+        <div class="arriba-fila">
+          <button class="boton-ico solo-telefono" data-abrir-menu aria-label="Abrir menú" aria-controls="lateral" aria-expanded="false">${icono('menu')}</button>
+          <button class="boton-ico" data-atras aria-label="Regresar" hidden>${icono('atras')}</button>
+          <a class="marca-arriba" id="marca-arriba" href="${enlace('/')}" hidden><span class="sello">${icono('tienda')}</span><span class="nombre">${esc(N.marca?.nombre_corto || N.nombre)}</span></a>
+          <h1 id="titulo" tabindex="-1"></h1>
+          <a class="boton-ico" id="ir-buscar" href="${enlace('/buscar')}" aria-label="Buscar">${icono('buscar')}</a>
+          <a class="boton-ico" id="ir-carrito" href="${enlace('/carrito')}" aria-label="Carrito">${icono('carrito')}<span class="insignia" hidden></span></a>
+        </div>
+        <a class="buscar-arriba" id="buscar-arriba" href="${enlace('/buscar')}" hidden>${icono('buscar')}<span>Buscar en ${esc(N.marca?.nombre_corto || N.nombre)}</span>${icono('escanear')}</a>
       </header>
       <main class="contenido" id="contenido"></main>
+      <nav class="pestanas" id="pestanas" aria-label="Tienda" hidden>
+        ${[['/', 'casa', 'Inicio'], ['/buscar', 'buscar', 'Buscar'], ['/favoritos', 'corazon', 'Favoritos'], ['/pedidos', 'pedidos', 'Pedidos'], ['/carrito', 'carrito', 'Carrito']].map(([r, ic, t]) =>
+          `<a href="${enlace(r)}" data-pestana="${r}">${icono(ic)}${r === '/carrito' ? '<span class="insignia" hidden></span>' : ''}<span class="etq">${t}</span></a>`).join('')}
+      </nav>
       <a class="barra-carrito" id="barra-carrito" href="${enlace('/carrito')}" hidden>
         ${icono('carrito')}<span class="cuanto"></span><span class="ver">Ver<span class="largo"> carrito</span> ${icono('adelante')}</span>
       </a>
@@ -138,9 +146,9 @@ function pintarInsignia(){
   const a = $app.querySelector('#ir-carrito');
   if(!b) return;
   const n = carrito.piezas();
-  b.hidden = n === 0;
-  b.textContent = n > 99 ? '99+' : n;
+  for(const x of $app.querySelectorAll('#ir-carrito .insignia, #pestanas .insignia')){ x.hidden = n === 0; x.textContent = n > 99 ? '99+' : n; }
   a.setAttribute('aria-label', n ? `Carrito, ${n} ${n === 1 ? 'pieza' : 'piezas'}` : 'Carrito');
+  $app.querySelector('[data-pestana="/carrito"]')?.setAttribute('aria-label', n ? `Carrito, ${n} ${n === 1 ? 'pieza' : 'piezas'}` : 'Carrito');
   pintarBarra();
 }
 
@@ -152,7 +160,7 @@ async function pintarBarra(){
   const barra = $app.querySelector('#barra-carrito');
   if(!barra) return;
   const n = carrito.piezas();
-  const toca = n > 0 && rutaActual?.apartado === 'cliente' && !['/carrito', '/pagar'].includes(rutaActual.ruta);
+  const toca = n > 0 && rutaActual?.apartado === 'cliente' && !['/carrito', '/pagar', '/p/:id'].includes(rutaActual.ruta);   // en la ficha manda su propio «Agregar»
   if(!toca){ barra.hidden = true; $app.classList.remove('con-barra'); return; }
   let total = 0;
   try{
@@ -217,6 +225,14 @@ async function navegar(){
   $app.querySelector('#ir-buscar').hidden = !enTienda || ruta?.ruta === '/buscar';
   $app.querySelector('#ir-carrito').hidden = !enTienda || ruta?.ruta === '/carrito';
   $app.classList.toggle('en-tienda', enTienda);
+  // La tienda se ve como tienda: la marca arriba en la portada, el buscador
+  // siempre a la mano y las pestañas abajo en el teléfono (Amazon, Mercado Libre).
+  const portada = enTienda && (!ruta || ruta.ruta === '/');
+  $app.classList.toggle('en-portada', portada);
+  $app.querySelector('#marca-arriba').hidden = !portada;
+  $app.querySelector('#buscar-arriba').hidden = !enTienda || ['/buscar', '/pagar'].includes(ruta?.ruta);
+  $app.querySelector('#pestanas').hidden = !enTienda;
+  $app.querySelectorAll('#pestanas a').forEach((a) => { if(ruta && a.dataset.pestana === ruta.ruta) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   rutaActual = ruta; pintarBarra();
 
   $t.textContent = ruta ? ruta.titulo : 'No encontrado';

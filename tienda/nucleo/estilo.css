@@ -39,13 +39,16 @@
 
   /* Neutros cálidos: seis pasos del fondo a la tinta. Ahí vive el 90% de la
      interfaz; el acento sólo para lo que importa. */
-  --fondo:        #F7F3EC;
+  /* Rediseño del 25 de septiembre: el beige leía a formulario viejo. Neutros
+     fríos y limpios, como las tiendas que la gente ya usa: el color lo pone el
+     negocio (acento), no el papel. */
+  --fondo:        #F2F3F5;
   --superficie:   #FFFFFF;
-  --hundido:      #EFE9DF;
-  --linea:        #E2D9CC;
-  --linea-fuerte: #C4B6A3;
-  --tinta-suave:  #5B524A;   /* 7.3:1 sobre --fondo */
-  --tinta:        #1B1714;
+  --hundido:      #EAECEF;
+  --linea:        #E0E3E7;
+  --linea-fuerte: #C2C7CE;
+  --tinta-suave:  #4F5560;   /* 7.1:1 sobre --fondo */
+  --tinta:        #111317;
 
   --acento-hondo: color-mix(in oklab, var(--acento) 78%, black);
   --acento-suave: color-mix(in oklab, var(--acento) 11%, var(--superficie));
@@ -56,16 +59,21 @@
   --ojo:   #8A5A00;  --ojo-suave:   #FBF0D9;
   --mal:   #A11D1D;  --mal-suave:   #FBE6E4;
 
-  --elev-1: 0 1px 2px rgb(27 23 20 / .07), 0 2px 8px rgb(27 23 20 / .05);
-  --elev-2: 0 12px 32px rgb(27 23 20 / .18), 0 2px 6px rgb(27 23 20 / .08);
+  --elev-1: 0 1px 2px rgb(17 19 23 / .06), 0 1px 6px rgb(17 19 23 / .04);
+  --elev-2: 0 12px 32px rgb(17 19 23 / .16), 0 2px 6px rgb(17 19 23 / .06);
 
   --letra: "Atkinson Next", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --t-chica: 14px; --t-cuerpo: 18px; --t-sub: 22px; --t-titulo: 28px; --t-grande: 36px; --t-enorme: 48px;
+  /* 17 de cuerpo: sigue arriba de lo que usan Amazon y Mercado Libre (15-16)
+     por los señores grandes, pero ya no hace que no quepa nada. Y con «letra
+     grande» sube para quien lo necesite. */
+  --t-mini: 13px; --t-chica: 14px; --t-cuerpo: 17px; --t-sub: 20px; --t-titulo: 26px; --t-grande: 32px; --t-enorme: 44px;
 
   --e1: 4px; --e2: 8px; --e3: 12px; --e4: 16px; --e5: 24px; --e6: 32px; --e7: 48px; --e8: 64px;
 
   --radio: 12px;
+  --radio-chico: 8px;
   --toque: 48px;
+  --pestanas: 64px;
   --menu-ancho: 288px;
   --menu-riel: 76px;
   --arriba: 64px;
@@ -81,13 +89,13 @@
 @media (prefers-color-scheme: dark){
   :root:not([data-tema="claro"]){
     color-scheme: dark;
-    --fondo:        #141210;
-    --superficie:   #1E1B18;   /* sube de luz: así se ve la elevación en oscuro */
-    --hundido:      #25211D;
-    --linea:        #332D27;
-    --linea-fuerte: #4A423A;
-    --tinta-suave:  #B3A99E;
-    --tinta:        #EEE8E1;   /* blanco roto: el blanco puro deslumbra */
+    --fondo:        #0E1013;
+    --superficie:   #171A1F;   /* sube de luz: así se ve la elevación en oscuro */
+    --hundido:      #1F2329;
+    --linea:        #2B3037;
+    --linea-fuerte: #414852;
+    --tinta-suave:  #A9B0BA;
+    --tinta:        #ECEEF1;   /* blanco roto: el blanco puro deslumbra */
     --acento-hondo: color-mix(in oklab, var(--acento) 60%, white);
     --acento-suave: color-mix(in oklab, var(--acento) 22%, var(--superficie));
     --bien: #6FCB98; --bien-suave: #183324;
@@ -99,8 +107,8 @@
 }
 :root[data-tema="oscuro"]{
   color-scheme: dark;
-  --fondo: #141210; --superficie: #1E1B18; --hundido: #25211D; --linea: #332D27;
-  --linea-fuerte: #4A423A; --tinta-suave: #B3A99E; --tinta: #EEE8E1;
+  --fondo: #0E1013; --superficie: #171A1F; --hundido: #1F2329; --linea: #2B3037;
+  --linea-fuerte: #414852; --tinta-suave: #A9B0BA; --tinta: #ECEEF1;
   --acento-hondo: color-mix(in oklab, var(--acento) 60%, white);
   --acento-suave: color-mix(in oklab, var(--acento) 22%, var(--superficie));
   --bien: #6FCB98; --bien-suave: #183324; --ojo: #E5B45A; --ojo-suave: #33280F;
@@ -109,7 +117,7 @@
   --elev-2: 0 16px 40px rgb(0 0 0 / .55), 0 0 0 1px rgb(255 255 255 / .06);
 }
 /* Letra más grande, a elección de quien usa la app (Mi cuenta). */
-:root[data-letra="grande"]{ --t-chica: 16px; --t-cuerpo: 21px; --t-sub: 25px; --t-titulo: 32px; }
+:root[data-letra="grande"]{ --t-mini: 15px; --t-chica: 16px; --t-cuerpo: 20px; --t-sub: 23px; --t-titulo: 30px; }
 
 /* ── Base ──────────────────────────────────────────────────────────────── */
 *{ box-sizing: border-box; }
@@ -209,13 +217,47 @@ a{ color: inherit; }
 
 .arriba{
   position: sticky; top: 0; z-index: 20;
-  display: flex; align-items: center; gap: var(--e1);
-  min-height: var(--arriba); padding: 0 var(--e2);
-  background: color-mix(in oklab, var(--fondo) 92%, transparent);
+  background: color-mix(in oklab, var(--superficie) 94%, transparent);
   backdrop-filter: saturate(1.2) blur(10px); -webkit-backdrop-filter: saturate(1.2) blur(10px);
   border-bottom: 1px solid var(--linea);
 }
-.arriba h1{ flex: 1; min-width: 0; margin: 0 var(--e1); font-size: var(--t-sub); font-weight: 750; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.arriba-fila{ display: flex; align-items: center; gap: var(--e1); min-height: 56px; padding: 0 var(--e2); }
+.arriba h1{ flex: 1; min-width: 0; margin: 0 var(--e1); font-size: 19px; font-weight: 750; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* En la tienda, la barra ES la marca: el color del negocio, como la barra
+   amarilla de Mercado Libre o la oscura de Amazon. */
+.app.en-tienda .arriba{ background: var(--acento); color: var(--sobre-acento); border-bottom: 0; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.app.en-tienda .arriba .boton-ico:hover{ background: rgb(255 255 255 / .14); }
+.app.en-tienda .arriba .insignia{ background: var(--sobre-acento); color: var(--acento); }
+.app.en-tienda .arriba :focus-visible{ outline-color: var(--sobre-acento); }
+.marca-arriba{ flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--e2); min-height: var(--toque); color: inherit; text-decoration: none; font-weight: 800; font-size: 19px; letter-spacing: .01em; }
+.marca-arriba .sello{ width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; flex: none; background: var(--sobre-acento); color: var(--acento); }
+.marca-arriba .sello .ico{ width: 20px; height: 20px; }
+.marca-arriba .nombre{ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.app.en-portada .arriba h1{ position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.buscar-arriba{ display: flex; align-items: center; gap: var(--e2); margin: 0 var(--e3) var(--e3); min-height: 46px; padding: 0 var(--e3) 0 var(--e4);
+  border-radius: 99px; background: var(--superficie); color: var(--tinta-suave); text-decoration: none; font-size: 16px; box-shadow: var(--elev-1); }
+.buscar-arriba span{ flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.buscar-arriba .ico{ width: 20px; height: 20px; color: var(--tinta-suave); }
+.buscar-arriba:focus-visible{ outline: 3px solid var(--sobre-acento); outline-offset: 2px; }
+.app.en-tienda #ir-buscar{ display: none; }
+
+/* Las pestañas de abajo: sólo en la tienda y sólo en teléfono. */
+.pestanas{ position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+  min-height: var(--pestanas); padding-bottom: env(safe-area-inset-bottom);
+  background: color-mix(in oklab, var(--superficie) 96%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid var(--linea); }
+.pestanas a{ position: relative; display: grid; justify-items: center; align-content: center; gap: 2px; min-height: var(--pestanas); color: var(--tinta-suave); text-decoration: none; font-size: 12px; font-weight: 650; }
+.pestanas a .ico{ width: 24px; height: 24px; }
+.pestanas a[aria-current="page"]{ color: var(--acento-hondo); }
+.pestanas a[aria-current="page"] .ico path, .pestanas a[aria-current="page"] .ico circle{ stroke-width: 2.25; }
+.pestanas a[aria-current="page"]::before{ content: ""; position: absolute; top: 0; left: 30%; right: 30%; height: 3px; border-radius: 0 0 3px 3px; background: var(--acento); }
+.pestanas .insignia{ top: 6px; right: calc(50% - 22px); }
+.app.en-tienda .contenido{ padding-bottom: calc(var(--pestanas) + var(--e6) + env(safe-area-inset-bottom)); }
+@media (min-width: 900px){
+  .pestanas{ display: none !important; }
+  .app.en-tienda .contenido{ padding-bottom: var(--e8); }
+  .buscar-arriba{ max-width: 720px; margin: 0 auto var(--e3); }
+}
 
 .contenido{ padding: var(--e4) var(--e4) var(--e8); max-width: var(--ancho-max); margin: 0 auto; }
 .contenido.ancho{ max-width: none; }
@@ -240,8 +282,8 @@ a{ color: inherit; }
 /* ── Botones ───────────────────────────────────────────────────────────── */
 .boton{
   display: inline-flex; align-items: center; justify-content: center; gap: var(--e2);
-  min-height: 52px; padding: 0 var(--e5); border-radius: var(--radio);
-  border: 2px solid transparent; font-size: var(--t-cuerpo); font-weight: 700;
+  min-height: var(--toque); padding: 0 var(--e5); border-radius: var(--radio);
+  border: 1.5px solid transparent; font-size: 16px; font-weight: 700; letter-spacing: .005em;
   text-decoration: none; white-space: nowrap;
   transition: background var(--rapido) ease, border-color var(--rapido) ease, transform var(--rapido) ease;
 }
@@ -260,7 +302,7 @@ a{ color: inherit; }
 .boton.ancho, .boton.grande{ white-space: normal; text-align: center; line-height: 1.25; padding-block: var(--e2); }
 .boton{ max-width: 100%; }
 .bloque-form .boton, .en-linea .boton{ white-space: normal; text-align: center; }
-.boton.grande{ min-height: 64px; font-size: var(--t-sub); border-radius: 16px; }
+.boton.grande{ min-height: 56px; font-size: 18px; border-radius: 14px; }
 /* Cargando: el botón NO se deshabilita en silencio — dice que está trabajando. */
 .boton[aria-busy="true"]{ position: relative; color: transparent !important; pointer-events: none; }
 .boton[aria-busy="true"]::after{
@@ -288,11 +330,11 @@ a{ color: inherit; }
 /* La etiqueta SIEMPRE arriba y visible: un marcador que desaparece al escribir
    es lo primero que olvida alguien con memoria corta. */
 .campo{ display: grid; gap: 6px; margin-bottom: var(--e4); }
-.campo > label, .campo > .etiqueta-campo{ font-weight: 700; font-size: 16px; }
+.campo > label, .campo > .etiqueta-campo{ font-weight: 700; font-size: 15px; }
 .campo .ayuda{ font-size: var(--t-chica); color: var(--tinta-suave); }
 .entrada, .campo input:not([type="checkbox"]):not([type="radio"]), .campo select, .campo textarea{
-  width: 100%; min-height: 52px; padding: 0 var(--e4);
-  border-radius: var(--radio); border: 2px solid var(--linea-fuerte);
+  width: 100%; min-height: 50px; padding: 0 var(--e4);
+  border-radius: var(--radio); border: 1.5px solid var(--linea-fuerte);
   background: var(--superficie); color: var(--tinta); font-size: var(--t-cuerpo);
   transition: border-color var(--rapido) ease;
 }
@@ -318,10 +360,10 @@ a{ color: inherit; }
 @media (min-width: 640px){ .caja{ padding: var(--e5); } }
 
 .seccion{ margin-top: var(--e6); }
-.seccion > header{ display: flex; align-items: baseline; gap: var(--e3); margin-bottom: var(--e3); }
-.seccion h2{ font-size: var(--t-sub); flex: 1; }
-.seccion .ver-todo{ font-size: 16px; color: var(--acento-hondo); font-weight: 700; text-decoration: none; min-height: var(--toque); display: inline-flex; align-items: center; }
-.nota{ color: var(--tinta-suave); font-size: 16px; margin: calc(-1 * var(--e1)) 0 var(--e3); }
+.seccion > header{ display: flex; align-items: center; gap: var(--e3); margin-bottom: var(--e3); }
+.seccion h2{ font-size: var(--t-sub); font-weight: 800; letter-spacing: -.01em; flex: 1; }
+.seccion .ver-todo{ font-size: 15px; color: var(--acento-hondo); font-weight: 700; text-decoration: none; min-height: var(--toque); display: inline-flex; align-items: center; }
+.nota{ color: var(--tinta-suave); font-size: 15px; line-height: 1.45; margin: calc(-1 * var(--e1)) 0 var(--e3); }
 
 .lista{ list-style: none; margin: 0; padding: 0; border: 1px solid var(--linea); border-radius: var(--radio); background: var(--superficie); overflow: hidden; }
 .lista > li + li{ border-top: 1px solid var(--linea); }
@@ -364,8 +406,8 @@ a{ color: inherit; }
 
 /* ── Catálogo ──────────────────────────────────────────────────────────── */
 .buscador{
-  display: flex; align-items: center; gap: var(--e3); min-height: 56px; padding: 0 var(--e4);
-  border-radius: 16px; background: var(--superficie); border: 2px solid var(--linea-fuerte);
+  display: flex; align-items: center; gap: var(--e3); min-height: 52px; padding: 0 var(--e4);
+  border-radius: 99px; background: var(--superficie); border: 1.5px solid var(--linea-fuerte);
   text-decoration: none; color: var(--tinta-suave); font-size: var(--t-cuerpo);
 }
 .buscador:focus-within{ border-color: var(--acento); box-shadow: 0 0 0 3px var(--acento-suave); }
@@ -373,16 +415,17 @@ a{ color: inherit; }
 
 .tira{ display: flex; gap: var(--e3); overflow-x: auto; scroll-snap-type: x proximity; margin: 0 calc(-1 * var(--e4)); padding: var(--e1) var(--e4) var(--e3); scrollbar-width: none; }
 .tira::-webkit-scrollbar{ display: none; }
-.cat{ scroll-snap-align: start; flex: none; width: 104px; display: grid; justify-items: center; gap: var(--e2); text-align: center; text-decoration: none; font-size: 15px; line-height: 1.25; font-weight: 650; }
-.cat .circulo{ width: 72px; height: 72px; border-radius: 50%; display: grid; place-items: center; background: var(--superficie); border: 1px solid var(--linea); box-shadow: var(--elev-1); color: var(--acento); transition: transform var(--rapido) ease; }
+.cat{ scroll-snap-align: start; flex: none; width: 84px; display: grid; justify-items: center; align-content: start; gap: 6px; text-align: center; text-decoration: none; font-size: 13px; line-height: 1.25; font-weight: 650; }
+.cat .circulo{ width: 64px; height: 64px; border-radius: 20px; display: grid; place-items: center; background: var(--acento-suave); color: var(--acento-hondo); transition: transform var(--rapido) ease; }
 .cat:active .circulo{ transform: scale(.95); }
-.cat .circulo .ico{ width: 30px; height: 30px; stroke-width: 1.6; }
+.cat .circulo .ico{ width: 28px; height: 28px; stroke-width: 1.6; }
 @media (min-width: 900px){ .tira{ flex-wrap: wrap; overflow: visible; margin: 0; padding: var(--e1) 0; } }
 
-.rejilla{ display: grid; gap: var(--e3); grid-template-columns: repeat(2, minmax(0, 1fr)); }
-@media (min-width: 640px){ .rejilla{ grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.rejilla{ display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 640px){ .rejilla{ grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--e3); } }
 @media (min-width: 1100px){ .rejilla{ grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-.carril{ display: grid; grid-auto-flow: column; grid-auto-columns: minmax(168px, 44%); gap: var(--e3); overflow-x: auto; margin: 0 calc(-1 * var(--e4)); padding: 0 var(--e4) var(--e2); scroll-snap-type: x proximity; scrollbar-width: none; }
+@media (min-width: 1400px){ .rejilla{ grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+.carril{ display: grid; grid-auto-flow: column; grid-auto-columns: minmax(150px, 42%); gap: 10px; overflow-x: auto; margin: 0 calc(-1 * var(--e4)); padding: 0 var(--e4) var(--e2); scroll-snap-type: x proximity; scrollbar-width: none; }
 .carril::-webkit-scrollbar{ display: none; }
 .carril > *{ scroll-snap-align: start; }
 @media (min-width: 900px){ .carril{ grid-auto-columns: minmax(200px, 23%); margin: 0; padding: 0 0 var(--e2); } }
@@ -394,25 +437,28 @@ a{ color: inherit; }
 /* Las fotos de producto vienen en fondo blanco: se les da SIEMPRE blanco, también
    en oscuro, o se ven como un recorte pegado. */
 .producto .foto{ position: relative; aspect-ratio: 1; background: #fff; }
-.producto .foto img{ width: 100%; height: 100%; object-fit: contain; padding: 10px; }
-.producto .cuerpo{ padding: 10px var(--e3) var(--e3); display: grid; gap: 2px; flex: 1; align-content: start; }
-.producto .m{ font-size: 13px; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .05em; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.producto .n{ font-size: 16px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.6em; }
-.producto .quedan{ font-size: 13px; color: var(--ojo); font-weight: 700; }
+.producto .foto img{ width: 100%; height: 100%; object-fit: contain; padding: 12px; }
+.producto .cuerpo{ padding: var(--e2) var(--e3) var(--e3); display: grid; gap: 2px; flex: 1; align-content: start; }
+.producto .m{ font-size: 12px; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .06em; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.producto .n{ font-size: 15px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.6em; }
+.producto .precio .ahora{ font-size: 19px; }
+.producto .precio .antes{ font-size: 13px; }
+.producto .quedan{ font-size: 12px; color: var(--ojo); font-weight: 700; }
 .producto.sin .foto img{ opacity: .4; }
 .precio{ display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px var(--e2); margin-top: var(--e1); }
 .precio .ahora{ font-size: 21px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .precio .antes{ font-size: 15px; color: var(--tinta-suave); text-decoration: line-through; font-variant-numeric: tabular-nums; }
-.marca-foto{ position: absolute; top: var(--e2); left: var(--e2); font-size: 13px; font-weight: 750; padding: 3px 9px; border-radius: 99px; }
+.marca-foto{ position: absolute; top: var(--e2); left: var(--e2); font-size: 12px; font-weight: 800; padding: 3px 8px; border-radius: 6px; }
 .marca-foto.oferta{ background: var(--acento); color: var(--sobre-acento); }
-.marca-foto.agotado{ background: #1B1714; color: #fff; }
+.marca-foto.agotado{ background: #111317; color: #fff; }
 
 .ficha{ display: grid; gap: var(--e5); }
 @media (min-width: 900px){ .ficha{ grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--e7); align-items: start; } }
-.ficha .foto-grande{ background: #fff; border: 1px solid var(--linea); border-radius: 18px; aspect-ratio: 1; overflow: hidden; }
+.ficha .foto-grande{ background: #fff; border: 1px solid var(--linea); border-radius: var(--radio); aspect-ratio: 1; overflow: hidden; }
+@media (max-width: 899px){ .ficha .foto-grande{ margin: calc(-1 * var(--e4)) calc(-1 * var(--e4)) 0; border-radius: 0; border-width: 0 0 1px; aspect-ratio: 5 / 4; } }
 .ficha .foto-grande img{ width: 100%; height: 100%; object-fit: contain; padding: var(--e4); }
-.ficha h2{ font-size: var(--t-titulo); margin: var(--e1) 0 var(--e2); }
-.ficha .precio .ahora{ font-size: var(--t-grande); }
+.ficha h2{ font-size: 23px; line-height: 1.25; margin: var(--e1) 0 var(--e2); letter-spacing: -.01em; }
+.ficha .precio .ahora{ font-size: var(--t-grande); letter-spacing: -.01em; }
 .existencia{ display: inline-flex; align-items: center; gap: var(--e2); font-weight: 700; margin: var(--e3) 0 var(--e4); }
 .existencia::before{ content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
 .existencia.si{ color: var(--bien); } .existencia.poco{ color: var(--ojo); } .existencia.no{ color: var(--mal); }
@@ -434,12 +480,17 @@ a{ color: inherit; }
 .aviso-linea{ display: flex; gap: var(--e2); align-items: flex-start; padding: var(--e3) var(--e4); margin-bottom: var(--e3); border-radius: var(--radio); background: var(--ojo-suave); color: var(--ojo); font-weight: 650; font-size: 16px; }
 .aviso-linea .ico{ width: 20px; height: 20px; margin-top: 2px; }
 
-/* Filtros de categoría: orden en segmentos y marca en un select */
-.filtros{ display: flex; flex-wrap: wrap; gap: var(--e3); align-items: center; margin-bottom: var(--e4); }
-.filtros .segmentos{ flex: 1 1 360px; overflow-x: auto; scrollbar-width: none; }
-.filtros .segmentos button{ white-space: nowrap; padding: 0 var(--e3); min-height: 44px; }
-.campo.compacto{ margin: 0; flex: 0 1 240px; }
-.campo.compacto select{ min-height: 52px; }
+/* Filtros: una fila de pastillas que se desliza, como en las tiendas grandes:
+   los productos se ven de inmediato, no media pantalla de controles. */
+.filtros{ display: flex; gap: var(--e2); align-items: center; margin: 0 calc(-1 * var(--e4)) var(--e3); padding: 2px var(--e4) var(--e1); overflow-x: auto; scrollbar-width: none; }
+.filtros::-webkit-scrollbar{ display: none; }
+.filtros > *{ flex: none; }
+.filtros .segmentos{ padding: 3px; border-radius: 99px; }
+.filtros .segmentos button{ white-space: nowrap; padding: 0 var(--e3); min-height: 44px; border-radius: 99px; font-size: 14px; }
+.filtros .interruptor.en-linea{ min-height: 44px; padding: 0 var(--e3) 0 2px; border-radius: 99px; background: var(--superficie); border: 1px solid var(--linea); font-size: 14px; }
+.campo.compacto{ margin: 0; }
+.campo.compacto select{ min-height: 44px; border-radius: 99px; font-size: 14px; font-weight: 650; padding: 0 var(--e5) 0 var(--e4); width: auto; max-width: 220px; }
+@media (min-width: 900px){ .filtros{ flex-wrap: wrap; overflow: visible; margin-inline: 0; padding-inline: 0; } }
 
 /* Carrito */
 .renglon{ display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: var(--e3); padding: var(--e3); background: var(--superficie); border: 1px solid var(--linea); border-radius: var(--radio); }
@@ -451,7 +502,7 @@ a{ color: inherit; }
 .cantidad button{ width: var(--toque); height: 44px; border: 0; background: transparent; display: grid; place-items: center; }
 .cantidad output{ min-width: 36px; text-align: center; font-weight: 750; font-variant-numeric: tabular-nums; }
 /* «Llevas N · $X» siempre visible: la memoria corta es lo primero que falla. */
-.resumen{ position: sticky; bottom: 0; z-index: 10; margin: var(--e5) calc(-1 * var(--e4)) calc(-1 * var(--e8)); padding: var(--e3) var(--e4) calc(var(--e3) + env(safe-area-inset-bottom)); background: var(--superficie); border-top: 1px solid var(--linea); display: grid; gap: 10px; }
+.resumen{ position: sticky; bottom: calc(var(--pestanas) + env(safe-area-inset-bottom)); z-index: 10; margin: var(--e5) calc(-1 * var(--e4)) calc(-1 * var(--e8)); padding: var(--e3) var(--e4) calc(var(--e3) + env(safe-area-inset-bottom)); background: var(--superficie); border-top: 1px solid var(--linea); display: grid; gap: 10px; }
 .resumen .total{ display: flex; justify-content: space-between; align-items: baseline; }
 .resumen .total strong{ font-size: var(--t-titulo); font-variant-numeric: tabular-nums; }
 /* En pantalla ancha, el resumen es una columna al lado que acompaña al bajar. */
@@ -463,9 +514,9 @@ a{ color: inherit; }
 /* «Llevas N · $X»: pegada abajo, donde está el pulgar. En pantalla ancha se
    queda del ancho del contenido, no de la ventana. */
 .barra-carrito{
-  position: sticky; bottom: calc(var(--e3) + env(safe-area-inset-bottom)); z-index: 15;
-  display: flex; align-items: center; gap: var(--e3); min-height: 56px;
-  margin: 0 var(--e4) var(--e3); padding: 0 var(--e4); border-radius: 16px;
+  position: fixed; left: var(--e3); right: var(--e3); bottom: calc(var(--pestanas) + var(--e2) + env(safe-area-inset-bottom)); z-index: 24;
+  display: flex; align-items: center; gap: var(--e3); min-height: 52px;
+  padding: 0 var(--e4); border-radius: 14px;
   background: var(--acento); color: var(--sobre-acento); text-decoration: none; font-weight: 700;
   box-shadow: var(--elev-2); animation: hoja-sube var(--medio) var(--entra);
 }
@@ -473,9 +524,11 @@ a{ color: inherit; }
 .barra-carrito .ver{ display: inline-flex; align-items: center; gap: var(--e1); white-space: nowrap; }
 .barra-carrito .ver .ico{ width: 20px; height: 20px; }
 @media (max-width: 419px){ .barra-carrito .ver .largo{ display: none; } }
-@media (min-width: 900px){ .barra-carrito{ max-width: calc(var(--ancho-max) - 2 * var(--e6)); margin: 0 auto var(--e4); width: calc(100% - 2 * var(--e6)); } }
+@media (min-width: 900px){ .barra-carrito{ position: sticky; left: auto; right: auto; bottom: var(--e4); max-width: calc(var(--ancho-max) - 2 * var(--e6)); margin: 0 auto var(--e4); width: calc(100% - 2 * var(--e6)); } }
+.app.con-barra .contenido{ padding-bottom: calc(var(--pestanas) + 80px + env(safe-area-inset-bottom)); }
 /* Con la barra puesta, los avisos flotantes suben para no taparla. */
-.app.con-barra ~ .avisos{ bottom: calc(88px + env(safe-area-inset-bottom)); }
+.app.con-barra ~ .avisos{ bottom: calc(var(--pestanas) + 76px + env(safe-area-inset-bottom)); }
+@media (max-width: 899px){ .app.en-tienda:not(.con-barra) ~ .avisos{ bottom: calc(var(--pestanas) + var(--e3) + env(safe-area-inset-bottom)); } }
 /* Lo mismo con la barra de cobrar del punto de venta, en teléfono. */
 body:has(.pos-barra:not([hidden])) .avisos{ bottom: calc(96px + env(safe-area-inset-bottom)); }
 
@@ -1280,3 +1333,50 @@ dialog.hoja .hoja-cuerpo{ padding: var(--e5); overflow-y: auto; max-height: calc
 .buscar-fila{ display: flex; gap: var(--e2); align-items: stretch; }
 .buscar-fila .buscador{ flex: 1; min-width: 0; }
 @media (max-width: 480px){ .buscar-fila .largo{ display: none; } }
+
+/* ══ Rediseño · la tienda (25 de septiembre) ══════════════════════════════
+   Lo que Carlos vio «fatal»: tarjetas con el «+» encima del precio, nombres
+   cortados que repetían la marca, la portada sin nada de tienda y filtros que
+   se salían. Aquí se acomoda, con las fichas de arriba (nada de números sueltos). */
+.app.en-tienda .contenido{ padding-top: var(--e3); }
+.contenido > .seccion.primera, .contenido > :first-child.seccion{ margin-top: var(--e3); }
+.franja-muestra{ font-size: 13px; padding: 6px var(--e4); }
+.franja-muestra span{ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* La franja de confianza: lo que en Amazon es «Envío GRATIS» y en Mercado
+   Libre «Llega mañana», con los datos reales del negocio. */
+.confianza{ list-style: none; display: flex; gap: var(--e2); margin: 0 calc(-1 * var(--e4)); padding: 0 var(--e4) var(--e1); overflow-x: auto; scrollbar-width: none; }
+.confianza::-webkit-scrollbar{ display: none; }
+.confianza li{ flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 var(--e3); border-radius: 99px; background: var(--superficie); border: 1px solid var(--linea); font-size: 13px; font-weight: 700; color: var(--tinta-suave); }
+.confianza .ico{ width: 16px; height: 16px; color: var(--acento-hondo); }
+@media (min-width: 900px){ .confianza{ margin: 0; padding: 0; flex-wrap: wrap; } }
+
+/* Tarjeta: el «+» va en la esquina de la FOTO, no encima del precio. La foto
+   es cuadrada y del ancho de la tarjeta, así que su borde de abajo es 100cqw. */
+.producto{ container-type: inline-size; }
+.producto .rapido{ top: calc(100cqw - 52px); bottom: auto; right: 8px; width: 44px; height: 44px; box-shadow: 0 2px 8px rgb(0 0 0 / .18); }
+.producto .rapido .ico{ width: 20px; height: 20px; stroke-width: 2.25; }
+.producto .corazon{ width: 44px; height: 44px; top: 4px; right: 4px; }
+.producto .corazon .ico{ width: 20px; height: 20px; }
+.producto .cuerpo{ padding-right: var(--e3); }
+.producto .n{ -webkit-line-clamp: 3; min-height: 3.9em; }
+.contenido > :first-child > .seccion:first-child, .contenido > .seccion:first-child{ margin-top: var(--e2); }
+.mios .n{ font-size: 16px; font-weight: 650; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.mios img, .mios .sin-foto{ width: 64px; height: 64px; object-fit: contain; background: #fff; border: 1px solid var(--linea); }
+.renglon .n{ font-size: 16px; font-weight: 650; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.renglon .precio .ahora{ font-size: 18px; }
+.cantidad{ border-width: 1.5px; border-radius: 99px; }
+.cantidad button{ border-radius: 99px; }
+.seccion > header .boton.fantasma{ min-height: 44px; font-size: 14px; padding-inline: var(--e2); }
+
+/* Ficha en teléfono: «Agregar» se queda pegado abajo, encima de las pestañas,
+   como el «Agregar al carrito» de Amazon: no hay que bajar a buscarlo. */
+@media (max-width: 899px){
+  .ficha .comprar{ position: sticky; bottom: calc(var(--pestanas) + env(safe-area-inset-bottom)); z-index: 12; margin: var(--e4) calc(-1 * var(--e4)) 0; padding: var(--e3) var(--e4);
+    background: color-mix(in oklab, var(--superficie) 96%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-top: 1px solid var(--linea); box-shadow: 0 -6px 20px rgb(0 0 0 / .06); flex-wrap: nowrap; }
+  .ficha .comprar .boton{ min-width: 0; }
+}
+.ficha-cabeza{ margin-top: var(--e2); }
+.ficha .existencia{ margin: var(--e2) 0 var(--e3); font-size: 15px; }
+.garantias{ padding: var(--e3) var(--e4); border: 1px solid var(--linea); border-radius: var(--radio); background: var(--superficie); }
+.garantias li{ font-size: 14px; }

@@ -108,7 +108,7 @@ export async function portada(){
        ${siempreTotal ? `<button class="boton principal ancho grande" data-siempre>${icono('repetir')}Pedir ${siempre.tipo === 'siempre' ? 'lo de siempre' : 'lo mismo'} · ${pesos(siempreTotal)}</button>` : ''}`,
       { nota: siempre.tipo === 'siempre' ? 'Lo que se repite en tus pedidos, en la cantidad que sueles llevar.' : 'Cuando repitas algo, aquí va a salir tu pedido de siempre.' })
     : seccion('Lo básico', `<div class="carril">${basicos.map(tarjeta).join('')}</div>`,
-      { nota: 'Uno de cada categoría. Cuando compres, aquí va a salir tu pedido de siempre.' });
+      { nota: 'Cuando compres, aquí sale tu pedido de siempre.' });
 
   const bloqueToca = toca.length ? seccion('Te toca surtirte',
     `<ul class="mios">${toca.slice(0, 6).map((r) => renglonMio(r.p, {
@@ -116,10 +116,16 @@ export async function portada(){
         boton: `<button class="boton secundario" data-toca="${esc(r.p.id)}" data-cuantas="${Math.max(1, Math.round(r.tipica))}" aria-label="Agregar ${esc(r.p.n)}">${icono('agregar')}<span>Agregar</span></button>` })).join('')}</ul>`,
     { verTodo: enlace('/cuenta'), nota: 'Según cada cuándo lo compras. En «Mi cuenta» ves el detalle.' }) : '';
 
+  const env = (await negocio()).ajustes?.envio || {};
+  const confianza = [
+    env.gratis_desde != null && Number(env.costo) ? ['camion', `Envío gratis desde ${pesos(env.gratis_desde)}`] : env.costo != null ? ['camion', 'Envío a domicilio'] : null,
+    env.recoger !== false ? ['tienda', 'O pasa a recoger'] : null,
+    ['efectivo', 'Pagas al recibir'],
+  ].filter(Boolean);
   return { html: `
-    <a class="buscador" href="${enlace('/buscar')}">${icono('buscar')}<span>¿Qué necesitas?</span></a>
+    <ul class="confianza">${confianza.map(([ic, t]) => `<li>${icono(ic)}<span>${t}</span></li>`).join('')}</ul>
+    <section class="seccion primera" aria-label="Categorías">${tiraCategorias(categorias)}</section>
     ${bloqueSiempre}
-    ${seccion('Categorías', tiraCategorias(categorias))}
     ${bloqueToca}
     ${vistos.length ? seccion('Vistos recientemente', `<div class="carril">${vistos.map(tarjeta).join('')}</div>`, { verTodo: enlace('/favoritos') }) : ''}
     ${ofertas.length ? seccion('Ofertas', `<div class="carril">${ofertas.map(tarjeta).join('')}</div>`) : ''}
@@ -263,9 +269,8 @@ export async function categoria({ params }){
     titulo: cat.nombre,
     html: `
       <div class="filtros">
-        <div class="segmentos" role="group" aria-label="Ordenar">
-          ${Object.entries(ORDENES).map(([k, o], i) => `<button type="button" data-orden="${k}" aria-pressed="${i === 0}">${o.nombre}</button>`).join('')}
-        </div>
+        <label class="campo compacto"><span class="oculto">Ordenar</span>
+          <select id="orden">${Object.entries(ORDENES).map(([k, o]) => `<option value="${k}">${o.nombre}</option>`).join('')}</select></label>
         <label class="interruptor en-linea"><input type="checkbox" id="solo-hay"><span>Sólo disponibles</span></label>
         ${marcas.length > 1 ? `<label class="campo compacto"><span class="oculto">Marca</span>
           <select id="marca"><option value="">Todas las marcas</option>${marcas.map((m) => `<option>${esc(m)}</option>`).join('')}</select></label>` : ''}
@@ -273,21 +278,16 @@ export async function categoria({ params }){
       <p class="nota" id="cuantos"></p>
       <div class="rejilla" id="lista"></div>`,
     alMontar(raiz){
-      let orden = 'sugerido';
+      const $orden = raiz.querySelector('#orden');
       const $lista = raiz.querySelector('#lista'), $cuantos = raiz.querySelector('#cuantos'), $marca = raiz.querySelector('#marca'), $solo = raiz.querySelector('#solo-hay');
       const pinta = () => {
         const m = $marca?.value || '';
-        const vistos = suyos.filter((p) => (!m || p.m === m) && (!$solo.checked || !p.x)).sort(ORDENES[orden].f);
+        const vistos = suyos.filter((p) => (!m || p.m === m) && (!$solo.checked || !p.x)).sort(ORDENES[$orden.value].f);
         $cuantos.textContent = plural(vistos.length, 'producto', 'productos');
         $lista.innerHTML = vistos.length ? vistos.map(tarjeta).join('')
           : estado({ icono: 'agotado', titulo: 'Nada disponible con este filtro', texto: 'Quita «Sólo disponibles» o elige otra marca.' });
       };
-      raiz.querySelector('.segmentos').addEventListener('click', (e) => {
-        const b = e.target.closest('[data-orden]'); if(!b) return;
-        orden = b.dataset.orden;
-        raiz.querySelectorAll('[data-orden]').forEach((x) => x.setAttribute('aria-pressed', x === b));
-        pinta();
-      });
+      $orden.addEventListener('change', pinta);
       $marca?.addEventListener('change', pinta); $solo.addEventListener('change', pinta);
       pinta();
     },
