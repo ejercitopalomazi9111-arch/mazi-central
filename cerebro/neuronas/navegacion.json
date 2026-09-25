@@ -172,6 +172,107 @@
         "se pierde el foco al abrir"
       ],
       "salioDe": "La navegación móvil del sitio del Instituto: trampa de foco, cierre con Escape e `inert` sobre el resto."
+    },
+    {
+      "id": "la-hoja-que-sobrevive-al-atras",
+      "titulo": "La ventanita abierta se quedaba flotando encima de la pantalla nueva",
+      "gravedad": "media",
+      "sintoma": "Con una hoja (<dialog>) abierta, el «atrás» del teléfono o un enlace cambiaba la pantalla de abajo, pero la hoja seguía encima, modal, tapando y bloqueando la pantalla nueva.",
+      "causa": "Las hojas se cuelgan de <body>, fuera del contenido que el enrutador reemplaza. Cambiar la dirección no las toca.",
+      "porque": "En una app de un solo documento, «cambiar de pantalla» es cambiar el hash; nada cierra lo que vive fuera del contenedor que se repinta.",
+      "arreglo": "La propia hoja escucha hashchange (una vez) y se cierra; al cerrarse, quita la escucha y se borra del documento. Está en hoja() de tienda/nucleo/piezas.js, así que la heredan todas.",
+      "comoCazarlo": "En la prueba de uso, abrir una hoja y SIN cerrarla navegar a otra ruta: el siguiente clic falla con «subtree intercepts pointer events». Así salió.",
+      "consejo": "Todo lo que se monta fuera del contenedor de pantallas (hojas, menús flotantes, avisos) necesita saber que la pantalla cambió.",
+      "senales": [
+        "el modal se queda abierto al regresar",
+        "la ventana tapa la pantalla nueva",
+        "intercepts pointer events",
+        "dialog abierto tras cambiar de ruta"
+      ],
+      "salioDe": "el Bloque 3 de la tienda, 24 de septiembre de 2026.",
+      "vecinas": [
+        "volver-atras-que-no-vuelve"
+      ]
+    },
+    {
+      "id": "ir-a-donde-ya-estas-no-hace-nada",
+      "titulo": "«Abrir caja» no cambiaba la pantalla, y Categorías no enseñaba lo recién guardado",
+      "gravedad": "media",
+      "sintoma": "Tras abrir la caja, seguía el formulario de abrir caja (la prueba esperó 20 s el buscador que nunca salió). En Categorías, al guardar una, la lista seguía como antes.",
+      "causa": "Para «volver a pintar» se llamaba ir('/v') estando en /v. Con enrutador por #, asignar el mismo hash no dispara hashchange: no pasa nada, sin error.",
+      "porque": "El navegador sólo avisa cuando la dirección CAMBIA. Pedir ir al mismo lugar es, para él, no pedir nada.",
+      "arreglo": "El armazón pasa a cada pantalla recargar() (= navegar()), que repinta la ruta actual. Se usa en abrir caja, en Categorías y al fallar una venta por existencias.",
+      "comoCazarlo": "Toda acción que termina «y ahora enséñame lo nuevo» en la MISMA pantalla: probarla de punta a punta, no sólo que la llamada al servidor contestó bien. La de Categorías llevaba desde el Bloque 3 sin que nadie la viera.",
+      "consejo": "ir() es para moverse; para refrescar, recargar(). Si alguna vez hace falta ir() a la ruta actual, es un recargar disfrazado.",
+      "senales": [
+        "no se actualiza la pantalla",
+        "hay que salir y volver para ver el cambio",
+        "location.hash igual no navega",
+        "hashchange no dispara"
+      ],
+      "salioDe": "el punto de venta de la tienda, 24 de septiembre de 2026.",
+      "vecinas": [
+        "la-hoja-que-sobrevive-al-atras"
+      ]
+    },
+    {
+      "id": "el-contenedor-reciclado-junta-oyentes",
+      "titulo": "«Volver a pedir» metía el doble después de cancelar",
+      "gravedad": "alta",
+      "sintoma": "Tras cancelar un pedido (que repinta la pantalla), un toque en «Volver a pedir» agregó 4 y 2 en vez de 2 y 1. En Cobrar, cada vuelta a la pantalla habría sumado productos de más.",
+      "causa": "Las pantallas se cuelgan de #contenido con addEventListener, y #contenido era SIEMPRE el mismo elemento: innerHTML cambia lo de adentro, no los oyentes del contenedor. Cada visita sumaba uno.",
+      "porque": "innerHTML = … borra los hijos y sus oyentes, pero el elemento al que se le asigna sigue vivo con todo lo que se le colgó. Leyendo el código de una pantalla no se ve: el defecto está en el armazón.",
+      "arreglo": "navegar() reemplaza #contenido por un clon vacío (cloneNode(false)) antes de pintar cada pantalla. Lo viejo se va con sus oyentes.",
+      "comoCazarlo": "Hacer la misma acción DOS veces con un repintado en medio (recargar, ir y volver) y contar el efecto, no si «funcionó».",
+      "consejo": "Un contenedor que sobrevive a las pantallas no debe recibir oyentes de las pantallas. O se recrea, o cada pantalla se cuelga de un elemento suyo.",
+      "senales": [
+        "se agrega dos veces",
+        "el clic cuenta doble",
+        "después de volver a la pantalla hace todo repetido",
+        "addEventListener duplicado"
+      ],
+      "salioDe": "Mis pedidos de la tienda, 24 de septiembre de 2026.",
+      "vecinas": [
+        "ir-a-donde-ya-estas-no-hace-nada"
+      ]
+    },
+    {
+      "id": "el-mapa-que-nace-en-una-pantalla-cerrada",
+      "titulo": "«_leaflet_pos» al salir de una pantalla con mapa antes de que cargara",
+      "gravedad": "media",
+      "sintoma": "Pasar rápido de Repartidores a Horas y días tronaba con «Cannot read properties of undefined (reading '_leaflet_pos')» en la pantalla NUEVA.",
+      "causa": "El mapa se crea después de un await (bajar Leaflet). Para entonces la pantalla ya había cambiado: Leaflet se montaba en una caja que ya no estaba en la página, y su animación de encuadre corría sobre nada.",
+      "porque": "Todo lo que se monta tras un await puede llegar tarde. El armazón limpia lo que la pantalla le devolvió, pero una pantalla async todavía no devolvía nada.",
+      "arreglo": "crearMapa() revisa el.isConnected después de cargar y se niega ('pantalla cerrada'); destruir() para animaciones y apaga el ResizeObserver; encuadrar sin animación. El armazón acepta que alMontar devuelva una promesa y, si llega tarde, limpia en el acto.",
+      "comoCazarlo": "La prueba de rutas recorre todas las pantallas seguidas y rápido: así salió. Una prueba que abre cada pantalla con calma no lo ve.",
+      "consejo": "Después de cada await en código de pantalla, preguntar: ¿sigo en la pantalla?",
+      "senales": [
+        "_leaflet_pos",
+        "error al cambiar de pantalla",
+        "mapa truena",
+        "leaflet undefined"
+      ],
+      "salioDe": "los mapas de la tienda, 24 de septiembre de 2026.",
+      "vecinas": [
+        "el-contenedor-reciclado-junta-oyentes"
+      ]
+    },
+    {
+      "id": "la-direccion-que-cambia-mientras-arranca",
+      "titulo": "Cambiar de pantalla mientras la app todavía carga la truena",
+      "gravedad": "media",
+      "sintoma": "Un error en consola «Cannot set properties of null (setting 'hidden')» al abrir la app con un enlace o dar «atrás» muy rápido; la pantalla sí termina de pintar.",
+      "causa": "El enrutador escucha `hashchange` desde que carga el archivo, pero el armazón (barra de arriba, menú) se pinta hasta que llega el negocio de la base. Un cambio de dirección en ese hueco llama a navegar() sobre un armazón que no existe.",
+      "porque": "Escuchar eventos y tener dónde pintar son dos momentos distintos del arranque, y entre ellos hay una llamada a la red de uno o dos segundos.",
+      "arreglo": "navegar() sale sin hacer nada si el armazón no está; el arranque navega solo en cuanto lo pinta, con la dirección que haya en ese momento.",
+      "comoCazarlo": "En una prueba, recargar y cambiar el `#` de inmediato sin esperar a que cargue. Leyendo no se ve: salió de una prueba de Cotizar que navegaba con prisa.",
+      "consejo": "Todo lo que el armazón pinta después de una espera de red, el enrutador tiene que poder encontrárselo vacío.",
+      "senales": [
+        "cannot set properties of null hidden",
+        "truena al abrir con un enlace",
+        "error al dar atrás rápido"
+      ],
+      "salioDe": "La tienda, 25 de septiembre: tienda/nucleo/app.js navegar()."
     }
   ]
 }

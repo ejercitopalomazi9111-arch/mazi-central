@@ -295,6 +295,25 @@
       "vecinas": [
         "dos-cosas-con-la-misma-clase"
       ]
+    },
+    {
+      "id": "el-select-que-mide-su-opcion-mas-larga",
+      "titulo": "Un menú de modelos de impresora empujaba la página hacia un lado",
+      "gravedad": "media",
+      "sintoma": "En el teléfono, la pantalla de Impresora se salía 55 px: toda la columna, no sólo el menú.",
+      "causa": "Un <select> toma como ancho mínimo el de su opción más larga («La que tenga instalada el teléfono o la computadora»). Dentro de un grid con columna automática, ese mínimo ensancha la columna entera.",
+      "porque": "Es el mismo mecanismo de `1fr = minmax(auto, 1fr)`: el contenido fija el piso. Con opciones cortas nunca se nota.",
+      "arreglo": "`.campo select{ max-width: 100%; min-width: 0 }` para todos, y la columna del grid en minmax(0, 1fr).",
+      "comoCazarlo": "La prueba de rutas mide scrollWidth contra el ancho de la ventana en cada pantalla a 390 px. Para encontrar al culpable: los elementos cuyo borde derecho pasa la ventana.",
+      "consejo": "Todo contenedor grid que tenga formularios: minmax(0, 1fr), siempre.",
+      "senales": [
+        "select muy ancho",
+        "la página se sale de lado",
+        "opción larga ensancha",
+        "overflow horizontal en el teléfono"
+      ],
+      "salioDe": "la configuración de impresoras de la tienda, 24 de septiembre de 2026.",
+      "vecinas": []
     }
   ]
 }

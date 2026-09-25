@@ -1,0 +1,957 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   DATOS · la única puerta a la base
+   ──────────────────────────────────────────────────────────────────────────
+   Ninguna pantalla habla con Supabase por su cuenta: pasan por aquí. Así, si
+   mañana cambia el proveedor (regla §2: conectar sí, depender no), se cambia
+   este archivo y no treinta pantallas.
+
+   Tres cosas viven aquí:
+     · el NEGOCIO que se abrió (su marca, sus ajustes, si es de muestra);
+     · el CATÁLOGO, ya con existencias, en la forma corta que usan las pantallas;
+     · la SESIÓN: nadie necesita cuenta para ver y llenar el carrito. La sesión
+       se crea cuando hace falta —al pagar, o al entrar a un apartado del
+       personal en el negocio de muestra—, nunca antes.
+   El carrito vive en el teléfono (localStorage) y sobrevive a todo eso.
+   ═════════════════════════════════════════════════════════════════════════ */
+import { crearMemoria } from './memoria.js';
+import { SUPABASE_URL, SUPABASE_LLAVE_PUBLICABLE, negocioPedido } from '../config.js';
+import * as DEV from './devolucion.js';
+import * as OF from './ofertas.js';
+import { crearFila, subir, sinRed } from './fila.js';
+
+const SLUG = negocioPedido();
+
+export const db = self.supabase.createClient(SUPABASE_URL, SUPABASE_LLAVE_PUBLICABLE, {
+  auth: { persistSession: true, autoRefreshToken: true, storageKey: 'tienda-sesion-' + SLUG },
+});
+
+/* ── Negocio ───────────────────────────────────────────────────────────── */
+let _negocio;
+export function negocio(){
+  return _negocio ??= (async () => {
+    const { data, error } = await db.from('negocios')
+      .select('id, slug, nombre, giro, marca, ajustes').eq('slug', SLUG).maybeSingle();
+    if(error) throw new ErrorDeDatos('No pudimos abrir la tienda', error);
+    if(!data) throw new ErrorDeDatos('Esta tienda no existe', { code: 'negocio_no_existe' });
+    return data;
+  })().catch((e) => { _negocio = undefined; throw e; });
+}
+
+export class ErrorDeDatos extends Error{
+  constructor(mensaje, causa){ super(mensaje); this.causa = causa; }
+}
+
+/* PostgREST entrega hasta 1000 renglones por vuelta. Un catálogo importado de
+   Excel pasa de eso el primer día, así que se pide por páginas. */
+async function todo(consulta){
+  const salida = [];
+  for(let desde = 0; ; desde += 1000){
+    const { data, error } = await consulta().range(desde, desde + 999);
+    if(error) throw new ErrorDeDatos('No pudimos cargar el catálogo', error);
+    salida.push(...data);
+    if(data.length < 1000) return salida;
+  }
+}
+
+/* ── Catálogo ──────────────────────────────────────────────────────────── */
+/* Forma corta, la misma que muestra/catalogo.json:
+     id · n nombre · m marca · c clave de categoría · p precio · a precio antes
+     f foto principal · fotos · d descripción · campos · q cuántas se pueden
+     vender (cantidad − apartado) · x agotado · sku · cb código de barras   */
+let _catalogo;
+export function catalogo(){
+  return _catalogo ??= (async () => {
+    const n = await negocio();
+    const [cats, prods, exist] = await Promise.all([
+      todo(() => db.from('categorias').select('id, clave, nombre, icono, orden, plantilla, padre_id')
+        .eq('negocio_id', n.id).order('orden')),
+      todo(() => db.from('productos').select('id, categoria_id, nombre, marca, descripcion, precio, precio_antes, campos, fotos, sku, codigo_barras')
+        .eq('negocio_id', n.id).eq('activo', true).order('nombre')),
+      todo(() => db.from('existencias').select('producto_id, cantidad, apartado, minimo').eq('negocio_id', n.id)),
+    ]);
+    const clavePorId = new Map(cats.map((c) => [c.id, c.clave]));
+    const hay = new Map(exist.map((e) => [e.producto_id, e]));
+    const productos = prods.map((p) => {
+      const e = hay.get(p.id);
+      const q = e ? e.cantidad - e.apartado : 0;
+      return {
+        id: p.id, n: p.nombre, m: p.marca, c: clavePorId.get(p.categoria_id) || '',
+        p: Number(p.precio), a: p.precio_antes ? Number(p.precio_antes) : null,
+        f: p.fotos?.[0] || '', fotos: p.fotos || [], d: p.descripcion, campos: p.campos || {},
+        q, min: e?.minimo ?? 0, x: q <= 0, sku: p.sku, cb: p.codigo_barras,
+      };
+    });
+    const categorias = cats.map((c) => ({ id: c.clave, uuid: c.id, nombre: c.nombre, icono: c.icono, plantilla: c.plantilla, padre: c.padre_id }));
+    return { categorias, productos, porId: new Map(productos.map((p) => [p.id, p])) };
+  })().catch((e) => { _catalogo = undefined; throw e; });
+}
+/* Tras vender o ajustar, lo que se ve tiene que ser lo que hay. */
+export function olvidarCatalogo(){ _catalogo = undefined; }
+
+/* ── Lo que la tienda recuerda del cliente (nucleo/memoria.js) ──────────── */
+export const memoria = crearMemoria(globalThis.localStorage ?? { getItem: () => null, setItem(){} }, SLUG);
+
+/* ── Carrito ───────────────────────────────────────────────────────────── */
+const LLAVE_CARRITO = 'tienda-carrito-' + SLUG;
+// Sólo renglones sanos: un id de texto y una cantidad entera positiva. Un
+// carrito guardado por otra versión, a mano o a medias no debe poder meter
+// «-4», «mil» o NaN a la cuenta (pruebas-personas.mjs · el niño).
+const sano = (x) => Array.isArray(x) && typeof x[0] === 'string' && Number.isInteger(x[1]) && x[1] > 0;
+const leer = () => { try{ const v = JSON.parse(localStorage.getItem(LLAVE_CARRITO) || '[]'); return new Map(Array.isArray(v) ? v.filter(sano) : []); }catch(e){ return new Map(); } };
+const oyentes = new Set();
+let _carro = leer();
+const guardar = () => {
+  try{ localStorage.setItem(LLAVE_CARRITO, JSON.stringify([..._carro])); }catch(e){}
+  oyentes.forEach((f) => f());
+};
+export const carrito = {
+  agregar(id, n = 1){ n = Math.floor(Number(n)); if(!(n > 0)) return; _carro.set(id, (_carro.get(id) || 0) + n); guardar(); },
+  quitar(id){ const v = (_carro.get(id) || 0) - 1; v > 0 ? _carro.set(id, v) : _carro.delete(id); guardar(); },
+  poner(id, n){ n = Math.floor(Number(n)); n > 0 ? _carro.set(id, n) : _carro.delete(id); guardar(); },
+  cuantas(id){ return _carro.get(id) || 0; },
+  renglones(){ return [..._carro]; },
+  piezas(){ let t = 0; _carro.forEach((n) => t += n); return t; },
+  vaciar(){ _carro.clear(); guardar(); },
+  alCambiar(f){ oyentes.add(f); return () => oyentes.delete(f); },
+};
+
+/* ── Sesión ────────────────────────────────────────────────────────────── */
+let _yo;   // { id, rol, nombre } o null
+export async function yo(){
+  if(_yo !== undefined) return _yo;
+  const { data: { session } } = await db.auth.getSession();
+  if(!session){ return _yo = null; }
+  const { data } = await db.from('perfiles').select('id, rol, nombre').eq('id', session.user.id).maybeSingle();
+  return _yo = data || null;
+}
+
+/* Pide a la función `entrar` un token de un solo uso y lo canjea por sesión.
+   No manda correo: ver supabase/funciones/entrar/index.ts. */
+/* Dos teléfonos entrando a la MISMA cuenta de muestra al mismo tiempo (Carlos
+   y su cliente abriendo «ver como» a la vez): el token nuevo invalida al que
+   todavía no se canjeaba y uno de los dos veía «No pudimos entrar». Se pide
+   otro y se reintenta, con una espera al azar para no volver a chocar. */
+async function entrar(tipo, rol, intento = 0){
+  const r = await fetch(SUPABASE_URL + '/functions/v1/entrar', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', apikey: SUPABASE_LLAVE_PUBLICABLE },
+    body: JSON.stringify({ tipo, negocio: SLUG, rol }),
+  });
+  const cuerpo = await r.json().catch(() => ({}));
+  if(!r.ok || !cuerpo.token_hash){
+    if(intento < 2 && r.status >= 500) return new Promise((ok) => setTimeout(ok, 300 + Math.random() * 700)).then(() => entrar(tipo, rol, intento + 1));
+    throw new ErrorDeDatos('No pudimos entrar', cuerpo);
+  }
+  const { error } = await db.auth.verifyOtp({ type: 'magiclink', token_hash: cuerpo.token_hash });
+  if(error){
+    if(intento < 2) return new Promise((ok) => setTimeout(ok, 300 + Math.random() * 700)).then(() => entrar(tipo, rol, intento + 1));
+    throw new ErrorDeDatos('No pudimos entrar', error);
+  }
+  _yo = undefined;
+  return yo();
+}
+
+/* El cliente que empieza a pagar sin cuenta. */
+export async function asegurarSesion(){
+  return (await yo()) || entrar('invitado');
+}
+
+/* «Ver como» del negocio de muestra. La función se niega en uno real. */
+/* En fila: el armazón cambia de rol solo al abrir una pantalla del personal,
+   y si mientras tanto alguien toca «ver como admin», las dos entradas se
+   cruzaban y la que llegaba al último —la automática, de cajero— dejaba al
+   admin sin permisos a media pantalla. Así se hacen una tras otra y gana la
+   última que se pidió (lo cazó pruebas-concurrencia.mjs, 4 de 6 corridas). */
+let _cola = Promise.resolve();
+export function verComo(rol){
+  const t = _cola.then(async () => {
+    const actual = await yo();
+    if(actual?.rol === rol) return actual;
+    await db.auth.signOut({ scope: 'local' });
+    _yo = undefined;
+    return entrar('demo', rol);
+  });
+  _cola = t.catch(() => {});
+  return t;
+}
+
+export async function salir(){
+  await db.auth.signOut({ scope: 'local' });
+  _yo = null;
+}
+
+/* Llamar a una función del servidor y traducir su error a algo que se lee.
+   Los códigos vienen de 0003/0006 (`raise exception 'no_alcanza'` …). */
+const DICCIONARIO = {
+  sin_existencias: 'Ya no alcanzan las piezas de:',
+  pago_insuficiente: 'Lo que se recibió no alcanza para el total.',
+  falta_cobro: 'Falta decir cómo pagó.',
+  no_autorizado: 'Tu cuenta no puede hacer esto.',
+  sin_caja: 'Primero hay que abrir la caja.',
+  sin_turno: 'No tienes un turno abierto.',
+  sin_sesion: 'Hace falta entrar primero.',
+  paso_invalido: 'Ese paso no se puede dar desde donde va el pedido.',
+  falta_motivo: 'Falta decir el motivo.',
+  pedido_vacio: 'No hay nada que cobrar.',
+  cantidad_invalida: 'La cantidad no es válida.',
+  producto_invalido: 'Uno de los productos ya no está a la venta.',
+  ya_pagado: 'Esto ya estaba pagado.',
+  sin_cambio: 'No hubo cambios que guardar.',
+  no_existe: 'Eso ya no existe.',
+  no_es_repartidor: 'Esa persona no es repartidor.',
+  no_a_ti_mismo: 'No puedes cambiarte el rol a ti mismo.',
+  otro_negocio: 'Eso es de otro negocio.',
+  devolucion_excede: 'Eso ya se devolvió completo:',
+  falta_nombre: 'Falta su nombre.',
+  telefono_invalido: 'Un WhatsApp son 10 números.',
+};
+export async function llamar(funcion, args){
+  const { data, error } = await db.rpc(funcion, args);
+  if(error){
+    const m = error.message || '';
+    const clave = Object.keys(DICCIONARIO).find((k) => m.startsWith(k));
+    /* 'sin_existencias: Cera X' → «Ya no alcanzan las piezas de: Cera X» */
+    const resto = clave && m.includes(':') ? ' ' + m.slice(m.indexOf(':') + 1).trim() : '';
+    throw new ErrorDeDatos(clave ? DICCIONARIO[clave] + resto : 'Algo falló: ' + (m || 'sin detalle'), error);
+  }
+  return data;
+}
+
+/* ══ ADMINISTRACIÓN DEL CATÁLOGO (Bloque 3) ═════════════════════════════════
+   Lo que escribe el admin. RLS (0002) ya exige que sea admin de ESTE negocio:
+   aquí no se revisa rol, se deja que la base diga que no y se traduce el error.
+   Inventario NUNCA se escribe directo: pasa por ajustar_inventario / poner_minimo. */
+
+function revisa({ data, error }, que){
+  if(error) throw new ErrorDeDatos(que, error);
+  return data;
+}
+
+/* Todo el catálogo, activos y no activos, con existencias crudas. */
+export async function catalogoAdmin(){
+  const n = await negocio();
+  const [cats, prods, exist] = await Promise.all([
+    todo(() => db.from('categorias').select('*').eq('negocio_id', n.id).order('orden')),
+    todo(() => db.from('productos').select('*').eq('negocio_id', n.id).order('nombre')),
+    todo(() => db.from('existencias').select('producto_id, cantidad, apartado, minimo, actualizado').eq('negocio_id', n.id)),
+  ]);
+  const hay = new Map(exist.map((e) => [e.producto_id, e]));
+  const productos = prods.map((p) => ({ ...p, precio: Number(p.precio), precio_antes: p.precio_antes == null ? null : Number(p.precio_antes),
+    existencia: hay.get(p.id) || { cantidad: 0, apartado: 0, minimo: 0 } }));
+  return { negocio: n, categorias: cats, productos, porId: new Map(productos.map((p) => [p.id, p])) };
+}
+
+/* Alta o cambio. Sólo se mandan los campos que el formulario conoce. */
+const CAMPOS_PRODUCTO = ['nombre', 'marca', 'descripcion', 'precio', 'precio_antes', 'sku', 'codigo_barras', 'categoria_id', 'campos', 'fotos', 'activo'];
+export async function guardarProducto(id, datos){
+  const n = await negocio();
+  const fila = Object.fromEntries(CAMPOS_PRODUCTO.filter((k) => k in datos).map((k) => [k, datos[k]]));
+  const r = id
+    ? await db.from('productos').update(fila).eq('id', id).select('id').single()
+    : await db.from('productos').insert({ ...fila, negocio_id: n.id }).select('id').single();
+  olvidarCatalogo();
+  if(r.error?.code === '23505') throw new ErrorDeDatos('Ese código de barras ya lo tiene otro producto.', r.error);
+  return revisa(r, 'No se pudo guardar el producto').id;
+}
+
+export async function ajustarInventario(id, delta, nota){
+  const r = await llamar('ajustar_inventario', { p_producto: id, p_delta: delta, p_nota: nota });
+  olvidarCatalogo(); return r;
+}
+export async function contarInventario(id, hay, nota){
+  const r = await llamar('contar_inventario', { p_producto: id, p_hay: hay, p_nota: nota });
+  olvidarCatalogo(); return r;
+}
+export async function ponerMinimo(id, minimo){
+  const r = await llamar('poner_minimo', { p_producto: id, p_minimo: minimo });
+  olvidarCatalogo(); return r;
+}
+
+export async function movimientosDe(id, cuantos = 30){
+  return revisa(await db.from('movimientos').select('delta, motivo, canal, nota, cuando, quien:perfiles(nombre)')
+    .eq('producto_id', id).order('cuando', { ascending: false }).limit(cuantos), 'No se pudo leer el historial');
+}
+
+export async function guardarCategoria(id, datos){
+  const n = await negocio();
+  const r = id
+    ? await db.from('categorias').update(datos).eq('id', id).select('id').single()
+    : await db.from('categorias').insert({ ...datos, negocio_id: n.id }).select('id').single();
+  olvidarCatalogo();
+  if(r.error?.code === '23505') throw new ErrorDeDatos('Ya hay una categoría con ese nombre.', r.error);
+  return revisa(r, 'No se pudo guardar la categoría').id;
+}
+
+/* Sólo se borra una categoría vacía; con productos adentro, se oculta. La base
+   pondría categoria_id en null y dejaría productos huérfanos sin avisar. */
+export async function borrarCategoria(id){
+  const { count, error } = await db.from('productos').select('id', { count: 'exact', head: true }).eq('categoria_id', id);
+  if(error) throw new ErrorDeDatos('No se pudo revisar la categoría', error);
+  if(count) throw new ErrorDeDatos(`Tiene ${count} productos: muévelos o mejor ocúltala.`, { code: 'con_productos' });
+  revisa(await db.from('categorias').delete().eq('id', id), 'No se pudo borrar la categoría');
+  olvidarCatalogo();
+}
+
+export async function guardarNegocio(cambios){
+  const n = await negocio();
+  const r = await db.from('negocios').update(cambios).eq('id', n.id).select('id, slug, nombre, giro, marca, ajustes').single();
+  _negocio = Promise.resolve(revisa(r, 'No se pudieron guardar los ajustes'));
+  return _negocio;
+}
+
+/* Fotos: se reducen EN EL TELÉFONO antes de subir. Una foto de cámara pesa
+   4 MB; la tienda la enseña a 480 px. Se sube a 1200 px en WebP (≈150 KB). */
+export async function subirFoto(archivo){
+  const n = await negocio();
+  const img = await createImageBitmap(archivo);
+  const lado = Math.min(1, 1200 / Math.max(img.width, img.height));
+  const lienzo = new OffscreenCanvas(Math.round(img.width * lado), Math.round(img.height * lado));
+  lienzo.getContext('2d').drawImage(img, 0, 0, lienzo.width, lienzo.height);
+  const blob = await lienzo.convertToBlob({ type: 'image/webp', quality: 0.85 });
+  const ruta = `${n.id}/${crypto.randomUUID()}.webp`;
+  revisa(await db.storage.from('fotos').upload(ruta, blob, { contentType: 'image/webp', cacheControl: '31536000' }), 'No se pudo subir la foto');
+  return db.storage.from('fotos').getPublicUrl(ruta).data.publicUrl;
+}
+
+/* EAN-13 internos (empiezan con 2) para los que no traen código. En lote y en
+   el servidor: son cientos (0008). Devuelve cuántos recibieron código. */
+export async function asignarCodigos(ids){
+  const r = await llamar('asignar_codigos', { p_ids: ids });
+  olvidarCatalogo(); return r;
+}
+
+/* ══ IMPORTAR (Bloque 4) ════════════════════════════════════════════════════
+   Todo o nada, armado desde aquí: los productos nuevos entran en tandas de 500
+   (cada tanda es UNA sentencia, así que entra completa o no entra) y si una
+   tanda falla, se borra lo que ya había entrado. Lo cambiado se guarda antes
+   como estaba, para deshacer. Las existencias pasan por contar_inventario, con
+   su movimiento y su motivo, como cualquier otro ajuste.
+   El historial vive en este teléfono (localStorage). La versión en el servidor
+   está escrita en la migración 0009 y todavía sin aplicar; ver PENDIENTES.md. */
+const LLAVE_IMPORTACIONES = 'tienda-importaciones-' + SLUG;
+export function importacionesGuardadas(){
+  try{ return JSON.parse(localStorage.getItem(LLAVE_IMPORTACIONES) || '[]'); }catch(e){ return []; }
+}
+function guardarImportaciones(lista){
+  try{ localStorage.setItem(LLAVE_IMPORTACIONES, JSON.stringify(lista.slice(0, 20))); }catch(e){}
+}
+const COLUMNAS_PRODUCTO = 'id, negocio_id, categoria_id, nombre, marca, descripcion, precio, precio_antes, sku, codigo_barras, campos, fotos, activo, externo_id';
+const tandas = (lista, n) => Array.from({ length: Math.ceil(lista.length / n) }, (_, i) => lista.slice(i * n, i * n + n));
+
+/* Hace `trabajo` sobre cada elemento, de `a` en `a` a la vez. */
+async function enParalelo(lista, a, trabajo){
+  const salida = new Array(lista.length); let sig = 0;
+  await Promise.all(Array.from({ length: Math.min(a, lista.length) }, async () => {
+    while(sig < lista.length){ const i = sig++; salida[i] = await trabajo(lista[i], i); }
+  }));
+  return salida;
+}
+
+function errorDeImportar(error){
+  if(error?.code === '23505'){
+    const cb = /\)=\([^,]*,\s*([^)]+)\)/.exec(error.details || '')?.[1];
+    return new ErrorDeDatos(cb ? `El código de barras ${cb} ya lo tiene otro producto de la tienda.` : 'Un código de barras del archivo ya lo tiene otro producto.', error);
+  }
+  if(error?.code === '23514') return new ErrorDeDatos('Un precio del archivo está en cero o negativo donde no se puede.', error);
+  return new ErrorDeDatos('No se pudo guardar la importación: ' + (error?.message || 'sin detalle'), error);
+}
+
+async function borrarProductos(ids){
+  for(const t of tandas(ids, 200)) await db.from('productos').delete().in('id', t);
+}
+
+/* nuevos: [{nombre, marca, …, existencias?}] · cambios: [{id, …campos, existencias?}]
+   avance(texto) va diciendo en qué va. */
+export async function importarProductos({ archivo, nuevos, cambios }, avance = () => {}){
+  const n = await negocio();
+  const id = crypto.randomUUID();
+  const sinExist = ({ existencias, ...r }) => r;
+
+  // 1 · Cómo estaba lo que se va a cambiar.
+  avance('Guardando cómo estaba todo, por si hay que deshacer…');
+  const antes = [];
+  for(const t of tandas(cambios.map((c) => c.id), 200)){
+    const [p, e] = await Promise.all([
+      db.from('productos').select(COLUMNAS_PRODUCTO).in('id', t),
+      db.from('existencias').select('producto_id, cantidad').in('producto_id', t),
+    ]);
+    if(p.error || e.error) throw errorDeImportar(p.error || e.error);
+    const cant = new Map(e.data.map((x) => [x.producto_id, x.cantidad]));
+    antes.push(...p.data.map((x) => ({ producto: x, cantidad: cant.get(x.id) ?? 0 })));
+  }
+
+  // 2 · Los nuevos, en tandas; si una falla, fuera lo que ya entró.
+  const creados = [];
+  const filasNuevas = nuevos.map((r, i) => ({ ...sinExist(r), negocio_id: n.id, externo_id: `importacion:${id}:${i}` }));
+  try{
+    for(const [k, t] of tandas(filasNuevas, 500).entries()){
+      avance(`Dando de alta productos… ${Math.min((k + 1) * 500, filasNuevas.length)} de ${filasNuevas.length}`);
+      const r = await db.from('productos').insert(t).select('id, externo_id');
+      if(r.error) throw errorDeImportar(r.error);
+      creados.push(...r.data);
+    }
+  }catch(e){
+    avance('Algo falló: quitando lo que alcanzó a entrar…');
+    await borrarProductos(creados.map((c) => c.id));
+    throw e;
+  }
+
+  // 3 · Los cambios: cada renglón completo, encima de como estaba.
+  const porId = new Map(antes.map((a) => [a.producto.id, a.producto]));
+  const filasCambio = cambios.map((c) => ({ ...porId.get(c.id), ...sinExist(c), activo: true }));
+  try{
+    for(const t of tandas(filasCambio, 500)){
+      avance('Actualizando los que ya tenías…');
+      const r = await db.from('productos').upsert(t, { onConflict: 'id' });
+      if(r.error) throw errorDeImportar(r.error);
+    }
+  }catch(e){
+    avance('Algo falló: regresando todo como estaba…');
+    for(const t of tandas(antes.map((a) => a.producto), 500)) await db.from('productos').upsert(t, { onConflict: 'id' });
+    await borrarProductos(creados.map((c) => c.id));
+    throw e;
+  }
+
+  // 4 · Existencias, con su movimiento. Ya no se deshace todo si una falla:
+  //     se cuenta y se dice cuál.
+  const idDeNuevo = new Map(creados.map((c) => [Number(c.externo_id.split(':')[2]), c.id]));
+  const cantAntes = new Map(antes.map((a) => [a.producto.id, a.cantidad]));
+  const conteos = [
+    ...nuevos.map((r, i) => ({ id: idDeNuevo.get(i), hay: r.existencias, era: 0 })),
+    ...cambios.map((c) => ({ id: c.id, hay: c.existencias, era: cantAntes.get(c.id) ?? 0 })),
+  ].filter((x) => x.id && Number.isInteger(x.hay) && x.hay !== x.era);
+  let hechos = 0; const fallaron = [];
+  await enParalelo(conteos, 6, async (x) => {
+    try{ await llamar('contar_inventario', { p_producto: x.id, p_hay: x.hay, p_nota: 'Importado de ' + archivo }); }
+    catch(e){ fallaron.push(x.id); }
+    avance(`Poniendo existencias… ${++hechos} de ${conteos.length}`);
+  });
+
+  const registro = { id, archivo, cuando: Date.now(), creados: creados.map((c) => c.id), antes, deshecha: null,
+    cuenta: { creados: creados.length, actualizados: cambios.length, existencias: conteos.length - fallaron.length } };
+  guardarImportaciones([registro, ...importacionesGuardadas()]);
+  olvidarCatalogo();
+  return { ...registro.cuenta, id, fallaron };
+}
+
+/* Como Ctrl+Z: sólo la última que siga en pie. Lo creado se borra, salvo lo
+   que ya se vendió (se oculta, para no perder su historia). */
+export async function deshacerImportacion(id, avance = () => {}){
+  const lista = importacionesGuardadas();
+  const r = lista.find((x) => x.id === id);
+  if(!r) throw new ErrorDeDatos('Esa importación no está en este teléfono.', {});
+  if(r.deshecha) throw new ErrorDeDatos('Esa importación ya se había deshecho.', {});
+  if(lista.find((x) => !x.deshecha) !== r) throw new ErrorDeDatos('Primero hay que deshacer la más reciente.', {});
+
+  avance('Revisando qué ya se vendió…');
+  const vendidos = new Set();
+  for(const t of tandas(r.creados, 200)){
+    const v = await db.from('movimientos').select('producto_id').in('producto_id', t).eq('motivo', 'venta');
+    if(v.error) throw errorDeImportar(v.error);
+    v.data.forEach((x) => vendidos.add(x.producto_id));
+  }
+  const ocultar = r.creados.filter((x) => vendidos.has(x)), borrar = r.creados.filter((x) => !vendidos.has(x));
+  avance('Quitando los productos nuevos…');
+  await borrarProductos(borrar);
+  for(const t of tandas(ocultar, 200)) await db.from('productos').update({ activo: false }).in('id', t);
+
+  avance('Regresando los cambiados como estaban…');
+  for(const t of tandas(r.antes.map((a) => a.producto), 500)){
+    const u = await db.from('productos').upsert(t, { onConflict: 'id' });
+    if(u.error) throw errorDeImportar(u.error);
+  }
+  const ahora = new Map();
+  for(const t of tandas(r.antes.map((a) => a.producto.id), 200)){
+    const e = await db.from('existencias').select('producto_id, cantidad').in('producto_id', t);
+    (e.data || []).forEach((x) => ahora.set(x.producto_id, x.cantidad));
+  }
+  await enParalelo(r.antes.filter((a) => ahora.get(a.producto.id) !== a.cantidad), 6, (a) =>
+    llamar('contar_inventario', { p_producto: a.producto.id, p_hay: a.cantidad, p_nota: 'Se deshizo la importación de ' + r.archivo }).catch(() => null));
+
+  r.deshecha = Date.now();
+  guardarImportaciones(lista);
+  olvidarCatalogo();
+  return { borrados: borrar.length, ocultos: ocultar.length, restaurados: r.antes.length };
+}
+
+/* ══ PUNTO DE VENTA (Bloque 5) ══════════════════════════════════════════════
+   Vender pasa SIEMPRE por vender() del servidor (0003/0006): bloquea las
+   existencias, exige el cobro en mostrador y deja rastro. La pantalla nunca
+   descuenta nada por su cuenta. */
+
+/* La caja abierta de quien está en la pantalla, o null. */
+export async function miCaja(){
+  const p = await yo();
+  if(!p) return null;
+  const r = await db.from('cajas').select('id, abierta, fondo').eq('perfil_id', p.id).is('cerrada', null).maybeSingle();
+  if(r.error) throw new ErrorDeDatos('No se pudo revisar la caja', r.error);
+  return r.data;
+}
+export const abrirCaja = (fondo) => llamar('abrir_caja', { p_fondo: fondo });
+export const cerrarCaja = (contado, nota) => llamar('cerrar_caja', { p_contado: contado, p_nota: nota || null });
+
+/* Lo cobrado en una caja, por forma de pago, en pesos. */
+export async function cobrosDeCaja(cajaId){
+  const r = await db.from('cobros').select('metodo, monto, cambio, cuando, pedido_id').eq('caja_id', cajaId);
+  if(r.error) throw new ErrorDeDatos('No se pudo leer lo cobrado', r.error);
+  return r.data.map((c) => ({ ...c, monto: Number(c.monto) }));
+}
+
+/* Ventas de mostrador hechas sin red, esperando subir (nucleo/fila.js). */
+export const filaMostrador = crearFila(typeof localStorage === 'undefined' ? { getItem: () => null, setItem(){} } : localStorage, 'tienda-fila-' + SLUG);
+
+async function venderEnServidor({ renglones, cobro, caja, cliente }){
+  const n = await negocio();
+  return llamar('vender', {
+    p_negocio: n.id, p_canal: 'pos', p_caja: caja, p_cliente: cliente || null,
+    p_renglones: renglones.map(({ id, cantidad }) => ({ producto_id: id, cantidad })),
+    p_cobro: cobro,
+  });
+}
+
+/* renglones: [{ id, cantidad, precio?, nombre? }]. Sin red, la venta se guarda
+   en la fila con folio provisional y total calculado aquí (con los precios que
+   se ven); el servidor la cobra con los suyos al subir. */
+export async function venderMostrador({ renglones, cobro, caja, cliente }){
+  try{
+    const r = await venderEnServidor({ renglones, cobro, caja, cliente });
+    olvidarCatalogo();
+    return r;
+  }catch(err){
+    if(!sinRed(err)) throw err;
+    const total = renglones.reduce((t, x) => t + Math.round(Number(x.precio || 0) * 100) * x.cantidad, 0) / 100;
+    const item = filaMostrador.agregar({ renglones: renglones.map(({ id, cantidad, precio, nombre }) => ({ id, cantidad, precio, nombre })), cobro, caja, cliente: cliente || null, total });
+    const recibido = Number(cobro?.recibido ?? total);
+    return { folio: item.folio, total, cambio: cobro?.metodo === 'efectivo' ? Math.max(0, recibido - total) : 0, pendiente: true };
+  }
+}
+
+/* Sube lo que se vendió sin red. Lo llama la app al volver la red y al abrir. */
+export async function subirVentasPendientes(){
+  if(!filaMostrador.pendientes().length) return { subidas: [], rechazadas: [], cortada: false };
+  const r = await subir(filaMostrador, (v) => venderEnServidor(v));
+  if(r.subidas.length) olvidarCatalogo();
+  return r;
+}
+
+/* Las ventas de un día (00:00 de hoy en el teléfono, hasta ahora). */
+export async function ventasDesde(desde){
+  const n = await negocio();
+  const r = await db.from('pedidos')
+    .select('id, folio, canal, estado, total, forma_pago, pagado, creado, renglones(producto_id, nombre, precio, cantidad, importe), cobros(metodo, monto, recibido, cambio)')
+    .eq('negocio_id', n.id).gte('creado', desde.toISOString()).neq('estado', 'cancelado')
+    .order('creado', { ascending: false }).limit(1000);
+  if(r.error) throw new ErrorDeDatos('No se pudieron leer las ventas', r.error);
+  return r.data.map((p) => ({ ...p, total: Number(p.total) }));
+}
+
+/* Para reportes y consejos: todas las ventas desde una fecha, por páginas (un
+   negocio con movimiento pasa de 1000 pedidos en un par de meses). */
+export async function ventasReporte(desde){
+  const n = await negocio();
+  const filas = await todo(() => db.from('pedidos')
+    .select('id, folio, canal, estado, total, forma_pago, creado, renglones(producto_id, nombre, precio, cantidad, importe)')
+    .eq('negocio_id', n.id).gte('creado', new Date(desde).toISOString()).order('creado'));
+  return filas.map((p) => ({ ...p, total: Number(p.total) }));
+}
+
+export async function cajasCerradas(cuantas = 10){
+  const n = await negocio();
+  const r = await db.from('cajas').select('id, abierta, cerrada, fondo, esperado, contado, nota, quien:perfiles(nombre)')
+    .eq('negocio_id', n.id).not('cerrada', 'is', null).order('cerrada', { ascending: false }).limit(cuantas);
+  if(r.error) throw new ErrorDeDatos('No se pudo leer el historial de caja', r.error);
+  return r.data;
+}
+
+/* ══ DEVOLUCIONES (Bloque 5) ═════════════════════════════════════════════════
+   Con 0011 aplicada, todo lo hace devolver() en el servidor. Sin ella (hoy),
+   el admin regresa las piezas con ajustar_inventario y la nota lleva el
+   reembolso; la caja lo lee de ahí (nucleo/devolucion.js). */
+export async function ventaPorFolio(folio){
+  const n = await negocio();
+  const r = await db.from('pedidos')
+    .select('id, folio, canal, estado, subtotal, descuento, total, forma_pago, creado, cliente:clientes(nombre), renglones(producto_id, nombre, precio, cantidad, importe)')
+    .eq('negocio_id', n.id).eq('folio', folio).maybeSingle();
+  if(r.error) throw new ErrorDeDatos('No se pudo buscar el ticket', r.error);
+  return r.data ? { ...r.data, total: Number(r.data.total) } : null;
+}
+
+/* Movimientos cuya nota empieza con «Devolución #»: de una venta, o de una caja (desde que abrió, por quien la tiene). */
+async function movsDevolucion({ folio, desde, quien } = {}){
+  const n = await negocio();
+  let q = db.from('movimientos').select('producto_id, delta, nota, cuando, quien').eq('negocio_id', n.id)
+    .like('nota', folio != null ? `Devolución #${folio} · %` : 'Devolución #%');
+  if(desde) q = q.gte('cuando', new Date(desde).toISOString());
+  if(quien) q = q.eq('quien', quien);
+  const r = await q.limit(1000);
+  if(r.error) throw new ErrorDeDatos('No se pudieron leer las devoluciones', r.error);
+  return r.data;
+}
+export const devueltasDe = async (venta) => DEV.devueltasDe(venta.folio, await movsDevolucion({ folio: venta.folio }));
+/* Sin filtrar por quién: la devolución la registra el admin (camino de hoy),
+   pero el efectivo sale del cajón que está abierto. */
+export async function efectivoDevueltoEnCaja(caja){
+  return DEV.efectivoSinDescontar(await movsDevolucion({ desde: caja.abierta }));
+}
+
+/* renglones: [{ producto_id, nombre, precio, cantidad }] — sólo lo que se devuelve. */
+let _sinDevolverEnServidor = false;   // se aprende con el primer 404 y no se vuelve a preguntar en la sesión
+export async function devolver({ venta, renglones, metodo, motivo }){
+  if(!_sinDevolverEnServidor) try{
+    const r = await llamar('devolver', { p_pedido: venta.id, p_renglones: renglones.map(({ producto_id, cantidad }) => ({ producto_id, cantidad })), p_metodo: metodo, p_motivo: motivo });
+    olvidarCatalogo();
+    return { ...r, camino: 'servidor' };
+  }catch(e){
+    // PGRST202 = la función no existe todavía (0011 sin aplicar). Cualquier otro error es de verdad.
+    if(e.causa?.code !== 'PGRST202') throw e;
+    _sinDevolverEnServidor = true;
+  }
+  const p = await yo();
+  if(p?.rol !== 'admin') throw new ErrorDeDatos('Por ahora las devoluciones las registra un admin: la caja podrá cuando se encienda la parte del servidor.', { code: 'no_autorizado' });
+  let total = 0;
+  for(const r of renglones){
+    const centavos = DEV.importe(venta, r.precio, r.cantidad);
+    await ajustarInventario(r.producto_id, r.cantidad, DEV.nota({ folio: venta.folio, metodo, centavos, motivo }));
+    total += centavos;
+  }
+  olvidarCatalogo();
+  return { monto: total / 100, folio: venta.folio, camino: 'admin' };
+}
+
+/* ══ CONVERSACIONES (Bloque 10) ═══════════════════════════════════════════════
+   Las escribe el transporte de WhatsApp con la llave del servidor (el personal
+   no puede crear conversaciones ni escribir como bot: RLS). Desde aquí sólo se
+   leen, se toman («lo tomo yo») y se contesta como persona. */
+export async function conversaciones(){
+  const n = await negocio();
+  const r = await db.from('conversaciones')
+    .select('id, canal, externo, estado, actualizado, tomada_por, cliente:clientes(nombre), quien:perfiles(nombre), mensajes(rol, texto, cuando)')
+    .eq('negocio_id', n.id).order('actualizado', { ascending: false }).limit(50);
+  if(r.error) throw new ErrorDeDatos('No se pudieron leer las conversaciones', r.error);
+  return r.data;
+}
+export async function tomarConversacion(id, tomar = true){
+  const p = await yo();
+  const d = revisa(await db.from('conversaciones').update({ estado: tomar ? 'persona' : 'bot', tomada_por: tomar ? p.id : null }).eq('id', id).select('id'), 'No se pudo tomar la conversación');
+  if(!d?.length) throw new ErrorDeDatos('No se pudo tomar la conversación', { code: 'no_autorizado' });
+}
+export async function contestarComoPersona(conversacion, texto){
+  const n = await negocio();
+  revisa(await db.from('mensajes').insert({ conversacion_id: conversacion, negocio_id: n.id, rol: 'persona', texto }), 'No se mandó el mensaje');
+}
+
+/* ══ SORTEOS (Bloque 11) ══════════════════════════════════════════════════════
+   La base NO deja activar uno sin permiso de Gobernación y fecha de aviso a
+   PROFECO (constraint sorteo_legal en 0001). El cliente sólo ve los activos. */
+export async function sorteos(){
+  const n = await negocio();
+  const r = await db.from('sorteos').select('id, nombre, premio, minimo_mensual, mes, permiso_segob, aviso_profeco, activo')
+    .eq('negocio_id', n.id).order('mes', { ascending: false }).limit(24);
+  if(r.error) throw new ErrorDeDatos('No se pudieron leer los sorteos', r.error);
+  return r.data.map((x) => ({ ...x, minimo_mensual: Number(x.minimo_mensual) }));
+}
+export async function guardarSorteo(id, datos){
+  const n = await negocio();
+  const q = id ? db.from('sorteos').update(datos).eq('id', id) : db.from('sorteos').insert({ ...datos, negocio_id: n.id });
+  const { data, error } = await q.select('id');
+  if(error){
+    if(error.code === '23514' && /sorteo_legal/.test(error.message)) throw new ErrorDeDatos('Para activarlo faltan el número de permiso de Gobernación y la fecha del aviso a PROFECO.', error);
+    throw new ErrorDeDatos('No se guardó el sorteo', error);
+  }
+  if(!data?.length) throw new ErrorDeDatos('No se guardó el sorteo', { code: 'no_autorizado' });
+  return data[0].id;
+}
+
+/* ══ OFERTAS (Bloque 11) ══════════════════════════════════════════════════════
+   Una oferta cambia el precio de verdad (nucleo/ofertas.js) y queda registrada
+   en `descuentos` con lo que tocó, para poder regresarlo. */
+export async function descuentos(){
+  const n = await negocio();
+  const r = await db.from('descuentos').select('*').eq('negocio_id', n.id).order('inicio', { ascending: false }).limit(50);
+  if(r.error) throw new ErrorDeDatos('No se pudieron leer las ofertas', r.error);
+  return r.data;
+}
+
+/* oferta: { nombre, tipo, valor, alcance: {todo|categorias|marcas}, fin } → aplica y registra. */
+export async function aplicarOferta(oferta, avance = () => {}){
+  const n = await negocio();
+  const { productos } = await catalogoAdmin();
+  const plan = OF.planAplicar(productos, oferta);
+  if(!plan.cambios.length) throw new ErrorDeDatos(plan.saltados.length ? 'Ningún producto cambió: ' + plan.saltados[0].razon + '.' : 'Ningún producto entra en esa oferta.', { code: 'sin_cambio' });
+  // Primero el registro (con lo que VA a tocar): si algo se corta a la mitad,
+  // «Terminar» sabe qué regresar.
+  const aplicado = Object.fromEntries(plan.cambios.map((c) => [c.id, [c.antes, c.ahora]]));
+  const reg = await db.from('descuentos').insert({ negocio_id: n.id, nombre: oferta.nombre, tipo: oferta.tipo, valor: oferta.valor,
+    alcance: { ...oferta.alcance, aplicado }, canales: ['tienda', 'pos', 'bot'], fin: oferta.fin, activo: true }).select('id').single();
+  const id = revisa(reg, 'No se guardó la oferta').id;
+  let hechos = 0;
+  await enParalelo(plan.cambios, 6, async (c) => { await guardarProducto(c.id, { precio: c.ahora, precio_antes: c.antes }); avance(++hechos, plan.cambios.length); });
+  olvidarCatalogo();
+  return { id, cambiados: plan.cambios.length, saltados: plan.saltados };
+}
+
+export async function terminarOferta(d, avance = () => {}){
+  const { productos } = await catalogoAdmin();
+  const plan = OF.planTerminar(productos, d.alcance?.aplicado);
+  let hechos = 0;
+  await enParalelo(plan.restaurar, 6, async (c) => { await guardarProducto(c.id, { precio: c.precio, precio_antes: null }); avance(++hechos, plan.restaurar.length); });
+  revisa(await db.from('descuentos').update({ activo: false, fin: d.fin && new Date(d.fin) < new Date() ? d.fin : new Date().toISOString() }).eq('id', d.id).select('id'), 'No se cerró la oferta');
+  olvidarCatalogo();
+  return { regresados: plan.restaurar.length, saltados: plan.saltados };
+}
+
+/* Las que ya vencieron se terminan solas en cuanto el admin abre la app. Una
+   tarea programada en el servidor lo haría a la hora exacta (PENDIENTES.md). */
+export async function terminarVencidas(){
+  const p = await yo(); if(p?.rol !== 'admin') return [];
+  const venc = OF.vencidas(await descuentos().catch(() => []));
+  const salida = [];
+  for(const d of venc) salida.push({ d, ...(await terminarOferta(d)) });
+  return salida;
+}
+
+/* ══ REDES (Bloque 12) ════════════════════════════════════════════════════════
+   Borradores y calendario. Publicar solo necesita el trámite de Meta; por
+   ahora se copia el texto y se abre la red (o se comparte desde el teléfono). */
+export async function publicaciones(){
+  const n = await negocio();
+  const r = await db.from('publicaciones').select('*').eq('negocio_id', n.id).order('programada', { ascending: true, nullsFirst: false }).limit(100);
+  if(r.error) throw new ErrorDeDatos('No se pudieron leer las publicaciones', r.error);
+  return r.data;
+}
+export async function guardarPublicacion(id, datos){
+  const n = await negocio();
+  const q = id ? db.from('publicaciones').update(datos).eq('id', id) : db.from('publicaciones').insert({ ...datos, negocio_id: n.id });
+  const d = revisa(await q.select('id'), 'No se guardó la publicación');
+  if(!d?.length) throw new ErrorDeDatos('No se guardó la publicación', { code: 'no_autorizado' });
+  return d[0].id;
+}
+export async function borrarPublicacion(id){
+  const d = revisa(await db.from('publicaciones').delete().eq('id', id).select('id'), 'No se borró');
+  if(!d?.length) throw new ErrorDeDatos('No se borró', { code: 'no_autorizado' });
+}
+
+/* ══ PEDIR DESDE LA TIENDA (Bloque 6) ═══════════════════════════════════════
+   La sesión se crea AQUÍ, al pagar, y nunca antes (invitado sin correo). En el
+   negocio de muestra, quien anduvo viendo como admin o caja pasa a «cliente de
+   prueba»: un pedido de tienda hecho por la caja no es un pedido de tienda. */
+export async function sesionDeCliente(){
+  const n = await negocio();
+  const p = await yo();
+  if(p && p.rol !== 'cliente' && n.ajustes?.demo === true) return verComo('cliente');
+  return asegurarSesion();
+}
+
+export async function miFicha(){
+  const p = await yo(); if(!p) return null;
+  const n = await negocio();
+  const r = await db.from('clientes').select('id, nombre, telefono, correo, direcciones, pago_preferido, creado').eq('negocio_id', n.id).eq('perfil_id', p.id).maybeSingle();
+  return r.data || null;
+}
+
+/* direccion: { calle, colonia, referencias, cp, lat?, lng? } o null si recoge. */
+export async function pedirTienda({ renglones, nombre, telefono, direccion, momento, notas, pago }){
+  await sesionDeCliente();
+  const n = await negocio();
+  const cliente = await llamar('mi_cliente', { p_negocio: n.id, p_nombre: nombre, p_telefono: telefono });
+  const v = await llamar('vender', {
+    p_negocio: n.id, p_canal: 'tienda', p_cliente: cliente, p_momento: momento,
+    p_renglones: renglones.map(({ id, cantidad }) => ({ producto_id: id, cantidad })),
+    p_direccion: direccion ? { ...direccion, pago } : { recoge: true, pago },
+    p_notas: notas || '',
+  });
+  // El envío va anotado en la dirección y totalConEnvio() lo suma. Cuando
+  // 0010 esté aplicada, aquí va `await llamar('poner_envio', …)` y el servidor
+  // lo mete en el total. Llamarla antes deja un 404 en cada pedido.
+  // La dirección se guarda en su ficha para la próxima (RLS: cli_editar, la suya).
+  if(direccion){
+    const f = await miFicha();
+    const otras = (f?.direcciones || []).filter((d) => d.calle !== direccion.calle || d.colonia !== direccion.colonia);
+    await db.from('clientes').update({ direcciones: [direccion, ...otras].slice(0, 5), pago_preferido: momento }).eq('id', cliente);
+  }
+  olvidarCatalogo();
+  return v;
+}
+
+export async function misPedidos(){
+  const f = await miFicha(); if(!f) return [];
+  const r = await db.from('pedidos')
+    .select('id, folio, estado, envio, total, forma_pago, momento_pago, pagado, direccion, notas, creado, renglones(producto_id, nombre, precio, cantidad, importe), eventos_pedido(a, por_que, cuando)')
+    .eq('cliente_id', f.id).order('creado', { ascending: false }).limit(50);
+  if(r.error) throw new ErrorDeDatos('No se pudieron leer tus pedidos', r.error);
+  return r.data.map((p) => ({ ...p, total: Number(p.total) }));
+}
+
+/* Cancelar regresa las piezas al inventario (0003): lo que se ve tiene que saberlo. */
+export async function cambiarEstado(pedido, a, porQue){
+  const r = await llamar('cambiar_estado', { p_pedido: pedido, p_a: a, p_por_que: porQue || null });
+  if(a === 'cancelado') olvidarCatalogo();
+  return r;
+}
+
+/* ══ CLIENTES Y RECOMPRA (Bloque 9) ═════════════════════════════════════════
+   El cálculo vive en recompra.js (puro y probado); aquí sólo se leen los
+   pedidos de cada cliente. Las ventas de mostrador sin cliente no entran: no
+   hay a quién avisarle. */
+export async function clientesNegocio(){
+  const n = await negocio();
+  const r = await db.from('clientes')
+    .select('id, nombre, telefono, correo, direcciones, pago_preferido, notas, creado, '
+      + 'pedidos(id, folio, creado, estado, total, envio, forma_pago, momento_pago, canal, direccion, renglones(producto_id, nombre, cantidad, precio))')
+    .eq('negocio_id', n.id).order('creado', { ascending: false }).limit(1000);
+  if(r.error) throw new ErrorDeDatos('No se pudieron leer los clientes', r.error);
+  return r.data.map((c) => ({ ...c, pedidos: (c.pedidos || []).map((p) => ({ ...p, total: Number(p.total) })) }));
+}
+
+/* Para «¿a nombre de quién?» en la caja: sólo lo que hace falta para buscar,
+   una vez por visita a Cobrar (son cientos, no miles). RLS: cli_ver. */
+export async function clientesMostrador(){
+  const n = await negocio();
+  const r = await db.from('clientes').select('id, nombre, telefono').eq('negocio_id', n.id).order('nombre').limit(3000);
+  if(r.error) throw new ErrorDeDatos('No se pudieron leer los clientes', r.error);
+  return r.data;
+}
+
+/* Alta desde la caja (0013). Sin la función en el servidor se dice claro qué
+   hacer mientras, y no se vuelve a preguntar en la sesión. */
+let _sinAltaEnServidor = false;
+export const altaEnServidor = () => !_sinAltaEnServidor;
+export async function altaCliente({ nombre, telefono }){
+  const sinAlta = () => new ErrorDeDatos('Dar de alta desde la caja todavía no está encendido. Por ahora, que haga su cuenta en la tienda y luego lo eliges aquí.', { code: 'sin_alta' });
+  if(_sinAltaEnServidor) throw sinAlta();
+  const n = await negocio();
+  try{ return await llamar('alta_cliente', { p_negocio: n.id, p_nombre: nombre, p_telefono: telefono }); }
+  catch(e){
+    if(e.causa?.code !== 'PGRST202') throw e;
+    _sinAltaEnServidor = true;
+    throw sinAlta();
+  }
+}
+
+/* Notas del admin sobre un cliente («pide factura», «sólo por la tarde»). RLS: cli_editar. */
+export async function guardarNotasCliente(id, notas){
+  const d = revisa(await db.from('clientes').update({ notas }).eq('id', id).select('id'), 'No se guardaron las notas');
+  // RLS no da error cuando filtra: contesta «cero filas». Eso también es no.
+  if(!d?.length) throw new ErrorDeDatos('No se guardaron las notas', { code: 'no_autorizado' });
+}
+
+/* El cliente edita lo suyo (RLS: cli_editar, perfil_id = auth.uid()). */
+export async function guardarMiFicha(cambios){
+  const f = await miFicha(); if(!f) throw new ErrorDeDatos('Todavía no tienes cuenta', null);
+  const d = revisa(await db.from('clientes').update(cambios).eq('id', f.id).select('id'), 'No se guardaron tus datos');
+  if(!d?.length) throw new ErrorDeDatos('No se guardaron tus datos', { code: 'no_autorizado' });
+}
+
+/* ══ PEDIDOS DEL NEGOCIO Y TABLERO (Bloque 6) ═══════════════════════════════ */
+const SELECT_PEDIDO = 'id, folio, canal, estado, subtotal, envio, total, forma_pago, momento_pago, pagado, direccion, notas, creado, actualizado, repartidor_id, '
+  + 'cliente:clientes(nombre, telefono), repartidor:perfiles!pedidos_repartidor_id_fkey(nombre), renglones(producto_id, nombre, precio, cantidad, importe)';
+
+export async function pedidosNegocio({ desde, estados } = {}){
+  const n = await negocio();
+  let q = db.from('pedidos').select(SELECT_PEDIDO).eq('negocio_id', n.id).neq('canal', 'pos');
+  if(desde) q = q.gte('creado', desde.toISOString());
+  if(estados?.length) q = q.in('estado', estados);
+  const r = await q.order('creado', { ascending: false }).limit(300);
+  if(r.error) throw new ErrorDeDatos('No se pudieron leer los pedidos', r.error);
+  return r.data.map((p) => ({ ...p, total: Number(p.total) }));
+}
+
+export async function repartidores(){
+  const n = await negocio();
+  const r = await db.from('perfiles').select('id, nombre, activo').eq('negocio_id', n.id).eq('rol', 'repartidor').eq('activo', true).order('nombre');
+  if(r.error) throw new ErrorDeDatos('No se pudo leer a los repartidores', r.error);
+  return r.data;
+}
+export const asignarRepartidor = (pedido, repartidor) => llamar('asignar_repartidor', { p_pedido: pedido, p_repartidor: repartidor });
+
+/* Tiempo real: avisa cuando cambia un pedido del negocio. Si el canal no
+   conecta (tabla fuera de la publicación, red caída), la pantalla sigue
+   funcionando con su propio reloj: `alCambiar` se llama igual cada 30 s. */
+export async function escucharPedidos(alCambiar){
+  const n = await negocio();
+  let vivo = false;
+  const canal = db.channel('pedidos-' + n.id)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos', filter: `negocio_id=eq.${n.id}` }, (e) => alCambiar(e))
+    .subscribe((estado) => { vivo = estado === 'SUBSCRIBED'; });
+  const reloj = setInterval(() => { if(document.visibilityState === 'visible') alCambiar(null); }, 30000);
+  return { vivo: () => vivo, cerrar(){ clearInterval(reloj); db.removeChannel(canal); } };
+}
+export const cobrarEntrega = (pedido, metodo, recibido) => llamar('cobrar_entrega', { p_pedido: pedido, p_metodo: metodo, p_recibido: recibido ?? null });
+
+/* Con 0010 aplicada, `envio` ya va dentro de `total`. Sin ella, el envío se
+   quedó anotado en la dirección y hay que sumarlo para cobrar. */
+export const totalConEnvio = (p) => Number(p.envio) > 0 ? Number(p.total) : Number(p.total) + Number(p.direccion?.envio || 0);
+
+/* ══ REPARTIDOR Y TURNOS (Bloque 7) ═════════════════════════════════════════ */
+export async function miTurno(){
+  const p = await yo(); if(!p) return null;
+  const r = await db.from('turnos').select('id, inicio, fin, pausas(inicio, fin)').eq('perfil_id', p.id).is('fin', null).maybeSingle();
+  if(r.error) throw new ErrorDeDatos('No se pudo revisar tu turno', r.error);
+  return r.data;
+}
+export async function misTurnos(desde){
+  const p = await yo(); if(!p) return [];
+  const r = await db.from('turnos').select('id, inicio, fin, efectivo_esperado, efectivo_entregado, pausas(inicio, fin)')
+    .eq('perfil_id', p.id).gte('inicio', desde.toISOString()).order('inicio', { ascending: false });
+  if(r.error) throw new ErrorDeDatos('No se pudieron leer tus turnos', r.error);
+  return r.data;
+}
+export const abrirTurno = () => llamar('abrir_turno', {});
+export const pausarTurno = (pausar) => llamar('pausar_turno', { p_pausar: pausar });
+export const cerrarTurno = (entregado) => llamar('cerrar_turno', { p_entregado: entregado });
+
+export async function cobrosDeTurno(turnoId){
+  const r = await db.from('cobros').select('metodo, monto, cambio, cuando, pedido_id').eq('turno_id', turnoId);
+  if(r.error) throw new ErrorDeDatos('No se pudo leer lo cobrado', r.error);
+  return r.data.map((c) => ({ ...c, monto: Number(c.monto) }));
+}
+
+/* Lo asignado a mí. `desde` para el historial; sin él, lo que sigue pendiente. */
+export async function misEntregas({ desde } = {}){
+  const [n, p] = await Promise.all([negocio(), yo()]); if(!p) return [];
+  let q = db.from('pedidos').select(SELECT_PEDIDO + ', eventos_pedido(a, por_que, cuando)').eq('negocio_id', n.id).eq('repartidor_id', p.id);
+  q = desde ? q.gte('creado', desde.toISOString()) : q.in('estado', ['recibido', 'preparando', 'en_camino', 'no_entregado']);
+  const r = await q.order('creado', { ascending: true }).limit(200);
+  if(r.error) throw new ErrorDeDatos('No se pudieron leer tus entregas', r.error);
+  return r.data.map((x) => ({ ...x, total: Number(x.total) }));
+}
+
+export async function pedidoPorId(id){
+  const r = await db.from('pedidos').select(SELECT_PEDIDO + ', eventos_pedido(a, por_que, cuando)').eq('id', id).maybeSingle();
+  if(r.error) throw new ErrorDeDatos('No se pudo leer el pedido', r.error);
+  return r.data ? { ...r.data, total: Number(r.data.total) } : null;
+}
+
+/* Admin: turnos de todo el personal de reparto, para horas y nómina. */
+export async function turnosNegocio(desde){
+  const n = await negocio();
+  const r = await db.from('turnos').select('id, perfil_id, inicio, fin, efectivo_esperado, efectivo_entregado, pausas(inicio, fin), quien:perfiles(nombre, rol)')
+    .eq('negocio_id', n.id).gte('inicio', desde.toISOString()).order('inicio', { ascending: false }).limit(1000);
+  if(r.error) throw new ErrorDeDatos('No se pudieron leer los turnos', r.error);
+  return r.data;
+}
+
+/* ══ UBICACIÓN Y SEGUIMIENTO (Bloque 8) ═════════════════════════════════════
+   El repartidor manda su punto SÓLO con turno abierto: la política ubic_mandar
+   de la base lo rechaza si no. El cliente nunca lee ubicaciones: donde_va()
+   le da el último punto de SU repartidor y sólo mientras su pedido va en camino. */
+export async function mandarUbicacion(turnoId, c){
+  const [n, p] = await Promise.all([negocio(), yo()]);
+  const r = await db.from('ubicaciones').insert({ negocio_id: n.id, perfil_id: p.id, turno_id: turnoId,
+    lat: c.latitude, lng: c.longitude, velocidad: c.speed ?? null, precision: c.accuracy ?? null, rumbo: c.heading ?? null });
+  if(r.error) throw new ErrorDeDatos('No se pudo mandar la ubicación', r.error);
+}
+export const dondeVa = (pedido) => llamar('donde_va', { p_pedido: pedido });
+
+/* Admin: el último punto de cada quien con turno abierto. */
+export async function repartidoresEnTurno(){
+  const n = await negocio();
+  const t = await db.from('turnos').select('id, perfil_id, inicio, pausas(inicio, fin), quien:perfiles(nombre)').eq('negocio_id', n.id).is('fin', null);
+  if(t.error) throw new ErrorDeDatos('No se pudo leer quién está en turno', t.error);
+  const salida = [];
+  for(const x of t.data){
+    const u = await db.from('ubicaciones').select('lat, lng, velocidad, precision, cuando').eq('turno_id', x.id).order('cuando', { ascending: false }).limit(2);
+    salida.push({ ...x, puntos: u.data || [] });
+  }
+  return salida;
+}

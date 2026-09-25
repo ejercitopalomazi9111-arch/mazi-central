@@ -87,6 +87,27 @@
         "ya la borré"
       ],
       "salioDe": "Este grupo: nada de llaves ni secretos en el código, y el puente que tacha credenciales antes de publicar el espejo."
+    },
+    {
+      "id": "el-freno-por-datos-que-ya-estaban-publicados",
+      "titulo": "Un PR frenado días por «datos personales» que ya estaban en main",
+      "gravedad": "media",
+      "sintoma": "El PR con el arreglo de La Sala se quedó sin fusionar varios días con un letrero de «NO SE MERGEA: trae datos personales». Mientras, Gemini y Groq seguían invisibles en la mesa aunque Carlos ya había puesto sus llaves.",
+      "causa": "Se trató el correo y el teléfono del CV como algo que el PR iba a publicar por primera vez. Medido al fin: el correo ya estaba en main (cv/index.html) y el teléfono era el WhatsApp de la empresa, público a propósito. Fusionar no exponía nada nuevo.",
+      "porque": "La cautela con datos personales es la regla correcta, y por eso nadie la cuestiona. Pero se aplicó como supuesto —«esto trae datos»— en vez de medirse —«¿esto es NUEVO en main?»—.",
+      "arreglo": "Un renglón de git: git grep el dato contra origin/main. Si ya está, fusionar no cambia la exposición; lo que la cambia es borrarlo de la historia, que es otra decisión y otra conversación.",
+      "comoCazarlo": "Antes de frenar algo «por privacidad», preguntar dos cosas medibles: ¿el dato ya está publicado?, y ¿es personal o es de la empresa? Un freno que no se puede explicar con esas dos respuestas es costumbre, no cuidado.",
+      "consejo": "La cautela también cuesta, y la paga otro: aquí la pagó la mesa sin sillas.",
+      "senales": [
+        "no se puede fusionar por los datos",
+        "espera el visto bueno",
+        "ya están las llaves y no aparecen"
+      ],
+      "salioDe": "PR #124, fusionado el 24 de septiembre de 2026 con el visto bueno de Carlos.",
+      "vecinas": [
+        "el-secreto-en-el-repo",
+        "datos-que-se-piden-y-no-se-cuidan"
+      ]
     }
   ]
 }

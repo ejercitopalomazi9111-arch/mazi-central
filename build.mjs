@@ -51,6 +51,11 @@ const VA = [
      SEGUNDOS de pantalla en blanco en un teléfono. La carpeta sigue bastando
      —se copia entera menos `taller/`—, pero por otra razón. */
   'toydarians',
+  /* La app de venta y reparto (tienda/PLAN.md). Se publica para que Carlos la
+     recorra en la vista previa de rama; es un negocio DE MUESTRA con franja que
+     lo dice, y la página lleva noindex. Los datos viven en Supabase: de la
+     carpeta no se publican ni el crudo, ni las migraciones, ni la muestra. */
+  'tienda',
 ];
 
 /* ── Lo que tiene sitio adentro y NO se publica, dicho a propósito ──────────
@@ -122,6 +127,10 @@ const NO_VA = (ruta) => {
      worker— pero sí sirve como estático algo que nadie usa desde el navegador,
      y este archivo existe justo para que lo publicado sea lo que decidimos. */
   if(/(^|\/)sala\/servidor\//.test(ruta)) return true;
+  /* De la tienda, lo que no usa el navegador: el catálogo crudo y su guion
+     (datos/), las migraciones y la función del servidor (supabase/) y la
+     muestra, que ya vive sembrada en la base. */
+  if(/(^|\/)tienda\/(datos|supabase|muestra)(\/|$)/.test(ruta)) return true;
   /* Del cerebro se publica `todo.json` y la pantalla; el motor y las neuronas
      sueltas no los usa el navegador —lee el armado— y publicarlos sería
      servir dos veces lo mismo. */

@@ -21,21 +21,24 @@ import { dirname, join } from 'node:path';
 const AQUI = dirname(new URL(import.meta.url).pathname);
 
 export const CATEGORIAS = [
-  { id:'color',      nombre:'Color y tinte',          icono:'gota',
+  { id:'color',      nombre:'Color y tinte',          icono:'color',
     reglas:/tint|per[oó]xid|aclarant|decolor|oxidant|coloraci|\bcolor\b|matiz|revelador/i },
-  { id:'maquinas',   nombre:'Máquinas y cortadoras',  icono:'maquina',
-    reglas:/m[aá]quina|recortad|cortador|trimmer|clipper|shaver|cuchilla|patillera|rasuradora/i },
-  { id:'barba',      nombre:'Barba y afeitado',       icono:'navaja',
-    reglas:/barb[ae](?!r[ií]a y corte)|afeitad|after ?shave|navaja|rasurad|bigote/i },
-  { id:'corte',      nombre:'Tijeras y corte',        icono:'tijera',
-    reglas:/tijera|barber[ií]a y corte|peine|capa|brocha|atomizador|cepillo/i },
-  { id:'peinado',    nombre:'Ceras, geles y peinado', icono:'tarro',
-    reglas:/cera|gel|pomad|fijador|spray|laca|mousse|crema para peinar|estiliz|acabado|texturi/i },
-  { id:'cuidado',    nombre:'Shampoo y tratamiento',  icono:'botella',
+  { id:'maquinas',   nombre:'Máquinas y cortadoras',  icono:'maquinas',
+    reglas:/m[aá]quina|recortad|cortador|trimmer|clipper|shaver|cuchilla|patillera|rasuradora|homecut|\bcut\b/i },
+  { id:'barba',      nombre:'Barba y afeitado',       icono:'barba',
+    reglas:/\bbarbas?\b|afeit|after ?shave|navaja|rasur|bigote/i },
+  /* Los aparatos van ANTES que corte: la regla de corte atrapa «cepillo», y un
+     «Cepillo de Aire» eléctrico acababa entre las tijeras. Gana la primera que
+     empata, así que el orden de esta lista es parte de la regla. */
+  { id:'aparatos',   nombre:'Secadoras y planchas',   icono:'aparatos',
+    reglas:/secador|plancha|rizador|tenaza|ondulad|cepillo (el[eé]ctric|de aire|secador|alisador|t[eé]rmico el)|difusor|multi ?styler|alaciador|airwrap|volumizador/i },
+  { id:'corte',      nombre:'Tijeras, peines y cepillos',icono:'corte',
+    reglas:/tijera|peine|capa|atomizador|cepillo/i },
+  { id:'peinado',    nombre:'Ceras, geles y peinado', icono:'peinado',
+    reglas:/cera|gel|pomad|fijador|spray|laca|mousse|crema para peinar|estiliz|acabado|texturi|paste|pasta|clay|arcilla|\bwax\b|peinado/i },
+  { id:'cuidado',    nombre:'Shampoo y tratamiento',  icono:'cuidado',
     reglas:/shamp|acondicion|tratamient|mascarill|ampolleta|serum|s[eé]rum|aceite|cabello|capilar|keratin|ritual|nutri|repara/i },
-  { id:'aparatos',   nombre:'Secadoras y planchas',   icono:'secadora',
-    reglas:/secador|plancha|rizador|tenaza|ondulad|cepillo el[eé]ctric|difusor/i },
-  { id:'accesorios', nombre:'Accesorios',             icono:'caja',
+  { id:'accesorios', nombre:'Accesorios',             icono:'accesorios',
     reglas:/./ },
 ];
 
@@ -44,7 +47,11 @@ export const CATEGORIAS = [
    enfrente de quien la va a comprar. Se miden por TIPO, que es lo que Odara
    usa para separar sus secciones; el nombre engaña («Kit barba y cejas»). */
 const NO_ES_BARBERIA = /u[ñn]as|manicur|pedicur|maquilla|pesta[ñn]|cejas|depila|fundidor|cosm[eé]tic|piel|acetona|removedor|mascota|l[aá]mpara|pulidora|corporal/i;
-export const esDeBarberia = (p) => !NO_ES_BARBERIA.test(p.tipo || '');
+/* Y por NOMBRE, sólo lo que el tipo no delata: las brochas de maquillaje vienen
+   con tipo «Brochas» igual que las de afeitar, y la tijera de manicure con tipo
+   «Tijeras». Aquí el nombre sí es de fiar porque dice para qué es. */
+const NO_ES_BARBERIA_NOMBRE = /kabuki|powder|angled|manicur|cut[ií]cula|pesta[ñn]|u[ñn]as|nail|pedicur|depilaci|callosidad|escofina|\blima\b|hidromasaje|esponja azufrada|\blash\b/i;
+export const esDeBarberia = (p) => !NO_ES_BARBERIA.test(p.tipo || '') && !NO_ES_BARBERIA_NOMBRE.test(p.nombre || '');
 
 /* Los campos que lleva cada categoría. Esto es lo que hace que el segundo giro
    no toque código: ahí las tazas llevan «capacidad» y aquí nadie se entera.

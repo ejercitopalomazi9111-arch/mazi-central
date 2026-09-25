@@ -1,0 +1,211 @@
+{
+  "_que": "Segundo giro, SÓLO con configuración (PLAN.md Bloque 13): ropa, termos, tazas y accesorios. Si para que funcione hubiera que tocar código, es un defecto del núcleo. Se siembra con sembrar_negocio(este JSON) y el catálogo entra por el importador.",
+  "slug": "variada",
+  "nombre": "Mercancía (nombre provisional)",
+  "giro": "mercancía variada",
+  "marca": {
+    "nombre_corto": "Mercancía",
+    "acento": "#1F5F8B",
+    "provisional": true
+  },
+  "categorias": [
+    {
+      "id": "ropa",
+      "nombre": "Ropa",
+      "icono": "ropa",
+      "plantilla": [
+        {
+          "clave": "talla",
+          "etiqueta": "Talla",
+          "tipo": "opcion",
+          "opciones": [
+            "CH",
+            "M",
+            "G",
+            "XG",
+            "XXG"
+          ]
+        },
+        {
+          "clave": "corte",
+          "etiqueta": "Corte",
+          "tipo": "opcion",
+          "opciones": [
+            "Hombre",
+            "Mujer",
+            "Unisex",
+            "Niño"
+          ]
+        },
+        {
+          "clave": "color",
+          "etiqueta": "Color",
+          "tipo": "texto"
+        },
+        {
+          "clave": "material",
+          "etiqueta": "Material",
+          "tipo": "texto"
+        }
+      ]
+    },
+    {
+      "id": "termos",
+      "nombre": "Termos y vasos",
+      "icono": "termo",
+      "plantilla": [
+        {
+          "clave": "capacidad",
+          "etiqueta": "Capacidad",
+          "tipo": "texto"
+        },
+        {
+          "clave": "material",
+          "etiqueta": "Material",
+          "tipo": "opcion",
+          "opciones": [
+            "Acero inoxidable",
+            "Plástico",
+            "Vidrio"
+          ]
+        },
+        {
+          "clave": "frio_caliente",
+          "etiqueta": "Mantiene frío y caliente",
+          "tipo": "si_no"
+        },
+        {
+          "clave": "color",
+          "etiqueta": "Color",
+          "tipo": "texto"
+        }
+      ]
+    },
+    {
+      "id": "tazas",
+      "nombre": "Tazas",
+      "icono": "taza",
+      "plantilla": [
+        {
+          "clave": "capacidad",
+          "etiqueta": "Capacidad",
+          "tipo": "texto"
+        },
+        {
+          "clave": "material",
+          "etiqueta": "Material",
+          "tipo": "opcion",
+          "opciones": [
+            "Cerámica",
+            "Peltre",
+            "Vidrio",
+            "Acero"
+          ]
+        },
+        {
+          "clave": "microondas",
+          "etiqueta": "Va al microondas",
+          "tipo": "si_no"
+        }
+      ]
+    },
+    {
+      "id": "accesorios",
+      "nombre": "Gorras y accesorios",
+      "icono": "accesorios",
+      "plantilla": [
+        {
+          "clave": "tipo",
+          "etiqueta": "Tipo",
+          "tipo": "opcion",
+          "opciones": [
+            "Gorra",
+            "Bolsa",
+            "Llavero",
+            "Otro"
+          ]
+        },
+        {
+          "clave": "color",
+          "etiqueta": "Color",
+          "tipo": "texto"
+        }
+      ]
+    },
+    {
+      "id": "regalos",
+      "nombre": "Para regalo",
+      "icono": "regalo",
+      "plantilla": [
+        {
+          "clave": "ocasion",
+          "etiqueta": "Ocasión",
+          "tipo": "opcion",
+          "opciones": [
+            "Cumpleaños",
+            "Aniversario",
+            "Graduación",
+            "Navidad",
+            "Cualquiera"
+          ]
+        },
+        {
+          "clave": "personalizable",
+          "etiqueta": "Se puede personalizar",
+          "tipo": "si_no"
+        }
+      ]
+    }
+  ],
+  "ajustes": {
+    "demo": false,
+    "bot": {
+      "sinonimos": [
+        [
+          "termo",
+          "tumbler",
+          "botella",
+          "cilindro",
+          "vaso termico"
+        ],
+        [
+          "taza",
+          "mug",
+          "tarro"
+        ],
+        [
+          "playera",
+          "camiseta",
+          "t-shirt",
+          "remera",
+          "shirt"
+        ],
+        [
+          "sudadera",
+          "hoodie",
+          "buzo"
+        ],
+        [
+          "gorra",
+          "cap",
+          "cachucha"
+        ],
+        [
+          "bolsa",
+          "tote",
+          "morral"
+        ],
+        [
+          "llavero",
+          "keychain"
+        ],
+        [
+          "calcetin",
+          "calceta",
+          "socks"
+        ]
+      ]
+    }
+  },
+  "productos": []
+}

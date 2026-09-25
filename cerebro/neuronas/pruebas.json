@@ -957,6 +957,45 @@
         "prueba-de-texto-que-pasa-con-la-cadena-vacia",
         "mutacion-sin-restaurar"
       ]
+    },
+    {
+      "id": "el-navegador-sale-por-node",
+      "titulo": "El navegador de pruebas no llegaba a la base real, y la salida fácil era apagar TLS",
+      "gravedad": "media",
+      "sintoma": "Chromium lanzado con el proxy del contenedor contestaba ERR_CERT_AUTHORITY_INVALID contra Supabase; sin proxy, ni siquiera salía. Las pruebas de pantalla sólo podían correr con datos inventados.",
+      "causa": "El proxy re-firma el TLS con su propia autoridad. Node la conoce (las variables de CA ya vienen puestas), pero el Chromium de Playwright no la tiene en su almacén.",
+      "porque": "Son dos programas con dos almacenes de certificados: que curl y Node salgan no dice nada del navegador.",
+      "arreglo": "En el contexto del navegador, ctx.route(/^https:\\/\\//) y cada petición se contesta con route.fulfill({ response: await api.fetch(route.request()) }), donde api = request.newContext({ proxy: { server: HTTPS_PROXY } }). La petición la hace Node, que sí confía; el navegador recibe la respuesta. Métodos, cuerpos y encabezados viajan completos (la función entrar de la tienda funciona así).",
+      "comoCazarlo": "Si una prueba de pantalla dice «no hay red», antes de inventar datos probar un goto a la URL real con este reenvío.",
+      "consejo": "Nunca ignoreHTTPSErrors para salir del paso: prueba otra cosa que lo que va a correr en producción.",
+      "senales": [
+        "ERR_CERT_AUTHORITY_INVALID",
+        "el navegador no sale a internet",
+        "probar contra supabase desde playwright"
+      ],
+      "salioDe": "las pruebas de rutas de la tienda, 24 de septiembre de 2026.",
+      "vecinas": []
+    },
+    {
+      "id": "el-websocket-no-pasa-por-la-ruta",
+      "titulo": "El tiempo real tronaba en las pruebas aunque todo lo demás llegaba a la base",
+      "gravedad": "baja",
+      "sintoma": "Con ctx.route reenviando https por Node, el tablero cargaba bien pero la consola se llenaba de «WebSocket connection … ERR_CERT_AUTHORITY_INVALID».",
+      "causa": "ctx.route sólo intercepta peticiones HTTP. El websocket (wss://) lo abre Chromium directo, contra el proxy en el que no confía.",
+      "porque": "Son dos mecanismos distintos en Playwright: route() para HTTP, routeWebSocket() para sockets.",
+      "arreglo": "ctx.routeWebSocket(/^wss:\\/\\//, () => {}) en pruebas-rutas.mjs: un socket mudo. La pantalla se queda en «Cada 30 s», que es su comportamiento real cuando el tiempo real se cae — así además se prueba ese camino.",
+      "comoCazarlo": "Si una pantalla nueva abre un canal en vivo, la prueba de rutas lo avisa como error de consola; no hay que apagar la compuerta de errores, hay que enmudecer el socket.",
+      "consejo": "En pruebas, lo que no se puede alcanzar se simula caído, no se ignora: así se prueba el respaldo.",
+      "senales": [
+        "WebSocket connection failed",
+        "ERR_CERT_AUTHORITY_INVALID wss",
+        "realtime en pruebas",
+        "supabase channel playwright"
+      ],
+      "salioDe": "el tablero de la tienda, 24 de septiembre de 2026.",
+      "vecinas": [
+        "el-navegador-sale-por-node"
+      ]
     }
   ]
 }

@@ -235,6 +235,26 @@
         "todataurl-devuelve-png-calladito",
         "animar-el-svg-y-perder-el-texto"
       ]
+    },
+    {
+      "id": "el-producto-sin-foto-es-una-imagen-rota",
+      "titulo": "Catálogo recién importado = tienda llena de imágenes rotas",
+      "gravedad": "media",
+      "sintoma": "Con un catálogo sin fotos, la tienda del cliente pintaba el ícono de imagen rota en cada tarjeta, en la ficha y en el carrito. El punto de venta sí lo cuidaba; la tienda no.",
+      "causa": "Las pantallas del cliente escribían <img src=\"${p.f}\"> sin preguntar si había foto. La muestra de barbería trae foto en todos los productos, así que nunca se vio.",
+      "porque": "Se construyó y probó con UN catálogo, el bonito. El primer catálogo real de un cliente llega de Excel y casi nunca trae fotos.",
+      "arreglo": "tienda/cliente/pantallas.js: una sola función foto(p) que pinta la imagen o un recuadro con ícono (.sin-foto), usada en tarjeta, ficha, carrito y «mis productos». La prueba de fuego del segundo giro (pruebas-segundo-giro.mjs) corre la tienda con productos SIN foto y revienta si aparece una imagen sin src.",
+      "comoCazarlo": "Correr la tienda con un catálogo distinto al de muestra: sin fotos, con nombres largos, con categorías de otro giro. Lo que sólo se probó con los datos bonitos, sólo funciona con los datos bonitos.",
+      "consejo": "Cuando la app dice «sirve para cualquier negocio», la prueba es otro negocio de verdad corriendo en el navegador — no revisar el código buscando si dice «barbería».",
+      "senales": [
+        "imagen rota",
+        "sin foto",
+        "catalogo importado sin fotos",
+        "icono de imagen rota",
+        "otro giro"
+      ],
+      "salioDe": "la prueba de fuego del segundo giro de la tienda, 24 de septiembre de 2026.",
+      "vecinas": []
     }
   ]
 }

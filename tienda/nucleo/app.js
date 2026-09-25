@@ -1,0 +1,443 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   EL ARMAZÓN · presentación, menú lateral, barra de arriba y enrutador
+   ──────────────────────────────────────────────────────────────────────────
+   Todo lo que se ve alrededor de una pantalla sale de aquí, y el menú sale de
+   rutas.js. Esta es la pieza que evita el «cuatro botones que te llevan al
+   mismo lado» de Ligas Mazi: aquí no hay ni un enlace escrito a mano.
+   ═════════════════════════════════════════════════════════════════════════ */
+import { APARTADOS, RUTAS, emparejar, enlace } from './rutas.js';
+import { icono } from './iconos.js';
+import { esc, pesos, plural, inicioDe, obra, noexiste, sinPermiso, fallo, cargando, hoja } from './piezas.js';
+import { negocio, yo, verComo, carrito, catalogo, subirVentasPendientes, memoria } from './datos.js';
+import { PANTALLAS as CLIENTE } from '../cliente/pantallas.js';
+import { PANTALLAS as ADMIN } from '../admin/pantallas.js';
+import { PANTALLAS as IMPORTAR } from '../admin/importar.js';
+import { PANTALLAS as VENTA } from '../venta/pantallas.js';
+import { PANTALLAS as PEDIR } from '../cliente/pedir.js';
+import { PANTALLAS as PEDIDOS } from '../admin/pedidos.js';
+import { PANTALLAS as REPARTO } from '../repartidor/pantallas.js';
+import { PANTALLAS as RUTA } from '../repartidor/ruta.js';
+import { PANTALLAS as IMPRESORA } from '../venta/impresora.js';
+import { PANTALLAS as CLIENTES } from '../admin/clientes.js';
+import { PANTALLAS as CUENTA } from '../cliente/cuenta.js';
+import { PANTALLAS as DEVOLUCION } from '../venta/devolucion.js';
+import { PANTALLAS as CONVERSACIONES } from '../admin/conversaciones.js';
+import { PANTALLAS as SORTEOS } from '../admin/sorteos.js';
+import { PANTALLAS as SORTEO } from '../cliente/sorteo.js';
+import { PANTALLAS as DESCUENTOS } from '../admin/descuentos.js';
+import { PANTALLAS as REPORTES } from '../admin/reportes.js';
+import { PANTALLAS as REDES } from '../admin/redes.js';
+import { PANTALLAS as MANUAL } from '../admin/manual.js';
+import { PANTALLAS as COTIZAR } from '../venta/cotizar.js';
+import { PANTALLAS as SURTIR } from '../admin/surtir.js';
+import { PANTALLAS as MIAS } from '../cliente/mias.js';
+
+const PANTALLAS = { ...CLIENTE, ...PEDIR, ...ADMIN, ...IMPORTAR, ...VENTA, ...PEDIDOS, ...REPARTO, ...RUTA, ...IMPRESORA, ...CLIENTES, ...CUENTA, ...DEVOLUCION, ...CONVERSACIONES, ...SORTEOS, ...SORTEO, ...DESCUENTOS, ...REPORTES, ...REDES, ...COTIZAR, ...SURTIR, ...MIAS, ...MANUAL, obra, noexiste };
+
+const $app = document.getElementById('app');
+const $avisos = document.getElementById('avisos');
+const guardado = (k, v) => { try{ if(v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); }catch(e){ return null; } };
+
+/* ── Avisos flotantes ─────────────────────────────────────────────────── */
+export function aviso(texto, tipo = ''){
+  const el = document.createElement('div');
+  el.className = 'aviso-flotante ' + tipo;
+  el.innerHTML = icono(tipo === 'mal' ? 'alerta' : 'listo') + `<span>${esc(texto)}</span>`;
+  // Nunca más de dos a la vez: el mismo aviso otra vez reemplaza al anterior,
+  // y si ya hay dos, se va el más viejo. Escaneando diez productos, los avisos
+  // apilados tapaban justo lo que se estaba cobrando.
+  [...$avisos.children].filter((x) => x.textContent === el.textContent).forEach((x) => x.remove());
+  while($avisos.children.length >= 2) $avisos.firstElementChild.remove();
+  $avisos.append(el);
+  setTimeout(() => el.remove(), tipo === 'mal' ? 6000 : 3200);
+}
+
+/* ── Presentación ─────────────────────────────────────────────────────── */
+/* ~1.2 s, una vez por sesión, y se salta al toque. Más que eso, y la gente
+   que abre la app diez veces al día la empieza a odiar. */
+function presentacion(n){
+  let vista = false;
+  try{ vista = sessionStorage.getItem('tienda-presentacion') === '1'; sessionStorage.setItem('tienda-presentacion', '1'); }catch(e){}
+  if(vista || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const el = document.createElement('div');
+  el.className = 'presentacion';
+  el.innerHTML = `<div class="marca">
+      <span class="sello">${icono('tienda')}</span>
+      <span class="nombre">${esc(n.marca?.nombre_corto || n.nombre)}</span>
+      <span class="giro">${esc(n.giro)}</span>
+    </div><span class="toca">Toca para entrar</span>`;
+  document.body.append(el);
+  const fuera = () => { el.classList.add('sale'); setTimeout(() => el.remove(), 450); };
+  el.addEventListener('click', fuera, { once: true });
+  setTimeout(fuera, 1200);
+}
+
+/* ── Menú ─────────────────────────────────────────────────────────────── */
+function puedeVer(ap, persona, esDemo){
+  if(!ap.roles || esDemo) return true;
+  return !!persona && ap.roles.includes(persona.rol);
+}
+
+function pintarMenu(n, persona){
+  const esDemo = n.ajustes?.demo === true;
+  const grupos = APARTADOS.filter((ap) => puedeVer(ap, persona, esDemo)).map((ap) => {
+    const suyas = RUTAS.filter((r) => r.apartado === ap.id && r.menu);
+    return `<details class="grupo" data-apartado="${ap.id}">
+      <summary>${icono(ap.icono)}<span>${esc(ap.nombre)}</span>${icono('abajo', 'gira')}</summary>
+      <ul>${suyas.map((r) => `<li><a href="${enlace(r.ruta)}" data-ruta="${esc(r.ruta)}" title="${esc(r.titulo)}">
+        ${icono(r.icono)}<span class="etq">${esc(r.titulo)}</span>${r.pantalla === 'obra' ? '<span class="obra">en obra</span>' : ''}</a></li>`).join('')}</ul>
+    </details>`;
+  }).join('');
+  return grupos;
+}
+
+/* ── Armazón ──────────────────────────────────────────────────────────── */
+let N, esDemo;
+
+function pintarArmazon(persona){
+  const riel = guardado('tienda-riel') === '1';
+  $app.classList.toggle('riel', riel);
+  $app.innerHTML = `
+    <div class="velo" data-cerrar-menu></div>
+    <aside class="lateral" id="lateral" aria-label="Menú">
+      <div class="cabeza">
+        <a class="marca" href="${enlace('/')}"><span class="sello">${icono('tienda')}</span><span>${esc(N.marca?.nombre_corto || N.nombre)}</span></a>
+        <button class="boton-ico solo-telefono" data-cerrar-menu aria-label="Cerrar menú">${icono('cerrar')}</button>
+        <button class="boton-ico solo-escritorio" data-riel aria-label="${riel ? 'Abrir menú' : 'Hacer menú angosto'}" aria-pressed="${riel}">${icono('menu')}</button>
+      </div>
+      <nav id="menu">${pintarMenu(N, persona)}</nav>
+      <div class="pie">
+        ${esDemo ? `<p class="chica suave como" id="como"></p>` : ''}
+        <div class="botones-pie">
+          <button class="boton-ico" data-tema aria-label="Cambiar a tema oscuro">${icono('luna')}</button>
+          <button class="boton-ico" data-letra aria-label="Letra más grande" aria-pressed="false">${icono('letra')}</button>
+          <button class="boton-ico" data-instalar aria-label="Instalar la app en el teléfono" title="Instalar la app"${instalada() ? ' hidden' : ''}>${icono('abajo')}</button>
+        </div>
+      </div>
+    </aside>
+    <div class="columna">
+      ${N.ajustes?.muestra ? `<div class="franja-muestra">${icono('info')}<span>${esc(N.ajustes.aviso_muestra || 'Tienda de muestra.')}</span></div>` : ''}
+      <header class="arriba">
+        <div class="arriba-fila">
+          <button class="boton-ico solo-telefono" data-abrir-menu aria-label="Abrir menú" aria-controls="lateral" aria-expanded="false">${icono('menu')}</button>
+          <button class="boton-ico" data-atras aria-label="Regresar" hidden>${icono('atras')}</button>
+          <a class="marca-arriba" id="marca-arriba" href="${enlace('/')}" hidden><span class="sello">${icono('tienda')}</span><span class="nombre">${esc(N.marca?.nombre_corto || N.nombre)}</span></a>
+          <h1 id="titulo" tabindex="-1"></h1>
+          <a class="boton-ico" id="ir-buscar" href="${enlace('/buscar')}" aria-label="Buscar">${icono('buscar')}</a>
+          <a class="boton-ico" id="ir-carrito" href="${enlace('/carrito')}" aria-label="Carrito">${icono('carrito')}<span class="insignia" hidden></span></a>
+        </div>
+        <a class="buscar-arriba" id="buscar-arriba" href="${enlace('/buscar')}" hidden>${icono('buscar')}<span>Buscar en ${esc(N.marca?.nombre_corto || N.nombre)}</span>${icono('escanear')}</a>
+      </header>
+      <main class="contenido" id="contenido"></main>
+      <nav class="pestanas" id="pestanas" aria-label="Tienda" hidden>
+        ${[['/', 'casa', 'Inicio'], ['/buscar', 'buscar', 'Buscar'], ['/favoritos', 'corazon', 'Favoritos'], ['/pedidos', 'pedidos', 'Pedidos'], ['/carrito', 'carrito', 'Carrito']].map(([r, ic, t]) =>
+          `<a href="${enlace(r)}" data-pestana="${r}">${icono(ic)}${r === '/carrito' ? '<span class="insignia" hidden></span>' : ''}<span class="etq">${t}</span></a>`).join('')}
+      </nav>
+      <a class="barra-carrito" id="barra-carrito" href="${enlace('/carrito')}" hidden>
+        ${icono('carrito')}<span class="cuanto"></span><span class="ver">Ver<span class="largo"> carrito</span> ${icono('adelante')}</span>
+      </a>
+    </div>`;
+  pintarAjustesVista();
+  pintarInsignia();
+}
+
+function pintarInsignia(){
+  const b = $app.querySelector('#ir-carrito .insignia');
+  const a = $app.querySelector('#ir-carrito');
+  if(!b) return;
+  const n = carrito.piezas();
+  for(const x of $app.querySelectorAll('#ir-carrito .insignia, #pestanas .insignia')){ x.hidden = n === 0; x.textContent = n > 99 ? '99+' : n; }
+  a.setAttribute('aria-label', n ? `Carrito, ${n} ${n === 1 ? 'pieza' : 'piezas'}` : 'Carrito');
+  $app.querySelector('[data-pestana="/carrito"]')?.setAttribute('aria-label', n ? `Carrito, ${n} ${n === 1 ? 'pieza' : 'piezas'}` : 'Carrito');
+  pintarBarra();
+}
+
+/* «Llevas N · $X» siempre a la vista mientras se compra (PLAN.md §1-bis: la
+   memoria corta es lo primero que falla). No sale donde estorba: en el carrito
+   mismo, al pagar, ni fuera de la tienda. */
+let rutaActual = null;
+async function pintarBarra(){
+  const barra = $app.querySelector('#barra-carrito');
+  if(!barra) return;
+  const n = carrito.piezas();
+  const toca = n > 0 && rutaActual?.apartado === 'cliente' && !['/carrito', '/pagar', '/p/:id'].includes(rutaActual.ruta);   // en la ficha manda su propio «Agregar»
+  if(!toca){ barra.hidden = true; $app.classList.remove('con-barra'); return; }
+  let total = 0;
+  try{
+    const { porId } = await catalogo();
+    for(const [id, k] of carrito.renglones()){ const p = porId.get(id); if(p) total += p.p * k; }
+  }catch(e){ /* sin catálogo no hay total, pero sí piezas */ }
+  barra.querySelector('.cuanto').textContent = `Llevas ${plural(n, 'pieza', 'piezas')}${total ? ' · ' + pesos(total) : ''}`;
+  barra.hidden = false;
+  $app.classList.add('con-barra');
+}
+
+function temaActual(){
+  const t = document.documentElement.dataset.tema;
+  if(t) return t;
+  return matchMedia('(prefers-color-scheme: dark)').matches ? 'oscuro' : 'claro';
+}
+function pintarAjustesVista(){
+  const bt = $app.querySelector('[data-tema]');
+  const oscuro = temaActual() === 'oscuro';
+  bt.innerHTML = icono(oscuro ? 'sol' : 'luna');
+  bt.setAttribute('aria-label', oscuro ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro');
+  const bl = $app.querySelector('[data-letra]');
+  const grande = document.documentElement.dataset.letra === 'grande';
+  bl.setAttribute('aria-pressed', grande);
+  bl.setAttribute('aria-label', grande ? 'Letra normal' : 'Letra más grande');
+}
+
+function abrirMenu(abrir){
+  $app.classList.toggle('menu-abierto', abrir);
+  $app.querySelector('[data-abrir-menu]')?.setAttribute('aria-expanded', abrir);
+  if(abrir) $app.querySelector('#menu a[aria-current="page"], #menu a')?.focus();
+}
+
+/* ── Enrutador ────────────────────────────────────────────────────────── */
+let turno = 0;          // cada navegación; una pantalla vieja que termina tarde no pinta encima
+let primera = true;
+let desmontar = null;
+
+async function navegar(){
+  // Un cambio de dirección mientras la app todavía carga el negocio (un
+  // «atrás» a tiempo, otra pestaña): el armazón no existe aún. El arranque
+  // navega solo en cuanto lo pinta, así que aquí basta con no tronar.
+  if(!$app.querySelector('.arriba')) return;
+  const mio = ++turno;
+  const direccion = location.hash.replace(/^#/, '') || '/';
+  const ruta = emparejar(direccion);
+  const $c = $app.querySelector('#contenido');
+  const $t = $app.querySelector('#titulo');
+  const ap = ruta && APARTADOS.find((a) => a.id === ruta.apartado);
+
+  abrirMenu(false);
+  desmontar?.(); desmontar = null;
+
+  // Menú: cuál está activa, y el grupo de la activa abierto.
+  $app.querySelectorAll('#menu a').forEach((a) => {
+    if(ruta && a.dataset.ruta === ruta.ruta) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+  });
+  $app.querySelectorAll('#menu .grupo').forEach((g) => { if(ruta && g.dataset.apartado === ruta.apartado) g.open = true; });
+  // Arriba: regresar sólo donde no se llega por el menú; buscar y carrito sólo en la tienda.
+  $app.querySelector('.arriba [data-atras]').hidden = !ruta || ruta.menu;
+  const enTienda = !ruta || ruta.apartado === 'cliente';
+  $app.querySelector('#ir-buscar').hidden = !enTienda || ruta?.ruta === '/buscar';
+  $app.querySelector('#ir-carrito').hidden = !enTienda || ruta?.ruta === '/carrito';
+  $app.classList.toggle('en-tienda', enTienda);
+  // La tienda se ve como tienda: la marca arriba en la portada, el buscador
+  // siempre a la mano y las pestañas abajo en el teléfono (Amazon, Mercado Libre).
+  const portada = enTienda && (!ruta || ruta.ruta === '/');
+  $app.classList.toggle('en-portada', portada);
+  $app.querySelector('#marca-arriba').hidden = !portada;
+  $app.querySelector('#buscar-arriba').hidden = !enTienda || ['/buscar', '/pagar'].includes(ruta?.ruta);
+  // Al pagar no se distrae: sin pestañas, como la caja de Amazon o Mercado Libre.
+  const pagando = ruta?.ruta === '/pagar';
+  $app.classList.toggle('en-pagar', pagando);
+  $app.querySelector('#pestanas').hidden = !enTienda || pagando;
+  $app.querySelectorAll('#pestanas a').forEach((a) => { if(ruta && a.dataset.pestana === ruta.ruta) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+  rutaActual = ruta; pintarBarra();
+
+  $t.textContent = ruta ? ruta.titulo : 'No encontrado';
+  document.title = `${ruta ? ruta.titulo + ' · ' : ''}${N.marca?.nombre_corto || N.nombre}`;
+  $c.innerHTML = cargando();
+
+  let vista;
+  try{
+    if(!ruta){ vista = noexiste(); }
+    else{
+      // ¿Hace falta un rol? En la muestra se cambia solo; en uno real, se pide.
+      if(ap?.roles){
+        let persona = await yo();
+        if(!persona || !ap.roles.includes(persona.rol)){
+          if(esDemo){
+            persona = await verComo(ap.roles[0]);
+            if(mio !== turno) return;
+            pintarComo(persona);
+            aviso(`Estás viendo como ${persona.nombre || ap.nombre}`);
+          }
+        }
+        if(!persona || !ap.roles.includes(persona.rol)) vista = sinPermiso({ ruta });
+      }
+      if(!vista){
+        const f = PANTALLAS[ruta.pantalla] || obra;
+        vista = await f({ params: ruta.params, ruta });
+      }
+    }
+  }catch(e){
+    console.error(e);
+    vista = fallo(e);
+  }
+  if(mio !== turno) return;
+
+  if(vista.titulo) $t.textContent = vista.titulo;
+  // Contenedor NUEVO en cada pantalla: las pantallas se cuelgan de $c con
+  // addEventListener, y un $c reciclado junta oyentes de visitas anteriores —
+  // «volver a pedir» metía el doble después de un recargar().
+  const $nuevo = $c.cloneNode(false);
+  $c.replaceWith($nuevo);
+  $nuevo.classList.toggle('ancho', !!vista.ancho);
+  $nuevo.innerHTML = vista.html;
+  window.scrollTo(0, 0);
+  // `recargar` vuelve a pintar la pantalla en la que ya estás. ir() a la misma
+  // ruta no sirve: el hash no cambia y no pasa nada (así se quedó colgada la
+  // caja recién abierta, y Categorías no enseñaba la que acababas de guardar).
+  const r = vista.alMontar?.($nuevo, { aviso, ir, ruta, recargar: () => navegar() });
+  // alMontar puede ser async (las pantallas con mapa): su limpieza llega
+  // después. Si para entonces ya se cambió de pantalla, se limpia en el acto.
+  if(typeof r === 'function') desmontar = r;
+  else if(r?.then) r.then((f) => { if(typeof f !== 'function') return; if(mio === turno) desmontar = f; else f(); }).catch((e) => console.error(e));
+  // El foco va al título al cambiar de pantalla (no en la primera carga): quien
+  // navega con lector de pantalla oye dónde llegó.
+  if(!primera) $t.focus({ preventScroll: true });
+  primera = false;
+  // El letrero «Viendo como» se vuelve a leer en cada pantalla: la sesión
+  // también cambia por dentro (al pedir, la muestra pasa a «cliente de
+  // prueba») y el menú se quedaba diciendo «Admin».
+  pintarComo().catch(() => {});
+}
+
+export function ir(patron, params){ location.hash = enlace(patron, params).slice(1); }
+
+async function pintarComo(persona){
+  const el = $app.querySelector('#como');
+  if(!el) return;
+  persona ??= await yo();
+  el.textContent = persona ? `Viendo como: ${persona.nombre || persona.rol}` : 'Viendo como: visitante sin cuenta';
+}
+
+/* ── Clics del armazón ────────────────────────────────────────────────── */
+$app.addEventListener('click', (e) => {
+  const t = e.target.closest('button, a');
+  if(!t) return;
+  if(t.matches('[data-abrir-menu]')) abrirMenu(true);
+  else if(t.matches('[data-cerrar-menu]')) abrirMenu(false);
+  else if(t.matches('[data-riel]')){
+    const riel = !$app.classList.contains('riel');
+    $app.classList.toggle('riel', riel);
+    guardado('tienda-riel', riel ? '1' : '0');
+    t.setAttribute('aria-pressed', riel);
+    t.setAttribute('aria-label', riel ? 'Abrir menú' : 'Hacer menú angosto');
+  }
+  else if(t.matches('[data-instalar]')) instalar();
+  else if(t.matches('[data-tema]')){
+    const nuevo = temaActual() === 'oscuro' ? 'claro' : 'oscuro';
+    document.documentElement.dataset.tema = nuevo;
+    guardado('tienda-tema', nuevo);
+    pintarAjustesVista();
+  }
+  else if(t.matches('[data-letra]')){
+    const grande = document.documentElement.dataset.letra !== 'grande';
+    if(grande) document.documentElement.dataset.letra = 'grande'; else delete document.documentElement.dataset.letra;
+    guardado('tienda-letra', grande ? 'grande' : '');
+    pintarAjustesVista();
+  }
+  else if(t.matches('[data-atras]')){
+    // Si se llegó por un enlace directo no hay a dónde regresar: al inicio del apartado.
+    if(history.length > 1 && !primeraEntrada) history.back();
+    else{
+      const r = emparejar(location.hash.replace(/^#/, '') || '/');
+      ir(inicioDe(r?.apartado || 'cliente').ruta);
+    }
+  }
+  else if(t.matches('[data-reintentar]')) navegar();
+  else if(t.matches('[data-fav]')) alternarFavorito(t);
+  else if(t.matches('[data-rapido]')) agregarRapido(t);
+});
+
+/* El corazón y el «+» de las tarjetas (cliente/tarjeta.js), en cualquier pantalla. */
+function alternarFavorito(b){
+  const puesto = memoria.favoritos.alternar({ id: b.dataset.fav, p: Number(b.dataset.precio) });
+  document.querySelectorAll(`[data-fav="${CSS.escape(b.dataset.fav)}"]`).forEach((x) => {
+    x.setAttribute('aria-pressed', puesto);
+    x.setAttribute('aria-label', x.getAttribute('aria-label').replace(/^(Quitar de favoritos|Guardar en favoritos)/, puesto ? 'Quitar de favoritos' : 'Guardar en favoritos'));
+  });
+  aviso(puesto ? 'Guardado en favoritos' : 'Quitado de favoritos');
+}
+async function agregarRapido(b){
+  const { porId } = await catalogo();
+  const p = porId.get(b.dataset.rapido);
+  if(!p || p.x){ aviso('Se agotó', 'mal'); return; }
+  if(carrito.cuantas(p.id) >= p.q){ aviso(`Ya llevas todas las que hay (${p.q})`, 'mal'); return; }
+  carrito.agregar(p.id);
+  b.classList.remove('hecho'); void b.offsetWidth; b.classList.add('hecho');
+  aviso(`Agregado · llevas ${carrito.piezas() === 1 ? '1 pieza' : `${carrito.piezas()} piezas`}`);
+}
+document.addEventListener('keydown', (e) => { if(e.key === 'Escape' && $app.classList.contains('menu-abierto')) abrirMenu(false); });
+
+let primeraEntrada = true;
+window.addEventListener('hashchange', () => { primeraEntrada = false; navegar(); });
+carrito.alCambiar(pintarInsignia);
+
+/* ── Arranque ─────────────────────────────────────────────────────────── */
+(async function arrancar(){
+  try{
+    N = await negocio();
+  }catch(e){
+    console.error(e);
+    $app.innerHTML = `<main class="contenido">${fallo(e).html}</main>`;
+    $app.addEventListener('click', (ev) => { if(ev.target.closest('[data-reintentar]')) location.reload(); }, { once: true });
+    return;
+  }
+  esDemo = N.ajustes?.demo === true;
+  if(N.marca?.acento && /^#[0-9a-f]{6}$/i.test(N.marca.acento))
+    document.documentElement.style.setProperty('--acento', N.marca.acento);
+  presentacion(N);
+  pintarArmazon(await yo().catch(() => null));
+  pintarComo();
+  navegar();
+  instalarFondo();
+  avisoDeRed();
+  subirPendientes();
+})();
+
+/* ── Instalar en el teléfono ─────────────────────────────────────────────
+   Android y computadora: el aviso del propio navegador. iPhone no tiene ese
+   aviso: se enseñan los dos toques (Compartir → Agregar a inicio). */
+let avisoInstalar = null;
+window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); avisoInstalar = e; });
+window.addEventListener('appinstalled', () => { $app.querySelector('[data-instalar]')?.setAttribute('hidden', ''); aviso('Listo: ya está en tu pantalla de inicio'); });
+function instalada(){ return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; }
+async function instalar(){
+  if(avisoInstalar){ avisoInstalar.prompt(); await avisoInstalar.userChoice.catch(() => null); avisoInstalar = null; return; }
+  const iphone = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  hoja({ titulo: 'Instalar la app', cuerpo: iphone
+    ? `<ol class="pasos-instalar"><li>Toca <b>Compartir</b> ${icono('adelante')} (el cuadrito con la flecha, abajo en Safari).</li>
+        <li>Baja y toca <b>Agregar a inicio</b>.</li><li>Toca <b>Agregar</b>. Queda como una app más, y abre aunque no haya internet.</li></ol>
+       <p class="nota">Tiene que ser en <b>Safari</b>: desde otro navegador del iPhone no sale la opción.</p>`
+    : `<ol class="pasos-instalar"><li>Abre el menú del navegador (los tres puntos).</li><li>Toca <b>Instalar app</b> o <b>Agregar a la pantalla principal</b>.</li></ol>
+       <p class="nota">Queda como una app más, y abre aunque no haya internet.</p>` });
+}
+
+/* ── Sin red ─────────────────────────────────────────────────────────────
+   El trabajador de fondo (sw.js) guarda la app y el catálogo; aquí se le
+   pasa la lista de lo que ya bajó en esta primera visita, para que la
+   siguiente abra aunque no haya internet. */
+function instalarFondo(){
+  if(!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.register('sw.js').then(async () => {
+    const listo = await navigator.serviceWorker.ready;
+    const urls = [...new Set([new URL('index.html', location.href).href,
+      ...performance.getEntriesByType('resource').map((r) => r.name).filter((u) => u.startsWith(location.origin))])];
+    listo.active?.postMessage({ tipo: 'guardar', urls });
+  }).catch((e) => console.error('trabajador de fondo', e));
+}
+
+/* Una franja que dice que no hay red y qué pasa mientras (sin asustar). */
+function avisoDeRed(){
+  const franja = document.createElement('div');
+  franja.className = 'franja-sin-red'; franja.setAttribute('role', 'status');
+  franja.innerHTML = `${icono('alerta')}<span>Sin internet. La app sigue: el mostrador vende y las ventas se suben solas al volver la red.</span>`;
+  const pinta = () => { franja.hidden = navigator.onLine !== false; };
+  document.body.append(franja); pinta();
+  window.addEventListener('offline', pinta);
+  window.addEventListener('online', () => { pinta(); subirPendientes(); });
+}
+
+async function subirPendientes(){
+  try{
+    const r = await subirVentasPendientes();
+    if(r.subidas.length) aviso(`Volvió la red: se ${r.subidas.length === 1 ? 'subió 1 venta' : `subieron ${r.subidas.length} ventas`} hechas sin internet`);
+    if(r.rechazadas.length) aviso(`${plural(r.rechazadas.length, 'venta sin red no se pudo', 'ventas sin red no se pudieron')} subir. Revísalas en Caja.`, 'mal');
+  }catch(e){ console.error(e); }
+}
