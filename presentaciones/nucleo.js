@@ -1434,3 +1434,43 @@ function textosDe(deck, i){
   return [...t.filter((x) => x.titulo), ...t.filter((x) => !x.titulo)];
 }
 function ponerTextoSinc(deck, i, forma, texto){ return ponerTexto(deck, i, forma, texto); }
+
+/* ══ INFORME DE DISEÑO (para que la IA opine con datos) ═══════════════════
+   La IA no ve la presentación: ve sus textos. Para que sus consejos de
+   diseño no sean de horóscopo, se le pasa lo que se puede MEDIR de cada
+   lámina: cuánto texto trae, qué tamaños y letras usa, qué fondo, cuántas
+   imágenes, qué se desborda o se sale. */
+export async function informeDiseno(deck){
+  const letras = new Map(), tamanos = [], colores = new Map();
+  const laminas = [];
+  for(const [i, l] of deck.laminas.entries()){
+    const m = await modelo(deck, i);
+    const fs = formasSueltas(deck, l);
+    const conTexto = fs.filter((f) => f.texto);
+    let palabras = 0, maxPt = 0, minPt = Infinity, desbordes = 0, fuera = 0;
+    for(const f of conTexto){
+      palabras += f.texto.split(/\s+/).filter(Boolean).length;
+      if(f.tipo === 'sp'){
+        const ps = parrafosMedibles(deck, l, f);
+        for(const p of ps){ if(!p.renglones.join('').trim()) continue; maxPt = Math.max(maxPt, p.pt); minPt = Math.min(minPt, p.pt); tamanos.push(Math.round(p.pt)); letras.set(p.letra, (letras.get(p.letra) || 0) + 1); }
+        const inn = interior(f);
+        if(!f.rot && inn.ancho > 4 && medirTexto(ps, inn.ancho, 1).alto > inn.alto * 1.05 && !hijo(hijo(f.tb, NS.a, 'bodyPr'), NS.a, 'spAutoFit')) desbordes++;
+      }
+      if(f.x < 0 || f.y < 0 || f.x + f.w > deck.ancho || f.y + f.h > deck.alto) fuera++;
+    }
+    for(const f of m.formas) for(const p of f.parrafos || []) for(const r of p.runs) if(r.t?.trim() && r.color) colores.set(r.color, (colores.get(r.color) || 0) + r.t.length);
+    const fondo = m.fondo.imagen ? 'imagen' : m.fondo.degradado ? `degradado ${m.fondo.degradado.map((g) => g.color).join('→')}` : (m.fondo.color || 'sin fondo');
+    laminas.push({
+      lamina: i + 1, palabras, cuadrosDeTexto: conTexto.length, imagenes: m.formas.filter((f) => f.imagen).length,
+      letraMaxPt: Math.round(maxPt) || null, letraMinPt: minPt === Infinity ? null : Math.round(minPt), fondo,
+      ...(desbordes ? { textoQueNoCabe: desbordes } : {}), ...(fuera ? { fueraDeLaLamina: fuera } : {}),
+      titulo: conTexto.find((f) => f.titulo)?.texto.slice(0, 80) || null,
+    });
+  }
+  const top = (mapa, n) => [...mapa.entries()].sort((a, b) => b[1] - a[1]).slice(0, n).map(([k]) => k);
+  return {
+    laminas: deck.laminas.length, proporcion: `${(deck.ancho / deck.alto).toFixed(2)} (${Math.abs(deck.ancho / deck.alto - 16 / 9) < 0.05 ? '16:9' : Math.abs(deck.ancho / deck.alto - 4 / 3) < 0.05 ? '4:3' : 'otra'})`,
+    letrasUsadas: top(letras, 6), tamanosDeLetraPt: [...new Set(tamanos)].sort((a, b) => b - a).slice(0, 12),
+    coloresDeTexto: top(colores, 6), paletaDelTema: paletaTema(deck), porLamina: laminas,
+  };
+}

@@ -43,6 +43,9 @@ function aviso(texto, tipo = '', { accion, ms = 4200 } = {}){
   const a = h('div', { class: `aviso ${tipo}` }, h('span', { class: 'crece' }, texto));
   if(accion) a.append(h('button', { class: 'chip', type: 'button', on: { click: () => { a.remove(); accion.fn(); } } }, accion.texto));
   $('#avisos').append(a);
+  // Dos a la vista, nunca más: haciendo cambios seguidos se apilaban ocho y tapaban toda la pantalla.
+  const vivos = $$('#avisos .aviso');
+  vivos.slice(0, Math.max(0, vivos.length - 2)).forEach((x) => x.remove());
   setTimeout(() => a.remove(), ms);
 }
 const ocupado = (tx) => { $('#ocupado-tx').textContent = tx || ''; $('#ocupado').hidden = !tx; };
@@ -86,6 +89,10 @@ function mostrarTrabajo(){
   $('#b-guardar').hidden = false; $('#b-abrir').hidden = false; $('#b-deshacer').hidden = false;
   $('#archivo').textContent = nombre + '.pptx';
   $('#laminas').style.setProperty('--proporcion', `${D.ancho} / ${D.alto}`);
+  construirRejilla();
+}
+/* Se rehace cuando cambia CUÁNTAS láminas hay (lámina nueva, o deshacerla). */
+function construirRejilla(){
   pintadas.clear(); version++;
   const cont = $('#laminas');
   observador.disconnect();
@@ -117,6 +124,10 @@ async function pintarLamina(i){
 }
 /* Después de un cambio: se repintan las que están a la vista; las demás, cuando aparezcan. */
 function refrescar(){
+  if($$('#laminas .lam').length !== D.laminas.length){
+    sel = new Set([...sel].filter((i) => i < D.laminas.length));
+    construirRejilla();
+  }
   version++;
   const alto = innerHeight;
   for(const m of $$('#laminas .marco')){
@@ -319,6 +330,7 @@ function panelTexto(){
     aQuien(),
     seccion('En qué textos', donde,
       h('p', { class: 'nota' }, 'Si la presentación no marca títulos, cuenta como título el texto más grande de cada lámina.')),
+    seccionRecuadro(() => en),
     seccion('Letra', h('div', { class: 'fila dos' }, h('label', { class: 'campo' }, 'Tipo de letra', letra),
       h('button', { class: 'btn', type: 'button', style: { alignSelf: 'end', marginBottom: '10px' }, on: { click: () => {
         const f = letra.value, o = obj(), e = en;
@@ -339,6 +351,36 @@ function panelTexto(){
         aplicar(`Cambiar «${b}»`, () => N.reemplazarTexto(D, o, b, p), (n) => n ? `Cambié ${plural(n, 'vez', 'veces')} «${b}».` : `No encontré «${b}».`);
       } } }, 'Cambiar en todas')),
   ]);
+}
+
+/* ── Recuadro detrás del texto: «para que se vean de lujo» (Carlos) ── */
+const RECUADROS = [
+  ['auto', 'Automático', 'Claro si el texto es oscuro, oscuro si es claro. Nunca se pierde el texto.'],
+  ['cristal', 'Cristal oscuro', null], ['claro', 'Cristal claro', null], ['solido', 'Sólido', null], ['pildora', 'Píldora', null], ['propio', 'Tu color', null],
+];
+function seccionRecuadro(dondeEs){
+  let estilo = 'auto', color = '#AC27FF', alfa = 0.85;
+  const extra = h('div');
+  const contraste = h('input', { type: 'checkbox', checked: true });
+  const opciones = h('div', { class: 'recuadros' }, RECUADROS.map(([id, nombre]) => h('button', { class: 'recuadro-op', type: 'button', 'data-recuadro': id, 'aria-pressed': String(id === estilo),
+    on: { click: () => { estilo = id; $$('[data-recuadro]', opciones).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.recuadro === id))); pintaExtra(); } } },
+    h('span', { class: `muestra-recuadro r-${id}` }, h('i', {}, 'Aa')), h('span', {}, nombre))));
+  const pintaExtra = () => extra.replaceChildren(estilo === 'propio' ? h('div', {}, selectorColor(color, (c) => { color = c; }),
+    h('label', { class: 'campo' }, 'Qué tan sólido', h('input', { type: 'range', min: '0.3', max: '1', step: '0.05', value: String(alfa), on: { input: (e) => { alfa = Number(e.target.value); } } }))) : '');
+  pintaExtra();
+  return seccion('Recuadro detrás del texto', opciones, extra,
+    h('p', { class: 'nota' }, 'Abraza al texto con sombra suave y esquinas redondas. El texto no se mueve. «En qué textos» de arriba también cuenta.'),
+    h('label', { class: 'check' }, contraste, h('span', {}, 'Arreglar el texto que no se lea sobre el recuadro')),
+    h('div', { class: 'fila dos' },
+      h('button', { class: 'btn primario', type: 'button', 'data-poner-recuadro': '', on: { click: () => {
+        const o = objetivo(), en = dondeEs(), e = estilo, op = e === 'propio' ? { estilo: 'solido', color, alfa } : { estilo: e };
+        aplicar('Recuadro', async () => {
+          const n = await N.ponerRecuadro(D, o, { ...op, en });
+          const c = contraste.checked && e !== 'auto' ? await N.arreglarContraste(D, o) : 0;
+          return { n, c };
+        }, (r) => r.n ? `Recuadro en ${plural(r.n, 'texto', 'textos')}${r.c ? ` · ${plural(r.c, 'texto ajustado', 'textos ajustados')} para que se lea` : ''}.` : 'No encontré textos sueltos a los que ponérselo (los que ya tienen fondo propio se respetan).');
+      } } }, 'Poner recuadro'),
+      h('button', { class: 'btn', type: 'button', on: { click: () => { const o = objetivo(); aplicar('Quitar recuadros', () => N.quitarRecuadro(D, o), (n) => n ? `${plural(n, 'recuadro quitado', 'recuadros quitados')}.` : 'No había recuadros puestos por aquí.'); } } }, 'Quitar recuadros')));
 }
 
 /* ══ ACOMODAR ═════════════════════════════════════════════════════════════
@@ -553,6 +595,8 @@ Cada cambio es uno de estos:
 {"op":"colorTexto","color":"#FFFFFF","en":"titulos","laminas":"todas"}
 {"op":"tamano","factor":1.1,"en":"texto","laminas":"todas"}
 {"op":"contraste","laminas":"todas"}
+{"op":"recuadro","estilo":"auto","en":"titulos","laminas":"todas"}   (recuadro con sombra detrás del texto; estilo: auto, cristal, claro, solido o pildora)
+{"op":"laminaNueva","copiaDe":4,"despues":6,"textos":["Título de la lámina","renglón 1\nrenglón 2"]}   (lámina nueva con el diseño de la lámina «copiaDe», puesta después de la lámina «despues»; «textos» va en orden: primero el título y luego los demás cuadros)
 
 Reglas:
 - "laminas" es "todas" o una lista de números de lámina. "en" es "todo", "titulos" o "texto".
@@ -560,12 +604,37 @@ Reglas:
 - Sólo propone cambios en las láminas que te paso.
 - No inventes datos, nombres, fechas ni cifras que no estén en la presentación.
 - Si cambias el fondo a oscuro o a claro, agrega también {"op":"contraste"} para las mismas láminas.
-- Si te piden algo que no se puede con estas órdenes (animaciones, mover cosas, agregar o borrar láminas, imágenes), dilo en "explicacion" y deja "cambios" vacío. Para imágenes di que usen la pestaña Imágenes.
+- Para sumar un apartado usa "laminaNueva": copia el diseño de una lámina que tenga la misma forma (título + viñetas se copia de una de título + viñetas) y no inventes cifras: si hace falta un dato, deja un renglón como «[dato por confirmar]».
+- Si te piden algo que no se puede con estas órdenes (animaciones, borrar láminas, imágenes), dilo en "explicacion" y deja "cambios" vacío. Para imágenes di que usen la pestaña Imágenes; para acomodar tamaños y márgenes, la pestaña Acomodar.
 - Si sólo te hacen una pregunta, contéstala en "explicacion" con "cambios" vacío.
 - Español de México, con buena ortografía y acentos.`;
-let chat = [];            // [{ de:'tu'|'yo', texto, propuesta? }]
+/* Modo opinión: Carlos quiere «preguntarle a la IA qué opina de la
+   presentación, consejos para mejorar el diseño o qué apartados sumar». La
+   IA no ve las láminas, así que además de los textos recibe lo que se MIDE
+   del archivo (informeDiseno): tamaños, letras, colores, fondos, imágenes,
+   texto que no cabe. Con eso opina de lo que hay, no de lo que imagina. */
+const SISTEMA_OPINION = `Eres directora de arte y coach de presentaciones en Grupo Mazi. Te paso los textos de una presentación de PowerPoint y un informe de su diseño medido del archivo (tamaños de letra en pt, letras usadas, colores, fondos, imágenes y problemas por lámina).
+
+Da tu opinión honesta y útil, como alguien que sabe y quiere que la presentación se vea profesional. Estructura tu respuesta así, en texto plano (sin #, sin **, sin tablas), con viñetas «•»:
+
+LO QUE FUNCIONA
+• dos o tres cosas concretas
+
+LO QUE MEJORARÍA DEL DISEÑO
+• cada punto con el número de lámina y qué hacer exactamente (tamaño, espacio, jerarquía, contraste, consistencia, cantidad de texto, imágenes)
+
+APARTADOS QUE LE SUMARÍA
+• cada apartado con por qué hace falta y qué llevaría (si falta un dato, dilo; no lo inventes)
+
+SIGUIENTES TRES PASOS
+• los tres cambios que más se notarían, en orden
+
+Reglas: menos de 30 palabras en una lámina se lee bien; más de 60 es mucho. Un título de menos de 28 pt en 16:9 se ve chico; texto de menos de 14 pt no se lee proyectado. Más de dos letras distintas se ve desordenado. Si te hacen una pregunta concreta, contéstala primero. Español de México, directo, sin relleno.`;
+let chat = [];            // [{ de:'tu'|'yo', texto, propuesta?, opinion? }]
 let motor = 'gemini';
-const EJEMPLOS = ['Corrige ortografía y acentos', 'Hazla más formal', 'Acorta los textos largos', 'Fondo azul marino y letra blanca', 'Títulos más llamativos'];
+let modoIA = 'cambios';
+const EJEMPLOS = ['Corrige ortografía y acentos', 'Hazla más formal', 'Acorta los textos largos', 'Fondo azul marino y letra blanca', 'Recuadro de lujo en los títulos'];
+const PREGUNTAS = ['¿Qué opinas de mi presentación?', '¿Qué apartados le faltan?', '¿Cómo mejoro el diseño?', '¿Sirve para exponer 10 minutos?', '¿Qué lámina está más floja?'];
 
 function panelIA(prellenado = '', enviarYa = false){
   const cuerpo = [];
@@ -575,6 +644,13 @@ function panelIA(prellenado = '', enviarYa = false){
     chatEl.replaceChildren(...chat.map((m) => {
       if(m.de === 'tu') return h('div', { class: 'msj tu' }, m.texto);
       if(m.error) return h('div', { class: 'msj yo error' }, m.texto);
+      if(m.opinion){
+        const caja = h('div', { class: 'msj yo opinion' }, m.texto);
+        if(!m.aplicando) caja.append(h('div', { style: { height: '10px' } }), h('button', { class: 'btn primario ancho', type: 'button', on: { click: () => { m.aplicando = true;
+          enviar('Aplica los consejos que acabas de darme que se puedan hacer con las órdenes, incluidas las láminas nuevas para los apartados que propusiste.', 'cambios'); } } }, '✦ Aplícalo'),
+          h('p', { class: 'nota' }, 'Te enseña los cambios antes de ponerlos, y tú eliges.'));
+        return caja;
+      }
       const caja = h('div', { class: 'msj yo' }, m.propuesta?.explicacion || m.texto);
       if(m.propuesta?.cambios?.length && !m.aplicado){
         const checks = m.propuesta.cambios.map((c) => ({ c, input: h('input', { type: 'checkbox', checked: true }) }));
@@ -591,16 +667,20 @@ function panelIA(prellenado = '', enviarYa = false){
     }));
     chatEl.lastElementChild?.scrollIntoView({ block: 'end' });
   };
-  const enviar = async () => {
-    const t = escribir.value.trim();
+  async function enviar(textoDirecto, modo = modoIA){
+    const t = (typeof textoDirecto === 'string' ? textoDirecto : escribir.value).trim();
     if(!t) return;
-    escribir.value = '';
+    if(typeof textoDirecto !== 'string') escribir.value = '';
     chat.push({ de: 'tu', texto: t });
     pintaChat();
-    chatEl.append(h('div', { class: 'msj yo' }, h('span', { class: 'pensando' }, h('i'), h('i'), h('i')), ` ${motor === 'gemini' ? 'Paulina' : 'Negro'} está pensando…`));
+    chatEl.append(h('div', { class: 'msj yo' }, h('span', { class: 'pensando' }, h('i'), h('i'), h('i')), ` ${motor === 'gemini' ? 'Paulina' : 'Negro'} está ${modo === 'opinion' ? 'revisando tu presentación' : 'pensando'}…`));
     try{
-      const res = await IA.texto({ motor, sistema: SISTEMA + '\n\n' + contexto(), tope: 8000,
+      const sistema = modo === 'opinion'
+        ? SISTEMA_OPINION + '\n\n' + contexto() + '\n\nINFORME DE DISEÑO (medido del archivo):\n' + JSON.stringify(await informe())
+        : SISTEMA + '\n\n' + contexto();
+      const res = await IA.texto({ motor, sistema, tope: 8000,
         mensajes: chat.filter((m) => !m.error).map((m) => ({ de: m.de, texto: m.de === 'yo' ? (m.crudo || m.texto) : m.texto })) });
+      if(modo === 'opinion'){ chat.push({ de: 'yo', texto: res.replace(/\*\*/g, '').replace(/^#+\s*/gm, ''), opinion: true, pregunta: t }); pintaChat(); return; }
       const j = IA.sacarJson(res);
       const propuesta = j && Array.isArray(j.cambios) ? { explicacion: String(j.explicacion || ''), cambios: j.cambios.filter(valido) } : null;
       chat.push({ de: 'yo', texto: propuesta ? propuesta.explicacion : res, crudo: res, propuesta, pregunta: t });
@@ -609,7 +689,7 @@ function panelIA(prellenado = '', enviarYa = false){
       if(e.llave) pintaLlave(true);
     }
     pintaChat();
-  };
+  }
   const zonaLlave = h('div');
   const pintaLlave = (forzar = false) => {
     if(IA.llave() && !forzar){ zonaLlave.replaceChildren(); return; }
@@ -620,22 +700,40 @@ function panelIA(prellenado = '', enviarYa = false){
       h('button', { class: 'btn ancho', type: 'button', on: { click: () => { if(IA.ponerLlave(inp.value)){ aviso('Listo, La Sala quedó conectada.', 'bien'); pintaLlave(); } else aviso('No encontré la llave en eso.', 'mal'); } } }, 'Conectar')));
   };
   pintaLlave();
+  const ejemplos = h('div', { class: 'ejemplos' });
+  const explica = h('p', { class: 'a-quien' });
+  const botonPedir = h('button', { class: 'btn primario', type: 'button', on: { click: () => enviar() } });
+  const pintaModo = () => {
+    const op = modoIA === 'opinion';
+    explica.replaceChildren(...(op ? ['La IA revisa ', h('b', {}, textoObjetivo()), ' y te dice qué funciona, qué mejorar del diseño y qué apartados sumar. Luego, si quieres, lo aplica.']
+      : ['La IA ve el texto de ', h('b', {}, textoObjetivo()), ' y te propone cambios. Tú decides cuáles se ponen.']));
+    ejemplos.replaceChildren(...(op ? PREGUNTAS : EJEMPLOS).map((e) => h('button', { class: 'chip', type: 'button', on: { click: () => { if(op){ enviar(e, 'opinion'); } else { escribir.value = e; escribir.focus(); } } } }, e)));
+    escribir.placeholder = op ? 'Pregúntale lo que quieras de tu presentación' : '¿Qué le hago a la presentación?';
+    botonPedir.textContent = op ? 'Preguntar' : 'Pedir';
+  };
+  pintaModo();
   cuerpo.push(
-    h('p', { class: 'a-quien' }, 'La IA ve el texto de ', h('b', {}, textoObjetivo()), ' y te propone cambios. Tú decides cuáles se ponen.'),
+    segmento([['cambios', 'Pedir cambios'], ['opinion', 'Opinión y consejos']], modoIA, (v) => { modoIA = v; pintaModo(); }),
+    explica,
     zonaLlave,
     segmento([['gemini', 'Paulina · Gemini'], ['groq', 'Negro · Groq']], motor, (v) => { motor = v; }),
     chatEl,
-    h('div', { class: 'ejemplos' }, EJEMPLOS.map((e) => h('button', { class: 'chip', type: 'button', on: { click: () => { escribir.value = e; escribir.focus(); } } }, e))),
+    ejemplos,
     escribir,
     h('div', { style: { height: '8px' } }),
     h('div', { class: 'fila dos' },
-      h('button', { class: 'btn primario', type: 'button', on: { click: enviar } }, 'Pedir'),
+      botonPedir,
       h('button', { class: 'btn', type: 'button', on: { click: () => { chat = []; pintaChat(); } } }, 'Empezar de nuevo')),
   );
   hoja('IA', cuerpo);
   escribir.addEventListener('keydown', (e) => { if(e.key === 'Enter' && (e.metaKey || e.ctrlKey)){ e.preventDefault(); enviar(); } });
   pintaChat();
   if(enviarYa) enviar();
+}
+async function informe(){
+  const inf = await N.informeDiseno(D);
+  const idx = new Set(N.cuales(D, objetivo()));
+  return { ...inf, porLamina: inf.porLamina.filter((x) => idx.has(x.lamina - 1)) };
 }
 /* Lo que ve la IA: los textos de las láminas a las que se aplica. */
 function contexto(){
@@ -663,6 +761,8 @@ function valido(c){
     case 'colorTexto': return esHex(c.color);
     case 'tamano': return Number(c.factor) > 0.3 && Number(c.factor) < 3;
     case 'contraste': return true;
+    case 'recuadro': return !c.estilo || ['auto', 'cristal', 'claro', 'solido', 'pildora'].includes(c.estilo);
+    case 'laminaNueva': { const k = Number(c.copiaDe) - 1, d = Number(c.despues ?? c.copiaDe); return k >= 0 && k < D.laminas.length && d >= 0 && d <= D.laminas.length && Array.isArray(c.textos) && c.textos.length > 0 && c.textos.length <= 12 && c.textos.every((t) => typeof t === 'string'); }
     default: return false;
   }
 }
@@ -681,12 +781,18 @@ function describir(c){
     case 'colorTexto': return ['Color ', muestra(c.color), ` en ${enTx} de ${donde(c)}`];
     case 'tamano': return [`${c.factor > 1 ? 'Agrandar' : 'Achicar'} ${enTx} ${Math.round(Math.abs(c.factor - 1) * 100)} % en ${donde(c)}`];
     case 'contraste': return [`Arreglar contraste en ${donde(c)}`];
+    case 'recuadro': return [`Recuadro ${{ auto: 'automático', cristal: 'de cristal oscuro', claro: 'de cristal claro', solido: 'sólido', pildora: 'de píldora' }[c.estilo || 'auto']} detrás de ${enTx} en ${donde(c)}`];
+    case 'laminaNueva': return [h('b', {}, `Lámina nueva después de la ${Number(c.despues ?? c.copiaDe)}: `), `«${String(c.textos[0]).slice(0, 80)}»`, c.textos.length > 1 ? ` — ${c.textos.slice(1).join(' / ').replace(/\n/g, ' · ').slice(0, 200)}` : '', h('span', { class: 'nota' }, ` (con el diseño de la ${c.copiaDe})`)];
   }
   return [JSON.stringify(c)];
 }
 async function aplicarCambios(cambios){
   let n = 0;
-  for(const c of cambios){
+  /* Las láminas nuevas van AL FINAL y de atrás para adelante: meter una
+     recorre los números de las que siguen, y los demás cambios hablan de los
+     números de antes. */
+  const nuevas = cambios.filter((c) => c.op === 'laminaNueva').sort((a, b) => Number(b.despues ?? b.copiaDe) - Number(a.despues ?? a.copiaDe));
+  for(const c of [...cambios.filter((c) => c.op !== 'laminaNueva'), ...nuevas]){
     const L = lams(c.laminas), en = EN.has(c.en) ? c.en : 'todo';
     switch(c.op){
       case 'texto': n += await N.ponerTexto(D, Number(c.lamina) - 1, Number(c.forma), c.texto); break;
@@ -696,6 +802,12 @@ async function aplicarCambios(cambios){
       case 'colorTexto': await N.ponerColorTexto(D, L, c.color, { en }); n++; break;
       case 'tamano': await N.escalarTexto(D, L, Number(c.factor), { en }); n++; break;
       case 'contraste': await N.arreglarContraste(D, L); n++; break;
+      case 'recuadro': n += (await N.ponerRecuadro(D, L, { estilo: c.estilo || 'auto', en })) ? 1 : 0; break;
+      case 'laminaNueva': {
+        const copia = Number(c.copiaDe) - 1, desp = Number(c.despues ?? c.copiaDe) - 1;
+        await N.laminaNueva(D, { copiaDe: copia >= 0 ? copia : 0, despues: desp, textos: c.textos.map(String) });
+        n++; break;
+      }
     }
   }
   return n;
@@ -725,6 +837,10 @@ async function pintarVisor(){
     marco,
     h('div', { class: 'nav-visor' },
       h('button', { class: 'btn', type: 'button', 'aria-pressed': String(elegida), on: { click: () => { alternar(i); pintarVisor(); } } }, elegida ? '✓ Elegida' : 'Elegir esta'),
+      h('button', { class: 'btn', type: 'button', on: { click: async () => {
+        const r = await aplicar('Lámina nueva', () => N.duplicarLamina(D, i, { despues: i }), (j) => `Lámina ${j + 1} nueva, igual a la ${i + 1}. Cámbiale los textos aquí abajo.`);
+        if(r != null){ actual = r; pintarVisor(); }
+      } } }, '＋ Lámina igual'),
       h('button', { class: 'btn', type: 'button', on: { click: () => { sel = new Set([i]); pintarEleccion(); $('#visor').close(); panelIA(`Mejora la redacción de la lámina ${i + 1}: más clara y directa, sin cambiar el sentido ni inventar datos.`, true); } } }, '✦ Mejorar con IA')),
     m.formas.some((f) => f.imagen || f.relleno?.imagen) ? h('p', { class: 'nota' }, 'Toca una imagen de la lámina para cambiarla.') : null,
     textos.length ? h('div', { class: 'seccion', style: { marginTop: '16px' } }, h('h3', {}, 'Textos de la lámina'),

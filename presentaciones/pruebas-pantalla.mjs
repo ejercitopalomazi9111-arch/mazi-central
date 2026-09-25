@@ -71,6 +71,15 @@ async function pagina(ancho, alto){
         { titulo: 'Cafetería escolar', descripcion: 'Alumnos comiendo en mesas largas.', temas: ['escuela', 'alimentación'], palabras: ['comida', 'alumnos'], texto_visible: '', problemas: '' }];
       return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ bien: true, motor: 'gemini', texto: JSON.stringify(fichas[(n - 1) % 3]) }) });
     }
+    if(/ia-texto/.test(u) && /directora de arte/.test(cuerpo?.sistema || '')){
+      return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ bien: true, motor: 'gemini', texto: 'LO QUE FUNCIONA\n• Los títulos son claros.\n\nLO QUE MEJORARÍA DEL DISEÑO\n• **Lámina 5**: el texto es chico.\n\nAPARTADOS QUE LE SUMARÍA\n• Resultados del piloto.\n\nSIGUIENTES TRES PASOS\n• Recuadros en los títulos.' }) });
+    }
+    if(/ia-texto/.test(u) && /Aplica los consejos/.test(cuerpo?.mensajes?.at(-1)?.texto || '')){
+      return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ bien: true, motor: 'gemini', texto: JSON.stringify({ explicacion: 'Pongo recuadros en los títulos y sumo la lámina de resultados.', cambios: [
+        { op: 'recuadro', estilo: 'auto', en: 'titulos', laminas: 'todas' },
+        { op: 'laminaNueva', copiaDe: 9, despues: 9, textos: ['Resultados del piloto', 'Menos filas\n[dato por confirmar]'] },
+        { op: 'laminaNueva', copiaDe: 99, despues: 2, textos: ['x'] }] }) }) });
+    }
     if(/ia-texto/.test(u)){
       const quiere = cuerpo?.mensajes?.at(-1)?.texto || '';
       const respuesta = /formal/.test(quiere)
@@ -168,7 +177,7 @@ console.log('\n· IA');
 await p.click('.dock [data-panel="ia"]');
 ok('con la llave de la mesa guardada, no pide conectar', !(await p.getByText('conecta La Sala una vez').count()));
 await p.locator('#hoja textarea').fill('Hazla más formal');
-await p.getByRole('button', { name: 'Pedir' }).click();
+await p.getByRole('button', { name: 'Pedir', exact: true }).click();
 await p.waitForSelector('#hoja .cambios li', { timeout: 10000 });
 const pedido = pedidos.find((x) => /ia-texto/.test(x.u));
 ok('le pide a La Sala con la llave de la sala', pedido?.llave === 'llave-de-prueba', JSON.stringify(pedido?.llave));
@@ -182,6 +191,48 @@ const tx5 = await p.evaluate(() => window.__pres.N.textos(window.__pres.D, 4).ma
 ok('el texto propuesto quedó en la lámina 5', tx5.includes('Propósito de Fadori') || tx5.some((t) => /Propósito de FADORI/.test(t)), JSON.stringify(tx5));
 ok('todo lo de la IA es UN solo deshacer', await p.evaluate(() => /^IA:/.test(window.__pres.D.deshacer.at(-1).nombre)));
 await p.keyboard.press('Escape');
+
+console.log('\n· Recuadro detrás del texto');
+await p.click('.dock [data-panel="texto"]');
+ok('la hoja de Texto trae el recuadro con seis estilos a la vista', (await p.locator('#hoja [data-recuadro]').count()) === 6);
+await p.locator('#hoja .segmento button', { hasText: 'Títulos' }).first().click();
+await captura(p, '10-recuadro');
+await p.locator('#hoja [data-poner-recuadro]').click();
+await p.waitForFunction(() => /Recuadro en \d+ texto/.test(document.querySelector('#avisos').textContent));
+const conSombra = await p.evaluate(async () => { const { D, N } = window.__pres; let n = 0; for(let i = 0; i < D.laminas.length; i++) n += (await N.modelo(D, i)).formas.filter((f) => f.sombra && f.relleno).length; return n; });
+ok('los títulos traen recuadro con sombra', conSombra > 5, String(conSombra));
+ok('y la miniatura lo dibuja (sombra en pantalla)', await p.evaluate(() => [...document.querySelectorAll('#laminas .forma')].some((f) => f.style.boxShadow)));
+await p.keyboard.press('Escape');
+ok('los avisos no se apilan: dos a la vista como mucho', (await p.locator('#avisos .aviso').count()) <= 2, String(await p.locator('#avisos .aviso').count()));
+await captura(p, '11-recuadro-laminas');
+await p.click('.dock [data-panel="texto"]');
+await p.getByRole('button', { name: 'Quitar recuadros' }).click();
+await p.waitForFunction(() => /recuadros? quitados?/.test(document.querySelector('#avisos').textContent));
+ok('«Quitar recuadros» los quita', await p.evaluate(async () => { const { D, N } = window.__pres; for(let i = 0; i < D.laminas.length; i++) if((await N.modelo(D, i)).formas.some((f) => f.sombra)) return false; return true; }));
+
+console.log('\n· IA: opinión y consejos');
+await p.keyboard.press('Escape');
+await p.click('.dock [data-panel="ia"]');
+await p.locator('#hoja .segmento button', { hasText: 'Opinión y consejos' }).click();
+ok('el modo opinión trae preguntas listas', await p.getByRole('button', { name: '¿Qué apartados le faltan?' }).isVisible());
+await p.getByRole('button', { name: '¿Qué opinas de mi presentación?' }).click();
+await p.waitForSelector('#hoja .msj.opinion');
+const pidioOpinion = pedidos.filter((x) => /ia-texto/.test(x.u) && /directora de arte/.test(x.cuerpo?.sistema || '')).at(-1);
+ok('a la IA le llega el diseño MEDIDO, no sólo el texto', /INFORME DE DISEÑO/.test(pidioOpinion?.cuerpo?.sistema || '') && /letraMaxPt/.test(pidioOpinion.cuerpo.sistema) && /tamanosDeLetraPt/.test(pidioOpinion.cuerpo.sistema));
+const opinion = await p.locator('#hoja .msj.opinion').textContent();
+ok('la opinión se lee limpia (sin ** de markdown)', /LO QUE FUNCIONA/.test(opinion) && !/\*\*/.test(opinion));
+await captura(p, '12-opinion');
+await p.getByRole('button', { name: '✦ Aplícalo' }).click();
+await p.waitForSelector('#hoja .cambios li');
+ok('«Aplícalo» propone los cambios (y tira la lámina que copia de una que no existe)', (await p.locator('#hoja .cambios li').count()) === 2, String(await p.locator('#hoja .cambios li').count()));
+await p.getByRole('button', { name: /Aplicar 2 cambios/ }).click();
+await p.waitForSelector('text=Aplicado');
+ok('sumó la lámina de resultados después de la 9', await p.evaluate(() => { const { D, N } = window.__pres; return D.laminas.length === 20 && N.textos(D, 9).some((t) => t.texto === 'Resultados del piloto'); }));
+ok('la rejilla se rehizo sola con 20', (await p.locator('#laminas .lam').count()) === 20);
+await p.keyboard.press('Escape');
+await p.click('#b-deshacer');
+await p.waitForFunction(() => document.querySelectorAll('#laminas .lam').length === 19);
+ok('deshacer quita la lámina nueva y los recuadros de un jalón', await p.evaluate(async () => { const { D, N } = window.__pres; if(D.laminas.length !== 19) return false; for(let i = 0; i < 19; i++) if((await N.modelo(D, i)).formas.some((f) => f.sombra)) return false; return true; }));
 
 console.log('\n· Imágenes');
 await p.click('.dock [data-panel="imagenes"]');
@@ -212,6 +263,13 @@ await p.waitForFunction(() => /texto guardado/.test(document.querySelector('#avi
 ok('editar un texto a mano se guarda', await p.evaluate(() => window.__pres.N.textos(window.__pres.D, 4).some((t) => t.texto === 'Título escrito a mano')));
 await p.click('#v-sig');
 ok('la flecha pasa a la siguiente', /Lámina 6/.test(await p.locator('#visor-titulo').textContent()));
+await p.getByRole('button', { name: '＋ Lámina igual' }).click();
+await p.waitForFunction(() => /Lámina 7 de 20/.test(document.querySelector('#visor-titulo').textContent));
+ok('«＋ Lámina igual» mete una copia justo después y la abre', true);
+await p.keyboard.press('Escape');
+await p.click('#b-deshacer');
+await p.waitForFunction(() => document.querySelectorAll('#laminas .lam').length === 19);
+ok('y deshacer la quita', true);
 ok('sin desborde en el visor', (await desborde(p)) <= 0);
 await captura(p, '06-visor');
 await p.keyboard.press('Escape');

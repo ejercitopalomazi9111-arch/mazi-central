@@ -198,6 +198,18 @@ input[type="color"]{padding:4px; height:48px; cursor:pointer}
 .cambios label{display:flex; gap:10px; align-items:flex-start; padding:8px 10px; border-radius:10px; background:var(--vacio); font-size:14px; cursor:pointer}
 .cambios input{width:20px; height:20px; accent-color:var(--violeta); flex:none; margin:1px 0 0}
 .cambios del{color:var(--tenue)}
+.msj.opinion{line-height:1.5}
+.recuadros{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px; margin-bottom:10px}
+.recuadro-op{appearance:none; border:2px solid var(--linea); background:var(--vacio); color:var(--hueso); border-radius:12px; padding:8px; cursor:pointer; display:grid; gap:6px; font-size:12px; font-weight:600; text-align:center; min-width:0}
+.recuadro-op[aria-pressed="true"]{border-color:var(--violeta)}
+.muestra-recuadro{display:grid; place-items:center; height:52px; border-radius:8px; background:linear-gradient(135deg,#1E2761,#065A82 55%,#E9E4E4 55%)}
+.muestra-recuadro i{font-style:normal; font-weight:800; font-size:15px; padding:4px 12px; border-radius:7px; box-shadow:0 4px 12px rgba(0,0,0,.35)}
+.r-auto i{background:linear-gradient(90deg,rgba(11,7,20,.6) 50%,rgba(255,255,255,.93) 50%); color:#fff; text-shadow:0 0 2px #000}
+.r-cristal i{background:rgba(11,7,20,.55); color:#fff; border:1px solid rgba(255,255,255,.2)}
+.r-claro i{background:rgba(255,255,255,.93); color:#1E1428}
+.r-solido i{background:#1E1428; color:#fff; border-radius:4px}
+.r-pildora i{background:rgba(11,7,20,.6); color:#fff; border-radius:99px}
+.r-propio i{background:var(--violeta); color:#fff}
 .ejemplos{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px}
 .pensando{display:inline-flex; gap:4px}
 .pensando i{width:7px; height:7px; border-radius:50%; background:var(--tenue); animation:late 1s infinite}
