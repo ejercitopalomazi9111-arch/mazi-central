@@ -9,6 +9,7 @@
 import * as N from './nucleo.js';
 import * as V from './vista.js';
 import * as IA from './ia.js';
+import { crearBanco } from './banco.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -80,6 +81,7 @@ const redim = new ResizeObserver(() => {
 redim.observe($('#laminas'));
 
 function mostrarTrabajo(){
+  BANCO.ocultar(); $$('.vistas [data-vista]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.vista === 'presentacion')));
   $('#inicio').hidden = true; $('#trabajo').hidden = false; $('#dock').hidden = false;
   $('#b-guardar').hidden = false; $('#b-abrir').hidden = false; $('#b-deshacer').hidden = false;
   $('#archivo').textContent = nombre + '.pptx';
@@ -489,6 +491,9 @@ function elegirImagen({ titulo, ancho, alto, original = null, sugerencia = '' })
     };
     hoja(titulo, [
       h('div', { class: 'fuentes' },
+        h('button', { class: 'btn de-banco', type: 'button', on: { click: () => BANCO.elegir(zona, async (b, f) => {
+          try{ const r = await recortar(b); aviso(`«${f.titulo || f.nombre}» del banco.`); terminar(r); }catch(e){ aviso(e.message, 'mal'); }
+        }) } }, 'De mi banco', h('small', {}, 'tus imágenes registradas')),
         h('label', { class: 'btn' }, 'Subir', h('small', {}, 'de tu teléfono'), subir),
         h('button', { class: 'btn', type: 'button', on: { click: vistaBuscar } }, 'Buscar', h('small', {}, 'fotos libres')),
         h('button', { class: 'btn', type: 'button', on: { click: () => vistaIA(false) } }, 'Crear con IA', h('small', {}, 'desde cero')),
@@ -742,5 +747,19 @@ $('#visor').addEventListener('keydown', (e) => {
 });
 addEventListener('resize', () => { const m = $('#visor .marco'); if(m) m.style.setProperty('--k', m.clientWidth / V.BASE); });
 
+/* ══ LAS DOS VISTAS: la presentación y el banco ════════════════════════════ */
+const BANCO = crearBanco({ h, $, $$, hoja, cerrar, aviso, ocupado, segmento, plural, OK });
+function verVista(v){
+  $$('.vistas [data-vista]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.vista === v)));
+  const enBanco = v === 'banco';
+  if(enBanco){ $('#inicio').hidden = true; $('#trabajo').hidden = true; $('#dock').hidden = true; BANCO.mostrar(); }
+  else{ BANCO.ocultar(); if(D){ $('#trabajo').hidden = false; $('#dock').hidden = false; } else $('#inicio').hidden = false; }
+  $('#b-guardar').hidden = enBanco || !D; $('#b-deshacer').hidden = enBanco || !D;
+  try{ history.replaceState(null, '', enBanco ? '#banco' : location.pathname + location.search); }catch{}
+  scrollTo(0, 0);
+}
+$$('.vistas [data-vista]').forEach((b) => b.addEventListener('click', () => verVista(b.dataset.vista)));
+if(location.hash === '#banco') verVista('banco');
+
 /* Para las pruebas: el estado a la vista, sin exponer nada del teléfono. */
-window.__pres = { get D(){ return D; }, get sel(){ return sel; }, N };
+window.__pres = { get D(){ return D; }, get sel(){ return sel; }, N, BANCO };

@@ -44,8 +44,8 @@ async function pedir(ruta, cuerpo, { metodo = 'POST', espera = 150000 } = {}){
 }
 export const motores = () => pedir('motores', null, { metodo: 'GET', espera: 15000 });
 /* motor: 'gemini' (Paulina) o 'groq' (Negro). mensajes: [{ de:'tu'|'yo', texto }] */
-export async function texto({ motor = 'gemini', sistema, mensajes, tope = 6000 }){
-  return (await pedir('ia-texto', { motor, sistema, mensajes, tope })).texto || '';
+export async function texto({ motor = 'gemini', sistema, mensajes, tope = 6000, imagenes, json }){
+  return (await pedir('ia-texto', { motor, sistema, mensajes, tope, ...(imagenes?.length ? { imagenes } : {}), ...(json ? { json: true } : {}) })).texto || '';
 }
 /* → { bytes, mime } */
 export async function imagen({ prompt, imagenes = [], aspecto = '16:9', tamano = '1K' }){
@@ -144,4 +144,43 @@ export async function bajar(foto){
     }catch{}
   }
   throw new Error('Esa foto no se deja bajar. Prueba con otra.');
+}
+
+/* ── el banco de imágenes (sala/servidor/banco.js) ──
+   Las imágenes piden la llave en una cabecera, así que no pueden ir en un
+   <img src> directo: se bajan con fetch y se muestran como blob. Con
+   Cache-Control immutable el navegador no las vuelve a bajar. */
+export const banco = {
+  lista: async () => (await pedir('banco', null, { metodo: 'GET', espera: 30000 })).fichas || [],
+  subir: async (datos) => (await pedir('banco', { accion: 'subir', ...datos }, { espera: 120000 })).ficha,
+  cambiar: async (id, campos) => (await pedir('banco', { accion: 'cambiar', id, campos })).ficha,
+  cambiarVarias: async (ids, campos = {}, agregarTemas = '') => (await pedir('banco', { accion: 'cambiarVarias', ids, campos, agregarTemas })).fichas || [],
+  borrar: (id) => pedir('banco', { accion: 'borrar', id }),
+  async bytes(id, parte = ''){
+    const k = llave();
+    const r = await fetch(`${SERVIDOR}/api/sala/${SALA}/banco?id=${encodeURIComponent(id)}${parte ? '&parte=' + parte : ''}`, { headers: k ? { 'X-Llave': k } : {} });
+    if(r.status === 401){ const e = new Error('Falta la llave de La Sala.'); e.llave = true; throw e; }
+    if(!r.ok) throw new Error('No se pudo bajar la imagen del banco.');
+    const b = await r.blob();
+    return { bytes: new Uint8Array(await b.arrayBuffer()), mime: b.type || 'image/jpeg', blob: b };
+  },
+};
+
+/* Que Paulina mire una imagen y la registre. Regresa campos para la ficha. */
+const SISTEMA_DESCRIBIR = `Registras imágenes en el banco de imágenes de Carlos, que las usa para actualizar presentaciones escolares y de trabajo. Miras UNA imagen y contestas SOLO un objeto JSON:
+{"titulo":"de 2 a 8 palabras, lo que es","descripcion":"una a tres frases de lo que se ve: personas, objetos, lugar, estilo, colores","temas":["3 a 6 temas generales, p. ej. ciencia, tecnología, escuela, alimentación"],"palabras":["6 a 15 palabras clave para buscarla: objetos, colores, lugar, estilo, tipo de imagen (foto, ilustración, diagrama, ícono)"],"texto_visible":"el texto que aparece en la imagen, o vacío","problemas":"lo que impediría usarla tal cual en una lámina (borrosa, marca de agua, texto cortado, baja resolución, fondo que no combina), o vacío"}
+Todo en español de México, en minúsculas los temas y palabras. No inventes lo que no se ve.`;
+export async function describir(bytes, mime){
+  const x = await paraIA(bytes, mime);
+  if(!x) throw new Error('No se pudo leer esa imagen.');
+  const t = await texto({ motor: 'gemini', sistema: SISTEMA_DESCRIBIR, mensajes: [{ de: 'tu', texto: 'Registra esta imagen.' }], tope: 1200, imagenes: [x], json: true });
+  const j = sacarJson(t);
+  if(!j) throw new Error('Paulina no contestó con la ficha.');
+  const lista = (v) => (Array.isArray(v) ? v : String(v || '').split(',')).map((s) => String(s).trim().toLowerCase()).filter(Boolean);
+  const palabras = lista(j.palabras);
+  if(j.texto_visible) palabras.push(...String(j.texto_visible).toLowerCase().split(/\s+/).filter((w) => w.length > 3).slice(0, 8));
+  return {
+    titulo: String(j.titulo || '').trim(), descripcion: String(j.descripcion || '').trim(),
+    temas: lista(j.temas), palabras: [...new Set(palabras)], problemas: String(j.problemas || '').trim(), ia: true,
+  };
 }

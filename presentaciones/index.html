@@ -214,6 +214,48 @@ dialog.visor{border:0; padding:0; margin:0; width:100vw; height:100dvh; max-widt
 .textos-lamina{display:grid; gap:10px; margin-top:8px}
 .textos-lamina label{display:grid; gap:4px; font-size:13px; color:var(--tenue)}
 
+/* pestañas de arriba */
+.vistas{display:grid; grid-template-columns:1fr 1fr; gap:4px; max-width:520px; margin:8px auto 0; padding:4px; background:var(--vacio); border-radius:12px}
+.vistas button{appearance:none; border:0; background:none; color:var(--tenue); min-height:40px; border-radius:9px; font-size:14px; font-weight:700; cursor:pointer}
+.vistas button[aria-pressed="true"]{background:var(--superficie-3); color:var(--hueso)}
+
+/* banco */
+.banco{max-width:1400px; margin:0 auto; padding:12px 12px 120px}
+.banco-cargando{padding:48px 16px; text-align:center; color:var(--tenue)}
+.banco-cab{display:grid; gap:10px; margin-bottom:12px}
+.banco-cab .fila > .entrada{flex:1}
+.filtros{flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; margin:0 -12px; padding:0 12px}
+.filtros::-webkit-scrollbar{display:none}
+.filtros .chip{flex:none}
+.banco-linea{display:flex; gap:8px; align-items:center; flex-wrap:wrap; font-size:14px; color:var(--tenue)}
+.banco-linea span:first-child{flex:1; min-width:120px}
+.rejilla-banco{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px}
+@media (min-width:700px){ .rejilla-banco{grid-template-columns:repeat(5, minmax(0,1fr)); gap:12px} }
+@media (min-width:1100px){ .rejilla-banco{grid-template-columns:repeat(7, minmax(0,1fr))} }
+.banco-carta{position:relative; min-width:0}
+.banco-abrir{appearance:none; display:block; width:100%; padding:0; border:1px solid var(--linea); background:var(--superficie); border-radius:10px; overflow:hidden; cursor:pointer; text-align:left; color:var(--hueso)}
+.banco-abrir:hover{border-color:var(--violeta)}
+.banco-abrir img{display:block; width:100%; aspect-ratio:1; object-fit:cover; background:var(--superficie-2)}
+.banco-titulo{display:block; font-size:12px; line-height:1.3; padding:6px 8px 2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.estado-ficha{display:inline-block; margin:0 8px 8px; font-size:11px; font-weight:700; padding:1px 7px; border-radius:99px; background:var(--superficie-3); color:var(--tenue)}
+.estado-ficha.e-lista{background:rgba(79,178,134,.18); color:#7FD3AC}
+.estado-ficha.e-cambios{background:rgba(255,176,32,.16); color:#FFC766}
+.banco-check{position:absolute; top:0; right:0; width:44px; height:44px; border:0; background:none; padding:0; cursor:pointer; display:grid; place-items:center}
+.banco-check .marca-sel{position:static}
+.banco-check[aria-checked="true"] .marca-sel{background:var(--violeta); border-color:var(--violeta)}
+.banco-check[aria-checked="true"] .marca-sel svg{opacity:1}
+.barra-lote{position:fixed; left:0; right:0; bottom:0; z-index:35; background:rgba(16,10,24,.95); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border-top:1px solid var(--linea);
+  padding:10px 12px calc(10px + env(safe-area-inset-bottom)); display:flex; gap:6px; flex-wrap:wrap; align-items:center; justify-content:center}
+.barra-lote .que{width:100%; text-align:center; font-size:14px}
+.progreso-banco{background:var(--superficie); border:1px solid var(--linea); border-radius:12px; padding:10px 12px; margin-bottom:12px; display:grid; gap:8px; font-size:14px}
+.progreso-banco.mal{border-color:rgba(255,107,107,.5)}
+.progreso-banco ul{margin:0; padding-left:18px; color:var(--tenue)}
+.progreso-banco progress{width:100%; height:8px; accent-color:var(--violeta)}
+.fuentes .de-banco{grid-column:1 / -1}
+body:has(#barra-lote:not([hidden])) .avisos{bottom:calc(150px + env(safe-area-inset-bottom))}
+body:has(#banco:not([hidden])) .avisos{bottom:calc(16px + env(safe-area-inset-bottom))}
+body:has(#banco:not([hidden])):has(#barra-lote:not([hidden])) .avisos{bottom:calc(150px + env(safe-area-inset-bottom))}
+
 /* avisos */
 .avisos{position:fixed; left:50%; transform:translateX(-50%); bottom:calc(var(--dock) + 12px); z-index:60; display:grid; gap:8px; width:min(92vw, 480px); pointer-events:none}
 .aviso{pointer-events:auto; background:var(--superficie-3); border:1px solid var(--linea); border-radius:12px; padding:12px 14px; font-size:15px; box-shadow:0 8px 24px rgba(0,0,0,.4); display:flex; gap:10px; align-items:center; animation:entra .18s ease-out}
@@ -239,6 +281,10 @@ dialog.visor{border:0; padding:0; margin:0; width:100vw; height:100dvh; max-widt
       Guardar
     </button>
   </div>
+  <nav class="vistas" aria-label="Qué ver">
+    <button type="button" data-vista="presentacion" aria-pressed="true">Presentación</button>
+    <button type="button" data-vista="banco" aria-pressed="false">Banco de imágenes</button>
+  </nav>
 </header>
 
 <main id="inicio" class="inicio">
@@ -268,6 +314,8 @@ dialog.visor{border:0; padding:0; margin:0; width:100vw; height:100dvh; max-widt
   </div>
   <div class="laminas" id="laminas"></div>
 </main>
+
+<main id="banco" class="banco" hidden></main>
 
 <nav class="dock" id="dock" hidden aria-label="Herramientas">
   <div class="dock-fila">

@@ -38,9 +38,39 @@ const pedidos = [];
 async function pagina(ancho, alto){
   const ctx = await b.newContext({ viewport: { width: ancho, height: alto }, acceptDownloads: true, serviceWorkers: 'block' });
   await ctx.addInitScript(() => { try{ if(!sessionStorage.getItem('limpio')){ localStorage.setItem('salaLlave', 'llave-de-prueba'); indexedDB.deleteDatabase('presentaciones'); sessionStorage.setItem('limpio', '1'); } }catch(e){} });
+  /* Un banco de mentiras en memoria, con la misma forma que sala/servidor/banco.js. */
+  const banco = new Map();
   await ctx.route(/sala\.palomazi9111\.workers\.dev/, async (r) => {
     const u = r.request().url(), cuerpo = r.request().postDataJSON?.() || null;
     pedidos.push({ u, cuerpo, llave: r.request().headers()['x-llave'] });
+    if(/\/banco/.test(u)){
+      const url = new URL(u), id = url.searchParams.get('id');
+      if(r.request().method() === 'GET' && id){
+        const f = banco.get(id);
+        return f ? r.fulfill({ contentType: f.ficha.mime, body: Buffer.from(url.searchParams.get('parte') === 'mini' && f.mini ? f.mini : f.datos, 'base64') }) : r.fulfill({ status: 404, contentType: 'application/json', body: '{"error":"no"}' });
+      }
+      if(r.request().method() === 'GET') return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ bien: true, fichas: [...banco.values()].map((x) => x.ficha).sort((a, b) => b.creado - a.creado) }) });
+      const c = cuerpo, lista = (v) => [...new Set((Array.isArray(v) ? v : String(v || '').split(',')).map((x) => String(x).trim().toLowerCase()).filter(Boolean))];
+      const limpia = (o = {}) => { const z = { ...o }; if('temas' in z) z.temas = lista(z.temas); if('palabras' in z) z.palabras = lista(z.palabras); return z; };
+      if(c.accion === 'subir'){
+        const nid = 'f' + (banco.size + 1) + Math.random().toString(36).slice(2, 6);
+        const ficha = { id: nid, nombre: c.nombre, mime: c.mime, bytes: Buffer.from(c.datos, 'base64').length, partes: 1, ancho: c.ancho, alto: c.alto, titulo: '', descripcion: '', temas: [], palabras: [], estado: 'sin-revisar', cambios: '', notas: '', carpeta: '', ia: false, creado: Date.now() + banco.size, ...limpia(c.campos) };
+        banco.set(nid, { ficha, datos: c.datos, mini: c.mini });
+        return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ bien: true, ficha }) });
+      }
+      if(c.accion === 'cambiar' || c.accion === 'cambiarVarias'){
+        const hechas = (c.ids || [c.id]).map((i) => banco.get(i)).filter(Boolean).map((x) => { Object.assign(x.ficha, limpia(c.campos)); if(c.agregarTemas) x.ficha.temas = [...new Set([...x.ficha.temas, ...lista(c.agregarTemas)])]; return x.ficha; });
+        return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ bien: true, fichas: hechas, ficha: hechas[0] }) });
+      }
+      if(c.accion === 'borrar'){ banco.delete(c.id); return r.fulfill({ contentType: 'application/json', body: '{"bien":true}' }); }
+    }
+    if(/ia-texto/.test(u) && cuerpo?.imagenes?.length){
+      const n = pedidos.filter((x) => /ia-texto/.test(x.u) && x.cuerpo?.imagenes).length;
+      const fichas = [{ titulo: 'Robot en el aula', descripcion: 'Un robot educativo sobre una mesa.', temas: ['robótica', 'escuela'], palabras: ['robot', 'mesa', 'azul'], texto_visible: '', problemas: '' },
+        { titulo: 'Laboratorio de química', descripcion: 'Matraces con líquidos de colores.', temas: ['ciencia', 'química'], palabras: ['matraz', 'laboratorio'], texto_visible: '', problemas: 'tiene marca de agua' },
+        { titulo: 'Cafetería escolar', descripcion: 'Alumnos comiendo en mesas largas.', temas: ['escuela', 'alimentación'], palabras: ['comida', 'alumnos'], texto_visible: '', problemas: '' }];
+      return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ bien: true, motor: 'gemini', texto: JSON.stringify(fichas[(n - 1) % 3]) }) });
+    }
     if(/ia-texto/.test(u)){
       const quiere = cuerpo?.mensajes?.at(-1)?.texto || '';
       const respuesta = /formal/.test(quiere)
@@ -161,7 +191,7 @@ ok(`lista las imágenes (${nImg})`, nImg > 5);
 const ruta = await p.locator('#hoja .img-carta').first().getAttribute('data-ruta');
 await p.locator('#hoja .img-carta').first().click();
 await p.getByRole('button', { name: 'Cambiar por otra…' }).click();
-ok('ofrece subir, buscar, crear y rehacer con IA', (await p.locator('#hoja2 .fuentes > *').count()) === 4);
+ok('ofrece banco, subir, buscar, crear y rehacer con IA', (await p.locator('#hoja2 .fuentes > *').count()) === 5);
 await p.getByRole('button', { name: /Crear con IA/ }).click();
 await p.locator('#hoja2 textarea').fill('Una cafetería escolar moderna');
 await p.locator('#hoja2 .btn.primario').click();
@@ -185,6 +215,78 @@ ok('la flecha pasa a la siguiente', /Lámina 6/.test(await p.locator('#visor-tit
 ok('sin desborde en el visor', (await desborde(p)) <= 0);
 await captura(p, '06-visor');
 await p.keyboard.press('Escape');
+
+console.log('\n· Banco de imágenes');
+await p.click('.vistas [data-vista="banco"]');
+await p.waitForSelector('#banco:not([hidden]) .banco-cab');
+ok('el banco abre vacío y explica qué hacer', /El banco está vacío/.test(await p.locator('#banco').textContent()));
+ok('en el banco no estorban el menú de abajo ni «Guardar»', await p.evaluate(() => document.querySelector('#dock').hidden && document.querySelector('#b-guardar').hidden));
+const png = Buffer.from(PNG, 'base64');
+await p.setInputFiles('#banco input[type=file]', [1, 2, 3].map((n) => ({ name: `imagen_${n}.png`, mimeType: 'image/png', buffer: png })));
+ok('antes de subir dice cuántas son y ofrece que la IA las describa', /3 imágenes/.test(await p.locator('#hoja').textContent()) && await p.locator('#hoja input[type=checkbox]').isChecked());
+await p.getByRole('button', { name: 'Subir 3 imágenes' }).click();
+await p.waitForFunction(() => document.querySelectorAll('#rejilla-banco .banco-carta').length === 3 && !document.querySelector('#banco-progreso .progreso-banco'), null, { timeout: 20000 });
+const titulos = await p.locator('#rejilla-banco .banco-titulo').allTextContents();
+ok('subió las tres y Paulina les puso título', titulos.length === 3 && titulos.includes('Robot en el aula') && titulos.includes('Cafetería escolar'), titulos.join(' | '));
+const visto = pedidos.filter((x) => /ia-texto/.test(x.u) && x.cuerpo?.imagenes?.length).at(-1);
+ok('a Paulina le mandó la foto y le pidió JSON', visto?.cuerpo?.json === true && /^image\//.test(visto.cuerpo.imagenes[0].mime));
+await p.fill('#banco input[type=search]', 'robotica');
+ok('buscar sin acentos: «robotica» encuentra la de robótica', (await p.locator('#rejilla-banco .banco-carta').count()) === 1);
+await p.fill('#banco input[type=search]', 'escuela comida');
+ok('dos palabras en cualquier orden', (await p.locator('#rejilla-banco .banco-carta').count()) === 1 && /Cafetería/.test(await p.locator('#rejilla-banco').textContent()));
+await p.fill('#banco input[type=search]', 'marca de agua');
+ok('busca también en lo que la IA notó (notas)', (await p.locator('#rejilla-banco .banco-carta').count()) === 1);
+await p.fill('#banco input[type=search]', '');
+await p.locator('#rejilla-banco .banco-check').nth(0).click();
+await p.locator('#rejilla-banco .banco-check').nth(1).click();
+ok('elegir dos muestra la barra de lote', /2 elegidas/.test(await p.locator('#barra-lote').textContent()));
+ok('la barra de lote cabe en el teléfono', await p.evaluate(() => { const b = document.querySelector('#barra-lote'); return [...b.children].every((c) => c.getBoundingClientRect().right <= innerWidth + 0.5); }));
+const tapa = await p.evaluate(() => { const a = document.querySelector('#avisos .aviso'); const b = document.querySelector('#barra-lote'); if(!a || !b) return false; const r1 = a.getBoundingClientRect(), r2 = b.getBoundingClientRect(); return r1.bottom > r2.top + 1; });
+ok('los avisos no tapan la barra de lote', !tapa);
+await captura(p, '08-banco');
+await p.locator('#barra-lote').getByRole('button', { name: '✓ Listas' }).click();
+await p.waitForFunction(() => /Listas · 2/.test(document.querySelector('#banco .banco-cab').textContent));
+ok('dos marcadas como listas, y el filtro las cuenta', true);
+await p.locator('#rejilla-banco .banco-abrir').first().click();
+await p.waitForSelector('#hoja[open] .grande-img');
+await p.locator('#hoja .segmento button', { hasText: 'Requiere cambios' }).click();
+await p.locator('#hoja textarea[placeholder="Qué le falta para poder usarla"]').fill('Quitar el logo viejo');
+ok('al marcar «requiere cambios» ofrece hacerlos con IA', await p.getByRole('button', { name: '✦ Hacer los cambios con IA' }).isVisible());
+await captura(p, '09-ficha');
+await p.locator('#hoja').getByRole('button', { name: 'Guardar', exact: true }).click();
+await p.waitForFunction(() => /Requieren cambios · 1/.test(document.querySelector('#banco .banco-cab').textContent));
+ok('la ficha se guardó como «requiere cambios»', true);
+const [csv] = await Promise.all([p.waitForEvent('download'), p.getByRole('button', { name: 'Exportar a Excel' }).click()]);
+const texto = readFileSync(await csv.path(), 'utf8');
+ok('exporta a Excel con acentos (marca UTF-8) y las tres', texto.charCodeAt(0) === 0xFEFF && /Título,Estado,Cambios que necesita/.test(texto) && /Quitar el logo viejo/.test(texto) && texto.trim().split('\r\n').length === 4, texto.slice(0, 120));
+ok('sin desborde en el banco', (await desborde(p)) <= 0, String(await desborde(p)));
+
+console.log('\n· Del banco a la lámina');
+await p.click('.vistas [data-vista="presentacion"]');
+ok('regresar a la presentación la deja como estaba', await p.locator('#laminas .lam').count() === 19 && await p.locator('#dock').isVisible());
+await p.click('.dock [data-panel="imagenes"]');
+await p.waitForSelector('#hoja .img-carta');
+const rutaB = await p.locator('#hoja .img-carta').nth(1).getAttribute('data-ruta');
+await p.locator('#hoja .img-carta').nth(1).click();
+await p.getByRole('button', { name: 'Cambiar por otra…' }).click();
+await p.getByRole('button', { name: /De mi banco/ }).click();
+await p.waitForSelector('#hoja2 [data-banco]');
+const listas = await p.evaluate(() => window.__pres.BANCO._estado().fichas.filter((f) => f.estado === 'lista').length);
+ok('el buscador del banco enseña sólo las que están listas', listas === 1 && (await p.locator('#hoja2 [data-banco]').count()) === listas, String(listas));
+await p.locator('#hoja2 [data-banco]').first().click();
+await p.waitForFunction(() => /Imagen cambiada/.test(document.querySelector('#avisos').textContent), null, { timeout: 10000 });
+ok('la imagen del banco entró a la presentación', true);
+await p.click('.vistas [data-vista="banco"]');
+await p.waitForSelector('#rejilla-banco .banco-carta');
+await p.locator('#rejilla-banco .banco-abrir').last().click();
+await p.waitForSelector('#hoja[open]');
+const borrar = p.getByRole('button', { name: 'Borrar del banco' });
+await borrar.click();
+ok('borrar pide confirmar', await p.getByRole('button', { name: '¿Seguro? Toca otra vez' }).isVisible());
+await p.getByRole('button', { name: '¿Seguro? Toca otra vez' }).click();
+await p.waitForFunction(() => document.querySelectorAll('#rejilla-banco .banco-carta').length === 2);
+ok('y al confirmar se va', true);
+await p.click('.vistas [data-vista="presentacion"]');
 
 console.log('\n· Guardar');
 await p.click('#b-guardar');
