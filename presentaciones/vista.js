@@ -20,6 +20,23 @@ function fondoCss(f){
   if(f.degradado?.length) return `linear-gradient(${(f.angulo ?? 90) + 90}deg, ${f.degradado.map((g) => `${g.color} ${g.pos}%`).join(', ')})`;
   return f.color ? rgba(f.color, f.alfa ?? 1) : 'transparent';
 }
+/* Las formas de PowerPoint más usadas, recortadas con clip-path: sin esto una
+   estrella o una flecha se veían como un cuadro en la vista (el archivo
+   estaba bien; la vista mentía). */
+const P = (t) => `polygon(${t})`;
+const RECORTE = {
+  triangle: P('50% 0,100% 100%,0 100%'), rtTriangle: P('0 0,100% 100%,0 100%'), diamond: P('50% 0,100% 50%,50% 100%,0 50%'),
+  pentagon: P('50% 0,100% 38%,82% 100%,18% 100%,0 38%'), hexagon: P('25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%'),
+  octagon: P('30% 0,70% 0,100% 30%,100% 70%,70% 100%,30% 100%,0 70%,0 30%'),
+  star5: P('50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%'),
+  rightArrow: P('0 25%,60% 25%,60% 0,100% 50%,60% 100%,60% 75%,0 75%'), leftArrow: P('100% 25%,40% 25%,40% 0,0 50%,40% 100%,40% 75%,100% 75%'),
+  upArrow: P('25% 100%,25% 40%,0 40%,50% 0,100% 40%,75% 40%,75% 100%'), downArrow: P('25% 0,25% 60%,0 60%,50% 100%,100% 60%,75% 60%,75% 0'),
+  leftRightArrow: P('0 50%,20% 0,20% 25%,80% 25%,80% 0,100% 50%,80% 100%,80% 75%,20% 75%,20% 100%'),
+  chevron: P('0 0,75% 0,100% 50%,75% 100%,0 100%,25% 50%'), homePlate: P('0 0,75% 0,100% 50%,75% 100%,0 100%'),
+  parallelogram: P('25% 0,100% 0,75% 100%,0 100%'), trapezoid: P('25% 0,75% 0,100% 100%,0 100%'),
+  plus: P('35% 0,65% 0,65% 35%,100% 35%,100% 65%,65% 65%,65% 100%,35% 100%,35% 65%,0 65%,0 35%,35% 35%'),
+  heart: P('50% 100%,6% 52%,0 30%,5% 11%,20% 1%,36% 4%,50% 20%,64% 4%,80% 1%,95% 11%,100% 30%,94% 52%'),
+};
 const ALINEA = { l: 'left', ctr: 'center', r: 'right', just: 'justify', dist: 'justify' };
 const ANCLA = { t: 'flex-start', ctr: 'center', b: 'flex-end' };
 
@@ -53,10 +70,22 @@ export function pintar(m){
         for(const p of f.parrafos){ const c = el('div', 'celda'); c.textContent = p.runs[0].t; caja.appendChild(c); }
       }else{ const e = el('span', 'etiqueta'); e.textContent = f.marcador; caja.appendChild(e); }
     }else{
+      // Una línea de PowerPoint mide 0 de alto: se pinta como una barra del grueso de su borde.
+      if(f.geo === 'line' && f.borde){
+        const g = Math.max(1, f.borde.ancho * k);
+        Object.assign(caja.style, { height: g + 'px', marginTop: -g / 2 + 'px', background: rgba(f.borde.color, f.borde.alfa ?? 1), borderRadius: g + 'px' });
+        lienzo.appendChild(caja); if(f.cid != null) caja.dataset.cid = f.cid;
+        continue;
+      }
       caja.style.background = fondoCss(f.relleno);
       if(f.borde) caja.style.border = `${Math.max(1, f.borde.ancho * k)}px solid ${rgba(f.borde.color, f.borde.alfa ?? 1)}`;
       if(f.sombra) caja.style.boxShadow = `0 ${f.sombra.dist * k}px ${f.sombra.blur * k}px rgba(0,0,0,${f.sombra.alfa})`;
       if(f.geo === 'ellipse') caja.style.borderRadius = '50%';
+      else if(RECORTE[f.geo]) caja.style.clipPath = RECORTE[f.geo];
+      else if(f.geo === 'donut') Object.assign(caja.style, { borderRadius: '50%', mask: 'radial-gradient(circle, transparent 32%, #000 33%)', webkitMask: 'radial-gradient(circle, transparent 32%, #000 33%)' });
+      else if(f.geo === 'cloud' || f.geo === 'cloudCallout') caja.style.borderRadius = '45%';
+      else if(f.geo === 'flowChartMagneticDisk' || f.geo === 'can') caja.style.borderRadius = '50% / 22%';
+      else if(/Callout$/.test(f.geo || '')) caja.style.borderRadius = Math.min(f.w, f.h) * k * 0.16 + 'px';
       else if(/round/i.test(f.geo)) caja.style.borderRadius = Math.min(f.w, f.h) * k * (f.redondeo ?? 0.16) + 'px';
       if(f.relleno?.rutaImagen){ caja.dataset.imagen = f.relleno.rutaImagen; caja.classList.add('es-imagen'); }
       if(f.parrafos?.some((p) => p.runs.some((r) => r.t))){
@@ -80,6 +109,7 @@ export function pintar(m){
         caja.appendChild(tx);
       }
     }
+    if(f.cid != null) caja.dataset.cid = f.cid;
     lienzo.appendChild(caja);
   }
   return lienzo;

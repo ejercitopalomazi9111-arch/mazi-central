@@ -1049,6 +1049,35 @@ console.log('\n· Las sillas');
     ok('y ya no se puede pedir', g.status === 404);
   }
 
+  /* ── /elementos · lo que Carlos arma y guarda (elementos.js) ─────────── */
+  {
+    const s = nueva({ LLAVES: 'carlos:MAESTRA' });
+    const [c0] = await leer(await pedir(s, 'GET', 'elementos', undefined, 'ajena'));
+    ok('mis elementos no se abren sin la llave de la sala', c0 === 401);
+    // Una «foto» de 2.4 MB en base64 → más de un registro: tiene que ir en trozos.
+    const foto = Buffer.from(new Uint8Array(1_800_000).map((_, i) => (i * 13) % 251)).toString('base64');
+    const datos = { xml: '<p:pic>…</p:pic>', medios: { rId7: { mime: 'image/png', b64: foto } }, ancho: 12192000, alto: 6858000, caja: { x: 1, y: 2, w: 400, h: 200 }, colado: 'no' };
+    const [c1, r1] = await leer(await pedir(s, 'POST', 'elementos', { accion: 'guardar', nombre: '  Mi   logo ', origen: 'inventado', datos, vista: { formas: [{ x: 0 }] } }, 'MAESTRA'));
+    const e = r1.elemento || {};
+    ok('guarda un elemento grande en trozos, con nombre limpio', c1 === 200 && e.partes === 2 && e.nombre === 'Mi logo' && e.origen === 'lamina' && e.proporcion === 2 && e.quien === 'carlos', JSON.stringify(r1).slice(0, 200));
+    const [, l1] = await leer(await pedir(s, 'GET', 'elementos', undefined, 'MAESTRA'));
+    ok('la lista trae su vista pero no los datos pesados', l1.elementos?.length === 1 && JSON.parse(l1.elementos[0].vista).formas.length === 1 && !('datos' in l1.elementos[0]));
+    const [c2, r2] = await leer(await s.fetch(new Request(`https://s.test/api/sala/ABCDEF/elementos?id=${e.id}`, { headers: { 'X-Llave': 'MAESTRA' } })));
+    ok('los datos regresan completos, sin lo que no es suyo', c2 === 200 && r2.medios?.rId7?.b64 === foto && r2.xml === datos.xml && !('colado' in r2));
+    const [c3] = await leer(await pedir(s, 'POST', 'elementos', { accion: 'guardar', datos: { xml: '<a/>', medios: { rId1: { mime: 'text/html', b64: 'AA==' } } } }, 'MAESTRA'));
+    ok('sólo acepta imágenes dentro del elemento', c3 === 400);
+    const [c4] = await leer(await pedir(s, 'POST', 'elementos', { accion: 'guardar', nombre: 'x' }, 'MAESTRA'));
+    ok('sin elemento no guarda nada', c4 === 400);
+    const [c5, r5] = await leer(await pedir(s, 'POST', 'elementos', { accion: 'renombrar', id: e.id, nombre: 'Logo de la escuela' }, 'MAESTRA'));
+    ok('se renombra', c5 === 200 && r5.elemento.nombre === 'Logo de la escuela');
+    const s2 = new Sala(s.ctx, { LLAVES: 'carlos:MAESTRA' });
+    const [, l2] = await leer(await pedir(s2, 'GET', 'elementos', undefined, 'MAESTRA'));
+    ok('después de reiniciar el servidor, siguen ahí', l2.elementos?.length === 1 && l2.elementos[0].nombre === 'Logo de la escuela');
+    const [c6] = await leer(await pedir(s, 'POST', 'elementos', { accion: 'borrar', id: e.id }, 'MAESTRA'));
+    const quedan = s.ctx.storage._claves().filter((k) => k.includes(e.id));
+    ok('borrar quita la ficha, la vista y TODOS sus trozos', c6 === 200 && !quedan.length, quedan.join());
+  }
+
   globalThis.fetch = original;
 }
 

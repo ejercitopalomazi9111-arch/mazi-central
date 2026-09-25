@@ -255,6 +255,24 @@
       ],
       "salioDe": "la prueba de fuego del segundo giro de la tienda, 24 de septiembre de 2026.",
       "vecinas": []
+    },
+    {
+      "id": "logo-en-capas-pierde-lo-oscuro",
+      "titulo": "El logo armado por piezas sale lavado o con manchas negras",
+      "gravedad": "media",
+      "sintoma": "Se corta un logo sobre fondo oscuro en capas para animarlo. Al juntarse, se ve más claro y sin los contornos negros entre letras; y al arreglarlo, las letras vuelan arrastrando manchas oscuras.",
+      "causa": "Separar «lo que brilla» del fondo con alfa sólo guarda lo MÁS CLARO que el fondo. Los contornos y sombras son más oscuros que el fondo y se pierden. Y el fondo del original no era parejo (arriba 26, abajo 16): medir «más oscuro que el fondo» con un solo número se lleva media parte baja del disco pegada a las piezas.",
+      "porque": "Las capas se ven bien una por una y el logo armado se ve «casi igual». Sólo sale al compararlo pixel a pixel contra el original.",
+      "arreglo": "Guardar también lo oscuro como negro con alfa, pero sólo lo de verdad negro (luminancia < 13), y dar al disco de CSS el mismo degradado del original. tienda/marca/cortar.py.",
+      "comoCazarlo": "Comparar el cuadro final contra el original con el mejor acomodo de ±3 px, y calibrar la raya con mutaciones (quitar una pieza, correr otra). tienda/nucleo/pruebas-apertura.mjs.",
+      "consejo": "Un logo tiene tanta forma en sus sombras como en sus brillos.",
+      "senales": [
+        "el logo se ve lavado",
+        "faltan los contornos del logo",
+        "manchas negras en la animacion",
+        "el logo armado no se ve igual"
+      ],
+      "salioDe": "La apertura de El Garaje del Barbero, 25 de septiembre."
     }
   ]
 }

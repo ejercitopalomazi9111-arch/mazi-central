@@ -13,6 +13,7 @@ import { createServer } from 'node:http';
 import { readFileSync, mkdirSync } from 'node:fs';
 import { join, extname, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { atenderElementos } from '../sala/servidor/elementos.js';
 
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..');
 const { chromium } = await import('/opt/node22/lib/node_modules/playwright/index.mjs');
@@ -40,9 +41,21 @@ async function pagina(ancho, alto){
   await ctx.addInitScript(() => { try{ if(!sessionStorage.getItem('limpio')){ localStorage.setItem('salaLlave', 'llave-de-prueba'); indexedDB.deleteDatabase('presentaciones'); sessionStorage.setItem('limpio', '1'); } }catch(e){} });
   /* Un banco de mentiras en memoria, con la misma forma que sala/servidor/banco.js. */
   const banco = new Map();
+  const guardado = new Map();
+  const almacen = {
+    async get(k){ if(Array.isArray(k)){ const m = new Map(); for(const x of k) if(guardado.has(x)) m.set(x, guardado.get(x)); return m; } return guardado.get(k); },
+    async put(k, v){ if(typeof k === 'object') for(const [a, b] of Object.entries(k)) guardado.set(a, b); else guardado.set(k, v); },
+    async delete(k){ for(const x of [].concat(k)) guardado.delete(x); },
+  };
   await ctx.route(/sala\.palomazi9111\.workers\.dev/, async (r) => {
     const u = r.request().url(), cuerpo = r.request().postDataJSON?.() || null;
     pedidos.push({ u, cuerpo, llave: r.request().headers()['x-llave'] });
+    /* Mis elementos: el servidor DE VERDAD (elementos.js) sobre un almacén en memoria. */
+    if(/\/elementos/.test(u)){
+      const req = new Request(u, { method: r.request().method(), body: r.request().method() === 'POST' ? r.request().postData() : undefined });
+      const res = await atenderElementos(almacen, req, new URL(u), 'carlos');
+      return r.fulfill({ status: res.status, contentType: res.headers.get('content-type') || 'application/json', body: Buffer.from(await res.arrayBuffer()) });
+    }
     if(/\/banco/.test(u)){
       const url = new URL(u), id = url.searchParams.get('id');
       if(r.request().method() === 'GET' && id){
@@ -53,8 +66,10 @@ async function pagina(ancho, alto){
       const c = cuerpo, lista = (v) => [...new Set((Array.isArray(v) ? v : String(v || '').split(',')).map((x) => String(x).trim().toLowerCase()).filter(Boolean))];
       const limpia = (o = {}) => { const z = { ...o }; if('temas' in z) z.temas = lista(z.temas); if('palabras' in z) z.palabras = lista(z.palabras); return z; };
       if(c.accion === 'subir'){
+        // La segunda foto falla UNA vez (como una red de teléfono): tiene que reintentarse sola.
+        if(c.nombre === 'imagen_2.png' && !banco.falloUna){ banco.falloUna = true; return r.fulfill({ status: 503, contentType: 'application/json', body: '{"error":"se cayó"}' }); }
         const nid = 'f' + (banco.size + 1) + Math.random().toString(36).slice(2, 6);
-        const ficha = { id: nid, nombre: c.nombre, mime: c.mime, bytes: Buffer.from(c.datos, 'base64').length, partes: 1, ancho: c.ancho, alto: c.alto, titulo: '', descripcion: '', temas: [], palabras: [], estado: 'sin-revisar', cambios: '', notas: '', carpeta: '', ia: false, creado: Date.now() + banco.size, ...limpia(c.campos) };
+        const ficha = { id: nid, huella: c.huella || null, nombre: c.nombre, mime: c.mime, bytes: Buffer.from(c.datos, 'base64').length, partes: 1, ancho: c.ancho, alto: c.alto, titulo: '', descripcion: '', temas: [], palabras: [], estado: 'sin-revisar', cambios: '', notas: '', carpeta: '', ia: false, creado: Date.now() + banco.size, ...limpia(c.campos) };
         banco.set(nid, { ficha, datos: c.datos, mini: c.mini });
         return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ bien: true, ficha }) });
       }
@@ -96,7 +111,7 @@ async function pagina(ancho, alto){
   });
   const p = await ctx.newPage();
   const errores = []; p.on('pageerror', (e) => errores.push(e.message));
-  p.on('console', (m) => { if(m.type() === 'error') errores.push(m.text()); });
+  p.on('console', (m) => { if(m.type() === 'error' && !/status of 503/.test(m.text())) errores.push(m.text()); });
   await p.goto(BASE);
   return { p, ctx, errores };
 }
@@ -192,6 +207,30 @@ ok('el texto propuesto quedó en la lámina 5', tx5.includes('Propósito de Fado
 ok('todo lo de la IA es UN solo deshacer', await p.evaluate(() => /^IA:/.test(window.__pres.D.deshacer.at(-1).nombre)));
 await p.keyboard.press('Escape');
 
+console.log('\n· Notificaciones');
+ok('la campana avisa que hay novedades', /\d/.test(await p.locator('#b-noti .contador').textContent()) && await p.locator('#b-noti .contador').isVisible());
+await p.click('#b-noti');
+await p.waitForSelector('#hoja[open] .notis');
+const notis = await p.locator('#hoja .noti').allTextContents();
+ok('el historial trae los cambios de hoy (Acomodé, Letra, Cambié…)', notis.some((t) => /Acomodé/.test(t)) && notis.some((t) => /Letra Montserrat/.test(t)), notis.slice(0, 5).join(' | '));
+ok('agrupados por día, con hora', /Hoy/.test(await p.locator('#hoja .grupo-noti h3').first().textContent()) && /hace un momento|hace \d+ min/.test(notis.join(' ')));
+const conVolver = p.locator('#hoja .noti', { hasText: 'Letra Montserrat' }).getByRole('button', { name: /Volver a antes de esto/ });
+ok('un cambio que se puede deshacer trae «Volver a antes de esto»', await conVolver.count() === 1);
+const pilaAntes = await p.evaluate(() => window.__pres.D.deshacer.length);
+await conVolver.click();
+await p.waitForFunction((n) => window.__pres.D.deshacer.length < n, pilaAntes);
+const pila = await p.evaluate(() => ({ n: window.__pres.D.deshacer.length, nombres: window.__pres.D.deshacer.map((o) => o.nombre) }));
+ok('«Volver a antes» deshace hasta quitar ese cambio (y los de después)', !pila.nombres.includes('Letra') && !pila.nombres.includes('Acomodar'), JSON.stringify(pila));
+ok('y lo anota', await p.evaluate(() => window.__pres.NOTI.todas()[0].texto.startsWith('Volviste a antes de «Letra»')));
+await captura(p, '13a-tus-cambios');
+await p.locator('#hoja .segmento button', { hasText: 'Novedades' }).click();
+ok('Novedades enseña lo nuevo de la herramienta', (await p.locator('#hoja .noti.novedad').count()) >= 5);
+await captura(p, '13-notificaciones');
+await p.keyboard.press('Escape');
+ok('ya vistas, la campana se apaga', await p.locator('#b-noti .contador').isHidden());
+ok('las pestañas no parten su nombre en dos renglones', await p.evaluate(() => [...document.querySelectorAll('.vistas button')].every((b) => b.getBoundingClientRect().height <= 44 && b.scrollWidth <= b.clientWidth + 1)));
+ok('ningún control del renglón de pestañas se sale', await p.evaluate(() => [...document.querySelectorAll('.vistas > *')].every((b) => b.getBoundingClientRect().right <= innerWidth + 0.5)));
+
 console.log('\n· Recuadro detrás del texto');
 await p.click('.dock [data-panel="texto"]');
 ok('la hoja de Texto trae el recuadro con seis estilos a la vista', (await p.locator('#hoja [data-recuadro]').count()) === 6);
@@ -285,9 +324,15 @@ ok('antes de subir dice cuántas son y ofrece que la IA las describa', /3 imáge
 await p.getByRole('button', { name: 'Subir 3 imágenes' }).click();
 await p.waitForFunction(() => document.querySelectorAll('#rejilla-banco .banco-carta').length === 3 && !document.querySelector('#banco-progreso .progreso-banco'), null, { timeout: 20000 });
 const titulos = await p.locator('#rejilla-banco .banco-titulo').allTextContents();
-ok('subió las tres y Paulina les puso título', titulos.length === 3 && titulos.includes('Robot en el aula') && titulos.includes('Cafetería escolar'), titulos.join(' | '));
+ok('subió las tres (una se cayó y se reintentó sola) y Paulina les puso título', titulos.length === 3 && titulos.includes('Robot en el aula') && titulos.includes('Cafetería escolar'), titulos.join(' | '));
 const visto = pedidos.filter((x) => /ia-texto/.test(x.u) && x.cuerpo?.imagenes?.length).at(-1);
 ok('a Paulina le mandó la foto y le pidió JSON', visto?.cuerpo?.json === true && /^image\//.test(visto.cuerpo.imagenes[0].mime));
+const subidasAntes = pedidos.filter((x) => x.cuerpo?.accion === 'subir').length;
+await p.setInputFiles('#banco input[type=file]', [1, 2, 3].map((n) => ({ name: `imagen_${n}.png`, mimeType: 'image/png', buffer: png })));
+ok('si vuelves a elegir las mismas, avisa que ya están (para reanudar sin repetir)', /Las 3 ya están en el banco/.test(await p.locator('#hoja').textContent()));
+await p.getByRole('button', { name: 'Subir 3 imágenes' }).click();
+await p.waitForFunction(() => /ya estaban/.test(document.querySelector('#avisos').textContent));
+ok('y no sube ninguna otra vez', pedidos.filter((x) => x.cuerpo?.accion === 'subir').length === subidasAntes && (await p.locator('#rejilla-banco .banco-carta').count()) === 3);
 await p.fill('#banco input[type=search]', 'robotica');
 ok('buscar sin acentos: «robotica» encuentra la de robótica', (await p.locator('#rejilla-banco .banco-carta').count()) === 1);
 await p.fill('#banco input[type=search]', 'escuela comida');
@@ -345,6 +390,144 @@ await p.getByRole('button', { name: '¿Seguro? Toca otra vez' }).click();
 await p.waitForFunction(() => document.querySelectorAll('#rejilla-banco .banco-carta').length === 2);
 ok('y al confirmar se va', true);
 await p.click('.vistas [data-vista="presentacion"]');
+
+console.log('\n· Insertar: formas');
+await p.click('.dock [data-panel="insertar"]');
+await p.waitForSelector('#hoja[open] [data-forma]');
+ok('Insertar trae las 20 formas de PowerPoint', (await p.locator('#hoja [data-forma]').count()) === 20);
+ok('y dice dónde va (esta lámina, o todas)', /Lámina \d+/.test(await p.locator('#hoja .segmento').first().textContent()) && /Todas · 19/.test(await p.locator('#hoja .segmento').first().textContent()));
+await captura(p, '14-insertar-formas');
+await p.locator('#hoja input[placeholder="Texto adentro (opcional)"]').fill('¡Hola!');
+const cuentaFormas = (i) => p.evaluate(async (i) => (await window.__pres.N.modelo(window.__pres.D, i)).formas.filter((f) => f.capa === 'lamina').length, i);
+const lam = await p.evaluate(() => window.__pres.INS && Number(document.querySelector('#hoja .segmento button[aria-pressed="true"]').textContent.match(/\d+/)[0]) - 1);
+const antesF = await cuentaFormas(lam);
+await p.locator('#hoja [data-forma="star5"]').click();
+await p.waitForSelector('#visor[open] .seleccion');
+ok('la barra del elemento no escribe «null»', !/null/.test(await p.locator('#barra-elemento').textContent()));
+ok('la estrella entra y se abre su lámina con la estrella ya elegida', (await cuentaFormas(lam)) === antesF + 1 && /Forma|Texto/.test(await p.locator('#barra-elemento').textContent()));
+const cidE = Number(await p.locator('.seleccion').getAttribute('data-cid'));
+const caja0 = await p.evaluate(([i, c]) => window.__pres.N.cajaDe(window.__pres.D, i, c), [lam, cidE]);
+let bb = await p.locator('.seleccion').boundingBox();
+await p.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2); await p.mouse.down(); await p.mouse.move(bb.x + bb.width / 2 + 60, bb.y + bb.height / 2 + 10, { steps: 6 }); await p.mouse.up();
+await p.waitForFunction(([i, c, x]) => window.__pres.N.cajaDe(window.__pres.D, i, c)?.x > x, [lam, cidE, caja0.x]);
+ok('arrastrarla la mueve (y es un solo deshacer)', /Mover/.test(await p.evaluate(() => window.__pres.D.deshacer.at(-1).nombre)));
+await p.waitForSelector('.seleccion .asa.se');
+bb = await p.locator('.seleccion .asa.se').boundingBox();
+await p.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2); await p.mouse.down(); await p.mouse.move(bb.x + 40, bb.y + 30, { steps: 5 }); await p.mouse.up();
+await p.waitForFunction(([i, c, w]) => window.__pres.N.cajaDe(window.__pres.D, i, c)?.w > w * 1.05, [lam, cidE, caja0.w]);
+ok('la esquina la agranda', true);
+await captura(p, '15-editar');
+await p.locator('#barra-elemento [data-accion="color"]').click();
+await p.locator('#hoja2 .muestra[data-c="#C00000"]').click();
+await p.getByRole('button', { name: 'Poner este color' }).click();
+await p.waitForFunction(async ([i, c]) => (await window.__pres.N.modelo(window.__pres.D, i)).formas.some((f) => f.cid === c && f.relleno?.color === '#C00000'), [lam, cidE]);
+ok('«Color» la recolorea', true);
+await p.locator('#barra-elemento [data-accion="duplicar"]').click();
+await p.waitForFunction(async ([i, n]) => (await window.__pres.N.modelo(window.__pres.D, i)).formas.filter((f) => f.capa === 'lamina').length === n, [lam, antesF + 2]);
+ok('«Duplicar» pone otra igual', true);
+await p.locator('#barra-elemento [data-accion="guardar"]').click();
+await p.locator('#hoja2 input[aria-label="Nombre del elemento"]').fill('Estrella roja');
+await p.locator('#hoja2 [data-guardar-mio]').click();
+await p.waitForFunction(() => /«Estrella roja» guardado en Mis elementos/.test(document.querySelector('#avisos').textContent), null, { timeout: 10000 });
+ok('«★ A mis elementos» la guarda en La Sala', true);
+await p.locator('#barra-elemento [data-accion="borrar"]').click();
+await p.waitForFunction(async ([i, n]) => (await window.__pres.N.modelo(window.__pres.D, i)).formas.filter((f) => f.capa === 'lamina').length === n, [lam, antesF + 1]);
+ok('«Borrar» la quita', true);
+await p.keyboard.press('Escape');
+
+console.log('\n· Mis elementos');
+await p.click('.dock [data-panel="insertar"]');
+await p.locator('#hoja [data-seccion="mios"]').click();
+await p.waitForSelector('#hoja .mio');
+ok('la estrella guardada aparece en Mis elementos, dibujada', (await p.locator('#hoja .mio').count()) === 1 && (await p.locator('#hoja .mio .mi-vista .lienzo .forma').count()) >= 1 && /Estrella roja/.test(await p.locator('#hoja .mio').textContent()));
+const antesMio = await cuentaFormas(lam);
+await p.locator('#hoja .mio-poner').first().click();
+await p.waitForSelector('#visor[open] .seleccion');
+ok('tocarla la pone en la lámina, con su color', (await cuentaFormas(lam)) === antesMio + 1 && await p.evaluate(async (i) => (await window.__pres.N.modelo(window.__pres.D, i)).formas.filter((f) => f.relleno?.color === '#C00000').length >= 1, lam));
+await p.keyboard.press('Escape');
+await p.click('.dock [data-panel="insertar"]');
+await p.locator('#hoja [data-crear="dibujo"]').click();
+await p.waitForSelector('#hoja2[open] canvas.dibujo');
+bb = await p.locator('#hoja2 canvas.dibujo').boundingBox();
+await p.mouse.move(bb.x + 40, bb.y + 40); await p.mouse.down();
+for(let t = 0; t <= 20; t++) await p.mouse.move(bb.x + 40 + t * 12, bb.y + 60 + Math.sin(t / 3) * 40);
+await p.mouse.up();
+await captura(p, '19-dibujar');
+await p.locator('#hoja2 [data-ponerlo]').click();
+await p.waitForSelector('#visor[open] .seleccion');
+ok('un dibujo con el dedo entra como imagen vectorial (SVG + PNG)', /Imagen/.test(await p.locator('#barra-elemento').textContent())
+  && await p.evaluate(() => Object.keys(window.__pres.D.zip.files).filter((f) => /media\/mazi\d+\.svg$/.test(f)).length >= 1));
+await p.keyboard.press('Escape');
+await p.click('.dock [data-panel="insertar"]');
+await p.locator('#hoja [data-crear="ia"]').click();
+await p.locator('#hoja2 textarea').fill('un foco con engranes');
+await p.locator('#hoja2 [data-hacer-ia]').click();
+await p.waitForSelector('#hoja2 .vista-ia img');
+ok('la IA hace un icono y se ve antes de ponerlo', /engranes/.test(pedidos.filter((x) => /ia-imagen/.test(x.u)).at(-1)?.cuerpo?.prompt || ''));
+await p.locator('#hoja2 [data-solo-guardar]').click();
+await p.waitForFunction(() => /guardado en Mis elementos/.test(document.querySelector('#avisos').textContent));
+await p.waitForFunction(() => document.querySelectorAll('#hoja .mio').length === 3, null, { timeout: 10000 });
+ok('«Sólo guardarlo» lo deja en la lista (con el dibujo: tres)', true);
+await captura(p, '20-mis-elementos');
+await p.locator('#hoja [data-editar-mios]').click();
+await p.locator('#hoja [data-borrar-mio]').first().click();
+await p.locator('#hoja2 [data-confirmar-borrar]').click();
+await p.waitForFunction(() => document.querySelectorAll('#hoja .mio').length === 2);
+ok('se borra uno (pidiendo confirmar)', true);
+await p.keyboard.press('Escape');
+
+console.log('\n· Insertar: iconos, diseños y transiciones');
+await p.click('.dock [data-panel="insertar"]');
+await p.locator('#hoja [data-seccion="iconos"]').click();
+await p.waitForSelector('#hoja [data-icono]');
+await p.locator('#hoja input[type=search]').fill('escuela');
+await p.waitForFunction(() => document.querySelector('#hoja [data-icono="school"]'));
+ok('buscar «escuela» (en español) encuentra el icono de escuela', true);
+await captura(p, '16-iconos');
+await p.locator('#hoja [data-icono="school"]').click();
+await p.waitForSelector('#visor[open] .seleccion');
+ok('el icono entra como imagen con su SVG', /Icono/.test(await p.locator('#barra-elemento').textContent()) && await p.evaluate(() => Object.keys(window.__pres.D.zip.files).some((f) => /media\/mazi\d+\.svg$/.test(f))));
+await p.locator('#barra-elemento [data-accion="color"]').click();
+await p.locator('#hoja2 .muestra[data-c="#2C5F2D"]').click();
+await p.getByRole('button', { name: 'Poner este color' }).click();
+await p.waitForFunction(() => /Icono recoloreado/.test(document.querySelector('#avisos').textContent));
+ok('el icono se recolorea (vuelve a dibujarse del color nuevo)', true);
+await p.keyboard.press('Escape');
+await p.click('.dock [data-panel="insertar"]');
+await p.locator('#hoja .segmento button', { hasText: 'Todas · 19' }).click();
+await p.locator('#hoja [data-seccion="disenos"]').click();
+ok('diez diseños armados', (await p.locator('#hoja [data-diseno]').count()) === 10);
+await p.locator('#hoja [data-diseno="numero"]').click();
+await p.waitForFunction(() => /En 19 láminas/.test(document.querySelector('#avisos').textContent));
+ok('un diseño en las 19 láminas de un jalón', await p.evaluate(async () => { const { D, N } = window.__pres; for(let i = 0; i < 19; i++) if(!(await N.modelo(D, i)).formas.some((f) => f.enGrupo)) return false; return true; }));
+await p.click('#b-deshacer');
+await p.click('.dock [data-panel="insertar"]');
+await p.locator('#hoja [data-seccion="transiciones"]').click();
+await p.locator('#hoja [data-transicion="push"]').click();
+await p.locator('#hoja .segmento button', { hasText: '↑ Arriba' }).click();
+await p.locator('#hoja .segmento button', { hasText: 'Todas · 19' }).click();
+await captura(p, '17-transiciones');
+await p.locator('#hoja [data-poner-transicion]').click();
+await p.waitForFunction(() => /Transición en 19 láminas/.test(document.querySelector('#avisos').textContent));
+ok('transición «empujar hacia arriba» en las 19', await p.evaluate(async () => (await window.__pres.N.modelo(window.__pres.D, 3)).transicion?.tipo === 'push'));
+await p.keyboard.press('Escape');
+
+console.log('\n· Presentar');
+await p.click('#b-presentar');
+await p.waitForSelector('#presentar[open] .diapo .lienzo');
+ok('«Presentar» abre la lámina a pantalla completa', /1 \/ 19/.test(await p.locator('#presentar-cuenta').textContent()));
+await p.keyboard.press('ArrowRight');
+await p.waitForFunction(() => /2 \/ 19/.test(document.querySelector('#presentar-cuenta').textContent));
+ok('avanza, con su transición', await p.evaluate(() => [...document.querySelectorAll('#presentar .diapo')].some((d) => /tr-empujar/.test(d.className))));
+await p.waitForTimeout(900);
+await captura(p, '18-presentar');
+const pres = await p.locator('#presentar-escenario').boundingBox();
+ok('la lámina llena el ancho del teléfono sin salirse', pres.width <= 391 && pres.width > 380, JSON.stringify(pres));
+await p.mouse.click(40, 400);
+await p.waitForFunction(() => /1 \/ 19/.test(document.querySelector('#presentar-cuenta').textContent));
+ok('tocar a la izquierda regresa', true);
+await p.keyboard.press('Escape');
+ok('Esc sale', await p.locator('#presentar').evaluate((d) => !d.open));
 
 console.log('\n· Guardar');
 await p.click('#b-guardar');

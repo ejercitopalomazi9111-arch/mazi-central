@@ -6,6 +6,7 @@
    mismo lado» de Ligas Mazi: aquí no hay ni un enlace escrito a mano.
    ═════════════════════════════════════════════════════════════════════════ */
 import { APARTADOS, RUTAS, emparejar, enlace } from './rutas.js';
+import { apertura, aperturaDe } from './apertura.js';
 import { icono } from './iconos.js';
 import { esc, pesos, plural, inicioDe, obra, noexiste, sinPermiso, fallo, cargando, hoja } from './piezas.js';
 import { negocio, yo, verComo, carrito, catalogo, subirVentasPendientes, memoria } from './datos.js';
@@ -58,7 +59,11 @@ export function aviso(texto, tipo = ''){
 function presentacion(n){
   let vista = false;
   try{ vista = sessionStorage.getItem('tienda-presentacion') === '1'; sessionStorage.setItem('tienda-presentacion', '1'); }catch(e){}
-  if(vista || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if(vista) return;
+  const quieto = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // El negocio con logo propio se abre armándolo (apertura.js); los demás, con la genérica.
+  if(aperturaDe(n)){ apertura(n, { quieto }); return; }
+  if(quieto) return;
   const el = document.createElement('div');
   el.className = 'presentacion';
   el.innerHTML = `<div class="marca">

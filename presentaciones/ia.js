@@ -166,6 +166,15 @@ export const banco = {
   },
 };
 
+/* Mis elementos: lo que Carlos arma y guarda para reusar (sala/servidor/elementos.js). */
+export const elementos = {
+  lista: async () => (await pedir('elementos', null, { metodo: 'GET', espera: 30000 })).elementos || [],
+  guardar: async (x) => (await pedir('elementos', { accion: 'guardar', ...x }, { espera: 120000 })).elemento,
+  renombrar: async (id, nombre) => (await pedir('elementos', { accion: 'renombrar', id, nombre })).elemento,
+  borrar: (id) => pedir('elementos', { accion: 'borrar', id }),
+  datos: (id) => pedir(`elementos?id=${encodeURIComponent(id)}`, null, { metodo: 'GET', espera: 60000 }),
+};
+
 /* Que Paulina mire una imagen y la registre. Regresa campos para la ficha. */
 const SISTEMA_DESCRIBIR = `Registras imágenes en el banco de imágenes de Carlos, que las usa para actualizar presentaciones escolares y de trabajo. Miras UNA imagen y contestas SOLO un objeto JSON:
 {"titulo":"de 2 a 8 palabras, lo que es","descripcion":"una a tres frases de lo que se ve: personas, objetos, lugar, estilo, colores","temas":["3 a 6 temas generales, p. ej. ciencia, tecnología, escuela, alimentación"],"palabras":["6 a 15 palabras clave para buscarla: objetos, colores, lugar, estilo, tipo de imagen (foto, ilustración, diagrama, ícono)"],"texto_visible":"el texto que aparece en la imagen, o vacío","problemas":"lo que impediría usarla tal cual en una lámina (borrosa, marca de agua, texto cortado, baja resolución, fondo que no combina), o vacío"}
