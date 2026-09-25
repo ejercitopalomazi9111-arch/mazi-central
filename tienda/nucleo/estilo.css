@@ -829,6 +829,19 @@ body:has(.pos-barra:not([hidden])) .avisos{ bottom: calc(96px + env(safe-area-in
 }
 .pagar-resumen{ padding: var(--e5); display: grid; gap: var(--e3); }
 .pagar-resumen h2{ font-size: var(--t-sub); }
+/* La barra fija de pagar: total y «Pedir» siempre a la mano en teléfono. */
+.pagar-fija{ display: none; }
+@media (max-width: 959px){
+  .pagar-fija{ position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--e3);
+    padding: var(--e3) var(--e4) calc(var(--e3) + env(safe-area-inset-bottom)); background: var(--superficie); border-top: 1px solid var(--linea);
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, .08); transition: transform .2s ease-out, visibility .2s; }
+  .pagar-fija.oculta{ transform: translateY(110%); visibility: hidden; transition: transform .16s ease-in, visibility .16s; }
+  .pagar-fija-total{ display: grid; line-height: 1.15; min-width: 0; }
+  .pagar-fija-total small{ font-size: var(--t-chica); color: var(--tinta-suave); }
+  .pagar-fija-total b{ font-size: var(--t-sub); font-variant-numeric: tabular-nums; }
+  .pagar-fija .boton{ min-width: 148px; }
+}
+@media (prefers-reduced-motion: reduce){ .pagar-fija{ transition: none; } }
 .con-margen{ margin-top: var(--e3); }
 .nota .ico, .con-margen .ico{ width: 18px; height: 18px; vertical-align: -3px; margin-right: 6px; }
 .segmentos button .ico{ width: 20px; height: 20px; vertical-align: -4px; margin-right: 6px; }

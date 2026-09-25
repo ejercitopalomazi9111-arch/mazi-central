@@ -231,7 +231,10 @@ async function navegar(){
   $app.classList.toggle('en-portada', portada);
   $app.querySelector('#marca-arriba').hidden = !portada;
   $app.querySelector('#buscar-arriba').hidden = !enTienda || ['/buscar', '/pagar'].includes(ruta?.ruta);
-  $app.querySelector('#pestanas').hidden = !enTienda;
+  // Al pagar no se distrae: sin pestañas, como la caja de Amazon o Mercado Libre.
+  const pagando = ruta?.ruta === '/pagar';
+  $app.classList.toggle('en-pagar', pagando);
+  $app.querySelector('#pestanas').hidden = !enTienda || pagando;
   $app.querySelectorAll('#pestanas a').forEach((a) => { if(ruta && a.dataset.pestana === ruta.ruta) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   rutaActual = ruta; pintarBarra();
 

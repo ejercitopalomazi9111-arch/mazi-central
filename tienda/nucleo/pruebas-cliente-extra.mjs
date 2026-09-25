@@ -98,6 +98,18 @@ await p.reload(); await listo(); await p.waitForTimeout(250);
 ok('lo elegido sobrevive a recargar', await p.$eval('[data-cuando="manana"]', (b) => b.getAttribute('aria-pressed')) === 'true' && await p.$eval('input[name="agotado"][value="parecido"]', (i) => i.checked));
 const notas = await p.evaluate(async () => { const m = await import('./cliente/pedir.js'); return [m.notasPedido({ notas: ' timbre ', cuando: 'manana', agotado: 'parecido' }, 'Envío $80'), m.notasPedido({ cuando: 'pronto', agotado: 'raro' })]; });
 ok('la nota del pedido lo dice claro para quien lo prepara', notas[0] === 'timbre · Para: mañana · Si se agota algo: cámbialo por uno parecido · Envío $80' && notas[1] === 'Si se agota algo: llámame para decidir', JSON.stringify(notas));
+// La caja sin distracciones: sin pestañas, y en teléfono «Pedir» con el total siempre a la mano.
+const caja = await p.evaluate(() => { const f = document.querySelector('[data-fija]'), r = f.getBoundingClientRect();
+  return { pestanas: document.querySelector('#pestanas').hidden, fija: getComputedStyle(f).display !== 'none' && r.bottom <= innerHeight + 1 && r.top < innerHeight && !f.classList.contains('oculta'),
+    total: f.querySelector('[data-total-fijo]').textContent, resumen: document.querySelector('[data-total]').textContent }; });
+ok('al pagar se esconden las pestañas', caja.pestanas);
+if(ANCHO < 960){
+  ok('la barra fija enseña el mismo total que el resumen', caja.fija && caja.total && caja.total === caja.resumen, JSON.stringify(caja));
+  await p.click('[data-pedir-fijo]'); await p.waitForTimeout(250);
+  ok('el «Pedir» de la barra manda el formulario (y marca lo que falta)', await p.$$eval('.campo.error', (c) => c.length) > 0);
+  await p.evaluate(() => document.querySelector('[data-pedir]').scrollIntoView({ block: 'center' })); await p.waitForTimeout(400);
+  ok('con el botón de verdad a la vista, la barra se quita', await p.$eval('[data-fija]', (f) => f.classList.contains('oculta')));
+} else ok('en computadora no hay barra fija: el resumen ya va al lado', !caja.fija, JSON.stringify(caja));
 if(CAPTURA) await p.screenshot({ path: join(CAPTURA, `x-pagar-${ANCHO}.png`), fullPage: true });
 await p.evaluate(() => { for(const k of Object.keys(localStorage)) if(k.startsWith('tienda-pagar')) localStorage.removeItem(k); });
 // Ayuda y comprar de nuevo

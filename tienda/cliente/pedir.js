@@ -162,6 +162,10 @@ async function pagar(){
         <button type="submit" class="boton principal grande ancho" data-pedir>${icono('listo')}<span data-pedir-texto>Pedir</span></button>
         <p class="nota centrado">Pagas al recibir, o antes si eliges transferencia. Puedes cancelar mientras no lo empiecen a preparar.</p>
       </aside>
+      <div class="pagar-fija" data-fija aria-hidden="true">
+        <span class="pagar-fija-total"><small>Total</small><b data-total-fijo></b></span>
+        <button type="submit" class="boton principal grande" data-pedir-fijo tabindex="-1">${icono('listo')}Pedir</button>
+      </div>
     </form>`,
 
     alMontar($c, { aviso }){
@@ -172,6 +176,7 @@ async function pagar(){
         $f.querySelector('[data-envio]').textContent = v.entrega !== 'domicilio' ? 'Recoges tú' : e ? pesosC(e) : 'Gratis';
         $f.querySelector('[data-total]').textContent = pesosC(totalC());
         $f.querySelector('[data-pedir-texto]').textContent = `Pedir · ${pesosC(totalC())}`;
+        $f.querySelector('[data-total-fijo]').textContent = pesosC(totalC());
         $f.querySelector('[data-bloque-domicilio]').hidden = v.entrega !== 'domicilio';
         $f.querySelectorAll('[data-entrega]').forEach((x) => x.setAttribute('aria-pressed', x.dataset.entrega === v.entrega));
         $f.querySelector('[data-billete]').hidden = v.pago !== 'efectivo';
@@ -227,7 +232,10 @@ async function pagar(){
         const malo = malos[0];
         if(malo){ malo.focus(); aviso('Revisa lo marcado en rojo', 'mal'); return; }
 
-        const $b = $f.querySelector('[data-pedir]'); $b.setAttribute('aria-busy', 'true'); $b.disabled = true;
+        // Los dos botones (el del resumen y el de la barra fija) se apagan juntos: un
+        // doble toque no debe mandar dos pedidos.
+        const $bs = [...$f.querySelectorAll('[data-pedir], [data-pedir-fijo]')];
+        $bs.forEach(($b) => { $b.setAttribute('aria-busy', 'true'); $b.disabled = true; });
         const envio = envioDe(v.entrega);
         const direccion = v.entrega === 'domicilio'
           ? { calle: v.calle.trim(), colonia: v.colonia.trim(), cp: v.cp.trim(), referencias: v.referencias.trim(), ...(v.lat ? { lat: v.lat, lng: v.lng } : {}), envio: aPesos(envio) }
@@ -251,10 +259,17 @@ async function pagar(){
         }catch(err){
           console.error(err);
           aviso(err.message || 'No se pudo hacer el pedido', 'mal');
-          $b.removeAttribute('aria-busy'); $b.disabled = false;
+          $bs.forEach(($b) => { $b.removeAttribute('aria-busy'); $b.disabled = false; });
         }
       });
       repintar();
+      // En teléfono el botón de pedir queda hasta abajo, tras todo el formulario.
+      // La barra fija lo tiene siempre a la mano con el total, como el «Realizar
+      // pedido» de Amazon, y se quita sola cuando el botón de verdad está a la vista.
+      const $fija = $f.querySelector('[data-fija]');
+      const vigia = 'IntersectionObserver' in window ? new IntersectionObserver(([x]) => $fija.classList.toggle('oculta', x.isIntersecting), { rootMargin: '0px 0px -8px 0px' }) : null;
+      vigia?.observe($f.querySelector('[data-pedir]'));
+      return () => vigia?.disconnect();
     },
   };
 }
