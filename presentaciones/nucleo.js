@@ -79,10 +79,17 @@ export async function abrir(datos, JSZipClase = globalThis.JSZip){
   const deck = { zip, partes: new Map(), sucias: new Set(), medios: new Map(), urls: new Map(), deshacer: [], _grabando: null };
   const pres = await parte(deck, 'ppt/presentation.xml');
   if(!pres) throw new Error('Eso no es una presentación de PowerPoint (.pptx).');
-  const rels = await relaciones(deck, 'ppt/presentation.xml');
   const tam = todos(pres.documentElement, NS.p, 'sldSz')[0];
   deck.ancho = Number(tam?.getAttribute('cx')) || 12192000;
   deck.alto = Number(tam?.getAttribute('cy')) || 6858000;
+  await leerLaminas(deck);
+  return deck;
+}
+/* La lista de láminas sale de presentation.xml (el orden) y de sus
+   relaciones. Se relee al deshacer una lámina nueva. */
+async function leerLaminas(deck){
+  const pres = await parte(deck, 'ppt/presentation.xml');
+  const rels = await relaciones(deck, 'ppt/presentation.xml');
   deck.laminas = [];
   for(const s of todos(pres.documentElement, NS.p, 'sldId')){
     const destino = rels.get(s.getAttributeNS(NS.r, 'id'));
@@ -102,7 +109,6 @@ export async function abrir(datos, JSZipClase = globalThis.JSZip){
       }
     }
   }
-  return deck;
 }
 
 /* Las partes se leen una vez y se quedan como documento: así cien cambios
@@ -164,6 +170,7 @@ export async function deshacer(deck){
     if(bytes === null) deck.zip.remove(ruta); else deck.zip.file(ruta, bytes);
     soltarUrl(deck, ruta);
   }
+  if(op.partes.has('ppt/presentation.xml')) await leerLaminas(deck);
   return op.nombre;
 }
 
@@ -606,7 +613,7 @@ export async function arreglarContraste(deck, sel, { claro = '#F5F2F2', oscuro =
     for(const c of cuerposDeTexto(doc)){
       // Un texto dentro de una forma con relleno propio se mide contra la forma, no contra el fondo.
       const spPr = hijo(c.sp, NS.p, 'spPr'), relleno = spPr && colorDe(hijo(spPr, NS.a, 'solidFill'), pal);
-      const detras = relleno && relleno.alfa > 0.5 ? relleno.hex : bg;
+      const detras = relleno && relleno.alfa >= 0.35 ? relleno.hex : bg;   // un recuadro de cristal (≥ 35 %) ya es el fondo del texto
       const heredado = colorDe(todos(c.sp, NS.a, 'fontRef')[0], pal)?.hex || '#' + (pal.tx1 || '000000');
       for(const run of corridas(c.tb)){
         if(run.localName !== 'endParaRPr' && !(hijo(run, NS.a, 't')?.textContent || '').trim()) continue;
@@ -764,9 +771,13 @@ async function recorrer(deck, l, ruta, arbol, pal, formas, soloAdorno, tx){
     }else{
       const geo = todos(spPr, NS.a, 'prstGeom')[0]?.getAttribute('prst');
       f.geo = geo || 'rect';
+      const adj = todos(todos(spPr, NS.a, 'prstGeom')[0], NS.a, 'gd').find((g) => g.getAttribute('name') === 'adj');
+      if(adj) f.redondeo = Number(String(adj.getAttribute('fmla')).replace(/\D/g, '')) / 100000;
       f.relleno = spPr && await leerRelleno(deck, ruta, spPr, pal);
+      const sombra = todos(hijo(spPr, NS.a, 'effectLst'), NS.a, 'outerShdw')[0];
+      if(sombra) f.sombra = { blur: num(sombra, 'blurRad'), dist: num(sombra, 'dist'), alfa: colorDe(sombra, pal)?.alfa ?? 0.35 };
       const ln = hijo(spPr, NS.a, 'ln');
-      if(ln && !hijo(ln, NS.a, 'noFill')){ const c = colorDe(hijo(ln, NS.a, 'solidFill'), pal); if(c) f.borde = { color: c.hex, ancho: (num(ln, 'w') || 12700) }; }
+      if(ln && !hijo(ln, NS.a, 'noFill')){ const c = colorDe(hijo(ln, NS.a, 'solidFill'), pal); if(c) f.borde = { color: c.hex, alfa: c.alfa, ancho: (num(ln, 'w') || 12700) }; }
       // Estilo de la forma (<p:style>): relleno del tema si no dice otro.
       if(!f.relleno && !spPr?.querySelector('*|noFill')){ const fr = todos(el, NS.a, 'fillRef')[0]; if(fr && fr.getAttribute('idx') !== '0'){ const c = colorDe(fr, pal); if(c) f.relleno = { color: c.hex }; } }
       const tb = hijo(el, NS.p, 'txBody');
@@ -891,7 +902,7 @@ function parrafosMedibles(deck, l, f){
       if(x.localName !== 'r' && x.localName !== 'fld') continue;
       const rpr = hijo(x, NS.a, 'rPr');
       const tam = (Number(rpr?.getAttribute('sz')) || base) / 100 * escala;
-      if(tam >= pt){ pt = tam; b = rpr?.getAttribute('b') === '1'; letra = hijo(rpr, NS.a, 'latin')?.getAttribute('typeface') || null; }
+      if(tam >= pt){ pt = tam; b = /^(1|true)$/.test(rpr?.getAttribute('b') || '') || /bold|black|heavy/i.test(hijo(rpr, NS.a, 'latin')?.getAttribute('typeface') || ''); letra = hijo(rpr, NS.a, 'latin')?.getAttribute('typeface') || null; }
       actual += hijo(x, NS.a, 't')?.textContent || '';
     }
     trozos.push(actual);
@@ -909,28 +920,46 @@ function parrafosMedibles(deck, l, f){
   });
 }
 /* ¿Cuánto mide de alto (en pt) este texto a este factor, dentro de este ancho? */
-function altoTexto(parrafos, anchoPt, factor){
+function altoTexto(parrafos, anchoPt, factor){ return medirTexto(parrafos, anchoPt, factor).alto; }
+/* Alto total y el renglón más ancho (en pt), ya partido como lo parte el cuadro. */
+/* ¿Tiene el navegador esa letra? Si mide igual que una letra que no existe,
+   no la tiene. Sin ella se mediría con una más angosta y el texto real se
+   saldría del recuadro en la compu que SÍ la tiene. */
+const _hayLetra = new Map();
+export function hayLetra(letra){
+  if(_hayLetra.has(letra)) return _hayLetra.get(letra);
+  const cx = medidor(), muestra = 'mmmmmmmmmmlliWWQ@#';
+  cx.font = '40px "No-Existe-Mazi-7", monospace'; const a = cx.measureText(muestra).width;
+  cx.font = `40px "${letra.replace(/"/g, '')}", monospace`; const b = cx.measureText(muestra).width;
+  const r = Math.abs(a - b) > 0.5; _hayLetra.set(letra, r); return r;
+}
+function medirTexto(parrafos, anchoPt, factor){
   const cx = medidor();
-  let alto = 0;
+  let alto = 0, ancho = 0;
   for(const p of parrafos){
     const pt = p.pt * factor;
-    cx.font = `${p.b ? 'bold ' : ''}${pt}px "${p.letra.replace(/"/g, '')}", Calibri, Carlito, Arial, sans-serif`;
+    const familia = p.letra.replace(/\s+(bold|black|heavy|semibold|medium|light|regular)$/i, '').replace(/"/g, '');
+    const tiene = hayLetra(p.letra) || hayLetra(familia);
+    // Sin la letra, se mide con una ANCHA (Verdana/DejaVu): mejor que sobre recuadro a que falte.
+    cx.font = `${p.b ? 'bold ' : ''}${pt}px ${tiene ? `"${hayLetra(p.letra) ? p.letra.replace(/"/g, '') : familia}", ` : ''}${tiene ? 'Calibri, Carlito, Arial' : 'Verdana, "DejaVu Sans"'}, sans-serif`;
     const disponible = Math.max(10, anchoPt - p.sangria * factor);
     let lineas = 0;
     for(const r of p.renglones){
       if(!r.trim()){ lineas++; continue; }
       let linea = '';
       let n = 1;
+      const mide = (t) => { const w = cx.measureText(t.trimEnd()).width; ancho = Math.max(ancho, w + p.sangria * factor); return w; };
       for(const palabra of r.split(/(\s+)/)){
         const prueba = linea + palabra;
-        if(linea.trim() && cx.measureText(prueba.trimEnd()).width > disponible){ n++; linea = palabra.trimStart(); }
+        if(linea.trim() && cx.measureText(prueba.trimEnd()).width > disponible){ mide(linea); n++; linea = palabra.trimStart(); }
         else linea = prueba;
       }
+      mide(linea);
       lineas += n;
     }
     alto += lineas * (p.lnPts ? p.lnPts * factor : pt * 1.2 * p.interlinea) + p.extra * factor;
   }
-  return alto;
+  return { alto, ancho };
 }
 function interior(f){
   const bp = hijo(f.tb, NS.a, 'bodyPr');
@@ -1198,3 +1227,210 @@ export async function acomodarTodo(deck, sel){
   r.total = Object.values(r).reduce((a, b) => a + b, 0);
   return r;
 }
+
+/* ══ RECUADRO DETRÁS DEL TEXTO ════════════════════════════════════════════
+   Carlos: «un recuadro tipo sombra de estos que van atrás del texto para que
+   se vean de lujo». No se mete una forma nueva detrás: al PROPIO cuadro de
+   texto se le pone relleno, esquinas redondas y sombra, y se agranda hacia
+   afuera exactamente lo que crece su margen interno. Así el texto no se mueve
+   ni un milímetro, y el recuadro viaja con el texto si luego lo mueven.
+   Sólo a cuadros de texto sin relleno propio: una forma que ya tiene color
+   es un diseño, no un texto suelto.
+   ═════════════════════════════════════════════════════════════════════════ */
+export const ESTILOS_RECUADRO = {
+  cristal:   { color: '#0B0714', alfa: 0.55, borde: { color: '#FFFFFF', alfa: 0.18 }, sombra: 0.35, redondeo: 0.14 },
+  // La sombra se ve A TRAVÉS del relleno translúcido: en el claro, más opaco y sombra suave, o sale gris.
+  claro:     { color: '#FFFFFF', alfa: 0.93, borde: { color: '#FFFFFF', alfa: 1 }, sombra: 0.12, redondeo: 0.14 },
+  solido:    { color: '#1E1428', alfa: 0.94, borde: null, sombra: 0.4, redondeo: 0.08 },
+  pildora:   { color: '#0B0714', alfa: 0.6, borde: null, sombra: 0.3, redondeo: 0.5 },
+};
+/* En el nombre del cuadro se anota cómo estaba (caja y márgenes), para
+   quitarlo y dejarlo EXACTO. «n» = ese margen no venía escrito. */
+const MARCA_RECUADRO = / ·recuadro:([-\dn_]+)(?:~([\d:,]+))?$/;
+function colorTextoDe(deck, l, f){
+  const pal = paleta(deck, l);
+  const heredado = colorDe(todos(f.el, NS.a, 'fontRef')[0], pal)?.hex || '#' + (pal.tx1 || '000000');
+  let suma = 0, n = 0;
+  for(const run of todos(f.tb, NS.a, 'r')){
+    const t = (hijo(run, NS.a, 't')?.textContent || '').trim().length;
+    if(!t) continue;
+    const c = colorDe(hijo(hijo(run, NS.a, 'rPr'), NS.a, 'solidFill'), pal)?.hex || heredado;
+    suma += lum(c) * t; n += t;
+  }
+  return n ? suma / n : lum(heredado);
+}
+export async function ponerRecuadro(deck, sel, { estilo = 'auto', color, alfa, en = 'todo', relleno = 0.18 } = {}){
+  let n = 0;
+  for(const i of cuales(deck, sel)){
+    const l = deck.laminas[i], doc = docDe(deck, l.ruta);
+    for(const f of formasSueltas(deck, l)){
+      if(f.tipo !== 'sp' || !f.texto || f.rot) continue;
+      if(en === 'titulos' && !f.titulo) continue;
+      if(en === 'texto' && f.titulo) continue;
+      const cnv = todos(f.el, NS.p, 'cNvPr')[0];
+      const spPr = hijo(f.el, NS.p, 'spPr');
+      const ya = MARCA_RECUADRO.test(cnv?.getAttribute('name') || '');
+      if(!ya && spPr && [...spPr.children].some((x) => ['solidFill', 'gradFill', 'blipFill', 'pattFill'].includes(x.localName))) continue;
+      // Automático: texto oscuro → cristal claro; texto claro → cristal oscuro. Así nunca se pierde el texto ni se le cambian sus colores.
+      const nombre = estilo === 'auto' ? (colorTextoDe(deck, l, f) < 0.35 ? 'claro' : 'cristal') : estilo;
+      const e = { ...(ESTILOS_RECUADRO[nombre] || ESTILOS_RECUADRO.cristal) };
+      if(color) e.color = color;
+      if(alfa != null) e.alfa = Math.min(1, Math.max(0.1, Number(alfa)));
+      if(!ya){
+        const bp0 = hijo(f.tb, NS.a, 'bodyPr');
+        const orig = [f.x, f.y, f.w, f.h, ...['lIns', 'rIns', 'tIns', 'bIns'].map((a) => bp0.getAttribute(a) ?? 'n')];
+        const lnOrig = [];
+        /* Canva escribe interlineados fijos enormes (129 pt para una letra de
+           62): el texto queda pegado abajo de un renglón altísimo y el recuadro
+           se ve vacío arriba. Se normaliza a 1.15× la letra, bajando el cuadro
+           lo mismo que se quitó para que la línea de base no se mueva. */
+        let bajar = 0;
+        for(const [k, p] of todos(f.tb, NS.a, 'p').entries()){
+          const pts = todos(hijo(hijo(p, NS.a, 'pPr'), NS.a, 'lnSpc'), NS.a, 'spcPts')[0];
+          if(!pts) continue;
+          const pm = parrafosMedibles(deck, l, { ...f, tb: f.tb }).find(() => true);
+          const letraPt = Math.max(...[...p.getElementsByTagNameNS(NS.a, 'rPr')].map((r) => Number(r.getAttribute('sz')) / 100 || 0), pm?.pt || 0);
+          const L = Number(pts.getAttribute('val')) / 100;
+          if(letraPt && L > letraPt * 1.3){
+            const nuevoL = Math.round(letraPt * 1.15 * 100);
+            if(!bajar) bajar = (L - nuevoL / 100) * EMU_PT;   // sólo el primer renglón empuja el texto
+            lnOrig.push(`${k}:${pts.getAttribute('val')}`);
+            pts.setAttribute('val', String(nuevoL));
+          }
+        }
+        if(bajar){ tocar(deck, l.ruta); ponerCaja(deck, l, f, { x: f.x, y: f.y + bajar, w: f.w, h: Math.max(1, f.h - bajar) }); }
+        const ps = parrafosMedibles(deck, l, f);
+        const pt = Math.max(10, ...ps.map((p) => p.pt));
+        const pad = Math.round(pt * EMU_PT * (0.35 + relleno));
+        const bp = hijo(f.tb, NS.a, 'bodyPr');
+        const ins = (a, d) => { const v = bp.getAttribute(a); return v == null ? d : Number(v); };
+        const L = f.x + ins('lIns', 91440), T = f.y + ins('tIns', 45720);
+        const W = f.w - ins('lIns', 91440) - ins('rIns', 91440), H = f.h - ins('tIns', 45720) - ins('bIns', 45720);
+        const med = medirTexto(ps, W / EMU_PT, 1);
+        /* El recuadro abraza al TEXTO, no al cuadro: los de Canva miden toda
+           la lámina de ancho con el texto centrado, y el recuadro salía
+           enorme. Sólo se ciñe de lado si todos los párrafos dicen su
+           alineación (si la heredan de la plantilla, no se sabe y se deja). */
+        const alineas = todos(f.tb, NS.a, 'p').filter((p) => hijo(p, NS.a, 'r')).map((p) => hijo(p, NS.a, 'pPr')?.getAttribute('algn') || null);
+        const algn = alineas.length && alineas.every((a) => a && a === alineas[0]) ? alineas[0] : (f.ph ? null : (alineas.every((a) => !a || a === 'l') ? 'l' : null));
+        const tw = algn ? Math.min(W, (med.ancho * 1.1 + 4) * EMU_PT) : W;
+        const ancla = bp.getAttribute('anchor') || (f.ph ? null : 't');
+        const th = ancla ? Math.max(Math.min(H, med.alto * 1.04 * EMU_PT), 1) : H;
+        const x0 = algn === 'ctr' ? L + (W - tw) / 2 : algn === 'r' ? L + W - tw : L;
+        const y0 = ancla === 'ctr' ? T + (H - th) / 2 : ancla === 'b' ? T + H - th : T;
+        const alto = med.alto * EMU_PT > H ? med.alto * 1.04 * EMU_PT : th;   // si ya se desbordaba, que el recuadro alcance todo el texto
+        ponerCaja(deck, l, f, { x: x0 - pad, y: y0 - pad, w: tw + 2 * pad, h: alto + 2 * pad });
+        for(const a of ['lIns', 'rIns', 'tIns', 'bIns']) bp.setAttribute(a, String(pad));
+        cnv?.setAttribute('name', `${cnv.getAttribute('name') || 'Texto'} ·recuadro:${orig.map((v) => String(Math.round(Number(v)) || v)).join('_')}${lnOrig.length ? '~' + lnOrig.join(',') : ''}`);
+      }
+      tocar(deck, l.ruta);
+      const pr = hijo(f.el, NS.p, 'spPr');
+      [...pr.children].filter((x) => ['prstGeom', 'custGeom', ...RELLENOS, 'ln', 'effectLst'].includes(x.localName)).forEach((x) => x.remove());
+      const geo = nuevo(doc, NS.a, 'prstGeom', { prst: e.redondeo ? 'roundRect' : 'rect' });
+      const av = nuevo(doc, NS.a, 'avLst');
+      if(e.redondeo) av.appendChild(nuevo(doc, NS.a, 'gd', { name: 'adj', fmla: `val ${Math.round(Math.min(0.5, e.redondeo) * 100000)}` }));
+      geo.appendChild(av);
+      meterEnOrden(pr, geo, ORDEN_SPPR);
+      const clr = (hex, a) => { const c = nuevo(doc, NS.a, 'srgbClr', { val: hex6(hex) || '000000' }); if(a < 1) c.appendChild(nuevo(doc, NS.a, 'alpha', { val: String(Math.round(a * 100000)) })); return c; };
+      const sf = nuevo(doc, NS.a, 'solidFill'); sf.appendChild(clr(e.color, e.alfa)); meterEnOrden(pr, sf, ORDEN_SPPR);
+      const ln = nuevo(doc, NS.a, 'ln', { w: '9525' });
+      if(e.borde){ const lf = nuevo(doc, NS.a, 'solidFill'); lf.appendChild(clr(e.borde.color, e.borde.alfa)); ln.appendChild(lf); }
+      else ln.appendChild(nuevo(doc, NS.a, 'noFill'));
+      meterEnOrden(pr, ln, ORDEN_SPPR);
+      if(e.sombra){
+        const ef = nuevo(doc, NS.a, 'effectLst');
+        const sh = nuevo(doc, NS.a, 'outerShdw', { blurRad: '266700', dist: '63500', dir: '5400000', algn: 't', rotWithShape: '0' });
+        sh.appendChild(clr('#000000', e.sombra)); ef.appendChild(sh);
+        meterEnOrden(pr, ef, ORDEN_SPPR);
+      }
+      n++;
+    }
+  }
+  return n;
+}
+/* Quitar: sólo los recuadros que puso esta herramienta (los reconoce por la
+   marca en el nombre), y el cuadro regresa EXACTO a su caja y márgenes. */
+export async function quitarRecuadro(deck, sel){
+  let n = 0;
+  for(const i of cuales(deck, sel)){
+    const l = deck.laminas[i];
+    for(const f of formasSueltas(deck, l)){
+      const cnv = todos(f.el, NS.p, 'cNvPr')[0], m = (cnv?.getAttribute('name') || '').match(MARCA_RECUADRO);
+      if(!m) continue;
+      const [x, y, w, h, ...insets] = m[1].split('_');
+      tocar(deck, l.ruta);
+      const pr = hijo(f.el, NS.p, 'spPr');
+      [...pr.children].filter((q) => [...RELLENOS, 'ln', 'effectLst'].includes(q.localName)).forEach((q) => q.remove());
+      const geo = hijo(pr, NS.a, 'prstGeom'); if(geo){ geo.setAttribute('prst', 'rect'); geo.replaceChildren(nuevo(docDe(deck, l.ruta), NS.a, 'avLst')); }
+      const bp = hijo(f.tb, NS.a, 'bodyPr');
+      ['lIns', 'rIns', 'tIns', 'bIns'].forEach((a, k) => { if(insets[k] === 'n' || insets[k] == null) bp.removeAttribute(a); else bp.setAttribute(a, insets[k]); });
+      const ps = todos(f.tb, NS.a, 'p');
+      for(const par of (m[2] || '').split(',').filter(Boolean)){
+        const [k, val] = par.split(':');
+        const pts = todos(hijo(hijo(ps[Number(k)], NS.a, 'pPr'), NS.a, 'lnSpc'), NS.a, 'spcPts')[0];
+        if(pts) pts.setAttribute('val', val);
+      }
+      ponerCaja(deck, l, f, { x: Number(x), y: Number(y), w: Number(w), h: Number(h) });
+      cnv.setAttribute('name', cnv.getAttribute('name').replace(MARCA_RECUADRO, ''));
+      n++;
+    }
+  }
+  return n;
+}
+
+/* ══ LÁMINA NUEVA (copia de una que ya existe) ════════════════════════════
+   Para «qué apartados sumar»: la IA propone una lámina nueva con el diseño de
+   otra y sus textos. Se copia la lámina con sus relaciones MENOS las notas
+   del orador y los comentarios: dos láminas que comparten las mismas notas
+   es de lo que PowerPoint se queja al abrir. */
+const T_NOTAS = /\/(notesSlide|comments|commentAuthors)$/;
+export async function duplicarLamina(deck, i, { despues = i } = {}){
+  const l = deck.laminas[i];
+  if(!l) throw new Error('No existe esa lámina.');
+  let n = deck.laminas.length + 1;
+  while(deck.zip.file(`ppt/slides/slide${n}.xml`) || deck.partes.has(`ppt/slides/slide${n}.xml`)) n++;
+  const ruta = `ppt/slides/slide${n}.xml`, rr = relsDe(ruta);
+  const ser = new XMLSerializer();
+  const nuevoDoc = new DOMParser().parseFromString(ser.serializeToString(docDe(deck, l.ruta)), 'application/xml');
+  if(deck._grabando && !deck._grabando.partes.has(ruta)) deck._grabando.partes.set(ruta, null);
+  deck.partes.set(ruta, nuevoDoc); tocar(deck, ruta);
+  const relsOrigen = await parte(deck, relsDe(l.ruta));
+  if(relsOrigen){
+    const copia = new DOMParser().parseFromString(ser.serializeToString(relsOrigen), 'application/xml');
+    for(const r of todos(copia.documentElement, NS.rel, 'Relationship')) if(T_NOTAS.test(r.getAttribute('Type'))) r.remove();
+    if(deck._grabando && !deck._grabando.partes.has(rr)) deck._grabando.partes.set(rr, null);
+    deck.partes.set(rr, copia); tocar(deck, rr);
+  }
+  // [Content_Types].xml
+  const ct = await parte(deck, '[Content_Types].xml');
+  tocar(deck, '[Content_Types].xml');
+  const ov = ct.createElementNS(NS.ct, 'Override');
+  ov.setAttribute('PartName', '/' + ruta); ov.setAttribute('ContentType', 'application/vnd.openxmlformats-officedocument.presentationml.slide+xml');
+  ct.documentElement.appendChild(ov);
+  // presentation.xml: relación y lugar en la lista
+  const id = await relNueva(deck, 'ppt/presentation.xml', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide', ruta);
+  const pres = docDe(deck, 'ppt/presentation.xml');
+  tocar(deck, 'ppt/presentation.xml');
+  const lista = todos(pres.documentElement, NS.p, 'sldIdLst')[0];
+  const ids = todos(lista, NS.p, 'sldId');
+  const s = nuevo(pres, NS.p, 'sldId', { id: String(Math.max(255, ...ids.map((x) => Number(x.getAttribute('id')) || 0)) + 1) });
+  s.setAttributeNS(NS.r, 'r:id', id);
+  lista.insertBefore(s, ids[despues + 1] || null);
+  await leerLaminas(deck);
+  return despues + 1;
+}
+/* Lámina nueva con textos: { copiaDe, despues, textos: ['título', 'cuerpo'…] }.
+   Los textos van en orden a los cuadros de la copia (el título primero). */
+export async function laminaNueva(deck, { copiaDe, despues = copiaDe, textos = [] }){
+  const j = await duplicarLamina(deck, copiaDe, { despues });
+  const cuadros = textosDe(deck, j);
+  cuadros.forEach((c, k) => { if(k < textos.length) ponerTextoSinc(deck, j, c.id, textos[k]); });
+  // Los cuadros de la copia que no recibieron texto se vacían: no se deja texto viejo de otra lámina.
+  cuadros.slice(textos.length).forEach((c) => ponerTextoSinc(deck, j, c.id, ''));
+  return j;
+}
+function textosDe(deck, i){
+  const t = textos(deck, i);
+  return [...t.filter((x) => x.titulo), ...t.filter((x) => !x.titulo)];
+}
+function ponerTextoSinc(deck, i, forma, texto){ return ponerTexto(deck, i, forma, texto); }

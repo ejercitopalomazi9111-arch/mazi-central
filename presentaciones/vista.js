@@ -54,9 +54,10 @@ export function pintar(m){
       }else{ const e = el('span', 'etiqueta'); e.textContent = f.marcador; caja.appendChild(e); }
     }else{
       caja.style.background = fondoCss(f.relleno);
-      if(f.borde) caja.style.border = `${Math.max(1, f.borde.ancho * k)}px solid ${f.borde.color}`;
+      if(f.borde) caja.style.border = `${Math.max(1, f.borde.ancho * k)}px solid ${rgba(f.borde.color, f.borde.alfa ?? 1)}`;
+      if(f.sombra) caja.style.boxShadow = `0 ${f.sombra.dist * k}px ${f.sombra.blur * k}px rgba(0,0,0,${f.sombra.alfa})`;
       if(f.geo === 'ellipse') caja.style.borderRadius = '50%';
-      else if(/round/i.test(f.geo)) caja.style.borderRadius = Math.min(f.w, f.h) * k * 0.16 + 'px';
+      else if(/round/i.test(f.geo)) caja.style.borderRadius = Math.min(f.w, f.h) * k * (f.redondeo ?? 0.16) + 'px';
       if(f.relleno?.rutaImagen){ caja.dataset.imagen = f.relleno.rutaImagen; caja.classList.add('es-imagen'); }
       if(f.parrafos?.some((p) => p.runs.some((r) => r.t))){
         const tx = el('div', 'texto', { justifyContent: ANCLA[f.ancla] || 'flex-start', padding: `${45720 * k}px ${91440 * k}px` });

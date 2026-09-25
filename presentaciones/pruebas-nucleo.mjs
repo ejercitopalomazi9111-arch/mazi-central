@@ -211,6 +211,75 @@ try{
   ok(`la acomodada abre en LibreOffice: ${paginas} páginas`, paginas === ac.releido, String(paginas));
 }catch(e){ ok('la acomodada abre en LibreOffice', false, e.message.slice(0, 200)); }
 
+console.log('\n· Recuadro detrás del texto y lámina nueva');
+const rc = await en(async (N) => {
+  const d = await N.abrir(await (await fetch('/fadori/presentacion/Fadori-STEAM.pptx')).arrayBuffer());
+  const NSA = 'http://schemas.openxmlformats.org/drawingml/2006/main', NSP = 'http://schemas.openxmlformats.org/presentationml/2006/main';
+  // Dónde empieza el texto de cada cuadro: x + margen izquierdo, y + margen de arriba.
+  const inicioTexto = () => d.laminas.flatMap((l) => [...d.partes.get(l.ruta).getElementsByTagNameNS(NSP, 'sp')].filter((sp) => sp.getElementsByTagNameNS(NSA, 't').length && sp.getElementsByTagNameNS(NSA, 'off')[0]).map((sp) => {
+    const off = sp.getElementsByTagNameNS(NSA, 'off')[0], bp = sp.getElementsByTagNameNS(NSA, 'bodyPr')[0];
+    const ins = (a, def) => bp.getAttribute(a) == null ? def : Number(bp.getAttribute(a));
+    return `${Number(off.getAttribute('x')) + ins('lIns', 91440)},${Number(off.getAttribute('y')) + ins('tIns', 45720)}`;
+  }));
+  const r = {};
+  const antes = inicioTexto();
+  const m4 = await N.modelo(d, 4);
+  const anchoCuadro4 = Math.max(...m4.formas.filter((f) => f.parrafos?.some((p) => p.runs.some((x) => /Fadori/.test(x.t || '')))).map((f) => f.w));
+  const xml0 = d.laminas.map((l) => new XMLSerializer().serializeToString(d.partes.get(l.ruta)));
+  r.puestos = await N.operacion(d, 'recuadro', () => N.ponerRecuadro(d, 'todas', { en: 'titulos' }));
+  // Automático: el título oscuro de la portada lleva cristal CLARO (se sigue leyendo); los claros, oscuro.
+  const port = (await N.modelo(d, 0)).formas.find((f) => f.relleno?.color && f.sombra);
+  r.portada = port?.relleno?.color;
+  // El recuadro abraza al texto: en «¿Qué es Fadori?» (cuadro de media lámina) debe medir mucho menos que el cuadro.
+  const t4 = (await N.modelo(d, 4)).formas.find((f) => f.relleno?.color && f.sombra);
+  r.anchoRecuadro = t4 ? t4.w / anchoCuadro4 : null;
+  r.mismoLugar = JSON.stringify(inicioTexto()) === JSON.stringify(antes);
+  const m = await N.modelo(d, 8);
+  const tit = m.formas.find((f) => f.relleno?.color && f.sombra && f.parrafos);
+  r.modelo = tit ? { color: tit.relleno.color, alfa: tit.relleno.alfa, sombra: !!tit.sombra, geo: tit.geo } : null;
+  const ext1 = [...d.partes.get(d.laminas[8].ruta).getElementsByTagNameNS(NSA, 'ext')].map((e) => e.getAttribute('cx')).join();
+  r.otroEstilo = await N.ponerRecuadro(d, 'todas', { estilo: 'claro', en: 'titulos' });
+  r.noCrece = ext1 === [...d.partes.get(d.laminas[8].ruta).getElementsByTagNameNS(NSA, 'ext')].map((e) => e.getAttribute('cx')).join();
+  r.quitados = await N.quitarRecuadro(d, 'todas');
+  // Exacto: sólo se permite que la geometría quede escrita como «rect» (que es lo mismo que nada).
+  r.comoAntes = d.laminas.every((l, k) => { const x = new XMLSerializer().serializeToString(d.partes.get(l.ruta)); const q = (t) => t.replace(/<a:prstGeom prst="rect"><a:avLst\/><\/a:prstGeom>/g, ''); return q(x) === q(xml0[k]); });
+  r.mismoLugar2 = JSON.stringify(inicioTexto()) === JSON.stringify(antes);
+  await N.ponerRecuadro(d, 'todas', { en: 'titulos' });   // automático, como lo usará Carlos
+  // Lámina nueva después de la 5 con el diseño de la 5.
+  r.n0 = d.laminas.length;
+  r.nueva = await N.operacion(d, 'lamina', () => N.laminaNueva(d, { copiaDe: 4, despues: 4, textos: ['Resultados del piloto', 'Menos filas\nMás tiempo para comer'] }));
+  r.n1 = d.laminas.length;
+  r.txNueva = N.textos(d, r.nueva).map((t) => t.texto);
+  r.txSig = N.textos(d, r.nueva + 1).map((t) => t.texto).join('|').slice(0, 60);
+  const relsN = await d.partes.get('ppt/slides/_rels/' + d.laminas[r.nueva].ruta.split('/').pop() + '.rels');
+  r.sinNotas = !relsN || ![...relsN.documentElement.children].some((x) => /notesSlide/.test(x.getAttribute('Type')));
+  const bytes = new Uint8Array(await (await N.guardar(d)).arrayBuffer());
+  r.b64 = btoa(Array.from(bytes, (x) => String.fromCharCode(x)).join(''));
+  r.releida = (await N.abrir(bytes)).laminas.length;
+  await N.deshacer(d);
+  r.n2 = d.laminas.length;
+  r.fuera = !d.zip.file(d.laminas.map((l) => l.ruta).find(() => false) || 'ppt/slides/slide20.xml');
+  return r;
+});
+ok('pone el recuadro a los títulos', rc.puestos > 5, String(rc.puestos));
+ok('automático: título oscuro → cristal claro, para que se siga leyendo', rc.portada === '#FFFFFF', rc.portada);
+ok('el recuadro abraza al texto, no al cuadro entero (es más angosto que el cuadro)', rc.anchoRecuadro && rc.anchoRecuadro < 0.95, String(rc.anchoRecuadro));
+ok('se ve: relleno translúcido, esquinas redondas y sombra', rc.modelo && rc.modelo.alfa < 1 && rc.modelo.sombra && /round/.test(rc.modelo.geo), JSON.stringify(rc.modelo));
+ok('cambiar de estilo no lo agranda otra vez', rc.otroEstilo > 0 && rc.noCrece);
+ok('quitarlo lo deja exacto como estaba', rc.quitados === rc.puestos && rc.comoAntes && rc.mismoLugar2, JSON.stringify({ q: rc.quitados, p: rc.puestos, igual: rc.comoAntes }));
+ok('lámina nueva en su lugar, con sus textos', rc.n1 === rc.n0 + 1 && rc.nueva === 5 && rc.txNueva.includes('Resultados del piloto') && rc.txNueva.some((t) => /Menos filas\nMás tiempo/.test(t)), JSON.stringify(rc.txNueva));
+ok('la que seguía se recorre una', rc.txSig.length > 0 && !/Resultados del piloto/.test(rc.txSig));
+ok('la copia no comparte las notas del orador (PowerPoint se queja)', rc.sinNotas);
+ok('se guarda y se vuelve a abrir con una lámina más', rc.releida === rc.n1);
+ok('deshacer la quita', rc.n2 === rc.n0);
+const salidaRc = join(TMP, 'recuadro.pptx');
+writeFileSync(salidaRc, Buffer.from(rc.b64, 'base64'));
+try{
+  execFileSync('soffice', ['--headless', '--norestore', `-env:UserInstallation=file://${TMP}/ui`, '--convert-to', 'pdf', '--outdir', TMP, salidaRc], { timeout: 180000, stdio: 'pipe' });
+  const paginas = (readFileSync(salidaRc.replace(/\.pptx$/, '.pdf')).toString('latin1').match(/\/Type\s*\/Page[^s]/g) || []).length;
+  ok(`con recuadros y lámina nueva abre en LibreOffice: ${paginas} páginas`, paginas === rc.releida, String(paginas));
+}catch(e){ ok('con recuadros y lámina nueva abre en LibreOffice', false, e.message.slice(0, 200)); }
+
 console.log('\n· Poner texto (para la IA)');
 const tx = await en(async (N) => {
   const d = await N.abrir(await (await fetch('/fadori/presentacion/Fadori-STEAM.pptx')).arrayBuffer());
