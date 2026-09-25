@@ -1274,3 +1274,9 @@ dialog.hoja .hoja-cuerpo{ padding: var(--e5); overflow-y: auto; max-height: calc
 .pregunta > div{ padding: 0 0 var(--e3); color: var(--tinta-suave); }
 .contacto-ayuda{ padding: var(--e5); display: grid; gap: var(--e2); margin-bottom: var(--e5); }
 .contacto-ayuda .ico{ width: 18px; height: 18px; vertical-align: -3px; }
+.segmentos.envuelve{ flex-wrap: wrap; }
+.segmentos.envuelve button{ flex: 1 1 auto; min-width: 0; padding-inline: var(--e3); }
+.sub-bloque{ font-size: var(--t-cuerpo); margin: var(--e5) 0 var(--e3); }
+.buscar-fila{ display: flex; gap: var(--e2); align-items: stretch; }
+.buscar-fila .buscador{ flex: 1; min-width: 0; }
+@media (max-width: 480px){ .buscar-fila .largo{ display: none; } }

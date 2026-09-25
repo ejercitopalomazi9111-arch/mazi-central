@@ -88,8 +88,8 @@ async function imprimirTicket(v, { cajon = false, aviso } = {}){
 }
 
 /* ── Escanear con la cámara (donde el navegador sabe) ──────────────────── */
-const puedeEscanear = () => 'BarcodeDetector' in self && !!navigator.mediaDevices?.getUserMedia;
-function hojaEscaner({ alLeer }){
+export const puedeEscanear = () => 'BarcodeDetector' in self && !!navigator.mediaDevices?.getUserMedia;
+export function hojaEscaner({ alLeer }){
   const d = hoja({ titulo: 'Escanear', clase: 'hoja-escaner', cuerpo: `
     <div class="visor"><video playsinline muted></video><span class="mira" aria-hidden="true"></span></div>
     <p class="nota" data-ultimo aria-live="polite">Apunta al código de barras o al QR de la etiqueta.</p>

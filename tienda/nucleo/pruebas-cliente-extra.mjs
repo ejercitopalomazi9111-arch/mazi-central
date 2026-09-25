@@ -89,6 +89,17 @@ await p.click(`[data-despues="${card.id}"]`); await p.waitForTimeout(200);
 ok('«Para después» lo saca del carrito y lo deja abajo', /Guardado para después/.test(await texto()) && /carrito está vacío/.test(await texto()));
 await p.click(`[data-regresar="${card.id}"]`); await p.waitForTimeout(200);
 ok('«Al carrito» lo regresa', !(/carrito está vacío/.test(await texto())) && !(/Guardado para después/.test(await texto())));
+// Pagar: para cuándo y qué hacer si algo se agota (sustituciones)
+await ir('/pagar');
+const pag = await texto();
+ok('al pagar pregunta para cuándo y qué hacer si algo se agota', /¿Para cuándo\?/.test(pag) && /Si algo se acabó/.test(pag) && /Cámbialo por uno parecido/.test(pag), pag.slice(0, 200));
+await p.click('[data-cuando="manana"]'); await p.check('input[name="agotado"][value="parecido"]'); await p.waitForTimeout(100);
+await p.reload(); await listo(); await p.waitForTimeout(250);
+ok('lo elegido sobrevive a recargar', await p.$eval('[data-cuando="manana"]', (b) => b.getAttribute('aria-pressed')) === 'true' && await p.$eval('input[name="agotado"][value="parecido"]', (i) => i.checked));
+const notas = await p.evaluate(async () => { const m = await import('./cliente/pedir.js'); return [m.notasPedido({ notas: ' timbre ', cuando: 'manana', agotado: 'parecido' }, 'Envío $80'), m.notasPedido({ cuando: 'pronto', agotado: 'raro' })]; });
+ok('la nota del pedido lo dice claro para quien lo prepara', notas[0] === 'timbre · Para: mañana · Si se agota algo: cámbialo por uno parecido · Envío $80' && notas[1] === 'Si se agota algo: llámame para decidir', JSON.stringify(notas));
+if(CAPTURA) await p.screenshot({ path: join(CAPTURA, `x-pagar-${ANCHO}.png`), fullPage: true });
+await p.evaluate(() => { for(const k of Object.keys(localStorage)) if(k.startsWith('tienda-pagar')) localStorage.removeItem(k); });
 // Ayuda y comprar de nuevo
 await ir('/ayuda');
 ok('Ayuda contesta envíos, pagos y cancelar', /¿Cuánto cuesta el envío\?/.test(await texto()) && /¿Puedo cancelar\?/.test(await texto()));

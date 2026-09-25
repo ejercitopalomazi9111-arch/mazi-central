@@ -17,6 +17,7 @@ import { tarjeta, foto, botonFavorito, POCAS } from './tarjeta.js';
 import { envioGratis, bajoDesde, comprados } from '../nucleo/memoria.js';
 import { aCentavos } from '../nucleo/dinero.js';
 import { waNegocio, ligaProducto } from './contacto.js';
+import { hojaEscaner, puedeEscanear } from '../venta/pantallas.js';
 import { pedidoDeSiempre, teToca, validos, diaCorto, dias } from '../nucleo/recompra.js';
 import { SINONIMOS } from '../nucleo/bot.js';
 import { sorteoDelMes, tarjetaSorteo } from './sorteo.js';
@@ -162,10 +163,13 @@ export async function buscar(){
   const grupos = [...SINONIMOS, ...(n.ajustes?.bot?.sinonimos || [])].map((g) => g.map(quitaAcentos));
   return {
     html: `
-      <label class="buscador">${icono('buscar')}
-        <span class="oculto">Buscar productos</span>
-        <input id="q" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="Nombre, marca o para qué sirve">
-      </label>
+      <div class="buscar-fila">
+        <label class="buscador">${icono('buscar')}
+          <span class="oculto">Buscar productos</span>
+          <input id="q" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="Nombre, marca o para qué sirve">
+        </label>
+        ${puedeEscanear() ? `<button type="button" class="boton secundario" data-escanear aria-label="Buscar escaneando el código de barras">${icono('escanear')}<span class="largo">Escanear</span></button>` : ''}
+      </div>
       <div class="filtros" id="filtros-busqueda" hidden>
         <label class="interruptor en-linea"><input type="checkbox" id="solo-hay"><span>Sólo disponibles</span></label>
         <label class="campo compacto"><span class="oculto">Ordenar</span>
@@ -217,6 +221,17 @@ export async function buscar(){
       };
       q.addEventListener('input', pinta);
       $solo.addEventListener('change', pinta); $orden.addEventListener('change', pinta);
+      // El envase vacío en la mano: se escanea su código y sale el producto.
+      raiz.querySelector('[data-escanear]')?.addEventListener('click', () => {
+        const d = hojaEscaner({ alLeer(codigo){
+          const t = codigo.trim();
+          const qr = /#\/p\/([0-9a-f-]{36})/i.exec(t)?.[1];
+          const p = (qr && productos.find((x) => x.id === qr)) || productos.find((x) => x.cb && x.cb === t) || productos.find((x) => x.sku && quitaAcentos(x.sku) === quitaAcentos(t));
+          if(!p) return `No tenemos el código ${t}. Prueba escribiendo el nombre.`;
+          d.close(); location.hash = enlace('/p/:id', { id: p.id });
+          return p.n;
+        } });
+      });
       q.addEventListener('keydown', (e) => { if(e.key === 'Enter'){ memoria.busquedas.guardar(q.value); q.blur(); } });
       res.addEventListener('click', (e) => {
         const b = e.target.closest('[data-buscar], [data-borrar-busquedas]'); if(!b) return;

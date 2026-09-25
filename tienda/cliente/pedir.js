@@ -38,6 +38,16 @@ const borrador = {
 
 /* ══ PAGAR ════════════════════════════════════════════════════════════════ */
 
+/* Lo que el negocio necesita saber para preparar, en la nota del pedido (la
+   ven el admin y el repartidor): para cuándo, y qué hacer si algo se agotó
+   entre que se pidió y se preparó — lo que Walmart llama «sustituciones». */
+export const CUANDO = { pronto: 'Lo antes posible', tarde: 'Hoy en la tarde', manana: 'Mañana' };
+export const SI_AGOTA = { llamar: ['Llámame para decidir', 'telefono'], parecido: ['Cámbialo por uno parecido', 'repetir'], quitar: ['Quítalo y mándame lo demás', 'borrar'] };
+export function notasPedido(v, envio = ''){
+  return [v.notas?.trim(), v.cuando && v.cuando !== 'pronto' ? `Para: ${CUANDO[v.cuando].toLowerCase()}` : '',
+    `Si se agota algo: ${(SI_AGOTA[v.agotado] || SI_AGOTA.llamar)[0].toLowerCase()}`, envio].filter(Boolean).join(' · ');
+}
+
 async function pagar(){
   const [n, cat, ficha] = await Promise.all([negocio(), catalogo(), miFicha().catch(() => null)]);
   const renglones = carrito.renglones().map(([id, cantidad]) => ({ p: cat.porId.get(id), cantidad })).filter((r) => r.p && !r.p.x);
@@ -58,6 +68,7 @@ async function pagar(){
     cp: b.cp ?? ultima.cp ?? '', lat: b.lat ?? ultima.lat, lng: b.lng ?? ultima.lng,
     pago: b.pago || (pagos.efectivo !== false ? 'efectivo' : pagos.tarjeta ? 'tarjeta' : 'transferencia'),
     billete: b.billete || '', notas: b.notas || '',
+    cuando: b.cuando || 'pronto', agotado: b.agotado || 'llamar',
   };
   const formas = [
     pagos.efectivo !== false && ['efectivo', 'Efectivo al recibir', 'efectivo'],
@@ -105,6 +116,15 @@ async function pagar(){
             <input id="referencias" name="referencias" maxlength="200" placeholder="Entre qué calles, color del portón…" value="${esc(v.referencias)}"></label>
           <button type="button" class="boton secundario" data-ubicacion>${icono('lugar')}<span data-ubicacion-texto>${v.lat ? 'Ubicación guardada · volver a tomar' : 'Usar mi ubicación'}</span></button>
           <p class="nota con-margen">Con tu ubicación el repartidor llega sin preguntar. Es opcional.</p>
+        </section>
+
+        <section class="tarjeta bloque-form">
+          <h2>¿Para cuándo?</h2>
+          <div class="segmentos envuelve" role="group" aria-label="Para cuándo lo quieres">${Object.entries(CUANDO).map(([k, t]) =>
+            `<button type="button" data-cuando="${k}" aria-pressed="${v.cuando === k}">${t}</button>`).join('')}</div>
+          <h3 class="sub-bloque">Si algo se acabó cuando lo preparemos</h3>
+          <div class="opciones-pago" role="radiogroup" aria-label="Si algo se agota">${Object.entries(SI_AGOTA).map(([k, [t, ic]]) =>
+            `<label class="opcion-pago"><input type="radio" name="agotado" value="${k}"${k === v.agotado ? ' checked' : ''}>${icono(ic)}<span>${t}</span></label>`).join('')}</div>
         </section>
 
         <section class="tarjeta bloque-form">
@@ -164,11 +184,12 @@ async function pagar(){
         }).join('');
         borrador.guardar(v);
       };
-      $f.addEventListener('input', (e) => { const t = e.target; if(t.name && t.name !== 'pago') v[t.name] = t.value; borrador.guardar(v); });
-      $f.addEventListener('change', (e) => { if(e.target.name === 'pago'){ v.pago = e.target.value; repintar(); } });
+      $f.addEventListener('input', (e) => { const t = e.target; if(t.name && t.name !== 'pago' && t.name !== 'agotado') v[t.name] = t.value; borrador.guardar(v); });
+      $f.addEventListener('change', (e) => { if(e.target.name === 'pago'){ v.pago = e.target.value; repintar(); } if(e.target.name === 'agotado'){ v.agotado = e.target.value; borrador.guardar(v); } });
       $f.addEventListener('click', async (e) => {
         const b = e.target.closest('button'); if(!b) return;
         if(b.dataset.entrega){ v.entrega = b.dataset.entrega; repintar(); }
+        if(b.dataset.cuando){ v.cuando = b.dataset.cuando; $f.querySelectorAll('[data-cuando]').forEach((x) => x.setAttribute('aria-pressed', x === b)); borrador.guardar(v); }
         if(b.dataset.billeteValor !== undefined){ v.billete = b.dataset.billeteValor; repintar(); }
         if(b.dataset.copiar){ try{ await navigator.clipboard.writeText(b.dataset.copiar); aviso('CLABE copiada'); }catch(err){ aviso('No se pudo copiar: selecciónala y cópiala', 'mal'); } }
         if(b.matches('[data-ubicacion]')){
@@ -217,7 +238,7 @@ async function pagar(){
             renglones: renglones.map((x) => ({ id: x.p.id, cantidad: Math.min(x.cantidad, x.p.q) })),
             nombre: v.nombre.trim(), telefono: tel, direccion, pago,
             momento: v.pago === 'transferencia' ? 'antes' : 'al_recibir',
-            notas: [v.notas.trim(), envio ? `Envío ${pesosC(envio)}` : ''].filter(Boolean).join(' · '),
+            notas: notasPedido(v, envio ? `Envío ${pesosC(envio)}` : ''),
           });
           carrito.vaciar(); borrador.borrar();
           $c.innerHTML = estado({ icono: 'listo', titulo: `¡Listo! Pedido #${r.folio}`,
