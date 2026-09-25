@@ -75,7 +75,7 @@ try{
   for(const [i, x] of PEDIR.entries()){
     const v = await C.p.datos((d, a) => d.pedirTienda({ renglones: [{ id: a.producto, cantidad: 1 }], nombre: 'Prueba GPS', telefono: '4425550888',
       direccion: { calle: `Poniente ${a.x.k}`, colonia: 'Prueba', cp: '', referencias: '', lat: a.x.lat, lng: a.x.lng, envio: 0 }, pago: { forma: 'efectivo' },
-      momento: 'al_recibir', notas: 'prueba automática de GPS: se cancela sola' }), { producto, x });
+      momento: 'al_recibir', notas: 'prueba automática de GPS: se cancela sola' + (a.x.k === 1 ? ' · Para: hoy en la tarde' : '') }), { producto, x });
     hechos.push({ ...x, id: v.id || v.pedido_id || v.pedido, folio: v.folio });
   }
   ok('el cliente pidió 4 entregas, cada una con su ubicación', hechos.length === 4 && hechos.every((h) => h.id), JSON.stringify(hechos.map((h) => h.folio)));
@@ -126,7 +126,11 @@ try{
   const orden = await R.p.$$eval('#ruta-lista a', (l) => l.map((a) => a.getAttribute('href').split('/').pop()));
   const pos = hechos.map((h) => ({ k: h.k, i: orden.indexOf(h.id) })).sort((a, b) => a.k - b.k);
   ok('las 4 entregas salen en la ruta', pos.every((x) => x.i >= 0), JSON.stringify(pos));
-  ok('pedidas revueltas (3, 1, 4, 2), salen en el orden que recorre menos (1, 2, 3, 4)', pos.every((x, j) => !j || x.i > pos[j - 1].i), JSON.stringify(pos));
+  // La 1 es la más cercana, pero la pidieron «para la tarde»: va después de las urgentes.
+  const urg = pos.filter((x) => x.k !== 1), tarde = pos.find((x) => x.k === 1);
+  ok('pedidas revueltas (3, 1, 4, 2), las urgentes salen en el orden que recorre menos (2, 3, 4)', urg.every((x, j) => !j || x.i > urg[j - 1].i), JSON.stringify(pos));
+  ok('y la de «hoy en la tarde» va después, aunque sea la más cercana, con su letrero', tarde.i > Math.max(...urg.map((x) => x.i))
+    && /En la tarde/.test(await R.p.$eval(`#ruta-lista a[href$="${hechos.find((h) => h.k === 1).id}"]`, (a) => a.textContent)), JSON.stringify(pos));
   const ligas = await R.p.$$eval('[data-tramo]', (l) => l.map((a) => a.href));
   const conLugar = await R.p.$$eval('.pin-mapa:not(.yo)', (l) => l.length);
   const intermedias = ligas.map((u) => (new URL(u).searchParams.get('waypoints') || '').split('|').filter(Boolean).length);

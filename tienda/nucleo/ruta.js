@@ -101,6 +101,33 @@ export function ordenar(origen, paradas){
   return { orden: [...orden, ...sin], sinLugar: sin, km, minutos: estimarMinutos(km, orden.length) };
 }
 
+/* ¿Cuándo lo quiere el cliente? Viene en las notas del pedido que arma
+   cliente/pedir.js: nada = lo antes posible, «Para: hoy en la tarde»,
+   «Para: mañana». */
+export const TANDAS = [{ id: 0, texto: 'Lo antes posible' }, { id: 1, texto: 'En la tarde' }, { id: 2, texto: 'Es para mañana' }];
+export function tandaDeNotas(notas = ''){
+  const n = String(notas || '').toLowerCase();
+  return /para: mañana|para: manana/.test(n) ? 2 : /para: hoy en la tarde/.test(n) ? 1 : 0;
+}
+
+/* Por tandas: primero todo lo urgente con la mejor ruta, luego lo de la
+   tarde saliendo de donde acabó lo urgente, y al final lo de mañana. Antes
+   la ruta sólo miraba distancia y podía dejar al que lo pidió «lo antes
+   posible» después del que dijo «en la tarde». */
+export function ordenarPorTandas(origen, paradas){
+  const grupos = TANDAS.map((t) => paradas.filter((p) => (p.tanda || 0) === t.id));
+  let desde = tieneLugar(origen) ? origen : null, km = 0, orden = [], sinLugar = [], cuantas = 0;
+  for(const g of grupos){
+    if(!g.length) continue;
+    const r = ordenar(desde, g);
+    orden = orden.concat(r.orden.filter(tieneLugar)); sinLugar = sinLugar.concat(r.sinLugar);
+    km += r.km;                                   // ordenar() ya cuenta el tramo desde `desde`
+    cuantas += r.orden.filter(tieneLugar).length;
+    desde = r.orden.filter(tieneLugar).at(-1) || desde;
+  }
+  return { orden: [...orden, ...sinLugar], sinLugar, km, minutos: estimarMinutos(km, cuantas) };
+}
+
 /* La ruta en ligas de Google Maps, por tramos. Google acepta a lo más TRES
    paradas intermedias cuando la liga se abre en el navegador del teléfono
    (nueve en otros lados; documentación de Maps URLs, verificada el 25 de

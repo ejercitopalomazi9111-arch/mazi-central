@@ -1572,3 +1572,6 @@ body:has(.app.en-tienda){ background: var(--tienda-fondo); }
    nada que tocar no se alcanza con teclado (axe: scrollable-region-focusable). */
 .app.en-tienda .confianza{ flex-wrap: wrap; overflow: visible; row-gap: var(--e1); margin-inline: 0; padding-inline: 0; }
 .app.en-tienda .confianza li{ min-height: 28px; }
+.parada-tarjeta .tanda{ display: inline-flex; align-items: center; gap: 4px; font-weight: 700; color: var(--ojo); }
+.parada-tarjeta .tanda .ico{ width: 14px; height: 14px; }
+.parada-tarjeta .tanda.t2{ color: var(--tinta-suave); }

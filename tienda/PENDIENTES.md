@@ -121,6 +121,8 @@ _(se agregan aquí conforme salgan; ninguna detiene el trabajo)_
   a la app se manda solo. **Para rastreo con la pantalla apagada** hace falta envolver la app como
   app nativa (Capacitor con un complemento de ubicación en segundo plano) y publicarla en las
   tiendas: es trabajo aparte, con cuenta de Apple (99 dólares al año) y de Google (25 una vez).
-- **La ruta optimizada no sabe de horarios ni de capacidad todavía.** Ordena por distancia (lo
-  que recorre menos). Si un cliente pidió «mañana» o «en la tarde», eso se ve en la nota del
-  pedido pero la ruta no lo acomoda sola; se asigna al repartidor el día que toca.
+- **La ruta ya respeta cuándo lo quiere el cliente (25 de septiembre):** primero lo urgente,
+  luego lo de «hoy en la tarde» y al final lo de «mañana», cada tanda en el orden que recorre
+  menos, con su letrero en la parada. **Lo que todavía no sabe:** cuánto le cabe al repartidor
+  (capacidad) ni horas exactas («entre 4 y 6»). Para eso el pedido tendría que guardar la
+  ventana como dato y no en la nota, y eso es una migración.

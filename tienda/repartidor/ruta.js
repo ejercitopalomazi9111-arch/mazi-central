@@ -16,7 +16,7 @@ import { icono } from '../nucleo/iconos.js';
 import { esc, pesos, plural, estado } from '../nucleo/piezas.js';
 import { negocio, miTurno, misEntregas, totalConEnvio, repartidoresEnTurno, pedidosNegocio, misPedidos, pedidoPorId, dondeVa } from '../nucleo/datos.js';
 import { crearMapa } from '../nucleo/mapa.js';
-import { ordenar, distancia, estimarMinutos, tieneLugar, tramosMaps } from '../nucleo/ruta.js';
+import { distancia, estimarMinutos, tieneLugar, tramosMaps, ordenarPorTandas, tandaDeNotas, TANDAS } from '../nucleo/ruta.js';
 import { rastreo, TEXTO_RASTREO } from '../nucleo/rastreo.js';
 import { ESTADOS } from '../cliente/pedir.js';
 import { enPausa } from '../nucleo/horas.js';
@@ -64,8 +64,9 @@ async function miRuta(){
     async alMontar($c){
       const quitar = montarRastreo($c, turno);
       const origen = rastreo.ultimo || await aquí() || tienda;
-      const paradas = pendientes.map((p) => ({ ...lugarDe(p), id: p.id, p }));
-      const r = ordenar(origen, paradas);
+      // Lo urgente primero, luego lo de la tarde y al final lo de mañana (ruta.js).
+      const paradas = pendientes.map((p) => ({ ...lugarDe(p), id: p.id, p, tanda: tandaDeNotas(p.notas) }));
+      const r = ordenarPorTandas(origen, paradas);
       const paraMaps = r.orden.filter(tieneLugar);
       const tramos = tramosMaps(origen, paraMaps);
       const $cab = $c.querySelector('#ruta-cabeza'); if(!$cab) return quitar;
@@ -82,7 +83,8 @@ async function miRuta(){
       $c.querySelector('#ruta-lista').innerHTML = r.orden.map((x, i) => `<li><a class="parada-tarjeta" href="${enlace('/r/parada/:id', { id: x.p.id })}">
         <span class="numero">${i + 1}</span>
         <span class="texto"><strong>${esc(x.p.cliente?.nombre || 'Cliente')}</strong><small>${esc([x.p.direccion?.calle, x.p.direccion?.colonia].filter(Boolean).join(', '))}</small>
-          <small>${x.p.pagado ? 'ya pagado' : `cobrar ${pesos(totalConEnvio(x.p))}`}${tieneLugar(x) ? '' : ' · sin ubicación'}</small></span>
+          <small>${x.p.pagado ? 'ya pagado' : `cobrar ${pesos(totalConEnvio(x.p))}`}${tieneLugar(x) ? '' : ' · sin ubicación'}</small>
+          ${x.tanda ? `<small class="tanda t${x.tanda}">${icono('reloj')}${TANDAS[x.tanda].texto}</small>` : ''}</span>
         <span class="chip ${ESTADOS[x.p.estado].clase}">${ESTADOS[x.p.estado].texto}</span></a></li>`).join('');
       let mapa;
       try{

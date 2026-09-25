@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* Pruebas de ruta.js · `node tienda/nucleo/pruebas-ruta.mjs` */
-import { distancia, ordenar, largo, estimarMinutos, tramosMaps } from './ruta.js';
+import { distancia, ordenar, largo, estimarMinutos, tramosMaps, ordenarPorTandas, tandaDeNotas } from './ruta.js';
 let bien = 0, mal = 0;
 const ok = (t, c, d = '') => { c ? bien++ : mal++; console.log(`  ${c ? '✓' : '✗'} ${t}${c || !d ? '' : ` — ${d}`}`); };
 
@@ -60,6 +60,20 @@ ok('sin saber dónde estás, el primer tramo no inventa origen', !pars(tramosMap
 ok('una sola parada: un tramo, sin intermedias', (() => { const t = tramosMaps(qro, puntos(1)); return t.length === 1 && !pars(t[0].url).has('waypoints'); })());
 ok('las paradas sin ubicación no entran a la liga', tramosMaps(qro, [{ id: 'x' }, ...puntos(2)]).flatMap((t) => t.paradas).length === 2);
 ok('sin paradas, sin tramos', tramosMaps(qro, []).length === 0);
+
+console.log('\n· Por tandas: lo urgente primero');
+ok('las notas dicen la tanda', tandaDeNotas('timbre · Para: hoy en la tarde · Si se agota…') === 1 && tandaDeNotas('Para: mañana') === 2 && tandaDeNotas('Si se agota algo: llámame') === 0 && tandaDeNotas(null) === 0);
+// Una parada de la tarde junto a la tienda y tres urgentes lejos: por
+// distancia iría primero la de la tarde; por tandas, al final de las urgentes.
+const cerca = { id: 'tarde', lat: qro.lat + 0.001, lng: qro.lng, tanda: 1 };
+const lejos = [1, 2, 3].map((k) => ({ id: 'u' + k, lat: qro.lat + 0.02 * k, lng: qro.lng + 0.01, tanda: 0 }));
+const manana = { id: 'mañana', lat: qro.lat - 0.001, lng: qro.lng, tanda: 2 };
+const rt = ordenarPorTandas(qro, [cerca, manana, ...lejos]);
+ok('lo urgente va primero aunque esté más lejos', rt.orden.slice(0, 3).every((p) => p.tanda === 0), rt.orden.map((p) => p.id).join());
+ok('después lo de la tarde, y lo de mañana al final', rt.orden[3].id === 'tarde' && rt.orden[4].id === 'mañana', rt.orden.map((p) => p.id).join());
+const ocho = puntos(8);
+ok('sin tandas marcadas, es lo mismo que ordenar por distancia', ordenarPorTandas(qro, ocho).orden.map((p) => p.id).join() === ordenar(qro, ocho).orden.map((p) => p.id).join());
+ok('las que no tienen lugar siguen yendo al final', ordenarPorTandas(qro, [{ id: 'x', tanda: 0 }, ...lejos]).orden.at(-1).id === 'x');
 
 console.log(`\n${mal ? '✗' : '✓'} ${bien} pasan · ${mal} fallan\n`);
 process.exit(mal ? 1 : 0);
