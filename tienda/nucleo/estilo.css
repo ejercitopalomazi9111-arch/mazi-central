@@ -1172,13 +1172,14 @@ dialog.hoja .hoja-cuerpo{ padding: var(--e5); overflow-y: auto; max-height: calc
 .consejo .chip{ justify-self: start; }
 .consejo strong{ font-size: 18px; overflow-wrap: anywhere; }
 .consejo p{ margin: 0; color: var(--tinta-suave); }
-.consejo.alerta{ border-color: var(--mal-suave); }
+.consejo.tono-alerta{ border-color: var(--mal-suave); }
+/* Los tonos llevan prefijo: «idea» a secas chocaba con la .idea de Redes (display: flex) y el consejo salía en columnas angostas. */
 .periodos{ flex-wrap: wrap; margin: var(--e5) 0 var(--e4); }
 .periodos button{ flex: 1 1 auto; white-space: nowrap; min-height: 44px; }
 /* En teléfono, cinco periodos no caben en un renglón y el quinto se caía solo
    abajo («Mes pasado» huérfano). Dos renglones parejos: 3 arriba, 2 abajo. */
 @media (max-width: 560px){
-  .periodos{ display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .segmentos.periodos{ display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
   .periodos button{ grid-column: span 2; }
   .periodos button:nth-child(4), .periodos button:nth-child(5){ grid-column: span 3; }
 }
@@ -1606,3 +1607,8 @@ body:has(.app.en-tienda){ background: var(--tienda-fondo); }
 .seguimiento .lo-pedido{ margin-top: var(--e5); }
 .app.en-tienda .seguimiento .lo-pedido{ margin-top: var(--e5); }
 .pos-parecido{ grid-column: 1 / -1; margin: 0; }
+
+/* Dos clases que se creen dueñas del acomodo en el mismo elemento: aquí se
+   dice cuál manda, a propósito (lo exige pruebas-rutas.mjs). */
+.interruptor.en-linea{ align-items: center; }          /* el «Sólo disponibles» del buscador: centrado con su texto */
+.chips-elegir.sugerencias{ flex-wrap: nowrap; }        /* las sugerencias del simulador se deslizan de lado */

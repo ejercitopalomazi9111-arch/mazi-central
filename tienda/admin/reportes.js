@@ -27,7 +27,7 @@ const horaLarga = (h) => h === 0 ? '12 am' : h < 12 ? `${h} am` : h === 12 ? '12
 
 export function tarjetaConsejo(c){
   const [clase, etq] = TONO[c.tono];
-  return `<li class="consejo ${c.tono}"><span class="chip ${clase}">${etq}</span>
+  return `<li class="consejo tono-${c.tono}"><span class="chip ${clase}">${etq}</span>
     <strong>${esc(c.titulo)}</strong><p>${esc(c.porque)}</p>
     ${c.accion ? `<a class="ver-todo" href="${enlace(c.accion.ruta)}">${esc(c.accion.texto)}</a>` : ''}</li>`;
 }

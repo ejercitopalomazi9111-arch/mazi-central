@@ -149,6 +149,29 @@ const primero = await (async () => {
   return (await r.json())[0]?.id;
 })();
 
+/* Las clases que se creen dueñas del acomodo: una regla de UNA sola clase que
+   pone `display`. Si un elemento trae dos de éstas, las dos le pelean el
+   acomodo y gana la de más abajo en el archivo, callada. Pasó dos veces el
+   mismo día: el consejo «idea» se acomodaba como la .idea de Redes, y la
+   .barra de Reportes estiraba las de Ventas de hoy. */
+const RAICES = (() => {
+  const css = readFileSync(join(TIENDA, 'nucleo/estilo.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const r = new Set();
+  for(const m of css.matchAll(/([^{}@]+)\{([^{}]*)\}/g)){
+    if(!/(^|;|\s)display\s*:/.test(m[2])) continue;
+    for(const sel of m[1].split(',')){ const k = sel.trim().match(/^\.([a-z0-9_-]+)$/i); if(k) r.add(k[1]); }
+  }
+  return [...r];
+})();
+// Las que se juntan a propósito: el CSS tiene una regla que nombra a las dos
+// (`.a.b`), o sea que alguien ya decidió cuál manda.
+const JUNTAS_A_PROPOSITO = (() => {
+  const css = readFileSync(join(TIENDA, 'nucleo/estilo.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const r = new Set();
+  for(const m of css.matchAll(/\.([a-z0-9_-]+)\.([a-z0-9_-]+)(?![a-z0-9_-])/gi)) r.add([m[1], m[2]].sort().join('+'));
+  return r;
+})();
+
 const direccion = (r) => r.ruta.replace(/:(\w+)/g, () => (r.ejemplo === '@primero' ? primero : r.ejemplo));
 
 for(const [ancho, alto] of [[390, 844], [1280, 800]]){
@@ -184,20 +207,26 @@ for(const [ancho, alto] of [[390, 844], [1280, 800]]){
     // Listo = ya no hay esqueleto de carga en el contenido.
     await pagina.waitForFunction(() => { const c = document.querySelector('#contenido'); return c && !c.querySelector('[aria-busy="true"]') && c.children.length; }, null, { timeout: 20000 }).catch(() => {});
     await pagina.waitForTimeout(150);
-    const m = await pagina.evaluate(() => {
+    const m = await pagina.evaluate(([raices, juntas]) => {
       const t = document.querySelector('#titulo')?.textContent.trim() || '';
+      const R = new Set(raices), choques = new Set();
+      for(const el of document.querySelectorAll('#contenido *')){
+        const cs = [...el.classList].filter((c) => R.has(c));
+        if(cs.length >= 2){ const k = cs.sort().join('+'); if(!juntas.includes(k)) choques.add(k); }
+      }
       const visible = (el) => { const b = el.getBoundingClientRect(); const s = getComputedStyle(el); return b.width > 0 && b.height > 0 && s.visibility !== 'hidden' && !el.closest('[hidden]'); };
       const chicos = [...document.querySelectorAll('#contenido button, #contenido a.boton, #contenido input, #contenido select, .arriba button, .arriba a, .lateral button, .lateral nav a')]
         .filter(visible).filter((el) => !el.closest('.velo') && !el.closest('.lateral') || getComputedStyle(document.querySelector('.lateral')).transform === 'none')
         .map((el) => { const b = el.getBoundingClientRect(); return [el, Math.round(b.width), Math.round(b.height)]; })
         .filter(([, w, h]) => w < 44 || h < 44)
         .map(([el, w, h]) => `${el.tagName.toLowerCase()}${el.className ? '.' + String(el.className).split(' ')[0] : ''} «${(el.textContent || el.getAttribute('aria-label') || '').trim().slice(0, 20)}» ${w}×${h}`);
-      return { t, chicos, ancho: document.documentElement.scrollWidth, vista: innerWidth, contenido: document.querySelector('#contenido')?.textContent.trim().length || 0 };
-    });
-    const bienRuta = m.t && m.contenido > 0 && !errores.length && !m.chicos.length && m.ancho <= m.vista;
+      return { t, chicos, choques: [...choques], ancho: document.documentElement.scrollWidth, vista: innerWidth, contenido: document.querySelector('#contenido')?.textContent.trim().length || 0 };
+    }, [RAICES, [...JUNTAS_A_PROPOSITO]]);
+    const bienRuta = m.t && m.contenido > 0 && !errores.length && !m.chicos.length && !m.choques.length && m.ancho <= m.vista;
     ok(`${dir} → «${m.t}»`, bienRuta,
        [!m.t && 'sin título', !m.contenido && 'contenido vacío', errores.length && 'errores: ' + errores.join(' | '),
-        m.chicos.length && 'controles chicos: ' + m.chicos.slice(0, 4).join(', '), m.ancho > m.vista && `se sale a lo ancho (${m.ancho} > ${m.vista})`]
+        m.chicos.length && 'controles chicos: ' + m.chicos.slice(0, 4).join(', '),
+        m.choques.length && 'dos clases le pelean el acomodo al mismo elemento: ' + m.choques.join(', '), m.ancho > m.vista && `se sale a lo ancho (${m.ancho} > ${m.vista})`]
          .filter(Boolean).join(' · '));
   }
   await ctx.close();
