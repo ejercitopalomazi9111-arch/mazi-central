@@ -626,6 +626,9 @@ body:has(.pos-barra:not([hidden])) .avisos{ bottom: calc(96px + env(safe-area-in
 .chip-boton[aria-pressed="true"]{ background: var(--acento-suave); border-color: var(--acento); color: var(--acento-hondo); }
 .plegable{ margin-top: var(--e4); border-top: 1px solid var(--linea); padding-top: var(--e2); }
 .plegable summary{ min-height: 44px; display: flex; align-items: center; font-weight: 700; cursor: pointer; }
+.plegable[data-canceladas] summary{ justify-content: space-between; gap: var(--e2); }
+.plegable[data-canceladas] summary .ico{ width: 20px; height: 20px; transition: transform .2s ease-out; }
+.plegable[data-canceladas][open] summary .ico{ transform: rotate(180deg); }
 .en-linea{ display: flex; flex-wrap: wrap; gap: var(--e3); align-items: end; }
 .en-linea .campo{ margin: 0; flex: 1 1 160px; }
 .movimientos{ list-style: none; margin: 0; padding: 0; display: grid; gap: var(--e2); }

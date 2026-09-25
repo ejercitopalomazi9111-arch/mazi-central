@@ -305,10 +305,16 @@ async function historial(){
   return {
     html: [...grupos.entries()].map(([dia, ps]) => {
       const ok = ps.filter((p) => p.estado === 'entregado');
-      return `<section class="seccion"><header><h2>${esc(dia)}</h2><span class="nota">${plural(ok.length, 'entrega', 'entregas')} · ${pesos(ok.reduce((t, p) => t + totalConEnvio(p), 0))}</span></header>
-        <ul class="lista">${ps.map((p) => `<li><a class="fila" href="${enlace('/r/parada/:id', { id: p.id })}">
+      // Lo que la tienda canceló no lo hizo el repartidor: va plegado al final
+      // del día, para que no tape las entregas de verdad.
+      const suyas = ps.filter((p) => p.estado !== 'cancelado'), canceladas = ps.filter((p) => p.estado === 'cancelado');
+      const fila = (p) => `<li><a class="fila" href="${enlace('/r/parada/:id', { id: p.id })}">
           <span class="texto"><strong>#${p.folio} · ${esc(p.cliente?.nombre || 'Cliente')}</strong><small>${esc(direccionTexto(p.direccion))}${p.estado !== 'entregado' ? ` · ${esc(p.eventos_pedido?.slice(-1)[0]?.por_que || '')}` : ''}</small></span>
-          <span class="chip ${ESTADOS[p.estado].clase}">${ESTADOS[p.estado].texto}</span></a></li>`).join('')}</ul></section>`;
+          <span class="chip ${ESTADOS[p.estado].clase}">${ESTADOS[p.estado].texto}</span></a></li>`;
+      return `<section class="seccion"><header><h2>${esc(dia)}</h2><span class="nota">${plural(ok.length, 'entrega', 'entregas')} · ${pesos(ok.reduce((t, p) => t + totalConEnvio(p), 0))}</span></header>
+        ${suyas.length ? `<ul class="lista">${suyas.map(fila).join('')}</ul>` : ''}
+        ${canceladas.length ? `<details class="plegable" data-canceladas><summary>${plural(canceladas.length, 'pedido cancelado', 'pedidos cancelados')} por la tienda${icono('abajo')}</summary>
+          <ul class="lista">${canceladas.map(fila).join('')}</ul></details>` : ''}</section>`;
     }).join(''),
   };
 }
