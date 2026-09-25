@@ -395,11 +395,12 @@ function cuadreHTML(r, devuelto = 0){
 async function cajaPantalla(){
   const [caja, historial] = await Promise.all([miCaja(), cajasCerradas(8).catch(() => [])]);
   const histHTML = historial.length ? `<section class="seccion"><header><h2>Cortes anteriores</h2></header>
-    <ul class="lista">${historial.map((h) => {
+    <ul class="lista">${historial.map((h, i) => {
       const dif = aCentavos(Number(h.contado) - Number(h.esperado));
       return `<li class="fila"><span class="texto"><strong>${esc(fecha(h.cerrada))}</strong>
         <small>${esc(h.quien?.nombre || '')} · abrió ${hora(h.abierta)} · debía ${pesos(h.esperado)}${h.nota ? ` · «${esc(h.nota)}»` : ''}</small></span>
-        <span class="chip ${dif === 0 ? 'bien' : dif > 0 ? 'ojo' : 'mal'}">${dif === 0 ? 'Cuadró' : dif > 0 ? `+${pesosC(dif)}` : `−${pesosC(-dif)}`}</span></li>`;
+        <span class="chip ${dif === 0 ? 'bien' : dif > 0 ? 'ojo' : 'mal'}">${dif === 0 ? 'Cuadró' : dif > 0 ? `+${pesosC(dif)}` : `−${pesosC(-dif)}`}</span>
+        <button class="boton-ico" data-reimprimir-corte="${i}" aria-label="Volver a imprimir el corte del ${esc(fecha(h.cerrada))}" title="Imprimir otra vez">${icono('imprimir')}</button></li>`;
     }).join('')}</ul></section>` : '';
 
   // Lo vendido sin red que todavía no llega al servidor (nucleo/fila.js).
@@ -413,6 +414,15 @@ async function cajaPantalla(){
         <button class="boton secundario" data-descartar="${esc(v.id)}">Ya lo resolví</button></li>`).join('')}</ul>` : ''}
   </section>` : '';
   const montarFila = ($c, { aviso, recargar }) => $c.addEventListener('click', async (e) => {
+    const rc = e.target.closest('[data-reimprimir-corte]');
+    if(rc){
+      // Del corte viejo sólo se guardó lo del cajón: debía, contó y la nota.
+      const h = historial[Number(rc.dataset.reimprimirCorte)]; rc.setAttribute('aria-busy', 'true');
+      try{ await imprimirCorte({ abierta: h.abierta, cerrada: h.cerrada, cajero: h.quien?.nombre, esperado: Number(h.esperado), contado: Number(h.contado), nota: h.nota, reimpresion: true }, await negocio()); }
+      catch(err){ console.error(err); aviso(`No se imprimió: ${err.message}`, 'mal'); }
+      finally{ rc.removeAttribute('aria-busy'); }
+      return;
+    }
     const b = e.target.closest('[data-subir], [data-descartar]'); if(!b) return;
     if(b.dataset.descartar){ if(confirm('¿Ya la cobraste o ajustaste el inventario? Se quita de esta lista.')){ filaMostrador.quitar(b.dataset.descartar); recargar(); } return; }
     b.setAttribute('aria-busy', 'true'); b.disabled = true;

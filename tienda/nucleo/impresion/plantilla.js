@@ -55,18 +55,20 @@ export function piezasCorte(k, negocio){
   const ps = [], centavos = (n) => Math.round(Number(n || 0) * 100);
   ps.push({ t: 'texto', v: negocio?.marca?.nombre_corto || negocio?.nombre || 'Tienda', alinear: 'centro', negritas: true, grande: true });
   ps.push({ t: 'texto', v: '*** CORTE DE CAJA ***', alinear: 'centro', negritas: true });
+  if(k.reimpresion) ps.push({ t: 'texto', v: '*** REIMPRESIÓN ***', alinear: 'centro', negritas: true });
   ps.push({ t: 'raya' });
   if(k.abierta) ps.push({ t: 'par', izq: 'Abrió', der: FECHA.format(new Date(k.abierta)) });
   ps.push({ t: 'par', izq: 'Cerró', der: FECHA.format(new Date(k.cerrada || Date.now())) });
   if(k.cajero) ps.push({ t: 'texto', v: `Cajero: ${k.cajero}` });
   ps.push({ t: 'raya' });
-  if(k.tickets != null) ps.push({ t: 'par', izq: 'Tickets', der: String(k.tickets) });
-  if(k.fondo != null) ps.push({ t: 'par', izq: 'Fondo inicial', der: pesos(k.fondo) });
-  if(k.efectivo != null) ps.push({ t: 'par', izq: 'Ventas en efectivo', der: pesos(k.efectivo) });
-  if(k.devuelto) ps.push({ t: 'par', izq: 'Devoluciones', der: '-' + pesos(k.devuelto) });
-  if(k.tarjeta) ps.push({ t: 'par', izq: 'Tarjeta (no va en el cajón)', der: pesos(k.tarjeta) });
-  if(k.transferencia) ps.push({ t: 'par', izq: 'Transferencia (no va en el cajón)', der: pesos(k.transferencia) });
-  ps.push({ t: 'raya' });
+  const cifras = [];
+  if(k.tickets != null) cifras.push({ t: 'par', izq: 'Tickets', der: String(k.tickets) });
+  if(k.fondo != null) cifras.push({ t: 'par', izq: 'Fondo inicial', der: pesos(k.fondo) });
+  if(k.efectivo != null) cifras.push({ t: 'par', izq: 'Ventas en efectivo', der: pesos(k.efectivo) });
+  if(k.devuelto) cifras.push({ t: 'par', izq: 'Devoluciones', der: '-' + pesos(k.devuelto) });
+  if(k.tarjeta) cifras.push({ t: 'par', izq: 'Tarjeta (no va en el cajón)', der: pesos(k.tarjeta) });
+  if(k.transferencia) cifras.push({ t: 'par', izq: 'Transferencia (no va en el cajón)', der: pesos(k.transferencia) });
+  if(cifras.length) ps.push(...cifras, { t: 'raya' });   // un corte reimpreso sólo trae lo del cajón
   ps.push({ t: 'par', izq: 'Debía haber', der: pesos(k.esperado), negritas: true });
   ps.push({ t: 'par', izq: 'Se contó', der: pesos(k.contado), negritas: true });
   const dif = centavos(k.contado) - centavos(k.esperado);

@@ -80,6 +80,8 @@ ok('el conteo por billete, del más grande al más chico', rc.indexOf('2 x $1,00
 ok('lleva la nota y renglones para firmar', /Nota: se pagó el garrafón/.test(rc) && /Entregó: _+/.test(rc) && /Recibió: _+/.test(rc));
 ok('cuadrado exacto lo dice', /CUADRÓ EXACTO/.test(aRenglones(piezasCorte({ ...corte, contado: 3550.5 }, negocio), 48).map((r) => r.v || '').join('\n')));
 ok('ningún renglón se sale del papel de 58 mm', aRenglones(piezasCorte(corte, negocio), 32).every((r) => !r.v || r.v.length <= 32));
+const viejo = aRenglones(piezasCorte({ cerrada: corte.cerrada, esperado: 100, contado: 100, reimpresion: true }, negocio), 32).map((r) => r.v || '');
+ok('el reimpreso lo dice y no deja dos rayas seguidas', viejo.some((v) => /REIMPRESIÓN/.test(v)) && !viejo.some((v, i) => /^-+$/.test(v) && /^-+$/.test(viejo[i + 1] || '')), viejo.join('|'));
 ok('y sale en bytes para la impresora', aBytes(piezasCorte(corte, negocio), { columnas: 32 }).length > 200);
 
 console.log(`\n${mal ? '✗' : '✓'} ${bien} pasan · ${mal} fallan\n`);
