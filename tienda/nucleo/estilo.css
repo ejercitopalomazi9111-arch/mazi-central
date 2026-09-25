@@ -578,6 +578,8 @@ body:has(.pos-barra:not([hidden])) .avisos{ bottom: calc(96px + env(safe-area-in
 }
 .bloque-form{ padding: var(--e5); }
 .bloque-form > h2{ font-size: var(--t-sub); margin: 0 0 var(--e4); }
+.cabeza-cierre{ display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--e3); margin-bottom: var(--e2); }
+.cabeza-cierre h2{ font-size: var(--t-sub); margin: 0; }
 .bloque-form > .campo:last-child{ margin-bottom: 0; }
 .dos{ display: grid; gap: 0 var(--e4); align-items: start; }
 @media (min-width: 560px){ .dos{ grid-template-columns: 1fr 1fr; } }

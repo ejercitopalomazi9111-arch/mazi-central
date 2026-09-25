@@ -443,8 +443,8 @@ async function cajaPantalla(){
         <div class="cifra-caja"><span class="valor">${pesosR(por('tarjeta') + por('transferencia'))}</span><span class="etq">tarjeta y transferencia</span></div>
       </div>
       <section class="tarjeta bloque-form">
-        <div class="botones fin"><button type="button" class="boton secundario" data-abrir-cajon>${icono('efectivo')}Abrir cajón</button></div>
-        <h2>Cerrar caja</h2>
+        <header class="cabeza-cierre"><h2>Cerrar caja</h2>
+          <button type="button" class="boton secundario" data-abrir-cajon>${icono('efectivo')}Abrir cajón</button></header>
         <p class="nota">Cuenta el cajón por billete y moneda. Primero cuenta y luego compara: así el corte es honesto.</p>
         <form data-cerrar novalidate>
           <h3>Billetes</h3><ul class="conteo">${BILLETES.map(filaConteo).join('')}</ul>
@@ -504,13 +504,14 @@ async function cajaPantalla(){
 
 const inicioDelDia = (d = new Date()) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
 
+const PAGINA_TICKETS = 20;
 async function ventasHoy(){
   const hoy = inicioDelDia();
   const semanaPasada = new Date(hoy); semanaPasada.setDate(hoy.getDate() - 7);
   const ahora = new Date(), mismaHora = new Date(semanaPasada.getTime() + (ahora - hoy));
   const [ventas, antes] = await Promise.all([ventasDesde(hoy), ventasDesde(semanaPasada).catch(() => [])]);
   const comparable = antes.filter((v) => new Date(v.creado) < mismaHora && new Date(v.creado) >= semanaPasada);
-  const f = { canal: 'todos' };
+  const f = { canal: 'todos', q: '', cuantos: PAGINA_TICKETS };
   const CANALES = [['todos', 'Todo'], ['pos', 'Mostrador'], ['tienda', 'En línea'], ['bot', 'WhatsApp']];
   const DIA = new Intl.DateTimeFormat('es-MX', { weekday: 'long' }).format(semanaPasada);
 
@@ -569,15 +570,32 @@ async function ventasHoy(){
                 <span class="texto"><strong>${esc(k === 'pendiente' ? 'Por cobrar' : METODOS[k] || k)}</strong><small>${Math.round(c / total * 100)} %</small></span><b>${pesosC(c)}</b></li>`).join('')}</ul></section>
           </div>
           <section class="seccion"><header><h2>Tickets</h2><button class="boton fantasma" data-csv>${icono('importar')}Descargar</button></header>
-            <ul class="lista">${vs.map((v) => `<li><button class="fila" data-ticket="${v.id}">
+            <label class="buscador">${icono('buscar')}
+              <input type="search" id="q-ticket" placeholder="Folio o producto" value="${esc(f.q)}" autocomplete="off" aria-label="Buscar ticket"></label>
+            <div id="tickets" class="con-margen"></div></section>`;
+        pintarTickets();
+      };
+      /* Con 133 tickets la lista medía 60 pantallas de teléfono. Se enseñan de
+         20 en 20 y se buscan por folio o por producto; la lista va aparte para
+         que escribir en el buscador no lo repinte (y le quite el foco). */
+      const pintarTickets = () => {
+        const q = quitaAcentos(f.q.trim()).replace(/^#/, '');
+        const vs = ventas.filter((v) => (f.canal === 'todos' || v.canal === f.canal)
+          && (!q || String(v.folio) === q || String(v.folio).startsWith(q) || v.renglones.some((r) => quitaAcentos(r.nombre).includes(q))));
+        const $t = $c.querySelector('#tickets'); if(!$t) return;
+        $t.innerHTML = !vs.length ? `<p class="nota" data-sin-tickets>Ningún ticket de hoy tiene «${esc(f.q)}».</p>` : `
+          <ul class="lista">${vs.slice(0, f.cuantos).map((v) => `<li><button class="fila" data-ticket="${v.id}">
               <span class="texto"><strong>#${v.folio} · ${hora(v.creado)}</strong>
                 <small>${plural(v.renglones.reduce((s, r) => s + r.cantidad, 0), 'pieza', 'piezas')} · ${esc(v.pagado ? METODOS[v.forma_pago] || '' : 'por cobrar')} · ${esc({ pos: 'mostrador', tienda: 'en línea', bot: 'WhatsApp' }[v.canal] || v.canal)}</small></span>
-              <b>${pesos(v.total)}</b></button></li>`).join('')}</ul></section>`;
+              <b>${pesos(v.total)}</b></button></li>`).join('')}</ul>
+          ${vs.length > f.cuantos ? `<div class="botones centro con-margen"><button class="boton secundario" data-mas-tickets>Ver ${Math.min(PAGINA_TICKETS, vs.length - f.cuantos)} más · quedan ${vs.length - f.cuantos}</button></div>` : ''}`;
       };
+      $c.addEventListener('input', (e) => { if(e.target.id === 'q-ticket'){ f.q = e.target.value; f.cuantos = PAGINA_TICKETS; pintarTickets(); } });
 
       $c.addEventListener('click', (e) => {
         const b = e.target.closest('button'); if(!b) return;
-        if(b.dataset.canal){ f.canal = b.dataset.canal; $c.querySelectorAll('[data-canal]').forEach((x) => x.setAttribute('aria-pressed', x === b)); pintar(); }
+        if(b.matches('[data-mas-tickets]')){ f.cuantos += PAGINA_TICKETS; pintarTickets(); }
+        if(b.dataset.canal){ f.canal = b.dataset.canal; f.cuantos = PAGINA_TICKETS; $c.querySelectorAll('[data-canal]').forEach((x) => x.setAttribute('aria-pressed', x === b)); pintar(); }
         if(b.dataset.ticket){
           const v = ventas.find((x) => x.id === b.dataset.ticket), c = v.cobros?.[0];
           const d = hoja({ titulo: `Ticket #${v.folio}`, cuerpo: `
