@@ -133,7 +133,9 @@ const NO_VA = (ruta) => {
   /* De la tienda, lo que no usa el navegador: el catálogo crudo y su guion
      (datos/), las migraciones y la función del servidor (supabase/) y la
      muestra, que ya vive sembrada en la base. */
-  if(/(^|\/)tienda\/(datos|supabase|muestra)(\/|$)/.test(ruta)) return true;
+  /* …y de la marca, los originales que mandó Carlos (4 MB) y el guion que los
+     corta: el navegador sólo usa las capas ya cortadas de marca/garaje/. */
+  if(/(^|\/)tienda\/(datos|supabase|muestra|marca\/fuente)(\/|$)/.test(ruta)) return true;
   /* Del cerebro se publica `todo.json` y la pantalla; el motor y las neuronas
      sueltas no los usa el navegador —lee el armado— y publicarlos sería
      servir dos veces lo mismo. */
@@ -161,7 +163,7 @@ const NO_VA = (ruta) => {
      material de trabajo. */
   if(/(^|\/)juegos\/guerra-de-puercos\/arte\//.test(ruta)
      && !/(^|\/)juegos\/guerra-de-puercos\/arte\/web(\/|$)/.test(ruta)) return true;
-  if(/^(medir|rehacer|recortar)\.py$/i.test(f)) return true;
+  if(/^(medir|rehacer|recortar|cortar)\.py$/i.test(f)) return true;
   if(/^\.wrangler$|^node_modules$|^\.git$/.test(f)) return true;
   return false;
 };
