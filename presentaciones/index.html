@@ -227,9 +227,28 @@ dialog.visor{border:0; padding:0; margin:0; width:100vw; height:100dvh; max-widt
 .textos-lamina label{display:grid; gap:4px; font-size:13px; color:var(--tenue)}
 
 /* pestañas de arriba */
-.vistas{display:grid; grid-template-columns:1fr 1fr; gap:4px; max-width:520px; margin:8px auto 0; padding:4px; background:var(--vacio); border-radius:12px}
-.vistas button{appearance:none; border:0; background:none; color:var(--tenue); min-height:40px; border-radius:9px; font-size:14px; font-weight:700; cursor:pointer}
+.vistas{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) 44px; gap:4px; max-width:520px; margin:8px auto 0; padding:4px; background:var(--vacio); border-radius:12px}
+.vistas button{appearance:none; border:0; background:none; color:var(--tenue); min-height:40px; border-radius:9px; font-size:14px; font-weight:700; cursor:pointer; white-space:nowrap; padding:0 6px; min-width:0}
+@media (max-width:400px){ .vistas button{font-size:13px; letter-spacing:-.01em} }
 .vistas button[aria-pressed="true"]{background:var(--superficie-3); color:var(--hueso)}
+
+/* notificaciones */
+.vistas .campana{position:relative; display:grid; place-items:center; padding:0; color:var(--tenue)}
+.vistas .campana svg{width:20px; height:20px}
+.campana .contador{position:absolute; top:2px; right:2px; min-width:18px; height:18px; padding:0 4px; border-radius:99px; background:var(--violeta); color:#fff; font-size:11px; font-weight:800; display:grid; place-items:center; line-height:1}
+.notis{list-style:none; padding:0; margin:0; display:grid; gap:6px}
+.noti{display:flex; gap:10px; align-items:flex-start; padding:10px 12px; border-radius:12px; background:var(--vacio); border:1px solid transparent}
+.noti.nueva{border-color:var(--linea)}
+.noti > i{flex:none; width:26px; height:26px; border-radius:50%; display:grid; place-items:center; font-style:normal; font-weight:800; font-size:13px; background:var(--superficie-3); color:var(--tenue)}
+.noti.t-cambio > i,.noti.t-bien > i{background:rgba(79,178,134,.18); color:#7FD3AC}
+.noti.t-mal > i{background:rgba(255,107,107,.16); color:var(--mal)}
+.noti.novedad > i{background:rgba(172,39,255,.18); color:var(--violeta-suave)}
+.noti p{margin:0 0 2px; font-size:15px; overflow-wrap:anywhere}
+.noti b{display:block; font-size:15px; margin-bottom:2px}
+.noti .nota{margin:0}
+.grupo-noti{margin-bottom:14px}
+.grupo-noti h3{font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--tenue); margin:6px 0 8px; font-weight:700}
+.grupo-noti h3::first-letter{text-transform:uppercase}
 
 /* banco */
 .banco{max-width:1400px; margin:0 auto; padding:12px 12px 120px}
@@ -296,6 +315,10 @@ body:has(#banco:not([hidden])):has(#barra-lote:not([hidden])) .avisos{bottom:cal
   <nav class="vistas" aria-label="Qué ver">
     <button type="button" data-vista="presentacion" aria-pressed="true">Presentación</button>
     <button type="button" data-vista="banco" aria-pressed="false">Banco de imágenes</button>
+    <button type="button" id="b-noti" class="campana" aria-label="Notificaciones" title="Notificaciones">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+      <span class="contador" hidden>0</span>
+    </button>
   </nav>
 </header>
 

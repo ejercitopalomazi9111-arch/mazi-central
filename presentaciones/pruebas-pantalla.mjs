@@ -192,6 +192,30 @@ ok('el texto propuesto quedó en la lámina 5', tx5.includes('Propósito de Fado
 ok('todo lo de la IA es UN solo deshacer', await p.evaluate(() => /^IA:/.test(window.__pres.D.deshacer.at(-1).nombre)));
 await p.keyboard.press('Escape');
 
+console.log('\n· Notificaciones');
+ok('la campana avisa que hay novedades', /\d/.test(await p.locator('#b-noti .contador').textContent()) && await p.locator('#b-noti .contador').isVisible());
+await p.click('#b-noti');
+await p.waitForSelector('#hoja[open] .notis');
+const notis = await p.locator('#hoja .noti').allTextContents();
+ok('el historial trae los cambios de hoy (Acomodé, Letra, Cambié…)', notis.some((t) => /Acomodé/.test(t)) && notis.some((t) => /Letra Montserrat/.test(t)), notis.slice(0, 5).join(' | '));
+ok('agrupados por día, con hora', /Hoy/.test(await p.locator('#hoja .grupo-noti h3').first().textContent()) && /hace un momento|hace \d+ min/.test(notis.join(' ')));
+const conVolver = p.locator('#hoja .noti', { hasText: 'Letra Montserrat' }).getByRole('button', { name: /Volver a antes de esto/ });
+ok('un cambio que se puede deshacer trae «Volver a antes de esto»', await conVolver.count() === 1);
+const pilaAntes = await p.evaluate(() => window.__pres.D.deshacer.length);
+await conVolver.click();
+await p.waitForFunction((n) => window.__pres.D.deshacer.length < n, pilaAntes);
+const pila = await p.evaluate(() => ({ n: window.__pres.D.deshacer.length, nombres: window.__pres.D.deshacer.map((o) => o.nombre) }));
+ok('«Volver a antes» deshace hasta quitar ese cambio (y los de después)', !pila.nombres.includes('Letra') && !pila.nombres.includes('Acomodar'), JSON.stringify(pila));
+ok('y lo anota', await p.evaluate(() => window.__pres.NOTI.todas()[0].texto.startsWith('Volviste a antes de «Letra»')));
+await captura(p, '13a-tus-cambios');
+await p.locator('#hoja .segmento button', { hasText: 'Novedades' }).click();
+ok('Novedades enseña lo nuevo de la herramienta', (await p.locator('#hoja .noti.novedad').count()) >= 5);
+await captura(p, '13-notificaciones');
+await p.keyboard.press('Escape');
+ok('ya vistas, la campana se apaga', await p.locator('#b-noti .contador').isHidden());
+ok('las pestañas no parten su nombre en dos renglones', await p.evaluate(() => [...document.querySelectorAll('.vistas button')].every((b) => b.getBoundingClientRect().height <= 44 && b.scrollWidth <= b.clientWidth + 1)));
+ok('ningún control del renglón de pestañas se sale', await p.evaluate(() => [...document.querySelectorAll('.vistas > *')].every((b) => b.getBoundingClientRect().right <= innerWidth + 0.5)));
+
 console.log('\n· Recuadro detrás del texto');
 await p.click('.dock [data-panel="texto"]');
 ok('la hoja de Texto trae el recuadro con seis estilos a la vista', (await p.locator('#hoja [data-recuadro]').count()) === 6);

@@ -10,6 +10,7 @@ import * as N from './nucleo.js';
 import * as V from './vista.js';
 import * as IA from './ia.js';
 import { crearBanco } from './banco.js';
+import * as NOTI from './notificaciones.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -39,7 +40,9 @@ const cuantasObjetivo = () => sel.size || D.laminas.length;
 const textoObjetivo = () => sel.size ? `${plural(sel.size, 'lámina elegida', 'láminas elegidas')}` : `las ${D.laminas.length} láminas`;
 
 /* ── avisos y ocupado ── */
-function aviso(texto, tipo = '', { accion, ms = 4200 } = {}){
+function aviso(texto, tipo = '', { accion, ms = 4200, opId } = {}){
+  // Todo aviso queda en el panel de notificaciones: el de abajo dura cuatro segundos.
+  NOTI.registrar({ texto: String(texto), tipo: opId ? 'cambio' : tipo, opId, archivo: D ? nombre + '.pptx' : '' });
   const a = h('div', { class: `aviso ${tipo}` }, h('span', { class: 'crece' }, texto));
   if(accion) a.append(h('button', { class: 'chip', type: 'button', on: { click: () => { a.remove(); accion.fn(); } } }, accion.texto));
   $('#avisos').append(a);
@@ -160,11 +163,15 @@ $('#b-ninguna').addEventListener('click', () => { sel.clear(); pintarEleccion();
 async function aplicar(nombreOp, fn, mensaje){
   ocupado('Aplicando…');
   try{
+    const antes = D.deshacer.length;
     const r = await N.operacion(D, nombreOp, fn);
+    // Cada cambio lleva una marca para que el panel pueda «volver a antes de esto».
+    let opId;
+    if(D.deshacer.length > antes){ const op = D.deshacer.at(-1); op.id = op.id || Date.now().toString(36) + Math.random().toString(36).slice(2, 6); opId = op.id; }
     refrescar();
     guardarLocal();
     const tx = typeof mensaje === 'function' ? mensaje(r) : mensaje;
-    if(tx) aviso(tx, 'bien', { accion: { texto: 'Deshacer', fn: deshacer } });
+    if(tx) aviso(tx, 'bien', { accion: { texto: 'Deshacer', fn: deshacer }, opId });
     return r;
   }catch(e){
     aviso('No se pudo: ' + e.message, 'mal', { ms: 8000 });
@@ -178,6 +185,15 @@ async function deshacer(){
   aviso(`Deshecho: ${n}`);
 }
 $('#b-deshacer').addEventListener('click', deshacer);
+/* Volver a antes de un cambio: se deshace de arriba para abajo hasta quitarlo. */
+async function volverA(opId){
+  const op = D?.deshacer.find((o) => o.id === opId);
+  if(!op) return;
+  let n = 0;
+  while(D.deshacer.some((o) => o.id === opId)){ await N.deshacer(D); n++; }
+  refrescar(); guardarLocal();
+  aviso(`Volviste a antes de «${op.nombre}» (${plural(n, 'cambio deshecho', 'cambios deshechos')}).`);
+}
 addEventListener('keydown', (e) => { if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !/input|textarea/i.test(document.activeElement?.tagName)){ e.preventDefault(); deshacer(); } });
 
 /* ══ GUARDAR ══════════════════════════════════════════════════════════════ */
@@ -863,6 +879,58 @@ $('#visor').addEventListener('keydown', (e) => {
 });
 addEventListener('resize', () => { const m = $('#visor .marco'); if(m) m.style.setProperty('--k', m.clientWidth / V.BASE); });
 
+/* ══ NOTIFICACIONES ═══════════════════════════════════════════════════════ */
+const TIPO_ICONO = { cambio: '✓', bien: '✓', mal: '!', '': '•' };
+function pintarCampana(){
+  const n = NOTI.novedadesSinVer() + NOTI.todas().filter((e) => e.tipo === 'mal' && !e.leida).length;
+  const b = $('#b-noti .contador');
+  b.textContent = n > 9 ? '9+' : String(n);
+  b.hidden = !n;
+  $('#b-noti').setAttribute('aria-label', n ? `Notificaciones, ${n} sin ver` : 'Notificaciones');
+}
+NOTI.alCambiar(pintarCampana);
+pintarCampana();
+let pestanaNoti = 'cambios', filtroNoti = 'todo';
+function panelNotificaciones(){
+  const cuerpo = h('div');
+  const pinta = () => {
+    const todas = NOTI.todas();
+    if(pestanaNoti === 'novedades'){
+      const sinVer = NOTI.novedadesSinVer();
+      cuerpo.replaceChildren(h('ul', { class: 'notis' }, NOTI.NOVEDADES.map((nv, k) => h('li', { class: `noti novedad${k < sinVer ? ' nueva' : ''}` },
+        h('i', { 'aria-hidden': 'true' }, '✦'),
+        h('div', { class: 'crece' }, h('b', {}, nv.titulo), h('p', {}, nv.texto),
+          h('span', { class: 'nota' }, new Date(nv.fecha + 'T12:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'long' }), k < sinVer ? ' · nuevo' : ''))))));
+      NOTI.verNovedades();
+      return;
+    }
+    const lista = todas.filter((e) => filtroNoti === 'todo' || (filtroNoti === 'cambios' ? e.tipo === 'cambio' : e.tipo === 'mal'));
+    const grupos = [];
+    for(const e of lista){ const d = NOTI.dia(e.cuando); if(grupos.at(-1)?.dia !== d) grupos.push({ dia: d, items: [] }); grupos.at(-1).items.push(e); }
+    cuerpo.replaceChildren(
+      h('div', { class: 'ejemplos' }, [['todo', `Todo · ${todas.length}`], ['cambios', 'Cambios'], ['errores', 'Errores']].map(([v, t]) =>
+        h('button', { class: 'chip', type: 'button', 'aria-pressed': String(filtroNoti === v), on: { click: () => { filtroNoti = v; pinta(); } } }, t))),
+      lista.length ? h('div', {}, grupos.map((g) => h('section', { class: 'grupo-noti' }, h('h3', {}, g.dia),
+        h('ul', { class: 'notis' }, g.items.map((e) => {
+          const vivo = e.opId && D?.deshacer.some((o) => o.id === e.opId);
+          return h('li', { class: `noti t-${e.tipo || 'info'}${e.leida ? '' : ' nueva'}` },
+            h('i', { 'aria-hidden': 'true' }, TIPO_ICONO[e.tipo] ?? '•'),
+            h('div', { class: 'crece' }, h('p', {}, e.texto), h('span', { class: 'nota' }, NOTI.cuando(e.cuando), e.archivo ? ` · ${e.archivo}` : ''),
+              vivo ? h('button', { class: 'chip', type: 'button', style: { marginTop: '6px' }, on: { click: async () => { await volverA(e.opId); pinta(); } } }, '↶ Volver a antes de esto') : null));
+        })))))
+        : h('p', { class: 'nota', style: { padding: '12px 0' } }, filtroNoti === 'errores' ? 'Nada ha fallado. 👌' : 'Todavía no hay nada. Lo que cambies va a aparecer aquí.'),
+      todas.length ? h('button', { class: 'btn ancho fantasma', type: 'button', style: { marginTop: '12px' }, on: { click: (ev) => {
+        const b = ev.currentTarget;
+        if(b.dataset.seguro !== '1'){ b.dataset.seguro = '1'; b.textContent = '¿Seguro? Toca otra vez'; setTimeout(() => { b.dataset.seguro = ''; b.textContent = 'Borrar el historial'; }, 4000); return; }
+        NOTI.borrarTodo(); pinta();
+      } } }, 'Borrar el historial') : null);
+    NOTI.marcarLeidas();
+  };
+  hoja('Notificaciones', [segmento([['cambios', 'Tus cambios'], ['novedades', `Novedades${NOTI.novedadesSinVer() ? ` · ${NOTI.novedadesSinVer()}` : ''}`]], pestanaNoti, (v) => { pestanaNoti = v; pinta(); }), cuerpo]);
+  pinta();
+}
+$('#b-noti').addEventListener('click', panelNotificaciones);
+
 /* ══ LAS DOS VISTAS: la presentación y el banco ════════════════════════════ */
 const BANCO = crearBanco({ h, $, $$, hoja, cerrar, aviso, ocupado, segmento, plural, OK });
 function verVista(v){
@@ -878,4 +946,4 @@ $$('.vistas [data-vista]').forEach((b) => b.addEventListener('click', () => verV
 if(location.hash === '#banco') verVista('banco');
 
 /* Para las pruebas: el estado a la vista, sin exponer nada del teléfono. */
-window.__pres = { get D(){ return D; }, get sel(){ return sel; }, N, BANCO };
+window.__pres = { get D(){ return D; }, get sel(){ return sel; }, N, BANCO, NOTI };
