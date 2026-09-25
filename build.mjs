@@ -163,7 +163,7 @@ const NO_VA = (ruta) => {
      material de trabajo. */
   if(/(^|\/)juegos\/guerra-de-puercos\/arte\//.test(ruta)
      && !/(^|\/)juegos\/guerra-de-puercos\/arte\/web(\/|$)/.test(ruta)) return true;
-  if(/^(medir|rehacer|recortar|cortar)\.py$/i.test(f)) return true;
+  if(/^(medir|rehacer|recortar|cortar|piezas)\.py$/i.test(f)) return true;
   if(/^\.wrangler$|^node_modules$|^\.git$/.test(f)) return true;
   return false;
 };
