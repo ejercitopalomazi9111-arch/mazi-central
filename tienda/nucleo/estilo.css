@@ -1549,3 +1549,15 @@ body:has(.app.en-tienda){ background: var(--tienda-fondo); }
 .app.en-tienda .mios .mio img{ background: var(--escenario); mix-blend-mode: multiply; border-radius: 10px; }
 .app.en-tienda .bloque-form.tarjeta, .app.en-tienda .pagar-resumen.tarjeta, .app.en-tienda .contacto-ayuda.tarjeta{ background: var(--hundido); border: 0; box-shadow: none; border-radius: calc(var(--radio) + 4px); }
 .app.en-tienda .bloque-form input:not([type=checkbox]):not([type=radio]), .app.en-tienda .bloque-form textarea, .app.en-tienda .bloque-form select{ background: var(--superficie); }
+/* En computadora la cabecera de la tienda va en UNA línea —nombre, buscador,
+   carrito—, como Apple o Aesop. En dos, se comía 110 px de pantalla. */
+@media (min-width: 900px){
+  .app.en-tienda .arriba{ display: flex; align-items: center; gap: var(--e3); padding: 0 var(--e4); min-height: 64px; }
+  .app.en-tienda .arriba-fila{ display: contents; }
+  .app.en-tienda .arriba h1{ flex: 0 1 auto; max-width: 32%; }
+  .app.en-tienda .buscar-arriba{ order: 1; flex: 1 1 auto; max-width: 560px; margin: var(--e2) auto; }
+  .app.en-tienda #ir-carrito{ order: 2; margin-left: auto; }
+  .app.en-tienda .buscar-arriba:not([hidden]) ~ #ir-carrito, .app.en-tienda #ir-carrito:has(~ .buscar-arriba:not([hidden])){ margin-left: 0; }
+}
+.app.en-tienda .estado:not(.error) .circulo{ background: var(--escenario); color: #111317; }
+.app.en-tienda .estado h2{ letter-spacing: -.02em; }
