@@ -28,8 +28,9 @@ import { PANTALLAS as DESCUENTOS } from '../admin/descuentos.js';
 import { PANTALLAS as REPORTES } from '../admin/reportes.js';
 import { PANTALLAS as REDES } from '../admin/redes.js';
 import { PANTALLAS as MANUAL } from '../admin/manual.js';
+import { PANTALLAS as COTIZAR } from '../venta/cotizar.js';
 
-const PANTALLAS = { ...CLIENTE, ...PEDIR, ...ADMIN, ...IMPORTAR, ...VENTA, ...PEDIDOS, ...REPARTO, ...RUTA, ...IMPRESORA, ...CLIENTES, ...CUENTA, ...DEVOLUCION, ...CONVERSACIONES, ...SORTEOS, ...SORTEO, ...DESCUENTOS, ...REPORTES, ...REDES, ...MANUAL, obra, noexiste };
+const PANTALLAS = { ...CLIENTE, ...PEDIR, ...ADMIN, ...IMPORTAR, ...VENTA, ...PEDIDOS, ...REPARTO, ...RUTA, ...IMPRESORA, ...CLIENTES, ...CUENTA, ...DEVOLUCION, ...CONVERSACIONES, ...SORTEOS, ...SORTEO, ...DESCUENTOS, ...REPORTES, ...REDES, ...COTIZAR, ...MANUAL, obra, noexiste };
 
 const $app = document.getElementById('app');
 const $avisos = document.getElementById('avisos');
@@ -189,6 +190,10 @@ let primera = true;
 let desmontar = null;
 
 async function navegar(){
+  // Un cambio de dirección mientras la app todavía carga el negocio (un
+  // «atrás» a tiempo, otra pestaña): el armazón no existe aún. El arranque
+  // navega solo en cuanto lo pinta, así que aquí basta con no tronar.
+  if(!$app.querySelector('.arriba')) return;
   const mio = ++turno;
   const direccion = location.hash.replace(/^#/, '') || '/';
   const ruta = emparejar(direccion);

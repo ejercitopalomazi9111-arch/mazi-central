@@ -25,7 +25,7 @@ export function piezasTicket(venta, negocio, { copia = '' } = {}){
   if(venta.titulo) ps.push({ t: 'texto', v: `*** ${venta.titulo} ***`, alinear: 'centro', negritas: true });   // «DEVOLUCIÓN»
   if(copia || venta.reimpresion) ps.push({ t: 'texto', v: `*** ${copia || 'REIMPRESIÓN'} ***`, alinear: 'centro', negritas: true });
   ps.push({ t: 'raya' });
-  ps.push({ t: 'par', izq: `Ticket #${venta.folio}`, der: FECHA.format(new Date(venta.cuando || Date.now())) });
+  ps.push({ t: 'par', izq: venta.etiquetaFolio ? `${venta.etiquetaFolio} ${venta.folio}` : `Ticket #${venta.folio}`, der: FECHA.format(new Date(venta.cuando || Date.now())) });
   if(venta.cajero) ps.push({ t: 'texto', v: `Atendió: ${venta.cajero}` });
   if(venta.cliente) ps.push({ t: 'texto', v: `Cliente: ${venta.cliente}` });
   if(venta.direccion) ps.push({ t: 'texto', v: `Entregar en: ${venta.direccion}` });

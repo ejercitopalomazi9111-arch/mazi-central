@@ -34,10 +34,15 @@ const pesosR = (c) => '$' + Math.round(c / 100).toLocaleString('es-MX');
 const METODOS = { efectivo: 'Efectivo', tarjeta: 'Tarjeta', transferencia: 'Transferencia', mixto: 'Mixto', pasarela: 'En línea' };
 
 /* ── El ticket en curso, guardado en el teléfono ───────────────────────── */
-const ticket = {
+export const ticket = {
   leer(){ try{ return JSON.parse(localStorage.getItem(LLAVE_TICKET) || '[]'); }catch(e){ return []; } },
   guardar(r){ try{ localStorage.setItem(LLAVE_TICKET, JSON.stringify(r)); }catch(e){} },
 };
+/* Quien pasa algo a cobrar desde otra pantalla (una cotización) deja aquí a
+   nombre de quién va; Cobrar lo toma una vez y lo borra. */
+const LLAVE_CLIENTE = 'tienda-pos-cliente-' + negocioPedido();
+export function dejarCliente(c){ try{ c ? sessionStorage.setItem(LLAVE_CLIENTE, JSON.stringify(c)) : sessionStorage.removeItem(LLAVE_CLIENTE); }catch(e){} }
+function tomarCliente(){ try{ const c = JSON.parse(sessionStorage.getItem(LLAVE_CLIENTE) || 'null'); sessionStorage.removeItem(LLAVE_CLIENTE); return c; }catch(e){ return null; } }
 
 /* ── Abrir caja (lo usan Cobrar y Caja) ────────────────────────────────── */
 const FONDOS = [0, 50000, 100000, 200000];
@@ -155,7 +160,7 @@ async function cobrar(){
       let cuantos = PAGINA, ultimo = null;
       /* ¿A nombre de quién? — vale para el ticket en curso y se borra al cobrar.
          La lista se pide al entrar: si luego se va la red, sigue en memoria. */
-      const aNombre = { cliente: null };
+      const aNombre = { cliente: tomarCliente() };
       const listaClientes = clientesMostrador();
       listaClientes.catch(() => {});
       const $rej = $c.querySelector('#pos-rejilla'), $mas = $c.querySelector('#pos-mas'), $q = $c.querySelector('#pos-q');

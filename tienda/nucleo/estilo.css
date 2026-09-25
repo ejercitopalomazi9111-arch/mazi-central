@@ -1181,3 +1181,22 @@ dialog.hoja .hoja-cuerpo{ padding: var(--e5); overflow-y: auto; max-height: calc
 .alta-cliente .botones{ justify-content: flex-end; }
 .venta-hecha .a-nombre{ display: inline-flex; align-items: center; gap: var(--e1); }
 .venta-hecha .a-nombre .ico{ width: 18px; height: 18px; }
+
+/* ── Cotizar (venta/cotizar.js) ──────────────────────────────────────── */
+.cotizaciones{ list-style: none; display: grid; gap: var(--e2); padding: 0; border: 0; background: none; overflow: visible; }
+.cot-lado{ display: flex; flex-direction: column; align-items: flex-end; gap: var(--e1); flex: none; }
+.cot-lado b{ font-variant-numeric: tabular-nums; }
+.cot-editor{ display: grid; gap: var(--e4); }
+.cot-buscar{ display: grid; gap: var(--e2); align-content: start; }
+.cot-buscar .fila-opcion b{ flex: none; font-variant-numeric: tabular-nums; }
+.cot-hoja{ padding: var(--e4); display: grid; gap: var(--e3); }
+.cot-hoja .cobro-cliente{ margin: 0; }
+.cot-datos{ display: grid; gap: var(--e3); }
+.cot-datos textarea{ resize: vertical; }
+.cot-acciones{ flex-wrap: wrap; }
+.cot-acciones .boton{ flex: 1 1 auto; }
+.cambios-cot{ margin: var(--e3) 0; padding-left: var(--e5); display: grid; gap: var(--e2); }
+@media (min-width: 900px){
+  .cot-editor{ grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); align-items: start; }
+  .cot-hoja{ position: sticky; top: var(--e4); }
+}

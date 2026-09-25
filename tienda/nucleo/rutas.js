@@ -92,6 +92,8 @@ export const RUTAS = [
     promesa: 'Abrir con el fondo, cerrar y cuadrar: lo que debería haber contra lo que hay.' },
   { ruta: '/v/ventas',      apartado: 'venta', titulo: 'Ventas de hoy',   icono: 'reportes',  menu: true,  pantalla: 'ventasHoy',      bloque: 5,
     promesa: 'Cuánto va, a qué hora se vende más y qué se lleva la gente.' },
+  { ruta: '/v/cotizar',     apartado: 'venta', titulo: 'Cotizar',         icono: 'calculadora', menu: true, pantalla: 'cotizar',   bloque: 5,
+    promesa: 'Armar una cotización con los precios de hoy, mandarla por WhatsApp o imprimirla, y cobrarla cuando digan «va».' },
   { ruta: '/v/impresora',   apartado: 'venta', titulo: 'Impresora',       icono: 'imprimir',  menu: true,  pantalla: 'impresora', bloque: 5,
     promesa: 'Qué impresora de tickets tienes, cómo está conectada, y una hoja de prueba.' },
   { ruta: '/v/devolucion',  apartado: 'venta', titulo: 'Devoluciones',    icono: 'deshacer',  menu: true,  pantalla: 'devolucion',      bloque: 5,

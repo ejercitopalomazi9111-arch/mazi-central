@@ -80,6 +80,10 @@ _(se agregan aquí conforme salgan; ninguna detiene el trabajo)_
   número sería fácil, pero le enseñaría las compras de Pedro a cualquiera que escriba su
   número: antes hay que verificar el número con un código por WhatsApp.
 
+- **Las cotizaciones viven en el teléfono donde se hicieron.** Si la hace el dueño en su
+  celular, la caja no la ve. Para compartirlas entre teléfonos hace falta una tabla en la
+  base (una migración más); mientras, se manda por WhatsApp y ahí queda también.
+
 - **Las ofertas vencidas regresan su precio cuando el admin abre la app** (el tablero o
   Descuentos), no a la hora exacta. Para que pase a la hora exacta hace falta una tarea
   programada en el servidor.

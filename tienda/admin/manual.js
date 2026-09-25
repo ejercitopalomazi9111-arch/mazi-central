@@ -25,6 +25,7 @@ const CAJA = () => ({ titulo: 'Caja', icono: 'venta', pasos: [
   ['Al abrir', `En ${ir('/v/caja', 'Caja')}, di con cuánto cambio empiezas. Sin caja abierta no se puede cobrar: así el corte cuadra.`],
   ['Cobrar', `En ${ir('/v', 'Cobrar')}: escanea con el lector o la cámara, o busca y toca el producto. «Cobrar», elige cómo pagan y, si es efectivo, con cuánto: la app dice el cambio.`],
   ['A nombre de quién', 'Si es cliente de siempre, antes de cobrar toca «¿A nombre de quién?» y búscalo por nombre o WhatsApp (o dalo de alta). Así le cuenta para el sorteo y el dueño sabe cuándo le toca surtirse. Es opcional: si hay fila, cobra sin nombre.'],
+  ['Cotizar', `Si preguntan «¿en cuánto me sale?», en ${ir('/v/cotizar', 'Cotizar')} arma la lista con los precios de hoy y mándala por WhatsApp o imprímela. Cuando digan «va», «Pasar a cobrar» la trae al ticket; si algo cambió de precio o se acabó, te avisa antes.`],
   ['El ticket', `Sale solo si así se configuró la impresora (${ir('/v/impresora', 'Impresora')}). Si no, toca «Imprimir ticket».`],
   ['Una devolución', `En ${ir('/v/devolucion', 'Devoluciones')}: el número del ticket, qué regresa y por qué. La pieza vuelve al inventario y el dinero sale de la caja.`],
   ['Si se va el internet', 'Sigue cobrando. La venta se guarda en el teléfono con un folio que empieza con L y se sube sola cuando vuelve la red. No cierres sesión mientras tanto.'],

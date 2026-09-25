@@ -16,7 +16,7 @@ import { altaCliente, altaEnServidor } from '../nucleo/datos.js';
 
 /* $caja: dónde se pinta. lista(): promesa con [{id, nombre, telefono}].
    estado: { cliente } — se comparte con quien cobra. */
-export function montarANombre($caja, { lista, estado, aviso }){
+export function montarANombre($caja, { lista, estado, aviso, pregunta = '¿A nombre de quién?', pista = 'Opcional · así cuenta para su recompra y el sorteo' }){
   let modo = estado.cliente ? 'elegido' : 'cerrado', q = '', clientes = null, error = null;
 
   const cargar = async () => {
@@ -39,7 +39,7 @@ export function montarANombre($caja, { lista, estado, aviso }){
     }
     if(modo === 'cerrado'){
       $caja.innerHTML = `<button type="button" class="fila-opcion abrir-cliente" data-abrir>${icono('cliente')}
-        <span class="texto"><strong>¿A nombre de quién?</strong><small>Opcional · así cuenta para su recompra y el sorteo</small></span>${icono('adelante')}</button>`;
+        <span class="texto"><strong>${esc(pregunta)}</strong><small>${esc(pista)}</small></span>${icono('adelante')}</button>`;
       return;
     }
     if(modo === 'alta'){
