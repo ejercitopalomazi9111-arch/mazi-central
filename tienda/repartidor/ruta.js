@@ -59,7 +59,7 @@ async function miRuta(){
   return {
     html: `${lineaRastreo()}
       <div class="ruta-cabeza" id="ruta-cabeza"><p class="nota">Calculando la mejor ruta…</p></div>
-      <div class="mapa" id="mapa" role="img" aria-label="Mapa de la ruta"></div>
+      <div class="mapa" id="mapa" role="region" aria-label="Mapa de la ruta"></div>
       <ol class="paradas" id="ruta-lista"></ol>`,
     async alMontar($c){
       const quitar = montarRastreo($c, turno);
@@ -119,7 +119,7 @@ async function repartidoresVivo(){
 
   return {
     html: `<p class="nota">Sólo aparece quien tiene el turno abierto. Al cerrar el turno, deja de compartir su ubicación.</p>
-      <div class="mapa" id="mapa" role="img" aria-label="Mapa de los repartidores"></div>
+      <div class="mapa" id="mapa" role="region" aria-label="Mapa de los repartidores"></div>
       <ul class="lista" id="gente">${gente.length ? gente.map(fila).join('') : `<li class="fila"><span class="texto"><strong>Nadie en turno</strong><small>Cuando un repartidor abra su turno, aparece aquí.</small></span></li>`}</ul>`,
     async alMontar($c, { recargar }){
       let mapa;
@@ -157,7 +157,7 @@ async function seguimiento({ params }){
       <h2 id="seg-titulo">${esc(ESTADOS[p.estado].dice)}</h2>
       ${i >= 0 ? `<ol class="pasos-pedido">${pasos.map((s, k) => `<li class="${k < i ? 'hecho' : k === i ? 'ahora' : ''}"><span class="punto">${icono(k < i ? 'listo' : ESTADOS[s].icono)}</span><span>${ESTADOS[s].texto}</span></li>`).join('')}</ol>` : ''}
       <div id="seg-vivo"></div>
-      ${p.estado === 'en_camino' ? '<div class="mapa" id="mapa" role="img" aria-label="Dónde va tu pedido"></div>' : ''}
+      ${p.estado === 'en_camino' ? '<div class="mapa" id="mapa" role="region" aria-label="Dónde va tu pedido"></div>' : ''}
       <p class="nota">${p.direccion?.recoge ? 'Pasas a recoger a la tienda.' : `Va a: ${esc([p.direccion?.calle, p.direccion?.colonia].filter(Boolean).join(', '))}`}</p>
       <a class="boton secundario" href="${enlace('/pedidos')}">${icono('pedidos')}Mis pedidos</a>
     </div>`,

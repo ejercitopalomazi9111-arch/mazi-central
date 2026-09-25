@@ -1567,3 +1567,8 @@ body:has(.app.en-tienda){ background: var(--tienda-fondo); }
 @media (prefers-color-scheme: dark){ :root:not([data-tema="claro"]){ --circulo-fondo: var(--hundido); --circulo-tinta: var(--tinta); } }
 :root[data-tema="oscuro"]{ --circulo-fondo: var(--hundido); --circulo-tinta: var(--tinta); }
 .app.en-tienda .cat .circulo, .app.en-tienda .cats-lista .circulo, .app.en-tienda .estado:not(.error) .circulo{ background: var(--circulo-fondo); color: var(--circulo-tinta); }
+/* La tira de confianza se acomoda en renglones en vez de deslizarse: en 390 px
+   el tercer punto salía cortado («Pagas al re…») y una fila que se desliza sin
+   nada que tocar no se alcanza con teclado (axe: scrollable-region-focusable). */
+.app.en-tienda .confianza{ flex-wrap: wrap; overflow: visible; row-gap: var(--e1); margin-inline: 0; padding-inline: 0; }
+.app.en-tienda .confianza li{ min-height: 28px; }
