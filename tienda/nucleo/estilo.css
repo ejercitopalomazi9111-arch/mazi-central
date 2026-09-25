@@ -1575,3 +1575,11 @@ body:has(.app.en-tienda){ background: var(--tienda-fondo); }
 .parada-tarjeta .tanda{ display: inline-flex; align-items: center; gap: 4px; font-weight: 700; color: var(--ojo); }
 .parada-tarjeta .tanda .ico{ width: 14px; height: 14px; }
 .parada-tarjeta .tanda.t2{ color: var(--tinta-suave); }
+/* El buscador de la cabecera, siempre al centro: con el nombre corto de la
+   portada se iba a la derecha y en las categorías quedaba al centro. */
+@media (min-width: 900px){
+  .app.en-tienda .arriba{ position: sticky; }
+  .app.en-tienda .buscar-arriba{ position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(560px, 44%); margin: 0; }
+  .app.en-tienda .arriba h1{ max-width: 26%; }
+  .app.en-tienda #ir-carrito{ margin-left: auto; }
+}
