@@ -1428,3 +1428,80 @@ dialog.hoja .hoja-cuerpo{ padding: var(--e5); overflow-y: auto; max-height: calc
 input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea{ font-size: max(16px, 1em); }
 :root[data-letra="grande"] .pestanas a{ font-size: 13px; }
 .estado h2, .estado p, .aviso-linea, .chip-boton{ overflow-wrap: anywhere; }
+
+/* ══ Escaparate · lo que hacen las tiendas caras ══════════════════════════
+   Referencias (25 de septiembre): Apple Store, Aesop, Hardgraft y el análisis
+   de Nielsen Norman Group «The Anatomy of a Good Design». Lo que tienen en
+   común, y lo que aquí se copia:
+     · El producto en un ESCENARIO parejo, sin la caja blanca de la foto
+       (multiply funde el fondo blanco del proveedor con el escenario).
+     · El marco se calla: cabecera blanca con línea fina, tarjetas sin borde
+       ni sombra, color de marca SÓLO en lo que se toca para comprar.
+     · Tipografía de una familia con pesos claros: marca chica en versalitas,
+       nombre normal, precio seminegro; nada gritando.
+     · Doble aire entre secciones que dentro de ellas.
+   Sólo en la tienda del cliente (.en-tienda): mostrador, oficina y reparto
+   son para trabajar y ahí manda la densidad. Letra grande y 44 px, intactos. */
+:root{ --escenario: #F3F3F1; --tienda-fondo: #FFFFFF; --tienda-vidrio: rgb(255 255 255 / .86); }
+@media (prefers-color-scheme: dark){ :root:not([data-tema="claro"]){ --escenario: #E6E6E3; --tienda-fondo: #0E1013; --tienda-vidrio: rgb(14 16 19 / .84); } }
+:root[data-tema="oscuro"]{ --escenario: #E6E6E3; --tienda-fondo: #0E1013; --tienda-vidrio: rgb(14 16 19 / .84); }
+
+body:has(.app.en-tienda){ background: var(--tienda-fondo); }
+
+/* Cabecera: vidrio claro, no bloque de color. */
+.app.en-tienda .arriba{ background: var(--tienda-vidrio); color: var(--tinta); border-bottom: 1px solid var(--linea);
+  -webkit-backdrop-filter: saturate(1.6) blur(18px); backdrop-filter: saturate(1.6) blur(18px); }
+.app.en-tienda .arriba .boton-ico:hover{ background: var(--hundido); }
+.app.en-tienda .arriba .insignia{ background: var(--acento); color: var(--sobre-acento); }
+.app.en-tienda .arriba :focus-visible{ outline-color: var(--acento); }
+.app.en-tienda .marca-arriba{ font-weight: 800; letter-spacing: -.01em; }
+.app.en-tienda .marca-arriba .sello{ background: var(--acento); color: var(--sobre-acento); }
+.app.en-tienda .buscar-arriba{ background: var(--hundido); box-shadow: none; border: 1px solid transparent; }
+.app.en-tienda .buscar-arriba:hover{ border-color: var(--linea-fuerte); }
+.app.en-tienda .buscar-arriba:focus-visible{ outline-color: var(--acento); }
+.app.en-tienda .pestanas{ background: var(--tienda-vidrio); -webkit-backdrop-filter: saturate(1.6) blur(18px); backdrop-filter: saturate(1.6) blur(18px); border-top: 1px solid var(--linea); box-shadow: none; }
+
+/* La tarjeta: escenario + texto sobre el fondo. */
+.app.en-tienda .producto{ background: transparent; border: 0; border-radius: 0; box-shadow: none; overflow: visible; }
+.app.en-tienda .producto:hover{ border-color: transparent; }
+.app.en-tienda .producto .foto{ background: var(--escenario); border-radius: var(--radio); overflow: hidden; isolation: isolate; }
+.app.en-tienda .producto .foto img{ padding: 13%; mix-blend-mode: multiply; transition: transform .5s var(--entra); }
+@media (hover: hover){ .app.en-tienda .producto:hover .foto img{ transform: scale(1.04); } }
+.app.en-tienda .producto.sin .foto img{ opacity: .45; }
+.app.en-tienda .producto .cuerpo{ padding: var(--e3) 2px 0; gap: 3px; }
+.app.en-tienda .producto .m{ letter-spacing: .08em; font-weight: 650; }
+.app.en-tienda .producto .n{ font-size: 15px; font-weight: 450; line-height: 1.35; color: var(--tinta); }
+.app.en-tienda .producto .precio{ margin-top: 2px; }
+.app.en-tienda .producto .precio .ahora{ font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
+.app.en-tienda .producto .precio .antes{ color: var(--tinta-suave); }
+.app.en-tienda .producto .rapido{ background: #fff; color: #111317; box-shadow: 0 1px 2px rgb(0 0 0 / .08), 0 4px 14px rgb(0 0 0 / .12); }
+.app.en-tienda .producto .rapido:hover{ background: var(--acento); color: var(--sobre-acento); }
+.app.en-tienda .producto .corazon{ background: transparent; color: #111317; box-shadow: none; }
+.app.en-tienda .producto .corazon[aria-pressed="true"]{ color: var(--mal); }
+.app.en-tienda .marca-foto{ top: var(--e3); left: var(--e3); border-radius: 99px; padding: 3px 10px; font-weight: 750; letter-spacing: .01em; }
+.app.en-tienda .marca-foto.agotado{ background: rgb(17 19 23 / .82); }
+.app.en-tienda .rejilla{ gap: var(--e6) var(--e3); }
+@media (min-width: 640px){ .app.en-tienda .rejilla{ gap: var(--e7) var(--e5); } }
+.app.en-tienda .carril{ gap: var(--e3); }
+
+/* Categorías: el mismo escenario, en redondo, con el ícono en tinta. */
+.app.en-tienda .cat .circulo{ width: 68px; height: 68px; border-radius: 50%; background: var(--escenario); color: #111317; }
+.app.en-tienda .cat{ width: 88px; font-weight: 600; }
+.app.en-tienda .cats-lista .circulo{ border-radius: 50%; background: var(--escenario); color: #111317; }
+
+/* Secciones: doble aire entre ellas, títulos más editoriales. */
+.app.en-tienda .seccion{ margin-top: var(--e7); }
+.app.en-tienda .seccion > header{ align-items: baseline; }
+.app.en-tienda .seccion h2{ font-size: 22px; font-weight: 750; letter-spacing: -.02em; }
+:root[data-letra="grande"] .app.en-tienda .seccion h2{ font-size: 25px; }
+.app.en-tienda .seccion .ver-todo{ color: var(--tinta); text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; font-weight: 600; }
+
+/* La tira de confianza: texto, no botones que parecen tocarse. */
+.app.en-tienda .confianza{ gap: var(--e4); }
+.app.en-tienda .confianza li{ background: transparent; border: 0; padding: 0; color: var(--tinta-suave); font-weight: 600; }
+.app.en-tienda .confianza .ico{ color: var(--tinta); }
+/* El imán de las filas que se deslizan pegaba la primera tarjeta al borde de
+   la pantalla (el «inicio» del imán era la orilla, no el margen). */
+.carril, .tira, .confianza, .filtros, .sugerencias{ scroll-padding-inline: var(--e4); }
+.app.en-tienda .seccion.primera{ margin-top: var(--e4); }
+.app.en-tienda .confianza + .seccion.primera{ margin-top: var(--e3); }
