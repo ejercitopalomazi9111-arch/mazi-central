@@ -473,7 +473,7 @@ a{ color: inherit; }
 
 /* Ficha: miniaturas, marca, comprar, descripción */
 .miniaturas{ display: flex; gap: var(--e2); margin-top: var(--e3); overflow-x: auto; scrollbar-width: none; }
-.miniaturas button{ flex: none; width: 64px; height: 64px; padding: 0; border: 2px solid var(--linea); border-radius: 10px; background: #fff; overflow: hidden; }
+.miniaturas button{ flex: none; width: 64px; height: 64px; padding: 0; border: 2px solid var(--linea); border-radius: 10px; background: var(--escenario, #fff); overflow: hidden; }
 .miniaturas button[aria-pressed="true"]{ border-color: var(--acento); }
 .miniaturas img{ width: 100%; height: 100%; object-fit: contain; }
 .marca-producto{ color: var(--tinta-suave); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; font-size: var(--t-chica); }
@@ -1505,3 +1505,35 @@ body:has(.app.en-tienda){ background: var(--tienda-fondo); }
 .carril, .tira, .confianza, .filtros, .sugerencias{ scroll-padding-inline: var(--e4); }
 .app.en-tienda .seccion.primera{ margin-top: var(--e4); }
 .app.en-tienda .confianza + .seccion.primera{ margin-top: var(--e3); }
+/* La ficha: la foto grande en el mismo escenario que las tarjetas. */
+.app.en-tienda .ficha .foto-grande{ background: var(--escenario); border: 0; isolation: isolate; }
+.app.en-tienda .ficha .foto-grande img{ mix-blend-mode: multiply; padding: 10%; }
+@media (max-width: 899px){ .app.en-tienda .ficha .foto-grande{ aspect-ratio: 4 / 3; } }  /* cuadrada, el precio quedaba detrás de la barra de «Agregar» */
+.app.en-tienda .ficha .foto-grande .corazon{ background: transparent; color: #111317; box-shadow: none; }
+.app.en-tienda .ficha h2{ font-size: 25px; font-weight: 700; letter-spacing: -.02em; }
+.app.en-tienda .ficha .precio .ahora{ font-size: 28px; font-weight: 750; letter-spacing: -.02em; }
+.app.en-tienda .garantias{ background: var(--hundido); border: 0; }
+.app.en-tienda .garantias .ico{ color: var(--tinta); }
+/* La vitrina: un producto, grande, en su escenario, con una sola acción. */
+.vitrina{ display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 42%); align-items: center; gap: var(--e3); margin: var(--e2) 0 var(--e4);
+  padding: var(--e5) var(--e4) var(--e5) var(--e5); border-radius: calc(var(--radio) + 6px); background: var(--escenario); color: #111317; overflow: hidden; }
+.vitrina-texto{ display: grid; gap: var(--e2); justify-items: start; min-width: 0; }
+.vitrina-sobre{ font-size: var(--t-mini); font-weight: 750; letter-spacing: .08em; text-transform: uppercase; color: var(--acento); }
+.vitrina h2{ font-size: 21px; line-height: 1.2; font-weight: 750; letter-spacing: -.02em; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.vitrina-precio{ font-size: 17px; }
+.vitrina-precio b{ font-weight: 750; }
+.vitrina-precio s{ color: #5B6068; font-size: 15px; }
+.vitrina .boton{ margin-top: var(--e1); }
+.vitrina-foto{ display: block; aspect-ratio: 1; }
+.vitrina-foto img{ width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
+@media (min-width: 900px){
+  .vitrina{ grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding: var(--e7) var(--e7) var(--e7) var(--e8); gap: var(--e6); margin-top: var(--e4); }
+  .vitrina h2{ font-size: 40px; line-height: 1.08; }
+  .vitrina-precio{ font-size: 22px; }
+  .vitrina-foto{ max-height: 360px; }
+}
+:root[data-letra="grande"] .vitrina h2{ font-size: 24px; }
+/* La foto de la ficha se cortaba abajo (y con ella la lupa): el botón que la
+   envuelve no llenaba el marco, así que `height: 100%` de la foto no tenía de
+   qué ser el 100 % y la foto salía cuadrada dentro de un marco más chato. */
+.ficha .foto-grande .acercar{ height: 100%; }

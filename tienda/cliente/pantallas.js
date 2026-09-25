@@ -132,8 +132,22 @@ export async function portada(){
     env.recoger !== false ? ['tienda', 'O pasa a recoger'] : null,
     ['efectivo', 'Pagas al recibir'],
   ].filter(Boolean);
+  /* La vitrina de arriba, como las tiendas caras: UN producto, grande, en su
+     escenario, con una sola acción. Sale del catálogo —la mejor oferta que
+     tenga foto—, así que sirve igual a la barbería que a cualquier giro. */
+  const destacado = ofertas.find((p) => p.f);
+  const vitrina = destacado ? `<section class="vitrina" aria-label="Oferta destacada">
+      <div class="vitrina-texto">
+        <p class="vitrina-sobre">Oferta · ${Math.round((1 - destacado.p / destacado.a) * 100)}% menos</p>
+        <h2>${esc(destacado.n)}</h2>
+        <p class="vitrina-precio"><b>${pesos(destacado.p)}</b> <s>${pesos(destacado.a)}</s></p>
+        <a class="boton principal" href="${enlace('/p/:id', { id: destacado.id })}">Ver producto</a>
+      </div>
+      <a class="vitrina-foto" href="${enlace('/p/:id', { id: destacado.id })}" tabindex="-1" aria-hidden="true">${foto(destacado, 480, 480, 'fetchpriority="high"')}</a>
+    </section>` : '';
   return { html: `
     <ul class="confianza">${confianza.map(([ic, t]) => `<li>${icono(ic)}<span>${t}</span></li>`).join('')}</ul>
+    ${vitrina}
     <section class="seccion primera" aria-label="Categorías">${tiraCategorias(categorias)}</section>
     ${bloqueSiempre}
     ${bloqueToca}
