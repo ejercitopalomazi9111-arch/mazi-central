@@ -76,7 +76,7 @@ function relativa(desde, hacia){
 /* ══ ABRIR ════════════════════════════════════════════════════════════════ */
 export async function abrir(datos, JSZipClase = globalThis.JSZip){
   const zip = await JSZipClase.loadAsync(datos);
-  const deck = { zip, partes: new Map(), sucias: new Set(), medios: new Map(), urls: new Map(), deshacer: [], _grabando: null };
+  const deck = { zip, JSZip: JSZipClase, partes: new Map(), sucias: new Set(), medios: new Map(), urls: new Map(), deshacer: [], _grabando: null };
   const pres = await parte(deck, 'ppt/presentation.xml');
   if(!pres) throw new Error('Eso no es una presentación de PowerPoint (.pptx).');
   const tam = todos(pres.documentElement, NS.p, 'sldSz')[0];
@@ -249,7 +249,7 @@ function colorDe(el, pal){
 }
 
 /* ══ MEDIOS (imágenes) ════════════════════════════════════════════════════ */
-const MIME = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', bmp: 'image/bmp', svg: 'image/svg+xml', webp: 'image/webp', tif: 'image/tiff', tiff: 'image/tiff', emf: 'image/x-emf', wmf: 'image/x-wmf' };
+const MIME = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', bmp: 'image/bmp', svg: 'image/svg+xml', webp: 'image/webp', tif: 'image/tiff', tiff: 'image/tiff', emf: 'image/x-emf', wmf: 'image/x-wmf', xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' };
 export const mimeDe = (ruta) => MIME[ruta.split('.').pop().toLowerCase()] || 'application/octet-stream';
 export async function urlDe(deck, ruta){
   if(deck.urls.has(ruta)) return deck.urls.get(ruta);
@@ -761,6 +761,9 @@ async function recorrer(deck, l, ruta, arbol, pal, formas, soloAdorno, tx, cidGr
     const caja = tx(num(off, 'x'), num(off, 'y'), num(ext, 'cx'), num(ext, 'cy'));
     const f = { tipo: nombre, ...caja, rot: num(x, 'rot') / 60000, capa: soloAdorno ? 'plantilla' : 'lamina' };
     if(!soloAdorno){ f.cid = cidGrupo ?? cidDe(el); if(cidGrupo) f.enGrupo = true; }
+    // Un enlace en el elemento (tocarlo abre el link) o en su texto.
+    const hl = todos(el, NS.a, 'hlinkClick').find((x) => x.getAttributeNS(NS.r, 'id'));
+    if(hl){ const r = (await relaciones(deck, ruta)).get(hl.getAttributeNS(NS.r, 'id')); if(r?.externa && /^(https?:|mailto:|tel:)/i.test(r.ruta)) f.enlace = r.ruta; }
     if(nombre === 'pic'){
       const blip = todos(el, NS.a, 'blip')[0], id = blip?.getAttributeNS(NS.r, 'embed');
       const r = id && (await relaciones(deck, ruta)).get(id);
@@ -770,7 +773,8 @@ async function recorrer(deck, l, ruta, arbol, pal, formas, soloAdorno, tx, cidGr
     }else if(nombre === 'graphicFrame'){
       const uri = todos(el, NS.a, 'graphicData')[0]?.getAttribute('uri') || '';
       f.marcador = /table/.test(uri) ? 'Tabla' : /chart/.test(uri) ? 'Gráfica' : /diagram/.test(uri) ? 'Diagrama' : 'Objeto';
-      if(f.marcador === 'Tabla') f.parrafos = todos(el, NS.a, 'tc').slice(0, 12).map((tc) => ({ runs: [{ t: textoDe(tc) }] }));
+      if(f.marcador === 'Tabla') f.tabla = leerTabla(todos(el, NS.a, 'tbl')[0], pal);
+      if(f.marcador === 'Gráfica'){ const rg = await rutaGrafica(deck, ruta, el); const d = rg && await parte(deck, rg.ruta); f.grafica = d ? leerGraficaDoc(d, pal) : null; }
     }else{
       const geo = todos(spPr, NS.a, 'prstGeom')[0]?.getAttribute('prst');
       f.geo = geo || 'rect';
@@ -806,6 +810,7 @@ async function recorrer(deck, l, ruta, arbol, pal, formas, soloAdorno, tx, cidGr
                 b: rpr?.getAttribute('b') === '1', i: rpr?.getAttribute('i') === '1',
                 color: colorDe(hijo(rpr, NS.a, 'solidFill'), pal)?.hex || colTx,
                 letra: hijo(rpr, NS.a, 'latin')?.getAttribute('typeface') || null,
+                ...(hijo(rpr, NS.a, 'hlinkClick') && f.enlace ? { enlace: true } : {}), ...(rpr?.getAttribute('u') && rpr.getAttribute('u') !== 'none' ? { u: true } : {}),
               };
             }),
           };
@@ -871,6 +876,14 @@ function ponerCaja(deck, l, f, c){
   }
   if(!x) return false;
   const off = hijo(x, NS.a, 'off'), ext = hijo(x, NS.a, 'ext');
+  // Una TABLA no se estira con su caja: PowerPoint manda el ancho de cada
+  // columna y el alto de cada renglón. Se escalan junto con la caja.
+  const tbl = f.tipo === 'graphicFrame' && todos(f.el, NS.a, 'tbl')[0];
+  if(tbl){
+    const kx = c.w / Math.max(1, num(ext, 'cx')), ky = c.h / Math.max(1, num(ext, 'cy'));
+    for(const g of todos(tbl, NS.a, 'gridCol')) g.setAttribute('w', String(Math.max(1, R(num(g, 'w') * kx))));
+    for(const tr of hijos(tbl, NS.a, 'tr')) tr.setAttribute('h', String(Math.max(1, R(num(tr, 'h') * ky))));
+  }
   off.setAttribute('x', String(Math.round(c.x))); off.setAttribute('y', String(Math.round(c.y)));
   ext.setAttribute('cx', String(Math.max(1, Math.round(c.w)))); ext.setAttribute('cy', String(Math.max(1, Math.round(c.h))));
   Object.assign(f, c);
@@ -1662,7 +1675,8 @@ export function cajaDe(deck, i, cid){
   const nombre = todos(f.el, NS.p, 'cNvPr')[0]?.getAttribute('name') || '';
   const spPr = hijo(f.el, NS.p, 'spPr');
   return { x: f.x, y: f.y, w: f.w, h: f.h, tipo: f.tipo, nombre, texto: f.texto, icono: (nombre.match(/^Icono lucide:([\w-]+)/) || [])[1] || null,
-    relleno: !!(spPr && hijo(spPr, NS.a, 'solidFill')), imagen: f.tipo === 'pic', grupo: f.tipo === 'grpSp' };
+    relleno: !!(spPr && hijo(spPr, NS.a, 'solidFill')), imagen: f.tipo === 'pic', grupo: f.tipo === 'grpSp',
+    tabla: !!todos(f.el, NS.a, 'tbl')[0], grafica: !!todos(f.el, NS_C, 'chart')[0], enlace: !!todos(f.el, NS.a, 'hlinkClick')[0] };
 }
 export function moverForma(deck, i, cid, c){
   const l = deck.laminas[i], f = formasSueltas(deck, l).find((x) => cidDe(x.el) === Number(cid));
@@ -1839,4 +1853,435 @@ export async function ponerTransicion(deck, sel, t){
     n++;
   }
   return n;
+}
+
+/* ══ TABLAS ═══════════════════════════════════════════════════════════════
+   Carlos: «básate mucho en Canva y mete tablas, gráficos, etc. configurables
+   para hacerlos de modo rápido y cómodo». Tablas NATIVAS de PowerPoint (se
+   editan igual en PowerPoint, Keynote y Google), con el formato escrito en
+   cada celda y no en un estilo de tabla del archivo: así se ven idénticas en
+   todos lados, en la vista de aquí incluida.
+   El estilo elegido se guarda en el nombre del marco («Tabla ·tema·AC27FF»)
+   para poder volver a editarla sin perderlo.
+   ═════════════════════════════════════════════════════════════════════════ */
+export const ESTILOS_TABLA = [['tema', 'Color'], ['oscuro', 'Oscura'], ['cebra', 'Rayas'], ['limpio', 'Limpia'], ['contorno', 'Contorno']];
+const U_TABLA = 'http://schemas.openxmlformats.org/drawingml/2006/table';
+function mezcla(a, b, t){
+  const x = hex6(a) || '000000', y = hex6(b) || 'FFFFFF';
+  return '#' + [0, 2, 4].map((k) => R(parseInt(x.slice(k, k + 2), 16) * (1 - t) + parseInt(y.slice(k, k + 2), 16) * t).toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+const sobreDe = (fondo) => contraste('#FFFFFF', fondo) >= contraste('#141018', fondo) ? '#FFFFFF' : '#141018';
+/* Cómo va UNA celda según el estilo. `oscura`: la lámina es oscura (para los estilos sin relleno). */
+function celdaEstilo(estilo, color, fila, n, oscura){
+  const enc = fila === 0, par = fila % 2 === 0;
+  const tinta = oscura ? '#FFFFFF' : '#1B1B1F', linea = oscura ? '#FFFFFF55' : '#D5D5DA';
+  const L = (c, w = 1) => ({ c, w });
+  switch(estilo){
+    case 'oscuro': return enc ? { f: '#1E1E24', t: '#FFFFFF', b: true, bd: { B: L(color, 3) } } : { f: par ? '#F3F3F6' : '#FFFFFF', t: '#1B1B1F', bd: {} };
+    case 'cebra': return enc ? { f: null, t: oscura ? '#FFFFFF' : color, b: true, bd: { B: L(color, 2) } } : { f: par ? null : (oscura ? '#FFFFFF1A' : '#F1F1F4'), t: tinta, bd: {} };
+    case 'limpio': return { f: null, t: enc && !oscura ? color : tinta, b: enc, bd: enc ? { B: L(enc ? color : linea, 2) } : (fila < n - 1 ? { B: L(linea, 0.75) } : {}) };
+    case 'contorno': return { f: null, t: enc && !oscura ? color : tinta, b: enc, bd: { L: L(color), R: L(color), T: L(color), B: L(color) } };
+    default: return enc ? { f: color, t: sobreDe(color), b: true, bd: { B: L('#FFFFFF', 1) } } : { f: par ? '#FFFFFF' : mezcla(color, '#FFFFFF', 0.86), t: '#1B1B1F', bd: { B: L('#FFFFFF', 1) } };
+  }
+}
+const lnXml = (lado, b) => {
+  const nom = { L: 'lnL', R: 'lnR', T: 'lnT', B: 'lnB' }[lado];
+  if(!b) return `<a:${nom} w="0"><a:noFill/></a:${nom}>`;
+  const hex = b.c.length === 9 ? b.c.slice(0, 7) : b.c, alfa = b.c.length === 9 ? parseInt(b.c.slice(7), 16) / 255 : 1;
+  return `<a:${nom} w="${R(b.w * EMU_PT)}"><a:solidFill>${clrXml(hex, alfa)}</a:solidFill></a:${nom}>`;
+};
+const rellenoXml = (c) => !c ? '<a:noFill/>' : `<a:solidFill>${clrXml(c.slice(0, 7), c.length === 9 ? parseInt(c.slice(7), 16) / 255 : 1)}</a:solidFill>`;
+function tcPrXml(st){ return `<a:tcPr marL="91440" marR="91440" marT="45720" marB="45720" anchor="ctr">${['L', 'R', 'T', 'B'].map((k) => lnXml(k, st.bd[k])).join('')}${rellenoXml(st.f)}</a:tcPr>`; }
+function celdaXml(texto, st, pt, alinea){
+  const sz = R(pt * 100);
+  const ps = String(texto ?? '').split('\n').map((t) => `<a:p><a:pPr algn="${alinea}"/>${t ? `<a:r><a:rPr lang="es-MX" sz="${sz}"${st.b ? ' b="1"' : ''} dirty="0"><a:solidFill>${clrXml(st.t)}</a:solidFill></a:rPr><a:t>${escXml(t)}</a:t></a:r>` : ''}<a:endParaRPr lang="es-MX" sz="${sz}" dirty="0"/></a:p>`).join('');
+  return `<a:tc><a:txBody><a:bodyPr/><a:lstStyle/>${ps}</a:txBody>${tcPrXml(st)}</a:tc>`;
+}
+const nombreTabla = (estilo, color) => `Tabla ·${estilo}·${(hex6(color) || 'AC27FF')}`;
+const leerNombreTabla = (n) => { const m = String(n || '').match(/·(tema|oscuro|cebra|limpio|contorno)·([0-9A-F]{6})/i); return m ? { estilo: m[1], color: '#' + m[2].toUpperCase() } : null; };
+const ptTabla = (altoFila) => Math.max(9, Math.min(20, R(altoFila / EMU_PT * 0.42)));
+async function fondoLamina(deck, i){ const m = await modelo(deck, i); return m.fondo?.color || '#FFFFFF'; }
+const esOscuro = (hex) => contraste('#FFFFFF', hex) > contraste('#141018', hex);
+
+/* spec: { datos: [['Encabezado', …], [...]], estilo, color, x, y, w, h, pt } */
+export async function insertarTabla(deck, i, spec){
+  const l = deck.laminas[i], doc = docDe(deck, l.ruta);
+  const datos = spec.datos?.length ? spec.datos : [['', ''], ['', '']];
+  const nc = Math.max(...datos.map((f) => f.length)), nf = datos.length;
+  const W = deck.ancho, H = deck.alto;
+  const w = spec.w ?? W * 0.8, h = spec.h ?? Math.min(H * 0.7, nf * H * 0.085);
+  const x = spec.x ?? (W - w) / 2, y = spec.y ?? (H - h) / 2;
+  const estilo = spec.estilo || 'tema', color = spec.color || '#AC27FF';
+  const oscura = esOscuro(await fondoLamina(deck, i));
+  const cw = Array.from({ length: nc }, (_, k) => k < nc - 1 ? R(w / nc) : R(w) - R(w / nc) * (nc - 1));
+  const rh = R(h / nf), pt = spec.pt || ptTabla(rh);
+  const cid = nuevoCid(doc);
+  const filas = datos.map((f, r) => `<a:tr h="${rh}">${Array.from({ length: nc }, (_, c) => celdaXml(f[c] ?? '', celdaEstilo(estilo, color, r, nf, oscura), pt, c === 0 || isNaN(Number(String(f[c]).replace(/[$,%\s]/g, ''))) || r === 0 ? 'l' : 'r')).join('')}</a:tr>`).join('');
+  const xml = `<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="${cid}" name="${nombreTabla(estilo, color)}"/><p:cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></p:cNvGraphicFramePr><p:nvPr/></p:nvGraphicFramePr>`
+    + `<p:xfrm><a:off x="${R(x)}" y="${R(y)}"/><a:ext cx="${R(w)}" cy="${rh * nf}"/></p:xfrm>`
+    + `<a:graphic><a:graphicData uri="${U_TABLA}"><a:tbl><a:tblPr firstRow="1" bandRow="1"/><a:tblGrid>${cw.map((v) => `<a:gridCol w="${v}"/>`).join('')}</a:tblGrid>${filas}</a:tbl></a:graphicData></a:graphic></p:graphicFrame>`;
+  meterEnArbol(deck, l, fragmento(doc, xml));
+  return cid;
+}
+/* Lo que se puede editar de una tabla ya puesta. */
+export function tablaDe(deck, i, cid){
+  const el = elementoDe(deck, deck.laminas[i], cid), tbl = el && todos(el, NS.a, 'tbl')[0];
+  if(!tbl) return null;
+  const datos = hijos(tbl, NS.a, 'tr').map((tr) => hijos(tr, NS.a, 'tc').map((tc) => todos(tc, NS.a, 'p').map((p) => todos(p, NS.a, 't').map((t) => t.textContent).join('')).join('\n')));
+  return { datos, ...(leerNombreTabla(todos(el, NS.p, 'cNvPr')[0]?.getAttribute('name')) || { estilo: null, color: null }) };
+}
+/* Pone texto en una celda conservando el formato de su primera corrida. */
+function textoCelda(doc, tc, texto){
+  const tb = hijo(tc, NS.a, 'txBody');
+  const ps = hijos(tb, NS.a, 'p');
+  const molde = todos(tb, NS.a, 'rPr')[0] || todos(tb, NS.a, 'endParaRPr')[0];
+  const ppr = ps[0] && hijo(ps[0], NS.a, 'pPr');
+  ps.forEach((p) => p.remove());
+  for(const t of String(texto ?? '').split('\n')){
+    const p = nuevo(doc, NS.a, 'p');
+    if(ppr) p.appendChild(ppr.cloneNode(true));
+    if(t){
+      const r = nuevo(doc, NS.a, 'r');
+      const rpr = molde ? molde.cloneNode(false) : nuevo(doc, NS.a, 'rPr', { lang: 'es-MX' });
+      const rp = doc.createElementNS(NS.a, 'a:rPr');
+      for(const at of rpr.attributes) rp.setAttribute(at.name, at.value);
+      if(molde) for(const hijoM of molde.children) rp.appendChild(hijoM.cloneNode(true));
+      const te = nuevo(doc, NS.a, 't'); te.textContent = t;
+      r.append(rp, te); p.appendChild(r);
+    }
+    const end = molde ? doc.createElementNS(NS.a, 'a:endParaRPr') : nuevo(doc, NS.a, 'endParaRPr', { lang: 'es-MX' });
+    if(molde){ for(const at of molde.attributes) end.setAttribute(at.name, at.value); for(const hm of molde.children) end.appendChild(hm.cloneNode(true)); }
+    p.appendChild(end);
+    tb.appendChild(p);
+  }
+}
+/* Cambia los datos (y, si se pide, el estilo) de una tabla puesta. Agrega o
+   quita renglones y columnas copiando el formato de los vecinos; el ancho
+   total se respeta y el alto crece con los renglones, como en Canva. */
+export async function ponerTabla(deck, i, cid, { datos, estilo, color }){
+  const l = deck.laminas[i], doc = docDe(deck, l.ruta), el = elementoDe(deck, l, cid);
+  const tbl = el && todos(el, NS.a, 'tbl')[0];
+  if(!tbl || !datos?.length) return 0;
+  tocar(deck, l.ruta);
+  const nf = datos.length, nc = Math.max(1, ...datos.map((f) => f.length));
+  const grid = hijo(tbl, NS.a, 'tblGrid');
+  const ext = hijo(hijo(el, NS.p, 'xfrm'), NS.a, 'ext');
+  const anchoTotal = num(ext, 'cx');
+  // columnas
+  let cols = hijos(grid, NS.a, 'gridCol');
+  while(cols.length < nc){ grid.appendChild(cols.at(-1).cloneNode(true)); for(const tr of hijos(tbl, NS.a, 'tr')){ const tcs = hijos(tr, NS.a, 'tc'); tr.insertBefore(tcs.at(-1).cloneNode(true), hijo(tr, NS.a, 'extLst')); } cols = hijos(grid, NS.a, 'gridCol'); }
+  while(cols.length > nc){ cols.at(-1).remove(); for(const tr of hijos(tbl, NS.a, 'tr')) hijos(tr, NS.a, 'tc').at(-1)?.remove(); cols = hijos(grid, NS.a, 'gridCol'); }
+  const suma = cols.reduce((s, g) => s + num(g, 'w'), 0) || 1;
+  cols.forEach((g) => g.setAttribute('w', String(Math.max(1, R(num(g, 'w') * anchoTotal / suma)))));
+  // renglones (el nuevo copia al último de cuerpo, no al encabezado)
+  let trs = hijos(tbl, NS.a, 'tr');
+  while(trs.length < nf){ const molde = trs.length > 2 ? trs.at(-2) : trs.at(-1); tbl.insertBefore(molde.cloneNode(true), hijo(tbl, NS.a, 'extLst')); trs = hijos(tbl, NS.a, 'tr'); }
+  while(trs.length > nf){ trs.at(-1).remove(); trs = hijos(tbl, NS.a, 'tr'); }
+  // textos
+  trs.forEach((tr, r) => hijos(tr, NS.a, 'tc').forEach((tc, c) => { if(!tc.hasAttribute('hMerge') && !tc.hasAttribute('vMerge')) textoCelda(doc, tc, datos[r]?.[c] ?? ''); }));
+  // estilo
+  const previo = leerNombreTabla(todos(el, NS.p, 'cNvPr')[0]?.getAttribute('name'));
+  const est = estilo || previo?.estilo, col = color || previo?.color;
+  if(est && col){
+    const oscura = esOscuro(await fondoLamina(deck, i));
+    const pt = ptTabla(num(trs[0], 'h'));
+    trs.forEach((tr, r) => hijos(tr, NS.a, 'tc').forEach((tc) => {
+      const st = celdaEstilo(est, col, r, nf, oscura);
+      hijo(tc, NS.a, 'tcPr')?.remove();
+      tc.appendChild(fragmento(doc, tcPrXml(st))[0]);
+      for(const rp of [...todos(tc, NS.a, 'rPr'), ...todos(tc, NS.a, 'endParaRPr')]){
+        RELLENOS.forEach((k) => hijos(rp, NS.a, k).forEach((x) => x.remove()));
+        const sf = nuevo(doc, NS.a, 'solidFill'); sf.appendChild(fragmento(doc, clrXml(st.t))[0]);
+        meterEnOrden(rp, sf, ORDEN_RPR);
+        if(st.b) rp.setAttribute('b', '1'); else rp.removeAttribute('b');
+        if(!rp.getAttribute('sz')) rp.setAttribute('sz', String(R(pt * 100)));
+      }
+    }));
+    todos(el, NS.p, 'cNvPr')[0].setAttribute('name', nombreTabla(est, col));
+  }
+  ext.setAttribute('cy', String(trs.reduce((s, tr) => s + num(tr, 'h'), 0)));
+  return 1;
+}
+/* Leer una tabla para pintarla: anchos, altos y cada celda con su formato. */
+function leerTabla(tbl, pal){
+  const cols = hijos(hijo(tbl, NS.a, 'tblGrid'), NS.a, 'gridCol').map((g) => num(g, 'w'));
+  const conEstilo = !!todos(tbl, NS.a, 'tableStyleId')[0];
+  const tp = hijo(tbl, NS.a, 'tblPr');
+  const filas = hijos(tbl, NS.a, 'tr').map((tr, r) => ({ h: num(tr, 'h'), celdas: hijos(tr, NS.a, 'tc').map((tc) => {
+    const pr = hijo(tc, NS.a, 'tcPr');
+    const f = colorDe(hijo(pr, NS.a, 'solidFill'), pal);
+    const rpr = todos(tc, NS.a, 'rPr')[0] || todos(tc, NS.a, 'endParaRPr')[0];
+    const lado = (k) => { const ln = hijo(pr, NS.a, k); if(!ln || hijo(ln, NS.a, 'noFill')) return null; const c = colorDe(hijo(ln, NS.a, 'solidFill'), pal); return c ? { color: c.hex, alfa: c.alfa ?? 1, w: num(ln, 'w') || 12700 } : null; };
+    let relleno = f ? { color: f.hex, alfa: f.alfa ?? 1 } : null;
+    // Tabla con estilo del archivo y sin formato propio: aproximación del estilo de PowerPoint.
+    if(!relleno && conEstilo && !hijo(pr, NS.a, 'noFill')) relleno = r === 0 && tp?.getAttribute('firstRow') === '1' ? { color: '#' + (pal.accent1 || '4472C4') } : { color: r % 2 ? '#FFFFFF' : mezcla('#' + (pal.accent1 || '4472C4'), '#FFFFFF', 0.8) };
+    return {
+      t: todos(tc, NS.a, 'p').map((p) => todos(p, NS.a, 't').map((t) => t.textContent).join('')).join('\n'),
+      relleno, color: colorDe(hijo(rpr, NS.a, 'solidFill'), pal)?.hex || (relleno && conEstilo && r === 0 ? '#FFFFFF' : '#' + (pal.tx1 || '000000')),
+      b: rpr?.getAttribute('b') === '1' || (conEstilo && r === 0), pt: (Number(rpr?.getAttribute('sz')) || 1800) / 100,
+      alinea: todos(tc, NS.a, 'pPr')[0]?.getAttribute('algn') || 'l',
+      span: Number(tc.getAttribute('gridSpan')) || 1, rspan: Number(tc.getAttribute('rowSpan')) || 1,
+      oculta: tc.hasAttribute('hMerge') || tc.hasAttribute('vMerge'),
+      bordes: { L: lado('lnL'), R: lado('lnR'), T: lado('lnT'), B: lado('lnB') },
+    };
+  }) }));
+  return { cols, filas };
+}
+
+/* ══ GRÁFICAS ═════════════════════════════════════════════════════════════
+   Gráficas NATIVAS de PowerPoint, con su hoja de Excel adentro (como las que
+   hace PowerPoint): en PowerPoint se abre «Editar datos» y ahí están. Aquí se
+   editan en una tablita tipo Canva. Se leen también las gráficas que ya traía
+   el archivo, para dibujarlas en la vista y poder editarlas.
+   spec: { tipo, apilada, categorias, series: [{ nombre, valores, color }],
+           titulo, leyenda, valores (etiquetas), colorTexto }
+   ═════════════════════════════════════════════════════════════════════════ */
+export const TIPOS_GRAFICA = [['columnas', 'Columnas'], ['barras', 'Barras'], ['lineas', 'Líneas'], ['area', 'Área'], ['pastel', 'Pastel'], ['dona', 'Dona']];
+const NS_C = 'http://schemas.openxmlformats.org/drawingml/2006/chart';
+const U_GRAFICA = NS_C;
+const T_GRAFICA = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart';
+const T_PAQUETE = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/package';
+const CT_GRAFICA = 'application/vnd.openxmlformats-officedocument.drawingml.chart+xml';
+const letraCol = (n) => String.fromCharCode(65 + n);
+const numero = (v) => { const x = Number(String(v ?? '').replace(/[$,\s%]/g, '')); return isFinite(x) ? x : 0; };
+export function limpiarGrafica(g){
+  const tipo = TIPOS_GRAFICA.some(([t]) => t === g.tipo) ? g.tipo : 'columnas';
+  const categorias = (g.categorias || []).map((c) => String(c ?? '')).slice(0, 60);
+  const redondas = tipo === 'pastel' || tipo === 'dona';
+  const series = (g.series || []).slice(0, redondas ? 1 : 8).map((s, k) => ({ nombre: String(s.nombre ?? `Serie ${k + 1}`), valores: categorias.map((_, j) => numero(s.valores?.[j])), color: hex6(s.color) ? '#' + hex6(s.color) : null }));
+  return { tipo, apilada: !!g.apilada && !redondas, categorias, series: series.length ? series : [{ nombre: 'Serie 1', valores: categorias.map(() => 0), color: null }],
+    titulo: String(g.titulo || ''), leyenda: g.leyenda ?? (series.length > 1 || redondas), valores: g.valores ?? true, colorTexto: g.colorTexto || '#404040', colores: (g.colores || []).map((c) => '#' + (hex6(c) || '808080')) };
+}
+const txPrC = (hex, sz = 1200, b = false) => `<c:txPr><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="${sz}"${b ? ' b="1"' : ''}><a:solidFill>${clrXml(hex)}</a:solidFill></a:defRPr></a:pPr><a:endParaRPr lang="es-MX"/></a:p></c:txPr>`;
+const rellenoC = (hex, linea) => linea ? `<c:spPr><a:ln w="31750" cap="rnd"><a:solidFill>${clrXml(hex)}</a:solidFill><a:round/></a:ln></c:spPr>` : `<c:spPr><a:solidFill>${clrXml(hex)}</a:solidFill><a:ln><a:noFill/></a:ln></c:spPr>`;
+function graficaXml(g0){
+  const g = limpiarGrafica(g0);
+  const n = g.categorias.length, redonda = g.tipo === 'pastel' || g.tipo === 'dona';
+  const colorSerie = (k) => g.series[k].color || g.colores[k % Math.max(1, g.colores.length)] || ['#AC27FF', '#4FB286', '#D69A2D', '#3B82F6', '#EF4444', '#14B8A6', '#F59E0B', '#8B5CF6'][k % 8];
+  const colorPunto = (j) => g.colores[j % Math.max(1, g.colores.length)] || ['#AC27FF', '#4FB286', '#D69A2D', '#3B82F6', '#EF4444', '#14B8A6', '#F59E0B', '#8B5CF6'][j % 8];
+  const cat = `<c:cat><c:strRef><c:f>Hoja1!$A$2:$A$${n + 1}</c:f><c:strCache><c:ptCount val="${n}"/>${g.categorias.map((c, j) => `<c:pt idx="${j}"><c:v>${escXml(c)}</c:v></c:pt>`).join('')}</c:strCache></c:strRef></c:cat>`;
+  const val = (k) => `<c:val><c:numRef><c:f>Hoja1!$${letraCol(k + 1)}$2:$${letraCol(k + 1)}$${n + 1}</c:f><c:numCache><c:formatCode>General</c:formatCode><c:ptCount val="${n}"/>${g.series[k].valores.map((v, j) => `<c:pt idx="${j}"><c:v>${v}</c:v></c:pt>`).join('')}</c:numCache></c:numRef></c:val>`;
+  const tx = (k) => `<c:tx><c:strRef><c:f>Hoja1!$${letraCol(k + 1)}$1</c:f><c:strCache><c:ptCount val="1"/><c:pt idx="0"><c:v>${escXml(g.series[k].nombre)}</c:v></c:pt></c:strCache></c:strRef></c:tx>`;
+  const etiquetas = g.valores ? `<c:dLbls><c:spPr><a:noFill/><a:ln><a:noFill/></a:ln></c:spPr>${txPrC(redonda ? '#FFFFFF' : g.colorTexto, 1100, true)}<c:showLegendKey val="0"/><c:showVal val="1"/><c:showCatName val="0"/><c:showSerName val="0"/><c:showPercent val="0"/><c:showBubbleSize val="0"/></c:dLbls>`
+    : '<c:dLbls><c:showLegendKey val="0"/><c:showVal val="0"/><c:showCatName val="0"/><c:showSerName val="0"/><c:showPercent val="0"/><c:showBubbleSize val="0"/></c:dLbls>';
+  const ejes = `<c:axId val="50010"/><c:axId val="50020"/>`;
+  const rejilla = mezcla(g.colorTexto, '#FFFFFF', 0.25);
+  const catAx = `<c:catAx><c:axId val="50010"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="${g.tipo === 'barras' ? 'l' : 'b'}"/><c:numFmt formatCode="General" sourceLinked="1"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/><c:spPr><a:ln w="9525"><a:solidFill>${clrXml(g.colorTexto, 0.5)}</a:solidFill></a:ln></c:spPr>${txPrC(g.colorTexto)}<c:crossAx val="50020"/><c:crosses val="autoZero"/><c:auto val="1"/><c:lblAlgn val="ctr"/><c:lblOffset val="100"/><c:noMultiLvlLbl val="0"/></c:catAx>`;
+  const valAx = `<c:valAx><c:axId val="50020"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="${g.tipo === 'barras' ? 'b' : 'l'}"/><c:majorGridlines><c:spPr><a:ln w="6350"><a:solidFill>${clrXml(g.colorTexto, 0.18)}</a:solidFill></a:ln></c:spPr></c:majorGridlines><c:numFmt formatCode="General" sourceLinked="1"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/><c:spPr><a:ln><a:noFill/></a:ln></c:spPr>${txPrC(g.colorTexto)}<c:crossAx val="50010"/><c:crosses val="autoZero"/><c:crossBetween val="${g.tipo === 'area' ? 'midCat' : 'between'}"/></c:valAx>`;
+  void rejilla;
+  let cuerpo;
+  if(redonda){
+    const pts = g.categorias.map((_, j) => `<c:dPt><c:idx val="${j}"/><c:bubble3D val="0"/>${`<c:spPr><a:solidFill>${clrXml(colorPunto(j))}</a:solidFill><a:ln w="19050"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:ln></c:spPr>`}</c:dPt>`).join('');
+    const ser = `<c:ser><c:idx val="0"/><c:order val="0"/>${tx(0)}${pts}${etiquetas}${cat}${val(0)}</c:ser>`;
+    cuerpo = g.tipo === 'dona' ? `<c:doughnutChart><c:varyColors val="1"/>${ser}<c:firstSliceAng val="0"/><c:holeSize val="58"/></c:doughnutChart>` : `<c:pieChart><c:varyColors val="1"/>${ser}<c:firstSliceAng val="0"/></c:pieChart>`;
+  }else if(g.tipo === 'lineas'){
+    const sers = g.series.map((s, k) => `<c:ser><c:idx val="${k}"/><c:order val="${k}"/>${tx(k)}${rellenoC(colorSerie(k), true)}<c:marker><c:symbol val="circle"/><c:size val="6"/><c:spPr><a:solidFill>${clrXml(colorSerie(k))}</a:solidFill><a:ln><a:noFill/></a:ln></c:spPr></c:marker>${etiquetas}${cat}${val(k)}<c:smooth val="0"/></c:ser>`).join('');
+    cuerpo = `<c:lineChart><c:grouping val="${g.apilada ? 'stacked' : 'standard'}"/><c:varyColors val="0"/>${sers}<c:marker val="1"/>${ejes}</c:lineChart>${catAx}${valAx}`;
+  }else if(g.tipo === 'area'){
+    const sers = g.series.map((s, k) => `<c:ser><c:idx val="${k}"/><c:order val="${k}"/>${tx(k)}<c:spPr><a:solidFill>${clrXml(colorSerie(k), 0.75)}</a:solidFill><a:ln><a:noFill/></a:ln></c:spPr>${etiquetas}${cat}${val(k)}</c:ser>`).join('');
+    cuerpo = `<c:areaChart><c:grouping val="${g.apilada ? 'stacked' : 'standard'}"/><c:varyColors val="0"/>${sers}${ejes}</c:areaChart>${catAx}${valAx}`;
+  }else{
+    const sers = g.series.map((s, k) => `<c:ser><c:idx val="${k}"/><c:order val="${k}"/>${tx(k)}${rellenoC(colorSerie(k))}<c:invertIfNegative val="0"/>${etiquetas}${cat}${val(k)}</c:ser>`).join('');
+    cuerpo = `<c:barChart><c:barDir val="${g.tipo === 'barras' ? 'bar' : 'col'}"/><c:grouping val="${g.apilada ? 'stacked' : 'clustered'}"/><c:varyColors val="0"/>${sers}<c:gapWidth val="${g.apilada ? 60 : 80}"/>${g.apilada ? '<c:overlap val="100"/>' : '<c:overlap val="-10"/>'}${ejes}</c:barChart>${catAx}${valAx}`;
+  }
+  const titulo = g.titulo ? `<c:title><c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="1600" b="1"><a:solidFill>${clrXml(g.colorTexto)}</a:solidFill></a:defRPr></a:pPr><a:r><a:rPr lang="es-MX" sz="1600" b="1"><a:solidFill>${clrXml(g.colorTexto)}</a:solidFill></a:rPr><a:t>${escXml(g.titulo)}</a:t></a:r></a:p></c:rich></c:tx><c:overlay val="0"/></c:title><c:autoTitleDeleted val="0"/>` : '<c:autoTitleDeleted val="1"/>';
+  const leyenda = g.leyenda ? `<c:legend><c:legendPos val="b"/><c:overlay val="0"/>${txPrC(g.colorTexto)}</c:legend>` : '';
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<c:chartSpace xmlns:c="${NS_C}" xmlns:a="${NS.a}" xmlns:r="${NS.r}"><c:date1904 val="0"/><c:lang val="es-MX"/><c:roundedCorners val="0"/>`
+    + `<c:chart>${titulo}<c:plotArea><c:layout/>${cuerpo}<c:spPr><a:noFill/><a:ln><a:noFill/></a:ln></c:spPr></c:plotArea>${leyenda}<c:plotVisOnly val="1"/><c:dispBlanksAs val="gap"/></c:chart>`
+    + `<c:spPr><a:noFill/><a:ln><a:noFill/></a:ln></c:spPr>${txPrC(g.colorTexto)}<c:externalData r:id="rId1"><c:autoUpdate val="0"/></c:externalData></c:chartSpace>`;
+}
+/* La hoja de Excel de adentro: la misma tabla, para «Editar datos» en PowerPoint. */
+async function xlsxDe(deck, g){
+  const z = new (deck.JSZip || globalThis.JSZip)();
+  const celda = (ref, v) => typeof v === 'number' ? `<c r="${ref}"><v>${v}</v></c>` : `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${escXml(v)}</t></is></c>`;
+  const filas = [`<row r="1">${g.series.map((s, k) => celda(`${letraCol(k + 1)}1`, s.nombre)).join('')}</row>`,
+    ...g.categorias.map((c, j) => `<row r="${j + 2}">${celda(`A${j + 2}`, c)}${g.series.map((s, k) => celda(`${letraCol(k + 1)}${j + 2}`, s.valores[j])).join('')}</row>`)];
+  z.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>');
+  z.file('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>');
+  z.file('xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Hoja1" sheetId="1" r:id="rId1"/></sheets></workbook>');
+  z.file('xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>');
+  z.file('xl/worksheets/sheet1.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${filas.join('')}</sheetData></worksheet>`);
+  return z.generateAsync({ type: 'uint8array', compression: 'DEFLATE' });
+}
+async function asegurarOverride(deck, ruta, tipo){
+  const ct = await parte(deck, '[Content_Types].xml');
+  if(todos(ct.documentElement, NS.ct, 'Override').some((o) => o.getAttribute('PartName') === '/' + ruta)) return;
+  tocar(deck, '[Content_Types].xml');
+  const ov = ct.createElementNS(NS.ct, 'Override');
+  ov.setAttribute('PartName', '/' + ruta); ov.setAttribute('ContentType', tipo);
+  ct.documentElement.appendChild(ov);
+}
+/* Escribe (o reescribe) la parte de la gráfica y su hoja de Excel. */
+async function escribirGrafica(deck, ruta, g){
+  if(deck._grabando && !deck._grabando.partes.has(ruta) && !deck.partes.has(ruta) && !deck.zip.file(ruta)) deck._grabando.partes.set(ruta, null);
+  if(deck.partes.has(ruta) || deck.zip.file(ruta)) await parte(deck, ruta);
+  tocar(deck, ruta);
+  deck.partes.set(ruta, new DOMParser().parseFromString(graficaXml(g), 'application/xml'));
+  await asegurarOverride(deck, ruta, CT_GRAFICA);
+  // su hoja de Excel: una por gráfica
+  const rels = await relaciones(deck, ruta);
+  let hoja = [...rels.values()].find((r) => r.tipo === T_PAQUETE && !r.externa)?.ruta;
+  const bytes = await xlsxDe(deck, limpiarGrafica(g));
+  if(!hoja){
+    let k = 1; while(deck.zip.file(`ppt/embeddings/Hoja_mazi${k}.xlsx`)) k++;
+    hoja = `ppt/embeddings/Hoja_mazi${k}.xlsx`;
+    await tocarMedio(deck, hoja); deck.zip.file(hoja, bytes);
+    await asegurarTipo(deck, 'xlsx');
+    // la relación de la gráfica a su hoja tiene que llamarse rId1 (así la nombra el XML de arriba)
+    const rr = relsDe(ruta);
+    for(const r of todos((await parte(deck, rr))?.documentElement, NS.rel, 'Relationship')) if(r.getAttribute('Type') === T_PAQUETE) r.remove();
+    const id = await relNueva(deck, ruta, T_PAQUETE, hoja);
+    if(id !== 'rId1'){ const r = todos(docDe(deck, rr).documentElement, NS.rel, 'Relationship').find((x) => x.getAttribute('Id') === id); r.setAttribute('Id', 'rId1'); }
+  }else{ await tocarMedio(deck, hoja); deck.zip.file(hoja, bytes); }
+}
+export async function insertarGrafica(deck, i, g, caja = {}){
+  const l = deck.laminas[i], doc = docDe(deck, l.ruta);
+  let k = 1; while(deck.zip.file(`ppt/charts/chart${k}.xml`) || deck.partes.has(`ppt/charts/chart${k}.xml`)) k++;
+  const ruta = `ppt/charts/chart${k}.xml`;
+  const fondo = await fondoLamina(deck, i);
+  await escribirGrafica(deck, ruta, { colorTexto: esOscuro(fondo) ? '#F2F2F2' : '#404040', ...g });
+  const rid = await relNueva(deck, l.ruta, T_GRAFICA, ruta);
+  const W = deck.ancho, H = deck.alto;
+  const w = caja.w ?? W * 0.62, h = caja.h ?? H * 0.62, x = caja.x ?? (W - w) / 2, y = caja.y ?? (H - h) / 2;
+  const cid = nuevoCid(doc);
+  const xml = `<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="${cid}" name="Gráfica ${cid}"/><p:cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></p:cNvGraphicFramePr><p:nvPr/></p:nvGraphicFramePr>`
+    + `<p:xfrm><a:off x="${R(x)}" y="${R(y)}"/><a:ext cx="${R(w)}" cy="${R(h)}"/></p:xfrm>`
+    + `<a:graphic><a:graphicData uri="${U_GRAFICA}"><c:chart xmlns:c="${NS_C}" r:id="${rid}"/></a:graphicData></a:graphic></p:graphicFrame>`;
+  meterEnArbol(deck, l, fragmento(doc, xml));
+  return cid;
+}
+/* Leer cualquier gráfica (las nuestras y las que ya traía el archivo). */
+function leerGraficaDoc(doc, pal){
+  const pa = todos(doc.documentElement, NS_C, 'plotArea')[0];
+  if(!pa) return null;
+  const MAPA = { barChart: 'columnas', bar3DChart: 'columnas', lineChart: 'lineas', line3DChart: 'lineas', areaChart: 'area', area3DChart: 'area', pieChart: 'pastel', pie3DChart: 'pastel', doughnutChart: 'dona', ofPieChart: 'pastel' };
+  const ch = [...pa.children].find((x) => MAPA[x.localName]);
+  if(!ch) return null;
+  let tipo = MAPA[ch.localName];
+  if(tipo === 'columnas' && hijo(ch, NS_C, 'barDir')?.getAttribute('val') === 'bar') tipo = 'barras';
+  const apilada = /stacked/i.test(hijo(ch, NS_C, 'grouping')?.getAttribute('val') || '');
+  const puntos = (el) => {
+    if(!el) return [];
+    const cache = todos(el, NS_C, 'strCache')[0] || todos(el, NS_C, 'numCache')[0] || todos(el, NS_C, 'strLit')[0] || todos(el, NS_C, 'numLit')[0];
+    if(!cache) return [];
+    const n = num(hijo(cache, NS_C, 'ptCount'), 'val') || 0;
+    const out = Array(n).fill('');
+    for(const pt of hijos(cache, NS_C, 'pt')){ const idx = num(pt, 'idx'); out[idx] = hijo(pt, NS_C, 'v')?.textContent ?? ''; }
+    return out;
+  };
+  const sers = hijos(ch, NS_C, 'ser');
+  const categorias = puntos(hijo(sers[0], NS_C, 'cat'));
+  const colores = [];
+  const series = sers.map((s, k) => {
+    const tx = hijo(s, NS_C, 'tx');
+    const nombre = tx ? (todos(tx, NS_C, 'v')[0]?.textContent || '') : `Serie ${k + 1}`;
+    const sp = hijo(s, NS_C, 'spPr');
+    const c = colorDe(hijo(sp, NS.a, 'solidFill') || hijo(hijo(sp, NS.a, 'ln'), NS.a, 'solidFill'), pal);
+    for(const d of hijos(s, NS_C, 'dPt')){ const cc = colorDe(todos(d, NS.a, 'solidFill')[0], pal); if(cc) colores[num(hijo(d, NS_C, 'idx'), 'val')] = cc.hex; }
+    return { nombre, valores: puntos(hijo(s, NS_C, 'val')).map(numero), color: c?.hex || null };
+  });
+  const cats = categorias.length ? categorias : (series[0]?.valores || []).map((_, j) => String(j + 1));
+  const titulo = todos(hijo(todos(doc.documentElement, NS_C, 'chart')[0], NS_C, 'title'), NS.a, 't').map((t) => t.textContent).join('');
+  const dl = todos(ch, NS_C, 'showVal')[0];
+  const txc = colorDe(todos(todos(doc.documentElement, NS_C, 'txPr').at(-1), NS.a, 'solidFill')[0], pal)?.hex;
+  const sin = (tipo === 'pastel' || tipo === 'dona') ? colores.filter(Boolean) : [];
+  return { tipo, apilada, categorias: cats, series, titulo, leyenda: !!todos(doc.documentElement, NS_C, 'legend')[0], valores: dl?.getAttribute('val') === '1', colorTexto: txc || '#404040', colores: sin };
+}
+async function rutaGrafica(deck, ruta, el){
+  const ch = el && todos(el, NS_C, 'chart')[0];
+  const id = ch?.getAttributeNS(NS.r, 'id');
+  const r = id && (await relaciones(deck, ruta)).get(id);
+  return r && !r.externa ? { ruta: r.ruta, rid: id } : null;
+}
+export async function graficaDe(deck, i, cid){
+  const l = deck.laminas[i], el = elementoDe(deck, l, cid);
+  const rg = await rutaGrafica(deck, l.ruta, el);
+  if(!rg) return null;
+  const doc = await parte(deck, rg.ruta);
+  return doc && leerGraficaDoc(doc, paleta(deck, l));
+}
+/* Cambiar los datos o el tipo de una gráfica puesta. Si otra lámina usa la
+   MISMA gráfica (pasa al duplicar láminas), ésta se separa primero: si no,
+   cambiar una cambiaba las dos. */
+export async function ponerGrafica(deck, i, cid, g){
+  const l = deck.laminas[i], el = elementoDe(deck, l, cid);
+  const rg = await rutaGrafica(deck, l.ruta, el);
+  if(!rg) return 0;
+  let compartida = false;
+  for(const otra of deck.laminas) if(otra !== l && [...(await relaciones(deck, otra.ruta)).values()].some((r) => r.ruta === rg.ruta)) compartida = true;
+  let ruta = rg.ruta;
+  if(compartida){
+    let k = 1; while(deck.zip.file(`ppt/charts/chart${k}.xml`) || deck.partes.has(`ppt/charts/chart${k}.xml`)) k++;
+    ruta = `ppt/charts/chart${k}.xml`;
+    const nid = await relNueva(deck, l.ruta, T_GRAFICA, ruta);
+    tocar(deck, l.ruta);
+    todos(el, NS_C, 'chart')[0].setAttributeNS(NS.r, 'r:id', nid);
+  }
+  const previo = await graficaDe(deck, i, cid) || {};
+  await escribirGrafica(deck, ruta, { colorTexto: previo.colorTexto, ...g });
+  return 1;
+}
+
+/* ══ ENLACES ══════════════════════════════════════════════════════════════
+   «Un texto que al presionarlo abra un link.» Se pone a nivel del elemento
+   (tocar la forma, la imagen o el icono abre el link) y en cada corrida de su
+   texto (así PowerPoint y Keynote lo pintan como enlace). */
+const T_HIPER = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink';
+export function normalizarEnlace(t){
+  let u = String(t || '').trim();
+  if(!u) return null;
+  if(/^(javascript|data|vbscript|file):/i.test(u)) return null;
+  if(/^[^\s@/]+@[^\s@/]+\.[a-z]{2,}$/i.test(u)) u = 'mailto:' + u;
+  else if(/^\+?[\d\s()-]{8,}$/.test(u)) u = 'tel:' + u.replace(/[^\d+]/g, '');
+  else if(!/^(https?:|mailto:|tel:)/i.test(u)) u = 'https://' + u;
+  try{ const x = new URL(u); if(!/^(https?:|mailto:|tel:)$/.test(x.protocol)) return null; return x.href; }catch{ return null; }
+}
+async function relExterna(deck, desde, tipo, url){
+  const id = await relNueva(deck, desde, tipo, desde);
+  const r = todos(docDe(deck, relsDe(desde)).documentElement, NS.rel, 'Relationship').find((x) => x.getAttribute('Id') === id);
+  r.setAttribute('Target', url); r.setAttribute('TargetMode', 'External');
+  return id;
+}
+export async function ponerEnlace(deck, i, cid, url){
+  const l = deck.laminas[i], doc = docDe(deck, l.ruta), el = elementoDe(deck, l, cid);
+  const u = normalizarEnlace(url);
+  if(!el || !u) return 0;
+  tocar(deck, l.ruta);
+  quitarEnlaceEl(el);
+  const id = await relExterna(deck, l.ruta, T_HIPER, u);
+  const hl = () => { const e = nuevo(doc, NS.a, 'hlinkClick'); e.setAttributeNS(NS.r, 'r:id', id); return e; };
+  const cnv = todos(el, NS.p, 'cNvPr')[0];
+  cnv.insertBefore(hl(), cnv.firstChild);
+  for(const run of todos(el, NS.a, 'r')){
+    let rpr = hijo(run, NS.a, 'rPr');
+    if(!rpr){ rpr = nuevo(doc, NS.a, 'rPr', { lang: 'es-MX' }); run.insertBefore(rpr, run.firstChild); }
+    meterEnOrden(rpr, hl(), ORDEN_RPR);
+  }
+  return 1;
+}
+function quitarEnlaceEl(el){ for(const h of todos(el, NS.a, 'hlinkClick')) h.remove(); }
+export function quitarEnlace(deck, i, cid){
+  const l = deck.laminas[i], el = elementoDe(deck, l, cid);
+  if(!el || !todos(el, NS.a, 'hlinkClick').length) return 0;
+  tocar(deck, l.ruta); quitarEnlaceEl(el); return 1;
+}
+export async function enlaceDe(deck, i, cid){
+  const l = deck.laminas[i], el = elementoDe(deck, l, cid);
+  const h = el && todos(el, NS.a, 'hlinkClick').find((x) => x.getAttributeNS(NS.r, 'id'));
+  if(!h) return null;
+  const r = (await relaciones(deck, l.ruta)).get(h.getAttributeNS(NS.r, 'id'));
+  return r?.externa ? r.ruta : null;
+}
+/* Un texto que ya nace con su link. */
+export async function insertarEnlace(deck, i, { texto, url, pt = 20, color = '#3B82F6' }){
+  const u = normalizarEnlace(url);
+  if(!u) throw new Error('Ese link no se entiende. Escríbelo como www.ejemplo.com o https://…');
+  const W = deck.ancho, H = deck.alto;
+  const t = String(texto || '').trim() || u.replace(/^(https?:\/\/|mailto:|tel:)/, '').replace(/\/$/, '');
+  const w = Math.min(W * 0.8, Math.max(W * 0.2, t.length * pt * EMU_PT * 0.62 + 182880)), h = pt * EMU_PT * 1.9;
+  const cid = insertarForma(deck, i, { geo: 'rect', x: (W - w) / 2, y: (H - h) / 2, w, h, texto: t, pt, colorTexto: color, nombre: `Enlace ${t}`.slice(0, 60) });
+  const run = todos(elementoDe(deck, deck.laminas[i], cid), NS.a, 'rPr')[0];
+  if(run) run.setAttribute('u', 'sng');
+  await ponerEnlace(deck, i, cid, u);
+  return cid;
 }

@@ -883,10 +883,14 @@ function pintarBarraElemento(cid){
   if(!c){ b.hidden = true; return; }
   b.hidden = false;
   const boton = (acc, tx, extra = {}) => h('button', { class: 'chip', type: 'button', 'data-accion': acc, on: { click: () => accionElemento(acc) }, ...extra }, tx);
-  const tipo = c.icono ? 'Icono' : c.grupo ? 'Diseño' : c.imagen ? 'Imagen' : c.tipo === 'cxnSp' ? 'Línea' : c.texto && !c.relleno ? 'Texto' : 'Forma';
+  const tipo = c.tabla ? 'Tabla' : c.grafica ? 'Gráfica' : c.icono ? 'Icono' : c.grupo ? 'Diseño' : c.imagen ? 'Imagen' : c.tipo === 'cxnSp' ? 'Línea' : c.texto && !c.relleno ? 'Texto' : 'Forma';
+  const marco = c.tabla || c.grafica;
   b.replaceChildren(...[h('b', {}, tipo),
-    (!c.imagen || c.icono) ? boton('color', '● Color') : null,
-    c.texto || c.grupo ? boton('colorTexto', 'A Color de letra') : null,
+    c.tabla ? boton('tabla', '▦ Editar tabla', { class: 'chip primario' }) : null,
+    c.grafica ? boton('grafica', '📊 Editar datos', { class: 'chip primario' }) : null,
+    (!c.imagen || c.icono) && !marco ? boton('color', '● Color') : null,
+    (c.texto || c.grupo) && !marco ? boton('colorTexto', 'A Color de letra') : null,
+    boton('enlace', c.enlace ? '🔗 Cambiar enlace' : '🔗 Enlace'),
     c.imagen && !c.icono ? boton('imagen', '⇄ Cambiar imagen') : null,
     boton('duplicar', '⧉ Duplicar'), boton('frente', '↑ Al frente'), boton('atras', '↓ Atrás'),
     boton('guardar', '★ A mis elementos'),
@@ -908,6 +912,9 @@ async function accionElemento(acc){
     return;
   }
   if(acc === 'guardar') return guardarElemento(i, cid);
+  if(acc === 'tabla') return INS.editarTabla(i, cid, repinta);
+  if(acc === 'grafica') return INS.editarGrafica(i, cid, repinta);
+  if(acc === 'enlace') return INS.editarEnlace(i, cid, repinta);
   if(acc === 'color' || acc === 'colorTexto'){
     const pal = N.paletaTema(D);
     const deTema = ['accent1', 'accent2', 'accent3', 'accent4', 'accent5', 'accent6', 'dk2', 'lt2'].map((k) => pal[k] && '#' + pal[k]).filter(Boolean);

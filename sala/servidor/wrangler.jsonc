@@ -19,6 +19,13 @@
   "workers_dev": true,
   "observability": { "enabled": true },
 
+  // Red de seguridad, no el arreglo: sin esto, cada despliegue desde GitHub
+  // BORRA las variables de texto puestas en el panel de Cloudflare («Wrangler
+  // will override them the next time you deploy» — documentación de Wrangler,
+  // 25 de septiembre). Así se apagaron Paulina y Negro: sus llaves estaban
+  // como «Text». Las llaves van como «Secret», que nunca se borran solas.
+  "keep_vars": true,
+
   // SQLite porque es lo que está incluido en el plan gratis; los de
   // key-value no. Igual que la Cooperativa de Fadori y que Puercos.
   "durable_objects": {

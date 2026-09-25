@@ -20,6 +20,9 @@ const TOPE = 300;
 /* Lo nuevo de la herramienta, lo más reciente arriba. Al agregar una función
    se agrega aquí su renglón: es lo que Carlos lee para saber qué cambió. */
 export const NOVEDADES = [
+  { id: 'n12', fecha: '2026-09-25', titulo: 'Enlaces', texto: 'Un texto (o una imagen, un icono, un botón) que al tocarlo abre un link: una página, un correo o un WhatsApp. Funciona al presentar y en PowerPoint.' },
+  { id: 'n11', fecha: '2026-09-25', titulo: 'Tablas y gráficas, como en Canva', texto: 'En Insertar: tablas con estilo en dos toques y gráficas de columnas, barras, líneas, área, pastel y dona. Se llenan en una tablita, y puedes pegar celdas de Excel o Google Sheets.' },
+  { id: 'n10', fecha: '2026-09-25', titulo: 'Sube tus 300 imágenes desde el teléfono', texto: 'Elige todas de un jalón. Si se corta, vuelve a elegirlas: las que ya subieron se saltan solas.' },
   { id: 'n9', fecha: '2026-09-25', titulo: 'Insertar: formas, iconos, diseños y transiciones', texto: 'Formas de PowerPoint, más de mil iconos que se buscan en español, diseños armados (número grande, tarjetas, línea de tiempo, pasos…) y transiciones entre láminas. En la vista grande, toca un elemento para moverlo, cambiarle el tamaño o el color.' },
   { id: 'n8', fecha: '2026-09-25', titulo: 'Tus propios elementos', texto: 'Guarda cualquier cosa de una lámina en «Mis elementos» y úsala en otras presentaciones. También puedes dibujar uno con el dedo o pedirle un icono a la IA.' },
   { id: 'n7', fecha: '2026-09-25', titulo: 'Este panel', texto: 'Todo lo que cambias queda aquí con su hora, y puedes volver a antes de cualquier cambio.' },
