@@ -19,7 +19,7 @@ import {
 } from '../nucleo/datos.js';
 import { ESTADOS } from '../cliente/pedir.js';
 import { aCentavos, aPesos, sugerirPagos, desglose } from '../nucleo/dinero.js';
-import { trabajado, porDia, entre, lunes, quincena, duracion, enPausa } from '../nucleo/horas.js';
+import { trabajado, porDia, entre, lunes, quincena, duracion, enPausa, turnoLargo } from '../nucleo/horas.js';
 import { rastreo, TEXTO_RASTREO } from '../nucleo/rastreo.js';
 
 const HORA = new Intl.DateTimeFormat('es-MX', { hour: 'numeric', minute: '2-digit' });
@@ -239,9 +239,10 @@ async function turnoPantalla(){
   const ef = cobros.filter((c) => c.metodo === 'efectivo').reduce((t, c) => t + aCentavos(c.monto), 0);
   const otros = cobros.filter((c) => c.metodo !== 'efectivo').reduce((t, c) => t + aCentavos(c.monto), 0);
   const pausa = enPausa(turno);
+  const largo = turnoLargo(turno);
 
   return {
-    html: `
+    html: `${largo ? `<p class="aviso-linea mal" role="alert" data-turno-largo>${icono('alerta')}<span>Tu turno está abierto desde el ${new Date(turno.inicio).toLocaleDateString('es-MX', { weekday: 'long' })} a las ${hora(turno.inicio)} Si se te olvidó cerrarlo, termínalo abajo y dile a la tienda a qué hora saliste de verdad.</span></p>` : ''}
       <div class="turno-reloj${pausa ? ' en-pausa' : ''}">
         <p class="etq">${pausa ? 'En pausa' : 'Trabajando'} · desde las ${hora(turno.inicio)}</p>
         <p class="valor" id="trabajado">${duracion(trabajado(turno))}</p>
@@ -321,12 +322,13 @@ async function horas(){
   for(const t of turnos){ if(!personas.has(t.perfil_id)) personas.set(t.perfil_id, { nombre: t.quien?.nombre || 'Sin nombre', rol: t.quien?.rol, turnos: [] }); personas.get(t.perfil_id).turnos.push(t); }
   const hoy0 = new Date(); hoy0.setHours(0, 0, 0, 0);
   const manana = new Date(hoy0); manana.setDate(manana.getDate() + 1);
-  const PERIODOS = { dia: ['Hoy', hoy0], semana: ['Esta semana', lunes()], quincena: ['Esta quincena', quincena()] };
+  // Cortos a propósito: «Esta quincena» se partía en dos renglones en el teléfono.
+  const PERIODOS = { dia: ['Hoy', hoy0], semana: ['Semana', lunes()], quincena: ['Quincena', quincena()] };
   const f = { periodo: 'semana' };
 
   return {
     html: `<div class="segmentos" role="group" aria-label="Periodo">${Object.entries(PERIODOS).map(([k, [t]]) => `<button data-periodo="${k}" aria-pressed="${k === f.periodo}">${t}</button>`).join('')}</div>
-      <div id="horas"></div>`,
+      <div id="horas" class="con-margen"></div>`,
     alMontar($c){
       const filas = () => [...personas.values()].map((p) => {
         const desdeP = PERIODOS[f.periodo][1];
@@ -349,7 +351,9 @@ async function horas(){
               <td class="num" data-etiqueta="Días">${p.dias}</td>
               <td class="num" data-etiqueta="Efectivo cobrado">${pesosC(p.esperado)}</td>
               <td class="num" data-etiqueta="Entregó">${pesosC(p.entregado)}${dif ? ` <span class="chip ${dif > 0 ? 'ojo' : 'mal'}">${dif > 0 ? '+' : '−'}${pesosC(Math.abs(dif))}</span>` : ''}</td>
-              <td data-etiqueta="Ahora">${p.abierto ? `<span class="chip ${enPausa(p.abierto) ? 'ojo' : 'bien'}">${enPausa(p.abierto) ? 'En pausa' : `Desde ${hora(p.abierto.inicio)}`}</span>` : '<span class="chip">Fuera</span>'}</td>
+              <td data-etiqueta="Ahora">${!p.abierto ? '<span class="chip">Fuera</span>'
+                : turnoLargo(p.abierto) ? `<span class="chip mal" data-turno-largo title="Abrió ${new Date(p.abierto.inicio).toLocaleString('es-MX')}">¿Olvidó cerrar? Lleva ${Math.floor((Date.now() - new Date(p.abierto.inicio).getTime()) / 3600000)} h</span>`
+                : `<span class="chip ${enPausa(p.abierto) ? 'ojo' : 'bien'}">${enPausa(p.abierto) ? 'En pausa' : `Desde ${hora(p.abierto.inicio)}`}</span>`}</td>
             </tr>`; }).join('')}</tbody></table>
           <div class="botones con-margen"><button class="boton secundario" data-csv>${icono('importar')}Descargar para Excel</button></div>`
           : estado({ icono: 'turnos', titulo: 'Sin turnos en este periodo', texto: 'Cuando un repartidor abra su turno, aquí se cuentan sus horas.' });

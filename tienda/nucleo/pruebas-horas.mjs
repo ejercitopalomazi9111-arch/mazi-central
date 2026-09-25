@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* Pruebas de horas.js · `node tienda/nucleo/pruebas-horas.mjs` — de aquí sale la nómina. */
-import { trabajado, porDia, entre, lunes, quincena, duracion, enPausa } from './horas.js';
+import { trabajado, porDia, entre, lunes, quincena, duracion, enPausa, turnoLargo } from './horas.js';
 let bien = 0, mal = 0;
 const ok = (t, c, d = '') => { c ? bien++ : mal++; console.log(`  ${c ? '✓' : '✗'} ${t}${c || !d ? '' : ` — ${d}`}`); };
 const H = 3600000, M = 60000;
@@ -33,6 +33,14 @@ ok('el lunes de un domingo es el de 6 días antes', lunes(f('2026-09-27T10:00'))
 ok('la quincena del 24 empieza el 16', quincena(f('2026-09-24')).getDate() === 16);
 ok('la quincena del 15 empieza el 1', quincena(f('2026-09-15')).getDate() === 1);
 ok('45 minutos se escriben «45 min»', duracion(45 * M) === '45 min');
+
+console.log('\n· Turno olvidado');
+const olvidado = { inicio: f('2026-09-24T18:57'), fin: null, pausas: [] };
+ok('abierto hace 11 h no avisa', !turnoLargo(olvidado, f('2026-09-25T05:57')));
+ok('abierto hace 19 h sí avisa', turnoLargo(olvidado, f('2026-09-25T13:57')));
+ok('uno ya cerrado nunca avisa, aunque haya sido largo', !turnoLargo({ ...olvidado, fin: f('2026-09-25T13:00') }, f('2026-09-25T14:00')));
+ok('una pausa larga no lo disculpa', turnoLargo({ ...olvidado, pausas: [{ inicio: f('2026-09-24T19:00'), fin: null }] }, f('2026-09-25T13:57')));
+ok('sin turno no truena', turnoLargo(null) === false);
 
 console.log(`\n${mal ? '✗' : '✓'} ${bien} pasan · ${mal} fallan\n`);
 process.exit(mal ? 1 : 0);

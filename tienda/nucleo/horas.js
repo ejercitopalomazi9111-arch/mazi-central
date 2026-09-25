@@ -51,6 +51,14 @@ export function porDia(turnos, ahora = Date.now()){
 export function lunes(d = new Date()){ const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
 export function quincena(d = new Date()){ const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() <= 15 ? 1 : 16); return x; }
 
+/* ¿Se le olvidó cerrar el turno? Un turno ABIERTO desde hace más de 12 horas
+   casi nunca es trabajo de verdad: es alguien que se fue a su casa sin tocar
+   «Terminar turno», y esas horas se van a la nómina calladitas. Se mide por
+   el reloj de pared desde que abrió, no por lo trabajado: las pausas no lo
+   disculpan. */
+export const TURNO_LARGO_MS = 12 * 3600000;
+export const turnoLargo = (turno, ahora = Date.now()) => !!turno && !turno.fin && ahora - new Date(turno.inicio).getTime() > TURNO_LARGO_MS;
+
 /* «7 h 25 min» · «45 min» */
 export function duracion(m){
   const min = Math.round(m / 60000);
