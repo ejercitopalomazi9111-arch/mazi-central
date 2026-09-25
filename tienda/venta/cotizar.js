@@ -10,6 +10,7 @@
    ═════════════════════════════════════════════════════════════════════════ */
 import { icono } from '../nucleo/iconos.js';
 import { esc, pesos, quitaAcentos, plural, hoja, estado } from '../nucleo/piezas.js';
+import { filtrar } from '../nucleo/parecido.js';
 import { negocio, catalogo, clientesMostrador } from '../nucleo/datos.js';
 import { negocioPedido } from '../config.js';
 import { aPesos } from '../nucleo/dinero.js';
@@ -55,13 +56,14 @@ async function cotizar(){
 
   /* ── El editor ────────────────────────────────────────────────────────── */
   const hallados = () => {
-    const t = quitaAcentos(q.trim()); if(!t) return [];
-    return productos.filter((p) => quitaAcentos(`${p.n} ${p.m || ''} ${p.sku || ''} ${p.cb || ''}`).includes(t)).slice(0, 12);
+    if(!q.trim()) return [];
+    const r = filtrar(productos, q, (p) => `${p.n} ${p.m || ''} ${p.sku || ''} ${p.cb || ''}`);
+    return Object.assign(r.slice(0, 12), { parecido: r.parecido });   // slice() no copia la marca
   };
   const resultadosHTML = () => {
     if(!q.trim()) return `<p class="nota">Escribe el nombre, la marca o el código, o escanéalo con el lector: si sale uno solo, Enter lo agrega.</p>`;
     const h = hallados();
-    return h.length ? `<ul class="lista-opciones">${h.map((p) => `<li><button type="button" class="fila-opcion" data-agregar="${esc(p.id)}">${icono('agregar')}
+    return h.length ? `${h.parecido ? `<p class="nota" data-parecido>Nada escrito así; lo que más se parece:</p>` : ''}<ul class="lista-opciones">${h.map((p) => `<li><button type="button" class="fila-opcion" data-agregar="${esc(p.id)}">${icono('agregar')}
         <span class="texto"><strong>${esc(p.n)}</strong><small>${esc(p.m || '')}${p.q <= 0 ? ' · agotado hoy' : ` · ${p.q} disp.`}</small></span><b>${pesos(p.p)}</b></button></li>`).join('')}</ul>`
       : `<p class="nota">Nada con «${esc(q.trim())}».</p>`;
   };
@@ -202,9 +204,9 @@ async function cotizar(){
         e.preventDefault();
         const t = e.target.value.trim(); if(!t) return;
         const exacto = productos.find((p) => p.cb === t || (p.sku && quitaAcentos(p.sku) === quitaAcentos(t)));
-        const h = exacto ? [exacto] : hallados();
+        const todos = exacto ? [exacto] : hallados(), h = todos.parecido ? [] : todos;   // Enter no agrega una adivinanza
         if(h.length === 1){ q = h[0].n; $cot.querySelector('[data-resultados]').innerHTML = resultadosHTML(); $cot.querySelector(`[data-agregar="${h[0].id}"]`)?.click(); }
-        else aviso(h.length ? `${h.length} coinciden: toca el que es` : `No hay nada con «${t}»`, h.length ? '' : 'mal');
+        else aviso(h.length ? `${h.length} coinciden: toca el que es` : todos.length ? 'No está escrito así: toca el que es' : `No hay nada con «${t}»`, h.length || todos.length ? '' : 'mal');
       });
       pintar();
     },

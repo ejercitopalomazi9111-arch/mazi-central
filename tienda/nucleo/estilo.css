@@ -1605,3 +1605,4 @@ body:has(.app.en-tienda){ background: var(--tienda-fondo); }
 .gracias span{ color: var(--tinta-suave); }
 .seguimiento .lo-pedido{ margin-top: var(--e5); }
 .app.en-tienda .seguimiento .lo-pedido{ margin-top: var(--e5); }
+.pos-parecido{ grid-column: 1 / -1; margin: 0; }

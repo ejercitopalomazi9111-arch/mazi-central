@@ -22,6 +22,7 @@ import { montarANombre } from './a-nombre.js';
 import { negocioPedido } from '../config.js';
 import { aCentavos, aPesos, sugerirPagos, desglose, contar, BILLETES, MONEDAS } from '../nucleo/dinero.js';
 import { imprimir, leerConf, abrirCajon } from '../nucleo/impresion/impresora.js';
+import { filtrar } from '../nucleo/parecido.js';
 
 const PAGINA = 60;
 const LLAVE_TICKET = 'tienda-pos-ticket-' + negocioPedido();
@@ -180,9 +181,8 @@ async function cobrar(){
         </button>`;
       };
       const pintarRejilla = () => {
-        const q = quitaAcentos(f.q.trim());
-        const vistos = productos.filter((p) => (!f.cat || p.c === f.cat) && (!q || quitaAcentos(`${p.n} ${p.m} ${p.sku || ''} ${p.cb || ''}`).includes(q)));
-        $rej.innerHTML = vistos.length ? vistos.slice(0, cuantos).map(tile).join('')
+        const vistos = filtrar(productos.filter((p) => !f.cat || p.c === f.cat), f.q, (p) => `${p.n} ${p.m} ${p.sku || ''} ${p.cb || ''}`);
+        $rej.innerHTML = vistos.length ? (vistos.parecido ? `<p class="nota pos-parecido" data-parecido>Nada escrito así; lo que más se parece a «${esc(f.q.trim())}»:</p>` : '') + vistos.slice(0, cuantos).map(tile).join('')
           : `<p class="nota">Nada con «${esc(f.q)}».</p>`;
         $mas.hidden = vistos.length <= cuantos;
       };
@@ -243,10 +243,10 @@ async function cobrar(){
         const p = deCodigo(t);
         if(p){ agregar(p.id); $q.value = ''; f.q = ''; pintarRejilla(); return; }
         // Si la búsqueda deja uno solo, Enter lo agrega.
-        const q = quitaAcentos(t);
-        const uno = productos.filter((x) => quitaAcentos(`${x.n} ${x.m}`).includes(q));
+        // Sólo lo que está escrito así: Enter no agrega una adivinanza por parecido.
+        const hallados = filtrar(productos, t, (x) => `${x.n} ${x.m}`), uno = hallados.parecido ? [] : hallados;
         if(uno.length === 1){ agregar(uno[0].id); $q.value = ''; f.q = ''; pintarRejilla(); }
-        else aviso(uno.length ? `${uno.length} coinciden: toca el que es` : `No hay nada con «${t}»`, uno.length ? '' : 'mal');
+        else aviso(uno.length ? `${uno.length} coinciden: toca el que es` : hallados.length ? 'No está escrito así: toca el que es' : `No hay nada con «${t}»`, uno.length || hallados.length ? '' : 'mal');
       });
       $q.addEventListener('input', () => { f.q = $q.value; cuantos = PAGINA; pintarRejilla(); });
       $mas.addEventListener('click', () => { cuantos += PAGINA; pintarRejilla(); });

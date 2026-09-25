@@ -53,3 +53,20 @@ export function estaParecida(t, w){
   }
   return false;
 }
+
+/* El filtro de las listas de trabajo (mostrador, cotizar, productos,
+   inventario). Antes buscaban la frase PEGADA: «mate cera» no encontraba
+   «Cera Mate», y un error de dedo dejaba la lista vacía. Ahora cada palabra
+   tiene que estar, en cualquier orden; si así no sale nada, se intenta por
+   parecido y el resultado sale marcado `parecido` para que la pantalla lo
+   diga (y para que Enter no agregue una adivinanza). */
+const llano = (t) => String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+export function filtrar(lista, q, texto){
+  const ws = llano(q).split(/[^a-z0-9ñ]+/).filter(Boolean);
+  if(!ws.length) return Object.assign([...lista], { parecido: false });
+  const conTexto = lista.map((x) => [x, llano(texto(x))]);
+  const exactos = conTexto.filter(([, t]) => ws.every((w) => t.includes(w))).map(([x]) => x);
+  if(exactos.length) return Object.assign(exactos, { parecido: false });
+  const casi = conTexto.filter(([, t]) => ws.every((w) => t.includes(w) || estaParecida(t, w))).map(([x]) => x);
+  return Object.assign(casi, { parecido: casi.length > 0 });
+}

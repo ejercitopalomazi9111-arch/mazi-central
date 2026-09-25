@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* Pruebas de parecido.js · `node tienda/nucleo/pruebas-parecido.mjs` */
-import { distancia, estaParecida } from './parecido.js';
+import { distancia, estaParecida, filtrar } from './parecido.js';
 let bien = 0, mal = 0;
 const ok = (t, c, d = '') => { c ? bien++ : mal++; console.log(`  ${c ? '✓' : '✗'} ${t}${c || !d ? '' : ` — ${d}`}`); };
 console.log('\n· Distancia');
@@ -18,5 +18,15 @@ console.log('\n· Lo que suena igual (se escribe de oído)');
 const cat = 'cera mate reuzel brocha de afeitar navaja zero gel';
 for(const w of ['seras', 'sera', 'vrocha', 'bróxa'.normalize('NFD').replace(/[̀-ͯ]/g, '').replace('x', 'ch'), 'nabaja']) ok(`«${w}»`, estaParecida(cat, w));
 for(const w of ['cerca', 'mata', 'gal']) ok(`«${w}» no suena a nada del catálogo`, !estaParecida('brocha de afeitar navaja', w));
+console.log('\n· filtrar(): las listas de trabajo');
+const ps = [{ n: 'Cera Mate Reuzel', sku: 'RZ-01' }, { n: 'Cera Brillo Reuzel', sku: 'RZ-02' }, { n: 'Shampoo Anticaspa', sku: 'SH-9' }];
+const f = (q) => filtrar(ps, q, (p) => `${p.n} ${p.sku}`);
+ok('las palabras en cualquier orden: «mate cera»', f('mate cera').map((p) => p.n).join() === 'Cera Mate Reuzel' && !f('mate cera').parecido);
+ok('mayúsculas y acentos no importan: «CÉRA»', f('CÉRA').length === 2);
+ok('por código: «rz-02»', f('rz-02').map((p) => p.n).join() === 'Cera Brillo Reuzel');
+ok('si no hay exacto, por parecido, y lo marca: «seras»', f('seras').length === 2 && f('seras').parecido === true);
+ok('exacto gana: con «cera» no se cuela nada por parecido', f('cera').parecido === false);
+ok('lo que no se parece a nada: vacío y sin marca', f('zzz').length === 0 && f('zzz').parecido === false);
+ok('sin búsqueda: todos', f('   ').length === 3);
 console.log(`\n${mal ? '✗' : '✓'} ${bien} pasan · ${mal} fallan\n`);
 process.exit(mal ? 1 : 0);

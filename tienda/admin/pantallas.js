@@ -16,6 +16,7 @@
 import { enlace } from '../nucleo/rutas.js';
 import { icono, ICONOS } from '../nucleo/iconos.js';
 import { esc, pesos, quitaAcentos, plural, estado, hoja, numero, fecha, descargarCSV } from '../nucleo/piezas.js';
+import { filtrar } from '../nucleo/parecido.js';
 import {
   negocio, catalogoAdmin, guardarProducto, subirFoto, ajustarInventario, contarInventario,
   ponerMinimo, movimientosDe, guardarCategoria, borrarCategoria, guardarNegocio, asignarCodigos,
@@ -165,10 +166,8 @@ async function productos(){
       };
 
       const pintar = () => {
-        const q = quitaAcentos(f.v.q.trim());
-        vistos = todos.filter((p) => PASA[f.v.ver]?.(p) ?? true)
-          .filter((p) => !f.v.cat || (f.v.cat === '-' ? !p.categoria_id : p.categoria_id === f.v.cat))
-          .filter((p) => !q || quitaAcentos([p.nombre, p.marca, p.sku, p.codigo_barras].join(' ')).includes(q));
+        vistos = filtrar(todos.filter((p) => PASA[f.v.ver]?.(p) ?? true)
+          .filter((p) => !f.v.cat || (f.v.cat === '-' ? !p.categoria_id : p.categoria_id === f.v.cat)), f.v.q, (p) => [p.nombre, p.marca, p.sku, p.codigo_barras].join(' '));
         $cuenta.textContent = vistos.length === todos.length ? plural(todos.length, 'producto', 'productos')
           : `${plural(vistos.length, 'producto', 'productos')} de ${todos.length}`;
         $lista.innerHTML = vistos.length ? vistos.slice(0, cuantos).map(fila).join('')
@@ -591,9 +590,7 @@ async function inventario(){
         </button></li>`;
       };
       const pintar = () => {
-        const q = quitaAcentos(f.v.q.trim());
-        vistos = activos.filter(PASA_INV[f.v.ver] || PASA_INV.todos)
-          .filter((p) => !q || quitaAcentos([p.nombre, p.marca, p.sku, p.codigo_barras].join(' ')).includes(q))
+        vistos = filtrar(activos.filter(PASA_INV[f.v.ver] || PASA_INV.todos), f.v.q, (p) => [p.nombre, p.marca, p.sku, p.codigo_barras].join(' '))
           .sort(ORDEN[f.v.orden] || ORDEN.nombre);
         $c.querySelector('#cuenta').textContent = plural(vistos.length, 'producto', 'productos');
         $lista.innerHTML = vistos.length ? vistos.slice(0, cuantos).map(fila).join('')
