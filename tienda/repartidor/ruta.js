@@ -152,16 +152,26 @@ async function seguimiento({ params }){
   const destinoL = lugarDe(p);
   const pasos = ['recibido', 'preparando', 'en_camino', 'entregado'], i = pasos.indexOf(p.estado);
 
+  const nuevo = /[?&]nuevo=1/.test(location.hash);
+  const envio = Number(p.envio) > 0 ? Number(p.envio) : Number(p.direccion?.envio || 0);
+  const pago = { efectivo: 'En efectivo al recibir', tarjeta: 'Con tarjeta al recibir', transferencia: 'Por transferencia' }[p.forma_pago] || '';
+  const loQuePidio = (p.renglones || []).length ? `<section class="seccion lo-pedido"><header><h2>Lo que pediste</h2></header>
+      <ul class="resumen-lista">${p.renglones.map((r) => `<li><span>${r.cantidad} × ${esc(r.nombre)}</span><b>${pesos(Number(r.importe))}</b></li>`).join('')}</ul>
+      <dl class="cuentas">${envio ? `<dt>Envío</dt><dd>${pesos(envio)}</dd>` : ''}<dt class="total">Total</dt><dd class="total">${pesos(totalConEnvio(p))}</dd></dl>
+      ${pago ? `<p class="nota">${pago}${p.pagado ? ' · ya pagado' : ''}</p>` : ''}</section>` : '';
   return {
     titulo: `Pedido #${p.folio}`,
-    html: `<div class="seguimiento">
+    html: `${nuevo ? `<div class="gracias" role="status">${icono('listo')}<div><strong>¡Gracias${p.cliente?.nombre ? `, ${esc(p.cliente.nombre.split(' ')[0])}` : ''}! Recibimos tu pedido #${p.folio}.</strong>
+        <span>${p.direccion?.recoge ? 'Te avisamos por WhatsApp cuando esté listo para recoger.' : 'Te avisamos por WhatsApp cuando vaya en camino. Aquí mismo ves en qué va.'}</span></div></div>` : ''}
+    <div class="seguimiento">
       <p class="chip ${ESTADOS[p.estado].clase}">${icono(ESTADOS[p.estado].icono)}${ESTADOS[p.estado].texto}</p>
       <h2 id="seg-titulo">${esc(ESTADOS[p.estado].dice)}</h2>
       ${i >= 0 ? `<ol class="pasos-pedido">${pasos.map((s, k) => `<li class="${k < i ? 'hecho' : k === i ? 'ahora' : ''}"><span class="punto">${icono(k < i ? 'listo' : ESTADOS[s].icono)}</span><span>${ESTADOS[s].texto}</span></li>`).join('')}</ol>` : ''}
       <div id="seg-vivo"></div>
       ${p.estado === 'en_camino' ? '<div class="mapa" id="mapa" role="region" aria-label="Dónde va tu pedido"></div>' : ''}
       <p class="nota">${p.direccion?.recoge ? 'Pasas a recoger a la tienda.' : `Va a: ${esc([p.direccion?.calle, p.direccion?.colonia].filter(Boolean).join(', '))}`}</p>
-      <a class="boton secundario" href="${enlace('/pedidos')}">${icono('pedidos')}Mis pedidos</a>
+      ${loQuePidio}
+      <div class="botones">${nuevo ? `<a class="boton principal" href="${enlace('/')}">Seguir comprando</a>` : ''}<a class="boton secundario" href="${enlace('/pedidos')}">${icono('pedidos')}Mis pedidos</a></div>
     </div>`,
     async alMontar($c, { recargar }){
       if(p.estado !== 'en_camino'){

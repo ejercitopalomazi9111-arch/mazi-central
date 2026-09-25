@@ -249,6 +249,11 @@ async function pagar(){
             notas: notasPedido(v, envio ? `Envío ${pesosC(envio)}` : ''),
           });
           carrito.vaciar(); borrador.borrar();
+          // A la página del pedido, con su «¡Gracias!»: ahí está lo que pidió,
+          // cuánto y cómo paga, y en qué va — y regresan las pestañas de abajo,
+          // que en la caja se esconden (antes se quedaba en «Pagar» sin salida).
+          const idNuevo = r.id || r.pedido_id || r.pedido;
+          if(idNuevo){ location.hash = enlace('/pedido/:id', { id: idNuevo }) + '?nuevo=1'; return; }
           $c.innerHTML = estado({ icono: 'listo', titulo: `¡Listo! Pedido #${r.folio}`,
             texto: v.entrega === 'domicilio' ? `Te lo llevamos a ${v.calle.trim()}. Te avisamos por WhatsApp cuando vaya en camino.`
               : 'Te avisamos por WhatsApp cuando esté listo para recoger.',

@@ -176,6 +176,8 @@ if(toca('niño')){
   const despues = await p.datos((d) => d.misPedidos().catch(() => []));
   despues.slice(0, despues.length - antes).forEach((x) => pedidosHechos.push({ id: x.id, p }));
   ok('tres toques a «Pedir» hacen UN pedido', despues.length - antes === 1, `${despues.length - antes} pedidos`);
+  const fin = await p.evaluate(() => ({ gracias: !!document.querySelector('.gracias'), lista: !!document.querySelector('.lo-pedido li'), pestanas: !document.getElementById('pestanas').hidden, ruta: location.hash }));
+  ok('al terminar llega a su pedido con «¡Gracias!», lo que pidió y las pestañas de vuelta (no se queda en «Pagar»)', fin.gracias && fin.lista && fin.pestanas && /^#\/pedido\//.test(fin.ruta), JSON.stringify(fin));
   ok('el niño no hizo tronar nada', !p.errores.length, p.errores.slice(0, 6).join(' | '));
   p.cerrar = () => ctx.close();
 }

@@ -1583,3 +1583,10 @@ body:has(.app.en-tienda){ background: var(--tienda-fondo); }
   .app.en-tienda .arriba h1{ max-width: 26%; }
   .app.en-tienda #ir-carrito{ margin-left: auto; }
 }
+/* El «¡Gracias!» al terminar de pedir: arriba, en verde, sin gritar. */
+.gracias{ display: flex; gap: var(--e3); align-items: flex-start; padding: var(--e4); margin-bottom: var(--e4); border-radius: calc(var(--radio) + 4px); background: var(--bien-suave); color: var(--tinta); }
+.gracias > .ico{ flex: none; width: 28px; height: 28px; padding: 4px; border-radius: 50%; background: var(--bien); color: #fff; }
+.gracias strong{ display: block; font-size: var(--t-sub); line-height: 1.25; margin-bottom: 2px; }
+.gracias span{ color: var(--tinta-suave); }
+.seguimiento .lo-pedido{ margin-top: var(--e5); }
+.app.en-tienda .seguimiento .lo-pedido{ margin-top: var(--e5); }
