@@ -476,6 +476,84 @@ await p.waitForFunction(() => document.querySelectorAll('#hoja .mio').length ===
 ok('se borra uno (pidiendo confirmar)', true);
 await p.keyboard.press('Escape');
 
+console.log('\n· Tablas, gráficas y enlaces (como Canva)');
+const formaDe = (i, c) => p.evaluate(async ([i, c]) => (await window.__pres.N.modelo(window.__pres.D, i)).formas.find((f) => f.cid === c), [i, c]);
+await p.click('.dock [data-panel="insertar"]');
+await p.locator('#hoja [data-seccion="tablas"]').click();
+await p.locator('#hoja [data-tam="3x4"]').click();
+ok('elegir el tamaño tocando la cuadrícula (como en Canva)', /3 renglones × 4 columnas/.test(await p.locator('#hoja .medida-tabla').textContent()));
+await p.locator('#hoja [data-estilo-tabla="cebra"]').click();
+await captura(p, '21-tablas');
+await p.locator('#hoja [data-poner-tabla]').click();
+await p.waitForSelector('#visor[open] .seleccion');
+const cidT = Number(await p.locator('.seleccion').getAttribute('data-cid'));
+let ft = await formaDe(lam, cidT);
+ok('la tabla entra de 3 × 4 y se abre elegida con «▦ Editar tabla»', ft?.tabla?.filas.length === 3 && ft.tabla.cols.length === 4 && await p.locator('#barra-elemento [data-accion="tabla"]').isVisible());
+await p.locator('#barra-elemento [data-accion="tabla"]').click();
+await p.waitForSelector('#hoja2[open] .casilla');
+ok('el editor enseña una casilla por celda', (await p.locator('#hoja2 .casilla').count()) === 12);
+await p.locator('#hoja2 .casilla[data-r="1"][data-c="0"]').fill('Pomada');
+// Pegar de Excel en la casilla del segundo renglón: llena desde ahí y agrega lo que falte.
+await p.locator('#hoja2 .casilla[data-r="2"][data-c="0"]').evaluate((el) => { const dt = new DataTransfer(); dt.setData('text/plain', 'Navaja\t$350\t3\nTijera\t$500\t2\nPeine\t$80\t20'); el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true })); });
+ok('pegar celdas de Excel llena la tabla y le suma renglones', (await p.locator('#hoja2 .casilla').count()) === 20 && (await p.locator('#hoja2 .casilla[data-r="4"][data-c="0"]').inputValue()) === 'Peine');
+await p.locator('#hoja2 [data-mas-col]').click();
+await captura(p, '22-editar-tabla');
+await p.locator('#hoja2 [data-estilo-tabla="tema"]').click();
+await p.locator('#hoja2 [data-guardar-tabla]').click();
+await p.waitForFunction(() => /Tabla actualizada/.test(document.querySelector('#avisos').textContent));
+const tt = await p.evaluate(([i, c]) => window.__pres.N.tablaDe(window.__pres.D, i, c), [lam, cidT]);
+ok('«Listo» la guarda: 5 renglones, 5 columnas, estilo nuevo', tt.datos.length === 5 && tt.datos[0].length === 5 && tt.datos[3][1] === '$500' && tt.estilo === 'tema', JSON.stringify(tt));
+ok('y la vista la dibuja con esos datos', await p.locator(`#visor .lienzo [data-cid="${cidT}"] .celda`, { hasText: 'Peine' }).count() === 1);
+await p.keyboard.press('Escape');
+
+await p.click('.dock [data-panel="insertar"]');
+await p.locator('#hoja [data-seccion="graficas"]').click();
+ok('seis tipos de gráfica', (await p.locator('#hoja [data-tipo-grafica]').count()) === 6);
+await p.locator('#hoja .casilla[data-r="1"][data-c="1"]').fill('40');
+await captura(p, '23-graficas');
+await p.locator('#hoja [data-poner-grafica]').click();
+await p.waitForSelector('#visor[open] .seleccion');
+const cidG = Number(await p.locator('.seleccion').getAttribute('data-cid'));
+let fg = await formaDe(lam, cidG);
+ok('la gráfica entra nativa, con los datos de la tablita', fg?.grafica?.tipo === 'columnas' && fg.grafica.series[0].valores[0] === 40 && fg.grafica.series.length === 2, JSON.stringify(fg?.grafica));
+ok('y se ve dibujada (barras en SVG)', (await p.locator(`#visor .lienzo [data-cid="${cidG}"] svg rect`).count()) >= 8);
+await p.locator('#barra-elemento [data-accion="grafica"]').click();
+await p.waitForSelector('#hoja2[open] [data-tipo-grafica]');
+await p.locator('#hoja2 [data-tipo-grafica="dona"]').click();
+await p.locator('#hoja2 .casilla[data-r="2"][data-c="1"]').fill('60');
+await captura(p, '24-editar-grafica');
+await p.locator('#hoja2 [data-guardar-grafica]').click();
+await p.waitForFunction(() => /Gráfica actualizada/.test(document.querySelector('#avisos').textContent));
+fg = await formaDe(lam, cidG);
+ok('«📊 Editar datos» la cambia a dona con el dato nuevo', fg?.grafica?.tipo === 'dona' && fg.grafica.series[0].valores[1] === 60 && (await p.locator(`#visor .lienzo [data-cid="${cidG}"] svg path`).count()) >= 4, JSON.stringify(fg?.grafica));
+await captura(p, '25-grafica-visor');
+// Enlace a un elemento que ya está: la gráfica misma.
+await p.locator('#barra-elemento [data-accion="enlace"]').click();
+await p.locator('#hoja2 input[type=url]').fill('grupomazi.com');
+await p.locator('#hoja2 [data-guardar-enlace]').click();
+await p.waitForFunction(() => /Enlace puesto/.test(document.querySelector('#avisos').textContent));
+ok('«🔗 Enlace» le pone link a lo que ya está', (await formaDe(lam, cidG))?.enlace === 'https://grupomazi.com/' && /Cambiar enlace/.test(await p.locator('#barra-elemento').textContent()));
+await p.keyboard.press('Escape');
+
+await p.click('.dock [data-panel="insertar"]');
+await p.locator('#hoja [data-seccion="enlace"]').click();
+await p.locator('#hoja input[aria-label="Texto del enlace"]').fill('Escríbenos por WhatsApp');
+await p.locator('#hoja input[aria-label="Link"]').fill('wa.me/524428833786');
+await p.locator('#hoja [data-poner-enlace]').click();
+await p.waitForSelector('#visor[open] .seleccion');
+const cidL = Number(await p.locator('.seleccion').getAttribute('data-cid'));
+ok('un texto con link: entra subrayado', (await formaDe(lam, cidL))?.enlace === 'https://wa.me/524428833786' && await p.locator(`#visor .lienzo [data-cid="${cidL}"] span`).first().evaluate((e) => getComputedStyle(e).textDecorationLine === 'underline'));
+await p.keyboard.press('Escape');
+// Al presentar, tocarlo abre el link en vez de pasar de lámina.
+await p.evaluate(() => { window.__abiertos = []; window.open = (u) => { window.__abiertos.push(u); return null; }; });
+await p.evaluate((i) => window.__pres.INS.presentar(i), lam);
+await p.waitForSelector('#presentar[open] .diapo [data-enlace]');
+await p.waitForTimeout(400);
+const bbL = await p.locator('#presentar .diapo:last-child [data-enlace]', { hasText: 'WhatsApp' }).boundingBox();
+await p.mouse.click(bbL.x + bbL.width / 2, bbL.y + bbL.height / 2);
+ok('al presentar, tocar el texto abre el link (y no pasa de lámina)', (await p.evaluate(() => window.__abiertos)).includes('https://wa.me/524428833786') && new RegExp(`^${lam + 1} /`).test(await p.locator('#presentar-cuenta').textContent()));
+await p.keyboard.press('Escape');
+
 console.log('\n· Insertar: iconos, diseños y transiciones');
 await p.click('.dock [data-panel="insertar"]');
 await p.locator('#hoja [data-seccion="iconos"]').click();

@@ -56,7 +56,7 @@ export function crearInsertar(U){
     const zonaColor = h('div');
     const pintaColor = () => zonaColor.replaceChildren(h('div', { class: 'seccion' }, h('h3', {}, 'Color'), selectorColor(color, (c) => { color = c; pintaSeccion(); }, temaColores)));
     const pestañas = h('div', { class: 'ejemplos filtros', role: 'tablist', style: { flexWrap: 'wrap', overflow: 'visible', marginBottom: '12px' } });
-    const pintaPestanas = () => pestañas.replaceChildren(...[['formas', 'Formas'], ['iconos', 'Iconos'], ['disenos', 'Diseños'], ['transiciones', 'Transiciones'], ['mios', 'Mis elementos']].map(([v, t]) =>
+    const pintaPestanas = () => pestañas.replaceChildren(...[['formas', 'Formas'], ['iconos', 'Iconos'], ['tablas', 'Tablas'], ['graficas', 'Gráficas'], ['disenos', 'Diseños'], ['enlace', 'Enlace'], ['transiciones', 'Transiciones'], ['mios', 'Mis elementos']].map(([v, t]) =>
       h('button', { class: 'chip', type: 'button', role: 'tab', 'aria-selected': String(seccion === v), 'aria-pressed': String(seccion === v), 'data-seccion': v, on: { click: () => { seccion = v; pintaPestanas(); pintaSeccion(); } } }, t)));
     const pintaSeccion = () => {
       zonaColor.hidden = seccion === 'transiciones' || seccion === 'mios';
@@ -64,6 +64,9 @@ export function crearInsertar(U){
       else if(seccion === 'iconos') seccionIconos(cuerpo);
       else if(seccion === 'disenos') seccionDisenos(cuerpo);
       else if(seccion === 'transiciones') seccionTransiciones(cuerpo);
+      else if(seccion === 'tablas') seccionTablas(cuerpo);
+      else if(seccion === 'graficas') seccionGraficas(cuerpo);
+      else if(seccion === 'enlace') seccionEnlace(cuerpo);
       else seccionMios(cuerpo);
     };
     pintaPestanas(); pintaColor(); pintaSeccion();
@@ -152,6 +155,176 @@ export function crearInsertar(U){
         h('button', { class: 'btn', type: 'button', on: { click: async () => { const dst = destino(); await aplicar('Quitar transiciones', () => N.ponerTransicion(D(), dst, { tipo: 'ninguna' }), (n) => `Sin transición en ${plural(n, 'lámina', 'láminas')}.`); } } }, 'Quitar')),
       h('p', { class: 'nota' }, 'Son las transiciones estándar: se ven igual en PowerPoint, Keynote y Google Slides.'));
     pintaDir(); anima();
+  }
+
+  /* ══ LA TABLITA DE DATOS ══
+     La misma para tablas y gráficas, como la de Canva: una rejilla de casillas,
+     botones para sumar y quitar renglones y columnas, y PEGAR desde Excel o
+     Google Sheets en cualquier casilla llena la rejilla desde ahí. */
+  function editorDatos(datos0, { etiquetaFila = 'Renglón', etiquetaCol = 'Columna', minCols = 1, maxCols = 12, maxFilas = 40, cabezaCol = true } = {}){
+    let datos = datos0.map((f) => [...f]);
+    const rejilla = h('div', { class: 'rejilla-datos', role: 'grid' });
+    const pinta = () => {
+      const nc = Math.max(...datos.map((f) => f.length));
+      datos = datos.map((f) => Array.from({ length: nc }, (_, c) => f[c] ?? ''));
+      rejilla.style.gridTemplateColumns = `repeat(${nc}, minmax(96px, 1fr))`;
+      rejilla.replaceChildren(...datos.flatMap((f, r) => f.map((v, c) => h('input', {
+        class: 'casilla' + (r === 0 || (cabezaCol && c === 0) ? ' cabeza' : ''), value: v, 'data-r': r, 'data-c': c, 'aria-label': `${etiquetaFila} ${r + 1}, ${etiquetaCol.toLowerCase()} ${c + 1}`,
+        inputmode: r > 0 && c > 0 && datos0.numeros ? 'decimal' : 'text',
+        on: {
+          input: (e) => { datos[r][c] = e.target.value; },
+          paste: (e) => {
+            const t = e.clipboardData?.getData('text/plain') || '';
+            if(!/[\t\n]/.test(t.trim())) return;
+            e.preventDefault();
+            const bloque = t.replace(/\r/g, '').replace(/\n$/, '').split('\n').map((l) => l.split('\t'));
+            bloque.forEach((fila, i) => fila.forEach((v, j) => { while(datos.length <= r + i && datos.length < maxFilas) datos.push(Array(datos[0].length).fill('')); if(datos[r + i]){ while(datos[r + i].length <= c + j && datos[r + i].length < maxCols) datos.forEach((ff) => ff.push('')); datos[r + i][c + j] = v.trim(); } }));
+            pinta();
+          },
+        },
+      }))));
+    };
+    const boton = (t, fn, extra = {}) => h('button', { class: 'chip', type: 'button', on: { click: () => { fn(); pinta(); } }, ...extra }, t);
+    const nodo = h('div', { class: 'editor-datos' },
+      h('div', { class: 'marco-datos' }, rejilla),
+      h('div', { class: 'ejemplos' },
+        boton(`＋ ${etiquetaFila}`, () => { if(datos.length < maxFilas) datos.push(Array(datos[0].length).fill('')); }, { 'data-mas-fila': '' }),
+        boton(`− ${etiquetaFila}`, () => { if(datos.length > 2) datos.pop(); }, { 'data-menos-fila': '' }),
+        boton(`＋ ${etiquetaCol}`, () => { if(datos[0].length < maxCols) datos.forEach((f) => f.push('')); }, { 'data-mas-col': '' }),
+        boton(`− ${etiquetaCol}`, () => { if(datos[0].length > minCols + 1) datos.forEach((f) => f.pop()); }, { 'data-menos-col': '' })),
+      h('p', { class: 'nota' }, 'Tip: copia celdas de Excel o Google Sheets y pégalas en cualquier casilla.'));
+    pinta();
+    return { nodo, leer: () => datos.map((f) => f.map((v) => String(v ?? '').trim())) };
+  }
+
+  /* ══ TABLAS ══ */
+  let tablaF = 4, tablaC = 3, estiloTabla = 'tema';
+  function miniTabla(estilo, c){
+    const filas = [0, 1, 2, 3].map((r) => { const st = r === 0 ? { tema: c, oscuro: '#1E1E24', cebra: 'transparent', limpio: 'transparent', contorno: 'transparent' }[estilo] : { tema: r % 2 ? `${c}26` : '#FFFFFF', oscuro: r % 2 ? '#F3F3F6' : '#FFFFFF', cebra: r % 2 ? '#FFFFFF22' : 'transparent', limpio: 'transparent', contorno: 'transparent' }[estilo];
+      return `<rect x="2" y="${2 + r * 9}" width="36" height="9" fill="${st}" ${estilo === 'contorno' ? `stroke="${c}"` : ''}/>${estilo === 'limpio' && r === 0 ? `<rect x="2" y="10" width="36" height="1.5" fill="${c}"/>` : ''}`; }).join('');
+    return `<svg viewBox="0 0 40 40" width="44" height="44" aria-hidden="true">${filas}<path d="M14 2v36M26 2v36" stroke="${estilo === 'contorno' ? c : '#88888866'}" stroke-width=".8"/></svg>`;
+  }
+  function seccionTablas(cuerpo){
+    const MAXF = 8, MAXC = 6;
+    const etiqueta = h('b', { class: 'medida-tabla' });
+    const cuadros = h('div', { class: 'elegir-tamano', role: 'group', 'aria-label': 'Tamaño de la tabla' });
+    const pintaCuadros = () => {
+      etiqueta.textContent = `${tablaF} renglones × ${tablaC} columnas`;
+      cuadros.replaceChildren(...Array.from({ length: MAXF * MAXC }, (_, k) => { const r = Math.floor(k / MAXC) + 1, c = k % MAXC + 1;
+        return h('button', { type: 'button', class: 'cuadro' + (r <= tablaF && c <= tablaC ? ' si' : ''), 'aria-label': `${r} × ${c}`, 'data-tam': `${r}x${c}`, on: { click: () => { tablaF = r; tablaC = c; pintaCuadros(); } } }); }));
+    };
+    const pegado = h('textarea', { class: 'entrada', rows: '3', placeholder: 'Opcional: pega aquí celdas de Excel o Google Sheets y la tabla sale con esos datos' });
+    const estilos = h('div', { class: 'rejilla-insertar' }, N.ESTILOS_TABLA.map(([v, t]) => h('button', { class: 'pieza', type: 'button', 'data-estilo-tabla': v, 'aria-pressed': String(v === estiloTabla), on: { click: () => { estiloTabla = v; $$('[data-estilo-tabla]', cuerpo).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.estiloTabla === v))); } } },
+      h('span', { innerHTML: miniTabla(v, color) }), h('small', {}, t))));
+    pintaCuadros();
+    cuerpo.replaceChildren(
+      h('div', { class: 'seccion' }, h('h3', {}, 'Tamaño'), etiqueta, cuadros),
+      h('div', { class: 'seccion' }, h('h3', {}, 'Estilo'), estilos),
+      h('label', { class: 'campo' }, 'Datos', pegado),
+      h('button', { class: 'btn primario ancho', type: 'button', 'data-poner-tabla': '', style: { marginTop: '12px' }, on: { click: () => {
+        const tsv = pegado.value.replace(/\r/g, '').trim();
+        const datos = tsv ? tsv.split('\n').map((l) => l.split(/\t|;|,(?=\S)/).map((x) => x.trim())).slice(0, 40)
+          : Array.from({ length: tablaF }, (_, r) => Array.from({ length: tablaC }, (_, c) => r === 0 ? `Título ${c + 1}` : ''));
+        insertar('Tabla', (i) => N.insertarTabla(D(), i, { datos, estilo: estiloTabla, color }), `Tabla de ${datos.length} × ${Math.max(...datos.map((f) => f.length))} puesta. Toca «▦ Editar tabla» para llenarla.`);
+      } } }, 'Poner tabla'));
+  }
+  function editarTabla(i, cid, listo){
+    const t = N.tablaDe(D(), i, cid);
+    if(!t) return;
+    let est = t.estilo, col = t.color || color || '#AC27FF';
+    const ed = editorDatos(t.datos, { etiquetaFila: 'Renglón', etiquetaCol: 'Columna', minCols: 0, cabezaCol: false });
+    const estilos = h('div', { class: 'ejemplos' }, [['', 'Como está'], ...N.ESTILOS_TABLA].map(([v, tx]) => h('button', { class: 'chip', type: 'button', 'data-estilo-tabla': v, 'aria-pressed': String((est || '') === v), on: { click: (e) => { est = v || null; $$('[data-estilo-tabla]', e.target.parentNode).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.estiloTabla === v))); } } }, tx)));
+    hoja('Editar tabla', [ed.nodo,
+      h('div', { class: 'seccion' }, h('h3', {}, 'Estilo'), estilos),
+      h('div', { class: 'seccion' }, h('h3', {}, 'Color'), selectorColor(col, (c) => { col = c; if(!est) est = 'tema'; })),
+      h('button', { class: 'btn primario ancho', type: 'button', 'data-guardar-tabla': '', on: { click: async () => {
+        cerrar('#hoja2');
+        await aplicar('Editar tabla', () => N.ponerTabla(D(), i, cid, { datos: ed.leer(), estilo: est, color: est ? col : null }), 'Tabla actualizada.');
+        listo?.();
+      } } }, 'Listo')], '#hoja2');
+  }
+
+  /* ══ GRÁFICAS ══ */
+  const DIBUJO_GRAFICA = {
+    columnas: '<rect x="6" y="18" width="7" height="16"/><rect x="16" y="10" width="7" height="24"/><rect x="26" y="22" width="7" height="12"/>',
+    barras: '<rect x="6" y="6" width="22" height="7"/><rect x="6" y="16" width="28" height="7"/><rect x="6" y="26" width="14" height="7"/>',
+    lineas: '<path d="M5 30 15 18l8 6 12-14" fill="none" stroke-width="3" stroke-linejoin="round"/>',
+    area: '<path d="M5 34V26l10-10 8 6 12-12v24z"/>',
+    pastel: '<path d="M20 20V5a15 15 0 1 1-13 22z"/><path d="M20 20 7 27A15 15 0 0 1 20 5z" opacity=".5"/>',
+    dona: '<path fill-rule="evenodd" d="M20 5a15 15 0 1 1 0 30 15 15 0 0 1 0-30zm0 8a7 7 0 1 0 0 14 7 7 0 0 0 0-14z"/>',
+  };
+  let tipoGrafica = 'columnas';
+  const datosDeGrafica = (g) => [['', ...g.series.map((s) => s.nombre)], ...g.categorias.map((c, j) => [c, ...g.series.map((s) => String(s.valores[j] ?? ''))])];
+  const graficaDeDatos = (datos, extra) => ({ ...extra, categorias: datos.slice(1).map((f) => f[0]), series: datos[0].slice(1).map((nombre, k) => ({ nombre: nombre || `Serie ${k + 1}`, valores: datos.slice(1).map((f) => f[k + 1]) })) });
+  function opcionesGrafica(g){
+    const titulo = h('input', { class: 'entrada', type: 'text', value: g.titulo || '', placeholder: 'Título (opcional)', 'aria-label': 'Título de la gráfica' });
+    const chk = (t, v, attr) => { const c = h('input', { type: 'checkbox', checked: !!v, [attr]: '' }); return [c, h('label', { class: 'check' }, c, h('span', {}, t))]; };
+    const [cVal, lVal] = chk('Mostrar los números', g.valores ?? true, 'data-mostrar-valores');
+    const [cLey, lLey] = chk('Mostrar la leyenda', g.leyenda ?? false, 'data-mostrar-leyenda');
+    const [cApi, lApi] = chk('Apilada (una sobre otra)', g.apilada, 'data-apilada');
+    return { nodo: [h('label', { class: 'campo' }, 'Título', titulo), lVal, lLey, lApi], leer: () => ({ titulo: titulo.value.trim(), valores: cVal.checked, leyenda: cLey.checked, apilada: cApi.checked }) };
+  }
+  function tiposGrafica(alElegir, actual){
+    return h('div', { class: 'rejilla-insertar' }, N.TIPOS_GRAFICA.map(([v, t]) => h('button', { class: 'pieza', type: 'button', 'data-tipo-grafica': v, 'aria-pressed': String(v === actual), on: { click: (e) => { alElegir(v); $$('[data-tipo-grafica]', e.currentTarget.parentNode).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tipoGrafica === v))); } } },
+      h('span', { innerHTML: `<svg viewBox="0 0 40 40" width="40" height="40" fill="${color}" stroke="${color}" aria-hidden="true">${DIBUJO_GRAFICA[v]}</svg>` }), h('small', {}, t))));
+  }
+  function seccionGraficas(cuerpo){
+    const base = [['', 'Ventas', 'Meta'], ['Ene', '12', '15'], ['Feb', '19', '15'], ['Mar', '8', '15'], ['Abr', '15', '15']];
+    base.numeros = true;
+    const ed = editorDatos(base, { etiquetaFila: 'Dato', etiquetaCol: 'Serie' });
+    const op = opcionesGrafica({ valores: true, leyenda: true });
+    const pal = N.paletaTema(D());
+    cuerpo.replaceChildren(
+      h('div', { class: 'seccion' }, h('h3', {}, 'Tipo'), tiposGrafica((v) => { tipoGrafica = v; }, tipoGrafica)),
+      h('div', { class: 'seccion' }, h('h3', {}, 'Datos'), h('p', { class: 'nota' }, 'La primera columna son las etiquetas; cada columna de a lado es una serie. Pastel y dona usan sólo la primera.'), ed.nodo),
+      h('div', { class: 'seccion' }, h('h3', {}, 'Opciones'), ...op.nodo),
+      h('button', { class: 'btn primario ancho', type: 'button', 'data-poner-grafica': '', on: { click: () => {
+        const colores = [color, ...['accent2', 'accent3', 'accent4', 'accent5', 'accent6'].map((k) => pal[k] && '#' + pal[k]).filter(Boolean)];
+        const g = graficaDeDatos(ed.leer(), { tipo: tipoGrafica, colores, ...op.leer() });
+        insertar('Gráfica', (i) => N.insertarGrafica(D(), i, g), 'Gráfica puesta. Toca «📊 Editar datos» para cambiarla.');
+      } } }, 'Poner gráfica'));
+  }
+  async function editarGrafica(i, cid, listo){
+    const g = await N.graficaDe(D(), i, cid);
+    if(!g){ aviso('No pude leer esa gráfica.', 'mal'); return; }
+    let tipo = g.tipo;
+    const datos = datosDeGrafica(g); datos.numeros = true;
+    const ed = editorDatos(datos, { etiquetaFila: 'Dato', etiquetaCol: 'Serie' });
+    const op = opcionesGrafica(g);
+    hoja('Editar gráfica', [tiposGrafica((v) => { tipo = v; }, tipo), h('div', { class: 'seccion' }, h('h3', {}, 'Datos'), ed.nodo), h('div', { class: 'seccion' }, h('h3', {}, 'Opciones'), ...op.nodo),
+      h('button', { class: 'btn primario ancho', type: 'button', 'data-guardar-grafica': '', on: { click: async () => {
+        cerrar('#hoja2');
+        const nueva = graficaDeDatos(ed.leer(), { ...g, tipo, ...op.leer() });
+        nueva.series = nueva.series.map((s, k) => ({ ...s, color: g.series[k]?.color || null }));
+        await aplicar('Editar gráfica', () => N.ponerGrafica(D(), i, cid, nueva), 'Gráfica actualizada.');
+        listo?.();
+      } } }, 'Listo')], '#hoja2');
+  }
+
+  /* ══ ENLACES ══ */
+  function seccionEnlace(cuerpo){
+    const texto = h('input', { class: 'entrada', type: 'text', placeholder: 'Lo que se lee: «Ver el video», «Escríbenos»…', 'aria-label': 'Texto del enlace' });
+    const url = h('input', { class: 'entrada', type: 'url', inputmode: 'url', autocapitalize: 'off', placeholder: 'www.ejemplo.com, un correo o un WhatsApp (wa.me/52…)', 'aria-label': 'Link' });
+    cuerpo.replaceChildren(
+      h('label', { class: 'campo' }, 'Texto', texto), h('label', { class: 'campo' }, 'Link', url),
+      h('p', { class: 'nota' }, 'Al presentar, o en PowerPoint y Keynote, tocar el texto abre el link. Para ponerle link a algo que ya está en la lámina (una imagen, un icono, un botón), tócalo en la vista grande y «🔗 Enlace».'),
+      h('button', { class: 'btn primario ancho', type: 'button', 'data-poner-enlace': '', on: { click: () => {
+        if(!N.normalizarEnlace(url.value)){ aviso('Ese link no se entiende. Escríbelo como www.ejemplo.com', 'mal'); return; }
+        const d = D();
+        insertar('Enlace', (i) => N.insertarEnlace(d, i, { texto: texto.value, url: url.value, pt: (d.ancho / 12700 / 960) * 28, color }), 'Enlace puesto.');
+      } } }, 'Poner enlace'));
+  }
+  async function editarEnlace(i, cid, listo){
+    const actual = await N.enlaceDe(D(), i, cid);
+    const url = h('input', { class: 'entrada', type: 'url', inputmode: 'url', autocapitalize: 'off', value: actual || '', placeholder: 'www.ejemplo.com', 'aria-label': 'Link' });
+    hoja('Enlace', [h('label', { class: 'campo' }, 'Al tocar este elemento se abre', url),
+      h('div', { class: 'fila dos' },
+        actual ? h('button', { class: 'btn', type: 'button', 'data-quitar-enlace': '', on: { click: async () => { cerrar('#hoja2'); await aplicar('Quitar enlace', () => N.quitarEnlace(D(), i, cid), 'Enlace quitado.'); listo?.(); } } }, 'Quitar') : h('span'),
+        h('button', { class: 'btn primario', type: 'button', 'data-guardar-enlace': '', on: { click: async () => {
+          if(!N.normalizarEnlace(url.value)){ aviso('Ese link no se entiende.', 'mal'); return; }
+          cerrar('#hoja2'); await aplicar('Enlace', () => N.ponerEnlace(D(), i, cid, url.value), 'Enlace puesto: al presentar, tocarlo lo abre.'); listo?.();
+        } } }, 'Guardar'))], '#hoja2');
+    setTimeout(() => url.focus(), 60);
   }
 
   /* ══ MIS ELEMENTOS ══ */
@@ -444,7 +617,13 @@ export function crearInsertar(U){
       cuenta.classList.remove('desvanece'); void cuenta.offsetWidth; cuenta.classList.add('desvanece');
       if(tr?.segundos && i < d.laminas.length - 1) reloj = setTimeout(() => mostrar(i + 1), tr.segundos * 1000 + ms);
     };
-    const toque = (e) => { if(e.target.closest('button')) return; (e.clientX > innerWidth * 0.35 ? mostrar(i + 1) : mostrar(i - 1)); };
+    const toque = (e) => {
+      if(e.target.closest('button')) return;
+      // Un elemento con link lo abre (en otra pestaña) en vez de pasar de lámina.
+      const ln = e.target.closest('[data-enlace]');
+      if(ln){ window.open(ln.dataset.enlace, '_blank', 'noopener'); return; }
+      (e.clientX > innerWidth * 0.35 ? mostrar(i + 1) : mostrar(i - 1));
+    };
     const tecla = (e) => { if(['ArrowRight', ' ', 'PageDown', 'Enter'].includes(e.key)){ e.preventDefault(); mostrar(i + 1); } if(['ArrowLeft', 'PageUp'].includes(e.key)){ e.preventDefault(); mostrar(i - 1); } };
     let x0 = null;
     const tIni = (e) => { x0 = e.touches[0].clientX; };
@@ -463,5 +642,5 @@ export function crearInsertar(U){
     return { siguiente: () => mostrar(i + 1), anterior: () => mostrar(i - 1), get i(){ return i; } };
   }
 
-  return { panel, montarEditor, presentar, guardarDeLamina, get elegido(){ return elegido; }, fijarSeleccion: (lamina, cid) => { elegido = cid == null ? null : { lamina, cid }; } };
+  return { panel, montarEditor, presentar, guardarDeLamina, editarTabla, editarGrafica, editarEnlace, get elegido(){ return elegido; }, fijarSeleccion: (lamina, cid) => { elegido = cid == null ? null : { lamina, cid }; } };
 }

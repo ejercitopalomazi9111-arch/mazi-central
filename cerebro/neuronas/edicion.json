@@ -140,6 +140,23 @@
         "la forma no se ve bien en la vista"
       ],
       "salioDe": "Captura de «Mis elementos» en Presentaciones, 25 de septiembre."
+    },
+    {
+      "id": "grafica-compartida-al-duplicar",
+      "titulo": "Cambié la gráfica de una lámina y cambió también la de otra",
+      "gravedad": "alta",
+      "sintoma": "Se duplica una lámina que tiene una gráfica, se editan los datos de la copia, y la gráfica de la lámina original cambia igual.",
+      "causa": "Duplicar una lámina copia sus relaciones: las dos láminas apuntan a la MISMA parte ppt/charts/chartN.xml. Editar esa parte cambia las dos.",
+      "porque": "El duplicado se ve perfecto y las dos gráficas se ven iguales —porque son la misma—. Sólo se nota al editar una.",
+      "arreglo": "Antes de escribir una gráfica, ver si otra lámina la usa; si sí, se escribe una parte nueva y se re-apunta sólo esta lámina (ponerGrafica en presentaciones/nucleo.js).",
+      "comoCazarlo": "Prueba: duplicar la lámina, editar la copia y exigir que la original conserve su tipo y datos.",
+      "consejo": "Duplicar en un .pptx copia punteros, no objetos.",
+      "senales": [
+        "cambie una grafica y cambio la otra",
+        "la grafica duplicada se cambia sola",
+        "editar la copia cambia la original"
+      ],
+      "salioDe": "Gráficas de Presentaciones, 25 de septiembre. La skill de pptx lo advierte para add_slide.py."
     }
   ]
 }

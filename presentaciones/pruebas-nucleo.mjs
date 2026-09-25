@@ -362,6 +362,81 @@ for(const [nom, b64] of [['insertado.pptx', ins.b64], ['importado.pptx', ins.b64
   }
 }
 
+console.log('\n· Tablas, gráficas y enlaces (lo de Canva)');
+const cv = await en(async (N) => {
+  const d = await N.abrir(await (await fetch('/fadori/presentacion/Fadori-STEAM.pptx')).arrayBuffer());
+  const r = {};
+  // Tabla de 3×3 con estilo «tema», luego le sumo un renglón y una columna y la cambio a «oscuro».
+  r.tabla = await N.operacion(d, 'tabla', () => N.insertarTabla(d, 1, { datos: [['Producto', 'Precio', 'Piezas'], ['Pomada', '$120', '14'], ['Navaja', '$350', '3']], estilo: 'tema', color: '#AC27FF' }));
+  r.t0 = N.tablaDe(d, 1, r.tabla);
+  await N.operacion(d, 'editar tabla', () => N.ponerTabla(d, 1, r.tabla, { datos: [['Producto', 'Precio', 'Piezas', 'Total'], ['Pomada', '$120', '14', '$1,680'], ['Navaja', '$350', '3', '$1,050'], ['Tijera', '$500', '2', '$1,000']], estilo: 'oscuro', color: '#1E88E5' }));
+  r.t1 = N.tablaDe(d, 1, r.tabla);
+  const m1 = await N.modelo(d, 1);
+  const ft = m1.formas.find((f) => f.cid === r.tabla);
+  r.vistaTabla = ft?.tabla ? { cols: ft.tabla.cols.length, filas: ft.tabla.filas.length, enc: ft.tabla.filas[0].celdas[0], cuerpo: ft.tabla.filas[1].celdas[1] } : null;
+  // Mover y estirar la tabla escala sus columnas (PowerPoint las manda, no la caja).
+  const c0 = N.cajaDe(d, 1, r.tabla);
+  N.moverForma(d, 1, r.tabla, { w: c0.w / 2, h: c0.h / 2 });
+  const doc = d.partes.get(d.laminas[1].ruta);
+  const cols = [...doc.getElementsByTagNameNS(N.NS.a, 'gridCol')].map((g) => Number(g.getAttribute('w')));
+  r.colsEscaladas = Math.abs(cols.reduce((a, b) => a + b, 0) - c0.w / 2) < 10;
+  // Gráficas: de columnas en la 3, dona en la 4; la de columnas se edita a líneas.
+  r.g1 = await N.operacion(d, 'grafica', () => N.insertarGrafica(d, 2, { tipo: 'columnas', categorias: ['Ene', 'Feb', 'Mar'], series: [{ nombre: 'Ventas', valores: [12, 19, 8] }, { nombre: 'Meta', valores: [15, 15, 15] }], titulo: 'Ventas del trimestre', leyenda: true, valores: true }));
+  r.g2 = await N.operacion(d, 'dona', () => N.insertarGrafica(d, 3, { tipo: 'dona', categorias: ['A', 'B', 'C'], series: [{ nombre: 'Reparto', valores: [50, 30, 20] }] }));
+  r.lg1 = await N.graficaDe(d, 2, r.g1);
+  await N.operacion(d, 'editar gráfica', () => N.ponerGrafica(d, 2, r.g1, { ...r.lg1, tipo: 'lineas', categorias: ['Ene', 'Feb', 'Mar', 'Abr'], series: [{ nombre: 'Ventas', valores: [12, 19, 8, 22] }] }));
+  r.lg1b = await N.graficaDe(d, 2, r.g1);
+  // La lámina 3 duplicada comparte la gráfica: editar la copia no toca la original.
+  const j = await N.operacion(d, 'dup', () => N.duplicarLamina(d, 2));
+  const cidCopia = (await N.modelo(d, j)).formas.find((f) => f.grafica)?.cid;
+  await N.operacion(d, 'editar copia', () => N.ponerGrafica(d, j, cidCopia, { tipo: 'barras', categorias: ['X'], series: [{ nombre: 'S', valores: [1] }] }));
+  r.original = (await N.graficaDe(d, 2, r.g1)).tipo; r.copia = (await N.graficaDe(d, j, cidCopia)).tipo;
+  // Enlaces: un texto nuevo con link, y un link a la estrella de un diseño.
+  r.enl = await N.operacion(d, 'enlace', () => N.insertarEnlace(d, 4, { texto: 'Ver el video', url: 'youtube.com/watch?v=abc', pt: 24 }));
+  r.urlEnl = await N.enlaceDe(d, 4, r.enl);
+  r.normal = ['wa.me/524428833786', 'grupomazi.oficial@gmail.com', 'javascript:alert(1)', '442 883 3786'].map(N.normalizarEnlace);
+  r.m4 = (await N.modelo(d, 4)).formas.find((f) => f.cid === r.enl);
+  // Guardar, reabrir y leer todo otra vez.
+  const bytes = new Uint8Array(await (await N.guardar(d)).arrayBuffer());
+  const d2 = await N.abrir(bytes);
+  r.reTabla = N.tablaDe(d2, 1, r.tabla);
+  r.reGraf = (await N.graficaDe(d2, 4, r.g2))?.tipo;   // la dona se recorrió a la 5 al duplicar la 3
+  r.reEnl = await N.enlaceDe(d2, 4, r.enl);
+  r.xlsx = Object.keys(d2.zip.files).filter((f) => /embeddings\/.*\.xlsx$/.test(f)).length;
+  // Deshacer todo deja el archivo sin gráficas nuevas.
+  while(d.deshacer.length) await N.deshacer(d);
+  r.limpio = !Object.keys(d.zip.files).some((f) => /charts\/chart\d+\.xml$|Hoja_mazi/.test(f));
+  const aB = (u) => { let x = ''; for(let k = 0; k < u.length; k += 0x8000) x += String.fromCharCode.apply(null, u.subarray(k, k + 0x8000)); return btoa(x); };
+  r.b64 = aB(bytes);
+  return r;
+});
+ok('tabla nativa: se pone, se leen sus datos y su estilo', cv.t0?.datos?.[1]?.[0] === 'Pomada' && cv.t0.estilo === 'tema', JSON.stringify(cv.t0));
+ok('se le suma renglón y columna y cambia de estilo', cv.t1?.datos?.length === 4 && cv.t1.datos[0].length === 4 && cv.t1.datos[3][3] === '$1,000' && cv.t1.estilo === 'oscuro', JSON.stringify(cv.t1));
+ok('la vista la dibuja con su formato (encabezado oscuro, texto claro)', cv.vistaTabla?.cols === 4 && cv.vistaTabla.filas === 4 && cv.vistaTabla.enc.relleno?.color === '#1E1E24' && cv.vistaTabla.enc.color === '#FFFFFF' && cv.vistaTabla.enc.b, JSON.stringify(cv.vistaTabla));
+ok('encogerla encoge sus columnas (no sólo la caja)', cv.colsEscaladas);
+ok('gráfica nativa: se lee de vuelta tal cual', cv.lg1?.tipo === 'columnas' && cv.lg1.series.length === 2 && cv.lg1.series[0].valores.join() === '12,19,8' && cv.lg1.titulo === 'Ventas del trimestre', JSON.stringify(cv.lg1));
+ok('se edita: cambia de tipo y de datos', cv.lg1b?.tipo === 'lineas' && cv.lg1b.categorias.length === 4 && cv.lg1b.series[0].valores[3] === 22, JSON.stringify(cv.lg1b));
+ok('en una lámina duplicada, editar la copia NO cambia la original', cv.original === 'lineas' && cv.copia === 'barras', `${cv.original} / ${cv.copia}`);
+ok('cada gráfica lleva su hoja de Excel (para «Editar datos» en PowerPoint)', cv.xlsx >= 3, String(cv.xlsx));
+ok('enlace: el texto nace con su link y sobrevive a guardar', cv.urlEnl === 'https://youtube.com/watch?v=abc' && cv.reEnl === cv.urlEnl && cv.m4?.enlace === cv.urlEnl);
+ok('los links se entienden como los escribe una persona (y javascript: no)', JSON.stringify(cv.normal) === JSON.stringify(['https://wa.me/524428833786', 'mailto:grupomazi.oficial@gmail.com', null, 'tel:4428833786']), JSON.stringify(cv.normal));
+ok('todo sobrevive a guardar y reabrir', cv.reTabla?.datos?.length === 4 && cv.reGraf === 'dona', JSON.stringify([cv.reTabla?.datos?.length, cv.reGraf]));
+ok('deshacer quita las gráficas y sus hojas del archivo', cv.limpio);
+{
+  const ruta = join(TMP, 'canva.pptx');
+  writeFileSync(ruta, Buffer.from(cv.b64, 'base64'));
+  try{
+    execFileSync('soffice', ['--headless', '--norestore', `-env:UserInstallation=file://${TMP}/ui`, '--convert-to', 'pdf', '--outdir', TMP, ruta], { timeout: 180000, stdio: 'pipe' });
+    const paginas = (readFileSync(ruta.replace(/\.pptx$/, '.pdf')).toString('latin1').match(/\/Type\s*\/Page[^s]/g) || []).length;
+    ok(`con tablas, gráficas y enlaces abre en LibreOffice (${paginas} páginas)`, paginas === 20, String(paginas));
+  }catch(e){ ok('con tablas, gráficas y enlaces abre en LibreOffice', false, e.message.slice(0, 200)); }
+  const VALIDA = '/mnt/skills/public/pptx/scripts/office/validate.py';
+  if(existsSync(VALIDA)) try{
+    const salida = execFileSync('python3', [VALIDA, ruta, '--original', join(RAIZ, 'fadori/presentacion/Fadori-STEAM.pptx')], { encoding: 'utf8', timeout: 180000, stdio: 'pipe' });
+    ok('canva.pptx pasa el validador de PowerPoint (tablas, gráficas con Excel y enlaces)', /All validations PASSED/.test(salida), salida.slice(-600));
+  }catch(e){ ok('canva.pptx pasa el validador de PowerPoint', false, ((e.stdout || '') + (e.stderr || '')).slice(-1200)); }
+}
+
 console.log('\n· Poner texto (para la IA)');
 const tx = await en(async (N) => {
   const d = await N.abrir(await (await fetch('/fadori/presentacion/Fadori-STEAM.pptx')).arrayBuffer());
