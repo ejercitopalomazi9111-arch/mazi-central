@@ -109,6 +109,8 @@ export async function atenderBanco(storage, pedido, url, cuenta){
       ancho: Math.max(0, Math.round(Number(c.ancho) || 0)), alto: Math.max(0, Math.round(Number(c.alto) || 0)),
       titulo: '', descripcion: '', temas: [], palabras: [], estado: 'sin-revisar', cambios: '', notas: '', carpeta: '', ia: false,
       origen: typeof c.origen === 'string' && fichas[c.origen] ? c.origen : null,
+      // «nombre|tamaño» del archivo del teléfono: para no volver a subir la misma al reanudar.
+      huella: texto(c.huella, 200) || null,
       creado: ahora, cambiado: ahora, quien: cuenta,
       ...limpiarCampos(c.campos || {}),
     };

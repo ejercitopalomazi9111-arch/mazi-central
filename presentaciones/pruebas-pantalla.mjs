@@ -66,8 +66,10 @@ async function pagina(ancho, alto){
       const c = cuerpo, lista = (v) => [...new Set((Array.isArray(v) ? v : String(v || '').split(',')).map((x) => String(x).trim().toLowerCase()).filter(Boolean))];
       const limpia = (o = {}) => { const z = { ...o }; if('temas' in z) z.temas = lista(z.temas); if('palabras' in z) z.palabras = lista(z.palabras); return z; };
       if(c.accion === 'subir'){
+        // La segunda foto falla UNA vez (como una red de teléfono): tiene que reintentarse sola.
+        if(c.nombre === 'imagen_2.png' && !banco.falloUna){ banco.falloUna = true; return r.fulfill({ status: 503, contentType: 'application/json', body: '{"error":"se cayó"}' }); }
         const nid = 'f' + (banco.size + 1) + Math.random().toString(36).slice(2, 6);
-        const ficha = { id: nid, nombre: c.nombre, mime: c.mime, bytes: Buffer.from(c.datos, 'base64').length, partes: 1, ancho: c.ancho, alto: c.alto, titulo: '', descripcion: '', temas: [], palabras: [], estado: 'sin-revisar', cambios: '', notas: '', carpeta: '', ia: false, creado: Date.now() + banco.size, ...limpia(c.campos) };
+        const ficha = { id: nid, huella: c.huella || null, nombre: c.nombre, mime: c.mime, bytes: Buffer.from(c.datos, 'base64').length, partes: 1, ancho: c.ancho, alto: c.alto, titulo: '', descripcion: '', temas: [], palabras: [], estado: 'sin-revisar', cambios: '', notas: '', carpeta: '', ia: false, creado: Date.now() + banco.size, ...limpia(c.campos) };
         banco.set(nid, { ficha, datos: c.datos, mini: c.mini });
         return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ bien: true, ficha }) });
       }
@@ -109,7 +111,7 @@ async function pagina(ancho, alto){
   });
   const p = await ctx.newPage();
   const errores = []; p.on('pageerror', (e) => errores.push(e.message));
-  p.on('console', (m) => { if(m.type() === 'error') errores.push(m.text()); });
+  p.on('console', (m) => { if(m.type() === 'error' && !/status of 503/.test(m.text())) errores.push(m.text()); });
   await p.goto(BASE);
   return { p, ctx, errores };
 }
@@ -322,9 +324,15 @@ ok('antes de subir dice cuántas son y ofrece que la IA las describa', /3 imáge
 await p.getByRole('button', { name: 'Subir 3 imágenes' }).click();
 await p.waitForFunction(() => document.querySelectorAll('#rejilla-banco .banco-carta').length === 3 && !document.querySelector('#banco-progreso .progreso-banco'), null, { timeout: 20000 });
 const titulos = await p.locator('#rejilla-banco .banco-titulo').allTextContents();
-ok('subió las tres y Paulina les puso título', titulos.length === 3 && titulos.includes('Robot en el aula') && titulos.includes('Cafetería escolar'), titulos.join(' | '));
+ok('subió las tres (una se cayó y se reintentó sola) y Paulina les puso título', titulos.length === 3 && titulos.includes('Robot en el aula') && titulos.includes('Cafetería escolar'), titulos.join(' | '));
 const visto = pedidos.filter((x) => /ia-texto/.test(x.u) && x.cuerpo?.imagenes?.length).at(-1);
 ok('a Paulina le mandó la foto y le pidió JSON', visto?.cuerpo?.json === true && /^image\//.test(visto.cuerpo.imagenes[0].mime));
+const subidasAntes = pedidos.filter((x) => x.cuerpo?.accion === 'subir').length;
+await p.setInputFiles('#banco input[type=file]', [1, 2, 3].map((n) => ({ name: `imagen_${n}.png`, mimeType: 'image/png', buffer: png })));
+ok('si vuelves a elegir las mismas, avisa que ya están (para reanudar sin repetir)', /Las 3 ya están en el banco/.test(await p.locator('#hoja').textContent()));
+await p.getByRole('button', { name: 'Subir 3 imágenes' }).click();
+await p.waitForFunction(() => /ya estaban/.test(document.querySelector('#avisos').textContent));
+ok('y no sube ninguna otra vez', pedidos.filter((x) => x.cuerpo?.accion === 'subir').length === subidasAntes && (await p.locator('#rejilla-banco .banco-carta').count()) === 3);
 await p.fill('#banco input[type=search]', 'robotica');
 ok('buscar sin acentos: «robotica» encuentra la de robótica', (await p.locator('#rejilla-banco .banco-carta').count()) === 1);
 await p.fill('#banco input[type=search]', 'escuela comida');

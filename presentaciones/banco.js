@@ -184,7 +184,10 @@ export function crearBanco(U){
     const describe = h('input', { type: 'checkbox', checked: true });
     const carpeta = h('input', { class: 'entrada', type: 'text', placeholder: 'Ej. Presentación de biología (opcional)' });
     const pesa = archivos.reduce((s, f) => s + f.size, 0);
+    const ya = new Set((fichas || []).map((f) => f.huella).filter(Boolean));
+    const rep = archivos.filter((a) => ya.has(huella(a))).length;
     hoja('Subir al banco', [
+      rep ? h('p', { class: 'nota', 'data-repetidas': rep }, rep === archivos.length ? `Las ${archivos.length} ya están en el banco: no hay nada que subir.` : `${plural(rep, 'ya está', 'ya están')} en el banco y se ${rep === 1 ? 'salta' : 'saltan'}: sólo se suben ${archivos.length - rep}.`) : '',
       h('p', { class: 'a-quien' }, h('b', {}, plural(archivos.length, 'imagen', 'imágenes')), ` · ${(pesa / 1048576).toFixed(0)} MB. Las muy grandes se ajustan a 2560 px, que sobra para una lámina.`),
       h('label', { class: 'check' }, describe, h('span', {}, 'Que Paulina describa cada una', h('br'), h('small', { class: 'nota' }, `Título, qué es, temas y palabras clave. Unos segundos por imagen (≈ ${Math.max(1, Math.round(archivos.length * 6 / 60))} min en total). Deja la pantalla abierta.`))),
       h('label', { class: 'campo' }, 'Grupo o carpeta', carpeta),
@@ -192,32 +195,91 @@ export function crearBanco(U){
     ]);
   }
   let parar = false;
+  /* Subir 300 desde el iPhone. Lo que aprendimos que falla y cómo se cubre:
+     · Safari PAUSA la página si cambias de app o se apaga la pantalla: la
+       pantalla se mantiene encendida (Wake Lock) y lo que falle se reintenta.
+     · Si se corta a la mitad, se vuelven a elegir TODAS: las que ya subieron
+       se reconocen (nombre + tamaño) y se saltan. Nada se sube dos veces.
+     · Primero se SUBEN todas (lo que importa es que queden a salvo) y después
+       Paulina las describe; si cierras antes, las fotos ya están en el banco
+       y «✦ Describir N con IA» retoma lo que falte. */
+  const huella = (a) => `${a.name}|${a.size}`;
+  const espera = (ms) => new Promise((ok) => setTimeout(ok, ms));
+  async function conReintentos(fn, veces = 4){
+    for(let n = 1; ; n++){
+      try{ return await fn(); }
+      catch(e){
+        if(e.llave || e.noSeRepite || n >= veces || parar) throw e;
+        if(typeof navigator !== 'undefined' && navigator.onLine === false) await new Promise((ok) => addEventListener('online', ok, { once: true }));
+        else await espera(1500 * 2 ** (n - 1));
+      }
+    }
+  }
+  let candado = null;
+  async function pantallaEncendida(si){
+    try{
+      if(si && !candado && navigator.wakeLock) candado = await navigator.wakeLock.request('screen');
+      if(!si && candado){ await candado.release(); candado = null; }
+    }catch{}
+  }
+  const alVolver = () => { if(document.visibilityState === 'visible' && candado?.released) { candado = null; pantallaEncendida(true); } };
+  const noCierres = (e) => { e.preventDefault(); e.returnValue = ''; };
+
   async function subirTodas(archivos, { describir, carpeta }){
     parar = false;
+    const ya = new Set((fichas || []).map((f) => f.huella).filter(Boolean));
+    const repetidas = archivos.filter((a) => ya.has(huella(a))).length;
+    const cola = archivos.filter((a) => !ya.has(huella(a)));
     const caja = $('#banco-progreso');
-    const barra = h('progress', { max: archivos.length, value: 0 });
-    const texto = h('span', {}, 'Empezando…');
+    const barra = h('progress', { max: cola.length, value: 0 });
+    const texto = h('span', {}, repetidas ? `${plural(repetidas, 'ya estaba', 'ya estaban')} en el banco; subiendo ${cola.length}…` : 'Empezando…');
+    const nota = h('small', { class: 'nota' }, 'Deja esta pantalla abierta. Si se corta, vuelve a elegir todas: las que ya subieron se saltan.');
     const errores = [];
     caja.replaceChildren(h('div', { class: 'progreso-banco' }, h('div', { class: 'fila', style: { justifyContent: 'space-between', flexWrap: 'nowrap' } }, texto,
-      h('button', { class: 'chip', type: 'button', on: { click: () => { parar = true; texto.textContent = 'Deteniendo después de la que va…'; } } }, 'Detener')), barra));
-    let hechas = 0, k = 0;
-    const trabajador = async () => {
-      while(k < archivos.length && !parar){
-        const a = archivos[k++];
-        try{
-          const f = await subirUna(a, { carpeta });
-          reemplazar(f);
-          if(describir){ texto.textContent = `Describiendo «${a.name}»…`; await describirUna(f.id).catch((e) => { errores.push(`${a.name}: la IA no pudo (${e.message})`); if(e.llave) parar = true; }); }
-        }catch(e){ errores.push(`${a.name}: ${e.message}`); if(e.llave) parar = true; }
-        hechas++;
-        barra.value = hechas;
-        texto.textContent = `${hechas} de ${archivos.length}${describir ? ' · subidas y descritas' : ' · subidas'}`;
-        if(hechas % 5 === 0 || hechas === archivos.length) pintarRejilla();
+      h('button', { class: 'chip', type: 'button', on: { click: () => { parar = true; texto.textContent = 'Deteniendo después de las que van…'; } } }, 'Detener')), barra, nota));
+    await pantallaEncendida(true);
+    document.addEventListener('visibilitychange', alVolver);
+    addEventListener('beforeunload', noCierres);
+    const nuevas = [];
+    try{
+      /* 1 · subir, de tres en tres */
+      let hechas = 0, k = 0;
+      const subidor = async () => {
+        while(k < cola.length && !parar){
+          const a = cola[k++];
+          try{ const f = await conReintentos(() => subirUna(a, { carpeta })); reemplazar(f); nuevas.push(f.id); }
+          catch(e){ errores.push(`${a.name}: ${e.message}`); if(e.llave) parar = true; }
+          barra.value = ++hechas;
+          texto.textContent = `Subidas ${hechas} de ${cola.length}${repetidas ? ` (+${repetidas} que ya estaban)` : ''}`;
+          if(hechas % 10 === 0 || hechas === cola.length) pintarRejilla();
+        }
+      };
+      await Promise.all([subidor(), subidor(), subidor()]);
+      /* 2 · describir con IA, de dos en dos */
+      if(describir && nuevas.length && !parar){
+        let n = 0, j = 0;
+        barra.max = nuevas.length; barra.value = 0;
+        nota.textContent = 'Ya están todas a salvo en el banco. Si cierras ahora, «✦ Describir con IA» retoma las que falten.';
+        const descriptor = async () => {
+          while(j < nuevas.length && !parar){
+            const id = nuevas[j++];
+            try{ await conReintentos(() => describirUna(id), 3); }
+            catch(e){ errores.push(`${(fichas.find((f) => f.id === id) || {}).nombre || id}: la IA no pudo (${e.message})`); if(e.llave) parar = true; }
+            barra.value = ++n;
+            texto.textContent = `Paulina describió ${n} de ${nuevas.length}`;
+            if(n % 10 === 0 || n === nuevas.length) pintarRejilla();
+          }
+        };
+        await Promise.all([descriptor(), descriptor()]);
       }
-    };
-    await Promise.all([trabajador(), trabajador()]);   // dos a la vez: más rápido sin ahogar al teléfono
-    caja.replaceChildren(errores.length ? h('div', { class: 'progreso-banco mal' }, h('b', {}, `${plural(hechas - errores.length, 'lista', 'listas')}, ${plural(errores.length, 'falló', 'fallaron')}:`), h('ul', {}, errores.slice(0, 12).map((e) => h('li', {}, e)))) : '');
-    aviso(parar ? `Detenido: ${plural(hechas, 'imagen subida', 'imágenes subidas')}.` : `${plural(hechas - errores.length, 'imagen', 'imágenes')} en el banco.`, errores.length ? 'mal' : 'bien', { ms: 7000 });
+    }finally{
+      await pantallaEncendida(false);
+      document.removeEventListener('visibilitychange', alVolver);
+      removeEventListener('beforeunload', noCierres);
+    }
+    caja.replaceChildren(errores.length ? h('div', { class: 'progreso-banco mal' }, h('b', {}, `${plural(nuevas.length, 'subida', 'subidas')}, ${plural(errores.length, 'falló', 'fallaron')}:`), h('ul', {}, errores.slice(0, 12).map((e) => h('li', {}, e))),
+      errores.length > 12 ? h('p', { class: 'nota' }, `…y ${errores.length - 12} más.`) : '', h('p', { class: 'nota' }, 'Vuelve a elegir las mismas fotos: sólo se sube lo que falta.')) : '');
+    aviso(parar ? `Detenido: ${plural(nuevas.length, 'imagen subida', 'imágenes subidas')}.` : `${plural(nuevas.length, 'imagen nueva', 'imágenes nuevas')} en el banco${repetidas ? ` (${repetidas} ya estaban)` : ''}.`, errores.length ? 'mal' : 'bien', { ms: 7000 });
     pintar();
   }
   async function subirUna(archivo, { carpeta }){
@@ -225,13 +287,17 @@ export function crearBanco(U){
     let mime = archivo.type || 'image/jpeg';
     let final = { bytes, mime }, dims = { ancho: 0, alto: 0 };
     if(mime !== 'image/gif'){
-      const a = await IA.ajustar(bytes, mime, { max: 2560 });
+      const a = await IA.ajustar(bytes, mime, { max: 2560 }).catch(() => {
+        const e = new Error(/hei[cf]/i.test(mime + archivo.name) ? 'es HEIC y este navegador no lo abre. En el iPhone: Ajustes → Cámara → Formatos → «Más compatible», o compártela como JPG.' : 'no se pudo abrir como imagen.');
+        e.noSeRepite = true; throw e;
+      });
       // Si achicarla no la hizo más ligera (una foto ya chica), se queda la original.
       final = a.bytes.length < bytes.length || !/^image\/(jpeg|png|webp)$/.test(mime) ? { bytes: a.bytes, mime: a.mime } : { bytes, mime };
       dims = { ancho: a.ancho, alto: a.alto };
     }
     const mini = await IA.ajustar(final.bytes, final.mime === 'image/png' ? 'image/jpeg' : final.mime, { max: 480 }).catch(() => null);
     const f = await IA.banco.subir({
+      huella: huella(archivo),
       nombre: archivo.name, mime: final.mime, datos: IA.aB64(final.bytes), mini: mini ? IA.aB64(mini.bytes) : undefined, ...dims,
       campos: { titulo: archivo.name.replace(/\.[a-z0-9]+$/i, '').replace(/[_-]+/g, ' ').trim(), ...(carpeta ? { carpeta } : {}) },
     });
