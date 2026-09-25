@@ -8,9 +8,11 @@
    ═════════════════════════════════════════════════════════════════════════ */
 import * as N from './nucleo.js';
 import * as V from './vista.js';
+import * as IC from './iconos.js';
 import * as IA from './ia.js';
 import { crearBanco } from './banco.js';
 import * as NOTI from './notificaciones.js';
+import { crearInsertar } from './insertar.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -272,13 +274,15 @@ function segmento(opciones, valor, alCambiar){
   pinta();
   return s;
 }
+const hexA = (c) => { const x = N.hex6(c); return x ? '#' + x : null; };
 const COLORES = ['#FFFFFF', '#F5F2F2', '#E9E4E4', '#100A18', '#1E1428', '#000000', '#AC27FF', '#1E2761', '#002060', '#065A82', '#028090', '#2C5F2D', '#C00000', '#B85042', '#F96167', '#D69A2D'];
-function selectorColor(inicial, alCambiar){
-  let valor = inicial;
+function selectorColor(inicial, alCambiar, extra = []){
+  let valor = (hexA(inicial) || inicial);
+  const lista = [...new Set([...extra.map(hexA).filter(Boolean), ...COLORES])];
   const input = h('input', { type: 'color', value: inicial.toLowerCase(), 'aria-label': 'Otro color', on: { input: () => { valor = input.value.toUpperCase(); pinta(); alCambiar(valor); } } });
   const cont = h('div', { class: 'muestras' });
   const pinta = () => $$('.muestra', cont).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.c === valor)));
-  for(const c of COLORES) cont.append(h('button', { class: 'muestra', type: 'button', 'data-c': c, 'aria-label': `Color ${c}`, style: { background: c },
+  for(const c of lista) cont.append(h('button', { class: 'muestra', type: 'button', 'data-c': c, 'aria-label': `Color ${c}`, style: { background: c },
     on: { click: () => { valor = c; input.value = c.toLowerCase(); pinta(); alCambiar(c); } } }));
   pinta();
   return h('div', {}, cont, h('label', { class: 'campo' }, 'Otro color', input));
@@ -286,7 +290,7 @@ function selectorColor(inicial, alCambiar){
 $$('.dock [data-panel]').forEach((b) => b.addEventListener('click', () => {
   if(!D) return;
   $$('.dock [data-panel]').forEach((x) => x.setAttribute('aria-expanded', String(x === b)));
-  ({ fondo: panelFondo, texto: panelTexto, acomodar: panelAcomodar, imagenes: panelImagenes, ia: panelIA })[b.dataset.panel]();
+  ({ fondo: panelFondo, texto: panelTexto, insertar: () => INS.panel(), acomodar: panelAcomodar, imagenes: panelImagenes, ia: panelIA })[b.dataset.panel]();
 }));
 
 /* ══ FONDO ════════════════════════════════════════════════════════════════ */
@@ -840,12 +844,7 @@ async function pintarVisor(){
   marco.style.setProperty('--proporcion', `${D.ancho} / ${D.alto}`);
   const m = await N.modelo(D, i);
   marco.append(V.pintar(m));
-  marco.addEventListener('click', async (e) => {
-    const f = e.target.closest('.es-imagen');
-    if(!f?.dataset.imagen) return;
-    const im = (await N.imagenes(D)).find((x) => x.ruta === f.dataset.imagen);
-    if(im) panelUnaImagen(im, { soloLamina: im.laminas.length > 1 ? i : null });
-  });
+  modeloVisor = m;
   const textos = N.textos(D, i);
   const areas = textos.map((t) => ({ t, a: h('textarea', { class: 'entrada', rows: Math.min(8, t.texto.split('\n').length + 1) }, t.texto) }));
   const elegida = sel.has(i);
@@ -857,8 +856,10 @@ async function pintarVisor(){
         const r = await aplicar('Lámina nueva', () => N.duplicarLamina(D, i, { despues: i }), (j) => `Lámina ${j + 1} nueva, igual a la ${i + 1}. Cámbiale los textos aquí abajo.`);
         if(r != null){ actual = r; pintarVisor(); }
       } } }, '＋ Lámina igual'),
-      h('button', { class: 'btn', type: 'button', on: { click: () => { sel = new Set([i]); pintarEleccion(); $('#visor').close(); panelIA(`Mejora la redacción de la lámina ${i + 1}: más clara y directa, sin cambiar el sentido ni inventar datos.`, true); } } }, '✦ Mejorar con IA')),
-    m.formas.some((f) => f.imagen || f.relleno?.imagen) ? h('p', { class: 'nota' }, 'Toca una imagen de la lámina para cambiarla.') : null,
+      h('button', { class: 'btn', type: 'button', on: { click: () => { sel = new Set([i]); pintarEleccion(); $('#visor').close(); panelIA(`Mejora la redacción de la lámina ${i + 1}: más clara y directa, sin cambiar el sentido ni inventar datos.`, true); } } }, '✦ Mejorar con IA'),
+      h('button', { class: 'btn', type: 'button', on: { click: () => { $('#visor').close(); INS.presentar(i); } } }, '▶ Presentar')),
+    h('div', { id: 'barra-elemento', class: 'barra-elemento', hidden: true }),
+    h('p', { class: 'nota' }, 'Toca cualquier cosa de la lámina para moverla, cambiarle el tamaño o el color.'),
     textos.length ? h('div', { class: 'seccion', style: { marginTop: '16px' } }, h('h3', {}, 'Textos de la lámina'),
       h('div', { class: 'textos-lamina' }, areas.map(({ t, a }) => h('label', {}, t.titulo ? 'Título' : `Cuadro ${t.id + 1}`, a))),
       h('div', { style: { height: '10px' } }),
@@ -869,6 +870,61 @@ async function pintarVisor(){
       } } }, 'Guardar textos')) : null,
   );
   requestAnimationFrame(() => marco.style.setProperty('--k', marco.clientWidth / V.BASE));
+  INS.montarEditor(marco, i, () => pintarVisor());
+}
+let modeloVisor = null;
+async function guardarElemento(i, cid){ aviso('Pronto: «Mis elementos».'); }
+function misElementos(cuerpo){ cuerpo.replaceChildren(h('p', { class: 'nota' }, 'Pronto.')); }
+/* La barra del elemento elegido, debajo de la lámina grande. */
+function pintarBarraElemento(cid){
+  const b = $('#barra-elemento');
+  if(!b) return;
+  if(cid == null){ b.hidden = true; b.replaceChildren(); return; }
+  const c = N.cajaDe(D, actual, cid);
+  if(!c){ b.hidden = true; return; }
+  b.hidden = false;
+  const boton = (acc, tx, extra = {}) => h('button', { class: 'chip', type: 'button', 'data-accion': acc, on: { click: () => accionElemento(acc) }, ...extra }, tx);
+  const tipo = c.icono ? 'Icono' : c.grupo ? 'Diseño' : c.imagen ? 'Imagen' : c.tipo === 'cxnSp' ? 'Línea' : c.texto ? 'Texto' : 'Forma';
+  b.replaceChildren(...[h('b', {}, tipo),
+    (!c.imagen || c.icono) ? boton('color', '● Color') : null,
+    c.texto || c.grupo ? boton('colorTexto', 'A Color de letra') : null,
+    c.imagen && !c.icono ? boton('imagen', '⇄ Cambiar imagen') : null,
+    boton('duplicar', '⧉ Duplicar'), boton('frente', '↑ Al frente'), boton('atras', '↓ Atrás'),
+    boton('guardar', '★ A mis elementos'),
+    boton('borrar', '🗑 Borrar', { class: 'chip peligro' })].filter(Boolean));
+}
+async function accionElemento(acc){
+  const sel0 = INS.elegido;
+  if(!sel0) return;
+  const { lamina: i, cid } = sel0;
+  const c = N.cajaDe(D, i, cid);
+  const repinta = () => pintarVisor();
+  if(acc === 'borrar'){ INS.fijarSeleccion(i, null); await aplicar('Borrar elemento', () => N.borrarForma(D, i, cid), 'Elemento borrado.'); return repinta(); }
+  if(acc === 'duplicar'){ const n = await aplicar('Duplicar', () => N.duplicarForma(D, i, cid), 'Duplicado.'); if(n) INS.fijarSeleccion(i, n); return repinta(); }
+  if(acc === 'frente' || acc === 'atras'){ await aplicar(acc === 'frente' ? 'Al frente' : 'Atrás', () => N.ordenForma(D, i, cid, acc), acc === 'frente' ? 'Hasta el frente.' : 'Hasta atrás.'); return repinta(); }
+  if(acc === 'imagen'){
+    const f = modeloVisor?.formas.find((x) => x.cid === cid && x.rutaImagen);
+    const im = f && (await N.imagenes(D)).find((x) => x.ruta === f.rutaImagen);
+    if(im) panelUnaImagen(im, { soloLamina: im.laminas.length > 1 ? i : null });
+    return;
+  }
+  if(acc === 'guardar') return guardarElemento(i, cid);
+  if(acc === 'color' || acc === 'colorTexto'){
+    const pal = N.paletaTema(D);
+    const deTema = ['accent1', 'accent2', 'accent3', 'accent4', 'accent5', 'accent6', 'dk2', 'lt2'].map((k) => pal[k] && '#' + pal[k]).filter(Boolean);
+    let elegido = deTema[0] || '#AC27FF';
+    hoja(acc === 'color' ? 'Color' : 'Color de letra', [selectorColor(elegido, (v) => { elegido = v; }, deTema),
+      h('button', { class: 'btn primario ancho', type: 'button', on: { click: async () => {
+        cerrar('#hoja2');
+        if(acc === 'colorTexto') await aplicar('Color de letra', () => N.colorTextoForma(D, i, cid, elegido), 'Color de letra cambiado.');
+        else if(c.icono){
+          ocupado('Recoloreando el icono…');
+          let arch; try{ arch = await IC.archivos(c.icono, { color: elegido }); }finally{ ocupado(''); }
+          await aplicar('Color del icono', () => N.cambiarMediosDe(D, i, cid, arch), 'Icono recoloreado.');
+        }else await aplicar('Color', () => N.colorForma(D, i, cid, elegido), (n) => n ? 'Color cambiado.' : 'Ese elemento no tiene color que cambiar.');
+        repinta();
+      } } }, 'Poner este color')], '#hoja2');
+  }
 }
 $('#v-ant').addEventListener('click', () => { if(actual > 0){ actual--; pintarVisor(); } });
 $('#v-sig').addEventListener('click', () => { if(actual < D.laminas.length - 1){ actual++; pintarVisor(); } });
@@ -945,5 +1001,26 @@ function verVista(v){
 $$('.vistas [data-vista]').forEach((b) => b.addEventListener('click', () => verVista(b.dataset.vista)));
 if(location.hash === '#banco') verVista('banco');
 
+/* Color en un solo renglón: los de la presentación primero, y «otro». Para
+   Insertar, donde el selector grande empujaba las formas hasta abajo. */
+function colorCompacto(inicial, alCambiar, extra = []){
+  let valor = hexA(inicial) || inicial;
+  const lista = [...new Set([...extra.map(hexA).filter(Boolean), '#FFFFFF', '#141018', '#AC27FF', '#1E2761', '#C00000', '#2C5F2D', '#D69A2D'])].slice(0, 12);
+  const fila = h('div', { class: 'colores-fila' });
+  const pinta = () => $$('.muestra', fila).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.c === valor)));
+  const otro = h('input', { type: 'color', value: valor.toLowerCase(), 'aria-label': 'Otro color', title: 'Otro color', on: { input: () => { valor = otro.value.toUpperCase(); pinta(); alCambiar(valor); } } });
+  for(const c of lista) fila.append(h('button', { class: 'muestra', type: 'button', 'data-c': c, 'aria-label': `Color ${c}`, style: { background: c }, on: { click: () => { valor = c; otro.value = c.toLowerCase(); pinta(); alCambiar(c); } } }));
+  fila.append(h('label', { class: 'muestra otro' }, '+', otro));
+  pinta();
+  return fila;
+}
+
+/* ══ INSERTAR (insertar.js) ══ */
+const INS = crearInsertar({ h, $, $$, hoja, cerrar, aviso, ocupado, segmento, plural, selectorColor: colorCompacto, aplicar, N, V,
+  D: () => D, abrirVisor, objetivo, sel: () => sel, actual: () => actual, pintarBarraElemento, accionElemento,
+  misElementos: (cuerpo, destino) => misElementos(cuerpo, destino) });
+$('#b-presentar').addEventListener('click', () => INS.presentar(sel.size ? Math.min(...sel) : 0));
+$('#presentar-cerrar').addEventListener('click', () => $('#presentar').close());
+
 /* Para las pruebas: el estado a la vista, sin exponer nada del teléfono. */
-window.__pres = { get D(){ return D; }, get sel(){ return sel; }, N, BANCO, NOTI };
+window.__pres = { get D(){ return D; }, get sel(){ return sel; }, N, BANCO, NOTI, INS };

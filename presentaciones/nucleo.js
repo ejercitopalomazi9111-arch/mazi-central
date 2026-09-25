@@ -1534,7 +1534,7 @@ export const FORMAS = [
   ['rect', 'Rectángulo'], ['roundRect', 'Redondeado'], ['ellipse', 'Círculo'], ['triangle', 'Triángulo'], ['diamond', 'Rombo'],
   ['hexagon', 'Hexágono'], ['star5', 'Estrella'], ['heart', 'Corazón'], ['rightArrow', 'Flecha'], ['leftRightArrow', 'Flecha doble'],
   ['chevron', 'Chevrón'], ['homePlate', 'Etiqueta'], ['wedgeRoundRectCallout', 'Globo de diálogo'], ['cloud', 'Nube'], ['donut', 'Anillo'],
-  ['parallelogram', 'Paralelogramo'], ['plus', 'Cruz'], ['flowChartMagneticDisk', 'Cilindro'], ['line', 'Línea'], ['lineaFlecha', 'Línea con flecha'],
+  ['parallelogram', 'Inclinado'], ['plus', 'Cruz'], ['flowChartMagneticDisk', 'Cilindro'], ['line', 'Línea'], ['lineaFlecha', 'Línea con flecha'],
 ];
 export function insertarForma(deck, i, s){
   const l = deck.laminas[i], doc = docDe(deck, l.ruta);

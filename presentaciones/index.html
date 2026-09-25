@@ -127,10 +127,11 @@ button,input,select,textarea{font:inherit; color:inherit}
 /* ── menú de abajo ── */
 .dock{position:fixed; left:0; right:0; bottom:0; z-index:30; background:rgba(16,10,24,.92); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
   border-top:1px solid var(--linea); padding:6px 8px calc(6px + env(safe-area-inset-bottom))}
-.dock-fila{display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:4px; max-width:680px; margin:0 auto}
+.dock-fila{display:grid; grid-template-columns:repeat(6, minmax(0,1fr)); gap:2px; max-width:760px; margin:0 auto}
 .dock button{appearance:none; border:0; background:none; color:var(--tenue); min-height:56px; border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; font-size:12px; font-weight:600; cursor:pointer; min-width:0; padding:0 2px; white-space:nowrap; letter-spacing:-.01em}
 .dock button:hover,.dock button[aria-expanded="true"]{background:var(--superficie-2); color:var(--hueso)}
 .dock svg{width:24px; height:24px}
+@media (max-width:420px){ .dock button{font-size:11px; letter-spacing:-.02em} }
 
 /* ── hojas ── */
 dialog.hoja{border:0; padding:0; margin:auto auto 0; width:100%; max-width:640px; max-height:88dvh; border-radius:20px 20px 0 0; background:var(--superficie); color:var(--hueso); box-shadow:0 -8px 40px rgba(0,0,0,.5)}
@@ -231,6 +232,68 @@ dialog.visor{border:0; padding:0; margin:0; width:100vw; height:100dvh; max-widt
 .vistas button{appearance:none; border:0; background:none; color:var(--tenue); min-height:40px; border-radius:9px; font-size:14px; font-weight:700; cursor:pointer; white-space:nowrap; padding:0 6px; min-width:0}
 @media (max-width:400px){ .vistas button{font-size:13px; letter-spacing:-.01em} }
 .vistas button[aria-pressed="true"]{background:var(--superficie-3); color:var(--hueso)}
+
+/* insertar */
+.rejilla-insertar{display:grid; grid-template-columns:repeat(auto-fill, minmax(76px,1fr)); gap:8px}
+.pieza{appearance:none; border:1px solid var(--linea); background:var(--vacio); color:var(--hueso); border-radius:12px; padding:8px 4px; min-height:76px; cursor:pointer; display:grid; place-items:center; gap:4px; text-align:center; min-width:0}
+.pieza:hover,.pieza:focus-visible{border-color:var(--violeta)}
+.pieza[aria-pressed="true"]{border-color:var(--violeta); background:rgba(172,39,255,.12)}
+.pieza small{font-size:11px; color:var(--tenue); line-height:1.2; overflow-wrap:anywhere}
+.pieza.tr{min-height:48px}
+.pieza.tr small{font-size:12px; color:var(--hueso); overflow-wrap:normal; white-space:nowrap}
+.rejilla-insertar:has(.pieza.tr){grid-template-columns:repeat(auto-fill, minmax(96px,1fr))}
+.colores-fila{display:flex; gap:8px; overflow-x:auto; padding:2px 2px 6px; scrollbar-width:none}
+.colores-fila::-webkit-scrollbar{display:none}
+.colores-fila .muestra{flex:none; width:40px; min-height:40px; aspect-ratio:1}
+.muestra.otro{position:relative; display:grid; place-items:center; background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red); color:#fff; font:800 20px var(--ui); text-shadow:0 1px 2px #000; cursor:pointer}
+.muestra.otro input{position:absolute; inset:0; opacity:0; width:100%; height:100%; cursor:pointer}
+.rejilla-iconos{display:grid; grid-template-columns:repeat(auto-fill, minmax(52px,1fr)); gap:6px; margin:10px 0; max-height:46vh; overflow:auto; padding:2px}
+.pieza.icono{min-height:52px; padding:6px; background:#fff}
+.accion i svg{width:26px; height:26px}
+.chip.peligro{color:var(--mal); border-color:rgba(255,107,107,.4)}
+.barra-elemento{display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:10px 12px; margin:10px 0; border:1px solid var(--violeta); border-radius:12px; background:rgba(172,39,255,.08)}
+.barra-elemento b{margin-right:4px}
+.visor .marco{position:relative; touch-action:none}
+.visor .marco:focus{outline:none}
+.seleccion{position:absolute; z-index:5; outline:2px solid var(--violeta); outline-offset:0; background:rgba(172,39,255,.06); cursor:move; touch-action:none; box-sizing:border-box}
+.asa{position:absolute; width:22px; height:22px; margin:-11px; border-radius:50%; background:#fff; border:2px solid var(--violeta); box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.asa.nw{left:0; top:0; cursor:nwse-resize} .asa.ne{right:0; top:0; margin-right:-11px; cursor:nesw-resize}
+.asa.sw{left:0; bottom:0; margin-bottom:-11px; cursor:nesw-resize} .asa.se{right:0; bottom:0; margin-right:-11px; margin-bottom:-11px; cursor:nwse-resize}
+.asa::after{content:""; position:absolute; inset:-11px}   /* 44 px de blanco para el dedo */
+.visor .forma[data-cid]{cursor:pointer}
+
+/* transiciones: la muestra en el menú y la presentación */
+.muestra-tr{position:relative; height:90px; border-radius:10px; overflow:hidden; margin-bottom:12px; background:#1E2761}
+.muestra-tr > div{position:absolute; inset:0; display:grid; place-items:center; font:800 34px var(--ui); color:#fff}
+.muestra-tr .tr-a{background:#1E2761} .muestra-tr .tr-b{background:var(--violeta); opacity:0}
+.muestra-tr.corre .tr-b{opacity:1; animation-duration:.8s; animation-fill-mode:both; animation-timing-function:cubic-bezier(.2,.7,.2,1)}
+dialog.presentar{border:0; padding:0; margin:0; width:100vw; height:100dvh; max-width:none; max-height:none; background:#000; display:none; place-items:center; overflow:hidden}
+dialog.presentar[open]{display:grid}
+dialog.presentar::backdrop{background:#000}
+.presentar-escenario{position:relative; overflow:hidden; background:#fff}
+.presentar-escenario .diapo{position:absolute; inset:0; overflow:hidden; background:#fff}
+.presentar-escenario .lienzo{transform:scale(var(--k,1))}
+.presentar-escenario .diapo.entra, .presentar-escenario .diapo.sale{animation-fill-mode:both; animation-timing-function:cubic-bezier(.2,.7,.2,1)}
+.vel-fast{animation-duration:.45s} .vel-med{animation-duration:.75s} .vel-slow{animation-duration:1.1s}
+.presentar-cuenta{position:fixed; bottom:calc(12px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); color:#fff; background:rgba(0,0,0,.5); padding:4px 12px; border-radius:99px; font:600 14px var(--ui); pointer-events:none}
+.presentar-cuenta.desvanece{animation:desvanece 2.4s forwards}
+@keyframes desvanece{0%,60%{opacity:1} 100%{opacity:0}}
+.presentar-cerrar{position:fixed; top:calc(10px + env(safe-area-inset-top)); right:calc(10px + env(safe-area-inset-right)); width:44px; height:44px; border-radius:50%; border:0; background:rgba(0,0,0,.45); color:#fff; font-size:18px; cursor:pointer; opacity:.5}
+.presentar-cerrar:hover{opacity:1}
+.tr-desvanecer{animation-name:trFade} .tr-acercar{animation-name:trZoom} .tr-circulo{animation-name:trCirculo} .tr-dividir{animation-name:trDividir}
+.tr-empujar.dir-l,.tr-cubrir.dir-l{animation-name:trDesdeDer} .tr-empujar.dir-r,.tr-cubrir.dir-r{animation-name:trDesdeIzq}
+.tr-empujar.dir-u,.tr-cubrir.dir-u{animation-name:trDesdeAbajo} .tr-empujar.dir-d,.tr-cubrir.dir-d{animation-name:trDesdeArriba}
+.tr-barrer.dir-l{animation-name:trBarrerIzq} .tr-barrer.dir-r{animation-name:trBarrerDer} .tr-barrer.dir-u{animation-name:trBarrerArriba} .tr-barrer.dir-d{animation-name:trBarrerAbajo}
+.sale.tr-empujar.dir-l{animation-name:trSaleIzq} .sale.tr-empujar.dir-r{animation-name:trSaleDer} .sale.tr-empujar.dir-u{animation-name:trSaleArriba} .sale.tr-empujar.dir-d{animation-name:trSaleAbajo}
+@keyframes trFade{from{opacity:0}} @keyframes trZoom{from{opacity:0; transform:scale(.7)}}
+@keyframes trCirculo{from{clip-path:circle(0% at 50% 50%)} to{clip-path:circle(75% at 50% 50%)}}
+@keyframes trDividir{from{clip-path:inset(0 50% 0 50%)} to{clip-path:inset(0)}}
+@keyframes trDesdeDer{from{transform:translateX(100%)}} @keyframes trDesdeIzq{from{transform:translateX(-100%)}}
+@keyframes trDesdeAbajo{from{transform:translateY(100%)}} @keyframes trDesdeArriba{from{transform:translateY(-100%)}}
+@keyframes trSaleIzq{to{transform:translateX(-100%)}} @keyframes trSaleDer{to{transform:translateX(100%)}} @keyframes trSaleArriba{to{transform:translateY(-100%)}} @keyframes trSaleAbajo{to{transform:translateY(100%)}}
+@keyframes trBarrerIzq{from{clip-path:inset(0 0 0 100%)} to{clip-path:inset(0)}} @keyframes trBarrerDer{from{clip-path:inset(0 100% 0 0)} to{clip-path:inset(0)}}
+@keyframes trBarrerArriba{from{clip-path:inset(100% 0 0 0)} to{clip-path:inset(0)}} @keyframes trBarrerAbajo{from{clip-path:inset(0 0 100% 0)} to{clip-path:inset(0)}}
+@media (prefers-reduced-motion:reduce){ .presentar-escenario .diapo{animation:none !important} }
 
 /* notificaciones */
 .vistas .campana{position:relative; display:grid; place-items:center; padding:0; color:var(--tenue)}
@@ -340,6 +403,7 @@ body:has(#banco:not([hidden])):has(#barra-lote:not([hidden])) .avisos{bottom:cal
 
 <main id="trabajo" class="trabajo" hidden>
   <div class="estado"><span class="archivo" id="archivo"></span><span class="cuantas" id="cuantas"></span><span class="crece"></span>
+    <button class="chip" type="button" id="b-presentar">▶ Presentar</button>
     <label class="chip abrir-otra" id="b-abrir" hidden>Abrir otra<input class="oculto" type="file" accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation" data-abrir></label>
   </div>
   <div class="eleccion" id="eleccion">
@@ -358,6 +422,8 @@ body:has(#banco:not([hidden])):has(#barra-lote:not([hidden])) .avisos{bottom:cal
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m3 16 5-5 4 4 3-3 6 6"/></svg>Fondo</button>
     <button type="button" data-panel="texto" aria-expanded="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6V4h14v2"/><path d="M12 4v16"/><path d="M9 20h6"/></svg>Texto</button>
+    <button type="button" data-panel="insertar" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg>Insertar</button>
     <button type="button" data-panel="acomodar" aria-expanded="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/></svg>Acomodar</button>
     <button type="button" data-panel="imagenes" aria-expanded="false">
@@ -383,6 +449,11 @@ body:has(#banco:not([hidden])):has(#barra-lote:not([hidden])) .avisos{bottom:cal
     <button class="btn icono" type="button" id="v-sig" aria-label="Lámina siguiente">›</button>
   </div></div>
   <div class="visor-cuerpo" id="visor-cuerpo"></div>
+</dialog>
+<dialog class="presentar" id="presentar" aria-label="Presentación a pantalla completa">
+  <div class="presentar-escenario" id="presentar-escenario"></div>
+  <span class="presentar-cuenta" id="presentar-cuenta"></span>
+  <button class="presentar-cerrar" id="presentar-cerrar" type="button" aria-label="Salir de la presentación">✕</button>
 </dialog>
 <div class="avisos" id="avisos" role="status" aria-live="polite"></div>
 <div class="ocupado" id="ocupado" hidden><div><span class="pensando"><i></i><i></i><i></i></span><span id="ocupado-tx"></span></div></div>
