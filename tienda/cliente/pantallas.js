@@ -200,7 +200,9 @@ export async function buscar(){
         clearTimeout(guardar);
         if(!palabras.length){
           $filtros.hidden = true;
-          res.innerHTML = recientes() + `<p class="nota">Escribe lo que buscas${ejemplos.length ? `. Por ejemplo: ${ejemplos.map((x) => `<b>${esc(x)}</b>`).join(', ').replace(/, ([^,]*)$/, ' o $1')}` : ''}.</p>`;
+          res.innerHTML = recientes() + `<p class="nota">Escribe lo que buscas${ejemplos.length ? `. Por ejemplo: ${ejemplos.map((x) => `<b>${esc(x)}</b>`).join(', ').replace(/, ([^,]*)$/, ' o $1')}` : ''}.</p>
+            <h2 class="sub-bloque">O entra por categoría</h2>
+            <ul class="cats-lista">${categorias.map((c) => `<li><a href="${enlace('/c/:cat', { cat: c.id })}"><span class="circulo">${icono(c.icono)}</span><span>${esc(c.nombre)}</span>${icono('adelante')}</a></li>`).join('')}</ul>`;
           return;
         }
         // Cada palabra vale por sus sinónimos: el catálogo del proveedor viene

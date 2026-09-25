@@ -1380,3 +1380,12 @@ dialog.hoja .hoja-cuerpo{ padding: var(--e5); overflow-y: auto; max-height: calc
 .ficha .existencia{ margin: var(--e2) 0 var(--e3); font-size: 15px; }
 .garantias{ padding: var(--e3) var(--e4); border: 1px solid var(--linea); border-radius: var(--radio); background: var(--superficie); }
 .garantias li{ font-size: 14px; }
+/* Buscar sin haber escrito: las categorías a un toque, no una pantalla vacía. */
+.cats-lista{ list-style: none; margin: 0; padding: 0; border: 1px solid var(--linea); border-radius: var(--radio); background: var(--superficie); overflow: hidden; }
+.cats-lista li + li{ border-top: 1px solid var(--linea); }
+.cats-lista a{ display: flex; align-items: center; gap: var(--e3); min-height: 56px; padding: var(--e2) var(--e4); color: inherit; text-decoration: none; font-weight: 650; }
+.cats-lista a span:not(.circulo){ flex: 1; }
+.cats-lista .circulo{ width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--acento-suave); color: var(--acento-hondo); flex: none; }
+.cats-lista .circulo .ico{ width: 22px; height: 22px; }
+.cats-lista a > .ico{ width: 18px; height: 18px; color: var(--tinta-suave); }
+.cats-lista a:hover{ background: var(--hundido); }
