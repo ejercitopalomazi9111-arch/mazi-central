@@ -63,7 +63,7 @@ async function miRuta(){
       <ol class="paradas" id="ruta-lista"></ol>`,
     async alMontar($c){
       const quitar = montarRastreo($c, turno);
-      const origen = rastreo.ultimo || await aquí() || tienda;
+      const origen = rastreo.lectura || rastreo.ultimo || await aquí() || tienda;
       // Lo urgente primero, luego lo de la tarde y al final lo de mañana (ruta.js).
       const paradas = pendientes.map((p) => ({ ...lugarDe(p), id: p.id, p, tanda: tandaDeNotas(p.notas) }));
       const r = ordenarPorTandas(origen, paradas);

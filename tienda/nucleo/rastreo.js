@@ -13,7 +13,7 @@ import { distancia } from './ruta.js';
 
 const CADA_MS = 30000, CADA_KM = 0.08, REINTENTO_MS = 15000;
 let vigia = null, turno = null, ultimo = null, estado = 'apagado';
-let pendiente = null, enviando = false, reintento = null;
+let pendiente = null, enviando = false, reintento = null, lectura = null;
 const oyentes = new Set();
 const avisar = () => oyentes.forEach((f) => f(estado, ultimo));
 
@@ -43,6 +43,9 @@ async function mandar(){
 export const rastreo = {
   get estado(){ return estado; },
   get ultimo(){ return ultimo; },
+  /* La última lectura del GPS, se haya mandado o no: para calcular la ruta
+     importa dónde está AHORA, no el último punto que alcanzó a subir. */
+  get lectura(){ return lectura; },
   alCambiar(f){ oyentes.add(f); f(estado, ultimo); return () => oyentes.delete(f); },
   iniciar(turnoId){
     if(!navigator.geolocation){ estado = 'sin-gps'; avisar(); return; }
@@ -52,6 +55,7 @@ export const rastreo = {
     vigia = navigator.geolocation.watchPosition((pos) => {
       const c = pos.coords, ahora = pos.timestamp || Date.now();
       const punto = { lat: c.latitude, lng: c.longitude, cuando: ahora };
+      lectura = punto;
       const km = ultimo ? distancia(ultimo, punto) : Infinity;
       if(!pendiente && ultimo && ahora - ultimo.cuando < CADA_MS && km < CADA_KM) return;
       let velocidad = Number.isFinite(c.speed) && c.speed >= 0 ? c.speed : null;
@@ -71,7 +75,7 @@ export const rastreo = {
   detener(limpiar = true){
     if(vigia != null) navigator.geolocation.clearWatch(vigia);
     vigia = null; clearTimeout(reintento); reintento = null;
-    if(limpiar){ turno = null; ultimo = null; pendiente = null; estado = 'apagado'; avisar(); }
+    if(limpiar){ turno = null; ultimo = null; lectura = null; pendiente = null; estado = 'apagado'; avisar(); }
   },
 };
 
