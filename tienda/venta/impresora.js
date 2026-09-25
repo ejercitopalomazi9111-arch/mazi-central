@@ -86,7 +86,7 @@ async function impresora(){
       <section class="tarjeta bloque-form">
         <h2>Así sale</h2>
         <div class="segmentos" role="group" aria-label="Qué ver"><button type="button" data-vista="ticket" aria-pressed="true">Un ticket</button><button type="button" data-vista="prueba" aria-pressed="false">La hoja de prueba</button></div>
-        <pre class="vista-ticket" id="vista" aria-label="Vista previa del ticket"></pre>
+        <pre class="vista-ticket" id="vista" tabindex="0" role="region" aria-label="Vista previa del ticket"></pre>
       </section>
 
       <div class="barra-guardar">
@@ -142,7 +142,7 @@ async function impresora(){
         const r = aRenglones(vista === 'prueba' ? piezasPrueba(c, n) : piezasTicket(EJEMPLO, n), c.columnas);
         const $v = $c.querySelector('#vista');
         $v.style.setProperty('--cols', c.columnas);
-        $v.innerHTML = r.map((x) => x.qr ? '<span class="qr-falso" aria-label="Código QR"></span>' : `<span class="${x.negritas ? 'n' : ''}${x.grande ? ' g' : ''}">${esc(x.v) || ' '}</span>`).join('\n');
+        $v.innerHTML = r.map((x) => x.qr ? '<span class="qr-falso" role="img" aria-label="Código QR"></span>' : `<span class="${x.negritas ? 'n' : ''}${x.grande ? ' g' : ''}">${esc(x.v) || ' '}</span>`).join('\n');
         $c.querySelector('#estado').innerHTML = `${icono('imprimir')}<span><strong>${esc(m.marca === 'Genérica' || m.marca === 'Cualquiera' ? m.modelo : `${m.marca} ${m.modelo}`)}</strong> · ${esc(CONEXIONES[c.conexion].nombre)}${c.conectada ? ` · ${esc(c.conectada)}` : ''}</span>`;
       };
 

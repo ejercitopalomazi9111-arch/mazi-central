@@ -63,7 +63,9 @@ for(const tema of ['claro', 'oscuro']){
   const h = await recorrer(tema, null, CLIENTE);
   ok(`${CLIENTE.length} pantallas sin hallazgos graves de WCAG 2 AA`, !h.size, [...h.values()].map((v) => `[${v.impacto}] ${v.id}: ${v.ayuda}\n        en ${v.rutas.join(', ')}\n        ${v.nodos.join('\n        ')}`).join('\n      '));
 }
-for(const [rol, rutas] of [['cajero', ['/v', '/v/caja', '/v/cotizar']], ['repartidor', ['/r', '/r/ruta', '/r/turno']], ['admin', ['/a', '/a/pedidos', '/a/productos', '/a/inventario', '/a/categorias', '/a/ajustes']]]){
+for(const [rol, rutas] of [['cajero', ['/v', '/v/caja', '/v/ventas', '/v/cotizar', '/v/impresora', '/v/devolucion']], ['repartidor', ['/r', '/r/ruta', '/r/turno', '/r/historial']],
+  ['admin', ['/a', '/a/pedidos', '/a/productos', '/a/inventario', '/a/surtir', '/a/etiquetas', '/a/importar', '/a/categorias', '/a/repartidores', '/a/turnos',
+    '/a/clientes', '/a/descuentos', '/a/sorteos', '/a/conversaciones', '/a/redes', '/a/reportes', '/a/manual', '/a/ajustes']]]){
   console.log(`\n· ${rol}`);
   const h = await recorrer('claro', rol, rutas);
   ok(`${rutas.length} pantallas sin hallazgos graves de WCAG 2 AA`, !h.size, [...h.values()].map((v) => `[${v.impacto}] ${v.id}: ${v.ayuda}\n        en ${v.rutas.join(', ')}\n        ${v.nodos.join('\n        ')}`).join('\n      '));
