@@ -2030,7 +2030,14 @@ function pintarGente(){
        desconectarse sin indicación directa». Un socket abierto ES esa
        indicación, al revés: mientras esté ahí, la persona está. Sólo se cae a
        «sin señal» quien ni tiene socket ni ha dado señales en cinco minutos. */
-    const callado = !conectados.has(p.id)
+    /* ⚠ LAS SILLAS NO CUENTAN. Paulina y Negro no tienen socket: los prende
+       el servidor cuando su llave está puesta, y contestan cuando les hablan.
+       Con la regla de los cinco minutos, a los cinco minutos de que nadie
+       escribiera se pintaban «sin señal» con la llave puesta y listas para
+       contestar — Carlos: «en sala aún salen apagadas sus sillas cuando no
+       deberían». Una silla que está en el censo ESTÁ: si le faltara la llave,
+       el servidor ni la sienta (sale abajo, en «Sillas apagadas»). */
+    const callado = !p.silla && !conectados.has(p.id)
                  && Date.now() - (p.visto || 0) > 5 * 60_000;
     const clase = (p.estado === 'topado' || p.estado === 'ocupado') ? 'topado'
                 : p.estado === 'fuera' ? 'fuera'
@@ -2096,7 +2103,7 @@ function pintarGente(){
      línea», y decir que hay cuatro en línea cuando tres llevan horas callados
      es exactamente la mentira que hizo que alguien esperara 150 segundos a
      quien no iba a contestar. */
-  const enLinea = lista.filter(p => conectados.has(p.id)
+  const enLinea = lista.filter(p => p.silla || conectados.has(p.id)
                               || Date.now() - (p.visto || 0) <= 5 * 60_000).length;
   $('enLinea').textContent = enLinea ? `${enLinea} en línea` : 'nadie en línea';
   $('puntoVivo').classList.toggle('vivo', enLinea > 0);
@@ -3322,7 +3329,7 @@ function verPantalla(id){
          <div class="paso">${p.reanuda ? 'Puede seguir a las ' + hora(p.reanuda) : 'Sin hora de regreso'}${
            p.nota ? ' · ' + esc(p.nota) : ''}</div></div>`
       : '') +
-    (!conectados.has(p.id) && Date.now() - (p.visto || 0) > 5 * 60_000 && !t
+    (!p.silla && !conectados.has(p.id) && Date.now() - (p.visto || 0) > 5 * 60_000 && !t
       ? `<div class="enque"><span class="rot">Sin señal</span>
          <div class="tit">Lleva ${Math.round((Date.now() - (p.visto || 0)) / 60_000)} min sin dar señales</div>
          <div class="paso">Entró a la sala, pero eso no quiere decir que esté corriendo.

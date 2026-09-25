@@ -186,7 +186,7 @@ a{ color: inherit; }
   transform: translateX(-102%); transition: transform var(--medio) var(--entra);
 }
 .app.menu-abierto .lateral{ transform: none; }
-.lateral .cabeza{ display: flex; align-items: center; gap: var(--e3); min-height: var(--arriba); padding: 0 var(--e2) 0 var(--e4); border-bottom: 1px solid var(--linea); }
+.lateral .cabeza{ display: flex; align-items: center; gap: var(--e3); min-height: calc(var(--arriba) + env(safe-area-inset-top, 0px)); padding: env(safe-area-inset-top, 0px) var(--e2) 0 calc(var(--e4) + env(safe-area-inset-left, 0px)); border-bottom: 1px solid var(--linea); }
 .lateral .cabeza .marca{ flex: 1; min-width: 0; display: flex; text-decoration: none; align-items: center; gap: var(--e3); font-weight: 750; letter-spacing: .05em; text-transform: uppercase; font-size: var(--t-chica); }
 .lateral .cabeza .marca .sello{ width: 36px; height: 36px; border-radius: 50%; background: var(--acento); color: var(--sobre-acento); display: grid; place-items: center; flex: none; }
 .lateral .cabeza .marca .sello .ico{ width: 20px; height: 20px; }
@@ -220,8 +220,14 @@ a{ color: inherit; }
 .grupo a .etq{ flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .grupo a .obra{ font-size: 12px; color: var(--tinta-suave); border: 1px solid var(--linea-fuerte); border-radius: 99px; padding: 1px var(--e2); }
 
+/* La muesca del iPhone (desde el X; Carlos, iPhone 13): con viewport-fit=cover
+   y la app instalada, la página se mete DEBAJO de la hora. La barra de arriba
+   crece hacia arriba lo que mide la muesca y pinta su color ahí; sin esto el
+   botón del menú quedaba bajo la hora. Lo mismo la cabeza del menú lateral. */
 .arriba{
   position: sticky; top: 0; z-index: 20;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px);
   background: color-mix(in oklab, var(--superficie) 94%, transparent);
   backdrop-filter: saturate(1.2) blur(10px); -webkit-backdrop-filter: saturate(1.2) blur(10px);
   border-bottom: 1px solid var(--linea);
@@ -514,7 +520,7 @@ a{ color: inherit; }
 /* En pantalla ancha, el resumen es una columna al lado que acompaña al bajar. */
 @media (min-width: 900px){
   .carrito-rejilla{ display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: var(--e5); align-items: start; }
-  .carrito-rejilla .resumen{ position: sticky; top: calc(var(--arriba) + var(--e4)); margin: 0; padding: var(--e4); border: 1px solid var(--linea); border-radius: var(--radio); box-shadow: var(--elev-1); }
+  .carrito-rejilla .resumen{ position: sticky; top: calc(var(--arriba) + env(safe-area-inset-top, 0px) + var(--e4)); margin: 0; padding: var(--e4); border: 1px solid var(--linea); border-radius: var(--radio); box-shadow: var(--elev-1); }
 }
 
 /* «Llevas N · $X»: pegada abajo, donde está el pulgar. En pantalla ancha se
@@ -573,7 +579,7 @@ body:has(.pos-barra:not([hidden])) .avisos{ bottom: calc(96px + env(safe-area-in
 .editor-principal, .editor-lado{ display: grid; gap: var(--e4); align-content: start; min-width: 0; }
 @media (min-width: 960px){
   .editor{ grid-template-columns: minmax(0, 1fr) 340px; align-items: start; }
-  .editor-lado{ position: sticky; top: calc(var(--arriba, 64px) + var(--e4)); }
+  .editor-lado{ position: sticky; top: calc(var(--arriba, 64px) + env(safe-area-inset-top, 0px) + var(--e4)); }
   .barra-guardar{ grid-column: 1 / -1; }
 }
 .bloque-form{ padding: var(--e5); }
@@ -717,7 +723,7 @@ body:has(.pos-barra:not([hidden])) .avisos{ bottom: calc(96px + env(safe-area-in
    iPad parado escondía el ticket detrás de una barra. */
 @media (min-width: 760px){
   .pos{ grid-template-columns: minmax(0, 1fr) 300px; align-items: start; }
-  .pos-ticket{ position: sticky; top: calc(var(--arriba) + var(--e3)); max-height: calc(100dvh - var(--arriba) - var(--e6)); overflow-y: auto; }
+  .pos-ticket{ position: sticky; top: calc(var(--arriba) + env(safe-area-inset-top, 0px) + var(--e3)); max-height: calc(100dvh - var(--arriba) - var(--e6)); overflow-y: auto; }
   .pos-barra{ display: none !important; }
 }
 @media (min-width: 900px){ .pos{ grid-template-columns: minmax(0, 1fr) 360px; } }
@@ -840,7 +846,7 @@ body:has(.pos-barra:not([hidden])) .avisos{ bottom: calc(96px + env(safe-area-in
 .pagar-principal{ display: grid; gap: var(--e4); min-width: 0; }
 @media (min-width: 960px){
   .pagar{ grid-template-columns: minmax(0, 1fr) 360px; align-items: start; }
-  .pagar-resumen{ position: sticky; top: calc(var(--arriba) + var(--e4)); }
+  .pagar-resumen{ position: sticky; top: calc(var(--arriba) + env(safe-area-inset-top, 0px) + var(--e4)); }
 }
 .pagar-resumen{ padding: var(--e5); display: grid; gap: var(--e3); }
 .pagar-resumen h2{ font-size: var(--t-sub); }

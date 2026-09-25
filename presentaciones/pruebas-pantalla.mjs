@@ -1,0 +1,391 @@
+#!/usr/bin/env node
+/* ══════════════════════════════════════════════════════════════════════════
+   LA PANTALLA DE PRESENTACIONES · `node presentaciones/pruebas-pantalla.mjs`
+   ──────────────────────────────────────────────────────────────────────────
+   Un navegador de verdad a 390×844 (el iPhone de Carlos) y a 1280×800. Se
+   abre la presentación real de Fadori y se usa como la usaría él: elegir
+   láminas, cambiar el fondo, pedirle a la IA, cambiar una imagen, guardar.
+   La Sala se contesta aquí mismo (sin internet en el contenedor), así que
+   lo que se prueba es la pantalla, no a Gemini. Cada botón se comprueba por
+   su EFECTO en el archivo, no porque exista.
+   ═════════════════════════════════════════════════════════════════════════ */
+import { createServer } from 'node:http';
+import { readFileSync, mkdirSync } from 'node:fs';
+import { join, extname, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..');
+const { chromium } = await import('/opt/node22/lib/node_modules/playwright/index.mjs');
+let bien = 0, mal = 0;
+const ok = (t, c, d = '') => { c ? bien++ : mal++; console.log(`  ${c ? '✓' : '✗'} ${t}${c || !d ? '' : ` — ${d}`}`); };
+const CAPTURAS = process.env.CAPTURAS || '';
+if(CAPTURAS) mkdirSync(CAPTURAS, { recursive: true });
+
+const TIPOS = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.woff2': 'font/woff2', '.pptx': 'application/octet-stream' };
+const servidor = createServer((req, res) => {
+  let r = join(RAIZ, decodeURIComponent(req.url.split('?')[0]).replace(/^\/+/, ''));
+  if(r.endsWith('/')) r += 'index.html';
+  try{ res.writeHead(200, { 'Content-Type': TIPOS[extname(r)] || 'application/octet-stream' }).end(readFileSync(r)); }
+  catch{ res.writeHead(404).end(); }
+}).listen(0);
+const BASE = `http://localhost:${servidor.address().port}/presentaciones/`;
+const PPTX = join(RAIZ, 'fadori/presentacion/Fadori-STEAM.pptx');
+// Un PNG violeta de 64×48 (la «imagen de la IA»).
+const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAEAAAAAwCAIAAAAuKetIAAAAUklEQVR4nO3PQQ3AIADAQMAM5vHIRPC4LOkpaOfZd/zZ0gGvGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0D7M0QIyKhL5GwAAAABJRU5ErkJggg==';
+
+const b = await chromium.launch();
+const pedidos = [];
+async function pagina(ancho, alto){
+  const ctx = await b.newContext({ viewport: { width: ancho, height: alto }, acceptDownloads: true, serviceWorkers: 'block' });
+  await ctx.addInitScript(() => { try{ if(!sessionStorage.getItem('limpio')){ localStorage.setItem('salaLlave', 'llave-de-prueba'); indexedDB.deleteDatabase('presentaciones'); sessionStorage.setItem('limpio', '1'); } }catch(e){} });
+  /* Un banco de mentiras en memoria, con la misma forma que sala/servidor/banco.js. */
+  const banco = new Map();
+  await ctx.route(/sala\.palomazi9111\.workers\.dev/, async (r) => {
+    const u = r.request().url(), cuerpo = r.request().postDataJSON?.() || null;
+    pedidos.push({ u, cuerpo, llave: r.request().headers()['x-llave'] });
+    if(/\/banco/.test(u)){
+      const url = new URL(u), id = url.searchParams.get('id');
+      if(r.request().method() === 'GET' && id){
+        const f = banco.get(id);
+        return f ? r.fulfill({ contentType: f.ficha.mime, body: Buffer.from(url.searchParams.get('parte') === 'mini' && f.mini ? f.mini : f.datos, 'base64') }) : r.fulfill({ status: 404, contentType: 'application/json', body: '{"error":"no"}' });
+      }
+      if(r.request().method() === 'GET') return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ bien: true, fichas: [...banco.values()].map((x) => x.ficha).sort((a, b) => b.creado - a.creado) }) });
+      const c = cuerpo, lista = (v) => [...new Set((Array.isArray(v) ? v : String(v || '').split(',')).map((x) => String(x).trim().toLowerCase()).filter(Boolean))];
+      const limpia = (o = {}) => { const z = { ...o }; if('temas' in z) z.temas = lista(z.temas); if('palabras' in z) z.palabras = lista(z.palabras); return z; };
+      if(c.accion === 'subir'){
+        const nid = 'f' + (banco.size + 1) + Math.random().toString(36).slice(2, 6);
+        const ficha = { id: nid, nombre: c.nombre, mime: c.mime, bytes: Buffer.from(c.datos, 'base64').length, partes: 1, ancho: c.ancho, alto: c.alto, titulo: '', descripcion: '', temas: [], palabras: [], estado: 'sin-revisar', cambios: '', notas: '', carpeta: '', ia: false, creado: Date.now() + banco.size, ...limpia(c.campos) };
+        banco.set(nid, { ficha, datos: c.datos, mini: c.mini });
+        return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ bien: true, ficha }) });
+      }
+      if(c.accion === 'cambiar' || c.accion === 'cambiarVarias'){
+        const hechas = (c.ids || [c.id]).map((i) => banco.get(i)).filter(Boolean).map((x) => { Object.assign(x.ficha, limpia(c.campos)); if(c.agregarTemas) x.ficha.temas = [...new Set([...x.ficha.temas, ...lista(c.agregarTemas)])]; return x.ficha; });
+        return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ bien: true, fichas: hechas, ficha: hechas[0] }) });
+      }
+      if(c.accion === 'borrar'){ banco.delete(c.id); return r.fulfill({ contentType: 'application/json', body: '{"bien":true}' }); }
+    }
+    if(/ia-texto/.test(u) && cuerpo?.imagenes?.length){
+      const n = pedidos.filter((x) => /ia-texto/.test(x.u) && x.cuerpo?.imagenes).length;
+      const fichas = [{ titulo: 'Robot en el aula', descripcion: 'Un robot educativo sobre una mesa.', temas: ['robótica', 'escuela'], palabras: ['robot', 'mesa', 'azul'], texto_visible: '', problemas: '' },
+        { titulo: 'Laboratorio de química', descripcion: 'Matraces con líquidos de colores.', temas: ['ciencia', 'química'], palabras: ['matraz', 'laboratorio'], texto_visible: '', problemas: 'tiene marca de agua' },
+        { titulo: 'Cafetería escolar', descripcion: 'Alumnos comiendo en mesas largas.', temas: ['escuela', 'alimentación'], palabras: ['comida', 'alumnos'], texto_visible: '', problemas: '' }];
+      return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ bien: true, motor: 'gemini', texto: JSON.stringify(fichas[(n - 1) % 3]) }) });
+    }
+    if(/ia-texto/.test(u) && /directora de arte/.test(cuerpo?.sistema || '')){
+      return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ bien: true, motor: 'gemini', texto: 'LO QUE FUNCIONA\n• Los títulos son claros.\n\nLO QUE MEJORARÍA DEL DISEÑO\n• **Lámina 5**: el texto es chico.\n\nAPARTADOS QUE LE SUMARÍA\n• Resultados del piloto.\n\nSIGUIENTES TRES PASOS\n• Recuadros en los títulos.' }) });
+    }
+    if(/ia-texto/.test(u) && /Aplica los consejos/.test(cuerpo?.mensajes?.at(-1)?.texto || '')){
+      return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ bien: true, motor: 'gemini', texto: JSON.stringify({ explicacion: 'Pongo recuadros en los títulos y sumo la lámina de resultados.', cambios: [
+        { op: 'recuadro', estilo: 'auto', en: 'titulos', laminas: 'todas' },
+        { op: 'laminaNueva', copiaDe: 9, despues: 9, textos: ['Resultados del piloto', 'Menos filas\n[dato por confirmar]'] },
+        { op: 'laminaNueva', copiaDe: 99, despues: 2, textos: ['x'] }] }) }) });
+    }
+    if(/ia-texto/.test(u)){
+      const quiere = cuerpo?.mensajes?.at(-1)?.texto || '';
+      const respuesta = /formal/.test(quiere)
+        ? { explicacion: 'Pongo el título de la lámina 5 más formal y cambio Fadori por FADORI.', cambios: [
+            { op: 'texto', lamina: 5, forma: 0, texto: 'Propósito de Fadori' },
+            { op: 'reemplazar', buscar: 'Fadori', poner: 'FADORI', laminas: 'todas' },
+            { op: 'fondo', color: '#ZZZZZZ' },                       // inválido: no debe salir
+            { op: 'borrarTodo' }] }                                    // inválido: no existe
+        : { explicacion: 'Eso no lo puedo hacer con estas herramientas.', cambios: [] };
+      return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ bien: true, motor: cuerpo.motor, texto: '```json\n' + JSON.stringify(respuesta) + '\n```' }) });
+    }
+    if(/ia-imagen/.test(u)) return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ bien: true, mime: 'image/png', data: PNG.repeat(1) }) });
+    return r.fulfill({ contentType: 'application/json', body: '{}' });
+  });
+  const p = await ctx.newPage();
+  const errores = []; p.on('pageerror', (e) => errores.push(e.message));
+  p.on('console', (m) => { if(m.type() === 'error') errores.push(m.text()); });
+  await p.goto(BASE);
+  return { p, ctx, errores };
+}
+const captura = async (p, n) => { if(CAPTURAS) await p.screenshot({ path: join(CAPTURAS, n + '.png') }); };
+const desborde = (p) => p.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+
+console.log('\n· Teléfono (390×844)');
+const { p, errores } = await pagina(390, 844);
+ok('la portada invita a abrir un archivo', await p.getByText('Abrir presentación').isVisible());
+await captura(p, '01-inicio');
+await p.setInputFiles('#soltar input', PPTX);
+await p.waitForSelector('#laminas .marco .lienzo', { timeout: 20000 });
+ok('se ven las 19 láminas', (await p.locator('#laminas .lam').count()) === 19);
+ok('las miniaturas se dibujan (con formas adentro)', (await p.locator('#laminas .marco .lienzo .forma').count()) > 10);
+ok('dice que los cambios van a las 19', /las 19/.test(await p.locator('#eleccion').textContent()));
+ok('sin desborde a lo ancho', (await desborde(p)) <= 0, String(await desborde(p)));
+const mini = await p.locator('#laminas .marco').first().boundingBox();
+ok('la miniatura mide la mitad del ancho (dos columnas)', mini.width > 150 && mini.width < 190, JSON.stringify(mini));
+const lz = await p.locator('#laminas .marco .lienzo').first().boundingBox();
+ok('el dibujo cabe exacto en su marco', Math.abs(lz.width - mini.width) < 2, `${lz.width} vs ${mini.width}`);
+await captura(p, '02-laminas');
+
+// Elegir dos láminas.
+await p.locator('#laminas .lam').nth(1).click();
+await p.locator('#laminas .lam').nth(2).click();
+ok('tocar dos láminas las elige', /2 láminas elegidas/.test(await p.locator('#eleccion').textContent()));
+
+console.log('\n· Fondo en las elegidas');
+await p.click('.dock [data-panel="fondo"]');
+ok('la hoja dice a cuántas se aplica', /2 láminas elegidas/.test(await p.locator('#hoja .a-quien').textContent()));
+await p.locator('#hoja .muestra[data-c="#AC27FF"]').click();
+await captura(p, '03-fondo');
+await p.getByRole('button', { name: /Poner fondo en 2 láminas/ }).click();
+await p.waitForFunction(() => window.__pres.D.deshacer.length === 1);
+const fondos = await p.evaluate(async () => { const { D, N } = window.__pres; return Promise.all([0, 1, 2, 3].map(async (i) => (await N.modelo(D, i)).fondo.color || 'otro')); });
+ok('sólo las elegidas cambiaron de fondo', fondos[1] === '#AC27FF' && fondos[2] === '#AC27FF' && fondos[0] !== '#AC27FF' && fondos[3] !== '#AC27FF', fondos.join());
+ok('avisa lo que hizo y ofrece deshacer', /Fondo nuevo en 2 láminas/.test(await p.locator('#avisos').textContent()));
+await p.click('#b-deshacer');
+await p.waitForFunction(() => window.__pres.D.deshacer.length === 0);
+const deVuelta = await p.evaluate(async () => { const { D, N } = window.__pres; return (await N.modelo(D, 1)).fondo.color || 'otro'; });
+ok('deshacer regresa el fondo', deVuelta !== '#AC27FF', deVuelta);
+
+console.log('\n· Texto en todas');
+await p.click('#b-ninguna');
+await p.click('.dock [data-panel="texto"]');
+ok('sin elegir nada, se aplica a las 19', /las 19 láminas/.test(await p.locator('#hoja .a-quien').textContent()));
+await p.locator('#hoja input[placeholder="Buscar…"]').fill('Fadori');
+await p.locator('#hoja input[placeholder="Cambiar por…"]').fill('Fadori Pro');
+await p.getByRole('button', { name: 'Cambiar en todas' }).click();
+await p.waitForFunction(() => /Cambié/.test(document.querySelector('#avisos').textContent));
+const veces = await p.evaluate(() => window.__pres.N.resumen(window.__pres.D).flatMap((l) => l.textos).filter((t) => /Fadori Pro/.test(t.texto)).length);
+ok('buscar y cambiar lo hizo en el archivo', veces > 0, String(veces));
+await p.locator('#hoja select').selectOption('Montserrat');
+await p.getByRole('button', { name: 'Cambiar letra' }).click();
+await p.waitForFunction(() => /Letra Montserrat/.test(document.querySelector('#avisos').textContent));
+ok('cambiar letra también', true);
+ok('los botones de la hoja no se salen', await p.evaluate(() => [...document.querySelectorAll('#hoja .btn')].every((b) => b.scrollWidth <= b.clientWidth + 1)));
+await captura(p, '04-texto');
+await p.keyboard.press('Escape');
+
+const etiquetas = await p.evaluate(() => [...document.querySelectorAll('.dock button')].map((b) => { const r = document.createRange(); r.selectNodeContents(b); const t = [...r.getClientRects()]; return { d: b.getBoundingClientRect(), t: { left: Math.min(...t.map((x) => x.left)), right: Math.max(...t.map((x) => x.right)) } }; }));
+ok('los letreros del menú de abajo no se enciman', etiquetas.every((e, k) => e.t.left >= e.d.left - 0.5 && e.t.right <= e.d.right + 0.5 && (k === 0 || e.t.left >= etiquetas[k - 1].t.right + 2)), JSON.stringify(etiquetas.map((e) => [Math.round(e.t.left), Math.round(e.t.right)])));
+console.log('\n· Acomodar');
+await p.click('.dock [data-panel="acomodar"]');
+ok('trae «Arreglar todo» y seis arreglos sueltos', (await p.locator('#hoja [data-acomodo]').count()) === 8);
+ok('ningún botón de acomodar se sale de la hoja', await p.evaluate(() => [...document.querySelectorAll('#hoja .accion')].every((b) => b.scrollWidth <= b.clientWidth + 1)));
+await captura(p, '04b-acomodar');
+const antesAc = await p.evaluate(() => window.__pres.D.deshacer.length);
+await p.locator('#hoja [data-acomodo="todo"]').click();
+await p.waitForFunction((n) => window.__pres.D.deshacer.length === n + 1, antesAc);
+ok('«Arreglar todo» dice qué hizo', /Acomodé|no cambié nada/.test(await p.locator('#avisos').textContent()), await p.locator('#avisos').textContent());
+await p.click('.dock [data-panel="acomodar"]');
+await p.locator('#hoja [data-acomodo="todo"]').click();
+await p.waitForFunction(() => /no cambié nada/.test(document.querySelector('#avisos').textContent), null, { timeout: 8000 }).catch(() => {});
+ok('la segunda vez dice que ya no había nada', /no cambié nada/.test(await p.locator('#avisos').textContent()), await p.locator('#avisos').textContent());
+
+console.log('\n· IA');
+await p.click('.dock [data-panel="ia"]');
+ok('con la llave de la mesa guardada, no pide conectar', !(await p.getByText('conecta La Sala una vez').count()));
+await p.locator('#hoja textarea').fill('Hazla más formal');
+await p.getByRole('button', { name: 'Pedir', exact: true }).click();
+await p.waitForSelector('#hoja .cambios li', { timeout: 10000 });
+const pedido = pedidos.find((x) => /ia-texto/.test(x.u));
+ok('le pide a La Sala con la llave de la sala', pedido?.llave === 'llave-de-prueba', JSON.stringify(pedido?.llave));
+ok('le manda el texto de las láminas', /Propósito|Fadori/.test(pedido?.cuerpo?.sistema || ''));
+ok('enseña los cambios válidos y tira los inválidos', (await p.locator('#hoja .cambios li').count()) === 2, String(await p.locator('#hoja .cambios li').count()));
+ok('enseña cómo estaba el texto antes', (await p.locator('#hoja .cambios del').count()) === 1);
+await captura(p, '05-ia');
+await p.getByRole('button', { name: /Aplicar 2 cambios/ }).click();
+await p.waitForSelector('text=Aplicado');
+const tx5 = await p.evaluate(() => window.__pres.N.textos(window.__pres.D, 4).map((t) => t.texto));
+ok('el texto propuesto quedó en la lámina 5', tx5.includes('Propósito de Fadori') || tx5.some((t) => /Propósito de FADORI/.test(t)), JSON.stringify(tx5));
+ok('todo lo de la IA es UN solo deshacer', await p.evaluate(() => /^IA:/.test(window.__pres.D.deshacer.at(-1).nombre)));
+await p.keyboard.press('Escape');
+
+console.log('\n· Recuadro detrás del texto');
+await p.click('.dock [data-panel="texto"]');
+ok('la hoja de Texto trae el recuadro con seis estilos a la vista', (await p.locator('#hoja [data-recuadro]').count()) === 6);
+await p.locator('#hoja .segmento button', { hasText: 'Títulos' }).first().click();
+await captura(p, '10-recuadro');
+await p.locator('#hoja [data-poner-recuadro]').click();
+await p.waitForFunction(() => /Recuadro en \d+ texto/.test(document.querySelector('#avisos').textContent));
+const conSombra = await p.evaluate(async () => { const { D, N } = window.__pres; let n = 0; for(let i = 0; i < D.laminas.length; i++) n += (await N.modelo(D, i)).formas.filter((f) => f.sombra && f.relleno).length; return n; });
+ok('los títulos traen recuadro con sombra', conSombra > 5, String(conSombra));
+ok('y la miniatura lo dibuja (sombra en pantalla)', await p.evaluate(() => [...document.querySelectorAll('#laminas .forma')].some((f) => f.style.boxShadow)));
+await p.keyboard.press('Escape');
+ok('los avisos no se apilan: dos a la vista como mucho', (await p.locator('#avisos .aviso').count()) <= 2, String(await p.locator('#avisos .aviso').count()));
+await captura(p, '11-recuadro-laminas');
+await p.click('.dock [data-panel="texto"]');
+await p.getByRole('button', { name: 'Quitar recuadros' }).click();
+await p.waitForFunction(() => /recuadros? quitados?/.test(document.querySelector('#avisos').textContent));
+ok('«Quitar recuadros» los quita', await p.evaluate(async () => { const { D, N } = window.__pres; for(let i = 0; i < D.laminas.length; i++) if((await N.modelo(D, i)).formas.some((f) => f.sombra)) return false; return true; }));
+
+console.log('\n· IA: opinión y consejos');
+await p.keyboard.press('Escape');
+await p.click('.dock [data-panel="ia"]');
+await p.locator('#hoja .segmento button', { hasText: 'Opinión y consejos' }).click();
+ok('el modo opinión trae preguntas listas', await p.getByRole('button', { name: '¿Qué apartados le faltan?' }).isVisible());
+await p.getByRole('button', { name: '¿Qué opinas de mi presentación?' }).click();
+await p.waitForSelector('#hoja .msj.opinion');
+const pidioOpinion = pedidos.filter((x) => /ia-texto/.test(x.u) && /directora de arte/.test(x.cuerpo?.sistema || '')).at(-1);
+ok('a la IA le llega el diseño MEDIDO, no sólo el texto', /INFORME DE DISEÑO/.test(pidioOpinion?.cuerpo?.sistema || '') && /letraMaxPt/.test(pidioOpinion.cuerpo.sistema) && /tamanosDeLetraPt/.test(pidioOpinion.cuerpo.sistema));
+const opinion = await p.locator('#hoja .msj.opinion').textContent();
+ok('la opinión se lee limpia (sin ** de markdown)', /LO QUE FUNCIONA/.test(opinion) && !/\*\*/.test(opinion));
+await captura(p, '12-opinion');
+await p.getByRole('button', { name: '✦ Aplícalo' }).click();
+await p.waitForSelector('#hoja .cambios li');
+ok('«Aplícalo» propone los cambios (y tira la lámina que copia de una que no existe)', (await p.locator('#hoja .cambios li').count()) === 2, String(await p.locator('#hoja .cambios li').count()));
+await p.getByRole('button', { name: /Aplicar 2 cambios/ }).click();
+await p.waitForSelector('text=Aplicado');
+ok('sumó la lámina de resultados después de la 9', await p.evaluate(() => { const { D, N } = window.__pres; return D.laminas.length === 20 && N.textos(D, 9).some((t) => t.texto === 'Resultados del piloto'); }));
+ok('la rejilla se rehizo sola con 20', (await p.locator('#laminas .lam').count()) === 20);
+await p.keyboard.press('Escape');
+await p.click('#b-deshacer');
+await p.waitForFunction(() => document.querySelectorAll('#laminas .lam').length === 19);
+ok('deshacer quita la lámina nueva y los recuadros de un jalón', await p.evaluate(async () => { const { D, N } = window.__pres; if(D.laminas.length !== 19) return false; for(let i = 0; i < 19; i++) if((await N.modelo(D, i)).formas.some((f) => f.sombra)) return false; return true; }));
+
+console.log('\n· Imágenes');
+await p.click('.dock [data-panel="imagenes"]');
+await p.waitForSelector('#hoja .img-carta');
+const nImg = await p.locator('#hoja .img-carta').count();
+ok(`lista las imágenes (${nImg})`, nImg > 5);
+const ruta = await p.locator('#hoja .img-carta').first().getAttribute('data-ruta');
+await p.locator('#hoja .img-carta').first().click();
+await p.getByRole('button', { name: 'Cambiar por otra…' }).click();
+ok('ofrece banco, subir, buscar, crear y rehacer con IA', (await p.locator('#hoja2 .fuentes > *').count()) === 5);
+await p.getByRole('button', { name: /Crear con IA/ }).click();
+await p.locator('#hoja2 textarea').fill('Una cafetería escolar moderna');
+await p.locator('#hoja2 .btn.primario').click();
+await p.waitForFunction(() => /Imagen cambiada/.test(document.querySelector('#avisos').textContent), null, { timeout: 15000 });
+const img = pedidos.find((x) => /ia-imagen/.test(x.u));
+ok('le pidió la imagen a Paulina con la forma del hueco', img && /^\d+:\d+$/.test(img.cuerpo.aspecto), JSON.stringify(img?.cuerpo?.aspecto));
+const cambio = await p.evaluate(async (ruta) => { const { D, N } = window.__pres; const im = (await N.imagenes(D)).find((x) => x.ruta === ruta) || (await N.imagenes(D))[0]; return { mime: im.mime, bytes: (await N.bytesDe(D, im.ruta))?.length }; }, ruta);
+ok('la imagen nueva entró al archivo', cambio.bytes > 0, JSON.stringify(cambio));
+
+console.log('\n· Visor');
+await p.locator('#laminas .ver').nth(4).click();
+await p.waitForSelector('#visor[open] .lienzo');
+ok('abre la lámina 5 en grande', /Lámina 5 de 19/.test(await p.locator('#visor-titulo').textContent()));
+const area = p.locator('#visor .textos-lamina textarea').first();
+await area.fill('Título escrito a mano');
+await p.getByRole('button', { name: 'Guardar textos' }).click();
+await p.waitForFunction(() => /texto guardado/.test(document.querySelector('#avisos').textContent));
+ok('editar un texto a mano se guarda', await p.evaluate(() => window.__pres.N.textos(window.__pres.D, 4).some((t) => t.texto === 'Título escrito a mano')));
+await p.click('#v-sig');
+ok('la flecha pasa a la siguiente', /Lámina 6/.test(await p.locator('#visor-titulo').textContent()));
+await p.getByRole('button', { name: '＋ Lámina igual' }).click();
+await p.waitForFunction(() => /Lámina 7 de 20/.test(document.querySelector('#visor-titulo').textContent));
+ok('«＋ Lámina igual» mete una copia justo después y la abre', true);
+await p.keyboard.press('Escape');
+await p.click('#b-deshacer');
+await p.waitForFunction(() => document.querySelectorAll('#laminas .lam').length === 19);
+ok('y deshacer la quita', true);
+ok('sin desborde en el visor', (await desborde(p)) <= 0);
+await captura(p, '06-visor');
+await p.keyboard.press('Escape');
+
+console.log('\n· Banco de imágenes');
+await p.click('.vistas [data-vista="banco"]');
+await p.waitForSelector('#banco:not([hidden]) .banco-cab');
+ok('el banco abre vacío y explica qué hacer', /El banco está vacío/.test(await p.locator('#banco').textContent()));
+ok('en el banco no estorban el menú de abajo ni «Guardar»', await p.evaluate(() => document.querySelector('#dock').hidden && document.querySelector('#b-guardar').hidden));
+const png = Buffer.from(PNG, 'base64');
+await p.setInputFiles('#banco input[type=file]', [1, 2, 3].map((n) => ({ name: `imagen_${n}.png`, mimeType: 'image/png', buffer: png })));
+ok('antes de subir dice cuántas son y ofrece que la IA las describa', /3 imágenes/.test(await p.locator('#hoja').textContent()) && await p.locator('#hoja input[type=checkbox]').isChecked());
+await p.getByRole('button', { name: 'Subir 3 imágenes' }).click();
+await p.waitForFunction(() => document.querySelectorAll('#rejilla-banco .banco-carta').length === 3 && !document.querySelector('#banco-progreso .progreso-banco'), null, { timeout: 20000 });
+const titulos = await p.locator('#rejilla-banco .banco-titulo').allTextContents();
+ok('subió las tres y Paulina les puso título', titulos.length === 3 && titulos.includes('Robot en el aula') && titulos.includes('Cafetería escolar'), titulos.join(' | '));
+const visto = pedidos.filter((x) => /ia-texto/.test(x.u) && x.cuerpo?.imagenes?.length).at(-1);
+ok('a Paulina le mandó la foto y le pidió JSON', visto?.cuerpo?.json === true && /^image\//.test(visto.cuerpo.imagenes[0].mime));
+await p.fill('#banco input[type=search]', 'robotica');
+ok('buscar sin acentos: «robotica» encuentra la de robótica', (await p.locator('#rejilla-banco .banco-carta').count()) === 1);
+await p.fill('#banco input[type=search]', 'escuela comida');
+ok('dos palabras en cualquier orden', (await p.locator('#rejilla-banco .banco-carta').count()) === 1 && /Cafetería/.test(await p.locator('#rejilla-banco').textContent()));
+await p.fill('#banco input[type=search]', 'marca de agua');
+ok('busca también en lo que la IA notó (notas)', (await p.locator('#rejilla-banco .banco-carta').count()) === 1);
+await p.fill('#banco input[type=search]', '');
+await p.locator('#rejilla-banco .banco-check').nth(0).click();
+await p.locator('#rejilla-banco .banco-check').nth(1).click();
+ok('elegir dos muestra la barra de lote', /2 elegidas/.test(await p.locator('#barra-lote').textContent()));
+ok('la barra de lote cabe en el teléfono', await p.evaluate(() => { const b = document.querySelector('#barra-lote'); return [...b.children].every((c) => c.getBoundingClientRect().right <= innerWidth + 0.5); }));
+const tapa = await p.evaluate(() => { const a = document.querySelector('#avisos .aviso'); const b = document.querySelector('#barra-lote'); if(!a || !b) return false; const r1 = a.getBoundingClientRect(), r2 = b.getBoundingClientRect(); return r1.bottom > r2.top + 1; });
+ok('los avisos no tapan la barra de lote', !tapa);
+await captura(p, '08-banco');
+await p.locator('#barra-lote').getByRole('button', { name: '✓ Listas' }).click();
+await p.waitForFunction(() => /Listas · 2/.test(document.querySelector('#banco .banco-cab').textContent));
+ok('dos marcadas como listas, y el filtro las cuenta', true);
+await p.locator('#rejilla-banco .banco-abrir').first().click();
+await p.waitForSelector('#hoja[open] .grande-img');
+await p.locator('#hoja .segmento button', { hasText: 'Requiere cambios' }).click();
+await p.locator('#hoja textarea[placeholder="Qué le falta para poder usarla"]').fill('Quitar el logo viejo');
+ok('al marcar «requiere cambios» ofrece hacerlos con IA', await p.getByRole('button', { name: '✦ Hacer los cambios con IA' }).isVisible());
+await captura(p, '09-ficha');
+await p.locator('#hoja').getByRole('button', { name: 'Guardar', exact: true }).click();
+await p.waitForFunction(() => /Requieren cambios · 1/.test(document.querySelector('#banco .banco-cab').textContent));
+ok('la ficha se guardó como «requiere cambios»', true);
+const [csv] = await Promise.all([p.waitForEvent('download'), p.getByRole('button', { name: 'Exportar a Excel' }).click()]);
+const texto = readFileSync(await csv.path(), 'utf8');
+ok('exporta a Excel con acentos (marca UTF-8) y las tres', texto.charCodeAt(0) === 0xFEFF && /Título,Estado,Cambios que necesita/.test(texto) && /Quitar el logo viejo/.test(texto) && texto.trim().split('\r\n').length === 4, texto.slice(0, 120));
+ok('sin desborde en el banco', (await desborde(p)) <= 0, String(await desborde(p)));
+
+console.log('\n· Del banco a la lámina');
+await p.click('.vistas [data-vista="presentacion"]');
+ok('regresar a la presentación la deja como estaba', await p.locator('#laminas .lam').count() === 19 && await p.locator('#dock').isVisible());
+await p.click('.dock [data-panel="imagenes"]');
+await p.waitForSelector('#hoja .img-carta');
+const rutaB = await p.locator('#hoja .img-carta').nth(1).getAttribute('data-ruta');
+await p.locator('#hoja .img-carta').nth(1).click();
+await p.getByRole('button', { name: 'Cambiar por otra…' }).click();
+await p.getByRole('button', { name: /De mi banco/ }).click();
+await p.waitForSelector('#hoja2 [data-banco]');
+const listas = await p.evaluate(() => window.__pres.BANCO._estado().fichas.filter((f) => f.estado === 'lista').length);
+ok('el buscador del banco enseña sólo las que están listas', listas === 1 && (await p.locator('#hoja2 [data-banco]').count()) === listas, String(listas));
+await p.locator('#hoja2 [data-banco]').first().click();
+await p.waitForFunction(() => /Imagen cambiada/.test(document.querySelector('#avisos').textContent), null, { timeout: 10000 });
+ok('la imagen del banco entró a la presentación', true);
+await p.click('.vistas [data-vista="banco"]');
+await p.waitForSelector('#rejilla-banco .banco-carta');
+await p.locator('#rejilla-banco .banco-abrir').last().click();
+await p.waitForSelector('#hoja[open]');
+const borrar = p.getByRole('button', { name: 'Borrar del banco' });
+await borrar.click();
+ok('borrar pide confirmar', await p.getByRole('button', { name: '¿Seguro? Toca otra vez' }).isVisible());
+await p.getByRole('button', { name: '¿Seguro? Toca otra vez' }).click();
+await p.waitForFunction(() => document.querySelectorAll('#rejilla-banco .banco-carta').length === 2);
+ok('y al confirmar se va', true);
+await p.click('.vistas [data-vista="presentacion"]');
+
+console.log('\n· Guardar');
+await p.click('#b-guardar');
+const [descarga] = await Promise.all([p.waitForEvent('download'), p.getByRole('button', { name: 'Descargar' }).click()]);
+ok('descarga «(Mazi).pptx»', /\(Mazi\)\.pptx$/.test(descarga.suggestedFilename()), descarga.suggestedFilename());
+const guardado = readFileSync(await descarga.path());
+ok('el archivo es un zip de verdad (PK)', guardado[0] === 0x50 && guardado[1] === 0x4b);
+
+console.log('\n· Volver después');
+await p.waitForTimeout(1800);   // el autoguardado espera 1.5 s
+await p.reload();
+await p.waitForSelector('#b-seguir:not([hidden])', { timeout: 5000 }).catch(() => {});
+ok('al volver ofrece seguir donde se quedó', /Seguir con «Fadori-STEAM»/.test(await p.locator('#b-seguir').textContent()));
+await p.click('#b-seguir');
+await p.waitForSelector('#laminas .lienzo');
+ok('y trae los cambios', await p.evaluate(() => window.__pres.N.textos(window.__pres.D, 4).some((t) => t.texto === 'Título escrito a mano')));
+ok('ni un error de consola', !errores.length, errores.join(' | '));
+
+console.log('\n· Sin llave');
+const s = await pagina(390, 844);
+await s.p.evaluate(() => localStorage.removeItem('salaLlave'));
+await s.p.setInputFiles('#soltar input', PPTX);
+await s.p.waitForSelector('#laminas .lienzo');
+await s.p.click('.dock [data-panel="ia"]');
+ok('sin llave pide pegar el link de La Sala', await s.p.getByText('conecta La Sala una vez').isVisible());
+await s.p.locator('#hoja input[placeholder*="link de La Sala"]').fill('https://mazi-central.palomazi9111.workers.dev/sala/?sala=GRUPAZ&llave=abc123');
+await s.p.getByRole('button', { name: 'Conectar' }).click();
+ok('saca la llave del link y la guarda', (await s.p.evaluate(() => localStorage.getItem('salaLlave'))) === 'abc123');
+
+console.log('\n· Computadora (1280×800)');
+const c = await pagina(1280, 800);
+await c.p.setInputFiles('#soltar input', PPTX);
+await c.p.waitForSelector('#laminas .lienzo');
+const cols = await c.p.evaluate(() => getComputedStyle(document.querySelector('#laminas')).gridTemplateColumns.split(' ').length);
+ok('cuatro columnas', cols === 4, String(cols));
+await c.p.click('.dock [data-panel="fondo"]');
+const hj = await c.p.locator('#hoja').boundingBox();
+ok('la hoja sale de lado, no tapando todo', hj.x > 700 && hj.height > 700, JSON.stringify(hj));
+await captura(c.p, '07-compu');
+ok('ni un error de consola', !c.errores.length, c.errores.join(' | '));
+
+await b.close(); servidor.close();
+console.log(`\n${mal ? '✗' : '✓'} ${bien} pasan · ${mal} fallan\n`);
+process.exit(mal ? 1 : 0);

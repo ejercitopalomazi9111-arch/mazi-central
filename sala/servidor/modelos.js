@@ -172,11 +172,24 @@ export async function preguntar(id, env, sistema, mensajes, op = {}) {
   const corta = new AbortController();
   const reloj = setTimeout(() => corta.abort(), op.esperaMs || ESPERA_MODELO_MS);
 
+  /* Ver imágenes: sólo Gemini. Llama 3.3 (Negro) es de puro texto, y mandarle
+     una foto la ignoraría callado; mejor decirlo. */
+  const imagenes = Array.isArray(op.imagenes) ? op.imagenes : [];
+  if (imagenes.length && id !== 'gemini') {
+    return { bien: false, motor: id, error: `${M.nombre} no ve imágenes. Para describirlas usa a Paulina (Gemini).` };
+  }
+  const cuerpo = M.arma(M.modelo, sistema, mensajes, tope);
+  if (imagenes.length) {
+    const ultimo = [...cuerpo.contents].reverse().find(x => x.role === 'user');
+    if (ultimo) ultimo.parts.unshift(...imagenes.map(x => ({ inlineData: { mimeType: x.mime, data: x.data } })));
+  }
+  if (op.json && id === 'gemini') cuerpo.generationConfig.responseMimeType = 'application/json';
+
   try {
     const r = await fetch(M.url(M.modelo, k), {
       method: 'POST',
       headers: M.cabeceras(k),
-      body: JSON.stringify(M.arma(M.modelo, sistema, mensajes, tope)),
+      body: JSON.stringify(cuerpo),
       signal: corta.signal,
     });
 
@@ -342,4 +355,82 @@ export function motorDe(quien){
   const t = String(quien).toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   return ALIAS[t] || null;
+}
+
+/* ── HACER Y REHACER IMÁGENES · Paulina con su modelo de imagen ───────────
+   Lo pidió Carlos para sus presentaciones: «rehacer algunas imágenes con IA
+   para que se vean bien». Verificado el 25 de septiembre de 2026 contra
+   ai.google.dev/gemini-api/docs/image-generation: el modelo general es
+   `gemini-3.1-flash-image` («Nano Banana 2») y se le habla por
+   `v1beta/interactions` con la llave en la cabecera `x-goog-api-key`; para
+   rehacer una imagen se le pasa la imagen en el mismo `input`.
+
+   ⚠ LA FORMA DE LA RESPUESTA NO VIENE ESCRITA EN CRUDO en la documentación
+   (sólo el atajo `interaction.output_image` del SDK). Por eso no se lee un
+   camino fijo: se recorre lo que conteste y se toma la ÚLTIMA imagen que
+   aparezca, venga como `{type:'image', data}` (interactions) o como
+   `inlineData` (el `generateContent` de siempre). Si interactions contesta
+   404, se intenta generateContent con el mismo modelo: una API que cambia de
+   nombre no debe tumbar la herramienta. */
+export const MODELO_IMAGEN = 'gemini-3.1-flash-image';
+export const ESPERA_IMAGEN_MS = 120_000;
+const ASPECTOS = new Set(['1:1', '2:3', '3:2', '3:4', '4:3', '4:5', '5:4', '9:16', '16:9', '21:9']);
+
+/** La última imagen que haya en cualquier parte de una respuesta. */
+export function buscarImagen(j){
+  let hallada = null, texto = '';
+  const ver = (x) => {
+    if(!x || typeof x !== 'object') return;
+    if(Array.isArray(x)){ x.forEach(ver); return; }
+    const inl = x.inlineData || x.inline_data;
+    if(inl && typeof inl.data === 'string' && inl.data.length > 100) hallada = { mime: inl.mimeType || inl.mime_type || 'image/png', data: inl.data };
+    else if(x.type === 'image' && typeof x.data === 'string' && x.data.length > 100) hallada = { mime: x.mime_type || x.mimeType || 'image/png', data: x.data };
+    if(x.type === 'text' && typeof x.text === 'string') texto += x.text;
+    else if(typeof x.text === 'string' && !x.type) texto += x.text;
+    for(const v of Object.values(x)) if(v && typeof v === 'object') ver(v);
+  };
+  ver(j);
+  return hallada ? { ...hallada, texto: texto.trim() } : null;
+}
+
+/** pedido: { prompt, imagenes?: [{ mime, data }], aspecto?, tamano? } */
+export async function generarImagen(env, pedido = {}, hacer = fetch){
+  const k = env && env.GEMINI_API_KEY;
+  if(!k) return { bien: false, error: 'Paulina está apagada: falta el secreto GEMINI_API_KEY en el proyecto sala de Cloudflare.' };
+  const prompt = String(pedido.prompt || '').trim().slice(0, 4000);
+  if(!prompt) return { bien: false, error: 'Falta decir qué imagen quieres.' };
+  const imagenes = (pedido.imagenes || []).filter((i) => i && typeof i.data === 'string').slice(0, 4);
+  const aspecto = ASPECTOS.has(pedido.aspecto) ? pedido.aspecto : null;
+  const tamano = ['1K', '2K'].includes(pedido.tamano) ? pedido.tamano : '1K';
+
+  const corta = new AbortController();
+  const reloj = setTimeout(() => corta.abort(), ESPERA_IMAGEN_MS);
+  const leer = async (r) => {
+    if(r.status === 401 || r.status === 403) return { bien: false, error: `Google rechazó la llave (${r.status}). GEMINI_API_KEY está puesta pero no sirve.` };
+    if(r.status === 429) return { bien: false, error: 'Google dice que vamos muy seguido (429). Espera un momento.' };
+    if(!r.ok) return { bien: false, estado: r.status, error: `Google contestó ${r.status}. ${(await r.text().catch(() => '')).slice(0, 240)}` };
+    const img = buscarImagen(await r.json());
+    return img ? { bien: true, ...img, modelo: MODELO_IMAGEN } : { bien: false, error: 'Paulina contestó sin imagen. Prueba a describirla distinto (a veces un filtro de contenido la frena).' };
+  };
+  try{
+    const input = [{ type: 'text', text: prompt }, ...imagenes.map((i) => ({ type: 'image', mime_type: i.mime || 'image/png', data: i.data }))];
+    const r1 = await hacer('https://generativelanguage.googleapis.com/v1beta/interactions', {
+      method: 'POST', signal: corta.signal,
+      headers: { 'x-goog-api-key': k, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: MODELO_IMAGEN, input, response_format: { type: 'image', ...(aspecto ? { aspect_ratio: aspecto } : {}), image_size: tamano } }),
+    });
+    const primero = await leer(r1);
+    if(primero.bien || primero.estado !== 404) return primero;
+    // interactions no existe (o cambió de nombre): el camino de siempre.
+    const r2 = await hacer(`https://generativelanguage.googleapis.com/v1beta/models/${MODELO_IMAGEN}:generateContent`, {
+      method: 'POST', signal: corta.signal,
+      headers: { 'x-goog-api-key': k, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }, ...imagenes.map((i) => ({ inlineData: { mimeType: i.mime || 'image/png', data: i.data } }))] }],
+        generationConfig: { responseModalities: ['IMAGE', 'TEXT'], ...(aspecto ? { imageConfig: { aspectRatio: aspecto } } : {}) } }),
+    });
+    return await leer(r2);
+  }catch(e){
+    if(e && e.name === 'AbortError') return { bien: false, error: `Paulina no terminó la imagen en ${ESPERA_IMAGEN_MS / 1000} s.` };
+    return { bien: false, error: `La imagen falló: ${e && e.message || e}` };
+  }finally{ clearTimeout(reloj); }
 }

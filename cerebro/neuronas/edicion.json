@@ -87,6 +87,23 @@
         "el ctrl+z no sirve aquí"
       ],
       "salioDe": "La neurona de deshacer mejor que confirmar, del área de carga mental."
+    },
+    {
+      "id": "titulos-que-no-son-marcador",
+      "titulo": "«Sólo títulos» no toca nada en presentaciones hechas con cuadros sueltos",
+      "gravedad": "alta",
+      "sintoma": "Cambiar el color de los títulos en todas las láminas dice que salió bien y no cambia ni uno.",
+      "causa": "Los títulos se buscaban por el marcador de título (<p:ph type=\"title\">). Lo que sale de Canva, Google, pptxgenjs o python-pptx suele ser todo cuadro de texto suelto: no hay marcador.",
+      "porque": "Probado con una presentación hecha en PowerPoint, funciona; con una generada, cuenta cero y nadie se entera.",
+      "arreglo": "Si la lámina no trae título formal, cuenta como título el cuadro con la letra más grande (20 pt o más). Está en cuerposDeTexto() de presentaciones/nucleo.js.",
+      "comoCazarlo": "Las operaciones en lote regresan cuántas cosas tocaron. Una prueba que exige ese número mayor que cero contra un archivo real lo caza al instante.",
+      "consejo": "Una operación en lote que toca cero cosas no salió bien: salió vacía. Hay que contar y decirlo.",
+      "senales": [
+        "no cambiaron los títulos",
+        "dice listo y no hizo nada",
+        "solo titulos no funciona"
+      ],
+      "salioDe": "presentaciones/pruebas-nucleo.mjs: «color de títulos» daba 0 en las dos presentaciones de Fadori."
     }
   ]
 }
