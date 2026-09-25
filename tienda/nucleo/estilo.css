@@ -953,8 +953,14 @@ a.cifra-caja{ text-decoration: none; }
 .rastreo{ display: flex; align-items: center; gap: var(--e2); font-size: var(--t-chica); font-weight: 650; color: var(--tinta-suave); margin: 0 0 var(--e3); }
 .rastreo .ico{ width: 18px; height: 18px; }
 .rastreo.compartiendo{ color: var(--bien); }
-.rastreo.sin-permiso, .rastreo.rechazado, .rastreo.sin-señal{ color: var(--ojo); }
+.rastreo.sin-permiso, .rastreo.rechazado, .rastreo.sin-señal, .rastreo.sin-red{ color: var(--ojo); }
 .ruta-cabeza{ display: grid; gap: var(--e3); }
+.tramos{ display: grid; gap: var(--e2); }
+/* Tres cifras en un teléfono: el número manda y la unidad va chica. Con el
+   tamaño normal «9.7 km» y «56 min» se cortaban en «9.7 …» y «56 …». */
+.ruta-cabeza .cifra-caja{ padding: var(--e3); }
+.ruta-cabeza .cifra-caja .valor{ font-size: var(--t-sub); white-space: normal; overflow: visible; }
+.cifra-caja .valor small{ font-size: .6em; font-weight: 700; color: var(--tinta-suave); }
 .ruta-cabeza .cifras{ grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; }
 .rep-fila .lado{ display: grid; justify-items: end; gap: 4px; }
 .seguimiento{ display: grid; gap: var(--e4); max-width: 720px; }

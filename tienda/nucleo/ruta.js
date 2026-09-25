@@ -101,6 +101,26 @@ export function ordenar(origen, paradas){
   return { orden: [...orden, ...sin], sinLugar: sin, km, minutos: estimarMinutos(km, orden.length) };
 }
 
+/* La ruta en ligas de Google Maps, por tramos. Google acepta a lo más TRES
+   paradas intermedias cuando la liga se abre en el navegador del teléfono
+   (nueve en otros lados; documentación de Maps URLs, verificada el 25 de
+   septiembre de 2026). Antes iba todo en una liga con hasta nueve: en el
+   teléfono se perdían paradas, y de la once en adelante se tiraban calladas.
+   Cada tramo sale de donde acabó el anterior, así que se recorren en orden. */
+export const POR_TRAMO = 4;
+export function tramosMaps(origen, paradas, porTramo = POR_TRAMO){
+  const con = paradas.filter(tieneLugar), tramos = [];
+  const xy = (p) => `${+p.lat.toFixed(6)},${+p.lng.toFixed(6)}`;
+  for(let i = 0; i < con.length; i += porTramo){
+    const grupo = con.slice(i, i + porTramo), desde = i ? con[i - 1] : (tieneLugar(origen) ? origen : null);
+    const destino = grupo.at(-1), intermedias = grupo.slice(0, -1);
+    const url = 'https://www.google.com/maps/dir/?api=1' + (desde ? `&origin=${xy(desde)}` : '') + `&destination=${xy(destino)}`
+      + (intermedias.length ? `&waypoints=${encodeURIComponent(intermedias.map(xy).join('|'))}` : '') + '&travelmode=driving';
+    tramos.push({ desde: i + 1, hasta: i + grupo.length, paradas: grupo, url });
+  }
+  return tramos;
+}
+
 /* En ciudad un repartidor en moto promedia ~22 km/h puerta a puerta, y cada
    entrega se lleva ~5 minutos. La línea recta se multiplica por 1.35: las
    calles no van derecho. */

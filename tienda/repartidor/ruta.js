@@ -16,13 +16,15 @@ import { icono } from '../nucleo/iconos.js';
 import { esc, pesos, plural, estado } from '../nucleo/piezas.js';
 import { negocio, miTurno, misEntregas, totalConEnvio, repartidoresEnTurno, pedidosNegocio, misPedidos, pedidoPorId, dondeVa } from '../nucleo/datos.js';
 import { crearMapa } from '../nucleo/mapa.js';
-import { ordenar, distancia, estimarMinutos, tieneLugar } from '../nucleo/ruta.js';
+import { ordenar, distancia, estimarMinutos, tieneLugar, tramosMaps } from '../nucleo/ruta.js';
 import { rastreo, TEXTO_RASTREO } from '../nucleo/rastreo.js';
 import { ESTADOS } from '../cliente/pedir.js';
 import { enPausa } from '../nucleo/horas.js';
 
 const HORA = new Intl.DateTimeFormat('es-MX', { hour: 'numeric', minute: '2-digit' });
-const hace = (d) => { const s = Math.round((Date.now() - new Date(d)) / 1000); return s < 60 ? `hace ${s} s` : s < 3600 ? `hace ${Math.round(s / 60)} min` : `desde las ${HORA.format(new Date(d))}`; };
+// El reloj del teléfono y el de la base nunca están idénticos: sin el tope,
+// un punto recién llegado decía «hace -1 s».
+const hace = (d) => { const s = Math.max(0, Math.round((Date.now() - new Date(d)) / 1000)); return s < 10 ? 'hace un momento' : s < 60 ? `hace ${s} s` : s < 3600 ? `hace ${Math.round(s / 60)} min` : `desde las ${HORA.format(new Date(d))}`; };
 const kmh = (ms) => ms == null ? null : Math.round(ms * 3.6);
 const LIMITE_KMH = 60;
 const lugarDe = (p) => tieneLugar(p.direccion) ? { lat: Number(p.direccion.lat), lng: Number(p.direccion.lng) } : null;
@@ -65,14 +67,16 @@ async function miRuta(){
       const paradas = pendientes.map((p) => ({ ...lugarDe(p), id: p.id, p }));
       const r = ordenar(origen, paradas);
       const paraMaps = r.orden.filter(tieneLugar);
-      const url = paraMaps.length ? `https://www.google.com/maps/dir/?api=1${origen ? `&origin=${origen.lat},${origen.lng}` : ''}&destination=${paraMaps.at(-1).lat},${paraMaps.at(-1).lng}${paraMaps.length > 1 ? `&waypoints=${paraMaps.slice(0, -1).slice(0, 9).map((x) => `${x.lat},${x.lng}`).join('|')}` : ''}&travelmode=driving` : '';
+      const tramos = tramosMaps(origen, paraMaps);
       const $cab = $c.querySelector('#ruta-cabeza'); if(!$cab) return quitar;
       $cab.innerHTML = `<div class="cifras">
           <div class="cifra-caja"><span class="valor">${r.orden.length}</span><span class="etq">paradas</span></div>
-          <div class="cifra-caja"><span class="valor">${r.km ? (r.km * 1.35).toFixed(1) + ' km' : '—'}</span><span class="etq">aprox. por calle</span></div>
-          <div class="cifra-caja"><span class="valor">${r.minutos ? `${Math.floor(r.minutos / 60) ? Math.floor(r.minutos / 60) + ' h ' : ''}${r.minutos % 60} min` : '—'}</span><span class="etq">con las entregas</span></div>
+          <div class="cifra-caja"><span class="valor">${r.km ? `${(r.km * 1.35).toFixed(1)}<small> km</small>` : '—'}</span><span class="etq">aprox. por calle</span></div>
+          <div class="cifra-caja"><span class="valor">${r.minutos ? `${Math.floor(r.minutos / 60) ? `${Math.floor(r.minutos / 60)}<small> h</small> ` : ''}${r.minutos % 60}<small> min</small>` : '—'}</span><span class="etq">con las entregas</span></div>
         </div>
-        ${url ? `<a class="boton principal grande ancho" href="${url}" target="_blank" rel="noopener">${icono('ruta')}Abrir la ruta en Google Maps</a>` : ''}
+        ${tramos.length === 1 ? `<a class="boton principal grande ancho" href="${esc(tramos[0].url)}" target="_blank" rel="noopener" data-tramo="1">${icono('ruta')}Abrir la ruta en Google Maps</a>`
+          : tramos.length ? `<p class="nota">Google Maps en el teléfono acepta pocas paradas por viaje: la ruta va en ${tramos.length} tramos. Al terminar uno, abre el siguiente.</p>
+          <div class="tramos">${tramos.map((t, k) => `<a class="boton ${k ? 'secundario' : 'principal'} grande ancho" href="${esc(t.url)}" target="_blank" rel="noopener" data-tramo="${k + 1}">${icono('ruta')}Tramo ${k + 1} · ${t.desde === t.hasta ? `parada ${t.desde}` : `paradas ${t.desde} a ${t.hasta}`}</a>`).join('')}</div>` : ''}
         ${!origen ? `<p class="nota">No supe dónde estás: la ruta empieza en la primera parada.</p>` : ''}
         ${r.sinLugar.length ? `<p class="aviso-linea">${icono('alerta')}<span>${plural(r.sinLugar.length, 'parada no tiene', 'paradas no tienen')} ubicación en el mapa: van al final. Revisa la dirección.</span></p>` : ''}`;
       $c.querySelector('#ruta-lista').innerHTML = r.orden.map((x, i) => `<li><a class="parada-tarjeta" href="${enlace('/r/parada/:id', { id: x.p.id })}">

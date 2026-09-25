@@ -348,6 +348,8 @@ dependemos.
    | si existe `navigator`, existe `navigator.onLine` | Node 21+ trae `navigator` **sin** `onLine`: `!navigator.onLine` da `true` y todo parece «sin red» | la fila de ventas sin red marcaba como caída de internet un «ya no alcanzan» de verdad. Se lee `navigator?.onLine ?? true` |
    | `page.waitForFunction(() => promesa)` espera a que la promesa diga que sí | una promesa **es un objeto, y es verdadero**: regresa al instante | la prueba sin red leía la fila antes de que la venta se subiera y salía rojo con el código sano. Se revisa a mano en un ciclo |
    | `ctx.route` ve todo lo que pide la página | **no ve lo que pide el trabajador de fondo** (service worker): esas peticiones salen solas y aquí no hay internet | las 93 pruebas de rutas salieron rojas el día que la tienda tuvo `sw.js`. Las de pantallas corren con `serviceWorkers: 'block'`, y la de sin red con `PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS=1` |
+   | una liga de Google Maps lleva hasta nueve paradas intermedias | **tres** si se abre en el navegador del teléfono; nueve es en otros lados (documentación de Maps URLs, 25 de septiembre) | «Abrir la ruta en Google Maps» perdía paradas justo donde la usa el repartidor, y de la once en adelante el código las tiraba callado. Ahora va por tramos de 4 |
+   | `Date.now() - cuando` de la base nunca es negativo | el reloj del teléfono y el del servidor no son el mismo: un punto recién llegado sale **en el futuro** | el dueño leía «última señal hace -1 s». Se topa en 0 y abajo de 10 s dice «hace un momento» |
 
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 

@@ -238,6 +238,49 @@
         "que numero pongo"
       ],
       "vecinas": ["hueco-cargado-a-un-solo-dia", "error-reseñas-de-relleno", "el-ultimo-precio-no-es-el-costo"]
+    },
+    {
+      "id": "liga-de-google-maps-con-demasiadas-paradas",
+      "titulo": "La liga de Google Maps pierde paradas en el teléfono",
+      "gravedad": "alta",
+      "sintoma": "El repartidor toca «Abrir la ruta en Google Maps» y el viaje trae menos paradas que su lista; con más de diez, las de en medio ni aparecen.",
+      "causa": "La liga metía hasta nueve paradas intermedias. La documentación de Maps URLs dice que en el navegador del teléfono se aceptan a lo más TRES (nueve en otros lados), y el código además cortaba en nueve sin decir nada.",
+      "porque": "En la computadora la misma liga funciona completa, y ahí es donde uno la prueba.",
+      "arreglo": "tramosMaps() en tienda/nucleo/ruta.js parte la ruta en tramos de 4 paradas (3 intermedias + destino); cada tramo sale de donde acabó el anterior y la pantalla pone un botón por tramo.",
+      "comoCazarlo": "Contar las intermedias de cada liga (searchParams.get('waypoints')) y comprobar que, juntando los tramos, se visitan todas en orden. Está en pruebas-ruta.mjs y pruebas-gps.mjs.",
+      "consejo": "Un límite de un servicio externo se verifica en su documentación el día que se usa, y se prueba con MÁS paradas de las que caben.",
+      "senales": [
+        "google maps no trae todas las paradas",
+        "faltan paradas en la ruta",
+        "waypoints límite",
+        "abrir ruta en maps"
+      ],
+      "salioDe": "La tienda, 25 de septiembre: Carlos pidió asegurar el GPS y la optimización de rutas.",
+      "vecinas": [
+        "rastreo-que-se-apaga-con-un-hueco-de-senal"
+      ]
+    },
+    {
+      "id": "rastreo-que-se-apaga-con-un-hueco-de-senal",
+      "titulo": "Un minuto sin internet apagaba el GPS del repartidor todo el turno",
+      "gravedad": "alta",
+      "sintoma": "El repartidor pasa por un túnel o un estacionamiento y deja de verse en el mapa del dueño hasta que cierra y vuelve a abrir su turno; su pantalla dice «Tu turno no está abierto».",
+      "causa": "El rastreo trataba cualquier falla al mandar el punto como «la base lo rechazó» y se apagaba para no insistir. Una caída de red y un turno cerrado se veían igual.",
+      "porque": "Las dos fallas llegan al mismo catch; sólo el rechazo de la base trae un código (42501 y compañía). La de red trae código vacío o un TypeError.",
+      "arreglo": "esRechazo() en tienda/nucleo/rastreo.js separa las dos: el rechazo apaga; el hueco de red dice «Sin internet» y reintenta cada 15 s con el punto más reciente.",
+      "comoCazarlo": "En el navegador, abortar las peticiones a /rest/v1/ubicaciones, mover el GPS y quitar el bloqueo: tiene que volver a «Compartiendo» solo. pruebas-gps.mjs lo hace.",
+      "consejo": "Todo catch que apaga algo para siempre tiene que preguntarse quién dijo que no: el servidor o la red.",
+      "senales": [
+        "repartidor desaparece del mapa",
+        "dejó de compartir ubicación",
+        "tu turno no está abierto pero sí está",
+        "gps se apaga solo",
+        "sin señal"
+      ],
+      "salioDe": "La tienda, 25 de septiembre: prueba de punta a punta del GPS.",
+      "vecinas": [
+        "liga-de-google-maps-con-demasiadas-paradas"
+      ]
     }
   ]
 }

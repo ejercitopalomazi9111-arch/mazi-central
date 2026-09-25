@@ -110,3 +110,17 @@ _(se agregan aquí conforme salgan; ninguna detiene el trabajo)_
   si mientras tanto alguien compró en línea la última pieza, esa venta queda marcada en Caja
   para resolverla a mano (no se pierde). Sin red **no** se puede cerrar caja, ni hacer pedidos
   en línea, ni cobrar entregas: eso necesita al servidor.
+
+- **El GPS del repartidor funciona con la app ABIERTA.** Probado de punta a punta el 25 de
+  septiembre (`nucleo/pruebas-gps.mjs`): el punto llega a la pantalla del dueño con su
+  velocidad, un hueco de señal ya no apaga el rastreo, la ruta sale ordenada y el cliente ve en
+  cuánto llega. **El límite que hay que decir con todas sus letras:** una app web no puede mandar
+  la ubicación con el teléfono bloqueado o mientras el repartidor está dentro de Google Maps;
+  el iPhone y Android pausan la página. Mientras tanto el dueño ve el último punto con «hace
+  cuánto» y un aviso de «Sin señal reciente» a los 5 minutos, y en cuanto el repartidor regresa
+  a la app se manda solo. **Para rastreo con la pantalla apagada** hace falta envolver la app como
+  app nativa (Capacitor con un complemento de ubicación en segundo plano) y publicarla en las
+  tiendas: es trabajo aparte, con cuenta de Apple (99 dólares al año) y de Google (25 una vez).
+- **La ruta optimizada no sabe de horarios ni de capacidad todavía.** Ordena por distancia (lo
+  que recorre menos). Si un cliente pidió «mañana» o «en la tarde», eso se ve en la nota del
+  pedido pero la ruta no lo acomoda sola; se asigna al repartidor el día que toca.
