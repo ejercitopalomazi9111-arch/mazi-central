@@ -291,6 +291,10 @@ async function navegar(){
   // navega con lector de pantalla oye dónde llegó.
   if(!primera) $t.focus({ preventScroll: true });
   primera = false;
+  // El letrero «Viendo como» se vuelve a leer en cada pantalla: la sesión
+  // también cambia por dentro (al pedir, la muestra pasa a «cliente de
+  // prueba») y el menú se quedaba diciendo «Admin».
+  pintarComo().catch(() => {});
 }
 
 export function ir(patron, params){ location.hash = enlace(patron, params).slice(1); }
