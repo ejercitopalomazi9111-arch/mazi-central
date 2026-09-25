@@ -41,10 +41,10 @@ export function consejos({ ventas = [], productos = [], clientes = [], ahora = D
     salida.push(a.q <= 0
       ? { clave: 'agotado:' + a.p.id, tono: 'alerta', peso: 100, titulo: `${a.p.nombre} está agotado y se vende`,
           porque: `Vendes como ${semana} por semana. Cada día sin él es venta que se va a otro lado. Para un mes, pide ${a.pedir}.`,
-          accion: { texto: 'Ver en inventario', ruta: '/a/inventario' } }
+          accion: { texto: 'Armar el pedido', ruta: '/a/surtir' } }
       : { clave: 'acaba:' + a.p.id, tono: 'alerta', peso: 90 - a.dias, titulo: `Se te acaba ${a.p.nombre} en ~${Math.max(1, Math.round(a.dias))} ${Math.round(a.dias) === 1 ? 'día' : 'días'}`,
           porque: `Vendes como ${semana} por semana y te ${a.q === 1 ? 'queda 1' : `quedan ${a.q}`}. Para un mes, pide ${a.pedir}.`,
-          accion: { texto: 'Ver en inventario', ruta: '/a/inventario' } });
+          accion: { texto: 'Armar el pedido', ruta: '/a/surtir' } });
   }
 
   // 2. Lo que no se mueve — sólo con más de un mes de historia.

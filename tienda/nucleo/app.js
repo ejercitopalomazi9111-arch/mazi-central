@@ -29,8 +29,9 @@ import { PANTALLAS as REPORTES } from '../admin/reportes.js';
 import { PANTALLAS as REDES } from '../admin/redes.js';
 import { PANTALLAS as MANUAL } from '../admin/manual.js';
 import { PANTALLAS as COTIZAR } from '../venta/cotizar.js';
+import { PANTALLAS as SURTIR } from '../admin/surtir.js';
 
-const PANTALLAS = { ...CLIENTE, ...PEDIR, ...ADMIN, ...IMPORTAR, ...VENTA, ...PEDIDOS, ...REPARTO, ...RUTA, ...IMPRESORA, ...CLIENTES, ...CUENTA, ...DEVOLUCION, ...CONVERSACIONES, ...SORTEOS, ...SORTEO, ...DESCUENTOS, ...REPORTES, ...REDES, ...COTIZAR, ...MANUAL, obra, noexiste };
+const PANTALLAS = { ...CLIENTE, ...PEDIR, ...ADMIN, ...IMPORTAR, ...VENTA, ...PEDIDOS, ...REPARTO, ...RUTA, ...IMPRESORA, ...CLIENTES, ...CUENTA, ...DEVOLUCION, ...CONVERSACIONES, ...SORTEOS, ...SORTEO, ...DESCUENTOS, ...REPORTES, ...REDES, ...COTIZAR, ...SURTIR, ...MANUAL, obra, noexiste };
 
 const $app = document.getElementById('app');
 const $avisos = document.getElementById('avisos');

@@ -36,6 +36,7 @@ const DUENO = () => ({ titulo: 'El dueño', icono: 'admin', pasos: [
   ['Cada mañana', `Abre ${ir('/a', 'Tablero')}: lo vendido hoy, los pedidos por mover, lo que se acaba y a quién le toca surtirse.`],
   ['Pedidos', `En ${ir('/a/pedidos', 'Pedidos')}, cada uno tiene un botón grande con el siguiente paso. Asígnale repartidor y avísale al cliente por WhatsApp con el mensaje ya escrito.`],
   ['Productos e inventario', `Da de alta en ${ir('/a/productos', 'Productos')} o sube tu Excel en ${ir('/a/importar', 'Importar')}. Lo que se vende fuera de la app se ajusta en ${ir('/a/inventario', 'Inventario')}, siempre con motivo.`],
+  ['Qué surtir', `${ir('/a/surtir', 'Qué surtir')} arma el pedido al proveedor con lo que vendes y tus mínimos, separado por marca y con el porqué de cada cantidad. Corrige lo que quieras y mándalo por WhatsApp o bájalo en Excel.`],
   ['Clientes', `${ir('/a/clientes', 'Clientes')} te dice cada cuándo compra cada quien y a quién ya le toca. Cada aviso dice en qué se basa.`],
   ['Vender más', `${ir('/a/reportes', 'Reportes')} trae consejos con sus números. ${ir('/a/descuentos', 'Descuentos')} cambia precios por unos días y los regresa solo. ${ir('/a/redes', 'Redes')} te arma publicaciones con tus ofertas.`],
   ['El bot', `Pruébalo en ${ir('/a/conversaciones', 'Conversaciones')} como si fueras cliente. Llena en ${ir('/a/ajustes', 'Ajustes')} el horario, el envío y cómo te pagan: lo que falta, lo pasa a una persona.`],

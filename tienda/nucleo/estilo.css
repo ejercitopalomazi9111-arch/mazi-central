@@ -1200,3 +1200,24 @@ dialog.hoja .hoja-cuerpo{ padding: var(--e5); overflow-y: auto; max-height: calc
   .cot-editor{ grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); align-items: start; }
   .cot-hoja{ position: sticky; top: var(--e4); }
 }
+
+/* ── Qué surtir (admin/surtir.js) ────────────────────────────────────── */
+.barra-surtir{ display: flex; flex-wrap: wrap; gap: var(--e3); align-items: center; justify-content: space-between; margin-bottom: var(--e4); }
+.barra-surtir .coberturas{ flex: 1 1 320px; max-width: 520px; }
+.barra-surtir .coberturas button{ min-width: 0; padding-inline: var(--e2); }
+.cifra-caja.alerta .valor{ color: var(--mal); }
+.surtir-marca > header{ display: flex; align-items: baseline; justify-content: space-between; gap: var(--e3); }
+.surtir-fila{ align-items: center; gap: var(--e3); }
+.surtir-fila .texto{ display: grid; gap: 4px; justify-items: start; min-width: 0; }
+.surtir-fila .texto small{ color: var(--tinta-suave); font-size: var(--t-chica); line-height: 1.4; }
+.surtir-fila.fuera .texto strong{ text-decoration: line-through; color: var(--tinta-suave); }
+.pedir{ display: grid; gap: 2px; justify-items: center; flex: none; font-size: var(--t-chica); color: var(--tinta-suave); }
+.pedir input{ width: 76px; min-height: var(--toque); text-align: center; font: inherit; font-size: var(--t-cuerpo); font-weight: 700; font-variant-numeric: tabular-nums;
+  color: var(--tinta); background: var(--superficie); border: 1px solid var(--linea-fuerte); border-radius: var(--radio); }
+.pedir input:focus-visible{ outline: 3px solid var(--acento); outline-offset: 2px; }
+.surtir-marca .botones{ margin-top: var(--e3); }
+/* «Mandar pedido de Alfaparf Milano Professional» no cabe en un renglón de 390 px: se parte. */
+.surtir-marca .botones .boton{ max-width: 100%; white-space: normal; text-align: left; line-height: 1.25; }
+.etq-cobertura{ font-weight: 700; flex: none; }
+.barra-surtir{ justify-content: flex-start; }
+.barra-surtir [data-csv]{ margin-left: auto; }

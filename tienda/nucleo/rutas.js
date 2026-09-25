@@ -108,6 +108,8 @@ export const RUTAS = [
     promesa: 'Dar de alta, cambiar precio y fotos, y sacar el código QR o de barras de cada uno.' },
   { ruta: '/a/inventario',  apartado: 'admin', titulo: 'Inventario',      icono: 'inventario',menu: true,  pantalla: 'inventario',      bloque: 3,
     promesa: 'Existencias, y el ajuste rápido para lo que se vendió fuera del sistema.' },
+  { ruta: '/a/surtir',      apartado: 'admin', titulo: 'Qué surtir',      icono: 'repetir',   menu: true,  pantalla: 'surtir',    bloque: 12,
+    promesa: 'Qué pedirle al proveedor y cuánto, con lo que vendes y tus mínimos, listo para mandar por WhatsApp.' },
   { ruta: '/a/producto/:id',apartado: 'admin', titulo: 'Editar producto', icono: 'caja',      menu: false, pantalla: 'productoEditar',      bloque: 3,
     ejemplo: '@primero',
     promesa: 'Cambiar nombre, precio, fotos y campos.' },
