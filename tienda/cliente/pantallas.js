@@ -11,8 +11,12 @@
    ═════════════════════════════════════════════════════════════════════════ */
 import { enlace } from '../nucleo/rutas.js';
 import { icono } from '../nucleo/iconos.js';
-import { esc, pesos, quitaAcentos, plural, estado } from '../nucleo/piezas.js';
-import { catalogo, carrito, misPedidos, negocio } from '../nucleo/datos.js';
+import { esc, pesos, quitaAcentos, plural, estado, hoja } from '../nucleo/piezas.js';
+import { catalogo, carrito, misPedidos, negocio, memoria } from '../nucleo/datos.js';
+import { tarjeta, foto, botonFavorito, POCAS } from './tarjeta.js';
+import { envioGratis, bajoDesde, comprados } from '../nucleo/memoria.js';
+import { aCentavos } from '../nucleo/dinero.js';
+import { waNegocio, ligaProducto } from './contacto.js';
 import { pedidoDeSiempre, teToca, validos, diaCorto, dias } from '../nucleo/recompra.js';
 import { SINONIMOS } from '../nucleo/bot.js';
 import { sorteoDelMes, tarjetaSorteo } from './sorteo.js';
@@ -22,34 +26,14 @@ import { avance } from '../nucleo/sorteo.js';
    la sesión nace al pagar, nunca por mirar la portada. */
 const historial = () => misPedidos().catch((e) => { console.error(e); return []; });
 
-/* A partir de cuántas se avisa que quedan pocas. Es de la tienda y no del
-   producto a propósito: el mínimo del producto es para el admin (reordenar),
-   no para meterle prisa al cliente. */
-const POCAS = 5;
-
 /* ── Piezas que se repiten ─────────────────────────────────────────────── */
+/* La tarjeta, la foto y el corazón viven en tarjeta.js: una sola para toda la tienda. */
 
-/* La foto, o un recuadro con ícono cuando no hay: un catálogo recién importado
-   casi nunca trae fotos, y una imagen rota se ve a tienda abandonada. */
-const foto = (p, w, h, extra = '') => p.f
-  ? `<img src="${esc(p.f)}" alt="" width="${w}" height="${h}" ${extra}>`
-  : `<span class="sin-foto" role="img" aria-label="Sin foto">${icono('caja')}</span>`;
-
-function tarjeta(p){
-  const oferta = p.a ? Math.round((1 - p.p / p.a) * 100) : 0;
-  return `<a class="producto${p.x ? ' sin' : ''}" href="${enlace('/p/:id', { id: p.id })}">
-    <div class="foto">
-      ${foto(p, 480, 480, 'loading="lazy" decoding="async"')}
-      ${p.x ? '<span class="marca-foto agotado">Agotado</span>'
-            : oferta >= 5 ? `<span class="marca-foto oferta">−${oferta}%</span>` : ''}
-    </div>
-    <div class="cuerpo">
-      <span class="m">${esc(p.m)}</span>
-      <span class="n">${esc(p.n)}</span>
-      <span class="precio"><span class="ahora">${pesos(p.p)}</span>${p.a ? `<span class="antes">${pesos(p.a)}</span>` : ''}</span>
-      ${!p.x && p.q <= POCAS ? `<span class="quedan">${p.q === 1 ? 'Queda 1' : `Quedan ${p.q}`}</span>` : ''}
-    </div>
-  </a>`;
+/* «en efectivo al recibir, con tarjeta al recibir o por transferencia» — de Ajustes. */
+function formasPago(n){
+  const g = n.ajustes?.pagos || {};
+  const l = [g.efectivo !== false && 'en efectivo al recibir', g.tarjeta && 'con tarjeta al recibir', g.transferencia && 'por transferencia'].filter(Boolean);
+  return l.length > 1 ? l.slice(0, -1).join(', ') + ' o ' + l.at(-1) : l[0] || '';
 }
 
 function seccion(titulo, cuerpo, { verTodo, nota } = {}){
@@ -112,6 +96,7 @@ export async function portada(){
   const siempreTotal = deSiempre.filter((r) => !r.p.x).reduce((t, r) => t + r.p.p * Math.min(r.cantidad, r.p.q), 0);
   const toca = teToca(mios).map((r) => ({ ...r, p: porId.get(r.producto_id) })).filter((r) => r.p);
 
+  const vistos = memoria.vistos.todos().map((id) => porId.get(id)).filter(Boolean).slice(0, 12);
   const ofertas = hay.filter((p) => p.a)
     .sort((a, b) => (1 - b.p / b.a) - (1 - a.p / a.a)).slice(0, 12);
 
@@ -135,6 +120,7 @@ export async function portada(){
     ${bloqueSiempre}
     ${seccion('Categorías', tiraCategorias(categorias))}
     ${bloqueToca}
+    ${vistos.length ? seccion('Vistos recientemente', `<div class="carril">${vistos.map(tarjeta).join('')}</div>`, { verTodo: enlace('/favoritos') }) : ''}
     ${ofertas.length ? seccion('Ofertas', `<div class="carril">${ofertas.map(tarjeta).join('')}</div>`) : ''}
     ${sorteo ? `<section class="seccion">${tarjetaSorteo(sorteo, avance(mios, sorteo))}</section>` : ''}
   `,
@@ -180,14 +166,31 @@ export async function buscar(){
         <span class="oculto">Buscar productos</span>
         <input id="q" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="Nombre, marca o para qué sirve">
       </label>
+      <div class="filtros" id="filtros-busqueda" hidden>
+        <label class="interruptor en-linea"><input type="checkbox" id="solo-hay"><span>Sólo disponibles</span></label>
+        <label class="campo compacto"><span class="oculto">Ordenar</span>
+          <select id="orden">${Object.entries(ORDENES).map(([k, o]) => `<option value="${k}">${o.nombre}</option>`).join('')}</select></label>
+      </div>
       <div id="resultados" class="seccion" aria-live="polite"></div>`,
     alMontar(raiz){
       const q = raiz.querySelector('#q');
       const res = raiz.querySelector('#resultados');
+      const $filtros = raiz.querySelector('#filtros-busqueda'), $solo = raiz.querySelector('#solo-hay'), $orden = raiz.querySelector('#orden');
+      // Viene de un «buscar de nuevo» (o de un enlace): la búsqueda ya escrita.
+      const previa = new URLSearchParams(location.hash.split('?')[1] || '').get('q');
+      if(previa) q.value = previa;
+      let guardar = null;
+      const recientes = () => {
+        const b = memoria.busquedas.todas();
+        return b.length ? `<div class="recientes"><div class="recientes-cabeza"><h2>Buscaste hace poco</h2><button type="button" class="boton fantasma" data-borrar-busquedas>Borrar</button></div>
+          <div class="chips-elegir">${b.map((t) => `<button type="button" class="chip-boton" data-buscar="${esc(t)}">${icono('historial')}${esc(t)}</button>`).join('')}</div></div>` : '';
+      };
       const pinta = () => {
         const palabras = quitaAcentos(q.value).split(/\s+/).filter(Boolean);
+        clearTimeout(guardar);
         if(!palabras.length){
-          res.innerHTML = `<p class="nota">Escribe lo que buscas${ejemplos.length ? `. Por ejemplo: ${ejemplos.map((x) => `<b>${esc(x)}</b>`).join(', ').replace(/, ([^,]*)$/, ' o $1')}` : ''}.</p>`;
+          $filtros.hidden = true;
+          res.innerHTML = recientes() + `<p class="nota">Escribe lo que buscas${ejemplos.length ? `. Por ejemplo: ${ejemplos.map((x) => `<b>${esc(x)}</b>`).join(', ').replace(/, ([^,]*)$/, ' o $1')}` : ''}.</p>`;
           return;
         }
         // Cada palabra vale por sus sinónimos: el catálogo del proveedor viene
@@ -196,18 +199,32 @@ export async function buscar(){
         // palabra completa si es corto («mat» no es «Matrix») o como inicio si es largo.
         const sin = (w) => grupos.find((g) => g.some((x) => x === w || x === w.replace(/(es|s)$/, ''))) || [];
         const esta = (t, w) => t.includes(w) || sin(w).some((x) => x.length >= 5 ? t.includes(' ' + x) : new RegExp(`\\s${x}(s|es)?(\\s|$)`).test(t));
-        const hallados = indice.map((i) => ({ ...i, enNombre: palabras.filter((w) => esta(i.propio, w)).length }))
+        let hallados = indice.map((i) => ({ ...i, enNombre: palabras.filter((w) => esta(i.propio, w)).length }))
           .filter((i) => palabras.every((w) => esta(i.propio, w) || esta(i.cat, w)))
           .sort((a, b) => (a.p.x || 0) - (b.p.x || 0) || b.enNombre - a.enNombre).map((i) => i.p);
+        const todos = hallados.length;
+        if($solo.checked) hallados = hallados.filter((p) => !p.x);
+        if($orden.value !== 'sugerido') hallados = [...hallados].sort(ORDENES[$orden.value].f);
+        $filtros.hidden = !todos;
+        // Se recuerda lo que se buscó y SÍ encontró algo, cuando se deja de escribir.
+        if(todos) guardar = setTimeout(() => memoria.busquedas.guardar(q.value), 1200);
         res.innerHTML = hallados.length
-          ? `<p class="nota">${plural(hallados.length, 'producto', 'productos')}</p><div class="rejilla">${hallados.slice(0, 60).map(tarjeta).join('')}</div>`
+          ? `<p class="nota">${plural(hallados.length, 'producto', 'productos')}${todos > hallados.length ? ` · ${todos - hallados.length} agotados escondidos` : ''}</p><div class="rejilla">${hallados.slice(0, 60).map(tarjeta).join('')}</div>`
+          : todos ? estado({ icono: 'agotado', titulo: 'Todo lo que coincide está agotado', texto: 'Quita «Sólo disponibles» para verlo y saber qué va a volver.' })
           : estado({ icono: 'buscar', titulo: `No encontramos «${q.value.trim()}»`,
               texto: 'Prueba con menos palabras, con la marca o con la categoría.',
               botones: `<a class="boton secundario" href="${enlace('/')}">Ver categorías</a>` });
       };
       q.addEventListener('input', pinta);
+      $solo.addEventListener('change', pinta); $orden.addEventListener('change', pinta);
+      q.addEventListener('keydown', (e) => { if(e.key === 'Enter'){ memoria.busquedas.guardar(q.value); q.blur(); } });
+      res.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-buscar], [data-borrar-busquedas]'); if(!b) return;
+        if(b.dataset.buscar){ q.value = b.dataset.buscar; pinta(); return; }
+        memoria.busquedas.borrar(); pinta();
+      });
       pinta();
-      q.focus({ preventScroll: true });
+      if(!previa) q.focus({ preventScroll: true });
     },
   };
 }
@@ -234,6 +251,7 @@ export async function categoria({ params }){
         <div class="segmentos" role="group" aria-label="Ordenar">
           ${Object.entries(ORDENES).map(([k, o], i) => `<button type="button" data-orden="${k}" aria-pressed="${i === 0}">${o.nombre}</button>`).join('')}
         </div>
+        <label class="interruptor en-linea"><input type="checkbox" id="solo-hay"><span>Sólo disponibles</span></label>
         ${marcas.length > 1 ? `<label class="campo compacto"><span class="oculto">Marca</span>
           <select id="marca"><option value="">Todas las marcas</option>${marcas.map((m) => `<option>${esc(m)}</option>`).join('')}</select></label>` : ''}
       </div>
@@ -241,12 +259,13 @@ export async function categoria({ params }){
       <div class="rejilla" id="lista"></div>`,
     alMontar(raiz){
       let orden = 'sugerido';
-      const $lista = raiz.querySelector('#lista'), $cuantos = raiz.querySelector('#cuantos'), $marca = raiz.querySelector('#marca');
+      const $lista = raiz.querySelector('#lista'), $cuantos = raiz.querySelector('#cuantos'), $marca = raiz.querySelector('#marca'), $solo = raiz.querySelector('#solo-hay');
       const pinta = () => {
         const m = $marca?.value || '';
-        const vistos = suyos.filter((p) => !m || p.m === m).sort(ORDENES[orden].f);
+        const vistos = suyos.filter((p) => (!m || p.m === m) && (!$solo.checked || !p.x)).sort(ORDENES[orden].f);
         $cuantos.textContent = plural(vistos.length, 'producto', 'productos');
-        $lista.innerHTML = vistos.map(tarjeta).join('');
+        $lista.innerHTML = vistos.length ? vistos.map(tarjeta).join('')
+          : estado({ icono: 'agotado', titulo: 'Nada disponible con este filtro', texto: 'Quita «Sólo disponibles» o elige otra marca.' });
       };
       raiz.querySelector('.segmentos').addEventListener('click', (e) => {
         const b = e.target.closest('[data-orden]'); if(!b) return;
@@ -254,7 +273,7 @@ export async function categoria({ params }){
         raiz.querySelectorAll('[data-orden]').forEach((x) => x.setAttribute('aria-pressed', x === b));
         pinta();
       });
-      $marca?.addEventListener('change', pinta);
+      $marca?.addEventListener('change', pinta); $solo.addEventListener('change', pinta);
       pinta();
     },
   };
@@ -262,9 +281,12 @@ export async function categoria({ params }){
 
 /* ── Producto ─────────────────────────────────────────────────────────── */
 export async function producto({ params }){
-  const [{ categorias, productos, porId }, mios] = await Promise.all([catalogo(), historial()]);
+  const [{ categorias, productos, porId }, mios, n] = await Promise.all([catalogo(), historial(), negocio()]);
   const p = porId.get(params.id);
   if(!p) return noEncontrado('Este producto ya no está', 'Puede que se haya dejado de vender.');
+  memoria.vistos.ver(p.id);
+  const env = n.ajustes?.envio || {};
+  const wa = waNegocio(n, `Hola, tengo una pregunta sobre ${p.n}${p.sku ? ` (clave ${p.sku})` : ''}: `);
   // La última vez que ESTE cliente lo pidió (lo cancelado no cuenta).
   const ultimaVez = validos(mios).reverse().find((x) => (x.renglones || []).some((r) => r.producto_id === p.id));
   const cuantasVez = ultimaVez ? ultimaVez.renglones.filter((r) => r.producto_id === p.id).reduce((t, r) => t + r.cantidad, 0) : 0;
@@ -282,11 +304,13 @@ export async function producto({ params }){
     html: `
       <div class="ficha">
         <div>
-          <div class="foto-grande">${p.f ? `<img id="foto" src="${esc(p.f)}" alt="${esc(p.n)}" width="480" height="480" decoding="async">` : foto(p, 480, 480)}</div>
+          <div class="foto-grande">${p.f ? `<button type="button" class="acercar" data-acercar aria-label="Ver la foto en grande"><img id="foto" src="${esc(p.f)}" alt="${esc(p.n)}" width="480" height="480" decoding="async"><span class="lupa">${icono('acercar')}</span></button>` : foto(p, 480, 480)}
+            ${botonFavorito(p, { grande: true })}</div>
           ${p.fotos.length > 1 ? `<div class="miniaturas">${p.fotos.map((f, i) => `<button type="button" data-foto="${esc(f)}" aria-label="Foto ${i + 1}" aria-pressed="${i === 0}"><img src="${esc(f)}" alt="" width="64" height="64" loading="lazy"></button>`).join('')}</div>` : ''}
         </div>
         <div>
-          <p class="marca-producto">${esc(p.m)}</p>
+          <div class="ficha-cabeza"><p class="marca-producto">${esc(p.m)}</p>
+            <button type="button" class="boton-ico" data-compartir aria-label="Compartir este producto">${icono('compartir')}</button></div>
           <h2>${esc(p.n)}</h2>
           <div class="precio"><span class="ahora">${pesos(p.p)}</span>${p.a ? `<span class="antes">${pesos(p.a)}</span>` : ''}</div>
           ${existencia(p)}
@@ -299,7 +323,13 @@ export async function producto({ params }){
             </div>
             <button class="boton principal" data-agregar>${icono('carrito')}Agregar</button>
           </div>`}
-          ${p.d ? `<p class="descripcion">${esc(p.d)}</p>` : ''}
+          <ul class="garantias">
+            ${env.costo != null || env.gratis_desde != null ? `<li>${icono('camion')}<span>${env.gratis_desde != null ? `Envío gratis desde ${pesos(env.gratis_desde)}` : 'Envío a domicilio'}${Number(env.costo) ? ` · si no, ${pesos(env.costo)}` : ''}${env.zona ? ` · ${esc(env.zona)}` : ''}</span></li>` : ''}
+            ${env.recoger !== false ? `<li>${icono('tienda')}<span>También puedes recogerlo${n.ajustes?.contacto?.direccion ? ` en ${esc(n.ajustes.contacto.direccion)}` : ' en el local'}</span></li>` : ''}
+            ${formasPago(n) ? `<li>${icono('efectivo')}<span>Pagas ${formasPago(n)} · sin crear cuenta</span></li>` : ''}
+          </ul>
+          ${wa ? `<a class="boton secundario ancho" href="${esc(wa)}" target="_blank" rel="noopener">${icono('preguntar')}Pregúntanos por WhatsApp</a>` : ''}
+          ${p.d ? `<h3 class="sub-ficha">Descripción</h3><p class="descripcion">${esc(p.d)}</p>` : ''}
           ${campos.length ? `<dl class="campos-producto">${campos.map((c) => `<dt>${esc(c.etiqueta)}</dt><dd>${esc(p.campos[c.clave])}</dd>`).join('')}</dl>` : ''}
           ${p.sku ? `<p class="nota chica">Clave ${esc(p.sku)}</p>` : ''}
         </div>
@@ -310,6 +340,14 @@ export async function producto({ params }){
         const b = e.target.closest('[data-foto]'); if(!b) return;
         raiz.querySelector('#foto').src = b.dataset.foto;
         raiz.querySelectorAll('[data-foto]').forEach((x) => x.setAttribute('aria-pressed', x === b));
+      });
+      raiz.querySelector('[data-acercar]')?.addEventListener('click', () => {
+        hoja({ titulo: p.n, clase: 'hoja-foto', cuerpo: `<img src="${esc(raiz.querySelector('#foto').src)}" alt="${esc(p.n)}">` });
+      });
+      raiz.querySelector('[data-compartir]').addEventListener('click', async () => {
+        const url = ligaProducto(p.id), texto = `${p.n} · ${pesos(p.p)}`;
+        if(navigator.share){ try{ await navigator.share({ title: p.n, text: texto, url }); return; }catch(e){ if(e.name === 'AbortError') return; } }
+        try{ await navigator.clipboard.writeText(`${texto}\n${url}`); aviso('Liga copiada: pégala donde quieras'); }catch(e){ aviso('No se pudo copiar la liga', 'mal'); }
       });
       if(p.x) return;
       let n = 1;
@@ -339,52 +377,84 @@ export async function producto({ params }){
 
 /* ── Carrito ──────────────────────────────────────────────────────────── */
 export async function carritoPantalla(){
-  const { porId } = await catalogo();
+  const [{ porId }, n] = await Promise.all([catalogo(), negocio()]);
+  const env = n.ajustes?.envio || {};
   return {
     html: `<div id="lista"></div>`,
-    alMontar(raiz){
+    alMontar(raiz, { aviso }){
       const lista = raiz.querySelector('#lista');
+      const despuesHTML = () => {
+        const d = memoria.despues.todos().map(([id, c]) => ({ p: porId.get(id), c })).filter((x) => x.p);
+        return d.length ? `<section class="seccion despues"><header><h2>Guardado para después</h2><span class="nota">${plural(d.length, 'producto', 'productos')}</span></header>
+          <ul class="mios">${d.map(({ p, c }) => `<li class="mio${p.x ? ' sin' : ''}">
+            <a href="${enlace('/p/:id', { id: p.id })}">${foto(p, 64, 64, 'loading="lazy"')}</a>
+            <div class="texto"><a class="n" href="${enlace('/p/:id', { id: p.id })}">${c > 1 ? `${c} × ` : ''}${esc(p.n)}</a><small>${p.x ? 'Agotado por ahora' : pesos(p.p) + ' c/u'}</small></div>
+            <div class="acciones-mio">${p.x ? '' : `<button class="boton secundario" data-regresar="${esc(p.id)}">${icono('carrito')}<span>Al carrito</span></button>`}
+              <button class="boton-ico" data-olvidar="${esc(p.id)}" aria-label="Quitar ${esc(p.n)} de guardados">${icono('borrar')}</button></div>
+          </li>`).join('')}</ul></section>` : '';
+      };
       const pinta = () => {
         /* Lo que ya no existe o se agotó sale del carrito con aviso, no en silencio:
            cobrar algo que no hay es peor que decirlo. */
         const quitados = [];
-        for(const [id, n] of carrito.renglones()){
+        for(const [id, c] of carrito.renglones()){
           const p = porId.get(id);
-          if(!p || p.x){ quitados.push(p?.n || 'un producto'); carrito.poner(id, 0); }
-          else if(n > p.q){ carrito.poner(id, p.q); }
+          if(!p || p.x){ quitados.push(p?.n || 'un producto'); carrito.poner(id, 0); if(p) memoria.despues.guardar(id, c); }
+          else if(c > p.q){ carrito.poner(id, p.q); }
         }
         const renglones = carrito.renglones();
         if(!renglones.length){
           lista.innerHTML = estado({ icono: 'carrito', titulo: 'Tu carrito está vacío',
-            texto: quitados.length ? `Quitamos ${quitados.join(', ')}: se agotó.` : 'Empieza por lo básico o busca lo que necesitas.',
-            botones: `<a class="boton principal" href="${enlace('/')}">Ver productos</a><a class="boton secundario" href="${enlace('/buscar')}">Buscar</a>` });
+            texto: quitados.length ? `Quitamos ${quitados.join(', ')}: se agotó. Lo dejamos en «Guardado para después».` : 'Empieza por lo básico o busca lo que necesitas.',
+            botones: `<a class="boton principal" href="${enlace('/')}">Ver productos</a><a class="boton secundario" href="${enlace('/favoritos')}">${icono('corazon')}Mis favoritos</a>` }) + despuesHTML();
           return;
         }
         let total = 0;
-        lista.innerHTML = (quitados.length ? `<p class="aviso-linea">${icono('alerta')}Quitamos ${esc(quitados.join(', '))}: se agotó.</p>` : '')
-          + '<div class="carrito-rejilla"><div class="renglones">' + renglones.map(([id, n]) => {
-            const p = porId.get(id); total += p.p * n;
-            return `<div class="renglon">
-              <a href="${enlace('/p/:id', { id })}">${foto(p, 76, 76, 'loading="lazy"')}</a>
-              <div>
-                <a class="n" href="${enlace('/p/:id', { id })}">${esc(p.n)}</a>
-                <div class="precio"><span class="ahora">${pesos(p.p * n)}</span>${n > 1 ? `<span class="nota chica">${pesos(p.p)} c/u</span>` : ''}</div>
+        const filas = renglones.map(([id, c]) => {
+          const p = porId.get(id); total += aCentavos(p.p) * c;
+          return `<div class="renglon">
+            <a href="${enlace('/p/:id', { id })}">${foto(p, 76, 76, 'loading="lazy"')}</a>
+            <div>
+              <a class="n" href="${enlace('/p/:id', { id })}">${esc(p.n)}</a>
+              <div class="precio"><span class="ahora">${pesos(p.p * c)}</span>${c > 1 ? `<span class="nota chica">${pesos(p.p)} c/u</span>` : ''}</div>
+              ${!p.x && p.q <= POCAS ? `<span class="quedan">${p.q === 1 ? 'Queda 1' : `Quedan ${p.q}`}</span>` : ''}
+              <div class="renglon-acciones">
                 <div class="cantidad" role="group" aria-label="Cantidad de ${esc(p.n)}">
-                  <button type="button" data-menos="${esc(id)}" aria-label="${n === 1 ? 'Quitar del carrito' : 'Una menos'}">${icono(n === 1 ? 'borrar' : 'menos')}</button>
-                  <output>${n}</output>
-                  <button type="button" data-mas="${esc(id)}" aria-label="Una más" ${n >= p.q ? 'disabled' : ''}>${icono('mas')}</button>
+                  <button type="button" data-menos="${esc(id)}" aria-label="${c === 1 ? 'Quitar del carrito' : 'Una menos'}">${icono(c === 1 ? 'borrar' : 'menos')}</button>
+                  <output>${c}</output>
+                  <button type="button" data-mas="${esc(id)}" aria-label="Una más" ${c >= p.q ? 'disabled' : ''}>${icono('mas')}</button>
                 </div>
-              </div></div>`;
-          }).join('') + `</div><div class="resumen">
-            <div class="total"><span>${plural(carrito.piezas(), 'pieza', 'piezas')}</span><strong>${pesos(total)}</strong></div>
+                <button type="button" class="boton fantasma" data-despues="${esc(id)}">${icono('despues')}Para después</button>
+              </div>
+            </div></div>`;
+        }).join('');
+        const g = envioGratis(total, env);
+        const barra = g ? `<div class="envio-gratis${g.listo ? ' listo' : ''}">
+            <p>${icono('camion')}<span>${g.listo ? '<b>Tu envío va gratis</b>' : `Te faltan <b>${pesos(g.falta / 100)}</b> para envío gratis`}</span></p>
+            <div class="barra-avance" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${g.avance}" aria-label="Avance para envío gratis"><span style="width:${g.avance}%"></span></div></div>` : '';
+        lista.innerHTML = (quitados.length ? `<p class="aviso-linea">${icono('alerta')}Quitamos ${esc(quitados.join(', '))}: se agotó. Lo dejamos en «Guardado para después».</p>` : '')
+          + `<div class="carrito-rejilla"><div class="renglones">${filas}</div><div class="resumen">
+            ${barra}
+            <div class="total"><span>Subtotal · ${plural(carrito.piezas(), 'pieza', 'piezas')}</span><strong>${pesos(total / 100)}</strong></div>
+            <p class="nota chica">El envío y la forma de pago se eligen en el siguiente paso.</p>
             <a class="boton principal ancho grande" href="${enlace('/pagar')}">Continuar</a>
-          </div></div>`;
+          </div></div>` + despuesHTML();
       };
       lista.addEventListener('click', (e) => {
-        const mas = e.target.closest('[data-mas]'), menos = e.target.closest('[data-menos]');
-        if(mas){ const p = porId.get(mas.dataset.mas); if(carrito.cuantas(p.id) < p.q) carrito.agregar(p.id); }
-        if(menos) carrito.quitar(menos.dataset.menos);
-        if(mas || menos) pinta();
+        const b = e.target.closest('button'); if(!b) return;
+        if(b.dataset.mas){ const p = porId.get(b.dataset.mas); if(carrito.cuantas(p.id) < p.q) carrito.agregar(p.id); }
+        else if(b.dataset.menos) carrito.quitar(b.dataset.menos);
+        else if(b.dataset.despues){ const id = b.dataset.despues; memoria.despues.guardar(id, carrito.cuantas(id)); carrito.poner(id, 0); aviso('Guardado para después: aquí abajo lo encuentras'); }
+        else if(b.dataset.regresar){
+          const id = b.dataset.regresar, p = porId.get(id), c = memoria.despues.todos().find(([x]) => x === id)?.[1] || 1;
+          const cabe = Math.max(0, Math.min(c, p.q - carrito.cuantas(id)));
+          if(cabe) carrito.agregar(id, cabe);
+          memoria.despues.quitar(id);
+          aviso(cabe < c ? `Sólo alcanzaron ${cabe}` : 'De vuelta en el carrito', cabe < c ? 'mal' : undefined);
+        }
+        else if(b.dataset.olvidar) memoria.despues.quitar(b.dataset.olvidar);
+        else return;
+        pinta();
       });
       pinta();
     },

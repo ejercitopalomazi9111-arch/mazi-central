@@ -9,6 +9,7 @@
    Pagar al recibir o antes (transferencia). El precio lo pone el servidor,
    nunca el teléfono: vender() lo lee de la base.
    ═════════════════════════════════════════════════════════════════════════ */
+import { waNegocio } from './contacto.js';
 import { enlace } from '../nucleo/rutas.js';
 import { icono } from '../nucleo/iconos.js';
 import { esc, pesos, plural, estado, hoja, fecha } from '../nucleo/piezas.js';
@@ -250,7 +251,7 @@ function progreso(p){
 }
 
 async function pedidos(){
-  const [lista, cat] = await Promise.all([misPedidos(), catalogo()]);
+  const [lista, cat, n] = await Promise.all([misPedidos(), catalogo(), negocio()]);
   if(!lista.length) return { html: estado({ icono: 'pedidos', titulo: 'Aún no has pedido nada',
     texto: 'Cuando pidas algo, aquí ves en qué va y lo vuelves a pedir con un toque.',
     botones: `<a class="boton principal" href="${enlace('/')}">Ir a la tienda</a>` }) };
@@ -267,6 +268,7 @@ async function pedidos(){
         <button class="boton ${p.estado === 'en_camino' ? 'secundario' : 'principal'}" data-repetir="${p.id}">${icono('repetir')}Volver a pedir</button>
         <button class="boton secundario" data-detalle="${p.id}">${icono('ver')}Detalle</button>
         ${p.estado === 'recibido' ? `<button class="boton fantasma" data-cancelar="${p.id}">Cancelar</button>` : ''}
+        ${waNegocio(n, `Hola, tengo un problema con mi pedido #${p.folio}: `) ? `<a class="boton fantasma" href="${esc(waNegocio(n, `Hola, tengo un problema con mi pedido #${p.folio}: `))}" target="_blank" rel="noopener">${icono('preguntar')}¿Algún problema?</a>` : ''}
       </div></li>`;
   };
 

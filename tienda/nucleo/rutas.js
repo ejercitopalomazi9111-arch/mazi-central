@@ -58,6 +58,10 @@ export const RUTAS = [
     promesa: 'Lo que llevas y cuánto va, siempre a la vista.' },
   { ruta: '/pagar',         apartado: 'cliente', titulo: 'Pagar',         icono: 'carrito',   menu: false, pantalla: 'pagar',      bloque: 6,
     promesa: 'Aquí se pide quién eres, y nunca antes. Pagas ahora o al recibir.' },
+  { ruta: '/favoritos',     apartado: 'cliente', titulo: 'Favoritos',     icono: 'corazon',   menu: true,  pantalla: 'favoritos',   bloque: 2,
+    promesa: 'Lo que guardaste con el corazón (y si bajó de precio) y lo que viste hace poco.' },
+  { ruta: '/otra-vez',      apartado: 'cliente', titulo: 'Comprar de nuevo', icono: 'repetir', menu: true,  pantalla: 'otraVez',     bloque: 9,
+    promesa: 'Todo lo que ya pediste, para volver a pedirlo con un toque.' },
   { ruta: '/pedidos',       apartado: 'cliente', titulo: 'Mis pedidos',   icono: 'pedidos',   menu: true,  pantalla: 'pedidos',      bloque: 6,
     promesa: 'Lo que has pedido, y «volver a pedir» en cada uno.' },
   { ruta: '/pedido/:id',    apartado: 'cliente', titulo: 'Seguimiento',   icono: 'parada',    menu: false, pantalla: 'seguimiento',      bloque: 8,
@@ -71,6 +75,9 @@ export const RUTAS = [
     promesa: 'Tus datos, tus direcciones y cuándo te toca volver a surtirte.' },
 
   /* ── Repartidor ──────────────────────────────────────────────────────── */
+  { ruta: '/ayuda',         apartado: 'cliente', titulo: 'Ayuda',         icono: 'ayuda',     menu: true,  pantalla: 'ayuda',       bloque: 2,
+    promesa: 'Envíos, pagos, cancelar, y escribirle a una persona por WhatsApp.' },
+
   { ruta: '/r',             apartado: 'repartidor', titulo: 'Hoy',        icono: 'camion',    menu: true,  pantalla: 'repartoHoy',      bloque: 7,
     promesa: 'Cuántas entregas, cuánto camino y cuál es la primera.' },
   { ruta: '/r/ruta',        apartado: 'repartidor', titulo: 'Mi ruta',    icono: 'ruta',      menu: true,  pantalla: 'miRuta',      bloque: 8,

@@ -13,6 +13,7 @@
        personal en el negocio de muestra—, nunca antes.
    El carrito vive en el teléfono (localStorage) y sobrevive a todo eso.
    ═════════════════════════════════════════════════════════════════════════ */
+import { crearMemoria } from './memoria.js';
 import { SUPABASE_URL, SUPABASE_LLAVE_PUBLICABLE, negocioPedido } from '../config.js';
 import * as DEV from './devolucion.js';
 import * as OF from './ofertas.js';
@@ -86,6 +87,9 @@ export function catalogo(){
 }
 /* Tras vender o ajustar, lo que se ve tiene que ser lo que hay. */
 export function olvidarCatalogo(){ _catalogo = undefined; }
+
+/* ── Lo que la tienda recuerda del cliente (nucleo/memoria.js) ──────────── */
+export const memoria = crearMemoria(globalThis.localStorage ?? { getItem: () => null, setItem(){} }, SLUG);
 
 /* ── Carrito ───────────────────────────────────────────────────────────── */
 const LLAVE_CARRITO = 'tienda-carrito-' + SLUG;

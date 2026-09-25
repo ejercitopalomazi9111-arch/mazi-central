@@ -84,6 +84,12 @@ _(se agregan aquí conforme salgan; ninguna detiene el trabajo)_
   celular, la caja no la ve. Para compartirlas entre teléfonos hace falta una tabla en la
   base (una migración más); mientras, se manda por WhatsApp y ahí queda también.
 
+- **Opiniones con estrellas y preguntas públicas (como Amazon y Mercado Libre).** Hacen falta
+  dos tablas en la base (otra migración) y alguien que modere: una opinión falsa o un insulto
+  publicado es peor que no tener opiniones. Mientras, la ficha tiene «Pregúntanos por WhatsApp».
+- **Favoritos, vistos y búsquedas viven en el teléfono del cliente.** Si cambia de teléfono no
+  los lleva. Para que viajen con su cuenta hace falta guardarlos en la base (otra migración).
+
 - **Las ofertas vencidas regresan su precio cuando el admin abre la app** (el tablero o
   Descuentos), no a la hora exacta. Para que pase a la hora exacta hace falta una tarea
   programada en el servidor.

@@ -387,7 +387,8 @@ a{ color: inherit; }
 .carril > *{ scroll-snap-align: start; }
 @media (min-width: 900px){ .carril{ grid-auto-columns: minmax(200px, 23%); margin: 0; padding: 0 0 var(--e2); } }
 
-.producto{ display: flex; flex-direction: column; background: var(--superficie); border: 1px solid var(--linea); border-radius: var(--radio); overflow: hidden; text-decoration: none; box-shadow: var(--elev-1); transition: transform var(--rapido) ease, border-color var(--rapido) ease; }
+.producto{ position: relative; display: flex; flex-direction: column; background: var(--superficie); border: 1px solid var(--linea); border-radius: var(--radio); overflow: hidden; box-shadow: var(--elev-1); transition: transform var(--rapido) ease, border-color var(--rapido) ease; }
+.producto-enlace{ display: flex; flex-direction: column; flex: 1; color: inherit; text-decoration: none; }
 .producto:hover{ border-color: var(--linea-fuerte); }
 .producto:active{ transform: scale(.985); }
 /* Las fotos de producto vienen en fondo blanco: se les da SIEMPRE blanco, también
@@ -1221,3 +1222,55 @@ dialog.hoja .hoja-cuerpo{ padding: var(--e5); overflow-y: auto; max-height: calc
 .etq-cobertura{ font-weight: 700; flex: none; }
 .barra-surtir{ justify-content: flex-start; }
 .barra-surtir [data-csv]{ margin-left: auto; }
+
+/* ── Lo que traen Amazon y Mercado Libre (cliente/tarjeta.js, mias.js) ── */
+.corazon{ position: absolute; top: 6px; right: 6px; z-index: 1; width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 50%;
+  background: color-mix(in srgb, var(--superficie) 88%, transparent); color: var(--tinta-suave); cursor: pointer; box-shadow: var(--elev-1); }
+.corazon .ico{ width: 22px; height: 22px; }
+.corazon[aria-pressed="true"]{ color: var(--mal); }
+.corazon[aria-pressed="true"] .ico path{ fill: currentColor; }
+.corazon:focus-visible, .rapido:focus-visible{ outline: 3px solid var(--acento); outline-offset: 2px; }
+.corazon.grande{ top: 10px; right: 10px; width: 48px; height: 48px; }
+.rapido{ position: absolute; right: 8px; bottom: 8px; width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 50%;
+  background: var(--acento); color: var(--sobre-acento); cursor: pointer; box-shadow: var(--elev-2); }
+.rapido .ico{ width: 22px; height: 22px; }
+.rapido.hecho{ animation: rapido-hecho 360ms ease-out; }
+@keyframes rapido-hecho{ 40%{ transform: scale(1.18); } }
+@media (prefers-reduced-motion: reduce){ .rapido.hecho{ animation: none; } }
+.producto .cuerpo{ padding-right: 56px; }
+.interruptor.en-linea{ display: inline-flex; align-items: center; margin: 0; font-weight: 650; }
+.interruptor.en-linea span{ padding-top: 0; }
+.recientes{ margin-bottom: var(--e4); }
+.recientes-cabeza{ display: flex; align-items: center; justify-content: space-between; }
+.recientes-cabeza h2{ font-size: var(--t-cuerpo); }
+.chip-boton .ico{ width: 16px; height: 16px; margin-right: 4px; vertical-align: -3px; }
+.envio-gratis{ display: grid; gap: var(--e2); padding: var(--e3); border-radius: var(--radio); background: var(--hundido); margin-bottom: var(--e3); }
+.envio-gratis p{ display: flex; gap: var(--e2); align-items: center; margin: 0; }
+.envio-gratis .ico{ width: 20px; height: 20px; flex: none; }
+.envio-gratis.listo{ background: var(--bien-suave); color: var(--bien); }
+.barra-avance{ height: 8px; border-radius: 99px; background: var(--linea); overflow: hidden; }
+.barra-avance span{ display: block; height: 100%; border-radius: inherit; background: var(--acento); transition: width 300ms ease; }
+.envio-gratis.listo .barra-avance span{ background: var(--bien); }
+.renglon-acciones{ display: flex; flex-wrap: wrap; align-items: center; gap: var(--e2); margin-top: var(--e2); }
+.renglon .quedan{ display: block; font-size: 13px; color: var(--ojo); font-weight: 700; }
+.acciones-mio{ display: flex; align-items: center; gap: var(--e1); flex: none; }
+.mio .precio-mio{ color: var(--tinta); }
+.garantias{ list-style: none; padding: 0; margin: var(--e4) 0; display: grid; gap: var(--e2); }
+.garantias li{ display: flex; gap: var(--e2); align-items: flex-start; font-size: 15px; color: var(--tinta-suave); }
+.garantias .ico{ width: 20px; height: 20px; flex: none; color: var(--acento-hondo); margin-top: 1px; }
+.ficha-cabeza{ display: flex; align-items: center; justify-content: space-between; gap: var(--e2); }
+.sub-ficha{ font-size: var(--t-cuerpo); margin: var(--e5) 0 var(--e2); }
+.foto-grande{ position: relative; }
+.acercar{ display: block; width: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; position: relative; }
+.acercar .lupa{ position: absolute; left: 10px; bottom: 10px; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: color-mix(in srgb, var(--superficie) 85%, transparent); color: var(--tinta); }
+.acercar .lupa .ico{ width: 20px; height: 20px; }
+.hoja-foto .hoja-cuerpo img{ width: 100%; height: auto; max-height: 80vh; object-fit: contain; background: #fff; border-radius: var(--radio); }
+.aviso-linea.bien{ background: var(--bien-suave); color: var(--bien); }
+.pregunta{ border-top: 1px solid var(--linea); }
+.pregunta summary{ min-height: 52px; display: flex; align-items: center; font-weight: 700; cursor: pointer; list-style: none; padding: var(--e2) 0; }
+.pregunta summary::-webkit-details-marker{ display: none; }
+.pregunta summary::after{ content: '+'; margin-left: auto; font-size: 22px; color: var(--tinta-suave); }
+.pregunta[open] summary::after{ content: '−'; }
+.pregunta > div{ padding: 0 0 var(--e3); color: var(--tinta-suave); }
+.contacto-ayuda{ padding: var(--e5); display: grid; gap: var(--e2); margin-bottom: var(--e5); }
+.contacto-ayuda .ico{ width: 18px; height: 18px; vertical-align: -3px; }

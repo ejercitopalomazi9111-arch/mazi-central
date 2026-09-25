@@ -8,7 +8,7 @@
 import { APARTADOS, RUTAS, emparejar, enlace } from './rutas.js';
 import { icono } from './iconos.js';
 import { esc, pesos, plural, inicioDe, obra, noexiste, sinPermiso, fallo, cargando, hoja } from './piezas.js';
-import { negocio, yo, verComo, carrito, catalogo, subirVentasPendientes } from './datos.js';
+import { negocio, yo, verComo, carrito, catalogo, subirVentasPendientes, memoria } from './datos.js';
 import { PANTALLAS as CLIENTE } from '../cliente/pantallas.js';
 import { PANTALLAS as ADMIN } from '../admin/pantallas.js';
 import { PANTALLAS as IMPORTAR } from '../admin/importar.js';
@@ -30,8 +30,9 @@ import { PANTALLAS as REDES } from '../admin/redes.js';
 import { PANTALLAS as MANUAL } from '../admin/manual.js';
 import { PANTALLAS as COTIZAR } from '../venta/cotizar.js';
 import { PANTALLAS as SURTIR } from '../admin/surtir.js';
+import { PANTALLAS as MIAS } from '../cliente/mias.js';
 
-const PANTALLAS = { ...CLIENTE, ...PEDIR, ...ADMIN, ...IMPORTAR, ...VENTA, ...PEDIDOS, ...REPARTO, ...RUTA, ...IMPRESORA, ...CLIENTES, ...CUENTA, ...DEVOLUCION, ...CONVERSACIONES, ...SORTEOS, ...SORTEO, ...DESCUENTOS, ...REPORTES, ...REDES, ...COTIZAR, ...SURTIR, ...MANUAL, obra, noexiste };
+const PANTALLAS = { ...CLIENTE, ...PEDIR, ...ADMIN, ...IMPORTAR, ...VENTA, ...PEDIDOS, ...REPARTO, ...RUTA, ...IMPRESORA, ...CLIENTES, ...CUENTA, ...DEVOLUCION, ...CONVERSACIONES, ...SORTEOS, ...SORTEO, ...DESCUENTOS, ...REPORTES, ...REDES, ...COTIZAR, ...SURTIR, ...MIAS, ...MANUAL, obra, noexiste };
 
 const $app = document.getElementById('app');
 const $avisos = document.getElementById('avisos');
@@ -317,7 +318,28 @@ $app.addEventListener('click', (e) => {
     }
   }
   else if(t.matches('[data-reintentar]')) navegar();
+  else if(t.matches('[data-fav]')) alternarFavorito(t);
+  else if(t.matches('[data-rapido]')) agregarRapido(t);
 });
+
+/* El corazón y el «+» de las tarjetas (cliente/tarjeta.js), en cualquier pantalla. */
+function alternarFavorito(b){
+  const puesto = memoria.favoritos.alternar({ id: b.dataset.fav, p: Number(b.dataset.precio) });
+  document.querySelectorAll(`[data-fav="${CSS.escape(b.dataset.fav)}"]`).forEach((x) => {
+    x.setAttribute('aria-pressed', puesto);
+    x.setAttribute('aria-label', x.getAttribute('aria-label').replace(/^(Quitar de favoritos|Guardar en favoritos)/, puesto ? 'Quitar de favoritos' : 'Guardar en favoritos'));
+  });
+  aviso(puesto ? 'Guardado en favoritos' : 'Quitado de favoritos');
+}
+async function agregarRapido(b){
+  const { porId } = await catalogo();
+  const p = porId.get(b.dataset.rapido);
+  if(!p || p.x){ aviso('Se agotó', 'mal'); return; }
+  if(carrito.cuantas(p.id) >= p.q){ aviso(`Ya llevas todas las que hay (${p.q})`, 'mal'); return; }
+  carrito.agregar(p.id);
+  b.classList.remove('hecho'); void b.offsetWidth; b.classList.add('hecho');
+  aviso(`Agregado · llevas ${carrito.piezas() === 1 ? '1 pieza' : `${carrito.piezas()} piezas`}`);
+}
 document.addEventListener('keydown', (e) => { if(e.key === 'Escape' && $app.classList.contains('menu-abierto')) abrirMenu(false); });
 
 let primeraEntrada = true;

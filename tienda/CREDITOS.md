@@ -2,7 +2,7 @@
 
 ## Iconos · Lucide
 
-Los iconos de `iconos.js` son de [Lucide](https://lucide.dev), versión 0.469.0 (también `telefono`, el «phone» de Lucide). `ropa`, `termo`, `taza` y `regalo` (shirt, cup-soda, coffee y gift) salen de lucide-static 1.48.0, bajados el 24 de septiembre de 2026 para el segundo giro.
+Los iconos de `iconos.js` son de [Lucide](https://lucide.dev), versión 0.469.0 (también `telefono`, el «phone» de Lucide). `ropa`, `termo`, `taza` y `regalo` (shirt, cup-soda, coffee y gift) salen de lucide-static 1.48.0, bajados el 24 de septiembre de 2026 para el segundo giro. `corazon`, `compartir`, `ayuda`, `acercar`, `despues`, `preguntar` y `estrella` (heart, share-2, circle-help, zoom-in, bookmark-plus, message-circle-question y star) salen de lucide-static 0.469.0, bajados el 25 de septiembre de 2026.
 
 > ISC License — Copyright (c) for portions of Lucide are held by Cole Bemis
 > 2013-2022 as part of Feather (MIT). All other copyright (c) for Lucide are held
