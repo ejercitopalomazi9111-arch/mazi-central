@@ -873,8 +873,7 @@ async function pintarVisor(){
   INS.montarEditor(marco, i, () => pintarVisor());
 }
 let modeloVisor = null;
-async function guardarElemento(i, cid){ aviso('Pronto: «Mis elementos».'); }
-function misElementos(cuerpo){ cuerpo.replaceChildren(h('p', { class: 'nota' }, 'Pronto.')); }
+const guardarElemento = (i, cid) => INS.guardarDeLamina(i, cid);
 /* La barra del elemento elegido, debajo de la lámina grande. */
 function pintarBarraElemento(cid){
   const b = $('#barra-elemento');
@@ -884,7 +883,7 @@ function pintarBarraElemento(cid){
   if(!c){ b.hidden = true; return; }
   b.hidden = false;
   const boton = (acc, tx, extra = {}) => h('button', { class: 'chip', type: 'button', 'data-accion': acc, on: { click: () => accionElemento(acc) }, ...extra }, tx);
-  const tipo = c.icono ? 'Icono' : c.grupo ? 'Diseño' : c.imagen ? 'Imagen' : c.tipo === 'cxnSp' ? 'Línea' : c.texto ? 'Texto' : 'Forma';
+  const tipo = c.icono ? 'Icono' : c.grupo ? 'Diseño' : c.imagen ? 'Imagen' : c.tipo === 'cxnSp' ? 'Línea' : c.texto && !c.relleno ? 'Texto' : 'Forma';
   b.replaceChildren(...[h('b', {}, tipo),
     (!c.imagen || c.icono) ? boton('color', '● Color') : null,
     c.texto || c.grupo ? boton('colorTexto', 'A Color de letra') : null,
@@ -1017,8 +1016,7 @@ function colorCompacto(inicial, alCambiar, extra = []){
 
 /* ══ INSERTAR (insertar.js) ══ */
 const INS = crearInsertar({ h, $, $$, hoja, cerrar, aviso, ocupado, segmento, plural, selectorColor: colorCompacto, aplicar, N, V,
-  D: () => D, abrirVisor, objetivo, sel: () => sel, actual: () => actual, pintarBarraElemento, accionElemento,
-  misElementos: (cuerpo, destino) => misElementos(cuerpo, destino) });
+  D: () => D, abrirVisor, objetivo, sel: () => sel, actual: () => actual, pintarBarraElemento, accionElemento });
 $('#b-presentar').addEventListener('click', () => INS.presentar(sel.size ? Math.min(...sel) : 0));
 $('#presentar-cerrar').addEventListener('click', () => $('#presentar').close());
 

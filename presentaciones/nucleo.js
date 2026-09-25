@@ -1760,6 +1760,21 @@ export async function exportarElemento(deck, i, cid){
   const f = formasSueltas(deck, l).find((x) => x.el === el);
   return { xml: new XMLSerializer().serializeToString(el), medios, ancho: deck.ancho, alto: deck.alto, caja: f ? { x: f.x, y: f.y, w: f.w, h: f.h } : null };
 }
+/* Un elemento hecho FUERA de una lámina (un dibujo, un icono de la IA): el
+   mismo formato que exportarElemento, sobre una lámina de referencia de
+   16:9. `lado` es qué fracción del ancho de la lámina ocupa al ponerlo. */
+export function elementoDeImagen({ png, svg, proporcion = 1, lado = 0.25, nombre = 'Mi elemento' }){
+  const W = 12192000, H = 6858000;
+  let w = W * lado, hh = w / proporcion;
+  if(hh > H * 0.8){ hh = H * 0.8; w = hh * proporcion; }
+  const ext = svg ? `<a:extLst><a:ext uri="{96DAC541-7B7A-43D3-8B79-37D633B846F1}"><asvg:svgBlip xmlns:asvg="http://schemas.microsoft.com/office/drawing/2016/SVG/main" r:embed="rId2"/></a:ext></a:extLst>` : '';
+  const xml = `<p:pic><p:nvPicPr><p:cNvPr id="2" name="${escXml(nombre)}"/><p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr>`
+    + `<p:blipFill><a:blip r:embed="rId1">${ext}</a:blip><a:stretch><a:fillRect/></a:stretch></p:blipFill>`
+    + `<p:spPr>${xfrmXml((W - w) / 2, (H - hh) / 2, w, hh)}<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`;
+  const medios = { rId1: { mime: png.mime || 'image/png', bytes: png.bytes } };
+  if(svg) medios.rId2 = { mime: 'image/svg+xml', bytes: svg.bytes };
+  return { xml, medios, ancho: W, alto: H, caja: { x: (W - w) / 2, y: (H - hh) / 2, w, h: hh } };
+}
 /* Y el camino de regreso: meterlo en otra lámina (de otra presentación, quizá
    de otro tamaño): ids nuevos, imágenes nuevas, y escalado a esta lámina. */
 export async function importarElemento(deck, i, e, { centrar = true } = {}){

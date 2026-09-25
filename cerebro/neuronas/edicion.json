@@ -104,6 +104,42 @@
         "solo titulos no funciona"
       ],
       "salioDe": "presentaciones/pruebas-nucleo.mjs: «color de títulos» daba 0 en las dos presentaciones de Fadori."
+    },
+    {
+      "id": "replacechildren-escribe-null",
+      "titulo": "Sale la palabra «null» pegada entre los botones",
+      "gravedad": "media",
+      "sintoma": "Una barra de botones que se arma según el caso enseña el texto «null» entre dos botones, justo donde iba uno que no aplicaba.",
+      "causa": "replaceChildren(a, cond ? b : null, c) convierte cada argumento que no es nodo en texto: null → «null», undefined → «undefined».",
+      "porque": "El mismo patrón funciona en funciones propias tipo h() que ignoran los null, así que se escribe igual sin pensar; el DOM nativo no los ignora.",
+      "arreglo": "Filtrar antes: el.replaceChildren(...[a, cond ? b : null, c].filter(Boolean)).",
+      "comoCazarlo": "En la prueba de pantalla, exigir que el textContent de la barra no contenga «null» ni «undefined» con el elemento que tiene MENOS botones.",
+      "consejo": "Los null que tu helper se come, el DOM te los escribe.",
+      "senales": [
+        "dice null",
+        "aparece null en la pantalla",
+        "texto undefined entre botones",
+        "sale la palabra null"
+      ],
+      "salioDe": "La barra del elemento en Presentaciones, 25 de septiembre: la vio la captura, no una prueba."
+    },
+    {
+      "id": "vista-que-dibuja-cuadros",
+      "titulo": "La estrella que pusiste se ve como un cuadro",
+      "gravedad": "media",
+      "sintoma": "Se inserta una estrella, flecha o corazón y en la vista de la herramienta sale un rectángulo del mismo color. Al abrir el PowerPoint, la forma está bien.",
+      "causa": "La vista pinta cada forma como un div y sólo sabía de rectángulos, redondeados y elipses. La geometría (prstGeom) se leía y se ignoraba.",
+      "porque": "Las pruebas miraban el ARCHIVO (geo = star5) y el archivo estaba bien. Lo que mentía era la pantalla, y ninguna prueba medía la silueta.",
+      "arreglo": "clip-path: polygon(…) por geometría en presentaciones/vista.js (RECORTE); dona con mask radial; nube y cilindro con border-radius.",
+      "comoCazarlo": "Mirar la captura de cada forma nueva que se ofrezca en el menú; si se agrega una forma a FORMAS, se agrega su recorte.",
+      "consejo": "Si ofreces veinte formas, la vista tiene que saber dibujar veinte formas.",
+      "senales": [
+        "la estrella sale cuadrada",
+        "se ve como cuadro",
+        "la flecha no se ve",
+        "la forma no se ve bien en la vista"
+      ],
+      "salioDe": "Captura de «Mis elementos» en Presentaciones, 25 de septiembre."
     }
   ]
 }

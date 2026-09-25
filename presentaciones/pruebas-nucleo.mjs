@@ -313,6 +313,12 @@ const ins = await en(async (N) => {
   r.importado = await N.importarElemento(otra, 0, e);
   const cajaImp = N.cajaDe(otra, 0, r.importado);
   r.importadoCentrado = cajaImp && Math.abs(cajaImp.x + cajaImp.w / 2 - otra.ancho / 2) < otra.ancho * 0.01;
+  // Un elemento hecho fuera de una lámina (dibujo con el dedo, icono de la IA).
+  const pm = Object.values(e.medios).find((m) => m.mime === 'image/png');
+  const ed = N.elementoDeImagen({ png: pm, svg: { bytes: new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 10"><path d="M0 0h20v10z"/></svg>') }, proporcion: 2, nombre: 'Mi dibujo' });
+  r.dibujo = await N.importarElemento(otra, 0, ed);
+  const cd = N.cajaDe(otra, 0, r.dibujo);
+  r.dibujoOk = !!(cd && cd.imagen && Math.abs(cd.w / cd.h - 2) < 0.02 && Math.abs(cd.w / otra.ancho - 0.25) < 0.01 && cd.nombre === 'Mi dibujo');
   const guardado = new Uint8Array(await (await N.guardar(d)).arrayBuffer());
   const otraBytes = new Uint8Array(await (await N.guardar(otra)).arrayBuffer());
   const d2 = await N.abrir(guardado);
@@ -337,6 +343,7 @@ ok('recolorear un diseño cambia su acento y deja las tarjetas blancas', ins.col
 ok('transición «empujar» rápida que avanza sola a los 5 s', ins.tr.l1?.tipo === 'push' && ins.tr.l1.dir === 'u' && ins.tr.l1.vel === 'fast' && ins.tr.l1.segundos === 5 && !ins.tr.l0, JSON.stringify(ins.tr));
 ok('<p:transition> va después de cSld y clrMapOvr', ins.ordenSld[0] < ins.ordenSld[2] && (ins.ordenSld[1] < 0 || ins.ordenSld[1] < ins.ordenSld[2]), JSON.stringify(ins.ordenSld));
 ok('un elemento exportado entra centrado en otra presentación de otro tamaño', ins.importadoCentrado);
+ok('un dibujo o icono de IA entra como imagen, sin deformarse y a un cuarto del ancho', ins.dibujoOk);
 for(const [nom, b64] of [['insertado.pptx', ins.b64], ['importado.pptx', ins.b64Otra], ['acomodada.pptx', null], ['recuadro.pptx', null]]){
   const ruta = join(TMP, nom);
   if(b64) writeFileSync(ruta, Buffer.from(b64, 'base64'));

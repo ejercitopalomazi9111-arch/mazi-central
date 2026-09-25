@@ -15,6 +15,8 @@
      tocar a la derecha avanza, a la izquierda regresa.
    ═════════════════════════════════════════════════════════════════════════ */
 import * as ICONOS from './iconos.js';
+import * as IA from './ia.js';
+import * as EL from './elementos.js';
 
 /* Dibujitos de las formas para el menú (viewBox 0 0 40 40). */
 const DIBUJO = {
@@ -53,7 +55,7 @@ export function crearInsertar(U){
     const temaColores = ['accent1', 'accent2', 'accent3', 'accent4', 'accent5', 'accent6', 'dk2', 'lt2'].map((k) => pal[k] && '#' + pal[k]).filter(Boolean);
     const zonaColor = h('div');
     const pintaColor = () => zonaColor.replaceChildren(h('div', { class: 'seccion' }, h('h3', {}, 'Color'), selectorColor(color, (c) => { color = c; pintaSeccion(); }, temaColores)));
-    const pestañas = h('div', { class: 'ejemplos filtros', role: 'tablist' });
+    const pestañas = h('div', { class: 'ejemplos filtros', role: 'tablist', style: { flexWrap: 'wrap', overflow: 'visible', marginBottom: '12px' } });
     const pintaPestanas = () => pestañas.replaceChildren(...[['formas', 'Formas'], ['iconos', 'Iconos'], ['disenos', 'Diseños'], ['transiciones', 'Transiciones'], ['mios', 'Mis elementos']].map(([v, t]) =>
       h('button', { class: 'chip', type: 'button', role: 'tab', 'aria-selected': String(seccion === v), 'aria-pressed': String(seccion === v), 'data-seccion': v, on: { click: () => { seccion = v; pintaPestanas(); pintaSeccion(); } } }, t)));
     const pintaSeccion = () => {
@@ -62,7 +64,7 @@ export function crearInsertar(U){
       else if(seccion === 'iconos') seccionIconos(cuerpo);
       else if(seccion === 'disenos') seccionDisenos(cuerpo);
       else if(seccion === 'transiciones') seccionTransiciones(cuerpo);
-      else U.misElementos(cuerpo, destino);
+      else seccionMios(cuerpo);
     };
     pintaPestanas(); pintaColor(); pintaSeccion();
     hoja('Insertar', [
@@ -150,6 +152,191 @@ export function crearInsertar(U){
         h('button', { class: 'btn', type: 'button', on: { click: async () => { const dst = destino(); await aplicar('Quitar transiciones', () => N.ponerTransicion(D(), dst, { tipo: 'ninguna' }), (n) => `Sin transición en ${plural(n, 'lámina', 'láminas')}.`); } } }, 'Quitar')),
       h('p', { class: 'nota' }, 'Son las transiciones estándar: se ven igual en PowerPoint, Keynote y Google Slides.'));
     pintaDir(); anima();
+  }
+
+  /* ══ MIS ELEMENTOS ══ */
+  let mios = null, cargandoMios = null, editandoMios = false, qMios = '', cuerpoMios = null;
+  const datosMios = new Map();                 // id → datos listos para importar
+  async function listaMios(forzar = false){
+    if(mios && !forzar) return mios;
+    if(!cargandoMios) cargandoMios = IA.elementos.lista().then((l) => { mios = l; return l; }).finally(() => { cargandoMios = null; });
+    return cargandoMios;
+  }
+  function sinLlave(cuerpo, alListo){
+    const en = h('input', { class: 'entrada', type: 'text', placeholder: 'Pega aquí el link de La Sala', 'aria-label': 'Link de La Sala' });
+    cuerpo.replaceChildren(h('div', { class: 'mios-vacio' },
+      h('p', {}, 'Tus elementos se guardan en La Sala, para que no se borren y se vean igual en el teléfono y en la compu. Falta la llave de La Sala en este teléfono.'),
+      en, h('button', { class: 'btn primario ancho', type: 'button', style: { marginTop: '8px' }, on: { click: () => { if(IA.ponerLlave(en.value)) alListo(); else aviso('Ese link no trae llave.', 'mal'); } } }, 'Usar esta llave')));
+  }
+  async function seccionMios(cuerpo){
+    cuerpoMios = cuerpo;
+    if(!IA.llave()) return sinLlave(cuerpo, () => seccionMios(cuerpo));
+    const crear = h('div', { class: 'fila dos' },
+      h('button', { class: 'btn', type: 'button', 'data-crear': 'dibujo', on: { click: () => abrirDibujo() } }, '✎ Dibujar uno'),
+      h('button', { class: 'btn', type: 'button', 'data-crear': 'ia', on: { click: () => abrirIconoIA() } }, '✦ Pedírselo a la IA'));
+    const zona = h('div', { class: 'rejilla-mios' }, h('span', { class: 'pensando' }, h('i'), h('i'), h('i')));
+    const cab = h('div');
+    cuerpo.replaceChildren(crear, h('p', { class: 'nota' }, 'Para guardar algo que ya está en una lámina: ábrela en grande, tócalo y «★ A mis elementos».'), cab, zona);
+    let l;
+    try{ l = await listaMios(); }catch(e){ if(e.llave) return sinLlave(cuerpo, () => seccionMios(cuerpo)); zona.replaceChildren(h('p', { class: 'nota' }, e.message)); return; }
+    const pinta = () => {
+      const palabras = qMios.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').split(/\s+/).filter(Boolean);
+      const vis = l.filter((e) => { const n = e.nombre.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); return palabras.every((w) => n.includes(w)); });
+      if(!l.length){ zona.replaceChildren(h('p', { class: 'mios-vacio' }, 'Todavía no tienes elementos. Dibuja uno, pídeselo a la IA o guarda algo de una lámina.')); return; }
+      zona.replaceChildren(...vis.map((e) => h('div', { class: 'mio', 'data-mio': e.id },
+        h('button', { class: 'mio-poner', type: 'button', title: `Poner «${e.nombre}»`, on: { click: () => ponerMio(e) } }, EL.pintarVista(U.V, e.vista, 132, 84), h('small', {}, e.nombre)),
+        editandoMios ? h('div', { class: 'mio-editar' },
+          h('button', { class: 'chip', type: 'button', 'data-renombrar': e.id, 'aria-label': `Renombrar ${e.nombre}`, on: { click: () => renombrarMio(e, pinta) } }, '✎'),
+          h('button', { class: 'chip peligro', type: 'button', 'data-borrar-mio': e.id, 'aria-label': `Borrar ${e.nombre}`, on: { click: () => borrarMio(e, () => { l = mios; pinta(); }) } }, '🗑')) : null)));
+      if(!vis.length) zona.replaceChildren(h('p', { class: 'nota' }, `Nada con «${qMios}».`));
+    };
+    const q = h('input', { class: 'entrada', type: 'search', placeholder: 'Buscar en mis elementos', value: qMios, 'aria-label': 'Buscar en mis elementos', on: { input: (ev) => { qMios = ev.target.value; pinta(); } } });
+    const bEditar = h('button', { class: 'chip', type: 'button', 'aria-pressed': String(editandoMios), 'data-editar-mios': '', on: { click: () => { editandoMios = !editandoMios; bEditar.setAttribute('aria-pressed', String(editandoMios)); bEditar.textContent = editandoMios ? 'Listo' : 'Editar'; pinta(); } } }, editandoMios ? 'Listo' : 'Editar');
+    cab.replaceChildren(l.length ? h('div', { class: 'mios-cab' }, l.length > 6 ? q : h('b', {}, plural(l.length, 'elemento', 'elementos')), bEditar) : '');
+    pinta();
+  }
+  async function datosDe(e){
+    if(!datosMios.has(e.id)) datosMios.set(e.id, EL.deEnvio(await IA.elementos.datos(e.id)));
+    return datosMios.get(e.id);
+  }
+  async function ponerMio(e){
+    ocupado(`Bajando «${e.nombre}»…`);
+    let datos;
+    try{ datos = await datosDe(e); }catch(err){ aviso('No se pudo bajar: ' + err.message, 'mal'); return; }finally{ ocupado(''); }
+    insertar(`Mi elemento: ${e.nombre}`, (i) => N.importarElemento(D(), i, datos), `«${e.nombre}» puesto.`);
+  }
+  function renombrarMio(e, listo){
+    const en = h('input', { class: 'entrada', type: 'text', value: e.nombre, maxlength: '80', 'aria-label': 'Nombre' });
+    hoja('Renombrar', [en, h('button', { class: 'btn primario ancho', type: 'button', style: { marginTop: '12px' }, on: { click: async () => {
+      try{ const n = await IA.elementos.renombrar(e.id, en.value); e.nombre = n.nombre; cerrar('#hoja2'); listo(); }catch(err){ aviso('No se pudo: ' + err.message, 'mal'); }
+    } } }, 'Guardar nombre')], '#hoja2');
+    setTimeout(() => en.select(), 50);
+  }
+  function borrarMio(e, listo){
+    hoja('¿Borrar este elemento?', [h('p', {}, `«${e.nombre}» se borra de tus elementos. Lo que ya pusiste en tus láminas se queda.`),
+      h('div', { class: 'fila dos' }, h('button', { class: 'btn', type: 'button', on: { click: () => cerrar('#hoja2') } }, 'No'),
+        h('button', { class: 'btn peligro', type: 'button', 'data-confirmar-borrar': '', on: { click: async () => {
+          try{ await IA.elementos.borrar(e.id); mios = mios.filter((x) => x.id !== e.id); datosMios.delete(e.id); cerrar('#hoja2'); aviso(`«${e.nombre}» borrado de tus elementos.`); listo(); }
+          catch(err){ aviso('No se pudo: ' + err.message, 'mal'); }
+        } } }, 'Sí, borrar'))], '#hoja2');
+  }
+  /* Guardar en la sala. `vista` ya armada. */
+  async function guardarMio(nombre, origen, datos, vista){
+    const e = await IA.elementos.guardar({ nombre, origen, datos: EL.aEnvio(datos), vista: JSON.stringify(vista) });
+    if(mios) mios = [e, ...mios];
+    datosMios.set(e.id, datos);
+    return e;
+  }
+  /* Desde la vista grande: «★ A mis elementos». */
+  async function guardarDeLamina(i, cid){
+    if(!IA.llave()){ const c = h('div'); hoja('A mis elementos', c, '#hoja2'); sinLlave(c, () => { cerrar('#hoja2'); guardarDeLamina(i, cid); }); return; }
+    const c = N.cajaDe(D(), i, cid);
+    const sugerido = c?.icono ? `Icono ${c.icono}` : (c?.texto || '').replace(/\s+/g, ' ').trim().slice(0, 40) || (c?.grupo ? 'Mi diseño' : c?.imagen ? 'Mi imagen' : 'Mi forma');
+    const en = h('input', { class: 'entrada', type: 'text', value: sugerido, maxlength: '80', 'aria-label': 'Nombre del elemento' });
+    hoja('A mis elementos', [h('p', { class: 'nota' }, 'Queda guardado con sus colores, texto e imágenes, para ponerlo en cualquier presentación desde Insertar → Mis elementos.'),
+      h('label', { class: 'campo' }, 'Nombre', en),
+      h('button', { class: 'btn primario ancho', type: 'button', 'data-guardar-mio': '', style: { marginTop: '12px' }, on: { click: async () => {
+        ocupado('Guardando…');
+        try{
+          const datos = await N.exportarElemento(D(), i, cid);
+          const vista = await EL.vistaDe(N, D(), i, cid);
+          const e = await guardarMio(en.value.trim() || sugerido, 'lamina', datos, vista);
+          cerrar('#hoja2');
+          aviso(`«${e.nombre}» guardado en Mis elementos.`, 'bien');
+        }catch(err){ aviso('No se pudo guardar: ' + err.message, 'mal', { ms: 8000 }); }
+        finally{ ocupado(''); }
+      } } }, 'Guardar')], '#hoja2');
+  }
+  /* Cierre común de dibujo e IA: ponerlo, guardarlo, o las dos. */
+  async function terminarImagen({ png, svg, proporcion, nombre, origen }, { poner, guardar }){
+    const datos = N.elementoDeImagen({ png, svg, proporcion, nombre });
+    if(guardar){
+      ocupado('Guardando…');
+      try{
+        const url = URL.createObjectURL(new Blob([png.bytes], { type: png.mime }));
+        const vista = await EL.vistaDeImagen(url, proporcion).finally(() => URL.revokeObjectURL(url));
+        await guardarMio(nombre, origen, datos, vista);
+        if(!poner) aviso(`«${nombre}» guardado en Mis elementos.`, 'bien');
+      }catch(err){ aviso('No se pudo guardar: ' + err.message, 'mal', { ms: 8000 }); if(!poner) return; }
+      finally{ ocupado(''); }
+    }
+    cerrar('#hoja2');
+    if(poner) await insertar(`Mi elemento: ${nombre}`, (i) => N.importarElemento(D(), i, datos), `«${nombre}» puesto${guardar ? ' y guardado en Mis elementos' : ''}.`);
+    else if(seccion === 'mios' && cuerpoMios?.isConnected) seccionMios(cuerpoMios);
+  }
+  const casillaGuardar = () => { const c = h('input', { type: 'checkbox', checked: !!IA.llave(), 'data-tambien-guardar': '' }); return [c, h('label', { class: 'check' }, c, h('span', {}, 'Guardarlo también en Mis elementos'))]; };
+
+  function abrirDibujo(){
+    const pal = N.paletaTema(D());
+    const deTema = ['accent1', 'accent2', 'dk2', 'lt2'].map((k) => pal[k] && '#' + pal[k]).filter(Boolean);
+    let tinta = color || '#AC27FF', grosor = 8;
+    const lz = EL.lienzoDibujo({ color: () => tinta, grosor: () => grosor });
+    const nombre = h('input', { class: 'entrada', type: 'text', value: 'Mi dibujo', maxlength: '80', 'aria-label': 'Nombre del dibujo' });
+    const [chk, fila] = casillaGuardar();
+    const listo = async (poner) => {
+      const r = EL.trazosASvg(lz.trazos());
+      if(!r){ aviso('Primero dibuja algo.', 'mal'); return; }
+      const png = await EL.svgAPng(r.svg, r.w, r.h);
+      await terminarImagen({ png, svg: { bytes: new TextEncoder().encode(r.svg) }, proporcion: r.w / r.h, nombre: nombre.value.trim() || 'Mi dibujo', origen: 'dibujo' }, { poner, guardar: poner ? chk.checked : true });
+    };
+    hoja('Dibujar', [
+      selectorColor(tinta, (c) => { tinta = c; }, deTema),
+      h('div', { style: { height: '8px' } }),
+      segmento([['3', 'Fino'], ['8', 'Medio'], ['16', 'Grueso'], ['30', 'Plumón']], '8', (v) => { grosor = Number(v); }),
+      h('div', { class: 'marco-dibujo' }, lz.nodo),
+      h('div', { class: 'fila dos' }, h('button', { class: 'btn', type: 'button', on: { click: lz.deshacer } }, '↶ Quitar trazo'), h('button', { class: 'btn', type: 'button', on: { click: lz.limpiar } }, 'Empezar de nuevo')),
+      h('label', { class: 'campo', style: { marginTop: '12px' } }, 'Nombre', nombre),
+      fila,
+      h('div', { class: 'fila dos' },
+        h('button', { class: 'btn', type: 'button', 'data-solo-guardar': '', on: { click: () => listo(false) } }, 'Sólo guardarlo'),
+        h('button', { class: 'btn primario', type: 'button', 'data-ponerlo': '', on: { click: () => listo(true) } }, 'Ponerlo')),
+      h('p', { class: 'nota' }, 'Entra como imagen nítida (vectorial) con fondo transparente, recortada a lo que dibujaste.'),
+    ], '#hoja2');
+  }
+
+  function abrirIconoIA(){
+    let estilo = 'plano', resultado = null, tinta = color || '#AC27FF', quitar = true, crudo = null;
+    const que = h('textarea', { class: 'entrada', rows: '2', placeholder: 'Qué quieres: «un foco con engranes», «una manzana sonriente», «un cohete despegando»…', 'aria-label': 'Qué icono quieres' });
+    const vista = h('div', { class: 'vista-ia' }, h('span', { class: 'nota' }, 'Aquí sale lo que haga la IA.'));
+    const nombre = h('input', { class: 'entrada', type: 'text', value: '', maxlength: '80', placeholder: 'Nombre', 'aria-label': 'Nombre del icono' });
+    const [chk, fila] = casillaGuardar();
+    const acciones = h('div', { class: 'fila dos', hidden: true },
+      h('button', { class: 'btn', type: 'button', 'data-solo-guardar': '', on: { click: () => listo(false) } }, 'Sólo guardarlo'),
+      h('button', { class: 'btn primario', type: 'button', 'data-ponerlo': '', on: { click: () => listo(true) } }, 'Ponerlo'));
+    const chkFondo = h('input', { type: 'checkbox', checked: true, on: { change: async (e) => { quitar = e.target.checked; if(crudo) await procesar(); } } });
+    const procesar = async () => {
+      resultado = quitar ? await EL.quitarFondo(crudo.bytes, crudo.mime).catch(() => ({ ...crudo, ancho: 1, alto: 1 })) : crudo;
+      if(!resultado.ancho){ const i = await IA.cargar(URL.createObjectURL(new Blob([crudo.bytes], { type: crudo.mime }))); resultado = { ...resultado, ancho: i.naturalWidth, alto: i.naturalHeight }; }
+      const url = URL.createObjectURL(new Blob([resultado.bytes], { type: resultado.mime }));
+      vista.replaceChildren(h('img', { src: url, alt: 'Lo que hizo la IA' }));
+      acciones.hidden = false;
+    };
+    const hacer = async () => {
+      if(!que.value.trim()){ aviso('Escribe qué quieres.', 'mal'); return; }
+      ocupado('La IA está dibujando…');
+      try{
+        crudo = await IA.imagen({ prompt: EL.promptIcono(que.value.trim(), estilo, tinta), aspecto: '1:1' });
+        await procesar();
+        if(!nombre.value) nombre.value = que.value.trim().replace(/^(un|una|el|la)\s+/i, '').slice(0, 40);
+      }catch(e){ aviso('No salió: ' + e.message, 'mal', { ms: 8000 }); }
+      finally{ ocupado(''); }
+    };
+    const listo = async (poner) => {
+      if(!resultado) return;
+      await terminarImagen({ png: { bytes: resultado.bytes, mime: resultado.mime }, proporcion: resultado.ancho / Math.max(1, resultado.alto), nombre: nombre.value.trim() || 'Icono de IA', origen: 'ia' }, { poner, guardar: poner ? chk.checked : true });
+    };
+    if(!IA.llave()){ const c = h('div'); hoja('Pedírselo a la IA', c, '#hoja2'); sinLlave(c, () => abrirIconoIA()); return; }
+    hoja('Pedírselo a la IA', [
+      que,
+      h('div', { class: 'seccion' }, h('h3', {}, 'Estilo'), segmento(EL.ESTILOS_IA.map(([v, t]) => [v, t]), estilo, (v) => { estilo = v; })),
+      h('div', { class: 'seccion' }, h('h3', {}, 'Color principal'), selectorColor(tinta, (c) => { tinta = c; })),
+      h('button', { class: 'btn primario ancho', type: 'button', 'data-hacer-ia': '', on: { click: hacer } }, '✦ Hacerlo'),
+      vista,
+      h('label', { class: 'check' }, chkFondo, h('span', {}, 'Quitarle el fondo blanco')),
+      h('button', { class: 'btn ancho', type: 'button', on: { click: hacer } }, '↻ Otra versión'),
+      h('label', { class: 'campo', style: { marginTop: '12px' } }, 'Nombre', nombre),
+      fila, acciones,
+    ], '#hoja2');
   }
 
   /* ══ EDITAR EN LA VISTA GRANDE ══ */
@@ -276,5 +463,5 @@ export function crearInsertar(U){
     return { siguiente: () => mostrar(i + 1), anterior: () => mostrar(i - 1), get i(){ return i; } };
   }
 
-  return { panel, montarEditor, presentar, get elegido(){ return elegido; }, fijarSeleccion: (lamina, cid) => { elegido = cid == null ? null : { lamina, cid }; } };
+  return { panel, montarEditor, presentar, guardarDeLamina, get elegido(){ return elegido; }, fijarSeleccion: (lamina, cid) => { elegido = cid == null ? null : { lamina, cid }; } };
 }

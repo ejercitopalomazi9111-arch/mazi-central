@@ -20,9 +20,9 @@ const TOPE = 300;
 /* Lo nuevo de la herramienta, lo más reciente arriba. Al agregar una función
    se agrega aquí su renglón: es lo que Carlos lee para saber qué cambió. */
 export const NOVEDADES = [
-  { id: 'n9', fecha: '2026-09-26', titulo: 'Insertar: formas, iconos, diseños y transiciones', texto: 'Formas de PowerPoint, más de mil iconos que se buscan en español, diseños armados (número grande, tarjetas, línea de tiempo, pasos…) y transiciones entre láminas. En la vista grande, toca un elemento para moverlo, cambiarle el tamaño o el color.' },
-  { id: 'n8', fecha: '2026-09-26', titulo: 'Tus propios elementos', texto: 'Guarda cualquier cosa de una lámina en «Mis elementos» y úsala en otras presentaciones. También puedes dibujar uno con el dedo o pedirle un icono a la IA.' },
-  { id: 'n7', fecha: '2026-09-26', titulo: 'Este panel', texto: 'Todo lo que cambias queda aquí con su hora, y puedes volver a antes de cualquier cambio.' },
+  { id: 'n9', fecha: '2026-09-25', titulo: 'Insertar: formas, iconos, diseños y transiciones', texto: 'Formas de PowerPoint, más de mil iconos que se buscan en español, diseños armados (número grande, tarjetas, línea de tiempo, pasos…) y transiciones entre láminas. En la vista grande, toca un elemento para moverlo, cambiarle el tamaño o el color.' },
+  { id: 'n8', fecha: '2026-09-25', titulo: 'Tus propios elementos', texto: 'Guarda cualquier cosa de una lámina en «Mis elementos» y úsala en otras presentaciones. También puedes dibujar uno con el dedo o pedirle un icono a la IA.' },
+  { id: 'n7', fecha: '2026-09-25', titulo: 'Este panel', texto: 'Todo lo que cambias queda aquí con su hora, y puedes volver a antes de cualquier cambio.' },
   { id: 'n6', fecha: '2026-09-25', titulo: 'La IA opina de tu presentación', texto: 'En IA → «Opinión y consejos»: te dice qué funciona, qué mejorar y qué apartados sumar, y «Aplícalo» lo hace.' },
   { id: 'n5', fecha: '2026-09-25', titulo: 'Recuadro de lujo detrás del texto', texto: 'En Texto: cristal, sólido o píldora, con sombra suave. El automático nunca deja el texto sin leerse.' },
   { id: 'n4', fecha: '2026-09-25', titulo: 'Banco de imágenes', texto: 'Sube tus imágenes, la IA escribe qué es cada una y tú marcas si está lista o qué le falta. Se buscan escribiendo.' },

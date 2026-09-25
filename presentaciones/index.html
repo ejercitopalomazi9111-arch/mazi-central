@@ -242,6 +242,22 @@ dialog.visor{border:0; padding:0; margin:0; width:100vw; height:100dvh; max-widt
 .pieza.tr{min-height:48px}
 .pieza.tr small{font-size:12px; color:var(--hueso); overflow-wrap:normal; white-space:nowrap}
 .rejilla-insertar:has(.pieza.tr){grid-template-columns:repeat(auto-fill, minmax(96px,1fr))}
+.rejilla-mios{display:grid; grid-template-columns:repeat(auto-fill, minmax(140px,1fr)); gap:10px; margin-top:12px}
+.mio{position:relative; min-width:0}
+.mio-poner{display:grid; gap:6px; justify-items:center; width:100%; padding:8px; border-radius:14px; border:1px solid var(--linea); background:var(--superficie); color:var(--hueso); cursor:pointer}
+.mio-poner:active{transform:scale(.98)}
+.mio-poner small{font-size:13px; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.mio-editar{position:absolute; top:4px; right:4px; display:flex; gap:4px}
+.mio-editar .chip{min-height:36px; min-width:36px; padding:0 8px; background:var(--vacio)}
+.mi-vista{position:relative; overflow:hidden; border-radius:8px; background:repeating-conic-gradient(#ffffff10 0 25%, transparent 0 50%) 0 0 / 16px 16px; display:grid; place-items:center; color:var(--tenue)}
+.mi-vista .lienzo{position:absolute; transform-origin:0 0; pointer-events:none}
+.mios-cab{display:flex; gap:8px; align-items:center; justify-content:space-between; margin-top:12px}
+.mios-cab .entrada{flex:1; min-width:0}
+.mios-vacio{padding:16px; border:1px dashed var(--linea); border-radius:14px; color:var(--tenue); line-height:1.5}
+.marco-dibujo{margin:12px 0; border-radius:14px; overflow:hidden; background:#fff; border:1px solid var(--linea)}
+canvas.dibujo{display:block; width:100%; aspect-ratio:4/3; touch-action:none; cursor:crosshair}
+.vista-ia{display:grid; place-items:center; min-height:180px; margin:12px 0; border-radius:14px; border:1px solid var(--linea); background:repeating-conic-gradient(#ffffff14 0 25%, transparent 0 50%) 0 0 / 20px 20px}
+.vista-ia img{max-width:100%; max-height:260px; display:block}
 .colores-fila{display:flex; gap:8px; overflow-x:auto; padding:2px 2px 6px; scrollbar-width:none}
 .colores-fila::-webkit-scrollbar{display:none}
 .colores-fila .muestra{flex:none; width:40px; min-height:40px; aspect-ratio:1}

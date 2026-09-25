@@ -13,6 +13,7 @@ import { createServer } from 'node:http';
 import { readFileSync, mkdirSync } from 'node:fs';
 import { join, extname, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { atenderElementos } from '../sala/servidor/elementos.js';
 
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..');
 const { chromium } = await import('/opt/node22/lib/node_modules/playwright/index.mjs');
@@ -40,9 +41,21 @@ async function pagina(ancho, alto){
   await ctx.addInitScript(() => { try{ if(!sessionStorage.getItem('limpio')){ localStorage.setItem('salaLlave', 'llave-de-prueba'); indexedDB.deleteDatabase('presentaciones'); sessionStorage.setItem('limpio', '1'); } }catch(e){} });
   /* Un banco de mentiras en memoria, con la misma forma que sala/servidor/banco.js. */
   const banco = new Map();
+  const guardado = new Map();
+  const almacen = {
+    async get(k){ if(Array.isArray(k)){ const m = new Map(); for(const x of k) if(guardado.has(x)) m.set(x, guardado.get(x)); return m; } return guardado.get(k); },
+    async put(k, v){ if(typeof k === 'object') for(const [a, b] of Object.entries(k)) guardado.set(a, b); else guardado.set(k, v); },
+    async delete(k){ for(const x of [].concat(k)) guardado.delete(x); },
+  };
   await ctx.route(/sala\.palomazi9111\.workers\.dev/, async (r) => {
     const u = r.request().url(), cuerpo = r.request().postDataJSON?.() || null;
     pedidos.push({ u, cuerpo, llave: r.request().headers()['x-llave'] });
+    /* Mis elementos: el servidor DE VERDAD (elementos.js) sobre un almacén en memoria. */
+    if(/\/elementos/.test(u)){
+      const req = new Request(u, { method: r.request().method(), body: r.request().method() === 'POST' ? r.request().postData() : undefined });
+      const res = await atenderElementos(almacen, req, new URL(u), 'carlos');
+      return r.fulfill({ status: res.status, contentType: res.headers.get('content-type') || 'application/json', body: Buffer.from(await res.arrayBuffer()) });
+    }
     if(/\/banco/.test(u)){
       const url = new URL(u), id = url.searchParams.get('id');
       if(r.request().method() === 'GET' && id){
@@ -404,9 +417,55 @@ ok('«Color» la recolorea', true);
 await p.locator('#barra-elemento [data-accion="duplicar"]').click();
 await p.waitForFunction(async ([i, n]) => (await window.__pres.N.modelo(window.__pres.D, i)).formas.filter((f) => f.capa === 'lamina').length === n, [lam, antesF + 2]);
 ok('«Duplicar» pone otra igual', true);
+await p.locator('#barra-elemento [data-accion="guardar"]').click();
+await p.locator('#hoja2 input[aria-label="Nombre del elemento"]').fill('Estrella roja');
+await p.locator('#hoja2 [data-guardar-mio]').click();
+await p.waitForFunction(() => /«Estrella roja» guardado en Mis elementos/.test(document.querySelector('#avisos').textContent), null, { timeout: 10000 });
+ok('«★ A mis elementos» la guarda en La Sala', true);
 await p.locator('#barra-elemento [data-accion="borrar"]').click();
 await p.waitForFunction(async ([i, n]) => (await window.__pres.N.modelo(window.__pres.D, i)).formas.filter((f) => f.capa === 'lamina').length === n, [lam, antesF + 1]);
 ok('«Borrar» la quita', true);
+await p.keyboard.press('Escape');
+
+console.log('\n· Mis elementos');
+await p.click('.dock [data-panel="insertar"]');
+await p.locator('#hoja [data-seccion="mios"]').click();
+await p.waitForSelector('#hoja .mio');
+ok('la estrella guardada aparece en Mis elementos, dibujada', (await p.locator('#hoja .mio').count()) === 1 && (await p.locator('#hoja .mio .mi-vista .lienzo .forma').count()) >= 1 && /Estrella roja/.test(await p.locator('#hoja .mio').textContent()));
+const antesMio = await cuentaFormas(lam);
+await p.locator('#hoja .mio-poner').first().click();
+await p.waitForSelector('#visor[open] .seleccion');
+ok('tocarla la pone en la lámina, con su color', (await cuentaFormas(lam)) === antesMio + 1 && await p.evaluate(async (i) => (await window.__pres.N.modelo(window.__pres.D, i)).formas.filter((f) => f.relleno?.color === '#C00000').length >= 1, lam));
+await p.keyboard.press('Escape');
+await p.click('.dock [data-panel="insertar"]');
+await p.locator('#hoja [data-crear="dibujo"]').click();
+await p.waitForSelector('#hoja2[open] canvas.dibujo');
+bb = await p.locator('#hoja2 canvas.dibujo').boundingBox();
+await p.mouse.move(bb.x + 40, bb.y + 40); await p.mouse.down();
+for(let t = 0; t <= 20; t++) await p.mouse.move(bb.x + 40 + t * 12, bb.y + 60 + Math.sin(t / 3) * 40);
+await p.mouse.up();
+await captura(p, '19-dibujar');
+await p.locator('#hoja2 [data-ponerlo]').click();
+await p.waitForSelector('#visor[open] .seleccion');
+ok('un dibujo con el dedo entra como imagen vectorial (SVG + PNG)', /Imagen/.test(await p.locator('#barra-elemento').textContent())
+  && await p.evaluate(() => Object.keys(window.__pres.D.zip.files).filter((f) => /media\/mazi\d+\.svg$/.test(f)).length >= 1));
+await p.keyboard.press('Escape');
+await p.click('.dock [data-panel="insertar"]');
+await p.locator('#hoja [data-crear="ia"]').click();
+await p.locator('#hoja2 textarea').fill('un foco con engranes');
+await p.locator('#hoja2 [data-hacer-ia]').click();
+await p.waitForSelector('#hoja2 .vista-ia img');
+ok('la IA hace un icono y se ve antes de ponerlo', /engranes/.test(pedidos.filter((x) => /ia-imagen/.test(x.u)).at(-1)?.cuerpo?.prompt || ''));
+await p.locator('#hoja2 [data-solo-guardar]').click();
+await p.waitForFunction(() => /guardado en Mis elementos/.test(document.querySelector('#avisos').textContent));
+await p.waitForFunction(() => document.querySelectorAll('#hoja .mio').length === 3, null, { timeout: 10000 });
+ok('«Sólo guardarlo» lo deja en la lista (con el dibujo: tres)', true);
+await captura(p, '20-mis-elementos');
+await p.locator('#hoja [data-editar-mios]').click();
+await p.locator('#hoja [data-borrar-mio]').first().click();
+await p.locator('#hoja2 [data-confirmar-borrar]').click();
+await p.waitForFunction(() => document.querySelectorAll('#hoja .mio').length === 2);
+ok('se borra uno (pidiendo confirmar)', true);
 await p.keyboard.press('Escape');
 
 console.log('\n· Insertar: iconos, diseños y transiciones');
