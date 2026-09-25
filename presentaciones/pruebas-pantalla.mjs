@@ -118,6 +118,22 @@ ok('los botones de la hoja no se salen', await p.evaluate(() => [...document.que
 await captura(p, '04-texto');
 await p.keyboard.press('Escape');
 
+const etiquetas = await p.evaluate(() => [...document.querySelectorAll('.dock button')].map((b) => { const r = document.createRange(); r.selectNodeContents(b); const t = [...r.getClientRects()]; return { d: b.getBoundingClientRect(), t: { left: Math.min(...t.map((x) => x.left)), right: Math.max(...t.map((x) => x.right)) } }; }));
+ok('los letreros del menú de abajo no se enciman', etiquetas.every((e, k) => e.t.left >= e.d.left - 0.5 && e.t.right <= e.d.right + 0.5 && (k === 0 || e.t.left >= etiquetas[k - 1].t.right + 2)), JSON.stringify(etiquetas.map((e) => [Math.round(e.t.left), Math.round(e.t.right)])));
+console.log('\n· Acomodar');
+await p.click('.dock [data-panel="acomodar"]');
+ok('trae «Arreglar todo» y seis arreglos sueltos', (await p.locator('#hoja [data-acomodo]').count()) === 8);
+ok('ningún botón de acomodar se sale de la hoja', await p.evaluate(() => [...document.querySelectorAll('#hoja .accion')].every((b) => b.scrollWidth <= b.clientWidth + 1)));
+await captura(p, '04b-acomodar');
+const antesAc = await p.evaluate(() => window.__pres.D.deshacer.length);
+await p.locator('#hoja [data-acomodo="todo"]').click();
+await p.waitForFunction((n) => window.__pres.D.deshacer.length === n + 1, antesAc);
+ok('«Arreglar todo» dice qué hizo', /Acomodé|no cambié nada/.test(await p.locator('#avisos').textContent()), await p.locator('#avisos').textContent());
+await p.click('.dock [data-panel="acomodar"]');
+await p.locator('#hoja [data-acomodo="todo"]').click();
+await p.waitForFunction(() => /no cambié nada/.test(document.querySelector('#avisos').textContent), null, { timeout: 8000 }).catch(() => {});
+ok('la segunda vez dice que ya no había nada', /no cambié nada/.test(await p.locator('#avisos').textContent()), await p.locator('#avisos').textContent());
+
 console.log('\n· IA');
 await p.click('.dock [data-panel="ia"]');
 ok('con la llave de la mesa guardada, no pide conectar', !(await p.getByText('conecta La Sala una vez').count()));

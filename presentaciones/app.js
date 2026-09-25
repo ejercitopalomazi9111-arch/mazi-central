@@ -257,7 +257,7 @@ function selectorColor(inicial, alCambiar){
 $$('.dock [data-panel]').forEach((b) => b.addEventListener('click', () => {
   if(!D) return;
   $$('.dock [data-panel]').forEach((x) => x.setAttribute('aria-expanded', String(x === b)));
-  ({ fondo: panelFondo, texto: panelTexto, imagenes: panelImagenes, ia: panelIA })[b.dataset.panel]();
+  ({ fondo: panelFondo, texto: panelTexto, acomodar: panelAcomodar, imagenes: panelImagenes, ia: panelIA })[b.dataset.panel]();
 }));
 
 /* ══ FONDO ════════════════════════════════════════════════════════════════ */
@@ -336,6 +336,32 @@ function panelTexto(){
         if(!b.trim()){ aviso('Escribe qué buscar.', 'mal'); return; }
         aplicar(`Cambiar «${b}»`, () => N.reemplazarTexto(D, o, b, p), (n) => n ? `Cambié ${plural(n, 'vez', 'veces')} «${b}».` : `No encontré «${b}».`);
       } } }, 'Cambiar en todas')),
+  ]);
+}
+
+/* ══ ACOMODAR ═════════════════════════════════════════════════════════════
+   Cada botón arregla un defecto que se puede medir y dice cuántas cosas tocó.
+   Si no encontró nada, lo dice: «no había nada que arreglar» también es un
+   resultado, y es mejor que un «listo» que no hizo nada. */
+const ACOMODOS = [
+  ['todo', '✦', 'Arreglar todo', 'Todo lo de abajo de un jalón, en el orden que no se pisa.', (o) => N.acomodarTodo(D, o),
+    (r) => r.total ? `Acomodé ${plural(r.total, 'cosa', 'cosas')}: ${[[r.quepa, 'texto que no cabía'], [r.estiradas, 'foto estirada'], [r.margenes, 'fuera de margen'], [r.alineadas, 'alineada'], [r.titulos, 'título en su lugar'], [r.tamanos, 'tamaño igualado'], [r.aire, 'con más aire']].filter(([n]) => n).map(([n, t]) => `${n} ${t}`).join(', ')}.` : 'Todo estaba bien acomodado: no cambié nada.'],
+  ['quepa', 'A', 'Que el texto quepa', 'Achica lo justo el texto que se sale de su cuadro. Si el cuadro puede crecer hacia abajo, crece el cuadro y la letra se queda.', (o) => N.textoQueQuepa(D, o), (n) => n ? `${plural(n, 'cuadro arreglado', 'cuadros arreglados')}: ya cabe el texto.` : 'Todo el texto ya cabía.'],
+  ['estiradas', '⤢', 'Quitar fotos estiradas', 'Las fotos deformadas se recortan al centro para verse con su forma real, en el mismo hueco.', (o) => N.desestirarImagenes(D, o), (n) => n ? `${plural(n, 'foto', 'fotos')} sin estirar.` : 'Ninguna foto estaba estirada.'],
+  ['margenes', '▣', 'Dentro de márgenes', 'El texto se despega del borde y nada se sale de la lámina. Los adornos y fondos se respetan.', (o) => N.meterEnMargenes(D, o), (n) => n ? `${plural(n, 'cosa metida', 'cosas metidas')} en los márgenes.` : 'Nada se salía.'],
+  ['alinear', '⫷', 'Alinear lo casi alineado', 'Lo que está a punto de estar alineado queda alineado. Lo que está lejos se deja: es a propósito.', (o) => N.alinearCasi(D, o), (n) => n ? `${plural(n, 'cosa alineada', 'cosas alineadas')}.` : 'Ya estaba alineado.'],
+  ['titulos', 'T', 'Títulos en el mismo lugar', 'Al pasar de lámina, el título no brinca: los que estaban cerca quedan en la misma posición.', (o) => N.titulosEnSuLugar(D, o), (n) => n ? `${plural(n, 'título acomodado', 'títulos acomodados')}.` : 'Los títulos ya estaban en su lugar (o están a propósito en otro).'],
+  ['tamanos', '≡', 'Igualar tamaños de letra', 'Los títulos que miden casi lo mismo quedan iguales, y lo mismo con el texto. Una nota chica no se vuelve grande.', (o) => N.igualarTamanos(D, o), (n) => n ? `${plural(n, 'tamaño igualado', 'tamaños igualados')}.` : 'Los tamaños ya eran parejos.'],
+  ['aire', '↕', 'Más aire entre renglones', 'El texto de varios renglones respira un poco más. Lo que ya tiene su interlineado se respeta.', (o) => N.aireEntreRenglones(D, o), (n) => n ? `${plural(n, 'cuadro', 'cuadros')} con más aire.` : 'Ya tenían su interlineado.'],
+];
+function panelAcomodar(){
+  hoja('Acomodar', [
+    aQuien(),
+    h('div', { class: 'acciones' }, ACOMODOS.map(([id, ico, titulo, desc, fn, msj]) => h('button', { class: 'accion', type: 'button', 'data-acomodo': id,
+      style: id === 'todo' ? { borderColor: 'var(--violeta)' } : null,
+      on: { click: async () => { const o = objetivo(); cerrar('#hoja'); await aplicar(titulo, () => fn(o), msj); } } },
+      h('i', {}, ico), h('b', {}, titulo), h('span', {}, desc)))),
+    h('p', { class: 'nota', style: { marginTop: '12px' } }, 'Todo se deshace con la flecha de arriba. Mueve y ajusta lo que está directo en la lámina; lo de la plantilla se queda.'),
   ]);
 }
 

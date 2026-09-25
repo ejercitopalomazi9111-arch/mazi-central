@@ -149,6 +149,68 @@ else{
   ok('quitar la imagen de las láminas', im.quitadas >= 0, String(im.quitadas));
 }
 
+console.log('\n· Acomodar');
+const ac = await en(async (N) => {
+  const d = await N.abrir(await (await fetch('/fadori/presentacion/Fadori-STEAM.pptx')).arrayBuffer());
+  const r = {};
+  const NSA = 'http://schemas.openxmlformats.org/drawingml/2006/main', NSP = 'http://schemas.openxmlformats.org/presentationml/2006/main';
+  // 1 · texto que no cabe: un cuadro con cuatro renglones largos.
+  const i = d.laminas.findIndex((_, k) => N.textos(d, k).some((t) => !t.titulo));
+  const t = N.textos(d, i).find((x) => !x.titulo);
+  const largo = Array.from({ length: 6 }, (_, k) => `Renglón ${k + 1}: una frase bastante larga para que el cuadro se desborde por abajo y por los lados`).join('\n');
+  await N.ponerTexto(d, i, t.id, largo);
+  const idx = (k) => N.textos(d, k);   // ids de cuerposDeTexto
+  const formaSuelta = (k, id) => { // posición del cuadro «id» entre las formas sueltas con texto
+    return id; };
+  r.antes = N.holguraTexto(d, i, t.id);
+  r.quepa = await N.operacion(d, 'quepa', () => N.textoQueQuepa(d, [i]));
+  r.despues = N.holguraTexto(d, i, t.id);
+  // 2 · foto estirada: se duplica el ancho de una imagen suelta.
+  let k2 = -1, pic = null;
+  for(let k = 0; k < d.laminas.length && !pic; k++){
+    const doc = d.partes.get(d.laminas[k].ruta);
+    pic = [...doc.getElementsByTagNameNS(NSP, 'spTree')[0].children].find((e) => e.localName === 'pic' && e.getElementsByTagNameNS(NSA, 'xfrm')[0]);
+    if(pic) k2 = k;
+  }
+  const ext = pic.getElementsByTagNameNS(NSA, 'ext')[0];
+  ext.setAttribute('cx', String(Number(ext.getAttribute('cx')) * 2));
+  r.estiradas = await N.operacion(d, 'estirada', () => N.desestirarImagenes(d, [k2]));
+  const src = pic.getElementsByTagNameNS(NSA, 'srcRect')[0];
+  const blip = pic.getElementsByTagNameNS(NSA, 'blip')[0];
+  const rels = await N.relaciones(d, d.laminas[k2].ruta);
+  const med = N.medidasImagen(await N.bytesDe(d, rels.get(blip.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'embed')).ruta));
+  const g = (a) => Number(src?.getAttribute(a) || 0) / 1e5;
+  r.aspectoVisible = (med.w * (1 - g('l') - g('r'))) / (med.h * (1 - g('t') - g('b')));
+  r.aspectoHueco = Number(ext.getAttribute('cx')) / Number(ext.getAttribute('cy'));
+  // 3 · un cuadro de texto que se sale por la izquierda.
+  const docM = d.partes.get(d.laminas[i].ruta);
+  const sp = [...docM.getElementsByTagNameNS(NSP, 'spTree')[0].children].find((e) => e.localName === 'sp' && e.getElementsByTagNameNS(NSA, 't').length && e.getElementsByTagNameNS(NSA, 'off')[0]);
+  const off = sp.getElementsByTagNameNS(NSA, 'off')[0];
+  off.setAttribute('x', String(-Math.round(d.ancho * 0.1)));
+  r.margenes = await N.operacion(d, 'margenes', () => N.meterEnMargenes(d, [i]));
+  r.xNueva = Number(off.getAttribute('x')) / d.ancho;
+  // 4 · todo junto en toda la presentación, y una segunda vez no debe hallar nada.
+  r.todo = await N.operacion(d, 'todo', () => N.acomodarTodo(d, 'todas'));
+  r.otra = await N.acomodarTodo(d, 'todas');
+  const bytes = new Uint8Array(await (await N.guardar(d)).arrayBuffer());
+  r.b64 = btoa(Array.from(bytes, (x) => String.fromCharCode(x)).join(''));
+  const d2 = await N.abrir(bytes);
+  r.releido = d2.laminas.length;
+  return r;
+});
+ok('el texto largo no cabía y ahora sí', ac.antes < 1 && ac.quepa >= 1 && ac.despues >= 0.98, JSON.stringify({ antes: ac.antes, despues: ac.despues, n: ac.quepa }));
+ok('la foto estirada se recorta a su forma real (sin deformarse)', ac.estiradas >= 1 && Math.abs(Math.log(ac.aspectoVisible / ac.aspectoHueco)) < 0.02, JSON.stringify({ n: ac.estiradas, v: ac.aspectoVisible, h: ac.aspectoHueco }));
+ok('el cuadro que se salía queda dentro del margen de 5 %', ac.margenes >= 1 && ac.xNueva >= 0.049, JSON.stringify({ n: ac.margenes, x: ac.xNueva }));
+ok('«arreglar todo» hizo algo en la presentación real', ac.todo.total > 0, JSON.stringify(ac.todo));
+ok('y una segunda pasada ya no encuentra nada (no se pelean entre sí)', ac.otra.total === 0, JSON.stringify(ac.otra));
+const salidaAc = join(TMP, 'acomodada.pptx');
+writeFileSync(salidaAc, Buffer.from(ac.b64, 'base64'));
+try{
+  execFileSync('soffice', ['--headless', '--norestore', `-env:UserInstallation=file://${TMP}/ui`, '--convert-to', 'pdf', '--outdir', TMP, salidaAc], { timeout: 180000, stdio: 'pipe' });
+  const paginas = (readFileSync(salidaAc.replace(/\.pptx$/, '.pdf')).toString('latin1').match(/\/Type\s*\/Page[^s]/g) || []).length;
+  ok(`la acomodada abre en LibreOffice: ${paginas} páginas`, paginas === ac.releido, String(paginas));
+}catch(e){ ok('la acomodada abre en LibreOffice', false, e.message.slice(0, 200)); }
+
 console.log('\n· Poner texto (para la IA)');
 const tx = await en(async (N) => {
   const d = await N.abrir(await (await fetch('/fadori/presentacion/Fadori-STEAM.pptx')).arrayBuffer());

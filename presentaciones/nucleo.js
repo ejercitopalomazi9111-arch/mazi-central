@@ -801,3 +801,400 @@ async function recorrer(deck, l, ruta, arbol, pal, formas, soloAdorno, tx){
     formas.push(f);
   }
 }
+
+/* ══ ACOMODAR ═════════════════════════════════════════════════════════════
+   Lo pidió Carlos: «botones que ajusten textos, imágenes y otros elementos a
+   un tamaño y disposición más cómodos y bonitos, en las seleccionadas o en
+   todas». Cada uno arregla UN defecto que se puede medir —texto que no cabe,
+   foto estirada, cosas pegadas al borde, cuadros casi alineados, tamaños casi
+   iguales— y deja en paz lo demás. Nada de «rediseñar»: si no hay defecto
+   medible, no se toca. Sólo mueve lo que vive directo en la lámina (no lo de
+   dentro de grupos ni lo de la plantilla).
+   ═════════════════════════════════════════════════════════════════════════ */
+const ORDEN_SPPR = ['xfrm', 'custGeom', 'prstGeom', 'noFill', 'solidFill', 'gradFill', 'blipFill', 'pattFill', 'grpFill', 'ln', 'effectLst', 'effectDag', 'scene3d', 'sp3d', 'extLst'];
+const ORDEN_PPR = ['lnSpc', 'spcBef', 'spcAft', 'buClrTx', 'buClr', 'buSzTx', 'buSzPct', 'buSzPts', 'buFontTx', 'buFont', 'buNone', 'buAutoNum', 'buChar', 'buBlip', 'tabLst', 'defRPr', 'extLst'];
+const ORDEN_BLIPFILL = ['blip', 'srcRect', 'tile', 'stretch'];
+
+/* Las formas que viven directo en la lámina, con su caja (la propia o la heredada). */
+function formasSueltas(deck, l){
+  const doc = docDe(deck, l.ruta), arbol = todos(doc.documentElement, NS.p, 'spTree')[0];
+  if(!arbol) return [];
+  const salida = [];
+  for(const el of arbol.children){
+    if(!['sp', 'pic', 'graphicFrame', 'grpSp', 'cxnSp'].includes(el.localName)) continue;
+    const x = el.localName === 'graphicFrame' ? hijo(el, NS.p, 'xfrm')
+      : el.localName === 'grpSp' ? hijo(hijo(el, NS.p, 'grpSpPr'), NS.a, 'xfrm')
+      : hijo(hijo(el, NS.p, 'spPr'), NS.a, 'xfrm');
+    const fuente = x || (el.localName === 'sp' ? xfrmHeredado(deck, l, el) : null);
+    if(!fuente) continue;
+    const off = hijo(fuente, NS.a, 'off'), ext = hijo(fuente, NS.a, 'ext');
+    const tb = hijo(el, NS.p, 'txBody');
+    const texto = tb ? textoDe(tb).trim() : '';
+    salida.push({ el, tipo: el.localName, x: num(off, 'x'), y: num(off, 'y'), w: num(ext, 'cx'), h: num(ext, 'cy'), rot: num(fuente, 'rot'), tb, texto, ph: tipoPh(el) });
+  }
+  // El título, como en cuerposDeTexto(): el marcador o, si no hay, el texto más grande.
+  const titulo = salida.find((f) => ['title', 'ctrTitle'].includes(f.ph))
+    || salida.filter((f) => f.texto).reduce((m, f) => { const t = Math.max(0, ...todos(f.tb, NS.a, 'rPr').map((r) => Number(r.getAttribute('sz')) || 0)); return t > m.t && t >= 2000 ? { f, t } : m; }, { f: null, t: 0 }).f;
+  if(titulo) titulo.titulo = true;
+  return salida;
+}
+function ponerCaja(deck, l, f, c){
+  const doc = docDe(deck, l.ruta);
+  tocar(deck, l.ruta);
+  let x;
+  if(f.tipo === 'graphicFrame') x = hijo(f.el, NS.p, 'xfrm');
+  else if(f.tipo === 'grpSp') x = hijo(hijo(f.el, NS.p, 'grpSpPr'), NS.a, 'xfrm');
+  else{
+    let spPr = hijo(f.el, NS.p, 'spPr');
+    if(!spPr){ spPr = nuevo(doc, NS.p, 'spPr'); const antes = hijo(f.el, NS.p, 'style') || hijo(f.el, NS.p, 'txBody'); f.el.insertBefore(spPr, antes); }
+    x = hijo(spPr, NS.a, 'xfrm');
+    if(!x){   // un marcador que heredaba su lugar: ahora lo trae propio
+      x = nuevo(doc, NS.a, 'xfrm');
+      if(f.rot) x.setAttribute('rot', String(f.rot));
+      x.append(nuevo(doc, NS.a, 'off', { x: '0', y: '0' }), nuevo(doc, NS.a, 'ext', { cx: '0', cy: '0' }));
+      meterEnOrden(spPr, x, ORDEN_SPPR);
+    }
+  }
+  if(!x) return false;
+  const off = hijo(x, NS.a, 'off'), ext = hijo(x, NS.a, 'ext');
+  off.setAttribute('x', String(Math.round(c.x))); off.setAttribute('y', String(Math.round(c.y)));
+  ext.setAttribute('cx', String(Math.max(1, Math.round(c.w)))); ext.setAttribute('cy', String(Math.max(1, Math.round(c.h))));
+  Object.assign(f, c);
+  return true;
+}
+
+/* ── medir texto ── */
+let _lienzo = null;
+function medidor(){
+  if(!_lienzo) _lienzo = (globalThis.OffscreenCanvas ? new OffscreenCanvas(8, 8) : document.createElement('canvas')).getContext('2d');
+  return _lienzo;
+}
+function letraDelTema(deck, l, titulo){
+  const t = l.tema && docDe(deck, l.tema);
+  const f = t && todos(t.documentElement, NS.a, titulo ? 'majorFont' : 'minorFont')[0];
+  return hijo(f, NS.a, 'latin')?.getAttribute('typeface') || 'Calibri';
+}
+/* Los párrafos de un cuadro como los va a pintar PowerPoint: tamaño efectivo
+   (con la escala de autoajuste), negrita y letra de su corrida más grande. */
+function parrafosMedibles(deck, l, f){
+  const bp = hijo(f.tb, NS.a, 'bodyPr');
+  const na = bp && todos(bp, NS.a, 'normAutofit')[0];
+  const escala = na ? (Number(na.getAttribute('fontScale')) || 100000) / 100000 : 1;
+  const base = tamanoHeredado(deck, l, f.el, !!f.titulo);
+  const tema = letraDelTema(deck, l, !!f.titulo);
+  return todos(f.tb, NS.a, 'p').map((p) => {
+    const trozos = [];
+    let actual = '';
+    let pt = 0, b = false, letra = null;
+    for(const x of p.children){
+      if(x.localName === 'br'){ trozos.push(actual); actual = ''; continue; }
+      if(x.localName !== 'r' && x.localName !== 'fld') continue;
+      const rpr = hijo(x, NS.a, 'rPr');
+      const tam = (Number(rpr?.getAttribute('sz')) || base) / 100 * escala;
+      if(tam >= pt){ pt = tam; b = rpr?.getAttribute('b') === '1'; letra = hijo(rpr, NS.a, 'latin')?.getAttribute('typeface') || null; }
+      actual += hijo(x, NS.a, 't')?.textContent || '';
+    }
+    trozos.push(actual);
+    if(!pt){ const e = hijo(p, NS.a, 'endParaRPr'); pt = (Number(e?.getAttribute('sz')) || base) / 100 * escala; }
+    const ppr = hijo(p, NS.a, 'pPr');
+    const sangria = ppr ? Math.max(0, Number(ppr.getAttribute('marL')) || 0) / EMU_PT : 0;
+    const vineta = !!(ppr && (hijo(ppr, NS.a, 'buChar') || hijo(ppr, NS.a, 'buAutoNum')));
+    const ln = hijo(ppr, NS.a, 'lnSpc');
+    const lnPct = Number(todos(ln, NS.a, 'spcPct')[0]?.getAttribute('val')) || 100000;
+    // Canva y Google escriben el interlineado en PUNTOS fijos (spcPts): no crece ni se achica con la letra.
+    const lnPts = Number(todos(ln, NS.a, 'spcPts')[0]?.getAttribute('val')) / 100 || 0;
+    const antes = Number(todos(hijo(ppr, NS.a, 'spcBef'), NS.a, 'spcPts')[0]?.getAttribute('val')) / 100 || 0;
+    const despues = Number(todos(hijo(ppr, NS.a, 'spcAft'), NS.a, 'spcPts')[0]?.getAttribute('val')) / 100 || 0;
+    return { renglones: trozos, pt, b, letra: (letra && !letra.startsWith('+')) ? letra : tema, sangria: sangria || (vineta ? pt * 1.2 : 0), interlinea: lnPct / 100000, lnPts, extra: antes + despues };
+  });
+}
+/* ¿Cuánto mide de alto (en pt) este texto a este factor, dentro de este ancho? */
+function altoTexto(parrafos, anchoPt, factor){
+  const cx = medidor();
+  let alto = 0;
+  for(const p of parrafos){
+    const pt = p.pt * factor;
+    cx.font = `${p.b ? 'bold ' : ''}${pt}px "${p.letra.replace(/"/g, '')}", Calibri, Carlito, Arial, sans-serif`;
+    const disponible = Math.max(10, anchoPt - p.sangria * factor);
+    let lineas = 0;
+    for(const r of p.renglones){
+      if(!r.trim()){ lineas++; continue; }
+      let linea = '';
+      let n = 1;
+      for(const palabra of r.split(/(\s+)/)){
+        const prueba = linea + palabra;
+        if(linea.trim() && cx.measureText(prueba.trimEnd()).width > disponible){ n++; linea = palabra.trimStart(); }
+        else linea = prueba;
+      }
+      lineas += n;
+    }
+    alto += lineas * (p.lnPts ? p.lnPts * factor : pt * 1.2 * p.interlinea) + p.extra * factor;
+  }
+  return alto;
+}
+function interior(f){
+  const bp = hijo(f.tb, NS.a, 'bodyPr');
+  const ins = (a, d) => { const v = bp?.getAttribute(a); return (v == null ? d : Number(v)) / EMU_PT; };
+  return { ancho: f.w / EMU_PT - ins('lIns', 91440) - ins('rIns', 91440), alto: f.h / EMU_PT - ins('tIns', 45720) - ins('bIns', 45720) };
+}
+/* Para las pruebas: cuánto sobra (>1) o falta (<1) de alto en un cuadro. */
+export function holguraTexto(deck, i, forma){
+  const l = deck.laminas[i];
+  const el = cuerposDeTexto(docDe(deck, l.ruta))[forma]?.sp;
+  const f = formasSueltas(deck, l).find((x) => x.el === el);
+  if(!f || !f.texto) return null;
+  const inn = interior(f);
+  return inn.alto / Math.max(1, altoTexto(parrafosMedibles(deck, l, f), inn.ancho, 1));
+}
+function escalarCuadro(deck, l, f, factor){
+  const base = tamanoHeredado(deck, l, f.el, !!f.titulo);
+  const bp = hijo(f.tb, NS.a, 'bodyPr'), na = bp && todos(bp, NS.a, 'normAutofit')[0];
+  const escala = na ? (Number(na.getAttribute('fontScale')) || 100000) / 100000 : 1;
+  tocar(deck, l.ruta);
+  for(const run of corridas(f.tb)){
+    const rpr = rPrDe(run);
+    const efectivo = (Number(rpr.getAttribute('sz')) || base) * escala;
+    rpr.setAttribute('sz', String(Math.max(600, Math.round(efectivo * factor / 50) * 50)));
+  }
+  // El interlineado y los espacios en puntos fijos se achican junto con la letra.
+  for(const pts of todos(f.tb, NS.a, 'spcPts')) pts.setAttribute('val', String(Math.max(100, Math.round(Number(pts.getAttribute('val')) * factor))));
+  // La escala ya quedó metida en cada tamaño: si se deja, se encoge dos veces.
+  if(na){ na.removeAttribute('fontScale'); na.removeAttribute('lnSpcReduction'); }
+}
+
+/* 1 · Que el texto quepa en su cuadro: se achica lo justo (hasta 55 %). */
+export async function textoQueQuepa(deck, sel){
+  let n = 0;
+  for(const i of cuales(deck, sel)){
+    const l = deck.laminas[i];
+    for(const f of formasSueltas(deck, l)){
+      if(f.tipo !== 'sp' || !f.texto || f.rot) continue;
+      const bp = hijo(f.tb, NS.a, 'bodyPr');
+      if(bp?.getAttribute('vert') && bp.getAttribute('vert') !== 'horz') continue;
+      const inn = interior(f);
+      if(inn.ancho <= 4) continue;
+      const ps = parrafosMedibles(deck, l, f);
+      const necesita = altoTexto(ps, inn.ancho, 1);
+      if(necesita <= inn.alto * 1.02) continue;
+      /* «El cuadro crece con su texto» (spAutoFit, lo que exportan Canva y los
+         generadores): PowerPoint no lo recalcula al abrir, así que el cuadro
+         guardado se queda chico y el texto se desborda encima de lo de abajo.
+         Si hay lugar hacia abajo, crece el CUADRO y la letra no se toca. */
+      const cabeHasta = deck.alto - deck.ancho * MARGEN - f.y;   // el mismo margen que meterEnMargenes()
+      const sobra = (f.h / EMU_PT) - inn.alto;          // los márgenes internos
+      if(bp && hijo(bp, NS.a, 'spAutoFit') && (necesita + sobra) * EMU_PT <= cabeHasta){
+        if(ponerCaja(deck, l, f, { x: f.x, y: f.y, w: f.w, h: Math.min(cabeHasta, (necesita + sobra) * EMU_PT * 1.02) })){ n++; continue; }
+      }
+      const disponible = bp && hijo(bp, NS.a, 'spAutoFit') ? Math.max(inn.alto, cabeHasta / EMU_PT - sobra) : inn.alto;
+      if(disponible <= 4) continue;
+      let factor = 1;
+      while(factor > 0.55 && altoTexto(ps, inn.ancho, factor) > disponible) factor -= 0.04;
+      escalarCuadro(deck, l, f, Math.max(0.55, factor));
+      if(disponible > inn.alto) ponerCaja(deck, l, f, { x: f.x, y: f.y, w: f.w, h: Math.min(cabeHasta, (altoTexto(ps, inn.ancho, Math.max(0.55, factor)) + sobra) * EMU_PT * 1.02) });
+      n++;
+    }
+  }
+  return n;
+}
+
+/* 2 · Fotos estiradas: se recortan al centro para que tengan su forma real
+   dentro del mismo hueco (como «Recortar → Rellenar» de PowerPoint). */
+function medidasImagen(bytes){
+  const b = bytes;
+  if(b[0] === 0x89 && b[1] === 0x50) return { w: (b[16] << 24 | b[17] << 16 | b[18] << 8 | b[19]) >>> 0, h: (b[20] << 24 | b[21] << 16 | b[22] << 8 | b[23]) >>> 0 };
+  if(b[0] === 0xFF && b[1] === 0xD8){
+    let i = 2;
+    while(i + 9 < b.length){
+      if(b[i] !== 0xFF){ i++; continue; }
+      const m = b[i + 1], largo = b[i + 2] << 8 | b[i + 3];
+      if(m >= 0xC0 && m <= 0xCF && ![0xC4, 0xC8, 0xCC].includes(m)) return { h: b[i + 5] << 8 | b[i + 6], w: b[i + 7] << 8 | b[i + 8] };
+      i += 2 + largo;
+    }
+  }
+  if(b[0] === 0x47 && b[1] === 0x49) return { w: b[6] | b[7] << 8, h: b[8] | b[9] << 8 };
+  return null;
+}
+export { medidasImagen };
+export async function desestirarImagenes(deck, sel){
+  let n = 0;
+  for(const i of cuales(deck, sel)){
+    const l = deck.laminas[i], rs = await relaciones(deck, l.ruta), doc = docDe(deck, l.ruta);
+    for(const f of formasSueltas(deck, l)){
+      if(f.tipo !== 'pic' || !f.w || !f.h) continue;
+      const bf = hijo(f.el, NS.p, 'blipFill'), blip = hijo(bf, NS.a, 'blip');
+      const r = blip && rs.get(blip.getAttributeNS(NS.r, 'embed'));
+      if(!r || r.externa || !hijo(bf, NS.a, 'stretch')) continue;
+      const bytes = await bytesDe(deck, r.ruta), med = bytes && medidasImagen(bytes);
+      if(!med?.w || !med?.h) continue;
+      const src = hijo(bf, NS.a, 'srcRect');
+      const c = { l: num(src, 'l') / 1e5, t: num(src, 't') / 1e5, r: num(src, 'r') / 1e5, b: num(src, 'b') / 1e5 };
+      const visible = (med.w * (1 - c.l - c.r)) / (med.h * (1 - c.t - c.b));
+      const hueco = f.w / f.h;
+      if(Math.abs(Math.log(visible / hueco)) < 0.03) continue;   // menos de 3 %: no se nota
+      // Recorte nuevo, centrado sobre lo que ya se veía.
+      let { l: L, t: T, r: R, b: B } = c;
+      if(visible > hueco){ const sobra = (1 - L - R) * (1 - hueco / visible); L += sobra / 2; R += sobra / 2; }
+      else{ const sobra = (1 - T - B) * (1 - visible / hueco); T += sobra / 2; B += sobra / 2; }
+      tocar(deck, l.ruta);
+      let s = src;
+      if(!s){ s = nuevo(doc, NS.a, 'srcRect'); meterEnOrden(bf, s, ORDEN_BLIPFILL); }
+      for(const [k, v] of [['l', L], ['t', T], ['r', R], ['b', B]]){ const val = Math.round(v * 1e5); if(val) s.setAttribute(k, String(val)); else s.removeAttribute(k); }
+      n++;
+    }
+  }
+  return n;
+}
+
+/* 3 · Dentro de márgenes: el texto no se pega al borde (5 % del ancho) y
+   nada se sale de la lámina. Lo que cubre la lámina entera (fondos, franjas)
+   y los adornos sin texto pegados al borde se respetan: están ahí a propósito. */
+const MARGEN = 0.05;
+export async function meterEnMargenes(deck, sel, { margen = MARGEN } = {}){
+  let n = 0;
+  const W = deck.ancho, H = deck.alto, m = Math.round(W * margen);
+  for(const i of cuales(deck, sel)){
+    const l = deck.laminas[i];
+    for(const f of formasSueltas(deck, l)){
+      if(f.rot || f.tipo === 'cxnSp') continue;
+      const completo = f.w >= W * 0.9 || f.h >= H * 0.9;
+      if(completo) continue;
+      const conTexto = !!f.texto;
+      if(f.tipo === 'sp' && !conTexto) continue;                // adorno
+      const borde = conTexto ? m : 0;
+      const ancho = W - 2 * borde, alto = H - 2 * borde;
+      let { x, y, w, h } = f;
+      if(w > ancho || h > alto){
+        if(f.tipo === 'pic' || f.tipo === 'grpSp' || f.tipo === 'graphicFrame'){ const k = Math.min(ancho / w, alto / h); w *= k; h *= k; }
+        else{ w = Math.min(w, ancho); h = Math.min(h, alto); }
+      }
+      x = Math.min(Math.max(x, borde), W - borde - w);
+      y = Math.min(Math.max(y, borde), H - borde - h);
+      if(Math.abs(x - f.x) < 1 && Math.abs(y - f.y) < 1 && Math.abs(w - f.w) < 1 && Math.abs(h - f.h) < 1) continue;
+      if(ponerCaja(deck, l, f, { x, y, w, h })) n++;
+    }
+  }
+  return n;
+}
+
+/* 4 · Alinear lo que está CASI alineado: bordes izquierdos a menos de 2 % del
+   ancho entre sí se juntan en el que más se repite. Lo que está lejos se deja:
+   si está lejos, es a propósito. */
+export async function alinearCasi(deck, sel, { tolerancia = 0.02 } = {}){
+  let n = 0;
+  const tol = deck.ancho * tolerancia;
+  for(const i of cuales(deck, sel)){
+    const l = deck.laminas[i];
+    const fs = formasSueltas(deck, l).filter((f) => !f.rot && (f.texto || f.tipo === 'pic') && f.w < deck.ancho * 0.9);
+    const usadas = new Set();
+    for(const f of fs){
+      if(usadas.has(f)) continue;
+      const grupo = fs.filter((g) => !usadas.has(g) && Math.abs(g.x - f.x) <= tol);
+      if(grupo.length < 2){ usadas.add(f); continue; }
+      grupo.forEach((g) => usadas.add(g));
+      const destino = moda(grupo.map((g) => g.x));
+      for(const g of grupo) if(Math.abs(g.x - destino) >= 1 && ponerCaja(deck, l, g, { x: destino, y: g.y, w: g.w, h: g.h })) n++;
+    }
+  }
+  return n;
+}
+function moda(valores){
+  const cuenta = new Map();
+  for(const v of valores) cuenta.set(v, (cuenta.get(v) || 0) + 1);
+  return [...cuenta.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0][0];
+}
+
+/* 5 · Igualar tamaños: los títulos que miden CASI lo mismo quedan iguales
+   (al tamaño que más se repite), y lo mismo con el texto normal. Una nota al
+   pie de 10 pt no se vuelve de 24: sólo se junta lo que está a ±30 %. */
+export async function igualarTamanos(deck, sel, { rango = 0.3 } = {}){
+  const cuadros = [];
+  for(const i of cuales(deck, sel)){
+    const l = deck.laminas[i];
+    for(const f of formasSueltas(deck, l)){
+      if(f.tipo !== 'sp' || !f.texto) continue;
+      const ps = parrafosMedibles(deck, l, f);
+      const pt = Math.max(...ps.map((p) => p.pt));
+      if(pt > 0) cuadros.push({ l, f, pt: Math.round(pt * 2) / 2 });
+    }
+  }
+  let n = 0;
+  for(const titulos of [true, false]){
+    const grupo = cuadros.filter((c) => !!c.f.titulo === titulos);
+    if(grupo.length < 2) continue;
+    const meta = moda(grupo.map((c) => c.pt));
+    for(const c of grupo){
+      if(c.pt === meta || Math.abs(c.pt - meta) / meta > rango) continue;
+      // Agrandar sólo si después cabe: si no, «que quepa» lo volvería a achicar
+      // y cada «Arreglar todo» se pelearía con el anterior.
+      if(meta > c.pt){ const inn = interior(c.f); if(altoTexto(parrafosMedibles(deck, c.l, c.f), inn.ancho, meta / c.pt) > inn.alto) continue; }
+      escalarCuadro(deck, c.l, c.f, meta / c.pt);
+      n++;
+    }
+  }
+  return n;
+}
+
+/* 6 · Aire entre renglones: el texto de varios renglones respira (115 %) y
+   entre párrafos queda un espacio. Lo que ya dice su interlineado, se respeta. */
+export async function aireEntreRenglones(deck, sel){
+  let n = 0;
+  for(const i of cuales(deck, sel)){
+    const l = deck.laminas[i], doc = docDe(deck, l.ruta);
+    for(const f of formasSueltas(deck, l)){
+      if(f.tipo !== 'sp' || !f.texto || f.titulo) continue;
+      const ps = todos(f.tb, NS.a, 'p').filter((p) => (hijo(p, NS.a, 'r') || hijo(p, NS.a, 'fld')));
+      if(ps.length < 2) continue;
+      let toco = false;
+      for(const p of ps){
+        let ppr = hijo(p, NS.a, 'pPr');
+        if(ppr && (hijo(ppr, NS.a, 'lnSpc') || hijo(ppr, NS.a, 'spcAft'))) continue;
+        if(!ppr){ ppr = nuevo(doc, NS.a, 'pPr'); p.insertBefore(ppr, p.firstChild); }
+        tocar(deck, l.ruta);
+        const ln = nuevo(doc, NS.a, 'lnSpc'); ln.appendChild(nuevo(doc, NS.a, 'spcPct', { val: '115000' }));
+        const aft = nuevo(doc, NS.a, 'spcAft'); aft.appendChild(nuevo(doc, NS.a, 'spcPts', { val: '600' }));
+        meterEnOrden(ppr, ln, ORDEN_PPR); meterEnOrden(ppr, aft, ORDEN_PPR);
+        toco = true;
+      }
+      if(toco) n++;
+    }
+  }
+  return n;
+}
+
+/* 7 · Títulos en el mismo lugar: entre láminas, los títulos que ya están
+   cerca de la posición más común se ponen exactamente ahí. Así, al pasar de
+   una lámina a otra, el título no brinca. */
+export async function titulosEnSuLugar(deck, sel, { tolerancia = 0.08 } = {}){
+  const tit = [];
+  for(const i of cuales(deck, sel)){
+    const l = deck.laminas[i];
+    const f = formasSueltas(deck, l).find((x) => x.titulo && x.tipo === 'sp' && !x.rot);
+    if(f) tit.push({ l, f });
+  }
+  if(tit.length < 3) return 0;
+  const clave = (f) => `${Math.round(f.x / (deck.ancho * 0.01))},${Math.round(f.y / (deck.alto * 0.01))}`;
+  const comun = moda(tit.map((t) => clave(t.f)));
+  const ref = tit.find((t) => clave(t.f) === comun).f;
+  let n = 0;
+  for(const { l, f } of tit){
+    const lejos = Math.abs(f.x - ref.x) / deck.ancho + Math.abs(f.y - ref.y) / deck.alto;
+    if(lejos === 0 || lejos > tolerancia) continue;
+    if(ponerCaja(deck, l, f, { x: ref.x, y: ref.y, w: f.w, h: f.h })) n++;
+  }
+  return n;
+}
+
+/* Todo junto, en el orden que no se pisa: primero lo que mueve cajas, al
+   final lo que mide si el texto cabe en la caja ya acomodada. */
+export async function acomodarTodo(deck, sel){
+  const r = {};
+  r.estiradas = await desestirarImagenes(deck, sel);
+  r.margenes = await meterEnMargenes(deck, sel);
+  r.alineadas = await alinearCasi(deck, sel);
+  r.titulos = await titulosEnSuLugar(deck, sel);
+  r.tamanos = await igualarTamanos(deck, sel);
+  r.aire = await aireEntreRenglones(deck, sel);
+  r.quepa = await textoQueQuepa(deck, sel);
+  r.total = Object.values(r).reduce((a, b) => a + b, 0);
+  return r;
+}
