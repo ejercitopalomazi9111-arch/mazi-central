@@ -984,7 +984,7 @@ async function ajustes(){
           ${campo('horario', 'Horario', contacto.horario || '', 'maxlength="120" placeholder="Lunes a sábado, 10 a 7"')}
           ${campo('direccion', 'Dirección del local', contacto.direccion || '', 'maxlength="200"')}
           <div class="en-linea">
-            <button type="button" class="boton secundario" data-ubicar-tienda>${icono('lugar')}<span data-tienda-texto>${a.tienda?.lat ? 'Ubicación guardada · tomarla otra vez' : 'Estoy en la tienda: tomar su ubicación'}</span></button>
+            <button type="button" class="boton secundario" id="ubicar_tienda" data-ubicar-tienda>${icono('lugar')}<span data-tienda-texto>${a.tienda?.lat ? 'Ubicación guardada · tomarla otra vez' : 'Estoy en la tienda: tomar su ubicación'}</span></button>
           </div>
           <p class="nota con-margen">De ahí salen las rutas de los repartidores y el mapa del tablero.</p>
         </section>
@@ -997,6 +997,10 @@ async function ajustes(){
 
     alMontar($c, { aviso }){
       const $f = $c.querySelector('#ajustes'), $acento = $c.querySelector('#acento');
+      // Llegando desde «A tu tienda le falta…» del tablero: directo al campo.
+      const aLlenar = new URLSearchParams(location.hash.split('?')[1] || '').get('campo');
+      const $aLlenar = aLlenar && /^[a-z_]+$/.test(aLlenar) && $c.querySelector('#' + aLlenar);
+      if($aLlenar) requestAnimationFrame(() => { $aLlenar.scrollIntoView({ block: 'center' }); $aLlenar.focus({ preventScroll: true }); });
       let cambiado = false;
       const marcar = () => { cambiado = true; $c.querySelector('#sin-guardar').hidden = false; };
       const alSalir = (e) => { if(cambiado){ e.preventDefault(); e.returnValue = ''; } };

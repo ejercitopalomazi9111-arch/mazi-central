@@ -1614,3 +1614,11 @@ body:has(.app.en-tienda){ background: var(--tienda-fondo); }
 .chips-elegir.sugerencias{ flex-wrap: nowrap; }        /* las sugerencias del simulador se deslizan de lado */
 .atajos{ margin: var(--e2) 0 0; font-size: 13px; color: var(--tinta-suave); }
 .atajos kbd{ display: inline-block; min-width: 24px; padding: 1px 6px; border: 1px solid var(--linea); border-bottom-width: 2px; border-radius: 6px; background: var(--superficie); font: inherit; font-weight: 700; text-align: center; }
+.arranque{ margin: var(--e4) 0; border: 1px solid var(--linea); border-radius: var(--radio); background: var(--superficie); }
+.arranque > summary{ display: flex; align-items: center; gap: var(--e3); min-height: 56px; padding: var(--e3) var(--e4); cursor: pointer; list-style: none; font-weight: 700; color: var(--ojo); }
+.arranque > summary::-webkit-details-marker{ display: none; }
+.arranque > summary > span{ flex: 1; min-width: 0; display: grid; }
+.arranque > summary small{ font-weight: 500; color: var(--tinta-suave); }
+.arranque > summary .ico{ width: 22px; height: 22px; flex: none; }
+.arranque[open] > summary > .ico:last-child{ transform: rotate(180deg); }
+.arranque .lista{ margin: 0; border: 0; border-top: 1px solid var(--linea); border-radius: 0 0 var(--radio) var(--radio); box-shadow: none; }

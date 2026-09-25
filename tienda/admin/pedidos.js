@@ -18,6 +18,7 @@ import {
   cobrarEntrega, totalConEnvio, ventasDesde, catalogoAdmin, clientesNegocio, terminarVencidas, ventasReporte,
 } from '../nucleo/datos.js';
 import { consejos } from '../nucleo/consejos.js';
+import { pendientesDeArranque } from '../nucleo/arranque.js';
 import { tarjetaConsejo } from './reportes.js';
 import { conRecompra, LES_TOCA, chip } from './clientes.js';
 import { ESTADOS } from '../cliente/pedir.js';
@@ -225,6 +226,8 @@ async function tablero(){
   const vendido = ventas.filter((v) => v.estado !== 'cancelado').reduce((t, v) => t + aCentavos(totalConEnvio(v)), 0);
   const porCobrar = ventas.filter((v) => !v.pagado && v.estado !== 'cancelado').reduce((t, v) => t + aCentavos(totalConEnvio(v)), 0);
   const h = new Date().getHours();
+  // Lo que le falta a la tienda y que el cliente sí nota (nucleo/arranque.js).
+  const faltan = pendientesDeArranque(cat.negocio, cat.productos);
 
   const pintarPedidos = () => pedidos.length
     ? `<ul class="pedidos-admin">${pedidos.slice(0, 12).map((p) => tarjetaPedido(p, reps)).join('')}</ul>
@@ -240,6 +243,10 @@ async function tablero(){
         <div class="cifra-caja"><span class="valor ${porCobrar ? 'ojo' : ''}">${pesosR(porCobrar)}</span><span class="etq">por cobrar</span></div>
         <a class="cifra-caja boton-cifra" href="${enlace('/a/inventario')}"><span class="valor ${acaban.length ? 'mal' : ''}">${acaban.length}</span><span class="etq">se acaban o agotados</span></a>
       </div>
+      ${faltan.length ? `<details class="arranque" data-arranque>
+        <summary>${icono('alerta')}<span>A tu tienda ${faltan.length === 1 ? 'le falta 1 cosa' : `le faltan ${faltan.length} cosas`}<small>${esc(faltan[0].texto)}${faltan.length > 1 ? ' y más' : ''}</small></span>${icono('abajo')}</summary>
+        <ul class="lista">${faltan.map((x) => `<li><a class="fila" href="${enlace(x.ruta)}${x.campo ? `?campo=${x.campo}` : ''}">
+          <span class="texto"><strong>${esc(x.texto)}</strong><small>${esc(x.porque)}</small></span>${icono('adelante')}</a></li>`).join('')}</ul></details>` : ''}
       ${cs.length ? `<section class="seccion"><header><h2>Consejos</h2><a class="ver-todo" href="${enlace('/a/reportes')}">Todos</a></header>
         <ul class="consejos">${cs.map(tarjetaConsejo).join('')}</ul></section>` : ''}
       <div class="tablero-cols">
