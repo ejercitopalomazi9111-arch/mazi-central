@@ -21,7 +21,7 @@ import {
 import { montarANombre } from './a-nombre.js';
 import { negocioPedido } from '../config.js';
 import { aCentavos, aPesos, sugerirPagos, desglose, contar, BILLETES, MONEDAS } from '../nucleo/dinero.js';
-import { imprimir, leerConf, abrirCajon } from '../nucleo/impresion/impresora.js';
+import { imprimir, imprimirCorte, leerConf, abrirCajon } from '../nucleo/impresion/impresora.js';
 import { filtrar } from '../nucleo/parecido.js';
 
 const PAGINA = 60;
@@ -490,10 +490,22 @@ async function cajaPantalla(){
         try{
           const r = await cerrarCaja(aPesos(total), $f.querySelector('#nota-caja').value.trim());
           const corte = { ...r, esperado: Number(r.esperado), contado: Number(r.contado) };
+          const contado = conteo();
           $c.innerHTML = estado({ icono: 'efectivo', titulo: 'Caja cerrada', extra: cuadreHTML(corte, devuelto),
-            botones: `<a class="boton principal" href="${enlace('/v/ventas')}">${icono('reportes')}Ver las ventas de hoy</a>
+            botones: `<button class="boton principal" data-imprimir-corte>${icono('imprimir')}Imprimir corte</button>
+              <a class="boton secundario" href="${enlace('/v/ventas')}">${icono('reportes')}Ver las ventas de hoy</a>
               <a class="boton secundario" href="${enlace('/v/caja')}">Abrir otra caja</a>` });
           aviso('Caja cerrada');
+          // El papel que se engrapa al dinero: lo que debía haber, lo que se contó y por qué billete.
+          const papel = { abierta: caja.abierta, cerrada: new Date().toISOString(), cajero: (await yo().catch(() => null))?.nombre, tickets,
+            fondo: fondo / 100, efectivo: ef / 100, devuelto: devuelto / 100, tarjeta: por('tarjeta') / 100, transferencia: por('transferencia') / 100,
+            esperado: corte.esperado - devuelto / 100, contado: corte.contado, nota: $f.querySelector('#nota-caja')?.value.trim(), conteo: contado };
+          $c.querySelector('[data-imprimir-corte]').addEventListener('click', async (ev) => {
+            const bt = ev.currentTarget; bt.setAttribute('aria-busy', 'true');
+            try{ await imprimirCorte(papel, await negocio()); }
+            catch(err){ console.error(err); aviso(`No se imprimió: ${err.message}`, 'mal'); }
+            finally{ bt.removeAttribute('aria-busy'); }
+          });
         }catch(err){ console.error(err); aviso(err.message, 'mal'); b.removeAttribute('aria-busy'); b.disabled = false; }
       });
     },

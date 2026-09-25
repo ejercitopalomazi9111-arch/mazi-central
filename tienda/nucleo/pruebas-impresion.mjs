@@ -2,7 +2,7 @@
 /* Pruebas de impresión · `node tienda/nucleo/pruebas-impresion.mjs`
    Byte por byte contra los manuales: Epson ESC/POS y Star Line Mode. */
 import { Ticket, codificar, partir, dosLados, aBits, PAGINAS } from './impresion/escpos.js';
-import { piezasTicket, aBytes, aRenglones } from './impresion/plantilla.js';
+import { piezasTicket, piezasCorte, aBytes, aRenglones } from './impresion/plantilla.js';
 let bien = 0, mal = 0;
 const ok = (t, c, d = '') => { c ? bien++ : mal++; console.log(`  ${c ? '✓' : '✗'} ${t}${c || !d ? '' : ` — ${d}`}`); };
 const hex = (b) => [...b].map((x) => x.toString(16).padStart(2, '0')).join(' ');
@@ -67,6 +67,20 @@ ok('la «ó» de «fijación» va en CP850 (a2)', contiene(b58, [0x66, 0x69, 0x6
 ok('el QR va en el ticket', contiene(b58, [0x1d, 0x28, 0x6b]));
 ok('con ticket.qr = false no va', !contiene(aBytes(piezasTicket(venta, { ...negocio, ajustes: { ...negocio.ajustes, ticket: { qr: false } } }), { columnas: 32 }), [0x1d, 0x28, 0x6b]));
 ok('todas las páginas tienen número para los dos dialectos', Object.values(PAGINAS).every((p) => Number.isInteger(p.escpos) && Number.isInteger(p.star)));
+
+console.log('\n· El corte de caja');
+const corte = { abierta: '2026-09-25T09:00:00', cerrada: '2026-09-25T20:05:00', cajero: 'Doña Lupe', tickets: 42, fondo: 500, efectivo: 3200.5,
+  devuelto: 150, tarjeta: 1800, transferencia: 0, esperado: 3550.5, contado: 3500.5, nota: 'se pagó el garrafón', conteo: { 100000: 2, 50000: 3, 10000: 0, 50: 1 } };
+const rc = aRenglones(piezasCorte(corte, negocio), 32).map((r) => r.v || '').join('\n');
+ok('dice que es un corte y de quién', /CORTE DE CAJA/.test(rc) && /Cajero: Doña Lupe/.test(rc));
+ok('debía, contó y el veredicto con la diferencia', /Debía haber\s+\$3,550\.50/.test(rc) && /Se contó\s+\$3,500\.50/.test(rc) && /FALTAN \$50\.00/.test(rc), rc);
+ok('las devoluciones restan y la tarjeta se aclara que no va al cajón', /Devoluciones\s+-\$150\.00/.test(rc) && /Tarjeta \(no va en el/.test(rc));
+ok('lo que es cero no se imprime (transferencia $0, billetes de 100 en 0)', !/Transferencia/.test(rc) && !/0 x \$100\.00/.test(rc));
+ok('el conteo por billete, del más grande al más chico', rc.indexOf('2 x $1,000.00') < rc.indexOf('3 x $500.00') && rc.indexOf('3 x $500.00') < rc.indexOf('1 x $0.50'));
+ok('lleva la nota y renglones para firmar', /Nota: se pagó el garrafón/.test(rc) && /Entregó: _+/.test(rc) && /Recibió: _+/.test(rc));
+ok('cuadrado exacto lo dice', /CUADRÓ EXACTO/.test(aRenglones(piezasCorte({ ...corte, contado: 3550.5 }, negocio), 48).map((r) => r.v || '').join('\n')));
+ok('ningún renglón se sale del papel de 58 mm', aRenglones(piezasCorte(corte, negocio), 32).every((r) => !r.v || r.v.length <= 32));
+ok('y sale en bytes para la impresora', aBytes(piezasCorte(corte, negocio), { columnas: 32 }).length > 200);
 
 console.log(`\n${mal ? '✗' : '✓'} ${bien} pasan · ${mal} fallan\n`);
 process.exit(mal ? 1 : 0);

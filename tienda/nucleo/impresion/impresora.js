@@ -13,7 +13,7 @@ import { negocioPedido } from '../../config.js';
 import { MODELOS } from './catalogo.js';
 import { TRANSPORTES, ErrorImpresora } from './transportes.js';
 import { Ticket, aBits } from './escpos.js';
-import { piezasTicket, aBytes, aRenglones } from './plantilla.js';
+import { piezasTicket, piezasCorte, aBytes, aRenglones } from './plantilla.js';
 
 const LLAVE = 'tienda-impresora-' + negocioPedido();
 export const CONF_INICIAL = { modelo: 'navegador', conexion: 'navegador', papel: 80, columnas: 48, dialecto: 'escpos', pagina: 'cp850', paginaNumero: null,
@@ -97,6 +97,13 @@ export async function imprimir(venta, negocio, { cajon = false, conf = leerConf(
     else await mandar(await bytesDe(piezas, conf, { cajon: cajon && conf.cajon && i === 0 }), conf);
   }
 }
+
+/* Cualquier papel que no es un ticket de venta (el corte de caja). */
+export async function imprimirPiezas(piezas, { conf = leerConf() } = {}){
+  if(conf.conexion === 'navegador') return porNavegador(aRenglones(piezas, conf.columnas), conf);
+  return mandar(await bytesDe(piezas, conf, { cajon: false }), conf);
+}
+export const imprimirCorte = (corte, negocio, o) => imprimirPiezas(piezasCorte(corte, negocio), o);
 
 export async function abrirCajon(conf = leerConf()){
   if(conf.conexion === 'navegador') throw new ErrorImpresora('Con la ventana de imprimir el cajón no se puede abrir desde la app: configura la impresora por USB, red o puente.');

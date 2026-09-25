@@ -48,6 +48,43 @@ export function piezasTicket(venta, negocio, { copia = '' } = {}){
   return ps;
 }
 
+/* El corte de caja, para engraparlo al dinero que se entrega. Montos en
+   pesos; `conteo`: { centavos de la denominación: cuántas }.
+   corte: { abierta, cerrada, cajero, tickets, fondo, efectivo, tarjeta, transferencia, devuelto, esperado, contado, nota, conteo } */
+export function piezasCorte(k, negocio){
+  const ps = [], centavos = (n) => Math.round(Number(n || 0) * 100);
+  ps.push({ t: 'texto', v: negocio?.marca?.nombre_corto || negocio?.nombre || 'Tienda', alinear: 'centro', negritas: true, grande: true });
+  ps.push({ t: 'texto', v: '*** CORTE DE CAJA ***', alinear: 'centro', negritas: true });
+  ps.push({ t: 'raya' });
+  if(k.abierta) ps.push({ t: 'par', izq: 'Abrió', der: FECHA.format(new Date(k.abierta)) });
+  ps.push({ t: 'par', izq: 'Cerró', der: FECHA.format(new Date(k.cerrada || Date.now())) });
+  if(k.cajero) ps.push({ t: 'texto', v: `Cajero: ${k.cajero}` });
+  ps.push({ t: 'raya' });
+  if(k.tickets != null) ps.push({ t: 'par', izq: 'Tickets', der: String(k.tickets) });
+  if(k.fondo != null) ps.push({ t: 'par', izq: 'Fondo inicial', der: pesos(k.fondo) });
+  if(k.efectivo != null) ps.push({ t: 'par', izq: 'Ventas en efectivo', der: pesos(k.efectivo) });
+  if(k.devuelto) ps.push({ t: 'par', izq: 'Devoluciones', der: '-' + pesos(k.devuelto) });
+  if(k.tarjeta) ps.push({ t: 'par', izq: 'Tarjeta (no va en el cajón)', der: pesos(k.tarjeta) });
+  if(k.transferencia) ps.push({ t: 'par', izq: 'Transferencia (no va en el cajón)', der: pesos(k.transferencia) });
+  ps.push({ t: 'raya' });
+  ps.push({ t: 'par', izq: 'Debía haber', der: pesos(k.esperado), negritas: true });
+  ps.push({ t: 'par', izq: 'Se contó', der: pesos(k.contado), negritas: true });
+  const dif = centavos(k.contado) - centavos(k.esperado);
+  ps.push({ t: 'texto', v: dif === 0 ? 'CUADRÓ EXACTO' : dif > 0 ? `SOBRAN ${pesos(dif / 100)}` : `FALTAN ${pesos(-dif / 100)}`, alinear: 'centro', negritas: true, grande: true });
+  const filas = Object.entries(k.conteo || {}).map(([d, n]) => [Number(d), Number(n)]).filter(([, n]) => n > 0).sort((a, b) => b[0] - a[0]);
+  if(filas.length){
+    ps.push({ t: 'raya' });
+    ps.push({ t: 'texto', v: 'Lo que se contó:', negritas: true });
+    for(const [d, n] of filas) ps.push({ t: 'par', izq: `${n} x ${pesos(d / 100)}`, der: pesos(d * n / 100) });
+  }
+  if(k.nota) ps.push({ t: 'texto', v: `Nota: ${k.nota}` });
+  ps.push({ t: 'saltar', n: 2 });
+  ps.push({ t: 'texto', v: 'Entregó: ______________________' });
+  ps.push({ t: 'saltar' });
+  ps.push({ t: 'texto', v: 'Recibió: ______________________' });
+  return ps;
+}
+
 export function aBytes(piezas, conf, { cajon = false, imagen = null } = {}){
   const k = new Ticket(conf);
   if(imagen) k.imagen(imagen);              // modo imagen: todo el ticket ya viene dibujado
