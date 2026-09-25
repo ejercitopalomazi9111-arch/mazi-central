@@ -704,14 +704,18 @@ body:has(.pos-barra:not([hidden])) .avisos{ bottom: calc(96px + env(safe-area-in
 .fotos-lote{ margin-top: var(--e5); }
 
 /* ══ Punto de venta (Bloque 5) ═══════════════════════════════════════════ */
-.solo-lectores{ position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.solo-lectores{ position: absolute; top: 0; left: 0; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .pos{ display: grid; gap: var(--e4); grid-template-columns: minmax(0, 1fr); }  /* sin minmax(0,…) la tira de categorías ensancha la columna y todo se sale */
-@media (min-width: 900px){
-  .pos{ grid-template-columns: minmax(0, 1fr) 360px; align-items: start; }
+/* Desde una tableta de pie (768–834 px) el ticket va al lado, siempre a la
+   vista: el cajero ve lo que lleva sin abrir nada. Antes era desde 900 y un
+   iPad parado escondía el ticket detrás de una barra. */
+@media (min-width: 760px){
+  .pos{ grid-template-columns: minmax(0, 1fr) 300px; align-items: start; }
   .pos-ticket{ position: sticky; top: calc(var(--arriba) + var(--e3)); max-height: calc(100dvh - var(--arriba) - var(--e6)); overflow-y: auto; }
   .pos-barra{ display: none !important; }
 }
-@media (max-width: 899px){ .pos-ticket{ display: none; } }
+@media (min-width: 900px){ .pos{ grid-template-columns: minmax(0, 1fr) 360px; } }
+@media (max-width: 759px){ .pos-ticket{ display: none; } }
 .pos-catalogo{ min-width: 0; }
 .pos-buscar{ display: flex; gap: var(--e2); }
 .pos-buscar .buscador{ flex: 1; min-width: 0; }
@@ -1009,7 +1013,10 @@ dialog.hoja .hoja-cuerpo{ padding: var(--e5); overflow-y: auto; max-height: calc
 @media (min-width: 700px){ dialog.hoja{ margin: auto; max-width: 560px; border-radius: 20px; } }
 
 .avisos{ position: fixed; left: 50%; bottom: calc(var(--e5) + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 90; display: grid; gap: var(--e2); width: min(92vw, 480px); pointer-events: none; }
-.aviso-flotante{ display: flex; align-items: center; gap: var(--e3); padding: var(--e3) var(--e4); border-radius: 14px; background: #1B1714; color: #F7F3EC; box-shadow: var(--elev-2); font-weight: 650; animation: hoja-sube var(--medio) var(--entra); pointer-events: auto; }
+.aviso-flotante{ display: flex; align-items: center; gap: var(--e3); padding: var(--e3) var(--e4); border-radius: 14px; background: #1B1714; color: #F7F3EC; box-shadow: var(--elev-2); font-weight: 650; animation: hoja-sube var(--medio) var(--entra); pointer-events: none; }
+/* El aviso flota justo donde viven «Guardar», «Pedir» y «Cobrar»: el toque
+   pasa a través. Antes, tocar Guardar mientras decía «Revisa lo marcado»
+   le daba al aviso y no pasaba nada (pruebas-personas.mjs · el despistado). */
 .aviso-flotante.mal{ background: var(--mal); color: #fff; }
 .aviso-flotante .ico{ flex: none; }
 

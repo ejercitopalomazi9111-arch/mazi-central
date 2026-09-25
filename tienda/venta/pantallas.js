@@ -312,6 +312,10 @@ async function cobrar(){
           d.querySelectorAll('[data-recibi]').forEach((b) => b.setAttribute('aria-pressed', Number(b.dataset.recibi) === r && $r.value !== ''));
           if(Number.isNaN(r)){ $cambio.innerHTML = '<p class="falta">Eso no es una cantidad.</p>'; $ok.disabled = true; return; }
           if(r < total){ $cambio.innerHTML = `<p class="falta">Faltan ${pesosC(total - r)}</p>`; $ok.disabled = true; return; }
+          // Un dedo que se resbala en el cero: 99,999,999 por un champú de 300
+          // daba un cambio de millones con su desglose en billetes. Nadie paga
+          // con más de $20,000 de cambio en un mostrador.
+          if(r - total > 2000000){ $cambio.innerHTML = '<p class="falta">Eso es demasiado para un pago. Revisa la cantidad.</p>'; $ok.disabled = true; return; }
           const c = r - total, dz = desglose(c);
           $cambio.innerHTML = c ? `<p class="cambio-grande"><span>Cambio</span><strong>${pesosC(c)}</strong></p>
             <p class="nota">Da: ${dz.piezas.map((x) => `${x.piezas} de ${pesosC(x.valor)}`).join(', ')}${dz.resto ? ` y ${dz.resto} centavos` : ''}</p>`

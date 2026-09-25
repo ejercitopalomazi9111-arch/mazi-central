@@ -386,7 +386,10 @@ async function productoEditar({ params }){
         else if(antes != null && precio != null && antes <= precio) falla('precio_antes', 'El precio de antes tiene que ser mayor al de ahora, o déjalo vacío.');
         const cb = val('codigo_barras');
         if(cb && !/^[0-9A-Za-z\-. ]+$/.test(cb)) falla('codigo_barras', 'Sólo números y letras, como viene en el empaque.');
+        if(!malo && precio > 1000000) falla('precio', 'Ese precio pasa del millón: revisa que no sobre un cero.');
         if(malo){ malo.focus(); aviso('Revisa lo marcado en rojo', 'mal'); return; }
+        // $0 no es un error de captura seguro, pero regala el producto: se pregunta.
+        if(precio === 0 && !confirm('El precio es $0: en la tienda saldría gratis. ¿Así lo quieres?')){ $f.elements.precio.focus(); return; }
 
         const datos = {
           nombre: val('nombre'), marca: val('marca'), descripcion: val('descripcion'),

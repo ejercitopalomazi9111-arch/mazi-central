@@ -357,6 +357,73 @@ if(toca('gato-personal')){
   }
 }
 
+/* ══ EL NIÑO EN LA CAJA ═══════════════════════════════════════════════════ */
+if(toca('niño-caja')){
+  console.log('\n· El niño en la caja (tableta, escrituras bloqueadas)');
+  const escrituras = [];
+  const { ctx, p } = await telefono('niño-caja', { ancho: 820, alto: 1180 });
+  await p.ir('/'); await p.datos((d) => d.verComo('cajero'));
+  await bloquearEscrituras(ctx, escrituras);
+  await p.ir('/v');
+  if(await p.$('#pos-rejilla')){
+    const prod = await p.$eval('#pos-rejilla .pos-prod:not(.sin)', (e) => e.dataset.id);
+    const q = await p.datos(async (d, id) => (await d.catalogo()).productos.find((x) => x.id === id).q, prod);
+    for(let k = 0; k < q + 8; k++) await p.click(`#pos-rejilla [data-id="${prod}"]`, { force: true, timeout: 400 }).catch(() => {});
+    const piezas = await p.locator('[data-cobrar]:visible').first().textContent();
+    const enTicket = await p.$$eval('#pos-ticket output', (l) => l.map((o) => Number(o.textContent)).reduce((a, b) => a + b, 0));
+    ok(`tocar un producto ${q + 8} veces no mete más de las ${q} que hay (van ${enTicket})`, enTicket >= 1 && enTicket <= q, piezas);
+    await p.locator('[data-cobrar]:visible').first().click(); await p.waitForSelector('dialog[open] #recibi');
+    const prueba = async (v) => { await p.fill('#recibi', v); await p.waitForTimeout(120); return p.$eval('[data-confirmar]', (b) => b.disabled); };
+    const r = { letras: await prueba('abc'), negativo: await prueba('-50'), millones: await prueba('999999999'), vacio: await prueba('') };
+    ok('«abc», «-50» y «999,999,999» no dejan cobrar; vacío es «exacto»', r.letras && r.negativo && r.millones && !r.vacio, JSON.stringify(r));
+    const antes = escrituras.filter((u) => /rpc\/vender/.test(u)).length;
+    await Promise.all([p.click('[data-confirmar]', { force: true }), p.click('[data-confirmar]', { force: true }).catch(() => {}), p.dblclick('[data-confirmar]', { force: true }).catch(() => {})]);
+    await p.waitForTimeout(1500);
+    ok('cuatro toques a «Cobrar» mandan UNA venta', escrituras.filter((u) => /rpc\/vender/.test(u)).length - antes === 1, escrituras.join(', '));
+    ok('y si la venta no pasa, el botón vuelve a servir', await p.$eval('[data-confirmar]', (b) => !b.disabled).catch(() => false));
+  } else ok('la caja de demo está abierta para probar', false, (await p.texto()).slice(0, 200));
+  const errores = p.errores.filter((e) => !/bloqueado por la prueba|Algo falló|ErrorDeDatos/.test(e));
+  ok('el niño en la caja no hizo tronar nada', !errores.length, errores.slice(0, 5).join(' | '));
+  await ctx.close();
+}
+
+/* ══ EL DESPISTADO EN LA OFICINA ══════════════════════════════════════════ */
+if(toca('despistado-oficina')){
+  console.log('\n· El despistado dando de alta un producto (escrituras bloqueadas)');
+  const escrituras = [], dialogos = [];
+  const { ctx, p } = await telefono('despistado-oficina');
+  p.removeAllListeners('dialog'); p.on('dialog', (d) => { dialogos.push(d.message()); d.dismiss().catch(() => {}); });
+  await p.ir('/'); await p.datos((d) => d.verComo('admin'));
+  await bloquearEscrituras(ctx, escrituras);
+  await p.ir('/a/producto/nuevo');
+  const intenta = async (datos) => {
+    for(const [k, v] of Object.entries(datos)) await p.fill(`#${k}`, v);
+    const n = escrituras.length; await p.click('#guardar'); await p.waitForTimeout(500);
+    return { escribio: escrituras.length > n, marcados: await p.$$eval('.campo.error', (l) => l.length) };
+  };
+  const casos = [
+    ['sin nombre', { nombre: '', precio: '250' }],
+    ['precio con letras', { nombre: 'Cera de prueba', precio: 'doscientos' }],
+    ['precio negativo', { nombre: 'Cera de prueba', precio: '-250' }],
+    ['precio con un cero de más de más', { nombre: 'Cera de prueba', precio: '25000000' }],
+    ['«antes» menor que el de ahora', { nombre: 'Cera de prueba', precio: '250', precio_antes: '200' }],
+  ];
+  const malos = [];
+  for(const [que, d] of casos){ const r = await intenta({ precio_antes: '', ...d }); if(r.escribio || !r.marcados) malos.push(`${que}: ${JSON.stringify(r)}`); }
+  ok('nombre vacío, precio con letras, negativo, de millones o «antes» menor: se marca y NO se manda nada', !malos.length, malos.join(' | '));
+  const cero = await intenta({ nombre: 'Cera de prueba', precio: '0', precio_antes: '' });
+  ok('precio $0: pregunta si de verdad lo regala, y si dice que no, no se manda', dialogos.some((m) => /\$0/.test(m)) && !cero.escribio, JSON.stringify({ cero, dialogos }));
+  const bien = escrituras.length;
+  await p.fill('#precio', '1,250.50');
+  await Promise.all([p.click('#guardar', { force: true }), p.click('#guardar', { force: true }).catch(() => {}), p.click('#guardar', { force: true }).catch(() => {})]);
+  await p.waitForTimeout(1500);
+  const diag = await p.evaluate(() => ({ errores: [...document.querySelectorAll('.campo.error')].map((c) => c.textContent.trim().slice(0, 80)), avisos: document.getElementById('avisos')?.textContent, precio: document.querySelector('#precio')?.value }));
+  ok('con «1,250.50» sí se manda, y tres toques a Guardar mandan UNO', escrituras.length - bien === 1, JSON.stringify({ mandadas: escrituras.slice(bien), ...diag }));
+  const errores = p.errores.filter((e) => !/bloqueado por la prueba|Algo falló|ErrorDeDatos/.test(e));
+  ok('el despistado en la oficina no hizo tronar nada', !errores.length, errores.slice(0, 5).join(' | '));
+  await ctx.close();
+}
+
 // Limpieza: lo que se pidió de verdad se cancela.
 for(const { id, p } of pedidosHechos){
   await p.datos(async (d, x) => { try{ await d.cambiarEstado(x, 'cancelado', 'prueba automática: el niño'); }catch(e){ return e.message; } }, id).catch(() => {});
