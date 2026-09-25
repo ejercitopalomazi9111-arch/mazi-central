@@ -116,7 +116,6 @@ function pintarArmazon(persona){
       </div>
     </aside>
     <div class="columna">
-      ${N.ajustes?.muestra ? `<div class="franja-muestra">${icono('info')}<span>${esc(N.ajustes.aviso_muestra || 'Tienda de muestra.')}</span></div>` : ''}
       <header class="arriba">
         <div class="arriba-fila">
           <button class="boton-ico solo-telefono" data-abrir-menu aria-label="Abrir menú" aria-controls="lateral" aria-expanded="false">${icono('menu')}</button>
@@ -128,6 +127,8 @@ function pintarArmazon(persona){
         </div>
         <a class="buscar-arriba" id="buscar-arriba" href="${enlace('/buscar')}" hidden>${icono('buscar')}<span>Buscar en ${esc(N.marca?.nombre_corto || N.nombre)}</span>${icono('escanear')}</a>
       </header>
+      ${/* La franja va DEBAJO de la barra: arriba de todo quedaba bajo la hora del iPhone. */''}
+      ${N.ajustes?.muestra ? `<div class="franja-muestra">${icono('info')}<span>${esc(N.ajustes.aviso_muestra || 'Tienda de muestra.')}</span></div>` : ''}
       <main class="contenido" id="contenido"></main>
       <nav class="pestanas" id="pestanas" aria-label="Tienda" hidden>
         ${[['/', 'casa', 'Inicio'], ['/buscar', 'buscar', 'Buscar'], ['/favoritos', 'corazon', 'Favoritos'], ['/pedidos', 'pedidos', 'Pedidos'], ['/carrito', 'carrito', 'Carrito']].map(([r, ic, t]) =>
