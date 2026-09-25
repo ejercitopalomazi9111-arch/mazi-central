@@ -256,6 +256,23 @@
       "vecinas": [
         "el-contenedor-reciclado-junta-oyentes"
       ]
+    },
+    {
+      "id": "la-direccion-que-cambia-mientras-arranca",
+      "titulo": "Cambiar de pantalla mientras la app todavía carga la truena",
+      "gravedad": "media",
+      "sintoma": "Un error en consola «Cannot set properties of null (setting 'hidden')» al abrir la app con un enlace o dar «atrás» muy rápido; la pantalla sí termina de pintar.",
+      "causa": "El enrutador escucha `hashchange` desde que carga el archivo, pero el armazón (barra de arriba, menú) se pinta hasta que llega el negocio de la base. Un cambio de dirección en ese hueco llama a navegar() sobre un armazón que no existe.",
+      "porque": "Escuchar eventos y tener dónde pintar son dos momentos distintos del arranque, y entre ellos hay una llamada a la red de uno o dos segundos.",
+      "arreglo": "navegar() sale sin hacer nada si el armazón no está; el arranque navega solo en cuanto lo pinta, con la dirección que haya en ese momento.",
+      "comoCazarlo": "En una prueba, recargar y cambiar el `#` de inmediato sin esperar a que cargue. Leyendo no se ve: salió de una prueba de Cotizar que navegaba con prisa.",
+      "consejo": "Todo lo que el armazón pinta después de una espera de red, el enrutador tiene que poder encontrárselo vacío.",
+      "senales": [
+        "cannot set properties of null hidden",
+        "truena al abrir con un enlace",
+        "error al dar atrás rápido"
+      ],
+      "salioDe": "La tienda, 25 de septiembre: tienda/nucleo/app.js navegar()."
     }
   ]
 }
