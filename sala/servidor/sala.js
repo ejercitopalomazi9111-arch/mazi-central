@@ -347,7 +347,7 @@ const revuelto = (t) => {
 import { buscar as buscarNeuronas, vecinas, CAMPOS, claseDe } from '../../cerebro/buscador.mjs';
 import { generarVapid, empujarATodos } from './push.mjs';
 import { MOTORES, preguntar, motoresVivos, motoresApagados, motorDe,
-         PAPEL_SILLA, PAPEL_RESUMEN, PAPEL_LIGUE } from './modelos.js';
+         PAPEL_SILLA, PAPEL_RESUMEN, PAPEL_LIGUE, generarImagen } from './modelos.js';
 
 const ahora = () => Date.now();
 
@@ -1998,6 +1998,29 @@ export class Sala {
         ligan: ['sylcred', 'claude-de-carlos', 'godines', 'claude-de-luis'],
         objeto: 'paulina',
       });
+    }
+
+    /* ── /ia-texto e /ia-imagen · Paulina y Negro trabajando FUERA de la mesa ──
+       Para la herramienta de presentaciones (presentaciones/): reescribir
+       láminas, armar órdenes para cambiar cien láminas de un jalón y hacer o
+       rehacer imágenes. Viven aquí porque aquí están las llaves — el
+       navegador nunca las ve — y detrás de la llave de la sala, para que un
+       desconocido no se gaste el saldo de Carlos. No publican nada en el hilo. */
+    if(pedido.method === 'POST' && (ruta === 'ia-texto' || ruta === 'ia-imagen')){
+      const crudo = await pedido.text().catch(() => '');
+      if(crudo.length > 30_000_000) return Response.json({ error: 'Es demasiado grande (más de 30 MB).' }, { status: 413 });
+      let c; try{ c = JSON.parse(crudo || '{}'); }catch{ return Response.json({ error: 'No entendí la petición.' }, { status: 400 }); }
+      if(ruta === 'ia-imagen'){
+        const r = await generarImagen(this.env, c);
+        return Response.json(r, { status: r.bien ? 200 : 502 });
+      }
+      const motor = motorDe(c.motor) || 'gemini';
+      const mensajes = (Array.isArray(c.mensajes) ? c.mensajes : [{ de: 'tu', texto: String(c.texto || '') }])
+        .slice(-30).map((m) => ({ de: m.de === 'yo' ? 'yo' : 'tu', texto: String(m.texto || '').slice(0, 60_000) }));
+      if(!mensajes.some((m) => m.texto.trim())) return Response.json({ error: 'No le escribiste nada.' }, { status: 400 });
+      const r = await preguntar(motor, this.env, String(c.sistema || 'Eres un asistente útil. Contesta en español de México.').slice(0, 20_000), mensajes,
+        { tope: Math.min(Math.max(Number(c.tope) || 1500, 100), 8000), esperaMs: 90_000 });
+      return Response.json(r, { status: r.bien ? 200 : 502 });
     }
 
     /* ── /motores · quién puede sentarse y quién no ───────────────────────

@@ -34,7 +34,7 @@
  * ===========================================================================*/
 import {
   MOTORES, preguntar, motoresVivos, motoresApagados,
-  PAPEL_SILLA, PAPEL_RESUMEN,
+  PAPEL_SILLA, PAPEL_RESUMEN, generarImagen, buscarImagen, MODELO_IMAGEN,
 } from './modelos.js';
 
 let pasan = 0, fallan = 0;
@@ -210,6 +210,39 @@ ok('el del resumen pone PRIMERO lo que está esperando a Carlos',
    /lo más\s+importante/i.test(PAPEL_RESUMEN));
 ok('y le prohíbe inventar',
    /no inventes/i.test(PAPEL_RESUMEN));
+
+
+/* ══ IMÁGENES (para la herramienta de presentaciones) ══════════════════════ */
+console.log('\n· Hacer y rehacer imágenes');
+{
+  const png = 'iVBORw0KGgo' + 'A'.repeat(200);
+  const llamadas = [];
+  const falso = (respuestas) => async (url, op) => { llamadas.push({ url, cuerpo: JSON.parse(op.body), cab: op.headers }); const r = respuestas.shift(); return new Response(typeof r.cuerpo === 'string' ? r.cuerpo : JSON.stringify(r.cuerpo), { status: r.estado || 200 }); };
+  const env = { GEMINI_API_KEY: 'llave-falsa' };
+
+  ok('sin llave no llama a nadie y dice cuál falta', (await generarImagen({}, { prompt: 'x' }, async () => { throw new Error('no debía llamar'); })).error.includes('GEMINI_API_KEY'));
+  ok('sin descripción no llama', !(await generarImagen(env, { prompt: '  ' }, async () => { throw new Error('no'); })).bien);
+
+  llamadas.length = 0;
+  const r1 = await generarImagen(env, { prompt: 'un aula moderna', aspecto: '16:9', tamano: '2K' }, falso([{ cuerpo: { id: 'i1', steps: [{ type: 'thought' }, { type: 'model_output', content: [{ type: 'text', text: 'Aquí está' }, { type: 'image', mime_type: 'image/png', data: png }] }] } }]));
+  ok('interactions: la imagen sale de donde venga en la respuesta', r1.bien && r1.data === png && r1.mime === 'image/png', JSON.stringify(r1).slice(0, 200));
+  ok('se pide al modelo de imagen verificado, con la llave en la cabecera (no en la URL)',
+     llamadas[0].cuerpo.model === MODELO_IMAGEN && llamadas[0].cab['x-goog-api-key'] === 'llave-falsa' && !llamadas[0].url.includes('llave-falsa'));
+  ok('el formato 16:9 y 2K viajan en response_format', llamadas[0].cuerpo.response_format.aspect_ratio === '16:9' && llamadas[0].cuerpo.response_format.image_size === '2K');
+  ok('un formato inventado no se manda', !(await (async () => { llamadas.length = 0; await generarImagen(env, { prompt: 'x', aspecto: '7:3' }, falso([{ cuerpo: { image: { type: 'image', data: png } } }])); return llamadas[0].cuerpo.response_format.aspect_ratio; })()));
+
+  llamadas.length = 0;
+  await generarImagen(env, { prompt: 'hazla más actual', imagenes: [{ mime: 'image/jpeg', data: png }] }, falso([{ cuerpo: { outputs: [{ type: 'image', data: png }] } }]));
+  ok('rehacer: la imagen original va en el mismo input, con su tipo', llamadas[0].cuerpo.input[1]?.type === 'image' && llamadas[0].cuerpo.input[1]?.mime_type === 'image/jpeg');
+
+  llamadas.length = 0;
+  const r404 = await generarImagen(env, { prompt: 'x' }, falso([{ estado: 404, cuerpo: 'no' }, { cuerpo: { candidates: [{ content: { parts: [{ inlineData: { mimeType: 'image/jpeg', data: png } }] } }] } }]));
+  ok('si interactions da 404, intenta generateContent y lee inlineData', r404.bien && r404.mime === 'image/jpeg' && llamadas[1].url.includes(':generateContent'), JSON.stringify(r404).slice(0, 160));
+  ok('401 dice que la llave no sirve (no que falta)', /no sirve/.test((await generarImagen(env, { prompt: 'x' }, falso([{ estado: 401, cuerpo: '' }]))).error));
+  ok('429 dice que esperes', /espera/i.test((await generarImagen(env, { prompt: 'x' }, falso([{ estado: 429, cuerpo: '' }]))).error));
+  ok('200 sin imagen no se hace pasar por imagen', !(await generarImagen(env, { prompt: 'x' }, falso([{ cuerpo: { steps: [{ type: 'text', text: 'no puedo' }] } }]))).bien);
+  ok('buscarImagen toma la ÚLTIMA imagen (la final, no un borrador)', buscarImagen({ a: { type: 'image', data: 'B'.repeat(150) }, b: [{ inlineData: { data: 'C'.repeat(150) } }] }).data.startsWith('C'));
+}
 
 /* ══════════════════════════════════════════════════════════════════════════ */
 console.log('\n' + (fallan ? '✗' : '✓') + `  ${pasan} pasan · ${fallan} fallan`);

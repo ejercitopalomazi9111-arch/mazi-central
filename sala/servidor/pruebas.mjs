@@ -967,6 +967,32 @@ console.log('\n· Las sillas');
        /Variables and Secrets/.test(r.error || ''), JSON.stringify(r));
   }
 
+  /* ── /ia-texto e /ia-imagen · para la herramienta de presentaciones ───── */
+  {
+    const antes = globalThis.fetch, vistas = [];
+    globalThis.fetch = async (url, op) => {
+      vistas.push(String(url));
+      if(String(url).includes('groq')) return new Response(JSON.stringify({ choices: [{ message: { content: 'Título mejorado' } }] }));
+      if(String(url).includes('interactions')) return new Response(JSON.stringify({ steps: [{ type: 'model_output', content: [{ type: 'image', mime_type: 'image/png', data: 'P'.repeat(300) }] }] }));
+      return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: 'hola desde gemini' }] } }] }));
+    };
+    const s = nueva({ ...LLAVES, LLAVES: 'carlos:MAESTRA' });
+    const [c0] = await leer(await pedir(s, 'POST', 'ia-texto', { motor: 'negro', texto: 'mejora esto' }, 'ajena'));
+    ok('sin la llave de la sala nadie gasta el saldo de Carlos', c0 === 401, String(c0));
+    const [c1, r1] = await leer(await pedir(s, 'POST', 'ia-texto', { motor: 'negro', sistema: 'Eres editor.', mensajes: [{ de: 'tu', texto: 'mejora esto' }] }, 'MAESTRA'));
+    ok('con llave, Negro (por su apodo) contesta el texto', c1 === 200 && r1.texto === 'Título mejorado', JSON.stringify(r1));
+    const [c2, r2] = await leer(await pedir(s, 'POST', 'ia-imagen', { prompt: 'aula moderna', aspecto: '16:9' }, 'MAESTRA'));
+    ok('y Paulina hace la imagen', c2 === 200 && r2.bien && r2.data.length === 300 && r2.mime === 'image/png', JSON.stringify(r2).slice(0, 120));
+    const [, h] = await leer(await pedir(s, 'GET', 'hilo', undefined, 'MAESTRA'));
+    ok('nada de esto se publica en el hilo de la mesa', !(h.hilo || []).some((m) => /mejorado|aula/.test(m.texto || '')));
+    const [c3] = await leer(await pedir(s, 'POST', 'ia-texto', { motor: 'gemini', texto: '   ' }, 'MAESTRA'));
+    ok('pedir sin texto se rechaza sin llamar a nadie', c3 === 400);
+    const sinLlave = nueva({ LLAVES: 'carlos:MAESTRA' });
+    const [c4, r4] = await leer(await pedir(sinLlave, 'POST', 'ia-imagen', { prompt: 'x' }, 'MAESTRA'));
+    ok('sin GEMINI_API_KEY la imagen dice qué secreto falta', c4 === 502 && /GEMINI_API_KEY/.test(r4.error), JSON.stringify(r4));
+    globalThis.fetch = antes;
+  }
+
   globalThis.fetch = original;
 }
 
