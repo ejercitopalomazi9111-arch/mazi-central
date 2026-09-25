@@ -346,6 +346,7 @@ const revuelto = (t) => {
    búsqueda copiada es el defecto `renombrar-de-un-lado` esperando a pasar. */
 import { buscar as buscarNeuronas, vecinas, CAMPOS, claseDe } from '../../cerebro/buscador.mjs';
 import { generarVapid, empujarATodos } from './push.mjs';
+import { atenderBanco } from './banco.js';
 import { MOTORES, preguntar, motoresVivos, motoresApagados, motorDe,
          PAPEL_SILLA, PAPEL_RESUMEN, PAPEL_LIGUE, generarImagen } from './modelos.js';
 
@@ -2006,6 +2007,9 @@ export class Sala {
        rehacer imágenes. Viven aquí porque aquí están las llaves — el
        navegador nunca las ve — y detrás de la llave de la sala, para que un
        desconocido no se gaste el saldo de Carlos. No publican nada en el hilo. */
+    /* ── /banco · las imágenes de Carlos para sus presentaciones (banco.js) ── */
+    if(ruta === 'banco') return atenderBanco(this.ctx.storage, pedido, url, cuenta);
+
     if(pedido.method === 'POST' && (ruta === 'ia-texto' || ruta === 'ia-imagen')){
       const crudo = await pedido.text().catch(() => '');
       if(crudo.length > 30_000_000) return Response.json({ error: 'Es demasiado grande (más de 30 MB).' }, { status: 413 });
@@ -2018,8 +2022,10 @@ export class Sala {
       const mensajes = (Array.isArray(c.mensajes) ? c.mensajes : [{ de: 'tu', texto: String(c.texto || '') }])
         .slice(-30).map((m) => ({ de: m.de === 'yo' ? 'yo' : 'tu', texto: String(m.texto || '').slice(0, 60_000) }));
       if(!mensajes.some((m) => m.texto.trim())) return Response.json({ error: 'No le escribiste nada.' }, { status: 400 });
+      /* Con `imagenes`, la IA las VE (para describir las del banco). Hasta 4, de 7 MB cada una. */
+      const imagenes = (Array.isArray(c.imagenes) ? c.imagenes : []).filter((x) => x && /^image\/(jpeg|png|webp|gif)$/.test(x.mime) && typeof x.data === 'string' && x.data.length < 7_000_000).slice(0, 4);
       const r = await preguntar(motor, this.env, String(c.sistema || 'Eres un asistente útil. Contesta en español de México.').slice(0, 20_000), mensajes,
-        { tope: Math.min(Math.max(Number(c.tope) || 1500, 100), 8000), esperaMs: 90_000 });
+        { tope: Math.min(Math.max(Number(c.tope) || 1500, 100), 8000), esperaMs: 90_000, imagenes, json: !!c.json });
       return Response.json(r, { status: r.bien ? 200 : 502 });
     }
 

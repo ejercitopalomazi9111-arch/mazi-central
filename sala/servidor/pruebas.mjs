@@ -37,8 +37,15 @@ function hacerCtx(){
          misma lección del día, aplicada al decorado en vez de al código: «lo
          tengo aquí» y «quedó guardado» son dos cosas, y un doble que las
          confunde aprueba justo los defectos que sólo se ven al reiniciar. */
-      async get(k){ const v = datos.get(k); return v === undefined ? undefined : structuredClone(v); },
-      async put(o){ for(const k in o) datos.set(k, structuredClone(o[k])); },
+      /* Como el de Cloudflare: una clave o una lista (regresa un Map), y put
+         con (clave, valor) o con un objeto de varias. El banco usa las dos. */
+      async get(k){
+        if(Array.isArray(k)) return new Map(k.filter((x) => datos.has(x)).map((x) => [x, structuredClone(datos.get(x))]));
+        const v = datos.get(k); return v === undefined ? undefined : structuredClone(v);
+      },
+      async put(o, v){ if(typeof o === 'string'){ datos.set(o, structuredClone(v)); return; } for(const k in o) datos.set(k, structuredClone(o[k])); },
+      async delete(k){ let n = 0; for(const x of [].concat(k)) if(datos.delete(x)) n++; return Array.isArray(k) ? n : n > 0; },
+      _claves: () => [...datos.keys()],
       async deleteAll(){ datos.clear(); },
       /* La alarma se guarda de verdad: sin esto no se puede probar que una
          sala viva no se borre sola, que es lo que se comió la sala de Carlos. */
@@ -990,7 +997,56 @@ console.log('\n· Las sillas');
     const sinLlave = nueva({ LLAVES: 'carlos:MAESTRA' });
     const [c4, r4] = await leer(await pedir(sinLlave, 'POST', 'ia-imagen', { prompt: 'x' }, 'MAESTRA'));
     ok('sin GEMINI_API_KEY la imagen dice qué secreto falta', c4 === 502 && /GEMINI_API_KEY/.test(r4.error), JSON.stringify(r4));
+    // Ver imágenes: Paulina sí, Negro no (y lo dice en vez de ignorarlas).
+    const cuerpos = [];
+    globalThis.fetch = async (url, op) => { cuerpos.push(JSON.parse(op.body)); return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: '{"titulo":"Aula"}' }] } }] })); };
+    const foto = { mime: 'image/jpeg', data: 'A'.repeat(200) };
+    const [c5, r5] = await leer(await pedir(s, 'POST', 'ia-texto', { motor: 'gemini', texto: 'describe', imagenes: [foto], json: true }, 'MAESTRA'));
+    const enviado = cuerpos.at(-1);
+    ok('Paulina recibe la foto junto con la pregunta', c5 === 200 && enviado?.contents?.at(-1)?.parts?.[0]?.inlineData?.mimeType === 'image/jpeg', JSON.stringify(enviado).slice(0, 200));
+    ok('y se le pide JSON cuando se quiere JSON', enviado?.generationConfig?.responseMimeType === 'application/json');
+    const [c6, r6] = await leer(await pedir(s, 'POST', 'ia-texto', { motor: 'negro', texto: 'describe', imagenes: [foto] }, 'MAESTRA'));
+    ok('Negro no ve imágenes y lo dice (no las ignora callado)', c6 === 502 && /no ve imágenes/.test(r6.error), JSON.stringify(r6));
     globalThis.fetch = antes;
+  }
+
+  /* ── /banco · las 300 imágenes de Carlos (banco.js) ─────────────────── */
+  {
+    const s = nueva({ LLAVES: 'carlos:MAESTRA' });
+    const b64 = (u) => Buffer.from(u).toString('base64');
+    const [c0] = await leer(await pedir(s, 'GET', 'banco', undefined, 'ajena'));
+    ok('el banco no se abre sin la llave de la sala', c0 === 401);
+    // 3.2 MB: más que un registro (2 MB), así que tiene que ir en trozos.
+    const grande = new Uint8Array(3_200_000); for(let i = 0; i < grande.length; i++) grande[i] = (i * 31 + 7) % 251;
+    const mini = new Uint8Array(2000).fill(9);
+    const [c1, r1] = await leer(await pedir(s, 'POST', 'banco', { accion: 'subir', nombre: 'robot.png', mime: 'image/png', datos: b64(grande), mini: b64(mini), ancho: 1920, alto: 1080,
+      campos: { titulo: 'Robot  en   el aula', temas: 'Robótica, robótica , STEAM', quien: 'otro', estado: 'inventado' } }, 'MAESTRA'));
+    const f = r1.ficha || {};
+    ok('sube una imagen de 3.2 MB (en trozos de 1.5 MB)', c1 === 200 && f.partes === 3 && f.bytes === grande.length, JSON.stringify(r1).slice(0, 200));
+    ok('limpia lo que escribe: espacios, temas repetidos, en minúsculas', f.titulo === 'Robot en el aula' && JSON.stringify(f.temas) === '["robótica","steam"]', JSON.stringify(f));
+    ok('no deja escribir campos que no son suyos ni estados inventados', f.quien === 'carlos' && f.estado === 'sin-revisar', `${f.quien} ${f.estado}`);
+    const img = await s.fetch(new Request(`https://s.test/api/sala/ABCDEF/banco?id=${f.id}`, { headers: { 'X-Llave': 'MAESTRA' } }));
+    const devuelta = new Uint8Array(await img.arrayBuffer());
+    ok('la imagen regresa byte por byte, con su tipo', img.status === 200 && img.headers.get('content-type') === 'image/png' && devuelta.length === grande.length && devuelta.every((x, i) => x === grande[i]));
+    const mi = await s.fetch(new Request(`https://s.test/api/sala/ABCDEF/banco?id=${f.id}&parte=mini`, { headers: { 'X-Llave': 'MAESTRA' } }));
+    ok('y la miniatura aparte', mi.status === 200 && (await mi.arrayBuffer()).byteLength === 2000);
+    const [, l1] = await leer(await pedir(s, 'GET', 'banco', undefined, 'MAESTRA'));
+    ok('la lista trae la ficha sin los bytes', l1.fichas?.length === 1 && !('datos' in l1.fichas[0]));
+    const [c2, r2] = await leer(await pedir(s, 'POST', 'banco', { accion: 'cambiar', id: f.id, campos: { estado: 'cambios', cambios: 'Quitar el logo viejo', descripcion: 'Un robot educativo' } }, 'MAESTRA'));
+    ok('se marca «requiere cambios» con qué cambios', c2 === 200 && r2.ficha.estado === 'cambios' && r2.ficha.cambios === 'Quitar el logo viejo');
+    const [, r3] = await leer(await pedir(s, 'POST', 'banco', { accion: 'subir', nombre: 'b.jpg', mime: 'image/jpeg', datos: b64(new Uint8Array(500).fill(1)) }, 'MAESTRA'));
+    const [c4, r4] = await leer(await pedir(s, 'POST', 'banco', { accion: 'cambiarVarias', ids: [f.id, r3.ficha.id, 'no-existe'], campos: { estado: 'lista' }, agregarTemas: 'Ciencia' }, 'MAESTRA'));
+    ok('varias de un jalón: estado y un tema más, sin perder los que tenían', c4 === 200 && r4.fichas.length === 2 && r4.fichas.every((x) => x.estado === 'lista' && x.temas.includes('ciencia')) && r4.fichas[0].temas.includes('robótica'), JSON.stringify(r4.fichas?.map((x) => x.temas)));
+    const [c5] = await leer(await pedir(s, 'POST', 'banco', { accion: 'subir', mime: 'application/pdf', datos: b64(new Uint8Array(10)) }, 'MAESTRA'));
+    ok('sólo acepta fotos', c5 === 400);
+    const s2 = new Sala(s.ctx, { LLAVES: 'carlos:MAESTRA' });
+    const [, l2] = await leer(await pedir(s2, 'GET', 'banco', undefined, 'MAESTRA'));
+    ok('después de reiniciar el servidor, el banco sigue ahí', l2.fichas?.length === 2);
+    const [c6] = await leer(await pedir(s, 'POST', 'banco', { accion: 'borrar', id: f.id }, 'MAESTRA'));
+    const quedan = s.ctx.storage._claves().filter((k) => k.includes(f.id));
+    ok('borrar quita la ficha y TODOS sus trozos', c6 === 200 && !quedan.length, quedan.join());
+    const g = await s.fetch(new Request(`https://s.test/api/sala/ABCDEF/banco?id=${f.id}`, { headers: { 'X-Llave': 'MAESTRA' } }));
+    ok('y ya no se puede pedir', g.status === 404);
   }
 
   globalThis.fetch = original;

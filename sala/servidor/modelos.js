@@ -172,11 +172,24 @@ export async function preguntar(id, env, sistema, mensajes, op = {}) {
   const corta = new AbortController();
   const reloj = setTimeout(() => corta.abort(), op.esperaMs || ESPERA_MODELO_MS);
 
+  /* Ver imágenes: sólo Gemini. Llama 3.3 (Negro) es de puro texto, y mandarle
+     una foto la ignoraría callado; mejor decirlo. */
+  const imagenes = Array.isArray(op.imagenes) ? op.imagenes : [];
+  if (imagenes.length && id !== 'gemini') {
+    return { bien: false, motor: id, error: `${M.nombre} no ve imágenes. Para describirlas usa a Paulina (Gemini).` };
+  }
+  const cuerpo = M.arma(M.modelo, sistema, mensajes, tope);
+  if (imagenes.length) {
+    const ultimo = [...cuerpo.contents].reverse().find(x => x.role === 'user');
+    if (ultimo) ultimo.parts.unshift(...imagenes.map(x => ({ inlineData: { mimeType: x.mime, data: x.data } })));
+  }
+  if (op.json && id === 'gemini') cuerpo.generationConfig.responseMimeType = 'application/json';
+
   try {
     const r = await fetch(M.url(M.modelo, k), {
       method: 'POST',
       headers: M.cabeceras(k),
-      body: JSON.stringify(M.arma(M.modelo, sistema, mensajes, tope)),
+      body: JSON.stringify(cuerpo),
       signal: corta.signal,
     });
 
