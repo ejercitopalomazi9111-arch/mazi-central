@@ -89,6 +89,16 @@ async function pagina(ancho, alto){
         { titulo: 'Cafetería escolar', descripcion: 'Alumnos comiendo en mesas largas.', temas: ['escuela', 'alimentación'], palabras: ['comida', 'alumnos'], texto_visible: '', problemas: '' }];
       return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ bien: true, motor: 'gemini', texto: JSON.stringify(fichas[(n - 1) % 3]) }) });
     }
+    // «Ponle imágenes de mi banco»: la IA de mentiras lee el catálogo que le llegó y elige de ahí.
+    if(/ia-texto/.test(u) && /imágenes de mi banco/.test(cuerpo?.mensajes?.at(-1)?.texto || '')){
+      const cat = JSON.parse((cuerpo.sistema.split('BANCO DE IMÁGENES de Carlos (').at(-1) || '[]').replace(/^[^\n]*\n/, '').split('\n')[0] || '[]');
+      const buena = cat.find((f) => !f.cambios), mala = cat.find((f) => f.cambios);
+      const lams = JSON.parse((cuerpo.sistema.match(/Te paso \d+[^:]*:\n(\[.*\])\n/) || [])[1] || '[]');
+      const conFoto = lams.find((l) => l.imagenes?.length)?.lamina || 1;
+      const cambios = [{ op: 'imagenBanco', id: buena?.id, lamina: 2, lugar: 'derecha' }, { op: 'cambiarImagen', lamina: conFoto, imagen: 1, id: buena?.id },
+        { op: 'imagenBanco', id: 'clave-inventada', lamina: 3 }, ...(mala ? [{ op: 'imagenBanco', id: mala.id, lamina: 4 }] : [])];
+      return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ bien: true, motor: 'gemini', texto: JSON.stringify({ explicacion: 'Pongo imágenes de tu banco.', cambios }) }) });
+    }
     if(/ia-texto/.test(u) && /directora de arte/.test(cuerpo?.sistema || '')){
       return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ bien: true, motor: 'gemini', texto: 'LO QUE FUNCIONA\n• Los títulos son claros.\n\nLO QUE MEJORARÍA DEL DISEÑO\n• **Lámina 5**: el texto es chico.\n\nAPARTADOS QUE LE SUMARÍA\n• Resultados del piloto.\n\nSIGUIENTES TRES PASOS\n• Recuadros en los títulos.' }) });
     }
@@ -406,6 +416,34 @@ await p.getByRole('button', { name: '¿Seguro? Toca otra vez' }).click();
 await p.waitForFunction(() => document.querySelectorAll('#rejilla-banco .banco-carta').length === 2);
 ok('y al confirmar se va', true);
 await p.click('.vistas [data-vista="presentacion"]');
+
+console.log('\n· La IA usa el banco');
+{
+  const antesL2 = await p.evaluate(async () => (await window.__pres.N.modelo(window.__pres.D, 1)).formas.filter((f) => f.tipo === 'pic').length);
+  // La primera lámina que trae una foto propia: ahí la IA de mentiras pide cambiarla.
+  const foto1 = await p.evaluate(async () => { const { D, N } = window.__pres; for(let i = 0; i < D.laminas.length; i++){ const f = (await N.modelo(D, i)).formas.find((x) => x.tipo === 'pic' && x.capa === 'lamina' && x.cid != null && x.rutaImagen); if(f) return { i, ruta: f.rutaImagen, bytes: (await N.bytesDe(D, f.rutaImagen)).length }; } return null; });
+  await p.click('.dock [data-panel="ia"]');
+  await p.locator('#hoja .segmento button', { hasText: 'Pedir cambios' }).click();
+  await p.locator('#hoja textarea').fill('Ponle imágenes de mi banco');
+  await p.getByRole('button', { name: 'Pedir', exact: true }).click();
+  await p.waitForSelector('#hoja .msj.yo .cambios li', { timeout: 10000 });
+  const pedidoB = pedidos.filter((x) => /ia-texto/.test(x.u) && /imágenes de mi banco/.test(x.cuerpo?.mensajes?.at(-1)?.texto || '')).at(-1);
+  ok('la IA recibe el catálogo del banco (títulos, temas, si está lista)', /BANCO DE IMÁGENES de Carlos \(2 imágenes\)/.test(pedidoB?.cuerpo?.sistema || '') && /"lista":true/.test(pedidoB.cuerpo.sistema), (pedidoB?.cuerpo?.sistema || '').split('BANCO DE IMÁGENES')[1]?.slice(0, 200));
+  ok('y sabe qué imágenes trae cada lámina, para poder cambiarlas', /"imagenes":\[\{"imagen":1/.test(pedidoB?.cuerpo?.sistema || ''));
+  const items = await p.locator('#hoja .msj.yo').last().locator('.cambios li').count();
+  ok('enseña sólo lo válido: tira la clave inventada y la imagen que «requiere cambios»', items === 2, String(items));
+  ok('cada cambio enseña la miniatura de la imagen del banco', await p.locator('#hoja .msj.yo').last().locator('.cambios img.mini-banco').count() === 2);
+  await captura(p, '10-ia-banco');
+  await p.locator('#hoja .msj.yo').last().getByRole('button', { name: /Aplicar 2 cambios/ }).click();
+  await p.waitForFunction(() => /La IA hizo 2 cambios/.test(document.querySelector('#avisos').textContent), null, { timeout: 15000 }).catch(async () => {
+    console.log('AVISOS:', await p.locator('#avisos').textContent(), JSON.stringify(await p.evaluate(() => [document.querySelector('.ocupado')?.textContent, [...document.querySelectorAll('#hoja .msj.yo')].at(-1)?.textContent?.slice(-200), window.__pres.D.deshacer.at(-1)?.nombre])), errores.slice(-3));
+  });
+  const despues = await p.evaluate(async () => { const fs = (await window.__pres.N.modelo(window.__pres.D, 1)).formas.filter((f) => f.tipo === 'pic'); return fs.length; });
+  ok('la imagen del banco entró a la lámina 2', despues === antesL2 + 1, `${antesL2} → ${despues}`);
+  const cambiada = await p.evaluate(async (antes) => { const f = (await window.__pres.N.modelo(window.__pres.D, antes.i)).formas.find((x) => x.tipo === 'pic' && x.capa === 'lamina' && x.cid != null && x.rutaImagen); const b = f && await window.__pres.N.bytesDe(window.__pres.D, f.rutaImagen); return !!b && (f.rutaImagen !== antes.ruta || b.length !== antes.bytes); }, foto1);
+  ok('y la foto que ya traía una lámina se cambió por la del banco', !!foto1 && cambiada, JSON.stringify(foto1));
+  await p.keyboard.press('Escape');
+}
 
 console.log('\n· Insertar: formas');
 await p.click('.dock [data-panel="insertar"]');

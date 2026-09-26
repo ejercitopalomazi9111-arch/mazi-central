@@ -455,5 +455,5 @@ export function crearBanco(U){
     pinta(); inp.focus();
   }
 
-  return { mostrar, ocultar: () => { raiz.hidden = true; }, elegir, _estado: () => ({ fichas, elegidas }) };
+  return { mostrar, ocultar: () => { raiz.hidden = true; }, elegir, fichas: (forzar) => cargar(forzar), mini: async (id) => { if(!minis.has(id)){ const b = await IA.banco.bytes(id, 'mini').catch(() => IA.banco.bytes(id)); minis.set(id, URL.createObjectURL(b.blob)); } return minis.get(id); }, _estado: () => ({ fichas, elegidas }) };
 }

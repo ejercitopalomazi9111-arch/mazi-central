@@ -628,6 +628,8 @@ Cada cambio es uno de estos:
 {"op":"contraste","laminas":"todas"}
 {"op":"recuadro","estilo":"auto","en":"titulos","laminas":"todas"}   (recuadro con sombra detrás del texto; estilo: auto, cristal, claro, solido o pildora)
 {"op":"laminaNueva","copiaDe":4,"despues":6,"textos":["Título de la lámina","renglón 1\nrenglón 2"]}   (lámina nueva con el diseño de la lámina «copiaDe», puesta después de la lámina «despues»; «textos» va en orden: primero el título y luego los demás cuadros)
+{"op":"imagenBanco","id":"clave de la imagen en el banco","lamina":3,"lugar":"derecha"}   (pone una imagen del BANCO DE IMÁGENES en la lámina; lugar: derecha, izquierda, centro, abajo o fondo)
+{"op":"cambiarImagen","lamina":3,"imagen":1,"id":"clave de la imagen en el banco"}   (cambia la imagen número «imagen» que ya trae esa lámina —las ves en "imagenes"— por una del banco; se recorta sola a su hueco)
 
 Reglas:
 - "laminas" es "todas" o una lista de números de lámina. "en" es "todo", "titulos" o "texto".
@@ -636,7 +638,8 @@ Reglas:
 - No inventes datos, nombres, fechas ni cifras que no estén en la presentación.
 - Si cambias el fondo a oscuro o a claro, agrega también {"op":"contraste"} para las mismas láminas.
 - Para sumar un apartado usa "laminaNueva": copia el diseño de una lámina que tenga la misma forma (título + viñetas se copia de una de título + viñetas) y no inventes cifras: si hace falta un dato, deja un renglón como «[dato por confirmar]».
-- Si te piden algo que no se puede con estas órdenes (animaciones, borrar láminas, imágenes), dilo en "explicacion" y deja "cambios" vacío. Para imágenes di que usen la pestaña Imágenes; para acomodar tamaños y márgenes, la pestaña Acomodar.
+- Imágenes: usa LIBREMENTE las del BANCO DE IMÁGENES de Carlos (te lo paso al final). Elige por título, descripción, temas y palabras la que mejor vaya con el texto de cada lámina, y no repitas la misma imagen en láminas seguidas. Prefiere las marcadas "lista": true y NUNCA uses las que traen "cambios". Usa sólo claves ("id") que estén en el banco. Si el banco está vacío o no hay una que quede, dilo y no pongas ninguna.
+- Si te piden algo que no se puede con estas órdenes (animaciones, borrar láminas), dilo en "explicacion" y deja "cambios" vacío. Para acomodar tamaños y márgenes, la pestaña Acomodar.
 - Si sólo te hacen una pregunta, contéstala en "explicacion" con "cambios" vacío.
 - Español de México, con buena ortografía y acentos.`;
 /* Modo opinión: Carlos quiere «preguntarle a la IA qué opina de la
@@ -664,7 +667,7 @@ Reglas: menos de 30 palabras en una lámina se lee bien; más de 60 es mucho. Un
 let chat = [];            // [{ de:'tu'|'yo', texto, propuesta?, opinion? }]
 let motor = 'gemini';
 let modoIA = 'cambios';
-const EJEMPLOS = ['Corrige ortografía y acentos', 'Hazla más formal', 'Acorta los textos largos', 'Fondo azul marino y letra blanca', 'Recuadro de lujo en los títulos'];
+const EJEMPLOS = ['Ponle imágenes de mi banco', 'Corrige ortografía y acentos', 'Hazla más formal', 'Acorta los textos largos', 'Fondo azul marino y letra blanca', 'Recuadro de lujo en los títulos'];
 const PREGUNTAS = ['¿Qué opinas de mi presentación?', '¿Qué apartados le faltan?', '¿Cómo mejoro el diseño?', '¿Sirve para exponer 10 minutos?', '¿Qué lámina está más floja?'];
 
 function panelIA(prellenado = '', enviarYa = false){
@@ -707,8 +710,8 @@ function panelIA(prellenado = '', enviarYa = false){
     chatEl.append(h('div', { class: 'msj yo' }, h('span', { class: 'pensando' }, h('i'), h('i'), h('i')), ` ${motor === 'gemini' ? 'Paulina' : 'Negro'} está ${modo === 'opinion' ? 'revisando tu presentación' : 'pensando'}…`));
     try{
       const sistema = modo === 'opinion'
-        ? SISTEMA_OPINION + '\n\n' + contexto() + '\n\nINFORME DE DISEÑO (medido del archivo):\n' + JSON.stringify(await informe())
-        : SISTEMA + '\n\n' + contexto();
+        ? SISTEMA_OPINION + '\n\n' + await contexto() + '\n\nINFORME DE DISEÑO (medido del archivo):\n' + JSON.stringify(await informe()) + '\n\n' + textoBanco(await catalogoBanco()) + '\nSi alguna lámina ganaría con una imagen del banco, dilo con el título de la imagen.'
+        : SISTEMA + '\n\n' + await contexto() + '\n\n' + textoBanco(await catalogoBanco());
       const res = await IA.texto({ motor, sistema, tope: 8000,
         mensajes: chat.filter((m) => !m.error).map((m) => ({ de: m.de, texto: m.de === 'yo' ? (m.crudo || m.texto) : m.texto })) });
       if(modo === 'opinion'){ chat.push({ de: 'yo', texto: res.replace(/\*\*/g, '').replace(/^#+\s*/gm, ''), opinion: true, pregunta: t }); pintaChat(); return; }
@@ -737,7 +740,7 @@ function panelIA(prellenado = '', enviarYa = false){
   const pintaModo = () => {
     const op = modoIA === 'opinion';
     explica.replaceChildren(...(op ? ['La IA revisa ', h('b', {}, textoObjetivo()), ' y te dice qué funciona, qué mejorar del diseño y qué apartados sumar. Luego, si quieres, lo aplica.']
-      : ['La IA ve el texto de ', h('b', {}, textoObjetivo()), ' y te propone cambios. Tú decides cuáles se ponen.']));
+      : ['La IA ve el texto de ', h('b', {}, textoObjetivo()), ' y tu banco de imágenes, y te propone cambios. Tú decides cuáles se ponen.']));
     ejemplos.replaceChildren(...(op ? PREGUNTAS : EJEMPLOS).map((e) => h('button', { class: 'chip', type: 'button', on: { click: () => { if(op){ enviar(e, 'opinion'); } else { escribir.value = e; escribir.focus(); } } } }, e)));
     escribir.placeholder = op ? 'Pregúntale lo que quieras de tu presentación' : '¿Qué le hago a la presentación?';
     botonPedir.textContent = op ? 'Preguntar' : 'Pedir';
@@ -766,11 +769,42 @@ async function informe(){
   const idx = new Set(N.cuales(D, objetivo()));
   return { ...inf, porLamina: inf.porLamina.filter((x) => idx.has(x.lamina - 1)) };
 }
+/* ══ EL BANCO, PARA LA IA ═══════════════════════════════════════════════
+   Carlos: «haz que la IA pueda usar el banco de imágenes libremente». La IA
+   no ve las fotos: ve sus FICHAS (título, descripción, temas, palabras y si
+   Carlos la marcó lista), que para eso las escribió Paulina al subirlas. Y
+   ve qué imágenes trae ya cada lámina, para poder cambiarlas. */
+let bancoIA = [];
+async function catalogoBanco(){
+  if(!IA.llave()){ bancoIA = []; return bancoIA; }
+  try{ bancoIA = await BANCO.fichas(); }catch{ bancoIA = []; }
+  return bancoIA;
+}
+const formaDeFoto = (w, h) => !w || !h ? undefined : w / h > 1.2 ? 'horizontal' : w / h < 0.83 ? 'vertical' : 'cuadrada';
+function textoBanco(fichas){
+  if(!fichas.length) return 'BANCO DE IMÁGENES: vacío.';
+  const orden = [...fichas].sort((a, b) => (b.estado === 'lista') - (a.estado === 'lista'));
+  const cortas = orden.map((f) => ({ id: f.id, titulo: f.titulo || f.nombre, que: (f.descripcion || '').slice(0, 140) || undefined,
+    temas: f.temas?.length ? f.temas : undefined, palabras: f.palabras?.length ? f.palabras.slice(0, 10) : undefined,
+    lista: f.estado === 'lista' || undefined, cambios: f.estado === 'cambios' ? (f.cambios || 'requiere cambios') : undefined, forma: formaDeFoto(f.ancho, f.alto) }));
+  let n = cortas.length, json = JSON.stringify(cortas);
+  while(json.length > 30000 && n > 20){ n = Math.floor(n * 0.8); json = JSON.stringify(cortas.slice(0, n)); }
+  return `BANCO DE IMÁGENES de Carlos (${fichas.length} imágenes${n < fichas.length ? `; te paso las primeras ${n}` : ''}):\n${json}`;
+}
+/* Las fotos que trae cada lámina (directo en la lámina, no las de la plantilla). */
+async function fotosDe(i){
+  const m = await N.modelo(D, i);
+  return m.formas.filter((f) => f.tipo === 'pic' && f.capa === 'lamina' && f.cid != null && f.rutaImagen);
+}
 /* Lo que ve la IA: los textos de las láminas a las que se aplica. */
-function contexto(){
+async function contexto(){
   const idx = N.cuales(D, objetivo());
   const todas = N.resumen(D);
-  let datos = idx.map((i) => todas[i]);
+  let datos = [];
+  for(const i of idx){
+    const fotos = await fotosDe(i);
+    datos.push(fotos.length ? { ...todas[i], imagenes: fotos.map((f, k) => ({ imagen: k + 1, tamano: f.w * f.h > D.ancho * D.alto * 0.15 ? 'grande' : 'chica', forma: formaDeFoto(f.w, f.h) })) } : todas[i]);
+  }
   let json = JSON.stringify(datos);
   let recorte = '';
   if(json.length > 60000){
@@ -782,6 +816,7 @@ function contexto(){
 const esHex = (c) => !!N.hex6(c);
 const lams = (x) => x === 'todas' || x == null ? 'todas' : (Array.isArray(x) ? x : [x]).map((n) => Number(n) - 1).filter((i) => i >= 0 && i < D.laminas.length);
 const EN = new Set(['todo', 'titulos', 'texto']);
+const LUGARES = new Set(['derecha', 'izquierda', 'centro', 'abajo', 'fondo']);
 function valido(c){
   if(!c || typeof c !== 'object') return false;
   switch(c.op){
@@ -794,6 +829,9 @@ function valido(c){
     case 'contraste': return true;
     case 'recuadro': return !c.estilo || ['auto', 'cristal', 'claro', 'solido', 'pildora'].includes(c.estilo);
     case 'laminaNueva': { const k = Number(c.copiaDe) - 1, d = Number(c.despues ?? c.copiaDe); return k >= 0 && k < D.laminas.length && d >= 0 && d <= D.laminas.length && Array.isArray(c.textos) && c.textos.length > 0 && c.textos.length <= 12 && c.textos.every((t) => typeof t === 'string'); }
+    // Sólo claves que de verdad están en el banco, y nunca una marcada «requiere cambios».
+    case 'imagenBanco': { const i = Number(c.lamina) - 1, f = bancoIA.find((x) => x.id === c.id); return i >= 0 && i < D.laminas.length && !!f && f.estado !== 'cambios' && (!c.lugar || LUGARES.has(c.lugar)); }
+    case 'cambiarImagen': { const i = Number(c.lamina) - 1, f = bancoIA.find((x) => x.id === c.id); return i >= 0 && i < D.laminas.length && !!f && f.estado !== 'cambios' && Number(c.imagen) >= 1; }
     default: return false;
   }
 }
@@ -813,6 +851,14 @@ function describir(c){
     case 'tamano': return [`${c.factor > 1 ? 'Agrandar' : 'Achicar'} ${enTx} ${Math.round(Math.abs(c.factor - 1) * 100)} % en ${donde(c)}`];
     case 'contraste': return [`Arreglar contraste en ${donde(c)}`];
     case 'recuadro': return [`Recuadro ${{ auto: 'automático', cristal: 'de cristal oscuro', claro: 'de cristal claro', solido: 'sólido', pildora: 'de píldora' }[c.estilo || 'auto']} detrás de ${enTx} en ${donde(c)}`];
+    case 'imagenBanco': case 'cambiarImagen': {
+      const f = bancoIA.find((x) => x.id === c.id);
+      const img = h('img', { class: 'mini-banco', alt: '' });
+      BANCO.mini(c.id).then((u) => { img.src = u; }).catch(() => {});
+      return c.op === 'imagenBanco'
+        ? [img, h('b', {}, `Lámina ${c.lamina}: `), `poner «${f?.titulo || f?.nombre || 'imagen del banco'}» ${{ derecha: 'a la derecha', izquierda: 'a la izquierda', centro: 'al centro', abajo: 'abajo', fondo: 'de fondo' }[c.lugar || 'derecha']}`]
+        : [img, h('b', {}, `Lámina ${c.lamina}: `), `cambiar la imagen ${c.imagen} por «${f?.titulo || f?.nombre || 'imagen del banco'}»`];
+    }
     case 'laminaNueva': return [h('b', {}, `Lámina nueva después de la ${Number(c.despues ?? c.copiaDe)}: `), `«${String(c.textos[0]).slice(0, 80)}»`, c.textos.length > 1 ? ` — ${c.textos.slice(1).join(' / ').replace(/\n/g, ' · ').slice(0, 200)}` : '', h('span', { class: 'nota' }, ` (con el diseño de la ${c.copiaDe})`)];
   }
   return [JSON.stringify(c)];
@@ -834,6 +880,32 @@ async function aplicarCambios(cambios){
       case 'tamano': await N.escalarTexto(D, L, Number(c.factor), { en }); n++; break;
       case 'contraste': await N.arreglarContraste(D, L); n++; break;
       case 'recuadro': n += (await N.ponerRecuadro(D, L, { estilo: c.estilo || 'auto', en })) ? 1 : 0; break;
+      case 'imagenBanco': {
+        const i = Number(c.lamina) - 1, lugar = LUGARES.has(c.lugar) ? c.lugar : 'derecha';
+        const b = await IA.banco.bytes(c.id);
+        if(lugar === 'fondo'){
+          const r = await IA.ajustar(b.bytes, b.mime, { ancho: D.ancho, alto: D.alto });
+          await N.ponerFondo(D, [i], { imagen: r }); await N.arreglarContraste(D, [i]); n++; break;
+        }
+        const r = await IA.ajustar(b.bytes, b.mime, {});
+        const W = D.ancho, H = D.alto;
+        const zona = { derecha: [W * 0.52, H * 0.16, W * 0.43, H * 0.72], izquierda: [W * 0.05, H * 0.16, W * 0.43, H * 0.72], centro: [W * 0.2, H * 0.2, W * 0.6, H * 0.6], abajo: [W * 0.25, H * 0.6, W * 0.5, H * 0.34] }[lugar];
+        const k = Math.min(zona[2] / r.ancho, zona[3] / r.alto), w = r.ancho * k, hh = r.alto * k;
+        const f = bancoIA.find((x) => x.id === c.id);
+        await N.insertarImagen(D, i, { png: { bytes: r.bytes, mime: r.mime }, x: zona[0] + (zona[2] - w) / 2, y: zona[1] + (zona[3] - hh) / 2, w, h: hh, nombre: `Banco: ${f?.titulo || c.id}`.slice(0, 60) });
+        n++; break;
+      }
+      case 'cambiarImagen': {
+        const i = Number(c.lamina) - 1, foto = (await fotosDe(i))[Number(c.imagen) - 1];
+        if(!foto) break;                                   // la IA habló de una imagen que no está
+        const b = await IA.banco.bytes(c.id);
+        const r = await IA.ajustar(b.bytes, b.mime, { ancho: foto.w, alto: foto.h });
+        const usos = (await N.imagenes(D)).find((x) => x.ruta === foto.rutaImagen);
+        // Si esa misma imagen sale en otras láminas, sólo se cambia aquí.
+        if(usos && usos.laminas.length > 1) await N.cambiarImagenEn(D, i, foto.rutaImagen, r);
+        else await N.cambiarImagen(D, foto.rutaImagen, r);
+        n++; break;
+      }
       case 'laminaNueva': {
         const copia = Number(c.copiaDe) - 1, desp = Number(c.despues ?? c.copiaDe) - 1;
         await N.laminaNueva(D, { copiaDe: copia >= 0 ? copia : 0, despues: desp, textos: c.textos.map(String) });
