@@ -1956,6 +1956,48 @@ async function presenciaPorSocket(){
   ok('un socket sin dueño no conecta a nadie', h3.conectados.length === 0);
 }
 
+console.log('\n· Los sockets duermen (la sala se cayó por el tope gratis de Cloudflare)');
+{
+  /* Un ctx con la API de hibernación, como el de producción: acepta el
+     socket él, lo lista con getWebSockets() y el «de quién es» viaja pegado
+     al socket, no en la memoria del objeto. Con `servidor.accept()` una
+     pestaña abierta todo el día se comía el tope diario gratis (13,000 GB-s)
+     y la mesa y el banco daban «Load failed» en el iPhone. */
+  const ctx = hacerCtx();
+  const dormidos = [];
+  ctx.acceptWebSocket = (ws) => { dormidos.push(ws); };
+  ctx.getWebSockets = () => dormidos.slice();
+  const s = new Sala(ctx, { ESPERA_MS: 250 });
+  await pedir(s, 'POST', 'entrar', { id:'yo', nombre:'Yo', tipo:'agente', motor:'claude' });
+  let aceptadoALaVieja = false;
+  const WSP = globalThis.WebSocketPair;
+  globalThis.WebSocketPair = function(){
+    const hacer = () => { let adj = null; return {
+      _enviado:[], send(t){ this._enviado.push(t); }, close(){},
+      accept(){ aceptadoALaVieja = true; }, addEventListener(){},
+      serializeAttachment(v){ adj = structuredClone(v); }, deserializeAttachment(){ return adj; },
+    }; };
+    return { 0: hacer(), 1: hacer() };
+  };
+  try{ s.conectar(new Request('https://s.test/api/sala/ABCDEF/ws?de=yo', { headers:{ Upgrade:'websocket' } })); }catch(e){}
+  globalThis.WebSocketPair = WSP;
+  ok('el socket se entrega a Cloudflare para que duerma, no con accept()', dormidos.length === 1 && !aceptadoALaVieja);
+  ok('y NO se queda en la memoria del objeto', s.vivos.size === 0);
+  ok('el «de quién es» va pegado al socket', dormidos[0].deserializeAttachment()?.quien === 'yo');
+  ok('y con eso cuenta como conectado', s.conectados().includes('yo'));
+  ok('le llega el «hola» con el hilo', JSON.parse(dormidos[0]._enviado[0]).que === 'hola');
+  /* Al despertar, el objeto es NUEVO: otra instancia sobre el mismo ctx. */
+  const despierta = new Sala(ctx, { ESPERA_MS: 250 });
+  await despierta.listo;
+  ok('otra instancia (el objeto recién despertado) sigue sabiendo quién está', despierta.conectados().includes('yo'));
+  despierta.difundir({ que:'prueba' });
+  ok('y le puede hablar al socket dormido', dormidos[0]._enviado.some((t) => JSON.parse(t).que === 'prueba'));
+  await despierta.webSocketClose(dormidos[0]);
+  await asentar();
+  ok('al cerrarse deja de estar conectado aunque Cloudflare todavía lo liste', !despierta.conectados(dormidos[0]).includes('yo'));
+  ok('y, como es agente, se le abre su vigilia', !!despierta.vigilias.yo);
+}
+
 console.log('\n· Escuchar TAMBIÉN es estar vivo');
 await presencia();
 async function presencia(){

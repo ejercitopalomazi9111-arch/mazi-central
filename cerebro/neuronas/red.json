@@ -1,128 +1,155 @@
 {
-  "area": "red",
-  "nombre": "Cuando la red falla",
-  "que": "Sin conexión, reintentos, datos viejos y errores que dicen de quién es el problema.",
-  "neuronas": [
-    {
-      "id": "la-pagina-que-supone-que-hay-red",
-      "titulo": "Sin conexión la aplicación se queda muda",
-      "gravedad": "media",
-      "sintoma": "Al perder la red, los botones dejan de responder sin explicación.",
-      "causa": "No hay estado de sin conexión: cada petición falla en silencio.",
-      "porque": "En desarrollo la red no se cae nunca.",
-      "arreglo": "Un estado explícito que diga que no hay conexión, qué se ve —lo último guardado— y que se actualizará solo al volver.",
-      "comoCazarlo": "Cortar la red a mitad de una tarea y mirar qué dice la pantalla.",
-      "consejo": "Culpar a la red de la persona cuando el problema es del servidor es peor que no decir nada.",
-      "senales": [
-        "se queda pensando y nada",
-        "no dice que no hay internet",
-        "dejó de funcionar sin avisar"
-      ],
-      "salioDe": "El banco de pruebas: los cuatro estados incluyen sin conexión, y dice qué se está viendo."
-    },
-    {
-      "id": "reintento-que-multiplica-el-problema",
-      "titulo": "Al fallar, se reintenta en bucle",
-      "gravedad": "media",
-      "sintoma": "Cuando el servidor va mal, la aplicación lo golpea más.",
-      "causa": "El reintento es inmediato y sin límite.",
-      "porque": "Reintentar parece resiliencia y en el caso feliz no se nota.",
-      "arreglo": "Espera creciente entre intentos, un tope, y decirlo en la interfaz.",
-      "comoCazarlo": "Provocar un fallo del servidor y contar las peticiones por minuto.",
-      "consejo": "Un reintento sin espera convierte una caída corta en una caída larga.",
-      "senales": [
-        "se satura cuando falla",
-        "hace mil peticiones",
-        "empeora al reintentar"
-      ],
-      "salioDe": "Práctica de reintento con espera creciente, usada en los empujes de este grupo."
-    },
-    {
-      "id": "lo-guardado-que-parece-en-vivo",
-      "titulo": "Se muestran datos viejos como si fueran de ahora",
-      "gravedad": "media",
-      "sintoma": "Alguien toma una decisión con un dato que ya cambió.",
-      "causa": "Se pinta lo que hay en caché sin decir de cuándo es.",
-      "porque": "Enseñar algo se siente mejor que enseñar un hueco, y la fecha ocupa sitio.",
-      "arreglo": "Decir de cuándo son los datos cuando no son de ahora, y marcar mientras se actualizan.",
-      "comoCazarlo": "Poner la aplicación sin conexión y preguntarse si se distingue lo viejo de lo nuevo.",
-      "consejo": "Es la diferencia entre una aplicación que funciona sin red y una que engaña sin red.",
-      "senales": [
-        "el dato estaba viejo",
-        "no sabía que era de ayer",
-        "me fié de lo que decía"
-      ],
-      "salioDe": "El estado sin conexión del banco: dice que lo que se ve es lo último guardado."
-    },
-    {
-      "id": "todo-o-nada-al-guardar",
-      "titulo": "Si falla el guardado se pierde el trabajo",
-      "gravedad": "alta",
-      "sintoma": "Un error de red borra media hora de escritura.",
-      "causa": "El estado vive sólo en memoria hasta que el servidor confirma.",
-      "porque": "Guardar localmente añade un caso más y parece redundante mientras la red funcione.",
-      "arreglo": "Guardar en el aparato conforme se escribe y sincronizar después. Lo local es lo que sobrevive al fallo.",
-      "comoCazarlo": "Escribir, cortar la red, recargar. Lo que no vuelva estaba sólo en memoria.",
-      "consejo": "Y avisar de que está guardado localmente: sin eso, nadie se atreve a cerrar.",
-      "senales": [
-        "perdí lo que escribí",
-        "se borró todo al fallar",
-        "no se guardó nada"
-      ],
-      "salioDe": "La regla de los formularios del Instituto: nunca se pierde lo que la persona escribió."
-    },
-    {
-      "id": "el-error-que-no-distingue-de-quien-es",
-      "titulo": "El mensaje no dice si el problema es de aquí o de allá",
-      "gravedad": "baja",
-      "sintoma": "La gente revisa su conexión cuando el que falló fue el servidor.",
-      "causa": "El mensaje es genérico y no distingue entre fallo de red, del servidor o de los datos.",
-      "porque": "Distinguirlos exige mirar el error de verdad, y todos acaban en el mismo bloque.",
-      "arreglo": "Tres mensajes distintos, y decir explícitamente cuándo NO es culpa de quien lee.",
-      "comoCazarlo": "Provocar los tres fallos y comparar lo que dice la pantalla.",
-      "consejo": "«El servidor tardó más de diez segundos. No es tu conexión» evita una llamada de soporte.",
-      "senales": [
-        "creí que era mi internet",
-        "el error no dice nada",
-        "¿es problema mío?"
-      ],
-      "salioDe": "El banco de pruebas: el estado de error dice explícitamente que no es la conexión de quien lee."
-    },
-    {
-      "id": "el-campo-que-el-servidor-dejo-de-mandar",
-      "titulo": "El websocket contesta 500 y parece problema de red",
-      "gravedad": "alta",
-      "sintoma": "La conexión en vivo no se abre: «Error during WebSocket handshake: unexpected response code 500». Todo lo demás del servidor responde bien.",
-      "causa": "El código que arma lo que se manda leía un campo que había dejado de existir tras un cambio de modelo de datos. Al reventar dentro del manejador, lo que sale por el cable no es un error del handshake: es un 500, que se lee como caída del servicio.",
-      "porque": "Cambiar el modelo de datos se prueba con las pruebas del modelo, y ésas pasan. Quien lee el dato es OTRO archivo, en otro proyecto, y sólo se entera al ejecutarse de verdad.",
-      "arreglo": "Correr las pruebas de extremo a extremo CON EL SERVIDOR LEVANTADO después de cualquier cambio de forma de los datos. Y no dar por buena la mitad: el defecto vivía justo en el papel que se pasan las dos.",
-      "comoCazarlo": "Un 500 en un handshake no es red: es una excepción del lado del servidor. El log del worker trae la línea exacta; buscarla ahí antes de sospechar del proxy.",
-      "consejo": "Un cambio de modelo de datos tiene tantos lugares que tocar como consumidores tiene el dato, y el compilador no los conoce si el reparto va por JSON.",
-      "senales": [
-        "no conecta en línea",
-        "error de websocket",
-        "500 al conectar",
-        "funciona local pero no entre dos"
-      ],
-      "salioDe": "Guerra de Puercos: pasar de un mazo compartido a un mazo por jugador dejó `this.J.mazo` sin existir, y el modo a distancia llevaba días muerto sin que nadie lo notara."
-    },
-    {
-      "id": "sin-conexion-con-buen-internet",
-      "titulo": "«No hay conexión» con buen internet (el iPhone tira la petición)",
-      "gravedad": "alta",
-      "sintoma": "En el iPhone, Presentaciones dice «No hay conexión con La Sala. Revisa tu internet» con buena señal, mientras la mesa de La Sala sí carga. Desde la compu y desde las pruebas, funciona.",
-      "causa": "El fetch se cae ANTES de salir (TypeError), y el código traducía cualquier TypeError a «revisa tu internet». Todas las formas medidas desde aquí (CORS con y sin llave, vistas previas, 401) estaban bien: la falla es del navegador del teléfono con la petición que lleva cabecera propia (X-Llave), que obliga a un «preflight».",
-      "porque": "Chromium de pruebas no es el Safari de Carlos. Y un mensaje que adivina la causa («tu internet») esconde la verdadera.",
-      "arreglo": "presentaciones/ia.js · llamar(): si la petición normal cae así, se reintenta «sencilla» (llave en ?llave= y cuerpo text/plain: sin preflight) y se queda sencilla en la visita. Si también cae, el aviso trae el error tal cual.",
-      "comoCazarlo": "pruebas-pantalla.mjs aborta toda petición con X-Llave (safariTerco) y exige que el banco abra igual.",
-      "consejo": "Un aviso de error dice lo que pasó, no lo que suponemos que pasó.",
-      "senales": [
-        "no hay conexion con la sala",
-        "dice revisa tu internet y tengo internet",
-        "el banco no abre en el iphone",
-        "load failed"
-      ],
-      "salioDe": "Captura de Carlos, 25 de septiembre, 4:20 pm."
-    }
-  ]
+ "area": "red",
+ "nombre": "Cuando la red falla",
+ "que": "Sin conexión, reintentos, datos viejos y errores que dicen de quién es el problema.",
+ "neuronas": [
+  {
+   "id": "la-pagina-que-supone-que-hay-red",
+   "titulo": "Sin conexión la aplicación se queda muda",
+   "gravedad": "media",
+   "sintoma": "Al perder la red, los botones dejan de responder sin explicación.",
+   "causa": "No hay estado de sin conexión: cada petición falla en silencio.",
+   "porque": "En desarrollo la red no se cae nunca.",
+   "arreglo": "Un estado explícito que diga que no hay conexión, qué se ve —lo último guardado— y que se actualizará solo al volver.",
+   "comoCazarlo": "Cortar la red a mitad de una tarea y mirar qué dice la pantalla.",
+   "consejo": "Culpar a la red de la persona cuando el problema es del servidor es peor que no decir nada.",
+   "senales": [
+    "se queda pensando y nada",
+    "no dice que no hay internet",
+    "dejó de funcionar sin avisar"
+   ],
+   "salioDe": "El banco de pruebas: los cuatro estados incluyen sin conexión, y dice qué se está viendo."
+  },
+  {
+   "id": "reintento-que-multiplica-el-problema",
+   "titulo": "Al fallar, se reintenta en bucle",
+   "gravedad": "media",
+   "sintoma": "Cuando el servidor va mal, la aplicación lo golpea más.",
+   "causa": "El reintento es inmediato y sin límite.",
+   "porque": "Reintentar parece resiliencia y en el caso feliz no se nota.",
+   "arreglo": "Espera creciente entre intentos, un tope, y decirlo en la interfaz.",
+   "comoCazarlo": "Provocar un fallo del servidor y contar las peticiones por minuto.",
+   "consejo": "Un reintento sin espera convierte una caída corta en una caída larga.",
+   "senales": [
+    "se satura cuando falla",
+    "hace mil peticiones",
+    "empeora al reintentar"
+   ],
+   "salioDe": "Práctica de reintento con espera creciente, usada en los empujes de este grupo."
+  },
+  {
+   "id": "lo-guardado-que-parece-en-vivo",
+   "titulo": "Se muestran datos viejos como si fueran de ahora",
+   "gravedad": "media",
+   "sintoma": "Alguien toma una decisión con un dato que ya cambió.",
+   "causa": "Se pinta lo que hay en caché sin decir de cuándo es.",
+   "porque": "Enseñar algo se siente mejor que enseñar un hueco, y la fecha ocupa sitio.",
+   "arreglo": "Decir de cuándo son los datos cuando no son de ahora, y marcar mientras se actualizan.",
+   "comoCazarlo": "Poner la aplicación sin conexión y preguntarse si se distingue lo viejo de lo nuevo.",
+   "consejo": "Es la diferencia entre una aplicación que funciona sin red y una que engaña sin red.",
+   "senales": [
+    "el dato estaba viejo",
+    "no sabía que era de ayer",
+    "me fié de lo que decía"
+   ],
+   "salioDe": "El estado sin conexión del banco: dice que lo que se ve es lo último guardado."
+  },
+  {
+   "id": "todo-o-nada-al-guardar",
+   "titulo": "Si falla el guardado se pierde el trabajo",
+   "gravedad": "alta",
+   "sintoma": "Un error de red borra media hora de escritura.",
+   "causa": "El estado vive sólo en memoria hasta que el servidor confirma.",
+   "porque": "Guardar localmente añade un caso más y parece redundante mientras la red funcione.",
+   "arreglo": "Guardar en el aparato conforme se escribe y sincronizar después. Lo local es lo que sobrevive al fallo.",
+   "comoCazarlo": "Escribir, cortar la red, recargar. Lo que no vuelva estaba sólo en memoria.",
+   "consejo": "Y avisar de que está guardado localmente: sin eso, nadie se atreve a cerrar.",
+   "senales": [
+    "perdí lo que escribí",
+    "se borró todo al fallar",
+    "no se guardó nada"
+   ],
+   "salioDe": "La regla de los formularios del Instituto: nunca se pierde lo que la persona escribió."
+  },
+  {
+   "id": "el-error-que-no-distingue-de-quien-es",
+   "titulo": "El mensaje no dice si el problema es de aquí o de allá",
+   "gravedad": "baja",
+   "sintoma": "La gente revisa su conexión cuando el que falló fue el servidor.",
+   "causa": "El mensaje es genérico y no distingue entre fallo de red, del servidor o de los datos.",
+   "porque": "Distinguirlos exige mirar el error de verdad, y todos acaban en el mismo bloque.",
+   "arreglo": "Tres mensajes distintos, y decir explícitamente cuándo NO es culpa de quien lee.",
+   "comoCazarlo": "Provocar los tres fallos y comparar lo que dice la pantalla.",
+   "consejo": "«El servidor tardó más de diez segundos. No es tu conexión» evita una llamada de soporte.",
+   "senales": [
+    "creí que era mi internet",
+    "el error no dice nada",
+    "¿es problema mío?"
+   ],
+   "salioDe": "El banco de pruebas: el estado de error dice explícitamente que no es la conexión de quien lee."
+  },
+  {
+   "id": "el-campo-que-el-servidor-dejo-de-mandar",
+   "titulo": "El websocket contesta 500 y parece problema de red",
+   "gravedad": "alta",
+   "sintoma": "La conexión en vivo no se abre: «Error during WebSocket handshake: unexpected response code 500». Todo lo demás del servidor responde bien.",
+   "causa": "El código que arma lo que se manda leía un campo que había dejado de existir tras un cambio de modelo de datos. Al reventar dentro del manejador, lo que sale por el cable no es un error del handshake: es un 500, que se lee como caída del servicio.",
+   "porque": "Cambiar el modelo de datos se prueba con las pruebas del modelo, y ésas pasan. Quien lee el dato es OTRO archivo, en otro proyecto, y sólo se entera al ejecutarse de verdad.",
+   "arreglo": "Correr las pruebas de extremo a extremo CON EL SERVIDOR LEVANTADO después de cualquier cambio de forma de los datos. Y no dar por buena la mitad: el defecto vivía justo en el papel que se pasan las dos.",
+   "comoCazarlo": "Un 500 en un handshake no es red: es una excepción del lado del servidor. El log del worker trae la línea exacta; buscarla ahí antes de sospechar del proxy.",
+   "consejo": "Un cambio de modelo de datos tiene tantos lugares que tocar como consumidores tiene el dato, y el compilador no los conoce si el reparto va por JSON.",
+   "senales": [
+    "no conecta en línea",
+    "error de websocket",
+    "500 al conectar",
+    "funciona local pero no entre dos"
+   ],
+   "salioDe": "Guerra de Puercos: pasar de un mazo compartido a un mazo por jugador dejó `this.J.mazo` sin existir, y el modo a distancia llevaba días muerto sin que nadie lo notara."
+  },
+  {
+   "id": "sin-conexion-con-buen-internet",
+   "titulo": "«No hay conexión» con buen internet (el iPhone tira la petición)",
+   "gravedad": "alta",
+   "sintoma": "En el iPhone, Presentaciones dice «No hay conexión con La Sala. Revisa tu internet» con buena señal, mientras la mesa de La Sala sí carga. Desde la compu y desde las pruebas, funciona.",
+   "causa": "El fetch se cae ANTES de salir (TypeError), y el código traducía cualquier TypeError a «revisa tu internet». Todas las formas medidas desde aquí (CORS con y sin llave, vistas previas, 401) estaban bien: la falla es del navegador del teléfono con la petición que lleva cabecera propia (X-Llave), que obliga a un «preflight». ⚠ CORREGIDO EL 26 DE SEPTIEMBRE: lo del preflight era una sospecha, no algo medido. Lo medido es que a las 23:25 UTC también la MESA daba «Load failed» y a las 00:00 UTC todo volvió solo: el tope diario gratis de Durable Objects (ver `sala-topada-por-el-plan-gratis`).",
+   "porque": "Chromium de pruebas no es el Safari de Carlos. Y un mensaje que adivina la causa («tu internet») esconde la verdadera.",
+   "arreglo": "presentaciones/ia.js · llamar(): si la petición normal cae así, se reintenta «sencilla» (llave en ?llave= y cuerpo text/plain: sin preflight) y se queda sencilla en la visita. Si también cae, el aviso trae el error tal cual.",
+   "comoCazarlo": "pruebas-pantalla.mjs aborta toda petición con X-Llave (safariTerco) y exige que el banco abra igual.",
+   "consejo": "Un aviso de error dice lo que pasó, no lo que suponemos que pasó.",
+   "senales": [
+    "no hay conexion con la sala",
+    "dice revisa tu internet y tengo internet",
+    "el banco no abre en el iphone",
+    "load failed"
+   ],
+   "salioDe": "Captura de Carlos, 25 de septiembre, 4:20 pm.",
+   "vecinas": [
+    "sala-topada-por-el-plan-gratis"
+   ]
+  },
+  {
+   "id": "sala-topada-por-el-plan-gratis",
+   "titulo": "La Sala da «Load failed» en el iPhone y se compone sola a las 6 pm",
+   "gravedad": "alta",
+   "sintoma": "En el teléfono, la mesa no deja entrar («Load failed») y Presentaciones dice «sin conexión», con buen internet. Desde aquí, con curl, /api/salud contesta bien y horas después todo funciona sin tocar nada.",
+   "causa": "El plan gratis de Cloudflare topa los Durable Objects por día: 13,000 GB-s de tiempo y 100,000 renglones escritos, y se reinicia a las 00:00 UTC (6 pm en México). La sala abría los websockets con servidor.accept(), que COBRA TIEMPO TODO EL RATO QUE EL SOCKET ESTÁ ABIERTO (una pestaña abierta el día entero son 11,059 GB-s), y cada guardar() escribía los 13 casilleros, el hilo de 800 KB incluido. Al toparse, el objeto truena, la respuesta sale SIN CORS y Safari sólo dice «Load failed».",
+   "porque": "Desde el contenedor se midió horas después, cuando para Cloudflare ya era otro día. /api/salud no toca el objeto, así que siempre sale bien. Y un error sin CORS no se puede leer desde la página: sólo se ve «Load failed».",
+   "arreglo": "sala/servidor/sala.js: ctx.acceptWebSocket (API de hibernación) con el «de quién es» en serializeAttachment, y webSocketClose/webSocketError; guardar() sólo escribe lo que cambió. sala/servidor/index.js: si el objeto truena, se contesta 503 CON CORS y con qué pasó.",
+   "comoCazarlo": "pruebas.mjs § «Los sockets duermen»: exige que el socket se entregue a ctx.acceptWebSocket y no con accept(), y que una instancia recién despertada siga sabiendo quién está. En workerd: npx wrangler dev --local y un WebSocket de Node.",
+   "consejo": "Cuando algo falla en el teléfono y funciona al medirlo, apuntar LA HORA del reporte: si se arregló sola a las 6 pm, es un tope diario.",
+   "senales": [
+    "load failed",
+    "no me deja entrar a la sala",
+    "se arregló solo",
+    "a las 6 de la tarde volvió",
+    "sin conexión con la sala",
+    "durable objects",
+    "plan gratis cloudflare"
+   ],
+   "vecinas": [
+    "sin-conexion-con-buen-internet"
+   ],
+   "salioDe": "Capturas de Carlos, 25 de septiembre, 23:25 UTC. Documentación de precios de Durable Objects, 26 de septiembre."
+  }
+ ]
 }

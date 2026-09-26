@@ -119,7 +119,19 @@ async function pagina(ancho, alto){
   return { p, ctx, errores };
 }
 const captura = async (p, n) => { if(CAPTURAS) await p.screenshot({ path: join(CAPTURAS, n + '.png') }); };
-const desborde = (p) => p.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+/* ⚠ Medir sólo la PÁGINA no ve lo que se sale DENTRO de una ventana
+   (<dialog>): el visor tiene su propio scroll, y ahí la fila de botones medía
+   616 px en 390 con la página «sin desborde». Lo reportó Carlos con capturas.
+   Se cuentan también los píxeles que cualquier cosa de un diálogo abierto se
+   pasa del borde (menos el lienzo de la lámina, que se escala adentro). */
+const desborde = (p) => p.evaluate(() => {
+  let fuera = document.documentElement.scrollWidth - innerWidth;
+  for(const d of document.querySelectorAll('dialog[open]')) for(const e of d.querySelectorAll('*')){
+    if(e.closest('.lienzo') || e.closest('.marco-datos')) continue;
+    const b = e.getBoundingClientRect(); if(b.width) fuera = Math.max(fuera, Math.round(b.right - innerWidth), Math.round(-b.left));
+  }
+  return fuera;
+});
 
 console.log('\n· Teléfono (390×844)');
 const { p, errores } = await pagina(390, 844);
@@ -312,7 +324,7 @@ await p.keyboard.press('Escape');
 await p.click('#b-deshacer');
 await p.waitForFunction(() => document.querySelectorAll('#laminas .lam').length === 19);
 ok('y deshacer la quita', true);
-ok('sin desborde en el visor', (await desborde(p)) <= 0);
+ok('sin desborde en el visor (ni adentro de su ventana)', (await desborde(p)) <= 0, String(await desborde(p)));
 await captura(p, '06-visor');
 await p.keyboard.press('Escape');
 
@@ -407,6 +419,7 @@ const antesF = await cuentaFormas(lam);
 await p.locator('#hoja [data-forma="star5"]').click();
 await p.waitForSelector('#visor[open] .seleccion');
 ok('la barra del elemento no escribe «null»', !/null/.test(await p.locator('#barra-elemento').textContent()));
+ok('con un elemento elegido, nada del visor se sale de lado', (await desborde(p)) <= 0, String(await desborde(p)));
 ok('la estrella entra y se abre su lámina con la estrella ya elegida', (await cuentaFormas(lam)) === antesF + 1 && /Forma|Texto/.test(await p.locator('#barra-elemento').textContent()));
 const cidE = Number(await p.locator('.seleccion').getAttribute('data-cid'));
 const caja0 = await p.evaluate(([i, c]) => window.__pres.N.cajaDe(window.__pres.D, i, c), [lam, cidE]);
