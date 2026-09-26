@@ -437,6 +437,87 @@ ok('deshacer quita las gráficas y sus hojas del archivo', cv.limpio);
   }catch(e){ ok('canva.pptx pasa el validador de PowerPoint', false, ((e.stdout || '') + (e.stderr || '')).slice(-1200)); }
 }
 
+console.log('\n· Estilo como Canva: degradados, patrones, texturas, transparencia, giro y escala');
+const es = await en(async (N) => {
+  const d = await N.abrir(await (await fetch('/fadori/presentacion/Fadori-STEAM.pptx')).arrayBuffer());
+  const V = await import('/presentaciones/vista.js');
+  const r = {};
+  const W = d.ancho, H = d.alto;
+  // Una textura de verdad: un PNG de 32×32 hecho aquí mismo.
+  const cv = document.createElement('canvas'); cv.width = cv.height = 32; const x = cv.getContext('2d');
+  x.fillStyle = '#8B5A2B'; x.fillRect(0, 0, 32, 32); x.fillStyle = '#A0522D'; x.fillRect(0, 0, 16, 16); x.fillRect(16, 16, 16, 16);
+  const png = new Uint8Array(await (await new Promise((ok) => cv.toBlob(ok, 'image/png'))).arrayBuffer());
+  const forma = (geo, k) => N.insertarForma(d, 0, { geo, x: W * (0.05 + k * 0.18), y: H * 0.6, w: W * 0.15, h: H * 0.25, relleno: '#CCCCCC' });
+  await N.operacion(d, 'estilo', async () => {
+    r.a = forma('star5', 0); r.b = forma('hexagon', 1); r.c = forma('heart', 2); r.d = forma('ellipse', 3); r.e = forma('roundRect', 4);
+    r.okA = await N.ponerRelleno(d, 0, r.a, { tipo: 'degradado', paradas: [{ pos: 0, color: '#FF512F' }, { pos: 50, color: '#F09819', alfa: 0.6 }, { pos: 100, color: '#AC27FF' }], angulo: 45 });
+    r.okB = await N.ponerRelleno(d, 0, r.b, { tipo: 'degradado', paradas: [{ color: '#00F5A0' }, { color: '#00D9F5' }, { color: '#7B2FF7' }, { color: '#FF3B30' }], forma: 'radial' });
+    r.okC = await N.ponerRelleno(d, 0, r.c, { tipo: 'patron', patron: 'smCheck', color: '#AC27FF', fondo: '#FFFFFF' });
+    r.okD = await N.ponerRelleno(d, 0, r.d, { tipo: 'textura', bytes: png, mime: 'image/png', escala: 0.4 });
+    r.malo = await N.ponerRelleno(d, 0, r.e, { tipo: 'patron', patron: 'inventado', color: '#000000' });
+    r.okE = N.ponerTransparencia(d, 0, r.e, 0.35);
+    r.okGiro = N.girarForma(d, 0, r.a, 405);
+    r.cajaAntes = N.cajaDe(d, 0, r.b);
+    r.okEsc = N.escalarForma(d, 0, r.b, 1.5);
+    r.cajaDespues = N.cajaDe(d, 0, r.b);
+    r.t1 = N.insertarTexto(d, 0, 'titulo'); r.t2 = N.insertarTexto(d, 0, 'subtitulo'); r.t3 = N.insertarTexto(d, 0, 'cuerpo');
+    r.okT = N.ponerTransparencia(d, 0, r.t2, 0.5);
+    // Una imagen transparente (alphaModFix).
+    const pics = (await N.modelo(d, 0)).formas.filter((f) => f.tipo === 'pic' && f.cid != null);
+    r.pic = pics[0]?.cid; if(r.pic != null) r.okPic = N.ponerTransparencia(d, 0, r.pic, 0.4);
+    return 1;
+  });
+  r.alfaE = N.transparenciaDe(d, 0, r.e); r.giroA = N.giroDe(d, 0, r.a);
+  const m = await N.modelo(d, 0), de = (cid) => m.formas.find((f) => f.cid === cid);
+  r.mA = de(r.a).relleno; r.mB = de(r.b).relleno; r.mC = de(r.c).relleno; r.mD = de(r.d).relleno; r.rotA = de(r.a).rot;
+  r.mT = [de(r.t1), de(r.t2), de(r.t3)].map((f) => ({ texto: f.parrafos?.[0]?.runs?.[0]?.t, pt: Math.round(f.parrafos?.[0]?.runs?.[0]?.pt), b: f.parrafos?.[0]?.runs?.[0]?.b, alfa: f.parrafos?.[0]?.runs?.[0]?.alfa }));
+  r.opPic = r.pic != null ? de(r.pic).opacidad : null;
+  // La vista lo dibuja: degradado de 3 paradas, radial, patrón, mosaico y giro.
+  const lz = V.pintar(m); document.body.append(lz);
+  const css = (cid) => { const e = lz.querySelector(`[data-cid="${cid}"]`); return e ? getComputedStyle(e) : null; };
+  r.cssA = css(r.a)?.backgroundImage; r.cssB = css(r.b)?.backgroundImage; r.cssC = css(r.c)?.backgroundImage; r.cssD = css(r.d)?.backgroundRepeat; r.rotCss = css(r.a)?.transform;
+  r.opCss = r.pic != null ? css(r.pic)?.opacity : null;
+  lz.remove();
+  const bytes = new Uint8Array(await (await N.guardar(d)).arrayBuffer());
+  const d2 = await N.abrir(bytes);
+  const m2 = await N.modelo(d2, 0);
+  r.reB = m2.formas.find((f) => f.cid === r.b)?.relleno?.degradado?.length;
+  r.reRot = m2.formas.find((f) => f.cid === r.a)?.rot;
+  while(d.deshacer.length) await N.deshacer(d);
+  r.limpio = !(await N.modelo(d, 0)).formas.some((f) => f.cid === r.a);
+  const aB = (u) => { let x = ''; for(let k = 0; k < u.length; k += 0x8000) x += String.fromCharCode.apply(null, u.subarray(k, k + 0x8000)); return btoa(x); };
+  r.b64 = aB(bytes);
+  return r;
+});
+ok('degradado de TRES colores (uno con transparencia) en una sola figura', es.okA === 1 && es.mA?.degradado?.length === 3 && es.mA.degradado[1].alfa === 0.6 && es.mA.angulo === 45, JSON.stringify(es.mA));
+ok('degradado radial de cuatro colores', es.okB === 1 && es.mB?.radial && es.mB.degradado.length === 4, JSON.stringify(es.mB));
+ok('patrón nativo (ajedrez) con sus dos colores', es.okC === 1 && es.mC?.patron === 'smCheck' && es.mC.color === '#AC27FF', JSON.stringify(es.mC));
+ok('textura en mosaico, con su tamaño', es.okD === 1 && !!es.mD?.imagen && es.mD.mosaico === 0.4, JSON.stringify(es.mD && { ...es.mD, imagen: !!es.mD.imagen }));
+ok('un patrón que no existe se rechaza (no rompe el archivo)', es.malo === 0);
+ok('transparencia del elemento entero, y se lee de vuelta', es.okE > 0 && Math.abs(es.alfaE - 0.35) < 0.001, String(es.alfaE));
+ok('girar 405° queda en 45°, sobre su centro', es.okGiro === 1 && es.giroA === 45 && es.rotA === 45, `${es.giroA} ${es.rotA}`);
+ok('escalar 1.5 crece desde el centro', es.okEsc === 1 && Math.abs(es.cajaDespues.w - es.cajaAntes.w * 1.5) < 2 && Math.abs((es.cajaDespues.x + es.cajaDespues.w / 2) - (es.cajaAntes.x + es.cajaAntes.w / 2)) < 2);
+ok('título, subtítulo y cuerpo nuevos, como los botones de Canva', es.mT[0].texto === 'Agrega un título' && es.mT[0].pt === 44 && es.mT[0].b && es.mT[1].pt === 28 && es.mT[2].pt === 18 && !es.mT[2].b, JSON.stringify(es.mT));
+ok('la transparencia también llega al texto', es.mT[1].alfa === 0.5, JSON.stringify(es.mT[1]));
+ok('una imagen se transparenta (alphaModFix) y la vista la pinta así', es.pic == null || (es.opPic === 0.4 && Number(es.opCss) === 0.4), `${es.opPic} ${es.opCss}`);
+ok('la vista pinta el degradado lineal, el radial, el patrón, el mosaico y el giro', /linear-gradient/.test(es.cssA) && /rgba\(240, 152, 25, 0\.6\)/.test(es.cssA) && /radial-gradient/.test(es.cssB) && /conic-gradient/.test(es.cssC) && es.cssD === 'repeat' && es.rotCss !== 'none', JSON.stringify([es.cssA, es.cssB?.slice(0, 40), es.cssC?.slice(0, 40), es.cssD, es.rotCss]));
+ok('todo sobrevive a guardar y reabrir', es.reB === 4 && es.reRot === 45, `${es.reB} ${es.reRot}`);
+ok('deshacer lo quita todo', es.limpio);
+{
+  const ruta = join(TMP, 'estilo.pptx');
+  writeFileSync(ruta, Buffer.from(es.b64, 'base64'));
+  try{
+    execFileSync('soffice', ['--headless', '--norestore', `-env:UserInstallation=file://${TMP}/ui`, '--convert-to', 'pdf', '--outdir', TMP, ruta], { timeout: 180000, stdio: 'pipe' });
+    const paginas = (readFileSync(ruta.replace(/\.pptx$/, '.pdf')).toString('latin1').match(/\/Type\s*\/Page[^s]/g) || []).length;
+    ok(`con degradados, patrones y texturas abre en LibreOffice (${paginas} páginas)`, paginas === 19, String(paginas));
+  }catch(e){ ok('con degradados, patrones y texturas abre en LibreOffice', false, e.message.slice(0, 200)); }
+  const VALIDA = '/mnt/skills/public/pptx/scripts/office/validate.py';
+  if(existsSync(VALIDA)) try{
+    const salida = execFileSync('python3', [VALIDA, ruta, '--original', join(RAIZ, 'fadori/presentacion/Fadori-STEAM.pptx')], { encoding: 'utf8', timeout: 180000, stdio: 'pipe' });
+    ok('estilo.pptx pasa el validador de PowerPoint', /All validations PASSED/.test(salida), salida.slice(-600));
+  }catch(e){ ok('estilo.pptx pasa el validador de PowerPoint', false, ((e.stdout || '') + (e.stderr || '')).slice(-1200)); }
+}
+
 console.log('\n· Poner texto (para la IA)');
 const tx = await en(async (N) => {
   const d = await N.abrir(await (await fetch('/fadori/presentacion/Fadori-STEAM.pptx')).arrayBuffer());

@@ -13,6 +13,7 @@ import * as IA from './ia.js';
 import { crearBanco } from './banco.js';
 import * as NOTI from './notificaciones.js';
 import { crearInsertar } from './insertar.js';
+import { crearEstilo } from './estilo.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -37,9 +38,12 @@ let D = null, nombre = '', sel = new Set();
 const pintadas = new Map();     // i → versión con la que se pintó
 let version = 0;
 const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
-const objetivo = () => sel.size ? [...sel].sort((a, b) => a - b) : 'todas';
-const cuantasObjetivo = () => sel.size || D.laminas.length;
-const textoObjetivo = () => sel.size ? `${plural(sel.size, 'lámina elegida', 'láminas elegidas')}` : `las ${D.laminas.length} láminas`;
+/* Desde el editor, Fondo, Acomodar e IA van a la lámina abierta o a todas
+   (el botón de arriba). Desde la rejilla, a las elegidas o a todas. */
+const enEditor = () => $('#visor')?.open;
+const objetivo = () => enEditor() ? (alcance === 'todas' ? 'todas' : [actual]) : sel.size ? [...sel].sort((a, b) => a - b) : 'todas';
+const cuantasObjetivo = () => enEditor() ? (alcance === 'todas' ? D.laminas.length : 1) : sel.size || D.laminas.length;
+const textoObjetivo = () => enEditor() ? (alcance === 'todas' ? `las ${D.laminas.length} láminas` : `la lámina ${actual + 1}`) : sel.size ? `${plural(sel.size, 'lámina elegida', 'láminas elegidas')}` : `las ${D.laminas.length} láminas`;
 
 /* ── avisos y ocupado ── */
 function aviso(texto, tipo = '', { accion, ms = 4200, opId } = {}){
@@ -252,10 +256,12 @@ function guardarLocal(){
 })();
 
 /* ══ HOJAS ════════════════════════════════════════════════════════════════ */
-function hoja(titulo, contenido, id = '#hoja'){
+function hoja(titulo, contenido, id = '#hoja', { baja = false } = {}){
   const d = $(id);
+  // «baja»: la hoja deja ver la lámina arriba, para la vista previa en vivo (relleno, girar…).
+  d.classList.toggle('baja', baja);
   $(id + '-titulo').textContent = titulo;
-  $(id + '-cuerpo').replaceChildren(...[].concat(contenido));
+  $(id + '-cuerpo').replaceChildren(...[].concat(contenido).filter((x) => x != null && x !== false));   // un null se escribiría como texto
   if(!d.open) d.showModal();
   $(id + '-cuerpo').scrollTop = 0;
   return d;
@@ -347,6 +353,10 @@ function panelTexto(){
   const poner = h('input', { type: 'text', placeholder: 'Cambiar por…', autocomplete: 'off' });
   const obj = objetivo;
   hoja('Texto', [
+    // Lo que Carlos no encontraba: «no hay un botón para poner más cuadros de texto».
+    enEditor() ? null : h('button', { class: 'btn primario ancho', type: 'button', 'data-agregar-texto': '', style: { marginBottom: '12px' }, on: { click: () => {
+      cerrar('#hoja'); abrirVisor(sel.size ? Math.min(...sel) : 0); herramientaTexto();
+    } } }, '＋ Agregar un cuadro de texto'),
     aQuien(),
     seccion('En qué textos', donde,
       h('p', { class: 'nota' }, 'Si la presentación no marca títulos, cuenta como título el texto más grande de cada lámina.')),
@@ -497,14 +507,15 @@ async function panelUnaImagen(im, { soloLamina = null } = {}){
 
 /* ¿De dónde sale la imagen nueva? Subida, buscada o hecha con IA. Regresa
    { bytes, mime } ya recortada a ancho×alto, o null si se canceló. */
-function elegirImagen({ titulo, ancho, alto, original = null, sugerencia = '' }){
+function elegirImagen({ titulo, ancho, alto, original = null, sugerencia = '', libre = false }){
   return new Promise((resolver) => {
     let listo = false;
     const d = $('#hoja2');
     const terminar = (r) => { listo = true; resolver(r); cerrar('#hoja2'); };
     d.addEventListener('close', () => { if(!listo) resolver(null); }, { once: true });
-    const recortar = async (b) => { ocupado('Acomodando la imagen…'); try{ return await IA.ajustar(b.bytes, b.mime, { ancho, alto }); }finally{ ocupado(''); } };
-    const aspecto = IA.aspectoCercano(ancho, alto);
+    const recortar = async (b) => { ocupado('Acomodando la imagen…'); try{ return await IA.ajustar(b.bytes, b.mime, libre ? {} : { ancho, alto }); }finally{ ocupado(''); } };
+    // «libre»: una foto que se pone suelta en la lámina conserva su forma.
+    const aspecto = libre ? '4:3' : IA.aspectoCercano(ancho, alto);
     const subir = h('input', { class: 'oculto', type: 'file', accept: 'image/*', on: { change: async () => {
       const f = subir.files[0]; if(!f) return;
       try{ terminar(await recortar({ bytes: new Uint8Array(await f.arrayBuffer()), mime: f.type || 'image/jpeg' })); }catch(e){ aviso(e.message, 'mal'); }
@@ -836,31 +847,53 @@ async function aplicarCambios(cambios){
 /* ══ VISOR (una lámina en grande) ═════════════════════════════════════════ */
 let actual = 0;
 function abrirVisor(i){ actual = i; pintarVisor(); if(!$('#visor').open) $('#visor').showModal(); }
+/* ══ EL EDITOR · como Canva ════════════════════════════════════════════════
+   Carlos: «la interfaz de presentaciones es absolutamente horrible, básate
+   en la de Canva» y «no hay un botón para poner más cuadros de texto».
+   Arriba el título y a qué láminas van Fondo, Acomodar e IA; al centro la
+   lámina y su tira de láminas; abajo una barra fija: Texto, Elementos,
+   Fotos, Subir, Fondo, Acomodar, IA y Presentar. Al tocar algo de la lámina
+   esa barra se cambia por la del elemento (relleno, transparencia, girar,
+   tamaño…), y al tocar el fondo vuelve la de siempre. */
+let alcance = 'esta';
 async function pintarVisor(){
   const i = actual;
   $('#visor-titulo').textContent = `Lámina ${i + 1} de ${D.laminas.length}`;
   $('#v-ant').disabled = i === 0; $('#v-sig').disabled = i === D.laminas.length - 1;
+  $('#v-deshacer').disabled = !D.deshacer.length;
+  $('#v-deshacer').title = D.deshacer.length ? `Deshacer: ${D.deshacer.at(-1).nombre}` : 'Deshacer';
+  $$('.alcance [data-alcance]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.alcance === alcance)));
   const marco = h('div', { class: 'marco', style: { '--proporcion': `${D.ancho} / ${D.alto}` } });
   marco.style.setProperty('--proporcion', `${D.ancho} / ${D.alto}`);
   const m = await N.modelo(D, i);
+  if(i !== actual) return;
   marco.append(V.pintar(m));
   modeloVisor = m;
   const textos = N.textos(D, i);
   const areas = textos.map((t) => ({ t, a: h('textarea', { class: 'entrada', rows: Math.min(8, t.texto.split('\n').length + 1) }, t.texto) }));
   const elegida = sel.has(i);
+  // La tira: las miniaturas que ya pintó la rejilla, clonadas (no se vuelve a dibujar nada).
+  const tira = h('div', { class: 'tira', role: 'list', 'aria-label': 'Láminas', 'data-desliza': '' },
+    D.laminas.map((_, j) => {
+      const mini = $(`#laminas .marco[data-i="${j}"]`);
+      const copia = mini ? mini.cloneNode(true) : h('div', { class: 'marco', style: { '--proporcion': `${D.ancho} / ${D.alto}` } });
+      copia.removeAttribute('data-i'); copia.style.setProperty('--k', 80 / V.BASE);
+      // Sin los «data-cid»: la miniatura no es editable, y así nada la confunde con la lámina grande.
+      copia.querySelectorAll('[data-cid], [data-enlace], [data-imagen]').forEach((e) => { e.removeAttribute('data-cid'); e.removeAttribute('data-enlace'); e.removeAttribute('data-imagen'); });
+      return h('button', { class: 'pag', type: 'button', role: 'listitem', 'aria-label': `Ir a la lámina ${j + 1}`, 'aria-current': String(j === i), on: { click: () => { actual = j; INS.fijarSeleccion(j, null); pintarVisor(); } } }, copia, h('span', {}, String(j + 1)));
+    }),
+    h('button', { class: 'pag-nueva', type: 'button', 'aria-label': '＋ Lámina igual', title: 'Lámina nueva, igual a ésta', on: { click: async () => {
+      const r = await aplicar('Lámina nueva', () => N.duplicarLamina(D, i, { despues: i }), (j) => `Lámina ${j + 1} nueva, igual a la ${i + 1}. Cámbiale los textos aquí abajo.`);
+      if(r != null){ actual = r; pintarVisor(); }
+    } } }, '＋'));
   $('#visor-cuerpo').replaceChildren(
     marco,
+    tira,
+    h('p', { class: 'nota' }, 'Toca cualquier cosa de la lámina para moverla, girarla, cambiarle el tamaño, el relleno o la transparencia.'),
     h('div', { class: 'nav-visor' },
       h('button', { class: 'btn', type: 'button', 'aria-pressed': String(elegida), on: { click: () => { alternar(i); pintarVisor(); } } }, elegida ? '✓ Elegida' : 'Elegir esta'),
-      h('button', { class: 'btn', type: 'button', on: { click: async () => {
-        const r = await aplicar('Lámina nueva', () => N.duplicarLamina(D, i, { despues: i }), (j) => `Lámina ${j + 1} nueva, igual a la ${i + 1}. Cámbiale los textos aquí abajo.`);
-        if(r != null){ actual = r; pintarVisor(); }
-      } } }, '＋ Lámina igual'),
-      h('button', { class: 'btn', type: 'button', on: { click: () => { sel = new Set([i]); pintarEleccion(); $('#visor').close(); panelIA(`Mejora la redacción de la lámina ${i + 1}: más clara y directa, sin cambiar el sentido ni inventar datos.`, true); } } }, '✦ Mejorar con IA'),
-      h('button', { class: 'btn', type: 'button', on: { click: () => { $('#visor').close(); INS.presentar(i); } } }, '▶ Presentar')),
-    h('div', { id: 'barra-elemento', class: 'barra-elemento', hidden: true }),
-    h('p', { class: 'nota' }, 'Toca cualquier cosa de la lámina para moverla, cambiarle el tamaño o el color.'),
-    textos.length ? h('div', { class: 'seccion', style: { marginTop: '16px' } }, h('h3', {}, 'Textos de la lámina'),
+      h('button', { class: 'btn', type: 'button', on: { click: () => { sel = new Set([i]); pintarEleccion(); $('#visor').close(); panelIA(`Mejora la redacción de la lámina ${i + 1}: más clara y directa, sin cambiar el sentido ni inventar datos.`, true); } } }, '✦ Mejorar con IA')),
+    textos.length ? h('div', { class: 'seccion', style: { marginTop: '8px' } }, h('h3', {}, 'Textos de la lámina'),
       h('div', { class: 'textos-lamina' }, areas.map(({ t, a }) => h('label', {}, t.titulo ? 'Título' : `Cuadro ${t.id + 1}`, a))),
       h('div', { style: { height: '10px' } }),
       h('button', { class: 'btn primario ancho', type: 'button', on: { click: async () => {
@@ -869,27 +902,38 @@ async function pintarVisor(){
         await aplicar(`Textos de la lámina ${i + 1}`, async () => { for(const { t, a } of cambiados) await N.ponerTexto(D, i, t.id, a.value); return cambiados.length; }, (n) => `${plural(n, 'texto guardado', 'textos guardados')}.`);
       } } }, 'Guardar textos')) : null,
   );
-  requestAnimationFrame(() => marco.style.setProperty('--k', marco.clientWidth / V.BASE));
+  requestAnimationFrame(() => {
+    marco.style.setProperty('--k', marco.clientWidth / V.BASE);
+    $('.tira .pag[aria-current="true"]')?.scrollIntoView({ block: 'nearest', inline: 'center' });
+  });
   INS.montarEditor(marco, i, () => pintarVisor());
 }
 let modeloVisor = null;
 const guardarElemento = (i, cid) => INS.guardarDeLamina(i, cid);
-/* La barra del elemento elegido, debajo de la lámina grande. */
+/* La barra del elemento elegido: toma el lugar de la de herramientas. */
 function pintarBarraElemento(cid){
-  const b = $('#barra-elemento');
+  const b = $('#barra-elemento'), herr = $('#editor-herramientas');
   if(!b) return;
-  if(cid == null){ b.hidden = true; b.replaceChildren(); return; }
+  const nada = () => { b.hidden = true; b.replaceChildren(); herr.hidden = false; };
+  if(cid == null) return nada();
   const c = N.cajaDe(D, actual, cid);
-  if(!c){ b.hidden = true; return; }
-  b.hidden = false;
+  if(!c) return nada();
+  b.hidden = false; herr.hidden = true;
   const boton = (acc, tx, extra = {}) => h('button', { class: 'chip', type: 'button', 'data-accion': acc, on: { click: () => accionElemento(acc) }, ...extra }, tx);
   const tipo = c.tabla ? 'Tabla' : c.grafica ? 'Gráfica' : c.icono ? 'Icono' : c.grupo ? 'Diseño' : c.imagen ? 'Imagen' : c.tipo === 'cxnSp' ? 'Línea' : c.texto && !c.relleno ? 'Texto' : 'Forma';
   const marco = c.tabla || c.grafica;
-  b.replaceChildren(...[h('b', {}, tipo),
+  b.replaceChildren(...[
+    h('button', { class: 'chip', type: 'button', 'aria-label': 'Listo, soltar el elemento', title: 'Listo', on: { click: () => { INS.fijarSeleccion(actual, null); pintarVisor(); } } }, '✓'),
+    h('b', {}, tipo),
     c.tabla ? boton('tabla', '▦ Editar tabla', { class: 'chip primario' }) : null,
     c.grafica ? boton('grafica', '📊 Editar datos', { class: 'chip primario' }) : null,
+    c.forma && !marco ? boton('relleno', '◐ Relleno', { class: 'chip primario' }) : null,
     (!c.imagen || c.icono) && !marco ? boton('color', '● Color') : null,
     (c.texto || c.grupo) && !marco ? boton('colorTexto', 'A Color de letra') : null,
+    c.texto && !marco ? boton('texto', '✎ Texto') : null,
+    boton('transparencia', '◌ Transparencia'),
+    !marco ? boton('girar', '⟳ Girar') : null,
+    boton('tamano', '⤢ Tamaño'),
     boton('enlace', c.enlace ? '🔗 Cambiar enlace' : '🔗 Enlace'),
     c.imagen && !c.icono ? boton('imagen', '⇄ Cambiar imagen') : null,
     boton('duplicar', '⧉ Duplicar'), boton('frente', '↑ Al frente'), boton('atras', '↓ Atrás'),
@@ -905,6 +949,21 @@ async function accionElemento(acc){
   if(acc === 'borrar'){ INS.fijarSeleccion(i, null); await aplicar('Borrar elemento', () => N.borrarForma(D, i, cid), 'Elemento borrado.'); return repinta(); }
   if(acc === 'duplicar'){ const n = await aplicar('Duplicar', () => N.duplicarForma(D, i, cid), 'Duplicado.'); if(n) INS.fijarSeleccion(i, n); return repinta(); }
   if(acc === 'frente' || acc === 'atras'){ await aplicar(acc === 'frente' ? 'Al frente' : 'Atrás', () => N.ordenForma(D, i, cid, acc), acc === 'frente' ? 'Hasta el frente.' : 'Hasta atrás.'); return repinta(); }
+  if(acc === 'relleno') return EST.relleno(i, cid, repinta);
+  if(acc === 'transparencia') return EST.transparencia(i, cid, repinta);
+  if(acc === 'girar') return EST.girar(i, cid, repinta);
+  if(acc === 'tamano') return EST.tamano(i, cid, repinta);
+  if(acc === 'texto'){
+    const t = N.textos(D, i).find((x) => x.cid === cid) || null;
+    if(!t){ aviso('Este elemento trae varios textos: cámbialos abajo, en «Textos de la lámina».'); return; }
+    const area = h('textarea', { class: 'entrada', rows: 5 }, t.texto);
+    hoja('Texto', [area, h('button', { class: 'btn primario ancho', type: 'button', style: { marginTop: '10px' }, on: { click: async () => {
+      cerrar('#hoja2');
+      await aplicar('Texto', () => N.ponerTexto(D, i, t.id, area.value), 'Texto cambiado.');
+    } } }, 'Guardar')], '#hoja2');
+    requestAnimationFrame(() => { area.focus(); area.select(); });
+    return;
+  }
   if(acc === 'imagen'){
     const f = modeloVisor?.formas.find((x) => x.cid === cid && x.rutaImagen);
     const im = f && (await N.imagenes(D)).find((x) => x.ruta === f.rutaImagen);
@@ -927,19 +986,68 @@ async function accionElemento(acc){
           ocupado('Recoloreando el icono…');
           let arch; try{ arch = await IC.archivos(c.icono, { color: elegido }); }finally{ ocupado(''); }
           await aplicar('Color del icono', () => N.cambiarMediosDe(D, i, cid, arch), 'Icono recoloreado.');
-        }else await aplicar('Color', () => N.colorForma(D, i, cid, elegido), (n) => n ? 'Color cambiado.' : 'Ese elemento no tiene color que cambiar.');
+        }else if(c.forma) await aplicar('Color', () => N.ponerRelleno(D, i, cid, { tipo: 'solido', color: elegido }), (n) => n ? 'Color cambiado.' : 'Ese elemento no tiene color que cambiar.');
+        else await aplicar('Color', () => N.colorForma(D, i, cid, elegido), (n) => n ? 'Color cambiado.' : 'Ese elemento no tiene color que cambiar.');
         repinta();
       } } }, 'Poner este color')], '#hoja2');
   }
 }
-$('#v-ant').addEventListener('click', () => { if(actual > 0){ actual--; pintarVisor(); } });
-$('#v-sig').addEventListener('click', () => { if(actual < D.laminas.length - 1){ actual++; pintarVisor(); } });
+/* ── la barra de herramientas del editor ── */
+const FOTO_MAX = 0.5;   // una foto nueva entra a la mitad del ancho de la lámina
+async function meterFoto(r, nombreF = 'Foto'){
+  if(!r) return;
+  const i = actual;
+  const med = r.ancho && r.alto ? { w: r.ancho, h: r.alto } : (N.medidasImagen(r.bytes) || { w: 4, h: 3 });
+  let w = D.ancho * FOTO_MAX, hh = w * med.h / med.w;
+  if(hh > D.alto * 0.7){ hh = D.alto * 0.7; w = hh * med.w / med.h; }
+  const cid = await aplicar('Poner foto', () => N.insertarImagen(D, i, { png: { bytes: r.bytes, mime: r.mime }, x: (D.ancho - w) / 2, y: (D.alto - hh) / 2, w, h: hh, nombre: nombreF }), 'Foto puesta. Muévela con el dedo.');
+  if(cid != null){ INS.fijarSeleccion(i, cid); pintarVisor(); }
+}
+function herramientaTexto(){
+  const i = actual;
+  const poner = async (tipo) => {
+    cerrar('#hoja2');
+    const cid = await aplicar('Texto nuevo', () => N.insertarTexto(D, i, tipo), null);
+    if(cid != null){ INS.fijarSeleccion(i, cid); await pintarVisor(); accionElemento('texto'); }
+  };
+  hoja('Texto', [h('div', { class: 'agregar-texto' },
+    h('button', { class: 't-titulo', type: 'button', 'data-texto': 'titulo', on: { click: () => poner('titulo') } }, 'Agregar un título'),
+    h('button', { class: 't-subtitulo', type: 'button', 'data-texto': 'subtitulo', on: { click: () => poner('subtitulo') } }, 'Agregar un subtítulo'),
+    h('button', { class: 't-cuerpo', type: 'button', 'data-texto': 'cuerpo', on: { click: () => poner('cuerpo') } }, 'Agregar un poco de texto')),
+    h('p', { class: 'nota' }, 'Entra en la lámina que estás viendo. Luego escribes lo tuyo, lo mueves y le cambias la letra y el color.')], '#hoja2');
+}
+async function herramientaSubir(){
+  const inp = h('input', { type: 'file', accept: 'image/*', class: 'oculto' });
+  inp.addEventListener('change', async () => {
+    const f = inp.files[0]; if(!f) return;
+    try{ ocupado('Acomodando la imagen…'); const r = await IA.ajustar(new Uint8Array(await f.arrayBuffer()), f.type || 'image/jpeg', {}); ocupado(''); await meterFoto(r, f.name.replace(/\.[^.]+$/, '')); }
+    catch(e){ ocupado(''); aviso(/heic|heif/i.test(f.type + f.name) ? 'Esa foto está en HEIC y este navegador no la abre. En el iPhone: Ajustes → Cámara → Formatos → «Más compatible».' : 'No se pudo abrir esa imagen: ' + e.message, 'mal'); }
+  }, { once: true });
+  document.body.append(inp); inp.click(); setTimeout(() => inp.remove(), 60000);
+}
+$$('#editor-herramientas [data-herramienta]').forEach((b) => b.addEventListener('click', async () => {
+  const q = b.dataset.herramienta;
+  if(q === 'texto') return herramientaTexto();
+  if(q === 'elementos') return INS.panel({ enLamina: true });
+  if(q === 'fotos') return meterFoto(await elegirImagen({ titulo: 'Poner una foto', libre: true }));
+  if(q === 'subir') return herramientaSubir();
+  if(q === 'fondo') return panelFondo();
+  if(q === 'acomodar') return panelAcomodar();
+  if(q === 'ia') return panelIA();
+  if(q === 'presentar'){ $('#visor').close(); return INS.presentar(actual); }
+}));
+$$('.alcance [data-alcance]').forEach((b) => b.addEventListener('click', () => { alcance = b.dataset.alcance; $$('.alcance [data-alcance]').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); }));
+$('#v-deshacer').addEventListener('click', deshacer);
+$('#visor').addEventListener('close', () => { INS.fijarSeleccion(actual, null); pintarBarraElemento(null); });
+$('#v-ant').addEventListener('click', () => { if(actual > 0){ actual--; INS.fijarSeleccion(actual, null); pintarVisor(); } });
+$('#v-sig').addEventListener('click', () => { if(actual < D.laminas.length - 1){ actual++; INS.fijarSeleccion(actual, null); pintarVisor(); } });
 $('#visor').addEventListener('keydown', (e) => {
   if(/textarea|input/i.test(e.target.tagName)) return;
+  if(e.target.closest?.('.marco') && INS.elegido) return;   // con algo elegido, las flechas lo mueven
   if(e.key === 'ArrowLeft') $('#v-ant').click();
   if(e.key === 'ArrowRight') $('#v-sig').click();
 });
-addEventListener('resize', () => { const m = $('#visor .marco'); if(m) m.style.setProperty('--k', m.clientWidth / V.BASE); });
+addEventListener('resize', () => { const m = $('#visor .visor-cuerpo > .marco'); if(m) m.style.setProperty('--k', m.clientWidth / V.BASE); });
 
 /* ══ NOTIFICACIONES ═══════════════════════════════════════════════════════ */
 const TIPO_ICONO = { cambio: '✓', bien: '✓', mal: '!', '': '•' };
@@ -1024,6 +1132,7 @@ function colorCompacto(inicial, alCambiar, extra = []){
 /* ══ INSERTAR (insertar.js) ══ */
 const INS = crearInsertar({ h, $, $$, hoja, cerrar, aviso, ocupado, segmento, plural, selectorColor: colorCompacto, aplicar, N, V,
   D: () => D, abrirVisor, objetivo, sel: () => sel, actual: () => actual, pintarBarraElemento, accionElemento });
+const EST = crearEstilo({ h, $$, hoja, cerrar, aviso, segmento, aplicar, N, D: () => D, selectorColor: colorCompacto, BANCO });
 $('#b-presentar').addEventListener('click', () => INS.presentar(sel.size ? Math.min(...sel) : 0));
 $('#presentar-cerrar').addEventListener('click', () => $('#presentar').close());
 

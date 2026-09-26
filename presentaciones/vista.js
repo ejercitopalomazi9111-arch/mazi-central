@@ -14,10 +14,32 @@ const rgba = (hex, a = 1) => {
   const h = hex.replace('#', '');
   return `rgba(${parseInt(h.slice(0, 2), 16)},${parseInt(h.slice(2, 4), 16)},${parseInt(h.slice(4, 6), 16)},${a})`;
 };
-function fondoCss(f){
+/* Los patrones de PowerPoint (pattFill), aproximados con CSS por familia:
+   puntos, rejilla, rayas, renglones, columnas, ajedrez y trama cruzada. */
+export function patronCss(f){
+  const c = rgba(f.color, f.alfa ?? 1), b = f.fondo, p = f.patron || '';
+  if(/^pct|Confetti|dotDmnd|sphere/.test(p)) return `radial-gradient(${c} 22%, transparent 24%) 0 0 / 9px 9px, ${b}`;
+  if(/Grid|^cross$|trellis/.test(p)) return `linear-gradient(${c} 1.5px, transparent 1.5px) 0 0 / 12px 12px, linear-gradient(90deg, ${c} 1.5px, transparent 1.5px) 0 0 / 12px 12px, ${b}`;
+  if(/Check/.test(p)) return `conic-gradient(${c} 25%, ${b} 0 50%, ${c} 0 75%, ${b} 0) 0 0 / 14px 14px`;
+  if(/UpDiag/.test(p)) return `repeating-linear-gradient(-45deg, ${c} 0 ${/wd|dk/.test(p) ? 5 : 2}px, ${b} 0 9px)`;
+  if(/DnDiag/.test(p)) return `repeating-linear-gradient(45deg, ${c} 0 ${/wd|dk/.test(p) ? 5 : 2}px, ${b} 0 9px)`;
+  if(/Horz|^horz$/.test(p) && !/Brick/.test(p)) return `repeating-linear-gradient(0deg, ${c} 0 2px, ${b} 0 9px)`;
+  if(/Vert|^vert$/.test(p)) return `repeating-linear-gradient(90deg, ${c} 0 2px, ${b} 0 9px)`;
+  if(/Brick/.test(p)) return `linear-gradient(${c} 2px, transparent 2px) 0 0 / 24px 12px, linear-gradient(90deg, ${c} 2px, transparent 2px) 0 0 / 24px 24px, ${b}`;
+  return `repeating-linear-gradient(45deg, ${c} 0 2px, transparent 0 10px), repeating-linear-gradient(-45deg, ${c} 0 2px, transparent 0 10px), ${b}`;
+}
+export function fondoCss(f){
   if(!f || f.nada) return 'transparent';
-  if(f.imagen) return `center / cover no-repeat url("${f.imagen}")`;
-  if(f.degradado?.length) return `linear-gradient(${(f.angulo ?? 90) + 90}deg, ${f.degradado.map((g) => `${g.color} ${g.pos}%`).join(', ')})`;
+  if(f.imagen){
+    // Textura en mosaico (tile): se repite con el tamaño que dice el archivo.
+    if(f.mosaico) return `0 0 / ${Math.max(8, 256 * f.mosaico)}px repeat url("${f.imagen}")`;
+    return `center / cover no-repeat url("${f.imagen}")`;
+  }
+  if(f.patron) return patronCss(f);
+  if(f.degradado?.length){
+    const paradas = f.degradado.map((g) => `${rgba(g.color, g.alfa ?? 1)} ${g.pos}%`).join(', ');
+    return f.radial ? `radial-gradient(circle, ${paradas})` : `linear-gradient(${(f.angulo ?? 90) + 90}deg, ${paradas})`;
+  }
   return f.color ? rgba(f.color, f.alfa ?? 1) : 'transparent';
 }
 /* Las formas de PowerPoint más usadas, recortadas con clip-path: sin esto una
@@ -50,6 +72,7 @@ export function pintar(m){
       transform: f.rot ? `rotate(${f.rot}deg)` : '',
     });
     if(f.tipo === 'pic'){
+      if(f.opacidad != null && f.opacidad < 1) caja.style.opacity = f.opacidad;
       if(f.imagen){
         const img = el('img');
         img.alt = ''; img.loading = 'lazy'; img.decoding = 'async'; img.src = f.imagen;
@@ -77,6 +100,8 @@ export function pintar(m){
         continue;
       }
       caja.style.background = fondoCss(f.relleno);
+      // Una textura con transparencia (alphaModFix): CSS no la puede aplicar sólo al fondo.
+      if(f.relleno?.imagen && f.relleno.alfa != null && f.relleno.alfa < 1) caja.style.opacity = f.relleno.alfa;
       if(f.borde) caja.style.border = `${Math.max(1, f.borde.ancho * k)}px solid ${rgba(f.borde.color, f.borde.alfa ?? 1)}`;
       if(f.sombra) caja.style.boxShadow = `0 ${f.sombra.dist * k}px ${f.sombra.blur * k}px rgba(0,0,0,${f.sombra.alfa})`;
       if(f.geo === 'ellipse') caja.style.borderRadius = '50%';
@@ -95,7 +120,7 @@ export function pintar(m){
           if(p.viñeta && p.runs.length) pe.appendChild(Object.assign(el('span'), { textContent: '• ' }));
           for(const r of p.runs){
             if(r.br){ pe.appendChild(el('br')); continue; }
-            const s = el('span', '', { fontSize: r.pt * ptPx + 'px', color: r.color, fontWeight: r.b ? '700' : '400', fontStyle: r.i ? 'italic' : 'normal' });
+            const s = el('span', '', { fontSize: r.pt * ptPx + 'px', color: rgba(r.color, r.alfa ?? 1), fontWeight: r.b ? '700' : '400', fontStyle: r.i ? 'italic' : 'normal' });
             if(r.letra) s.style.fontFamily = `"${r.letra.replace(/"/g, '')}", system-ui, sans-serif`;
             if(r.enlace || r.u) s.style.textDecoration = 'underline';
             s.textContent = r.t;
