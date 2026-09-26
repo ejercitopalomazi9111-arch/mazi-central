@@ -13,6 +13,7 @@ import * as IA from './ia.js';
 import { crearBanco } from './banco.js';
 import * as NOTI from './notificaciones.js';
 import { crearInsertar } from './insertar.js';
+import { crearEstilo } from './estilo.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -37,9 +38,12 @@ let D = null, nombre = '', sel = new Set();
 const pintadas = new Map();     // i → versión con la que se pintó
 let version = 0;
 const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
-const objetivo = () => sel.size ? [...sel].sort((a, b) => a - b) : 'todas';
-const cuantasObjetivo = () => sel.size || D.laminas.length;
-const textoObjetivo = () => sel.size ? `${plural(sel.size, 'lámina elegida', 'láminas elegidas')}` : `las ${D.laminas.length} láminas`;
+/* Desde el editor, Fondo, Acomodar e IA van a la lámina abierta o a todas
+   (el botón de arriba). Desde la rejilla, a las elegidas o a todas. */
+const enEditor = () => $('#visor')?.open;
+const objetivo = () => enEditor() ? (alcance === 'todas' ? 'todas' : [actual]) : sel.size ? [...sel].sort((a, b) => a - b) : 'todas';
+const cuantasObjetivo = () => enEditor() ? (alcance === 'todas' ? D.laminas.length : 1) : sel.size || D.laminas.length;
+const textoObjetivo = () => enEditor() ? (alcance === 'todas' ? `las ${D.laminas.length} láminas` : `la lámina ${actual + 1}`) : sel.size ? `${plural(sel.size, 'lámina elegida', 'láminas elegidas')}` : `las ${D.laminas.length} láminas`;
 
 /* ── avisos y ocupado ── */
 function aviso(texto, tipo = '', { accion, ms = 4200, opId } = {}){
@@ -252,10 +256,12 @@ function guardarLocal(){
 })();
 
 /* ══ HOJAS ════════════════════════════════════════════════════════════════ */
-function hoja(titulo, contenido, id = '#hoja'){
+function hoja(titulo, contenido, id = '#hoja', { baja = false } = {}){
   const d = $(id);
+  // «baja»: la hoja deja ver la lámina arriba, para la vista previa en vivo (relleno, girar…).
+  d.classList.toggle('baja', baja);
   $(id + '-titulo').textContent = titulo;
-  $(id + '-cuerpo').replaceChildren(...[].concat(contenido));
+  $(id + '-cuerpo').replaceChildren(...[].concat(contenido).filter((x) => x != null && x !== false));   // un null se escribiría como texto
   if(!d.open) d.showModal();
   $(id + '-cuerpo').scrollTop = 0;
   return d;
@@ -347,6 +353,10 @@ function panelTexto(){
   const poner = h('input', { type: 'text', placeholder: 'Cambiar por…', autocomplete: 'off' });
   const obj = objetivo;
   hoja('Texto', [
+    // Lo que Carlos no encontraba: «no hay un botón para poner más cuadros de texto».
+    enEditor() ? null : h('button', { class: 'btn primario ancho', type: 'button', 'data-agregar-texto': '', style: { marginBottom: '12px' }, on: { click: () => {
+      cerrar('#hoja'); abrirVisor(sel.size ? Math.min(...sel) : 0); herramientaTexto();
+    } } }, '＋ Agregar un cuadro de texto'),
     aQuien(),
     seccion('En qué textos', donde,
       h('p', { class: 'nota' }, 'Si la presentación no marca títulos, cuenta como título el texto más grande de cada lámina.')),
@@ -497,14 +507,15 @@ async function panelUnaImagen(im, { soloLamina = null } = {}){
 
 /* ¿De dónde sale la imagen nueva? Subida, buscada o hecha con IA. Regresa
    { bytes, mime } ya recortada a ancho×alto, o null si se canceló. */
-function elegirImagen({ titulo, ancho, alto, original = null, sugerencia = '' }){
+function elegirImagen({ titulo, ancho, alto, original = null, sugerencia = '', libre = false }){
   return new Promise((resolver) => {
     let listo = false;
     const d = $('#hoja2');
     const terminar = (r) => { listo = true; resolver(r); cerrar('#hoja2'); };
     d.addEventListener('close', () => { if(!listo) resolver(null); }, { once: true });
-    const recortar = async (b) => { ocupado('Acomodando la imagen…'); try{ return await IA.ajustar(b.bytes, b.mime, { ancho, alto }); }finally{ ocupado(''); } };
-    const aspecto = IA.aspectoCercano(ancho, alto);
+    const recortar = async (b) => { ocupado('Acomodando la imagen…'); try{ return await IA.ajustar(b.bytes, b.mime, libre ? {} : { ancho, alto }); }finally{ ocupado(''); } };
+    // «libre»: una foto que se pone suelta en la lámina conserva su forma.
+    const aspecto = libre ? '4:3' : IA.aspectoCercano(ancho, alto);
     const subir = h('input', { class: 'oculto', type: 'file', accept: 'image/*', on: { change: async () => {
       const f = subir.files[0]; if(!f) return;
       try{ terminar(await recortar({ bytes: new Uint8Array(await f.arrayBuffer()), mime: f.type || 'image/jpeg' })); }catch(e){ aviso(e.message, 'mal'); }
@@ -617,6 +628,8 @@ Cada cambio es uno de estos:
 {"op":"contraste","laminas":"todas"}
 {"op":"recuadro","estilo":"auto","en":"titulos","laminas":"todas"}   (recuadro con sombra detrás del texto; estilo: auto, cristal, claro, solido o pildora)
 {"op":"laminaNueva","copiaDe":4,"despues":6,"textos":["Título de la lámina","renglón 1\nrenglón 2"]}   (lámina nueva con el diseño de la lámina «copiaDe», puesta después de la lámina «despues»; «textos» va en orden: primero el título y luego los demás cuadros)
+{"op":"imagenBanco","id":"clave de la imagen en el banco","lamina":3,"lugar":"derecha"}   (pone una imagen del BANCO DE IMÁGENES en la lámina; lugar: derecha, izquierda, centro, abajo o fondo)
+{"op":"cambiarImagen","lamina":3,"imagen":1,"id":"clave de la imagen en el banco"}   (cambia la imagen número «imagen» que ya trae esa lámina —las ves en "imagenes"— por una del banco; se recorta sola a su hueco)
 
 Reglas:
 - "laminas" es "todas" o una lista de números de lámina. "en" es "todo", "titulos" o "texto".
@@ -625,7 +638,8 @@ Reglas:
 - No inventes datos, nombres, fechas ni cifras que no estén en la presentación.
 - Si cambias el fondo a oscuro o a claro, agrega también {"op":"contraste"} para las mismas láminas.
 - Para sumar un apartado usa "laminaNueva": copia el diseño de una lámina que tenga la misma forma (título + viñetas se copia de una de título + viñetas) y no inventes cifras: si hace falta un dato, deja un renglón como «[dato por confirmar]».
-- Si te piden algo que no se puede con estas órdenes (animaciones, borrar láminas, imágenes), dilo en "explicacion" y deja "cambios" vacío. Para imágenes di que usen la pestaña Imágenes; para acomodar tamaños y márgenes, la pestaña Acomodar.
+- Imágenes: usa LIBREMENTE las del BANCO DE IMÁGENES de Carlos (te lo paso al final). Elige por título, descripción, temas y palabras la que mejor vaya con el texto de cada lámina, y no repitas la misma imagen en láminas seguidas. Prefiere las marcadas "lista": true y NUNCA uses las que traen "cambios". Usa sólo claves ("id") que estén en el banco. Si el banco está vacío o no hay una que quede, dilo y no pongas ninguna.
+- Si te piden algo que no se puede con estas órdenes (animaciones, borrar láminas), dilo en "explicacion" y deja "cambios" vacío. Para acomodar tamaños y márgenes, la pestaña Acomodar.
 - Si sólo te hacen una pregunta, contéstala en "explicacion" con "cambios" vacío.
 - Español de México, con buena ortografía y acentos.`;
 /* Modo opinión: Carlos quiere «preguntarle a la IA qué opina de la
@@ -653,7 +667,7 @@ Reglas: menos de 30 palabras en una lámina se lee bien; más de 60 es mucho. Un
 let chat = [];            // [{ de:'tu'|'yo', texto, propuesta?, opinion? }]
 let motor = 'gemini';
 let modoIA = 'cambios';
-const EJEMPLOS = ['Corrige ortografía y acentos', 'Hazla más formal', 'Acorta los textos largos', 'Fondo azul marino y letra blanca', 'Recuadro de lujo en los títulos'];
+const EJEMPLOS = ['Ponle imágenes de mi banco', 'Corrige ortografía y acentos', 'Hazla más formal', 'Acorta los textos largos', 'Fondo azul marino y letra blanca', 'Recuadro de lujo en los títulos'];
 const PREGUNTAS = ['¿Qué opinas de mi presentación?', '¿Qué apartados le faltan?', '¿Cómo mejoro el diseño?', '¿Sirve para exponer 10 minutos?', '¿Qué lámina está más floja?'];
 
 function panelIA(prellenado = '', enviarYa = false){
@@ -696,8 +710,8 @@ function panelIA(prellenado = '', enviarYa = false){
     chatEl.append(h('div', { class: 'msj yo' }, h('span', { class: 'pensando' }, h('i'), h('i'), h('i')), ` ${motor === 'gemini' ? 'Paulina' : 'Negro'} está ${modo === 'opinion' ? 'revisando tu presentación' : 'pensando'}…`));
     try{
       const sistema = modo === 'opinion'
-        ? SISTEMA_OPINION + '\n\n' + contexto() + '\n\nINFORME DE DISEÑO (medido del archivo):\n' + JSON.stringify(await informe())
-        : SISTEMA + '\n\n' + contexto();
+        ? SISTEMA_OPINION + '\n\n' + await contexto() + '\n\nINFORME DE DISEÑO (medido del archivo):\n' + JSON.stringify(await informe()) + '\n\n' + textoBanco(await catalogoBanco()) + '\nSi alguna lámina ganaría con una imagen del banco, dilo con el título de la imagen.'
+        : SISTEMA + '\n\n' + await contexto() + '\n\n' + textoBanco(await catalogoBanco());
       const res = await IA.texto({ motor, sistema, tope: 8000,
         mensajes: chat.filter((m) => !m.error).map((m) => ({ de: m.de, texto: m.de === 'yo' ? (m.crudo || m.texto) : m.texto })) });
       if(modo === 'opinion'){ chat.push({ de: 'yo', texto: res.replace(/\*\*/g, '').replace(/^#+\s*/gm, ''), opinion: true, pregunta: t }); pintaChat(); return; }
@@ -726,7 +740,7 @@ function panelIA(prellenado = '', enviarYa = false){
   const pintaModo = () => {
     const op = modoIA === 'opinion';
     explica.replaceChildren(...(op ? ['La IA revisa ', h('b', {}, textoObjetivo()), ' y te dice qué funciona, qué mejorar del diseño y qué apartados sumar. Luego, si quieres, lo aplica.']
-      : ['La IA ve el texto de ', h('b', {}, textoObjetivo()), ' y te propone cambios. Tú decides cuáles se ponen.']));
+      : ['La IA ve el texto de ', h('b', {}, textoObjetivo()), ' y tu banco de imágenes, y te propone cambios. Tú decides cuáles se ponen.']));
     ejemplos.replaceChildren(...(op ? PREGUNTAS : EJEMPLOS).map((e) => h('button', { class: 'chip', type: 'button', on: { click: () => { if(op){ enviar(e, 'opinion'); } else { escribir.value = e; escribir.focus(); } } } }, e)));
     escribir.placeholder = op ? 'Pregúntale lo que quieras de tu presentación' : '¿Qué le hago a la presentación?';
     botonPedir.textContent = op ? 'Preguntar' : 'Pedir';
@@ -755,11 +769,42 @@ async function informe(){
   const idx = new Set(N.cuales(D, objetivo()));
   return { ...inf, porLamina: inf.porLamina.filter((x) => idx.has(x.lamina - 1)) };
 }
+/* ══ EL BANCO, PARA LA IA ═══════════════════════════════════════════════
+   Carlos: «haz que la IA pueda usar el banco de imágenes libremente». La IA
+   no ve las fotos: ve sus FICHAS (título, descripción, temas, palabras y si
+   Carlos la marcó lista), que para eso las escribió Paulina al subirlas. Y
+   ve qué imágenes trae ya cada lámina, para poder cambiarlas. */
+let bancoIA = [];
+async function catalogoBanco(){
+  if(!IA.llave()){ bancoIA = []; return bancoIA; }
+  try{ bancoIA = await BANCO.fichas(); }catch{ bancoIA = []; }
+  return bancoIA;
+}
+const formaDeFoto = (w, h) => !w || !h ? undefined : w / h > 1.2 ? 'horizontal' : w / h < 0.83 ? 'vertical' : 'cuadrada';
+function textoBanco(fichas){
+  if(!fichas.length) return 'BANCO DE IMÁGENES: vacío.';
+  const orden = [...fichas].sort((a, b) => (b.estado === 'lista') - (a.estado === 'lista'));
+  const cortas = orden.map((f) => ({ id: f.id, titulo: f.titulo || f.nombre, que: (f.descripcion || '').slice(0, 140) || undefined,
+    temas: f.temas?.length ? f.temas : undefined, palabras: f.palabras?.length ? f.palabras.slice(0, 10) : undefined,
+    lista: f.estado === 'lista' || undefined, cambios: f.estado === 'cambios' ? (f.cambios || 'requiere cambios') : undefined, forma: formaDeFoto(f.ancho, f.alto) }));
+  let n = cortas.length, json = JSON.stringify(cortas);
+  while(json.length > 30000 && n > 20){ n = Math.floor(n * 0.8); json = JSON.stringify(cortas.slice(0, n)); }
+  return `BANCO DE IMÁGENES de Carlos (${fichas.length} imágenes${n < fichas.length ? `; te paso las primeras ${n}` : ''}):\n${json}`;
+}
+/* Las fotos que trae cada lámina (directo en la lámina, no las de la plantilla). */
+async function fotosDe(i){
+  const m = await N.modelo(D, i);
+  return m.formas.filter((f) => f.tipo === 'pic' && f.capa === 'lamina' && f.cid != null && f.rutaImagen);
+}
 /* Lo que ve la IA: los textos de las láminas a las que se aplica. */
-function contexto(){
+async function contexto(){
   const idx = N.cuales(D, objetivo());
   const todas = N.resumen(D);
-  let datos = idx.map((i) => todas[i]);
+  let datos = [];
+  for(const i of idx){
+    const fotos = await fotosDe(i);
+    datos.push(fotos.length ? { ...todas[i], imagenes: fotos.map((f, k) => ({ imagen: k + 1, tamano: f.w * f.h > D.ancho * D.alto * 0.15 ? 'grande' : 'chica', forma: formaDeFoto(f.w, f.h) })) } : todas[i]);
+  }
   let json = JSON.stringify(datos);
   let recorte = '';
   if(json.length > 60000){
@@ -771,6 +816,7 @@ function contexto(){
 const esHex = (c) => !!N.hex6(c);
 const lams = (x) => x === 'todas' || x == null ? 'todas' : (Array.isArray(x) ? x : [x]).map((n) => Number(n) - 1).filter((i) => i >= 0 && i < D.laminas.length);
 const EN = new Set(['todo', 'titulos', 'texto']);
+const LUGARES = new Set(['derecha', 'izquierda', 'centro', 'abajo', 'fondo']);
 function valido(c){
   if(!c || typeof c !== 'object') return false;
   switch(c.op){
@@ -783,6 +829,9 @@ function valido(c){
     case 'contraste': return true;
     case 'recuadro': return !c.estilo || ['auto', 'cristal', 'claro', 'solido', 'pildora'].includes(c.estilo);
     case 'laminaNueva': { const k = Number(c.copiaDe) - 1, d = Number(c.despues ?? c.copiaDe); return k >= 0 && k < D.laminas.length && d >= 0 && d <= D.laminas.length && Array.isArray(c.textos) && c.textos.length > 0 && c.textos.length <= 12 && c.textos.every((t) => typeof t === 'string'); }
+    // Sólo claves que de verdad están en el banco, y nunca una marcada «requiere cambios».
+    case 'imagenBanco': { const i = Number(c.lamina) - 1, f = bancoIA.find((x) => x.id === c.id); return i >= 0 && i < D.laminas.length && !!f && f.estado !== 'cambios' && (!c.lugar || LUGARES.has(c.lugar)); }
+    case 'cambiarImagen': { const i = Number(c.lamina) - 1, f = bancoIA.find((x) => x.id === c.id); return i >= 0 && i < D.laminas.length && !!f && f.estado !== 'cambios' && Number(c.imagen) >= 1; }
     default: return false;
   }
 }
@@ -802,6 +851,14 @@ function describir(c){
     case 'tamano': return [`${c.factor > 1 ? 'Agrandar' : 'Achicar'} ${enTx} ${Math.round(Math.abs(c.factor - 1) * 100)} % en ${donde(c)}`];
     case 'contraste': return [`Arreglar contraste en ${donde(c)}`];
     case 'recuadro': return [`Recuadro ${{ auto: 'automático', cristal: 'de cristal oscuro', claro: 'de cristal claro', solido: 'sólido', pildora: 'de píldora' }[c.estilo || 'auto']} detrás de ${enTx} en ${donde(c)}`];
+    case 'imagenBanco': case 'cambiarImagen': {
+      const f = bancoIA.find((x) => x.id === c.id);
+      const img = h('img', { class: 'mini-banco', alt: '' });
+      BANCO.mini(c.id).then((u) => { img.src = u; }).catch(() => {});
+      return c.op === 'imagenBanco'
+        ? [img, h('b', {}, `Lámina ${c.lamina}: `), `poner «${f?.titulo || f?.nombre || 'imagen del banco'}» ${{ derecha: 'a la derecha', izquierda: 'a la izquierda', centro: 'al centro', abajo: 'abajo', fondo: 'de fondo' }[c.lugar || 'derecha']}`]
+        : [img, h('b', {}, `Lámina ${c.lamina}: `), `cambiar la imagen ${c.imagen} por «${f?.titulo || f?.nombre || 'imagen del banco'}»`];
+    }
     case 'laminaNueva': return [h('b', {}, `Lámina nueva después de la ${Number(c.despues ?? c.copiaDe)}: `), `«${String(c.textos[0]).slice(0, 80)}»`, c.textos.length > 1 ? ` — ${c.textos.slice(1).join(' / ').replace(/\n/g, ' · ').slice(0, 200)}` : '', h('span', { class: 'nota' }, ` (con el diseño de la ${c.copiaDe})`)];
   }
   return [JSON.stringify(c)];
@@ -823,6 +880,32 @@ async function aplicarCambios(cambios){
       case 'tamano': await N.escalarTexto(D, L, Number(c.factor), { en }); n++; break;
       case 'contraste': await N.arreglarContraste(D, L); n++; break;
       case 'recuadro': n += (await N.ponerRecuadro(D, L, { estilo: c.estilo || 'auto', en })) ? 1 : 0; break;
+      case 'imagenBanco': {
+        const i = Number(c.lamina) - 1, lugar = LUGARES.has(c.lugar) ? c.lugar : 'derecha';
+        const b = await IA.banco.bytes(c.id);
+        if(lugar === 'fondo'){
+          const r = await IA.ajustar(b.bytes, b.mime, { ancho: D.ancho, alto: D.alto });
+          await N.ponerFondo(D, [i], { imagen: r }); await N.arreglarContraste(D, [i]); n++; break;
+        }
+        const r = await IA.ajustar(b.bytes, b.mime, {});
+        const W = D.ancho, H = D.alto;
+        const zona = { derecha: [W * 0.52, H * 0.16, W * 0.43, H * 0.72], izquierda: [W * 0.05, H * 0.16, W * 0.43, H * 0.72], centro: [W * 0.2, H * 0.2, W * 0.6, H * 0.6], abajo: [W * 0.25, H * 0.6, W * 0.5, H * 0.34] }[lugar];
+        const k = Math.min(zona[2] / r.ancho, zona[3] / r.alto), w = r.ancho * k, hh = r.alto * k;
+        const f = bancoIA.find((x) => x.id === c.id);
+        await N.insertarImagen(D, i, { png: { bytes: r.bytes, mime: r.mime }, x: zona[0] + (zona[2] - w) / 2, y: zona[1] + (zona[3] - hh) / 2, w, h: hh, nombre: `Banco: ${f?.titulo || c.id}`.slice(0, 60) });
+        n++; break;
+      }
+      case 'cambiarImagen': {
+        const i = Number(c.lamina) - 1, foto = (await fotosDe(i))[Number(c.imagen) - 1];
+        if(!foto) break;                                   // la IA habló de una imagen que no está
+        const b = await IA.banco.bytes(c.id);
+        const r = await IA.ajustar(b.bytes, b.mime, { ancho: foto.w, alto: foto.h });
+        const usos = (await N.imagenes(D)).find((x) => x.ruta === foto.rutaImagen);
+        // Si esa misma imagen sale en otras láminas, sólo se cambia aquí.
+        if(usos && usos.laminas.length > 1) await N.cambiarImagenEn(D, i, foto.rutaImagen, r);
+        else await N.cambiarImagen(D, foto.rutaImagen, r);
+        n++; break;
+      }
       case 'laminaNueva': {
         const copia = Number(c.copiaDe) - 1, desp = Number(c.despues ?? c.copiaDe) - 1;
         await N.laminaNueva(D, { copiaDe: copia >= 0 ? copia : 0, despues: desp, textos: c.textos.map(String) });
@@ -836,31 +919,53 @@ async function aplicarCambios(cambios){
 /* ══ VISOR (una lámina en grande) ═════════════════════════════════════════ */
 let actual = 0;
 function abrirVisor(i){ actual = i; pintarVisor(); if(!$('#visor').open) $('#visor').showModal(); }
+/* ══ EL EDITOR · como Canva ════════════════════════════════════════════════
+   Carlos: «la interfaz de presentaciones es absolutamente horrible, básate
+   en la de Canva» y «no hay un botón para poner más cuadros de texto».
+   Arriba el título y a qué láminas van Fondo, Acomodar e IA; al centro la
+   lámina y su tira de láminas; abajo una barra fija: Texto, Elementos,
+   Fotos, Subir, Fondo, Acomodar, IA y Presentar. Al tocar algo de la lámina
+   esa barra se cambia por la del elemento (relleno, transparencia, girar,
+   tamaño…), y al tocar el fondo vuelve la de siempre. */
+let alcance = 'esta';
 async function pintarVisor(){
   const i = actual;
   $('#visor-titulo').textContent = `Lámina ${i + 1} de ${D.laminas.length}`;
   $('#v-ant').disabled = i === 0; $('#v-sig').disabled = i === D.laminas.length - 1;
+  $('#v-deshacer').disabled = !D.deshacer.length;
+  $('#v-deshacer').title = D.deshacer.length ? `Deshacer: ${D.deshacer.at(-1).nombre}` : 'Deshacer';
+  $$('.alcance [data-alcance]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.alcance === alcance)));
   const marco = h('div', { class: 'marco', style: { '--proporcion': `${D.ancho} / ${D.alto}` } });
   marco.style.setProperty('--proporcion', `${D.ancho} / ${D.alto}`);
   const m = await N.modelo(D, i);
+  if(i !== actual) return;
   marco.append(V.pintar(m));
   modeloVisor = m;
   const textos = N.textos(D, i);
   const areas = textos.map((t) => ({ t, a: h('textarea', { class: 'entrada', rows: Math.min(8, t.texto.split('\n').length + 1) }, t.texto) }));
   const elegida = sel.has(i);
+  // La tira: las miniaturas que ya pintó la rejilla, clonadas (no se vuelve a dibujar nada).
+  const tira = h('div', { class: 'tira', role: 'list', 'aria-label': 'Láminas', 'data-desliza': '' },
+    D.laminas.map((_, j) => {
+      const mini = $(`#laminas .marco[data-i="${j}"]`);
+      const copia = mini ? mini.cloneNode(true) : h('div', { class: 'marco', style: { '--proporcion': `${D.ancho} / ${D.alto}` } });
+      copia.removeAttribute('data-i'); copia.style.setProperty('--k', 80 / V.BASE);
+      // Sin los «data-cid»: la miniatura no es editable, y así nada la confunde con la lámina grande.
+      copia.querySelectorAll('[data-cid], [data-enlace], [data-imagen]').forEach((e) => { e.removeAttribute('data-cid'); e.removeAttribute('data-enlace'); e.removeAttribute('data-imagen'); });
+      return h('button', { class: 'pag', type: 'button', role: 'listitem', 'aria-label': `Ir a la lámina ${j + 1}`, 'aria-current': String(j === i), on: { click: () => { actual = j; INS.fijarSeleccion(j, null); pintarVisor(); } } }, copia, h('span', {}, String(j + 1)));
+    }),
+    h('button', { class: 'pag-nueva', type: 'button', 'aria-label': '＋ Lámina igual', title: 'Lámina nueva, igual a ésta', on: { click: async () => {
+      const r = await aplicar('Lámina nueva', () => N.duplicarLamina(D, i, { despues: i }), (j) => `Lámina ${j + 1} nueva, igual a la ${i + 1}. Cámbiale los textos aquí abajo.`);
+      if(r != null){ actual = r; pintarVisor(); }
+    } } }, '＋'));
   $('#visor-cuerpo').replaceChildren(
     marco,
+    tira,
+    h('p', { class: 'nota' }, 'Toca cualquier cosa de la lámina para moverla, girarla, cambiarle el tamaño, el relleno o la transparencia.'),
     h('div', { class: 'nav-visor' },
       h('button', { class: 'btn', type: 'button', 'aria-pressed': String(elegida), on: { click: () => { alternar(i); pintarVisor(); } } }, elegida ? '✓ Elegida' : 'Elegir esta'),
-      h('button', { class: 'btn', type: 'button', on: { click: async () => {
-        const r = await aplicar('Lámina nueva', () => N.duplicarLamina(D, i, { despues: i }), (j) => `Lámina ${j + 1} nueva, igual a la ${i + 1}. Cámbiale los textos aquí abajo.`);
-        if(r != null){ actual = r; pintarVisor(); }
-      } } }, '＋ Lámina igual'),
-      h('button', { class: 'btn', type: 'button', on: { click: () => { sel = new Set([i]); pintarEleccion(); $('#visor').close(); panelIA(`Mejora la redacción de la lámina ${i + 1}: más clara y directa, sin cambiar el sentido ni inventar datos.`, true); } } }, '✦ Mejorar con IA'),
-      h('button', { class: 'btn', type: 'button', on: { click: () => { $('#visor').close(); INS.presentar(i); } } }, '▶ Presentar')),
-    h('div', { id: 'barra-elemento', class: 'barra-elemento', hidden: true }),
-    h('p', { class: 'nota' }, 'Toca cualquier cosa de la lámina para moverla, cambiarle el tamaño o el color.'),
-    textos.length ? h('div', { class: 'seccion', style: { marginTop: '16px' } }, h('h3', {}, 'Textos de la lámina'),
+      h('button', { class: 'btn', type: 'button', on: { click: () => { sel = new Set([i]); pintarEleccion(); $('#visor').close(); panelIA(`Mejora la redacción de la lámina ${i + 1}: más clara y directa, sin cambiar el sentido ni inventar datos.`, true); } } }, '✦ Mejorar con IA')),
+    textos.length ? h('div', { class: 'seccion', style: { marginTop: '8px' } }, h('h3', {}, 'Textos de la lámina'),
       h('div', { class: 'textos-lamina' }, areas.map(({ t, a }) => h('label', {}, t.titulo ? 'Título' : `Cuadro ${t.id + 1}`, a))),
       h('div', { style: { height: '10px' } }),
       h('button', { class: 'btn primario ancho', type: 'button', on: { click: async () => {
@@ -869,27 +974,38 @@ async function pintarVisor(){
         await aplicar(`Textos de la lámina ${i + 1}`, async () => { for(const { t, a } of cambiados) await N.ponerTexto(D, i, t.id, a.value); return cambiados.length; }, (n) => `${plural(n, 'texto guardado', 'textos guardados')}.`);
       } } }, 'Guardar textos')) : null,
   );
-  requestAnimationFrame(() => marco.style.setProperty('--k', marco.clientWidth / V.BASE));
+  requestAnimationFrame(() => {
+    marco.style.setProperty('--k', marco.clientWidth / V.BASE);
+    $('.tira .pag[aria-current="true"]')?.scrollIntoView({ block: 'nearest', inline: 'center' });
+  });
   INS.montarEditor(marco, i, () => pintarVisor());
 }
 let modeloVisor = null;
 const guardarElemento = (i, cid) => INS.guardarDeLamina(i, cid);
-/* La barra del elemento elegido, debajo de la lámina grande. */
+/* La barra del elemento elegido: toma el lugar de la de herramientas. */
 function pintarBarraElemento(cid){
-  const b = $('#barra-elemento');
+  const b = $('#barra-elemento'), herr = $('#editor-herramientas');
   if(!b) return;
-  if(cid == null){ b.hidden = true; b.replaceChildren(); return; }
+  const nada = () => { b.hidden = true; b.replaceChildren(); herr.hidden = false; };
+  if(cid == null) return nada();
   const c = N.cajaDe(D, actual, cid);
-  if(!c){ b.hidden = true; return; }
-  b.hidden = false;
+  if(!c) return nada();
+  b.hidden = false; herr.hidden = true;
   const boton = (acc, tx, extra = {}) => h('button', { class: 'chip', type: 'button', 'data-accion': acc, on: { click: () => accionElemento(acc) }, ...extra }, tx);
   const tipo = c.tabla ? 'Tabla' : c.grafica ? 'Gráfica' : c.icono ? 'Icono' : c.grupo ? 'Diseño' : c.imagen ? 'Imagen' : c.tipo === 'cxnSp' ? 'Línea' : c.texto && !c.relleno ? 'Texto' : 'Forma';
   const marco = c.tabla || c.grafica;
-  b.replaceChildren(...[h('b', {}, tipo),
+  b.replaceChildren(...[
+    h('button', { class: 'chip', type: 'button', 'aria-label': 'Listo, soltar el elemento', title: 'Listo', on: { click: () => { INS.fijarSeleccion(actual, null); pintarVisor(); } } }, '✓'),
+    h('b', {}, tipo),
     c.tabla ? boton('tabla', '▦ Editar tabla', { class: 'chip primario' }) : null,
     c.grafica ? boton('grafica', '📊 Editar datos', { class: 'chip primario' }) : null,
+    c.forma && !marco ? boton('relleno', '◐ Relleno', { class: 'chip primario' }) : null,
     (!c.imagen || c.icono) && !marco ? boton('color', '● Color') : null,
     (c.texto || c.grupo) && !marco ? boton('colorTexto', 'A Color de letra') : null,
+    c.texto && !marco ? boton('texto', '✎ Texto') : null,
+    boton('transparencia', '◌ Transparencia'),
+    !marco ? boton('girar', '⟳ Girar') : null,
+    boton('tamano', '⤢ Tamaño'),
     boton('enlace', c.enlace ? '🔗 Cambiar enlace' : '🔗 Enlace'),
     c.imagen && !c.icono ? boton('imagen', '⇄ Cambiar imagen') : null,
     boton('duplicar', '⧉ Duplicar'), boton('frente', '↑ Al frente'), boton('atras', '↓ Atrás'),
@@ -905,6 +1021,21 @@ async function accionElemento(acc){
   if(acc === 'borrar'){ INS.fijarSeleccion(i, null); await aplicar('Borrar elemento', () => N.borrarForma(D, i, cid), 'Elemento borrado.'); return repinta(); }
   if(acc === 'duplicar'){ const n = await aplicar('Duplicar', () => N.duplicarForma(D, i, cid), 'Duplicado.'); if(n) INS.fijarSeleccion(i, n); return repinta(); }
   if(acc === 'frente' || acc === 'atras'){ await aplicar(acc === 'frente' ? 'Al frente' : 'Atrás', () => N.ordenForma(D, i, cid, acc), acc === 'frente' ? 'Hasta el frente.' : 'Hasta atrás.'); return repinta(); }
+  if(acc === 'relleno') return EST.relleno(i, cid, repinta);
+  if(acc === 'transparencia') return EST.transparencia(i, cid, repinta);
+  if(acc === 'girar') return EST.girar(i, cid, repinta);
+  if(acc === 'tamano') return EST.tamano(i, cid, repinta);
+  if(acc === 'texto'){
+    const t = N.textos(D, i).find((x) => x.cid === cid) || null;
+    if(!t){ aviso('Este elemento trae varios textos: cámbialos abajo, en «Textos de la lámina».'); return; }
+    const area = h('textarea', { class: 'entrada', rows: 5 }, t.texto);
+    hoja('Texto', [area, h('button', { class: 'btn primario ancho', type: 'button', style: { marginTop: '10px' }, on: { click: async () => {
+      cerrar('#hoja2');
+      await aplicar('Texto', () => N.ponerTexto(D, i, t.id, area.value), 'Texto cambiado.');
+    } } }, 'Guardar')], '#hoja2');
+    requestAnimationFrame(() => { area.focus(); area.select(); });
+    return;
+  }
   if(acc === 'imagen'){
     const f = modeloVisor?.formas.find((x) => x.cid === cid && x.rutaImagen);
     const im = f && (await N.imagenes(D)).find((x) => x.ruta === f.rutaImagen);
@@ -927,19 +1058,68 @@ async function accionElemento(acc){
           ocupado('Recoloreando el icono…');
           let arch; try{ arch = await IC.archivos(c.icono, { color: elegido }); }finally{ ocupado(''); }
           await aplicar('Color del icono', () => N.cambiarMediosDe(D, i, cid, arch), 'Icono recoloreado.');
-        }else await aplicar('Color', () => N.colorForma(D, i, cid, elegido), (n) => n ? 'Color cambiado.' : 'Ese elemento no tiene color que cambiar.');
+        }else if(c.forma) await aplicar('Color', () => N.ponerRelleno(D, i, cid, { tipo: 'solido', color: elegido }), (n) => n ? 'Color cambiado.' : 'Ese elemento no tiene color que cambiar.');
+        else await aplicar('Color', () => N.colorForma(D, i, cid, elegido), (n) => n ? 'Color cambiado.' : 'Ese elemento no tiene color que cambiar.');
         repinta();
       } } }, 'Poner este color')], '#hoja2');
   }
 }
-$('#v-ant').addEventListener('click', () => { if(actual > 0){ actual--; pintarVisor(); } });
-$('#v-sig').addEventListener('click', () => { if(actual < D.laminas.length - 1){ actual++; pintarVisor(); } });
+/* ── la barra de herramientas del editor ── */
+const FOTO_MAX = 0.5;   // una foto nueva entra a la mitad del ancho de la lámina
+async function meterFoto(r, nombreF = 'Foto'){
+  if(!r) return;
+  const i = actual;
+  const med = r.ancho && r.alto ? { w: r.ancho, h: r.alto } : (N.medidasImagen(r.bytes) || { w: 4, h: 3 });
+  let w = D.ancho * FOTO_MAX, hh = w * med.h / med.w;
+  if(hh > D.alto * 0.7){ hh = D.alto * 0.7; w = hh * med.w / med.h; }
+  const cid = await aplicar('Poner foto', () => N.insertarImagen(D, i, { png: { bytes: r.bytes, mime: r.mime }, x: (D.ancho - w) / 2, y: (D.alto - hh) / 2, w, h: hh, nombre: nombreF }), 'Foto puesta. Muévela con el dedo.');
+  if(cid != null){ INS.fijarSeleccion(i, cid); pintarVisor(); }
+}
+function herramientaTexto(){
+  const i = actual;
+  const poner = async (tipo) => {
+    cerrar('#hoja2');
+    const cid = await aplicar('Texto nuevo', () => N.insertarTexto(D, i, tipo), null);
+    if(cid != null){ INS.fijarSeleccion(i, cid); await pintarVisor(); accionElemento('texto'); }
+  };
+  hoja('Texto', [h('div', { class: 'agregar-texto' },
+    h('button', { class: 't-titulo', type: 'button', 'data-texto': 'titulo', on: { click: () => poner('titulo') } }, 'Agregar un título'),
+    h('button', { class: 't-subtitulo', type: 'button', 'data-texto': 'subtitulo', on: { click: () => poner('subtitulo') } }, 'Agregar un subtítulo'),
+    h('button', { class: 't-cuerpo', type: 'button', 'data-texto': 'cuerpo', on: { click: () => poner('cuerpo') } }, 'Agregar un poco de texto')),
+    h('p', { class: 'nota' }, 'Entra en la lámina que estás viendo. Luego escribes lo tuyo, lo mueves y le cambias la letra y el color.')], '#hoja2');
+}
+async function herramientaSubir(){
+  const inp = h('input', { type: 'file', accept: 'image/*', class: 'oculto' });
+  inp.addEventListener('change', async () => {
+    const f = inp.files[0]; if(!f) return;
+    try{ ocupado('Acomodando la imagen…'); const r = await IA.ajustar(new Uint8Array(await f.arrayBuffer()), f.type || 'image/jpeg', {}); ocupado(''); await meterFoto(r, f.name.replace(/\.[^.]+$/, '')); }
+    catch(e){ ocupado(''); aviso(/heic|heif/i.test(f.type + f.name) ? 'Esa foto está en HEIC y este navegador no la abre. En el iPhone: Ajustes → Cámara → Formatos → «Más compatible».' : 'No se pudo abrir esa imagen: ' + e.message, 'mal'); }
+  }, { once: true });
+  document.body.append(inp); inp.click(); setTimeout(() => inp.remove(), 60000);
+}
+$$('#editor-herramientas [data-herramienta]').forEach((b) => b.addEventListener('click', async () => {
+  const q = b.dataset.herramienta;
+  if(q === 'texto') return herramientaTexto();
+  if(q === 'elementos') return INS.panel({ enLamina: true });
+  if(q === 'fotos') return meterFoto(await elegirImagen({ titulo: 'Poner una foto', libre: true }));
+  if(q === 'subir') return herramientaSubir();
+  if(q === 'fondo') return panelFondo();
+  if(q === 'acomodar') return panelAcomodar();
+  if(q === 'ia') return panelIA();
+  if(q === 'presentar'){ $('#visor').close(); return INS.presentar(actual); }
+}));
+$$('.alcance [data-alcance]').forEach((b) => b.addEventListener('click', () => { alcance = b.dataset.alcance; $$('.alcance [data-alcance]').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); }));
+$('#v-deshacer').addEventListener('click', deshacer);
+$('#visor').addEventListener('close', () => { INS.fijarSeleccion(actual, null); pintarBarraElemento(null); });
+$('#v-ant').addEventListener('click', () => { if(actual > 0){ actual--; INS.fijarSeleccion(actual, null); pintarVisor(); } });
+$('#v-sig').addEventListener('click', () => { if(actual < D.laminas.length - 1){ actual++; INS.fijarSeleccion(actual, null); pintarVisor(); } });
 $('#visor').addEventListener('keydown', (e) => {
   if(/textarea|input/i.test(e.target.tagName)) return;
+  if(e.target.closest?.('.marco') && INS.elegido) return;   // con algo elegido, las flechas lo mueven
   if(e.key === 'ArrowLeft') $('#v-ant').click();
   if(e.key === 'ArrowRight') $('#v-sig').click();
 });
-addEventListener('resize', () => { const m = $('#visor .marco'); if(m) m.style.setProperty('--k', m.clientWidth / V.BASE); });
+addEventListener('resize', () => { const m = $('#visor .visor-cuerpo > .marco'); if(m) m.style.setProperty('--k', m.clientWidth / V.BASE); });
 
 /* ══ NOTIFICACIONES ═══════════════════════════════════════════════════════ */
 const TIPO_ICONO = { cambio: '✓', bien: '✓', mal: '!', '': '•' };
@@ -1024,6 +1204,7 @@ function colorCompacto(inicial, alCambiar, extra = []){
 /* ══ INSERTAR (insertar.js) ══ */
 const INS = crearInsertar({ h, $, $$, hoja, cerrar, aviso, ocupado, segmento, plural, selectorColor: colorCompacto, aplicar, N, V,
   D: () => D, abrirVisor, objetivo, sel: () => sel, actual: () => actual, pintarBarraElemento, accionElemento });
+const EST = crearEstilo({ h, $$, hoja, cerrar, aviso, segmento, aplicar, N, D: () => D, selectorColor: colorCompacto, BANCO });
 $('#b-presentar').addEventListener('click', () => INS.presentar(sel.size ? Math.min(...sel) : 0));
 $('#presentar-cerrar').addEventListener('click', () => $('#presentar').close());
 

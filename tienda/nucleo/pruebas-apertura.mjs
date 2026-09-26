@@ -35,12 +35,12 @@ async function pagina(extra = {}){
   const ctx = await nav.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, serviceWorkers: 'block', isMobile: true, hasTouch: true, ...extra });
   await ctx.routeWebSocket(/^wss:\/\//, () => {});
   await ctx.route(/^https:\/\//, async (r) => { try{ await r.fulfill({ response: await api.fetch(r.request()) }); }catch{ await r.abort(); } });
-  // Mientras la prueba mira un cuadro (window.__retener), el reloj de 3.7 s (DURA)
+  // Mientras la prueba mira un cuadro (window.__retener), el reloj de 4.6 s (DURA)
   // que quita la apertura espera.
   await ctx.addInitScript(() => {
     const st = window.setTimeout;
     window.setTimeout = function(f, ms, ...r){
-      if(ms !== 3700 || typeof f !== 'function') return st.call(this, f, ms, ...r);
+      if(ms !== 4600 || typeof f !== 'function') return st.call(this, f, ms, ...r);
       const intenta = () => window.__retener ? st(intenta, 100) : f(...r);
       return st(intenta, ms);
     };
@@ -66,7 +66,25 @@ try{
     // contra el de la animación (así salía «la D ya llegó» a los «700 ms»).
     // Y el reloj que la quita a los 3.3 s se detiene mientras se mira.
     await p.evaluate(() => { window.__retener = true; });
-    const cuadros = [250, 700, 1150, 1600, 2100, 2800, 3550];
+    // La acción que pidió Carlos, medida en el cuadro exacto.
+    const en = (t, fn) => p.evaluate(([t, cuerpo]) => { document.getAnimations().forEach((a) => { a.pause(); a.currentTime = t; }); return (0, eval)(cuerpo)(); }, [t, fn.toString()]);
+    // La serpiente: cuadro por cuadro, la cuerda gira (casi dos vueltas en total) y su centro va de un lado a otro.
+    const pasos = [];
+    for(let t = 380; t <= 1600; t += 40) pasos.push(await en(t, () => { const e = document.querySelector('.apertura .cuerda-izq'), r = e.getBoundingClientRect(), c = e.parentNode.getBoundingClientRect(), m = getComputedStyle(e).transform; const v = m === 'none' ? [1, 0] : m.match(/matrix\(([^)]+)\)/)[1].split(',').map(Number); return { x: r.left + r.width / 2 - (c.left + c.width / 2), y: r.top + r.height / 2 - (c.top + c.height / 2), a: Math.atan2(v[1], v[0]) * 180 / Math.PI }; }));
+    let vueltas = 0, cambios = 0, dir = 0;
+    for(let k = 1; k < pasos.length; k++){
+      let d = pasos[k].a - pasos[k - 1].a; if(d > 180) d -= 360; if(d < -180) d += 360; vueltas += Math.abs(d);
+      const dx = pasos[k].x - pasos[k - 1].x; if(Math.abs(dx) > 0.5){ const s = Math.sign(dx); if(dir && s !== dir) cambios++; dir = s; }
+    }
+    ok('las cuerdas suben como serpiente: giran casi dos vueltas y culebrean de un lado a otro', vueltas > 500 && cambios >= 2 && pasos[0].y > pasos.at(-1).y + 20, JSON.stringify({ vueltas: Math.round(vueltas), cambios, y0: Math.round(pasos[0].y), y1: Math.round(pasos.at(-1).y) }));
+    const tij = await en(1520, () => { const e = document.querySelector('.apertura .p-tijeras'), r = e.getBoundingClientRect(), c = e.parentNode.getBoundingClientRect(); return { top: r.top - c.top, op: getComputedStyle(e).opacity }; });
+    const tij2 = await en(1830, () => { const e = document.querySelector('.apertura .p-tijeras'), r = e.getBoundingClientRect(), c = e.parentNode.getBoundingClientRect(); return { top: r.top - c.top, op: getComputedStyle(e).opacity }; });
+    ok('las tijeras caen desde muy arriba y pegan en su lugar', tij.top < -40 && Number(tij.op) > 0.2 && tij2.top > 0, JSON.stringify([tij, tij2]));
+    const golpe = await en(1880, () => getComputedStyle(document.querySelector('.apertura .logo-armado')).transform);
+    ok('al pegar las tijeras, el logo entero se sacude (y salta la chispa)', golpe !== 'none' && await en(1900, () => Number(getComputedStyle(document.querySelector('.apertura .chispa.c1')).opacity)) > 0.2, golpe);
+    const mango = await en(1900, () => Number(getComputedStyle(document.querySelector('.apertura .p-mango')).opacity));
+    ok('el otro mango entra a armarse con las tijeras', mango > 0.3, String(mango));
+    const cuadros = [250, 900, 1350, 1700, 2350, 3000, 4450];
     const opacidades = [], piezasEn = [];
     for(const [n, ms] of cuadros.entries()){
       await p.evaluate((t) => document.getAnimations().forEach((a) => { a.pause(); a.currentTime = t; }), ms);
@@ -77,10 +95,10 @@ try{
     }
     const piezas = await p.evaluate(() => [...document.querySelectorAll('.apertura .pieza')].map((i) => i.className.split(' ')[1]));
     ok('las piezas sueltas de Carlos (G, D, B, navaja, peine y los dos mangos de las tijeras) están en la apertura', piezas.length === 7, piezas.join());
-    ok('la G que vuela es la pieza ENTERA; la capa cortada aparece al aterrizar', Number(piezasEn[2]['p-g']) > 0.3 && opacidades[2].g === '0.00', JSON.stringify(piezasEn[2]) + JSON.stringify(opacidades[2]));
+    ok('la G que vuela es la pieza ENTERA; la capa cortada aparece al aterrizar', Number(piezasEn[4]['p-g']) > 0.3 && opacidades[4].g === '0.00', JSON.stringify(piezasEn[4]) + JSON.stringify(opacidades[4]));
     ok('y al final ya no queda ninguna pieza suelta: sólo el logo exacto', Object.values(piezasEn.at(-1)).every((o) => o === '0.00'), JSON.stringify(piezasEn.at(-1)));
     ok('las piezas llegan en orden: la D todavía no está cuando el aro ya se ve', opacidades[1].aro === '1.00' && Number(opacidades[1].d) < 0.2, JSON.stringify(opacidades[1]));
-    ok('a los 3.5 s están todas', Object.values(opacidades.at(-1)).every((o) => o === '1.00'), JSON.stringify(opacidades.at(-1)));
+    ok('a los 4.45 s están todas', Object.values(opacidades.at(-1)).every((o) => o === '1.00'), JSON.stringify(opacidades.at(-1)));
     // El logo armado contra el original: mismo lugar y mismo tamaño en pantalla.
     const dif = await p.evaluate(() => { const c = document.querySelector('.apertura .logo-armado').getBoundingClientRect(); return { caja: [c.x, c.y, c.width, c.height] }; });
     const png = await p.screenshot({ clip: { x: dif.caja[0], y: dif.caja[1], width: dif.caja[2], height: dif.caja[3] } });
@@ -95,23 +113,32 @@ try{
       const W = 288, H = Math.round(W * 535 / 577);
       const leer = (i) => { const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(i, 0, 0, W, H); return x.getImageData(0, 0, W, H).data; };
       const A = leer(a), B = leer(b);
-      let mejor = Infinity;
+      /* Dos medidas: el logo entero y SÓLO la franja del nombre (abajo, entre
+         12° y 165°, del radio 118 al 225). La del logo entero NO veía un nombre
+         a medias: el 26 de septiembre la máscara del título quedó mal escrita,
+         el nombre se paraba en «EL GAR», y el promedio de todo el logo seguía
+         abajo de 15. */
+      let mejor = Infinity, mejorNombre = Infinity;
       for(let sy = -3; sy <= 3; sy++) for(let sx = -3; sx <= 3; sx++){
-        let suma = 0, n = 0;
+        let suma = 0, n = 0, sumaN = 0, nN = 0;
         for(let y = 4; y < H - 4; y++) for(let x = 4; x < W - 4; x++){
-          const dx = x / W * 577 - 289, dy = y / H * 535 - 269;
-          if(Math.hypot(dx, dy) > 225) continue;   // afuera: el original es negro y la apertura su fondo
+          const dx = x / W * 577 - 289, dy = y / H * 535 - 269, r = Math.hypot(dx, dy);
+          if(r > 225) continue;   // afuera: el original es negro y la apertura su fondo
           const k = (y * W + x) * 4, q = ((y + sy) * W + x + sx) * 4;
-          suma += (Math.abs(A[q] - B[k]) + Math.abs(A[q + 1] - B[k + 1]) + Math.abs(A[q + 2] - B[k + 2])) / 3; n++;
+          const d = (Math.abs(A[q] - B[k]) + Math.abs(A[q + 1] - B[k + 1]) + Math.abs(A[q + 2] - B[k + 2])) / 3;
+          suma += d; n++;
+          const ang = Math.atan2(dy, dx) * 180 / Math.PI;
+          if(r >= 118 && ang >= 12 && ang <= 165){ sumaN += d; nN++; }
         }
-        mejor = Math.min(mejor, suma / n);
+        mejor = Math.min(mejor, suma / n); mejorNombre = Math.min(mejorNombre, sumaN / nN);
       }
-      return mejor;
+      return { todo: mejor, nombre: mejorNombre };
     }, png.toString('base64'));
     // Calibrado con mutaciones el 25 de septiembre: armado completo 12.3 (lo que
     // queda es el JPEG del original y el reescalado del navegador); sin la G,
     // 19.3; con el título corrido un 3 %, 17.3. La raya va en 15.
-    ok('al terminar, lo armado ES el logo (diferencia < 15; sin la G da 19)', comparar < 15, comparar.toFixed(2));
+    ok('al terminar, lo armado ES el logo (diferencia < 15; sin la G da 19)', comparar.todo < 15, comparar.todo.toFixed(2));
+    ok('y el nombre está COMPLETO en su arco (franja < 18: completo da 11.4, cortado en «EL GAR» da 26.7)', comparar.nombre < 18, comparar.nombre.toFixed(2));
     await p.evaluate(() => { window.__retener = false; document.getAnimations().forEach((a) => a.finish()); });
     await p.waitForSelector('.apertura', { state: 'detached', timeout: 5000 });
     ok('se quita sola y deja la tienda', await p.locator('#contenido').count() === 1);

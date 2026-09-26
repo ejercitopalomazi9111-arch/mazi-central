@@ -192,6 +192,40 @@
     "toco y no avanza"
    ],
    "salioDe": "Corriendo las pruebas el 26 de septiembre."
+  },
+  {
+   "id": "alcance-pegado-de-la-vez-anterior",
+   "titulo": "Una estrella tocada en la lámina 2 aparece en las 19",
+   "gravedad": "alta",
+   "sintoma": "Desde el editor de una lámina, «Elementos» → una forma: la forma se mete en TODAS las láminas en lugar de la que tienes abierta.",
+   "causa": "El panel de Insertar guarda a qué láminas va (dondeV) entre una vez y otra. Si la última vez se eligió «Todas» (p. ej. para una transición), la siguiente forma también iba a todas.",
+   "porque": "La memoria del panel era buena desde la rejilla (repetir en lote) y mala desde la lámina abierta, donde en Canva lo que agregas va a esa página.",
+   "arreglo": "insertar.js · panel({ enLamina: true }) regresa a «Lámina N» cada vez que se abre desde el editor.",
+   "comoCazarlo": "pruebas-pantalla.mjs § «El editor tipo Canva»: corre DESPUÉS de la prueba que pone una transición en «Todas · 19», y exige que la estrella quede elegida en su lámina.",
+   "consejo": "Una opción que se recuerda es una opción que alguien olvidó que había puesto. Si el contexto cambia (rejilla → lámina abierta), se vuelve al valor del contexto.",
+   "senales": [
+    "se puso en todas las láminas",
+    "la forma aparece en todas",
+    "inserté en una y salió en todas"
+   ],
+   "salioDe": "Construyendo el editor tipo Canva, 26 de septiembre."
+  },
+  {
+   "id": "manija-recortada-por-el-marco",
+   "titulo": "La manija de girar no responde cerca del borde de la lámina",
+   "gravedad": "media",
+   "sintoma": "Con el elemento pegado arriba (o grande), la manija redonda de girar no se puede tocar.",
+   "causa": "La manija iba 40 px ARRIBA del elemento, y el marco de la lámina tiene overflow:hidden: quedaba recortada, o tapada por la orilla del contenedor.",
+   "porque": "En las primeras capturas el elemento estaba en medio y la manija se veía perfecta.",
+   "arreglo": "La manija va ABAJO del elemento (como Canva en teléfono), y en el editor el marco deja asomar las manijas (overflow visible); el recorte de la lámina lo sigue haciendo el lienzo.",
+   "comoCazarlo": "pruebas-pantalla.mjs gira con la manija DESPUÉS de duplicar el tamaño del elemento, que es cuando se sale del marco.",
+   "consejo": "Una manija se prueba con el elemento en la orilla y grande, no en el centro.",
+   "senales": [
+    "no puedo girar",
+    "la manija no sale",
+    "no se deja rotar"
+   ],
+   "salioDe": "Pruebas del editor, 26 de septiembre."
   }
  ]
 }

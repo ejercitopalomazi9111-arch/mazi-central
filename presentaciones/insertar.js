@@ -44,8 +44,12 @@ export function crearInsertar(U){
   const svgPeq = (cont, c) => `<svg viewBox="0 0 40 40" width="40" height="40" fill="${c}" stroke="${c}" aria-hidden="true">${cont}</svg>`;
 
   /* ══ LA HOJA DE INSERTAR ══ */
-  function panel(){
+  /* Desde el editor (la lámina abierta), lo que se agrega va a ESA lámina,
+     como en Canva: antes se quedaba pegado el «Todas» de la vez anterior y
+     una estrella tocada en la lámina 2 aparecía en las 19. */
+  function panel({ enLamina = false } = {}){
     const d = D();
+    if(enLamina) dondeV = 'esta';
     const pal = N.paletaTema(d);
     color = color || '#' + (pal.accent1 || 'AC27FF');
     const actual = U.actual();
@@ -523,8 +527,10 @@ export function crearInsertar(U){
       const c = N.cajaDe(d, i, elegido.cid);
       if(!c){ elegido = null; U.pintarBarraElemento(null); return; }
       const k = marco.clientWidth / d.ancho;
-      const caja = h('div', { class: 'seleccion', 'data-cid': elegido.cid, style: { left: c.x * k + 'px', top: c.y * k + 'px', width: Math.max(12, c.w * k) + 'px', height: Math.max(12, c.h * k) + 'px' } },
-        ...['nw', 'ne', 'sw', 'se'].map((q) => h('span', { class: `asa ${q}`, 'data-asa': q })));
+      const caja = h('div', { class: 'seleccion', 'data-cid': elegido.cid, style: { left: c.x * k + 'px', top: c.y * k + 'px', width: Math.max(12, c.w * k) + 'px', height: Math.max(12, c.h * k) + 'px', rotate: c.rot ? `${c.rot}deg` : '' } },
+        ...['nw', 'ne', 'sw', 'se'].map((q) => h('span', { class: `asa ${q}`, 'data-asa': q })),
+        // La manija de girar, como en Canva (las tablas y gráficas no giran en PowerPoint).
+        c.tabla || c.grafica ? null : h('span', { class: 'asa giro', 'data-asa': 'giro', 'aria-label': 'Girar', title: 'Girar' }, '⟳'));
       marco.append(caja);
       arrastrable(caja, marco, i, c, k, alCambiar);
     };
@@ -553,11 +559,26 @@ export function crearInsertar(U){
       e.preventDefault(); e.stopPropagation();
       caja.setPointerCapture(e.pointerId);
       inicio = { x: e.clientX, y: e.clientY, asa: e.target.dataset.asa || null, l: caja.offsetLeft, t: caja.offsetTop, w: caja.offsetWidth, hh: caja.offsetHeight, movio: false };
+      if(inicio.asa === 'giro'){
+        const r = caja.getBoundingClientRect();
+        inicio.cx = r.left + r.width / 2; inicio.cy = r.top + r.height / 2;
+        inicio.a0 = Math.atan2(e.clientY - inicio.cy, e.clientX - inicio.cx) * 180 / Math.PI;
+        inicio.rot0 = c0.rot || 0;
+      }
     });
     caja.addEventListener('pointermove', (e) => {
       if(!inicio) return;
       const dx = e.clientX - inicio.x, dy = e.clientY - inicio.y;
       if(Math.abs(dx) + Math.abs(dy) > 3) inicio.movio = true;
+      if(inicio.asa === 'giro'){
+        let g = inicio.rot0 + Math.atan2(e.clientY - inicio.cy, e.clientX - inicio.cx) * 180 / Math.PI - inicio.a0;
+        // Se «pega» a cada 45° cuando pasa cerca, como en Canva.
+        const pega = Math.round(g / 45) * 45; if(Math.abs(g - pega) < 4) g = pega;
+        inicio.giro = ((Math.round(g) % 360) + 360) % 360;
+        caja.style.rotate = `${inicio.giro}deg`;
+        $$(`.lienzo [data-cid="${c0Cid(caja)}"]`, marco).forEach((el) => { el.style.rotate = `${inicio.giro - (c0.rot || 0)}deg`; });
+        return;
+      }
       let { l, t, w, hh } = inicio;
       const fijo = c0.imagen || c0.grupo;          // fotos, iconos y diseños no se deforman
       if(!inicio.asa){ l += dx; t += dy; }
@@ -575,8 +596,13 @@ export function crearInsertar(U){
     });
     caja.addEventListener('pointerup', async () => {
       if(!inicio) return;
-      const movio = inicio.movio; inicio = null;
+      const movio = inicio.movio, giro = inicio.giro, asa = inicio.asa; inicio = null;
       if(!movio) return;
+      if(asa === 'giro'){
+        if(giro == null) return;
+        await aplicar('Girar', () => N.girarForma(d, i, c0Cid(caja), giro), null);
+        alCambiar(); return;
+      }
       const x = caja.offsetLeft / k, y = caja.offsetTop / k, w = caja.offsetWidth / k, hh = caja.offsetHeight / k;
       const cid = c0Cid(caja);
       await aplicar(c0.grupo ? 'Mover diseño' : 'Mover', () => N.moverForma(d, i, cid, c0.h === 0 || c0.tipo === 'cxnSp' ? { x, y, w } : { x, y, w, h: hh }), null);

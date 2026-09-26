@@ -637,7 +637,7 @@ export async function arreglarContraste(deck, sel, { claro = '#F5F2F2', oscuro =
 const textoDe = (tb) => todos(tb, NS.a, 'p').map((p) => [...p.children].map((x) => x.localName === 'br' ? '\n' : (x.localName === 'r' || x.localName === 'fld') ? (hijo(x, NS.a, 't')?.textContent || '') : '').join('')).join('\n');
 export function textos(deck, i){
   const l = deck.laminas[i], doc = docDe(deck, l.ruta);
-  return cuerposDeTexto(doc).map((c, k) => ({ id: k, titulo: c.titulo, texto: textoDe(c.tb) })).filter((x) => x.texto.trim());
+  return cuerposDeTexto(doc).map((c, k) => ({ id: k, cid: cidDe(c.sp), titulo: c.titulo, texto: textoDe(c.tb) })).filter((x) => x.texto.trim());
 }
 export function resumen(deck){
   return deck.laminas.map((_, i) => ({ lamina: i + 1, textos: textos(deck, i).map((t) => ({ forma: t.id, titulo: t.titulo, texto: t.texto.slice(0, 600) })) }));
@@ -701,17 +701,23 @@ export async function modelo(deck, i){
 async function leerRelleno(deck, ruta, el, pal){
   if(!el) return null;
   if(el.localName === 'bgRef'){ const c = colorDe(el, pal); return c ? { color: c.hex } : null; }
-  const sf = hijo(el, NS.a, 'solidFill'), gf = hijo(el, NS.a, 'gradFill'), bf = hijo(el, NS.a, 'blipFill');
+  const sf = hijo(el, NS.a, 'solidFill'), gf = hijo(el, NS.a, 'gradFill'), bf = hijo(el, NS.a, 'blipFill'), pf = hijo(el, NS.a, 'pattFill');
   if(sf){ const c = colorDe(sf, pal); return c ? { color: c.hex, alfa: c.alfa } : null; }
   if(gf){
-    const paradas = todos(gf, NS.a, 'gs').map((g) => ({ pos: Number(g.getAttribute('pos')) / 1000, color: colorDe(g, pal)?.hex || '#888888' }));
-    const lin = hijo(gf, NS.a, 'lin');
-    return { degradado: paradas, angulo: lin ? Number(lin.getAttribute('ang')) / 60000 : 90 };
+    const paradas = todos(gf, NS.a, 'gs').map((g) => { const c = colorDe(g, pal); return { pos: Number(g.getAttribute('pos')) / 1000, color: c?.hex || '#888888', ...(c && c.alfa < 1 ? { alfa: c.alfa } : {}) }; });
+    const lin = hijo(gf, NS.a, 'lin'), path = hijo(gf, NS.a, 'path');
+    return { degradado: paradas, angulo: lin ? Number(lin.getAttribute('ang')) / 60000 : 90, ...(path ? { radial: true } : {}) };
+  }
+  if(pf){
+    const fg = colorDe(hijo(pf, NS.a, 'fgClr'), pal), bg = colorDe(hijo(pf, NS.a, 'bgClr'), pal);
+    return { patron: pf.getAttribute('prst') || 'pct20', color: fg?.hex || '#000000', fondo: bg?.hex || '#FFFFFF', alfa: fg?.alfa ?? 1 };
   }
   if(bf){
     const blip = hijo(bf, NS.a, 'blip'), id = blip?.getAttributeNS(NS.r, 'embed');
     const r = id && (await relaciones(deck, ruta)).get(id);
-    return r && !r.externa ? { imagen: await urlDe(deck, r.ruta), rutaImagen: r.ruta } : null;
+    const tile = hijo(bf, NS.a, 'tile');
+    const amf = blip && hijo(blip, NS.a, 'alphaModFix');
+    return r && !r.externa ? { imagen: await urlDe(deck, r.ruta), rutaImagen: r.ruta, ...(tile ? { mosaico: (Number(tile.getAttribute('sx')) || 100000) / 100000 } : {}), ...(amf ? { alfa: (Number(amf.getAttribute('amt')) || 100000) / 100000 } : {}) } : null;
   }
   if(hijo(el, NS.a, 'noFill')) return { nada: true };
   return null;
@@ -768,6 +774,8 @@ async function recorrer(deck, l, ruta, arbol, pal, formas, soloAdorno, tx, cidGr
       const blip = todos(el, NS.a, 'blip')[0], id = blip?.getAttributeNS(NS.r, 'embed');
       const r = id && (await relaciones(deck, ruta)).get(id);
       if(r && !r.externa){ f.imagen = await urlDe(deck, r.ruta); f.rutaImagen = r.ruta; }
+      const amf = todos(el, NS.a, 'alphaModFix')[0];
+      if(amf) f.opacidad = (Number(amf.getAttribute('amt')) || 100000) / 100000;
       const src = todos(el, NS.a, 'srcRect')[0];
       if(src) f.recorte = { l: num(src, 'l') / 100000, t: num(src, 't') / 100000, r: num(src, 'r') / 100000, b: num(src, 'b') / 100000 };
     }else if(nombre === 'graphicFrame'){
@@ -809,6 +817,7 @@ async function recorrer(deck, l, ruta, arbol, pal, formas, soloAdorno, tx, cidGr
                 pt: (Number(rpr?.getAttribute('sz')) || defSz) / 100 * escala,
                 b: rpr?.getAttribute('b') === '1', i: rpr?.getAttribute('i') === '1',
                 color: colorDe(hijo(rpr, NS.a, 'solidFill'), pal)?.hex || colTx,
+                ...((a) => a != null && a < 1 ? { alfa: a } : {})(colorDe(hijo(rpr, NS.a, 'solidFill'), pal)?.alfa),
                 letra: hijo(rpr, NS.a, 'latin')?.getAttribute('typeface') || null,
                 ...(hijo(rpr, NS.a, 'hlinkClick') && f.enlace ? { enlace: true } : {}), ...(rpr?.getAttribute('u') && rpr.getAttribute('u') !== 'none' ? { u: true } : {}),
               };
@@ -1676,7 +1685,8 @@ export function cajaDe(deck, i, cid){
   const spPr = hijo(f.el, NS.p, 'spPr');
   return { x: f.x, y: f.y, w: f.w, h: f.h, tipo: f.tipo, nombre, texto: f.texto, icono: (nombre.match(/^Icono lucide:([\w-]+)/) || [])[1] || null,
     relleno: !!(spPr && hijo(spPr, NS.a, 'solidFill')), imagen: f.tipo === 'pic', grupo: f.tipo === 'grpSp',
-    tabla: !!todos(f.el, NS.a, 'tbl')[0], grafica: !!todos(f.el, NS_C, 'chart')[0], enlace: !!todos(f.el, NS.a, 'hlinkClick')[0] };
+    tabla: !!todos(f.el, NS.a, 'tbl')[0], grafica: !!todos(f.el, NS_C, 'chart')[0], enlace: !!todos(f.el, NS.a, 'hlinkClick')[0],
+    rot: (Number(xfrmDe(f.el)?.getAttribute('rot')) || 0) / 60000, forma: f.tipo === 'sp' };
 }
 export function moverForma(deck, i, cid, c){
   const l = deck.laminas[i], f = formasSueltas(deck, l).find((x) => cidDe(x.el) === Number(cid));
@@ -2284,4 +2294,143 @@ export async function insertarEnlace(deck, i, { texto, url, pt = 20, color = '#3
   if(run) run.setAttribute('u', 'sng');
   await ponerEnlace(deck, i, cid, u);
   return cid;
+}
+
+/* ══ ESTILO DE UN ELEMENTO · como Canva ═══════════════════════════════════
+   Carlos: «figuras con formas variadas y colores varios, texturas, varios
+   degradados en una sola figura, ajustar transparencia, escala, rotación».
+   Todo sale NATIVO de PowerPoint —gradFill con sus paradas, pattFill,
+   blipFill en mosaico, alpha y rot—, para que el archivo se siga editando
+   igual en PowerPoint, Keynote o Google. Nada se «aplana» a imagen.
+   ═════════════════════════════════════════════════════════════════════════ */
+export const PATRONES = [
+  ['pct20', 'Puntitos'], ['dotGrid', 'Rejilla de puntos'], ['smGrid', 'Cuadrícula'], ['ltUpDiag', 'Rayas'], ['wdUpDiag', 'Rayas anchas'],
+  ['horz', 'Renglones'], ['vert', 'Columnas'], ['smCheck', 'Ajedrez'], ['diagCross', 'Rombos'], ['horzBrick', 'Ladrillo'],
+  ['weave', 'Tejido'], ['plaid', 'Cuadros'], ['zigZag', 'Zigzag'], ['wave', 'Ondas'], ['shingle', 'Tejas'], ['smConfetti', 'Confeti'],
+];
+const PATRON_OK = new Set(PATRONES.map(([k]) => k).concat(['pct5', 'pct10', 'pct25', 'pct30', 'pct40', 'pct50', 'pct60', 'pct70', 'pct75', 'pct80', 'pct90', 'ltHorz', 'dkHorz', 'narHorz', 'ltVert', 'dkVert', 'narVert', 'dashHorz', 'dashVert', 'cross', 'dnDiag', 'upDiag', 'ltDnDiag', 'dkDnDiag', 'dkUpDiag', 'wdDnDiag', 'dashDnDiag', 'dashUpDiag', 'lgCheck', 'lgGrid', 'lgConfetti', 'diagBrick', 'solidDmnd', 'openDmnd', 'dotDmnd', 'sphere', 'divot', 'trellis']));
+/* Degradados armados, para tocar y listo. Varias paradas en una sola figura. */
+export const DEGRADADOS = [
+  ['Atardecer', ['#FF512F', '#F09819', '#FFD86F']], ['Mazi', ['#2A0A45', '#AC27FF', '#F5B3FF']], ['Océano', ['#0F2027', '#2C5364', '#4FC3F7']],
+  ['Bosque', ['#0B3D2E', '#2E8B57', '#B8F2C8']], ['Oro', ['#6B4E16', '#D69A2D', '#FFF1B8', '#D69A2D']], ['Arcoíris', ['#FF3B30', '#FF9500', '#FFCC00', '#34C759', '#007AFF', '#AF52DE']],
+  ['Neón', ['#00F5A0', '#00D9F5', '#7B2FF7']], ['Fresa', ['#FF5F6D', '#FFC371']], ['Noche', ['#141E30', '#243B55']], ['Plata', ['#8E9EAB', '#EEF2F3', '#8E9EAB']],
+];
+const clamp01 = (v) => Math.max(0, Math.min(1, Number(v)));
+/* Lo que se le puede cambiar a un elemento sin romperlo: la forma (sp), la
+   línea (cxnSp) y la imagen (pic). Un grupo sólo se rota o se transparenta
+   entero; su relleno es el de cada pieza. */
+function spPrDe(el){ return el && (el.localName === 'sp' || el.localName === 'cxnSp' || el.localName === 'pic') ? hijo(el, NS.p, 'spPr') : null; }
+
+/* r: { tipo:'solido', color, alfa }
+      { tipo:'degradado', paradas:[{ pos:0-100, color, alfa }], angulo (grados, 0 = izquierda→derecha), forma:'lineal'|'radial' }
+      { tipo:'patron', patron, color, fondo }
+      { tipo:'textura', bytes, mime, escala (0.1–2) }
+      { tipo:'nada' } */
+export async function ponerRelleno(deck, i, cid, r){
+  const l = deck.laminas[i], el = elementoDe(deck, l, cid), doc = docDe(deck, l.ruta);
+  const spPr = spPrDe(el);
+  if(!spPr || el.localName !== 'sp' || !r) return 0;
+  let xml;
+  if(r.tipo === 'solido'){
+    if(!hex6(r.color)) return 0;
+    xml = `<a:solidFill>${clrXml(r.color, r.alfa ?? 1)}</a:solidFill>`;
+  }else if(r.tipo === 'degradado'){
+    const ps = (r.paradas || []).filter((p) => hex6(p.color)).slice(0, 10);
+    if(ps.length < 2) return 0;
+    const orden = ps.map((p, k) => ({ ...p, pos: p.pos ?? (k / (ps.length - 1)) * 100 })).sort((a, b) => a.pos - b.pos);
+    const gs = orden.map((p) => `<a:gs pos="${R(Math.max(0, Math.min(100, p.pos)) * 1000)}">${clrXml(p.color, p.alfa ?? 1)}</a:gs>`).join('');
+    const tipo = r.forma === 'radial'
+      ? '<a:path path="circle"><a:fillToRect l="50000" t="50000" r="50000" b="50000"/></a:path>'
+      : `<a:lin ang="${R((((Number(r.angulo) || 0) % 360) + 360) % 360 * 60000)}" scaled="0"/>`;
+    xml = `<a:gradFill rotWithShape="1"><a:gsLst>${gs}</a:gsLst>${tipo}</a:gradFill>`;
+  }else if(r.tipo === 'patron'){
+    if(!PATRON_OK.has(r.patron) || !hex6(r.color) || !hex6(r.fondo || '#FFFFFF')) return 0;
+    xml = `<a:pattFill prst="${r.patron}"><a:fgClr>${clrXml(r.color)}</a:fgClr><a:bgClr>${clrXml(r.fondo || '#FFFFFF')}</a:bgClr></a:pattFill>`;
+  }else if(r.tipo === 'textura'){
+    if(!r.bytes?.length) return 0;
+    const ruta = await medioNuevo(deck, r.bytes, r.mime || 'image/jpeg');
+    const id = await relNueva(deck, l.ruta, T_IMAGEN, ruta);
+    const s = R(clamp01(r.escala ?? 0.5) * 100000) || 50000;
+    xml = `<a:blipFill dpi="0" rotWithShape="1"><a:blip r:embed="${id}"/><a:srcRect/><a:tile tx="0" ty="0" sx="${s}" sy="${s}" flip="none" algn="tl"/></a:blipFill>`;
+  }else if(r.tipo === 'nada') xml = '<a:noFill/>';
+  else return 0;
+  tocar(deck, l.ruta);
+  RELLENOS.forEach((k) => hijos(spPr, NS.a, k).forEach((x) => x.remove()));
+  for(const n of fragmento(doc, xml)) meterEnOrden(spPr, n, ORDEN_SPPR);
+  return 1;
+}
+
+/* Transparencia de TODO el elemento (0 = invisible, 1 = sólido), como la
+   perilla de Canva: relleno, borde, texto e imagen a la vez. Las sombras se
+   dejan como están. */
+const enEfecto = (x, el) => { for(let p = x.parentNode; p && p !== el; p = p.parentNode) if(p.localName === 'effectLst' || p.localName === 'style') return true; return false; };
+export function transparenciaDe(deck, i, cid){
+  const el = elementoDe(deck, deck.laminas[i], cid);
+  if(!el) return 1;
+  const amf = todos(el, NS.a, 'alphaModFix')[0];
+  if(amf) return (Number(amf.getAttribute('amt')) || 100000) / 100000;
+  const a = todos(el, NS.a, 'alpha').find((x) => !enEfecto(x, el));
+  return a ? Number(a.getAttribute('val')) / 100000 : 1;
+}
+export function ponerTransparencia(deck, i, cid, alfa){
+  const l = deck.laminas[i], el = elementoDe(deck, l, cid), doc = docDe(deck, l.ruta);
+  if(!el) return 0;
+  const a = clamp01(alfa);
+  tocar(deck, l.ruta);
+  let n = 0;
+  const COLORES = ['srgbClr', 'schemeClr', 'prstClr', 'sysClr', 'scrgbClr', 'hslClr'];
+  for(const c of [...el.getElementsByTagNameNS(NS.a, '*')].filter((x) => COLORES.includes(x.localName) && !enEfecto(x, el))){
+    [...c.children].filter((x) => x.localName === 'alpha').forEach((x) => x.remove());
+    if(a < 1) c.insertBefore(nuevo(doc, NS.a, 'alpha', { val: String(R(a * 100000)) }), c.firstChild);
+    n++;
+  }
+  for(const b of todos(el, NS.a, 'blip')){
+    hijos(b, NS.a, 'alphaModFix').forEach((x) => x.remove());
+    if(a < 1) b.insertBefore(nuevo(doc, NS.a, 'alphaModFix', { amt: String(R(a * 100000)) }), hijo(b, NS.a, 'extLst'));
+    n++;
+  }
+  return n;
+}
+
+/* Giro en grados (0–359), sobre su centro, como en PowerPoint. */
+function xfrmDe(el){
+  if(!el) return null;
+  if(el.localName === 'grpSp') return hijo(hijo(el, NS.p, 'grpSpPr'), NS.a, 'xfrm');
+  if(el.localName === 'graphicFrame') return null;   // tablas y gráficas no giran en PowerPoint
+  return hijo(hijo(el, NS.p, 'spPr'), NS.a, 'xfrm');
+}
+export function giroDe(deck, i, cid){ const x = xfrmDe(elementoDe(deck, deck.laminas[i], cid)); return x ? (Number(x.getAttribute('rot')) || 0) / 60000 : 0; }
+export function girarForma(deck, i, cid, grados){
+  const l = deck.laminas[i], x = xfrmDe(elementoDe(deck, l, cid));
+  if(!x) return 0;
+  const g = ((R(Number(grados) || 0) % 360) + 360) % 360;
+  tocar(deck, l.ruta);
+  if(g) x.setAttribute('rot', String(g * 60000)); else x.removeAttribute('rot');
+  return 1;
+}
+/* Escala sobre su centro (1 = igual; 1.5 = 50 % más grande). */
+export function escalarForma(deck, i, cid, k){
+  const c = cajaDe(deck, i, cid), f = Math.max(0.05, Math.min(20, Number(k) || 1));
+  if(!c) return 0;
+  const w = c.w * f, h = c.h * f;
+  return moverForma(deck, i, cid, { x: c.x + (c.w - w) / 2, y: c.y + (c.h - h) / 2, w, h });
+}
+
+/* ── texto nuevo, como los tres botones de Canva ── */
+export const ESTILOS_TEXTO = {
+  titulo: { pt: 44, negrita: true, texto: 'Agrega un título', alto: 0.16 },
+  subtitulo: { pt: 28, negrita: true, texto: 'Agrega un subtítulo', alto: 0.11 },
+  cuerpo: { pt: 18, negrita: false, texto: 'Agrega un poco de texto', alto: 0.09 },
+};
+export function insertarTexto(deck, i, tipo = 'cuerpo', { texto, color, letra } = {}){
+  const e = ESTILOS_TEXTO[tipo] || ESTILOS_TEXTO.cuerpo;
+  const W = deck.ancho, H = deck.alto;
+  // El color que ya usa la lámina, para que el texto nuevo se lea sobre su fondo.
+  const pal = deck.laminas[i] ? paleta(deck, deck.laminas[i]) : {};
+  const w = W * 0.7, h = H * e.alto;
+  const n = deck.laminas[i]._textosNuevos = (deck.laminas[i]._textosNuevos || 0) + 1;
+  // Cada texto nuevo cae un poco más abajo que el anterior: tres seguidos no se enciman.
+  return insertarForma(deck, i, { geo: 'rect', x: (W - w) / 2, y: H * 0.14 + ((n - 1) % 4) * H * 0.19, w, h,
+    texto: texto ?? e.texto, pt: e.pt, negrita: e.negrita, colorTexto: color || (pal.tx1 ? '#' + pal.tx1 : '#141018'), letra, alinea: 'ctr', ancla: 'ctr',
+    nombre: `Texto ${tipo}` });
 }

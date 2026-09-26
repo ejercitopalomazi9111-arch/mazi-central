@@ -89,6 +89,16 @@ async function pagina(ancho, alto){
         { titulo: 'Cafetería escolar', descripcion: 'Alumnos comiendo en mesas largas.', temas: ['escuela', 'alimentación'], palabras: ['comida', 'alumnos'], texto_visible: '', problemas: '' }];
       return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ bien: true, motor: 'gemini', texto: JSON.stringify(fichas[(n - 1) % 3]) }) });
     }
+    // «Ponle imágenes de mi banco»: la IA de mentiras lee el catálogo que le llegó y elige de ahí.
+    if(/ia-texto/.test(u) && /imágenes de mi banco/.test(cuerpo?.mensajes?.at(-1)?.texto || '')){
+      const cat = JSON.parse((cuerpo.sistema.split('BANCO DE IMÁGENES de Carlos (').at(-1) || '[]').replace(/^[^\n]*\n/, '').split('\n')[0] || '[]');
+      const buena = cat.find((f) => !f.cambios), mala = cat.find((f) => f.cambios);
+      const lams = JSON.parse((cuerpo.sistema.match(/Te paso \d+[^:]*:\n(\[.*\])\n/) || [])[1] || '[]');
+      const conFoto = lams.find((l) => l.imagenes?.length)?.lamina || 1;
+      const cambios = [{ op: 'imagenBanco', id: buena?.id, lamina: 2, lugar: 'derecha' }, { op: 'cambiarImagen', lamina: conFoto, imagen: 1, id: buena?.id },
+        { op: 'imagenBanco', id: 'clave-inventada', lamina: 3 }, ...(mala ? [{ op: 'imagenBanco', id: mala.id, lamina: 4 }] : [])];
+      return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ bien: true, motor: 'gemini', texto: JSON.stringify({ explicacion: 'Pongo imágenes de tu banco.', cambios }) }) });
+    }
     if(/ia-texto/.test(u) && /directora de arte/.test(cuerpo?.sistema || '')){
       return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ bien: true, motor: 'gemini', texto: 'LO QUE FUNCIONA\n• Los títulos son claros.\n\nLO QUE MEJORARÍA DEL DISEÑO\n• **Lámina 5**: el texto es chico.\n\nAPARTADOS QUE LE SUMARÍA\n• Resultados del piloto.\n\nSIGUIENTES TRES PASOS\n• Recuadros en los títulos.' }) });
     }
@@ -127,7 +137,8 @@ const captura = async (p, n) => { if(CAPTURAS) await p.screenshot({ path: join(C
 const desborde = (p) => p.evaluate(() => {
   let fuera = document.documentElement.scrollWidth - innerWidth;
   for(const d of document.querySelectorAll('dialog[open]')) for(const e of d.querySelectorAll('*')){
-    if(e.closest('.lienzo') || e.closest('.marco-datos')) continue;
+    // Lo que se desliza de lado A PROPÓSITO (tira de láminas, barras de botones) se recorta en su carril.
+    if(e.closest('.lienzo') || e.closest('.marco-datos') || e.closest('[data-desliza]')) continue;
     const b = e.getBoundingClientRect(); if(b.width) fuera = Math.max(fuera, Math.round(b.right - innerWidth), Math.round(-b.left));
   }
   return fuera;
@@ -406,6 +417,34 @@ await p.waitForFunction(() => document.querySelectorAll('#rejilla-banco .banco-c
 ok('y al confirmar se va', true);
 await p.click('.vistas [data-vista="presentacion"]');
 
+console.log('\n· La IA usa el banco');
+{
+  const antesL2 = await p.evaluate(async () => (await window.__pres.N.modelo(window.__pres.D, 1)).formas.filter((f) => f.tipo === 'pic').length);
+  // La primera lámina que trae una foto propia: ahí la IA de mentiras pide cambiarla.
+  const foto1 = await p.evaluate(async () => { const { D, N } = window.__pres; for(let i = 0; i < D.laminas.length; i++){ const f = (await N.modelo(D, i)).formas.find((x) => x.tipo === 'pic' && x.capa === 'lamina' && x.cid != null && x.rutaImagen); if(f) return { i, ruta: f.rutaImagen, bytes: (await N.bytesDe(D, f.rutaImagen)).length }; } return null; });
+  await p.click('.dock [data-panel="ia"]');
+  await p.locator('#hoja .segmento button', { hasText: 'Pedir cambios' }).click();
+  await p.locator('#hoja textarea').fill('Ponle imágenes de mi banco');
+  await p.getByRole('button', { name: 'Pedir', exact: true }).click();
+  await p.waitForSelector('#hoja .msj.yo .cambios li', { timeout: 10000 });
+  const pedidoB = pedidos.filter((x) => /ia-texto/.test(x.u) && /imágenes de mi banco/.test(x.cuerpo?.mensajes?.at(-1)?.texto || '')).at(-1);
+  ok('la IA recibe el catálogo del banco (títulos, temas, si está lista)', /BANCO DE IMÁGENES de Carlos \(2 imágenes\)/.test(pedidoB?.cuerpo?.sistema || '') && /"lista":true/.test(pedidoB.cuerpo.sistema), (pedidoB?.cuerpo?.sistema || '').split('BANCO DE IMÁGENES')[1]?.slice(0, 200));
+  ok('y sabe qué imágenes trae cada lámina, para poder cambiarlas', /"imagenes":\[\{"imagen":1/.test(pedidoB?.cuerpo?.sistema || ''));
+  const items = await p.locator('#hoja .msj.yo').last().locator('.cambios li').count();
+  ok('enseña sólo lo válido: tira la clave inventada y la imagen que «requiere cambios»', items === 2, String(items));
+  ok('cada cambio enseña la miniatura de la imagen del banco', await p.locator('#hoja .msj.yo').last().locator('.cambios img.mini-banco').count() === 2);
+  await captura(p, '10-ia-banco');
+  await p.locator('#hoja .msj.yo').last().getByRole('button', { name: /Aplicar 2 cambios/ }).click();
+  await p.waitForFunction(() => /La IA hizo 2 cambios/.test(document.querySelector('#avisos').textContent), null, { timeout: 15000 }).catch(async () => {
+    console.log('AVISOS:', await p.locator('#avisos').textContent(), JSON.stringify(await p.evaluate(() => [document.querySelector('.ocupado')?.textContent, [...document.querySelectorAll('#hoja .msj.yo')].at(-1)?.textContent?.slice(-200), window.__pres.D.deshacer.at(-1)?.nombre])), errores.slice(-3));
+  });
+  const despues = await p.evaluate(async () => { const fs = (await window.__pres.N.modelo(window.__pres.D, 1)).formas.filter((f) => f.tipo === 'pic'); return fs.length; });
+  ok('la imagen del banco entró a la lámina 2', despues === antesL2 + 1, `${antesL2} → ${despues}`);
+  const cambiada = await p.evaluate(async (antes) => { const f = (await window.__pres.N.modelo(window.__pres.D, antes.i)).formas.find((x) => x.tipo === 'pic' && x.capa === 'lamina' && x.cid != null && x.rutaImagen); const b = f && await window.__pres.N.bytesDe(window.__pres.D, f.rutaImagen); return !!b && (f.rutaImagen !== antes.ruta || b.length !== antes.bytes); }, foto1);
+  ok('y la foto que ya traía una lámina se cambió por la del banco', !!foto1 && cambiada, JSON.stringify(foto1));
+  await p.keyboard.press('Escape');
+}
+
 console.log('\n· Insertar: formas');
 await p.click('.dock [data-panel="insertar"]');
 await p.waitForSelector('#hoja[open] [data-forma]');
@@ -605,6 +644,122 @@ await p.locator('#hoja [data-poner-transicion]').click();
 await p.waitForFunction(() => /Transición en 19 láminas/.test(document.querySelector('#avisos').textContent));
 ok('transición «empujar hacia arriba» en las 19', await p.evaluate(async () => (await window.__pres.N.modelo(window.__pres.D, 3)).transicion?.tipo === 'push'));
 await p.keyboard.press('Escape');
+
+console.log('\n· El editor tipo Canva');
+{
+  // Por si quedó algo abierto de la sección anterior.
+  for(const id of ['#hoja2', '#hoja', '#visor']) await p.evaluate((x) => { const d = document.querySelector(x); if(d?.open) d.close(); }, id);
+  await p.locator('#laminas .ver').nth(1).click();
+  await p.waitForSelector('#visor[open] .visor-cuerpo > .marco .lienzo');
+  const L = 1;
+  const herramientas = await p.locator('#editor-herramientas [data-herramienta]').evaluateAll((bs) => bs.map((b) => b.dataset.herramienta));
+  ok('abajo, la barra de Canva: Texto, Elementos, Fotos, Subir, Fondo, Acomodar, IA y Presentar', herramientas.join() === 'texto,elementos,fotos,subir,fondo,acomodar,ia,presentar', herramientas.join());
+  const nLam = await p.evaluate(() => window.__pres.D.laminas.length);
+  ok('la tira trae todas las láminas y la abierta marcada', (await p.locator('#visor .tira .pag').count()) === nLam && /2/.test(await p.locator('#visor .tira .pag[aria-current="true"]').textContent()));
+  ok('las miniaturas de la tira no se confunden con la lámina grande', (await p.locator('#visor .tira [data-cid]').count()) === 0);
+  await captura(p, '30-editor');
+  // TEXTO: el botón que Carlos no encontraba.
+  await p.click('#editor-herramientas [data-herramienta="texto"]');
+  await p.waitForSelector('#hoja2[open] .agregar-texto');
+  ok('«Texto» ofrece título, subtítulo y cuerpo, como Canva', (await p.locator('#hoja2 .agregar-texto button').count()) === 3);
+  await p.click('#hoja2 [data-texto="subtitulo"]');
+  await p.waitForSelector('#hoja2[open] textarea');
+  await p.locator('#hoja2 textarea').fill('Hola desde el editor');
+  await p.locator('#hoja2 .btn.primario').click();
+  await p.waitForFunction(() => /Texto cambiado/.test(document.querySelector('#avisos').textContent));
+  const tNuevo = await p.evaluate(async (i) => { const m = await window.__pres.N.modelo(window.__pres.D, i); const f = m.formas.find((x) => x.parrafos?.[0]?.runs?.[0]?.t === 'Hola desde el editor'); return f && { pt: Math.round(f.parrafos[0].runs[0].pt), b: f.parrafos[0].runs[0].b }; }, L);
+  ok('el cuadro de texto nuevo entra con su tamaño de subtítulo y lo que escribiste', tNuevo?.pt === 28 && tNuevo.b, JSON.stringify(tNuevo));
+  ok('y queda elegido: la barra de abajo es la del elemento', await p.locator('#barra-elemento').isVisible() && !(await p.locator('#editor-herramientas').isVisible()));
+  await p.click('#barra-elemento [aria-label="Listo, soltar el elemento"]');
+  ok('«✓» lo suelta y regresa la barra de herramientas', await p.locator('#editor-herramientas').isVisible());
+  // ELEMENTOS → una estrella, y a vestirla.
+  await p.click('#editor-herramientas [data-herramienta="elementos"]');
+  await p.locator('#hoja [data-seccion="formas"]').click();
+  await p.locator('#hoja [data-forma="star5"]').click();
+  await p.waitForSelector('#visor[open] .seleccion');
+  const cidE = Number(await p.locator('#visor .seleccion').getAttribute('data-cid'));
+  ok('con un elemento elegido, nada del editor se sale de lado', (await desborde(p)) <= 0, String(await desborde(p)));
+  await p.click('#barra-elemento [data-accion="relleno"]');
+  await p.waitForSelector('#hoja2[open] .muestra-relleno');
+  ok('la hoja de relleno deja ver la lámina (vista previa en vivo)', await p.evaluate(() => { const r = document.querySelector('#hoja2').getBoundingClientRect(), m = document.querySelector('#visor .visor-cuerpo > .marco').getBoundingClientRect(); return r.top > m.top + m.height * 0.4; }));
+  await p.click('#hoja2 [aria-label="Degradado Neón"]');
+  await p.click('#hoja2 [data-mas-color]');
+  const vivo = await p.evaluate((c) => getComputedStyle(document.querySelector(`#visor .visor-cuerpo > .marco .lienzo [data-cid="${c}"]`)).backgroundImage, cidE);
+  ok('mientras eliges, la estrella ya se ve con el degradado', /gradient/.test(vivo), vivo.slice(0, 60));
+  await captura(p, '31-relleno');
+  await p.click('#hoja2 [data-poner-relleno]');
+  await p.waitForFunction(() => /Relleno puesto/.test(document.querySelector('#avisos').textContent));
+  let fE = await formaDe(L, cidE);
+  ok('degradado de CUATRO colores en la estrella (tres del «Neón» y uno más)', fE?.relleno?.degradado?.length === 4, JSON.stringify(fE?.relleno));
+  await p.click('#barra-elemento [data-accion="relleno"]');
+  await p.locator('#hoja2 .segmento button', { hasText: 'Patrón' }).click();
+  await p.click('#hoja2 [data-patron="smCheck"]');
+  await p.click('#hoja2 [data-poner-relleno]');
+  const esperaForma = async (prueba) => { for(let k = 0; k < 60; k++){ const f = await formaDe(1, cidE); if(prueba(f)) return f; await p.waitForTimeout(250); } return formaDe(1, cidE); };
+  ok('patrón de ajedrez', (await esperaForma((f) => f?.relleno?.patron === 'smCheck'))?.relleno?.patron === 'smCheck');
+  await p.click('#barra-elemento [data-accion="relleno"]');
+  await p.locator('#hoja2 .segmento button', { hasText: 'Textura' }).click();
+  await p.click('#hoja2 [data-textura="madera"]');
+  await p.waitForFunction(() => /url\(/.test(document.querySelector('#hoja2 .muestra-relleno').style.background));
+  await p.click('#hoja2 [data-poner-relleno]');
+  ok('textura de madera en mosaico', !!(await esperaForma((f) => f?.relleno?.mosaico))?.relleno?.mosaico);
+  // TRANSPARENCIA, GIRAR y TAMAÑO.
+  await p.click('#barra-elemento [data-accion="transparencia"]');
+  await p.locator('#hoja2 .chip', { hasText: '25 %' }).click();
+  await p.waitForFunction((c) => Math.abs(window.__pres.N.transparenciaDe(window.__pres.D, 1, c) - 0.25) < 0.001, cidE);
+  await p.locator('#hoja2 .btn.primario').click();
+  ok('transparencia al 25 %', true);
+  await p.click('#barra-elemento [data-accion="girar"]');
+  await p.locator('#hoja2 .chip', { hasText: '90°' }).click();
+  await p.waitForFunction((c) => window.__pres.N.giroDe(window.__pres.D, 1, c) === 90, cidE);
+  await p.locator('#hoja2 .btn.primario').click();
+  ok('girar a 90°', true);
+  const c0 = await p.evaluate((c) => window.__pres.N.cajaDe(window.__pres.D, 1, c), cidE);
+  await p.click('#barra-elemento [data-accion="tamano"]');
+  await p.locator('#hoja2 .chip', { hasText: 'Doble' }).click();
+  await p.waitForFunction(([c, w]) => window.__pres.N.cajaDe(window.__pres.D, 1, c).w > w * 1.9, [cidE, c0.w]);
+  await p.locator('#hoja2 .btn.primario').click();
+  ok('tamaño al doble, desde su centro', true);
+  // La manija de girar, con el dedo.
+  await p.waitForSelector('#visor .seleccion .asa.giro');
+  const sb = await p.locator('#visor .seleccion').boundingBox(), gb = await p.locator('#visor .seleccion .asa.giro').boundingBox();
+  const cx = sb.x + sb.width / 2, cy = sb.y + sb.height / 2;
+  await p.mouse.move(gb.x + gb.width / 2, gb.y + gb.height / 2); await p.mouse.down();
+  await p.mouse.move(cx + 80, cy, { steps: 8 }); await p.mouse.up();
+  await p.waitForFunction((c) => window.__pres.N.giroDe(window.__pres.D, 1, c) !== 90, cidE);
+  ok('la manija redonda gira el elemento', true, String(await p.evaluate((c) => window.__pres.N.giroDe(window.__pres.D, 1, c), cidE)));
+  await captura(p, '32-estrella-vestida');
+  // La tira cambia de lámina; «Aplicar en» manda en Fondo.
+  await p.click('#barra-elemento [aria-label="Listo, soltar el elemento"]');
+  await p.locator('#visor .tira .pag').nth(2).click();
+  await p.waitForFunction(() => /Lámina 3 de/.test(document.querySelector('#visor-titulo').textContent));
+  ok('tocar una miniatura de la tira abre esa lámina', true);
+  await p.click('#editor-herramientas [data-herramienta="fondo"]');
+  ok('«Fondo» desde el editor va a ESTA lámina', /la lámina 3/.test(await p.locator('#hoja .a-quien').textContent()));
+  await p.keyboard.press('Escape');
+  await p.click('.alcance [data-alcance="todas"]');
+  await p.click('#editor-herramientas [data-herramienta="fondo"]');
+  ok('y con «Todas» va a todas', new RegExp(`las ${nLam} láminas`).test(await p.locator('#hoja .a-quien').textContent()));
+  await p.keyboard.press('Escape');
+  await p.click('.alcance [data-alcance="esta"]');
+  // SUBIR una foto del teléfono.
+  const [chooser] = await Promise.all([p.waitForEvent('filechooser'), p.click('#editor-herramientas [data-herramienta="subir"]')]);
+  const antesPics = await p.evaluate(async () => (await window.__pres.N.modelo(window.__pres.D, 2)).formas.filter((f) => f.tipo === 'pic').length);
+  await chooser.setFiles({ name: 'foto.png', mimeType: 'image/png', buffer: Buffer.from(PNG, 'base64') });
+  // (waitForFunction con una promesa regresa al instante: se revisa a mano, en ciclo)
+  for(let k = 0; k < 60; k++){
+    if(await p.evaluate(async (n) => (await window.__pres.N.modelo(window.__pres.D, 2)).formas.filter((f) => f.tipo === 'pic').length > n, antesPics)) break;
+    await p.waitForTimeout(250);
+  }
+  ok('«Subir» pone la foto del teléfono en la lámina, con su forma (sin recortarla)', await p.evaluate(async () => { const m = await window.__pres.N.modelo(window.__pres.D, 2); const f = m.formas.filter((x) => x.tipo === 'pic').at(-1); return Math.abs(f.w / f.h - 64 / 48) < 0.02; }));
+  await p.evaluate(() => document.querySelector('#visor').close());
+  // Desde la rejilla, «Texto» ya trae el botón de agregar un cuadro.
+  await p.click('.dock [data-panel="texto"]');
+  await p.click('#hoja [data-agregar-texto]');
+  await p.waitForSelector('#visor[open]'); await p.waitForSelector('#hoja2[open] .agregar-texto');
+  ok('en la hoja de Texto de siempre, «＋ Agregar un cuadro de texto» abre el editor con los tres botones', true);
+  await p.evaluate(() => { document.querySelector('#hoja2').close(); document.querySelector('#visor').close(); });
+}
 
 console.log('\n· Presentar');
 await p.click('#b-presentar');

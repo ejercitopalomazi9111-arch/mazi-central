@@ -20,6 +20,10 @@ const TOPE = 300;
 /* Lo nuevo de la herramienta, lo más reciente arriba. Al agregar una función
    se agrega aquí su renglón: es lo que Carlos lee para saber qué cambió. */
 export const NOVEDADES = [
+  { id: 'n16', fecha: '2026-09-26', titulo: 'La IA usa tu banco de imágenes', texto: 'Pídele «ponle imágenes de mi banco»: lee las fichas de tus fotos (qué son, temas, si están listas) y propone cuál va en cada lámina, nueva o en lugar de una que ya estaba. Nunca usa las que marcaste «requiere cambios».' },
+  { id: 'n15', fecha: '2026-09-26', titulo: 'Editor como Canva', texto: 'Abre una lámina y abajo tienes Texto, Elementos, Fotos, Subir, Fondo, Acomodar, IA y Presentar, con la tira de láminas debajo. «Texto» pone un título, un subtítulo o un cuadro de texto nuevo.' },
+  { id: 'n14', fecha: '2026-09-26', titulo: 'Relleno: degradados, patrones y texturas', texto: 'Toca una figura → «Relleno»: degradados de hasta seis colores (en línea o desde el centro), patrones y diez texturas (madera, mármol, piel…), o una del banco o tuya.' },
+  { id: 'n13', fecha: '2026-09-26', titulo: 'Transparencia, girar y tamaño', texto: 'Con una perilla, y lo ves cambiar mientras la mueves. También se gira con la manija redonda de abajo del elemento.' },
   { id: 'n12', fecha: '2026-09-25', titulo: 'Enlaces', texto: 'Un texto (o una imagen, un icono, un botón) que al tocarlo abre un link: una página, un correo o un WhatsApp. Funciona al presentar y en PowerPoint.' },
   { id: 'n11', fecha: '2026-09-25', titulo: 'Tablas y gráficas, como en Canva', texto: 'En Insertar: tablas con estilo en dos toques y gráficas de columnas, barras, líneas, área, pastel y dona. Se llenan en una tablita, y puedes pegar celdas de Excel o Google Sheets.' },
   { id: 'n10', fecha: '2026-09-25', titulo: 'Sube tus 300 imágenes desde el teléfono', texto: 'Elige todas de un jalón. Si se corta, vuelve a elegirlas: las que ya subieron se saltan solas.' },
