@@ -589,7 +589,7 @@ export function crearInsertar(U){
   async function presentar(desde = 0){
     const d = D();
     const dlg = $('#presentar');
-    let i = desde, reloj = null, ocupadoTr = false;
+    let i = desde, reloj = null, ocupadoTr = false, pendiente = null;
     const escenario = $('#presentar-escenario');
     const cuenta = $('#presentar-cuenta');
     const medir = () => {
@@ -599,8 +599,14 @@ export function crearInsertar(U){
       escenario.style.setProperty('--k', w / 960);
     };
     const lamina = async (j) => { const m = await N.modelo(d, j); const div = h('div', { class: 'diapo' }, U.V.pintar(m)); return { div, m }; };
+    /* Un toque DURANTE la transición no se tira: se guarda y se cumple al
+       terminar. Antes se ignoraba callado, y «pasar rápido dos láminas» se
+       quedaba en una — y la prueba de la flecha fallaba 1 de cada 2 veces,
+       porque la flecha llegaba en los 30 ms que la primera lámina tarda en
+       asentarse. */
     const mostrar = async (j, animar = true) => {
-      if(ocupadoTr || j < 0 || j >= d.laminas.length) return;
+      if(j < 0 || j >= d.laminas.length) return;
+      if(ocupadoTr){ pendiente = j - i; return; }
       ocupadoTr = true;
       clearTimeout(reloj);
       const { div, m } = await lamina(j);
@@ -611,7 +617,10 @@ export function crearInsertar(U){
       if(vieja && clase && tr.tipo === 'push') vieja.className = `diapo sale tr-empujar dir-${tr.dir || 'l'} vel-${tr.vel || 'med'}`;
       escenario.append(div);
       const ms = clase ? ({ fast: 450, med: 750, slow: 1100 }[tr.vel] || 750) : 0;
-      setTimeout(() => { vieja?.remove(); div.classList.remove('entra'); ocupadoTr = false; }, ms + 30);
+      setTimeout(() => {
+        vieja?.remove(); div.classList.remove('entra'); ocupadoTr = false;
+        if(pendiente != null && dlg.open){ const paso = pendiente; pendiente = null; mostrar(i + Math.sign(paso)); }
+      }, ms + 30);
       i = j;
       cuenta.textContent = `${i + 1} / ${d.laminas.length}`;
       cuenta.classList.remove('desvanece'); void cuenta.offsetWidth; cuenta.classList.add('desvanece');

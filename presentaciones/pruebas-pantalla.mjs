@@ -35,6 +35,7 @@ const PPTX = join(RAIZ, 'fadori/presentacion/Fadori-STEAM.pptx');
 const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAEAAAAAwCAIAAAAuKetIAAAAUklEQVR4nO3PQQ3AIADAQMAM5vHIRPC4LOkpaOfZd/zZ0gGvGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0D7M0QIyKhL5GwAAAABJRU5ErkJggg==';
 
 const b = await chromium.launch();
+let safariTerco = false;
 const pedidos = [];
 async function pagina(ancho, alto){
   const ctx = await b.newContext({ viewport: { width: ancho, height: alto }, acceptDownloads: true, serviceWorkers: 'block' });
@@ -50,6 +51,8 @@ async function pagina(ancho, alto){
   await ctx.route(/sala\.palomazi9111\.workers\.dev/, async (r) => {
     const u = r.request().url(), cuerpo = r.request().postDataJSON?.() || null;
     pedidos.push({ u, cuerpo, llave: r.request().headers()['x-llave'] });
+    // Como el Safari del iPhone de Carlos: toda petición con la cabecera X-Llave muere antes de salir.
+    if(safariTerco && r.request().headers()['x-llave']) return r.abort('failed');
     /* Mis elementos: el servidor DE VERDAD (elementos.js) sobre un almacén en memoria. */
     if(/\/elementos/.test(u)){
       const req = new Request(u, { method: r.request().method(), body: r.request().method() === 'POST' ? r.request().postData() : undefined });
@@ -116,7 +119,19 @@ async function pagina(ancho, alto){
   return { p, ctx, errores };
 }
 const captura = async (p, n) => { if(CAPTURAS) await p.screenshot({ path: join(CAPTURAS, n + '.png') }); };
-const desborde = (p) => p.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+/* ⚠ Medir sólo la PÁGINA no ve lo que se sale DENTRO de una ventana
+   (<dialog>): el visor tiene su propio scroll, y ahí la fila de botones medía
+   616 px en 390 con la página «sin desborde». Lo reportó Carlos con capturas.
+   Se cuentan también los píxeles que cualquier cosa de un diálogo abierto se
+   pasa del borde (menos el lienzo de la lámina, que se escala adentro). */
+const desborde = (p) => p.evaluate(() => {
+  let fuera = document.documentElement.scrollWidth - innerWidth;
+  for(const d of document.querySelectorAll('dialog[open]')) for(const e of d.querySelectorAll('*')){
+    if(e.closest('.lienzo') || e.closest('.marco-datos')) continue;
+    const b = e.getBoundingClientRect(); if(b.width) fuera = Math.max(fuera, Math.round(b.right - innerWidth), Math.round(-b.left));
+  }
+  return fuera;
+});
 
 console.log('\n· Teléfono (390×844)');
 const { p, errores } = await pagina(390, 844);
@@ -309,7 +324,7 @@ await p.keyboard.press('Escape');
 await p.click('#b-deshacer');
 await p.waitForFunction(() => document.querySelectorAll('#laminas .lam').length === 19);
 ok('y deshacer la quita', true);
-ok('sin desborde en el visor', (await desborde(p)) <= 0);
+ok('sin desborde en el visor (ni adentro de su ventana)', (await desborde(p)) <= 0, String(await desborde(p)));
 await captura(p, '06-visor');
 await p.keyboard.press('Escape');
 
@@ -404,6 +419,7 @@ const antesF = await cuentaFormas(lam);
 await p.locator('#hoja [data-forma="star5"]').click();
 await p.waitForSelector('#visor[open] .seleccion');
 ok('la barra del elemento no escribe «null»', !/null/.test(await p.locator('#barra-elemento').textContent()));
+ok('con un elemento elegido, nada del visor se sale de lado', (await desborde(p)) <= 0, String(await desborde(p)));
 ok('la estrella entra y se abre su lámina con la estrella ya elegida', (await cuentaFormas(lam)) === antesF + 1 && /Forma|Texto/.test(await p.locator('#barra-elemento').textContent()));
 const cidE = Number(await p.locator('.seleccion').getAttribute('data-cid'));
 const caja0 = await p.evaluate(([i, c]) => window.__pres.N.cajaDe(window.__pres.D, i, c), [lam, cidE]);
@@ -634,6 +650,15 @@ ok('sin llave pide pegar el link de La Sala', await s.p.getByText('conecta La Sa
 await s.p.locator('#hoja input[placeholder*="link de La Sala"]').fill('https://mazi-central.palomazi9111.workers.dev/sala/?sala=GRUPAZ&llave=abc123');
 await s.p.getByRole('button', { name: 'Conectar' }).click();
 ok('saca la llave del link y la guarda', (await s.p.evaluate(() => localStorage.getItem('salaLlave'))) === 'abc123');
+
+console.log('\n· Cuando el teléfono tira la petición antes de mandarla');
+safariTerco = true;
+const t = await pagina(390, 844);
+await t.p.click('.vistas [data-vista="banco"]');
+await t.p.waitForSelector('#banco:not([hidden]) .banco-cab', { timeout: 10000 }).catch(() => {});
+const lasDeBanco = pedidos.filter((x) => /\/banco/.test(x.u)).slice(-2);
+ok('el banco abre igual: reintenta con la llave en la dirección (sin la cabecera)', await t.p.locator('#banco .banco-cab').count() === 1 && /[?&]llave=llave-de-prueba/.test(lasDeBanco.at(-1)?.u || ''), (await t.p.locator('#banco').textContent()).slice(0, 120));
+safariTerco = false;
 
 console.log('\n· Computadora (1280×800)');
 const c = await pagina(1280, 800);

@@ -157,7 +157,21 @@ export default {
          desde cualquier máquina y desde cualquier cuenta. Es lo que convierte
          seis letras en una mesa compartida. */
       const id = env.SALA.idFromName(codigo);
-      const r = await env.SALA.get(id).fetch(pedido);
+      let r;
+      try{ r = await env.SALA.get(id).fetch(pedido); }
+      catch(e){
+        /* Si el objeto truena —el caso real: el tope diario GRATIS de
+           Durable Objects, que se pasó el 25 de septiembre—, la excepción
+           salía sin CORS y el iPhone sólo decía «Load failed». Ahora sale
+           con CORS y con lo que pasó, para que la mesa y el banco lo digan. */
+        const tope = /exceeded|limit|free tier|quota/i.test(String(e && e.message));
+        return conCORS(Response.json({
+          error: tope
+            ? 'La Sala llegó al tope gratis de hoy de Cloudflare. Vuelve sola a las 6 pm (hora de México), cuando se reinicia el día para Cloudflare.'
+            : 'La Sala tuvo un error por dentro: ' + String((e && e.message) || e).slice(0, 200),
+          tope,
+        }, { status: 503 }), pedido);
+      }
       /* El websocket no lleva CORS: se negocia distinto. */
       return r.webSocket ? r : conCORS(r, pedido);
     }

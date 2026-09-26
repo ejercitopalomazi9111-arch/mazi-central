@@ -221,11 +221,14 @@ input[type="color"]{padding:4px; height:48px; cursor:pointer}
 
 /* visor */
 dialog.visor{border:0; padding:0; margin:0; width:100vw; height:100dvh; max-width:none; max-height:none; background:var(--vacio); color:var(--hueso)}
-.visor-cuerpo{max-width:1100px; margin:0 auto; padding:12px 12px 40px; overflow:auto; height:calc(100dvh - 64px)}
+.visor-cuerpo{max-width:1100px; margin:0 auto; padding:12px 12px 40px; overflow-x:hidden; overflow-y:auto; height:calc(100dvh - 64px)}
 .visor .marco{box-shadow:0 8px 32px rgba(0,0,0,.5)}
 .visor .es-imagen{cursor:pointer; outline:2px dashed transparent}
 .visor .es-imagen:hover{outline-color:var(--violeta)}
-.nav-visor{display:flex; gap:8px; align-items:center; margin:12px 0}
+/* En teléfono los cuatro botones no caben en un renglón (medían 616 px en 390):
+   la fila se desbordaba y el visor entero se corría de lado. Rejilla de dos. */
+.nav-visor{display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap:8px; margin:12px 0}
+.nav-visor .btn{min-width:0; white-space:normal}
 .textos-lamina{display:grid; gap:10px; margin-top:8px}
 .textos-lamina label{display:grid; gap:4px; font-size:13px; color:var(--tenue)}
 

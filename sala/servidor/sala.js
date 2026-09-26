@@ -522,14 +522,30 @@ export class Sala {
     }
   }
 
+  /* Sólo se escribe lo que CAMBIÓ. Antes cada `guardar()` escribía los
+     trece casilleros —el hilo entero, de casi 800 KB, incluido— aunque sólo
+     se hubiera movido un `visto`, y el plan gratis de Cloudflare topa los
+     renglones escritos a 100,000 al día (documentación de precios de Durable
+     Objects, 26 de septiembre). Se compara contra lo último escrito desde
+     ESTA instancia; al despertar se escribe todo una vez, que es lo seguro. */
   async guardar(){
-    await this.ctx.storage.put({
+    const todo = {
       hilo: this.hilo, gente: this.gente, vueltas: this.vueltas, resumido: this.resumido,
       proyectos: this.proyectos, serie: this.serie,
       llaves: this.llaves, dueno: this.dueno, propuestas: this.propuestas,
       vigilias: this.vigilias, retratos: this.retratos, fusiones: this.fusiones,
       vistos: this.vistos,
-    });
+    };
+    this._escrito = this._escrito || {};
+    const cambia = {};
+    for(const [k, v] of Object.entries(todo)){
+      const huella = JSON.stringify(v === undefined ? null : v);
+      if(this._escrito[k] !== huella){ cambia[k] = v; this._escrito[k] = huella; }
+    }
+    if(Object.keys(cambia).length){
+      try{ await this.ctx.storage.put(cambia); }
+      catch(e){ for(const k in cambia) delete this._escrito[k]; throw e; }
+    }
     await this.tocar(true);
   }
 
@@ -876,6 +892,8 @@ export class Sala {
       return;
     }
     await this.ctx.storage.deleteAll();
+    /* Lo borrado ya no está escrito: sin esto, `guardar()` creería que sí. */
+    this._escrito = {};
   }
 
   /* ══ LA VIGILIA ══════════════════════════════════════════════════════════
@@ -1469,9 +1487,78 @@ export class Sala {
 
   difundir(paquete){
     const texto = JSON.stringify(paquete);
-    for(const s of [...this.vivos]){
+    for(const s of this.sockets()){
       try{ s.send(texto); }catch(e){ this.vivos.delete(s); }
     }
+  }
+
+  /* ══ LOS SOCKETS DUERMEN · por qué la sala se cayó el 25 de septiembre ════
+     Carlos, a las 23:25 UTC: «no me deja entrar a la sala desde la central y
+     a presentaciones sigue saliéndole sin conexión». Desde aquí la sala
+     contestaba perfecto, y a las 00:00 UTC volvió sola.
+
+     Es el tope GRATIS de Cloudflare para Durable Objects: 13,000 GB-s al día
+     (documentación de precios, 26 de septiembre), que se reinicia a las 00:00
+     UTC —las 6 pm en México—. Y con `servidor.accept()` el objeto COBRA
+     TIEMPO TODO EL RATO QUE UN SOCKET ESTÉ ABIERTO, aunque nadie hable: una
+     pestaña de la mesa abierta el día entero son 11,059 GB-s ella sola. Al
+     pasarse, cada petición al objeto truena, la respuesta sale sin CORS y
+     Safari la reporta como «Load failed». Por eso fallaban LAS DOS —la mesa y
+     el banco— y por eso no se veía desde aquí: a la hora de medir ya era otro
+     día para Cloudflare.
+
+     Con `ctx.acceptWebSocket` (la API de hibernación) el objeto se duerme
+     entre mensajes y el socket sigue abierto: el tiempo sólo corre mientras
+     de verdad se atiende algo. El «de quién es» va pegado al socket con
+     `serializeAttachment`, porque al despertar la memoria del objeto es
+     nueva y `__quien` ya no existiría.
+
+     `vivos` se queda para los sockets que no duermen: los de la sala local
+     (local.mjs) y los de mentira de las pruebas. */
+  sockets(){
+    const dormidos = (this.ctx && typeof this.ctx.getWebSockets === 'function') ? this.ctx.getWebSockets() : [];
+    return [...this.vivos, ...dormidos];
+  }
+
+  quienDe(s){
+    if(s.__quien) return s.__quien;
+    try{ return (typeof s.deserializeAttachment === 'function' && s.deserializeAttachment()?.quien) || null; }
+    catch(e){ return null; }
+  }
+
+  /* Cerrar el socket SÍ es indicación directa: cerró la pestaña, se le fue
+     la red o bloqueó el teléfono. Ahí se avisa a los demás. */
+  irse(ws){
+    this.vivos.delete(ws);
+    const quien = this.quienDe(ws);
+    if(quien){
+      /* Si le queda OTRO socket abierto, no se cayó: cerró una pestaña de
+         dos. Sin esta comprobación, recargar la página abriría una vigilia
+         cada vez. El que se va se excluye a mano: dormido, Cloudflare todavía
+         lo puede listar mientras cierra. */
+      if(!this.conectados(ws).includes(quien)){
+        this.abrirVigilia(quien);
+        /* `waitUntil` y no `await`: el `close` no espera a nadie, y sin esto
+           la vigilia se apuntaría en memoria y se perdería al dormirse el
+           objeto — o sea que funcionaría en las pruebas y no en producción. */
+        this.luego((async () => { await this.guardar(); await this.armar(); })());
+      }
+    }
+    this.difundir({ que:'gente', gente:this.gente, conectados:this.conectados(ws) });
+  }
+
+  /* Los tres que llama Cloudflare al despertar al objeto por un socket. La
+     mesa no manda nada por el socket (todo va por HTTP), así que un mensaje
+     sólo se ignora. */
+  async webSocketMessage(){}
+  async webSocketClose(ws){
+    await this.listo;
+    this.irse(ws);
+    try{ ws.close(); }catch(e){}
+  }
+  async webSocketError(ws){
+    await this.listo;
+    this.irse(ws);
   }
 
   /* Despierta a los agentes colgados en /esperar. */
@@ -2680,9 +2767,12 @@ export class Sala {
 
   /* Quién tiene un socket abierto AHORA MISMO. Es la única señal que no
      admite duda: no es «habló hace poco», es «está del otro lado». */
-  conectados(){
+  conectados(excepto){
     const ids = new Set();
-    for(const s of this.vivos){ if(s.__quien) ids.add(s.__quien); }
+    for(const s of this.sockets()){
+      if(s === excepto) continue;
+      const q = this.quienDe(s); if(q) ids.add(q);
+    }
     return [...ids];
   }
 
@@ -2748,40 +2838,33 @@ export class Sala {
     const quien = new URL(pedido.url).searchParams.get('de') || '';
     const par = new WebSocketPair();
     const [cliente, servidor] = Object.values(par);
-    servidor.accept();
-    if(quien && this.gente[quien]){
-      servidor.__quien = quien;
+    const conPersona = !!(quien && this.gente[quien]);
+    /* Dormible si Cloudflare lo ofrece (producción y `wrangler dev`); si no,
+       el de siempre, que es el que usan la sala local y las pruebas. */
+    const duerme = this.ctx && typeof this.ctx.acceptWebSocket === 'function';
+    if(duerme){
+      this.ctx.acceptWebSocket(servidor);
+      servidor.serializeAttachment({ quien: conPersona ? quien : null });
+    }else{
+      servidor.accept();
+      if(conPersona) servidor.__quien = quien;
+      this.vivos.add(servidor);
+      servidor.addEventListener('close', () => this.irse(servidor));
+      servidor.addEventListener('error', () => this.irse(servidor));
+    }
+    if(conPersona){
       this.gente[quien].visto = ahora();
       /* Volver cancela la vigilia y, si ya se había anunciado la ausencia,
          anuncia el regreso. */
       this.luego(this.cerrarVigilia(quien));
     }
-    this.vivos.add(servidor);
     servidor.send(JSON.stringify({
       que:'hola', hilo:this.hilo, gente:this.gente, proyectos:this.proyectos,
       retratos:this.retratos, fusiones:this.fusiones, vistos:this.vistos,
       vueltas:this.vueltas, tope:this.topeVueltas, conectados:this.conectados(),
       escribiendo:this.escribiendo(),
     }));
-    /* Cerrar el socket SÍ es indicación directa: cerró la pestaña, se le fue
-       la red o bloqueó el teléfono. Ahí se avisa a los demás. */
-    const irse = () => {
-      this.vivos.delete(servidor);
-      if(!servidor.__quien) return;
-      /* Si le queda OTRO socket abierto, no se cayó: cerró una pestaña de dos.
-         Sin esta comprobación, recargar la página abriría una vigilia cada vez. */
-      if(!this.conectados().includes(servidor.__quien)){
-        this.abrirVigilia(servidor.__quien);
-        /* `waitUntil` y no `await`: el `close` no espera a nadie, y sin esto
-           la vigilia se apuntaría en memoria y se perdería al dormirse el
-           objeto — o sea que funcionaría en las pruebas y no en producción. */
-        this.luego((async () => { await this.guardar(); await this.armar(); })());
-      }
-      this.difundir({ que:'gente', gente:this.gente, conectados:this.conectados() });
-    };
-    servidor.addEventListener('close', irse);
-    servidor.addEventListener('error', irse);
-    if(quien && this.gente[quien]){
+    if(conPersona){
       this.difundir({ que:'gente', gente:this.gente, conectados:this.conectados() });
     }
     return new Response(null, { status:101, webSocket:cliente });

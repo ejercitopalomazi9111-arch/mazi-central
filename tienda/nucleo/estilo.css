@@ -201,21 +201,30 @@ a{ color: inherit; }
 }
 .apertura.corre .cuerda-izq{ animation: ap-orbita-izq 760ms 450ms cubic-bezier(.2,.9,.25,1) both; }
 .apertura.corre .cuerda-der{ animation: ap-orbita-der 760ms 450ms cubic-bezier(.2,.9,.25,1) both; }
-.apertura.corre .herramientas{ animation: ap-cae 700ms 640ms cubic-bezier(.3,1.45,.5,1) both; }
-.apertura.corre .g{ animation: ap-izq 620ms 860ms cubic-bezier(.2,.9,.2,1) both; }
-.apertura.corre .b{ animation: ap-der 620ms 860ms cubic-bezier(.2,.9,.2,1) both; }
-.apertura.corre .d{ animation: ap-d 640ms 1120ms cubic-bezier(.2,1.1,.3,1) both; }
+.apertura.corre .herramientas{ animation: ap-ve 220ms 1500ms both; }
+/* Las piezas sueltas de Carlos vuelan enteras y, al aterrizar, se funden con
+   su capa del logo (la capa aparece mientras la pieza se va). */
+.apertura .pieza{ position: absolute; opacity: 0; pointer-events: none; transform: rotate(var(--gira)); }
+.apertura.corre .p-navaja{ animation: ap-herr 1000ms 620ms cubic-bezier(.3,.9,.4,1) both; }
+.apertura.corre .p-peine{ animation: ap-herr 880ms 740ms cubic-bezier(.3,.9,.4,1) both; }
+.apertura.corre .p-tijeras{ animation: ap-herr 760ms 860ms cubic-bezier(.3,.9,.4,1) both; }
+.apertura.corre .p-mango{ animation: ap-herr 700ms 920ms cubic-bezier(.3,.9,.4,1) both; }
+.apertura.corre .p-g{ animation: ap-pieza-izq 800ms 860ms cubic-bezier(.2,.9,.2,1) both; }
+.apertura.corre .p-b{ animation: ap-pieza-der 800ms 860ms cubic-bezier(.2,.9,.2,1) both; }
+.apertura.corre .p-d{ animation: ap-pieza-d 900ms 1120ms cubic-bezier(.2,1,.3,1) both; }
+.apertura.corre .g, .apertura.corre .b{ animation: ap-ve 220ms 1440ms both; }
+.apertura.corre .d{ animation: ap-ve 220ms 1760ms both; }
 .apertura.corre .titulo{
   -webkit-mask: conic-gradient(from calc(258deg - var(--giro)) at 50.09% 50.28%, #000 var(--giro), transparent 0);
   mask: conic-gradient(from calc(258deg - var(--giro)) at 50.09% 50.28%, #000 var(--giro), transparent 0);
-  animation: ap-arco 720ms 1380ms cubic-bezier(.45,0,.3,1) both, ap-ve 1ms 1380ms both;
+  animation: ap-arco 720ms 1780ms cubic-bezier(.45,0,.3,1) both, ap-ve 1ms 1780ms both;
 }
 .apertura.corre .subtitulo{
   -webkit-mask: conic-gradient(from calc(258deg - var(--giro)) at 50.09% 50.28%, #000 var(--giro), transparent 0);
   mask: conic-gradient(from calc(258deg - var(--giro)) at 50.09% 50.28%, #000 var(--giro), transparent 0);
-  animation: ap-arco 640ms 1700ms cubic-bezier(.45,0,.3,1) both, ap-ve 1ms 1700ms both;
+  animation: ap-arco 640ms 2080ms cubic-bezier(.45,0,.3,1) both, ap-ve 1ms 2080ms both;
 }
-.apertura.corre .brillo{ animation: ap-brillo 900ms 2250ms ease-in-out both; }
+.apertura.corre .brillo{ animation: ap-brillo 900ms 2600ms ease-in-out both; }
 .apertura.corre .toca{ animation: sube 600ms 900ms both; opacity: .5; }
 /* Con «reducir movimiento»: el logo entero, quieto, que aparece y ya. */
 .apertura.quieta.corre .disco, .apertura.quieta.corre .capa{ animation: ap-ve 500ms both; -webkit-mask: none; mask: none; transform: none; }
@@ -230,6 +239,10 @@ a{ color: inherit; }
 @keyframes ap-izq{ from{ opacity: 0; transform: translateX(-42%); filter: blur(6px); } to{ opacity: 1; transform: none; filter: none; } }
 @keyframes ap-der{ from{ opacity: 0; transform: translateX(42%); filter: blur(6px); } to{ opacity: 1; transform: none; filter: none; } }
 @keyframes ap-d{ 0%{ opacity: 0; transform: translateY(-34%) scale(1.5); filter: brightness(3) blur(4px); } 60%{ opacity: 1; filter: brightness(2.2); } to{ opacity: 1; transform: none; filter: none; } }
+@keyframes ap-herr{ 0%{ opacity: 0; transform: translateY(-140%) rotate(calc(var(--gira) - 30deg)); } 45%{ opacity: 1; } 72%{ transform: rotate(var(--gira)); } 88%{ opacity: 1; } 100%{ opacity: 0; transform: rotate(var(--gira)); } }
+@keyframes ap-pieza-izq{ 0%{ opacity: 0; transform: translateX(-140%) rotate(var(--gira)); filter: blur(6px); } 70%{ opacity: 1; transform: rotate(var(--gira)); filter: none; } 80%{ opacity: 1; } 100%{ opacity: 0; transform: rotate(var(--gira)); } }
+@keyframes ap-pieza-der{ 0%{ opacity: 0; transform: translateX(140%) rotate(var(--gira)); filter: blur(6px); } 70%{ opacity: 1; transform: rotate(var(--gira)); filter: none; } 80%{ opacity: 1; } 100%{ opacity: 0; transform: rotate(var(--gira)); } }
+@keyframes ap-pieza-d{ 0%{ opacity: 0; transform: translateY(-90%) scale(1.5); filter: brightness(3) blur(4px); } 60%{ opacity: 1; transform: none; filter: brightness(2); } 78%{ opacity: 1; filter: none; } 100%{ opacity: 0; transform: none; } }
 @keyframes ap-brillo{ from{ opacity: 1; background-position: 150% 0; } to{ opacity: 1; background-position: -50% 0; } }
 
 /* ── Armazón ───────────────────────────────────────────────────────────── */

@@ -1,162 +1,197 @@
 {
-  "area": "edicion",
-  "nombre": "Editar y guardar",
-  "que": "Modo de edición, guardado y pérdida de trabajo: lo que la gente más recuerda cuando sale mal.",
-  "neuronas": [
-    {
-      "id": "no-se-sabe-si-esta-guardado",
-      "titulo": "No hay forma de saber si los cambios se guardaron",
-      "gravedad": "alta",
-      "sintoma": "La gente no se atreve a cerrar la pestaña.",
-      "causa": "El guardado es automático y silencioso, o manual y sin confirmación.",
-      "porque": "Quien lo programó ve la petición y sabe que funciona.",
-      "arreglo": "Un estado visible: guardando, guardado a tal hora, o sin guardar. Y avisar al salir con cambios pendientes.",
-      "comoCazarlo": "Escribir algo y preguntarse, sin mirar el código, si está a salvo.",
-      "consejo": "«Guardado hace un momento» tranquiliza más que un icono que parpadea.",
-      "senales": [
-        "¿ya se guardó?",
-        "no me atrevo a cerrar",
-        "perdí cambios"
-      ],
-      "salioDe": "La regla de no perder lo escrito, del área de interfaz."
-    },
-    {
-      "id": "modo-edicion-que-no-se-distingue",
-      "titulo": "No se nota si se está editando o mirando",
-      "gravedad": "media",
-      "sintoma": "Se escriben cosas creyendo que se está en un buscador, o se intenta escribir donde no se puede.",
-      "causa": "Los dos modos se ven casi igual.",
-      "porque": "Un modo de edición discreto se ve más limpio y elegante.",
-      "arreglo": "Que editar se vea distinto: fondo, borde, cursor, y una salida clara.",
-      "comoCazarlo": "Capturar los dos modos y compararlos. Si cuesta distinguirlos, falta señal.",
-      "consejo": "Vale también para lo contrario: un campo que parece editable y no lo es.",
-      "senales": [
-        "no sabía que podía escribir",
-        "creí que era editable",
-        "¿estoy editando?"
-      ],
-      "salioDe": "Principio de visibilidad del estado del sistema."
-    },
-    {
-      "id": "perder-el-trabajo-al-navegar",
-      "titulo": "Se toca un enlace y se pierde lo escrito",
-      "gravedad": "alta",
-      "sintoma": "Un clic accidental borra media hora de trabajo.",
-      "causa": "No hay aviso al salir con cambios sin guardar.",
-      "porque": "El aviso es molesto cuando no hay cambios, y distinguirlo exige llevar la cuenta.",
-      "arreglo": "Avisar sólo si hay cambios sin guardar, y guardar un borrador local mientras tanto.",
-      "comoCazarlo": "Escribir y navegar a otra página sin guardar.",
-      "consejo": "El borrador local es mejor que el aviso: no interrumpe y salva igual.",
-      "senales": [
-        "se perdió todo",
-        "le di sin querer y se borró",
-        "no me avisó"
-      ],
-      "salioDe": "La misma regla de los formularios: nunca se pierde lo que la persona escribió."
-    },
-    {
-      "id": "dos-personas-editando-lo-mismo",
-      "titulo": "El último que guarda pisa al otro",
-      "gravedad": "alta",
-      "sintoma": "Alguien pierde su trabajo porque otra persona guardó después.",
-      "causa": "No hay detección de conflicto: se guarda encima.",
-      "porque": "Con un solo editor el caso no existe y añadir versiones es trabajo.",
-      "arreglo": "Detectar que la versión cambió y ofrecer resolver, en vez de pisar en silencio.",
-      "comoCazarlo": "Abrir el mismo documento en dos ventanas y guardar en las dos.",
-      "consejo": "Aunque no haya edición colaborativa, dos pestañas de la misma persona ya son dos editores.",
-      "senales": [
-        "me borró los cambios",
-        "se perdió lo que hice",
-        "el otro guardó encima"
-      ],
-      "salioDe": "El mismo patrón de conflicto que se maneja al publicar sobre una versión más nueva."
-    },
-    {
-      "id": "deshacer-que-no-llega-a-lo-importante",
-      "titulo": "Deshacer sólo funciona para el texto",
-      "gravedad": "media",
-      "sintoma": "Se puede deshacer lo escrito pero no borrar un elemento por error.",
-      "causa": "El historial cubre sólo una parte de las acciones.",
-      "porque": "El texto lo deshace el navegador solo; el resto hay que implementarlo.",
-      "arreglo": "Un historial que cubra las acciones destructivas, que son las que importan.",
-      "comoCazarlo": "Hacer las cinco acciones más destructivas e intentar deshacerlas.",
-      "consejo": "Si sólo se puede implementar una, que sea la de borrar.",
-      "senales": [
-        "no puedo deshacer eso",
-        "borré sin querer",
-        "el ctrl+z no sirve aquí"
-      ],
-      "salioDe": "La neurona de deshacer mejor que confirmar, del área de carga mental."
-    },
-    {
-      "id": "titulos-que-no-son-marcador",
-      "titulo": "«Sólo títulos» no toca nada en presentaciones hechas con cuadros sueltos",
-      "gravedad": "alta",
-      "sintoma": "Cambiar el color de los títulos en todas las láminas dice que salió bien y no cambia ni uno.",
-      "causa": "Los títulos se buscaban por el marcador de título (<p:ph type=\"title\">). Lo que sale de Canva, Google, pptxgenjs o python-pptx suele ser todo cuadro de texto suelto: no hay marcador.",
-      "porque": "Probado con una presentación hecha en PowerPoint, funciona; con una generada, cuenta cero y nadie se entera.",
-      "arreglo": "Si la lámina no trae título formal, cuenta como título el cuadro con la letra más grande (20 pt o más). Está en cuerposDeTexto() de presentaciones/nucleo.js.",
-      "comoCazarlo": "Las operaciones en lote regresan cuántas cosas tocaron. Una prueba que exige ese número mayor que cero contra un archivo real lo caza al instante.",
-      "consejo": "Una operación en lote que toca cero cosas no salió bien: salió vacía. Hay que contar y decirlo.",
-      "senales": [
-        "no cambiaron los títulos",
-        "dice listo y no hizo nada",
-        "solo titulos no funciona"
-      ],
-      "salioDe": "presentaciones/pruebas-nucleo.mjs: «color de títulos» daba 0 en las dos presentaciones de Fadori."
-    },
-    {
-      "id": "replacechildren-escribe-null",
-      "titulo": "Sale la palabra «null» pegada entre los botones",
-      "gravedad": "media",
-      "sintoma": "Una barra de botones que se arma según el caso enseña el texto «null» entre dos botones, justo donde iba uno que no aplicaba.",
-      "causa": "replaceChildren(a, cond ? b : null, c) convierte cada argumento que no es nodo en texto: null → «null», undefined → «undefined».",
-      "porque": "El mismo patrón funciona en funciones propias tipo h() que ignoran los null, así que se escribe igual sin pensar; el DOM nativo no los ignora.",
-      "arreglo": "Filtrar antes: el.replaceChildren(...[a, cond ? b : null, c].filter(Boolean)).",
-      "comoCazarlo": "En la prueba de pantalla, exigir que el textContent de la barra no contenga «null» ni «undefined» con el elemento que tiene MENOS botones.",
-      "consejo": "Los null que tu helper se come, el DOM te los escribe.",
-      "senales": [
-        "dice null",
-        "aparece null en la pantalla",
-        "texto undefined entre botones",
-        "sale la palabra null"
-      ],
-      "salioDe": "La barra del elemento en Presentaciones, 25 de septiembre: la vio la captura, no una prueba."
-    },
-    {
-      "id": "vista-que-dibuja-cuadros",
-      "titulo": "La estrella que pusiste se ve como un cuadro",
-      "gravedad": "media",
-      "sintoma": "Se inserta una estrella, flecha o corazón y en la vista de la herramienta sale un rectángulo del mismo color. Al abrir el PowerPoint, la forma está bien.",
-      "causa": "La vista pinta cada forma como un div y sólo sabía de rectángulos, redondeados y elipses. La geometría (prstGeom) se leía y se ignoraba.",
-      "porque": "Las pruebas miraban el ARCHIVO (geo = star5) y el archivo estaba bien. Lo que mentía era la pantalla, y ninguna prueba medía la silueta.",
-      "arreglo": "clip-path: polygon(…) por geometría en presentaciones/vista.js (RECORTE); dona con mask radial; nube y cilindro con border-radius.",
-      "comoCazarlo": "Mirar la captura de cada forma nueva que se ofrezca en el menú; si se agrega una forma a FORMAS, se agrega su recorte.",
-      "consejo": "Si ofreces veinte formas, la vista tiene que saber dibujar veinte formas.",
-      "senales": [
-        "la estrella sale cuadrada",
-        "se ve como cuadro",
-        "la flecha no se ve",
-        "la forma no se ve bien en la vista"
-      ],
-      "salioDe": "Captura de «Mis elementos» en Presentaciones, 25 de septiembre."
-    },
-    {
-      "id": "grafica-compartida-al-duplicar",
-      "titulo": "Cambié la gráfica de una lámina y cambió también la de otra",
-      "gravedad": "alta",
-      "sintoma": "Se duplica una lámina que tiene una gráfica, se editan los datos de la copia, y la gráfica de la lámina original cambia igual.",
-      "causa": "Duplicar una lámina copia sus relaciones: las dos láminas apuntan a la MISMA parte ppt/charts/chartN.xml. Editar esa parte cambia las dos.",
-      "porque": "El duplicado se ve perfecto y las dos gráficas se ven iguales —porque son la misma—. Sólo se nota al editar una.",
-      "arreglo": "Antes de escribir una gráfica, ver si otra lámina la usa; si sí, se escribe una parte nueva y se re-apunta sólo esta lámina (ponerGrafica en presentaciones/nucleo.js).",
-      "comoCazarlo": "Prueba: duplicar la lámina, editar la copia y exigir que la original conserve su tipo y datos.",
-      "consejo": "Duplicar en un .pptx copia punteros, no objetos.",
-      "senales": [
-        "cambie una grafica y cambio la otra",
-        "la grafica duplicada se cambia sola",
-        "editar la copia cambia la original"
-      ],
-      "salioDe": "Gráficas de Presentaciones, 25 de septiembre. La skill de pptx lo advierte para add_slide.py."
-    }
-  ]
+ "area": "edicion",
+ "nombre": "Editar y guardar",
+ "que": "Modo de edición, guardado y pérdida de trabajo: lo que la gente más recuerda cuando sale mal.",
+ "neuronas": [
+  {
+   "id": "no-se-sabe-si-esta-guardado",
+   "titulo": "No hay forma de saber si los cambios se guardaron",
+   "gravedad": "alta",
+   "sintoma": "La gente no se atreve a cerrar la pestaña.",
+   "causa": "El guardado es automático y silencioso, o manual y sin confirmación.",
+   "porque": "Quien lo programó ve la petición y sabe que funciona.",
+   "arreglo": "Un estado visible: guardando, guardado a tal hora, o sin guardar. Y avisar al salir con cambios pendientes.",
+   "comoCazarlo": "Escribir algo y preguntarse, sin mirar el código, si está a salvo.",
+   "consejo": "«Guardado hace un momento» tranquiliza más que un icono que parpadea.",
+   "senales": [
+    "¿ya se guardó?",
+    "no me atrevo a cerrar",
+    "perdí cambios"
+   ],
+   "salioDe": "La regla de no perder lo escrito, del área de interfaz."
+  },
+  {
+   "id": "modo-edicion-que-no-se-distingue",
+   "titulo": "No se nota si se está editando o mirando",
+   "gravedad": "media",
+   "sintoma": "Se escriben cosas creyendo que se está en un buscador, o se intenta escribir donde no se puede.",
+   "causa": "Los dos modos se ven casi igual.",
+   "porque": "Un modo de edición discreto se ve más limpio y elegante.",
+   "arreglo": "Que editar se vea distinto: fondo, borde, cursor, y una salida clara.",
+   "comoCazarlo": "Capturar los dos modos y compararlos. Si cuesta distinguirlos, falta señal.",
+   "consejo": "Vale también para lo contrario: un campo que parece editable y no lo es.",
+   "senales": [
+    "no sabía que podía escribir",
+    "creí que era editable",
+    "¿estoy editando?"
+   ],
+   "salioDe": "Principio de visibilidad del estado del sistema."
+  },
+  {
+   "id": "perder-el-trabajo-al-navegar",
+   "titulo": "Se toca un enlace y se pierde lo escrito",
+   "gravedad": "alta",
+   "sintoma": "Un clic accidental borra media hora de trabajo.",
+   "causa": "No hay aviso al salir con cambios sin guardar.",
+   "porque": "El aviso es molesto cuando no hay cambios, y distinguirlo exige llevar la cuenta.",
+   "arreglo": "Avisar sólo si hay cambios sin guardar, y guardar un borrador local mientras tanto.",
+   "comoCazarlo": "Escribir y navegar a otra página sin guardar.",
+   "consejo": "El borrador local es mejor que el aviso: no interrumpe y salva igual.",
+   "senales": [
+    "se perdió todo",
+    "le di sin querer y se borró",
+    "no me avisó"
+   ],
+   "salioDe": "La misma regla de los formularios: nunca se pierde lo que la persona escribió."
+  },
+  {
+   "id": "dos-personas-editando-lo-mismo",
+   "titulo": "El último que guarda pisa al otro",
+   "gravedad": "alta",
+   "sintoma": "Alguien pierde su trabajo porque otra persona guardó después.",
+   "causa": "No hay detección de conflicto: se guarda encima.",
+   "porque": "Con un solo editor el caso no existe y añadir versiones es trabajo.",
+   "arreglo": "Detectar que la versión cambió y ofrecer resolver, en vez de pisar en silencio.",
+   "comoCazarlo": "Abrir el mismo documento en dos ventanas y guardar en las dos.",
+   "consejo": "Aunque no haya edición colaborativa, dos pestañas de la misma persona ya son dos editores.",
+   "senales": [
+    "me borró los cambios",
+    "se perdió lo que hice",
+    "el otro guardó encima"
+   ],
+   "salioDe": "El mismo patrón de conflicto que se maneja al publicar sobre una versión más nueva."
+  },
+  {
+   "id": "deshacer-que-no-llega-a-lo-importante",
+   "titulo": "Deshacer sólo funciona para el texto",
+   "gravedad": "media",
+   "sintoma": "Se puede deshacer lo escrito pero no borrar un elemento por error.",
+   "causa": "El historial cubre sólo una parte de las acciones.",
+   "porque": "El texto lo deshace el navegador solo; el resto hay que implementarlo.",
+   "arreglo": "Un historial que cubra las acciones destructivas, que son las que importan.",
+   "comoCazarlo": "Hacer las cinco acciones más destructivas e intentar deshacerlas.",
+   "consejo": "Si sólo se puede implementar una, que sea la de borrar.",
+   "senales": [
+    "no puedo deshacer eso",
+    "borré sin querer",
+    "el ctrl+z no sirve aquí"
+   ],
+   "salioDe": "La neurona de deshacer mejor que confirmar, del área de carga mental."
+  },
+  {
+   "id": "titulos-que-no-son-marcador",
+   "titulo": "«Sólo títulos» no toca nada en presentaciones hechas con cuadros sueltos",
+   "gravedad": "alta",
+   "sintoma": "Cambiar el color de los títulos en todas las láminas dice que salió bien y no cambia ni uno.",
+   "causa": "Los títulos se buscaban por el marcador de título (<p:ph type=\"title\">). Lo que sale de Canva, Google, pptxgenjs o python-pptx suele ser todo cuadro de texto suelto: no hay marcador.",
+   "porque": "Probado con una presentación hecha en PowerPoint, funciona; con una generada, cuenta cero y nadie se entera.",
+   "arreglo": "Si la lámina no trae título formal, cuenta como título el cuadro con la letra más grande (20 pt o más). Está en cuerposDeTexto() de presentaciones/nucleo.js.",
+   "comoCazarlo": "Las operaciones en lote regresan cuántas cosas tocaron. Una prueba que exige ese número mayor que cero contra un archivo real lo caza al instante.",
+   "consejo": "Una operación en lote que toca cero cosas no salió bien: salió vacía. Hay que contar y decirlo.",
+   "senales": [
+    "no cambiaron los títulos",
+    "dice listo y no hizo nada",
+    "solo titulos no funciona"
+   ],
+   "salioDe": "presentaciones/pruebas-nucleo.mjs: «color de títulos» daba 0 en las dos presentaciones de Fadori."
+  },
+  {
+   "id": "replacechildren-escribe-null",
+   "titulo": "Sale la palabra «null» pegada entre los botones",
+   "gravedad": "media",
+   "sintoma": "Una barra de botones que se arma según el caso enseña el texto «null» entre dos botones, justo donde iba uno que no aplicaba.",
+   "causa": "replaceChildren(a, cond ? b : null, c) convierte cada argumento que no es nodo en texto: null → «null», undefined → «undefined».",
+   "porque": "El mismo patrón funciona en funciones propias tipo h() que ignoran los null, así que se escribe igual sin pensar; el DOM nativo no los ignora.",
+   "arreglo": "Filtrar antes: el.replaceChildren(...[a, cond ? b : null, c].filter(Boolean)).",
+   "comoCazarlo": "En la prueba de pantalla, exigir que el textContent de la barra no contenga «null» ni «undefined» con el elemento que tiene MENOS botones.",
+   "consejo": "Los null que tu helper se come, el DOM te los escribe.",
+   "senales": [
+    "dice null",
+    "aparece null en la pantalla",
+    "texto undefined entre botones",
+    "sale la palabra null"
+   ],
+   "salioDe": "La barra del elemento en Presentaciones, 25 de septiembre: la vio la captura, no una prueba."
+  },
+  {
+   "id": "vista-que-dibuja-cuadros",
+   "titulo": "La estrella que pusiste se ve como un cuadro",
+   "gravedad": "media",
+   "sintoma": "Se inserta una estrella, flecha o corazón y en la vista de la herramienta sale un rectángulo del mismo color. Al abrir el PowerPoint, la forma está bien.",
+   "causa": "La vista pinta cada forma como un div y sólo sabía de rectángulos, redondeados y elipses. La geometría (prstGeom) se leía y se ignoraba.",
+   "porque": "Las pruebas miraban el ARCHIVO (geo = star5) y el archivo estaba bien. Lo que mentía era la pantalla, y ninguna prueba medía la silueta.",
+   "arreglo": "clip-path: polygon(…) por geometría en presentaciones/vista.js (RECORTE); dona con mask radial; nube y cilindro con border-radius.",
+   "comoCazarlo": "Mirar la captura de cada forma nueva que se ofrezca en el menú; si se agrega una forma a FORMAS, se agrega su recorte.",
+   "consejo": "Si ofreces veinte formas, la vista tiene que saber dibujar veinte formas.",
+   "senales": [
+    "la estrella sale cuadrada",
+    "se ve como cuadro",
+    "la flecha no se ve",
+    "la forma no se ve bien en la vista"
+   ],
+   "salioDe": "Captura de «Mis elementos» en Presentaciones, 25 de septiembre."
+  },
+  {
+   "id": "grafica-compartida-al-duplicar",
+   "titulo": "Cambié la gráfica de una lámina y cambió también la de otra",
+   "gravedad": "alta",
+   "sintoma": "Se duplica una lámina que tiene una gráfica, se editan los datos de la copia, y la gráfica de la lámina original cambia igual.",
+   "causa": "Duplicar una lámina copia sus relaciones: las dos láminas apuntan a la MISMA parte ppt/charts/chartN.xml. Editar esa parte cambia las dos.",
+   "porque": "El duplicado se ve perfecto y las dos gráficas se ven iguales —porque son la misma—. Sólo se nota al editar una.",
+   "arreglo": "Antes de escribir una gráfica, ver si otra lámina la usa; si sí, se escribe una parte nueva y se re-apunta sólo esta lámina (ponerGrafica en presentaciones/nucleo.js).",
+   "comoCazarlo": "Prueba: duplicar la lámina, editar la copia y exigir que la original conserve su tipo y datos.",
+   "consejo": "Duplicar en un .pptx copia punteros, no objetos.",
+   "senales": [
+    "cambie una grafica y cambio la otra",
+    "la grafica duplicada se cambia sola",
+    "editar la copia cambia la original"
+   ],
+   "salioDe": "Gráficas de Presentaciones, 25 de septiembre. La skill de pptx lo advierte para add_slide.py."
+  },
+  {
+   "id": "desborde-dentro-del-dialogo",
+   "titulo": "El visor se corre de lado en el teléfono y la prueba dice «sin desborde»",
+   "gravedad": "media",
+   "sintoma": "En el iPhone, al abrir una lámina en grande, todo se puede arrastrar de lado y los botones quedan cortados. Las pruebas decían «sin desborde en el visor».",
+   "causa": "La fila de cuatro botones del visor era flex sin wrap: medía 616 px en 390. El visor es un <dialog> con su propio scroll, así que el que se desbordaba era el diálogo, no la página.",
+   "porque": "La prueba medía document.documentElement.scrollWidth, que no ve lo que se sale DENTRO de una ventana con overflow propio.",
+   "arreglo": "presentaciones/index.html: .nav-visor en rejilla que baja de renglón. La prueba ahora mide el borde derecho de todo lo que está en un diálogo abierto.",
+   "comoCazarlo": "pruebas-pantalla.mjs · desborde() recorre dialog[open] * y cuenta lo que se pasa de innerWidth.",
+   "consejo": "Una ventana con su propio scroll es otra página: se mide aparte.",
+   "senales": [
+    "se sale de lado",
+    "se corre la pantalla",
+    "el visor se ve cortado",
+    "botones cortados en el teléfono"
+   ],
+   "salioDe": "Capturas de Carlos del visor «Lámina 1 de 19», 25 de septiembre."
+  },
+  {
+   "id": "toque-tirado-en-transicion",
+   "titulo": "Al presentar, tocar «siguiente» a veces no hace nada",
+   "gravedad": "media",
+   "sintoma": "En Presentar, pasar rápido dos láminas se queda en una. La prueba de la flecha fallaba 1 de cada 2 veces.",
+   "causa": "mostrar() ignoraba callado cualquier pedido mientras la lámina anterior entraba (ocupadoTr), incluidos los 30 ms que tarda en asentarse la primera.",
+   "porque": "Parecía intermitente de la prueba; sin cambios fallaba 3 de 3.",
+   "arreglo": "presentaciones/insertar.js: el pedido durante la transición se guarda (pendiente) y se cumple al terminar.",
+   "comoCazarlo": "Correr pruebas-pantalla.mjs doce veces: 12/12.",
+   "consejo": "Un botón que a veces no hace nada casi nunca es la prueba: es un pedido que se tira.",
+   "senales": [
+    "no pasa de lámina",
+    "presentar se traba",
+    "toco y no avanza"
+   ],
+   "salioDe": "Corriendo las pruebas el 26 de septiembre."
+  }
+ ]
 }

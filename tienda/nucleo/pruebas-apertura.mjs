@@ -35,12 +35,12 @@ async function pagina(extra = {}){
   const ctx = await nav.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, serviceWorkers: 'block', isMobile: true, hasTouch: true, ...extra });
   await ctx.routeWebSocket(/^wss:\/\//, () => {});
   await ctx.route(/^https:\/\//, async (r) => { try{ await r.fulfill({ response: await api.fetch(r.request()) }); }catch{ await r.abort(); } });
-  // Mientras la prueba mira un cuadro (window.__retener), el reloj de 3.3 s
+  // Mientras la prueba mira un cuadro (window.__retener), el reloj de 3.7 s (DURA)
   // que quita la apertura espera.
   await ctx.addInitScript(() => {
     const st = window.setTimeout;
     window.setTimeout = function(f, ms, ...r){
-      if(ms !== 3300 || typeof f !== 'function') return st.call(this, f, ms, ...r);
+      if(ms !== 3700 || typeof f !== 'function') return st.call(this, f, ms, ...r);
       const intenta = () => window.__retener ? st(intenta, 100) : f(...r);
       return st(intenta, ms);
     };
@@ -59,23 +59,28 @@ try{
     await p.waitForSelector('.apertura', { timeout: 30000 });
     ok('la barbería abre con su logo, no con la genérica', await p.locator('.apertura .capa').count() === 9 && !(await p.locator('.presentacion .sello').count()));
     await p.waitForSelector('.apertura.corre', { timeout: 5000 });
-    const cargadas = await p.evaluate(() => [...document.querySelectorAll('.apertura img')].every((i) => i.complete && i.naturalWidth > 1000));
-    ok('las nueve capas cargan (y es cuando arranca)', cargadas);
+    const cargadas = await p.evaluate(() => [...document.querySelectorAll('.apertura img.capa')].every((i) => i.complete && i.naturalWidth > 1000) && [...document.querySelectorAll('.apertura img.pieza')].every((i) => i.complete && i.naturalWidth > 20));
+    ok('las nueve capas y las piezas sueltas cargan (y es cuando arranca)', cargadas);
     // Los cuadros se toman con las animaciones PAUSADAS en el milisegundo
     // exacto: tomar capturas en vivo tarda, y el reloj de la prueba se atrasa
     // contra el de la animación (así salía «la D ya llegó» a los «700 ms»).
     // Y el reloj que la quita a los 3.3 s se detiene mientras se mira.
     await p.evaluate(() => { window.__retener = true; });
-    const cuadros = [250, 700, 1150, 1600, 2100, 2700, 3200];
-    const opacidades = [];
+    const cuadros = [250, 700, 1150, 1600, 2100, 2800, 3550];
+    const opacidades = [], piezasEn = [];
     for(const [n, ms] of cuadros.entries()){
       await p.evaluate((t) => document.getAnimations().forEach((a) => { a.pause(); a.currentTime = t; }), ms);
       await p.waitForTimeout(60);
       opacidades.push(await p.evaluate(() => Object.fromEntries([...document.querySelectorAll('.apertura .capa')].map((i) => [i.classList[1], Number(getComputedStyle(i).opacity).toFixed(2)]))));
+      piezasEn.push(await p.evaluate(() => Object.fromEntries([...document.querySelectorAll('.apertura .pieza')].map((i) => [i.classList[1], Number(getComputedStyle(i).opacity).toFixed(2)]))));
       if(CAP) await p.screenshot({ path: `${CAP}/apertura-${n + 1}.png` });
     }
+    const piezas = await p.evaluate(() => [...document.querySelectorAll('.apertura .pieza')].map((i) => i.className.split(' ')[1]));
+    ok('las piezas sueltas de Carlos (G, D, B, navaja, peine y los dos mangos de las tijeras) están en la apertura', piezas.length === 7, piezas.join());
+    ok('la G que vuela es la pieza ENTERA; la capa cortada aparece al aterrizar', Number(piezasEn[2]['p-g']) > 0.3 && opacidades[2].g === '0.00', JSON.stringify(piezasEn[2]) + JSON.stringify(opacidades[2]));
+    ok('y al final ya no queda ninguna pieza suelta: sólo el logo exacto', Object.values(piezasEn.at(-1)).every((o) => o === '0.00'), JSON.stringify(piezasEn.at(-1)));
     ok('las piezas llegan en orden: la D todavía no está cuando el aro ya se ve', opacidades[1].aro === '1.00' && Number(opacidades[1].d) < 0.2, JSON.stringify(opacidades[1]));
-    ok('a los 3.2 s están todas', Object.values(opacidades.at(-1)).every((o) => o === '1.00'), JSON.stringify(opacidades.at(-1)));
+    ok('a los 3.5 s están todas', Object.values(opacidades.at(-1)).every((o) => o === '1.00'), JSON.stringify(opacidades.at(-1)));
     // El logo armado contra el original: mismo lugar y mismo tamaño en pantalla.
     const dif = await p.evaluate(() => { const c = document.querySelector('.apertura .logo-armado').getBoundingClientRect(); return { caja: [c.x, c.y, c.width, c.height] }; });
     const png = await p.screenshot({ clip: { x: dif.caja[0], y: dif.caja[1], width: dif.caja[2], height: dif.caja[3] } });
