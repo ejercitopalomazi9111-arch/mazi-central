@@ -2,12 +2,16 @@
    LA APERTURA · el logo del negocio se arma al abrir la app
    ──────────────────────────────────────────────────────────────────────────
    Carlos mandó el logo de El Garaje del Barbero y sus piezas «para que hagas
-   la animación de apertura de la app». Se arma así, en ~3 s:
+   la animación de apertura de la app», y después: «que las líneas suban como
+   serpientes y den vueltas antes de ponerse en su lugar, que las tijeras
+   caigan con fuerza y se armen allí, que todo sea más movido». En ~4.5 s:
 
-     disco → el aro se dibuja alrededor → las cuerdas entran girando por los
-     lados → caen las herramientas → la G y la B entran de los lados → la D
-     cae de arriba con un destello → el nombre se escribe a lo largo del
-     arco → el subtítulo → un brillo cruza todo el logo.
+     disco → el aro se dibuja girando → las cuerdas suben culebreando y dan
+     casi dos vueltas → navaja y peine caen de golpe → las tijeras caen con
+     fuerza, rebotan y el otro mango entra girando y se arma con ellas
+     (chispa y sacudón) → la G y la B entran de los lados y rebotan → la D
+     cae con destello → el nombre se escribe en el arco → brillo y un latido.
+   La línea de tiempo vive en estilo.css (.apertura).
 
    DOS juegos de imágenes, y cada uno hace lo que el otro no puede:
    · Las PIEZAS SUELTAS que mandó Carlos (G, D, B, navaja, peine y los dos
@@ -25,7 +29,7 @@
    ═════════════════════════════════════════════════════════════════════════ */
 const CAPAS = ['aro', 'cuerda-izq', 'cuerda-der', 'herramientas', 'g', 'b', 'd', 'titulo', 'subtitulo'];
 const PIEZAS = ['navaja', 'peine', 'tijeras', 'mango', 'g', 'b', 'd'];
-export const DURA = 3700;
+export const DURA = 4600;
 
 /* Qué negocio tiene apertura propia. Se puede poner en la marca del negocio
    (`marca.apertura`) sin tocar código; la barbería de muestra ya la trae. */
@@ -60,6 +64,14 @@ export function apertura(n, { quieto = false } = {}){
       Object.assign(img.style, { left: x.x + '%', top: x.y + '%', width: x.w + '%', height: x.h + '%' });
       img.style.setProperty('--gira', `${x.giro || 0}deg`);
       logo.insertBefore(img, brillo);
+    }
+    // Chispas donde pegan las tijeras (c1) y la navaja (c2).
+    for(const [clase, p] of [['c1', l.tijeras], ['c2', l.navaja]]){
+      if(!p) continue;
+      const c = document.createElement('span');
+      c.className = `chispa ${clase}`;
+      Object.assign(c.style, { left: p.x + p.w / 2 + '%', top: p.y + p.h * 0.85 + '%' });
+      logo.insertBefore(c, brillo);
     }
   });
   return new Promise((listo) => {

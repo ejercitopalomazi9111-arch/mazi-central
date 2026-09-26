@@ -192,57 +192,150 @@ a{ color: inherit; }
   -webkit-mask: var(--logo) center / 100% 100% no-repeat; mask: var(--logo) center / 100% 100% no-repeat;
 }
 .apertura .toca{ opacity: 0; }
-/* Hasta que las capas están listas no corre nada (si no, se animaría en blanco). */
+/* Hasta que las capas están listas no corre nada (si no, se animaría en blanco).
+
+   LA LÍNEA DE TIEMPO · con acción, como la pidió Carlos: «que las líneas suban
+   como serpientes y den vueltas antes de ponerse en su lugar, que las tijeras
+   caigan con fuerza y se armen allí, que todo sea más movido».
+     0.00 s  el disco sale del fondo
+     0.15    el aro se dibuja girando
+     0.35    las cuerdas SUBEN COMO SERPIENTES: zigzag y casi dos vueltas
+     1.15    navaja y peine caen de golpe (un sacudón al pegar)
+     1.45    las TIJERAS caen con fuerza girando, rebotan y el otro mango
+             entra dando la vuelta y se ARMA con ellas (chispa y sacudón)
+     2.05    la G y la B entran de los lados y rebotan (sacudón)
+     2.40    la D cae con destello
+     2.75    el nombre se escribe a lo largo del arco, luego el subtítulo
+     3.55    un brillo cruza todo y el logo late una vez
+   Al final cada pieza suelta se funde con su capa cortada: lo que queda es
+   EXACTAMENTE el logo (lo comprueba pruebas-apertura.mjs pixel a pixel). */
 .apertura.corre .disco{ animation: ap-disco 520ms cubic-bezier(.2,.8,.2,1) both; }
 .apertura.corre .aro{
   -webkit-mask: conic-gradient(from 0deg at 50.09% 50.28%, #000 var(--giro), transparent 0);
   mask: conic-gradient(from 0deg at 50.09% 50.28%, #000 var(--giro), transparent 0);
-  animation: ap-giro 900ms 160ms cubic-bezier(.65,0,.25,1) both, ap-ve 1ms 160ms both;
+  animation: ap-giro 900ms 150ms cubic-bezier(.65,0,.25,1) both, ap-ve 1ms 150ms both, ap-aro-vuelta 900ms 150ms cubic-bezier(.3,.8,.3,1) both;
 }
-.apertura.corre .cuerda-izq{ animation: ap-orbita-izq 760ms 450ms cubic-bezier(.2,.9,.25,1) both; }
-.apertura.corre .cuerda-der{ animation: ap-orbita-der 760ms 450ms cubic-bezier(.2,.9,.25,1) both; }
-.apertura.corre .herramientas{ animation: ap-ve 220ms 1500ms both; }
-/* Las piezas sueltas de Carlos vuelan enteras y, al aterrizar, se funden con
-   su capa del logo (la capa aparece mientras la pieza se va). */
+.apertura.corre .cuerda-izq{ animation: ap-serpiente-izq 1250ms 350ms linear both; }
+.apertura.corre .cuerda-der{ animation: ap-serpiente-der 1250ms 430ms linear both; }
+.apertura.corre .herramientas{ animation: ap-ve 200ms 2020ms both; }
+/* Las piezas sueltas de Carlos: vuelan enteras y se funden con su capa al
+   aterrizar (piezas.py calculó dónde cae cada una). */
 .apertura .pieza{ position: absolute; opacity: 0; pointer-events: none; transform: rotate(var(--gira)); }
-.apertura.corre .p-navaja{ animation: ap-herr 1000ms 620ms cubic-bezier(.3,.9,.4,1) both; }
-.apertura.corre .p-peine{ animation: ap-herr 880ms 740ms cubic-bezier(.3,.9,.4,1) both; }
-.apertura.corre .p-tijeras{ animation: ap-herr 760ms 860ms cubic-bezier(.3,.9,.4,1) both; }
-.apertura.corre .p-mango{ animation: ap-herr 700ms 920ms cubic-bezier(.3,.9,.4,1) both; }
-.apertura.corre .p-g{ animation: ap-pieza-izq 800ms 860ms cubic-bezier(.2,.9,.2,1) both; }
-.apertura.corre .p-b{ animation: ap-pieza-der 800ms 860ms cubic-bezier(.2,.9,.2,1) both; }
-.apertura.corre .p-d{ animation: ap-pieza-d 900ms 1120ms cubic-bezier(.2,1,.3,1) both; }
-.apertura.corre .g, .apertura.corre .b{ animation: ap-ve 220ms 1440ms both; }
-.apertura.corre .d{ animation: ap-ve 220ms 1760ms both; }
+.apertura.corre .p-navaja{ animation: ap-golpe 900ms 1150ms both; }
+.apertura.corre .p-peine{ animation: ap-golpe 900ms 1260ms both; }
+.apertura.corre .p-tijeras{ animation: ap-tijeras 1100ms 1450ms both; }
+.apertura.corre .p-mango{ animation: ap-mango 800ms 1750ms both; }
+.apertura.corre .p-g{ animation: ap-pieza-izq 950ms 2050ms both; }
+.apertura.corre .p-b{ animation: ap-pieza-der 950ms 2050ms both; }
+.apertura.corre .p-d{ animation: ap-pieza-d 900ms 2400ms cubic-bezier(.2,1,.3,1) both; }
+.apertura.corre .g, .apertura.corre .b{ animation: ap-ve 180ms 2800ms both; }
+.apertura.corre .d{ animation: ap-ve 200ms 3080ms both; }
 .apertura.corre .titulo{
   -webkit-mask: conic-gradient(from calc(258deg - var(--giro)) at 50.09% 50.28%, #000 var(--giro), transparent 0);
   mask: conic-gradient(from calc(258deg - var(--giro)) at 50.09% 50.28%, #000 var(--giro), transparent 0);
-  animation: ap-arco 720ms 1780ms cubic-bezier(.45,0,.3,1) both, ap-ve 1ms 1780ms both;
+  animation: ap-arco 720ms 2750ms cubic-bezier(.45,0,.3,1) both, ap-ve 1ms 2750ms both;
 }
 .apertura.corre .subtitulo{
   -webkit-mask: conic-gradient(from calc(258deg - var(--giro)) at 50.09% 50.28%, #000 var(--giro), transparent 0);
   mask: conic-gradient(from calc(258deg - var(--giro)) at 50.09% 50.28%, #000 var(--giro), transparent 0);
-  animation: ap-arco 640ms 2080ms cubic-bezier(.45,0,.3,1) both, ap-ve 1ms 2080ms both;
+  animation: ap-arco 640ms 3050ms cubic-bezier(.45,0,.3,1) both, ap-ve 1ms 3050ms both;
 }
-.apertura.corre .brillo{ animation: ap-brillo 900ms 2600ms ease-in-out both; }
+.apertura.corre .brillo{ animation: ap-brillo 900ms 3550ms ease-in-out both; }
+/* El logo entero se sacude en cada golpe y late al final. */
+.apertura.corre .logo-armado{ animation: ap-sacude 240ms 1580ms both, ap-sacude-fuerte 360ms 1830ms both, ap-sacude 240ms 2620ms both, ap-late 520ms 3700ms cubic-bezier(.3,1.6,.5,1) both; }
+/* Chispas donde pegan las tijeras (apertura.js las pone en su lugar). */
+.apertura .chispa{ position: absolute; width: 22%; aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; opacity: 0; pointer-events: none; mix-blend-mode: plus-lighter;
+  background: radial-gradient(circle, rgb(255 244 214 / .95) 0 8%, rgb(255 196 90 / .7) 18%, transparent 46%), conic-gradient(from 0deg, transparent 0 4%, rgb(255 214 140 / .9) 5% 6%, transparent 7% 16%, rgb(255 214 140 / .8) 17% 18%, transparent 19% 29%, rgb(255 214 140 / .9) 30% 31%, transparent 32% 45%, rgb(255 214 140 / .8) 46% 47%, transparent 48% 61%, rgb(255 214 140 / .9) 62% 63%, transparent 64% 78%, rgb(255 214 140 / .8) 79% 80%, transparent 81%);
+  -webkit-mask: radial-gradient(circle, #000 30%, transparent 70%); mask: radial-gradient(circle, #000 30%, transparent 70%); }
+.apertura.corre .chispa.c1{ animation: ap-chispa 520ms 1830ms ease-out both; }
+.apertura.corre .chispa.c2{ animation: ap-chispa 420ms 1560ms ease-out both; }
 .apertura.corre .toca{ animation: sube 600ms 900ms both; opacity: .5; }
-/* Con «reducir movimiento»: el logo entero, quieto, que aparece y ya. */
+/* «Reducir movimiento»: el logo, quieto. */
 .apertura.quieta.corre .disco, .apertura.quieta.corre .capa{ animation: ap-ve 500ms both; -webkit-mask: none; mask: none; transform: none; }
-.apertura.quieta.corre .brillo{ animation: none; }
+.apertura.quieta.corre .brillo, .apertura.quieta.corre .logo-armado, .apertura.quieta .chispa{ animation: none; }
 @keyframes ap-ve{ to{ opacity: 1; } }
 @keyframes ap-disco{ from{ opacity: 0; transform: scale(.72); } to{ opacity: 1; transform: none; } }
 @keyframes ap-giro{ from{ --giro: 0deg; } to{ --giro: 361deg; } }
 @keyframes ap-arco{ from{ --giro: 0deg; } to{ --giro: 158deg; } }
-@keyframes ap-orbita-izq{ from{ opacity: 0; transform: rotate(-75deg) scale(.92); } to{ opacity: 1; transform: none; } }
-@keyframes ap-orbita-der{ from{ opacity: 0; transform: rotate(75deg) scale(.92); } to{ opacity: 1; transform: none; } }
-@keyframes ap-cae{ from{ opacity: 0; transform: translateY(-26%) scale(.9); } 40%{ opacity: 1; } to{ opacity: 1; transform: none; } }
-@keyframes ap-izq{ from{ opacity: 0; transform: translateX(-42%); filter: blur(6px); } to{ opacity: 1; transform: none; filter: none; } }
-@keyframes ap-der{ from{ opacity: 0; transform: translateX(42%); filter: blur(6px); } to{ opacity: 1; transform: none; filter: none; } }
-@keyframes ap-d{ 0%{ opacity: 0; transform: translateY(-34%) scale(1.5); filter: brightness(3) blur(4px); } 60%{ opacity: 1; filter: brightness(2.2); } to{ opacity: 1; transform: none; filter: none; } }
-@keyframes ap-herr{ 0%{ opacity: 0; transform: translateY(-140%) rotate(calc(var(--gira) - 30deg)); } 45%{ opacity: 1; } 72%{ transform: rotate(var(--gira)); } 88%{ opacity: 1; } 100%{ opacity: 0; transform: rotate(var(--gira)); } }
-@keyframes ap-pieza-izq{ 0%{ opacity: 0; transform: translateX(-140%) rotate(var(--gira)); filter: blur(6px); } 70%{ opacity: 1; transform: rotate(var(--gira)); filter: none; } 80%{ opacity: 1; } 100%{ opacity: 0; transform: rotate(var(--gira)); } }
-@keyframes ap-pieza-der{ 0%{ opacity: 0; transform: translateX(140%) rotate(var(--gira)); filter: blur(6px); } 70%{ opacity: 1; transform: rotate(var(--gira)); filter: none; } 80%{ opacity: 1; } 100%{ opacity: 0; transform: rotate(var(--gira)); } }
-@keyframes ap-pieza-d{ 0%{ opacity: 0; transform: translateY(-90%) scale(1.5); filter: brightness(3) blur(4px); } 60%{ opacity: 1; transform: none; filter: brightness(2); } 78%{ opacity: 1; filter: none; } 100%{ opacity: 0; transform: none; } }
+@keyframes ap-aro-vuelta{ from{ transform: rotate(-200deg) scale(.9); } to{ transform: none; } }
+/* La serpiente: sube desde abajo culebreando (x va y viene), dando casi dos
+   vueltas alrededor del centro, y se asienta con un último coletazo. */
+@keyframes ap-serpiente-izq{
+  0%  { opacity: 0; transform: translate(0, 70%) rotate(-640deg) scale(.55) skewX(0deg); animation-timing-function: cubic-bezier(.3,.6,.5,1); }
+  12% { opacity: 1; }
+  22% { transform: translate(14%, 48%) rotate(-470deg) scale(.68) skewX(14deg); }
+  40% { transform: translate(-13%, 27%) rotate(-300deg) scale(.8) skewX(-14deg); }
+  58% { transform: translate(9%, 11%) rotate(-150deg) scale(.9) skewX(9deg); }
+  74% { transform: translate(-4%, 2%) rotate(-40deg) scale(.97) skewX(-5deg); }
+  86% { transform: translate(1%, 0) rotate(10deg) scale(1.02) skewX(2deg); }
+  94% { transform: rotate(-3deg); }
+  100%{ opacity: 1; transform: none; }
+}
+@keyframes ap-serpiente-der{
+  0%  { opacity: 0; transform: translate(0, 70%) rotate(640deg) scale(.55) skewX(0deg); animation-timing-function: cubic-bezier(.3,.6,.5,1); }
+  12% { opacity: 1; }
+  22% { transform: translate(-14%, 48%) rotate(470deg) scale(.68) skewX(-14deg); }
+  40% { transform: translate(13%, 27%) rotate(300deg) scale(.8) skewX(14deg); }
+  58% { transform: translate(-9%, 11%) rotate(150deg) scale(.9) skewX(-9deg); }
+  74% { transform: translate(4%, 2%) rotate(40deg) scale(.97) skewX(5deg); }
+  86% { transform: translate(-1%, 0) rotate(-10deg) scale(1.02) skewX(-2deg); }
+  94% { transform: rotate(3deg); }
+  100%{ opacity: 1; transform: none; }
+}
+/* Caer de golpe: acelera (ease-in), pega, se aplasta y rebota poquito. */
+@keyframes ap-golpe{
+  0%  { opacity: 0; transform: translateY(-280%) rotate(calc(var(--gira) - 25deg)); animation-timing-function: cubic-bezier(.55,0,1,.45); }
+  8%  { opacity: 1; }
+  48% { transform: translateY(0) rotate(var(--gira)) scale(1.08, .88); animation-timing-function: cubic-bezier(.2,.8,.3,1); }
+  60% { transform: translateY(-9%) rotate(var(--gira)) scale(.96, 1.05); animation-timing-function: cubic-bezier(.6,0,1,.6); }
+  70% { transform: rotate(var(--gira)); }
+  82% { opacity: 1; }
+  100%{ opacity: 0; transform: rotate(var(--gira)); }
+}
+/* Las tijeras: caen desde muy arriba girando dos vueltas, con fuerza. */
+@keyframes ap-tijeras{
+  0%  { opacity: 0; transform: translateY(-420%) rotate(calc(var(--gira) - 720deg)) scale(1.3); animation-timing-function: cubic-bezier(.6,0,1,.5); }
+  6%  { opacity: 1; }
+  34% { transform: translateY(0) rotate(var(--gira)) scale(1.12, .84); animation-timing-function: cubic-bezier(.2,.9,.3,1); }
+  44% { transform: translateY(-16%) rotate(calc(var(--gira) + 6deg)) scale(.95, 1.07); animation-timing-function: cubic-bezier(.6,0,1,.6); }
+  54% { transform: translateY(0) rotate(calc(var(--gira) - 2deg)) scale(1.03, .97); }
+  62% { transform: rotate(var(--gira)); }
+  86% { opacity: 1; transform: rotate(var(--gira)); }
+  100%{ opacity: 0; transform: rotate(var(--gira)); }
+}
+/* El otro mango: entra dando la vuelta desde la derecha y se ARMA con las tijeras. */
+@keyframes ap-mango{
+  0%  { opacity: 0; transform: translate(260%, -120%) rotate(calc(var(--gira) + 300deg)) scale(.7); animation-timing-function: cubic-bezier(.4,0,.9,.6); }
+  10% { opacity: 1; }
+  52% { transform: translate(-12%, 6%) rotate(calc(var(--gira) - 14deg)) scale(1.08); animation-timing-function: cubic-bezier(.2,.9,.3,1); }
+  66% { transform: translate(3%, -2%) rotate(calc(var(--gira) + 5deg)); }
+  76% { transform: rotate(var(--gira)); }
+  82% { opacity: 1; }
+  100%{ opacity: 0; transform: rotate(var(--gira)); }
+}
+@keyframes ap-pieza-izq{
+  0%  { opacity: 0; transform: translateX(-170%) rotate(calc(var(--gira) - 35deg)); filter: blur(6px); animation-timing-function: cubic-bezier(.5,0,.9,.6); }
+  10% { opacity: 1; }
+  52% { transform: translateX(7%) rotate(calc(var(--gira) + 5deg)) scale(1.05, .95); filter: none; animation-timing-function: cubic-bezier(.2,.9,.3,1); }
+  64% { transform: translateX(-3%) rotate(calc(var(--gira) - 2deg)); }
+  74% { transform: rotate(var(--gira)); }
+  84% { opacity: 1; }
+  100%{ opacity: 0; transform: rotate(var(--gira)); }
+}
+@keyframes ap-pieza-der{
+  0%  { opacity: 0; transform: translateX(170%) rotate(calc(var(--gira) + 35deg)); filter: blur(6px); animation-timing-function: cubic-bezier(.5,0,.9,.6); }
+  10% { opacity: 1; }
+  52% { transform: translateX(-7%) rotate(calc(var(--gira) - 5deg)) scale(1.05, .95); filter: none; animation-timing-function: cubic-bezier(.2,.9,.3,1); }
+  64% { transform: translateX(3%) rotate(calc(var(--gira) + 2deg)); }
+  74% { transform: rotate(var(--gira)); }
+  84% { opacity: 1; }
+  100%{ opacity: 0; transform: rotate(var(--gira)); }
+}
+@keyframes ap-pieza-d{ 0%{ opacity: 0; transform: translateY(-110%) scale(1.6); filter: brightness(3) blur(4px); } 55%{ opacity: 1; transform: scale(.94, 1.06); filter: brightness(2.2); } 68%{ transform: none; } 80%{ opacity: 1; filter: none; } 100%{ opacity: 0; transform: none; } }
+@keyframes ap-sacude{ 0%,100%{ transform: none; } 20%{ transform: translate(-1.2%, .8%) rotate(-.6deg); } 45%{ transform: translate(1%, -.6%) rotate(.5deg); } 70%{ transform: translate(-.5%, .3%); } }
+@keyframes ap-sacude-fuerte{ 0%,100%{ transform: none; } 12%{ transform: translate(0, 2.2%) scale(.985); } 28%{ transform: translate(-1.8%, -1%) rotate(-1deg); } 48%{ transform: translate(1.6%, .8%) rotate(.8deg); } 68%{ transform: translate(-.8%, -.4%) rotate(-.3deg); } 84%{ transform: translate(.3%, .2%); } }
+@keyframes ap-late{ 0%,100%{ transform: none; } 45%{ transform: scale(1.045); } }
+@keyframes ap-chispa{ 0%{ opacity: 0; transform: scale(.3) rotate(0deg); } 18%{ opacity: 1; } 100%{ opacity: 0; transform: scale(1.6) rotate(40deg); } }
 @keyframes ap-brillo{ from{ opacity: 1; background-position: 150% 0; } to{ opacity: 1; background-position: -50% 0; } }
 
 /* ── Armazón ───────────────────────────────────────────────────────────── */
