@@ -171,6 +171,45 @@ for(const [nombre, margen] of [['Safari con sus encabezados', SAFARI_PEOR],
      p > hojas ? 'sobran ' + (p - hojas) : '');
 }
 
+/* ── SAFARI NO ACOMODA LAS PÁGINAS CON EL ZOOM · 30 de septiembre ──────────
+   Con la escala del iPhone (0.80) la aritmética de arriba dice que la hoja
+   cabe, y aun así a Carlos le salía «la normal y una en blanco»; se le quitaba
+   bajando a 95 % en el diálogo. O sea: Safari reparte las páginas con la hoja
+   SIN el zoom. Aquí se simula eso —se le quita el zoom a la hoja— y se exige
+   que, con el marco de impresión, cada hoja salga ENTERA en su página: su
+   pie, con el número de página, tiene que estar en la página que le toca. */
+{
+  const pieDe = await page.evaluate(() => [...document.querySelectorAll('.hoja .folio-pie .pagina')].map(e => e.textContent.trim()));
+  const pdfSin = async (envolver) => {
+    await page.evaluate((env) => {
+      const st = document.createElement('style'); st.id = 'como-safari';
+      /* sin marco = como estaba antes: el PDF dispara `beforeprint` y lo pondría
+         solo, así que aquí se anula a mano para medir el «antes» de verdad */
+      st.textContent = '@media print{ .hoja{ zoom:1 !important } }' + (env ? '' :
+        '@media print{ .pagina-imp{display:contents !important} .pagina-imp > .hoja{position:static !important; transform:none !important; break-after:page !important} }');
+      document.head.appendChild(st);
+      if(env) envolverHojas();
+    }, envolver);
+    const buf = await page.pdf({ format:'Letter', printBackground:true, margin:SAFARI_PEOR, preferCSSPageSize:false });
+    await page.evaluate(() => { desenvolverHojas(); document.getElementById('como-safari').remove(); });
+    const f = '/tmp/claude-0/-home-user-mazi-central/617efe1d-4733-537e-8ae2-f3b050e50e7a/scratchpad/safari-sin-zoom.pdf';
+    writeFileSync(f, buf);
+    const pags = paginasDe(buf);
+    const primera = execFileSync('pdftotext', ['-f', '1', '-l', '1', '-layout', f, '-'], { encoding:'utf-8' });
+    return { pags, primera };
+  };
+  const sinMarco = await pdfSin(false);
+  const conMarco = await pdfSin(true);
+  const marca = pieDe[0] || '';
+  ok('SIMULACIÓN válida: sin el marco y sin zoom, el pie de la hoja 1 NO cabe en su página',
+     !sinMarco.primera.includes(marca), 'el pie sí cupo: la simulación no reproduce lo de Safari');
+  ok('con el marco, aunque Safari ignore el zoom, la hoja 1 sale ENTERA (con su pie «' + marca + '»)',
+     !!marca && conMarco.primera.includes(marca), JSON.stringify(marca));
+  ok('y salen tantas páginas como hojas, ni una en blanco', conMarco.pags === hojas, conMarco.pags + ' páginas para ' + hojas + ' hojas');
+  const quedo = await page.evaluate(() => ({ marcos: document.querySelectorAll('.pagina-imp').length, hojas: document.querySelectorAll('#pila > .hoja').length }));
+  ok('al terminar, las hojas vuelven a su lugar (sin marcos colgados)', quedo.marcos === 0 && quedo.hojas === hojas, JSON.stringify(quedo));
+}
+
 /* ── QUÉ IMPRIME EL BOTÓN DESDE CADA PESTAÑA ──────────────────────────
    Carlos: «revisa que no siempre imprime lo que corresponde el botón de
    imprimir». Hay OCHO pestañas y el botón de la barra se ve desde todas, así

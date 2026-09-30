@@ -737,6 +737,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
    eso seguiría desbordando. */
 @page{size:letter portrait; margin:0}
 #impresora{display:none}
+.pagina-imp{display:contents}
 /* El aviso de fecha vieja. Va PEGADO al campo, no en una barra arriba: un
    aviso lejos del error se ignora. */
 .fecha-vieja{
@@ -952,6 +953,23 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
   }
 
   .hoja:last-child{break-after:auto; page-break-after:auto}
+  /* EL MARCO DE CADA PÁGINA · 30 de septiembre.
+     Carlos seguía viendo «la normal y una en blanco» con la escala del iPhone
+     (0.80), y se le quitaba bajando a 95 % en el diálogo de impresión. La
+     aritmética decía que la hoja al 80 % cabía de sobra; lo que fallaba es que
+     Safari reparte las páginas con el alto de la hoja SIN el `zoom`: para él
+     seguía midiendo 279.4 mm, no cabía, y arrastraba una página en blanco.
+     Ahora, al imprimir, cada hoja va dentro de un marco que YA mide lo que va
+     a medir impresa (alto × escala) y adentro se encoge con `transform`, que
+     no depende de cómo trate cada navegador el `zoom`. El marco cabe: no hay
+     nada que partir. */
+  .pagina-imp{display:block; position:relative; overflow:hidden; margin:0 auto;
+    width:calc(215.9mm * var(--imp, .8)); height:calc(279.4mm * var(--imp, .8));
+    break-inside:avoid; page-break-inside:avoid; break-after:page; page-break-after:always}
+  .pagina-imp:last-child{break-after:auto; page-break-after:auto}
+  .pagina-imp > .hoja{position:absolute; left:0; top:0; margin:0 !important; zoom:1 !important;
+    transform:scale(var(--imp, .8)); transform-origin:0 0;
+    break-after:auto !important; page-break-after:auto !important}
   .pliego{box-shadow:none; margin:0 auto; break-after:page; page-break-after:always;
     break-inside:avoid; page-break-inside:avoid}
   .pliego:last-child{break-after:auto; page-break-after:auto}
@@ -4550,6 +4568,24 @@ $$('.modo').forEach(b => b.addEventListener('click', () => verVista(primeraDe(b.
 $('#bMas').addEventListener('click', () => { zoomAuto=false; zoom=Math.min(2, zoom+.1); aplicarZoom(); });
 $('#bMenos').addEventListener('click', () => { zoomAuto=false; zoom=Math.max(.2, zoom-.1); aplicarZoom(); });
 $('#bAjustar').addEventListener('click', () => { zoomAuto=true; aplicarZoom(); });
+/* Cada hoja a su marco para imprimir, y de vuelta al terminar (ver el
+   comentario de .pagina-imp en el CSS de impresión). Se hace también con
+   `beforeprint`, para cuando se imprime desde el menú de Safari y no desde
+   el botón. */
+function envolverHojas(){
+  const pila = PILA();
+  if(!pila || document.body.classList.contains('imprime-cred')) return;
+  [...pila.children].filter(h => h.classList.contains('hoja')).forEach(h => {
+    const w = document.createElement('div'); w.className = 'pagina-imp';
+    pila.insertBefore(w, h); w.appendChild(h);
+  });
+}
+function desenvolverHojas(){
+  document.querySelectorAll('.pagina-imp').forEach(w => w.replaceWith(...w.childNodes));
+}
+window.addEventListener('beforeprint', envolverHojas);
+window.addEventListener('afterprint', desenvolverHojas);
+
 function imprimir(){
   /* ⚠️ Si estamos en la pestaña de credenciales, se imprimen LAS
      CREDENCIALES. Antes no: el botón grande de la barra —el único que se ve
@@ -4592,8 +4628,9 @@ function imprimir(){
   paginar(R);
   const antes = PILA().style.transform;
   PILA().style.transform = 'none'; PILA().style.height = '';
+  envolverHojas();
   setTimeout(()=>{ window.print();
-    setTimeout(()=>{ PILA().style.transform = antes; aplicarZoom(); }, 300); }, 120);
+    setTimeout(()=>{ desenvolverHojas(); PILA().style.transform = antes; aplicarZoom(); }, 300); }, 120);
 }
 $('#bImprimir').addEventListener('click', imprimir);
 $('#bImprimir2').addEventListener('click', imprimir);
