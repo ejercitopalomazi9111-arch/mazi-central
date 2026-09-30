@@ -265,17 +265,17 @@
     },
     {
       "id": "load-failed-por-brincar-de-direccion",
-      "titulo": "«Load failed» en el iPhone con el servidor sano: la página le hablaba a OTRA dirección",
+      "titulo": "«Load failed» en el iPhone con el servidor sano: la página se abría desde github.io y La Sala la rechazaba",
       "gravedad": "alta",
       "sintoma": "En Presentaciones, Gemini, Groq y el banco dicen «No hay conexión con La Sala (TypeError: Load failed)» en el iPhone de Carlos, y desde aquí el mismo servidor contesta 200 en medio segundo con CORS bien puesto.",
-      "causa": "La página vive en mazi-central.palomazi9111.workers.dev y le hablaba a sala.palomazi9111.workers.dev. workers.dev está en la lista de sufijos públicos: para Safari son DOS sitios, y cualquier cosa que se atraviese entre ellos (bloqueador, relevo privado, respuesta sin permiso de CORS como el 403 «Desde ahí no.») sale como «Load failed», sin más detalle. Ni la vía normal ni la «sencilla» con la llave en la dirección lo salvaban.",
-      "porque": "Un error de red en Safari no dice cuál fue la causa, y desde el contenedor no se puede reproducir el teléfono. Perseguir la causa exacta era adivinar; quitar el brinco la elimina entera.",
-      "arreglo": "puerta.js en la raíz: la Central ya no es sólo archivos, trae un worker mínimo con enlace de servicio (services → sala) que pasa /api/sala/* a La Sala por dentro de Cloudflare. presentaciones/ia.js prueba primero su propia dirección y sólo si la puerta no contesta con X-Puerta: sala cae a la directa. Lo de casa entra sin Origin; lo de fuera sigue revisándose.",
+      "causa": "CORREGIDO la misma tarde. Carlos abre la Central desde GitHub Pages (ejercitopalomazi9111-arch.github.io), no desde Cloudflare. La Sala sólo aceptaba el origen de Cloudflare y a los demás les contestaba 403 «Desde ahí no.» SIN CORS, así que Safari sólo veía «Load failed». La primera sospecha —que mazi-central y sala son dos sitios para Safari— era cierta pero NO era la causa: la puerta de la Central no sirvió porque github.io no tiene puerta.",
+      "porque": "Desde aquí todas las pruebas se hicieron contra la dirección de Cloudflare, que era la única que funcionaba. Lo cazó la versión del error con detalle: «puerta 404 sin marca · directa Load failed».",
+      "arreglo": "sala/servidor/wrangler.jsonc: ORIGENES suma los dos github.io (cuentas de Carlos). index.js: el 403 de origen ajeno ahora lleva CORS y dice desde dónde, para que la página lo LEA. Se queda la puerta (puerta.js) para quien abre desde Cloudflare.",
       "vecinas": [
         "secreto-en-el-panel-que-el-servidor-no-ve"
       ],
-      "comoCazarlo": "presentaciones/pruebas-pantalla.mjs § «no alcanza la dirección de La Sala»: aborta TODO lo que va a sala.palomazi9111 y exige que el banco abra por la puerta. Con la puerta apagada (mutación) sale rojo. En local: npx wrangler dev -c wrangler.jsonc -c sala/servidor/wrangler.jsonc.",
-      "consejo": "Si una página y su servidor viven en dos direcciones de workers.dev, en el iPhone son dos sitios distintos. Lo que la página necesita, que lo pida a su propia dirección.",
+      "comoCazarlo": "sala/servidor/pruebas.mjs § CORS: un origen ajeno da 403 legible y github.io entra leyendo el wrangler.jsonc real (mutación: quitarlo → rojo). En el teléfono: el error de Presentaciones dice versión, qué hizo la puerta y qué hizo la vía directa. Y ANTES de perseguir un error de red, preguntar desde qué dirección se abrió la página.",
+      "consejo": "Probar desde la MISMA dirección que usa la persona. Si su captura no enseña la barra de direcciones, preguntar o hacer que el error diga location.host.",
       "senales": [
         "load failed",
         "no hay conexión con la sala",
@@ -284,7 +284,11 @@
         "safari",
         "cors",
         "workers.dev",
-        "puerta"
+        "puerta",
+        "github.io",
+        "desde ahí no",
+        "403",
+        "origen"
       ],
       "salioDe": "Carlos, 30 de septiembre: capturas de Presentaciones con Gemini y Groq en «Load failed»."
     }
