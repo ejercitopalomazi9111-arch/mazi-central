@@ -81,8 +81,14 @@ export const MOTORES = {
     nombre: 'Negro',
     figura: 'rayo',
     /* El más rápido que hay y con plan gratis generoso: por eso es el que le
-       toca leer hilos largos, que es lo que Carlos pidió. */
-    modelo: 'llama-3.3-70b-versatile',
+       toca leer hilos largos, que es lo que Carlos pidió.
+       ⚠ 30 de septiembre: `llama-3.3-70b-versatile` ya NO existe en Groq
+       (404 con la llave buena). Lista de /openai/v1/models ese día:
+       gpt-oss-120b, gpt-oss-20b, qwen/qwen3.8-27b y utilitarios. Se probaron
+       los dos grandes con un encargo de Presentaciones; éste corrige mejor el
+       español. Razona antes de contestar, así que va con esfuerzo «low»: con
+       200 de tope gastó 19 en pensar y contestó completo. */
+    modelo: 'openai/gpt-oss-120b',
     llave: 'GROQ_API_KEY',
     url: () => 'https://api.groq.com/openai/v1/chat/completions',
     cabeceras: (k) => ({ 'Authorization': 'Bearer ' + k, 'Content-Type': 'application/json' }),
@@ -94,6 +100,7 @@ export const MOTORES = {
                                          content: m.texto }))],
       max_tokens: tope,
       temperature: 0.4,
+      ...(/gpt-oss/.test(modelo) ? { reasoning_effort: 'low' } : {}),
     }),
     saca: (j) => j?.choices?.[0]?.message?.content ?? '',
   },

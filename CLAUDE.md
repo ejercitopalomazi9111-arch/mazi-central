@@ -309,7 +309,7 @@ dependemos.
    | Lo que recuerdo | Lo que es | Lo que costó |
    |---|---|---|
    | three.js es **un** archivo | desde r185 son **dos**: `three.module.min.js` **y** `three.core.min.js` | la página se quedó en blanco **sin un solo error en consola** |
-   | los modelos de un proveedor los sé de memoria | los siete del relevo tenían el nombre viejo | las 4 llaves daban **404, nunca 401** — parecían llaves malas y estaban bien |
+   | los modelos de un proveedor los sé de memoria | los siete del relevo tenían el nombre viejo | las 4 llaves daban **404, nunca 401** — parecían llaves malas y estaban bien. **Otra vez el 30 de septiembre:** Groq retiró `llama-3.3-70b-versatile` y Negro daba 404 con la llave recién puesta; se lista `/openai/v1/models` antes de culpar a la llave |
    | GLM va en `glm-5.2` | la documentación de Z.ai ya iba en `glm-5.3` | la guía que trajo Carlos **nació desfasada** |
    | Gemini `2.5-*` estable está disponible | cerrado a cuentas nuevas | media hora buscando un error de permisos que no existía |
    | `Math.max(...[])` truena | devuelve **-Infinity**, calladito | un `NaN` que dejó la red del Cerebro en negro **para siempre** |

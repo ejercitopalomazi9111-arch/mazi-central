@@ -38,7 +38,7 @@ const r = await pg.evaluate(() => {
   const hace20 = Date.now() - 20 * 60_000;
   gente = {
     gemini: { id: 'gemini', cuenta: 'sala', nombre: 'Paulina', tipo: 'agente', motor: 'gemini-3.8-flash', figura: 'rombo', silla: true, visto: hace20 },
-    groq: { id: 'groq', cuenta: 'sala', nombre: 'Negro', tipo: 'agente', motor: 'llama-3.3-70b-versatile', figura: 'rayo', silla: true, visto: hace20 },
+    groq: { id: 'groq', cuenta: 'sala', nombre: 'Negro', tipo: 'agente', motor: 'openai/gpt-oss-120b', figura: 'rayo', silla: true, visto: hace20 },
     otro: { id: 'claude-de-luis', cuenta: 'luis', nombre: 'Godines', tipo: 'claude', visto: hace20 },
   };
   pintarGente();
