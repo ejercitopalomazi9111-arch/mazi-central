@@ -379,6 +379,8 @@ export function crearBanco(U){
           }catch(e){ aviso(e.message, 'mal'); } finally{ ocupado(''); }
         } } }, '✦ Describir con IA')),
       h('div', { style: { height: '8px' } }),
+      h('button', { class: 'btn ancho', type: 'button', on: { click: () => sinFondo(f) } }, '✂ Quitar el fondo'),
+      h('div', { style: { height: '8px' } }),
       h('div', { class: 'fila dos' },
         h('button', { class: 'btn', type: 'button', on: { click: async () => {
           const b = await IA.banco.bytes(id); const u = URL.createObjectURL(b.blob);
@@ -392,6 +394,26 @@ export function crearBanco(U){
           catch(err){ aviso(err.message, 'mal'); } finally{ ocupado(''); }
         } } }, 'Borrar del banco')),
     ]);
+  }
+  /* Quitar el fondo (recorte.js): la versión sin fondo entra como ficha NUEVA,
+     con los mismos datos, y la original se queda igual — como «hacer cambios». */
+  async function sinFondo(f){
+    try{
+      const b = await IA.banco.bytes(f.id);
+      const RC = await import('./recorte.js');
+      const r = await RC.recortar(b.blob, { titulo: 'Quitar el fondo' });
+      if(!r) return;
+      ocupado('Guardando la versión sin fondo…');
+      const mini = await IA.ajustar(r.bytes, 'image/png', { max: 480 }).catch(() => null);
+      const nueva = await IA.banco.subir({ nombre: f.nombre.replace(/(\.[a-z0-9]+)?$/i, ' (sin fondo).png'), mime: 'image/png', datos: IA.aB64(r.bytes), mini: mini ? IA.aB64(mini.bytes) : undefined, ancho: r.ancho, alto: r.alto, origen: f.id,
+        campos: { titulo: `${f.titulo || f.nombre} (sin fondo)`, descripcion: f.descripcion, temas: f.temas, palabras: [...new Set([...(f.palabras || []), 'sin fondo', 'png'])], carpeta: f.carpeta, notas: `Sin fondo, hecha desde «${f.titulo || f.nombre}».` + (f.notas ? `\n${f.notas}` : '') } });
+      if(mini) minis.set(nueva.id, URL.createObjectURL(new Blob([mini.bytes], { type: mini.mime || 'image/png' })));
+      fichas.unshift(nueva);
+      ocupado('');
+      aviso('Versión sin fondo en el banco. La original se queda igual.', 'bien', { ms: 7000 });
+      abrirFicha(nueva.id);
+      pintar();
+    }catch(e){ ocupado(''); aviso(e.message, 'mal', { ms: 9000 }); }
   }
   /* «Requiere cambios» + lo que le falta → Paulina hace una versión nueva. La
      vieja NO se toca: la nueva entra al banco como otra ficha, sin revisar,

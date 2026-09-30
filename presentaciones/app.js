@@ -483,6 +483,17 @@ async function panelImagenes(){
 async function medidas(ruta){
   try{ const i = await IA.cargar(await N.urlDe(D, ruta)); return { ancho: i.naturalWidth, alto: i.naturalHeight }; }catch{ return { ancho: 4, alto: 3 }; }
 }
+/* Quitar el fondo de una imagen de la presentación (recorte.js). Se queda del
+   MISMO tamaño —sin recortar al contenido— para que no se estire en su hueco. */
+async function quitarFondoA(im, { soloLamina = null } = {}){
+  const blob = await (await fetch(await N.urlDe(D, im.ruta))).blob();
+  const RC = await import('./recorte.js');
+  const r = await RC.recortar(blob, { recortarAlContenido: false });
+  if(!r) return false;
+  if(soloLamina != null) await aplicar('Quitar fondo', () => N.cambiarImagenEn(D, soloLamina, im.ruta, r), 'Fondo quitado en esa lámina.');
+  else await aplicar('Quitar fondo', () => N.cambiarImagen(D, im.ruta, r), im.laminas.length > 1 ? `Fondo quitado en las ${im.laminas.length} láminas donde sale.` : 'Fondo quitado.');
+  return true;
+}
 async function panelUnaImagen(im, { soloLamina = null } = {}){
   const u = await N.urlDe(D, im.ruta), med = await medidas(im.ruta);
   const donde = soloLamina != null ? `sólo en la lámina ${soloLamina + 1}` : `en ${plural(im.laminas.length, 'lámina', 'láminas')}`;
@@ -496,6 +507,8 @@ async function panelUnaImagen(im, { soloLamina = null } = {}){
       if(soloLamina != null) await aplicar('Imagen', () => N.cambiarImagenEn(D, soloLamina, im.ruta, r), 'Imagen cambiada en esa lámina.');
       else await aplicar('Imagen', () => N.cambiarImagen(D, im.ruta, r), `Imagen cambiada ${donde}.`);
     } } }, 'Cambiar por otra…'),
+    h('div', { style: { height: '8px' } }),
+    h('button', { class: 'btn ancho', type: 'button', on: { click: async () => { cerrar('#hoja'); await quitarFondoA(im, { soloLamina }); } } }, '✂ Quitar el fondo'),
     h('div', { style: { height: '8px' } }),
     h('button', { class: 'btn ancho', type: 'button', on: { click: async () => {
       const obj = soloLamina != null ? [soloLamina] : objetivo();
@@ -1046,6 +1059,7 @@ function pintarBarraElemento(cid){
     boton('tamano', '⤢ Tamaño'),
     boton('enlace', c.enlace ? '🔗 Cambiar enlace' : '🔗 Enlace'),
     c.imagen && !c.icono ? boton('imagen', '⇄ Cambiar imagen') : null,
+    c.imagen && !c.icono ? boton('fondo', '✂ Quitar fondo') : null,
     boton('duplicar', '⧉ Duplicar'), boton('frente', '↑ Al frente'), boton('atras', '↓ Atrás'),
     boton('guardar', '★ A mis elementos'),
     boton('borrar', '🗑 Borrar', { class: 'chip peligro' })].filter(Boolean));
@@ -1073,6 +1087,12 @@ async function accionElemento(acc){
     } } }, 'Guardar')], '#hoja2');
     requestAnimationFrame(() => { area.focus(); area.select(); });
     return;
+  }
+  if(acc === 'fondo'){
+    const f = modeloVisor?.formas.find((x) => x.cid === cid && x.rutaImagen);
+    const im = f && (await N.imagenes(D)).find((x) => x.ruta === f.rutaImagen);
+    if(im) await quitarFondoA(im, { soloLamina: im.laminas.length > 1 ? i : null });
+    return repinta();
   }
   if(acc === 'imagen'){
     const f = modeloVisor?.formas.find((x) => x.cid === cid && x.rutaImagen);
