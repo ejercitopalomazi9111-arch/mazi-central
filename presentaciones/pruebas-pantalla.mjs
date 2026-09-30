@@ -37,7 +37,8 @@ const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAEAAAAAwCAIAAAAuKetIAAAAUklEQVR4nO3PQQ3AIAD
 const b = await chromium.launch();
 let sinGemini = false;
 let safariTerco = false;
-const pedidos = [];
+let puertaViva = false, salaInalcanzable = false;
+const pedidos = [], porLaPuerta = [];
 async function pagina(ancho, alto){
   const ctx = await b.newContext({ viewport: { width: ancho, height: alto }, acceptDownloads: true, serviceWorkers: 'block' });
   await ctx.addInitScript(() => { try{ if(!sessionStorage.getItem('limpio')){ localStorage.setItem('salaLlave', 'llave-de-prueba'); indexedDB.deleteDatabase('presentaciones'); sessionStorage.setItem('limpio', '1'); } }catch(e){} });
@@ -49,7 +50,18 @@ async function pagina(ancho, alto){
     async put(k, v){ if(typeof k === 'object') for(const [a, b] of Object.entries(k)) guardado.set(a, b); else guardado.set(k, v); },
     async delete(k){ for(const x of [].concat(k)) guardado.delete(x); },
   };
+  /* La puerta de la Central (puerta.js): la misma dirección de la página. */
+  await ctx.route(/localhost:\d+\/api\/sala\//, async (r) => {
+    if(!puertaViva) return r.fulfill({ status: 404, body: '' });   // como los archivos de dist/ sin la puerta
+    const u = r.request().url();
+    porLaPuerta.push({ u, llave: r.request().headers()['x-llave'] });
+    const body = /motores/.test(u) ? { bien: true, vivos: [{ id: 'gemini', nombre: 'Paulina' }, { id: 'groq', nombre: 'Negro' }], apagados: [] }
+      : /banco/.test(u) ? { bien: true, fichas: [] } : { bien: true };
+    return r.fulfill({ contentType: 'application/json', headers: { 'X-Puerta': 'sala' }, body: JSON.stringify(body) });
+  });
   await ctx.route(/sala\.palomazi9111\.workers\.dev/, async (r) => {
+    // El iPhone de Carlos el 30 de septiembre: la dirección de La Sala ni se alcanza.
+    if(salaInalcanzable) return r.abort('failed');
     const u = r.request().url(), cuerpo = r.request().postDataJSON?.() || null;
     pedidos.push({ u, cuerpo, llave: r.request().headers()['x-llave'] });
     // Como el Safari del iPhone de Carlos: toda petición con la cabecera X-Llave muere antes de salir.
@@ -131,7 +143,9 @@ async function pagina(ancho, alto){
   });
   const p = await ctx.newPage();
   const errores = []; p.on('pageerror', (e) => errores.push(e.message));
-  p.on('console', (m) => { if(m.type() === 'error' && !/status of 503/.test(m.text())) errores.push(m.text()); });
+  /* El 404 de la puerta cuando no está puesta es a propósito: así sabe la
+     página que tiene que irse por la dirección directa. */
+  p.on('console', (m) => { if(m.type() === 'error' && !/status of 503/.test(m.text()) && !(/status of 404/.test(m.text()) && /\/api\/sala\//.test(m.location()?.url || ''))) errores.push(m.text()); });
   await p.goto(BASE);
   return { p, ctx, errores };
 }
@@ -843,6 +857,16 @@ await t.p.waitForSelector('#banco:not([hidden]) .banco-cab', { timeout: 10000 })
 const lasDeBanco = pedidos.filter((x) => /\/banco/.test(x.u)).slice(-2);
 ok('el banco abre igual: reintenta con la llave en la dirección (sin la cabecera)', await t.p.locator('#banco .banco-cab').count() === 1 && /[?&]llave=llave-de-prueba/.test(lasDeBanco.at(-1)?.u || ''), (await t.p.locator('#banco').textContent()).slice(0, 120));
 safariTerco = false;
+
+console.log('\n· Cuando el teléfono no alcanza la dirección de La Sala: entra por la puerta de la Central');
+puertaViva = true; salaInalcanzable = true;
+const pu = await pagina(390, 844);
+await pu.p.click('.vistas [data-vista="banco"]');
+await pu.p.waitForSelector('#banco:not([hidden]) .banco-cab', { timeout: 10000 }).catch(() => {});
+ok('el banco abre por la puerta, sin tocar la otra dirección', await pu.p.locator('#banco .banco-cab').count() === 1 && porLaPuerta.some((x) => /\/api\/sala\/GRUPAZ\/banco/.test(x.u)), JSON.stringify(porLaPuerta.slice(-2)));
+ok('por la puerta la llave va en su cabecera', porLaPuerta.every((x) => x.llave === 'llave-de-prueba'));
+ok('ni un «Load failed» en la página', !/Load failed|No hay conexión/.test(await pu.p.locator('body').textContent()));
+puertaViva = false; salaInalcanzable = false;
 
 console.log('\n· Computadora (1280×800)');
 const c = await pagina(1280, 800);

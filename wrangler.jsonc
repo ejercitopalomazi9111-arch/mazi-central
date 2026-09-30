@@ -18,9 +18,17 @@
   // CLAUDE.md con cosas del negocio y el código del servidor. La lista de lo
   // que sí va está en `build.mjs`, a la vista.
   "build": { "command": "node build.mjs" },
+  // La puerta (puerta.js): sólo despierta con lo que NO es archivo, y le
+  // pasa `/api/sala/…` a La Sala por dentro de Cloudflare. Así Presentaciones
+  // le habla a su misma dirección y el iPhone no tiene «otro sitio» que
+  // bloquear («Load failed», 30 de septiembre). Sólo va la pieza de la
+  // puerta: el servidor de La Sala sigue siendo su proyecto aparte.
+  "main": "puerta.js",
   "assets": {
     "directory": "dist",
+    "binding": "ASSETS",
     // una URL que no existe devuelve 404 de verdad, no la portada disfrazada
     "not_found_handling": "none"
-  }
+  },
+  "services": [{ "binding": "SALA", "service": "sala" }]
 }

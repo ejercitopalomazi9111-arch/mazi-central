@@ -8,7 +8,15 @@
    abrió en este teléfono, la herramienta entra sola.
    ═════════════════════════════════════════════════════════════════════════ */
 const params = new URLSearchParams(location.search);
-export const SERVIDOR = (params.get('servidor') || 'https://sala.palomazi9111.workers.dev').replace(/\/+$/, '');
+export const DIRECTO = 'https://sala.palomazi9111.workers.dev';
+/* ?servidor= manda a un servidor fijo (pruebas, otra sala). Sin él se usa la
+   PUERTA: la misma dirección de la página (puerta.js en la raíz del repo), que
+   le pasa el recado a La Sala por dentro de Cloudflare. Si la puerta no está
+   —página abierta desde otro lado, o la Central sin publicar— se cae a la
+   dirección directa de La Sala, como antes. */
+const FIJO = (params.get('servidor') || '').replace(/\/+$/, '');
+const PUERTA = !FIJO && /^https?:$/.test(location.protocol) ? location.origin : '';
+export const SERVIDOR = FIJO || DIRECTO;
 export const SALA = (params.get('sala') || 'GRUPAZ').toUpperCase();
 
 export function llave(){ try{ return localStorage.getItem('salaLlave') || ''; }catch{ return ''; } }
@@ -34,7 +42,39 @@ export function ponerLlave(texto){
    reintenta sencilla y, si funciona, se queda sencilla en esta visita. Si
    también falla, el aviso trae el error tal cual lo dijo el navegador. */
 let sencilla = (() => { try{ return sessionStorage.getItem('salaSencilla') === '1'; }catch{ return false; } })();
-export async function llamar(url, { metodo = 'GET', cuerpo, espera = 150000, crudo = false } = {}){
+/* La puerta se da por buena o mala UNA vez por visita: si contesta con su
+   marca (X-Puerta), todo va por ahí; si no existe (404 pelón de los archivos,
+   o la red), todo va directo y no se vuelve a probar. */
+let puerta = PUERTA ? null : false;
+export async function llamar(url, opciones = {}){
+  if(puerta !== false && url.startsWith(DIRECTO + '/')){
+    const ruta = url.slice(DIRECTO.length);
+    try{
+      const r = await porPuerta(PUERTA + ruta, opciones);
+      if(r.headers.get('X-Puerta') === 'sala'){ puerta = true; return r; }
+      if(puerta === true) return r;
+    }catch(e){
+      if(e.name === 'AbortError') throw new Error('La Sala tardó demasiado y se cortó. Prueba otra vez.');
+      if(puerta === true) throw new Error(`No hay conexión con La Sala${typeof navigator !== 'undefined' && navigator.onLine === false ? ': este teléfono está sin internet' : ''}. (Detalle para Sylcred: puerta · ${e.name}: ${e.message})`);
+    }
+    puerta = false;
+  }
+  return directo(url, opciones);
+}
+/* Por la puerta es la misma casa: sin CORS ni pregunta previa, así que la
+   llave va en su cabecera de siempre. */
+async function porPuerta(url, { metodo = 'GET', cuerpo, espera = 150000, crudo = false } = {}){
+  const k = llave();
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), espera);
+  try{
+    return await fetch(url, {
+      method: metodo, signal: ctl.signal,
+      headers: { ...(cuerpo ? { 'Content-Type': 'application/json' } : {}), ...(k ? { 'X-Llave': k } : {}) },
+      body: cuerpo ? (crudo ? cuerpo : JSON.stringify(cuerpo)) : undefined,
+    });
+  }finally{ clearTimeout(t); }
+}
+async function directo(url, { metodo = 'GET', cuerpo, espera = 150000, crudo = false } = {}){
   const k = llave();
   const intento = async (simple) => {
     const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), espera);
