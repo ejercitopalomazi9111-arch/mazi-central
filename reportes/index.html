@@ -323,6 +323,24 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
     radial-gradient(58% 200% at 95% 58%, rgba(10,26,66,.34) 0%, rgba(10,26,66,0) 58%);
 }
 .cred.reverso .sup-navy, .cred.reverso .sup-rojo{display:none}
+/* EL FONDO HORNEADO · 30 de septiembre.
+   Carlos: al imprimir «pierde muchísima calidad», «la estrella de la vida sale
+   como un cuadro negro», «los degradados azul-rojo se hacen raros», «los
+   hexágonos no se alcanzan a imprimir» y la imprenta tardaba HORAS en sacar
+   una. Las cuatro son la misma causa: TRANSPARENCIAS. El panal iba con
+   opacidad, el veteado de las bandas con degradados semitransparentes y la
+   estrella con opacidad y máscara. Un PDF con transparencias obliga a la
+   impresora a «aplanarlo» —lento, y en las que no saben, la máscara sale
+   negra y los degradados en escalones—.
+   Ahora el fondo se PINTA en un lienzo a 600 ppp con todo ya mezclado y sale
+   como UNA imagen opaca: la impresora no tiene nada que aplanar. Las piezas
+   de CSS siguen abajo sólo como respaldo, por si el lienzo no se pudo pintar. */
+.cred.horneada{background-size:100% 100%; background-repeat:no-repeat}
+.cred.horneada .panal, .cred.horneada .franja{display:none}
+.cred .bloque-inf .estrella.plana{opacity:1; -webkit-mask-image:none; mask-image:none; z-index:0}
+/* ya opaca, la estrella tiene que ir DETRÁS del texto y del QR: antes se veía
+   la leyenda a través de su 26 %, ahora la taparía */
+.cred .bloque-inf .leyenda, .cred .bloque-inf .lado{position:relative; z-index:1}
 .cred .ranura{
   position:absolute; top:3.4mm; left:50%; transform:translateX(-50%); z-index:5;
   width:17mm; height:2.6mm; border-radius:1.3mm;
@@ -337,7 +355,13 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
 .cred .logo{width:100%; max-height:9.6mm; object-fit:contain; display:block}
 /* la raya del electro: fina de verdad, y el pico sin deformar */
 .cred .ecg{display:flex; align-items:center; width:100%}
-.cred .ecg .raya{flex:1; height:.38mm; background:var(--rojo); min-width:0}
+.cred .ecg .raya{flex:1; min-width:0; height:7.04mm; display:block}
+/* 30 de septiembre · Carlos: «tus líneas con un ekg tienen 2 grosores
+   diferentes». La raya era un DIV de .38 mm y el pico un TRAZO de SVG: dos
+   cosas que el navegador y la impresora redondean distinto. Ahora la raya
+   también es trazo de SVG, con la MISMA altura de caja y el MISMO viewBox
+   vertical (44) que el pico: el grosor sale igual por construcción. Se estira
+   sólo a lo ancho, y a lo ancho una raya horizontal no cambia de grosor. */
 /* La caja del SVG tiene EXACTAMENTE el aspecto de su viewBox (60:44). Si es
    más ancha, el dibujo se centra dentro y deja un hueco entre la raya y el
    pico — que es lo que se veía. */
@@ -389,13 +413,15 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
 
 /* ══ el reverso ══ */
 .cred.reverso .interior{top:6mm; bottom:34mm; padding:2mm 3.4mm 1mm}
-.cred .cabeza{display:flex; align-items:center; gap:2mm; margin-bottom:2.4mm}
+.cred .cabeza{display:flex; align-items:center; gap:2mm; margin-bottom:1.6mm}
 .cred .cabeza img{height:9mm; width:auto; flex:0 0 auto}
 .cred .cabeza .pulso{flex:1; min-width:0}
 .cred .tabla{border:.26mm solid #C3C9D8; border-radius:1.6mm; overflow:hidden}
 .cred .tabla .ren{
   display:grid; grid-template-columns:4.4mm 1fr 1.05fr; gap:1.4mm; align-items:center;
-  padding:1.15mm 1.6mm; border-bottom:.2mm solid #DDE2EC;
+  padding:.8mm 1.6mm; border-bottom:.2mm solid #DDE2EC;
+  /* .8 y no 1.15: con la proporción de la CR80 el reverso es 4 mm más bajo y
+     el séptimo renglón (vencimiento) se cortaba */
 }
 .cred .tabla .ren:last-child{border-bottom:0}
 .cred .tabla svg{width:3.2mm; height:3.2mm; fill:var(--rojo)}
@@ -416,8 +442,13 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
   mask-image:radial-gradient(circle at 50% 50%, #000 58%, rgba(0,0,0,.7) 76%, transparent 96%);
 }
 .cred .bloque-inf .leyenda{
-  flex:1; min-width:0; font-size:5.4pt; line-height:1.38; font-weight:700;
+  flex:1; min-width:0; font-size:5.2pt; line-height:1.42; font-weight:700;
   display:flex; align-items:center;      /* que llene su apartado, no que flote arriba */
+  /* Carlos: «la leyenda se ve muy aplastada». Era la letra condensada del
+     resto de la tarjeta, que en un párrafo de seis renglones se ve apachurrada.
+     La leyenda va en letra de ancho normal. */
+  font-family:Arial, Helvetica, "Liberation Sans", sans-serif !important;
+  font-stretch:normal !important; letter-spacing:.01em;
 }
 /* Con los dos códigos puestos, la leyenda se aprieta un punto para que quepan
    los tres sin que nada se salga. Se probó midiendo, no a ojo. */
@@ -432,6 +463,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
 .cred .bloque-inf .qr{width:20mm; height:20mm; background:#fff; border-radius:1.2mm; overflow:hidden}
 .cred .bloque-inf .lado:has(.unqr + .unqr) .qr{width:17.5mm; height:17.5mm}
 .cred .bloque-inf .qr img{width:100%; height:100%; object-fit:contain; display:block}
+.cred .bloque-inf .qr svg{width:100%; height:100%; display:block}
 .cred .bloque-inf .qr .falta{font-size:4pt; color:#8A8A96; text-align:center; font-weight:700;
   display:grid; place-items:center; height:100%}
 .cred .bloque-inf .arroba{font-size:4.2pt; font-weight:800; letter-spacing:.01em}
@@ -451,6 +483,11 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
   print-color-adjust:exact; -webkit-print-color-adjust:exact;
 }
 .pliego .marca-corte{position:absolute; background:#B9BFCB}
+/* Una por página, al tamaño exacto de la credencial: lo que pide una imprenta
+   de credenciales (y una impresora de PVC). Sin esquinas redondas: el fondo
+   llega al borde y el corte lo hace la imprenta. */
+.suelta{background:#fff; margin:0 auto 18px; overflow:hidden; position:relative}
+.suelta .cred{border-radius:0; box-shadow:none}
 
 /* ═════════ LA HOJA · tamaño carta real, en milímetros ═════════
    Todo lo de aquí abajo es el documento impreso. Se mide en mm y pt a
@@ -919,6 +956,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
     break-inside:avoid; page-break-inside:avoid}
   .pliego:last-child{break-after:auto; page-break-after:auto}
   .cred{box-shadow:none}
+  .suelta{margin:0; break-after:page; page-break-after:always; break-inside:avoid; page-break-inside:avoid}
+  .suelta:last-child{break-after:auto; page-break-after:auto}
   .mesa{display:none !important}
 }
 </style>
@@ -1148,21 +1187,29 @@ El día ...
             </select></label>
           <label class="campo"><span>Ciclo</span><input type="text" id="cCiclo"></label>
           <label class="campo"><span>Red social</span><input type="text" id="cRed"></label>
-          <label class="campo"><span>Ancho (mm)</span>
+          <label class="campo"><span>Tamaño de la credencial</span>
+            <select id="cFormato">
+              <option value="cr80">Estándar de PVC (CR80) · 54 × 85.6 mm</option>
+              <option value="original">Tu diseño original · 63.5 × 105 mm</option>
+              <option value="otra">Otra medida</option>
+            </select></label>
+          <label class="campo"><span>Enlace del QR</span>
+            <input type="text" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" id="cQREnlace" placeholder="https://www.instagram.com/…"></label>
+          <label class="campo" data-otra><span>Ancho (mm)</span>
             <input type="number" id="cAncho" step="0.5" min="45" max="100"></label>
-          <label class="campo"><span>Alto (mm)</span>
+          <label class="campo" data-otra><span>Alto (mm)</span>
             <input type="number" id="cAlto" step="0.5" min="70" max="160"></label>
         </div>
         <label class="campo"><span>Leyenda del reverso</span>
           <textarea id="cLeyenda" style="min-height:80px; font-family:inherit"></textarea></label>
         <div class="chips">
-          <button class="chip" type="button" id="cQR">Poner el código QR</button>
+          <button class="chip" type="button" id="cQR">Usar una imagen de QR</button>
+          <button class="chip" type="button" id="cQRGenerado">Volver al QR generado</button>
           <input type="file" id="cQRIn" accept="image/*" hidden>
-          <button class="chip" type="button" id="cMedidas">Volver a 63.5 × 105 mm</button>
         </div>
-        <p class="aviso">La proporción del original que mandaste es <b>1.654</b> de alto sobre
-          ancho, que da justo <b>63.5 × 105 mm</b>. Si tu imprenta pide otra medida, cámbiala aquí
-          y todo se reacomoda solo.</p>
+        <p class="aviso">El QR se <b>genera</b> del enlace, en cuadros negros sobre blanco, para que
+          cualquier teléfono lo lea impreso. Con otra medida, la tarjeta entera se escala a esa
+          medida: no se apachurra nada.</p>
       </div>
     </details>
 
@@ -1170,6 +1217,7 @@ El día ...
     <div class="mesa" id="mesaCred"></div>
     <label style="display:block; margin-top:14px">Cómo acomodarlas en la hoja
       <select id="cAcomodo">
+        <option value="una">Para la imprenta — una por página, al tamaño exacto</option>
         <option value="junta">Frente y reverso juntos — 2 credenciales por hoja</option>
         <option value="doblecara">Doble cara — 4 por hoja, para voltear la hoja</option>
       </select></label>
@@ -3051,8 +3099,19 @@ const CRED_BASE = {
   /* 'junta' = frente y reverso en LA MISMA hoja, dos credenciales completas
      por hoja. 'doblecara' = todos los frentes en una y los reversos en otra,
      en espejo, para imprimir por los dos lados. */
-  acomodo:'junta',
-  ciclo:'2026-2027', red:'@ADVANCED.CRITICAL_CARE', ancho:63.5, alto:105, qr:'credencial/qr-instagram.jpg',
+  acomodo:'una',
+  /* El formato de la tarjeta. 'cr80' es la credencial estándar de PVC (la de
+     las credenciales de identificación, ISO/IEC 7810 ID-1): 54 × 85.6 mm.
+     'original' es la medida que se sacó de la imagen que mandó Carlos. Con
+     'otra' mandan ancho y alto. El diseño se arma siempre a 63.5 mm de ancho
+     y se ESCALA entero a la medida pedida: así cambia el tamaño y no se
+     apachurra nada. */
+  formato:'cr80',
+  /* El QR se GENERA de este enlace, en cuadros negros sobre blanco. El que
+     había era la imagen de Instagram —puntitos redondos en degradado naranja
+     y la arroba adentro—: impresa a 2 cm, ningún teléfono la leía. */
+  qrEnlace:'https://www.instagram.com/advanced.critical_care/',
+  ciclo:'2026-2027', red:'@ADVANCED.CRITICAL_CARE', ancho:63.5, alto:105, qr:'',
   /* La credencial NO usa la tipografía de la casa por decisión de Carlos.
      Se cambia desde la pestaña el día que la quiera. */
   fuente:'Arial, Helvetica, "Liberation Sans", sans-serif',
@@ -3071,6 +3130,13 @@ function cargarCred(){
   try{ const c = JSON.parse(localStorage.getItem(LLAVE_CRED) || 'null');
        if(c && Array.isArray(c.gente)) CRED = c; }catch(e){}
   CRED.base = Object.assign({}, CRED_BASE, CRED.base || {});
+  /* v2 · 30 de septiembre: lo guardado antes traía el QR de Instagram que no
+     se lee, sin formato y acomodado en hoja carta. Se pasa UNA vez a lo
+     nuevo; después manda lo que Carlos elija. */
+  if(!CRED.base.v2){
+    if(CRED.base.qr === 'credencial/qr-instagram.jpg') CRED.base.qr = '';
+    CRED.base.formato = 'cr80'; CRED.base.acomodo = 'una'; CRED.base.v2 = true;
+  }
   if(!CRED.gente.length) CRED.gente = [credNueva()];
   if(credActiva >= CRED.gente.length) credActiva = 0;
 }
@@ -3217,10 +3283,138 @@ function archivoDe(c){
   };
 }
 
+/* ── la medida: se diseña a 63.5 mm de ancho y se escala a la pedida ── */
+const DISENO_AN = 63.5;
+const FORMATOS = {
+  cr80:     { an:54,   al:85.6, nombre:'Credencial estándar de PVC (CR80) · 54 × 85.6 mm' },
+  original: { an:63.5, al:105,  nombre:'La de tu diseño original · 63.5 × 105 mm' },
+};
+function medidasCred(b){
+  const f = FORMATOS[b.formato];
+  const an = f ? f.an : (+b.ancho || 63.5), al = f ? f.al : (+b.alto || 105);
+  return { an, al, dAn:DISENO_AN, dAl:+(DISENO_AN * al / an).toFixed(3), k:+(an / DISENO_AN).toFixed(5) };
+}
+function estiloCred(b){
+  const m = medidasCred(b);
+  const fam = (b.fuente || CRED_BASE.fuente).replace(/"/g,'&quot;');
+  return '--an:'+m.dAn+'mm; --al:'+m.dAl+'mm; --cred-fam:'+fam+'; zoom:'+m.k;
+}
+
+/* ── EL FONDO HORNEADO ──
+   Todo lo que era transparente —el panal, el veteado de las bandas— se pinta
+   aquí ya mezclado, a 600 ppp, y sale como UNA imagen opaca. La impresora no
+   tiene nada que aplanar: ni tarda horas ni inventa cuadros negros. Los
+   hexágonos van un tono más firme que en pantalla (#DCE1E9 a 0.16 mm) porque
+   el de antes, mezclado, quedaba en un 7 % de gris y la impresora lo tiraba. */
+const HORNO = {};
+const PPMM = 600 / 25.4;
+function fondoCred(lado, dAn, dAl){
+  const clave = lado + '|' + dAn + '|' + dAl;
+  if(clave in HORNO) return HORNO[clave];
+  let url = null;
+  try{
+    const W = Math.round(dAn * PPMM), H = Math.round(dAl * PPMM);
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const x = cv.getContext('2d');
+    x.fillStyle = '#FFFFFF'; x.fillRect(0, 0, W, H);
+    /* el panal: celdas de 4.4 × 5.1 mm, como el de CSS */
+    const cw = 4.4 * PPMM, ch = 5.1 * PPMM, ux = cw / 24, uy = ch / 28;
+    const HEX = [[12,1],[22,6.5],[22,17.5],[12,23],[2,17.5],[2,6.5]];
+    x.strokeStyle = '#DCE1E9'; x.lineWidth = 0.16 * PPMM; x.lineJoin = 'miter';
+    x.beginPath();
+    for(let oy = 0; oy < H + ch; oy += ch) for(let ox = 0; ox < W + cw; ox += cw){
+      HEX.forEach(([px, py], i) => { const X = ox + px * ux, Y = oy + py * uy; i ? x.lineTo(X, Y) : x.moveTo(X, Y); });
+      x.closePath();
+    }
+    x.stroke();
+    const poli = (pts, relleno) => {
+      x.beginPath(); pts.forEach(([px, py], i) => { const X = px / 100 * W, Y = py / 100 * H; i ? x.lineTo(X, Y) : x.moveTo(X, Y); });
+      x.closePath(); x.fillStyle = relleno; x.fill();
+    };
+    /* la banda roja con su veteado azul: los mismos tres degradados del CSS
+       (tamaño en % del ancho y del alto de la tarjeta), ya mezclados */
+    const VETAS = [[6,50,70,220,.42,.55],[42,42,46,190,.16,.62],[95,58,58,200,.34,.58]];
+    const banda = (pts) => {
+      x.save(); poli(pts, '#C8102E'); x.clip();
+      VETAS.forEach(([cx, cy, rx, ry, a, fin]) => {
+        x.save(); x.translate(cx / 100 * W, cy / 100 * H); x.scale(rx / 100 * W, ry / 100 * H);
+        const g = x.createRadialGradient(0, 0, 0, 0, 0, 1);
+        g.addColorStop(0, 'rgba(10,26,66,' + a + ')'); g.addColorStop(fin, 'rgba(10,26,66,0)'); g.addColorStop(1, 'rgba(10,26,66,0)');
+        x.fillStyle = g; x.fillRect(-2, -2, 4, 4); x.restore();
+      });
+      x.restore();
+    };
+    if(lado === 'frente'){
+      banda([[0,17.4],[68,0],[71.4,0],[0,23]]);
+      poli([[0,0],[68,0],[0,18]], '#0E2050');
+    }
+    banda([[56,84.4],[100,74.3],[100,71],[56,83]]);
+    poli([[0,100],[100,100],[100,73.5],[60,82.7],[0,82.7]], '#0E2050');
+    url = cv.toDataURL('image/png');
+  }catch(e){ url = null; }
+  HORNO[clave] = url;
+  return url;
+}
+
+/* La estrella de la vida, APLANADA sobre el azul del reverso. Antes iba al
+   26 % con una máscara circular: en muchas impresoras una máscara sale como
+   un cuadro negro. Aquí se mezcla una vez en un lienzo y queda opaca; sus
+   esquinas son del mismo azul del fondo, así que no se notan. */
+let ESTRELLA_PLANA = null;
+(function(){
+  const im = new Image();
+  im.onload = () => {
+    try{
+      const L = Math.max(im.naturalWidth, 600);
+      const a = document.createElement('canvas'); a.width = a.height = L;
+      const xa = a.getContext('2d'); xa.drawImage(im, 0, 0, L, L);
+      xa.globalCompositeOperation = 'destination-in';
+      const g = xa.createRadialGradient(L/2, L/2, 0, L/2, L/2, L/2);
+      g.addColorStop(0, '#000'); g.addColorStop(.58, '#000'); g.addColorStop(.76, 'rgba(0,0,0,.7)'); g.addColorStop(.96, 'rgba(0,0,0,0)');
+      xa.fillStyle = g; xa.fillRect(0, 0, L, L);
+      const b = document.createElement('canvas'); b.width = b.height = L;
+      const xb = b.getContext('2d'); xb.fillStyle = '#0E2050'; xb.fillRect(0, 0, L, L);
+      xb.globalAlpha = .26; xb.drawImage(a, 0, 0);
+      ESTRELLA_PLANA = b.toDataURL('image/png');
+      if(typeof pintarCred === 'function' && document.querySelector('#mesaCred .cred')) pintarCred();
+    }catch(e){}
+  };
+  im.src = 'credencial/estrella-vida.png';
+})();
+
+/* El QR, VECTORIAL y en cuadros negros sobre blanco: a cualquier tamaño y en
+   cualquier impresora los módulos salen nítidos. Un teléfono necesita ~0.4 mm
+   por módulo; el enlace de Instagram da un código de 29 × 29, que a 17 mm
+   (20 mm × 0.85 de la CR80) queda en 0.52 mm. */
+const QR_CACHE = {};
+function qrVector(texto){
+  if(QR_CACHE[texto]) return QR_CACHE[texto];
+  if(typeof QRCode === 'undefined' || !QRCode.create) return '';
+  try{
+    const q = QRCode.create(texto, { errorCorrectionLevel:'M' });
+    const n = q.modules.size, d = q.modules.data, m = 2, T = n + 2 * m;
+    let camino = '';
+    for(let y = 0; y < n; y++){
+      let x0 = -1;
+      for(let x = 0; x <= n; x++){
+        const on = x < n && d[y * n + x];
+        if(on && x0 < 0) x0 = x;
+        if(!on && x0 >= 0){ camino += 'M'+(x0+m)+' '+(y+m)+'h'+(x-x0)+'v1h-'+(x-x0)+'z'; x0 = -1; }
+      }
+    }
+    return (QR_CACHE[texto] = '<svg viewBox="0 0 '+T+' '+T+'" shape-rendering="crispEdges" aria-hidden="true">'+
+      '<rect width="'+T+'" height="'+T+'" fill="#FFFFFF"/><path d="'+camino+'" fill="#000000"/></svg>');
+  }catch(e){ return ''; }
+}
+function qrDeLaBase(b){
+  if(b.qr) return '<img src="'+b.qr+'" alt="">';
+  const v = b.qrEnlace ? qrVector(b.qrEnlace) : '';
+  return v || '<span class="falta">Pon aquí<br>el QR</span>';
+}
+
 /* ── el frente ── */
 function credFrente(c){
   const b = CRED.base;
-  const fam = (b.fuente || CRED_BASE.fuente).replace(/"/g,'&quot;');
   const otras = (c.otras||'').split('\n').map(x=>x.trim()).filter(Boolean);
   const glifos = ['llave','auto','lupa','estrella','credencial','persona'];
   const filas = [];
@@ -3231,7 +3425,9 @@ function credFrente(c){
   if(c.acred)    filas.push(['estrella','ACREDITADO COMO:<br><b>'+esc(c.acred)+'</b>']);
   otras.forEach((o,k) => filas.push([glifos[k % glifos.length], '<b>'+esc(o)+'</b>']));
 
-  return '<div class="cred" style="--an:'+b.ancho+'mm; --al:'+b.alto+'mm; --cred-fam:'+fam+'">'+
+  const m = medidasCred(b), fondo = fondoCred('frente', m.dAn, m.dAl);
+  return '<div class="cred'+(fondo ? ' horneada' : '')+'" style="'+estiloCred(b)+
+    (fondo ? '; background-image:url('+fondo+')' : '')+'">'+
     '<div class="panal"></div>'+
     '<div class="franja sup-rojo"></div><div class="franja sup-navy"></div>'+
     '<div class="franja inf-rojo"></div><div class="franja inf-navy"></div>'+
@@ -3268,7 +3464,8 @@ function credFrente(c){
    trazo y lo deja blando — que era justo lo que se veía mal. */
 function ECG(clase){
   return '<span class="ecg '+clase+'">'+
-    '<span class="raya"></span>'+
+    '<svg class="raya" viewBox="0 0 100 44" preserveAspectRatio="none" aria-hidden="true">'+
+      '<path d="M0 22H100" fill="none" stroke="#C8102E" stroke-width="2.4" stroke-linecap="butt"/></svg>'+
     /* la línea base va justo en el centro del lienzo para que empalme con la
        raya sin escalón */
     '<svg viewBox="0 0 60 44" aria-hidden="true">'+
@@ -3280,7 +3477,6 @@ const PULSO = ECG('pulso');
 
 function credReverso(c){
   const b = CRED.base;
-  const fam = (b.fuente || CRED_BASE.fuente).replace(/"/g,'&quot;');
   const R = [
     ['gota','TIPO DE SANGRE', c.sangre],
     ['alerta','ALERGIAS', c.alergias],
@@ -3291,7 +3487,9 @@ function credReverso(c){
     ['reloj','FECHA DE VENCIMIENTO', c.vence],
   ].filter(x => x[2]);
 
-  return '<div class="cred reverso" style="--an:'+b.ancho+'mm; --al:'+b.alto+'mm; --cred-fam:'+fam+'">'+
+  const m = medidasCred(b), fondo = fondoCred('reverso', m.dAn, m.dAl);
+  return '<div class="cred reverso'+(fondo ? ' horneada' : '')+'" style="'+estiloCred(b)+
+    (fondo ? '; background-image:url('+fondo+')' : '')+'">'+
     '<div class="panal"></div><div class="ranura"></div>'+
     '<div class="franja inf-rojo"></div><div class="franja inf-navy"></div>'+
     '<div class="interior">'+
@@ -3303,7 +3501,8 @@ function credReverso(c){
     '</div>'+
     '<div class="bloque-inf">'+
       '<div class="arriba">'+
-        '<img class="estrella" src="credencial/estrella-vida.png" alt="">'+
+        (ESTRELLA_PLANA ? '<img class="estrella plana" src="'+ESTRELLA_PLANA+'" alt="">'
+                        : '<img class="estrella" src="credencial/estrella-vida.png" alt="">')+
         '<div class="leyenda">'+esc(b.leyenda)+'</div>'+
         /* LOS DOS QR, uno al lado del otro. Carlos: «si se pone el qr quede
            ese ADEMÁS del de redes, no puedes quitarle el de redes».
@@ -3317,8 +3516,7 @@ function credReverso(c){
            necesita rótulo: un QR solo no obliga a nadie a escanear dos para
            saber cuál es cuál, que era la razón por la que se rotularon. */
         '<div class="lado">'+
-          '<div class="unqr"><div class="qr">'+ (b.qr ? '<img src="'+b.qr+'" alt="">'
-              : '<span class="falta">Pon aquí<br>el QR</span>') +'</div></div>'+
+          '<div class="unqr"><div class="qr">'+ qrDeLaBase(b) +'</div></div>'+
         '</div>'+
       '</div>'+
       '<div class="red">'+svg('globo')+'<span>'+esc(b.red)+'</span></div>'+
@@ -3332,8 +3530,11 @@ const CAMPOS_CRED = [['#cApellidos','apellidos'],['#cNombres','nombres'],['#cNiv
   ['#cHabilidades','habilidades'],
   ['#cSangre','sangre'],['#cAlergias','alergias'],['#cTel','tel'],['#cFamiliar','familiar'],
   ['#cInicio','inicio'],['#cVence','vence']];
-const CAMPOS_BASE = [['#cCiclo','ciclo'],['#cRed','red'],['#cLeyenda','leyenda'],['#cFuente','fuente']];
+const CAMPOS_BASE = [['#cCiclo','ciclo'],['#cRed','red'],['#cLeyenda','leyenda'],['#cFuente','fuente'],['#cQREnlace','qrEnlace']];
 const AVISO_ACOMODO = {
+  una:'Sale <b>cada credencial en su propia página, al tamaño exacto</b>: primero el frente y '+
+      'luego el reverso. Es el formato que usa una imprenta de credenciales o una impresora de PVC: '+
+      'no tienen que recortar ni reacomodar nada. Guárdalo como PDF y mándaselos así.',
   junta:'Sale <b>una hoja por cada dos credenciales</b>, con el frente y el reverso de cada una '+
         'lado a lado. Se corta, se pega espalda con espalda y se plastifica. Es lo que menos papel gasta.',
   doblecara:'Salen <b>4 por hoja carta</b>: primero todos los frentes, luego los reversos '+
@@ -3391,6 +3592,9 @@ function pintarCred(){
   CAMPOS_CRED.forEach(([sel,campo]) => { $(sel).value = c[campo] || ''; });
   CAMPOS_BASE.forEach(([sel,campo]) => { $(sel).value = b[campo] || ''; });
   $('#cAncho').value = b.ancho; $('#cAlto').value = b.alto;
+  $('#cFormato').value = FORMATOS[b.formato] ? b.formato : 'otra';
+  /* con style y no con `hidden`: `hidden` pierde contra el display de .campo */
+  document.querySelectorAll('[data-otra]').forEach(el => { el.style.display = FORMATOS[b.formato] ? 'none' : ''; });
   $('#cAcomodo').value = b.acomodo || 'junta';
   $('#cAvisoAcomodo').innerHTML = AVISO_ACOMODO[b.acomodo] || AVISO_ACOMODO.junta;
   $('#mesaCred').innerHTML = credFrente(c) + credReverso(c);
@@ -3405,13 +3609,14 @@ CAMPOS_BASE.forEach(([sel,campo]) => {
 ['#cAncho','#cAlto'].forEach(sel => {
   $(sel).addEventListener('input', () => {
     const v = parseFloat($(sel).value);
-    if(v > 0) CRED.base[sel === '#cAncho' ? 'ancho' : 'alto'] = v;
+    if(v > 0){ CRED.base[sel === '#cAncho' ? 'ancho' : 'alto'] = v; CRED.base.formato = 'otra'; }
     guardarCred(); pintarCred();
   });
 });
-$('#cMedidas').addEventListener('click', () => {
-  CRED.base.ancho = 63.5; CRED.base.alto = 105; guardarCred(); pintarCred();
+$('#cFormato').addEventListener('change', () => {
+  CRED.base.formato = $('#cFormato').value; guardarCred(); pintarCred();
 });
+$('#cQRGenerado').addEventListener('click', () => { CRED.base.qr = ''; guardarCred(); pintarCred(); });
 
 $('#listaCred').addEventListener('click', e => {
   const b = e.target.closest('[data-cred]'); if(!b) return;
@@ -3564,8 +3769,18 @@ function pliegoDobleCara(grupo){
          '<div class="pliego">'+ CORTES + espejo.map(g => CAJA(g ? credReverso(g) : '')).join('') +'</div>';
 }
 
+/* Una por página, al tamaño EXACTO de la credencial: frente y luego reverso
+   de cada persona. Es el formato que usa una imprenta de credenciales o una
+   impresora de PVC: no hay que recortar, reacomodar ni adivinar la escala. */
+function sueltasDe(gente){
+  const m = medidasCred(CRED.base);
+  const caja = (html) => '<div class="suelta" style="width:'+m.an+'mm; height:'+m.al+'mm">'+html+'</div>';
+  return gente.map(g => caja(credFrente(g)) + caja(credReverso(g))).join('');
+}
+
 function pliegosDe(gente, modo){
   const m = modo || CRED.base.acomodo || 'junta';
+  if(m === 'una') return sueltasDe(gente);
   const paso = m === 'junta' ? 2 : 4;
   const salida = [];
   for(let i=0;i<gente.length;i+=paso){
@@ -3586,8 +3801,17 @@ function imprimirCredenciales(soloEsta){
   const imp = $('#impresora');
   imp.innerHTML = pliegosDe(gente);
   document.body.classList.add('imprime-cred');
+  /* En «una por página» la HOJA mide lo que la credencial, sin márgenes. Safari
+     del iPhone respeta @page size desde iOS 18.2 (caniuse, 30 sep 2026). */
+  const pag = document.createElement('style');
+  pag.id = 'pagina-cred';
+  if((CRED.base.acomodo || 'junta') === 'una'){
+    const m = medidasCred(CRED.base);
+    pag.textContent = '@page{size:'+m.an+'mm '+m.al+'mm; margin:0}';
+  }
+  document.head.appendChild(pag);
   setTimeout(()=>{ window.print();
-    setTimeout(()=>{ document.body.classList.remove('imprime-cred'); imp.innerHTML=''; }, 500); }, 160);
+    setTimeout(()=>{ document.body.classList.remove('imprime-cred'); imp.innerHTML=''; pag.remove(); }, 500); }, 160);
 }
 $('#cAcomodo').addEventListener('change', () => {
   CRED.base.acomodo = $('#cAcomodo').value; guardarCred(); pintarCred();
