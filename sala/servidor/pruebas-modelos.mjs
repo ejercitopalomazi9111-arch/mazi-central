@@ -193,6 +193,32 @@ seccion('los fallos, que es para lo que sirve de verdad');
      !r.bien && r.error.includes('se cayó la red'), r.error);
 }
 {
+  /* 30 de septiembre: Google daba 503 a ratos en su modelo principal y en el
+     mismo minuto otros contestaban. Paulina tiene que brincar sola. */
+  const pedidos = [];
+  globalThis.fetch = async (url) => {
+    pedidos.push(String(url));
+    return /gemini-3\.8-flash/.test(String(url)) ? resp(503, 'high demand')
+      : resp(200, { candidates: [{ content: { parts: [{ text: 'hola' }] } }] });
+  };
+  const r = await preguntar('gemini', ENV, 's', MSG);
+  ok('si el modelo principal está saturado (503), contesta con el de respaldo',
+     r.bien && r.texto === 'hola' && pedidos.length === 2 && /gemini-3\.6-flash/.test(pedidos[1]), JSON.stringify(r));
+  ok('y el dato de «brincar» no se asoma en la respuesta', !('otro' in r));
+}
+{
+  let n = 0;
+  globalThis.fetch = async () => { n++; return resp(401, 'no'); };
+  const r = await preguntar('gemini', ENV, 's', MSG);
+  ok('una llave mala NO se prueba con los de respaldo: es la llave, no el modelo', !r.bien && n === 1 && /rechazó la llave/.test(r.error), `${n} ${r.error}`);
+}
+{
+  let n = 0;
+  globalThis.fetch = async () => { n++; return resp(503, 'high demand'); };
+  const r = await preguntar('groq', ENV, 's', MSG);
+  ok('si todos están saturados, lo dice claro y una sola vez', !r.bien && n === 2 && /saturado/.test(r.error), `${n} ${r.error}`);
+}
+{
   const r = await preguntar('no-existe', ENV, 's', MSG);
   ok('un motor que no existe se dice claro, no truena',
      !r.bien && r.error.includes('no-existe'), r.error);

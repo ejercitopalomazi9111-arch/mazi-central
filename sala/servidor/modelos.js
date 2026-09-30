@@ -89,6 +89,9 @@ export const MOTORES = {
        español. Razona antes de contestar, así que va con esfuerzo «low»: con
        200 de tope gastó 19 en pensar y contestó completo. */
     modelo: 'openai/gpt-oss-120b',
+    /* Si el principal se satura o desaparece, se prueba el siguiente en la
+       misma llamada: quien pidió no ve el tropiezo. */
+    respaldo: ['qwen/qwen3.8-27b'],
     llave: 'GROQ_API_KEY',
     url: () => 'https://api.groq.com/openai/v1/chat/completions',
     cabeceras: (k) => ({ 'Authorization': 'Bearer ' + k, 'Content-Type': 'application/json' }),
@@ -111,6 +114,10 @@ export const MOTORES = {
     nombre: 'Paulina',
     figura: 'rombo',
     modelo: 'gemini-3.8-flash',
+    /* 30 de septiembre: Google daba 503 «high demand» a ratos en 3.8, 3.7 y
+       flash-latest, y en el mismo minuto 3.6, 3.5 y flash-lite contestaban.
+       `gemini-2.5-flash` da 404 a cuentas nuevas. Todos ven imágenes. */
+    respaldo: ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-flash-lite-latest'],
     llave: 'GEMINI_API_KEY',
     /* ⚠ LA LLAVE VA EN LA URL y no en una cabecera porque así lo documenta
        Google. Es servidor contra servidor —no pasa por ningún navegador ni por
@@ -185,7 +192,24 @@ export async function preguntar(id, env, sistema, mensajes, op = {}) {
   if (imagenes.length && id !== 'gemini') {
     return { bien: false, motor: id, error: `${M.nombre} no ve imágenes. Para describirlas usa a Paulina (Gemini).` };
   }
-  const cuerpo = M.arma(M.modelo, sistema, mensajes, tope);
+  const modelos = [M.modelo, ...(M.respaldo || [])];
+  let ultimo = null;
+  for (let i = 0; i < modelos.length; i++) {
+    const res = await preguntarA(M, modelos[i], k, sistema, mensajes, tope, imagenes, op, corta, reloj);
+    /* Se pasa al siguiente sólo si el tropiezo es del modelo (saturado,
+       caído, retirado). Una llave mala o una respuesta vacía no mejoran con
+       otro modelo. */
+    if (res.bien || !res.otro || corta.signal.aborted) { clearTimeout(reloj); delete res.otro; return res; }
+    ultimo = res;
+  }
+  clearTimeout(reloj);
+  delete ultimo.otro;
+  return ultimo;
+}
+
+async function preguntarA(M, modelo, k, sistema, mensajes, tope, imagenes, op, corta, reloj) {
+  const id = M.id;
+  const cuerpo = M.arma(modelo, sistema, mensajes, tope);
   if (imagenes.length) {
     const ultimo = [...cuerpo.contents].reverse().find(x => x.role === 'user');
     if (ultimo) ultimo.parts.unshift(...imagenes.map(x => ({ inlineData: { mimeType: x.mime, data: x.data } })));
@@ -193,7 +217,7 @@ export async function preguntar(id, env, sistema, mensajes, op = {}) {
   if (op.json && id === 'gemini') cuerpo.generationConfig.responseMimeType = 'application/json';
 
   try {
-    const r = await fetch(M.url(M.modelo, k), {
+    const r = await fetch(M.url(modelo, k), {
       method: 'POST',
       headers: M.cabeceras(k),
       body: JSON.stringify(cuerpo),
@@ -211,17 +235,18 @@ export async function preguntar(id, env, sistema, mensajes, op = {}) {
           `pero no sirve: revísala o genera otra.` };
       }
       if (r.status === 404) {
-        return { bien: false, motor: id, error:
-          `${M.nombre} no conoce el modelo "${M.modelo}" (404). La llave está BIEN; ` +
+        return { bien: false, motor: id, otro: true, error:
+          `${M.nombre} no conoce el modelo "${modelo}" (404). La llave está BIEN; ` +
           `lo que caducó es el nombre del modelo. Se abre su documentación y se ` +
           `corrige en modelos.js.` };
       }
       if (r.status === 429) {
-        return { bien: false, motor: id, error:
+        return { bien: false, motor: id, otro: true, error:
           `${M.nombre} dice que vamos muy seguido (429). Hay que esperar un rato.` };
       }
-      return { bien: false, motor: id, error:
-        `${M.nombre} contestó ${r.status}. ${cuerpo.slice(0, 200)}` };
+      return { bien: false, motor: id, otro: r.status >= 500, error:
+        r.status === 503 ? `${M.nombre}: su proveedor está saturado (503), y sus modelos de respaldo también. Prueba en un minuto.`
+                         : `${M.nombre} contestó ${r.status}. ${cuerpo.slice(0, 200)}` };
     }
 
     const j = await r.json();
@@ -241,9 +266,7 @@ export async function preguntar(id, env, sistema, mensajes, op = {}) {
       return { bien: false, motor: id, error:
         `${M.nombre} no contestó en ${Math.round((op.esperaMs || ESPERA_MODELO_MS) / 1000)} s.` };
     }
-    return { bien: false, motor: id, error: `${M.nombre} falló: ${e && e.message || e}` };
-  } finally {
-    clearTimeout(reloj);
+    return { bien: false, motor: id, otro: true, error: `${M.nombre} falló: ${e && e.message || e}` };
   }
 }
 
