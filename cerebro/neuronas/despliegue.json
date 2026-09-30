@@ -262,6 +262,31 @@
         "falta el secreto GEMINI_API_KEY"
       ],
       "salioDe": "Presentaciones, 30 de septiembre: la IA seguía muda después de que Carlos volvió a poner las dos llaves."
+    },
+    {
+      "id": "load-failed-por-brincar-de-direccion",
+      "titulo": "«Load failed» en el iPhone con el servidor sano: la página le hablaba a OTRA dirección",
+      "gravedad": "alta",
+      "sintoma": "En Presentaciones, Gemini, Groq y el banco dicen «No hay conexión con La Sala (TypeError: Load failed)» en el iPhone de Carlos, y desde aquí el mismo servidor contesta 200 en medio segundo con CORS bien puesto.",
+      "causa": "La página vive en mazi-central.palomazi9111.workers.dev y le hablaba a sala.palomazi9111.workers.dev. workers.dev está en la lista de sufijos públicos: para Safari son DOS sitios, y cualquier cosa que se atraviese entre ellos (bloqueador, relevo privado, respuesta sin permiso de CORS como el 403 «Desde ahí no.») sale como «Load failed», sin más detalle. Ni la vía normal ni la «sencilla» con la llave en la dirección lo salvaban.",
+      "porque": "Un error de red en Safari no dice cuál fue la causa, y desde el contenedor no se puede reproducir el teléfono. Perseguir la causa exacta era adivinar; quitar el brinco la elimina entera.",
+      "arreglo": "puerta.js en la raíz: la Central ya no es sólo archivos, trae un worker mínimo con enlace de servicio (services → sala) que pasa /api/sala/* a La Sala por dentro de Cloudflare. presentaciones/ia.js prueba primero su propia dirección y sólo si la puerta no contesta con X-Puerta: sala cae a la directa. Lo de casa entra sin Origin; lo de fuera sigue revisándose.",
+      "vecinas": [
+        "secreto-en-el-panel-que-el-servidor-no-ve"
+      ],
+      "comoCazarlo": "presentaciones/pruebas-pantalla.mjs § «no alcanza la dirección de La Sala»: aborta TODO lo que va a sala.palomazi9111 y exige que el banco abra por la puerta. Con la puerta apagada (mutación) sale rojo. En local: npx wrangler dev -c wrangler.jsonc -c sala/servidor/wrangler.jsonc.",
+      "consejo": "Si una página y su servidor viven en dos direcciones de workers.dev, en el iPhone son dos sitios distintos. Lo que la página necesita, que lo pida a su propia dirección.",
+      "senales": [
+        "load failed",
+        "no hay conexión con la sala",
+        "typeerror",
+        "iphone",
+        "safari",
+        "cors",
+        "workers.dev",
+        "puerta"
+      ],
+      "salioDe": "Carlos, 30 de septiembre: capturas de Presentaciones con Gemini y Groq en «Load failed»."
     }
   ]
 }

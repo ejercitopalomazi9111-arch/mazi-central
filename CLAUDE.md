@@ -309,7 +309,7 @@ dependemos.
    | Lo que recuerdo | Lo que es | Lo que costó |
    |---|---|---|
    | three.js es **un** archivo | desde r185 son **dos**: `three.module.min.js` **y** `three.core.min.js` | la página se quedó en blanco **sin un solo error en consola** |
-   | los modelos de un proveedor los sé de memoria | los siete del relevo tenían el nombre viejo | las 4 llaves daban **404, nunca 401** — parecían llaves malas y estaban bien |
+   | los modelos de un proveedor los sé de memoria | los siete del relevo tenían el nombre viejo | las 4 llaves daban **404, nunca 401** — parecían llaves malas y estaban bien. **Otra vez el 30 de septiembre:** Groq retiró `llama-3.3-70b-versatile` y Negro daba 404 con la llave recién puesta; se lista `/openai/v1/models` antes de culpar a la llave |
    | GLM va en `glm-5.2` | la documentación de Z.ai ya iba en `glm-5.3` | la guía que trajo Carlos **nació desfasada** |
    | Gemini `2.5-*` estable está disponible | cerrado a cuentas nuevas | media hora buscando un error de permisos que no existía |
    | `Math.max(...[])` truena | devuelve **-Infinity**, calladito | un `NaN` que dejó la red del Cerebro en negro **para siempre** |
@@ -364,6 +364,7 @@ dependemos.
    | una diferencia pixel a pixel del logo entero caza cualquier pieza mal puesta | caza una PIEZA (sin la G da 19 contra 12), no una TIRA: con el nombre del arco cortado en «EL GAR» el promedio seguía abajo de 15 | la apertura quedó con el nombre a medias por una máscara copiada de memoria, y además culpé primero al pintado de Chromium; en vivo salía igual. Ahora hay una medida sólo de la franja del nombre (11.4 bien, 26.7 cortado) |
 
    | «Value encrypted» en el panel de Cloudflare es una llave que el servidor lee | es una llave que **se guardó**; el panel tiene dos cajas casi iguales (la del programa y la de «Build», que el programa nunca ve) y el servidor puede no recibirla | Carlos puso Gemini y Groq dos veces y la IA de Presentaciones seguía muda. Se comprueba con `/motores`, no con el panel; y ahora la llave se pega en la propia app (`/llaves-ia`) |
+   | si el servidor contesta bien con `curl` y con CORS, el teléfono también lo alcanza | `mazi-central.…workers.dev` y `sala.…workers.dev` son **dos sitios** para Safari (workers.dev es sufijo público): cualquier cosa que se atraviese entre los dos sale como «Load failed», sin detalle | Gemini, Groq y el banco caídos en el iPhone de Carlos con el servidor sano. Ahora la Central trae `puerta.js`, que pasa `/api/sala/*` a La Sala por dentro de Cloudflare, y Presentaciones le habla a su propia dirección |
 
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
