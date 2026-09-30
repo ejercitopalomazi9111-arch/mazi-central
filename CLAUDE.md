@@ -366,6 +366,8 @@ dependemos.
    | «Value encrypted» en el panel de Cloudflare es una llave que el servidor lee | es una llave que **se guardó**; el panel tiene dos cajas casi iguales (la del programa y la de «Build», que el programa nunca ve) y el servidor puede no recibirla | Carlos puso Gemini y Groq dos veces y la IA de Presentaciones seguía muda. Se comprueba con `/motores`, no con el panel; y ahora la llave se pega en la propia app (`/llaves-ia`) |
    | si el servidor contesta bien con `curl` y con CORS, el teléfono también lo alcanza | sólo si pruebo desde **la misma dirección** que el teléfono: Carlos abre la Central desde **github.io**, y La Sala sólo aceptaba la de Cloudflare y a los demás les daba 403 **sin CORS** → Safari: «Load failed» | un día entero: primero culpé a que eran «dos sitios» y armé `puerta.js` (sirve, pero github.io no la tiene). Lo cazó el error con detalle —«puerta 404 sin marca»—. Ahora `ORIGENES` lista los dos github.io y el 403 lleva CORS y se lee |
 
+   | si se ve bien en pantalla, se imprime bien | el navegador mezcla las transparencias en pantalla; en el PDF quedan como grupos y máscaras (`smask`) que la impresora tiene que aplanar | la estrella de la credencial salió como **cuadro negro**, el veteado en escalones, los hexágonos no salieron y la imprenta tardó **horas**. Se caza con `pdfimages -list`; lo decorativo que va a papel se **hornea** en una imagen opaca |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---

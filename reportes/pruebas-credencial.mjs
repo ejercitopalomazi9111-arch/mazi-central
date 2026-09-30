@@ -113,21 +113,74 @@ writeFileSync(ruta, pdf);
    Y se comprueba además que el de habilidades YA NO ESTÉ. Quitarlo de la
    pantalla y que siguiera saliendo impreso sería justo el tipo de defecto que
    nadie mira: la credencial que se ve no es la que sale del papel. */
+/* 30 de septiembre: ahora cada cara sale en SU página (formato de imprenta),
+   así que se leen TODAS las páginas, no sólo la primera. Y el QR ya no es la
+   imagen adornada de Instagram sino uno vectorial de cuadros negros: se exige
+   que se lea desde 300 ppp, no sólo a 600. */
+const { readdirSync } = await import('node:fs');
 for(const ppp of [300, 600]){
   execFileSync('pdftoppm', ['-r', String(ppp), '-png', ruta, TMP + '/cp' + ppp]);
-  const leidos = leer(TMP + '/cp' + ppp + '-1.png');
+  const paginas = readdirSync(TMP).filter(f => f.startsWith('cp' + ppp + '-')).map(f => TMP + '/' + f);
+  const leidos = paginas.flatMap(f => leer(f));
   const hab = leidos.some(x => /credencial\/#PM-014$/.test(x));
   const red = leidos.some(x => /instagram\.com/.test(x));
   console.log('   a ' + ppp + ' ppp → habilidades:' + (hab?'sí':'no') + ' · redes:' + (red?'sí':'no'));
   ok('a ' + ppp + ' ppp el código de habilidades NO está impreso', !hab,
      'se retiró de la credencial y no debe salir en el papel');
-  if(ppp === 600){
-    ok('y a 600 ppp —lo normal de una impresora— el de redes sí se lee', red,
-       'redes:' + red);
-  }
-  try{ unlinkSync(TMP + '/cp' + ppp + '-1.png'); }catch(e){}
+  ok('y a ' + ppp + ' ppp el QR de redes SÍ se lee', red, 'redes:' + red);
+  paginas.forEach(f => { try{ unlinkSync(f); }catch(e){} });
 }
 try{ unlinkSync(ruta); }catch(e){}
+
+/* ── 30 de septiembre · lo que Carlos vio en la imprenta ─────────────────── */
+console.log('\n── Lo que salía mal al imprimir ──');
+const imp = await page.evaluate(() => {
+  const r = document.querySelector('#mesaCred .cred.reverso'), f = document.querySelector('#mesaCred .cred');
+  const est = r.querySelector('.estrella'), ley = r.querySelector('.leyenda');
+  const raya = f.querySelector('.ecg .raya'), pico = f.querySelector('.ecg svg:not(.raya)');
+  const cs = (el) => getComputedStyle(el);
+  return {
+    horneada: f.classList.contains('horneada') && r.classList.contains('horneada'),
+    panal: cs(f.querySelector('.panal')).display,
+    estrellaPlana: est.classList.contains('plana') && cs(est).opacity === '1' && /none/.test(cs(est).maskImage || cs(est).webkitMaskImage || 'none'),
+    grosor: [raya.getBoundingClientRect().height, pico.getBoundingClientRect().height,
+             raya.querySelector('path').getAttribute('stroke-width'), pico.querySelector('path').getAttribute('stroke-width'),
+             raya.viewBox.baseVal.height, pico.viewBox.baseVal.height],
+    leyenda: cs(ley).fontStretch,
+    qrVector: !!r.querySelector('.qr svg path'),
+    formato: CRED.base.formato, acomodo: CRED.base.acomodo,
+  };
+});
+ok('el fondo va horneado en una imagen opaca (sin panal transparente encima)', imp.horneada && imp.panal === 'none', JSON.stringify(imp));
+ok('la estrella de la vida va aplanada: sin opacidad ni máscara, que eran el «cuadro negro»', imp.estrellaPlana);
+const [hR, hP, sR, sP, vR, vP] = imp.grosor;
+ok('la raya del electro y el pico tienen el MISMO grosor (misma caja, mismo trazo, misma escala)',
+   Math.abs(hR - hP) < 0.01 && sR === sP && vR === vP, JSON.stringify(imp.grosor));
+ok('la leyenda va en letra de ancho normal, no condensada', /normal|100%/.test(imp.leyenda), imp.leyenda);
+ok('el QR es vectorial (cuadros), no la imagen adornada de Instagram', imp.qrVector);
+ok('por defecto: credencial estándar CR80 y una por página', imp.formato === 'cr80' && imp.acomodo === 'una', imp.formato + ' · ' + imp.acomodo);
+
+await page.evaluate(() => {
+  document.querySelector('#impresora').innerHTML = pliegosDe(CRED.gente);
+  document.body.classList.add('imprime-cred');
+  const m = medidasCred(CRED.base);
+  const st = document.createElement('style'); st.id = 'pagina-cred';
+  st.textContent = '@page{size:' + m.an + 'mm ' + m.al + 'mm; margin:0}'; document.head.appendChild(st);
+});
+const pdf2 = await page.pdf({ preferCSSPageSize:true, printBackground:true });
+const ruta2 = TMP + '/cred-cr80.pdf'; writeFileSync(ruta2, pdf2);
+const info = execFileSync('pdfinfo', [ruta2], { encoding:'utf8' });
+const tam = (info.match(/Page size:\s+([\d.]+) x ([\d.]+)/) || []).slice(1).map(Number);
+ok('el PDF sale a la medida EXACTA de la CR80 (54 × 85.6 mm), una cara por página',
+   /Pages:\s+2/.test(info) && Math.abs(tam[0] - 153.07) < 1 && Math.abs(tam[1] - 242.65) < 1, tam.join(' × ') + ' pt');
+const lista = execFileSync('pdfimages', ['-list', ruta2], { encoding:'utf8' }).split('\n').slice(2).filter(Boolean)
+  .map(l => l.trim().split(/\s+/)).map(c => ({ tipo:c[2], ancho:+c[3] }));
+/* las únicas máscaras que se permiten son las de los dos logos (PNG con su
+   silueta); ni el fondo (≥ 1400 px) ni la estrella (600 px) pueden llevar */
+const mascaras = lista.filter(x => x.tipo === 'smask').map(x => x.ancho);
+ok('ni el fondo ni la estrella llevan máscara de transparencia en el PDF',
+   !mascaras.some(a => a >= 1400 || a === 600), 'máscaras de ' + mascaras.join(', ') + ' px');
+try{ unlinkSync(ruta2); }catch(e){}
 
 ok('la página no tiró ningún error', errores.length === 0, errores[0] || '');
 

@@ -120,3 +120,32 @@ resplandor se hace aquí: la estrella va en blanco y se desvanece en círculo co
 El archivo original venía con **fondo blanco opaco**, no transparente. Sin quitarlo, al aclararlo
 por filtro toda la imagen se vuelve un rectángulo blanco — que fue exactamente lo que pasó en el
 primer intento.
+
+## Lo que falló en la imprenta · 30 de septiembre
+
+Carlos llevó las credenciales a imprimir y: perdían calidad, **la estrella salía como un cuadro
+negro**, el veteado azul de las bandas rojas salía en escalones, **los hexágonos no se veían** y a
+la imprenta le tomó **horas** sacar una. Además el QR no se leía, la leyenda se veía aplastada y la
+raya del electro no tenía el mismo grosor que el pico.
+
+**La causa de los primeros cinco es una sola: transparencias.** El panal iba con `opacity`, el
+veteado con degradados semitransparentes y la estrella con `opacity` más `mask-image`. En el PDF eso
+queda como grupos de transparencia y máscaras suaves; la impresora tiene que «aplanarlos» —lento—, y
+las que no saben pintan la máscara en negro. Se comprueba sin imprenta: `pdfimages -list` enseñaba
+un `smask` pegado a la estrella.
+
+**Lo que se hizo:**
+
+| Qué | Cómo |
+|---|---|
+| Fondo (panal + bandas + veteado) | se pinta en un lienzo a **600 ppp** ya mezclado y va como UNA imagen opaca (`fondoCred`) |
+| Estrella de la vida | se aplana una vez sobre el azul del reverso: opaca, sin máscara (`ESTRELLA_PLANA`) |
+| Hexágonos | un tono más firme para papel: `#DCE1E9` a 0.16 mm (mezclado, el de antes era un 7 % de gris) |
+| QR | **vectorial**, cuadros negros sobre blanco, generado del enlace. El de Instagram (puntitos en degradado + la arroba dentro) no lo lee ni un detector a tamaño impreso |
+| Leyenda | letra de ancho normal; la condensada en un párrafo de seis renglones se ve apachurrada |
+| Electro | la raya también es trazo de SVG, con la misma caja y el mismo viewBox vertical que el pico |
+| Formato | **CR80 · 54 × 85.6 mm** (la credencial estándar de PVC) y **una cara por página a la medida exacta**. El diseño se arma a 63.5 mm y se escala entero, así no se apachurra |
+
+Las pruebas están en `reportes/pruebas-credencial.mjs` § «Lo que salía mal al imprimir»: medida del
+PDF, ninguna máscara en fondo ni estrella, mismo grosor en el electro, QR legible desde 300 ppp.
+Necesitan `zbarimg` (`apt-get install zbar-tools`) y un servidor en 8791.

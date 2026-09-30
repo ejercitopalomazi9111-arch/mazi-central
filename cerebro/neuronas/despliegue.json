@@ -291,6 +291,31 @@
         "origen"
       ],
       "salioDe": "Carlos, 30 de septiembre: capturas de Presentaciones con Gemini y Groq en «Load failed»."
+    },
+    {
+      "id": "transparencia-que-la-imprenta-pinta-negra",
+      "titulo": "Lo que en pantalla es transparente, en la imprenta sale negro, en escalones o no sale — y tarda horas",
+      "gravedad": "alta",
+      "sintoma": "La credencial se veía perfecta en el teléfono. Impresa: la estrella de la vida como cuadro negro, el veteado de las bandas en escalones, los hexágonos del fondo desaparecidos, poca calidad, y la imprenta tardó horas en sacar una.",
+      "causa": "Transparencias en el PDF: el panal con opacity, el veteado con degradados rgba y la estrella con opacity + mask-image. El PDF las guarda como grupos de transparencia y máscaras suaves (smask); la impresora tiene que aplanarlas, lo hace lento y las que no saben pintan la máscara negra. Los hexágonos, mezclados, quedaban en un 7 % de gris y la impresora los tiraba.",
+      "porque": "En pantalla el navegador mezcla todo solo y se ve bien; el defecto sólo existe en la cadena de impresión, que nadie prueba.",
+      "arreglo": "Hornear: pintar el fondo (panal, bandas, veteado) en un canvas a 600 ppp ya mezclado y ponerlo como UNA imagen opaca; aplanar la estrella sobre su azul; subir el gris de las líneas finas para papel. El texto sigue siendo texto (vectorial).",
+      "comoCazarlo": "pdfimages -list al PDF impreso: si una imagen decorativa trae 'smask', va a dar problemas. reportes/pruebas-credencial.mjs lo exige: ni el fondo ni la estrella con máscara.",
+      "consejo": "Todo lo que vaya a papel: nada de opacity, mask ni rgba en lo decorativo. Si hace falta un efecto, se hornea en una imagen.",
+      "senales": [
+        "imprimir",
+        "imprenta",
+        "cuadro negro",
+        "transparencia",
+        "opacity",
+        "mask",
+        "pdf",
+        "degradado",
+        "credencial",
+        "calidad de impresión"
+      ],
+      "salioDe": "Carlos, 30 de septiembre: las credenciales de Advanced Critical Care en la imprenta.",
+      "vecinas": []
     }
   ]
 }
