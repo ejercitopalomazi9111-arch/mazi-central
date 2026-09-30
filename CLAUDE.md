@@ -368,6 +368,8 @@ dependemos.
 
    | si se ve bien en pantalla, se imprime bien | el navegador mezcla las transparencias en pantalla; en el PDF quedan como grupos y máscaras (`smask`) que la impresora tiene que aplanar | la estrella de la credencial salió como **cuadro negro**, el veteado en escalones, los hexágonos no salieron y la imprenta tardó **horas**. Se caza con `pdfimages -list`; lo decorativo que va a papel se **hornea** en una imagen opaca |
 
+   | `zoom` encoge la hoja y el navegador reparte las páginas con el tamaño encogido | Safari del iPhone siguió dando «la normal y una en blanco» con la hoja al 80 %, y se quitaba bajando a 95 % en SU diálogo: reparte las páginas con el alto SIN zoom (no medido en WebKit —aquí sólo hay Chromium—, pero es lo único que cuadra con el 95 %) | días con el defecto «arreglado» por aritmética. Ahora cada hoja va en un marco que YA mide lo impreso y se encoge con `transform`; la prueba simula a Safari quitándole el zoom |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---
