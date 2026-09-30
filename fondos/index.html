@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0B0710">
+<title>Quitar fondos</title>
+<!-- ══════════════════════════════════════════════════════════════════════════
+     QUITAR FONDOS · la herramienta sola, sin abrir Presentaciones
+     ──────────────────────────────────────────────────────────────────────────
+     Carlos: «ponla como una independiente, porque muchas veces tengo que editar
+     una imagen, quitar fondos y descargarla como PNG».
+     Es la MISMA pieza de Presentaciones (../presentaciones/recorte.js): al
+     abrir recorta solo lo del centro, y se corrige por color o con el dedo.
+     Aquí sólo se agrega lo de alrededor: elegir varias, descargar el PNG y
+     guardarlo en Fotos. La imagen no sale del teléfono.
+     ═════════════════════════════════════════════════════════════════════════ -->
+<style>
+:root{
+  --fondo:#0B0710; --sup:#1E1428; --borde:#3A2C4A; --texto:#EDEAF2; --tenue:#B3A9C2; --acento:#AC27FF;
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0; background:var(--fondo); color:var(--texto);
+  font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; -webkit-text-size-adjust:100%}
+main{max-width:720px; margin:0 auto; padding:calc(16px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom))}
+.volver{display:inline-flex; align-items:center; min-height:44px; color:var(--tenue); text-decoration:none}
+h1{font-size:28px; line-height:1.15; margin:8px 0 4px}
+.sub{color:var(--tenue); margin:0 0 24px}
+.soltar{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; text-align:center;
+  min-height:180px; padding:24px 16px; border:2px dashed var(--borde); border-radius:16px; background:var(--sup); cursor:pointer}
+.soltar.encima{border-color:var(--acento)}
+.soltar b{font-size:20px}
+.soltar span{color:var(--tenue); font-size:14px}
+.soltar input{position:absolute; width:1px; height:1px; opacity:0; pointer-events:none}
+.opcion{display:flex; align-items:center; gap:12px; min-height:48px; margin:16px 0 0; color:var(--texto)}
+.opcion input{width:24px; height:24px; accent-color:var(--acento); flex:none}
+.opcion small{display:block; color:var(--tenue)}
+button,.boton{font:inherit; color:inherit; background:var(--sup); border:1px solid var(--borde); border-radius:12px;
+  min-height:44px; padding:0 16px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  text-decoration:none; white-space:nowrap}
+.si{background:var(--acento); border-color:var(--acento); color:#fff; font-weight:700}
+#estado{min-height:24px; margin:16px 0 0; color:var(--tenue)}
+#listas{display:grid; grid-template-columns:minmax(0,1fr); gap:16px; margin-top:24px}
+@media (min-width:560px){ #listas{grid-template-columns:repeat(2,minmax(0,1fr))} }
+.ficha{background:var(--sup); border:1px solid var(--borde); border-radius:16px; overflow:hidden}
+.ver{aspect-ratio:1; display:flex; align-items:center; justify-content:center; padding:12px;
+  background:repeating-conic-gradient(#2A2033 0 25%, #1A1322 0 50%) 0 0/20px 20px}
+.ver img{max-width:100%; max-height:100%; object-fit:contain}
+.datos{padding:12px; display:flex; flex-direction:column; gap:8px}
+.nombre{font-size:14px; color:var(--tenue); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.botones{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px}
+.botones .ancho{grid-column:1/-1}
+.todas{display:flex; flex-wrap:wrap; gap:8px; margin-top:16px}
+[hidden]{display:none !important}
+.oculto{position:absolute; top:0; left:0; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<main>
+  <a class="volver" href="../">‹ Central</a>
+  <h1>Quitar fondos</h1>
+  <p class="sub">Elige una foto: el fondo se va solo. Si algo sale mal, lo corriges tocando un color o trazando con el dedo, y la descargas en PNG transparente.</p>
+
+  <label class="soltar" id="soltar">
+    <input type="file" accept="image/*" multiple id="archivo">
+    <b>Elegir imágenes</b>
+    <span>Una o varias · también puedes arrastrarlas o pegarlas aquí</span>
+  </label>
+
+  <label class="opcion">
+    <input type="checkbox" id="ajustar" checked>
+    <span>Recortar al borde de lo que se queda
+      <small>Como sticker: sin espacio vacío alrededor. Apágalo para conservar el tamaño original.</small></span>
+  </label>
+
+  <p id="estado" role="status" aria-live="polite"></p>
+  <div class="todas" id="todas" hidden>
+    <button type="button" class="si" id="bajarTodas">Descargar todas</button>
+    <button type="button" id="borrarTodas">Quitar todas</button>
+  </div>
+  <div id="listas"></div>
+</main>
+
+<script type="module">
+import { recortar, cargarModelo } from '../presentaciones/recorte.js';
+
+const $ = (s) => document.querySelector(s);
+const estado = $('#estado'), listas = $('#listas');
+const hechas = [];                       // { nombre, original: Blob, png: Blob, url, ficha }
+const fila = [];                         // lo que falta por recortar
+let trabajando = false;
+
+cargarModelo().catch(() => {});          // que el modelo ya esté bajado cuando elija la primera
+
+function nombrePng(n){ return (n || 'imagen').replace(/\.[^.]+$/, '') + '-sin-fondo.png'; }
+
+function bajar(h){
+  const a = document.createElement('a');
+  a.href = h.url; a.download = h.nombre; document.body.append(a); a.click(); a.remove();
+}
+
+async function guardarEnFotos(h){
+  const f = new File([h.png], h.nombre, { type: 'image/png' });
+  if(navigator.canShare?.({ files: [f] })){
+    try{ await navigator.share({ files: [f] }); }
+    catch(e){ if(e.name !== 'AbortError') bajar(h); }
+  } else bajar(h);
+}
+
+function pintarFicha(h){
+  const ficha = document.createElement('article');
+  ficha.className = 'ficha';
+  ficha.innerHTML = `<div class="ver"><img alt=""></div>
+    <div class="datos"><div class="nombre"></div>
+      <div class="botones">
+        <button type="button" class="si ancho" data-a="bajar">⬇ Descargar PNG</button>
+        <button type="button" data-a="fotos">Guardar en Fotos</button>
+        <button type="button" data-a="editar">✂ Corregir</button>
+        <button type="button" class="ancho" data-a="quitar">Quitar</button>
+      </div></div>`;
+  ficha.querySelector('.nombre').textContent = h.nombre;
+  ficha.addEventListener('click', async (e) => {
+    const a = e.target.closest('button')?.dataset.a; if(!a) return;
+    if(a === 'bajar') bajar(h);
+    else if(a === 'fotos') guardarEnFotos(h);
+    else if(a === 'editar'){ fila.unshift({ nombre: h.nombre, original: h.original, reemplaza: h }); siguiente(); }
+    else if(a === 'quitar'){ URL.revokeObjectURL(h.url); hechas.splice(hechas.indexOf(h), 1); ficha.remove(); contar(); }
+  });
+  h.ficha = ficha;
+  pintarImagen(h);
+  listas.prepend(ficha);
+}
+function pintarImagen(h){
+  const im = h.ficha.querySelector('img');
+  im.src = h.url; im.alt = 'Sin fondo: ' + h.nombre;
+}
+
+function contar(){
+  $('#todas').hidden = hechas.length < 2;
+  if(!trabajando) estado.textContent = hechas.length ? `${hechas.length} lista${hechas.length > 1 ? 's' : ''}. Descárgalas o toca «Corregir».` : '';
+}
+
+async function siguiente(){
+  if(trabajando || !fila.length) return;
+  trabajando = true;
+  const t = fila.shift();
+  estado.textContent = fila.length ? `Recortando «${t.nombre}» · faltan ${fila.length}` : `Recortando «${t.nombre}»…`;
+  try{
+    const r = await recortar(t.original, { recortarAlContenido: $('#ajustar').checked, titulo: 'Quitar el fondo' });
+    if(r){
+      if(t.reemplaza){
+        const h = t.reemplaza; URL.revokeObjectURL(h.url);
+        h.png = r.blob; h.url = URL.createObjectURL(r.blob); pintarImagen(h);
+      } else {
+        const h = { nombre: nombrePng(t.nombre), original: t.original, png: r.blob, url: URL.createObjectURL(r.blob) };
+        hechas.push(h); pintarFicha(h);
+      }
+    }
+  } catch(e){
+    estado.textContent = `No se pudo abrir «${t.nombre}»: ${e.message || e}`;
+    trabajando = false; return setTimeout(siguiente, 1500);
+  }
+  trabajando = false;
+  contar();
+  siguiente();
+}
+
+function agregar(archivos){
+  const imgs = [...archivos].filter((f) => f.type.startsWith('image/'));
+  if(!imgs.length){ estado.textContent = 'Eso no es una imagen.'; return; }
+  for(const f of imgs) fila.push({ nombre: f.name || 'imagen.png', original: f });
+  siguiente();
+}
+
+$('#archivo').addEventListener('change', (e) => { agregar(e.target.files); e.target.value = ''; });
+const zona = $('#soltar');
+zona.addEventListener('dragover', (e) => { e.preventDefault(); zona.classList.add('encima'); });
+zona.addEventListener('dragleave', () => zona.classList.remove('encima'));
+zona.addEventListener('drop', (e) => { e.preventDefault(); zona.classList.remove('encima'); agregar(e.dataTransfer.files); });
+addEventListener('paste', (e) => { const fs = [...(e.clipboardData?.files || [])]; if(fs.length) agregar(fs); });
+
+$('#bajarTodas').addEventListener('click', async () => {
+  for(const h of hechas){ bajar(h); await new Promise((ok) => setTimeout(ok, 350)); }   // Safari tira descargas pegadas
+});
+$('#borrarTodas').addEventListener('click', () => {
+  for(const h of hechas){ URL.revokeObjectURL(h.url); h.ficha.remove(); }
+  hechas.length = 0; contar();
+});
+window.__fondos = { hechas };
+</script>
+</body>
+</html>

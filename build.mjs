@@ -59,6 +59,9 @@ const VA = [
   /* Presentaciones: abrir un .pptx y cambiarlo en lote, con IA por La Sala.
      Las pruebas se quedan fuera solas (pruebas-*.mjs). */
   'presentaciones',
+  /* Quitar fondos, sola: la misma pieza de Presentaciones (recorte.js) sin
+     abrir una presentación. Lee su motor de ../presentaciones/. */
+  'fondos',
 ];
 
 /* ── Lo que tiene sitio adentro y NO se publica, dicho a propósito ──────────
