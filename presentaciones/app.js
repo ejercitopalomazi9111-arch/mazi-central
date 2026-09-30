@@ -775,7 +775,9 @@ function panelIA(prellenado = '', enviarYa = false){
   const pintaModo = () => {
     const op = modoIA === 'opinion';
     explica.replaceChildren(...(op ? ['La IA revisa ', h('b', {}, textoObjetivo()), ' y te dice qué funciona, qué mejorar del diseño y qué apartados sumar. Luego, si quieres, lo aplica.']
-      : ['La IA ve el texto de ', h('b', {}, textoObjetivo()), ' y tu banco de imágenes, y te propone cambios. Tú decides cuáles se ponen.']));
+      : ['La IA ve el texto de ', h('b', {}, textoObjetivo()), ' y tu banco de imágenes, y te propone cambios. Tú decides cuáles se ponen.']),
+      /* La versión a la vista: con una captura se sabe si el teléfono ya trae la última. */
+      h('small', { class: 'version-ia', style: { display: 'block', marginTop: '6px', opacity: '.55' } }, IA.VERSION));
     ejemplos.replaceChildren(...(op ? PREGUNTAS : EJEMPLOS).map((e) => h('button', { class: 'chip', type: 'button', on: { click: () => { if(op){ enviar(e, 'opinion'); } else { escribir.value = e; escribir.focus(); } } } }, e)));
     escribir.placeholder = op ? 'Pregúntale lo que quieras de tu presentación' : '¿Qué le hago a la presentación?';
     botonPedir.textContent = op ? 'Preguntar' : 'Pedir';

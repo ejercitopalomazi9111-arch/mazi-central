@@ -46,6 +46,10 @@ let sencilla = (() => { try{ return sessionStorage.getItem('salaSencilla') === '
    marca (X-Puerta), todo va por ahí; si no existe (404 pelón de los archivos,
    o la red), todo va directo y no se vuelve a probar. */
 let puerta = PUERTA ? null : false;
+/* Qué pasó con la puerta, para el detalle del error: con una captura se sabe
+   qué versión corría el teléfono y por qué camino falló. */
+export const VERSION = 'v30sep-b';
+let porQue = PUERTA ? 'puerta sin probar' : `sin puerta (${typeof location !== 'undefined' ? location.host || location.protocol : '?'})`;
 export async function llamar(url, opciones = {}){
   if(puerta !== false && url.startsWith(DIRECTO + '/')){
     const ruta = url.slice(DIRECTO.length);
@@ -53,9 +57,11 @@ export async function llamar(url, opciones = {}){
       const r = await porPuerta(PUERTA + ruta, opciones);
       if(r.headers.get('X-Puerta') === 'sala'){ puerta = true; return r; }
       if(puerta === true) return r;
+      porQue = `puerta ${r.status}${r.headers.get('X-Puerta') ? ' ' + r.headers.get('X-Puerta') : ' sin marca'}`;
     }catch(e){
+      porQue = `puerta ${e.name}: ${e.message}`;
       if(e.name === 'AbortError') throw new Error('La Sala tardó demasiado y se cortó. Prueba otra vez.');
-      if(puerta === true) throw new Error(`No hay conexión con La Sala${typeof navigator !== 'undefined' && navigator.onLine === false ? ': este teléfono está sin internet' : ''}. (Detalle para Sylcred: puerta · ${e.name}: ${e.message})`);
+      if(puerta === true) throw new Error(`No hay conexión con La Sala${typeof navigator !== 'undefined' && navigator.onLine === false ? ': este teléfono está sin internet' : ''}. (Detalle para Sylcred: ${VERSION} · puerta · ${e.name}: ${e.message})`);
     }
     puerta = false;
   }
@@ -94,7 +100,7 @@ async function directo(url, { metodo = 'GET', cuerpo, espera = 150000, crudo = f
       try{ const r = await intento(true); sencilla = true; try{ sessionStorage.setItem('salaSencilla', '1'); }catch{} return r; }
       catch(e2){ if(e2.name === 'AbortError') throw new Error('La Sala tardó demasiado y se cortó. Prueba otra vez.'); e = e2; }
     }
-    throw new Error(`No hay conexión con La Sala${typeof navigator !== 'undefined' && navigator.onLine === false ? ': este teléfono está sin internet' : ''}. (Detalle para Sylcred: ${e.name}: ${e.message})`);
+    throw new Error(`No hay conexión con La Sala${typeof navigator !== 'undefined' && navigator.onLine === false ? ': este teléfono está sin internet' : ''}. (Detalle para Sylcred: ${VERSION} · ${porQue} · directa ${e.name}: ${e.message})`);
   }
 }
 async function pedir(ruta, cuerpo, { metodo = 'POST', espera = 150000 } = {}){
