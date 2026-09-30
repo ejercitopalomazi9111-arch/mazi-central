@@ -1169,6 +1169,7 @@ El día ...
     </div>
     <div class="chips">
       <button class="chip" type="button" id="cFoto">Poner la foto</button>
+      <button class="chip" type="button" id="cFotoFondo">✂ Quitar el fondo de la foto</button>
       <button class="chip" type="button" id="cQuitarFoto">Quitar la foto</button>
       <input type="file" id="cFotoIn" accept="image/*" hidden>
     </div>
@@ -3645,7 +3646,7 @@ $('#cNueva').addEventListener('click', () => {
 });
 $('#cDuplicar').addEventListener('click', () => {
   const copia = Object.assign({}, cAct(), credNueva());
-  copia.apellidos = ''; copia.nombres = ''; copia.foto = ''; copia.num = '';
+  copia.apellidos = ''; copia.nombres = ''; copia.foto = ''; copia.fotoOriginal = ''; copia.num = '';
   CRED.gente.push(copia); credActiva = CRED.gente.length-1; guardarCred(); pintarCred();
 });
 $('#cBorrar').addEventListener('click', () => {
@@ -3657,11 +3658,32 @@ $('#cBorrar').addEventListener('click', () => {
 $('#cFoto').addEventListener('click', () => $('#cFotoIn').click());
 $('#cFotoIn').addEventListener('change', async e => {
   const f = e.target.files && e.target.files[0]; if(!f) return;
-  try{ cAct().foto = await achicar(f, 620); guardarCred(); pintarCred(); }
+  try{ const c = cAct(); c.foto = await achicar(f, 620); c.fotoOriginal = ''; guardarCred(); pintarCred(); }
   catch(err){ alert('Esa foto no se pudo leer.'); }
   e.target.value = '';
 });
-$('#cQuitarFoto').addEventListener('click', () => { cAct().foto = ''; guardarCred(); pintarCred(); });
+$('#cQuitarFoto').addEventListener('click', () => { cAct().foto = ''; cAct().fotoOriginal = ''; guardarCred(); pintarCred(); });
+/* Quitar el fondo de la foto con la herramienta de Presentaciones (recorte.js):
+   automático, por color o con el dedo. El resultado se ASIENTA sobre blanco y
+   se guarda como JPG: la credencial va a imprenta, y una foto con
+   transparencia es justo lo que la impresora pinta como cuadro negro. Se
+   guarda la original para poder repetirlo desde cero. */
+$('#cFotoFondo').addEventListener('click', async () => {
+  const c = cAct();
+  if(!c.foto){ alert('Primero pon la foto.'); return; }
+  let RC;
+  try{ RC = await import('../presentaciones/recorte.js'); }
+  catch(e){ alert('No se pudo abrir la herramienta de recorte. Revisa tu conexión y prueba otra vez.'); return; }
+  const r = await RC.recortar(c.fotoOriginal || c.foto, { recortarAlContenido: false, titulo: 'Quitar el fondo de la foto' });
+  if(!r) return;
+  const img = new Image(); img.src = URL.createObjectURL(r.blob); await img.decode();
+  const cv = document.createElement('canvas'); cv.width = img.naturalWidth; cv.height = img.naturalHeight;
+  const x = cv.getContext('2d'); x.fillStyle = '#FFFFFF'; x.fillRect(0, 0, cv.width, cv.height); x.drawImage(img, 0, 0);
+  URL.revokeObjectURL(img.src);
+  if(!c.fotoOriginal) c.fotoOriginal = c.foto;
+  c.foto = cv.toDataURL('image/jpeg', 0.9);
+  guardarCred(); pintarCred();
+});
 $('#cQR').addEventListener('click', () => $('#cQRIn').click());
 $('#cQRIn').addEventListener('change', async e => {
   const f = e.target.files && e.target.files[0]; if(!f) return;

@@ -145,7 +145,11 @@ async function pagina(ancho, alto){
   const errores = []; p.on('pageerror', (e) => errores.push(e.message));
   /* El 404 de la puerta cuando no está puesta es a propósito: así sabe la
      página que tiene que irse por la dirección directa. */
-  p.on('console', (m) => { if(m.type() === 'error' && !/status of 503/.test(m.text()) && !(/status of 404/.test(m.text()) && /\/api\/sala\//.test(m.location()?.url || ''))) errores.push(m.text()); });
+  /* MediaPipe escribe como «error» su bitácora (INFO de TensorFlow) y, con el
+     servidor de pruebas de Python —que no manda .wasm como application/wasm—,
+     el aviso de que carga el wasm por el camino lento. Cloudflare sí lo manda bien. */
+  const ruidoDelModelo = /wasm streaming compile failed|falling back to ArrayBuffer|^INFO: /;
+  p.on('console', (m) => { if(m.type() === 'error' && !ruidoDelModelo.test(m.text()) && !/status of 503/.test(m.text()) && !(/status of 404/.test(m.text()) && /\/api\/sala\//.test(m.location()?.url || ''))) errores.push(m.text()); });
   await p.goto(BASE);
   return { p, ctx, errores };
 }
@@ -815,6 +819,37 @@ await p.click('#b-seguir');
 await p.waitForSelector('#laminas .lienzo');
 ok('y trae los cambios', await p.evaluate(() => window.__pres.N.textos(window.__pres.D, 4).some((t) => t.texto === 'Título escrito a mano')));
 ok('ni un error de consola', !errores.length, errores.join(' | '));
+
+console.log('\n· Quitar el fondo de una imagen de la lámina');
+{
+  const q = await pagina(390, 844);
+  await q.p.setInputFiles('#soltar input', PPTX);
+  await q.p.waitForSelector('#laminas .lienzo');
+  const con = await q.p.evaluate(async () => { const { D, N } = window.__pres;
+    for(let i = 0; i < D.laminas.length; i++){ const m = await N.modelo(D, i);
+      const f = m.formas.find((f) => f.rutaImagen && /\.(png|jpe?g)$/i.test(f.rutaImagen) && f.capa === 'lamina'); if(f) return { i, cid: f.cid, ruta: f.rutaImagen }; }
+    return null; });
+  ok('la presentación de prueba trae una foto en alguna lámina', !!con, 'no hay');
+  if(con){
+    await q.p.evaluate(([i, c]) => window.__pres.INS.fijarSeleccion(i, c), [con.i, con.cid]);
+    await q.p.locator('#laminas .ver').nth(con.i).click();
+    await q.p.waitForSelector('#visor[open] #barra-elemento [data-accion="fondo"]', { timeout: 8000 }).catch(() => {});
+    ok('una imagen elegida trae «✂ Quitar fondo» en su barra', await q.p.locator('#barra-elemento [data-accion="fondo"]').isVisible());
+    const antes = await q.p.evaluate(() => window.__pres.D.deshacer.length);
+    await q.p.click('#barra-elemento [data-accion="fondo"]');
+    await q.p.waitForSelector('.rc', { timeout: 10000 });
+    await q.p.waitForFunction(() => !/Buscando|Cargando/.test(document.querySelector('.rc-estado').textContent), null, { timeout: 60000 });
+    await captura(q.p, '22-quitar-fondo');
+    await q.p.click('.rc [data-listo]');
+    await q.p.waitForFunction(() => /Fondo quitado/.test(document.querySelector('#avisos').textContent), null, { timeout: 15000 }).catch(() => {});
+    ok('«Listo» cambia la imagen en la lámina y avisa', /Fondo quitado/.test(await q.p.locator('#avisos').textContent()));
+    ok('y se puede deshacer como cualquier otro cambio', await q.p.evaluate(() => window.__pres.D.deshacer.at(-1)?.nombre) === 'Quitar fondo' && await q.p.evaluate(() => window.__pres.D.deshacer.length) === antes + 1);
+    const nueva = await q.p.evaluate(async (c) => { const { D, N } = window.__pres; const m = await N.modelo(D, c.i); const f = m.formas.find((x) => x.cid === c.cid); return f?.rutaImagen; }, con);
+    ok('la imagen de esa lámina ahora es un PNG (con transparencia)', /\.png$/i.test(nueva || ''), nueva);
+    ok('ni un error de consola', !q.errores.length, q.errores.join(' | '));
+  }
+  await q.ctx.close();
+}
 
 console.log('\n· Sin llave');
 const s = await pagina(390, 844);
