@@ -66,6 +66,11 @@ async function pedir(ruta, cuerpo, { metodo = 'POST', espera = 150000 } = {}){
   return j;
 }
 export const motores = () => pedir('motores', null, { metodo: 'GET', espera: 15000 });
+/* Las llaves de Gemini y Groq se pegan aquí y viajan directo al servidor de
+   La Sala, que las prueba y las guarda. Nunca se quedan en el teléfono ni en
+   el repo. De regreso sólo vienen los últimos 4 caracteres. */
+export const llavesIA = () => pedir('llaves-ia', null, { metodo: 'GET', espera: 15000 });
+export const guardarLlavesIA = (llaves) => pedir('llaves-ia', llaves, { espera: 30000 });
 /* motor: 'gemini' (Paulina) o 'groq' (Negro). mensajes: [{ de:'tu'|'yo', texto }] */
 export async function texto({ motor = 'gemini', sistema, mensajes, tope = 6000, imagenes, json }){
   return (await pedir('ia-texto', { motor, sistema, mensajes, tope, ...(imagenes?.length ? { imagenes } : {}), ...(json ? { json: true } : {}) })).texto || '';

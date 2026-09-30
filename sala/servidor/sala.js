@@ -372,10 +372,36 @@ function nuevaLlave(){
   return [...n].map(x => 'abcdefghijkmnpqrstuvwxyz23456789'[x % 32]).join('');
 }
 
+/* Las llaves de modelo que se pueden pegar desde la app, por motor. */
+const LLAVES_IA = { gemini: 'GEMINI_API_KEY', groq: 'GROQ_API_KEY' };
+const NOMBRES_LLAVE_IA = Object.values(LLAVES_IA);
+
+/* Una pregunta que no cuesta nada: la lista de modelos. Contesta 200 con una
+   llave buena y 400/401/403 con una mala. Se prueba ANTES de guardar. */
+async function probarLlaveIA(id, k){
+  const quien = id === 'gemini' ? 'Google' : 'Groq';
+  /* El formato sólo sirve de PISTA cuando la prueba falla: si un día cambian
+     cómo empiezan las llaves, una regla fija rechazaría una llave buena. */
+  const pista = (id === 'gemini' ? /^AIza/ : /^gsk_/).test(k) ? '' : (id === 'gemini'
+    ? ' Además no parece llave de Gemini (suelen empezar con «AIza»): cópiala otra vez de aistudio.google.com/apikey.'
+    : ' Además no parece llave de Groq (empiezan con «gsk_»): cópiala otra vez de console.groq.com/keys.');
+  try{
+    const r = id === 'gemini'
+      ? await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=1', { headers: { 'x-goog-api-key': k } })
+      : await fetch('https://api.groq.com/openai/v1/models', { headers: { Authorization: `Bearer ${k}` } });
+    if(r.ok) return { bien: true };
+    if([400, 401, 403].includes(r.status)) return { bien: false, error: `${quien} dice que esa llave no sirve (${r.status}). Puede que la hayan revocado: saca una nueva.${pista}` };
+    return { bien: false, error: `${quien} contestó ${r.status}. Intenta en un minuto.` };
+  }catch(e){ return { bien: false, error: `No pude comprobar la llave con ${quien}: ${e.message}` }; }
+}
+
 export class Sala {
   constructor(ctx, env){
     this.ctx = ctx;
     this.env = env;
+    /* El entorno TAL CUAL lo da Cloudflare. `this.env` puede traer encima las
+       llaves de modelo pegadas desde la app (ver /llaves-ia). */
+    this.envBase = env;
     /* El tope de vueltas se lee del ENTORNO, no de una constante: Carlos pidió
        quitar el freno de 12 y lo que queda es un techo anti-bucle de 500, que
        se puede subir, bajar o apagar sin volver a desplegar código.
@@ -400,6 +426,10 @@ export class Sala {
       this.serie   = await ctx.storage.get('serie')   || 0;
       /* Las llaves de ESTA sala, `llave → cuenta`. Vacío = sala abierta. */
       this.llaves  = await ctx.storage.get('llaves')  || {};
+      /* Las llaves de Gemini y Groq pegadas desde la app. Viven aquí, en el
+         almacenamiento del servidor, y NUNCA en el repo: GitHub las escanea y
+         Google revoca la que encuentra publicada. */
+      this.ponerLlavesIA(await ctx.storage.get('llavesIA') || {});
       this.dueno   = await ctx.storage.get('dueno')   || null;
       /* Las neuronas que proponen los agentes, esperando entrar al repo. */
       this.propuestas = await ctx.storage.get('propuestas') || [];
@@ -1092,6 +1122,15 @@ export class Sala {
      La llave NO la elige el que se conecta: viene de las variables del
      worker. Por eso un participante puede mentir en su nombre pero no en su
      cuenta, que es lo único que importa para saber de quién es cada sesión. */
+  /* Encima del entorno de Cloudflare van las pegadas desde la app: si Carlos
+     cambia una llave desde el teléfono, ésa manda sobre la del panel. */
+  ponerLlavesIA(guardadas){
+    this.llavesIA = guardadas;
+    const extra = {};
+    for(const n of NOMBRES_LLAVE_IA) if(guardadas[n]) extra[n] = guardadas[n];
+    this.env = Object.keys(extra).length ? { ...this.envBase, ...extra } : this.envBase;
+  }
+
   cuentaDe(llave){
     /* ── las llaves de la sala van PRIMERO ────────────────────────────────
        Carlos lo pidió así: «que crear la llave de sala sea fácil, nada de
@@ -2103,6 +2142,42 @@ export class Sala {
     if(ruta === 'banco') return atenderBanco(this.ctx.storage, pedido, url, cuenta);
     /* ── /elementos · lo que Carlos arma y guarda para reusar (elementos.js) ── */
     if(ruta === 'elementos') return atenderElementos(this.ctx.storage, pedido, url, cuenta);
+
+    /* ── /llaves-ia · pegar la llave de Gemini o Groq desde la app ─────────
+       Carlos puso las dos en el panel de Cloudflare como «Secret», vio «Value
+       encrypted», y el servidor seguía diciendo que faltaban: el panel tiene
+       DOS cajas con el mismo nombre (las del programa y las de «Build», que
+       el programa nunca ve) y desde el teléfono no se distinguen. Así que la
+       llave se pega en la herramienta y llega aquí directo.
+         · sólo el dueño de la sala;
+         · se PRUEBA contra Google o Groq antes de guardarla — una llave mala
+           se rechaza aquí y no cuando ya estás pidiendo cambios;
+         · de regreso sólo salen los últimos 4 caracteres. Nunca la llave. */
+    if(ruta === 'llaves-ia'){
+      if(cuenta !== (this.dueno || 'carlos')) return Response.json({ error: 'Sólo el dueño de la sala puede cambiar las llaves de la IA.' }, { status: 403 });
+      const estado = () => Object.fromEntries(Object.entries(LLAVES_IA).map(([id, n]) => [id, {
+        puesta: !!this.env[n],
+        de: this.llavesIA[n] ? 'app' : (this.envBase && this.envBase[n] ? 'panel' : null),
+        termina: this.env[n] ? String(this.env[n]).slice(-4) : null,
+      }]));
+      if(pedido.method === 'GET') return Response.json({ bien: true, llaves: estado() });
+      if(pedido.method !== 'POST') return Response.json({ error: 'Usa GET o POST.' }, { status: 405 });
+      const c = await pedido.json().catch(() => ({}));
+      const nuevas = { ...this.llavesIA };
+      for(const [id, n] of Object.entries(LLAVES_IA)){
+        if(c.borrar === id){ delete nuevas[n]; continue; }
+        if(c[id] === undefined) continue;
+        const k = String(c[id] || '').replace(/\s+/g, '');
+        if(!k) continue;
+        const prueba = await probarLlaveIA(id, k);
+        if(!prueba.bien) return Response.json({ bien: false, error: prueba.error }, { status: 400 });
+        nuevas[n] = k;
+      }
+      await this.ctx.storage.put('llavesIA', nuevas);
+      this.ponerLlavesIA(nuevas);
+      this.sentarSillasVivas();
+      return Response.json({ bien: true, llaves: estado() });
+    }
 
     if(pedido.method === 'POST' && (ruta === 'ia-texto' || ruta === 'ia-imagen')){
       const crudo = await pedido.text().catch(() => '');

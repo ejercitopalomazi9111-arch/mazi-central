@@ -721,6 +721,8 @@ function panelIA(prellenado = '', enviarYa = false){
     }catch(e){
       chat.push({ de: 'yo', texto: e.message, error: true });
       if(e.llave) pintaLlave(true);
+      if(/falta el secreto|apagad/.test(e.message)) pintaMotores();
+      else if(/rechazó la llave|llave no sirve|no sirve/.test(e.message)) pintaMotores(true);
     }
     pintaChat();
   }
@@ -731,9 +733,42 @@ function panelIA(prellenado = '', enviarYa = false){
     zonaLlave.replaceChildren(h('div', { class: 'a-quien' },
       h('b', {}, 'Para usar la IA, conecta La Sala una vez. '), 'Pega el link con el que entras a la sala (o sólo la llave). Se guarda en este teléfono; la llave de Gemini y Groq nunca sale del servidor.',
       h('div', { style: { height: '8px' } }), inp, h('div', { style: { height: '8px' } }),
-      h('button', { class: 'btn ancho', type: 'button', on: { click: () => { if(IA.ponerLlave(inp.value)){ aviso('Listo, La Sala quedó conectada.', 'bien'); pintaLlave(); } else aviso('No encontré la llave en eso.', 'mal'); } } }, 'Conectar')));
+      h('button', { class: 'btn ancho', type: 'button', on: { click: () => { if(IA.ponerLlave(inp.value)){ aviso('Listo, La Sala quedó conectada.', 'bien'); pintaLlave(); pintaMotores(); } else aviso('No encontré la llave en eso.', 'mal'); } } }, 'Conectar')));
   };
   pintaLlave();
+  /* Si al servidor le falta la llave de Gemini o de Groq, se pega aquí mismo.
+     Carlos la puso en el panel de Cloudflare y el servidor no la veía; así ya
+     no depende de encontrar la caja correcta del panel. */
+  const zonaMotores = h('div');
+  const pintaMotores = async (forzar = false) => {
+    if(!IA.llave()){ zonaMotores.replaceChildren(); return; }
+    let faltan = [];
+    try{ faltan = (await IA.motores()).apagados.map((m) => m.id); }catch{ zonaMotores.replaceChildren(); return; }
+    if(forzar) faltan = ['gemini', 'groq'];
+    if(!faltan.length){ zonaMotores.replaceChildren(); return; }
+    const campos = {};
+    const NOMBRE = { gemini: ['Paulina · Gemini', 'aistudio.google.com/apikey'], groq: ['Negro · Groq', 'console.groq.com/keys'] };
+    const filas = faltan.map((id) => {
+      campos[id] = h('input', { class: 'entrada', type: 'password', placeholder: `Llave de ${NOMBRE[id][0]}`, autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false' });
+      return h('div', { style: { marginTop: '8px' } }, campos[id], h('small', { style: { display: 'block', marginTop: '4px', opacity: '.75' } }, `Se saca en ${NOMBRE[id][1]}`));
+    });
+    const boton = h('button', { class: 'btn primario ancho', type: 'button', on: { click: async () => {
+      const envio = {};
+      for(const id of faltan) if(campos[id].value.trim()) envio[id] = campos[id].value.trim();
+      if(!Object.keys(envio).length){ aviso('Pega al menos una llave.', 'mal'); return; }
+      boton.disabled = true; boton.textContent = 'Probando la llave…';
+      try{
+        await IA.guardarLlavesIA(envio);
+        aviso('Listo: la llave sirve y quedó guardada en La Sala.', 'bien');
+        await pintaMotores();
+      }catch(e){ aviso(e.message, 'mal'); boton.disabled = false; boton.textContent = 'Guardar en La Sala'; }
+    } } }, 'Guardar en La Sala');
+    zonaMotores.replaceChildren(h('div', { class: 'a-quien' },
+      h('b', {}, forzar ? 'Cambia la llave de la IA. ' : `A La Sala le falta la llave de ${faltan.map((id) => NOMBRE[id][0]).join(' y ')}. `),
+      'Pégala aquí: se prueba al momento y se guarda en el servidor, no en este teléfono ni en GitHub.',
+      ...filas, h('div', { style: { height: '8px' } }), boton));
+  };
+  pintaMotores();
   const ejemplos = h('div', { class: 'ejemplos' });
   const explica = h('p', { class: 'a-quien' });
   const botonPedir = h('button', { class: 'btn primario', type: 'button', on: { click: () => enviar() } });
@@ -750,6 +785,7 @@ function panelIA(prellenado = '', enviarYa = false){
     segmento([['cambios', 'Pedir cambios'], ['opinion', 'Opinión y consejos']], modoIA, (v) => { modoIA = v; pintaModo(); }),
     explica,
     zonaLlave,
+    zonaMotores,
     segmento([['gemini', 'Paulina · Gemini'], ['groq', 'Negro · Groq']], motor, (v) => { motor = v; }),
     chatEl,
     ejemplos,

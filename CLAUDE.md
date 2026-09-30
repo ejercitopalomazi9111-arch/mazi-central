@@ -363,6 +363,8 @@ dependemos.
    | «sin desborde» en la página es sin desborde en la pantalla | un `<dialog>` con su propio scroll se desborda **por dentro** y `document.scrollWidth` ni se entera | la fila de botones del visor medía 616 px en 390 con la prueba en verde; lo vio Carlos en capturas. `desborde()` ahora mide también lo que hay en `dialog[open]` |
    | una diferencia pixel a pixel del logo entero caza cualquier pieza mal puesta | caza una PIEZA (sin la G da 19 contra 12), no una TIRA: con el nombre del arco cortado en «EL GAR» el promedio seguía abajo de 15 | la apertura quedó con el nombre a medias por una máscara copiada de memoria, y además culpé primero al pintado de Chromium; en vivo salía igual. Ahora hay una medida sólo de la franja del nombre (11.4 bien, 26.7 cortado) |
 
+   | «Value encrypted» en el panel de Cloudflare es una llave que el servidor lee | es una llave que **se guardó**; el panel tiene dos cajas casi iguales (la del programa y la de «Build», que el programa nunca ve) y el servidor puede no recibirla | Carlos puso Gemini y Groq dos veces y la IA de Presentaciones seguía muda. Se comprueba con `/motores`, no con el panel; y ahora la llave se pega en la propia app (`/llaves-ia`) |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---
