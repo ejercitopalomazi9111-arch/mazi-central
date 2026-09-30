@@ -35,6 +35,7 @@ const PPTX = join(RAIZ, 'fadori/presentacion/Fadori-STEAM.pptx');
 const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAEAAAAAwCAIAAAAuKetIAAAAUklEQVR4nO3PQQ3AIADAQMAM5vHIRPC4LOkpaOfZd/zZ0gGvGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0D7M0QIyKhL5GwAAAABJRU5ErkJggg==';
 
 const b = await chromium.launch();
+let sinGemini = false;
 let safariTerco = false;
 const pedidos = [];
 async function pagina(ancho, alto){
@@ -58,6 +59,12 @@ async function pagina(ancho, alto){
       const req = new Request(u, { method: r.request().method(), body: r.request().method() === 'POST' ? r.request().postData() : undefined });
       const res = await atenderElementos(almacen, req, new URL(u), 'carlos');
       return r.fulfill({ status: res.status, contentType: res.headers.get('content-type') || 'application/json', body: Buffer.from(await res.arrayBuffer()) });
+    }
+    if(/\/motores/.test(u)) return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ bien: true, vivos: [], apagados: sinGemini ? [{ id: 'gemini', nombre: 'Paulina', falta: 'GEMINI_API_KEY' }] : [] }) });
+    if(/\/llaves-ia/.test(u)){
+      if(/MALA/.test(cuerpo?.gemini || '')) return r.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ bien: false, error: 'Google dice que esa llave no sirve (400).' }) });
+      sinGemini = false;
+      return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ bien: true, llaves: { gemini: { puesta: true, de: 'app', termina: 'abcd' } } }) });
     }
     if(/\/banco/.test(u)){
       const url = new URL(u), id = url.searchParams.get('id');
@@ -805,6 +812,28 @@ ok('sin llave pide pegar el link de La Sala', await s.p.getByText('conecta La Sa
 await s.p.locator('#hoja input[placeholder*="link de La Sala"]').fill('https://mazi-central.palomazi9111.workers.dev/sala/?sala=GRUPAZ&llave=abc123');
 await s.p.getByRole('button', { name: 'Conectar' }).click();
 ok('saca la llave del link y la guarda', (await s.p.evaluate(() => localStorage.getItem('salaLlave'))) === 'abc123');
+
+console.log('\n· Al servidor le falta la llave de Gemini');
+sinGemini = true;
+const g = await pagina(390, 844);
+await g.p.setInputFiles('#soltar input', PPTX);
+await g.p.waitForSelector('#laminas .lienzo');
+await g.p.click('.dock [data-panel="ia"]');
+await g.p.waitForSelector('text=le falta la llave de Paulina', { timeout: 5000 }).catch(() => {});
+ok('dice cuál llave le falta a La Sala', await g.p.getByText('le falta la llave de Paulina · Gemini').isVisible());
+await captura(g.p, '05c-falta-llave');
+await g.p.locator('#hoja input[placeholder*="Llave de Paulina"]').fill('AIzaMALA123');
+await g.p.getByRole('button', { name: 'Guardar en La Sala' }).click();
+await g.p.waitForFunction(() => /no sirve/.test(document.querySelector('#avisos').textContent), null, { timeout: 5000 }).catch(() => {});
+ok('una llave mala se avisa y no se da por buena', /no sirve/.test(await g.p.locator('#avisos').textContent()) && await g.p.getByText('le falta la llave de Paulina').isVisible());
+await g.p.locator('#hoja input[placeholder*="Llave de Paulina"]').fill('  AIzaBUENA123  ');
+await g.p.getByRole('button', { name: 'Guardar en La Sala' }).click();
+await g.p.waitForFunction(() => !/le falta la llave/.test(document.querySelector('#hoja').textContent), null, { timeout: 5000 }).catch(() => {});
+const pegada = pedidos.filter((x) => /llaves-ia/.test(x.u)).at(-1);
+ok('la manda a La Sala con la llave de la sala, sin espacios', pegada?.cuerpo?.gemini === 'AIzaBUENA123' && pegada?.llave === 'llave-de-prueba', JSON.stringify(pegada?.cuerpo));
+ok('y el cuadro se quita cuando ya quedó', !(await g.p.getByText('le falta la llave').count()));
+ok('la llave de Gemini no se queda en el teléfono', !(await g.p.evaluate(() => JSON.stringify(localStorage) + JSON.stringify(sessionStorage))).includes('AIzaBUENA'));
+ok('nada se sale de la pantalla', await g.p.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
 
 console.log('\n· Cuando el teléfono tira la petición antes de mandarla');
 safariTerco = true;

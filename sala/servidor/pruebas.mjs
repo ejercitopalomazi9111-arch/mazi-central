@@ -1010,6 +1010,48 @@ console.log('\n· Las sillas');
     globalThis.fetch = antes;
   }
 
+  /* ── /llaves-ia · pegar la llave de Gemini o Groq desde la app ─────────
+     Carlos las puso en el panel como «Secret» y el servidor seguía sin
+     verlas. Esto las guarda en la sala, sin pasar por GitHub. */
+  {
+    const antes = globalThis.fetch, vistas = [];
+    const BUENA = 'AIzaPRUEBA' + 'x'.repeat(29), GROQ = 'gsk_' + 'y'.repeat(40);
+    globalThis.fetch = async (url, op = {}) => {
+      const u = String(url), llaveUsada = op.headers?.['x-goog-api-key'] || op.headers?.Authorization || '';
+      vistas.push({ u, llaveUsada });
+      if(u.endsWith('/models?pageSize=1')) return new Response('{}', { status: llaveUsada === BUENA || llaveUsada === 'AIzaDELPANEL' ? 200 : 400 });
+      if(u.endsWith('/openai/v1/models')) return new Response('{}', { status: llaveUsada === `Bearer ${GROQ}` ? 200 : 401 });
+      return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: 'hola con la llave pegada' }] } }] }));
+    };
+    const ctx = hacerCtx();
+    const s = new Sala(ctx, { ESPERA_MS: 250, LLAVES: 'carlos:MAESTRA,luis:DELUIS' });
+    const [c0] = await leer(await pedir(s, 'POST', 'llaves-ia', { gemini: BUENA }, 'DELUIS'));
+    ok('sólo el dueño cambia las llaves de la IA', c0 === 403, String(c0));
+    const [, g0] = await leer(await pedir(s, 'GET', 'llaves-ia', undefined, 'MAESTRA'));
+    ok('sin llaves, la sala dice que no hay ninguna puesta', g0.llaves.gemini.puesta === false && g0.llaves.groq.puesta === false);
+    const [c1, r1] = await leer(await pedir(s, 'POST', 'llaves-ia', { gemini: 'AIzaMALA' + 'z'.repeat(30) }, 'MAESTRA'));
+    ok('una llave que Google rechaza no se guarda', c1 === 400 && /no sirve/.test(r1.error), JSON.stringify(r1));
+    const [c1b, r1b] = await leer(await pedir(s, 'POST', 'llaves-ia', { groq: 'hola' }, 'MAESTRA'));
+    ok('y si ni parece llave, lo dice', c1b === 400 && /gsk_/.test(r1b.error), JSON.stringify(r1b));
+    const [c2, r2] = await leer(await pedir(s, 'POST', 'llaves-ia', { gemini: ` ${BUENA}\n`, groq: GROQ }, 'MAESTRA'));
+    ok('la buena se guarda (con espacios o salto de línea al pegar)', c2 === 200 && r2.llaves.gemini.puesta && r2.llaves.gemini.de === 'app' && r2.llaves.groq.puesta, JSON.stringify(r2));
+    ok('y de regreso sólo salen los últimos 4, nunca la llave', !JSON.stringify(r2).includes(BUENA) && !JSON.stringify(r2).includes(GROQ) && r2.llaves.gemini.termina === BUENA.slice(-4));
+    const [, m] = await leer(await pedir(s, 'GET', 'motores', undefined, 'MAESTRA'));
+    ok('con eso Paulina y Negro quedan prendidos', m.vivos.length === 2 && m.apagados.length === 0, JSON.stringify(m));
+    const [c3, r3] = await leer(await pedir(s, 'POST', 'ia-texto', { motor: 'gemini', texto: 'hola' }, 'MAESTRA'));
+    ok('y la IA de verdad contesta con la llave pegada', c3 === 200 && r3.texto === 'hola con la llave pegada' && vistas.at(-1).u.includes(encodeURIComponent(BUENA)), JSON.stringify(r3));
+    const s2 = new Sala(ctx, { ESPERA_MS: 250, LLAVES: 'carlos:MAESTRA' });
+    const [, g2] = await leer(await pedir(s2, 'GET', 'llaves-ia', undefined, 'MAESTRA'));
+    ok('sobrevive a que el servidor se reinicie', g2.llaves.gemini.puesta && g2.llaves.gemini.de === 'app');
+    ok('y la llave queda en el almacenamiento de la sala', (await ctx.storage.get('llavesIA')).GEMINI_API_KEY === BUENA);
+    const s3 = new Sala(ctx, { ESPERA_MS: 250, LLAVES: 'carlos:MAESTRA', GEMINI_API_KEY: 'AIzaDELPANEL' });
+    const [, g3] = await leer(await pedir(s3, 'GET', 'llaves-ia', undefined, 'MAESTRA'));
+    ok('la pegada en la app manda sobre la del panel', g3.llaves.gemini.de === 'app' && g3.llaves.gemini.termina === BUENA.slice(-4));
+    const [, g4] = await leer(await pedir(s3, 'POST', 'llaves-ia', { borrar: 'gemini' }, 'MAESTRA'));
+    ok('al borrarla vuelve a usarse la del panel', g4.llaves.gemini.de === 'panel' && g4.llaves.gemini.termina === 'ANEL' && g4.llaves.groq.de === 'app', JSON.stringify(g4));
+    globalThis.fetch = antes;
+  }
+
   /* ── /banco · las 300 imágenes de Carlos (banco.js) ─────────────────── */
   {
     const s = nueva({ LLAVES: 'carlos:MAESTRA' });

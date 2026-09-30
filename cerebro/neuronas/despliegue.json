@@ -243,6 +243,25 @@
         "el-apunte-que-avisa-de-estados-viejos-y-esta-viejo",
         "lista-a-mano-que-se-rompe-con-el-segundo-caso"
       ]
+    },
+    {
+      "id": "secreto-en-el-panel-que-el-servidor-no-ve",
+      "titulo": "La llave dice «Value encrypted» en el panel y el servidor sigue sin verla",
+      "gravedad": "alta",
+      "sintoma": "Carlos pone GEMINI_API_KEY y GROQ_API_KEY como «Secret» en Cloudflare, el panel las enseña guardadas, y la IA de Presentaciones sigue sin funcionar. /api/sala/GRUPAZ/motores da las dos por faltantes.",
+      "causa": "El worker en producción no recibe esas variables. Lo medido: /motores y /ia-texto dicen «falta el secreto». Lo que no se pudo ver desde aquí es en qué caja del panel quedaron; la sospecha más fuerte es la de «Build → Variables and secrets», que sólo existe mientras se arma y el programa nunca ve, o un proyecto distinto de `sala`.",
+      "porque": "El panel tiene dos cajas casi iguales y desde el teléfono no se distinguen. «Value encrypted» sólo dice que se guardó, no que el programa la lea.",
+      "arreglo": "Las llaves de la IA ya no dependen del panel: se pegan en Presentaciones → IA, el servidor las PRUEBA contra Google o Groq, y si sirven las guarda en el almacenamiento de La Sala (ruta /llaves-ia, sólo el dueño). Nunca pasan por el repo, así que GitHub no las ve ni Google las revoca.",
+      "comoCazarlo": "No se cree al panel: curl -H 'X-Llave: …' https://sala.palomazi9111.workers.dev/api/sala/GRUPAZ/motores. Si `apagados` trae el motor, el servidor no tiene la llave, diga lo que diga el panel.",
+      "consejo": "Una llave que se guardó y una llave que el programa lee son dos cosas. Se comprueba desde el programa, no desde donde se pegó.",
+      "senales": [
+        "no hay conexión con La Sala",
+        "ya puse las llaves y no jala",
+        "Paulina y Negro apagados",
+        "value encrypted pero no funciona",
+        "falta el secreto GEMINI_API_KEY"
+      ],
+      "salioDe": "Presentaciones, 30 de septiembre: la IA seguía muda después de que Carlos volvió a poner las dos llaves."
     }
   ]
 }
