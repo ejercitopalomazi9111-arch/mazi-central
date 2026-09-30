@@ -35,7 +35,12 @@
 
   "vars": {
     // De dónde se acepta que llamen. En claro y sin comodín.
-    "ORIGENES": "https://mazi-central.palomazi9111.workers.dev,http://localhost:8792,http://127.0.0.1:8792",
+    // ⚠ 30 de septiembre: Carlos abre la Central desde GitHub Pages (github.io),
+    // no desde Cloudflare. Sin esas dos, TODO lo de La Sala le daba «Load
+    // failed» en el iPhone —Gemini, Groq, el banco— mientras desde aquí,
+    // probando con la dirección de Cloudflare, todo salía bien. Las dos son
+    // páginas que sólo sus cuentas pueden publicar.
+    "ORIGENES": "https://mazi-central.palomazi9111.workers.dev,https://ejercitopalomazi9111-arch.github.io,https://bigtigermx.github.io,http://localhost:8792,http://127.0.0.1:8792",
 
     // Las vistas previas del sitio: Cloudflare le pone un nombre distinto a
     // cada rama y a cada commit. Sin esto, la mesa abierta desde una vista

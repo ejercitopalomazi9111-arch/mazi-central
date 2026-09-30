@@ -1361,6 +1361,22 @@ console.log('\n· CORS sobre respuestas inmutables');
   ok('y el Vary, para que no se cachee mal',
      !!r && r.headers.get('vary') === 'Origin');
   ok('el cuerpo llega entero', !!r && (await r.json()).bien === true);
+
+  /* 30 de septiembre: la Central de Carlos vive TAMBIÉN en github.io. El
+     rechazo de un origen ajeno tiene que poder leerse: sin CORS, Safari sólo
+     dice «Load failed». */
+  const ajeno = await puerta.fetch(new Request('https://s.test/api/sala/ABCDEF/hilo',
+    { headers:{ Origin: 'https://malo.example' } }), conObjeto);
+  const cuerpoAjeno = await ajeno.json().catch(() => ({}));
+  ok('un origen ajeno se rechaza (403) PERO con CORS, para que la página lea por qué',
+     ajeno.status === 403 && ajeno.headers.get('access-control-allow-origin') === 'https://malo.example'
+     && /no acepta pedidos desde https:\/\/malo\.example/.test(cuerpoAjeno.error || ''), JSON.stringify(cuerpoAjeno));
+  const { readFileSync } = await import('node:fs');
+  const conf = readFileSync(new URL('./wrangler.jsonc', import.meta.url), 'utf8');
+  const origenes = (conf.match(/"ORIGENES":\s*"([^"]*)"/) || [])[1] || '';
+  const deGitHub = await puerta.fetch(new Request('https://s.test/api/sala/ABCDEF/hilo',
+    { headers:{ Origin: 'https://ejercitopalomazi9111-arch.github.io' } }), { ...conObjeto, ORIGENES: origenes });
+  ok('la Central abierta desde GitHub Pages SÍ entra (wrangler.jsonc la lista)', deGitHub.status === 200, `${deGitHub.status} · ${origenes}`);
 }
 
 

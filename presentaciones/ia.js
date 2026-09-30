@@ -105,8 +105,9 @@ async function directo(url, { metodo = 'GET', cuerpo, espera = 150000, crudo = f
 }
 async function pedir(ruta, cuerpo, { metodo = 'POST', espera = 150000 } = {}){
   const r = await llamar(`${SERVIDOR}/api/sala/${SALA}/${ruta}`, { metodo, cuerpo, espera });
-  if(r.status === 401 || r.status === 403){ const e = new Error('Falta la llave de La Sala (o ya no sirve). Pégala en la pestaña IA.'); e.llave = true; throw e; }
   const j = await r.json().catch(() => ({}));
+  if(r.status === 403 && /no acepta pedidos desde/.test(j.error || '')) throw new Error(j.error);
+  if(r.status === 401 || r.status === 403){ const e = new Error('Falta la llave de La Sala (o ya no sirve). Pégala en la pestaña IA.'); e.llave = true; throw e; }
   if(r.status === 404 && !j.error) throw new Error('El servidor de La Sala todavía no tiene esta función. Hay que publicarlo.');
   if(!r.ok || j.bien === false) throw new Error(j.error || `La Sala contestó ${r.status}.`);
   return j;

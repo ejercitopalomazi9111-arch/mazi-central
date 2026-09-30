@@ -63,7 +63,12 @@ export default {
   async fetch(pedido, env){
     const url = new URL(pedido.url);
 
-    if(!origenBueno(pedido, env)) return new Response('Desde ahí no.', { status:403 });
+    /* El rechazo lleva permiso de CORS para que la página LO PUEDA LEER: sin
+       él, Safari no enseña «Desde ahí no», enseña «Load failed», y así se
+       pasó un día entero buscando una falla de red que era esta línea. */
+    if(!origenBueno(pedido, env)) return conCORS(Response.json({ bien:false, error:
+      `La Sala no acepta pedidos desde ${pedido.headers.get('Origin')}. Abre la página desde la Central (mazi-central.palomazi9111.workers.dev).` },
+      { status:403 }), pedido);
 
     if(pedido.method === 'OPTIONS'){
       return conCORS(new Response(null, { status:204, headers:{
