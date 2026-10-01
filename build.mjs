@@ -69,6 +69,11 @@ const VA = [
   /* Cambiar color: cabello y ropa sin perder sombras. Trae su modelo de
      partes (vendor/, 16 MB) y usa el motor de MediaPipe de ../presentaciones/. */
   'recolor',
+  /* Las tres presentaciones de primeros auxilios para bajarlas (PDF, editable
+     y «para celular»). Carlos las pidió aquí para descargarlas y pasarle el
+     link al cliente. El archivo más pesado mide 21 MB: el tope de Cloudflare
+     por archivo es 25 MiB. */
+  'cursos',
 ];
 
 /* ── Lo que tiene sitio adentro y NO se publica, dicho a propósito ──────────
