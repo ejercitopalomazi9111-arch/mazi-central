@@ -74,6 +74,9 @@ const VA = [
      link al cliente. El archivo más pesado mide 21 MB: el tope de Cloudflare
      por archivo es 25 MiB. */
   'cursos',
+  /* Limpiar fotos: propone qué borrar (repetidas, ráfagas, borrosas, negras,
+     capturas viejas) y arma la lista para el atajo que las borra. */
+  'limpiar',
 ];
 
 /* ── Lo que tiene sitio adentro y NO se publica, dicho a propósito ──────────
