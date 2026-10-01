@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0B0710">
+<title>Cursos de primeros auxilios · presentaciones</title>
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CURSOS · las tres presentaciones para bajarlas desde la Central
+     ──────────────────────────────────────────────────────────────────────────
+     Carlos: «súbelas a central con opción de descargar desde ahí y asegúrate
+     que mantengan el formato correcto, o sea como tú lo ves… y en su defecto se
+     lo comparto al cliente como link».
+     Cada curso va en tres versiones, porque un .pptx NO se ve igual en todos
+     lados (el visor del iPhone cruza imágenes entre láminas; ver la tabla de la
+     regla 12 en CLAUDE.md):
+       · PDF — sale del mismo PowerPoint, y se ve idéntico en cualquier lado.
+       · PowerPoint para editar — el editable, para PowerPoint en la compu.
+       · PowerPoint para celular — cada lámina es una imagen (plano.py): se ve
+         bien en iPhone y WhatsApp, pero no se edita.
+     Se rehacen desde los editables con plano.py; los nombres de descarga van
+     en el atributo `download`, los de disco son cortos y sin espacios.
+     ═════════════════════════════════════════════════════════════════════════ -->
+<style>
+:root{
+  --fondo:#0B0710; --sup:#1E1428; --borde:#3A2C4A; --texto:#EDEAF2; --tenue:#B3A9C2; --acento:#AC27FF;
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0; background:var(--fondo); color:var(--texto);
+  font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; -webkit-text-size-adjust:100%}
+main{max-width:1120px; margin:0 auto; padding:calc(16px + env(safe-area-inset-top)) 16px calc(48px + env(safe-area-inset-bottom))}
+.volver{display:inline-flex; align-items:center; min-height:44px; color:var(--tenue); text-decoration:none}
+h1{font-size:28px; line-height:1.15; margin:8px 0 8px}
+.sub{color:var(--tenue); margin:0 0 24px; max-width:65ch}
+.cual{display:grid; grid-template-columns:minmax(0,1fr); gap:8px; margin:0 0 32px; padding:16px; background:var(--sup);
+  border:1px solid var(--borde); border-radius:16px; max-width:760px}
+.cual p{margin:0; font-size:15px; line-height:1.4}
+.cual b{color:var(--texto)}
+.cual span{color:var(--tenue)}
+.cursos{display:grid; grid-template-columns:minmax(0,1fr); gap:24px}
+@media (min-width:760px){ .cursos{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (min-width:1080px){ .cursos{grid-template-columns:repeat(3,minmax(0,1fr))} }
+.curso{background:var(--sup); border:1px solid var(--borde); border-radius:16px; overflow:hidden; display:flex; flex-direction:column}
+.portada{display:block; background:#000; aspect-ratio:16/9}
+.portada img{display:block; width:100%; height:100%; object-fit:contain}
+.datos{padding:16px; display:flex; flex-direction:column; gap:12px; flex:1}
+h2{font-size:20px; line-height:1.2; margin:0}
+.laminas{color:var(--tenue); font-size:14px; margin:-6px 0 0}
+.botones{display:grid; grid-template-columns:minmax(0,1fr); gap:8px; margin-top:auto}
+.fila{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px}
+a.boton{font:inherit; color:inherit; background:#2A1F37; border:1px solid var(--borde); border-radius:12px;
+  min-height:48px; padding:6px 12px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; text-decoration:none; line-height:1.25}
+a.boton small{color:var(--tenue); font-size:12px}
+a.boton.si{background:var(--acento); border-color:var(--acento); color:#fff; font-weight:700}
+a.boton.si small{color:#F1E3FF; font-weight:400}
+a.boton:focus-visible{outline:2px solid #fff; outline-offset:2px}
+@media (hover:hover){ a.boton:hover{border-color:var(--acento)} a.boton.si:hover{filter:brightness(1.1)} }
+.pie{color:var(--tenue); font-size:14px; margin:32px 0 0; max-width:65ch}
+</style>
+</head>
+<body>
+<main>
+  <a class="volver" href="../">‹ Central</a>
+  <h1>Cursos de primeros auxilios</h1>
+  <p class="sub">Las tres presentaciones, listas para bajar. Cada una viene en tres versiones: elige según dónde la vas a abrir.</p>
+
+  <div class="cual">
+    <p><b>PDF</b> <span>— se ve idéntico en la compu, el iPhone y WhatsApp. Es la que conviene mandar al cliente.</span></p>
+    <p><b>PowerPoint para editar</b> <span>— para abrirlo y cambiarlo en PowerPoint en la computadora.</span></p>
+    <p><b>PowerPoint para celular</b> <span>— se ve bien en el iPhone y en WhatsApp, pero no se puede editar.</span></p>
+  </div>
+
+  <div class="cursos">
+    <article class="curso">
+      <a class="portada" href="archivos/principal.pdf" target="_blank" rel="noopener" aria-label="Ver Curso principal en PDF">
+        <img src="archivos/principal-portada.jpg" width="800" height="450" alt="Portada: Primeros auxilios, curso de primeros auxilios"></a>
+      <div class="datos">
+        <h2>Primeros Auxilios · Curso principal</h2>
+        <p class="laminas">85 láminas</p>
+        <div class="botones">
+          <div class="fila">
+            <a class="boton si" href="archivos/principal.pdf" download="Primeros Auxilios - Curso principal.pdf">⬇ PDF<small>17 MB</small></a>
+            <a class="boton" href="archivos/principal.pdf" target="_blank" rel="noopener">Ver PDF<small>sin bajarlo</small></a>
+          </div>
+          <a class="boton" href="archivos/principal.pptx" download="Primeros Auxilios - Curso principal.pptx">⬇ PowerPoint para editar<small>20 MB</small></a>
+          <a class="boton" href="archivos/principal-celular.pptx" download="Primeros Auxilios - Curso principal (para celular).pptx">⬇ PowerPoint para celular<small>20 MB</small></a>
+        </div>
+      </div>
+    </article>
+
+    <article class="curso">
+      <a class="portada" href="archivos/brigada.pdf" target="_blank" rel="noopener" aria-label="Ver Brigada de primeros auxilios en PDF">
+        <img src="archivos/brigada-portada.jpg" width="800" height="450" alt="Portada: Primeros auxilios, brigada de primeros auxilios"></a>
+      <div class="datos">
+        <h2>Primeros Auxilios · Brigada</h2>
+        <p class="laminas">90 láminas</p>
+        <div class="botones">
+          <div class="fila">
+            <a class="boton si" href="archivos/brigada.pdf" download="Primeros Auxilios - Brigada.pdf">⬇ PDF<small>8 MB</small></a>
+            <a class="boton" href="archivos/brigada.pdf" target="_blank" rel="noopener">Ver PDF<small>sin bajarlo</small></a>
+          </div>
+          <a class="boton" href="archivos/brigada.pptx" download="Primeros Auxilios - Brigada.pptx">⬇ PowerPoint para editar<small>14 MB</small></a>
+          <a class="boton" href="archivos/brigada-celular.pptx" download="Primeros Auxilios - Brigada (para celular).pptx">⬇ PowerPoint para celular<small>18 MB</small></a>
+        </div>
+      </div>
+    </article>
+
+    <article class="curso">
+      <a class="portada" href="archivos/acuatica.pdf" target="_blank" rel="noopener" aria-label="Ver Brigada acuática en PDF">
+        <img src="archivos/acuatica-portada.jpg" width="800" height="600" alt="Portada: Brigada de seguridad, rescate y salvamento acuático"></a>
+      <div class="datos">
+        <h2>Brigada de Seguridad, Rescate y Salvamento Acuático</h2>
+        <p class="laminas">57 láminas</p>
+        <div class="botones">
+          <div class="fila">
+            <a class="boton si" href="archivos/acuatica.pdf" download="Brigada Acuatica.pdf">⬇ PDF<small>7 MB</small></a>
+            <a class="boton" href="archivos/acuatica.pdf" target="_blank" rel="noopener">Ver PDF<small>sin bajarlo</small></a>
+          </div>
+          <a class="boton" href="archivos/acuatica.pptx" download="Brigada Acuatica.pptx">⬇ PowerPoint para editar<small>8 MB</small></a>
+          <a class="boton" href="archivos/acuatica-celular.pptx" download="Brigada Acuatica (para celular).pptx">⬇ PowerPoint para celular<small>14 MB</small></a>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <p class="pie">Si en el iPhone un PowerPoint para editar se ve con imágenes cruzadas entre láminas, es el visor de Apple, no el archivo: en PowerPoint se ve bien. Para verlo en el teléfono, usa el PDF o la versión para celular.</p>
+</main>
+</body>
+</html>
