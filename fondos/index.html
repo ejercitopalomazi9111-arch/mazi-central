@@ -14,7 +14,9 @@
      Es la MISMA pieza de Presentaciones (../presentaciones/recorte.js): al
      abrir recorta solo lo del centro, y se corrige por color o con el dedo.
      Aquí sólo se agrega lo de alrededor: elegir varias, descargar el PNG y
-     guardarlo en Fotos. La imagen no sale del teléfono.
+     guardarlo en Fotos. La imagen no sale del teléfono. El fondo nuevo (color,
+     textura, otra foto) también es de recorte.js: aquí sólo cambia el nombre
+     del archivo, «…-fondo-nuevo.png», para no confundirlo con el transparente.
      ═════════════════════════════════════════════════════════════════════════ -->
 <style>
 :root{
@@ -61,7 +63,7 @@ button,.boton{font:inherit; color:inherit; background:var(--sup); border:1px sol
 <main>
   <a class="volver" href="../">‹ Central</a>
   <h1>Quitar fondos</h1>
-  <p class="sub">Elige una foto: el fondo se va solo. Si algo sale mal, lo corriges tocando un color o trazando con el dedo, y la descargas en PNG transparente.</p>
+  <p class="sub">Elige una foto: el fondo se va solo. Si algo sale mal, lo corriges tocando un color o trazando con el dedo. Descárgala en PNG transparente o, en «Fondo», ponle otro: un color, una textura, otra foto o color con textura.</p>
 
   <label class="soltar" id="soltar">
     <input type="file" accept="image/*" multiple id="archivo">
@@ -94,7 +96,7 @@ let trabajando = false;
 
 cargarModelo().catch(() => {});          // que el modelo ya esté bajado cuando elija la primera
 
-function nombrePng(n){ return (n || 'imagen').replace(/\.[^.]+$/, '') + '-sin-fondo.png'; }
+function nombrePng(n, fondo){ return (n || 'imagen').replace(/\.[^.]+$/, '') + (fondo && fondo !== 'nada' ? '-fondo-nuevo.png' : '-sin-fondo.png'); }
 
 function bajar(h){
   const a = document.createElement('a');
@@ -125,7 +127,7 @@ function pintarFicha(h){
     const a = e.target.closest('button')?.dataset.a; if(!a) return;
     if(a === 'bajar') bajar(h);
     else if(a === 'fotos') guardarEnFotos(h);
-    else if(a === 'editar'){ fila.unshift({ nombre: h.nombre, original: h.original, reemplaza: h }); siguiente(); }
+    else if(a === 'editar'){ fila.unshift({ nombre: h.base || h.nombre, original: h.original, reemplaza: h }); siguiente(); }
     else if(a === 'quitar'){ URL.revokeObjectURL(h.url); hechas.splice(hechas.indexOf(h), 1); ficha.remove(); contar(); }
   });
   h.ficha = ficha;
@@ -152,9 +154,10 @@ async function siguiente(){
     if(r){
       if(t.reemplaza){
         const h = t.reemplaza; URL.revokeObjectURL(h.url);
-        h.png = r.blob; h.url = URL.createObjectURL(r.blob); pintarImagen(h);
+        h.png = r.blob; h.url = URL.createObjectURL(r.blob); h.nombre = nombrePng(t.nombre, r.fondo);
+        h.ficha.querySelector('.nombre').textContent = h.nombre; pintarImagen(h);
       } else {
-        const h = { nombre: nombrePng(t.nombre), original: t.original, png: r.blob, url: URL.createObjectURL(r.blob) };
+        const h = { nombre: nombrePng(t.nombre, r.fondo), base: t.nombre, original: t.original, png: r.blob, url: URL.createObjectURL(r.blob) };
         hechas.push(h); pintarFicha(h);
       }
     }

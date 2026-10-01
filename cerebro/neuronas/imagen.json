@@ -293,6 +293,25 @@
     "logo-en-capas-pierde-lo-oscuro"
    ],
    "salioDe": "Apertura con más acción, 26 de septiembre."
+  },
+  {
+   "id": "quitar-fondo-deja-manchas",
+   "titulo": "Quitar el fondo deja manchas del fondo y letras borrosas",
+   "gravedad": "alta",
+   "sintoma": "Tras el recorte automático quedan islas del color del fondo alrededor de la figura, el ojo de una O sigue lleno y las letras salen borrosas o mordidas (a una G le falta media letra).",
+   "causa": "El modelo (MediaPipe magic touch) trabaja a baja resolución: su borde es una mancha suave que se come el trazo fino y agarra pedazos de fondo. Lo que se usaba tal cual era su confianza.",
+   "porque": "Con fotos de una persona sobre fondo con dibujo se ve bien; el defecto sale con logos, letras e infografías sobre fondo liso, que es justo lo que Carlos recorta.",
+   "arreglo": "Después del modelo se afina con los COLORES de la foto (presentaciones/recorte.js · afinar): se mide el fondo pegado a la figura; si es liso, el borde se decide por color, se crece por lo que claramente no es fondo y se quitan huecos e islas del color idéntico; si no, cada pixel del borde se explica como mezcla del color de la figura y del fondo de alrededor. Al guardar, la orilla se vuelve a decidir a tamaño original y se le resta el color del fondo viejo (sin halo).",
+   "comoCazarlo": "Recortar una imagen de letras gruesas y un anillo sobre fondo crema liso y contar: tinta en cada letra, pixeles del color del fondo que quedaron opacos y pixeles a medias. presentaciones/pruebas-recorte.mjs lo hace.",
+   "consejo": "Una camisa blanca sobre fondo blanco NO es un hueco: sólo se quita lo del color IDÉNTICO al fondo (sin sombra ni pliegue). Un filtro guiado sobre la luz no sirve con fondo con textura: deja una rampa de 5 pixeles.",
+   "senales": [
+    "deja interiores con color",
+    "letras muy borrosas",
+    "quedan manchas del fondo",
+    "se come media letra",
+    "el recorte deja blanco alrededor"
+   ],
+   "salioDe": "Reporte de Carlos del 1 de octubre de 2026, reproducido con una imagen GOBO + anillo antes de tocar nada."
   }
  ]
 }

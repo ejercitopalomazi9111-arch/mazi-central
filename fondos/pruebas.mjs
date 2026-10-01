@@ -70,9 +70,20 @@ await p.locator('.ficha').first().locator('[data-a="editar"]').click();
 await p.waitForSelector('.rc', { timeout: 15000 });
 ok('«Corregir» vuelve a abrir la pantalla de recorte con la original', true);
 await p.waitForFunction(() => !/Buscando|Cargando/.test(document.querySelector('.rc-estado').textContent), null, { timeout: 60000 });
+/* y de paso, un fondo nuevo: color violeta */
+await p.click('.rc [data-modo="fondo"]'); await p.click('.rc [data-fondo="color"]'); await p.click('.rc [data-color="#AC27FF"]');
 await p.click('.rc [data-listo]');
 await p.waitForFunction(() => !document.querySelector('.rc'), null, { timeout: 15000 });
 ok('y no se duplica: siguen siendo dos', await p.locator('.ficha').count() === 2);
+const nombreNuevo = await p.locator('.ficha').first().locator('.nombre').textContent();
+ok('con fondo nuevo, el archivo se llama «…-fondo-nuevo.png»', /-fondo-nuevo\.png$/.test(nombreNuevo), nombreNuevo);
+const [baja2] = await Promise.all([p.waitForEvent('download'), p.locator('.ficha').first().locator('[data-a="bajar"]').click()]);
+const info2 = await p.evaluate(async (b64) => {
+  const im = new Image(); im.src = 'data:image/png;base64,' + b64; await im.decode();
+  const c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight; const x = c.getContext('2d'); x.drawImage(im, 0, 0);
+  return { w: c.width, h: c.height, esquina: [...x.getImageData(0, 0, 1, 1).data] };
+}, readFileSync(await baja2.path()).toString('base64'));
+ok('y se descarga entera (400×300) con la esquina violeta y opaca', info2.w === 400 && info2.h === 300 && info2.esquina[3] === 255 && Math.abs(info2.esquina[0] - 0xAC) < 4 && Math.abs(info2.esquina[2] - 0xFF) < 4, JSON.stringify(info2));
 await p.locator('.ficha').first().locator('[data-a="quitar"]').click();
 ok('«Quitar» la saca de la lista', await p.locator('.ficha').count() === 1);
 ok('con una sola, se esconde «Descargar todas»', !(await p.locator('#bajarTodas').isVisible()));
