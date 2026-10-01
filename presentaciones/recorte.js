@@ -341,11 +341,13 @@ const CSS = `
 .rc-lienzo{flex:1; min-height:0; position:relative; display:grid; place-items:center; overflow:hidden; touch-action:none;
   background-color:#fff; background-image:linear-gradient(45deg,#D9DCE3 25%,transparent 25%,transparent 75%,#D9DCE3 75%),linear-gradient(45deg,#D9DCE3 25%,transparent 25%,transparent 75%,#D9DCE3 75%);
   background-size:20px 20px; background-position:0 0,10px 10px}
-.rc-lienzo canvas{max-width:100%; max-height:100%; display:block; image-rendering:auto}
+.rc-lienzo canvas{max-width:100%; max-height:100%; display:block; image-rendering:auto; transform-origin:center center}
+.rc-leyenda{display:flex; gap:12px; flex:1 1 100%; font-size:13px; color:#B9B0C6}
+.rc-leyenda i{display:inline-block; width:14px; height:14px; border-radius:4px; vertical-align:-2px; margin-right:4px}
 .rc-estado{position:absolute; left:50%; bottom:12px; transform:translateX(-50%); background:rgba(11,7,16,.86); color:#fff;
   padding:8px 14px; border-radius:999px; font-size:14px; white-space:nowrap; max-width:92%; overflow:hidden; text-overflow:ellipsis; pointer-events:none}
 .rc-estado:empty{display:none}
-.rc-modos{display:flex; gap:6px; padding:10px 12px 0}
+.rc-modos{display:flex; flex-wrap:wrap; gap:6px; padding:10px 12px 0}
 .rc-modos button{flex:1 1 auto; white-space:nowrap; padding:0 8px}
 .rc-tipos{flex:1 1 100%; display:flex; flex-wrap:wrap; gap:6px}
 .rc-tipos button{flex:1 1 auto; white-space:nowrap; padding:0 12px}
@@ -427,6 +429,10 @@ export async function recortar(fuente, { recortarAlContenido = true, titulo = 'Q
   let modo = 'auto', sumar = true, juntos = true, tol = 40, suave = 0, dentro = true;
   /* Fondo nuevo: lo que se quitó se rellena. tipo: nada · color · textura · imagen · mezcla */
   const fondo = { tipo: 'nada', color: '#FFFFFF', textura: 'madera', imagen: null, fuerza: 55 };
+  /* Dónde va el recorte sobre el fondo nuevo (en pixeles de la imagen de trabajo): se mueve con un dedo y
+     se agranda con dos, en el modo «Fondo». Y el acercamiento de la vista, para trazar fino en los demás. */
+  const pos = { x: 0, y: 0, s: 1 };
+  const zoom = { s: 1, x: 0, y: 0 };
 
   const vista = h('canvas', { 'aria-label': 'La imagen; toca o traza sobre ella' }); vista.width = W; vista.height = H;
   const vx = vista.getContext('2d');
@@ -474,6 +480,14 @@ export async function recortar(fuente, { recortarAlContenido = true, titulo = 'Q
     for(let i = 0, j = 0; i < W * H; i++, j += 4){ o[j] = rgb[j]; o[j + 1] = rgb[j + 1]; o[j + 2] = rgb[j + 2]; o[j + 3] = m[i] * px[j + 3] / 255; }
     cx.putImageData(d, 0, 0); sucio = false;
   }
+  let fant = null;
+  const fantasma = () => {
+    if(fant) return fant;
+    fant = h('canvas'); fant.width = W; fant.height = H; const g = fant.getContext('2d');
+    g.drawImage(base, 0, 0); g.globalCompositeOperation = 'saturation'; g.fillStyle = '#808080'; g.fillRect(0, 0, W, H);
+    g.globalCompositeOperation = 'source-atop'; g.fillStyle = 'rgba(225,29,72,.45)'; g.fillRect(0, 0, W, H);
+    return fant;
+  };
   let cuadro = 0;
   function pintar(){
     cancelAnimationFrame(cuadro);
@@ -481,7 +495,13 @@ export async function recortar(fuente, { recortarAlContenido = true, titulo = 'Q
       if(sucio) componer();
       vx.clearRect(0, 0, W, H);
       pintarFondo(vx, W, H, fondo);
-      vx.drawImage(capa, 0, 0);
+      if(modo === 'fondo'){
+        vx.save(); vx.translate(W / 2 + pos.x, H / 2 + pos.y); vx.scale(pos.s, pos.s); vx.drawImage(capa, -W / 2, -H / 2); vx.restore();
+      } else {
+        /* lo que se quita se sigue viendo, deslavado y en rojo: así se sabe qué queda adentro */
+        if(fondo.tipo === 'nada'){ vx.save(); vx.globalAlpha = .55; vx.drawImage(fantasma(), 0, 0); vx.restore(); }
+        vx.drawImage(capa, 0, 0);
+      }
       if(trazo.length > 1){
         vx.save(); vx.lineWidth = Math.max(2, W / 220); vx.strokeStyle = '#AC27FF'; vx.setLineDash([vx.lineWidth * 3, vx.lineWidth * 2]);
         vx.beginPath(); trazo.forEach(([x, y], n) => n ? vx.lineTo(x, y) : vx.moveTo(x, y)); vx.stroke(); vx.restore();
@@ -512,8 +532,31 @@ export async function recortar(fuente, { recortarAlContenido = true, titulo = 'Q
       h('p', {}, dentro ? 'Traza con el dedo el contorno de lo que se queda. Lo de afuera se borra.' : 'Traza con el dedo lo que quieres borrar.'),
       ...par('Adentro se queda', 'Adentro se borra', dentro, (v) => { dentro = v; }), suaveR);
     else panel.replaceChildren(...panelFondo());
+    if(modo !== 'fondo') panel.append(leyenda());
+    lienzo.classList.toggle('rc-mueve', modo === 'fondo');
+    vista.setAttribute('aria-label', modo === 'fondo' ? 'El recorte sobre el fondo nuevo: muévelo con un dedo, agrándalo con dos' : 'La imagen; toca o traza sobre ella');
+    pintar();
   }
 
+  function leyenda(){
+    const e = h('p', { class: 'rc-leyenda' });
+    e.innerHTML = '<span><i style="background:linear-gradient(135deg,#F2C14E,#2E9E5B)"></i>a todo color: se queda</span><span><i style="background:rgba(225,29,72,.55)"></i>deslavado en rojo: se borra</span>' + (zoom.s > 1 ? '' : '<span>· dos dedos: acercar</span>');
+    return e;
+  }
+  /* ── acomodar el recorte sobre el fondo nuevo ── */
+  function cajaRecorte(){
+    let x0 = W, y0 = H, x1 = -1, y1 = -1;
+    for(let y = 0; y < H; y++) for(let x = 0; x < W; x++) if(mascara[y * W + x] > 8){ if(x < x0) x0 = x; if(x > x1) x1 = x; if(y < y0) y0 = y; if(y > y1) y1 = y; }
+    return x1 < 0 ? null : { x0, y0, x1, y1 };
+  }
+  function centrar(){
+    const c = cajaRecorte(); if(!c) return;
+    pos.x = -pos.s * ((c.x0 + c.x1) / 2 - W / 2); pos.y = -pos.s * ((c.y0 + c.y1) / 2 - H / 2); pintar();
+  }
+  function llenar(){
+    const c = cajaRecorte(); if(!c) return;
+    pos.s = Math.min(4, .9 * Math.min(W / (c.x1 - c.x0 + 1), H / (c.y1 - c.y0 + 1))); centrar();
+  }
   function panelFondo(){
     const t = fondo.tipo;
     const tipo = (id, tx) => h('button', { type: 'button', 'data-fondo': id, 'aria-pressed': String(t === id), on: { click: () => {
@@ -538,6 +581,12 @@ export async function recortar(fuente, { recortarAlContenido = true, titulo = 'Q
     if(t === 'mezcla') lista.push(colores(), texturas(),
       h('label', {}, 'Textura', h('input', { type: 'range', min: 10, max: 100, value: fondo.fuerza, 'aria-label': 'Cuánta textura', on: { input: (e) => { fondo.fuerza = +e.target.value; pintar(); } } })));
     if(t === 'imagen') lista.push(h('button', { type: 'button', on: { click: () => elegirImagen.click() } }, fondo.imagen ? 'Cambiar la imagen…' : 'Elegir imagen…'));
+    lista.push(h('p', {}, 'Mueve el recorte con un dedo; con dos lo agrandas o achicas.'),
+      h('button', { type: 'button', 'data-acomodo': 'centrar', on: { click: centrar } }, '⊕ Centrar'),
+      h('button', { type: 'button', 'data-acomodo': 'llenar', on: { click: llenar } }, '⤢ Llenar'),
+      h('button', { type: 'button', 'data-acomodo': 'menos', 'aria-label': 'Más chico', on: { click: () => { pos.s = Math.max(.1, pos.s / 1.15); pintar(); } } }, '－'),
+      h('button', { type: 'button', 'data-acomodo': 'mas', 'aria-label': 'Más grande', on: { click: () => { pos.s = Math.min(6, pos.s * 1.15); pintar(); } } }, '＋'),
+      h('button', { type: 'button', 'data-acomodo': 'inicio', on: { click: () => { pos.x = pos.y = 0; pos.s = 1; pintar(); } } }, '↺ Como estaba'));
     return lista;
   }
 
@@ -573,10 +622,35 @@ export async function recortar(fuente, { recortarAlContenido = true, titulo = 'Q
   const aImg = (e) => { const r = vista.getBoundingClientRect();
     return [Math.min(W - 1, Math.max(0, (e.clientX - r.left) / r.width * W)), Math.min(H - 1, Math.max(0, (e.clientY - r.top) / r.height * H))]; };
   let trazo = [], abajo = null;
-  vista.addEventListener('pointerdown', (e) => { e.preventDefault(); vista.setPointerCapture(e.pointerId); abajo = aImg(e); trazo = modo === 'dedo' ? [abajo] : []; });
-  vista.addEventListener('pointermove', (e) => { if(!abajo || modo !== 'dedo') return; trazo.push(aImg(e)); pintar(); });
-  vista.addEventListener('pointerup', (e) => {
-    if(!abajo) return;
+  const dedos = new Map();               // pointerId → [clientX, clientY]
+  let gesto = null;                      // dos dedos: dónde empezaron
+  const vistaZoom = () => { vista.style.transform = zoom.s === 1 && !zoom.x && !zoom.y ? '' : `translate(${zoom.x}px,${zoom.y}px) scale(${zoom.s})`; };
+  const mitad = () => { const [a, b] = [...dedos.values()]; return { cx: (a[0] + b[0]) / 2, cy: (a[1] + b[1]) / 2, d: Math.hypot(a[0] - b[0], a[1] - b[1]) || 1 }; };
+  vista.addEventListener('pointerdown', (e) => {
+    e.preventDefault(); vista.setPointerCapture(e.pointerId); dedos.set(e.pointerId, [e.clientX, e.clientY]);
+    if(dedos.size === 2){ abajo = null; trazo = []; const m = mitad(); gesto = { ...m, zoom: { ...zoom }, pos: { ...pos } }; pintar(); return; }
+    if(dedos.size > 2) return;
+    abajo = aImg(e); trazo = modo === 'dedo' ? [abajo] : [];
+    if(modo === 'fondo') gesto = { solo: true, x: e.clientX, y: e.clientY, pos: { ...pos } };
+  });
+  vista.addEventListener('pointermove', (e) => {
+    if(!dedos.has(e.pointerId)) return;
+    dedos.set(e.pointerId, [e.clientX, e.clientY]);
+    const r = vista.getBoundingClientRect(), porPx = W / r.width;     // pixeles de imagen por pixel de pantalla
+    if(dedos.size === 2 && gesto && !gesto.solo){
+      const m = mitad(), k = m.d / gesto.d;
+      if(modo === 'fondo'){ pos.s = Math.min(6, Math.max(.1, gesto.pos.s * k)); pos.x = gesto.pos.x + (m.cx - gesto.cx) * porPx; pos.y = gesto.pos.y + (m.cy - gesto.cy) * porPx; pintar(); }
+      else { zoom.s = Math.min(8, Math.max(1, gesto.zoom.s * k)); zoom.x = gesto.zoom.x + (m.cx - gesto.cx); zoom.y = gesto.zoom.y + (m.cy - gesto.cy); if(zoom.s === 1){ zoom.x = zoom.y = 0; } vistaZoom(); }
+      return;
+    }
+    if(modo === 'fondo' && gesto && gesto.solo){ pos.x = gesto.pos.x + (e.clientX - gesto.x) * porPx; pos.y = gesto.pos.y + (e.clientY - gesto.y) * porPx; pintar(); return; }
+    if(!abajo || modo !== 'dedo') return; trazo.push(aImg(e)); pintar();
+  });
+  const soltar = (e) => {
+    const eran = dedos.size; dedos.delete(e.pointerId);
+    if(eran >= 2){ if(!dedos.size){ gesto = null; if(modo !== 'fondo') pintarPanel(); } abajo = null; trazo = []; return; }
+    gesto = null;
+    if(!abajo || modo === 'fondo'){ abajo = null; return; }
     const [x, y] = aImg(e); const toque = Math.hypot(x - abajo[0], y - abajo[1]) < W / 60;
     abajo = null;
     if(modo === 'auto' && toque) automatico(x / W, y / H, sumar ? 'sumar' : 'quitar');
@@ -590,7 +664,11 @@ export async function recortar(fuente, { recortarAlContenido = true, titulo = 'Q
       for(let i = 0; i < W * H; i++){ const a = p[i * 4 + 3]; m[i] = dentro ? a : Math.min(m[i], 255 - a); }
       trazo = []; cambiar(m);
     } else { trazo = []; pintar(); }
-  });
+  };
+  vista.addEventListener('pointerup', soltar);
+  vista.addEventListener('pointercancel', (e) => { dedos.delete(e.pointerId); gesto = null; abajo = null; trazo = []; pintar(); });
+  /* doble toque con la vista acercada: regresa a verla entera */
+  vista.addEventListener('dblclick', () => { if(modo !== 'fondo' && zoom.s !== 1){ zoom.s = 1; zoom.x = zoom.y = 0; vistaZoom(); pintarPanel(); } });
 
   /* que la imagen llene su espacio aunque sea chica (y el dedo tenga dónde trazar) */
   const ajustar = () => {
@@ -637,7 +715,9 @@ export async function recortar(fuente, { recortarAlContenido = true, titulo = 'Q
   let final = out;
   if(fondo.tipo !== 'nada'){
     const fg = h('canvas'); fg.width = EW; fg.height = EH; fg.getContext('2d').putImageData(foto, 0, 0);
-    ox.clearRect(0, 0, EW, EH); pintarFondo(ox, EW, EH, fondo); ox.drawImage(fg, 0, 0);
+    ox.clearRect(0, 0, EW, EH); pintarFondo(ox, EW, EH, fondo);
+    const ke2 = EW / W;                  // el acomodo se hizo en la imagen de trabajo: se lleva al tamaño final
+    ox.save(); ox.translate(EW / 2 + pos.x * ke2, EH / 2 + pos.y * ke2); ox.scale(pos.s, pos.s); ox.drawImage(fg, -EW / 2, -EH / 2); ox.restore();
   } else {
     ox.putImageData(foto, 0, 0);
     if(recortarAlContenido){
