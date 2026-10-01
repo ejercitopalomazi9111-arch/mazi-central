@@ -77,6 +77,9 @@ const VA = [
   /* Limpiar fotos: propone qué borrar (repetidas, ráfagas, borrosas, negras,
      capturas viejas) y arma la lista para el atajo que las borra. */
   'limpiar',
+  /* Tiempo en pantalla: el plan de Carlos y los pasos de Tiempo en pantalla
+     del iPhone con sus apps, horas y límites. */
+  'tiempo',
 ];
 
 /* ── Lo que tiene sitio adentro y NO se publica, dicho a propósito ──────────
