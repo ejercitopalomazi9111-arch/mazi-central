@@ -312,6 +312,24 @@
     "el recorte deja blanco alrededor"
    ],
    "salioDe": "Reporte de Carlos del 1 de octubre de 2026, reproducido con una imagen GOBO + anillo antes de tocar nada."
+  },
+  {
+   "id": "pptx-iphone-imagenes-cruzadas",
+   "titulo": "En el iPhone las imágenes de un PowerPoint salen cambiadas de lámina",
+   "gravedad": "alta",
+   "sintoma": "La vista previa del iPhone pinta el logo de una lámina donde iba una infografía de otra, o deja tarjetas blancas vacías; en PowerPoint y LibreOffice todo se ve bien.",
+   "causa": "La Vista rápida de iOS cruza imágenes de láminas distintas que usan el mismo id de relación (rId8 en dos láminas = la misma imagen para ella). python-pptx numera las relaciones por lámina, así que se repiten.",
+   "porque": "Las pruebas renderizan con LibreOffice, que respeta las relaciones de cada lámina; el defecto sólo existe en el visor del teléfono.",
+   "arreglo": "Renombrar cada relación de cada lámina con un id único en toda la presentación (rIdL<lámina>n<k>) y actualizar sus referencias r: en el XML. Va como último paso del armado.",
+   "comoCazarlo": "Buscar ids de relación repetidos entre láminas que apunten a imágenes distintas; o abrir el archivo en la vista previa de un iPhone.",
+   "consejo": "Antes de entregar un .pptx a Carlos, que lo abre en el iPhone, correr rids_unicos.py.",
+   "senales": [
+    "en el iphone salen otras imagenes",
+    "la vista previa muestra el logo equivocado",
+    "imagenes cambiadas de lamina",
+    "tarjetas blancas vacias en el telefono"
+   ],
+   "salioDe": "Captura de Carlos de la vista previa de las presentaciones K-9, 1 de octubre de 2026."
   }
  ]
 }
