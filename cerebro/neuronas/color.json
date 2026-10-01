@@ -248,6 +248,28 @@
         "el-mismo-color-para-display-y-para-texto-chico",
         "violeta-de-la-casa-no-admite-tinta-oscura"
       ]
+    },
+    {
+      "id": "lab-la-sombra-pierde-el-color",
+      "titulo": "Elegir «el mismo color» en Lab deja fuera las sombras",
+      "gravedad": "alta",
+      "sintoma": "Tocar un cabello o una prenda con sombras sólo agarra una parte (8 % de un cabello con mechones); o, al subir la tolerancia, se sale a la cara y al fondo.",
+      "causa": "Se comparaba a y b de Lab creyendo que ahí vive el color sin la luz. No: en Lab lo oscuro tiene a y b más chicos, así que la sombra de un café queda lejos de su parte iluminada.",
+      "porque": "Lab separa luz y color para la VISTA, no para la física de la sombra: una sombra multiplica los tres canales por lo mismo, y eso sólo se lo come la cromaticidad (r, g divididos entre r+g+b).",
+      "arreglo": "Para ELEGIR, cromaticidad con un poco de luz (recolor/motor.js `distancia`); para PINTAR, Lab conservando la variación de L. Y en fotos de verdad, además, restringir a la parte que reconoce el modelo de partes (recolor/partes.js): el color decide la orilla, el modelo hasta dónde llega.",
+      "comoCazarlo": "Una foto de prueba con degradado de luz FUERTE (de 30 % a 100 %) dentro de la zona: si tocarla no la agarra entera, la medida no aguanta sombras. Y luego una foto real con cabello rubio: si el color se sale al fondo deslavado, falta el modelo.",
+      "consejo": "La foto de prueba sintética aprobó todo y la real reprobó a la primera: siempre una foto real antes de decir que quedó.",
+      "salioDe": "Cambiar color, 1 de octubre de 2026: 74 pruebas en verde con un retrato dibujado, y con una foto de Wikimedia el rosa del cabello pintaba medio paisaje.",
+      "senales": [
+        "tocar el cabello agarra sólo una parte",
+        "el color se sale al fondo",
+        "las sombras no se pintan",
+        "se sale a la cara",
+        "los jeans gastados quedan a medias"
+      ],
+      "vecinas": [
+        "gris-que-no-es-gris"
+      ]
     }
   ]
 }

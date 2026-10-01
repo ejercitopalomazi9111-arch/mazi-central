@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0B0710">
+<title>Cambiar color</title>
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CAMBIAR COLOR · cabello, ropa y lo que sea, sin perder sombras ni textura
+     ──────────────────────────────────────────────────────────────────────────
+     Carlos: «una aplicación de dibujo que no encime los colores al ponerlos en
+     una imagen y que los separe según la tonalidad. Que permita cambiar colores
+     de cosas como cabello o ropa que lleva sombras, tonos, etc.».
+     El cálculo vive en motor.js (y ahí está explicado por qué no se encima);
+     aquí está la pantalla. Se trabaja a 1600 px para que el dedo vaya fluido y
+     al descargar se repite todo sobre la foto original, hasta 4032 px.
+     La foto no sale del teléfono.
+     ═════════════════════════════════════════════════════════════════════════ -->
+<style>
+:root{
+  --fondo:#0B0710; --sup:#1E1428; --sup2:#2A1F37; --borde:#3A2C4A; --texto:#EDEAF2; --tenue:#B3A9C2; --acento:#AC27FF;
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0; background:var(--fondo); color:var(--texto);
+  font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; -webkit-text-size-adjust:100%}
+main{max-width:1280px; margin:0 auto; padding:calc(16px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom))}
+.volver{display:inline-flex; align-items:center; min-height:44px; color:var(--tenue); text-decoration:none}
+h1{font-size:28px; line-height:1.15; margin:8px 0 4px}
+.sub{color:var(--tenue); margin:0 0 24px; max-width:65ch}
+.soltar{position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; text-align:center;
+  min-height:200px; max-width:720px; padding:24px 16px; border:2px dashed var(--borde); border-radius:16px; background:var(--sup); cursor:pointer}
+.soltar.encima{border-color:var(--acento)}
+.soltar b{font-size:20px}
+.soltar span{color:var(--tenue); font-size:14px}
+.soltar input{position:absolute; top:0; left:0; width:1px; height:1px; opacity:0; pointer-events:none}
+
+button,.boton{font:inherit; color:inherit; background:var(--sup); border:1px solid var(--borde); border-radius:12px;
+  min-height:44px; padding:0 14px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  text-decoration:none; white-space:nowrap; touch-action:manipulation}
+button:focus-visible,.boton:focus-within,input:focus-visible{outline:2px solid var(--acento); outline-offset:2px}
+button[disabled]{opacity:.45; cursor:default}
+.si{background:var(--acento); border-color:var(--acento); color:#fff; font-weight:700}
+
+.editor{display:grid; grid-template-columns:minmax(0,1fr); gap:16px}
+@media (min-width:900px){ .editor{grid-template-columns:minmax(0,1fr) 360px; align-items:start} }
+
+.escenario{position:sticky; top:0; z-index:2; height:min(50vh,520px); min-height:260px; border-radius:0 0 16px 16px; overflow:hidden; touch-action:none;
+  background:repeating-conic-gradient(#2A2033 0 25%, #1A1322 0 50%) 0 0/20px 20px; user-select:none; -webkit-user-select:none}
+/* En el teléfono la foto se queda arriba mientras se mueven los controles de
+   abajo: si se iba con el scroll, cada cambio de color se hacía a ciegas. */
+@media (min-width:900px){ .escenario{top:16px; height:max(420px, calc(100vh - 290px)); border-radius:16px} }   /* entera aun sin bajar: 290 = el título de arriba */
+.escenario canvas{position:absolute; transform-origin:50% 50%; image-rendering:auto}
+#marca{pointer-events:none}
+.anillo{position:absolute; border:2px solid #fff; border-radius:50%; box-shadow:0 0 0 1px #000; pointer-events:none; transform:translate(-50%,-50%)}
+.pista{position:absolute; left:8px; right:8px; bottom:8px; margin:0; padding:8px 12px; border-radius:12px;
+  background:rgba(11,7,16,.82); color:var(--texto); font-size:14px; line-height:1.35; pointer-events:none}
+.esquina{position:absolute; top:8px; right:8px; display:flex; gap:8px}
+.esquina button{background:rgba(11,7,16,.82)}
+
+.panel{display:flex; flex-direction:column; gap:16px; min-width:0}
+.bloque{background:var(--sup); border:1px solid var(--borde); border-radius:16px; padding:12px; display:flex; flex-direction:column; gap:12px; min-width:0}
+.bloque h2{font-size:14px; letter-spacing:.04em; text-transform:uppercase; color:var(--tenue); margin:0}
+.herramientas{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px}
+.herramientas button{flex-direction:column; gap:0; padding:6px 4px; min-height:56px; font-size:13px; line-height:1.2; white-space:normal; text-align:center}
+.herramientas button span{font-size:20px; line-height:1}
+.herramientas button[aria-pressed="true"]{background:var(--acento); border-color:var(--acento); color:#fff; font-weight:700}
+
+.muestras{display:grid; grid-template-columns:repeat(auto-fill,minmax(44px,1fr)); gap:8px}
+.muestras button{padding:0; min-height:44px; height:44px; border-radius:50%; border:2px solid rgba(255,255,255,.18); position:relative}
+.muestras button[aria-pressed="true"]{border-color:#fff; box-shadow:0 0 0 3px var(--acento)}
+.muestras label{position:relative; min-height:44px; height:44px; border-radius:50%; border:2px dashed var(--tenue); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:20px}
+.muestras label input{position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer}
+.elegido{display:flex; align-items:center; gap:8px; font-size:14px; color:var(--tenue); min-height:24px}
+.elegido i{width:20px; height:20px; border-radius:50%; border:1px solid rgba(255,255,255,.3); flex:none}
+
+.control{display:flex; flex-direction:column; gap:4px}
+.control label{display:flex; justify-content:space-between; gap:8px; font-size:14px}
+.control output{color:var(--tenue)}
+input[type=range]{width:100%; height:44px; margin:0; accent-color:var(--acento)}
+.interruptor{display:flex; align-items:center; gap:12px; min-height:44px; cursor:pointer; font-size:15px; line-height:1.3}
+.interruptor input{width:24px; height:24px; accent-color:var(--acento); flex:none; margin:0}
+.interruptor small{display:block; color:var(--tenue); font-size:13px}
+
+.partes{display:flex; flex-direction:column; gap:8px}
+.chips{display:grid; grid-template-columns:repeat(auto-fill,minmax(80px,1fr)); gap:8px}
+.acciones{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px}
+.acciones .ancho{grid-column:1/-1}
+.acciones button{white-space:normal; line-height:1.2; padding:6px 10px}
+.grupos{display:grid; grid-template-columns:repeat(auto-fill,minmax(72px,1fr)); gap:8px}
+.grupos button{flex-direction:column; gap:2px; padding:6px 4px; min-height:64px; font-size:12px; color:var(--tenue)}
+.grupos button i{width:32px; height:24px; border-radius:6px; border:1px solid rgba(255,255,255,.25)}
+.grupos button[aria-pressed="true"]{border-color:var(--acento); box-shadow:0 0 0 2px var(--acento); color:var(--texto)}
+#estado{min-height:24px; margin:0; color:var(--tenue); font-size:14px}
+[hidden]{display:none !important}
+.oculto{position:absolute; top:0; left:0; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<main>
+  <a class="volver" href="../">‹ Central</a>
+  <h1>Cambiar color</h1>
+  <p class="sub">Cambia el color del cabello, la ropa o lo que sea, <b>sin perder sombras, brillos ni textura</b>. Toca lo que quieres cambiar y elige el color; el pincel sólo pinta lo que se parece a donde empezaste, así que no se sale a la piel ni al fondo.</p>
+
+  <label class="soltar" id="soltar">
+    <input type="file" accept="image/*" id="archivo">
+    <b>Elegir una foto</b>
+    <span>También puedes arrastrarla o pegarla aquí · no sale del teléfono</span>
+  </label>
+
+  <div class="editor" id="editor" hidden>
+    <div class="escenario" id="escenario">
+      <canvas id="vista" aria-label="La foto: tócala para elegir lo que cambia de color"></canvas>
+      <canvas id="marca" aria-hidden="true"></canvas>
+      <div class="anillo" id="anillo" hidden></div>
+      <div class="esquina">
+        <button type="button" id="comparar" aria-label="Mantén presionado para ver la foto como estaba">◐ Antes</button>
+        <button type="button" id="encuadre" hidden>Ver completa</button>
+      </div>
+      <p class="pista" id="pista"></p>
+    </div>
+
+    <div class="panel">
+      <section class="bloque" aria-labelledby="t-herr">
+        <h2 id="t-herr">Qué hace el dedo</h2>
+        <div class="herramientas" id="herramientas">
+          <button type="button" data-h="tocar" aria-pressed="true"><span aria-hidden="true">☝</span>Tocar</button>
+          <button type="button" data-h="pincel" aria-pressed="false"><span aria-hidden="true">🖌</span>Pincel</button>
+          <button type="button" data-h="borrar" aria-pressed="false"><span aria-hidden="true">⌫</span>Borrar</button>
+          <button type="button" data-h="gotero" aria-pressed="false"><span aria-hidden="true">💧</span>Tomar color</button>
+        </div>
+        <div class="partes" id="partes" hidden>
+          <p class="elegido" id="partesEstado"></p>
+          <div class="chips">
+            <button type="button" data-p="1">Cabello</button>
+            <button type="button" data-p="piel">Piel</button>
+            <button type="button" data-p="4">Ropa</button>
+            <button type="button" data-p="0">Fondo</button>
+          </div>
+        </div>
+        <div class="control" id="c-tol">
+          <label for="tol">Qué tanto se parece <output id="o-tol"></output></label>
+          <input type="range" id="tol" min="4" max="60" value="18">
+        </div>
+        <div class="control" id="c-radio" hidden>
+          <label for="radio">Tamaño del pincel <output id="o-radio"></output></label>
+          <input type="range" id="radio" min="4" max="160" value="36">
+        </div>
+        <label class="interruptor" id="c-contiguo"><input type="checkbox" id="contiguo" checked>
+          <span>Sólo la parte que toco<small>Apágalo para agarrar ese color en toda la foto.</small></span></label>
+        <label class="interruptor" id="c-respetar" hidden><input type="checkbox" id="respetar" checked>
+          <span>El pincel respeta los bordes<small>Sólo pinta lo que se parece a donde empezaste.</small></span></label>
+        <label class="interruptor"><input type="checkbox" id="marcar">
+          <span>Marcar lo elegido<small>Lo pinta de violeta para ver qué entró.</small></span></label>
+      </section>
+
+      <section class="bloque" aria-labelledby="t-color">
+        <h2 id="t-color">Color nuevo</h2>
+        <div class="muestras" id="muestras"></div>
+        <p class="elegido" id="elegido"></p>
+        <div class="control">
+          <label for="fuerza">Intensidad <output id="o-fuerza"></output></label>
+          <input type="range" id="fuerza" min="0" max="100" value="100">
+        </div>
+        <label class="interruptor"><input type="checkbox" id="igualar" checked>
+          <span>Igualar la luz del color<small>Apágalo para cambiar sólo el tono y dejar lo claro y lo oscuro como estaba.</small></span></label>
+      </section>
+
+      <section class="bloque" aria-labelledby="t-acc">
+        <h2 id="t-acc" class="oculto">Acciones</h2>
+        <div class="acciones">
+          <button type="button" class="si ancho" id="aplicar" disabled>✓ Listo, cambiar otra cosa</button>
+          <button type="button" id="deshacer" disabled>↶ Deshacer</button>
+          <button type="button" id="limpiar" disabled>Soltar lo elegido</button>
+          <button type="button" class="ancho" id="tonos" aria-expanded="false">Separar por tono</button>
+        </div>
+        <div id="panelTonos" hidden>
+          <p class="elegido">Cada cuadro es un grupo de tonos de la foto. Tócalo para elegirlo entero.</p>
+          <div class="grupos" id="grupos"></div>
+          <label class="interruptor"><input type="checkbox" id="verTonos">
+            <span>Ver la foto separada por tonos</span></label>
+        </div>
+      </section>
+
+      <section class="bloque" aria-labelledby="t-fin">
+        <h2 id="t-fin" class="oculto">Guardar</h2>
+        <div class="acciones">
+          <button type="button" class="si ancho" id="bajar">⬇ Descargar</button>
+          <button type="button" id="fotos">Guardar en Fotos</button>
+          <button type="button" id="otra">Otra foto</button>
+        </div>
+        <p id="estado" role="status" aria-live="polite"></p>
+      </section>
+    </div>
+  </div>
+</main>
+<script type="module" src="app.js"></script>
+</body>
+</html>

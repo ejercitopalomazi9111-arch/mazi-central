@@ -66,6 +66,9 @@ const VA = [
      Lee las texturas, los iconos y el quitafondos de ../presentaciones/, y el
      lector de Excel de ../tienda/. */
   'carteles',
+  /* Cambiar color: cabello y ropa sin perder sombras. Trae su modelo de
+     partes (vendor/, 16 MB) y usa el motor de MediaPipe de ../presentaciones/. */
+  'recolor',
 ];
 
 /* ── Lo que tiene sitio adentro y NO se publica, dicho a propósito ──────────
