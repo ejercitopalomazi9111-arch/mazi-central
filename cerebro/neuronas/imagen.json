@@ -318,18 +318,25 @@
    "titulo": "En el iPhone las imágenes de un PowerPoint salen cambiadas de lámina",
    "gravedad": "alta",
    "sintoma": "La vista previa del iPhone pinta el logo de una lámina donde iba una infografía de otra, o deja tarjetas blancas vacías; en PowerPoint y LibreOffice todo se ve bien.",
-   "causa": "La Vista rápida de iOS cruza imágenes de láminas distintas que usan el mismo id de relación (rId8 en dos láminas = la misma imagen para ella). python-pptx numera las relaciones por lámina, así que se repiten.",
-   "porque": "Las pruebas renderizan con LibreOffice, que respeta las relaciones de cada lámina; el defecto sólo existe en el visor del teléfono.",
-   "arreglo": "Renombrar cada relación de cada lámina con un id único en toda la presentación (rIdL<lámina>n<k>) y actualizar sus referencias r: en el XML. Va como último paso del armado.",
-   "comoCazarlo": "Buscar ids de relación repetidos entre láminas que apunten a imágenes distintas; o abrir el archivo en la vista previa de un iPhone.",
-   "consejo": "Antes de entregar un .pptx a Carlos, que lo abre en el iPhone, correr rids_unicos.py.",
+   "causa": "El visor de Apple (OfficeImport: Vista rápida, Archivos, WhatsApp, Mail) sólo dibuja con HTML el rectángulo simple. Esquinas redondeadas, óvalos, flechas, líneas, grupos, sombras y giros los vuelve PDFs aparte, y su memoria de PDFs tiene un error (se guarda por dirección de memoria y se reusa): se cruzan entre láminas. Además ~120 figuras no las dibuja nunca: round2DiagRect, donut, moon, wave… La primera sospecha —ids de relación repetidos entre láminas— era falsa: con ids únicos el iPhone siguió cruzando.",
+   "porque": "Las pruebas renderizan con LibreOffice, que dibuja todo bien; el defecto sólo existe en el visor de Apple. Y el primer arreglo se dio por bueno sin poder verlo en un iPhone.",
+   "arreglo": "Hornear: cada figura que no es rectángulo simple se pinta sola con LibreOffice sobre negro y sobre blanco, de la diferencia sale la transparencia exacta, y se cambia por una imagen rectangular en el mismo sitio; su texto queda encima como cuadro de texto rectangular, editable. Las fotos con esquinas redondeadas se quedan como foto rectangular y encima va sólo lo que tapan las esquinas. Herramienta: fadori/presentacion/iphone.py.",
+   "comoCazarlo": "npx quicklook-pptx lint archivo.pptx (paquete quicklook-pptx-renderer): cuenta lo que va por PDF (geometry-forces-pdf, opaque-pdf-block, group-as-pdf, rotation-forces-pdf) y lo que no se dibuja (unsupported-geometry). Tiene que dar cero de esas.",
+   "consejo": "Antes de entregar un .pptx que se va a ver en un teléfono (Carlos lo abre en el iPhone y lo reenvía por WhatsApp), correr iphone.py y el lint.",
    "senales": [
     "en el iphone salen otras imagenes",
     "la vista previa muestra el logo equivocado",
     "imagenes cambiadas de lamina",
-    "tarjetas blancas vacias en el telefono"
+    "tarjetas blancas vacias en el telefono",
+    "una foto no aparece en el iphone",
+    "sale un recuadro de otra lamina",
+    "en whatsapp la vista previa se ve mal",
+    "figuras que desaparecen en el telefono",
+    "la presentacion se ve mal en el iphone",
+    "el powerpoint se ve mal en el celular",
+    "vista previa del powerpoint en el iphone"
    ],
-   "salioDe": "Captura de Carlos de la vista previa de las presentaciones K-9, 1 de octubre de 2026."
+   "salioDe": "Capturas de Carlos de la vista previa de las presentaciones K-9 en el iPhone y en WhatsApp, 1 de octubre de 2026 (dos rondas)."
   }
  ]
 }
