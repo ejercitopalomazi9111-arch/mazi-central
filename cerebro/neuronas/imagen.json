@@ -293,6 +293,52 @@
     "logo-en-capas-pierde-lo-oscuro"
    ],
    "salioDe": "Apertura con más acción, 26 de septiembre."
+  },
+  {
+   "id": "quitar-fondo-deja-manchas",
+   "titulo": "Quitar el fondo deja manchas del fondo y letras borrosas",
+   "gravedad": "alta",
+   "sintoma": "Tras el recorte automático quedan islas del color del fondo alrededor de la figura, el ojo de una O sigue lleno y las letras salen borrosas o mordidas (a una G le falta media letra).",
+   "causa": "El modelo (MediaPipe magic touch) trabaja a baja resolución: su borde es una mancha suave que se come el trazo fino y agarra pedazos de fondo. Lo que se usaba tal cual era su confianza.",
+   "porque": "Con fotos de una persona sobre fondo con dibujo se ve bien; el defecto sale con logos, letras e infografías sobre fondo liso, que es justo lo que Carlos recorta.",
+   "arreglo": "Después del modelo se afina con los COLORES de la foto (presentaciones/recorte.js · afinar): se mide el fondo pegado a la figura; si es liso, el borde se decide por color, se crece por lo que claramente no es fondo y se quitan huecos e islas del color idéntico; si no, cada pixel del borde se explica como mezcla del color de la figura y del fondo de alrededor. Al guardar, la orilla se vuelve a decidir a tamaño original y se le resta el color del fondo viejo (sin halo).",
+   "comoCazarlo": "Recortar una imagen de letras gruesas y un anillo sobre fondo crema liso y contar: tinta en cada letra, pixeles del color del fondo que quedaron opacos y pixeles a medias. presentaciones/pruebas-recorte.mjs lo hace.",
+   "consejo": "Una camisa blanca sobre fondo blanco NO es un hueco: sólo se quita lo del color IDÉNTICO al fondo (sin sombra ni pliegue). Un filtro guiado sobre la luz no sirve con fondo con textura: deja una rampa de 5 pixeles.",
+   "senales": [
+    "deja interiores con color",
+    "letras muy borrosas",
+    "quedan manchas del fondo",
+    "se come media letra",
+    "el recorte deja blanco alrededor"
+   ],
+   "salioDe": "Reporte de Carlos del 1 de octubre de 2026, reproducido con una imagen GOBO + anillo antes de tocar nada."
+  },
+  {
+   "id": "pptx-iphone-imagenes-cruzadas",
+   "titulo": "En el iPhone las imágenes de un PowerPoint salen cambiadas de lámina",
+   "gravedad": "alta",
+   "sintoma": "La vista previa del iPhone pinta el logo de una lámina donde iba una infografía de otra, o deja tarjetas blancas vacías; en PowerPoint y LibreOffice todo se ve bien.",
+   "causa": "El visor de Apple (OfficeImport: Vista rápida, Archivos, WhatsApp, Mail) sólo dibuja con HTML el rectángulo simple. Esquinas redondeadas, óvalos, flechas, líneas, grupos, sombras y giros los vuelve PDFs aparte, y su memoria de PDFs tiene un error (se guarda por dirección de memoria y se reusa): se cruzan entre láminas. Además ~120 figuras no las dibuja nunca: round2DiagRect, donut, moon, wave… La primera sospecha —ids de relación repetidos entre láminas— era falsa: con ids únicos el iPhone siguió cruzando. TERCERA RONDA: con todo hecho rectángulo, el cruce siguió, pero sólo en imágenes con transparencia (PNG con alfa): logos, figuras horneadas y esquinas. Las fotos JPEG salieron bien en todas las capturas. El visor manda las imágenes con alfa por la misma memoria que se cruza. CUARTA RONDA: sin una sola figura ni transparencia, el iPhone puso el fondo de la lámina en lugar de una foto. La causa de raíz es un error de memoria del visor de Apple: guarda lo que ya pintó con la dirección de memoria de cada elemento, libera la lámina, y los elementos de la siguiente caen en esas direcciones y reciben una imagen ajena. Depende de cuántos elementos hay y en qué orden, así que cada arreglo sólo mueve el cruce de lugar.",
+   "porque": "Las pruebas renderizan con LibreOffice, que dibuja todo bien; el defecto sólo existe en el visor de Apple. Y el primer arreglo se dio por bueno sin poder verlo en un iPhone. Lo que más costó: dos arreglos seguidos que «quitaban la causa» y ninguno se podía ver en un iPhone; la pista buena salió de comparar en las capturas QUÉ tipo de imagen se cruzaba y cuál nunca.",
+   "arreglo": "No se arregla dentro del PowerPoint editable; se esquiva. Para VER en el teléfono o mandar por WhatsApp: PDF, o el .pptx «para celular» de fadori/presentacion/plano.py (cada lámina es una sola imagen de fondo y cero elementos: no queda a quién darle una imagen ajena). El editable se queda para PowerPoint o Keynote. iphone.py y opacas.py reducen el cruce pero no lo eliminan.",
+   "comoCazarlo": "npx quicklook-pptx lint archivo.pptx (paquete quicklook-pptx-renderer): cuenta lo que va por PDF (geometry-forces-pdf, opaque-pdf-block, group-as-pdf, rotation-forces-pdf) y lo que no se dibuja (unsupported-geometry). Tiene que dar cero de esas. Y que en el paquete no quede ningún PNG con alfa que use una lámina.",
+   "consejo": "Si el .pptx se va a ver en un teléfono o se va a reenviar por WhatsApp, se entregan además el PDF y la versión plana. No gastar otra ronda tratando de hacer que el editable se vea bien en la vista previa de Apple.",
+   "senales": [
+    "en el iphone salen otras imagenes",
+    "la vista previa muestra el logo equivocado",
+    "imagenes cambiadas de lamina",
+    "tarjetas blancas vacias en el telefono",
+    "una foto no aparece en el iphone",
+    "sale un recuadro de otra lamina",
+    "en whatsapp la vista previa se ve mal",
+    "figuras que desaparecen en el telefono",
+    "la presentacion se ve mal en el iphone",
+    "el powerpoint se ve mal en el celular",
+    "vista previa del powerpoint en el iphone",
+    "sale el fondo en lugar de la foto",
+    "sigue viendose mal en el iphone"
+   ],
+   "salioDe": "Capturas de Carlos de la vista previa de las presentaciones K-9 en el iPhone y en WhatsApp, 1 de octubre de 2026 (dos rondas)."
   }
  ]
 }

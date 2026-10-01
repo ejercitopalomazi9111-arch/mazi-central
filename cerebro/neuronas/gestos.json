@@ -87,6 +87,27 @@
         "el botón de cerrar no se ve"
       ],
       "salioDe": "La galería de la sala: salida deslizando hacia abajo, y un botón que estaba tapado por la cabecera."
+    },
+    {
+      "id": "el-primer-dedo-del-pellizco-toca",
+      "titulo": "El primer dedo de un pellizco cuenta como toque",
+      "gravedad": "media",
+      "sintoma": "Al acercar la foto con dos dedos se elige (o se pinta) lo que había debajo del primer dedo.",
+      "causa": "La acción de tocar se hacía en `pointerdown`, y en un pellizco el primer dedo baja solo unos milisegundos antes que el segundo.",
+      "porque": "Para el navegador un pellizco son dos toques que empiezan por separado; no hay un evento de «van a ser dos».",
+      "arreglo": "Lo que es un toque se hace al LEVANTAR el dedo, sólo si nunca hubo segundo dedo y no se movió más de 12 px. Lo que es un trazo (pincel) sí empieza al bajar, y si llega el segundo dedo se deshace.",
+      "comoCazarlo": "Prueba con dos toques simulados (CDP `Input.dispatchTouchEvent`) y comparar la suma de TODA la máscara antes y después — no sólo la zona que uno espera: la falla pintaba el fondo y la prueba miraba la playera.",
+      "consejo": "Vale para todo lo que hace algo con un solo toque sobre una superficie que también se acerca con dos dedos: elegir, tomar color, poner un punto en un mapa.",
+      "salioDe": "Cambiar color, 1 de octubre de 2026: la descarga traía el fondo de otro color y nadie lo había elegido.",
+      "senales": [
+        "al acercar se pinta",
+        "dos dedos eligen algo",
+        "el zoom selecciona",
+        "aparece color donde no toqué"
+      ],
+      "vecinas": [
+        "gesto-que-pelea-con-el-navegador"
+      ]
     }
   ]
 }

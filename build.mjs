@@ -62,6 +62,13 @@ const VA = [
   /* Quitar fondos, sola: la misma pieza de Presentaciones (recorte.js) sin
      abrir una presentación. Lee su motor de ../presentaciones/. */
   'fondos',
+  /* Carteles para redes: marca + producto → anuncios en seis estilos y a lote.
+     Lee las texturas, los iconos y el quitafondos de ../presentaciones/, y el
+     lector de Excel de ../tienda/. */
+  'carteles',
+  /* Cambiar color: cabello y ropa sin perder sombras. Trae su modelo de
+     partes (vendor/, 16 MB) y usa el motor de MediaPipe de ../presentaciones/. */
+  'recolor',
 ];
 
 /* ── Lo que tiene sitio adentro y NO se publica, dicho a propósito ──────────

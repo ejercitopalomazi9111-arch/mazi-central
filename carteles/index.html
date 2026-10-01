@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0B0710">
+<title>Carteles</title>
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CARTELES · anuncios para redes, de cualquier marca, a lote
+     ──────────────────────────────────────────────────────────────────────────
+     Carlos: «cientos de carteles diferentes para cada producto, para subirlos a
+     redes cada día… de marcas varias diferentes entre sí, de una manera
+     mecanizada y constante».
+     La marca se guarda una vez (logo, colores, letras, contacto). Cada producto
+     sale en seis estilos y en variantes sin fin («Otra versión»). El lote toma
+     una tabla de Excel con los productos y las fotos, y entrega un ZIP.
+     Todo se pinta en el teléfono: las fotos no salen de él.
+     ═════════════════════════════════════════════════════════════════════════ -->
+<style>
+:root{ --fondo:#0B0710; --sup:#1E1428; --sup2:#271B34; --borde:#3A2C4A; --texto:#EDEAF2; --tenue:#B3A9C2; --acento:#AC27FF; color-scheme:dark; }
+*{box-sizing:border-box}
+html,body{margin:0; background:var(--fondo); color:var(--texto); font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; -webkit-text-size-adjust:100%}
+main{max-width:1180px; margin:0 auto; padding:calc(12px + env(safe-area-inset-top)) 16px calc(40px + env(safe-area-inset-bottom))}
+.volver{display:inline-flex; align-items:center; min-height:44px; color:var(--tenue); text-decoration:none}
+h1{font-size:28px; line-height:1.15; margin:4px 0 2px}
+h2{font-size:20px; margin:0 0 12px}
+.sub{color:var(--tenue); margin:0 0 16px}
+.pestanas{display:flex; gap:8px; margin:0 0 16px; overflow-x:auto}
+.pestanas button[aria-selected="true"]{background:var(--acento); border-color:var(--acento); color:#fff; font-weight:700}
+.rejilla{display:grid; grid-template-columns:minmax(0,1fr); gap:16px}
+@media (min-width:900px){ .rejilla{grid-template-columns:minmax(0,420px) minmax(0,1fr)} }
+.tarjeta{background:var(--sup); border:1px solid var(--borde); border-radius:16px; padding:16px}
+label.campo{display:flex; flex-direction:column; gap:4px; margin:0 0 12px; font-size:14px; color:var(--tenue)}
+input[type=text],input[type=tel],textarea,select{font:inherit; font-size:16px; color:var(--texto); background:var(--sup2); border:1px solid var(--borde); border-radius:10px; padding:10px 12px; min-height:44px; width:100%}
+textarea{min-height:96px; resize:vertical}
+.dos{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px}
+.tres{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px}
+.color{display:flex; align-items:center; gap:8px; font-size:14px; color:var(--tenue)}
+.color input{width:48px; height:44px; border:1px solid var(--borde); border-radius:10px; background:none; padding:2px}
+button,.boton{font:inherit; color:inherit; background:var(--sup2); border:1px solid var(--borde); border-radius:12px; min-height:44px; padding:0 14px; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center; gap:6px; text-decoration:none; white-space:nowrap}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--acento); outline-offset:2px}
+.si{background:var(--acento); border-color:var(--acento); color:#fff; font-weight:700}
+.fila{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+.foto{display:flex; align-items:center; gap:12px; margin:0 0 12px}
+.foto img{width:72px; height:72px; object-fit:contain; border-radius:10px; background:repeating-conic-gradient(#2A2033 0 25%, #1A1322 0 50%) 0 0/16px 16px; border:1px solid var(--borde)}
+.foto .vacio{width:72px; height:72px; border-radius:10px; border:2px dashed var(--borde); display:flex; align-items:center; justify-content:center; color:var(--tenue); font-size:12px; text-align:center}
+.chips{display:flex; flex-wrap:wrap; gap:8px}
+.chips button[aria-pressed="true"]{border-color:var(--acento); background:#2E1A45}
+.vista{display:flex; flex-direction:column; gap:12px; align-items:center}
+.vista canvas{width:100%; max-width:540px; height:auto; border-radius:12px; box-shadow:0 12px 40px rgba(0,0,0,.5); background:#000}
+.variantes{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; width:100%; max-width:540px}
+.variantes button{padding:0; min-height:0; border-radius:10px; overflow:hidden; border:2px solid transparent; background:none}
+.variantes button[aria-pressed="true"]{border-color:var(--acento)}
+.variantes img{width:100%; display:block}
+.nota{font-size:14px; color:var(--tenue)}
+#estado,#estadoLote{min-height:24px; color:var(--tenue)}
+.galeria{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin-top:12px}
+.galeria img{width:100%; border-radius:8px; display:block}
+details summary{cursor:pointer; min-height:44px; display:flex; align-items:center; color:var(--tenue)}
+[hidden]{display:none !important}
+.oculto{position:absolute; top:0; left:0; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<main>
+  <a class="volver" href="../">← Central</a>
+  <h1>Carteles</h1>
+  <p class="sub">Tu marca una vez; cada producto en seis estilos y en variantes sin fin.</p>
+
+  <div class="pestanas" role="tablist">
+    <button role="tab" aria-selected="true" data-pestana="uno">Un cartel</button>
+    <button role="tab" aria-selected="false" data-pestana="marca">Marca</button>
+    <button role="tab" aria-selected="false" data-pestana="lote">Muchos a la vez</button>
+  </div>
+
+  <!-- ════════ MARCA ════════ -->
+  <section id="p-marca" hidden>
+    <div class="tarjeta" style="max-width:640px">
+      <div class="fila" style="margin-bottom:12px">
+        <label class="campo" style="flex:1; margin:0">Marca
+          <select id="marcas"></select></label>
+        <button id="nuevaMarca" style="align-self:flex-end">＋ Nueva</button>
+      </div>
+      <label class="campo">Nombre <input type="text" id="m-nombre" autocomplete="off"></label>
+      <div class="foto"><span id="m-logoVer" class="vacio">Sin logo</span>
+        <div class="fila"><button id="m-logo">Subir logo</button><button id="m-logoFondo" hidden>Quitar fondo</button><button id="m-logoQuitar" hidden>Quitar</button></div></div>
+      <div class="fila" style="margin-bottom:12px">
+        <label class="color"><input type="color" id="m-acento" value="#F5B301"> Acento</label>
+        <label class="color"><input type="color" id="m-fondo" value="#0E0E0E"> Fondo</label>
+        <label class="color"><input type="color" id="m-texto" value="#FFFFFF"> Letras</label>
+        <button id="m-colores" hidden>Sacar del logo</button>
+      </div>
+      <label class="campo">Letras
+        <select id="m-letras"><option value="brocha">A brocha (urbana)</option><option value="impacto">Impacto (condensada)</option><option value="elegante">Elegante (con remates)</option></select></label>
+      <label class="campo">WhatsApp <input type="tel" id="m-whatsapp" autocomplete="off"></label>
+      <label class="campo">Dirección <input type="text" id="m-direccion" autocomplete="off"></label>
+      <label class="campo">Promos de la semana <span class="nota">Una por renglón: día | lo grande | la línea. Ej.: <i>Martes | 2x1 | en rollos empanizados</i></span>
+        <textarea id="m-semana"></textarea></label>
+      <div class="fila"><button class="si" id="guardarMarca">Guardar marca</button><button id="borrarMarca">Borrar esta marca</button>
+        <button id="exportarMarca">Exportar</button><button id="importarMarca">Importar</button></div>
+      <p class="nota" id="estadoMarca" role="status"></p>
+    </div>
+  </section>
+
+  <!-- ════════ UN CARTEL ════════ -->
+  <section id="p-uno">
+    <div class="rejilla">
+      <div class="tarjeta">
+        <h2>El producto</h2>
+        <div class="foto"><span id="p-fotoVer" class="vacio">Sin foto</span>
+          <div class="fila"><button id="p-foto">Subir foto</button><button id="p-fotoFondo" hidden>Quitar fondo</button></div></div>
+        <label class="campo">Nombre <input type="text" id="p-nombre" placeholder="Bananito" autocomplete="off"></label>
+        <label class="campo">Frase <input type="text" id="p-frase" placeholder="El postre que sí es sushi" autocomplete="off"></label>
+        <div class="dos">
+          <label class="campo">Etiqueta <input type="text" id="p-promo" placeholder="Promoción" autocomplete="off"></label>
+          <label class="campo">Precio <input type="text" id="p-precio" placeholder="$109" inputmode="decimal" autocomplete="off"></label>
+        </div>
+        <label class="campo">Antes del precio <input type="text" id="p-detalle" placeholder="Platillo Bananito por sólo" autocomplete="off"></label>
+        <label class="campo">Ingredientes <span class="nota">separados con coma</span><input type="text" id="p-ingredientes" placeholder="Plátano natural, Arroz de sushi, Chocolate" autocomplete="off"></label>
+        <details>
+          <summary>Más textos (promo gigante, a mano)</summary>
+          <div class="tres">
+            <label class="campo">Día <input type="text" id="p-dia" placeholder="Martes" autocomplete="off"></label>
+            <label class="campo">Lo grande <input type="text" id="p-grande" placeholder="2x1" autocomplete="off"></label>
+            <label class="campo">Franja <input type="text" id="p-nota" placeholder="Envío sin costo" autocomplete="off"></label>
+          </div>
+          <label class="campo">Frase a mano de arriba <input type="text" id="p-lema" placeholder="Dulce, crujiente, único." autocomplete="off"></label>
+          <label class="campo">Remate a mano de abajo <input type="text" id="p-remate" placeholder="El dulce también se disfruta en rollo" autocomplete="off"></label>
+        </details>
+      </div>
+      <div class="tarjeta vista">
+        <div class="chips" id="estilos" role="group" aria-label="Estilo"></div>
+        <div class="chips" id="formatos" role="group" aria-label="Tamaño"></div>
+        <canvas id="lienzo" width="1080" height="1350" aria-label="El cartel"></canvas>
+        <div class="fila"><button id="otra">↻ Otra versión</button><button class="si" id="descargar">Descargar</button><button id="compartir" hidden>Guardar en Fotos</button></div>
+        <p class="nota">Las seis de abajo son el mismo producto en cada estilo: toca una para elegirla.</p>
+        <div class="variantes" id="variantes"></div>
+        <p id="estado" role="status"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════ LOTE ════════ -->
+  <section id="p-lote" hidden>
+    <div class="tarjeta">
+      <h2>Muchos carteles a la vez</h2>
+      <p class="nota">Pega aquí una tabla de Excel o Google Sheets (con encabezados) o sube el archivo. Columnas que entiende:
+        <b>Producto</b>, Frase, Precio, Promo, Detalle, Ingredientes, Día, Grande, Nota, Foto (nombre del archivo).</p>
+      <textarea id="tabla" placeholder="Producto	Frase	Precio	Foto&#10;Bananito	El postre que sí es sushi	$109	bananito.jpg"></textarea>
+      <div class="fila" style="margin:12px 0"><button id="subirTabla">Subir Excel o CSV</button><button id="subirFotos">Elegir las fotos</button><span class="nota" id="cuantasFotos"></span></div>
+      <p class="nota">Estilos que entran al lote:</p>
+      <div class="chips" id="estilosLote" role="group" aria-label="Estilos del lote"></div>
+      <div class="tres" style="margin-top:12px">
+        <label class="campo">Tamaño <select id="formatoLote"></select></label>
+        <label class="campo">Carteles por producto <select id="porProducto"><option>1</option><option selected>3</option><option>6</option><option>12</option></select></label>
+        <label class="campo">Tanda <input type="text" id="tanda" inputmode="numeric" value="1" autocomplete="off"></label>
+      </div>
+      <p class="nota">«Tanda» cambia todas las variantes: tanda 2 da carteles distintos a la tanda 1 con los mismos productos.</p>
+      <div class="fila"><button class="si" id="hacerLote">Hacer los carteles</button><button id="bajarLote" hidden>Descargar ZIP</button></div>
+      <p id="estadoLote" role="status"></p>
+      <div class="galeria" id="galeria"></div>
+    </div>
+  </section>
+
+  <input type="file" id="archivo" class="oculto" tabindex="-1" aria-hidden="true">
+</main>
+<script src="../presentaciones/vendor/jszip-3.10.2.min.js" defer></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
