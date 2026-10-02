@@ -12,6 +12,7 @@
    y trata de correr su `node build.mjs` dentro de esta carpeta.
    ═════════════════════════════════════════════════════════════════════════ */
 export { Sala } from './sala.js';
+import { traer as traerInkwell } from './inkwell.js';
 
 /* Sin comodín. Un "*" aquí le abre la puerta a cualquier página del mundo
    para leer y escribir en la mesa de los cuatro. */
@@ -85,6 +86,14 @@ export default {
     }
 
     if(url.pathname === '/api/salud') return conCORS(Response.json({ bien:true }), pedido);
+
+    /* INKWELL: el recadero de Webtoon (inkwell.js). Va antes de las rutas de
+       una sala porque «inkwell» cabe en el molde /api/sala/X/Y y ahí daría
+       «ese código no existe». */
+    if(url.pathname === '/api/sala/inkwell/traer'){
+      if(pedido.method !== 'GET') return conCORS(Response.json({ bien:false, error:'Sólo GET.' }, { status:405 }), pedido);
+      return conCORS(await traerInkwell(url), pedido);
+    }
 
     /* ── /entrar/CODIGO · el link que se le pasa a un Claude ───────────────
        Ésta es LA pieza que hace que el compañero nada más tenga que pegar un

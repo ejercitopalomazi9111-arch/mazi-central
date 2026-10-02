@@ -842,6 +842,26 @@
         "cuesta moverlo",
         "agarrar"
       ]
+    },
+    {
+      "id": "service-worker-que-congela",
+      "titulo": "El service worker «primero lo guardado» congela la app",
+      "gravedad": "alta",
+      "sintoma": "Se sube un cambio y en el teléfono sigue la versión vieja; o una lista que viene de una API nunca cambia aunque del otro lado sí.",
+      "causa": "El service worker responde con lo que ya tiene guardado y sólo va a la red si no lo tiene: el archivo del primer día se sirve para siempre, y cualquier pedido que pase por él se congela igual.",
+      "porque": "Se escribe así para que la app abra sin internet, y para eso funciona; lo que no se ve es que también deja de oír al servidor.",
+      "arreglo": "La app (html, js, manifest) va «primero la red» con lo guardado de respaldo; lo que de verdad no cambia (pinturas, fuentes) puede ir «primero lo guardado»; y lo de otro sitio o de /api/ NO pasa por el caché. Subir la versión del caché en cada cambio de estrategia.",
+      "comoCazarlo": "Leer el `fetch` del service worker: si el primer paso es `caches.match` para TODO, está congelando. Y probar: cambiar el html, recargar dos veces con red, ¿salió el cambio?",
+      "consejo": "Cuando una página de pronto empieza a hablar con una API, revisar el service worker en el mismo cambio: lo que antes era inofensivo ahora congela datos vivos.",
+      "salioDe": "INKWELL · Tiras, 2 de octubre de 2026: con el service worker de v3 la lista de capítulos de Webtoon se habría quedado como el día que se agregó la serie.",
+      "senales": [
+        "no se actualiza en el teléfono",
+        "sigue la versión vieja",
+        "no aparecen capítulos nuevos",
+        "la lista nunca cambia",
+        "funciona sin internet pero no se actualiza"
+      ],
+      "vecinas": []
     }
   ]
 }
