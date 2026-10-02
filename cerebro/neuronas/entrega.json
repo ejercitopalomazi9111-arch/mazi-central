@@ -87,6 +87,24 @@
         "otra vez con lo mismo"
       ],
       "salioDe": "Una regla explícita de este equipo, y la corrección «no me des problemas, dime qué necesitas»."
+    },
+    {
+      "id": "archivo-pesado-que-no-abre-en-el-telefono",
+      "titulo": "Un archivo sano que «no abre» en el teléfono",
+      "gravedad": "alta",
+      "sintoma": "Carlos: «las presentaciones no abren». El PDF y los PowerPoint de los cursos se bajan bien en la compu y en el teléfono no se ven.",
+      "causa": "Abrirlos es bajar 8 a 21 MB DE GOLPE y dárselos a un visor ajeno: con `download` el iPhone los manda callado a Archivos (parece que no pasó nada), con datos tarda tanto que se ve en blanco, y el navegador de WhatsApp ni baja archivos.",
+      "porque": "Se comprobó el archivo (pdfinfo, unzip -t, mismos bytes en el servidor) y se dio por bueno; el defecto no estaba en el archivo sino en el camino para verlo.",
+      "arreglo": "Un visor propio: cada lámina como imagen de ~150 KB que se pide cuando ya casi se ve (`loading=lazy`), con modo presentar. «Ver aquí» es el botón principal; bajar el archivo queda para guardarlo. cursos/ver.html, láminas sacadas con cursos/laminas.py.",
+      "comoCazarlo": "Abrir el link en el navegador de WhatsApp y con datos, no en la compu con wifi. Y contar cuánto pide la página al abrir (cursos/pruebas-visor.mjs exige menos de la mitad de las imágenes).",
+      "consejo": "Lo que se entrega para VER en un teléfono se entrega como página, no como archivo. El archivo es para guardar o editar.",
+      "senales": [
+        "no abre la presentación",
+        "no se ve el pdf en el iphone",
+        "le doy descargar y no pasa nada",
+        "en whatsapp no abre el link"
+      ],
+      "salioDe": "Cursos de primeros auxilios, 2 de octubre de 2026."
     }
   ]
 }

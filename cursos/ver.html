@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0B0710">
+<title>Ver presentación · Cursos de primeros auxilios</title>
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CURSOS · el visor
+     ──────────────────────────────────────────────────────────────────────────
+     Carlos, 2 de octubre: «las presentaciones no abren». Los archivos están
+     sanos (pdfinfo y unzip -t limpios, mismos bytes en el servidor), pero en el
+     iPhone abrirlos es bajar 8 a 21 MB DE GOLPE y dárselos a un visor ajeno: con
+     datos tarda, el botón con `download` los manda callado a Archivos, y en el
+     navegador de WhatsApp ni bajan. Aquí cada lámina es una imagen de ~150 KB que
+     se pide cuando ya casi se ve: abre al instante en cualquier teléfono.
+     Las imágenes salen del «para celular» (cada lámina ya es una imagen) con
+     cursos/laminas.py; si se rehace una presentación, se vuelve a correr.
+     ═════════════════════════════════════════════════════════════════════════ -->
+<style>
+:root{ --fondo:#0B0710; --sup:#1E1428; --borde:#3A2C4A; --texto:#EDEAF2; --tenue:#B3A9C2; --acento:#AC27FF; color-scheme:dark }
+*{box-sizing:border-box}
+html,body{margin:0; background:var(--fondo); color:var(--texto);
+  font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; -webkit-text-size-adjust:100%}
+header{position:sticky; top:0; z-index:2; background:rgba(11,7,16,.94); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--borde); padding:calc(8px + env(safe-area-inset-top)) 16px 8px}
+.barra{max-width:1120px; margin:0 auto; display:flex; align-items:center; gap:8px}
+.barra a.volver{color:var(--tenue); text-decoration:none; min-height:44px; display:inline-flex; align-items:center; flex:none}
+.barra h1{font-size:16px; line-height:1.2; margin:0; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+button{font:inherit; color:inherit; cursor:pointer}
+.presentar{flex:none; min-height:44px; padding:0 16px; border-radius:12px; border:0; background:var(--acento); color:#fff; font-weight:700}
+main{max-width:1120px; margin:0 auto; padding:16px 16px calc(48px + env(safe-area-inset-bottom))}
+.lista{display:grid; grid-template-columns:minmax(0,1fr); gap:16px; list-style:none; margin:0; padding:0}
+@media (min-width:900px){ .lista{grid-template-columns:repeat(2,minmax(0,1fr))} }
+.lista li{margin:0}
+.lista button{display:block; width:100%; padding:0; border:1px solid var(--borde); border-radius:12px; overflow:hidden; background:#000; position:relative}
+.lista img{display:block; width:100%; height:auto; background:#15101C}
+.lista .num{position:absolute; left:8px; bottom:8px; background:rgba(0,0,0,.7); color:#fff; font-size:13px; padding:2px 8px; border-radius:8px}
+.error{color:var(--tenue); max-width:65ch}
+/* el modo presentar: una lámina a pantalla completa */
+dialog{border:0; padding:0; margin:0; width:100vw; height:100vh; height:100dvh; max-width:none; max-height:none; background:#000; color:#fff}
+dialog::backdrop{background:#000}
+.escena{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; touch-action:pan-y pinch-zoom}
+.escena img{max-width:100%; max-height:100%; object-fit:contain; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none}
+.zona{position:absolute; top:0; bottom:0; width:33%; border:0; background:transparent}
+.zona.ant{left:0} .zona.sig{right:0}
+.zona:focus{outline:none} /* son orillas invisibles para tocar; con teclado van las flechas */
+html.presentando{overflow:hidden} /* que la lista de atrás no se mueva mientras presentas */
+.controles{position:absolute; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:space-between; gap:8px;
+  padding:8px calc(12px + env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));
+  background:linear-gradient(transparent, rgba(0,0,0,.7)); transition:opacity .2s}
+.controles button{min-width:48px; min-height:48px; border-radius:12px; border:1px solid rgba(255,255,255,.25); background:rgba(0,0,0,.5); font-size:20px}
+.controles .cuenta{font-variant-numeric:tabular-nums; font-size:15px}
+.cerrar{position:absolute; top:calc(8px + env(safe-area-inset-top)); right:calc(8px + env(safe-area-inset-right)); min-width:48px; min-height:48px;
+  border-radius:12px; border:1px solid rgba(255,255,255,.25); background:rgba(0,0,0,.5); font-size:22px; transition:opacity .2s}
+dialog.quieto .controles, dialog.quieto .cerrar{opacity:0}
+.oculto{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); top:0; left:0}
+</style>
+</head>
+<body>
+<header><div class="barra">
+  <a class="volver" href="./">‹ Cursos</a>
+  <h1 id="titulo">Presentación</h1>
+  <button class="presentar" id="presentar" type="button">▶ Presentar</button>
+</div></header>
+<main>
+  <ol class="lista" id="lista"></ol>
+</main>
+<dialog id="visor" aria-label="Presentación a pantalla completa">
+  <div class="escena" id="escena"><img id="grande" alt=""></div>
+  <button class="zona ant" type="button" data-paso="-1" aria-label="Lámina anterior"></button>
+  <button class="zona sig" type="button" data-paso="1" aria-label="Lámina siguiente"></button>
+  <button class="cerrar" type="button" id="cerrar" aria-label="Salir de presentar">✕</button>
+  <div class="controles">
+    <button type="button" data-paso="-1" aria-label="Lámina anterior">‹</button>
+    <span class="cuenta" id="cuenta" aria-live="polite"></span>
+    <button type="button" data-paso="1" aria-label="Lámina siguiente">›</button>
+  </div>
+</dialog>
+<script>
+/* Los tres cursos. `laminas` y `alto` salen de cursos/laminas.py. */
+const CURSOS = {
+  principal: { nombre: 'Primeros Auxilios · Curso principal', laminas: 85, alto: 900 },
+  brigada:   { nombre: 'Primeros Auxilios · Brigada',          laminas: 90, alto: 900 },
+  acuatica:  { nombre: 'Brigada de Seguridad, Rescate y Salvamento Acuático', laminas: 57, alto: 1200 },
+};
+const $ = (s) => document.querySelector(s);
+const clave = new URLSearchParams(location.search).get('c');
+const C = CURSOS[clave];
+const src = (i) => `archivos/${clave}/${String(i).padStart(2, '0')}.jpg`;
+
+if (!C) {
+  $('#lista').outerHTML = '<p class="error">No encontré esa presentación. <a href="./" style="color:inherit">Regresa a Cursos</a> y elige una.</p>';
+  $('#presentar').hidden = true;
+} else {
+  document.title = C.nombre + ' · Cursos';
+  $('#titulo').textContent = C.nombre;
+  const ol = $('#lista');
+  for (let i = 1; i <= C.laminas; i++) {
+    const li = document.createElement('li');
+    li.innerHTML = `<button type="button" aria-label="Presentar desde la lámina ${i}"><img loading="${i <= 2 ? 'eager' : 'lazy'}" decoding="async" width="1600" height="${C.alto}" src="${src(i)}" alt="Lámina ${i}"><span class="num">${i} / ${C.laminas}</span></button>`;
+    li.firstChild.addEventListener('click', () => abrir(i));
+    ol.append(li);
+  }
+}
+
+/* ── Presentar ─────────────────────────────────────────────────────────── */
+const visor = $('#visor'), grande = $('#grande');
+let actual = 1, reloj;
+function mostrar(i) {
+  actual = Math.min(C.laminas, Math.max(1, i));
+  grande.src = src(actual);
+  grande.alt = `Lámina ${actual} de ${C.laminas}`;
+  $('#cuenta').textContent = `${actual} / ${C.laminas}`;
+  // la que sigue ya se pide, para que el cambio sea inmediato
+  if (actual < C.laminas) new Image().src = src(actual + 1);
+  despertar();
+}
+function despertar() {
+  visor.classList.remove('quieto');
+  clearTimeout(reloj);
+  reloj = setTimeout(() => visor.classList.add('quieto'), 2500);
+}
+function abrir(i) {
+  document.documentElement.classList.add('presentando');
+  visor.showModal();
+  mostrar(i);
+  // pantalla completa donde el navegador la deja (en iPhone no: ahí el diálogo ya ocupa todo)
+  visor.requestFullscreen?.().catch(() => {});
+}
+function cerrar() {
+  if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+  visor.close();
+  document.documentElement.classList.remove('presentando');
+  // al salir, la lista queda en la lámina donde ibas
+  $('#lista').children[actual - 1]?.scrollIntoView({ block: 'center' });
+}
+$('#presentar').addEventListener('click', () => abrir(1));
+$('#cerrar').addEventListener('click', cerrar);
+visor.addEventListener('cancel', (e) => { e.preventDefault(); cerrar(); });
+visor.querySelectorAll('[data-paso]').forEach((b) => b.addEventListener('click', () => mostrar(actual + Number(b.dataset.paso))));
+visor.addEventListener('pointermove', despertar);
+document.addEventListener('keydown', (e) => {
+  if (!visor.open) return;
+  if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); mostrar(actual + 1); }
+  else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); mostrar(actual - 1); }
+  else if (e.key === 'Home') { e.preventDefault(); mostrar(1); }
+  else if (e.key === 'End') { e.preventDefault(); mostrar(C.laminas); }
+});
+/* deslizar con el dedo */
+let x0 = null, y0 = 0;
+visor.addEventListener('touchstart', (e) => { if (e.touches.length === 1) { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; } }, { passive: true });
+visor.addEventListener('touchend', (e) => {
+  if (x0 === null) return;
+  const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+  x0 = null;
+  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) mostrar(actual + (dx < 0 ? 1 : -1));
+  else despertar();
+});
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && visor.open) despertar(); });
+</script>
+</body>
+</html>
