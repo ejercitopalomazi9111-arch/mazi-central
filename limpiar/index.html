@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0B0710">
+<title>Limpiar fotos</title>
+<!-- ══════════════════════════════════════════════════════════════════════════
+     LIMPIAR FOTOS · elige qué se queda y qué se va, y lo borra un atajo
+     ──────────────────────────────────────────────────────────────────────────
+     El análisis vive en analisis.js; aquí la pantalla.
+     Una página web NO puede borrar fotos del iPhone: Apple no le da esa
+     llave a nadie más que a una app instalada o a Atajos. Por eso el borrado
+     lo hace un atajo de Atajos de Apple, que recibe la lista (una fecha de
+     captura por renglón) y la manda a «Eliminar fotos»: iOS pide UNA
+     confirmación para todo el lote y lo deja 30 días en «Eliminados».
+     Las fotos no salen del teléfono.
+     ═════════════════════════════════════════════════════════════════════════ -->
+<style>
+:root{
+  --fondo:#0B0710; --sup:#1E1428; --sup2:#2A1F37; --borde:#3A2C4A; --texto:#EDEAF2; --tenue:#B3A9C2; --acento:#AC27FF;
+  --va:#FF5C7A; --queda:#3DDC97;
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0; background:var(--fondo); color:var(--texto);
+  font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; -webkit-text-size-adjust:100%}
+main{max-width:1120px; margin:0 auto; padding:calc(16px + env(safe-area-inset-top)) 16px calc(120px + env(safe-area-inset-bottom))}
+.volver{display:inline-flex; align-items:center; min-height:44px; color:var(--tenue); text-decoration:none}
+h1{font-size:28px; line-height:1.15; margin:8px 0 4px}
+.sub{color:var(--tenue); margin:0 0 24px; max-width:65ch}
+.soltar{position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; text-align:center;
+  min-height:200px; max-width:720px; padding:24px 16px; border:2px dashed var(--borde); border-radius:16px; background:var(--sup); cursor:pointer}
+.soltar.encima{border-color:var(--acento)}
+.soltar b{font-size:20px}
+.soltar span{color:var(--tenue); font-size:14px; max-width:44ch}
+.soltar input{position:absolute; top:0; left:0; width:1px; height:1px; opacity:0; pointer-events:none}
+.consejo{max-width:720px; color:var(--tenue); font-size:14px; margin:12px 0 0}
+
+button,.boton{font:inherit; color:inherit; background:var(--sup); border:1px solid var(--borde); border-radius:12px;
+  min-height:44px; padding:0 16px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  text-decoration:none; white-space:nowrap; touch-action:manipulation}
+button:focus-visible,.boton:focus-visible{outline:2px solid #fff; outline-offset:2px}
+button[disabled]{opacity:.45; cursor:default}
+.si{background:var(--acento); border-color:var(--acento); color:#fff; font-weight:700}
+
+.avance{max-width:720px; margin:24px 0 0}
+.barra{height:10px; border-radius:6px; background:var(--sup); overflow:hidden; border:1px solid var(--borde)}
+.barra i{display:block; height:100%; width:0; background:var(--acento); transition:width .2s}
+#estado{min-height:24px; margin:8px 0 0; color:var(--tenue)}
+
+.resumen{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin:24px 0 8px; max-width:720px}
+.cifra{background:var(--sup); border:1px solid var(--borde); border-radius:16px; padding:12px; min-width:0}
+.cifra b{display:block; font-size:24px; line-height:1.1; font-variant-numeric:tabular-nums}
+.cifra span{color:var(--tenue); font-size:13px; line-height:1.3; display:block}
+@media (min-width:560px){ .cifra{padding:12px 16px} .cifra b{font-size:28px} .cifra span{font-size:14px} }
+.cifra.va b{color:var(--va)}
+.leyenda{color:var(--tenue); font-size:14px; margin:0 0 8px; max-width:70ch}
+
+section.cat{margin:32px 0 0}
+section.cat > header{display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:8px}
+section.cat h2{font-size:20px; margin:0}
+section.cat h2 small{color:var(--tenue); font-weight:400; font-size:14px; margin-left:6px}
+section.cat p.que{margin:4px 0 12px; color:var(--tenue); font-size:14px; max-width:70ch}
+.todas{display:flex; gap:8px; flex-wrap:wrap}
+.todas button{min-height:44px; font-size:14px; padding:0 12px}
+.rejilla{display:grid; grid-template-columns:repeat(auto-fill,minmax(104px,1fr)); gap:8px}
+@media (min-width:700px){ .rejilla{grid-template-columns:repeat(auto-fill,minmax(136px,1fr))} }
+.grupo{background:var(--sup); border:1px solid var(--borde); border-radius:14px; padding:8px; margin:0 0 12px}
+.grupo .rejilla{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}
+@media (min-width:700px){ .grupo .rejilla{grid-template-columns:repeat(auto-fill,minmax(136px,1fr))} }
+.foto{position:relative; padding:0; border:2px solid transparent; border-radius:12px; overflow:hidden; background:#000;
+  aspect-ratio:1; display:block; width:100%; min-height:0; white-space:normal}
+.foto img{width:100%; height:100%; object-fit:cover; display:block; transition:opacity .15s, filter .15s}
+.foto[aria-pressed="true"]{border-color:var(--va)}
+.foto[aria-pressed="true"] img{opacity:.45; filter:grayscale(.6)}
+.foto .sello{position:absolute; left:4px; bottom:4px; right:4px; padding:2px 6px; border-radius:8px; font-size:12px; font-weight:700;
+  line-height:1.3; text-align:left; background:rgba(11,7,16,.82); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.foto[aria-pressed="true"] .sello{color:var(--va)}
+.foto[aria-pressed="false"] .sello{color:var(--queda)}
+.foto .lupa{position:absolute; top:4px; right:4px; width:32px; height:32px; border-radius:50%; background:rgba(11,7,16,.75);
+  display:flex; align-items:center; justify-content:center; font-size:15px}
+.foto .dur{position:absolute; top:4px; left:4px; padding:1px 6px; border-radius:6px; background:rgba(11,7,16,.75); font-size:12px}
+.vacio{color:var(--tenue); font-size:14px; padding:12px; background:var(--sup); border-radius:12px}
+
+.pie{position:fixed; left:0; right:0; bottom:0; z-index:5; background:rgba(11,7,16,.94); border-top:1px solid var(--borde);
+  padding:12px 16px calc(12px + env(safe-area-inset-bottom)); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px)}
+.pie > div{max-width:1120px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:12px}
+.pie p{margin:0; font-size:15px; line-height:1.3}
+.pie p b{color:var(--va); font-variant-numeric:tabular-nums}
+.pie p span{display:block; color:var(--tenue); font-size:13px}
+
+dialog{background:var(--sup); color:var(--texto); border:1px solid var(--borde); border-radius:18px; padding:0; width:min(640px, calc(100vw - 24px));
+  max-height:calc(100dvh - 24px)}
+dialog::backdrop{background:rgba(0,0,0,.7)}
+.hoja{padding:20px; display:flex; flex-direction:column; gap:12px; overflow:auto; max-height:calc(100dvh - 26px)}
+.hoja h2{margin:0; font-size:22px}
+.hoja ol{margin:0; padding-left:22px; display:flex; flex-direction:column; gap:6px}
+.hoja li{line-height:1.4}
+.hoja .nota{color:var(--tenue); font-size:14px; margin:0}
+.hoja .botones{display:grid; grid-template-columns:minmax(0,1fr); gap:8px}
+.hoja details{background:var(--sup2); border-radius:12px; padding:0 12px}
+.hoja summary{min-height:44px; display:flex; align-items:center; cursor:pointer; font-weight:600}
+.hoja details[open]{padding-bottom:12px}
+.hoja code{background:#0B0710; border-radius:6px; padding:1px 6px; font-size:14px}
+.grande img,.grande video{display:block; width:100%; max-height:60dvh; object-fit:contain; background:#000; border-radius:12px}
+.sin-fecha{display:grid; grid-template-columns:repeat(auto-fill,minmax(64px,1fr)); gap:6px}
+.sin-fecha img{width:100%; aspect-ratio:1; object-fit:cover; border-radius:8px}
+[hidden]{display:none !important}
+.oculto{position:absolute; top:0; left:0; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<main>
+  <a class="volver" href="../">‹ Central</a>
+  <h1>Limpiar fotos</h1>
+  <p class="sub">Elige tus fotos y la app propone qué se va: <b>repetidas, ráfagas, borrosas, negras y capturas viejas</b>, quedándose siempre con la mejor de cada grupo. Tú revisas, y un atajo del iPhone las borra todas de un jalón.</p>
+
+  <div id="inicio">
+    <label class="soltar" id="soltar">
+      <input type="file" accept="image/*,video/*" multiple id="archivo">
+      <b>Elegir fotos y videos</b>
+      <span>En el iPhone: toca «Seleccionar», toca una foto y arrastra el dedo para elegir muchas de un jalón. También puedes elegir un álbum entero.</span>
+    </label>
+    <p class="consejo">Las fotos no salen del teléfono: todo se calcula aquí mismo. Tip: el iPhone ya junta las idénticas en Fotos → Álbumes → <b>Duplicados</b>; esta app además encuentra las parecidas, las borrosas y las que sobran.</p>
+  </div>
+
+  <div class="avance" id="avance" hidden>
+    <div class="barra" aria-hidden="true"><i id="barra"></i></div>
+    <p id="estado" role="status" aria-live="polite"></p>
+  </div>
+
+  <div id="resultado" hidden>
+    <div class="resumen" id="resumen"></div>
+    <p class="leyenda">Toca una foto para cambiarla entre <b style="color:var(--queda)">se queda</b> y <b style="color:var(--va)">se va</b>. La lupa la abre en grande.</p>
+    <div id="categorias"></div>
+    <p style="margin-top:32px"><button type="button" id="otra">Elegir otras fotos</button></p>
+  </div>
+</main>
+
+<div class="pie" id="pie" hidden>
+  <div>
+    <p id="cuenta"></p>
+    <button type="button" class="si" id="borrar">Borrarlas del iPhone</button>
+  </div>
+</div>
+
+<dialog id="dlgBorrar" aria-labelledby="tBorrar">
+  <div class="hoja">
+    <h2 id="tBorrar">Borrarlas del iPhone</h2>
+    <p class="nota" id="resumenBorrar"></p>
+    <ol>
+      <li>Toca <b>Copiar la lista y abrir Atajos</b>.</li>
+      <li>El atajo «Limpiar fotos Mazi» las encuentra y el iPhone te pregunta <b>una sola vez</b> si las elimina.</li>
+      <li>Quedan 30 días en Fotos → <b>Eliminados</b>, por si te arrepientes.</li>
+    </ol>
+    <div class="botones">
+      <button type="button" class="si" id="copiarAbrir">Copiar la lista y abrir Atajos</button>
+      <button type="button" id="bajarLista">Bajar la lista (.txt)</button>
+    </div>
+    <p class="nota" id="avisoCopia" role="status" aria-live="polite"></p>
+    <div id="sinFecha" hidden>
+      <p class="nota"><b id="nSinFecha"></b> su fecha de captura, y sin ella el atajo no la encuentra. Ésas se borran a mano:</p>
+      <div class="sin-fecha" id="listaSinFecha"></div>
+    </div>
+    <details>
+      <summary>La primera vez: armar el atajo (1 minuto)</summary>
+      <ol>
+        <li>Abre <b>Atajos</b> → <b>＋</b> y llámalo exactamente <code>Limpiar fotos Mazi</code>.</li>
+        <li>Agrega <b>Obtener portapapeles</b>.</li>
+        <li>Agrega <b>Dividir texto</b>: «Portapapeles» por <b>Nuevas líneas</b>.</li>
+        <li>Agrega <b>Repetir con cada uno</b> sobre «Texto dividido». Adentro:
+          <ol>
+            <li><b>Obtener fechas de</b> «Elemento repetido».</li>
+            <li><b>Ajustar fecha</b>: <b>Sumar 1 segundo</b> a «Fechas».</li>
+            <li><b>Buscar fotos</b> → Agregar filtro → <b>Fecha de captura</b> <b>está entre</b> «Fechas» y «Fecha ajustada».</li>
+          </ol>
+        </li>
+        <li>Después de «Fin de repetición», agrega <b>Eliminar fotos</b> con «Resultados de repetición».</li>
+      </ol>
+      <p class="nota" style="margin-top:8px">Si en el paso 3 de adentro no te deja poner las fechas, mándame captura y lo ajusto.</p>
+    </details>
+    <details>
+      <summary>Extra: borrar las capturas viejas sin abrir esta app</summary>
+      <ol>
+        <li>Atajos → <b>＋</b> → <b>Buscar fotos</b>.</li>
+        <li>Filtros: <b>Es captura de pantalla</b> es verdadero, y <b>Fecha de captura</b> <b>es anterior a</b> hace 30 días.</li>
+        <li>Agrega <b>Eliminar fotos</b>. Lo puedes correr cada semana con una automatización.</li>
+      </ol>
+    </details>
+    <button type="button" id="cerrarBorrar">Cerrar</button>
+  </div>
+</dialog>
+
+<dialog id="dlgVer" aria-labelledby="tVer">
+  <div class="hoja">
+    <h2 id="tVer"></h2>
+    <div class="grande" id="grande"></div>
+    <p class="nota" id="razonVer"></p>
+    <div class="botones">
+      <button type="button" class="si" id="alternarVer"></button>
+      <button type="button" id="cerrarVer">Cerrar</button>
+    </div>
+  </div>
+</dialog>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

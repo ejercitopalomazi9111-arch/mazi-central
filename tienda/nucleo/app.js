@@ -67,7 +67,7 @@ function presentacion(n){
   const el = document.createElement('div');
   el.className = 'presentacion';
   el.innerHTML = `<div class="marca">
-      <span class="sello">${icono('tienda')}</span>
+      ${sello(n)}
       <span class="nombre">${esc(n.marca?.nombre_corto || n.nombre)}</span>
       <span class="giro">${esc(n.giro)}</span>
     </div><span class="toca">Toca para entrar</span>`;
@@ -98,6 +98,11 @@ function pintarMenu(n, persona){
 
 /* ── Armazón ──────────────────────────────────────────────────────────── */
 let N, esDemo;
+/* El sello de la marca: su LOGO si el negocio tiene (El Garaje del Barbero),
+   o el ícono de tienda si no (la plantilla, el siguiente cliente). */
+const sello = (n) => n.marca?.logo
+  ? `<span class="sello con-logo"><img src="${esc(n.marca.logo)}" alt="" width="48" height="48"></span>`
+  : `<span class="sello">${icono('tienda')}</span>`;
 
 function pintarArmazon(persona){
   const riel = guardado('tienda-riel') === '1';
@@ -106,7 +111,7 @@ function pintarArmazon(persona){
     <div class="velo" data-cerrar-menu></div>
     <aside class="lateral" id="lateral" aria-label="Menú">
       <div class="cabeza">
-        <a class="marca" href="${enlace('/')}"><span class="sello">${icono('tienda')}</span><span>${esc(N.marca?.nombre_corto || N.nombre)}</span></a>
+        <a class="marca" href="${enlace('/')}">${sello(N)}<span>${esc(N.marca?.nombre_corto || N.nombre)}</span></a>
         <button class="boton-ico solo-telefono" data-cerrar-menu aria-label="Cerrar menú">${icono('cerrar')}</button>
         <button class="boton-ico solo-escritorio" data-riel aria-label="${riel ? 'Abrir menú' : 'Hacer menú angosto'}" aria-pressed="${riel}">${icono('menu')}</button>
       </div>
@@ -125,7 +130,7 @@ function pintarArmazon(persona){
         <div class="arriba-fila">
           <button class="boton-ico solo-telefono" data-abrir-menu aria-label="Abrir menú" aria-controls="lateral" aria-expanded="false">${icono('menu')}</button>
           <button class="boton-ico" data-atras aria-label="Regresar" hidden>${icono('atras')}</button>
-          <a class="marca-arriba" id="marca-arriba" href="${enlace('/')}" hidden><span class="sello">${icono('tienda')}</span><span class="nombre">${esc(N.marca?.nombre_corto || N.nombre)}</span></a>
+          <a class="marca-arriba" id="marca-arriba" href="${enlace('/')}" hidden>${sello(N)}<span class="nombre">${esc(N.marca?.nombre_corto || N.nombre)}</span></a>
           <h1 id="titulo" tabindex="-1"></h1>
           <a class="boton-ico" id="ir-buscar" href="${enlace('/buscar')}" aria-label="Buscar">${icono('buscar')}</a>
           <a class="boton-ico" id="ir-carrito" href="${enlace('/carrito')}" aria-label="Carrito">${icono('carrito')}<span class="insignia" hidden></span></a>
@@ -388,6 +393,8 @@ carrito.alCambiar(pintarInsignia);
   esDemo = N.ajustes?.demo === true;
   if(N.marca?.acento && /^#[0-9a-f]{6}$/i.test(N.marca.acento))
     document.documentElement.style.setProperty('--acento', N.marca.acento);
+  /* el ícono que toma el iPhone al «Agregar a inicio» es el del negocio */
+  if(N.marca?.icono) document.querySelector('link[rel="apple-touch-icon"]')?.setAttribute('href', N.marca.icono);
   presentacion(N);
   pintarArmazon(await yo().catch(() => null));
   pintarComo();

@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0B0710">
+<title>Tiempo en pantalla</title>
+<!-- ══════════════════════════════════════════════════════════════════════════
+     TIEMPO EN PANTALLA · el plan y los pasos, hechos para Carlos
+     ──────────────────────────────────────────────────────────────────────────
+     Carlos: «una app para cuidar mi tiempo en pantalla… protegerme de la
+     tentación del teléfono, del contenido sexual y del doomscroll, con límite
+     por hora, día e incluso uso, y que sólo pueda acceder a lo de trabajo:
+     Claude, WhatsApp, WhatsApp Business, Central/Sala, Duolingo y Alarmy.
+     Todo lo demás se bloquea, y que me mande a dormir».
+     Una página web no puede bloquear apps en un iPhone: sólo lo hace Tiempo en
+     pantalla (o una app nativa con permiso de Apple, que pide Xcode y cuenta
+     de desarrollador). Lo que sí se puede es usar el candado que ya trae el
+     iPhone COMPLETO y bien puesto, y eso es esta página: él arma su plan y le
+     salen los pasos con SUS apps, SUS horas y SUS límites, con su palomita
+     para cada uno. Lo que de verdad hace que funcione está en el paso 1: el
+     código lo pone otra persona.
+     Los nombres de los menús se verificaron el 1 de octubre de 2026 en la
+     ayuda de Apple; cambian un poco entre versiones y por eso van los dos.
+     ═════════════════════════════════════════════════════════════════════════ -->
+<style>
+:root{
+  --fondo:#0B0710; --sup:#1E1428; --sup2:#2A1F37; --borde:#3A2C4A; --texto:#EDEAF2; --tenue:#B3A9C2; --acento:#AC27FF; --bien:#3DDC97;
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0; background:var(--fondo); color:var(--texto);
+  font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; -webkit-text-size-adjust:100%}
+main{max-width:1120px; margin:0 auto; padding:calc(16px + env(safe-area-inset-top)) 16px calc(48px + env(safe-area-inset-bottom))}
+.volver{display:inline-flex; align-items:center; min-height:44px; color:var(--tenue); text-decoration:none}
+h1{font-size:28px; line-height:1.15; margin:8px 0 4px}
+.sub{color:var(--tenue); margin:0 0 24px; max-width:65ch}
+.cols{display:grid; grid-template-columns:minmax(0,1fr); gap:24px; align-items:start}
+@media (min-width:960px){ .cols{grid-template-columns:380px minmax(0,1fr)} }   /* el plan NO va fijo: es más alto que la pantalla y su final quedaba fuera de alcance */
+.plan,.paso{background:var(--sup); border:1px solid var(--borde); border-radius:16px; padding:16px}
+.plan h2,.pasos > h2{font-size:20px; margin:0 0 12px}
+.campo{display:flex; flex-direction:column; gap:6px; margin:0 0 16px}
+.campo > span{font-size:14px; color:var(--tenue)}
+.chips{display:flex; flex-wrap:wrap; gap:8px}
+.chips button{font:inherit; font-size:15px; color:var(--texto); background:var(--sup2); border:1px solid var(--borde); border-radius:999px;
+  min-height:44px; padding:0 14px; cursor:pointer}
+.chips button[aria-pressed="true"]{background:var(--acento); border-color:var(--acento); color:#fff; font-weight:600}
+.chips button[aria-pressed="true"]::before{content:"✓ "}
+.agregar{display:flex; gap:8px}
+input[type=text],input[type=time],select{font:inherit; color:var(--texto); background:var(--fondo); border:1px solid var(--borde); border-radius:12px;
+  min-height:44px; padding:0 12px; width:100%; min-width:0}
+.dos{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px}
+.dos label{display:flex; flex-direction:column; gap:4px; font-size:14px; color:var(--tenue)}
+button.normal{font:inherit; color:var(--texto); background:var(--sup2); border:1px solid var(--borde); border-radius:12px; min-height:44px; padding:0 14px; cursor:pointer; white-space:nowrap}
+.opcion{display:flex; gap:10px; align-items:flex-start; min-height:44px; padding:8px 0; cursor:pointer}
+.opcion input{width:22px; height:22px; accent-color:var(--acento); margin:2px 0 0; flex:none}
+.opcion small{display:block; color:var(--tenue); font-size:13px}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #fff; outline-offset:2px}
+
+.avance{display:flex; align-items:center; gap:12px; margin:0 0 16px}
+.avance .barra{flex:1; height:10px; border-radius:6px; background:var(--sup); border:1px solid var(--borde); overflow:hidden}
+.avance .barra i{display:block; height:100%; width:0; background:var(--bien); transition:width .2s}
+.avance b{font-variant-numeric:tabular-nums; white-space:nowrap}
+.pasos{display:flex; flex-direction:column; gap:12px}
+.paso{display:grid; grid-template-columns:auto minmax(0,1fr); gap:4px 12px}
+.paso .num{width:36px; height:36px; border-radius:50%; background:var(--sup2); display:flex; align-items:center; justify-content:center; font-weight:700}
+.paso.hecho .num{background:var(--bien); color:#0B0710}
+.paso h3{margin:4px 0 0; font-size:18px; line-height:1.25}
+.paso .cuerpo{grid-column:2; font-size:15px; line-height:1.45}
+.paso .ruta{display:inline-block; background:var(--fondo); border-radius:8px; padding:2px 8px; font-size:14px; margin:4px 0}
+.paso ol,.paso ul{margin:6px 0; padding-left:20px}
+.paso li{margin:2px 0}
+.paso .porque{color:var(--tenue); font-size:14px; margin:6px 0 0}
+.paso .nota{color:var(--tenue); font-size:13px}
+.paso .lista{display:flex; flex-wrap:wrap; gap:6px; margin:6px 0}
+.paso .lista span{background:var(--sup2); border-radius:8px; padding:2px 8px; font-size:14px}
+.listo{grid-column:2; display:flex; flex-wrap:wrap; gap:8px; margin-top:8px}
+.listo label{display:inline-flex; align-items:center; gap:8px; min-height:44px; padding:0 14px; border-radius:12px; background:var(--sup2); border:1px solid var(--borde); cursor:pointer}
+.listo input{width:22px; height:22px; accent-color:var(--bien); margin:0}
+.paso.hecho .listo label{border-color:var(--bien)}
+.paso.opcional h3::after{content:" · opcional"; color:var(--tenue); font-weight:400; font-size:14px}
+a{color:#D9B2FF}
+[hidden]{display:none !important}
+</style>
+</head>
+<body>
+<main>
+  <a class="volver" href="../">‹ Central</a>
+  <h1>Tiempo en pantalla</h1>
+  <p class="sub">Tu iPhone ya trae el candado: <b>Tiempo en pantalla</b>. Aquí armas tu plan —tus apps de trabajo, tu hora de dormir, cuánto ocio— y te salen los pasos exactos para dejarlo puesto. Lo que hace que funcione de verdad es el paso 1: <b>el código lo pone otra persona</b>.</p>
+
+  <div class="cols">
+    <form class="plan" id="plan" autocomplete="off">
+      <h2>Tu plan</h2>
+      <div class="campo">
+        <span>Apps de trabajo: siempre abiertas</span>
+        <div class="chips" id="apps"></div>
+        <div class="agregar">
+          <input type="text" id="otraApp" placeholder="Otra app…" aria-label="Agregar otra app de trabajo">
+          <button type="button" class="normal" id="agregarApp">Agregar</button>
+        </div>
+      </div>
+      <div class="campo">
+        <label for="ocio"><span style="font-size:14px;color:var(--tenue)">Todo lo demás, al día</span></label>
+        <select id="ocio">
+          <option value="1">Nada (1 minuto)</option><option value="15">15 minutos</option><option value="30">30 minutos</option>
+          <option value="45">45 minutos</option><option value="60">1 hora</option><option value="90">1 hora y media</option>
+        </select>
+      </div>
+      <div class="campo">
+        <span>A dormir</span>
+        <div class="dos">
+          <label>Me duermo<input type="time" id="dormir"></label>
+          <label>Me levanto<input type="time" id="despertar"></label>
+        </div>
+      </div>
+      <div class="campo">
+        <span>Apps de tentación: sólo en esta franja</span>
+        <div class="chips" id="tentacion"></div>
+        <div class="dos">
+          <label>Desde<input type="time" id="franjaDe"></label>
+          <label>Hasta<input type="time" id="franjaA"></label>
+        </div>
+      </div>
+      <div class="campo">
+        <span>Internet</span>
+        <label class="opcion"><input type="radio" name="web" value="estricto"><span>Estricto<small>Sólo abren las páginas de tu lista. Es lo más seguro contra el porno.</small></span></label>
+        <label class="opcion"><input type="radio" name="web" value="normal"><span>Normal<small>Abre todo menos sitios para adultos y redes.</small></span></label>
+      </div>
+      <div class="campo">
+        <label for="quien"><span style="font-size:14px;color:var(--tenue)">Quién guarda tu código</span></label>
+        <input type="text" id="quien" placeholder="Luis, tu mamá, tu pareja…">
+      </div>
+    </form>
+
+    <section class="pasos" aria-labelledby="tPasos">
+      <h2 id="tPasos" style="font-size:20px;margin:0">Tus pasos</h2>
+      <div class="avance"><div class="barra" aria-hidden="true"><i id="barra"></i></div><b id="cuenta" role="status" aria-live="polite"></b></div>
+      <div id="lista" class="pasos"></div>
+    </section>
+  </div>
+</main>
+<script type="module" src="app.js"></script>
+</body>
+</html>

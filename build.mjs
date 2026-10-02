@@ -74,6 +74,12 @@ const VA = [
      link al cliente. El archivo más pesado mide 21 MB: el tope de Cloudflare
      por archivo es 25 MiB. */
   'cursos',
+  /* Limpiar fotos: propone qué borrar (repetidas, ráfagas, borrosas, negras,
+     capturas viejas) y arma la lista para el atajo que las borra. */
+  'limpiar',
+  /* Tiempo en pantalla: el plan de Carlos y los pasos de Tiempo en pantalla
+     del iPhone con sus apps, horas y límites. */
+  'tiempo',
 ];
 
 /* ── Lo que tiene sitio adentro y NO se publica, dicho a propósito ──────────
@@ -178,7 +184,7 @@ const NO_VA = (ruta) => {
      material de trabajo. */
   if(/(^|\/)juegos\/guerra-de-puercos\/arte\//.test(ruta)
      && !/(^|\/)juegos\/guerra-de-puercos\/arte\/web(\/|$)/.test(ruta)) return true;
-  if(/^(medir|rehacer|recortar|cortar|piezas)\.py$/i.test(f)) return true;
+  if(/^(medir|rehacer|recortar|cortar|piezas|laminas)\.py$/i.test(f)) return true;
   if(/^\.wrangler$|^node_modules$|^\.git$/.test(f)) return true;
   return false;
 };
