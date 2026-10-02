@@ -41,6 +41,9 @@ for (const [ancho, alto] of [[390, 844], [1280, 800]]) {
     await pag.evaluate(() => { Element.prototype.requestFullscreen = undefined; }); // headless no pinta la pantalla completa en la foto
     await pag.waitForFunction(() => { const i = document.querySelector('.lista img'); return i && i.complete && i.naturalWidth > 0; });
     ok(await pag.$$eval('.lista li', (l) => l.length) === n, `${c}: ${n} láminas en la lista`);
+    const bajar = await pag.$$eval('#bajar a', (as) => as.map((a) => a.getAttribute('href')));
+    ok(bajar.join() === [`archivos/${c}.pdf`, `archivos/${c}.pptx`, `archivos/${c}-celular.pptx`].join(), `${c}: se baja en PDF y en los dos PowerPoint`);
+    for (const h of bajar) { const r = await pag.request.head(BASE + h); ok(r.ok(), `${c}: ${h} existe`); }
     ok(await pag.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${c}: sin desborde`);
     // las de abajo NO se piden de entrada (eso es lo que hace que abra al instante)
     const pedidas = await pag.evaluate(() => performance.getEntriesByType('resource').filter((e) => e.name.endsWith('.jpg')).length);

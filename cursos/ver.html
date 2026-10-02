@@ -31,6 +31,11 @@ header{position:sticky; top:0; z-index:2; background:rgba(11,7,16,.94); -webkit-
 button{font:inherit; color:inherit; cursor:pointer}
 .presentar{flex:none; min-height:44px; padding:0 16px; border-radius:12px; border:0; background:var(--acento); color:#fff; font-weight:700}
 main{max-width:1120px; margin:0 auto; padding:16px 16px calc(48px + env(safe-area-inset-bottom))}
+.bajar{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin:0 0 16px}
+.bajar a{display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:48px; padding:6px 8px; text-align:center; line-height:1.25;
+  color:inherit; text-decoration:none; background:#2A1F37; border:1px solid var(--borde); border-radius:12px; font-size:15px}
+.bajar a small{color:var(--tenue); font-size:12px; white-space:nowrap}
+@media (hover:hover){ .bajar a:hover{border-color:var(--acento)} }
 .lista{display:grid; grid-template-columns:minmax(0,1fr); gap:16px; list-style:none; margin:0; padding:0}
 @media (min-width:900px){ .lista{grid-template-columns:repeat(2,minmax(0,1fr))} }
 .lista li{margin:0}
@@ -65,6 +70,7 @@ dialog.quieto .controles, dialog.quieto .cerrar{opacity:0}
   <button class="presentar" id="presentar" type="button">▶ Presentar</button>
 </div></header>
 <main>
+  <nav class="bajar" id="bajar" aria-label="Descargar"></nav>
   <ol class="lista" id="lista"></ol>
 </main>
 <dialog id="visor" aria-label="Presentación a pantalla completa">
@@ -81,9 +87,9 @@ dialog.quieto .controles, dialog.quieto .cerrar{opacity:0}
 <script>
 /* Los tres cursos. `laminas` y `alto` salen de cursos/laminas.py. */
 const CURSOS = {
-  principal: { nombre: 'Primeros Auxilios · Curso principal', laminas: 85, alto: 900 },
-  brigada:   { nombre: 'Primeros Auxilios · Brigada',          laminas: 90, alto: 900 },
-  acuatica:  { nombre: 'Brigada de Seguridad, Rescate y Salvamento Acuático', laminas: 57, alto: 1200 },
+  principal: { nombre: 'Primeros Auxilios · Curso principal', laminas: 85, alto: 900, archivo: 'Primeros Auxilios - Curso principal', mb: [17, 20, 20] },
+  brigada:   { nombre: 'Primeros Auxilios · Brigada',          laminas: 90, alto: 900, archivo: 'Primeros Auxilios - Brigada', mb: [8, 14, 18] },
+  acuatica:  { nombre: 'Brigada de Seguridad, Rescate y Salvamento Acuático', laminas: 57, alto: 1200, archivo: 'Brigada Acuatica', mb: [7, 8, 14] },
 };
 const $ = (s) => document.querySelector(s);
 const clave = new URLSearchParams(location.search).get('c');
@@ -93,9 +99,16 @@ const src = (i) => `archivos/${clave}/${String(i).padStart(2, '0')}.jpg`;
 if (!C) {
   $('#lista').outerHTML = '<p class="error">No encontré esa presentación. <a href="./" style="color:inherit">Regresa a Cursos</a> y elige una.</p>';
   $('#presentar').hidden = true;
+  $('#bajar').hidden = true;
 } else {
   document.title = C.nombre + ' · Cursos';
   $('#titulo').textContent = C.nombre;
+  /* Carlos: «que además de pdf se pueda descargar como pptx». Los tres, aquí mismo. */
+  const [pdf, ppt, cel] = C.mb;
+  $('#bajar').innerHTML = `
+    <a href="archivos/${clave}.pdf" download="${C.archivo}.pdf">⬇ PDF<small>para mandar</small><small>${pdf} MB</small></a>
+    <a href="archivos/${clave}.pptx" download="${C.archivo}.pptx">⬇ PPTX<small>para editar</small><small>${ppt} MB</small></a>
+    <a href="archivos/${clave}-celular.pptx" download="${C.archivo} (para celular).pptx">⬇ PPTX<small>para celular</small><small>${cel} MB</small></a>`;
   const ol = $('#lista');
   for (let i = 1; i <= C.laminas; i++) {
     const li = document.createElement('li');
