@@ -407,6 +407,9 @@ a{ color: inherit; }
 .marca-arriba{ flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--e2); min-height: var(--toque); color: inherit; text-decoration: none; font-weight: 800; font-size: 19px; letter-spacing: .01em; }
 .marca-arriba .sello{ width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; flex: none; background: var(--sobre-acento); color: var(--acento); }
 .marca-arriba .sello .ico{ width: 20px; height: 20px; }
+/* con logo propio el sello es el logo, sobre oscuro para que el bronce y la plata se lean en los dos temas */
+.sello.con-logo, .lateral .cabeza .marca .sello.con-logo, .app.en-tienda .marca-arriba .sello.con-logo{ background: #14110d; padding: 2px; overflow: hidden; }
+.sello.con-logo img{ width: 100%; height: 100%; object-fit: contain; display: block; }
 .marca-arriba .nombre{ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .app.en-portada .arriba h1{ position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .buscar-arriba{ display: flex; align-items: center; gap: var(--e2); margin: 0 var(--e3) var(--e3); min-height: 46px; padding: 0 var(--e3) 0 var(--e4);
