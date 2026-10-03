@@ -105,6 +105,24 @@
         "en whatsapp no abre el link"
       ],
       "salioDe": "Cursos de primeros auxilios, 2 de octubre de 2026."
+    },
+    {
+      "id": "pptx-animacion-huerfana-powerpoint-no-abre",
+      "titulo": "El PowerPoint «marca error» y el validador dice que está bien",
+      "gravedad": "alta",
+      "sintoma": "Carlos abre el .pptx para editar en PowerPoint y sale error de contenido dañado. El validador pasa, python-pptx y LibreOffice lo abren sin quejarse.",
+      "causa": "Animaciones cuyo objetivo (`spid` en `p:spTgt` o `p:bldP`) ya no existe en la lámina.",
+      "porque": "iphone.py deshace grupos (la animación era del grupo), quita figuras invisibles y renumera ids repetidos; nadie movía las animaciones. Un archivo sin animaciones (el Curso principal) salía sano por suerte.",
+      "arreglo": "fadori/presentacion/animaciones.py quita sólo el efecto huérfano, poda lo que queda vacío y, si la lámina se queda sin animaciones, su <p:timing>. iphone.py lo llama antes de guardar. Pruebas: fadori/presentacion/pruebas-animaciones.py.",
+      "comoCazarlo": "Comparar los spid que piden las animaciones contra los cNvPr id de la lámina: `python3 -c \"from animaciones import huerfanas\"` sobre cada slideN.xml. Cualquier herramienta que quite o reagrupe formas tiene que pasar por ahí.",
+      "consejo": "LibreOffice no es PowerPoint: abrir bien ahí no prueba nada sobre lo que PowerPoint acepta.",
+      "senales": [
+        "el powerpoint marca error",
+        "no abre el pptx en la computadora",
+        "powerpoint dice que el archivo está dañado",
+        "quiere reparar la presentación"
+      ],
+      "salioDe": "Cursos de primeros auxilios, 3 de octubre de 2026."
     }
   ]
 }
