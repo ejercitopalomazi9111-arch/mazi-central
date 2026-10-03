@@ -368,6 +368,8 @@ def main():
     # PowerPoint da el archivo por dañado (LibreOffice y el validador no lo ven)
     from animaciones import limpiar_lamina
     huerfanos = sum(limpiar_lamina(s._element) for s in prs.slides)
+    from orden import ordenar
+    for s_ in prs.slides: ordenar(s_._element)
     prs.save(sal)
     shutil.rmtree(tmp, ignore_errors=True)
     if huerfanos: print(f'iphone: {huerfanos} animaciones huérfanas quitadas')
