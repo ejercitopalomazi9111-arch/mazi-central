@@ -364,8 +364,13 @@ def main():
             t.remove(el); quitadas += 1
         if texto:
             texto_rectangular(el, b, geo)
+    # deshacer grupos y quitar figuras deja animaciones apuntando a la nada, y
+    # PowerPoint da el archivo por dañado (LibreOffice y el validador no lo ven)
+    from animaciones import limpiar_lamina
+    huerfanos = sum(limpiar_lamina(s._element) for s in prs.slides)
     prs.save(sal)
     shutil.rmtree(tmp, ignore_errors=True)
+    if huerfanos: print(f'iphone: {huerfanos} animaciones huérfanas quitadas')
     print(f'iphone: {deshechos} grupos deshechos · {hechas} figuras horneadas ({peso // 1024} KB) · {quitadas} invisibles quitadas')
 
 if __name__ == '__main__': main()
