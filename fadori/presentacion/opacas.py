@@ -147,6 +147,10 @@ def main():
             if x1 > x0 and y1 > y0:
                 trozo = pinta.crop((x0 - px[0], y0 - px[1], x1 - px[0], y1 - px[1]))
                 lienzo.alpha_composite(trozo, (x0, y0))
+    # PowerPoint exige el orden del esquema dentro del texto (la viñeta antes de
+    # defRPr, etc.); LibreOffice no. Sin esto, Brigada y Acuática no abrían.
+    from orden import ordenar
+    for s_ in prs.slides: ordenar(s_._element)
     prs.save(sal)
     print(f'opacas: {hechas} imágenes con transparencia vueltas opacas · {subidos} textos subidos encima · {vinetas[0]} viñetas de imagen cambiadas')
 

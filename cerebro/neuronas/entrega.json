@@ -123,6 +123,24 @@
         "quiere reparar la presentación"
       ],
       "salioDe": "Cursos de primeros auxilios, 3 de octubre de 2026."
+    },
+    {
+      "id": "pptx-orden-del-esquema-powerpoint",
+      "titulo": "PowerPoint no abre un .pptx que todos los demás sí",
+      "gravedad": "alta",
+      "sintoma": "El PowerPoint para editar no abre ni en la app ni en el visor de Office, aunque pasa el validador del skill, python-pptx y LibreOffice lo abren.",
+      "causa": "Piezas fuera del orden que manda el esquema: `a:buNone` después de `a:defRPr` en `a:pPr`, `a:latin` fuera de su lugar en `a:rPr`, y `a14:hiddenEffects` vacío.",
+      "porque": "opacas.py metía la viñeta de letra donde estaba la de imagen sin respetar la secuencia; el esquema de DrawingML es una SECUENCIA y PowerPoint no la perdona.",
+      "arreglo": "fadori/presentacion/orden.py reacomoda pPr y rPr al orden del esquema (de un mismo lugar se queda el último) y rellena hiddenEffects/hiddenFill vacíos. opacas.py e iphone.py lo llaman. Pruebas: pruebas-orden.py.",
+      "comoCazarlo": "El validador de Microsoft: proyecto de consola con DocumentFormat.OpenXml y OpenXmlValidator; tiene que dar 0 errores. Ningún otro dice lo que dice PowerPoint.",
+      "consejo": "Primero se arregló una causa real (animaciones huérfanas) y se dio por resuelto sin el validador de Microsoft. Había dos defectos; el que se ve primero no es el único.",
+      "senales": [
+        "el powerpoint sigue sin abrir",
+        "no abre ni en la app de powerpoint",
+        "office online no muestra la presentación",
+        "error al abrir pptx"
+      ],
+      "salioDe": "Cursos de primeros auxilios, 3 de octubre de 2026."
     }
   ]
 }
