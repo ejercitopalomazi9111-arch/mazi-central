@@ -1,0 +1,904 @@
+<!--
+  FOTOGRAFÍA — estado de la demo
+  Propias del local (Carlos, sept. 2026):  img/mostrador.jpg · img/caja.jpg · img/cartel.jpg
+
+  Provisionales de Unsplash (licencia libre para uso comercial, sin atribución
+  obligatoria). TODAS deben sustituirse por fotos del producto real antes de
+  publicar bajo el nombre del negocio:
+    img/hero.jpg · img/orilla.jpg · img/base.jpg
+    img/c-*.jpg (5 complementos) · img/pz/*.jpg (15 pizzas)
+
+  AVISO IMPORTANTE sobre img/pz/: cada foto se eligió por parecido visual con la
+  receta, no porque sea ese platillo. Las más cercanas son margarita, pepperoni y
+  carnesfrias. Las más lejanas son chilorio, pastor, atun y vivamexico: ahí la
+  foto NO representa lo que el cliente va a recibir.
+
+  img/base.jpg es la base del armador: encima se pintan los ingredientes elegidos.
+
+  img/textura.jpg NO es fotografía ni es de banco: la genera scripts/textura.py,
+  que dibuja 190 ingredientes (pepperoni, aceituna, albahaca, champiñón, jalapeño,
+  jitomate, queso, cebolla, piña, orégano, pimiento) repartidos al azar con
+  envoltura en los bordes, de modo que la baldosa empalma sin costura y sin
+  espejo. Es el fondo animado de toda la página. Para variarla, cambia la
+  semilla del Random en ese script.
+-->
+<title>Smiley&#39;s Wings &amp; Pizza</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Figtree:wght@400;600;800;900&display=swap">
+<style>
+/* «El mostrador»: el negro del azulejo y la caja, el rojo del logo, el kraft del
+   cartón y la franja holográfica del aparador. Un solo mundo, comprometido y oscuro. */
+:root{
+  --negro:#09090B; --tinta-fondo:#0F0F13; --carbon:#15151A; --carbon-2:#1D1D24;
+  --borde:#2B2B35; --borde-2:#3A3A47;
+  --tinta:#F6F4F0; --tinta-2:#A9A59D; --tinta-3:#726E67;
+  --rojo:#EF2B3A; --rojo-hondo:#B01020; --kraft:#CFA26A; --queso:#F2BE41;
+  --display:'Archivo Black','Arial Black',system-ui,sans-serif;
+  --texto:'Figtree','Segoe UI',system-ui,sans-serif;
+  color-scheme:dark;
+  --tex:url("img/textura.jpg");
+  --grano:url("data:image/png;base64,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");
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--negro);color:var(--tinta);font-family:var(--texto);
+  font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.env{width:100%;max-width:1200px;margin-inline:auto;padding-inline:20px}
+h1,h2,h3{font-family:var(--display);font-weight:400;text-wrap:balance;letter-spacing:-0.025em;line-height:0.94}
+a{color:inherit}
+img{display:block;max-width:100%}
+:focus-visible{outline:3px solid var(--rojo);outline-offset:3px;border-radius:3px}
+.num{font-variant-numeric:tabular-nums}
+
+/* grano sobre todo el documento, muy tenue */
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:200;
+  opacity:.055;mix-blend-mode:overlay;background-image:var(--grano);background-size:72px 72px}
+
+/* ─── barra ─── */
+.barra{position:sticky;top:env(safe-area-inset-top,0px);z-index:90;
+  background:rgba(9,9,11,.82);backdrop-filter:none;
+  border-bottom:1px solid transparent;transition:border-color .3s ease, background .3s ease}
+.barra.pegada{border-bottom-color:var(--borde);background:rgba(9,9,11,.96)}
+.barra__in{display:flex;align-items:center;gap:16px;height:62px}
+.marca{display:flex;align-items:center;gap:9px;font-family:var(--display);font-size:20px;
+  letter-spacing:-0.04em;text-decoration:none;flex:0 0 auto}
+.marca svg{width:34px;height:20px}
+.barra nav{display:none;gap:24px;margin-left:auto;font-size:14px;font-weight:700}
+.barra nav a{text-decoration:none;color:var(--tinta-2);position:relative;padding-block:4px}
+.barra nav a::after{content:"";position:absolute;left:0;right:100%;bottom:0;height:2px;
+  background:var(--rojo);transition:right .28s cubic-bezier(.2,.7,.3,1)}
+.barra nav a:hover{color:var(--tinta)} .barra nav a:hover::after{right:0}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  background:var(--rojo);color:#fff;font-family:var(--texto);font-weight:800;font-size:14px;
+  padding:12px 20px;border:0;border-radius:999px;text-decoration:none;cursor:pointer;
+  white-space:nowrap;transition:transform .18s cubic-bezier(.2,.7,.3,1), background .18s ease}
+.btn:hover{transform:translateY(-3px);background:var(--rojo-hondo)}
+.btn--linea{background:transparent;color:var(--tinta);border:2px solid var(--borde-2)}
+.btn--linea:hover{background:var(--carbon-2);border-color:var(--tinta-3)}
+.barra .btn{margin-left:auto;padding:10px 18px}
+@media(min-width:920px){.barra nav{display:flex}.barra .btn{margin-left:0}}
+
+/* ─── portada ─── */
+.hero{position:relative;min-height:min(86vh,760px);display:flex;align-items:flex-end;
+  overflow:hidden;background:var(--negro)}
+.hero__foto{position:absolute;inset:-6% -2%;z-index:0}
+.hero__foto img{width:100%;height:100%;object-fit:cover;
+  animation:acercar 26s ease-in-out infinite alternate}
+@keyframes acercar{from{transform:scale(1.03)}to{transform:scale(1.14)}}
+.hero__velo{position:absolute;inset:0;z-index:1;
+  background:linear-gradient(176deg,rgba(9,9,11,.92) 0%,rgba(9,9,11,.42) 34%,
+    rgba(9,9,11,.80) 72%,var(--negro) 100%)}
+.hero__velo2{position:absolute;inset:0;z-index:1;
+  background:radial-gradient(120% 80% at 18% 78%,rgba(9,9,11,.86) 0%,transparent 62%)}
+.hero__in{position:relative;z-index:2;width:100%;padding-block:92px 86px}
+.hero__eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:11.5px;font-weight:900;
+  letter-spacing:.24em;text-transform:uppercase;color:var(--tinta);margin-bottom:20px;
+  background:var(--rojo);padding:7px 14px;border-radius:999px}
+.hero h1{font-size:clamp(46px,11.5vw,124px);letter-spacing:-0.045em}
+.linea{display:block;overflow:hidden}
+.linea>span{display:block;transform:translateY(104%);
+  animation:subir .9s cubic-bezier(.16,.84,.26,1) forwards}
+.linea:nth-of-type(2)>span{animation-delay:.1s}
+.linea:nth-of-type(3)>span{animation-delay:.2s}
+.linea--rojo>span{color:var(--rojo)}
+@keyframes subir{to{transform:translateY(0)}}
+.hero__lema{margin-top:26px;max-width:34ch;font-size:clamp(16px,2.2vw,20px);font-weight:600;
+  color:var(--tinta-2)}
+.hero__lema b{color:var(--tinta);font-weight:800}
+.hero__cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}
+.hero__pie{display:flex;gap:26px;flex-wrap:wrap;margin-top:34px;
+  border-top:1px solid rgba(246,244,240,.14);padding-top:18px}
+.dato__k{font-family:var(--display);font-size:clamp(24px,5vw,34px);color:var(--tinta);line-height:1}
+.dato__e{font-size:11px;font-weight:800;letter-spacing:.17em;text-transform:uppercase;
+  color:var(--tinta-3);margin-top:5px}
+
+/* sonrisa que se traza sola */
+.trazo{position:absolute;left:0;right:0;bottom:-2px;z-index:2;width:100%;height:auto}
+.trazo path{fill:none;stroke:var(--rojo);stroke-width:14;stroke-linecap:round;
+  stroke-dasharray:1600;stroke-dashoffset:1600;animation:trazar 1.6s .5s cubic-bezier(.3,.8,.3,1) forwards}
+@keyframes trazar{to{stroke-dashoffset:0}}
+
+/* ─── cinta infinita ─── */
+.cinta{background:#060608;border-block:1px solid var(--borde);padding-block:15px;overflow:hidden;
+  display:flex;gap:0;white-space:nowrap}
+.cinta__g{display:flex;align-items:center;gap:40px;padding-right:40px;flex:0 0 auto;
+  animation:correr 34s linear infinite}
+@keyframes correr{to{transform:translateX(-100%)}}
+.cinta b{font-family:var(--display);font-size:clamp(17px,3.1vw,26px);letter-spacing:-0.02em;
+  color:var(--tinta)}
+.cinta i{color:var(--rojo);font-style:normal;font-size:20px}
+
+/* ─── encabezados ─── */
+section{scroll-margin-top:78px}
+.cab{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:8px}
+.cab h2{font-size:clamp(32px,7vw,62px)}
+.cab__nota{font-size:12px;font-weight:900;letter-spacing:.2em;text-transform:uppercase;color:var(--rojo)}
+.sub{color:var(--tinta-2);margin-bottom:30px;max-width:60ch;font-size:16.5px}
+
+/* ─── mostrador (foto con parallax) ─── */
+.vitrina{position:relative;height:clamp(240px,42vw,420px);overflow:hidden;background:#000}
+.vitrina img{position:absolute;inset:-14% 0;width:100%;height:128%;object-fit:cover;will-change:transform}
+.vitrina__velo{position:absolute;inset:0;background:linear-gradient(90deg,rgba(9,9,11,.94) 0%,
+  rgba(9,9,11,.55) 46%,rgba(9,9,11,.2) 100%)}
+.vitrina__tx{position:absolute;inset:0;display:flex;align-items:center}
+.vitrina__tx h2{font-size:clamp(26px,5.4vw,48px);margin-bottom:10px}
+.reb{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px}
+.reb__p{background:rgba(9,9,11,.72);border:1px solid var(--borde-2);border-radius:3px;
+  padding:11px 16px}
+.reb__p b{font-family:var(--display);font-size:clamp(20px,3.6vw,28px);color:var(--queso);display:block;line-height:1}
+.reb__p span{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--tinta-3);display:block;margin-top:5px}
+
+/* ─── promos ─── */
+.promos{padding-block:72px}
+.promos__g{display:grid;gap:16px;grid-template-columns:1fr}
+@media(min-width:760px){.promos__g{grid-template-columns:repeat(3,1fr)}}
+.promo{position:relative;background:var(--carbon);border:1px solid var(--borde);border-radius:4px;
+  padding:30px 24px 26px;overflow:hidden;transition:transform .26s cubic-bezier(.2,.7,.3,1),
+  border-color .26s ease}
+.promo::before{content:"";position:absolute;inset:0;z-index:0;opacity:0;
+  background:radial-gradient(120% 90% at 50% 120%,rgba(239,43,58,.26),transparent 64%);
+  transition:opacity .3s ease}
+.promo:hover{transform:translateY(-7px);border-color:var(--rojo)}
+.promo:hover::before{opacity:1}
+.promo>*{position:relative;z-index:1}
+.promo__rebs{position:absolute;top:0;right:0;z-index:2;background:var(--rojo);color:#fff;
+  font-family:var(--display);font-size:12.5px;padding:7px 13px;letter-spacing:.01em}
+.promo__t{font-family:var(--display);font-size:23px;line-height:1.02;margin-bottom:6px}
+.promo__d{font-size:14px;color:var(--tinta-2);min-height:2.7em}
+.promo__p{font-family:var(--display);font-size:clamp(44px,9vw,62px);color:var(--rojo);
+  margin-top:16px;letter-spacing:-0.05em;line-height:.9}
+.promo__ast{font-size:11px;color:var(--tinta-3);margin-top:8px}
+
+/* ─── pizzas ─── */
+/* franja de ingredientes que recorre el fondo; el espejo evita la costura */
+/* FONDO DE PÁGINA: una sola capa fija detrás de todo, con la baldosa de
+   ingredientes repetida a tamaño fijo y desplazándose en horizontal. Fija
+   (no absoluta) para que no dependa del alto de ninguna sección: así se ve
+   igual en el teléfono y en el monitor. */
+.fondo{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.fondo__c{position:absolute;top:0;bottom:0;left:0;width:calc(100% + 460px);
+  background-image:var(--tex);background-repeat:repeat;background-size:460px auto;
+  opacity:1;animation:corretex 19s linear infinite;will-change:transform}
+.fondo::after{content:"";position:absolute;inset:0;background:rgba(9,9,11,.62)}
+@keyframes corretex{from{transform:translateX(0)}to{transform:translateX(-460px)}}
+@media(min-width:900px){
+  .fondo__c{width:calc(100% + 620px);background-size:620px auto;
+    animation-name:corretexg;animation-duration:24s}
+  @keyframes corretexg{from{transform:translateX(0)}to{transform:translateX(-620px)}}
+}
+/* todo el contenido va por encima de la capa */
+main,footer{position:relative;z-index:1}
+.menu{position:relative;padding-block:10px 72px}
+.menu>.env{position:relative;z-index:1}
+.chips{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:28px}
+.chip{background:transparent;border:1.5px solid var(--borde);color:var(--tinta-2);
+  font-family:var(--texto);font-weight:800;font-size:13.5px;padding:10px 17px;border-radius:999px;
+  cursor:pointer;transition:all .18s ease}
+.chip:hover{border-color:var(--tinta-3);color:var(--tinta)}
+.chip[aria-pressed="true"]{background:var(--rojo);border-color:var(--rojo);color:#fff}
+.rejilla{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.pz{background:var(--carbon);border:1px solid var(--borde);border-radius:5px;padding:18px 18px 20px;
+  display:flex;flex-direction:column;min-width:0;perspective:800px;
+  transition:border-color .26s ease, box-shadow .26s ease}
+.pz:hover{border-color:var(--kraft);box-shadow:0 18px 44px -24px rgba(0,0,0,.9)}
+.pz__art{position:relative;width:100%;aspect-ratio:1/1;margin-bottom:16px;overflow:hidden;
+  border-radius:4px;background:#0B0B0D}
+.pz__art img{width:100%;height:100%;object-fit:cover;
+  transition:transform .65s cubic-bezier(.2,.7,.3,1)}
+.pz:hover .pz__art img{transform:scale(1.09) rotate(1.4deg)}
+.pz__art::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(to top,rgba(9,9,11,.62),transparent 54%)}
+.pz__n{font-family:var(--display);font-size:19px;line-height:1.02;margin-bottom:6px}
+.pz__d{font-size:13.5px;color:var(--tinta-2);line-height:1.4;flex:1}
+.pz__tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.tag{font-size:10px;font-weight:900;letter-spacing:.11em;text-transform:uppercase;padding:4px 9px;
+  border-radius:999px;border:1px solid var(--borde-2);color:var(--tinta-3)}
+.tag--pic{border-color:var(--rojo);color:var(--rojo)}
+.tag--veg{border-color:#4E8E3A;color:#73B457}
+.pz.oculta{display:none}
+
+/* ─── armador ─── */
+.armar{position:relative;overflow:hidden;padding-block:72px;background:rgba(15,15,19,.74);
+  border-block:1px solid var(--borde)}
+.armar>.env{position:relative;z-index:1}
+.armar__g{display:grid;gap:28px;grid-template-columns:1fr;align-items:start}
+@media(min-width:900px){.armar__g{grid-template-columns:minmax(0,300px) 1fr}}
+.armar__viz{position:relative}
+.armar__viz canvas{width:100%;height:auto;aspect-ratio:1/1;display:block;border-radius:50%;
+  box-shadow:0 30px 70px -26px rgba(0,0,0,.95), 0 0 0 1px rgba(246,244,240,.07);
+  animation:flotar 7s ease-in-out infinite}
+@keyframes flotar{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-10px) rotate(3deg)}}
+.armar__cuenta{text-align:center;margin-top:14px;font-size:12.5px;font-weight:800;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--tinta-3)}
+.ings{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px}
+.ing{display:inline-flex;align-items:center;gap:7px;background:var(--carbon);
+  border:1.5px solid var(--borde);color:var(--tinta-2);font-family:var(--texto);font-weight:700;
+  font-size:13.5px;padding:8px 14px;border-radius:999px;cursor:pointer;
+  transition:transform .16s cubic-bezier(.2,.7,.3,1), border-color .16s ease, color .16s ease}
+.ing:hover{transform:translateY(-2px);color:var(--tinta);border-color:var(--borde-2)}
+.ing[aria-pressed="true"]{border-color:var(--queso);color:var(--tinta);background:var(--carbon-2)}
+.ing__pt{width:11px;height:11px;border-radius:50%;flex:0 0 auto}
+.ing:disabled{opacity:.34;cursor:not-allowed;transform:none}
+.armar__fila{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.sel{background:var(--carbon);color:var(--tinta);border:1.5px solid var(--borde);border-radius:999px;
+  padding:12px 16px;font-family:var(--texto);font-weight:700;font-size:14px;cursor:pointer}
+.armar__nota{font-size:12.5px;color:var(--tinta-3);margin-top:14px}
+
+/* ─── orilla ─── */
+.orilla{position:relative;overflow:hidden;background:rgba(11,11,13,.72);border-block:1px solid var(--borde)}
+.orilla>img{position:absolute;inset:-12% 0;width:100%;height:124%;object-fit:cover;opacity:.42;
+  will-change:transform}
+.orilla__velo{position:absolute;inset:0;background:linear-gradient(90deg,rgba(9,9,11,.95) 6%,
+  rgba(9,9,11,.55) 52%,rgba(9,9,11,.85) 100%)}
+.orilla__in{position:relative;z-index:2;display:flex;align-items:center;
+  justify-content:space-between;gap:22px;flex-wrap:wrap;padding-block:62px}
+.orilla__t{font-family:var(--display);font-size:clamp(26px,5.4vw,46px);line-height:.98}
+.orilla__t em{font-style:normal;color:var(--kraft)}
+.orilla__d{font-size:15px;color:var(--tinta-2);margin-top:8px;max-width:40ch}
+.orilla__p{font-family:var(--display);font-size:clamp(50px,11vw,84px);color:var(--kraft);
+  letter-spacing:-0.05em;line-height:.86}
+
+/* ─── complementos ─── */
+.comp{padding-block:72px}
+.comp__g{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.plato{background:var(--carbon);border:1px solid var(--borde);border-radius:5px;overflow:hidden;
+  display:flex;flex-direction:column;min-width:0;
+  transition:transform .26s cubic-bezier(.2,.7,.3,1), border-color .26s ease}
+.plato:hover{transform:translateY(-7px);border-color:var(--rojo)}
+.plato__foto{position:relative;aspect-ratio:4/3;overflow:hidden;background:#0B0B0D}
+.plato__foto img{width:100%;height:100%;object-fit:cover;
+  transition:transform .55s cubic-bezier(.2,.7,.3,1)}
+.plato:hover .plato__foto img{transform:scale(1.08)}
+.plato__foto::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(to top,rgba(9,9,11,.82),rgba(9,9,11,.05) 58%)}
+.plato__cuerpo{display:flex;align-items:center;gap:12px;padding:14px 16px 17px;min-width:0}
+.plato__tx{flex:1;min-width:0}
+.plato__n{font-family:var(--display);font-size:17px;line-height:1.06}
+.plato__2x{font-size:12px;color:var(--tinta-3);font-weight:800;letter-spacing:.04em;margin-top:3px}
+.plato__p{font-family:var(--display);font-size:26px;color:var(--rojo);letter-spacing:-0.045em}
+
+/* ─── caja / sucursales ─── */
+.llevar{padding-block:0;background:rgba(9,9,11,.72)}
+.llevar__g{display:grid;gap:0;grid-template-columns:1fr}
+@media(min-width:900px){.llevar__g{grid-template-columns:1fr 1fr;align-items:center}}
+.llevar__foto{position:relative;overflow:hidden;min-height:clamp(280px,48vw,540px);background:#0B0B0D}
+.llevar__foto img{position:absolute;inset:-10% 0;width:100%;height:120%;object-fit:cover;
+  will-change:transform}
+.llevar__tx{padding-block:60px}
+.llevar__tx h2{font-size:clamp(30px,6.4vw,56px);margin-bottom:12px}
+.suc__g{display:grid;gap:12px;margin-top:26px}
+.sucursal{background:var(--carbon);border:1px solid var(--borde);border-radius:4px;padding:18px 20px;
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  transition:border-color .22s ease, transform .22s cubic-bezier(.2,.7,.3,1)}
+.sucursal:hover{border-color:var(--rojo);transform:translateX(5px)}
+.sucursal__tx{flex:1;min-width:0}
+.sucursal__n{font-family:var(--display);font-size:17px;line-height:1.06}
+.sucursal__tel{font-size:15px;font-weight:800;color:var(--tinta-2);user-select:all;margin-top:3px}
+
+/* ─── cartel ─── */
+.frase{position:relative;overflow:hidden;min-height:clamp(340px,56vw,520px);display:flex;
+  align-items:center;background:#0A0A0C}
+.frase img{position:absolute;inset:-14% -8%;width:116%;height:128%;object-fit:cover;opacity:.14;
+  will-change:transform}
+.frase__velo{position:absolute;inset:0;background:radial-gradient(90% 90% at 50% 50%,
+  rgba(9,9,11,.6) 0%,rgba(9,9,11,.95) 72%)}
+.frase__tx{position:relative;z-index:2;text-align:center;width:100%}
+.frase__tx p{font-family:var(--display);font-size:clamp(28px,6.6vw,66px);line-height:.98;
+  letter-spacing:-0.035em;max-width:17ch;margin-inline:auto}
+.frase__tx em{font-style:normal;color:var(--rojo)}
+.frase__tx span{display:block;margin-top:22px;font-size:12px;font-weight:900;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--tinta-3)}
+
+/* ─── QR ─── */
+.qr{padding-block:66px;background:rgba(21,21,26,.78)}
+.qr__in{display:flex;gap:32px;align-items:center;flex-wrap:wrap}
+.qr__caja{flex:0 0 auto;width:172px;height:172px;background:#fff;border-radius:5px;padding:13px}
+.qr__caja svg{width:100%;height:100%}
+.qr__tx{flex:1;min-width:240px}
+.qr__tx h2{font-size:clamp(26px,5vw,40px);margin-bottom:10px}
+.qr__tx p{color:var(--tinta-2);font-size:15.5px;max-width:46ch}
+.qr__liga{margin-top:14px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;
+  color:var(--tinta-3);word-break:break-all;user-select:all;background:var(--negro);
+  border:1px solid var(--borde);border-radius:4px;padding:10px 12px}
+
+/* ─── pie ─── */
+footer{padding-block:48px 56px;border-top:1px solid var(--borde);background:rgba(9,9,11,.80)}
+.pie{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;align-items:flex-end}
+.pie__m{font-family:var(--display);font-size:30px;letter-spacing:-0.04em}
+.pie__soc{margin-top:8px;font-weight:800}
+.pie__soc a{text-decoration:none;color:var(--tinta-2)}
+.pie__soc a:hover{color:var(--rojo)}
+.pie__nota{font-size:12.5px;color:var(--tinta-3);max-width:44ch;text-align:right}
+
+/* ─── revelado: sólo desplazamiento, nunca opacidad ─── */
+.rev{transition:transform .7s cubic-bezier(.16,.84,.26,1)}
+.rev--off{transform:translateY(26px)}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
+    transition-duration:.001ms!important}
+  .rev--off{transform:none}
+  .linea>span{transform:none;animation:none}
+  .trazo path{stroke-dashoffset:0;animation:none}
+}
+</style>
+
+<div class="fondo" aria-hidden="true"><div class="fondo__c"></div></div>
+
+<header class="barra" id="barra">
+  <div class="env barra__in">
+    <a class="marca" href="#top">
+      <svg viewBox="0 0 64 36" aria-hidden="true">
+        <path d="M5 13 C5 4, 20 4, 20 14 C20 22, 9 22, 9 15" fill="none" stroke="currentColor" stroke-width="4.6" stroke-linecap="round"/>
+        <path d="M4 19 C15 34, 48 34, 61 10" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+      </svg>
+      smiley&rsquo;s
+    </a>
+    <nav>
+      <a href="#promos">Promos</a>
+      <a href="#pizzas">Pizzas</a>
+      <a href="#armar">Ármala tú</a>
+      <a href="#complementos">Complementos</a>
+      <a href="#sucursales">Sucursales</a>
+    </nav>
+    <a class="btn" href="#sucursales">Pedir ahora</a>
+  </div>
+</header>
+
+<main id="top">
+
+  <section class="hero">
+    <div class="hero__foto"><img src="img/hero.jpg" alt="Pizza recién horneada junto al horno"></div>
+    <div class="hero__velo"></div>
+    <div class="hero__velo2"></div>
+    <div class="env hero__in">
+      <span class="hero__eyebrow">Wings &amp; Pizza · Querétaro</span>
+      <h1>
+        <span class="linea"><span>El que sabe</span></span>
+        <span class="linea"><span>de calidad y gusto</span></span>
+        <span class="linea linea--rojo"><span>sabe que es justo</span></span>
+      </h1>
+      <p class="hero__lema">Quince recetas, alitas, boneless y papas gajo, hechas en el momento.
+        <b>Pide por WhatsApp</b> a la sucursal que te quede más cerca.</p>
+      <div class="hero__cta">
+        <a class="btn" href="#pizzas">Ver las 15 pizzas</a>
+        <a class="btn btn--linea" href="#armar">Ármala tú mismo</a>
+      </div>
+      <div class="hero__pie">
+        <div><p class="dato__k num">15</p><p class="dato__e">Recetas</p></div>
+        <div><p class="dato__k num">3</p><p class="dato__e">Sucursales</p></div>
+        <div><p class="dato__k num">$40</p><p class="dato__e">La rebanada</p></div>
+        <div><p class="dato__k num">$109</p><p class="dato__e">Grande sencilla</p></div>
+      </div>
+    </div>
+    <svg class="trazo" viewBox="0 0 1200 90" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+      <path d="M20 40 C200 108, 900 108, 1180 14"/>
+    </svg>
+  </section>
+
+  <div class="cinta" aria-hidden="true" id="cinta"></div>
+
+  <section class="vitrina" aria-label="Rebanada suelta">
+    <img src="img/mostrador.jpg" alt="Mostrador del local con la vitrina y los precios por rebanada" data-par="0.16">
+    <div class="vitrina__velo"></div>
+    <div class="vitrina__tx"><div class="env">
+      <h2>¿Vas de pasada?</h2>
+      <p class="sub" style="margin-bottom:0">Siempre hay rebanada lista en la vitrina.</p>
+      <div class="reb">
+        <div class="reb__p"><b class="num">$40</b><span>1 rebanada</span></div>
+        <div class="reb__p"><b class="num">$65</b><span>2 rebanadas</span></div>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="promos" id="promos">
+    <div class="env">
+      <div class="cab rev"><h2>Promociones</h2><span class="cab__nota">Vigentes en mostrador</span></div>
+      <p class="sub rev">Las de siempre, las que todo el barrio ya se sabe de memoria.</p>
+      <div class="promos__g">
+        <article class="promo rev">
+          <span class="promo__rebs">8 rebanadas c/u</span>
+          <h3 class="promo__t">2 pizzas<br>grandes</h3>
+          <p class="promo__d">Dos grandes, los ingredientes que quieras en cada una.</p>
+          <p class="promo__p num">$289</p>
+        </article>
+        <article class="promo rev">
+          <span class="promo__rebs">10 rebanadas c/u</span>
+          <h3 class="promo__t">2 pizzas<br>familiares</h3>
+          <p class="promo__d">La de la reunión. Veinte rebanadas en total.</p>
+          <p class="promo__p num">$350</p>
+        </article>
+        <article class="promo rev">
+          <span class="promo__rebs">1 ingrediente</span>
+          <h3 class="promo__t">Pizza grande<br>sencilla</h3>
+          <p class="promo__d">Grande con el ingrediente que elijas.</p>
+          <p class="promo__p num">$109</p>
+          <p class="promo__ast">*No aplica con otras promociones.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="menu" id="pizzas">
+    <div class="env">
+      <div class="cab rev"><h2>Las pizzas</h2><span class="cab__nota">15 recetas de la casa</span></div>
+      <p class="sub rev">Todas se hacen en grande o familiar, y a cualquiera se le puede poner orilla de queso.</p>
+      <div class="chips" role="group" aria-label="Filtrar pizzas">
+        <button class="chip" data-f="todas" aria-pressed="true">Todas</button>
+        <button class="chip" data-f="veg" aria-pressed="false">Sin carne</button>
+        <button class="chip" data-f="pic" aria-pressed="false">Con picante</button>
+        <button class="chip" data-f="pina" aria-pressed="false">Con piña</button>
+      </div>
+      <div class="rejilla" id="rejilla"></div>
+    </div>
+  </section>
+
+  <section class="armar" id="armar">
+    <div class="env">
+      <div class="cab rev"><h2>Ármala tú</h2><span class="cab__nota">Hasta 5 ingredientes</span></div>
+      <p class="sub rev">Elige y mírala tomar forma. Cuando te guste, mándala por WhatsApp.</p>
+      <div class="armar__g">
+        <div class="armar__viz rev">
+          <canvas id="mia" role="img" aria-label="Vista previa de tu pizza"></canvas>
+          <p class="armar__cuenta" id="cuenta">Ninguno · queso solo</p>
+        </div>
+        <div class="rev">
+          <div class="ings" id="ings" role="group" aria-label="Elegir ingredientes"></div>
+          <div class="armar__fila">
+            <select class="sel" id="suc-sel" aria-label="Sucursal"></select>
+            <a class="btn" id="pedir-mia" target="_blank" rel="noopener">Pedirla por WhatsApp</a>
+            <button class="btn btn--linea" id="limpiar" type="button">Empezar de nuevo</button>
+          </div>
+          <p class="armar__nota">La preparación y el precio final te los confirman en la sucursal.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="orilla">
+    <img src="img/orilla.jpg" alt="" data-par="0.1">
+    <div class="orilla__velo"></div>
+    <div class="env orilla__in">
+      <div class="rev">
+        <h2 class="orilla__t">Y ponle <em>orilla de queso</em></h2>
+        <p class="orilla__d">Se le puede agregar a cualquiera de las quince, y a la que armes tú.</p>
+      </div>
+      <p class="orilla__p num rev">+$35</p>
+    </div>
+  </section>
+
+  <section class="comp" id="complementos">
+    <div class="env">
+      <div class="cab rev"><h2>Complementos</h2><span class="cab__nota">Snacks y extras</span></div>
+      <p class="sub rev">Boneless, alitas y papas gajo. El segundo siempre sale más barato.</p>
+      <div class="comp__g" id="complementos-g"></div>
+    </div>
+  </section>
+
+  <section class="llevar" id="sucursales">
+    <div class="llevar__g">
+      <div class="llevar__foto">
+        <img src="img/caja.jpg" alt="Caja de pizza de Smiley's con el logo de la sonrisa" data-par="0.12">
+      </div>
+      <div class="env llevar__tx">
+        <div class="cab rev"><h2>Para llevar</h2><span class="cab__nota">Tres sucursales</span></div>
+        <p class="sub rev" style="margin-bottom:0">Escribe por WhatsApp, te la preparan y pasas por ella.</p>
+        <div class="suc__g" id="sucursales-g"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="frase">
+    <img src="img/cartel.jpg" alt="" data-par="0.1">
+    <div class="frase__velo"></div>
+    <div class="env frase__tx">
+      <p>El que sabe de calidad y gusto sabe que es <em>un precio justo</em></p>
+      <span>Smiley&rsquo;s Wings &amp; Pizza</span>
+    </div>
+  </section>
+
+  <section class="qr">
+    <div class="env qr__in">
+      <div class="qr__caja" id="qr-caja" aria-hidden="true"></div>
+      <div class="qr__tx">
+        <h2>El menú, en el código</h2>
+        <p>Este código abre esta misma carta en el teléfono de quien lo escanee.
+           Imprímelo para las mesas, el mostrador o pégalo en la caja.</p>
+        <p class="qr__liga" id="qr-liga">&nbsp;</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="env pie">
+    <div>
+      <p class="pie__m">smiley&rsquo;s</p>
+      <p class="pie__soc"><a href="https://instagram.com/smileyswp" target="_blank" rel="noopener">@smileyswp</a></p>
+    </div>
+    <p class="pie__nota">Lomas de San José · Zona Peñaflor · Lomas de Balvanera, Querétaro.<br>Precios en pesos mexicanos.</p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script>
+(function(){
+"use strict";
+var quieto = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ═══════════ datos del local ═══════════ */
+var PIZZAS = [
+ {s:"alemana", n:"Alemana",            d:"Salchicha con chorizo.",                                  i:["salchicha","chorizo"]},
+ {s:"mrcheese", n:"Mr. Cheese",         d:"Deliciosa mezcla de quesos.",                             i:["queso","parmesano"]},
+ {s:"carnesfrias", n:"Carnes Frías",       d:"Jamón, pepperoni y chorizo.",                             i:["jamon","pepperoni","chorizo"]},
+ {s:"margarita", n:"Margarita",          d:"Toque de parmesano, jitomate y orégano.",                 i:["parmesano","jitomate","oregano"]},
+ {s:"hawai", n:"Fiesta en Hawai",    d:"Jamón, piña y extra queso.",                              i:["jamon","pina","queso"]},
+ {s:"meatlovers", n:"Meat Lovers",        d:"Jamón y salchicha viena.",                                i:["jamon","salchicha"]},
+ {s:"pepperoni", n:"Pepperoni Especial", d:"La más vendida pero… ¡con mucho queso!",                  i:["pepperoni","queso"]},
+ {s:"ranchera", n:"Ranchera",           d:"Chorizo con jalapeño.",                                   i:["chorizo","jalapeno"]},
+ {s:"smileys", n:"Smiley's",           d:"Pepperoni, champiñón, pimiento y cebolla.",               i:["pepperoni","champinon","pimiento","cebolla"]},
+ {s:"magnifica", n:"Magnífica",          d:"Jamón, champiñón y aguacate.",                            i:["jamon","champinon","aguacate"]},
+ {s:"tony", n:"Tony Special",       d:"Jamón, salchicha y champiñón.",                           i:["jamon","salchicha","champinon"]},
+ {s:"vivamexico", n:"Viva México",        d:"Jamón, chorizo, jalapeño, jitomate, aguacate y cebolla.", i:["jamon","chorizo","jalapeno","jitomate","aguacate","cebolla"]},
+ {s:"pastor", n:"Pastor",             d:"Cebolla, cilantro, pastor y piña.",                       i:["cebolla","cilantro","pastor","pina"]},
+ {s:"atun", n:"Atún",               d:"Atún, cebolla, elote y pimienta.",                        i:["atun","cebolla","elote","pimienta"]},
+ {s:"chilorio", n:"Chilorio",           d:"Chilorio, cebolla, jalapeño y champiñones.",              i:["chilorio","cebolla","jalapeno","champinon"]}
+];
+var CARNES  = ["salchicha","chorizo","jamon","pepperoni","pastor","chilorio","atun"];
+var PICANTE = ["jalapeno"];
+var COMPLEMENTOS = [
+ {n:"Boneless",     p:129, dos:240, ic:"boneless"},
+ {n:"Alitas",       p:149, dos:270, ic:"alitas"},
+ {n:"Papas gajo",   p:49,  dos:80,  ic:"papas"},
+ {n:"Spaguetti",    p:65,  dos:109, ic:"spaguetti"},
+ {n:"Chicken Bake", p:69,  dos:119, ic:"bake"}
+];
+var SUCURSALES = [
+ {n:"Lomas de San José",  tel:"442-680-29-01", wa:"524426802901"},
+ {n:"Zona Peñaflor",      tel:"442-149-79-89", wa:"524421497989"},
+ {n:"Lomas de Balvanera", tel:"442-612-37-73", wa:"524426123773"}
+];
+var ETIQUETAS = {
+ pepperoni:["Pepperoni","#AE2E1C"], jamon:["Jamón","#E79AA2"], chorizo:["Chorizo","#8C2A17"],
+ salchicha:["Salchicha","#E08C78"], champinon:["Champiñón","#D9C5A2"], jalapeno:["Jalapeño","#4C8C36"],
+ pina:["Piña","#F3C63F"], cebolla:["Cebolla","#EFE7DB"], jitomate:["Jitomate","#C8402C"],
+ aguacate:["Aguacate","#6FA047"], elote:["Elote","#F5CE4B"], atun:["Atún","#D8C7A6"],
+ pimiento:["Pimiento","#3F8C50"], cilantro:["Cilantro","#4F8F3C"], pastor:["Pastor","#D1622A"],
+ chilorio:["Chilorio","#93331C"], queso:["Queso extra","#FBE39A"], parmesano:["Parmesano","#FFF8E7"],
+ oregano:["Orégano","#4A5F2E"]
+};
+
+/* ═══════════ azar reproducible ═══════════ */
+function semilla(txt){
+  var h = 2166136261;
+  for (var k=0;k<txt.length;k++){ h ^= txt.charCodeAt(k); h = Math.imul(h,16777619); }
+  return function(){ h += 0x6D2B79F5; var t = h;
+    t = Math.imul(t ^ (t>>>15), t|1); t ^= t + Math.imul(t ^ (t>>>7), t|61);
+    return ((t ^ (t>>>14))>>>0) / 4294967296; };
+}
+
+/* ═══════════ trazo de cada ingrediente ═══════════ */
+var T = {
+ pepperoni:function(c,x,y,r,a){ c.fillStyle="#AE2E1C"; c.beginPath(); c.arc(x,y,r*1.05,0,6.2832); c.fill();
+   c.fillStyle="#7E1A0D"; for(var k=0;k<4;k++){ var g=a()*6.2832,d=a()*r*.55;
+     c.beginPath(); c.arc(x+Math.cos(g)*d,y+Math.sin(g)*d,r*.15,0,6.2832); c.fill(); }
+   c.strokeStyle="rgba(90,20,8,.5)"; c.lineWidth=r*.12; c.beginPath(); c.arc(x,y,r*1.05,0,6.2832); c.stroke(); },
+ jamon:function(c,x,y,r,a){ c.save(); c.translate(x,y); c.rotate(a()*1.6-.8);
+   c.fillStyle="#E79AA2"; c.beginPath(); c.roundRect(-r,-r*.82,r*2,r*1.64,r*.3); c.fill();
+   c.fillStyle="#F4C2C6"; c.beginPath(); c.roundRect(-r*.5,-r*.3,r*.9,r*.5,r*.18); c.fill(); c.restore(); },
+ chorizo:function(c,x,y,r,a){ c.fillStyle="#8C2A17"; for(var k=0;k<3;k++){ var g=a()*6.2832,d=a()*r*.8;
+   c.beginPath(); c.arc(x+Math.cos(g)*d,y+Math.sin(g)*d,r*(.3+a()*.26),0,6.2832); c.fill(); } },
+ salchicha:function(c,x,y,r,a){ c.save(); c.translate(x,y); c.rotate(a()*3.14);
+   c.fillStyle="#E08C78"; c.beginPath(); c.ellipse(0,0,r*1.05,r*.78,0,0,6.2832); c.fill();
+   c.fillStyle="#F3BCAC"; c.beginPath(); c.ellipse(0,0,r*.52,r*.36,0,0,6.2832); c.fill(); c.restore(); },
+ champinon:function(c,x,y,r,a){ c.save(); c.translate(x,y); c.rotate(a()*6.2832);
+   c.fillStyle="#D9C5A2"; c.beginPath(); c.arc(0,0,r,3.14,0); c.lineTo(r*.42,r*.72);
+   c.lineTo(-r*.42,r*.72); c.closePath(); c.fill();
+   c.fillStyle="#AE9472"; c.fillRect(-r*.2,0,r*.4,r*.7); c.restore(); },
+ jalapeno:function(c,x,y,r,a){ c.strokeStyle="#4C8C36"; c.lineWidth=Math.max(1.4,r*.34);
+   c.beginPath(); c.arc(x,y,r*.74,0,6.2832); c.stroke();
+   c.fillStyle="#E3EDC8"; c.beginPath(); c.arc(x,y,r*.3,0,6.2832); c.fill(); },
+ pina:function(c,x,y,r,a){ c.save(); c.translate(x,y); c.rotate(a()*6.2832);
+   c.fillStyle="#F3C63F"; c.beginPath(); c.roundRect(-r*.8,-r*.7,r*1.6,r*1.4,r*.26); c.fill();
+   c.fillStyle="#D6A212"; c.fillRect(-r*.8,-r*.12,r*1.6,r*.2); c.restore(); },
+ cebolla:function(c,x,y,r,a){ c.strokeStyle="#EFE7DB"; c.lineWidth=Math.max(1.1,r*.26);
+   c.lineCap="round"; var g=a()*6.2832;
+   c.beginPath(); c.arc(x,y,r*.82,g,g+1.9); c.stroke();
+   c.beginPath(); c.arc(x,y,r*.46,g+.4,g+1.6); c.stroke(); },
+ jitomate:function(c,x,y,r,a){ c.fillStyle="#C8402C"; c.beginPath(); c.arc(x,y,r,0,6.2832); c.fill();
+   c.fillStyle="#E88974"; c.beginPath(); c.arc(x,y,r*.46,0,6.2832); c.fill(); },
+ aguacate:function(c,x,y,r,a){ c.save(); c.translate(x,y); c.rotate(a()*6.2832);
+   c.fillStyle="#6FA047"; c.beginPath(); c.ellipse(0,0,r*1.05,r*.6,0,0,6.2832); c.fill();
+   c.fillStyle="#A4C877"; c.beginPath(); c.ellipse(0,-r*.12,r*.72,r*.3,0,0,6.2832); c.fill(); c.restore(); },
+ elote:function(c,x,y,r,a){ c.fillStyle="#F5CE4B"; for(var k=0;k<4;k++){ var g=a()*6.2832,d=a()*r*.9;
+   c.save(); c.translate(x+Math.cos(g)*d,y+Math.sin(g)*d); c.rotate(a()*3.14);
+   c.beginPath(); c.roundRect(-r*.26,-r*.2,r*.52,r*.4,r*.18); c.fill(); c.restore(); } },
+ atun:function(c,x,y,r,a){ c.fillStyle="#D8C7A6"; for(var k=0;k<3;k++){ var g=a()*6.2832,d=a()*r*.75;
+   c.save(); c.translate(x+Math.cos(g)*d,y+Math.sin(g)*d); c.rotate(a()*3.14);
+   c.beginPath(); c.roundRect(-r*.42,-r*.2,r*.84,r*.4,r*.14); c.fill(); c.restore(); } },
+ pimiento:function(c,x,y,r,a){ c.save(); c.translate(x,y); c.rotate(a()*6.2832);
+   c.fillStyle="#3F8C50"; c.beginPath(); c.roundRect(-r*1.1,-r*.22,r*2.2,r*.44,r*.2); c.fill(); c.restore(); },
+ cilantro:function(c,x,y,r,a){ c.fillStyle="#4F8F3C"; for(var k=0;k<5;k++){ var g=a()*6.2832,d=a()*r;
+   c.beginPath(); c.arc(x+Math.cos(g)*d,y+Math.sin(g)*d,r*.2,0,6.2832); c.fill(); } },
+ pastor:function(c,x,y,r,a){ c.save(); c.translate(x,y); c.rotate(a()*6.2832);
+   c.fillStyle="#D1622A"; c.beginPath(); c.roundRect(-r*.75,-r*.55,r*1.5,r*1.1,r*.22); c.fill();
+   c.fillStyle="#A33F13"; c.beginPath(); c.roundRect(-r*.3,-r*.5,r*.4,r*1,r*.16); c.fill(); c.restore(); },
+ chilorio:function(c,x,y,r,a){ c.strokeStyle="#93331C"; c.lineWidth=Math.max(1.3,r*.3); c.lineCap="round";
+   for(var k=0;k<3;k++){ var g=a()*6.2832; c.beginPath();
+     c.moveTo(x+Math.cos(g)*r*.8,y+Math.sin(g)*r*.8);
+     c.lineTo(x-Math.cos(g)*r*.8,y-Math.sin(g)*r*.8); c.stroke(); } },
+ parmesano:function(c,x,y,r,a){ c.fillStyle="#FFF8E7"; for(var k=0;k<6;k++){ var g=a()*6.2832,d=a()*r;
+   c.beginPath(); c.arc(x+Math.cos(g)*d,y+Math.sin(g)*d,r*.14,0,6.2832); c.fill(); } },
+ oregano:function(c,x,y,r,a){ c.fillStyle="#4A5F2E"; for(var k=0;k<7;k++){ var g=a()*6.2832,d=a()*r;
+   c.beginPath(); c.arc(x+Math.cos(g)*d,y+Math.sin(g)*d,r*.11,0,6.2832); c.fill(); } },
+ pimienta:function(c,x,y,r,a){ c.fillStyle="#3A3028"; for(var k=0;k<8;k++){ var g=a()*6.2832,d=a()*r;
+   c.beginPath(); c.arc(x+Math.cos(g)*d,y+Math.sin(g)*d,r*.1,0,6.2832); c.fill(); } },
+ queso:function(c,x,y,r,a){ c.fillStyle="#FBE39A"; c.beginPath();
+   c.ellipse(x,y,r*1.15,r*.85,a()*3.14,0,6.2832); c.fill(); }
+};
+var DOSIS = { pepperoni:[9,.062],jamon:[8,.055],chorizo:[10,.05],salchicha:[9,.055],
+ champinon:[7,.058],jalapeno:[9,.05],pina:[8,.055],cebolla:[8,.06],jitomate:[7,.055],
+ aguacate:[6,.06],elote:[7,.05],atun:[7,.055],pimiento:[6,.05],cilantro:[7,.045],
+ pastor:[8,.055],chilorio:[8,.05],parmesano:[9,.05],oregano:[9,.05],pimienta:[8,.045],queso:[7,.07] };
+
+/* La vista previa se compone SOBRE una pizza de queso real: la masa y el
+   queso son fotografía, los ingredientes se pintan encima con sombra. */
+var base = new Image(), baseLista = false;
+base.onload = function(){ baseLista = true; dibujarMia(); };
+base.src = "img/base.jpg";
+
+function dibujarMia(){
+  var cv = document.getElementById("mia");
+  var dpr = Math.min(window.devicePixelRatio||1, 2);
+  var lado = cv.clientWidth || 300;
+  if(!lado) return;
+  cv.width = Math.round(lado*dpr); cv.height = Math.round(lado*dpr);
+  var c = cv.getContext("2d"); if(!c) return;
+  c.setTransform(dpr,0,0,dpr,0,0); c.clearRect(0,0,lado,lado);
+
+  var cx = lado/2, cy = lado/2, R = lado/2;
+  c.save(); c.beginPath(); c.arc(cx,cy,R*0.995,0,6.2832); c.clip();
+  if(baseLista) c.drawImage(base, 0, 0, lado, lado);
+  else { c.fillStyle = "#E0A93C"; c.fillRect(0,0,lado,lado); }
+  c.restore();
+
+  var Rq = R*0.76, a = semilla("mia-"+elegidos.join("-"));
+  c.save();
+  c.beginPath(); c.arc(cx,cy,Rq*1.06,0,6.2832); c.clip();
+  elegidos.forEach(function(ing, idx){
+    var fn = T[ing]; if(!fn) return;
+    var dz = DOSIS[ing]||[7,.055], n = dz[0], r = lado*dz[1]*1.08;
+    var giro = idx*1.1 + a()*6.2832;
+    c.shadowColor = "rgba(40,18,0,.55)";
+    c.shadowBlur = r*0.6; c.shadowOffsetY = r*0.22;
+    for(var k=0;k<n;k++){
+      var ang = giro + (k/n)*6.2832 + (a()-.5)*.5;
+      var rad = Rq*(.28 + .58*Math.sqrt((k%3)/3 + a()*.33));
+      if(rad > Rq-r*1.25) rad = Rq-r*1.25;
+      fn(c, cx+Math.cos(ang)*rad, cy+Math.sin(ang)*rad, r, a);
+    }
+  });
+  c.shadowColor = "transparent"; c.shadowBlur = 0; c.shadowOffsetY = 0;
+  c.restore();
+}
+
+/* ═══════════ tarjetas ═══════════ */
+var rejilla = document.getElementById("rejilla"), tarjetas = [];
+PIZZAS.forEach(function(p){
+  var veg  = !p.i.some(function(x){ return CARNES.indexOf(x)>=0; });
+  var pic  = p.i.some(function(x){ return PICANTE.indexOf(x)>=0; });
+  var pina = p.i.indexOf("pina")>=0;
+  var art = document.createElement("article");
+  art.className="pz rev"; art.dataset.veg=veg?"1":"0"; art.dataset.pic=pic?"1":"0"; art.dataset.pina=pina?"1":"0";
+  art.innerHTML =
+    '<div class="pz__art"><img loading="lazy" src="img/pz/'+p.s+'.jpg" alt=""></div>'+
+    '<h3 class="pz__n"></h3><p class="pz__d"></p>';
+  art.querySelector(".pz__art img").alt = "Pizza " + p.n;
+  art.querySelector(".pz__n").textContent = p.n;
+  art.querySelector(".pz__d").textContent = p.d;
+  if(veg||pic||pina){
+    var tg=document.createElement("div"); tg.className="pz__tags";
+    function et(cl,tx){ var e=document.createElement("span"); e.className=cl; e.textContent=tx; tg.appendChild(e); }
+    if(pic) et("tag tag--pic","Picante");
+    if(veg) et("tag tag--veg","Sin carne");
+    if(pina) et("tag","Con piña");
+    art.appendChild(tg);
+  }
+  rejilla.appendChild(art);
+  tarjetas.push({el:art});
+});
+
+/* inclinación leve de la tarjeta completa al pasar el puntero */
+if(!quieto && window.matchMedia("(hover:hover)").matches){
+  tarjetas.forEach(function(t){
+    t.el.addEventListener("pointermove", function(e){
+      var r = t.el.getBoundingClientRect();
+      var px = (e.clientX-r.left)/r.width - .5, py = (e.clientY-r.top)/r.height - .5;
+      t.el.style.transform = "perspective(900px) rotateY("+(px*5).toFixed(2)+
+        "deg) rotateX("+(-py*5).toFixed(2)+"deg) translateY(-5px)";
+    });
+    t.el.addEventListener("pointerleave", function(){ t.el.style.transform=""; });
+  });
+}
+
+var retardo;
+window.addEventListener("resize", function(){
+  clearTimeout(retardo);
+  retardo = setTimeout(dibujarMia, 220);
+});
+
+/* ═══════════ filtros ═══════════ */
+var chips = [].slice.call(document.querySelectorAll(".chip"));
+chips.forEach(function(ch){
+  ch.addEventListener("click", function(){
+    chips.forEach(function(o){ o.setAttribute("aria-pressed", String(o===ch)); });
+    var f = ch.dataset.f;
+    tarjetas.forEach(function(t){
+      var pasa = f==="todas" || (f==="veg"&&t.el.dataset.veg==="1")
+        || (f==="pic"&&t.el.dataset.pic==="1") || (f==="pina"&&t.el.dataset.pina==="1");
+      t.el.classList.toggle("oculta", !pasa);
+    });
+  });
+});
+
+/* ═══════════ armador ═══════════ */
+var MAX = 5, elegidos = [];
+var cajaIngs = document.getElementById("ings");
+var cuenta = document.getElementById("cuenta");
+var botones = {};
+
+Object.keys(ETIQUETAS).forEach(function(k){
+  var b = document.createElement("button");
+  b.type="button"; b.className="ing"; b.setAttribute("aria-pressed","false"); b.dataset.k=k;
+  b.innerHTML = '<span class="ing__pt" style="background:'+ETIQUETAS[k][1]+'"></span><span></span>';
+  b.lastChild.textContent = ETIQUETAS[k][0];
+  b.addEventListener("click", function(){
+    var i = elegidos.indexOf(k);
+    if(i>=0) elegidos.splice(i,1);
+    else { if(elegidos.length>=MAX) return; elegidos.push(k); }
+    refrescarArmador();
+  });
+  cajaIngs.appendChild(b);
+  botones[k]=b;
+});
+
+function refrescarArmador(){
+  Object.keys(botones).forEach(function(k){
+    var puesto = elegidos.indexOf(k)>=0;
+    botones[k].setAttribute("aria-pressed", String(puesto));
+    botones[k].disabled = !puesto && elegidos.length>=MAX;
+  });
+  cuenta.textContent = elegidos.length
+    ? elegidos.length+" de "+MAX+" · "+elegidos.map(function(k){ return ETIQUETAS[k][0]; }).join(", ")
+    : "Ninguno · queso solo";
+  dibujarMia();
+  actualizarPedido();
+}
+
+var selSuc = document.getElementById("suc-sel");
+SUCURSALES.forEach(function(s,ix){
+  var o=document.createElement("option"); o.value=String(ix); o.textContent=s.n; selSuc.appendChild(o);
+});
+function actualizarPedido(){
+  var s = SUCURSALES[Number(selSuc.value)||0];
+  var lista = elegidos.length
+    ? elegidos.map(function(k){ return ETIQUETAS[k][0].toLowerCase(); }).join(", ")
+    : "queso solo";
+  var txt = "¡Hola! Quiero una pizza con " + lista + ". ¿Me la pueden preparar?";
+  document.getElementById("pedir-mia").href = "https://wa.me/"+s.wa+"?text="+encodeURIComponent(txt);
+}
+selSuc.addEventListener("change", actualizarPedido);
+document.getElementById("limpiar").addEventListener("click", function(){ elegidos=[]; refrescarArmador(); });
+refrescarArmador();
+
+/* ═══════════ complementos ═══════════ */
+var FOTOS = {boneless:"c-boneless.jpg",alitas:"c-alitas.jpg",papas:"c-papas.jpg",
+  spaguetti:"c-spaguetti.jpg",bake:"c-bake.jpg"};
+var compG = document.getElementById("complementos-g");
+COMPLEMENTOS.forEach(function(it){
+  var a = document.createElement("article"); a.className = "plato rev";
+  a.innerHTML =
+    '<div class="plato__foto"><img loading="lazy" src="img/'+FOTOS[it.ic]+'" alt=""></div>'+
+    '<div class="plato__cuerpo"><div class="plato__tx">'+
+      '<p class="plato__n"></p><p class="plato__2x num">2 x $'+it.dos+'</p>'+
+    '</div><p class="plato__p num">$'+it.p+'</p></div>';
+  a.querySelector(".plato__n").textContent = it.n;
+  a.querySelector(".plato__foto img").alt = it.n;
+  compG.appendChild(a);
+});
+
+/* ═══════════ sucursales ═══════════ */
+var sucG = document.getElementById("sucursales-g");
+SUCURSALES.forEach(function(s){
+  var d=document.createElement("article"); d.className="sucursal rev";
+  d.innerHTML = '<div class="sucursal__tx"><p class="sucursal__n"></p><p class="sucursal__tel num"></p></div>'+
+    '<a class="btn" target="_blank" rel="noopener">WhatsApp</a>';
+  d.querySelector(".sucursal__n").textContent = s.n;
+  d.querySelector(".sucursal__tel").textContent = s.tel;
+  d.querySelector(".btn").href = "https://wa.me/"+s.wa;
+  sucG.appendChild(d);
+});
+
+/* ═══════════ cinta ═══════════ */
+var FRASES = ["2 REBANADAS $65","ORILLA DE QUESO +$35","2 GRANDES $289","1 REBANADA $40",
+  "2 FAMILIARES $350","GRANDE SENCILLA $109","ALITAS 2X$270","BONELESS 2X$240"];
+var cinta = document.getElementById("cinta");
+function grupoCinta(){
+  var g=document.createElement("div"); g.className="cinta__g";
+  FRASES.forEach(function(f){
+    var b=document.createElement("b"); b.textContent=f;
+    var i=document.createElement("i"); i.textContent="●";
+    g.appendChild(b); g.appendChild(i);
+  });
+  return g;
+}
+cinta.appendChild(grupoCinta()); cinta.appendChild(grupoCinta());
+
+/* ═══════════ QR ═══════════ */
+var liga = location.href.split("#")[0];
+document.getElementById("qr-liga").textContent = liga;
+try{
+  if(typeof qrcode==="function"){
+    var q2=qrcode(0,"M"); q2.addData(liga); q2.make();
+    document.getElementById("qr-caja").innerHTML = q2.createSvgTag({cellSize:4,margin:0,scalable:true});
+  } else { document.getElementById("qr-caja").style.display="none"; }
+}catch(e){ document.getElementById("qr-caja").style.display="none"; }
+
+/* ═══════════ barra pegada, parallax y revelado ═══════════ */
+var barra = document.getElementById("barra");
+var capas = [].slice.call(document.querySelectorAll("[data-par]"));
+var pendiente = false;
+function alDesplazar(){
+  if(pendiente) return; pendiente = true;
+  requestAnimationFrame(function(){
+    pendiente = false;
+    barra.classList.toggle("pegada", window.scrollY > 24);
+    if(quieto) return;
+    var h = window.innerHeight;
+    capas.forEach(function(im){
+      var r = im.parentElement.getBoundingClientRect();
+      if(r.bottom < -100 || r.top > h+100) return;
+      var avance = (r.top + r.height/2 - h/2) / h;
+      im.style.transform = "translate3d(0,"+(avance * parseFloat(im.dataset.par) * -100).toFixed(1)+"px,0)";
+    });
+  });
+}
+window.addEventListener("scroll", alDesplazar, {passive:true});
+alDesplazar();
+
+/* Se parte de todo visible: sólo se desplaza lo que aún no entra en pantalla. */
+if(!quieto && "IntersectionObserver" in window){
+  var revs = [].slice.call(document.querySelectorAll(".rev"));
+  var alto = window.innerHeight;
+  var fuera = revs.filter(function(el){ return el.getBoundingClientRect().top > alto*.9; });
+  fuera.forEach(function(el){ el.classList.add("rev--off"); });
+  var ob = new IntersectionObserver(function(es){
+    es.forEach(function(e){
+      if(e.isIntersecting){ e.target.classList.remove("rev--off"); ob.unobserve(e.target); }
+    });
+  }, {rootMargin:"0px 0px -7% 0px", threshold:.04});
+  fuera.forEach(function(el){ ob.observe(el); });
+}
+})();
+</script>
