@@ -80,6 +80,10 @@ const VA = [
   /* Tiempo en pantalla: el plan de Carlos y los pasos de Tiempo en pantalla
      del iPhone con sus apps, horas y límites. */
   'tiempo',
+  /* Smiley's Wings & Pizza: página y menú con QR que hizo Luis (Godines). Su
+     casa es BigTigerMX/smileys-wp, pero esta sesión no puede escribir ahí; Carlos
+     pidió subirla aquí mientras tanto. El QR de la página apunta a donde se abra. */
+  'smileys',
 ];
 
 /* ── Lo que tiene sitio adentro y NO se publica, dicho a propósito ──────────
@@ -184,7 +188,7 @@ const NO_VA = (ruta) => {
      material de trabajo. */
   if(/(^|\/)juegos\/guerra-de-puercos\/arte\//.test(ruta)
      && !/(^|\/)juegos\/guerra-de-puercos\/arte\/web(\/|$)/.test(ruta)) return true;
-  if(/^(medir|rehacer|recortar|cortar|piezas|laminas)\.py$/i.test(f)) return true;
+  if(/^(medir|rehacer|recortar|cortar|piezas|laminas|textura)\.py$/i.test(f)) return true;
   if(/^\.wrangler$|^node_modules$|^\.git$/.test(f)) return true;
   return false;
 };
