@@ -36,7 +36,7 @@ for (const [ancho, alto] of [[390, 844], [1280, 800]]) {
   ok(ver.length === 3 && ver.every((h) => h.startsWith('ver.html?c=')), 'los tres botones principales abren el visor');
   ok(await pag.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'Cursos sin desborde');
 
-  for (const [c, n] of [['principal', 85], ['brigada', 90], ['acuatica', 57]]) {
+  for (const [c, n] of [['principal', 53], ['brigada', 90], ['acuatica', 57]]) {
     await pag.goto(BASE + 'ver.html?c=' + c);
     await pag.evaluate(() => { Element.prototype.requestFullscreen = undefined; }); // headless no pinta la pantalla completa en la foto
     await pag.waitForFunction(() => { const i = document.querySelector('.lista img'); return i && i.complete && i.naturalWidth > 0; });

@@ -141,6 +141,25 @@
         "error al abrir pptx"
       ],
       "salioDe": "Cursos de primeros auxilios, 3 de octubre de 2026."
+    },
+    {
+      "id": "curso-imagenes-del-banco-enteras-y-un-logo",
+      "titulo": "El cliente del curso rechazó la presentación por verse parchada",
+      "gravedad": "alta",
+      "sintoma": "Las presentaciones abrían bien y aun así no le gustaron al cliente: dos logos, imágenes partidas en varias láminas, cuarenta tamaños distintos, fotos de internet y logos ajenos tapados con el nuestro.",
+      "causa": "Se arreglaba lámina por lámina lo que se veía mal (agrandar, partir la infografía para que se leyera, tapar SINCAPRED con nuestro logo) sin una regla de conjunto. Cada arreglo era razonable solo; juntos se ven a «parche».",
+      "porque": "Una infografía ajena con nuestro logo encima no parece hecha así: sobre fondo liso pasa, pero sobre textura el difuminado se nota, y el cliente lo nota primero que nada.",
+      "arreglo": "Las reglas del cliente (7 de octubre): un solo logo (Advanced Critical Care; ACA y UNIPROTEC sólo en portada y cierre); ninguna imagen partida; mismo tamaño para todas (caja estándar); sólo imágenes del BANCO, enteras. Lo que el banco no trae se quita, no se busca en internet. Las infografías con parche que se nota se listan para que Carlos las consiga rehechas con IA.",
+      "comoCazarlo": "Clasificar cada imagen por huella (dHash) contra el banco, las originales del cliente, las fotos de internet y nuestros dibujos: no debe quedar ninguna «externa» ni «pedazo». Y comparar cada infografía contra su original: lo que cambió es un parche, y se mira de cerca, no en la miniatura.",
+      "consejo": "Antes de tapar una marca ajena en una imagen, preguntar si se puede conseguir la imagen sin la marca. Tapar es la última opción, no la primera.",
+      "senales": [
+        "se ve muy parchado",
+        "usar solo un logo",
+        "no dividir la imagen en varias diapositivas",
+        "mismo tamaño en todas las imágenes",
+        "solo imágenes del banco"
+      ],
+      "salioDe": "Cursos de primeros auxilios, 7 de octubre de 2026."
     }
   ]
 }
