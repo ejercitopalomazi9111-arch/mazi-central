@@ -25,3 +25,9 @@
   Cache-Control: public, max-age=0, must-revalidate
 /fadori/estilo.css
   Cache-Control: public, max-age=0, must-revalidate
+
+# MOSCA · la página «aislada» deja usar memoria compartida: los tres cerebros corren en paralelo,
+# uno por núcleo, leyendo el MISMO conectoma (90 MB una sola vez). Todo lo que carga es de aquí mismo.
+/mosca/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp

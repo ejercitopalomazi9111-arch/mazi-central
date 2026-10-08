@@ -996,6 +996,24 @@
       "vecinas": [
         "el-navegador-sale-por-node"
       ]
+    },
+    {
+      "id": "modelo-publicado-fuera-de-su-prueba",
+      "titulo": "Un modelo publicado que funciona en su experimento puede desbocarse en el tuyo",
+      "gravedad": "alta",
+      "sintoma": "El cerebro de mosca (Shiu et al. 2024) daba el reflejo de comer igual que el artículo, y con cualquier olor o con calor la red entera se encendía a 440 Hz y no se apagaba nunca.",
+      "causa": "El modelo se validó con gusto y antenas, nunca con olores. En FlyWire v783 las interneuronas locales excitadoras del lóbulo antenal (lLN1_bc) se mandan 40 mil sinapsis entre ellas y con las neuronas de proyección; sin uniones eléctricas ni inhibición equilibrada, ese lazo se dispara solo. Encima, el neurotransmisor venía predicho neurona por neurona: Kenyon «dopamina», tipos partidos entre excitar e inhibir.",
+      "porque": "Probar el modelo con SU caso de éxito (azúcar → MN9) dice que el código está bien, no que el modelo sirva para todo lo demás.",
+      "arreglo": "mosca/herramientas/preparar.py: signo del neurotransmisor por tipo de célula (literatura primero), moduladores sin corriente rápida, sin excitación química de las interneuronas locales excitadoras del lóbulo antenal ni entre neuronas del mismo tipo; y un cansancio lento en cerebro.js. Para validar se reprodujo primero el resultado del artículo con SUS datos (v630): MN9 a ~120 Hz con azúcar.",
+      "comoCazarlo": "Por cada entrada posible: estimular, quitar el estímulo y medir que la actividad vuelva a cero (pruebas-cerebro.mjs, «que nada se quede encendido»). Un lazo desbocado se ve en que distintos estímulos dan la MISMA cifra de spikes.",
+      "consejo": "Antes de culpar a los datos, correr el modelo con los datos del artículo: si ahí sale bien, el motor está bien y el problema es lo nuevo.",
+      "senales": [
+        "la red se enciende entera",
+        "con cualquier estímulo da lo mismo",
+        "no se apaga después de quitar el estímulo",
+        "actividad epiléptica en la simulación"
+      ],
+      "salioDe": "Tres moscas con el cerebro de FlyWire, 8 de octubre de 2026."
     }
   ]
 }
