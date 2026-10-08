@@ -1,0 +1,22 @@
+<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mosca · cuerpo</title><style>html,body{margin:0;height:100%;background:#eee}canvas{display:block}</style>
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from './vendor/controls/OrbitControls.js';
+import { cargarCuerpo, crearMosca } from './cuerpo.js';
+const r = new THREE.WebGLRenderer({ antialias: true }); r.setSize(innerWidth, innerHeight); r.setPixelRatio(devicePixelRatio); document.body.append(r.domElement);
+const esc = new THREE.Scene(); esc.background = new THREE.Color(0xeeeeee);
+const cam = new THREE.PerspectiveCamera(35, innerWidth / innerHeight, 0.01, 100); cam.position.set(0.25, 0.18, 0.35);
+const ctl = new OrbitControls(cam, r.domElement); ctl.target.set(0, 0.02, 0);
+esc.add(new THREE.HemisphereLight(0xffffff, 0x886644, 2)); const d = new THREE.DirectionalLight(0xffffff, 2); d.position.set(1, 2, 1); esc.add(d);
+const plano = await cargarCuerpo('modelo/');
+const vista = new URLSearchParams(location.search).get('vista');
+const m = crearMosca(plano); esc.add(m.raiz);
+if (vista === 'arriba') cam.position.set(0, 0.45, 0.001);
+if (vista === 'lado') cam.position.set(0, 0.03, 0.4);
+ctl.update();
+const caja = new THREE.Box3().setFromObject(m.raiz); console.log('caja', JSON.stringify(caja));
+window.listo = true;
+(function loop() { requestAnimationFrame(loop); r.render(esc, cam); })();
+</script>

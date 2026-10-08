@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07090c">
+<title>Moscas · cerebro real</title>
+<style>
+:root{
+  --fondo:#07090c; --panel:#0f1318; --panel2:#161b22; --borde:#232a33; --texto:#e8ecf1; --tenue:#8a95a3;
+  --acento:#7cf2c3; --peligro:#ff5d5d; --aviso:#ffcf5c; --m1:#ff7a59; --m2:#59c3ff; --m3:#c48bff;
+  --radio:12px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--fondo);color:var(--texto);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden;-webkit-tap-highlight-color:transparent}
+button,input,select{font:inherit;color:inherit}
+#escena{position:fixed;inset:0}
+#escena canvas{display:block;width:100%;height:100%;touch-action:none}
+
+/* barra de arriba */
+.barra{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top)) 12px 8px;
+  background:linear-gradient(#07090cee,#07090c00);pointer-events:none;z-index:3}
+.barra h1{font-size:16px;margin:0;font-weight:650;letter-spacing:.2px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.barra h1 small{display:block;font-size:12px;color:var(--tenue);font-weight:400}
+.chip{pointer-events:auto;border:1px solid var(--borde);background:#0f1318cc;border-radius:999px;padding:6px 12px;min-height:40px;display:inline-flex;align-items:center;gap:6px;font-size:13px;white-space:nowrap}
+.chip.boton{cursor:pointer}
+.chip b{font-variant-numeric:tabular-nums}
+
+/* las etiquetas de las moscas sobre la escena */
+.etiqueta{position:fixed;left:0;top:0;transform:translate(-50%,-140%);pointer-events:none;z-index:2;font-size:12px;
+  background:#0b0e12d9;border:1px solid var(--borde);border-radius:8px;padding:3px 8px;white-space:nowrap}
+.etiqueta i{font-style:normal;display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}
+
+/* hoja de abajo */
+.hoja{position:fixed;left:0;right:0;bottom:0;z-index:4;background:var(--panel);border-top:1px solid var(--borde);border-radius:16px 16px 0 0;
+  max-height:min(52vh,560px);display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom);transition:transform .25s ease}
+.hoja.cerrada{transform:translateY(calc(100% - 58px - env(safe-area-inset-bottom)))}
+.pestanas{display:flex;gap:4px;padding:8px 8px 0;overflow-x:auto;scrollbar-width:none;flex:none}
+.pestanas::-webkit-scrollbar{display:none}
+.pestanas button{flex:none;border:0;background:none;color:var(--tenue);padding:10px 12px;min-height:44px;border-radius:10px;cursor:pointer;font-weight:600}
+.pestanas button[aria-selected=true]{background:var(--panel2);color:var(--texto)}
+.pestanas .plegar{margin-left:auto}
+.cuerpo{overflow:auto;padding:12px;flex:1;min-height:0}
+.seccion{margin:0 0 16px}
+.seccion h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--tenue);margin:0 0 8px;font-weight:650}
+.rejilla{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px}
+.est{border:1px solid var(--borde);background:var(--panel2);border-radius:var(--radio);padding:10px;min-height:56px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.est span{font-size:12px;color:var(--tenue);line-height:1.3}
+.est[aria-pressed=true]{border-color:var(--acento);box-shadow:inset 0 0 0 1px var(--acento)}
+.est.peligro[aria-pressed=true]{border-color:var(--peligro);box-shadow:inset 0 0 0 1px var(--peligro)}
+.deslizador{display:grid;grid-template-columns:110px minmax(0,1fr) 56px;align-items:center;gap:8px;margin:6px 0;min-height:44px}
+.deslizador output{text-align:right;font-variant-numeric:tabular-nums;color:var(--tenue);font-size:13px}
+input[type=range]{width:100%;accent-color:var(--acento);min-height:32px}
+.nota{font-size:13px;color:var(--tenue);margin:4px 0 12px;max-width:65ch}
+
+/* tarjetas de las moscas */
+.moscas{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.tarjeta{background:var(--panel2);border:1px solid var(--borde);border-radius:var(--radio);padding:12px}
+.tarjeta header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.tarjeta header i{width:10px;height:10px;border-radius:50%}
+.tarjeta header b{flex:1}
+.estado{font-size:14px;margin:0 0 8px;min-height:40px}
+.estado small{display:block;color:var(--tenue);font-size:12px}
+.barras{display:grid;gap:4px;margin-bottom:8px}
+.barra-c{display:grid;grid-template-columns:76px minmax(0,1fr) 44px;gap:6px;align-items:center;font-size:12px}
+.barra-c .riel{height:8px;background:#0b0e12;border-radius:4px;overflow:hidden}
+.barra-c .riel div{height:100%;width:0;background:var(--acento);border-radius:4px;transition:width .2s linear}
+.barra-c output{text-align:right;color:var(--tenue);font-variant-numeric:tabular-nums}
+.lesiones{display:flex;flex-wrap:wrap;gap:6px}
+.lesiones label{display:inline-flex;align-items:center;gap:6px;font-size:12px;border:1px solid var(--borde);border-radius:999px;padding:6px 10px;min-height:36px;cursor:pointer}
+.lesiones input{accent-color:var(--peligro)}
+.mini{border:1px solid var(--borde);background:none;border-radius:999px;padding:6px 12px;min-height:36px;cursor:pointer;font-size:13px}
+
+/* cerebro */
+#lienzoCerebro{width:100%;height:min(36vh,340px);display:block;border-radius:var(--radio);background:#030405;border:1px solid var(--borde)}
+.leyenda{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12px;color:var(--tenue);margin:8px 0}
+.leyenda i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
+.cifras{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.cifra{background:var(--panel2);border:1px solid var(--borde);border-radius:10px;padding:8px 12px;min-width:110px}
+.cifra b{display:block;font-size:20px;font-variant-numeric:tabular-nums}
+.cifra span{font-size:12px;color:var(--tenue)}
+
+/* instintos */
+.tabla-i{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+.tabla-i th,.tabla-i td{padding:6px 4px;text-align:center;border-bottom:1px solid var(--borde)}
+.tabla-i th:first-child,.tabla-i td:first-child{text-align:left;white-space:nowrap}
+.envuelve{overflow-x:auto}
+.principal{background:var(--acento);color:#04120c;border:0;border-radius:10px;padding:10px 16px;min-height:44px;font-weight:700;cursor:pointer}
+
+/* bitácora */
+.log{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.log li{background:var(--panel2);border:1px solid var(--borde);border-radius:10px;padding:8px 10px;font-size:13px}
+.log li time{color:var(--tenue);font-size:12px;margin-right:6px;font-variant-numeric:tabular-nums}
+
+/* carga */
+#carga{position:fixed;inset:0;z-index:10;display:grid;place-items:center;background:var(--fondo);padding:24px}
+#carga .caja{max-width:420px;width:100%}
+#carga h2{margin:0 0 6px;font-size:22px}
+#carga p{color:var(--tenue);margin:0 0 16px}
+.progreso{height:8px;background:var(--panel2);border-radius:4px;overflow:hidden}
+.progreso div{height:100%;width:0;background:var(--acento);transition:width .2s}
+#cargaTexto{font-size:13px;color:var(--tenue);margin-top:8px;font-variant-numeric:tabular-nums}
+.oculto{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);top:0;left:0}
+.creditos{font-size:12px;color:var(--tenue)}
+.creditos a{color:var(--tenue)}
+@media (min-width:900px){
+  .hoja{left:auto;right:12px;bottom:12px;width:440px;border-radius:16px;border:1px solid var(--borde);max-height:calc(100vh - 90px)}
+  .hoja.cerrada{transform:translateY(calc(100% - 58px))}
+}
+@media (prefers-reduced-motion:reduce){.hoja{transition:none}}
+</style>
+</head>
+<body>
+<div id="escena" aria-label="Arena 3D con tres moscas"></div>
+
+<div class="barra">
+  <h1>Tres moscas<small>cerebro real de FlyWire</small></h1>
+  <span class="chip" id="velocidad" title="Qué tan rápido corre el cerebro comparado con el tiempo real">— ×</span>
+  <button class="chip boton" id="pausa" aria-label="Pausar">❚❚</button>
+</div>
+
+<div class="hoja" id="hoja">
+  <div class="pestanas" role="tablist">
+    <button role="tab" aria-selected="true" data-p="estimulos">Estímulos</button>
+    <button role="tab" aria-selected="false" data-p="moscas">Moscas</button>
+    <button role="tab" aria-selected="false" data-p="cerebro">Cerebro</button>
+    <button role="tab" aria-selected="false" data-p="instintos">Instintos</button>
+    <button role="tab" aria-selected="false" data-p="bitacora">Bitácora</button>
+    <button class="plegar" id="plegar" aria-label="Plegar panel">▾</button>
+  </div>
+  <div class="cuerpo">
+    <section data-panel="estimulos">
+      <div class="seccion"><h3>Depredadores</h3>
+        <div class="rejilla">
+          <button class="est peligro" data-e="arana">🕷️ Araña<span>camina hacia la más cercana</span></button>
+          <button class="est peligro" data-e="pajaro">🐦 Pájaro<span>se lanza en picada</span></button>
+          <button class="est peligro" data-e="sombra">⚫ Sombra<span>algo que cae encima (el clásico del laboratorio)</span></button>
+          <button class="est peligro" data-e="gato">🐱 Gato<span>se asoma y manotea</span></button>
+        </div></div>
+      <div class="seccion"><h3>Comida</h3>
+        <div class="rejilla">
+          <button class="est" data-e="gota:azucar">🍯 Azúcar<span>una gota en el piso</span></button>
+          <button class="est" data-e="gota:amargo">🧪 Amargo<span>quinina: sabe horrible</span></button>
+          <button class="est" data-e="gota:agua">💧 Agua</button>
+          <button class="est" data-e="gota:sal">🧂 Sal</button>
+          <button class="est" data-e="fruta">🍌 Plátano podrido<span>azúcar y olor a vinagre</span></button>
+        </div></div>
+      <div class="seccion"><h3>Olores</h3>
+        <div class="rejilla">
+          <button class="est" data-e="olor:vinagre">🍷 Vinagre<span>la fruta fermentada que aman</span></button>
+          <button class="est" data-e="olor:moho">🍞 Moho<span>geosmina: comida echada a perder</span></button>
+          <button class="est" data-e="olor:co2">💨 CO₂<span>el olor de miedo de otras moscas</span></button>
+          <button class="est" data-e="olor:feromona">💜 Feromona<span>cVA, de macho</span></button>
+        </div></div>
+      <div class="seccion"><h3>Estrés y ambiente</h3>
+        <div class="deslizador"><label for="temp">Temperatura</label><input id="temp" type="range" min="10" max="40" value="25"><output for="temp">25 °C</output></div>
+        <div class="deslizador"><label for="viento">Viento</label><input id="viento" type="range" min="0" max="100" value="0"><output for="viento">0 %</output></div>
+        <div class="deslizador"><label for="humedad">Humedad</label><input id="humedad" type="range" min="0" max="100" value="55"><output for="humedad">55 %</output></div>
+        <div class="deslizador"><label for="luz">Luz</label><input id="luz" type="range" min="0" max="100" value="70"><output for="luz">70 %</output></div>
+        <div class="rejilla">
+          <button class="est" data-e="ruido">🔊 Ruido<span>un zumbido fuerte</span></button>
+          <button class="est" data-e="polvo">🌫️ Polvo<span>les cae encima: se limpian</span></button>
+          <button class="est" data-e="sacudida">📳 Sacudida<span>golpe a la mesa</span></button>
+          <button class="est" data-e="destello">⚡ Destello<span>flash de cámara</span></button>
+        </div></div>
+      <div class="seccion"><h3>Pantalla de la arena</h3>
+        <p class="nota">La pared de la arena es una pantalla, como las que usan en los laboratorios. Lo que pongas ahí lo ven las tres.</p>
+        <div class="rejilla">
+          <button class="est" data-e="pantalla:rayas">〰️ Rayas que giran</button>
+          <button class="est" data-e="pantalla:circulo">⭕ Círculo que crece</button>
+          <button class="est" data-e="pantalla:parpadeo">💡 Parpadeo</button>
+          <label class="est" for="archivoImagen">🖼️ Tu imagen<span>de tu galería</span></label>
+          <label class="est" for="archivoVideo">🎬 Tu video<span>de tu galería</span></label>
+          <button class="est" data-e="pantalla:nada">⬛ Apagar pantalla</button>
+        </div>
+        <input class="oculto" type="file" id="archivoImagen" accept="image/*">
+        <input class="oculto" type="file" id="archivoVideo" accept="video/*">
+      </div>
+      <button class="mini" id="limpiar">Quitar todo</button>
+    </section>
+
+    <section data-panel="moscas" hidden>
+      <p class="nota">Cada mosca tiene su propio cerebro completo. Lo que ves en las barras sale de las neuronas que mandan cada conducta, en spikes por segundo.</p>
+      <div class="moscas" id="tarjetas"></div>
+    </section>
+
+    <section data-panel="cerebro" hidden>
+      <div class="lesiones" id="selCerebro" role="radiogroup" aria-label="De qué mosca ver el cerebro"></div>
+      <canvas id="lienzoCerebro" aria-label="Las 138,639 neuronas; las que disparan se encienden"></canvas>
+      <div class="leyenda" id="leyenda"></div>
+      <div class="cifras" id="cifras"></div>
+      <p class="nota">Cada punto es el cuerpo de una neurona, en su lugar real dentro de la cabeza (los dos lóbulos de los lados son los de la vista). Brillan las que dispararon en los últimos 200 ms.</p>
+    </section>
+
+    <section data-panel="instintos" hidden>
+      <p class="nota">Se le da a un cerebro limpio <b>un solo sentido a la vez</b> durante 0.4 s y se mide qué conductas se encienden. Nadie le enseñó nada: lo que sale es lo que trae «de fábrica» el cableado.</p>
+      <button class="principal" id="correrInstintos">Correr la prueba de instintos</button>
+      <p class="nota" id="instintosAvance"></p>
+      <div class="envuelve" id="tablaInstintos"></div>
+    </section>
+
+    <section data-panel="bitacora" hidden>
+      <div class="cifras" id="resumen"></div>
+      <ol class="log" id="log" reversed></ol>
+    </section>
+
+    <p class="creditos">Cerebro: <a href="https://flywire.ai" target="_blank" rel="noopener">FlyWire</a> v783 (Dorkenwald et al. 2024, CC-BY 4.0) con el modelo de Shiu et al. 2024 · Cuerpo: flybody (Vaxenburg et al. 2025, Apache 2.0) · Araña: cptx032, OpenGameArt (CC-BY 3.0) · Pájaro y gato: Kenney (CC0). Lo que sale del conectoma y lo que no está explicado en <a href="https://github.com/ejercitopalomazi9111-arch/mazi-central/blob/main/mosca/LEEME.md" target="_blank" rel="noopener">LEEME</a>.</p>
+  </div>
+</div>
+
+<div id="carga" role="status" aria-live="polite">
+  <div class="caja">
+    <h2>Despertando a las moscas</h2>
+    <p>Se baja el cerebro completo de una mosca de la fruta: 138,639 neuronas y 15 millones de conexiones, mapeadas una por una. Son 31 MB, una sola vez.</p>
+    <div class="progreso"><div id="cargaBarra"></div></div>
+    <div id="cargaTexto">empezando…</div>
+  </div>
+</div>
+
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
+<script type="module" src="mundo.js"></script>
+</body>
+</html>

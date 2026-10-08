@@ -26,7 +26,7 @@ export const PARAMS = {
   t_rfc: 2.2,         // ms, periodo refractario
   t_dly: 1.8,         // ms, retraso sináptico
   w_syn: 0.275,       // mV por sinapsis
-  eps: 0.02,          // mV: abajo de esto la neurona se da por quieta (sale de la lista de activas)
+  eps: 0.3,           // mV: abajo de esto la neurona se da por quieta (sale de la lista de activas); el umbral está a 7
   // NO es de Shiu: «cansancio» lento (adaptación) — cada spike sube el umbral 0.05 mV y se va en un
   // segundo. Sin él, después de oler algo quedaba un eco en el cuerno lateral (LHPV1c2 ↔ LHPV6o1 ↔
   // LHPV7a2) que no se apagaba nunca. Más fuerte (0.5 mV) apagaba también el reflejo de comer.
@@ -47,16 +47,17 @@ function leerVarint(bytes, ini, n, salida, zigzag) {
 
 export class Red {
   /** bytes: Uint8Array con grado (uint32 × N) + destinos (delta-varint) + pesos (zigzag-varint) */
-  static desde(bytes, indice) {
+  /** `nuevo(bytes)` da el buffer donde se arma (un SharedArrayBuffer para compartir entre trabajadores). */
+  static desde(bytes, indice, nuevo = (n) => new ArrayBuffer(n)) {
     const N = indice.neuronas, E = indice.aristas;
     const grado = new Uint32Array(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + 4 * N));
-    const ini = new Uint32Array(N + 1);
+    const ini = new Uint32Array(nuevo(4 * (N + 1)));
     for (let i = 0; i < N; i++) ini[i + 1] = ini[i] + grado[i];
     if (ini[N] !== E) throw new Error(`conectoma: ${ini[N]} conexiones, se esperaban ${E}`);
-    const dst = new Uint32Array(E);
+    const dst = new Uint32Array(nuevo(4 * E));
     let p = leerVarint(bytes, 4 * N, E, dst, false);
     for (let i = 0; i < N; i++) for (let k = ini[i] + 1; k < ini[i + 1]; k++) dst[k] += dst[k - 1];
-    const pesos = new Int16Array(E);
+    const pesos = new Int16Array(nuevo(2 * E));
     p = leerVarint(bytes, p, E, pesos, true);
     if (p !== bytes.length) throw new Error(`conectoma: sobran ${bytes.length - p} bytes`);
     return new Red(N, ini, dst, pesos, indice);
@@ -75,10 +76,9 @@ export class Cerebro {
   constructor(red, params = {}) {
     this.red = red; this.P = { ...PARAMS, ...params };
     const { N } = red, P = this.P;
-    this.u = new Float32Array(N);          // voltaje sobre el reposo
-    this.g = new Float32Array(N);          // corriente sináptica
-    this.rfc = new Float32Array(N);        // hasta cuándo está refractaria (ms)
-    this.ada = new Float32Array(N);        // cansancio: lo que sube el umbral
+    // por neurona, cuatro números seguidos: voltaje sobre el reposo, corriente sináptica,
+    // hasta cuándo está refractaria (ms) y cansancio (lo que sube el umbral)
+    this.st = new Float32Array(N * 4);
     this.activa = new Uint8Array(N);
     this.lista = new Int32Array(N); this.nLista = 0;
     this.cuenta = new Uint32Array(N);      // spikes desde la última lectura del mapa (para pintar el cerebro)
@@ -115,53 +115,58 @@ export class Cerebro {
   apagarTodo() { for (const k of [...this.entradas.keys()]) { const [n, l] = k.split(':'); this.estimular(n, l, 0); } }
   silenciar(ids, si = true) { for (const i of ids) this.silenciadas[i] = si ? 1 : 0; }
 
-  _disparar(i, t) {
-    this.u[i] = 0; this.g[i] = 0; this.rfc[i] = t + this.P.t_rfc; this.ada[i] += this.P.d_ada;
-    this.cuenta[i]++; this.spikesPaso++;
-    if (!this.silenciadas[i]) this.anillo[(this.k + this.pasosRetraso) % this.anillo.length].push(i);
-    if (!this.activa[i]) { this.activa[i] = 1; this.lista[this.nLista++] = i; }
-  }
-
   paso() {
-    const P = this.P, { ini, dst, pesos } = this.red, u = this.u, g = this.g, rfc = this.rfc;
+    // Todo en variables locales, y el estado de cada neurona JUNTO (u, g, refractario, cansancio en
+    // cuatro números seguidos): con propiedades de `this` y cuatro arreglos separados, cada neurona
+    // costaba cuatro saltos de memoria y el cerebro iba a una décima del tiempo real.
+    const P = this.P, red = this.red, ini = red.ini, dst = red.dst, pesos = red.pesos;
+    const st = this.st, activa = this.activa, lista = this.lista;
     const t = this.t, w = this.w;
+    let nLista = this.nLista;
     // 1 · llegan los spikes de hace t_dly
     const llegan = this.anillo[this.k % this.anillo.length];
-    for (let s = 0; s < llegan.length; s++) {
+    for (let s = 0, ns = llegan.length; s < ns; s++) {
       const i = llegan[s];
       for (let k = ini[i], fin = ini[i + 1]; k < fin; k++) {
         const j = dst[k];
-        g[j] += pesos[k] * w;
-        if (!this.activa[j]) { this.activa[j] = 1; this.lista[this.nLista++] = j; }
+        st[j * 4 + 1] += pesos[k] * w;
+        if (activa[j] === 0) { activa[j] = 1; lista[nLista++] = j; }
       }
     }
     llegan.length = 0;
+    this.nLista = nLista;
     // 2 · entradas de los sentidos (Poisson)
     for (const { ids, hz } of this.entradas.values()) {
       const p = hz * P.dt / 1000;
       for (let s = 0; s < ids.length; s++) if (this.azar() < p) this._dispararEntrada(ids[s], t);
     }
+    nLista = this.nLista;
     // 3 · integrar sólo las activas; las quietas salen de la lista
-    const { uu, ug, gg } = this.A, eps = P.eps, th = P.v_th, ada = this.ada, aa = this.aa;
-    let n = 0;
-    for (let s = 0; s < this.nLista; s++) {
-      const i = this.lista[s];
-      const ai = ada[i] * aa; ada[i] = ai;
-      if (t < rfc[i]) { this.lista[n++] = i; continue; }       // refractaria: no integra (como Brian)
-      const ui = u[i], gi = g[i];
-      const un = uu * ui + ug * gi, gn = gg * gi;
-      if (un > th + ai) { this._disparar(i, t); this.lista[n++] = i; continue; }
-      u[i] = un; g[i] = gn;
-      if (un < eps && un > -eps && gn < eps && gn > -eps && ai < eps && !this.forzadas[i]) { u[i] = 0; g[i] = 0; ada[i] = 0; this.activa[i] = 0; }
-      else this.lista[n++] = i;
+    const uu = this.A.uu, ug = this.A.ug, gg = this.A.gg, eps = P.eps, th = P.v_th, aa = this.aa, forzadas = this.forzadas;
+    const espera = this.anillo[(this.k + this.pasosRetraso) % this.anillo.length];
+    const silenciadas = this.silenciadas, cuenta = this.cuenta, t_rfc = P.t_rfc, d_ada = P.d_ada;
+    let n = 0, disparos = 0;
+    for (let s = 0; s < nLista; s++) {
+      const i = lista[s], b = i * 4;
+      const ai = st[b + 3] * aa; st[b + 3] = ai;
+      if (t < st[b + 2]) { lista[n++] = i; continue; }       // refractaria: no integra (como Brian)
+      const gi = st[b + 1];
+      const un = uu * st[b] + ug * gi, gn = gg * gi;
+      if (un > th + ai) {                                     // dispara
+        st[b] = 0; st[b + 1] = 0; st[b + 2] = t + t_rfc; st[b + 3] = ai + d_ada; cuenta[i]++; disparos++;
+        if (silenciadas[i] === 0) espera.push(i);
+        lista[n++] = i; continue;
+      }
+      if (un < eps && un > -eps && gn < eps && gn > -eps && ai < eps && forzadas[i] === 0) { st[b] = 0; st[b + 1] = 0; st[b + 3] = 0; activa[i] = 0; }
+      else { st[b] = un; st[b + 1] = gn; lista[n++] = i; }
     }
-    this.nLista = n;
+    this.nLista = n; this.spikesPaso += disparos;
     this.k++; this.t += P.dt;
   }
 
   _dispararEntrada(i, t) {
     // como el PoissonInput de Shiu: cada evento sube el voltaje 68.75 mV → dispara sin refractario
-    this.u[i] = 0; this.g[i] = 0; this.cuenta[i]++; this.spikesPaso++;
+    this.st[i * 4] = 0; this.st[i * 4 + 1] = 0; this.cuenta[i]++; this.spikesPaso++;
     if (!this.silenciadas[i]) this.anillo[(this.k + this.pasosRetraso) % this.anillo.length].push(i);
   }
 

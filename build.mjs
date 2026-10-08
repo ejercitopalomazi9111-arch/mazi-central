@@ -84,6 +84,9 @@ const VA = [
      casa es BigTigerMX/smileys-wp, pero esta sesión no puede escribir ahí; Carlos
      pidió subirla aquí mientras tanto. El QR de la página apunta a donde se abra. */
   'smileys',
+  /* Tres moscas con el cerebro real de FlyWire (proyecto personal de Carlos). Lleva el conectoma
+     comprimido en dos piezas de < 20 MB: Cloudflare no sirve archivos de más de 25 MiB. */
+  'mosca',
 ];
 
 /* ── Lo que tiene sitio adentro y NO se publica, dicho a propósito ──────────
