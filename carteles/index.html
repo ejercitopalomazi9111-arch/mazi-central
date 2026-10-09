@@ -59,6 +59,38 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .galeria{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin-top:12px}
 .galeria img{width:100%; border-radius:8px; display:block}
 details summary{cursor:pointer; min-height:44px; display:flex; align-items:center; color:var(--tenue)}
+.pasos{display:grid; grid-template-columns:minmax(0,1fr); gap:16px}
+@media (min-width:900px){ .pasos{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} .pasos > .tarjeta:first-child{grid-column:1 / -1} }
+h2 .num{display:inline-flex; width:30px; height:30px; border-radius:50%; background:var(--acento); color:#fff; align-items:center; justify-content:center; font-size:16px; margin-right:6px; vertical-align:2px}
+.fotosCampana{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin:12px 0; max-height:70vh; overflow:auto; padding-right:4px}
+.fichaFoto{background:var(--sup2); border:1px solid var(--borde); border-radius:12px; padding:8px; display:flex; flex-direction:column; gap:6px; min-width:0}
+.fichaFoto.fuera{opacity:.45}
+.fichaFoto img{width:100%; aspect-ratio:1; object-fit:contain; border-radius:8px; background:#111}
+.fichaFoto img.recortada{background:repeating-conic-gradient(#2A2033 0 25%, #1A1322 0 50%) 0 0/16px 16px}
+.fichaFoto select{min-height:44px; font-size:15px; padding:6px 8px}
+.fichaFoto .acciones{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:6px}
+.fichaFoto .acciones button{padding:0 6px; font-size:14px; min-width:0; overflow:hidden; text-overflow:ellipsis}
+.fichaFoto .acciones button[aria-pressed="true"]{border-color:var(--acento); background:#2E1A45}
+.chips.en-linea{display:inline-flex; vertical-align:middle}
+.marca-check{display:flex; align-items:center; gap:10px; min-height:44px; margin:0 0 8px}
+.marca-check input{width:24px; height:24px; accent-color:var(--acento)}
+.grupo{margin:20px 0}
+.grupoCab{display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:8px}
+.grupoCab h3{flex:1 1 200px; margin:0; font-size:18px}
+#c-resultados .galeria{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
+.miniAnuncio{padding:0; min-height:0; border-radius:8px; overflow:hidden; background:#000; border:1px solid var(--borde)}
+.miniAnuncio img{width:100%; display:block}
+dialog.hoja{width:min(560px, calc(100% - 24px)); max-height:calc(100% - 24px); background:var(--sup); color:var(--texto); border:1px solid var(--borde); border-radius:18px; padding:16px; overflow:auto}
+dialog.hoja::backdrop{background:rgba(5,3,8,.75)}
+.hojaCab{display:flex; align-items:center; gap:8px; margin-bottom:8px}
+.hojaCab h2{flex:1; margin:0}
+.carpetas{display:flex; flex-direction:column; gap:8px}
+.carpetas button{justify-content:space-between; white-space:normal; text-align:left; padding:10px 14px; gap:12px}
+.carpetas button span{color:var(--tenue); font-size:14px}
+.visor img{width:100%; border-radius:10px; display:block; margin-bottom:8px}
+.visor select{width:auto; flex:1 1 160px}
+input[type=date]{font:inherit; font-size:16px; color:var(--texto); background:var(--sup2); border:1px solid var(--borde); border-radius:10px; padding:10px 12px; min-height:44px; width:100%; color-scheme:dark}
+.grupoChips{flex:1 1 100%; font-size:13px; color:var(--tenue); text-transform:uppercase; letter-spacing:.12em; margin-top:4px}
 [hidden]{display:none !important}
 .oculto{position:absolute; top:0; left:0; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0)}
 </style>
@@ -67,13 +99,72 @@ details summary{cursor:pointer; min-height:44px; display:flex; align-items:cente
 <main>
   <a class="volver" href="../">← Central</a>
   <h1>Carteles</h1>
-  <p class="sub">Tu marca una vez; cada producto en seis estilos y en variantes sin fin.</p>
+  <p class="sub">Tu marca una vez. Tus fotos del banco o del teléfono, y salen campañas de días enteros con estilo de marca de lujo.</p>
 
   <div class="pestanas" role="tablist">
-    <button role="tab" aria-selected="true" data-pestana="uno">Un cartel</button>
+    <button role="tab" aria-selected="true" data-pestana="campana">Campaña</button>
+    <button role="tab" aria-selected="false" data-pestana="uno">Un cartel</button>
     <button role="tab" aria-selected="false" data-pestana="marca">Marca</button>
-    <button role="tab" aria-selected="false" data-pestana="lote">Muchos a la vez</button>
+    <button role="tab" aria-selected="false" data-pestana="lote">Desde Excel</button>
   </div>
+
+  <!-- ════════ CAMPAÑA ════════ -->
+  <section id="p-campana">
+    <div class="pasos">
+      <div class="tarjeta">
+        <h2><span class="num">1</span> Las fotos</h2>
+        <div class="fila"><button class="si" id="c-delBanco">Del banco</button><button id="c-delTel">Del teléfono</button>
+          <button id="c-recortar">✂ Quitar los fondos</button><button id="c-paulina">Que Paulina diga qué son</button></div>
+        <p class="nota" id="c-estadoFotos" role="status"></p>
+        <p class="nota" id="c-resumenFotos"></p>
+        <div class="chips" id="c-cats" role="group" aria-label="Filtrar por categoría"></div>
+        <div class="fotosCampana" id="c-fotos"></div>
+        <details><summary>Más</summary><button id="c-borrarTodas">Quitar todas las fotos de esta marca</button></details>
+      </div>
+      <div class="tarjeta">
+        <h2><span class="num">2</span> El estilo</h2>
+        <p class="nota">Paquetes: <span class="chips en-linea" id="c-paquetes"></span></p>
+        <div class="chips" id="c-estilos" role="group" aria-label="Estilos que entran"></div>
+      </div>
+      <div class="tarjeta">
+        <h2><span class="num">3</span> El calendario</h2>
+        <div class="tres">
+          <label class="campo">Días <input type="text" id="c-dias" inputmode="numeric" value="15" autocomplete="off"></label>
+          <label class="campo">Anuncios por día <input type="text" id="c-porDia" inputmode="numeric" value="10" autocomplete="off"></label>
+          <label class="campo">De ellos, historias <input type="text" id="c-historias" inputmode="numeric" value="4" autocomplete="off"></label>
+        </div>
+        <div class="dos">
+          <label class="campo">Empieza el <input type="date" id="c-inicio"></label>
+          <label class="campo">Mezcla <input type="text" id="c-semilla" inputmode="numeric" value="1" autocomplete="off"></label>
+        </div>
+        <div class="fila"><button class="si" id="c-hacer">Hacer la campaña</button><button id="c-otraMezcla">↻ Otra mezcla</button></div>
+      </div>
+      <div class="tarjeta">
+        <h2><span class="num">4</span> Tanda</h2>
+        <p class="nota">N personas, N días: cada día todos ponen una parte y alguien estrena. Con precio, el pago diario sale solo.</p>
+        <div class="tres">
+          <label class="campo">De qué <select id="c-tCat"></select></label>
+          <label class="campo">Precio <span class="nota">(si quieres)</span><input type="text" id="c-tPrecio" inputmode="decimal" placeholder="$450" autocomplete="off"></label>
+          <label class="campo">Personas <input type="text" id="c-tPersonas" inputmode="numeric" value="15" autocomplete="off"></label>
+        </div>
+        <label class="marca-check"><input type="checkbox" id="c-tAvance" checked> Con el avance diario («Día 3 de 15»)</label>
+        <div class="fila"><button class="si" id="c-tHacer">Hacer la tanda</button></div>
+        <h2 style="margin-top:20px">Encuesta</h2>
+        <div class="tres">
+          <label class="campo">Opción A <select id="c-eA"></select></label>
+          <label class="campo">Opción B <select id="c-eB"></select></label>
+          <label class="campo">Pregunta <input type="text" id="c-eTitulo" value="¿Qué tanda sigue?" autocomplete="off"></label>
+        </div>
+        <div class="fila"><button id="c-eHacer">Hacer la encuesta</button></div>
+      </div>
+    </div>
+    <p class="nota" id="c-estadoHacer" role="status"></p>
+    <div class="fila"><button class="si" id="c-bajarTodo" hidden style="white-space:normal">Descargar todo en ZIP</button></div>
+    <div id="c-resultados"></div>
+  </section>
+
+  <dialog id="c-banco" class="hoja"><div class="hojaCab"><h2>Del banco</h2><button class="cerrar" type="button" aria-label="Cerrar">✕</button></div><div id="c-bancoCuerpo"></div></dialog>
+  <dialog id="c-visor" class="hoja"><div class="hojaCab"><h2>Anuncio</h2><button class="cerrar" type="button" aria-label="Cerrar">✕</button></div><div id="c-visorCuerpo" class="visor"></div></dialog>
 
   <!-- ════════ MARCA ════════ -->
   <section id="p-marca" hidden>
@@ -105,7 +196,7 @@ details summary{cursor:pointer; min-height:44px; display:flex; align-items:cente
   </section>
 
   <!-- ════════ UN CARTEL ════════ -->
-  <section id="p-uno">
+  <section id="p-uno" hidden>
     <div class="rejilla">
       <div class="tarjeta">
         <h2>El producto</h2>
@@ -135,7 +226,7 @@ details summary{cursor:pointer; min-height:44px; display:flex; align-items:cente
         <div class="chips" id="formatos" role="group" aria-label="Tamaño"></div>
         <canvas id="lienzo" width="1080" height="1350" aria-label="El cartel"></canvas>
         <div class="fila"><button id="otra">↻ Otra versión</button><button class="si" id="descargar">Descargar</button><button id="compartir" hidden>Guardar en Fotos</button></div>
-        <p class="nota">Las seis de abajo son el mismo producto en cada estilo: toca una para elegirla.</p>
+        <p class="nota">Abajo, el mismo producto en cada estilo de su grupo: toca uno para elegirlo.</p>
         <div class="variantes" id="variantes"></div>
         <p id="estado" role="status"></p>
       </div>
