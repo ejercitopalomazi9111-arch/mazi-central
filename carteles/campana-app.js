@@ -273,8 +273,14 @@ const COSA = { playera: ['playera', 'playeras', 'la'], sudadera: ['sudadera', 's
   cinturon: ['cinturón', 'cinturones', 'el'], gorra: ['gorra', 'gorras', 'la'], lentes: ['par de lentes', 'lentes', 'el'], reloj: ['reloj', 'relojes', 'el'], joyeria: ['joya', 'joyas', 'la'],
   locion: ['loción', 'lociones', 'la'], cosmetico: ['kit de belleza', 'cosméticos', 'el'], termo: ['termo', 'termos', 'el'], tienda: ['prenda', 'prendas', 'la'], producto: ['prenda', 'prendas', 'la'] };
 const cosaDe = cat => COSA[cat] || COSA.producto;
+/* «Tanda de zapatos» con una sola foto de zapatos y dieciséis de tenis: en la calle todo eso es
+   calzado, así que si la categoría no alcanza se completa con su familia (primero lo suyo). */
+const FAMILIA = { tenis: 'calzado', zapatos: 'calzado', botas: 'calzado', sandalias: 'calzado', bolsa: 'bolsas', cartera: 'bolsas', mochila: 'bolsas' };
+const deFamilia = cat => FAMILIA[cat] ? [cat, ...Object.keys(FAMILIA).filter(c => c !== cat && FAMILIA[c] === FAMILIA[cat])] : [cat];
 function pintarOpcionesTanda() {
-  const cats = [...new Set(fotos.filter(f => f.usar && !f.muchas).map(f => f.cat))];
+  let cats = [...new Set(fotos.filter(f => f.usar && !f.muchas).map(f => f.cat))];
+  // con tenis o botas ya se puede hacer «tanda de zapatos» (calzado); con carteras, «de bolsas»
+  for (const [fam, general] of [['calzado', 'zapatos'], ['bolsas', 'bolsa']]) if (cats.some(c => FAMILIA[c] === fam) && !cats.includes(general)) cats.push(general);
   const todas = cats.length ? cats : ['playera', 'sudadera', 'pantalon', 'chamarra', 'locion'];
   for (const id of ['#c-tCat', '#c-eA', '#c-eB']) {
     const s = $(id); if (!s) continue; const v = s.value;
@@ -283,10 +289,6 @@ function pintarOpcionesTanda() {
   }
 }
 const fotosCat = (cat, n, recortadas = true) => fotos.filter(f => f.usar && f.cat === cat && !f.muchas && (!recortadas || (f.usarRecorte && f.recorte))).slice(0, n).map(f => f.id);
-/* «Tanda de zapatos» con una sola foto de zapatos y dieciséis de tenis: en la calle todo eso es
-   calzado, así que si la categoría no alcanza se completa con su familia (primero lo suyo). */
-const FAMILIA = { tenis: 'calzado', zapatos: 'calzado', botas: 'calzado', sandalias: 'calzado', bolsa: 'bolsas', cartera: 'bolsas', mochila: 'bolsas' };
-const deFamilia = cat => FAMILIA[cat] ? [cat, ...Object.keys(FAMILIA).filter(c => c !== cat && FAMILIA[c] === FAMILIA[cat])] : [cat];
 const fotosFam = (cat, n, recortadas = true) => deFamilia(cat).flatMap(c => fotosCat(c, n, recortadas)).slice(0, n);
 async function hacerTanda() {
   const cat = $('#c-tCat').value, [cosa, pl, genero] = cosaDe(cat), fam = deFamilia(cat);
