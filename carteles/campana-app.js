@@ -175,7 +175,9 @@ async function preguntarPaulina() {
   for (const f of pend) {
     aviso(`Paulina está mirando ${++n} de ${pend.length}…`);
     try {
-      const bytes = new Uint8Array(await f.foto.arrayBuffer()), d = await I.describir(bytes, 'image/jpeg');
+      const bytes = new Uint8Array(await f.foto.arrayBuffer());
+      // La Sala a veces contesta 502 cuando la IA está saturada: tres intentos con espera creciente
+      let d; for (let k = 0; ; k++) { try { d = await I.describir(bytes, 'image/jpeg'); break; } catch (e) { if (e.llave || k === 2) throw e; await new Promise(r => setTimeout(r, 4000 * (k + 1))); } }
       f.texto = [d.titulo, d.descripcion, (d.palabras || []).join(' ')].filter(Boolean).join(' · ');
       f.nombre = d.titulo || f.nombre; f.cat = categorizar(f.texto); f.muchas = esDeMuchas(f.texto) || f.cat === 'tienda';
       await guardarFoto(f); if (n % 5 === 0) pintarFotos();

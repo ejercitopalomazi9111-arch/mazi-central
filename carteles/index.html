@@ -208,6 +208,11 @@ input[type=date]{font:inherit; font-size:16px; color:var(--texto); background:va
           <label class="campo">Etiqueta <input type="text" id="p-promo" placeholder="Promoción" autocomplete="off"></label>
           <label class="campo">Precio <input type="text" id="p-precio" placeholder="$109" inputmode="decimal" autocomplete="off"></label>
         </div>
+        <div class="dos">
+          <label class="campo">Línea chica de arriba <input type="text" id="p-kicker" placeholder="Nueva colección" autocomplete="off"></label>
+          <label class="campo">Precio antes <span class="nota">(sale tachado)</span><input type="text" id="p-antes" placeholder="$1,799" inputmode="decimal" autocomplete="off"></label>
+        </div>
+        <label class="campo">Llamado <input type="text" id="p-cta" placeholder="Pide la tuya por DM" autocomplete="off"></label>
         <label class="campo">Antes del precio <input type="text" id="p-detalle" placeholder="Platillo Bananito por sólo" autocomplete="off"></label>
         <label class="campo">Ingredientes <span class="nota">separados con coma</span><input type="text" id="p-ingredientes" placeholder="Plátano natural, Arroz de sushi, Chocolate" autocomplete="off"></label>
         <details>
@@ -238,7 +243,7 @@ input[type=date]{font:inherit; font-size:16px; color:var(--texto); background:va
     <div class="tarjeta">
       <h2>Muchos carteles a la vez</h2>
       <p class="nota">Pega aquí una tabla de Excel o Google Sheets (con encabezados) o sube el archivo. Columnas que entiende:
-        <b>Producto</b>, Frase, Precio, Promo, Detalle, Ingredientes, Día, Grande, Nota, Foto (nombre del archivo).</p>
+        <b>Producto</b>, Frase, Precio, Precio antes, Promo, Línea chica, Llamado, Detalle, Ingredientes, Día, Grande, Nota, Foto (nombre del archivo).</p>
       <textarea id="tabla" placeholder="Producto	Frase	Precio	Foto&#10;Bananito	El postre que sí es sushi	$109	bananito.jpg"></textarea>
       <div class="fila" style="margin:12px 0"><button id="subirTabla">Subir Excel o CSV</button><button id="subirFotos">Elegir las fotos</button><span class="nota" id="cuantasFotos"></span></div>
       <p class="nota">Estilos que entran al lote:</p>
