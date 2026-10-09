@@ -25,8 +25,8 @@ import { registrar, rgb, legible, contraste, renglones, recortada, medidas, caja
 /* ───────────────────────────── letra ───────────────────────────── */
 const SERIF = 'Playfair Display', SANS = 'Montserrat', COND = 'Anton';
 const f = (fam, peso = 400, it = false) => px => `${it ? 'italic ' : ''}${peso} ${Math.round(px)}px "${fam}"`;
-const serif = (peso = 400, it = false) => f(SERIF, peso, it);
-const sans = (peso = 500) => f(SANS, peso);
+export const serif = (peso = 400, it = false) => f(SERIF, peso, it);
+export const sans = (peso = 500) => f(SANS, peso);
 
 /** Texto con letras separadas (las mayúsculas de lujo). sep en px. Devuelve el ancho. */
 export function anchoEsp(ctx, t, sep) { let w = 0; for (const c of t) w += ctx.measureText(c).width; return w + sep * Math.max(0, [...t].length - 1); }
@@ -44,7 +44,7 @@ function tamEsp(ctx, t, fnt, ancho, max, min, sepRel) {
   return min;
 }
 /** Una línea de mayúsculas espaciadas que siempre cabe. Devuelve el alto que ocupó. */
-function lineaEsp(ctx, t, x, y, { fnt = sans(600), tam = 22, sep = .32, color = '#000', alinear = 'left', ancho = 900, min = 12 } = {}) {
+export function lineaEsp(ctx, t, x, y, { fnt = sans(600), tam = 22, sep = .32, color = '#000', alinear = 'left', ancho = 900, min = 12 } = {}) {
   if (!t) return 0;
   const T = MAY(t), s = tamEsp(ctx, T, fnt, ancho, tam, min, sep);
   ctx.save(); ctx.font = fnt(s); ctx.fillStyle = color; ctx.textBaseline = 'alphabetic';
@@ -61,7 +61,7 @@ export function caber(ctx, texto, fnt, caja, max, min = 22, inter = 1.08, maxR =
   ctx.font = fnt(min); let ls = renglones(ctx, t, caja.w).slice(0, maxR);
   return { s: min, ls, alto: ls.length * min * inter, inter, fnt };
 }
-function escribir(ctx, b, x, y, { alinear = 'left', color = '#000', sombra = null } = {}) {
+export function escribir(ctx, b, x, y, { alinear = 'left', color = '#000', sombra = null } = {}) {
   ctx.save(); ctx.font = b.fnt(b.s); ctx.fillStyle = color; ctx.textAlign = alinear; ctx.textBaseline = 'alphabetic';
   if (sombra) { ctx.shadowColor = sombra; ctx.shadowBlur = b.s * .3; ctx.shadowOffsetY = b.s * .05; }
   b.ls.forEach((l, i) => ctx.fillText(l, x, y + b.s * .82 + i * b.s * b.inter));
@@ -223,7 +223,7 @@ function enGris(img) {
 }
 /** Grano de película, siempre el mismo (no depende de la semilla). */
 let GRANO = null;
-function grano(ctx, W, H, a = .07) {
+export function grano(ctx, W, H, a = .07) {
   if (!GRANO) {
     GRANO = document.createElement('canvas'); GRANO.width = GRANO.height = 180;
     const x = GRANO.getContext('2d'), d = x.createImageData(180, 180); let s = 7;
@@ -232,7 +232,7 @@ function grano(ctx, W, H, a = .07) {
   }
   ctx.save(); ctx.globalAlpha = a; ctx.globalCompositeOperation = 'overlay'; ctx.fillStyle = ctx.createPattern(GRANO, 'repeat'); ctx.fillRect(0, 0, W, H); ctx.restore();
 }
-function viñeta(ctx, W, H, centro, orilla, cx = .5, cy = .45) {
+export function viñeta(ctx, W, H, centro, orilla, cx = .5, cy = .45) {
   const g = ctx.createRadialGradient(W * cx, H * cy, 0, W * cx, H * cy, Math.max(W, H) * .78);
   g.addColorStop(0, centro); g.addColorStop(1, orilla); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
 }
@@ -259,7 +259,7 @@ function llamadoLinea(ctx, t, x, y, color, alinear = 'center', tam = 22, ancho =
   return s * 1.5;
 }
 /** Llamado en píldora (para los estilos de tienda). */
-function llamadoPildora(ctx, t, cx, y, fondo, letra, { tam = 24, contorno = false, alinear = 'center', ancho = 900 } = {}) {
+export function llamadoPildora(ctx, t, cx, y, fondo, letra, { tam = 24, contorno = false, alinear = 'center', ancho = 900 } = {}) {
   const T = MAY(t), fnt = sans(700), s = tamEsp(ctx, T, fnt, ancho - 90, tam, 13, .18);
   ctx.save(); ctx.font = fnt(s); const w = anchoEsp(ctx, T, s * .18) + s * 3.2, h = s * 2.6;
   const x = alinear === 'center' ? cx - w / 2 : alinear === 'right' ? cx - w : cx;
@@ -269,7 +269,7 @@ function llamadoPildora(ctx, t, cx, y, fondo, letra, { tam = 24, contorno = fals
   ctx.restore(); return h;
 }
 /** El precio con el de antes tachado, si lo hay. */
-function precio(ctx, p, x, y, { tam = 96, color = '#111', tenue = '#888', alinear = 'left', fam = SERIF, peso = 500 } = {}) {
+export function precio(ctx, p, x, y, { tam = 96, color = '#111', tenue = '#888', alinear = 'left', fam = SERIF, peso = 500 } = {}) {
   if (!p.precio) return 0;
   ctx.save(); ctx.textBaseline = 'alphabetic';
   const pr = String(p.precio).trim(), an = p.antes ? String(p.antes).trim() : '';
