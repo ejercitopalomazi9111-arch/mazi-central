@@ -498,48 +498,70 @@ function abrirCobro(oid){
    F22 · pedido de a pie
    ═════════════════════════════════════════════════════════════════════ */
 function abrirDeAPie(){
+  /* Se pinta UNA vez y luego sólo se tocan los números. Antes cada toque
+     repintaba la hoja entera: volvía hasta arriba y no se podía avanzar en
+     una lista larga. Con buscador, porque con el menú real son decenas. */
   const disp = F.productos(true);
   const carrito = [];
+  const sinAcentos = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   $('#hojitaT').textContent = 'Pedido de mostrador';
-  const pintarH = () => {
-    $('#hojitaC').innerHTML =
-      '<label for="hNombre" style="margin-top:0">¿A nombre de quién?</label>'+
-      '<input id="hNombre" maxlength="24" placeholder="Primer nombre e inicial del apellido" value="'+esc(nombreTmp)+'">'+
-      '<label for="hGrupo">Grupo (si lo sabe)</label>'+
-      '<input id="hGrupo" maxlength="6" value="'+esc(grupoTmp)+'">'+
-      '<h3 style="margin:18px 0 8px">¿Qué lleva?</h3>'+
-      '<div class="pila">'+ disp.map(p =>
+  $('#hojitaC').innerHTML =
+    '<label for="hNombre" style="margin-top:0">¿A nombre de quién?</label>'+
+    '<input id="hNombre" maxlength="24" placeholder="Primer nombre e inicial del apellido">'+
+    '<label for="hGrupo">Grupo (si lo sabe)</label>'+
+    '<input id="hGrupo" maxlength="6">'+
+    '<h3 style="margin:18px 0 6px">¿Qué lleva?</h3>'+
+    '<div class="apie-busca"><input id="hBusca" type="search" placeholder="Buscar: torta, agua, papas…" autocomplete="off" aria-label="Buscar producto"></div>'+
+    '<div class="apie-lista" id="hLista">'+ disp.map(p =>
+      '<div class="apie-fila" data-fila="'+p.id+'" data-cuantos="0" data-busca="'+esc(sinAcentos(p.nombre + ' ' + (p.cat || '')))+'">'+
         '<button class="linea-prod" type="button" data-agregar="'+p.id+'">'+
-        mini(p)+'<span style="flex:1; min-width:0">'+esc(p.nombre)+'</span>'+
-        '<span class="cant">'+(carrito.filter(r=>r.prod===p.id).reduce((s,r)=>s+r.cant,0)||'')+'</span>'+
-        '<span>'+F.pesos(p.precio)+'</span></button>').join('') +'</div>'+
-      '<div class="chips" style="margin-top:16px">'+
-        '<button class="btn fuerte" id="hCrear" type="button" style="flex:1">'+
-          'Meter a la fila · '+F.pesos(F.totalDe(carrito))+'</button>'+
-        '<button class="btn" id="hCerrar" type="button">Cancelar</button>'+
-      '</div>';
-    $$('#hojitaC [data-agregar]').forEach(b => b.addEventListener('click', () => {
-      const r = carrito.find(x => x.prod === b.dataset.agregar);
-      if(r) r.cant++; else carrito.push({ prod:b.dataset.agregar, cant:1 });
-      guardaTmp(); pintarH();
-    }));
-    $('#hCerrar').addEventListener('click', () => { $('#velo').hidden = true; });
-    $('#hCrear').addEventListener('click', () => {
-      guardaTmp();
-      if(!carrito.length) return aviso('El pedido está vacío.', 'malo');
-      try{
-        F.pedir(null, carrito, { origen:'mostrador', nombre:nombreTmp || 'Mostrador', grupo:grupoTmp });
-        $('#velo').hidden = true; pintar();
-      }catch(e){ aviso(e.message, 'malo'); }
-    });
+          mini(p)+'<span style="flex:1; min-width:0">'+esc(p.nombre)+'</span>'+
+          '<span class="cant" data-cant="'+p.id+'"></span>'+
+          '<span>'+F.pesos(p.precio)+'</span></button>'+
+        '<button class="menos" type="button" data-quitar="'+p.id+'" aria-label="Quitar uno de '+esc(p.nombre)+'">−</button>'+
+      '</div>').join('') +
+      '<p class="apie-vacio" id="hNada" hidden>No hay nada con ese nombre.</p>'+
+    '</div>'+
+    '<div class="apie-pie">'+
+      '<button class="btn fuerte" id="hCrear" type="button" style="flex:1">Meter a la fila · '+F.pesos(0)+'</button>'+
+      '<button class="btn" id="hCerrar" type="button">Cancelar</button>'+
+    '</div>';
+  const cuenta = (pid) => carrito.filter(r => r.prod === pid).reduce((s, r) => s + r.cant, 0);
+  const refresca = (pid) => {
+    const n = cuenta(pid);
+    $('[data-cant="'+pid+'"]').textContent = n ? n + '×' : '';
+    $('[data-fila="'+pid+'"]').dataset.cuantos = n;
+    $('#hCrear').textContent = 'Meter a la fila · ' + F.pesos(F.totalDe(carrito));
   };
-  let nombreTmp = '', grupoTmp = '';
-  const guardaTmp = () => {
-    const n = $('#hNombre'), g = $('#hGrupo');
-    if(n) nombreTmp = n.value; if(g) grupoTmp = g.value;
-  };
-  pintarH();
+  $('#hLista').addEventListener('click', (e) => {
+    const mas = e.target.closest('[data-agregar]'), menos = e.target.closest('[data-quitar]');
+    if(mas){
+      const r = carrito.find(x => x.prod === mas.dataset.agregar);
+      if(r) r.cant = Math.min(10, r.cant + 1); else carrito.push({ prod: mas.dataset.agregar, cant: 1 });
+      refresca(mas.dataset.agregar);
+    } else if(menos){
+      const i = carrito.findIndex(x => x.prod === menos.dataset.quitar);
+      if(i >= 0){ carrito[i].cant--; if(carrito[i].cant <= 0) carrito.splice(i, 1); }
+      refresca(menos.dataset.quitar);
+    }
+  });
+  $('#hBusca').addEventListener('input', () => {
+    const q = sinAcentos($('#hBusca').value.trim());
+    let hay = 0;
+    $$('#hLista [data-fila]').forEach(f => { const si = !q || f.dataset.busca.indexOf(q) >= 0; f.style.display = si ? '' : 'none'; if(si) hay++; });
+    $('#hNada').hidden = hay > 0;
+  });
+  $('#hCerrar').addEventListener('click', () => { $('#velo').hidden = true; });
+  $('#hCrear').addEventListener('click', () => {
+    if(!carrito.length) return aviso('El pedido está vacío.', 'malo');
+    try{
+      F.pedir(null, carrito, { origen:'mostrador', nombre: $('#hNombre').value.trim() || 'Mostrador', grupo: $('#hGrupo').value.trim() });
+      $('#velo').hidden = true; pintar();
+      aviso('Pedido metido a la fila.', 'bueno');
+    }catch(e){ aviso(e.message, 'malo'); }
+  });
   $('#velo').hidden = false;
+  $('#hojitaC').scrollTop = 0;
 }
 
 /* ══════════════════════════════════════════════════════════════════════

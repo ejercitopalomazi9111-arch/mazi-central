@@ -570,7 +570,10 @@ td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
   display:grid; place-items:center; box-shadow:var(--sombra);
 }
 .hojita-rueda{flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch;
-  padding:0 16px 6px}
+  padding:0 16px 6px;
+  /* sin esto, un hijo flex nunca baja de la altura de su contenido: la hoja
+     se cortaba en vez de rodar (el pedido de a pie no dejaba hacer scroll) */
+  min-height:0; overscroll-behavior:contain}
 .hojita-pie{
   flex:0 0 auto; padding:12px 16px calc(14px + env(safe-area-inset-bottom));
   background:var(--piso); border-top:2px solid var(--linea);
@@ -1347,3 +1350,16 @@ body.cortina-arriba{overflow:hidden}
   transition:transform .2s ease}
 .lo-pedido:not([open]) > summary::after{transform:rotate(-90deg)}
 .lo-pedido > summary:focus-visible{outline:3px solid var(--acento, #E8622C); outline-offset:3px; border-radius:8px}
+
+/* pedido de a pie · buscador arriba y total abajo, siempre a la vista */
+.apie-busca{position:sticky; top:0; z-index:2; background:var(--piso); padding:6px 0 10px}
+.apie-busca input{width:100%; font-size:17px}
+.apie-lista{display:flex; flex-direction:column; gap:8px; padding-bottom:12px}
+.apie-fila{display:flex; gap:8px; align-items:stretch}
+.apie-fila .linea-prod{flex:1; min-width:0}
+.apie-fila .menos{flex:0 0 52px; min-height:52px; border-radius:14px; border:1px solid var(--linea);
+  background:var(--sup); color:var(--cafe); font-size:24px; font-weight:900}
+.apie-fila[data-cuantos="0"] .menos{display:none}
+.apie-pie{position:sticky; bottom:0; z-index:2; background:var(--piso); padding:10px 0 calc(10px + env(safe-area-inset-bottom));
+  border-top:2px solid var(--linea); display:flex; gap:10px}
+.apie-vacio{padding:14px 4px; color:var(--tenue)}
