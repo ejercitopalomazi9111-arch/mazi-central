@@ -397,6 +397,30 @@
       "vecinas": [
         "borrar-que-no-viaja"
       ]
+    },
+    {
+      "id": "fotos-de-producto-del-modelo-exacto",
+      "titulo": "Fotos de catálogo de un producto de tienda (el modelo exacto), desde este contenedor",
+      "gravedad": "media",
+      "sintoma": "Hace falta la foto de un producto de marca (Takis Fuego, Boing de guayaba 500 ml…) y Google Imágenes no contesta.",
+      "causa": "Desde aquí Google responde 302 (pide verificar), Bing devuelve basura y DuckDuckGo no da su token. Mercado Libre da 403.",
+      "porque": "Los buscadores bloquean peticiones automáticas; los catálogos de supermercado no.",
+      "arreglo": "El catálogo VTEX de Chedraui contesta JSON con nombre exacto, presentación y foto en fondo blanco: https://www.chedraui.com.mx/api/catalog_system/pub/products/search?ft=<texto con %20> (con «+» en vez de %20 da 400). Lo que no está ahí: Open Food Facts (cgi/search.pl?json=1, o api/v2/product/<código de barras>), que a veces da 503 y hay que reintentar. El fondo blanco se quita con «sólo lo blanco que toca la orilla» (scipy label): el modelo de recorte se comía las letras de adentro (las paletas Vero salían sin «Mango»).",
+      "comoCazarlo": "Comparar SIEMPRE la foto contra la del cliente: la de «Milky Way 40g» en Chedraui es un Snickers.",
+      "consejo": "Para producto de marca, el catálogo del súper es mejor fuente que un buscador: trae el nombre del modelo y su tamaño, y la foto ya va en fondo blanco.",
+      "salioDe": "fadori · «usa imágenes de Google para cada producto, asegúrate de que sean el mismo modelo», 9 de octubre",
+      "senales": [
+        "foto de producto",
+        "imagen de google",
+        "catálogo",
+        "packshot",
+        "fondo blanco",
+        "chedraui",
+        "open food facts"
+      ],
+      "vecinas": [
+        "firma-que-solo-ve-si-hay"
+      ]
     }
   ]
 }

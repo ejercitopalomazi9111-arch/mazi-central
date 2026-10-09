@@ -54,10 +54,10 @@ const CATEGORIAS = [
    no inventados.
 
    Las fotos (fotos/menu/, créditos en fotos/CREDITOS.md), pedidas «de modo
-   más aesthetic»:
-   · lo empaquetado va RECORTADO sobre un fondo suave del color de su
-     categoría, todo igual — varios salen de las fotos que tomó Carlos en la
-     cafetería, recortados con presentaciones/recorte.js;
+   más aesthetic» y luego «con imágenes de internet, del mismo modelo»:
+   · lo empaquetado es la foto de catálogo del producto EXACTO que se vende
+     ahí (Chedraui, Open Food Facts), RECORTADA sobre un fondo suave del
+     color de su categoría; si hay varios sabores salen juntos;
    · la comida va en foto completa, con licencia libre (Openverse). Son de
      relleno: Carlos va a ir subiendo las de verdad desde el mostrador, y
      esas NO se pisan nunca (ver la migración 6 → 7).
@@ -88,46 +88,100 @@ const MENU_BASE = [
   { nombre:'Orden de 3 tacos de chorizo', emoji:'🌮', cat:'antojo', precio:5000, seg:60, desc:'Tres tacos de chorizo por $50.', al:[], foto:'fotos/menu/taco-de-chorizo.jpg' },
   { nombre:'Quesadilla', emoji:'🫓', cat:'antojo', precio:2000, seg:50, desc:'Tortilla con queso, a la plancha.', al:['lacteos'], foto:'fotos/menu/quesadilla.jpg' },
   { nombre:'Quesadilla con carne', emoji:'🫓', cat:'antojo', precio:2500, seg:55, desc:'Con queso y carne.', al:['lacteos'], foto:'fotos/menu/quesadilla-con-carne.jpg' },
-  { nombre:'Maruchan', emoji:'🍜', cat:'antojo', precio:3500, seg:60, desc:'Sopa instantánea, con su agua caliente.', al:['gluten','soya','mariscos'], foto:'fotos/menu/maruchan.jpg' },
+  { nombre:'Maruchan', emoji:'🍜', cat:'antojo', precio:3500, seg:60, desc:'Instant Lunch con camarón, con su agua caliente.', al:['gluten','soya','mariscos'], foto:'fotos/menu/maruchan.jpg' },
   /* ── bebidas ── */
-  { nombre:'Coca-Cola 600 ml', emoji:'🥤', cat:'bebida', precio:3000, seg:8, desc:'Botella de 600.', al:[], foto:'fotos/cafeteria/cocacola.jpg' },
+  { nombre:'Coca-Cola 600 ml', emoji:'🥤', cat:'bebida', precio:3000, seg:8, desc:'Sabor original, botella de 600.', al:[], foto:'fotos/menu/coca-600.jpg' },
   { nombre:'Coca-Cola chica', emoji:'🥤', cat:'bebida', precio:2000, seg:8, desc:'Normal o sin azúcar: dile cuál.', al:[], foto:'fotos/menu/coca-chica.jpg' },
-  { nombre:'Arizona', emoji:'🥫', cat:'bebida', precio:2500, seg:8, desc:'Lata grande. Sandía o mucho mango, según haya.', al:[], foto:'fotos/menu/arizona.jpg' },
-  { nombre:'Boing', emoji:'🧃', cat:'bebida', precio:2500, seg:8, desc:'Uva, guayaba o mango, según haya.', al:[], foto:'fotos/menu/boing.jpg' },
-  { nombre:'Gatorade', emoji:'🧴', cat:'bebida', precio:3000, seg:8, desc:'Botella.', al:[], foto:'fotos/menu/gatorade.jpg' },
+  { nombre:'Arizona', emoji:'🥫', cat:'bebida', precio:2500, seg:8, desc:'Lata. Sandía o Mucho Mango, según haya.', al:[], foto:'fotos/menu/arizona.jpg' },
+  { nombre:'Boing', emoji:'🧃', cat:'bebida', precio:2500, seg:8, desc:'Uva, guayaba o mango, de 500 ml.', al:[], foto:'fotos/menu/boing.jpg' },
+  { nombre:'Gatorade', emoji:'🧴', cat:'bebida', precio:3000, seg:8, desc:'Botella de 600 ml.', al:[], foto:'fotos/menu/gatorade.jpg' },
   { nombre:'Agua 600 ml', emoji:'💧', cat:'bebida', precio:1000, seg:6, desc:'Agua natural.', al:[], foto:'fotos/menu/agua-600.jpg' },
   { nombre:'Agua de litro', emoji:'💧', cat:'bebida', precio:2000, seg:6, desc:'Agua natural.', al:[], foto:'fotos/menu/agua-litro.jpg' },
-  { nombre:'Agua mineral', emoji:'🫧', cat:'bebida', precio:2500, seg:6, desc:'Con gas.', al:[], foto:'fotos/menu/agua-mineral.jpg' },
-  { nombre:'Yakult', emoji:'🥛', cat:'bebida', precio:1500, seg:6, desc:'Leche fermentada.', al:['lacteos'], foto:'fotos/menu/yakult.jpg' },
+  { nombre:'Agua mineral', emoji:'🫧', cat:'bebida', precio:2500, seg:6, desc:'Peñafiel, 600 ml.', al:[], foto:'fotos/menu/agua-mineral.jpg' },
+  { nombre:'Yakult', emoji:'🥛', cat:'bebida', precio:1500, seg:6, desc:'Botellita de 80 ml.', al:['lacteos'], foto:'fotos/menu/yakult.jpg' },
   { nombre:'Café capuchino', emoji:'☕', cat:'bebida', precio:2500, seg:40, desc:'Calientito.', al:['lacteos'], foto:'fotos/menu/cafe-capuchino.jpg' },
   /* ── papas (la foto es de su anaquel) ── */
-  { nombre:'Takis Fuego', emoji:'🔥', cat:'botana', precio:2500, seg:6, desc:'Bolsa.', al:['gluten','picante'], foto:'fotos/menu/takis.jpg' },
-  { nombre:'Doritos Dinamita', emoji:'🔺', cat:'botana', precio:2500, seg:6, desc:'Flamin’ Hot.', al:['picante'], foto:'fotos/menu/doritos.jpg' },
-  { nombre:'Tostitos salsa verde', emoji:'🌶️', cat:'botana', precio:2500, seg:6, desc:'Bolsa.', al:['picante'], foto:'fotos/menu/tostitos.jpg' },
-  { nombre:'Cheetos Flamin’ Hot', emoji:'🔥', cat:'botana', precio:2500, seg:6, desc:'Bolsa.', al:['lacteos','picante'], foto:'fotos/menu/cheetos.jpg' },
-  { nombre:'Crujientes', emoji:'🔥', cat:'botana', precio:2500, seg:6, desc:'Flamin’ Hot.', al:['gluten','picante'], foto:'fotos/menu/crujientes.jpg' },
-  { nombre:'Chip’s jalapeño', emoji:'🥔', cat:'botana', precio:2500, seg:6, desc:'Papas.', al:['picante'], foto:'fotos/cafeteria/chips.jpg' },
-  { nombre:'Cacahuates japoneses', emoji:'🥜', cat:'botana', precio:1000, seg:6, desc:'Bolsita.', al:['cacahuate','gluten','soya'], foto:'fotos/menu/cacahuates.jpg' },
+  { nombre:'Takis Fuego', emoji:'🔥', cat:'botana', precio:2500, seg:6, desc:'Barcel, bolsa.', al:['gluten','picante'], foto:'fotos/menu/takis.jpg' },
+  { nombre:'Doritos Dinamita', emoji:'🔺', cat:'botana', precio:2500, seg:6, desc:'Flamin’ Hot o Chile Limón: dile cuál.', al:['picante'], foto:'fotos/menu/doritos.jpg' },
+  { nombre:'Tostitos salsa verde', emoji:'🌶️', cat:'botana', precio:2500, seg:6, desc:'Sabritas, bolsa.', al:['picante'], foto:'fotos/menu/tostitos.jpg' },
+  { nombre:'Cheetos Flamin’ Hot', emoji:'🔥', cat:'botana', precio:2500, seg:6, desc:'Xtra Flamin’ Hot, bolsa.', al:['lacteos','picante'], foto:'fotos/menu/cheetos.jpg' },
+  { nombre:'Crujientes', emoji:'🔥', cat:'botana', precio:2500, seg:6, desc:'Sabritas Receta Crujiente Flamin’ Hot.', al:['gluten','picante'], foto:'fotos/menu/crujientes.jpg' },
+  { nombre:'Chip’s jalapeño', emoji:'🥔', cat:'botana', precio:2500, seg:6, desc:'Barcel, bolsa.', al:['picante'], foto:'fotos/menu/chips.jpg' },
+  { nombre:'Cacahuates japoneses', emoji:'🥜', cat:'botana', precio:1000, seg:6, desc:'Kurumaya, bolsita.', al:['cacahuate','gluten','soya'], foto:'fotos/menu/cacahuates.jpg' },
   /* ── dulces ── */
-  { nombre:'Snickers', emoji:'🍫', cat:'dulce', precio:2500, seg:6, desc:'Chocolate.', al:['cacahuate','lacteos','soya'], foto:'fotos/menu/snickers.jpg' },
-  { nombre:'Milky Way', emoji:'🍫', cat:'dulce', precio:2500, seg:6, desc:'Chocolate.', al:['lacteos','soya'] },
-  { nombre:'M&M’s', emoji:'🍬', cat:'dulce', precio:2500, seg:6, desc:'Chocolate.', al:['lacteos','soya'], foto:'fotos/menu/mym.jpg' },
-  { nombre:'Kinder Delice', emoji:'🧁', cat:'dulce', precio:2000, seg:6, desc:'Pastelito de chocolate.', al:['gluten','lacteos','huevo'] },
-  { nombre:'Carlos V', emoji:'🍫', cat:'dulce', precio:1500, seg:6, desc:'Chocolate.', al:['lacteos','soya'] },
+  { nombre:'Snickers', emoji:'🍫', cat:'dulce', precio:2500, seg:6, desc:'Barra de chocolate.', al:['cacahuate','lacteos','soya'], foto:'fotos/menu/snickers.jpg' },
+  { nombre:'Milky Way', emoji:'🍫', cat:'dulce', precio:2500, seg:6, desc:'Barra de chocolate.', al:['lacteos','soya'], foto:'fotos/menu/milky-way.jpg' },
+  { nombre:'M&M’s', emoji:'🍬', cat:'dulce', precio:2500, seg:6, desc:'De cacahuate.', al:['lacteos','soya'], foto:'fotos/menu/mym.jpg' },
+  { nombre:'Kinder Delice', emoji:'🧁', cat:'dulce', precio:2000, seg:6, desc:'Pastelito de cacao.', al:['gluten','lacteos','huevo'], foto:'fotos/menu/kinder-delice.jpg' },
+  { nombre:'Carlos V', emoji:'🍫', cat:'dulce', precio:1500, seg:6, desc:'Chocolate con leche.', al:['lacteos','soya'], foto:'fotos/menu/carlos-v.jpg' },
   { nombre:'Brownie', emoji:'🍫', cat:'dulce', precio:1500, seg:6, desc:'De chocolate.', al:['gluten','lacteos','huevo'], foto:'fotos/menu/brownie.jpg' },
   { nombre:'Galletas de $25', emoji:'🍪', cat:'dulce', precio:2500, seg:6, desc:'Pregunta cuáles hay.', al:['gluten','lacteos','huevo'], foto:'fotos/menu/galletas-25.jpg' },
   { nombre:'Galletas de $15', emoji:'🍪', cat:'dulce', precio:1500, seg:6, desc:'Pregunta cuáles hay.', al:['gluten','lacteos','huevo'], foto:'fotos/menu/galletas-15.jpg' },
-  { nombre:'Peelers', emoji:'🍬', cat:'dulce', precio:2500, seg:6, desc:'', al:[] },
-  { nombre:'Halls', emoji:'🍬', cat:'dulce', precio:1500, seg:6, desc:'Pastillas.', al:[] },
-  { nombre:'Tutsi Pop', emoji:'🍭', cat:'dulce', precio:1000, seg:6, desc:'Paleta.', al:[], foto:'fotos/cafeteria/tutsipop.jpg' },
-  { nombre:'Pelonetas', emoji:'🍬', cat:'dulce', precio:1000, seg:6, desc:'', al:['picante'] },
-  { nombre:'Pelón', emoji:'🌶️', cat:'dulce', precio:500, seg:6, desc:'', al:['picante'] },
-  { nombre:'Tix Tix', emoji:'🍬', cat:'dulce', precio:500, seg:6, desc:'', al:[] },
-  { nombre:'Mazapán', emoji:'🥜', cat:'dulce', precio:500, seg:6, desc:'De cacahuate.', al:['cacahuate'], foto:'fotos/menu/mazapan.jpg' },
-  { nombre:'Paleta de mango', emoji:'🍭', cat:'dulce', precio:500, seg:6, desc:'', al:['picante'] },
-  { nombre:'Paleta de elote', emoji:'🍭', cat:'dulce', precio:500, seg:6, desc:'', al:[] },
-  { nombre:'Tarrito', emoji:'🍯', cat:'dulce', precio:500, seg:6, desc:'', al:[] },
+  { nombre:'Peelerz', emoji:'🍬', cat:'dulce', precio:2500, seg:6, desc:'Gomitas Amos que se pelan. Plátano o uva.', al:[], foto:'fotos/menu/peelerz.jpg' },
+  { nombre:'Halls', emoji:'🍬', cat:'dulce', precio:1500, seg:6, desc:'Pastillas. Pregunta los sabores.', al:[], foto:'fotos/menu/halls.jpg' },
+  { nombre:'Tutsi Pop', emoji:'🍭', cat:'dulce', precio:1000, seg:6, desc:'Paleta con chicle.', al:[], foto:'fotos/menu/tutsi-pop.jpg' },
+  { nombre:'Pelonetas', emoji:'🍬', cat:'dulce', precio:1000, seg:6, desc:'Pelón Pelonetes, bolsita.', al:['picante'], foto:'fotos/menu/pelonetas.jpg' },
+  { nombre:'Pelón', emoji:'🌶️', cat:'dulce', precio:500, seg:6, desc:'Pelón Pelo Rico.', al:['picante'], foto:'fotos/menu/pelon.jpg' },
+  { nombre:'Tix Tix', emoji:'🍬', cat:'dulce', precio:500, seg:6, desc:'Paleta ácida de Sonric’s.', al:[], foto:'fotos/menu/tix-tix.jpg' },
+  { nombre:'Mazapán', emoji:'🥜', cat:'dulce', precio:500, seg:6, desc:'De la Rosa.', al:['cacahuate'], foto:'fotos/menu/mazapan.jpg' },
+  { nombre:'Paleta de mango', emoji:'🍭', cat:'dulce', precio:500, seg:6, desc:'Vero Mango Intenso, con chile.', al:['picante'], foto:'fotos/menu/paleta-mango.jpg' },
+  { nombre:'Paleta de elote', emoji:'🍭', cat:'dulce', precio:500, seg:6, desc:'Vero Elotes Intenso.', al:[], foto:'fotos/menu/paleta-elote.jpg' },
+  { nombre:'Tarrito', emoji:'🍯', cat:'dulce', precio:500, seg:6, desc:'Paleta Vero Tarrito.', al:[], foto:'fotos/menu/tarrito.jpg' },
 ];
+
+/* las descripciones de fábrica de la versión 7, para saber cuáles no tocó nadie */
+const MENU_DESC_7 = {
+  'Banderilla': 'Salchicha empanizada en su palito.',
+  'Enchiladas verdes': 'En salsa verde, con crema y queso.',
+  'Torta de milanesa': 'Milanesa empanizada en telera, con todo.',
+  'Hamburguesa': 'Carne a la plancha en pan, con queso.',
+  'Hot dog': 'Salchicha en pan, con sus aderezos.',
+  'Molletes': 'Bolillo con frijoles y queso gratinado.',
+  'Pizza individual': 'Una pizza chica para ti solo.',
+  'Taco de arrachera': 'Precio por taco.',
+  'Taco de bistec': 'Precio por taco. Tres te salen en $50: pide la orden.',
+  'Orden de 3 tacos de bistec': 'Tres tacos de bistec por $50.',
+  'Taco de chorizo': 'Precio por taco. Tres te salen en $50: pide la orden.',
+  'Orden de 3 tacos de chorizo': 'Tres tacos de chorizo por $50.',
+  'Quesadilla': 'Tortilla con queso, a la plancha.',
+  'Quesadilla con carne': 'Con queso y carne.',
+  'Maruchan': 'Sopa instantánea, con su agua caliente.',
+  'Coca-Cola 600 ml': 'Botella de 600.',
+  'Coca-Cola chica': 'Normal o sin azúcar: dile cuál.',
+  'Arizona': 'Lata grande. Sandía o mucho mango, según haya.',
+  'Boing': 'Uva, guayaba o mango, según haya.',
+  'Gatorade': 'Botella.',
+  'Agua 600 ml': 'Agua natural.',
+  'Agua de litro': 'Agua natural.',
+  'Agua mineral': 'Con gas.',
+  'Yakult': 'Leche fermentada.',
+  'Café capuchino': 'Calientito.',
+  'Takis Fuego': 'Bolsa.',
+  'Doritos Dinamita': 'Flamin’ Hot.',
+  'Tostitos salsa verde': 'Bolsa.',
+  'Cheetos Flamin’ Hot': 'Bolsa.',
+  'Crujientes': 'Flamin’ Hot.',
+  'Chip’s jalapeño': 'Papas.',
+  'Cacahuates japoneses': 'Bolsita.',
+  'Snickers': 'Chocolate.',
+  'Milky Way': 'Chocolate.',
+  'M&M’s': 'Chocolate.',
+  'Kinder Delice': 'Pastelito de chocolate.',
+  'Carlos V': 'Chocolate.',
+  'Brownie': 'De chocolate.',
+  'Galletas de $25': 'Pregunta cuáles hay.',
+  'Galletas de $15': 'Pregunta cuáles hay.',
+  'Peelers': '',
+  'Halls': 'Pastillas.',
+  'Tutsi Pop': 'Paleta.',
+  'Pelonetas': '',
+  'Pelón': '',
+  'Tix Tix': '',
+  'Mazapán': 'De cacahuate.',
+  'Paleta de mango': '',
+  'Paleta de elote': '',
+  'Tarrito': '',
+};
 
 /* El menú de ARRANQUE de antes, el inventado (pozole, chilaquiles…). Ya no
    se siembra: se queda aquí porque las migraciones viejas lo nombran y porque
@@ -1087,7 +1141,7 @@ function productoDeBase(p, i){
 }
 function siembra(){
   const d = estadoVacio();
-  d.version = 7;
+  d.version = 8;
   d.productos = MENU_BASE.map(productoDeBase);
   return d;
 }
@@ -1201,7 +1255,34 @@ function migrar(d){
     });
   }
 
-  d.version = 7;
+  /* 7 → 8 · las fotos de catálogo del modelo exacto, y «Peelers» se llama
+     como su empaque: Peelerz. El nombre viejo se retira (el id sale del
+     nombre) y el nuevo entra; las fotos nuestras se refrescan con la misma
+     regla de la 6 → 7. */
+  if(antes < 8){
+    const t = ahora(), toca = (p) => { p.t = Math.max(t, (p.t || 0) + 1); };
+    const viejo = d.productos.find(x => x.id === 'pb-peelers');
+    if(viejo && !viejo.borrado){ viejo.borrado = true; viejo.disponible = false; toca(viejo); }
+    MENU_BASE.forEach((b, i) => {
+      const pid = idBase(b.nombre);
+      let p = d.productos.find(x => x.id === pid);
+      if(!p){
+        if(antes < 6) return;            /* lo agrega la 5 → 6 */
+        p = productoDeBase(b, i); if(viejo && b.nombre === 'Peelerz') p.precio = viejo.precio;   /* el precio que le hayan puesto */
+        d.productos.push(p); toca(p); return;
+      }
+      if(p.borrado) return;
+      const nuestra = !p.foto || /^fotos\//.test(p.foto);
+      let cambio = false;
+      if(nuestra && p.foto !== (b.foto || '')){ p.foto = b.foto || ''; cambio = true; }
+      /* la descripción de fábrica se actualiza si nadie la cambió a mano */
+      const descVieja = (MENU_DESC_7[b.nombre] || '');
+      if(b.desc && p.desc !== b.desc && (!p.desc || p.desc === descVieja)){ p.desc = b.desc; cambio = true; }
+      if(cambio) toca(p);
+    });
+  }
+
+  d.version = 8;
   return antes;
 }
 
@@ -1210,7 +1291,7 @@ function cargar(){
   if(!D){ D = siembra(); MOTOR.escribir(D); arrancarSync(); return D; }
   const antes = migrar(D);
   /* si de verdad se migró, se guarda: si no, cada carga vuelve a hacerlo */
-  if(antes < 7){ try{ MOTOR.escribir(D); }catch(e){} }
+  if(antes < 8){ try{ MOTOR.escribir(D); }catch(e){} }
   if(!limpiadoLocal){ limpiadoLocal = true; if(limpiarLocal(D)) MotorLocal.escribir(D); }
   arrancarSync();
   return D;

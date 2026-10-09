@@ -37,44 +37,70 @@ modo más aesthetic»*. Dos maneras, a propósito:
 - **La comida** va en foto completa. **Es de relleno:** Carlos va a ir subiendo las fotos
   de verdad desde el mostrador, y la app no las pisa.
 
-Recortadas de **las fotos que tomó Carlos en la cafetería** (son de la cooperativa):
-`arizona`, `boing`, `yakult`, `maruchan`, `cacahuates`, `cheetos`, `tostitos`, `doritos`,
-`crujientes`. Las marcas de los empaques son de sus dueños.
+**Los productos empaquetados** (bebidas, papas, dulces) son la **foto de catálogo del
+modelo exacto** que se vende en la cafetería —Carlos lo pidió así el 9 de octubre: *«usa
+imágenes de internet para cada producto, no las que te di, sólo asegúrate de que sean el
+mismo modelo»*—. Se compararon contra sus fotos del mostrador. Salen del catálogo en línea
+de Chedraui y de Open Food Facts (base de datos abierta, CC BY-SA), recortadas sobre el
+fondo de su categoría. Son las fotos con que las marcas presentan su propio producto; se
+usan para enseñar ese mismo producto a la venta, y las marcas son de sus dueños.
 
-Las demás son de bancos libres (buscadas con Openverse), recortadas y ajustadas —recortar
+| Archivo | Producto · de dónde |
+|---|---|
+| `coca-600.jpg` | Refresco Coca-Cola Original 600ml · [Chedraui](https://www.chedraui.com.mx/refresco-coca-cola-original-600ml-3001968/p) |
+| `coca-chica.jpg` | Refresco Coca-Cola Original 355ml · [Chedraui](https://www.chedraui.com.mx/refresco-coca-cola-original-355ml-3308371/p)<br>Refresco Coca-Cola sin Azúcar 355ml · [Chedraui](https://www.chedraui.com.mx/refresco-coca-cola-sin-azucar-355ml-3441616/p) |
+| `arizona.jpg` | Té Arizona Sandía 460ml · [Chedraui](https://www.chedraui.com.mx/te-arizona-sandia-460ml-3760769/p)<br>Té Arizona Mango 460ml · [Chedraui](https://www.chedraui.com.mx/te-arizona-mango-460ml-3760772/p) |
+| `boing.jpg` | Bebida Boing de Jugo de Uva Fortificada 500ml · [Chedraui](https://www.chedraui.com.mx/bebida-boing-de-jugo-de-uva-fortificada-500ml-3042003/p)<br>Bebida Boing con Pulpa de Guayaba 500ml · [Chedraui](https://www.chedraui.com.mx/bebida-boing-con-pulpa-de-guayaba-500ml-3093303/p)<br>Bebida Boing Con Pulpa de Mango 500ml · [Chedraui](https://www.chedraui.com.mx/bebida-boing-con-pulpa-de-mango-500ml-3093304/p) |
+| `gatorade.jpg` | Gatorade Moras 600ml · [Chedraui](https://www.chedraui.com.mx/gatorade-moras-600ml-3095645/p) |
+| `agua-600.jpg` | Agua purificada libre de sodio · [Open Food Facts](https://world.openfoodfacts.org/product/7500533001091) |
+| `agua-litro.jpg` | Agua purificada Member's Mark · [Open Food Facts](https://world.openfoodfacts.org/product/7500533000803) |
+| `agua-mineral.jpg` | Agua Mineral Peñafiel 600ml · [Chedraui](https://www.chedraui.com.mx/agua-mineral-penafiel-600ml-3808535/p) |
+| `yakult.jpg` | Yakult Producto a base de leche fermentada 80ml · [Chedraui](https://www.chedraui.com.mx/yakult-producto-a-base-de-leche-fermentada-80ml-3016340/p) |
+| `takis.jpg` | Botana Barcel Takis Fuego 56g · [Chedraui](https://www.chedraui.com.mx/botana-barcel-takis-fuego-56g-3090610/p) |
+| `doritos.jpg` | Botana Doritos Dinamita Flamin Hot 50g · [Chedraui](https://www.chedraui.com.mx/botana-doritos-dinamita-flamin-hot-50g-3783842/p)<br>Botana Doritos Dinamita Chile/Limón 50g · [Chedraui](https://www.chedraui.com.mx/botana-doritos-dinamita-chilelimon-50g-3783841/p) |
+| `tostitos.jpg` | Botana Tostitos Salsa Verde 55g · [Chedraui](https://www.chedraui.com.mx/botana-tostitos-salsa-verde-55g-3818356/p) |
+| `cheetos.jpg` | Botana De Queso Sabritas Cheetos Xtra Flamin Hot 145g · [Chedraui](https://www.chedraui.com.mx/botana-de-queso-sabritas-cheetos-xtra-flamin-hot-145g-3090778/p) |
+| `crujientes.jpg` | Receta Crujiente Flamin Hot · [Open Food Facts](https://world.openfoodfacts.org/product/7501011159266) |
+| `chips.jpg` | Chip´s Jalapeño · [Open Food Facts](https://world.openfoodfacts.org/product/0757528036478) |
+| `cacahuates.jpg` | Cacahuates estilo japonés · [Open Food Facts](https://world.openfoodfacts.org/product/7503003870432) |
+| `maruchan.jpg` | Sopa Maruchan Camarón 64g · [Chedraui](https://www.chedraui.com.mx/sopa-maruchan-camaron-64g-3089924/p) |
+| `snickers.jpg` | Snickers Barra De Chocolate Con Leche 40g · [Chedraui](https://www.chedraui.com.mx/snickers-barra-de-chocolate-con-leche-40g-3089899/p) |
+| `milky-way.jpg` | Chocolate Milky Way · Chedraui |
+| `mym.jpg` | M&Ms Chocolates Con Leche Y Cacahuate Confitados 37.5g · [Chedraui](https://www.chedraui.com.mx/mms-chocolates-con-leche-y-cacahuate-confitados-375g-3009208/p) |
+| `kinder-delice.jpg` | Pastelito Kinder Kinder Délice Cacao 39g · [Chedraui](https://www.chedraui.com.mx/pastelito-kinder-kinder-delice-cacao-39g-3485059/p) |
+| `carlos-v.jpg` | Chocolate Carlos V Suizo 18g · [Chedraui](https://www.chedraui.com.mx/chocolate-carlos-v-suizo-18g-3591466/p) |
+| `peelerz.jpg` | Gomitas Peelerz Banana 65g · [Chedraui](https://www.chedraui.com.mx/gomitas-peelerz-banana-65g-3896478/p)<br>Gomitas Peelerz Uva Pelable 65g · [Chedraui](https://www.chedraui.com.mx/gomitas-peelerz-uva-pelable-65g-3915586/p) |
+| `halls.jpg` | Pastillas Halls Colors 25.2g · [Chedraui](https://www.chedraui.com.mx/pastillas-halls-colors-252g-3222172/p) |
+| `tutsi-pop.jpg` | Paleta Tutsi Pop 7 Paletas Cereza 140g · [Chedraui](https://www.chedraui.com.mx/paleta-tutsi-pop-7-paletas-cereza-140g-3697651/p) |
+| `pelonetas.jpg` | Dulce Pelon Pelonetes Tamarindo 65g · [Chedraui](https://www.chedraui.com.mx/dulce-pelon-pelonetes-tamarindo-65g-3475505/p) |
+| `pelon.jpg` | Dulce Pelon Pelo Rico Tamarindo 30g · [Chedraui](https://www.chedraui.com.mx/dulce-pelon-pelo-rico-tamarindo-30g-3537817/p) |
+| `tix-tix.jpg` | tix tix surtido · [Open Food Facts](https://world.openfoodfacts.org/product/7500478026258) |
+| `mazapan.jpg` | Mazapán De la Rosa 50g · [Chedraui](https://www.chedraui.com.mx/mazapan-de-la-rosa-50g-3695561/p) |
+| `paleta-mango.jpg` | Paleta Vero Mango Intenso 350 g · [Chedraui](https://www.chedraui.com.mx/paleta-vero-mango-intenso-350-g-3906344/p) |
+| `paleta-elote.jpg` | Paleta Vero Elote Intenso 350 g · [Chedraui](https://www.chedraui.com.mx/paleta-vero-elote-intenso-350-g-3906345/p) |
+| `tarrito.jpg` | Paleta Vero Tarrito 560g · [Chedraui](https://www.chedraui.com.mx/paleta-vero-tarrito-560g-3828906/p) |
+
+**La comida** (banderilla, enchiladas, tacos, etc.) es de relleno hasta que Carlos suba las
+suyas. La comida es de bancos libres (buscada con Openverse), recortadas y ajustadas —recortar
 cuenta como modificar, y por eso este archivo cumple con la parte de «compartir igual» de
 las BY-SA—:
 
 | Archivo | Licencia | Autor | Dónde está |
 |---|---|---|---|
-| `agua-600.jpg` | CC BY 2.0 | Muffet | [flickr](https://www.flickr.com/photos/53133240@N00/7985698964) |
-| `agua-litro.jpg` | CC BY 2.0 | How can I recycle this | [flickr](https://www.flickr.com/photos/87481332@N00/167934943) |
-| `agua-mineral.jpg` | CC BY 2.0 | sashafatcat | [flickr](https://www.flickr.com/photos/91255327@N00/4701781601) |
 | `banderilla.jpg` | CC BY 2.0 | Andreanna Moya Photography | [flickr](https://www.flickr.com/photos/13897165@N00/2815597393) |
 | `brownie.jpg` | CC BY 2.0 | jeffreyw | [flickr](https://www.flickr.com/photos/7927684@N03/4448807631) |
 | `cafe-capuchino.jpg` | CC BY 2.0 | Bryan Pocius | [flickr](https://www.flickr.com/photos/57104631@N00/4437445488) |
-| `coca-chica.jpg` | CC BY-SA 2.0 | France1978 | [flickr](https://www.flickr.com/photos/51764518@N02/10632126184) |
 | `enchiladas-verdes.jpg` | CC BY-SA 2.0 | blogefl | [flickr](https://www.flickr.com/photos/51223760@N00/15370911603) |
 | `galletas-15.jpg` | CC BY 2.0 | toadstool ring | [flickr](https://www.flickr.com/photos/32496161@N07/3587056928) |
 | `galletas-25.jpg` | CC BY 2.0 | grongar | [flickr](https://www.flickr.com/photos/70757891@N00/7133349441) |
-| `gatorade.jpg` | CC BY 2.0 | JeepersMedia | [flickr](https://www.flickr.com/photos/39160147@N03/13555935473) |
 | `hamburguesa.jpg` | CC BY 2.0 | TheCulinaryGeek | [flickr](https://www.flickr.com/photos/72949902@N00/5076897498) |
 | `hot-dog.jpg` | CC BY 2.0 | TheBusyBrain | [flickr](https://www.flickr.com/photos/26176646@N04/2632651360) |
-| `mazapan.jpg` | CC0 1.0 | kadyh08 | [flickr](https://www.flickr.com/photos/165044571@N07/32638016007) |
-| `mym.jpg` | CC BY 2.0 | serbosca | [flickr](https://www.flickr.com/photos/131261968@N05/32186792428) |
 | `pizza-individual.jpg` | CC BY 2.0 | @joefoodie | [flickr](https://www.flickr.com/photos/98178986@N00/3804324703) |
 | `quesadilla.jpg` | CC BY 2.0 | jeffreyw | [flickr](https://www.flickr.com/photos/7927684@N03/6045328855) |
 | `quesadilla-con-carne.jpg` | CC BY 2.0 | elsie.hui | [flickr](https://www.flickr.com/photos/91188380@N05/15957588059) |
-| `snickers.jpg` | CC BY 2.0 | NINXIVI | [flickr](https://www.flickr.com/photos/44124295669@N01/2741152406) |
 | `taco-de-arrachera.jpg` | CC BY 2.0 | T.Tseng | [flickr](https://www.flickr.com/photos/68147320@N02/13707613743) |
 | `taco-de-bistec.jpg` | CC BY 2.0 | The MisAdventures of Maja | [flickr](https://www.flickr.com/photos/36399194@N03/21576032295) |
 | `taco-de-chorizo.jpg` | CC BY-SA 2.0 | Phil Denton | [flickr](https://www.flickr.com/photos/37475039@N04/6374323251) |
-| `takis.jpg` | CC BY-SA 2.0 | Effervescing Elephant | [flickr](https://www.flickr.com/photos/35995738@N00/6155449017) |
-
-## Las de la cafetería · `cafeteria/`
-
-Recortes sin tratar de las fotos de Carlos: `cocacola`, `chips` y `tutsipop` (las que no
-quedaron bien recortadas sobre fondo). Son de la cooperativa.
 
 ---
 

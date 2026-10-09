@@ -1658,7 +1658,7 @@ arrancar();
     ok('pero NO le pisa la foto que la cooperativa ya había puesto',
        viejo.productos[1].foto === 'una-suya.jpg');
     ok('y la migración deja el archivo marcado, para no repetirla',
-       viejo.version === 7);
+       viejo.version === 8);
     ok('el platillo de arranque toma su id de fábrica, igual en todos los aparatos',
        viejo.productos[0].id === 'pb-pozole' && viejo.productos[1].id === 'v2');
     ok('y el pedido que lo nombraba lo sigue nombrando', (function(){
@@ -1681,7 +1681,18 @@ arrancar();
         { id:'pb-banderilla', nombre:'Banderilla', cat:'antojo', precio:4500, foto:'data:image/jpeg;base64,AAAA', t:5 }] };
       F._migrar(v);
       return v.productos[0].foto === 'fotos/menu/takis.jpg' && v.productos[0].t > 5 &&
-             v.productos[1].foto === 'data:image/jpeg;base64,AAAA' && v.productos[1].t === 5;
+             v.productos[1].foto === 'data:image/jpeg;base64,AAAA';
+    })());
+    ok('7 → 8: «Peelers» se retira y entra «Peelerz» con el precio que tenía', (function(){
+      const v = { version:7, config:{}, alumnos:{}, eventos:[], conteos:[], pedidos:[], productos:[
+        { id:'pb-peelers', nombre:'Peelers', cat:'dulce', precio:2700, foto:'', t:5 },
+        { id:'pb-carlos-v', nombre:'Carlos V', cat:'dulce', precio:1500, desc:'Chocolate.', foto:'', t:5 },
+        { id:'pb-snickers', nombre:'Snickers', cat:'dulce', precio:2500, desc:'El de la casa', foto:'', t:5 }] };
+      F._migrar(v);
+      const nuevo = v.productos.find(p => p.id === 'pb-peelerz'), c = v.productos.find(p => p.id === 'pb-carlos-v'),
+            sn = v.productos.find(p => p.id === 'pb-snickers');
+      return v.productos[0].borrado === true && !!nuevo && nuevo.precio === 2700 &&
+             c.desc === 'Chocolate con leche.' && c.foto === 'fotos/menu/carlos-v.jpg' && sn.desc === 'El de la casa';
     })());
     ok('sin foto, cada platillo trae SU dibujito (la pizza no sale con un taco)',
        F.emojiDe({ id:'pb-pizza-individual', cat:'antojo' }) === '🍕' && F.emojiDe({ id:'otro', cat:'antojo' }) === '🌮');
