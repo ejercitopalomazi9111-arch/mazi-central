@@ -328,7 +328,7 @@ function abrir(x) {
   const aptos = x.job.estilo.startsWith('tanda') || x.job.estilo === 'encuesta' || ['coleccion', 'mosaico'].includes(x.job.estilo) ? [] : ESTILOS.filter(e => e.grupo === 'moda' && !e.varias);
   const rehacer = async (cambio) => {
     Object.assign(x.job, cambio); x.blob = await pintarJob(document.createElement('canvas'), x.job);
-    x.nombre = x.nombre.replace(/-[a-z-]+\.jpg$/, `-${x.job.estilo}.jpg`);
+    if (!x.job.nombre) x.nombre = x.nombre.replace(/-[^-/]+\.jpg$/, `-${x.job.estilo}.jpg`);   // sólo cambia la última parte: el estilo
     img.src = urlDe(x.blob); pintarResultados();
   };
   cuerpo.replaceChildren(img, h('p', { class: 'nota' }, `${x.grupo} · ${x.nombre}`),

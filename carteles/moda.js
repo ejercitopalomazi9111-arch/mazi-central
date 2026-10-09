@@ -46,9 +46,13 @@ function tamEsp(ctx, t, fnt, ancho, max, min, sepRel) {
 /** Una línea de mayúsculas espaciadas que siempre cabe. Devuelve el alto que ocupó. */
 export function lineaEsp(ctx, t, x, y, { fnt = sans(600), tam = 22, sep = .32, color = '#000', alinear = 'left', ancho = 900, min = 12 } = {}) {
   if (!t) return 0;
-  const T = MAY(t), s = tamEsp(ctx, T, fnt, ancho, tam, min, sep);
-  ctx.save(); ctx.font = fnt(s); ctx.fillStyle = color; ctx.textBaseline = 'alphabetic';
-  espaciado(ctx, T, x, y + s * .8, s * sep, alinear); ctx.restore();
+  let T = MAY(t); const s = tamEsp(ctx, T, fnt, ancho, tam, min, sep);
+  ctx.save(); ctx.font = fnt(s);
+  // si ni en el tamaño mínimo cabe, se junta un poco y, si aún no, se corta con «…»
+  let sp = s * sep; if (anchoEsp(ctx, T, sp) > ancho) sp = s * .08;
+  while (T.length > 4 && anchoEsp(ctx, T, sp) > ancho) T = T.replace(/…$/, '').slice(0, -1).trimEnd() + '…';
+  ctx.fillStyle = color; ctx.textBaseline = 'alphabetic';
+  espaciado(ctx, T, x, y + s * .8, sp, alinear); ctx.restore();
   return s;
 }
 /** Busca el tamaño con el que el texto cabe en la caja en ≤maxR renglones. */
@@ -343,7 +347,7 @@ function minimal(ctx, W, H, d, r) {
     yAbajo = m.T + s * .82;
   }
   // abajo: el titular chico a la izquierda, la línea y el llamado a la derecha
-  const anchoTxt = W * .5;
+  const anchoTxt = W - m.M * 2 - W * .36 - 40;      // lo que deja libre la columna de la derecha
   const tit = caber(ctx, titular(p, 'Nueva temporada'), sans(500), { w: anchoTxt, h: 170 * m.k }, 44 * m.k, 24, 1.2, 3);
   const yTxt = H - m.B - tit.alto;
   escribir(ctx, tit, m.M, yTxt, { color: tinta });

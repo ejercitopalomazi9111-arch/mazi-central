@@ -197,6 +197,45 @@
       "vecinas": [
         "ver-la-pantalla"
       ]
+    },
+    {
+      "id": "renombrar-con-regex-codiciosa",
+      "titulo": "Cambiar «la última parte» de un nombre con una expresión que se come de más",
+      "gravedad": "media",
+      "sintoma": "Tras «Otra versión», el anuncio «01-publicacion-maison.jpg» se llamaba «01-maison.jpg»: perdió el tamaño y el ZIP ya no lo ordenaba con los demás.",
+      "causa": "Para cambiar el estilo se usó /-[a-z-]+\\.jpg$/: el guion dentro de la clase deja que se coma «-publicacion-maison» entero.",
+      "porque": "Se escribió pensando en el estilo («maison») y no en todo lo que hay antes del último guion.",
+      "arreglo": "Sólo la última parte: /-[^-/]+\\.jpg$/. Y si el nombre lo puso un plan (la tanda), no se toca.",
+      "comoCazarlo": "La prueba que baja el ZIP y busca la ruta completa de un anuncio que se rehízo.",
+      "consejo": "Una clase con guion dentro come guiones: la «última parte» se dice excluyendo el separador.",
+      "salioDe": "carteles/campana-app.js · visor de la Campaña",
+      "senales": [
+        "el archivo cambió de nombre",
+        "se perdió el tamaño del nombre",
+        "otra versión renombra"
+      ],
+      "vecinas": []
+    },
+    {
+      "id": "auditar-donde-cae-el-texto",
+      "titulo": "Un cartel pintado en canvas no avisa si el texto se encima: hay que anotar dónde cae cada fillText",
+      "gravedad": "alta",
+      "sintoma": "En 51 carteles de moda todo «se veía bien» en la hoja de contacto y la prueba no fallaba; con un titular largo, la línea chica de la derecha se metía en él.",
+      "causa": "Una línea espaciada que no cabe ni en su tamaño mínimo se desborda hacia la izquierda, encima de lo que haya.",
+      "porque": "Las pruebas de resultado miran pixeles o que exista el lienzo, no la geometría del texto; y a ojo, en miniatura, no se nota.",
+      "arreglo": "Envolver CanvasRenderingContext2D.prototype.fillText en la prueba: medir con measureText y la transformación, y exigir que ningún texto se salga ni se cruce con otro de otro renglón. La línea que no cabe se junta y se corta con «…».",
+      "comoCazarlo": "node carteles/pruebas-campana.mjs · cada estilo × 3 tamaños × texto corto y texto largo.",
+      "consejo": "Probar con el texto más largo que alguien vaya a escribir, no con el de ejemplo.",
+      "salioDe": "carteles/moda.js · estilo minimal",
+      "senales": [
+        "texto encimado",
+        "se sale el texto",
+        "no cabe la frase",
+        "canvas"
+      ],
+      "vecinas": [
+        "la-codificacion-invisible"
+      ]
     }
   ]
 }
