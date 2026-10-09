@@ -260,8 +260,11 @@ export function planTanda(t) {
   add('07-el-numero', 'historia', 'tanda-numero', { cta: 'Responde para apartar' }, fondo);
   add('08-las-cuentas', 'historia', 'tanda-cuentas', { cta: 'Responde para apartar' });
   add('09-quedan-pocos', 'historia', 'tanda-lugares', { frase: 'Quedan pocos lugares', boleto: '¿Te apuntas?', cta: 'Responde para apartar' }, fondo);
+  // con dos o más recortadas, en colección; si los recortes no salieron, con las fotos completas en mosaico
   if (t.fotos && t.fotos.length >= 2) out.push({ nombre: '10-proxima-tanda', formato: 'feed', estilo: 'coleccion', fotos: t.fotos.slice(0, 3),
     prod: { kicker: 'Próxima tanda', frase: k, cta: 'Aparta tu lugar', categoria: t.cat } });
+  else if (t.completas && t.completas.length >= 2) out.push({ nombre: '10-proxima-tanda', formato: 'feed', estilo: 'mosaico', fotos: t.completas.slice(0, 4),
+    prod: { kicker: 'Próxima tanda', frase: `Próxima tanda: ${plural} · Aparta tu lugar`, categoria: t.cat } });
   if (t.avance !== false) for (let n = 1; n <= dias; n++) add(`Avance diario/Dia ${String(n).padStart(2, '0')}`, 'historia', 'tanda-dia', { dia: n, frase: `Hoy se entrega ${g} ${cosa} #${n}` });
   return out;
 }
