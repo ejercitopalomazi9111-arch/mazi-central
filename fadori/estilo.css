@@ -570,7 +570,10 @@ td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
   display:grid; place-items:center; box-shadow:var(--sombra);
 }
 .hojita-rueda{flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch;
-  padding:0 16px 6px}
+  padding:0 16px 6px;
+  /* sin esto, un hijo flex nunca baja de la altura de su contenido: la hoja
+     se cortaba en vez de rodar (el pedido de a pie no dejaba hacer scroll) */
+  min-height:0; overscroll-behavior:contain}
 .hojita-pie{
   flex:0 0 auto; padding:12px 16px calc(14px + env(safe-area-inset-bottom));
   background:var(--piso); border-top:2px solid var(--linea);
@@ -1337,3 +1340,67 @@ body.cortina-arriba{overflow:hidden}
 
   @page{ margin:14mm }
 }
+
+/* Mi turno · lo que pediste, en desplegable (cerrado al pagar o cancelar) */
+.lo-pedido{margin-top:20px}
+.lo-pedido > summary{cursor:pointer; list-style:none; display:flex; align-items:center; gap:8px;
+  min-height:44px; font-size:20px; font-weight:800; letter-spacing:-.01em}
+.lo-pedido > summary::-webkit-details-marker{display:none}
+.lo-pedido > summary::after{content:'▾'; margin-left:auto; font-size:18px; color:var(--tenue);
+  transition:transform .2s ease}
+.lo-pedido:not([open]) > summary::after{transform:rotate(-90deg)}
+.lo-pedido > summary:focus-visible{outline:3px solid var(--acento, #E8622C); outline-offset:3px; border-radius:8px}
+
+/* pedido de a pie · buscador arriba y total abajo, siempre a la vista */
+.apie-busca{position:sticky; top:0; z-index:2; background:var(--piso); padding:6px 0 10px}
+.apie-busca input{width:100%; font-size:17px}
+.apie-lista{display:flex; flex-direction:column; gap:8px; padding-bottom:12px}
+.apie-fila{display:flex; gap:8px; align-items:stretch}
+.apie-fila .linea-prod{flex:1; min-width:0}
+.apie-fila .menos{flex:0 0 52px; min-height:52px; border-radius:14px; border:1px solid var(--linea);
+  background:var(--sup); color:var(--cafe); font-size:24px; font-weight:900}
+.apie-fila[data-cuantos="0"] .menos{display:none}
+.apie-pie{position:sticky; bottom:0; z-index:2; background:var(--piso); padding:10px 0 calc(10px + env(safe-area-inset-bottom));
+  border-top:2px solid var(--linea); display:flex; gap:10px}
+.apie-vacio{padding:14px 4px; color:var(--tenue)}
+
+/* ══ El letrero de aviso (Avisos.letrero en nucleo.js) ══════════════════
+   Baja desde arriba, grande y de color sólido: se tiene que ver de reojo con
+   el teléfono en la mano, en el patio y con sol. Texto blanco sobre el tono
+   hondo de cada caso (los tres pasan 4.5:1). Un toque lo cierra. */
+.alerta-grande{
+  position:fixed; left:12px; right:12px; top:calc(env(safe-area-inset-top, 0px) + 10px);
+  z-index:2147483000; max-width:520px; margin:0 auto;
+  display:grid; gap:4px; padding:16px 18px; border-radius:18px;
+  background:var(--cafe); color:#fff; box-shadow:0 12px 34px rgba(30,15,5,.35);
+  transform:translateY(calc(-100% - 40px)); opacity:0; pointer-events:none;
+  transition:transform .32s cubic-bezier(.2,.9,.3,1.2), opacity .2s ease;
+}
+.alerta-grande.sale{transform:none; opacity:1; pointer-events:auto; cursor:pointer}
+.alerta-grande b{font-size:22px; line-height:1.15}
+.alerta-grande span{font-size:16px; line-height:1.35}
+.alerta-grande small{font-size:12px; opacity:.8}
+.alerta-grande.listo{background:#2F5419}
+.alerta-grande.sigue{background:#2F5419}
+.alerta-grande.falta{background:#8F2416}
+.alerta-grande.nuevo{background:#9C3608}
+.alerta-grande.cambio{background:var(--cafe)}
+.alerta-grande.prueba{background:#2F5419}
+.alerta-grande.listo.sale{animation:alerta-late 1s ease-in-out 3}
+@keyframes alerta-late{50%{box-shadow:0 0 0 8px rgba(63,107,35,.35), 0 12px 34px rgba(30,15,5,.35)}}
+@media (prefers-reduced-motion: reduce){
+  .alerta-grande{transition:opacity .15s linear; transform:none}
+  .alerta-grande.listo.sale{animation:none}
+}
+
+/* el número late cuando avanzas en la fila (sin sonido: pasa seguido) */
+.late{animation:numero-late .7s ease-out}
+@keyframes numero-late{30%{transform:scale(1.12); color:var(--verde)}}
+@media (prefers-reduced-motion: reduce){ .late{animation:none} }
+
+/* «Activa los avisos» */
+.avisos-caja{background:var(--sup); border:1px solid var(--linea); border-radius:16px; padding:14px 16px}
+.avisos-caja p{margin:0 0 10px; font-size:15px; line-height:1.4}
+.avisos-caja.faltaPermiso, .avisos-caja.instalar{background:var(--rescoldo); border-color:var(--rescoldo-hondo)}
+.avisos-caja.negados{border-color:var(--rojo)}
+.avisos-caja .chips{margin:0}

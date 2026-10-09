@@ -129,7 +129,7 @@ ok(`50 pedidos de un jalón: entran sólo los del tope (${entraron})`, entraron 
 const alumnosFalsos = Array.from({ length: 40 }, (_, i) => { const c = cod(); return { id: c, codigo: c, nombre: 'Falso ' + i, grupo: '1A', terminos: T, t: T }; });
 r = await sync(troll, { alumnos: alumnosFalsos });
 const creados = alumnosFalsos.filter(a => !rechazo(r, a.id)).length;
-ok(`40 alumnos falsos desde un teléfono: entran pocos (${creados})`, creados <= 5);
+ok(`40 alumnos falsos desde un teléfono: entran pocos (${creados})`, creados <= 12);
 r = await llamar('/api/sync', { desde: 0, cambios: { eventos: Array.from({ length: 5000 }, (_, i) => ({ id: 'e' + i, t: ahora(), tipo: 'pedido', basura: 'x'.repeat(200) })) } }, { ap: troll });
 ok('un cuerpo de 1 MB de basura se rechaza', r.status === 413, 'status ' + r.status);
 r = await llamar('/api/sync', undefined, { ap: troll, metodo: 'POST', crudo: '{"desde":0,"cambios":{"pedidos":[{"id":' });

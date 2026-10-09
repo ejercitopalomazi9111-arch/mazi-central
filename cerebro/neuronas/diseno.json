@@ -328,6 +328,53 @@
         "servidor-que-nadie-conecta",
         "gana-el-reloj-equivocado"
       ]
+    },
+    {
+      "id": "bajada-completa-que-pisa-lo-pendiente",
+      "titulo": "La bajada completa «forzada» pisa lo que el aparato no ha subido",
+      "gravedad": "alta",
+      "sintoma": "El día del menú de verdad: la tablet migró al menú real, la señora puso su pasador, y el servidor se quedó con el pozole viejo y la torta a $38. Sin un solo error.",
+      "causa": "Al poner el pasador la app pide TODO desde cero y lo aplica «forzado» (sin mirar la hora), para traer la versión completa de lo que antes llegaba recortado. Esa bajada salió antes de que se apuntara el menú por subir, y al volver le pegó encima la copia vieja a lo que la tablet acababa de cambiar.",
+      "porque": "Cada prueba arrancaba con el servidor y la tablet de acuerdo. Sólo sale cuando el aparato trae un cambio local más nuevo que lo del servidor justo al entrar.",
+      "arreglo": "fadori/nucleo.js · mezclar: con «forzar», se salta todo registro que esté en la lista de pendientes (fadori_pendientes). Lo pendiente es más nuevo por definición.",
+      "comoCazarlo": "LOCAL=1 API_LOCAL=… node fadori/pruebas-menu.mjs — tablet con menú viejo + servidor con menú viejo → pasador → el servidor tiene que quedar con el real. Antes del arreglo: 3 rojas.",
+      "consejo": "«Forzar» significa «trae lo que me falta», nunca «olvida lo que hice». Lo que está por subir no se toca.",
+      "salioDe": "fadori · «ese es el menú de la cafetería, te encargo que todo quede al 100», 9 de octubre",
+      "senales": [
+        "menú viejo regresa",
+        "pozole regresa",
+        "precio viejo",
+        "al poner el pasador",
+        "se pierde un cambio",
+        "forzar",
+        "bajada completa"
+      ],
+      "vecinas": [
+        "gana-el-reloj-equivocado",
+        "borrar-que-no-viaja"
+      ]
+    },
+    {
+      "id": "borrar-que-no-viaja",
+      "titulo": "Borrar un registro quitándolo de la lista: el servidor lo devuelve",
+      "gravedad": "media",
+      "sintoma": "En Fadori, un platillo borrado en el mostrador reaparecía en la siguiente sincronización.",
+      "causa": "borrarProducto lo sacaba del arreglo local. La sincronización sólo manda registros que EXISTEN y cambiaron, así que el borrado nunca salía; el servidor seguía teniéndolo y lo volvía a mandar.",
+      "porque": "En un solo aparato sin servidor, quitar y borrar son lo mismo. Con varios, no.",
+      "arreglo": "Borrar = marcar (`borrado: true`, `disponible: false`). productos() filtra los borrados; producto(id) los sigue dando para el historial.",
+      "comoCazarlo": "pruebas-menu.mjs §3: borrar en la tablet, recargar, y que no regrese ni a la tablet ni al alumno.",
+      "consejo": "En algo que se sincroniza, borrar es un cambio más y tiene que viajar como cambio.",
+      "salioDe": "fadori · el menú real, 9 de octubre",
+      "senales": [
+        "borrado reaparece",
+        "platillo regresa",
+        "no se borra",
+        "borrar producto",
+        "lápida"
+      ],
+      "vecinas": [
+        "bajada-completa-que-pisa-lo-pendiente"
+      ]
     }
   ]
 }

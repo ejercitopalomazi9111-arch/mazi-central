@@ -135,6 +135,8 @@ const NO_VA = (ruta) => {
      publicar y no lo que se quedó en la carpeta. Se colaban diez. */
   if(/^pruebas[^/]*\.(mjs|js|py)$/i.test(f)) return true;
   if(/^armar-suelto\.mjs$/i.test(f)) return true;
+  /* la mesa de pruebas de Fadori y su túnel: sólo los usan las pruebas */
+  if(/^(mesa-de-pruebas|tunel-ws)\.mjs$/i.test(f)) return true;
   /* el taller de la lámina arma el HTML: es material de trabajo, no sitio.
      OJO: `ruta` llega SIN barra al final cuando lo que se mira es la carpeta
      misma, así que el patrón acepta el fin de cadena — igual que `arte/web`. */

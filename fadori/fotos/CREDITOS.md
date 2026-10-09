@@ -27,6 +27,15 @@ lista fija. En cuanto suba las fotos de su comida de verdad, éstas desaparecen.
 | `torta-jamon.jpg` | CC BY-SA 4.0 | Jj saezdeo | [Mexican torta sandwich.jpg](https://commons.wikimedia.org/wiki/File:Mexican_torta_sandwich.jpg) |
 | `torta-milanesa.jpg` | CC0 | Pancuter Mandrade | [Sándwich de milanesa tucumano.jpg](https://commons.wikimedia.org/wiki/File:S%C3%A1ndwich_de_milanesa_tucumano.jpg) |
 
+## Las de la cafetería · `cafeteria/`
+
+Las tomó Carlos en la cafetería del Instituto Rembrandt el 9 de octubre de 2026 y
+son recortes de esas fotos: arizona, boing, gatorade, cocacola, agua, yakult,
+takis, doritos, tostitos, cheetos, crujientes, chips, cacahuates, mym, maruchan,
+tutsipop y brownie. **Son de la cooperativa**, no de un banco de imágenes. Las
+marcas que salen en los empaques son de sus dueños; se enseñan porque es lo que
+de verdad se vende ahí.
+
 ---
 
 ## Qué hay que respetar de cada licencia

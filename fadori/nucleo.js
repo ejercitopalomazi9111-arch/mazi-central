@@ -48,7 +48,84 @@ const CATEGORIAS = [
   { id:'botana',  nombre:'Botanas',      emoji:'🥨', tono:'#8A6212' },  /* fritura, sal */
 ];
 
-/* El menú de arranque. La cooperativa lo cambia entero desde su pantalla:
+/* ══════════════════════════════════════════════════════════════════════════
+   EL MENÚ DE VERDAD · el de la cafetería del Rembrandt
+   Lo mandó Carlos el 9 de octubre con fotos del mostrador: precios de ellos,
+   no inventados. Las fotos con «cafeteria/» son SUYAS (recortes de las que él
+   tomó); las demás son las de Wikimedia que ya estaban, sólo donde el
+   platillo es el mismo. Lo que no tiene foto enseña el emoji de su categoría
+   hasta que la cooperativa le ponga la suya desde el mostrador.
+
+   Lo que NO está, a propósito, porque falta el dato:
+   · «tacos de choriqueso»: llegó sin precio. No se inventa: lo da de alta la
+     cooperativa con su precio.
+   · Las dos «Galletas» ($25 y $15) llegaron sin decir cuál es cuál: van con
+     su precio en el nombre hasta que se sepa.
+   Los alérgenos son los evidentes (pan = gluten, queso = leche…); la
+   cooperativa los corrige en el mostrador. Los segundos de preparación son
+   semilla: F40 los cambia por lo medido en cuanto haya despachos. */
+const MENU_BASE = [
+  /* ── comida ── */
+  { nombre:'Banderilla', cat:'antojo', precio:4500, seg:60, desc:'Salchicha empanizada en su palito.', al:['gluten','huevo','lacteos'] },
+  { nombre:'Enchiladas verdes', cat:'fuerte', precio:4500, seg:90, desc:'En salsa verde, con crema y queso.', al:['lacteos','picante'] },
+  { nombre:'Torta de milanesa', cat:'torta', precio:5000, seg:60, desc:'Milanesa empanizada en telera, con todo.', al:['gluten','huevo','lacteos'], foto:'fotos/torta-milanesa.jpg' },
+  { nombre:'Hamburguesa', cat:'torta', precio:4500, seg:90, desc:'Carne a la plancha en pan, con queso.', al:['gluten','lacteos'] },
+  { nombre:'Hot dog', cat:'torta', precio:2500, seg:45, desc:'Salchicha en pan, con sus aderezos.', al:['gluten'] },
+  { nombre:'Molletes', cat:'torta', precio:2500, seg:50, desc:'Bolillo con frijoles y queso gratinado.', al:['gluten','lacteos'] },
+  { nombre:'Pizza individual', cat:'antojo', precio:2500, seg:60, desc:'Una pizza chica para ti solo.', al:['gluten','lacteos'] },
+  { nombre:'Taco de arrachera', cat:'antojo', precio:2000, seg:45, desc:'Precio por taco.', al:[] },
+  { nombre:'Taco de bistec', cat:'antojo', precio:2000, seg:45, desc:'Precio por taco. Tres te salen en $50: pide la orden.', al:[] },
+  { nombre:'Orden de 3 tacos de bistec', cat:'antojo', precio:5000, seg:60, desc:'Tres tacos de bistec por $50.', al:[] },
+  { nombre:'Taco de chorizo', cat:'antojo', precio:2000, seg:45, desc:'Precio por taco. Tres te salen en $50: pide la orden.', al:[] },
+  { nombre:'Orden de 3 tacos de chorizo', cat:'antojo', precio:5000, seg:60, desc:'Tres tacos de chorizo por $50.', al:[] },
+  { nombre:'Quesadilla', cat:'antojo', precio:2000, seg:50, desc:'Tortilla con queso, a la plancha.', al:['lacteos'], foto:'fotos/quesadilla.jpg' },
+  { nombre:'Quesadilla con carne', cat:'antojo', precio:2500, seg:55, desc:'Con queso y carne.', al:['lacteos'], foto:'fotos/quesadilla.jpg' },
+  { nombre:'Maruchan', cat:'antojo', precio:3500, seg:60, desc:'Sopa instantánea, con su agua caliente.', al:['gluten','soya','mariscos'], foto:'fotos/cafeteria/maruchan.jpg' },
+  /* ── bebidas ── */
+  { nombre:'Coca-Cola 600 ml', cat:'bebida', precio:3000, seg:8, desc:'Botella de 600.', al:[], foto:'fotos/cafeteria/cocacola.jpg' },
+  { nombre:'Coca-Cola chica', cat:'bebida', precio:2000, seg:8, desc:'Normal o sin azúcar: dile cuál.', al:[] },
+  { nombre:'Arizona', cat:'bebida', precio:2500, seg:8, desc:'Lata grande. Sandía o mucho mango, según haya.', al:[], foto:'fotos/cafeteria/arizona.jpg' },
+  { nombre:'Boing', cat:'bebida', precio:2500, seg:8, desc:'Uva, guayaba o mango, según haya.', al:[], foto:'fotos/cafeteria/boing.jpg' },
+  { nombre:'Gatorade', cat:'bebida', precio:3000, seg:8, desc:'Botella.', al:[], foto:'fotos/cafeteria/gatorade.jpg' },
+  { nombre:'Agua 600 ml', cat:'bebida', precio:1000, seg:6, desc:'Agua natural.', al:[], foto:'fotos/cafeteria/agua.jpg' },
+  { nombre:'Agua de litro', cat:'bebida', precio:2000, seg:6, desc:'Agua natural.', al:[] },
+  { nombre:'Agua mineral', cat:'bebida', precio:2500, seg:6, desc:'Con gas.', al:[] },
+  { nombre:'Yakult', cat:'bebida', precio:1500, seg:6, desc:'Leche fermentada.', al:['lacteos'], foto:'fotos/cafeteria/yakult.jpg' },
+  { nombre:'Café capuchino', cat:'bebida', precio:2500, seg:40, desc:'Calientito.', al:['lacteos'] },
+  /* ── papas (la foto es de su anaquel) ── */
+  { nombre:'Takis Fuego', cat:'botana', precio:2500, seg:6, desc:'Bolsa.', al:['gluten','picante'], foto:'fotos/cafeteria/takis.jpg' },
+  { nombre:'Doritos Dinamita', cat:'botana', precio:2500, seg:6, desc:'Flamin’ Hot.', al:['picante'], foto:'fotos/cafeteria/doritos.jpg' },
+  { nombre:'Tostitos salsa verde', cat:'botana', precio:2500, seg:6, desc:'Bolsa.', al:['picante'], foto:'fotos/cafeteria/tostitos.jpg' },
+  { nombre:'Cheetos Flamin’ Hot', cat:'botana', precio:2500, seg:6, desc:'Bolsa.', al:['lacteos','picante'], foto:'fotos/cafeteria/cheetos.jpg' },
+  { nombre:'Crujientes', cat:'botana', precio:2500, seg:6, desc:'Flamin’ Hot.', al:['gluten','picante'], foto:'fotos/cafeteria/crujientes.jpg' },
+  { nombre:'Chip’s jalapeño', cat:'botana', precio:2500, seg:6, desc:'Papas.', al:['picante'], foto:'fotos/cafeteria/chips.jpg' },
+  { nombre:'Cacahuates japoneses', cat:'botana', precio:1000, seg:6, desc:'Bolsita.', al:['cacahuate','gluten','soya'], foto:'fotos/cafeteria/cacahuates.jpg' },
+  /* ── dulces ── */
+  { nombre:'Snickers', cat:'dulce', precio:2500, seg:6, desc:'Chocolate.', al:['cacahuate','lacteos','soya'] },
+  { nombre:'Milky Way', cat:'dulce', precio:2500, seg:6, desc:'Chocolate.', al:['lacteos','soya'] },
+  { nombre:'M&M’s', cat:'dulce', precio:2500, seg:6, desc:'Chocolate.', al:['lacteos','soya'], foto:'fotos/cafeteria/mym.jpg' },
+  { nombre:'Kinder Delice', cat:'dulce', precio:2000, seg:6, desc:'Pastelito de chocolate.', al:['gluten','lacteos','huevo'] },
+  { nombre:'Carlos V', cat:'dulce', precio:1500, seg:6, desc:'Chocolate.', al:['lacteos','soya'] },
+  { nombre:'Brownie', cat:'dulce', precio:1500, seg:6, desc:'De chocolate.', al:['gluten','lacteos','huevo'], foto:'fotos/cafeteria/brownie.jpg' },
+  { nombre:'Galletas de $25', cat:'dulce', precio:2500, seg:6, desc:'Pregunta cuáles hay.', al:['gluten','lacteos','huevo'], foto:'fotos/galletas.jpg' },
+  { nombre:'Galletas de $15', cat:'dulce', precio:1500, seg:6, desc:'Pregunta cuáles hay.', al:['gluten','lacteos','huevo'], foto:'fotos/galletas.jpg' },
+  { nombre:'Peelers', cat:'dulce', precio:2500, seg:6, desc:'', al:[] },
+  { nombre:'Halls', cat:'dulce', precio:1500, seg:6, desc:'Pastillas.', al:[] },
+  { nombre:'Tutsi Pop', cat:'dulce', precio:1000, seg:6, desc:'Paleta.', al:[], foto:'fotos/cafeteria/tutsipop.jpg' },
+  { nombre:'Pelonetas', cat:'dulce', precio:1000, seg:6, desc:'', al:['picante'] },
+  { nombre:'Pelón', cat:'dulce', precio:500, seg:6, desc:'', al:['picante'] },
+  { nombre:'Tix Tix', cat:'dulce', precio:500, seg:6, desc:'', al:[] },
+  { nombre:'Mazapán', cat:'dulce', precio:500, seg:6, desc:'De cacahuate.', al:['cacahuate'] },
+  { nombre:'Paleta de mango', cat:'dulce', precio:500, seg:6, desc:'', al:['picante'] },
+  { nombre:'Paleta de elote', cat:'dulce', precio:500, seg:6, desc:'', al:[] },
+  { nombre:'Tarrito', cat:'dulce', precio:500, seg:6, desc:'', al:[] },
+];
+
+/* El menú de ARRANQUE de antes, el inventado (pozole, chilaquiles…). Ya no
+   se siembra: se queda aquí porque las migraciones viejas lo nombran y porque
+   la 5 → 6 necesita saber cuáles platillos eran de relleno para retirarlos.
+   Lo que sigue es el comentario original:
+   El menú de arranque. La cooperativa lo cambia entero desde su pantalla:
    esto es para que la app sirva desde el primer minuto, no una lista fija.
    Las fotos son REALES y con licencia libre, bajadas de Wikimedia Commons:
    el crédito de cada una está en fotos/CREDITOS.md. Nada de dibujitos de
@@ -56,7 +133,7 @@ const CATEGORIAS = [
    inventa. La cooperativa las reemplaza por las suyas cuando quiera.
    Los segundos de preparación son la SEMILLA del estimado; en cuanto haya
    despachos reales, F40 los reemplaza con lo medido. */
-const MENU_BASE = [
+const MENU_VIEJO = [
   { nombre:'Guisado del día con arroz', cat:'fuerte', precio:4500, seg:95,
     desc:'El guisado que toque hoy, con arroz y su tortilla.', al:['picante'] , foto:'fotos/guisado.jpg'},
   { nombre:'Pozole', cat:'fuerte', precio:5000, seg:80,
@@ -580,8 +657,9 @@ const MotorServidor = {
      sin haber salido. Además así no se re-manda lo que llegó de otro lado. */
   /* Un pedido de ESTE teléfono que el servidor no aceptó se marca cancelado
      con el motivo, sin volverlo a mandar (si se estampara, iría y vendría). */
-  marcarRechazados(porId){
+  marcarRechazados(porId, alumnosRech){
     const ids = Object.keys(porId); if(!ids.length) return false;
+    alumnosRech = alumnosRech || {};
     const d = MotorLocal.leer(); if(!d) return false;
     const mios = misCodigos(), motivo = {
       tope: 'Ya tienes los pedidos que se permiten por recreo.', agotado: 'Se acabó algo de lo que pediste.',
@@ -591,7 +669,9 @@ const MotorServidor = {
     d.pedidos.forEach(p => {
       if(!porId[p.id] || p.turno || mios.indexOf(p.alumno) < 0 || p.estado === 'cancelado') return;
       p.estado = 'cancelado'; p.cancelado = ahora();
-      p.rechazo = motivo[porId[p.id]] || 'El servidor no lo aceptó.';
+      p.rechazo = alumnosRech[p.alumno] === 'tope'
+        ? 'Este teléfono ya dio de alta a muchos alumnos hoy. Pídelo desde el teléfono del alumno o con su código.'
+        : motivo[porId[p.id]] || 'El servidor no lo aceptó.';
       if(this._huellas && this._huellas.pedidos) this._huellas.pedidos[p.id] = huellaDe(p);
       toco = true;
     });
@@ -652,9 +732,10 @@ const MotorServidor = {
       this.pendientes = cuantos;
       this.ultimoIntento = ahora();
 
+      const completo = !!this._completo && !!llaveMostrador();
       const r = await fetch(api + '/api/sync?casa=' + encodeURIComponent(this.casa()), {
         method: 'POST', headers: cabezasSync(),
-        body: JSON.stringify({ desde: this._reloj, cambios }),
+        body: JSON.stringify({ desde: completo ? 0 : this._reloj, cambios }),
       });
       if(!r.ok) throw new Error('el servidor contestó ' + r.status);
       const res = await r.json();
@@ -681,9 +762,10 @@ const MotorServidor = {
       if(cambios.config && pend.config != null && (cambios.config.t || 0) >= pend.config &&
          !(rech.config && rech.config.config === 'pasador')) delete pend.config;
       this._guardarPend(pend);
-      const tumbados = this.marcarRechazados(rech.pedidos || {});
+      const tumbados = this.marcarRechazados(rech.pedidos || {}, rech.alumnos || {});
 
-      const cambio = this.mezclar(res.cambios || {});
+      const cambio = this.mezclar(res.cambios || {}, completo);
+      if(completo) this._completo = false;
       this._reloj = Math.max(this._reloj, res.reloj || 0);
       if(tumbados) this._avisar();
       this.enLinea = true;
@@ -734,6 +816,14 @@ const MotorServidor = {
   mezclar(cambios, forzar){
     const d = MotorLocal.leer(); if(!d) return false;
     let tocado = false;
+    /* «Forzar» (la bajada completa al poner el pasador o el código) sirve para
+       traer la versión completa de lo que llegó recortado. NO para pisar lo
+       que este aparato cambió y todavía no sube: eso es más nuevo que lo del
+       servidor por definición. Pasó el día del menú de verdad: la tablet puso
+       su pasador, la bajada completa le regresó el pozole viejo encima del
+       retirado, y el retiro se perdió. */
+    const pend = forzar ? this._pend() : null;
+    const pendiente = (c, rid) => !!(pend && pend[c] && pend[c][rid] != null);
 
     for(const c of CAJONES){
       const lista = cambios[c] || [];
@@ -741,7 +831,7 @@ const MotorServidor = {
         if(!r || !r.id) continue;
         if(c === 'alumnos'){
           const v = d.alumnos[r.id];
-          if(!v || forzar || (r.t || 0) > (v.t || 0)){
+          if(!v || (forzar && !pendiente(c, r.id)) || (r.t || 0) > (v.t || 0)){
             const copia = this.sanear('alumnos', r); delete copia.id;
             d.alumnos[r.id] = copia; tocado = true;
           }
@@ -751,7 +841,7 @@ const MotorServidor = {
         const i = d[c].findIndex(x => x && x.id === r.id);
         const copia = this.sanear(c, r);
         if(i < 0){ d[c].push(copia); tocado = true; }
-        else if(forzar || (r.t || 0) > (d[c][i].t || 0)){ d[c][i] = copia; tocado = true; }
+        else if((forzar && !pendiente(c, r.id)) || (r.t || 0) > (d[c][i].t || 0)){ d[c][i] = copia; tocado = true; }
       }
     }
     if(cambios.config && (cambios.config.t || 0) > (d.config.t || 0)){
@@ -898,6 +988,10 @@ const MotorServidor = {
     const j = await r.json().catch(() => ({}));
     if(r.status === 200 && j.token){
       try{ localStorage.setItem(LLAVE_ADMIN, JSON.stringify({ token: j.token, vence: j.vence })); }catch(e){}
+      /* Lo que esta tablet bajó ANTES de la llave venía recortado (sin
+         nombres, sin alumnos, sin fiados). Con la llave se vuelve a bajar
+         todo desde cero y la versión completa gana. */
+      this._completo = true;
       this.enchufar(); this.empujar();
       return { ok: true };
     }
@@ -966,24 +1060,27 @@ function idBase(nombre){
     .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
-function siembra(){
-  const d = estadoVacio();
-  d.version = 5;
-  d.productos = MENU_BASE.map((p, i) => ({
+function productoDeBase(p, i){
+  return {
     id: idBase(p.nombre),
     nombre: p.nombre,
     cat: p.cat,
     precio: p.precio,
     segPrep: p.seg,
     desc: p.desc || '',
-    alergenos: p.al || [],
+    alergenos: (p.al || []).slice(),
     foto: p.foto || '',
     dias: [],                    /* vacío = todos los días (F50) */
     disponible: true,
-    destacado: i === 0,          /* F02 · el plato fuerte del día va primero */
+    destacado: false,            /* F02 · el platillo del día lo escoge la cooperativa */
     existencias: null,           /* null = sin control de inventario */
     orden: i,
-  }));
+  };
+}
+function siembra(){
+  const d = estadoVacio();
+  d.version = 6;
+  d.productos = MENU_BASE.map(productoDeBase);
   return d;
 }
 
@@ -1011,11 +1108,11 @@ function migrar(d){
      le puso la suya, no se toca. */
   if(antes < 2){
     const porNombre = {};
-    MENU_BASE.forEach(b => { if(b.foto) porNombre[b.nombre] = b.foto; });
+    MENU_VIEJO.forEach(b => { if(b.foto) porNombre[b.nombre] = b.foto; });
     d.productos.forEach(p => {
       if(!p.foto && porNombre[p.nombre]) p.foto = porNombre[p.nombre];
       if(!p.desc && !p.alergenos.length){
-        const b = MENU_BASE.find(x => x.nombre === p.nombre);
+        const b = MENU_VIEJO.find(x => x.nombre === p.nombre);
         if(b){ p.desc = b.desc || ''; p.alergenos = (b.al || []).slice(); }
       }
     });
@@ -1040,7 +1137,7 @@ function migrar(d){
   if(antes < 5){
     const usados = new Set(d.productos.map(p => p.id)), cambio = {};
     d.productos.forEach(p => {
-      if(!MENU_BASE.some(b => b.nombre === p.nombre)) return;
+      if(!MENU_VIEJO.some(b => b.nombre === p.nombre)) return;
       const nuevo = idBase(p.nombre);
       if(p.id === nuevo || usados.has(nuevo)) return;
       cambio[p.id] = nuevo; usados.add(nuevo); p.id = nuevo;
@@ -1051,7 +1148,39 @@ function migrar(d){
     }
   }
 
-  d.version = 5;
+  /* 5 → 6 · EL MENÚ DE VERDAD. Los platillos de relleno (pozole,
+     chilaquiles… los que sembró la app y nadie vende) se RETIRAN: quedan
+     como «borrado» para que el historial siga diciendo qué se pidió y para
+     que el retiro viaje al servidor y a los demás aparatos (un registro que
+     sólo se quita de aquí vuelve en la siguiente sincronización). Los del
+     menú real entran, o se actualizan si ya estaban (torta de milanesa,
+     quesadilla). Lo que la cooperativa dio de alta ella misma no se toca.
+     Cada registro tocado se estampa con hora nueva: así le gana a la copia
+     vieja del servidor en vez de que la vieja lo pise. */
+  if(antes < 6){
+    const t = ahora(), toca = (p) => { p.t = Math.max(t, (p.t || 0) + 1); };
+    const reales = new Set(MENU_BASE.map(b => b.nombre));
+    d.productos.forEach(p => {
+      const deRelleno = MENU_VIEJO.some(b => b.nombre === p.nombre) && p.id === idBase(p.nombre);
+      if(deRelleno && !reales.has(p.nombre) && !p.borrado){ p.borrado = true; p.disponible = false; p.destacado = false; toca(p); }
+    });
+    MENU_BASE.forEach((b, i) => {
+      const pid = idBase(b.nombre);
+      let p = d.productos.find(x => x.id === pid);
+      if(!p){ p = productoDeBase(b, i); d.productos.push(p); }
+      else {
+        Object.assign(p, { nombre: b.nombre, cat: b.cat, precio: b.precio, desc: b.desc || '',
+          alergenos: (b.al || []).slice(), orden: i, borrado: false });
+        if(!p.foto || /^fotos\/[^/]+\.jpg$/.test(p.foto)) p.foto = b.foto || '';
+      }
+      toca(p);
+    });
+    /* lo de la cooperativa, después del menú */
+    let o = MENU_BASE.length;
+    d.productos.forEach(p => { if(!p.id.startsWith('pb-')) p.orden = o++; });
+  }
+
+  d.version = 6;
   return antes;
 }
 
@@ -1060,7 +1189,7 @@ function cargar(){
   if(!D){ D = siembra(); MOTOR.escribir(D); arrancarSync(); return D; }
   const antes = migrar(D);
   /* si de verdad se migró, se guarda: si no, cada carga vuelve a hacerlo */
-  if(antes < 5){ try{ MOTOR.escribir(D); }catch(e){} }
+  if(antes < 6){ try{ MOTOR.escribir(D); }catch(e){} }
   if(!limpiadoLocal){ limpiadoLocal = true; if(limpiarLocal(D)) MotorLocal.escribir(D); }
   arrancarSync();
   return D;
@@ -1075,6 +1204,10 @@ function cargar(){
 let limpiadoLocal = false;
 function limpiarLocal(d){
   if(MOTOR.nombre !== 'servidor') return false;
+  /* La pantalla de la cooperativa NUNCA se limpia como teléfono de alumno,
+     aunque todavía no tenga llave: se abre, carga, y el pasador se pone
+     después. Limpiarla ahí borraba a los alumnos y con ellos los fiados. */
+  try{ if(/mostrador|medidor/.test(location.pathname)) return false; }catch(e){}
   const t = ahora(), hoy = new Date(t).toDateString();
   const antesP = d.pedidos.length, antesE = d.eventos.length;
   if(llaveMostrador()){
@@ -1197,7 +1330,7 @@ function cambiarPasador(nuevo){
 
 /* ══════════════════════════════════════════════════════════════════════════
    5 · QUIÉN ES · F06 · identidad sin registro
-   Nombre de pila y grupo. Sin contraseña, sin correo, sin apellidos, sin
+   Primer nombre e inicial del apellido, y grupo. Sin contraseña, sin correo, sin apellidos, sin
    foto. Cientos de menores sin una base de datos de menores.
    ═════════════════════════════════════════════════════════════════════════ */
 const LLAVE_YO = 'fadori_yo';
@@ -1288,7 +1421,9 @@ function aceptarTerminos(cod){
    ═════════════════════════════════════════════════════════════════════════ */
 function productos(soloDisponibles){
   const d = estado();
-  const lista = d.productos.slice().sort((a,b) => (a.orden||0) - (b.orden||0));
+  /* los borrados no salen en ningún menú; siguen existiendo para que el
+     historial diga qué se pidió y para que el borrado viaje a los demás */
+  const lista = d.productos.filter(p => !p.borrado).sort((a,b) => (a.orden||0) - (b.orden||0));
   /* F50 · lo que no toca hoy no sale en el menú del alumno. Sale en el del
      mostrador (soloDisponibles = false) porque ahí se administra la semana. */
   return soloDisponibles
@@ -1325,9 +1460,12 @@ function guardarProducto(datos){
   guardar();
 }
 
+/* Borrar es MARCAR, no quitar: quitado de aquí, el servidor lo devolvía en
+   la siguiente sincronización y el platillo «borrado» reaparecía. */
 function borrarProducto(pid){
-  const d = estado();
-  d.productos = d.productos.filter(p => p.id !== pid);
+  const p = estado().productos.find(x => x.id === pid);
+  if(!p) return;
+  p.borrado = true; p.disponible = false; p.destacado = false;
   guardar();
 }
 
@@ -2196,6 +2334,136 @@ function sugerencias(){
 /* ══════════════════════════════════════════════════════════════════════════
    14 · LO QUE VE EL MUNDO
    ═════════════════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════════════════
+   LOS AVISOS · sonido, letrero y notificación del teléfono
+   ──────────────────────────────────────────────────────────────────────────
+   Carlos: «activa alertas sonoras y visuales en el sitio web tmb así como las
+   notificaciones habituales del teléfono».
+
+   · Con la app abierta: suena (WebAudio, sin archivos), vibra y sale un
+     letrero grande arriba. Se nota aunque el teléfono esté sobre la mesa.
+   · Con la app en segundo plano o cerrada: notificación del teléfono, que
+     manda el SERVIDOR (Web Push). En iPhone eso sólo existe si la app está
+     en la pantalla de inicio (iOS 16.4+): es regla de Apple, no nuestra, y
+     la app lo dice con esas palabras en vez de fallar callada.
+   · El navegador no deja sonar nada hasta que la persona toca la pantalla
+     una vez: el primer toque «despierta» el audio.
+   ═════════════════════════════════════════════════════════════════════════ */
+const LLAVE_SONIDO = 'fadori_sonido';
+const Avisos = {
+  _audio: null,
+  sonidoPrendido(){ try{ return localStorage.getItem(LLAVE_SONIDO) !== '0'; }catch(e){ return true; } },
+  ponerSonido(si){ try{ localStorage.setItem(LLAVE_SONIDO, si ? '1' : '0'); }catch(e){} },
+  despertarAudio(){
+    try{
+      const AC = window.AudioContext || window.webkitAudioContext; if(!AC) return;
+      if(!this._audio) this._audio = new AC();
+      if(this._audio.state === 'suspended') this._audio.resume();
+    }catch(e){}
+  },
+  /* tres sonidos, distintos a propósito: el de «ya está» se reconoce sin ver */
+  sonar(tipo){
+    if(!this.sonidoPrendido()) return;
+    this.despertarAudio();
+    const ac = this._audio; if(!ac) return;
+    const notas = { listo: [660, 880, 1175], sigue: [523, 784], falta: [440, 330], nuevo: [880, 1175], cambio: [587, 740], prueba: [660, 880, 1175] }[tipo] || [660, 880];
+    try{
+      const t0 = ac.currentTime + .02;
+      notas.forEach((f, i) => {
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, t0 + i * .16);
+        g.gain.exponentialRampToValueAtTime(0.35, t0 + i * .16 + .02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + i * .16 + .32);
+        o.connect(g); g.connect(ac.destination);
+        o.start(t0 + i * .16); o.stop(t0 + i * .16 + .34);
+      });
+    }catch(e){}
+  },
+  vibrar(p){ try{ if(navigator.vibrate) navigator.vibrate(p); }catch(e){} },
+  /* el letrero grande de arriba. Se quita solo o con un toque. */
+  letrero(tipo, titulo, cuerpo){
+    if(typeof document === 'undefined') return;
+    let n = document.getElementById('fadoriAlerta');
+    if(!n){
+      n = document.createElement('div'); n.id = 'fadoriAlerta'; n.setAttribute('role', 'alert');
+      n.addEventListener('click', () => { n.className = 'alerta-grande'; });
+      document.body.appendChild(n);
+    }
+    n.innerHTML = '<b></b><span></span><small>Toca para cerrar</small>';
+    n.querySelector('b').textContent = titulo; n.querySelector('span').textContent = cuerpo || '';
+    n.className = 'alerta-grande ' + tipo + ' sale';
+    clearTimeout(this._quita);
+    this._quita = setTimeout(() => { n.className = 'alerta-grande ' + tipo; }, tipo === 'listo' ? 15000 : 7000);
+  },
+  /* todo junto: lo que se hace cuando algo de verdad importa */
+  avisar(tipo, titulo, cuerpo, tag){
+    this.letrero(tipo, titulo, cuerpo);
+    this.sonar(tipo);
+    this.vibrar(tipo === 'listo' ? [200, 100, 200, 100, 400] : [120, 80, 120]);
+    /* con la app escondida, la notificación del teléfono (si hay permiso). Si
+       además llega la del servidor, trae el mismo `tag` y la reemplaza: no
+       salen dos. */
+    if(typeof document !== 'undefined' && document.hidden) this.notificar(titulo, cuerpo, tag);
+  },
+  async notificar(titulo, cuerpo, tag){
+    try{
+      if(!('Notification' in window) || Notification.permission !== 'granted') return;
+      const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration();
+      const op = { body: cuerpo || '', tag: tag || 'fadori', renotify: true, icon: 'marca/icon-192.png' };
+      if(reg) await reg.showNotification(titulo, op); else new Notification(titulo, op);
+    }catch(e){}
+  },
+
+  esIOS(){ return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); },
+  instalada(){ try{ return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; }catch(e){ return false; } },
+  /* en qué está: 'activos' · 'faltaPermiso' · 'negados' · 'instalar' (iPhone sin pantalla de inicio) · 'no' */
+  estado(){
+    if(typeof window === 'undefined') return 'no';
+    if(!('Notification' in window)) return this.esIOS() && !this.instalada() ? 'instalar' : 'no';
+    if(Notification.permission === 'denied') return 'negados';
+    if(Notification.permission === 'granted') return 'activos';
+    return 'faltaPermiso';
+  },
+  /* tiene que llamarse desde un toque: es la única forma en que el navegador
+     deja pedir el permiso */
+  async activar(){
+    this.despertarAudio();
+    if(this.estado() === 'instalar') return { ok: false, por: 'instalar' };
+    if(!('Notification' in window)) return { ok: false, por: 'no' };
+    let permiso = Notification.permission;
+    if(permiso === 'default') permiso = await Notification.requestPermission();
+    if(permiso !== 'granted') return { ok: false, por: 'negados' };
+    const push = await this.suscribir();
+    return { ok: true, push };
+  },
+  /* el trabajador de fondo y la suscripción al servidor. Se repite en cada
+     carga si ya hay permiso (la suscripción puede cambiar, o el aparato) */
+  async suscribir(){
+    try{
+      if(!('serviceWorker' in navigator)) return false;
+      const reg = await navigator.serviceWorker.register('sw.js');
+      await navigator.serviceWorker.ready;
+      const api = direccionServidor();
+      if(!api || !('PushManager' in window) || !reg.pushManager) return false;
+      const casa = encodeURIComponent(MotorServidor.casa());
+      const r = await fetch(api + '/api/push/clave?casa=' + casa, { headers: cabezasSync() });
+      const { clave } = await r.json();
+      const bytes = (t) => { const s = String(t).replace(/-/g, '+').replace(/_/g, '/'); const b = atob(s + '==='.slice((s.length + 3) % 4)); return Uint8Array.from(b, c => c.charCodeAt(0)); };
+      let sub = await reg.pushManager.getSubscription();
+      if(!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytes(clave) });
+      const alta = await fetch(api + '/api/push/alta?casa=' + casa, { method: 'POST', headers: cabezasSync(), body: JSON.stringify({ sub: sub.toJSON() }) });
+      return alta.ok;
+    }catch(e){ return false; }
+  },
+};
+/* el primer toque despierta el audio; y si ya había permiso, se re-suscribe */
+if(typeof document !== 'undefined'){
+  const despierta = () => { Avisos.despertarAudio(); document.removeEventListener('pointerdown', despierta, true); };
+  document.addEventListener('pointerdown', despierta, true);
+  try{ if(window.Notification && Notification.permission === 'granted') setTimeout(() => Avisos.suscribir(), 2500); }catch(e){}
+}
+
 const FADORI = {
   /* utilería */
   /* los billetes y monedas con los que de verdad llega un alumno */
@@ -2207,7 +2475,7 @@ const FADORI = {
   DIAS, tocaHoy, menuDelDia, nombreDelDia, cuandoTocaTexto, diaDeHoy,
   tema, ponerTema, esOscuro, aplicarTema, verTurno,
   servidor: direccionServidor, ponerServidor, elegirMotor, sync: MotorServidor, pausarSync, servidorDeFabrica, subirMenu,
-  aparatoId, llaveMostrador, misCodigos, entrarConCodigo,
+  aparatoId, llaveMostrador, misCodigos, entrarConCodigo, avisos: Avisos,
   entrarMostrador: (p) => MotorServidor.entrarMostrador(p), salirMostrador: () => MotorServidor.salirMostrador(),
   pasadorAlServidor: (n) => MotorServidor.pasadorAlServidor(n),
   estadoSync: () => MotorServidor.estado(), probarServidor: (u) => MotorServidor.probar(u), alCambiar: (fn) => MOTOR.alCambiar(fn), motor: () => MOTOR.nombre,
