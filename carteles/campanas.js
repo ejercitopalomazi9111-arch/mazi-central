@@ -246,17 +246,18 @@ export function planTanda(t) {
   const personas = +t.personas || 15, dias = +t.dias || personas, cosa = t.cosa || 'prenda', plural = t.plural || cosa + 's';
   const g = t.genero === 'el' ? 'el' : 'la', un = g === 'el' ? 'un' : 'una', su = 'su';
   const k = `Tanda de ${plural}`, icono = iconoDe(t.cat), pago = pagoDiario(t.precio, personas);
+  const estrena = cosa.startsWith('par de ') ? cosa.slice(7) : cosa;   // «estrena zapatos», no «estrena par de zapatos»
   const base = { kicker: k, cosa, genero: g, personas, dias, icono, ...(t.precio ? { precio: t.precio } : {}) };
   const pasos = [`Apartas uno de los ${personas} lugares`, pago ? `Cada día das ${pesos(pago)}` : 'Cada día das tu parte', `Cada día alguien estrena, hasta que los ${personas} tengan ${su} ${cosa}`];
   const fondo = t.fondo ? [t.fondo] : [];
   const out = [];
   const add = (nombre, formato, estilo, prod, fotos = []) => out.push({ nombre, formato, estilo, fotos, prod: { ...base, ...prod } });
-  add('01-como-funciona', 'feed', 'tanda-como', { frase: `Estrena ${cosa} dando poquito cada día`, pasos, cta: 'Aparta tu lugar por DM' });
+  add('01-como-funciona', 'feed', 'tanda-como', { frase: `Estrena ${estrena} dando poquito cada día`, pasos, cta: 'Aparta tu lugar por DM' });
   add('02-el-numero', 'feed', 'tanda-numero', { sub: pago ? `${pesos(pago)} al día y en ${dias} días todos tienen ${su} ${cosa} de marca` : `Das poquito al día y en ${dias} días todos tienen ${su} ${cosa} de marca`, cta: 'Quiero mi lugar' }, fondo);
   add('03-las-cuentas', 'feed', 'tanda-cuentas', { cta: 'Aparta tu lugar' });
-  add('04-calendario', 'feed', 'tanda-calendario', { frase: `Cada día alguien estrena ${cosa}`, sub: `${dias} días · ${personas} personas · todos con ${su} ${cosa}`, cta: 'Aparta tu lugar por DM' });
+  add('04-calendario', 'feed', 'tanda-calendario', { frase: `Cada día alguien estrena ${estrena}`, sub: `${dias} días · ${personas} personas · todos con ${su} ${cosa}`, cta: 'Aparta tu lugar por DM' });
   add('05-lugares', 'feed', 'tanda-lugares', { frase: `Sólo hay ${personas} lugares`, boleto: 'Tu lugar te espera', cta: 'Aparta el tuyo' }, fondo);
-  add('06-como-funciona', 'historia', 'tanda-como', { frase: `Estrena ${cosa} dando poquito cada día`, pasos, cta: 'Responde «YO» para entrar' });
+  add('06-como-funciona', 'historia', 'tanda-como', { frase: `Estrena ${estrena} dando poquito cada día`, pasos, cta: 'Responde «YO» para entrar' });
   add('07-el-numero', 'historia', 'tanda-numero', { cta: 'Responde para apartar' }, fondo);
   add('08-las-cuentas', 'historia', 'tanda-cuentas', { cta: 'Responde para apartar' });
   add('09-quedan-pocos', 'historia', 'tanda-lugares', { frase: 'Quedan pocos lugares', boleto: '¿Te apuntas?', cta: 'Responde para apartar' }, fondo);
