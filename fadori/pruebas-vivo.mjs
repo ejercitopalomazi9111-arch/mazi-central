@@ -18,6 +18,7 @@
 import { createRequire } from 'module'; import fs from 'fs'; import path from 'path'; import { abrirWS } from './tunel-ws.mjs';
 const require = createRequire('/opt/node22/lib/node_modules/'); const { chromium } = require('playwright');
 const PROD = 'https://mazi-central.palomazi9111.workers.dev', CASA = 'prueba-vivo-' + Date.now();
+const API_LOCAL = process.env.API_LOCAL || '';
 const px = new URL(process.env.HTTPS_PROXY);
 const br = await chromium.launch({ args: process.env.H1 ? ['--disable-http2'] : [], proxy: { server: `${px.protocol}//${px.host}`, username: decodeURIComponent(px.username), password: decodeURIComponent(px.password) } });
 const fallas = []; const ok = (q, c) => { console.log((c ? '  ✓ ' : '  ✗ ') + q); if (!c) fallas.push(q); };
@@ -34,9 +35,26 @@ async function aparato(ruta, w = 390, h = 844, desfase = 0) {
     if (fs.existsSync(f) && fs.statSync(f).isFile()) return route.fulfill({ status: 200, body: fs.readFileSync(f), headers: { 'content-type': T[path.extname(f)] || 'application/octet-stream' } });
     return route.continue();
   });
-  // relevo: el socket del navegador se conecta de verdad al servidor por un túnel (ver tunel.mjs)
+  // con API_LOCAL=http://127.0.0.1:8791 la API va al servidor de `wrangler dev` (para probar
+  // el servidor nuevo ANTES de publicarlo); sin ella, al de producción
+  if (API_LOCAL) await ctx.route(/fadori\.palomazi9111\.workers\.dev\/api\//, async route => {
+    if (ctx._sinRed) return route.abort('internetdisconnected');   // el relevo respeta el «sin señal»
+    const q = route.request(), u = new URL(q.url());
+    const h = Object.assign({}, q.headers()); delete h.host;
+    const r = await fetch(API_LOCAL + u.pathname + u.search, { method: q.method(), headers: h, body: q.method() === 'POST' ? q.postDataBuffer() : undefined });
+    const cuerpo = Buffer.from(await r.arrayBuffer());
+    return route.fulfill({ status: r.status, body: cuerpo, headers: { 'content-type': r.headers.get('content-type') || 'application/json', 'access-control-allow-origin': PROD } });
+  });
+  // relevo: el socket del navegador se conecta de verdad al servidor (por un túnel, ver tunel-ws.mjs)
   await ctx.routeWebSocket(/fadori\.palomazi9111\.workers\.dev\/api\/vivo/, async pagina => {
     try {
+      if (API_LOCAL) {
+        const u = new URL(pagina.url()), real = new WebSocket(API_LOCAL.replace(/^http/, 'ws') + u.pathname + u.search);
+        real.onmessage = e => pagina.send(String(e.data)); real.onclose = () => { try { pagina.close(); } catch (e) {} };
+        await new Promise((ok, mal) => { real.onopen = ok; real.onerror = mal; });
+        pagina.onMessage(m => real.send(String(m))); pagina.onClose(() => real.close());
+        return;
+      }
       const real = await abrirWS(pagina.url(), PROD, m => pagina.send(m), () => { try { pagina.close(); } catch (e) {} });
       pagina.onMessage(m => real.enviar(String(m))); pagina.onClose(() => real.cerrar());
     } catch (e) { console.log('relevo falló', e.message); pagina.close(); }
@@ -53,6 +71,9 @@ async function tarda(pg, fn, arg) {
 }
 const most = await aparato('/fadori/mostrador', 1100, 800, -3000);   // la tablet 3 s atrasada
 const pant = await aparato('/fadori/pantalla', 1280, 720);
+// la cooperativa entra como de verdad: con el pasador, en su pantalla, y el SERVIDOR le da la llave
+await most.fill('#rPase', '1234'); await most.click('#rEntrar');
+ok('el mostrador entra con el pasador y el servidor le da su llave', !!(await most.waitForFunction(() => FADORI.llaveMostrador(), null, { timeout: 10000 }).catch(() => null)));
 await most.waitForTimeout(2500);   // que suba su menú
 const a = await aparato('/fadori/', 390, 844, 120000), b = await aparato('/fadori/');   // A con el reloj 2 min adelantado
 for (const [n, pg] of [['mostrador', most], ['pantalla', pant], ['alumno A', a], ['alumno B', b]])
@@ -109,15 +130,33 @@ ms = await tarda(most, id => !!FADORI.pedido(id), idC); ok(`su pedido llega al m
 ms = await tarda(c, id => FADORI.pedido(id)?.turno != null, idC); ok(`y recibe turno (${ms} ms)`, ms != null && ms < 4000);
 
 console.log('\n7 · sin señal: pide sin internet y sale solo cuando vuelve');
-await b.context().setOffline(true);
+b.context()._sinRed = true; await b.context().setOffline(true);
 const idB2 = await b.evaluate(() => { const yo = FADORI.yo && FADORI.yo(); const al = FADORI.registrar('Alumno B2', '3B'); FADORI.aceptarTerminos(al.codigo); const prod = FADORI.productos(true).find(p => p.disponible); return FADORI.pedir(al.codigo, [{ prod: prod.id, cant: 1 }], {}).id; });
 await b.waitForTimeout(3000);
 ok('sin señal no llega (todavía)', !(await most.evaluate(id => !!FADORI.pedido(id), idB2)));
-await b.context().setOffline(false);
+b.context()._sinRed = false; await b.context().setOffline(false);
 ms = await tarda(most, id => !!FADORI.pedido(id), idB2); ok(`vuelve la señal y llega solo (${ms} ms)`, ms != null && ms < 14000);
 
-console.log('\n8 · pantallas');
-for (const [n, pg] of [['mostrador', most], ['pantalla', pant], ['alumno A', a], ['alumno B', b], ['alumno C', c]]) {
+console.log('\n8 · lo que NO debe pasar');
+ok('el teléfono de A no guarda los nombres de los demás', await a.evaluate(() => !FADORI.estado().pedidos.some(p => /Alumno [BC]/.test(p.nombre || ''))));
+ok('ni sus códigos', await a.evaluate(() => Object.keys(FADORI.estado().alumnos).length === 1));
+ok('ni el pasador del mostrador', await a.evaluate(() => !JSON.stringify(localStorage).includes('fadori_llave_mostrador')));
+const truco = await a.evaluate(async id => { const p = FADORI.pedido(id); if (!p) return 'sin pedido'; p.estado = 'entregado'; p.pagado = 999999; FADORI.guardar(); return 'ok'; }, idA);
+await a.waitForTimeout(1500);
+ok(`A intenta marcarse pagado desde su teléfono: el mostrador no se lo cree (${truco})`, await most.evaluate(id => FADORI.pedido(id).pagado !== 999999, idA));
+const precioA = await a.evaluate(() => { const p = FADORI.productos(true)[0]; p.precio = 1; FADORI.guardar(); return p.id; });
+await a.waitForTimeout(1500);
+ok('A intenta poner un platillo en $0.01: a B no le llega', await b.evaluate(id => FADORI.producto(id).precio !== 1, precioA));
+
+console.log('\n9 · el mismo alumno en otro teléfono, con su código');
+const d = await aparato('/fadori/');
+const codA = await a.evaluate(() => FADORI.yo().codigo);
+const entro = await d.evaluate(async c => { try { const x = await FADORI.entrarConCodigo(c); return x ? x.nombre : null; } catch (e) { return 'error: ' + e.message; } }, codA);
+ok(`entra con el código de A (${entro})`, entro === 'Alumno A');
+ok('y ve sus pedidos', await d.evaluate(() => FADORI.pedidosDe(FADORI.yo().codigo).length > 0));
+
+console.log('\n10 · pantallas');
+for (const [n, pg] of [['mostrador', most], ['pantalla', pant], ['alumno A', a], ['alumno B', b], ['alumno C', c], ['alumno D', d]]) {
   ok(`${n}: sin errores (${pg.errores.slice(0, 2).join(' | ')})`, !pg.errores.length);
   const pr = pg.consola.find(t => /pruebas/.test(t)); if (pr) ok(`${n}: ${pr.replace(/%c| color:.*/g, '')}`, !/✗/.test(pg.consola.join(' ')) && !/color:#FF7A7A/.test(pr));
 }

@@ -375,6 +375,50 @@ try{
 const LLAVE_API   = 'fadori_servidor';   /* la dirección, fuera del documento */
 const LLAVE_SYNC  = 'fadori_sync';       /* (viejo) hasta qué hora ya había mandado */
 const LLAVE_PEND  = 'fadori_pendientes'; /* lo que cambié aquí y falta mandar */
+const LLAVE_APARATO = 'fadori_aparato';   /* quién es este teléfono para el servidor */
+const LLAVE_ADMIN   = 'fadori_llave_mostrador';
+const LLAVE_MIOS    = 'fadori_mios';      /* los alumnos que se dieron de alta o entraron AQUÍ */
+
+/* Cada teléfono tiene un id al azar. Es lo que hace que un alumno sea de su
+   teléfono: el servidor no deja que otro aparato le cancele el pedido, le
+   cambie el nombre o pida a su nombre. */
+function aparatoId(){
+  let v = '';
+  try{ v = localStorage.getItem(LLAVE_APARATO) || ''; }catch(e){}
+  if(!/^[a-f0-9]{32}$/.test(v)){
+    const b = new Uint8Array(16);
+    try{ crypto.getRandomValues(b); }catch(e){ for(let i = 0; i < 16; i++) b[i] = Math.floor(Math.random() * 256); }
+    v = Array.from(b, x => x.toString(16).padStart(2, '0')).join('');
+    try{ localStorage.setItem(LLAVE_APARATO, v); }catch(e){}
+  }
+  return v;
+}
+/* La llave del mostrador la da el SERVIDOR al poner el pasador. Sin ella, lo
+   que se toca en la pantalla de la cooperativa no sale de la tablet. */
+function llaveMostrador(){
+  try{
+    const j = JSON.parse(localStorage.getItem(LLAVE_ADMIN) || 'null');
+    if(j && /^[a-f0-9]{64}$/.test(j.token || '') && (j.vence || 0) > ahora()) return j.token;
+  }catch(e){}
+  return '';
+}
+function cabezasSync(){
+  const h = { 'content-type': 'application/json', 'x-fadori-aparato': aparatoId() };
+  const l = llaveMostrador(); if(l) h['x-fadori-admin'] = l;
+  return h;
+}
+function misCodigos(){
+  try{
+    const v = JSON.parse(localStorage.getItem(LLAVE_MIOS) || 'null');
+    if(Array.isArray(v)) return v;
+    const yo = localStorage.getItem('fadori_yo');
+    return yo ? [yo] : [];
+  }catch(e){ return []; }
+}
+function apuntarMio(cod){
+  const v = misCodigos(); if(v.indexOf(cod) < 0) v.push(cod);
+  try{ localStorage.setItem(LLAVE_MIOS, JSON.stringify(v.slice(-10))); }catch(e){}
+}
 const CAJONES = ['productos', 'alumnos', 'pedidos', 'conteos', 'eventos'];
 
 /* El servidor de fábrica. Antes la dirección sólo se podía pegar a mano en
@@ -432,6 +476,7 @@ function huellaDe(r){
    primera vez que se conecta lo sube entero una vez: precios, agotados,
    platillos propios y ajustes. */
 function subirMenu(){
+  if(!llaveMostrador()) return false;
   const d = estado(), t = ahora(), M = MotorServidor, pend = M._pend();
   pend.productos = pend.productos || {};
   d.productos.forEach(p => { p.t = Math.max(t, (p.t || 0) + 1); pend.productos[p.id] = p.t; });
@@ -533,6 +578,27 @@ const MotorServidor = {
      llegara un registro de un teléfono con el reloj adelantado para que la
      marca brincara al futuro y todo lo de este aparato se diera por mandado
      sin haber salido. Además así no se re-manda lo que llegó de otro lado. */
+  /* Un pedido de ESTE teléfono que el servidor no aceptó se marca cancelado
+     con el motivo, sin volverlo a mandar (si se estampara, iría y vendría). */
+  marcarRechazados(porId){
+    const ids = Object.keys(porId); if(!ids.length) return false;
+    const d = MotorLocal.leer(); if(!d) return false;
+    const mios = misCodigos(), motivo = {
+      tope: 'Ya tienes los pedidos que se permiten por recreo.', agotado: 'Se acabó algo de lo que pediste.',
+      'no existe': 'Ese platillo ya no está en el menú.', ajeno: 'Este teléfono no puede pedir a nombre de ese alumno.',
+      actualiza: 'Actualiza la app y vuelve a pedir.', vacio: 'El pedido estaba vacío.' };
+    let toco = false;
+    d.pedidos.forEach(p => {
+      if(!porId[p.id] || p.turno || mios.indexOf(p.alumno) < 0 || p.estado === 'cancelado') return;
+      p.estado = 'cancelado'; p.cancelado = ahora();
+      p.rechazo = motivo[porId[p.id]] || 'El servidor no lo aceptó.';
+      if(this._huellas && this._huellas.pedidos) this._huellas.pedidos[p.id] = huellaDe(p);
+      toco = true;
+    });
+    if(toco){ MotorLocal.escribir(d); D = d; }
+    return toco;
+  },
+
   porMandar(d){
     const pend = this._pend();
     const cambios = {};
@@ -587,11 +653,20 @@ const MotorServidor = {
       this.ultimoIntento = ahora();
 
       const r = await fetch(api + '/api/sync?casa=' + encodeURIComponent(this.casa()), {
-        method: 'POST', headers: { 'content-type': 'application/json' },
+        method: 'POST', headers: cabezasSync(),
         body: JSON.stringify({ desde: this._reloj, cambios }),
       });
       if(!r.ok) throw new Error('el servidor contestó ' + r.status);
       const res = await r.json();
+
+      /* Lo que el servidor no aceptó. Si es porque falta el pasador (el
+         mostrador sin llave), se queda en la lista hasta que entre. Lo demás
+         no se va a aceptar nunca: se tacha, y si era un pedido de este
+         teléfono se le dice al alumno en vez de dejarlo esperando un turno
+         que no va a llegar. */
+      const rech = {};
+      (res.rechazados || []).forEach(x => { (rech[x.cajon] = rech[x.cajon] || {})[x.id] = x.por || 'no'; });
+      this.faltaPasador = (res.rechazados || []).some(x => x.por === 'pasador');
 
       /* lo que mandé ya está allá: se tacha de la lista. Si mientras viajaba
          se volvió a cambiar (su hora en la lista es más nueva que la que
@@ -599,14 +674,18 @@ const MotorServidor = {
       const pend = this._pend();
       for(const c of CAJONES){
         (cambios[c] || []).forEach(x => {
+          if(rech[c] && rech[c][x.id] === 'pasador') return;
           if(pend[c] && pend[c][x.id] != null && (x.t || 0) >= pend[c][x.id]) delete pend[c][x.id];
         });
       }
-      if(cambios.config && pend.config != null && (cambios.config.t || 0) >= pend.config) delete pend.config;
+      if(cambios.config && pend.config != null && (cambios.config.t || 0) >= pend.config &&
+         !(rech.config && rech.config.config === 'pasador')) delete pend.config;
       this._guardarPend(pend);
+      const tumbados = this.marcarRechazados(rech.pedidos || {});
 
       const cambio = this.mezclar(res.cambios || {});
-      this._reloj = res.reloj || this._reloj;
+      this._reloj = Math.max(this._reloj, res.reloj || 0);
+      if(tumbados) this._avisar();
       this.enLinea = true;
       this._reintento = 2000;
       this.pendientes = 0;
@@ -652,7 +731,7 @@ const MotorServidor = {
   },
 
   /* ── Meter lo que llegó, sin pisar lo que es más nuevo aquí ─────────── */
-  mezclar(cambios){
+  mezclar(cambios, forzar){
     const d = MotorLocal.leer(); if(!d) return false;
     let tocado = false;
 
@@ -662,7 +741,7 @@ const MotorServidor = {
         if(!r || !r.id) continue;
         if(c === 'alumnos'){
           const v = d.alumnos[r.id];
-          if(!v || (r.t || 0) > (v.t || 0)){
+          if(!v || forzar || (r.t || 0) > (v.t || 0)){
             const copia = this.sanear('alumnos', r); delete copia.id;
             d.alumnos[r.id] = copia; tocado = true;
           }
@@ -672,12 +751,16 @@ const MotorServidor = {
         const i = d[c].findIndex(x => x && x.id === r.id);
         const copia = this.sanear(c, r);
         if(i < 0){ d[c].push(copia); tocado = true; }
-        else if((r.t || 0) > (d[c][i].t || 0)){ d[c][i] = copia; tocado = true; }
+        else if(forzar || (r.t || 0) > (d[c][i].t || 0)){ d[c][i] = copia; tocado = true; }
       }
     }
     if(cambios.config && (cambios.config.t || 0) > (d.config.t || 0)){
       const cc = Object.assign({}, cambios.config); delete cc._r;
-      d.config = Object.assign({}, CONFIG_BASE, cc); tocado = true;
+      /* el pasador ya no viaja: el de esta tablet se queda como estaba */
+      const pase = d.config.pasador;
+      d.config = Object.assign({}, CONFIG_BASE, cc);
+      if(!('pasador' in cc) && pase) d.config.pasador = pase;
+      tocado = true;
     }
 
     if(tocado){
@@ -736,17 +819,33 @@ const MotorServidor = {
     const api = direccionServidor();
     if(!api || typeof WebSocket === 'undefined') return;
     try{ if(this._ws) this._ws.close(); }catch(e){}
-    const url = api.replace(/^http/, 'ws') + '/api/vivo?casa=' + encodeURIComponent(this.casa());
+    const l = llaveMostrador();
+    const url = api.replace(/^http/, 'ws') + '/api/vivo?casa=' + encodeURIComponent(this.casa()) +
+      '&aparato=' + aparatoId() + (l ? '&admin=' + l : '');
     try{
       const ws = new WebSocket(url);
       this._ws = ws;
       ws.onmessage = (e) => {
         if(e.data === 'pong') return;
         let m = null; try{ m = JSON.parse(e.data); }catch(err){ return; }
-        if(m && m.tipo === 'reloj' && m.reloj > this._reloj) this.empujar();
+        if(!m) return;
+        /* el servidor manda el cambio mismo, ya recortado a lo que este
+           aparato puede ver: no hace falta volver a preguntar. Si se perdió
+           alguno (el reloj no cuadra), entonces sí se pregunta. */
+        if(m.tipo === 'cambios'){
+          if(m.antes === this._reloj){
+            const cambio = this.mezclar(m.cambios || {});
+            this._reloj = m.reloj;
+            if(cambio) this._avisar();
+          } else if(m.reloj > this._reloj) this.empujar();
+          return;
+        }
+        if(m.tipo === 'reloj' && m.reloj > this._reloj) this.empujar();
       };
       ws.onopen  = () => { this.enLinea = true; this.empujar(); };
-      ws.onclose = () => { this.enLinea = false; clearTimeout(this._reconecta);
+      ws.onclose = () => {
+        if(this._ws !== ws) return;          /* uno viejo que se cerró al cambiarlo: no se reconecta */
+        this.enLinea = false; clearTimeout(this._reconecta);
         this._reconecta = setTimeout(() => this.enchufar(), 4000); };
       ws.onerror = () => { try{ ws.close(); }catch(e){} };
       clearInterval(this._latido);
@@ -766,9 +865,79 @@ const MotorServidor = {
        teléfono. */
     if(!this._huellas){ const d0 = MotorLocal.leer(); if(d0) this.estampar(d0); }
     this.enchufar();
+    /* Con el socket abierto, preguntar cada 15 s sobra: los cambios llegan
+       solos. Se pregunta cada 2 min por si acaso, cada 15 s sólo si el socket
+       no pasa, y NADA con la app en segundo plano. Con 80 teléfonos, eso es
+       la diferencia entre caber en el plan gratis o acabárselo en dos recreos. */
     clearInterval(this._ronda);
-    this._ronda = setInterval(() => this.empujar(), 15000);
+    this._ronda = setInterval(() => {
+      if(typeof document !== 'undefined' && document.hidden) return;
+      const vivo = this._ws && this._ws.readyState === 1;
+      if(vivo && ahora() - (this.ultimoIntento || 0) < 120000) return;
+      this.empujar();
+    }, 15000);
+    if(typeof document !== 'undefined' && !this._alVolver){
+      this._alVolver = () => {
+        if(document.hidden) return;
+        if(!this._ws || this._ws.readyState > 1) this.enchufar();
+        this.empujar();
+      };
+      document.addEventListener('visibilitychange', this._alVolver);
+    }
     this.empujar();
+  },
+
+  /* ── el mostrador entra: el pasador lo revisa el SERVIDOR ───────────── */
+  async entrarMostrador(pase){
+    const api = direccionServidor();
+    let r;
+    try{
+      r = await fetch(api + '/api/entrar?casa=' + encodeURIComponent(this.casa()), {
+        method: 'POST', headers: cabezasSync(), body: JSON.stringify({ pasador: String(pase || '') }) });
+    }catch(e){ return { sinRed: true }; }
+    const j = await r.json().catch(() => ({}));
+    if(r.status === 200 && j.token){
+      try{ localStorage.setItem(LLAVE_ADMIN, JSON.stringify({ token: j.token, vence: j.vence })); }catch(e){}
+      this.enchufar(); this.empujar();
+      return { ok: true };
+    }
+    return { ok: false, error: j.error || ('El servidor contestó ' + r.status) };
+  },
+  async salirMostrador(){
+    const api = direccionServidor(), l = llaveMostrador();
+    try{ localStorage.removeItem(LLAVE_ADMIN); }catch(e){}
+    if(api && l){ try{ await fetch(api + '/api/salir?casa=' + encodeURIComponent(this.casa()),
+      { method: 'POST', headers: Object.assign(cabezasSync(), { 'x-fadori-admin': l }), body: '{}' }); }catch(e){} }
+    this.enchufar();
+  },
+  async pasadorAlServidor(n){
+    const api = direccionServidor();
+    if(!api) return { ok: true };
+    if(!llaveMostrador()) return { ok: false, error: 'Entra con el pasador actual para poder cambiarlo.' };
+    try{
+      const r = await fetch(api + '/api/pasador?casa=' + encodeURIComponent(this.casa()),
+        { method: 'POST', headers: cabezasSync(), body: JSON.stringify({ nuevo: String(n) }) });
+      const j = await r.json().catch(() => ({}));
+      return r.ok ? { ok: true } : { ok: false, error: j.error || 'No se pudo.' };
+    }catch(e){ return { ok: false, error: 'Sin conexión: el pasador no se cambió en el servidor.' }; }
+  },
+  /* «Ya tenías código»: el alumno ya no está en este teléfono, así que se le
+     pregunta al servidor (que pone un tope a los intentos) */
+  async porCodigo(cod){
+    const api = direccionServidor();
+    let r;
+    try{
+      r = await fetch(api + '/api/codigo?casa=' + encodeURIComponent(this.casa()),
+        { method: 'POST', headers: cabezasSync(), body: JSON.stringify({ codigo: cod }) });
+    }catch(e){ throw new Error('Sin conexión. Inténtalo con internet.'); }
+    const j = await r.json().catch(() => ({}));
+    if(r.status === 429) throw new Error(j.error || 'Demasiados intentos. Espera unos minutos.');
+    if(r.status !== 200 || !j.alumno) return null;
+    const a = Object.assign({}, j.alumno, { t: j.alumno.t || ahora() });
+    /* forzado: este teléfono ya tenía esos pedidos SIN nombre (como ve los de
+       todos), con la misma hora; la versión completa tiene que ganar */
+    this.mezclar({ alumnos: [a], pedidos: j.pedidos || [] }, true);
+    return a;
   },
 };
 
@@ -892,8 +1061,39 @@ function cargar(){
   const antes = migrar(D);
   /* si de verdad se migró, se guarda: si no, cada carga vuelve a hacerlo */
   if(antes < 5){ try{ MOTOR.escribir(D); }catch(e){} }
+  if(!limpiadoLocal){ limpiadoLocal = true; if(limpiarLocal(D)) MotorLocal.escribir(D); }
   arrancarSync();
   return D;
+}
+
+/* El teléfono no tiene por qué guardar lo de los demás, ni para siempre. En
+   el de un alumno se queda SU gente, la fila de hoy sin nombres y el menú;
+   en el mostrador, dos meses. Antes cada teléfono traía los nombres y los
+   códigos de toda la escuela (y con ellos, cómo hacerse pasar por cualquiera),
+   y la memoria del aparato se llenaba en un par de meses. Va ANTES de la foto
+   de la sincronía, para que borrar no cuente como un cambio que mandar. */
+let limpiadoLocal = false;
+function limpiarLocal(d){
+  if(MOTOR.nombre !== 'servidor') return false;
+  const t = ahora(), hoy = new Date(t).toDateString();
+  const antesP = d.pedidos.length, antesE = d.eventos.length;
+  if(llaveMostrador()){
+    d.pedidos = d.pedidos.filter(p => (p.creado || 0) > t - 60 * 864e5);
+    return d.pedidos.length !== antesP;
+  }
+  const mios = misCodigos();
+  let toco = false;
+  Object.keys(d.alumnos).forEach(k => { if(mios.indexOf(k) < 0){ delete d.alumnos[k]; toco = true; } });
+  d.pedidos = d.pedidos.filter(p => mios.indexOf(p.alumno) >= 0
+    ? (p.creado || 0) > t - 30 * 864e5
+    : new Date(p.creado || 0).toDateString() === hoy);
+  d.pedidos.forEach(p => {
+    if(mios.indexOf(p.alumno) >= 0 || !p.nombre || p.nombre === 'Sin nombre') return;
+    p.nombre = 'Sin nombre'; p.grupo = ''; p.alumno = null; p.nota = ''; toco = true;
+  });
+  d.eventos = d.eventos.filter(e => (e.t || 0) > t - 3 * 864e5);
+  if(d.conteos.length){ d.conteos = []; toco = true; }
+  return toco || d.pedidos.length !== antesP || d.eventos.length !== antesE;
 }
 
 /* la sincronía se prende una sola vez, y sólo si hay dirección guardada */
@@ -962,6 +1162,13 @@ function pasadorOk(intento){
   renovarPase();
   return true;
 }
+/* el pasador que el servidor aceptó se guarda en la tablet para poder entrar
+   sin internet; se escribe directo, sin contar como cambio que mandar */
+function recordarPasador(n){
+  const d = estado(); d.config.pasador = String(n);
+  if(MotorServidor._huellas) MotorServidor._huellaConfig = huellaDe(d.config);
+  MotorLocal.escribir(d);
+}
 function renovarPase(){
   try{ localStorage.setItem(LLAVE_PASE, String(ahora())); }catch(e){}
 }
@@ -1014,6 +1221,7 @@ function nuevaPersona(nombre, grupo){
 function registrar(nombre, grupo){
   const a = nuevaPersona(nombre, grupo);
   try{ localStorage.setItem(LLAVE_YO, a.codigo); }catch(e){}
+  apuntarMio(a.codigo);
   return a;
 }
 
@@ -1049,7 +1257,18 @@ function entrarComo(cod){
   const a = d.alumnos[String(cod||'').toUpperCase()];
   if(!a) return null;
   try{ localStorage.setItem(LLAVE_YO, a.codigo); }catch(e){}
+  apuntarMio(a.codigo);
   return a;
+}
+/* con servidor, el alumno de otro teléfono no está aquí: se le pregunta */
+async function entrarConCodigo(cod){
+  const c = String(cod || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const aqui = entrarComo(c);
+  if(aqui || MOTOR.nombre !== 'servidor') return aqui;
+  const a = await MotorServidor.porCodigo(c);
+  if(!a) return null;
+  D = MotorLocal.leer() || D;
+  return entrarComo(c);
 }
 
 function salir(){ try{ localStorage.removeItem(LLAVE_YO); }catch(e){} }
@@ -1988,6 +2207,9 @@ const FADORI = {
   DIAS, tocaHoy, menuDelDia, nombreDelDia, cuandoTocaTexto, diaDeHoy,
   tema, ponerTema, esOscuro, aplicarTema, verTurno,
   servidor: direccionServidor, ponerServidor, elegirMotor, sync: MotorServidor, pausarSync, servidorDeFabrica, subirMenu,
+  aparatoId, llaveMostrador, misCodigos, entrarConCodigo,
+  entrarMostrador: (p) => MotorServidor.entrarMostrador(p), salirMostrador: () => MotorServidor.salirMostrador(),
+  pasadorAlServidor: (n) => MotorServidor.pasadorAlServidor(n),
   estadoSync: () => MotorServidor.estado(), probarServidor: (u) => MotorServidor.probar(u), alCambiar: (fn) => MOTOR.alCambiar(fn), motor: () => MOTOR.nombre,
   /* quién es */
   registrar, nuevaPersona, buscarPersonas, yo, entrarComo, salir, aceptarTerminos,
@@ -2006,7 +2228,7 @@ const FADORI = {
   /* medición */
   contarFila, resumenDelDia, curvaDeFila, csvDePedidos, csvDeConteos, bajarCSV, cerrarCiclo,
   /* el pasador */
-  pasadorOk, pasoElPasador, cerrarMostrador, cambiarPasador, renovarPase, PASE_DURA,
+  pasadorOk, pasoElPasador, cerrarMostrador, cambiarPasador, renovarPase, recordarPasador, PASE_DURA,
   /* cerebro */
   opcionesPara, sugerenciasPara, misNumeros, sugerir, sugerencias,
   /* para las pruebas */

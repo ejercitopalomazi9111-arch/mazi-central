@@ -302,6 +302,32 @@
       "vecinas": [
         "servidor-que-nadie-conecta"
       ]
+    },
+    {
+      "id": "servidor-que-le-cree-al-telefono",
+      "titulo": "Un servidor de sincronía que acepta lo que le manden es una puerta abierta, aunque «nadie lo sepa»",
+      "gravedad": "alta",
+      "sintoma": "En Fadori, /api/todo sin contraseña devolvía el pasador del mostrador y los nombres y códigos de toda la escuela; cualquiera podía poner un platillo en $0, marcar pagado el pedido de otro, colarse con creado=0 o mandar 50 pedidos de un jalón. 30 de 42 ataques pasaban.",
+      "causa": "El diseño era «último en escribir gana» para TODO y para TODOS: el servidor sólo repartía turnos. El pasador vivía en la configuración que se sincroniza a cada teléfono, y cada teléfono recibía los datos de todos.",
+      "porque": "Se diseñó para que nada se perdiera (sincronía) y no para que nadie hiciera trampa; el pasador era «contra el alumno curioso». En una escuela con 80 alumnos con teléfono, el curioso abre las herramientas del navegador.",
+      "arreglo": "servidor/src/index.js: llave de mostrador emitida por /api/entrar; id de aparato dueño de su alumno; lista blanca de lo que un alumno puede cambiar; turno, total, hora, anticipado y pagado los pone el servidor; vista recortada por quién pregunta; topes por alumno, aparato, IP y escuela; tamaño de cuerpo; almacenamiento por registro con limpieza. ataques.mjs lo prueba (42/42) junto con 160 pedidos simultáneos del mismo wifi.",
+      "comoCazarlo": "cd servidor && npx wrangler dev --port 8791 --local; node ataques.mjs. Y la pregunta: ¿qué devuelve esto si lo llamo con curl sin nada?",
+      "consejo": "Todo lo que el teléfono manda es una sugerencia. El servidor decide lo que cuesta dinero o lugar en la fila, y cada quien ve sólo lo suyo.",
+      "salioDe": "fadori · «prepara el servidor y la app para ataques de pendejos», 9 de octubre",
+      "senales": [
+        "ataque",
+        "muchos pedidos",
+        "seguridad",
+        "pasador",
+        "hackear",
+        "trampa",
+        "inundar",
+        "servidor"
+      ],
+      "vecinas": [
+        "servidor-que-nadie-conecta",
+        "gana-el-reloj-equivocado"
+      ]
     }
   ]
 }
