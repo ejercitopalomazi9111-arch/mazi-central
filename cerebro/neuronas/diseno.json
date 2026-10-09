@@ -176,6 +176,27 @@
         "los puntitos no se mueven"
       ],
       "vecinas": []
+    },
+    {
+      "id": "max-height-no-agranda",
+      "titulo": "max-height:100% encoge lo grande pero no agranda lo chico",
+      "gravedad": "media",
+      "sintoma": "En las historias de 1080×1920 la sudadera recortada salía chiquita, con medio lienzo vacío, y en las publicaciones de 4:5 se veía bien.",
+      "causa": "La imagen tenía max-width y max-height: 100%. Eso sólo pone un TOPE. Un recorte de 600 px se quedaba en 600 px aunque su caja midiera 1,100.",
+      "porque": "En el formato chico la caja era más chica que la foto y el tope sí trabajaba, así que se veía «bien» y parecía que la regla llenaba la caja.",
+      "arreglo": "width/height: 100% con object-fit: contain. Así la foto llena su caja sin deformarse, sea más grande o más chica que ella.",
+      "comoCazarlo": "Probar el mismo diseño con una imagen MÁS CHICA que su caja, y verlo en el formato más grande que se vaya a usar.",
+      "consejo": "max-* es un techo, no una medida.",
+      "salioDe": "herramientas/moda · anuncios de All's fashion",
+      "senales": [
+        "la foto sale chiquita",
+        "sobra espacio",
+        "en historia se ve chica",
+        "no llena"
+      ],
+      "vecinas": [
+        "ver-la-pantalla"
+      ]
     }
   ]
 }
