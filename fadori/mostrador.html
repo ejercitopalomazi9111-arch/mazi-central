@@ -304,7 +304,7 @@ function tono(cat){
 function mini(p){
   const c = tono(p ? p.cat : '');
   return '<span class="mini" style="--t1:'+c.tono+'; --t2:'+c.tono+'88">'+
-    (p && p.foto ? '<img src="'+esc(p.foto)+'" alt="">' : c.emoji)+'</span>';
+    (p && p.foto ? '<img src="'+esc(p.foto)+'" alt="">' : (p ? F.emojiDe(p) : c.emoji))+'</span>';
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -1330,7 +1330,7 @@ function pintarSinLlave(){
 setInterval(pintarSinLlave, 4000);
 function subirMenuUnaVez(){
   if(F.motor() !== 'servidor' || !F.llaveMostrador()) return;
-  const marca = 'fadori_menu_subido3:' + F.sync.casa();   /* 3 = el menú de verdad (9 de octubre) */
+  const marca = 'fadori_menu_subido4:' + F.sync.casa();   /* 3 = el menú de verdad · 4 = sus fotos parejas (9 de octubre) */
   try{ if(localStorage.getItem(marca)) return; }catch(e){ return; }
   if(F.subirMenu() !== false){ try{ localStorage.setItem(marca, String(Date.now())); }catch(e){} }
 }

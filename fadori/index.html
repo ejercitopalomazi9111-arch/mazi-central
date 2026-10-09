@@ -364,7 +364,7 @@ function fichaPlato(p){
       '<button class="foto" type="button" data-sumar="'+p.id+'"'+(agotado?' disabled':'')+
         ' style="--t1:'+t.t1+'; --t2:'+t.t2+'; --tb:'+t.borde+'"'+
         ' aria-label="Agregar '+esc(p.nombre)+'">'+
-        (p.foto ? '<img src="'+esc(p.foto)+'" alt="">' : t.emoji)+
+        (p.foto ? '<img src="'+esc(p.foto)+'" alt="">' : F.emojiDe(p))+
       '</button>'+
       /* el "+" cuelga de la FOTO, no de la tarjeta: anclado a la tarjeta se
          montaba encima del nombre en cuanto el texto crecía */
@@ -571,7 +571,7 @@ function cartelFalta(p){
           '<button class="falta-op" type="button" data-cambiar="'+p.id+':'+f.i+':'+c.id+'">'+
             '<span class="fo-i">'+(c.foto
               ? '<img src="'+esc(c.foto)+'" alt="">'
-              : (F.CATEGORIAS.find(x=>x.id===c.cat)||{}).emoji || '🍽️')+'</span>'+
+              : F.emojiDe(c))+'</span>'+
             '<span class="fo-n">'+esc(c.nombre)+'</span>'+
             '<span class="fo-p">'+F.pesos(c.precio)+'</span>'+
           '</button>').join('') +'</div>'
@@ -1070,7 +1070,7 @@ function abrirPlatillo(pid){
     $('#hojitaC').innerHTML =
       '<div class="fic-foto" style="--t1:'+mezcla(c.tono,'#FFFDF9',.84)+
         '; --t2:'+mezcla(c.tono,'#FFFDF9',.66)+'">'+
-        (p.foto ? '<img src="'+esc(p.foto)+'" alt="">' : c.emoji)+'</div>'+
+        (p.foto ? '<img src="'+esc(p.foto)+'" alt="">' : F.emojiDe(p))+'</div>'+
       '<div class="fic-precio">'+F.pesos(p.precio)+'</div>'+
       (p.desc ? '<p class="fic-desc">'+esc(p.desc)+'</p>' : '')+
 
@@ -1149,7 +1149,7 @@ function pintarCarrito(){
         return '<div class="carro-linea">'+
           '<span class="carro-foto" style="--t1:'+mezcla(c.tono,'#FFFDF9',.84)+
             '; --t2:'+mezcla(c.tono,'#FFFDF9',.66)+'">'+
-            (p.foto ? '<img src="'+esc(p.foto)+'" alt="">' : c.emoji)+'</span>'+
+            (p.foto ? '<img src="'+esc(p.foto)+'" alt="">' : F.emojiDe(p))+'</span>'+
           '<span class="carro-que">'+
             '<b>'+esc(p.nombre)+'</b>'+
             '<span class="carro-precio">'+F.pesos(p.precio * r.cant)+'</span>'+
@@ -1179,7 +1179,7 @@ function pintarCarrito(){
           return '<div class="llevate-uno">'+
             '<span class="llevate-foto" style="--t1:'+mezcla(c.tono,'#FFFDF9',.84)+
               '; --t2:'+mezcla(c.tono,'#FFFDF9',.66)+'">'+
-              (p.foto ? '<img src="'+esc(p.foto)+'" alt="">' : c.emoji)+
+              (p.foto ? '<img src="'+esc(p.foto)+'" alt="">' : F.emojiDe(p))+
               '<button class="mas-flota" type="button" data-csug="'+p.id+'"'+
                 ' aria-label="Agregar '+esc(p.nombre)+'">+</button>'+
             '</span>'+
@@ -1655,7 +1655,7 @@ arrancar();
     ok('pero NO le pisa la foto que la cooperativa ya había puesto',
        viejo.productos[1].foto === 'una-suya.jpg');
     ok('y la migración deja el archivo marcado, para no repetirla',
-       viejo.version === 6);
+       viejo.version === 7);
     ok('el platillo de arranque toma su id de fábrica, igual en todos los aparatos',
        viejo.productos[0].id === 'pb-pozole' && viejo.productos[1].id === 'v2');
     ok('y el pedido que lo nombraba lo sigue nombrando', (function(){
@@ -1672,6 +1672,16 @@ arrancar();
     ok('el menú de verdad entra completo', ['pb-banderilla','pb-takis-fuego','pb-coca-cola-600-ml','pb-orden-de-3-tacos-de-bistec']
        .every(id => viejo.productos.some(p => p.id === id && !p.borrado)));
     ok('y lo de la cooperativa va después del menú', viejo.productos[1].orden >= 40);
+    ok('6 → 7: la foto nuestra se cambia por la pareja, la que subió la cooperativa NO', (function(){
+      const v = { version:6, config:{}, alumnos:{}, eventos:[], conteos:[], pedidos:[], productos:[
+        { id:'pb-takis-fuego', nombre:'Takis Fuego', cat:'botana', precio:2500, foto:'fotos/cafeteria/takis.jpg', t:5 },
+        { id:'pb-banderilla', nombre:'Banderilla', cat:'antojo', precio:4500, foto:'data:image/jpeg;base64,AAAA', t:5 }] };
+      F._migrar(v);
+      return v.productos[0].foto === 'fotos/menu/takis.jpg' && v.productos[0].t > 5 &&
+             v.productos[1].foto === 'data:image/jpeg;base64,AAAA' && v.productos[1].t === 5;
+    })());
+    ok('sin foto, cada platillo trae SU dibujito (la pizza no sale con un taco)',
+       F.emojiDe({ id:'pb-pizza-individual', cat:'antojo' }) === '🍕' && F.emojiDe({ id:'otro', cat:'antojo' }) === '🌮');
     ok('lo que ya estaba con el mismo nombre toma el precio real (torta de milanesa a $50)', (function(){
       const v = { version:5, config:{}, alumnos:{}, eventos:[], conteos:[], pedidos:[],
         productos:[{ id:'pb-torta-de-milanesa', nombre:'Torta de milanesa', cat:'torta', precio:3800, foto:'fotos/torta-milanesa.jpg', t:5 }] };
