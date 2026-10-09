@@ -170,6 +170,9 @@
       marcaste a cada platillo — aquí no se captura nada, sólo se revisa.</p>
     <div class="pila" id="laSemana"></div>
 
+    <h2>Sonido y notificaciones</h2>
+    <div id="avisosMostrador"></div>
+
     <h2>Cómo se ve esta pantalla</h2>
     <p class="sub">Es de esta tablet, no de la cuenta. En <b>automático</b> sigue al
       aparato. De noche o en un cuarto oscuro, la oscura cansa menos la vista.</p>
@@ -972,6 +975,7 @@ const PERILLAS = [
 ];
 
 function pintarAjustes(){
+  pintarAvisosMostrador();
   const c = F.estado().config;
   $('#aRecreo').value = c.recreoInicia;
   $('#aMinutos').value = c.recreoMinutos;
@@ -1199,8 +1203,75 @@ function pintarReloj(){
 setInterval(pintarReloj, 1000);
 pintarReloj();
 
-F.alCambiar(() => { F.cargar(); pintar(); });
-setInterval(() => { F.cargar(); pintar(); }, 4000);
+F.alCambiar(() => { F.cargar(); pintar(); vigilarCola(); });
+setInterval(() => { F.cargar(); pintar(); vigilarCola(); }, 4000);
+
+/* ══════════════════════════════════════════════════════════════════════
+   LOS AVISOS DEL MOSTRADOR
+   En el recreo nadie está viendo la tablet: está despachando. Lo que cambió
+   en la fila tiene que oírse y verse de lejos.
+   · pedido nuevo ......... sonido y letrero naranja («3 pedidos nuevos» si
+                            llegan juntos, no tres letreros)
+   · escogió otra cosa .... cuando un alumno resuelve lo que se acabó
+   · canceló / lo dejó para mañana
+   · va en camino
+   La primera pasada sólo toma nota. Con la tablet bloqueada o la pestaña
+   escondida, suena la notificación que manda el servidor.
+   ═════════════════════════════════════════════════════════════════════ */
+let vistosM = null;
+function vigilarCola(){
+  if(!$('#reja') || !$('#reja').hidden) { vistosM = null; return; }   /* con la reja puesta, nada */
+  const hoy = F.estado().pedidos || [], ahora = {};
+  for(const p of hoy) ahora[p.id] = { estado: p.estado, falta: F.faltantesDe(p).length, camino: p.enCamino || 0 };
+  if(!vistosM){ vistosM = ahora; return; }
+  const nuevos = [], otros = [];
+  for(const p of hoy){
+    const a = vistosM[p.id], h = ahora[p.id], n = 'Turno ' + F.verTurno(p), quien = p.nombre || '';
+    if(!a){ if(p.estado === 'en_cola' && p.origen !== 'mostrador') nuevos.push(p); continue; }
+    if(h.estado !== a.estado && h.estado === 'cancelado' && !p.porFalta) otros.push(['falta', n + ' canceló', quien]);
+    else if(h.estado !== a.estado && h.estado === 'apartado') otros.push(['cambio', n + ' lo dejó para mañana', quien]);
+    else if(a.falta > 0 && h.falta === 0 && F.VIVOS.indexOf(h.estado) >= 0) otros.push(['cambio', n + ' escogió otra cosa', quien + ' · revisa su pedido']);
+    if(h.camino && !a.camino && F.VIVOS.indexOf(h.estado) >= 0) otros.push(['cambio', n + ' va en camino', quien]);
+  }
+  vistosM = ahora;
+  if(nuevos.length === 1){
+    const p = nuevos[0];
+    F.avisos.avisar('nuevo', 'Nuevo pedido · Turno ' + F.verTurno(p), (p.nombre || '') + (p.grupo ? ' · ' + p.grupo : ''), 'nuevo-' + p.id);
+  } else if(nuevos.length > 1){
+    F.avisos.avisar('nuevo', nuevos.length + ' pedidos nuevos', 'Turnos ' + nuevos.map(p => F.verTurno(p)).join(', '), 'nuevos');
+  } else if(otros.length){
+    const [tipo, t, c] = otros[otros.length - 1];
+    F.avisos.avisar(tipo, otros.length > 1 ? t + ' (y ' + (otros.length - 1) + ' cambio' + (otros.length > 2 ? 's' : '') + ' más)' : t, c, 'cambio');
+  }
+}
+
+/* ── el sonido y las notificaciones, en Ajustes ── */
+function pintarAvisosMostrador(){
+  const caja = $('#avisosMostrador'); if(!caja) return;
+  const est = F.avisos.estado(), son = F.avisos.sonidoPrendido();
+  const txt = {
+    activos: '<b>Notificaciones prendidas.</b> Aunque la tablet esté bloqueada, le suena cuando entra un pedido.',
+    faltaPermiso: '<b>Notificaciones apagadas.</b> Con la pantalla abierta suena igual; para que suene bloqueada, actívalas.',
+    negados: '<b>Las bloquearon en este aparato.</b> Se prenden en los ajustes del navegador (Notificaciones → permitir).',
+    instalar: '<b>En iPad o iPhone, agrégala a inicio</b> (Compartir → Agregar a inicio) y ábrela desde ahí: Apple sólo deja notificar así.',
+    no: 'Este navegador no deja notificar. Con la pantalla abierta suena igual.',
+  }[est];
+  const html = '<p class="sub" style="margin:0 0 10px">'+txt+'</p><div class="chips">'+
+    (est === 'faltaPermiso' ? '<button class="btn" type="button" data-avm="activar">🔔 Activar notificaciones</button>' : '')+
+    '<button class="chip" type="button" data-avm="sonido" aria-pressed="'+son+'">'+(son ? '🔊 Sonido prendido' : '🔇 Sonido apagado')+'</button>'+
+    '<button class="chip" type="button" data-avm="probar">Probar sonido</button></div>';
+  if(caja.innerHTML !== html) caja.innerHTML = html;
+}
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-avm]'); if(!b) return;
+  if(b.dataset.avm === 'activar'){
+    b.disabled = true;
+    const r = await F.avisos.activar();
+    aviso(r.ok ? (r.push ? 'Listo: suena aunque la tablet esté bloqueada.' : 'Listo: suena con la pantalla abierta.') : 'No se dio el permiso.', r.ok ? 'bueno' : 'malo');
+  } else if(b.dataset.avm === 'sonido') F.avisos.ponerSonido(!F.avisos.sonidoPrendido());
+  else F.avisos.avisar('nuevo', 'Así suena un pedido nuevo', 'Turno 12 · Pao L · 3B', 'prueba');
+  pintarAvisosMostrador();
+});
 /* ── la reja ── */
 /* Con servidor, entrar es pedirle la llave AL SERVIDOR: es lo único que deja
    que lo que se haga aquí llegue a los teléfonos. Sin internet se puede

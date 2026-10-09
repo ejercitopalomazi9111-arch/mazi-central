@@ -183,6 +183,7 @@
       <button class="btn chico" id="bNoPuedo" type="button">Hoy no puedo ir</button>
     </div>
     <button class="btn ancho" id="bVerMenu" type="button" style="margin-top:16px">Pedir algo más</button>
+    <div class="donde-avisos" style="margin-top:20px"></div>
   </section>
 
   <!-- ══════════ LO MÍO · F41 ══════════ -->
@@ -211,6 +212,9 @@
       <b>Se guardan sólo en este teléfono</b> — la cooperativa no las ve y no salen
       en ninguna lista. Aun así, si tu alergia es seria, pregúntales antes de pedir.</p>
     <div class="chips" id="misAlergias"></div>
+
+    <h2>Avisos</h2>
+    <div class="donde-avisos"></div>
 
     <h2>Cómo se ve</h2>
     <p class="sub">Es de este teléfono, no de tu cuenta. En <b>automático</b> se pone
@@ -1313,7 +1317,7 @@ $('#bNoPuedo').addEventListener('click', () => {
   preguntar({ titulo:'¿Cancelamos el pedido?',
     texto:'La cooperativa ya no lo prepara y pierdes tu turno.',
     si:'Sí, cancélalo', no:'No, déjalo',
-    hecho:() => { F.cancelar(miPedido.id, 'alumno'); pintar();
+    hecho:() => { yoCancele.add(miPedido.id); F.cancelar(miPedido.id, 'alumno'); pintar();
       aviso('Pedido cancelado.'); } });
 });
 
@@ -1426,43 +1430,99 @@ $('#bSoporte').addEventListener('click', () => {
    ═════════════════════════════════════════════════════════════════════ */
 /* F45 · si se acaba algo mío mientras ando en otra pantalla, me entero AHÍ.
    Enterarse al llegar al mostrador es justo lo que estamos arreglando. */
-let faltaAvisada = 0;
-F.alCambiar(() => {
-  F.cargar(); pintar();
-  const f = miFalta();
-  if(f && f.avisoFalta.t !== faltaAvisada){
-    faltaAvisada = f.avisoFalta.t;
-    if(pantalla !== 'turno'){
-      aviso('Se acabó '+f.avisoFalta.nombres.join(' y ')+'. Toca "Mi turno".', 'malo');
-      vibra([30,60,30]);
-    }
-  }
-});
-setInterval(() => { if(pantalla === 'turno' || pantalla === 'menu'){ F.cargar(); pintar(); } }, 5000);
+F.alCambiar(() => { F.cargar(); pintar(); vigilarMios(); });
+setInterval(() => { if(pantalla === 'turno' || pantalla === 'menu'){ F.cargar(); pintar(); } vigilarMios(); }, 3000);
 /* pintarMenu sólo reconstruye si el catálogo cambió, así que este
    temporizador ya no le da el tirón a la rejilla cada cinco segundos */
 
-/* F11 · el aviso. Si el navegador no lo permite, NO pasa nada: el turno se
-   ve en pantalla igual y la señora sigue gritando números. La app acelera,
-   no reemplaza. */
-let avisado = null;
-setInterval(() => {
-  if(!miPedido) return;
-  const p = F.pedido(miPedido.id);
-  if(p && p.estado === 'listo' && avisado !== p.id){
-    avisado = p.id;
-    try{ if(navigator.vibrate) navigator.vibrate([90,60,90,60,180]); }catch(e){}
-    try{
-      if(window.Notification && Notification.permission === 'granted')
-        new Notification('Fadori', { body:'Tu pedido '+p.folio+' ya está listo' });
-    }catch(e){}
+/* ══════════════════════════════════════════════════════════════════════
+   LOS AVISOS DEL ALUMNO
+   Se compara cada pedido mío contra cómo estaba la última vez que lo vi, y
+   sólo lo que CAMBIÓ suena. La primera pasada sólo toma nota: abrir la app
+   con un pedido listo desde hace rato no tiene por qué pitar.
+   · ya está ........ letrero verde, sonido de tres notas, vibra largo
+   · se acabó algo .. letrero rojo, dos notas bajas
+   · eres el que sigue / lo están preparando .. letrero y sonido corto
+   · avanzaste en la fila .. sin sonido: el número late y, si estás en otra
+     pantalla, un aviso chico. Con 80 alumnos la fila se mueve cada minuto y
+     si eso sonara, apagarían todo.
+   · la cooperativa lo canceló .. letrero rojo (si lo cancelé yo, nada)
+   Con la app cerrada, lo que suena es la notificación del servidor.
+   ═════════════════════════════════════════════════════════════════════ */
+const yoCancele = new Set();
+let vistos = null;
+function fotoDe(p){
+  const v = F.VIVOS.indexOf(p.estado) >= 0 && p.estado === 'en_cola' ? F.veredicto(p.id) : null;
+  return { estado: p.estado, antes: v ? v.antes : null, falta: p.avisoFalta ? p.avisoFalta.t : 0 };
+}
+function vigilarMios(){
+  const yo = F.yo(); if(!yo) { vistos = null; return; }
+  const mios = F.pedidosDe(yo.codigo), ahora = {};
+  for(const p of mios) ahora[p.id] = fotoDe(p);
+  if(!vistos){ vistos = ahora; return; }
+  for(const p of mios){
+    const a = vistos[p.id], h = ahora[p.id], n = 'Turno ' + F.verTurno(p);
+    if(!a) continue;   /* recién pedido por mí: ya sé que existe */
+    if(h.estado !== a.estado){
+      if(h.estado === 'listo') F.avisos.avisar('listo', '¡Tu pedido ya está!', n + ' · ve por él al mostrador', 'listo-' + p.id);
+      else if(h.estado === 'preparando') F.avisos.avisar('cambio', 'Ya están preparando tu pedido', n, 'prep-' + p.id);
+      else if(h.estado === 'entregado'){ F.avisos.letrero('cambio', 'Entregado', n + ' · provecho'); }
+      else if(h.estado === 'cancelado' && !yoCancele.has(p.id) && !p.porFalta)
+        F.avisos.avisar('falta', 'Tu pedido se canceló', p.rechazo || (n + ' · lo canceló la cooperativa'), 'cancelado-' + p.id);
+    }
+    if(h.falta && h.falta !== a.falta && F.faltantesDe(p).length){
+      F.avisos.avisar('falta', 'Se acabó ' + F.faltantesDe(p).map(f => f.prod.nombre).join(' y '), n + ' · toca «Mi turno» y escoge otra cosa', 'falta-' + p.id);
+    }
+    if(h.estado === 'en_cola' && a.estado === 'en_cola' && h.antes != null && a.antes != null && h.antes < a.antes){
+      if(h.antes === 0) F.avisos.avisar('sigue', 'Eres el que sigue', n + ' · acércate al mostrador', 'sigue-' + p.id);
+      else if(pantalla === 'turno') latir();
+      else aviso('Avanzaste: hay ' + h.antes + ' antes que tú.', 'bueno');
+    }
   }
-}, 3000);
+  vistos = ahora;
+}
+function latir(){
+  const n = document.querySelector('#cajaTurno .numero, #cajaTurno .detalle');
+  if(!n) return;
+  n.classList.remove('late'); void n.offsetWidth; n.classList.add('late');
+}
 
-document.addEventListener('click', function pedirPermiso(){
-  try{ if(window.Notification && Notification.permission === 'default') Notification.requestPermission(); }catch(e){}
-  document.removeEventListener('click', pedirPermiso);
+/* ── «Activa los avisos» ─────────────────────────────────────────────
+   Dice en qué está, con palabras: en iPhone sin la app en inicio NO hay
+   notificaciones (regla de Apple), y es mejor decirlo que fallar callado. */
+function pintarAvisos(){
+  const est = F.avisos.estado(), son = F.avisos.sonidoPrendido();
+  const txt = {
+    activos: '<b>Avisos prendidos.</b> Te suena el teléfono cuando tu pedido esté listo, aunque tengas la app cerrada.',
+    faltaPermiso: '<b>Que te avise cuando esté listo.</b> Aunque cierres la app, te llega la notificación como de WhatsApp.',
+    negados: '<b>Bloqueaste los avisos.</b> Para prenderlos: Ajustes del teléfono → Notificaciones → tu navegador → permitir. Mientras, sólo suena con la app abierta.',
+    instalar: '<b>En iPhone, primero agrégala a tu inicio.</b> Toca <b>Compartir</b> (el cuadrito con flecha) → <b>Agregar a inicio</b>, ábrela desde ahí y vuelve aquí. Apple sólo deja mandar avisos así.',
+    no: 'Este navegador no deja mandar notificaciones. Con la app abierta sí te suena y te sale el letrero.',
+  }[est];
+  const html = '<div class="avisos-caja '+est+'"><p>'+txt+'</p><div class="chips">'+
+    (est === 'faltaPermiso' ? '<button class="btn chico" type="button" data-avisos="activar">🔔 Activar avisos</button>' : '')+
+    '<button class="chip" type="button" data-avisos="sonido" aria-pressed="'+son+'">'+(son ? '🔊 Sonido prendido' : '🔇 Sonido apagado')+'</button>'+
+    '<button class="chip" type="button" data-avisos="probar">Probar</button>'+
+    '</div></div>';
+  document.querySelectorAll('.donde-avisos').forEach(c => { if(c.innerHTML !== html) c.innerHTML = html; });
+}
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-avisos]'); if(!b) return;
+  const que = b.dataset.avisos;
+  if(que === 'activar'){
+    b.disabled = true; b.textContent = 'Un momento…';
+    const r = await F.avisos.activar();
+    if(r.ok) aviso(r.push ? 'Listo: te avisamos aunque cierres la app.' : 'Listo: te avisamos con la app abierta.', 'bueno');
+    else if(r.por === 'negados') aviso('No diste permiso. Puedes prenderlo en los ajustes del teléfono.', 'malo');
+  } else if(que === 'sonido'){
+    F.avisos.ponerSonido(!F.avisos.sonidoPrendido());
+  } else if(que === 'probar'){
+    F.avisos.avisar('listo', 'Así se ve cuando está listo', 'Turno 12 · ve por él al mostrador', 'prueba');
+  }
+  pintarAvisos();
 });
+pintarAvisos();
+document.addEventListener('visibilitychange', () => { if(!document.hidden){ pintarAvisos(); vigilarMios(); } });
 
 pintarReloj();
 
