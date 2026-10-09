@@ -375,6 +375,28 @@
       "vecinas": [
         "bajada-completa-que-pisa-lo-pendiente"
       ]
+    },
+    {
+      "id": "firma-que-solo-ve-si-hay",
+      "titulo": "La «firma» que decide si repintar sólo mira si HAY foto, no CUÁL",
+      "gravedad": "media",
+      "sintoma": "Fadori: la cooperativa cambia la foto de relleno de un platillo por la de verdad, le llega al teléfono del alumno… y el menú sigue enseñando la vieja hasta que recarga.",
+      "causa": "Para no reescribir la rejilla cada 5 s, el menú se repinta sólo si cambia su firma, y la firma llevaba (p.foto ? 1 : 0). Cambiar una foto por otra no la movía.",
+      "porque": "Cuando se escribió, los platillos o tenían foto o no; nadie cambiaba una por otra.",
+      "arreglo": "fadori/index.html · firmaMenu: la foto entra por su largo y sus últimos 16 caracteres.",
+      "comoCazarlo": "pruebas-menu.mjs §4: sube una foto desde el mostrador y exige que el <img> del menú del alumno la traiga. Antes del arreglo: rojo.",
+      "consejo": "Una firma para «¿cambió?» tiene que cambiar con todo lo que se pinta; un booleano de «hay» sólo sirve si nunca se reemplaza.",
+      "salioDe": "fadori · «yo iré reemplazando el placeholder con el final», 9 de octubre",
+      "senales": [
+        "foto no cambia",
+        "no se actualiza la foto",
+        "repintar",
+        "firma",
+        "placeholder"
+      ],
+      "vecinas": [
+        "borrar-que-no-viaja"
+      ]
     }
   ]
 }

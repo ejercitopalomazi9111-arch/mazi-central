@@ -27,14 +27,54 @@ lista fija. En cuanto suba las fotos de su comida de verdad, éstas desaparecen.
 | `torta-jamon.jpg` | CC BY-SA 4.0 | Jj saezdeo | [Mexican torta sandwich.jpg](https://commons.wikimedia.org/wiki/File:Mexican_torta_sandwich.jpg) |
 | `torta-milanesa.jpg` | CC0 | Pancuter Mandrade | [Sándwich de milanesa tucumano.jpg](https://commons.wikimedia.org/wiki/File:S%C3%A1ndwich_de_milanesa_tucumano.jpg) |
 
+## Las del menú · `menu/`
+
+Pedidas por Carlos el 9 de octubre: *«busca imágenes de los productos para ponerlas de
+modo más aesthetic»*. Dos maneras, a propósito:
+
+- **Lo empaquetado** (bebidas, papas, dulces) va **recortado** sobre un fondo suave del
+  color de su categoría, con su sombra: así toda la rejilla se ve de una sola mano.
+- **La comida** va en foto completa. **Es de relleno:** Carlos va a ir subiendo las fotos
+  de verdad desde el mostrador, y la app no las pisa.
+
+Recortadas de **las fotos que tomó Carlos en la cafetería** (son de la cooperativa):
+`arizona`, `boing`, `yakult`, `maruchan`, `cacahuates`, `cheetos`, `tostitos`, `doritos`,
+`crujientes`. Las marcas de los empaques son de sus dueños.
+
+Las demás son de bancos libres (buscadas con Openverse), recortadas y ajustadas —recortar
+cuenta como modificar, y por eso este archivo cumple con la parte de «compartir igual» de
+las BY-SA—:
+
+| Archivo | Licencia | Autor | Dónde está |
+|---|---|---|---|
+| `agua-600.jpg` | CC BY 2.0 | Muffet | [flickr](https://www.flickr.com/photos/53133240@N00/7985698964) |
+| `agua-litro.jpg` | CC BY 2.0 | How can I recycle this | [flickr](https://www.flickr.com/photos/87481332@N00/167934943) |
+| `agua-mineral.jpg` | CC BY 2.0 | sashafatcat | [flickr](https://www.flickr.com/photos/91255327@N00/4701781601) |
+| `banderilla.jpg` | CC BY 2.0 | Andreanna Moya Photography | [flickr](https://www.flickr.com/photos/13897165@N00/2815597393) |
+| `brownie.jpg` | CC BY 2.0 | jeffreyw | [flickr](https://www.flickr.com/photos/7927684@N03/4448807631) |
+| `cafe-capuchino.jpg` | CC BY 2.0 | Bryan Pocius | [flickr](https://www.flickr.com/photos/57104631@N00/4437445488) |
+| `coca-chica.jpg` | CC BY-SA 2.0 | France1978 | [flickr](https://www.flickr.com/photos/51764518@N02/10632126184) |
+| `enchiladas-verdes.jpg` | CC BY-SA 2.0 | blogefl | [flickr](https://www.flickr.com/photos/51223760@N00/15370911603) |
+| `galletas-15.jpg` | CC BY 2.0 | toadstool ring | [flickr](https://www.flickr.com/photos/32496161@N07/3587056928) |
+| `galletas-25.jpg` | CC BY 2.0 | grongar | [flickr](https://www.flickr.com/photos/70757891@N00/7133349441) |
+| `gatorade.jpg` | CC BY 2.0 | JeepersMedia | [flickr](https://www.flickr.com/photos/39160147@N03/13555935473) |
+| `hamburguesa.jpg` | CC BY 2.0 | TheCulinaryGeek | [flickr](https://www.flickr.com/photos/72949902@N00/5076897498) |
+| `hot-dog.jpg` | CC BY 2.0 | TheBusyBrain | [flickr](https://www.flickr.com/photos/26176646@N04/2632651360) |
+| `mazapan.jpg` | CC0 1.0 | kadyh08 | [flickr](https://www.flickr.com/photos/165044571@N07/32638016007) |
+| `mym.jpg` | CC BY 2.0 | serbosca | [flickr](https://www.flickr.com/photos/131261968@N05/32186792428) |
+| `pizza-individual.jpg` | CC BY 2.0 | @joefoodie | [flickr](https://www.flickr.com/photos/98178986@N00/3804324703) |
+| `quesadilla.jpg` | CC BY 2.0 | jeffreyw | [flickr](https://www.flickr.com/photos/7927684@N03/6045328855) |
+| `quesadilla-con-carne.jpg` | CC BY 2.0 | elsie.hui | [flickr](https://www.flickr.com/photos/91188380@N05/15957588059) |
+| `snickers.jpg` | CC BY 2.0 | NINXIVI | [flickr](https://www.flickr.com/photos/44124295669@N01/2741152406) |
+| `taco-de-arrachera.jpg` | CC BY 2.0 | T.Tseng | [flickr](https://www.flickr.com/photos/68147320@N02/13707613743) |
+| `taco-de-bistec.jpg` | CC BY 2.0 | The MisAdventures of Maja | [flickr](https://www.flickr.com/photos/36399194@N03/21576032295) |
+| `taco-de-chorizo.jpg` | CC BY-SA 2.0 | Phil Denton | [flickr](https://www.flickr.com/photos/37475039@N04/6374323251) |
+| `takis.jpg` | CC BY-SA 2.0 | Effervescing Elephant | [flickr](https://www.flickr.com/photos/35995738@N00/6155449017) |
+
 ## Las de la cafetería · `cafeteria/`
 
-Las tomó Carlos en la cafetería del Instituto Rembrandt el 9 de octubre de 2026 y
-son recortes de esas fotos: arizona, boing, gatorade, cocacola, agua, yakult,
-takis, doritos, tostitos, cheetos, crujientes, chips, cacahuates, mym, maruchan,
-tutsipop y brownie. **Son de la cooperativa**, no de un banco de imágenes. Las
-marcas que salen en los empaques son de sus dueños; se enseñan porque es lo que
-de verdad se vende ahí.
+Recortes sin tratar de las fotos de Carlos: `cocacola`, `chips` y `tutsipop` (las que no
+quedaron bien recortadas sobre fondo). Son de la cooperativa.
 
 ---
 

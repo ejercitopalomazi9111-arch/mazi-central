@@ -304,7 +304,7 @@ function tono(cat){
 function mini(p){
   const c = tono(p ? p.cat : '');
   return '<span class="mini" style="--t1:'+c.tono+'; --t2:'+c.tono+'88">'+
-    (p && p.foto ? '<img src="'+esc(p.foto)+'" alt="">' : c.emoji)+'</span>';
+    (p && p.foto ? '<img src="'+esc(p.foto)+'" alt="">' : (p ? F.emojiDe(p) : c.emoji))+'</span>';
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -833,7 +833,7 @@ function abrirProducto(pid){
     fotoOcupada = true;
     $('#hVista').innerHTML = '<p class="sub" style="margin:0">Preparando la foto…</p>';
     $('#hGuardar').disabled = true;
-    achicar(f, 640, (dataUrl) => {
+    achicar(f, 480, (dataUrl) => {
       fotoNueva = dataUrl; fotoOcupada = false;
       $('#hVista').innerHTML = '<img src="'+dataUrl+'" alt="" '+
         'style="max-height:140px; border-radius:12px">';
@@ -898,17 +898,20 @@ function abrirProducto(pid){
 }
 
 /* Las fotos se achican antes de guardarlas: una foto de teléfono llena la
-   memoria del navegador en veinte productos. */
+   memoria del navegador en veinte productos. Y salen CUADRADAS, recortadas
+   al centro, como las del menú: así la foto que suba la cooperativa queda
+   pareja con las demás, y 480 px sobran para una tarjeta de teléfono (cada
+   foto viaja a todos los teléfonos de los alumnos). */
 function achicar(archivo, lado, listo){
   const lector = new FileReader();
   lector.onload = () => {
     const img = new Image();
     img.onload = () => {
-      const k = Math.min(1, lado / Math.max(img.width, img.height));
+      const q = Math.min(img.width, img.height), L = Math.min(lado, q);
       const c = document.createElement('canvas');
-      c.width = Math.round(img.width*k); c.height = Math.round(img.height*k);
-      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-      listo(c.toDataURL('image/jpeg', .78));
+      c.width = L; c.height = L;
+      c.getContext('2d').drawImage(img, (img.width - q) / 2, (img.height - q) / 2, q, q, 0, 0, L, L);
+      listo(c.toDataURL('image/jpeg', .8));
     };
     img.src = lector.result;
   };
@@ -1327,7 +1330,7 @@ function pintarSinLlave(){
 setInterval(pintarSinLlave, 4000);
 function subirMenuUnaVez(){
   if(F.motor() !== 'servidor' || !F.llaveMostrador()) return;
-  const marca = 'fadori_menu_subido3:' + F.sync.casa();   /* 3 = el menú de verdad (9 de octubre) */
+  const marca = 'fadori_menu_subido4:' + F.sync.casa();   /* 3 = el menú de verdad · 4 = sus fotos parejas (9 de octubre) */
   try{ if(localStorage.getItem(marca)) return; }catch(e){ return; }
   if(F.subirMenu() !== false){ try{ localStorage.setItem(marca, String(Date.now())); }catch(e){} }
 }

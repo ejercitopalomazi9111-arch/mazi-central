@@ -80,6 +80,27 @@ ok('al alumno se le quita del menú', await a.evaluate(() => !FADORI.productos(t
 await m.reload(); await m.waitForTimeout(3500);
 ok('y en la tablet no regresa al recargar', await m.evaluate(() => !FADORI.productos(false).some(p => p.id === 'pb-peelers')));
 
+console.log('\n4 · la foto de verdad que sube Carlos desde el mostrador');
+await m.click('[data-vista="menu"]').catch(() => {});
+await m.waitForTimeout(500);
+const abierto = await m.evaluate(() => { const b = document.querySelector('[data-editar="pb-banderilla"]'); if(b){ b.click(); return true; } return false; });
+let foto = null;
+if(abierto){
+  await m.waitForSelector('#hFoto', { timeout: 5000 });
+  /* una foto de teléfono, rectangular y grande */
+  const png = await m.evaluate(() => { const c = document.createElement('canvas'); c.width = 1600; c.height = 1200; const g = c.getContext('2d'); g.fillStyle = '#c33'; g.fillRect(0, 0, 1600, 1200); g.fillStyle = '#ff0'; g.fillRect(500, 300, 600, 600); return c.toDataURL('image/png').split(',')[1]; });
+  await m.setInputFiles('#hFoto', { name: 'banderilla.png', mimeType: 'image/png', buffer: Buffer.from(png, 'base64') });
+  await m.waitForFunction(() => !document.querySelector('#hGuardar').disabled && document.querySelector('#hVista img'), null, { timeout: 8000 });
+  await m.click('#hGuardar');
+  foto = await m.evaluate(() => FADORI.producto('pb-banderilla').foto);
+}
+ok('el mostrador tiene botón para editar la banderilla y subirle foto', abierto);
+const lado = foto && await m.evaluate(async (src) => { const im = new Image(); im.src = src; await im.decode(); return [im.width, im.height]; }, foto);
+ok('la foto se guarda cuadrada y a 480 px', !!lado && lado[0] === 480 && lado[1] === 480, JSON.stringify(lado));
+await tarda(a, () => /^data:image/.test((FADORI.producto('pb-banderilla') || {}).foto || ''));
+ok('al alumno le llega la foto nueva', await a.evaluate(() => /^data:image/.test(FADORI.producto('pb-banderilla').foto)));
+ok('y el menú del alumno la enseña', await a.evaluate(() => { const b = document.querySelector('[data-sumar="pb-banderilla"] img'); return !!b && /^data:image/.test(b.getAttribute('src')); }));
+
 for(const [n, pg] of [['tablet', m], ['alumno', a]]) ok('sin errores en ' + n, !pg.errores.length, pg.errores.join(' | '));
 await cerrar();
 console.log(`\n${fallas.length ? '✗' : '✓'} menú · ${fallas.length} fallas`);
