@@ -425,7 +425,10 @@ function refrescarFicha(pid){
    completa, que en un teléfono se siente como un tirón. */
 function firmaMenu(){
   return filtro + '|' + F.productos(false)
-    .map(p => p.id+p.disponible+p.precio+p.destacado+(p.existencias)+p.nombre+(p.foto?1:0))
+    /* la foto entra por su largo y su final, no por «hay o no hay»: cambiar
+       la de relleno por la de verdad no repintaba el menú del alumno */
+    .map(p => p.id+p.disponible+p.precio+p.destacado+(p.existencias)+p.nombre+
+      (p.foto ? p.foto.length + p.foto.slice(-16) : 0))
     .join(',');
 }
 let ultimaFirma = '';
