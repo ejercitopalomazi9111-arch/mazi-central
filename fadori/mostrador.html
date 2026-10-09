@@ -1247,6 +1247,7 @@ setTimeout(() => {
 (function(){
   let bien = 0, mal = 0;
   F.pausarSync();   /* que los pedidos de prueba no salgan al servidor */
+  const pendRealTodo = (function(){ try{ return localStorage.getItem('fadori_pendientes'); }catch(e){ return null; } })();
   const ok = (q,c) => { if(c) bien++; else { mal++; console.error('✗ '+q); } };
   const guardado = JSON.stringify(F.estado());
 
@@ -1336,22 +1337,12 @@ setTimeout(() => {
        (function(){ try{ F.ponerServidor('fadori.workers.dev'); return false; }
                     catch(e){ return true; } })());
 
-    /* la huella: sólo sale lo que de verdad cambió */
+    /* la huella: sólo sale lo que de verdad cambió. Lo que la prueba mueve
+       de la sincronía (la lista de pendientes y la foto) se guarda y se
+       repone al final: estas pruebas corren en el mostrador de verdad. */
     const d = F.estado();
+    M._guardarPend({});
     M._huellas = null; M.estampar(d);        /* foto inicial */
-
-    ok('un aparato que NUNCA sincronizó tiene todo pendiente, y así debe ser',
-       M.porMandar(d).cuantos > 0);
-
-    /* se finge una sincronización buena: de aquí en adelante sólo debe salir
-       lo que se toque después */
-    const yaVisto = {};
-    const pend = M.porMandar(d).cambios;
-    ['productos','alumnos','pedidos','conteos','eventos'].forEach(c => {
-      yaVisto[c] = (pend[c] || []).reduce((m, x) => Math.max(m, x.t || 0), 0);
-    });
-    if(pend.config) yaVisto.config = pend.config.t || 0;
-    M._guardarVisto(yaVisto);
     ok('recién sincronizado ya no hay nada que mandar', M.porMandar(d).cuantos === 0);
 
     d.productos[0].precio += 100;
@@ -1369,7 +1360,27 @@ setTimeout(() => {
     ok('dos cambios seguidos nunca comparten la hora',
        d.productos[1].t > a1);
     d.productos[1].precio -= 1; M.estampar(d);
-    M._guardarVisto({});
+
+    /* quien cambia algo le gana a la versión que tenía enfrente, aunque esa
+       versión traiga una hora del futuro (servidor o teléfono adelantados) */
+    const futuro = Date.now() + 120000;
+    d.productos[2].t = futuro; M._huellas = null; M.estampar(d);
+    d.productos[2].precio += 1; M.estampar(d);
+    ok('un cambio aquí le gana a la versión con reloj adelantado',
+       d.productos[2].t > futuro);
+    d.productos[2].precio -= 1; M.estampar(d);
+    M._guardarPend({});
+
+    /* lo que llega de otro aparato no se vuelve a mandar, y una hora del
+       futuro no deja atorados los cambios de aquí (pasaba: todo lo de este
+       aparato se daba por mandado sin haber salido) */
+    M.mezclar({ productos:[Object.assign({}, d.productos[3], { nombre:'Otro aparato', t: futuro + 5 })] });
+    ok('lo que llegó de otro aparato no se vuelve a mandar', M.porMandar(F.estado()).cuantos === 0);
+    F.estado().productos[4].precio += 1; M.estampar(F.estado());
+    ok('y después de que llegó algo del futuro, lo de aquí SÍ sale',
+       M.porMandar(F.estado()).cambios.productos.some(x => x.id === F.estado().productos[4].id));
+    F.estado().productos[4].precio -= 1;
+    M._guardarPend({});   /* el estado entero se repone al final de las pruebas */
 
     /* la mezcla: gana el más reciente, por registro */
     const p0 = d.productos[0];
@@ -1659,6 +1670,11 @@ setTimeout(() => {
 
   try{ localStorage.setItem('fadori_v1', guardado); }catch(e){}
   F.cargar(); pintar();
+  /* la sincronía queda como estaba: su lista de pendientes y una foto nueva
+     de lo que de verdad hay */
+  try{ if(pendRealTodo === null) localStorage.removeItem('fadori_pendientes');
+       else localStorage.setItem('fadori_pendientes', pendRealTodo); }catch(e){}
+  F.sync._huellas = null; F.sync.estampar(F.estado());
 
   console.log('%cFadori mostrador · '+bien+'/'+(bien+mal)+' pruebas',
     'color:'+(mal?'#FF7A7A':'#5BD98A')+';font-weight:700');
