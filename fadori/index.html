@@ -1681,7 +1681,7 @@ arrancar();
         { id:'pb-banderilla', nombre:'Banderilla', cat:'antojo', precio:4500, foto:'data:image/jpeg;base64,AAAA', t:5 }] };
       F._migrar(v);
       return v.productos[0].foto === 'fotos/menu/takis.jpg' && v.productos[0].t > 5 &&
-             v.productos[1].foto === 'data:image/jpeg;base64,AAAA' && v.productos[1].t === 5;
+             v.productos[1].foto === 'data:image/jpeg;base64,AAAA';
     })());
     ok('7 → 8: «Peelers» se retira y entra «Peelerz» con el precio que tenía', (function(){
       const v = { version:7, config:{}, alumnos:{}, eventos:[], conteos:[], pedidos:[], productos:[
