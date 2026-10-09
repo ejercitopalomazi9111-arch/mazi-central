@@ -64,11 +64,9 @@ const CATEGORIAS = [
    Lo que no tiene foto enseña SU dibujito (`emoji`), no el de la categoría:
    una pizza con un taco encima se ve mal.
 
-   Lo que NO está, a propósito, porque falta el dato:
-   · «tacos de choriqueso»: llegó sin precio. No se inventa: lo da de alta la
-     cooperativa con su precio.
-   · Las dos «Galletas» ($25 y $15) llegaron sin decir cuál es cuál: van con
-     su precio en el nombre hasta que se sepa.
+   Lo que llegó después (Carlos, 9 de octubre): el taco de choriqueso va a
+   $25; las galletas de $15 son las BLANDAS de la vitrina, y las de $25 son
+   las comerciales («las Oreo están en 25 igual que todas las comerciales»).
    Los alérgenos son los evidentes (pan = gluten, queso = leche…); la
    cooperativa los corrige en el mostrador. Los segundos de preparación son
    semilla: F40 los cambia por lo medido en cuanto haya despachos. */
@@ -86,6 +84,7 @@ const MENU_BASE = [
   { nombre:'Orden de 3 tacos de bistec', emoji:'🌮', cat:'antojo', precio:5000, seg:60, desc:'Tres tacos de bistec por $50.', al:[], foto:'fotos/menu/taco-de-bistec.jpg' },
   { nombre:'Taco de chorizo', emoji:'🌮', cat:'antojo', precio:2000, seg:45, desc:'Precio por taco. Tres te salen en $50: pide la orden.', al:[], foto:'fotos/menu/taco-de-chorizo.jpg' },
   { nombre:'Orden de 3 tacos de chorizo', emoji:'🌮', cat:'antojo', precio:5000, seg:60, desc:'Tres tacos de chorizo por $50.', al:[], foto:'fotos/menu/taco-de-chorizo.jpg' },
+  { nombre:'Taco de choriqueso', emoji:'🌮', cat:'antojo', precio:2500, seg:50, desc:'Chorizo con queso. Precio por taco.', al:['lacteos'], foto:'fotos/menu/taco-de-chorizo.jpg' },
   { nombre:'Quesadilla', emoji:'🫓', cat:'antojo', precio:2000, seg:50, desc:'Tortilla con queso, a la plancha.', al:['lacteos'], foto:'fotos/menu/quesadilla.jpg' },
   { nombre:'Quesadilla con carne', emoji:'🫓', cat:'antojo', precio:2500, seg:55, desc:'Con queso y carne.', al:['lacteos'], foto:'fotos/menu/quesadilla-con-carne.jpg' },
   { nombre:'Maruchan', emoji:'🍜', cat:'antojo', precio:3500, seg:60, desc:'Instant Lunch con camarón, con su agua caliente.', al:['gluten','soya','mariscos'], foto:'fotos/menu/maruchan.jpg' },
@@ -115,8 +114,8 @@ const MENU_BASE = [
   { nombre:'Kinder Delice', emoji:'🧁', cat:'dulce', precio:2000, seg:6, desc:'Pastelito de cacao.', al:['gluten','lacteos','huevo'], foto:'fotos/menu/kinder-delice.jpg' },
   { nombre:'Carlos V', emoji:'🍫', cat:'dulce', precio:1500, seg:6, desc:'Chocolate con leche.', al:['lacteos','soya'], foto:'fotos/menu/carlos-v.jpg' },
   { nombre:'Brownie', emoji:'🍫', cat:'dulce', precio:1500, seg:6, desc:'De chocolate.', al:['gluten','lacteos','huevo'], foto:'fotos/menu/brownie.jpg' },
-  { nombre:'Galletas de $25', emoji:'🍪', cat:'dulce', precio:2500, seg:6, desc:'Pregunta cuáles hay.', al:['gluten','lacteos','huevo'], foto:'fotos/menu/galletas-25.jpg' },
-  { nombre:'Galletas de $15', emoji:'🍪', cat:'dulce', precio:1500, seg:6, desc:'Pregunta cuáles hay.', al:['gluten','lacteos','huevo'], foto:'fotos/menu/galletas-15.jpg' },
+  { nombre:'Galletas comerciales', emoji:'🍪', cat:'dulce', precio:2500, seg:6, desc:'Oreo y las demás de paquete: pregunta cuáles hay.', al:['gluten','lacteos','soya'], foto:'fotos/menu/galletas-comerciales.jpg' },
+  { nombre:'Galletas blandas', emoji:'🍪', cat:'dulce', precio:1500, seg:6, desc:'Las suaves de la vitrina.', al:['gluten','lacteos','huevo'], foto:'fotos/menu/galletas-blandas.jpg' },
   { nombre:'Peelerz', emoji:'🍬', cat:'dulce', precio:2500, seg:6, desc:'Gomitas Amos que se pelan. Plátano o uva.', al:[], foto:'fotos/menu/peelerz.jpg' },
   { nombre:'Halls', emoji:'🍬', cat:'dulce', precio:1500, seg:6, desc:'Pastillas. Pregunta los sabores.', al:[], foto:'fotos/menu/halls.jpg' },
   { nombre:'Tutsi Pop', emoji:'🍭', cat:'dulce', precio:1000, seg:6, desc:'Paleta con chicle.', al:[], foto:'fotos/menu/tutsi-pop.jpg' },
@@ -1141,7 +1140,7 @@ function productoDeBase(p, i){
 }
 function siembra(){
   const d = estadoVacio();
-  d.version = 8;
+  d.version = 9;
   d.productos = MENU_BASE.map(productoDeBase);
   return d;
 }
@@ -1282,7 +1281,26 @@ function migrar(d){
     });
   }
 
-  d.version = 8;
+  /* 8 → 9 · las galletas con su nombre de verdad (comerciales y blandas, en
+     vez de «de $25» y «de $15») y el taco de choriqueso. El nombre viejo se
+     retira y el nuevo hereda su precio y si estaba disponible. */
+  if(antes < 9){
+    const t = ahora(), toca = (p) => { p.t = Math.max(t, (p.t || 0) + 1); };
+    [['pb-galletas-de-25', 'Galletas comerciales'], ['pb-galletas-de-15', 'Galletas blandas']].forEach(([vid, nombre]) => {
+      const v = d.productos.find(x => x.id === vid); if(!v || v.borrado) return;
+      const b = MENU_BASE.find(x => x.nombre === nombre);
+      let n = d.productos.find(x => x.id === idBase(nombre));
+      if(!n){ n = productoDeBase(b, MENU_BASE.indexOf(b)); d.productos.push(n); }
+      n.precio = v.precio; n.disponible = v.disponible !== false; toca(n);
+      v.borrado = true; v.disponible = false; v.destacado = false; toca(v);
+    });
+    MENU_BASE.forEach((b, i) => {
+      const pid = idBase(b.nombre);
+      if(!d.productos.some(x => x.id === pid)){ const p = productoDeBase(b, i); d.productos.push(p); toca(p); }
+    });
+  }
+
+  d.version = 9;
   return antes;
 }
 
@@ -1291,7 +1309,7 @@ function cargar(){
   if(!D){ D = siembra(); MOTOR.escribir(D); arrancarSync(); return D; }
   const antes = migrar(D);
   /* si de verdad se migró, se guarda: si no, cada carga vuelve a hacerlo */
-  if(antes < 8){ try{ MOTOR.escribir(D); }catch(e){} }
+  if(antes < 9){ try{ MOTOR.escribir(D); }catch(e){} }
   if(!limpiadoLocal){ limpiadoLocal = true; if(limpiarLocal(D)) MotorLocal.escribir(D); }
   arrancarSync();
   return D;

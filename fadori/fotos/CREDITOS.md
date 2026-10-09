@@ -79,6 +79,7 @@ usan para enseñar ese mismo producto a la venta, y las marcas son de sus dueño
 | `paleta-mango.jpg` | Paleta Vero Mango Intenso 350 g · [Chedraui](https://www.chedraui.com.mx/paleta-vero-mango-intenso-350-g-3906344/p) |
 | `paleta-elote.jpg` | Paleta Vero Elote Intenso 350 g · [Chedraui](https://www.chedraui.com.mx/paleta-vero-elote-intenso-350-g-3906345/p) |
 | `tarrito.jpg` | Paleta Vero Tarrito 560g · [Chedraui](https://www.chedraui.com.mx/paleta-vero-tarrito-560g-3828906/p) |
+| `galletas-comerciales.jpg` | Oreo Original 66 g · [Open Food Facts](https://world.openfoodfacts.org/product/7622210318800) |
 
 **La comida** (banderilla, enchiladas, tacos, etc.) es de relleno hasta que Carlos suba las
 suyas. La comida es de bancos libres (buscada con Openverse), recortadas y ajustadas —recortar
@@ -91,8 +92,7 @@ las BY-SA—:
 | `brownie.jpg` | CC BY 2.0 | jeffreyw | [flickr](https://www.flickr.com/photos/7927684@N03/4448807631) |
 | `cafe-capuchino.jpg` | CC BY 2.0 | Bryan Pocius | [flickr](https://www.flickr.com/photos/57104631@N00/4437445488) |
 | `enchiladas-verdes.jpg` | CC BY-SA 2.0 | blogefl | [flickr](https://www.flickr.com/photos/51223760@N00/15370911603) |
-| `galletas-15.jpg` | CC BY 2.0 | toadstool ring | [flickr](https://www.flickr.com/photos/32496161@N07/3587056928) |
-| `galletas-25.jpg` | CC BY 2.0 | grongar | [flickr](https://www.flickr.com/photos/70757891@N00/7133349441) |
+| `galletas-blandas.jpg` | CC BY 2.0 | toadstool ring | [flickr](https://www.flickr.com/photos/32496161@N07/3587056928) |
 | `hamburguesa.jpg` | CC BY 2.0 | TheCulinaryGeek | [flickr](https://www.flickr.com/photos/72949902@N00/5076897498) |
 | `hot-dog.jpg` | CC BY 2.0 | TheBusyBrain | [flickr](https://www.flickr.com/photos/26176646@N04/2632651360) |
 | `pizza-individual.jpg` | CC BY 2.0 | @joefoodie | [flickr](https://www.flickr.com/photos/98178986@N00/3804324703) |
