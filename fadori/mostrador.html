@@ -1327,7 +1327,7 @@ function pintarSinLlave(){
 setInterval(pintarSinLlave, 4000);
 function subirMenuUnaVez(){
   if(F.motor() !== 'servidor' || !F.llaveMostrador()) return;
-  const marca = 'fadori_menu_subido2:' + F.sync.casa();
+  const marca = 'fadori_menu_subido3:' + F.sync.casa();   /* 3 = el menú de verdad (9 de octubre) */
   try{ if(localStorage.getItem(marca)) return; }catch(e){ return; }
   if(F.subirMenu() !== false){ try{ localStorage.setItem(marca, String(Date.now())); }catch(e){} }
 }

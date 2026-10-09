@@ -48,7 +48,84 @@ const CATEGORIAS = [
   { id:'botana',  nombre:'Botanas',      emoji:'🥨', tono:'#8A6212' },  /* fritura, sal */
 ];
 
-/* El menú de arranque. La cooperativa lo cambia entero desde su pantalla:
+/* ══════════════════════════════════════════════════════════════════════════
+   EL MENÚ DE VERDAD · el de la cafetería del Rembrandt
+   Lo mandó Carlos el 9 de octubre con fotos del mostrador: precios de ellos,
+   no inventados. Las fotos con «cafeteria/» son SUYAS (recortes de las que él
+   tomó); las demás son las de Wikimedia que ya estaban, sólo donde el
+   platillo es el mismo. Lo que no tiene foto enseña el emoji de su categoría
+   hasta que la cooperativa le ponga la suya desde el mostrador.
+
+   Lo que NO está, a propósito, porque falta el dato:
+   · «tacos de choriqueso»: llegó sin precio. No se inventa: lo da de alta la
+     cooperativa con su precio.
+   · Las dos «Galletas» ($25 y $15) llegaron sin decir cuál es cuál: van con
+     su precio en el nombre hasta que se sepa.
+   Los alérgenos son los evidentes (pan = gluten, queso = leche…); la
+   cooperativa los corrige en el mostrador. Los segundos de preparación son
+   semilla: F40 los cambia por lo medido en cuanto haya despachos. */
+const MENU_BASE = [
+  /* ── comida ── */
+  { nombre:'Banderilla', cat:'antojo', precio:4500, seg:60, desc:'Salchicha empanizada en su palito.', al:['gluten','huevo','lacteos'] },
+  { nombre:'Enchiladas verdes', cat:'fuerte', precio:4500, seg:90, desc:'En salsa verde, con crema y queso.', al:['lacteos','picante'] },
+  { nombre:'Torta de milanesa', cat:'torta', precio:5000, seg:60, desc:'Milanesa empanizada en telera, con todo.', al:['gluten','huevo','lacteos'], foto:'fotos/torta-milanesa.jpg' },
+  { nombre:'Hamburguesa', cat:'torta', precio:4500, seg:90, desc:'Carne a la plancha en pan, con queso.', al:['gluten','lacteos'] },
+  { nombre:'Hot dog', cat:'torta', precio:2500, seg:45, desc:'Salchicha en pan, con sus aderezos.', al:['gluten'] },
+  { nombre:'Molletes', cat:'torta', precio:2500, seg:50, desc:'Bolillo con frijoles y queso gratinado.', al:['gluten','lacteos'] },
+  { nombre:'Pizza individual', cat:'antojo', precio:2500, seg:60, desc:'Una pizza chica para ti solo.', al:['gluten','lacteos'] },
+  { nombre:'Taco de arrachera', cat:'antojo', precio:2000, seg:45, desc:'Precio por taco.', al:[] },
+  { nombre:'Taco de bistec', cat:'antojo', precio:2000, seg:45, desc:'Precio por taco. Tres te salen en $50: pide la orden.', al:[] },
+  { nombre:'Orden de 3 tacos de bistec', cat:'antojo', precio:5000, seg:60, desc:'Tres tacos de bistec por $50.', al:[] },
+  { nombre:'Taco de chorizo', cat:'antojo', precio:2000, seg:45, desc:'Precio por taco. Tres te salen en $50: pide la orden.', al:[] },
+  { nombre:'Orden de 3 tacos de chorizo', cat:'antojo', precio:5000, seg:60, desc:'Tres tacos de chorizo por $50.', al:[] },
+  { nombre:'Quesadilla', cat:'antojo', precio:2000, seg:50, desc:'Tortilla con queso, a la plancha.', al:['lacteos'], foto:'fotos/quesadilla.jpg' },
+  { nombre:'Quesadilla con carne', cat:'antojo', precio:2500, seg:55, desc:'Con queso y carne.', al:['lacteos'], foto:'fotos/quesadilla.jpg' },
+  { nombre:'Maruchan', cat:'antojo', precio:3500, seg:60, desc:'Sopa instantánea, con su agua caliente.', al:['gluten','soya','mariscos'], foto:'fotos/cafeteria/maruchan.jpg' },
+  /* ── bebidas ── */
+  { nombre:'Coca-Cola 600 ml', cat:'bebida', precio:3000, seg:8, desc:'Botella de 600.', al:[], foto:'fotos/cafeteria/cocacola.jpg' },
+  { nombre:'Coca-Cola chica', cat:'bebida', precio:2000, seg:8, desc:'Normal o sin azúcar: dile cuál.', al:[], foto:'fotos/refresco.jpg' },
+  { nombre:'Arizona', cat:'bebida', precio:2500, seg:8, desc:'Lata grande. Sandía o mucho mango, según haya.', al:[], foto:'fotos/cafeteria/arizona.jpg' },
+  { nombre:'Boing', cat:'bebida', precio:2500, seg:8, desc:'Uva, guayaba o mango, según haya.', al:[], foto:'fotos/cafeteria/boing.jpg' },
+  { nombre:'Gatorade', cat:'bebida', precio:3000, seg:8, desc:'Botella.', al:[], foto:'fotos/cafeteria/gatorade.jpg' },
+  { nombre:'Agua 600 ml', cat:'bebida', precio:1000, seg:6, desc:'Agua natural.', al:[], foto:'fotos/cafeteria/agua.jpg' },
+  { nombre:'Agua de litro', cat:'bebida', precio:2000, seg:6, desc:'Agua natural.', al:[] },
+  { nombre:'Agua mineral', cat:'bebida', precio:2500, seg:6, desc:'Con gas.', al:[] },
+  { nombre:'Yakult', cat:'bebida', precio:1500, seg:6, desc:'Leche fermentada.', al:['lacteos'], foto:'fotos/cafeteria/yakult.jpg' },
+  { nombre:'Café capuchino', cat:'bebida', precio:2500, seg:40, desc:'Calientito.', al:['lacteos'] },
+  /* ── papas (la foto es de su anaquel) ── */
+  { nombre:'Takis Fuego', cat:'botana', precio:2500, seg:6, desc:'Bolsa.', al:['gluten','picante'], foto:'fotos/cafeteria/takis.jpg' },
+  { nombre:'Doritos Dinamita', cat:'botana', precio:2500, seg:6, desc:'Flamin’ Hot.', al:['picante'], foto:'fotos/cafeteria/doritos.jpg' },
+  { nombre:'Tostitos salsa verde', cat:'botana', precio:2500, seg:6, desc:'Bolsa.', al:['picante'], foto:'fotos/cafeteria/tostitos.jpg' },
+  { nombre:'Cheetos Flamin’ Hot', cat:'botana', precio:2500, seg:6, desc:'Bolsa.', al:['lacteos','picante'], foto:'fotos/cafeteria/cheetos.jpg' },
+  { nombre:'Crujientes', cat:'botana', precio:2500, seg:6, desc:'Flamin’ Hot.', al:['gluten','picante'], foto:'fotos/cafeteria/crujientes.jpg' },
+  { nombre:'Chip’s jalapeño', cat:'botana', precio:2500, seg:6, desc:'Papas.', al:['picante'], foto:'fotos/cafeteria/chips.jpg' },
+  { nombre:'Cacahuates japoneses', cat:'botana', precio:1000, seg:6, desc:'Bolsita.', al:['cacahuate','gluten','soya'], foto:'fotos/cafeteria/cacahuates.jpg' },
+  /* ── dulces ── */
+  { nombre:'Snickers', cat:'dulce', precio:2500, seg:6, desc:'Chocolate.', al:['cacahuate','lacteos','soya'] },
+  { nombre:'Milky Way', cat:'dulce', precio:2500, seg:6, desc:'Chocolate.', al:['lacteos','soya'] },
+  { nombre:'M&M’s', cat:'dulce', precio:2500, seg:6, desc:'Chocolate.', al:['lacteos','soya'], foto:'fotos/cafeteria/mym.jpg' },
+  { nombre:'Kinder Delice', cat:'dulce', precio:2000, seg:6, desc:'Pastelito de chocolate.', al:['gluten','lacteos','huevo'] },
+  { nombre:'Carlos V', cat:'dulce', precio:1500, seg:6, desc:'Chocolate.', al:['lacteos','soya'] },
+  { nombre:'Brownie', cat:'dulce', precio:1500, seg:6, desc:'De chocolate.', al:['gluten','lacteos','huevo'], foto:'fotos/cafeteria/brownie.jpg' },
+  { nombre:'Galletas de $25', cat:'dulce', precio:2500, seg:6, desc:'Pregunta cuáles hay.', al:['gluten','lacteos','huevo'], foto:'fotos/galletas.jpg' },
+  { nombre:'Galletas de $15', cat:'dulce', precio:1500, seg:6, desc:'Pregunta cuáles hay.', al:['gluten','lacteos','huevo'], foto:'fotos/galletas.jpg' },
+  { nombre:'Peelers', cat:'dulce', precio:2500, seg:6, desc:'', al:[] },
+  { nombre:'Halls', cat:'dulce', precio:1500, seg:6, desc:'Pastillas.', al:[] },
+  { nombre:'Tutsi Pop', cat:'dulce', precio:1000, seg:6, desc:'Paleta.', al:[], foto:'fotos/cafeteria/tutsipop.jpg' },
+  { nombre:'Pelonetas', cat:'dulce', precio:1000, seg:6, desc:'', al:['picante'] },
+  { nombre:'Pelón', cat:'dulce', precio:500, seg:6, desc:'', al:['picante'] },
+  { nombre:'Tix Tix', cat:'dulce', precio:500, seg:6, desc:'', al:[] },
+  { nombre:'Mazapán', cat:'dulce', precio:500, seg:6, desc:'De cacahuate.', al:['cacahuate'] },
+  { nombre:'Paleta de mango', cat:'dulce', precio:500, seg:6, desc:'', al:['picante'] },
+  { nombre:'Paleta de elote', cat:'dulce', precio:500, seg:6, desc:'', al:[] },
+  { nombre:'Tarrito', cat:'dulce', precio:500, seg:6, desc:'', al:[] },
+];
+
+/* El menú de ARRANQUE de antes, el inventado (pozole, chilaquiles…). Ya no
+   se siembra: se queda aquí porque las migraciones viejas lo nombran y porque
+   la 5 → 6 necesita saber cuáles platillos eran de relleno para retirarlos.
+   Lo que sigue es el comentario original:
+   El menú de arranque. La cooperativa lo cambia entero desde su pantalla:
    esto es para que la app sirva desde el primer minuto, no una lista fija.
    Las fotos son REALES y con licencia libre, bajadas de Wikimedia Commons:
    el crédito de cada una está en fotos/CREDITOS.md. Nada de dibujitos de
@@ -56,7 +133,7 @@ const CATEGORIAS = [
    inventa. La cooperativa las reemplaza por las suyas cuando quiera.
    Los segundos de preparación son la SEMILLA del estimado; en cuanto haya
    despachos reales, F40 los reemplaza con lo medido. */
-const MENU_BASE = [
+const MENU_VIEJO = [
   { nombre:'Guisado del día con arroz', cat:'fuerte', precio:4500, seg:95,
     desc:'El guisado que toque hoy, con arroz y su tortilla.', al:['picante'] , foto:'fotos/guisado.jpg'},
   { nombre:'Pozole', cat:'fuerte', precio:5000, seg:80,
@@ -739,6 +816,14 @@ const MotorServidor = {
   mezclar(cambios, forzar){
     const d = MotorLocal.leer(); if(!d) return false;
     let tocado = false;
+    /* «Forzar» (la bajada completa al poner el pasador o el código) sirve para
+       traer la versión completa de lo que llegó recortado. NO para pisar lo
+       que este aparato cambió y todavía no sube: eso es más nuevo que lo del
+       servidor por definición. Pasó el día del menú de verdad: la tablet puso
+       su pasador, la bajada completa le regresó el pozole viejo encima del
+       retirado, y el retiro se perdió. */
+    const pend = forzar ? this._pend() : null;
+    const pendiente = (c, rid) => !!(pend && pend[c] && pend[c][rid] != null);
 
     for(const c of CAJONES){
       const lista = cambios[c] || [];
@@ -746,7 +831,7 @@ const MotorServidor = {
         if(!r || !r.id) continue;
         if(c === 'alumnos'){
           const v = d.alumnos[r.id];
-          if(!v || forzar || (r.t || 0) > (v.t || 0)){
+          if(!v || (forzar && !pendiente(c, r.id)) || (r.t || 0) > (v.t || 0)){
             const copia = this.sanear('alumnos', r); delete copia.id;
             d.alumnos[r.id] = copia; tocado = true;
           }
@@ -756,7 +841,7 @@ const MotorServidor = {
         const i = d[c].findIndex(x => x && x.id === r.id);
         const copia = this.sanear(c, r);
         if(i < 0){ d[c].push(copia); tocado = true; }
-        else if(forzar || (r.t || 0) > (d[c][i].t || 0)){ d[c][i] = copia; tocado = true; }
+        else if((forzar && !pendiente(c, r.id)) || (r.t || 0) > (d[c][i].t || 0)){ d[c][i] = copia; tocado = true; }
       }
     }
     if(cambios.config && (cambios.config.t || 0) > (d.config.t || 0)){
@@ -975,24 +1060,27 @@ function idBase(nombre){
     .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
-function siembra(){
-  const d = estadoVacio();
-  d.version = 5;
-  d.productos = MENU_BASE.map((p, i) => ({
+function productoDeBase(p, i){
+  return {
     id: idBase(p.nombre),
     nombre: p.nombre,
     cat: p.cat,
     precio: p.precio,
     segPrep: p.seg,
     desc: p.desc || '',
-    alergenos: p.al || [],
+    alergenos: (p.al || []).slice(),
     foto: p.foto || '',
     dias: [],                    /* vacío = todos los días (F50) */
     disponible: true,
-    destacado: i === 0,          /* F02 · el plato fuerte del día va primero */
+    destacado: false,            /* F02 · el platillo del día lo escoge la cooperativa */
     existencias: null,           /* null = sin control de inventario */
     orden: i,
-  }));
+  };
+}
+function siembra(){
+  const d = estadoVacio();
+  d.version = 6;
+  d.productos = MENU_BASE.map(productoDeBase);
   return d;
 }
 
@@ -1020,11 +1108,11 @@ function migrar(d){
      le puso la suya, no se toca. */
   if(antes < 2){
     const porNombre = {};
-    MENU_BASE.forEach(b => { if(b.foto) porNombre[b.nombre] = b.foto; });
+    MENU_VIEJO.forEach(b => { if(b.foto) porNombre[b.nombre] = b.foto; });
     d.productos.forEach(p => {
       if(!p.foto && porNombre[p.nombre]) p.foto = porNombre[p.nombre];
       if(!p.desc && !p.alergenos.length){
-        const b = MENU_BASE.find(x => x.nombre === p.nombre);
+        const b = MENU_VIEJO.find(x => x.nombre === p.nombre);
         if(b){ p.desc = b.desc || ''; p.alergenos = (b.al || []).slice(); }
       }
     });
@@ -1049,7 +1137,7 @@ function migrar(d){
   if(antes < 5){
     const usados = new Set(d.productos.map(p => p.id)), cambio = {};
     d.productos.forEach(p => {
-      if(!MENU_BASE.some(b => b.nombre === p.nombre)) return;
+      if(!MENU_VIEJO.some(b => b.nombre === p.nombre)) return;
       const nuevo = idBase(p.nombre);
       if(p.id === nuevo || usados.has(nuevo)) return;
       cambio[p.id] = nuevo; usados.add(nuevo); p.id = nuevo;
@@ -1060,7 +1148,39 @@ function migrar(d){
     }
   }
 
-  d.version = 5;
+  /* 5 → 6 · EL MENÚ DE VERDAD. Los platillos de relleno (pozole,
+     chilaquiles… los que sembró la app y nadie vende) se RETIRAN: quedan
+     como «borrado» para que el historial siga diciendo qué se pidió y para
+     que el retiro viaje al servidor y a los demás aparatos (un registro que
+     sólo se quita de aquí vuelve en la siguiente sincronización). Los del
+     menú real entran, o se actualizan si ya estaban (torta de milanesa,
+     quesadilla). Lo que la cooperativa dio de alta ella misma no se toca.
+     Cada registro tocado se estampa con hora nueva: así le gana a la copia
+     vieja del servidor en vez de que la vieja lo pise. */
+  if(antes < 6){
+    const t = ahora(), toca = (p) => { p.t = Math.max(t, (p.t || 0) + 1); };
+    const reales = new Set(MENU_BASE.map(b => b.nombre));
+    d.productos.forEach(p => {
+      const deRelleno = MENU_VIEJO.some(b => b.nombre === p.nombre) && p.id === idBase(p.nombre);
+      if(deRelleno && !reales.has(p.nombre) && !p.borrado){ p.borrado = true; p.disponible = false; p.destacado = false; toca(p); }
+    });
+    MENU_BASE.forEach((b, i) => {
+      const pid = idBase(b.nombre);
+      let p = d.productos.find(x => x.id === pid);
+      if(!p){ p = productoDeBase(b, i); d.productos.push(p); }
+      else {
+        Object.assign(p, { nombre: b.nombre, cat: b.cat, precio: b.precio, desc: b.desc || '',
+          alergenos: (b.al || []).slice(), orden: i, borrado: false });
+        if(!p.foto || /^fotos\/[^/]+\.jpg$/.test(p.foto)) p.foto = b.foto || '';
+      }
+      toca(p);
+    });
+    /* lo de la cooperativa, después del menú */
+    let o = MENU_BASE.length;
+    d.productos.forEach(p => { if(!p.id.startsWith('pb-')) p.orden = o++; });
+  }
+
+  d.version = 6;
   return antes;
 }
 
@@ -1069,7 +1189,7 @@ function cargar(){
   if(!D){ D = siembra(); MOTOR.escribir(D); arrancarSync(); return D; }
   const antes = migrar(D);
   /* si de verdad se migró, se guarda: si no, cada carga vuelve a hacerlo */
-  if(antes < 5){ try{ MOTOR.escribir(D); }catch(e){} }
+  if(antes < 6){ try{ MOTOR.escribir(D); }catch(e){} }
   if(!limpiadoLocal){ limpiadoLocal = true; if(limpiarLocal(D)) MotorLocal.escribir(D); }
   arrancarSync();
   return D;
@@ -1301,7 +1421,9 @@ function aceptarTerminos(cod){
    ═════════════════════════════════════════════════════════════════════════ */
 function productos(soloDisponibles){
   const d = estado();
-  const lista = d.productos.slice().sort((a,b) => (a.orden||0) - (b.orden||0));
+  /* los borrados no salen en ningún menú; siguen existiendo para que el
+     historial diga qué se pidió y para que el borrado viaje a los demás */
+  const lista = d.productos.filter(p => !p.borrado).sort((a,b) => (a.orden||0) - (b.orden||0));
   /* F50 · lo que no toca hoy no sale en el menú del alumno. Sale en el del
      mostrador (soloDisponibles = false) porque ahí se administra la semana. */
   return soloDisponibles
@@ -1338,9 +1460,12 @@ function guardarProducto(datos){
   guardar();
 }
 
+/* Borrar es MARCAR, no quitar: quitado de aquí, el servidor lo devolvía en
+   la siguiente sincronización y el platillo «borrado» reaparecía. */
 function borrarProducto(pid){
-  const d = estado();
-  d.productos = d.productos.filter(p => p.id !== pid);
+  const p = estado().productos.find(x => x.id === pid);
+  if(!p) return;
+  p.borrado = true; p.disponible = false; p.destacado = false;
   guardar();
 }
 

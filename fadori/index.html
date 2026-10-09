@@ -1655,7 +1655,7 @@ arrancar();
     ok('pero NO le pisa la foto que la cooperativa ya había puesto',
        viejo.productos[1].foto === 'una-suya.jpg');
     ok('y la migración deja el archivo marcado, para no repetirla',
-       viejo.version === 5);
+       viejo.version === 6);
     ok('el platillo de arranque toma su id de fábrica, igual en todos los aparatos',
        viejo.productos[0].id === 'pb-pozole' && viejo.productos[1].id === 'v2');
     ok('y el pedido que lo nombraba lo sigue nombrando', (function(){
@@ -1664,6 +1664,26 @@ arrancar();
         pedidos:[{ id:'o1', renglones:[{ prod:'azar1', cant:1 }] }] };
       F._migrar(v);
       return v.pedidos[0].renglones[0].prod === 'pb-pozole';
+    })());
+    /* 5 → 6 · el menú de verdad de la cafetería */
+    ok('el platillo de relleno (pozole) se retira, pero sigue para el historial',
+       viejo.productos[0].borrado === true && viejo.productos[0].disponible === false);
+    ok('y el de la cooperativa no se toca', !viejo.productos[1].borrado && viejo.productos[1].disponible);
+    ok('el menú de verdad entra completo', ['pb-banderilla','pb-takis-fuego','pb-coca-cola-600-ml','pb-orden-de-3-tacos-de-bistec']
+       .every(id => viejo.productos.some(p => p.id === id && !p.borrado)));
+    ok('y lo de la cooperativa va después del menú', viejo.productos[1].orden >= 40);
+    ok('lo que ya estaba con el mismo nombre toma el precio real (torta de milanesa a $50)', (function(){
+      const v = { version:5, config:{}, alumnos:{}, eventos:[], conteos:[], pedidos:[],
+        productos:[{ id:'pb-torta-de-milanesa', nombre:'Torta de milanesa', cat:'torta', precio:3800, foto:'fotos/torta-milanesa.jpg', t:5 }] };
+      F._migrar(v);
+      const t = v.productos.find(p => p.id === 'pb-torta-de-milanesa');
+      return t.precio === 5000 && t.t > 5 && v.productos.filter(p => p.id === t.id).length === 1;
+    })());
+    ok('un borrado no sale en el menú (ni en el del mostrador)', (function(){
+      const p = F.productos(false)[0]; if(!p) return false;
+      p.borrado = true; const fuera = !F.productos(false).some(x => x.id === p.id) && !!F.producto(p.id);
+      delete p.borrado;
+      return fuera;
     })());
     ok('y a los platillos viejos les pone "todos los días", que no cambia nada',
        Array.isArray(viejo.productos[0].dias) && viejo.productos[0].dias.length === 0);
@@ -1692,7 +1712,7 @@ arrancar();
     })());
     ok('el destacado con foto se vuelve cartel, y sin foto se queda ficha',
        (function(){
-         const d = F.productos(false).find(x => x.destacado);
+         const d = F.productos(false).find(x => x.destacado) || F.productos(false)[0];
          if(!d) return false;
          const sinFoto = fichaPlato(d).indexOf('class="plato') > 0;
          F.guardarProducto({ id:d.id, foto:'data:image/gif;base64,R0lGODlhAQABAAAAACw=' });
