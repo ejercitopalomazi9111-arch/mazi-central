@@ -180,7 +180,9 @@ for(let i = 0; i < 40; i++){
   if(x.status === 429){ bloqueado = true; break; }
   if(x.status === 200) entro = true;
 }
-ok('adivinar el pasador a lo loco: se bloquea pronto', bloqueado && !entro);
+ok('adivinar el pasador a lo loco (un teléfono nuevo por intento): se bloquea pronto', bloqueado && !entro);
+r = await llamar('/api/entrar', { pasador: '482913' }, { ap: mostrador });
+ok('y en pleno ataque, la tablet de siempre SÍ entra', r.status === 200 && !!r.j?.token, 'status ' + r.status);
 r = await sync(fisgon, { productos: [{ ...menu[1], precio: 1, t: ahora() + 10 ** 9 }] }, { admin: 'llave-inventada-' + 'a'.repeat(40) });
 r = await sync(mostrador, {}, { admin: ADMIN });
 ok('una llave de mostrador inventada no sirve', r.j.cambios.productos.find(p => p.id === 'pb-agua').precio === 1500);

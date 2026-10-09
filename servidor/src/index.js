@@ -59,6 +59,8 @@ const TOPE = {
   eventosPorAparato10min: 400,
   fallasPasadorAparato15min: 6,
   fallasPasadorIp15min: 30,
+  fallasPasadorEscuelaHora: 25,       /* pasado esto, sólo intentan los aparatos que ya entraron antes */
+  codigosPorEscuelaHora: 400,
   codigosPorAparato10min: 10,
   codigosPorIp10min: 60,
   aparatosPorAlumno: 5,
@@ -91,6 +93,7 @@ export class Cooperativa {
       this.turno = (await g.get('turno')) || { dia: 0, n: 0 };
       this.config = (await g.get('config')) || null;
       this.llaves = (await g.get('llaves')) || {};
+      this.confiables = (await g.get('confiables')) || {};   /* aparatos que ya entraron al mostrador */
       this.limpiado = (await g.get('limpiado')) || 0;
       this.datos = {};
       for(const c of CAJONES) this.datos[c] = {};
@@ -163,20 +166,32 @@ export class Cooperativa {
 
   /* ── el mostrador entra ────────────────────────────────────────────── */
   async entrar(cuerpo, quien){
-    const kAp = 'pase:ap:' + (quien.aparato || 'anon'), kIp = 'pase:ip:' + quien.ip;
+    const kAp = 'pase:ap:' + (quien.aparato || 'anon'), kIp = 'pase:ip:' + quien.ip, kEsc = 'pase:escuela';
+    const confiable = !!(quien.aparato && this.confiables[quien.aparato]);
     if(this.lleva(kAp, 15 * 60000) >= TOPE.fallasPasadorAparato15min ||
-       this.lleva(kIp, 15 * 60000) >= TOPE.fallasPasadorIp15min)
+       (!confiable && this.lleva(kIp, 15 * 60000) >= TOPE.fallasPasadorIp15min))
       return json({ error: 'Demasiados intentos. Espera 15 minutos.' }, 429);
+    /* Alguien está probando pasadores desde muchos teléfonos o muchas redes
+       (el tope por red no lo frena: en producción cada intento puede salir de
+       otra IP). Entonces sólo prueban los aparatos que YA entraron alguna vez:
+       la tablet de la cooperativa entra; el de afuera se queda afuera. */
+    if(!confiable && this.lleva(kEsc, 60 * 60000) >= TOPE.fallasPasadorEscuelaHora)
+      return json({ error: 'Demasiados intentos en esta escuela. Entra desde la tablet de siempre o espera una hora.' }, 429);
     const bueno = String((this.config && this.config.pasador) || '1234');
     if(!igual(String(cuerpo.pasador || '').slice(0, 20), bueno)){
-      this.suma(kAp, 15 * 60000); this.suma(kIp, 15 * 60000);
+      this.suma(kAp, 15 * 60000); this.suma(kIp, 15 * 60000); this.suma(kEsc, 60 * 60000);
       return json({ error: 'Ese no es el pasador.' }, 401);
     }
     const ahora = Date.now();
     for(const k in this.llaves) if(this.llaves[k] < ahora) delete this.llaves[k];
     const llave = hex(32), vence = ahora + TOPE.llaveDura;
     this.llaves[llave] = vence;
-    await this.ctx.storage.put('llaves', this.llaves);
+    if(quien.aparato){
+      this.confiables[quien.aparato] = ahora;
+      const lista = Object.entries(this.confiables).sort((a, b) => b[1] - a[1]).slice(0, 20);
+      this.confiables = Object.fromEntries(lista);
+    }
+    await this.ctx.storage.put({ llaves: this.llaves, confiables: this.confiables });
     return json({ token: llave, vence });
   }
 
@@ -199,7 +214,8 @@ export class Cooperativa {
   async porCodigo(cuerpo, quien){
     if(!quien.aparato) return json({ error: 'Actualiza la app.' }, 400);
     if(!this.cuenta('cod:ap:' + quien.aparato, 10 * 60000, TOPE.codigosPorAparato10min) ||
-       !this.cuenta('cod:ip:' + quien.ip, 10 * 60000, TOPE.codigosPorIp10min))
+       !this.cuenta('cod:ip:' + quien.ip, 10 * 60000, TOPE.codigosPorIp10min) ||
+       !this.cuenta('cod:escuela', 60 * 60000, TOPE.codigosPorEscuelaHora))
       return json({ error: 'Demasiados intentos. Espera unos minutos.' }, 429);
     const cod = String(cuerpo.codigo || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const a = RE_COD.test(cod) && this.datos.alumnos[cod];
