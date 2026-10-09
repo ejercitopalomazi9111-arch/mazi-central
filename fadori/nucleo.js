@@ -83,7 +83,7 @@ const MENU_BASE = [
   { nombre:'Maruchan', cat:'antojo', precio:3500, seg:60, desc:'Sopa instantánea, con su agua caliente.', al:['gluten','soya','mariscos'], foto:'fotos/cafeteria/maruchan.jpg' },
   /* ── bebidas ── */
   { nombre:'Coca-Cola 600 ml', cat:'bebida', precio:3000, seg:8, desc:'Botella de 600.', al:[], foto:'fotos/cafeteria/cocacola.jpg' },
-  { nombre:'Coca-Cola chica', cat:'bebida', precio:2000, seg:8, desc:'Normal o sin azúcar: dile cuál.', al:[], foto:'fotos/refresco.jpg' },
+  { nombre:'Coca-Cola chica', cat:'bebida', precio:2000, seg:8, desc:'Normal o sin azúcar: dile cuál.', al:[] },
   { nombre:'Arizona', cat:'bebida', precio:2500, seg:8, desc:'Lata grande. Sandía o mucho mango, según haya.', al:[], foto:'fotos/cafeteria/arizona.jpg' },
   { nombre:'Boing', cat:'bebida', precio:2500, seg:8, desc:'Uva, guayaba o mango, según haya.', al:[], foto:'fotos/cafeteria/boing.jpg' },
   { nombre:'Gatorade', cat:'bebida', precio:3000, seg:8, desc:'Botella.', al:[], foto:'fotos/cafeteria/gatorade.jpg' },
