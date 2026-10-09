@@ -42,7 +42,7 @@ function semanaDe(t) {
 function marcaParaMotor() {
   return { nombre: marca.nombre, colores: marca.colores, letras: marca.letras, whatsapp: marca.whatsapp, direccion: marca.direccion, logo: logoImg };
 }
-const CAMPOS = ['nombre', 'frase', 'promo', 'precio', 'detalle', 'ingredientes', 'dia', 'grande', 'nota', 'lema', 'remate'];
+const CAMPOS = ['nombre', 'frase', 'promo', 'precio', 'detalle', 'ingredientes', 'dia', 'grande', 'nota', 'lema', 'remate', 'kicker', 'antes', 'cta'];
 function producto() {
   const p = { foto: fotoImg };
   for (const c of CAMPOS) { const v = $('#p-' + c).value.trim(); if (v) p[c] = v; }

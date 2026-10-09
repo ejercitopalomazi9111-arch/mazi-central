@@ -601,7 +601,8 @@ export function leerTabla(texto) {
   const sinAcentos = t => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
   const enc = partir(filas[0]).map(sinAcentos);
   const campo = { producto: 'nombre', nombre: 'nombre', platillo: 'nombre', frase: 'frase', eslogan: 'frase', precio: 'precio', promo: 'promo', promocion: 'promo',
-    detalle: 'detalle', ingredientes: 'ingredientes', foto: 'archivo', archivo: 'archivo', imagen: 'archivo', dia: 'dia', grande: 'grande', nota: 'nota', lema: 'lema', remate: 'remate' };
+    detalle: 'detalle', ingredientes: 'ingredientes', foto: 'archivo', archivo: 'archivo', imagen: 'archivo', dia: 'dia', grande: 'grande', nota: 'nota', lema: 'lema', remate: 'remate',
+    kicker: 'kicker', linea: 'kicker', 'linea chica': 'kicker', antes: 'antes', 'precio antes': 'antes', llamado: 'cta', cta: 'cta', titular: 'frase' };
   return filas.slice(1).map(l => {
     const c = partir(l), p = {};
     enc.forEach((e, i) => { const k = campo[e]; if (k && c[i] !== undefined && String(c[i]).trim()) p[k] = String(c[i]).trim(); });
