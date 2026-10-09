@@ -373,7 +373,8 @@ try{
 }catch(e){}
 
 const LLAVE_API   = 'fadori_servidor';   /* la dirección, fuera del documento */
-const LLAVE_SYNC  = 'fadori_sync';       /* hasta qué reloj ya me puse de acuerdo */
+const LLAVE_SYNC  = 'fadori_sync';       /* (viejo) hasta qué hora ya había mandado */
+const LLAVE_PEND  = 'fadori_pendientes'; /* lo que cambié aquí y falta mandar */
 const CAJONES = ['productos', 'alumnos', 'pedidos', 'conteos', 'eventos'];
 
 /* El servidor de fábrica. Antes la dirección sólo se podía pegar a mano en
@@ -431,9 +432,11 @@ function huellaDe(r){
    primera vez que se conecta lo sube entero una vez: precios, agotados,
    platillos propios y ajustes. */
 function subirMenu(){
-  const d = estado(), t = ahora();
-  d.productos.forEach(p => { p.t = t; });
-  if(d.config) d.config.t = t;
+  const d = estado(), t = ahora(), M = MotorServidor, pend = M._pend();
+  pend.productos = pend.productos || {};
+  d.productos.forEach(p => { p.t = Math.max(t, (p.t || 0) + 1); pend.productos[p.id] = p.t; });
+  if(d.config){ d.config.t = Math.max(t, (d.config.t || 0) + 1); pend.config = d.config.t; }
+  M._guardarPend(pend);
   MOTOR.escribir(d);
 }
 
@@ -495,31 +498,71 @@ const MotorServidor = {
        milisegundo de más no le hace daño a nadie; un pedido perdido sí. */
     const t = Math.max(ahora(), (this._ultimoT || 0) + 1);
     this._ultimoT = t;
+    /* Y además, quien cambia un registro le gana a la versión que tenía
+       enfrente, diga lo que diga su reloj. Gana el más reciente por hora, y
+       las horas de los aparatos NO coinciden: el servidor iba medio segundo
+       adelante, así que «tomar» un pedido justo después de que le pusieran
+       turno salía con hora "vieja" y se tiraba callado — la señora lo tomaba
+       y al alumno nunca le salía «preparando». Con un teléfono adelantado
+       cinco minutos, nadie le habría podido cambiar nada en cinco minutos. */
+    const nueva = (vieja) => {
+      const n = Math.max(t, (Number(vieja) || 0) + 1);
+      if(n > this._ultimoT) this._ultimoT = n;
+      return n;
+    };
+    let pend = null;
+    const apuntar = (c, id, n) => { pend = pend || this._pend(); (pend[c] = pend[c] || {})[id] = n; };
     for(const c of CAJONES){
       registrosDe(d, c).forEach(r => {
         const h = huellaDe(r);
         if(this._huellas[c][r.id] !== h){
           this._huellas[c][r.id] = h;
-          if(c === 'alumnos'){ if(d.alumnos[r.id]) d.alumnos[r.id].t = t; }
-          else r.t = t;
+          if(c === 'alumnos'){ if(d.alumnos[r.id]) apuntar(c, r.id, d.alumnos[r.id].t = nueva(d.alumnos[r.id].t)); }
+          else apuntar(c, r.id, r.t = nueva(r.t));
         }
       });
     }
     const hc = huellaDe(d.config || {});
-    if(hc !== this._huellaConfig){ this._huellaConfig = hc; d.config.t = t; }
+    if(hc !== this._huellaConfig){ this._huellaConfig = hc; d.config.t = nueva(d.config.t); pend = pend || this._pend(); pend.config = d.config.t; }
+    if(pend) this._guardarPend(pend);
   },
 
   /* ── Lo que todavía no sabe el servidor ─────────────────────────────── */
+  /* Qué falta mandar: la LISTA de lo que se cambió aquí, no "todo lo que sea
+     más nuevo que la última vez". Antes era lo segundo, y bastaba con que
+     llegara un registro de un teléfono con el reloj adelantado para que la
+     marca brincara al futuro y todo lo de este aparato se diera por mandado
+     sin haber salido. Además así no se re-manda lo que llegó de otro lado. */
   porMandar(d){
-    const visto = this._visto();
+    const pend = this._pend();
     const cambios = {};
     let cuantos = 0;
     for(const c of CAJONES){
-      cambios[c] = registrosDe(d, c).filter(r => (r.t || 0) > (visto[c] || 0));
+      const p = pend[c] || {};
+      cambios[c] = registrosDe(d, c).filter(r => p[r.id] != null);
       cuantos += cambios[c].length;
     }
-    if((d.config && d.config.t || 0) > (visto.config || 0)){ cambios.config = d.config; cuantos++; }
+    if(pend.config != null && d.config){ cambios.config = d.config; cuantos++; }
     return { cambios, cuantos };
+  },
+
+  _pend(){
+    try{
+      const crudo = localStorage.getItem(LLAVE_PEND);
+      if(crudo) return JSON.parse(crudo) || {};
+      /* aparato que viene de la versión con marca de hora: lo que tenía
+         pendiente según la marca vieja entra a la lista una sola vez */
+      const visto = this._visto(), d = MotorLocal.leer(), p = {};
+      if(d && localStorage.getItem(LLAVE_SYNC)){
+        for(const c of CAJONES) registrosDe(d, c).forEach(r => {
+          if((r.t || 0) > (visto[c] || 0)) (p[c] = p[c] || {})[r.id] = r.t; });
+        if(d.config && (d.config.t || 0) > (visto.config || 0)) p.config = d.config.t;
+      }
+      return p;
+    }catch(e){ return {}; }
+  },
+  _guardarPend(p){
+    try{ localStorage.setItem(LLAVE_PEND, JSON.stringify(p)); }catch(e){}
   },
 
   _visto(){
@@ -539,7 +582,6 @@ const MotorServidor = {
     this._empujando = true;
     try{
       const d = MotorLocal.leer(); if(!d) return;
-      const visto = this._visto();
       const { cambios, cuantos } = this.porMandar(d);
       this.pendientes = cuantos;
       this.ultimoIntento = ahora();
@@ -551,15 +593,17 @@ const MotorServidor = {
       if(!r.ok) throw new Error('el servidor contestó ' + r.status);
       const res = await r.json();
 
-      /* lo que mandé ya está allá: la próxima vez no se vuelve a mandar */
-      const nuevoVisto = Object.assign({}, visto);
+      /* lo que mandé ya está allá: se tacha de la lista. Si mientras viajaba
+         se volvió a cambiar (su hora en la lista es más nueva que la que
+         salió), se queda para el siguiente empujón. */
+      const pend = this._pend();
       for(const c of CAJONES){
         (cambios[c] || []).forEach(x => {
-          nuevoVisto[c] = Math.max(nuevoVisto[c] || 0, x.t || 0);
+          if(pend[c] && pend[c][x.id] != null && (x.t || 0) >= pend[c][x.id]) delete pend[c][x.id];
         });
       }
-      if(cambios.config) nuevoVisto.config = Math.max(nuevoVisto.config || 0, cambios.config.t || 0);
-      this._guardarVisto(nuevoVisto);
+      if(cambios.config && pend.config != null && (cambios.config.t || 0) >= pend.config) delete pend.config;
+      this._guardarPend(pend);
 
       const cambio = this.mezclar(res.cambios || {});
       this._reloj = res.reloj || this._reloj;
@@ -716,6 +760,11 @@ const MotorServidor = {
      Es el cinturón además de los tirantes, y cuesta un pedido de 200 bytes. */
   arrancar(){
     if(!direccionServidor()) return;
+    /* La foto de huellas se toma AQUÍ, antes de que nadie toque nada. Si se
+       tomara en el primer guardado, ese primer cambio quedaría dentro de la
+       foto y nunca saldría: el primer pedido del alumno se quedaba en su
+       teléfono. */
+    if(!this._huellas){ const d0 = MotorLocal.leer(); if(d0) this.estampar(d0); }
     this.enchufar();
     clearInterval(this._ronda);
     this._ronda = setInterval(() => this.empujar(), 15000);

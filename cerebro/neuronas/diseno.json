@@ -278,6 +278,30 @@
         "sin servidor"
       ],
       "vecinas": []
+    },
+    {
+      "id": "gana-el-reloj-equivocado",
+      "titulo": "Sincronizar «gana el más reciente» con la hora de cada aparato pierde cambios callado",
+      "gravedad": "alta",
+      "sintoma": "En Fadori, la señora tomaba un pedido y al alumno nunca le salía «preparando»; la cancelación de un alumno no llegaba al mostrador. Sin errores en ningún lado.",
+      "causa": "Tres caras del mismo error: (1) el servidor iba medio segundo adelante y le ponía su hora al pedido al darle turno, así que «tomar» justo después salía con hora más vieja y el servidor lo tiraba; (2) lo que faltaba mandar se decidía con una marca «ya mandé hasta tal hora», y un registro llegado de un teléfono con el reloj 2 min adelantado brincaba esa marca al futuro: todo lo de este aparato se daba por mandado sin salir; (3) la foto de huellas se tomaba en el primer guardado, y ese primer cambio quedaba dentro de la foto: el primer pedido del alumno que ya estaba registrado nunca salía.",
+      "porque": "Las relojes de los aparatos nunca coinciden, y cada prueba corría en UNA máquina con UN reloj. Sólo salió con aparatos de relojes distintos contra el servidor publicado.",
+      "arreglo": "fadori/nucleo.js: quien cambia un registro lo estampa con max(su hora, hora de la versión que vio + 1); lo pendiente es una LISTA de ids cambiados aquí (fadori_pendientes), no una marca de hora; y la foto de huellas se toma al arrancar la sincronía.",
+      "comoCazarlo": "LOCAL=1 node fadori/pruebas-vivo.mjs — dos alumnos (uno 2 min adelantado), mostrador 3 s atrasado, contra el servidor real. Mutación probada: sin la foto al arrancar, el «alumno que vuelve» sale rojo.",
+      "consejo": "En algo distribuido, la hora de un aparato es una opinión. Un cambio tiene que ganarle a lo que su autor vio, no al reloj de pared.",
+      "salioDe": "fadori · «asegúrate de que todo sea 100 % funcional y en tiempo real», 9 de octubre",
+      "senales": [
+        "no llega el cambio",
+        "preparando no aparece",
+        "cancelación no llega",
+        "reloj adelantado",
+        "hora del teléfono",
+        "sincronización pierde",
+        "tiempo real"
+      ],
+      "vecinas": [
+        "servidor-que-nadie-conecta"
+      ]
     }
   ]
 }

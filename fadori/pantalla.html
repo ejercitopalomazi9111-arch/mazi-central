@@ -121,6 +121,7 @@ pintar(); reloj();
 
 (function(){
   let bien = 0, mal = 0;
+  F.pausarSync();   /* que el pedido de prueba no salga al servidor */
   const ok = (q,c) => { if(c) bien++; else { mal++; console.error('✗ '+q); } };
   const guardado = JSON.stringify(F.estado());
   const uno = F.productos(true)[0];
@@ -128,7 +129,8 @@ pintar(); reloj();
     { origen:'mostrador', nombre:'Fulanito Secreto', grupo:'3A' });
   F.cargar(); pintar();
   const texto = $('#cuerpo').textContent;
-  ok('la pantalla pública muestra el número de turno', texto.indexOf(String(p.turno)) >= 0);
+  /* con servidor el turno llega un parpadeo después y mientras se ve «…» */
+  ok('la pantalla pública muestra el número de turno', texto.indexOf(F.verTurno(p)) >= 0);
   ok('la pantalla pública NUNCA muestra nombres', texto.indexOf('Fulanito') < 0);
   ok('tampoco muestra el grupo, que también identifica', texto.indexOf('3A') < 0);
   ok('ni el código del pedido, que va sólo en el ticket', texto.indexOf(p.folio) < 0);
