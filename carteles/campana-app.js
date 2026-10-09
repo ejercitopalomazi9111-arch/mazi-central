@@ -283,10 +283,16 @@ function pintarOpcionesTanda() {
   }
 }
 const fotosCat = (cat, n, recortadas = true) => fotos.filter(f => f.usar && f.cat === cat && !f.muchas && (!recortadas || (f.usarRecorte && f.recorte))).slice(0, n).map(f => f.id);
+/* «Tanda de zapatos» con una sola foto de zapatos y dieciséis de tenis: en la calle todo eso es
+   calzado, así que si la categoría no alcanza se completa con su familia (primero lo suyo). */
+const FAMILIA = { tenis: 'calzado', zapatos: 'calzado', botas: 'calzado', sandalias: 'calzado', bolsa: 'bolsas', cartera: 'bolsas', mochila: 'bolsas' };
+const deFamilia = cat => FAMILIA[cat] ? [cat, ...Object.keys(FAMILIA).filter(c => c !== cat && FAMILIA[c] === FAMILIA[cat])] : [cat];
+const fotosFam = (cat, n, recortadas = true) => deFamilia(cat).flatMap(c => fotosCat(c, n, recortadas)).slice(0, n);
 async function hacerTanda() {
-  const cat = $('#c-tCat').value, [cosa, pl, genero] = cosaDe(cat);
-  const fondo = fotos.find(f => f.usar && f.cat === cat && f.muchas) || fotos.find(f => f.usar && f.cat === cat);
-  const jobs = planTanda({ cat, cosa, plural: pl, genero, personas: +$('#c-tPersonas').value || 15, precio: $('#c-tPrecio').value.trim(), fondo: fondo?.id, fotos: fotosCat(cat, 3), avance: $('#c-tAvance').checked });
+  const cat = $('#c-tCat').value, [cosa, pl, genero] = cosaDe(cat), fam = deFamilia(cat);
+  const fondo = fam.map(c => fotos.find(f => f.usar && f.cat === c && f.muchas)).find(Boolean) || fam.map(c => fotos.find(f => f.usar && f.cat === c)).find(Boolean);
+  const jobs = planTanda({ cat, cosa, plural: pl, genero, personas: +$('#c-tPersonas').value || 15, precio: $('#c-tPrecio').value.trim(), fondo: fondo?.id,
+    fotos: fotosFam(cat, 3), completas: fotosFam(cat, 4, false), avance: $('#c-tAvance').checked });
   await hacer([{ grupo: `Tanda de ${pl}`, jobs }]);
 }
 async function hacerEncuesta() {

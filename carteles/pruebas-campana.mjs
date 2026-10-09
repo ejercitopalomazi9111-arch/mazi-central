@@ -57,6 +57,10 @@ ok(t1.some(a => a.prod.pasos?.some(p => p.includes('$30'))), 'con precio, los pa
 const t2 = planTanda({ cat: 'pantalon', cosa: 'pantalón', plural: 'pantalones', genero: 'el', personas: 12, avance: false });
 ok(!JSON.stringify(t2).includes('$') && t2.every(a => !a.nombre.startsWith('Avance')), 'sin precio no aparece ningún «$»; sin avance, no hay avances');
 ok(t2.some(a => a.prod.personas === 12) && JSON.stringify(t2).includes('12 lugares'), 'respeta 12 personas');
+const prox = x => x.find(a => a.nombre === '10-proxima-tanda');
+ok(prox(planTanda({ cat: 'playera', cosa: 'playera', plural: 'playeras', fotos: ['a', 'b'] }))?.estilo === 'coleccion', 'con dos recortes, la próxima tanda va en colección');
+ok(prox(planTanda({ cat: 'playera', cosa: 'playera', plural: 'playeras', fotos: ['a'], completas: ['a', 'b', 'c'] }))?.estilo === 'mosaico', 'sin recortes que alcancen, la próxima tanda sale igual, en mosaico con las fotos completas');
+ok(!prox(planTanda({ cat: 'playera', cosa: 'playera', plural: 'playeras', fotos: [], completas: ['a'] })), 'con una sola foto no hay próxima tanda');
 ok(planEncuesta({ a: 'Chamarras', b: 'Lociones' }).length === 2, 'la encuesta trae publicación e historia');
 
 /* ───────────── el servidor de archivos ───────────── */
