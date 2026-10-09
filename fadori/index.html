@@ -1487,6 +1487,7 @@ arrancar();
      menú se seguía viendo, pero al pedir la app le decía que no había puesto
      su nombre. Un alumno no tiene por qué pagar el precio de nuestras
      pruebas. */
+  F.pausarSync();   /* que los pedidos de prueba no salgan al servidor */
   const guardado = JSON.stringify(F.estado());
   let suYo = null, susAlergias = null;
   try{ suYo = localStorage.getItem('fadori_yo');
@@ -1508,7 +1509,11 @@ arrancar();
   const cola = F.colaOrdenada();
   ok('la fila atiende primero lo rápido', cola[0].id === p2.id);
   ok('cada pedido trae su código corto', /^[A-Z0-9]{4}$/.test(p1.folio) && p1.folio !== p2.folio);
-  ok('el turno se numera solo', p2.turno === p1.turno + 1);
+  /* con servidor el turno lo pone él y llega un parpadeo después: aquí sólo
+     se puede comprobar que el aparato NO se lo inventó */
+  ok('el turno se numera solo', F.motor() === 'servidor'
+       ? (p1.turno === null && p2.turno === null)
+       : p2.turno === p1.turno + 1);
 
   ok('el tope por alumno frena el cuarto pedido', (function(){
     try{ F.pedir(a.codigo, [{prod:rapido.id, cant:1}]);
@@ -1568,7 +1573,16 @@ arrancar();
     ok('pero NO le pisa la foto que la cooperativa ya había puesto',
        viejo.productos[1].foto === 'una-suya.jpg');
     ok('y la migración deja el archivo marcado, para no repetirla',
-       viejo.version === 4);
+       viejo.version === 5);
+    ok('el platillo de arranque toma su id de fábrica, igual en todos los aparatos',
+       viejo.productos[0].id === 'pb-pozole' && viejo.productos[1].id === 'v2');
+    ok('y el pedido que lo nombraba lo sigue nombrando', (function(){
+      const v = { version:4, config:{}, alumnos:{}, eventos:[], conteos:[],
+        productos:[{ id:'azar1', nombre:'Pozole', cat:'fuerte', precio:5000 }],
+        pedidos:[{ id:'o1', renglones:[{ prod:'azar1', cant:1 }] }] };
+      F._migrar(v);
+      return v.pedidos[0].renglones[0].prod === 'pb-pozole';
+    })());
     ok('y a los platillos viejos les pone "todos los días", que no cambia nada',
        Array.isArray(viejo.productos[0].dias) && viejo.productos[0].dias.length === 0);
     ok('y les pone id a los eventos y conteos viejos, para poder sincronizarlos',

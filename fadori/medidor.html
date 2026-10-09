@@ -369,6 +369,7 @@ verVista('hoy');
    ═════════════════════════════════════════════════════════════════════ */
 (function(){
   let bien = 0, mal = 0;
+  F.pausarSync();   /* que los pedidos de prueba no salgan al servidor */
   const ok = (q,c) => { if(c) bien++; else { mal++; console.error('✗ '+q); } };
   const guardado = JSON.stringify(F.estado());
 

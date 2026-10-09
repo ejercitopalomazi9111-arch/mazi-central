@@ -1230,11 +1230,23 @@ $('#aPasador').addEventListener('change', () => {
 abrirReja();
 verVista('despachar');
 
+/* El menú que este mostrador tenía antes de conectarse nunca había salido
+   (sólo sale lo que cambia). La primera vez, se sube entero. Va después de
+   las pruebas de abajo, que no deben salir del aparato. */
+setTimeout(() => {
+  if(F.motor() !== 'servidor') return;
+  const marca = 'fadori_menu_subido:' + F.sync.casa();
+  try{ if(localStorage.getItem(marca)) return; }catch(e){ return; }
+  F.subirMenu();
+  try{ localStorage.setItem(marca, String(Date.now())); }catch(e){}
+}, 800);
+
 /* ══════════════════════════════════════════════════════════════════════
    PRUEBAS
    ═════════════════════════════════════════════════════════════════════ */
 (function(){
   let bien = 0, mal = 0;
+  F.pausarSync();   /* que los pedidos de prueba no salgan al servidor */
   const ok = (q,c) => { if(c) bien++; else { mal++; console.error('✗ '+q); } };
   const guardado = JSON.stringify(F.estado());
 
@@ -1313,8 +1325,12 @@ verVista('despachar');
   (function(){
     const M = F.sync;
 
-    ok('sin dirección guardada, el motor es el local y nada sale del aparato',
-       !F.servidor() && F.motor() === 'local');
+    /* publicada, la app trae su servidor de fábrica (si no, cada teléfono
+       saca turno 1 y nada llega al mostrador); en local, ninguno */
+    ok('el servidor de fábrica sólo entra en la dirección publicada',
+       F.servidorDeFabrica()
+         ? F.servidor() !== '' && F.motor() === 'servidor'
+         : (!F.servidor() && F.motor() === 'local'));
 
     ok('una dirección sin https no se acepta',
        (function(){ try{ F.ponerServidor('fadori.workers.dev'); return false; }
