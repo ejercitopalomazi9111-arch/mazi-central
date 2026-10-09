@@ -7,11 +7,12 @@ export const FAMILIAS = [
   ['Kalam', 'fuentes/Kalam-Bold.woff2', '700'],
   ['Oswald', 'fuentes/Oswald.woff2', '200 700'],
   ['Playfair Display', 'fuentes/PlayfairDisplay.woff2', '400 900'],
+  ['Playfair Display', 'fuentes/PlayfairDisplay-Italic.woff2', '400 900', 'italic'],
   ['Montserrat', 'fuentes/Montserrat.woff2', '100 900'],
 ];
 export async function cargarLetras() {
-  await Promise.all(FAMILIAS.map(async ([fam, url, peso]) => {
-    const f = new FontFace(fam, `url(${new URL(url, BASE)})`, { weight: peso });
+  await Promise.all(FAMILIAS.map(async ([fam, url, peso, estilo = 'normal']) => {
+    const f = new FontFace(fam, `url(${new URL(url, BASE)})`, { weight: peso, style: estilo });
     await f.load(); document.fonts.add(f);
   }));
 }

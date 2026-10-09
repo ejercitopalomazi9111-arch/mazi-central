@@ -31,7 +31,7 @@ export const LETRAS = {
 };
 
 export const ESTILOS = [
-  { id: 'brocha',  nombre: 'Brocha',        para: 'Producto estrella con ingredientes, como el Bananito' },
+  { id: 'brocha', grupo: 'comida', nombre: 'Brocha',        para: 'Producto estrella con ingredientes, como el Bananito' },
   { id: 'gigante', nombre: 'Promo gigante', para: '2x1, 3x2, «segundo a $1»: la promo en letras enormes' },
   { id: 'semana',  nombre: 'La semana',     para: 'Las promos de cada día en un solo cartel' },
   { id: 'foto',    nombre: 'Foto limpia',   para: 'La foto manda; logo y nombre discretos' },
@@ -546,6 +546,15 @@ function estiloBloque(ctx, W, H, d, r, rec) {
 }
 
 const PINTORES = { brocha: estiloBrocha, gigante: estiloGigante, semana: estiloSemana, foto: estiloFoto, limpio: estiloLimpio, bloque: estiloBloque };
+ESTILOS.forEach(e => { e.grupo ||= 'comida'; });
+/* Otros módulos (moda.js, campanas.js) suman sus estilos aquí sin tocar éste. */
+export function registrar(meta, fn) {
+  if (!ESTILOS.some(e => e.id === meta.id)) ESTILOS.push({ grupo: 'comida', ...meta });
+  else Object.assign(ESTILOS.find(e => e.id === meta.id), meta);
+  PINTORES[meta.id] = fn;
+}
+/* Lo que los otros estilos reusan del motor. */
+export { rgba, fuente, pintarBloque, MAY, cajaRedonda, fondoOscuro, medidas, pintarFoto, hueco, pintarLogo, icono, pintarPrecio };
 
 /** Lo que necesita un cartel, con valores por omisión que no truenan. */
 export function normalizar(marca = {}, prod = {}) {
@@ -567,7 +576,7 @@ export function pintar(canvas, o, rec = {}) {
   const ctx = canvas.getContext('2d');
   const d = normalizar(o.marca, o.prod); d.semana = o.semana || [];
   const r = azar(`${o.semilla ?? 1}|${o.estilo}|${o.prod?.nombre || ''}`);
-  (PINTORES[o.estilo] || estiloBrocha)(ctx, f.w, f.h, d, r, rec);
+  (PINTORES[o.estilo] || estiloBrocha)(ctx, f.w, f.h, d, r, rec, o);
   return canvas;
 }
 
