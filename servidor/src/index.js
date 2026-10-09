@@ -49,7 +49,7 @@ const TOPE = {
   cuerpoMostrador: 6 * 1024 * 1024,   /* el menú con fotos */
   registrosPorVuelta: 60,             /* registros por cajón en una sola llamada de alumno */
   peticionesPorIpMinuto: 2400,        /* todo un wifi escolar cabe; un script en bucle no */
-  alumnosPorAparatoDia: 5,            /* hermanos que comparten teléfono, sí; 40 alumnos falsos, no */
+  alumnosPorAparatoDia: 12,           /* hermanos y pruebas en un teléfono, sí; 40 alumnos falsos, no */
   alumnosPorIpHora: 400,
   alumnosPorEscuelaDia: 3000,
   pedidosPorAlumnoDia: 12,

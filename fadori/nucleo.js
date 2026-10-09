@@ -580,8 +580,9 @@ const MotorServidor = {
      sin haber salido. Además así no se re-manda lo que llegó de otro lado. */
   /* Un pedido de ESTE teléfono que el servidor no aceptó se marca cancelado
      con el motivo, sin volverlo a mandar (si se estampara, iría y vendría). */
-  marcarRechazados(porId){
+  marcarRechazados(porId, alumnosRech){
     const ids = Object.keys(porId); if(!ids.length) return false;
+    alumnosRech = alumnosRech || {};
     const d = MotorLocal.leer(); if(!d) return false;
     const mios = misCodigos(), motivo = {
       tope: 'Ya tienes los pedidos que se permiten por recreo.', agotado: 'Se acabó algo de lo que pediste.',
@@ -591,7 +592,9 @@ const MotorServidor = {
     d.pedidos.forEach(p => {
       if(!porId[p.id] || p.turno || mios.indexOf(p.alumno) < 0 || p.estado === 'cancelado') return;
       p.estado = 'cancelado'; p.cancelado = ahora();
-      p.rechazo = motivo[porId[p.id]] || 'El servidor no lo aceptó.';
+      p.rechazo = alumnosRech[p.alumno] === 'tope'
+        ? 'Este teléfono ya dio de alta a muchos alumnos hoy. Pídelo desde el teléfono del alumno o con su código.'
+        : motivo[porId[p.id]] || 'El servidor no lo aceptó.';
       if(this._huellas && this._huellas.pedidos) this._huellas.pedidos[p.id] = huellaDe(p);
       toco = true;
     });
@@ -652,9 +655,10 @@ const MotorServidor = {
       this.pendientes = cuantos;
       this.ultimoIntento = ahora();
 
+      const completo = !!this._completo && !!llaveMostrador();
       const r = await fetch(api + '/api/sync?casa=' + encodeURIComponent(this.casa()), {
         method: 'POST', headers: cabezasSync(),
-        body: JSON.stringify({ desde: this._reloj, cambios }),
+        body: JSON.stringify({ desde: completo ? 0 : this._reloj, cambios }),
       });
       if(!r.ok) throw new Error('el servidor contestó ' + r.status);
       const res = await r.json();
@@ -681,9 +685,10 @@ const MotorServidor = {
       if(cambios.config && pend.config != null && (cambios.config.t || 0) >= pend.config &&
          !(rech.config && rech.config.config === 'pasador')) delete pend.config;
       this._guardarPend(pend);
-      const tumbados = this.marcarRechazados(rech.pedidos || {});
+      const tumbados = this.marcarRechazados(rech.pedidos || {}, rech.alumnos || {});
 
-      const cambio = this.mezclar(res.cambios || {});
+      const cambio = this.mezclar(res.cambios || {}, completo);
+      if(completo) this._completo = false;
       this._reloj = Math.max(this._reloj, res.reloj || 0);
       if(tumbados) this._avisar();
       this.enLinea = true;
@@ -898,6 +903,10 @@ const MotorServidor = {
     const j = await r.json().catch(() => ({}));
     if(r.status === 200 && j.token){
       try{ localStorage.setItem(LLAVE_ADMIN, JSON.stringify({ token: j.token, vence: j.vence })); }catch(e){}
+      /* Lo que esta tablet bajó ANTES de la llave venía recortado (sin
+         nombres, sin alumnos, sin fiados). Con la llave se vuelve a bajar
+         todo desde cero y la versión completa gana. */
+      this._completo = true;
       this.enchufar(); this.empujar();
       return { ok: true };
     }
@@ -1075,6 +1084,10 @@ function cargar(){
 let limpiadoLocal = false;
 function limpiarLocal(d){
   if(MOTOR.nombre !== 'servidor') return false;
+  /* La pantalla de la cooperativa NUNCA se limpia como teléfono de alumno,
+     aunque todavía no tenga llave: se abre, carga, y el pasador se pone
+     después. Limpiarla ahí borraba a los alumnos y con ellos los fiados. */
+  try{ if(/mostrador|medidor/.test(location.pathname)) return false; }catch(e){}
   const t = ahora(), hoy = new Date(t).toDateString();
   const antesP = d.pedidos.length, antesE = d.eventos.length;
   if(llaveMostrador()){
@@ -1197,7 +1210,7 @@ function cambiarPasador(nuevo){
 
 /* ══════════════════════════════════════════════════════════════════════════
    5 · QUIÉN ES · F06 · identidad sin registro
-   Nombre de pila y grupo. Sin contraseña, sin correo, sin apellidos, sin
+   Primer nombre e inicial del apellido, y grupo. Sin contraseña, sin correo, sin apellidos, sin
    foto. Cientos de menores sin una base de datos de menores.
    ═════════════════════════════════════════════════════════════════════════ */
 const LLAVE_YO = 'fadori_yo';

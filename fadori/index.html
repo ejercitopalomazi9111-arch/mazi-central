@@ -74,7 +74,7 @@
 
     <div class="tarjeta">
       <label for="eNombre">¿Cómo te digo?</label>
-      <input id="eNombre" maxlength="24" autocomplete="off" placeholder="Tu nombre de pila">
+      <input id="eNombre" maxlength="24" autocomplete="off" placeholder="Primer nombre e inicial del apellido">
       <label for="eGrupo">¿De qué grupo?</label>
       <input id="eGrupo" maxlength="6" autocomplete="off" placeholder="3.1">
       <p class="aviso" style="margin-top:14px">Nada más eso. <b>Sin apellidos, sin correo,
@@ -108,7 +108,7 @@
       </ul>
       <h3 style="margin:16px 0 8px">Qué se guarda de ti</h3>
       <ul style="padding-left:18px; line-height:1.65; color:var(--tenue); font-size:14px">
-        <li>Tu <b>nombre de pila</b> y tu <b>grupo</b>. Nada más.</li>
+        <li>Tu <b>primer nombre y la inicial de tu apellido</b>, y tu <b>grupo</b>. Nada más.</li>
         <li>Lo que pides, para darte tu turno y tu ticket.</li>
         <li><b>No</b> se guarda: apellidos, correo, teléfono, contraseña ni fotos tuyas.</li>
         <li>Se usa <b>sólo</b> para despachar la cooperativa. No se comparte con nadie más.</li>
@@ -172,9 +172,13 @@
     <h1>Tu turno</h1>
     <div id="cajaTurno" class="pila"></div>
     <div id="esperando"></div>
-    <h2 id="tituloRenglones">Lo que pediste</h2>
-    <ul class="renglones" id="renglonesTurno"></ul>
-    <div class="chips" style="margin-top:16px">
+    <!-- Ya pagado, entregado o cancelado, la lista estorba: va cerrada y se
+         abre con un toque. Mientras está vivo, abierta. -->
+    <details class="lo-pedido" id="loPedido" open>
+      <summary id="tituloRenglones">Lo que pediste</summary>
+      <ul class="renglones" id="renglonesTurno"></ul>
+    </details>
+    <div class="chips" id="accionesTurno" style="margin-top:16px">
       <button class="btn chico" id="bEnCamino" type="button">🚶 Voy en camino</button>
       <button class="btn chico" id="bNoPuedo" type="button">Hoy no puedo ir</button>
     </div>
@@ -619,6 +623,7 @@ function tarjetaEspera(p, lugar){
   '</button>';
 }
 
+let claveLista = '';
 function pintarTurno(){
   const caja = $('#cajaTurno');
   const vivos = misVivos();
@@ -637,11 +642,23 @@ function pintarTurno(){
 
   if(!miPedido){
     caja.innerHTML = '<p class="sub">No tienes ningún pedido en la fila.</p>';
-    $('#renglonesTurno').innerHTML = ''; $('#tituloRenglones').hidden = true;
+    $('#renglonesTurno').innerHTML = ''; $('#loPedido').hidden = true;
+    $('#bEnCamino').style.display = 'none'; $('#bNoPuedo').style.display = 'none';
     $('#esperando').innerHTML = ''; return;
   }
   const p = miPedido;
-  $('#tituloRenglones').hidden = false;
+  $('#loPedido').hidden = false;
+  /* «Hoy no puedo ir» sólo mientras sigue en la fila y sin pagar; «Voy en
+     camino» mientras está vivo. Con display y no con `hidden`: el `hidden`
+     pierde contra el display de .btn y el botón seguía pintado. */
+  const vivo = F.VIVOS.indexOf(p.estado) >= 0, pagado = (p.pagado || 0) > 0;
+  $('#bNoPuedo').style.display = p.estado === 'en_cola' && !pagado ? '' : 'none';
+  $('#bEnCamino').style.display = vivo && !pagado ? '' : 'none';
+  /* pagado, entregado o cancelado: la lista se cierra (una vez; si el alumno
+     la abre, no se le vuelve a cerrar en el siguiente repintado) */
+  const cerrado = !vivo || pagado, clave = p.id + ':' + cerrado;
+  if(clave !== claveLista){ claveLista = clave; $('#loPedido').open = !cerrado; }
+  $('#tituloRenglones').textContent = cerrado ? 'Lo que pediste · ' + F.pesos(p.total) : 'Lo que pediste';
 
   if(F.VIVOS.indexOf(p.estado) >= 0){
     caja.innerHTML = tarjetaTurno(p);

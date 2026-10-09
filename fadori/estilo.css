@@ -1337,3 +1337,13 @@ body.cortina-arriba{overflow:hidden}
 
   @page{ margin:14mm }
 }
+
+/* Mi turno · lo que pediste, en desplegable (cerrado al pagar o cancelar) */
+.lo-pedido{margin-top:20px}
+.lo-pedido > summary{cursor:pointer; list-style:none; display:flex; align-items:center; gap:8px;
+  min-height:44px; font-size:20px; font-weight:800; letter-spacing:-.01em}
+.lo-pedido > summary::-webkit-details-marker{display:none}
+.lo-pedido > summary::after{content:'▾'; margin-left:auto; font-size:18px; color:var(--tenue);
+  transition:transform .2s ease}
+.lo-pedido:not([open]) > summary::after{transform:rotate(-90deg)}
+.lo-pedido > summary:focus-visible{outline:3px solid var(--acento, #E8622C); outline-offset:3px; border-radius:8px}
