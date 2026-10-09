@@ -1330,7 +1330,7 @@ function pintarSinLlave(){
 setInterval(pintarSinLlave, 4000);
 function subirMenuUnaVez(){
   if(F.motor() !== 'servidor' || !F.llaveMostrador()) return;
-  const marca = 'fadori_menu_subido4:' + F.sync.casa();   /* 3 = el menú de verdad · 4 = sus fotos parejas (9 de octubre) */
+  const marca = 'fadori_menu_subido5:' + F.sync.casa();   /* 3 = el menú de verdad · 4 = fotos parejas · 5 = fotos del modelo exacto (9 de octubre) */
   try{ if(localStorage.getItem(marca)) return; }catch(e){ return; }
   if(F.subirMenu() !== false){ try{ localStorage.setItem(marca, String(Date.now())); }catch(e){} }
 }
