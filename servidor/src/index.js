@@ -39,7 +39,10 @@
      en 30 minutos desde el MISMO wifi: eso tiene que pasar entero.
    ═════════════════════════════════════════════════════════════════════════ */
 
+import { nuevasLlavesVapid, mandar, suscripcionValida } from './push.js';
+
 const CAJONES = ['productos', 'alumnos', 'pedidos', 'conteos', 'eventos'];
+const CONTACTO = 'mailto:grupomazi.oficial@gmail.com';
 const VIVOS = ['en_cola', 'preparando', 'listo'];
 const DIA = 24 * 60 * 60 * 1000;
 
@@ -94,6 +97,9 @@ export class Cooperativa {
       this.config = (await g.get('config')) || null;
       this.llaves = (await g.get('llaves')) || {};
       this.confiables = (await g.get('confiables')) || {};   /* aparatos que ya entraron al mostrador */
+      this.vapid = (await g.get('vapid')) || null;
+      this.subs = {};                                          /* aparato -> suscripción de notificaciones */
+      for(const [k, v] of await g.list({ prefix: 'push:' })) this.subs[k.slice(5)] = v;
       this.limpiado = (await g.get('limpiado')) || 0;
       this.datos = {};
       for(const c of CAJONES) this.datos[c] = {};
@@ -144,6 +150,8 @@ export class Cooperativa {
       return json({ reloj: this.reloj, cambios: this.desde(0, quien), turno: this.turno });
     }
 
+    if(ruta.endsWith('/push/clave')) return json({ clave: (await this.llavesVapid()).publica });
+
     if(pedido.method !== 'POST') return json({ error: 'No existe.' }, 404);
     const crudo = await pedido.text();
     if(crudo.length > (quien.admin ? TOPE.cuerpoMostrador : TOPE.cuerpoAlumno))
@@ -161,7 +169,65 @@ export class Cooperativa {
     }
     if(ruta.endsWith('/pasador')) return this.cambiarPasador(cuerpo, quien);
     if(ruta.endsWith('/codigo')) return this.porCodigo(cuerpo, quien);
+    if(ruta.endsWith('/push/alta')) return this.altaPush(cuerpo, quien);
+    if(ruta.endsWith('/push/baja')){
+      if(quien.aparato && this.subs[quien.aparato]){ delete this.subs[quien.aparato]; await this.ctx.storage.delete('push:' + quien.aparato); }
+      return json({ bien: true });
+    }
     return json({ error: 'No existe.' }, 404);
+  }
+
+  /* ── las notificaciones del teléfono ───────────────────────────────── */
+  async llavesVapid(){
+    if(!this.vapid){ this.vapid = await nuevasLlavesVapid(); await this.ctx.storage.put('vapid', this.vapid); }
+    return this.vapid;
+  }
+  async altaPush(cuerpo, quien){
+    if(!quien.aparato) return json({ error: 'Actualiza la app.' }, 400);
+    if(!suscripcionValida(cuerpo.sub, this.env && this.env.PUSH_PRUEBA)) return json({ error: 'Esa suscripción no es de un servicio de notificaciones.' }, 400);
+    if(!this.subs[quien.aparato] && Object.keys(this.subs).length >= 6000) return json({ error: 'Demasiados aparatos.' }, 429);
+    const s = { sub: { endpoint: cuerpo.sub.endpoint, keys: { p256dh: cuerpo.sub.keys.p256dh, auth: cuerpo.sub.keys.auth } },
+                mostrador: !!quien.admin, t: Date.now() };
+    this.subs[quien.aparato] = s;
+    await this.ctx.storage.put('push:' + quien.aparato, s);
+    return json({ bien: true });
+  }
+  /* Qué merece sonar en el bolsillo: que ya está, que se acabó algo, que la
+     cooperativa lo canceló; y a la cooperativa, que llegó un pedido. Lo que
+     se mueve en la fila se ve en la app, no se manda: serían veinte avisos
+     por recreo y el alumno los apagaría todos. */
+  notificar(tocados, quien){
+    const envios = [];
+    for(const [c, rec, previo] of tocados){
+      if(c !== 'pedidos') continue;
+      const n = rec.turno ? 'Turno ' + rec.turno : 'Tu pedido';
+      if(rec.alumno){
+        const avisos = [];
+        if(rec.estado === 'listo' && (!previo || previo.estado !== 'listo'))
+          avisos.push({ titulo: '¡Tu pedido ya está!', cuerpo: n + ' · ve por él al mostrador', tag: 'listo-' + rec.id });
+        if(rec.avisoFalta && (!previo || !previo.avisoFalta || previo.avisoFalta.t !== rec.avisoFalta.t))
+          avisos.push({ titulo: 'Se acabó algo de tu pedido', cuerpo: n + ' · abre la app y escoge otra cosa', tag: 'falta-' + rec.id });
+        if(quien.admin && rec.estado === 'cancelado' && previo && previo.estado !== 'cancelado' && !rec.porFalta)
+          avisos.push({ titulo: 'Tu pedido se canceló', cuerpo: n + ' · lo canceló la cooperativa', tag: 'cancelado-' + rec.id });
+        const a = this.datos.alumnos[rec.alumno];
+        for(const ap of (a && a._dev) || []) for(const av of avisos) envios.push([ap, Object.assign({ url: 'index.html' }, av)]);
+      }
+      if(!previo && !quien.admin && rec.origen === 'app' && rec.estado === 'en_cola'){
+        for(const ap in this.subs) if(this.subs[ap].mostrador)
+          envios.push([ap, { titulo: 'Nuevo pedido · ' + n, cuerpo: (rec.nombre || '') + (rec.grupo ? ' · ' + rec.grupo : ''), tag: 'nuevo-' + rec.id, url: 'mostrador.html' }]);
+      }
+    }
+    if(!envios.length) return;
+    const p = (async () => {
+      const vapid = await this.llavesVapid();
+      await Promise.allSettled(envios.map(async ([ap, av]) => {
+        const s = this.subs[ap]; if(!s) return;
+        const st = await mandar(vapid, s.sub, av, CONTACTO).catch(() => 0);
+        /* 404/410: esa suscripción ya no existe (desinstaló, borró datos) */
+        if(st === 404 || st === 410){ delete this.subs[ap]; await this.ctx.storage.delete('push:' + ap); }
+      }));
+    })();
+    try{ this.ctx.waitUntil(p); }catch(e){}
   }
 
   /* ── el mostrador entra ────────────────────────────────────────────── */
@@ -283,7 +349,7 @@ export class Cooperativa {
     const rechazados = [], tocados = [];
     let configTocada = false, turnoTocado = false;
     const rechaza = (cajon, id, por) => rechazados.push({ cajon, id: String(id || '').slice(0, 40), por });
-    const poner = (c, rec) => { rec._r = nuevo; this.datos[c][rec.id] = rec; tocados.push([c, rec]); };
+    const poner = (c, rec) => { const previo = this.datos[c][rec.id]; rec._r = nuevo; this.datos[c][rec.id] = rec; tocados.push([c, rec, previo]); };
     const lista = (c) => Array.isArray(cambios[c]) ? cambios[c].slice(0, quien.admin ? 5000 : TOPE.registrosPorVuelta) : [];
 
     /* ── el mostrador: confía, pero limpia ──────────────────────────── */
@@ -348,6 +414,7 @@ export class Cooperativa {
       if(configTocada) escribe.push(['config', this.config]);
       await this.escribir(escribe);
       this.avisar(tocados, configTocada, antes);
+      this.notificar(tocados, quien);
     }
     if(ahora - this.limpiado > 60 * 60000) await this.limpiar(ahora);
 
