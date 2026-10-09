@@ -256,6 +256,28 @@
         "Paulina"
       ],
       "vecinas": []
+    },
+    {
+      "id": "servidor-que-nadie-conecta",
+      "titulo": "Fadori: el servidor estaba vivo y ningún teléfono le hablaba — todos turno 1 y nada en el mostrador",
+      "gravedad": "alta",
+      "sintoma": "Carlos hizo pedidos con cinco alumnos: todos salieron con turno 1 y ninguno llegó al mostrador. Sospechó del servidor, y el servidor contestaba {\"bien\":true}.",
+      "causa": "La dirección del servidor sólo se podía pegar a mano en los ajustes del mostrador; el teléfono del alumno no tiene ajustes, así que cada uno trabajaba «local»: contaba sus propios turnos y sus pedidos nunca salían. Debajo había un segundo defecto: el menú de arranque se sembraba con ids al azar en cada aparato y nunca se subía, así que aun conectados el mostrador recibía pedidos de platillos que no conocía.",
+      "porque": "Cada pieza pasaba sus pruebas por separado —el servidor las suyas, cada pantalla las suyas en modo local— y nadie había probado dos teléfonos y un mostrador juntos contra el servidor publicado.",
+      "arreglo": "fadori/nucleo.js: servidor de fábrica cuando la página está publicada (en local sigue sin servidor; «quitar el servidor» guarda 'local' a propósito); ids de fábrica para el menú de arranque (idBase) con migración 4→5 que también corrige pedidos y eventos; el mostrador sube su menú entero la primera vez que se conecta; y pausarSync() para que las pruebas que corren solas al cargar no manden sus pedidos de mentira al servidor.",
+      "comoCazarlo": "Abrir DOS alumnos y UN mostrador contra el servidor real en una escuela de prueba (fadori_casa aparte), pedir desde los dos y mirar: turnos distintos, la cola del mostrador con los dos, y el nombre del platillo en cada renglón.",
+      "consejo": "Un sistema de varios aparatos se prueba con varios aparatos. Y un servidor que hay que configurar a mano en cada teléfono es un servidor que no existe.",
+      "salioDe": "fadori · prueba de Carlos con cinco alumnos, 9 de octubre",
+      "senales": [
+        "turno 1",
+        "todos turno 1",
+        "no llegan los pedidos",
+        "mostrador vacío",
+        "servidor",
+        "fadori",
+        "sin servidor"
+      ],
+      "vecinas": []
     }
   ]
 }

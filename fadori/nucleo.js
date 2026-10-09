@@ -376,13 +376,31 @@ const LLAVE_API   = 'fadori_servidor';   /* la dirección, fuera del documento *
 const LLAVE_SYNC  = 'fadori_sync';       /* hasta qué reloj ya me puse de acuerdo */
 const CAJONES = ['productos', 'alumnos', 'pedidos', 'conteos', 'eventos'];
 
+/* El servidor de fábrica. Antes la dirección sólo se podía pegar a mano en
+   los ajustes del mostrador, y el teléfono del alumno no tiene ajustes: cada
+   uno se quedaba en «local», todos sacaban turno 1 y ningún pedido salía del
+   teléfono (lo cazó Carlos probando con cinco alumnos). Ahora, publicada, la
+   app se conecta sola; en local y en las pruebas sigue sin servidor. */
+const SERVIDOR_DE_FABRICA = 'https://fadori.palomazi9111.workers.dev';
+const SIN_SERVIDOR = 'local';            /* «quitar el servidor» a propósito */
+function servidorDeFabrica(){
+  try{
+    const h = location.hostname || '';
+    return /(^|\.)mazi-central\.palomazi9111\.workers\.dev$/.test(h) ? SERVIDOR_DE_FABRICA : '';
+  }catch(e){ return ''; }
+}
 function direccionServidor(){
-  try{ return localStorage.getItem(LLAVE_API) || ''; }catch(e){ return ''; }
+  let v = '';
+  try{ v = localStorage.getItem(LLAVE_API) || ''; }catch(e){}
+  if(v === SIN_SERVIDOR) return '';
+  return v || servidorDeFabrica();
 }
 function ponerServidor(url){
   const u = String(url || '').trim().replace(/\/+$/, '');
   if(u && !/^https?:\/\//.test(u)) throw new Error('La dirección tiene que empezar con https://');
-  try{ u ? localStorage.setItem(LLAVE_API, u) : localStorage.removeItem(LLAVE_API); }catch(e){}
+  /* sin dirección = «trabajar sola» a propósito; si sólo se borrara, volvería
+     a entrar el servidor de fábrica en la siguiente recarga */
+  try{ localStorage.setItem(LLAVE_API, u || SIN_SERVIDOR); }catch(e){}
   return u;
 }
 
@@ -404,6 +422,27 @@ function huellaDe(r){
   try{ return JSON.stringify(c); }catch(e){ return String(Math.random()); }
 }
 
+/* La pausa dura lo que dura el código que está corriendo ahora mismo: se
+   suelta sola en cuanto termina, aunque una prueba truene a la mitad. Una
+   pausa que dependiera de que alguien la quitara se quedaría puesta el día
+   que una prueba falle, y entonces ningún pedido saldría nunca. */
+/* El mostrador es el dueño del menú. Lo que tenía guardado de antes de
+   conectarse nunca se había mandado (sólo sale lo que cambia), así que la
+   primera vez que se conecta lo sube entero una vez: precios, agotados,
+   platillos propios y ajustes. */
+function subirMenu(){
+  const d = estado(), t = ahora();
+  d.productos.forEach(p => { p.t = t; });
+  if(d.config) d.config.t = t;
+  MOTOR.escribir(d);
+}
+
+let syncEnPausa = false;
+function pausarSync(){
+  syncEnPausa = true;
+  setTimeout(() => { syncEnPausa = false; }, 0);
+}
+
 const MotorServidor = {
   nombre: 'servidor',
   _huellas: null,      /* cajon -> {id: huella} */
@@ -421,6 +460,11 @@ const MotorServidor = {
   leer(){ return MotorLocal.leer(); },
 
   escribir(d){
+    /* Las pruebas que corren solas al cargar cada pantalla hacen pedidos de
+       mentira y al final reponen lo que había. Con servidor, esos pedidos se
+       habrían ido a TODOS los aparatos de la escuela. Mientras corren, nada
+       sale del aparato. */
+    if(syncEnPausa){ MotorLocal.escribir(d); return; }
     this.estampar(d);
     MotorLocal.escribir(d);          /* primero al aparato. SIEMPRE. */
     this.empujar();                  /* y luego, si se puede, al servidor */
@@ -490,6 +534,7 @@ const MotorServidor = {
   async empujar(){
     const api = direccionServidor();
     if(!api) return;
+    if(syncEnPausa){ clearTimeout(this._tras); this._tras = setTimeout(() => this.empujar(), 30); return; }
     if(this._empujando){ this._otraVez = true; return; }
     this._empujando = true;
     try{
@@ -694,11 +739,20 @@ elegirMotor();
    ═════════════════════════════════════════════════════════════════════════ */
 let D = null;
 
+/* El id de un platillo de arranque sale de su NOMBRE, no del azar. Con id al
+   azar cada aparato sembraba su propio menú con otros ids, y el pedido del
+   alumno llegaba al mostrador pidiendo un platillo que el mostrador no
+   conocía: salía el turno, pero no qué cocinar. */
+function idBase(nombre){
+  return 'pb-' + String(nombre).normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
 function siembra(){
   const d = estadoVacio();
-  d.version = 4;
+  d.version = 5;
   d.productos = MENU_BASE.map((p, i) => ({
-    id: id('p'),
+    id: idBase(p.nombre),
     nombre: p.nombre,
     cat: p.cat,
     precio: p.precio,
@@ -762,7 +816,24 @@ function migrar(d){
     d.productos.forEach(p => { if(!Array.isArray(p.dias)) p.dias = []; });
   }
 
-  d.version = 4;
+  /* 4 → 5 · los platillos de arranque toman su id de fábrica (ver idBase), y
+     con ellos los pedidos y eventos que los nombraban. Lo que la cooperativa
+     dio de alta ella misma no se toca. */
+  if(antes < 5){
+    const usados = new Set(d.productos.map(p => p.id)), cambio = {};
+    d.productos.forEach(p => {
+      if(!MENU_BASE.some(b => b.nombre === p.nombre)) return;
+      const nuevo = idBase(p.nombre);
+      if(p.id === nuevo || usados.has(nuevo)) return;
+      cambio[p.id] = nuevo; usados.add(nuevo); p.id = nuevo;
+    });
+    if(Object.keys(cambio).length){
+      d.pedidos.forEach(o => (o.renglones || []).forEach(r => { if(cambio[r.prod]) r.prod = cambio[r.prod]; }));
+      d.eventos.forEach(e => { if(cambio[e.prod]) e.prod = cambio[e.prod]; });
+    }
+  }
+
+  d.version = 5;
   return antes;
 }
 
@@ -771,7 +842,7 @@ function cargar(){
   if(!D){ D = siembra(); MOTOR.escribir(D); arrancarSync(); return D; }
   const antes = migrar(D);
   /* si de verdad se migró, se guarda: si no, cada carga vuelve a hacerlo */
-  if(antes < 4){ try{ MOTOR.escribir(D); }catch(e){} }
+  if(antes < 5){ try{ MOTOR.escribir(D); }catch(e){} }
   arrancarSync();
   return D;
 }
@@ -1867,7 +1938,7 @@ const FADORI = {
   cargar, guardar, estado, _migrar: migrar, avisaCon,
   DIAS, tocaHoy, menuDelDia, nombreDelDia, cuandoTocaTexto, diaDeHoy,
   tema, ponerTema, esOscuro, aplicarTema, verTurno,
-  servidor: direccionServidor, ponerServidor, elegirMotor, sync: MotorServidor,
+  servidor: direccionServidor, ponerServidor, elegirMotor, sync: MotorServidor, pausarSync, servidorDeFabrica, subirMenu,
   estadoSync: () => MotorServidor.estado(), probarServidor: (u) => MotorServidor.probar(u), alCambiar: (fn) => MOTOR.alCambiar(fn), motor: () => MOTOR.nombre,
   /* quién es */
   registrar, nuevaPersona, buscarPersonas, yo, entrarComo, salir, aceptarTerminos,
