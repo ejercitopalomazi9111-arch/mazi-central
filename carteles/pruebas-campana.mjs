@@ -188,6 +188,12 @@ for (const [ancho, alto, nombre] of [[390, 844, 'teléfono'], [1280, 800, 'compu
   await pg.click('#c-eHacer');
   await pg.waitForFunction(() => [...document.querySelectorAll('.grupo h3')].some(h => /Encuesta/.test(h.textContent)), null, { timeout: 60000 });
   ok(true, 'la encuesta sale en su grupo');
+  // con tenis y ninguna foto de «zapatos», la tanda de zapatos igual se puede pedir, y sale con la foto de los tenis
+  ok(await pg.$('#c-tCat option[value=zapatos]') !== null, 'con tenis ya aparece «Zapatos» entre las tandas');
+  await pg.selectOption('#c-tCat', 'zapatos'); await pg.evaluate(() => { document.querySelector('#c-estadoHacer').textContent = ''; }); await pg.click('#c-tHacer');
+  await pg.waitForFunction(() => [...document.querySelectorAll('.grupo h3')].some(h => /Tanda de zapatos/.test(h.textContent)) && /Listos/.test(document.querySelector('#c-estadoHacer').textContent), null, { timeout: 120000 });
+  ok(true, 'la tanda de zapatos sale en su grupo');
+  await pg.selectOption('#c-tCat', 'playera');
   // el visor: otra versión cambia el anuncio
   await pg.locator('.miniAnuncio').first().click(); await pg.waitForSelector('#c-visor[open]');
   const src0 = await pg.getAttribute('#c-visorCuerpo img', 'src');

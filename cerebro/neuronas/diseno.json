@@ -236,6 +236,26 @@
       "vecinas": [
         "la-codificacion-invisible"
       ]
+    },
+    {
+      "id": "menu-sale-de-lo-que-dijo-el-clasificador",
+      "titulo": "La opción que pide el cliente no existe porque el clasificador no la dijo",
+      "gravedad": "media",
+      "sintoma": "Carlos pidió «tanda de zapatos» y la lista de tandas no traía Zapatos: había 16 tenis y 4 botas, pero Paulina no marcó ninguna foto como «zapatos» en esa corrida (en la anterior sí marcó una).",
+      "causa": "La lista de opciones se armaba sólo con las categorías que el clasificador devolvió. Una palabra general de la calle («zapatos») dependía de que la IA la usara para alguna foto.",
+      "porque": "Cada vez que un menú se arma con lo que dijo una IA, preguntar: ¿la palabra que va a usar el cliente sale aunque la IA diga otra?",
+      "arreglo": "Familias en campana-app.js (calzado, bolsas): si existe cualquier miembro, se ofrece la palabra general, y la tanda toma fotos de su categoría y luego de la familia. «Próxima tanda» cae a mosaico con fotos completas si los recortes no alcanzan.",
+      "comoCazarlo": "pruebas-campana.mjs: con tenis y ninguna foto de zapatos, la opción «Zapatos» tiene que aparecer y la tanda salir.",
+      "consejo": "Si el cliente nombra algo con su palabra, esa palabra se ofrece aunque la IA haya clasificado con otra.",
+      "salioDe": "carteles/campana-app.js · pintarOpcionesTanda (tanda de zapatos de All's fashion)",
+      "senales": [
+        "no aparece la opción",
+        "tanda de zapatos",
+        "categoría que falta",
+        "clasificador",
+        "Paulina"
+      ],
+      "vecinas": []
     }
   ]
 }
