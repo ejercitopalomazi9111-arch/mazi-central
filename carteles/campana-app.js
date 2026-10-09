@@ -290,11 +290,13 @@ function pintarOpcionesTanda() {
 }
 const fotosCat = (cat, n, recortadas = true) => fotos.filter(f => f.usar && f.cat === cat && !f.muchas && (!recortadas || (f.usarRecorte && f.recorte))).slice(0, n).map(f => f.id);
 const fotosFam = (cat, n, recortadas = true) => deFamilia(cat).flatMap(c => fotosCat(c, n, recortadas)).slice(0, n);
+// para el mosaico sirven también las del montón (las playeras dobladas en fila se lucen enteras)
+const completasFam = (cat, n) => deFamilia(cat).flatMap(c => fotos.filter(f => f.usar && f.cat === c).map(f => f.id)).slice(0, n);
 async function hacerTanda() {
   const cat = $('#c-tCat').value, [cosa, pl, genero] = cosaDe(cat), fam = deFamilia(cat);
   const fondo = fam.map(c => fotos.find(f => f.usar && f.cat === c && f.muchas)).find(Boolean) || fam.map(c => fotos.find(f => f.usar && f.cat === c)).find(Boolean);
   const jobs = planTanda({ cat, cosa, plural: pl, genero, personas: +$('#c-tPersonas').value || 15, precio: $('#c-tPrecio').value.trim(), fondo: fondo?.id,
-    fotos: fotosFam(cat, 3), completas: fotosFam(cat, 4, false), avance: $('#c-tAvance').checked });
+    fotos: fotosFam(cat, 3), completas: completasFam(cat, 4), avance: $('#c-tAvance').checked });
   await hacer([{ grupo: `Tanda de ${pl}`, jobs }]);
 }
 async function hacerEncuesta() {
