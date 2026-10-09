@@ -52,9 +52,9 @@
     <input id="rPase" type="tel" inputmode="numeric" maxlength="8" autocomplete="off"
       style="font-size:28px; letter-spacing:.5em; text-align:center; font-weight:900">
     <button class="btn fuerte ancho" id="rEntrar" type="button" style="margin-top:14px">Entrar</button>
-    <p class="aviso" style="margin-top:16px"><b>Esto es un pasador, no una cerradura.</b>
-      Detiene al alumno curioso, no a alguien que se lo proponga: el número vive en
-      este mismo aparato. La cerradura de verdad llega con el servidor.<br>
+    <p class="aviso" style="margin-top:16px"><b>Con internet, el pasador lo revisa el servidor</b>
+      y le da a esta tablet la llave para despachar y cambiar el menú. Ningún teléfono
+      de alumno la tiene. Usa uno de 6 números o más.<br>
       <b>Una vez que entras, esta pantalla queda abierta en este teléfono</b> hasta
       que le des «Cerrar la caja» en Ajustes, o hasta que pasen 14 horas sin usarla.
       Así no te la vuelve a pedir a media venta — pero quien agarre este teléfono
@@ -966,10 +966,13 @@ function pintarAjustes(){
     const color = e.modo === 'enlinea' ? 'var(--verde)'
                 : e.modo === 'sinred'  ? 'var(--ambar)' : 'var(--tenue)';
     $('#aServidor').value = F.servidor() || '';
+    const llave = F.motor() !== 'servidor' ? ''
+      : F.llaveMostrador() ? '<small>Mostrador conectado: lo que hagas aquí les llega a todos.</small>'
+      : '<small><b>Sin llave:</b> pon el pasador con internet para que lo de aquí salga.</small>';
     $('#estadoServidor').innerHTML =
       '<div class="renglon" style="border-left:5px solid '+color+'">'+
         '<span class="q" style="flex:1"><b>'+esc(e.texto)+'</b>'+
-        (e.api ? '<small>'+esc(e.api)+'</small>' : '')+'</span></div>';
+        (e.api ? '<small>'+esc(e.api)+'</small>' : '')+llave+'</span></div>';
   })();
 
   /* F50 · la semana de un vistazo. Es la pantalla que contesta "¿qué día hay
@@ -1177,18 +1180,64 @@ pintarReloj();
 F.alCambiar(() => { F.cargar(); pintar(); });
 setInterval(() => { F.cargar(); pintar(); }, 4000);
 /* ── la reja ── */
+/* Con servidor, entrar es pedirle la llave AL SERVIDOR: es lo único que deja
+   que lo que se haga aquí llegue a los teléfonos. Sin internet se puede
+   trabajar igual con el pasador guardado en la tablet (sinLlaveOk), y se
+   avisa arriba hasta que se vuelva a entrar con red. */
+let sinLlaveOk = false;
+function conLlave(){ return F.motor() !== 'servidor' || !!F.llaveMostrador() || sinLlaveOk; }
 function abrirReja(){
-  const dentro = F.pasoElPasador();
+  const dentro = F.pasoElPasador() && conLlave();
   $('#reja').hidden = dentro;
   $('#cuerpoMostrador').hidden = !dentro;
   document.querySelector('header.barra').hidden = !dentro;
   if(!dentro) setTimeout(() => $('#rPase').focus(), 100);
   return dentro;
 }
-$('#rEntrar').addEventListener('click', () => {
-  if(F.pasadorOk($('#rPase').value)){ abrirReja(); pintar(); }
-  else { $('#rPase').value = ''; aviso('Ese no es el pasador.', 'malo'); }
+$('#rEntrar').addEventListener('click', async () => {
+  const pase = $('#rPase').value.trim();
+  if(F.motor() !== 'servidor'){
+    if(F.pasadorOk(pase)){ abrirReja(); pintar(); }
+    else { $('#rPase').value = ''; aviso('Ese no es el pasador.', 'malo'); }
+    return;
+  }
+  const b = $('#rEntrar'); b.disabled = true; b.textContent = 'Revisando…';
+  const r = await F.entrarMostrador(pase);
+  b.disabled = false; b.textContent = 'Entrar';
+  if(r.ok){
+    F.recordarPasador(pase); F.renovarPase(); sinLlaveOk = false;
+    subirMenuUnaVez(); abrirReja(); pintar(); pintarSinLlave();
+    return;
+  }
+  if(r.sinRed && F.pasadorOk(pase)){
+    sinLlaveOk = true; abrirReja(); pintar(); pintarSinLlave();
+    aviso('Sin internet: entraste en esta tablet. Lo que hagas se sube cuando vuelvas a entrar con internet.', 'malo');
+    return;
+  }
+  $('#rPase').value = '';
+  aviso(r.sinRed ? 'Sin internet y ese no es el pasador de esta tablet.' : (r.error || 'Ese no es el pasador.'), 'malo');
 });
+/* el aviso de arriba: sin llave, nada de lo que se hace aquí llega a los alumnos */
+function pintarSinLlave(){
+  let n = document.getElementById('sinLlave');
+  const falta = F.motor() === 'servidor' && !F.llaveMostrador() && !$('#cuerpoMostrador').hidden;
+  if(!falta){ if(n) n.remove(); return; }
+  if(!n){
+    n = document.createElement('div'); n.id = 'sinLlave'; n.className = 'aviso malo';
+    n.style.cssText = 'margin:8px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap';
+    n.innerHTML = '<span style="flex:1;min-width:200px"><b>Esta tablet no está conectada.</b> Lo que despaches o cambies no les llega a los alumnos hasta que vuelvas a poner el pasador con internet.</span>'+
+      '<button class="btn fuerte" type="button" id="bPonerPasador">Poner el pasador</button>';
+    $('#cuerpoMostrador').prepend(n);
+    n.querySelector('#bPonerPasador').addEventListener('click', () => { sinLlaveOk = false; F.cerrarMostrador(); abrirReja(); });
+  }
+}
+setInterval(pintarSinLlave, 4000);
+function subirMenuUnaVez(){
+  if(F.motor() !== 'servidor' || !F.llaveMostrador()) return;
+  const marca = 'fadori_menu_subido2:' + F.sync.casa();
+  try{ if(localStorage.getItem(marca)) return; }catch(e){ return; }
+  if(F.subirMenu() !== false){ try{ localStorage.setItem(marca, String(Date.now())); }catch(e){} }
+}
 $('#rPase').addEventListener('keydown', (e) => { if(e.key === 'Enter') $('#rEntrar').click(); });
 $('#bSalirMostrador').addEventListener('click', () => { F.cerrarMostrador(); abrirReja(); });
 /* F48 · pegar la dirección del servidor. Se PRUEBA antes de guardarse:
@@ -1222,8 +1271,16 @@ $('#bSinServidor').addEventListener('click', () => {
   });
 });
 
-$('#aPasador').addEventListener('change', () => {
-  try{ F.cambiarPasador($('#aPasador').value); aviso('Pasador cambiado.', 'bueno'); }
+$('#aPasador').addEventListener('change', async () => {
+  const n = $('#aPasador').value.trim();
+  if(!/^\d{4,8}$/.test(n)){ aviso('El pasador va de 4 a 8 números.', 'malo'); pintarAjustes(); return; }
+  /* primero el servidor: si allá no cambió, aquí tampoco, para que no
+     queden dos pasadores distintos */
+  if(F.motor() === 'servidor'){
+    const r = await F.pasadorAlServidor(n);
+    if(!r.ok){ aviso(r.error, 'malo'); pintarAjustes(); return; }
+  }
+  try{ F.cambiarPasador(n); aviso('Pasador cambiado.' + (n.length < 6 ? ' Mejor de 6 números o más.' : ''), 'bueno'); }
   catch(e){ aviso(e.message, 'malo'); pintarAjustes(); }
 });
 
@@ -1231,15 +1288,9 @@ abrirReja();
 verVista('despachar');
 
 /* El menú que este mostrador tenía antes de conectarse nunca había salido
-   (sólo sale lo que cambia). La primera vez, se sube entero. Va después de
-   las pruebas de abajo, que no deben salir del aparato. */
-setTimeout(() => {
-  if(F.motor() !== 'servidor') return;
-  const marca = 'fadori_menu_subido:' + F.sync.casa();
-  try{ if(localStorage.getItem(marca)) return; }catch(e){ return; }
-  F.subirMenu();
-  try{ localStorage.setItem(marca, String(Date.now())); }catch(e){}
-}, 800);
+   (sólo sale lo que cambia): la primera vez que entra con llave, se sube
+   entero. Va con retraso para no cruzarse con las pruebas de abajo. */
+setTimeout(() => { subirMenuUnaVez(); pintarSinLlave(); }, 800);
 
 /* ══════════════════════════════════════════════════════════════════════
    PRUEBAS

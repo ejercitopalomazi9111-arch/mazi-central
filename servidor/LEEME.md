@@ -109,3 +109,34 @@ sin internet.
 ---
 
 *Fadori · Grupo Mazi · si no existe la herramienta, se construye la herramienta.*
+
+---
+
+## La seguridad · desde el 9 de octubre
+
+**Antes, el servidor le creía a cualquiera.** Una sola llamada sin contraseña devolvía el pasador
+del mostrador y los nombres y códigos de toda la escuela; cualquiera podía poner la torta en $0,
+marcar pagado el pedido de otro, colarse con una hora de las 7 am o mandar mil pedidos. Ahora:
+
+| Quién | Qué puede |
+|---|---|
+| **El mostrador** (con la llave que da `/api/entrar` al poner el pasador) | todo: menú, ajustes, conteos, despachar, cobrar |
+| **Un teléfono de alumno** (con su id de aparato) | darse de alta, pedir, cancelar lo que sigue en la fila, cambiar lo que se acabó. Sólo lo suyo |
+| **Cualquiera** | ver si el servidor está vivo |
+
+- El **pasador** se revisa aquí y **nunca viaja** a ningún teléfono. Se cambia con `/api/pasador`.
+- Del pedido, el servidor pone **el turno, el total, la hora, si es anticipado y si está pagado**.
+- Cada quien **ve lo suyo**: el alumno ve la fila (números y estados), no nombres ni códigos.
+- **Topes** (en `TOPE`, arriba de `src/index.js`), calibrados para que 80 alumnos pidiendo dos
+  veces desde el mismo wifi pasen enteros: pedidos vivos por alumno, alumnos nuevos por teléfono,
+  pedidos por teléfono/wifi/escuela, intentos de pasador y de código, y tamaño de lo que se manda.
+- Cada registro se guarda **por separado** y lo viejo se limpia (pedidos 7 días, eventos 3).
+- El WebSocket **manda el cambio mismo** y el latido lo contesta Cloudflare sin despertar al objeto.
+
+**Se prueba con** `node ataques.mjs` (42 ataques y el recreo de 80 alumnos) además de `node prueba.mjs`.
+
+**Lo que NO se puede blindar desde el código en el plan gratis:** alguien con un script que mande
+peticiones sin parar se gasta las 100,000 diarias del plan gratis aunque todas se rechacen. La app
+sigue funcionando en cada aparato, pero deja de sincronizar ese día. Lo que lo resuelve es el plan
+de pago de Workers (5 dólares al mes, 10 millones de peticiones) o un dominio propio con una regla
+de límite de Cloudflare.

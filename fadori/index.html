@@ -663,7 +663,8 @@ function pintarTurno(){
       '<div class="detalle">Si escoges otra cosa aquí abajo, vuelve con este mismo turno</div></div>';
   } else {
     caja.innerHTML = '<div class="turno"><div class="rotulo">Cancelado</div>'+
-      '<div class="frase">Este pedido ya no va</div></div>';
+      '<div class="frase">Este pedido ya no va</div>'+
+      (p.rechazo ? '<div class="detalle">'+esc(p.rechazo)+'</div>' : '')+'</div>';
   }
 
   /* el cartel de lo que se acabó va PEGADO al turno, no al final de la
@@ -832,10 +833,14 @@ $('#bCopiarCodigo').addEventListener('click', async () => {
   }
 });
 
-$('#bVolver').addEventListener('click', () => {
-  const a = F.entrarComo($('#eCodigo').value);
-  if(!a) return aviso('Ese código no existe en este aparato.', 'malo');
-  arrancar();
+$('#bVolver').addEventListener('click', async () => {
+  const b = $('#bVolver'); b.disabled = true;
+  try{
+    const a = await F.entrarConCodigo($('#eCodigo').value);
+    if(!a) return aviso('No hay nadie con ese código.', 'malo');
+    arrancar();
+  }catch(e){ aviso(e.message, 'malo'); }
+  finally{ b.disabled = false; }
 });
 
 $('#bAcepto').addEventListener('click', () => {
