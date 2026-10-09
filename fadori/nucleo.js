@@ -2209,6 +2209,136 @@ function sugerencias(){
 /* ══════════════════════════════════════════════════════════════════════════
    14 · LO QUE VE EL MUNDO
    ═════════════════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════════════════
+   LOS AVISOS · sonido, letrero y notificación del teléfono
+   ──────────────────────────────────────────────────────────────────────────
+   Carlos: «activa alertas sonoras y visuales en el sitio web tmb así como las
+   notificaciones habituales del teléfono».
+
+   · Con la app abierta: suena (WebAudio, sin archivos), vibra y sale un
+     letrero grande arriba. Se nota aunque el teléfono esté sobre la mesa.
+   · Con la app en segundo plano o cerrada: notificación del teléfono, que
+     manda el SERVIDOR (Web Push). En iPhone eso sólo existe si la app está
+     en la pantalla de inicio (iOS 16.4+): es regla de Apple, no nuestra, y
+     la app lo dice con esas palabras en vez de fallar callada.
+   · El navegador no deja sonar nada hasta que la persona toca la pantalla
+     una vez: el primer toque «despierta» el audio.
+   ═════════════════════════════════════════════════════════════════════════ */
+const LLAVE_SONIDO = 'fadori_sonido';
+const Avisos = {
+  _audio: null,
+  sonidoPrendido(){ try{ return localStorage.getItem(LLAVE_SONIDO) !== '0'; }catch(e){ return true; } },
+  ponerSonido(si){ try{ localStorage.setItem(LLAVE_SONIDO, si ? '1' : '0'); }catch(e){} },
+  despertarAudio(){
+    try{
+      const AC = window.AudioContext || window.webkitAudioContext; if(!AC) return;
+      if(!this._audio) this._audio = new AC();
+      if(this._audio.state === 'suspended') this._audio.resume();
+    }catch(e){}
+  },
+  /* tres sonidos, distintos a propósito: el de «ya está» se reconoce sin ver */
+  sonar(tipo){
+    if(!this.sonidoPrendido()) return;
+    this.despertarAudio();
+    const ac = this._audio; if(!ac) return;
+    const notas = { listo: [660, 880, 1175], sigue: [523, 784], falta: [440, 330], nuevo: [880, 1175], cambio: [587, 740], prueba: [660, 880, 1175] }[tipo] || [660, 880];
+    try{
+      const t0 = ac.currentTime + .02;
+      notas.forEach((f, i) => {
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, t0 + i * .16);
+        g.gain.exponentialRampToValueAtTime(0.35, t0 + i * .16 + .02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + i * .16 + .32);
+        o.connect(g); g.connect(ac.destination);
+        o.start(t0 + i * .16); o.stop(t0 + i * .16 + .34);
+      });
+    }catch(e){}
+  },
+  vibrar(p){ try{ if(navigator.vibrate) navigator.vibrate(p); }catch(e){} },
+  /* el letrero grande de arriba. Se quita solo o con un toque. */
+  letrero(tipo, titulo, cuerpo){
+    if(typeof document === 'undefined') return;
+    let n = document.getElementById('fadoriAlerta');
+    if(!n){
+      n = document.createElement('div'); n.id = 'fadoriAlerta'; n.setAttribute('role', 'alert');
+      n.addEventListener('click', () => { n.className = 'alerta-grande'; });
+      document.body.appendChild(n);
+    }
+    n.innerHTML = '<b></b><span></span><small>Toca para cerrar</small>';
+    n.querySelector('b').textContent = titulo; n.querySelector('span').textContent = cuerpo || '';
+    n.className = 'alerta-grande ' + tipo + ' sale';
+    clearTimeout(this._quita);
+    this._quita = setTimeout(() => { n.className = 'alerta-grande ' + tipo; }, tipo === 'listo' ? 15000 : 7000);
+  },
+  /* todo junto: lo que se hace cuando algo de verdad importa */
+  avisar(tipo, titulo, cuerpo, tag){
+    this.letrero(tipo, titulo, cuerpo);
+    this.sonar(tipo);
+    this.vibrar(tipo === 'listo' ? [200, 100, 200, 100, 400] : [120, 80, 120]);
+    /* con la app escondida, la notificación del teléfono (si hay permiso). Si
+       además llega la del servidor, trae el mismo `tag` y la reemplaza: no
+       salen dos. */
+    if(typeof document !== 'undefined' && document.hidden) this.notificar(titulo, cuerpo, tag);
+  },
+  async notificar(titulo, cuerpo, tag){
+    try{
+      if(!('Notification' in window) || Notification.permission !== 'granted') return;
+      const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration();
+      const op = { body: cuerpo || '', tag: tag || 'fadori', renotify: true, icon: 'marca/icon-192.png' };
+      if(reg) await reg.showNotification(titulo, op); else new Notification(titulo, op);
+    }catch(e){}
+  },
+
+  esIOS(){ return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); },
+  instalada(){ try{ return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; }catch(e){ return false; } },
+  /* en qué está: 'activos' · 'faltaPermiso' · 'negados' · 'instalar' (iPhone sin pantalla de inicio) · 'no' */
+  estado(){
+    if(typeof window === 'undefined') return 'no';
+    if(!('Notification' in window)) return this.esIOS() && !this.instalada() ? 'instalar' : 'no';
+    if(Notification.permission === 'denied') return 'negados';
+    if(Notification.permission === 'granted') return 'activos';
+    return 'faltaPermiso';
+  },
+  /* tiene que llamarse desde un toque: es la única forma en que el navegador
+     deja pedir el permiso */
+  async activar(){
+    this.despertarAudio();
+    if(this.estado() === 'instalar') return { ok: false, por: 'instalar' };
+    if(!('Notification' in window)) return { ok: false, por: 'no' };
+    let permiso = Notification.permission;
+    if(permiso === 'default') permiso = await Notification.requestPermission();
+    if(permiso !== 'granted') return { ok: false, por: 'negados' };
+    const push = await this.suscribir();
+    return { ok: true, push };
+  },
+  /* el trabajador de fondo y la suscripción al servidor. Se repite en cada
+     carga si ya hay permiso (la suscripción puede cambiar, o el aparato) */
+  async suscribir(){
+    try{
+      if(!('serviceWorker' in navigator)) return false;
+      const reg = await navigator.serviceWorker.register('sw.js');
+      await navigator.serviceWorker.ready;
+      const api = direccionServidor();
+      if(!api || !('PushManager' in window) || !reg.pushManager) return false;
+      const casa = encodeURIComponent(MotorServidor.casa());
+      const r = await fetch(api + '/api/push/clave?casa=' + casa, { headers: cabezasSync() });
+      const { clave } = await r.json();
+      const bytes = (t) => { const s = String(t).replace(/-/g, '+').replace(/_/g, '/'); const b = atob(s + '==='.slice((s.length + 3) % 4)); return Uint8Array.from(b, c => c.charCodeAt(0)); };
+      let sub = await reg.pushManager.getSubscription();
+      if(!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytes(clave) });
+      const alta = await fetch(api + '/api/push/alta?casa=' + casa, { method: 'POST', headers: cabezasSync(), body: JSON.stringify({ sub: sub.toJSON() }) });
+      return alta.ok;
+    }catch(e){ return false; }
+  },
+};
+/* el primer toque despierta el audio; y si ya había permiso, se re-suscribe */
+if(typeof document !== 'undefined'){
+  const despierta = () => { Avisos.despertarAudio(); document.removeEventListener('pointerdown', despierta, true); };
+  document.addEventListener('pointerdown', despierta, true);
+  try{ if(window.Notification && Notification.permission === 'granted') setTimeout(() => Avisos.suscribir(), 2500); }catch(e){}
+}
+
 const FADORI = {
   /* utilería */
   /* los billetes y monedas con los que de verdad llega un alumno */
@@ -2220,7 +2350,7 @@ const FADORI = {
   DIAS, tocaHoy, menuDelDia, nombreDelDia, cuandoTocaTexto, diaDeHoy,
   tema, ponerTema, esOscuro, aplicarTema, verTurno,
   servidor: direccionServidor, ponerServidor, elegirMotor, sync: MotorServidor, pausarSync, servidorDeFabrica, subirMenu,
-  aparatoId, llaveMostrador, misCodigos, entrarConCodigo,
+  aparatoId, llaveMostrador, misCodigos, entrarConCodigo, avisos: Avisos,
   entrarMostrador: (p) => MotorServidor.entrarMostrador(p), salirMostrador: () => MotorServidor.salirMostrador(),
   pasadorAlServidor: (n) => MotorServidor.pasadorAlServidor(n),
   estadoSync: () => MotorServidor.estado(), probarServidor: (u) => MotorServidor.probar(u), alCambiar: (fn) => MOTOR.alCambiar(fn), motor: () => MOTOR.nombre,
