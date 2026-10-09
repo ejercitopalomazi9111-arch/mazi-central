@@ -2,6 +2,9 @@
    datos, se guardan las marcas y se descarga lo que sale. */
 import { pintar, ESTILOS, FORMATOS, plan, leerTabla, rgb } from './motor.js';
 import { preparar } from './recursos.js';
+import './moda.js';
+import './campanas.js';
+import { iniciarCampana, cambioDeMarca } from './campana-app.js';
 
 const $ = s => document.querySelector(s);
 const estado = (t, donde = '#estado') => { $(donde).textContent = t; };
@@ -24,7 +27,10 @@ const guardarCosa = (k, v) => tx('cosas', 'readwrite', s => s.put(v, k));
 
 /* ───────────── estado ───────────── */
 let rec = null, marcas = [], marca = null, logoImg = null, fotoImg = null, fotoBlob = null;
-let estilo = 'brocha', formato = 'feed', semilla = 1;
+let estilo = 'maison', formato = 'feed', semilla = 1;
+/* En «Un cartel» y en el lote van los de moda y los de comida; los de campaña (tanda, encuesta) viven en Campaña. */
+const SUELTOS = () => ESTILOS.filter(e => e.grupo !== 'campana' && !e.varias);
+const DEL_GRUPO = () => { const g = (ESTILOS.find(e => e.id === estilo) || {}).grupo || 'moda'; return SUELTOS().filter(e => e.grupo === g); };
 const imagenDe = blob => new Promise((ok, mal) => { if (!blob) return ok(null); const u = URL.createObjectURL(blob), i = new Image(); i.onload = () => ok(i); i.onerror = mal; i.src = u; });
 
 function marcaVacia() {
@@ -66,7 +72,7 @@ async function usarMarca(id) {
   marca = marcas.find(m => m.id === id) || marcas[0];
   logoImg = await imagenDe(marca.logo);
   await guardarCosa('marcaActual', marca.id);
-  llenarMarca(); redibujar();
+  llenarMarca(); redibujar(); cambioDeMarca();
 }
 /** El color con más presencia y saturación del logo → acento. */
 function coloresDelLogo(img) {
@@ -113,7 +119,7 @@ async function redibujar() {
 async function variantes() {
   const cont = $('#variantes'), o = { marca: marcaParaMotor(), prod: producto(), formato, semilla, semana: semanaDe(marca.semana) };
   const c = document.createElement('canvas'), botones = [];
-  for (const e of ESTILOS) {
+  for (const e of DEL_GRUPO()) {
     pintar(c, { ...o, estilo: e.id }, rec);
     const chico = document.createElement('canvas'); chico.width = 270; chico.height = Math.round(270 * c.height / c.width);
     chico.getContext('2d').drawImage(c, 0, 0, chico.width, chico.height);
@@ -129,9 +135,10 @@ function marcarChips() {
   document.querySelectorAll('#formatos button').forEach(b => b.setAttribute('aria-pressed', b.dataset.id === formato));
 }
 function chips() {
-  $('#estilos').replaceChildren(...ESTILOS.map(e => { const b = document.createElement('button'); b.dataset.id = e.id; b.textContent = e.nombre; b.title = e.para; b.onclick = () => { estilo = e.id; marcarChips(); redibujar(); }; return b; }));
+  $('#estilos').replaceChildren(...['moda', 'comida'].flatMap(g => [Object.assign(document.createElement('span'), { className: 'grupoChips', textContent: g === 'moda' ? 'Moda' : 'Comida' }),
+    ...SUELTOS().filter(e => e.grupo === g).map(e => { const b = document.createElement('button'); b.dataset.id = e.id; b.textContent = e.nombre; b.title = e.para; b.onclick = () => { estilo = e.id; marcarChips(); redibujar(); }; return b; })]));
   $('#formatos').replaceChildren(...Object.entries(FORMATOS).map(([id, f]) => { const b = document.createElement('button'); b.dataset.id = id; b.textContent = f.nombre; b.onclick = () => { formato = id; marcarChips(); redibujar(); }; return b; }));
-  $('#estilosLote').replaceChildren(...ESTILOS.filter(e => e.id !== 'semana').map(e => { const b = document.createElement('button'); b.dataset.id = e.id; b.textContent = e.nombre; b.setAttribute('aria-pressed', 'true'); b.onclick = () => b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') !== 'true'); return b; }));
+  $('#estilosLote').replaceChildren(...SUELTOS().filter(e => e.id !== 'semana').map(e => { const b = document.createElement('button'); b.dataset.id = e.id; b.textContent = e.nombre; b.setAttribute('aria-pressed', 'true'); b.onclick = () => b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') !== 'true'); return b; }));
   $('#formatoLote').replaceChildren(...Object.entries(FORMATOS).map(([id, f]) => Object.assign(document.createElement('option'), { value: id, textContent: f.nombre })));
   marcarChips();
 }
@@ -210,11 +217,12 @@ async function iniciar() {
   await usarMarca(actual && marcas.some(m => m.id === actual) ? actual : marcas[0].id);
   estado('');
   if (navigator.canShare) $('#compartir').hidden = false;
+  await iniciarCampana({ marcaParaMotor, marcaId: () => marca.id, rec });
 }
 
 document.querySelectorAll('[data-pestana]').forEach(b => b.onclick = () => {
   document.querySelectorAll('[data-pestana]').forEach(x => x.setAttribute('aria-selected', x === b));
-  for (const id of ['uno', 'marca', 'lote']) $('#p-' + id).hidden = id !== b.dataset.pestana;
+  for (const id of ['campana', 'uno', 'marca', 'lote']) $('#p-' + id).hidden = id !== b.dataset.pestana;
 });
 for (const c of CAMPOS) $('#p-' + c).addEventListener('input', () => { clearTimeout(redibujar.e); redibujar.e = setTimeout(redibujar, 120); });
 $('#p-foto').onclick = async () => { const [f] = await elegir('image/*'); if (!f) return; fotoBlob = f; fotoImg = await imagenDe(f); await guardarCosa('foto', f); verFoto(); redibujar(); };

@@ -36,8 +36,11 @@ for (const [ancho, alto, nombre] of [[390, 844, 'teléfono'], [1280, 800, 'compu
   const ctx = await br.newContext({ viewport: { width: ancho, height: alto }, acceptDownloads: true });
   const pg = await ctx.newPage(); const errores = [];
   pg.on('pageerror', e => errores.push(e.message)); pg.on('console', m => m.type() === 'error' && errores.push(m.text()));
-  await pg.goto(BASE); await pg.waitForFunction(() => document.querySelectorAll('#variantes img').length === 6, null, { timeout: 30000 });
-  ok(true, 'arranca y pinta las seis variantes');
+  await pg.goto(BASE); await pg.waitForFunction(() => document.querySelector('#c-estilos button'), null, { timeout: 30000 });
+  ok(await pg.evaluate(() => !document.querySelector('#p-campana').hidden), 'abre en «Campaña»');
+  await pg.click('[data-pestana="uno"]'); await pg.click('#estilos button[data-id="brocha"]');
+  await pg.waitForFunction(() => document.querySelectorAll('#variantes img').length === 6, null, { timeout: 30000 });
+  ok(true, 'en «Un cartel», un estilo de comida pinta las seis variantes de comida');
   ok(await desborde(pg) <= 0, 'nada se sale de la pantalla');
   const chicos = await pg.evaluate(() => [...document.querySelectorAll('button:not(.variantes button), select, input[type=text]')].filter(e => e.offsetParent && e.getBoundingClientRect().height < 44).map(e => e.id || e.textContent.trim()));
   ok(!chicos.length, 'todo lo que se toca mide 44 px o más' + (chicos.length ? ' — ' + chicos.join(', ') : ''));
