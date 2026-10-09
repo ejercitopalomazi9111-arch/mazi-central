@@ -24,7 +24,7 @@ const PUNTOS = {
 };
 /** ¿Esta foto es de muchas cosas (no se recorta)? Por lo que dice de ella. */
 export function esDeMuchas(texto) {
-  return /\b(varias|varios|dobladas|doblados|organizad|exhibici|estante|anaquel|repisa|bodega|fila[s]?|montón|monton|coleccion de|mesa con|muestrario|tienda|seis|tres|cuatro|cinco)\b/i.test(String(texto || '').normalize('NFD').replace(/[̀-ͯ]/g, ''));
+  return /\b(varias|varios|organizad|exhibici|estante|anaquel|repisa|bodega|fila[s]?|montón|monton|coleccion de|mesa con|muestrario|tienda|seis|tres|cuatro|cinco)\b/i.test(String(texto || '').normalize('NFD').replace(/[̀-ͯ]/g, ''));
 }
 
 let rec = null;

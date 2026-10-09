@@ -65,7 +65,7 @@ export function planCampana(productos, op = {}) {
   const usoEstilo = new Map(permitidos.map(e => [e, 0]));
 
   const recortadas = c => (porCat.get(c) || []).filter(p => p.recortada);
-  const catsColeccion = cats.filter(c => c !== 'tienda' && recortadas(c).length >= 2);
+  const catsColeccion = cats.filter(c => c !== 'tienda' && c !== 'producto' && recortadas(c).length >= 2);
   const conFoto = lista.filter(p => !p.recortada || p.cat !== 'tienda');
   let iCol = 0, iMos = 0;
 
@@ -102,7 +102,7 @@ export function planCampana(productos, op = {}) {
         rs.forEach(p => usoProd.set(p.id, usoProd.get(p.id) + 1)); usoEstilo.set('coleccion', (usoEstilo.get('coleccion') || 0) + 1);
       } else if (tipos[k] === 'mosaico') {
         const n = formato === 'historia' ? 6 : 4;
-        const c = cats.filter(c => (porCat.get(c) || []).length >= n)[iMos % Math.max(1, cats.filter(c => (porCat.get(c) || []).length >= n).length)];
+        const conN = cats.filter(c => c !== 'producto' && (porCat.get(c) || []).length >= n), c = conN[iMos % Math.max(1, conN.length)];
         const fuente = c ? porCat.get(c) : lista; iMos++;
         const fs = menosUsadas(fuente).slice(0, n); fs.forEach(p => usoProd.set(p.id, usoProd.get(p.id) + 1));
         a = { estilo: 'mosaico', fotos: fs.map(p => p.id), prod: { ...textos(c || 'producto', formato), frase: MOSAICO[(d + k) % MOSAICO.length] } };
