@@ -400,7 +400,6 @@
     },
     {
       "id": "fotos-de-producto-del-modelo-exacto",
-      "clase": "pieza",
       "titulo": "Fotos de catálogo de un producto de tienda (el modelo exacto), desde este contenedor",
       "gravedad": "media",
       "sintoma": "Hace falta la foto de un producto de marca (Takis Fuego, Boing de guayaba 500 ml…) y Google Imágenes no contesta.",
