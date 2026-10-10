@@ -1678,7 +1678,9 @@ function puedePedir(cod){
 function pedir(cod, renglones, opciones){
   const d = estado();
   const o = opciones || {};
-  const permiso = o.origen === 'mostrador' ? { puede:true } : puedePedir(cod);
+  /* la tablet de la cooperativa (modo kiosco) pide como el mostrador: es
+     aparato de la cooperativa y el servidor la reconoce por su llave */
+  const permiso = (o.origen === 'mostrador' || o.origen === 'kiosco') ? { puede:true } : puedePedir(cod);
   if(!permiso.puede) throw new Error(permiso.por);
   const limpios = (renglones||[])
     .filter(r => r && r.prod && r.cant > 0)
@@ -1702,6 +1704,11 @@ function pedir(cod, renglones, opciones){
        pantalla de despachar, es un campo decorativo y mejor no tenerlo. */
     nota: String(o.nota || '').slice(0, 140).trim(),
     origen: o.origen || 'app',
+    /* qué sale de este pedido en la pantalla de turnos: lo decide quien pide.
+       'nombre' = su primer nombre y lo que pidió · 'pedido' = sólo lo que
+       pidió (lo que se recuerda: «dos banderillas y un agua») · 'numero' =
+       sólo el número. Por omisión, sólo el pedido: no expone a nadie. */
+    ver: verLimpio(o.ver),
     despachador: null,
     tomado: 0, listoEn: 0, entregado: 0,
     /* Con servidor el turno lo pone ÉL: cada aparato contaría por su cuenta
@@ -1721,6 +1728,41 @@ function pedir(cod, renglones, opciones){
    Es un detalle chico y es exactamente de los que se ven en una captura. */
 function verTurno(p){
   return (p && p.turno != null && p.turno !== '') ? String(p.turno) : '…';
+}
+
+const VERES = ['nombre', 'pedido', 'numero'];
+function verLimpio(v){ return VERES.indexOf(v) >= 0 ? v : 'pedido'; }
+const LLAVE_VER = 'fadori_ver';
+function miVer(){ try{ return verLimpio(localStorage.getItem(LLAVE_VER)); }catch(e){ return 'pedido'; } }
+function ponerMiVer(v){ try{ localStorage.setItem(LLAVE_VER, verLimpio(v)); }catch(e){} }
+
+/* el primer nombre, y sólo si quien pidió dijo que sí. Del servidor llega ya
+   recortado (`alias`) a los teléfonos que no son la cooperativa. */
+function primerNombre(n){ return String(n || '').trim().split(/\s+/)[0].slice(0, 14); }
+function aliasDe(p){
+  if(!p || verLimpio(p.ver) !== 'nombre') return '';
+  return primerNombre(p.alias || p.nombre || '');
+}
+
+/* «2 Banderillas · Torta de jamón · Agua de jamaica»: lo que la gente sí
+   recuerda de su pedido, mucho mejor que el turno 75 o el código HNLT */
+function plural(nombre){
+  const ps = String(nombre || '').split(' ');
+  const w = ps[0] || '';
+  if(!w) return nombre;
+  ps[0] = /[aeiouáéó]$/i.test(w) ? w + 's' : /z$/i.test(w) ? w.slice(0, -1) + 'ces' : /s$/i.test(w) ? w : w + 'es';
+  return ps.join(' ');
+}
+function queSePidio(p, max){
+  if(!p || verLimpio(p.ver) === 'numero') return '';
+  const cuenta = {};
+  (p.renglones || []).filter(r => !r.sinSurtir).forEach(r => { cuenta[r.prod] = (cuenta[r.prod] || 0) + (r.cant || 1); });
+  const partes = Object.keys(cuenta).map(pid => {
+    const pr = producto(pid), n = pr ? pr.nombre : 'Algo', c = cuenta[pid];
+    return c > 1 ? c + ' ' + plural(n) : n;
+  });
+  const tope = max || 4;
+  return partes.length > tope ? partes.slice(0, tope).join(' · ') + ' y ' + (partes.length - tope) + ' más' : partes.join(' · ');
 }
 
 function siguienteTurno(){
@@ -2657,6 +2699,7 @@ const FADORI = {
   productos, producto, marcarDisponible, guardarProducto, borrarProducto, existenciasOk, emojiDe, iconoDe, ico,
   /* pedidos */
   pedir, pedido, pedidosDe, pedidosDeHoy, puedePedir, totalDe, segundosDe,
+  VERES, verLimpio, miVer, ponerMiVer, aliasDe, primerNombre, queSePidio,
   cancelar, apartarParaManana, voyEnCamino,
   seAcabo, avisarFalta, aQuienLePega, noSePuede, enLugarDe, cambiarRenglon, renunciarA, faltantesDe,
   /* la fila */
