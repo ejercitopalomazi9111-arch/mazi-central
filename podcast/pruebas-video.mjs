@@ -155,7 +155,11 @@ console.log('\n5b · la cabina: grabar aquí con el guion encima');
 await pg.click('[data-ep="5"]');
 await pg.click('#bCabina');
 await pg.waitForSelector('#cabina:not([hidden])');
-await pg.waitForFunction(() => document.querySelector('#cabVista').videoWidth > 0, null, { timeout: 10000 });
+await pg.waitForFunction(() => document.querySelector('#cabVista').videoWidth > 0, null, { timeout: 10000 }).catch(() => {});
+if(!await pg.evaluate(() => document.querySelector('#cabVista').videoWidth > 0)){
+  ok('la cámara se prende (¿la deja `_headers`? Permissions-Policy camera=(self))', false);
+  await br.close(); console.log(`\n✗ estudio · video · ${bien} pasan · ${mal} fallan`); process.exit(1);
+}
 ok('la cámara se prende', await pg.evaluate(() => document.querySelector('#cabVista').videoWidth > 0));
 ok('el apuntador enseña el gancho del episodio', /decir la verdad o evitar el pánico/.test(await pg.textContent('#cabApuntador')), await pg.textContent('#cabApuntador'));
 await pg.click('#cabApuntador');
