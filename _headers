@@ -23,6 +23,16 @@
   ! X-Frame-Options
   Content-Security-Policy: frame-ancestors 'self' https://*.floot.app capacitor://localhost https://localhost
 
+# EL ESTUDIO DE PODCAST graba con el micrófono. La regla de arriba lo apaga en
+# todo el sitio (y está bien: nadie más lo usa), así que aquí, y sólo aquí, se
+# quita esa cabecera y se pone una que deja el micrófono a la propia página.
+# Sin esto el botón de grabar fallaba en producción y en local funcionaba: el
+# servidor de pruebas no manda cabeceras. Lo cazó la prueba contra la
+# dirección publicada.
+/podcast/*
+  ! Permissions-Policy
+  Permissions-Policy: camera=(), microphone=(self), geolocation=(), payment=()
+
 # Las fotos del menú y los iconos no cambian: que el teléfono no los vuelva a
 # bajar en cada recreo. Es el ahorro más grande en un wifi de escuela.
 /fadori/marca/*
