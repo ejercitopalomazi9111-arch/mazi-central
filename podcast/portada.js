@@ -6,6 +6,8 @@
    El adorno es la onda de TU episodio, no un dibujo genérico. */
 
 export const TEMAS = {
+  /* Radio Divergentes: negro con vino, como sus logos */
+  divergentes: { nombre: 'Divergentes', fondo: ['#0E0B0D', '#2B0E14'], tinta: '#EDE6DC', acento: '#A3242F', suave: '#B8A9A4' },
   noche:     { nombre: 'Noche',     fondo: ['#16121C', '#2A1630'], tinta: '#F6EFE8', acento: '#FF5A4E', suave: '#B9A9C2' },
   crema:     { nombre: 'Crema',     fondo: ['#F4ECDF', '#EADCC6'], tinta: '#22160F', acento: '#D2421B', suave: '#7A5A42' },
   electrico: { nombre: 'Eléctrico', fondo: ['#14186A', '#2B1A8F'], tinta: '#FFFFFF', acento: '#C6F432', suave: '#B7BCF5' },
@@ -50,6 +52,32 @@ export function dibujarPortada(cv, o = {}){
     ctx.fillStyle = v; ctx.fillRect(0, 0, N, N);
   }
   const tinta = o.foto ? '#FFFFFF' : T.tinta, suave = o.foto ? 'rgba(255,255,255,.78)' : T.suave;
+
+  /* con logo, el logo ES la portada: grande y al centro, y abajo sólo lo
+     que cambia de episodio a episodio */
+  if(o.logo){
+    const L = o.logo, abajo = (o.titulo ? 260 : 0) * u + (o.episodio ? 240 * u : 0) + 60 * u;
+    const maxW = N - 2 * m, maxH = N - 2 * m - abajo;
+    const k = Math.min(maxW / L.width, maxH / L.height);
+    const w = L.width * k, h = L.height * k;
+    ctx.drawImage(L, (N - w) / 2, m + (maxH - h) / 2, w, h);
+    ctx.textAlign = 'center';
+    if(o.episodio){
+      ctx.font = `800 ${92 * u}px system-ui, -apple-system, sans-serif`;
+      const txt = ('EPISODIO ' + o.episodio).toUpperCase(), tw = ctx.measureText(txt).width + 120 * u, th = 170 * u;
+      const yP = N - m - (o.titulo ? 230 * u : 0) - th;
+      ctx.fillStyle = T.acento; ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect((N - tw) / 2, yP, tw, th, th / 2) : ctx.rect((N - tw) / 2, yP, tw, th); ctx.fill();
+      ctx.fillStyle = '#FFFFFF'; ctx.textBaseline = 'middle'; ctx.fillText(txt, N / 2, yP + th / 2 + 4 * u);
+    }
+    if(o.titulo){
+      ctx.textBaseline = 'alphabetic'; ctx.fillStyle = o.foto ? '#fff' : T.tinta;
+      const t = ajustar(ctx, o.titulo, N - 2 * m, 1, 150 * u, 80 * u, 800);
+      ctx.fillText(t.r[0], N / 2, N - m);
+    }
+    ctx.textAlign = 'left';
+    return cv;
+  }
 
   /* la onda del episodio, como franja de barras a media altura */
   const onda = o.onda && o.onda.length ? o.onda : null;

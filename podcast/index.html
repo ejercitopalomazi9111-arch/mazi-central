@@ -24,7 +24,7 @@
     </div>
   </div>
   <nav class="pasos" aria-label="Pasos">
-    <a href="#clips" class="v">1 · Clips</a><a href="#voz" class="a">1 · Voz</a>
+    <a href="#episodios">Episodios</a><a href="#clips" class="v">1 · Clips</a><a href="#voz" class="a">1 · Voz</a>
     <a href="#edicion" class="v">2 · Edición</a><a href="#limpiar" class="a">2 · Limpiar</a>
     <a href="#intro">3 · Entrada</a><a href="#nombres" class="v">4 · Nombres</a>
     <a href="#exportar" class="v">5 · Exportar</a><a href="#armar" class="a">4 · Armar</a>
@@ -33,6 +33,14 @@
 </header>
 
 <main class="hoja">
+
+  <!-- ═══════════ LOS EPISODIOS ═══════════ -->
+  <section class="paso" id="episodios" aria-labelledby="tEpisodios">
+    <h2 id="tEpisodios"><span class="num"><span data-ico="list-ordered"></span></span>Tus episodios</h2>
+    <p class="ayuda" id="epAyuda">El orden del pizarrón: 2 temas por hora, 6 por semana. Toca el que van a grabar.</p>
+    <div id="listaEpisodios"></div>
+    <div class="ep-guion" id="epGuion" hidden></div>
+  </section>
 
   <!-- ═══════════ VIDEO · 1 · CLIPS ═══════════ -->
   <section class="paso v" id="clips" aria-labelledby="tClips">
@@ -56,6 +64,8 @@
         <span><b>Cortar los silencios</b><small>Las pausas largas se van, como en YouTube</small></span></label>
       <label class="palanca"><input type="checkbox" id="vLimpiar" checked><span data-ico="wand-sparkles"></span>
         <span><b>Limpiar el audio</b><small>Ruido, zumbido y volumen parejo</small></span></label>
+      <label class="palanca"><input type="checkbox" id="vMarca" checked><span data-ico="image"></span>
+        <span><b>Logo en la esquina</b><small>Chiquito y transparente mientras hablan</small></span></label>
     </div>
     <p class="rotulo-chips">Formato</p>
     <div class="chips" id="formatos" role="radiogroup" aria-label="Formato"></div>
@@ -112,6 +122,16 @@
       <label class="campo">Escuela o grupo<input id="pEscuela" maxlength="40" placeholder="Rembrandt · 3.1"></label>
     </div>
     <label class="campo">Título del episodio<input id="pTitulo" maxlength="70" placeholder="¿De qué hablamos hoy?"></label>
+    <p class="rotulo-chips">Logo</p>
+    <div class="logo-fila">
+      <canvas id="cvLogo" width="160" height="160" aria-label="Tu logo"></canvas>
+      <div class="chips" id="logos">
+        <button class="chip" type="button" data-logo="divergentes"><span data-ico="sparkles"></span>Radio Divergentes</button>
+        <label class="chip" for="fLogo"><span data-ico="upload"></span>Otro logo</label>
+        <button class="chip" type="button" data-logo="ninguno"><span data-ico="x"></span>Sin logo</button>
+      </div>
+      <input id="fLogo" type="file" accept="image/*" hidden>
+    </div>
     <p class="rotulo-chips">Colores</p>
     <div class="chips" id="temas" role="radiogroup" aria-label="Colores"></div>
 

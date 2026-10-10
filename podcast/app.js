@@ -7,6 +7,7 @@ import { SR, unir, aWav, tiempo, lufs } from './motor.js';
 import { ESTILOS } from './jingle.js';
 import { TEMAS, dibujarPortada, aJpeg } from './portada.js';
 import { FORMATOS, abrirVideo, planear, exportar, dibujarEntrada, dibujarNombre, dibujarMiniatura, dibujarCuadro, tipoDeVideo } from './video.js';
+import { EPISODIOS, TIEMPOS, PODCAST, cuando, guion } from './episodios.js';
 
 const $ = (s) => document.querySelector(s);
 const ico = (n) => (window.ICONOS ? window.ICONOS.ico(n) : '');
@@ -120,8 +121,79 @@ document.querySelector('.modo').addEventListener('click', (e) => { const b = e.t
    LOS DATOS DEL EPISODIO (sirven a la entrada, la portada y la miniatura)
    ═════════════════════════════════════════════════════════════════════ */
 let tema = 'noche', foto = null;
-const datos = () => ({ nombre: $('#pNombre').value.trim() || 'Mi podcast', episodio: $('#pEpisodio').value.trim(),
-  titulo: $('#pTitulo').value.trim(), escuela: $('#pEscuela').value.trim(), tema });
+/* el logo: el de Radio Divergentes (la paloma, en blanco puro para pintarse
+   del color del fondo) o uno que suban; sin logo, la entrada usa el nombre */
+let logo = { fuente: null, completo: null, chico: null, mascara: false };
+const tintes = new Map();
+function tenido(img, color){
+  if(!img) return null;
+  const k = (img._id || (img._id = Math.random())) + color;
+  if(tintes.has(k)) return tintes.get(k);
+  const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+  const g = c.getContext('2d'); g.drawImage(img, 0, 0);
+  if(logo.mascara){ g.globalCompositeOperation = 'source-in'; g.fillStyle = color; g.fillRect(0, 0, c.width, c.height); }
+  tintes.set(k, c); return c;
+}
+const datos = () => {
+  const T = TEMAS[tema] || TEMAS.noche;
+  return { nombre: $('#pNombre').value.trim() || 'Mi podcast', episodio: $('#pEpisodio').value.trim(),
+    titulo: $('#pTitulo').value.trim(), escuela: $('#pEscuela').value.trim(), tema,
+    logo: tenido(logo.completo, T.tinta), logoChico: tenido(logo.chico, '#FFFFFF'),
+    marcaAgua: $('#vMarca').checked };
+};
+async function cargarImagen(src){
+  const im = new Image(); im.src = src; await im.decode(); return im;
+}
+/* un logo subido: si tiene fondo liso (las cuatro esquinas parecidas), el
+   fondo se vuelve transparente; los colores del logo se respetan */
+async function prepararLogoPropio(blob){
+  const bm = await createImageBitmap(blob), max = 1400, k = Math.min(1, max / Math.max(bm.width, bm.height));
+  const c = document.createElement('canvas'); c.width = Math.round(bm.width * k); c.height = Math.round(bm.height * k);
+  const g = c.getContext('2d'); g.drawImage(bm, 0, 0, c.width, c.height);
+  const im = g.getImageData(0, 0, c.width, c.height), d = im.data, W = c.width, H = c.height;
+  const px = (x, y) => { const i = (y * W + x) * 4; return [d[i], d[i + 1], d[i + 2], d[i + 3]]; };
+  const esq = [px(2, 2), px(W - 3, 2), px(2, H - 3), px(W - 3, H - 3)];
+  const fondo = [0, 1, 2].map(j => esq.reduce((s, e) => s + e[j], 0) / 4);
+  const parejo = esq.every(e => e[3] > 250 && Math.abs(e[0] - fondo[0]) + Math.abs(e[1] - fondo[1]) + Math.abs(e[2] - fondo[2]) < 40);
+  if(parejo){
+    for(let i = 0; i < d.length; i += 4){
+      const dist = Math.abs(d[i] - fondo[0]) + Math.abs(d[i + 1] - fondo[1]) + Math.abs(d[i + 2] - fondo[2]);
+      d[i + 3] = Math.round(255 * Math.min(1, Math.max(0, (dist - 30) / 90)));
+    }
+    g.putImageData(im, 0, 0);
+  }
+  return c;
+}
+async function ponerLogo(fuente, blob){
+  tintes.clear();
+  if(fuente === 'divergentes'){
+    logo = { fuente, mascara: true, completo: await cargarImagen('marca/radio-divergentes.png'), chico: await cargarImagen('marca/paloma.png') };
+  } else if(fuente === 'propio' && blob){
+    const c = await prepararLogoPropio(blob);
+    logo = { fuente, mascara: false, completo: c, chico: c };
+  } else logo = { fuente: null, completo: null, chico: null, mascara: false };
+  pintarLogo(); repintarVistas();
+}
+function pintarLogo(){
+  const cv = $('#cvLogo'), g = cv.getContext('2d'), T = TEMAS[tema] || TEMAS.noche;
+  g.fillStyle = T.fondo[0]; g.fillRect(0, 0, 160, 160);
+  const L = tenido(logo.completo, T.tinta);
+  if(L){ const k = Math.min(140 / L.width, 140 / L.height); g.drawImage(L, 80 - L.width * k / 2, 80 - L.height * k / 2, L.width * k, L.height * k); }
+  else { g.fillStyle = T.suave; g.font = '700 22px system-ui'; g.textAlign = 'center'; g.fillText('sin logo', 80, 86); g.textAlign = 'left'; }
+  document.querySelectorAll('[data-logo]').forEach(b => b.setAttribute('aria-pressed', String(
+    (b.dataset.logo === 'divergentes' && logo.fuente === 'divergentes') || (b.dataset.logo === 'ninguno' && !logo.fuente))));
+}
+$('#logos').addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-logo]'); if(!b) return;
+  const f = b.dataset.logo === 'divergentes' ? 'divergentes' : null;
+  await ponerLogo(f); guardar('logo', { fuente: f });
+});
+$('#fLogo').addEventListener('change', async (e) => {
+  const f = e.target.files[0]; e.target.value = ''; if(!f) return;
+  try{ await ponerLogo('propio', f); await guardar('logo', { fuente: 'propio', blob: f }); aviso('Listo: tu logo va en la entrada, la portada y la miniatura.'); }
+  catch(err){ aviso('No pude abrir ese logo.'); }
+});
+$('#vMarca') && $('#vMarca').addEventListener('change', () => guardar('vmarca', $('#vMarca').checked));
 function guardarDatos(){ guardar('portada', { nombre: $('#pNombre').value, episodio: $('#pEpisodio').value, titulo: $('#pTitulo').value, escuela: $('#pEscuela').value, tema }); }
 function pintarTemas(){
   $('#temas').innerHTML = Object.entries(TEMAS).map(([id, t]) =>
@@ -134,7 +206,45 @@ function repintarVistas(){
   tPintar = setTimeout(() => { pintarPortada(); pintarMiniatura(); if(!animandoEntrada) dibujarEntrada($('#cvEntrada').getContext('2d'), 1280, 720, 2.6, 8, datos(), 0.3); }, 60);
 }
 ['pNombre', 'pEpisodio', 'pTitulo', 'pEscuela'].forEach(id => $('#' + id).addEventListener('input', () => { repintarVistas(); guardarDatos(); }));
-$('#temas').addEventListener('click', (e) => { const b = e.target.closest('[data-tema]'); if(!b) return; tema = b.dataset.tema; pintarTemas(); repintarVistas(); guardarDatos(); });
+$('#temas').addEventListener('click', (e) => { const b = e.target.closest('[data-tema]'); if(!b) return; tema = b.dataset.tema; pintarTemas(); pintarLogo(); repintarVistas(); guardarDatos(); });
+
+/* ══════════════════════════════════════════════════════════════════════
+   LOS EPISODIOS · el orden del pizarrón y la escaleta de cada tema
+   ═════════════════════════════════════════════════════════════════════ */
+let epElegido = 0;
+function pintarEpisodios(){
+  const porSemana = {};
+  EPISODIOS.forEach(ep => { const c = cuando(ep.n); (porSemana[c.semana] = porSemana[c.semana] || []).push([ep, c]); });
+  $('#listaEpisodios').innerHTML = Object.entries(porSemana).map(([sem, eps]) =>
+    '<p class="semana-t">Semana '+sem+'</p><div class="eps">'+ eps.map(([ep, c]) =>
+      '<button class="ep" type="button" data-ep="'+ep.n+'" aria-pressed="'+(epElegido === ep.n)+'">'+
+      '<span class="ep-n">'+ep.n+'</span><span><b>'+esc(ep.titulo)+'</b></span>'+
+      '<span class="ep-h">hora '+c.hora+'</span></button>').join('') +'</div>').join('');
+  const ep = EPISODIOS.find(x => x.n === epElegido), caja = $('#epGuion');
+  caja.hidden = !ep;
+  if(!ep) return;
+  caja.innerHTML = '<h3>'+ep.n+' · '+esc(ep.titulo)+'</h3><p class="gancho">«'+esc(ep.gancho)+'»</p><ol>'+
+    TIEMPOS.map(([m, q, d], i) => {
+      const txt = i === 1 ? 'Gancho: ' + ep.gancho : i >= 2 && i <= 4 ? ep.bloques[i - 2] : i === 5 ? ep.dilema : d;
+      return '<li><time>'+m+'</time><span><b>'+esc(q)+'</b>'+esc(txt)+'</span></li>';
+    }).join('') +'</ol>'+
+    '<p class="semana-t">Para investigar</p><ul class="inv">'+ep.investigar.map(x => '<li>'+esc(x)+'</li>').join('')+'<li>Fechas y cifras: cada una con su fuente.</li></ul>'+
+    (ep.cuidado ? '<p class="cuidado"><b>Ojo:</b> '+esc(ep.cuidado)+'</p>' : '')+
+    '<div class="fila-btn"><button class="btn" type="button" id="bCopiarGuion">'+ico('check')+'Copiar el guion</button></div>';
+}
+$('#listaEpisodios').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-ep]'); if(!b) return;
+  epElegido = +b.dataset.ep; const ep = EPISODIOS.find(x => x.n === epElegido);
+  $('#pEpisodio').value = String(ep.n); $('#pTitulo').value = ep.titulo;
+  guardarDatos(); guardar('episodio', epElegido); pintarEpisodios(); repintarVistas();
+  $('#epGuion').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+});
+$('#epGuion').addEventListener('click', async (e) => {
+  if(!e.target.closest('#bCopiarGuion')) return;
+  const ep = EPISODIOS.find(x => x.n === epElegido);
+  try{ await navigator.clipboard.writeText(guion(ep)); aviso('Guion copiado: pégalo en las notas del equipo.'); }
+  catch(err){ aviso('No se pudo copiar; mantén presionado el texto para copiarlo.'); }
+});
 
 /* ══════════════════════════════════════════════════════════════════════
    AUDIO · 1 · LA VOZ
@@ -643,9 +753,15 @@ $('#bPortada').addEventListener('click', async () => {
   const vo = await leer('vopc'); if(vo) vOpc = Object.assign(vOpc, vo);
   const ar = await leer('archivo'); if(ar) $('#eArchivo').value = ar;
   const av = await leer('archivoV'); if(av) $('#eArchivoV').value = av;
-  const po = await leer('portada'); if(po){ $('#pNombre').value = po.nombre || ''; $('#pEpisodio').value = po.episodio || ''; $('#pTitulo').value = po.titulo || ''; $('#pEscuela').value = po.escuela || ''; tema = po.tema || tema; }
+  const po = await leer('portada');
+  if(po){ $('#pNombre').value = po.nombre || ''; $('#pEpisodio').value = po.episodio || ''; $('#pTitulo').value = po.titulo || ''; $('#pEscuela').value = po.escuela || ''; tema = po.tema || tema; }
+  else { $('#pNombre').value = PODCAST.nombre; tema = 'divergentes'; }   /* la primera vez: el podcast de Carlos ya puesto */
+  const lg = await leer('logo');
+  try{ await ponerLogo(lg ? lg.fuente : 'divergentes', lg && lg.blob); }catch(e){ await ponerLogo(null); }
+  const vm = await leer('vmarca'); if(vm === false) $('#vMarca').checked = false;
+  epElegido = (await leer('episodio')) || 0;
   nombres = (await leer('nombres')) || [];
-  pintarTemas(); pintarIntro(); pintarOpcionesVideo(); pintarNombres(); pintarPedazos(); pintarClips(); pintarFrase(); repintarVistas();
+  pintarTemas(); pintarLogo(); pintarEpisodios(); pintarIntro(); pintarOpcionesVideo(); pintarNombres(); pintarPedazos(); pintarClips(); pintarFrase(); repintarVistas();
   const orden = (await leer('orden')) || [], vorden = (await leer('vorden')) || [];
   if(orden.length || vorden.length) ocupado('Recuperando lo que tenías…', 0.2);
   for(const id of orden){
