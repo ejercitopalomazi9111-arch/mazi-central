@@ -1404,3 +1404,176 @@ body.cortina-arriba{overflow:hidden}
 .avisos-caja.faltaPermiso, .avisos-caja.instalar{background:var(--rescoldo); border-color:var(--rescoldo-hondo)}
 .avisos-caja.negados{border-color:var(--rojo)}
 .avisos-caja .chips{margin:0}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   REDISEÑO · 10 de octubre
+   «Hazlo más bello, usa menos texto, cambia los emojis por iconos y haz más
+   estético Mi turno y la pantalla de turnos» (Carlos).
+
+   Los emojis los dibuja cada teléfono a su manera —el mismo taco sale de
+   tres formas en tres aparatos— y por eso nunca se ven de una pieza con lo
+   demás. Ahora todo es Lucide: una rejilla de 24, un grosor, el color del
+   texto. Lo que manda sigue siendo la foto de la comida.
+   ═════════════════════════════════════════════════════════════════════════ */
+:root{
+  --listo-fondo:linear-gradient(170deg, #E3F3D5, #F3FAEC);
+  --listo-borde:#9CC97A;
+  --listo-tinta:#2E5417;
+  --prep-fondo:linear-gradient(170deg, #FFF0DC, var(--sup));
+}
+:root[data-tema="oscuro"]{
+  --listo-fondo:linear-gradient(170deg, #1F3313, #22301A);
+  --listo-borde:#4E7A30;
+  --listo-tinta:#B7E596;
+  --prep-fondo:linear-gradient(170deg, #3A2414, var(--sup));
+}
+
+/* el icono: hereda el color y el tamaño de la letra de al lado */
+.i{width:1.2em; height:1.2em; flex:0 0 auto; display:inline-block; vertical-align:-.22em}
+[data-ico]{display:inline-flex; align-items:center; justify-content:center}
+.i.grande{width:64px; height:64px; stroke-width:1.6}
+.btn .i, .chip .i{width:18px; height:18px}
+.chip .i{opacity:.85}
+.chip[aria-pressed="true"] .i{opacity:1}
+
+/* la barra del pulgar: iconos de línea, el activo con su pastilla */
+.dedo .ico{display:inline-flex; padding:5px 13px; border-radius:999px; font-size:0}
+.dedo .ico .i{width:23px; height:23px; stroke-width:1.9}
+.dedo[aria-current="page"] .ico .i{stroke-width:2.3}
+
+/* sin foto: el icono del platillo sobre su color lavado, no un emoji gigante */
+.sin-foto{display:grid; place-items:center; width:100%; height:100%; color:var(--cafe); opacity:.55}
+.sin-foto .i{width:42%; height:42%; stroke-width:1.4}
+.carro-foto .i, .falta-op .fo-i .i{width:55%; height:55%; stroke-width:1.6; color:var(--tenue)}
+.carro-foto, .falta-op .fo-i{display:grid; place-items:center}
+
+/* ¿Cuánto traes? · el icono en su círculo */
+.ct-ico{width:42px; height:42px; border-radius:50%; background:var(--rescoldo);
+  color:var(--naranja-hondo); font-size:0}
+.ct-ico .i{width:22px; height:22px}
+.ct-mas .i{width:22px; height:22px}
+.op-ico{display:inline-flex; color:var(--naranja-hondo); font-size:0}
+.op-ico .i{width:22px; height:22px}
+.op-mas .i{width:20px; height:20px}
+.alerg{display:inline-flex; align-items:center; gap:6px}
+.alerg .i{width:16px; height:16px}
+.semana .i{color:var(--naranja-hondo)}
+.nota-ico{display:flex; align-items:center; gap:10px; margin:0; font-size:14px; color:var(--tenue); line-height:1.4}
+.nota-ico [data-ico]{width:36px; height:36px; flex:0 0 36px; border-radius:50%;
+  background:var(--rescoldo); color:var(--naranja-hondo)}
+.nota-ico .i{width:19px; height:19px}
+label small.tenue{font-weight:600; color:var(--tenue); opacity:.85}
+
+/* Lo tuyo · las cifras con su icono arriba */
+.cifra .i{width:20px; height:20px; color:var(--naranja-hondo); margin-bottom:8px; display:block}
+
+/* ── MI TURNO · un boleto, no una caja ──────────────────────────────────
+   La tarjeta se lee en este orden, de lejos a cerca: el número (lo único que
+   hay que recordar), cuánto falta, cuántos van antes —dibujado, no escrito—
+   y en qué paso va. El corte con muescas la separa en dos como un boleto de
+   verdad: arriba lo tuyo, abajo el camino. */
+.turno{
+  position:relative; text-align:center; padding:18px 18px 16px; border-radius:24px;
+  background:var(--prep-fondo); border:1px solid var(--linea); box-shadow:var(--sombra-alta);
+  overflow:hidden;
+}
+.turno-cab{display:flex; align-items:center; justify-content:space-between; gap:10px}
+.turno .rotulo{font-size:12px; letter-spacing:.16em}
+.turno .folio{display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:999px;
+  background:var(--sup); border:1px solid var(--linea); font-size:14px; letter-spacing:.18em; color:var(--dorado)}
+.turno .folio .i{width:15px; height:15px}
+.turno .numero{font-size:clamp(96px, 34vw, 156px); margin:8px 0 0; line-height:.9}
+.turno .frase{margin-top:10px; display:flex; align-items:center; justify-content:center; gap:8px;
+  font-size:18px; font-weight:800}
+.turno .frase .i{width:22px; height:22px}
+.turno .detalle{margin-top:4px; font-size:14px; font-weight:600}
+.eta{display:inline-flex; align-items:center; gap:7px; padding:7px 14px; border-radius:999px;
+  background:var(--rescoldo); color:var(--naranja-hondo); font-size:16px; font-weight:800}
+.eta .i{width:18px; height:18px}
+.eta.no{background:var(--rojo-suave); color:var(--rojo)}
+
+/* la fila, dibujada */
+.fila-dib{display:flex; align-items:center; justify-content:center; gap:7px; margin:14px 0 2px; flex-wrap:wrap}
+.fd-p{width:12px; height:12px; border-radius:50%; background:var(--linea)}
+.fd-mas{font-size:12px; font-weight:800; color:var(--tenue); padding:2px 7px; border-radius:999px; background:var(--piso)}
+.fd-yo{width:30px; height:30px; border-radius:50%; display:grid; place-items:center;
+  background:var(--naranja-relleno); color:#fff; box-shadow:0 0 0 4px var(--rescoldo)}
+.fd-yo .i{width:16px; height:16px}
+
+/* el corte del boleto: línea punteada con una muesca a cada lado del color del suelo */
+.turno-corte{position:relative; margin:16px -18px 14px; border-top:2px dashed var(--linea)}
+.turno-corte::before, .turno-corte::after{content:''; position:absolute; top:-12px; width:22px; height:22px;
+  border-radius:50%; background:var(--fondo); border:1px solid var(--linea)}
+.turno-corte::before{left:-12px}
+.turno-corte::after{right:-12px}
+
+/* los tres pasos, como el rastreo de un paquete */
+.pasos-turno{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(3,1fr); position:relative}
+.pasos-turno::before, .pasos-turno::after{content:''; position:absolute; top:17px; left:16.6%; height:3px; border-radius:3px}
+.pasos-turno::before{right:16.6%; background:var(--linea)}
+.pasos-turno::after{width:calc(33.4% * var(--va)); background:var(--naranja-relleno); transition:width .5s ease}
+.pasos-turno li{position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; gap:6px;
+  font-size:12px; font-weight:700; color:var(--tenue)}
+.pt-ico{width:37px; height:37px; border-radius:50%; display:grid; place-items:center;
+  background:var(--sup); border:2px solid var(--linea); color:var(--tenue)}
+.pt-ico .i{width:18px; height:18px}
+.pasos-turno li.ya .pt-ico{background:var(--naranja-relleno); border-color:var(--naranja-relleno); color:#fff}
+.pasos-turno li.ahora .pt-ico{background:var(--sup); border-color:var(--naranja-relleno); color:var(--naranja-hondo);
+  box-shadow:0 0 0 5px var(--rescoldo)}
+.pasos-turno li.ahora{color:var(--cafe)}
+
+/* listo: verde, y el paso final encendido */
+.turno.listo{background:var(--listo-fondo); border-color:var(--listo-borde)}
+.turno.listo .frase{color:var(--listo-tinta)}
+.turno.listo .pasos-turno::after{background:#3F6B23}
+.turno.listo .pasos-turno li.ya .pt-ico{background:#3F6B23; border-color:#3F6B23}
+.turno.listo .pasos-turno li.ahora .pt-ico{background:#3F6B23; border-color:#3F6B23; color:#fff;
+  box-shadow:0 0 0 5px rgba(63,107,35,.22); animation:listo-pulso 1.6s ease-in-out infinite}
+.turno.listo .numero{color:var(--listo-tinta)}
+@keyframes listo-pulso{50%{box-shadow:0 0 0 10px rgba(63,107,35,0)}}
+.turno.hecho .frase{color:var(--naranja-hondo)}
+.turno.apagado{background:var(--sup)}
+.turno.apagado .numero{color:var(--tenue)}
+@media (prefers-reduced-motion: reduce){
+  .turno.listo .pasos-turno li.ahora .pt-ico{animation:none}
+  .pasos-turno::after{transition:none}
+}
+
+/* sin pedidos */
+.vacio-turno{display:flex; flex-direction:column; align-items:center; gap:6px; padding:34px 16px;
+  border-radius:24px; border:2px dashed var(--linea); text-align:center; color:var(--tenue)}
+.vacio-turno .i{color:var(--naranja-hondo); opacity:.7; margin-bottom:6px}
+.vacio-turno b{font-size:18px; color:var(--cafe)}
+.vacio-turno span{font-size:14px}
+
+/* lo que pediste, como el talón del boleto */
+.lo-pedido .renglon{background:var(--sup)}
+
+/* «Avisos» en un renglón: icono, qué pasa, y los botones */
+.avisos-caja{padding:14px; border-radius:18px}
+.av-fila{display:flex; align-items:flex-start; gap:12px; margin-bottom:12px}
+.av-ico{width:40px; height:40px; flex:0 0 40px; border-radius:50%; display:grid; place-items:center;
+  background:var(--rescoldo); color:var(--naranja-hondo)}
+.av-ico .i{width:20px; height:20px}
+.avisos-caja .av-fila p{margin:0; font-size:15px; line-height:1.35}
+.avisos-caja .av-fila p small{display:block; margin-top:2px; font-size:13px; color:var(--tenue)}
+.avisos-caja.activos .av-ico{background:#E3F3D5; color:#2E5417}
+.avisos-caja.negados .av-ico{background:var(--rojo-suave); color:var(--rojo)}
+
+/* la miniatura del platillo en la lista del turno */
+.mini-f{width:38px; height:38px; flex:0 0 38px; border-radius:10px; overflow:hidden;
+  display:grid; place-items:center; background:var(--piso); color:var(--tenue)}
+.mini-f img{width:100%; height:100%; object-fit:cover}
+.mini-f .i{width:20px; height:20px}
+.renglones .renglon{align-items:center}
+
+/* las tres cifras de «Lo tuyo» en una sola fila: tres tarjetas y una huérfana
+   abajo se leían como un error de acomodo */
+.cifras{grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px}
+.cifra{padding:13px 12px; min-width:0}
+.cifra b{font-size:21px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.cifra span{font-size:10.5px; letter-spacing:.05em}
+.mini .i{width:26px; height:26px; color:#fff}
+.linea-prod .palomita .i{width:24px; height:24px; color:var(--verde); stroke-width:3}
+.plato .tiempo{display:inline-flex; align-items:center; gap:4px}
+.plato .tiempo .i{width:13px; height:13px}

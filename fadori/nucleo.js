@@ -40,12 +40,12 @@ const CONFIG_BASE = {
    la app, a propósito: eso las hace ver frescas —que es justo lo que se vende
    de una bebida— y rompe la monotonía cálida antes de que empalague. */
 const CATEGORIAS = [
-  { id:'fuerte',  nombre:'Plato fuerte', emoji:'🍲', tono:'#C2410C' },  /* guisado, caldo */
-  { id:'antojo',  nombre:'Antojitos',    emoji:'🌮', tono:'#D98324' },  /* masa dorada */
-  { id:'torta',   nombre:'Tortas y sándwiches', emoji:'🥪', tono:'#A8763E' },  /* pan tostado */
-  { id:'dulce',   nombre:'Dulces y postres', emoji:'🍩', tono:'#B34A6B' },  /* fruta */
-  { id:'bebida',  nombre:'Bebidas',      emoji:'🥤', tono:'#3E7C8C' },  /* el único frío */
-  { id:'botana',  nombre:'Botanas',      emoji:'🥨', tono:'#8A6212' },  /* fritura, sal */
+  { id:'fuerte',  nombre:'Plato fuerte', emoji:'🍲', icono:'soup', tono:'#C2410C' },  /* guisado, caldo */
+  { id:'antojo',  nombre:'Antojitos',    emoji:'🌮', icono:'flame', tono:'#D98324' },  /* masa dorada */
+  { id:'torta',   nombre:'Tortas y sándwiches', emoji:'🥪', icono:'sandwich', tono:'#A8763E' },  /* pan tostado */
+  { id:'dulce',   nombre:'Dulces y postres', emoji:'🍩', icono:'candy', tono:'#B34A6B' },  /* fruta */
+  { id:'bebida',  nombre:'Bebidas',      emoji:'🥤', icono:'cup-soda', tono:'#3E7C8C' },  /* el único frío */
+  { id:'botana',  nombre:'Botanas',      emoji:'🥨', icono:'popcorn', tono:'#8A6212' },  /* fritura, sal */
 ];
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -239,15 +239,15 @@ const MENU_VIEJO = [
    exactamente lo que la regla de "cero datos de más" existe para evitar.
    ═════════════════════════════════════════════════════════════════════════ */
 const ALERGENOS = [
-  { id:'gluten',   nombre:'Gluten',        emoji:'🌾' },
-  { id:'lacteos',  nombre:'Leche',         emoji:'🥛' },
-  { id:'huevo',    nombre:'Huevo',         emoji:'🥚' },
-  { id:'soya',     nombre:'Soya',          emoji:'🫘' },
-  { id:'cacahuate',nombre:'Cacahuate',     emoji:'🥜' },
-  { id:'nuez',     nombre:'Nueces',        emoji:'🌰' },
-  { id:'mariscos', nombre:'Pescado y mariscos', emoji:'🦐' },
-  { id:'ajonjoli', nombre:'Ajonjolí',      emoji:'🫓' },
-  { id:'picante',  nombre:'Picante',       emoji:'🌶️' },
+  { id:'gluten',   nombre:'Gluten',        emoji:'🌾', icono:'wheat' },
+  { id:'lacteos',  nombre:'Leche',         emoji:'🥛', icono:'milk' },
+  { id:'huevo',    nombre:'Huevo',         emoji:'🥚', icono:'egg' },
+  { id:'soya',     nombre:'Soya',          emoji:'🫘', icono:'bean' },
+  { id:'cacahuate',nombre:'Cacahuate',     emoji:'🥜', icono:'nut' },
+  { id:'nuez',     nombre:'Nueces',        emoji:'🌰', icono:'nut' },
+  { id:'mariscos', nombre:'Pescado y mariscos', emoji:'🦐', icono:'shrimp' },
+  { id:'ajonjoli', nombre:'Ajonjolí',      emoji:'🫓', icono:'sprout' },
+  { id:'picante',  nombre:'Picante',       emoji:'🌶️', icono:'flame' },
 ];
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -1590,6 +1590,35 @@ function emojiDe(p){
   return EMOJI_BASE[p.id] || (CATEGORIAS.find(c => c.id === p.cat) || {}).emoji || '🍽️';
 }
 
+/* El icono de un platillo, para cuando no hay foto y para las listas. Los
+   emojis se quedan en los datos (no hay que migrar nada), pero la pantalla
+   dibuja iconos de una sola colección: un emoji lo pinta cada teléfono a su
+   manera y no hay forma de que se vea de una pieza con lo demás. Se escoge
+   por la PALABRA del nombre, así un platillo nuevo que da de alta la
+   cooperativa también sale con el suyo. */
+const ICONO_POR_PALABRA = [
+  [/hamburguesa/i, 'hamburger'], [/pizza/i, 'pizza'], [/torta|hot ?dog|sándwich|sandwich/i, 'sandwich'],
+  [/mollete|bolillo|pan\b/i, 'croissant'], [/banderilla|pollo|alita/i, 'drumstick'],
+  [/caf[eé]|capuchino|chocolate caliente/i, 'coffee'], [/agua mineral|mineral/i, 'droplets'],
+  [/agua/i, 'droplet'], [/yakult|leche|yogur/i, 'milk'], [/arizona|lata/i, 'can-soda'],
+  [/coca|refresco|boing|jugo|gatorade|bebida/i, 'cup-soda'],
+  [/galleta/i, 'cookie'], [/brownie|pastel|delice|panqu[eé]/i, 'cupcake'],
+  [/paleta|tutsi|tix|tarrito|chupa/i, 'lollipop'], [/cacahuate|mazap[aá]n|nuez/i, 'nut'],
+  [/helado|nieve/i, 'ice-cream-cone'], [/maruchan|sopa|caldo|pozole|enchilada|guisado/i, 'soup'],
+  [/takis|cheetos|crujiente|fuego|flamin/i, 'flame'], [/papas|chip|doritos|tostitos|palomitas/i, 'popcorn'],
+];
+function iconoDe(p){
+  if(!p) return 'utensils';
+  const nom = String(p.nombre || '');
+  for(const [re, ic] of ICONO_POR_PALABRA) if(re.test(nom)) return ic;
+  return (CATEGORIAS.find(c => c.id === p.cat) || {}).icono || 'utensils';
+}
+/* el <svg> de un icono por nombre; sin el archivo de iconos, nada (la página
+   sigue funcionando, sólo sin dibujitos) */
+function ico(n, clase){
+  return (typeof window !== 'undefined' && window.FADORI_ICONOS) ? window.FADORI_ICONOS.ico(n, clase) : '';
+}
+
 /* Borrar es MARCAR, no quitar: quitado de aquí, el servidor lo devolvía en
    la siguiente sincronización y el platillo «borrado» reaparecía. */
 function borrarProducto(pid){
@@ -2625,7 +2654,7 @@ const FADORI = {
   /* quién es */
   registrar, nuevaPersona, buscarPersonas, yo, entrarComo, salir, aceptarTerminos,
   /* menú */
-  productos, producto, marcarDisponible, guardarProducto, borrarProducto, existenciasOk, emojiDe,
+  productos, producto, marcarDisponible, guardarProducto, borrarProducto, existenciasOk, emojiDe, iconoDe, ico,
   /* pedidos */
   pedir, pedido, pedidosDe, pedidosDeHoy, puedePedir, totalDe, segundosDe,
   cancelar, apartarParaManana, voyEnCamino,
