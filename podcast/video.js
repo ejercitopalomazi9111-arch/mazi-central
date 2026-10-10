@@ -25,6 +25,12 @@
    ═════════════════════════════════════════════════════════════════════════ */
 import { SR, tramosConVoz, envolvente, pico, niveles, pisoDeRuido } from './motor.js';
 import { TEMAS } from './portada.js';
+import { dibujarIdent, dibujarAnuncio, DURA_IDENT, DURA_ANUNCIO } from '../fadori/anuncios.js';
+
+/* la tanda de anuncios de la escuela: logo del canal, cada anuncio con su
+   logo que gira, y el logo del canal otra vez para regresar */
+export const TANDA = { abre: 2.6, cierra: 2.2, cada: DURA_IDENT + DURA_ANUNCIO };
+export const duraTanda = (n) => TANDA.abre + n * TANDA.cada + TANDA.cierra;
 
 export const FORMATOS = {
   horizontal: { nombre: 'Horizontal 16:9', w: 1280, h: 720, para: 'YouTube' },
@@ -99,6 +105,8 @@ export function planear(clips, { cortar = true, maxPausa = 0.9 } = {}){
     const quitar = (ed.cortes || []).concat((c.marcas || []).map(t => corteDeError(c.audio.subarray(0, largo), t)));
     const permitidos = restar(ini, fin, quitar);
     const voz = cortar ? tramosConVoz(c.audio.subarray(0, largo), SR, { maxPausa, dejar: 0.4 }).map(([a, b]) => [a / SR, b / SR]) : [[0, c.dur]];
+    const ads = (c.anuncios || []).slice(0, 3);
+    if(ads.length) orden.push({ tipo: 'tanda', ids: ads, dur: duraTanda(ads.length) });
     if(c.cartel && String(c.cartel).trim()) orden.push({ tipo: 'cartel', texto: String(c.cartel).trim(), dur: 2.5 });
     for(const [va, vb] of voz) for(const [pa, pb] of permitidos){
       const A = Math.max(va, pa), B = Math.min(vb, pb);
@@ -117,7 +125,9 @@ export function planear(clips, { cortar = true, maxPausa = 0.9 } = {}){
   const total = tramos.reduce((s, t) => s + t.b - t.a, 0);
   const original = clips.reduce((s, c) => s + c.dur, 0);
   return { tramos, orden, total, quitado: Math.max(0, original - total),
-    carteles: orden.filter(o => o.tipo === 'cartel').length };
+    carteles: orden.filter(o => o.tipo === 'cartel').length,
+    tandas: orden.filter(o => o.tipo === 'tanda').length,
+    extra: orden.filter(o => o.tipo !== 'tramo').reduce((s, o) => s + o.dur, 0) };
 }
 
 /* ── dibujo ───────────────────────────────────────────────────────────── */
@@ -319,6 +329,72 @@ export function dibujarNombre(g, W, H, t, dur, p, tema){
   g.globalAlpha = 1;
 }
 
+/* ── LA TARJETA DE QUIÉN HABLA · estilo reality ───────────────────────
+   Tres bloques inclinados que entran uno tras otro desde la izquierda: el
+   nombre en una franja blanca, el APODO enorme en el color de su asiento
+   (con un brillo que lo cruza) y lo que hace en una franja oscura. A la
+   izquierda, el número de su asiento. Cada asiento tiene su color: el
+   presentador va con el del podcast. */
+export const COLORES_ASIENTO = ['', '#F59E0B', '#3B82F6', '#22C55E', '#A855F7', '#EC4899'];
+export function colorDeAsiento(k, tema){ const T = TEMAS[tema] || TEMAS.noche; return k === 0 ? T.acento : COLORES_ASIENTO[k % COLORES_ASIENTO.length] || T.acento; }
+export function dibujarTarjeta(g, W, H, t, dur, p, tema, k = 0){
+  if(t < 0 || t > dur) return;
+  const u = Math.min(W, H) / 720, horiz = W > H, col = colorDeAsiento(k, tema);
+  const sale = (x) => { x = Math.max(0, Math.min(1, x)); return 1 - Math.pow(1 - x, 3); };
+  const entra = (d) => sale((t - d) / 0.5), vete = suave((t - (dur - 0.45)) / 0.45);
+  const x0 = (horiz ? 64 : 40) * u, maxW = W - x0 * 2 - 90 * u;
+  const nombre = String(p.nombre || '').toUpperCase(), apodo = String(p.apodo || '').trim(), rol = String(p.rol || '');
+  /* si algo no cabe, todo se achica parejo */
+  let k1 = 1;
+  const medir = () => {
+    g.font = `800 ${40 * u * k1}px ${FAM}`; const wN = g.measureText(nombre).width;
+    g.font = `italic 900 ${84 * u * k1}px ${FAM}`; const wA = apodo ? g.measureText('«' + apodo.toUpperCase() + '»').width : 0;
+    g.font = `700 ${29 * u * k1}px ${FAM}`; const wR = g.measureText(rol).width;
+    return { wN, wA, wR };
+  };
+  let m = medir();
+  const mayor = Math.max(m.wN + 40 * u, m.wA + 60 * u, m.wR + 40 * u);
+  if(mayor > maxW){ k1 = maxW / mayor; m = medir(); }
+  const hN = 60 * u * k1, hA = apodo ? 112 * u * k1 : 0, hR = rol ? 52 * u * k1 : 0;
+  const alto = hN + hA + hR, y0 = H - (horiz ? 70 : 300) * u - alto;
+  const insc = 0.22;                              /* la inclinación */
+  const bloque = (x, y, w, h, color) => { g.beginPath(); g.moveTo(x + insc * h, y); g.lineTo(x + w + insc * h, y); g.lineTo(x + w, y + h); g.lineTo(x, y + h); g.closePath(); g.fillStyle = color; g.fill(); };
+  const corre = (d, w) => (1 - entra(d)) * -(w + x0 + 120 * u) - vete * (W * 0.6);
+  const xT = x0 + 108 * u * k1;
+  g.save(); g.globalAlpha = 1 - vete * 0.6;
+  /* el asiento */
+  const s = hN + hA, xs = x0 + corre(0, 80 * u);
+  bloque(xs, y0, 96 * u * k1, s, col);
+  g.fillStyle = '#fff'; g.font = `900 ${64 * u * k1}px ${FAM}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(String(k + 1), xs + 48 * u * k1 + insc * s / 2, y0 + s / 2 + 2 * u);
+  g.textAlign = 'left';
+  /* el nombre */
+  const wN = m.wN + 40 * u * k1, xn = xT + corre(0.08, wN);
+  bloque(xn, y0, wN, hN, '#FFFFFF');
+  g.fillStyle = '#121014'; g.font = `800 ${40 * u * k1}px ${FAM}`; g.fillText(nombre, xn + 18 * u * k1 + insc * hN / 2, y0 + hN / 2 + 1);
+  /* el apodo, con su brillo */
+  if(apodo){
+    const wA = m.wA + 84 * u * k1, xa = xT - insc * hA + corre(0.18, wA), ya = y0 + hN;
+    bloque(xa, ya, wA, hA, col);
+    g.fillStyle = '#FFFFFF'; g.font = `italic 900 ${84 * u * k1}px ${FAM}`;
+    g.fillText('«' + apodo.toUpperCase() + '»', xa + 28 * u * k1 + insc * hA / 2, ya + hA / 2 + 3 * u);
+    const b = (t - 0.55) / 0.6;
+    if(b > 0 && b < 1){
+      g.save(); g.beginPath(); g.moveTo(xa + insc * hA, ya); g.lineTo(xa + wA + insc * hA, ya); g.lineTo(xa + wA, ya + hA); g.lineTo(xa, ya + hA); g.closePath(); g.clip();
+      const bx = xa + (wA + 200 * u) * b - 100 * u, gr = g.createLinearGradient(bx - 60 * u, 0, bx + 60 * u, 0);
+      gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(.5, 'rgba(255,255,255,.55)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+      g.fillStyle = gr; g.fillRect(xa, ya, wA + hA, hA); g.restore();
+    }
+  }
+  /* lo que hace */
+  if(rol){
+    const wR = m.wR + 40 * u * k1, xr = xT - insc * (hA + hR) + corre(0.28, wR), yr = y0 + hN + hA;
+    bloque(xr, yr, wR, hR, 'rgba(12,10,14,.86)');
+    g.fillStyle = 'rgba(255,255,255,.92)'; g.font = `700 ${29 * u * k1}px ${FAM}`; g.fillText(rol, xr + 18 * u * k1 + insc * hR / 2, yr + hR / 2 + 1);
+  }
+  g.restore(); g.textBaseline = 'alphabetic';
+}
+
 /* la miniatura para YouTube (1280 × 720): un cuadro del video, oscurecido de
    un lado, con el título enorme. Es lo que decide si alguien le da clic. */
 export function dibujarMiniatura(cv, v, d){
@@ -403,6 +479,14 @@ export async function exportar({ piezas, clips, formato = 'horizontal', modo = '
   let t = 0; const linea = piezas.map(p => { const d = p.tipo === 'tramo' ? p.b - p.a : p.dur; const o = { p, ini: t, dur: d }; t += d; return o; });
   const total = t;
   const iniEpisodio = (linea.find(x => x.p.tipo === 'tramo') || { ini: 0 }).ini;
+  /* las tarjetas de quién sale: al empezar el clip donde aparece, una tras
+     otra, 4.8 s cada una */
+  const tarjetas = [];
+  clips.forEach((c, k) => {
+    if(!c.salen || !c.salen.length) return;
+    const L0 = linea.find(x => x.p.tipo === 'tramo' && x.p.clip === k); if(!L0) return;
+    c.salen.forEach((per, j) => tarjetas.push({ per, en: L0.ini + 0.6 + j * 5.2, dura: 4.8 }));
+  });
 
   /* dibuja un cuadro del momento `ahora` (segundos del video final) */
   let activo = null, actual = 0, nivelesActual = null;
@@ -412,10 +496,16 @@ export async function exportar({ piezas, clips, formato = 'horizontal', modo = '
     if(L.p.tipo === 'entrada') dibujarEntrada(g, W, H, tl, L.dur, datos, nivelesActual ? nivelesActual[Math.min(nivelesActual.length - 1, Math.floor(tl * 30))] : 0);
     else if(L.p.tipo === 'cierre') dibujarCierre(g, W, H, tl, L.dur, datos, nivelesActual ? nivelesActual[Math.min(nivelesActual.length - 1, Math.floor(tl * 30))] : 0);
     else if(L.p.tipo === 'cartel') dibujarCartel(g, W, H, tl, L.dur, L.p.texto, datos);
+    else if(L.p.tipo === 'canal') dibujarIdent(g, W, H, tl, L.p.P, { dur: L.dur, aterriza: false });
+    else if(L.p.tipo === 'ident') dibujarIdent(g, W, H, tl, L.p.P, { dur: L.dur, aterriza: true });
+    else if(L.p.tipo === 'anuncio') dibujarAnuncio(g, W, H, tl, L.p.P, { dur: L.dur });
     else if(activo && activo.readyState >= 2){ dibujarCuadro(g, activo, W, H, modo); if(datos.marcaAgua) dibujarMarca(g, W, H, datos); }
     /* nombres: su segundo cuenta desde que empieza el episodio */
     const te = ahora - iniEpisodio;
-    nombres.forEach(n => { const a = +n.en || 0, d = +n.dura || 5; if(te >= a && te <= a + d && L.p.tipo === 'tramo') dibujarNombre(g, W, H, te - a, d, n, datos.tema); });
+    if(L.p.tipo === 'tramo'){
+      nombres.forEach(n => { if(n.en === '' || n.en == null) return; const a = +n.en || 0, d = +n.dura || 5; if(te >= a && te <= a + d) dibujarTarjeta(g, W, H, te - a, d, n, datos.tema, n.asiento || 0); });
+      tarjetas.forEach(x => { if(ahora >= x.en && ahora <= x.en + x.dura) dibujarTarjeta(g, W, H, ahora - x.en, x.dura, x.per, datos.tema, x.per.asiento || 0); });
+    }
   }
 
   /* arranca: primer cuadro pintado ANTES de grabar, para que no salga negro */
@@ -448,7 +538,8 @@ export async function exportar({ piezas, clips, formato = 'horizontal', modo = '
         }
         if(sig && sig.p.tipo === 'tramo') posicionar(vids[(actual + 1) % 2], sig.p);
       } else {
-        const au = p.audio || fiu();
+        /* el anuncio va callado: el «fiu» ya sonó en su logo */
+        const au = p.audio || (p.tipo === 'anuncio' ? new Float32Array(SR / 10) : fiu());
         const s = ac.createBufferSource(); s.buffer = buffer(au); s.connect(dest);
         s.start(Math.max(ac.currentTime, cuando)); fuentes.push(s);
         nivelesActual = nivelesMusica(au);

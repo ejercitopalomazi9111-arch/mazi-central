@@ -6,7 +6,8 @@
 import { SR, unir, aWav, tiempo, lufs } from './motor.js';
 import { ESTILOS } from './jingle.js';
 import { TEMAS, dibujarPortada, aJpeg } from './portada.js';
-import { FORMATOS, abrirVideo, planear, exportar, corteDeError, dibujarEntrada, dibujarNombre, dibujarMiniatura, dibujarCuadro, tipoDeVideo } from './video.js';
+import { FORMATOS, abrirVideo, planear, exportar, corteDeError, dibujarEntrada, dibujarTarjeta, colorDeAsiento, dibujarMiniatura, dibujarCuadro, tipoDeVideo, TANDA } from './video.js';
+import { ANUNCIOS, prepararAnuncio } from '../fadori/anuncios.js';
 import { EPISODIOS, TIEMPOS, PODCAST, cuando, guion } from './episodios.js';
 
 const $ = (s) => document.querySelector(s);
@@ -206,7 +207,7 @@ function repintarVistas(){
   tPintar = setTimeout(() => { pintarPortada(); pintarMiniatura(); if(!animandoEntrada) dibujarEntrada($('#cvEntrada').getContext('2d'), 1280, 720, 2.6, 8, datos(), 0.3); }, 60);
 }
 ['pNombre', 'pEpisodio', 'pTitulo', 'pEscuela'].forEach(id => $('#' + id).addEventListener('input', () => { repintarVistas(); guardarDatos(); }));
-$('#temas').addEventListener('click', (e) => { const b = e.target.closest('[data-tema]'); if(!b) return; tema = b.dataset.tema; pintarTemas(); pintarLogo(); repintarVistas(); guardarDatos(); });
+$('#temas').addEventListener('click', (e) => { const b = e.target.closest('[data-tema]'); if(!b) return; tema = b.dataset.tema; pintarTemas(); pintarLogo(); repintarVistas(); guardarDatos(); verTarjeta(enfocada); });
 
 /* ══════════════════════════════════════════════════════════════════════
    LOS EPISODIOS · el orden del pizarrón y la escaleta de cada tema
@@ -533,9 +534,12 @@ function etiquetasDe(c){
   if(e.cortes && e.cortes.length) t.push(ico('scissors') + e.cortes.length + (e.cortes.length === 1 ? ' pedazo fuera' : ' pedazos fuera'));
   if(c.marcas && c.marcas.length) t.push(ico('undo-2') + c.marcas.length + (c.marcas.length === 1 ? ' error borrado' : ' errores borrados'));
   if(c.cartel) t.push(ico('flag') + 'Cartel: ' + esc(c.cartel));
+  const quienes = (c.salen || []).map(id => (nombres.find(n => n.id === id) || {}).nombre).filter(Boolean);
+  if(quienes.length) t.push(ico('users') + esc(quienes.join(', ')));
+  if(c.anuncios && c.anuncios.length) t.push(ico('megaphone') + (c.anuncios.length === 1 ? '1 anuncio' : c.anuncios.length + ' anuncios'));
   return t.length ? '<span class="etiquetas">' + t.map(x => '<span class="etiqueta">' + x + '</span>').join('') + '</span>' : '';
 }
-const metaDe = (c) => ({ edicion: c.edicion || null, marcas: c.marcas || [], cartel: c.cartel || '' });
+const metaDe = (c) => ({ edicion: c.edicion || null, marcas: c.marcas || [], cartel: c.cartel || '', salen: c.salen || [], anuncios: c.anuncios || [] });
 async function agregarVideo(blob, nombre, meta){
   const id = nuevoId('v');
   await guardar('vclip:' + id, { blob, nombre });       /* primero se guarda */
@@ -747,6 +751,8 @@ function abrirEditor(c){
   $('#edTitulo').textContent = c.nombre; $('#edCartel').value = c.cartel || '';
   $('#edSugerencias').innerHTML = ['Saludo', 'Bloque 1', 'Bloque 2', 'Bloque 3', 'El dilema', 'Cierre']
     .map(t => '<button class="chip" type="button" data-cartel="'+t+'">'+t+'</button>').join('');
+  ed.salen = (c.salen || []).slice(); ed.anuncios = (c.anuncios || []).slice();
+  pintarEdChips();
   edV.src = c.url; edV.currentTime = 0;
   $('#editor').hidden = false; document.body.classList.add('sin-scroll');
   pintarEd(); vigilarEd();
@@ -823,15 +829,27 @@ $('#edCortes').addEventListener('click', (e) => {
   if(b.dataset.quitaCorte != null) ed.cortes.splice(+b.dataset.quitaCorte, 1);
   if(b.dataset.quitaMarca != null){ ed.marcas.splice(+b.dataset.quitaMarca, 1); ed.zonas.splice(+b.dataset.quitaMarca, 1); }
 });
+function pintarEdChips(){
+  const gente = nombres.filter(n => n.nombre.trim());
+  $('#edSalen').innerHTML = gente.length ? gente.map(n => '<button class="chip" type="button" data-sale="'+n.id+'" aria-pressed="'+(ed.salen.indexOf(n.id) >= 0)+'">'+
+    '<i class="asiento" style="background:'+colorDeAsiento(nombres.indexOf(n), tema)+'">'+(nombres.indexOf(n) + 1)+'</i>'+esc(n.apodo || n.nombre)+'</button>').join('')
+    : '<p class="ayuda">Primero pon los nombres en «Quién sale · tarjetas».</p>';
+  $('#edAnuncios').innerHTML = ANUNCIOS.map(a => '<button class="chip" type="button" data-anuncio="'+a.id+'" aria-pressed="'+(ed.anuncios.indexOf(a.id) >= 0)+'">'+
+    '<i class="asiento" style="background:'+a.color+'"></i>'+esc(a.marca)+'</button>').join('');
+}
+$('#edSalen').addEventListener('click', (e) => { const b = e.target.closest('[data-sale]'); if(!b) return; const id = b.dataset.sale, k = ed.salen.indexOf(id);
+  if(k >= 0) ed.salen.splice(k, 1); else ed.salen.push(id); pintarEdChips(); });
+$('#edAnuncios').addEventListener('click', (e) => { const b = e.target.closest('[data-anuncio]'); if(!b) return; const id = b.dataset.anuncio, k = ed.anuncios.indexOf(id);
+  if(k >= 0) ed.anuncios.splice(k, 1); else if(ed.anuncios.length < 3) ed.anuncios.push(id); else aviso('Máximo 3 anuncios por tanda.'); pintarEdChips(); });
 $('#edSugerencias').addEventListener('click', (e) => { const b = e.target.closest('[data-cartel]'); if(b) $('#edCartel').value = b.dataset.cartel; });
-$('#edBorrar').addEventListener('click', () => { ed.ini = 0; ed.fin = ed.c.dur; ed.cortes = []; ed.marcas = []; ed.zonas = []; ed.desde = null; $('#edCartel').value = ''; });
+$('#edBorrar').addEventListener('click', () => { ed.ini = 0; ed.fin = ed.c.dur; ed.cortes = []; ed.marcas = []; ed.zonas = []; ed.desde = null; ed.salen = []; ed.anuncios = []; $('#edCartel').value = ''; pintarEdChips(); });
 $('#edCerrar').addEventListener('click', cerrarEditor);
 $('#editor').addEventListener('click', (e) => { if(e.target.id === 'editor') cerrarEditor(); });
 document.addEventListener('keydown', (e) => { if(e.key === 'Escape' && ed.c) cerrarEditor(); });
 $('#edListo').addEventListener('click', async () => {
   const c = ed.c, sinNada = ed.ini <= 0.05 && ed.fin >= c.dur - 0.05 && !ed.cortes.length;
   c.edicion = sinNada ? null : { ini: +ed.ini.toFixed(2), fin: +ed.fin.toFixed(2), cortes: ed.cortes };
-  c.marcas = ed.marcas; c.cartel = $('#edCartel').value.trim();
+  c.marcas = ed.marcas; c.cartel = $('#edCartel').value.trim(); c.salen = ed.salen.slice(); c.anuncios = ed.anuncios.slice();
   await guardar('vmeta:' + c.id, metaDe(c));
   cerrarEditor(); plan = null; $('#resPlan').hidden = true; pintarClips();
   aviso('Guardado. Los cortes se hacen al exportar.');
@@ -860,7 +878,7 @@ function hacerPlan(){
     '<div><b>'+tiempo(original)+'</b><span>grabado</span></div>'+
     '<div><b>'+tiempo(plan.total)+'</b><span>queda</span></div>'+
     '<div><b>'+(plan.quitado >= 1 ? '−' + tiempo(plan.quitado) : '0:00')+'</b><span>'+(plan.tramos.length - clips.length > 0 ? (plan.tramos.length - clips.length) + (plan.tramos.length - clips.length === 1 ? ' corte' : ' cortes') : 'sin cortes')+'</span></div></div>'+
-    (plan.carteles ? '<p class="nota">'+plan.carteles+(plan.carteles === 1 ? ' cartel' : ' carteles')+' entre bloques (+'+tiempo(plan.carteles * 2.5)+')</p>' : '');
+    (plan.extra ? '<p class="nota">'+[plan.carteles ? plan.carteles+(plan.carteles === 1 ? ' cartel' : ' carteles') : '', plan.tandas ? plan.tandas+(plan.tandas === 1 ? ' tanda' : ' tandas')+' de anuncios' : ''].filter(Boolean).join(' y ')+' (+'+tiempo(plan.extra)+')</p>' : '');
   return plan;
 }
 $('#bPlanear').addEventListener('click', () => { hacerPlan(); aviso('Así queda. Los cortes se hacen al exportar.'); });
@@ -878,28 +896,65 @@ async function audiosLimpios(){
   }
 }
 
-/* ── VIDEO · 4 · NOMBRES ─────────────────────────────────────────────── */
+/* ── VIDEO · 4 · QUIÉN SALE · las tarjetas estilo reality ─────────────
+   Cada quien con su asiento (el 1 es quien presenta), su nombre, su apodo y
+   qué hace. La tarjeta sale al empezar el clip donde se marcó que aparece, o
+   en el segundo que se ponga aquí. */
 let nombres = [];
+const nuevaPersonaId = () => 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
 function pintarNombres(){
   $('#listaNombres').innerHTML = nombres.map((n, k) =>
     '<li class="nombre-fila" data-k="'+k+'">'+
-    '<label class="campo">Nombre<input data-n="nombre" maxlength="30" value="'+esc(n.nombre)+'" placeholder="Ana Pérez"></label>'+
-    '<label class="campo">Qué hace<input data-n="rol" maxlength="30" value="'+esc(n.rol)+'" placeholder="Conduce"></label>'+
-    '<label class="campo">Segundo<input data-n="en" inputmode="numeric" maxlength="5" value="'+esc(n.en)+'"></label>'+
+    '<i class="asiento grande" style="background:'+colorDeAsiento(k, tema)+'" aria-hidden="true">'+(k + 1)+'</i>'+
+    '<label class="campo">Nombre<input data-n="nombre" maxlength="30" value="'+esc(n.nombre)+'" placeholder="'+(k ? 'Nombre de quien viene' : 'Carlos Eduardo')+'"></label>'+
+    '<label class="campo">Apodo<input data-n="apodo" maxlength="20" value="'+esc(n.apodo || '')+'" placeholder="'+(k ? 'Su apodo' : 'La Riata')+'"></label>'+
+    '<label class="campo ancho">Qué hace<input data-n="rol" maxlength="44" value="'+esc(n.rol)+'" placeholder="'+(k ? 'Invitado' : 'Presentador y jefe de grupo 3.1')+'"></label>'+
+    '<label class="campo">Segundo<input data-n="en" inputmode="numeric" maxlength="5" value="'+esc(n.en || '')+'" placeholder="—"></label>'+
     '<button class="mini" type="button" data-quita="'+k+'" aria-label="Quitar a '+esc(n.nombre || 'esta persona')+'">'+ico('trash')+'</button></li>').join('');
+  $('#bMesa').hidden = nombres.length >= 4;
+  verTarjeta(Math.min(enfocada, nombres.length - 1));
+}
+let enfocada = 0;
+/* la vista: la tarjeta de la persona que se está escribiendo, sobre un
+   cuadro del primer clip (o el fondo del tema) */
+function verTarjeta(k){
+  const cv = $('#cvTarjeta'), g = cv.getContext('2d'), W = cv.width, H = cv.height;
+  const grd = g.createLinearGradient(0, 0, W, H); grd.addColorStop(0, '#2A2330'); grd.addColorStop(1, '#0E0B10');
+  g.fillStyle = grd; g.fillRect(0, 0, W, H);
+  const mini = clips[0] && clips[0].mini && miniImg;
+  if(mini) g.drawImage(miniImg, 0, 0, W, H);
+  const n = nombres[k];
+  cv.hidden = !n;
+  if(!n) return;
+  const per = { nombre: n.nombre || (k ? 'Invitado' : 'Carlos Eduardo'), apodo: n.apodo, rol: n.rol, asiento: k };
+  if(!n.nombre && !n.apodo && !n.rol) Object.assign(per, k ? { apodo: 'Su apodo', rol: 'Invitado' } : { apodo: 'La Riata', rol: 'Presentador y jefe de grupo 3.1' });
+  dibujarTarjeta(g, W, H, 2.2, 5, per, tema, k);
+}
+let miniImg = null;
+function cargarMiniVista(){
+  if(!clips[0] || !clips[0].mini){ miniImg = null; return; }
+  const im = new Image(); im.onload = () => { miniImg = im; verTarjeta(enfocada); }; im.src = clips[0].mini;
 }
 $('#listaNombres').addEventListener('input', (e) => {
   const i = e.target.closest('[data-n]'); if(!i) return; const k = +i.closest('[data-k]').dataset.k;
   nombres[k][i.dataset.n] = i.dataset.n === 'en' ? i.value.replace(/[^0-9]/g, '') : i.value; guardar('nombres', nombres);
+  enfocada = k; verTarjeta(k);
 });
-$('#listaNombres').addEventListener('click', (e) => { const b = e.target.closest('[data-quita]'); if(!b) return; nombres.splice(+b.dataset.quita, 1); pintarNombres(); guardar('nombres', nombres); });
+$('#listaNombres').addEventListener('focusin', (e) => { const f = e.target.closest('[data-k]'); if(f){ enfocada = +f.dataset.k; verTarjeta(enfocada); } });
+$('#listaNombres').addEventListener('click', (e) => { const b = e.target.closest('[data-quita]'); if(!b) return; nombres.splice(+b.dataset.quita, 1); enfocada = 0; pintarNombres(); guardar('nombres', nombres); });
 $('#bMasNombre').addEventListener('click', () => {
-  const ultimo = nombres[nombres.length - 1];
-  nombres.push({ nombre: '', rol: '', en: String(ultimo ? (+ultimo.en || 0) + 6 : 2) });
-  pintarNombres(); guardar('nombres', nombres);
+  nombres.push({ id: nuevaPersonaId(), nombre: '', apodo: '', rol: nombres.length ? 'Invitado' : 'Presentador', en: '' });
+  enfocada = nombres.length - 1; pintarNombres(); guardar('nombres', nombres);
   const ins = $('#listaNombres').querySelectorAll('input[data-n="nombre"]'); ins[ins.length - 1].focus();
 });
-const nombresListos = () => nombres.filter(n => n.nombre.trim()).map(n => ({ nombre: n.nombre.trim(), rol: n.rol.trim(), en: +n.en || 0, dura: 5 }));
+/* la mesa del podcast: quien presenta y tres invitados */
+$('#bMesa').addEventListener('click', () => {
+  while(nombres.length < 4) nombres.push({ id: nuevaPersonaId(), nombre: '', apodo: '', rol: nombres.length ? 'Invitado' : 'Presentador', en: '' });
+  enfocada = 0; pintarNombres(); guardar('nombres', nombres);
+  $('#listaNombres input[data-n="nombre"]').focus();
+});
+const persona = (n) => ({ nombre: n.nombre.trim(), apodo: (n.apodo || '').trim(), rol: n.rol.trim(), asiento: nombres.indexOf(n) });
+const nombresListos = () => nombres.filter(n => n.nombre.trim()).map(n => Object.assign(persona(n), { en: n.en === '' || n.en == null ? '' : +n.en || 0, dura: 5 }));
 
 /* ── VIDEO · 5 · EXPORTAR ────────────────────────────────────────────── */
 let videoFinal = null;
@@ -909,9 +964,28 @@ $('#eArchivoV').addEventListener('input', () => guardar('archivoV', $('#eArchivo
 async function piezasDe({ entrada = true, tramos = true, cierre = true }){
   const p = [];
   if(entrada){ ocupado('Componiendo la entrada…', 0.1); const m = await laMusica('golpe'); p.push({ tipo: 'entrada', audio: m, dur: m.length / SR }); }
-  if(tramos){ if(!plan) hacerPlan(); plan.orden.forEach(o => p.push(Object.assign({}, o))); }
+  if(tramos){
+    if(!plan) hacerPlan();
+    for(const o of plan.orden){
+      if(o.tipo === 'tanda') p.push(...await piezasDeTanda(o.ids));
+      else p.push(Object.assign({}, o));
+    }
+  }
   if(cierre){ ocupado('Componiendo el cierre…', 0.2); const m = musicaPropia || await laMusica('fundido'); p.push({ tipo: 'cierre', audio: m, dur: Math.max(5, m.length / SR) }); }
   return p;
+}
+/* la tanda: el logo del podcast, cada anuncio con su logo que gira, y el
+   logo del podcast otra vez para regresar */
+async function piezasDeTanda(ids){
+  const canal = await prepararAnuncio(ANUNCIOS.find(a => a.id === 'divergentes'));
+  const out = [{ tipo: 'canal', P: canal, dur: TANDA.abre }];
+  for(const id of ids){
+    const a = ANUNCIOS.find(x => x.id === id); if(!a) continue;
+    const P = await prepararAnuncio(a);
+    out.push({ tipo: 'ident', P, dur: TANDA.cada - 7 }, { tipo: 'anuncio', P, dur: 7 });
+  }
+  out.push({ tipo: 'canal', P: canal, dur: TANDA.cierra });
+  return out;
 }
 let bloqueo = null;
 async function grabarVideo(piezas, que){
@@ -921,7 +995,8 @@ async function grabarVideo(piezas, que){
   const total = piezas.reduce((s, p) => s + (p.tipo === 'tramo' ? p.b - p.a : p.dur), 0);
   ocupado('Grabando ' + que + '… 0:00 de ' + tiempo(total), 0, () => senal.cancelar && senal.cancelar());
   try{
-    const blob = await exportar({ piezas, clips: clips.map(c => ({ url: c.url, audioLimpio: c.limpio })), formato: vOpc.formato,
+    const salenDe = (c) => (c.salen || []).map(id => nombres.find(n => n.id === id)).filter(n => n && n.nombre.trim()).map(persona);
+    const blob = await exportar({ piezas, clips: clips.map(c => ({ url: c.url, audioLimpio: c.limpio, salen: salenDe(c) })), formato: vOpc.formato,
       modo: vOpc.encuadre, datos: datos(), nombres: nombresListos(), alto: vOpc.alto },
       (p, t, T) => ocupado('Grabando ' + que + '… ' + tiempo(t) + ' de ' + tiempo(T), p, () => senal.cancelar && senal.cancelar()), senal);
     return blob;
@@ -968,12 +1043,19 @@ $('#bKitAudio').addEventListener('click', async () => {
     }
   } catch(e){ aviso('No salió el audio: ' + e.message); } finally{ ocupado(false); }
 });
+$('#bKitTanda').addEventListener('click', async () => {
+  /* la tanda sola, con los anuncios que se eligieron en los clips (o los dos
+     primeros si no se eligió ninguno) */
+  const ids = [...new Set(clips.flatMap(c => c.anuncios || []))].slice(0, 3);
+  try{ const b = await grabarVideo(await piezasDeTanda(ids.length ? ids : ['rembrandt', 'fadori']), 'la tanda'); if(b){ window.__tanda = b; bajar(b, nombreVideo() + '-anuncios.' + extDe(b)); } }
+  catch(e){ ocupado(false); aviso('No salió la tanda: ' + e.message); }
+});
 $('#bKitNombres').addEventListener('click', async () => {
-  const ns = nombresListos(); if(!ns.length){ aviso('Primero agrega a alguien en «Nombres en pantalla».'); return; }
+  const ns = nombresListos(); if(!ns.length){ aviso('Primero agrega a alguien en «Quién sale · tarjetas».'); return; }
   const F = FORMATOS[vOpc.formato];
   for(const n of ns){
     const c = document.createElement('canvas'); c.width = F.w * 1.5; c.height = F.h * 1.5;
-    dibujarNombre(c.getContext('2d'), c.width, c.height, 2, 5, n, tema);
+    dibujarTarjeta(c.getContext('2d'), c.width, c.height, 2.2, 5, n, tema, n.asiento);
     const b = await new Promise(r => c.toBlob(r, 'image/png'));
     bajar(b, 'nombre-' + limpiarNombre(n.nombre, 'persona') + '.png');
     await new Promise(r => setTimeout(r, 300));
@@ -1040,7 +1122,7 @@ $('#bPortada').addEventListener('click', async () => {
   try{ await ponerLogo(lg ? lg.fuente : 'divergentes', lg && lg.blob); }catch(e){ await ponerLogo(null); }
   const vm = await leer('vmarca'); if(vm === false) $('#vMarca').checked = false;
   epElegido = (await leer('episodio')) || 0;
-  nombres = (await leer('nombres')) || [];
+  nombres = ((await leer('nombres')) || []).map(n => Object.assign({ apodo: '', en: '' }, n, { id: n.id || nuevaPersonaId() }));
   pintarTemas(); pintarLogo(); pintarEpisodios(); pintarIntro(); pintarOpcionesVideo(); pintarNombres(); pintarPedazos(); pintarClips(); pintarFrase(); repintarVistas();
   const orden = (await leer('orden')) || [], vorden = (await leer('vorden')) || [];
   if(orden.length || vorden.length) ocupado('Recuperando lo que tenías…', 0.2);
@@ -1057,6 +1139,6 @@ $('#bPortada').addEventListener('click', async () => {
   const fr = await leer('frase'); if(fr){ try{ vozIntro = await decodificar(fr.blob); }catch(e){} }
   const mu = await leer('musica'); if(mu){ try{ musicaPropia = prepararMusica(await decodificar(mu.blob)); }catch(e){} }
   ocupado(false);
-  pintarIntro(); pintarPedazos(); pintarClips(); pintarFrase(); repintarVistas();
+  pintarIntro(); pintarPedazos(); pintarClips(); pintarFrase(); repintarVistas(); cargarMiniVista();
   window.ESTUDIO = { pedazos: () => pedazos, clips: () => clips, editor: () => ed, final: () => final, video: () => videoFinal, plan: () => plan, listo: true };
 })();

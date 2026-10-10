@@ -167,10 +167,14 @@
 
   <!-- ═══════════ VIDEO · 4 · NOMBRES ═══════════ -->
   <section class="paso v" id="nombres" aria-labelledby="tNombres">
-    <h2 id="tNombres"><span class="num">4</span>Nombres en pantalla</h2>
-    <p class="ayuda">Salen abajo a la izquierda, como en la tele, en el segundo del episodio que digas.</p>
+    <h2 id="tNombres"><span class="num">4</span>Quién sale · tarjetas</h2>
+    <p class="ayuda">La tarjeta de cada quien, como en los realities: su nombre, su apodo y qué hace. Sale sola al empezar el clip donde aparece (márcalo al editar el clip) o en el segundo que pongas.</p>
+    <canvas class="vista-tarjeta" id="cvTarjeta" width="1280" height="720" aria-label="Así se ve la tarjeta"></canvas>
     <ol class="nombres" id="listaNombres"></ol>
-    <button class="btn" id="bMasNombre" type="button"><span data-ico="user-plus"></span>Agregar a alguien</button>
+    <div class="fila-btn">
+      <button class="btn fuerte" id="bMesa" type="button"><span data-ico="users"></span>Armar la mesa de 4</button>
+      <button class="btn" id="bMasNombre" type="button"><span data-ico="user-plus"></span>Agregar a alguien</button>
+    </div>
   </section>
 
   <!-- ═══════════ VIDEO · 5 · EXPORTAR ═══════════ -->
@@ -198,6 +202,7 @@
         <button class="btn" id="bKitEntrada" type="button"><span data-ico="clapperboard"></span>Entrada</button>
         <button class="btn" id="bKitCierre" type="button"><span data-ico="clapperboard"></span>Cierre</button>
         <button class="btn" id="bKitAudio" type="button" disabled><span data-ico="audio-lines"></span>Audio limpio</button>
+        <button class="btn" id="bKitTanda" type="button"><span data-ico="megaphone"></span>Tanda de anuncios</button>
         <button class="btn" id="bKitNombres" type="button"><span data-ico="captions"></span>Nombres (PNG)</button>
       </div>
     </details>
@@ -328,8 +333,12 @@
       <button class="btn" id="edCorte" type="button"><span data-ico="scissors"></span>Quitar desde aquí</button>
     </div>
     <ul class="ed-cortes" id="edCortes"></ul>
+    <h4 class="ed-sub"><span data-ico="users"></span>Quién sale en este clip</h4>
+    <div class="chips" id="edSalen"></div>
     <label class="campo">Cartel antes de este clip<input id="edCartel" maxlength="60" placeholder="Bloque 1 · De dónde salimos"></label>
     <div class="chips" id="edSugerencias"></div>
+    <h4 class="ed-sub"><span data-ico="megaphone"></span>Anuncios de la escuela antes de este clip</h4>
+    <div class="chips" id="edAnuncios"></div>
     <div class="fila-btn ed-pie">
       <button class="btn" id="edBorrar" type="button"><span data-ico="undo-2"></span>Quitar toda la edición</button>
       <button class="btn fuerte" id="edListo" type="button"><span data-ico="check"></span>Listo</button>
