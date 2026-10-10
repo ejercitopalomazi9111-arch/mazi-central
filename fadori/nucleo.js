@@ -1076,6 +1076,22 @@ const MotorServidor = {
       return r.ok ? { ok: true } : { ok: false, error: j.error || 'No se pudo.' };
     }catch(e){ return { ok: false, error: 'Sin conexión: el pasador no se cambió en el servidor.' }; }
   },
+  /* ── las cuentas: credencial, correo y contraseña ──────────────────── */
+  async llamar(ruta, cuerpo){
+    const api = direccionServidor();
+    if(!api) return { ok: false, error: 'Esto necesita el servidor de la escuela.' };
+    let r;
+    try{ r = await fetch(api + ruta + '?casa=' + encodeURIComponent(this.casa()), { method: 'POST', headers: cabezasSync(), body: JSON.stringify(cuerpo || {}) }); }
+    catch(e){ return { ok: false, sinRed: true, error: 'Sin conexión. Inténtalo con internet.' }; }
+    const j = await r.json().catch(() => ({}));
+    return Object.assign({ ok: r.status === 200, estado: r.status }, j, r.status === 200 ? {} : { error: j.error || ('El servidor contestó ' + r.status) });
+  },
+  /* lo que devuelve «entrar»: el alumno completo y sus pedidos, que ganan */
+  abrir(j){
+    const a = Object.assign({}, j.alumno, { t: j.alumno.t || ahora() });
+    this.mezclar({ alumnos: [a], pedidos: j.pedidos || [] }, true);
+    return a;
+  },
   /* «Ya tenías código»: el alumno ya no está en este teléfono, así que se le
      pregunta al servidor (que pone un tope a los intentos) */
   async porCodigo(cod){
@@ -1087,6 +1103,7 @@ const MotorServidor = {
     }catch(e){ throw new Error('Sin conexión. Inténtalo con internet.'); }
     const j = await r.json().catch(() => ({}));
     if(r.status === 429) throw new Error(j.error || 'Demasiados intentos. Espera unos minutos.');
+    if(r.status === 403 && j.conCorreo){ const e = new Error(j.error); e.conCorreo = true; throw e; }
     if(r.status !== 200 || !j.alumno) return null;
     const a = Object.assign({}, j.alumno, { t: j.alumno.t || ahora() });
     /* forzado: este teléfono ya tenía esos pedidos SIN nombre (como ve los de
@@ -1526,6 +1543,59 @@ async function entrarConCodigo(cod){
   D = MotorLocal.leer() || D;
   return entrarComo(c);
 }
+
+/* ── LAS CUENTAS (10 de octubre) ────────────────────────────────────────
+   Para que nadie pida a nombre de otro: la foto de la credencial UNA vez (la
+   revisa la cooperativa y se borra), y si quieres, correo y contraseña para
+   entrar en otro teléfono. Sin servidor no hay a quién mandarle nada, así que
+   todo esto contesta «necesita internet» y la app sigue como siempre. */
+async function entrarConCorreo(correo, clave){
+  if(MOTOR.nombre !== 'servidor') return { ok: false, error: 'Esto necesita el servidor de la escuela.' };
+  const j = await MotorServidor.llamar('/api/cuenta/entrar', { correo, clave });
+  if(!j.ok || !j.alumno) return j;
+  MotorServidor.abrir(j); D = MotorLocal.leer() || D;
+  return { ok: true, alumno: entrarComo(j.alumno.codigo || j.alumno.id) };
+}
+async function recuperarCuenta(codigo, correo, nueva){
+  if(MOTOR.nombre !== 'servidor') return { ok: false, error: 'Esto necesita el servidor de la escuela.' };
+  const j = await MotorServidor.llamar('/api/cuenta/recuperar', { codigo, correo, nueva });
+  if(!j.ok || !j.alumno) return j;
+  MotorServidor.abrir(j); D = MotorLocal.leer() || D;
+  return { ok: true, alumno: entrarComo(j.alumno.codigo || j.alumno.id) };
+}
+/* lo que cambia el servidor en la cuenta se apunta aquí también, sin
+   contar como cambio que haya que mandar */
+function apuntarCuenta(cod, cambio){
+  const d = estado(), a = d.alumnos[cod]; if(!a) return;
+  Object.assign(a, cambio); MotorLocal.escribir(d);
+}
+async function protegerCuenta(codigo, correo, clave, antes){
+  if(MOTOR.nombre !== 'servidor') return { ok: false, error: 'Esto necesita el servidor de la escuela.' };
+  const j = await MotorServidor.llamar('/api/cuenta/proteger', { codigo, correo, clave, antes });
+  if(j.ok) apuntarCuenta(codigo, { protegida: j.protegida });
+  return j;
+}
+async function subirCredencial(codigo, foto){
+  if(MOTOR.nombre !== 'servidor') return { ok: false, error: 'Esto necesita el servidor de la escuela.' };
+  const j = await MotorServidor.llamar('/api/cuenta/credencial', { codigo, foto });
+  if(j.ok) apuntarCuenta(codigo, { verif: j.verif });
+  return j;
+}
+async function credencialesPendientes(){
+  if(MOTOR.nombre !== 'servidor') return { ok: true, pendientes: [] };
+  return MotorServidor.llamar('/api/cuenta/pendientes', {});
+}
+async function decidirCredencial(codigo, si){
+  if(MOTOR.nombre !== 'servidor') return { ok: false, error: 'Esto necesita el servidor de la escuela.' };
+  const j = await MotorServidor.llamar('/api/cuenta/decidir', { codigo, si: !!si });
+  if(j.ok) apuntarCuenta(codigo, { verif: j.verif });
+  return j;
+}
+/* cómo está la cuenta de un alumno, en palabras de la cooperativa */
+function verificado(a){ return !!a && a.verif === 'si'; }
+/* Que el teléfono no borre lo guardado solo: Safari tira lo de una página
+   que no se abre en 7 días, salvo que la página pida quedarse. */
+function pedirQuedarse(){ try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); }catch(e){} }
 
 function salir(){ try{ localStorage.removeItem(LLAVE_YO); }catch(e){} }
 
@@ -2693,6 +2763,7 @@ const FADORI = {
   tema, ponerTema, esOscuro, aplicarTema, verTurno,
   servidor: direccionServidor, ponerServidor, elegirMotor, sync: MotorServidor, pausarSync, servidorDeFabrica, subirMenu,
   aparatoId, llaveMostrador, misCodigos, entrarConCodigo, avisos: Avisos,
+  entrarConCorreo, recuperarCuenta, protegerCuenta, subirCredencial, credencialesPendientes, decidirCredencial, verificado, pedirQuedarse,
   entrarMostrador: (p) => MotorServidor.entrarMostrador(p), salirMostrador: () => MotorServidor.salirMostrador(),
   pasadorAlServidor: (n) => MotorServidor.pasadorAlServidor(n),
   estadoSync: () => MotorServidor.estado(), probarServidor: (u) => MotorServidor.probar(u), alCambiar: (fn) => MOTOR.alCambiar(fn), motor: () => MOTOR.nombre,

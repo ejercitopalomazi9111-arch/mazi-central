@@ -202,5 +202,82 @@ r = await sync(fisgon, { productos: [{ ...menu[1], precio: 1, t: ahora() + 10 **
 r = await sync(mostrador, {}, { admin: ADMIN });
 ok('una llave de mostrador inventada no sirve', r.j.cambios.productos.find(p => p.id === 'pb-agua').precio === 1500);
 
+console.log('\n9 · Las cuentas: credencial, correo y contraseña');
+{   /* en su propio bloque: los nombres de aquí no chocan con los de arriba */
+const beto = aparato(), BETO = cod(), T9 = ahora();
+await sync(beto, { alumnos: [{ id: BETO, codigo: BETO, nombre: 'Beto', grupo: '2C', terminos: T9, t: T9, verif: 'si' }] });
+r = await sync(beto, {});
+let yoBeto = (r.j.cambios.alumnos || []).find(a => a.id === BETO);
+ok('una cuenta nueva desde el teléfono nace «sin verificar» (aunque el teléfono diga que sí)', yoBeto && yoBeto.verif === 'sin', JSON.stringify(yoBeto));
+const foto = 'data:image/jpeg;base64,' + Buffer.alloc(30000, 7).toString('base64');
+r = await llamar('/api/cuenta/credencial', { codigo: BETO, foto }, { ap: fisgon });
+ok('nadie sube la credencial de una cuenta que no es suya', r.status === 403);
+r = await llamar('/api/cuenta/credencial', { codigo: BETO, foto: 'data:text/html;base64,PHNjcmlwdD4=' }, { ap: beto });
+ok('lo que no es foto no entra', r.status === 400);
+r = await llamar('/api/cuenta/credencial', { codigo: BETO, foto: 'data:image/jpeg;base64,' + 'A'.repeat(200 * 1024) }, { ap: beto });
+ok('una foto enorme no entra', r.status === 413 || r.status === 400, 'status ' + r.status);
+r = await llamar('/api/cuenta/credencial', { codigo: BETO, foto }, { ap: beto });
+ok('Beto sube la foto de su credencial: queda «en revisión»', r.status === 200 && r.j.verif === 'pendiente', JSON.stringify(r.j));
+r = await llamar('/api/cuenta/pendientes', {}, { ap: fisgon });
+ok('las fotos por revisar NO las ve un alumno', r.status === 401);
+r = await sync(fisgon, {});
+ok('ni le llegan en la sincronía', !JSON.stringify(r.j).includes(foto.slice(30, 80)));
+r = await llamar('/api/cuenta/pendientes', {}, { ap: mostrador, admin: ADMIN });
+ok('la cooperativa sí: con la foto, el nombre y el grupo', r.status === 200 && r.j.pendientes.some(x => x.codigo === BETO && x.foto === foto && x.nombre === 'Beto'), 'status ' + r.status);
+r = await llamar('/api/cuenta/decidir', { codigo: BETO, si: true }, { ap: fisgon });
+ok('un alumno no se auto-aprueba', r.status === 401);
+r = await llamar('/api/cuenta/decidir', { codigo: BETO, si: true }, { ap: mostrador, admin: ADMIN });
+ok('la cooperativa dice «es él»', r.status === 200 && r.j.verif === 'si');
+r = await llamar('/api/cuenta/pendientes', {}, { ap: mostrador, admin: ADMIN });
+ok('y la foto se BORRA en ese momento', r.status === 200 && !r.j.pendientes.some(x => x.codigo === BETO));
+r = await sync(beto, {});
+yoBeto = (r.j.cambios.alumnos || []).find(a => a.id === BETO);
+ok('a Beto le llega la palomita', yoBeto && yoBeto.verif === 'si');
+/* una copia vieja del mostrador no le quita la palomita */
+r = await sync(mostrador, { alumnos: [{ id: BETO, codigo: BETO, nombre: 'Beto R', grupo: '2C', verif: 'no', t: ahora() + 5000 }] }, { admin: ADMIN });
+r = await sync(mostrador, {}, { admin: ADMIN });
+ok('el mostrador cambia el nombre, pero la palomita sólo cambia por su puerta', (r.j.cambios.alumnos || []).find(a => a.id === BETO)?.verif === 'si');
+
+r = await llamar('/api/cuenta/proteger', { codigo: BETO, correo: 'beto@escuela.mx', clave: '123456' }, { ap: fisgon });
+ok('nadie le pone contraseña a una cuenta ajena', r.status === 403);
+r = await llamar('/api/cuenta/proteger', { codigo: BETO, correo: 'beto@escuela.mx', clave: '123' }, { ap: beto });
+ok('una contraseña de 3 no', r.status === 400);
+r = await llamar('/api/cuenta/proteger', { codigo: BETO, correo: 'Beto@Escuela.mx ', clave: 'tortas2026' }, { ap: beto });
+ok('Beto protege su cuenta con correo y contraseña', r.status === 200 && r.j.protegida === 'be•••@escuela.mx', JSON.stringify(r.j));
+r = await sync(mostrador, {}, { admin: ADMIN });
+const crudo = JSON.stringify(r.j);
+ok('ni el correo ni la contraseña viajan a nadie (ni al mostrador)', !/beto@escuela|tortas2026|"_cuenta"|"sal"/.test(crudo));
+r = await llamar('/api/codigo', { codigo: BETO }, { ap: aparato() });
+ok('con contraseña, el código solo YA NO abre la cuenta', r.status === 403 && r.j.conCorreo === true, 'status ' + r.status);
+const telBeto = aparato();
+r = await llamar('/api/cuenta/entrar', { correo: 'beto@escuela.mx', clave: 'mal' }, { ap: telBeto });
+ok('con la contraseña mal, no', r.status === 401);
+r = await llamar('/api/cuenta/entrar', { correo: 'nadie@escuela.mx', clave: 'tortas2026' }, { ap: telBeto });
+ok('con un correo que no existe, el MISMO mensaje (no delata quién tiene cuenta)', r.status === 401 && /no coinciden/.test(r.j.error));
+r = await llamar('/api/cuenta/entrar', { correo: 'BETO@escuela.mx', clave: 'tortas2026' }, { ap: telBeto });
+ok('con correo y contraseña, entra en el teléfono nuevo', r.status === 200 && r.j.alumno?.id === BETO && r.j.alumno.verif === 'si');
+ok('…sin que le llegue su contraseña ni su correo', !/tortas2026|beto@escuela|_cuenta/.test(JSON.stringify(r.j)));
+let candado = false;
+for(let i = 0; i < 12; i++){ const x = await llamar('/api/cuenta/entrar', { correo: 'beto@escuela.mx', clave: 'intento' + i }, { ap: aparato() }); if(x.status === 429){ candado = true; break; } }
+ok('adivinar la contraseña de UNA cuenta desde muchos teléfonos: se bloquea', candado);
+r = await llamar('/api/cuenta/entrar', { correo: 'beto@escuela.mx', clave: 'tortas2026' }, { ap: aparato() });
+ok('…y mientras dura el candado, ni con la buena (15 min)', r.status === 429);
+
+const telCaro = aparato(), CARO = cod(), T10 = ahora();
+await sync(telCaro, { alumnos: [{ id: CARO, codigo: CARO, nombre: 'Caro', grupo: '1A', terminos: T10, t: T10 }] });
+await llamar('/api/cuenta/proteger', { codigo: CARO, correo: 'caro@escuela.mx', clave: 'olvidada1' }, { ap: telCaro });
+r = await llamar('/api/cuenta/proteger', { codigo: BETO, correo: 'caro@escuela.mx', clave: 'otra12345' }, { ap: beto });
+ok('un correo no puede ser de dos cuentas', r.status === 409 || r.status === 401, 'status ' + r.status);
+const nuevoTel = aparato();
+r = await llamar('/api/cuenta/recuperar', { codigo: CARO, correo: 'otro@escuela.mx', nueva: 'nueva123' }, { ap: nuevoTel });
+ok('recuperar con el código y un correo que no es: no', r.status === 401);
+r = await llamar('/api/cuenta/recuperar', { codigo: CARO, correo: 'caro@escuela.mx', nueva: 'nueva123' }, { ap: nuevoTel });
+ok('con su código Y su correo: contraseña nueva y entra', r.status === 200 && r.j.alumno?.id === CARO);
+r = await llamar('/api/cuenta/entrar', { correo: 'caro@escuela.mx', clave: 'olvidada1' }, { ap: aparato() });
+ok('la contraseña vieja ya no sirve', r.status === 401);
+r = await llamar('/api/cuenta/entrar', { correo: 'caro@escuela.mx', clave: 'nueva123' }, { ap: aparato() });
+ok('la nueva sí', r.status === 200);
+}
+
 console.log(`\n${mal ? '✗' : '✓'} ataques · ${bien}/${bien + mal}`);
 process.exit(mal ? 1 : 0);
