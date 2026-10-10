@@ -22,8 +22,11 @@ for(let f = 0; f < 4; f++){
 const voz = M.unir(partes, SR, 0); for(let i = 0; i < voz.length; i++) voz[i] += (rnd() * 2 - 1) * 0.002;
 const wav = Buffer.from(M.aWav(voz));
 
-const br = await chromium.launch({ args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--autoplay-policy=no-user-gesture-required'] });
-const ctx = await br.newContext({ viewport: { width: 390, height: 844 }, acceptDownloads: true, hasTouch: true });
+/* contra la dirección publicada (https), por el proxy del contenedor */
+const px = /^https:/.test(BASE) && process.env.HTTPS_PROXY ? new URL(process.env.HTTPS_PROXY) : null;
+const br = await chromium.launch({ args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--autoplay-policy=no-user-gesture-required'],
+  ...(px ? { proxy: { server: `${px.protocol}//${px.host}`, username: decodeURIComponent(px.username), password: decodeURIComponent(px.password) } } : {}) });
+const ctx = await br.newContext({ viewport: { width: 390, height: 844 }, acceptDownloads: true, hasTouch: true, ignoreHTTPSErrors: !!px });
 await ctx.grantPermissions(['microphone'], { origin: BASE });
 const pg = await ctx.newPage(); const errores = [];
 pg.on('pageerror', e => errores.push(e.message)); pg.on('console', m => { if(m.type() === 'error') errores.push(m.text()); });

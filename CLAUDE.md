@@ -386,6 +386,8 @@ dependemos.
    | un `IntersectionObserver` con margen sirve para todo lo que pasa en el scroll | el margen que sirve para CARGAR por adelantado (1200 px) hace que «leído» se marque 1200 px antes de llegar; y uno sin margen se brinca el final con un dedazo, porque sólo mira cada cuadro | el lector de INKWELL daba por leídos capítulos que nunca aparecieron. Cargar va con el observador; «leído» se decide al moverse: su final ya pasó arriba de la mitad |
    | un service worker «primero lo guardado» deja la app lista sin internet | también la deja **congelada**: el `index.html` del primer día se sirve para siempre, y lo que pase por él (una API) no se vuelve a pedir | INKWELL nunca se habría actualizado y las Tiras nunca habrían visto un capítulo nuevo. La app va «primero la red»; lo de otro sitio y `/api/` no se toca |
 
+   | una página que graba bien en local graba bien publicada | `_headers` pone `Permissions-Policy: microphone=()` a **todo** el sitio, y el servidor de pruebas local no manda cabeceras | el Estudio de podcast pasó 24/24 en local y la grabadora estaba muerta en producción; lo cazó correr la misma prueba contra la dirección publicada. La página que use micrófono o cámara lleva su regla en `_headers` (`! Permissions-Policy` y la suya) |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---
