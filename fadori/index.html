@@ -1185,6 +1185,10 @@ function kReiniciar(){
   const eran = cesta.map(r => r.prod);
   cesta = []; notaPedido = ''; abiertoPara = false; filtro = 'todo';
   eran.forEach(refrescarFicha); pintarCesta(); cerrarHoja();
+  /* la hoja cerrada guarda el carrito anterior —con el nombre de quien pidió—
+     aunque no se vea: se vacía para que no quede nada de esa persona */
+  $('#hojitaC').innerHTML = '';
+  ['#kNum', '#kNombre', '#kPidio', '#kFolio'].forEach(x => { $(x).textContent = ''; });
   $('#kTicket').hidden = true;
   ver('menu');
 }
@@ -1480,6 +1484,9 @@ function pintarCarrito(){
   muestra();
   $('#bConfirmar').addEventListener('click', () => {
     /* el que más duele repetir: dos toques nerviosos = dos pedidos */
+    /* en la tablet, el nombre se revisa ANTES del candado de doble toque: si
+       no, el toque sin nombre cuenta y el bueno, un segundo después, se tira */
+    if(KIOSCO && String(kQuien.nombre || '').trim().length < 2) return pedirEnTablet();
     if(muySeguido('confirmar')) return;
     if(KIOSCO) return pedirEnTablet();
     const yo = F.yo();

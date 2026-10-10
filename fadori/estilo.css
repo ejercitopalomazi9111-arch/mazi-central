@@ -1633,3 +1633,4 @@ label small.tenue{font-weight:600; color:var(--tenue); opacity:.85}
 .kiosco .cesta .btn.fuerte{min-height:56px; font-size:18px; padding:0 28px}
 .kiosco .hojita{max-width:760px}
 @media (min-width:900px){ .kiosco .velo{align-items:center} .kiosco .hojita{border-radius:22px} }
+.kiosco .barra-fila{max-width:1080px}

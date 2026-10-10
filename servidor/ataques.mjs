@@ -119,6 +119,21 @@ ok('ni algo que no existe', (r.j.rechazados || []).length === 1);
 r = await sync(bea, { pedidos: [{ id: 'o' + aparato().slice(0, 12), folio: 'EF58', alumno: ANA, renglones: [{ prod: 'pb-agua', cant: 1 }], creado: ahora(), estado: 'en_cola', t: ahora() }] });
 ok('ni pedir a nombre de otro alumno', (r.j.rechazados || []).length === 1);
 
+console.log('\n1b · El nombre en la pantalla de turnos, sólo si quien pide dice que sí');
+const caro = aparato(), CARO = cod();
+await sync(caro, { alumnos: [{ id: CARO, codigo: CARO, nombre: 'Carolina Ruiz M', grupo: '3C', terminos: T, t: T }] });
+const pCaro = { id: 'o' + aparato().slice(0, 12), folio: 'GH78', alumno: CARO, renglones: [{ prod: 'pb-agua', cant: 1 }], creado: ahora(), estado: 'en_cola', ver: 'nombre', t: ahora() };
+await sync(caro, { pedidos: [pCaro] });
+const pRaro = { id: 'o' + aparato().slice(0, 12), folio: 'GH79', alumno: CARO, renglones: [{ prod: 'pb-agua', cant: 1 }], creado: ahora(), estado: 'en_cola', ver: '<script>', t: ahora() };
+await sync(caro, { pedidos: [pRaro] });
+r = await sync(fisgon, {});
+const vc = pedidoEn(r, pCaro.id), va = pedidoEn(r, pAna.id), vr = pedidoEn(r, pRaro.id);
+ok('quien eligió «mi nombre» sale sólo con su primer nombre', vc?.alias === 'Carolina' && vc?.ver === 'nombre', JSON.stringify(vc));
+ok('sin apellido ni grupo', !JSON.stringify(r.j).includes('Ruiz') && !JSON.stringify(vc || {}).includes('3C'));
+ok('quien no eligió nada sale sin nombre', !!va && !va.alias && va.ver === 'pedido', JSON.stringify(va));
+ok('un valor inventado vale como «sólo el pedido»', !!vr && vr.ver === 'pedido' && !vr.alias, JSON.stringify(vr));
+ok('y lo que pidió sí se ve, para la pantalla', vc?.renglones?.[0]?.prod === 'pb-agua');
+
 console.log('\n5 · Inundar');
 const troll = aparato(), TROLL = cod();
 await sync(troll, { alumnos: [{ id: TROLL, codigo: TROLL, nombre: 'Troll', grupo: '1A', terminos: T, t: T }] });

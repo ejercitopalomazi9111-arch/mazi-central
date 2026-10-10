@@ -1,113 +1,151 @@
 {
-  "area": "privacidad",
-  "nombre": "Confianza: terceros, datos y permisos",
-  "que": "Lo que la página promete y lo que de verdad hace. Decisiones de diseño con consecuencias fuera de la pantalla.",
-  "neuronas": [
-    {
-      "id": "el-mapa-que-carga-siempre",
-      "titulo": "Un servicio de terceros carga aunque nadie lo pida",
-      "gravedad": "alta",
-      "sintoma": "El aviso de privacidad dice que no hay terceros y la página contacta a varios al abrir.",
-      "causa": "Un mapa, un vídeo o una fuente se incrustan directamente y se cargan siempre.",
-      "porque": "Incrustar es un copiar y pegar, y el costo de privacidad no se ve en la pantalla.",
-      "arreglo": "Cargar el servicio SÓLO si la persona lo pide, con un marcador que explique qué va a pasar.",
-      "comoCazarlo": "Listar los dominios contactados al abrir y compararlos con lo que promete el aviso legal.",
-      "consejo": "Un aviso de privacidad que la propia página contradice es un problema legal, no de diseño.",
-      "senales": [
-        "el mapa carga solo",
-        "hay peticiones a terceros",
-        "el aviso dice que no hay rastreo"
-      ],
-      "salioDe": "El sitio del Instituto: el mapa de Google se carga sólo si el visitante lo pide."
-    },
-    {
-      "id": "analitica-que-contradice-el-aviso",
-      "titulo": "Se añadió medición y nadie miró el aviso legal",
-      "gravedad": "alta",
-      "sintoma": "El sitio declara cero cookies y cero terceros, y lleva un script de analítica.",
-      "causa": "La medición se añade como tarea técnica, sin revisar los documentos publicados.",
-      "porque": "Medir parece neutro y el aviso legal lo escribió otra persona hace meses.",
-      "arreglo": "Antes de añadir cualquier script externo, leer lo que el sitio promete. Si se contradice, se cambia el documento o no se añade.",
-      "comoCazarlo": "Comparar la lista de dominios contactados con el aviso, cada vez que se añade algo.",
-      "consejo": "Es de las pocas decisiones de una página que tienen consecuencias fuera de la pantalla.",
-      "senales": [
-        "¿podemos poner analytics?",
-        "el aviso dice que no hay cookies",
-        "añadí un pixel"
-      ],
-      "salioDe": "La lista de decidido y cerrado del sitio del Instituto: analítica descartada por contradecir el aviso publicado."
-    },
-    {
-      "id": "foto-de-persona-sin-permiso",
-      "titulo": "Se publicó la foto de alguien sin permiso",
-      "gravedad": "alta",
-      "sintoma": "Aparecen personas identificables en la web sin que conste autorización.",
-      "causa": "La foto estaba en la carpeta y se usó.",
-      "porque": "Una foto real siempre se ve mejor que un marcador, y el permiso es un trámite que frena.",
-      "arreglo": "No se publica sin permiso. Con menores, permiso por escrito de quien tenga la tutela.",
-      "comoCazarlo": "Por cada persona reconocible, buscar dónde consta la autorización.",
-      "consejo": "El marcador honesto es siempre mejor que una foto que no se puede defender.",
-      "senales": [
-        "¿tenemos permiso de esa foto?",
-        "salen alumnos",
-        "es una foto del evento"
-      ],
-      "salioDe": "El sitio del Instituto: publicar fotos de menores identificables exige consentimiento por escrito."
-    },
-    {
-      "id": "datos-que-se-piden-y-no-se-cuidan",
-      "titulo": "Se recogen datos que después nadie protege",
-      "gravedad": "alta",
-      "sintoma": "Hay formularios que guardan datos personales sin que nadie sepa dónde acaban.",
-      "causa": "Se pidió el dato porque cabía en el formulario, sin decidir quién lo custodia.",
-      "porque": "Recoger es fácil y las obligaciones aparecen después.",
-      "arreglo": "Pedir lo mínimo. Y por cada dato, saber dónde vive, quién lo ve y cuánto se guarda.",
-      "comoCazarlo": "Por cada campo, contestar esas tres preguntas. Lo que no tenga respuesta, no se pide.",
-      "consejo": "El dato que no se recoge es el único que no hay que proteger.",
-      "senales": [
-        "¿dónde acaban estos datos?",
-        "pedimos muchos datos",
-        "nadie sabe quién los ve"
-      ],
-      "salioDe": "Los formularios del Instituto: sin base de datos, el mensaje va por correo y nada se almacena."
-    },
-    {
-      "id": "el-secreto-en-el-repo",
-      "titulo": "Una llave acabó en el historial de git",
-      "gravedad": "alta",
-      "sintoma": "Un token o contraseña aparece en un archivo del repositorio.",
-      "causa": "Se pegó para probar y se commiteó.",
-      "porque": "Pegar la llave es lo que desbloquea el trabajo en ese momento, y borrarla después parece suficiente.",
-      "arreglo": "Las llaves salen del entorno y nunca de un archivo. Y si una se commiteó, se revoca: borrarla no la saca del historial.",
-      "comoCazarlo": "Escaneo de secretos en el repositorio, y revisar el historial y no sólo el estado actual.",
-      "consejo": "Una llave que pasó por un chat o por un commit está quemada aunque se borre.",
-      "senales": [
-        "puse la llave para probar",
-        "está en el commit anterior",
-        "ya la borré"
-      ],
-      "salioDe": "Este grupo: nada de llaves ni secretos en el código, y el puente que tacha credenciales antes de publicar el espejo."
-    },
-    {
-      "id": "el-freno-por-datos-que-ya-estaban-publicados",
-      "titulo": "Un PR frenado días por «datos personales» que ya estaban en main",
-      "gravedad": "media",
-      "sintoma": "El PR con el arreglo de La Sala se quedó sin fusionar varios días con un letrero de «NO SE MERGEA: trae datos personales». Mientras, Gemini y Groq seguían invisibles en la mesa aunque Carlos ya había puesto sus llaves.",
-      "causa": "Se trató el correo y el teléfono del CV como algo que el PR iba a publicar por primera vez. Medido al fin: el correo ya estaba en main (cv/index.html) y el teléfono era el WhatsApp de la empresa, público a propósito. Fusionar no exponía nada nuevo.",
-      "porque": "La cautela con datos personales es la regla correcta, y por eso nadie la cuestiona. Pero se aplicó como supuesto —«esto trae datos»— en vez de medirse —«¿esto es NUEVO en main?»—.",
-      "arreglo": "Un renglón de git: git grep el dato contra origin/main. Si ya está, fusionar no cambia la exposición; lo que la cambia es borrarlo de la historia, que es otra decisión y otra conversación.",
-      "comoCazarlo": "Antes de frenar algo «por privacidad», preguntar dos cosas medibles: ¿el dato ya está publicado?, y ¿es personal o es de la empresa? Un freno que no se puede explicar con esas dos respuestas es costumbre, no cuidado.",
-      "consejo": "La cautela también cuesta, y la paga otro: aquí la pagó la mesa sin sillas.",
-      "senales": [
-        "no se puede fusionar por los datos",
-        "espera el visto bueno",
-        "ya están las llaves y no aparecen"
-      ],
-      "salioDe": "PR #124, fusionado el 24 de septiembre de 2026 con el visto bueno de Carlos.",
-      "vecinas": [
-        "el-secreto-en-el-repo",
-        "datos-que-se-piden-y-no-se-cuidan"
-      ]
-    }
-  ]
+ "area": "privacidad",
+ "nombre": "Confianza: terceros, datos y permisos",
+ "que": "Lo que la página promete y lo que de verdad hace. Decisiones de diseño con consecuencias fuera de la pantalla.",
+ "neuronas": [
+  {
+   "id": "el-mapa-que-carga-siempre",
+   "titulo": "Un servicio de terceros carga aunque nadie lo pida",
+   "gravedad": "alta",
+   "sintoma": "El aviso de privacidad dice que no hay terceros y la página contacta a varios al abrir.",
+   "causa": "Un mapa, un vídeo o una fuente se incrustan directamente y se cargan siempre.",
+   "porque": "Incrustar es un copiar y pegar, y el costo de privacidad no se ve en la pantalla.",
+   "arreglo": "Cargar el servicio SÓLO si la persona lo pide, con un marcador que explique qué va a pasar.",
+   "comoCazarlo": "Listar los dominios contactados al abrir y compararlos con lo que promete el aviso legal.",
+   "consejo": "Un aviso de privacidad que la propia página contradice es un problema legal, no de diseño.",
+   "senales": [
+    "el mapa carga solo",
+    "hay peticiones a terceros",
+    "el aviso dice que no hay rastreo"
+   ],
+   "salioDe": "El sitio del Instituto: el mapa de Google se carga sólo si el visitante lo pide."
+  },
+  {
+   "id": "analitica-que-contradice-el-aviso",
+   "titulo": "Se añadió medición y nadie miró el aviso legal",
+   "gravedad": "alta",
+   "sintoma": "El sitio declara cero cookies y cero terceros, y lleva un script de analítica.",
+   "causa": "La medición se añade como tarea técnica, sin revisar los documentos publicados.",
+   "porque": "Medir parece neutro y el aviso legal lo escribió otra persona hace meses.",
+   "arreglo": "Antes de añadir cualquier script externo, leer lo que el sitio promete. Si se contradice, se cambia el documento o no se añade.",
+   "comoCazarlo": "Comparar la lista de dominios contactados con el aviso, cada vez que se añade algo.",
+   "consejo": "Es de las pocas decisiones de una página que tienen consecuencias fuera de la pantalla.",
+   "senales": [
+    "¿podemos poner analytics?",
+    "el aviso dice que no hay cookies",
+    "añadí un pixel"
+   ],
+   "salioDe": "La lista de decidido y cerrado del sitio del Instituto: analítica descartada por contradecir el aviso publicado."
+  },
+  {
+   "id": "foto-de-persona-sin-permiso",
+   "titulo": "Se publicó la foto de alguien sin permiso",
+   "gravedad": "alta",
+   "sintoma": "Aparecen personas identificables en la web sin que conste autorización.",
+   "causa": "La foto estaba en la carpeta y se usó.",
+   "porque": "Una foto real siempre se ve mejor que un marcador, y el permiso es un trámite que frena.",
+   "arreglo": "No se publica sin permiso. Con menores, permiso por escrito de quien tenga la tutela.",
+   "comoCazarlo": "Por cada persona reconocible, buscar dónde consta la autorización.",
+   "consejo": "El marcador honesto es siempre mejor que una foto que no se puede defender.",
+   "senales": [
+    "¿tenemos permiso de esa foto?",
+    "salen alumnos",
+    "es una foto del evento"
+   ],
+   "salioDe": "El sitio del Instituto: publicar fotos de menores identificables exige consentimiento por escrito."
+  },
+  {
+   "id": "datos-que-se-piden-y-no-se-cuidan",
+   "titulo": "Se recogen datos que después nadie protege",
+   "gravedad": "alta",
+   "sintoma": "Hay formularios que guardan datos personales sin que nadie sepa dónde acaban.",
+   "causa": "Se pidió el dato porque cabía en el formulario, sin decidir quién lo custodia.",
+   "porque": "Recoger es fácil y las obligaciones aparecen después.",
+   "arreglo": "Pedir lo mínimo. Y por cada dato, saber dónde vive, quién lo ve y cuánto se guarda.",
+   "comoCazarlo": "Por cada campo, contestar esas tres preguntas. Lo que no tenga respuesta, no se pide.",
+   "consejo": "El dato que no se recoge es el único que no hay que proteger.",
+   "senales": [
+    "¿dónde acaban estos datos?",
+    "pedimos muchos datos",
+    "nadie sabe quién los ve"
+   ],
+   "salioDe": "Los formularios del Instituto: sin base de datos, el mensaje va por correo y nada se almacena."
+  },
+  {
+   "id": "el-secreto-en-el-repo",
+   "titulo": "Una llave acabó en el historial de git",
+   "gravedad": "alta",
+   "sintoma": "Un token o contraseña aparece en un archivo del repositorio.",
+   "causa": "Se pegó para probar y se commiteó.",
+   "porque": "Pegar la llave es lo que desbloquea el trabajo en ese momento, y borrarla después parece suficiente.",
+   "arreglo": "Las llaves salen del entorno y nunca de un archivo. Y si una se commiteó, se revoca: borrarla no la saca del historial.",
+   "comoCazarlo": "Escaneo de secretos en el repositorio, y revisar el historial y no sólo el estado actual.",
+   "consejo": "Una llave que pasó por un chat o por un commit está quemada aunque se borre.",
+   "senales": [
+    "puse la llave para probar",
+    "está en el commit anterior",
+    "ya la borré"
+   ],
+   "salioDe": "Este grupo: nada de llaves ni secretos en el código, y el puente que tacha credenciales antes de publicar el espejo."
+  },
+  {
+   "id": "el-freno-por-datos-que-ya-estaban-publicados",
+   "titulo": "Un PR frenado días por «datos personales» que ya estaban en main",
+   "gravedad": "media",
+   "sintoma": "El PR con el arreglo de La Sala se quedó sin fusionar varios días con un letrero de «NO SE MERGEA: trae datos personales». Mientras, Gemini y Groq seguían invisibles en la mesa aunque Carlos ya había puesto sus llaves.",
+   "causa": "Se trató el correo y el teléfono del CV como algo que el PR iba a publicar por primera vez. Medido al fin: el correo ya estaba en main (cv/index.html) y el teléfono era el WhatsApp de la empresa, público a propósito. Fusionar no exponía nada nuevo.",
+   "porque": "La cautela con datos personales es la regla correcta, y por eso nadie la cuestiona. Pero se aplicó como supuesto —«esto trae datos»— en vez de medirse —«¿esto es NUEVO en main?»—.",
+   "arreglo": "Un renglón de git: git grep el dato contra origin/main. Si ya está, fusionar no cambia la exposición; lo que la cambia es borrarlo de la historia, que es otra decisión y otra conversación.",
+   "comoCazarlo": "Antes de frenar algo «por privacidad», preguntar dos cosas medibles: ¿el dato ya está publicado?, y ¿es personal o es de la empresa? Un freno que no se puede explicar con esas dos respuestas es costumbre, no cuidado.",
+   "consejo": "La cautela también cuesta, y la paga otro: aquí la pagó la mesa sin sillas.",
+   "senales": [
+    "no se puede fusionar por los datos",
+    "espera el visto bueno",
+    "ya están las llaves y no aparecen"
+   ],
+   "salioDe": "PR #124, fusionado el 24 de septiembre de 2026 con el visto bueno de Carlos.",
+   "vecinas": [
+    "el-secreto-en-el-repo",
+    "datos-que-se-piden-y-no-se-cuidan"
+   ]
+  },
+  {
+   "id": "aparato-compartido-guarda-al-anterior",
+   "titulo": "En un aparato que usan todos, lo de la persona anterior se queda escondido en la página",
+   "gravedad": "alta",
+   "sintoma": "En la tablet de la fila, la siguiente persona abre el carrito y trae el nombre de quien pidió antes; o el nombre sigue en el HTML aunque no se vea.",
+   "causa": "Cerrar una hoja o esconder un ticket NO borra su contenido: `cerrarHoja()` sólo ponía `hidden`, y el carrito viejo (con el campo del nombre) y el ticket se quedaban en el DOM.",
+   "porque": "En un teléfono personal no importa: el que sigue eres tú. En un aparato compartido, lo escondido es de otra persona.",
+   "arreglo": "fadori/index.html · kReiniciar(): además de vaciar el carrito, se vacía #hojitaC y los textos del ticket (#kNum, #kNombre, #kPidio, #kFolio).",
+   "comoCazarlo": "fadori/pruebas-tele.mjs: después de un pedido, `document.body.innerHTML.includes('Valeria')` tiene que dar falso. Salía intermitente (1 de 3) porque dependía de qué alcanzaba a repintarse: hay que correrla varias veces.",
+   "consejo": "En modo kiosco, «empezar de nuevo» es borrar, no esconder. Pregunta para cada pantalla: ¿qué queda de la persona anterior si alguien abre el inspector?",
+   "salioDe": "Fadori · modo tablet, 10 de octubre",
+   "senales": [
+    "kiosco",
+    "tablet compartida",
+    "sale el nombre del anterior",
+    "datos del otro",
+    "se queda escondido"
+   ]
+  },
+  {
+   "id": "nombre-en-pantalla-publica-solo-con-permiso",
+   "titulo": "La pantalla de turnos enseña el nombre sólo si quien pidió dijo que sí, y sólo el primero",
+   "gravedad": "media",
+   "sintoma": "Carlos pidió que en la pantalla saliera qué comida sale y el nombre, porque nadie se acuerda del «turno 75 código HNLT», pero sí de «dos banderillas y un agua».",
+   "causa": "La pantalla vieja tenía la regla «números, nunca nombres»: una pantalla pública con nombres de alumnos expone a menores.",
+   "porque": "Las dos cosas son ciertas: el nombre ayuda y también expone. La salida es que lo elija cada quien.",
+   "arreglo": "Cada pedido trae `ver`: 'nombre' (primer nombre + pedido), 'pedido' (sólo lo que pidió, por omisión) o 'numero'. Lo elige quien pide, en el carrito. El servidor (servidor/src/index.js · vista) a los demás aparatos les manda sólo `alias` = primer nombre y sólo si ver === 'nombre'; nunca apellido ni grupo.",
+   "comoCazarlo": "servidor/ataques.mjs §1b y fadori/pruebas-tele.mjs §1.",
+   "consejo": "Descartado: dejar el nombre siempre (expone) y no dejarlo nunca (Carlos tiene razón en que el número no se recuerda). Por omisión, sólo el pedido: no expone a nadie y ya ayuda.",
+   "salioDe": "Fadori · pantalla de turnos, 10 de octubre",
+   "senales": [
+    "nombre en la pantalla",
+    "pantalla publica",
+    "privacidad menores",
+    "turno con nombre",
+    "que se vea mi nombre"
+   ]
+  }
+ ]
 }

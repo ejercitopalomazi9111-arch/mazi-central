@@ -171,7 +171,7 @@
   .aj-lista input[type=text]{width:100%; min-height:40px; border-radius:10px; border:1px solid var(--tv-linea); background:var(--tv-fondo); color:var(--tv-tinta);
     padding:0 10px; font:inherit; font-size:15px}
   .aj-lista small{display:block; color:var(--tv-tenue); font-size:12.5px; margin-top:2px}
-  .aj-color{width:14px; height:14px; border-radius:50%; flex:none}
+  .aj-lista li > span.aj-color{width:14px; height:14px; border-radius:50%; flex:none}
   .aj-btn{border:1px solid var(--tv-linea); background:var(--tv-sup2); color:var(--tv-tinta); border-radius:12px; min-height:44px; min-width:44px;
     padding:0 14px; font:inherit; font-weight:800; font-size:14px; display:inline-flex; align-items:center; justify-content:center; gap:6px; cursor:pointer}
   .aj-btn.fuerte{background:var(--tv-naranja); color:#1A0F0A; border-color:transparent}
@@ -183,7 +183,10 @@
   .aj-chip[aria-pressed="true"]{background:var(--tv-naranja); color:#1A0F0A; border-color:transparent}
   .aj-sw{display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--tv-linea); font-weight:700}
   .aj-sw span{flex:1}
-  .aj-sw input{width:24px; height:24px; accent-color:var(--tv-naranja)}
+  .aj-sw input{width:26px; height:26px; min-height:0; padding:0; flex:none; accent-color:var(--tv-naranja)}
+  dialog.ajustes label{margin:0}
+  .aj-sw{font-size:15px; color:var(--tv-tinta)}
+  .aj-lista input[type=checkbox]{min-height:0; padding:0; flex:none}
   .aj-edita{display:grid; gap:8px; margin:6px 0 4px; padding:10px; border-radius:12px; background:var(--tv-fondo)}
   .aj-edita[hidden]{display:none}
   .aj-edita label{display:flex; flex-direction:column; gap:4px; font-size:13px; font-weight:800; color:var(--tv-tenue)}
