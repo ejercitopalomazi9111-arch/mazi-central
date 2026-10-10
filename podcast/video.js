@@ -105,10 +105,13 @@ export function planear(clips, { cortar = true, maxPausa = 0.9 } = {}){
     const ed = c.edicion || {}, ini = Math.max(0, +ed.ini || 0), fin = Math.min(c.dur, ed.fin ? +ed.fin : c.dur);
     const quitar = (ed.cortes || []).concat((c.marcas || []).map(t => corteDeError(c.audio.subarray(0, largo), t)));
     const permitidos = restar(ini, fin, quitar);
-    const voz = cortar ? tramosConVoz(c.audio.subarray(0, largo), SR, { maxPausa, dejar: 0.4 }).map(([a, b]) => [a / SR, b / SR]) : [[0, c.dur]];
+    /* el video de un proyecto entra completo: sus silencios son de su
+       edición (música, una pausa a propósito), no un «eeeh» de la grabación */
+    const voz = cortar && !c.proyecto ? tramosConVoz(c.audio.subarray(0, largo), SR, { maxPausa, dejar: 0.4 }).map(([a, b]) => [a / SR, b / SR]) : [[0, c.dur]];
     const ads = (c.anuncios || []).slice(0, 3);
     if(ads.length) orden.push({ tipo: 'tanda', ids: ads, dur: duraTanda(ads.length) });
-    if(c.cartel && String(c.cartel).trim()) orden.push({ tipo: 'cartel', texto: String(c.cartel).trim(), dur: 2.5 });
+    const cartel = c.cartel && String(c.cartel).trim() ? String(c.cartel).trim() : c.proyecto ? 'Proyecto · ' + (c.proyecto.titulo || c.nombre || '') : '';
+    if(cartel) orden.push({ tipo: 'cartel', texto: cartel, dur: 2.5 });
     for(const [va, vb] of voz) for(const [pa, pb] of permitidos){
       const A = Math.max(va, pa), B = Math.min(vb, pb);
       if(B - A < 0.25) continue;
@@ -139,6 +142,40 @@ function partir(g, texto, ancho){
   const p = String(texto || '').split(/\s+/).filter(Boolean), out = []; let r = '';
   for(const w of p){ const t = r ? r + ' ' + w : w; if(g.measureText(t).width <= ancho || !r) r = t; else { out.push(r); r = w; } }
   if(r) out.push(r); return out;
+}
+
+/* el rótulo del video de un proyecto: abajo a la izquierda, «PROYECTO»
+   en el color del tema, el nombre grande y quién lo hizo. Entra deslizándose
+   y se va igual; nunca tapa más de la mitad del ancho. */
+export function dibujarRotuloProyecto(g, W, H, t, dur, info, tema){
+  const u = Math.min(W, H) / 720;
+  const entra = suave(t / 0.45), sale = 1 - suave((t - (dur - 0.45)) / 0.45), k = Math.min(entra, sale);
+  if(k <= 0) return;
+  /* el acento del tema, aclarado si es oscuro: sobre el recuadro negro un
+     vino tinto no se lee */
+  let acento = (TEMAS[tema] || TEMAS.noche).acento || '#F2A93B';
+  const m = /^#?([0-9a-f]{6})$/i.exec(acento);
+  if(m){ const n = parseInt(m[1], 16), c = [n >> 16, (n >> 8) & 255, n & 255];
+    if(0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2] < 140) acento = 'rgb(' + c.map(v => Math.round(v + (255 - v) * 0.55)).join(',') + ')'; }
+  const x0 = 36 * u, maxW = W * 0.55;
+  g.save();
+  g.globalAlpha = k; g.translate(-(1 - k) * 60 * u, 0);
+  g.font = '900 ' + Math.round(40 * u) + 'px ' + FAM;
+  const titulo = partir(g, info.titulo || '', maxW - 40 * u).slice(0, 2);
+  g.font = '700 ' + Math.round(24 * u) + 'px ' + FAM;
+  const quien = info.quien ? partir(g, info.quien, maxW - 40 * u)[0] : '';
+  const altoT = titulo.length * 46 * u, alto = 30 * u + 24 * u + altoT + (quien ? 34 * u : 0) + 20 * u;
+  const ancho = Math.min(maxW, 40 * u + Math.max(...[180 * u].concat(titulo.map(l => { g.font = '900 ' + Math.round(40 * u) + 'px ' + FAM; return g.measureText(l).width; }), quien ? [(g.font = '700 ' + Math.round(24 * u) + 'px ' + FAM, g.measureText(quien).width)] : [])));
+  const y0 = H - 40 * u - alto;
+  g.fillStyle = 'rgba(10,8,12,.82)'; rr(g, x0, y0, ancho, alto, 16 * u); g.fill();
+  g.fillStyle = acento; rr(g, x0, y0, 10 * u, alto, 5 * u); g.fill();
+  g.textBaseline = 'top'; g.textAlign = 'left';
+  g.fillStyle = acento; g.font = '900 ' + Math.round(20 * u) + 'px ' + FAM;
+  g.fillText('PROYECTO', x0 + 26 * u, y0 + 20 * u);
+  g.fillStyle = '#FFFFFF'; g.font = '900 ' + Math.round(40 * u) + 'px ' + FAM;
+  titulo.forEach((l, i) => g.fillText(l, x0 + 26 * u, y0 + 50 * u + i * 46 * u));
+  if(quien){ g.fillStyle = 'rgba(255,255,255,.78)'; g.font = '700 ' + Math.round(24 * u) + 'px ' + FAM; g.fillText(quien, x0 + 26 * u, y0 + 54 * u + altoT); }
+  g.restore();
 }
 
 /* el video en el lienzo: «llenar» recorta; «completo» lo pone entero sobre
@@ -503,6 +540,14 @@ export async function exportar({ piezas, clips, formato = 'horizontal', modo = '
     c.salen.forEach((per, j) => tarjetas.push({ per, en: L0.ini + 0.6 + j * 5.2, dura: 4.8 }));
   });
 
+  /* el rótulo del proyecto: los primeros 6 s de su video */
+  const rotulos = [];
+  clips.forEach((c, k) => {
+    if(!c.proyecto) return;
+    const L0 = linea.find(x => x.p.tipo === 'tramo' && x.p.clip === k); if(!L0) return;
+    rotulos.push({ info: c.proyecto, en: L0.ini + 0.3, dura: Math.min(6, Math.max(2.5, L0.dur - 0.5)) });
+  });
+
   /* dibuja un cuadro del momento `ahora` (segundos del video final) */
   let activo = null, actual = 0, nivelesActual = null;
   function pintar(ahora){
@@ -514,12 +559,14 @@ export async function exportar({ piezas, clips, formato = 'horizontal', modo = '
     else if(L.p.tipo === 'canal') dibujarIdent(g, W, H, tl, L.p.P, { dur: L.dur, aterriza: false });
     else if(L.p.tipo === 'ident') dibujarIdent(g, W, H, tl, L.p.P, { dur: L.dur, aterriza: true });
     else if(L.p.tipo === 'anuncio') dibujarAnuncio(g, W, H, tl, L.p.P, { dur: L.dur });
-    else if(activo && activo.readyState >= 2){ dibujarCuadro(g, activo, W, H, modo); if(datos.marcaAgua) dibujarMarca(g, W, H, datos); }
+    /* el de un proyecto se ve ENTERO aunque sea vertical: no se le recorta nada */
+    else if(activo && activo.readyState >= 2){ dibujarCuadro(g, activo, W, H, clips[L.p.clip] && clips[L.p.clip].proyecto ? 'completo' : modo); if(datos.marcaAgua) dibujarMarca(g, W, H, datos); }
     /* nombres: su segundo cuenta desde que empieza el episodio */
     const te = ahora - iniEpisodio;
     if(L.p.tipo === 'tramo'){
       nombres.forEach(n => { if(n.en === '' || n.en == null) return; const a = +n.en || 0, d = +n.dura || 5; if(te >= a && te <= a + d) dibujarTarjeta(g, W, H, te - a, d, n, datos.tema, n.asiento || 0); });
       tarjetas.forEach(x => { if(ahora >= x.en && ahora <= x.en + x.dura) dibujarTarjeta(g, W, H, ahora - x.en, x.dura, x.per, datos.tema, x.per.asiento || 0); });
+      rotulos.forEach(x => { if(ahora >= x.en && ahora <= x.en + x.dura) dibujarRotuloProyecto(g, W, H, ahora - x.en, x.dura, x.info, datos.tema); });
     }
   }
 

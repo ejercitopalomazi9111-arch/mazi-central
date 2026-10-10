@@ -52,7 +52,10 @@
       <input id="fCamara" type="file" accept="video/*" capture="user" hidden>
       <label class="btn" for="fVideos"><span data-ico="upload"></span>Subir video</label>
       <input id="fVideos" type="file" accept="video/*" multiple hidden>
+      <label class="btn" for="fProyecto"><span data-ico="presentation"></span>Video de un proyecto</label>
+      <input id="fProyecto" type="file" accept="video/*" multiple hidden>
     </div>
+    <p class="ayuda chica">¿Te mandaron el video de su proyecto? Súbelo con <b>Video de un proyecto</b>: entra completo, sin recortes, con su nombre y quién lo hizo en pantalla. Muévelo con la flecha a donde va.</p>
     <ol class="pedazos" id="listaClips"></ol>
     <p class="vacio" id="sinClips">Todavía no hay video.</p>
   </section>
@@ -333,6 +336,13 @@
       <button class="btn" id="edCorte" type="button"><span data-ico="scissors"></span>Quitar desde aquí</button>
     </div>
     <ul class="ed-cortes" id="edCortes"></ul>
+    <div class="ed-proyecto" id="edProyecto">
+      <label class="interruptor"><input type="checkbox" id="edEsProyecto"><span>Es el video de un proyecto</span></label>
+      <div class="ed-proy-campos" id="edProyCampos">
+        <label class="campo">Nombre del proyecto<input id="edProyTitulo" maxlength="50" placeholder="Huerto vertical con botellas"></label>
+        <label class="campo">Quién lo hizo<input id="edProyQuien" maxlength="60" placeholder="Equipo 4 · 2.° B"></label>
+      </div>
+    </div>
     <h4 class="ed-sub"><span data-ico="users"></span>Quién sale en este clip</h4>
     <div class="chips" id="edSalen"></div>
     <label class="campo">Cartel antes de este clip<input id="edCartel" maxlength="60" placeholder="Bloque 1 · De dónde salimos"></label>

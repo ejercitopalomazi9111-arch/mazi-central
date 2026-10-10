@@ -535,13 +535,14 @@ function etiquetasDe(c){
   if((+e.ini || 0) > 0.05 || (e.fin && e.fin < c.dur - 0.05)) t.push(ico('scissors') + 'Recortado');
   if(e.cortes && e.cortes.length) t.push(ico('scissors') + e.cortes.length + (e.cortes.length === 1 ? ' pedazo fuera' : ' pedazos fuera'));
   if(c.marcas && c.marcas.length) t.push(ico('undo-2') + c.marcas.length + (c.marcas.length === 1 ? ' error borrado' : ' errores borrados'));
+  if(c.proyecto) t.push(ico('presentation') + 'Proyecto' + (c.proyecto.quien ? ' · ' + esc(c.proyecto.quien) : ''));
   if(c.cartel) t.push(ico('flag') + 'Cartel: ' + esc(c.cartel));
   const quienes = (c.salen || []).map(id => (nombres.find(n => n.id === id) || {}).nombre).filter(Boolean);
   if(quienes.length) t.push(ico('users') + esc(quienes.join(', ')));
   if(c.anuncios && c.anuncios.length) t.push(ico('megaphone') + (c.anuncios.length === 1 ? '1 anuncio' : c.anuncios.length + ' anuncios'));
   return t.length ? '<span class="etiquetas">' + t.map(x => '<span class="etiqueta">' + x + '</span>').join('') + '</span>' : '';
 }
-const metaDe = (c) => ({ edicion: c.edicion || null, marcas: c.marcas || [], cartel: c.cartel || '', salen: c.salen || [], anuncios: c.anuncios || [] });
+const metaDe = (c) => ({ edicion: c.edicion || null, marcas: c.marcas || [], cartel: c.cartel || '', salen: c.salen || [], anuncios: c.anuncios || [], proyecto: c.proyecto || null });
 async function agregarVideo(blob, nombre, meta){
   const id = nuevoId('v');
   await guardar('vclip:' + id, { blob, nombre });       /* primero se guarda */
@@ -565,6 +566,19 @@ async function subirVideos(fs){
 }
 $('#fVideos').addEventListener('change', (e) => { const fs = [...e.target.files]; e.target.value = ''; subirVideos(fs); });
 $('#fCamara').addEventListener('change', (e) => { const fs = [...e.target.files]; e.target.value = ''; subirVideos(fs); });
+/* el video del proyecto de alguien: entra marcado como proyecto y se abre el
+   editor para ponerle nombre y quién lo hizo */
+$('#fProyecto').addEventListener('change', async (e) => {
+  const fs = [...e.target.files]; e.target.value = '';
+  for(let i = 0; i < fs.length; i++){
+    ocupado('Abriendo ' + fs[i].name + '…', i / fs.length);
+    const titulo = fs[i].name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim();
+    await agregarVideo(fs[i], titulo, { proyecto: { titulo, quien: '' } });
+  }
+  ocupado(false);
+  const ult = clips[clips.length - 1];
+  if(ult && ult.proyecto) abrirEditor(ult);
+});
 $('#listaClips').addEventListener('click', async (e) => {
   const b = e.target.closest('[data-vacc]'); if(!b) return;
   const id = b.closest('.pedazo').dataset.id, k = clips.findIndex(c => c.id === id);
@@ -754,6 +768,10 @@ function abrirEditor(c){
   $('#edSugerencias').innerHTML = ['Saludo', 'Bloque 1', 'Bloque 2', 'Bloque 3', 'El dilema', 'Cierre']
     .map(t => '<button class="chip" type="button" data-cartel="'+t+'">'+t+'</button>').join('');
   ed.salen = (c.salen || []).slice(); ed.anuncios = (c.anuncios || []).slice();
+  $('#edEsProyecto').checked = !!c.proyecto;
+  $('#edProyTitulo').value = c.proyecto ? c.proyecto.titulo || '' : '';
+  $('#edProyQuien').value = c.proyecto ? c.proyecto.quien || '' : '';
+  $('#edProyCampos').hidden = !c.proyecto;
   pintarEdChips();
   edV.src = c.url; edV.currentTime = 0;
   $('#editor').hidden = false; document.body.classList.add('sin-scroll');
@@ -843,6 +861,10 @@ $('#edSalen').addEventListener('click', (e) => { const b = e.target.closest('[da
   if(k >= 0) ed.salen.splice(k, 1); else ed.salen.push(id); pintarEdChips(); });
 $('#edAnuncios').addEventListener('click', (e) => { const b = e.target.closest('[data-anuncio]'); if(!b) return; const id = b.dataset.anuncio, k = ed.anuncios.indexOf(id);
   if(k >= 0) ed.anuncios.splice(k, 1); else if(ed.anuncios.length < 3) ed.anuncios.push(id); else aviso('Máximo 3 anuncios por tanda.'); pintarEdChips(); });
+$('#edEsProyecto').addEventListener('change', () => {
+  $('#edProyCampos').hidden = !$('#edEsProyecto').checked;
+  if($('#edEsProyecto').checked && !$('#edProyTitulo').value) $('#edProyTitulo').value = ed.c.nombre;
+});
 $('#edSugerencias').addEventListener('click', (e) => { const b = e.target.closest('[data-cartel]'); if(b) $('#edCartel').value = b.dataset.cartel; });
 $('#edBorrar').addEventListener('click', () => { ed.ini = 0; ed.fin = ed.c.dur; ed.cortes = []; ed.marcas = []; ed.zonas = []; ed.desde = null; ed.salen = []; ed.anuncios = []; $('#edCartel').value = ''; pintarEdChips(); });
 $('#edCerrar').addEventListener('click', cerrarEditor);
@@ -852,6 +874,8 @@ $('#edListo').addEventListener('click', async () => {
   const c = ed.c, sinNada = ed.ini <= 0.05 && ed.fin >= c.dur - 0.05 && !ed.cortes.length;
   c.edicion = sinNada ? null : { ini: +ed.ini.toFixed(2), fin: +ed.fin.toFixed(2), cortes: ed.cortes };
   c.marcas = ed.marcas; c.cartel = $('#edCartel').value.trim(); c.salen = ed.salen.slice(); c.anuncios = ed.anuncios.slice();
+  c.proyecto = $('#edEsProyecto').checked ? { titulo: $('#edProyTitulo').value.trim() || c.nombre, quien: $('#edProyQuien').value.trim() } : null;
+  if(c.proyecto) c.limpio = null;
   await guardar('vmeta:' + c.id, metaDe(c));
   cerrarEditor(); plan = null; $('#resPlan').hidden = true; pintarClips();
   aviso('Guardado. Los cortes se hacen al exportar.');
@@ -891,7 +915,8 @@ async function audiosLimpios(){
   for(let i = 0; i < clips.length; i++){
     const c = clips[i];
     if(c.limpio) continue;
-    if(!limpiar){ c.limpio = c.audio; continue; }
+    /* el video de un proyecto trae su música y su sonido: no se le toca */
+    if(!limpiar || c.proyecto){ c.limpio = c.audio; continue; }
     ocupado('Limpiando el audio del clip ' + (i + 1) + ' de ' + clips.length + '…', i / clips.length);
     const r = await tarea('limpiar', { audio: Float32Array.from(c.audio), opciones: { silencios: false, parejo: true, ruido: true, zumbido: true } });
     c.limpio = r.datos;
@@ -998,7 +1023,7 @@ async function grabarVideo(piezas, que){
   ocupado('Grabando ' + que + '… 0:00 de ' + tiempo(total), 0, () => senal.cancelar && senal.cancelar());
   try{
     const salenDe = (c) => (c.salen || []).map(id => nombres.find(n => n.id === id)).filter(n => n && n.nombre.trim()).map(persona);
-    const blob = await exportar({ piezas, clips: clips.map(c => ({ url: c.url, audioLimpio: c.limpio, salen: salenDe(c) })), formato: vOpc.formato,
+    const blob = await exportar({ piezas, clips: clips.map(c => ({ url: c.url, audioLimpio: c.limpio, salen: salenDe(c), proyecto: c.proyecto || null })), formato: vOpc.formato,
       modo: vOpc.encuadre, datos: datos(), nombres: nombresListos(), alto: vOpc.alto },
       (p, t, T) => ocupado('Grabando ' + que + '… ' + tiempo(t) + ' de ' + tiempo(T), p, () => senal.cancelar && senal.cancelar()), senal);
     return blob;

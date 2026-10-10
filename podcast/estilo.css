@@ -304,3 +304,11 @@ body.sin-scroll{overflow:hidden}
 }
 .ed-sub{margin:16px 0 8px; font-size:14px; display:flex; align-items:center; gap:6px; color:var(--tenue)}
 .ed-sub .i{width:16px; height:16px}
+
+/* el video de un proyecto, en el editor del clip */
+.ed-proyecto{margin:14px 0 4px; padding:12px; border-radius:14px; background:var(--sup2, rgba(255,255,255,.04)); border:1px solid var(--linea, rgba(255,255,255,.12))}
+.ed-proy-campos{display:grid; gap:8px; margin-top:10px}
+.ed-proy-campos[hidden]{display:none}
+.interruptor{display:flex; align-items:center; gap:10px; font-weight:800; cursor:pointer}
+.interruptor input{width:24px; height:24px; flex:none; accent-color:var(--acento, #F2A93B)}
+.ayuda.chica{font-size:13.5px; margin-top:8px}

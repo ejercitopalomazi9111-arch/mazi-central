@@ -243,6 +243,40 @@ const rec = await pg.evaluate(() => window.ESTUDIO.clips().map(c => c.nombre));
 ok('la toma interrumpida vuelve como clip «recuperada»', rec.length === 3 && /recuperada/.test(rec[2]), JSON.stringify(rec));
 ok('y la toma con su error sigue con su marca', await pg.evaluate(() => (window.ESTUDIO.clips()[1].marcas || []).length === 1));
 
+console.log('\n5d · el video del proyecto de alguien, dentro del episodio');
+const antesP = await pg.evaluate(() => window.ESTUDIO.clips().length);
+await pg.setInputFiles('#fProyecto', { name: 'huerto-vertical.webm', mimeType: 'video/webm', buffer: Buffer.from(b64, 'base64') });
+await pg.waitForSelector('#editor:not([hidden])', { timeout: 20000 });
+ok('entra y abre el editor ya marcado como proyecto', await pg.isChecked('#edEsProyecto') && await pg.inputValue('#edProyTitulo') === 'huerto vertical');
+await pg.fill('#edProyTitulo', 'Huerto vertical');
+await pg.fill('#edProyQuien', 'Equipo 4 · 2.° B');
+await pg.click('#edListo');
+await pg.waitForSelector('#editor', { state: 'hidden' });
+const kP = antesP;
+ok('en la lista dice que es un proyecto y de quién', /Proyecto · Equipo 4/.test(await pg.locator('#listaClips .pedazo').nth(kP).textContent()));
+await pg.click('#bPlanear');
+const plP = await pg.evaluate((k) => { const p = window.ESTUDIO.plan(), c = window.ESTUDIO.clips()[k];
+  const suyos = p.tramos.filter(t => t.clip === k), i = p.orden.findIndex(o => o.tipo === 'tramo' && o.clip === k);
+  return { dur: c.dur, queda: suyos.reduce((s, t) => s + t.b - t.a, 0), cartel: p.orden[i - 1] && p.orden[i - 1].tipo === 'cartel' ? p.orden[i - 1].texto : null }; }, kP);
+ok('entra COMPLETO: no se le cortan sus silencios (el mismo video de charla sí perdió sus pausas)', Math.abs(plP.queda - plP.dur) < 0.3, JSON.stringify(plP));
+ok('y lo presenta un cartel con su nombre', plP.cartel === 'Proyecto · Huerto vertical', plP.cartel);
+/* el rótulo, grabado de verdad en 3 s del video del proyecto */
+const rot = await pg.evaluate(async (k) => {
+  const V = await import('/podcast/video.js'), c = window.ESTUDIO.clips()[k];
+  const blob = await V.exportar({ piezas: [{ tipo: 'tramo', clip: 0, a: 0, b: 3 }], clips: [{ url: c.url, audioLimpio: null, proyecto: c.proyecto }], formato: 'horizontal', modo: 'llenar', datos: { tema: 'divergentes' } });
+  const v = document.createElement('video'); v.muted = true; v.src = URL.createObjectURL(blob);
+  await new Promise(r => v.onloadeddata = r); v.currentTime = 2; await new Promise(r => { v.onseeked = r; setTimeout(r, 3000); });
+  const cv = document.createElement('canvas'); cv.width = 128; cv.height = 72; const g = cv.getContext('2d'); g.drawImage(v, 0, 0, 128, 72);
+  const px = (x, y) => Array.from(g.getImageData(x, y, 1, 1).data.slice(0, 3));
+  /* abajo a la izquierda, el recuadro oscuro del rótulo; arriba a la derecha, el video (verde) */
+  let oscuros = 0; for(let x = 6; x < 50; x += 2) for(let y = 50; y < 66; y += 2){ const [r, gg, b] = px(x, y); if(r + gg + b < 150) oscuros++; }
+  return { oscuros, video: px(110, 10) };
+}, kP);
+ok('el rótulo del proyecto sale abajo a la izquierda', rot.oscuros > 60, JSON.stringify(rot));
+ok('sin tapar el resto del video', rot.video[1] > 120 && rot.video[0] < 100, JSON.stringify(rot.video));
+await pg.reload(); await pg.waitForFunction(() => window.ESTUDIO && window.ESTUDIO.listo, null, { timeout: 30000 });
+ok('al recargar sigue siendo el proyecto del Equipo 4', await pg.evaluate(() => window.ESTUDIO.clips().some(c => c.proyecto && c.proyecto.quien === 'Equipo 4 · 2.° B' && c.proyecto.titulo === 'Huerto vertical')));
+
 console.log('\n6 · tamaños');
 for(const w of [320, 390, 1280]){ await pg.setViewportSize({ width: w, height: 800 }); await pg.waitForTimeout(200);
   const d = await pg.evaluate(() => document.documentElement.scrollWidth - innerWidth); ok('nada se sale a ' + w + ' px', d <= 0, d); }
