@@ -439,6 +439,26 @@
     "lucide",
     "se ve de plantilla"
    ]
+  },
+  {
+   "id": "video-en-el-telefono-sin-pausar-la-grabadora",
+   "titulo": "Editar video en el navegador del iPhone: canvas + MediaRecorder sin pausar, con dos reproductores",
+   "gravedad": "media",
+   "sintoma": "Hace falta cortar un video (jump cuts), ponerle entrada, nombres y cierre, y bajarlo, todo en el teléfono y sin servidor.",
+   "causa": "No hay codificador de video propio en el navegador que funcione igual en Safari; ffmpeg.wasm pesa 30 MB y pide cabeceras de aislamiento. Y MediaRecorder en iOS tiene fallas documentadas con pause()/resume() (sigue entregando el mismo pedazo y a veces termina con un archivo vacío).",
+   "porque": "Safari implementa MediaRecorder distinto entre versiones; canvas.captureStream sí es estable desde hace años.",
+   "arreglo": "podcast/video.js: todo se dibuja en un canvas y se graba en tiempo real (captureStream + el audio por MediaStreamDestination) SIN pausar nunca: hay dos <video>, mientras uno suena el otro ya está posicionado en el siguiente tramo. El reloj es el AudioContext; el video se corrige con playbackRate si se despega más de 80 ms. El audio limpio de cada clip se procesa SIN quitar silencios para que dure lo mismo que la imagen; los cortes se hacen en los mismos puntos con tramosConVoz de motor.js.",
+   "comoCazarlo": "pruebas-video.mjs fabrica en la página un video con pausas apagadas (ojo: una «pausa» a −29 dB es voz para el estudio) y mira el cuadro del segundo 9: si se ve el clip y su contador saltó, los cortes funcionan.",
+   "consejo": "Descartado: WebCodecs + muxer (AudioEncoder incierto en Safari), ffmpeg.wasm (peso y COOP/COEP) y pausar la grabadora. Se avisa que tarda lo que dura y se pide Wake Lock. Además va un kit para CapCut por si el teléfono no aguanta.",
+   "salioDe": "podcast · «el podcast sería en video», 10 de octubre",
+   "senales": [
+    "video",
+    "mediarecorder",
+    "jump cut",
+    "cortar silencios",
+    "capcut",
+    "safari"
+   ]
   }
  ]
 }

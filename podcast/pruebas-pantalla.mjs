@@ -31,6 +31,8 @@ await ctx.grantPermissions(['microphone'], { origin: BASE });
 const pg = await ctx.newPage(); const errores = [];
 pg.on('pageerror', e => errores.push(e.message)); pg.on('console', m => { if(m.type() === 'error') errores.push(m.text()); });
 await pg.goto(BASE + '/podcast/'); await pg.waitForFunction(() => window.ESTUDIO && window.ESTUDIO.listo);
+/* esta prueba es la del modo AUDIO; el video tiene la suya (pruebas-video.mjs) */
+await pg.click('[data-modo="audio"]');
 
 console.log('\n1 · abrir');
 ok('los iconos se pintan (hay <svg> en el logo)', await pg.evaluate(() => !!document.querySelector('.logo svg')));
