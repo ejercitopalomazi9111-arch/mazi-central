@@ -81,8 +81,7 @@
     <div class="pila" id="cola"></div>
 
     <h2>Pedido de a pie <span class="solo-lectores">para quien llegó sin app</span></h2>
-    <p class="sub">Para quien llegó sin teléfono. Sin esto la fila física queda fuera del
-      sistema, el turno miente y la medición mide la mitad de la operación.</p>
+    <p class="sub">Para quien llegó sin teléfono.</p>
     <button class="btn ancho" id="bDeAPie" type="button">+ Capturar un pedido de mostrador</button>
 
     <h2>Si se cae la app</h2>
@@ -215,6 +214,7 @@
   <div class="hojita hojita-chica" id="hojita2" role="dialog" aria-modal="true"></div>
 </div>
 
+<script src="iconos.js"></script>
 <script src="nucleo.js"></script>
 <script>
 (function(){
@@ -304,7 +304,7 @@ function tono(cat){
 function mini(p){
   const c = tono(p ? p.cat : '');
   return '<span class="mini" style="--t1:'+c.tono+'; --t2:'+c.tono+'88">'+
-    (p && p.foto ? '<img src="'+esc(p.foto)+'" alt="">' : (p ? F.emojiDe(p) : c.emoji))+'</span>';
+    (p && p.foto ? '<img src="'+esc(p.foto)+'" alt="">' : F.ico(p ? F.iconoDe(p) : c.icono))+'</span>';
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -375,7 +375,7 @@ function fichaActual(p){
           '<span class="cant">'+r.cant+'×</span>'+
           '<span style="flex:1; min-width:0">'+esc(prod.nombre)+
             (r.para ? '<span class="para">para '+esc(r.para)+'</span>' : '')+'</span>'+
-          '<span>'+(r.listo ? '✓' : '')+'</span>'+
+          '<span class="palomita">'+(r.listo ? F.ico('check') : '')+'</span>'+
         '</button>'+
         (r.listo ? '' : '<button class="btn-nohay" type="button" data-nohay="'+p.id+':'+i+'" '+
           'title="No se lo puedo dar" aria-label="No se lo puedo dar">no hay</button>')+
@@ -756,7 +756,7 @@ function pintarMenu(){
         (p.destacado ? ' <b style="color:var(--dorado)">· hoy</b>' : '')+
         '<small>'+F.pesos(p.precio)+
         (typeof p.existencias === 'number' ? ' · quedan '+p.existencias : '')+
-        (pocas ? ' ⚠️' : '')+
+        (pocas ? ' <span style="color:var(--ambar)">'+F.ico('triangle-alert')+'</span>' : '')+
         ((p.dias||[]).length ? ' · <b style="color:var(--naranja)">'+
           esc(F.cuandoTocaTexto(p))+'</b>' : '')+
         (!F.tocaHoy(p) ? ' · <b>hoy no toca</b>' : '')+'</small></span>'+
@@ -777,7 +777,7 @@ function abrirProducto(pid){
     '<input id="hPrecio" type="number" min="0" step="0.5" value="'+(p?(p.precio/100):'')+'">'+
     '<label for="hCat">De qué es</label>'+
     '<select id="hCat">'+ F.CATEGORIAS.map(c =>
-      '<option value="'+c.id+'"'+(p&&p.cat===c.id?' selected':'')+'>'+c.emoji+' '+c.nombre+'</option>').join('') +'</select>'+
+      '<option value="'+c.id+'"'+(p&&p.cat===c.id?' selected':'')+'>'+c.nombre+'</option>').join('') +'</select>'+
     '<label style="margin-top:16px">Qué días se ofrece</label>'+
     '<p class="sub" style="margin:0 0 8px">Sin ninguno marcado se ofrece <b>todos los días</b>. '+
       'Marca sólo los días que toca: la pizza el viernes, el pozole el jueves.</p>'+
@@ -792,7 +792,7 @@ function abrirProducto(pid){
       ' esto es seguridad, no adorno</b></label>'+
     '<div class="chips" id="hAlerg">'+ F.ALERGENOS.map(a =>
       '<button class="chip" type="button" data-al="'+a.id+'" aria-pressed="'+
-      (!!(p && (p.alergenos||[]).indexOf(a.id) >= 0))+'">'+a.emoji+' '+esc(a.nombre)+
+      (!!(p && (p.alergenos||[]).indexOf(a.id) >= 0))+'">'+F.ico(a.icono)+esc(a.nombre)+
       '</button>').join('') +'</div>'+
     '<p class="aviso" style="margin-top:8px">Si no estás segura, márcalo. '+
       'Un alumno alérgico confía en esta lista.</p>'+
@@ -1020,9 +1020,9 @@ function pintarAjustes(){
 
   /* F49 · claro / oscuro / automático */
   const hoy = F.tema();
-  $('#aTemas').innerHTML = [['auto','Automático','🌗'],['claro','Claro','☀️'],['oscuro','Oscuro','🌙']]
-    .map(([id,nom,emo]) => '<button class="chip'+(hoy===id?' on':'')+'" type="button" '+
-      'data-tema="'+id+'" aria-pressed="'+(hoy===id)+'">'+emo+' '+nom+'</button>').join('');
+  $('#aTemas').innerHTML = [['auto','Automático','sun-moon'],['claro','Claro','sun'],['oscuro','Oscuro','moon']]
+    .map(([id,nom,ic]) => '<button class="chip'+(hoy===id?' on':'')+'" type="button" '+
+      'data-tema="'+id+'" aria-pressed="'+(hoy===id)+'">'+F.ico(ic)+nom+'</button>').join('');
 
   const sug = F.sugerencias();
   $('#listaSugerencias').innerHTML = sug.length ? sug.slice(0,20).map(s =>
@@ -1258,11 +1258,12 @@ function pintarAvisosMostrador(){
     negados: '<b>Las bloquearon en este aparato.</b> Se prenden en los ajustes del navegador (Notificaciones → permitir).',
     instalar: '<b>En iPad o iPhone, agrégala a inicio</b> (Compartir → Agregar a inicio) y ábrela desde ahí: Apple sólo deja notificar así.',
     no: 'Este navegador no deja notificar. Con la pantalla abierta suena igual.',
+    nativa: 'Con la pantalla abierta suena y sale el letrero.',
   }[est];
   const html = '<p class="sub" style="margin:0 0 10px">'+txt+'</p><div class="chips">'+
-    (est === 'faltaPermiso' ? '<button class="btn" type="button" data-avm="activar">🔔 Activar notificaciones</button>' : '')+
-    '<button class="chip" type="button" data-avm="sonido" aria-pressed="'+son+'">'+(son ? '🔊 Sonido prendido' : '🔇 Sonido apagado')+'</button>'+
-    '<button class="chip" type="button" data-avm="probar">Probar sonido</button></div>';
+    (est === 'faltaPermiso' ? '<button class="btn" type="button" data-avm="activar">'+F.ico('bell-ring')+'Activar notificaciones</button>' : '')+
+    '<button class="chip" type="button" data-avm="sonido" aria-pressed="'+son+'">'+(son ? F.ico('volume-2')+'Sonido prendido' : F.ico('volume-x')+'Sonido apagado')+'</button>'+
+    '<button class="chip" type="button" data-avm="probar">'+F.ico('send')+'Probar sonido</button></div>';
   if(caja.innerHTML !== html) caja.innerHTML = html;
 }
 document.addEventListener('click', async (e) => {

@@ -69,25 +69,21 @@
   <!-- ══════════ ENTRADA · F06 · identidad sin registro ══════════ -->
   <section id="p-entrada" hidden>
     <h1>Pide sin formarte</h1>
-    <p class="sub">Dejas tu pedido con anticipación, la app te da un turno y vas por tu comida
-      cuando ya esté. <b>Nada de treinta minutos parado en el pasillo.</b></p>
+    <p class="sub">Pide desde aquí y recoge cuando esté listo. <b>Sin fila.</b></p>
 
     <div class="tarjeta">
       <label for="eNombre">¿Cómo te digo?</label>
       <input id="eNombre" maxlength="24" autocomplete="off" placeholder="Primer nombre e inicial del apellido">
       <label for="eGrupo">¿De qué grupo?</label>
       <input id="eGrupo" maxlength="6" autocomplete="off" placeholder="3.1">
-      <p class="aviso" style="margin-top:14px">Nada más eso. <b>Sin apellidos, sin correo,
-        sin contraseña y sin foto tuya.</b> Se guarda en este teléfono y en la cooperativa,
-        y se borra al terminar el ciclo escolar.</p>
+      <p class="nota-ico" style="margin-top:14px"><span data-ico="shield-check"></span>
+        Sólo tu nombre y grupo. Sin correo ni contraseña.</p>
       <button class="btn fuerte ancho" id="bEntrar" type="button" style="margin-top:14px">Empezar</button>
     </div>
 
     <h2>¿Ya tenías código?</h2>
     <div class="tarjeta">
-      <p class="sub" style="margin-top:0">Lo encuentras en el otro teléfono, en
-        <b>Lo mío</b>: sale hasta arriba, en grande.</p>
-      <label for="eCodigo">Tu código: cuatro letras y números</label>
+      <label for="eCodigo">Tu código <small class="tenue">· está en «Lo mío» del otro teléfono</small></label>
       <input id="eCodigo" maxlength="4" autocomplete="off" placeholder="ABCD"
         style="text-transform:uppercase; letter-spacing:.3em; font-weight:800">
       <button class="btn ancho" id="bVolver" type="button" style="margin-top:12px">Entrar con mi código</button>
@@ -127,16 +123,16 @@
     <p class="sub" id="estadoFila">—</p>
 
     <div id="cajaSiempre" hidden style="margin-bottom:18px">
-      <button class="btn ancho" id="bSiempre" type="button">🔁 <span id="txtSiempre">Lo de siempre</span></button>
+      <button class="btn ancho" id="bSiempre" type="button"><span data-ico="repeat"></span> <span id="txtSiempre">Lo de siempre</span></button>
     </div>
 
     <p class="semana" id="laSemana" hidden></p>
 
     <button class="btn ancho cuanto-traes" id="bCuanto" type="button">
-      <span class="ct-ico">🪙</span>
+      <span class="ct-ico" data-ico="coins"></span>
       <span class="ct-que"><b>¿Cuánto traes?</b>
         <small>te armo lo que sí alcanza</small></span>
-      <span class="ct-mas">›</span>
+      <span class="ct-mas" data-ico="chevron-right"></span>
     </button>
 
     <div class="chips tira" id="filtros"></div>
@@ -147,7 +143,6 @@
       <div class="rejilla" id="rejillaDestacados"></div>
     </div>
 
-    <p class="rotulillo">Todo lo que hay</p>
     <h2 id="tituloMenu">El menú</h2>
     <div class="rejilla" id="rejilla"></div>
 
@@ -179,10 +174,10 @@
       <ul class="renglones" id="renglonesTurno"></ul>
     </details>
     <div class="chips" id="accionesTurno" style="margin-top:16px">
-      <button class="btn chico" id="bEnCamino" type="button">🚶 Voy en camino</button>
+      <button class="btn chico" id="bEnCamino" type="button"><span data-ico="footprints"></span> Voy en camino</button>
       <button class="btn chico" id="bNoPuedo" type="button">Hoy no puedo ir</button>
     </div>
-    <button class="btn ancho" id="bVerMenu" type="button" style="margin-top:16px">Pedir algo más</button>
+    <button class="btn ancho" id="bVerMenu" type="button" style="margin-top:16px"><span data-ico="plus"></span> Pedir algo más</button>
     <div class="donde-avisos" style="margin-top:20px"></div>
   </section>
 
@@ -196,10 +191,8 @@
     <div class="tarjeta codigo-caja">
       <span class="codigo-que">Tu código</span>
       <b class="codigo-es" id="miCodigo">—</b>
-      <button class="btn" id="bCopiarCodigo" type="button">Copiar</button>
-      <p class="sub" style="margin:0">Con esto entras desde cualquier otro teléfono:
-        abre la app, baja a <b>«¿Ya tenías código?»</b> y escríbelo.
-        No lo compartas — quien lo tenga puede pedir a tu nombre.</p>
+      <button class="btn" id="bCopiarCodigo" type="button"><span data-ico="copy"></span> Copiar</button>
+      <p class="sub" style="margin:0">Para entrar desde otro teléfono. No lo compartas.</p>
     </div>
     <div class="cifras" id="misCifras"></div>
     <div id="miDeuda" style="margin-top:14px"></div>
@@ -208,24 +201,18 @@
     <h2>Tus pedidos</h2>
     <div id="misPedidos" class="pila"></div>
     <h2>Tus alergias</h2>
-    <p class="sub">Márcalas y la app te avisa si algo del menú las lleva.
-      <b>Se guardan sólo en este teléfono</b> — la cooperativa no las ve y no salen
-      en ninguna lista. Aun así, si tu alergia es seria, pregúntales antes de pedir.</p>
+    <p class="sub">Te avisamos si algo las lleva. Sólo se guardan en este teléfono.</p>
     <div class="chips" id="misAlergias"></div>
 
     <h2>Avisos</h2>
     <div class="donde-avisos"></div>
 
     <h2>Cómo se ve</h2>
-    <p class="sub">Es de este teléfono, no de tu cuenta. En <b>automático</b> se pone
-      oscura cuando tu teléfono se pone oscuro.</p>
     <div class="chips" id="misTemas"></div>
 
-    <button class="btn ancho" id="bSalir" type="button" style="margin-top:24px">Salir de esta cuenta</button>
+    <button class="btn ancho" id="bSalir" type="button" style="margin-top:24px"><span data-ico="log-out"></span> Salir de esta cuenta</button>
     <p class="sub" style="margin-top:22px; font-size:12px">
-      Fadori · Proyecto Sin Filas · Instituto Rembrandt de Querétaro ·
-      construido por <a href="../">Grupo Mazi</a> ·
-      <a href="fotos/CREDITOS.md">créditos de las fotos</a></p>
+      Fadori · Proyecto Sin Filas · <a href="fotos/CREDITOS.md">créditos de las fotos</a></p>
     <div class="saltos" style="margin-top:10px; opacity:.6">
       <a href="mostrador.html">Mostrador</a>
       <a href="pantalla.html">Pantalla</a>
@@ -242,7 +229,7 @@
   navegación de una app que se usa de pie y con una mano. -->
 <div class="cesta" id="cesta">
   <div class="cesta-dentro">
-    <button class="btn chico redondo" id="bVaciar" type="button" aria-label="Vaciar el pedido">✕</button>
+    <button class="btn chico redondo" id="bVaciar" type="button" aria-label="Vaciar el pedido"><span data-ico="x"></span></button>
     <div class="cuenta">
       <b id="cestaTotal">$0.00</b>
       <span id="cestaDetalle">nada todavía</span>
@@ -253,12 +240,12 @@
 
 <nav class="pulgar" id="pulgar" aria-label="Secciones">
   <button class="dedo" type="button" data-ir="menu" aria-current="page">
-    <span class="ico" aria-hidden="true">🍽️</span><span>Menú</span></button>
+    <span class="ico" aria-hidden="true" data-ico="utensils"></span><span>Menú</span></button>
   <button class="dedo" type="button" data-ir="turno">
-    <span class="ico" aria-hidden="true">🎟️</span><span>Mi turno</span>
+    <span class="ico" aria-hidden="true" data-ico="ticket"></span><span>Mi turno</span>
     <span class="punto" id="puntoTurno" hidden></span></button>
   <button class="dedo" type="button" data-ir="yo">
-    <span class="ico" aria-hidden="true">👤</span><span>Lo mío</span></button>
+    <span class="ico" aria-hidden="true" data-ico="user-round"></span><span>Lo mío</span></button>
 </nav>
 
 <!-- hojita para confirmar y para pedir por varios -->
@@ -270,13 +257,14 @@
   <div class="hojita" role="dialog" aria-modal="true" aria-labelledby="hojitaT">
     <div class="hojita-cabeza">
       <h3 id="hojitaT">Confirmar el pedido</h3>
-      <button class="hojita-x" id="hojitaX" type="button" aria-label="Cerrar">✕</button>
+      <button class="hojita-x" id="hojitaX" type="button" aria-label="Cerrar"><span data-ico="x"></span></button>
     </div>
     <div class="hojita-rueda" id="hojitaC"></div>
     <div class="hojita-pie" id="hojitaP" hidden></div>
   </div>
 </div>
 
+<script src="iconos.js"></script>
 <script src="nucleo.js"></script>
 <script>
 (function(){
@@ -288,6 +276,10 @@ const esc = (t) => String(t==null?'':t).replace(/[&<>"']/g, c =>
   ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 F.cargar();
+
+/* Los iconos del HTML fijo: el marcado sólo dice CUÁL (data-ico) y aquí se
+   pone el dibujo. Así el HTML se lee y no trae 80 renglones de <path>. */
+$$('[data-ico]').forEach(el => { el.innerHTML = F.ico(el.dataset.ico); });
 
 /* ── el carrito vive en memoria, no en los datos: es borrador ─────────── */
 let cesta = [];          /* [{prod, cant, para}] */
@@ -364,7 +356,7 @@ function fichaPlato(p){
       '<button class="foto" type="button" data-sumar="'+p.id+'"'+(agotado?' disabled':'')+
         ' style="--t1:'+t.t1+'; --t2:'+t.t2+'; --tb:'+t.borde+'"'+
         ' aria-label="Agregar '+esc(p.nombre)+'">'+
-        (p.foto ? '<img src="'+esc(p.foto)+'" alt="">' : F.emojiDe(p))+
+        (p.foto ? '<img src="'+esc(p.foto)+'" alt="">' : '<span class="sin-foto">'+F.ico(F.iconoDe(p))+'</span>')+
       '</button>'+
       /* el "+" cuelga de la FOTO, no de la tarjeta: anclado a la tarjeta se
          montaba encima del nombre en cuanto el texto crecía */
@@ -373,8 +365,7 @@ function fichaPlato(p){
     '<button class="cuerpo" type="button" data-ver="'+p.id+'">'+
       '<span class="precio">'+F.pesos(p.precio)+'</span>'+
       '<span class="nom">'+esc(p.nombre)+'</span>'+
-      '<span class="tiempo">'+ (seg < 60 ? 'sale rápido' : 'tarda ~'+Math.round(seg/60)+' min') +
-        ((p.alergenos && p.alergenos.length) ? ' · qué contiene' : '') +'</span>'+
+      '<span class="tiempo">'+F.ico('clock')+ (seg < 60 ? 'al momento' : '~'+Math.round(seg/60)+' min') +'</span>'+
     '</button>'+
     (agotado ? '' : '<div class="pasos"'+(n?'':' hidden')+'>'+ pasosDe(p, n) +'</div>')+
   '</div>';
@@ -452,7 +443,7 @@ function pintarSemana(){
   }
   caja.hidden = !proximos.length;
   if(!proximos.length) return;
-  caja.innerHTML = '🗓️ ' + proximos.map(x =>
+  caja.innerHTML = F.ico('calendar-days') + ' ' + proximos.map(x =>
     'el <b>' + esc(F.nombreDelDia(x.dia).toLowerCase()) + '</b> hay ' +
     esc(x.prod.nombre)).join(' · ');
 }
@@ -470,9 +461,9 @@ function pintarMenu(forzar){
 
     const cats = F.CATEGORIAS.filter(c => todos.some(p => p.cat === c.id));
     $('#filtros').innerHTML =
-      '<button class="chip" type="button" data-filtro="todo" aria-pressed="'+(filtro==='todo')+'">Todo</button>'+
+      '<button class="chip" type="button" data-filtro="todo" aria-pressed="'+(filtro==='todo')+'">'+F.ico('layout-grid')+'Todo</button>'+
       cats.map(c => '<button class="chip" type="button" data-filtro="'+c.id+'" aria-pressed="'+
-        (filtro===c.id)+'">'+c.emoji+' '+esc(c.nombre)+'</button>').join('');
+        (filtro===c.id)+'">'+F.ico(c.icono)+esc(c.nombre)+'</button>').join('');
 
     const lista = todos.filter(p => filtro === 'todo' || p.cat === filtro);
     $('#rejilla').innerHTML = lista.length ? lista.map(fichaPlato).join('')
@@ -574,7 +565,7 @@ function cartelFalta(p){
           '<button class="falta-op" type="button" data-cambiar="'+p.id+':'+f.i+':'+c.id+'">'+
             '<span class="fo-i">'+(c.foto
               ? '<img src="'+esc(c.foto)+'" alt="">'
-              : F.emojiDe(c))+'</span>'+
+              : F.ico(F.iconoDe(c)))+'</span>'+
             '<span class="fo-n">'+esc(c.nombre)+'</span>'+
             '<span class="fo-p">'+F.pesos(c.precio)+'</span>'+
           '</button>').join('') +'</div>'
@@ -586,33 +577,58 @@ function cartelFalta(p){
   '</div>';
 }
 
+/* La fila, dibujada: un puntito por cada pedido antes del tuyo y el tuyo
+   encendido al final. Se entiende sin leer, que es lo que hace falta cuando
+   se mira de reojo caminando por el pasillo. Arriba de 7 se resume. */
+function filaDibujada(antes){
+  const muestra = Math.min(antes, 7), resto = antes - muestra;
+  let h = '<div class="fila-dib" aria-hidden="true">';
+  if(resto > 0) h += '<span class="fd-mas">+'+resto+'</span>';
+  for(let i = 0; i < muestra; i++) h += '<span class="fd-p"></span>';
+  return h + '<span class="fd-yo">'+F.ico('user-round')+'</span></div>';
+}
+/* Los tres pasos del pedido, como el rastreo de un paquete: en la fila,
+   preparando, listo. El que va, encendido; los que ya pasaron, llenos. */
+function pasosTurno(estado){
+  const i = estado === 'listo' ? 2 : estado === 'preparando' ? 1 : 0;
+  const P = [['hourglass','En la fila'], ['chef-hat','Preparando'], ['circle-check-big','Listo']];
+  return '<ol class="pasos-turno" style="--va:'+i+'">'+ P.map(([ic, t], k) =>
+    '<li class="'+(k < i ? 'ya' : k === i ? 'ahora' : '')+'"'+(k === i ? ' aria-current="step"' : '')+'>'+
+      '<span class="pt-ico">'+F.ico(ic)+'</span><span class="pt-t">'+t+'</span></li>').join('') +'</ol>';
+}
+
 function tarjetaTurno(p){
+  const cab = '<div class="turno-cab"><span class="rotulo">Tu número</span>'+
+    '<span class="folio">'+F.ico('ticket')+esc(p.folio)+'</span></div>';
   if(p.estado === 'listo'){
-    return '<div class="turno listo">'+
-      '<div class="rotulo">Tu turno</div>'+
+    return '<div class="turno listo">'+ cab +
       '<div class="numero">'+F.verTurno(p)+'</div>'+
-      '<div class="folio">'+esc(p.folio)+'</div>'+
-      '<div class="frase">¡Ya está! Ve por él</div>'+
-      '<div class="detalle">Di tu código <b>'+esc(p.folio)+'</b> en el mostrador</div>'+
+      '<div class="frase">'+F.ico('party-popper')+'¡Ya está! Ve por él</div>'+
+      '<div class="detalle">Di tu código en el mostrador</div>'+
+      '<div class="turno-corte"></div>'+ pasosTurno('listo') +
     '</div>';
   }
   const v = F.veredicto(p.id);
   const preparando = p.estado === 'preparando';
-  return '<div class="turno">'+
-    '<div class="rotulo">Tu turno</div>'+
+  const eta = v && !preparando
+    ? '<span class="eta'+(v.alcanza ? '' : ' no')+'">'+F.ico(v.alcanza ? 'clock' : 'triangle-alert')+
+        (v.alcanza ? (v.segundos < 60 ? 'Listo en un momento' : 'Listo en ~'+Math.round(v.segundos/60)+' min') : 'Hoy no alcanzas')+'</span>'
+    : '';
+  return '<div class="turno'+(preparando ? ' prepara' : '')+'">'+ cab +
     '<div class="numero">'+F.verTurno(p)+'</div>'+
-    '<div class="folio">'+esc(p.folio)+'</div>'+
     (preparando
-      ? '<div class="frase">Lo están preparando</div>'
-      : '<div class="frase'+(v && !v.alcanza ? ' no' : '')+'">'+esc(v ? v.frase : '—')+'</div>')+
-    '<div class="detalle">'+(v ? (v.antes === 0 ? 'Eres el que sigue'
-      : 'Hay '+v.antes+' antes que tú') : '')+'</div>'+
+      ? '<div class="frase">'+F.ico('chef-hat')+'Lo están preparando</div>'
+      : '<div class="frase'+(v && !v.alcanza ? ' no' : '')+'">'+eta+'</div>')+
+    '<div class="detalle">'+(preparando ? 'Ya casi' : v ? (v.antes === 0 ? 'Eres el que sigue'
+      : 'Hay '+v.antes+(v.antes === 1 ? ' antes que tú' : ' antes que tú')) : '')+'</div>'+
+    (v && !preparando ? filaDibujada(v.antes) : '')+
+    '<div class="turno-corte"></div>'+ pasosTurno(p.estado) +
   '</div>'+
   (v && !v.alcanza && !preparando
-    ? '<div class="aviso malo">Al ritmo de hoy el recreo se acaba antes de que te toque. '+
-      '<b>Mejor no lo esperes parado.</b> Te lo podemos guardar para mañana y entras de los primeros.'+
+    ? '<div class="aviso malo">El recreo se acaba antes de que te toque. '+
+      '<b>Te lo guardamos para mañana</b> y entras de los primeros.'+
       '<div class="chips" style="margin-top:10px">'+
-      '<button class="btn chico" data-apartar="'+p.id+'" type="button">Guárdamelo para mañana</button>'+
+      '<button class="btn chico" data-apartar="'+p.id+'" type="button">'+F.ico('moon')+'Guárdamelo para mañana</button>'+
       '</div></div>'
     : '');
 }
@@ -648,7 +664,8 @@ function pintarTurno(){
   }
 
   if(!miPedido){
-    caja.innerHTML = '<p class="sub">No tienes ningún pedido en la fila.</p>';
+    caja.innerHTML = '<div class="vacio-turno">'+F.ico('ticket','grande')+
+      '<b>Sin pedidos</b><span>Pide en el menú y aquí ves tu turno.</span></div>';
     $('#renglonesTurno').innerHTML = ''; $('#loPedido').hidden = true;
     $('#bEnCamino').style.display = 'none'; $('#bNoPuedo').style.display = 'none';
     $('#esperando').innerHTML = ''; return;
@@ -670,14 +687,15 @@ function pintarTurno(){
   if(F.VIVOS.indexOf(p.estado) >= 0){
     caja.innerHTML = tarjetaTurno(p);
   } else if(p.estado === 'entregado'){
-    caja.innerHTML = '<div class="turno"><div class="rotulo">Entregado</div>'+
+    caja.innerHTML = '<div class="turno hecho"><div class="turno-cab"><span class="rotulo">Entregado</span>'+
+      '<span class="folio">'+F.ico('check')+esc(p.folio)+'</span></div>'+
       '<div class="numero">'+F.verTurno(p)+'</div>'+
-      '<div class="frase">Provecho</div>'+
+      '<div class="frase">'+F.ico('heart')+'Provecho</div>'+
       '<div class="detalle">'+F.pesos(p.total)+
       (p.debio ? ' · quedaste a deber '+F.pesos(p.debio) : ' · pagado')+'</div></div>';
   } else if(p.estado === 'apartado'){
     caja.innerHTML = '<div class="turno"><div class="rotulo">Apartado</div>'+
-      '<div class="numero">🌙</div>'+
+      '<div class="numero">'+F.ico('moon','grande')+'</div>'+
       '<div class="frase">Te lo guardamos para mañana</div>'+
       '<div class="detalle">Mañana entras de los primeros</div></div>';
   } else if(p.porFalta){
@@ -686,7 +704,8 @@ function pintarTurno(){
       '<div class="frase no">No hubo nada de lo que pediste</div>'+
       '<div class="detalle">Si escoges otra cosa aquí abajo, vuelve con este mismo turno</div></div>';
   } else {
-    caja.innerHTML = '<div class="turno"><div class="rotulo">Cancelado</div>'+
+    caja.innerHTML = '<div class="turno apagado"><div class="rotulo">Cancelado</div>'+
+      '<div class="numero">'+F.ico('circle-x','grande')+'</div>'+
       '<div class="frase">Este pedido ya no va</div>'+
       (p.rechazo ? '<div class="detalle">'+esc(p.rechazo)+'</div>' : '')+'</div>';
   }
@@ -708,7 +727,8 @@ function pintarTurno(){
     if(r.sinSurtir) return '<li class="renglon sinsurtir"><span class="n">'+r.cant+'×</span>'+
       '<span class="q"><s>'+esc(prod.nombre)+'</s><small>se acabó · no lo pagas</small></span>'+
       '<span>—</span></li>';
-    return '<li class="renglon"><span class="n">'+r.cant+'×</span>'+
+    return '<li class="renglon"><span class="mini-f">'+(prod.foto ? '<img src="'+esc(prod.foto)+'" alt="">'
+        : F.ico(F.iconoDe(prod)))+'</span><span class="n">'+r.cant+'×</span>'+
       '<span class="q">'+esc(prod.nombre)+
       (r.para ? '<small>para '+esc(r.para)+'</small>' : '')+'</span>'+
       '<span>'+F.pesos(prod.precio*r.cant)+'</span></li>';
@@ -717,13 +737,13 @@ function pintarTurno(){
 
 /* F49 · el selector de tema. Tres botones, no un interruptor: con un
    interruptor no cabe "automático", que es el que casi todos van a dejar. */
-const TEMAS = [['auto','Automático','🌗'], ['claro','Claro','☀️'], ['oscuro','Oscuro','🌙']];
+const TEMAS = [['auto','Automático','sun-moon'], ['claro','Claro','sun'], ['oscuro','Oscuro','moon']];
 function pintarTemas(){
   const caja = $('#misTemas'); if(!caja) return;
   const hoy = F.tema();
   caja.innerHTML = TEMAS.map(([id, nom, emo]) =>
     '<button class="chip'+(hoy === id ? ' on' : '')+'" type="button" data-tema="'+id+'" '+
-    'aria-pressed="'+(hoy === id)+'">'+emo+' '+nom+'</button>').join('');
+    'aria-pressed="'+(hoy === id)+'">'+F.ico(emo)+nom+'</button>').join('');
 }
 
 function pintarYo(){
@@ -732,14 +752,14 @@ function pintarYo(){
   const mias = F.misAlergias();
   $('#misAlergias').innerHTML = F.ALERGENOS.map(a =>
     '<button class="chip" type="button" data-alergia="'+a.id+'" aria-pressed="'+
-    (mias.indexOf(a.id) >= 0)+'">'+a.emoji+' '+esc(a.nombre)+'</button>').join('');
+    (mias.indexOf(a.id) >= 0)+'">'+F.ico(a.icono)+esc(a.nombre)+'</button>').join('');
   $('#miCodigo').textContent = yo.codigo;
   const n = F.misNumeros(yo.codigo);
   $('#misCifras').innerHTML =
-    '<div class="cifra"><b>'+n.pedidos+'</b><span>pedidos</span></div>'+
-    '<div class="cifra"><b>'+F.pesos(n.gastado)+'</b><span>gastado</span></div>'+
-    '<div class="cifra"><b>'+(n.favoritos[0] ? esc(n.favoritos[0].nombre.split(' ')[0]) : '—')+
-      '</b><span>lo que más pides</span></div>';
+    '<div class="cifra">'+F.ico('receipt-text')+'<b>'+n.pedidos+'</b><span>pedidos</span></div>'+
+    '<div class="cifra">'+F.ico('wallet')+'<b>'+F.pesos(n.gastado)+'</b><span>gastado</span></div>'+
+    '<div class="cifra">'+F.ico('heart')+'<b>'+(n.favoritos[0] ? esc(n.favoritos[0].nombre.split(' ')[0]) : '—')+
+      '</b><span>tu favorito</span></div>';
 
   $('#miDeuda').innerHTML = yo.deuda > 0
     ? '<div class="aviso malo">Debes <b>'+F.pesos(yo.deuda)+'</b>. '+
@@ -1086,14 +1106,12 @@ function abrirPlatillo(pid){
       '<h3 class="fic-tit">Qué contiene</h3>'+
       ((p.alergenos && p.alergenos.length)
         ? '<div class="alergenos">'+ p.alergenos.map(a => {
-            const A = F.ALERGENOS.find(x => x.id === a) || { nombre:a, emoji:'⚠️' };
+            const A = F.ALERGENOS.find(x => x.id === a) || { nombre:a, icono:'triangle-alert' };
             return '<span class="alerg'+(mias.indexOf(a)>=0?' mio':'')+'">'+
-              A.emoji+' '+esc(A.nombre)+'</span>';
+              F.ico(A.icono)+esc(A.nombre)+'</span>';
           }).join('') +'</div>'+
-          '<p class="fic-nota">Lo declara la cooperativa. Si tienes alguna alergia seria, '+
-          'pregúntales antes de pedir.</p>'
-        : '<p class="fic-nota">La cooperativa no declaró ningún alérgeno para este platillo. '+
-          '<b>Eso no quiere decir que no tenga:</b> si tienes alguna alergia seria, pregúntales.</p>')+
+          '<p class="fic-nota">Si tu alergia es seria, pregunta en la cooperativa.</p>'
+        : '<p class="fic-nota">Sin alérgenos declarados. Si tu alergia es seria, pregunta.</p>')+
 
       '';
     $('#hojitaP').hidden = false;
@@ -1152,7 +1170,7 @@ function pintarCarrito(){
         return '<div class="carro-linea">'+
           '<span class="carro-foto" style="--t1:'+mezcla(c.tono,'#FFFDF9',.84)+
             '; --t2:'+mezcla(c.tono,'#FFFDF9',.66)+'">'+
-            (p.foto ? '<img src="'+esc(p.foto)+'" alt="">' : F.emojiDe(p))+'</span>'+
+            (p.foto ? '<img src="'+esc(p.foto)+'" alt="">' : F.ico(F.iconoDe(p)))+'</span>'+
           '<span class="carro-que">'+
             '<b>'+esc(p.nombre)+'</b>'+
             '<span class="carro-precio">'+F.pesos(p.precio * r.cant)+'</span>'+
@@ -1161,7 +1179,7 @@ function pintarCarrito(){
           '<span class="carro-pasos">'+
             '<button class="paso" type="button" data-cmenos="'+i+'" aria-label="'+
               (r.cant === 1 ? 'Quitar '+esc(p.nombre) : 'Uno menos')+'">'+
-              (r.cant === 1 ? '🗑' : '−')+'</button>'+
+              (r.cant === 1 ? F.ico('trash') : '−')+'</button>'+
             '<span class="cuantos">'+r.cant+'</span>'+
             '<button class="paso mas" type="button" data-cmas="'+i+'" aria-label="Uno más">+</button>'+
           '</span>'+
@@ -1218,12 +1236,12 @@ function pintarCarrito(){
 
     '<div class="renglones-op">'+
       '<button class="op" type="button" id="bNota">'+
-        '<span class="op-ico">📝</span>'+
+        '<span class="op-ico">'+F.ico('notebook-pen')+'</span>'+
         '<span class="op-que"><b>Una nota para la cooperativa</b>'+
           '<small>'+(notaPedido ? esc(notaPedido) : 'sin chile, para llevar, lo que sea')+'</small></span>'+
         '<span class="op-mas">'+(notaPedido ? 'cambiar' : '+')+'</span></button>'+
       '<button class="op" type="button" id="bPara">'+
-        '<span class="op-ico">👥</span>'+
+        '<span class="op-ico">'+F.ico('users')+'</span>'+
         '<span class="op-que"><b>Es para varios</b>'+
           '<small>'+(cesta.some(r=>r.para) ? 'ya pusiste nombres' : 'pon de quién es cada cosa')+'</small></span>'+
         '<span class="op-mas">'+(abiertoPara ? '−' : '+')+'</span></button>'+
@@ -1236,7 +1254,7 @@ function pintarCarrito(){
         : '')+
       (anti
         ? '<label class="op op-palanca">'+
-            '<span class="op-ico">🏫</span>'+
+            '<span class="op-ico">'+F.ico('school')+'</span>'+
             '<span class="op-que"><b>Lo dejo pedido de antes</b>'+
               '<small>desde ayer o antes de clases, para que ya esté hecho</small></span>'+
             '<input type="checkbox" id="eAnticipado"'+(antesMarcado?' checked':'')+'>'+
@@ -1411,9 +1429,9 @@ $('#bSoporte').addEventListener('click', () => {
       (yo ? '<div class="renglon"><span class="q"><b>Tu código</b>'+
         '<small>por si hay que buscar tu pedido: '+esc(yo.codigo)+'</small></span></div>' : '')+
       '<button class="op" type="button" id="bIrYo">'+
-        '<span class="op-ico">👤</span>'+
+        '<span class="op-ico">'+F.ico('user-round')+'</span>'+
         '<span class="op-que"><b>Lo mío</b><small>tu código, tus pedidos, tus alergias</small></span>'+
-        '<span class="op-mas">›</span></button>'+
+        '<span class="op-mas">'+F.ico('chevron-right')+'</span></button>'+
     '</div>';
   $('#hojitaP').hidden = false;
   $('#hojitaP').innerHTML = '<button class="btn fuerte ancho" id="bSugerir" type="button">Mandar</button>';
@@ -1495,21 +1513,25 @@ function latir(){
    notificaciones (regla de Apple), y es mejor decirlo que fallar callado. */
 function pintarAvisos(){
   const est = F.avisos.estado(), son = F.avisos.sonidoPrendido();
-  const txt = {
-    activos: '<b>Avisos prendidos.</b> Te suena el teléfono cuando tu pedido esté listo, aunque tengas la app cerrada.',
-    faltaPermiso: '<b>Que te avise cuando esté listo.</b> Aunque cierres la app, te llega la notificación como de WhatsApp.',
-    negados: '<b>Bloqueaste los avisos.</b> Para prenderlos: Ajustes del teléfono → Notificaciones → tu navegador → permitir. Mientras, sólo suena con la app abierta.',
-    instalar: '<b>En iPhone, primero agrégala a tu inicio.</b> Toca <b>Compartir</b> (el cuadrito con flecha) → <b>Agregar a inicio</b>, ábrela desde ahí y vuelve aquí. Apple sólo deja mandar avisos así.',
-    nativa: '<b>Con la app abierta te suena y te sale el letrero</b> en cuanto tu pedido esté listo. Déjala abierta en el recreo.',
-    no: 'Este navegador no deja mandar notificaciones. Con la app abierta sí te suena y te sale el letrero.',
+  const [ic, tit, sub] = {
+    activos:      ['bell-ring', 'Avisos prendidos', 'Te suena aunque cierres la app.'],
+    faltaPermiso: ['bell', 'Que te avise cuando esté listo', 'Llega como un mensaje de WhatsApp.'],
+    negados:      ['bell-off', 'Bloqueaste los avisos', 'Ajustes del teléfono → Notificaciones → tu navegador.'],
+    instalar:     ['smartphone', 'Para recibir avisos en iPhone', 'Compartir → «Agregar a inicio» y ábrela desde ahí.'],
+    nativa:       ['bell-ring', 'Avisos con la app abierta', 'Te suena y sale el letrero cuando esté listo.'],
+    no:           ['bell', 'Avisos con la app abierta', 'Este navegador no deja mandar notificaciones.'],
   }[est];
-  const html = '<div class="avisos-caja '+est+'"><p>'+txt+'</p><div class="chips">'+
-    (est === 'faltaPermiso' ? '<button class="btn chico" type="button" data-avisos="activar">🔔 Activar avisos</button>' : '')+
-    '<button class="chip" type="button" data-avisos="sonido" aria-pressed="'+son+'">'+(son ? '🔊 Sonido prendido' : '🔇 Sonido apagado')+'</button>'+
-    '<button class="chip" type="button" data-avisos="probar">Probar</button>'+
+  const html = '<div class="avisos-caja '+est+'">'+
+    '<div class="av-fila"><span class="av-ico">'+F.ico(ic)+'</span>'+
+      '<p><b>'+tit+'</b><small>'+sub+'</small></p></div>'+
+    '<div class="chips">'+
+    (est === 'faltaPermiso' ? '<button class="btn chico fuerte" type="button" data-avisos="activar">'+F.ico('bell-ring')+'Activar</button>' : '')+
+    '<button class="chip" type="button" data-avisos="sonido" aria-pressed="'+son+'">'+(son ? F.ico('volume-2')+'Sonido prendido' : F.ico('volume-x')+'Sonido apagado')+'</button>'+
+    '<button class="chip" type="button" data-avisos="probar">'+F.ico('send')+'Probar</button>'+
     '</div></div>';
   document.querySelectorAll('.donde-avisos').forEach(c => { if(c.innerHTML !== html) c.innerHTML = html; });
 }
+
 document.addEventListener('click', async (e) => {
   const b = e.target.closest('[data-avisos]'); if(!b) return;
   const que = b.dataset.avisos;
@@ -1794,7 +1816,7 @@ arrancar();
       const lineas = document.querySelectorAll('.carro-linea');
       ok('el carrito lista una línea por platillo', lineas.length === 2);
       ok('con uno solo, el botón de quitar es el bote y no un menos',
-         lineas[0].querySelector('.paso').textContent === '🗑');
+         !!lineas[0].querySelector('.paso svg') && lineas[0].querySelector('.paso').textContent.trim() === '');
       ok('con varios, sí es un menos',
          lineas[1].querySelector('.paso').textContent === '−');
       ok('el total del carrito cuadra con la suma',
@@ -2098,7 +2120,7 @@ arrancar();
     })());
     ok('dice que no se comparte', /No lo compartas/i.test(loQueSeLee()));
     ok('la pantalla de entrada dice dónde encontrarlo',
-       /Lo encuentras en el otro tel/i.test(loQueSeLee()));
+       /en «Lo mío» del otro tel/i.test(loQueSeLee()));
     /* El alfabeto trae números (ABCDEFGHJKLMNPQRSTUVWXYZ23456789), así que la
        app no puede prometer «cuatro letras»: un alumno con K4ZP se queda
        buscando dónde escribir el 4. */

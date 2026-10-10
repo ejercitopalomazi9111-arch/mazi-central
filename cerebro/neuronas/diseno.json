@@ -1,426 +1,444 @@
 {
-  "area": "diseno",
-  "nombre": "Diseño que se ve y se lee",
-  "que": "Errores de pantalla que no son de código: cosas invisibles, encimadas, o bonitas pero mentirosas.",
-  "neuronas": [
-    {
-      "id": "la-codificacion-invisible",
-      "titulo": "Lo que codifica el significado no se veía",
-      "gravedad": "alta",
-      "sintoma": "El gráfico se ve bonito y no comunica. La gente pregunta qué significa.",
-      "causa": "El elemento que carga el significado —una línea guía, una escala, un eje— quedó tan tenue que desapareció.",
-      "porque": "Al diseñar uno lo baja para que «no estorbe», y termina bajándolo por debajo del umbral de verse.",
-      "arreglo": "Subirle contraste al elemento que codifica, aunque sea el que menos «adorna».",
-      "comoCazarlo": "Tápate el resto y pregúntate si el dato sigue leyéndose. Si no, la codificación no existe.",
-      "consejo": "Lo decorativo puede ser tenue. Lo que significa, no.",
-      "salioDe": "campana/mapa · los anillos de urgencia eran invisibles, y la distancia al centro era TODA la idea",
-      "senales": [
-        "se ve bonito pero",
-        "no entiendo qué significa",
-        "no se distingue"
-      ],
-      "vecinas": [
-        "color-sin-forma",
-        "ver-la-pantalla"
-      ]
-    },
-    {
-      "id": "color-sin-forma",
-      "titulo": "Distinguirlo sólo por color deja fuera a mucha gente",
-      "gravedad": "media",
-      "sintoma": "Impreso en blanco y negro, o para quien no distingue rojo y verde, dos categorías se vuelven una.",
-      "causa": "El color es el único canal que separa las categorías.",
-      "porque": "En la pantalla del que diseña se distinguen perfecto, y ahí termina la prueba.",
-      "arreglo": "Cada categoría lleva ADEMÁS su figura, su posición o su etiqueta.",
-      "comoCazarlo": "Convierte a escala de grises y mide la separación. Si dos quedan a menos de 5 puntos, no se distinguen.",
-      "consejo": "Para material que se va a fotocopiar esto no es accesibilidad: es que funcione.",
-      "salioDe": "campana/ · los tres verbos llevan ◼ ◆ ▲ además de color",
-      "senales": [
-        "se ve igual impreso",
-        "no distingo los colores",
-        "en blanco y negro"
-      ],
-      "vecinas": [
-        "la-codificacion-invisible"
-      ]
-    },
-    {
-      "id": "medir-el-texto-pintado",
-      "titulo": "Los rótulos se encimaban porque medí la caja y no el texto",
-      "gravedad": "media",
-      "sintoma": "Dos etiquetas se pisan, o una se sale del papel, aunque «según el código» caben.",
-      "causa": "Se midió lo declarado —la caja, el ancho reservado— y no lo que de verdad se pintó.",
-      "porque": "La tipografía real, el ajuste de línea y el idioma cambian el ancho, y nada de eso está en el XML ni en el CSS.",
-      "arreglo": "Medir el texto ya pintado, con la fuente cargada, y resolver colisiones con ese número.",
-      "comoCazarlo": "Una versión que medía cajas daba todo bien mientras la presentación se veía rota. Medir lo pintado cazó 31 defectos.",
-      "consejo": "Y vuelve a medir cuando cargue la tipografía: antes de eso los anchos son de la fuente de respaldo.",
-      "salioDe": "fadori/presentacion/medir.py y campana/mapa",
-      "senales": [
-        "se encima",
-        "se sale",
-        "se corta el texto"
-      ],
-      "vecinas": [
-        "la-codificacion-invisible"
-      ]
-    },
-    {
-      "id": "no-cabe-legible",
-      "titulo": "Todo cabía en el teléfono, ilegible",
-      "gravedad": "media",
-      "sintoma": "En el celular se ve completo y no se puede leer nada.",
-      "causa": "Se encogió hasta que cupo, sin piso de legibilidad.",
-      "porque": "«Que quepa» es fácil de comprobar; «que se lea» no tiene una comprobación automática.",
-      "arreglo": "Poner piso al acercamiento y enseñar una parte legible, con manera de moverse al resto.",
-      "comoCazarlo": "Cuenta cuántas etiquetas quedan fuera del cuadro. Si son más de la mitad, la vista está rota aunque «quepa».",
-      "consejo": "Un mapa que no se puede leer no es un mapa. Mejor una parte legible que el todo ilegible.",
-      "salioDe": "campana/mapa · 9 de 14 rótulos fuera de cuadro en iPhone",
-      "senales": [
-        "se ve chiquito",
-        "no se alcanza a leer",
-        "todo apretado"
-      ],
-      "vecinas": [
-        "falta-el-viewport",
-        "medir-el-texto-pintado"
-      ]
-    },
-    {
-      "id": "codigo-muerto-de-adorno",
-      "titulo": "Dejé estilos de algo que nunca llegué a dibujar",
-      "gravedad": "baja",
-      "sintoma": "Reglas que no aplican a nada, y quien lo lea después va a buscar el elemento que las usa.",
-      "causa": "Se planeó una pieza, se escribió su estilo, y la pieza no se construyó.",
-      "porque": "El estilo se escribe primero porque es fácil, y luego se olvida que quedó huérfano.",
-      "arreglo": "Buscar la clase en el código que pinta. Si no aparece, se borra.",
-      "comoCazarlo": "Un `grep` de cada clase nueva contra el archivo entero.",
-      "consejo": "Borrar código muerto es barato hoy y caro dentro de un mes, cuando alguien lo tome por una pista.",
-      "salioDe": "sala/index.html · las líneas conectoras del taller que nunca se dibujaron",
-      "senales": [
-        "esto para qué es",
-        "no encuentro dónde se usa"
-      ],
-      "vecinas": [
-        "funcion-duplicada"
-      ]
-    },
-    {
-      "id": "barra-que-no-cabe-en-el-telefono",
-      "clase": "error",
-      "gravedad": "media",
-      "titulo": "La barra de La Sala se salía de la pantalla y «Salir» quedaba cortado",
-      "sintoma": "En un teléfono de 390px, el último botón de la barra superior aparece cortado contra el borde derecho y no se puede tocar. En computadora se ve perfecto.",
-      "causa": "`.barra` es `display:flex` sin `flex-wrap`, así que los hijos se comprimen y se desbordan en vez de bajar de renglón. Y `.btn` sin `white-space:nowrap` partía «Quién es quién» en tres renglones, lo que triplicaba el alto de la barra al apretarse.",
-      "porque": "Nadie había capturado la mesa a 390px. Estaba roto desde antes de agregarle botones — agregarlos sólo lo hizo evidente. Un desbordamiento horizontal no avienta error ni sale en consola: hay que VERLO.",
-      "arreglo": "`flex-wrap:wrap` con `row-gap` en la barra, y `white-space:nowrap` en el botón. Baja a un segundo renglón, que es más feo que nada y mucho menos feo que un botón inalcanzable.",
-      "comoCazarlo": "Capturar toda barra de herramientas a 390px antes de darla por buena, y contar los elementos en la foto: si en el código hay seis y en la pantalla se ven cinco, se está desbordando.",
-      "consejo": "Una barra con más de tres o cuatro acciones no cabe en teléfono. En cuanto se le agregue una, se vuelve a capturar.",
-      "toca": [
-        "sala/index.html"
-      ],
-      "senales": [
-        "se sale de la pantalla",
-        "el botón está cortado",
-        "no me cabe en el celular",
-        "se ve mal en el teléfono"
-      ],
-      "vecinas": [
-        "pieza-sala",
-        "ver-la-pantalla"
-      ],
-      "salioDe": "La Sala a 390px · «Salir» —el botón para irse— quedaba cortado contra el borde de la pantalla"
-    },
-    {
-      "id": "control-nativo-que-no-se-encoge",
-      "clase": "error",
-      "gravedad": "media",
-      "titulo": "El campo de fecha se encimaba y ningún ancho lo arreglaba",
-      "sintoma": "En iPhone el campo de fecha se monta sobre el de al lado. Se le baja el ancho, se le pone `max-width`, y sigue igual.",
-      "causa": "`input[type=date]` en iOS es un control NATIVO, no una caja de texto. Trae un ancho intrínseco propio —el que necesita para dd/mm/aaaa— y `min-width`/`max-width` no se lo bajan.",
-      "porque": "En el escritorio sí se deja encoger, así que el arreglo «funciona» donde uno lo prueba. El defecto sólo existe en el teléfono, que es donde Carlos trabaja.",
-      "arreglo": "No pelearle el ancho: darle su propio renglón, completo. Es la única solución que no depende de cuánto mida el control en la versión de iOS de cada quien.",
-      "comoCazarlo": "Medir el ancho pintado del control contra el que se le declaró. Si no coinciden, no es un problema de layout: el control no obedece.",
-      "consejo": "Mi primer arreglo fue a pelear el ancho (`1.55fr`, `min-width:0`, `max-width:100%`) y Carlos me mandó exactamente la misma captura otra vez. Cuando el mismo reporte vuelve, el arreglo estaba en el lugar equivocado.",
-      "toca": [
-        "avisos/index.html"
-      ],
-      "senales": [
-        "la fecha se encima",
-        "se monta sobre el otro campo",
-        "no le baja el ancho",
-        "en el iphone se ve mal"
-      ],
-      "vecinas": [
-        "medir-el-texto-pintado",
-        "no-cabe-legible",
-        "barra-que-no-cabe-en-el-telefono"
-      ],
-      "area": "diseno",
-      "salioDe": "avisos/ · dos intentos hasta entender que el control no obedece"
-    },
-    {
-      "id": "content-no-se-anima",
-      "titulo": "Los puntos suspensivos animados: content no es una propiedad animable",
-      "gravedad": "baja",
-      "clase": "error",
-      "sintoma": "Un «escribiendo…» con puntos que deberían contar se queda con un punto fijo. Sin error en consola.",
-      "causa": "Se intentó animar la propiedad content en unos keyframes. content sólo existe en un pseudo-elemento y ahí tampoco se interpola: el navegador se queda con el primer valor y no avisa de nada.",
-      "porque": "Es de las que se leen bien y no funcionan, así que uno va a buscar el problema a la duración, al infinite o a la especificidad.",
-      "arreglo": "Poner los puntos como texto de verdad y animar CUÁNTO se ve de ellos: un inline-block con overflow oculto y el ancho de 0 a 1.15em, con pasos.",
-      "comoCazarlo": "Si una animación de CSS no hace nada y no hay error, revisa que la propiedad esté en la lista de animables. content, display y position no lo están.",
-      "consejo": "Y con pasos, no con una transición suave: lo que se lee es cuántos puntos hay, y una opacidad a media transición se ve como un parpadeo sucio en vez de como un conteo.",
-      "salioDe": "sala/index.html · la tira de «está escribiendo»",
-      "senales": [
-        "la animación no hace nada",
-        "se queda en el primer cuadro",
-        "los puntitos no se mueven"
-      ],
-      "vecinas": []
-    },
-    {
-      "id": "max-height-no-agranda",
-      "titulo": "max-height:100% encoge lo grande pero no agranda lo chico",
-      "gravedad": "media",
-      "sintoma": "En las historias de 1080×1920 la sudadera recortada salía chiquita, con medio lienzo vacío, y en las publicaciones de 4:5 se veía bien.",
-      "causa": "La imagen tenía max-width y max-height: 100%. Eso sólo pone un TOPE. Un recorte de 600 px se quedaba en 600 px aunque su caja midiera 1,100.",
-      "porque": "En el formato chico la caja era más chica que la foto y el tope sí trabajaba, así que se veía «bien» y parecía que la regla llenaba la caja.",
-      "arreglo": "width/height: 100% con object-fit: contain. Así la foto llena su caja sin deformarse, sea más grande o más chica que ella.",
-      "comoCazarlo": "Probar el mismo diseño con una imagen MÁS CHICA que su caja, y verlo en el formato más grande que se vaya a usar.",
-      "consejo": "max-* es un techo, no una medida.",
-      "salioDe": "herramientas/moda · anuncios de All's fashion",
-      "senales": [
-        "la foto sale chiquita",
-        "sobra espacio",
-        "en historia se ve chica",
-        "no llena"
-      ],
-      "vecinas": [
-        "ver-la-pantalla"
-      ]
-    },
-    {
-      "id": "renombrar-con-regex-codiciosa",
-      "titulo": "Cambiar «la última parte» de un nombre con una expresión que se come de más",
-      "gravedad": "media",
-      "sintoma": "Tras «Otra versión», el anuncio «01-publicacion-maison.jpg» se llamaba «01-maison.jpg»: perdió el tamaño y el ZIP ya no lo ordenaba con los demás.",
-      "causa": "Para cambiar el estilo se usó /-[a-z-]+\\.jpg$/: el guion dentro de la clase deja que se coma «-publicacion-maison» entero.",
-      "porque": "Se escribió pensando en el estilo («maison») y no en todo lo que hay antes del último guion.",
-      "arreglo": "Sólo la última parte: /-[^-/]+\\.jpg$/. Y si el nombre lo puso un plan (la tanda), no se toca.",
-      "comoCazarlo": "La prueba que baja el ZIP y busca la ruta completa de un anuncio que se rehízo.",
-      "consejo": "Una clase con guion dentro come guiones: la «última parte» se dice excluyendo el separador.",
-      "salioDe": "carteles/campana-app.js · visor de la Campaña",
-      "senales": [
-        "el archivo cambió de nombre",
-        "se perdió el tamaño del nombre",
-        "otra versión renombra"
-      ],
-      "vecinas": []
-    },
-    {
-      "id": "auditar-donde-cae-el-texto",
-      "titulo": "Un cartel pintado en canvas no avisa si el texto se encima: hay que anotar dónde cae cada fillText",
-      "gravedad": "alta",
-      "sintoma": "En 51 carteles de moda todo «se veía bien» en la hoja de contacto y la prueba no fallaba; con un titular largo, la línea chica de la derecha se metía en él.",
-      "causa": "Una línea espaciada que no cabe ni en su tamaño mínimo se desborda hacia la izquierda, encima de lo que haya.",
-      "porque": "Las pruebas de resultado miran pixeles o que exista el lienzo, no la geometría del texto; y a ojo, en miniatura, no se nota.",
-      "arreglo": "Envolver CanvasRenderingContext2D.prototype.fillText en la prueba: medir con measureText y la transformación, y exigir que ningún texto se salga ni se cruce con otro de otro renglón. La línea que no cabe se junta y se corta con «…».",
-      "comoCazarlo": "node carteles/pruebas-campana.mjs · cada estilo × 3 tamaños × texto corto y texto largo.",
-      "consejo": "Probar con el texto más largo que alguien vaya a escribir, no con el de ejemplo.",
-      "salioDe": "carteles/moda.js · estilo minimal",
-      "senales": [
-        "texto encimado",
-        "se sale el texto",
-        "no cabe la frase",
-        "canvas"
-      ],
-      "vecinas": [
-        "la-codificacion-invisible"
-      ]
-    },
-    {
-      "id": "menu-sale-de-lo-que-dijo-el-clasificador",
-      "titulo": "La opción que pide el cliente no existe porque el clasificador no la dijo",
-      "gravedad": "media",
-      "sintoma": "Carlos pidió «tanda de zapatos» y la lista de tandas no traía Zapatos: había 16 tenis y 4 botas, pero Paulina no marcó ninguna foto como «zapatos» en esa corrida (en la anterior sí marcó una).",
-      "causa": "La lista de opciones se armaba sólo con las categorías que el clasificador devolvió. Una palabra general de la calle («zapatos») dependía de que la IA la usara para alguna foto.",
-      "porque": "Cada vez que un menú se arma con lo que dijo una IA, preguntar: ¿la palabra que va a usar el cliente sale aunque la IA diga otra?",
-      "arreglo": "Familias en campana-app.js (calzado, bolsas): si existe cualquier miembro, se ofrece la palabra general, y la tanda toma fotos de su categoría y luego de la familia. «Próxima tanda» cae a mosaico con fotos completas si los recortes no alcanzan.",
-      "comoCazarlo": "pruebas-campana.mjs: con tenis y ninguna foto de zapatos, la opción «Zapatos» tiene que aparecer y la tanda salir.",
-      "consejo": "Si el cliente nombra algo con su palabra, esa palabra se ofrece aunque la IA haya clasificado con otra.",
-      "salioDe": "carteles/campana-app.js · pintarOpcionesTanda (tanda de zapatos de All's fashion)",
-      "senales": [
-        "no aparece la opción",
-        "tanda de zapatos",
-        "categoría que falta",
-        "clasificador",
-        "Paulina"
-      ],
-      "vecinas": []
-    },
-    {
-      "id": "servidor-que-nadie-conecta",
-      "titulo": "Fadori: el servidor estaba vivo y ningún teléfono le hablaba — todos turno 1 y nada en el mostrador",
-      "gravedad": "alta",
-      "sintoma": "Carlos hizo pedidos con cinco alumnos: todos salieron con turno 1 y ninguno llegó al mostrador. Sospechó del servidor, y el servidor contestaba {\"bien\":true}.",
-      "causa": "La dirección del servidor sólo se podía pegar a mano en los ajustes del mostrador; el teléfono del alumno no tiene ajustes, así que cada uno trabajaba «local»: contaba sus propios turnos y sus pedidos nunca salían. Debajo había un segundo defecto: el menú de arranque se sembraba con ids al azar en cada aparato y nunca se subía, así que aun conectados el mostrador recibía pedidos de platillos que no conocía.",
-      "porque": "Cada pieza pasaba sus pruebas por separado —el servidor las suyas, cada pantalla las suyas en modo local— y nadie había probado dos teléfonos y un mostrador juntos contra el servidor publicado.",
-      "arreglo": "fadori/nucleo.js: servidor de fábrica cuando la página está publicada (en local sigue sin servidor; «quitar el servidor» guarda 'local' a propósito); ids de fábrica para el menú de arranque (idBase) con migración 4→5 que también corrige pedidos y eventos; el mostrador sube su menú entero la primera vez que se conecta; y pausarSync() para que las pruebas que corren solas al cargar no manden sus pedidos de mentira al servidor.",
-      "comoCazarlo": "Abrir DOS alumnos y UN mostrador contra el servidor real en una escuela de prueba (fadori_casa aparte), pedir desde los dos y mirar: turnos distintos, la cola del mostrador con los dos, y el nombre del platillo en cada renglón.",
-      "consejo": "Un sistema de varios aparatos se prueba con varios aparatos. Y un servidor que hay que configurar a mano en cada teléfono es un servidor que no existe.",
-      "salioDe": "fadori · prueba de Carlos con cinco alumnos, 9 de octubre",
-      "senales": [
-        "turno 1",
-        "todos turno 1",
-        "no llegan los pedidos",
-        "mostrador vacío",
-        "servidor",
-        "fadori",
-        "sin servidor"
-      ],
-      "vecinas": []
-    },
-    {
-      "id": "gana-el-reloj-equivocado",
-      "titulo": "Sincronizar «gana el más reciente» con la hora de cada aparato pierde cambios callado",
-      "gravedad": "alta",
-      "sintoma": "En Fadori, la señora tomaba un pedido y al alumno nunca le salía «preparando»; la cancelación de un alumno no llegaba al mostrador. Sin errores en ningún lado.",
-      "causa": "Tres caras del mismo error: (1) el servidor iba medio segundo adelante y le ponía su hora al pedido al darle turno, así que «tomar» justo después salía con hora más vieja y el servidor lo tiraba; (2) lo que faltaba mandar se decidía con una marca «ya mandé hasta tal hora», y un registro llegado de un teléfono con el reloj 2 min adelantado brincaba esa marca al futuro: todo lo de este aparato se daba por mandado sin salir; (3) la foto de huellas se tomaba en el primer guardado, y ese primer cambio quedaba dentro de la foto: el primer pedido del alumno que ya estaba registrado nunca salía.",
-      "porque": "Las relojes de los aparatos nunca coinciden, y cada prueba corría en UNA máquina con UN reloj. Sólo salió con aparatos de relojes distintos contra el servidor publicado.",
-      "arreglo": "fadori/nucleo.js: quien cambia un registro lo estampa con max(su hora, hora de la versión que vio + 1); lo pendiente es una LISTA de ids cambiados aquí (fadori_pendientes), no una marca de hora; y la foto de huellas se toma al arrancar la sincronía.",
-      "comoCazarlo": "LOCAL=1 node fadori/pruebas-vivo.mjs — dos alumnos (uno 2 min adelantado), mostrador 3 s atrasado, contra el servidor real. Mutación probada: sin la foto al arrancar, el «alumno que vuelve» sale rojo.",
-      "consejo": "En algo distribuido, la hora de un aparato es una opinión. Un cambio tiene que ganarle a lo que su autor vio, no al reloj de pared.",
-      "salioDe": "fadori · «asegúrate de que todo sea 100 % funcional y en tiempo real», 9 de octubre",
-      "senales": [
-        "no llega el cambio",
-        "preparando no aparece",
-        "cancelación no llega",
-        "reloj adelantado",
-        "hora del teléfono",
-        "sincronización pierde",
-        "tiempo real"
-      ],
-      "vecinas": [
-        "servidor-que-nadie-conecta"
-      ]
-    },
-    {
-      "id": "servidor-que-le-cree-al-telefono",
-      "titulo": "Un servidor de sincronía que acepta lo que le manden es una puerta abierta, aunque «nadie lo sepa»",
-      "gravedad": "alta",
-      "sintoma": "En Fadori, /api/todo sin contraseña devolvía el pasador del mostrador y los nombres y códigos de toda la escuela; cualquiera podía poner un platillo en $0, marcar pagado el pedido de otro, colarse con creado=0 o mandar 50 pedidos de un jalón. 30 de 42 ataques pasaban.",
-      "causa": "El diseño era «último en escribir gana» para TODO y para TODOS: el servidor sólo repartía turnos. El pasador vivía en la configuración que se sincroniza a cada teléfono, y cada teléfono recibía los datos de todos.",
-      "porque": "Se diseñó para que nada se perdiera (sincronía) y no para que nadie hiciera trampa; el pasador era «contra el alumno curioso». En una escuela con 80 alumnos con teléfono, el curioso abre las herramientas del navegador.",
-      "arreglo": "servidor/src/index.js: llave de mostrador emitida por /api/entrar; id de aparato dueño de su alumno; lista blanca de lo que un alumno puede cambiar; turno, total, hora, anticipado y pagado los pone el servidor; vista recortada por quién pregunta; topes por alumno, aparato, IP y escuela; tamaño de cuerpo; almacenamiento por registro con limpieza. ataques.mjs lo prueba (42/42) junto con 160 pedidos simultáneos del mismo wifi.",
-      "comoCazarlo": "cd servidor && npx wrangler dev --port 8791 --local; node ataques.mjs. Y la pregunta: ¿qué devuelve esto si lo llamo con curl sin nada?",
-      "consejo": "Todo lo que el teléfono manda es una sugerencia. El servidor decide lo que cuesta dinero o lugar en la fila, y cada quien ve sólo lo suyo.",
-      "salioDe": "fadori · «prepara el servidor y la app para ataques de pendejos», 9 de octubre",
-      "senales": [
-        "ataque",
-        "muchos pedidos",
-        "seguridad",
-        "pasador",
-        "hackear",
-        "trampa",
-        "inundar",
-        "servidor"
-      ],
-      "vecinas": [
-        "servidor-que-nadie-conecta",
-        "gana-el-reloj-equivocado"
-      ]
-    },
-    {
-      "id": "bajada-completa-que-pisa-lo-pendiente",
-      "titulo": "La bajada completa «forzada» pisa lo que el aparato no ha subido",
-      "gravedad": "alta",
-      "sintoma": "El día del menú de verdad: la tablet migró al menú real, la señora puso su pasador, y el servidor se quedó con el pozole viejo y la torta a $38. Sin un solo error.",
-      "causa": "Al poner el pasador la app pide TODO desde cero y lo aplica «forzado» (sin mirar la hora), para traer la versión completa de lo que antes llegaba recortado. Esa bajada salió antes de que se apuntara el menú por subir, y al volver le pegó encima la copia vieja a lo que la tablet acababa de cambiar.",
-      "porque": "Cada prueba arrancaba con el servidor y la tablet de acuerdo. Sólo sale cuando el aparato trae un cambio local más nuevo que lo del servidor justo al entrar.",
-      "arreglo": "fadori/nucleo.js · mezclar: con «forzar», se salta todo registro que esté en la lista de pendientes (fadori_pendientes). Lo pendiente es más nuevo por definición.",
-      "comoCazarlo": "LOCAL=1 API_LOCAL=… node fadori/pruebas-menu.mjs — tablet con menú viejo + servidor con menú viejo → pasador → el servidor tiene que quedar con el real. Antes del arreglo: 3 rojas.",
-      "consejo": "«Forzar» significa «trae lo que me falta», nunca «olvida lo que hice». Lo que está por subir no se toca.",
-      "salioDe": "fadori · «ese es el menú de la cafetería, te encargo que todo quede al 100», 9 de octubre",
-      "senales": [
-        "menú viejo regresa",
-        "pozole regresa",
-        "precio viejo",
-        "al poner el pasador",
-        "se pierde un cambio",
-        "forzar",
-        "bajada completa"
-      ],
-      "vecinas": [
-        "gana-el-reloj-equivocado",
-        "borrar-que-no-viaja"
-      ]
-    },
-    {
-      "id": "borrar-que-no-viaja",
-      "titulo": "Borrar un registro quitándolo de la lista: el servidor lo devuelve",
-      "gravedad": "media",
-      "sintoma": "En Fadori, un platillo borrado en el mostrador reaparecía en la siguiente sincronización.",
-      "causa": "borrarProducto lo sacaba del arreglo local. La sincronización sólo manda registros que EXISTEN y cambiaron, así que el borrado nunca salía; el servidor seguía teniéndolo y lo volvía a mandar.",
-      "porque": "En un solo aparato sin servidor, quitar y borrar son lo mismo. Con varios, no.",
-      "arreglo": "Borrar = marcar (`borrado: true`, `disponible: false`). productos() filtra los borrados; producto(id) los sigue dando para el historial.",
-      "comoCazarlo": "pruebas-menu.mjs §3: borrar en la tablet, recargar, y que no regrese ni a la tablet ni al alumno.",
-      "consejo": "En algo que se sincroniza, borrar es un cambio más y tiene que viajar como cambio.",
-      "salioDe": "fadori · el menú real, 9 de octubre",
-      "senales": [
-        "borrado reaparece",
-        "platillo regresa",
-        "no se borra",
-        "borrar producto",
-        "lápida"
-      ],
-      "vecinas": [
-        "bajada-completa-que-pisa-lo-pendiente"
-      ]
-    },
-    {
-      "id": "firma-que-solo-ve-si-hay",
-      "titulo": "La «firma» que decide si repintar sólo mira si HAY foto, no CUÁL",
-      "gravedad": "media",
-      "sintoma": "Fadori: la cooperativa cambia la foto de relleno de un platillo por la de verdad, le llega al teléfono del alumno… y el menú sigue enseñando la vieja hasta que recarga.",
-      "causa": "Para no reescribir la rejilla cada 5 s, el menú se repinta sólo si cambia su firma, y la firma llevaba (p.foto ? 1 : 0). Cambiar una foto por otra no la movía.",
-      "porque": "Cuando se escribió, los platillos o tenían foto o no; nadie cambiaba una por otra.",
-      "arreglo": "fadori/index.html · firmaMenu: la foto entra por su largo y sus últimos 16 caracteres.",
-      "comoCazarlo": "pruebas-menu.mjs §4: sube una foto desde el mostrador y exige que el <img> del menú del alumno la traiga. Antes del arreglo: rojo.",
-      "consejo": "Una firma para «¿cambió?» tiene que cambiar con todo lo que se pinta; un booleano de «hay» sólo sirve si nunca se reemplaza.",
-      "salioDe": "fadori · «yo iré reemplazando el placeholder con el final», 9 de octubre",
-      "senales": [
-        "foto no cambia",
-        "no se actualiza la foto",
-        "repintar",
-        "firma",
-        "placeholder"
-      ],
-      "vecinas": [
-        "borrar-que-no-viaja"
-      ]
-    },
-    {
-      "id": "fotos-de-producto-del-modelo-exacto",
-      "titulo": "Fotos de catálogo de un producto de tienda (el modelo exacto), desde este contenedor",
-      "gravedad": "media",
-      "sintoma": "Hace falta la foto de un producto de marca (Takis Fuego, Boing de guayaba 500 ml…) y Google Imágenes no contesta.",
-      "causa": "Desde aquí Google responde 302 (pide verificar), Bing devuelve basura y DuckDuckGo no da su token. Mercado Libre da 403.",
-      "porque": "Los buscadores bloquean peticiones automáticas; los catálogos de supermercado no.",
-      "arreglo": "El catálogo VTEX de Chedraui contesta JSON con nombre exacto, presentación y foto en fondo blanco: https://www.chedraui.com.mx/api/catalog_system/pub/products/search?ft=<texto con %20> (con «+» en vez de %20 da 400). Lo que no está ahí: Open Food Facts (cgi/search.pl?json=1, o api/v2/product/<código de barras>), que a veces da 503 y hay que reintentar. El fondo blanco se quita con «sólo lo blanco que toca la orilla» (scipy label): el modelo de recorte se comía las letras de adentro (las paletas Vero salían sin «Mango»).",
-      "comoCazarlo": "Comparar SIEMPRE la foto contra la del cliente: la de «Milky Way 40g» en Chedraui es un Snickers.",
-      "consejo": "Para producto de marca, el catálogo del súper es mejor fuente que un buscador: trae el nombre del modelo y su tamaño, y la foto ya va en fondo blanco.",
-      "salioDe": "fadori · «usa imágenes de Google para cada producto, asegúrate de que sean el mismo modelo», 9 de octubre",
-      "senales": [
-        "foto de producto",
-        "imagen de google",
-        "catálogo",
-        "packshot",
-        "fondo blanco",
-        "chedraui",
-        "open food facts"
-      ],
-      "vecinas": [
-        "firma-que-solo-ve-si-hay"
-      ]
-    }
-  ]
+ "area": "diseno",
+ "nombre": "Diseño que se ve y se lee",
+ "que": "Errores de pantalla que no son de código: cosas invisibles, encimadas, o bonitas pero mentirosas.",
+ "neuronas": [
+  {
+   "id": "la-codificacion-invisible",
+   "titulo": "Lo que codifica el significado no se veía",
+   "gravedad": "alta",
+   "sintoma": "El gráfico se ve bonito y no comunica. La gente pregunta qué significa.",
+   "causa": "El elemento que carga el significado —una línea guía, una escala, un eje— quedó tan tenue que desapareció.",
+   "porque": "Al diseñar uno lo baja para que «no estorbe», y termina bajándolo por debajo del umbral de verse.",
+   "arreglo": "Subirle contraste al elemento que codifica, aunque sea el que menos «adorna».",
+   "comoCazarlo": "Tápate el resto y pregúntate si el dato sigue leyéndose. Si no, la codificación no existe.",
+   "consejo": "Lo decorativo puede ser tenue. Lo que significa, no.",
+   "salioDe": "campana/mapa · los anillos de urgencia eran invisibles, y la distancia al centro era TODA la idea",
+   "senales": [
+    "se ve bonito pero",
+    "no entiendo qué significa",
+    "no se distingue"
+   ],
+   "vecinas": [
+    "color-sin-forma",
+    "ver-la-pantalla"
+   ]
+  },
+  {
+   "id": "color-sin-forma",
+   "titulo": "Distinguirlo sólo por color deja fuera a mucha gente",
+   "gravedad": "media",
+   "sintoma": "Impreso en blanco y negro, o para quien no distingue rojo y verde, dos categorías se vuelven una.",
+   "causa": "El color es el único canal que separa las categorías.",
+   "porque": "En la pantalla del que diseña se distinguen perfecto, y ahí termina la prueba.",
+   "arreglo": "Cada categoría lleva ADEMÁS su figura, su posición o su etiqueta.",
+   "comoCazarlo": "Convierte a escala de grises y mide la separación. Si dos quedan a menos de 5 puntos, no se distinguen.",
+   "consejo": "Para material que se va a fotocopiar esto no es accesibilidad: es que funcione.",
+   "salioDe": "campana/ · los tres verbos llevan ◼ ◆ ▲ además de color",
+   "senales": [
+    "se ve igual impreso",
+    "no distingo los colores",
+    "en blanco y negro"
+   ],
+   "vecinas": [
+    "la-codificacion-invisible"
+   ]
+  },
+  {
+   "id": "medir-el-texto-pintado",
+   "titulo": "Los rótulos se encimaban porque medí la caja y no el texto",
+   "gravedad": "media",
+   "sintoma": "Dos etiquetas se pisan, o una se sale del papel, aunque «según el código» caben.",
+   "causa": "Se midió lo declarado —la caja, el ancho reservado— y no lo que de verdad se pintó.",
+   "porque": "La tipografía real, el ajuste de línea y el idioma cambian el ancho, y nada de eso está en el XML ni en el CSS.",
+   "arreglo": "Medir el texto ya pintado, con la fuente cargada, y resolver colisiones con ese número.",
+   "comoCazarlo": "Una versión que medía cajas daba todo bien mientras la presentación se veía rota. Medir lo pintado cazó 31 defectos.",
+   "consejo": "Y vuelve a medir cuando cargue la tipografía: antes de eso los anchos son de la fuente de respaldo.",
+   "salioDe": "fadori/presentacion/medir.py y campana/mapa",
+   "senales": [
+    "se encima",
+    "se sale",
+    "se corta el texto"
+   ],
+   "vecinas": [
+    "la-codificacion-invisible"
+   ]
+  },
+  {
+   "id": "no-cabe-legible",
+   "titulo": "Todo cabía en el teléfono, ilegible",
+   "gravedad": "media",
+   "sintoma": "En el celular se ve completo y no se puede leer nada.",
+   "causa": "Se encogió hasta que cupo, sin piso de legibilidad.",
+   "porque": "«Que quepa» es fácil de comprobar; «que se lea» no tiene una comprobación automática.",
+   "arreglo": "Poner piso al acercamiento y enseñar una parte legible, con manera de moverse al resto.",
+   "comoCazarlo": "Cuenta cuántas etiquetas quedan fuera del cuadro. Si son más de la mitad, la vista está rota aunque «quepa».",
+   "consejo": "Un mapa que no se puede leer no es un mapa. Mejor una parte legible que el todo ilegible.",
+   "salioDe": "campana/mapa · 9 de 14 rótulos fuera de cuadro en iPhone",
+   "senales": [
+    "se ve chiquito",
+    "no se alcanza a leer",
+    "todo apretado"
+   ],
+   "vecinas": [
+    "falta-el-viewport",
+    "medir-el-texto-pintado"
+   ]
+  },
+  {
+   "id": "codigo-muerto-de-adorno",
+   "titulo": "Dejé estilos de algo que nunca llegué a dibujar",
+   "gravedad": "baja",
+   "sintoma": "Reglas que no aplican a nada, y quien lo lea después va a buscar el elemento que las usa.",
+   "causa": "Se planeó una pieza, se escribió su estilo, y la pieza no se construyó.",
+   "porque": "El estilo se escribe primero porque es fácil, y luego se olvida que quedó huérfano.",
+   "arreglo": "Buscar la clase en el código que pinta. Si no aparece, se borra.",
+   "comoCazarlo": "Un `grep` de cada clase nueva contra el archivo entero.",
+   "consejo": "Borrar código muerto es barato hoy y caro dentro de un mes, cuando alguien lo tome por una pista.",
+   "salioDe": "sala/index.html · las líneas conectoras del taller que nunca se dibujaron",
+   "senales": [
+    "esto para qué es",
+    "no encuentro dónde se usa"
+   ],
+   "vecinas": [
+    "funcion-duplicada"
+   ]
+  },
+  {
+   "id": "barra-que-no-cabe-en-el-telefono",
+   "clase": "error",
+   "gravedad": "media",
+   "titulo": "La barra de La Sala se salía de la pantalla y «Salir» quedaba cortado",
+   "sintoma": "En un teléfono de 390px, el último botón de la barra superior aparece cortado contra el borde derecho y no se puede tocar. En computadora se ve perfecto.",
+   "causa": "`.barra` es `display:flex` sin `flex-wrap`, así que los hijos se comprimen y se desbordan en vez de bajar de renglón. Y `.btn` sin `white-space:nowrap` partía «Quién es quién» en tres renglones, lo que triplicaba el alto de la barra al apretarse.",
+   "porque": "Nadie había capturado la mesa a 390px. Estaba roto desde antes de agregarle botones — agregarlos sólo lo hizo evidente. Un desbordamiento horizontal no avienta error ni sale en consola: hay que VERLO.",
+   "arreglo": "`flex-wrap:wrap` con `row-gap` en la barra, y `white-space:nowrap` en el botón. Baja a un segundo renglón, que es más feo que nada y mucho menos feo que un botón inalcanzable.",
+   "comoCazarlo": "Capturar toda barra de herramientas a 390px antes de darla por buena, y contar los elementos en la foto: si en el código hay seis y en la pantalla se ven cinco, se está desbordando.",
+   "consejo": "Una barra con más de tres o cuatro acciones no cabe en teléfono. En cuanto se le agregue una, se vuelve a capturar.",
+   "toca": [
+    "sala/index.html"
+   ],
+   "senales": [
+    "se sale de la pantalla",
+    "el botón está cortado",
+    "no me cabe en el celular",
+    "se ve mal en el teléfono"
+   ],
+   "vecinas": [
+    "pieza-sala",
+    "ver-la-pantalla"
+   ],
+   "salioDe": "La Sala a 390px · «Salir» —el botón para irse— quedaba cortado contra el borde de la pantalla"
+  },
+  {
+   "id": "control-nativo-que-no-se-encoge",
+   "clase": "error",
+   "gravedad": "media",
+   "titulo": "El campo de fecha se encimaba y ningún ancho lo arreglaba",
+   "sintoma": "En iPhone el campo de fecha se monta sobre el de al lado. Se le baja el ancho, se le pone `max-width`, y sigue igual.",
+   "causa": "`input[type=date]` en iOS es un control NATIVO, no una caja de texto. Trae un ancho intrínseco propio —el que necesita para dd/mm/aaaa— y `min-width`/`max-width` no se lo bajan.",
+   "porque": "En el escritorio sí se deja encoger, así que el arreglo «funciona» donde uno lo prueba. El defecto sólo existe en el teléfono, que es donde Carlos trabaja.",
+   "arreglo": "No pelearle el ancho: darle su propio renglón, completo. Es la única solución que no depende de cuánto mida el control en la versión de iOS de cada quien.",
+   "comoCazarlo": "Medir el ancho pintado del control contra el que se le declaró. Si no coinciden, no es un problema de layout: el control no obedece.",
+   "consejo": "Mi primer arreglo fue a pelear el ancho (`1.55fr`, `min-width:0`, `max-width:100%`) y Carlos me mandó exactamente la misma captura otra vez. Cuando el mismo reporte vuelve, el arreglo estaba en el lugar equivocado.",
+   "toca": [
+    "avisos/index.html"
+   ],
+   "senales": [
+    "la fecha se encima",
+    "se monta sobre el otro campo",
+    "no le baja el ancho",
+    "en el iphone se ve mal"
+   ],
+   "vecinas": [
+    "medir-el-texto-pintado",
+    "no-cabe-legible",
+    "barra-que-no-cabe-en-el-telefono"
+   ],
+   "area": "diseno",
+   "salioDe": "avisos/ · dos intentos hasta entender que el control no obedece"
+  },
+  {
+   "id": "content-no-se-anima",
+   "titulo": "Los puntos suspensivos animados: content no es una propiedad animable",
+   "gravedad": "baja",
+   "clase": "error",
+   "sintoma": "Un «escribiendo…» con puntos que deberían contar se queda con un punto fijo. Sin error en consola.",
+   "causa": "Se intentó animar la propiedad content en unos keyframes. content sólo existe en un pseudo-elemento y ahí tampoco se interpola: el navegador se queda con el primer valor y no avisa de nada.",
+   "porque": "Es de las que se leen bien y no funcionan, así que uno va a buscar el problema a la duración, al infinite o a la especificidad.",
+   "arreglo": "Poner los puntos como texto de verdad y animar CUÁNTO se ve de ellos: un inline-block con overflow oculto y el ancho de 0 a 1.15em, con pasos.",
+   "comoCazarlo": "Si una animación de CSS no hace nada y no hay error, revisa que la propiedad esté en la lista de animables. content, display y position no lo están.",
+   "consejo": "Y con pasos, no con una transición suave: lo que se lee es cuántos puntos hay, y una opacidad a media transición se ve como un parpadeo sucio en vez de como un conteo.",
+   "salioDe": "sala/index.html · la tira de «está escribiendo»",
+   "senales": [
+    "la animación no hace nada",
+    "se queda en el primer cuadro",
+    "los puntitos no se mueven"
+   ],
+   "vecinas": []
+  },
+  {
+   "id": "max-height-no-agranda",
+   "titulo": "max-height:100% encoge lo grande pero no agranda lo chico",
+   "gravedad": "media",
+   "sintoma": "En las historias de 1080×1920 la sudadera recortada salía chiquita, con medio lienzo vacío, y en las publicaciones de 4:5 se veía bien.",
+   "causa": "La imagen tenía max-width y max-height: 100%. Eso sólo pone un TOPE. Un recorte de 600 px se quedaba en 600 px aunque su caja midiera 1,100.",
+   "porque": "En el formato chico la caja era más chica que la foto y el tope sí trabajaba, así que se veía «bien» y parecía que la regla llenaba la caja.",
+   "arreglo": "width/height: 100% con object-fit: contain. Así la foto llena su caja sin deformarse, sea más grande o más chica que ella.",
+   "comoCazarlo": "Probar el mismo diseño con una imagen MÁS CHICA que su caja, y verlo en el formato más grande que se vaya a usar.",
+   "consejo": "max-* es un techo, no una medida.",
+   "salioDe": "herramientas/moda · anuncios de All's fashion",
+   "senales": [
+    "la foto sale chiquita",
+    "sobra espacio",
+    "en historia se ve chica",
+    "no llena"
+   ],
+   "vecinas": [
+    "ver-la-pantalla"
+   ]
+  },
+  {
+   "id": "renombrar-con-regex-codiciosa",
+   "titulo": "Cambiar «la última parte» de un nombre con una expresión que se come de más",
+   "gravedad": "media",
+   "sintoma": "Tras «Otra versión», el anuncio «01-publicacion-maison.jpg» se llamaba «01-maison.jpg»: perdió el tamaño y el ZIP ya no lo ordenaba con los demás.",
+   "causa": "Para cambiar el estilo se usó /-[a-z-]+\\.jpg$/: el guion dentro de la clase deja que se coma «-publicacion-maison» entero.",
+   "porque": "Se escribió pensando en el estilo («maison») y no en todo lo que hay antes del último guion.",
+   "arreglo": "Sólo la última parte: /-[^-/]+\\.jpg$/. Y si el nombre lo puso un plan (la tanda), no se toca.",
+   "comoCazarlo": "La prueba que baja el ZIP y busca la ruta completa de un anuncio que se rehízo.",
+   "consejo": "Una clase con guion dentro come guiones: la «última parte» se dice excluyendo el separador.",
+   "salioDe": "carteles/campana-app.js · visor de la Campaña",
+   "senales": [
+    "el archivo cambió de nombre",
+    "se perdió el tamaño del nombre",
+    "otra versión renombra"
+   ],
+   "vecinas": []
+  },
+  {
+   "id": "auditar-donde-cae-el-texto",
+   "titulo": "Un cartel pintado en canvas no avisa si el texto se encima: hay que anotar dónde cae cada fillText",
+   "gravedad": "alta",
+   "sintoma": "En 51 carteles de moda todo «se veía bien» en la hoja de contacto y la prueba no fallaba; con un titular largo, la línea chica de la derecha se metía en él.",
+   "causa": "Una línea espaciada que no cabe ni en su tamaño mínimo se desborda hacia la izquierda, encima de lo que haya.",
+   "porque": "Las pruebas de resultado miran pixeles o que exista el lienzo, no la geometría del texto; y a ojo, en miniatura, no se nota.",
+   "arreglo": "Envolver CanvasRenderingContext2D.prototype.fillText en la prueba: medir con measureText y la transformación, y exigir que ningún texto se salga ni se cruce con otro de otro renglón. La línea que no cabe se junta y se corta con «…».",
+   "comoCazarlo": "node carteles/pruebas-campana.mjs · cada estilo × 3 tamaños × texto corto y texto largo.",
+   "consejo": "Probar con el texto más largo que alguien vaya a escribir, no con el de ejemplo.",
+   "salioDe": "carteles/moda.js · estilo minimal",
+   "senales": [
+    "texto encimado",
+    "se sale el texto",
+    "no cabe la frase",
+    "canvas"
+   ],
+   "vecinas": [
+    "la-codificacion-invisible"
+   ]
+  },
+  {
+   "id": "menu-sale-de-lo-que-dijo-el-clasificador",
+   "titulo": "La opción que pide el cliente no existe porque el clasificador no la dijo",
+   "gravedad": "media",
+   "sintoma": "Carlos pidió «tanda de zapatos» y la lista de tandas no traía Zapatos: había 16 tenis y 4 botas, pero Paulina no marcó ninguna foto como «zapatos» en esa corrida (en la anterior sí marcó una).",
+   "causa": "La lista de opciones se armaba sólo con las categorías que el clasificador devolvió. Una palabra general de la calle («zapatos») dependía de que la IA la usara para alguna foto.",
+   "porque": "Cada vez que un menú se arma con lo que dijo una IA, preguntar: ¿la palabra que va a usar el cliente sale aunque la IA diga otra?",
+   "arreglo": "Familias en campana-app.js (calzado, bolsas): si existe cualquier miembro, se ofrece la palabra general, y la tanda toma fotos de su categoría y luego de la familia. «Próxima tanda» cae a mosaico con fotos completas si los recortes no alcanzan.",
+   "comoCazarlo": "pruebas-campana.mjs: con tenis y ninguna foto de zapatos, la opción «Zapatos» tiene que aparecer y la tanda salir.",
+   "consejo": "Si el cliente nombra algo con su palabra, esa palabra se ofrece aunque la IA haya clasificado con otra.",
+   "salioDe": "carteles/campana-app.js · pintarOpcionesTanda (tanda de zapatos de All's fashion)",
+   "senales": [
+    "no aparece la opción",
+    "tanda de zapatos",
+    "categoría que falta",
+    "clasificador",
+    "Paulina"
+   ],
+   "vecinas": []
+  },
+  {
+   "id": "servidor-que-nadie-conecta",
+   "titulo": "Fadori: el servidor estaba vivo y ningún teléfono le hablaba — todos turno 1 y nada en el mostrador",
+   "gravedad": "alta",
+   "sintoma": "Carlos hizo pedidos con cinco alumnos: todos salieron con turno 1 y ninguno llegó al mostrador. Sospechó del servidor, y el servidor contestaba {\"bien\":true}.",
+   "causa": "La dirección del servidor sólo se podía pegar a mano en los ajustes del mostrador; el teléfono del alumno no tiene ajustes, así que cada uno trabajaba «local»: contaba sus propios turnos y sus pedidos nunca salían. Debajo había un segundo defecto: el menú de arranque se sembraba con ids al azar en cada aparato y nunca se subía, así que aun conectados el mostrador recibía pedidos de platillos que no conocía.",
+   "porque": "Cada pieza pasaba sus pruebas por separado —el servidor las suyas, cada pantalla las suyas en modo local— y nadie había probado dos teléfonos y un mostrador juntos contra el servidor publicado.",
+   "arreglo": "fadori/nucleo.js: servidor de fábrica cuando la página está publicada (en local sigue sin servidor; «quitar el servidor» guarda 'local' a propósito); ids de fábrica para el menú de arranque (idBase) con migración 4→5 que también corrige pedidos y eventos; el mostrador sube su menú entero la primera vez que se conecta; y pausarSync() para que las pruebas que corren solas al cargar no manden sus pedidos de mentira al servidor.",
+   "comoCazarlo": "Abrir DOS alumnos y UN mostrador contra el servidor real en una escuela de prueba (fadori_casa aparte), pedir desde los dos y mirar: turnos distintos, la cola del mostrador con los dos, y el nombre del platillo en cada renglón.",
+   "consejo": "Un sistema de varios aparatos se prueba con varios aparatos. Y un servidor que hay que configurar a mano en cada teléfono es un servidor que no existe.",
+   "salioDe": "fadori · prueba de Carlos con cinco alumnos, 9 de octubre",
+   "senales": [
+    "turno 1",
+    "todos turno 1",
+    "no llegan los pedidos",
+    "mostrador vacío",
+    "servidor",
+    "fadori",
+    "sin servidor"
+   ],
+   "vecinas": []
+  },
+  {
+   "id": "gana-el-reloj-equivocado",
+   "titulo": "Sincronizar «gana el más reciente» con la hora de cada aparato pierde cambios callado",
+   "gravedad": "alta",
+   "sintoma": "En Fadori, la señora tomaba un pedido y al alumno nunca le salía «preparando»; la cancelación de un alumno no llegaba al mostrador. Sin errores en ningún lado.",
+   "causa": "Tres caras del mismo error: (1) el servidor iba medio segundo adelante y le ponía su hora al pedido al darle turno, así que «tomar» justo después salía con hora más vieja y el servidor lo tiraba; (2) lo que faltaba mandar se decidía con una marca «ya mandé hasta tal hora», y un registro llegado de un teléfono con el reloj 2 min adelantado brincaba esa marca al futuro: todo lo de este aparato se daba por mandado sin salir; (3) la foto de huellas se tomaba en el primer guardado, y ese primer cambio quedaba dentro de la foto: el primer pedido del alumno que ya estaba registrado nunca salía.",
+   "porque": "Las relojes de los aparatos nunca coinciden, y cada prueba corría en UNA máquina con UN reloj. Sólo salió con aparatos de relojes distintos contra el servidor publicado.",
+   "arreglo": "fadori/nucleo.js: quien cambia un registro lo estampa con max(su hora, hora de la versión que vio + 1); lo pendiente es una LISTA de ids cambiados aquí (fadori_pendientes), no una marca de hora; y la foto de huellas se toma al arrancar la sincronía.",
+   "comoCazarlo": "LOCAL=1 node fadori/pruebas-vivo.mjs — dos alumnos (uno 2 min adelantado), mostrador 3 s atrasado, contra el servidor real. Mutación probada: sin la foto al arrancar, el «alumno que vuelve» sale rojo.",
+   "consejo": "En algo distribuido, la hora de un aparato es una opinión. Un cambio tiene que ganarle a lo que su autor vio, no al reloj de pared.",
+   "salioDe": "fadori · «asegúrate de que todo sea 100 % funcional y en tiempo real», 9 de octubre",
+   "senales": [
+    "no llega el cambio",
+    "preparando no aparece",
+    "cancelación no llega",
+    "reloj adelantado",
+    "hora del teléfono",
+    "sincronización pierde",
+    "tiempo real"
+   ],
+   "vecinas": [
+    "servidor-que-nadie-conecta"
+   ]
+  },
+  {
+   "id": "servidor-que-le-cree-al-telefono",
+   "titulo": "Un servidor de sincronía que acepta lo que le manden es una puerta abierta, aunque «nadie lo sepa»",
+   "gravedad": "alta",
+   "sintoma": "En Fadori, /api/todo sin contraseña devolvía el pasador del mostrador y los nombres y códigos de toda la escuela; cualquiera podía poner un platillo en $0, marcar pagado el pedido de otro, colarse con creado=0 o mandar 50 pedidos de un jalón. 30 de 42 ataques pasaban.",
+   "causa": "El diseño era «último en escribir gana» para TODO y para TODOS: el servidor sólo repartía turnos. El pasador vivía en la configuración que se sincroniza a cada teléfono, y cada teléfono recibía los datos de todos.",
+   "porque": "Se diseñó para que nada se perdiera (sincronía) y no para que nadie hiciera trampa; el pasador era «contra el alumno curioso». En una escuela con 80 alumnos con teléfono, el curioso abre las herramientas del navegador.",
+   "arreglo": "servidor/src/index.js: llave de mostrador emitida por /api/entrar; id de aparato dueño de su alumno; lista blanca de lo que un alumno puede cambiar; turno, total, hora, anticipado y pagado los pone el servidor; vista recortada por quién pregunta; topes por alumno, aparato, IP y escuela; tamaño de cuerpo; almacenamiento por registro con limpieza. ataques.mjs lo prueba (42/42) junto con 160 pedidos simultáneos del mismo wifi.",
+   "comoCazarlo": "cd servidor && npx wrangler dev --port 8791 --local; node ataques.mjs. Y la pregunta: ¿qué devuelve esto si lo llamo con curl sin nada?",
+   "consejo": "Todo lo que el teléfono manda es una sugerencia. El servidor decide lo que cuesta dinero o lugar en la fila, y cada quien ve sólo lo suyo.",
+   "salioDe": "fadori · «prepara el servidor y la app para ataques de pendejos», 9 de octubre",
+   "senales": [
+    "ataque",
+    "muchos pedidos",
+    "seguridad",
+    "pasador",
+    "hackear",
+    "trampa",
+    "inundar",
+    "servidor"
+   ],
+   "vecinas": [
+    "servidor-que-nadie-conecta",
+    "gana-el-reloj-equivocado"
+   ]
+  },
+  {
+   "id": "bajada-completa-que-pisa-lo-pendiente",
+   "titulo": "La bajada completa «forzada» pisa lo que el aparato no ha subido",
+   "gravedad": "alta",
+   "sintoma": "El día del menú de verdad: la tablet migró al menú real, la señora puso su pasador, y el servidor se quedó con el pozole viejo y la torta a $38. Sin un solo error.",
+   "causa": "Al poner el pasador la app pide TODO desde cero y lo aplica «forzado» (sin mirar la hora), para traer la versión completa de lo que antes llegaba recortado. Esa bajada salió antes de que se apuntara el menú por subir, y al volver le pegó encima la copia vieja a lo que la tablet acababa de cambiar.",
+   "porque": "Cada prueba arrancaba con el servidor y la tablet de acuerdo. Sólo sale cuando el aparato trae un cambio local más nuevo que lo del servidor justo al entrar.",
+   "arreglo": "fadori/nucleo.js · mezclar: con «forzar», se salta todo registro que esté en la lista de pendientes (fadori_pendientes). Lo pendiente es más nuevo por definición.",
+   "comoCazarlo": "LOCAL=1 API_LOCAL=… node fadori/pruebas-menu.mjs — tablet con menú viejo + servidor con menú viejo → pasador → el servidor tiene que quedar con el real. Antes del arreglo: 3 rojas.",
+   "consejo": "«Forzar» significa «trae lo que me falta», nunca «olvida lo que hice». Lo que está por subir no se toca.",
+   "salioDe": "fadori · «ese es el menú de la cafetería, te encargo que todo quede al 100», 9 de octubre",
+   "senales": [
+    "menú viejo regresa",
+    "pozole regresa",
+    "precio viejo",
+    "al poner el pasador",
+    "se pierde un cambio",
+    "forzar",
+    "bajada completa"
+   ],
+   "vecinas": [
+    "gana-el-reloj-equivocado",
+    "borrar-que-no-viaja"
+   ]
+  },
+  {
+   "id": "borrar-que-no-viaja",
+   "titulo": "Borrar un registro quitándolo de la lista: el servidor lo devuelve",
+   "gravedad": "media",
+   "sintoma": "En Fadori, un platillo borrado en el mostrador reaparecía en la siguiente sincronización.",
+   "causa": "borrarProducto lo sacaba del arreglo local. La sincronización sólo manda registros que EXISTEN y cambiaron, así que el borrado nunca salía; el servidor seguía teniéndolo y lo volvía a mandar.",
+   "porque": "En un solo aparato sin servidor, quitar y borrar son lo mismo. Con varios, no.",
+   "arreglo": "Borrar = marcar (`borrado: true`, `disponible: false`). productos() filtra los borrados; producto(id) los sigue dando para el historial.",
+   "comoCazarlo": "pruebas-menu.mjs §3: borrar en la tablet, recargar, y que no regrese ni a la tablet ni al alumno.",
+   "consejo": "En algo que se sincroniza, borrar es un cambio más y tiene que viajar como cambio.",
+   "salioDe": "fadori · el menú real, 9 de octubre",
+   "senales": [
+    "borrado reaparece",
+    "platillo regresa",
+    "no se borra",
+    "borrar producto",
+    "lápida"
+   ],
+   "vecinas": [
+    "bajada-completa-que-pisa-lo-pendiente"
+   ]
+  },
+  {
+   "id": "firma-que-solo-ve-si-hay",
+   "titulo": "La «firma» que decide si repintar sólo mira si HAY foto, no CUÁL",
+   "gravedad": "media",
+   "sintoma": "Fadori: la cooperativa cambia la foto de relleno de un platillo por la de verdad, le llega al teléfono del alumno… y el menú sigue enseñando la vieja hasta que recarga.",
+   "causa": "Para no reescribir la rejilla cada 5 s, el menú se repinta sólo si cambia su firma, y la firma llevaba (p.foto ? 1 : 0). Cambiar una foto por otra no la movía.",
+   "porque": "Cuando se escribió, los platillos o tenían foto o no; nadie cambiaba una por otra.",
+   "arreglo": "fadori/index.html · firmaMenu: la foto entra por su largo y sus últimos 16 caracteres.",
+   "comoCazarlo": "pruebas-menu.mjs §4: sube una foto desde el mostrador y exige que el <img> del menú del alumno la traiga. Antes del arreglo: rojo.",
+   "consejo": "Una firma para «¿cambió?» tiene que cambiar con todo lo que se pinta; un booleano de «hay» sólo sirve si nunca se reemplaza.",
+   "salioDe": "fadori · «yo iré reemplazando el placeholder con el final», 9 de octubre",
+   "senales": [
+    "foto no cambia",
+    "no se actualiza la foto",
+    "repintar",
+    "firma",
+    "placeholder"
+   ],
+   "vecinas": [
+    "borrar-que-no-viaja"
+   ]
+  },
+  {
+   "id": "fotos-de-producto-del-modelo-exacto",
+   "titulo": "Fotos de catálogo de un producto de tienda (el modelo exacto), desde este contenedor",
+   "gravedad": "media",
+   "sintoma": "Hace falta la foto de un producto de marca (Takis Fuego, Boing de guayaba 500 ml…) y Google Imágenes no contesta.",
+   "causa": "Desde aquí Google responde 302 (pide verificar), Bing devuelve basura y DuckDuckGo no da su token. Mercado Libre da 403.",
+   "porque": "Los buscadores bloquean peticiones automáticas; los catálogos de supermercado no.",
+   "arreglo": "El catálogo VTEX de Chedraui contesta JSON con nombre exacto, presentación y foto en fondo blanco: https://www.chedraui.com.mx/api/catalog_system/pub/products/search?ft=<texto con %20> (con «+» en vez de %20 da 400). Lo que no está ahí: Open Food Facts (cgi/search.pl?json=1, o api/v2/product/<código de barras>), que a veces da 503 y hay que reintentar. El fondo blanco se quita con «sólo lo blanco que toca la orilla» (scipy label): el modelo de recorte se comía las letras de adentro (las paletas Vero salían sin «Mango»).",
+   "comoCazarlo": "Comparar SIEMPRE la foto contra la del cliente: la de «Milky Way 40g» en Chedraui es un Snickers.",
+   "consejo": "Para producto de marca, el catálogo del súper es mejor fuente que un buscador: trae el nombre del modelo y su tamaño, y la foto ya va en fondo blanco.",
+   "salioDe": "fadori · «usa imágenes de Google para cada producto, asegúrate de que sean el mismo modelo», 9 de octubre",
+   "senales": [
+    "foto de producto",
+    "imagen de google",
+    "catálogo",
+    "packshot",
+    "fondo blanco",
+    "chedraui",
+    "open food facts"
+   ],
+   "vecinas": [
+    "firma-que-solo-ve-si-hay"
+   ]
+  },
+  {
+   "id": "iconos-no-emojis-en-la-interfaz",
+   "titulo": "La interfaz va con iconos de una sola colección, no con emojis",
+   "gravedad": "media",
+   "sintoma": "Carlos: «cambia los emojis por iconos». Chips, barra de abajo, alergias y relleno de platillos con emoji se veían de plantilla.",
+   "causa": "Cada teléfono dibuja los emojis a su manera, con su propio color y grosor; nunca combinan con la letra ni entre sí.",
+   "porque": "Un emoji es un dibujo del sistema operativo, no de la app: no hereda color, tamaño ni grosor.",
+   "arreglo": "fadori/iconos.js con Lucide (ISC), armado por herramientas/iconos-fadori.py desde presentaciones/vendor. En el HTML fijo va <span data-ico=\"nombre\"> y al cargar se pinta; en JS, F.ico(nombre). Los emojis se quedan en los DATOS (no se migra nada) y F.iconoDe(p) escoge el icono por la palabra del nombre, así un platillo nuevo también sale con el suyo.",
+   "comoCazarlo": "python con el rango \\U0001F000-\\U0001FAFF sobre los .html: lo que quede debe ser sólo consola o comentarios.",
+   "consejo": "Descartado: SVG a mano por platillo (no escala cuando la cooperativa da de alta algo) y emojis por CDN de Twemoji (depende de un externo).",
+   "salioDe": "fadori · rediseño del 10 de octubre",
+   "senales": [
+    "emoji",
+    "iconos",
+    "lucide",
+    "se ve de plantilla"
+   ]
+  }
+ ]
 }
