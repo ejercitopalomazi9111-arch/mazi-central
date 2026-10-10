@@ -23,7 +23,7 @@
    solo si se adelanta o se atrasa más de 80 ms (cambiando su velocidad un
    poquito), que es lo que hace que la boca y la voz no se despeguen.
    ═════════════════════════════════════════════════════════════════════════ */
-import { SR, tramosConVoz, envolvente, pico } from './motor.js';
+import { SR, tramosConVoz, envolvente, pico, niveles, pisoDeRuido } from './motor.js';
 import { TEMAS } from './portada.js';
 
 export const FORMATOS = {
@@ -49,22 +49,75 @@ export async function abrirVideo(blob, decodificar){
   return out;
 }
 
-/* ── el plan: qué tramos de qué clip, en qué orden ────────────────────── */
+/* ── «me equivoqué»: de dónde a dónde se borra ───────────────────────────
+   Quien se equivoca casi siempre se calla un momento y repite la frase. Al
+   tocar el botón se borra desde el principio de la frase que estaba diciendo
+   (el último silencio de al menos 0.35 s antes del toque) hasta el toque. Si
+   no hay silencio en los 20 s de antes, se borran los últimos 8 s. */
+export function corteDeError(audio, t){
+  const { db, n } = niveles(audio, SR), piso = pisoDeRuido(audio, SR);
+  const umbral = Math.min(Math.max(piso + 10, -55), -28), paso = n / SR;
+  let i = Math.min(db.length - 1, Math.floor((t - 0.4) / paso));
+  const tope = Math.max(0, Math.floor((t - 20) / paso)), minSil = Math.ceil(0.35 / paso);
+  /* primero se salta la voz hacia atrás hasta un silencio largo */
+  while(i > tope){
+    if(db[i] < umbral){
+      let j = i; while(j > tope && db[j] < umbral) j--;
+      if(i - j >= minSil) return [Math.max(0, (i + 1) * paso - 0.1), t + 0.15];
+      i = j;
+    } else i--;
+  }
+  return [Math.max(0, t - 8), t + 0.15];
+}
+
+/* restar intervalos: [a,b] menos una lista de cortes */
+function restar(a, b, cortes){
+  let partes = [[a, b]];
+  for(const [x, y] of cortes){
+    const nuevas = [];
+    for(const [p, q] of partes){
+      if(y <= p || x >= q){ nuevas.push([p, q]); continue; }
+      if(x > p) nuevas.push([p, x]);
+      if(y < q) nuevas.push([y, q]);
+    }
+    partes = nuevas;
+  }
+  return partes;
+}
+
+/* ── el plan: qué tramos de qué clip, en qué orden ──────────────────────
+   Cada clip puede traer su edición a mano:
+     ed.ini / ed.fin   recortar el principio y el final
+     ed.cortes         pedazos a quitar [[a,b], …]
+     marcas            los toques de «me equivoqué» durante la grabación
+     cartel            un letrero de 2.5 s antes del clip («Bloque 2 · …») */
 export function planear(clips, { cortar = true, maxPausa = 0.9 } = {}){
-  const tramos = [];
+  const tramos = [], orden = [];
   clips.forEach((c, k) => {
     const largo = Math.min(c.audio.length, Math.round(c.dur * SR));
-    const t = cortar ? tramosConVoz(c.audio.subarray(0, largo), SR, { maxPausa, dejar: 0.4 }) : [[0, largo]];
-    /* un tramo de menos de un cuarto de segundo es un parpadeo: se junta */
-    t.forEach(([a, b]) => {
-      const A = a / SR, B = b / SR, prev = tramos[tramos.length - 1];
-      if(prev && prev.clip === k && A - prev.b < 0.25){ prev.b = B; return; }
-      if(B - A >= 0.25) tramos.push({ clip: k, a: A, b: B });
-    });
+    const ed = c.edicion || {}, ini = Math.max(0, +ed.ini || 0), fin = Math.min(c.dur, ed.fin ? +ed.fin : c.dur);
+    const quitar = (ed.cortes || []).concat((c.marcas || []).map(t => corteDeError(c.audio.subarray(0, largo), t)));
+    const permitidos = restar(ini, fin, quitar);
+    const voz = cortar ? tramosConVoz(c.audio.subarray(0, largo), SR, { maxPausa, dejar: 0.4 }).map(([a, b]) => [a / SR, b / SR]) : [[0, c.dur]];
+    if(c.cartel && String(c.cartel).trim()) orden.push({ tipo: 'cartel', texto: String(c.cartel).trim(), dur: 2.5 });
+    for(const [va, vb] of voz) for(const [pa, pb] of permitidos){
+      const A = Math.max(va, pa), B = Math.min(vb, pb);
+      if(B - A < 0.25) continue;
+      /* un tramo pegadito al anterior del mismo clip se junta: un corte de
+         un cuarto de segundo es un parpadeo, no un corte */
+      const prev = tramos[tramos.length - 1];
+      if(prev && prev.clip === k && A - prev.b < 0.25 && A >= prev.a){ prev.b = Math.max(prev.b, B); continue; }
+      const t = { clip: k, a: A, b: B };
+      tramos.push(t); orden.push(Object.assign({ tipo: 'tramo' }, t));
+    }
   });
+  /* el orden guarda copias: si se juntó un tramo, se actualiza su copia */
+  const porClave = new Map(tramos.map(t => [t.clip + ':' + t.a, t]));
+  orden.forEach(o => { if(o.tipo === 'tramo'){ const t = porClave.get(o.clip + ':' + o.a); if(t) o.b = t.b; } });
   const total = tramos.reduce((s, t) => s + t.b - t.a, 0);
   const original = clips.reduce((s, c) => s + c.dur, 0);
-  return { tramos, total, quitado: Math.max(0, original - total) };
+  return { tramos, orden, total, quitado: Math.max(0, original - total),
+    carteles: orden.filter(o => o.tipo === 'cartel').length };
 }
 
 /* ── dibujo ───────────────────────────────────────────────────────────── */
@@ -186,6 +239,33 @@ function entradaConLogo(g, W, H, t, dur, d, nivel, T, u, sale){
     g.fillText(String(d.escuela).toUpperCase(), cx, y + 20 * u);
   }
   g.textAlign = 'left'; g.globalAlpha = 1;
+}
+
+/* el cartel entre bloques: fondo del tema, una raya que cruza y el texto */
+export function dibujarCartel(g, W, H, t, dur, texto, d){
+  const T = TEMAS[d.tema] || TEMAS.noche, u = Math.min(W, H) / 720;
+  const grd = g.createLinearGradient(0, 0, W, H); grd.addColorStop(0, T.fondo[0]); grd.addColorStop(1, T.fondo[1]);
+  g.fillStyle = grd; g.fillRect(0, 0, W, H);
+  const e = suave(t / 0.35) * (1 - suave((t - (dur - 0.35)) / 0.35)), m = W * 0.08;
+  g.globalAlpha = e;
+  const raya = suave(t / 0.6);
+  g.fillStyle = T.acento; rr(g, m, H / 2 + 46 * u, (W - 2 * m) * raya, 8 * u, 4 * u); g.fill();
+  g.fillStyle = T.tinta; let tam = (W > H ? 72 : 60) * u; g.font = `900 ${tam}px ${FAM}`;
+  let r = partir(g, texto, W - 2 * m);
+  while((r.length > 2 || r.some(x => g.measureText(x).width > W - 2 * m)) && tam > 30 * u){ tam -= 3 * u; g.font = `900 ${tam}px ${FAM}`; r = partir(g, texto, W - 2 * m); }
+  r.forEach((x, i) => g.fillText(x, m + (1 - e) * -30 * u, H / 2 + 20 * u - (r.length - 1 - i) * tam * 1.05));
+  if(d.logoChico){ const L = d.logoChico, h = 70 * u, w = L.width * h / L.height; g.globalAlpha = e * 0.8; g.drawImage(L, W - m - w, H / 2 + 70 * u, w, h); }
+  g.globalAlpha = 1;
+}
+/* el «fiu» del cartel: ruido que sube y baja, 0.8 s */
+export function fiu(){
+  const n = Math.round(0.8 * SR), x = new Float32Array(n); let lp = 0, s = 12345;
+  for(let i = 0; i < n; i++){
+    s = (s * 1103515245 + 12345) >>> 0; const r = (s / 4294967296) * 2 - 1, k = i / n;
+    lp += (0.02 + 0.3 * Math.sin(Math.PI * k)) * (r - lp);
+    x[i] = lp * 0.25 * Math.sin(Math.PI * k);
+  }
+  return x;
 }
 
 /* la marca de agua: el logo chico en la esquina mientras hablan */
@@ -331,6 +411,7 @@ export async function exportar({ piezas, clips, formato = 'horizontal', modo = '
     const tl = ahora - L.ini;
     if(L.p.tipo === 'entrada') dibujarEntrada(g, W, H, tl, L.dur, datos, nivelesActual ? nivelesActual[Math.min(nivelesActual.length - 1, Math.floor(tl * 30))] : 0);
     else if(L.p.tipo === 'cierre') dibujarCierre(g, W, H, tl, L.dur, datos, nivelesActual ? nivelesActual[Math.min(nivelesActual.length - 1, Math.floor(tl * 30))] : 0);
+    else if(L.p.tipo === 'cartel') dibujarCartel(g, W, H, tl, L.dur, L.p.texto, datos);
     else if(activo && activo.readyState >= 2){ dibujarCuadro(g, activo, W, H, modo); if(datos.marcaAgua) dibujarMarca(g, W, H, datos); }
     /* nombres: su segundo cuenta desde que empieza el episodio */
     const te = ahora - iniEpisodio;
@@ -367,9 +448,10 @@ export async function exportar({ piezas, clips, formato = 'horizontal', modo = '
         }
         if(sig && sig.p.tipo === 'tramo') posicionar(vids[(actual + 1) % 2], sig.p);
       } else {
-        const s = ac.createBufferSource(); s.buffer = buffer(p.audio); s.connect(dest);
+        const au = p.audio || fiu();
+        const s = ac.createBufferSource(); s.buffer = buffer(au); s.connect(dest);
         s.start(Math.max(ac.currentTime, cuando)); fuentes.push(s);
-        nivelesActual = nivelesMusica(p.audio);
+        nivelesActual = nivelesMusica(au);
         activo = null;
         if(linea[actual + 1] && linea[actual + 1].p.tipo === 'tramo') posicionar(vids[(actual + 1) % 2], linea[actual + 1].p);
       }
