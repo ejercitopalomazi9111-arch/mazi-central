@@ -283,3 +283,10 @@ body.modo-video .a-i, body.modo-audio .v-i{display:none}
 .etiqueta{display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:800; padding:2px 7px; border-radius:999px;
   background:var(--acento-suave); color:var(--tinta); margin:3px 4px 0 0}
 .etiqueta .i{width:12px; height:12px}
+body.sin-scroll{overflow:hidden}
+.etiquetas{display:block}
+.ed-queda{background:transparent !important; padding-left:2px !important; color:var(--tenue)}
+.ed-queda b{color:var(--tinta)}
+.ed-botones{display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px; margin-top:12px}
+.ed-botones .btn{flex-direction:column; gap:4px; min-height:64px; padding:8px 6px; font-size:13px; line-height:1.15; text-align:center; justify-content:center; width:auto}
+.ed-botones .btn.fuerte{color:#fff}
