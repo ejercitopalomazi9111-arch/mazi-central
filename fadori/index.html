@@ -1175,6 +1175,7 @@ function preguntarMas(){
 /* se acabó el turno de esta persona: todo en blanco y de vuelta a la pantalla */
 function kTerminar(){
   clearInterval(kReloj);
+  if(window.kDormir) window.kDormir();
   const p = kPedido && (F.pedido(kPedido.id) || kPedido);
   kAvisaPapa('kiosco-fin', p ? { pedido: p.id, turno: p.turno } : {});
   kReiniciar();
@@ -1203,9 +1204,13 @@ if(KIOSCO){
      sin dejar nada de esa persona. Con el ticket en pantalla se dan 40 s
      para anotarlo, que es otra cosa. (La espera se puede acortar para las
      pruebas con localStorage «fadori_kiosco_espera», en segundos.) */
-  let kUltimo = Date.now();
-  const kToque = () => { kUltimo = Date.now(); };
+  /* `kActivo`: la tablet está enseñando la app. Cerrada (la pantalla de
+     turnos encima), el reloj no corre: si no, el marco escondido se ponía a
+     preguntar «¿sigues ahí?» solo y avisaba «terminé» a destiempo. */
+  let kUltimo = Date.now(), kActivo = window.parent === window;   /* metida en la pantalla, arranca dormida hasta que la abran */
+  const kToque = () => { kUltimo = Date.now(); kActivo = true; };
   window.kToque = kToque;
+  window.kDormir = () => { kActivo = false; };
   const ESPERA = (() => { try{ return Math.max(3, +localStorage.getItem('fadori_kiosco_espera') || 0) || 30; }catch(e){ return 30; } })();
   ['pointerdown', 'keydown', 'input'].forEach(ev => document.addEventListener(ev, kToque, true));
   /* con el «¿sigues ahí?» puesto, CUALQUIER toque cuenta como «aquí sigo»,
@@ -1215,6 +1220,7 @@ if(KIOSCO){
     e.preventDefault(); $('#kAqui').click();
   });
   setInterval(() => {
+    if(!kActivo) return;
     const quieto = (Date.now() - kUltimo) / 1000;
     if(!$('#kTicket').hidden){
       if(!$('#kBoleto').hidden && quieto > 40) preguntarMas();
@@ -1244,7 +1250,7 @@ if(KIOSCO){
     ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => m.addEventListener(ev, suelta));
     m.addEventListener('contextmenu', (e) => e.preventDefault());
   })();
-  window.KIOSCO = { reiniciar: () => { kReiniciar(); kToque(); }, pedir: pedirEnTablet };
+  window.KIOSCO = { reiniciar: () => { kReiniciar(); kToque(); }, dormir: () => window.kDormir(), pedir: pedirEnTablet };
 }
 
 /* ══════════════════════════════════════════════════════════════════════

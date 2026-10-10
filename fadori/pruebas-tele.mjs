@@ -17,6 +17,7 @@
    Correr:  LOCAL=1 API_LOCAL=http://127.0.0.1:8791 node fadori/pruebas-tele.mjs
    ═════════════════════════════════════════════════════════════════════════ */
 import { abrirMesa } from './mesa-de-pruebas.mjs';
+import fs from 'fs'; import path from 'path'; import os from 'os'; import vm from 'vm';
 const { ok, fallas, aparato, tarda, mostrador, alumno, cerrar, CASA } = await abrirMesa('tele');
 
 /* la pantalla: la voz se apunta en vez de sonar (en el servidor de pruebas no hay bocinas) */
@@ -29,6 +30,26 @@ async function pantalla(w = 1280, h = 800){
   });
   await p.waitForFunction(() => window.TELE && window.TELE.listo, null, { timeout: 15000 });
   return p;
+}
+
+/* una canción de 4 s con su etiqueta ID3 (título, artista y carátula), hecha
+   aquí con el LAME que ya trae el estudio de podcast */
+function cancionDePrueba(){
+  const raiz = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+  const ctx = { Math, Int8Array, Int16Array, Int32Array, Uint8Array, Float32Array, Float64Array, Array, Object }; ctx.window = ctx; vm.createContext(ctx);
+  vm.runInContext(fs.readFileSync(path.join(raiz, 'podcast/vendor/lame-1.2.1.min.js'), 'utf8'), ctx);
+  const sr = 44100, n = sr * 4, pcm = new Int16Array(n);
+  for(let i = 0; i < n; i++) pcm[i] = Math.round(6000 * Math.sin(2 * Math.PI * 440 * i / sr));
+  const enc = new ctx.lamejs.Mp3Encoder(1, sr, 96), out = [];
+  for(let i = 0; i < n; i += 1152){ const b = enc.encodeBuffer(pcm.subarray(i, i + 1152)); if(b.length) out.push(Buffer.from(b)); }
+  out.push(Buffer.from(enc.flush()));
+  const marco = (id, d) => Buffer.concat([Buffer.from(id), Buffer.from([(d.length >>> 24) & 255, (d.length >>> 16) & 255, (d.length >>> 8) & 255, d.length & 255, 0, 0]), d]);
+  const cuerpo = Buffer.concat([marco('TIT2', Buffer.concat([Buffer.from([3]), Buffer.from('Canción del recreo')])), marco('TPE1', Buffer.concat([Buffer.from([3]), Buffer.from('Grupo 3.1')])),
+    marco('APIC', Buffer.concat([Buffer.from([0]), Buffer.from('image/jpeg'), Buffer.from([0, 3, 0]), fs.readFileSync(path.join(raiz, 'fadori/fotos/agua.jpg'))]))]);
+  const L = cuerpo.length;
+  const f = path.join(os.tmpdir(), 'fadori-cancion-' + process.pid + '.mp3');
+  fs.writeFileSync(f, Buffer.concat([Buffer.from([0x49, 0x44, 0x33, 3, 0, 0, (L >> 21) & 127, (L >> 14) & 127, (L >> 7) & 127, L & 127]), cuerpo, ...out]));
+  return f;
 }
 
 /* el pad: cada número es un toque, como lo haría el de la cooperativa */
@@ -100,6 +121,61 @@ ok('el episodio sale con su nombre en el marco', /Episodio 5/.test(await tv.text
 ok('y avanza', (await tarda(tv, () => document.querySelector('#prog').currentTime > 1, null, 8000)) != null);
 ok('a los 3 s de programa (así lo pusimos) entra la tanda sola', (await tarda(tv, () => window.TELE.Programa.enCorte, null, 10000)) != null);
 ok('y el programa sigue donde se quedó', (await tarda(tv, () => !window.TELE.Programa.enCorte && !document.querySelector('#prog').paused, null, 40000)) != null);
+
+console.log('\n3b · sin episodio nuevo: música con su carátula, YouTube, y el aviso de Fadori a un lado');
+const mp3 = cancionDePrueba();
+await tv.evaluate(() => { const T = window.TELE; T.cfg.cadaMin = 99; T.cfg.porCorte = 1; });
+await tv.click('#bAjustes');
+await tv.setInputFiles('#ajRelArch', mp3);
+/* el título va en un campo editable: se lee su VALOR, que textContent no trae */
+ok('la canción subida trae su nombre y artista de adentro del MP3', (await tarda(tv, () => { const i = document.querySelector('#ajRell input[data-nombre-rel]'); return i && i.value === 'Canción del recreo' && /Grupo 3\.1/.test(document.querySelector('#ajRell').textContent); }, null, 6000)) != null,
+  await tv.evaluate(() => [...document.querySelectorAll('#ajRell input')].map(i => i.value).join('|') + ' · ' + document.querySelector('#ajRell').textContent));
+ok('…y su carátula', await tv.evaluate(() => /^blob:/.test((document.querySelector('#ajRell img') || {}).src || '')));
+ok('pero mientras haya un episodio nuevo, sigue el episodio', await tv.evaluate(() => window.TELE.Programa.actual && window.TELE.Programa.actual.tipo === 'ep'));
+await tv.click('#ajCerrar');
+await tv.evaluate(() => { const v = document.querySelector('#prog'); if(v.duration) v.currentTime = Math.max(0, v.duration - 0.5); });
+ok('al acabarse el episodio (ya no es nuevo) pasa la música', (await tarda(tv, () => { const a = window.TELE.Programa.actual; return a && a.tipo === 'archivo' && !document.querySelector('#portada').hidden; }, null, 45000)) != null,
+  await tv.evaluate(() => JSON.stringify(window.TELE.Programa.actual && { n: window.TELE.Programa.actual.nombre, t: window.TELE.Programa.actual.tipo })));
+ok('con la carátula en grande, el título y el artista', await tv.evaluate(() => /^blob:/.test(document.querySelector('#ptTapa').src) && document.querySelector('#ptTitulo').textContent === 'Canción del recreo' && document.querySelector('#ptArtista').textContent === 'Grupo 3.1'));
+ok('y suena', (await tarda(tv, () => document.querySelector('#prog').currentTime > 0.5 && !document.querySelector('#prog').paused, null, 8000)) != null);
+ok('el episodio quedó como «ya se pasó»', await tv.evaluate(() => !!JSON.parse(localStorage.getItem('fadori_tele_vistos') || '{}').prueba));
+
+/* el aviso de Fadori */
+await tv.evaluate(() => window.TELE.verPop());
+await tv.waitForTimeout(900);
+const pop = await tv.evaluate(() => { const p = document.querySelector('#popFadori').getBoundingClientRect(), m = document.querySelector('#marco').getBoundingClientRect(), t = document.querySelector('#ptTapa').getBoundingClientRect();
+  const cruza = !(p.right < t.left || p.left > t.right || p.bottom < t.top || p.top > t.bottom);
+  return { sale: document.querySelector('#popFadori').classList.contains('sale'), dentro: p.left >= m.left - 1 && p.right <= m.right + 1 && p.top >= m.top && p.bottom <= m.bottom, ancho: p.width / m.width, cruza }; });
+ok('el aviso de Fadori sale a un lado del programa', pop.sale && pop.dentro, JSON.stringify(pop));
+ok('sin tapar más de un tercio de la pantalla', pop.ancho < 0.34, pop.ancho.toFixed(2));
+ok('y con una canción, por el lado donde no está la carátula', !pop.cruza, JSON.stringify(pop));
+ok('trae la hamburguesa armándose y el código para pedir', await tv.evaluate(() => document.querySelectorAll('#popFadori .burger .cap').length === 7 && /qr\/abrir/.test(document.querySelector('#popFadori .pf-qr').src)));
+ok('y se va sola', (await tarda(tv, () => !document.querySelector('#popFadori').classList.contains('sale'), null, 14000)) != null);
+await tv.evaluate(() => { window.TELE.Programa.enCorte = true; });
+ok('nunca sale en medio de la tanda', await tv.evaluate(() => window.TELE.verPop() === false));
+await tv.evaluate(() => { window.TELE.Programa.enCorte = false; });
+
+/* «Repetir los episodios» en vez de música */
+await tv.click('#bAjustes');
+await tv.click('[data-cfg="alAcabar"][data-v="repetir"]');
+ok('si se elige «Repetir los episodios», vuelve el episodio en ese momento', await tv.evaluate(() => window.TELE.Programa.actual.tipo === 'ep' && document.querySelector('#portada').hidden));
+await tv.click('[data-cfg="alAcabar"][data-v="relleno"]');
+ok('y de regreso a la música', await tv.evaluate(() => window.TELE.Programa.actual.tipo === 'archivo'));
+
+/* enlaces */
+await tv.fill('#ajRelUrl', 'https://www.google.com/');
+await tv.click('#ajRelAgrega');
+ok('un enlace que no es de YouTube ni Spotify se dice, no se guarda', /no es de YouTube/.test(await tv.textContent('#ajRelMsg')) && await tv.evaluate(() => window.TELE.Programa.rell.length === 1));
+await tv.fill('#ajRelUrl', 'https://youtu.be/dQw4w9WgXcQ');
+await tv.click('#ajRelAgrega');
+ok('uno de YouTube entra a la lista', (await tarda(tv, () => window.TELE.Programa.rell.some(r => r.tipo === 'youtube'), null, 4000)) != null);
+await tv.click('#ajSiguiente');
+ok('«Pasar al siguiente» lo pone: el video de YouTube en el marco', await tv.evaluate(() => { const w = document.querySelector('#progWeb');
+  return !w.hidden && /^https:\/\/www\.youtube-nocookie\.com\/embed\/dQw4w9WgXcQ\?.*enablejsapi=1/.test(w.src) && document.querySelector('#prog').paused && document.querySelector('#portada').hidden; }),
+  await tv.evaluate(() => document.querySelector('#progWeb').src));
+await tv.click('#ajSiguiente');
+ok('y al pasar a la canción, YouTube se apaga del todo (no sigue sonando escondido)', await tv.evaluate(() => { const w = document.querySelector('#progWeb'); return w.hidden && /about:blank/.test(w.src); }));
+await tv.click('#ajCerrar');
 
 console.log('\n4 · la tablet de la fila: tocar, pedir y ver el turno');
 const tab = await pantalla();
