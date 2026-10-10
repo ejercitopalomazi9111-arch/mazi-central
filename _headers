@@ -10,6 +10,19 @@
   # Sin permisos que no usamos. La cámara y el micrófono no los pide nadie aquí.
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
 
+# FADORI EN LA APP DE LA TIENDA · la app de iPhone y Android es un cascarón
+# hecho en Floot que enseña /fadori/ en un marco a pantalla completa, así que
+# AQUÍ, y sólo en la pantalla del alumno, se deja que nos metan en un marco:
+# las direcciones de Floot (vista previa y publicada) y las de la app nativa
+# (capacitor://localhost en iPhone, https://localhost en Android). El
+# mostrador, la pantalla pública y todo lo demás siguen sin poder enmarcarse.
+/fadori/
+  ! X-Frame-Options
+  Content-Security-Policy: frame-ancestors 'self' https://*.floot.app capacitor://localhost https://localhost
+/fadori/index.html
+  ! X-Frame-Options
+  Content-Security-Policy: frame-ancestors 'self' https://*.floot.app capacitor://localhost https://localhost
+
 # Las fotos del menú y los iconos no cambian: que el teléfono no los vuelva a
 # bajar en cada recreo. Es el ahorro más grande en un wifi de escuela.
 /fadori/marca/*
