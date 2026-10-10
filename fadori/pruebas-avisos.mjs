@@ -101,8 +101,20 @@ const ip = await a.evaluate(() => {
 });
 ok('en iPhone sin la app en inicio dice «agrégala a tu inicio»', ip === 'instalar', ip);
 
+/* dentro de la app de la tienda (el cascarón de Floot la abre con ?app=nativa)
+   no hay «Agregar a inicio» que valga: pedírselo es mandarlo a buscar un botón
+   que no existe */
+const nat = await aparato('/fadori/?app=nativa');
+await nat.waitForFunction(() => window.FADORI && FADORI.avisos, null, { timeout: 20000 });
+ok('en la app nativa el estado es «nativa»', await nat.evaluate(() => FADORI.avisos.estado()) === 'nativa');
+await nat.evaluate(() => { location.hash = ''; });
+await nat.reload();
+await nat.waitForFunction(() => window.FADORI && FADORI.avisos, null, { timeout: 20000 });
+ok('y lo recuerda al recargar sin la marca en la dirección', await nat.evaluate(() => { history.replaceState(null, '', location.pathname); return FADORI.avisos.estado(); }) === 'nativa');
+ok('activar en la app nativa no pide permiso', (await nat.evaluate(() => FADORI.avisos.activar())).por === 'nativa');
+
 console.log('\n6 · ni un error de consola');
-for(const [n, pg] of [['mostrador', most], ['Ana', a], ['Beto', b]])
+for(const [n, pg] of [['mostrador', most], ['Ana', a], ['Beto', b], ['app nativa', nat]])
   ok('sin errores en ' + n, !pg.errores.length, pg.errores.join(' | '));
 
 await cerrar();

@@ -2547,9 +2547,21 @@ const Avisos = {
 
   esIOS(){ return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); },
   instalada(){ try{ return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; }catch(e){ return false; } },
-  /* en qué está: 'activos' · 'faltaPermiso' · 'negados' · 'instalar' (iPhone sin pantalla de inicio) · 'no' */
+  /* Abierta desde la app de la tienda (el cascarón nativo de Floot la carga
+     con ?app=nativa). Ahí el navegador de adentro NO tiene notificaciones web
+     ni hay «Agregar a inicio» que valga: pedírselo al alumno es mandarlo a
+     buscar un botón que no existe. Se guarda en la sesión porque al recargar
+     o al cambiar de pantalla la marca de la dirección se puede perder. */
+  enAppNativa(){
+    try{
+      if(/[?&]app=nativa\b/.test(location.search)){ sessionStorage.setItem('fadori_app', 'nativa'); return true; }
+      return sessionStorage.getItem('fadori_app') === 'nativa';
+    }catch(e){ return false; }
+  },
+  /* en qué está: 'activos' · 'faltaPermiso' · 'negados' · 'instalar' (iPhone sin pantalla de inicio) · 'nativa' (dentro de la app de la tienda) · 'no' */
   estado(){
     if(typeof window === 'undefined') return 'no';
+    if(this.enAppNativa()) return 'nativa';
     if(!('Notification' in window)) return this.esIOS() && !this.instalada() ? 'instalar' : 'no';
     if(Notification.permission === 'denied') return 'negados';
     if(Notification.permission === 'granted') return 'activos';
@@ -2559,7 +2571,8 @@ const Avisos = {
      deja pedir el permiso */
   async activar(){
     this.despertarAudio();
-    if(this.estado() === 'instalar') return { ok: false, por: 'instalar' };
+    const est = this.estado();
+    if(est === 'instalar' || est === 'nativa') return { ok: false, por: est };
     if(!('Notification' in window)) return { ok: false, por: 'no' };
     let permiso = Notification.permission;
     if(permiso === 'default') permiso = await Notification.requestPermission();
