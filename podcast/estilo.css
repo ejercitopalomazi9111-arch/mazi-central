@@ -189,3 +189,31 @@ body.modo-video .a-i, body.modo-audio .v-i{display:none}
 #cvMini{width:100%; height:auto; border-radius:14px; box-shadow:var(--sombra)}
 .miniatura input[type=range]{width:100%; accent-color:var(--acento); min-height:32px}
 .tr-caja .btn{margin-top:14px}
+
+/* ── los episodios ── */
+.semana-t{margin:14px 0 8px; font-size:12px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--tenue)}
+.semana-t:first-child{margin-top:4px}
+.eps{display:grid; gap:6px}
+.ep{display:grid; grid-template-columns:34px minmax(0,1fr) auto; gap:10px; align-items:center; text-align:left;
+  padding:10px 12px; border-radius:14px; border:1px solid var(--linea); background:var(--sup2); cursor:pointer; min-height:52px}
+.ep .ep-n{width:30px; height:30px; border-radius:50%; display:grid; place-items:center; font-weight:900; font-size:14px;
+  background:var(--sup); color:var(--acento)}
+.ep b{display:block; font-size:14px; line-height:1.25}
+.ep small{display:block; font-size:12px; color:var(--tenue); margin-top:1px}
+.ep .ep-h{font-size:11px; font-weight:800; color:var(--tenue); white-space:nowrap}
+.ep[aria-pressed="true"]{border-color:var(--acento); background:var(--acento-suave)}
+.ep[aria-pressed="true"] .ep-n{background:var(--acento); color:#fff}
+.ep-guion{margin-top:14px; padding:14px; border-radius:16px; background:var(--sup2)}
+.ep-guion h3{margin:0 0 4px; font-size:16px}
+.ep-guion .gancho{margin:0 0 10px; font-size:15px; font-style:italic}
+.ep-guion ol{list-style:none; margin:0; padding:0; display:grid; gap:6px}
+.ep-guion li{display:grid; grid-template-columns:50px minmax(0,1fr); gap:8px; font-size:14px; line-height:1.4}
+.ep-guion li time{font-weight:900; color:var(--acento); font-variant-numeric:tabular-nums}
+.ep-guion li b{display:block}
+.ep-guion .inv{margin:12px 0 0; padding-left:18px; color:var(--tenue); font-size:13.5px; line-height:1.55}
+.ep-guion .cuidado{margin:10px 0 0; font-size:13px; padding:8px 10px; border-radius:10px; background:var(--acento-suave)}
+
+/* ── el logo ── */
+.logo-fila{display:flex; gap:12px; align-items:center; margin-top:8px}
+#cvLogo{width:80px; height:80px; border-radius:16px; background:var(--sup2); flex:0 0 80px}
+.logo-fila .chips{margin-top:0}

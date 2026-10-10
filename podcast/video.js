@@ -99,6 +99,7 @@ export function dibujarEntrada(g, W, H, t, dur, d, nivel = 0){
   const grd = g.createLinearGradient(0, 0, W, H); grd.addColorStop(0, T.fondo[0]); grd.addColorStop(1, T.fondo[1]);
   g.fillStyle = grd; g.fillRect(0, 0, W, H);
   const sale = 1 - suave((t - (dur - 0.6)) / 0.6);   /* se desvanece al final */
+  if(d.logo) return entradaConLogo(g, W, H, t, dur, d, nivel, T, u, sale);
   g.globalAlpha = sale;
   /* las barras: 48, cada una con su fase, crecen con el nivel de la música */
   const n = 48, m = W * 0.08, bw = (W - 2 * m) / n, y0 = H * (W > H ? 0.26 : 0.24);
@@ -144,6 +145,56 @@ export function dibujarEntrada(g, W, H, t, dur, d, nivel = 0){
   g.globalAlpha = 1;
 }
 
+/* Con logo: el logo entra creciendo y flota con la música (la paloma
+   «respira»); el número y el título del episodio salen a su lado (horizontal)
+   o abajo (vertical). Las barras bailan al pie. */
+function entradaConLogo(g, W, H, t, dur, d, nivel, T, u, sale){
+  const L = d.logo, horiz = W > H, m = W * 0.07;
+  const e = suave(t / 0.9), flota = Math.sin(t * 2.2) * 6 * u * e;
+  const zona = horiz ? { x: m, y: H * 0.08, w: W * 0.42, h: H * 0.74 } : { x: m, y: H * 0.08, w: W - 2 * m, h: H * 0.48 };
+  const k = Math.min(zona.w / L.width, zona.h / L.height) * (0.9 + 0.1 * e) * (1 + nivel * 0.015);
+  const lw = L.width * k, lh = L.height * k;
+  g.globalAlpha = sale * e;
+  g.drawImage(L, zona.x + (zona.w - lw) / 2, zona.y + (zona.h - lh) / 2 + flota, lw, lh);
+  /* las barras al pie */
+  const n = 56, bw = (W - 2 * m) / n, yB = H - (horiz ? 60 : 90) * u;
+  g.fillStyle = T.acento;
+  for(let b = 0; b < n; b++){
+    const fase = Math.sin(b * 0.6 + t * 5) * 0.5 + 0.5, h = (6 + (24 + 50 * nivel) * fase) * u * suave((t - b * 0.01) / 0.5);
+    rr(g, m + b * bw + bw * 0.22, yB - h / 2, bw * 0.56, h, bw * 0.28); g.fill();
+  }
+  /* el episodio */
+  const col = horiz ? { x: W * 0.55, w: W * 0.45 - m } : { x: m, w: W - 2 * m };
+  let y = horiz ? H * 0.40 : H * 0.62;
+  const k2 = suave((t - 0.8) / 0.6);
+  g.textAlign = horiz ? 'left' : 'center';
+  const cx = horiz ? col.x : W / 2;
+  if(d.episodio){
+    g.globalAlpha = sale * k2; g.font = `900 ${30 * u}px ${FAM}`;
+    const txt = 'EPISODIO ' + d.episodio, w = g.measureText(txt).width + 40 * u;
+    g.fillStyle = T.acento; rr(g, horiz ? cx : cx - w / 2, y - 34 * u, w, 50 * u, 25 * u); g.fill();
+    g.fillStyle = '#fff'; g.fillText(txt, horiz ? cx + 20 * u : cx, y + 2 * u); y += 74 * u;
+  }
+  if(d.titulo){
+    g.globalAlpha = sale * suave((t - 1.1) / 0.6); g.fillStyle = T.tinta;
+    let tam = 54 * u; g.font = `900 ${tam}px ${FAM}`; let r = partir(g, d.titulo, col.w);
+    while((r.length > 4 || r.some(x => g.measureText(x).width > col.w)) && tam > 26 * u){ tam -= 2 * u; g.font = `900 ${tam}px ${FAM}`; r = partir(g, d.titulo, col.w); }
+    r.forEach((x, i) => g.fillText(x, cx, y + i * tam * 1.08)); y += r.length * tam * 1.08;
+  }
+  if(d.escuela){
+    g.globalAlpha = sale * suave((t - 1.4) / 0.6); g.fillStyle = T.suave; g.font = `700 ${24 * u}px ${FAM}`;
+    g.fillText(String(d.escuela).toUpperCase(), cx, y + 20 * u);
+  }
+  g.textAlign = 'left'; g.globalAlpha = 1;
+}
+
+/* la marca de agua: el logo chico en la esquina mientras hablan */
+export function dibujarMarca(g, W, H, d){
+  const L = d.logoChico; if(!L) return;
+  const u = Math.min(W, H) / 720, h = 74 * u, w = L.width * h / L.height, m = 26 * u;
+  g.globalAlpha = 0.6; g.drawImage(L, W - m - w, m, w, h); g.globalAlpha = 1;
+}
+
 /* el cierre: gracias y el nombre del podcast */
 export function dibujarCierre(g, W, H, t, dur, d, nivel = 0){
   const T = TEMAS[d.tema] || TEMAS.noche, u = Math.min(W, H) / 720;
@@ -152,6 +203,10 @@ export function dibujarCierre(g, W, H, t, dur, d, nivel = 0){
   const entra = suave(t / 0.6), sale = 1 - suave((t - (dur - 1.2)) / 1.2);
   g.globalAlpha = entra * sale; g.textAlign = 'center';
   const cx = W / 2, cy = H / 2;
+  if(d.logoChico){
+    const L = d.logoChico, h = (190 + 20 * nivel) * u, w = L.width * h / L.height;
+    g.drawImage(L, cx - w / 2, cy - 90 * u - h, w, h);
+  } else {
   g.fillStyle = T.acento; const rad = (70 + 26 * nivel) * u;
   g.beginPath(); g.arc(cx, cy - 120 * u, rad, 0, Math.PI * 2); g.fill();
   g.strokeStyle = (d.tema === 'electrico' || d.tema === 'atardecer') ? T.fondo[0] : '#fff'; g.lineWidth = 9 * u; g.lineCap = 'round';
@@ -159,6 +214,7 @@ export function dibujarCierre(g, W, H, t, dur, d, nivel = 0){
   rr(g, cx - 18 * u, cy - 170 * u, 36 * u, 64 * u, 18 * u); g.stroke();
   g.beginPath(); g.arc(cx, cy - 122 * u, 34 * u, 0.15 * Math.PI, 0.85 * Math.PI); g.stroke();
   g.beginPath(); g.moveTo(cx, cy - 88 * u); g.lineTo(cx, cy - 72 * u); g.stroke();
+  }
   g.fillStyle = T.tinta; g.font = `900 ${64 * u}px ${FAM}`; g.fillText('¡Gracias por ver!', cx, cy + 20 * u);
   g.fillStyle = T.suave; g.font = `700 ${30 * u}px ${FAM}`;
   g.fillText(d.nombre || 'Mi podcast', cx, cy + 72 * u);
@@ -207,6 +263,7 @@ export function dibujarMiniatura(cv, v, d){
   g.lineJoin = 'round'; g.lineWidth = 10 * u; g.strokeStyle = 'rgba(0,0,0,.55)';
   r.forEach((x, i) => { g.strokeText(x, m, y0 + i * tam); g.fillStyle = i === r.length - 1 ? T.acento : '#fff'; g.fillText(x, m, y0 + i * tam); });
   if(d.titulo && d.nombre){ g.fillStyle = 'rgba(255,255,255,.85)'; g.font = `800 ${30 * u}px ${FAM}`; g.fillText(d.nombre.toUpperCase(), m, H - m + 6 * u); }
+  if(d.logoChico){ const L = d.logoChico, h = 150 * u, w = L.width * h / L.height; g.drawImage(L, W - m - w, m - 10 * u, w, h); }
   return cv;
 }
 
@@ -274,7 +331,7 @@ export async function exportar({ piezas, clips, formato = 'horizontal', modo = '
     const tl = ahora - L.ini;
     if(L.p.tipo === 'entrada') dibujarEntrada(g, W, H, tl, L.dur, datos, nivelesActual ? nivelesActual[Math.min(nivelesActual.length - 1, Math.floor(tl * 30))] : 0);
     else if(L.p.tipo === 'cierre') dibujarCierre(g, W, H, tl, L.dur, datos, nivelesActual ? nivelesActual[Math.min(nivelesActual.length - 1, Math.floor(tl * 30))] : 0);
-    else if(activo && activo.readyState >= 2) dibujarCuadro(g, activo, W, H, modo);
+    else if(activo && activo.readyState >= 2){ dibujarCuadro(g, activo, W, H, modo); if(datos.marcaAgua) dibujarMarca(g, W, H, datos); }
     /* nombres: su segundo cuenta desde que empieza el episodio */
     const te = ahora - iniEpisodio;
     nombres.forEach(n => { const a = +n.en || 0, d = +n.dura || 5; if(te >= a && te <= a + d && L.p.tipo === 'tramo') dibujarNombre(g, W, H, te - a, d, n, datos.tema); });
