@@ -26,6 +26,7 @@
 import { SR, tramosConVoz, envolvente, pico, niveles, pisoDeRuido } from './motor.js';
 import { TEMAS } from './portada.js';
 import { dibujarIdent, dibujarAnuncio, DURA_IDENT, DURA_ANUNCIO } from '../fadori/anuncios.js';
+import { dibujarPaloma, PALOMA } from './marca/paloma-anim.js';
 
 /* la tanda de anuncios de la escuela: logo del canal, cada anuncio con su
    logo que gira, y el logo del canal otra vez para regresar */
@@ -217,8 +218,22 @@ function entradaConLogo(g, W, H, t, dur, d, nivel, T, u, sale){
   const zona = horiz ? { x: m, y: H * 0.08, w: W * 0.42, h: H * 0.74 } : { x: m, y: H * 0.08, w: W - 2 * m, h: H * 0.48 };
   const k = Math.min(zona.w / L.width, zona.h / L.height) * (0.9 + 0.1 * e) * (1 + nivel * 0.015);
   const lw = L.width * k, lh = L.height * k;
-  g.globalAlpha = sale * e;
-  g.drawImage(L, zona.x + (zona.w - lw) / 2, zona.y + (zona.h - lh) / 2 + flota, lw, lh);
+  if(d.logoVector){
+    /* la paloma en vectores: se dibuja sola, aletea y le laten los audífonos
+       con la música; las letras de abajo (del logo original) entran después */
+    const x0 = zona.x + (zona.w - lw) / 2, y0 = zona.y + (zona.h - lh) / 2;
+    const altoPaloma = lh * PALOMA.alto / L.height;
+    g.globalAlpha = sale;
+    dibujarPaloma(g, x0 + lw / 2, y0 + altoPaloma / 2, altoPaloma, t, { color: d.tinta || '#fff', nivel, dibuja: 1.3 });
+    const resto = L.height - PALOMA.alto;
+    if(resto > 10){
+      g.globalAlpha = sale * suave((t - 1.2) / 0.6);
+      g.drawImage(L, 0, PALOMA.alto, L.width, resto, x0, y0 + altoPaloma + (1 - suave((t - 1.2) / 0.6)) * 20 * u, lw, resto * k);
+    }
+  } else {
+    g.globalAlpha = sale * e;
+    g.drawImage(L, zona.x + (zona.w - lw) / 2, zona.y + (zona.h - lh) / 2 + flota, lw, lh);
+  }
   /* las barras al pie */
   const n = 56, bw = (W - 2 * m) / n, yB = H - (horiz ? 60 : 90) * u;
   g.fillStyle = T.acento;

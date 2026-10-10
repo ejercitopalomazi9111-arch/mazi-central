@@ -140,7 +140,9 @@ const datos = () => {
   return { nombre: $('#pNombre').value.trim() || 'Mi podcast', episodio: $('#pEpisodio').value.trim(),
     titulo: $('#pTitulo').value.trim(), escuela: $('#pEscuela').value.trim(), tema,
     logo: tenido(logo.completo, T.tinta), logoChico: tenido(logo.chico, '#FFFFFF'),
-    marcaAgua: $('#vMarca').checked };
+    marcaAgua: $('#vMarca').checked,
+    /* con la paloma de fábrica, la entrada la anima en vectores */
+    logoVector: logo.fuente === 'divergentes', tinta: T.tinta };
 };
 async function cargarImagen(src){
   const im = new Image(); im.src = src; await im.decode(); return im;
