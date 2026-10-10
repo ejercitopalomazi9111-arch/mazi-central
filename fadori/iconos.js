@@ -1,8 +1,8 @@
-/* FADORI · los iconos. Lucide (lucide.dev), licencia ISC — ver fotos/CREDITOS.md.
+/* FADORI · los iconos. Lucide (lucide.dev), licencia ISC.
    Una sola colección, rejilla de 24 y un solo grosor: por eso se ven de una pieza,
    cosa que los emojis no hacen (cada teléfono los dibuja distinto). Van aquí
    adentro y no por CDN: la app abre igual sin red. Se arma con
-   herramientas/iconos-fadori.py; no se edita a mano. */
+   herramientas/iconos-lucide.py; no se edita a mano. */
 (function(){
 'use strict';
 const T = {
@@ -90,10 +90,10 @@ const T = {
    al lado ya dice qué es; si un botón sólo trae el icono, el botón lleva su
    aria-label. */
 function ico(n, clase){
-  const c = T[n] || T['utensils'];
+  const c = T[n] || T[Object.keys(T)[0]];
   return '<svg class="i'+(clase ? ' '+clase : '')+'" viewBox="0 0 24 24" fill="none" '+
     'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" '+
     'aria-hidden="true" focusable="false">'+c+'</svg>';
 }
-window.FADORI_ICONOS = { ico, hay: (n) => !!T[n], nombres: () => Object.keys(T) };
+window.FADORI_ICONOS = window.ICONOS = { ico, hay: (n) => !!T[n], nombres: () => Object.keys(T) };
 })();

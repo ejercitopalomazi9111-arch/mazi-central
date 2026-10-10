@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Estudio · tu podcast</title>
+<meta name="description" content="Graba, limpia el audio, ponle intro y bájalo en MP3. Todo en tu teléfono.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#131016">
+<link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+
+<header class="cab">
+  <div class="cab-dentro">
+    <span class="logo" data-ico="mic-vocal"></span>
+    <div>
+      <h1>Estudio</h1>
+      <p>De la grabación al MP3, en tu teléfono.</p>
+    </div>
+  </div>
+  <nav class="pasos" aria-label="Pasos">
+    <a href="#voz">1 · Voz</a><a href="#limpiar">2 · Limpiar</a><a href="#intro">3 · Intro</a><a href="#armar">4 · Armar</a><a href="#portada">5 · Portada</a>
+  </nav>
+</header>
+
+<main class="hoja">
+
+  <!-- 1 · LA VOZ -->
+  <section class="paso" id="voz" aria-labelledby="tVoz">
+    <h2 id="tVoz"><span class="num">1</span>Tu voz</h2>
+    <p class="ayuda">Graba aquí o sube lo que grabaste con Notas de voz. Puedes juntar varios pedazos.</p>
+
+    <div class="grabadora" id="grabadora">
+      <button class="rec" id="bGrabar" type="button" aria-label="Grabar"><span class="rec-punto"></span></button>
+      <div class="rec-info">
+        <b id="recTiempo">0:00</b>
+        <span id="recEstado">Toca para grabar</span>
+        <div class="medidor" aria-hidden="true"><i id="recNivel"></i></div>
+      </div>
+      <label class="btn" for="fSubir"><span data-ico="upload"></span>Subir audio</label>
+      <input id="fSubir" type="file" accept="audio/*,video/*" multiple hidden>
+    </div>
+
+    <ol class="pedazos" id="pedazos"></ol>
+    <p class="vacio" id="sinPedazos">Todavía no hay audio.</p>
+  </section>
+
+  <!-- 2 · LIMPIAR -->
+  <section class="paso" id="limpiar" aria-labelledby="tLimpiar">
+    <h2 id="tLimpiar"><span class="num">2</span>Limpiar</h2>
+    <div class="palancas">
+      <label class="palanca"><input type="checkbox" id="oSilencios" checked><span data-ico="scissors"></span>
+        <span><b>Quitar silencios largos</b><small>Las pausas de más de un segundo quedan cortitas</small></span></label>
+      <label class="palanca"><input type="checkbox" id="oParejo" checked><span data-ico="sliders-horizontal"></span>
+        <span><b>Volumen parejo</b><small>Al nivel de Spotify y Apple</small></span></label>
+      <label class="palanca"><input type="checkbox" id="oRuido" checked><span data-ico="audio-waveform"></span>
+        <span><b>Bajar ruido de fondo</b><small>El siseo entre frase y frase</small></span></label>
+      <label class="palanca"><input type="checkbox" id="oZumbido" checked><span data-ico="zap"></span>
+        <span><b>Quitar zumbido grave</b><small>Ventiladores, aire, golpes en la mesa</small></span></label>
+    </div>
+    <button class="btn fuerte ancho" id="bLimpiar" type="button" disabled><span data-ico="wand-sparkles"></span>Limpiar el audio</button>
+    <div class="resultado" id="resLimpio" hidden></div>
+  </section>
+
+  <!-- 3 · INTRO -->
+  <section class="paso" id="intro" aria-labelledby="tIntro">
+    <h2 id="tIntro"><span class="num">3</span>Entrada y cierre</h2>
+    <p class="ayuda">Música hecha para ti: nadie más tiene la misma. «Otra versión» compone otra.</p>
+    <div class="chips" id="estilos" role="radiogroup" aria-label="Estilo"></div>
+    <div class="chips" id="largos" role="radiogroup" aria-label="Duración">
+      <button class="chip" type="button" data-largo="8">8 s</button>
+      <button class="chip" type="button" data-largo="12">12 s</button>
+      <button class="chip" type="button" data-largo="16">16 s</button>
+    </div>
+    <div class="fila-btn">
+      <button class="btn" id="bOirIntro" type="button"><span data-ico="play"></span>Escuchar</button>
+      <button class="btn" id="bOtraIntro" type="button"><span data-ico="shuffle"></span>Otra versión</button>
+      <label class="btn" for="fMusica"><span data-ico="music"></span>Usar mi música</label>
+      <input id="fMusica" type="file" accept="audio/*" hidden>
+    </div>
+    <p class="nota" id="notaMusica" hidden></p>
+    <label class="palanca"><input type="checkbox" id="oCierre" checked><span data-ico="disc-3"></span>
+      <span><b>También de cierre</b><small>La misma música al final, desvaneciéndose</small></span></label>
+
+    <div class="frase">
+      <div><b>Tu frase de entrada</b><small>Suena encima de la música, que se baja sola. Por ejemplo: «Esto es <i>Voces del 3.1</i>, el podcast del Bachillerato Rembrandt. Soy ___ y hoy hablamos de ___».</small></div>
+      <div class="fila-btn">
+        <button class="btn" id="bGrabarFrase" type="button"><span data-ico="mic"></span>Grabar frase</button>
+        <button class="btn" id="bOirFrase" type="button" hidden><span data-ico="play"></span>Oír</button>
+        <button class="btn icono" id="bBorrarFrase" type="button" hidden aria-label="Borrar la frase"><span data-ico="trash"></span></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · ARMAR -->
+  <section class="paso" id="armar" aria-labelledby="tArmar">
+    <h2 id="tArmar"><span class="num">4</span>Armar y bajar</h2>
+    <label class="campo">Nombre del archivo
+      <input id="eArchivo" placeholder="mi-podcast-ep1" maxlength="60" autocomplete="off"></label>
+    <button class="btn fuerte ancho" id="bArmar" type="button" disabled><span data-ico="audio-lines"></span>Armar el episodio</button>
+    <div class="final" id="final" hidden>
+      <canvas class="onda" id="ondaFinal" height="64"></canvas>
+      <audio id="oirFinal" controls preload="none"></audio>
+      <p class="datos" id="datosFinal"></p>
+      <div class="fila-btn">
+        <button class="btn fuerte" id="bMp3" type="button"><span data-ico="download"></span>Bajar MP3</button>
+        <button class="btn" id="bCompartir" type="button" hidden><span data-ico="share-2"></span>Compartir</button>
+        <button class="btn" id="bWav" type="button"><span data-ico="download"></span>WAV</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 · PORTADA -->
+  <section class="paso" id="portada" aria-labelledby="tPortada">
+    <h2 id="tPortada"><span class="num">5</span>Portada</h2>
+    <div class="portada-caja">
+      <canvas id="cvPortada" width="900" height="900" aria-label="Vista de la portada"></canvas>
+      <div class="portada-campos">
+        <label class="campo">Nombre del podcast<input id="pNombre" maxlength="60" placeholder="Voces del 3.1"></label>
+        <div class="dos">
+          <label class="campo">Episodio<input id="pEpisodio" maxlength="4" inputmode="numeric" placeholder="1"></label>
+          <label class="campo">Escuela o grupo<input id="pEscuela" maxlength="40" placeholder="Rembrandt · 3.1"></label>
+        </div>
+        <label class="campo">Título del episodio<input id="pTitulo" maxlength="70" placeholder="¿De qué hablamos hoy?"></label>
+        <div class="chips" id="temas" role="radiogroup" aria-label="Colores"></div>
+        <div class="fila-btn">
+          <label class="btn" for="fFoto"><span data-ico="image"></span>Foto de fondo</label>
+          <input id="fFoto" type="file" accept="image/*" hidden>
+          <button class="btn icono" id="bSinFoto" type="button" hidden aria-label="Quitar la foto"><span data-ico="x"></span></button>
+          <button class="btn fuerte" id="bPortada" type="button"><span data-ico="download"></span>Bajar portada</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GUÍA -->
+  <section class="paso guia" aria-labelledby="tGuia">
+    <h2 id="tGuia"><span class="num"><span data-ico="lightbulb"></span></span>Guía rápida</h2>
+    <details open>
+      <summary>Cómo armar un episodio (escaleta)</summary>
+      <ol class="escaleta">
+        <li><b>0:00 · Entrada</b> música + tu frase: nombre del podcast y quién habla.</li>
+        <li><b>0:20 · Gancho</b> en una frase, de qué va hoy y por qué importa.</li>
+        <li><b>1:00 · Tema</b> tres bloques cortos; cada uno abre con una pregunta.</li>
+        <li><b>Cierre</b> lo más importante en una frase y qué viene en el próximo.</li>
+      </ol>
+    </details>
+    <details>
+      <summary>Grabar bien con el teléfono</summary>
+      <ul>
+        <li>Cuarto chico con cosas suaves (cama, ropa, cortinas). El baño y el salón vacío hacen eco.</li>
+        <li>El teléfono a un palmo de la boca, de lado, para que no le peguen las «p».</li>
+        <li>Modo avión: una notificación a media frase se oye.</li>
+        <li>Si te equivocas, haz una pausa de dos segundos y repite la frase: la pausa larga se quita sola.</li>
+        <li>Varios hablando: cada uno a la misma distancia del teléfono.</li>
+      </ul>
+    </details>
+    <details>
+      <summary>Publicarlo</summary>
+      <ul>
+        <li><b>Spotify for Creators</b> (gratis): sube el MP3 y la portada; de ahí también puede ir a otras apps.</li>
+        <li>La portada sale cuadrada de 3000 px y menos de 512 KB, como la piden.</li>
+        <li>El MP3 sale al volumen que recomiendan las plataformas (−16 LUFS).</li>
+        <li>Música: la intro de aquí es tuya. Una canción comercial de fondo puede hacer que te bajen el episodio.</li>
+      </ul>
+    </details>
+  </section>
+
+  <p class="pie">Todo se procesa en tu teléfono: el audio no se sube a ningún lado. · Codificador MP3: <a href="vendor/LAMEJS-LICENCIA.txt">LAME</a> (LGPL) · iconos Lucide</p>
+</main>
+
+<div class="trabajando" id="trabajando" hidden role="status" aria-live="polite">
+  <div class="tr-caja"><span class="giro" data-ico="loader-circle"></span><b id="trTexto">Trabajando…</b>
+    <div class="barra"><i id="trBarra"></i></div></div>
+</div>
+<div class="toston" id="toston" role="status" aria-live="polite"></div>
+
+<script src="iconos.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

@@ -87,6 +87,10 @@ const VA = [
   /* Tres moscas con el cerebro real de FlyWire (proyecto personal de Carlos). Lleva el conectoma
      comprimido en dos piezas de < 20 MB: Cloudflare no sirve archivos de más de 25 MiB. */
   'mosca',
+  /* Estudio de podcast: grabar, limpiar el audio, intro compuesta por código,
+     MP3 y portada, todo en el teléfono. Carlos lo pidió para un podcast de
+     la escuela. Trae el codificador LAME (vendor/, LGPL) con su licencia. */
+  'podcast',
 ];
 
 /* ── Lo que tiene sitio adentro y NO se publica, dicho a propósito ──────────

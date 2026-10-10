@@ -1,0 +1,161 @@
+/* ESTUDIO · la piel
+   Oscuro de cabina de grabación, un solo acento: el rojo del foquito de «al
+   aire». Todo lo demás es tinta y superficie. En claro, papel y el mismo rojo. */
+:root{
+  --fondo:#131016; --sup:#1D1921; --sup2:#262129; --linea:#352E3A;
+  --tinta:#F4EEE8; --tenue:#B3A7B8; --acento:#FF5A4E; --acento-hondo:#E0402F; --acento-suave:#3A1D1E;
+  --bien:#7BD389; --radio:18px; --sombra:0 10px 30px rgba(0,0,0,.35);
+  --fam:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){
+  :root{ --fondo:#F5F1EC; --sup:#FFFFFF; --sup2:#F1EBE4; --linea:#E3D9CF; --tinta:#1E1620; --tenue:#6C5F70;
+    --acento:#D93A2B; --acento-hondo:#B92C1F; --acento-suave:#FDE7E3; --bien:#2E7D3E; --sombra:0 10px 30px rgba(60,30,20,.10);
+    color-scheme:light; }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--fondo); color:var(--tinta); font-family:var(--fam); -webkit-text-size-adjust:100%;
+  padding-bottom:env(safe-area-inset-bottom)}
+button,input{font:inherit; color:inherit}
+a{color:var(--acento)}
+.i{width:1.15em; height:1.15em; flex:0 0 auto; vertical-align:-.2em}
+[data-ico]{display:inline-flex; align-items:center; justify-content:center}
+/* `hidden` es la regla más débil que hay: el display de .btn le gana y el botón
+   «escondido» seguía pintado. Aquí manda siempre. */
+[hidden]{display:none !important}
+
+/* ── cabecera ── */
+.cab{position:sticky; top:0; z-index:20; background:color-mix(in srgb, var(--fondo) 90%, transparent);
+  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border-bottom:1px solid var(--linea)}
+.cab-dentro{max-width:720px; margin:0 auto; padding:14px 16px 8px; display:flex; align-items:center; gap:12px}
+.logo{width:44px; height:44px; border-radius:14px; background:var(--acento); color:#fff}
+.logo .i{width:24px; height:24px}
+.cab h1{margin:0; font-size:22px; letter-spacing:-.03em}
+.cab p{margin:0; font-size:13px; color:var(--tenue)}
+.pasos{max-width:720px; margin:0 auto; display:flex; gap:6px; overflow-x:auto; padding:0 16px 10px; scrollbar-width:none}
+.pasos::-webkit-scrollbar{display:none}
+.pasos a{flex:0 0 auto; padding:7px 12px; border-radius:999px; background:var(--sup); color:var(--tenue);
+  text-decoration:none; font-size:13px; font-weight:700; border:1px solid var(--linea)}
+
+.hoja{max-width:720px; margin:0 auto; padding:16px 16px 60px}
+.paso{background:var(--sup); border:1px solid var(--linea); border-radius:24px; padding:18px; margin-bottom:16px;
+  scroll-margin-top:110px}
+.paso h2{margin:0 0 6px; display:flex; align-items:center; gap:10px; font-size:20px; letter-spacing:-.02em}
+.num{width:30px; height:30px; border-radius:50%; display:inline-grid; place-items:center; background:var(--acento-suave);
+  color:var(--acento); font-size:15px; font-weight:900; flex:0 0 30px}
+.num .i{width:16px; height:16px}
+.ayuda{margin:0 0 14px; color:var(--tenue); font-size:14px; line-height:1.45}
+.vacio{margin:10px 0 0; color:var(--tenue); font-size:14px; text-align:center}
+.nota{font-size:13px; color:var(--tenue); margin:8px 0 0}
+
+/* ── botones ── */
+.btn{min-height:48px; padding:0 18px; border-radius:999px; border:1px solid var(--linea); background:var(--sup2);
+  font-weight:800; font-size:15px; display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  cursor:pointer; -webkit-tap-highlight-color:transparent; transition:transform .12s ease}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.4; cursor:default}
+.btn.fuerte{background:var(--acento); border-color:var(--acento); color:#fff}
+.btn.ancho{width:100%; margin-top:14px}
+.btn.icono{width:48px; padding:0}
+.btn .i{width:19px; height:19px}
+.btn:focus-visible, .chip:focus-visible, .rec:focus-visible{outline:3px solid var(--acento); outline-offset:2px}
+.fila-btn{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px}
+.chips{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px}
+.chip{min-height:44px; padding:0 14px; border-radius:999px; border:1px solid var(--linea); background:var(--sup2);
+  color:var(--tenue); font-weight:700; font-size:14px; display:inline-flex; align-items:center; gap:7px; cursor:pointer}
+.chip[aria-checked="true"]{background:var(--acento-suave); border-color:var(--acento); color:var(--tinta)}
+.chip .i{width:17px; height:17px}
+
+/* ── la grabadora ── */
+.grabadora{display:grid; grid-template-columns:auto 1fr; gap:14px; align-items:center}
+.grabadora .btn{grid-column:1 / -1}
+.rec{width:84px; height:84px; border-radius:50%; border:3px solid var(--linea); background:var(--sup2);
+  display:grid; place-items:center; cursor:pointer}
+.rec-punto{width:40px; height:40px; border-radius:50%; background:var(--acento); transition:all .2s ease}
+.rec.grabando{border-color:var(--acento); animation:al-aire 1.4s ease-in-out infinite}
+.rec.grabando .rec-punto{width:30px; height:30px; border-radius:8px}
+@keyframes al-aire{50%{box-shadow:0 0 0 10px color-mix(in srgb, var(--acento) 25%, transparent)}}
+.rec-info b{display:block; font-size:30px; font-variant-numeric:tabular-nums; letter-spacing:-.02em}
+.rec-info span{display:block; font-size:13px; color:var(--tenue); margin-top:2px}
+.medidor{height:6px; border-radius:6px; background:var(--sup2); margin-top:10px; overflow:hidden}
+.medidor i{display:block; height:100%; width:0; background:var(--bien); transition:width .08s linear}
+
+/* ── los pedazos ── */
+.pedazos{list-style:none; margin:14px 0 0; padding:0; display:flex; flex-direction:column; gap:8px}
+.pedazo{display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:10px; align-items:center;
+  background:var(--sup2); border-radius:16px; padding:10px}
+.pedazo .orden{width:28px; text-align:center; font-weight:900; color:var(--acento)}
+.pedazo .que{min-width:0}
+.pedazo .que b{display:block; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.pedazo .que small{color:var(--tenue); font-size:12px}
+.pedazo canvas{display:block; width:100%; height:32px; margin-top:4px}
+.pedazo .acc{display:flex; gap:4px}
+.mini{width:40px; height:40px; border-radius:50%; border:0; background:var(--sup); display:grid; place-items:center; cursor:pointer}
+.mini .i{width:18px; height:18px}
+.mini:disabled{opacity:.3}
+
+/* ── palancas ── */
+.palancas{display:flex; flex-direction:column; gap:8px; margin-top:8px}
+.palanca{display:grid; grid-template-columns:auto auto 1fr; gap:12px; align-items:center; padding:12px;
+  background:var(--sup2); border-radius:16px; cursor:pointer; margin-top:8px}
+.palancas .palanca{margin-top:0}
+.palanca input{appearance:none; -webkit-appearance:none; width:46px; height:28px; border-radius:999px;
+  background:var(--linea); position:relative; margin:0; cursor:pointer; transition:background .15s}
+.palanca input::after{content:''; position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%;
+  background:#fff; transition:transform .15s}
+.palanca input:checked{background:var(--acento)}
+.palanca input:checked::after{transform:translateX(18px)}
+.palanca input:focus-visible{outline:3px solid var(--acento); outline-offset:2px}
+.palanca > [data-ico]{color:var(--tenue)}
+.palanca b{display:block; font-size:15px}
+.palanca small{display:block; font-size:12.5px; color:var(--tenue); margin-top:1px}
+
+.resultado{margin-top:14px; padding:14px; border-radius:16px; background:var(--sup2)}
+.resultado .cifras{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-bottom:12px}
+.resultado .cifras div{background:var(--sup); border-radius:12px; padding:10px}
+.resultado .cifras b{display:block; font-size:20px; font-variant-numeric:tabular-nums}
+.resultado .cifras span{font-size:11px; color:var(--tenue); text-transform:uppercase; letter-spacing:.05em; font-weight:700}
+.resultado .ab{display:grid; gap:8px}
+.resultado .ab label{font-size:12px; color:var(--tenue); font-weight:700}
+audio{width:100%; height:44px}
+
+.frase{margin-top:14px; padding:14px; border-radius:16px; background:var(--sup2)}
+.frase b{display:block}
+.frase small{display:block; color:var(--tenue); font-size:13px; margin-top:2px}
+
+.campo{display:block; font-size:13px; font-weight:700; color:var(--tenue); margin-top:12px}
+.campo input{display:block; width:100%; margin-top:6px; min-height:48px; padding:0 14px; border-radius:14px;
+  border:1px solid var(--linea); background:var(--sup2); font-size:16px; font-weight:600}
+.campo input:focus{outline:2px solid var(--acento); border-color:transparent}
+.dos{display:grid; grid-template-columns:1fr 2fr; gap:10px}
+
+.final{margin-top:14px}
+.onda{width:100%; height:64px; display:block; margin-bottom:10px}
+.datos{font-size:13px; color:var(--tenue); margin:8px 0 0}
+
+.portada-caja{display:grid; gap:16px}
+@media (min-width:640px){ .portada-caja{grid-template-columns:260px 1fr; align-items:start} }
+#cvPortada{width:100%; max-width:360px; aspect-ratio:1; height:auto; border-radius:18px; box-shadow:var(--sombra); justify-self:center}
+
+.guia details{border-top:1px solid var(--linea); padding:12px 0}
+.guia details:first-of-type{border-top:0}
+.guia summary{cursor:pointer; font-weight:800; font-size:15px}
+.guia ul, .guia ol{margin:10px 0 0; padding-left:20px; color:var(--tenue); font-size:14px; line-height:1.6}
+.guia li b{color:var(--tinta)}
+.pie{color:var(--tenue); font-size:12px; text-align:center; margin:20px 0}
+
+/* ── trabajando ── */
+.trabajando{position:fixed; inset:0; z-index:50; background:rgba(10,8,12,.6); display:grid; place-items:center; padding:20px}
+.trabajando[hidden]{display:none}
+.tr-caja{background:var(--sup); border-radius:22px; padding:22px; width:min(340px, 100%); text-align:center; box-shadow:var(--sombra)}
+.tr-caja b{display:block; margin:8px 0 14px}
+.giro{color:var(--acento)} .giro .i{width:34px; height:34px; animation:gira 1s linear infinite}
+@keyframes gira{to{transform:rotate(360deg)}}
+.barra{height:8px; border-radius:8px; background:var(--sup2); overflow:hidden}
+.barra i{display:block; height:100%; width:0; background:var(--acento); transition:width .2s}
+.toston{position:fixed; left:50%; bottom:calc(20px + env(safe-area-inset-bottom)); transform:translate(-50%, 20px); opacity:0;
+  background:var(--tinta); color:var(--fondo); padding:12px 18px; border-radius:14px; font-weight:700; font-size:14px;
+  transition:all .25s; z-index:60; max-width:calc(100% - 32px); pointer-events:none}
+.toston.vivo{opacity:1; transform:translate(-50%, 0)}
+@media (prefers-reduced-motion: reduce){ .rec.grabando, .giro .i{animation:none} }
