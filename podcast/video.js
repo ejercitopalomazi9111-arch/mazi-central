@@ -101,21 +101,29 @@ export function dibujarEntrada(g, W, H, t, dur, d, nivel = 0){
   const sale = 1 - suave((t - (dur - 0.6)) / 0.6);   /* se desvanece al final */
   g.globalAlpha = sale;
   /* las barras: 48, cada una con su fase, crecen con el nivel de la música */
-  const n = 48, m = W * 0.08, bw = (W - 2 * m) / n, y0 = H * (W > H ? 0.30 : 0.33);
+  const n = 48, m = W * 0.08, bw = (W - 2 * m) / n, y0 = H * (W > H ? 0.26 : 0.24);
   g.fillStyle = T.acento;
   for(let b = 0; b < n; b++){
     const fase = Math.sin(b * 0.7 + t * 5) * 0.5 + 0.5, entra = suave((t - b * 0.012) / 0.5);
     const h = (12 + (60 + 120 * nivel) * fase) * u * entra;
     rr(g, m + b * bw + bw * 0.2, y0 - h / 2, bw * 0.6, h, bw * 0.3); g.fill();
   }
+  /* el bloque de texto (nombre, episodio y título) se mide primero y se
+     centra en el espacio que queda abajo de las barras: con un nombre largo
+     se achica en vez de salirse por abajo */
   const ancho = W - 2 * m, k = suave((t - 0.35) / 0.7);
+  const arriba = y0 + 120 * u, piso = H - (d.escuela ? m * (W > H ? 1.2 : 1.4) : m * 0.8);
+  let tam = (W > H ? 92 : 84) * u, r;
+  const altoBloque = (tt, rr) => rr.length * tt * 1.02 + (d.episodio ? 58 * u : 0) + (d.titulo ? 46 * u : 0);
+  for(;; tam -= 4 * u){
+    g.font = `900 ${tam}px ${FAM}`; r = partir(g, d.nombre || 'Mi podcast', ancho);
+    if((r.length <= 3 && r.every(x => g.measureText(x).width <= ancho) && altoBloque(tam, r) <= piso - arriba) || tam <= 36 * u) break;
+  }
+  const yIni = arriba + Math.max(0, (piso - arriba - altoBloque(tam, r)) / 2) + tam * 0.8;
   g.globalAlpha = sale * k; g.fillStyle = T.tinta; g.textBaseline = 'alphabetic';
-  let tam = (W > H ? 92 : 84) * u; g.font = `900 ${tam}px ${FAM}`;
-  let r = partir(g, d.nombre || 'Mi podcast', ancho);
-  while((r.length > 3 || r.some(x => g.measureText(x).width > ancho)) && tam > 36 * u){ tam -= 4 * u; g.font = `900 ${tam}px ${FAM}`; r = partir(g, d.nombre || 'Mi podcast', ancho); }
-  const yN = H * (W > H ? 0.58 : 0.55) + (1 - k) * 30 * u;
+  const yN = yIni + (1 - k) * 30 * u;
   r.forEach((x, i) => g.fillText(x, m, yN + i * tam * 1.02));
-  let y = yN + (r.length - 1) * tam * 1.02 + 56 * u;
+  let y = yIni + (r.length - 1) * tam * 1.02 + 56 * u;
   const k2 = suave((t - 0.9) / 0.6);
   if(d.episodio){
     g.globalAlpha = sale * k2; g.font = `800 ${26 * u}px ${FAM}`;
@@ -126,7 +134,8 @@ export function dibujarEntrada(g, W, H, t, dur, d, nivel = 0){
   }
   if(d.titulo){
     g.globalAlpha = sale * suave((t - 1.2) / 0.6); g.fillStyle = T.suave; g.font = `700 ${34 * u}px ${FAM}`;
-    partir(g, d.titulo, ancho).slice(0, 2).forEach((x, i) => g.fillText(x, m, y + 4 * u + i * 42 * u));
+    const lt = partir(g, d.titulo, ancho)[0] || '';
+    g.fillText(lt, m, y + 4 * u);
   }
   if(d.escuela){
     g.globalAlpha = sale * suave((t - 1.5) / 0.6); g.fillStyle = T.suave; g.font = `700 ${22 * u}px ${FAM}`;

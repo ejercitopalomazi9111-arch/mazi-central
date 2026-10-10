@@ -470,7 +470,7 @@ function hacerPlan(){
   caja.innerHTML = '<div class="cifras">'+
     '<div><b>'+tiempo(original)+'</b><span>grabado</span></div>'+
     '<div><b>'+tiempo(plan.total)+'</b><span>queda</span></div>'+
-    '<div><b>'+(plan.quitado >= 1 ? '−' + tiempo(plan.quitado) : '0:00')+'</b><span>'+(plan.tramos.length - clips.length > 0 ? (plan.tramos.length - clips.length) + ' cortes' : 'sin cortes')+'</span></div></div>';
+    '<div><b>'+(plan.quitado >= 1 ? '−' + tiempo(plan.quitado) : '0:00')+'</b><span>'+(plan.tramos.length - clips.length > 0 ? (plan.tramos.length - clips.length) + (plan.tramos.length - clips.length === 1 ? ' corte' : ' cortes') : 'sin cortes')+'</span></div></div>';
   return plan;
 }
 $('#bPlanear').addEventListener('click', () => { hacerPlan(); aviso('Así queda. Los cortes se hacen al exportar.'); });
