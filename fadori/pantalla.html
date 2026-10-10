@@ -194,6 +194,42 @@
   .aj-estado{padding:12px 14px; border-radius:14px; background:var(--tv-sup2); border:1px solid var(--tv-linea); font-weight:700; margin-bottom:10px}
   .aj-estado.bien{border-color:#3F6B23; background:#132608; color:#C9F0A8}
   [hidden]{display:none !important}
+
+  /* ══ EL ACOMODO DE UN VISTAZO (10 de octubre) ══════════════════════════
+     Nada de espacio muerto: a la derecha, de arriba abajo, «Ya puede pasar»
+     ENORME; debajo del programa, una franja con lo que sigue (en la plancha
+     y en la fila) con números grandes. Los tamaños van en vh: en una tele de
+     1080 o en la tablet, ocupan lo mismo de la pantalla. */
+  .tv-cab{padding-top:clamp(6px,1.2vh,14px); padding-bottom:clamp(6px,1.2vh,14px)}
+  .tv-cuerpo{grid-template-columns:minmax(0, 1.7fr) minmax(0, 1fr); grid-template-rows:minmax(0, 1fr) auto;
+    grid-template-areas:"escena llamado" "siguen llamado"; gap:clamp(10px,1.6vh,20px) clamp(12px,1.4vw,22px)}
+  .escenario{grid-area:escena; container-type:size; display:grid; place-items:center}
+  .marco{width:min(100cqw, calc(100cqh * 16 / 9)); max-height:100cqh}
+  .turnos{grid-area:llamado; gap:clamp(8px,1.4vh,14px)}
+  .siguen{grid-area:siguen; display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1.2fr); gap:clamp(10px,1.4vw,20px);
+    background:var(--tv-sup); border:1px solid var(--tv-linea); border-radius:clamp(16px,1.6vw,24px); padding:clamp(10px,1.6vh,18px) clamp(12px,1.4vw,22px)}
+  .llamando{flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0}
+  .llamando h2{font-size:clamp(16px,2.8vh,30px)}
+  .llamando .n{font-size:clamp(90px,24vh,300px); margin:0}
+  .llamando .quien{font-size:clamp(20px,4.4vh,48px)}
+  .llamando .pidio{font-size:clamp(15px,2.9vh,30px)}
+  .llamando .vacio{font-size:clamp(16px,2.8vh,28px)}
+  .bloque h3{font-size:clamp(13px,2.3vh,24px)}
+  .ficha b{font-size:clamp(22px,4.2vh,46px)}
+  .ficha span{font-size:clamp(13px,2.2vh,22px)}
+  .numeros b{font-size:clamp(20px,4.6vh,52px); padding:clamp(2px,.5vh,6px) clamp(8px,1vw,16px); border-radius:clamp(8px,1vh,14px)}
+  .numeros b.primero{background:var(--tv-naranja); color:#1A0F0A; border-color:transparent}
+  .siguen .fichas{flex-direction:row; flex-wrap:wrap}
+  .siguen .ficha{flex:1 1 220px}
+  .tv-pie{padding-top:clamp(6px,1vh,12px); padding-bottom:clamp(6px,1vh,12px)}
+  .tv-pie img{width:clamp(44px,7vh,80px)}
+  @media (orientation:portrait){
+    .tv-cuerpo{grid-template-columns:1fr; grid-template-rows:auto auto minmax(0, 1fr); grid-template-areas:"escena" "siguen" "llamado"}
+    .escenario{container-type:normal}
+    .marco{width:100%}
+    .llamando .n{font-size:clamp(90px,16vh,260px)}
+    .siguen{grid-template-columns:1fr 1fr}
+  }
 </style>
 </head>
 <body class="publica tele">
@@ -223,9 +259,12 @@
     <aside class="turnos" aria-live="polite">
       <div class="llamando" id="llamando"></div>
       <div class="bloque" id="bListos"></div>
+    </aside>
+
+    <section class="siguen" aria-label="Lo que sigue">
       <div class="bloque" id="bPrep"></div>
       <div class="bloque" id="bFila"></div>
-    </aside>
+    </section>
   </main>
 
   <footer class="tv-pie">
@@ -257,6 +296,7 @@
 
 <script src="iconos.js"></script>
 <script src="nucleo.js"></script>
+<script src="pad.js"></script>
 <script type="module" src="tele.js"></script>
 </body>
 </html>

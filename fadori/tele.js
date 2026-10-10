@@ -72,12 +72,13 @@ function pintarTurnos(){
   const otros = listos.slice(1);
   $('#bListos').innerHTML = otros.length ? '<h3>' + F.ico('circle-check-big') + 'También listos</h3><div class="fichas">' +
     otros.slice(0, 3).map(p => ficha(p, 'lista')).join('') + '</div>' + (otros.length > 3 ? '<p class="mas">y ' + (otros.length - 3) + ' más</p>' : '') : '';
-  $('#bPrep').innerHTML = '<h3>' + F.ico('chef-hat') + 'Preparando <span class="cuenta">' + (prep.length || '') + '</span></h3>' +
-    (prep.length ? '<div class="fichas">' + prep.slice(0, 3).map(p => ficha(p, 'prep')).join('') + '</div>' + (prep.length > 3 ? '<p class="mas">y ' + (prep.length - 3) + ' más</p>' : '')
+  $('#bPrep').innerHTML = '<h3>' + F.ico('chef-hat') + 'En la plancha <span class="cuenta">' + (prep.length || '') + '</span></h3>' +
+    (prep.length ? '<div class="fichas">' + prep.slice(0, 2).map(p => ficha(p, 'prep')).join('') + '</div>' + (prep.length > 2 ? '<p class="mas">y ' + (prep.length - 2) + ' más</p>' : '')
       : '<p class="mas">Nada en la plancha</p>');
-  $('#bFila').innerHTML = '<h3>' + F.ico('hourglass') + 'En la fila <span class="cuenta">' + (fila.length || '') + '</span></h3>' +
-    (fila.length ? '<div class="numeros">' + fila.slice(0, 14).map(p => '<b data-id="' + p.id + '"' + (p.id === nuevoDeTablet ? ' class="nueva"' : '') + '>' + esc(F.verTurno(p)) + '</b>').join('') + '</div>' +
-      (fila.length > 14 ? '<p class="mas">y ' + (fila.length - 14) + ' más</p>' : '') : '<p class="mas">Nadie esperando</p>');
+  /* la fila: el primero (el que sigue) resaltado */
+  $('#bFila').innerHTML = '<h3>' + F.ico('hourglass') + 'Siguen en la fila <span class="cuenta">' + (fila.length || '') + '</span></h3>' +
+    (fila.length ? '<div class="numeros">' + fila.slice(0, 12).map((p, i) => '<b data-id="' + p.id + '" class="' + (i === 0 ? 'primero' : '') + (p.id === nuevoDeTablet ? ' nueva' : '') + '">' + esc(F.verTurno(p)) + '</b>').join('') + '</div>' +
+      (fila.length > 12 ? '<p class="mas">y ' + (fila.length - 12) + ' más</p>' : '') : '<p class="mas">Nadie esperando</p>');
 
   /* lo nuevo: el timbre, la voz y el letrero grande */
   if(antes){
@@ -301,9 +302,32 @@ function cerrarTablet(pedidoId){
   setTimeout(() => { nuevoDeTablet = null; }, 2500);
 }
 window.addEventListener('message', (e) => {
-  if(e.origin !== location.origin || !e.data || e.data.fadori !== 'kiosco-fin') return;
-  cerrarTablet(e.data.pedido);
+  if(e.origin !== location.origin || !e.data) return;
+  if(e.data.fadori === 'kiosco-fin') cerrarTablet(e.data.pedido);
+  if(e.data.fadori === 'kiosco-mostrador') irAlMostrador();
 });
+/* La puerta escondida al mostrador: dos segundos con el dedo sobre «Fadori.»
+   en la tablet (o sobre el logo de la pantalla) → pad del pasador → mostrador.
+   Lo pidió Carlos para el de la cooperativa que voltea la tablet hacia la caja. */
+let yendo = false;
+async function irAlMostrador(){
+  if(yendo) return; yendo = true;
+  const ok = await pedirPasador('Abrir el mostrador', 'Para despachar desde esta tablet. Pon el pasador de la cooperativa.');
+  yendo = false;
+  if(!ok) return;
+  window.__alMostrador = true;
+  location.href = 'mostrador.html?desde=pantalla';
+}
+(function(){
+  const logo = document.querySelector('.tv-logo'); if(!logo) return;
+  let t = null;
+  const suelta = () => { clearTimeout(t); t = null; };
+  logo.addEventListener('pointerdown', (e) => { e.stopPropagation(); suelta(); t = setTimeout(() => { suelta(); irAlMostrador(); }, 2000); });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => logo.addEventListener(ev, suelta));
+  logo.addEventListener('click', (e) => e.stopPropagation());
+  logo.addEventListener('contextmenu', (e) => e.preventDefault());
+  logo.draggable = false; logo.style.touchAction = 'none'; logo.style.webkitUserSelect = 'none';
+})();
 $('#kCerrar').addEventListener('click', () => { try{ marco.contentWindow.KIOSCO.reiniciar(); }catch(e){} cerrarTablet(null); });
 $('#tv').addEventListener('click', (e) => {
   if(e.target.closest('button, a, dialog')) return;
@@ -347,9 +371,8 @@ function pintarAjustes(){
   const c = $('#ajCuerpo');
   if(pedirPase){
     c.innerHTML = '<h3>' + F.ico('shield-check') + 'Pasador de la cooperativa</h3><p class="aj-nota">La tablet está en modo pedir: los ajustes son sólo para la cooperativa.</p>' +
-      '<div class="aj-fila"><input type="password" inputmode="numeric" id="ajPase" class="aj-pase" style="min-height:44px;border-radius:12px;border:1px solid var(--tv-linea);background:var(--tv-fondo);color:var(--tv-tinta);padding:0 12px;font:inherit;font-size:18px" placeholder="Pasador">' +
-      '<button class="aj-btn fuerte" id="ajPaseOk" type="button">Entrar</button></div>';
-    $('#ajPaseOk').onclick = () => { if(F.pasadorOk($('#ajPase').value)){ pedirPase = false; pintarAjustes(); } else { $('#ajPase').value = ''; $('#ajPase').placeholder = 'Ese no es'; } };
+      '<div class="aj-fila"><button class="aj-btn fuerte" id="ajPaseOk" type="button">' + F.ico('lock') + 'Poner el pasador</button></div>';
+    $('#ajPaseOk').onclick = async () => { if(await pedirPasador('Ajustes de la pantalla')){ pedirPase = false; pintarAjustes(); } };
     return;
   }
   const chips = (clave, ops) => '<div class="aj-fila">' + ops.map(([v, t]) => '<button class="aj-chip" type="button" data-cfg="' + clave + '" data-v="' + v + '" aria-pressed="' + (String(cfg[clave]) === String(v)) + '">' + t + '</button>').join('') + '</div>';
@@ -398,8 +421,7 @@ function pintarAjustes(){
       : cfg.tablet && !conLlave ? 'Prendido, pero falta el pasador de hoy: sin él, los pedidos no llegarían a la cooperativa.' : 'Apagado: la pantalla sólo enseña.') + '</div>' +
     (tabletLista()
       ? '<button class="aj-btn" type="button" id="ajTabletNo">Apagar el modo tablet</button>'
-      : '<div class="aj-fila"><input type="password" inputmode="numeric" id="ajTabPase" style="min-height:44px;border-radius:12px;border:1px solid var(--tv-linea);background:var(--tv-fondo);color:var(--tv-tinta);padding:0 12px;font:inherit;font-size:18px;width:160px" placeholder="Pasador">' +
-        '<button class="aj-btn fuerte" type="button" id="ajTabletSi">Prender el modo tablet</button></div><p class="aj-nota" id="ajTabMsg" style="margin-top:8px"></p>') +
+      : '<div class="aj-fila"><button class="aj-btn fuerte" type="button" id="ajTabletSi">' + F.ico('lock') + 'Prender el modo tablet</button></div><p class="aj-nota" style="margin-top:8px">Pide el pasador de la cooperativa, con el pad de números.</p>') +
 
     '<h3>' + F.ico('maximize') + 'Pantalla</h3>' +
     '<div class="aj-fila"><button class="aj-btn" type="button" id="ajCompleta">' + F.ico('maximize') + 'Pantalla completa</button></div>';
@@ -465,18 +487,23 @@ function conectarAjustes(){
   const no = $('#ajTabletNo'); if(no) no.onclick = () => { cfg.tablet = false; guardarCfg(); pintarTablet(); pintarAjustes(); };
   const si = $('#ajTabletSi');
   if(si) si.onclick = async () => {
-    const pase = $('#ajTabPase').value.trim(), msg = $('#ajTabMsg');
-    if(F.motor() !== 'servidor'){
-      if(!F.pasadorOk(pase)){ msg.textContent = 'Ese no es el pasador.'; return; }
-    } else {
-      si.disabled = true; msg.textContent = 'Revisando…';
-      const r = await F.entrarMostrador(pase);
-      si.disabled = false;
-      if(!r.ok){ msg.textContent = r.sinRed ? 'Sin internet: el modo tablet necesita internet para mandar los pedidos.' : (r.error || 'Ese no es el pasador.'); return; }
-      F.recordarPasador(pase); F.renovarPase();
-    }
+    if(!(await pedirPasador('Prender el modo tablet', 'Los pedidos de la fila llegan a la cooperativa con este pasador.', true))) return;
     cfg.tablet = true; guardarCfg(); pintarTablet(); precargar(); pintarAjustes();
   };
+}
+/* el pasador SIEMPRE con el pad de números, nunca con el teclado: lo pidió
+   Carlos, el de la cooperativa puede traer las manos sucias o estar cobrando.
+   Con servidor, el pasador lo revisa el servidor y le da a esta tablet la llave
+   del mostrador; `exigeRed` = sin internet no sirve (el modo tablet manda los
+   pedidos, así que sin red no tiene caso prenderlo). */
+function pedirPasador(titulo, sub = 'El de la cooperativa.', exigeRed = false){
+  return FadoriPad.abrir({ titulo, sub, largo: F.largoPasador(), revisar: async (v) => {
+    if(F.motor() !== 'servidor') return F.pasadorOk(v) || { error: 'Ese no es el pasador' };
+    const r = await F.entrarMostrador(v);
+    if(r.ok){ F.recordarPasador(v); F.renovarPase(); return true; }
+    if(r.sinRed && !exigeRed && F.pasadorOk(v)) return true;
+    return { error: r.sinRed ? (exigeRed ? 'Sin internet: los pedidos no llegarían' : 'Sin internet, y ése no es el de esta tablet') : (r.error || 'Ese no es el pasador') };
+  } });
 }
 async function cambiarAnuncio(id, cambio){
   const g = (await leer('anuncios')) || {}; g.cambios = g.cambios || {}; g.nuevos = g.nuevos || [];

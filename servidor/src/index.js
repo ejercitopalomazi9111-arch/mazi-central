@@ -243,7 +243,7 @@ export class Cooperativa {
        la tablet de la cooperativa entra; el de afuera se queda afuera. */
     if(!confiable && this.lleva(kEsc, 60 * 60000) >= TOPE.fallasPasadorEscuelaHora)
       return json({ error: 'Demasiados intentos en esta escuela. Entra desde la tablet de siempre o espera una hora.' }, 429);
-    const bueno = String((this.config && this.config.pasador) || '1234');
+    const bueno = String((this.config && this.config.pasador) || '121026');
     if(!igual(String(cuerpo.pasador || '').slice(0, 20), bueno)){
       this.suma(kAp, 15 * 60000); this.suma(kIp, 15 * 60000); this.suma(kEsc, 60 * 60000);
       return json({ error: 'Ese no es el pasador.' }, 401);

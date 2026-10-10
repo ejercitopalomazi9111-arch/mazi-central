@@ -31,7 +31,7 @@ const CONFIG_BASE = {
   aceptaAnticipados: true,    /* F13 */
   nombreLugar: 'Cooperativa',
   /* El pasador de la pantalla de la cooperativa. Se cambia desde Ajustes. */
-  pasador: '1234',
+  pasador: '121026',   /* el de fábrica, el que pidió Carlos el 10 de octubre; se cambia en Ajustes */
 };
 
 /* Las categorías mandan el orden del menú y los colores de las fichas.
@@ -1417,6 +1417,9 @@ function pasadorOk(intento){
 }
 /* el pasador que el servidor aceptó se guarda en la tablet para poder entrar
    sin internet; se escribe directo, sin contar como cambio que mandar */
+/* cuántos números lleva el pasador que esta tablet conoce: el pad entra solo
+   al juntarlos, sin buscar el botón */
+function largoPasador(){ return String(estado().config.pasador || CONFIG_BASE.pasador).length; }
 function recordarPasador(n){
   const d = estado(); d.config.pasador = String(n);
   if(MotorServidor._huellas) MotorServidor._huellaConfig = huellaDe(d.config);
@@ -2711,7 +2714,7 @@ const FADORI = {
   /* medición */
   contarFila, resumenDelDia, curvaDeFila, csvDePedidos, csvDeConteos, bajarCSV, cerrarCiclo,
   /* el pasador */
-  pasadorOk, pasoElPasador, cerrarMostrador, cambiarPasador, renovarPase, recordarPasador, PASE_DURA,
+  pasadorOk, largoPasador, pasoElPasador, cerrarMostrador, cambiarPasador, renovarPase, recordarPasador, PASE_DURA,
   /* cerebro */
   opcionesPara, sugerenciasPara, misNumeros, sugerir, sugerencias,
   /* para las pruebas */

@@ -42,7 +42,7 @@ const pedidoEn = (res, id) => (res.j?.cambios?.pedidos || []).find(p => p.id ===
 /* ── preparar: la cooperativa entra y sube su menú ─────────────────────── */
 console.log('\nPreparar · la cooperativa entra con su pasador y sube el menú');
 const mostrador = aparato();
-let r = await llamar('/api/entrar', { pasador: '1234' }, { ap: mostrador });
+let r = await llamar('/api/entrar', { pasador: '121026' }, { ap: mostrador });
 ok('el mostrador entra con el pasador de fábrica y recibe su llave', r.status === 200 && typeof r.j?.token === 'string', JSON.stringify(r));
 const ADMIN = r.j?.token;
 const T = ahora();
@@ -68,7 +68,7 @@ r = await llamar('/api/todo', undefined, { ap: fisgon });
 ok('/api/todo sin llave del mostrador: NO', r.status === 401 || r.status === 403, 'status ' + r.status);
 r = await sync(fisgon, {});
 const texto = JSON.stringify(r.j);
-ok('un aparato cualquiera NO ve el pasador', !/9999|1234|pasador/.test(texto));
+ok('un aparato cualquiera NO ve el pasador', !/9999|121026|pasador/.test(texto));
 ok('ni el nombre de Ana', !texto.includes('"Ana"'));
 ok('ni su código', !texto.includes(ANA));
 ok('pero sí ve la fila (turnos) y el menú', (r.j.cambios.pedidos || []).some(p => p.turno === 1) && (r.j.cambios.productos || []).length === 3);
@@ -187,7 +187,7 @@ r = await llamar('/api/pasador', { nuevo: '482913' }, { ap: fisgon });
 ok('un alumno NO puede cambiar el pasador', r.status === 401 || r.status === 403);
 r = await llamar('/api/pasador', { nuevo: '482913' }, { ap: mostrador, admin: ADMIN });
 ok('el mostrador sí', r.status === 200);
-r = await llamar('/api/entrar', { pasador: '1234' }, { ap: fisgon });
+r = await llamar('/api/entrar', { pasador: '121026' }, { ap: fisgon });
 ok('con el pasador viejo ya no se entra', r.status === 401);
 bloqueado = false; let entro = false;
 for(let i = 0; i < 40; i++){

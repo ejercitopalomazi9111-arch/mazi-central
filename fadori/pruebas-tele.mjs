@@ -31,6 +31,11 @@ async function pantalla(w = 1280, h = 800){
   return p;
 }
 
+/* el pad: cada número es un toque, como lo haría el de la cooperativa */
+async function teclear(pg, cod, donde = 'dialog.fpad-capa'){
+  for(const d of cod) await pg.click(donde + ' .fpad-teclas [data-d="' + d + '"]');
+}
+
 const most = await mostrador();
 const ana = await alumno('Ana Pérez', '3B');
 const beto = await alumno('Beto Ruiz', '2C');
@@ -100,7 +105,12 @@ console.log('\n4 · la tablet de la fila: tocar, pedir y ver el turno');
 const tab = await pantalla();
 await tab.click('#bArranque').catch(() => {});
 await tab.click('#bAjustes');
-await tab.fill('#ajTabPase', '1234'); await tab.click('#ajTabletSi');
+await tab.click('#ajTabletSi');
+ok('prender el modo tablet abre el pad de números, no el teclado', (await tarda(tab, () => !!document.querySelector('dialog.fpad-capa[open]'), null, 3000)) != null);
+ok('y no hay ningún campo de texto donde escribir el pasador', await tab.evaluate(() => !document.querySelector('dialog.fpad-capa input')));
+await teclear(tab, '999999');
+ok('un pasador malo no entra: el pad se queda y lo dice', (await tarda(tab, () => /no es/.test(document.querySelector('.fpad-msg').textContent), null, 5000)) != null);
+await teclear(tab, '121026'); await tab.click('dialog.fpad-capa .fpad-ok');
 ok('con el pasador, el modo tablet se prende', (await tarda(tab, () => document.body.classList.contains('con-tablet'), null, 10000)) != null);
 ok('y la tablet queda con la llave de la cooperativa', await tab.evaluate(() => !!FADORI.llaveMostrador()));
 await tab.click('#ajCerrar');
@@ -147,13 +157,58 @@ ok('…ni su nombre en el carrito', (await k.inputValue('#kNombreIn')) === '', a
 await tab.click('#kCerrar');
 ok('«Volver a la pantalla» la cierra', (await tarda(tab, () => document.querySelector('#kCapa').hidden, null, 3000)) != null);
 
+console.log('\n4b · nadie la toca: «¿sigues ahí?» y 10 segundos');
+await tab.evaluate(() => { localStorage.setItem('fadori_kiosco_espera', '4'); document.querySelector('#kMarco').contentWindow.location.reload(); });
+await tab.waitForTimeout(500);
+await k.waitForFunction(() => window.KIOSCO, null, { timeout: 15000 });
+await tab.mouse.click(420, 360);
+await tarda(tab, () => !document.querySelector('#kCapa').hidden, null, 4000);
+const tq = Date.now();
+ok('sin tocar nada, pregunta «¿Sigues ahí?»', (await tarda(tab, () => { const d = document.querySelector('#kMarco').contentDocument; return d && !d.querySelector('#kTicket').hidden && !d.querySelector('#kSigues').hidden; }, null, 9000)) != null);
+ok(`… a la espera que se puso (${((Date.now() - tq) / 1000).toFixed(1)} s)`, (Date.now() - tq) / 1000 > 3.5);
+await k.click('#kTicket', { position: { x: 30, y: 30 } });
+ok('tocar donde sea cuenta como «aquí sigo»', await k.evaluate(() => document.querySelector('#kTicket').hidden) && !(await tab.evaluate(() => document.querySelector('#kCapa').hidden)));
+await k.locator('#rejilla button[aria-label^="Agregar"]').nth(0).click();
+ok('con algo en el carrito vuelve a preguntar', (await tarda(tab, () => { const d = document.querySelector('#kMarco').contentDocument; return d && !d.querySelector('#kTicket').hidden && !d.querySelector('#kSigues').hidden; }, null, 9000)) != null,
+  JSON.stringify(await k.evaluate(() => ({ t: document.querySelector('#kTicket').hidden, c: document.querySelector('#cestaCuantos').textContent }))));
+ok('y avisa que se va a borrar avisa que se va a borrar', /se borra tu pedido/.test(await k.textContent('#kSiguesQue')), await k.textContent('#kSiguesQue'));
+const t10 = Date.now();
+ok('y si nadie toca, regresa sola a la pantalla de turnos', (await tarda(tab, () => document.querySelector('#kCapa').hidden, null, 14000)) != null);
+const s10 = (Date.now() - t10) / 1000;
+ok(`… a los 10 s (${s10.toFixed(1)} s)`, s10 > 8.5 && s10 < 12.5);
+ok('sin dejar nada en el carrito', await k.evaluate(() => document.querySelector('#cestaCuantos').textContent === '0'));
+await tab.evaluate(() => localStorage.removeItem('fadori_kiosco_espera'));
+
+console.log('\n4c · la puerta escondida al mostrador (dedo 2 s sobre «Fadori.»)');
+await tab.mouse.click(420, 360);
+await tarda(tab, () => !document.querySelector('#kCapa').hidden, null, 4000);
+const marca = k.locator('header.barra .marca');
+await marca.hover();
+await tab.mouse.down(); await tab.waitForTimeout(600); await tab.mouse.up();
+ok('un toque corto en el logo no abre nada', !(await tab.evaluate(() => !!document.querySelector('dialog.fpad-capa[open]'))));
+await marca.hover(); await tab.mouse.down(); await tab.waitForTimeout(2300); await tab.mouse.up();
+ok('dejando el dedo 2 s sale el pad del pasador', (await tarda(tab, () => !!document.querySelector('dialog.fpad-capa[open]'), null, 3000)) != null);
+await teclear(tab, '121026');
+ok('con el pasador abre el mostrador', (await tarda(tab, () => /mostrador\.html\?desde=pantalla/.test(location.href) && document.querySelector('#cuerpoMostrador') && !document.querySelector('#cuerpoMostrador').hidden, null, 10000)) != null, await tab.evaluate(() => location.href));
+ok('y trae el botón para volver a la pantalla de turnos', await tab.isVisible('#bVolverTele'));
+
+console.log('\n4d · la reja del mostrador también es con el pad');
+const reja = await aparato('/fadori/mostrador.html', { w: 820, h: 1180 });
+await reja.waitForSelector('#rPad .fpad-teclas', { timeout: 10000 });
+ok('la reja trae el pad', await reja.isVisible('#rPad .fpad-teclas'));
+ok('y el campo no saca el teclado del teléfono', (await reja.getAttribute('#rPase', 'inputmode')) === 'none');
+const t4 = await reja.evaluate(() => [...document.querySelectorAll('#rPad .fpad-teclas button')].map(b => b.getBoundingClientRect()).every(r => r.width >= 64 && r.height >= 64));
+ok('con teclas grandes (≥ 64 px)', t4);
+await teclear(reja, '121026', '#rPad');
+ok('con los 6 números entra sola, sin buscar el botón', (await tarda(reja, () => !document.querySelector('#cuerpoMostrador').hidden, null, 10000)) != null);
+
 console.log('\n5 · tamaños y errores');
 for(const [w, h] of [[1280, 800], [1920, 1080], [800, 1280]]){
   await tv.setViewportSize({ width: w, height: h }); await tv.waitForTimeout(300);
   const d = await tv.evaluate(() => ({ x: document.documentElement.scrollWidth - innerWidth, y: document.documentElement.scrollHeight - innerHeight }));
   ok(`nada se sale a ${w}×${h}`, d.x <= 0 && d.y <= 2, JSON.stringify(d));
 }
-for(const [n, pg] of [['pantalla', tv], ['tablet', tab], ['mostrador', most], ['Ana', ana], ['Beto', beto]])
+for(const [n, pg] of [['pantalla', tv], ['tablet', tab], ['mostrador', most], ['reja', reja], ['Ana', ana], ['Beto', beto]])
   ok(`${n}: sin errores (${pg.errores.slice(0, 2).join(' | ')})`, !pg.errores.length);
 
 console.log(`\n${fallas.length ? '✗ ' + fallas.length + ' fallas' : '✓ todo bien'} · escuela de prueba ${CASA}`);

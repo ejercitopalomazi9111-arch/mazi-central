@@ -287,7 +287,7 @@
   </div>
   <div class="k-tarjeta k-mas" id="kSigues" hidden>
     <h2>¿Sigues ahí?</h2>
-    <p class="k-anota" style="justify-content:center">Si no, en unos segundos se borra este pedido para el que sigue.</p>
+    <p class="k-anota" style="justify-content:center" id="kSiguesQue">Toca la pantalla. Si no, en 10 segundos regresa a los turnos.</p>
     <div class="k-cuenta" aria-hidden="true"><i id="kBarra2"></i></div>
     <div class="k-botones">
       <button class="btn ancho" id="kBorra" type="button">Borrar y salir</button>
@@ -1198,24 +1198,52 @@ if(KIOSCO){
   $('#kSi').addEventListener('click', () => { clearInterval(kReloj); kPedido = null; $('#kTicket').hidden = true; ver('menu'); kToque(); });
   $('#kBorra').addEventListener('click', kTerminar);
   $('#kAqui').addEventListener('click', () => { clearInterval(kReloj); $('#kTicket').hidden = true; kToque(); });
-  /* el que se va a la mitad: a los 60 s sin tocar nada se le pregunta, y si
-     no contesta, se borra para el que sigue. Con el ticket en pantalla se le
-     dan 40 s para anotarlo. */
+  /* Lo pidió Carlos: si nadie toca la tablet, se pregunta «¿sigues ahí?» y
+     hay 10 segundos para tocar; si no, de vuelta a la pantalla de turnos y
+     sin dejar nada de esa persona. Con el ticket en pantalla se dan 40 s
+     para anotarlo, que es otra cosa. (La espera se puede acortar para las
+     pruebas con localStorage «fadori_kiosco_espera», en segundos.) */
   let kUltimo = Date.now();
   const kToque = () => { kUltimo = Date.now(); };
   window.kToque = kToque;
+  const ESPERA = (() => { try{ return Math.max(3, +localStorage.getItem('fadori_kiosco_espera') || 0) || 30; }catch(e){ return 30; } })();
   ['pointerdown', 'keydown', 'input'].forEach(ev => document.addEventListener(ev, kToque, true));
+  /* con el «¿sigues ahí?» puesto, CUALQUIER toque cuenta como «aquí sigo»,
+     no sólo el botón: la persona que regresa toca donde sea */
+  $('#kTicket').addEventListener('pointerdown', (e) => {
+    if($('#kSigues').hidden || e.target.closest('#kBorra, #kAqui')) return;
+    e.preventDefault(); $('#kAqui').click();
+  });
   setInterval(() => {
     const quieto = (Date.now() - kUltimo) / 1000;
     if(!$('#kTicket').hidden){
       if(!$('#kBoleto').hidden && quieto > 40) preguntarMas();
       return;
     }
-    const algo = cesta.length || !$('#velo').hidden || !$('#velo2').hidden;
-    if(algo && quieto > 60){ $('#kTicket').hidden = false; $('#kBoleto').hidden = true; $('#kMas').hidden = true; $('#kSigues').hidden = false;
-      cuentaAtras('#kBarra2', 10, kTerminar); }
-    else if(!algo && quieto > 45) kTerminar();
+    if(quieto > ESPERA){
+      const algo = cesta.length > 0;
+      $('#kSiguesQue').textContent = algo ? 'Toca la pantalla. Si no, en 10 segundos se borra tu pedido y regresa a los turnos.'
+                                          : 'Toca la pantalla. Si no, en 10 segundos regresa a los turnos.';
+      $('#kTicket').hidden = false; $('#kBoleto').hidden = true; $('#kMas').hidden = true; $('#kSigues').hidden = false;
+      cuentaAtras('#kBarra2', 10, kTerminar);
+    }
   }, 1000);
+  /* La puerta escondida al mostrador. La tablet que da a la fila es la misma
+     que el de la cooperativa voltea hacia la caja: dejar el dedo DOS segundos
+     sobre «Fadori.» le pide a la pantalla que abra el pad del pasador. Nadie
+     de la fila llega ahí sin querer, y aunque llegue, sin el pasador no pasa. */
+  (function(){
+    const m = document.querySelector('header.barra .marca'); if(!m) return;
+    let t = null;
+    m.style.touchAction = 'none'; m.style.webkitUserSelect = 'none'; m.style.userSelect = 'none';
+    const suelta = () => { clearTimeout(t); t = null; m.classList.remove('k-sosteniendo'); };
+    m.addEventListener('pointerdown', () => {
+      suelta(); m.classList.add('k-sosteniendo');
+      t = setTimeout(() => { suelta(); kAvisaPapa('kiosco-mostrador'); }, 2000);
+    });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => m.addEventListener(ev, suelta));
+    m.addEventListener('contextmenu', (e) => e.preventDefault());
+  })();
   window.KIOSCO = { reiniciar: () => { kReiniciar(); kToque(); }, pedir: pedirEnTablet };
 }
 

@@ -65,7 +65,7 @@ export async function abrirMesa(nombre = 'flujos'){
   /* la cooperativa entra como de verdad: pasador en su pantalla */
   async function mostrador(opciones){
     const m = await aparato('/fadori/mostrador', Object.assign({ w: 1100, h: 800 }, opciones || {}));
-    await m.fill('#rPase', '1234'); await m.click('#rEntrar');
+    await m.fill('#rPase', '121026'); await m.click('#rEntrar');
     await m.waitForFunction(() => FADORI.llaveMostrador(), null, { timeout: 10000 }).catch(() => {});
     await m.waitForTimeout(1500);
     return m;

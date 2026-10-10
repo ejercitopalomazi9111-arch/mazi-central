@@ -58,7 +58,7 @@ ms = await tarda(a, () => (FADORI.yo() || {}).deuda > 0);
 ok(`Ana ve su deuda en su teléfono (${ms} ms)`, ms != null);
 await most.reload(); await most.waitForTimeout(2500);
 const pase = await most.$('#rPase');
-if(pase && await pase.isVisible()){ await most.fill('#rPase', '1234'); await most.click('#rEntrar'); await most.waitForTimeout(2000); }
+if(pase && await pase.isVisible()){ await most.fill('#rPase', '121026'); await most.click('#rEntrar'); await most.waitForTimeout(2000); }
 ok('tras recargar el mostrador, Ana sigue en la lista de fiados', await most.evaluate(() => {
   document.querySelector('[data-vista="deudas"]')?.click();
   return /Ana P/.test(document.getElementById('listaDeudas')?.textContent || '');
@@ -67,7 +67,7 @@ ok('y los pedidos conservan el nombre (no «Sin nombre»)', await most.evaluate(
 // la tablet nueva (o la de siempre con la llave vencida): abre, carga como cualquiera, y LUEGO pone el pasador
 const most2 = await aparato('/fadori/mostrador', { w: 1100, h: 800 });
 await most2.waitForTimeout(2000);
-await most2.fill('#rPase', '1234'); await most2.click('#rEntrar');
+await most2.fill('#rPase', '121026'); await most2.click('#rEntrar');
 ms = await tarda(most2, () => { document.querySelector('[data-vista="deudas"]')?.click(); return /Ana P/.test(document.getElementById('listaDeudas')?.textContent || ''); }, null, 10000);
 ok(`una tablet que entra con el pasador DESPUÉS de cargar ve los fiados (${ms} ms)`, ms != null);
 ok('y los nombres de los pedidos', await most2.evaluate(id => (FADORI.pedido(id) || {}).nombre === 'Ana P', idA));

@@ -72,7 +72,7 @@ async function tarda(pg, fn, arg) {
 const most = await aparato('/fadori/mostrador', 1100, 800, -3000);   // la tablet 3 s atrasada
 const pant = await aparato('/fadori/pantalla', 1280, 720);
 // la cooperativa entra como de verdad: con el pasador, en su pantalla, y el SERVIDOR le da la llave
-await most.fill('#rPase', '1234'); await most.click('#rEntrar');
+await most.fill('#rPase', '121026'); await most.click('#rEntrar');
 ok('el mostrador entra con el pasador y el servidor le da su llave', !!(await most.waitForFunction(() => FADORI.llaveMostrador(), null, { timeout: 10000 }).catch(() => null)));
 await most.waitForTimeout(2500);   // que suba su menú
 const a = await aparato('/fadori/', 390, 844, 120000), b = await aparato('/fadori/');   // A con el reloj 2 min adelantado
