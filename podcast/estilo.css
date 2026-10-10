@@ -217,3 +217,76 @@ body.modo-video .a-i, body.modo-audio .v-i{display:none}
 .logo-fila{display:flex; gap:12px; align-items:center; margin-top:8px}
 #cvLogo{width:80px; height:80px; border-radius:16px; background:var(--sup2); flex:0 0 80px}
 .logo-fila .chips{margin-top:0}
+
+/* ── LA CABINA ── */
+.cabina{position:fixed; inset:0; z-index:70; background:#000; color:#fff; display:flex; flex-direction:column}
+.cabina video{position:absolute; inset:0; width:100%; height:100%; object-fit:cover}
+.cabina video.espejo{transform:scaleX(-1)}
+.cab-arriba{position:relative; z-index:2; display:flex; align-items:center; gap:10px;
+  padding:calc(10px + env(safe-area-inset-top)) 14px 10px; background:linear-gradient(rgba(0,0,0,.55), transparent)}
+.rec-chip{display:inline-flex; align-items:center; gap:8px; padding:6px 12px; border-radius:999px; background:rgba(0,0,0,.5);
+  font-variant-numeric:tabular-nums; font-size:16px}
+.rec-chip i{width:10px; height:10px; border-radius:50%; background:#777}
+.cabina.grabando .rec-chip i{background:#FF3B30; animation:latir 1s ease-in-out infinite}
+@keyframes latir{50%{opacity:.3}}
+.cab-medidor{flex:1; margin:0; background:rgba(255,255,255,.2)}
+.cabina .mini{background:rgba(0,0,0,.5); color:#fff}
+.cab-girar{position:relative; z-index:2; margin:8px auto; padding:10px 14px; border-radius:14px; background:rgba(0,0,0,.65);
+  display:flex; gap:8px; align-items:center; font-weight:700; font-size:14px}
+.apuntador{position:relative; z-index:2; margin:auto 14px 10px; max-width:560px; align-self:center; width:calc(100% - 28px);
+  background:rgba(10,8,12,.62); border-radius:16px; padding:12px 14px; font-size:15px; line-height:1.35;
+  -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px)}
+.apuntador[hidden]{display:none !important}
+.apuntador .ap-que{font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#FFB4AE}
+.apuntador .ap-txt{display:block; margin-top:4px; font-weight:700; font-size:17px}
+.apuntador .ap-sig{display:block; margin-top:8px; font-size:13px; color:rgba(255,255,255,.7)}
+.cab-aviso{position:relative; z-index:2; text-align:center; min-height:20px; margin:0 14px 6px; font-weight:800; font-size:14px;
+  text-shadow:0 1px 3px #000}
+.cab-abajo{position:relative; z-index:2; display:grid; grid-template-columns:repeat(4,1fr); align-items:center; justify-items:center;
+  padding:12px 10px calc(16px + env(safe-area-inset-bottom)); background:linear-gradient(transparent, rgba(0,0,0,.6))}
+.cab-abajo .rec{grid-column:2; grid-row:1}
+.cab-abajo #cabCamara{grid-column:1; grid-row:1}
+.cab-abajo #cabError{grid-column:3; grid-row:1}
+.cab-abajo #cabGuion{grid-column:4; grid-row:1}
+.cab-btn{border:0; background:rgba(0,0,0,.45); color:#fff; border-radius:16px; min-width:64px; min-height:60px; padding:6px 8px;
+  display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer}
+.cab-btn .i{width:22px; height:22px}
+.cab-btn small{font-size:11px; font-weight:700}
+.cab-btn:disabled{opacity:.35}
+.cab-btn[aria-pressed="true"]{background:rgba(255,90,78,.5)}
+.cabina .rec{border-color:#fff; background:rgba(0,0,0,.3)}
+@media (orientation:landscape) and (max-height:500px){
+  .cab-abajo{position:absolute; right:0; top:0; bottom:0; grid-template-columns:1fr; grid-template-rows:repeat(4,1fr);
+    padding:10px calc(10px + env(safe-area-inset-right)) 10px 10px; background:linear-gradient(90deg, transparent, rgba(0,0,0,.6))}
+  .cab-abajo .rec{grid-column:1; grid-row:2} .cab-abajo #cabCamara{grid-column:1; grid-row:1}
+  .cab-abajo #cabError{grid-column:1; grid-row:3} .cab-abajo #cabGuion{grid-column:1; grid-row:4}
+  .apuntador{margin:auto 110px 10px 14px; max-width:460px; align-self:flex-start}
+}
+@media (prefers-reduced-motion: reduce){ .cabina.grabando .rec-chip i{animation:none} }
+
+/* ── EL EDITOR ── */
+.editor-capa{position:fixed; inset:0; z-index:65; background:rgba(8,6,10,.7); display:grid; place-items:end center}
+.editor{width:min(720px, 100%); max-height:96vh; overflow-y:auto; background:var(--sup); border-radius:24px 24px 0 0;
+  padding:14px 16px calc(16px + env(safe-area-inset-bottom))}
+@media (min-width:760px){ .editor-capa{place-items:center} .editor{border-radius:24px} }
+.ed-cab{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px}
+.ed-cab h3{margin:0; font-size:18px}
+#edVideo{width:100%; max-height:40vh; background:#000; border-radius:14px; display:block}
+#edLinea{width:100%; height:72px; display:block; margin-top:10px; border-radius:12px; background:var(--sup2); cursor:pointer; touch-action:none}
+.ed-ctrl{display:flex; align-items:center; gap:8px; margin-top:8px}
+.ed-ctrl b{margin-left:auto; font-variant-numeric:tabular-nums}
+.mini.grande{width:52px; height:52px}
+.ed-cortes{list-style:none; margin:10px 0 0; padding:0; display:flex; flex-direction:column; gap:6px}
+.ed-cortes li{display:flex; align-items:center; gap:10px; background:var(--sup2); border-radius:12px; padding:6px 6px 6px 12px; font-size:14px}
+.ed-cortes li span{flex:1}
+.ed-pie{justify-content:space-between}
+.etiqueta{display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:800; padding:2px 7px; border-radius:999px;
+  background:var(--acento-suave); color:var(--tinta); margin:3px 4px 0 0}
+.etiqueta .i{width:12px; height:12px}
+body.sin-scroll{overflow:hidden}
+.etiquetas{display:block}
+.ed-queda{background:transparent !important; padding-left:2px !important; color:var(--tenue)}
+.ed-queda b{color:var(--tinta)}
+.ed-botones{display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px; margin-top:12px}
+.ed-botones .btn{flex-direction:column; gap:4px; min-height:64px; padding:8px 6px; font-size:13px; line-height:1.15; text-align:center; justify-content:center; width:auto}
+.ed-botones .btn.fuerte{color:#fff}

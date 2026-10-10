@@ -459,6 +459,28 @@
     "capcut",
     "safari"
    ]
+  },
+  {
+   "id": "grabar-en-la-pagina-por-trozos-y-me-equivoque",
+   "titulo": "Grabar video dentro de la página sin perder la toma, y «me equivoqué» que borra la frase sola",
+   "gravedad": "media",
+   "sintoma": "Grabar 30 minutos de podcast en el teléfono: si la pestaña se cierra, se acaba la pila o iOS corta la cámara, se pierde todo; y al equivocarse hay que acordarse después de dónde cortar.",
+   "causa": "MediaRecorder entrega el archivo al PARAR: lo que hay en memoria muere con la pestaña. Y editar a mano una frase repetida obliga a buscarla en la línea de tiempo.",
+   "porque": "El navegador no guarda nada solo; IndexedDB sí aguanta Blobs y sobrevive al cierre.",
+   "arreglo": "podcast/app.js · la cabina: MediaRecorder con trozos de 1 s; cada trozo va a IndexedDB (`vtrozo:ID:n`) con un encabezado `grabando` (tipo, cuántos, marcas). Al abrir, si hay encabezado, se arma el clip «(recuperada)». «Me equivoqué» sólo apunta el segundo; video.js `corteDeError` busca hacia atrás el último silencio de ≥0.35 s (el principio de la frase) y quita de ahí al toque; si no hay en 20 s, quita 8 s. Nada se corta en el archivo: se apunta y se resuelve en `planear` al exportar, igual que los recortes a mano y los carteles.",
+   "comoCazarlo": "pruebas-video.mjs §5b-5c: graba con la cámara de mentira de Chromium, toca «Me equivoqué», revisa que el encabezado ya esté en IndexedDB a media toma y RECARGA a media grabación: tiene que volver como «recuperada». Ojo: la cámara falsa de Chromium sin ventana entrega el primer trozo tarde (~5 s), no culpar al código.",
+   "consejo": "Descartado: guardar todo el arreglo de trozos en una sola llave (se reescribe completo cada segundo) y cortar el archivo de verdad (en Safari no hay con qué sin ffmpeg). No se deja cambiar de cámara a media toma: cambiar la pista rompe la grabadora.",
+   "salioDe": "podcast · «ponle más funciones… incluyendo la grabación del video y audio y la edición simple», 10 de octubre",
+   "senales": [
+    "grabar",
+    "cabina",
+    "me equivoqué",
+    "recuperar",
+    "indexeddb",
+    "apuntador",
+    "teleprompter",
+    "recortar clip"
+   ]
   }
  ]
 }

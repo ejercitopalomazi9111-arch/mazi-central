@@ -47,7 +47,8 @@
     <h2 id="tClips"><span class="num">1</span>Tus clips</h2>
     <p class="ayuda">Graba con la cámara del teléfono, de preferencia acostado (horizontal), o sube lo que ya tienes. Si son varios, se juntan en orden.</p>
     <div class="fila-btn">
-      <label class="btn fuerte" for="fCamara"><span data-ico="camera"></span>Grabar con la cámara</label>
+      <button class="btn fuerte" id="bCabina" type="button"><span data-ico="video"></span>Grabar aquí</button>
+      <label class="btn" for="fCamara"><span data-ico="camera"></span>Cámara del teléfono</label>
       <input id="fCamara" type="file" accept="video/*" capture="user" hidden>
       <label class="btn" for="fVideos"><span data-ico="upload"></span>Subir video</label>
       <input id="fVideos" type="file" accept="video/*" multiple hidden>
@@ -288,6 +289,53 @@
 
   <p class="pie">Todo se procesa en tu teléfono: nada se sube a ningún lado. · Codificador MP3: <a href="vendor/LAMEJS-LICENCIA.txt">LAME</a> (LGPL) · iconos Lucide</p>
 </main>
+
+<!-- ═══════════ LA CABINA: grabar aquí con apuntador ═══════════ -->
+<div class="cabina" id="cabina" hidden role="dialog" aria-modal="true" aria-label="Grabar">
+  <video id="cabVista" playsinline muted autoplay></video>
+  <div class="cab-arriba">
+    <span class="rec-chip" id="cabRec"><i></i><b id="cabTiempo">0:00</b></span>
+    <div class="medidor cab-medidor" aria-hidden="true"><i id="cabNivel"></i></div>
+    <button class="mini" id="cabCerrar" type="button" aria-label="Cerrar la cabina"><span data-ico="x"></span></button>
+  </div>
+  <p class="cab-girar" id="cabGirar" hidden><span data-ico="smartphone"></span>Gira el teléfono: el video es horizontal</p>
+  <div class="apuntador" id="cabApuntador"></div>
+  <p class="cab-aviso" id="cabAviso" aria-live="polite"></p>
+  <div class="cab-abajo">
+    <button class="cab-btn" id="cabCamara" type="button"><span data-ico="switch-camera"></span><small>Cámara</small></button>
+    <button class="rec" id="cabGrabar" type="button" aria-label="Grabar"><span class="rec-punto"></span></button>
+    <button class="cab-btn" id="cabError" type="button" disabled><span data-ico="scissors"></span><small>Me equivoqué</small></button>
+    <button class="cab-btn" id="cabGuion" type="button" aria-pressed="true"><span data-ico="scroll-text"></span><small>Guion</small></button>
+  </div>
+</div>
+
+<!-- ═══════════ EL EDITOR DE UN CLIP ═══════════ -->
+<div class="editor-capa" id="editor" hidden role="dialog" aria-modal="true" aria-labelledby="edTitulo">
+  <div class="editor">
+    <div class="ed-cab"><h3 id="edTitulo">Editar clip</h3>
+      <button class="mini" id="edCerrar" type="button" aria-label="Cerrar sin guardar"><span data-ico="x"></span></button></div>
+    <video id="edVideo" playsinline preload="auto"></video>
+    <canvas id="edLinea" height="72" aria-label="Línea de tiempo: toca para moverte"></canvas>
+    <div class="ed-ctrl">
+      <button class="mini" id="edAtras" type="button" aria-label="Un segundo atrás"><span data-ico="skip-back"></span></button>
+      <button class="mini grande" id="edPlay" type="button" aria-label="Reproducir"><span data-ico="play"></span></button>
+      <button class="mini" id="edAdelante" type="button" aria-label="Un segundo adelante"><span data-ico="skip-forward"></span></button>
+      <b id="edTiempo">0:00</b>
+    </div>
+    <div class="ed-botones">
+      <button class="btn" id="edIni" type="button"><span data-ico="flag"></span>Empieza aquí</button>
+      <button class="btn" id="edFin" type="button"><span data-ico="flag"></span>Termina aquí</button>
+      <button class="btn" id="edCorte" type="button"><span data-ico="scissors"></span>Quitar desde aquí</button>
+    </div>
+    <ul class="ed-cortes" id="edCortes"></ul>
+    <label class="campo">Cartel antes de este clip<input id="edCartel" maxlength="60" placeholder="Bloque 1 · De dónde salimos"></label>
+    <div class="chips" id="edSugerencias"></div>
+    <div class="fila-btn ed-pie">
+      <button class="btn" id="edBorrar" type="button"><span data-ico="undo-2"></span>Quitar toda la edición</button>
+      <button class="btn fuerte" id="edListo" type="button"><span data-ico="check"></span>Listo</button>
+    </div>
+  </div>
+</div>
 
 <div class="trabajando" id="trabajando" hidden role="status" aria-live="polite">
   <div class="tr-caja"><span class="giro" data-ico="loader-circle"></span><b id="trTexto">Trabajando…</b>

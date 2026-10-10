@@ -6,7 +6,7 @@
 import { SR, unir, aWav, tiempo, lufs } from './motor.js';
 import { ESTILOS } from './jingle.js';
 import { TEMAS, dibujarPortada, aJpeg } from './portada.js';
-import { FORMATOS, abrirVideo, planear, exportar, dibujarEntrada, dibujarNombre, dibujarMiniatura, dibujarCuadro, tipoDeVideo } from './video.js';
+import { FORMATOS, abrirVideo, planear, exportar, corteDeError, dibujarEntrada, dibujarNombre, dibujarMiniatura, dibujarCuadro, tipoDeVideo } from './video.js';
 import { EPISODIOS, TIEMPOS, PODCAST, cuando, guion } from './episodios.js';
 
 const $ = (s) => document.querySelector(s);
@@ -516,8 +516,10 @@ function pintarClips(){
   $('#listaClips').innerHTML = clips.map((c, k) =>
     '<li class="pedazo clip" data-id="'+c.id+'">'+
     (c.mini ? '<img class="clip-mini" src="'+c.mini+'" alt="">' : '<span class="clip-mini"></span>')+
-    '<div class="que"><b>'+(k + 1)+' · '+esc(c.nombre)+'</b><small>'+tiempo(c.dur)+(c.w ? ' · ' + (c.w >= c.h ? 'horizontal' : 'vertical') : '')+'</small></div>'+
+    '<div class="que"><b>'+(k + 1)+' · '+esc(c.nombre)+'</b><small>'+tiempo(c.dur)+(c.w ? ' · ' + (c.w >= c.h ? 'horizontal' : 'vertical') : '')+'</small>'+
+      etiquetasDe(c)+'</div>'+
     '<div class="acc">'+
+      '<button class="mini" type="button" data-vacc="edita" aria-label="Editar «'+esc(c.nombre)+'»">'+ico('pencil')+'</button>'+
       '<button class="mini" type="button" data-vacc="sube" aria-label="Subir"'+(k === 0 ? ' disabled' : '')+'>'+ico('arrow-up')+'</button>'+
       '<button class="mini" type="button" data-vacc="borra" aria-label="Borrar">'+ico('trash')+'</button>'+
     '</div></li>').join('');
@@ -525,19 +527,30 @@ function pintarClips(){
   $('#bPlanear').disabled = !hay; $('#bExportar').disabled = !hay; $('#bKitAudio').disabled = !hay;
   pintarMiniatura();
 }
-async function agregarVideo(blob, nombre){
+function etiquetasDe(c){
+  const e = c.edicion || {}, t = [];
+  if((+e.ini || 0) > 0.05 || (e.fin && e.fin < c.dur - 0.05)) t.push(ico('scissors') + 'Recortado');
+  if(e.cortes && e.cortes.length) t.push(ico('scissors') + e.cortes.length + (e.cortes.length === 1 ? ' pedazo fuera' : ' pedazos fuera'));
+  if(c.marcas && c.marcas.length) t.push(ico('undo-2') + c.marcas.length + (c.marcas.length === 1 ? ' error borrado' : ' errores borrados'));
+  if(c.cartel) t.push(ico('flag') + 'Cartel: ' + esc(c.cartel));
+  return t.length ? '<span class="etiquetas">' + t.map(x => '<span class="etiqueta">' + x + '</span>').join('') + '</span>' : '';
+}
+const metaDe = (c) => ({ edicion: c.edicion || null, marcas: c.marcas || [], cartel: c.cartel || '' });
+async function agregarVideo(blob, nombre, meta){
   const id = nuevoId('v');
   await guardar('vclip:' + id, { blob, nombre });       /* primero se guarda */
+  if(meta) await guardar('vmeta:' + id, meta);
   try{
     const info = await abrirVideo(blob, decodificar);
-    const c = Object.assign({ id, nombre, blob, limpio: null }, info);
+    const c = Object.assign({ id, nombre, blob, limpio: null }, meta || {}, info);
     c.mini = await miniaturaDe(c.url, Math.min(1, c.dur / 3));
     clips.push(c);
     await guardar('vorden', clips.map(x => x.id));
     plan = null; $('#resPlan').hidden = true; pintarClips();
   }catch(err){
-    await guardar('vclip:' + id, undefined);
+    await guardar('vclip:' + id, undefined); await guardar('vmeta:' + id, undefined);
     aviso('No pude abrir «' + nombre + '». Prueba con un .mov o .mp4.');
+    return false;
   }
 }
 async function subirVideos(fs){
@@ -549,13 +562,279 @@ $('#fCamara').addEventListener('change', (e) => { const fs = [...e.target.files]
 $('#listaClips').addEventListener('click', async (e) => {
   const b = e.target.closest('[data-vacc]'); if(!b) return;
   const id = b.closest('.pedazo').dataset.id, k = clips.findIndex(c => c.id === id);
+  if(b.dataset.vacc === 'edita'){ abrirEditor(clips[k]); return; }
   if(b.dataset.vacc === 'sube' && k > 0) [clips[k - 1], clips[k]] = [clips[k], clips[k - 1]];
   if(b.dataset.vacc === 'borra'){
     if(!confirm('¿Borrar «' + clips[k].nombre + '»? No se puede deshacer.')) return;
-    URL.revokeObjectURL(clips[k].url); clips.splice(k, 1); await guardar('vclip:' + id, undefined);
+    URL.revokeObjectURL(clips[k].url); clips.splice(k, 1); await guardar('vclip:' + id, undefined); await guardar('vmeta:' + id, undefined);
   }
   await guardar('vorden', clips.map(c => c.id));
   plan = null; $('#resPlan').hidden = true; pintarClips();
+});
+
+/* ── VIDEO · 1b · LA CABINA ──────────────────────────────────────────────
+   Grabar aquí mismo: la cámara de frente, el guion del episodio encima y un
+   botón de «me equivoqué». Cada segundo lo grabado se guarda en el teléfono: si
+   se cierra la pestaña o se acaba la pila, al volver se recupera. */
+const cab = { flujo: null, rec: null, id: null, n: 0, trozos: [], cola: Promise.resolve(), t0: 0, reloj: 0,
+  marcas: [], frente: true, ac: null, raf: 0, bloqueo: null, manual: -1, guion: true, nombre: '' };
+const aSeg = (m) => { const [a, b] = m.split(':').map(Number); return a * 60 + b; };
+function seccionesDelGuion(){
+  const ep = EPISODIOS.find(x => x.n === epElegido);
+  if(!ep) return null;
+  return TIEMPOS.slice(1).map(([m, q, d], j) => { const i = j + 1;
+    return { ini: aSeg(m), que: q, txt: i === 1 ? ep.gancho : i >= 2 && i <= 4 ? ep.bloques[i - 2] : i === 5 ? ep.dilema : d }; });
+}
+/* en qué parte del episodio vas: lo que ya está grabado + lo de ahora */
+function pintarApuntador(seg){
+  const caja = $('#cabApuntador'), S = seccionesDelGuion();
+  caja.hidden = !cab.guion;
+  if(!S){ caja.innerHTML = '<span class="ap-que">Sin guion</span><span class="ap-txt">Elige el episodio arriba y aquí sale su guion mientras grabas.</span>'; return; }
+  const yaHay = clips.reduce((s, c) => s + c.dur, 0), tEp = 15 + yaHay + seg;
+  let i = 0; S.forEach((x, k) => { if(tEp >= x.ini) i = k; });
+  if(cab.manual > i) i = Math.min(S.length - 1, cab.manual);
+  const fin = S[i + 1] ? S[i + 1].ini : 30 * 60, queda = Math.max(0, fin - tEp);
+  caja.innerHTML = '<span class="ap-que">'+esc(S[i].que)+(cab.manual > -1 || seg > 0 ? ' · quedan ' + tiempo(queda) : '')+'</span>'+
+    '<span class="ap-txt">'+esc(S[i].txt)+'</span>'+
+    (S[i + 1] ? '<span class="ap-sig">Sigue: '+esc(S[i + 1].que)+' — toca para pasar</span>' : '');
+  caja.dataset.i = i;
+}
+$('#cabApuntador').addEventListener('click', () => { const S = seccionesDelGuion(); if(!S) return; cab.manual = Math.min(S.length - 1, (+$('#cabApuntador').dataset.i || 0) + 1); pintarApuntador(cab.rec ? (Date.now() - cab.t0) / 1000 : 0); });
+function tipoDeCamara(){
+  const M = window.MediaRecorder; if(!M || !M.isTypeSupported) return '';
+  return ['video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find(t => M.isTypeSupported(t)) || '';
+}
+function revisarGiro(){
+  const h = vOpc.formato !== 'vertical', parado = innerHeight > innerWidth, g = $('#cabGirar');
+  g.hidden = h ? !parado : parado;
+  g.lastChild.textContent = h ? 'Gira el teléfono: el video es horizontal' : 'Pon el teléfono vertical: el video es vertical';
+}
+function apagarCamara(){
+  cancelAnimationFrame(cab.raf);
+  if(cab.flujo) cab.flujo.getTracks().forEach(t => t.stop());
+  if(cab.ac) cab.ac.close().catch(() => {});
+  cab.flujo = null; cab.ac = null; $('#cabNivel').style.width = '0%';
+}
+async function prenderCamara(){
+  apagarCamara();
+  const h = vOpc.formato !== 'vertical';
+  cab.flujo = await navigator.mediaDevices.getUserMedia({
+    video: { facingMode: cab.frente ? 'user' : 'environment', width: { ideal: h ? 1280 : 720 }, height: { ideal: h ? 720 : 1280 }, frameRate: { ideal: 30 } },
+    audio: { echoCancellation: false, noiseSuppression: true, autoGainControl: true } });
+  const v = $('#cabVista'); v.srcObject = cab.flujo; v.classList.toggle('espejo', cab.frente); v.play().catch(() => {});
+  try{
+    cab.ac = new (window.AudioContext || window.webkitAudioContext)(); const an = cab.ac.createAnalyser(); an.fftSize = 512;
+    cab.ac.createMediaStreamSource(cab.flujo).connect(an); const d = new Float32Array(an.fftSize);
+    const mira = () => { an.getFloatTimeDomainData(d); let m = 0; for(const x of d) m = Math.max(m, Math.abs(x));
+      $('#cabNivel').style.width = Math.min(100, Math.round(m * 140)) + '%'; cab.raf = requestAnimationFrame(mira); };
+    mira();
+  }catch(e){}
+}
+async function abrirCabina(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder){ aviso('Este navegador no deja grabar aquí. Usa «Cámara del teléfono».'); return; }
+  cab.manual = -1; $('#cabina').hidden = false; document.body.classList.add('sin-scroll');
+  $('#cabTiempo').textContent = '0:00'; $('#cabAviso').textContent = ''; pintarApuntador(0); revisarGiro();
+  try{ await prenderCamara(); }
+  catch(e){ cerrarCabina(); aviso('No hay permiso para la cámara o el micrófono. Revísalo en los ajustes del navegador.'); return; }
+  try{ cab.bloqueo = navigator.wakeLock ? await navigator.wakeLock.request('screen') : null; }catch(e){ cab.bloqueo = null; }
+}
+async function cerrarCabina(){
+  if(cab.rec) await pararCabina();
+  apagarCamara(); $('#cabVista').srcObject = null;
+  try{ cab.bloqueo && cab.bloqueo.release(); }catch(e){} cab.bloqueo = null;
+  $('#cabina').hidden = true; document.body.classList.remove('sin-scroll');
+}
+const encabezado = () => ({ id: cab.id, tipo: cab.rec ? cab.rec.mimeType : '', n: cab.n, marcas: cab.marcas, nombre: cab.nombre });
+function empezarCabina(){
+  const tipo = tipoDeCamara();
+  cab.id = nuevoId('v'); cab.n = 0; cab.trozos = []; cab.marcas = []; cab.cola = Promise.resolve();
+  const ep = EPISODIOS.find(x => x.n === epElegido);
+  cab.nombre = (ep ? 'Ep ' + ep.n + ' · ' : '') + 'Toma ' + (clips.length + 1);
+  cab.rec = new MediaRecorder(cab.flujo, tipo ? { mimeType: tipo, videoBitsPerSecond: 4e6, audioBitsPerSecond: 128000 } : undefined);
+  const id = cab.id;
+  cab.rec.ondataavailable = (e) => {
+    if(!e.data || !e.data.size) return;
+    const k = cab.n++, trozo = e.data; cab.trozos.push(trozo);
+    const cab0 = encabezado();
+    cab.cola = cab.cola.then(() => guardar('vtrozo:' + id + ':' + k, trozo)).then(() => guardar('grabando', cab0));
+  };
+  cab.cola = cab.cola.then(() => guardar('grabando', encabezado()));
+  cab.rec.start(1000); cab.t0 = Date.now();
+  $('#cabina').classList.add('grabando'); $('#cabGrabar').setAttribute('aria-label', 'Parar');
+  $('#cabError').disabled = false; $('#cabCamara').disabled = true;
+  cab.reloj = setInterval(() => { const s = (Date.now() - cab.t0) / 1000; $('#cabTiempo').textContent = tiempo(s); pintarApuntador(s); }, 250);
+}
+async function pararCabina(){
+  const rec = cab.rec; if(!rec) return;
+  const listo = new Promise(r => { rec.onstop = r; });
+  if(rec.state !== 'inactive') rec.stop();
+  await listo; clearInterval(cab.reloj);
+  cab.rec = null;
+  $('#cabina').classList.remove('grabando'); $('#cabGrabar').setAttribute('aria-label', 'Grabar');
+  $('#cabError').disabled = true; $('#cabCamara').disabled = false;
+  await cab.cola;
+  const blob = new Blob(cab.trozos, { type: (rec.mimeType || 'video/mp4').split(';')[0] });
+  const marcas = cab.marcas.slice(), id = cab.id, n = cab.n;
+  $('#cabAviso').textContent = 'Guardando la toma…';
+  const ok = await agregarVideo(blob, cab.nombre, { edicion: null, marcas, cartel: '' });
+  for(let k = 0; k < n; k++) await guardar('vtrozo:' + id + ':' + k, undefined);
+  await guardar('grabando', undefined);
+  cab.trozos = [];
+  $('#cabAviso').textContent = ok === false ? 'No se pudo abrir la toma' : 'Toma guardada' + (marcas.length ? ' · ' + marcas.length + (marcas.length === 1 ? ' error se borra solo' : ' errores se borran solos') : '');
+}
+$('#bCabina').addEventListener('click', abrirCabina);
+$('#cabCerrar').addEventListener('click', cerrarCabina);
+$('#cabGrabar').addEventListener('click', async () => {
+  if(cab.rec){ await pararCabina(); return; }
+  if(!cab.flujo) return;
+  try{ empezarCabina(); }catch(e){ aviso('No se pudo empezar a grabar: ' + e.message); }
+});
+let tAvisoCab = 0;
+$('#cabError').addEventListener('click', () => {
+  if(!cab.rec) return;
+  const t = (Date.now() - cab.t0) / 1000; cab.marcas.push(+t.toFixed(2));
+  cab.cola = cab.cola.then(() => guardar('grabando', encabezado()));
+  const a = $('#cabAviso'); a.textContent = 'Listo: esa frase se borra sola. Repítela.'; clearTimeout(tAvisoCab);
+  tAvisoCab = setTimeout(() => { a.textContent = ''; }, 2600);
+  if(navigator.vibrate) navigator.vibrate(40);
+});
+$('#cabCamara').addEventListener('click', async () => {
+  if(cab.rec) return; cab.frente = !cab.frente;
+  try{ await prenderCamara(); }catch(e){ cab.frente = !cab.frente; aviso('No se pudo cambiar de cámara.'); try{ await prenderCamara(); }catch(x){} }
+});
+$('#cabGuion').addEventListener('click', () => { cab.guion = !cab.guion; $('#cabGuion').setAttribute('aria-pressed', String(cab.guion)); pintarApuntador(cab.rec ? (Date.now() - cab.t0) / 1000 : 0); });
+addEventListener('resize', () => { if(!$('#cabina').hidden) revisarGiro(); });
+/* si la pestaña se fue a segundo plano a media toma, se cierra la toma: iOS
+   corta la cámara y lo grabado hasta ahí ya está a salvo */
+document.addEventListener('visibilitychange', () => { if(document.hidden && cab.rec) pararCabina(); });
+addEventListener('pagehide', () => { try{ if(cab.rec && cab.rec.state === 'recording') cab.rec.requestData(); }catch(e){} });
+async function recuperarToma(){
+  const g = await leer('grabando'); if(!g || !g.id) return;
+  const trozos = [];
+  for(let k = 0; k < (g.n || 0); k++){ const t = await leer('vtrozo:' + g.id + ':' + k); if(t) trozos.push(t); }
+  if(trozos.length){
+    const ok = await agregarVideo(new Blob(trozos, { type: (g.tipo || 'video/mp4').split(';')[0] }), (g.nombre || 'Toma') + ' (recuperada)', { edicion: null, marcas: g.marcas || [], cartel: '' });
+    if(ok !== false) aviso('Recuperé una toma que no se alcanzó a guardar.');
+  }
+  for(let k = 0; k < (g.n || 0); k++) await guardar('vtrozo:' + g.id + ':' + k, undefined);
+  await guardar('grabando', undefined);
+}
+
+/* ── VIDEO · 1c · EDITAR UN CLIP ─────────────────────────────────────────
+   Lo mínimo que se pide al editar: dónde empieza, dónde acaba, quitar un
+   pedazo de en medio y un cartel antes. Nada se corta aquí: se apunta, y el
+   corte se hace al exportar. Al reproducir, se brinca lo que se va. */
+const ed = { c: null, ini: 0, fin: 0, cortes: [], marcas: [], zonas: [], desde: null, picos: null, raf: 0 };
+const edV = $('#edVideo');
+const fino = (s) => { const d = Math.max(0, s); return Math.floor(d / 60) + ':' + String(Math.floor(d % 60)).padStart(2, '0') + '.' + Math.floor((d * 10) % 10); };
+function quitadosEd(){
+  const c = ed.c, z = [];
+  if(ed.ini > 0) z.push([0, ed.ini, 'recorte']);
+  if(ed.fin < c.dur) z.push([ed.fin, c.dur, 'recorte']);
+  ed.cortes.forEach(([a, b]) => z.push([a, b, 'corte']));
+  ed.zonas.forEach(([a, b]) => z.push([a, b, 'error']));
+  return z;
+}
+function quedaEd(){
+  const z = quitadosEd().map(([a, b]) => [Math.max(0, a), Math.min(ed.c.dur, b)]).sort((x, y) => x[0] - y[0]);
+  let fuera = 0, hasta = 0; for(const [a, b] of z){ const A = Math.max(a, hasta); if(b > A) fuera += b - A; hasta = Math.max(hasta, b); }
+  return Math.max(0, ed.c.dur - fuera);
+}
+function abrirEditor(c){
+  ed.c = c; const e = c.edicion || {};
+  ed.ini = +e.ini || 0; ed.fin = e.fin ? +e.fin : c.dur; ed.cortes = (e.cortes || []).map(x => x.slice());
+  ed.marcas = (c.marcas || []).slice(); ed.zonas = ed.marcas.map(t => corteDeError(c.audio, t)); ed.desde = null; ed.picos = null;
+  $('#edTitulo').textContent = c.nombre; $('#edCartel').value = c.cartel || '';
+  $('#edSugerencias').innerHTML = ['Saludo', 'Bloque 1', 'Bloque 2', 'Bloque 3', 'El dilema', 'Cierre']
+    .map(t => '<button class="chip" type="button" data-cartel="'+t+'">'+t+'</button>').join('');
+  edV.src = c.url; edV.currentTime = 0;
+  $('#editor').hidden = false; document.body.classList.add('sin-scroll');
+  pintarEd(); vigilarEd();
+}
+function cerrarEditor(){ edV.pause(); cancelAnimationFrame(ed.raf); $('#editor').hidden = true; document.body.classList.remove('sin-scroll'); ed.c = null; }
+function pintarEd(){
+  if(!ed.c) return;
+  const c = ed.c, cv = $('#edLinea'), dpr = Math.min(2, devicePixelRatio || 1), W = Math.max(100, Math.round(cv.clientWidth * dpr)), H = Math.round(72 * dpr);
+  if(cv.width !== W) cv.width = W;      /* asignar el ancho BORRA el lienzo: sólo si cambió */
+  if(cv.height !== H) cv.height = H;
+  const g = cv.getContext('2d'), est = getComputedStyle(document.body);
+  const tinta = est.getPropertyValue('--tenue').trim() || '#999', acento = est.getPropertyValue('--acento').trim() || '#f55';
+  if(!ed.picos || ed.picos.length !== W){
+    ed.picos = new Float32Array(W); const por = c.audio.length / W;
+    for(let x = 0; x < W; x++){ let m = 0; const a = Math.floor(x * por), b = Math.min(c.audio.length, Math.floor((x + 1) * por)); for(let i = a; i < b; i += 4) m = Math.max(m, Math.abs(c.audio[i])); ed.picos[x] = m; }
+  }
+  g.clearRect(0, 0, W, H);
+  const aX = (t) => t / c.dur * W;
+  quitadosEd().forEach(([a, b, q]) => { g.fillStyle = q === 'error' ? 'rgba(255,170,0,.30)' : 'rgba(255,59,48,.26)'; g.fillRect(aX(a), 0, Math.max(2, aX(b) - aX(a)), H); });
+  if(ed.desde != null){ const a = Math.min(ed.desde, edV.currentTime), b = Math.max(ed.desde, edV.currentTime); g.fillStyle = 'rgba(255,59,48,.45)'; g.fillRect(aX(a), 0, Math.max(2, aX(b) - aX(a)), H); }
+  g.fillStyle = tinta;
+  for(let x = 0; x < W; x++){ const h = Math.max(1, Math.min(1, ed.picos[x] * 1.6) * (H - 8)); g.fillRect(x, (H - h) / 2, 1, h); }
+  g.fillStyle = acento; const px = aX(edV.currentTime || 0); g.fillRect(Math.round(px) - dpr, 0, 2 * dpr, H);
+  $('#edTiempo').textContent = fino(edV.currentTime || 0) + ' / ' + tiempo(c.dur);
+  $('#edCorte').lastChild.textContent = ed.desde == null ? 'Quitar desde aquí' : 'Hasta aquí';
+  $('#edCorte').classList.toggle('fuerte', ed.desde != null);
+  const filas = ed.cortes.map(([a, b], k) => '<li><span>'+ico('scissors')+' Se quita '+fino(a)+' – '+fino(b)+'</span>'+
+      '<button class="mini" type="button" data-ir="'+a+'" aria-label="Ver ese pedazo">'+ico('play')+'</button>'+
+      '<button class="mini" type="button" data-quita-corte="'+k+'" aria-label="Dejar ese pedazo">'+ico('trash')+'</button></li>')
+    .concat(ed.marcas.map((t, k) => '<li><span>'+ico('undo-2')+' Me equivoqué a los '+tiempo(t)+' · se quita '+fino(ed.zonas[k][0])+' – '+fino(Math.min(c.dur, ed.zonas[k][1]))+'</span>'+
+      '<button class="mini" type="button" data-ir="'+ed.zonas[k][0]+'" aria-label="Ver ese pedazo">'+ico('play')+'</button>'+
+      '<button class="mini" type="button" data-quita-marca="'+k+'" aria-label="Dejar esa frase">'+ico('trash')+'</button></li>'));
+  $('#edCortes').innerHTML = filas.join('') + '<li class="ed-queda"><span>Queda <b>'+fino(quedaEd())+'</b> de '+fino(c.dur)+
+    (ed.ini > 0 || ed.fin < c.dur ? ' · empieza en '+tiempo(ed.ini)+' y termina en '+tiempo(ed.fin) : '')+'</span></li>';
+}
+/* mientras suena: brincar lo que se va, y parar al final */
+function vigilarEd(){
+  cancelAnimationFrame(ed.raf);
+  const paso = () => {
+    if(!ed.c) return;
+    if(!edV.paused && ed.desde == null){
+      const t = edV.currentTime, z = quitadosEd().find(([a, b]) => t >= a && t < b - 0.05);
+      if(z){ if(z[1] >= ed.c.dur - 0.05 || z[0] >= ed.fin){ edV.pause(); } else edV.currentTime = z[1]; }
+    }
+    pintarEd(); ed.raf = requestAnimationFrame(paso);
+  };
+  paso();
+}
+function irEd(t){ edV.currentTime = Math.max(0, Math.min(ed.c.dur, t)); }
+(function(){
+  const cv = $('#edLinea'); let arrastra = false;
+  const mover = (e) => { const r = cv.getBoundingClientRect(); irEd((e.clientX - r.left) / r.width * ed.c.dur); };
+  cv.addEventListener('pointerdown', (e) => { if(!ed.c) return; arrastra = true; try{ cv.setPointerCapture(e.pointerId); }catch(x){} edV.pause(); mover(e); });
+  cv.addEventListener('pointermove', (e) => { if(arrastra) mover(e); });
+  cv.addEventListener('pointerup', () => { arrastra = false; });
+  cv.addEventListener('pointercancel', () => { arrastra = false; });
+})();
+edV.addEventListener('play', () => { $('#edPlay').innerHTML = ico('pause'); $('#edPlay').setAttribute('aria-label', 'Pausar'); });
+edV.addEventListener('pause', () => { $('#edPlay').innerHTML = ico('play'); $('#edPlay').setAttribute('aria-label', 'Reproducir'); });
+$('#edPlay').addEventListener('click', () => { if(edV.paused){ if(edV.currentTime >= ed.fin - 0.05) irEd(ed.ini); edV.play().catch(() => {}); } else edV.pause(); });
+$('#edAtras').addEventListener('click', () => irEd(edV.currentTime - 1));
+$('#edAdelante').addEventListener('click', () => irEd(edV.currentTime + 1));
+$('#edIni').addEventListener('click', () => { ed.ini = Math.max(0, Math.min(edV.currentTime, ed.fin - 0.5)); aviso('El clip empieza en ' + tiempo(ed.ini) + '.'); });
+$('#edFin').addEventListener('click', () => { ed.fin = Math.min(ed.c.dur, Math.max(edV.currentTime, ed.ini + 0.5)); aviso('El clip termina en ' + tiempo(ed.fin) + '.'); });
+$('#edCorte').addEventListener('click', () => {
+  if(ed.desde == null){ ed.desde = edV.currentTime; aviso('Avanza hasta donde acaba lo que quitas y toca «Hasta aquí».'); return; }
+  const a = Math.min(ed.desde, edV.currentTime), b = Math.max(ed.desde, edV.currentTime); ed.desde = null;
+  if(b - a < 0.2){ aviso('Ese pedazo es muy chico: mueve el video antes de tocar «Hasta aquí».'); return; }
+  ed.cortes.push([+a.toFixed(2), +b.toFixed(2)]); ed.cortes.sort((x, y) => x[0] - y[0]);
+});
+$('#edCortes').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if(!b) return;
+  if(b.dataset.ir != null){ irEd(+b.dataset.ir); edV.play().catch(() => {}); }
+  if(b.dataset.quitaCorte != null) ed.cortes.splice(+b.dataset.quitaCorte, 1);
+  if(b.dataset.quitaMarca != null){ ed.marcas.splice(+b.dataset.quitaMarca, 1); ed.zonas.splice(+b.dataset.quitaMarca, 1); }
+});
+$('#edSugerencias').addEventListener('click', (e) => { const b = e.target.closest('[data-cartel]'); if(b) $('#edCartel').value = b.dataset.cartel; });
+$('#edBorrar').addEventListener('click', () => { ed.ini = 0; ed.fin = ed.c.dur; ed.cortes = []; ed.marcas = []; ed.zonas = []; ed.desde = null; $('#edCartel').value = ''; });
+$('#edCerrar').addEventListener('click', cerrarEditor);
+$('#editor').addEventListener('click', (e) => { if(e.target.id === 'editor') cerrarEditor(); });
+document.addEventListener('keydown', (e) => { if(e.key === 'Escape' && ed.c) cerrarEditor(); });
+$('#edListo').addEventListener('click', async () => {
+  const c = ed.c, sinNada = ed.ini <= 0.05 && ed.fin >= c.dur - 0.05 && !ed.cortes.length;
+  c.edicion = sinNada ? null : { ini: +ed.ini.toFixed(2), fin: +ed.fin.toFixed(2), cortes: ed.cortes };
+  c.marcas = ed.marcas; c.cartel = $('#edCartel').value.trim();
+  await guardar('vmeta:' + c.id, metaDe(c));
+  cerrarEditor(); plan = null; $('#resPlan').hidden = true; pintarClips();
+  aviso('Guardado. Los cortes se hacen al exportar.');
 });
 
 /* ── VIDEO · 2 · EDICIÓN ─────────────────────────────────────────────── */
@@ -580,7 +859,8 @@ function hacerPlan(){
   caja.innerHTML = '<div class="cifras">'+
     '<div><b>'+tiempo(original)+'</b><span>grabado</span></div>'+
     '<div><b>'+tiempo(plan.total)+'</b><span>queda</span></div>'+
-    '<div><b>'+(plan.quitado >= 1 ? '−' + tiempo(plan.quitado) : '0:00')+'</b><span>'+(plan.tramos.length - clips.length > 0 ? (plan.tramos.length - clips.length) + (plan.tramos.length - clips.length === 1 ? ' corte' : ' cortes') : 'sin cortes')+'</span></div></div>';
+    '<div><b>'+(plan.quitado >= 1 ? '−' + tiempo(plan.quitado) : '0:00')+'</b><span>'+(plan.tramos.length - clips.length > 0 ? (plan.tramos.length - clips.length) + (plan.tramos.length - clips.length === 1 ? ' corte' : ' cortes') : 'sin cortes')+'</span></div></div>'+
+    (plan.carteles ? '<p class="nota">'+plan.carteles+(plan.carteles === 1 ? ' cartel' : ' carteles')+' entre bloques (+'+tiempo(plan.carteles * 2.5)+')</p>' : '');
   return plan;
 }
 $('#bPlanear').addEventListener('click', () => { hacerPlan(); aviso('Así queda. Los cortes se hacen al exportar.'); });
@@ -629,7 +909,7 @@ $('#eArchivoV').addEventListener('input', () => guardar('archivoV', $('#eArchivo
 async function piezasDe({ entrada = true, tramos = true, cierre = true }){
   const p = [];
   if(entrada){ ocupado('Componiendo la entrada…', 0.1); const m = await laMusica('golpe'); p.push({ tipo: 'entrada', audio: m, dur: m.length / SR }); }
-  if(tramos){ if(!plan) hacerPlan(); plan.tramos.forEach(t => p.push(Object.assign({ tipo: 'tramo' }, t))); }
+  if(tramos){ if(!plan) hacerPlan(); plan.orden.forEach(o => p.push(Object.assign({}, o))); }
   if(cierre){ ocupado('Componiendo el cierre…', 0.2); const m = musicaPropia || await laMusica('fundido'); p.push({ tipo: 'cierre', audio: m, dur: Math.max(5, m.length / SR) }); }
   return p;
 }
@@ -770,11 +1050,13 @@ $('#bPortada').addEventListener('click', async () => {
   }
   for(const id of vorden){
     const g = await leer('vclip:' + id); if(!g) continue;
-    try{ const info = await abrirVideo(g.blob, decodificar); const c = Object.assign({ id, nombre: g.nombre, blob: g.blob, limpio: null }, info); c.mini = await miniaturaDe(c.url, Math.min(1, c.dur / 3)); clips.push(c); }catch(e){}
+    const meta = await leer('vmeta:' + id);
+    try{ const info = await abrirVideo(g.blob, decodificar); const c = Object.assign({ id, nombre: g.nombre, blob: g.blob, limpio: null }, meta || {}, info); c.mini = await miniaturaDe(c.url, Math.min(1, c.dur / 3)); clips.push(c); }catch(e){}
   }
+  await recuperarToma();
   const fr = await leer('frase'); if(fr){ try{ vozIntro = await decodificar(fr.blob); }catch(e){} }
   const mu = await leer('musica'); if(mu){ try{ musicaPropia = prepararMusica(await decodificar(mu.blob)); }catch(e){} }
   ocupado(false);
   pintarIntro(); pintarPedazos(); pintarClips(); pintarFrase(); repintarVistas();
-  window.ESTUDIO = { pedazos: () => pedazos, clips: () => clips, final: () => final, video: () => videoFinal, plan: () => plan, listo: true };
+  window.ESTUDIO = { pedazos: () => pedazos, clips: () => clips, editor: () => ed, final: () => final, video: () => videoFinal, plan: () => plan, listo: true };
 })();

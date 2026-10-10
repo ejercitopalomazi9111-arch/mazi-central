@@ -19,7 +19,7 @@ qr-code smartphone receipt-text circle-x rotate-ccw palette shield-check map-pin
   'podcast': '''mic mic-off upload play pause square circle scissors wand-sparkles music download share-2 image trash
 arrow-up arrow-down sliders-horizontal sparkles refresh-cw volume-2 audio-lines audio-waveform x check chevron-down
 chevron-right clock mic-vocal radio headphones list-ordered lightbulb info circle-alert loader-circle shuffle disc-3
-guitar newspaper coffee zap palette type hash school video camera film clapperboard user-plus rectangle-horizontal rectangle-vertical eye crop maximize monitor smartphone captions sun'''.split(),
+guitar newspaper coffee zap palette type hash school video camera film clapperboard user-plus rectangle-horizontal rectangle-vertical eye crop maximize monitor smartphone captions sun switch-camera pencil undo-2 flag scroll-text skip-back skip-forward'''.split(),
 }
 d = json.loads((RAIZ / 'presentaciones/vendor/lucide-1.48.0.json').read_text())['iconos']
 def armar(app, NOMBRES):
