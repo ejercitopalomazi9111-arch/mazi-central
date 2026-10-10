@@ -159,3 +159,33 @@ audio{width:100%; height:44px}
   transition:all .25s; z-index:60; max-width:calc(100% - 32px); pointer-events:none}
 .toston.vivo{opacity:1; transform:translate(-50%, 0)}
 @media (prefers-reduced-motion: reduce){ .rec.grabando, .giro .i{animation:none} }
+
+/* ── VIDEO o AUDIO: la página es una sola y cada modo enseña lo suyo ── */
+body.modo-video .a, body.modo-audio .v{display:none !important}
+body.modo-video .a-i, body.modo-audio .v-i{display:none}
+.cab-dentro .crece{flex:1; min-width:0}
+.modo{display:flex; background:var(--sup2); border:1px solid var(--linea); border-radius:999px; padding:3px; flex:0 0 auto}
+.modo button{border:0; background:none; min-height:38px; padding:0 12px; border-radius:999px; font-weight:800; font-size:13px;
+  color:var(--tenue); display:inline-flex; align-items:center; gap:6px; cursor:pointer}
+.modo button .i{width:16px; height:16px}
+.modo button[aria-checked="true"]{background:var(--acento); color:#fff}
+@media (max-width:380px){ .modo button{padding:0 9px} .cab p{display:none} }
+.rotulo-chips{margin:16px 0 0; font-size:12px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--tenue)}
+.rotulo-chips + .chips{margin-top:8px}
+.previa{width:100%; height:auto; border-radius:16px; margin-top:12px; display:block; background:#000}
+.clip-mini{width:72px; height:48px; border-radius:10px; object-fit:cover; background:#000; display:block}
+.pedazo.clip{grid-template-columns:auto minmax(0,1fr) auto}
+.nombres{list-style:none; margin:0 0 12px; padding:0; display:flex; flex-direction:column; gap:8px}
+.nombre-fila{display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) 74px auto; gap:6px; align-items:end;
+  background:var(--sup2); border-radius:16px; padding:10px}
+.nombre-fila .campo{margin-top:0}
+.nombre-fila .campo input{min-height:44px; background:var(--sup)}
+@media (max-width:480px){ .nombre-fila{grid-template-columns:1fr 1fr} .nombre-fila .campo:nth-child(3){grid-column:1} }
+#finalV video{width:100%; border-radius:14px; background:#000; display:block; max-height:70vh}
+.kit{margin-top:16px; border-top:1px solid var(--linea); padding-top:12px}
+.kit summary{cursor:pointer; font-weight:800; display:flex; align-items:center; gap:8px}
+.aviso-tiempo{margin-top:12px; padding:10px 12px; border-radius:12px; background:var(--acento-suave); color:var(--tinta)}
+.miniatura{display:grid; gap:10px; margin-bottom:18px}
+#cvMini{width:100%; height:auto; border-radius:14px; box-shadow:var(--sombra)}
+.miniatura input[type=range]{width:100%; accent-color:var(--acento); min-height:32px}
+.tr-caja .btn{margin-top:14px}

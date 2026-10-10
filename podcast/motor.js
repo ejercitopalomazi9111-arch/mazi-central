@@ -105,26 +105,8 @@ export function pisoDeRuido(x, sr = SR){
    principio y otro al final para que la respiración no se corte, y se une
    con un fundido de 10 ms para que no truene. */
 export function recortarSilencios(x, sr = SR, { maxPausa = 0.7, dejar = 0.35 } = {}){
-  const { db, n } = niveles(x, sr);
-  const piso = pisoDeRuido(x, sr);
-  const umbral = Math.min(Math.max(piso + 10, -55), -28);
-  const quedan = [];          /* tramos [desde, hasta) en muestras */
-  let i = 0, desde = 0, quitado = 0, cortes = 0;
-  const minCuadros = Math.ceil(maxPausa * sr / n);
-  const mitad = Math.round(dejar / 2 * sr);
-  while(i < db.length){
-    if(db[i] < umbral){
-      let j = i; while(j < db.length && db[j] < umbral) j++;
-      if(j - i >= minCuadros){
-        const a = i * n + mitad, b = Math.min(x.length, j * n) - mitad;
-        if(b > a){
-          quedan.push([desde, a]); desde = b; quitado += b - a; cortes++;
-        }
-      }
-      i = j;
-    } else i++;
-  }
-  quedan.push([desde, x.length]);
+  const quedan = tramosConVoz(x, sr, { maxPausa, dejar });
+  const quitado = x.length - quedan.reduce((s, [a, b]) => s + b - a, 0);
   const fundido = Math.round(0.01 * sr);
   const out = new Float32Array(x.length - quitado);
   let o = 0;
@@ -136,7 +118,32 @@ export function recortarSilencios(x, sr = SR, { maxPausa = 0.7, dejar = 0.35 } =
       out[o] = x[s] * g;
     }
   });
-  return { datos: out, quitado: quitado / sr, cortes };
+  return { datos: out, quitado: quitado / sr, cortes: quedan.length - 1 };
+}
+
+/* Los tramos que se QUEDAN, en muestras [desde, hasta). Es lo mismo que usa
+   recortarSilencios, pero sin tocar el audio: el video lo necesita así para
+   cortar la imagen en los mismos puntos que el sonido (cortes «jump cut»). */
+export function tramosConVoz(x, sr = SR, { maxPausa = 0.7, dejar = 0.35 } = {}){
+  const { db, n } = niveles(x, sr);
+  const piso = pisoDeRuido(x, sr);
+  const umbral = Math.min(Math.max(piso + 10, -55), -28);
+  const quedan = [];
+  let i = 0, desde = 0;
+  const minCuadros = Math.ceil(maxPausa * sr / n);
+  const mitad = Math.round(dejar / 2 * sr);
+  while(i < db.length){
+    if(db[i] < umbral){
+      let j = i; while(j < db.length && db[j] < umbral) j++;
+      if(j - i >= minCuadros){
+        const a = Math.max(desde, i * n + mitad), b = Math.min(x.length, j * n) - mitad;
+        if(b > a){ quedan.push([desde, a]); desde = b; }
+      }
+      i = j;
+    } else i++;
+  }
+  quedan.push([desde, x.length]);
+  return quedan.filter(([a, b]) => b > a);
 }
 
 /* ── bajar el ruido de fondo (expansor hacia abajo) ──────────────────────
