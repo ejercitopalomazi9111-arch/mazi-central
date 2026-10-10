@@ -264,6 +264,44 @@
   </div>
 </div>
 
+<!-- MODO TABLET: el ticket que se anota y el «¿algo más?». Sólo existe en
+     la tablet de la cooperativa (index.html?kiosco), adentro de la pantalla
+     de turnos. -->
+<div class="k-capa" id="kTicket" hidden role="dialog" aria-modal="true" aria-labelledby="kTitulo">
+  <div class="k-tarjeta" id="kBoleto">
+    <p class="k-que" id="kTitulo">Tu turno</p>
+    <b class="k-num" id="kNum">…</b>
+    <p class="k-nombre" id="kNombre" hidden></p>
+    <p class="k-pidio" id="kPidio"></p>
+    <p class="k-anota"><span data-ico="camera"></span><span>Anótalo o tómale foto. Cuando tu número salga en verde en la pantalla, pasa por tu pedido.</span></p>
+    <p class="k-cod">Código <b id="kFolio">—</b></p>
+    <button class="btn fuerte ancho" id="kOk" type="button"><span data-ico="check"></span> Ya lo anoté</button>
+  </div>
+  <div class="k-tarjeta k-mas" id="kMas" hidden>
+    <h2>¿Quieres pedir algo más?</h2>
+    <div class="k-cuenta" aria-hidden="true"><i id="kBarra"></i></div>
+    <div class="k-botones">
+      <button class="btn ancho" id="kNo" type="button">No, ya terminé</button>
+      <button class="btn fuerte ancho" id="kSi" type="button"><span data-ico="plus"></span> Sí, pedir otra cosa</button>
+    </div>
+  </div>
+  <div class="k-tarjeta k-mas" id="kSigues" hidden>
+    <h2>¿Sigues ahí?</h2>
+    <p class="k-anota" style="justify-content:center">Si no, en unos segundos se borra este pedido para el que sigue.</p>
+    <div class="k-cuenta" aria-hidden="true"><i id="kBarra2"></i></div>
+    <div class="k-botones">
+      <button class="btn ancho" id="kBorra" type="button">Borrar y salir</button>
+      <button class="btn fuerte ancho" id="kAqui" type="button">Aquí sigo</button>
+    </div>
+  </div>
+</div>
+<div class="k-candado" id="kCandado" hidden>
+  <div class="k-tarjeta">
+    <h2>Esta tablet todavía no puede levantar pedidos</h2>
+    <p class="k-anota" style="justify-content:center">Que la cooperativa la active en la pantalla de turnos, con su pasador.</p>
+  </div>
+</div>
+
 <script src="iconos.js"></script>
 <script src="nucleo.js"></script>
 <script>
@@ -276,6 +314,15 @@ const esc = (t) => String(t==null?'':t).replace(/[&<>"']/g, c =>
   ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 F.cargar();
+
+/* ── MODO TABLET (kiosco) ──────────────────────────────────────────────
+   La misma app, pero para cualquiera que llegue a la tablet de la
+   cooperativa: sin cuenta, sin «Lo mío», con su nombre en el carrito, y al
+   final un ticket que se anota. La tablet pide como la cooperativa (con su
+   llave), así que el pedido entra directo a la fila. */
+const KIOSCO = /[?&]kiosco\b/.test(location.search);
+if(KIOSCO) document.documentElement.classList.add('kiosco');
+const kAvisaPapa = (tipo, datos) => { try{ if(window.parent !== window) window.parent.postMessage(Object.assign({ fadori: tipo }, datos || {}), location.origin); }catch(e){} };
 
 /* Los iconos del HTML fijo: el marcado sólo dice CUÁL (data-ico) y aquí se
    pone el dibujo. Así el HTML se lee y no trae 80 renglones de <path>. */
@@ -840,6 +887,12 @@ function pintar(){
    ARRANQUE
    ═════════════════════════════════════════════════════════════════════ */
 function arrancar(){
+  if(KIOSCO){
+    /* con servidor, sin la llave de la cooperativa el pedido se quedaría en
+       la tablet: mejor decirlo que dejar pedir en balde */
+    $('#kCandado').hidden = !(F.motor() === 'servidor' && !F.llaveMostrador());
+    return ver('menu');
+  }
   const yo = F.yo();
   if(!yo) return ver('entrada');
   if(!yo.terminos) return ver('terminos');
@@ -1057,6 +1110,7 @@ $('#bSiempre').addEventListener('click', () => {
 
 /* F05 · pedido para varios, y la confirmación integrada al último toque */
 $('#bPedir').addEventListener('click', () => {
+  if(KIOSCO) return abrirConfirmacion();
   const yo = F.yo(); if(!yo) return ver('entrada');
   const permiso = F.puedePedir(yo.codigo);
   if(!permiso.puede) return aviso(permiso.por, 'malo');
@@ -1074,6 +1128,96 @@ $('#bPedir').addEventListener('click', () => {
    ═════════════════════════════════════════════════════════════════════ */
 let notaPedido = '';
 let abiertoPara = false;
+/* qué sale en la pantalla de turnos: en el teléfono se recuerda; en la
+   tablet vuelve a «sólo mi pedido» con cada persona */
+let verElegido = KIOSCO ? 'pedido' : F.miVer();
+let kQuien = { nombre: '', grupo: '' };
+
+/* ── LA TABLET: pedir, el ticket y el «¿algo más?» ───────────────────── */
+let kPedido = null, kReloj = 0;
+function pedirEnTablet(){
+  const nombre = String(kQuien.nombre || '').trim();
+  if(nombre.length < 2){ aviso('Escribe tu primer nombre para saber de quién es.', 'malo'); const i = $('#kNombreIn'); if(i) i.focus(); return; }
+  try{
+    kPedido = F.pedir(null, cesta, { origen: 'kiosco', nombre, grupo: kQuien.grupo, nota: notaPedido, ver: verElegido });
+  }catch(err){ return aviso(err.message, 'malo'); }
+  const eran = cesta.map(r => r.prod);
+  cesta = []; notaPedido = ''; abiertoPara = false;
+  eran.forEach(refrescarFicha); pintarCesta(); cerrarHoja();
+  verTicket();
+}
+function verTicket(){
+  const p = kPedido && (F.pedido(kPedido.id) || kPedido); if(!p) return;
+  $('#kTicket').hidden = false; $('#kBoleto').hidden = false; $('#kMas').hidden = true; $('#kSigues').hidden = true;
+  $('#kNum').textContent = F.verTurno(p);
+  const al = F.primerNombre(p.nombre);
+  $('#kNombre').hidden = !al; $('#kNombre').textContent = al;
+  $('#kPidio').textContent = F.queSePidio(Object.assign({}, p, { ver: 'pedido' }), 6);
+  $('#kFolio').textContent = p.folio || '—';
+  $('#kOk').focus();
+}
+/* con servidor el número llega un parpadeo después: se actualiza solo */
+F.alCambiar(() => { if(KIOSCO && kPedido && !$('#kBoleto').hidden) verTicket(); });
+function cuentaAtras(barra, seg, alAcabar){
+  clearInterval(kReloj);
+  const ini = Date.now(), b = $(barra);
+  b.style.transform = 'scaleX(1)';
+  kReloj = setInterval(() => {
+    const q = 1 - (Date.now() - ini) / (seg * 1000);
+    b.style.transform = 'scaleX(' + Math.max(0, q) + ')';
+    if(q <= 0){ clearInterval(kReloj); alAcabar(); }
+  }, 50);
+}
+function preguntarMas(){
+  $('#kBoleto').hidden = true; $('#kMas').hidden = false; $('#kSigues').hidden = true;
+  cuentaAtras('#kBarra', 5, () => kTerminar());
+}
+/* se acabó el turno de esta persona: todo en blanco y de vuelta a la pantalla */
+function kTerminar(){
+  clearInterval(kReloj);
+  const p = kPedido && (F.pedido(kPedido.id) || kPedido);
+  kAvisaPapa('kiosco-fin', p ? { pedido: p.id, turno: p.turno } : {});
+  kReiniciar();
+}
+function kReiniciar(){
+  clearInterval(kReloj);
+  kPedido = null; kQuien = { nombre: '', grupo: '' }; verElegido = 'pedido';
+  const eran = cesta.map(r => r.prod);
+  cesta = []; notaPedido = ''; abiertoPara = false; filtro = 'todo';
+  eran.forEach(refrescarFicha); pintarCesta(); cerrarHoja();
+  /* la hoja cerrada guarda el carrito anterior —con el nombre de quien pidió—
+     aunque no se vea: se vacía para que no quede nada de esa persona */
+  $('#hojitaC').innerHTML = '';
+  ['#kNum', '#kNombre', '#kPidio', '#kFolio'].forEach(x => { $(x).textContent = ''; });
+  $('#kTicket').hidden = true;
+  ver('menu');
+}
+if(KIOSCO){
+  $('#kOk').addEventListener('click', preguntarMas);
+  $('#kNo').addEventListener('click', kTerminar);
+  $('#kSi').addEventListener('click', () => { clearInterval(kReloj); kPedido = null; $('#kTicket').hidden = true; ver('menu'); kToque(); });
+  $('#kBorra').addEventListener('click', kTerminar);
+  $('#kAqui').addEventListener('click', () => { clearInterval(kReloj); $('#kTicket').hidden = true; kToque(); });
+  /* el que se va a la mitad: a los 60 s sin tocar nada se le pregunta, y si
+     no contesta, se borra para el que sigue. Con el ticket en pantalla se le
+     dan 40 s para anotarlo. */
+  let kUltimo = Date.now();
+  const kToque = () => { kUltimo = Date.now(); };
+  window.kToque = kToque;
+  ['pointerdown', 'keydown', 'input'].forEach(ev => document.addEventListener(ev, kToque, true));
+  setInterval(() => {
+    const quieto = (Date.now() - kUltimo) / 1000;
+    if(!$('#kTicket').hidden){
+      if(!$('#kBoleto').hidden && quieto > 40) preguntarMas();
+      return;
+    }
+    const algo = cesta.length || !$('#velo').hidden || !$('#velo2').hidden;
+    if(algo && quieto > 60){ $('#kTicket').hidden = false; $('#kBoleto').hidden = true; $('#kMas').hidden = true; $('#kSigues').hidden = false;
+      cuentaAtras('#kBarra2', 10, kTerminar); }
+    else if(!algo && quieto > 45) kTerminar();
+  }, 1000);
+  window.KIOSCO = { reiniciar: () => { kReiniciar(); kToque(); }, pedir: pedirEnTablet };
+}
 
 /* ══════════════════════════════════════════════════════════════════════
    LA FICHA DEL PLATILLO
@@ -1234,6 +1378,23 @@ function pintarCarrito(){
           'Puedes pedirlo de todos modos y te lo guardamos para mañana.')+
     '</div>'+
 
+    /* en la tablet: tu nombre va aquí, que es cuando de verdad hace falta */
+    (KIOSCO
+      ? '<div class="k-quien">'+
+          '<label class="k-campo">Tu primer nombre<input id="kNombreIn" maxlength="18" autocomplete="off" autocapitalize="words" value="'+esc(kQuien.nombre)+'" placeholder="Así te llamamos"></label>'+
+          '<label class="k-campo chico">Grupo<input id="kGrupoIn" maxlength="6" autocomplete="off" value="'+esc(kQuien.grupo)+'" placeholder="3.1"></label>'+
+        '</div>'
+      : '')+
+    /* qué sale en la pantalla de turnos: lo decide quien pide */
+    '<div class="ver-en-pantalla">'+
+      '<h3>'+F.ico('monitor')+' En la pantalla de turnos sale…</h3>'+
+      '<div class="ver-opciones" role="radiogroup" aria-label="Qué sale en la pantalla">'+
+        [['nombre','user-round','Mi nombre y mi pedido'],['pedido','utensils','Sólo mi pedido'],['numero','hash','Sólo mi número']].map(([v, i, t]) =>
+          '<button class="ver-op" type="button" role="radio" data-ver="'+v+'" aria-checked="'+(verElegido === v)+'">'+F.ico(i)+'<span>'+t+'</span></button>').join('')+
+      '</div>'+
+      '<p class="ver-muestra" id="verMuestra"></p>'+
+    '</div>'+
+
     '<div class="renglones-op">'+
       '<button class="op" type="button" id="bNota">'+
         '<span class="op-ico">'+F.ico('notebook-pen')+'</span>'+
@@ -1252,7 +1413,7 @@ function pintarCarrito(){
               '<input data-para="'+i+'" maxlength="24" placeholder="¿de quién es?" value="'+esc(r.para)+'"></label>';
           }).join('') +'</div>'
         : '')+
-      (anti
+      (anti && !KIOSCO
         ? '<label class="op op-palanca">'+
             '<span class="op-ico">'+F.ico('school')+'</span>'+
             '<span class="op-que"><b>Lo dejo pedido de antes</b>'+
@@ -1306,13 +1467,32 @@ function pintarCarrito(){
       hecho:(t) => { notaPedido = String(t).slice(0,140).trim(); pintarCarrito(); } });
   });
   $('#bPara').addEventListener('click', () => { abiertoPara = !abiertoPara; pintarCarrito(); });
+  const muestra = () => {
+    const nom = KIOSCO ? ($('#kNombreIn') ? $('#kNombreIn').value : '') : ((F.yo() || {}).nombre || '');
+    const prueba = { ver: verElegido, nombre: nom, renglones: cesta.map(r => ({ prod: r.prod, cant: r.cant })) };
+    const al = F.aliasDe(prueba), qu = F.queSePidio(prueba, 3);
+    $('#verMuestra').innerHTML = 'Así se ve: <b>Turno 75</b>' + (al ? ' · ' + esc(al) : '') + (qu ? ' · ' + esc(qu) : '');
+  };
+  $$('#hojitaC [data-ver]').forEach(b => b.addEventListener('click', () => {
+    verElegido = b.dataset.ver; if(!KIOSCO) F.ponerMiVer(verElegido);
+    $$('#hojitaC [data-ver]').forEach(x => x.setAttribute('aria-checked', String(x === b))); muestra();
+  }));
+  if(KIOSCO){
+    $('#kNombreIn').addEventListener('input', () => { kQuien.nombre = $('#kNombreIn').value; muestra(); });
+    $('#kGrupoIn').addEventListener('input', () => { kQuien.grupo = $('#kGrupoIn').value; });
+  }
+  muestra();
   $('#bConfirmar').addEventListener('click', () => {
     /* el que más duele repetir: dos toques nerviosos = dos pedidos */
+    /* en la tablet, el nombre se revisa ANTES del candado de doble toque: si
+       no, el toque sin nombre cuenta y el bueno, un segundo después, se tira */
+    if(KIOSCO && String(kQuien.nombre || '').trim().length < 2) return pedirEnTablet();
     if(muySeguido('confirmar')) return;
+    if(KIOSCO) return pedirEnTablet();
     const yo = F.yo();
     try{
       const a = $('#eAnticipado');
-      miPedido = F.pedir(yo.codigo, cesta, { anticipado: a && a.checked, nota: notaPedido });
+      miPedido = F.pedir(yo.codigo, cesta, { anticipado: a && a.checked, nota: notaPedido, ver: verElegido });
       const eran = cesta.map(r => r.prod);
       cesta = []; notaPedido = ''; abiertoPara = false;
       eran.forEach(refrescarFicha);   /* si no, la ficha se queda con el conteo viejo */
@@ -1562,7 +1742,7 @@ pintarReloj();
   let yaSalio = false;
   try{ yaSalio = sessionStorage.getItem('fadori_cortinilla') === '1'; }catch(e){}
   const menos = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if(yaSalio || menos){ c.remove(); return; }
+  if(yaSalio || menos || KIOSCO){ c.remove(); return; }
   document.body.classList.add('cortina-arriba');
   try{ sessionStorage.setItem('fadori_cortinilla','1'); }catch(e){}
   const quitar = () => {
@@ -2011,7 +2191,7 @@ arrancar();
        9 px se infló a 59. Ninguna prueba lo cazó — se vio en una captura. */
     (function(){
       const pt = $('#puntoTurno'), barra = $('#pulgar');
-      if(!pt || !barra) return;
+      if(!pt || !barra || KIOSCO) return;   /* en la tablet no hay menú de abajo */
       const antes = pt.className, oculto = pt.hidden, barraOculta = barra.hidden;
       barra.hidden = false; pt.hidden = false; pt.className = 'punto urge';
       const r = pt.getBoundingClientRect();

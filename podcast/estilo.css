@@ -180,7 +180,6 @@ body.modo-video .a-i, body.modo-audio .v-i{display:none}
   background:var(--sup2); border-radius:16px; padding:10px}
 .nombre-fila .campo{margin-top:0}
 .nombre-fila .campo input{min-height:44px; background:var(--sup)}
-@media (max-width:480px){ .nombre-fila{grid-template-columns:1fr 1fr} .nombre-fila .campo:nth-child(3){grid-column:1} }
 #finalV video{width:100%; border-radius:14px; background:#000; display:block; max-height:70vh}
 .kit{margin-top:16px; border-top:1px solid var(--linea); padding-top:12px}
 .kit summary{cursor:pointer; font-weight:800; display:flex; align-items:center; gap:8px}
@@ -290,3 +289,18 @@ body.sin-scroll{overflow:hidden}
 .ed-botones{display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px; margin-top:12px}
 .ed-botones .btn{flex-direction:column; gap:4px; min-height:64px; padding:8px 6px; font-size:13px; line-height:1.15; text-align:center; justify-content:center; width:auto}
 .ed-botones .btn.fuerte{color:#fff}
+
+/* ── QUIÉN SALE · las tarjetas reality ── */
+.vista-tarjeta{width:100%; height:auto; aspect-ratio:16/9; border-radius:16px; display:block; margin:4px 0 12px; background:#111}
+.nombre-fila{grid-template-columns:36px minmax(0,1.1fr) minmax(0,1fr) minmax(0,1.4fr) 70px auto}
+.campo.ancho{min-width:0}
+.asiento{display:inline-grid; place-items:center; width:20px; height:20px; border-radius:6px; color:#fff; font-style:normal; font-weight:900; font-size:12px;
+  margin-right:6px; flex:none}
+.asiento.grande{width:36px; height:44px; border-radius:10px; font-size:18px; margin:0; align-self:end; transform:skewX(-10deg)}
+@media (max-width:640px){
+  .nombre-fila{grid-template-columns:36px minmax(0,1fr) minmax(0,1fr) auto}
+  .nombre-fila .campo.ancho{grid-column:2 / 4}
+  .nombre-fila .campo:nth-of-type(4){grid-column:2 / 3}
+}
+.ed-sub{margin:16px 0 8px; font-size:14px; display:flex; align-items:center; gap:6px; color:var(--tenue)}
+.ed-sub .i{width:16px; height:16px}

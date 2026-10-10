@@ -486,7 +486,7 @@ export class Cooperativa {
         /* la hora la pone el servidor; a lo mucho se le cree 10 minutos atrás
            (el que pidió sin señal), nunca las 7 de la mañana */
         creado: Math.min(ahora, Math.max(ahora - 10 * 60000, Number(r.creado) || ahora)),
-        estado, anticipado, nota: texto(r.nota, 140), origen: 'app', despachador: null,
+        estado, anticipado, nota: texto(r.nota, 140), origen: 'app', ver: verLimpio(r.ver), despachador: null,
         tomado: 0, listoEn: 0, entregado: 0, cancelado: estado === 'cancelado' ? ahora : 0,
         turno, t: Math.max((Number(r.t) || 0) + 1, ahora),
       });
@@ -550,8 +550,12 @@ export class Cooperativa {
     if(c === 'pedidos'){
       if(mio(rec.alumno)) return sinInternos(rec);
       /* de los demás, sólo lo que hace falta para saber tu lugar en la fila */
+      /* el nombre sólo si quien pidió dijo que sí, y sólo el primero: es lo
+         que sale en la pantalla de turnos */
+      const ver = verLimpio(rec.ver);
       return { id: rec.id, turno: rec.turno, estado: rec.estado, creado: rec.creado, anticipado: rec.anticipado,
         tomado: rec.tomado, listoEn: rec.listoEn, entregado: rec.entregado, origen: rec.origen, t: rec.t, _r: rec._r,
+        ver, alias: ver === 'nombre' ? String(rec.nombre || '').trim().split(/\s+/)[0].slice(0, 14) : '',
         renglones: (rec.renglones || []).map(x => ({ prod: x.prod, cant: x.cant, listo: !!x.listo, sinSurtir: x.sinSurtir || 0 })) };
     }
     if(c === 'eventos'){
@@ -741,6 +745,7 @@ function limpiarRegistro(r, maxBytes){
   c.t = Number(r.t) || 0;
   return c;
 }
+function verLimpio(v){ return ['nombre', 'pedido', 'numero'].indexOf(v) >= 0 ? v : 'pedido'; }
 function renglonesLimpios(lista, dejarVacio){
   if(!Array.isArray(lista)) return null;
   const out = lista.slice(0, 10).filter(x => x && typeof x === 'object' && RE_ID.test(String(x.prod || '')))
