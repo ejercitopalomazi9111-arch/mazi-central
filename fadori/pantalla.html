@@ -1,203 +1,259 @@
 <!doctype html>
-<html lang="es-MX">
+<html lang="es-MX" data-tema="oscuro">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Fadori · turnos</title>
-<meta name="theme-color" content="#1A0F0A">
+<meta name="theme-color" content="#120A06">
 <link rel="icon" href="marca/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="marca/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Turnos">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="stylesheet" href="estilo.css">
-<script>
-/* El tema, ANTES de pintar. Va aquí y no en nucleo.js —que carga hasta el
-   final— porque si no, la página parpadea en claro antes de ponerse oscura y
-   eso se ve barato. Son cuatro renglones repetidos a propósito. */
-(function(){try{
-  var t = localStorage.getItem('fadori_tema') || 'auto';
-  var osc = t === 'oscuro' || (t === 'auto' &&
-    window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
-  document.documentElement.dataset.tema = osc ? 'oscuro' : 'claro';
-}catch(e){}})();
-</script>
 
 <style>
-  /* Esta pantalla se ve DE LEJOS, colgada junto a la cooperativa. Dos zonas
-     y nada más: a la izquierda, en verde y en grande, los que ya pueden pasar
-     (lo único que alguien busca con urgencia); a la derecha, más chico, lo que
-     se está haciendo y la fila. Abajo, el QR para que el que está formado
-     deje de estarlo la próxima vez. */
-  body.publica{min-height:100vh; display:flex; flex-direction:column}
-  .tv-cab{display:flex; align-items:center; gap:clamp(12px,2vw,24px);
-    padding:clamp(14px,2.4vh,26px) clamp(18px,3vw,40px)}
-  .tv-logo{width:clamp(40px,5vw,64px); height:auto; border-radius:14px}
-  .tv-marca{font-size:clamp(26px,3.4vw,46px); font-weight:900; letter-spacing:-.04em; color:var(--cafe)}
-  .tv-marca b{color:var(--naranja)}
-  .tv-recreo{display:inline-flex; align-items:center; gap:8px; padding:8px 16px; border-radius:999px;
-    background:var(--sup); border:1px solid var(--linea); font-weight:800; color:var(--tenue);
-    font-size:clamp(14px,1.6vw,20px)}
+  /* LA PANTALLA DE TURNOS · se ve DE LEJOS, en el recreo.
+     En grande, el podcast de la escuela con su marco de televisión, y cada
+     tanto una tanda de anuncios de la escuela. En la esquina, el turno que ya
+     puede pasar con LO QUE PIDIÓ (eso sí se recuerda; el número 75 no) y,
+     sólo si quien pidió dijo que sí, su primer nombre. Va siempre en oscuro:
+     es una tele. */
+  :root{ --tv-fondo:#0D0805; --tv-sup:#1A110B; --tv-sup2:#24170F; --tv-linea:#3A271A; --tv-tinta:#FFF4E8; --tv-tenue:#C9AE96;
+    --tv-verde:#7CD957; --tv-verde-hondo:#1E3A10; --tv-naranja:#FF7A2E; --tv-rojo:#E0473C }
+  html, body{background:var(--tv-fondo); color:var(--tv-tinta)}
+  body.tele{margin:0; min-height:100vh; overflow:hidden; font-family:var(--fam, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif)}
+  .tv{height:100vh; height:100dvh; display:grid; grid-template-rows:auto minmax(0, 1fr) auto; transform-origin:50% 50%}
+  .tv.regresa{animation:tv-regresa .7s cubic-bezier(.2,.9,.3,1) both}
+  @keyframes tv-regresa{from{transform:scale(1.35); filter:blur(6px)} to{transform:scale(1); filter:none}}
+
+  .tv-cab{display:flex; align-items:center; gap:clamp(10px,1.6vw,20px); padding:clamp(10px,1.8vh,18px) clamp(16px,2.4vw,32px)}
+  .tv-logo{width:clamp(34px,4vw,52px); height:auto; border-radius:12px}
+  .tv-marca{font-size:clamp(22px,2.8vw,38px); font-weight:900; letter-spacing:-.04em}
+  .tv-marca b{color:var(--tv-naranja)}
+  .tv-recreo{display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border-radius:999px; background:var(--tv-sup);
+    border:1px solid var(--tv-linea); font-weight:800; color:var(--tv-tenue); font-size:clamp(13px,1.4vw,18px)}
   .tv-recreo[hidden]{display:none}
-  .tv-recreo .i{width:1.1em; height:1.1em; color:var(--naranja)}
-  .tv-reloj{margin-left:auto; font-size:clamp(28px,4vw,56px); font-weight:900; letter-spacing:-.03em;
-    font-variant-numeric:tabular-nums; color:var(--cafe)}
+  .tv-recreo .i{width:1.1em; height:1.1em; color:var(--tv-naranja)}
+  .tv-reloj{margin-left:auto; font-size:clamp(24px,3.4vw,46px); font-weight:900; letter-spacing:-.03em; font-variant-numeric:tabular-nums}
+  .tv-boton{border:1px solid var(--tv-linea); background:var(--tv-sup); color:var(--tv-tenue); width:44px; height:44px; border-radius:14px;
+    display:grid; place-items:center; cursor:pointer; opacity:.55}
+  .tv-boton:hover, .tv-boton:focus-visible{opacity:1}
+  .tv-boton .i{width:22px; height:22px}
 
-  .tv-cuerpo{flex:1; display:grid; grid-template-columns:1.35fr 1fr; gap:clamp(14px,2vw,28px);
-    padding:0 clamp(18px,3vw,40px) clamp(14px,2vh,24px)}
-  @media (max-width:820px){ .tv-cuerpo{grid-template-columns:1fr} }
-  .tv-zona{border-radius:28px; padding:clamp(16px,2.4vw,30px); background:var(--sup);
-    border:1px solid var(--linea); display:flex; flex-direction:column; min-width:0}
-  .tv-zona.listos{background:linear-gradient(165deg, #1E3A10, #16290C); border-color:#3F6B23}
-  .tv-zona h2{margin:0 0 clamp(12px,2vh,20px); display:flex; align-items:center; gap:12px;
-    font-size:clamp(20px,2.4vw,34px); letter-spacing:-.02em}
-  .tv-zona h2 .i{width:1.1em; height:1.1em}
-  .tv-zona.listos h2{color:#C9F0A8}
-  .tv-zona h3{margin:clamp(14px,2.4vh,26px) 0 12px; display:flex; align-items:center; gap:10px;
-    font-size:clamp(16px,1.7vw,24px); color:var(--tenue)}
-  .tv-zona h3:first-of-type{margin-top:0}
-  .tv-zona h3 .i{width:1.05em; height:1.05em; color:var(--naranja)}
-  .tv-zona h3 .cuenta{margin-left:auto; font-variant-numeric:tabular-nums}
+  .tv-cuerpo{display:grid; grid-template-columns:minmax(0, 2.25fr) minmax(260px, 1fr); gap:clamp(12px,1.6vw,22px);
+    padding:0 clamp(16px,2.4vw,32px) clamp(10px,1.6vh,18px); min-height:0}
+  @media (orientation:portrait){ .tv-cuerpo{grid-template-columns:1fr; grid-template-rows:auto minmax(0, 1fr)} }
 
-  .tv-rej{display:grid; gap:clamp(10px,1.4vw,18px); grid-template-columns:repeat(auto-fill, minmax(clamp(120px,13vw,190px),1fr))}
-  .tv-rej.chica{grid-template-columns:repeat(auto-fill, minmax(clamp(74px,7vw,110px),1fr)); gap:10px}
-  .num{border-radius:22px; display:grid; place-items:center; aspect-ratio:1.25/1;
-    font-weight:900; letter-spacing:-.05em; font-variant-numeric:tabular-nums; line-height:1}
-  .tv-rej .num{background:#2F5419; color:#F2FFE6; font-size:clamp(54px,7vw,104px);
-    box-shadow:0 0 0 2px #5E9636 inset}
-  .tv-rej .num.nuevo{animation:tv-entra .7s cubic-bezier(.2,1.4,.4,1) both, tv-brilla 1.4s ease-in-out .7s 3}
-  .tv-rej.chica .num{background:var(--piso); color:var(--cafe); font-size:clamp(28px,3.2vw,46px);
-    border-radius:16px; box-shadow:none}
-  .tv-rej.chica .num.prep{background:var(--rescoldo); color:var(--naranja-hondo); box-shadow:0 0 0 2px var(--naranja) inset}
-  @keyframes tv-entra{from{transform:scale(.4); opacity:0}}
-  @keyframes tv-brilla{50%{box-shadow:0 0 0 2px #5E9636 inset, 0 0 0 10px rgba(140,210,90,.25)}}
-  @media (prefers-reduced-motion: reduce){ .tv-rej .num.nuevo{animation:none} }
+  /* ── el escenario: la tele dentro de la tele ── */
+  .escenario{min-width:0; min-height:0; display:grid; place-items:center}
+  .marco{position:relative; width:100%; max-height:100%; aspect-ratio:16/9; border-radius:clamp(16px,1.8vw,28px); overflow:hidden; background:#000;
+    box-shadow:0 0 0 2px rgba(255,122,46,.55), 0 0 0 clamp(5px,.6vw,8px) var(--tv-sup2), 0 0 0 calc(clamp(5px,.6vw,8px) + 2px) var(--tv-linea),
+      0 30px 80px rgba(0,0,0,.6), 0 0 120px rgba(255,122,46,.12)}
+  @supports not (aspect-ratio:16/9){ .marco{height:0; padding-top:56.25%} }
+  .marco video, .marco canvas{position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:#000}
+  .marco canvas{object-fit:fill}
+  .marco canvas[hidden], .marco video[hidden]{display:none}
+  .bicho{position:absolute; top:clamp(10px,1.4vw,18px); right:clamp(12px,1.6vw,22px); display:flex; align-items:center; gap:8px; opacity:.85;
+    font-weight:900; font-size:clamp(10px,1vw,14px); letter-spacing:.12em; text-shadow:0 1px 4px #000; pointer-events:none}
+  .bicho img{width:clamp(26px,2.6vw,40px); height:auto; filter:drop-shadow(0 1px 3px #000)}
+  .tercio{position:absolute; left:clamp(12px,1.6vw,22px); bottom:clamp(12px,1.6vw,22px); right:clamp(12px,1.6vw,22px); display:flex; align-items:center;
+    gap:12px; pointer-events:none; transition:opacity .4s}
+  .tercio .vivo{flex:none; background:var(--tv-rojo); color:#fff; font-weight:900; font-size:clamp(10px,1vw,14px); letter-spacing:.14em;
+    padding:6px 10px; border-radius:8px; display:inline-flex; align-items:center; gap:6px}
+  .tercio .vivo i{width:8px; height:8px; border-radius:50%; background:#fff; animation:latido 1.4s ease-in-out infinite}
+  @keyframes latido{50%{opacity:.25}}
+  .tercio .que{background:rgba(10,6,4,.72); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); padding:8px 14px; border-radius:10px;
+    min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-weight:800; font-size:clamp(12px,1.3vw,19px)}
+  .tercio .que small{color:var(--tv-tenue); font-weight:700; margin-left:8px}
+  .barrita{position:absolute; left:0; right:0; bottom:0; height:4px; background:rgba(255,255,255,.08)}
+  .barrita i{display:block; height:100%; width:0; background:var(--tv-naranja)}
+  .sin-prog{position:absolute; inset:0; display:grid; place-items:center; text-align:center; padding:24px; color:var(--tv-tenue);
+    font-weight:800; font-size:clamp(14px,1.6vw,22px)}
+  .sin-prog[hidden]{display:none}
 
-  .tv-vacio{flex:1; display:grid; place-items:center; text-align:center; color:var(--tenue);
-    font-size:clamp(16px,1.8vw,24px); font-weight:700; padding:20px; gap:10px}
-  .tv-zona.listos .tv-vacio{color:#9FC983}
-  .tv-vacio .i{width:clamp(40px,5vw,70px); height:clamp(40px,5vw,70px); stroke-width:1.5; opacity:.7}
-  .tv-mas{margin-top:12px; color:var(--tenue); font-weight:800; font-size:clamp(14px,1.5vw,20px)}
+  /* el aviso grande: «¡Turno 75, ya está!» encima del programa */
+  .llamado{position:absolute; left:4%; right:4%; bottom:6%; border-radius:clamp(16px,1.6vw,26px); padding:clamp(14px,2vw,26px) clamp(18px,2.4vw,32px);
+    background:linear-gradient(120deg, #2D5A14, #17330A); box-shadow:0 0 0 3px var(--tv-verde) inset, 0 20px 60px rgba(0,0,0,.6);
+    display:flex; align-items:center; gap:clamp(16px,2.2vw,32px); transform:translateY(140%); transition:transform .6s cubic-bezier(.2,1.25,.4,1)}
+  .llamado.sale{transform:none}
+  .llamado .n{font-size:clamp(56px,8vw,128px); font-weight:900; letter-spacing:-.06em; line-height:.9; color:#F2FFE6; font-variant-numeric:tabular-nums}
+  .llamado .t{min-width:0}
+  .llamado .t b{display:block; font-size:clamp(18px,2.4vw,36px); letter-spacing:-.02em; color:#C9F0A8}
+  .llamado .t span{display:block; font-size:clamp(14px,1.7vw,24px); font-weight:700; color:#fff; margin-top:4px}
+  @media (prefers-reduced-motion: reduce){ .llamado{transition:none} .tercio .vivo i{animation:none} }
 
-  .tv-pie{display:flex; align-items:center; gap:clamp(12px,2vw,22px);
-    padding:clamp(10px,1.8vh,18px) clamp(18px,3vw,40px); border-top:1px solid var(--linea); background:var(--sup)}
-  .tv-pie img{width:clamp(56px,6vw,84px); height:auto; background:#fff; border-radius:10px; padding:5px}
-  .tv-pie b{display:block; font-size:clamp(18px,2vw,28px); letter-spacing:-.02em}
-  .tv-pie span{font-size:clamp(13px,1.4vw,18px); color:var(--tenue)}
-  .tv-pie .saltos{margin-left:auto; opacity:.35}
-  .tv-pie .saltos:hover, .tv-pie .saltos:focus-within{opacity:1}
+  /* ── la esquina de los turnos ── */
+  .turnos{min-width:0; min-height:0; display:flex; flex-direction:column; gap:clamp(10px,1.4vh,16px); overflow:hidden}
+  .llamando{border-radius:clamp(18px,1.8vw,28px); padding:clamp(14px,1.8vw,24px); background:linear-gradient(165deg, #1E3A10, #12260A);
+    box-shadow:0 0 0 2px #3F6B23 inset; transition:transform .3s}
+  .llamando.brinca{animation:brinca .9s cubic-bezier(.2,1.4,.4,1)}
+  @keyframes brinca{30%{transform:scale(1.05)}}
+  .llamando h2{margin:0; display:flex; align-items:center; gap:10px; font-size:clamp(14px,1.4vw,20px); color:#C9F0A8; letter-spacing:.02em}
+  .llamando h2 .i{width:1.2em; height:1.2em}
+  .llamando .n{display:block; font-size:clamp(72px,8vw,140px); font-weight:900; letter-spacing:-.06em; line-height:.95; color:#F2FFE6;
+    font-variant-numeric:tabular-nums; margin-top:4px}
+  .llamando .quien{display:block; font-size:clamp(18px,1.9vw,28px); font-weight:900; color:#fff}
+  .llamando .pidio{display:block; font-size:clamp(14px,1.4vw,20px); font-weight:700; color:#D8F5C2; margin-top:4px; line-height:1.3}
+  .llamando .vacio{display:block; margin-top:8px; color:#9FC983; font-weight:700; font-size:clamp(14px,1.4vw,19px)}
+  .bloque h3{margin:0 0 8px; display:flex; align-items:center; gap:8px; font-size:clamp(13px,1.25vw,17px); color:var(--tv-tenue)}
+  .bloque h3 .i{width:1.1em; height:1.1em; color:var(--tv-naranja)}
+  .bloque h3 .cuenta{margin-left:auto; font-variant-numeric:tabular-nums}
+  .fichas{display:flex; flex-direction:column; gap:6px}
+  .ficha{display:flex; align-items:baseline; gap:10px; padding:8px 12px; border-radius:14px; background:var(--tv-sup); border:1px solid var(--tv-linea); min-width:0}
+  .ficha b{font-size:clamp(20px,2vw,30px); font-weight:900; letter-spacing:-.04em; font-variant-numeric:tabular-nums; flex:none; min-width:2.2ch}
+  .ficha span{min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; color:var(--tv-tenue); font-weight:700; font-size:clamp(12px,1.15vw,16px)}
+  .ficha.lista{background:#1A3110; border-color:#3F6B23} .ficha.lista b{color:#C9F0A8}
+  .ficha.prep b{color:var(--tv-naranja)}
+  .ficha.nueva{animation:nueva 1.6s ease-out}
+  @keyframes nueva{0%{box-shadow:0 0 0 4px var(--tv-naranja); transform:scale(1.06)} 100%{box-shadow:0 0 0 0 transparent}}
+  .numeros{display:flex; flex-wrap:wrap; gap:6px}
+  .numeros b{padding:4px 10px; border-radius:10px; background:var(--tv-sup); border:1px solid var(--tv-linea); font-size:clamp(16px,1.5vw,22px);
+    font-variant-numeric:tabular-nums}
+  .numeros b.nueva{animation:nueva 1.6s ease-out}
+  .mas{color:var(--tv-tenue); font-weight:700; font-size:14px; margin:6px 0 0}
+
+  .tv-pie{display:flex; align-items:center; gap:clamp(12px,1.6vw,20px); padding:clamp(8px,1.4vh,14px) clamp(16px,2.4vw,32px);
+    border-top:1px solid var(--tv-linea); background:var(--tv-sup)}
+  .tv-pie img{width:clamp(48px,5vw,72px); height:auto; background:#fff; border-radius:10px; padding:4px}
+  .tv-pie b{display:block; font-size:clamp(16px,1.7vw,24px); letter-spacing:-.02em}
+  .tv-pie span{font-size:clamp(12px,1.25vw,16px); color:var(--tv-tenue)}
+  .toca{margin-left:auto; display:none; align-items:center; gap:10px; padding:10px 18px; border-radius:999px; background:var(--tv-naranja);
+    color:#1A0F0A; font-weight:900; font-size:clamp(14px,1.5vw,20px); animation:llama 2.4s ease-in-out infinite}
+  .toca .i{width:1.3em; height:1.3em}
+  .con-tablet .toca{display:inline-flex}
+  @keyframes llama{50%{box-shadow:0 0 0 10px rgba(255,122,46,.18)}}
+  .saltos{margin-left:auto; opacity:.3; display:flex; gap:12px; font-size:13px}
+  .con-tablet .saltos{display:none}
+  .saltos a{color:var(--tv-tenue)}
+
+  /* la primera vez: tocar para que haya sonido (los navegadores lo exigen) */
+  .arranque{position:fixed; inset:0; z-index:40; display:grid; place-items:center; background:rgba(13,8,5,.78);
+    -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px)}
+  .arranque[hidden]{display:none}
+  .arranque button{border:0; border-radius:28px; padding:26px 36px; background:var(--tv-naranja); color:#1A0F0A; font:inherit; font-weight:900;
+    font-size:clamp(20px,2.6vw,34px); display:flex; flex-direction:column; align-items:center; gap:10px; cursor:pointer}
+  .arranque button .i{width:56px; height:56px}
+  .arranque small{font-size:15px; font-weight:700; opacity:.8}
+  .mudo{position:fixed; right:16px; bottom:16px; z-index:30; display:none}
+
+  /* ── el modo tablet: la app encima, con el turno en chiquito arriba ── */
+  .k-capa-tv{position:fixed; inset:0; z-index:50; display:grid; grid-template-rows:auto minmax(0, 1fr); background:var(--fondo, #F3ECE1)}
+  .k-capa-tv[hidden]{display:none}
+  .k-capa-tv.entra{animation:k-abre .45s cubic-bezier(.2,.9,.3,1) both}
+  .k-capa-tv.sale{animation:k-cierra .6s cubic-bezier(.6,0,.8,.4) both}
+  @keyframes k-abre{from{transform:scale(.2); opacity:0; border-radius:40px}}
+  @keyframes k-cierra{to{transform:scale(.06); opacity:0; border-radius:60px}}
+  .k-tira{display:flex; align-items:center; gap:12px; padding:8px 12px; background:#1A0F0A; color:#FFF4E8}
+  .k-mini{display:inline-flex; align-items:center; gap:10px; padding:4px 12px 4px 6px; border-radius:999px; background:#1E3A10; box-shadow:0 0 0 1px #3F6B23 inset}
+  .k-mini small{font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#C9F0A8; padding-left:8px}
+  .k-mini b{font-size:24px; font-weight:900; letter-spacing:-.04em; font-variant-numeric:tabular-nums; color:#F2FFE6}
+  .k-mini span{color:#9FC983; font-weight:700; font-size:13px}
+  .k-tira .crece{flex:1}
+  .k-tira button{border:1px solid #3A271A; background:#24170F; color:#FFF4E8; border-radius:12px; min-height:40px; padding:0 14px; font:inherit;
+    font-weight:800; font-size:14px; display:inline-flex; align-items:center; gap:6px; cursor:pointer}
+  .k-tira button .i{width:18px; height:18px}
+  .k-capa-tv iframe{border:0; width:100%; height:100%; background:var(--fondo, #F3ECE1)}
+
+  /* ── los ajustes ── */
+  dialog.ajustes{width:min(720px, calc(100vw - 24px)); max-height:calc(100vh - 24px); border:0; border-radius:24px; padding:0;
+    background:var(--tv-sup); color:var(--tv-tinta); box-shadow:0 30px 90px rgba(0,0,0,.7)}
+  dialog.ajustes::backdrop{background:rgba(0,0,0,.6)}
+  .aj-cab{position:sticky; top:0; display:flex; align-items:center; gap:10px; padding:16px 18px; background:var(--tv-sup); border-bottom:1px solid var(--tv-linea); z-index:2}
+  .aj-cab h2{margin:0; font-size:20px; flex:1}
+  .aj-cuerpo{padding:6px 18px 22px}
+  .aj-cuerpo h3{margin:20px 0 8px; font-size:16px; display:flex; align-items:center; gap:8px}
+  .aj-cuerpo h3 .i{width:20px; height:20px; color:var(--tv-naranja)}
+  .aj-nota{margin:0 0 10px; color:var(--tv-tenue); font-size:14px}
+  .aj-lista{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px}
+  .aj-lista li{display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:14px; background:var(--tv-sup2); border:1px solid var(--tv-linea)}
+  .aj-lista li > span{flex:1; min-width:0}
+  .aj-lista input[type=text]{width:100%; min-height:40px; border-radius:10px; border:1px solid var(--tv-linea); background:var(--tv-fondo); color:var(--tv-tinta);
+    padding:0 10px; font:inherit; font-size:15px}
+  .aj-lista small{display:block; color:var(--tv-tenue); font-size:12.5px; margin-top:2px}
+  .aj-color{width:14px; height:14px; border-radius:50%; flex:none}
+  .aj-btn{border:1px solid var(--tv-linea); background:var(--tv-sup2); color:var(--tv-tinta); border-radius:12px; min-height:44px; min-width:44px;
+    padding:0 14px; font:inherit; font-weight:800; font-size:14px; display:inline-flex; align-items:center; justify-content:center; gap:6px; cursor:pointer}
+  .aj-btn.fuerte{background:var(--tv-naranja); color:#1A0F0A; border-color:transparent}
+  .aj-btn .i{width:18px; height:18px}
+  .aj-btn:disabled{opacity:.4}
+  .aj-fila{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+  .aj-chip{border:1px solid var(--tv-linea); background:var(--tv-sup2); color:var(--tv-tinta); border-radius:999px; min-height:40px; padding:0 14px;
+    font:inherit; font-weight:800; font-size:14px; cursor:pointer}
+  .aj-chip[aria-pressed="true"]{background:var(--tv-naranja); color:#1A0F0A; border-color:transparent}
+  .aj-sw{display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--tv-linea); font-weight:700}
+  .aj-sw span{flex:1}
+  .aj-sw input{width:24px; height:24px; accent-color:var(--tv-naranja)}
+  .aj-edita{display:grid; gap:8px; margin:6px 0 4px; padding:10px; border-radius:12px; background:var(--tv-fondo)}
+  .aj-edita[hidden]{display:none}
+  .aj-edita label{display:flex; flex-direction:column; gap:4px; font-size:13px; font-weight:800; color:var(--tv-tenue)}
+  .aj-edita input{min-height:40px; border-radius:10px; border:1px solid var(--tv-linea); background:var(--tv-sup); color:var(--tv-tinta); padding:0 10px; font:inherit}
+  .aj-estado{padding:12px 14px; border-radius:14px; background:var(--tv-sup2); border:1px solid var(--tv-linea); font-weight:700; margin-bottom:10px}
+  .aj-estado.bien{border-color:#3F6B23; background:#132608; color:#C9F0A8}
+  [hidden]{display:none !important}
 </style>
 </head>
-<body class="publica">
+<body class="publica tele">
 
-<header class="tv-cab">
-  <img class="tv-logo" src="marca/icon-192.png" alt="">
-  <span class="tv-marca">Fadori<b>.</b></span>
-  <span class="tv-recreo" id="recreo" hidden></span>
-  <span class="tv-reloj" id="reloj">—</span>
-</header>
+<div class="tv" id="tv">
+  <header class="tv-cab">
+    <img class="tv-logo" src="marca/icon-192.png" alt="">
+    <span class="tv-marca">Fadori<b>.</b></span>
+    <span class="tv-recreo" id="recreo" hidden></span>
+    <span class="tv-reloj" id="reloj">—</span>
+    <button class="tv-boton" id="bAjustes" type="button" aria-label="Ajustes de la pantalla"><span data-ico="settings"></span></button>
+  </header>
 
-<main class="tv-cuerpo" id="cuerpo">
-  <section class="tv-zona listos" aria-live="polite">
-    <h2><span data-ico="circle-check-big"></span>Listos · pasa por él</h2>
-    <div id="listos" class="tv-cont"></div>
-  </section>
-  <section class="tv-zona">
-    <h3><span data-ico="chef-hat"></span>Preparando <span class="cuenta" id="nPrep"></span></h3>
-    <div id="preparando"></div>
-    <h3><span data-ico="hourglass"></span>En la fila <span class="cuenta" id="nFila"></span></h3>
-    <div id="fila"></div>
-  </section>
-</main>
+  <main class="tv-cuerpo" id="cuerpo">
+    <section class="escenario" aria-label="El programa">
+      <div class="marco" id="marco">
+        <video id="prog" playsinline preload="auto"></video>
+        <canvas id="tanda" hidden></canvas>
+        <div class="sin-prog" id="sinProg" hidden></div>
+        <div class="bicho" aria-hidden="true"><img src="marca/paloma.png" alt=""><span>RADIO DIVERGENTES</span></div>
+        <div class="tercio" id="tercio"><span class="vivo"><i></i>EN EL RECREO</span><span class="que" id="progQue">Radio Divergentes</span></div>
+        <div class="barrita"><i id="progBarra"></i></div>
+        <div class="llamado" id="llamado" aria-live="assertive"><span class="n" id="llN"></span><span class="t"><b id="llQue">¡Ya está tu pedido!</b><span id="llPidio"></span></span></div>
+      </div>
+    </section>
 
-<footer class="tv-pie">
-  <img src="qr/abrir.svg" alt="Código QR para abrir Fadori">
-  <div><b>Pide desde tu teléfono</b><span>Escanea, pide y vuelve cuando tu número salga en verde.</span></div>
-  <nav class="saltos" aria-label="Pantallas de Fadori"><a href="index.html">Alumno</a><a href="mostrador.html">Mostrador</a><a href="medidor.html">Medidor</a></nav>
-</footer>
+    <aside class="turnos" aria-live="polite">
+      <div class="llamando" id="llamando"></div>
+      <div class="bloque" id="bListos"></div>
+      <div class="bloque" id="bPrep"></div>
+      <div class="bloque" id="bFila"></div>
+    </aside>
+  </main>
+
+  <footer class="tv-pie">
+    <img src="qr/abrir.svg" alt="Código QR para abrir Fadori">
+    <div><b>Pide desde tu teléfono</b><span>Escanea, pide y vuelve cuando tu número salga en verde.</span></div>
+    <span class="toca" id="toca"><span data-ico="pointer"></span>o toca aquí para pedir</span>
+    <nav class="saltos" aria-label="Pantallas de Fadori"><a href="index.html">Alumno</a><a href="mostrador.html">Mostrador</a><a href="medidor.html">Medidor</a></nav>
+  </footer>
+</div>
+
+<div class="arranque" id="arranque" hidden>
+  <button type="button" id="bArranque"><span data-ico="play"></span>Empezar la transmisión<small>Con sonido, pantalla completa y sin que se apague</small></button>
+</div>
+<button class="aj-btn mudo" id="bMudo" type="button"><span data-ico="volume-x"></span> Toca para el sonido</button>
+
+<div class="k-capa-tv" id="kCapa" hidden>
+  <div class="k-tira">
+    <span class="k-mini" id="kMini"></span>
+    <span class="crece"></span>
+    <button type="button" id="kCerrar"><span data-ico="x"></span> Volver a la pantalla</button>
+  </div>
+  <iframe id="kMarco" title="Pedir aquí" src="about:blank"></iframe>
+</div>
+
+<dialog class="ajustes" id="ajustes" aria-labelledby="ajTit">
+  <div class="aj-cab"><h2 id="ajTit">La pantalla de turnos</h2><button class="aj-btn" id="ajCerrar" type="button" aria-label="Cerrar"><span data-ico="x"></span></button></div>
+  <div class="aj-cuerpo" id="ajCuerpo"></div>
+</dialog>
 
 <script src="iconos.js"></script>
 <script src="nucleo.js"></script>
-<script>
-(function(){
-'use strict';
-const $ = (s) => document.querySelector(s);
-const F = window.FADORI;
-F.cargar();
-
-/* Números, NUNCA nombres. Una pantalla pública con nombres de alumnos es
-   exhibir a un menor, y aquí no hace falta: el número basta. */
-document.querySelectorAll('[data-ico]').forEach(el => { el.innerHTML = F.ico(el.dataset.ico); });
-let yaListos = null;   /* los que ya estaban en verde: los nuevos entran con brinco */
-function pintar(){
-  const d = F.estado();
-  const listos = d.pedidos.filter(p => p.estado === 'listo')
-    .sort((a,b) => a.listoEn - b.listoEn);
-  const cola = F.colaOrdenada();
-  const prep = cola.filter(p => p.estado === 'preparando');
-  const fila = cola.filter(p => p.estado !== 'preparando');
-  const antes = yaListos;
-  yaListos = new Set(listos.map(p => p.id));
-
-  $('#listos').innerHTML = listos.length
-    ? '<div class="tv-rej">'+ listos.slice(0,12).map(p =>
-        '<div class="num'+(antes && !antes.has(p.id) ? ' nuevo' : '')+'">'+F.verTurno(p)+'</div>').join('') +'</div>'+
-      (listos.length > 12 ? '<p class="tv-mas">y '+(listos.length-12)+' más</p>' : '')
-    : '<div class="tv-vacio">'+F.ico('circle-check-big')+'<span>Aquí sale tu número cuando esté listo</span></div>';
-
-  const chicas = (arr, clase, max) => arr.length
-    ? '<div class="tv-rej chica">'+ arr.slice(0,max).map(p =>
-        '<div class="num'+(clase?' '+clase:'')+'">'+F.verTurno(p)+'</div>').join('') +'</div>'+
-      (arr.length > max ? '<p class="tv-mas">y '+(arr.length-max)+' más</p>' : '')
-    : '';
-  $('#preparando').innerHTML = chicas(prep, 'prep', 8) || '<p class="tv-mas">Nada en la plancha</p>';
-  $('#fila').innerHTML = chicas(fila, '', 20) || '<p class="tv-mas">Nadie esperando</p>';
-  $('#nPrep').textContent = prep.length || '';
-  $('#nFila').textContent = fila.length || '';
-}
-
-function reloj(){
-  const t = new Date();
-  $('#reloj').textContent = t.toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'});
-  const r = $('#recreo');
-  if(F.enRecreo()){
-    r.hidden = false;
-    r.innerHTML = F.ico('clock') + 'Quedan ' + Math.ceil(F.quedanSegundosDeRecreo()/60) + ' min de recreo';
-  } else r.hidden = true;
-}
-
-F.alCambiar(() => { F.cargar(); pintar(); });
-setInterval(() => { F.cargar(); pintar(); reloj(); }, 3000);
-pintar(); reloj();
-
-/* que la pantalla no se apague sola, si el navegador lo permite */
-(async () => {
-  try{ if(navigator.wakeLock) await navigator.wakeLock.request('screen'); }catch(e){}
-})();
-
-(function(){
-  let bien = 0, mal = 0;
-  F.pausarSync();   /* que el pedido de prueba no salga al servidor */
-  const ok = (q,c) => { if(c) bien++; else { mal++; console.error('✗ '+q); } };
-  const guardado = JSON.stringify(F.estado());
-  const uno = F.productos(true)[0];
-  const p = F.pedir(null, [{prod:uno.id, cant:1}],
-    { origen:'mostrador', nombre:'Fulanito Secreto', grupo:'3A' });
-  F.cargar(); pintar();
-  const texto = $('#cuerpo').textContent;
-  /* con servidor el turno llega un parpadeo después y mientras se ve «…» */
-  ok('la pantalla pública muestra el número de turno', texto.indexOf(F.verTurno(p)) >= 0);
-  ok('la pantalla pública NUNCA muestra nombres', texto.indexOf('Fulanito') < 0);
-  ok('tampoco muestra el grupo, que también identifica', texto.indexOf('3A') < 0);
-  ok('ni el código del pedido, que va sólo en el ticket', texto.indexOf(p.folio) < 0);
-  try{ localStorage.setItem('fadori_v1', guardado); }catch(e){}
-  F.cargar(); pintar();
-  console.log('%cFadori pantalla · '+bien+'/'+(bien+mal)+' pruebas',
-    'color:'+(mal?'#FF7A7A':'#5BD98A')+';font-weight:700');
-})();
-
-})();
-</script>
+<script type="module" src="tele.js"></script>
 </body>
 </html>
