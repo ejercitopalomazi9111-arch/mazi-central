@@ -35,6 +35,10 @@
     border:1px solid var(--tv-linea); font-weight:800; color:var(--tv-tenue); font-size:clamp(13px,1.4vw,18px)}
   .tv-recreo[hidden]{display:none}
   .tv-recreo .i{width:1.1em; height:1.1em; color:var(--tv-naranja)}
+  .tv-nube{margin-left:auto; max-width:40vw; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; padding:6px 12px; border-radius:999px;
+    background:var(--tv-sup); border:1px solid var(--tv-linea); color:var(--tv-tenue); font-weight:800; font-size:clamp(12px,1.2vw,15px)}
+  .tv-nube[hidden]{display:none}
+  .tv-nube:not([hidden]) + .tv-reloj{margin-left:0}
   .tv-reloj{margin-left:auto; font-size:clamp(24px,3.4vw,46px); font-weight:900; letter-spacing:-.03em; font-variant-numeric:tabular-nums}
   .tv-boton{border:1px solid var(--tv-linea); background:var(--tv-sup); color:var(--tv-tenue); width:44px; height:44px; border-radius:14px;
     display:grid; place-items:center; cursor:pointer; opacity:.55}
@@ -177,6 +181,7 @@
   .aj-btn.fuerte{background:var(--tv-naranja); color:#1A0F0A; border-color:transparent}
   .aj-btn .i{width:18px; height:18px}
   .aj-btn:disabled{opacity:.4}
+  .aj-btn.seguro{background:var(--tv-rojo); color:#fff; border-color:transparent}
   .aj-fila{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
   .aj-chip{border:1px solid var(--tv-linea); background:var(--tv-sup2); color:var(--tv-tinta); border-radius:999px; min-height:40px; padding:0 14px;
     font:inherit; font-weight:800; font-size:14px; cursor:pointer}
@@ -297,6 +302,7 @@
     <img class="tv-logo" src="marca/icon-192.png" alt="">
     <span class="tv-marca">Fadori<b>.</b></span>
     <span class="tv-recreo" id="recreo" hidden></span>
+    <span class="tv-nube" id="nubeChip" hidden></span>
     <span class="tv-reloj" id="reloj">—</span>
     <button class="tv-boton" id="bAjustes" type="button" aria-label="Ajustes de la pantalla"><span data-ico="settings"></span></button>
   </header>

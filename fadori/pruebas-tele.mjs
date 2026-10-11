@@ -177,6 +177,34 @@ await tv.click('#ajSiguiente');
 ok('y al pasar a la canción, YouTube se apaga del todo (no sigue sonando escondido)', await tv.evaluate(() => { const w = document.querySelector('#progWeb'); return w.hidden && /about:blank/.test(w.src); }));
 await tv.click('#ajCerrar');
 
+console.log('\n3c · lo que Carlos sube desde su teléfono llega solo a la tablet');
+const cel = await pantalla(390, 844);
+cel.on('dialog', d => d.accept());
+const tablita = await pantalla();
+await tablita.evaluate(() => FADORI.entrarMostrador('121026'));
+await cel.click('#bArranque').catch(() => {});
+await cel.click('#bAjustes');
+await cel.click('#ajNubePase');
+await teclear(cel, '121026');
+ok('en el teléfono, con el pasador, dice que lo que suba llega a las demás', (await tarda(cel, () => /llega solo a las otras pantallas/.test(document.querySelector('#ajCuerpo').textContent), null, 6000)) != null);
+await cel.setInputFiles('#ajRelArch', mp3);
+ok('la canción se sube al buzón', (await tarda(cel, () => /ya está en el buzón/.test(document.querySelector('#ajNube').textContent), null, 20000)) != null, await cel.textContent('#ajNube'));
+ok('la tablet la baja sola, con su nombre y su carátula', (await tarda(tablita, () => window.TELE.Nube.revisar() && window.TELE.Programa.rell.some(r => r.nombre === 'Canción del recreo' && /^blob:/.test(r.tapa || '')), null, 20000)) != null,
+  await tablita.evaluate(() => JSON.stringify(window.__nube)) + ' · cel: ' + await cel.evaluate(async () => { const r = await FADORI.alServidor('/api/medios/lista', { cuerpo: {} }); return document.querySelectorAll('#ajRell [data-rquita]').length + ' ' + JSON.stringify((await r.json()).medios.map(m => m.nombre)) + ' ' + window.TELE.Nube.estado; }));
+ok('…y se oye: el archivo llegó entero', await tablita.evaluate(async () => { const r = window.TELE.Programa.rell[0]; const a = new Audio(r.url); await new Promise(x => { a.onloadedmetadata = x; a.onerror = x; setTimeout(x, 4000); }); return a.duration > 3.5 && a.duration < 4.6; }));
+await cel.click('#bAjustes').catch(() => {});
+await cel.waitForSelector('#ajRell [data-rquita]');
+await cel.click('#ajRell [data-rquita]');
+ok('«Quitar» pide un segundo toque (antes nunca quitaba nada)', /Seguro/.test(await cel.textContent('#ajRell [data-rquita]')));
+await cel.click('#ajRell [data-rquita]');
+await cel.waitForTimeout(800);
+await tarda(cel, () => !document.querySelector('#ajRell [data-rquita]'), null, 5000);
+await cel.waitForTimeout(800);
+/* la tablet revisa el buzón cada 2 minutos; aquí se le pide sin esperar (si
+   ya iba revisando, la vuelta siguiente lo ve) */
+ok('si la borra en el teléfono, se borra también en la tablet', (await tarda(tablita, () => { window.TELE.Nube.revisar(); return !window.TELE.Programa.rell.some(r => r.nombre === 'Canción del recreo'); }, null, 15000)) != null,
+  await tablita.evaluate(() => JSON.stringify(window.__nube)) + ' · cel: ' + await cel.evaluate(async () => { const r = await FADORI.alServidor('/api/medios/lista', { cuerpo: {} }); return document.querySelectorAll('#ajRell [data-rquita]').length + ' ' + JSON.stringify((await r.json()).medios.map(m => m.nombre)) + ' ' + window.TELE.Nube.estado; }));
+
 console.log('\n4 · la tablet de la fila: tocar, pedir y ver el turno');
 const tab = await pantalla();
 await tab.click('#bArranque').catch(() => {});
@@ -306,7 +334,7 @@ for(const [w, h] of [[1280, 800], [1920, 1080], [800, 1280]]){
   const d = await tv.evaluate(() => ({ x: document.documentElement.scrollWidth - innerWidth, y: document.documentElement.scrollHeight - innerHeight }));
   ok(`nada se sale a ${w}×${h}`, d.x <= 0 && d.y <= 2, JSON.stringify(d));
 }
-for(const [n, pg] of [['pantalla', tv], ['tablet', tab], ['mostrador', most], ['reja', reja], ['Ana', ana], ['Beto', beto]])
+for(const [n, pg] of [['pantalla', tv], ['tablet', tab], ['mostrador', most], ['reja', reja], ['Ana', ana], ['Beto', beto], ['teléfono de Carlos', cel], ['tablet que baja', tablita]])
   ok(`${n}: sin errores (${pg.errores.slice(0, 2).join(' | ')})`, !pg.errores.length);
 
 console.log(`\n${fallas.length ? '✗ ' + fallas.length + ' fallas' : '✓ todo bien'} · escuela de prueba ${CASA}`);

@@ -24,7 +24,7 @@ document.querySelectorAll('[data-ico]').forEach(el => { el.innerHTML = F.ico(el.
 
 /* ── ajustes de esta tablet ─────────────────────────────────────────── */
 const LLAVE = 'fadori_tele';
-const BASE = { cadaMin: 8, porCorte: 2, canal: 'rembrandt', timbre: true, voz: true, plancha: true, volumen: 0.9, tablet: false, sigAnuncio: 0, alAcabar: 'relleno', popCada: 3 };
+const BASE = { cadaMin: 8, porCorte: 2, canal: 'rembrandt', timbre: true, voz: true, plancha: true, volumen: 0.9, tablet: false, sigAnuncio: 0, alAcabar: 'relleno', popCada: 3, recibir: true };
 let cfg = Object.assign({}, BASE);
 try{ cfg = Object.assign(cfg, JSON.parse(localStorage.getItem(LLAVE) || '{}')); }catch(e){}
 const guardarCfg = () => { try{ localStorage.setItem(LLAVE, JSON.stringify(cfg)); }catch(e){} };
@@ -498,6 +498,7 @@ $('#bAjustes').addEventListener('click', (e) => {
      tocan todos */
   pedirPase = cfg.tablet && !F.pasoElPasador();
   pintarAjustes(); dlg.showModal();
+  Nube.revisar();
 });
 $('#ajCerrar').addEventListener('click', () => dlg.close());
 dlg.addEventListener('close', () => { Programa.pausar(!capa.hidden); });
@@ -526,6 +527,13 @@ function pintarAjustes(){
     '<div class="aj-fila" style="margin-top:10px"><label class="aj-btn fuerte" for="ajVideos">' + F.ico('upload') + 'Agregar episodios</label>' +
     '<input type="file" id="ajVideos" accept="video/*" multiple hidden>' +
     '<button class="aj-btn" type="button" id="ajSiguiente"' + (Programa.fuente().length > 1 ? '' : ' disabled') + '>' + F.ico('skip-forward') + 'Pasar al siguiente</button></div>' +
+
+    '<p class="aj-nota" style="margin-top:10px">' + (Nube.activa()
+      ? F.ico('upload') + ' Lo que agregues aquí <b>llega solo a las otras pantallas</b> (súbelo desde tu teléfono y la tablet lo baja).'
+      : 'Para que lo que subas llegue a las otras pantallas, esta pantalla necesita el pasador de la cooperativa.' +
+        (F.motor() === 'servidor' ? ' <button class="aj-btn" type="button" id="ajNubePase" style="margin-top:6px">' + F.ico('lock') + 'Poner el pasador</button>' : '')) + '</p>' +
+    '<p class="aj-nota" id="ajNube" aria-live="polite" style="font-weight:800">' + esc(Nube.estado) + '</p>' +
+    chips('recibir', [[true, 'Esta pantalla baja lo que se sube'], [false, 'No bajar nada aquí']]) +
 
     '<h3>' + F.ico('music') + 'Si no hay episodio nuevo</h3>' +
     '<p class="aj-nota">Cuando ya pasaron todos los nuevos:</p>' + chips('alAcabar', [['relleno', 'Poner música y videos'], ['repetir', 'Repetir los episodios']]) +
@@ -588,7 +596,8 @@ function pintarAjustes(){
 function conectarAjustes(){
   const c = $('#ajCuerpo');
   c.querySelectorAll('[data-cfg]').forEach(b => b.onclick = () => {
-    const v = b.dataset.v; cfg[b.dataset.cfg] = /^\d+$/.test(v) ? +v : v; guardarCfg();
+    const v = b.dataset.v; cfg[b.dataset.cfg] = v === 'true' ? true : v === 'false' ? false : /^\d+$/.test(v) ? +v : v; guardarCfg();
+    if(b.dataset.cfg === 'recibir' && cfg.recibir) Nube.revisar();
     /* si lo que suena ya no toca con la regla nueva, se cambia ya */
     if(b.dataset.cfg === 'alAcabar' && Programa.actual && Programa.fuente().indexOf(Programa.actual) < 0) Programa.siguiente();
     pintarAjustes();
@@ -600,11 +609,12 @@ function conectarAjustes(){
   $('#ajCorte').onclick = () => { dlg.close(); Programa.corte(); };
   $('#ajSiguiente').onclick = () => { Programa.siguiente(); pintarAjustes(); };
   $('#ajPop').onclick = () => { dlg.close(); setTimeout(verPop, 300); };
+  const np = $('#ajNubePase'); if(np) np.onclick = async () => { if(await pedirPasador('Mandar a las otras pantallas')) pintarAjustes(); };
   c.querySelectorAll('[data-renueva]').forEach(b => b.onclick = () => { delete vistos[b.dataset.renueva]; guardarVistos(); Programa.revisar(); pintarAjustes(); });
   /* el relleno: archivos de la tablet y enlaces */
   $('#ajRelArch').onchange = async (e) => {
     const fs = [...e.target.files]; e.target.value = '';
-    const orden = (await leer('relleno')) || [];
+    const orden = (await leer('relleno')) || [], subidos = [];
     for(const f of fs){
       const id = 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
       const esAudio = /^audio\//.test(f.type) || /\.(mp3|m4a|aac|wav|ogg|flac)$/i.test(f.name);
@@ -618,17 +628,20 @@ function conectarAjustes(){
             if(t.portada) g.portada = new Blob([t.portada.bytes], { type: t.portada.mime }); }
         }catch(err){}
       }
-      await guardar('rel:' + id, g); orden.push(id);
+      await guardar('rel:' + id, g); orden.push(id); subidos.push([id, g]);
     }
     await guardar('relleno', orden); await Programa.cargar(); pintarAjustes();
+    for(const [id, g] of subidos) await Nube.subir(id, 'rel', g);
   };
   $('#ajRelAgrega').onclick = async () => {
     const r = enlace($('#ajRelUrl').value, { origen: location.origin });
     if(!r){ $('#ajRelMsg').textContent = 'Ese enlace no es de YouTube ni de Spotify. Cópialo con «Compartir → Copiar enlace».'; return; }
     const id = 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
     const orden = (await leer('relleno')) || [];
-    await guardar('rel:' + id, Object.assign(r, { fuente: $('#ajRelUrl').value.trim() })); orden.push(id);
+    const g = Object.assign(r, { fuente: $('#ajRelUrl').value.trim() });
+    await guardar('rel:' + id, g); orden.push(id);
     await guardar('relleno', orden); await Programa.cargar(); pintarAjustes();
+    Nube.subir(id, 'rel', g);
   };
   c.querySelectorAll('[data-nombre-rel]').forEach(i => i.onchange = async () => {
     const id = i.dataset.nombreRel, g = await leer('rel:' + id); if(!g) return;
@@ -640,18 +653,20 @@ function conectarAjustes(){
     if(k > 0){ [orden[k - 1], orden[k]] = [orden[k], orden[k - 1]]; await guardar('relleno', orden); await Programa.cargar(); pintarAjustes(); }
   });
   c.querySelectorAll('[data-rquita]').forEach(b => b.onclick = async () => {
-    if(!confirm('¿Quitar esto de la tablet?')) return;
+    if(!otraVez(b)) return;
     const orden = ((await leer('relleno')) || []).filter(x => x !== b.dataset.rquita);
-    await guardar('rel:' + b.dataset.rquita, undefined); await guardar('relleno', orden); await Programa.cargar(); pintarAjustes();
+    const p = Nube.borrar(b.dataset.rquita);
+    await guardar('rel:' + b.dataset.rquita, undefined); await guardar('relleno', orden); await Programa.cargar(); pintarAjustes(); await p;
   });
   $('#ajVideos').onchange = async (e) => {
     const fs = [...e.target.files]; e.target.value = '';
-    const orden = (await leer('eps')) || [];
+    const orden = (await leer('eps')) || [], subidos = [];
     for(const f of fs){
-      const id = 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-      await guardar('ep:' + id, { blob: f, nombre: bonito(f.name) }); orden.push(id);
+      const id = 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), g = { blob: f, nombre: bonito(f.name) };
+      await guardar('ep:' + id, g); orden.push(id); subidos.push([id, g]);
     }
     await guardar('eps', orden); await Programa.cargar(); Programa.revisar(); pintarAjustes();
+    for(const [id, g] of subidos) await Nube.subir(id, 'ep', g);
   };
   c.querySelectorAll('[data-nombre-ep]').forEach(i => i.onchange = async () => {
     const id = i.dataset.nombreEp, g = await leer('ep:' + id); if(!g) return;
@@ -663,9 +678,10 @@ function conectarAjustes(){
     if(k > 0){ [orden[k - 1], orden[k]] = [orden[k], orden[k - 1]]; await guardar('eps', orden); await Programa.cargar(); pintarAjustes(); }
   });
   c.querySelectorAll('[data-quita]').forEach(b => b.onclick = async () => {
-    if(!confirm('¿Quitar este episodio de la tablet?')) return;
+    if(!otraVez(b)) return;
     const orden = ((await leer('eps')) || []).filter(x => x !== b.dataset.quita);
-    await guardar('ep:' + b.dataset.quita, undefined); await guardar('eps', orden); await Programa.cargar(); pintarAjustes();
+    const p = Nube.borrar(b.dataset.quita);
+    await guardar('ep:' + b.dataset.quita, undefined); await guardar('eps', orden); await Programa.cargar(); pintarAjustes(); await p;
   });
   c.querySelectorAll('[data-edita]').forEach(b => b.onclick = () => { editando = editando === b.dataset.edita ? null : b.dataset.edita; pintarAjustes(); });
   c.querySelectorAll('[data-activo]').forEach(i => i.onchange = () => cambiarAnuncio(i.dataset.activo, { activo: i.checked }));
@@ -708,10 +724,21 @@ function pedirPasador(titulo, sub = 'El de la cooperativa.', exigeRed = false){
   return FadoriPad.abrir({ titulo, sub, largo: F.largoPasador(), revisar: async (v) => {
     if(F.motor() !== 'servidor') return F.pasadorOk(v) || { error: 'Ese no es el pasador' };
     const r = await F.entrarMostrador(v);
-    if(r.ok){ F.recordarPasador(v); F.renovarPase(); return true; }
+    if(r.ok){ F.recordarPasador(v); F.renovarPase(); setTimeout(() => Nube.revisar(), 500); return true; }
     if(r.sinRed && !exigeRed && F.pasadorOk(v)) return true;
     return { error: r.sinRed ? (exigeRed ? 'Sin internet: los pedidos no llegarían' : 'Sin internet, y ése no es el de esta tablet') : (r.error || 'Ese no es el pasador') };
   } });
+}
+/* Quitar pide un segundo toque. NO con confirm(): nucleo.js tapa los
+   diálogos del navegador (en la tele se veían prestados) y confirm() siempre
+   contesta «no», así que «Quitar» nunca había quitado nada. Lo cazó la
+   prueba de la nube el 11 de octubre. */
+function otraVez(b){
+  if(b.dataset.seguro === '1') return true;
+  b.dataset.seguro = '1'; const antes = b.innerHTML;
+  b.classList.add('seguro'); b.innerHTML = F.ico('trash') + '¿Seguro? Toca otra vez';
+  setTimeout(() => { if(b.isConnected){ b.dataset.seguro = ''; b.classList.remove('seguro'); b.innerHTML = antes; } }, 3500);
+  return false;
 }
 async function cambiarAnuncio(id, cambio){
   const g = (await leer('anuncios')) || {}; g.cambios = g.cambios || {}; g.nuevos = g.nuevos || [];
@@ -737,6 +764,104 @@ function bonito(n){
   return b.replace(/[-_]+/g, ' ').replace(/\s+/g, ' ').trim().replace(/^./, c => c.toUpperCase()) || 'Episodio';
 }
 
+/* ══════════════════════════════════════════════════════════════════════
+   4 · LA NUBE: lo que se sube en un aparato llega a los demás
+   Carlos, 10 de octubre: «si lo subo desde mi teléfono, que la tablet
+   también lo tenga, porque no es fácil estar yendo a cada rato». Lo que se
+   agrega aquí (episodios, música, películas, enlaces) se manda al buzón del
+   servidor en pedazos; cada pantalla con el pasador revisa el buzón y baja
+   sola lo que le falta, y lo guarda en ella. Borrar en una lo borra en todas.
+   ═════════════════════════════════════════════════════════════════════ */
+const Nube = {
+  ocupada: false, estado: '',
+  activa(){ return F.motor() === 'servidor' && !!F.llaveMostrador(); },
+  aviso(t){ this.estado = t; const n = $('#ajNube'); if(n) n.textContent = t; const c = $('#nubeChip'); if(c){ c.hidden = !t; c.textContent = t; } },
+  async pide(ruta, opc){ const r = await F.alServidor(ruta, opc); if(!r.ok) throw new Error((await r.json().catch(() => ({}))).error || ('El servidor contestó ' + r.status)); return r; },
+  /* subir lo que se acaba de agregar en ESTE aparato */
+  async subir(id, tipo, g){
+    if(!this.activa()) return;
+    const clase = g.tipo === 'youtube' || g.tipo === 'spotify' ? g.tipo : 'archivo';
+    let portada = '';
+    if(g.portada) try{ portada = await chiquita(g.portada); }catch(e){}
+    try{
+      const alta = await (await this.pide('/api/medios/alta', { cuerpo: { id, tipo, clase, nombre: g.nombre, mime: g.blob ? g.blob.type : '', tam: g.blob ? g.blob.size : 0,
+        esAudio: !!g.esAudio, artista: g.artista || '', portada, embed: g.embed || '' } })).json();
+      for(let k = 0; k < alta.partes; k++){
+        this.aviso('Subiendo «' + g.nombre + '» para las otras pantallas… ' + Math.round(100 * k / alta.partes) + '%');
+        const trozo = await g.blob.slice(k * alta.parte, (k + 1) * alta.parte).arrayBuffer();
+        await reintentar(() => this.pide('/api/medios/parte', { cuerpo: trozo, query: { id, k } }));
+      }
+      this.aviso('«' + g.nombre + '» ya está en el buzón: las otras pantallas lo bajan solas.');
+      setTimeout(() => { if(/ya está en el buzón/.test(this.estado)) this.aviso(''); }, 8000);
+    }catch(e){ this.aviso('No se pudo subir «' + g.nombre + '»: ' + e.message); }
+  },
+  /* lo que se quita aquí se apunta para no volver a bajarlo: si el buzón
+     todavía lo tenía cuando se revisó, regresaba solo (se cazó en la prueba) */
+  quitados(){ try{ return JSON.parse(localStorage.getItem('fadori_tele_quitados') || '[]'); }catch(e){ return []; } },
+  async borrar(id){
+    try{ localStorage.setItem('fadori_tele_quitados', JSON.stringify(this.quitados().concat(id).slice(-300))); }catch(e){}
+    if(this.activa()) try{ await this.pide('/api/medios/borrar', { cuerpo: { id } }); }catch(e){}
+  },
+  /* revisar el buzón: bajar lo que falta y quitar lo que borraron en otra */
+  async revisar(){
+    if(!this.activa() || this.ocupada || cfg.recibir === false) return;
+    this.ocupada = true;
+    try{
+      const { medios, borrados } = await (await this.pide('/api/medios/lista', { cuerpo: {} })).json();
+      const eps = (await leer('eps')) || [], rel = (await leer('relleno')) || [];
+      let cambio = false;
+      for(const b of borrados || []){
+        if(eps.indexOf(b.id) >= 0){ eps.splice(eps.indexOf(b.id), 1); await guardar('ep:' + b.id, undefined); cambio = true; }
+        if(rel.indexOf(b.id) >= 0){ rel.splice(rel.indexOf(b.id), 1); await guardar('rel:' + b.id, undefined); cambio = true; }
+      }
+      if(cambio){ await guardar('eps', eps); await guardar('relleno', rel); }
+      const quitados = this.quitados();
+      for(const m of medios || []){
+        if(eps.indexOf(m.id) >= 0 || rel.indexOf(m.id) >= 0 || quitados.indexOf(m.id) >= 0) continue;
+        const g = { nombre: m.nombre, nube: true };
+        if(m.clase !== 'archivo'){ if(!m.embed) continue; Object.assign(g, { tipo: m.clase, embed: m.embed }); }
+        else {
+          const trozos = [];
+          for(let k = 0; k < m.partes; k++){
+            this.aviso('Bajando «' + m.nombre + '»… ' + Math.round(100 * k / m.partes) + '%');
+            let t = await leer('baja:' + m.id + ':' + k);          /* si se cortó, sigue donde iba */
+            if(!t){ const r = await reintentar(() => this.pide('/api/medios/parte', { metodo: 'GET', query: { id: m.id, k } }));
+              t = new Blob([await r.arrayBuffer()]); await guardar('baja:' + m.id + ':' + k, t); }
+            trozos.push(t);
+          }
+          g.blob = new Blob(trozos, { type: m.mime || 'video/mp4' });
+          if(m.tipo === 'rel'){ g.tipo = 'archivo'; g.esAudio = !!m.esAudio; g.artista = m.artista || '';
+            if(m.portada) g.portada = await (await fetch(m.portada)).blob(); }
+        }
+        if(m.tipo === 'ep'){ await guardar('ep:' + m.id, g); eps.push(m.id); await guardar('eps', eps); }
+        else { await guardar('rel:' + m.id, g); rel.push(m.id); await guardar('relleno', rel); }
+        for(let k = 0; k < (m.partes || 0); k++) await guardar('baja:' + m.id + ':' + k, undefined);
+        this.pide('/api/medios/bajado', { cuerpo: { id: m.id } }).catch(() => {});
+        cambio = true;
+        this.aviso('Llegó «' + m.nombre + '»');
+        setTimeout(() => { if(/^Llegó/.test(this.estado)) this.aviso(''); }, 6000);
+      }
+      if(cambio){ await Programa.cargar(); Programa.revisar(); if(dlg.open) pintarAjustes(); }
+      window.__nube = { t: Date.now(), medios: (medios || []).length };
+    }catch(e){ this.aviso(''); window.__nube = { t: Date.now(), error: e.message }; }
+    finally{ this.ocupada = false; }
+  },
+};
+async function reintentar(f, veces = 4){
+  for(let i = 0; ; i++){ try{ return await f(); }catch(e){ if(i >= veces - 1) throw e; await new Promise(r => setTimeout(r, 1000 * (i + 1))); } }
+}
+/* la carátula viaja chica: 240 px */
+async function chiquita(blob){
+  const u = URL.createObjectURL(blob);
+  try{
+    const im = await new Promise((si, no) => { const i = new Image(); i.onload = () => si(i); i.onerror = no; i.src = u; });
+    const e = Math.min(1, 240 / Math.max(im.naturalWidth, im.naturalHeight)), c = document.createElement('canvas');
+    c.width = Math.round(im.naturalWidth * e); c.height = Math.round(im.naturalHeight * e);
+    c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); return c.toDataURL('image/jpeg', 0.8);
+  } finally { URL.revokeObjectURL(u); }
+}
+setInterval(() => Nube.revisar(), 120000);
+
 /* ── el reloj y el arranque ─────────────────────────────────────────── */
 function reloj(){
   const t = new Date();
@@ -751,9 +876,10 @@ setInterval(() => { F.cargar(); pintarTurnos(); reloj(); pintarTablet(); }, 3000
 pintarTurnos(); reloj(); pintarTablet();
 await cargarAnuncios();
 await Programa.cargar();
+setTimeout(() => Nube.revisar(), 2500);
 /* la primera vez hay que tocar: sin un toque el navegador no deja sonar */
 $('#arranque').hidden = false;
 setTimeout(() => { if(!arrancado){ $('#arranque').hidden = true; $('#bMudo').style.display = 'inline-flex'; } }, 9000);
 video.muted = true; if(Programa.actual && !Programa.esWeb()) video.play().catch(() => {});
 
-window.TELE = { Programa, cfg, anunciar, Sonido, abrirTablet, cerrarTablet, verPop, listo: true };
+window.TELE = { Programa, cfg, anunciar, Sonido, abrirTablet, cerrarTablet, verPop, Nube, listo: true };
