@@ -77,16 +77,51 @@
       <label for="eGrupo">¿De qué grupo?</label>
       <input id="eGrupo" maxlength="6" autocomplete="off" placeholder="3.1">
       <p class="nota-ico" style="margin-top:14px"><span data-ico="shield-check"></span>
-        Sólo tu nombre y grupo. Sin correo ni contraseña.</p>
+        Tu nombre, tu grupo y, una sola vez, una foto de tu credencial.</p>
       <button class="btn fuerte ancho" id="bEntrar" type="button" style="margin-top:14px">Empezar</button>
     </div>
 
-    <h2>¿Ya tenías código?</h2>
+    <h2>¿Ya tenías cuenta?</h2>
     <div class="tarjeta">
-      <label for="eCodigo">Tu código <small class="tenue">· está en «Lo mío» del otro teléfono</small></label>
+      <label for="eCorreo">Con tu correo <small class="tenue">· si protegiste tu cuenta</small></label>
+      <input id="eCorreo" type="email" autocomplete="email" inputmode="email" placeholder="tu@correo.com">
+      <label for="eClave">Contraseña</label>
+      <input id="eClave" type="password" autocomplete="current-password" placeholder="La que pusiste">
+      <button class="btn fuerte ancho" id="bEntrarCorreo" type="button" style="margin-top:12px">Entrar</button>
+      <button class="enlacillo" id="bOlvide" type="button" style="margin-top:12px">Olvidé mi contraseña</button>
+      <div id="cajaRecuperar" hidden style="margin-top:12px">
+        <p class="sub" style="margin:0 0 8px">Con tu <b>código</b> (está en «Lo mío») y tu <b>correo</b> pones una contraseña nueva.</p>
+        <label for="rCodigo">Tu código</label>
+        <input id="rCodigo" maxlength="4" autocomplete="off" placeholder="ABCD" style="text-transform:uppercase; letter-spacing:.3em; font-weight:800">
+        <label for="rNueva">Contraseña nueva</label>
+        <input id="rNueva" type="password" autocomplete="new-password" placeholder="Mínimo 6">
+        <button class="btn ancho" id="bRecuperar" type="button" style="margin-top:12px">Poner contraseña nueva</button>
+      </div>
+      <hr class="raya">
+      <label for="eCodigo">Sólo con tu código <small class="tenue">· está en «Lo mío» del otro teléfono</small></label>
       <input id="eCodigo" maxlength="4" autocomplete="off" placeholder="ABCD"
         style="text-transform:uppercase; letter-spacing:.3em; font-weight:800">
       <button class="btn ancho" id="bVolver" type="button" style="margin-top:12px">Entrar con mi código</button>
+    </div>
+  </section>
+
+  <!-- ══════════ LA CREDENCIAL · una sola vez ══════════
+       Lo pidió Carlos: que nadie le cree cuenta a otro ni pida a su nombre.
+       La foto la ve la cooperativa en el mostrador, dice «es él» o «no
+       coincide», y en ese momento se borra. -->
+  <section id="p-credencial" hidden>
+    <h1>Tu credencial, una vez</h1>
+    <p class="sub">Así nadie pide a tu nombre. La revisa la cooperativa y <b>se borra</b> en cuanto la ven.</p>
+    <div class="tarjeta">
+      <div class="cred-vista" id="credVista"><span data-ico="id-card"></span><span>La credencial de la escuela, de frente y que se lea tu nombre</span></div>
+      <div class="fila-btn" style="margin-top:12px">
+        <label class="btn fuerte" for="fCred"><span data-ico="camera"></span> Tomarle foto</label>
+        <input id="fCred" type="file" accept="image/*" capture="environment" hidden>
+        <label class="btn" for="fCredGal"><span data-ico="image"></span> De mis fotos</label>
+        <input id="fCredGal" type="file" accept="image/*" hidden>
+      </div>
+      <button class="btn fuerte ancho" id="bMandarCred" type="button" style="margin-top:12px" disabled><span data-ico="send"></span> Mandarla</button>
+      <button class="enlacillo" id="bSinCred" type="button" style="margin-top:14px">No la traigo hoy</button>
     </div>
   </section>
 
@@ -106,7 +141,9 @@
       <ul style="padding-left:18px; line-height:1.65; color:var(--tenue); font-size:14px">
         <li>Tu <b>primer nombre y la inicial de tu apellido</b>, y tu <b>grupo</b>. Nada más.</li>
         <li>Lo que pides, para darte tu turno y tu ticket.</li>
-        <li><b>No</b> se guarda: apellidos, correo, teléfono, contraseña ni fotos tuyas.</li>
+        <li>La <b>foto de tu credencial</b>, sólo hasta que la cooperativa la revisa. En cuanto dice sí o no, <b>se borra</b>.</li>
+        <li>Si proteges tu cuenta: de tu correo sólo una huella para reconocerlo (no se puede leer de vuelta) y tu contraseña cifrada. <b>No te mandamos correos.</b></li>
+        <li><b>No</b> se guarda: apellidos ni teléfono.</li>
         <li>Se usa <b>sólo</b> para despachar la cooperativa. No se comparte con nadie más.</li>
         <li>Se <b>borra al cerrar el ciclo escolar</b>.</li>
       </ul>
@@ -194,6 +231,7 @@
       <button class="btn" id="bCopiarCodigo" type="button"><span data-ico="copy"></span> Copiar</button>
       <p class="sub" style="margin:0">Para entrar desde otro teléfono. No lo compartas.</p>
     </div>
+    <div class="tarjeta" id="miCuenta"></div>
     <div class="cifras" id="misCifras"></div>
     <div id="miDeuda" style="margin-top:14px"></div>
     <h2>Lo que más pides</h2>
@@ -267,6 +305,22 @@
 <!-- MODO TABLET: el ticket que se anota y el «¿algo más?». Sólo existe en
      la tablet de la cooperativa (index.html?kiosco), adentro de la pantalla
      de turnos. -->
+<!-- LA TABLET · quién pide lo anota la cooperativa (Carlos, 10 de octubre:
+     «que el de mostrador ponga el nombre y grupo del alumno y luego el alumno
+     pueda hacer el pedido normal»). Así nadie pide en la tablet a nombre de
+     otro: el nombre lo pone alguien que le está viendo la cara. -->
+<div class="k-capa" id="kAnota" hidden role="dialog" aria-modal="true" aria-labelledby="kAnotaT">
+  <div class="k-tarjeta k-anota-caja">
+    <p class="k-que"><span data-ico="store"></span> Lo anota la cooperativa</p>
+    <h2 id="kAnotaT">¿Quién va a pedir?</h2>
+    <div class="k-quien">
+      <label class="k-campo">Nombre<input id="kaNombre" maxlength="24" autocomplete="off" autocapitalize="words" placeholder="Nombre e inicial"></label>
+      <label class="k-campo chico">Grupo<input id="kaGrupo" maxlength="6" autocomplete="off" placeholder="3.1"></label>
+    </div>
+    <div class="k-lista" id="kaLista" aria-live="polite"></div>
+    <button class="btn fuerte ancho" id="kaListo" type="button"><span data-ico="check"></span> Listo, que pida</button>
+  </div>
+</div>
 <div class="k-capa" id="kTicket" hidden role="dialog" aria-modal="true" aria-labelledby="kTitulo">
   <div class="k-tarjeta" id="kBoleto">
     <p class="k-que" id="kTitulo">Tu turno</p>
@@ -337,7 +391,7 @@ let miPedido = null;     /* el pedido vivo que estoy siguiendo */
 /* ══════════════════════════════════════════════════════════════════════
    PINTAR
    ═════════════════════════════════════════════════════════════════════ */
-const PANTALLAS = ['entrada','terminos','menu','turno','yo'];
+const PANTALLAS = ['entrada','terminos','credencial','menu','turno','yo'];
 function ver(p){
   pantalla = p;
   PANTALLAS.forEach(n => { $('#p-'+n).hidden = (n !== p); });
@@ -801,6 +855,7 @@ function pintarYo(){
     '<button class="chip" type="button" data-alergia="'+a.id+'" aria-pressed="'+
     (mias.indexOf(a.id) >= 0)+'">'+F.ico(a.icono)+esc(a.nombre)+'</button>').join('');
   $('#miCodigo').textContent = yo.codigo;
+  pintarCuenta(yo);
   const n = F.misNumeros(yo.codigo);
   $('#misCifras').innerHTML =
     '<div class="cifra">'+F.ico('receipt-text')+'<b>'+n.pedidos+'</b><span>pedidos</span></div>'+
@@ -891,11 +946,13 @@ function arrancar(){
     /* con servidor, sin la llave de la cooperativa el pedido se quedaría en
        la tablet: mejor decirlo que dejar pedir en balde */
     $('#kCandado').hidden = !(F.motor() === 'servidor' && !F.llaveMostrador());
-    return ver('menu');
+    ver('menu');
+    return verAnota();
   }
   const yo = F.yo();
   if(!yo) return ver('entrada');
   if(!yo.terminos) return ver('terminos');
+  if(faltaCredencial(yo)) return ver('credencial');
   /* si traigo un pedido vivo, la pantalla que importa es el turno */
   const falta = miFalta();
   if(falta){ miPedido = falta; return ver('turno'); }
@@ -910,6 +967,7 @@ function arrancar(){
 $('#bEntrar').addEventListener('click', () => {
   try{
     F.registrar($('#eNombre').value, $('#eGrupo').value);
+    F.pedirQuedarse();
     ver('terminos');
   }catch(e){ aviso(e.message, 'malo'); }
 });
@@ -935,16 +993,117 @@ $('#bVolver').addEventListener('click', async () => {
   try{
     const a = await F.entrarConCodigo($('#eCodigo').value);
     if(!a) return aviso('No hay nadie con ese código.', 'malo');
-    arrancar();
-  }catch(e){ aviso(e.message, 'malo'); }
+    F.pedirQuedarse(); arrancar();
+  }catch(e){ aviso(e.message, 'malo'); if(e.conCorreo) $('#eCorreo').focus(); }
   finally{ b.disabled = false; }
 });
 
 $('#bAcepto').addEventListener('click', () => {
   const yo = F.yo(); if(!yo) return ver('entrada');
   F.aceptarTerminos(yo.codigo);
-  ver('menu');
+  ver(faltaCredencial(yo) ? 'credencial' : 'menu');
 });
+
+/* ══════════════════════════════════════════════════════════════════════
+   LA CUENTA: credencial una vez, correo y contraseña, recuperar
+   ═════════════════════════════════════════════════════════════════════ */
+const LUEGO = 'fadori_cred_luego';
+const hoyEs = () => new Date().toDateString();
+/* se pide con servidor, si no está revisada ni en revisión, y si hoy no dijo
+   «no la traigo»: mañana se le vuelve a pedir, nunca a media compra */
+function faltaCredencial(yo){
+  if(KIOSCO || !yo || F.motor() !== 'servidor') return false;
+  if(yo.verif === 'si' || yo.verif === 'pendiente') return false;
+  try{ if(localStorage.getItem(LUEGO) === hoyEs()) return false; }catch(e){}
+  return true;
+}
+/* la foto se achica en el teléfono: ~900 px y menos de 100 KB; la de la
+   cámara pesa 4 MB y el servidor no la recibe */
+async function achicarFoto(f){
+  const url = URL.createObjectURL(f);
+  try{
+    const im = await new Promise((si, no) => { const i = new Image(); i.onload = () => si(i); i.onerror = no; i.src = url; });
+    let lado = 900;
+    for(let k = 0; k < 6; k++){
+      const e = Math.min(1, lado / Math.max(im.naturalWidth, im.naturalHeight));
+      const c = document.createElement('canvas'); c.width = Math.round(im.naturalWidth * e); c.height = Math.round(im.naturalHeight * e);
+      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+      for(const q of [0.72, 0.6, 0.5]){ const d = c.toDataURL('image/jpeg', q); if(d.length <= 100000) return d; }
+      lado = Math.round(lado * 0.8);
+    }
+    throw new Error('No pude achicar la foto.');
+  } finally { URL.revokeObjectURL(url); }
+}
+let fotoCred = null;
+async function tomarCred(e){
+  const f = e.target.files && e.target.files[0]; e.target.value = '';
+  if(!f) return;
+  try{
+    fotoCred = await achicarFoto(f);
+    $('#credVista').innerHTML = '<img src="' + fotoCred + '" alt="Tu credencial">';
+    $('#bMandarCred').disabled = false;
+  }catch(err){ aviso('Esa foto no se pudo abrir. Prueba con otra.', 'malo'); }
+}
+$('#fCred').addEventListener('change', tomarCred);
+$('#fCredGal').addEventListener('change', tomarCred);
+$('#bMandarCred').addEventListener('click', async () => {
+  const yo = F.yo(); if(!yo || !fotoCred) return;
+  const b = $('#bMandarCred'); b.disabled = true; b.textContent = 'Mandando…';
+  const r = await F.subirCredencial(yo.codigo, fotoCred);
+  b.innerHTML = F.ico('send') + ' Mandarla';
+  if(!r.ok){ b.disabled = false; return aviso(r.error || 'No se pudo mandar.', 'malo'); }
+  fotoCred = null; $('#credVista').innerHTML = '';
+  aviso('Listo. La cooperativa la revisa y se borra. Ya puedes pedir.');
+  arrancar();
+});
+$('#bSinCred').addEventListener('click', () => { try{ localStorage.setItem(LUEGO, hoyEs()); }catch(e){} arrancar(); });
+
+$('#bEntrarCorreo').addEventListener('click', async () => {
+  const b = $('#bEntrarCorreo'); b.disabled = true;
+  try{
+    const r = await F.entrarConCorreo($('#eCorreo').value, $('#eClave').value);
+    if(!r.ok) return aviso(r.error || 'No se pudo entrar.', 'malo');
+    $('#eClave').value = ''; F.pedirQuedarse(); arrancar();
+  } finally { b.disabled = false; }
+});
+$('#bOlvide').addEventListener('click', () => { $('#cajaRecuperar').hidden = !$('#cajaRecuperar').hidden; });
+$('#bRecuperar').addEventListener('click', async () => {
+  const b = $('#bRecuperar'); b.disabled = true;
+  try{
+    if(!$('#eCorreo').value.trim()) { $('#eCorreo').focus(); return aviso('Escribe arriba tu correo.', 'malo'); }
+    const r = await F.recuperarCuenta($('#rCodigo').value, $('#eCorreo').value, $('#rNueva').value);
+    if(!r.ok) return aviso(r.error || 'No se pudo.', 'malo');
+    $('#rNueva').value = ''; F.pedirQuedarse(); aviso('Contraseña nueva puesta. Ya entraste.'); arrancar();
+  } finally { b.disabled = false; }
+});
+
+/* «Tu cuenta» en «Lo mío» */
+function pintarCuenta(yo){
+  const caja = $('#miCuenta');
+  if(F.motor() !== 'servidor'){ caja.hidden = true; return; }
+  caja.hidden = false;
+  const estado = yo.verif === 'si' ? '<div class="aviso bueno">' + F.ico('badge-check') + ' <b>Cuenta verificada</b> por la cooperativa.</div>'
+    : yo.verif === 'pendiente' ? '<div class="aviso">' + F.ico('hourglass') + ' Tu credencial <b>está en revisión</b>. Mientras, puedes pedir igual.</div>'
+    : yo.verif === 'no' ? '<div class="aviso malo">' + F.ico('circle-alert') + ' La cooperativa dijo que la credencial <b>no coincidió</b>. Manda otra.</div>'
+    : '<div class="aviso malo">' + F.ico('id-card') + ' Falta la <b>foto de tu credencial</b>. Es una sola vez.</div>';
+  caja.innerHTML = '<h3 style="margin:0 0 10px">Tu cuenta</h3>' + estado +
+    (yo.verif !== 'si' && yo.verif !== 'pendiente' ? '<button class="btn ancho" type="button" id="bIrCred" style="margin-top:10px">' + F.ico('camera') + ' Mandar mi credencial</button>' : '') +
+    '<h4 style="margin:16px 0 6px">' + (yo.protegida ? 'Protegida con ' + esc(yo.protegida) : 'Protégela con correo y contraseña') + '</h4>' +
+    '<p class="sub" style="margin:0 0 8px">' + (yo.protegida ? 'En otro teléfono entras con tu correo y tu contraseña. El código solo ya no basta.' : 'Así nadie entra con sólo saber tu código, y si cambias de teléfono entras con tu correo.') + '</p>' +
+    '<label for="pCorreo">Correo</label><input id="pCorreo" type="email" autocomplete="email" inputmode="email" placeholder="tu@correo.com">' +
+    (yo.protegida ? '<label for="pAntes">Contraseña de ahora</label><input id="pAntes" type="password" autocomplete="current-password">' : '') +
+    '<label for="pClave">' + (yo.protegida ? 'Contraseña nueva' : 'Contraseña') + '</label><input id="pClave" type="password" autocomplete="new-password" placeholder="Mínimo 6">' +
+    '<button class="btn fuerte ancho" type="button" id="bProteger" style="margin-top:12px">' + F.ico('shield-check') + (yo.protegida ? ' Cambiarla' : ' Proteger mi cuenta') + '</button>';
+  const ir = $('#bIrCred'); if(ir) ir.onclick = () => { try{ localStorage.removeItem(LUEGO); }catch(e){} ver('credencial'); };
+  $('#bProteger').onclick = async () => {
+    const b = $('#bProteger'); b.disabled = true;
+    try{
+      const r = await F.protegerCuenta(yo.codigo, $('#pCorreo').value, $('#pClave').value, $('#pAntes') ? $('#pAntes').value : '');
+      if(!r.ok) return aviso(r.error || 'No se pudo.', 'malo');
+      aviso('Listo: tu cuenta quedó protegida.'); pintarYo();
+    } finally { b.disabled = false; }
+  };
+}
 
 $('#bVerMenu').addEventListener('click', () => ver('menu'));
 $('#bSalir').addEventListener('click', () => { F.salir(); cesta = []; miPedido = null; ver('entrada'); });
@@ -1137,9 +1296,13 @@ let kQuien = { nombre: '', grupo: '' };
 let kPedido = null, kReloj = 0;
 function pedirEnTablet(){
   const nombre = String(kQuien.nombre || '').trim();
-  if(nombre.length < 2){ aviso('Escribe tu primer nombre para saber de quién es.', 'malo'); const i = $('#kNombreIn'); if(i) i.focus(); return; }
+  if(nombre.length < 2){ cerrarHoja(); verAnota(); return; }
   try{
-    kPedido = F.pedir(null, cesta, { origen: 'kiosco', nombre, grupo: kQuien.grupo, nota: notaPedido, ver: verElegido });
+    /* si la cooperativa escogió a un alumno de la lista, el pedido es SUYO
+       (cuenta en sus pedidos y en su fiado); si no, va con el nombre */
+    kPedido = kQuien.codigo
+      ? F.pedir(kQuien.codigo, cesta, { origen: 'kiosco', nota: notaPedido, ver: verElegido })
+      : F.pedir(null, cesta, { origen: 'kiosco', nombre, grupo: kQuien.grupo, nota: notaPedido, ver: verElegido });
   }catch(err){ return aviso(err.message, 'malo'); }
   const eran = cesta.map(r => r.prod);
   cesta = []; notaPedido = ''; abiertoPara = false;
@@ -1183,6 +1346,7 @@ function kTerminar(){
 function kReiniciar(){
   clearInterval(kReloj);
   kPedido = null; kQuien = { nombre: '', grupo: '' }; verElegido = 'pedido';
+  $('#kaLista').innerHTML = '';
   const eran = cesta.map(r => r.prod);
   cesta = []; notaPedido = ''; abiertoPara = false; filtro = 'todo';
   eran.forEach(refrescarFicha); pintarCesta(); cerrarHoja();
@@ -1192,6 +1356,44 @@ function kReiniciar(){
   ['#kNum', '#kNombre', '#kPidio', '#kFolio'].forEach(x => { $(x).textContent = ''; });
   $('#kTicket').hidden = true;
   ver('menu');
+  verAnota();
+}
+/* «¿Quién va a pedir?»: nombre y grupo, o un alumno de la lista */
+const sinAcentos = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+function verAnota(){
+  if(!KIOSCO) return;
+  $('#kaNombre').value = kQuien.nombre || ''; $('#kaGrupo').value = kQuien.grupo || '';
+  pintarAnota();
+  $('#kAnota').hidden = false;
+  setTimeout(() => { try{ $('#kaNombre').focus(); }catch(e){} }, 60);
+}
+function pintarAnota(){
+  const q = sinAcentos($('#kaNombre').value), g = sinAcentos($('#kaGrupo').value);
+  /* tres letras o más, y cuatro a lo mucho: la lista es para encontrar a
+     quien tienes enfrente, no para que el de la fila vea quién existe */
+  if(q.length < 3){ $('#kaLista').innerHTML = ''; return; }
+  const todos = Object.values(F.estado().alumnos || {}).filter(a => a && a.nombre && sinAcentos(a.nombre).indexOf(q) >= 0 && (!g || sinAcentos(a.grupo) === g));
+  $('#kaLista').innerHTML = todos.slice(0, 4).map(a =>
+    '<button class="k-alumno" type="button" data-ka="'+esc(a.codigo || a.id)+'">'+F.ico(F.verificado(a) ? 'badge-check' : 'user-round')+
+      '<span><b>'+esc(a.nombre)+'</b>'+(a.grupo ? ' · '+esc(a.grupo) : '')+'</span>'+
+      '<small>'+(F.verificado(a) ? 'verificado' : 'sin verificar')+'</small></button>').join('');
+}
+if(KIOSCO){
+  $('#kaNombre').addEventListener('input', () => { kQuien = { nombre: $('#kaNombre').value, grupo: $('#kaGrupo').value }; pintarAnota(); });
+  $('#kaGrupo').addEventListener('input', () => { kQuien = { nombre: $('#kaNombre').value, grupo: $('#kaGrupo').value }; pintarAnota(); });
+  $('#kaLista').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-ka]'); if(!b) return;
+    const a = F.estado().alumnos[b.dataset.ka]; if(!a) return;
+    kQuien = { codigo: a.codigo || a.id, nombre: a.nombre, grupo: a.grupo || '' };
+    $('#kaNombre').value = a.nombre; $('#kaGrupo').value = a.grupo || ''; $('#kaLista').innerHTML = '';
+  });
+  $('#kaListo').addEventListener('click', () => {
+    const n = String($('#kaNombre').value || '').trim();
+    if(n.length < 2){ aviso('Escribe el nombre de quien va a pedir.', 'malo'); $('#kaNombre').focus(); return; }
+    if(!kQuien.codigo) kQuien = { nombre: n, grupo: String($('#kaGrupo').value || '').trim() };
+    $('#kAnota').hidden = true;
+    pintarCesta();
+  });
 }
 if(KIOSCO){
   $('#kOk').addEventListener('click', preguntarMas);
@@ -1238,8 +1440,10 @@ if(KIOSCO){
      que el de la cooperativa voltea hacia la caja: dejar el dedo DOS segundos
      sobre «Fadori.» le pide a la pantalla que abra el pad del pasador. Nadie
      de la fila llega ahí sin querer, y aunque llegue, sin el pasador no pasa. */
-  (function(){
-    const m = document.querySelector('header.barra .marca'); if(!m) return;
+  /* también sobre «Lo anota la cooperativa»: con esa tarjeta abierta, el
+     encabezado queda tapado y la puerta tiene que seguir donde se ve */
+  [document.querySelector('header.barra .marca'), document.querySelector('#kAnota .k-que')].forEach(function(m){
+    if(!m) return;
     let t = null;
     m.style.touchAction = 'none'; m.style.webkitUserSelect = 'none'; m.style.userSelect = 'none';
     const suelta = () => { clearTimeout(t); t = null; m.classList.remove('k-sosteniendo'); };
@@ -1249,7 +1453,7 @@ if(KIOSCO){
     });
     ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => m.addEventListener(ev, suelta));
     m.addEventListener('contextmenu', (e) => e.preventDefault());
-  })();
+  });
   window.KIOSCO = { reiniciar: () => { kReiniciar(); kToque(); }, dormir: () => window.kDormir(), pedir: pedirEnTablet };
 }
 
@@ -1413,11 +1617,10 @@ function pintarCarrito(){
     '</div>'+
 
     /* en la tablet: tu nombre va aquí, que es cuando de verdad hace falta */
+    /* en la tablet: quién pide ya lo anotó la cooperativa; aquí sólo se ve */
     (KIOSCO
-      ? '<div class="k-quien">'+
-          '<label class="k-campo">Tu primer nombre<input id="kNombreIn" maxlength="18" autocomplete="off" autocapitalize="words" value="'+esc(kQuien.nombre)+'" placeholder="Así te llamamos"></label>'+
-          '<label class="k-campo chico">Grupo<input id="kGrupoIn" maxlength="6" autocomplete="off" value="'+esc(kQuien.grupo)+'" placeholder="3.1"></label>'+
-        '</div>'
+      ? '<div class="k-pide" id="kPide">'+F.ico('user-round')+'<span>Pide <b>'+esc(kQuien.nombre || '—')+'</b>'+(kQuien.grupo ? ' · '+esc(kQuien.grupo) : '')+'</span>'+
+          '<button class="enlacillo" type="button" id="kCambiaQuien">cambiar</button></div>'
       : '')+
     /* qué sale en la pantalla de turnos: lo decide quien pide */
     '<div class="ver-en-pantalla">'+
@@ -1502,7 +1705,7 @@ function pintarCarrito(){
   });
   $('#bPara').addEventListener('click', () => { abiertoPara = !abiertoPara; pintarCarrito(); });
   const muestra = () => {
-    const nom = KIOSCO ? ($('#kNombreIn') ? $('#kNombreIn').value : '') : ((F.yo() || {}).nombre || '');
+    const nom = KIOSCO ? (kQuien.nombre || '') : ((F.yo() || {}).nombre || '');
     const prueba = { ver: verElegido, nombre: nom, renglones: cesta.map(r => ({ prod: r.prod, cant: r.cant })) };
     const al = F.aliasDe(prueba), qu = F.queSePidio(prueba, 3);
     $('#verMuestra').innerHTML = 'Así se ve: <b>Turno 75</b>' + (al ? ' · ' + esc(al) : '') + (qu ? ' · ' + esc(qu) : '');
@@ -1511,10 +1714,7 @@ function pintarCarrito(){
     verElegido = b.dataset.ver; if(!KIOSCO) F.ponerMiVer(verElegido);
     $$('#hojitaC [data-ver]').forEach(x => x.setAttribute('aria-checked', String(x === b))); muestra();
   }));
-  if(KIOSCO){
-    $('#kNombreIn').addEventListener('input', () => { kQuien.nombre = $('#kNombreIn').value; muestra(); });
-    $('#kGrupoIn').addEventListener('input', () => { kQuien.grupo = $('#kGrupoIn').value; });
-  }
+  if(KIOSCO) $('#kCambiaQuien').addEventListener('click', () => { cerrarHoja(); verAnota(); });
   muestra();
   $('#bConfirmar').addEventListener('click', () => {
     /* el que más duele repetir: dos toques nerviosos = dos pedidos */

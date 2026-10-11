@@ -1634,3 +1634,43 @@ label small.tenue{font-weight:600; color:var(--tenue); opacity:.85}
 .kiosco .hojita{max-width:760px}
 @media (min-width:900px){ .kiosco .velo{align-items:center} .kiosco .hojita{border-radius:22px} }
 .kiosco .barra-fila{max-width:1080px}
+
+/* ── la cuenta (10 de octubre) ── */
+.raya{border:0; border-top:1px solid var(--linea); margin:18px 0 14px}
+.cred-vista{display:grid; place-items:center; gap:8px; min-height:170px; padding:16px; border-radius:16px; text-align:center;
+  border:2px dashed var(--linea); color:var(--tenue); font-weight:700; font-size:14px; background:var(--sup)}
+.cred-vista .i{width:44px; height:44px; color:var(--naranja)}
+.cred-vista img{width:100%; max-height:260px; object-fit:contain; border-radius:12px}
+#miCuenta .aviso{display:flex; gap:8px; align-items:flex-start}
+#miCuenta .aviso .i{flex:none; width:20px; height:20px; margin-top:1px}
+#miCuenta[hidden]{display:none}
+#bOlvide, #bSinCred{display:block; margin-left:auto; margin-right:auto; min-height:44px}
+
+/* el mostrador: cuentas sin verificar y credenciales por revisar */
+.sin-verif{display:inline-flex; align-items:center; gap:4px; margin-left:6px; padding:2px 8px; border-radius:999px;
+  background:var(--rescoldo, #FDE7D6); color:var(--naranja-hondo, #9A3412); font-size:12px; font-weight:800; white-space:nowrap; vertical-align:middle}
+.sin-verif .i{width:14px; height:14px}
+.aviso.revisar{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:12px 0}
+.aviso.revisar > .i{width:22px; height:22px; flex:none}
+.aviso.revisar span{flex:1; min-width:180px}
+.cred-rev{padding:12px; border-radius:16px; border:1px solid var(--linea); background:var(--sup); margin-bottom:12px}
+.cred-rev img{display:block; width:100%; max-height:300px; object-fit:contain; border-radius:12px; background:#000}
+.cred-rev p{margin:10px 0}
+.cred-rev small{display:block; color:var(--tenue); font-size:13px}
+
+/* la tablet: quién pide (lo anota la cooperativa) */
+.k-anota-caja{max-width:560px}
+.k-anota-caja h2{margin:4px 0 0}
+.k-anota-caja .k-que{display:flex; align-items:center; gap:6px; justify-content:center}
+.k-anota-caja .k-que .i{width:16px; height:16px}
+.k-lista{display:flex; flex-direction:column; gap:8px; margin:12px 0}
+.k-lista:empty{display:none}
+.k-alumno{display:flex; align-items:center; gap:10px; min-height:52px; padding:8px 14px; border-radius:14px; border:1px solid var(--linea);
+  background:var(--sup); color:inherit; font:inherit; text-align:left; cursor:pointer}
+.k-alumno .i{width:22px; height:22px; flex:none; color:var(--verde)}
+.k-alumno span{flex:1; min-width:0}
+.k-alumno small{color:var(--tenue); font-weight:700; font-size:12px}
+.k-pide{display:flex; align-items:center; gap:10px; margin-top:14px; padding:12px 14px; border-radius:14px; background:var(--sup); border:1px solid var(--linea); font-size:16px}
+.k-pide .i{width:20px; height:20px; flex:none; color:var(--naranja)}
+.k-pide span{flex:1; min-width:0}
+.k-pide .enlacillo{min-height:44px}

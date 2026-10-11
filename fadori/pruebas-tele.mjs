@@ -197,12 +197,18 @@ const k = tab.frame({ url: /kiosco/ });
 await k.waitForFunction(() => window.KIOSCO, null, { timeout: 15000 });
 ok('arriba a la izquierda, en chiquito, quién ya puede pasar', /Ya puede pasar/.test(await tab.textContent('#kMini')));
 ok('en la tablet no se pide cuenta ni términos: va directo al menú', await k.evaluate(() => !document.querySelector('#p-menu').hidden && document.querySelector('#p-entrada').hidden));
+ok('pero primero la cooperativa anota quién va a pedir', await k.evaluate(() => !document.querySelector('#kAnota').hidden));
+await k.click('#kaListo');
+ok('sin nombre no deja seguir', await k.evaluate(() => !document.querySelector('#kAnota').hidden));
+await k.fill('#kaNombre', 'Val');
+ok('con tres letras busca entre los alumnos (sin nadie que se llame así, no sale nadie)', await k.evaluate(() => !document.querySelectorAll('#kaLista [data-ka]').length));
+await k.fill('#kaNombre', 'Valeria'); await k.fill('#kaGrupo', '2A');
+await k.click('#kaListo');
+ok('con nombre y grupo, ya puede pedir', await k.evaluate(() => document.querySelector('#kAnota').hidden));
 const mas = k.locator('#rejilla button[aria-label^="Agregar"]');
 await mas.nth(0).click(); await mas.nth(3).click();
 await k.click('#bPedir');
-await k.click('#bConfirmar');
-ok('sin nombre no deja pedir', await k.evaluate(() => document.querySelector('#kTicket').hidden));
-await k.fill('#kNombreIn', 'Valeria');
+ok('en el carrito dice quién pide, y no se puede escribir otro nombre ahí', /Valeria/.test(await k.textContent('#kPide')) && !(await k.$('#kNombreIn')));
 await k.click('[data-ver="nombre"]');
 ok('la muestra dice cómo se va a ver en la pantalla', /Valeria/.test(await k.textContent('#verMuestra')));
 await k.click('#bConfirmar');
@@ -226,10 +232,23 @@ await k.waitForFunction(() => !document.querySelector('#p-menu').hidden);
 ok('la siguiente persona empieza en blanco (sin el nombre de la anterior)', await k.evaluate(() => document.querySelector('#cestaCuantos').textContent === '0'));
 ok('y no queda nada de la persona anterior en la página', !(await k.evaluate(() => document.body.innerHTML.includes('Valeria'))),
   await k.evaluate(() => [...document.querySelectorAll('body *')].filter(e => !e.children.length && /Valeria/.test(e.textContent + (e.value || ''))).map(e => e.id || e.className).join(',')));
+ok('…y la cooperativa vuelve a anotar quién sigue, en blanco', await k.evaluate(() => !document.querySelector('#kAnota').hidden) && (await k.inputValue('#kaNombre')) === '');
+/* esta vez es una alumna que ya tiene cuenta: se escoge de la lista y el pedido es SUYO */
+const codAna = await ana.evaluate(() => FADORI.yo().codigo);
+await k.fill('#kaNombre', 'ana p');
+ok('al escribir «ana p» sale Ana de la lista', (await tarda(tab, () => { const d = document.querySelector('#kMarco').contentDocument; return d && /Ana Pérez/.test(d.querySelector('#kaLista').textContent); }, null, 3000)) != null);
+await k.click('#kaLista [data-ka]');
+await k.click('#kaListo');
 await k.locator('#rejilla button[aria-label^="Agregar"]').nth(1).click();
 await k.waitForFunction(() => document.querySelector('#cestaCuantos').textContent === '1');
 await k.click('#bPedir');
-ok('…ni su nombre en el carrito', (await k.inputValue('#kNombreIn')) === '', await k.inputValue('#kNombreIn'));
+ok('…ni el nombre de la anterior en el carrito: dice Ana', /Ana/.test(await k.textContent('#kPide')) && !/Valeria/.test(await k.textContent('#kPide')));
+await k.click('#bConfirmar');
+ok('el pedido de la tablet queda a nombre de la cuenta de Ana (cuenta en sus pedidos)', (await tarda(most, (c) => FADORI.estado().pedidos.some(p => p.origen === 'kiosco' && p.alumno === c), codAna, 10000)) != null);
+await k.click('#kOk').catch(() => {}); await k.click('#kNo').catch(() => {});
+await tarda(tab, () => document.querySelector('#kCapa').hidden, null, 4000);
+await tab.mouse.click(420, 360);
+await tarda(tab, () => !document.querySelector('#kCapa').hidden, null, 4000);
 await tab.click('#kCerrar');
 ok('«Volver a la pantalla» la cierra', (await tarda(tab, () => document.querySelector('#kCapa').hidden, null, 3000)) != null);
 
@@ -244,6 +263,7 @@ ok('sin tocar nada, pregunta «¿Sigues ahí?»', (await tarda(tab, () => { cons
 ok(`… a la espera que se puso (${((Date.now() - tq) / 1000).toFixed(1)} s)`, (Date.now() - tq) / 1000 > 3.5);
 await k.click('#kTicket', { position: { x: 30, y: 30 } });
 ok('tocar donde sea cuenta como «aquí sigo»', await k.evaluate(() => document.querySelector('#kTicket').hidden) && !(await tab.evaluate(() => document.querySelector('#kCapa').hidden)));
+await k.fill('#kaNombre', 'Prueba'); await k.click('#kaListo');
 await k.locator('#rejilla button[aria-label^="Agregar"]').nth(0).click();
 ok('con algo en el carrito vuelve a preguntar', (await tarda(tab, () => { const d = document.querySelector('#kMarco').contentDocument; return d && !d.querySelector('#kTicket').hidden && !d.querySelector('#kSigues').hidden; }, null, 9000)) != null,
   JSON.stringify(await k.evaluate(() => ({ t: document.querySelector('#kTicket').hidden, c: document.querySelector('#cestaCuantos').textContent }))));
@@ -255,10 +275,12 @@ ok(`… a los 10 s (${s10.toFixed(1)} s)`, s10 > 8.5 && s10 < 12.5);
 ok('sin dejar nada en el carrito', await k.evaluate(() => document.querySelector('#cestaCuantos').textContent === '0'));
 await tab.evaluate(() => localStorage.removeItem('fadori_kiosco_espera'));
 
-console.log('\n4c · la puerta escondida al mostrador (dedo 2 s sobre «Fadori.»)');
+console.log('\n4c · la puerta escondida al mostrador (dedo 2 s sobre «Lo anota la cooperativa»)');
 await tab.mouse.click(420, 360);
 await tarda(tab, () => !document.querySelector('#kCapa').hidden, null, 4000);
-const marca = k.locator('header.barra .marca');
+/* al abrir, la tarjeta de «¿quién va a pedir?» tapa el encabezado: la
+   puerta vive también en su etiqueta de arriba */
+const marca = k.locator('#kAnota .k-que');
 await marca.hover();
 await tab.mouse.down(); await tab.waitForTimeout(600); await tab.mouse.up();
 ok('un toque corto en el logo no abre nada', !(await tab.evaluate(() => !!document.querySelector('dialog.fpad-capa[open]'))));

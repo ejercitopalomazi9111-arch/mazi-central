@@ -80,6 +80,7 @@
 
   <!-- ══════════ DESPACHAR · F19–F25 ══════════ -->
   <section id="v-despachar">
+    <div id="porRevisar"></div>
     <div id="actual"></div>
 
     <h2>Lo que sigue</h2>
@@ -351,6 +352,14 @@ function pintarDespachar(){
       : (listos.length ? '' : '<p class="sub">Nada pendiente.</p>'));
 }
 
+/* «sin verificar»: la cuenta que hizo el pedido todavía no tiene su
+   credencial revisada. Al entregar, se le pide la credencial en persona. */
+function marcaCuenta(p){
+  if(!p.alumno || F.motor() !== 'servidor') return '';
+  const a = F.estado().alumnos[p.alumno];
+  if(!a || a.verif === 'si') return '';
+  return ' <span class="sin-verif" title="Pídele su credencial al entregar">' + F.ico('id-card') + (a.verif === 'pendiente' ? 'credencial por revisar' : 'sin verificar') + '</span>';
+}
 function resumenCorto(p){
   return p.renglones.map(r => r.cant+'× '+((F.producto(r.prod)||{}).nombre||'—')).join(' · ');
 }
@@ -359,7 +368,7 @@ function fichaActual(p){
   return '<div class="actual">'+
     '<div class="encabeza">'+
       '<span class="turno-n">'+F.verTurno(p)+'</span>'+
-      '<span class="quien">'+esc(p.nombre)+(p.grupo?' · '+esc(p.grupo):'')+'</span>'+
+      '<span class="quien">'+esc(p.nombre)+(p.grupo?' · '+esc(p.grupo):'')+marcaCuenta(p)+'</span>'+
       '<span class="cod">'+esc(p.folio)+'</span>'+
     '</div>'+
     (p.nota ? '<div class="aviso" style="margin-top:12px; border-left-color:var(--ambar)">'+
@@ -400,7 +409,7 @@ function renglonPedido(p, tipo){
   return '<div class="renglon" style="border-width:2px'+
     (listo ? '; border-color:var(--verde)' : '')+'">'+
     '<span class="n" style="font-size:22px">'+F.verTurno(p)+'</span>'+
-    '<span class="q"><b>'+esc(p.nombre)+'</b>'+(p.grupo?' · '+esc(p.grupo):'')+
+    '<span class="q"><b>'+esc(p.nombre)+'</b>'+(p.grupo?' · '+esc(p.grupo):'')+marcaCuenta(p)+
       (p.anticipado ? ' <b style="color:var(--dorado)">· anticipado</b>' : '')+
       '<small>'+esc(resumenCorto(p))+'</small></span>'+
     (listo
@@ -410,6 +419,55 @@ function renglonPedido(p, tipo){
 }
 
 /* ══════════════════════════════════════════════════════════════════════
+   LAS CREDENCIALES POR REVISAR · 10 de octubre
+   La foto que mandó cada alumno al crear su cuenta. «Es él» le pone la
+   palomita; «No coincide» le pide otra. En cuanto se decide, el servidor
+   BORRA la foto. Se revisa cada 20 s mientras esta pantalla está abierta.
+   ═════════════════════════════════════════════════════════════════════ */
+let porRevisar = [];
+async function revisarCredenciales(){
+  if(F.motor() !== 'servidor' || !F.llaveMostrador() || $('#cuerpoMostrador').hidden) return;
+  const r = await F.credencialesPendientes();
+  porRevisar = (r && r.pendientes) || [];
+  pintarPorRevisar();
+}
+function pintarPorRevisar(){
+  const n = porRevisar.length;
+  $('#porRevisar').innerHTML = n ? '<div class="aviso revisar">'+F.ico('id-card')+
+    '<span><b>'+n+(n === 1 ? ' credencial' : ' credenciales')+' por revisar.</b> Fotos de alumnos que crearon su cuenta.</span>'+
+    '<button class="btn fuerte chico" type="button" id="bRevisar">Revisar</button></div>' : '';
+  const b = $('#bRevisar'); if(b) b.onclick = abrirRevision;
+}
+function abrirRevision(){
+  $('#hojitaT').textContent = 'Credenciales por revisar';
+  $('#hojitaC').innerHTML = (porRevisar.length ? porRevisar.map(x =>
+    '<div class="cred-rev" data-cred="'+esc(x.codigo)+'">'+
+      '<img src="'+x.foto+'" alt="Credencial que mandó '+esc(x.nombre)+'">'+
+      '<p><b>'+esc(x.nombre)+'</b>'+(x.grupo ? ' · '+esc(x.grupo) : '')+'<small>Dijo llamarse así. ¿La credencial es suya?</small></p>'+
+      '<div class="chips"><button class="btn fuerte" type="button" data-cred-si="'+esc(x.codigo)+'" style="flex:1">'+F.ico('check')+' Es él/ella</button>'+
+      '<button class="btn" type="button" data-cred-no="'+esc(x.codigo)+'">'+F.ico('x')+' No coincide</button></div></div>').join('')
+    : '<p class="sub">Nada por revisar.</p>') +
+    '<p class="sub" style="margin-top:14px">En cuanto decides, la foto se borra del servidor.</p>'+
+    '<button class="btn ancho" id="hCerrar" type="button" style="margin-top:8px">Cerrar</button>';
+  $('#hCerrar').addEventListener('click', () => { $('#velo').hidden = true; });
+  $('#hojitaC').querySelectorAll('[data-cred-si],[data-cred-no]').forEach(b => b.addEventListener('click', async () => {
+    const cod = b.dataset.credSi || b.dataset.credNo, si = !!b.dataset.credSi;
+    b.disabled = true;
+    const r = await F.decidirCredencial(cod, si);
+    if(!r.ok){ b.disabled = false; return aviso(r.error || 'No se pudo.', 'malo'); }
+    porRevisar = porRevisar.filter(x => x.codigo !== cod);
+    const fila = $('#hojitaC').querySelector('[data-cred="'+cod+'"]'); if(fila) fila.remove();
+    pintarPorRevisar(); pintar();
+    aviso(si ? 'Listo: cuenta verificada.' : 'Listo: se le pedirá otra.', 'bueno');
+    if(!porRevisar.length) $('#velo').hidden = true;
+  }));
+  $('#velo').hidden = false;
+  $('#hojitaC').scrollTop = 0;
+}
+setInterval(revisarCredenciales, 20000);
+setTimeout(revisarCredenciales, 1500);
+
+/* ══════════════════════════════════════════════════════════════════════
    COBRAR · F26 · el ticket · F27 · la deuda
    ═════════════════════════════════════════════════════════════════════ */
 function abrirCobro(oid){
@@ -417,6 +475,7 @@ function abrirCobro(oid){
   $('#hojitaT').textContent = 'Cobrar el turno ' + F.verTurno(p);
   $('#hojitaC').innerHTML =
     '<p class="sub">'+esc(p.nombre)+(p.grupo?' · '+esc(p.grupo):'')+' · código <b>'+esc(p.folio)+'</b></p>'+
+    (marcaCuenta(p) ? '<div class="aviso malo" style="margin-bottom:12px">'+F.ico('id-card')+' <b>Cuenta sin verificar.</b> Antes de entregar, pídele su credencial y revisa que sea '+esc(p.nombre)+'.</div>' : '')+
     '<div class="cifras"><div class="cifra"><b>'+F.pesos(p.total)+'</b><span>total</span></div></div>'+
     '<label for="hPago">¿Con cuánto paga?</label>'+
     '<input id="hPago" type="number" inputmode="decimal" min="0" step="0.5" value="'+(p.total/100)+'">'+
