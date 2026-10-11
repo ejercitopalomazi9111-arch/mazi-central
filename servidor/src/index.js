@@ -95,6 +95,12 @@ const RE_ID = /^[A-Za-z0-9_-]{1,40}$/;
 const RE_COD = /^[A-Z0-9]{4}$/;
 const RE_APARATO = /^[a-f0-9]{32}$/;
 const RE_LLAVE = /^[a-f0-9]{64}$/;
+/* cuánto mueve la deuda cada movimiento, en centavos (los manda el mostrador) */
+const DELTA_DEUDA = {
+  deuda: (e) => entero(e.monto, 0, 1e7, 0),
+  abono: (e) => -entero(e.monto, 0, 1e7, 0),
+  deuda_ajuste: (e) => entero(e.despues, 0, 1e7, 0) - entero(e.antes, 0, 1e7, 0),
+};
 const EVENTOS_DEL_ALUMNO = ['pedido', 'cancelado', 'terminos', 'apartado', 'en_camino', 'revivido', 'cambio_por_falta', 'renuncia'];
 const EVENTOS_A_LA_VISTA = ['renglon_listo', 'listo', 'tomado', 'producto_agotado', 'producto_vuelve', 'pedido'];
 
@@ -588,6 +594,7 @@ export class Cooperativa {
     const rechazados = [], tocados = [];
     let configTocada = false, turnoTocado = false;
     const rechaza = (cajon, id, por) => rechazados.push({ cajon, id: String(id || '').slice(0, 40), por });
+    const movimientos = [];
     const poner = (c, rec) => { const previo = this.datos[c][rec.id]; rec._r = nuevo; this.datos[c][rec.id] = rec; tocados.push([c, rec, previo]); };
     const lista = (c) => Array.isArray(cambios[c]) ? cambios[c].slice(0, quien.admin ? 5000 : TOPE.registrosPorVuelta) : [];
 
@@ -609,9 +616,17 @@ export class Cooperativa {
           if(!rec){ rechaza(c, r.id, 'grande'); continue; }
           /* lo de la cuenta sólo cambia por sus propias puertas: una copia
              vieja del mostrador no le borra la contraseña ni la palomita */
-          if(c === 'alumnos' && viejo){ rec._dev = viejo._dev; rec._cuenta = viejo._cuenta; rec.verif = viejo.verif; rec.protegida = viejo.protegida; rec.correo = viejo.correo; rec.npedidos = viejo.npedidos; }
-          /* el que da de alta la cooperativa en persona ya está visto */
-          else if(c === 'alumnos') rec.verif = 'si';
+          if(c === 'alumnos' && viejo){ rec._dev = viejo._dev; rec._cuenta = viejo._cuenta; rec.verif = viejo.verif; rec.protegida = viejo.protegida; rec.correo = viejo.correo; rec.npedidos = viejo.npedidos;
+            /* LA DEUDA LA LLEVA EL SERVIDOR (Carlos, 11 de octubre: «arregla el
+               sistema de deudas»). Cada aparato mandaba la deuda ENTERA y ganaba
+               el último: la tablet fiaba $45, el teléfono abonaba $10 al mismo
+               tiempo, y los $45 se perdían. Ahora la de un registro que llega no
+               cuenta: la mueven sólo los movimientos (abajo) */
+            rec.deuda = Number(viejo.deuda) || 0; }
+          /* el que da de alta la cooperativa en persona ya está visto; su deuda
+             nace en cero y la suben los movimientos que vienen detrás */
+          else if(c === 'alumnos'){ rec.verif = 'si'; rec.deuda = 0; }
+          if(c === 'eventos' && !viejo && DELTA_DEUDA[rec.tipo] && rec.alumno) movimientos.push(rec);
           if(c === 'pedidos'){
             const teniaTurno = rec.turno !== null && rec.turno !== undefined;
             if(viejo && viejo.turno) rec.turno = viejo.turno;
@@ -620,6 +635,13 @@ export class Cooperativa {
           }
           poner(c, rec);
         }
+      }
+      /* los movimientos de deuda, cada uno UNA vez (el evento se guarda por id:
+         si un aparato lo vuelve a mandar, ya existe y no entra aquí) */
+      for(const e of movimientos){
+        const a = this.datos.alumnos[String(e.alumno).toUpperCase()]; if(!a) continue;
+        const deuda = Math.max(0, Math.round((Number(a.deuda) || 0) + DELTA_DEUDA[e.tipo](e)));
+        poner('alumnos', Object.assign({}, a, { deuda, t: Math.max(Number(a.t) || 0, ahora, Number(e.t) || 0) + 1 }));
       }
     } else {
       /* ── un teléfono de alumno: sólo lo suyo, y sólo lo permitido ───── */
@@ -704,6 +726,9 @@ export class Cooperativa {
          cooperativa la revisa al despachar */
       const due = this.datos.alumnos[r.alumno];
       if(estado === 'en_cola' && (!due._cuenta || (due.verif !== 'si' && due.verif !== 'pendiente'))) { rechaza('pedidos', r.id, 'sin-cuenta'); return false; }
+      /* el límite de fiado lo revisaba sólo la app: ahora también aquí */
+      const limite = entero(this.config && this.config.limiteDeuda, 0, 1e7, 8000);
+      if(estado === 'en_cola' && limite > 0 && (Number(due.deuda) || 0) >= limite) { rechaza('pedidos', r.id, 'deuda'); return false; }
       const renglones = renglonesLimpios(r.renglones);
       if(!renglones) { rechaza('pedidos', r.id, 'vacio'); return false; }
       if(hayMenu){

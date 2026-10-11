@@ -726,7 +726,8 @@ const MotorServidor = {
       tope: 'Ya tienes los pedidos que se permiten por recreo.', agotado: 'Se acabó algo de lo que pediste.',
       'no existe': 'Ese platillo ya no está en el menú.', ajeno: 'Este teléfono no puede pedir a nombre de ese alumno.',
       actualiza: 'Actualiza la app y vuelve a pedir.', vacio: 'El pedido estaba vacío.',
-      'sin-cuenta': 'Para pedir necesitas tu correo y la foto de tu credencial (en «Lo mío»).' };
+      'sin-cuenta': 'Para pedir necesitas tu correo y la foto de tu credencial (en «Lo mío»).',
+      deuda: 'Tienes una deuda pendiente: hay que pagar en la cooperativa para volver a pedir.' };
     let toco = false;
     d.pedidos.forEach(p => {
       if(!porId[p.id] || p.turno || mios.indexOf(p.alumno) < 0 || p.estado === 'cancelado') return;
@@ -2322,8 +2323,11 @@ function ajustarDeuda(cod, nuevaEnCentavos, quien){
 
 function abonar(cod, centavos){
   const d = estado(), a = d.alumnos[cod]; if(!a) return null;
-  a.deuda = Math.max(0, a.deuda - Math.max(0, Math.round(centavos)));
-  anotar('abono', { alumno:cod, monto:centavos });
+  /* el movimiento lleva lo que DE VERDAD se abonó: con servidor, la deuda es
+     la suma de los movimientos, y abonar 20 sobre 10 no deja «−10» */
+  const monto = Math.min(a.deuda, Math.max(0, Math.round(centavos)));
+  a.deuda -= monto;
+  anotar('abono', { alumno:cod, monto });
   guardar();
   return a;
 }
