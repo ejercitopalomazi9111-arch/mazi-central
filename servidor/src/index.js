@@ -69,6 +69,23 @@ const TOPE = {
   aparatosPorAlumno: 5,
   socketsPorEscuela: 4000,
   llaveDura: 14 * 60 * 60 * 1000,     /* un turno de trabajo, igual que el pase de la pantalla */
+  /* LAS CUENTAS (10 de octubre) */
+  credencialBytes: 140 * 1024,        /* la foto ya llega achicada del teléfono: ~60 KB */
+  credencialesPorAlumnoHora: 4,
+  credencialesPendientes: 600,        /* más que eso es un ataque, no una escuela */
+  correoPorAparato10min: 10,          /* entrar con correo */
+  correoPorIp10min: 80,
+  correoPorEscuelaHora: 600,
+  fallasPorCuenta15min: 8,            /* adivinar la contraseña de UNA cuenta */
+  recuperarPorAparato15min: 5,
+  recuperarPorEscuelaHora: 120,
+  iteraciones: 10000,                 /* PBKDF2: barato para el servidor gratis, caro para quien adivina */
+  /* EL BUZÓN DE LA PANTALLA: el plan gratis da 1 GB por objeto (documentación de
+     Durable Objects, 11 de octubre) y cada valor hasta 2 MB */
+  medioParte: 1536 * 1024,
+  medioMax: 800 * 1e6,
+  mediosObjeto: 900 * 1e6,
+  mediosR2: 8 * 1e9,
 };
 /* qué se guarda y por cuánto: lo de hoy es lo que importa; el historial vive
    en el mostrador y en sus CSV */
@@ -107,6 +124,9 @@ export class Cooperativa {
         const i = k.indexOf(':', 2), c = k.slice(2, i);
         if(this.datos[c]) this.datos[c][k.slice(i + 1)] = v;
       }
+      /* correo (su huella) → alumno, para «entrar con mi correo» */
+      this.correos = {};
+      for(const id in this.datos.alumnos){ const a = this.datos.alumnos[id]; if(a._cuenta && a._cuenta.correo) this.correos[a._cuenta.correo] = id; }
       /* Migración: antes cada cajón era UN valor con todo adentro, y se
          reescribía entero en cada llamada. Con el uso de un mes rebasaba el
          tamaño máximo de un valor y el servidor moría para todos. */
@@ -151,6 +171,9 @@ export class Cooperativa {
     }
 
     if(ruta.endsWith('/push/clave')) return json({ clave: (await this.llavesVapid()).publica });
+    /* los medios de la pantalla van ANTES de leer el cuerpo como texto: los
+       pedazos de video son binarios */
+    if(ruta.indexOf('/medios/') >= 0) return this.rutaMedios(ruta, url, pedido, quien);
 
     if(pedido.method !== 'POST') return json({ error: 'No existe.' }, 404);
     const crudo = await pedido.text();
@@ -162,6 +185,9 @@ export class Cooperativa {
       return json({ error: 'El cuerpo no es JSON.' }, 400);
 
     if(ruta.endsWith('/sync')) return json(await this.sincronizar(cuerpo, quien));
+    /* las de la cuenta van ANTES: «/cuenta/entrar» también acaba en «/entrar»
+       y se iba a la puerta del mostrador */
+    if(ruta.indexOf('/cuenta/') >= 0) return this.rutaCuenta(ruta, cuerpo, quien);
     if(ruta.endsWith('/entrar')) return this.entrar(cuerpo, quien);
     if(ruta.endsWith('/salir')){
       if(quien.admin){ delete this.llaves[quien.llave]; await this.ctx.storage.put('llaves', this.llaves); }
@@ -243,7 +269,7 @@ export class Cooperativa {
        la tablet de la cooperativa entra; el de afuera se queda afuera. */
     if(!confiable && this.lleva(kEsc, 60 * 60000) >= TOPE.fallasPasadorEscuelaHora)
       return json({ error: 'Demasiados intentos en esta escuela. Entra desde la tablet de siempre o espera una hora.' }, 429);
-    const bueno = String((this.config && this.config.pasador) || '1234');
+    const bueno = String((this.config && this.config.pasador) || '121026');
     if(!igual(String(cuerpo.pasador || '').slice(0, 20), bueno)){
       this.suma(kAp, 15 * 60000); this.suma(kIp, 15 * 60000); this.suma(kEsc, 60 * 60000);
       return json({ error: 'Ese no es el pasador.' }, 401);
@@ -286,12 +312,221 @@ export class Cooperativa {
     const cod = String(cuerpo.codigo || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const a = RE_COD.test(cod) && this.datos.alumnos[cod];
     if(!a) return json({ error: 'No hay nadie con ese código.' }, 404);
+    /* con contraseña, el código solo ya no abre la cuenta: el código se ve
+       en la pantalla del teléfono y cualquiera que lo vio podía pedir a tu
+       nombre. Ahora se entra con el correo y la contraseña. */
+    if(a._cuenta) return json({ error: 'Esta cuenta tiene contraseña: entra con tu correo.', conCorreo: true }, 403);
+    return this.abrirEn(a, quien);
+  }
+  /* el alumno queda abierto también en este teléfono */
+  async abrirEn(a, quien){
+    const cod = a.id;
     const dev = (a._dev || []).filter(x => x !== quien.aparato);
     dev.push(quien.aparato);
     a._dev = dev.slice(-TOPE.aparatosPorAlumno);
     await this.ctx.storage.put('r:alumnos:' + cod, a);
     const suyos = Object.values(this.datos.pedidos).filter(p => p.alumno === cod).map(p => sinInternos(p));
     return json({ alumno: sinInternos(a), pedidos: suyos });
+  }
+
+  /* ══ EL BUZÓN DE LA PANTALLA ═══════════════════════════════════════════
+     Carlos, 10 de octubre: «si lo subo desde mi teléfono, que la tablet
+     también lo tenga». Episodios, música, películas y enlaces se suben aquí
+     en pedazos de 1.5 MB (con la llave de la cooperativa), y cada pantalla
+     los baja sola y los guarda EN ELLA: el servidor es un buzón, no la
+     videoteca. Se guarda en el propio objeto (el plan gratis da 1 GB por
+     escuela) o, si algún día se conecta, en un R2 (`MEDIOS`), que da 10 GB.
+     Lo ya bajado se va primero cuando falta espacio. */
+  get alm(){
+    const r2 = this.env && this.env.MEDIOS, g = this.ctx.storage;
+    return r2 ? {
+      cabe: TOPE.mediosR2, poner: (id, k, b) => r2.put(id + '/' + k, b),
+      sacar: async (id, k) => { const o = await r2.get(id + '/' + k); return o ? o.arrayBuffer() : null; },
+      borrar: async (id, n) => { const ks = []; for(let k = 0; k < n; k++) ks.push(id + '/' + k); for(let i = 0; i < ks.length; i += 900) await r2.delete(ks.slice(i, i + 900)); },
+    } : {
+      cabe: TOPE.mediosObjeto, poner: (id, k, b) => g.put('mp:' + id + ':' + k, b),
+      sacar: (id, k) => g.get('mp:' + id + ':' + k),
+      borrar: async (id, n) => { const ks = []; for(let k = 0; k < n; k++) ks.push('mp:' + id + ':' + k); for(let i = 0; i < ks.length; i += 128) await g.delete(ks.slice(i, i + 128)); },
+    };
+  }
+  async medios(){
+    if(!this._medios){ this._medios = {}; for(const [k, v] of await this.ctx.storage.list({ prefix: 'medio:' })) this._medios[k.slice(6)] = v; }
+    return this._medios;
+  }
+  async guardarMedio(m){ (await this.medios())[m.id] = m; await this.ctx.storage.put('medio:' + m.id, m); }
+  async quitarMedio(id, tumba){
+    const M = await this.medios(), m = M[id]; if(!m) return;
+    if(m.partes) await this.alm.borrar(id, m.partes);
+    delete M[id]; await this.ctx.storage.delete('medio:' + id);
+    if(tumba){ const b = (await this.ctx.storage.get('medios-borrados')) || []; b.push({ id, t: Date.now() }); await this.ctx.storage.put('medios-borrados', b.slice(-300)); }
+  }
+  async rutaMedios(ruta, url, pedido, quien){
+    if(!quien.admin) return json({ error: 'Sólo con el pasador de la cooperativa.' }, 401);
+    const que = ruta.slice(ruta.indexOf('/medios/') + 8), M = await this.medios();
+    const id = String(url.searchParams.get('id') || ''), k = Number(url.searchParams.get('k'));
+    if(que === 'parte' && pedido.method === 'GET'){
+      const m = M[id]; if(!m || !(k >= 0 && k < m.partes)) return json({ error: 'No existe.' }, 404);
+      const b = await this.alm.sacar(id, k); if(!b) return json({ error: 'Falta ese pedazo.' }, 404);
+      return new Response(b, { headers: { 'content-type': 'application/octet-stream' } });
+    }
+    if(pedido.method !== 'POST') return json({ error: 'No existe.' }, 404);
+    if(que === 'parte'){
+      const m = M[id]; if(!m || m.listo || !(k >= 0 && k < m.partes)) return json({ error: 'No existe.' }, 404);
+      const b = await pedido.arrayBuffer();
+      if(b.byteLength > TOPE.medioParte || b.byteLength === 0) return json({ error: 'Pedazo inválido.' }, 413);
+      await this.alm.poner(id, k, b);
+      m.llegaron = Math.max(m.llegaron || 0, k + 1);
+      if(k === m.partes - 1){ m.listo = true; m.t = Date.now(); }
+      await this.guardarMedio(m);
+      return json({ bien: true, listo: !!m.listo });
+    }
+    let c = {}; try{ c = JSON.parse(await pedido.text()) || {}; }catch(e){}
+    if(que === 'lista'){
+      const borrados = (await this.ctx.storage.get('medios-borrados')) || [];
+      return json({ medios: Object.values(M).filter(m => m.listo).map(m => Object.assign({}, m)), borrados });
+    }
+    if(que === 'alta'){
+      const nid = String(c.id || '');
+      if(!/^[a-z0-9]{6,40}$/.test(nid)) return json({ error: 'Id inválido.' }, 400);
+      const tam = entero(c.tam, 0, 4e9, 0), clase = ['archivo', 'youtube', 'spotify'].indexOf(c.clase) >= 0 ? c.clase : 'archivo';
+      if(clase === 'archivo' && (tam <= 0 || tam > TOPE.medioMax)) return json({ error: 'Pesa ' + Math.round(tam / 1e6) + ' MB. Lo más que entra son ' + Math.round(TOPE.medioMax / 1e6) + ' MB: expórtalo en 720p.' }, 413);
+      /* espacio: se van primero los ya bajados por alguna pantalla, de los más viejos */
+      const usado = () => Object.values(M).reduce((x, m) => x + (m.tam || 0), 0);
+      const viejos = Object.values(M).filter(m => m.listo && m.bajado).sort((a, b) => a.bajado - b.bajado);
+      while(usado() + tam > this.alm.cabe && viejos.length) await this.quitarMedio(viejos.shift().id, false);
+      if(usado() + tam > this.alm.cabe) return json({ error: 'El buzón está lleno: espera a que la pantalla baje lo que ya subiste.' }, 507);
+      if(M[nid]) await this.quitarMedio(nid, false);
+      const partes = clase === 'archivo' ? Math.ceil(tam / TOPE.medioParte) : 0;
+      const portada = typeof c.portada === 'string' && /^data:image\/(jpeg|png|webp);base64,/.test(c.portada) && c.portada.length < 120000 ? c.portada : '';
+      const m = { id: nid, tipo: c.tipo === 'rel' ? 'rel' : 'ep', clase, nombre: texto(c.nombre, 80) || 'Sin nombre', mime: texto(c.mime, 60),
+        tam, partes, esAudio: !!c.esAudio, artista: texto(c.artista, 60), portada,
+        embed: clase !== 'archivo' && /^https:\/\/(www\.youtube-nocookie\.com|open\.spotify\.com)\//.test(String(c.embed || '')) ? String(c.embed).slice(0, 500) : '',
+        listo: clase !== 'archivo', llegaron: 0, de: quien.aparato, t: Date.now(), bajado: 0 };
+      await this.guardarMedio(m);
+      return json({ bien: true, partes, parte: TOPE.medioParte });
+    }
+    if(que === 'bajado'){ const m = M[String(c.id || '')]; if(m && !m.bajado){ m.bajado = Date.now(); await this.guardarMedio(m); } return json({ bien: true }); }
+    if(que === 'borrar'){ await this.quitarMedio(String(c.id || ''), true); return json({ bien: true }); }
+    return json({ error: 'No existe.' }, 404);
+  }
+
+  /* ══ LAS CUENTAS ═══════════════════════════════════════════════════════
+     Lo pidió Carlos, con la razón: «me preocupa que hagan pedidos en la
+     tablet a nombre de otras personas». Tres piezas:
+
+     · LA CREDENCIAL, una sola vez. El teléfono manda una foto chica; aquí se
+       guarda APARTE (no viaja en la sincronía a nadie) hasta que la
+       cooperativa la ve en el mostrador y dice «es él» o «no coincide». En
+       cuanto decide, la foto se BORRA: lo que queda es la palomita.
+     · CORREO Y CONTRASEÑA. Del correo se guarda su huella (SHA-256), no el
+       correo; de la contraseña, PBKDF2 con sal propia. Una cuenta protegida
+       ya no se abre con el código solo.
+     · RECUPERAR con el código + el correo: los dos juntos, con tope de
+       intentos, y se pone una contraseña nueva. No se manda ningún correo
+       (no hay servidor de correo y no hace falta). */
+  rutaCuenta(ruta, cuerpo, quien){
+    const que = ruta.slice(ruta.indexOf('/cuenta/') + 8);
+    if(que === 'credencial') return this.subirCredencial(cuerpo, quien);
+    if(que === 'proteger') return this.protegerCuenta(cuerpo, quien);
+    if(que === 'entrar') return this.entrarConCorreo(cuerpo, quien);
+    if(que === 'recuperar') return this.recuperarCuenta(cuerpo, quien);
+    if(que === 'pendientes') return this.credencialesPendientes(quien);
+    if(que === 'decidir') return this.decidirCredencial(cuerpo, quien);
+    return json({ error: 'No existe.' }, 404);
+  }
+  esSuyo(cod, quien){ const a = this.datos.alumnos[cod]; return !!a && !!quien.aparato && (a._dev || []).indexOf(quien.aparato) >= 0; }
+  async tocarAlumno(a){
+    a.t = Math.max(Date.now(), (a.t || 0) + 1);
+    const antes = this.reloj; this.reloj++; a._r = this.reloj;
+    this.datos.alumnos[a.id] = a;
+    await this.escribir([['r:alumnos:' + a.id, a], ['reloj', this.reloj]]);
+    this.avisar([['alumnos', a]], false, antes);
+  }
+  async subirCredencial(cuerpo, quien){
+    if(!quien.aparato) return json({ error: 'Actualiza la app.' }, 400);
+    const cod = String(cuerpo.codigo || '').toUpperCase();
+    if(!RE_COD.test(cod) || !this.esSuyo(cod, quien)) return json({ error: 'Esa cuenta no es de este teléfono.' }, 403);
+    const foto = String(cuerpo.foto || '');
+    if(!/^data:image\/(jpeg|webp|png);base64,[A-Za-z0-9+/=]+$/.test(foto)) return json({ error: 'Eso no es una foto.' }, 400);
+    if(foto.length > TOPE.credencialBytes) return json({ error: 'La foto es demasiado grande.' }, 413);
+    if(!this.cuenta('cred:' + cod, 60 * 60000, TOPE.credencialesPorAlumnoHora)) return json({ error: 'Ya mandaste varias. Espera a que la revisen.' }, 429);
+    const a = this.datos.alumnos[cod];
+    if(a.verif === 'si') return json({ bien: true, verif: 'si' });
+    const pend = await this.ctx.storage.list({ prefix: 'cred:', limit: TOPE.credencialesPendientes + 1 });
+    if(pend.size >= TOPE.credencialesPendientes && !pend.has('cred:' + cod)) return json({ error: 'Hay demasiadas por revisar. Inténtalo mañana.' }, 429);
+    await this.ctx.storage.put('cred:' + cod, { foto, t: Date.now() });
+    a.verif = 'pendiente';
+    await this.tocarAlumno(a);
+    return json({ bien: true, verif: 'pendiente' });
+  }
+  async credencialesPendientes(quien){
+    if(!quien.admin) return json({ error: 'Sólo el mostrador.' }, 401);
+    const out = [];
+    for(const [k, v] of await this.ctx.storage.list({ prefix: 'cred:', limit: 200 })){
+      const cod = k.slice(5), a = this.datos.alumnos[cod];
+      if(!a){ await this.ctx.storage.delete(k); continue; }
+      out.push({ codigo: cod, nombre: a.nombre, grupo: a.grupo, foto: v.foto, t: v.t });
+    }
+    out.sort((x, y) => x.t - y.t);
+    return json({ pendientes: out });
+  }
+  async decidirCredencial(cuerpo, quien){
+    if(!quien.admin) return json({ error: 'Sólo el mostrador.' }, 401);
+    const cod = String(cuerpo.codigo || '').toUpperCase(), a = RE_COD.test(cod) && this.datos.alumnos[cod];
+    if(!a) return json({ error: 'No existe.' }, 404);
+    a.verif = cuerpo.si === true ? 'si' : 'no';
+    await this.ctx.storage.delete('cred:' + cod);            /* decidido: la foto se va */
+    await this.tocarAlumno(a);
+    return json({ bien: true, verif: a.verif });
+  }
+  async protegerCuenta(cuerpo, quien){
+    if(!quien.aparato) return json({ error: 'Actualiza la app.' }, 400);
+    const cod = String(cuerpo.codigo || '').toUpperCase();
+    if(!RE_COD.test(cod) || !this.esSuyo(cod, quien)) return json({ error: 'Esa cuenta no es de este teléfono.' }, 403);
+    const correo = correoLimpio(cuerpo.correo), clave = String(cuerpo.clave || '');
+    if(!correo) return json({ error: 'Ese correo no se ve bien.' }, 400);
+    if(clave.length < 6 || clave.length > 72) return json({ error: 'La contraseña va de 6 a 72 letras o números.' }, 400);
+    const a = this.datos.alumnos[cod];
+    /* cambiarla teniendo ya una: hay que dar la de antes */
+    if(a._cuenta && !(await claveBuena(String(cuerpo.antes || ''), a._cuenta))) return json({ error: 'La contraseña de antes no es esa.' }, 401);
+    const huella = await sha('fadori-correo:' + correo);
+    if(this.correos[huella] && this.correos[huella] !== cod) return json({ error: 'Ese correo ya es de otra cuenta.' }, 409);
+    if(a._cuenta && a._cuenta.correo && a._cuenta.correo !== huella) delete this.correos[a._cuenta.correo];
+    a._cuenta = await cuentaNueva(huella, clave);
+    a.protegida = tapar(correo);
+    this.correos[huella] = cod;
+    await this.tocarAlumno(a);
+    return json({ bien: true, protegida: a.protegida });
+  }
+  async entrarConCorreo(cuerpo, quien){
+    if(!quien.aparato) return json({ error: 'Actualiza la app.' }, 400);
+    if(!this.cuenta('cor:ap:' + quien.aparato, 10 * 60000, TOPE.correoPorAparato10min) ||
+       !this.cuenta('cor:ip:' + quien.ip, 10 * 60000, TOPE.correoPorIp10min) ||
+       !this.cuenta('cor:escuela', 60 * 60000, TOPE.correoPorEscuelaHora))
+      return json({ error: 'Demasiados intentos. Espera unos minutos.' }, 429);
+    const correo = correoLimpio(cuerpo.correo);
+    const cod = correo && this.correos[await sha('fadori-correo:' + correo)], a = cod && this.datos.alumnos[cod];
+    const malo = () => json({ error: 'El correo o la contraseña no coinciden.' }, 401);
+    if(!a || !a._cuenta){ await claveBuena('x', CUENTA_FALSA); return malo(); }   /* tarda lo mismo exista o no */
+    if(this.lleva('cfa:' + cod, 15 * 60000) >= TOPE.fallasPorCuenta15min) return json({ error: 'Esta cuenta tuvo muchos intentos. Espera 15 minutos.' }, 429);
+    if(!(await claveBuena(String(cuerpo.clave || ''), a._cuenta))){ this.suma('cfa:' + cod, 15 * 60000); return malo(); }
+    return this.abrirEn(a, quien);
+  }
+  async recuperarCuenta(cuerpo, quien){
+    if(!quien.aparato) return json({ error: 'Actualiza la app.' }, 400);
+    if(!this.cuenta('rec:ap:' + quien.aparato, 15 * 60000, TOPE.recuperarPorAparato15min) ||
+       !this.cuenta('rec:escuela', 60 * 60000, TOPE.recuperarPorEscuelaHora))
+      return json({ error: 'Demasiados intentos. Espera unos minutos.' }, 429);
+    const cod = String(cuerpo.codigo || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const correo = correoLimpio(cuerpo.correo), nueva = String(cuerpo.nueva || '');
+    const a = RE_COD.test(cod) && this.datos.alumnos[cod];
+    const malo = () => json({ error: 'El código y el correo no coinciden.' }, 401);
+    if(!a || !a._cuenta || !correo) return malo();
+    if(this.lleva('cfa:' + cod, 15 * 60000) >= TOPE.fallasPorCuenta15min) return json({ error: 'Esta cuenta tuvo muchos intentos. Espera 15 minutos.' }, 429);
+    if(!igual(await sha('fadori-correo:' + correo), a._cuenta.correo)){ this.suma('cfa:' + cod, 15 * 60000); return malo(); }
+    if(nueva.length < 6 || nueva.length > 72) return json({ error: 'La contraseña nueva va de 6 a 72 letras o números.' }, 400);
+    a._cuenta = await cuentaNueva(a._cuenta.correo, nueva);
+    return this.abrirEn(a, quien);
   }
 
   /* ── El WebSocket: empuja los cambios ya filtrados para cada quien ─── */
@@ -368,7 +603,11 @@ export class Cooperativa {
           if(viejo && !(t > (viejo.t || 0) || (t === (viejo.t || 0) && r.id > viejo.id))) continue;
           const rec = limpiarRegistro(r, c === 'productos' ? 1600000 : 4000);
           if(!rec){ rechaza(c, r.id, 'grande'); continue; }
-          if(c === 'alumnos' && viejo) rec._dev = viejo._dev;
+          /* lo de la cuenta sólo cambia por sus propias puertas: una copia
+             vieja del mostrador no le borra la contraseña ni la palomita */
+          if(c === 'alumnos' && viejo){ rec._dev = viejo._dev; rec._cuenta = viejo._cuenta; rec.verif = viejo.verif; rec.protegida = viejo.protegida; }
+          /* el que da de alta la cooperativa en persona ya está visto */
+          else if(c === 'alumnos') rec.verif = 'si';
           if(c === 'pedidos'){
             const teniaTurno = rec.turno !== null && rec.turno !== undefined;
             if(viejo && viejo.turno) rec.turno = viejo.turno;
@@ -431,7 +670,7 @@ export class Cooperativa {
          !this.cuenta('alu:escuela', DIA, TOPE.alumnosPorEscuelaDia)) return rechaza('alumnos', id, 'tope');
       return poner('alumnos', {
         id, codigo: id, nombre: nombre(r.nombre) || 'Sin nombre', grupo: texto(r.grupo, 8).toUpperCase(),
-        terminos: entero(r.terminos, 0, ahora, 0), deuda: 0, creado: ahora,
+        terminos: entero(r.terminos, 0, ahora, 0), deuda: 0, creado: ahora, verif: 'sin',
         t: Math.min(Number(r.t) || ahora, ahora), _dev: [quien.aparato],
       });
     }
@@ -713,9 +952,29 @@ function igual(a, b){
 }
 function sinInternos(rec){
   const c = Object.assign({}, rec);
-  delete c._dev;
+  delete c._dev; delete c._cuenta;
   return c;
 }
+/* ── las cuentas: huellas, sal y PBKDF2 ── */
+const bytesHex = (b) => Array.from(new Uint8Array(b), x => x.toString(16).padStart(2, '0')).join('');
+const hexBytes = (h) => new Uint8Array((String(h).match(/../g) || []).map(x => parseInt(x, 16)));
+async function sha(t){ return bytesHex(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t))); }
+async function derivar(clave, sal, iter){
+  const k = await crypto.subtle.importKey('raw', new TextEncoder().encode(clave), 'PBKDF2', false, ['deriveBits']);
+  return bytesHex(await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: hexBytes(sal), iterations: iter }, k, 256));
+}
+async function cuentaNueva(huellaCorreo, clave){
+  const sal = hex(16), iter = TOPE.iteraciones;
+  return { correo: huellaCorreo, sal, iter, clave: await derivar(clave, sal, iter), t: Date.now() };
+}
+async function claveBuena(clave, c){ return !!c && igual(await derivar(clave.slice(0, 72), c.sal, c.iter || TOPE.iteraciones), c.clave); }
+const CUENTA_FALSA = { sal: '00'.repeat(16), iter: TOPE.iteraciones, clave: '00'.repeat(32) };
+function correoLimpio(v){
+  const c = String(v || '').trim().toLowerCase().slice(0, 120);
+  return /^[^\s@<>]{1,64}@[^\s@<>]+\.[a-z]{2,}$/.test(c) ? c : '';
+}
+/* «carlos@gmail.com» → «ca•••@gmail.com»: lo que se enseña para que sepas cuál pusiste */
+function tapar(correo){ const [u, d] = correo.split('@'); return u.slice(0, 2) + '•••@' + d; }
 function configPublica(cfg){
   const c = Object.assign({}, cfg);
   delete c.pasador; delete c._recreo;

@@ -21,9 +21,12 @@ export async function abrirMesa(nombre = 'flujos'){
   const fallas = [];
   const ok = (q, c, extra) => { console.log((c ? '  ✓ ' : '  ✗ ') + q + (!c && extra ? ' · ' + extra : '')); if(!c) fallas.push(q); };
 
-  async function aparato(ruta, { w = 390, h = 844, desfase = 0 } = {}){
+  async function aparato(ruta, { w = 390, h = 844, desfase = 0, credencial = false } = {}){
     const ctx = await br.newContext({ viewport: { width: w, height: h }, serviceWorkers: 'block', hasTouch: w < 800 });
     await ctx.addInitScript(c => { try{ localStorage.setItem('fadori_casa', c); }catch(e){} }, CASA);
+    /* las pruebas de antes no traen credencial: dicen «no la traigo hoy», como
+       un alumno que la deja para mañana. La prueba de cuentas pasa credencial:true */
+    if(!credencial) await ctx.addInitScript(() => { try{ localStorage.setItem('fadori_cred_luego', new Date().toDateString()); }catch(e){} });
     if(desfase) await ctx.addInitScript(ms => { const real = Date.now.bind(Date); Date.now = () => real() + ms; }, desfase);
     if(process.env.LOCAL) await ctx.route(/mazi-central\.palomazi9111\.workers\.dev\/fadori\//, route => {
       const u = new URL(route.request().url()); let f = path.join(RAIZ, decodeURIComponent(u.pathname));
@@ -65,7 +68,7 @@ export async function abrirMesa(nombre = 'flujos'){
   /* la cooperativa entra como de verdad: pasador en su pantalla */
   async function mostrador(opciones){
     const m = await aparato('/fadori/mostrador', Object.assign({ w: 1100, h: 800 }, opciones || {}));
-    await m.fill('#rPase', '1234'); await m.click('#rEntrar');
+    await m.fill('#rPase', '121026'); await m.click('#rEntrar');
     await m.waitForFunction(() => FADORI.llaveMostrador(), null, { timeout: 10000 }).catch(() => {});
     await m.waitForTimeout(1500);
     return m;

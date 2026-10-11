@@ -41,7 +41,7 @@ const esperar = async (fn, ms = 6000) => { const t0 = Date.now(); while(Date.now
 
 const api = async (ruta, cuerpo, h) => { const r = await fetch(`${API}${ruta}?casa=${CASA}`, { method: cuerpo ? 'POST' : 'GET', headers: { 'content-type': 'application/json', ...h }, body: cuerpo ? JSON.stringify(cuerpo) : undefined }); return { status: r.status, j: await r.json().catch(() => null) }; };
 const AP_M = crypto.randomBytes(16).toString('hex'), AP_A = crypto.randomBytes(16).toString('hex');
-const llave = (await api('/api/entrar', { pasador: '1234' }, { 'x-fadori-aparato': AP_M })).j.token;
+const llave = (await api('/api/entrar', { pasador: '121026' }, { 'x-fadori-aparato': AP_M })).j.token;
 const M = { 'x-fadori-aparato': AP_M, 'x-fadori-admin': llave }, A = { 'x-fadori-aparato': AP_A };
 await api('/api/sync', { desde: 0, cambios: { productos: [{ id: 'pb-torta', nombre: 'Torta', precio: 3500, disponible: true, t: 1 }] } }, M);
 

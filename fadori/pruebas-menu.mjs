@@ -23,7 +23,7 @@ const VIEJOS = [
   { id: 'pb-torta-de-milanesa', nombre: 'Torta de milanesa', cat: 'torta', precio: 3800, segPrep: 60, disponible: true, orden: 2, foto: 'fotos/torta-milanesa.jpg', t: 1000 },
 ];
 const AP = 'a'.repeat(32);
-const llave = (await api('/api/entrar', { pasador: '1234' }, { 'x-fadori-aparato': AP })).j.token;
+const llave = (await api('/api/entrar', { pasador: '121026' }, { 'x-fadori-aparato': AP })).j.token;
 await api('/api/sync', { desde: 0, cambios: { productos: VIEJOS } }, { 'x-fadori-aparato': AP, 'x-fadori-admin': llave });
 await api('/api/salir', {}, { 'x-fadori-aparato': AP, 'x-fadori-admin': llave });
 
@@ -39,7 +39,7 @@ await m.evaluate((viejos) => {
 await m.reload();
 await m.waitForFunction(() => window.FADORI && FADORI.estadoSync().modo === 'enlinea', null, { timeout: 20000 }).catch(() => {});
 ok('la tablet migra sola: ya no enseña el pozole', await m.evaluate(() => !FADORI.productos(false).some(p => p.id === 'pb-pozole')));
-await m.fill('#rPase', '1234'); await m.click('#rEntrar');
+await m.fill('#rPase', '121026'); await m.click('#rEntrar');
 await m.waitForFunction(() => FADORI.llaveMostrador(), null, { timeout: 10000 }).catch(() => {});
 
 const t0 = Date.now();

@@ -36,7 +36,7 @@ const pedidoDe = (res, id) => (res.cambios.pedidos || []).find(p => p.id === id)
 /* ── está vivo ─────────────────────────────────────────────────────────── */
 const salud = await (await fetch(API + '/api/salud')).json();
 ok('el servidor contesta que está vivo', salud.bien === true && salud.quien === 'fadori');
-LLAVE = (await (await fetch(API + '/api/entrar?casa=' + CASA, { method: 'POST', headers: cabezas(), body: JSON.stringify({ pasador: '1234' }) })).json()).token || '';
+LLAVE = (await (await fetch(API + '/api/entrar?casa=' + CASA, { method: 'POST', headers: cabezas(), body: JSON.stringify({ pasador: '121026' }) })).json()).token || '';
 ok('el mostrador entra con su pasador', /^[a-f0-9]{64}$/.test(LLAVE));
 
 /* ── el turno lo pone el servidor ──────────────────────────────────────── */

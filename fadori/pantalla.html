@@ -35,6 +35,10 @@
     border:1px solid var(--tv-linea); font-weight:800; color:var(--tv-tenue); font-size:clamp(13px,1.4vw,18px)}
   .tv-recreo[hidden]{display:none}
   .tv-recreo .i{width:1.1em; height:1.1em; color:var(--tv-naranja)}
+  .tv-nube{margin-left:auto; max-width:40vw; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; padding:6px 12px; border-radius:999px;
+    background:var(--tv-sup); border:1px solid var(--tv-linea); color:var(--tv-tenue); font-weight:800; font-size:clamp(12px,1.2vw,15px)}
+  .tv-nube[hidden]{display:none}
+  .tv-nube:not([hidden]) + .tv-reloj{margin-left:0}
   .tv-reloj{margin-left:auto; font-size:clamp(24px,3.4vw,46px); font-weight:900; letter-spacing:-.03em; font-variant-numeric:tabular-nums}
   .tv-boton{border:1px solid var(--tv-linea); background:var(--tv-sup); color:var(--tv-tenue); width:44px; height:44px; border-radius:14px;
     display:grid; place-items:center; cursor:pointer; opacity:.55}
@@ -177,6 +181,7 @@
   .aj-btn.fuerte{background:var(--tv-naranja); color:#1A0F0A; border-color:transparent}
   .aj-btn .i{width:18px; height:18px}
   .aj-btn:disabled{opacity:.4}
+  .aj-btn.seguro{background:var(--tv-rojo); color:#fff; border-color:transparent}
   .aj-fila{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
   .aj-chip{border:1px solid var(--tv-linea); background:var(--tv-sup2); color:var(--tv-tinta); border-radius:999px; min-height:40px; padding:0 14px;
     font:inherit; font-weight:800; font-size:14px; cursor:pointer}
@@ -194,6 +199,127 @@
   .aj-estado{padding:12px 14px; border-radius:14px; background:var(--tv-sup2); border:1px solid var(--tv-linea); font-weight:700; margin-bottom:10px}
   .aj-estado.bien{border-color:#3F6B23; background:#132608; color:#C9F0A8}
   [hidden]{display:none !important}
+
+  /* ── lo que pasa cuando no hay episodio nuevo ── */
+  .marco{container-type:inline-size}
+  .marco iframe#progWeb{position:absolute; inset:0; width:100%; height:100%; border:0; background:#000}
+  .portada{position:absolute; inset:0; display:grid; grid-template-columns:auto minmax(0, 1fr); align-items:center; gap:5cqw; padding:7cqw 8cqw; overflow:hidden; background:#120A06}
+  .pt-fondo{position:absolute; inset:-12%; background:center/cover no-repeat; filter:blur(48px) saturate(1.5) brightness(.5); transform:scale(1.1)}
+  .portada.sin-tapa .pt-fondo{filter:blur(60px) saturate(1.2) brightness(.35)}
+  .pt-tapa{position:relative; width:30cqw; aspect-ratio:1; object-fit:cover; border-radius:1.4cqw; box-shadow:0 2cqw 6cqw rgba(0,0,0,.6);
+    animation:pt-respira 6s ease-in-out infinite}
+  .portada.sin-tapa .pt-tapa{object-fit:contain; background:#1A110B; padding:3cqw}
+  @keyframes pt-respira{50%{transform:scale(1.025)}}
+  .pt-datos{position:relative; min-width:0; display:flex; flex-direction:column; gap:.8cqw}
+  .pt-datos small{display:flex; align-items:center; gap:.8cqw; font-size:1.6cqw; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--tv-naranja)}
+  .pt-datos small .i{width:2cqw; height:2cqw}
+  .pt-datos b{font-size:4.6cqw; line-height:1.02; letter-spacing:-.03em; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical}
+  .pt-datos > span{font-size:2.4cqw; font-weight:700; color:var(--tv-tenue)}
+  .pt-ondas{display:flex; align-items:flex-end; gap:.6cqw; height:4cqw; margin-top:1.4cqw}
+  .pt-ondas i{width:.9cqw; height:100%; border-radius:1cqw; background:var(--tv-naranja); transform-origin:50% 100%; animation:pt-onda 1.1s ease-in-out infinite}
+  .pt-ondas i:nth-child(2){animation-delay:-.3s} .pt-ondas i:nth-child(3){animation-delay:-.7s} .pt-ondas i:nth-child(4){animation-delay:-.15s}
+  .pt-ondas i:nth-child(5){animation-delay:-.5s} .pt-ondas i:nth-child(6){animation-delay:-.9s} .pt-ondas i:nth-child(7){animation-delay:-.4s}
+  @keyframes pt-onda{0%,100%{transform:scaleY(.25)} 50%{transform:scaleY(1)}}
+
+  /* ── el aviso de Fadori a un lado: entra desde la izquierda, a media
+     altura, sin tapar el centro ni el letrero de abajo ── */
+  .pop-fadori{position:absolute; left:2.2cqw; top:50%; width:30cqw; display:grid; grid-template-columns:minmax(0, 1fr) auto; grid-template-areas:"plato plato" "txt qr";
+    gap:1cqw 1.2cqw; align-items:end; padding:1.6cqw; border-radius:2cqw; background:linear-gradient(165deg, #E8590C, #C2410C 62%, #A83809); color:#FFF6EC;
+    box-shadow:0 1.6cqw 4cqw rgba(0,0,0,.55), 0 0 0 .25cqw rgba(255,217,190,.35) inset;
+    transform:translate(-120%, -50%) rotate(-4deg); opacity:0; pointer-events:none;
+    transition:transform .7s cubic-bezier(.2,1.3,.4,1), opacity .3s}
+  .pop-fadori.sale{transform:translate(0, -50%) rotate(0); opacity:1}
+  .pf-plato{grid-area:plato; display:grid; place-items:center}
+  .pop-fadori .burger{width:15cqw}
+  .pf-txt{grid-area:txt; min-width:0; display:flex; flex-direction:column; gap:.3cqw}
+  .pf-marca{font-size:2.6cqw; font-weight:900; letter-spacing:-.04em; line-height:1}
+  .pf-marca i{font-style:normal; color:#FFD9BE}
+  .pf-txt b:not(.pf-marca){font-size:1.9cqw; line-height:1.1}
+  .pf-txt span{font-size:1.55cqw; font-weight:700; color:rgba(255,246,236,.88); line-height:1.2}
+  .pf-qr{grid-area:qr; width:7cqw; height:auto; background:#fff; border-radius:.8cqw; padding:.4cqw}
+  @media (prefers-reduced-motion: reduce){ .pop-fadori{transition:opacity .3s} .pt-tapa, .pt-ondas i{animation:none} }
+
+  /* ══ EL ACOMODO DE UN VISTAZO (10 de octubre) ══════════════════════════
+     Nada de espacio muerto: a la derecha, de arriba abajo, «Ya puede pasar»
+     ENORME; debajo del programa, una franja con lo que sigue (en la plancha
+     y en la fila) con números grandes. Los tamaños van en vh: en una tele de
+     1080 o en la tablet, ocupan lo mismo de la pantalla. */
+  .tv-cab{padding-top:clamp(6px,1.2vh,14px); padding-bottom:clamp(6px,1.2vh,14px)}
+  /* El programa arriba a lo ancho de su columna, y TODO lo que sobra de alto
+     es para lo que sigue: antes el programa se centraba y dejaba dos franjas
+     muertas, arriba y abajo. */
+  .tv-cuerpo{grid-template-columns:minmax(0, 1.7fr) minmax(0, 1fr); grid-template-rows:auto minmax(0, 1fr);
+    grid-template-areas:"escena llamado" "siguen llamado"; gap:clamp(10px,1.6vh,20px) clamp(12px,1.4vw,22px)}
+  .escenario{grid-area:escena; display:grid; place-items:start center}
+  .marco{width:min(100%, calc(64dvh * 16 / 9)); max-height:none}
+  .turnos{grid-area:llamado; gap:clamp(8px,1.4vh,14px)}
+  .siguen{grid-area:siguen; display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1.2fr); gap:clamp(10px,1.4vw,20px);
+    background:var(--tv-sup); border:1px solid var(--tv-linea); border-radius:clamp(16px,1.6vw,24px); padding:clamp(10px,1.6vh,18px) clamp(12px,1.4vw,22px)}
+  .llamando{flex:1; display:flex; flex-direction:column; justify-content:safe center; min-height:0; overflow:hidden}
+  .llamando h2{font-size:clamp(16px,2.8vh,30px)}
+  .llamando .n{font-size:clamp(90px,24vh,300px); margin:0}
+  .llamando .quien{font-size:clamp(20px,4.4vh,48px)}
+  .llamando .pidio{font-size:clamp(15px,2.9vh,30px)}
+  .llamando .vacio{font-size:clamp(16px,2.8vh,28px)}
+  .bloque h3{font-size:clamp(13px,2.3vh,24px)}
+  .ficha b{font-size:clamp(22px,4.2vh,46px)}
+  .ficha span{font-size:clamp(13px,2.2vh,22px)}
+  .numeros b{font-size:clamp(20px,4.6vh,52px); padding:clamp(2px,.5vh,6px) clamp(8px,1vw,16px); border-radius:clamp(8px,1vh,14px)}
+  .numeros b.primero{background:var(--tv-naranja); color:#1A0F0A; border-color:transparent}
+  /* la franja de lo que sigue llena su alto: números a la medida del espacio */
+  .siguen{container-type:size; min-height:clamp(110px,18vh,400px); align-content:start}
+  .siguen .numeros{max-height:calc(100cqh - 2.6em); overflow:hidden; gap:clamp(6px,1.2cqw,14px)}
+  .siguen .numeros b{font-size:clamp(20px, min(26cqh, 5.6cqw), 96px); line-height:1.1}
+  .siguen .ficha b{font-size:clamp(22px, min(20cqh, 5cqw), 64px)}
+  .siguen .ficha span{font-size:clamp(13px, min(9cqh, 2.2cqw), 26px)}
+  .siguen .bloque h3{font-size:clamp(13px, min(10cqh, 2.4cqw), 26px)}
+  /* sin nadie listo, el recuadro grande dice quién sigue */
+  .llamando .sigue{display:block; margin-top:clamp(8px,2vh,24px); font-size:clamp(15px,2.6vh,28px); font-weight:800; color:#9FC983}
+  .llamando .sigue b{display:block; font-size:clamp(60px,15vh,200px); font-weight:900; letter-spacing:-.06em; line-height:.95; color:var(--tv-naranja); font-variant-numeric:tabular-nums}
+  /* con una canción, el aviso entra por la derecha y la carátula le hace lugar */
+  .portada{transition:padding .6s cubic-bezier(.2,.9,.3,1)}
+  .portada.con-pop{padding-right:36cqw}
+  .pop-fadori.derecha{left:auto; right:2.2cqw; transform:translate(120%, -50%) rotate(4deg)}
+  .pop-fadori.derecha.sale{transform:translate(0, -50%) rotate(0)}
+  .siguen .fichas{flex-direction:row; flex-wrap:wrap}
+  .siguen .ficha{flex:1 1 220px}
+  .tv-pie{padding-top:clamp(6px,1vh,12px); padding-bottom:clamp(6px,1vh,12px)}
+  .tv-pie img{width:clamp(44px,7vh,80px)}
+  /* SÓLO TURNOS: sin nada que pasar, a la izquierda «Ya puede pasar» enorme y
+     a la derecha la plancha y la fila, una arriba de la otra */
+  body.solo-turnos .escenario{display:none}
+  body.solo-turnos .tv-cuerpo{grid-template-columns:minmax(0, 1.15fr) minmax(0, 1fr); grid-template-rows:minmax(0, 1fr); grid-template-areas:"llamado siguen"}
+  body.solo-turnos .siguen{grid-template-columns:minmax(0, 1fr); grid-template-rows:auto minmax(0, 1fr); align-content:stretch; min-height:0}
+  body.solo-turnos .llamando .n{font-size:clamp(120px,34vh,420px)}
+  body.solo-turnos .llamando .sigue b{font-size:clamp(90px,24vh,300px)}
+  body.solo-turnos .siguen > *{min-width:0}
+  body.solo-turnos .siguen .fichas{flex-direction:column; gap:clamp(6px,1.4cqh,14px)}
+  body.solo-turnos .siguen .ficha{flex:none; padding:clamp(8px,1.6cqh,18px) clamp(12px,2.4cqw,24px); align-items:center}
+  /* la columna de la derecha se llena: los números crecen con su caja */
+  body.solo-turnos .siguen .bloque h3{font-size:clamp(16px, min(4cqh, 4.4cqw), 36px)}
+  body.solo-turnos .siguen .ficha b{font-size:clamp(34px, min(10cqh, 11cqw), 120px)}
+  body.solo-turnos .siguen .ficha span{font-size:clamp(15px, min(3.4cqh, 3.8cqw), 34px)}
+  body.solo-turnos .siguen .numeros{max-height:none; gap:clamp(8px,1.6cqw,18px)}
+  body.solo-turnos .siguen .numeros b{font-size:clamp(34px, min(11cqh, 12cqw), 150px); padding:.06em .32em; border-radius:clamp(10px,1.6cqw,20px)}
+  @media (orientation:portrait){
+    body.solo-turnos .tv-cuerpo{grid-template-columns:1fr; grid-template-rows:minmax(0, 1.3fr) minmax(0, 1fr); grid-template-areas:"llamado" "siguen"}
+    body.solo-turnos .siguen{grid-template-columns:minmax(0, 1fr); grid-template-rows:auto minmax(0, 1fr); container-type:size}
+    body.solo-turnos .llamando .n{font-size:clamp(110px, min(20vh, 46vw), 360px)}
+    body.solo-turnos .llamando .sigue b{font-size:clamp(80px, min(15vh, 34vw), 260px)}
+    body.solo-turnos .llamando .quien{font-size:clamp(22px, 3.6vh, 52px)}
+    body.solo-turnos .llamando .pidio{font-size:clamp(16px, 2.4vh, 32px)}
+    body.solo-turnos .siguen .ficha b{font-size:clamp(30px, min(11cqh, 9cqw), 96px)}
+    body.solo-turnos .siguen .ficha span{font-size:clamp(14px, min(4cqh, 3.4cqw), 30px)}
+    body.solo-turnos .siguen .numeros b{font-size:clamp(30px, min(13cqh, 10cqw), 130px)}
+  }
+  @media (orientation:portrait){
+    .tv-cuerpo{grid-template-columns:1fr; grid-template-rows:auto auto minmax(0, 1fr); grid-template-areas:"escena" "siguen" "llamado"}
+    .marco{width:100%}
+    .siguen{min-height:0; container-type:normal}
+    .llamando .n{font-size:clamp(70px,11vh,220px)}
+    .llamando .quien{font-size:clamp(18px,3vh,40px)} .llamando .pidio{font-size:clamp(14px,2.2vh,26px)}
+    .siguen{grid-template-columns:1fr 1fr}
+  }
 </style>
 </head>
 <body class="publica tele">
@@ -203,6 +329,7 @@
     <img class="tv-logo" src="marca/icon-192.png" alt="">
     <span class="tv-marca">Fadori<b>.</b></span>
     <span class="tv-recreo" id="recreo" hidden></span>
+    <span class="tv-nube" id="nubeChip" hidden></span>
     <span class="tv-reloj" id="reloj">—</span>
     <button class="tv-boton" id="bAjustes" type="button" aria-label="Ajustes de la pantalla"><span data-ico="settings"></span></button>
   </header>
@@ -211,11 +338,30 @@
     <section class="escenario" aria-label="El programa">
       <div class="marco" id="marco">
         <video id="prog" playsinline preload="auto"></video>
+        <iframe id="progWeb" hidden title="Música y videos" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+        <div class="portada" id="portada" hidden>
+          <div class="pt-fondo" id="ptFondo"></div>
+          <img class="pt-tapa" id="ptTapa" alt="">
+          <div class="pt-datos"><small><span data-ico="music"></span>Sonando en el recreo</small><b id="ptTitulo"></b><span id="ptArtista"></span>
+            <div class="pt-ondas" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+        </div>
         <canvas id="tanda" hidden></canvas>
         <div class="sin-prog" id="sinProg" hidden></div>
         <div class="bicho" aria-hidden="true"><img src="marca/paloma.png" alt=""><span>RADIO DIVERGENTES</span></div>
         <div class="tercio" id="tercio"><span class="vivo"><i></i>EN EL RECREO</span><span class="que" id="progQue">Radio Divergentes</span></div>
         <div class="barrita"><i id="progBarra"></i></div>
+        <aside class="pop-fadori" id="popFadori" aria-hidden="true">
+          <div class="pf-plato">
+            <div class="burger" aria-hidden="true">
+              <img class="cap sombra" src="marca/capa-sombra.png" alt=""><img class="cap pan-abajo" src="marca/capa-pan-abajo.png" alt="">
+              <img class="cap carne" src="marca/capa-carne.png" alt=""><img class="cap queso" src="marca/capa-queso.png" alt="">
+              <img class="cap jitomate" src="marca/capa-jitomate.png" alt=""><img class="cap lechuga" src="marca/capa-lechuga.png" alt="">
+              <img class="cap pan-arriba" src="marca/capa-pan-arriba.png" alt="">
+            </div>
+          </div>
+          <div class="pf-txt"><b class="pf-marca">Fadori<i>.</i></b><b id="popUno">Pide desde tu celular</b><span id="popDos"></span></div>
+          <img class="pf-qr" src="qr/abrir.svg" alt="">
+        </aside>
         <div class="llamado" id="llamado" aria-live="assertive"><span class="n" id="llN"></span><span class="t"><b id="llQue">¡Ya está tu pedido!</b><span id="llPidio"></span></span></div>
       </div>
     </section>
@@ -223,9 +369,12 @@
     <aside class="turnos" aria-live="polite">
       <div class="llamando" id="llamando"></div>
       <div class="bloque" id="bListos"></div>
+    </aside>
+
+    <section class="siguen" aria-label="Lo que sigue">
       <div class="bloque" id="bPrep"></div>
       <div class="bloque" id="bFila"></div>
-    </aside>
+    </section>
   </main>
 
   <footer class="tv-pie">
@@ -257,6 +406,7 @@
 
 <script src="iconos.js"></script>
 <script src="nucleo.js"></script>
+<script src="pad.js"></script>
 <script type="module" src="tele.js"></script>
 </body>
 </html>

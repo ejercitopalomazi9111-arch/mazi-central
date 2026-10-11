@@ -14,6 +14,7 @@
        queda en chiquito arriba a la izquierda. Al terminar, la pantalla
        regresa sola haciendo zoom hacia el turno. */
 import { mezclarAnuncios, prepararAnuncio, dibujarIdent, dibujarAnuncio, DURA_IDENT, DURA_ANUNCIO } from './anuncios.js';
+import { enlace, leerID3, largoID3, YT } from './relleno.js';
 
 const $ = (s) => document.querySelector(s);
 const F = window.FADORI;
@@ -23,7 +24,7 @@ document.querySelectorAll('[data-ico]').forEach(el => { el.innerHTML = F.ico(el.
 
 /* ── ajustes de esta tablet ─────────────────────────────────────────── */
 const LLAVE = 'fadori_tele';
-const BASE = { cadaMin: 8, porCorte: 2, canal: 'rembrandt', timbre: true, voz: true, plancha: true, volumen: 0.9, tablet: false, sigAnuncio: 0 };
+const BASE = { cadaMin: 8, porCorte: 2, canal: 'rembrandt', timbre: true, voz: true, plancha: true, volumen: 0.9, tablet: false, sigAnuncio: 0, alAcabar: 'relleno', popCada: 3, recibir: true };
 let cfg = Object.assign({}, BASE);
 try{ cfg = Object.assign(cfg, JSON.parse(localStorage.getItem(LLAVE) || '{}')); }catch(e){}
 const guardarCfg = () => { try{ localStorage.setItem(LLAVE, JSON.stringify(cfg)); }catch(e){} };
@@ -51,6 +52,45 @@ async function leer(clave){
 let yaListos = null, yaPrep = null, nuevoDeTablet = null;
 const quien = (p) => F.aliasDe(p);
 const pidio = (p, max) => F.queSePidio(p, max);
+/* ── EL MOVIMIENTO DEL ACOMODO (Carlos, 10 de octubre) ─────────────────
+   «Cada cambio en la disposición debe ser natural: que se cambie suavemente,
+   con el texto, los elementos y las imágenes desplazándose, y lo que está
+   apareciendo que entre desde fuera como si ya estuviese listo».
+   Es la técnica FLIP: se mide dónde estaba cada cosa, se cambia, se mide
+   dónde quedó y se le anima la diferencia (sólo transform y opacity, que no
+   traban). Lo nuevo entra deslizándose desde fuera; lo que se va, se desliza
+   hacia fuera antes de irse. Con «reducir movimiento», cambia sin animar. */
+const CURVA = 'cubic-bezier(.22,.8,.24,1)';
+const quieto = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+function flip(nodos, cambiar, { dur = 700, entra = 'derecha' } = {}){
+  if(quieto()){ cambiar(); return; }
+  const antes = new Map();
+  nodos().forEach(e => { const r = e.getBoundingClientRect(); if(r.width) antes.set(e.dataset.flip || e, r); });
+  cambiar();
+  nodos().forEach(e => {
+    const b = e.getBoundingClientRect(); if(!b.width) return;
+    const a = antes.get(e.dataset.flip || e);
+    if(a){
+      /* del centro viejo al centro nuevo, con escala PAREJA: estirar a lo
+         ancho y a lo alto por separado deforma las letras a media vuelta */
+      const dx = (a.left + a.width / 2) - (b.left + b.width / 2), dy = (a.top + a.height / 2) - (b.top + b.height / 2);
+      const k = Math.max(.5, Math.min(2, Math.min(a.width / b.width, a.height / b.height)));
+      if(Math.abs(dx) + Math.abs(dy) < 1 && Math.abs(k - 1) < .01) return;
+      e.animate([{ transform: 'translate(' + dx + 'px,' + dy + 'px) scale(' + k + ')' }, { transform: 'none' }], { duration: dur, easing: CURVA });
+    } else {
+      const desde = entra === 'abajo' ? 'translateY(40px)' : 'translateX(' + (b.left > innerWidth / 2 ? 60 : -60) + 'px)';
+      e.animate([{ transform: desde, opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: dur * 0.8, easing: CURVA });
+    }
+  });
+}
+/* pintar un bloque de turnos sólo si cambió; los números que se mueven se
+   deslizan a su lugar nuevo y los que llegan entran desde fuera */
+function pon(sel, html){
+  const el = $(sel); if(el._html === html) return; el._html = html;
+  flip(() => el.querySelectorAll('[data-id]').length ? [...el.querySelectorAll('[data-id]')].map(x => (x.dataset.flip = x.dataset.id, x)) : [],
+    () => { el.innerHTML = html; el.querySelectorAll('[data-id]').forEach(x => { x.dataset.flip = x.dataset.id; }); }, { dur: 600 });
+  if(sel === '#llamando'){ const n = el.querySelector('.n, .sigue b'); if(n && !quieto()) n.animate([{ transform: 'translateY(30px) scale(.96)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 650, easing: CURVA }); }
+}
 function pintarTurnos(){
   const d = F.estado();
   const listos = d.pedidos.filter(p => p.estado === 'listo').sort((a, b) => (b.listoEn || 0) - (a.listoEn || 0));
@@ -61,23 +101,25 @@ function pintarTurnos(){
   yaListos = new Set(listos.map(p => p.id)); yaPrep = new Set(prep.map(p => p.id));
 
   const top = listos[0];
-  $('#llamando').innerHTML = '<h2>' + F.ico('circle-check-big') + 'Ya puede pasar</h2>' + (top
+  pon('#llamando', '<h2>' + F.ico('circle-check-big') + 'Ya puede pasar</h2>' + (top
     ? '<b class="n">' + esc(F.verTurno(top)) + '</b>' + (quien(top) ? '<span class="quien">' + esc(quien(top)) + '</span>' : '') +
       (pidio(top) ? '<span class="pidio">' + esc(pidio(top, 4)) + '</span>' : '')
-    : '<span class="vacio">Aquí sale tu número cuando esté listo</span>');
+    : '<span class="vacio">Aquí sale tu número cuando esté listo</span>' +
+      (cola[0] ? '<span class="sigue">Sigue el<b>' + esc(F.verTurno(cola[0])) + '</b></span>' : '')));
   $('#llamando').dataset.turno = top ? top.id : '';
 
   const ficha = (p, clase) => '<div class="ficha ' + clase + (p.id === nuevoDeTablet ? ' nueva' : '') + '" data-id="' + p.id + '"><b>' + esc(F.verTurno(p)) + '</b>' +
     '<span>' + esc([quien(p), pidio(p, 2)].filter(Boolean).join(' · ')) + '</span></div>';
   const otros = listos.slice(1);
-  $('#bListos').innerHTML = otros.length ? '<h3>' + F.ico('circle-check-big') + 'También listos</h3><div class="fichas">' +
-    otros.slice(0, 3).map(p => ficha(p, 'lista')).join('') + '</div>' + (otros.length > 3 ? '<p class="mas">y ' + (otros.length - 3) + ' más</p>' : '') : '';
-  $('#bPrep').innerHTML = '<h3>' + F.ico('chef-hat') + 'Preparando <span class="cuenta">' + (prep.length || '') + '</span></h3>' +
-    (prep.length ? '<div class="fichas">' + prep.slice(0, 3).map(p => ficha(p, 'prep')).join('') + '</div>' + (prep.length > 3 ? '<p class="mas">y ' + (prep.length - 3) + ' más</p>' : '')
-      : '<p class="mas">Nada en la plancha</p>');
-  $('#bFila').innerHTML = '<h3>' + F.ico('hourglass') + 'En la fila <span class="cuenta">' + (fila.length || '') + '</span></h3>' +
-    (fila.length ? '<div class="numeros">' + fila.slice(0, 14).map(p => '<b data-id="' + p.id + '"' + (p.id === nuevoDeTablet ? ' class="nueva"' : '') + '>' + esc(F.verTurno(p)) + '</b>').join('') + '</div>' +
-      (fila.length > 14 ? '<p class="mas">y ' + (fila.length - 14) + ' más</p>' : '') : '<p class="mas">Nadie esperando</p>');
+  pon('#bListos', otros.length ? '<h3>' + F.ico('circle-check-big') + 'También listos</h3><div class="fichas">' +
+    otros.slice(0, 3).map(p => ficha(p, 'lista')).join('') + '</div>' + (otros.length > 3 ? '<p class="mas">y ' + (otros.length - 3) + ' más</p>' : '') : '');
+  pon('#bPrep', '<h3>' + F.ico('chef-hat') + 'En la plancha <span class="cuenta">' + (prep.length || '') + '</span></h3>' +
+    (prep.length ? '<div class="fichas">' + prep.slice(0, 2).map(p => ficha(p, 'prep')).join('') + '</div>' + (prep.length > 2 ? '<p class="mas">y ' + (prep.length - 2) + ' más</p>' : '')
+      : '<p class="mas">Nada en la plancha</p>'));
+  /* la fila: el primero (el que sigue) resaltado */
+  pon('#bFila', '<h3>' + F.ico('hourglass') + 'Siguen en la fila <span class="cuenta">' + (fila.length || '') + '</span></h3>' +
+    (fila.length ? '<div class="numeros">' + fila.slice(0, 10).map((p, i) => '<b data-id="' + p.id + '" class="' + (i === 0 ? 'primero' : '') + (p.id === nuevoDeTablet ? ' nueva' : '') + '">' + esc(F.verTurno(p)) + '</b>').join('') + '</div>' +
+      (fila.length > 10 ? '<p class="mas">y ' + (fila.length - 10) + ' más</p>' : '') : '<p class="mas">Nadie esperando</p>'));
 
   /* lo nuevo: el timbre, la voz y el letrero grande */
   if(antes){
@@ -170,45 +212,136 @@ let anuncios = [];
 async function cargarAnuncios(){ anuncios = mezclarAnuncios(await leer('anuncios')); }
 const activos = () => anuncios.filter(a => a.activo !== false);
 
+/* QUÉ PASA EN EL PROGRAMA, en orden (lo pidió Carlos el 10 de octubre):
+     1 · los episodios NUEVOS del podcast — nuevo = todavía no se ha pasado
+         completo en esta tablet;
+     2 · cuando ya pasaron todos, «el relleno»: música o películas subidas a
+         la tablet, videos o listas de YouTube, o Spotify con su carátula;
+     3 · si no hay relleno (o así se eligió), los episodios otra vez;
+     4 · si no hay nada de nada, la tanda de anuncios da vueltas sola.
+   Un episodio nuevo que se sube a media música entra en cuanto se sube. */
+const web = $('#progWeb'), portada = $('#portada');
+const VISTOS = 'fadori_tele_vistos';
+let vistos = {}; try{ vistos = JSON.parse(localStorage.getItem(VISTOS) || '{}') || {}; }catch(e){}
+const guardarVistos = () => { try{ localStorage.setItem(VISTOS, JSON.stringify(vistos)); }catch(e){} };
+const DE = { ep: 'Radio Divergentes', youtube: 'YouTube', spotify: 'Spotify' };
+let dejarDeOir = null;
 const Programa = {
-  eps: [],              /* [{id, nombre, url}] */
-  i: 0, desdeCorte: 0, ultimoT: 0, enCorte: false, pausado: false, bajo: false,
-  async cargar(){
-    const orden = (await leer('eps')) || [];
-    this.eps.forEach(e => URL.revokeObjectURL(e.url));
-    this.eps = [];
-    for(const id of orden){ const g = await leer('ep:' + id); if(g && g.blob) this.eps.push({ id, nombre: g.nombre, url: URL.createObjectURL(g.blob) }); }
-    let pos = null; try{ pos = JSON.parse(localStorage.getItem('fadori_tele_pos') || 'null'); }catch(e){}
-    const k = pos ? this.eps.findIndex(e => e.id === pos.id) : -1;
-    this.i = k >= 0 ? k : 0;
-    this.poner(k >= 0 ? pos.t : 0);
+  eps: [],              /* [{id, tipo:'ep', nombre, url}] */
+  rell: [],             /* [{id, tipo:'archivo'|'youtube'|'spotify', nombre, ...}] */
+  actual: null, desdeCorte: 0, ultimoT: 0, enCorte: false, pausado: false, bajo: false,
+  /* lo que toca pasar ahora, según la regla de arriba */
+  fuente(){
+    const nuevos = this.eps.filter(e => !vistos[e.id]);
+    if(nuevos.length) return nuevos;
+    if(this.rell.length && cfg.alAcabar !== 'repetir') return this.rell;
+    return this.eps.length ? this.eps : this.rell;
   },
-  poner(t = 0){
-    const e = this.eps[this.i];
+  async cargar(){
+    [...this.eps, ...this.rell].forEach(e => { if(e.url) URL.revokeObjectURL(e.url); if(e.tapa) URL.revokeObjectURL(e.tapa); });
+    this.eps = []; this.rell = [];
+    for(const id of ((await leer('eps')) || [])){ const g = await leer('ep:' + id); if(g && g.blob) this.eps.push({ id, tipo: 'ep', nombre: g.nombre, url: URL.createObjectURL(g.blob) }); }
+    for(const id of ((await leer('relleno')) || [])){
+      const g = await leer('rel:' + id); if(!g) continue;
+      const r = Object.assign({ id }, g); delete r.blob; delete r.portada;
+      if(g.blob) r.url = URL.createObjectURL(g.blob);
+      if(g.portada) r.tapa = URL.createObjectURL(g.portada);
+      this.rell.push(r);
+    }
+    let pos = null; try{ pos = JSON.parse(localStorage.getItem('fadori_tele_pos') || 'null'); }catch(e){}
+    const lista = this.fuente();
+    const k = pos ? lista.findIndex(e => e.id === pos.id) : -1;
+    this.poner(k >= 0 ? lista[k] : (lista[0] || null), k >= 0 ? pos.t : 0);
+  },
+  esWeb(e = this.actual){ return !!e && (e.tipo === 'youtube' || e.tipo === 'spotify'); },
+  poner(e, t = 0){
+    this.actual = e || null;
     $('#sinProg').hidden = true;
+    /* lo que no toca se apaga del todo: un YouTube escondido sigue sonando */
+    if(!this.esWeb(e) && web.dataset.id){ web.src = 'about:blank'; web.dataset.id = ''; if(dejarDeOir) dejarDeOir(); }
+    web.hidden = !this.esWeb(e);
+    portada.hidden = !(e && e.tipo === 'archivo' && e.esAudio);
     if(!e){
-      video.removeAttribute('src'); video.load(); video.hidden = true;
+      video.removeAttribute('src'); video.dataset.id = ''; video.load(); video.hidden = true;
       $('#progQue').innerHTML = 'Anuncios de la escuela';
+      setTimeout(acomodar, 0);
       return;
+    }
+    setTimeout(acomodar, 0);
+    const sub = e.tipo === 'archivo' ? (e.artista || (e.esAudio ? 'Música' : 'Película')) : DE[e.tipo];
+    $('#progQue').innerHTML = esc(e.nombre) + '<small>' + esc(sub) + '</small>';
+    if(this.esWeb(e)){
+      video.pause(); video.hidden = true;
+      if(video.dataset.id){ video.removeAttribute('src'); video.dataset.id = ''; video.load(); }
+      if(web.dataset.id !== e.id){
+        /* sin el toque de arranque el navegador sólo deja empezar en silencio */
+        web.src = e.tipo === 'youtube' && !arrancado ? e.embed + '&mute=1' : e.embed;
+        web.dataset.id = e.id;
+        if(dejarDeOir) dejarDeOir();
+        if(e.tipo === 'youtube') web.onload = () => { dejarDeOir = YT.escuchar(web); setTimeout(() => this.volumen(), 1500); };
+      }
+      if(this.enCorte || this.pausado) this.callar();
+      return;
+    }
+    if(e.esAudio){
+      $('#ptTapa').src = e.tapa || 'marca/paloma.png';
+      $('#ptFondo').style.backgroundImage = 'url("' + (e.tapa || 'marca/icon-512.png') + '")';
+      portada.classList.toggle('sin-tapa', !e.tapa);
+      $('#ptTitulo').textContent = e.nombre; $('#ptArtista').textContent = e.artista || '';
     }
     video.hidden = false;
     if(video.dataset.id !== e.id){ video.src = e.url; video.dataset.id = e.id; }
     try{ video.currentTime = t || 0; }catch(err){}
-    $('#progQue').innerHTML = esc(e.nombre) + '<small>Radio Divergentes</small>';
     this.volumen();
     if(!this.enCorte && !this.pausado) video.play().catch(() => {});
   },
-  volumen(){ video.volume = Math.max(0, Math.min(1, (this.bajo ? 0.12 : 1) * cfg.volumen)); video.muted = !Sonido.ac || Sonido.ac.state !== 'running'; },
-  bajar(si){ this.bajo = si; this.volumen(); },
-  pausar(si){
-    this.pausado = si;
-    if(si){ video.pause(); } else if(!this.enCorte && this.eps.length) video.play().catch(() => {});
+  siguiente(){
+    const lista = this.fuente();
+    if(!lista.length){ this.poner(null); return; }
+    const k = this.actual ? lista.findIndex(x => x.id === this.actual.id) : -1;
+    this.poner(lista[(k + 1) % lista.length], 0);
   },
+  /* se acabó lo que sonaba: si era episodio, ya no es nuevo; tanda y lo que sigue */
+  async acabo(){
+    const e = this.actual;
+    if(e && e.tipo === 'ep'){ vistos[e.id] = Date.now(); guardarVistos(); }
+    await this.corte();
+    this.siguiente();
+  },
+  /* un episodio nuevo que llega a media música entra ya */
+  revisar(){
+    const nuevo = this.eps.find(e => !vistos[e.id]);
+    if(nuevo && (!this.actual || this.actual.tipo !== 'ep')) this.poner(nuevo, 0);
+  },
+  volumen(){
+    const v = Math.max(0, Math.min(1, (this.bajo ? 0.12 : 1) * cfg.volumen));
+    video.volume = v; video.muted = !Sonido.ac || Sonido.ac.state !== 'running';
+    if(this.actual && this.actual.tipo === 'youtube'){
+      YT.mandar(web, 'setVolume', [Math.round(v * 100)]);
+      YT.mandar(web, video.muted ? 'mute' : 'unMute');
+    }
+  },
+  bajar(si){ this.bajo = si; this.volumen(); },
+  /* callar y seguir: para la tanda, la tablet y los ajustes. Spotify no se
+     deja pausar desde fuera, así que se quita y al volver se pone otra vez */
+  callar(){
+    video.pause();
+    if(this.actual && this.actual.tipo === 'youtube') YT.mandar(web, 'pauseVideo');
+    if(this.actual && this.actual.tipo === 'spotify'){ web.src = 'about:blank'; web.dataset.id = ''; }
+  },
+  seguir(){
+    if(this.enCorte || this.pausado || !this.actual) return;
+    if(this.actual.tipo === 'youtube'){ YT.mandar(web, 'playVideo'); this.volumen(); }
+    else if(this.actual.tipo === 'spotify'){ if(!web.dataset.id) this.poner(this.actual); }
+    else video.play().catch(() => {});
+  },
+  pausar(si){ this.pausado = si; if(si) this.callar(); else this.seguir(); },
   async corte(){
     if(this.enCorte) return;
     const lista = activos();
     if(!lista.length) return;
-    this.enCorte = true; video.pause(); this.desdeCorte = 0;
+    this.enCorte = true; this.callar(); this.desdeCorte = 0; ocultarPop();
+    if(solo){ acomodar(); await new Promise(r => setTimeout(r, quieto() ? 0 : 650)); }
     $('#tercio').style.opacity = 0; document.querySelector('.bicho').style.opacity = 0;
     const canal = anuncios.find(a => a.id === cfg.canal) || anuncios[0];
     const piezas = [{ tipo: 'canal', a: canal, dur: 2.6 }];
@@ -223,7 +356,8 @@ const Programa = {
     await this.tanda(piezas);
     $('#tercio').style.opacity = 1; document.querySelector('.bicho').style.opacity = '';
     this.enCorte = false;
-    if(this.eps.length && !this.pausado) video.play().catch(() => {});
+    this.seguir();
+    acomodar();
   },
   tanda(piezas){
     return new Promise((fin) => {
@@ -255,18 +389,84 @@ video.addEventListener('timeupdate', () => {
   const t = video.currentTime, d = t - Programa.ultimoT; Programa.ultimoT = t;
   if(d > 0 && d < 2) Programa.desdeCorte += d;
   $('#progBarra').style.width = (video.duration ? 100 * t / video.duration : 0) + '%';
-  const e = Programa.eps[Programa.i];
+  const e = Programa.actual;
   if(e && Math.round(t) % 5 === 0) try{ localStorage.setItem('fadori_tele_pos', JSON.stringify({ id: e.id, t })); }catch(err){}
   if(Programa.desdeCorte >= cfg.cadaMin * 60 && !avisando) Programa.corte();
 });
-video.addEventListener('ended', async () => {
-  await Programa.corte();
-  Programa.i = (Programa.i + 1) % Math.max(1, Programa.eps.length);
-  Programa.poner(0);
+video.addEventListener('ended', () => Programa.acabo());
+video.addEventListener('error', () => { if(Programa.actual && !Programa.esWeb()) $('#sinProg').hidden = false, $('#sinProg').textContent = 'Este archivo no se puede reproducir aquí. Cárgalo otra vez desde los ajustes.'; });
+/* YouTube y Spotify no avisan del tiempo como un video: se cuenta a mano */
+setInterval(() => {
+  if(!Programa.esWeb() || Programa.enCorte || Programa.pausado) return;
+  Programa.desdeCorte += 1;
+  $('#progBarra').style.width = '0%';
+  if(Programa.desdeCorte >= cfg.cadaMin * 60 && !avisando) Programa.corte();
+}, 1000);
+/* YouTube dice cuándo acabó (el video, o la lista entera) */
+addEventListener('message', (e) => {
+  if(YT.ORIGENES.indexOf(e.origin) < 0 || e.source !== web.contentWindow) return;
+  if(YT.estado(e.data) === 0 && Programa.actual && Programa.actual.tipo === 'youtube' && !Programa.enCorte) Programa.acabo();
 });
-video.addEventListener('error', () => { if(Programa.eps.length) $('#sinProg').hidden = false, $('#sinProg').textContent = 'Este video no se puede reproducir aquí. Cárgalo otra vez desde los ajustes.'; });
-/* sin episodios, la tanda da vueltas sola para que la pantalla nunca esté vacía */
-setInterval(() => { if(!Programa.eps.length && !Programa.enCorte && !Programa.pausado && !avisando) Programa.corte(); }, 1500);
+/* SIN NADA QUE PASAR (Carlos: «si no hay nada reproduciéndose, simplemente
+   pon los turnos en grande y bien acomodados»): la pantalla se vuelve sólo
+   turnos. La tanda de anuncios sigue saliendo cada `cadaMin` minutos: el
+   programa entra deslizándose, pasa la tanda y se vuelve a ir. */
+let solo = null, desdeSolo = 0;
+function acomodar(){
+  const quiere = !Programa.actual && !Programa.enCorte;
+  if(quiere === solo) return;
+  const primera = solo === null; solo = quiere;
+  const bloques = () => [...document.querySelectorAll('.escenario, .turnos, .siguen, #llamando, #bPrep, #bFila, #bListos')];
+  if(primera){ document.body.classList.toggle('solo-turnos', quiere); return; }
+  if(quiere){
+    /* el programa se va deslizando hacia fuera antes de esconderse */
+    const esc = document.querySelector('.escenario');
+    const a = quieto() ? null : esc.animate([{ transform: 'none', opacity: 1 }, { transform: 'translateX(-80px)', opacity: 0 }], { duration: 380, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' });
+    const seguir = () => { flip(bloques, () => document.body.classList.add('solo-turnos')); if(a) a.cancel(); };
+    if(a) a.onfinish = seguir; else seguir();
+  } else flip(bloques, () => document.body.classList.remove('solo-turnos'));
+}
+setInterval(() => {
+  acomodar();
+  if(Programa.actual || Programa.enCorte || Programa.pausado || avisando){ desdeSolo = 0; return; }
+  desdeSolo += 1;
+  if(desdeSolo >= cfg.cadaMin * 60){ desdeSolo = 0; Programa.corte(); }
+}, 1000);
+
+/* ── el aviso de Fadori a un lado ───────────────────────────────────────
+   Lo pidió Carlos: «anuncios tipo pop up durante el podcast como lo que hace
+   Fadori al entrar, pero en un lateral, sin estorbar demasiado y dando
+   visibilidad a la app». Es la misma hamburguesa que se arma al abrir la
+   app, en chiquito, con el QR. Sale cada `popCada` minutos de programa,
+   dura 11 s y nunca encima de la tanda, del letrero de turno ni de la tablet. */
+const pop = $('#popFadori');
+const FRASES_POP = [
+  ['Pide desde tu celular', 'y pasa cuando tu número salga en verde'],
+  ['Sin hacer fila', 'escanea el código y pide'],
+  ['¿Ya tienes hambre?', 'tu pedido puede ir en camino'],
+];
+let desdePop = 0, fraseK = 0, popTimer = null;
+function verPop(){
+  if(!pop || Programa.enCorte || avisando || !capa.hidden) return false;
+  const [a, b] = FRASES_POP[fraseK++ % FRASES_POP.length];
+  $('#popUno').textContent = a;
+  $('#popDos').textContent = tabletLista() ? b + ', o toca la pantalla' : b;
+  /* la hamburguesa se vuelve a armar desde cero cada vez */
+  const viejo = pop.querySelector('.burger'), nuevo = viejo.cloneNode(true); viejo.replaceWith(nuevo);
+  /* con una canción, la carátula está a la izquierda: el aviso sale por la derecha */
+  pop.classList.toggle('derecha', !portada.hidden);
+  portada.classList.toggle('con-pop', !portada.hidden);
+  pop.classList.remove('sale'); void pop.offsetWidth; pop.classList.add('sale');
+  pop.setAttribute('aria-hidden', 'false');
+  window.__pop = { t: Date.now(), frase: a };
+  clearTimeout(popTimer); popTimer = setTimeout(ocultarPop, 11000);
+  return true;
+}
+function ocultarPop(){ clearTimeout(popTimer); portada.classList.remove('con-pop'); if(pop){ pop.classList.remove('sale'); pop.setAttribute('aria-hidden', 'true'); } }
+setInterval(() => {
+  if(!cfg.popCada || Programa.enCorte || Programa.pausado || !capa.hidden) return;
+  if(++desdePop >= cfg.popCada * 60){ if(verPop()) desdePop = 0; }
+}, 1000);
 
 /* ══════════════════════════════════════════════════════════════════════
    3 · EL MODO TABLET
@@ -301,10 +501,33 @@ function cerrarTablet(pedidoId){
   setTimeout(() => { nuevoDeTablet = null; }, 2500);
 }
 window.addEventListener('message', (e) => {
-  if(e.origin !== location.origin || !e.data || e.data.fadori !== 'kiosco-fin') return;
-  cerrarTablet(e.data.pedido);
+  if(e.origin !== location.origin || !e.data) return;
+  if(e.data.fadori === 'kiosco-fin') cerrarTablet(e.data.pedido);
+  if(e.data.fadori === 'kiosco-mostrador') irAlMostrador();
 });
-$('#kCerrar').addEventListener('click', () => { try{ marco.contentWindow.KIOSCO.reiniciar(); }catch(e){} cerrarTablet(null); });
+/* La puerta escondida al mostrador: dos segundos con el dedo sobre «Fadori.»
+   en la tablet (o sobre el logo de la pantalla) → pad del pasador → mostrador.
+   Lo pidió Carlos para el de la cooperativa que voltea la tablet hacia la caja. */
+let yendo = false;
+async function irAlMostrador(){
+  if(yendo) return; yendo = true;
+  const ok = await pedirPasador('Abrir el mostrador', 'Para despachar desde esta tablet. Pon el pasador de la cooperativa.');
+  yendo = false;
+  if(!ok) return;
+  window.__alMostrador = true;
+  location.href = 'mostrador.html?desde=pantalla';
+}
+(function(){
+  const logo = document.querySelector('.tv-logo'); if(!logo) return;
+  let t = null;
+  const suelta = () => { clearTimeout(t); t = null; };
+  logo.addEventListener('pointerdown', (e) => { e.stopPropagation(); suelta(); t = setTimeout(() => { suelta(); irAlMostrador(); }, 2000); });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => logo.addEventListener(ev, suelta));
+  logo.addEventListener('click', (e) => e.stopPropagation());
+  logo.addEventListener('contextmenu', (e) => e.preventDefault());
+  logo.draggable = false; logo.style.touchAction = 'none'; logo.style.webkitUserSelect = 'none';
+})();
+$('#kCerrar').addEventListener('click', () => { try{ marco.contentWindow.KIOSCO.reiniciar(); marco.contentWindow.KIOSCO.dormir(); }catch(e){} cerrarTablet(null); });
 $('#tv').addEventListener('click', (e) => {
   if(e.target.closest('button, a, dialog')) return;
   if(!arrancado){ arrancar(); return; }
@@ -319,7 +542,9 @@ async function arrancar(){
   try{ if(document.documentElement.requestFullscreen && !document.fullscreenElement) await document.documentElement.requestFullscreen({ navigationUI: 'hide' }); }catch(e){}
   despierto();
   Programa.volumen();
-  if(!Programa.enCorte && !Programa.pausado && Programa.eps.length) video.play().catch(() => {});
+  /* YouTube empezó en silencio por no haber toque: ahora sí con sonido */
+  if(Programa.actual && Programa.actual.tipo === 'youtube'){ web.dataset.id = ''; Programa.poner(Programa.actual); }
+  else Programa.seguir();
   precargar();
 }
 let bloqueo = null;
@@ -339,6 +564,7 @@ $('#bAjustes').addEventListener('click', (e) => {
      tocan todos */
   pedirPase = cfg.tablet && !F.pasoElPasador();
   pintarAjustes(); dlg.showModal();
+  Nube.revisar();
 });
 $('#ajCerrar').addEventListener('click', () => dlg.close());
 dlg.addEventListener('close', () => { Programa.pausar(!capa.hidden); });
@@ -347,9 +573,8 @@ function pintarAjustes(){
   const c = $('#ajCuerpo');
   if(pedirPase){
     c.innerHTML = '<h3>' + F.ico('shield-check') + 'Pasador de la cooperativa</h3><p class="aj-nota">La tablet está en modo pedir: los ajustes son sólo para la cooperativa.</p>' +
-      '<div class="aj-fila"><input type="password" inputmode="numeric" id="ajPase" class="aj-pase" style="min-height:44px;border-radius:12px;border:1px solid var(--tv-linea);background:var(--tv-fondo);color:var(--tv-tinta);padding:0 12px;font:inherit;font-size:18px" placeholder="Pasador">' +
-      '<button class="aj-btn fuerte" id="ajPaseOk" type="button">Entrar</button></div>';
-    $('#ajPaseOk').onclick = () => { if(F.pasadorOk($('#ajPase').value)){ pedirPase = false; pintarAjustes(); } else { $('#ajPase').value = ''; $('#ajPase').placeholder = 'Ese no es'; } };
+      '<div class="aj-fila"><button class="aj-btn fuerte" id="ajPaseOk" type="button">' + F.ico('lock') + 'Poner el pasador</button></div>';
+    $('#ajPaseOk').onclick = async () => { if(await pedirPasador('Ajustes de la pantalla')){ pedirPase = false; pintarAjustes(); } };
     return;
   }
   const chips = (clave, ops) => '<div class="aj-fila">' + ops.map(([v, t]) => '<button class="aj-chip" type="button" data-cfg="' + clave + '" data-v="' + v + '" aria-pressed="' + (String(cfg[clave]) === String(v)) + '">' + t + '</button>').join('') + '</div>';
@@ -357,15 +582,45 @@ function pintarAjustes(){
   const conLlave = F.motor() !== 'servidor' || !!F.llaveMostrador();
   c.innerHTML =
     '<h3>' + F.ico('film') + 'El programa</h3>' +
-    '<p class="aj-nota">Los episodios se guardan en esta tablet y se repiten en orden. Uno de 30 minutos llena un recreo.</p>' +
+    '<p class="aj-nota">Primero pasan los episodios <b>nuevos</b>, una vez cada uno. Se guardan en esta tablet; uno de 30 minutos llena un recreo.</p>' +
     '<ul class="aj-lista" id="ajEps">' + (Programa.eps.length ? Programa.eps.map((e, k) =>
-      '<li data-ep="' + e.id + '"><span><input type="text" data-nombre-ep="' + e.id + '" value="' + esc(e.nombre) + '" aria-label="Nombre del episodio"></span>' +
+      '<li data-ep="' + e.id + '"><span><input type="text" data-nombre-ep="' + e.id + '" value="' + esc(e.nombre) + '" aria-label="Nombre del episodio">' +
+      '<small>' + (vistos[e.id] ? 'Ya se pasó' : '<b style="color:var(--tv-naranja)">Nuevo</b>') + (Programa.actual && Programa.actual.id === e.id ? ' · al aire' : '') + '</small></span>' +
+      (vistos[e.id] ? '<button class="aj-btn" type="button" data-renueva="' + e.id + '" title="Que vuelva a pasar como nuevo">' + F.ico('rotate-ccw') + '</button>' : '') +
       '<button class="aj-btn" type="button" data-sube="' + e.id + '" aria-label="Subir"' + (k ? '' : ' disabled') + '>' + F.ico('arrow-up') + '</button>' +
       '<button class="aj-btn" type="button" data-quita="' + e.id + '" aria-label="Quitar">' + F.ico('trash') + '</button></li>').join('')
-      : '<li><span>Todavía no hay episodios: mientras, pasan los anuncios de la escuela.</span></li>') + '</ul>' +
+      : '<li><span>Todavía no hay episodios.</span></li>') + '</ul>' +
     '<div class="aj-fila" style="margin-top:10px"><label class="aj-btn fuerte" for="ajVideos">' + F.ico('upload') + 'Agregar episodios</label>' +
     '<input type="file" id="ajVideos" accept="video/*" multiple hidden>' +
-    '<button class="aj-btn" type="button" id="ajSiguiente"' + (Programa.eps.length > 1 ? '' : ' disabled') + '>' + F.ico('skip-forward') + 'Pasar al siguiente</button></div>' +
+    '<button class="aj-btn" type="button" id="ajSiguiente"' + (Programa.fuente().length > 1 ? '' : ' disabled') + '>' + F.ico('skip-forward') + 'Pasar al siguiente</button></div>' +
+
+    '<p class="aj-nota" style="margin-top:10px">' + (Nube.activa()
+      ? F.ico('upload') + ' Lo que agregues aquí <b>llega solo a las otras pantallas</b> (súbelo desde tu teléfono y la tablet lo baja).'
+      : 'Para que lo que subas llegue a las otras pantallas, esta pantalla necesita el pasador de la cooperativa.' +
+        (F.motor() === 'servidor' ? ' <button class="aj-btn" type="button" id="ajNubePase" style="margin-top:6px">' + F.ico('lock') + 'Poner el pasador</button>' : '')) + '</p>' +
+    '<p class="aj-nota" id="ajNube" aria-live="polite" style="font-weight:800">' + esc(Nube.estado) + '</p>' +
+    chips('recibir', [[true, 'Esta pantalla baja lo que se sube'], [false, 'No bajar nada aquí']]) +
+
+    '<h3>' + F.ico('music') + 'Si no hay episodio nuevo</h3>' +
+    '<p class="aj-nota">Cuando ya pasaron todos los nuevos:</p>' + chips('alAcabar', [['relleno', 'Poner música y videos'], ['repetir', 'Repetir los episodios']]) +
+    '<ul class="aj-lista" id="ajRell" style="margin-top:12px">' + (Programa.rell.length ? Programa.rell.map((r, k) =>
+      '<li data-rel="' + r.id + '">' + (r.tapa ? '<img src="' + r.tapa + '" alt="" style="width:40px;height:40px;border-radius:8px;object-fit:cover;flex:none">'
+        : '<span class="aj-color" style="width:40px;height:40px;border-radius:8px;display:grid;place-items:center;background:var(--tv-fondo)">' + F.ico(r.tipo === 'youtube' ? 'video' : r.tipo === 'spotify' ? 'list-music' : r.esAudio ? 'music' : 'clapperboard') + '</span>') +
+      '<span><input type="text" data-nombre-rel="' + r.id + '" value="' + esc(r.nombre) + '" aria-label="Nombre"><small>' +
+        esc(r.tipo === 'archivo' ? (r.esAudio ? 'Música' + (r.artista ? ' · ' + r.artista : '') : 'Película o video') : DE[r.tipo]) + (Programa.actual && Programa.actual.id === r.id ? ' · al aire' : '') + '</small></span>' +
+      '<button class="aj-btn" type="button" data-rsube="' + r.id + '" aria-label="Subir"' + (k ? '' : ' disabled') + '>' + F.ico('arrow-up') + '</button>' +
+      '<button class="aj-btn" type="button" data-rquita="' + r.id + '" aria-label="Quitar">' + F.ico('trash') + '</button></li>').join('')
+      : '<li><span>Nada todavía. Sube música o películas, o pega un enlace.</span></li>') + '</ul>' +
+    '<div class="aj-fila" style="margin-top:10px"><label class="aj-btn fuerte" for="ajRelArch">' + F.ico('upload') + 'Subir música o película</label>' +
+    '<input type="file" id="ajRelArch" accept="audio/*,video/*" multiple hidden></div>' +
+    '<div class="aj-fila" style="margin-top:8px"><input type="url" id="ajRelUrl" placeholder="Pega un enlace de YouTube o Spotify" style="flex:1;min-width:220px;min-height:44px;border-radius:12px;border:1px solid var(--tv-linea);background:var(--tv-fondo);color:var(--tv-tinta);padding:0 12px;font:inherit">' +
+    '<button class="aj-btn" type="button" id="ajRelAgrega">' + F.ico('link') + 'Agregar</button></div>' +
+    '<p class="aj-nota" id="ajRelMsg" style="margin-top:8px">YouTube pasa el video con su sonido. <b>Spotify</b> enseña la carátula; sin una cuenta de Spotify abierta en este navegador sólo deja oír 30 segundos por canción, y hay que tocar ▶ una vez en la pantalla.</p>' +
+
+    '<h3>' + F.ico('sparkles') + 'El aviso de Fadori a un lado</h3>' +
+    '<p class="aj-nota">Durante el programa sale a un lado, sin tapar, la hamburguesa armándose con el código para pedir.</p>' +
+    chips('popCada', [[2, 'Cada 2 min'], [3, 'Cada 3 min'], [5, 'Cada 5 min'], [0, 'Nunca']]) +
+    '<div class="aj-fila" style="margin-top:8px"><button class="aj-btn" type="button" id="ajPop">' + F.ico('play') + 'Verlo ahora</button></div>' +
 
     '<h3>' + F.ico('megaphone') + 'La tanda de anuncios</h3>' +
     '<p class="aj-nota">Anuncios de la escuela, nada de fuera. Se abre y se cierra con el logo que gira.</p>' +
@@ -398,8 +653,7 @@ function pintarAjustes(){
       : cfg.tablet && !conLlave ? 'Prendido, pero falta el pasador de hoy: sin él, los pedidos no llegarían a la cooperativa.' : 'Apagado: la pantalla sólo enseña.') + '</div>' +
     (tabletLista()
       ? '<button class="aj-btn" type="button" id="ajTabletNo">Apagar el modo tablet</button>'
-      : '<div class="aj-fila"><input type="password" inputmode="numeric" id="ajTabPase" style="min-height:44px;border-radius:12px;border:1px solid var(--tv-linea);background:var(--tv-fondo);color:var(--tv-tinta);padding:0 12px;font:inherit;font-size:18px;width:160px" placeholder="Pasador">' +
-        '<button class="aj-btn fuerte" type="button" id="ajTabletSi">Prender el modo tablet</button></div><p class="aj-nota" id="ajTabMsg" style="margin-top:8px"></p>') +
+      : '<div class="aj-fila"><button class="aj-btn fuerte" type="button" id="ajTabletSi">' + F.ico('lock') + 'Prender el modo tablet</button></div><p class="aj-nota" style="margin-top:8px">Pide el pasador de la cooperativa, con el pad de números.</p>') +
 
     '<h3>' + F.ico('maximize') + 'Pantalla</h3>' +
     '<div class="aj-fila"><button class="aj-btn" type="button" id="ajCompleta">' + F.ico('maximize') + 'Pantalla completa</button></div>';
@@ -407,35 +661,93 @@ function pintarAjustes(){
 }
 function conectarAjustes(){
   const c = $('#ajCuerpo');
-  c.querySelectorAll('[data-cfg]').forEach(b => b.onclick = () => { const v = b.dataset.v; cfg[b.dataset.cfg] = /^\d+$/.test(v) ? +v : v; guardarCfg(); pintarAjustes(); });
+  c.querySelectorAll('[data-cfg]').forEach(b => b.onclick = () => {
+    const v = b.dataset.v; cfg[b.dataset.cfg] = v === 'true' ? true : v === 'false' ? false : /^\d+$/.test(v) ? +v : v; guardarCfg();
+    if(b.dataset.cfg === 'recibir' && cfg.recibir) Nube.revisar();
+    /* si lo que suena ya no toca con la regla nueva, se cambia ya */
+    if(b.dataset.cfg === 'alAcabar' && Programa.actual && Programa.fuente().indexOf(Programa.actual) < 0) Programa.siguiente();
+    pintarAjustes();
+  });
   c.querySelectorAll('[data-sw]').forEach(i => i.onchange = () => { cfg[i.dataset.sw] = i.checked; guardarCfg(); });
   $('#ajVol').oninput = () => { cfg.volumen = +$('#ajVol').value; guardarCfg(); Programa.volumen(); };
   $('#ajProbar').onclick = () => { Sonido.despierta(); Sonido.timbre(); setTimeout(() => decir('Turno 75. Ana, tu pedido está listo.'), 1300); };
   $('#ajCompleta').onclick = async () => { try{ await document.documentElement.requestFullscreen(); }catch(e){} };
   $('#ajCorte').onclick = () => { dlg.close(); Programa.corte(); };
-  $('#ajSiguiente').onclick = () => { Programa.i = (Programa.i + 1) % Programa.eps.length; Programa.poner(0); };
+  $('#ajSiguiente').onclick = () => { Programa.siguiente(); pintarAjustes(); };
+  $('#ajPop').onclick = () => { dlg.close(); setTimeout(verPop, 300); };
+  const np = $('#ajNubePase'); if(np) np.onclick = async () => { if(await pedirPasador('Mandar a las otras pantallas')) pintarAjustes(); };
+  c.querySelectorAll('[data-renueva]').forEach(b => b.onclick = () => { delete vistos[b.dataset.renueva]; guardarVistos(); Programa.revisar(); pintarAjustes(); });
+  /* el relleno: archivos de la tablet y enlaces */
+  $('#ajRelArch').onchange = async (e) => {
+    const fs = [...e.target.files]; e.target.value = '';
+    const orden = (await leer('relleno')) || [], subidos = [];
+    for(const f of fs){
+      const id = 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      const esAudio = /^audio\//.test(f.type) || /\.(mp3|m4a|aac|wav|ogg|flac)$/i.test(f.name);
+      const g = { tipo: 'archivo', blob: f, esAudio, nombre: f.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim() || 'Sin nombre' };
+      if(esAudio){
+        /* la carátula y el nombre de la canción vienen dentro del MP3 */
+        try{
+          const n = largoID3(new Uint8Array(await f.slice(0, 10).arrayBuffer()));
+          if(n){ const t = leerID3(new Uint8Array(await f.slice(0, Math.min(n, 12e6)).arrayBuffer()));
+            if(t.titulo) g.nombre = t.titulo; if(t.artista) g.artista = t.artista;
+            if(t.portada) g.portada = new Blob([t.portada.bytes], { type: t.portada.mime }); }
+        }catch(err){}
+      }
+      await guardar('rel:' + id, g); orden.push(id); subidos.push([id, g]);
+    }
+    await guardar('relleno', orden); await Programa.cargar(); pintarAjustes();
+    for(const [id, g] of subidos) await Nube.subir(id, 'rel', g);
+  };
+  $('#ajRelAgrega').onclick = async () => {
+    const r = enlace($('#ajRelUrl').value, { origen: location.origin });
+    if(!r){ $('#ajRelMsg').textContent = 'Ese enlace no es de YouTube ni de Spotify. Cópialo con «Compartir → Copiar enlace».'; return; }
+    const id = 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const orden = (await leer('relleno')) || [];
+    const g = Object.assign(r, { fuente: $('#ajRelUrl').value.trim() });
+    await guardar('rel:' + id, g); orden.push(id);
+    await guardar('relleno', orden); await Programa.cargar(); pintarAjustes();
+    Nube.subir(id, 'rel', g);
+  };
+  c.querySelectorAll('[data-nombre-rel]').forEach(i => i.onchange = async () => {
+    const id = i.dataset.nombreRel, g = await leer('rel:' + id); if(!g) return;
+    g.nombre = i.value.trim() || g.nombre; await guardar('rel:' + id, g);
+    const r = Programa.rell.find(x => x.id === id); if(r) r.nombre = g.nombre;
+  });
+  c.querySelectorAll('[data-rsube]').forEach(b => b.onclick = async () => {
+    const orden = (await leer('relleno')) || [], k = orden.indexOf(b.dataset.rsube);
+    if(k > 0){ [orden[k - 1], orden[k]] = [orden[k], orden[k - 1]]; await guardar('relleno', orden); await Programa.cargar(); pintarAjustes(); }
+  });
+  c.querySelectorAll('[data-rquita]').forEach(b => b.onclick = async () => {
+    if(!otraVez(b)) return;
+    const orden = ((await leer('relleno')) || []).filter(x => x !== b.dataset.rquita);
+    const p = Nube.borrar(b.dataset.rquita);
+    await guardar('rel:' + b.dataset.rquita, undefined); await guardar('relleno', orden); await Programa.cargar(); pintarAjustes(); await p;
+  });
   $('#ajVideos').onchange = async (e) => {
     const fs = [...e.target.files]; e.target.value = '';
-    const orden = (await leer('eps')) || [];
+    const orden = (await leer('eps')) || [], subidos = [];
     for(const f of fs){
-      const id = 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-      await guardar('ep:' + id, { blob: f, nombre: bonito(f.name) }); orden.push(id);
+      const id = 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), g = { blob: f, nombre: bonito(f.name) };
+      await guardar('ep:' + id, g); orden.push(id); subidos.push([id, g]);
     }
-    await guardar('eps', orden); await Programa.cargar(); pintarAjustes();
+    await guardar('eps', orden); await Programa.cargar(); Programa.revisar(); pintarAjustes();
+    for(const [id, g] of subidos) await Nube.subir(id, 'ep', g);
   };
   c.querySelectorAll('[data-nombre-ep]').forEach(i => i.onchange = async () => {
     const id = i.dataset.nombreEp, g = await leer('ep:' + id); if(!g) return;
     g.nombre = i.value.trim() || g.nombre; await guardar('ep:' + id, g);
-    const e = Programa.eps.find(x => x.id === id); if(e){ e.nombre = g.nombre; if(Programa.eps[Programa.i] === e) $('#progQue').innerHTML = esc(e.nombre) + '<small>Radio Divergentes</small>'; }
+    const e = Programa.eps.find(x => x.id === id); if(e){ e.nombre = g.nombre; if(Programa.actual === e) $('#progQue').innerHTML = esc(e.nombre) + '<small>Radio Divergentes</small>'; }
   });
   c.querySelectorAll('[data-sube]').forEach(b => b.onclick = async () => {
     const orden = (await leer('eps')) || [], k = orden.indexOf(b.dataset.sube);
     if(k > 0){ [orden[k - 1], orden[k]] = [orden[k], orden[k - 1]]; await guardar('eps', orden); await Programa.cargar(); pintarAjustes(); }
   });
   c.querySelectorAll('[data-quita]').forEach(b => b.onclick = async () => {
-    if(!confirm('¿Quitar este episodio de la tablet?')) return;
+    if(!otraVez(b)) return;
     const orden = ((await leer('eps')) || []).filter(x => x !== b.dataset.quita);
-    await guardar('ep:' + b.dataset.quita, undefined); await guardar('eps', orden); await Programa.cargar(); pintarAjustes();
+    const p = Nube.borrar(b.dataset.quita);
+    await guardar('ep:' + b.dataset.quita, undefined); await guardar('eps', orden); await Programa.cargar(); pintarAjustes(); await p;
   });
   c.querySelectorAll('[data-edita]').forEach(b => b.onclick = () => { editando = editando === b.dataset.edita ? null : b.dataset.edita; pintarAjustes(); });
   c.querySelectorAll('[data-activo]').forEach(i => i.onchange = () => cambiarAnuncio(i.dataset.activo, { activo: i.checked }));
@@ -448,9 +760,9 @@ function conectarAjustes(){
     const a = anuncios.find(x => x.id === b.dataset.verAnuncio); if(!a) return;
     dlg.close();
     const P = await prepararAnuncio(a);
-    Programa.enCorte = true; video.pause();
+    Programa.enCorte = true; Programa.callar();
     await Programa.tanda([{ tipo: 'ident', a, P, dur: DURA_IDENT }, { tipo: 'anuncio', a, P, dur: DURA_ANUNCIO }]);
-    Programa.enCorte = false; if(Programa.eps.length) video.play().catch(() => {});
+    Programa.enCorte = false; Programa.seguir();
   });
   c.querySelectorAll('[data-borra-anuncio]').forEach(b => b.onclick = async () => {
     const g = (await leer('anuncios')) || {}; g.nuevos = (g.nuevos || []).filter(x => x.id !== b.dataset.borraAnuncio);
@@ -465,18 +777,34 @@ function conectarAjustes(){
   const no = $('#ajTabletNo'); if(no) no.onclick = () => { cfg.tablet = false; guardarCfg(); pintarTablet(); pintarAjustes(); };
   const si = $('#ajTabletSi');
   if(si) si.onclick = async () => {
-    const pase = $('#ajTabPase').value.trim(), msg = $('#ajTabMsg');
-    if(F.motor() !== 'servidor'){
-      if(!F.pasadorOk(pase)){ msg.textContent = 'Ese no es el pasador.'; return; }
-    } else {
-      si.disabled = true; msg.textContent = 'Revisando…';
-      const r = await F.entrarMostrador(pase);
-      si.disabled = false;
-      if(!r.ok){ msg.textContent = r.sinRed ? 'Sin internet: el modo tablet necesita internet para mandar los pedidos.' : (r.error || 'Ese no es el pasador.'); return; }
-      F.recordarPasador(pase); F.renovarPase();
-    }
+    if(!(await pedirPasador('Prender el modo tablet', 'Los pedidos de la fila llegan a la cooperativa con este pasador.', true))) return;
     cfg.tablet = true; guardarCfg(); pintarTablet(); precargar(); pintarAjustes();
   };
+}
+/* el pasador SIEMPRE con el pad de números, nunca con el teclado: lo pidió
+   Carlos, el de la cooperativa puede traer las manos sucias o estar cobrando.
+   Con servidor, el pasador lo revisa el servidor y le da a esta tablet la llave
+   del mostrador; `exigeRed` = sin internet no sirve (el modo tablet manda los
+   pedidos, así que sin red no tiene caso prenderlo). */
+function pedirPasador(titulo, sub = 'El de la cooperativa.', exigeRed = false){
+  return FadoriPad.abrir({ titulo, sub, largo: F.largoPasador(), revisar: async (v) => {
+    if(F.motor() !== 'servidor') return F.pasadorOk(v) || { error: 'Ese no es el pasador' };
+    const r = await F.entrarMostrador(v);
+    if(r.ok){ F.recordarPasador(v); F.renovarPase(); setTimeout(() => Nube.revisar(), 500); return true; }
+    if(r.sinRed && !exigeRed && F.pasadorOk(v)) return true;
+    return { error: r.sinRed ? (exigeRed ? 'Sin internet: los pedidos no llegarían' : 'Sin internet, y ése no es el de esta tablet') : (r.error || 'Ese no es el pasador') };
+  } });
+}
+/* Quitar pide un segundo toque. NO con confirm(): nucleo.js tapa los
+   diálogos del navegador (en la tele se veían prestados) y confirm() siempre
+   contesta «no», así que «Quitar» nunca había quitado nada. Lo cazó la
+   prueba de la nube el 11 de octubre. */
+function otraVez(b){
+  if(b.dataset.seguro === '1') return true;
+  b.dataset.seguro = '1'; const antes = b.innerHTML;
+  b.classList.add('seguro'); b.innerHTML = F.ico('trash') + '¿Seguro? Toca otra vez';
+  setTimeout(() => { if(b.isConnected){ b.dataset.seguro = ''; b.classList.remove('seguro'); b.innerHTML = antes; } }, 3500);
+  return false;
 }
 async function cambiarAnuncio(id, cambio){
   const g = (await leer('anuncios')) || {}; g.cambios = g.cambios || {}; g.nuevos = g.nuevos || [];
@@ -502,6 +830,104 @@ function bonito(n){
   return b.replace(/[-_]+/g, ' ').replace(/\s+/g, ' ').trim().replace(/^./, c => c.toUpperCase()) || 'Episodio';
 }
 
+/* ══════════════════════════════════════════════════════════════════════
+   4 · LA NUBE: lo que se sube en un aparato llega a los demás
+   Carlos, 10 de octubre: «si lo subo desde mi teléfono, que la tablet
+   también lo tenga, porque no es fácil estar yendo a cada rato». Lo que se
+   agrega aquí (episodios, música, películas, enlaces) se manda al buzón del
+   servidor en pedazos; cada pantalla con el pasador revisa el buzón y baja
+   sola lo que le falta, y lo guarda en ella. Borrar en una lo borra en todas.
+   ═════════════════════════════════════════════════════════════════════ */
+const Nube = {
+  ocupada: false, estado: '',
+  activa(){ return F.motor() === 'servidor' && !!F.llaveMostrador(); },
+  aviso(t){ this.estado = t; const n = $('#ajNube'); if(n) n.textContent = t; const c = $('#nubeChip'); if(c){ c.hidden = !t; c.textContent = t; } },
+  async pide(ruta, opc){ const r = await F.alServidor(ruta, opc); if(!r.ok) throw new Error((await r.json().catch(() => ({}))).error || ('El servidor contestó ' + r.status)); return r; },
+  /* subir lo que se acaba de agregar en ESTE aparato */
+  async subir(id, tipo, g){
+    if(!this.activa()) return;
+    const clase = g.tipo === 'youtube' || g.tipo === 'spotify' ? g.tipo : 'archivo';
+    let portada = '';
+    if(g.portada) try{ portada = await chiquita(g.portada); }catch(e){}
+    try{
+      const alta = await (await this.pide('/api/medios/alta', { cuerpo: { id, tipo, clase, nombre: g.nombre, mime: g.blob ? g.blob.type : '', tam: g.blob ? g.blob.size : 0,
+        esAudio: !!g.esAudio, artista: g.artista || '', portada, embed: g.embed || '' } })).json();
+      for(let k = 0; k < alta.partes; k++){
+        this.aviso('Subiendo «' + g.nombre + '» para las otras pantallas… ' + Math.round(100 * k / alta.partes) + '%');
+        const trozo = await g.blob.slice(k * alta.parte, (k + 1) * alta.parte).arrayBuffer();
+        await reintentar(() => this.pide('/api/medios/parte', { cuerpo: trozo, query: { id, k } }));
+      }
+      this.aviso('«' + g.nombre + '» ya está en el buzón: las otras pantallas lo bajan solas.');
+      setTimeout(() => { if(/ya está en el buzón/.test(this.estado)) this.aviso(''); }, 8000);
+    }catch(e){ this.aviso('No se pudo subir «' + g.nombre + '»: ' + e.message); }
+  },
+  /* lo que se quita aquí se apunta para no volver a bajarlo: si el buzón
+     todavía lo tenía cuando se revisó, regresaba solo (se cazó en la prueba) */
+  quitados(){ try{ return JSON.parse(localStorage.getItem('fadori_tele_quitados') || '[]'); }catch(e){ return []; } },
+  async borrar(id){
+    try{ localStorage.setItem('fadori_tele_quitados', JSON.stringify(this.quitados().concat(id).slice(-300))); }catch(e){}
+    if(this.activa()) try{ await this.pide('/api/medios/borrar', { cuerpo: { id } }); }catch(e){}
+  },
+  /* revisar el buzón: bajar lo que falta y quitar lo que borraron en otra */
+  async revisar(){
+    if(!this.activa() || this.ocupada || cfg.recibir === false) return;
+    this.ocupada = true;
+    try{
+      const { medios, borrados } = await (await this.pide('/api/medios/lista', { cuerpo: {} })).json();
+      const eps = (await leer('eps')) || [], rel = (await leer('relleno')) || [];
+      let cambio = false;
+      for(const b of borrados || []){
+        if(eps.indexOf(b.id) >= 0){ eps.splice(eps.indexOf(b.id), 1); await guardar('ep:' + b.id, undefined); cambio = true; }
+        if(rel.indexOf(b.id) >= 0){ rel.splice(rel.indexOf(b.id), 1); await guardar('rel:' + b.id, undefined); cambio = true; }
+      }
+      if(cambio){ await guardar('eps', eps); await guardar('relleno', rel); }
+      const quitados = this.quitados();
+      for(const m of medios || []){
+        if(eps.indexOf(m.id) >= 0 || rel.indexOf(m.id) >= 0 || quitados.indexOf(m.id) >= 0) continue;
+        const g = { nombre: m.nombre, nube: true };
+        if(m.clase !== 'archivo'){ if(!m.embed) continue; Object.assign(g, { tipo: m.clase, embed: m.embed }); }
+        else {
+          const trozos = [];
+          for(let k = 0; k < m.partes; k++){
+            this.aviso('Bajando «' + m.nombre + '»… ' + Math.round(100 * k / m.partes) + '%');
+            let t = await leer('baja:' + m.id + ':' + k);          /* si se cortó, sigue donde iba */
+            if(!t){ const r = await reintentar(() => this.pide('/api/medios/parte', { metodo: 'GET', query: { id: m.id, k } }));
+              t = new Blob([await r.arrayBuffer()]); await guardar('baja:' + m.id + ':' + k, t); }
+            trozos.push(t);
+          }
+          g.blob = new Blob(trozos, { type: m.mime || 'video/mp4' });
+          if(m.tipo === 'rel'){ g.tipo = 'archivo'; g.esAudio = !!m.esAudio; g.artista = m.artista || '';
+            if(m.portada) g.portada = await (await fetch(m.portada)).blob(); }
+        }
+        if(m.tipo === 'ep'){ await guardar('ep:' + m.id, g); eps.push(m.id); await guardar('eps', eps); }
+        else { await guardar('rel:' + m.id, g); rel.push(m.id); await guardar('relleno', rel); }
+        for(let k = 0; k < (m.partes || 0); k++) await guardar('baja:' + m.id + ':' + k, undefined);
+        this.pide('/api/medios/bajado', { cuerpo: { id: m.id } }).catch(() => {});
+        cambio = true;
+        this.aviso('Llegó «' + m.nombre + '»');
+        setTimeout(() => { if(/^Llegó/.test(this.estado)) this.aviso(''); }, 6000);
+      }
+      if(cambio){ await Programa.cargar(); Programa.revisar(); if(dlg.open) pintarAjustes(); }
+      window.__nube = { t: Date.now(), medios: (medios || []).length };
+    }catch(e){ this.aviso(''); window.__nube = { t: Date.now(), error: e.message }; }
+    finally{ this.ocupada = false; }
+  },
+};
+async function reintentar(f, veces = 4){
+  for(let i = 0; ; i++){ try{ return await f(); }catch(e){ if(i >= veces - 1) throw e; await new Promise(r => setTimeout(r, 1000 * (i + 1))); } }
+}
+/* la carátula viaja chica: 240 px */
+async function chiquita(blob){
+  const u = URL.createObjectURL(blob);
+  try{
+    const im = await new Promise((si, no) => { const i = new Image(); i.onload = () => si(i); i.onerror = no; i.src = u; });
+    const e = Math.min(1, 240 / Math.max(im.naturalWidth, im.naturalHeight)), c = document.createElement('canvas');
+    c.width = Math.round(im.naturalWidth * e); c.height = Math.round(im.naturalHeight * e);
+    c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); return c.toDataURL('image/jpeg', 0.8);
+  } finally { URL.revokeObjectURL(u); }
+}
+setInterval(() => Nube.revisar(), 120000);
+
 /* ── el reloj y el arranque ─────────────────────────────────────────── */
 function reloj(){
   const t = new Date();
@@ -516,9 +942,10 @@ setInterval(() => { F.cargar(); pintarTurnos(); reloj(); pintarTablet(); }, 3000
 pintarTurnos(); reloj(); pintarTablet();
 await cargarAnuncios();
 await Programa.cargar();
+setTimeout(() => Nube.revisar(), 2500);
 /* la primera vez hay que tocar: sin un toque el navegador no deja sonar */
 $('#arranque').hidden = false;
 setTimeout(() => { if(!arrancado){ $('#arranque').hidden = true; $('#bMudo').style.display = 'inline-flex'; } }, 9000);
-video.muted = true; if(Programa.eps.length) video.play().catch(() => {});
+video.muted = true; if(Programa.actual && !Programa.esWeb()) video.play().catch(() => {});
 
-window.TELE = { Programa, cfg, anunciar, Sonido, abrirTablet, cerrarTablet, listo: true };
+window.TELE = { Programa, cfg, anunciar, Sonido, abrirTablet, cerrarTablet, verPop, Nube, acomodar, listo: true };

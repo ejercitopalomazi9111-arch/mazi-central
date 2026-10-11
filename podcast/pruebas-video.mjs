@@ -89,6 +89,17 @@ ok('aparece el pedazo que se quita (6.5 – 7.5)', await pg.evaluate(() => { con
 const linea = await pg.evaluate(() => { const c = document.querySelector('#edLinea'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
   let pinta = 0; for(let i = 3; i < d.length; i += 4) if(d[i] > 0) pinta++; return pinta; });
 ok('la línea de tiempo dibuja la onda y lo que se va', linea > 500, linea);
+/* Carlos, 10 de octubre: «al editar de repente no deja tocar nada, se
+   ilumina pero no pasa nada». La lista y los botones se reescribían en cada
+   cuadro mientras sonaba el video, y el iPhone cancela el toque si lo que
+   está bajo el dedo cambia. Mientras suena, NO se toca lo que no cambió. */
+const cambios = await pg.evaluate(async () => {
+  const v = document.querySelector('#edVideo'); v.currentTime = 0.2; v.muted = true; await v.play().catch(() => {});
+  let n = 0; const ob = new MutationObserver(m => { n += m.length; });
+  ['#edCortes', '#edCorte', '#edIni', '#edFin', '#edSugerencias'].forEach(s => ob.observe(document.querySelector(s), { childList: true, subtree: true, characterData: true, attributes: true }));
+  await new Promise(r => setTimeout(r, 1500)); ob.disconnect(); v.pause(); return { n, t: v.currentTime };
+});
+ok(`mientras suena, la lista y los botones no se reescriben (${cambios.n} cambios en 1.5 s)`, cambios.n === 0 && cambios.t > 0.5, JSON.stringify(cambios));
 await pg.click('#edSugerencias [data-cartel="Bloque 1"]');
 ok('la sugerencia llena el cartel', await pg.inputValue('#edCartel') === 'Bloque 1');
 await pg.click('#edListo');
@@ -183,10 +194,12 @@ const tanda = await pg.evaluate(async () => {
   const v = document.createElement('video'); v.muted = true; v.src = URL.createObjectURL(window.__tanda);
   await new Promise(r => v.onloadedmetadata = r);
   if(!Number.isFinite(v.duration)){ v.currentTime = 1e7; await new Promise(r => { v.ontimeupdate = r; setTimeout(r, 3000); }); }
-  const d = v.duration, muestra = async (t) => { v.currentTime = t; await new Promise(r => { v.onseeked = r; setTimeout(r, 3000); });
+  const d = v.duration, muestra = async (t, x = 10, y = 30) => { v.currentTime = t; await new Promise(r => { v.onseeked = r; setTimeout(r, 3000); });
     const c = document.createElement('canvas'); c.width = 64; c.height = 36; const g = c.getContext('2d'); g.drawImage(v, 0, 0, 64, 36);
-    return Array.from(g.getImageData(10, 30, 1, 1).data.slice(0, 3)); };
-  return { d, logo: await muestra(1.5), anuncio: await muestra(7.5) };
+    return Array.from(g.getImageData(x, y, 1, 1).data.slice(0, 3)); };
+  /* el logo se mide a media altura y a un lado del emblema: desde el 10 de
+     octubre el fondo del canal se oscurece suave hacia las esquinas */
+  return { d, logo: await muestra(1.5, 14, 18), anuncio: await muestra(7.5) };
 });
 ok('dura ~14 s', tanda.d > 12.5 && tanda.d < 16.5, tanda.d.toFixed(1));
 ok('al principio, el logo del canal (rojo Divergentes)', tanda.logo[0] > tanda.logo[2] && tanda.logo[0] > 40, JSON.stringify(tanda.logo));
@@ -204,9 +217,9 @@ if(!await pg.evaluate(() => document.querySelector('#cabVista').videoWidth > 0))
   await br.close(); console.log(`\n✗ estudio · video · ${bien} pasan · ${mal} fallan`); process.exit(1);
 }
 ok('la cámara se prende', await pg.evaluate(() => document.querySelector('#cabVista').videoWidth > 0));
-ok('el apuntador enseña el gancho del episodio', /decir la verdad o evitar el pánico/.test(await pg.textContent('#cabApuntador')), await pg.textContent('#cabApuntador'));
+ok('el apuntador enseña el gancho del episodio', /decir la verdad o evitar el pánico/i.test(await pg.textContent('#cabApuntador')), await pg.textContent('#cabApuntador'));
 await pg.click('#cabApuntador');
-ok('tocarlo pasa al Bloque 1', /Bloque 1/.test(await pg.textContent('#cabApuntador')) && /reactor 4/.test(await pg.textContent('#cabApuntador')));
+ok('tocarlo pasa al Bloque 1', /Bloque 1/.test(await pg.textContent('#cabApuntador')) && /Qué pasó/.test(await pg.textContent('#cabApuntador')));
 ok('«Me equivoqué» está apagado si no se graba', await pg.isDisabled('#cabError'));
 await pg.click('#cabGrabar');
 await pg.waitForTimeout(3200);
@@ -242,6 +255,40 @@ await pg.reload(); await pg.waitForFunction(() => window.ESTUDIO && window.ESTUD
 const rec = await pg.evaluate(() => window.ESTUDIO.clips().map(c => c.nombre));
 ok('la toma interrumpida vuelve como clip «recuperada»', rec.length === 3 && /recuperada/.test(rec[2]), JSON.stringify(rec));
 ok('y la toma con su error sigue con su marca', await pg.evaluate(() => (window.ESTUDIO.clips()[1].marcas || []).length === 1));
+
+console.log('\n5d · el video del proyecto de alguien, dentro del episodio');
+const antesP = await pg.evaluate(() => window.ESTUDIO.clips().length);
+await pg.setInputFiles('#fProyecto', { name: 'huerto-vertical.webm', mimeType: 'video/webm', buffer: Buffer.from(b64, 'base64') });
+await pg.waitForSelector('#editor:not([hidden])', { timeout: 20000 });
+ok('entra y abre el editor ya marcado como proyecto', await pg.isChecked('#edEsProyecto') && await pg.inputValue('#edProyTitulo') === 'huerto vertical');
+await pg.fill('#edProyTitulo', 'Huerto vertical');
+await pg.fill('#edProyQuien', 'Equipo 4 · 2.° B');
+await pg.click('#edListo');
+await pg.waitForSelector('#editor', { state: 'hidden' });
+const kP = antesP;
+ok('en la lista dice que es un proyecto y de quién', /Proyecto · Equipo 4/.test(await pg.locator('#listaClips .pedazo').nth(kP).textContent()));
+await pg.click('#bPlanear');
+const plP = await pg.evaluate((k) => { const p = window.ESTUDIO.plan(), c = window.ESTUDIO.clips()[k];
+  const suyos = p.tramos.filter(t => t.clip === k), i = p.orden.findIndex(o => o.tipo === 'tramo' && o.clip === k);
+  return { dur: c.dur, queda: suyos.reduce((s, t) => s + t.b - t.a, 0), cartel: p.orden[i - 1] && p.orden[i - 1].tipo === 'cartel' ? p.orden[i - 1].texto : null }; }, kP);
+ok('entra COMPLETO: no se le cortan sus silencios (el mismo video de charla sí perdió sus pausas)', Math.abs(plP.queda - plP.dur) < 0.3, JSON.stringify(plP));
+ok('y lo presenta un cartel con su nombre', plP.cartel === 'Proyecto · Huerto vertical', plP.cartel);
+/* el rótulo, grabado de verdad en 3 s del video del proyecto */
+const rot = await pg.evaluate(async (k) => {
+  const V = await import('/podcast/video.js'), c = window.ESTUDIO.clips()[k];
+  const blob = await V.exportar({ piezas: [{ tipo: 'tramo', clip: 0, a: 0, b: 3 }], clips: [{ url: c.url, audioLimpio: null, proyecto: c.proyecto }], formato: 'horizontal', modo: 'llenar', datos: { tema: 'divergentes' } });
+  const v = document.createElement('video'); v.muted = true; v.src = URL.createObjectURL(blob);
+  await new Promise(r => v.onloadeddata = r); v.currentTime = 2; await new Promise(r => { v.onseeked = r; setTimeout(r, 3000); });
+  const cv = document.createElement('canvas'); cv.width = 128; cv.height = 72; const g = cv.getContext('2d'); g.drawImage(v, 0, 0, 128, 72);
+  const px = (x, y) => Array.from(g.getImageData(x, y, 1, 1).data.slice(0, 3));
+  /* abajo a la izquierda, el recuadro oscuro del rótulo; arriba a la derecha, el video (verde) */
+  let oscuros = 0; for(let x = 6; x < 50; x += 2) for(let y = 50; y < 66; y += 2){ const [r, gg, b] = px(x, y); if(r + gg + b < 150) oscuros++; }
+  return { oscuros, video: px(110, 10) };
+}, kP);
+ok('el rótulo del proyecto sale abajo a la izquierda', rot.oscuros > 60, JSON.stringify(rot));
+ok('sin tapar el resto del video', rot.video[1] > 120 && rot.video[0] < 100, JSON.stringify(rot.video));
+await pg.reload(); await pg.waitForFunction(() => window.ESTUDIO && window.ESTUDIO.listo, null, { timeout: 30000 });
+ok('al recargar sigue siendo el proyecto del Equipo 4', await pg.evaluate(() => window.ESTUDIO.clips().some(c => c.proyecto && c.proyecto.quien === 'Equipo 4 · 2.° B' && c.proyecto.titulo === 'Huerto vertical')));
 
 console.log('\n6 · tamaños');
 for(const w of [320, 390, 1280]){ await pg.setViewportSize({ width: w, height: 800 }); await pg.waitForTimeout(200);
