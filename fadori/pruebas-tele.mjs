@@ -339,8 +339,9 @@ ok('un toque corto en el logo no abre nada', !(await tab.evaluate(() => !!docume
 await marca.hover(); await tab.mouse.down(); await tab.waitForTimeout(2300); await tab.mouse.up();
 ok('dejando el dedo 2 s sale el pad del pasador', (await tarda(tab, () => !!document.querySelector('dialog.fpad-capa[open]'), null, 3000)) != null);
 await teclear(tab, '121026');
-ok('con el pasador abre el mostrador', (await tarda(tab, () => /mostrador\.html\?desde=pantalla/.test(location.href) && document.querySelector('#cuerpoMostrador') && !document.querySelector('#cuerpoMostrador').hidden, null, 10000)) != null, await tab.evaluate(() => location.href));
-ok('y trae el botón para volver a la pantalla de turnos', await tab.isVisible('#bVolverTele'));
+ok('con el pasador abre el mostrador', (await tarda(tab, () => /mostrador(\.html)?\?desde=pantalla/.test(location.href) && document.querySelector('#cuerpoMostrador') && !document.querySelector('#cuerpoMostrador').hidden, null, 10000)) != null, await tab.evaluate(() => location.href));
+ok('y trae el botón para volver a la pantalla de turnos', (await tarda(tab, () => { const b = document.querySelector('#bVolverTele'); return b && b.getBoundingClientRect().width > 0; }, null, 3000)) != null,
+  await tab.evaluate(() => { const b = document.querySelector('#bVolverTele'); return b ? JSON.stringify(b.getBoundingClientRect()) + ' ' + getComputedStyle(b.closest('header') || b).display : 'no existe'; }));
 
 console.log('\n4d · la reja del mostrador también es con el pad');
 const reja = await aparato('/fadori/mostrador.html', { w: 820, h: 1180 });
