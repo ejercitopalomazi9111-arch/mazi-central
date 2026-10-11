@@ -32,7 +32,7 @@ for (const [aislar, ancho, alto] of [[true, 390, 844], [false, 1280, 800]]) {
   console.log(`\n── ${aislar ? 'en paralelo' : 'en un solo trabajador'} · ${ancho}×${alto}`);
   const p = await nav.newPage({ viewport: { width: ancho, height: alto } });
   const errores = [];
-  p.on('pageerror', (e) => errores.push(e.message)); p.on('console', (m) => m.type() === 'error' && errores.push(m.text()));
+  p.on('pageerror', (e) => errores.push(e.message + ' @ ' + (e.stack || '').split('\n').slice(1, 3).join(' '))); p.on('console', (m) => m.type() === 'error' && errores.push(m.text()));
   await p.goto(`http://localhost:${srv.address().port}/index.html`);
   await p.waitForFunction(() => !document.querySelector('#carga'), null, { timeout: 180000 });
   ok(await p.evaluate(() => window.crossOriginIsolated) === aislar, aislar ? 'la página quedó aislada: tres núcleos' : 'sin aislar: un solo trabajador');
@@ -63,6 +63,28 @@ for (const [aislar, ancho, alto] of [[true, 390, 844], [false, 1280, 800]]) {
     const b = new THREE.Box3().setFromObject(d.obj); return b.max.x - b.min.x;
   });
   ok(tam > 0.6 && tam < 2.5, `la araña mide ${tam.toFixed(2)} cm de ancho`);
+
+  // qué piensa: con una sombra encima, «siente» que algo se le viene y quiere huir
+  await p.click('[data-p=mente]'); await p.waitForTimeout(400);
+  await p.evaluate(() => window.__mosca.soltarDepredador('sombra'));
+  const sintio = await p.waitForFunction(() => /se le viene encima/.test(document.querySelector('#mentes').textContent), null, { timeout: 30000 }).then(() => true).catch(() => false);
+  ok(sintio, '«Qué piensa»: siente que algo se le viene encima');
+  ok(await p.waitForFunction(() => [...document.querySelectorAll('.mente .ganas output')].some((o) => parseInt(o.textContent) > 0), null, { timeout: 20000 }).then(() => true).catch(() => false), '«Qué piensa»: las ganas se mueven (sale de las neuronas que mandan)');
+  ok(await p.evaluate(() => [...document.querySelectorAll('.mente .hace')].every((h) => h.textContent.trim().length > 3)), '«Qué piensa»: dice qué hace cada una');
+  if (ancho === 390) await p.screenshot({ path: '/tmp/mosca-mente.png' });
+  // zonas: se reparten las 138 mil neuronas y con la sombra se encienden los detectores
+  await p.click('[data-p=zonas]');
+  await p.waitForFunction(() => document.querySelectorAll('#listaZonas li').length > 10, null, { timeout: 30000 }).catch(() => {});
+  const nz = await p.evaluate(() => [...document.querySelectorAll('#listaZonas li')].reduce((a, li) => a + parseInt(li.querySelector('output small').textContent.replace(/\D/g, '')), 0));
+  ok(nz === 138639, `«Zonas»: las ${nz.toLocaleString('es-MX')} neuronas caen en alguna zona`);
+  await p.evaluate(() => window.__mosca.soltarDepredador('sombra'));
+  const prendio = await p.waitForFunction(() => { const li = [...document.querySelectorAll('#listaZonas li.activa')]; return li.some((x) => /Detectores|Vista/.test(x.textContent)); }, null, { timeout: 30000 }).then(() => true).catch(() => false);
+  ok(prendio, '«Zonas»: con la sombra se encienden la vista y los detectores de peligro');
+  ok(await p.evaluate(() => /trabaja más|en calma/.test(document.querySelector('#zonasAhora').textContent)), '«Zonas»: dice en palabras qué zona trabaja más');
+  await p.click('#selZonas label:nth-child(3)'); await p.waitForTimeout(2500);
+  const deQuien = await p.evaluate(() => [document.querySelector('#zonasAhora').textContent, document.querySelector('[name=zonasDe]:checked').closest('label').textContent.trim()]);
+  ok(deQuien[0].startsWith(deQuien[1] + ':'), `«Zonas»: habla de la mosca elegida (${deQuien[1]} → «${deQuien[0].slice(0, 30)}…»)`);
+  if (ancho === 390) await p.screenshot({ path: '/tmp/mosca-zonas.png' });
 
   // paneles
   for (const pest of ['moscas', 'cerebro', 'bitacora']) {

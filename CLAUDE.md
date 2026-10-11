@@ -398,6 +398,9 @@ dependemos.
 
    | `confirm()` pregunta y deja seguir si dicen que sí | en Fadori `nucleo.js` lo TAPA a propósito (los diálogos del navegador se veían prestados en la tele) y siempre contesta `false` | «Quitar» un episodio de la pantalla nunca quitó nada desde que existe; lo cazó la prueba de la nube. Ahí se usa el segundo toque (`otraVez` en `tele.js`) |
 
+   | un selector por clase (`.tarjeta[data-k]`) encuentra la tarjeta del panel donde la busco | encuentra la PRIMERA de la página: al meter el panel «Qué piensa» con tarjetas de la misma clase, el de «Moscas» agarraba la ajena y tronaba cada cuadro | 3 errores de consola por segundo en la mosca; el selector va anclado a su contenedor (`#tarjetas .tarjeta…`) |
+   | con un trabajador por mosca, el mapa que llega es el de la mosca que se ve | llegan los de las tres revueltos: el panel decía «Mosca 3» con la 2 elegida | se descarta todo mapa que no sea de la mosca elegida (`mapaElegida` en `mosca/mundo.js`) |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---
