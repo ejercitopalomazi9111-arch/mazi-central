@@ -48,6 +48,19 @@ No se esconde nada: todo lo que no viene del conectoma está aquí y en el códi
 6. **El paso de tiempo**: 0.5 ms en vez de 0.1 (las ecuaciones se integran exactas entre pasos), y una
    neurona con menos de 0.3 mV de voltaje se da por quieta. Es lo que deja correr tres cerebros a la vez.
 
+## Los paneles «Qué piensa» y «Zonas» (11 de octubre)
+
+- **Qué piensa**, por mosca: **Siente** (lo que entra por los sentidos, lo mismo que se le inyecta al
+  cerebro, en palabras y con su lado), **Quiere** (qué tan cerca está cada conducta de dispararse, en las
+  neuronas que la mandan: 100 % = la hace) y **Hace** (lo que el cuerpo termina haciendo; si es el paseo de
+  fondo, lo dice).
+- **Zonas**: las 138,639 neuronas repartidas en 19 zonas con lo que hace cada una (vista, detectores de
+  peligro, olfato, cuerno lateral, cuerpos fungiformes, gusto, oído, brújula, timón, protocerebro, químicos
+  del ánimo, órdenes al cuerpo…), ordenadas por qué parte de la zona disparó en los últimos 200 ms.
+  **La zona es nuestra lectura, no viene de FlyWire así:** sale del tipo de cada neurona (Schlegel et al.
+  2024; los nombres llevan la región: SMP, LAL, LH, KC, FB…) y de los grupos de sentidos y de órdenes que
+  ya usa el cerebro. Lo que no cae en ninguna va a «otras».
+
 ## Cómo corre
 
 - `trabajador.js` corre los cerebros en segundo plano. Si la página está «aislada» (cabeceras COOP/COEP,

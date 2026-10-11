@@ -71,6 +71,32 @@ input[type=range]{width:100%;accent-color:var(--acento);min-height:32px}
 .lesiones input{accent-color:var(--peligro)}
 .mini{border:1px solid var(--borde);background:none;border-radius:999px;padding:6px 12px;min-height:36px;cursor:pointer;font-size:13px}
 
+/* qué piensa */
+.mentes{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.mente h4{margin:10px 0 4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--tenue)}
+.siente{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.siente li{display:flex;justify-content:space-between;gap:8px;font-size:14px}
+.siente li small{color:var(--tenue);flex:none}
+.siente li.calma{color:var(--tenue)}
+.ganas .barra-c{grid-template-columns:minmax(0,9em) minmax(0,1fr) 44px}
+.ganas .barra-c span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ganas .barra-c.pasa .riel div{background:var(--peligro)}
+.hace{margin:0;font-size:15px;font-weight:600}
+.hace small{display:block;font-weight:400;color:var(--tenue);font-size:12px;margin-top:2px}
+
+/* zonas del cerebro */
+.ahora{margin:10px 0;font-size:15px;min-height:2.6em}
+.zonas{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.zonas li{display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--borde);border-radius:var(--radio);background:var(--panel2);opacity:.55;transition:opacity .3s}
+.zonas li.activa{opacity:1}
+.zonas li > i{width:10px;height:10px;border-radius:50%}
+.zonas li b{font-size:14px}
+.zonas li small{display:block;color:var(--tenue);font-size:12px;line-height:1.3}
+.zonas li .riel{height:6px;background:#0b0e12;border-radius:3px;overflow:hidden;margin-top:6px}
+.zonas li .riel div{height:100%;width:0;border-radius:3px;transition:width .3s linear}
+.zonas li output{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;font-size:14px;min-width:4.5em}
+.zonas li output small{font-weight:400}
+
 /* cerebro */
 #lienzoCerebro{width:100%;height:min(36vh,340px);display:block;border-radius:var(--radio);background:#030405;border:1px solid var(--borde)}
 .leyenda{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12px;color:var(--tenue);margin:8px 0}
@@ -122,6 +148,8 @@ input[type=range]{width:100%;accent-color:var(--acento);min-height:32px}
 <div class="hoja" id="hoja">
   <div class="pestanas" role="tablist">
     <button role="tab" aria-selected="true" data-p="estimulos">Estímulos</button>
+    <button role="tab" aria-selected="false" data-p="mente">Qué piensa</button>
+    <button role="tab" aria-selected="false" data-p="zonas">Zonas</button>
     <button role="tab" aria-selected="false" data-p="moscas">Moscas</button>
     <button role="tab" aria-selected="false" data-p="cerebro">Cerebro</button>
     <button role="tab" aria-selected="false" data-p="instintos">Instintos</button>
@@ -177,6 +205,18 @@ input[type=range]{width:100%;accent-color:var(--acento);min-height:32px}
         <input class="oculto" type="file" id="archivoVideo" accept="video/*">
       </div>
       <button class="mini" id="limpiar">Quitar todo</button>
+    </section>
+
+    <section data-panel="mente" hidden>
+      <p class="nota">Lo que le llega a cada mosca por sus sentidos, las ganas que eso le despierta (medidas en las neuronas que mandan cada conducta) y lo que termina haciendo.</p>
+      <div class="mentes" id="mentes"></div>
+    </section>
+
+    <section data-panel="zonas" hidden>
+      <div class="lesiones" id="selZonas" role="radiogroup" aria-label="De qué mosca ver las zonas"></div>
+      <p class="ahora" id="zonasAhora" aria-live="polite"></p>
+      <ol class="zonas" id="listaZonas"></ol>
+      <p class="nota">Cada zona junta las neuronas de esa parte del cerebro (por su tipo en FlyWire). La barra es qué parte de esa zona disparó en los últimos 200 ms; se ordenan de la más activa a la menos.</p>
     </section>
 
     <section data-panel="moscas" hidden>

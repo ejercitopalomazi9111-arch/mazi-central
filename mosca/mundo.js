@@ -121,7 +121,7 @@ const BASE = new URL('./', location.href).href;
 const trabajadores = [];          // { w, moscas, t, listo }
 const dueno = [];                 // mosca → trabajador
 let cerebroListo = false, tCerebro = 0, tCerebroPintado = 0, velocidad = 0, pausado = false;
-let ultimoMapa = null, mapaMosca = 0, info = null;
+let ultimoMapa = null, mapaMosca = 0, mapaElegida = 0, info = null;
 function nuevoTrabajador(moscasDe) {
   const w = new Worker(new URL('./trabajador.js', import.meta.url), { type: 'module' });
   const reg = { w, moscas: moscasDe, t: 0, listo: false, vel: 1 };
@@ -156,7 +156,11 @@ function alRecibir(reg, m) {
     tCerebro = Math.min(...trabajadores.map((r) => r.t));           // el mundo va al paso del más lento
     velocidad = Math.min(...trabajadores.map((r) => r.vel));
     for (const [k, d] of Object.entries(m.moscas)) if (moscas[k]) { moscas[k].tasas = d.tasas; moscas[k].activas = d.activas; moscas[k].spikes = d.spikes; }
-  } else if (m.tipo === 'mapa') { ultimoMapa = m.m; mapaMosca = m.mosca; pintarMapa(); }
+  } else if (m.tipo === 'mapa') {
+    /* con un núcleo por mosca llegan los mapas de las tres: sólo cuenta el de la que se está viendo */
+    if (m.mosca !== mapaElegida) return;
+    ultimoMapa = m.m; mapaMosca = m.mosca; pintarMapa();
+  }
   else if (m.tipo === 'instintos') pintarInstintos(m.filas);
   else if (m.tipo === 'error') { $('#cargaTexto').textContent = 'No se pudo: ' + m.mensaje; anotar('Error del cerebro: ' + m.mensaje, 'mal'); }
 }
@@ -571,6 +575,8 @@ for (const t of $$('.pestanas [role=tab]')) t.addEventListener('click', () => {
   for (const p of $$('[data-panel]')) p.hidden = p.dataset.panel !== t.dataset.p;
   $('#hoja').classList.remove('cerrada'); $('#plegar').textContent = '▾'; ajustar();
   if (t.dataset.p === 'cerebro') iniciarVistaCerebro();
+  if (t.dataset.p === 'zonas') iniciarZonas();
+  if (t.dataset.p === 'mente') pintarMentes(true);
 });
 $('#plegar').addEventListener('click', () => { const h = $('#hoja'); h.classList.toggle('cerrada'); $('#plegar').textContent = h.classList.contains('cerrada') ? '▴' : '▾'; ajustar(); });
 $('#pausa').addEventListener('click', () => {
@@ -643,7 +649,7 @@ function armarTarjetas() {
     anotar(`${NOMBRES[k]}: ${c.checked ? 'se apagaron' : 'se prendieron otra vez'} las neuronas de «${CONDUCTAS[g]}».`);
   });
   $('#selCerebro').innerHTML = moscas.map((m) => `<label><input type="radio" name="cerebro" value="${m.k}" ${m.k === 0 ? 'checked' : ''}> <i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${COLORES[m.k]}"></i> ${NOMBRES[m.k]}</label>`).join('');
-  for (const r of $$('[name=cerebro]')) r.addEventListener('change', () => aDueno(+r.value, { tipo: 'mapa', mosca: +r.value }));
+  for (const r of $$('[name=cerebro]')) r.addEventListener('change', () => { mapaElegida = +r.value; ultimoMapa = null; aDueno(+r.value, { tipo: 'mapa', mosca: +r.value }); for (const o of $$('[name=zonasDe]')) o.checked = +o.value === +r.value; });
 }
 const ETIQUETA_MODO = { explorar: 'Caminando', volar: 'Volando — escapó', comer: 'Comiendo (trompa afuera)', acicalar: 'Limpiándose', reversa: 'Retrocede', atrapada: 'Atrapada' };
 let ultimoPanel = 0;
@@ -651,7 +657,7 @@ function pintarPaneles(ahora) {
   if (ahora - ultimoPanel < 150) return; ultimoPanel = ahora;
   $('#velocidad').innerHTML = cerebroListo ? (pausado ? 'en pausa' : `<b>${velocidad.toFixed(2)}×</b> tiempo real`) : 'cargando';
   if (!$('[data-panel=moscas]').hidden) for (const m of moscas) {
-    const t = $(`.tarjeta[data-k="${m.k}"]`); if (!t) continue;
+    const t = $(`#tarjetas .tarjeta[data-k="${m.k}"]`); if (!t) continue;
     t.querySelector('.estado').innerHTML = `${ETIQUETA_MODO[m.modo] || m.modo}<small>${m.motivo || ''}${m.activas ? ` · ${m.activas.toLocaleString('es-MX')} neuronas activas` : ''}</small>`;
     for (const [k] of Object.entries(CONDUCTAS)) {
       const v = tasa(m, k), b = t.querySelector(`[data-c="${k}"]`);
@@ -660,6 +666,7 @@ function pintarPaneles(ahora) {
     }
   }
   if (!$('[data-panel=bitacora]').hidden) pintarResumen();
+  if (!$('[data-panel=mente]').hidden) pintarMentes();
 }
 function pintarBitacora() {
   const ol = $('#log'); if (!ol) return;
@@ -698,11 +705,7 @@ const COLOR_SUPER = { optic: '#3a6ea5', central: '#9b7bd4', sensory: '#e0a33a', 
 async function iniciarVistaCerebro() {
   if (vistaCerebro) return;
   vistaCerebro = { listo: false };
-  const [indice, buf] = await Promise.all([
-    fetch('datos/indice.json').then((r) => r.json()),
-    fetch('datos/neuronas.bin').then((r) => r.body.pipeThrough(new DecompressionStream('gzip'))).then((s) => new Response(s).arrayBuffer()),
-  ]);
-  const dv = new DataView(buf), N = indice.neuronas;
+  const { indice, dv } = await cargarNeuronas(); const N = indice.neuronas;
   const pos = new Float32Array(N * 3), base = new Float32Array(N * 3), col = new Float32Array(N * 3);
   const c = new THREE.Color();
   let cx = 0, cy = 0, cz = 0;
@@ -738,6 +741,7 @@ async function iniciarVistaCerebro() {
   })();
 }
 function pintarMapa() {
+  pintarZonas();
   if (!vistaCerebro?.listo || !ultimoMapa) return;
   let disparan = 0, total = 0;
   for (let i = 0; i < ultimoMapa.length; i++) if (ultimoMapa[i]) { disparan++; total += ultimoMapa[i]; vistaCerebro.brillo[i] = Math.min(1.5, 0.5 + ultimoMapa[i] * 0.25); }
@@ -745,6 +749,162 @@ function pintarMapa() {
   $('#cifras').innerHTML = `<div class="cifra"><b>${disparan.toLocaleString('es-MX')}</b><span>neuronas dispararon (0.2 s)</span></div>
     <div class="cifra"><b>${Math.round(total * 5).toLocaleString('es-MX')}</b><span>spikes por segundo</span></div>
     <div class="cifra"><b>${(m?.activas || 0).toLocaleString('es-MX')}</b><span>neuronas con voltaje moviéndose</span></div>`;
+}
+
+// ───────────────────────── qué piensa cada mosca ─────────────────────────
+/* Carlos, 11 de octubre: «un panel donde ver qué hace, qué siente y qué trata
+   de hacer». SIENTE = lo que entra por los sentidos (lo mismo que se le
+   inyecta al cerebro); QUIERE = qué tan cerca está cada conducta de
+   dispararse, medido en las neuronas que la mandan (100 % = la hace);
+   HACE = lo que el cuerpo termina haciendo. */
+const SIENTE = {
+  acercamiento: 'algo se le viene encima', objeto_chico: 'algo chico se mueve cerca', movimiento: 'el paisaje se mueve',
+  azucar: 'dulce en las patas', amargo: 'algo amargo (sabe horrible)', agua: 'agua', sal: 'algo salado',
+  vinagre: 'olor a fruta fermentada', moho: 'olor a moho', co2: 'olor a miedo (CO₂)', feromona: 'feromona de macho',
+  viento: 'viento en las antenas', sonido: 'un zumbido fuerte', tacto: 'le tocan el cuerpo', polvo_ojos: 'polvo en los ojos',
+  calor: 'calor', frio: 'frío', seco: 'aire seco', humedo: 'aire húmedo', luz: 'un cambio de luz',
+};
+const GANAS = [  // [salida, lado, nombre, umbral en Hz con el que la conducta pasa de verdad (los de decidir)]
+  ['escape', 'todos', 'huir volando', 25], ['atras', 'todos', 'echarse para atrás', 4], ['comer', 'todos', 'comer', 4],
+  ['acicalar', 'todos', 'limpiarse', 1.5], ['adelante', 'todos', 'avanzar', 3], ['giro', 'izq', 'voltear a la izquierda', 3],
+  ['giro', 'der', 'voltear a la derecha', 3], ['volar', 'todos', 'batir las alas', 10],
+];
+const HACE = { explorar: 'Camina por ahí', volar: 'Va volando: escapó', comer: 'Está comiendo (trompa afuera)', acicalar: 'Se está limpiando', reversa: 'Se echa para atrás', atrapada: 'La atraparon' };
+const fuerzaPalabra = (hz) => hz > 80 ? 'muy fuerte' : hz > 30 ? 'fuerte' : 'leve';
+function armarMentes() {
+  $('#mentes').innerHTML = moscas.map((m) => `
+    <article class="tarjeta mente" data-k="${m.k}">
+      <header><i style="background:${COLORES[m.k]}"></i><b>${NOMBRES[m.k]}</b></header>
+      <h4>Siente</h4><ul class="siente"></ul>
+      <h4>Quiere</h4><div class="barras ganas">${GANAS.map(([, , n], i) => `<div class="barra-c" data-g="${i}"><span>${n}</span><div class="riel"><div></div></div><output>0 %</output></div>`).join('')}</div>
+      <h4>Hace</h4><p class="hace"></p>
+    </article>`).join('');
+}
+function pintarMentes(forzar) {
+  if (!$('#mentes').children.length) armarMentes();
+  for (const m of moscas) {
+    const t = $(`.mente[data-k="${m.k}"]`); if (!t) continue;
+    const s = Object.entries(m.sentidos || {}).map(([n, v]) => {
+      const hz = Math.max(v.izq || 0, v.der || 0); if (hz < 3 || !SIENTE[n]) return null;
+      const lado = (v.izq || 0) > 3 && (v.der || 0) > 3 ? '' : (v.izq || 0) > (v.der || 0) ? ' · por la izquierda' : ' · por la derecha';
+      return { hz, txt: `${SIENTE[n]}${lado}`, f: fuerzaPalabra(hz) };
+    }).filter(Boolean).sort((a, b) => b.hz - a.hz).slice(0, 4);
+    const sienteHtml = s.length ? s.map((x) => `<li><b>${x.txt}</b><small>${x.f}</small></li>`).join('') : '<li class="calma">Nada en especial: todo tranquilo</li>';
+    const ul = t.querySelector('.siente'); if (forzar || ul.dataset.v !== sienteHtml) { ul.innerHTML = sienteHtml; ul.dataset.v = sienteHtml; }
+    GANAS.forEach(([sal, lado, , umbral], i) => {
+      const pct = Math.min(100, Math.round(tasa(m, sal, lado) / umbral * 100)), b = t.querySelector(`[data-g="${i}"]`);
+      b.querySelector('.riel div').style.width = pct + '%'; b.classList.toggle('pasa', pct >= 100);
+      b.querySelector('output').textContent = pct + ' %';
+    });
+    const quiere = GANAS.map(([sal, lado, n, u]) => ({ n, f: tasa(m, sal, lado) / u })).sort((a, b) => b.f - a.f)[0];
+    const hace = (HACE[m.modo] || m.modo) + (m.modo === 'explorar' && quiere.f > 0.3 && quiere.f < 1 ? `, con ganas de ${quiere.n}` : '') + '.';
+    const extra = m.modo === 'explorar' && quiere.f <= 0.3 ? 'Sin órdenes del cerebro: es el paseo de fondo (no sale del conectoma).' : (m.motivo || '');
+    const p = t.querySelector('.hace'), h = `${hace}<small>${extra}</small>`;
+    if (p.dataset.v !== h) { p.innerHTML = h; p.dataset.v = h; }
+  }
+}
+
+// ───────────────────────── zonas del cerebro ─────────────────────────
+/* «otro panel donde se vea qué partes del cerebro se están activando y de qué
+   se encarga cada una». FlyWire no trae aquí la zona de cada neurona, pero sí
+   su TIPO (Schlegel et al. 2024), y los nombres de tipo llevan la zona donde
+   viven (SMP…, LAL…, LH…, KC…, FB…); los sentidos y las órdenes salen de los
+   grupos que ya usa el cerebro. Lo que no cae en ninguna va a «otras». */
+const ZONAS = [
+  ['vistaI', 'Vista · ojo izquierdo', 'Bordes, colores y movimiento. Dos terceras partes del cerebro son para ver.', '#3a6ea5'],
+  ['vistaD', 'Vista · ojo derecho', 'Lo mismo, del ojo derecho.', '#4c84bf'],
+  ['peligro', 'Detectores de movimiento y peligro', 'Avisan si algo crece en el ojo (se acerca), si algo chico se mueve o si todo gira.', '#4fb3a9'],
+  ['olfato', 'Olfato (lóbulo antenal)', 'Huele: fruta fermentada, moho, CO₂ y feromonas.', '#e0a33a'],
+  ['cuerno', 'Cuerno lateral', 'Olores «de nacimiento»: decide sin aprender si algo es comida o peligro.', '#d98c3a'],
+  ['memoria', 'Cuerpos fungiformes', 'Memoria y aprendizaje: recuerda qué olor salió bien y cuál salió mal.', '#c77dff'],
+  ['gusto', 'Gusto', 'Sabe si lo que pisa o prueba es dulce, amargo, salado o agua.', '#ffb347'],
+  ['oido', 'Oído y viento (antenas)', 'Las antenas como orejas: zumbidos, viento y gravedad.', '#7ec8e3'],
+  ['tacto', 'Tacto y cuerpo', 'Lo que sienten las patas, las alas y los pelitos, y lo que sube del cuerpo.', '#d46a6a'],
+  ['clima', 'Temperatura y humedad', 'Calor, frío, aire seco o húmedo.', '#ff8f8f'],
+  ['luz', 'Ocelos', 'Tres ojitos extra arriba de la cabeza: cambios de luz y el horizonte.', '#f2e27a'],
+  ['brujula', 'Complejo central', 'La brújula: sabe hacia dónde mira y hacia dónde quiere ir.', '#9b7bd4'],
+  ['timon', 'Timón (LAL y vecinos)', 'Convierte las decisiones en giros y en hacia dónde mover el cuerpo.', '#b48ef0'],
+  ['decide', 'Protocerebro', 'Junta lo que ve, huele y oye, y elige qué hacer.', '#8f86c9'],
+  ['animo', 'Químicos del ánimo', 'Dopamina, serotonina y octopamina: hambre, alerta y recompensa.', '#7cf2c3'],
+  ['ordenes', 'Órdenes al cuerpo', 'Bajan al cuerpo: caminar, voltear, huir, comer, limpiarse.', '#ff5d5d'],
+  ['motoras', 'Motoras de la cabeza', 'Mueven la trompa, el cuello y las antenas.', '#ffcf5c'],
+  ['sentidos', 'Otros sentidos', 'Receptores que no cayeron en los grupos de arriba.', '#c9a26b'],
+  ['otras', 'Otras del centro', 'Conexiones del centro sin una zona clara en su nombre.', '#666'],
+];
+const GRUPO_ZONA = { azucar: 'gusto', amargo: 'gusto', agua: 'gusto', sal: 'gusto', vinagre: 'olfato', moho: 'olfato', co2: 'olfato', feromona: 'olfato',
+  viento: 'oido', sonido: 'oido', tacto: 'tacto', polvo_ojos: 'tacto', calor: 'clima', frio: 'clima', seco: 'clima', humedo: 'clima', luz: 'luz',
+  acercamiento: 'peligro', objeto_chico: 'peligro', movimiento: 'peligro',
+  escape: 'ordenes', atras: 'ordenes', adelante: 'ordenes', giro: 'ordenes', acicalar: 'ordenes', comer: 'motoras', volar: 'ordenes' };
+const POR_TIPO = [
+  [/^(KC|MBON|PAM|PPL1|PPL2|APL|DPM|MBIN)/, 'memoria'], [/^LH/, 'cuerno'],
+  [/^(ORN|ALPN|ALLN|ALIN|ALON|AL-|lLN|il3LN|l2LN|v2LN|mAL|M_|[DV][ACLMP]\d)/, 'olfato'],
+  [/^(JO|AMMC|WED|SAD)/, 'oido'],
+  [/^(EPG|PEG|PEN|PFN|PFL|PFR|PFG|FB|hDelta|vDelta|ER\d|ExR|EL\b|LNO|Delta7|FC\d|FS\d|FR\d|IbSpsP|SpsP|PB)/, 'brujula'],
+  [/^(LAL|PS\d|VES|IB\d|SPS|GNG)/, 'timon'],
+  [/^(LC\d|LPLC|LPC|LLPC)/, 'peligro'],
+  [/^(SMP|SLP|SIP|CRE|CL\d|AVLP|PVLP|PLP|aSP|aIP|pSP|ATL|SCL|ICL|AOTU)/, 'decide'],
+];
+let zonas = null;
+async function cargarNeuronas() {
+  if (cargarNeuronas.p) return cargarNeuronas.p;
+  return (cargarNeuronas.p = Promise.all([
+    fetch('datos/indice.json').then((r) => r.json()),
+    fetch('datos/neuronas.bin').then((r) => r.body.pipeThrough(new DecompressionStream('gzip'))).then((s) => new Response(s).arrayBuffer()),
+  ]).then(([indice, buf]) => ({ indice, dv: new DataView(buf) })));
+}
+async function iniciarZonas() {
+  if (!$('#selZonas').children.length) {
+    $('#selZonas').innerHTML = moscas.map((m) => `<label><input type="radio" name="zonasDe" value="${m.k}" ${m.k === mapaElegida ? 'checked' : ''}> <i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${COLORES[m.k]}"></i> ${NOMBRES[m.k]}</label>`).join('');
+    for (const r of $$('[name=zonasDe]')) r.addEventListener('change', () => { mapaElegida = +r.value; ultimoMapa = null; aDueno(+r.value, { tipo: 'mapa', mosca: +r.value }); for (const o of $$('[name=cerebro]')) o.checked = +o.value === +r.value; pintarZonas(true); });
+  }
+  if (zonas) return;
+  zonas = { listo: false };
+  $('#zonasAhora').textContent = 'Acomodando las 138,639 neuronas por zona…';
+  const { indice, dv } = await cargarNeuronas();
+  const N = indice.neuronas, z = new Uint8Array(N), idx = Object.fromEntries(ZONAS.map(([id], i) => [id, i]));
+  const SUP = indice.superclases, NT = indice.neurotransmisores, T = indice.tipos;
+  for (let i = 0; i < N; i++) {
+    const tipo = T[dv.getUint16(i * 12 + 6, true)] || '', sup = SUP[dv.getUint8(i * 12 + 8)], lado = dv.getUint8(i * 12 + 9), nt = NT[dv.getUint8(i * 12 + 10)];
+    let zona = null;
+    if (sup === 'descending') zona = 'ordenes';
+    else if (sup === 'motor') zona = 'motoras';
+    if (!zona) for (const [re, zz] of POR_TIPO) if (re.test(tipo)) { zona = zz; break; }
+    if (!zona && (sup === 'ascending' || sup === 'sensory_ascending')) zona = 'tacto';
+    if (!zona && (sup === 'optic' || sup === 'visual_centrifugal')) zona = lado === 2 ? 'vistaD' : 'vistaI';
+    if (!zona && sup === 'visual_projection') zona = 'peligro';
+    if (!zona && (sup === 'endocrine' || ['dopamine', 'serotonin', 'octopamine', 'tyramine'].includes(nt))) zona = 'animo';
+    if (!zona && sup === 'sensory') zona = 'sentidos';
+    z[i] = idx[zona || 'otras'];
+  }
+  /* los grupos de sentidos y de órdenes son la verdad: pisan lo de arriba */
+  for (const [g, lados] of Object.entries(indice.grupos)) {
+    const zz = GRUPO_ZONA[g]; if (zz == null) continue;
+    for (const lista of Array.isArray(lados) ? [lados] : Object.values(lados)) for (const i of lista) z[i] = idx[zz];
+  }
+  const tam = new Uint32Array(ZONAS.length); for (let i = 0; i < N; i++) tam[z[i]]++;
+  Object.assign(zonas, { z, tam, listo: true });
+  $('#listaZonas').innerHTML = ZONAS.map(([id, n, que, color], i) => tam[i] ? `<li data-z="${i}" style="order:${i}"><i style="background:${color}"></i><div><b>${n}</b><small>${que}</small><div class="riel"><div style="background:${color}"></div></div></div><output>0 %<small>${tam[i].toLocaleString('es-MX')} neuronas</small></output></li>` : '').join('');
+  pintarZonas(true);
+}
+let ultimaZona = 0;
+function pintarZonas(forzar) {
+  if (!zonas?.listo || !ultimoMapa || $('[data-panel=zonas]').hidden) return;
+  const ahora = performance.now(); if (!forzar && ahora - ultimaZona < 400) return; ultimaZona = ahora;
+  const dispara = new Uint32Array(ZONAS.length), spikes = new Uint32Array(ZONAS.length);
+  for (let i = 0; i < ultimoMapa.length; i++) if (ultimoMapa[i]) { dispara[zonas.z[i]]++; spikes[zonas.z[i]] += ultimoMapa[i]; }
+  const pct = ZONAS.map((_, i) => zonas.tam[i] ? dispara[i] / zonas.tam[i] * 100 : 0);
+  const maxPct = Math.max(1, ...pct);
+  const orden = ZONAS.map((_, i) => i).filter((i) => zonas.tam[i]).sort((a, b) => pct[b] - pct[a]);
+  orden.forEach((i, pos) => {
+    const li = $(`#listaZonas [data-z="${i}"]`); if (!li) return;
+    li.style.order = pos; li.classList.toggle('activa', dispara[i] > 0);
+    li.querySelector('.riel div').style.width = (pct[i] / maxPct * 100).toFixed(1) + '%';
+    li.querySelector('output').firstChild.textContent = (pct[i] < 1 && pct[i] > 0 ? pct[i].toFixed(1) : Math.round(pct[i])) + ' % ';
+  });
+  const top = orden.filter((i) => dispara[i] > 0).slice(0, 2);
+  $('#zonasAhora').innerHTML = top.length
+    ? `${NOMBRES[mapaMosca]}: trabaja más <b>${ZONAS[top[0]][1]}</b> (${ZONAS[top[0]][2].replace(/\.$/, '').toLowerCase()})${top[1] != null ? `, y luego <b>${ZONAS[top[1]][1]}</b>` : ''}.`
+    : `${NOMBRES[mapaMosca]}: cerebro en calma, casi nada dispara. Ponle algo en Estímulos.`;
 }
 
 // ───────────────────────── arranque ─────────────────────────
