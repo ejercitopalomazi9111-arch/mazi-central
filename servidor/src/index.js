@@ -454,7 +454,10 @@ export class Cooperativa {
     if(a.verif === 'si') return json({ bien: true, verif: 'si' });
     const pend = await this.ctx.storage.list({ prefix: 'cred:', limit: TOPE.credencialesPendientes + 1 });
     if(pend.size >= TOPE.credencialesPendientes && !pend.has('cred:' + cod)) return json({ error: 'Hay demasiadas por revisar. Inténtalo mañana.' }, 429);
-    await this.ctx.storage.put('cred:' + cod, { foto, t: Date.now() });
+    /* lo que dijo el lector del teléfono: si el nombre impreso coincidió, o si
+       no se alcanzó a leer y lo revisa la cooperativa a ojo */
+    const lectura = cuerpo.lectura === 'coincide' || cuerpo.lectura === 'no-se-leyo' ? cuerpo.lectura : '';
+    await this.ctx.storage.put('cred:' + cod, { foto, t: Date.now(), lectura });
     a.verif = 'pendiente';
     await this.tocarAlumno(a);
     return json({ bien: true, verif: 'pendiente' });
@@ -465,7 +468,7 @@ export class Cooperativa {
     for(const [k, v] of await this.ctx.storage.list({ prefix: 'cred:', limit: 200 })){
       const cod = k.slice(5), a = this.datos.alumnos[cod];
       if(!a){ await this.ctx.storage.delete(k); continue; }
-      out.push({ codigo: cod, nombre: a.nombre, grupo: a.grupo, foto: v.foto, t: v.t });
+      out.push({ codigo: cod, nombre: a.nombre, grupo: a.grupo, foto: v.foto, t: v.t, lectura: v.lectura || '' });
     }
     out.sort((x, y) => x.t - y.t);
     return json({ pendientes: out });

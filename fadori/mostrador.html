@@ -454,7 +454,10 @@ function abrirRevision(){
   $('#hojitaC').innerHTML = (porRevisar.length ? porRevisar.map(x =>
     '<div class="cred-rev" data-cred="'+esc(x.codigo)+'">'+
       '<img src="'+x.foto+'" alt="Credencial que mandó '+esc(x.nombre)+'">'+
-      '<p><b>'+esc(x.nombre)+'</b>'+(x.grupo ? ' · '+esc(x.grupo) : '')+'<small>Dijo llamarse así. ¿La credencial es suya?</small></p>'+
+      '<p><b>'+esc(x.nombre)+'</b>'+(x.grupo ? ' · '+esc(x.grupo) : '')+
+        (x.lectura === 'coincide' ? '<small class="lectura bien">'+F.ico('badge-check')+' La app leyó la credencial: el nombre coincide. Revisa que la cara sea de quien pide.</small>'
+         : x.lectura === 'no-se-leyo' ? '<small class="lectura mal">'+F.ico('circle-alert')+' La app no alcanzó a leer el nombre: revísalo tú.</small>'
+         : '<small>Dijo llamarse así. ¿La credencial es suya?</small>')+'</p>'+
       '<div class="chips"><button class="btn fuerte" type="button" data-cred-si="'+esc(x.codigo)+'" style="flex:1">'+F.ico('check')+' Es él/ella</button>'+
       '<button class="btn" type="button" data-cred-no="'+esc(x.codigo)+'">'+F.ico('x')+' No coincide</button></div></div>').join('')
     : '<p class="sub">Nada por revisar.</p>') +
