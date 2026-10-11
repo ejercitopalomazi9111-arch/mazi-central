@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Fadori · letreros de mesa</title>
+<style>
+/* Dos letreros de 4×6 pulgadas (10×15 cm, el porta-letrero de acrílico más común)
+   en una hoja carta acostada. Se imprimen, se recortan por la línea punteada y se meten al plástico. */
+@page{size:11in 8.5in;margin:0}
+*{box-sizing:border-box;margin:0}
+html,body{width:11in;height:8.5in;background:#fff;font-family:"Helvetica Neue",Arial,sans-serif;color:#2E1B10;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.hoja{width:11in;height:8.5in;display:flex;justify-content:center;align-items:center;gap:.6in}
+.letrero{width:4in;height:6in;position:relative;overflow:hidden;outline:1px dashed #b9a58f;outline-offset:0;display:flex;flex-direction:column}
+.qr{background:#FFFDF9;border-radius:.14in;padding:.08in}
+.qr img{display:block;width:100%}
+.pasos{list-style:none;padding:0;display:grid;gap:.07in}
+.pasos li{display:flex;align-items:center;gap:.1in;font-size:11.5pt;font-weight:700;line-height:1.15}
+.pasos b{flex:none;width:.28in;height:.28in;border-radius:50%;display:grid;place-items:center;font-size:11pt;color:#fff;background:#C2410C}
+.pie{font-size:8pt;text-align:center;letter-spacing:.04em}
+
+/* A · naranja, la que grita */
+.a{background:#E8590C;color:#fff}
+.a .arriba{padding:.3in .3in .12in;text-align:center}
+.a .arriba small{display:block;font-size:11pt;font-weight:700;letter-spacing:.14em;text-transform:uppercase;opacity:.9}
+.a h1{font-size:34pt;line-height:.95;font-weight:900;letter-spacing:-.02em;margin-top:.06in}
+.a .medio{flex:1;background:#FFFDF9;color:#2E1B10;border-radius:.3in .3in 0 0;padding:.24in .3in .16in;display:grid;grid-template-columns:1.85in 1fr;gap:.18in;align-items:center;align-content:start}
+.a .qr{grid-row:span 2;border:.04in solid #2E1B10}
+.a .logo{width:1.5in}
+.a .pasos li{font-size:10.5pt}
+.a .pasos b{width:.25in;height:.25in;font-size:10pt}
+.a .nota{grid-column:1/-1;font-size:10.5pt;line-height:1.35;color:#7A5A42;margin-top:.06in}
+.a .chips{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:.06in}
+.a .chips span{background:#FFE8D6;color:#9C3608;border-radius:99px;padding:.04in .12in;font-size:9.5pt;font-weight:800}
+.a .nota b{color:#2E1B10}
+.a .pie{background:#FFFDF9;color:#7A5A42;padding:0 .3in .2in}
+
+/* B · crema, la del logo grande */
+.b{background:#F3ECE1;padding:.3in .32in .22in;align-items:center;text-align:center}
+.b .logo{width:1.75in}
+.b h2{font-size:21pt;line-height:1.02;font-weight:900;letter-spacing:-.01em;margin:.1in 0 .04in}
+.b h2 em{font-style:normal;color:#C2410C}
+.b p{font-size:10.5pt;color:#7A5A42;line-height:1.3}
+.b .qr{width:1.8in;margin:.14in 0 .06in;box-shadow:none;border:.03in solid #E6D9C6}
+.b .apunta{font-size:10pt;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#C2410C}
+.b .pasos{margin-top:auto;grid-template-columns:repeat(3,1fr);gap:.08in;width:100%}
+.b .pasos li{flex-direction:column;font-size:9pt;gap:.05in;text-align:center}
+.b .pie{margin-top:.12in;color:#7A5A42;font-size:8pt}
+</style>
+</head>
+<body>
+<div class="hoja">
+  <section class="letrero a">
+    <div class="arriba">
+      <small>Cooperativa sin filas</small>
+      <h1>¿Hambre?<br>Sáltate la fila.</h1>
+    </div>
+    <div class="medio">
+      <div class="qr"><img src="../qr/abrir.svg" alt="QR para abrir Fadori"></div>
+      <img class="logo" src="logo-papel.png" alt="Fadori">
+      <ol class="pasos">
+        <li><b>1</b>Escanea</li>
+        <li><b>2</b>Pide desde aquí</li>
+        <li><b>3</b>Recoge cuando salga tu turno</li>
+      </ol>
+      <p class="nota"><b>Tu turno sale en la pantalla</b> y te avisa en el teléfono cuando está listo. Tú sigues en tu mesa.</p>
+      <div class="chips"><span>Todo el menú con foto y precio</span><span>Sin gritar tu orden</span><span>Sin hacer fila</span></div>
+    </div>
+    <p class="pie">FADORI · COOPERATIVA DEL INSTITUTO REMBRANDT</p>
+  </section>
+
+  <section class="letrero b">
+    <img class="logo" src="logo-crema.png" alt="Fadori">
+    <h2>Pide desde tu mesa.<br><em>Cero fila.</em></h2>
+    <p>El menú completo en tu teléfono.</p>
+    <div class="qr"><img src="../qr/abrir.svg" alt="QR para abrir Fadori"></div>
+    <div class="apunta">Apunta tu cámara aquí</div>
+    <ol class="pasos">
+      <li><b>1</b>Escanea</li>
+      <li><b>2</b>Elige y pide</li>
+      <li><b>3</b>Te avisamos</li>
+    </ol>
+    <p class="pie">FADORI · COOPERATIVA DEL INSTITUTO REMBRANDT</p>
+  </section>
+</div>
+</body>
+</html>
