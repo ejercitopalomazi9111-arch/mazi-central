@@ -722,7 +722,7 @@ function tarjetaTurno(p){
       : '<div class="frase'+(v && !v.alcanza ? ' no' : '')+'">'+eta+'</div>')+
     '<div class="detalle">'+(preparando ? 'Ya casi' : v ? (v.antes === 0 ? 'Eres el que sigue'
       : 'Hay '+v.antes+(v.antes === 1 ? ' antes que tú' : ' antes que tú')) : '')+'</div>'+
-    (v && !preparando ? filaDibujada(v.antes) : '')+
+    (v && !preparando && v.antes > 0 ? filaDibujada(v.antes) : '')+
     '<div class="turno-corte"></div>'+ pasosTurno(p.estado) +
   '</div>'+
   (v && !v.alcanza && !preparando
@@ -1082,10 +1082,10 @@ function pintarCuenta(yo){
   const caja = $('#miCuenta');
   if(F.motor() !== 'servidor'){ caja.hidden = true; return; }
   caja.hidden = false;
-  const estado = yo.verif === 'si' ? '<div class="aviso bueno">' + F.ico('badge-check') + ' <b>Cuenta verificada</b> por la cooperativa.</div>'
-    : yo.verif === 'pendiente' ? '<div class="aviso">' + F.ico('hourglass') + ' Tu credencial <b>está en revisión</b>. Mientras, puedes pedir igual.</div>'
-    : yo.verif === 'no' ? '<div class="aviso malo">' + F.ico('circle-alert') + ' La cooperativa dijo que la credencial <b>no coincidió</b>. Manda otra.</div>'
-    : '<div class="aviso malo">' + F.ico('id-card') + ' Falta la <b>foto de tu credencial</b>. Es una sola vez.</div>';
+  const estado = yo.verif === 'si' ? '<div class="aviso bueno">' + F.ico('badge-check') + '<span><b>Cuenta verificada</b> por la cooperativa.</span></div>'
+    : yo.verif === 'pendiente' ? '<div class="aviso">' + F.ico('hourglass') + '<span>Tu credencial <b>está en revisión</b>. Mientras, puedes pedir igual.</span></div>'
+    : yo.verif === 'no' ? '<div class="aviso malo">' + F.ico('circle-alert') + '<span>La cooperativa dijo que la credencial <b>no coincidió</b>. Manda otra.</span></div>'
+    : '<div class="aviso malo">' + F.ico('id-card') + '<span>Falta la <b>foto de tu credencial</b>. Es una sola vez.</span></div>';
   caja.innerHTML = '<h3 style="margin:0 0 10px">Tu cuenta</h3>' + estado +
     (yo.verif !== 'si' && yo.verif !== 'pendiente' ? '<button class="btn ancho" type="button" id="bIrCred" style="margin-top:10px">' + F.ico('camera') + ' Mandar mi credencial</button>' : '') +
     '<h4 style="margin:16px 0 6px">' + (yo.protegida ? 'Protegida con ' + esc(yo.protegida) : 'Protégela con correo y contraseña') + '</h4>' +

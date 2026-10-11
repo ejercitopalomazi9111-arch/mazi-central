@@ -1977,6 +1977,8 @@ function cuentaRegresiva(){
 /* mm:ss cuando falta poco, "12 min" cuando falta harto. Nadie necesita los
    segundos a veinte minutos del final, y a los dos minutos sí. */
 function relojCorto(seg){
+  /* «392 min» no se lee de un vistazo: pasada la hora va en horas */
+  if(seg >= 3600){ const t = Math.round(seg / 60), h = Math.floor(t / 60), m = t % 60; return h + ' h' + (m ? ' ' + m + ' min' : ''); }
   if(seg >= 600) return Math.round(seg/60) + ' min';
   const m = Math.floor(seg/60), s2 = seg % 60;
   return m + ':' + String(s2).padStart(2,'0');

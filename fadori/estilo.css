@@ -350,11 +350,15 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--naranja); outlin
   position:fixed; left:0; right:0; bottom:0; z-index:50;
   background:var(--sup); box-shadow:0 -6px 24px rgba(70,40,20,.14);
   border-top:1px solid var(--linea); padding:11px 14px 11px;
-  transform:translateY(200%); transition:transform .22s cubic-bezier(.22,1,.36,1);
+  /* escondida de verdad: con la barra del pulgar y la del iPhone, 200 % no
+     alcanzaba y asomaba una tira; y sin `visibility` sus botones seguían
+     alcanzables con el lector de pantalla */
+  transform:translateY(calc(100% + 160px)); visibility:hidden;
+  transition:transform .22s cubic-bezier(.22,1,.36,1), visibility 0s linear .22s;
 }
 /* Cuando hay pedido, la cuenta se apila justo encima de la barra del pulgar:
    las dos cosas que se tocan quedan en el mismo tercio de la pantalla. */
-.cesta.viva{transform:none}
+.cesta.viva{transform:none; visibility:visible; transition:transform .22s cubic-bezier(.22,1,.36,1)}
 body.con-pulgar .cesta{bottom:calc(var(--barra-baja) + env(safe-area-inset-bottom))}
 .btn.redondo{width:44px; min-width:44px; padding:0; border-radius:50%; font-size:17px}
 .cesta-dentro{max-width:640px; margin:0 auto; display:flex; align-items:center; gap:12px}
@@ -1636,6 +1640,7 @@ label small.tenue{font-weight:600; color:var(--tenue); opacity:.85}
 .kiosco .barra-fila{max-width:1080px}
 
 /* ── la cuenta (10 de octubre) ── */
+#miCuenta{margin-top:16px}
 .raya{border:0; border-top:1px solid var(--linea); margin:18px 0 14px}
 .cred-vista{display:grid; place-items:center; gap:8px; min-height:170px; padding:16px; border-radius:16px; text-align:center;
   border:2px dashed var(--linea); color:var(--tenue); font-weight:700; font-size:14px; background:var(--sup)}
@@ -1674,3 +1679,7 @@ label small.tenue{font-weight:600; color:var(--tenue); opacity:.85}
 .k-pide .i{width:20px; height:20px; flex:none; color:var(--naranja)}
 .k-pide span{flex:1; min-width:0}
 .k-pide .enlacillo{min-height:44px}
+
+/* las acciones del turno llenan el renglón: cuando queda una sola («Voy en
+   camino», ya listo) no se queda flotando a media pantalla */
+#accionesTurno .btn{flex:1 1 0; min-width:0; justify-content:center}
