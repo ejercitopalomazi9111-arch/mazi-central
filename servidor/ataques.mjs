@@ -38,6 +38,16 @@ async function llamar(ruta, cuerpo, { ap, admin, metodo, crudo } = {}){
 const sync = (ap, cambios, extra = {}) => llamar('/api/sync', { desde: extra.desde || 0, cambios }, { ap, admin: extra.admin });
 const rechazo = (res, id) => (res.j?.rechazados || []).find(x => x.id === id);
 const pedidoEn = (res, id) => (res.j?.cambios?.pedidos || []).find(p => p.id === id);
+/* desde el 11 de octubre no se pide sin correo y credencial: el alumno de
+   prueba manda su foto y pone su correo antes de pedir */
+const FOTO_MIN = 'data:image/jpeg;base64,' + Buffer.from('cuadro gris').toString('base64');
+let nCorreo = 0;
+async function cuentaLista(ap, codigo){
+  await llamar('/api/cuenta/credencial', { codigo, foto: FOTO_MIN }, { ap });
+  const correo = 'alumno' + (++nCorreo) + '-' + Date.now() + '@prueba.mx';
+  await llamar('/api/cuenta/proteger', { codigo, correo, clave: 'prueba123' }, { ap });
+  return correo;
+}
 
 /* ── preparar: la cooperativa entra y sube su menú ─────────────────────── */
 console.log('\nPreparar · la cooperativa entra con su pasador y sube el menú');
@@ -58,6 +68,9 @@ ok('el mostrador sube el menú', r.status === 200 && !(r.j?.rechazados || []).le
 const ana = aparato(), ANA = cod();
 r = await sync(ana, { alumnos: [{ id: ANA, codigo: ANA, nombre: 'Ana', grupo: '3B', terminos: T, t: T }] });
 ok('un alumno se registra', r.status === 200 && (r.j.cambios.alumnos || []).some(a => a.codigo === ANA));
+r = await sync(ana, { pedidos: [{ id: 'o' + aparato().slice(0, 12), folio: 'AB11', alumno: ANA, renglones: [{ prod: 'pb-torta', cant: 1 }], total: 3500, creado: ahora(), estado: 'en_cola', turno: null, t: ahora() }] });
+ok('sin correo ni credencial, el servidor NO le da turno', (r.j?.rechazados || []).some(x => x.por === 'sin-cuenta'), JSON.stringify(r.j?.rechazados));
+const CORREO_ANA = await cuentaLista(ana, ANA);
 const pAna = { id: 'o' + aparato().slice(0, 12), folio: 'AB12', alumno: ANA, renglones: [{ prod: 'pb-torta', cant: 1 }], total: 3500, creado: ahora(), estado: 'en_cola', turno: null, t: ahora() };
 r = await sync(ana, { pedidos: [pAna] });
 ok('y pide: le llega con turno', pedidoEn(r, pAna.id)?.turno === 1, JSON.stringify(r.j?.rechazados));
@@ -105,6 +118,7 @@ ok('ni cambiarse el turno', pedidoEn(r, pAna.id).turno === 1);
 ok('ni agregarle cosas después de pedido', pedidoEn(r, pAna.id).renglones.length === 1 && pedidoEn(r, pAna.id).renglones[0].cant === 1);
 const bea = aparato(), BEA = cod();
 await sync(bea, { alumnos: [{ id: BEA, codigo: BEA, nombre: 'Bea', grupo: '3B', terminos: T, t: T }] });
+await cuentaLista(bea, BEA);
 const pBea = { id: 'o' + aparato().slice(0, 12), folio: 'CD34', alumno: BEA, renglones: [{ prod: 'pb-torta', cant: 2 }], total: 1, pagado: 7000, estado: 'listo', creado: 0, anticipado: true, turno: 0, despachador: 'yo', t: ahora() };
 r = await sync(bea, { pedidos: [pBea] });
 const pb = pedidoEn(r, pBea.id);
@@ -122,6 +136,7 @@ ok('ni pedir a nombre de otro alumno', (r.j.rechazados || []).length === 1);
 console.log('\n1b · El nombre en la pantalla de turnos, sólo si quien pide dice que sí');
 const caro = aparato(), CARO = cod();
 await sync(caro, { alumnos: [{ id: CARO, codigo: CARO, nombre: 'Carolina Ruiz M', grupo: '3C', terminos: T, t: T }] });
+await cuentaLista(caro, CARO);
 const pCaro = { id: 'o' + aparato().slice(0, 12), folio: 'GH78', alumno: CARO, renglones: [{ prod: 'pb-agua', cant: 1 }], creado: ahora(), estado: 'en_cola', ver: 'nombre', t: ahora() };
 await sync(caro, { pedidos: [pCaro] });
 const pRaro = { id: 'o' + aparato().slice(0, 12), folio: 'GH79', alumno: CARO, renglones: [{ prod: 'pb-agua', cant: 1 }], creado: ahora(), estado: 'en_cola', ver: '<script>', t: ahora() };
@@ -137,6 +152,7 @@ ok('y lo que pidió sí se ve, para la pantalla', vc?.renglones?.[0]?.prod === '
 console.log('\n5 · Inundar');
 const troll = aparato(), TROLL = cod();
 await sync(troll, { alumnos: [{ id: TROLL, codigo: TROLL, nombre: 'Troll', grupo: '1A', terminos: T, t: T }] });
+await cuentaLista(troll, TROLL);
 const muchos = Array.from({ length: 50 }, (_, i) => ({ id: 'o' + aparato().slice(0, 12), folio: 'ZZ' + String(i).padStart(2, '0').slice(-2), alumno: TROLL, renglones: [{ prod: 'pb-agua', cant: 1 }], creado: ahora(), estado: 'en_cola', t: ahora() }));
 r = await sync(troll, { pedidos: muchos });
 const entraron = muchos.filter(p => !rechazo(r, p.id)).length;
@@ -165,7 +181,9 @@ for(let i = 0; i < 40; i++){
 ok('adivinar códigos a lo loco: se le cierra la puerta pronto', bloqueado && !adivino);
 const otroTel = aparato();
 r = await llamar('/api/codigo', { codigo: ANA }, { ap: otroTel });
-ok('Ana sí entra con su código desde otro teléfono', r.status === 200 && r.j?.alumno?.nombre === 'Ana');
+ok('con correo puesto, el código solo ya no abre la cuenta de Ana', r.status === 403 && r.j?.conCorreo === true, 'status ' + r.status);
+r = await llamar('/api/cuenta/entrar', { correo: CORREO_ANA, clave: 'prueba123' }, { ap: otroTel });
+ok('Ana sí entra con su correo desde otro teléfono', r.status === 200 && r.j?.alumno?.nombre === 'Ana', 'status ' + r.status);
 r = await sync(otroTel, { pedidos: [{ ...pAna, estado: 'cancelado', t: ahora() + 1000 }] });
 r = await sync(mostrador, {}, { admin: ADMIN });
 ok('y desde ahí puede cancelar su pedido', pedidoEn(r, pAna.id).estado === 'cancelado');
@@ -173,6 +191,7 @@ ok('y desde ahí puede cancelar su pedido', pedidoEn(r, pAna.id).estado === 'can
 console.log('\n7 · Uso normal en el recreo: 80 alumnos, mismo wifi, 2 pedidos cada uno');
 const alumnos = Array.from({ length: 80 }, () => ({ ap: aparato(), c: cod() }));
 await Promise.all(alumnos.map(a => sync(a.ap, { alumnos: [{ id: a.c, codigo: a.c, nombre: 'Alumno ' + a.c, grupo: '2A', terminos: T, t: T }] })));
+await Promise.all(alumnos.map(a => cuentaLista(a.ap, a.c)));
 const t0 = ahora();
 const res = await Promise.all(alumnos.flatMap(a => [0, 1].map(k => sync(a.ap, { pedidos: [{ id: 'o' + aparato().slice(0, 12), folio: 'Q' + k + a.c.slice(0, 2), alumno: a.c, renglones: [{ prod: k ? 'pb-agua' : 'pb-torta', cant: 1 }], creado: ahora(), estado: 'en_cola', t: ahora() }] }))));
 const seg = (ahora() - t0) / 1000;
@@ -246,7 +265,10 @@ r = await llamar('/api/cuenta/proteger', { codigo: BETO, correo: 'Beto@Escuela.m
 ok('Beto protege su cuenta con correo y contraseña', r.status === 200 && r.j.protegida === 'be•••@escuela.mx', JSON.stringify(r.j));
 r = await sync(mostrador, {}, { admin: ADMIN });
 const crudo = JSON.stringify(r.j);
-ok('ni el correo ni la contraseña viajan a nadie (ni al mostrador)', !/beto@escuela|tortas2026|"_cuenta"|"sal"/.test(crudo));
+ok('la contraseña no viaja a nadie (ni al mostrador)', !/tortas2026|"_cuenta"|"sal"/.test(crudo));
+ok('el correo sí le llega al mostrador (para que no le ganen)', /beto@escuela\.mx/.test(crudo));
+r = await sync(fisgon, {});
+ok('…pero a un aparato cualquiera, ni el correo', !/beto@escuela/.test(JSON.stringify(r.j)));
 r = await llamar('/api/codigo', { codigo: BETO }, { ap: aparato() });
 ok('con contraseña, el código solo YA NO abre la cuenta', r.status === 403 && r.j.conCorreo === true, 'status ' + r.status);
 const telBeto = aparato();
@@ -256,7 +278,7 @@ r = await llamar('/api/cuenta/entrar', { correo: 'nadie@escuela.mx', clave: 'tor
 ok('con un correo que no existe, el MISMO mensaje (no delata quién tiene cuenta)', r.status === 401 && /no coinciden/.test(r.j.error));
 r = await llamar('/api/cuenta/entrar', { correo: 'BETO@escuela.mx', clave: 'tortas2026' }, { ap: telBeto });
 ok('con correo y contraseña, entra en el teléfono nuevo', r.status === 200 && r.j.alumno?.id === BETO && r.j.alumno.verif === 'si');
-ok('…sin que le llegue su contraseña ni su correo', !/tortas2026|beto@escuela|_cuenta/.test(JSON.stringify(r.j)));
+ok('…sin que le llegue su contraseña', !/tortas2026|_cuenta|"sal"/.test(JSON.stringify(r.j)));
 let candado = false;
 for(let i = 0; i < 12; i++){ const x = await llamar('/api/cuenta/entrar', { correo: 'beto@escuela.mx', clave: 'intento' + i }, { ap: aparato() }); if(x.status === 429){ candado = true; break; } }
 ok('adivinar la contraseña de UNA cuenta desde muchos teléfonos: se bloquea', candado);

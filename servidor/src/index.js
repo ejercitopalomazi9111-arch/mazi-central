@@ -494,6 +494,7 @@ export class Cooperativa {
     if(a._cuenta && a._cuenta.correo && a._cuenta.correo !== huella) delete this.correos[a._cuenta.correo];
     a._cuenta = await cuentaNueva(huella, clave);
     a.protegida = tapar(correo);
+    a.correo = correo;      /* completo: lo ven él y la cooperativa, nadie más */
     this.correos[huella] = cod;
     await this.tocarAlumno(a);
     return json({ bien: true, protegida: a.protegida });
@@ -605,7 +606,7 @@ export class Cooperativa {
           if(!rec){ rechaza(c, r.id, 'grande'); continue; }
           /* lo de la cuenta sólo cambia por sus propias puertas: una copia
              vieja del mostrador no le borra la contraseña ni la palomita */
-          if(c === 'alumnos' && viejo){ rec._dev = viejo._dev; rec._cuenta = viejo._cuenta; rec.verif = viejo.verif; rec.protegida = viejo.protegida; }
+          if(c === 'alumnos' && viejo){ rec._dev = viejo._dev; rec._cuenta = viejo._cuenta; rec.verif = viejo.verif; rec.protegida = viejo.protegida; rec.correo = viejo.correo; rec.npedidos = viejo.npedidos; }
           /* el que da de alta la cooperativa en persona ya está visto */
           else if(c === 'alumnos') rec.verif = 'si';
           if(c === 'pedidos'){
@@ -695,6 +696,11 @@ export class Cooperativa {
     if(!viejo){
       if(!esDeEl(r.alumno)) { rechaza('pedidos', r.id, 'ajeno'); return false; }
       const estado = r.estado === 'cancelado' ? 'cancelado' : 'en_cola';
+      /* Carlos, 11 de octubre: sin correo y sin credencial no se pide (que no
+         pidan a nombre de otro). La credencial basta con estar mandada: la
+         cooperativa la revisa al despachar */
+      const due = this.datos.alumnos[r.alumno];
+      if(estado === 'en_cola' && (!due._cuenta || (due.verif !== 'si' && due.verif !== 'pendiente'))) { rechaza('pedidos', r.id, 'sin-cuenta'); return false; }
       const renglones = renglonesLimpios(r.renglones);
       if(!renglones) { rechaza('pedidos', r.id, 'vacio'); return false; }
       if(hayMenu){
@@ -719,6 +725,10 @@ export class Cooperativa {
          reloj del servidor: palomearlo a media fila era colarse */
       const anticipado = !!r.anticipado && cfg.aceptaAnticipados !== false && mx(ahora).min < minutos(cfg.recreoInicia || '10:00');
       const turno = estado === 'en_cola' ? this.siguienteTurno() : null;
+      /* para el mostrador: con cuántos pedidos va esta cuenta (y el correo,
+         que sólo ve la cooperativa) — un nombre se inventa, una historia no */
+      const hechos = (Number(a.npedidos) || 0) + 1;
+      poner('alumnos', Object.assign({}, a, { npedidos: hechos }));
       poner('pedidos', {
         id: r.id, folio: /^[A-Z0-9]{4,6}$/.test(String(r.folio || '')) ? r.folio : hex(2).toUpperCase(),
         alumno: r.alumno, nombre: a.nombre, grupo: a.grupo, renglones, total, pagado: 0,
@@ -726,6 +736,7 @@ export class Cooperativa {
            (el que pidió sin señal), nunca las 7 de la mañana */
         creado: Math.min(ahora, Math.max(ahora - 10 * 60000, Number(r.creado) || ahora)),
         estado, anticipado, nota: texto(r.nota, 140), origen: 'app', ver: verLimpio(r.ver), despachador: null,
+        correo: String(a.correo || a.protegida || ''), hechos,
         tomado: 0, listoEn: 0, entregado: 0, cancelado: estado === 'cancelado' ? ahora : 0,
         turno, t: Math.max((Number(r.t) || 0) + 1, ahora),
       });

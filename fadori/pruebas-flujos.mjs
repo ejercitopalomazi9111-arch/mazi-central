@@ -15,7 +15,7 @@
 
    Correr:  LOCAL=1 API_LOCAL=http://127.0.0.1:8791 node fadori/pruebas-flujos.mjs
    ═════════════════════════════════════════════════════════════════════════ */
-import { abrirMesa } from './mesa-de-pruebas.mjs';
+import { abrirMesa, ponerCuenta } from './mesa-de-pruebas.mjs';
 const { ok, fallas, aparato, tarda, mostrador, alumno, cerrar, CASA } = await abrirMesa('flujos');
 
 const most = await mostrador();
@@ -81,9 +81,11 @@ console.log('\n3 · volver a entrar con tu código desde otro teléfono');
 const codA = await a.evaluate(() => FADORI.yo().codigo);
 const d = await aparato('/fadori/');
 await d.evaluate(() => { const s = document.getElementById('p-entrada'); if(s) s.hidden = false; });
-await d.fill('#eCodigo', codA); await d.click('#bVolver');
+/* Ana ya tiene correo (desde el 11 de octubre es obligatorio), así que en
+   otro teléfono entra con su correo y su contraseña */
+await d.fill('#eCorreo', a.correoPrueba); await d.fill('#eClave', 'prueba123'); await d.click('#bEntrarCorreo');
 ms = await tarda(d, () => FADORI.yo() && FADORI.yo().nombre === 'Ana P', null, 8000);
-ok(`entra con el código por la pantalla (${ms} ms)`, ms != null);
+ok(`entra con su correo por la pantalla (${ms} ms)`, ms != null);
 ok('y trae su historial', await d.evaluate(() => FADORI.pedidosDe(FADORI.yo().codigo).length >= 1));
 
 /* ── 4 · varios alumnos en un mismo teléfono ────────────────────────── */
@@ -91,7 +93,8 @@ console.log('\n4 · varios alumnos en el mismo teléfono (pruebas, hermanos)');
 const t = await aparato('/fadori/');
 let aceptados = 0;
 for(let i = 1; i <= 8; i++){
-  await t.evaluate(n => { FADORI.salir(); const al = FADORI.registrar('Prueba ' + n, '1A'); FADORI.aceptarTerminos(al.codigo); }, i);
+  const c = await t.evaluate(n => { FADORI.salir(); const al = FADORI.registrar('Prueba ' + n, '1A'); FADORI.aceptarTerminos(al.codigo); return al.codigo; }, i);
+  await ponerCuenta(t, c);
   const id = await pedir(t, [0]);
   const turno = await tarda(t, i => { const p = FADORI.pedido(i); return p && (p.turno != null || p.estado === 'cancelado'); }, id, 6000);
   if(turno != null && await t.evaluate(i => FADORI.pedido(i).turno != null, id)) aceptados++;

@@ -110,19 +110,25 @@
        La foto la ve la cooperativa en el mostrador, dice «es él» o «no
        coincide», y en ese momento se borra. -->
   <section id="p-credencial" hidden>
-    <h1>Tu credencial, una vez</h1>
-    <p class="sub">Así nadie pide a tu nombre. La revisa la cooperativa y <b>se borra</b> en cuanto la ven.</p>
-    <div class="tarjeta">
+    <h1>Tu cuenta, una vez</h1>
+    <p class="sub">Para pedir hace falta <b>tu credencial</b> y <b>tu correo</b>. Así nadie pide a tu nombre. La foto la revisa la cooperativa y <b>se borra</b> en cuanto la ven.</p>
+    <div class="tarjeta" id="credPaso">
+      <h3 style="margin:0 0 10px">1 · Tu credencial</h3>
       <div class="cred-vista" id="credVista"><span data-ico="id-card"></span><span>La credencial de la escuela, de frente y que se lea tu nombre</span></div>
       <div class="fila-btn" style="margin-top:12px">
-        <label class="btn fuerte" for="fCred"><span data-ico="camera"></span> Tomarle foto</label>
+        <label class="btn" for="fCred"><span data-ico="camera"></span> Tomarle foto</label>
         <input id="fCred" type="file" accept="image/*" capture="environment" hidden>
         <label class="btn" for="fCredGal"><span data-ico="image"></span> De mis fotos</label>
         <input id="fCredGal" type="file" accept="image/*" hidden>
       </div>
-      <button class="btn fuerte ancho" id="bMandarCred" type="button" style="margin-top:12px" disabled><span data-ico="send"></span> Mandarla</button>
-      <button class="enlacillo" id="bSinCred" type="button" style="margin-top:14px">No la traigo hoy</button>
     </div>
+    <div class="tarjeta" id="correoPaso" style="margin-top:14px">
+      <h3 style="margin:0 0 10px"><span id="correoNum">2</span> · Tu correo y una contraseña</h3>
+      <p class="sub" style="margin:0 0 8px">Con esto entras si cambias de teléfono.</p>
+      <label for="cCorreo">Correo</label><input id="cCorreo" type="email" autocomplete="email" inputmode="email" placeholder="tu@correo.com">
+      <label for="cClave">Contraseña</label><input id="cClave" type="password" autocomplete="new-password" placeholder="Mínimo 6">
+    </div>
+    <button class="btn fuerte ancho" id="bMandarCred" type="button" style="margin-top:16px" disabled><span data-ico="check"></span> Listo, ya puedo pedir</button>
   </section>
 
   <!-- ══════════ TÉRMINOS · F29 · una pantalla, una vez ══════════ -->
@@ -394,6 +400,7 @@ let miPedido = null;     /* el pedido vivo que estoy siguiendo */
 const PANTALLAS = ['entrada','terminos','credencial','menu','turno','yo'];
 function ver(p){
   pantalla = p;
+  if(p === 'credencial') pintarPasosCuenta();
   PANTALLAS.forEach(n => { $('#p-'+n).hidden = (n !== p); });
   window.scrollTo(0,0);
   pintar();
@@ -1007,16 +1014,29 @@ $('#bAcepto').addEventListener('click', () => {
 /* ══════════════════════════════════════════════════════════════════════
    LA CUENTA: credencial una vez, correo y contraseña, recuperar
    ═════════════════════════════════════════════════════════════════════ */
-const LUEGO = 'fadori_cred_luego';
-const hoyEs = () => new Date().toDateString();
-/* se pide con servidor, si no está revisada ni en revisión, y si hoy no dijo
-   «no la traigo»: mañana se le vuelve a pedir, nunca a media compra */
+/* Carlos, 11 de octubre: «que no puedan pedir sin correo y credencial».
+   Con servidor, la cuenta tiene que traer las dos cosas antes del menú (el
+   servidor además rechaza el pedido si faltan). Sin servidor, no aplica. */
 function faltaCredencial(yo){
   if(KIOSCO || !yo || F.motor() !== 'servidor') return false;
-  if(yo.verif === 'si' || yo.verif === 'pendiente') return false;
-  try{ if(localStorage.getItem(LUEGO) === hoyEs()) return false; }catch(e){}
-  return true;
+  return faltaFoto(yo) || !yo.protegida;
 }
+const faltaFoto = (yo) => !(yo.verif === 'si' || yo.verif === 'pendiente');
+function pintarPasosCuenta(){
+  const yo = F.yo(); if(!yo) return;
+  $('#credPaso').hidden = !faltaFoto(yo);
+  $('#correoPaso').hidden = !!yo.protegida;
+  $('#correoNum').textContent = faltaFoto(yo) ? '2' : '1';
+  revisarListo();
+}
+function revisarListo(){
+  const yo = F.yo(); if(!yo) return;
+  const fotoOk = !faltaFoto(yo) || !!fotoCred;
+  const correoOk = !!yo.protegida || (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test($('#cCorreo').value.trim()) && $('#cClave').value.length >= 6);
+  $('#bMandarCred').disabled = !(fotoOk && correoOk);
+}
+$('#cCorreo').addEventListener('input', revisarListo);
+$('#cClave').addEventListener('input', revisarListo);
 /* la foto se achica en el teléfono: ~900 px y menos de 100 KB; la de la
    cámara pesa 4 MB y el servidor no la recibe */
 async function achicarFoto(f){
@@ -1041,22 +1061,30 @@ async function tomarCred(e){
   try{
     fotoCred = await achicarFoto(f);
     $('#credVista').innerHTML = '<img src="' + fotoCred + '" alt="Tu credencial">';
-    $('#bMandarCred').disabled = false;
+    revisarListo();
   }catch(err){ aviso('Esa foto no se pudo abrir. Prueba con otra.', 'malo'); }
 }
 $('#fCred').addEventListener('change', tomarCred);
 $('#fCredGal').addEventListener('change', tomarCred);
 $('#bMandarCred').addEventListener('click', async () => {
-  const yo = F.yo(); if(!yo || !fotoCred) return;
-  const b = $('#bMandarCred'); b.disabled = true; b.textContent = 'Mandando…';
-  const r = await F.subirCredencial(yo.codigo, fotoCred);
-  b.innerHTML = F.ico('send') + ' Mandarla';
-  if(!r.ok){ b.disabled = false; return aviso(r.error || 'No se pudo mandar.', 'malo'); }
-  fotoCred = null; $('#credVista').innerHTML = '';
-  aviso('Listo. La cooperativa la revisa y se borra. Ya puedes pedir.');
+  const yo = F.yo(); if(!yo) return;
+  const b = $('#bMandarCred'); b.disabled = true; b.textContent = 'Guardando…';
+  const fin = () => { b.innerHTML = F.ico('check') + ' Listo, ya puedo pedir'; revisarListo(); };
+  if(faltaFoto(yo)){
+    if(!fotoCred){ fin(); return aviso('Falta la foto de tu credencial.', 'malo'); }
+    const r = await F.subirCredencial(yo.codigo, fotoCred);
+    if(!r.ok){ fin(); return aviso(r.error || 'No se pudo mandar la credencial.', 'malo'); }
+    fotoCred = null; $('#credVista').innerHTML = '';
+  }
+  if(!F.yo().protegida){
+    const r = await F.protegerCuenta(yo.codigo, $('#cCorreo').value.trim(), $('#cClave').value);
+    if(!r.ok){ pintarPasosCuenta(); fin(); return aviso(r.error || 'No se pudo guardar tu correo.', 'malo'); }
+    $('#cClave').value = '';
+  }
+  fin();
+  aviso('Listo. La cooperativa revisa tu credencial y se borra. Ya puedes pedir.');
   arrancar();
 });
-$('#bSinCred').addEventListener('click', () => { try{ localStorage.setItem(LUEGO, hoyEs()); }catch(e){} arrancar(); });
 
 $('#bEntrarCorreo').addEventListener('click', async () => {
   const b = $('#bEntrarCorreo'); b.disabled = true;
@@ -1094,7 +1122,7 @@ function pintarCuenta(yo){
     (yo.protegida ? '<label for="pAntes">Contraseña de ahora</label><input id="pAntes" type="password" autocomplete="current-password">' : '') +
     '<label for="pClave">' + (yo.protegida ? 'Contraseña nueva' : 'Contraseña') + '</label><input id="pClave" type="password" autocomplete="new-password" placeholder="Mínimo 6">' +
     '<button class="btn fuerte ancho" type="button" id="bProteger" style="margin-top:12px">' + F.ico('shield-check') + (yo.protegida ? ' Cambiarla' : ' Proteger mi cuenta') + '</button>';
-  const ir = $('#bIrCred'); if(ir) ir.onclick = () => { try{ localStorage.removeItem(LUEGO); }catch(e){} ver('credencial'); };
+  const ir = $('#bIrCred'); if(ir) ir.onclick = () => ver('credencial');
   $('#bProteger').onclick = async () => {
     const b = $('#bProteger'); b.disabled = true;
     try{

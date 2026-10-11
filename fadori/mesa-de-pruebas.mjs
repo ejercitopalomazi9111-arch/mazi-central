@@ -13,6 +13,33 @@ export const PROD = 'https://mazi-central.palomazi9111.workers.dev';
 const RAIZ = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const T = { '.js': 'text/javascript', '.mjs': 'text/javascript', '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.webmanifest': 'application/manifest+json', '.jpg': 'image/jpeg', '.png': 'image/png', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
 
+/* desde el 11 de octubre no se pide sin correo y credencial: el alumno de
+   prueba manda una foto (un cuadro gris) y pone un correo propio. Deja el
+   correo en `pg.correoPrueba` (contraseña: prueba123) */
+export async function ponerCuenta(pg, codigo){
+  if(!(await pg.evaluate(() => FADORI.motor() === 'servidor'))) return;
+  /* como una persona: entre darse de alta y escoger la foto pasan segundos.
+     Hacerlo en el mismo milisegundo pierde la aceptación de los términos */
+  await pg.waitForTimeout(1500);
+  const correo = 'p' + Math.random().toString(36).slice(2, 10) + '@prueba.mx';
+  const r = await pg.evaluate(async ([correo, cod]) => {
+    const F = FADORI, al = () => F.estado().alumnos[cod || (F.yo() || {}).codigo]; if(!al()) return 'sin alumno';
+    const c = document.createElement('canvas'); c.width = 64; c.height = 40; const g = c.getContext('2d'); g.fillStyle = '#888'; g.fillRect(0, 0, 64, 40);
+    let ultimo = '';
+    for(let i = 0; i < 40; i++){
+      const a = al(), f = a.verif === 'si' || a.verif === 'pendiente' ? { ok: true } : await F.subirCredencial(a.codigo, c.toDataURL('image/jpeg', .6));
+      const p = al().protegida ? { ok: true } : (f.ok ? await F.protegerCuenta(a.codigo, correo, 'prueba123') : { ok: false });
+      if(f.ok && p.ok) return 'ok';
+      ultimo = (f.error || '') + ' / ' + (p.error || '');
+      await new Promise(s => setTimeout(s, 500));   /* el alta del alumno todavía no llega al servidor */
+    }
+    return 'no se pudo: ' + ultimo;
+  }, [correo, codigo || null]);
+  if(r !== 'ok') throw new Error('cuenta de prueba: ' + r);
+  if(!(await pg.evaluate((cod) => !!(FADORI.estado().alumnos[cod || FADORI.yo().codigo] || {}).terminos, codigo || null))) throw new Error('cuenta de prueba: se perdió la aceptación de los términos');
+  pg.correoPrueba = correo;
+}
+
 export async function abrirMesa(nombre = 'flujos'){
   const CASA = 'prueba-' + nombre + '-' + Date.now();
   const API_LOCAL = process.env.API_LOCAL || '';
@@ -73,11 +100,13 @@ export async function abrirMesa(nombre = 'flujos'){
     await m.waitForTimeout(1500);
     return m;
   }
+  const cuenta = (pg, codigo) => ponerCuenta(pg, codigo);
   /* un alumno se registra por la pantalla, como lo haría un niño */
   async function alumno(nombre, grupo = '3B', pg){
     const a = pg || await aparato('/fadori/');
     await a.evaluate(([n, g]) => { const F = FADORI; const al = F.registrar(n, g); F.aceptarTerminos(al.codigo); }, [nombre, grupo]);
+    await cuenta(a);
     return a;
   }
-  return { CASA, br, ok, fallas, aparato, tarda, mostrador, alumno, cerrar: () => br.close() };
+  return { CASA, br, ok, fallas, aparato, tarda, mostrador, alumno, cuenta, cerrar: () => br.close() };
 }

@@ -334,7 +334,7 @@ function pintarDespachar(){
     caja.innerHTML = sig
       ? '<div class="actual"><div class="encabeza">'+
         '<span class="turno-n">'+sig.turno+'</span>'+
-        '<span class="quien">'+esc(sig.nombre)+(sig.grupo?' · '+esc(sig.grupo):'')+'</span>'+
+        '<span class="quien">'+esc(sig.nombre)+(sig.grupo?' · '+esc(sig.grupo):'')+marcaCuenta(sig)+datosCuenta(sig)+'</span>'+
         '<span class="cod">'+esc(sig.folio)+'</span></div>'+
         '<p class="sub" style="margin:12px 0 0">'+resumenCorto(sig)+'</p>'+
         '<button class="btn fuerte ancho" data-tomar="'+sig.id+'" type="button" '+
@@ -360,6 +360,17 @@ function marcaCuenta(p){
   if(!a || a.verif === 'si') return '';
   return ' <span class="sin-verif" title="Pídele su credencial al entregar">' + F.ico('id-card') + (a.verif === 'pendiente' ? 'credencial por revisar' : 'sin verificar') + '</span>';
 }
+/* Carlos, 11 de octubre: «que se muestre el correo y los pedidos que ha
+   hecho además del nombre, para que no nos ganen». Un nombre se inventa; un
+   correo y un historial no. */
+function datosCuenta(p){
+  if(!p.alumno || F.motor() !== 'servidor') return '';
+  const a = F.estado().alumnos[p.alumno] || {};
+  const correo = p.correo || a.correo || a.protegida || '', n = Number(p.hechos || a.npedidos) || 0;
+  if(!correo && !n) return '';
+  return '<span class="dato-cuenta">' + (correo ? F.ico('mail') + esc(correo) : '') +
+    (n ? '<b>' + (n === 1 ? 'primer pedido' : n + '.º pedido') + '</b>' : '') + '</span>';
+}
 function resumenCorto(p){
   return p.renglones.map(r => r.cant+'× '+((F.producto(r.prod)||{}).nombre||'—')).join(' · ');
 }
@@ -368,7 +379,7 @@ function fichaActual(p){
   return '<div class="actual">'+
     '<div class="encabeza">'+
       '<span class="turno-n">'+F.verTurno(p)+'</span>'+
-      '<span class="quien">'+esc(p.nombre)+(p.grupo?' · '+esc(p.grupo):'')+marcaCuenta(p)+'</span>'+
+      '<span class="quien">'+esc(p.nombre)+(p.grupo?' · '+esc(p.grupo):'')+marcaCuenta(p)+datosCuenta(p)+'</span>'+
       '<span class="cod">'+esc(p.folio)+'</span>'+
     '</div>'+
     (p.nota ? '<div class="aviso" style="margin-top:12px; border-left-color:var(--ambar)">'+
@@ -409,7 +420,7 @@ function renglonPedido(p, tipo){
   return '<div class="renglon" style="border-width:2px'+
     (listo ? '; border-color:var(--verde)' : '')+'">'+
     '<span class="n" style="font-size:22px">'+F.verTurno(p)+'</span>'+
-    '<span class="q"><b>'+esc(p.nombre)+'</b>'+(p.grupo?' · '+esc(p.grupo):'')+marcaCuenta(p)+
+    '<span class="q"><b>'+esc(p.nombre)+'</b>'+(p.grupo?' · '+esc(p.grupo):'')+marcaCuenta(p)+datosCuenta(p)+
       (p.anticipado ? ' <b style="color:var(--dorado)">· anticipado</b>' : '')+
       '<small>'+esc(resumenCorto(p))+'</small></span>'+
     (listo

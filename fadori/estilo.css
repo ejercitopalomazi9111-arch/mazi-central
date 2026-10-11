@@ -1692,3 +1692,8 @@ label small.tenue{font-weight:600; color:var(--tenue); opacity:.85}
 :root[data-tema="oscuro"] [style*="--t1"]{
   background:linear-gradient(155deg, color-mix(in srgb, var(--t1) 18%, var(--sup)), color-mix(in srgb, var(--t2) 18%, var(--sup)))}
 :root[data-tema="oscuro"] .sin-foto{color:var(--t2); opacity:.7}
+
+/* el correo y con cuántos pedidos va, debajo del nombre en el mostrador */
+.dato-cuenta{display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; margin-top:3px; font-size:13px; font-weight:600; color:var(--tenue); letter-spacing:0}
+.dato-cuenta .i{width:14px; height:14px}
+.dato-cuenta b{color:var(--texto, inherit); font-weight:800}

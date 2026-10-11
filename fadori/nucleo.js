@@ -725,7 +725,8 @@ const MotorServidor = {
     const mios = misCodigos(), motivo = {
       tope: 'Ya tienes los pedidos que se permiten por recreo.', agotado: 'Se acabó algo de lo que pediste.',
       'no existe': 'Ese platillo ya no está en el menú.', ajeno: 'Este teléfono no puede pedir a nombre de ese alumno.',
-      actualiza: 'Actualiza la app y vuelve a pedir.', vacio: 'El pedido estaba vacío.' };
+      actualiza: 'Actualiza la app y vuelve a pedir.', vacio: 'El pedido estaba vacío.',
+      'sin-cuenta': 'Para pedir necesitas tu correo y la foto de tu credencial (en «Lo mío»).' };
     let toco = false;
     d.pedidos.forEach(p => {
       if(!porId[p.id] || p.turno || mios.indexOf(p.alumno) < 0 || p.estado === 'cancelado') return;

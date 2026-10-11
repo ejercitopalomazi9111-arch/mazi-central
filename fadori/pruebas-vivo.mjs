@@ -15,7 +15,7 @@
    almacén de Chromium (certutil -d sql:$HOME/.pki/nssdb -A …) y el WebSocket
    va por un relevo (tunel-ws.mjs) porque el proxy no deja pasar la mejora a
    WebSocket cuando el navegador ofrece h2. Un teléfono va directo a Cloudflare. */
-import { createRequire } from 'module'; import fs from 'fs'; import path from 'path'; import { abrirWS } from './tunel-ws.mjs';
+import { createRequire } from 'module'; import fs from 'fs'; import path from 'path'; import { abrirWS } from './tunel-ws.mjs'; import { ponerCuenta } from './mesa-de-pruebas.mjs';
 const require = createRequire('/opt/node22/lib/node_modules/'); const { chromium } = require('playwright');
 const PROD = 'https://mazi-central.palomazi9111.workers.dev', CASA = 'prueba-vivo-' + Date.now();
 const API_LOCAL = process.env.API_LOCAL || '';
@@ -80,10 +80,13 @@ for (const [n, pg] of [['mostrador', most], ['pantalla', pant], ['alumno A', a],
   ok(`${n}: conectado en vivo (${await pg.evaluate(() => FADORI.estadoSync().texto)})`, await pg.evaluate(() => FADORI.estadoSync().modo === 'enlinea'));
 
 console.log('\n1 · pedir');
-const pedir = (pg, n) => pg.evaluate(n => { const F = FADORI; const al = F.registrar('Alumno ' + n, '3B'); F.aceptarTerminos(al.codigo);
+/* desde el 11 de octubre no se pide sin correo y credencial: primero la cuenta */
+const alta = async (pg, n) => { const c = await pg.evaluate(n => { const F = FADORI; const al = F.registrar('Alumno ' + n, '3B'); F.aceptarTerminos(al.codigo); return al.codigo; }, n); await ponerCuenta(pg, c); return c; };
+const codA0 = await alta(a, "A"), codB0 = await alta(b, "B");
+const pedir = (pg, c) => pg.evaluate(c => { const F = FADORI;
   const prod = F.productos(true).find(p => p.disponible && F.tocaHoy(p)) || F.productos(true)[0];
-  return F.pedir(al.codigo, [{ prod: prod.id, cant: 1 }], {}).id; }, n);
-const idA = await pedir(a, 'A'), idB = await pedir(b, 'B');
+  return F.pedir(c, [{ prod: prod.id, cant: 1 }], {}).id; }, c);
+const idA = await pedir(a, codA0), idB = await pedir(b, codB0);
 let ms = await tarda(a, id => FADORI.pedido(id)?.turno != null, idA); ok(`A recibe su turno del servidor (${ms} ms)`, ms != null && ms < 4000);
 ms = await tarda(b, id => FADORI.pedido(id)?.turno != null, idB); ok(`B recibe su turno del servidor (${ms} ms)`, ms != null && ms < 4000);
 const ta = await a.evaluate(id => FADORI.pedido(id).turno, idA), tb = await b.evaluate(id => FADORI.pedido(id).turno, idB);
@@ -123,15 +126,18 @@ ms = await tarda(a, ([id, pr]) => FADORI.producto(id)?.precio === pr, precio); o
 console.log('\n6 · el alumno que vuelve: abre la app ya registrado y lo PRIMERO que hace es pedir');
 const c = await aparato('/fadori/');
 const codC = await c.evaluate(() => { const al = FADORI.registrar('Alumno C', '2A'); FADORI.aceptarTerminos(al.codigo); return al.codigo; });
-await c.waitForTimeout(1500);
+await ponerCuenta(c, codC);
 await c.reload(); await c.waitForFunction(() => window.FADORI && FADORI.estadoSync().modo === 'enlinea', null, { timeout: 20000 }).catch(() => {});
 const idC = await c.evaluate(cod => { const prod = FADORI.productos(true).find(p => p.disponible); return FADORI.pedir(cod, [{ prod: prod.id, cant: 1 }], {}).id; }, codC);
 ms = await tarda(most, id => !!FADORI.pedido(id), idC); ok(`su pedido llega al mostrador (${ms} ms)`, ms != null && ms < 4000);
 ms = await tarda(c, id => FADORI.pedido(id)?.turno != null, idC); ok(`y recibe turno (${ms} ms)`, ms != null && ms < 4000);
 
 console.log('\n7 · sin señal: pide sin internet y sale solo cuando vuelve');
+/* la cuenta se arma con señal (sin correo ni credencial no se pide); lo que
+   se hace sin señal es el pedido */
+const codB2 = await alta(b, 'B2');
 b.context()._sinRed = true; await b.context().setOffline(true);
-const idB2 = await b.evaluate(() => { const yo = FADORI.yo && FADORI.yo(); const al = FADORI.registrar('Alumno B2', '3B'); FADORI.aceptarTerminos(al.codigo); const prod = FADORI.productos(true).find(p => p.disponible); return FADORI.pedir(al.codigo, [{ prod: prod.id, cant: 1 }], {}).id; });
+const idB2 = await b.evaluate((c) => { const prod = FADORI.productos(true).find(p => p.disponible); return FADORI.pedir(c, [{ prod: prod.id, cant: 1 }], {}).id; }, codB2);
 await b.waitForTimeout(3000);
 ok('sin señal no llega (todavía)', !(await most.evaluate(id => !!FADORI.pedido(id), idB2)));
 b.context()._sinRed = false; await b.context().setOffline(false);
@@ -148,11 +154,13 @@ const precioA = await a.evaluate(() => { const p = FADORI.productos(true)[0]; p.
 await a.waitForTimeout(1500);
 ok('A intenta poner un platillo en $0.01: a B no le llega', await b.evaluate(id => FADORI.producto(id).precio !== 1, precioA));
 
-console.log('\n9 · el mismo alumno en otro teléfono, con su código');
+console.log('\n9 · el mismo alumno en otro teléfono, con su correo');
 const d = await aparato('/fadori/');
 const codA = await a.evaluate(() => FADORI.yo().codigo);
-const entro = await d.evaluate(async c => { try { const x = await FADORI.entrarConCodigo(c); return x ? x.nombre : null; } catch (e) { return 'error: ' + e.message; } }, codA);
-ok(`entra con el código de A (${entro})`, entro === 'Alumno A');
+const soloCodigo = await d.evaluate(async c => { try { await FADORI.entrarConCodigo(c); return 'entró'; } catch (e) { return e.message; } }, codA);
+ok('con el código solo ya no entra (tiene correo)', /correo/.test(soloCodigo), soloCodigo);
+const entro = await d.evaluate(async ([correo]) => { const r = await FADORI.entrarConCorreo(correo, 'prueba123'); return r && r.ok ? (FADORI.yo() || {}).nombre : 'error: ' + (r && r.error); }, [a.correoPrueba]);
+ok(`entra con el correo de A (${entro})`, entro === 'Alumno A');
 ok('y ve sus pedidos', await d.evaluate(() => FADORI.pedidosDe(FADORI.yo().codigo).length > 0));
 
 console.log('\n10 · pantallas');
