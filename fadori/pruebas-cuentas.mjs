@@ -14,7 +14,7 @@ const { ok, fallas, aparato, tarda, mostrador, alumno, cerrar, CASA } = await ab
 const RAIZ = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const FOTO = path.join(RAIZ, 'fadori/fotos/agua.jpg');
 
-console.log('\n1 · Una cuenta nueva pide la credencial UNA vez');
+console.log('\n1 · Una cuenta nueva pide credencial Y correo, una vez');
 const ana = await aparato('/fadori/', { credencial: true });
 await ana.waitForSelector('#p-entrada:not([hidden])');
 ok('la entrada ya no promete «sin correo»: dice lo de la credencial', /credencial/.test(await ana.textContent('#p-entrada')));
@@ -23,18 +23,23 @@ await ana.click('#bEntrar');
 await ana.waitForSelector('#p-terminos:not([hidden])');
 ok('los términos dicen que la foto se borra al revisarla', /se borra/.test(await ana.textContent('#p-terminos')));
 await ana.click('#bAcepto');
-ok('después de los términos, la credencial', (await tarda(ana, () => !document.querySelector('#p-credencial').hidden, null, 4000)) != null);
-ok('«Mandarla» está apagado hasta que haya foto', await ana.isDisabled('#bMandarCred'));
+ok('después de los términos, la cuenta', (await tarda(ana, () => !document.querySelector('#p-credencial').hidden, null, 4000)) != null);
+ok('ya no hay «No la traigo hoy»', !(await ana.evaluate(() => /no la traigo/i.test(document.querySelector('#p-credencial').textContent))));
+ok('pide credencial y correo en la misma pantalla', await ana.isVisible('#credPaso') && await ana.isVisible('#correoPaso'));
+ok('«Listo» está apagado sin nada', await ana.isDisabled('#bMandarCred'));
 await ana.setInputFiles('#fCredGal', FOTO);
-const FOTOS = process.env.FOTOS; const foto = async (pg, n) => { if(FOTOS) await pg.screenshot({ path: FOTOS + '/' + n + '.png' }); };
+const FOTOS = process.env.FOTOS; const foto = async (pg, n) => { if(FOTOS) await pg.screenshot({ path: FOTOS + '/' + n + '.png', fullPage: true }); };
 ok('la foto se ve antes de mandarla', (await tarda(ana, () => !!document.querySelector('#credVista img'), null, 5000)) != null);
 const peso = await ana.evaluate(() => document.querySelector('#credVista img').src.length);
-await foto(ana, 'credencial');
 ok(`y va achicada (${Math.round(peso / 1024)} KB, menos de 100)`, peso <= 100000);
+ok('con la foto pero sin correo sigue apagado', await ana.isDisabled('#bMandarCred'));
+await ana.fill('#cCorreo', 'ana.p@escuela.mx'); await ana.fill('#cClave', 'torta2026');
+ok('con foto, correo y contraseña se prende', !(await ana.isDisabled('#bMandarCred')));
+await foto(ana, 'cuenta');
 await ana.click('#bMandarCred');
 ok('al mandarla, ya puede pedir', (await tarda(ana, () => !document.querySelector('#p-menu').hidden, null, 8000)) != null);
 const cod = await ana.evaluate(() => FADORI.yo().codigo);
-ok('su cuenta queda «en revisión»', await ana.evaluate(() => FADORI.yo().verif === 'pendiente'));
+ok('su cuenta queda «en revisión» y con correo', await ana.evaluate(() => FADORI.yo().verif === 'pendiente' && /an•••@escuela\.mx/.test(FADORI.yo().protegida || '')));
 await ana.reload(); await ana.waitForFunction(() => window.FADORI && FADORI.yo());
 ok('al volver a abrir la app NO se la vuelve a pedir', (await tarda(ana, () => document.querySelector('#p-credencial').hidden && !document.querySelector('#p-menu').hidden, null, 6000)) != null);
 
@@ -48,6 +53,9 @@ ok('se ve la foto con el nombre y el grupo', await most.isVisible('.cred-rev img
 await most.click('#hCerrar');
 const pid = await ana.evaluate(() => { const F = FADORI, d = F.productos(true).filter(p => p.disponible); return F.pedir(F.yo().codigo, [{ prod: d[0].id, cant: 1 }], {}).id; });
 ok('su pedido le llega al mostrador marcado «credencial por revisar»', (await tarda(most, (id) => { const r = [...document.querySelectorAll('#cola .renglon, #actual')].find(x => x.innerHTML.includes('credencial por revisar')); return !!r; }, pid, 12000)) != null);
+ok('y con su correo completo y «primer pedido»', (await tarda(most, () => /ana\.p@escuela\.mx/.test(document.body.innerText) && /primer pedido/.test(document.body.innerText), null, 8000)) != null,
+  await most.evaluate(() => [...document.querySelectorAll('.dato-cuenta')].map(x => x.textContent).join(' | ')));
+await foto(most, 'mostrador-cuenta');
 await most.click('#bRevisar');
 await most.click('.cred-rev [data-cred-si]');
 ok('«Es él/ella» quita el aviso', (await tarda(most, () => !document.querySelector('#porRevisar').textContent.trim(), null, 6000)) != null);
@@ -55,13 +63,11 @@ ok('…y la marca del pedido', (await tarda(most, () => !document.body.innerHTML
 ok('a Ana le llega «Cuenta verificada»', (await tarda(ana, () => FADORI.yo() && FADORI.yo().verif === 'si', null, 12000)) != null);
 await ana.click('#bPestYo').catch(async () => { await ana.evaluate(() => document.querySelector('[data-pest="yo"], #tabYo') && document.querySelector('[data-pest="yo"], #tabYo').click()); });
 
-console.log('\n3 · Protege su cuenta con correo y contraseña');
+console.log('\n3 · «Lo mío» dice cómo está la cuenta');
 await ana.evaluate(() => { const b = [...document.querySelectorAll('button')].find(x => /Lo mío/.test(x.textContent)); b && b.click(); });
 await ana.waitForSelector('#miCuenta #bProteger', { timeout: 6000 });
 ok('«Lo mío» dice que está verificada', /verificada/.test(await ana.textContent('#miCuenta')));
-await ana.fill('#pCorreo', 'ana.p@escuela.mx'); await ana.fill('#pClave', 'torta2026');
-await ana.click('#bProteger');
-ok('queda «Protegida con an•••@escuela.mx»', (await tarda(ana, () => /an•••@escuela\.mx/.test(document.querySelector('#miCuenta').textContent), null, 6000)) != null);
+ok('y «Protegida con an•••@escuela.mx»', /an•••@escuela\.mx/.test(await ana.textContent('#miCuenta')));
 await ana.evaluate(() => document.querySelector('#miCuenta').scrollIntoView()); await foto(ana, 'lo-mio');
 
 console.log('\n4 · Otro teléfono: con el código solo ya no entra; con su correo sí');
@@ -86,19 +92,18 @@ await tercero.fill('#eCorreo', 'ana.p@escuela.mx'); await tercero.fill('#rCodigo
 await tercero.click('#bRecuperar');
 ok('con su código y su correo pone contraseña nueva y entra', (await tarda(tercero, (c) => FADORI.yo() && FADORI.yo().codigo === c, cod, 8000)) != null);
 
-console.log('\n6 · «No la traigo hoy»');
+console.log('\n6 · Sin correo ni credencial, el servidor no deja pedir');
 const beto = await aparato('/fadori/', { credencial: true });
 await beto.waitForSelector('#p-entrada:not([hidden])');
 await beto.fill('#eNombre', 'Beto R'); await beto.fill('#eGrupo', '2C'); await beto.click('#bEntrar');
 await beto.click('#bAcepto');
-await beto.waitForSelector('#p-credencial:not([hidden])');
-await beto.click('#bSinCred');
-ok('deja pedir hoy', (await tarda(beto, () => !document.querySelector('#p-menu').hidden, null, 4000)) != null);
-await beto.reload(); await beto.waitForFunction(() => window.FADORI && FADORI.yo());
-ok('y hoy ya no la vuelve a pedir', (await tarda(beto, () => !document.querySelector('#p-menu').hidden, null, 6000)) != null);
-await beto.evaluate(() => localStorage.setItem('fadori_cred_luego', 'Mon Jan 01 2001'));
-await beto.reload(); await beto.waitForFunction(() => window.FADORI && FADORI.yo());
-ok('otro día, sí', (await tarda(beto, () => !document.querySelector('#p-credencial').hidden, null, 6000)) != null);
+ok('la app lo detiene en «Tu cuenta, una vez»', (await tarda(beto, () => !document.querySelector('#p-credencial').hidden, null, 4000)) != null);
+await beto.waitForTimeout(2500);   /* que su alta llegue al servidor */
+const idB = await beto.evaluate(() => { const F = FADORI, d = F.productos(true).filter(p => p.disponible); return F.pedir(F.yo().codigo, [{ prod: d[0].id, cant: 1 }], {}).id; });
+const rech = await tarda(beto, (id) => { const p = FADORI.estado().pedidos.find(x => x.id === id); return p && p.estado === 'cancelado' && p.rechazo ? p.rechazo : null; }, idB, 12000);
+ok('y si se lo salta a la mala, el servidor lo rechaza', rech != null);
+ok('con el motivo: «necesitas tu correo y la foto de tu credencial»', await beto.evaluate((id) => /correo y la foto de tu credencial/.test((FADORI.estado().pedidos.find(x => x.id === id) || {}).rechazo || ''), idB));
+ok('…y el mostrador nunca lo ve', !(await most.evaluate((id) => FADORI.estado().pedidos.some(p => p.id === id && p.estado !== 'cancelado'), idB)));
 
 console.log('\n7 · Tamaños y errores');
 for(const [n, pg] of [['Ana', ana], ['otro', otro]]){
