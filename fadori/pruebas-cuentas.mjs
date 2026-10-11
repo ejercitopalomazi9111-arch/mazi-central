@@ -10,9 +10,25 @@
    ═════════════════════════════════════════════════════════════════════════ */
 import { abrirMesa } from './mesa-de-pruebas.mjs';
 import path from 'path';
-const { ok, fallas, aparato, tarda, mostrador, alumno, cerrar, CASA } = await abrirMesa('cuentas');
+const { ok, fallas, aparato, tarda, mostrador, alumno, cerrar, CASA, br } = await abrirMesa('cuentas');
 const RAIZ = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const FOTO = path.join(RAIZ, 'fadori/fotos/agua.jpg');
+/* una credencial de mentira con el formato de la escuela (nombre en
+   mayúsculas arriba de «Número de Matrícula»), dibujada aquí: nada real */
+import os from 'os'; import fs from 'fs';
+async function credencial(nombre){
+  const pg = await br.newPage({ viewport: { width: 640, height: 1000 } });
+  await pg.setContent(`<body style="margin:0;font-family:Arial;background:#fff">
+    <div style="height:260px;background:linear-gradient(160deg,#d4111f 0 40%,#fff 40% 46%,#463d78 46% 70%,#fff 70%)"></div>
+    <div style="width:220px;height:240px;margin:-120px auto 20px;background:#bbb;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)"></div>
+    <h1 style="text-align:center;font-size:34px;margin:10px 30px;line-height:1.15">${nombre.split('|').join('<br>')}</h1>
+    <hr style="width:60%;border:0;border-top:3px solid #000">
+    <p style="text-align:center;color:#d4111f;font-size:24px;line-height:1.5">Número de Matrícula: 00000TEST0001<br>Grupo: 3.1<br>Ciclo Escolar: AGOSTO 2026 - DICIEMBRE 2026</p>
+    <div style="height:160px;background:linear-gradient(20deg,#463d78 0 20%,#fff 20% 26%,#d4111f 26% 55%,#fff 55%)"></div></body>`);
+  const f = path.join(os.tmpdir(), 'cred-' + Math.random().toString(36).slice(2) + '.jpg');
+  fs.writeFileSync(f, await pg.screenshot({ type: 'jpeg', quality: 80 })); await pg.close();
+  return f;
+}
 
 console.log('\n1 · Una cuenta nueva pide credencial Y correo, una vez');
 const ana = await aparato('/fadori/', { credencial: true });
@@ -27,8 +43,24 @@ ok('después de los términos, la cuenta', (await tarda(ana, () => !document.que
 ok('ya no hay «No la traigo hoy»', !(await ana.evaluate(() => /no la traigo/i.test(document.querySelector('#p-credencial').textContent))));
 ok('pide credencial y correo en la misma pantalla', await ana.isVisible('#credPaso') && await ana.isVisible('#correoPaso'));
 ok('«Listo» está apagado sin nada', await ana.isDisabled('#bMandarCred'));
-await ana.setInputFiles('#fCredGal', FOTO);
 const FOTOS = process.env.FOTOS; const foto = async (pg, n) => { if(FOTOS) await pg.screenshot({ path: FOTOS + '/' + n + '.png', fullPage: true }); };
+const lectura = () => tarda(ana, () => { const e = document.querySelector('#credLectura'); return e && !e.hidden && !e.classList.contains('leyendo') ? e.className : null; }, null, 60000);
+/* 1 · la credencial de OTRA persona: no deja mandarla */
+await ana.setInputFiles('#fCredGal', await credencial('LUIS MARIO|TORRES DÍAZ'));
+ok('con la credencial de otro, la app lee el nombre y dice que no coincide', (await lectura()) != null && /LUIS MARIO TORRES DIAZ/.test(await ana.textContent('#credLectura')) && /no coincide|tu cuenta dice/i.test(await ana.textContent('#credLectura')), await ana.textContent('#credLectura'));
+await ana.fill('#cCorreo', 'x@x.mx'); await ana.fill('#cClave', 'xxxxxxx');
+ok('…y «Listo» sigue apagado aunque haya correo', await ana.isDisabled('#bMandarCred'));
+await foto(ana, 'credencial-ajena');
+/* 2 · una foto sin letras, dos veces: a la segunda, «que la revise la cooperativa» */
+await ana.setInputFiles('#fCredGal', FOTO); await lectura();
+ok('una foto sin nombre: «no se alcanzó a leer»', /no se alcanz/i.test(await ana.textContent('#credLectura')) && !(await ana.isVisible('#bQueRevisen')));
+await ana.setInputFiles('#fCredGal', FOTO); await lectura();
+ok('a la segunda ofrece que la revise la cooperativa', await ana.isVisible('#bQueRevisen'));
+/* 3 · la suya */
+await ana.fill('#cCorreo', ''); await ana.fill('#cClave', '');
+await ana.setInputFiles('#fCredGal', await credencial('ANA PAOLA|PÉREZ LÓPEZ'));
+ok('con SU credencial: «coincide con tu cuenta»', (await lectura()) != null && /coincide con tu cuenta/i.test(await ana.textContent('#credLectura')), await ana.textContent('#credLectura'));
+await foto(ana, 'credencial-suya');
 ok('la foto se ve antes de mandarla', (await tarda(ana, () => !!document.querySelector('#credVista img'), null, 5000)) != null);
 const peso = await ana.evaluate(() => document.querySelector('#credVista img').src.length);
 ok(`y va achicada (${Math.round(peso / 1024)} KB, menos de 100)`, peso <= 100000);
@@ -49,6 +81,7 @@ ok('el mostrador avisa que hay una por revisar', (await tarda(most, () => /1 cre
 await most.click('#bRevisar');
 await foto(most, 'revisar');
 ok('se ve la foto con el nombre y el grupo', await most.isVisible('.cred-rev img') && /Ana P/.test(await most.textContent('.cred-rev')) && /3B/.test(await most.textContent('.cred-rev')));
+ok('y dice que la app ya leyó que el nombre coincide', /el nombre coincide/.test(await most.textContent('.cred-rev')));
 /* un pedido de una cuenta todavía sin revisar sale marcado */
 await most.click('#hCerrar');
 const pid = await ana.evaluate(() => { const F = FADORI, d = F.productos(true).filter(p => p.disponible); return F.pedir(F.yo().codigo, [{ prod: d[0].id, cant: 1 }], {}).id; });

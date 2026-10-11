@@ -115,6 +115,7 @@
     <div class="tarjeta" id="credPaso">
       <h3 style="margin:0 0 10px">1 · Tu credencial</h3>
       <div class="cred-vista" id="credVista"><span data-ico="id-card"></span><span>La credencial de la escuela, de frente y que se lea tu nombre</span></div>
+      <div class="cred-lectura" id="credLectura" role="status" aria-live="polite" hidden></div>
       <div class="fila-btn" style="margin-top:12px">
         <label class="btn" for="fCred"><span data-ico="camera"></span> Tomarle foto</label>
         <input id="fCred" type="file" accept="image/*" capture="environment" hidden>
@@ -364,6 +365,7 @@
 
 <script src="iconos.js"></script>
 <script src="nucleo.js"></script>
+<script type="module" src="lector.js"></script>
 <script>
 (function(){
 'use strict';
@@ -1031,7 +1033,7 @@ function pintarPasosCuenta(){
 }
 function revisarListo(){
   const yo = F.yo(); if(!yo) return;
-  const fotoOk = !faltaFoto(yo) || !!fotoCred;
+  const fotoOk = !faltaFoto(yo) || (!!fotoCred && !!lecturaCred);
   const correoOk = !!yo.protegida || (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test($('#cCorreo').value.trim()) && $('#cClave').value.length >= 6);
   $('#bMandarCred').disabled = !(fotoOk && correoOk);
 }
@@ -1055,14 +1057,55 @@ async function achicarFoto(f){
   } finally { URL.revokeObjectURL(url); }
 }
 let fotoCred = null;
+/* Carlos, 11 de octubre: «que la app revise que el nombre sea correcto».
+   El lector lee la foto en el teléfono y compara con el nombre de la cuenta:
+   coincide → se puede mandar; dice otro nombre → o es tu credencial y tu
+   cuenta está mal escrita (un toque la corrige), o no es la tuya; no se lee →
+   otra foto, y a la segunda la revisa la cooperativa a ojo. */
+let lecturaCred = null, intentosLectura = 0;
+const credLectura = (html, clase) => { const el = $('#credLectura'); el.hidden = !html; el.className = 'cred-lectura' + (clase ? ' ' + clase : ''); el.innerHTML = html || ''; };
+async function leerCred(f){
+  const yo = F.yo(); if(!yo) return;
+  lecturaCred = null; revisarListo();
+  credLectura(F.ico('id-card') + '<span>Revisando el nombre de tu credencial…</span>', 'leyendo');
+  let r = null;
+  try{
+    if(!window.FadoriLector) await new Promise(s => setTimeout(s, 1500));
+    const { texto } = await window.FadoriLector.leer(f);
+    r = window.FadoriLector.revisarNombre(texto, yo.nombre);
+  }catch(e){ r = null; }
+  if(r && r.coincide){
+    lecturaCred = 'coincide';
+    credLectura(F.ico('badge-check') + '<span>Dice <b>' + esc(r.leido || yo.nombre) + '</b>. Coincide con tu cuenta.</span>', 'bien');
+  } else if(r && r.leido && r.sugerido){
+    credLectura(F.ico('circle-alert') + '<span>Tu credencial dice <b>' + esc(r.leido) + '</b> y tu cuenta dice <b>' + esc(yo.nombre) + '</b>.</span>' +
+      '<button class="btn chico" type="button" id="bUsarNombre">Usar «' + esc(r.sugerido) + '», el de mi credencial</button>' +
+      '<small>Si no es tu credencial, toma la foto de la tuya.</small>', 'mal');
+    $('#bUsarNombre').onclick = () => {
+      F.cambiarNombre(yo.codigo, r.sugerido);
+      lecturaCred = 'coincide';
+      credLectura(F.ico('badge-check') + '<span>Listo: tu cuenta ahora dice <b>' + esc(r.sugerido) + '</b>, como tu credencial.</span>', 'bien');
+      revisarListo();
+    };
+  } else {
+    intentosLectura++;
+    credLectura(F.ico('id-card') + '<span>No se alcanzó a leer tu nombre. Tómala <b>de frente, con luz</b> y que se vea completa.</span>' +
+      (intentosLectura >= 2 ? '<button class="btn chico" type="button" id="bQueRevisen">No se lee: que la revise la cooperativa</button>' : ''), 'mal');
+    const q = $('#bQueRevisen');
+    if(q) q.onclick = () => { lecturaCred = 'no-se-leyo'; credLectura(F.ico('hourglass') + '<span>La cooperativa la revisa a ojo.</span>', 'bien'); revisarListo(); };
+  }
+  revisarListo();
+}
 async function tomarCred(e){
   const f = e.target.files && e.target.files[0]; e.target.value = '';
   if(!f) return;
+  lecturaCred = null; revisarListo();
+  credLectura(F.ico('id-card') + '<span>Revisando el nombre de tu credencial…</span>', 'leyendo');
   try{
     fotoCred = await achicarFoto(f);
     $('#credVista').innerHTML = '<img src="' + fotoCred + '" alt="Tu credencial">';
-    revisarListo();
-  }catch(err){ aviso('Esa foto no se pudo abrir. Prueba con otra.', 'malo'); }
+  }catch(err){ return aviso('Esa foto no se pudo abrir. Prueba con otra.', 'malo'); }
+  await leerCred(f);
 }
 $('#fCred').addEventListener('change', tomarCred);
 $('#fCredGal').addEventListener('change', tomarCred);
@@ -1072,9 +1115,9 @@ $('#bMandarCred').addEventListener('click', async () => {
   const fin = () => { b.innerHTML = F.ico('check') + ' Listo, ya puedo pedir'; revisarListo(); };
   if(faltaFoto(yo)){
     if(!fotoCred){ fin(); return aviso('Falta la foto de tu credencial.', 'malo'); }
-    const r = await F.subirCredencial(yo.codigo, fotoCred);
+    const r = await F.subirCredencial(yo.codigo, fotoCred, lecturaCred);
     if(!r.ok){ fin(); return aviso(r.error || 'No se pudo mandar la credencial.', 'malo'); }
-    fotoCred = null; $('#credVista').innerHTML = '';
+    fotoCred = null; lecturaCred = null; $('#credVista').innerHTML = ''; credLectura('');
   }
   if(!F.yo().protegida){
     const r = await F.protegerCuenta(yo.codigo, $('#cCorreo').value.trim(), $('#cClave').value);

@@ -1576,9 +1576,16 @@ async function protegerCuenta(codigo, correo, clave, antes){
   if(j.ok) apuntarCuenta(codigo, { protegida: j.protegida });
   return j;
 }
-async function subirCredencial(codigo, foto){
+/* el nombre de la cuenta, tal como viene en la credencial (lo propone el lector) */
+function cambiarNombre(cod, nombre){
+  const d = estado(), a = d.alumnos[cod]; if(!a) return null;
+  a.nombre = String(nombre || '').replace(/\s+/g, ' ').trim().slice(0, 40) || a.nombre;
+  guardar();
+  return a;
+}
+async function subirCredencial(codigo, foto, lectura){
   if(MOTOR.nombre !== 'servidor') return { ok: false, error: 'Esto necesita el servidor de la escuela.' };
-  const j = await MotorServidor.llamar('/api/cuenta/credencial', { codigo, foto });
+  const j = await MotorServidor.llamar('/api/cuenta/credencial', { codigo, foto, lectura });
   if(j.ok) apuntarCuenta(codigo, { verif: j.verif });
   return j;
 }
@@ -2780,7 +2787,7 @@ const FADORI = {
   tema, ponerTema, esOscuro, aplicarTema, verTurno,
   servidor: direccionServidor, ponerServidor, elegirMotor, sync: MotorServidor, pausarSync, servidorDeFabrica, subirMenu,
   aparatoId, llaveMostrador, misCodigos, entrarConCodigo, avisos: Avisos,
-  alServidor, entrarConCorreo, recuperarCuenta, protegerCuenta, subirCredencial, credencialesPendientes, decidirCredencial, verificado, pedirQuedarse,
+  alServidor, entrarConCorreo, recuperarCuenta, protegerCuenta, subirCredencial, cambiarNombre, credencialesPendientes, decidirCredencial, verificado, pedirQuedarse,
   entrarMostrador: (p) => MotorServidor.entrarMostrador(p), salirMostrador: () => MotorServidor.salirMostrador(),
   pasadorAlServidor: (n) => MotorServidor.pasadorAlServidor(n),
   estadoSync: () => MotorServidor.estado(), probarServidor: (u) => MotorServidor.probar(u), alCambiar: (fn) => MOTOR.alCambiar(fn), motor: () => MOTOR.nombre,

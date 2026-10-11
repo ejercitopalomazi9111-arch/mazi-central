@@ -1697,3 +1697,18 @@ label small.tenue{font-weight:600; color:var(--tenue); opacity:.85}
 .dato-cuenta{display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; margin-top:3px; font-size:13px; font-weight:600; color:var(--tenue); letter-spacing:0}
 .dato-cuenta .i{width:14px; height:14px}
 .dato-cuenta b{color:var(--texto, inherit); font-weight:800}
+
+/* lo que dijo el lector de la credencial */
+.cred-lectura{display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; margin-top:12px; padding:10px 12px; border-radius:14px;
+  background:var(--sup); border:1px solid var(--linea); font-size:14px; line-height:1.35}
+.cred-lectura > .i{flex:none; width:20px; height:20px}
+.cred-lectura > span{flex:1 1 200px; min-width:0}
+.cred-lectura .btn{flex:1 1 100%}
+.cred-lectura small{flex:1 1 100%; color:var(--tenue)}
+.cred-lectura.bien{border-color:#3F8A4A; background:color-mix(in srgb, #3F8A4A 12%, var(--sup))}
+.cred-lectura.mal{border-color:var(--rojo); background:color-mix(in srgb, var(--rojo) 8%, var(--sup))}
+.cred-lectura.leyendo > .i{animation:latido 1.2s ease-in-out infinite}
+@keyframes latido{50%{opacity:.35}}
+.cred-rev small.lectura{display:flex; gap:6px; align-items:flex-start; font-weight:700}
+.cred-rev small.lectura .i{flex:none; width:16px; height:16px; margin-top:1px}
+.cred-rev small.lectura.bien{color:#2F7A3A} .cred-rev small.lectura.mal{color:var(--rojo)}
