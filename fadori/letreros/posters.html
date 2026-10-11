@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Fadori · pósters</title>
+<style>
+/* Dos pósters tamaño carta (21.6 × 27.9 cm), una hoja cada uno. */
+@page{size:8.5in 11in;margin:0}
+*{box-sizing:border-box;margin:0}
+html,body{background:#fff;font-family:"Helvetica Neue",Arial,sans-serif;color:#2E1B10;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.poster{width:8.5in;height:11in;position:relative;overflow:hidden;display:flex;flex-direction:column;page-break-after:always;break-after:page}
+.qr{background:#FFFDF9;border-radius:.2in;padding:.12in}
+.qr img{display:block;width:100%}
+.pasos{list-style:none;padding:0;display:flex;gap:.25in}
+.pasos li{display:flex;align-items:center;gap:.12in;font-size:15pt;font-weight:800}
+.pasos b{flex:none;width:.42in;height:.42in;border-radius:50%;display:grid;place-items:center;font-size:15pt;color:#fff;background:#C2410C}
+
+/* 1 · naranja: el grito */
+.uno{background:#E8590C;color:#fff;padding:.7in .7in .55in}
+.uno .chico{font-size:15pt;font-weight:800;letter-spacing:.2em;text-transform:uppercase;opacity:.92}
+.uno h1{font-size:86pt;line-height:.88;font-weight:900;letter-spacing:-.035em;margin:.18in 0 .2in}
+.uno .sub{font-size:20pt;line-height:1.25;font-weight:600;max-width:6in}
+.uno .logo{width:2.7in;align-self:flex-end;margin:.1in 0 .25in}
+.uno .abajo{margin-top:auto;background:#FFFDF9;color:#2E1B10;border-radius:.35in;padding:.35in;display:grid;grid-template-columns:2.4in 1fr;gap:.35in;align-items:center}
+.uno .abajo .qr{padding:0}
+.uno .abajo h2{font-size:28pt;line-height:1;font-weight:900;margin-bottom:.2in}
+.uno .abajo .pasos{flex-direction:column;gap:.12in}
+.uno .pie{font-size:10pt;letter-spacing:.08em;text-align:center;margin-top:.22in;opacity:.9}
+
+/* 2 · crema: el que explica */
+.dos{background:#F3ECE1;padding:.65in .7in .5in;align-items:center;text-align:center}
+.dos .logo{width:3in}
+.dos h1{max-width:6.6in;font-size:46pt;line-height:.98;font-weight:900;letter-spacing:-.025em;margin:.3in 0 .15in}
+.dos h1 em{font-style:normal;color:#C2410C}
+.dos .sub{font-size:17pt;line-height:1.35;color:#7A5A42;max-width:6.2in}
+.dos .centro{display:flex;align-items:center;gap:.45in;margin:.4in 0 .3in}
+.dos .qr{width:2.6in;border:.04in solid #E6D9C6}
+.dos .ventajas{list-style:none;padding:0;text-align:left;display:grid;gap:.16in}
+.dos .ventajas li{font-size:16pt;font-weight:800;line-height:1.15}
+.dos .ventajas small{display:block;font-size:12pt;font-weight:500;color:#7A5A42;margin-top:.03in}
+.dos .apunta{font-size:13pt;font-weight:900;letter-spacing:.16em;text-transform:uppercase;color:#C2410C}
+.dos .pasos{margin-top:auto}
+.dos .pie{font-size:10pt;letter-spacing:.08em;color:#7A5A42;margin-top:.25in}
+</style>
+</head>
+<body>
+<section class="poster uno">
+  <div class="chico">Cooperativa sin filas</div>
+  <h1>La fila<br>ya no<br>es tuya.</h1>
+  <p class="sub">Pide desde el salón o desde tu mesa. Tú sigues en lo tuyo y la comida te espera.</p>
+  <img class="logo" src="logo-naranja.png" alt="Fadori">
+  <div class="abajo">
+    <div class="qr"><img src="../qr/abrir.svg" alt="QR para abrir Fadori"></div>
+    <div>
+      <h2>Escanea y pide.</h2>
+      <ol class="pasos">
+        <li><b>1</b>Abre la cámara</li>
+        <li><b>2</b>Elige y pide</li>
+        <li><b>3</b>Recoge cuando salga tu turno</li>
+      </ol>
+    </div>
+  </div>
+  <p class="pie">FADORI · COOPERATIVA DEL INSTITUTO REMBRANDT</p>
+</section>
+
+<section class="poster dos">
+  <img class="logo" src="logo-crema.png" alt="Fadori">
+  <h1>El recreo es para comer, <em>no para formarse.</em></h1>
+  <p class="sub">Todo el menú de la cooperativa en tu teléfono, con foto y precio. Pides, te dan turno y te avisamos cuando está listo.</p>
+  <div class="centro">
+    <div class="qr"><img src="../qr/abrir.svg" alt="QR para abrir Fadori"></div>
+    <ul class="ventajas">
+      <li>Sin fila<small>tu lugar lo guarda la app</small></li>
+      <li>Sin gritar tu orden<small>llega escrita al mostrador</small></li>
+      <li>Te avisa<small>en la pantalla y en tu teléfono</small></li>
+    </ul>
+  </div>
+  <div class="apunta">Apunta tu cámara al código</div>
+  <ol class="pasos">
+    <li><b>1</b>Escanea</li>
+    <li><b>2</b>Pide</li>
+    <li><b>3</b>Recoge</li>
+  </ol>
+  <p class="pie">FADORI · COOPERATIVA DEL INSTITUTO REMBRANDT</p>
+</section>
+</body>
+</html>
