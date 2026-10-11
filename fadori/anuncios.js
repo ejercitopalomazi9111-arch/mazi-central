@@ -123,65 +123,62 @@ function emblema(g, P, cx, cy, r, giro = 1, brillo = 0){
     /* el destello que cruza el emblema */
     g.save(); g.beginPath(); g.arc(0, 0, r, 0, Math.PI * 2); g.clip();
     const x = (-1.4 + 2.8 * brillo) * r, grd = g.createLinearGradient(x - r * .4, -r, x + r * .4, r);
-    grd.addColorStop(0, 'rgba(255,255,255,0)'); grd.addColorStop(.5, 'rgba(255,255,255,.65)'); grd.addColorStop(1, 'rgba(255,255,255,0)');
+    grd.addColorStop(0, 'rgba(255,255,255,0)'); grd.addColorStop(.5, 'rgba(255,255,255,.32)'); grd.addColorStop(1, 'rgba(255,255,255,0)');
     g.fillStyle = grd; g.fillRect(-r, -r, 2 * r, 2 * r); g.restore();
   }
   g.restore();
 }
 
-/* ── LA TRANSICIÓN · el logo que gira, como en la tele ──────────────────
-   0.00–0.45  un destello del color de la marca se abre desde el centro
-   0.15–1.35  el emblema sale chiquito, gira tres medias vueltas y crece
-   1.20–1.65  un brillo le cruza y salen anillos
-   1.65–dur   (si `aterriza`) se va a su lugar en la tarjeta del anuncio */
+/* ── LA TRANSICIÓN · el logo que entra, como en la tele ─────────────────
+   Carlos, 10 de octubre: «lo que usas tipo efecto de luz en rayitos para los
+   logos quítalos y haz una animación más cómoda y agradable, no tan
+   sofocante pero sí muy smooth». Antes: rayos girando, tres medias vueltas y
+   anillos. Ahora una sola cosa a la vez y todo con curvas que frenan:
+   0.00–0.70  el color de la marca se funde desde el centro, con una luz suave
+              que respira (sin rayos)
+   0.20–1.20  el emblema sube un poco y crece de 86 % a 100 %, apareciendo
+   1.10–1.60  un brillo tenue le pasa una sola vez
+   1.60–dur   (si `aterriza`) se desliza a su lugar en la tarjeta del anuncio */
 export const DURA_IDENT = 2.3;
+const fluye = (t) => { t = lim(t); return 1 - Math.pow(1 - t, 4); };          /* sale rápido y frena largo */
 export function dibujarIdent(g, W, H, t, P, { dur = DURA_IDENT, aterriza = true } = {}){
   const a = P.a, L = acomodo(W, H), cx = W / 2, cy = H / 2, R = Math.hypot(W, H) / 2;
-  /* el fondo: del color de la marca, con rayos que giran */
-  const abre = sale(t / 0.45);
+  /* el fondo: un degradado de la marca que se abre en círculo suave */
+  const abre = fluye(t / 0.7);
   g.save();
-  g.beginPath(); g.arc(cx, cy, R * abre + 1, 0, Math.PI * 2); g.clip();
-  const grd = g.createRadialGradient(cx, cy, 0, cx, cy, R);
+  g.fillStyle = a.color2 || a.color; g.globalAlpha = abre; g.fillRect(0, 0, W, H); g.globalAlpha = 1;
+  const grd = g.createRadialGradient(cx, cy, 0, cx, cy, R * (0.35 + 0.65 * abre));
   grd.addColorStop(0, a.color); grd.addColorStop(1, a.color2 || a.color);
-  g.fillStyle = grd; g.fillRect(0, 0, W, H);
-  g.globalAlpha = .10 * (1 - suave((t - 1.6) / .6));
-  g.fillStyle = a.acento || '#fff';
-  const rayos = 14;
-  for(let k = 0; k < rayos; k++){
-    const ang = k / rayos * Math.PI * 2 + t * 0.6;
-    g.beginPath(); g.moveTo(cx, cy);
-    g.arc(cx, cy, R, ang, ang + Math.PI / rayos / 1.4); g.closePath(); g.fill();
-  }
-  g.globalAlpha = 1;
+  g.globalAlpha = abre; g.fillStyle = grd; g.fillRect(0, 0, W, H);
+  /* una luz grande y difusa que se mueve despacio, como respiración */
+  const lx = cx + Math.sin(t * 0.9) * W * 0.08, ly = cy - H * 0.06 + Math.cos(t * 0.7) * H * 0.05;
+  const luz = g.createRadialGradient(lx, ly, 0, lx, ly, Math.min(W, H) * 0.75);
+  luz.addColorStop(0, 'rgba(255,255,255,' + (0.16 * abre) + ')'); luz.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = luz; g.fillRect(0, 0, W, H);
   g.restore();
-  /* los anillos que salen cuando brilla */
-  for(let k = 0; k < 3; k++){
-    const p = (t - 1.25 - k * 0.12) / 0.7;
-    if(p > 0 && p < 1){
-      g.beginPath(); g.arc(cx, cy, Math.min(W, H) * (0.18 + 0.4 * sale(p)), 0, Math.PI * 2);
-      g.strokeStyle = a.acento || '#fff'; g.globalAlpha = (1 - p) * .55; g.lineWidth = 6 * L.u * (1 - p) + 1; g.stroke(); g.globalAlpha = 1;
-    }
-  }
-  /* el emblema: sale, gira y crece */
-  const p = (t - 0.15) / 1.2, grande = Math.min(W, H) * 0.2;
+  /* el emblema: aparece, sube y crece un poquito; nada de giros */
+  const p = fluye((t - 0.2) / 1.0), grande = Math.min(W, H) * 0.2;
   if(p > 0){
-    const ang = (1 - sale(p)) * Math.PI * 3;          /* tres medias vueltas que frenan */
-    let r = grande * (0.2 + 0.8 * rebote(p)), x = cx, y = cy;
-    const viaje = aterriza ? suave((t - 1.65) / (dur - 1.65 - 0.05)) : 0;
+    let r = grande * (0.86 + 0.14 * p), x = cx, y = cy + (1 - p) * 24 * L.u;
+    const viaje = aterriza ? suave((t - 1.6) / (dur - 1.6 - 0.05)) : 0;
     if(viaje > 0){ x = cx + (L.logo.x - cx) * viaje; y = cy + (L.logo.y - cy) * viaje; r = r + (L.logo.r - r) * viaje; }
-    /* el halo */
-    const h = g.createRadialGradient(x, y, r * .6, x, y, r * 2.2);
-    h.addColorStop(0, 'rgba(255,255,255,.35)'); h.addColorStop(1, 'rgba(255,255,255,0)');
-    g.fillStyle = h; g.globalAlpha = 1 - viaje; g.fillRect(x - r * 2.2, y - r * 2.2, r * 4.4, r * 4.4); g.globalAlpha = 1;
-    emblema(g, P, x, y, r, Math.cos(ang), lim((t - 1.2) / 0.45));
+    /* su sombra suave, para que flote */
+    g.save(); g.globalAlpha = p * (1 - viaje) * 0.5;
+    const so = g.createRadialGradient(x, y + r * 0.25, r * 0.5, x, y + r * 0.25, r * 1.6);
+    so.addColorStop(0, 'rgba(0,0,0,.45)'); so.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = so; g.fillRect(x - r * 2, y - r * 1.6, r * 4, r * 4); g.restore();
+    g.save(); g.globalAlpha = lim(p * 1.4);
+    const brillo = (t - 1.1) / 0.5;
+    emblema(g, P, x, y, r, 1, brillo > 0 && brillo < 1 ? suave(brillo) * 0.999 + 0.0005 : 0);
+    g.restore();
   }
-  /* el nombre de la marca, debajo, cuando ya dejó de girar */
+  /* el nombre de la marca, debajo, cuando el emblema ya llegó */
   if(!aterriza){
-    const q = suave((t - 1.2) / 0.4) * (1 - suave((t - dur + 0.35) / 0.35));
+    const q = fluye((t - 0.9) / 0.6) * (1 - suave((t - dur + 0.4) / 0.4));
     if(q > 0){
       g.globalAlpha = q; g.fillStyle = a.acento || '#fff'; g.textAlign = 'center'; g.textBaseline = 'top';
       g.font = '800 ' + Math.round(34 * L.u) + 'px ' + FAM;
-      g.fillText(String(a.marca || '').toUpperCase(), cx, cy + grande * 1.25 + 10 * L.u * (1 - q));
+      g.fillText(String(a.marca || '').toUpperCase(), cx, cy + grande * 1.25 + 14 * L.u * (1 - q));
       g.globalAlpha = 1; g.textAlign = 'left'; g.textBaseline = 'alphabetic';
     }
   }

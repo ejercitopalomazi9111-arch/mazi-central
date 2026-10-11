@@ -52,6 +52,45 @@ async function leer(clave){
 let yaListos = null, yaPrep = null, nuevoDeTablet = null;
 const quien = (p) => F.aliasDe(p);
 const pidio = (p, max) => F.queSePidio(p, max);
+/* ── EL MOVIMIENTO DEL ACOMODO (Carlos, 10 de octubre) ─────────────────
+   «Cada cambio en la disposición debe ser natural: que se cambie suavemente,
+   con el texto, los elementos y las imágenes desplazándose, y lo que está
+   apareciendo que entre desde fuera como si ya estuviese listo».
+   Es la técnica FLIP: se mide dónde estaba cada cosa, se cambia, se mide
+   dónde quedó y se le anima la diferencia (sólo transform y opacity, que no
+   traban). Lo nuevo entra deslizándose desde fuera; lo que se va, se desliza
+   hacia fuera antes de irse. Con «reducir movimiento», cambia sin animar. */
+const CURVA = 'cubic-bezier(.22,.8,.24,1)';
+const quieto = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+function flip(nodos, cambiar, { dur = 700, entra = 'derecha' } = {}){
+  if(quieto()){ cambiar(); return; }
+  const antes = new Map();
+  nodos().forEach(e => { const r = e.getBoundingClientRect(); if(r.width) antes.set(e.dataset.flip || e, r); });
+  cambiar();
+  nodos().forEach(e => {
+    const b = e.getBoundingClientRect(); if(!b.width) return;
+    const a = antes.get(e.dataset.flip || e);
+    if(a){
+      /* del centro viejo al centro nuevo, con escala PAREJA: estirar a lo
+         ancho y a lo alto por separado deforma las letras a media vuelta */
+      const dx = (a.left + a.width / 2) - (b.left + b.width / 2), dy = (a.top + a.height / 2) - (b.top + b.height / 2);
+      const k = Math.max(.5, Math.min(2, Math.min(a.width / b.width, a.height / b.height)));
+      if(Math.abs(dx) + Math.abs(dy) < 1 && Math.abs(k - 1) < .01) return;
+      e.animate([{ transform: 'translate(' + dx + 'px,' + dy + 'px) scale(' + k + ')' }, { transform: 'none' }], { duration: dur, easing: CURVA });
+    } else {
+      const desde = entra === 'abajo' ? 'translateY(40px)' : 'translateX(' + (b.left > innerWidth / 2 ? 60 : -60) + 'px)';
+      e.animate([{ transform: desde, opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: dur * 0.8, easing: CURVA });
+    }
+  });
+}
+/* pintar un bloque de turnos sólo si cambió; los números que se mueven se
+   deslizan a su lugar nuevo y los que llegan entran desde fuera */
+function pon(sel, html){
+  const el = $(sel); if(el._html === html) return; el._html = html;
+  flip(() => el.querySelectorAll('[data-id]').length ? [...el.querySelectorAll('[data-id]')].map(x => (x.dataset.flip = x.dataset.id, x)) : [],
+    () => { el.innerHTML = html; el.querySelectorAll('[data-id]').forEach(x => { x.dataset.flip = x.dataset.id; }); }, { dur: 600 });
+  if(sel === '#llamando'){ const n = el.querySelector('.n, .sigue b'); if(n && !quieto()) n.animate([{ transform: 'translateY(30px) scale(.96)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 650, easing: CURVA }); }
+}
 function pintarTurnos(){
   const d = F.estado();
   const listos = d.pedidos.filter(p => p.estado === 'listo').sort((a, b) => (b.listoEn || 0) - (a.listoEn || 0));
@@ -62,25 +101,25 @@ function pintarTurnos(){
   yaListos = new Set(listos.map(p => p.id)); yaPrep = new Set(prep.map(p => p.id));
 
   const top = listos[0];
-  $('#llamando').innerHTML = '<h2>' + F.ico('circle-check-big') + 'Ya puede pasar</h2>' + (top
+  pon('#llamando', '<h2>' + F.ico('circle-check-big') + 'Ya puede pasar</h2>' + (top
     ? '<b class="n">' + esc(F.verTurno(top)) + '</b>' + (quien(top) ? '<span class="quien">' + esc(quien(top)) + '</span>' : '') +
       (pidio(top) ? '<span class="pidio">' + esc(pidio(top, 4)) + '</span>' : '')
     : '<span class="vacio">Aquí sale tu número cuando esté listo</span>' +
-      (cola[0] ? '<span class="sigue">Sigue el<b>' + esc(F.verTurno(cola[0])) + '</b></span>' : ''));
+      (cola[0] ? '<span class="sigue">Sigue el<b>' + esc(F.verTurno(cola[0])) + '</b></span>' : '')));
   $('#llamando').dataset.turno = top ? top.id : '';
 
   const ficha = (p, clase) => '<div class="ficha ' + clase + (p.id === nuevoDeTablet ? ' nueva' : '') + '" data-id="' + p.id + '"><b>' + esc(F.verTurno(p)) + '</b>' +
     '<span>' + esc([quien(p), pidio(p, 2)].filter(Boolean).join(' · ')) + '</span></div>';
   const otros = listos.slice(1);
-  $('#bListos').innerHTML = otros.length ? '<h3>' + F.ico('circle-check-big') + 'También listos</h3><div class="fichas">' +
-    otros.slice(0, 3).map(p => ficha(p, 'lista')).join('') + '</div>' + (otros.length > 3 ? '<p class="mas">y ' + (otros.length - 3) + ' más</p>' : '') : '';
-  $('#bPrep').innerHTML = '<h3>' + F.ico('chef-hat') + 'En la plancha <span class="cuenta">' + (prep.length || '') + '</span></h3>' +
+  pon('#bListos', otros.length ? '<h3>' + F.ico('circle-check-big') + 'También listos</h3><div class="fichas">' +
+    otros.slice(0, 3).map(p => ficha(p, 'lista')).join('') + '</div>' + (otros.length > 3 ? '<p class="mas">y ' + (otros.length - 3) + ' más</p>' : '') : '');
+  pon('#bPrep', '<h3>' + F.ico('chef-hat') + 'En la plancha <span class="cuenta">' + (prep.length || '') + '</span></h3>' +
     (prep.length ? '<div class="fichas">' + prep.slice(0, 2).map(p => ficha(p, 'prep')).join('') + '</div>' + (prep.length > 2 ? '<p class="mas">y ' + (prep.length - 2) + ' más</p>' : '')
-      : '<p class="mas">Nada en la plancha</p>');
+      : '<p class="mas">Nada en la plancha</p>'));
   /* la fila: el primero (el que sigue) resaltado */
-  $('#bFila').innerHTML = '<h3>' + F.ico('hourglass') + 'Siguen en la fila <span class="cuenta">' + (fila.length || '') + '</span></h3>' +
+  pon('#bFila', '<h3>' + F.ico('hourglass') + 'Siguen en la fila <span class="cuenta">' + (fila.length || '') + '</span></h3>' +
     (fila.length ? '<div class="numeros">' + fila.slice(0, 10).map((p, i) => '<b data-id="' + p.id + '" class="' + (i === 0 ? 'primero' : '') + (p.id === nuevoDeTablet ? ' nueva' : '') + '">' + esc(F.verTurno(p)) + '</b>').join('') + '</div>' +
-      (fila.length > 10 ? '<p class="mas">y ' + (fila.length - 10) + ' más</p>' : '') : '<p class="mas">Nadie esperando</p>');
+      (fila.length > 10 ? '<p class="mas">y ' + (fila.length - 10) + ' más</p>' : '') : '<p class="mas">Nadie esperando</p>'));
 
   /* lo nuevo: el timbre, la voz y el letrero grande */
   if(antes){
@@ -225,8 +264,10 @@ const Programa = {
     if(!e){
       video.removeAttribute('src'); video.dataset.id = ''; video.load(); video.hidden = true;
       $('#progQue').innerHTML = 'Anuncios de la escuela';
+      setTimeout(acomodar, 0);
       return;
     }
+    setTimeout(acomodar, 0);
     const sub = e.tipo === 'archivo' ? (e.artista || (e.esAudio ? 'Música' : 'Película')) : DE[e.tipo];
     $('#progQue').innerHTML = esc(e.nombre) + '<small>' + esc(sub) + '</small>';
     if(this.esWeb(e)){
@@ -300,6 +341,7 @@ const Programa = {
     const lista = activos();
     if(!lista.length) return;
     this.enCorte = true; this.callar(); this.desdeCorte = 0; ocultarPop();
+    if(solo){ acomodar(); await new Promise(r => setTimeout(r, quieto() ? 0 : 650)); }
     $('#tercio').style.opacity = 0; document.querySelector('.bicho').style.opacity = 0;
     const canal = anuncios.find(a => a.id === cfg.canal) || anuncios[0];
     const piezas = [{ tipo: 'canal', a: canal, dur: 2.6 }];
@@ -315,6 +357,7 @@ const Programa = {
     $('#tercio').style.opacity = 1; document.querySelector('.bicho').style.opacity = '';
     this.enCorte = false;
     this.seguir();
+    acomodar();
   },
   tanda(piezas){
     return new Promise((fin) => {
@@ -364,8 +407,31 @@ addEventListener('message', (e) => {
   if(YT.ORIGENES.indexOf(e.origin) < 0 || e.source !== web.contentWindow) return;
   if(YT.estado(e.data) === 0 && Programa.actual && Programa.actual.tipo === 'youtube' && !Programa.enCorte) Programa.acabo();
 });
-/* sin nada que pasar, la tanda da vueltas sola para que la pantalla nunca esté vacía */
-setInterval(() => { if(!Programa.actual && !Programa.enCorte && !Programa.pausado && !avisando) Programa.corte(); }, 1500);
+/* SIN NADA QUE PASAR (Carlos: «si no hay nada reproduciéndose, simplemente
+   pon los turnos en grande y bien acomodados»): la pantalla se vuelve sólo
+   turnos. La tanda de anuncios sigue saliendo cada `cadaMin` minutos: el
+   programa entra deslizándose, pasa la tanda y se vuelve a ir. */
+let solo = null, desdeSolo = 0;
+function acomodar(){
+  const quiere = !Programa.actual && !Programa.enCorte;
+  if(quiere === solo) return;
+  const primera = solo === null; solo = quiere;
+  const bloques = () => [...document.querySelectorAll('.escenario, .turnos, .siguen, #llamando, #bPrep, #bFila, #bListos')];
+  if(primera){ document.body.classList.toggle('solo-turnos', quiere); return; }
+  if(quiere){
+    /* el programa se va deslizando hacia fuera antes de esconderse */
+    const esc = document.querySelector('.escenario');
+    const a = quieto() ? null : esc.animate([{ transform: 'none', opacity: 1 }, { transform: 'translateX(-80px)', opacity: 0 }], { duration: 380, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' });
+    const seguir = () => { flip(bloques, () => document.body.classList.add('solo-turnos')); if(a) a.cancel(); };
+    if(a) a.onfinish = seguir; else seguir();
+  } else flip(bloques, () => document.body.classList.remove('solo-turnos'));
+}
+setInterval(() => {
+  acomodar();
+  if(Programa.actual || Programa.enCorte || Programa.pausado || avisando){ desdeSolo = 0; return; }
+  desdeSolo += 1;
+  if(desdeSolo >= cfg.cadaMin * 60){ desdeSolo = 0; Programa.corte(); }
+}, 1000);
 
 /* ── el aviso de Fadori a un lado ───────────────────────────────────────
    Lo pidió Carlos: «anuncios tipo pop up durante el podcast como lo que hace
@@ -882,4 +948,4 @@ $('#arranque').hidden = false;
 setTimeout(() => { if(!arrancado){ $('#arranque').hidden = true; $('#bMudo').style.display = 'inline-flex'; } }, 9000);
 video.muted = true; if(Programa.actual && !Programa.esWeb()) video.play().catch(() => {});
 
-window.TELE = { Programa, cfg, anunciar, Sonido, abrirTablet, cerrarTablet, verPop, Nube, listo: true };
+window.TELE = { Programa, cfg, anunciar, Sonido, abrirTablet, cerrarTablet, verPop, Nube, acomodar, listo: true };

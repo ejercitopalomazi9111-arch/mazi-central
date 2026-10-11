@@ -194,10 +194,12 @@ const tanda = await pg.evaluate(async () => {
   const v = document.createElement('video'); v.muted = true; v.src = URL.createObjectURL(window.__tanda);
   await new Promise(r => v.onloadedmetadata = r);
   if(!Number.isFinite(v.duration)){ v.currentTime = 1e7; await new Promise(r => { v.ontimeupdate = r; setTimeout(r, 3000); }); }
-  const d = v.duration, muestra = async (t) => { v.currentTime = t; await new Promise(r => { v.onseeked = r; setTimeout(r, 3000); });
+  const d = v.duration, muestra = async (t, x = 10, y = 30) => { v.currentTime = t; await new Promise(r => { v.onseeked = r; setTimeout(r, 3000); });
     const c = document.createElement('canvas'); c.width = 64; c.height = 36; const g = c.getContext('2d'); g.drawImage(v, 0, 0, 64, 36);
-    return Array.from(g.getImageData(10, 30, 1, 1).data.slice(0, 3)); };
-  return { d, logo: await muestra(1.5), anuncio: await muestra(7.5) };
+    return Array.from(g.getImageData(x, y, 1, 1).data.slice(0, 3)); };
+  /* el logo se mide a media altura y a un lado del emblema: desde el 10 de
+     octubre el fondo del canal se oscurece suave hacia las esquinas */
+  return { d, logo: await muestra(1.5, 14, 18), anuncio: await muestra(7.5) };
 });
 ok('dura ~14 s', tanda.d > 12.5 && tanda.d < 16.5, tanda.d.toFixed(1));
 ok('al principio, el logo del canal (rojo Divergentes)', tanda.logo[0] > tanda.logo[2] && tanda.logo[0] > 40, JSON.stringify(tanda.logo));

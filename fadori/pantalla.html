@@ -285,6 +285,33 @@
   .siguen .ficha{flex:1 1 220px}
   .tv-pie{padding-top:clamp(6px,1vh,12px); padding-bottom:clamp(6px,1vh,12px)}
   .tv-pie img{width:clamp(44px,7vh,80px)}
+  /* SÓLO TURNOS: sin nada que pasar, a la izquierda «Ya puede pasar» enorme y
+     a la derecha la plancha y la fila, una arriba de la otra */
+  body.solo-turnos .escenario{display:none}
+  body.solo-turnos .tv-cuerpo{grid-template-columns:minmax(0, 1.15fr) minmax(0, 1fr); grid-template-rows:minmax(0, 1fr); grid-template-areas:"llamado siguen"}
+  body.solo-turnos .siguen{grid-template-columns:minmax(0, 1fr); grid-template-rows:auto minmax(0, 1fr); align-content:stretch; min-height:0}
+  body.solo-turnos .llamando .n{font-size:clamp(120px,34vh,420px)}
+  body.solo-turnos .llamando .sigue b{font-size:clamp(90px,24vh,300px)}
+  body.solo-turnos .siguen > *{min-width:0}
+  body.solo-turnos .siguen .fichas{flex-direction:column; gap:clamp(6px,1.4cqh,14px)}
+  body.solo-turnos .siguen .ficha{flex:none; padding:clamp(8px,1.6cqh,18px) clamp(12px,2.4cqw,24px); align-items:center}
+  /* la columna de la derecha se llena: los números crecen con su caja */
+  body.solo-turnos .siguen .bloque h3{font-size:clamp(16px, min(4cqh, 4.4cqw), 36px)}
+  body.solo-turnos .siguen .ficha b{font-size:clamp(34px, min(10cqh, 11cqw), 120px)}
+  body.solo-turnos .siguen .ficha span{font-size:clamp(15px, min(3.4cqh, 3.8cqw), 34px)}
+  body.solo-turnos .siguen .numeros{max-height:none; gap:clamp(8px,1.6cqw,18px)}
+  body.solo-turnos .siguen .numeros b{font-size:clamp(34px, min(11cqh, 12cqw), 150px); padding:.06em .32em; border-radius:clamp(10px,1.6cqw,20px)}
+  @media (orientation:portrait){
+    body.solo-turnos .tv-cuerpo{grid-template-columns:1fr; grid-template-rows:minmax(0, 1.3fr) minmax(0, 1fr); grid-template-areas:"llamado" "siguen"}
+    body.solo-turnos .siguen{grid-template-columns:minmax(0, 1fr); grid-template-rows:auto minmax(0, 1fr); container-type:size}
+    body.solo-turnos .llamando .n{font-size:clamp(110px, min(20vh, 46vw), 360px)}
+    body.solo-turnos .llamando .sigue b{font-size:clamp(80px, min(15vh, 34vw), 260px)}
+    body.solo-turnos .llamando .quien{font-size:clamp(22px, 3.6vh, 52px)}
+    body.solo-turnos .llamando .pidio{font-size:clamp(16px, 2.4vh, 32px)}
+    body.solo-turnos .siguen .ficha b{font-size:clamp(30px, min(11cqh, 9cqw), 96px)}
+    body.solo-turnos .siguen .ficha span{font-size:clamp(14px, min(4cqh, 3.4cqw), 30px)}
+    body.solo-turnos .siguen .numeros b{font-size:clamp(30px, min(13cqh, 10cqw), 130px)}
+  }
   @media (orientation:portrait){
     .tv-cuerpo{grid-template-columns:1fr; grid-template-rows:auto auto minmax(0, 1fr); grid-template-areas:"escena" "siguen" "llamado"}
     .marco{width:100%}

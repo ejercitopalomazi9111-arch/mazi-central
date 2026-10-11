@@ -99,7 +99,16 @@ ok('la tanda se ve encima del programa (no en negro)', enCorte > 10000, enCorte)
 ok('abre y cierra con el logo del canal, con anuncios en medio', await tv.evaluate(() => { const p = (window.__corte || {}).piezas || []; return p[0] === 'canal:rembrandt' && p[p.length - 1] === 'canal:rembrandt' && p.some(x => /^anuncio:/.test(x)) && p.some(x => /^ident:/.test(x)); }),
   await tv.evaluate(() => JSON.stringify(window.__corte)));
 const t1 = await tv.evaluate(() => window.__corte.t);
-ok('al terminar, como no hay episodios, empieza otra: la pantalla nunca se queda vacía', (await tarda(tv, t => window.__corte.t !== t, t1, 35000)) != null);
+ok('al terminar, como no hay nada que pasar, la pantalla se queda SÓLO con los turnos', (await tarda(tv, () => document.body.classList.contains('solo-turnos') && !window.TELE.Programa.enCorte, null, 35000)) != null);
+const medida = await tv.evaluate(() => ({ esc: getComputedStyle(document.querySelector('.escenario')).display, n: parseFloat(getComputedStyle(document.querySelector('#llamando .n, #llamando .sigue b') || document.body).fontSize), h: innerHeight }));
+ok(`el programa se esconde y el número llamado crece (${Math.round(medida.n)} px en ${medida.h} de alto)`, medida.esc === 'none' && medida.n >= medida.h * 0.2, JSON.stringify(medida));
+ok('el cambio se anima: los bloques se deslizan (no brincan)', await tv.evaluate(async () => { window.TELE.acomodar(); document.body.classList.remove('solo-turnos');
+  /* forzar el regreso y medir que haya animaciones corriendo en los bloques */
+  window.TELE.Programa.actual = { tipo: 'prueba' }; window.TELE.acomodar(); const n = document.getAnimations().length; window.TELE.Programa.actual = null; window.TELE.acomodar(); return n > 0; }));
+await tv.evaluate(() => { window.TELE.cfg.cadaMin = 0.05; });
+ok('y la tanda sigue saliendo cada tantos minutos, con el programa entrando otra vez', (await tarda(tv, t => window.__corte.t !== t && !document.body.classList.contains('solo-turnos'), t1, 20000)) != null);
+ok('al acabar esa tanda, otra vez sólo turnos', (await tarda(tv, () => document.body.classList.contains('solo-turnos') && !window.TELE.Programa.enCorte, null, 40000)) != null);
+await tv.evaluate(() => { window.TELE.cfg.cadaMin = 8; });
 
 console.log('\n3 · el programa: un episodio cargado en la tablet, y el corte cada tantos minutos');
 await tv.evaluate(async () => {
