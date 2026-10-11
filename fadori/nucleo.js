@@ -1593,6 +1593,20 @@ async function decidirCredencial(codigo, si){
 }
 /* cómo está la cuenta de un alumno, en palabras de la cooperativa */
 function verificado(a){ return !!a && a.verif === 'si'; }
+/* Una petición cruda al servidor de la escuela, con la llave de esta tablet:
+   la usan los medios de la pantalla (los videos van en pedazos binarios, no en
+   JSON). `cuerpo` puede ser un ArrayBuffer o algo que se vuelve JSON. */
+async function alServidor(ruta, { metodo = 'POST', cuerpo, query = {} } = {}){
+  const api = direccionServidor();
+  if(!api) throw new Error('Sin servidor');
+  const q = new URLSearchParams(Object.assign({ casa: MotorServidor.casa() }, query));
+  const h = cabezasSync();
+  let body;
+  if(cuerpo instanceof ArrayBuffer || ArrayBuffer.isView(cuerpo) || (typeof Blob !== 'undefined' && cuerpo instanceof Blob)){ h['content-type'] = 'application/octet-stream'; body = cuerpo; }
+  else if(cuerpo !== undefined) body = JSON.stringify(cuerpo);
+  if(metodo === 'GET') delete h['content-type'];
+  return fetch(api + ruta + '?' + q.toString(), { method: metodo, headers: h, body });
+}
 /* Que el teléfono no borre lo guardado solo: Safari tira lo de una página
    que no se abre en 7 días, salvo que la página pida quedarse. */
 function pedirQuedarse(){ try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); }catch(e){} }
@@ -2763,7 +2777,7 @@ const FADORI = {
   tema, ponerTema, esOscuro, aplicarTema, verTurno,
   servidor: direccionServidor, ponerServidor, elegirMotor, sync: MotorServidor, pausarSync, servidorDeFabrica, subirMenu,
   aparatoId, llaveMostrador, misCodigos, entrarConCodigo, avisos: Avisos,
-  entrarConCorreo, recuperarCuenta, protegerCuenta, subirCredencial, credencialesPendientes, decidirCredencial, verificado, pedirQuedarse,
+  alServidor, entrarConCorreo, recuperarCuenta, protegerCuenta, subirCredencial, credencialesPendientes, decidirCredencial, verificado, pedirQuedarse,
   entrarMostrador: (p) => MotorServidor.entrarMostrador(p), salirMostrador: () => MotorServidor.salirMostrador(),
   pasadorAlServidor: (n) => MotorServidor.pasadorAlServidor(n),
   estadoSync: () => MotorServidor.estado(), probarServidor: (u) => MotorServidor.probar(u), alCambiar: (fn) => MOTOR.alCambiar(fn), motor: () => MOTOR.nombre,

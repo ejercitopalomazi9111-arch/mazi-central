@@ -80,6 +80,12 @@ const TOPE = {
   recuperarPorAparato15min: 5,
   recuperarPorEscuelaHora: 120,
   iteraciones: 10000,                 /* PBKDF2: barato para el servidor gratis, caro para quien adivina */
+  /* EL BUZÓN DE LA PANTALLA: el plan gratis da 1 GB por objeto (documentación de
+     Durable Objects, 11 de octubre) y cada valor hasta 2 MB */
+  medioParte: 1536 * 1024,
+  medioMax: 800 * 1e6,
+  mediosObjeto: 900 * 1e6,
+  mediosR2: 8 * 1e9,
 };
 /* qué se guarda y por cuánto: lo de hoy es lo que importa; el historial vive
    en el mostrador y en sus CSV */
@@ -165,6 +171,9 @@ export class Cooperativa {
     }
 
     if(ruta.endsWith('/push/clave')) return json({ clave: (await this.llavesVapid()).publica });
+    /* los medios de la pantalla van ANTES de leer el cuerpo como texto: los
+       pedazos de video son binarios */
+    if(ruta.indexOf('/medios/') >= 0) return this.rutaMedios(ruta, url, pedido, quien);
 
     if(pedido.method !== 'POST') return json({ error: 'No existe.' }, 404);
     const crudo = await pedido.text();
@@ -318,6 +327,87 @@ export class Cooperativa {
     await this.ctx.storage.put('r:alumnos:' + cod, a);
     const suyos = Object.values(this.datos.pedidos).filter(p => p.alumno === cod).map(p => sinInternos(p));
     return json({ alumno: sinInternos(a), pedidos: suyos });
+  }
+
+  /* ══ EL BUZÓN DE LA PANTALLA ═══════════════════════════════════════════
+     Carlos, 10 de octubre: «si lo subo desde mi teléfono, que la tablet
+     también lo tenga». Episodios, música, películas y enlaces se suben aquí
+     en pedazos de 1.5 MB (con la llave de la cooperativa), y cada pantalla
+     los baja sola y los guarda EN ELLA: el servidor es un buzón, no la
+     videoteca. Se guarda en el propio objeto (el plan gratis da 1 GB por
+     escuela) o, si algún día se conecta, en un R2 (`MEDIOS`), que da 10 GB.
+     Lo ya bajado se va primero cuando falta espacio. */
+  get alm(){
+    const r2 = this.env && this.env.MEDIOS, g = this.ctx.storage;
+    return r2 ? {
+      cabe: TOPE.mediosR2, poner: (id, k, b) => r2.put(id + '/' + k, b),
+      sacar: async (id, k) => { const o = await r2.get(id + '/' + k); return o ? o.arrayBuffer() : null; },
+      borrar: async (id, n) => { const ks = []; for(let k = 0; k < n; k++) ks.push(id + '/' + k); for(let i = 0; i < ks.length; i += 900) await r2.delete(ks.slice(i, i + 900)); },
+    } : {
+      cabe: TOPE.mediosObjeto, poner: (id, k, b) => g.put('mp:' + id + ':' + k, b),
+      sacar: (id, k) => g.get('mp:' + id + ':' + k),
+      borrar: async (id, n) => { const ks = []; for(let k = 0; k < n; k++) ks.push('mp:' + id + ':' + k); for(let i = 0; i < ks.length; i += 128) await g.delete(ks.slice(i, i + 128)); },
+    };
+  }
+  async medios(){
+    if(!this._medios){ this._medios = {}; for(const [k, v] of await this.ctx.storage.list({ prefix: 'medio:' })) this._medios[k.slice(6)] = v; }
+    return this._medios;
+  }
+  async guardarMedio(m){ (await this.medios())[m.id] = m; await this.ctx.storage.put('medio:' + m.id, m); }
+  async quitarMedio(id, tumba){
+    const M = await this.medios(), m = M[id]; if(!m) return;
+    if(m.partes) await this.alm.borrar(id, m.partes);
+    delete M[id]; await this.ctx.storage.delete('medio:' + id);
+    if(tumba){ const b = (await this.ctx.storage.get('medios-borrados')) || []; b.push({ id, t: Date.now() }); await this.ctx.storage.put('medios-borrados', b.slice(-300)); }
+  }
+  async rutaMedios(ruta, url, pedido, quien){
+    if(!quien.admin) return json({ error: 'Sólo con el pasador de la cooperativa.' }, 401);
+    const que = ruta.slice(ruta.indexOf('/medios/') + 8), M = await this.medios();
+    const id = String(url.searchParams.get('id') || ''), k = Number(url.searchParams.get('k'));
+    if(que === 'parte' && pedido.method === 'GET'){
+      const m = M[id]; if(!m || !(k >= 0 && k < m.partes)) return json({ error: 'No existe.' }, 404);
+      const b = await this.alm.sacar(id, k); if(!b) return json({ error: 'Falta ese pedazo.' }, 404);
+      return new Response(b, { headers: { 'content-type': 'application/octet-stream' } });
+    }
+    if(pedido.method !== 'POST') return json({ error: 'No existe.' }, 404);
+    if(que === 'parte'){
+      const m = M[id]; if(!m || m.listo || !(k >= 0 && k < m.partes)) return json({ error: 'No existe.' }, 404);
+      const b = await pedido.arrayBuffer();
+      if(b.byteLength > TOPE.medioParte || b.byteLength === 0) return json({ error: 'Pedazo inválido.' }, 413);
+      await this.alm.poner(id, k, b);
+      m.llegaron = Math.max(m.llegaron || 0, k + 1);
+      if(k === m.partes - 1){ m.listo = true; m.t = Date.now(); }
+      await this.guardarMedio(m);
+      return json({ bien: true, listo: !!m.listo });
+    }
+    let c = {}; try{ c = JSON.parse(await pedido.text()) || {}; }catch(e){}
+    if(que === 'lista'){
+      const borrados = (await this.ctx.storage.get('medios-borrados')) || [];
+      return json({ medios: Object.values(M).filter(m => m.listo).map(m => Object.assign({}, m)), borrados });
+    }
+    if(que === 'alta'){
+      const nid = String(c.id || '');
+      if(!/^[a-z0-9]{6,40}$/.test(nid)) return json({ error: 'Id inválido.' }, 400);
+      const tam = entero(c.tam, 0, 4e9, 0), clase = ['archivo', 'youtube', 'spotify'].indexOf(c.clase) >= 0 ? c.clase : 'archivo';
+      if(clase === 'archivo' && (tam <= 0 || tam > TOPE.medioMax)) return json({ error: 'Pesa ' + Math.round(tam / 1e6) + ' MB. Lo más que entra son ' + Math.round(TOPE.medioMax / 1e6) + ' MB: expórtalo en 720p.' }, 413);
+      /* espacio: se van primero los ya bajados por alguna pantalla, de los más viejos */
+      const usado = () => Object.values(M).reduce((x, m) => x + (m.tam || 0), 0);
+      const viejos = Object.values(M).filter(m => m.listo && m.bajado).sort((a, b) => a.bajado - b.bajado);
+      while(usado() + tam > this.alm.cabe && viejos.length) await this.quitarMedio(viejos.shift().id, false);
+      if(usado() + tam > this.alm.cabe) return json({ error: 'El buzón está lleno: espera a que la pantalla baje lo que ya subiste.' }, 507);
+      if(M[nid]) await this.quitarMedio(nid, false);
+      const partes = clase === 'archivo' ? Math.ceil(tam / TOPE.medioParte) : 0;
+      const portada = typeof c.portada === 'string' && /^data:image\/(jpeg|png|webp);base64,/.test(c.portada) && c.portada.length < 120000 ? c.portada : '';
+      const m = { id: nid, tipo: c.tipo === 'rel' ? 'rel' : 'ep', clase, nombre: texto(c.nombre, 80) || 'Sin nombre', mime: texto(c.mime, 60),
+        tam, partes, esAudio: !!c.esAudio, artista: texto(c.artista, 60), portada,
+        embed: clase !== 'archivo' && /^https:\/\/(www\.youtube-nocookie\.com|open\.spotify\.com)\//.test(String(c.embed || '')) ? String(c.embed).slice(0, 500) : '',
+        listo: clase !== 'archivo', llegaron: 0, de: quien.aparato, t: Date.now(), bajado: 0 };
+      await this.guardarMedio(m);
+      return json({ bien: true, partes, parte: TOPE.medioParte });
+    }
+    if(que === 'bajado'){ const m = M[String(c.id || '')]; if(m && !m.bajado){ m.bajado = Date.now(); await this.guardarMedio(m); } return json({ bien: true }); }
+    if(que === 'borrar'){ await this.quitarMedio(String(c.id || ''), true); return json({ bien: true }); }
+    return json({ error: 'No existe.' }, 404);
   }
 
   /* ══ LAS CUENTAS ═══════════════════════════════════════════════════════
