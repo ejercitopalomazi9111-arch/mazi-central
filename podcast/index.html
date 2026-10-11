@@ -196,7 +196,9 @@
       <div class="fila-btn">
         <button class="btn fuerte" id="bBajarVideo" type="button"><span data-ico="download"></span>Bajar video</button>
         <button class="btn" id="bCompartirVideo" type="button" hidden><span data-ico="share-2"></span>Compartir</button>
+        <button class="btn" id="bMandarTele" type="button" hidden><span data-ico="monitor"></span>Mandar a la pantalla de Fadori</button>
       </div>
+      <p class="ayuda chica" id="tMandarTele" aria-live="polite" hidden></p>
     </div>
     <details class="kit">
       <summary><span data-ico="film"></span>Para editar en CapCut o iMovie</summary>
@@ -364,6 +366,7 @@
 <div class="toston" id="toston" role="status" aria-live="polite"></div>
 
 <script src="iconos.js"></script>
+<script src="../fadori/pad.js"></script>
 <script type="module" src="app.js"></script>
 </body>
 </html>

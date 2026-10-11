@@ -9,6 +9,7 @@ import { TEMAS, dibujarPortada, aJpeg } from './portada.js';
 import { FORMATOS, abrirVideo, planear, exportar, corteDeError, dibujarEntrada, dibujarTarjeta, colorDeAsiento, dibujarMiniatura, dibujarCuadro, tipoDeVideo, TANDA } from './video.js';
 import { ANUNCIOS, prepararAnuncio } from '../fadori/anuncios.js';
 import { EPISODIOS, TIEMPOS, PODCAST, cuando, guion } from './episodios.js';
+import * as Buzon from '../fadori/buzon.js';
 
 const $ = (s) => document.querySelector(s);
 const ico = (n) => (window.ICONOS ? window.ICONOS.ico(n) : '');
@@ -1063,11 +1064,30 @@ $('#bExportar').addEventListener('click', async () => {
     const v = $('#verFinal'); if(v.src) URL.revokeObjectURL(v.src); v.src = URL.createObjectURL(b);
     $('#finalV').hidden = false;
     $('#datosFinalV').textContent = 'Listo · ' + (b.size / 1048576).toFixed(1) + ' MB · ' + extDe(b).toUpperCase();
+    $('#bMandarTele').hidden = !Buzon.hayServidor(); $('#tMandarTele').hidden = true;
     $('#bCompartirVideo').hidden = !(navigator.canShare && navigator.canShare({ files: [new File([new Uint8Array(8)], 'x.' + extDe(b), { type: b.type })] }));
     $('#finalV').scrollIntoView({ behavior: 'smooth', block: 'center' });
   }catch(e){ ocupado(false); aviso('Algo falló al hacer el video: ' + e.message); }
 });
 $('#bBajarVideo').addEventListener('click', () => videoFinal && bajar(videoFinal, nombreVideo() + '.' + extDe(videoFinal)));
+/* Mandar el episodio a la pantalla de turnos: se va al buzón de Fadori y la
+   tablet lo baja sola (Carlos: «no es fácil estar yendo a cada rato»). */
+$('#bMandarTele').addEventListener('click', async () => {
+  if(!videoFinal) return;
+  const t = $('#tMandarTele'), b = $('#bMandarTele'); t.hidden = false;
+  if(!Buzon.hayLlave()){
+    const ok = await window.FadoriPad.abrir({ titulo: 'Pasador de la cooperativa', sub: 'Para mandar el episodio a la pantalla de turnos.',
+      revisar: async (v) => { const r = await Buzon.entrar(v); return r.ok ? true : { error: r.error }; } });
+    if(!ok){ t.textContent = ''; return; }
+  }
+  b.disabled = true;
+  try{
+    const ep = datos().episodio, nombre = (ep ? 'Episodio ' + ep + ' · ' : '') + (datos().titulo || datos().nombre || 'Episodio');
+    await Buzon.mandar(videoFinal, { nombre }, (p) => { t.textContent = 'Mandando a la pantalla… ' + Math.round(p * 100) + '%'; });
+    t.textContent = 'Listo: la pantalla de turnos lo baja sola en unos minutos.';
+  }catch(e){ t.textContent = 'No se pudo mandar: ' + e.message; }
+  finally{ b.disabled = false; }
+});
 $('#bCompartirVideo').addEventListener('click', async () => {
   try{ await navigator.share({ files: [new File([videoFinal], nombreVideo() + '.' + extDe(videoFinal), { type: videoFinal.type })] }); }
   catch(e){ if(e && e.name !== 'AbortError') aviso('No se pudo compartir.'); }

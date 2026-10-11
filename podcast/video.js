@@ -503,7 +503,7 @@ export async function exportar({ piezas, clips, formato = 'horizontal', modo = '
   const flujo = new MediaStream([...cv.captureStream(fps).getVideoTracks(), ...dest.stream.getAudioTracks()]);
   const tipo = tipoDeVideo();
   if(!tipo) throw new Error('Este navegador no puede grabar video');
-  const rec = new MediaRecorder(flujo, { mimeType: tipo, videoBitsPerSecond: alto ? 8e6 : 5e6, audioBitsPerSecond: 128000 });
+  const rec = new MediaRecorder(flujo, { mimeType: tipo, videoBitsPerSecond: alto ? 3.5e6 : 2.5e6,   /* un episodio de 30 min cabe en el buzón de la pantalla (~800 MB) y se ve bien de una persona hablando */ audioBitsPerSecond: 128000 });
   const trozos = []; rec.ondataavailable = (e) => { if(e.data && e.data.size) trozos.push(e.data); };
   const listo = new Promise(r => { rec.onstop = r; });
 

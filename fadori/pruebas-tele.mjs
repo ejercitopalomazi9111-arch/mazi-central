@@ -205,6 +205,19 @@ await cel.waitForTimeout(800);
 ok('si la borra en el teléfono, se borra también en la tablet', (await tarda(tablita, () => { window.TELE.Nube.revisar(); return !window.TELE.Programa.rell.some(r => r.nombre === 'Canción del recreo'); }, null, 15000)) != null,
   await tablita.evaluate(() => JSON.stringify(window.__nube)) + ' · cel: ' + await cel.evaluate(async () => { const r = await FADORI.alServidor('/api/medios/lista', { cuerpo: {} }); return document.querySelectorAll('#ajRell [data-rquita]').length + ' ' + JSON.stringify((await r.json()).medios.map(m => m.nombre)) + ' ' + window.TELE.Nube.estado; }));
 
+/* el Estudio de podcast manda su episodio con fadori/buzon.js */
+const desdeEstudio = await cel.evaluate(async () => {
+  const B = await import('./buzon.js');
+  const c = document.createElement('canvas'); c.width = 160; c.height = 90; const g = c.getContext('2d');
+  const rec = new MediaRecorder(c.captureStream(15), { mimeType: 'video/webm' }), tr = []; rec.ondataavailable = e => tr.push(e.data);
+  const fin = new Promise(r => rec.onstop = r); rec.start();
+  await new Promise(r => { const t0 = performance.now(); const p = () => { g.fillStyle = '#C2410C'; g.fillRect(0, 0, 160, 90); if(performance.now() - t0 < 2500) requestAnimationFrame(p); else r(); }; p(); });
+  rec.stop(); await fin;
+  return { llave: B.hayLlave(), id: await B.mandar(new Blob(tr, { type: 'video/webm' }), { nombre: 'Episodio 7 · Verdad o felicidad' }) };
+});
+ok('el Estudio manda su episodio al buzón con la llave que ya tenía el teléfono', desdeEstudio.llave && /^e[a-z0-9]+$/.test(desdeEstudio.id), JSON.stringify(desdeEstudio));
+ok('…y la tablet lo baja como episodio NUEVO', (await tarda(tablita, () => { window.TELE.Nube.revisar(); return window.TELE.Programa.eps.some(e => e.nombre === 'Episodio 7 · Verdad o felicidad'); }, null, 20000)) != null);
+
 console.log('\n4 · la tablet de la fila: tocar, pedir y ver el turno');
 const tab = await pantalla();
 await tab.click('#bArranque').catch(() => {});
