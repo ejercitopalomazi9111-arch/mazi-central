@@ -463,6 +463,9 @@ body.mostrador .barra{background:rgba(244,239,231,.96)}
 body.mostrador .cesta{background:#fff}
 :root[data-tema="oscuro"] body.mostrador .cesta{background:var(--sup)}
 body.mostrador .envoltura{max-width:900px}
+/* la barra de arriba con el mismo ancho que lo de abajo (900 menos el relleno):
+   antes iba a 640 y sus bordes no caían con los del contenido */
+body.mostrador .barra-fila{max-width:872px}
 body.mostrador .btn{font-size:17px; font-weight:800}
 body.mostrador .btn.fuerte{color:#fff}
 body.mostrador .btn.chico{min-height:48px; font-size:15px}
@@ -1683,3 +1686,9 @@ label small.tenue{font-weight:600; color:var(--tenue); opacity:.85}
 /* las acciones del turno llenan el renglón: cuando queda una sola («Voy en
    camino», ya listo) no se queda flotando a media pantalla */
 #accionesTurno .btn{flex:1 1 0; min-width:0; justify-content:center}
+
+/* en oscuro, el color lavado de cada platillo (lo que se ve mientras llega la
+   foto, o si no tiene) se apaga: un cuadro durazno claro en tema oscuro deslumbra */
+:root[data-tema="oscuro"] [style*="--t1"]{
+  background:linear-gradient(155deg, color-mix(in srgb, var(--t1) 18%, var(--sup)), color-mix(in srgb, var(--t2) 18%, var(--sup)))}
+:root[data-tema="oscuro"] .sin-foto{color:var(--t2); opacity:.7}

@@ -295,12 +295,14 @@ await k.click('#bPedir');
 ok('…ni el nombre de la anterior en el carrito: dice Ana', /Ana/.test(await k.textContent('#kPide')) && !/Valeria/.test(await k.textContent('#kPide')));
 await k.click('#bConfirmar');
 ok('el pedido de la tablet queda a nombre de la cuenta de Ana (cuenta en sus pedidos)', (await tarda(most, (c) => FADORI.estado().pedidos.some(p => p.origen === 'kiosco' && p.alumno === c), codAna, 10000)) != null);
+await tab.evaluate(() => { const c = document.querySelector('#kCapa'), t0 = performance.now(); window.__capa = [];
+  new MutationObserver(() => window.__capa.push(Math.round(performance.now() - t0) + ':' + (c.hidden ? 'H' : 'V') + '.' + c.className)).observe(c, { attributes: true }); });
 await k.click('#kOk').catch(() => {}); await k.click('#kNo').catch(() => {});
 await tarda(tab, () => document.querySelector('#kCapa').hidden, null, 4000);
 await tab.mouse.click(420, 360);
 await tarda(tab, () => !document.querySelector('#kCapa').hidden, null, 4000);
 await tab.click('#kCerrar');
-ok('«Volver a la pantalla» la cierra', (await tarda(tab, () => document.querySelector('#kCapa').hidden, null, 3000)) != null);
+ok('«Volver a la pantalla» la cierra', (await tarda(tab, () => document.querySelector('#kCapa').hidden, null, 3000)) != null, await tab.evaluate(() => window.__capa.join(' ')));
 
 console.log('\n4b · nadie la toca: «¿sigues ahí?» y 10 segundos');
 await tab.evaluate(() => { localStorage.setItem('fadori_kiosco_espera', '4'); document.querySelector('#kMarco').contentWindow.location.reload(); });
