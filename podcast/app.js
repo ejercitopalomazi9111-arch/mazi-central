@@ -638,8 +638,11 @@ function apagarCamara(){
 async function prenderCamara(){
   apagarCamara();
   const h = vOpc.formato !== 'vertical';
+  /* el tamaño se pide como esté el teléfono AHORA: pedir 1280×720 con el
+     teléfono parado le da al iPhone una imagen parada que luego no gira */
+  const parado = innerHeight > innerWidth;
   cab.flujo = await navigator.mediaDevices.getUserMedia({
-    video: { facingMode: cab.frente ? 'user' : 'environment', width: { ideal: h ? 1280 : 720 }, height: { ideal: h ? 720 : 1280 }, frameRate: { ideal: 30 } },
+    video: { facingMode: cab.frente ? 'user' : 'environment', width: { ideal: parado ? 720 : 1280 }, height: { ideal: parado ? 1280 : 720 }, frameRate: { ideal: 30 } },
     audio: { echoCancellation: false, noiseSuppression: true, autoGainControl: true } });
   const v = $('#cabVista'); v.srcObject = cab.flujo; v.classList.toggle('espejo', cab.frente); v.play().catch(() => {});
   try{
@@ -723,7 +726,19 @@ $('#cabCamara').addEventListener('click', async () => {
   try{ await prenderCamara(); }catch(e){ cab.frente = !cab.frente; aviso('No se pudo cambiar de cámara.'); try{ await prenderCamara(); }catch(x){} }
 });
 $('#cabGuion').addEventListener('click', () => { cab.guion = !cab.guion; $('#cabGuion').setAttribute('aria-pressed', String(cab.guion)); pintarApuntador(cab.rec ? (Date.now() - cab.t0) / 1000 : 0); });
-addEventListener('resize', () => { if(!$('#cabina').hidden) revisarGiro(); });
+/* Al girar el teléfono sin estar grabando se vuelve a pedir la cámara: el
+   iPhone sigue mandando la imagen con el acomodo de antes y en horizontal se
+   veía una tira angosta en medio de la pantalla negra. */
+let tGiro = 0, eraParado = innerHeight > innerWidth;
+addEventListener('resize', () => {
+  if($('#cabina').hidden) return;
+  revisarGiro();
+  const parado = innerHeight > innerWidth;
+  if(parado === eraParado) return;
+  eraParado = parado;
+  clearTimeout(tGiro);
+  tGiro = setTimeout(() => { if(!cab.rec && !$('#cabina').hidden) prenderCamara().catch(() => {}); }, 450);
+});
 /* si la pestaña se fue a segundo plano a media toma, se cierra la toma: iOS
    corta la cámara y lo grabado hasta ahí ya está a salvo */
 document.addEventListener('visibilitychange', () => { if(document.hidden && cab.rec) pararCabina(); });
@@ -761,7 +776,7 @@ function quedaEd(){
   return Math.max(0, ed.c.dur - fuera);
 }
 function abrirEditor(c){
-  ed.c = c; const e = c.edicion || {};
+  ed.c = c; ed.listaHtml = null; const e = c.edicion || {};
   ed.ini = +e.ini || 0; ed.fin = e.fin ? +e.fin : c.dur; ed.cortes = (e.cortes || []).map(x => x.slice());
   ed.marcas = (c.marcas || []).slice(); ed.zonas = ed.marcas.map(t => corteDeError(c.audio, t)); ed.desde = null; ed.picos = null;
   $('#edTitulo').textContent = c.nombre; $('#edCartel').value = c.cartel || '';
@@ -796,18 +811,24 @@ function pintarEd(){
   g.fillStyle = tinta;
   for(let x = 0; x < W; x++){ const h = Math.max(1, Math.min(1, ed.picos[x] * 1.6) * (H - 8)); g.fillRect(x, (H - h) / 2, 1, h); }
   g.fillStyle = acento; const px = aX(edV.currentTime || 0); g.fillRect(Math.round(px) - dpr, 0, 2 * dpr, H);
-  $('#edTiempo').textContent = fino(edV.currentTime || 0) + ' / ' + tiempo(c.dur);
-  $('#edCorte').lastChild.textContent = ed.desde == null ? 'Quitar desde aquí' : 'Hasta aquí';
-  $('#edCorte').classList.toggle('fuerte', ed.desde != null);
+  /* Lo de abajo corre 60 veces por segundo mientras suena el video. Al DOM
+     sólo se le toca lo que CAMBIÓ: el iPhone cancela el toque si lo que
+     tienes bajo el dedo se reescribe en ese momento, y el botón «se
+     ilumina pero no hace nada» (lo cazó Carlos, 10 de octubre). */
+  ponerTexto($('#edTiempo'), fino(edV.currentTime || 0) + ' / ' + tiempo(c.dur));
+  ponerTexto($('#edCorte').lastChild, ed.desde == null ? 'Quitar desde aquí' : 'Hasta aquí');
+  if($('#edCorte').classList.contains('fuerte') !== (ed.desde != null)) $('#edCorte').classList.toggle('fuerte', ed.desde != null);
   const filas = ed.cortes.map(([a, b], k) => '<li><span>'+ico('scissors')+' Se quita '+fino(a)+' – '+fino(b)+'</span>'+
       '<button class="mini" type="button" data-ir="'+a+'" aria-label="Ver ese pedazo">'+ico('play')+'</button>'+
       '<button class="mini" type="button" data-quita-corte="'+k+'" aria-label="Dejar ese pedazo">'+ico('trash')+'</button></li>')
     .concat(ed.marcas.map((t, k) => '<li><span>'+ico('undo-2')+' Me equivoqué a los '+tiempo(t)+' · se quita '+fino(ed.zonas[k][0])+' – '+fino(Math.min(c.dur, ed.zonas[k][1]))+'</span>'+
       '<button class="mini" type="button" data-ir="'+ed.zonas[k][0]+'" aria-label="Ver ese pedazo">'+ico('play')+'</button>'+
       '<button class="mini" type="button" data-quita-marca="'+k+'" aria-label="Dejar esa frase">'+ico('trash')+'</button></li>'));
-  $('#edCortes').innerHTML = filas.join('') + '<li class="ed-queda"><span>Queda <b>'+fino(quedaEd())+'</b> de '+fino(c.dur)+
+  const html = filas.join('') + '<li class="ed-queda"><span>Queda <b>'+fino(quedaEd())+'</b> de '+fino(c.dur)+
     (ed.ini > 0 || ed.fin < c.dur ? ' · empieza en '+tiempo(ed.ini)+' y termina en '+tiempo(ed.fin) : '')+'</span></li>';
+  if(ed.listaHtml !== html){ ed.listaHtml = html; $('#edCortes').innerHTML = html; }
 }
+function ponerTexto(nodo, t){ if(nodo && nodo.textContent !== t) nodo.textContent = t; }
 /* mientras suena: brincar lo que se va, y parar al final */
 function vigilarEd(){
   cancelAnimationFrame(ed.raf);

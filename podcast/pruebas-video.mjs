@@ -89,6 +89,17 @@ ok('aparece el pedazo que se quita (6.5 – 7.5)', await pg.evaluate(() => { con
 const linea = await pg.evaluate(() => { const c = document.querySelector('#edLinea'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
   let pinta = 0; for(let i = 3; i < d.length; i += 4) if(d[i] > 0) pinta++; return pinta; });
 ok('la línea de tiempo dibuja la onda y lo que se va', linea > 500, linea);
+/* Carlos, 10 de octubre: «al editar de repente no deja tocar nada, se
+   ilumina pero no pasa nada». La lista y los botones se reescribían en cada
+   cuadro mientras sonaba el video, y el iPhone cancela el toque si lo que
+   está bajo el dedo cambia. Mientras suena, NO se toca lo que no cambió. */
+const cambios = await pg.evaluate(async () => {
+  const v = document.querySelector('#edVideo'); v.currentTime = 0.2; v.muted = true; await v.play().catch(() => {});
+  let n = 0; const ob = new MutationObserver(m => { n += m.length; });
+  ['#edCortes', '#edCorte', '#edIni', '#edFin', '#edSugerencias'].forEach(s => ob.observe(document.querySelector(s), { childList: true, subtree: true, characterData: true, attributes: true }));
+  await new Promise(r => setTimeout(r, 1500)); ob.disconnect(); v.pause(); return { n, t: v.currentTime };
+});
+ok(`mientras suena, la lista y los botones no se reescriben (${cambios.n} cambios en 1.5 s)`, cambios.n === 0 && cambios.t > 0.5, JSON.stringify(cambios));
 await pg.click('#edSugerencias [data-cartel="Bloque 1"]');
 ok('la sugerencia llena el cartel', await pg.inputValue('#edCartel') === 'Bloque 1');
 await pg.click('#edListo');
@@ -204,9 +215,9 @@ if(!await pg.evaluate(() => document.querySelector('#cabVista').videoWidth > 0))
   await br.close(); console.log(`\n✗ estudio · video · ${bien} pasan · ${mal} fallan`); process.exit(1);
 }
 ok('la cámara se prende', await pg.evaluate(() => document.querySelector('#cabVista').videoWidth > 0));
-ok('el apuntador enseña el gancho del episodio', /decir la verdad o evitar el pánico/.test(await pg.textContent('#cabApuntador')), await pg.textContent('#cabApuntador'));
+ok('el apuntador enseña el gancho del episodio', /decir la verdad o evitar el pánico/i.test(await pg.textContent('#cabApuntador')), await pg.textContent('#cabApuntador'));
 await pg.click('#cabApuntador');
-ok('tocarlo pasa al Bloque 1', /Bloque 1/.test(await pg.textContent('#cabApuntador')) && /reactor 4/.test(await pg.textContent('#cabApuntador')));
+ok('tocarlo pasa al Bloque 1', /Bloque 1/.test(await pg.textContent('#cabApuntador')) && /Qué pasó/.test(await pg.textContent('#cabApuntador')));
 ok('«Me equivoqué» está apagado si no se graba', await pg.isDisabled('#cabError'));
 await pg.click('#cabGrabar');
 await pg.waitForTimeout(3200);

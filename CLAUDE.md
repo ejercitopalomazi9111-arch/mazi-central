@@ -390,6 +390,9 @@ dependemos.
 
    | un candado contra doble toque protege de pedidos dobles | también se come el toque BUENO si el primero lo rechazó una validación: el rechazado cuenta como toque | en la tablet de Fadori, «Pedir» sin nombre → escribes el nombre → «Pedir» otra vez y no pasaba nada. El candado va después de las validaciones (lo cazó `fadori/pruebas-tele.mjs`) |
 
+   | si el botón se ilumina al tocarlo, el toque llegó | el iPhone **cancela el clic** si lo que está bajo el dedo se reescribe en ese momento; un `innerHTML` en cada cuadro (60 veces por segundo, mientras suena un video) basta | en el editor del Estudio «se ilumina pero no pasa nada» y en Chromium todo pasaba. Lo que corre por cuadro sólo toca el DOM si el valor CAMBIÓ (`podcast/pruebas-video.mjs` cuenta las mutaciones: 0 en 1.5 s) |
+   | `ruta.endsWith('/entrar')` es la puerta del mostrador | también agarra `/api/cuenta/entrar`: el alumno que entraba con su correo caía en la del pasador y le contestaba «Ese no es el pasador» | las rutas largas se revisan ANTES que las cortas (`rutaCuenta` en `servidor/src/index.js`); lo cazó `servidor/ataques.mjs` |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---
