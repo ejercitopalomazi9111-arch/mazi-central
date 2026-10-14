@@ -197,6 +197,7 @@
     <!-- Los créditos. Aquí decía "Para cuadrar el gasto" y debajo no había
          nada: el asistente de presupuesto se movió arriba y el rótulo se
          quedó solo. Carlos lo cachó. Ahora dice de quién es esto. -->
+    <button class="btn ancho" type="button" data-faq style="margin-top:24px"><span data-ico="circle-question-mark"></span> Preguntas frecuentes</button>
     <div class="creditos">
       <img class="cred-logo" src="marca/icon-192.png" alt="">
       <div class="cred-marca">Fadori<b>.</b></div>
@@ -230,8 +231,15 @@
   </section>
 
   <!-- ══════════ LO MÍO · F41 ══════════ -->
+
+  <!-- ══════════ PREGUNTAS FRECUENTES (Carlos, 14 de octubre) ══════════ -->
+  <dialog class="faq" id="faq" aria-labelledby="faqTit">
+    <div class="faq-cab"><h2 id="faqTit">Preguntas frecuentes</h2><button class="btn chico" type="button" id="faqCerrar">Cerrar</button></div>
+    <div class="faq-lista"><details class="faq-q"><summary>¿Cómo pido?</summary><p>Elige en el menú, toca <b>Pedir</b> y te damos un turno. Sigues en lo tuyo y pasas a la cooperativa cuando tu número salga en verde en la pantalla.</p></details><details class="faq-q"><summary>¿Necesito hacer cuenta?</summary><p>Sí, una sola vez: tu correo, una contraseña y la foto de tu credencial del Rembrandt. La app revisa que el nombre sea el tuyo. Así nadie pide a tu nombre.</p></details><details class="faq-q"><summary>¿Cómo sé en qué va mi pedido?</summary><p>En <b>Tu turno</b> ves si ya se <b>recibió</b>, si se está <b>preparando</b> o si ya está <b>listo</b>. La pantalla de la cooperativa dice tu número en voz alta, y si lo permites, te llega aviso al teléfono.</p></details><details class="faq-q"><summary>¿Cuántos pedidos puedo hacer?</summary><p>Hasta <b>5 por recreo</b>.</p></details><details class="faq-q"><summary>¿Cómo pago?</summary><p>En la cooperativa, al recoger. Si pagas de menos, lo que falte queda a deber; al llegar al límite no puedes pedir hasta pagar. Lo que debes sólo lo ven tú y la cooperativa.</p></details><details class="faq-q"><summary>¿Y si se acaba algo de lo que pedí?</summary><p>La app te avisa y eliges: cambiarlo por otra cosa o quitarlo. No pierdes tu lugar en la fila y no pagas lo que no te dieron.</p></details><details class="faq-q"><summary>¿Puedo cancelar?</summary><p>Sí, desde <b>Tu turno</b>, mientras siga en la fila.</p></details><details class="faq-q"><summary>¿Qué pasa si no tengo internet?</summary><p>La app abre con lo último que viste. Lo que hagas se guarda en tu teléfono y se manda solo cuando vuelve la señal. Arriba sale un aviso mientras la conexión falla.</p></details><details class="faq-q"><summary>¿Tengo alergias, cómo sé qué lleva cada cosa?</summary><p>Toca el nombre de cualquier platillo: dice qué contiene. Marca tus alergias en <b>Lo tuyo</b> y te avisamos cuando algo las lleve. Eso sólo se guarda en tu teléfono.</p></details><details class="faq-q"><summary>¿Quién ve mis datos?</summary><p>La cooperativa ve tu nombre, tu correo y tus pedidos para entregártelos. Otros alumnos no ven nada tuyo. En la pantalla sale tu nombre sólo si tú lo eliges al pedir.</p></details><details class="faq-q"><summary>¿Qué es «¿Cuánto traes?»?</summary><p>Le dices cuánto dinero traes y te arma combinaciones del menú que sí te alcanzan.</p></details><details class="faq-q"><summary>¿Para qué es mi código?</summary><p>Para entrar con tu cuenta desde otro teléfono. No lo compartas.</p></details></div>
+  </dialog>
   <section id="p-yo" hidden>
     <h1>Lo tuyo</h1>
+    <button class="btn ancho" type="button" data-faq><span data-ico="circle-question-mark"></span> Preguntas frecuentes</button>
     <!-- El código va ARRIBA y en grande. Antes vivía aquí mismo pero como letra
          chica gris dentro de un párrafo, y un compañero que probó la app dijo que
          era difícil de encontrar. Tenía razón: es lo único que necesitas para
@@ -529,6 +537,10 @@ function refrescarFicha(pid){
    menú: el temporizador corría cada 5 segundos y reescribía la rejilla
    completa, que en un teléfono se siente como un tirón. */
 let busqueda = '';
+document.addEventListener('click', (e) => {
+  if(e.target.closest('[data-faq]')){ const d = document.getElementById('faq'); if(d && !d.open) d.showModal(); }
+  if(e.target.closest('#faqCerrar')) document.getElementById('faq').close();
+});
 document.addEventListener('input', (e) => {
   if(e.target && e.target.id === 'buscaMenu'){ busqueda = e.target.value; pintarMenu(true); }
 });
@@ -2077,7 +2089,27 @@ pintarReloj();
   let yaSalio = false;
   try{ yaSalio = sessionStorage.getItem('fadori_cortinilla') === '1'; }catch(e){}
   const menos = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if(yaSalio || menos || KIOSCO){ c.remove(); return; }
+  if(yaSalio || menos || KIOSCO){
+    c.remove();
+    /* LA PANTALLA DE CARGA (Carlos, 14 de octubre): la cortinilla sale una vez
+       por visita; las demás veces, mientras llega lo último del servidor, el
+       logo y una barrita. Se va en cuanto contesta el servidor (o falla: sin
+       red la app abre con lo guardado y el aviso de arriba lo dice), y nunca
+       dura más de 2.5 s. */
+    if(!KIOSCO && F.motor() === 'servidor'){
+      const l = document.createElement('div'); l.className = 'cargando'; l.setAttribute('role', 'status');
+      l.innerHTML = '<div class="caj"><img src="marca/icon-192.png" alt=""><div class="barra-c"><i></i></div><small>Cargando el menú…</small></div>';
+      document.body.appendChild(l);
+      const t0 = Date.now();
+      const quita = () => { if(!l.isConnected) return; l.classList.add('se-va'); setTimeout(() => l.remove(), 320); };
+      const mira = setInterval(() => {
+        const s = F.sync, listo = s._ultimoBien || (s._fallos || 0) > 0 || navigator.onLine === false;
+        if((listo && Date.now() - t0 > 250) || Date.now() - t0 > 2500){ clearInterval(mira); quita(); }
+      }, 100);
+      l.addEventListener('click', quita);
+    }
+    return;
+  }
   document.body.classList.add('cortina-arriba');
   try{ sessionStorage.setItem('fadori_cortinilla','1'); }catch(e){}
   const quitar = () => {

@@ -403,6 +403,11 @@ dependemos.
 
    | «gana el más reciente» sirve para cualquier campo de un registro | no para un SALDO: cada aparato mandaba la deuda entera y el último pisaba al otro. La tablet fiaba $45, el teléfono abonaba $10 a la vez, y quedaba $60 en vez de $105 | dinero perdido en silencio, invisible con un solo mostrador. Un saldo se lleva con MOVIMIENTOS que el servidor suma una vez cada uno (`DELTA_DEUDA` en `servidor/src/index.js`); lo cazó `fadori/pruebas-fiados.mjs` con dos mostradores sin red |
 
+   | las pruebas que corren solas al cargar la página reponen todo al final y no dejan rastro | corrían en CADA aparato de verdad, encima de sus datos; si una tronaba a la mitad, lo movido se quedaba, y una dejaba el primer platillo llamándose «Guisado del día con arroz» | el 12 de octubre volvió a producción el menú inventado (pozole, chilaquiles, el guisado dos veces) y Carlos lo vio el 14. Ahora sólo corren con `?pruebas`, y el servidor no deja que lo retirado regrese (`RETIRADOS`) |
+   | `speechSynthesis.speak()` habla cuando lo llamas | el navegador lo bloquea CALLADO si nadie ha tocado la página; la pantalla arranca sola y a los 9 s escondía el botón grande | «la voz que dice el turno no está sonando». Cualquier toque la desbloquea (`desbloquearVoz` en `tele.js`) y el botón dice «Toca una vez para que se oigan los turnos» |
+   | `context.setOffline(true)` corta todo lo que pide la página | NO corta lo que va por `ctx.route` y se reenvía desde Node (el modo LOCAL de la mesa): `navigator.onLine` dice false y el pedido sí sale | la prueba de «por mandar» daba rojo con el código sano; lo de «sin red» de verdad se prueba con el trabajador de fondo en localhost (`/tmp` → `sw-off`) |
+   | `w.scrollWidth` mide lo mismo que `el.clientWidth` | con `zoom` en `w`, scrollWidth viene en los px de ADENTRO: nunca «cabía» y la fila se quedaba con un solo número | al encoger bloques para que quepan, todo se mide con `getBoundingClientRect` (`encajar` en `tele.js`) |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---

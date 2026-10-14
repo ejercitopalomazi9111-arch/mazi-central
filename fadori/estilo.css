@@ -1745,3 +1745,30 @@ label small.tenue{font-weight:600; color:var(--tenue); opacity:.85}
 .tv-llc-e input{width:44px; min-height:40px; text-align:center; border:0; border-left:1px solid var(--linea); background:none; font:inherit; font-weight:800}
 .tv-llc-e.gano{background:var(--rescoldo)} .tv-llc-e.gano button{color:var(--naranja-hondo)}
 .tv-llc-e.hueco{color:var(--tenue); padding:0 10px; font-style:italic}
+
+/* ══ PREGUNTAS FRECUENTES ══ */
+.faq{border:0; border-radius:20px; padding:0; width:min(620px, calc(100% - 24px)); max-height:calc(100dvh - 40px); background:var(--sup); color:var(--cafe); box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.faq::backdrop{background:rgba(26,15,10,.55)}
+.faq-cab{position:sticky; top:0; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 18px; background:var(--sup); border-bottom:1px solid var(--linea)}
+.faq-cab h2{margin:0}
+.faq-lista{padding:6px 18px 18px}
+.faq-q{border-bottom:1px solid var(--linea)}
+.faq-q summary{cursor:pointer; list-style:none; display:flex; justify-content:space-between; gap:12px; align-items:center; min-height:52px; font-weight:800; font-size:16px}
+.faq-q summary::-webkit-details-marker{display:none}
+.faq-q summary::after{content:'+'; font-size:22px; color:var(--naranja); flex:none}
+.faq-q[open] summary::after{content:'−'}
+.faq-q p{margin:0 0 14px; line-height:1.5; color:var(--tenue)}
+.faq-q p b{color:var(--cafe)}
+:root[data-tema="oscuro"] .faq, :root[data-tema="oscuro"] .faq-cab{color:var(--texto, #F5EDE3)}
+
+/* ══ LA PANTALLA DE CARGA (cuando la cortinilla ya salió en esta visita) ══ */
+.cargando{position:fixed; inset:0; z-index:9000; display:grid; place-items:center; background:var(--fondo); transition:opacity .3s}
+.cargando.se-va{opacity:0; pointer-events:none}
+.cargando .caj{display:flex; flex-direction:column; align-items:center; gap:14px}
+.cargando img{width:88px; height:88px; border-radius:22px; animation:late 1.1s ease-in-out infinite}
+.cargando .barra-c{width:140px; height:5px; border-radius:3px; background:var(--linea); overflow:hidden}
+.cargando .barra-c i{display:block; width:40%; height:100%; background:var(--naranja); border-radius:3px; animation:corre 1s ease-in-out infinite}
+.cargando small{font-weight:700; color:var(--tenue)}
+@keyframes late{50%{transform:scale(1.06)}}
+@keyframes corre{0%{transform:translateX(-100%)} 100%{transform:translateX(260%)}}
+@media (prefers-reduced-motion: reduce){ .cargando img, .cargando .barra-c i{animation:none} }
