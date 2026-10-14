@@ -80,14 +80,15 @@ ok('con su primer nombre, porque ella eligió «mi nombre»', /Ana/.test(esquina
 ok('sin su apellido ni su grupo', !/Pérez|3B/.test(await tv.textContent('body')));
 ok('y con lo que pidió («2 …» del primer platillo)', /2 \S/.test(esquina), esquina);
 ok('salió el letrero grande encima del programa', (await tarda(tv, () => document.querySelector('#llamado').classList.contains('sale'), null, 4000)) != null);
-const dicho = await tarda(tv, () => window.__dichos.length > 0, null, 6000);
-ok('y la voz dice el turno y su nombre', dicho != null && await tv.evaluate(() => /^Turno \d+\. Ana, tu pedido está listo\.$/.test(window.__dichos[0])), await tv.evaluate(() => window.__dichos.join(' | ')));
+const dicho = await tarda(tv, () => window.__dichos.some(x => /Turno/.test(x)), null, 6000);
+/* (el primer «dicho» puede ser el espacio en silencio que desbloquea la voz) */
+ok('y la voz dice el turno, su nombre y lo que pidió', dicho != null && await tv.evaluate(() => /^Turno \d+\. Ana, tu pedido está listo: 2 .+\.$/.test(window.__dichos.filter(x => /Turno/.test(x))[0])), await tv.evaluate(() => window.__dichos.join(' | ')));
 await most.evaluate(id => { const F = FADORI; F.tomar(id, 'prueba'); F.marcarListo(id); }, idB);
 await tarda(tv, id => document.querySelector('#llamando').dataset.turno === id, idB);
 const esq2 = await tv.textContent('#llamando');
 ok('el de Beto sale con lo que pidió y SIN nombre (eligió «sólo mi pedido»)', !/Beto/.test(esq2) && esq2.length > 20, esq2);
 await tv.waitForTimeout(7600);
-ok('los avisos van en fila: también se dijo el de Beto, sin nombre', await tv.evaluate(() => window.__dichos.length >= 2 && /^Turno \d+\. tu pedido está listo\.$/.test(window.__dichos[1])), await tv.evaluate(() => window.__dichos.join(' | ')));
+ok('los avisos van en fila: también se dijo el de Beto, sin nombre', await tv.evaluate(() => { const d = window.__dichos.filter(x => /Turno/.test(x)); return d.length >= 2 && /^Turno \d+\. tu pedido está listo: .+\.$/.test(d[1]); }), await tv.evaluate(() => window.__dichos.join(' | ')));
 ok('Ana pasa a «También listos»', /Ana/.test(await tv.textContent('#bListos')));
 
 console.log('\n2 · la tanda de anuncios con el logo que gira');

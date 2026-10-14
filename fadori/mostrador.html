@@ -639,7 +639,10 @@ function abrirDeAPie(){
     try{
       F.pedir(null, carrito, { origen:'mostrador', nombre: $('#hNombre').value.trim() || 'Mostrador', grupo: $('#hGrupo').value.trim() });
       $('#velo').hidden = true; pintar();
-      aviso('Pedido metido a la fila.', 'bueno');
+      /* sin la llave del mostrador el pedido se queda SÓLO en esta tablet: ni
+         la pantalla ni el otro mostrador lo ven. Que se sepa en ese momento. */
+      if(F.motor() === 'servidor' && !F.llaveMostrador()) aviso('Quedó en ESTA tablet nada más: no está conectada. Pon el pasador con internet para que salga en la pantalla y en la fila.', 'malo');
+      else aviso('Pedido metido a la fila: ya sale en la pantalla.', 'bueno');
     }catch(e){ aviso(e.message, 'malo'); }
   });
   $('#velo').hidden = false;
