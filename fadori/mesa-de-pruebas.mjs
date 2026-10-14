@@ -44,7 +44,9 @@ export async function abrirMesa(nombre = 'flujos'){
   const CASA = 'prueba-' + nombre + '-' + Date.now();
   const API_LOCAL = process.env.API_LOCAL || '';
   const px = process.env.HTTPS_PROXY ? new URL(process.env.HTTPS_PROXY) : null;
-  const br = await chromium.launch(px && !API_LOCAL ? { proxy: { server: `${px.protocol}//${px.host}`, username: decodeURIComponent(px.username), password: decodeURIComponent(px.password) } } : {});
+  /* cámara y micrófono de mentira para la transmisión en vivo (WebRTC) */
+  const MEDIOS = ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', '--autoplay-policy=no-user-gesture-required'];
+  const br = await chromium.launch(Object.assign({ args: MEDIOS }, px && !API_LOCAL ? { proxy: { server: `${px.protocol}//${px.host}`, username: decodeURIComponent(px.username), password: decodeURIComponent(px.password) } } : {}));
   const fallas = [];
   const ok = (q, c, extra) => { console.log((c ? '  ✓ ' : '  ✗ ') + q + (!c && extra ? ' · ' + extra : '')); if(!c) fallas.push(q); };
 

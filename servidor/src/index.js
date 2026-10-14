@@ -134,6 +134,7 @@ export class Cooperativa {
       this.subs = {};                                          /* aparato -> suscripción de notificaciones */
       for(const [k, v] of await g.list({ prefix: 'push:' })) this.subs[k.slice(5)] = v;
       this.limpiado = (await g.get('limpiado')) || 0;
+      this.transmision = (await g.get('transmision')) || null;   /* el partido en vivo: marcador, llaves, fuente */
       this.datos = {};
       for(const c of CAJONES) this.datos[c] = {};
       for(const [k, v] of await g.list({ prefix: 'r:' })){
@@ -235,6 +236,7 @@ export class Cooperativa {
       return json({ bien: true });
     }
     if(ruta.endsWith('/pasador')) return this.cambiarPasador(cuerpo, quien);
+    if(ruta.endsWith('/transmision')) return this.ponerTransmision(cuerpo, quien);
     if(ruta.endsWith('/codigo')) return this.porCodigo(cuerpo, quien);
     if(ruta.endsWith('/push/alta')) return this.altaPush(cuerpo, quien);
     if(ruta.endsWith('/push/baja')){
@@ -588,9 +590,50 @@ export class Cooperativa {
        tiempo mientras nadie habla */
     this.ctx.acceptWebSocket(servidor, etiquetas);
     servidor.send(JSON.stringify({ tipo: 'reloj', reloj: this.reloj }));
+    if(this.transmision) servidor.send(JSON.stringify({ tipo: 'transmision', estado: this.transmision, ahora: Date.now() }));
     return new Response(null, { status: 101, webSocket: cliente });
   }
-  webSocketMessage(){ /* el latido lo contesta Cloudflare solo; lo demás se ignora */ }
+
+  /* ── EL PARTIDO EN VIVO (Carlos, 14 de octubre: «reproducir en vivo videos
+     como los partidos de fútbol, actualizar en tiempo real el marcador,
+     ponerme de comentarista y mostrar cómo están las llaves del torneo»).
+     El estado (marcador, llaves, de dónde sale el video) lo cambia SÓLO quien
+     tiene la llave del mostrador; se guarda y se empuja al instante a todas
+     las pantallas por el mismo socket de los pedidos. */
+  async ponerTransmision(cuerpo, quien){
+    if(!quien.admin) return json({ error: 'Sólo el mostrador.' }, 401);
+    const e = cuerpo && cuerpo.estado;
+    if(!e || typeof e !== 'object' || Array.isArray(e)) return json({ error: 'Falta el estado.' }, 400);
+    let txt = '';
+    try{ txt = JSON.stringify(e); }catch(err){ return json({ error: 'No se pudo leer.' }, 400); }
+    if(txt.length > 24000) return json({ error: 'Demasiado grande.' }, 413);
+    this.transmision = Object.assign(JSON.parse(txt), { t: Date.now() });
+    await this.ctx.storage.put('transmision', this.transmision);
+    const m = JSON.stringify({ tipo: 'transmision', estado: this.transmision, ahora: Date.now() });
+    for(const ws of this.ctx.getWebSockets()){ try{ ws.send(m); }catch(err){} }
+    return json({ bien: true, t: this.transmision.t });
+  }
+
+  /* LA SEÑAL del video y la voz del comentarista (WebRTC). El servidor sólo
+     pasa recados entre aparatos: la imagen y el sonido van directo del
+     teléfono a la pantalla, no por aquí. Quien tiene la llave del mostrador
+     puede escribirle a cualquiera; los demás sólo le contestan a un mostrador. */
+  webSocketMessage(ws, msg){
+    if(typeof msg !== 'string' || msg === 'ping' || msg.length > 60000) return;
+    let m = null; try{ m = JSON.parse(msg); }catch(e){ return; }
+    if(!m || m.tipo !== 'senal') return;
+    const de = this.quienDe(ws);
+    if(!de.aparato || !this.cuenta('senal:' + de.aparato, 60000, 600)) return;
+    const para = String(m.para || '');
+    const sale = JSON.stringify({ tipo: 'senal', de: de.aparato, datos: m.datos === undefined ? null : m.datos });
+    for(const otro of this.ctx.getWebSockets()){
+      if(otro === ws) continue;
+      const q = this.quienDe(otro);
+      if(para !== '*' && q.aparato !== para) continue;
+      if(!de.admin && !q.admin) continue;
+      try{ otro.send(sale); }catch(e){}
+    }
+  }
   webSocketClose(){}
   webSocketError(){}
 

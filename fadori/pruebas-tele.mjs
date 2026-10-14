@@ -80,14 +80,15 @@ ok('con su primer nombre, porque ella eligió «mi nombre»', /Ana/.test(esquina
 ok('sin su apellido ni su grupo', !/Pérez|3B/.test(await tv.textContent('body')));
 ok('y con lo que pidió («2 …» del primer platillo)', /2 \S/.test(esquina), esquina);
 ok('salió el letrero grande encima del programa', (await tarda(tv, () => document.querySelector('#llamado').classList.contains('sale'), null, 4000)) != null);
-const dicho = await tarda(tv, () => window.__dichos.length > 0, null, 6000);
-ok('y la voz dice el turno y su nombre', dicho != null && await tv.evaluate(() => /^Turno \d+\. Ana, tu pedido está listo\.$/.test(window.__dichos[0])), await tv.evaluate(() => window.__dichos.join(' | ')));
+const dicho = await tarda(tv, () => window.__dichos.some(x => /Turno/.test(x)), null, 6000);
+/* (el primer «dicho» puede ser el espacio en silencio que desbloquea la voz) */
+ok('y la voz dice el turno, su nombre y lo que pidió', dicho != null && await tv.evaluate(() => /^Turno \d+\. Ana, tu pedido está listo: 2 .+\.$/.test(window.__dichos.filter(x => /Turno/.test(x))[0])), await tv.evaluate(() => window.__dichos.join(' | ')));
 await most.evaluate(id => { const F = FADORI; F.tomar(id, 'prueba'); F.marcarListo(id); }, idB);
 await tarda(tv, id => document.querySelector('#llamando').dataset.turno === id, idB);
 const esq2 = await tv.textContent('#llamando');
 ok('el de Beto sale con lo que pidió y SIN nombre (eligió «sólo mi pedido»)', !/Beto/.test(esq2) && esq2.length > 20, esq2);
 await tv.waitForTimeout(7600);
-ok('los avisos van en fila: también se dijo el de Beto, sin nombre', await tv.evaluate(() => window.__dichos.length >= 2 && /^Turno \d+\. tu pedido está listo\.$/.test(window.__dichos[1])), await tv.evaluate(() => window.__dichos.join(' | ')));
+ok('los avisos van en fila: también se dijo el de Beto, sin nombre', await tv.evaluate(() => { const d = window.__dichos.filter(x => /Turno/.test(x)); return d.length >= 2 && /^Turno \d+\. tu pedido está listo: .+\.$/.test(d[1]); }), await tv.evaluate(() => window.__dichos.join(' | ')));
 ok('Ana pasa a «También listos»', /Ana/.test(await tv.textContent('#bListos')));
 
 console.log('\n2 · la tanda de anuncios con el logo que gira');
@@ -325,6 +326,20 @@ ok('y si nadie toca, regresa sola a la pantalla de turnos', (await tarda(tab, ()
 const s10 = (Date.now() - t10) / 1000;
 ok(`… a los 10 s (${s10.toFixed(1)} s)`, s10 > 8.5 && s10 < 12.5);
 ok('sin dejar nada en el carrito', await k.evaluate(() => document.querySelector('#cestaCuantos').textContent === '0'));
+
+console.log('\n4b-bis · hacer scroll también cuenta, y el programa no se calla (14 de octubre)');
+await tab.mouse.click(420, 360);
+await tarda(tab, () => !document.querySelector('#kCapa').hidden, null, 4000);
+await k.fill('#kaNombre', 'Scroll').catch(() => {}); await k.click('#kaListo').catch(() => {});
+const tS = Date.now();
+while(Date.now() - tS < 7000){ await k.evaluate(() => { window.scrollBy(0, 40); window.scrollBy(0, -40); }); await k.waitForTimeout(1200); }
+ok('7 s haciendo scroll (con espera de 4) y NO pregunta «¿sigues ahí?»', await k.evaluate(() => document.querySelector('#kTicket').hidden));
+ok('con la tablet abierta el programa sigue (no se pausa)', await tab.evaluate(() => !TELE.Programa.pausado));
+ok('y el video se hace chico en una esquina', await tab.evaluate(() => document.body.classList.contains('con-pip')));
+ok('la tira de arriba dice quién ya puede pasar', /Ya puede pasar/.test(await tab.textContent('#kMini')));
+await tab.click('#kCerrar');
+await tarda(tab, () => document.querySelector('#kCapa').hidden, null, 3000);
+ok('al cerrar, el video regresa a su lugar', await tab.evaluate(() => !document.body.classList.contains('con-pip')));
 await tab.evaluate(() => localStorage.removeItem('fadori_kiosco_espera'));
 
 console.log('\n4c · la puerta escondida al mostrador (dedo 2 s sobre «Lo anota la cooperativa»)');

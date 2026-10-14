@@ -834,12 +834,14 @@ const MotorServidor = {
       this.enLinea = true;
       this._reintento = 2000;
       this.pendientes = 0;
+      this._fallos = 0; this._ultimoBien = ahora(); this._lat = ahora() - this.ultimoIntento;
       if(cambio) this._avisar();
     }catch(e){
       /* Aquí NO se avienta el error: quedarse sin red no es un error del
          alumno y no tiene por qué salirle en pantalla. Lo suyo ya está
          guardado en su aparato; esto se vuelve a intentar solo. */
       this.enLinea = false;
+      this._fallos = (this._fallos || 0) + 1;
       this._reintento = Math.min(this._reintento * 2, 60000);
       clearTimeout(this._alarma);
       this._alarma = setTimeout(() => this.empujar(), this._reintento);
@@ -967,6 +969,38 @@ const MotorServidor = {
     try{ return localStorage.getItem('fadori_casa') || 'rembrandt'; }catch(e){ return 'rembrandt'; }
   },
 
+  /* ── qué tal la conexión: bien · inestable · sinred · local ────────── */
+  _nace: Date.now(),
+  conexion(){
+    if(!direccionServidor()) return 'local';
+    if(typeof navigator !== 'undefined' && navigator.onLine === false) return 'sinred';
+    if(ahora() - this._nace < 8000) return 'bien';           /* arrancando: todavía no hay de qué preocuparse */
+    if((this._fallos || 0) >= 3) return 'sinred';
+    const wsMal = !this._ws || this._ws.readyState !== 1 ? (this._wsCaido && ahora() - this._wsCaido > 10000) : false;
+    if((this._fallos || 0) >= 1 || wsMal || (this._lat || 0) > 4000) return 'inestable';
+    return 'bien';
+  },
+
+  /* ── el partido en vivo ─────────────────────────────────────────────── */
+  _vivo: [],
+  transmision: null,
+  alVivo(fn){ this._vivo.push(fn); if(this.transmision) try{ fn({ tipo: 'transmision', estado: this.transmision, ahora: Date.now() + (this._desfaseVivo || 0) }); }catch(e){} },
+  aparato(){ return aparatoId(); },
+  /* un recado para otro aparato (la señal de WebRTC); «*» = a todos */
+  mandarVivo(para, datos){
+    const ws = this._ws; if(!ws || ws.readyState !== 1) return false;
+    try{ ws.send(JSON.stringify({ tipo: 'senal', para, datos })); return true; }catch(e){ return false; }
+  },
+  async ponerTransmision(estado){
+    const api = direccionServidor();
+    if(!api){ this.transmision = Object.assign({}, estado, { t: ahora() }); this._vivo.forEach(f => { try{ f({ tipo: 'transmision', estado: this.transmision }); }catch(e){} }); return true; }
+    const r = await fetch(api + '/api/transmision?casa=' + encodeURIComponent(this.casa()), {
+      method: 'POST', headers: cabezasSync(), body: JSON.stringify({ estado }) });
+    const j = await r.json().catch(() => ({}));
+    if(!r.ok) throw new Error(j.error || 'No se pudo.');
+    return true;
+  },
+
   /* ── El socket: no trae datos, trae "hubo cambio, ven por él" ───────── */
   enchufar(){
     const api = direccionServidor();
@@ -978,10 +1012,19 @@ const MotorServidor = {
     try{
       const ws = new WebSocket(url);
       this._ws = ws;
+      this._ultimoMsg = ahora();
       ws.onmessage = (e) => {
+        this._ultimoMsg = ahora();
         if(e.data === 'pong') return;
         let m = null; try{ m = JSON.parse(e.data); }catch(err){ return; }
         if(!m) return;
+        /* el partido en vivo y la señal de video/voz no son datos de la
+           cooperativa: van directo a quien los escucha (transmision.js) */
+        if(m.tipo === 'transmision' || m.tipo === 'senal'){
+          if(m.tipo === 'transmision'){ this.transmision = m.estado; this._desfaseVivo = typeof m.ahora === 'number' ? m.ahora - Date.now() : 0; }
+          this._vivo.forEach(f => { try{ f(m); }catch(err){} });
+          return;
+        }
         /* el servidor manda el cambio mismo, ya recortado a lo que este
            aparato puede ver: no hace falta volver a preguntar. Si se perdió
            alguno (el reloj no cuadra), entonces sí se pregunta. */
@@ -995,16 +1038,23 @@ const MotorServidor = {
         }
         if(m.tipo === 'reloj' && m.reloj > this._reloj) this.empujar();
       };
-      ws.onopen  = () => { this.enLinea = true; this.empujar(); };
+      ws.onopen  = () => { this.enLinea = true; this._wsCaido = 0; this._ultimoMsg = ahora(); this.empujar(); };
       ws.onclose = () => {
         if(this._ws !== ws) return;          /* uno viejo que se cerró al cambiarlo: no se reconecta */
-        this.enLinea = false; clearTimeout(this._reconecta);
+        this.enLinea = false; if(!this._wsCaido) this._wsCaido = ahora(); clearTimeout(this._reconecta);
         this._reconecta = setTimeout(() => this.enchufar(), 4000); };
       ws.onerror = () => { try{ ws.close(); }catch(e){} };
       clearInterval(this._latido);
+      /* el latido cada 20 s. Si en 50 s no llegó NADA (ni el «pong»), el
+         socket está muerto aunque diga que está abierto —pasa en el wifi de
+         la escuela al cambiar de antena—: se cierra y se vuelve a conectar,
+         y mientras, los cambios llegan preguntando. */
       this._latido = setInterval(() => {
-        try{ if(ws.readyState === 1) ws.send('ping'); }catch(e){}
-      }, 30000);
+        try{
+          if(ws.readyState === 1) ws.send('ping');
+          if(ahora() - (this._ultimoMsg || 0) > 50000){ this._ultimoMsg = ahora(); ws.close(); this.empujar(); }
+        }catch(e){}
+      }, 20000);
     }catch(e){ /* sin socket se sigue trabajando: queda el reloj de abajo */ }
   },
 
@@ -1036,6 +1086,9 @@ const MotorServidor = {
         this.empujar();
       };
       document.addEventListener('visibilitychange', this._alVolver);
+      /* al volver la red, de inmediato: no esperar a la siguiente ronda */
+      addEventListener('online', () => { this.enchufar(); this.empujar(); avisoRed(); });
+      addEventListener('offline', () => { avisoRed(); });
     }
     this.empujar();
   },
@@ -2847,5 +2900,49 @@ const FADORI = {
 };
 
 global.FADORI = FADORI;
+
+/* ══════════════════════════════════════════════════════════════════════════
+   EL AVISO DE CONEXIÓN (Carlos, 14 de octubre: «un aviso cuando la conexión
+   sea inestable»). Una píldora arriba al centro, en TODAS las pantallas de
+   Fadori: sin internet, inestable, y «conectado de nuevo» al volver. Nunca
+   tapa un toque (no recibe clics).
+   ═════════════════════════════════════════════════════════════════════════ */
+let redAntes = 'bien', redVolvio = 0;
+function avisoRed(){
+  if(typeof document === 'undefined' || !document.body) return;
+  try{ if(window.parent !== window) return; }catch(e){}          /* la tablet dentro de la pantalla: avisa la pantalla */
+  const m = MotorServidor.conexion();
+  if(m === 'local') return;
+  let el = document.getElementById('fadoriRed');
+  if(!el){
+    el = document.createElement('div'); el.id = 'fadoriRed'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite');
+    el.style.cssText = 'position:fixed;left:50%;top:calc(env(safe-area-inset-top, 0px) + 8px);transform:translateX(-50%);z-index:2147483000;' +
+      'max-width:calc(100% - 24px);padding:8px 16px;border-radius:999px;font:700 14px/1.3 system-ui,-apple-system,sans-serif;text-align:center;' +
+      'box-shadow:0 6px 20px rgba(0,0,0,.25);pointer-events:none;transition:opacity .3s, transform .3s';
+    document.body.appendChild(el);
+  }
+  if(m !== 'bien' && redAntes === 'bien') redVolvio = 0;
+  if(m === 'bien' && redAntes !== 'bien') redVolvio = ahora();
+  redAntes = m;
+  /* lo que falta por subir, de la lista de pendientes (chica: sólo ids) */
+  let pend = 0;
+  if(m !== 'bien'){ try{ const pp = MotorServidor._pend(); for(const c in pp){ if(c === 'config') pend++; else pend += Object.keys(pp[c] || {}).length; } }catch(e){} }
+  let txt = '', fondo = '';
+  if(m === 'sinred'){ txt = 'Sin internet · lo que hagas se guarda aquí y se manda solo al volver' + (pend ? ' (' + pend + ' por mandar)' : ''); fondo = '#7A1F12'; }
+  else if(m === 'inestable'){ txt = 'Conexión inestable · puede tardar en llegar, no cierres la app'; fondo = '#8A5A08'; }
+  else if(redVolvio && ahora() - redVolvio < 3000){ txt = '✓ Conectado de nuevo'; fondo = '#2F5A17'; }
+  el.style.background = fondo || 'transparent'; el.style.color = '#fff';
+  el.textContent = txt;
+  el.style.opacity = txt ? '1' : '0';
+  el.dataset.estado = txt ? m : '';
+}
+FADORI.avisoRed = avisoRed;
+if(typeof window !== 'undefined' && typeof document !== 'undefined'){
+  setInterval(avisoRed, 1500);
+  /* la copia para abrir sin internet (sw.js): en todas las pantallas de Fadori */
+  try{
+    if('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(() => {});
+  }catch(e){}
+}
 
 })(typeof window !== 'undefined' ? window : globalThis);

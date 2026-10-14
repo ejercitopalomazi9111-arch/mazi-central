@@ -15,6 +15,7 @@
        regresa sola haciendo zoom hacia el turno. */
 import { mezclarAnuncios, prepararAnuncio, dibujarIdent, dibujarAnuncio, DURA_IDENT, DURA_ANUNCIO } from './anuncios.js';
 import { enlace, leerID3, largoID3, YT } from './relleno.js';
+import { montarPantalla } from './transmision.js';
 
 const $ = (s) => document.querySelector(s);
 const F = window.FADORI;
@@ -88,9 +89,46 @@ function flip(nodos, cambiar, { dur = 700, entra = 'derecha' } = {}){
 function pon(sel, html){
   const el = $(sel); if(el._html === html) return; el._html = html;
   flip(() => el.querySelectorAll('[data-id]').length ? [...el.querySelectorAll('[data-id]')].map(x => (x.dataset.flip = x.dataset.id, x)) : [],
-    () => { el.innerHTML = html; el.querySelectorAll('[data-id]').forEach(x => { x.dataset.flip = x.dataset.id; }); }, { dur: 600 });
+    () => { el.innerHTML = html ? '<div class="encaje">' + html + '</div>' : ''; el.querySelectorAll('[data-id]').forEach(x => { x.dataset.flip = x.dataset.id; }); encajarTodo(); }, { dur: 600 });
   if(sel === '#llamando'){ const n = el.querySelector('.n, .sigue b'); if(n && !quieto()) n.animate([{ transform: 'translateY(30px) scale(.96)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 650, easing: CURVA }); }
 }
+/* QUE TODO QUEPA EN CUALQUIER PANTALLA (Carlos, 14 de octubre: «los
+   próximos en fila se cortan», «los elementos se escalan mal en pantallas
+   diferentes»). Cada bloque se encoge entero (zoom) hasta caber en el lugar
+   que le toca, y si ni así, los números de la fila que sobran se cambian por
+   «y N más» con la cuenta correcta. Antes la fila tenía un tope de alto con
+   `overflow:hidden`: los números de abajo simplemente desaparecían. */
+function encajar(el){
+  const w = el && el.querySelector(':scope > .encaje'); if(!w || !el.offsetParent) return;
+  w.style.zoom = 1;
+  w.querySelectorAll('.numeros b[hidden]').forEach(b => { b.hidden = false; });
+  const masFila = w.querySelector('.mas-calc'); if(masFila) masFila.remove();
+  const tope = () => {
+    const r = el.getBoundingClientRect(), cs = getComputedStyle(el);
+    let fondo = r.bottom - parseFloat(cs.paddingBottom || 0) - parseFloat(cs.borderBottomWidth || 0);
+    const clip = el.parentElement && el.parentElement.closest('.turnos, .siguen, .tv-cuerpo');
+    if(clip) fondo = Math.min(fondo, clip.getBoundingClientRect().bottom);
+    return fondo;
+  };
+  /* todo en medidas de pantalla: con zoom, scrollWidth viene en los px de
+     adentro y nunca «cabía» */
+  const cabe = () => { const r = w.getBoundingClientRect(); return r.bottom <= tope() + 1 && r.right <= el.getBoundingClientRect().right + 2; };
+  let z = 1;
+  while(!cabe() && z > 0.56){ z = Math.round((z - 0.06) * 100) / 100; w.style.zoom = z; }
+  if(cabe()) return;
+  /* la fila: fuera los números que no caben, y la cuenta de los que faltan */
+  const nums = [...w.querySelectorAll('.numeros b')]; if(!nums.length) return;
+  const total = Number(el.dataset.total) || nums.length;
+  const viejo = w.querySelector('.mas'); if(viejo) viejo.hidden = true;
+  const p = document.createElement('p'); p.className = 'mas mas-calc'; w.appendChild(p);
+  for(let i = nums.length - 1; i > 0 && !cabe(); i--){
+    nums[i].hidden = true;
+    p.textContent = 'y ' + (total - i) + ' más';
+  }
+}
+function encajarTodo(){ ['#llamando', '#bListos', '#bPrep', '#bFila'].forEach(s => encajar($(s))); }
+addEventListener('resize', () => { clearTimeout(encajarTodo._t); encajarTodo._t = setTimeout(encajarTodo, 120); });
+
 function pintarTurnos(){
   const d = F.estado();
   const listos = d.pedidos.filter(p => p.estado === 'listo').sort((a, b) => (b.listoEn || 0) - (a.listoEn || 0));
@@ -101,11 +139,19 @@ function pintarTurnos(){
   yaListos = new Set(listos.map(p => p.id)); yaPrep = new Set(prep.map(p => p.id));
 
   const top = listos[0];
-  pon('#llamando', '<h2>' + F.ico('circle-check-big') + 'Ya puede pasar</h2>' + (top
-    ? '<b class="n">' + esc(F.verTurno(top)) + '</b>' + (quien(top) ? '<span class="quien">' + esc(quien(top)) + '</span>' : '') +
+  /* Sin nadie listo NO decía nada útil: «Ya puede pasar» con la caja vacía
+     (Carlos: «debería decir que la fila está libre y que pidan desde la
+     app»). Ahora son tres casos: alguien listo, gente esperando, o libre. */
+  const estadoDe = (p) => p.estado === 'preparando' ? 'preparando' : 'recibido, en la fila';
+  pon('#llamando', top
+    ? '<h2>' + F.ico('circle-check-big') + 'Ya puede pasar</h2><b class="n">' + esc(F.verTurno(top)) + '</b>' + (quien(top) ? '<span class="quien">' + esc(quien(top)) + '</span>' : '') +
       (pidio(top) ? '<span class="pidio">' + esc(pidio(top, 4)) + '</span>' : '')
-    : '<span class="vacio">Aquí sale tu número cuando esté listo</span>' +
-      (cola[0] ? '<span class="sigue">Sigue el<b>' + esc(F.verTurno(cola[0])) + '</b></span>' : '')));
+    : cola.length
+      ? '<h2>' + F.ico('chef-hat') + 'Preparando los pedidos</h2><span class="vacio">Aquí sale tu número cuando esté listo</span>' +
+        '<span class="sigue">Sigue el<b>' + esc(F.verTurno(cola[0])) + '</b><small>' + estadoDe(cola[0]) + '</small></span>'
+      : '<h2>' + F.ico('sparkles') + 'La fila está libre</h2><span class="libre">Pide desde la app</span>' +
+        '<span class="vacio">Escanea el código, pide y pasa cuando salga tu número.</span><img class="qr-libre" src="qr/abrir.svg" alt="Código para abrir Fadori">');
+  $('#llamando').classList.toggle('libre-ya', !top && !cola.length);
   $('#llamando').dataset.turno = top ? top.id : '';
 
   const ficha = (p, clase) => '<div class="ficha ' + clase + (p.id === nuevoDeTablet ? ' nueva' : '') + '" data-id="' + p.id + '"><b>' + esc(F.verTurno(p)) + '</b>' +
@@ -113,13 +159,14 @@ function pintarTurnos(){
   const otros = listos.slice(1);
   pon('#bListos', otros.length ? '<h3>' + F.ico('circle-check-big') + 'También listos</h3><div class="fichas">' +
     otros.slice(0, 3).map(p => ficha(p, 'lista')).join('') + '</div>' + (otros.length > 3 ? '<p class="mas">y ' + (otros.length - 3) + ' más</p>' : '') : '');
-  pon('#bPrep', '<h3>' + F.ico('chef-hat') + 'En la plancha <span class="cuenta">' + (prep.length || '') + '</span></h3>' +
+  pon('#bPrep', '<h3>' + F.ico('chef-hat') + 'Preparando <span class="cuenta">' + (prep.length || '') + '</span></h3>' +
     (prep.length ? '<div class="fichas">' + prep.slice(0, 2).map(p => ficha(p, 'prep')).join('') + '</div>' + (prep.length > 2 ? '<p class="mas">y ' + (prep.length - 2) + ' más</p>' : '')
       : '<p class="mas">Nada en la plancha</p>'));
   /* la fila: el primero (el que sigue) resaltado */
-  pon('#bFila', '<h3>' + F.ico('hourglass') + 'Siguen en la fila <span class="cuenta">' + (fila.length || '') + '</span></h3>' +
-    (fila.length ? '<div class="numeros">' + fila.slice(0, 10).map((p, i) => '<b data-id="' + p.id + '" class="' + (i === 0 ? 'primero' : '') + (p.id === nuevoDeTablet ? ' nueva' : '') + '">' + esc(F.verTurno(p)) + '</b>').join('') + '</div>' +
-      (fila.length > 10 ? '<p class="mas">y ' + (fila.length - 10) + ' más</p>' : '') : '<p class="mas">Nadie esperando</p>'));
+  $('#bFila').dataset.total = fila.length;
+  pon('#bFila', '<h3>' + F.ico('hourglass') + 'Recibidos · en la fila <span class="cuenta">' + (fila.length || '') + '</span></h3>' +
+    (fila.length ? '<div class="numeros">' + fila.slice(0, 40).map((p, i) => '<b data-id="' + p.id + '" class="' + (i === 0 ? 'primero' : '') + (p.id === nuevoDeTablet ? ' nueva' : '') + '">' + esc(F.verTurno(p)) + '</b>').join('') + '</div>' +
+      (fila.length > 40 ? '<p class="mas">y ' + (fila.length - 40) + ' más</p>' : '') : '<p class="mas">Nadie esperando</p>'));
 
   /* lo nuevo: el timbre, la voz y el letrero grande */
   if(antes){
@@ -128,12 +175,16 @@ function pintarTurnos(){
     if(nuevos.length){ const c = $('#llamando'); c.classList.remove('brinca'); void c.offsetWidth; c.classList.add('brinca'); }
     if(antesPrep && cfg.plancha && prep.some(p => !antesPrep.has(p.id))) Sonido.tin();
   }
-  pintarMini(listos);
+  pintarMini(listos, prep, fila);
+  encajarTodo();
 }
-function pintarMini(listos){
+function pintarMini(listos, prep = [], fila = []){
   const top = listos[0];
-  $('#kMini').innerHTML = '<small>Ya puede pasar</small><b>' + (top ? esc(F.verTurno(top)) : '—') + '</b>' +
-    (listos.length > 1 ? '<span>' + listos.slice(1, 4).map(p => esc(F.verTurno(p))).join(' · ') + '</span>' : '');
+  const grupo = (txt, cl, ps) => ps.length ? '<span class="k-est ' + cl + '"><small>' + txt + '</small>' + ps.slice(0, 4).map(p => '<i>' + esc(F.verTurno(p)) + '</i>').join('') + (ps.length > 4 ? '<em>+' + (ps.length - 4) + '</em>' : '') + '</span>' : '';
+  const html = '<span class="k-est listo"><small>Ya puede pasar</small><b>' + (top ? esc(F.verTurno(top)) : '—') + '</b>' +
+    listos.slice(1, 3).map(p => '<i>' + esc(F.verTurno(p)) + '</i>').join('') + '</span>' +
+    grupo('Preparando', 'prep', prep) + grupo('En la fila', 'fila', fila);
+  const k = $('#kMini'); if(k._html !== html){ k._html = html; k.innerHTML = html; }
 }
 
 /* ── el timbre y la voz ─────────────────────────────────────────────── */
@@ -175,14 +226,31 @@ function voz(){
   return vs.find(v => /^es[-_]MX/i.test(v.lang)) || vs.find(v => /^es[-_](US|419)/i.test(v.lang)) || vs.find(v => /^es/i.test(v.lang)) || null;
 }
 if('speechSynthesis' in window) speechSynthesis.onvoiceschanged = () => { vozLista = voz(); };
+/* LA VOZ NO SONABA (Carlos, 14 de octubre). La causa: el navegador sólo deja
+   hablar a una página que alguien ya TOCÓ, y la pantalla arranca sola; a los
+   9 s escondía el botón grande y la voz se quedaba bloqueada sin decir nada.
+   Ahora cualquier toque la desbloquea (y el timbre), se dice una frase vacía
+   para que Safari la suelte, y Chrome —que a veces se queda «en pausa»
+   después de un rato— se despierta antes de cada aviso. */
+let vozDesbloqueada = false;
+function desbloquearVoz(){
+  Sonido.despierta();
+  if(vozDesbloqueada || !('speechSynthesis' in window)) return;
+  try{ const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); vozDesbloqueada = true; }catch(e){}
+}
+['pointerdown', 'keydown', 'touchstart'].forEach(t => addEventListener(t, desbloquearVoz, { capture: true, passive: true }));
+window.__dicho = [];
 function decir(texto){
+  window.__dicho.push(texto);
   if(!cfg.voz || !('speechSynthesis' in window)) return;
   try{
+    if(speechSynthesis.paused) speechSynthesis.resume();
     const u = new SpeechSynthesisUtterance(texto);
     u.lang = 'es-MX'; u.rate = 0.95; u.pitch = 1; u.volume = 1;
     const v = vozLista || voz(); if(v) u.voice = v;
+    u.onerror = (e) => { window.__vozError = e.error || 'error'; };
     speechSynthesis.speak(u);
-  }catch(e){}
+  }catch(e){ window.__vozError = e.message; }
 }
 /* los avisos van en fila: si salen tres juntos, se dicen uno por uno */
 const filaAvisos = []; let avisando = false;
@@ -199,7 +267,9 @@ function siguienteAviso(){
   $('#llamado').classList.add('sale');
   Programa.bajar(true);
   if(cfg.timbre) Sonido.timbre();
-  setTimeout(() => decir('Turno ' + n + '. ' + (al ? al + ', ' : '') + 'tu pedido está listo.'), cfg.timbre ? 1300 : 0);
+  /* número, nombre (si quien pidió lo eligió) y lo que pidió */
+  const loQue = pidio(p, 3);
+  setTimeout(() => decir('Turno ' + n + '. ' + (al ? al + ', ' : '') + 'tu pedido está listo' + (loQue ? ': ' + loQue.replace(/·/g, ',') : '') + '.'), cfg.timbre ? 1300 : 0);
   window.__ultimoAviso = { turno: n, alias: al, pidio: qu, t: Date.now() };
   setTimeout(() => { $('#llamado').classList.remove('sale'); setTimeout(siguienteAviso, 700); }, 6500);
 }
@@ -391,7 +461,7 @@ video.addEventListener('timeupdate', () => {
   $('#progBarra').style.width = (video.duration ? 100 * t / video.duration : 0) + '%';
   const e = Programa.actual;
   if(e && Math.round(t) % 5 === 0) try{ localStorage.setItem('fadori_tele_pos', JSON.stringify({ id: e.id, t })); }catch(err){}
-  if(Programa.desdeCorte >= cfg.cadaMin * 60 && !avisando) Programa.corte();
+  if(Programa.desdeCorte >= cfg.cadaMin * 60 && !avisando && capa.hidden && !enVivo) Programa.corte();
 });
 video.addEventListener('ended', () => Programa.acabo());
 video.addEventListener('error', () => { if(Programa.actual && !Programa.esWeb()) $('#sinProg').hidden = false, $('#sinProg').textContent = 'Este archivo no se puede reproducir aquí. Cárgalo otra vez desde los ajustes.'; });
@@ -400,7 +470,7 @@ setInterval(() => {
   if(!Programa.esWeb() || Programa.enCorte || Programa.pausado) return;
   Programa.desdeCorte += 1;
   $('#progBarra').style.width = '0%';
-  if(Programa.desdeCorte >= cfg.cadaMin * 60 && !avisando) Programa.corte();
+  if(Programa.desdeCorte >= cfg.cadaMin * 60 && !avisando && capa.hidden && !enVivo) Programa.corte();
 }, 1000);
 /* YouTube dice cuándo acabó (el video, o la lista entera) */
 addEventListener('message', (e) => {
@@ -411,9 +481,9 @@ addEventListener('message', (e) => {
    pon los turnos en grande y bien acomodados»): la pantalla se vuelve sólo
    turnos. La tanda de anuncios sigue saliendo cada `cadaMin` minutos: el
    programa entra deslizándose, pasa la tanda y se vuelve a ir. */
-let solo = null, desdeSolo = 0;
+let solo = null, desdeSolo = 0, enVivo = false;
 function acomodar(){
-  const quiere = !Programa.actual && !Programa.enCorte;
+  const quiere = !Programa.actual && !Programa.enCorte && !enVivo;
   if(quiere === solo) return;
   const primera = solo === null; solo = quiere;
   const bloques = () => [...document.querySelectorAll('.escenario, .turnos, .siguen, #llamando, #bPrep, #bFila, #bListos')];
@@ -428,9 +498,9 @@ function acomodar(){
 }
 setInterval(() => {
   acomodar();
-  if(Programa.actual || Programa.enCorte || Programa.pausado || avisando){ desdeSolo = 0; return; }
+  if(Programa.actual || Programa.enCorte || Programa.pausado || avisando || enVivo){ desdeSolo = 0; return; }
   desdeSolo += 1;
-  if(desdeSolo >= cfg.cadaMin * 60){ desdeSolo = 0; Programa.corte(); }
+  if(desdeSolo >= cfg.cadaMin * 60 && capa.hidden){ desdeSolo = 0; Programa.corte(); }
 }, 1000);
 
 /* ── el aviso de Fadori a un lado ───────────────────────────────────────
@@ -481,7 +551,14 @@ function abrirTablet(x, y){
   precargar();
   capa.style.transformOrigin = (x || innerWidth / 2) + 'px ' + (y || innerHeight / 2) + 'px';
   capa.hidden = false; capa.classList.remove('sale'); capa.classList.add('entra');
-  Programa.pausar(true);
+  /* EL PROGRAMA NO SE CALLA (Carlos, 14 de octubre: «el audio de reproducción
+     y el próximo turno por pasar no deben desaparecer jamás en ese modo, y el
+     video debería hacerse chico y ponerse en una esquina»). Antes se pausaba
+     todo al abrir la tablet. Ahora el video se encoge a una esquina con su
+     sonido, y la tira de arriba sigue diciendo quién pasa, quién se prepara y
+     quién está en la fila. La tanda de anuncios espera a que se cierre. */
+  $('#tv').classList.remove('regresa');
+  document.body.classList.add('con-pip');
   try{ marco.contentWindow.KIOSCO && marco.contentWindow.KIOSCO.reiniciar(); }catch(e){}
   try{ marco.focus(); }catch(e){}
 }
@@ -497,7 +574,8 @@ function cerrarTablet(pedidoId){
   $('#tv').style.transformOrigin = cx + 'px ' + cy + 'px';
   capa.classList.remove('entra'); capa.classList.add('sale');
   const tv = $('#tv'); tv.classList.remove('regresa'); void tv.offsetWidth; tv.classList.add('regresa');
-  setTimeout(() => { capa.hidden = true; capa.classList.remove('sale'); Programa.pausar(false); }, 600);
+  document.body.classList.remove('con-pip');
+  setTimeout(() => { capa.hidden = true; capa.classList.remove('sale'); }, 600);
   setTimeout(() => { nuevoDeTablet = null; }, 2500);
 }
 window.addEventListener('message', (e) => {
@@ -538,7 +616,7 @@ $('#tv').addEventListener('click', (e) => {
 async function arrancar(){
   arrancado = true;
   $('#arranque').hidden = true; $('#bMudo').style.display = 'none';
-  Sonido.despierta();
+  desbloquearVoz();
   try{ if(document.documentElement.requestFullscreen && !document.fullscreenElement) await document.documentElement.requestFullscreen({ navigationUI: 'hide' }); }catch(e){}
   despierto();
   Programa.volumen();
@@ -567,7 +645,7 @@ $('#bAjustes').addEventListener('click', (e) => {
   Nube.revisar();
 });
 $('#ajCerrar').addEventListener('click', () => dlg.close());
-dlg.addEventListener('close', () => { Programa.pausar(!capa.hidden); });
+dlg.addEventListener('close', () => { Programa.pausar(enVivo); });
 
 function pintarAjustes(){
   const c = $('#ajCuerpo');
@@ -948,4 +1026,13 @@ $('#arranque').hidden = false;
 setTimeout(() => { if(!arrancado){ $('#arranque').hidden = true; $('#bMudo').style.display = 'inline-flex'; } }, 9000);
 video.muted = true; if(Programa.actual && !Programa.esWeb()) video.play().catch(() => {});
 
-window.TELE = { Programa, cfg, anunciar, Sonido, abrirTablet, cerrarTablet, verPop, Nube, acomodar, listo: true };
+/* EL PARTIDO EN VIVO: mientras haya transmisión (o las llaves en pantalla), el
+   programa se calla y no hay tanda de anuncios; los turnos, el timbre y la
+   voz siguen saliendo encima. Al apagarla, el programa sigue donde iba. */
+const Vivo = montarPantalla({ marco: $('#marco'), alCambiar: (ver, est) => {
+  const calla = !!(est.activa || est.llaves.visible);
+  if(calla !== enVivo){ enVivo = calla; Programa.pausar(calla); }
+  acomodar();
+} });
+
+window.TELE = { Vivo, Programa, cfg, anunciar, Sonido, abrirTablet, cerrarTablet, verPop, Nube, acomodar, listo: true };

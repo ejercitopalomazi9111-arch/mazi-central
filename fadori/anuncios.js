@@ -156,10 +156,14 @@ export function dibujarIdent(g, W, H, t, P, { dur = DURA_IDENT, aterriza = true 
   luz.addColorStop(0, 'rgba(255,255,255,' + (0.16 * abre) + ')'); luz.addColorStop(1, 'rgba(255,255,255,0)');
   g.fillStyle = luz; g.fillRect(0, 0, W, H);
   g.restore();
-  /* el emblema: aparece, sube y crece un poquito; nada de giros */
+  /* el emblema: aparece y sube; nada de giros. Y SIN crecer: antes entraba
+     al 86 % y crecía justo mientras se acomodaba, y Carlos lo vio (14 de
+     octubre: «el logo del Rembrandt se escala al quedar en su posición
+     final y se nota el cambio»). Ahora su tamaño es uno solo de principio a
+     fin; lo único que cambia es la altura y la opacidad. */
   const p = fluye((t - 0.2) / 1.0), grande = Math.min(W, H) * 0.2;
   if(p > 0){
-    let r = grande * (0.86 + 0.14 * p), x = cx, y = cy + (1 - p) * 24 * L.u;
+    let r = grande, x = cx, y = cy + (1 - p) * 24 * L.u;
     const viaje = aterriza ? suave((t - 1.6) / (dur - 1.6 - 0.05)) : 0;
     if(viaje > 0){ x = cx + (L.logo.x - cx) * viaje; y = cy + (L.logo.y - cy) * viaje; r = r + (L.logo.r - r) * viaje; }
     /* su sombra suave, para que flote */
