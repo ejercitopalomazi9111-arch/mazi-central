@@ -167,6 +167,11 @@
   .k-tira button{border:1px solid #3A271A; background:#24170F; color:#FFF4E8; border-radius:12px; min-height:40px; padding:0 14px; font:inherit;
     font-weight:800; font-size:14px; display:inline-flex; align-items:center; gap:6px; cursor:pointer}
   .k-tira button .i{width:18px; height:18px}
+  /* el programa en chiquito, en una esquina, mientras alguien pide en la tablet */
+  body.con-pip .marco{position:fixed; z-index:60; top:calc(64px + env(safe-area-inset-top)); right:12px; width:min(26vw, 380px) !important; min-width:200px;
+    height:auto; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.45), 0 0 0 2px rgba(255,255,255,.18); pointer-events:none}
+  body.con-pip .marco .tercio, body.con-pip .marco .pop-fadori, body.con-pip .marco .bicho{display:none}
+  body.con-pip .marco .llamado{transform:scale(.55); transform-origin:left bottom}
   .k-capa-tv iframe{border:0; width:100%; height:100%; background:var(--fondo, #F3ECE1)}
 
   /* ── los ajustes ── */

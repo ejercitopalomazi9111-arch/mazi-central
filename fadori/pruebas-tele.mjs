@@ -326,6 +326,20 @@ ok('y si nadie toca, regresa sola a la pantalla de turnos', (await tarda(tab, ()
 const s10 = (Date.now() - t10) / 1000;
 ok(`… a los 10 s (${s10.toFixed(1)} s)`, s10 > 8.5 && s10 < 12.5);
 ok('sin dejar nada en el carrito', await k.evaluate(() => document.querySelector('#cestaCuantos').textContent === '0'));
+
+console.log('\n4b-bis · hacer scroll también cuenta, y el programa no se calla (14 de octubre)');
+await tab.mouse.click(420, 360);
+await tarda(tab, () => !document.querySelector('#kCapa').hidden, null, 4000);
+await k.fill('#kaNombre', 'Scroll').catch(() => {}); await k.click('#kaListo').catch(() => {});
+const tS = Date.now();
+while(Date.now() - tS < 7000){ await k.evaluate(() => { window.scrollBy(0, 40); window.scrollBy(0, -40); }); await k.waitForTimeout(1200); }
+ok('7 s haciendo scroll (con espera de 4) y NO pregunta «¿sigues ahí?»', await k.evaluate(() => document.querySelector('#kTicket').hidden));
+ok('con la tablet abierta el programa sigue (no se pausa)', await tab.evaluate(() => !TELE.Programa.pausado));
+ok('y el video se hace chico en una esquina', await tab.evaluate(() => document.body.classList.contains('con-pip')));
+ok('la tira de arriba dice quién ya puede pasar', /Ya puede pasar/.test(await tab.textContent('#kMini')));
+await tab.click('#kCerrar');
+await tarda(tab, () => document.querySelector('#kCapa').hidden, null, 3000);
+ok('al cerrar, el video regresa a su lugar', await tab.evaluate(() => !document.body.classList.contains('con-pip')));
 await tab.evaluate(() => localStorage.removeItem('fadori_kiosco_espera'));
 
 console.log('\n4c · la puerta escondida al mostrador (dedo 2 s sobre «Lo anota la cooperativa»)');

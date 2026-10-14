@@ -1504,8 +1504,18 @@ if(KIOSCO){
   const kToque = () => { kUltimo = Date.now(); kActivo = true; };
   window.kToque = kToque;
   window.kDormir = () => { kActivo = false; };
-  const ESPERA = (() => { try{ return Math.max(3, +localStorage.getItem('fadori_kiosco_espera') || 0) || 30; }catch(e){ return 30; } })();
-  ['pointerdown', 'keydown', 'input'].forEach(ev => document.addEventListener(ev, kToque, true));
+  /* 35 s SIN NINGÚN contacto (Carlos, 14 de octubre): toques, clics, teclas,
+     escribir, deslizar el dedo, girar la rueda o hacer scroll en cualquier
+     lista. Antes eran 30 s y bajar por el menú no contaba: a media lectura
+     salía «¿sigues ahí?». */
+  const ESPERA = (() => { try{ return Math.max(3, +localStorage.getItem('fadori_kiosco_espera') || 0) || 35; }catch(e){ return 35; } })();
+  /* el contacto sólo REINICIA la cuenta; no despierta a la tablet dormida
+     (el scroll que hace la propia app al reiniciarse no es una persona) */
+  const kMovio = () => { kUltimo = Date.now(); };
+  ['pointerdown', 'pointermove', 'keydown', 'input', 'click', 'touchstart', 'touchmove', 'wheel', 'scroll'].forEach(ev =>
+    document.addEventListener(ev, kMovio, { capture: true, passive: true }));
+  addEventListener('scroll', kMovio, { passive: true });
+  ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, () => { if(window.parent === window) kActivo = true; }, true));
   /* con el «¿sigues ahí?» puesto, CUALQUIER toque cuenta como «aquí sigo»,
      no sólo el botón: la persona que regresa toca donde sea */
   $('#kTicket').addEventListener('pointerdown', (e) => {

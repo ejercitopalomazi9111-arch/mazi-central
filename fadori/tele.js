@@ -460,7 +460,7 @@ video.addEventListener('timeupdate', () => {
   $('#progBarra').style.width = (video.duration ? 100 * t / video.duration : 0) + '%';
   const e = Programa.actual;
   if(e && Math.round(t) % 5 === 0) try{ localStorage.setItem('fadori_tele_pos', JSON.stringify({ id: e.id, t })); }catch(err){}
-  if(Programa.desdeCorte >= cfg.cadaMin * 60 && !avisando) Programa.corte();
+  if(Programa.desdeCorte >= cfg.cadaMin * 60 && !avisando && capa.hidden) Programa.corte();
 });
 video.addEventListener('ended', () => Programa.acabo());
 video.addEventListener('error', () => { if(Programa.actual && !Programa.esWeb()) $('#sinProg').hidden = false, $('#sinProg').textContent = 'Este archivo no se puede reproducir aquí. Cárgalo otra vez desde los ajustes.'; });
@@ -469,7 +469,7 @@ setInterval(() => {
   if(!Programa.esWeb() || Programa.enCorte || Programa.pausado) return;
   Programa.desdeCorte += 1;
   $('#progBarra').style.width = '0%';
-  if(Programa.desdeCorte >= cfg.cadaMin * 60 && !avisando) Programa.corte();
+  if(Programa.desdeCorte >= cfg.cadaMin * 60 && !avisando && capa.hidden) Programa.corte();
 }, 1000);
 /* YouTube dice cuándo acabó (el video, o la lista entera) */
 addEventListener('message', (e) => {
@@ -499,7 +499,7 @@ setInterval(() => {
   acomodar();
   if(Programa.actual || Programa.enCorte || Programa.pausado || avisando){ desdeSolo = 0; return; }
   desdeSolo += 1;
-  if(desdeSolo >= cfg.cadaMin * 60){ desdeSolo = 0; Programa.corte(); }
+  if(desdeSolo >= cfg.cadaMin * 60 && capa.hidden){ desdeSolo = 0; Programa.corte(); }
 }, 1000);
 
 /* ── el aviso de Fadori a un lado ───────────────────────────────────────
@@ -550,7 +550,14 @@ function abrirTablet(x, y){
   precargar();
   capa.style.transformOrigin = (x || innerWidth / 2) + 'px ' + (y || innerHeight / 2) + 'px';
   capa.hidden = false; capa.classList.remove('sale'); capa.classList.add('entra');
-  Programa.pausar(true);
+  /* EL PROGRAMA NO SE CALLA (Carlos, 14 de octubre: «el audio de reproducción
+     y el próximo turno por pasar no deben desaparecer jamás en ese modo, y el
+     video debería hacerse chico y ponerse en una esquina»). Antes se pausaba
+     todo al abrir la tablet. Ahora el video se encoge a una esquina con su
+     sonido, y la tira de arriba sigue diciendo quién pasa, quién se prepara y
+     quién está en la fila. La tanda de anuncios espera a que se cierre. */
+  $('#tv').classList.remove('regresa');
+  document.body.classList.add('con-pip');
   try{ marco.contentWindow.KIOSCO && marco.contentWindow.KIOSCO.reiniciar(); }catch(e){}
   try{ marco.focus(); }catch(e){}
 }
@@ -566,7 +573,8 @@ function cerrarTablet(pedidoId){
   $('#tv').style.transformOrigin = cx + 'px ' + cy + 'px';
   capa.classList.remove('entra'); capa.classList.add('sale');
   const tv = $('#tv'); tv.classList.remove('regresa'); void tv.offsetWidth; tv.classList.add('regresa');
-  setTimeout(() => { capa.hidden = true; capa.classList.remove('sale'); Programa.pausar(false); }, 600);
+  document.body.classList.remove('con-pip');
+  setTimeout(() => { capa.hidden = true; capa.classList.remove('sale'); }, 600);
   setTimeout(() => { nuevoDeTablet = null; }, 2500);
 }
 window.addEventListener('message', (e) => {
@@ -636,7 +644,7 @@ $('#bAjustes').addEventListener('click', (e) => {
   Nube.revisar();
 });
 $('#ajCerrar').addEventListener('click', () => dlg.close());
-dlg.addEventListener('close', () => { Programa.pausar(!capa.hidden); });
+dlg.addEventListener('close', () => { Programa.pausar(false); });
 
 function pintarAjustes(){
   const c = $('#ajCuerpo');
