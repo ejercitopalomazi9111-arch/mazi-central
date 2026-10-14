@@ -365,9 +365,9 @@ setInterval(() => { F.cargar(); pintar(); }, 6000);
 verVista('hoy');
 
 /* ══════════════════════════════════════════════════════════════════════
-   PRUEBAS
+   PRUEBAS · sólo con «?pruebas» (ver el mostrador)
    ═════════════════════════════════════════════════════════════════════ */
-(function(){
+if(/[?&]pruebas\b/.test(location.search)) (function(){
   let bien = 0, mal = 0;
   F.pausarSync();   /* que los pedidos de prueba no salgan al servidor */
   const ok = (q,c) => { if(c) bien++; else { mal++; console.error('✗ '+q); } };

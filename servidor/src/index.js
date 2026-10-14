@@ -44,6 +44,16 @@ import { nuevasLlavesVapid, mandar, suscripcionValida } from './push.js';
 const CAJONES = ['productos', 'alumnos', 'pedidos', 'conteos', 'eventos'];
 const CONTACTO = 'mailto:grupomazi.oficial@gmail.com';
 const VIVOS = ['en_cola', 'preparando', 'listo'];
+/* EL MENÚ INVENTADO DEL ARRANQUE (pozole, chilaquiles, el guisado…). Nadie lo
+   vende; la app lo retiró el 9 de octubre y el 12 resucitó porque un aparato
+   con una copia vieja lo subió con hora nueva. Carlos lo vio el 14: «el guiso
+   de arroz quítalo». Ahora el servidor NO deja que regrese, venga de quien
+   venga, y al arrancar retira lo que haya quedado vivo. */
+const RETIRADOS = new Set(['guisado del dia con arroz', 'pozole', 'chilaquiles', 'torta de jamon', 'sandwich',
+  'tacos dorados', 'tamal', 'agua del dia', 'refresco', 'jugo', 'gelatina', 'galletas', 'pastelito', 'papas',
+  'cacahuates', 'peelers', 'galletas de $25', 'galletas de $15']);
+const nombreLlano = (n) => String(n || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+const esRetirado = (p) => p && RETIRADOS.has(nombreLlano(p.nombre));
 const DIA = 24 * 60 * 60 * 1000;
 
 /* Los topes, en un solo lugar. Cada uno dice contra qué protege. */
@@ -145,6 +155,31 @@ export class Cooperativa {
         const todo = [];
         for(const c of CAJONES) for(const id in this.datos[c]) todo.push(['r:' + c + ':' + id, this.datos[c][id]]);
         await this.escribir(todo, viejos);
+      }
+      /* el menú inventado que resucitó: fuera, una sola vez por arranque (no
+         toca nada si ya está retirado), y la torta de milanesa a su precio
+         real si trae el inventado. Y el tope de pedidos que pidió Carlos el 14
+         de octubre: de 3 a 5. */
+      const arreglo = [];
+      for(const id in this.datos.productos){
+        const p = this.datos.productos[id];
+        let n = null;
+        if(esRetirado(p) && !p.borrado) n = Object.assign({}, p, { borrado: true, disponible: false, destacado: false });
+        else if(id === 'pb-torta-de-milanesa' && p.precio === 3800) n = Object.assign({}, p, { precio: 5000 });
+        if(n){ n.t = Math.max(Date.now(), (p.t || 0) + 1); arreglo.push(n); }
+      }
+      if(arreglo.length){
+        this.reloj++;
+        const escr = [];
+        for(const n of arreglo){ n._r = this.reloj; this.datos.productos[n.id] = n; escr.push(['r:productos:' + n.id, n]); }
+        await this.escribir(escr, []);
+        await g.put('reloj', this.reloj);
+      }
+      if(this.config && this.config.topeporAlumno === 3 && !this.config._tope5){
+        this.config.topeporAlumno = 5; this.config._tope5 = 1;
+        this.config.t = Math.max(Date.now(), (this.config.t || 0) + 1);
+        this.reloj++; this.config._r = this.reloj;
+        await g.put({ config: this.config, reloj: this.reloj });
       }
       /* Carlos, 9 de octubre: el recreo es de 10:00 a 10:30. La hora de fábrica
          era 10:30; si nadie la había cambiado, se corrige una sola vez. */
@@ -604,7 +639,7 @@ export class Cooperativa {
       if(cfg && typeof cfg === 'object' && (!this.config || (Number(cfg.t) || 0) > (this.config.t || 0))){
         this.config = Object.assign(limpiarConfig(cfg), {
           pasador: this.config && this.config.pasador,       /* el pasador sólo cambia por /api/pasador */
-          _recreo: this.config && this.config._recreo, _r: nuevo });
+          _recreo: this.config && this.config._recreo, _tope5: this.config && this.config._tope5, _r: nuevo });
         configTocada = true;
       }
       for(const c of CAJONES){
@@ -614,6 +649,8 @@ export class Cooperativa {
           if(viejo && !(t > (viejo.t || 0) || (t === (viejo.t || 0) && r.id > viejo.id))) continue;
           const rec = limpiarRegistro(r, c === 'productos' ? 1600000 : 4000);
           if(!rec){ rechaza(c, r.id, 'grande'); continue; }
+          /* lo inventado no regresa al menú aunque una copia vieja lo mande vivo */
+          if(c === 'productos' && esRetirado(rec)){ rec.borrado = true; rec.disponible = false; rec.destacado = false; }
           /* lo de la cuenta sólo cambia por sus propias puertas: una copia
              vieja del mostrador no le borra la contraseña ni la palomita */
           if(c === 'alumnos' && viejo){ rec._dev = viejo._dev; rec._cuenta = viejo._cuenta; rec.verif = viejo.verif; rec.protegida = viejo.protegida; rec.correo = viejo.correo; rec.npedidos = viejo.npedidos;
@@ -740,7 +777,7 @@ export class Cooperativa {
       }
       const hoy = mx(ahora).dia;
       const suyos = Object.values(this.datos.pedidos).filter(p => p.alumno === r.alumno && mx(p.creado || 0).dia === hoy);
-      const tope = entero(this.config && this.config.topeporAlumno, 1, 10, 3);
+      const tope = entero(this.config && this.config.topeporAlumno, 1, 10, 5);
       if(estado === 'en_cola' && suyos.filter(p => VIVOS.indexOf(p.estado) >= 0).length >= tope) { rechaza('pedidos', r.id, 'tope'); return false; }
       if(suyos.length >= TOPE.pedidosPorAlumnoDia) { rechaza('pedidos', r.id, 'tope'); return false; }
       if(!this.cuenta('ped:ap:' + quien.aparato, 10 * 60000, TOPE.pedidosPorAparato10min) ||
@@ -1016,7 +1053,7 @@ function correoLimpio(v){
 function tapar(correo){ const [u, d] = correo.split('@'); return u.slice(0, 2) + '•••@' + d; }
 function configPublica(cfg){
   const c = Object.assign({}, cfg);
-  delete c.pasador; delete c._recreo;
+  delete c.pasador; delete c._recreo; delete c._tope5;
   return c;
 }
 /* los ajustes: sólo lo que existe, con su tipo y su rango */
@@ -1029,7 +1066,7 @@ function limpiarConfig(cfg){
     else if(typeof v === 'string') c[k] = v.slice(0, 200);
   }
   if(c.recreoInicia && !/^\d{1,2}:\d{2}$/.test(c.recreoInicia)) c.recreoInicia = '10:00';
-  if('topeporAlumno' in c) c.topeporAlumno = entero(c.topeporAlumno, 1, 10, 3);
+  if('topeporAlumno' in c) c.topeporAlumno = entero(c.topeporAlumno, 1, 10, 5);
   if('recreoMinutos' in c) c.recreoMinutos = entero(c.recreoMinutos, 5, 180, 30);
   c.t = Number(cfg.t) || Date.now();
   return c;
