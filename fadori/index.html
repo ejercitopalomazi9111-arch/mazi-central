@@ -179,6 +179,10 @@
       <span class="ct-mas" data-ico="chevron-right"></span>
     </button>
 
+    <label class="busca-menu" for="buscaMenu"><span data-ico="search"></span>
+      <input id="buscaMenu" type="search" placeholder="Busca por nombre: torta, Takis, agua…" autocomplete="off" enterkeyhint="search">
+    </label>
+
     <div class="chips tira" id="filtros"></div>
 
     <div id="destacados" class="destacado" hidden>
@@ -524,8 +528,13 @@ function refrescarFicha(pid){
 /* La firma del catálogo. Si no cambió, no hay por qué volver a construir el
    menú: el temporizador corría cada 5 segundos y reescribía la rejilla
    completa, que en un teléfono se siente como un tirón. */
+let busqueda = '';
+document.addEventListener('input', (e) => {
+  if(e.target && e.target.id === 'buscaMenu'){ busqueda = e.target.value; pintarMenu(true); }
+});
+const normal = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 function firmaMenu(){
-  return filtro + '|' + F.productos(false)
+  return filtro + '|' + busqueda + '|' + F.productos(false)
     /* la foto entra por su largo y su final, no por «hay o no hay»: cambiar
        la de relleno por la de verdad no repintaba el menú del alumno */
     .map(p => p.id+p.disponible+p.precio+p.destacado+(p.existencias)+p.nombre+
@@ -575,9 +584,20 @@ function pintarMenu(forzar){
       cats.map(c => '<button class="chip" type="button" data-filtro="'+c.id+'" aria-pressed="'+
         (filtro===c.id)+'">'+F.ico(c.icono)+esc(c.nombre)+'</button>').join('');
 
-    const lista = todos.filter(p => filtro === 'todo' || p.cat === filtro);
-    $('#rejilla').innerHTML = lista.length ? lista.map(fichaPlato).join('')
-      : '<p class="sub">No hay nada en esta categoría hoy.</p>';
+    /* Lo que se acabó NO estorba arriba (Carlos, 14 de octubre): va hasta
+       abajo, o sale al buscarlo por su nombre. Con algo escrito en el
+       buscador se ignora la categoría y salen todos los que coinciden. */
+    const q = normal(busqueda);
+    const hay = (p) => p.disponible && F.existenciasOk(p);
+    const lista = q ? todos.filter(p => normal(p.nombre + ' ' + (p.desc || '')).indexOf(q) >= 0)
+                    : todos.filter(p => filtro === 'todo' || p.cat === filtro);
+    const si = lista.filter(hay), no = lista.filter(p => !hay(p));
+    $('#filtros').hidden = !!q;
+    $('#destacados').hidden = !!q || !dest.length;
+    $('#tituloMenu').textContent = q ? (lista.length ? 'Lo que encontré' : 'No encontré eso') : 'El menú';
+    $('#rejilla').innerHTML = (si.length ? si.map(fichaPlato).join('')
+      : '<p class="sub">' + (q ? (no.length ? 'Eso hoy se acabó:' : 'Prueba con otra palabra.') : 'No hay nada en esta categoría hoy.') + '</p>') +
+      (no.length ? '<p class="rotulillo se-acabo">Se acabó por hoy</p>' + no.map(fichaPlato).join('') : '');
   }
 
   /* el estado de la fila, en cristiano. Esto sí se refresca siempre: es una
@@ -2070,8 +2090,11 @@ arrancar();
 /* ══════════════════════════════════════════════════════════════════════
    PRUEBAS · corren solas al cargar. Si algo se rompe, sale en la consola
    antes de que lo vea un alumno.
+   ⚠ Sólo con «?pruebas» en la dirección (14 de octubre). Corrían en CADA
+   aparato de verdad, encima de sus datos: si una tronaba a la mitad, lo que
+   había movido se quedaba y se subía al servidor.
    ═════════════════════════════════════════════════════════════════════ */
-(function(){
+if(/[?&]pruebas\b/.test(location.search)) (function(){
   let bien = 0, mal = 0;
   const ok = (q, c) => { if(c) bien++; else { mal++; console.error('✗ '+q); } };
   /* Las pruebas corren en el aparato del alumno, encima de SUS datos. Así que
@@ -2166,7 +2189,7 @@ arrancar();
     ok('pero NO le pisa la foto que la cooperativa ya había puesto',
        viejo.productos[1].foto === 'una-suya.jpg');
     ok('y la migración deja el archivo marcado, para no repetirla',
-       viejo.version === 9);
+       viejo.version === 10);
     ok('el platillo de arranque toma su id de fábrica, igual en todos los aparatos',
        viejo.productos[0].id === 'pb-pozole' && viejo.productos[1].id === 'v2');
     ok('y el pedido que lo nombraba lo sigue nombrando', (function(){

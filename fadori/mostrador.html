@@ -1051,7 +1051,7 @@ const PERILLAS = [
   ['#aRecreo','recreoInicia', v => v],
   ['#aMinutos','recreoMinutos', v => parseInt(v,10)||30],
   ['#aDespachadores','despachadores', v => Math.max(1, parseInt(v,10)||1)],
-  ['#aTope','topeporAlumno', v => Math.max(1, parseInt(v,10)||3)],
+  ['#aTope','topeporAlumno', v => Math.max(1, parseInt(v,10)||5)],
   ['#aAdelantos','topeAdelantos', v => Math.max(1, parseInt(v,10)||4)],
   ['#aLimite','limiteDeuda', v => Math.max(0, Math.round(parseFloat(v||0)*100))],
 ];
@@ -1421,7 +1421,7 @@ function pintarSinLlave(){
 setInterval(pintarSinLlave, 4000);
 function subirMenuUnaVez(){
   if(F.motor() !== 'servidor' || !F.llaveMostrador()) return;
-  const marca = 'fadori_menu_subido6:' + F.sync.casa();   /* 3 = el menú de verdad · 4 = fotos parejas · 5 = fotos del modelo exacto · 6 = galletas y choriqueso (9 de octubre) */
+  const marca = 'fadori_menu_subido7:' + F.sync.casa();   /* 3 = el menú de verdad · 4 = fotos parejas · 5 = fotos del modelo exacto · 6 = galletas y choriqueso (9 de octubre) · 7 = fuera el menú inventado que resucitó (14 de octubre) */
   try{ if(localStorage.getItem(marca)) return; }catch(e){ return; }
   if(F.subirMenu() !== false){ try{ localStorage.setItem(marca, String(Date.now())); }catch(e){} }
 }
@@ -1480,9 +1480,12 @@ verVista('despachar');
 setTimeout(() => { subirMenuUnaVez(); pintarSinLlave(); }, 800);
 
 /* ══════════════════════════════════════════════════════════════════════
-   PRUEBAS
+   PRUEBAS · sólo con «?pruebas» en la dirección. Corrían en el mostrador de
+   verdad cada vez que se abría, encima del menú real: la que dejaba el
+   primer platillo llamándose «Guisado del día con arroz» es justo lo que
+   Carlos vio en el menú el 14 de octubre.
    ═════════════════════════════════════════════════════════════════════ */
-(function(){
+if(/[?&]pruebas\b/.test(location.search)) (function(){
   let bien = 0, mal = 0;
   F.pausarSync();   /* que los pedidos de prueba no salgan al servidor */
   const pendRealTodo = (function(){ try{ return localStorage.getItem('fadori_pendientes'); }catch(e){ return null; } })();

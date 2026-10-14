@@ -24,7 +24,7 @@
 const CONFIG_BASE = {
   recreoInicia: '10:30',      /* hora de la chicharra */
   recreoMinutos: 30,
-  topeporAlumno: 3,           /* F16 · cuántos pedidos por recreo */
+  topeporAlumno: 5,           /* F16 · cuántos pedidos por recreo (Carlos, 14 de octubre: de 3 a 5) */
   topeAdelantos: 4,           /* F10 · nadie se atrasa más de N turnos */
   limiteDeuda: 8000,          /* F28 · en centavos. Arranca en un plato fuerte */
   despachadores: 1,           /* F23 */
@@ -1159,7 +1159,7 @@ function productoDeBase(p, i){
 }
 function siembra(){
   const d = estadoVacio();
-  d.version = 9;
+  d.version = 10;
   d.productos = MENU_BASE.map(productoDeBase);
   return d;
 }
@@ -1319,7 +1319,33 @@ function migrar(d){
     });
   }
 
-  d.version = 9;
+  /* 9 → 10 · EL MENÚ INVENTADO HABÍA RESUCITADO (lo vio Carlos el 14 de
+     octubre: «el guiso de arroz quítalo, no vendemos eso»). El 12 un aparato
+     con una copia vieja volvió a subir pozole, chilaquiles, tamal, el guisado…
+     con hora nueva, y le ganó al retiro. Ahora se retira POR NOMBRE, sea cual
+     sea su id, y el servidor tampoco deja que vuelvan (RETIRADOS allá). La
+     torta de milanesa regresa a su precio de verdad si tiene el inventado, el
+     menú recupera su orden y el tope de pedidos pasa de 3 a 5. */
+  if(antes < 10){
+    const t = ahora(), toca = (p) => { p.t = Math.max(t, (p.t || 0) + 1); };
+    const reales = new Set(MENU_BASE.map(b => b.nombre));
+    d.productos.forEach(p => {
+      if(MENU_VIEJO.some(b => b.nombre === p.nombre) && !reales.has(p.nombre) && !p.borrado){
+        p.borrado = true; p.disponible = false; p.destacado = false; toca(p); }
+    });
+    MENU_BASE.forEach((b, i) => {
+      const p = d.productos.find(x => x.id === idBase(b.nombre)); if(!p || p.borrado) return;
+      const v = MENU_VIEJO.find(x => x.nombre === b.nombre);
+      let cambio = p.orden !== i;
+      p.orden = i;
+      if(v && p.precio === v.precio && p.precio !== b.precio){ p.precio = b.precio; cambio = true; }
+      if(v && p.foto === v.foto && b.foto){ p.foto = b.foto; cambio = true; }
+      if(cambio) toca(p);
+    });
+    if(d.config && d.config.topeporAlumno === 3){ d.config.topeporAlumno = 5; d.config.t = Math.max(t, (d.config.t || 0) + 1); }
+  }
+
+  d.version = 10;
   return antes;
 }
 

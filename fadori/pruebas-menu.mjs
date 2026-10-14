@@ -101,6 +101,41 @@ await tarda(a, () => /^data:image/.test((FADORI.producto('pb-banderilla') || {})
 ok('al alumno le llega la foto nueva', await a.evaluate(() => /^data:image/.test(FADORI.producto('pb-banderilla').foto)));
 ok('y el menú del alumno la enseña', await a.evaluate(() => { const b = document.querySelector('[data-sumar="pb-banderilla"] img'); return !!b && /^data:image/.test(b.getAttribute('src')); }));
 
+console.log('\n5 · el menú inventado NO resucita (14 de octubre: volvió el guiso de arroz)');
+{
+  const AP2 = 'c'.repeat(32);
+  const k2 = (await api('/api/entrar', { pasador: '121026' }, { 'x-fadori-aparato': AP2 })).j.token;
+  const vivo = { id: 'pmt6b2dkbrcm9', nombre: 'Guisado del día con arroz', cat: 'fuerte', precio: 4500, disponible: true, orden: 0, t: Date.now() + 60000 };
+  const poz = { id: 'pb-pozole', nombre: 'Pozole', cat: 'fuerte', precio: 5000, disponible: true, borrado: false, orden: 1, t: Date.now() + 60000 };
+  await api('/api/sync', { desde: 0, cambios: { productos: [vivo, poz] } }, { 'x-fadori-aparato': AP2, 'x-fadori-admin': k2 });
+  await api('/api/salir', {}, { 'x-fadori-aparato': AP2, 'x-fadori-admin': k2 });
+  const r = (await api('/api/sync', { desde: 0, cambios: {} }, { 'x-fadori-aparato': 'd'.repeat(32) })).j;
+  const q = (id) => (r.cambios.productos || []).find(p => p.id === id);
+  ok('un mostrador con copia vieja manda el guisado vivo y el servidor lo deja retirado', q('pmt6b2dkbrcm9') && q('pmt6b2dkbrcm9').borrado === true);
+  ok('y el pozole con hora del futuro tampoco regresa', q('pb-pozole') && q('pb-pozole').borrado === true);
+  await a.reload(); await a.waitForFunction(() => window.FADORI && FADORI.productos, null, { timeout: 10000 });
+  await tarda(a, () => !FADORI.productos(false).some(p => /guisado/i.test(p.nombre)), null, 8000);
+  ok('el alumno no ve ningún guisado', await a.evaluate(() => !FADORI.productos(false).some(p => /guisado|pozole/i.test(p.nombre))));
+  ok('el tope de pedidos es 5', await a.evaluate(() => FADORI.estado().config.topeporAlumno === 5));
+}
+
+console.log('\n6 · el buscador y lo que se acabó (14 de octubre)');
+await m.evaluate(() => { const p = FADORI.producto('pb-takis-fuego'); p.disponible = false; FADORI.guardar(); });
+await tarda(a, () => FADORI.producto('pb-takis-fuego') && !FADORI.producto('pb-takis-fuego').disponible, null, 10000);
+await a.click('.dedo[data-ir="menu"]').catch(() => {});
+await a.waitForTimeout(400);
+const orden = await a.evaluate(() => [...document.querySelectorAll('#rejilla [data-ficha]')].map(x => x.dataset.ficha));
+ok('lo que se acabó (Takis) sale hasta abajo del menú', orden.length > 5 && orden.indexOf('pb-takis-fuego') === orden.length - 1, orden.length + ' · ' + orden.slice(-3).join(','));
+await a.fill('#buscaMenu', 'taki');
+await a.waitForTimeout(300);
+const hall = await a.evaluate(() => [...document.querySelectorAll('#rejilla [data-ficha]')].map(x => x.dataset.ficha));
+ok('buscar «taki» lo encuentra aunque se haya acabado', hall.length === 1 && hall[0] === 'pb-takis-fuego', hall.join(','));
+await a.fill('#buscaMenu', 'cafe');
+await a.waitForTimeout(300);
+ok('buscar sin acento encuentra el «Café capuchino»', await a.evaluate(() => [...document.querySelectorAll('#rejilla [data-ficha]')].some(x => x.dataset.ficha === 'pb-cafe-capuchino')));
+await a.fill('#buscaMenu', '');
+await m.evaluate(() => { const p = FADORI.producto('pb-takis-fuego'); p.disponible = true; FADORI.guardar(); });
+
 for(const [n, pg] of [['tablet', m], ['alumno', a]]) ok('sin errores en ' + n, !pg.errores.length, pg.errores.join(' | '));
 await cerrar();
 console.log(`\n${fallas.length ? '✗' : '✓'} menú · ${fallas.length} fallas`);

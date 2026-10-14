@@ -162,8 +162,8 @@ if(window.matchMedia && matchMedia('(display-mode: standalone)').matches){
     'Estás viéndola como app.</div>';
 }
 
-/* ── pruebas ─────────────────────────────────────────────────────────── */
-(function(){
+/* ── pruebas · sólo con «?pruebas» ────────────────────────────────────── */
+if(/[?&]pruebas\b/.test(location.search)) (function(){
   let bien = 0, mal = 0;
   const ok = (q, c) => { if(c) bien++; else { mal++; console.error('✗ ' + q); } };
 
