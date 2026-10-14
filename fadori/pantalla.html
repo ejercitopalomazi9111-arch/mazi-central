@@ -252,6 +252,49 @@
   .pf-txt b:not(.pf-marca){font-size:1.9cqw; line-height:1.1}
   .pf-txt span{font-size:1.55cqw; font-weight:700; color:rgba(255,246,236,.88); line-height:1.2}
   .pf-qr{grid-area:qr; width:7cqw; height:auto; background:#fff; border-radius:.8cqw; padding:.4cqw}
+
+  /* ══ EN VIVO · el partido encima del programa (transmision.js) ══ */
+  .tv-vivo{position:absolute; inset:0; z-index:4; background:#000}
+  .tv-vivo[hidden]{display:none}
+  .tv-vivo:not(.con-video){background:transparent}
+  .tv-vivo-video, .tv-vivo-web{position:absolute; inset:0; width:100%; height:100%; border:0; object-fit:contain; background:#000}
+  .tv-vivo:not(.con-video) .tv-vivo-video, .tv-vivo:not(.con-video) .tv-vivo-web, .tv-vivo:not(.con-video) .tv-envivo{display:none}
+  .tv-vivo-sin{position:absolute; inset:0; display:grid; place-items:center; padding:8%; text-align:center; color:#FFF4E8; font-weight:800; font-size:clamp(16px,2.6cqw,34px)}
+  .tv-vivo-sin[hidden]{display:none}
+  .tv-envivo{position:absolute; right:2.5%; top:4%; display:inline-flex; align-items:center; gap:.5em; padding:.35em .8em; border-radius:999px; background:#D7263D; color:#fff;
+    font-weight:900; letter-spacing:.12em; font-size:clamp(11px,1.5cqw,20px)}
+  .tv-envivo i{width:.6em; height:.6em; border-radius:50%; background:#fff; animation:latido 1.2s ease-in-out infinite}
+  @keyframes latido{50%{opacity:.25}}
+  .tv-marcador{position:absolute; left:2.5%; top:4%; display:flex; align-items:stretch; border-radius:clamp(8px,1.2cqw,16px); overflow:hidden;
+    box-shadow:0 6px 22px rgba(0,0,0,.45); font-size:clamp(13px,2.1cqw,30px); font-weight:900; color:#fff; background:#141018}
+  .tv-marcador[hidden]{display:none}
+  .tv-marcador .tm-eq{display:flex; align-items:center; gap:.45em; padding:.35em .7em; background:#1E1824; max-width:9em; overflow:hidden; white-space:nowrap; text-overflow:ellipsis}
+  .tv-marcador .tm-eq i{width:.5em; align-self:stretch; background:var(--c); border-radius:3px; flex:none}
+  .tv-marcador .tm-pts{display:grid; place-items:center; min-width:1.7em; padding:.35em .45em; background:#fff; color:#141018; font-variant-numeric:tabular-nums; font-size:1.15em}
+  .tv-marcador .tm-pts + .tm-pts{border-left:2px solid #D9D2C8}
+  .tv-marcador .tm-reloj{display:grid; place-items:center; padding:.35em .7em; background:#C2410C; font-variant-numeric:tabular-nums}
+  .tv-marcador .tm-per{display:grid; place-items:center; padding:.35em .6em; background:#2A2230; color:#FFD9BE; font-size:.8em}
+  .tv-marcador.gol{animation:gol 1.6s cubic-bezier(.2,1.4,.4,1)}
+  @keyframes gol{0%{transform:scale(1)} 20%{transform:scale(1.25)} 40%{transform:scale(1); box-shadow:0 0 0 8px rgba(255,200,80,.6)} 100%{transform:scale(1)}}
+  .tv-llaves{position:absolute; inset:0; padding:3% 3% 4%; background:radial-gradient(circle at 30% 20%, #2A1A0E, #0E0907 70%); color:#FFF4E8; overflow:hidden; container-type:size}
+  .tv-llaves[hidden]{display:none}
+  .tv-vivo.con-video .tv-llaves{background:rgba(14,9,7,.9)}
+  .tv-ll{height:100%; display:flex; flex-direction:column; gap:2cqh}
+  .tv-ll h3{margin:0; font-size:clamp(16px,6cqh,52px); font-weight:900; letter-spacing:-.02em}
+  .tv-ll-rondas{flex:1; min-height:0; display:flex; gap:2cqw}
+  .tv-ll-ronda{flex:1; min-width:0; display:flex; flex-direction:column; justify-content:space-around; gap:1.2cqh}
+  .tv-ll-ronda > small{font-size:clamp(10px,2.6cqh,20px); font-weight:800; text-transform:uppercase; letter-spacing:.1em; color:#FFB37A}
+  .tv-ll-p{border-radius:clamp(6px,1.4cqh,14px); overflow:hidden; background:#24170F; box-shadow:0 0 0 1px #3A271A inset}
+  .tv-ll-e{display:flex; justify-content:space-between; gap:.6em; padding:.3em .6em; font-size:clamp(11px,3.4cqh,28px); font-weight:800}
+  .tv-ll-e + .tv-ll-e{border-top:1px solid #3A271A}
+  .tv-ll-e span{min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis}
+  .tv-ll-e b{font-variant-numeric:tabular-nums}
+  .tv-ll-e.gano{background:#1E3A10; color:#C9F0A8}
+  .tv-ll-e.perdio{opacity:.45}
+  .tv-ll-e.hueco{opacity:.4; font-style:italic}
+  .tv-ll-ronda.campeon{justify-content:center}
+  .tv-ll-copa{padding:.6em .8em; border-radius:clamp(8px,2cqh,18px); background:linear-gradient(160deg,#C8901E,#8A6212); color:#fff; font-weight:900; font-size:clamp(12px,4.4cqh,40px); text-align:center}
+  .tv-ll-vacio{display:grid; place-items:center; height:100%; font-size:clamp(14px,4cqh,30px)}
   @media (prefers-reduced-motion: reduce){ .pop-fadori{transition:opacity .3s} .pt-tapa, .pt-ondas i{animation:none} }
 
   /* ══ EL ACOMODO DE UN VISTAZO (10 de octubre) ══════════════════════════

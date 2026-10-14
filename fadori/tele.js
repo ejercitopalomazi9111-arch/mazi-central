@@ -15,6 +15,7 @@
        regresa sola haciendo zoom hacia el turno. */
 import { mezclarAnuncios, prepararAnuncio, dibujarIdent, dibujarAnuncio, DURA_IDENT, DURA_ANUNCIO } from './anuncios.js';
 import { enlace, leerID3, largoID3, YT } from './relleno.js';
+import { montarPantalla } from './transmision.js';
 
 const $ = (s) => document.querySelector(s);
 const F = window.FADORI;
@@ -460,7 +461,7 @@ video.addEventListener('timeupdate', () => {
   $('#progBarra').style.width = (video.duration ? 100 * t / video.duration : 0) + '%';
   const e = Programa.actual;
   if(e && Math.round(t) % 5 === 0) try{ localStorage.setItem('fadori_tele_pos', JSON.stringify({ id: e.id, t })); }catch(err){}
-  if(Programa.desdeCorte >= cfg.cadaMin * 60 && !avisando && capa.hidden) Programa.corte();
+  if(Programa.desdeCorte >= cfg.cadaMin * 60 && !avisando && capa.hidden && !enVivo) Programa.corte();
 });
 video.addEventListener('ended', () => Programa.acabo());
 video.addEventListener('error', () => { if(Programa.actual && !Programa.esWeb()) $('#sinProg').hidden = false, $('#sinProg').textContent = 'Este archivo no se puede reproducir aquí. Cárgalo otra vez desde los ajustes.'; });
@@ -469,7 +470,7 @@ setInterval(() => {
   if(!Programa.esWeb() || Programa.enCorte || Programa.pausado) return;
   Programa.desdeCorte += 1;
   $('#progBarra').style.width = '0%';
-  if(Programa.desdeCorte >= cfg.cadaMin * 60 && !avisando && capa.hidden) Programa.corte();
+  if(Programa.desdeCorte >= cfg.cadaMin * 60 && !avisando && capa.hidden && !enVivo) Programa.corte();
 }, 1000);
 /* YouTube dice cuándo acabó (el video, o la lista entera) */
 addEventListener('message', (e) => {
@@ -480,9 +481,9 @@ addEventListener('message', (e) => {
    pon los turnos en grande y bien acomodados»): la pantalla se vuelve sólo
    turnos. La tanda de anuncios sigue saliendo cada `cadaMin` minutos: el
    programa entra deslizándose, pasa la tanda y se vuelve a ir. */
-let solo = null, desdeSolo = 0;
+let solo = null, desdeSolo = 0, enVivo = false;
 function acomodar(){
-  const quiere = !Programa.actual && !Programa.enCorte;
+  const quiere = !Programa.actual && !Programa.enCorte && !enVivo;
   if(quiere === solo) return;
   const primera = solo === null; solo = quiere;
   const bloques = () => [...document.querySelectorAll('.escenario, .turnos, .siguen, #llamando, #bPrep, #bFila, #bListos')];
@@ -497,7 +498,7 @@ function acomodar(){
 }
 setInterval(() => {
   acomodar();
-  if(Programa.actual || Programa.enCorte || Programa.pausado || avisando){ desdeSolo = 0; return; }
+  if(Programa.actual || Programa.enCorte || Programa.pausado || avisando || enVivo){ desdeSolo = 0; return; }
   desdeSolo += 1;
   if(desdeSolo >= cfg.cadaMin * 60 && capa.hidden){ desdeSolo = 0; Programa.corte(); }
 }, 1000);
@@ -644,7 +645,7 @@ $('#bAjustes').addEventListener('click', (e) => {
   Nube.revisar();
 });
 $('#ajCerrar').addEventListener('click', () => dlg.close());
-dlg.addEventListener('close', () => { Programa.pausar(false); });
+dlg.addEventListener('close', () => { Programa.pausar(enVivo); });
 
 function pintarAjustes(){
   const c = $('#ajCuerpo');
@@ -1025,4 +1026,13 @@ $('#arranque').hidden = false;
 setTimeout(() => { if(!arrancado){ $('#arranque').hidden = true; $('#bMudo').style.display = 'inline-flex'; } }, 9000);
 video.muted = true; if(Programa.actual && !Programa.esWeb()) video.play().catch(() => {});
 
-window.TELE = { Programa, cfg, anunciar, Sonido, abrirTablet, cerrarTablet, verPop, Nube, acomodar, listo: true };
+/* EL PARTIDO EN VIVO: mientras haya transmisión (o las llaves en pantalla), el
+   programa se calla y no hay tanda de anuncios; los turnos, el timbre y la
+   voz siguen saliendo encima. Al apagarla, el programa sigue donde iba. */
+const Vivo = montarPantalla({ marco: $('#marco'), alCambiar: (ver, est) => {
+  const calla = !!(est.activa || est.llaves.visible);
+  if(calla !== enVivo){ enVivo = calla; Programa.pausar(calla); }
+  acomodar();
+} });
+
+window.TELE = { Vivo, Programa, cfg, anunciar, Sonido, abrirTablet, cerrarTablet, verPop, Nube, acomodar, listo: true };

@@ -34,6 +34,23 @@
   ! Permissions-Policy
   Permissions-Policy: camera=(self), microphone=(self), geolocation=(), payment=()
 
+# FADORI EN VIVO (14 de octubre): el mostrador transmite con la cámara y el
+# micrófono del teléfono (WebRTC) y la pantalla puede usar una cámara o
+# capturadora conectada a ella. Sólo estas dos páginas, con y sin «.html»
+# (Cloudflare se lo quita a la dirección).
+/fadori/mostrador
+  ! Permissions-Policy
+  Permissions-Policy: camera=(self), microphone=(self), geolocation=(), payment=()
+/fadori/mostrador.html
+  ! Permissions-Policy
+  Permissions-Policy: camera=(self), microphone=(self), geolocation=(), payment=()
+/fadori/pantalla
+  ! Permissions-Policy
+  Permissions-Policy: camera=(self), microphone=(self), geolocation=(), payment=()
+/fadori/pantalla.html
+  ! Permissions-Policy
+  Permissions-Policy: camera=(self), microphone=(self), geolocation=(), payment=()
+
 # Las fotos del menú y los iconos no cambian: que el teléfono no los vuelva a
 # bajar en cada recreo. Es el ahorro más grande en un wifi de escuela.
 /fadori/marca/*

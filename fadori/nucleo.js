@@ -967,6 +967,26 @@ const MotorServidor = {
     try{ return localStorage.getItem('fadori_casa') || 'rembrandt'; }catch(e){ return 'rembrandt'; }
   },
 
+  /* ── el partido en vivo ─────────────────────────────────────────────── */
+  _vivo: [],
+  transmision: null,
+  alVivo(fn){ this._vivo.push(fn); if(this.transmision) try{ fn({ tipo: 'transmision', estado: this.transmision, ahora: Date.now() + (this._desfaseVivo || 0) }); }catch(e){} },
+  aparato(){ return aparatoId(); },
+  /* un recado para otro aparato (la señal de WebRTC); «*» = a todos */
+  mandarVivo(para, datos){
+    const ws = this._ws; if(!ws || ws.readyState !== 1) return false;
+    try{ ws.send(JSON.stringify({ tipo: 'senal', para, datos })); return true; }catch(e){ return false; }
+  },
+  async ponerTransmision(estado){
+    const api = direccionServidor();
+    if(!api){ this.transmision = Object.assign({}, estado, { t: ahora() }); this._vivo.forEach(f => { try{ f({ tipo: 'transmision', estado: this.transmision }); }catch(e){} }); return true; }
+    const r = await fetch(api + '/api/transmision?casa=' + encodeURIComponent(this.casa()), {
+      method: 'POST', headers: cabezasSync(), body: JSON.stringify({ estado }) });
+    const j = await r.json().catch(() => ({}));
+    if(!r.ok) throw new Error(j.error || 'No se pudo.');
+    return true;
+  },
+
   /* ── El socket: no trae datos, trae "hubo cambio, ven por él" ───────── */
   enchufar(){
     const api = direccionServidor();
@@ -982,6 +1002,13 @@ const MotorServidor = {
         if(e.data === 'pong') return;
         let m = null; try{ m = JSON.parse(e.data); }catch(err){ return; }
         if(!m) return;
+        /* el partido en vivo y la señal de video/voz no son datos de la
+           cooperativa: van directo a quien los escucha (transmision.js) */
+        if(m.tipo === 'transmision' || m.tipo === 'senal'){
+          if(m.tipo === 'transmision'){ this.transmision = m.estado; this._desfaseVivo = typeof m.ahora === 'number' ? m.ahora - Date.now() : 0; }
+          this._vivo.forEach(f => { try{ f(m); }catch(err){} });
+          return;
+        }
         /* el servidor manda el cambio mismo, ya recortado a lo que este
            aparato puede ver: no hace falta volver a preguntar. Si se perdió
            alguno (el reloj no cuadra), entonces sí se pregunta. */

@@ -75,6 +75,7 @@
     <button class="chip" type="button" data-vista="menu" aria-pressed="false">El menú</button>
     <button class="chip" type="button" data-vista="corte" aria-pressed="false">Corte del día</button>
     <button class="chip" type="button" data-vista="deudas" aria-pressed="false">Fiados</button>
+    <button class="chip" type="button" data-vista="vivo" aria-pressed="false">En vivo</button>
     <button class="chip" type="button" data-vista="ajustes" aria-pressed="false">Ajustes</button>
   </div>
 
@@ -126,6 +127,12 @@
     <p class="sub">Esta pantalla es <b>sólo de la cooperativa</b>. Ningún alumno ve lo que
       debe otro: eso es humillación, no administración.</p>
     <div class="pila" id="listaDeudas"></div>
+  </section>
+
+  <!-- ══════════ EN VIVO · el partido en la pantalla (transmision.js) ══════════ -->
+  <section id="v-vivo" hidden>
+    <h2>En vivo en la pantalla</h2>
+    <div id="vivoControl"></div>
   </section>
 
   <!-- ══════════ AJUSTES ══════════ -->
@@ -223,6 +230,7 @@
 <script src="iconos.js"></script>
 <script src="nucleo.js"></script>
 <script src="pad.js"></script>
+<script type="module" src="transmision.js"></script>
 <script>
 (function(){
 'use strict';
@@ -293,7 +301,7 @@ try{ quien = localStorage.getItem(LLAVE_QUIEN) || ''; }catch(e){}
 if(!quien){ quien = 'mostrador-' + F.codigo(3); try{ localStorage.setItem(LLAVE_QUIEN, quien); }catch(e){} }
 
 let vista = 'despachar';
-const VISTAS = ['despachar','menu','corte','deudas','ajustes'];
+const VISTAS = ['despachar','menu','corte','deudas','vivo','ajustes'];
 
 function verVista(v){
   vista = v;
