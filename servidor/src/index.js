@@ -207,6 +207,9 @@ export class Cooperativa {
     if(!this.cuenta('req:' + ip, 60000, TOPE.peticionesPorIpMinuto))
       return json({ error: 'Demasiadas peticiones. Espera un minuto.' }, 429);
 
+    /* la sociedad de alumnos: su propio módulo, con la misma cuenta. Va
+       antes que todo: «/soc/todo» también acaba en «/todo» */
+    if(ruta.indexOf('/soc/') >= 0) return rutaSociedad(this, ruta, url, pedido, quien, { json });
     if(ruta.endsWith('/vivo')) return this.enchufar(pedido, quien);
     if(ruta.endsWith('/todo')){
       if(!quien.admin) return json({ error: 'Sólo el mostrador.' }, 401);
@@ -217,8 +220,6 @@ export class Cooperativa {
     /* los medios de la pantalla van ANTES de leer el cuerpo como texto: los
        pedazos de video son binarios */
     if(ruta.indexOf('/medios/') >= 0) return this.rutaMedios(ruta, url, pedido, quien);
-    /* la sociedad de alumnos: su propio módulo, con la misma cuenta */
-    if(ruta.indexOf('/soc/') >= 0) return rutaSociedad(this, ruta, url, pedido, quien, { json });
 
     if(pedido.method !== 'POST') return json({ error: 'No existe.' }, 404);
     const crudo = await pedido.text();
