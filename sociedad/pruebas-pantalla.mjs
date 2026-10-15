@@ -21,7 +21,10 @@ try{
   const m = await M.mostrador();
   const pres = await M.alumno('Carlos Palomares', '3.1');
   const codPres = await pres.evaluate(() => FADORI.yo().codigo);
-  const r = await m.evaluate(async ([api, casa, cod]) => { const x = await fetch(api + '/api/soc/miembros?casa=' + casa, { method: 'POST', headers: { 'content-type': 'application/json', 'x-fadori-admin': FADORI.llaveMostrador(), 'x-fadori-aparato': localStorage.getItem('fadori_aparato') }, body: JSON.stringify({ cod, rol: 'presidencia' }) }); return x.status; }, [API, M.CASA, codPres]);
+  /* como de verdad: la cooperativa abre la sociedad en su tablet (con el pasador puesto) y lo nombra */
+  await sociedad(m, 'miembros');
+  await m.fill('#fM [name=cod]', codPres); await m.selectOption('#fM [name=rol]', 'presidencia'); await m.click('#fM button');
+  const r = await M.tarda(m, () => /presidencia/.test(document.querySelector('.lista').innerText), null, 8000) !== null ? 200 : 0;
   ok('la cooperativa nombra a Carlos presidente', r === 200, r);
 
   console.log('· la presidencia');
