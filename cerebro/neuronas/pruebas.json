@@ -1069,6 +1069,28 @@
         "--cafe"
       ],
       "salioDe": "Grabando el comercial de Fadori en modo oscuro, 15 de octubre de 2026"
+    },
+    {
+      "id": "cero-es-falso-en-el-respaldo",
+      "titulo": "El recreo a las 10:00 se volvía 10:30",
+      "gravedad": "alta",
+      "sintoma": "La app decía «el recreo empieza a las 10:00» y a la vez contaba los minutos hasta las 10:30: a las 9:43 marcaba «para el recreo 46 min».",
+      "causa": "ventanaRecreo hacía setHours(h || 10, m || 30): con 00 minutos, el cero es falso y se usaba el 30 de respaldo.",
+      "porque": "`||` no distingue «no hay dato» de «el dato es cero»; con horas en punto, el cero es lo normal.",
+      "arreglo": "Number.isFinite(m) ? m : 0, y la hora de fábrica de la app pasó a 10:00 como la del servidor.",
+      "comoCazarlo": "LOCAL=1 API_LOCAL=http://127.0.0.1:8791 node fadori/pruebas-recreo.mjs — pone el teléfono a las 9:43, 10:12 y 10:40 de México.",
+      "consejo": "Cada `|| número` es sospechoso si el número puede ser cero.",
+      "senales": [
+        "recreo",
+        "10:30",
+        "10:00",
+        "hora",
+        "minutos",
+        "cero",
+        "||",
+        "cuenta regresiva"
+      ],
+      "salioDe": "Capturas de los pósters de Fadori, 15 de octubre de 2026"
     }
   ]
 }
