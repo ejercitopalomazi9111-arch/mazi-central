@@ -116,6 +116,7 @@ const VA = [
    está aquí con su razón. Si no está en ninguna, el armado se para y la
    nombra. */
 const NO_SE_PUBLICA = {
+  'fadori-campana': 'fuentes de los pósters y el comercial de Fadori (13 MB de fotos en grande); lo que sale es el PDF y el MP4, no esto',
   'rodrigo-claro':
     'material de paso hacia BigTigerMX/rodrigo-cabrera. Sus rutas apuntan a '
     + 'assets/, que aquí no existe: publicarla serviría una página rota.',

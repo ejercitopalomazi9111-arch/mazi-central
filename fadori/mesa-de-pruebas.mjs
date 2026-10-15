@@ -50,8 +50,8 @@ export async function abrirMesa(nombre = 'flujos'){
   const fallas = [];
   const ok = (q, c, extra) => { console.log((c ? '  ✓ ' : '  ✗ ') + q + (!c && extra ? ' · ' + extra : '')); if(!c) fallas.push(q); };
 
-  async function aparato(ruta, { w = 390, h = 844, desfase = 0, credencial = false } = {}){
-    const ctx = await br.newContext({ viewport: { width: w, height: h }, serviceWorkers: 'block', hasTouch: w < 800 });
+  async function aparato(ruta, { w = 390, h = 844, desfase = 0, credencial = false, escala = 1 } = {}){
+    const ctx = await br.newContext({ viewport: { width: w, height: h }, serviceWorkers: 'block', hasTouch: w < 800, deviceScaleFactor: escala });
     await ctx.addInitScript(c => { try{ localStorage.setItem('fadori_casa', c); }catch(e){} }, CASA);
     /* las pruebas de antes no traen credencial: dicen «no la traigo hoy», como
        un alumno que la deja para mañana. La prueba de cuentas pasa credencial:true */
