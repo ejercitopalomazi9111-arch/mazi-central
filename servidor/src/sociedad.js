@@ -153,15 +153,24 @@ function vista(self, y){
   const buzon = val(s.buzon).filter(b => soc || b.autor === y.cod || b.publico).map(b => Object.assign({}, b,
     { autor: soc && !b.anonimo ? b.autor : undefined, alias: b.anonimo ? 'Anónimo' : b.alias, apoyos: (b.apoyos || []).length, apoye: !!y.cod && (b.apoyos || []).indexOf(y.cod) >= 0, mia: b.autor === y.cod }));
   return {
-    yo: y.cod ? { cod: y.cod, alias: y.alias, grupo: y.grupo, rol: y.rol, cuenta: y.cuenta } : null,
+    yo: y.cod ? { cod: y.cod, alias: y.alias, nombre: y.a.nombre, grupo: y.grupo, grupoNombre: corto(y.a.grupo, 8).toUpperCase(), rol: y.rol, cuenta: y.cuenta } : null,
     admin: y.admin,
     avisos: val(s.avisos), eventos, votos, pubs, buzon,
     torneos: val(s.torneos), horarios: val(s.horarios),
     temas: soc ? val(s.temas) : [],
     miembros: soc || y.admin ? Object.entries(s.cfg.miembros).map(([cod, rol]) => ({ cod, rol, alias: self.datos.alumnos[cod] ? aliasDe(self.datos.alumnos[cod]) + ' · ' + (self.datos.alumnos[cod].grupo || '') : cod })) : [],
-    grupos: [...new Set(Object.values(self.datos.alumnos).map(a => normGrupo(a.grupo)).filter(Boolean))].sort(),
+    grupos: gruposDe(self),
     ahora: Date.now(),
   };
+}
+
+/* los grupos que existen (por las cuentas y por los horarios), con el nombre
+   como lo escriben («3.1») y su clave sin puntos («31») */
+function gruposDe(self){
+  const m = {};
+  for(const h of Object.values(self.soc.horarios)) m[h.grupo] = h.nombre || h.grupo;
+  for(const a of Object.values(self.datos.alumnos)){ const g = normGrupo(a.grupo); if(g && !m[g]) m[g] = corto(a.grupo, 8).toUpperCase(); }
+  return Object.entries(m).map(([id, nombre]) => ({ id, nombre })).sort((a, b) => a.id.localeCompare(b.id, 'es', { numeric: true }));
 }
 
 /* los canales de chat que puede abrir cada quien */
@@ -206,7 +215,7 @@ function limpiar(c, r, y, viejo){
       ? { ini: b.ini.padStart(5, '0'), fin: b.fin.padStart(5, '0'), materia: corto(b.materia, 50), salon: corto(b.salon, 20), color: /^#[0-9a-fA-F]{6}$/.test(b.color || '') ? b.color : '' } : null)
       .sort((a, b) => a.ini.localeCompare(b.ini));
     const g = normGrupo(r.grupo || (viejo && viejo.grupo)); if(!g) return null;
-    return Object.assign(base, { id: 'h' + g.toLowerCase(), grupo: g, turno: corto(r.turno, 20), dias });
+    return Object.assign(base, { id: 'h' + g.toLowerCase(), grupo: g, nombre: corto(r.nombre || r.grupo, 8).toUpperCase() || g, turno: corto(r.turno, 20), dias });
   }
   return null;
 }

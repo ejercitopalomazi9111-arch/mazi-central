@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sociedad de Alumnos Rembrandt</title>
+<meta name="description" content="La página de la Sociedad de Alumnos del Instituto Rembrandt: avisos, eventos, votaciones, buzón, chats, recuerdos, material, torneos y horarios.">
+<meta name="theme-color" content="#002060">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Sociedad">
+<link rel="stylesheet" href="estilo.css">
+</head>
+<body data-ruta="inicio">
+<header class="barra">
+  <button class="ico-btn menu-btn" id="menuBtn" aria-label="Abrir el menú"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+  <a class="marca" href="#/"><img src="escudo.png" alt=""><span><b>Sociedad</b><small>Instituto Rembrandt</small></span></a>
+  <a class="reloj vacio" id="reloj" href="#/horarios" aria-label="Tu clase ahora"><span class="r-eti"><span>Tu clase</span></span><span class="r-ven"><span class="r-tira"><span>…</span></span></span><span class="r-barra"><i style="width:0"></i></span></a>
+</header>
+<nav class="lado" id="lado" aria-label="Secciones"></nav>
+<div class="velo" id="velo"></div>
+<main id="vista"><div class="ancho"><div class="cargando-s">Cargando…</div></div></main>
+<dialog class="hoja" id="hoja"></dialog>
+<div id="brindis" role="status" aria-live="polite"></div>
+<script src="iconos.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
