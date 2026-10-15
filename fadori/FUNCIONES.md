@@ -113,6 +113,13 @@ app en el que te hace volver.
 El alumno avisa. Sin esto, la comida se hace y nadie la recoge: **la señora perdió el ingrediente y
 el lugar en la fila**, y es el problema económico número uno de pedir sin pagar por adelantado.
 
+**Desde el 15 de octubre (Carlos):** «hoy no puedo ir» se volvió **«Cancelar pedido»** y sólo
+sirve en los **primeros 5 minutos** desde que se pidió, con el tiempo que queda contado abajo del
+botón. Pasado eso, la comida ya puede ir en la plancha. El candado lo pone también el servidor
+(`PLAZO_CANCELAR`, con 1 minuto de gracia para el que canceló sin señal). **La cooperativa cancela
+cualquier pedido no entregado, cuando sea**, con la ✕ de cada pedido en Despachar; al alumno le
+llega el aviso. Pruebas: `fadori/pruebas-cancelar.mjs`.
+
 ### F16 · **(+)** Tope de pedidos por alumno por recreo
 Sin tope, alguien pide treinta tortas de broma el primer día y los pedidos reales quedan atrás.
 

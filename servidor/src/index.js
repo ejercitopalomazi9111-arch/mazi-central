@@ -112,6 +112,7 @@ const DELTA_DEUDA = {
   abono: (e) => -entero(e.monto, 0, 1e7, 0),
   deuda_ajuste: (e) => entero(e.despues, 0, 1e7, 0) - entero(e.antes, 0, 1e7, 0),
 };
+const PLAZO_CANCELAR = 6 * 60000;   /* 5 min que ve el alumno + 1 de gracia */
 const EVENTOS_DEL_ALUMNO = ['pedido', 'cancelado', 'terminos', 'apartado', 'en_camino', 'revivido', 'cambio_por_falta', 'renuncia'];
 const EVENTOS_A_LA_VISTA = ['renglon_listo', 'listo', 'tomado', 'producto_agotado', 'producto_vuelve', 'pedido'];
 
@@ -862,16 +863,20 @@ export class Cooperativa {
     const t = Number(r.t) || 0;
     if(!(t > (viejo.t || 0))) return false;
     const rec = Object.assign({}, viejo);
-    /* el alumno sólo puede: cancelar lo que sigue en la fila, apartarlo, y
-       revivir lo que se canceló porque se acabó algo */
+    /* el alumno sólo puede: cancelar lo que sigue en la fila (en los primeros
+       5 minutos desde que pidió, con 1 de gracia para el que lo hizo sin
+       señal), apartarlo, y revivir lo que se canceló porque se acabó algo.
+       La cooperativa cancela cuando sea: eso va por el camino del mostrador. */
+    let negado = false;
     if(r.estado !== viejo.estado){
-      const sePuede = (viejo.estado === 'en_cola' && (r.estado === 'cancelado' || r.estado === 'apartado')) ||
+      const aTiempo = Date.now() <= (Number(viejo.creado) || 0) + PLAZO_CANCELAR;
+      const sePuede = (viejo.estado === 'en_cola' && ((r.estado === 'cancelado' && aTiempo) || r.estado === 'apartado')) ||
                       (viejo.estado === 'cancelado' && viejo.porFalta && (r.estado === 'en_cola' || r.estado === 'apartado'));
       if(sePuede){
         rec.estado = r.estado;
         if(r.estado === 'cancelado') rec.cancelado = Date.now();
         if(r.estado === 'en_cola'){ rec.porFalta = false; rec.cancelado = 0; }
-      }
+      } else negado = true;
     }
     /* cambiar o quitar lo que se acabó; NUNCA agregar después de pedido */
     if(Array.isArray(r.renglones) && ['en_cola', 'preparando', 'cancelado'].indexOf(viejo.estado) >= 0 &&
@@ -894,7 +899,12 @@ export class Cooperativa {
     if(r.avisoFalta == null && viejo.avisoFalta) rec.avisoFalta = null;
     rec.t = t;
     const igualQue = (x) => JSON.stringify(Object.assign({}, x, { t: 0, _r: 0 }));
-    if(igualQue(rec) !== igualQue(viejo)) poner('pedidos', rec);
+    /* Si se le negó el cambio de estado (cancelar pasados los 5 minutos, o
+       desde un teléfono que no vio que ya lo estaban preparando), el teléfono
+       ya se lo había puesto a sí mismo: sin mandarle la copia buena con una
+       hora MÁS NUEVA, se quedaba creyendo que estaba cancelado. */
+    if(negado){ rec.t = Math.max(t + 1, Date.now()); poner('pedidos', rec); }
+    else if(igualQue(rec) !== igualQue(viejo)) poner('pedidos', rec);
     return false;
   }
 

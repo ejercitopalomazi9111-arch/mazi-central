@@ -420,6 +420,7 @@ function fichaActual(p){
       '<button class="btn fuerte" data-listo="'+p.id+'" type="button" style="flex:1">'+
         'Pedido listo · '+F.pesos(p.total)+'</button>'+
       '<button class="btn" data-soltar="'+p.id+'" type="button">Soltar</button>'+
+      botonCancelar(p, '')+
     '</div></div>';
 }
 
@@ -434,7 +435,15 @@ function renglonPedido(p, tipo){
     (listo
       ? '<button class="btn chico" data-cobrar="'+p.id+'" type="button">Entregar</button>'
       : '<button class="btn chico" data-tomar="'+p.id+'" type="button">Tomar</button>')+
+    botonCancelar(p, 'chico')+
     '</div>';
+}
+
+/* Carlos, 15 de octubre: la cooperativa cancela cualquier pedido que no se
+   haya entregado, sin límite de tiempo (el alumno, sólo 5 minutos). */
+function botonCancelar(p, tam){
+  return '<button class="btn '+tam+' btn-cancelar" data-cancelar="'+p.id+'" type="button" '+
+    'title="Cancelar pedido" aria-label="Cancelar el pedido de '+esc(p.nombre)+'">'+F.ico('x')+'</button>';
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -1154,6 +1163,17 @@ document.addEventListener('click', (e) => {
     return pintar();
   }
   if((b = t('data-listo'))){ F.marcarListo(b.dataset.listo); return pintar(); }
+  if((b = t('data-cancelar'))){
+    const p = F.pedido(b.dataset.cancelar);
+    if(!p || F.VIVOS.indexOf(p.estado) < 0) return pintar();
+    preguntar({
+      titulo: '¿Cancelar el pedido de '+p.nombre+'?',
+      texto: 'Turno '+F.verTurno(p)+' · '+resumenCorto(p)+'. Al alumno le llega el aviso de que lo canceló la cooperativa.',
+      si: 'Sí, cancelarlo', no: 'No, déjalo',
+      hecho: () => { F.cancelar(p.id, 'mostrador'); pintar(); aviso('Pedido cancelado.', 'bueno'); },
+    });
+    return;
+  }
   if((b = t('data-cobrar'))) return abrirCobro(b.dataset.cobrar);
   if((b = t('data-agotar'))){
     const p = F.producto(b.dataset.agotar);

@@ -1031,6 +1031,23 @@
         "el reloj no se movió"
       ],
       "salioDe": "La segunda vuelta de los pósters de Fadori, 15 de octubre."
+    },
+    {
+      "id": "cambio-negado-en-silencio",
+      "titulo": "El teléfono cree que canceló y el servidor dijo que no",
+      "gravedad": "alta",
+      "sintoma": "El alumno ve su pedido «cancelado» y la cooperativa lo sigue teniendo en la fila y se lo prepara.",
+      "causa": "El servidor ignoraba el cambio de estado no permitido sin guardar nada, así que no había copia nueva que bajara al teléfono, que ya se había marcado cancelado a sí mismo.",
+      "porque": "Sincronizar «gana el más reciente» sólo corrige al que tiene la copia vieja; si el servidor no escribe, el teléfono nunca recibe la versión buena.",
+      "arreglo": "Cuando el servidor niega un cambio, guarda su copia con la hora más nueva (max(t+1, ahora)) para que gane en el teléfono.",
+      "comoCazarlo": "Hacer el cambio prohibido brincándose la app y esperar a que el teléfono REGRESE al estado bueno, no sólo que el servidor no cambie.",
+      "consejo": "Toda regla del servidor necesita su camino de regreso al aparato que la rompió.",
+      "senales": [
+        "en mi teléfono dice cancelado pero se lo prepararon",
+        "el teléfono dice una cosa y el mostrador otra",
+        "no se sincroniza el estado"
+      ],
+      "salioDe": "Cancelar en 5 minutos de Fadori, 15 de octubre."
     }
   ]
 }

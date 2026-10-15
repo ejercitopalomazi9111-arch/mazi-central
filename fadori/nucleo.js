@@ -2114,8 +2114,17 @@ function voyEnCamino(oid){
   return p;
 }
 
+/* Carlos, 15 de octubre: el alumno cancela sólo en los primeros 5 minutos
+   desde que pidió (y mientras siga en la fila); la cooperativa, cuando sea.
+   El servidor pone el mismo candado, así que esto es la cortesía de no
+   enseñar un botón que no va a servir. */
+const MIN_CANCELAR = 5 * 60000;
+function cancelableHasta(p){ return (Number(p && p.creado) || 0) + MIN_CANCELAR; }
+function puedeCancelar(p){ return !!p && p.estado === 'en_cola' && ahora() < cancelableHasta(p); }
+
 function cancelar(oid, quien){
   const p = pedido(oid); if(!p) return null;
+  if((quien || 'alumno') === 'alumno' && !puedeCancelar(p)) return null;
   p.estado = 'cancelado';
   p.cancelado = ahora();
   anotar('cancelado', { pedido:oid, quien: quien || 'alumno' });
@@ -2881,7 +2890,7 @@ const FADORI = {
   /* pedidos */
   pedir, pedido, pedidosDe, pedidosDeHoy, puedePedir, totalDe, segundosDe,
   VERES, verLimpio, miVer, ponerMiVer, aliasDe, primerNombre, queSePidio,
-  cancelar, apartarParaManana, voyEnCamino,
+  cancelar, puedeCancelar, cancelableHasta, MIN_CANCELAR, apartarParaManana, voyEnCamino,
   seAcabo, avisarFalta, aQuienLePega, noSePuede, enLugarDe, cambiarRenglon, renunciarA, faltantesDe,
   /* la fila */
   colaOrdenada, lugarDe, veredicto, quedanSegundosDeRecreo, enRecreo, ventanaRecreo,
