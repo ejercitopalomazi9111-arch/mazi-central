@@ -138,12 +138,32 @@ ok('y si se lo salta a la mala, el servidor lo rechaza', rech != null);
 ok('con el motivo: «necesitas tu correo y la foto de tu credencial»', await beto.evaluate((id) => /correo y la foto de tu credencial/.test((FADORI.estado().pedidos.find(x => x.id === id) || {}).rechazo || ''), idB));
 ok('…y el mostrador nunca lo ve', !(await most.evaluate((id) => FADORI.estado().pedidos.some(p => p.id === id && p.estado !== 'cancelado'), idB)));
 
+console.log('\n6b · Una credencial, una cuenta (Carlos, 15 de octubre)');
+const cami = await aparato('/fadori/', { credencial: true });
+await cami.waitForSelector('#p-entrada:not([hidden])');
+await cami.fill('#eNombre', 'Ana P'); await cami.fill('#eGrupo', '2A'); await cami.click('#bEntrar');
+await cami.click('#bAcepto');
+await tarda(cami, () => !document.querySelector('#p-credencial').hidden || null, null, 4000);
+await cami.waitForTimeout(2500);   /* que su alta llegue al servidor */
+const lecturaC = () => tarda(cami, () => { const e = document.querySelector('#credLectura'); return e && !e.hidden && !e.classList.contains('leyendo') ? e.className : null; }, null, 60000);
+await cami.setInputFiles('#fCredGal', await credencial('ANA PAOLA|PÉREZ LÓPEZ'));
+ok('el lector dice que coincide (la credencial es de «Ana P»)', (await lecturaC()) != null && /coincide con tu cuenta/i.test(await cami.textContent('#credLectura')), await cami.textContent('#credLectura'));
+await cami.fill('#cCorreo', 'otra.ana@escuela.mx'); await cami.fill('#cClave', 'torta2026');
+await cami.click('#bMandarCred');
+ok('pero la credencial de Ana ya está en su cuenta: el servidor no la deja usar en otra', (await tarda(cami, () => /ya está en otra cuenta/.test(document.querySelector('#credLectura').textContent) || null, null, 8000)) != null, await cami.textContent('#credLectura'));
+ok('…y la nueva cuenta sigue sin poder pedir', await cami.evaluate(() => !document.querySelector('#p-credencial').hidden));
+/* otra foto de la misma credencial puede leer una letra distinta: tampoco pasa */
+const casi = await cami.evaluate(async () => FADORI.subirCredencial(FADORI.yo().codigo, 'data:image/jpeg;base64,AAAA', 'coincide', 'ANA PAOLA PERES LOPEZ'));
+ok('con una letra mal leída («PERES») tampoco: 409', casi.estado === 409 && casi.credOcupada, casi);
+const ajena = await cami.evaluate(async () => FADORI.subirCredencial(FADORI.yo().codigo, 'data:image/jpeg;base64,AAAA', 'coincide', 'ANA PAOLA RAMOS LOPEZ'));
+ok('una credencial de otra persona (otro apellido) sí pasa', ajena.ok, ajena);
+
 console.log('\n7 · Tamaños y errores');
 for(const [n, pg] of [['Ana', ana], ['otro', otro]]){
   for(const w of [320, 390]){ await pg.setViewportSize({ width: w, height: 800 }); await pg.waitForTimeout(150);
     const d = await pg.evaluate(() => document.documentElement.scrollWidth - innerWidth); ok(`${n}: nada se sale a ${w}`, d <= 0, d); }
 }
-for(const [n, pg] of [['Ana', ana], ['otro', otro], ['tercero', tercero], ['Beto', beto], ['mostrador', most]])
+for(const [n, pg] of [['Ana', ana], ['otro', otro], ['tercero', tercero], ['Beto', beto], ['Cami', cami], ['mostrador', most]])
   ok(`${n}: sin errores (${pg.errores.slice(0, 2).join(' | ')})`, !pg.errores.length);
 
 console.log(`\n${fallas.length ? '✗ ' + fallas.length + ' fallas' : '✓ todo bien'} · escuela de prueba ${CASA}`);

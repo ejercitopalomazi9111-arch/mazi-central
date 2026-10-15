@@ -1096,11 +1096,11 @@ let fotoCred = null;
    coincide → se puede mandar; dice otro nombre → o es tu credencial y tu
    cuenta está mal escrita (un toque la corrige), o no es la tuya; no se lee →
    otra foto, y a la segunda la revisa la cooperativa a ojo. */
-let lecturaCred = null, intentosLectura = 0;
+let lecturaCred = null, intentosLectura = 0, leidoCred = '';   /* el nombre completo que leyó: una credencial, una cuenta */
 const credLectura = (html, clase) => { const el = $('#credLectura'); el.hidden = !html; el.className = 'cred-lectura' + (clase ? ' ' + clase : ''); el.innerHTML = html || ''; };
 async function leerCred(f){
   const yo = F.yo(); if(!yo) return;
-  lecturaCred = null; revisarListo();
+  lecturaCred = null; leidoCred = ''; revisarListo();
   credLectura(F.ico('id-card') + '<span>Revisando el nombre de tu credencial…</span>', 'leyendo');
   let r = null;
   try{
@@ -1109,7 +1109,7 @@ async function leerCred(f){
     r = window.FadoriLector.revisarNombre(texto, yo.nombre, zona);
   }catch(e){ r = null; }
   if(r && r.coincide){
-    lecturaCred = 'coincide';
+    lecturaCred = 'coincide'; leidoCred = r.leido || '';
     credLectura(F.ico('badge-check') + '<span>Dice <b>' + esc(r.leido || yo.nombre) + '</b>. Coincide con tu cuenta.</span>', 'bien');
   } else if(r && r.esReverso){
     /* la vuelta (firma del director y contacto): no trae el nombre del alumno */
@@ -1120,7 +1120,7 @@ async function leerCred(f){
       '<small>Si no es tu credencial, toma la foto de la tuya.</small>', 'mal');
     $('#bUsarNombre').onclick = () => {
       F.cambiarNombre(yo.codigo, r.sugerido);
-      lecturaCred = 'coincide';
+      lecturaCred = 'coincide'; leidoCred = r.leido || '';
       credLectura(F.ico('badge-check') + '<span>Listo: tu cuenta ahora dice <b>' + esc(r.sugerido) + '</b>, como tu credencial.</span>', 'bien');
       revisarListo();
     };
@@ -1152,9 +1152,13 @@ $('#bMandarCred').addEventListener('click', async () => {
   const fin = () => { b.innerHTML = F.ico('check') + ' Listo, ya puedo pedir'; revisarListo(); };
   if(faltaFoto(yo)){
     if(!fotoCred){ fin(); return aviso('Falta la foto de tu credencial.', 'malo'); }
-    const r = await F.subirCredencial(yo.codigo, fotoCred, lecturaCred);
-    if(!r.ok){ fin(); return aviso(r.error || 'No se pudo mandar la credencial.', 'malo'); }
-    fotoCred = null; lecturaCred = null; $('#credVista').innerHTML = ''; credLectura('');
+    const r = await F.subirCredencial(yo.codigo, fotoCred, lecturaCred, leidoCred);
+    if(!r.ok){
+      fin();
+      if(r.credOcupada) credLectura(F.ico('circle-alert') + '<span>Esa credencial <b>ya está en otra cuenta</b>. Si es tuya, entra con tu correo en «Ya tengo cuenta».</span>', 'mal');
+      return aviso(r.error || 'No se pudo mandar la credencial.', 'malo');
+    }
+    fotoCred = null; lecturaCred = null; leidoCred = ''; $('#credVista').innerHTML = ''; credLectura('');
   }
   if(!F.yo().protegida){
     const r = await F.protegerCuenta(yo.codigo, $('#cCorreo').value.trim(), $('#cClave').value);

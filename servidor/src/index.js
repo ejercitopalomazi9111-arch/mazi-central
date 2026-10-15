@@ -490,6 +490,14 @@ export class Cooperativa {
     await this.escribir([['r:alumnos:' + a.id, a], ['reloj', this.reloj]]);
     this.avisar([['alumnos', a]], false, antes);
   }
+  /* ¿qué OTRA cuenta (que siga existiendo) tiene esa credencial? */
+  credDe(nom, cod){
+    for(const id in this.datos.alumnos){
+      const b = this.datos.alumnos[id];
+      if(id !== cod && b && b._cred && !b.borrado && mismaCredencial(b._cred, nom)) return id;
+    }
+    return '';
+  }
   async subirCredencial(cuerpo, quien){
     if(!quien.aparato) return json({ error: 'Actualiza la app.' }, 400);
     const cod = String(cuerpo.codigo || '').toUpperCase();
@@ -505,6 +513,16 @@ export class Cooperativa {
     /* lo que dijo el lector del teléfono: si el nombre impreso coincidió, o si
        no se alcanzó a leer y lo revisa la cooperativa a ojo */
     const lectura = cuerpo.lectura === 'coincide' || cuerpo.lectura === 'no-se-leyo' ? cuerpo.lectura : '';
+    /* UNA CREDENCIAL, UNA CUENTA (Carlos, 15 de octubre). El nombre completo
+       que leyó el teléfono se compara con el de las demás cuentas, perdonando
+       un par de letras mal leídas (otra foto de la misma credencial no lo
+       brinca). Se queda en el servidor: no va a los teléfonos ni al mostrador. */
+    const nom = nombreCred(cuerpo.nombre);
+    if(nom){
+      const otro = this.credDe(nom, cod);
+      if(otro) return json({ error: 'Esa credencial ya está en otra cuenta. Si es tuya, entra con tu correo en «Ya tengo cuenta».', credOcupada: true }, 409);
+      a._cred = nom;
+    }
     await this.ctx.storage.put('cred:' + cod, { foto, t: Date.now(), lectura });
     a.verif = 'pendiente';
     await this.tocarAlumno(a);
@@ -526,6 +544,7 @@ export class Cooperativa {
     const cod = String(cuerpo.codigo || '').toUpperCase(), a = RE_COD.test(cod) && this.datos.alumnos[cod];
     if(!a) return json({ error: 'No existe.' }, 404);
     a.verif = cuerpo.si === true ? 'si' : 'no';
+    if(a.verif === 'no') delete a._cred;                      /* no era suya: la credencial queda libre */
     await this.ctx.storage.delete('cred:' + cod);            /* decidido: la foto se va */
     await this.tocarAlumno(a);
     return json({ bien: true, verif: a.verif });
@@ -704,7 +723,7 @@ export class Cooperativa {
           if(c === 'productos' && esRetirado(rec)){ rec.borrado = true; rec.disponible = false; rec.destacado = false; }
           /* lo de la cuenta sólo cambia por sus propias puertas: una copia
              vieja del mostrador no le borra la contraseña ni la palomita */
-          if(c === 'alumnos' && viejo){ rec._dev = viejo._dev; rec._cuenta = viejo._cuenta; rec.verif = viejo.verif; rec.protegida = viejo.protegida; rec.correo = viejo.correo; rec.npedidos = viejo.npedidos;
+          if(c === 'alumnos' && viejo){ rec._dev = viejo._dev; rec._cuenta = viejo._cuenta; rec._cred = viejo._cred; rec.verif = viejo.verif; rec.protegida = viejo.protegida; rec.correo = viejo.correo; rec.npedidos = viejo.npedidos;
             /* LA DEUDA LA LLEVA EL SERVIDOR (Carlos, 11 de octubre: «arregla el
                sistema de deudas»). Cada aparato mandaba la deuda ENTERA y ganaba
                el último: la tablet fiaba $45, el teléfono abonaba $10 al mismo
@@ -1080,6 +1099,24 @@ function hex(n){
   const b = new Uint8Array(n); crypto.getRandomValues(b);
   return Array.from(b, x => x.toString(16).padStart(2, '0')).join('');
 }
+/* el nombre de la credencial: MAYÚSCULAS sin acentos, sólo letras; con menos
+   de dos palabras u ocho letras no sirve para distinguir a nadie */
+function nombreCred(x){
+  const n = String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-ZÑ ]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
+  return n.split(' ').length >= 2 && n.replace(/ /g, '').length >= 8 ? n : '';
+}
+function edicion(a, b){
+  if(Math.abs(a.length - b.length) > 3) return 9;
+  let ant = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for(let i = 1; i <= a.length; i++){
+    const fila = [i];
+    for(let j = 1; j <= b.length; j++) fila[j] = Math.min(ant[j] + 1, fila[j - 1] + 1, ant[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    ant = fila;
+  }
+  return ant[b.length];
+}
+/* la misma credencial leída dos veces: igual, o a lo mucho 2 letras distintas */
+const mismaCredencial = (a, b) => a === b || edicion(a, b) <= 2;
 /* comparar sin delatar por cuánto tardó cuántas letras atinaste */
 function igual(a, b){
   let d = a.length ^ b.length;
@@ -1088,7 +1125,7 @@ function igual(a, b){
 }
 function sinInternos(rec){
   const c = Object.assign({}, rec);
-  delete c._dev; delete c._cuenta;
+  delete c._dev; delete c._cuenta; delete c._cred;
   return c;
 }
 /* ── las cuentas: huellas, sal y PBKDF2 ── */

@@ -1663,9 +1663,11 @@ function cambiarNombre(cod, nombre){
   guardar();
   return a;
 }
-async function subirCredencial(codigo, foto, lectura){
+/* `nombre`: el nombre completo que leyó el lector; el servidor no deja que la
+   misma credencial quede en dos cuentas */
+async function subirCredencial(codigo, foto, lectura, nombre){
   if(MOTOR.nombre !== 'servidor') return { ok: false, error: 'Esto necesita el servidor de la escuela.' };
-  const j = await MotorServidor.llamar('/api/cuenta/credencial', { codigo, foto, lectura });
+  const j = await MotorServidor.llamar('/api/cuenta/credencial', { codigo, foto, lectura, nombre: nombre || '' });
   if(j.ok) apuntarCuenta(codigo, { verif: j.verif });
   return j;
 }
