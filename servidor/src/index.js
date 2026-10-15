@@ -40,6 +40,7 @@
    ═════════════════════════════════════════════════════════════════════════ */
 
 import { nuevasLlavesVapid, mandar, suscripcionValida } from './push.js';
+import { rutaSociedad } from './sociedad.js';
 
 const CAJONES = ['productos', 'alumnos', 'pedidos', 'conteos', 'eventos'];
 const CONTACTO = 'mailto:grupomazi.oficial@gmail.com';
@@ -94,7 +95,7 @@ const TOPE = {
      Durable Objects, 11 de octubre) y cada valor hasta 2 MB */
   medioParte: 1536 * 1024,
   medioMax: 800 * 1e6,
-  mediosObjeto: 900 * 1e6,
+  mediosObjeto: 650 * 1e6,          /* los otros 250 MB son de la sociedad de alumnos */
   mediosR2: 8 * 1e9,
 };
 /* qué se guarda y por cuánto: lo de hoy es lo que importa; el historial vive
@@ -206,6 +207,9 @@ export class Cooperativa {
     if(!this.cuenta('req:' + ip, 60000, TOPE.peticionesPorIpMinuto))
       return json({ error: 'Demasiadas peticiones. Espera un minuto.' }, 429);
 
+    /* la sociedad de alumnos: su propio módulo, con la misma cuenta. Va
+       antes que todo: «/soc/todo» también acaba en «/todo» */
+    if(ruta.indexOf('/soc/') >= 0) return rutaSociedad(this, ruta, url, pedido, quien, { json });
     if(ruta.endsWith('/vivo')) return this.enchufar(pedido, quien);
     if(ruta.endsWith('/todo')){
       if(!quien.admin) return json({ error: 'Sólo el mostrador.' }, 401);
@@ -585,6 +589,7 @@ export class Cooperativa {
     const par = new WebSocketPair();
     const [cliente, servidor] = Object.values(par);
     const etiquetas = ['ap:' + (quien.aparato || 'anon')];
+    if(new URL(pedido.url).searchParams.get('soc')) etiquetas.push('soc');
     if(quien.admin) etiquetas.push('llave:' + quien.llave);
     /* hibernación: el objeto se duerme con los sockets abiertos y no cobra
        tiempo mientras nadie habla */
@@ -653,6 +658,8 @@ export class Cooperativa {
   avisar(tocados, configTocada, antes){
     for(const ws of this.ctx.getWebSockets()){
       try{
+        /* los de la página de la sociedad sólo oyen «cambió X» de lo suyo */
+        if(this.ctx.getTags(ws).indexOf('soc') >= 0) continue;
         const quien = this.quienDe(ws), cambios = {};
         for(const [c, rec] of tocados){
           const v = this.vista(c, rec, quien);

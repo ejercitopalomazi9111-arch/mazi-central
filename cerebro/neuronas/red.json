@@ -150,6 +150,25 @@
     "sin-conexion-con-buen-internet"
    ],
    "salioDe": "Capturas de Carlos, 25 de septiembre, 23:25 UTC. Documentación de precios de Durable Objects, 26 de septiembre."
+  },
+  {
+   "id": "ruta-corta-se-come-la-larga",
+   "titulo": "Una ruta que acaba igual que otra se va a la equivocada",
+   "gravedad": "alta",
+   "sintoma": "La página nueva pide sus datos y el servidor contesta «Sólo el mostrador» o «Ese no es el pasador».",
+   "causa": "El servidor de Fadori decide a dónde va cada llamada con endsWith: «/api/soc/todo» acaba en «/todo» y se iba a la ruta del mostrador. Ya había pasado con «/api/cuenta/entrar» y «/entrar».",
+   "porque": "endsWith sólo mira el final; dos rutas con el mismo final son la misma para él.",
+   "arreglo": "Las rutas de un módulo (con su prefijo, como «/soc/») se revisan ANTES que todas las cortas; dentro, se compara el nombre exacto.",
+   "comoCazarlo": "Correr la prueba del módulo nuevo contra el servidor local: la primera llamada falla con el error de otra ruta (sociedad/pruebas-servidor.mjs).",
+   "consejo": "Antes de agregar una ruta, buscar qué otras terminan igual.",
+   "senales": [
+    "sólo el mostrador",
+    "contesta otra cosa",
+    "la ruta nueva no funciona",
+    "ese no es el pasador"
+   ],
+   "salioDe": "La sociedad de alumnos, 15 de octubre de 2026.",
+   "vecinas": []
   }
  ]
 }

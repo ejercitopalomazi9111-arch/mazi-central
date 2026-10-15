@@ -91,6 +91,11 @@ const VA = [
      MP3 y portada, todo en el teléfono. Carlos lo pidió para un podcast de
      la escuela. Trae el codificador LAME (vendor/, LGPL) con su licencia. */
   'podcast',
+  /* La Sociedad de Alumnos del Rembrandt (Carlos, 15 de octubre): buzón,
+     votaciones, eventos, chats, muro revisado, material, torneos, el panel de
+     la sociedad y el reloj de clases. Habla con el servidor de Fadori y usa
+     la misma cuenta. */
+  'sociedad',
 ];
 
 /* ── Lo que tiene sitio adentro y NO se publica, dicho a propósito ──────────

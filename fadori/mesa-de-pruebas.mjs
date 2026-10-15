@@ -57,7 +57,7 @@ export async function abrirMesa(nombre = 'flujos'){
        un alumno que la deja para mañana. La prueba de cuentas pasa credencial:true */
     if(!credencial) await ctx.addInitScript(() => { try{ localStorage.setItem('fadori_cred_luego', new Date().toDateString()); }catch(e){} });
     if(desfase) await ctx.addInitScript(ms => { const real = Date.now.bind(Date); Date.now = () => real() + ms; }, desfase);
-    if(process.env.LOCAL) await ctx.route(/mazi-central\.palomazi9111\.workers\.dev\/fadori\//, route => {
+    if(process.env.LOCAL) await ctx.route(/mazi-central\.palomazi9111\.workers\.dev\/(fadori|sociedad|podcast)\//, route => {
       const u = new URL(route.request().url()); let f = path.join(RAIZ, decodeURIComponent(u.pathname));
       if(f.endsWith('/')) f += 'index.html'; if(!fs.existsSync(f) && fs.existsSync(f + '.html')) f += '.html';
       if(fs.existsSync(f) && fs.statSync(f).isFile()) return route.fulfill({ status: 200, body: fs.readFileSync(f), headers: { 'content-type': T[path.extname(f)] || 'application/octet-stream' } });
