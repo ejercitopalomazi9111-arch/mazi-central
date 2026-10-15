@@ -18,7 +18,7 @@ import path from 'path';
 const TEMA = process.env.TEMA || '';                                    /* TEMA=oscuro graba la misma demo en modo oscuro */
 const SAL = path.join(path.dirname(new URL(import.meta.url).pathname), '..', 'salida', 'rec', TEMA ? 'app-' + TEMA : 'app');
 const ZONA = 'America/Mexico_City';
-const hoy = new Date(); hoy.setUTCHours(16, 12, 0, 0);                 /* 10:12 en México */
+const hoy = new Date(); hoy.setUTCHours(15, 42, 0, 0);                 /* 9:42 en México: el recreo es a las 10:00 */
 const desfase = hoy.getTime() - Date.now();
 const M = await abrirMesa('comercial');
 const most = await M.mostrador({ desfase });
