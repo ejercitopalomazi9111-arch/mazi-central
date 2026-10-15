@@ -15,6 +15,10 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
 .tel .pant{border-radius:50px;overflow:hidden;position:relative}
 .tel img{width:100%;display:block}
 .tel::before{content:"";position:absolute;top:30px;left:50%;width:120px;height:34px;margin-left:-60px;border-radius:20px;background:#111;z-index:2}
+.m8i{position:absolute;left:1080px;top:70px;width:680px;filter:drop-shadow(0 40px 40px rgba(0,0,0,.3))}
+.m8f{position:absolute;left:1040px;top:120px;width:720px;height:720px;border-radius:50%;overflow:hidden;border:18px solid #fff;box-shadow:0 40px 80px rgba(0,0,0,.4)}
+.m8f img{width:100%;height:100%;object-fit:cover}
+.m8n{position:absolute;left:120px;top:110px;background:#fff;color:#2E1B10;font:900 54px/1 Pop;padding:20px 34px;border-radius:99px}
 .qr{background:#fff;border-radius:30px;padding:22px}
 .qr img{width:100%;display:block}
 .chip{display:inline-block;background:#E8590C;color:#fff;font:800 26px/1 Pop;letter-spacing:.12em;text-transform:uppercase;padding:14px 26px;border-radius:99px}
@@ -67,9 +71,12 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
 
 <!-- 6 · te avisamos -->
 <section class="esc" id="e6">
-  <img class="full" id="e6foto" src="img/hd-taco-de-chorizo.jpg">
-  <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.35),rgba(0,0,0,.15) 40%,rgba(0,0,0,.8))"></div>
-  <div id="e6not" style="position:absolute;left:50%;top:80px;width:1100px;margin-left:-550px;background:rgba(36,48,26,.95);border-radius:44px;padding:34px 44px;display:flex;gap:30px;align-items:center;box-shadow:0 30px 80px rgba(0,0,0,.5)">
+  <div class="full" style="background:radial-gradient(circle at 70% 55%,#FF9A3D 0,#FF5A1F 45%,#C2410C 100%)"></div>
+  <div class="full" style="background-image:radial-gradient(rgba(255,255,255,.16) 3px,transparent 3.5px);background-size:44px 44px"></div>
+  <img id="e6foto" src="img/fl/bell_color.svg" style="position:absolute;left:1290px;top:300px;width:520px;filter:drop-shadow(0 40px 40px rgba(0,0,0,.3))">
+  <img id="e6s1" src="img/fl/sparkles_color.svg" style="position:absolute;left:1080px;top:340px;width:170px">
+  <img id="e6s2" src="img/fl/sparkles_color.svg" style="position:absolute;left:1680px;top:720px;width:130px">
+  <div id="e6not" style="position:absolute;left:50%;top:80px;width:1100px;margin-left:-550px;color:#2E1B10;background:rgba(255,255,255,.97);border-radius:44px;padding:34px 44px;display:flex;gap:30px;align-items:center;box-shadow:0 30px 80px rgba(0,0,0,.5)">
     <div style="flex:none;width:110px;height:110px;border-radius:28px;background:#E8590C;overflow:hidden;display:grid;place-items:center"><img src="img/logo-fadori.png" style="width:150px;margin-top:-10px"></div>
     <div><div style="font:600 24px/1 Pop;opacity:.75;letter-spacing:.06em;text-transform:uppercase">Fadori · ahora</div><div style="font:900 56px/1.1 Pop;margin-top:10px">¡Tu pedido ya está!</div><div style="font:600 32px/1.2 Pop;opacity:.9;margin-top:6px">Turno 7 · ve por él al mostrador</div></div>
   </div>
@@ -81,21 +88,31 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
 
 <!-- 7 · la pantalla -->
 <section class="esc" id="e7" style="background:#1A0F0A">
-  <div id="e7tv" style="position:absolute;left:120px;top:150px;width:1120px;background:#000;border-radius:30px;padding:18px;box-shadow:0 40px 90px rgba(0,0,0,.7)"><img src="img/f-pantalla.png" style="width:100%;border-radius:16px;display:block"></div>
-  <div style="position:absolute;left:1320px;right:90px;top:250px">
-    <div class="anton" style="font-size:118px">Pasa cuando<br>salga <span style="color:#B8E28C">tu número.</span></div>
-    <div id="e7sub" style="font:600 40px/1.35 Pop;margin-top:30px;color:#F5E9DA">Y la pantalla lo dice en voz alta.</div>
+  <div id="e7tv" style="position:absolute;left:90px;top:200px;width:1050px">
+    <div style="background:#1b1b1f;border-radius:34px 34px 10px 10px;padding:24px 24px 34px;box-shadow:0 40px 90px rgba(0,0,0,.7)"><img src="img/f-vivo.png" style="width:100%;border-radius:8px;display:block"></div>
+    <div style="height:34px;margin:0 -70px;background:linear-gradient(#d9dbe0,#9aa0aa);border-radius:0 0 40px 40px;position:relative"><div style="position:absolute;left:50%;top:0;width:180px;height:12px;margin-left:-90px;background:#7d838d;border-radius:0 0 14px 14px"></div></div>
+  </div>
+  <div style="position:absolute;left:1240px;right:70px;top:190px">
+    <div class="anton" style="font-size:110px">Pasa cuando<br>salga <span style="color:#B8E28C">tu número.</span></div>
+    <div id="e7sub" style="font:600 38px/1.35 Pop;margin-top:26px;color:#F5E9DA">Y mientras, partidos en vivo con Radio Divergentes.</div>
+    <div id="e7logos" style="display:flex;align-items:center;gap:22px;margin-top:40px"><div style="background:#fff;border-radius:24px;padding:6px 18px"><img src="img/logo-fadori.png" style="height:110px;display:block"></div><span style="font:900 40px/1 Pop;color:#8a7a6c">×</span><div style="background:#2A211B;border-radius:24px;padding:10px 14px"><img src="img/radio-divergentes.png" style="height:104px;display:block"></div></div>
   </div>
 </section>
 
 <!-- 8 · el menú -->
 <section class="esc" id="e8" style="background:#000">
-  <img class="full m8" src="img/hd-taco-de-arrachera.jpg"><img class="full m8" src="img/hd-pizza-individual.jpg"><img class="full m8" src="img/hd-torta.jpg"><img class="full m8" src="img/hd-banderilla.jpg">
-  <img class="full m8" src="img/hd-quesadilla.jpg"><img class="full m8" src="img/hd-hot-dog.jpg"><img class="full m8" src="img/hd-brownie.jpg"><img class="full m8" src="img/hd-cafe-capuchino.jpg">
-  <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.75),rgba(0,0,0,0) 50%)"></div>
+  <div class="full m8" style="background:#FF8A3D"><div class="full" style="background-image:radial-gradient(rgba(255,255,255,.18) 3px,transparent 3.5px);background-size:44px 44px"></div><img class="m8i" src="img/fl/taco_color.svg"><div class="m8n">Tacos</div></div>
+  <div class="full m8" style="background:#0B5ED7"><div class="full" style="background-image:radial-gradient(rgba(255,255,255,.18) 3px,transparent 3.5px);background-size:44px 44px"></div><div class="m8f"><img src="img/hd-pizza-individual.jpg"></div><div class="m8n">Pizza</div></div>
+  <div class="full m8" style="background:#FFC629"><div class="full" style="background-image:radial-gradient(rgba(255,255,255,.18) 3px,transparent 3.5px);background-size:44px 44px"></div><img class="m8i" src="img/fl/sandwich_color.svg"><div class="m8n">Tortas</div></div>
+  <div class="full m8" style="background:#E3262F"><div class="full" style="background-image:radial-gradient(rgba(255,255,255,.18) 3px,transparent 3.5px);background-size:44px 44px"></div><img class="m8i" src="img/fl/hot_dog_color.svg"><div class="m8n">Hot dogs</div></div>
+  <div class="full m8" style="background:#00A85A"><div class="full" style="background-image:radial-gradient(rgba(255,255,255,.18) 3px,transparent 3.5px);background-size:44px 44px"></div><img class="m8i" src="img/fl/stuffed_flatbread_color.svg"><div class="m8n">Quesadillas</div></div>
+  <div class="full m8" style="background:#6C2BD9"><div class="full" style="background-image:radial-gradient(rgba(255,255,255,.18) 3px,transparent 3.5px);background-size:44px 44px"></div><img class="m8i" src="img/fl/cup_with_straw_color.svg"><div class="m8n">Bebidas</div></div>
+  <div class="full m8" style="background:#FF3E7F"><div class="full" style="background-image:radial-gradient(rgba(255,255,255,.18) 3px,transparent 3.5px);background-size:44px 44px"></div><img class="m8i" src="img/fl/chocolate_bar_color.svg"><div class="m8n">Dulces</div></div>
+  <div class="full m8" style="background:#3B2416"><div class="full" style="background-image:radial-gradient(rgba(255,255,255,.18) 3px,transparent 3.5px);background-size:44px 44px"></div><div class="m8f"><img src="img/hd-cafe-capuchino.jpg"></div><div class="m8n">Capuchino</div></div>
+  <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.55),rgba(0,0,0,0) 45%)"></div>
   <div style="position:absolute;left:120px;bottom:100px">
     <div class="anton" style="font-size:150px">Todo el menú,</div>
-    <div class="anton" id="e8nom" style="font-size:150px;color:#F4B63A">con foto.</div>
+    <div class="anton" id="e8nom" style="font-size:150px;color:#FFE27A">en tu mano.</div>
   </div>
 </section>
 
@@ -115,8 +132,9 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
   <div style="font:900 44px/1 Pop;color:#fff;margin-bottom:26px">Créditos</div>
   <div style="columns:2;column-gap:70px">
     <p><b style="color:#F4B63A">Música:</b> «Funky Chunk», Kevin MacLeod (incompetech.com). Licencia Creative Commons Atribución 4.0 (creativecommons.org/licenses/by/4.0).</p>
-    <p style="margin-top:14px"><b style="color:#F4B63A">Fotos (Flickr, CC BY 2.0 salvo indicación):</b> taco de chorizo, Phil Denton (CC BY-SA 2.0) · tacos de arrachera, T.Tseng · pizza, @joefoodie · banderilla, Andreanna Moya Photography · quesadilla y brownie, jeffreyw · hot dog, TheBusyBrain · capuchino, Bryan Pocius · hamburguesa, TheCulinaryGeek. Recortadas y ajustadas.</p>
-    <p style="margin-top:14px"><b style="color:#F4B63A">Wikimedia Commons:</b> torta de milanesa, Pancuter Mandrade (CC0).</p>
+    <p style="margin-top:14px"><b style="color:#F4B63A">Fotos (Flickr, CC BY 2.0):</b> pizza, @joefoodie · capuchino, Bryan Pocius. Recortadas.</p>
+    <p style="margin-top:14px"><b style="color:#F4B63A">Partido:</b> «TB vs ÍF», EileenSanda, Wikimedia Commons (CC BY-SA 3.0).</p>
+    <p style="margin-top:14px"><b style="color:#F4B63A">Ilustraciones:</b> Fluent Emoji de Microsoft (licencia MIT).</p>
     <p style="margin-top:14px"><b style="color:#F4B63A">Letras:</b> Anton y Poppins (SIL Open Font License).</p>
     <p style="margin-top:14px"><b style="color:#F4B63A">Pantallas:</b> la app Fadori de verdad, con datos de prueba.</p>
     <p style="margin-top:14px"><b style="color:#F4B63A">Hecho por</b> Grupo Mazi para Fadori · Instituto Rembrandt.</p>
@@ -159,11 +177,11 @@ const escenas = {
     const sl = (id, t0) => { const k = eo((l - t0) / 0.45); $(id).style.opacity = l < t0 ? 0 : 1; $(id).style.transform = 'translateY(' + (1 - k) * 100 + '%)'; };
     sl('e4b', 2.2); sl('e4c', 4.0); },
   e5(l){ $('e5tel').style.transform = 'translateX(' + (1 - eo(l / 0.6)) * -700 + 'px)'; $('e5sub').style.opacity = cl((l - 1) / 0.5); },
-  e6(l){ $('e6foto').style.transform = 'scale(' + (1.12 - 0.08 * cl(l / 5)) + ')'; const k = rebote((l - 0.5) / 0.6);
+  e6(l){ const g = rebote((l - 0.9) / 0.7); $('e6foto').style.transform = 'scale(' + g + ') rotate(' + Math.sin(l * 9) * 14 * Math.exp(-l * 0.7) + 'deg)'; ['e6s1', 'e6s2'].forEach((x, i) => { $(x).style.opacity = cl((l - 1.3 - i * 0.2) / 0.3); $(x).style.transform = 'scale(' + (0.8 + 0.2 * Math.sin(l * 4 + i)) + ')'; }); const k = rebote((l - 0.5) / 0.6);
     $('e6not').style.transform = 'translateY(' + (1 - k) * -360 + 'px)'; $('e6not').style.opacity = cl((l - 0.5) / 0.2); $('e6t').style.opacity = cl((l - 1.4) / 0.4); },
-  e7(l, d){ $('e7tv').style.transform = 'scale(' + (0.9 + 0.1 * eo(l / 0.7) + 0.05 * cl(l / d)) + ')'; $('e7sub').style.opacity = cl((l - 1.6) / 0.5); },
+  e7(l, d){ $('e7tv').style.transform = 'scale(' + (0.9 + 0.1 * eo(l / 0.7) + 0.05 * cl(l / d)) + ')'; $('e7sub').style.opacity = cl((l - 1.6) / 0.5); const g = rebote((l - 2.3) / 0.6); $('e7logos').style.opacity = cl((l - 2.3) / 0.2); $('e7logos').style.transform = 'scale(' + g + ')'; },
   e8(l){ const fotos = document.querySelectorAll('.m8'), i = Math.min(fotos.length - 1, Math.floor(l / B));
-    fotos.forEach((f, j) => { f.style.opacity = j === i ? 1 : 0; f.style.transform = 'scale(' + (1.15 - 0.12 * cl((l - j * B) / B)) + ')'; }); },
+    fotos.forEach((f, j) => { f.style.opacity = j === i ? 1 : 0; const k = rebote((l - j * B) / 0.45), it = f.querySelector('.m8i,.m8f'); it.style.transform = 'scale(' + (0.3 + 0.7 * k) + ') rotate(' + (1 - k) * -25 + 'deg)'; }); },
   e9(l){ ['p1', 'p2', 'p3'].forEach((p, i) => { const k = rebote((l - i * B) / 0.45); $(p).style.transform = 'scale(' + (0.2 + 0.8 * k) + ')'; $(p).style.opacity = cl((l - i * B) / 0.1); });
     $('e9sub').style.opacity = cl((l - 3 * B) / 0.5); const q = rebote((l - 0.4) / 0.6); $('e9qr').style.transform = 'scale(' + q + ') rotate(' + (1 - q) * 20 + 'deg)';
     $('e9logo').style.transform = 'translateY(' + (1 - eo((l - 2.6) / 0.6)) * 420 + 'px) rotate(-6deg)'; },
