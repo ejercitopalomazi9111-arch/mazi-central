@@ -188,7 +188,7 @@ function vInicio(c){
   const fijos = d.avisos.filter(a => a.fijo && vigente(a)).sort((a, b) => b.creado - a.creado).slice(0, 3);
   const saludo = y ? '¡Hola, ' + e(String(y.nombre || y.alias).split(' ')[0]) + '!' : '¡Hola!';
   c.innerHTML = (d.error ? '<div class="aviso-cuenta">' + ico('triangle-alert') + '<div>' + e(d.error) + '</div></div>' : '') +
-    '<section class="portada"><small>Sociedad de Alumnos · Instituto Rembrandt</small><h1>' + saludo + '</h1>' + claseGrande() + '</section>' +
+    '<section class="portada"><small>Sociedad de Alumnos</small><h1>' + saludo + '</h1>' + claseGrande() + '</section>' +
     '<nav class="atajos" aria-label="Atajos">' +
       [['buzon', 'inbox', 'Proponer', 1], ['votar', 'vote', 'Votar', 1], ['eventos', 'calendar-days', 'Eventos'], ['chats', 'messages-square', 'Chats'],
        ['muro', 'images', 'Recuerdos'], ['material', 'book-open', 'Material'], ['torneos', 'trophy', 'Torneos'], ['horarios', 'clock', 'Horarios']]
@@ -216,7 +216,7 @@ function vHorarios(c){
       grupos.map(x => '<option value="' + e(x.id) + '"' + (x.id === g ? ' selected' : '') + '>' + e(x.nombre) + '</option>').join('') + '</select></label>' +
     (h ? '<div class="filtros" role="tablist">' + [1, 2, 3, 4, 5, 6].filter(n => n <= 5 || bloques(h, 6).length).map(n => '<button data-dia="' + n + '" class="' + (n === diaSel ? 'si' : '') + '">' + DIAS[n] + (n === dia ? ' · hoy' : '') + '</button>').join('') + '</div>' +
       (bs.length ? '<div class="hoy">' + bs.map(b => '<div class="bloque" data-ini="' + b.ini + '" data-fin="' + b.fin + '" data-hoy="' + (diaSel === dia ? 1 : 0) + '"><span class="tira" style="background:' + colorDe(b) + '"></span>' +
-        '<div class="horas"><b>' + hora12(b.ini).replace(/ (am|pm)/, '') + '</b>' + hora12(b.fin) + '</div><div><h3>' + e(b.materia) + '</h3><div class="meta">' + (b.salon ? '<span>' + ico('map-pin') + e(b.salon) + '</span>' : '') + '<span>' + Math.round((aSeg(b.fin) - aSeg(b.ini)) / 60) + ' min</span></div></div><span class="prog"></span></div>').join('') + '</div>'
+        '<div class="horas"><b>' + hora12(b.ini) + '</b>a ' + hora12(b.fin) + '</div><div><h3>' + e(b.materia) + '</h3><div class="meta">' + (b.salon ? '<span>' + ico('map-pin') + e(b.salon) + '</span>' : '') + '<span>' + Math.round((aSeg(b.fin) - aSeg(b.ini)) / 60) + ' min</span></div></div><span class="prog"></span></div>').join('') + '</div>'
         : vacio('calendar-check', 'Este día no hay clases capturadas.')) +
       '<h2>' + ico('calendar-days') + 'La semana</h2>' + semana(h)
       : vacio('clock', g ? 'Todavía no hay horario del ' + nombreGrupo(g) + '.' : 'Elige tu grupo para ver su horario.', esSoc() ? '' : '<p class="nota">Lo captura la sociedad de alumnos.</p>')) +
@@ -282,8 +282,8 @@ function vPantalla(c){
 }
 function pintarTele(){
   const g = $('#teleG'); if(!g) return;
-  const ahora = new Date(), hs = S.d.horarios.slice().sort((a, b) => a.grupo.localeCompare(b.grupo, 'es', { numeric: true }));
-  $('#teleHora').textContent = ((ahora.getHours() % 12) || 12) + ':' + String(ahora.getMinutes()).padStart(2, '0');
+  const { seg } = ahoraMx(), hs = S.d.horarios.slice().sort((a, b) => a.grupo.localeCompare(b.grupo, 'es', { numeric: true }));
+  $('#teleHora').textContent = ((Math.floor(seg / 3600) % 12) || 12) + ':' + String(Math.floor(seg / 60) % 60).padStart(2, '0');
   g.innerHTML = hs.length ? hs.map(h => { const q = queToca(h), t = textoReloj(q); const b = q.actual || q.siguiente || q.manana;
     return '<div class="tele-c"><div class="g">' + e(h.nombre || h.grupo) + '</div><div class="m">' + e(t ? t.uno : 'Sin clases') + '</div><div class="s">' + e(t ? t.pie : '') + (b && b.salon ? ' · ' + e(b.salon) : '') + '</div>' +
       '<div class="r-barra"><i style="width:' + (t ? t.p * 100 : 0).toFixed(1) + '%"></i></div></div>'; }).join('') : '<p>Todavía no hay horarios capturados.</p>';

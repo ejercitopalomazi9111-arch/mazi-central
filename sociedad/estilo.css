@@ -101,6 +101,7 @@ p{margin:0 0 8px}
 
 .tarjeta{background:var(--sup);border:1px solid var(--linea);border-radius:var(--radio);padding:16px;box-shadow:var(--elev)}
 .tarjeta + .tarjeta{margin-top:12px}
+.lista > .tarjeta + .tarjeta,.lista > * > .tarjeta{margin-top:0}
 .lista{display:grid;gap:12px}
 @media (min-width:720px){.lista.dos{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (min-width:1100px){.lista.tres{grid-template-columns:repeat(3,minmax(0,1fr))}}
@@ -238,7 +239,7 @@ label.campo > span{display:block;font-size:13.5px;font-weight:650;margin:0 0 4px
 
 /* panel de la sociedad (kanban) */
 .tablero{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(260px,82vw);gap:12px;overflow-x:auto;padding-bottom:12px;margin:0 -16px;padding-left:16px;padding-right:16px;scroll-snap-type:x mandatory}
-@media (min-width:960px){.tablero{grid-auto-columns:minmax(220px,1fr);margin:0}}
+@media (min-width:960px){.tablero{grid-auto-columns:minmax(176px,1fr);margin:0;padding-left:0;padding-right:0}}
 .columna{background:var(--sup2);border-radius:var(--radio);padding:10px;scroll-snap-align:start;min-height:120px}
 .columna h3{display:flex;align-items:center;gap:6px;font-size:14px;padding:2px 4px 8px}
 .columna h3 .chip{margin-left:auto}
@@ -278,7 +279,7 @@ table.tabla{width:100%;border-collapse:collapse;font-size:14px}
 .bloque{display:flex;gap:12px;align-items:stretch;background:var(--sup);border:1px solid var(--linea);border-radius:14px;overflow:hidden;position:relative}
 .bloque .tira{width:6px;flex:none}
 .bloque .horas{flex:none;width:72px;padding:10px 0;font-size:13px;color:var(--tenue);font-variant-numeric:tabular-nums;line-height:1.35}
-.bloque .horas b{color:var(--tinta);font-size:15px;display:block}
+.bloque .horas b{color:var(--tinta);font-size:15px;display:block;white-space:nowrap}
 .bloque > div:last-child{padding:10px 12px 10px 0;flex:1;min-width:0}
 .bloque.ahora{border-color:var(--oro);box-shadow:0 0 0 2px var(--oro)}
 .bloque.paso{opacity:.55}
@@ -298,7 +299,10 @@ table.tabla{width:100%;border-collapse:collapse;font-size:14px}
 /* la pantalla de horarios (para una tele) */
 body.pantalla .barra,body.pantalla .lado,body.pantalla .velo{display:none}
 body.pantalla main{margin:0;padding:24px;min-height:100dvh;background:var(--azul);color:#fff}
-.tele-h{display:flex;align-items:center;gap:16px;margin-bottom:20px}
+body.pantalla main > .ancho{max-width:none}
+body.pantalla{background:var(--azul)}
+.tele-h{display:flex;align-items:center;gap:12px 16px;margin-bottom:20px;flex-wrap:wrap}
+.tele-h h1{min-width:0}
 .tele-h img{width:64px;height:64px;border-radius:50%;background:#fff;padding:3px}
 .tele-h h1{color:#fff;font-size:clamp(24px,3vw,44px);margin:0;flex:1}
 .tele-h .hora{font-size:clamp(28px,4vw,64px);font-weight:800;font-variant-numeric:tabular-nums;color:var(--oro)}
@@ -338,5 +342,6 @@ dialog.hoja::backdrop{background:rgba(5,10,25,.5)}
 
 #brindis{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translate(-50%,40px);opacity:0;z-index:80;background:#0E1A33;color:#fff;border-radius:14px;padding:12px 18px;font-weight:600;font-size:15px;max-width:calc(100vw - 32px);transition:.2s;pointer-events:none;box-shadow:var(--elev2)}
 #brindis.ver{opacity:1;transform:translate(-50%,0)}
+body[data-ruta=chat] #brindis{bottom:calc(84px + env(safe-area-inset-bottom))}
 .cargando-s{display:grid;place-items:center;min-height:50vh;color:var(--tenue)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
