@@ -1,0 +1,14 @@
+{
+  "name": "secre",
+  "private": true,
+  "type": "module",
+  "description": "Secre: la secretaria de WhatsApp de Carlos. Redacta y él aprueba.",
+  "scripts": {
+    "start": "node correr.mjs",
+    "pruebas": "node pruebas.mjs"
+  },
+  "dependencies": {
+    "baileys": "7.0.0-rc14"
+  },
+  "engines": { "node": ">=20" }
+}

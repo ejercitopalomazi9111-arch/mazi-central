@@ -1,0 +1,127 @@
+#!/usr/bin/env node
+/* ══════════════════════════════════════════════════════════════════════════
+   SECRE · prender las cuentas y el panel
+   ──────────────────────────────────────────────────────────────────────────
+   Corre en una máquina que no se apague (la compu de Carlos o un servidor):
+   WhatsApp necesita una conexión abierta todo el tiempo, y eso no cabe en los
+   workers de Cloudflare.
+
+     SECRE_CUENTAS="principal:5214421234567,segunda:5214427654321" \
+     SECRE_CLAVE="una-contraseña-larga" \
+     SECRE_SALA_LLAVE="…la llave de La Sala…" \
+     node secre/correr.mjs
+
+   La primera vez, cada cuenta saca un CÓDIGO de 8 letras (en la consola y en
+   el panel): en el teléfono → WhatsApp → Dispositivos vinculados → Vincular
+   con número de teléfono → se escribe el código. Después ya no se pide.
+
+   Todo lo de Carlos (la sesión, sus chats, su configuración) vive en
+   secre/datos/, que NUNCA entra al repo (.gitignore).
+   ═════════════════════════════════════════════════════════════════════════ */
+import fs from 'fs'; import path from 'path'; import http from 'http'; import crypto from 'crypto';
+import { Secre, AYUDA } from './nucleo.mjs';
+import { ia } from './ia.mjs';
+
+const RAIZ = path.dirname(new URL(import.meta.url).pathname);
+const DATOS = process.env.SECRE_DATOS || path.join(RAIZ, 'datos');
+const PUERTO = Number(process.env.SECRE_PUERTO) || 8790;
+let CLAVE = process.env.SECRE_CLAVE || '';
+if(!CLAVE){ CLAVE = crypto.randomBytes(9).toString('base64url'); console.log(`\n🔑 No pusiste SECRE_CLAVE. La contraseña del panel por esta vez es: ${CLAVE}\n`); }
+
+/* «principal:5214421234567,segunda:5214427654321» */
+const CUENTAS = (process.env.SECRE_CUENTAS || '').split(',').map(x => x.trim()).filter(Boolean).map(x => { const [id, tel] = x.split(':'); return { id: id.replace(/[^\w-]/g, ''), telefono: (tel || '').replace(/\D/g, '') }; });
+if(!CUENTAS.length){ console.error('Falta SECRE_CUENTAS, por ejemplo: SECRE_CUENTAS="principal:5214421234567,segunda:5214427654321"'); process.exit(1); }
+
+/* guardar en archivos: escribe a uno temporal y lo renombra, para que un apagón no deje el JSON a medias */
+function almacenEn(dir){
+  fs.mkdirSync(dir, { recursive: true });
+  return {
+    leer(k, d){ try{ return JSON.parse(fs.readFileSync(path.join(dir, k + '.json'), 'utf8')); }catch{ return d; } },
+    guardar(k, v){ const f = path.join(dir, k + '.json'); fs.writeFileSync(f + '.tmp', JSON.stringify(v, null, 1)); fs.renameSync(f + '.tmp', f); },
+  };
+}
+
+const vivas = {};     /* id → { secre, estado: { conectado, codigo, error }, transporte } */
+const { conectar } = await import('./whatsapp.mjs');
+for(const c of CUENTAS){
+  const dir = path.join(DATOS, c.id);
+  const v = vivas[c.id] = { estado: { conectado: false }, secre: null };
+  /* el transporte llega después de conectar; mientras, el núcleo no manda nada */
+  const puente = { yo: () => (v.transporte ? v.transporte.yo() : []), enviar: (j, t) => v.transporte.enviar(j, t), escribiendo: (j, ms) => v.transporte.escribiendo(j, ms), leido: (j) => v.transporte.leido(j) };
+  v.secre = new Secre({ cuenta: c.id, transporte: puente, ia, almacen: almacenEn(dir) });
+  v.transporte = await conectar({ dir: path.join(dir, 'sesion'), telefono: c.telefono,
+    alMensaje: (m) => v.secre.alMensaje(m).catch(e => console.error(`[${c.id}]`, e.message)),
+    alEstado: (e) => {
+      v.estado = { ...v.estado, ...e };
+      if(e.codigo) console.log(`\n📱 [${c.id}] Código para vincular: ${e.codigo}\n   WhatsApp → Dispositivos vinculados → Vincular con número de teléfono\n`);
+      if(e.conectado){ console.log(`✅ [${c.id}] conectada`); v.estado.codigo = ''; }
+      if(e.error) console.log(`⚠️  [${c.id}] ${e.error}`);
+    } });
+}
+/* el reloj: cada 5 segundos cada cuenta revisa su cola, saludos y resumen */
+setInterval(() => { for(const v of Object.values(vivas)) if(v.estado.conectado) v.secre.tic().catch(e => console.error(e.message)); }, 5000);
+
+/* ══ el panel ══════════════════════════════════════════════════════════════
+   Una página para el teléfono, con contraseña. Desde la misma red de la casa:
+   http://<ip-de-la-compu>:8790 · desde fuera, con Tailscale o similar (no se
+   abre el puerto a internet). */
+const sesiones = new Set();
+const igual = (a, b) => { const x = Buffer.from(String(a)), y = Buffer.from(String(b)); return x.length === y.length && crypto.timingSafeEqual(x, y); };
+const json = (res, code, obj) => { res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }); res.end(JSON.stringify(obj)); };
+const cuerpo = (req) => new Promise((si) => { let d = ''; req.on('data', x => { d += x; if(d.length > 200_000) req.destroy(); }); req.on('end', () => { try{ si(JSON.parse(d || '{}')); }catch{ si({}); } }); });
+const galleta = (req) => (String(req.headers.cookie || '').match(/(?:^|;\s*)secre=([\w-]+)/) || [])[1] || '';
+const intentos = new Map();
+
+function vista(v){
+  const s = v.secre, c = s.config, e = s.estado;
+  return {
+    cuenta: s.cuenta, conexion: v.estado, config: c,
+    chats: Object.entries(c.chats).filter(([, x]) => x.nombre).map(([id, x]) => ({ id, ...x, modoAhora: s.modo(id, '', !!x.grupo) })).sort((a, b) => a.nombre.localeCompare(b.nombre)),
+    propuestas: e.propuestas, pendientes: e.pendientes.filter(p => !p.hecho).concat(e.pendientes.filter(p => p.hecho).slice(-10)),
+    charla: e.charla.slice(-60), registro: e.registro.slice(-60), ahora: Date.now(), ayuda: AYUDA,
+  };
+}
+
+http.createServer(async (req, res) => {
+  const url = new URL(req.url, 'http://x');
+  if(url.pathname === '/' || url.pathname === '/index.html'){
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-frame-options': 'DENY', 'referrer-policy': 'no-referrer' });
+    return res.end(fs.readFileSync(path.join(RAIZ, 'panel.html')));
+  }
+  if(url.pathname === '/api/entrar' && req.method === 'POST'){
+    const ip = req.socket.remoteAddress || '?', n = (intentos.get(ip) || 0) + 1; intentos.set(ip, n);
+    if(n > 8) return json(res, 429, { error: 'Demasiados intentos. Espera un rato.' });
+    const b = await cuerpo(req);
+    if(!igual(b.clave || '', CLAVE)) return json(res, 401, { error: 'Esa no es la contraseña.' });
+    intentos.delete(ip);
+    const tok = crypto.randomBytes(24).toString('base64url'); sesiones.add(tok);
+    res.writeHead(200, { 'content-type': 'application/json', 'set-cookie': `secre=${tok}; HttpOnly; SameSite=Strict; Path=/; Max-Age=2592000` });
+    return res.end('{"bien":true}');
+  }
+  if(!url.pathname.startsWith('/api/')) return json(res, 404, { error: 'No existe.' });
+  if(!sesiones.has(galleta(req))) return json(res, 401, { error: 'Entra con la contraseña.' });
+  const [, , id, que] = url.pathname.split('/');
+  if(id === 'cuentas') return json(res, 200, { cuentas: Object.entries(vivas).map(([k, v]) => ({ id: k, ...v.estado })) });
+  const v = vivas[id]; if(!v) return json(res, 404, { error: 'No conozco esa cuenta.' });
+  if(req.method === 'GET' && !que) return json(res, 200, vista(v));
+  if(req.method !== 'POST') return json(res, 405, { error: 'Así no.' });
+  const b = await cuerpo(req), s = v.secre;
+  if(!v.estado.conectado && (que === 'orden' || que === 'propuesta')) return json(res, 409, { error: 'Esa cuenta no está conectada a WhatsApp todavía.' });
+  if(que === 'accion'){ const hecho = s.aplicar(b); s.guardar(); return json(res, hecho ? 200 : 400, hecho ? { bien: true, hecho } : { error: 'No pude aplicar eso.' }); }
+  /* hablarle a Secre desde el panel es lo mismo que escribirle en el chat propio */
+  if(que === 'orden'){ await s.orden(String(b.texto || '').slice(0, 2000)); return json(res, 200, { bien: true }); }
+  if(que === 'propuesta'){
+    const n = +b.n;
+    await s.orden(b.tirar ? `x${n}` : (b.texto ? `${n} ${String(b.texto).slice(0, 4000)}` : `${n}`));
+    return json(res, 200, { bien: true });
+  }
+  if(que === 'pendiente'){ const p = s.estado.pendientes.find(x => x.n === +b.n); if(p){ p.hecho = !!b.hecho; s.guardar(); } return json(res, 200, { bien: !!p }); }
+  if(que === 'chat'){
+    const c = s.config.chats[b.id]; if(!c) return json(res, 404, { error: 'No conozco ese chat.' });
+    if(b.modo !== undefined){ if(!['', 'borrador', 'callado'].includes(b.modo)) return json(res, 400, { error: 'Modo raro.' }); c.modo = b.modo; }
+    if(b.nota !== undefined) c.nota = String(b.nota).slice(0, 500);
+    if(b.etiquetas !== undefined) c.etiquetas = String(b.etiquetas).split(',').map(x => x.trim().toLowerCase()).filter(Boolean).slice(0, 10);
+    s.guardar(); return json(res, 200, { bien: true });
+  }
+  return json(res, 404, { error: 'No existe.' });
+}).listen(PUERTO, '0.0.0.0', () => console.log(`\n🗂  Panel de Secre: http://localhost:${PUERTO}  (desde el teléfono, con la IP de esta máquina)\n`));

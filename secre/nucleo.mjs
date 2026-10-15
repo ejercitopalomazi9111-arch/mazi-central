@@ -98,6 +98,7 @@ export class Secre {
       cola: {},            /* jid → cuándo toca redactar */
       enviados: [],        /* ids de lo que mandó Secre (para no confundirlo con Carlos) */
       registro: [],        /* lo que hizo, para el panel */
+      charla: [],          /* la plática de Carlos con Secre, también para el panel */
       resumenFecha: '',
       sigN: 1, sigP: 1,
     }, almacen.leer('estado', {}));
@@ -154,8 +155,10 @@ export class Secre {
       return;
     }
     const c = this.chat(m.chat);
-    if(!m.mio && m.nombre && !c.nombre) c.nombre = m.nombre;
-    if(m.grupo && m.nombre && !c.nombre) c.nombre = m.nombre;
+    /* en un grupo, el chat se llama como el grupo, no como quien escribió */
+    const nc = m.grupo ? m.nombreChat : m.nombre;
+    if(nc && !c.nombre && (m.grupo || !m.mio)) c.nombre = nc;
+    if(m.grupo) c.grupo = true;
     const h = this.estado.historial[m.chat] || (this.estado.historial[m.chat] = []);
     h.push({ de: m.mio ? 'yo' : 'el', quien: m.grupo && !m.mio ? m.nombre || '' : '', texto: m.texto.slice(0, 2000), t: ahora });
     this.estado.historial[m.chat] = h.slice(-30);
@@ -263,6 +266,7 @@ export class Secre {
 
   /* a Carlos, en su chat propio; siempre empieza con 🤖 para no confundirse con él */
   async avisar(texto){
+    this.charlar('secre', texto);
     const id = await this.transporte.enviar(this.transporte.yo()[0], '🤖 ' + texto);
     if(id){ this.estado.enviados.push(id); this.estado.enviados = this.estado.enviados.slice(-500); }
   }
@@ -280,8 +284,10 @@ export class Secre {
   }
 
   /* ══ las órdenes de Carlos, en su chat propio ══════════════════════════ */
+  charlar(de, texto){ this.estado.charla.push({ de, texto, t: this.reloj() }); this.estado.charla = this.estado.charla.slice(-150); }
   async orden(texto){
     const t = texto.trim(), s = sinAcentos(t);
+    this.charlar('carlos', t);
     let m;
     /* aprobar / cambiar / tirar una propuesta: «3», «3 sí voy», «x3» */
     if((m = /^#?(\d+)(?:\s+([\s\S]+))?$/.exec(t))){
