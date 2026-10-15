@@ -1114,6 +1114,30 @@
    ],
    "salioDe": "Comercial de Fadori, versiones con otras voces (15 de octubre)",
    "vecinas": []
+  },
+  {
+   "id": "lector-anclado-a-un-diseno",
+   "titulo": "La credencial nueva de la escuela no la leía Fadori",
+   "gravedad": "alta",
+   "sintoma": "Con las credenciales del ciclo 2026-2027 el lector leía «GO» en vez de «DIEGO», proponía «Sep C» como nombre y en la vuelta «De Q».",
+   "causa": "El lector buscaba el nombre arriba de «Número de Matrícula», que la credencial nueva ya no trae; el logo de la SEP queda en el mismo renglón que el nombre, y de lejos la letra sale chica.",
+   "porque": "Un lector que se ancla a UNA palabra de un diseño ajeno se rompe callado el día que el dueño del diseño lo cambia.",
+   "arreglo": "Anclas MATRÍCULA o BACHILLERATO; segunda lectura de cerca de la franja de arriba del ancla (recortada de la foto original y ampliada); quitar SEP/DGETI antes de juzgar el renglón; reconocer la vuelta y pedir el frente.",
+   "comoCazarlo": "node fadori/pruebas-lector.mjs — credenciales dibujadas en los dos formatos, de cerca y de lejos, y la vuelta. Con el lector viejo: 8 pasan · 7 fallan.",
+   "consejo": "Cuando la escuela cambie la credencial, que Carlos mande una foto y se agregue el formato a la prueba con nombres inventados.",
+   "salioDe": "Fadori, fotos de las credenciales nuevas que mandó Carlos (15 de octubre)",
+   "senales": [
+    "credencial",
+    "lector",
+    "ocr",
+    "tesseract",
+    "nombre",
+    "matricula",
+    "bachillerato",
+    "no lee",
+    "vuelta",
+    "reverso"
+   ]
   }
  ]
 }

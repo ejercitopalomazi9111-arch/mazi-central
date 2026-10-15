@@ -1105,12 +1105,15 @@ async function leerCred(f){
   let r = null;
   try{
     if(!window.FadoriLector) await new Promise(s => setTimeout(s, 1500));
-    const { texto } = await window.FadoriLector.leer(f);
-    r = window.FadoriLector.revisarNombre(texto, yo.nombre);
+    const { texto, zona } = await window.FadoriLector.leer(f);
+    r = window.FadoriLector.revisarNombre(texto, yo.nombre, zona);
   }catch(e){ r = null; }
   if(r && r.coincide){
     lecturaCred = 'coincide';
     credLectura(F.ico('badge-check') + '<span>Dice <b>' + esc(r.leido || yo.nombre) + '</b>. Coincide con tu cuenta.</span>', 'bien');
+  } else if(r && r.esReverso){
+    /* la vuelta (firma del director y contacto): no trae el nombre del alumno */
+    credLectura(F.ico('id-card') + '<span>Ésa es la <b>vuelta</b> de la credencial. Toma la foto del <b>frente</b>, donde vienen tu foto y tu nombre.</span>', 'mal');
   } else if(r && r.leido && r.sugerido){
     credLectura(F.ico('circle-alert') + '<span>Tu credencial dice <b>' + esc(r.leido) + '</b> y tu cuenta dice <b>' + esc(yo.nombre) + '</b>.</span>' +
       '<button class="btn chico" type="button" id="bUsarNombre">Usar «' + esc(r.sugerido) + '», el de mi credencial</button>' +

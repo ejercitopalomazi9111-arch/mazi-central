@@ -420,6 +420,8 @@ dependemos.
 
    | una voz que sale en `/v1/voices` de la cuenta se puede usar | en plan gratis sólo las **premade**: Araceli y Diego (mexicanas, «professional») salen en la lista y dan **402** al pedirles audio | dos veces se prometió acento mexicano para el comercial; se probó con una frase y `curl` antes de generar las 15 |
 
+   | el lector de la credencial encuentra el nombre arriba de «Matrícula» | la credencial nueva (2026-2027) **ya no trae «Matrícula»**: nombre, apellidos y «BACHILLERATO», con el logo de la SEP en el mismo renglón | con las fotos de Carlos leía «GO» por «DIEGO» y proponía «Sep C». Ahora ancla en Matrícula o Bachillerato, relee de cerca la franja del nombre y `fadori/pruebas-lector.mjs` dibuja los dos formatos |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---
