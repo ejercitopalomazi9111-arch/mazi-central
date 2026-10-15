@@ -224,8 +224,9 @@
     </details>
     <div class="chips" id="accionesTurno" style="margin-top:16px">
       <button class="btn chico" id="bEnCamino" type="button"><span data-ico="footprints"></span> Voy en camino</button>
-      <button class="btn chico" id="bNoPuedo" type="button">Hoy no puedo ir</button>
+      <button class="btn chico" id="bNoPuedo" type="button"><span data-ico="x"></span> Cancelar pedido</button>
     </div>
+    <p class="plazo-cancelar" id="plazoCancelar" hidden></p>
     <button class="btn ancho" id="bVerMenu" type="button" style="margin-top:16px"><span data-ico="plus"></span> Pedir algo más</button>
     <div class="donde-avisos" style="margin-top:20px"></div>
   </section>
@@ -235,7 +236,7 @@
   <!-- ══════════ PREGUNTAS FRECUENTES (Carlos, 14 de octubre) ══════════ -->
   <dialog class="faq" id="faq" aria-labelledby="faqTit">
     <div class="faq-cab"><h2 id="faqTit">Preguntas frecuentes</h2><button class="btn chico" type="button" id="faqCerrar">Cerrar</button></div>
-    <div class="faq-lista"><details class="faq-q"><summary>¿Cómo pido?</summary><p>Elige en el menú, toca <b>Pedir</b> y te damos un turno. Sigues en lo tuyo y pasas a la cooperativa cuando tu número salga en verde en la pantalla.</p></details><details class="faq-q"><summary>¿Necesito hacer cuenta?</summary><p>Sí, una sola vez: tu correo, una contraseña y la foto de tu credencial del Rembrandt. La app revisa que el nombre sea el tuyo. Así nadie pide a tu nombre.</p></details><details class="faq-q"><summary>¿Cómo sé en qué va mi pedido?</summary><p>En <b>Tu turno</b> ves si ya se <b>recibió</b>, si se está <b>preparando</b> o si ya está <b>listo</b>. La pantalla de la cooperativa dice tu número en voz alta, y si lo permites, te llega aviso al teléfono.</p></details><details class="faq-q"><summary>¿Cuántos pedidos puedo hacer?</summary><p>Hasta <b>5 por recreo</b>.</p></details><details class="faq-q"><summary>¿Cómo pago?</summary><p>En la cooperativa, al recoger. Si pagas de menos, lo que falte queda a deber; al llegar al límite no puedes pedir hasta pagar. Lo que debes sólo lo ven tú y la cooperativa.</p></details><details class="faq-q"><summary>¿Y si se acaba algo de lo que pedí?</summary><p>La app te avisa y eliges: cambiarlo por otra cosa o quitarlo. No pierdes tu lugar en la fila y no pagas lo que no te dieron.</p></details><details class="faq-q"><summary>¿Puedo cancelar?</summary><p>Sí, desde <b>Tu turno</b>, mientras siga en la fila.</p></details><details class="faq-q"><summary>¿Qué pasa si no tengo internet?</summary><p>La app abre con lo último que viste. Lo que hagas se guarda en tu teléfono y se manda solo cuando vuelve la señal. Arriba sale un aviso mientras la conexión falla.</p></details><details class="faq-q"><summary>¿Tengo alergias, cómo sé qué lleva cada cosa?</summary><p>Toca el nombre de cualquier platillo: dice qué contiene. Marca tus alergias en <b>Lo tuyo</b> y te avisamos cuando algo las lleve. Eso sólo se guarda en tu teléfono.</p></details><details class="faq-q"><summary>¿Quién ve mis datos?</summary><p>La cooperativa ve tu nombre, tu correo y tus pedidos para entregártelos. Otros alumnos no ven nada tuyo. En la pantalla sale tu nombre sólo si tú lo eliges al pedir.</p></details><details class="faq-q"><summary>¿Qué es «¿Cuánto traes?»?</summary><p>Le dices cuánto dinero traes y te arma combinaciones del menú que sí te alcanzan.</p></details><details class="faq-q"><summary>¿Para qué es mi código?</summary><p>Para entrar con tu cuenta desde otro teléfono. No lo compartas.</p></details></div>
+    <div class="faq-lista"><details class="faq-q"><summary>¿Cómo pido?</summary><p>Elige en el menú, toca <b>Pedir</b> y te damos un turno. Sigues en lo tuyo y pasas a la cooperativa cuando tu número salga en verde en la pantalla.</p></details><details class="faq-q"><summary>¿Necesito hacer cuenta?</summary><p>Sí, una sola vez: tu correo, una contraseña y la foto de tu credencial del Rembrandt. La app revisa que el nombre sea el tuyo. Así nadie pide a tu nombre.</p></details><details class="faq-q"><summary>¿Cómo sé en qué va mi pedido?</summary><p>En <b>Tu turno</b> ves si ya se <b>recibió</b>, si se está <b>preparando</b> o si ya está <b>listo</b>. La pantalla de la cooperativa dice tu número en voz alta, y si lo permites, te llega aviso al teléfono.</p></details><details class="faq-q"><summary>¿Cuántos pedidos puedo hacer?</summary><p>Hasta <b>5 por recreo</b>.</p></details><details class="faq-q"><summary>¿Cómo pago?</summary><p>En la cooperativa, al recoger. Si pagas de menos, lo que falte queda a deber; al llegar al límite no puedes pedir hasta pagar. Lo que debes sólo lo ven tú y la cooperativa.</p></details><details class="faq-q"><summary>¿Y si se acaba algo de lo que pedí?</summary><p>La app te avisa y eliges: cambiarlo por otra cosa o quitarlo. No pierdes tu lugar en la fila y no pagas lo que no te dieron.</p></details><details class="faq-q"><summary>¿Puedo cancelar?</summary><p>Sí, desde <b>Tu turno</b>, en los primeros <b>5 minutos</b> después de pedir y mientras siga en la fila. Ahí mismo ves cuánto tiempo te queda.</p></details><details class="faq-q"><summary>¿Qué pasa si no tengo internet?</summary><p>La app abre con lo último que viste. Lo que hagas se guarda en tu teléfono y se manda solo cuando vuelve la señal. Arriba sale un aviso mientras la conexión falla.</p></details><details class="faq-q"><summary>¿Tengo alergias, cómo sé qué lleva cada cosa?</summary><p>Toca el nombre de cualquier platillo: dice qué contiene. Marca tus alergias en <b>Lo tuyo</b> y te avisamos cuando algo las lleve. Eso sólo se guarda en tu teléfono.</p></details><details class="faq-q"><summary>¿Quién ve mis datos?</summary><p>La cooperativa ve tu nombre, tu correo y tus pedidos para entregártelos. Otros alumnos no ven nada tuyo. En la pantalla sale tu nombre sólo si tú lo eliges al pedir.</p></details><details class="faq-q"><summary>¿Qué es «¿Cuánto traes?»?</summary><p>Le dices cuánto dinero traes y te arma combinaciones del menú que sí te alcanzan.</p></details><details class="faq-q"><summary>¿Para qué es mi código?</summary><p>Para entrar con tu cuenta desde otro teléfono. No lo compartas.</p></details></div>
   </dialog>
   <section id="p-yo" hidden>
     <h1>Lo tuyo</h1>
@@ -809,16 +810,17 @@ function pintarTurno(){
     caja.innerHTML = '<div class="vacio-turno">'+F.ico('ticket','grande')+
       '<b>Sin pedidos</b><span>Pide en el menú y aquí ves tu turno.</span></div>';
     $('#renglonesTurno').innerHTML = ''; $('#loPedido').hidden = true;
-    $('#bEnCamino').style.display = 'none'; $('#bNoPuedo').style.display = 'none';
+    $('#bEnCamino').style.display = 'none'; pintarPlazoCancelar();
     $('#esperando').innerHTML = ''; return;
   }
   const p = miPedido;
   $('#loPedido').hidden = false;
-  /* «Hoy no puedo ir» sólo mientras sigue en la fila y sin pagar; «Voy en
-     camino» mientras está vivo. Con display y no con `hidden`: el `hidden`
-     pierde contra el display de .btn y el botón seguía pintado. */
+  /* «Cancelar pedido» sólo en los primeros 5 minutos, mientras sigue en la
+     fila y sin pagar; «Voy en camino» mientras está vivo. Con display y no
+     con `hidden`: el `hidden` pierde contra el display de .btn y el botón
+     seguía pintado. */
   const vivo = F.VIVOS.indexOf(p.estado) >= 0, pagado = (p.pagado || 0) > 0;
-  $('#bNoPuedo').style.display = p.estado === 'en_cola' && !pagado ? '' : 'none';
+  pintarPlazoCancelar();
   $('#bEnCamino').style.display = vivo && !pagado ? '' : 'none';
   /* pagado, entregado o cancelado: la lista se cierra (una vez; si el alumno
      la abre, no se le vuelve a cerrar en el siguiente repintado) */
@@ -1860,13 +1862,31 @@ $('#bEnCamino').addEventListener('click', () => {
   aviso('Listo, ya saben que vas para allá.', 'bueno');
 });
 
+/* El plazo de 5 minutos se cuenta aparte del botón: reescribir lo que está
+   bajo el dedo cada segundo hace que el iPhone se coma el toque. Y sólo se
+   toca el DOM cuando el texto CAMBIA. */
+function pintarPlazoCancelar(){
+  const p = miPedido, b = $('#bNoPuedo'), nota = $('#plazoCancelar');
+  const sirve = !!p && F.puedeCancelar(p) && !((p.pagado || 0) > 0);
+  const disp = sirve ? '' : 'none';
+  if(b.style.display !== disp) b.style.display = disp;
+  if(nota.hidden !== !sirve) nota.hidden = !sirve;
+  if(!sirve) return;
+  const s = Math.max(0, Math.ceil((F.cancelableHasta(p) - Date.now()) / 1000));
+  const txt = 'Puedes cancelar durante ' + Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') + ' más.';
+  if(nota.textContent !== txt) nota.textContent = txt;
+}
+setInterval(() => { if(pantalla === 'turno') pintarPlazoCancelar(); }, 1000);
+
 $('#bNoPuedo').addEventListener('click', () => {
   if(!miPedido) return;
+  if(!F.puedeCancelar(miPedido)){ pintarPlazoCancelar(); return aviso('Ya pasaron los 5 minutos para cancelar. Si de plano no puedes ir, avísale a la cooperativa.'); }
   preguntar({ titulo:'¿Cancelamos el pedido?',
     texto:'La cooperativa ya no lo prepara y pierdes tu turno.',
     si:'Sí, cancélalo', no:'No, déjalo',
-    hecho:() => { yoCancele.add(miPedido.id); F.cancelar(miPedido.id, 'alumno'); pintar();
-      aviso('Pedido cancelado.'); } });
+    hecho:() => {
+      if(!F.cancelar(miPedido.id, 'alumno')){ pintar(); return aviso('Ya pasaron los 5 minutos para cancelar.'); }
+      yoCancele.add(miPedido.id); pintar(); aviso('Pedido cancelado.'); } });
 });
 
 /* F39 · el asistente de presupuesto */

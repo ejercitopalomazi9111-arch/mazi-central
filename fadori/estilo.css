@@ -227,6 +227,10 @@ h2{font-size:20px; font-weight:800; letter-spacing:-.025em; margin:28px 0 12px;
 .btn:disabled{opacity:.4}
 
 .chips{display:flex; gap:8px; flex-wrap:wrap}
+#accionesTurno .btn{flex:1 1 auto; white-space:nowrap}
+.plazo-cancelar{margin:8px 2px 0; font-size:13px; color:var(--tenue); font-variant-numeric:tabular-nums}
+.btn-cancelar{color:var(--rojo); min-width:46px; padding:0 12px}
+.btn-cancelar:active{background:var(--rojo); color:#fff}
 /* el buscador del menú (Carlos, 14 de octubre) */
 .busca-menu{display:flex; align-items:center; gap:10px; min-height:48px; padding:0 16px; margin:4px 0 12px;
   border:1px solid var(--linea); border-radius:999px; background:var(--sup); color:var(--tenue)}

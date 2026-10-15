@@ -11,7 +11,7 @@ const require = createRequire('/opt/node22/lib/node_modules/'); const { chromium
 
 export const PROD = 'https://mazi-central.palomazi9111.workers.dev';
 const RAIZ = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
-const T = { '.js': 'text/javascript', '.mjs': 'text/javascript', '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.webmanifest': 'application/manifest+json', '.jpg': 'image/jpeg', '.png': 'image/png', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
+const T = { '.js': 'text/javascript', '.mjs': 'text/javascript', '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.webmanifest': 'application/manifest+json', '.jpg': 'image/jpeg', '.png': 'image/png', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.mp4': 'video/mp4', '.webm': 'video/webm', '.mp3': 'audio/mpeg' };
 
 /* desde el 11 de octubre no se pide sin correo y credencial: el alumno de
    prueba manda una foto (un cuadro gris) y pone un correo propio. Deja el
@@ -50,8 +50,8 @@ export async function abrirMesa(nombre = 'flujos'){
   const fallas = [];
   const ok = (q, c, extra) => { console.log((c ? '  ✓ ' : '  ✗ ') + q + (!c && extra ? ' · ' + extra : '')); if(!c) fallas.push(q); };
 
-  async function aparato(ruta, { w = 390, h = 844, desfase = 0, credencial = false } = {}){
-    const ctx = await br.newContext({ viewport: { width: w, height: h }, serviceWorkers: 'block', hasTouch: w < 800 });
+  async function aparato(ruta, { w = 390, h = 844, desfase = 0, credencial = false, escala = 1 } = {}){
+    const ctx = await br.newContext({ viewport: { width: w, height: h }, serviceWorkers: 'block', hasTouch: w < 800, deviceScaleFactor: escala });
     await ctx.addInitScript(c => { try{ localStorage.setItem('fadori_casa', c); }catch(e){} }, CASA);
     /* las pruebas de antes no traen credencial: dicen «no la traigo hoy», como
        un alumno que la deja para mañana. La prueba de cuentas pasa credencial:true */

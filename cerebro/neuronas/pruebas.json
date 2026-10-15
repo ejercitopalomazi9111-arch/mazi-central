@@ -1014,6 +1014,40 @@
         "actividad epiléptica en la simulación"
       ],
       "salioDe": "Tres moscas con el cerebro de FlyWire, 8 de octubre de 2026."
+    },
+    {
+      "id": "reloj-de-captura-en-utc",
+      "titulo": "La captura de la pantalla salía a las 4 de la mañana",
+      "gravedad": "baja",
+      "sintoma": "La tele de turnos fotografiada para un póster decía «03:56 a.m.» aunque la mesa movía el reloj a las 10:12.",
+      "causa": "El desfase de la mesa de pruebas se pidió en hora UTC (10:12 UTC son las 4:12 en México) y además sólo cambia Date.now(); el reloj de tele.js usa new Date().",
+      "porque": "El desfase cuadra para la lógica del recreo (que lee Date.now) y nadie mira la esquina del reloj hasta que sale impreso.",
+      "arreglo": "Pedir la hora de México en UTC (+6 h: 16:12 UTC) y, para la foto, fijar el texto de #reloj con un MutationObserver justo antes de capturar.",
+      "comoCazarlo": "Recortar la esquina del reloj de cada captura que vaya a un cartel y leerla.",
+      "consejo": "Una captura para publicidad se revisa como cartel, no como prueba: la hora, los nombres y los números se ven.",
+      "senales": [
+        "la hora sale rara en la captura",
+        "dice a.m. de madrugada",
+        "el reloj no se movió"
+      ],
+      "salioDe": "La segunda vuelta de los pósters de Fadori, 15 de octubre."
+    },
+    {
+      "id": "cambio-negado-en-silencio",
+      "titulo": "El teléfono cree que canceló y el servidor dijo que no",
+      "gravedad": "alta",
+      "sintoma": "El alumno ve su pedido «cancelado» y la cooperativa lo sigue teniendo en la fila y se lo prepara.",
+      "causa": "El servidor ignoraba el cambio de estado no permitido sin guardar nada, así que no había copia nueva que bajara al teléfono, que ya se había marcado cancelado a sí mismo.",
+      "porque": "Sincronizar «gana el más reciente» sólo corrige al que tiene la copia vieja; si el servidor no escribe, el teléfono nunca recibe la versión buena.",
+      "arreglo": "Cuando el servidor niega un cambio, guarda su copia con la hora más nueva (max(t+1, ahora)) para que gane en el teléfono.",
+      "comoCazarlo": "Hacer el cambio prohibido brincándose la app y esperar a que el teléfono REGRESE al estado bueno, no sólo que el servidor no cambie.",
+      "consejo": "Toda regla del servidor necesita su camino de regreso al aparato que la rompió.",
+      "senales": [
+        "en mi teléfono dice cancelado pero se lo prepararon",
+        "el teléfono dice una cosa y el mostrador otra",
+        "no se sincroniza el estado"
+      ],
+      "salioDe": "Cancelar en 5 minutos de Fadori, 15 de octubre."
     }
   ]
 }
