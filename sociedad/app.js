@@ -91,7 +91,7 @@ function pintarMenu(){
   let html = '<div class="cab"><img src="escudo.png" alt=""><div><b>Sociedad de Alumnos</b><small>Instituto Rembrandt</small></div></div>';
   let g = '';
   for(const s of SECCIONES){
-    if(s.soc && !esSoc()) continue;
+    if(s.soc && !esSoc() && !(s.id === 'miembros' && S.d && S.d.admin)) continue;
     if(s.g !== g){ g = s.g; html += '<h6>' + e(g) + '</h6>'; }
     const n = s.cuenta ? s.cuenta() : 0;
     html += '<a href="#/' + s.id + '" class="' + (ruta === s.id ? 'activo' : '') + '">' + ico(s.i) + '<span>' + e(s.t) + '</span>' + (n ? '<span class="cuenta">' + n + '</span>' : '') + '</a>';
@@ -161,7 +161,7 @@ function render(quieto){
   /* el contenedor se recrea en cada pantalla: así no se juntan los oyentes */
   const nuevo = document.createElement('div'); nuevo.className = 'ancho';
   if(!S.cargado){ nuevo.innerHTML = '<div class="cargando-s">Cargando…</div>'; main.replaceChildren(nuevo); return; }
-  if(s && s.soc && !esSoc()){ nuevo.innerHTML = vacio('lock', 'Esto es sólo para la sociedad de alumnos.'); main.replaceChildren(nuevo); return; }
+  if(s && s.soc && !esSoc() && !(s.id === 'miembros' && S.d.admin)){ nuevo.innerHTML = vacio('lock', 'Esto es sólo para la sociedad de alumnos.'); main.replaceChildren(nuevo); return; }
   const v = s ? s.v : oculta || vInicio;
   main.replaceChildren(nuevo);
   v(nuevo, arg);
@@ -840,7 +840,7 @@ function vTema(c, id){
 }
 function vMiembros(c){
   const ms = S.d.miembros;
-  c.innerHTML = '<h1>Miembros</h1><p class="sub">Quién es de la sociedad. ' + (esPres() ? 'Para agregar a alguien necesitas el código de 4 letras de su cuenta (lo ve en «Tu cuenta»).' : 'Los agrega la presidencia.') + '</p>' +
+  c.innerHTML = '<h1>Miembros</h1>' + (S.d.admin && !esSoc() ? '<div class="aviso-cuenta">' + ico('shield-check') + '<div>Entraste con el pasador de la cooperativa: puedes nombrar a la presidencia.</div></div>' : '') + '<p class="sub">Quién es de la sociedad. ' + (esPres() ? 'Para agregar a alguien necesitas el código de 4 letras de su cuenta (lo ve en «Tu cuenta»).' : 'Los agrega la presidencia.') + '</p>' +
     '<div class="lista">' + ms.map(m => '<div class="tarjeta archivo"><span class="bola">' + ico(m.rol === 'presidencia' ? 'crown' : 'user-round') + '</span><div><b>' + e(m.alias) + '</b><div class="meta"><span class="chip ' + (m.rol === 'presidencia' ? 'oro' : 'azul') + '">' + e(m.rol) + '</span><span>' + e(m.cod) + '</span></div></div>' +
       (esPres() && m.cod !== miCodigo() ? '<button class="btn chico mal" data-quitar-m="' + e(m.cod) + '">' + ico('user-minus') + 'Quitar</button>' : '') + '</div>').join('') + '</div>' +
     (esPres() ? '<h2>' + ico('user-plus') + 'Agregar</h2><form id="fM" class="tarjeta"><div class="fila2"><label class="campo"><span>Código</span><input name="cod" required maxlength="4" style="text-transform:uppercase;letter-spacing:.2em;font-weight:800" placeholder="AB12"></label>' +
