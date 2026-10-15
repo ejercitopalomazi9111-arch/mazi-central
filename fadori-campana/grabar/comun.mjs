@@ -42,6 +42,9 @@ export async function dedo(pg){
       addEventListener('mousemove', e => { d.style.left = e.clientX + 'px'; d.style.top = e.clientY + 'px'; d.style.opacity = 1; }, true);
       addEventListener('mousedown', () => { d.style.transform = 'scale(.72)'; }, true);
       addEventListener('mouseup', () => { d.style.transform = 'scale(1)'; }, true);
+      /* para deslizar sin ratón (un ratón presionado al arrastrar haría clic en un platillo) */
+      window.__dedo = { el: d, en(x, y){ d.style.left = x + 'px'; d.style.top = y + 'px'; d.style.opacity = 1; },
+        presionar(si){ d.style.transform = si ? 'scale(.72)' : 'scale(1)'; }, ocultar(){ d.style.opacity = 0; } };
     });
   });
 }
@@ -66,12 +69,34 @@ export async function tocar(pg, sel, K = 1){
 }
 
 /* Desplazar la página suave, como un dedo (con frenado al final). */
+/* Deslizar como un dedo de verdad (Carlos: «debe simular el deslizamiento para
+   hacer scroll, más natural, no tan robótico»): el dedo baja, ARRASTRA la
+   página con él, se levanta y lo que falta lo recorre la inercia, frenando.
+   Devuelve dónde quedó el dedo para que el siguiente toque salga de ahí. */
 export async function deslizar(pg, dy, ms = 1200){
-  await pg.evaluate(([dy, ms]) => new Promise(si => {
-    const y0 = scrollY, t0 = performance.now();
-    const paso = (t) => { const k = Math.min(1, (t - t0) / ms), e = 1 - Math.pow(1 - k, 3); scrollTo(0, y0 + dy * e); k < 1 ? requestAnimationFrame(paso) : si(); };
+  const fin = await pg.evaluate(([dy, ms]) => new Promise(si => {
+    const D = window.__dedo, y0 = scrollY, t0 = performance.now();
+    const x = innerWidth * (0.56 + Math.random() * 0.12), yA = innerHeight * 0.74;
+    const arrastre = Math.min(dy * 0.5, innerHeight * 0.42), tA = ms * 0.38, tI = ms - tA;
+    const eio = (k) => k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+    if(D){ D.en(x, yA); D.presionar(true); }
+    const paso = (t) => {
+      const u = t - t0;
+      if(u < tA){                                   /* el dedo arrastra: la página va pegada a él */
+        const k = eio(u / tA), y = arrastre * k;
+        scrollTo(0, y0 + y); if(D) D.en(x + Math.sin(k * 2) * 6, yA - y);
+        requestAnimationFrame(paso); return;
+      }
+      if(D && D.el.style.transform !== 'scale(1)'){ D.presionar(false); }
+      const k = Math.min(1, (u - tA) / tI), e = 1 - Math.pow(1 - k, 3);
+      scrollTo(0, y0 + arrastre + (dy - arrastre) * e);  /* la inercia, frenando */
+      if(D) D.en(x + 6 + k * 10, yA - arrastre - 40 * Math.min(1, k * 3));
+      if(D && k > 0.25) D.el.style.opacity = String(Math.max(0, 1 - (k - 0.25) * 3));
+      k < 1 ? requestAnimationFrame(paso) : si([x + 16, yA - arrastre - 40]);
+    };
     requestAnimationFrame(paso);
   }), [dy, ms]);
+  if(fin) dedoEn.set(pg, fin);
 }
 
 /* CÁMARA LENTA. Carlos, 15 de octubre: «hazlo a 60fps porque se traba».

@@ -28,14 +28,21 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
 .tv img{display:block;width:100%;height:100%;border-radius:8px}
 .chip{display:inline-flex;align-items:center;gap:14px;background:#E8590C;color:#fff;font:800 30px/1 Pop;letter-spacing:.08em;text-transform:uppercase;padding:16px 28px;border-radius:99px}
 .ilus{position:absolute;right:26px;bottom:22px;z-index:50;font:600 17px/1 Pop;color:rgba(255,255,255,.92);background:rgba(0,0,0,.45);padding:7px 12px;border-radius:8px;opacity:0}
-#grano{position:absolute;inset:0;z-index:90;mix-blend-mode:overlay;opacity:.22;pointer-events:none;width:1920px;height:1080px}
 /* el color de cine: sombras frías, luces cálidas */
 #grado{position:absolute;inset:0;z-index:88;pointer-events:none;mix-blend-mode:soft-light;background:linear-gradient(180deg,rgba(255,176,96,.28),rgba(255,140,60,.08) 45%,rgba(0,96,120,.26))}
-#destello{position:absolute;inset:-20%;z-index:91;pointer-events:none;mix-blend-mode:screen;opacity:0;background:radial-gradient(40% 55% at 50% 50%,rgba(255,214,150,.95),rgba(255,120,40,.45) 45%,transparent 72%)}
+/* PATRONES AL RITMO (Carlos: «fondos como los de Express TV, puntos, líneas o patrones
+   moviéndose acorde al ritmo»): sólo sobre los colores sólidos, como en los pósters */
+.patron{position:absolute;inset:-160px;pointer-events:none;will-change:transform}
+.patron.puntos{background-image:radial-gradient(var(--c) 4.6px,transparent 5.2px);background-size:48px 48px}
+.patron.rayas{background:repeating-linear-gradient(-45deg,var(--c) 0 34px,transparent 34px 68px)}
+.patron.anillos{background:repeating-radial-gradient(circle at 50% 50%,var(--c) 0 3px,transparent 3px 46px)}
+.patron.reja{background-image:linear-gradient(var(--c) 1.5px,transparent 1.5px),linear-gradient(90deg,var(--c) 1.5px,transparent 1.5px);background-size:64px 64px}
+/* la cortina de cada corte: un panel de color con rayas que barre la pantalla */
+#cortina{position:absolute;top:-10%;bottom:-10%;left:0;width:150%;z-index:80;pointer-events:none;transform:translateX(120%) skewX(-12deg)}
+#cortina .patron{inset:0}
 #lugar{position:absolute;left:96px;bottom:150px;z-index:96;color:#F5EADF;font:600 26px/1.3 Pop;letter-spacing:.22em;text-transform:uppercase;opacity:0}
 #lugar b{display:block;font:800 30px/1.3 Pop;letter-spacing:.28em}
 #lugar span{color:#F4B63A}
-#vin{position:absolute;inset:0;z-index:89;background:radial-gradient(ellipse at center,transparent 58%,rgba(0,0,0,.42) 100%);pointer-events:none}
 #franjas::before,#franjas::after{content:"";position:absolute;left:0;right:0;height:var(--f,0px);background:#000;z-index:95}
 #franjas::before{top:0}#franjas::after{bottom:0}
 .flota{position:absolute;border-radius:50%;object-fit:cover;filter:blur(2px) saturate(1.1);opacity:.9;box-shadow:0 30px 60px rgba(60,30,10,.25)}
@@ -45,6 +52,7 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
 
 <!-- 1 · el reloj del recreo -->
 <section class="esc" id="e1" style="background:#0d0a08">
+  <div class="patron puntos" data-ritmo="latido" style="--c:rgba(244,182,58,.30)"></div>
   <svg id="e1anillo" viewBox="0 0 100 100" style="position:absolute;left:50%;top:50%;width:760px;height:760px;margin:-380px 0 0 -380px;transform:rotate(-90deg)">
     <circle cx="50" cy="50" r="45" fill="none" stroke="#2a201a" stroke-width="3"/>
     <circle id="e1arco" cx="50" cy="50" r="45" fill="none" stroke="#F4B63A" stroke-width="3" stroke-linecap="round" stroke-dasharray="282.7" stroke-dashoffset="0"/>
@@ -64,6 +72,7 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
 
 <!-- 4 · la app de verdad: se abre, se escoge y se pide -->
 <section class="esc" id="e4" style="background:#FDF6EC">
+  <div class="patron puntos" data-ritmo="deriva" style="--c:rgba(194,65,12,.16)"></div>
   <div id="e4fondo" style="position:absolute;inset:0">
     <img class="flota" src="img/foto/hamburguesa.jpg" style="width:300px;height:300px;left:-60px;top:640px">
     <img class="flota" src="img/foto/tacos.jpg" style="width:250px;height:250px;left:820px;top:-70px">
@@ -74,7 +83,7 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
   <div style="position:absolute;left:140px;top:250px;width:820px;color:#2E1B10">
     <div id="e4chip" class="chip">Fadori</div>
     <div class="anton" id="e4t1" style="font-size:150px;margin-top:34px"><span class="palabra">Pide</span> <span class="palabra">desde</span><br><span class="palabra">el</span> <span class="palabra">primer</span><br><span class="palabra" style="color:#C2410C">momento.</span></div>
-    <div class="anton" id="e4t2" style="font-size:150px;margin-top:34px;position:absolute;top:84px;left:0"><span class="palabra">Escoge.</span><br><span class="palabra">Pide.</span><br><span class="palabra" style="color:#C2410C">Tu turno.</span></div>
+    <div class="anton" id="e4t2" style="font-size:150px;margin-top:34px;position:absolute;top:84px;left:0"><span class="palabra">Pide.</span><br><span class="palabra">Disfruta.</span><br><span class="palabra" style="color:#C2410C">Saborea.</span></div>
   </div>
   <div class="tel" id="e4tel" style="left:1210px;top:66px"><div class="pant"><img id="e4img"></div></div>
   <div class="ilus" id="e4ilus">Imágenes ilustrativas</div>
@@ -82,6 +91,7 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
 
 <!-- 5 · mientras lo preparan -->
 <section class="esc" id="e5" style="background:#1A100A">
+  <div class="patron anillos" data-ritmo="latido" style="--c:rgba(244,182,58,.12);z-index:1"></div>
   <div style="position:absolute;inset:0;background:radial-gradient(70% 70% at 30% 50%,#4A1F0E,#1A100A)"></div>
   <div style="position:absolute;left:0;top:0;width:1300px;height:1080px;perspective:1800px">
     <div class="tv" id="e5tv" style="left:110px;top:250px;width:1060px;height:628px;transform:rotateY(14deg)"><img id="e5tvimg"></div>
@@ -92,6 +102,7 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
 
 <!-- 6 · ¿ya está? te avisa -->
 <section class="esc" id="e6" style="background:#2F5419">
+  <div class="patron puntos" data-ritmo="latido" style="--c:rgba(233,255,217,.22)"></div>
   <div id="e6ondas" style="position:absolute;left:50%;top:50%;width:0;height:0"></div>
   <div class="anton" id="e6t" style="position:absolute;left:120px;top:330px;font-size:220px;color:#E9FFD9">¡Ya<br>está!</div>
   <div class="anton" id="e6s" style="position:absolute;right:130px;top:420px;font-size:96px;color:#BFF09B;text-align:right">Te<br>avisa.</div>
@@ -112,8 +123,8 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
 
 <!-- 8 · de día o en modo oscuro -->
 <section class="esc" id="e8">
-  <div id="e8claro" style="position:absolute;inset:0;background:#FDF6EC"></div>
-  <div id="e8oscuro" style="position:absolute;inset:0;background:#17110D"></div>
+  <div id="e8claro" style="position:absolute;inset:0;background:#FDF6EC;overflow:hidden"><div class="patron puntos" data-ritmo="latido" style="--c:rgba(194,65,12,.10)"></div></div>
+  <div id="e8oscuro" style="position:absolute;inset:0;background:#17110D;overflow:hidden"><div class="patron puntos" data-ritmo="latido" style="--c:rgba(255,138,76,.14)"></div></div>
   <div class="tel" id="e8tel" style="left:734px;top:66px"><div class="pant"><img id="e8a"><img id="e8b"></div></div>
   <div class="anton" id="e8t1" style="position:absolute;left:150px;top:400px;font-size:150px;color:#2E1B10">De día…</div>
   <div class="anton" id="e8t2" style="position:absolute;right:120px;top:400px;font-size:150px;color:#F5EADF;text-align:right">o en modo<br><span style="color:#FF8A4C">oscuro.</span></div>
@@ -122,6 +133,7 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
 
 <!-- 9 · el cierre -->
 <section class="esc" id="e9" style="background:#E8590C">
+  <div class="patron puntos" data-ritmo="deriva" style="--c:rgba(255,255,255,.20)"></div>
   <div id="e9ray" style="position:absolute;inset:-200px;background:repeating-linear-gradient(-45deg,rgba(255,255,255,.07) 0 34px,transparent 34px 68px)"></div>
   <img id="e9logo" src="img/logo-fadori.png" style="position:absolute;left:130px;top:120px;width:260px;background:#fff;border-radius:40px;box-shadow:0 30px 60px rgba(90,25,0,.35)">
   <div class="anton" id="e9t" style="position:absolute;left:130px;top:430px;width:1080px;font-size:132px"><span class="palabra">El</span> <span class="palabra">recreo</span> <span class="palabra">es</span> <span class="palabra">para</span> <span class="palabra" style="color:#FFE27A">comer,</span><br><span class="palabra" style="color:#2E1B10">no</span> <span class="palabra" style="color:#2E1B10">para</span> <span class="palabra" style="color:#2E1B10">formarte.</span></div>
@@ -131,23 +143,22 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
 
 <!-- 10 · créditos -->
 <section class="esc" id="e10" style="background:#111;color:#DDD;padding:110px 120px;font:600 29px/1.45 Pop">
+  <div class="patron reja" data-ritmo="deriva" style="--c:rgba(255,255,255,.035)"></div>
   <div style="font:900 56px/1 Pop;color:#fff;margin-bottom:34px">Créditos</div>
   <div id="e10txt" style="columns:2;column-gap:80px">
     <p><b style="color:#F4B63A">Pantallas:</b> la app Fadori y la pantalla del recreo de verdad, grabadas con datos de prueba.</p>
     <p style="margin-top:12px"><b style="color:#F4B63A">Voz:</b> generada con ElevenLabs.</p>
     <p style="margin-top:12px"><b style="color:#F4B63A">Música:</b> «Funky Chunk» y «Carefree», Kevin MacLeod (incompetech.com), CC BY 4.0.</p>
     <p style="margin-top:12px"><b style="color:#F4B63A">Película en la tele:</b> «Big Buck Bunny», © Blender Foundation (peach.blender.org), CC BY 3.0.</p>
-    <p style="margin-top:12px"><b style="color:#F4B63A">Partido:</b> «TB vs ÍF», EileenSanda, Wikimedia Commons, CC BY-SA 3.0.</p>
+    <p style="margin-top:12px"><b style="color:#F4B63A">Partido:</b> «Sevilla-Rangers: Kanouté marca de penalti», Juan Jiménez Martínez (Flickr), CC BY 2.0. Recortado.</p>
     <p style="margin-top:12px"><b style="color:#F4B63A">Fotos de comida:</b> dominio público (CC0), StockSnap y Rawpixel. Imágenes ilustrativas.</p>
     <p style="margin-top:12px"><b style="color:#F4B63A">Letras:</b> Anton y Poppins (SIL Open Font License). Efectos de sonido hechos por nosotros.</p>
     <p style="margin-top:12px"><b style="color:#F4B63A">Hecho por</b> Grupo Mazi para Fadori · Instituto Rembrandt.</p>
   </div>
 </section>
 
-<canvas id="grano" width="480" height="270"></canvas>
+<div id="cortina"><div class="patron rayas" style="--c:rgba(255,255,255,.14)"></div></div>
 <div id="grado"></div>
-<div id="destello"></div>
-<div id="vin"></div>
 <div id="lugar"><b>Instituto Rembrandt</b><span id="lugarHora">10:00 a.m. · suena el timbre</span></div>
 <div id="franjas" style="position:absolute;inset:0;pointer-events:none;z-index:95"></div>
 </div>
@@ -186,32 +197,43 @@ function appEn(l){
 const pendientes = [];
 function poner(img, src){ if(img.dataset.src === src) return; img.dataset.src = src; img.src = src; pendientes.push(img.decode().catch(() => {})); }
 
-function pintarGrano(t){
-  const c = $('grano'), g = c.getContext('2d'), d = g.createImageData(480, 270), a = d.data;
-  let s = (Math.floor(t * 30) * 2654435761) >>> 0;   /* el grano cambia a 30: a 60 hierve de más */
-  for(let i = 0; i < a.length; i += 4){ s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; const v = s & 255; a[i] = a[i + 1] = a[i + 2] = v; a[i + 3] = 255; }
-  g.putImageData(d, 0, 0);
+
+/* EL RITMO de «Funky Chunk»: 115 golpes por minuto, el primero a los 0.03 s
+   (medido de la canción, no a ojo). Cada patrón se mueve a golpes */
+const GOLPE = 60 / 115, FASE = 0.03;
+function ritmo(t){ const b = (t - FASE) / GOLPE, n = Math.floor(b), f = b - n; return { n, f, pulso: Math.exp(-f * 5), paso: n + eo(Math.min(1, f * 3)) }; }
+function moverPatron(pa, t){
+  const r = ritmo(t), modo = pa.dataset.ritmo || 'paso';
+  if(pa.classList.contains('rayas')) pa.style.transform = 'translateX(' + (-(r.paso % 8) * 48) + 'px)';
+  else if(pa.classList.contains('anillos')) pa.style.transform = 'scale(' + (1 + 0.05 * r.pulso + (r.paso % 2) * 0.03) + ')';
+  else if(modo === 'latido') pa.style.transform = 'translate(' + ((r.paso * 12) % 48) + 'px,' + ((r.paso * 12) % 48) + 'px) scale(' + (1 + 0.06 * r.pulso) + ')';
+  else pa.style.transform = 'translate(' + ((r.paso * 24) % 48) + 'px,' + (-(t * 14) % 48) + 'px) scale(' + (1 + 0.03 * r.pulso) + ')';
+  pa.style.opacity = (0.75 + 0.25 * r.pulso).toFixed(3);
 }
 
 window.pintar = async function(t){
   pendientes.length = 0;
-  /* CORTES DE CINE: la escena que sale se barre a la izquierda con desenfoque
-     de movimiento y la que entra llega de la derecha; en el corte, un destello */
-  const W = 0.2;                                 /* medio corte, en segundos */
+  /* CORTES: la escena cambia de golpe detrás de una cortina de color con rayas
+     que barre la pantalla (sin desenfoques ni destellos: Carlos los vio como
+     «estática y túnel»). La que entra llega con un empujoncito de cámara. */
+  const CORTE = 0.3;
   E.forEach(([id, a, b], i) => {
-    const el = $(id), primera = i === 0, ultima = i === E.length - 1;
-    if(t < a - W || t >= b + W){ el.style.opacity = 0; el.style.filter = ''; return; }
-    const pe = primera ? 1 : cl((t - (a - W)) / (2 * W)), px = ultima ? 0 : cl((t - (b - W)) / (2 * W));
-    const x = (1 - eio(pe)) * 640 - eio(px) * 640, bl = 30 * Math.sin(Math.PI * pe) + 30 * Math.sin(Math.PI * px);
-    el.style.opacity = Math.min(cl(pe * 2.2), cl((1 - px) * 2.2));
-    el.style.transform = 'translateX(' + x + 'px) scale(' + (1.04 - 0.04 * eo(pe) + 0.05 * eo(px)) + ')';
-    el.style.filter = bl > 0.5 ? 'blur(' + bl.toFixed(1) + 'px)' : '';
+    const el = $(id);
+    if(t < a || t >= b){ el.style.opacity = 0; return; }
+    const pe = i === 0 ? 1 : eo((t - a) / 0.5);
+    el.style.opacity = 1;
+    el.style.transform = 'scale(' + (1.035 - 0.035 * pe) + ')';
     el.style.zIndex = i + 1;
     escenas[id](t - a, b - a);
+    for(const pa of el.querySelectorAll('.patron')) moverPatron(pa, t);
   });
-  let fl = 0; for(const [, , b] of E.slice(0, -1)) fl = Math.max(fl, Math.exp(-Math.pow((t - b) / 0.13, 2)));
-  $('destello').style.opacity = (0.85 * fl).toFixed(3);
-  $('destello').style.transform = 'translateX(' + (Math.sin(t * 3) * 300) + 'px)';
+  /* la cortina del corte más cercano */
+  const COLORES = ['#C2410C', '#2E1B10', '#F4B63A', '#2F5419', '#E8590C', '#5A3624', '#C2410C', '#2E1B10'];
+  let ci = -1, cp = 0;
+  E.slice(0, -1).forEach(([, , b], i) => { const p = (t - (b - CORTE)) / (2 * CORTE); if(p > 0 && p < 1){ ci = i; cp = p; } });
+  const cor = $('cortina');
+  if(ci < 0) cor.style.transform = 'translateX(120%) skewX(-12deg)';
+  else { cor.style.background = COLORES[ci % COLORES.length]; cor.style.transform = 'translateX(' + (110 - 260 * eio(cp)) + '%) skewX(-12deg)'; moverPatron(cor.firstElementChild, t); }
   /* cámara en mano: un vaivén chiquito, nunca quieta del todo */
   const mano = 'translate(' + (Math.sin(t * 0.9) * 3 + Math.sin(t * 2.3) * 1.2).toFixed(2) + 'px,' + (Math.cos(t * 0.7) * 2.5 + Math.sin(t * 1.9)).toFixed(2) + 'px) rotate(' + (Math.sin(t * 0.5) * 0.12).toFixed(3) + 'deg)';
   E.forEach(([id]) => { const el = $(id); if(el.style.opacity !== '0') el.style.transform += ' ' + mano; });
@@ -221,7 +243,6 @@ window.pintar = async function(t){
   /* el letrero de lugar, como en las películas */
   $('lugar').style.opacity = (cl((t - 0.5) / 0.6) * (1 - cl((t - 4.6) / 0.5))).toFixed(3);
   $('lugar').style.transform = 'translateY(' + ((1 - eo((t - 0.5) / 0.8)) * 16) + 'px)';
-  pintarGrano(t);
   await Promise.all(pendientes);
 };
 
@@ -244,7 +265,7 @@ const escenas = {
     $('e1anillo').style.transform = 'rotate(' + (-90 + l * 4) + 'deg) scale(' + (0.96 + 0.04 * eo(l / 2)) + ')';
     $('e1num').style.color = p > .5 ? '#FF6A4D' : '#fff';
   },
-  e3(l){ const k = rebote(l / 0.45); $('e3t').style.transform = 'scale(' + (2.4 - 1.4 * k) + ') rotate(' + (1 - eo(l / 0.45)) * -9 + 'deg) translate(' + Math.sin(l * 70) * 6 * Math.exp(-l * 6) + 'px,0)'; $('e3ray').style.transform = 'translateX(' + (-l * 120) + 'px)'; },
+  e3(l){ const k = rebote(l / 0.45); $('e3t').style.transform = 'scale(' + (2.4 - 1.4 * k) + ') rotate(' + (1 - eo(l / 0.45)) * -9 + 'deg) translate(' + Math.sin(l * 70) * 6 * Math.exp(-l * 6) + 'px,0)'; $('e3ray').style.transform = 'translateX(' + (-(ritmo(l + 5.6).paso % 8) * 48) + 'px)'; },
   e4(l, d){
     const r = appEn(l);
     poner($('e4img'), REC('app', tope('app', r * RF)));
@@ -308,7 +329,7 @@ const escenas = {
     palabras('#e9t', l, 0.45, 0.32);
     $('e9sub').style.opacity = cl((l - 4.3) / 0.4); $('e9sub').style.transform = 'translateY(' + (1 - eo((l - 4.3) / 0.5)) * 30 + 'px)';
     const q = rebote((l - 4.1) / 0.6); $('e9qr').style.transform = 'scale(' + q + ') rotate(' + ((1 - q) * 20 + Math.sin(l * 1.3) * 1.5) + 'deg)';
-    $('e9ray').style.transform = 'translateX(' + (-l * 60) + 'px)';
+    $('e9ray').style.transform = 'translateX(' + (-(ritmo(l + 44.4).paso % 8) * 48) + 'px)';
   },
   e10(l){ $('e10txt').style.transform = 'translateY(' + (1 - eo(l / 0.6)) * 30 + 'px) scale(' + (1 + l * 0.008) + ')'; },
 };

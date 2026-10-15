@@ -52,5 +52,15 @@ fil.push(`[mus][vozsc]sidechaincompress=threshold=0.03:ratio=8:attack=20:release
 fil.push(`[voz1][fx][musb]amix=inputs=3:normalize=0,loudnorm=I=-14:TP=-1.5:LRA=11[a]`);
 const mp4 = path.join(SAL, 'Fadori-comercial-v3' + (FPS === 60 ? '-60fps' : '') + '.mp4');
 execFileSync(ff, ['-y', '-v', 'error', ...ent, '-filter_complex', fil.join(';'), '-map', '0:v', '-map', '[a]',
-  '-c:v', 'libx264', '-preset', 'slow', '-crf', '18', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-ar', '48000', '-movflags', '+faststart', '-t', String(DUR), mp4]);
+  '-c:v', 'libx264', '-preset', 'slow', '-crf', '18', '-profile:v', 'high', '-level:v', '4.2', '-pix_fmt', 'yuv420p',
+  '-c:a', 'aac', '-b:a', '192k', '-ar', '44100', '-ac', '2', '-movflags', '+faststart', '-t', String(DUR), mp4]);
 console.log('✓', DUR.toFixed(1) + ' s →', path.relative(process.cwd(), mp4));
+
+/* la copia para mandar por el chat (tope de 30 MB): dos pasadas al bitrate que cabe,
+   mismo 1080p y mismos cuadros; el audio, AAC estéreo 44.1 kHz, el que el iPhone lee siempre */
+const chico = path.join(SAL, 'Fadori-comercial-para-mandar.mp4'), kbps = Math.floor((27.5 * 8192) / DUR) - 160;
+const log = path.join(SAL, 'dospasadas');
+execFileSync(ff, ['-y', '-v', 'error', '-i', mp4, '-c:v', 'libx264', '-preset', 'slow', '-b:v', kbps + 'k', '-pass', '1', '-passlogfile', log, '-an', '-f', 'mp4', '/dev/null']);
+execFileSync(ff, ['-y', '-v', 'error', '-i', mp4, '-c:v', 'libx264', '-preset', 'slow', '-b:v', kbps + 'k', '-maxrate', Math.round(kbps * 1.6) + 'k', '-bufsize', Math.round(kbps * 2) + 'k',
+  '-pass', '2', '-passlogfile', log, '-profile:v', 'high', '-level:v', '4.2', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '160k', '-ar', '44100', '-ac', '2', '-movflags', '+faststart', chico]);
+console.log('✓ para mandar:', (fs.statSync(chico).size / 1048576).toFixed(1) + ' MB →', path.relative(process.cwd(), chico));
