@@ -46,12 +46,18 @@ export async function abrirMesa(nombre = 'flujos'){
   const px = process.env.HTTPS_PROXY ? new URL(process.env.HTTPS_PROXY) : null;
   /* cámara y micrófono de mentira para la transmisión en vivo (WebRTC) */
   const MEDIOS = ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', '--autoplay-policy=no-user-gesture-required'];
+  /* ESCALA=2 para grabar videos: sin la bandera, el screencast de Chromium sin pantalla sale a 1x
+     aunque el contexto diga deviceScaleFactor 2 */
+  if(process.env.ESCALA) MEDIOS.push('--force-device-scale-factor=' + process.env.ESCALA);
   const br = await chromium.launch(Object.assign({ args: MEDIOS }, px && !API_LOCAL ? { proxy: { server: `${px.protocol}//${px.host}`, username: decodeURIComponent(px.username), password: decodeURIComponent(px.password) } } : {}));
   const fallas = [];
   const ok = (q, c, extra) => { console.log((c ? '  ✓ ' : '  ✗ ') + q + (!c && extra ? ' · ' + extra : '')); if(!c) fallas.push(q); };
 
-  async function aparato(ruta, { w = 390, h = 844, desfase = 0, credencial = false, escala = 1 } = {}){
-    const ctx = await br.newContext({ viewport: { width: w, height: h }, serviceWorkers: 'block', hasTouch: w < 800, deviceScaleFactor: escala });
+  async function aparato(ruta, { w = 390, h = 844, desfase = 0, credencial = false, escala = 1, zona, tema } = {}){
+    /* zona: la hora del aparato (p. ej. 'America/Mexico_City'); sin ella el navegador va en UTC
+       y `new Date().setHours(10,30)` cae seis horas antes que en un teléfono de México */
+    const ctx = await br.newContext(Object.assign({ viewport: { width: w, height: h }, serviceWorkers: 'block', hasTouch: w < 800, deviceScaleFactor: escala }, zona ? { timezoneId: zona } : {}));
+    if(tema) await ctx.addInitScript(t => { try{ localStorage.setItem('fadori_tema', t); }catch(e){} }, tema);
     await ctx.addInitScript(c => { try{ localStorage.setItem('fadori_casa', c); }catch(e){} }, CASA);
     /* las pruebas de antes no traen credencial: dicen «no la traigo hoy», como
        un alumno que la deja para mañana. La prueba de cuentas pasa credencial:true */

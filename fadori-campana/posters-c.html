@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Fadori · pósters, tanda C</title>
+<!-- Tanda C (15 de octubre): quince diseños distintos entre sí —revista,
+     suizo, pizarrón, polaroids, retro, recibo, diagonal, mínimo, cuadrícula,
+     cómic, neón, letras con foto, postal, duotono y boleto— con fotos reales
+     de comida normal (CC0). Toda cara con comida dice «Imágenes ilustrativas»
+     en una esquina, como pidió Carlos. -->
+<style>
+@font-face{font-family:Anton;src:url(f/Anton-Regular.ttf)}
+@font-face{font-family:Serif;src:url(f/DMSerifDisplay-Regular.ttf)}
+@font-face{font-family:Serif;font-style:italic;src:url(f/DMSerifDisplay-Italic.ttf)}
+@font-face{font-family:Pacifico;src:url(f/Pacifico-Regular.ttf)}
+@font-face{font-family:Pop;font-weight:500;src:url(f/Poppins-Medium.ttf)}
+@font-face{font-family:Pop;font-weight:600;src:url(f/Poppins-SemiBold.ttf)}
+@font-face{font-family:Pop;font-weight:800;src:url(f/Poppins-ExtraBold.ttf)}
+@font-face{font-family:Pop;font-weight:900;src:url(f/Poppins-Black.ttf)}
+:root{--nar:#E8590C;--hor:#C2410C;--cafe:#2E1B10;--tenue:#7A5A42;--crema:#FDF8F0;--oro:#F4B63A;--verde:#3F6B23;--lima:#B8E28C}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#777;font-family:Pop,sans-serif;color:var(--cafe)}
+.cara{width:816px;height:1056px;position:relative;overflow:hidden;margin:20px auto;background:var(--crema)}
+img{display:block}
+.ab{position:absolute}
+.anton{font-family:Anton;text-transform:uppercase;line-height:.9}
+.serif{font-family:Serif;line-height:.95}
+.pac{font-family:Pacifico;line-height:1.1}
+.ilus{position:absolute;top:12px;right:14px;z-index:9;font:600 9px/1 Pop;letter-spacing:.06em;color:#fff;background:rgba(0,0,0,.45);padding:5px 8px;border-radius:99px}
+.ilus.c{color:var(--tenue);background:rgba(255,255,255,.8)}
+.qr{background:#fff;border-radius:18px;padding:9px;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.qr img{width:100%}
+.qr small{display:block;text-align:center;font:800 12px/1.2 Pop;letter-spacing:.08em;text-transform:uppercase;margin-top:5px;color:var(--cafe)}
+.foto{object-fit:cover}
+.tel{position:absolute;background:#111;border-radius:42px;padding:10px;box-shadow:0 26px 50px rgba(0,0,0,.4);overflow:hidden}
+.tel img{width:100%;border-radius:33px}
+.tel::before{content:"";position:absolute;top:19px;left:50%;width:78px;height:22px;margin-left:-39px;border-radius:12px;background:#111;z-index:2}
+.firma{position:absolute;left:0;right:0;bottom:0;height:40px;display:flex;align-items:center;justify-content:space-between;padding:0 36px;font:800 10.5px/1 Pop;letter-spacing:.16em;text-transform:uppercase}
+.firma b{font-weight:900}
+.cuerpo{font:500 16px/1.45 Pop}
+.polar{position:absolute;background:#fff;padding:14px 14px 50px;box-shadow:0 18px 36px rgba(0,0,0,.3)}
+.polar img{width:100%;height:100%;object-fit:cover}
+.polar span{position:absolute;left:0;right:0;bottom:10px;text-align:center;font-family:Pacifico;font-size:22px;color:var(--cafe)}
+.cinta{position:absolute;width:110px;height:30px;background:rgba(255,236,170,.75);left:50%;margin-left:-55px;top:-14px;transform:rotate(-4deg)}
+</style>
+</head>
+<body>
+
+<!-- ═══ C1 · PORTADA DE REVISTA ═══ -->
+<section class="cara" style="background:#111;color:#fff">
+  <img class="ab foto" src="img/foto/tacos.jpg" style="inset:0;width:100%;height:100%;object-position:50% 55%">
+  <div class="ab" style="inset:0;background:linear-gradient(180deg,rgba(0,0,0,.7),rgba(0,0,0,.35) 42%,rgba(0,0,0,0) 58%,rgba(0,0,0,.82))"></div>
+  <p class="ilus">Imágenes ilustrativas</p>
+  <div class="ab serif" style="left:0;right:0;top:34px;text-align:center;font-size:170px;letter-spacing:-.02em">Fadori</div>
+  <div class="ab" style="left:40px;right:40px;top:210px;display:flex;justify-content:space-between;font:800 12px/1 Pop;letter-spacing:.2em;text-transform:uppercase"><span>Edición recreo</span><span>Instituto Rembrandt</span><span>Octubre</span></div>
+  <div class="ab" style="left:40px;top:300px;width:250px;font:600 17px/1.35 Pop;text-shadow:0 2px 8px rgba(0,0,0,.8)"><b style="display:block;font:900 30px/1 Pop;color:var(--oro)">0 min</b>de fila: el truco que ya usa la escuela</div>
+  <div class="ab" style="right:40px;top:300px;width:230px;text-align:right;font:600 17px/1.35 Pop;text-shadow:0 2px 8px rgba(0,0,0,.8)"><b style="display:block;font:900 30px/1 Pop;color:var(--oro)">5 pedidos</b>por recreo, para que alcance para todos</div>
+  <div class="ab" style="left:40px;right:40px;bottom:70px">
+    <p class="serif" style="font-size:96px;font-style:italic">El recreo<br>es para comer.</p>
+    <p style="font:600 19px/1.4 Pop;margin-top:14px;max-width:520px">Pide desde el primer momento y pasa cuando salga tu número.</p>
+  </div>
+  <div class="firma" style="color:#fff"><span><b>Fadori.</b> La cooperativa sin filas</span><span>Escanea atrás →</span></div>
+</section>
+<section class="cara" style="background:#F7F3EC">
+  <div class="ab serif" style="left:48px;top:56px;font-size:30px;font-style:italic;color:var(--hor)">En este número</div>
+  <div class="ab serif" style="left:48px;right:48px;top:100px;font-size:84px">Cómo pedir<br>sin formarte</div>
+  <div class="ab" style="left:48px;right:48px;top:320px;height:2px;background:var(--cafe)"></div>
+  <div class="ab" style="left:48px;right:48px;top:350px;display:grid;grid-template-columns:repeat(3,1fr);gap:28px">
+    <div><p class="serif" style="font-size:80px;color:var(--hor)">1</p><b style="font:900 22px/1.1 Pop">Abre la app</b><p class="cuerpo" style="color:var(--tenue);margin-top:6px">Escanea el código. La primera vez haces tu cuenta con tu correo y tu credencial.</p></div>
+    <div><p class="serif" style="font-size:80px;color:var(--hor)">2</p><b style="font:900 22px/1.1 Pop">Elige y pide</b><p class="cuerpo" style="color:var(--tenue);margin-top:6px">Todo el menú con foto. Tocas «Pedir» y ya tienes número.</p></div>
+    <div><p class="serif" style="font-size:80px;color:var(--hor)">3</p><b style="font:900 22px/1.1 Pop">Recoge y paga</b><p class="cuerpo" style="color:var(--tenue);margin-top:6px">Cuando tu número salga en verde, dices tu código y pagas ahí.</p></div>
+  </div>
+  <div class="ab" style="left:48px;right:48px;top:700px;height:2px;background:var(--cafe)"></div>
+  <div class="ab" style="left:48px;top:740px;width:380px"><p class="serif" style="font-size:44px;font-style:italic">«Te avisamos cuando esté listo.»</p><p class="cuerpo" style="color:var(--tenue);margin-top:10px">Y la pantalla de la cooperativa lo dice en voz alta.</p></div>
+  <div class="ab" style="right:48px;top:730px;width:220px"><div class="qr"><img src="img/abrir.svg"><small>Escanea y pide</small></div></div>
+  <div class="firma" style="color:var(--tenue)"><span><b>Fadori.</b></span><span>Instituto Rembrandt</span></div>
+</section>
+
+<!-- ═══ C2 · SUIZO ═══ -->
+<section class="cara" style="background:#fff">
+  <div class="ab" style="left:0;top:0;width:12px;height:100%;background:#E3262F"></div>
+  <div class="ab" style="left:48px;top:48px;font:900 16px/1 Pop;letter-spacing:.3em;color:#E3262F">FADORI · 01</div>
+  <div class="ab" style="left:44px;top:90px;font:900 210px/.82 Pop;letter-spacing:-.06em">Hot<br>dog.</div>
+  <img class="ab foto" src="img/foto/hotdog.jpg" style="left:48px;right:48px;top:470px;height:380px;width:auto;border-radius:0">
+  <p class="ilus c">Imágenes ilustrativas</p>
+  <div class="ab" style="left:48px;top:880px;width:330px;font:600 17px/1.4 Pop">Pídelo desde la app y recógelo cuando salga tu número.</div>
+  <div class="ab" style="right:48px;top:875px;display:flex;gap:30px;font:900 15px/1.3 Pop;text-transform:uppercase;letter-spacing:.08em"><span>Sin<br>fila</span><span style="color:#E3262F">Sin<br>prisa</span><span>Sin<br>drama</span></div>
+  <div class="firma" style="color:#999"><span><b style="color:#111">Fadori.</b> Cooperativa sin filas</span><span>02 →</span></div>
+</section>
+<section class="cara" style="background:#fff">
+  <div class="ab" style="left:0;top:0;width:12px;height:100%;background:#E3262F"></div>
+  <div class="ab" style="left:48px;top:48px;font:900 16px/1 Pop;letter-spacing:.3em;color:#E3262F">FADORI · 02</div>
+  <div class="ab" style="left:44px;top:90px;font:900 96px/.9 Pop;letter-spacing:-.05em">Cómo<br>funciona.</div>
+  <div class="ab" style="left:48px;right:48px;top:330px;display:grid;gap:0">
+    <div style="display:grid;grid-template-columns:120px 1fr;border-top:3px solid #111;padding:22px 0"><span style="font:900 64px/1 Pop;color:#E3262F">1</span><span><b style="font:900 26px/1.1 Pop">Elige</b><br><span class="cuerpo" style="color:#666">El menú completo, con foto y precio.</span></span></div>
+    <div style="display:grid;grid-template-columns:120px 1fr;border-top:3px solid #111;padding:22px 0"><span style="font:900 64px/1 Pop;color:#E3262F">2</span><span><b style="font:900 26px/1.1 Pop">Pide</b><br><span class="cuerpo" style="color:#666">Te damos turno y ves cuántos van antes.</span></span></div>
+    <div style="display:grid;grid-template-columns:120px 1fr;border-top:3px solid #111;padding:22px 0"><span style="font:900 64px/1 Pop;color:#E3262F">3</span><span><b style="font:900 26px/1.1 Pop">Recoge</b><br><span class="cuerpo" style="color:#666">Tu número sale en verde. Dices tu código y pagas.</span></span></div>
+    <div style="display:grid;grid-template-columns:120px 1fr;border-top:3px solid #111;border-bottom:3px solid #111;padding:22px 0"><span style="font:900 64px/1 Pop;color:#E3262F">5'</span><span><b style="font:900 26px/1.1 Pop">¿Te arrepentiste?</b><br><span class="cuerpo" style="color:#666">Cancelas en los primeros 5 minutos.</span></span></div>
+  </div>
+  <div class="ab" style="right:48px;bottom:70px;width:170px"><div class="qr" style="box-shadow:none;border:3px solid #111;border-radius:0"><img src="img/abrir.svg"></div></div>
+  <div class="firma" style="color:#999"><span><b style="color:#111">Fadori.</b> Instituto Rembrandt</span><span>Escanea →</span></div>
+</section>
+
+<!-- ═══ C3 · PIZARRÓN ═══ -->
+<section class="cara" style="background:#1F2B24;color:#F2EFE6">
+  <div class="ab" style="inset:18px;border:10px solid #8A5A36;border-radius:8px;box-shadow:inset 0 0 60px rgba(0,0,0,.6)"></div>
+  <div class="ab" style="inset:28px;background:radial-gradient(ellipse at 50% 40%,rgba(255,255,255,.06),transparent 70%)"></div>
+  <p class="ilus">Imágenes ilustrativas</p>
+  <div class="ab pac" style="left:0;right:0;top:70px;text-align:center;font-size:72px;color:#fff">Hoy en la cooperativa</div>
+  <div class="ab" style="left:0;right:0;top:180px;text-align:center;font:600 18px/1 Pop;letter-spacing:.3em;text-transform:uppercase;color:#C9D8C2">— pídelo sin formarte —</div>
+  <div class="ab" style="left:70px;right:70px;top:240px;display:grid;grid-template-columns:1fr 1fr;gap:26px 30px">
+    <div style="transform:rotate(-2deg)"><img class="foto" src="img/foto/tacos-b.jpg" style="width:100%;height:200px;border:6px solid #F2EFE6"><p class="pac" style="font-size:34px;margin-top:8px">Tacos</p></div>
+    <div style="transform:rotate(2deg)"><img class="foto" src="img/foto/torta.jpg" style="width:100%;height:200px;border:6px solid #F2EFE6"><p class="pac" style="font-size:34px;margin-top:8px">Tortas</p></div>
+    <div style="transform:rotate(1.5deg)"><img class="foto" src="img/foto/quesadilla.jpg" style="width:100%;height:200px;border:6px solid #F2EFE6"><p class="pac" style="font-size:34px;margin-top:8px">Quesadillas</p></div>
+    <div style="transform:rotate(-1.5deg)"><img class="foto" src="img/foto/brownie.jpg" style="width:100%;height:200px;border:6px solid #F2EFE6"><p class="pac" style="font-size:34px;margin-top:8px">Brownie</p></div>
+  </div>
+  <div class="ab" style="left:70px;right:70px;bottom:70px;text-align:center;font:600 19px/1.4 Pop;color:#E7E2D4">Y mucho más en la app. <b style="color:var(--oro)">Escanea el código de atrás.</b></div>
+</section>
+<section class="cara" style="background:#1F2B24;color:#F2EFE6">
+  <div class="ab" style="inset:18px;border:10px solid #8A5A36;border-radius:8px"></div>
+  <div class="ab pac" style="left:0;right:0;top:70px;text-align:center;font-size:64px">Las reglas del pizarrón</div>
+  <div class="ab" style="left:90px;right:90px;top:220px;display:grid;gap:26px;font:600 22px/1.4 Pop">
+    <p><span class="pac" style="font-size:40px;color:var(--oro)">1.</span> Hasta 5 pedidos por recreo.</p>
+    <p><span class="pac" style="font-size:40px;color:var(--oro)">2.</span> Tu cuenta es tuya: correo, contraseña y credencial.</p>
+    <p><span class="pac" style="font-size:40px;color:var(--oro)">3.</span> Pagas al recoger, en la cooperativa.</p>
+    <p><span class="pac" style="font-size:40px;color:var(--oro)">4.</span> Cancelas en los primeros 5 minutos.</p>
+    <p><span class="pac" style="font-size:40px;color:var(--oro)">5.</span> Si se acaba algo, la app te avisa y eliges otra cosa.</p>
+  </div>
+  <div class="ab" style="left:50%;bottom:70px;width:200px;margin-left:-100px"><div class="qr"><img src="img/abrir.svg"><small>Escanea y pide</small></div></div>
+</section>
+
+<!-- ═══ C4 · POLAROIDS ═══ -->
+<section class="cara" style="background:#C79A6B;background-image:radial-gradient(rgba(0,0,0,.08) 1px,transparent 1.5px);background-size:9px 9px">
+  <p class="ilus">Imágenes ilustrativas</p>
+  <div class="polar" style="left:40px;top:70px;width:360px;height:400px;transform:rotate(-6deg)"><div class="cinta"></div><img src="img/foto/pizza.jpg"><span>pizza</span></div>
+  <div class="polar" style="right:40px;top:110px;width:340px;height:380px;transform:rotate(5deg)"><div class="cinta"></div><img src="img/foto/capuchino.jpg"><span>capuchino</span></div>
+  <div class="polar" style="left:110px;top:470px;width:330px;height:360px;transform:rotate(3deg)"><div class="cinta"></div><img src="img/foto/galletas.jpg"><span>galletas</span></div>
+  <div class="ab" style="right:40px;top:560px;width:330px;background:#FFF7C4;padding:26px 24px;transform:rotate(-3deg);box-shadow:0 14px 30px rgba(0,0,0,.25)">
+    <p class="pac" style="font-size:38px;color:var(--hor)">Recuerdos<br>del recreo</p>
+    <p style="font:600 17px/1.4 Pop;margin-top:10px">…de cuando ya no hacíamos fila. Pide desde el primer momento.</p>
+  </div>
+  <div class="firma" style="background:var(--cafe);color:#FFD9BF"><span><b>Fadori.</b> Cooperativa sin filas</span><span>Escanea atrás →</span></div>
+</section>
+<section class="cara" style="background:#C79A6B;background-image:radial-gradient(rgba(0,0,0,.08) 1px,transparent 1.5px);background-size:9px 9px">
+  <div class="ab" style="left:60px;right:60px;top:60px;bottom:90px;background:#FFFDF7;box-shadow:0 20px 40px rgba(0,0,0,.25);transform:rotate(-1deg);padding:50px 50px">
+    <p class="pac" style="font-size:54px;color:var(--hor)">Querido alumno:</p>
+    <p style="font:500 20px/1.6 Pop;margin-top:24px">Ya no tienes que gastar tu recreo en la fila. Escanea el código, elige lo que quieres y tócale «Pedir». Te damos un número y te avisamos cuando esté listo.</p>
+    <p style="font:500 20px/1.6 Pop;margin-top:16px">Pagas al recoger. Y si cambias de opinión, tienes 5 minutos para cancelar.</p>
+    <p class="pac" style="font-size:34px;margin-top:30px">Con cariño, <span style="color:var(--hor)">la cooperativa</span></p>
+    <div style="position:absolute;right:50px;bottom:50px;width:190px"><div class="qr"><img src="img/abrir.svg"><small>Escanea</small></div></div>
+  </div>
+  <div class="firma" style="background:var(--cafe);color:#FFD9BF"><span><b>Fadori.</b></span><span>Instituto Rembrandt</span></div>
+</section>
+
+<!-- ═══ C5 · RETRO 70s ═══ -->
+<section class="cara" style="background:#F4E4C1">
+  <div class="ab" style="left:-200px;right:-200px;top:480px;height:1000px;background:repeating-conic-gradient(from -90deg at 50% 0%,#E8590C 0 6deg,#F4B63A 6deg 12deg,#C2410C 12deg 18deg,#F4E4C1 18deg 24deg)"></div>
+  <p class="ilus c">Imágenes ilustrativas</p>
+  <div class="ab pac" style="left:0;right:0;top:60px;text-align:center;font-size:96px;color:var(--hor);text-shadow:4px 4px 0 var(--oro)">¡Buenos días,</div>
+  <div class="ab pac" style="left:0;right:0;top:170px;text-align:center;font-size:96px;color:var(--cafe);text-shadow:4px 4px 0 var(--oro)">recreo!</div>
+  <div class="ab" style="left:50%;top:330px;width:420px;height:420px;margin-left:-210px;border-radius:50%;overflow:hidden;border:16px solid #FFF7E4;box-shadow:0 0 0 10px var(--cafe)"><img class="foto" src="img/foto/capuchino-b.jpg" style="width:100%;height:100%"></div>
+  <div class="ab" style="left:50%;top:800px;width:520px;margin-left:-260px;background:var(--cafe);color:#FFF7E4;border-radius:99px;padding:22px 30px;text-align:center"><span class="anton" style="font-size:44px">Capuchino sin fila</span></div>
+  <div class="firma" style="background:var(--cafe);color:var(--oro)"><span><b>Fadori.</b> Desde 2026</span><span>Bebidas, atrás →</span></div>
+</section>
+<section class="cara" style="background:#F4E4C1">
+  <div class="ab pac" style="left:0;right:0;top:60px;text-align:center;font-size:76px;color:var(--hor);text-shadow:3px 3px 0 var(--oro)">Para tomar</div>
+  <div class="ab" style="left:70px;right:70px;top:210px;display:grid;gap:14px">
+    <div style="display:flex;justify-content:space-between;border-bottom:3px dotted var(--hor);padding-bottom:10px;font:800 24px/1 Pop"><span>Café capuchino</span><span class="pac" style="font-size:24px;color:var(--hor)">caliente</span></div>
+    <div style="display:flex;justify-content:space-between;border-bottom:3px dotted var(--hor);padding-bottom:10px;font:800 24px/1 Pop"><span>Coca-Cola 600 ml y chica</span><span class="pac" style="font-size:24px;color:var(--hor)">bien fría</span></div>
+    <div style="display:flex;justify-content:space-between;border-bottom:3px dotted var(--hor);padding-bottom:10px;font:800 24px/1 Pop"><span>Arizona</span><span class="pac" style="font-size:24px;color:var(--hor)">fría</span></div>
+    <div style="display:flex;justify-content:space-between;border-bottom:3px dotted var(--hor);padding-bottom:10px;font:800 24px/1 Pop"><span>Boing</span><span class="pac" style="font-size:24px;color:var(--hor)">fría</span></div>
+    <div style="display:flex;justify-content:space-between;border-bottom:3px dotted var(--hor);padding-bottom:10px;font:800 24px/1 Pop"><span>Gatorade</span><span class="pac" style="font-size:24px;color:var(--hor)">fría</span></div>
+    <div style="display:flex;justify-content:space-between;border-bottom:3px dotted var(--hor);padding-bottom:10px;font:800 24px/1 Pop"><span>Agua 600 ml, de litro y mineral</span><span class="pac" style="font-size:24px;color:var(--hor)">fría</span></div>
+    <div style="display:flex;justify-content:space-between;border-bottom:3px dotted var(--hor);padding-bottom:10px;font:800 24px/1 Pop"><span>Yakult</span><span class="pac" style="font-size:24px;color:var(--hor)">chiquito</span></div>
+  </div>
+  <p class="ab" style="left:70px;right:70px;top:720px;font:600 16px/1.4 Pop;color:var(--tenue)">Lo que haya ese día y sus precios, siempre al día en la app. Las marcas son de sus dueños.</p>
+  <div class="ab" style="left:50%;bottom:60px;width:190px;margin-left:-95px"><div class="qr"><img src="img/abrir.svg"><small>Escanea</small></div></div>
+</section>
+
+<!-- ═══ C6 · RECIBO ═══ -->
+<section class="cara" style="background:#E7E2D8">
+  <p class="ilus c">Imágenes ilustrativas</p>
+  <div class="ab" style="left:150px;right:150px;top:50px;transform:scale(1.18);transform-origin:50% 0;background:#fff;box-shadow:0 20px 40px rgba(0,0,0,.18);font-family:'Courier New',monospace;color:#222;padding:30px 36px 46px;
+    -webkit-mask:radial-gradient(circle 9px at 50% 100%,#0000 98%,#000) bottom/24px 100% repeat-x">
+    <div style="text-align:center;font:900 30px/1 Pop">Fadori.</div>
+    <div style="text-align:center;font-size:14px;margin-top:6px">Cooperativa del Instituto Rembrandt</div>
+    <div style="border-top:2px dashed #999;margin:16px 0"></div>
+    <img class="foto" src="img/foto/hamburguesa-b.jpg" style="width:100%;height:240px;filter:grayscale(.05)">
+    <div style="border-top:2px dashed #999;margin:16px 0"></div>
+    <div style="display:flex;justify-content:space-between;font-size:20px;font-weight:700"><span>1 × Hamburguesa</span><span>✓</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:20px;font-weight:700;margin-top:8px"><span>1 × Refresco</span><span>✓</span></div>
+    <div style="border-top:2px dashed #999;margin:16px 0"></div>
+    <div style="display:flex;justify-content:space-between;font-size:20px"><span>Tiempo en la fila</span><span style="font-weight:900">0:00</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:20px;margin-top:8px"><span>Recreo que te queda</span><span style="font-weight:900">TODO</span></div>
+    <div style="border-top:2px dashed #999;margin:16px 0"></div>
+    <div style="text-align:center;font:900 54px/1 Pop;color:var(--hor)">TURNO 12</div>
+    <div style="text-align:center;font-size:15px;margin-top:10px">Pasa cuando salga tu número en verde.<br>¡Gracias por no hacer fila!</div>
+    <div style="margin:18px auto 0;width:300px;height:56px;background:repeating-linear-gradient(90deg,#222 0 3px,transparent 3px 5px,#222 5px 6px,transparent 6px 10px,#222 10px 14px,transparent 14px 16px)"></div>
+  </div>
+</section>
+<section class="cara" style="background:#E7E2D8">
+  <div class="ab" style="left:150px;right:150px;top:90px;transform:scale(1.22);transform-origin:50% 0;background:#fff;box-shadow:0 20px 40px rgba(0,0,0,.18);font-family:'Courier New',monospace;color:#222;padding:36px 40px">
+    <div style="text-align:center;font:900 28px/1 Pop">LO QUE NO SE COBRA</div>
+    <div style="border-top:2px dashed #999;margin:18px 0"></div>
+    <div style="display:grid;gap:12px;font-size:18px;font-weight:700">
+      <div style="display:flex;justify-content:space-between"><span>Hacer fila</span><span>$0</span></div>
+      <div style="display:flex;justify-content:space-between"><span>Aviso cuando esté listo</span><span>$0</span></div>
+      <div style="display:flex;justify-content:space-between"><span>Ver cuántos van antes</span><span>$0</span></div>
+      <div style="display:flex;justify-content:space-between"><span>«¿Cuánto traes?»</span><span>$0</span></div>
+      <div style="display:flex;justify-content:space-between"><span>Avisos de alergias</span><span>$0</span></div>
+      <div style="display:flex;justify-content:space-between"><span>Cancelar (5 min)</span><span>$0</span></div>
+    </div>
+    <div style="border-top:2px dashed #999;margin:18px 0"></div>
+    <div style="display:flex;justify-content:space-between;font:900 26px/1 Pop"><span>TOTAL APP</span><span>$0</span></div>
+    <div style="font-size:15px;margin-top:10px">Sólo pagas tu comida, al recogerla.</div>
+    <div style="border-top:2px dashed #999;margin:18px 0"></div>
+    <div style="width:220px;margin:10px auto 0"><img src="img/abrir.svg" style="width:100%"></div>
+    <div style="text-align:center;font-size:15px;margin-top:10px">Escanea · pide · come</div>
+  </div>
+</section>
+
+<!-- ═══ C7 · DIAGONAL ═══ -->
+<section class="cara" style="background:var(--nar)">
+  <img class="ab foto" src="img/foto/pizza.jpg" style="inset:0;width:100%;height:100%;clip-path:polygon(0 0,100% 0,100% 42%,0 70%)">
+  <p class="ilus">Imágenes ilustrativas</p>
+  <div class="ab" style="left:48px;right:48px;bottom:90px;color:#fff;text-align:right">
+    <p class="anton" style="font-size:150px">Una rebanada</p>
+    <p class="serif" style="font-size:80px;font-style:italic;color:var(--cafe);margin-top:6px">de recreo libre.</p>
+  </div>
+  <div class="firma" style="background:var(--cafe);color:#FFD9BF"><span><b>Fadori.</b> Pizza individual</span><span>Escanea atrás →</span></div>
+</section>
+<section class="cara" style="background:var(--cafe);color:#fff">
+  <div class="ab" style="left:0;right:0;top:0;height:420px;background:var(--nar);clip-path:polygon(0 0,100% 0,100% 70%,0 100%)"></div>
+  <div class="ab" style="left:48px;top:60px"><p class="anton" style="font-size:110px">Pide en<br>3 toques.</p></div>
+  <div class="tel" style="right:56px;top:120px;width:250px;transform:rotate(6deg)"><img src="img/app-menu2.png"></div>
+  <div class="ab" style="left:48px;top:480px;width:400px;display:grid;gap:22px">
+    <div><b class="anton" style="font-size:46px;color:var(--oro)">1 · Elige</b><p class="cuerpo" style="color:#E9D8C6">Toca el + del platillo que quieras.</p></div>
+    <div><b class="anton" style="font-size:46px;color:var(--oro)">2 · Pide</b><p class="cuerpo" style="color:#E9D8C6">Te damos número al instante.</p></div>
+    <div><b class="anton" style="font-size:46px;color:var(--oro)">3 · Recoge</b><p class="cuerpo" style="color:#E9D8C6">Cuando salga en verde, di tu código.</p></div>
+  </div>
+  <div class="ab" style="right:56px;bottom:80px;width:180px"><div class="qr"><img src="img/abrir.svg"><small>Escanea</small></div></div>
+  <div class="firma" style="background:#000;color:#F5E9DA"><span><b>Fadori.</b></span><span>Instituto Rembrandt</span></div>
+</section>
+
+<!-- ═══ C8 · MÍNIMO ═══ -->
+<section class="cara" style="background:#FAFAF7">
+  <p class="ilus c">Imágenes ilustrativas</p>
+  <img class="ab foto" src="img/foto/galletas-b.jpg" style="left:50%;top:250px;width:380px;height:380px;margin-left:-190px;border-radius:50%">
+  <div class="ab" style="left:0;right:0;top:120px;text-align:center;font:500 16px/1 Pop;letter-spacing:.5em;text-transform:uppercase;color:#999">Fadori</div>
+  <div class="ab serif" style="left:0;right:0;top:700px;text-align:center;font-size:64px">Menos fila.<br><i style="color:var(--hor)">Más galletas.</i></div>
+  <div class="ab" style="left:0;right:0;bottom:60px;text-align:center;font:500 13px/1 Pop;letter-spacing:.3em;text-transform:uppercase;color:#999">La cooperativa del Rembrandt</div>
+</section>
+<section class="cara" style="background:#FAFAF7">
+  <div class="ab" style="left:0;right:0;top:120px;text-align:center;font:500 16px/1 Pop;letter-spacing:.5em;text-transform:uppercase;color:#999">Fadori</div>
+  <div class="ab" style="left:50%;top:300px;width:300px;margin-left:-150px"><img src="img/abrir.svg" style="width:100%"></div>
+  <div class="ab serif" style="left:0;right:0;top:660px;text-align:center;font-size:52px">Escanea. Pide. <i style="color:var(--hor)">Come.</i></div>
+  <div class="ab" style="left:0;right:0;top:760px;text-align:center;font:500 16px/1.6 Pop;color:#777">Pagas al recoger · hasta 5 pedidos por recreo<br>cancelas en los primeros 5 minutos</div>
+  <div class="ab" style="left:0;right:0;bottom:60px;text-align:center;font:500 13px/1 Pop;letter-spacing:.3em;text-transform:uppercase;color:#999">La cooperativa del Rembrandt</div>
+</section>
+
+<!-- ═══ C9 · CUADRÍCULA ═══ -->
+<section class="cara" style="background:#fff">
+  <p class="ilus">Imágenes ilustrativas</p>
+  <div class="ab" style="left:0;right:0;top:0;height:780px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:4px;overflow:hidden">
+    <img class="foto" src="img/foto/tacos.jpg" style="width:100%;height:100%"><img class="foto" src="img/foto/hamburguesa.jpg" style="width:100%;height:100%"><img class="foto" src="img/foto/pizza-b.jpg" style="width:100%;height:100%">
+    <img class="foto" src="img/foto/hotdog-b.jpg" style="width:100%;height:100%">
+    <div style="background:var(--nar);color:#fff;display:grid;place-items:center;text-align:center"><div><p class="anton" style="font-size:56px">Lo más<br>pedido</p></div></div>
+    <img class="foto" src="img/foto/capuchino.jpg" style="width:100%;height:100%">
+    <img class="foto" src="img/foto/quesadilla-b.jpg" style="width:100%;height:100%"><img class="foto" src="img/foto/brownie.jpg" style="width:100%;height:100%"><img class="foto" src="img/foto/torta.jpg" style="width:100%;height:100%">
+  </div>
+  <div class="ab" style="left:48px;right:48px;top:810px;display:flex;justify-content:space-between;align-items:center">
+    <div><p style="font:900 46px/1 Pop;letter-spacing:-.03em">¿Se te antojó?</p><p class="cuerpo" style="color:#666;margin-top:8px">Pídelo desde el primer momento, sin formarte.</p></div>
+    <img src="img/logo-fadori.png" style="width:170px">
+  </div>
+  <div class="firma" style="color:#999"><span><b style="color:#111">Fadori.</b> Cooperativa sin filas</span><span>Escanea atrás →</span></div>
+</section>
+<section class="cara" style="background:#fff">
+  <div class="ab" style="left:48px;right:48px;top:56px;display:flex;align-items:center;gap:16px"><div style="width:72px;height:72px;border-radius:50%;background:var(--nar);display:grid;place-items:center;overflow:hidden"><img src="img/logo-fadori.png" style="width:96px;margin-top:-4px"></div><div><b style="font:900 26px/1 Pop">fadori.rembrandt</b><p style="font:500 15px/1.3 Pop;color:#666">La cooperativa sin filas</p></div></div>
+  <div class="ab" style="left:48px;right:48px;top:170px;display:flex;justify-content:space-around;text-align:center;font:500 14px/1.3 Pop;color:#666">
+    <div><b style="display:block;font:900 30px/1 Pop;color:#111">5</b>pedidos por recreo</div>
+    <div><b style="display:block;font:900 30px/1 Pop;color:#111">0</b>minutos de fila</div>
+    <div><b style="display:block;font:900 30px/1 Pop;color:#111">1</b>toque para pedir</div>
+  </div>
+  <div class="ab" style="left:48px;right:48px;top:280px;display:grid;grid-template-columns:1fr 1fr;gap:20px">
+    <div class="tel" style="position:relative;height:520px"><img src="img/app-menu.png"></div>
+    <div class="tel" style="position:relative;height:520px"><img src="img/app-turno-listo.png"></div>
+  </div>
+  <div class="ab" style="left:48px;right:48px;bottom:60px;display:flex;align-items:center;gap:20px"><div class="qr" style="width:140px"><img src="img/abrir.svg"></div><p style="font:800 24px/1.25 Pop">Síguenos desde<br>la fila… que ya no existe.</p></div>
+</section>
+
+<!-- ═══ C10 · CÓMIC ═══ -->
+<section class="cara" style="background:#FFD23F;background-image:radial-gradient(#E3262F 2.2px,transparent 2.6px);background-size:16px 16px">
+  <div class="ab" style="left:40px;right:40px;top:300px;height:520px;border:8px solid #111;background:#fff;overflow:hidden;box-shadow:12px 12px 0 #111"><img class="foto" src="img/foto/hotdog.jpg" style="width:100%;height:100%"></div>
+  <p class="ilus">Imágenes ilustrativas</p>
+  <div class="ab" style="left:40px;top:50px;width:520px;background:#fff;border:6px solid #111;border-radius:40px;padding:26px 30px;box-shadow:8px 8px 0 #111">
+    <p class="anton" style="font-size:78px;color:#111">¿¡Sin fila!?</p>
+    <div style="position:absolute;left:80px;bottom:-40px;width:0;height:0;border-left:30px solid transparent;border-right:30px solid transparent;border-top:40px solid #111"></div>
+  </div>
+  <div class="ab anton" style="right:30px;top:200px;width:230px;height:230px;background:#E3262F;color:#fff;display:grid;place-items:center;text-align:center;font-size:58px;transform:rotate(12deg);clip-path:polygon(50% 0,61% 20%,83% 10%,80% 33%,100% 40%,84% 55%,96% 76%,72% 76%,66% 100%,50% 84%,34% 100%,28% 76%,4% 76%,16% 55%,0 40%,20% 33%,17% 10%,39% 20%)">¡Pum!</div>
+  <div class="ab" style="left:40px;right:40px;bottom:70px;background:#111;color:#FFD23F;padding:16px 22px;font:900 26px/1.2 Pop;text-transform:uppercase;transform:rotate(-1deg)">Pídelo en la app. Pasa cuando salga tu número.</div>
+</section>
+<section class="cara" style="background:#fff">
+  <div class="ab anton" style="left:40px;top:40px;font-size:90px">Mientras tanto…</div>
+  <div class="ab" style="left:40px;right:40px;top:170px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:330px 330px;gap:16px">
+    <div style="border:6px solid #111;background:#FFD23F;padding:18px;position:relative"><p class="anton" style="font-size:40px">1. Pides</p><div class="tel" style="width:150px;right:20px;bottom:-40px;padding:6px;border-radius:24px"><img src="img/app-menu.png" style="border-radius:18px"></div></div>
+    <div style="border:6px solid #111;background:#9ED8F0;padding:18px"><p class="anton" style="font-size:40px">2. Sigues en lo tuyo</p><p style="font:700 22px/1.3 Pop;margin-top:16px">Platicas, juegas, terminas la tarea…</p></div>
+    <div style="border:6px solid #111;background:#B8E28C;padding:18px"><p class="anton" style="font-size:40px">3. ¡Bip!</p><p style="font:700 22px/1.3 Pop;margin-top:16px">«¡Tu pedido ya está!» Te llega al teléfono y sale en la pantalla.</p></div>
+    <div style="border:6px solid #111;background:#FFB199;padding:18px;display:flex;flex-direction:column;justify-content:space-between"><p class="anton" style="font-size:40px">4. Comes</p><div style="width:150px;align-self:flex-end"><div class="qr" style="border:4px solid #111;border-radius:6px;box-shadow:none"><img src="img/abrir.svg"></div></div></div>
+  </div>
+  <div class="firma" style="background:#111;color:#FFD23F"><span><b>Fadori.</b> Cooperativa sin filas</span><span>Instituto Rembrandt</span></div>
+</section>
+
+<!-- ═══ C11 · NEÓN ═══ -->
+<section class="cara" style="background:#0D0A14;color:#fff">
+  <div class="ab" style="left:50%;top:360px;width:560px;height:560px;margin-left:-280px;border-radius:50%;overflow:hidden;box-shadow:0 0 0 6px #FF5A1F,0 0 50px 10px rgba(255,90,31,.6)"><img class="foto" src="img/foto/hamburguesa.jpg" style="width:100%;height:100%"></div>
+  <p class="ilus">Imágenes ilustrativas</p>
+  <div class="ab pac" style="left:0;right:0;top:70px;text-align:center;font-size:110px;color:#FFE1CF;text-shadow:0 0 8px #FF5A1F,0 0 22px #FF5A1F,0 0 46px #FF2D00">Abierto</div>
+  <div class="ab" style="left:0;right:0;top:230px;text-align:center;font:800 28px/1 Pop;letter-spacing:.4em;text-transform:uppercase;color:#FFF3B0;text-shadow:0 0 10px #F4B63A,0 0 26px #F4B63A">en el recreo</div>
+  <div class="ab" style="left:0;right:0;bottom:70px;text-align:center;font:700 22px/1.4 Pop;color:#F5E9DA">Sin fila. <span style="color:#7CF7C4;text-shadow:0 0 12px #2EE6A0">Pide desde tu teléfono.</span></div>
+  <div class="firma" style="color:#8a7a9c"><span><b style="color:#fff">Fadori.</b></span><span>Escanea atrás →</span></div>
+</section>
+<section class="cara" style="background:#0D0A14;color:#fff">
+  <div class="ab pac" style="left:0;right:0;top:60px;text-align:center;font-size:80px;color:#E7DBFF;text-shadow:0 0 10px #9B5CFF,0 0 30px #9B5CFF">En la pantalla</div>
+  <div class="ab" style="left:70px;right:70px;top:220px;background:#1b1b1f;border-radius:18px;padding:12px;box-shadow:0 0 0 3px #9B5CFF,0 0 40px rgba(155,92,255,.5)"><img src="img/f-vivo.png" style="width:100%;border-radius:8px"></div>
+  <div class="ab" style="left:70px;right:70px;top:640px;display:grid;grid-template-columns:1fr 1fr;gap:14px 30px;font:700 20px/1.3 Pop">
+    <p style="color:#7CF7C4;text-shadow:0 0 10px #2EE6A0">● Partidos en vivo</p><p style="color:#FFB4E6;text-shadow:0 0 10px #FF4FB8">● Radio Divergentes</p>
+    <p style="color:#FFF3B0;text-shadow:0 0 10px #F4B63A">● Películas y música</p><p style="color:#9FD8FF;text-shadow:0 0 10px #3FA8FF">● Proyectos de compañeros</p>
+    <p style="color:#FFD0BA;text-shadow:0 0 10px #FF5A1F">● Tu turno en voz alta</p>
+  </div>
+  <div class="ab" style="right:70px;bottom:70px;width:150px"><div class="qr"><img src="img/abrir.svg"></div></div>
+  <p class="ab" style="left:70px;bottom:50px;font:500 8.5px/1.2 Pop;color:#6d6080">Foto del partido: EileenSanda, CC BY-SA 3.0, Wikimedia Commons</p>
+</section>
+
+<!-- ═══ C12 · LETRAS CON FOTO ═══ -->
+<section class="cara" style="background:var(--cafe);color:#fff">
+  <p class="ilus">Imágenes ilustrativas</p>
+  <div class="ab anton" style="left:0;right:0;top:80px;text-align:center;font-size:380px;line-height:.86;background:url(img/foto/tacos-b.jpg) center/cover;-webkit-background-clip:text;background-clip:text;color:transparent">TA<br>COS</div>
+  <div class="ab" style="left:0;right:0;top:770px;text-align:center"><p class="serif" style="font-size:64px;font-style:italic;color:var(--oro)">sin hacer fila.</p><p style="font:600 19px/1.4 Pop;color:#F5E9DA;margin-top:12px">Arrachera, bistec, chorizo y choriqueso. Pídelos desde la app.</p></div>
+  <div class="firma" style="background:#000;color:var(--oro)"><span><b>Fadori.</b> Antojitos</span><span>Escanea atrás →</span></div>
+</section>
+<section class="cara" style="background:var(--oro)">
+  <div class="ab anton" style="left:48px;right:48px;top:60px;font-size:120px">Escanea<br>y pide<br><span style="color:#fff">ya.</span></div>
+  <div class="ab" style="right:48px;top:80px;width:260px"><div class="qr" style="padding:14px"><img src="img/abrir.svg"><small>Apunta tu cámara</small></div></div>
+  <div class="ab" style="left:48px;right:48px;top:470px;background:var(--cafe);color:#fff;border-radius:28px;padding:30px;display:grid;grid-template-columns:1fr 1fr;gap:18px 26px">
+    <div><b class="anton" style="font-size:40px;color:var(--oro)">Pagas al recoger</b><p class="cuerpo" style="color:#E9D8C6">en la cooperativa.</p></div>
+    <div><b class="anton" style="font-size:40px;color:var(--oro)">5 por recreo</b><p class="cuerpo" style="color:#E9D8C6">para que alcance para todos.</p></div>
+    <div><b class="anton" style="font-size:40px;color:var(--oro)">5 min para cancelar</b><p class="cuerpo" style="color:#E9D8C6">desde «Tu turno».</p></div>
+    <div><b class="anton" style="font-size:40px;color:var(--oro)">Te avisamos</b><p class="cuerpo" style="color:#E9D8C6">cuando esté listo.</p></div>
+  </div>
+  <img class="ab" src="img/logo-fadori.png" style="left:30px;bottom:30px;width:180px">
+</section>
+
+<!-- ═══ C13 · POSTAL ═══ -->
+<section class="cara" style="background:#EDE3D1">
+  <p class="ilus c">Imágenes ilustrativas</p>
+  <div class="ab" style="left:40px;right:40px;top:60px;bottom:60px;background:#FFFBF2;box-shadow:0 18px 40px rgba(0,0,0,.2);padding:30px">
+    <div style="position:relative;height:560px;overflow:hidden"><img class="foto" src="img/foto/quesadilla-b.jpg" style="width:100%;height:100%;object-position:50% 40%">
+      <div class="pac" style="position:absolute;left:24px;bottom:16px;font-size:64px;color:#fff;text-shadow:0 4px 16px rgba(0,0,0,.6)">Saludos desde</div></div>
+    <div class="anton" style="font-size:118px;color:var(--hor);margin-top:16px;letter-spacing:.01em">la cooperativa</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:18px">
+      <p style="font:600 19px/1.4 Pop;max-width:430px">Aquí el recreo se pasa comiendo, no en la fila. Pide desde la app.</p>
+      <div style="width:120px;height:140px;border:3px dashed var(--hor);display:grid;place-items:center;transform:rotate(4deg)"><img src="img/logo-fadori.png" style="width:110px"></div>
+    </div>
+  </div>
+</section>
+<section class="cara" style="background:#EDE3D1">
+  <div class="ab" style="left:40px;right:40px;top:60px;bottom:60px;background:#FFFBF2;box-shadow:0 18px 40px rgba(0,0,0,.2);padding:40px;display:grid;grid-template-columns:1fr 2px 1fr;gap:30px">
+    <div>
+      <p class="pac" style="font-size:44px;color:var(--hor)">¡Hola!</p>
+      <p style="font:500 18px/1.6 Pop;margin-top:14px">Te escribo desde el recreo. Ya no hago fila: abro la app, elijo, toco «Pedir» y me dan número. Cuando sale en verde paso, digo mi código y pago.</p>
+      <p style="font:500 18px/1.6 Pop;margin-top:12px">Y mientras, veo el partido en la pantalla.</p>
+      <p class="pac" style="font-size:32px;margin-top:20px">Nos vemos en la cooperativa.</p>
+    </div>
+    <div style="background:repeating-linear-gradient(180deg,var(--tenue) 0 10px,transparent 10px 18px)"></div>
+    <div style="display:flex;flex-direction:column;justify-content:space-between">
+      <div style="align-self:flex-end;width:150px"><div class="qr" style="box-shadow:none;border:3px dashed var(--hor)"><img src="img/abrir.svg"></div></div>
+      <div style="display:grid;gap:22px;font:600 18px/1 Pop;color:var(--tenue)">
+        <div style="border-bottom:2px solid var(--tenue);padding-bottom:8px">Para: todo el Rembrandt</div>
+        <div style="border-bottom:2px solid var(--tenue);padding-bottom:8px">Recreo de las 10:00</div>
+        <div style="border-bottom:2px solid var(--tenue);padding-bottom:8px">Cooperativa sin filas</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ C14 · DUOTONO ═══ -->
+<section class="cara" style="background:var(--hor)">
+  <div class="ab" style="inset:0;background:#2E1B10"><img class="foto" src="img/foto/hamburguesa-b.jpg" style="width:100%;height:100%;filter:grayscale(1) contrast(1.15);mix-blend-mode:screen;opacity:.9"></div>
+  <div class="ab" style="inset:0;background:#E8590C;mix-blend-mode:multiply"></div>
+  <p class="ilus">Imágenes ilustrativas</p>
+  <div class="ab anton" style="left:48px;right:48px;top:70px;font-size:170px;color:#FFF3E6">Menos<br>fila.</div>
+  <div class="ab anton" style="left:48px;right:48px;bottom:100px;font-size:170px;color:var(--cafe);text-align:right">Más<br>recreo.</div>
+  <div class="firma" style="background:var(--cafe);color:#FFD9BF;z-index:5"><span><b>Fadori.</b> Cooperativa sin filas</span><span>Escanea atrás →</span></div>
+</section>
+<section class="cara" style="background:#FFF1E6">
+  <div class="ab anton" style="left:48px;right:48px;top:60px;font-size:96px">¿Y si se acaba<br><span style="color:var(--hor)">lo que pedí?</span></div>
+  <div class="ab" style="left:48px;right:48px;top:330px;display:grid;gap:16px">
+    <div style="background:#fff;border-radius:24px;padding:24px 28px"><b style="font:900 24px/1.1 Pop">La app te avisa al momento.</b><p class="cuerpo" style="color:var(--tenue);margin-top:6px">Te dice qué se acabó de tu pedido.</p></div>
+    <div style="background:#fff;border-radius:24px;padding:24px 28px"><b style="font:900 24px/1.1 Pop">Tú eliges.</b><p class="cuerpo" style="color:var(--tenue);margin-top:6px">Cambiarlo por otra cosa o quitarlo.</p></div>
+    <div style="background:#fff;border-radius:24px;padding:24px 28px"><b style="font:900 24px/1.1 Pop">No pierdes tu lugar.</b><p class="cuerpo" style="color:var(--tenue);margin-top:6px">Sigues en la fila con el mismo número.</p></div>
+    <div style="background:#fff;border-radius:24px;padding:24px 28px"><b style="font:900 24px/1.1 Pop">Y no pagas lo que no te dieron.</b><p class="cuerpo" style="color:var(--tenue);margin-top:6px">Así de sencillo.</p></div>
+  </div>
+  <div class="ab" style="right:48px;bottom:60px;display:flex;align-items:center;gap:16px"><p style="font:800 19px/1.2 Pop;text-align:right">Escanea<br>y pide</p><div class="qr" style="width:136px"><img src="img/abrir.svg"></div></div>
+  <img class="ab" src="img/logo-fadori.png" style="left:30px;bottom:22px;width:160px">
+</section>
+
+<!-- ═══ C15 · BOLETO ═══ -->
+<section class="cara" style="background:#14260A">
+  <p class="ilus">Imágenes ilustrativas</p>
+  <div class="ab" style="left:60px;right:60px;top:110px;height:800px;background:#FFF8E8;border-radius:28px;overflow:hidden;
+    -webkit-mask:radial-gradient(circle 26px at 0 62%,#0000 98%,#000) left/51% 100% no-repeat,radial-gradient(circle 26px at 100% 62%,#0000 98%,#000) right/51% 100% no-repeat">
+    <img class="foto" src="img/foto/torta.jpg" style="width:100%;height:400px">
+    <div style="padding:24px 34px 0">
+      <p style="font:800 14px/1 Pop;letter-spacing:.3em;color:var(--verde)">PASE DE ABORDAR · RECREO</p>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:14px">
+        <div><p style="font:600 13px/1 Pop;color:var(--tenue);letter-spacing:.1em">DE</p><p class="anton" style="font-size:66px">Salón</p></div>
+        <p class="anton" style="font-size:50px;color:var(--verde)">→</p>
+        <div style="text-align:right"><p style="font:600 13px/1 Pop;color:var(--tenue);letter-spacing:.1em">A</p><p class="anton" style="font-size:66px">Comida</p></div>
+      </div>
+    </div>
+    <div style="border-top:4px dashed #D9CDB2;margin:38px 34px 0"></div>
+    <div style="display:flex;justify-content:space-between;padding:22px 34px;font:600 14px/1.3 Pop;color:var(--tenue)">
+      <div>ESCALAS<br><b class="anton" style="font-size:44px;color:var(--cafe)">0</b></div>
+      <div>FILA<br><b class="anton" style="font-size:44px;color:var(--cafe)">0 min</b></div>
+      <div>TURNO<br><b class="anton" style="font-size:44px;color:var(--verde)">7</b></div>
+    </div>
+  </div>
+  <div class="firma" style="color:var(--lima)"><span><b>Fadori.</b> Cooperativa sin filas</span><span>Escanea atrás →</span></div>
+</section>
+<section class="cara" style="background:#14260A;color:#fff">
+  <div class="ab" style="inset:0;background:radial-gradient(circle at 50% 40%,#3F6B23 0,#14260A 70%)"></div>
+  <div class="ab anton" style="left:0;right:0;top:70px;text-align:center;font-size:100px">Embarca<br><span style="color:var(--lima)">por aquí.</span></div>
+  <div class="ab" style="left:50%;top:330px;width:400px;margin-left:-200px"><div class="qr" style="padding:20px;border-radius:30px"><img src="img/abrir.svg"><small style="font-size:16px">Apunta tu cámara aquí</small></div></div>
+  <div class="ab" style="left:60px;right:60px;top:830px;text-align:center;font:600 19px/1.45 Pop;color:#E3F3D6">Tu número sale en verde en la pantalla y en tu teléfono. Dices tu código, pagas y listo.</div>
+  <div class="firma" style="color:var(--lima)"><span><b>Fadori.</b></span><span>Instituto Rembrandt</span></div>
+</section>
+
+</body>
+</html>

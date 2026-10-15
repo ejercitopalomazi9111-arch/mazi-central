@@ -22,7 +22,7 @@
    no aquí: esto nada más son los valores de arranque.
    ═════════════════════════════════════════════════════════════════════════ */
 const CONFIG_BASE = {
-  recreoInicia: '10:30',      /* hora de la chicharra */
+  recreoInicia: '10:00',      /* hora de la chicharra · Carlos: de 10:00 a 10:30 */
   recreoMinutos: 30,
   topeporAlumno: 5,           /* F16 · cuántos pedidos por recreo (Carlos, 14 de octubre: de 3 a 5) */
   topeAdelantos: 4,           /* F10 · nadie se atrasa más de N turnos */
@@ -2037,8 +2037,10 @@ function lugarDe(oid){
    ═════════════════════════════════════════════════════════════════════════ */
 function ventanaRecreo(){
   const d = estado();
-  const [h, m] = String(d.config.recreoInicia || '10:30').split(':').map(Number);
-  const hoy = new Date(); hoy.setHours(h||10, m||30, 0, 0);
+  const [h, m] = String(d.config.recreoInicia || '10:00').split(':').map(Number);
+  /* `m || 30` convertía «10:00» en 10:30: cero minutos es falso. Desde que el
+     recreo es a las 10:00 (9 de octubre) la app lo esperaba media hora tarde */
+  const hoy = new Date(); hoy.setHours(Number.isFinite(h) ? h : 10, Number.isFinite(m) ? m : 0, 0, 0);
   const inicio = hoy.getTime();
   return { inicio, fin: inicio + (d.config.recreoMinutos || 30) * 60000 };
 }

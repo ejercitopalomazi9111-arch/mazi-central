@@ -1,0 +1,178 @@
+{
+ "tacos": {
+  "autor": "Tim Sullivan",
+  "lic": "cc0",
+  "prov": "stocksnap",
+  "fuente": "https://stocksnap.io/photo/mexican-tacos-UPG7YS3LGW",
+  "titulo": "Mexican Tacos",
+  "tam": [
+   960,
+   1444
+  ]
+ },
+ "tacos-b": {
+  "autor": null,
+  "lic": "cc0",
+  "prov": "rawpixel",
+  "fuente": "https://www.rawpixel.com/image/5917508/free-taco-image-public-domain-food-cc0-photo",
+  "titulo": "Free taco image",
+  "tam": [
+   1024,
+   683
+  ]
+ },
+ "hamburguesa": {
+  "autor": "Sebastián LP",
+  "lic": "cc0",
+  "prov": "stocksnap",
+  "fuente": "https://stocksnap.io/photo/burger-food-BN2YAQSIU1",
+  "titulo": "Burger Food",
+  "tam": [
+   960,
+   628
+  ]
+ },
+ "hamburguesa-b": {
+  "autor": "Markus Spiske",
+  "lic": "cc0",
+  "prov": "stocksnap",
+  "fuente": "https://stocksnap.io/photo/food-burger-CFSQPAXM18",
+  "titulo": "Food Burger",
+  "tam": [
+   960,
+   640
+  ]
+ },
+ "hotdog": {
+  "autor": null,
+  "lic": "cc0",
+  "prov": "rawpixel",
+  "fuente": "https://www.rawpixel.com/image/6075115/hot-dogs",
+  "titulo": "Hot Dogs",
+  "tam": [
+   1024,
+   683
+  ]
+ },
+ "hotdog-b": {
+  "autor": null,
+  "lic": "cc0",
+  "prov": "rawpixel",
+  "fuente": "https://www.rawpixel.com/image/6075018/hot-dogs",
+  "titulo": "Hot Dogs",
+  "tam": [
+   1024,
+   683
+  ]
+ },
+ "pizza": {
+  "autor": "Pawel Kadysz",
+  "lic": "cc0",
+  "prov": "stocksnap",
+  "fuente": "https://stocksnap.io/photo/pizza-food-R926LU1YEA",
+  "titulo": "Pizza Food",
+  "tam": [
+   960,
+   640
+  ]
+ },
+ "pizza-b": {
+  "autor": null,
+  "lic": "cc0",
+  "prov": "rawpixel",
+  "fuente": "https://www.rawpixel.com/image/5914811/image-public-domain-fire-food",
+  "titulo": "Free close pepperoni pizza oven",
+  "tam": [
+   1024,
+   683
+  ]
+ },
+ "capuchino": {
+  "autor": "Bryan Pocius",
+  "lic": "cc0",
+  "prov": "stocksnap",
+  "fuente": "https://stocksnap.io/photo/coffee-cappuccino-TO4DBIESND",
+  "titulo": "Coffee Cappuccino",
+  "tam": [
+   960,
+   638
+  ]
+ },
+ "capuchino-b": {
+  "autor": "Porapak Apichodilok",
+  "lic": "cc0",
+  "prov": "stocksnap",
+  "fuente": "https://stocksnap.io/photo/cappuccino-froth-8R6DD0I63L",
+  "titulo": "Cappuccino Froth",
+  "tam": [
+   960,
+   720
+  ]
+ },
+ "brownie": {
+  "autor": null,
+  "lic": "cc0",
+  "prov": "rawpixel",
+  "fuente": "https://www.rawpixel.com/image/5906085/photo-image-background-public-domain-tree",
+  "titulo": "Free chocolate brownies image",
+  "tam": [
+   1024,
+   683
+  ]
+ },
+ "galletas": {
+  "autor": "Suzy Hazelwood",
+  "lic": "cc0",
+  "prov": "stocksnap",
+  "fuente": "https://stocksnap.io/photo/cookies-chocolatechipcookies-S4T2FDBYCN",
+  "titulo": "Cookies Chocolatechipcookies",
+  "tam": [
+   960,
+   559
+  ]
+ },
+ "galletas-b": {
+  "autor": "PICSELI",
+  "lic": "cc0",
+  "prov": "stocksnap",
+  "fuente": "https://stocksnap.io/photo/chocolatechip-cookies-PAUNN1ZOQL",
+  "titulo": "Chocolatechip Cookies",
+  "tam": [
+   960,
+   708
+  ]
+ },
+ "torta": {
+  "autor": "petradr",
+  "lic": "cc0",
+  "prov": "stocksnap",
+  "fuente": "https://stocksnap.io/photo/sandwich-toasted-D7F9292D60",
+  "titulo": "Sandwich Toasted",
+  "tam": [
+   960,
+   644
+  ]
+ },
+ "quesadilla": {
+  "autor": null,
+  "lic": "cc0",
+  "prov": "rawpixel",
+  "fuente": "https://www.rawpixel.com/image/5940361/free-public-domain-cc0-photo",
+  "titulo": null,
+  "tam": [
+   1024,
+   683
+  ]
+ },
+ "quesadilla-b": {
+  "autor": "T'Kai Monet",
+  "lic": "cc0",
+  "prov": "wordpress",
+  "fuente": "https://wordpress.org/photos/photo/58169e6dbd/",
+  "titulo": "A plate of birria quesadillas accompanied by limes",
+  "tam": [
+   1536,
+   2048
+  ]
+ }
+}

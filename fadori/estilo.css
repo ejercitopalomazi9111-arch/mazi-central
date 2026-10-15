@@ -32,6 +32,7 @@
   /* la tinta · café profundo, no negro. Negro sobre crema se lee clínico,
      de receta médica; café sobre crema se lee horneado. 15.51 de contraste */
   --cafe:#2E1B10;
+  --cafe-solido:#2E1B10;  /* FONDO con letra blanca encima: no se invierte con el tema */
   --tenue:#7A5A42;      /* 5.90 sobre crema */
 
   /* el sabor */
@@ -100,6 +101,7 @@
   --linea:#43301F;
 
   --cafe:#F5EADF;       /* la tinta se vuelve crema · 14.7 sobre el suelo */
+  --cafe-solido:#5A3624; /* los fondos con letra blanca NO pueden seguir a --cafe: quedaban crema sobre crema */
   --tenue:#C3AC98;      /* 7.9 · el gris de aquí también es café */
 
   --naranja:#FF8A4C;    /* el de crema se apaga en oscuro; éste da 7.4 */
@@ -297,7 +299,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--naranja); outlin
   font-size:11px; font-weight:900; letter-spacing:.04em; text-transform:uppercase;
   background:var(--naranja-relleno); color:#fff; box-shadow:0 2px 8px rgba(70,40,20,.28);
 }
-.plato .marca-esq.agotado{background:var(--cafe)}
+.plato .marca-esq.agotado{background:var(--cafe-solido)}
 .plato .foto{
   aspect-ratio:1/1; width:100%; display:grid; place-items:center; font-size:58px;
   background:linear-gradient(155deg, var(--t1), var(--t2)); position:relative;
@@ -528,7 +530,7 @@ body.mostrador h1{font-size:30px}
    crema sobre espresso da 17.79, que es lo más alto de toda la app. */
 body.publica{
   --fondo:#1A0F0A; --sup:#26160E; --piso:#20130C; --sup2:#2E1B10;
-  --linea:#3D2618; --cafe:#F5E9DA; --tenue:#C4A78D;
+  --linea:#3D2618; --cafe:#F5E9DA; --tenue:#C4A78D; --cafe-solido:#5A3624;
   --naranja:#FF8A3D; --dorado:#E0A93C; --verde:#7BC24A;
   --sombra:none; --sombra-alta:none;
   background:#1A0F0A;
@@ -1200,7 +1202,7 @@ body.cortina-arriba{overflow:hidden}
   position:fixed; left:50%; bottom:calc(var(--barra-baja) + 24px + env(safe-area-inset-bottom));
   z-index:220; transform:translate(-50%, 20px); opacity:0;
   max-width:min(92vw, 460px); padding:13px 18px; border-radius:999px;
-  background:var(--cafe); color:#FFF6EC; font-size:14.5px; font-weight:700;
+  background:var(--cafe-solido); color:#FFF6EC; font-size:14.5px; font-weight:700;
   line-height:1.35; text-align:center; box-shadow:0 8px 30px rgba(70,40,20,.4);
   transition:opacity .22s ease, transform .22s cubic-bezier(.22,1,.36,1);
   pointer-events:none;
@@ -1389,7 +1391,7 @@ body.cortina-arriba{overflow:hidden}
   position:fixed; left:12px; right:12px; top:calc(env(safe-area-inset-top, 0px) + 10px);
   z-index:2147483000; max-width:520px; margin:0 auto;
   display:grid; gap:4px; padding:16px 18px; border-radius:18px;
-  background:var(--cafe); color:#fff; box-shadow:0 12px 34px rgba(30,15,5,.35);
+  background:var(--cafe-solido); color:#fff; box-shadow:0 12px 34px rgba(30,15,5,.35);
   transform:translateY(calc(-100% - 40px)); opacity:0; pointer-events:none;
   transition:transform .32s cubic-bezier(.2,.9,.3,1.2), opacity .2s ease;
 }
@@ -1401,7 +1403,7 @@ body.cortina-arriba{overflow:hidden}
 .alerta-grande.sigue{background:#2F5419}
 .alerta-grande.falta{background:#8F2416}
 .alerta-grande.nuevo{background:#9C3608}
-.alerta-grande.cambio{background:var(--cafe)}
+.alerta-grande.cambio{background:var(--cafe-solido)}
 .alerta-grande.prueba{background:#2F5419}
 .alerta-grande.listo.sale{animation:alerta-late 1s ease-in-out 3}
 @keyframes alerta-late{50%{box-shadow:0 0 0 8px rgba(63,107,35,.35), 0 12px 34px rgba(30,15,5,.35)}}
