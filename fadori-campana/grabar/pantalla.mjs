@@ -61,7 +61,9 @@ await tv.click('#bArranque').catch(() => {}); await tv.waitForTimeout(4000 * K);
 /* con cámara lenta corren 5 minutos reales por cada uno del video: el reloj brincaba de 10:13 a 10:17 entre tomas */
 await tv.evaluate(() => { const r = document.querySelector('#reloj'); const fijo = () => { if(r.textContent !== '10:12 a.m.') r.textContent = '10:12 a.m.'; }; fijo(); new MutationObserver(fijo).observe(r, { childList: true, characterData: true, subtree: true }); });
 
+const SOLO = process.env.SOLO;                                         /* SOLO=vivo graba nada más esa parte */
 const parte = async (nombre, hacer, seg) => {
+  if(SOLO && SOLO !== nombre){ await hacer(); await tv.waitForTimeout(seg * 1000 * K); return; }   /* mismo tiempo, para que la fila llegue igual */
   const rec = await grabar(tv, { escala: 1 });
   await hacer(); await tv.waitForTimeout(seg * 1000 * K);
   const n = await rec.parar(path.join(REC, 'tv-' + nombre), 60, K);
@@ -84,6 +86,14 @@ const vivo = (activa) => most.evaluate(async ([api, casa, url, activa]) => {
   return (await fetch(api + '/api/transmision?casa=' + casa, { method: 'POST', headers: { 'content-type': 'application/json', 'x-fadori-admin': FADORI.llaveMostrador(), 'x-fadori-aparato': localStorage.getItem('fadori_aparato') }, body: JSON.stringify({ estado: e }) })).status;
 }, ['https://fadori.palomazi9111.workers.dev', M.CASA, PROD + '/fadori/medios-comercial/partido.webm', activa]);
 await tomar(3);
-await parte('vivo', async () => { console.log('  transmisión', await vivo(true)); setTimeout(() => listo(3), 6000 * K); }, 13);
+/* el reloj del partido va PARADO en el servidor (con cámara lenta correría 5 veces
+   más rápido) y en la tele se le da cuerda con performance.now, que sí va lento:
+   así avanza un segundo por cada segundo del video. Carlos: «el cronómetro del
+   partido en vivo no cambia el tiempo» */
+const darCuerda = () => P(() => { const p0 = performance.now(), base = 34 * 60 + 12;
+  setInterval(() => { const el = document.querySelector('.tm-reloj'); if(!el) return;
+    const s = base + Math.floor((performance.now() - p0) / 1000), t = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+    if(el.textContent !== t) el.textContent = t; }, 100); });
+await parte('vivo', async () => { console.log('  transmisión', await vivo(true)); await darCuerda(); setTimeout(() => listo(3), 6000 * K); }, 13);
 await vivo(false);
 await M.cerrar();

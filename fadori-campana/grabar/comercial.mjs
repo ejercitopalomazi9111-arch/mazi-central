@@ -13,6 +13,14 @@ const RAIZ = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..')
 const PREVIA = Number(process.env.PREVIA) || 0, FPS = Number(process.env.FPS) || 60;   /* Carlos: «hazlo a 60fps» */
 const ff = execFileSync('python3', ['-c', 'import imageio_ffmpeg;print(imageio_ffmpeg.get_ffmpeg_exe())']).toString().trim();
 
+/* la cortinilla de la app, copiada de fadori/estilo.css para que el comercial la
+   pinte en grande con el CSS de verdad (si cambia en la app, cambia aquí) */
+{
+  const css = fs.readFileSync(path.join(RAIZ, '..', 'fadori', 'estilo.css'), 'utf8');
+  const tramo = (de, a) => { const i = css.indexOf(de), j = css.indexOf(a, i); if(i < 0 || j < 0) throw new Error('no encontré ' + de + ' en estilo.css'); return css.slice(i, j); };
+  fs.writeFileSync(path.join(RAIZ, 'grabar', 'cortinilla.css'), '/* GENERADO por grabar/comercial.mjs desde fadori/estilo.css: no se edita a mano */\n' +
+    tramo('.cortinilla{', '/* ── La página de instalar') + tramo('.burger{', '@media (prefers-reduced-motion: reduce){\n  .cortinilla'));
+}
 const cuadros = {};
 for(const d of fs.readdirSync(path.join(SAL, 'rec'))) cuadros[d] = fs.readdirSync(path.join(SAL, 'rec', d)).filter(f => f.endsWith('.jpg')).length;
 const br = await chromium.launch();
