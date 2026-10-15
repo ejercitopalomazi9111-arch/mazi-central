@@ -14,12 +14,31 @@ const require = createRequire('/opt/node22/lib/node_modules/'); const { chromium
 const AQUI = path.dirname(new URL(import.meta.url).pathname), SAL = path.join(AQUI, 'salida');
 fs.mkdirSync(SAL, { recursive: true });
 const que = process.argv[2] || 'posters';
+/* `posters [archivo] [tanda]`: cada tanda en su carpeta y su PDF. `previa`
+   saca lo mismo a tamaño de pantalla y dos hojas (frentes y vueltas), que es
+   lo que se revisa a ojo antes de mandar a 300 ppp. */
+const archivo = process.argv[3] || 'posters.html', tanda = process.argv[4] || '';
 const br = await chromium.launch();
-if(que === 'posters'){
+if(que === 'previa'){
+  const pg = await br.newPage({ viewport: { width: 900, height: 1100 }, deviceScaleFactor: 1 });
+  await pg.goto('file://' + path.join(AQUI, archivo)); await pg.evaluate(() => document.fonts.ready); await pg.waitForTimeout(800);
+  const caras = await pg.$$('.cara'), dir = path.join(SAL, 'previa' + (tanda ? '-' + tanda : '')); fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
+  for(let i = 0; i < caras.length; i++) await caras[i].screenshot({ path: path.join(dir, String(Math.floor(i / 2) + 1).padStart(2, '0') + (i % 2 ? '-vuelta' : '-frente') + '.jpg'), type: 'jpeg', quality: 85 });
+  execFileSync('python3', ['-c', `
+import glob
+from PIL import Image
+for lado in ['frente','vuelta']:
+    fs=sorted(glob.glob('${dir}/*-'+lado+'.jpg')); ims=[Image.open(f).resize((408,528)) for f in fs]
+    c=Image.new('RGB',(5*418+10,((len(ims)+4)//5)*538+10),'#3a3a3a')
+    for i,im in enumerate(ims): c.paste(im,(10+(i%5)*418,10+(i//5)*538))
+    c.save('${dir}/hoja-'+lado+'s.jpg',quality=85)`]);
+  console.log('✓ ' + caras.length + ' caras → ' + path.relative(AQUI, dir));
+} else if(que === 'posters'){
   const pg = await br.newPage({ viewport: { width: 900, height: 1100 }, deviceScaleFactor: 3.125 });   /* 816 px × 3.125 = 2550 = 8.5 in a 300 ppp */
-  await pg.goto('file://' + path.join(AQUI, 'posters.html')); await pg.evaluate(() => document.fonts.ready); await pg.waitForTimeout(800);
-  const caras = await pg.$$('.cara'), dir = path.join(SAL, 'caras'); fs.mkdirSync(dir, { recursive: true });
+  await pg.goto('file://' + path.join(AQUI, archivo)); await pg.evaluate(() => document.fonts.ready); await pg.waitForTimeout(800);
+  const caras = await pg.$$('.cara'), dir = path.join(SAL, 'caras' + (tanda ? '-' + tanda : '')); fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
   for(let i = 0; i < caras.length; i++) await caras[i].screenshot({ path: path.join(dir, String(Math.floor(i / 2) + 1).padStart(2, '0') + (i % 2 ? '-vuelta' : '-frente') + '.png') });
+  const pdf = 'Fadori-15-posters' + (tanda ? '-' + tanda : '') + '-doble-cara.pdf';
   execFileSync('python3', ['-c', `
 import glob, img2pdf, os
 from PIL import Image
@@ -27,8 +46,8 @@ js=[]
 for f in sorted(glob.glob('${dir}/*.png')):
     j=f[:-4]+'.jpg'; Image.open(f).convert('RGB').save(j,quality=88,dpi=(300,300)); js.append(j)
 lay=img2pdf.get_layout_fun((img2pdf.in_to_pt(8.5),img2pdf.in_to_pt(11)))
-open('${SAL}/Fadori-15-posters-doble-cara.pdf','wb').write(img2pdf.convert(js,layout_fun=lay))`], { stdio: 'inherit' });
-  console.log('✓ ' + caras.length + ' caras → salida/Fadori-15-posters-doble-cara.pdf');
+open('${SAL}/${pdf}','wb').write(img2pdf.convert(js,layout_fun=lay))`], { stdio: 'inherit' });
+  console.log('✓ ' + caras.length + ' caras → salida/' + pdf);
 } else {
   const mp3 = path.join(SAL, 'Funky-Chunk.mp3');
   if(!fs.existsSync(mp3)) execFileSync('curl', ['-sL', '-A', 'Mozilla/5.0', '-o', mp3, 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Funky%20Chunk.mp3']);
