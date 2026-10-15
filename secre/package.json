@@ -5,10 +5,13 @@
   "description": "Secre: la secretaria de WhatsApp de Carlos. Redacta y él aprueba.",
   "scripts": {
     "start": "node correr.mjs",
-    "pruebas": "node pruebas.mjs"
+    "pruebas": "node pruebas.mjs && node pruebas-panel.mjs"
   },
   "dependencies": {
-    "baileys": "7.0.0-rc14"
+    "baileys": "7.0.0-rc14",
+    "pino": "9.14.0"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }

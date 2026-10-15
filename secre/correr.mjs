@@ -20,7 +20,8 @@
    ═════════════════════════════════════════════════════════════════════════ */
 import fs from 'fs'; import path from 'path'; import http from 'http'; import crypto from 'crypto';
 import { Secre, AYUDA } from './nucleo.mjs';
-import { ia } from './ia.mjs';
+const FALSO = !!process.env.SECRE_FALSO;
+const { ia } = await import(FALSO ? './falso.mjs' : './ia.mjs');
 
 const RAIZ = path.dirname(new URL(import.meta.url).pathname);
 const DATOS = process.env.SECRE_DATOS || path.join(RAIZ, 'datos');
@@ -42,7 +43,8 @@ function almacenEn(dir){
 }
 
 const vivas = {};     /* id → { secre, estado: { conectado, codigo, error }, transporte } */
-const { conectar } = await import('./whatsapp.mjs');
+const { conectar } = await import(FALSO ? './falso.mjs' : './whatsapp.mjs');
+if(FALSO) console.log('🧪 Modo de prueba: nada sale a WhatsApp ni a la IA.');
 for(const c of CUENTAS){
   const dir = path.join(DATOS, c.id);
   const v = vivas[c.id] = { estado: { conectado: false }, secre: null };
@@ -106,6 +108,8 @@ http.createServer(async (req, res) => {
   if(req.method === 'GET' && !que) return json(res, 200, vista(v));
   if(req.method !== 'POST') return json(res, 405, { error: 'Así no.' });
   const b = await cuerpo(req), s = v.secre;
+  /* sólo en modo de prueba: hacer como que alguien escribió */
+  if(FALSO && que === 'llega'){ await v.transporte.llega(b); return json(res, 200, { bien: true }); }
   if(!v.estado.conectado && (que === 'orden' || que === 'propuesta')) return json(res, 409, { error: 'Esa cuenta no está conectada a WhatsApp todavía.' });
   if(que === 'accion'){ const hecho = s.aplicar(b); s.guardar(); return json(res, hecho ? 200 : 400, hecho ? { bien: true, hecho } : { error: 'No pude aplicar eso.' }); }
   /* hablarle a Secre desde el panel es lo mismo que escribirle en el chat propio */

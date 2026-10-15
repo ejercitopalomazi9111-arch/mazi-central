@@ -1138,6 +1138,24 @@
     "vuelta",
     "reverso"
    ]
+  },
+  {
+   "id": "hora-programada-que-ya-paso",
+   "titulo": "Un recordatorio puesto a media tarde para las 7 de la mañana sale en ese momento",
+   "gravedad": "media",
+   "sintoma": "En Secre, poner «buenos días a las 7:00» a las 3 de la tarde proponía un buenos días a las 3 de la tarde.",
+   "causa": "La regla era «si ya pasó la hora y hoy no ha salido, que salga»: no distingue entre llegar a la hora y llegar ocho horas tarde.",
+   "porque": "Se escribe pensando en el reloj que avanza minuto a minuto, no en la configuración que se cambia a cualquier hora o en la máquina que estuvo apagada.",
+   "arreglo": "Ventana de gracia: si ya pasó más de una hora, se marca como hecho por hoy y no se manda (secre/nucleo.mjs, saludos).",
+   "comoCazarlo": "Lo cazó la prueba del panel corriendo a la hora real; ahora secre/pruebas.mjs salta a las 15:00 y exige que no salga.",
+   "salioDe": "secre/pruebas-panel.mjs",
+   "consejo": "Todo lo que se dispara «a cierta hora» necesita también un «hasta cuándo ya no»: la hora se puede configurar tarde y la máquina puede estar apagada.",
+   "senales": [
+    "el buenos días salió en la tarde",
+    "el recordatorio llegó a deshoras",
+    "puse una hora y se mandó luego luego",
+    "prendí el bot y soltó todo lo atrasado"
+   ]
   }
  ]
 }

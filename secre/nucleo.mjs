@@ -215,8 +215,8 @@ export class Secre {
     /* una sola propuesta viva por chat: la nueva reemplaza a la vieja */
     this.estado.propuestas = this.estado.propuestas.filter(p => !(p.chat === jid && p.tipo === 'respuesta'));
     const n = this.estado.sigN++;
-    this.estado.propuestas.push({ n, chat: jid, nombre, texto: propuesta, motivo: (r && r.motivo) || '', t: this.reloj(), tipo: 'respuesta' });
     const cita = nuevos.slice(-3).map(x => (x.quien ? x.quien + ': ' : '') + x.texto).join(' / ').slice(0, 300);
+    this.estado.propuestas.push({ n, chat: jid, nombre, texto: propuesta, motivo: (r && r.motivo) || '', dijo: cita, urgente: !!(r && r.urgente), t: this.reloj(), tipo: 'respuesta' });
     await this.avisar(`#${n} · ${nombre}${r && r.urgente ? ' ⚠️' : ''}: «${cita}»\n` +
       (propuesta ? `Propuesta: «${propuesta}»\n→ «${n}» la manda · «${n} tu texto» manda el tuyo · «x${n}» la tira` : 'No supe qué contestarle: te toca.') +
       (r && r.motivo ? `\n(${r.motivo})` : ''));
@@ -241,6 +241,8 @@ export class Secre {
         if(r[cual + 'En'] == null){ const v = Math.max(0, +s.variacion || 0); r[cual + 'En'] = aMin(s[cual]) + Math.round((this.azar() * 2 - 1) * v); }
         if(minDelDia(ahora) < r[cual + 'En']) continue;
         r[cual] = true;
+        /* si ya pasó más de una hora (se puso a media tarde, o Secre estuvo apagada), hoy ya no: un «buenos días» a las 3 de la tarde no sirve */
+        if(minDelDia(ahora) - r[cual + 'En'] > 60){ this.guardar(); continue; }
         const nombre = this.nombreDe(s.chat);
         let texto = '';
         try{ texto = await this.ia.saludo({ dueno: this.config.nombre, nombre, cual, nota: this.chat(s.chat).nota || '', estilo: this.estado.estilo.slice(-40), antes: (this.estado.historial[s.chat] || []).filter(x => x.de === 'yo').slice(-6).map(x => x.texto) }); }
@@ -294,6 +296,7 @@ export class Secre {
       const p = this.estado.propuestas.find(x => x.n === +m[1]);
       if(!p) return this.avisar(`No tengo la #${m[1]} (o ya caducó).`);
       const final = (m[2] || p.texto).trim();
+      if(!final) return this.avisar(`La #${m[1]} no trae texto: escribe «${m[1]} lo que quieras decir».`);
       this.estado.propuestas = this.estado.propuestas.filter(x => x !== p);
       await this.mandar(p.chat, final);
       this.guardar();
@@ -389,7 +392,7 @@ export class Secre {
         if(hasta) r.hasta = hasta;
         if(!r.palabras && !r.etiquetas && !r.chats && !r.de) return '';
         this.config.reglas.push(r);
-        return `Regla: ${a.modo}${r.palabras ? ' si hablan de ' + r.palabras.join(', ') : ''}${r.etiquetas ? ' con los de ' + r.etiquetas.join(', ') : ''}${r.chats ? ' con ' + r.chats.map(j => this.nombreDe(j)).join(', ') : ''}${r.de ? ` de ${r.de} a ${r.a}` : ''}${r.hasta ? ' hasta el ' + fechaMx(r.hasta - 1) : ''}`;
+        return `Regla: ${a.modo === 'callado' ? 'no proponer' : 'sí proponer'}${r.palabras ? ' si hablan de ' + r.palabras.join(', ') : ''}${r.etiquetas ? ' con los de ' + r.etiquetas.join(', ') : ''}${r.chats ? ' con ' + r.chats.map(j => this.nombreDe(j)).join(', ') : ''}${r.de ? ` de ${r.de} a ${r.a}` : ''}${r.hasta ? ' hasta el ' + fechaMx(r.hasta - 1) : ''}`;
       }
       case 'quitarRegla': {
         const antes = this.config.reglas.length;

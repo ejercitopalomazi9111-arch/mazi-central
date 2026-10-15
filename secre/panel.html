@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1714">
+<meta name="robots" content="noindex">
+<title>Secre</title>
+<style>
+:root{
+  --fondo:#f4f5f2; --hoja:#ffffff; --linea:#dfe3dc; --tinta:#16201b; --suave:#5b665f;
+  --acento:#127a52; --acento-tinta:#ffffff; --acento-claro:#e2f2ea; --peligro:#b3261e; --aviso:#8a5a00; --aviso-fondo:#fff3d6;
+  --radio:12px; --sombra:0 1px 2px rgba(0,0,0,.06);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-tema="claro"]){
+  --fondo:#0f1714; --hoja:#18221e; --linea:#2a3631; --tinta:#e8ede9; --suave:#a3afa8;
+  --acento:#3cc68a; --acento-tinta:#06231a; --acento-claro:#1c3a2d; --peligro:#ff8a80; --aviso:#ffd27a; --aviso-fondo:#3a2e10;
+  --sombra:none; color-scheme: dark;
+}}
+*{ box-sizing:border-box; }
+html,body{ margin:0; background:var(--fondo); color:var(--tinta); font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; -webkit-text-size-adjust:100%; }
+button,input,select,textarea{ font:inherit; color:inherit; }
+button{ cursor:pointer; }
+.envoltura{ max-width:720px; margin:0 auto; padding:12px 16px calc(96px + env(safe-area-inset-bottom)); }
+.oculto{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); top:0; left:0; }
+
+/* ── arriba ── */
+header{ position:sticky; top:0; z-index:5; background:var(--fondo); padding:10px 0 8px; }
+.fila{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+h1{ font-size:22px; margin:0; letter-spacing:-.01em; }
+h2{ font-size:18px; margin:24px 0 8px; }
+.cuentas{ display:flex; gap:8px; overflow-x:auto; padding:8px 0 4px; position:relative; }
+.cuenta{ min-height:44px; padding:0 14px; border-radius:999px; border:1px solid var(--linea); background:var(--hoja); display:flex; align-items:center; gap:8px; white-space:nowrap; }
+.cuenta[aria-pressed="true"]{ border-color:var(--acento); background:var(--acento-claro); font-weight:600; }
+.punto{ width:10px; height:10px; border-radius:50%; background:var(--suave); flex:none; }
+.punto.si{ background:var(--acento); }
+.pausa{ margin-left:auto; }
+
+/* ── pestañas abajo, al alcance del pulgar ── */
+nav.pestanas{ position:fixed; left:0; right:0; bottom:0; z-index:6; background:var(--hoja); border-top:1px solid var(--linea);
+  display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); padding-bottom:env(safe-area-inset-bottom); }
+nav.pestanas button{ min-height:60px; border:0; background:none; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-size:12px; color:var(--suave); position:relative; padding:4px 2px; }
+nav.pestanas button span.ico{ font-size:20px; line-height:1; }
+nav.pestanas button[aria-selected="true"]{ color:var(--acento); font-weight:700; }
+.globo{ position:absolute; top:6px; left:calc(50% + 6px); min-width:18px; height:18px; padding:0 5px; border-radius:9px; background:var(--peligro); color:#fff; font-size:11px; font-weight:700; line-height:18px; }
+@media (min-width:900px){
+  nav.pestanas{ position:sticky; top:auto; bottom:auto; border:1px solid var(--linea); border-radius:var(--radio); margin:4px 0 8px; }
+  .envoltura{ padding-bottom:32px; }
+}
+
+/* ── piezas ── */
+.tarjeta{ background:var(--hoja); border:1px solid var(--linea); border-radius:var(--radio); padding:14px; margin:0 0 12px; box-shadow:var(--sombra); }
+.tarjeta .quien{ font-weight:700; }
+.tarjeta .meta{ color:var(--suave); font-size:14px; }
+.boton{ min-height:44px; padding:0 16px; border-radius:10px; border:1px solid var(--linea); background:var(--hoja); font-weight:600; }
+.boton.principal{ background:var(--acento); color:var(--acento-tinta); border-color:var(--acento); }
+.boton.peligro{ color:var(--peligro); }
+.boton:disabled{ opacity:.5; cursor:default; }
+.campo{ width:100%; min-height:44px; padding:10px 12px; border-radius:10px; border:1px solid var(--linea); background:var(--fondo); }
+textarea.campo{ min-height:88px; resize:vertical; }
+label.etq{ display:block; font-size:14px; color:var(--suave); margin:10px 0 4px; }
+.acciones{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+.acciones .boton{ flex:1 1 auto; }
+.vacio{ color:var(--suave); text-align:center; padding:32px 8px; }
+.aviso{ background:var(--aviso-fondo); color:var(--aviso); border-radius:var(--radio); padding:12px 14px; margin:8px 0; }
+.codigo{ font:700 28px/1.2 ui-monospace,Menlo,monospace; letter-spacing:.08em; color:var(--tinta); display:block; margin:6px 0; }
+.chip{ display:inline-block; padding:2px 10px; border-radius:999px; background:var(--acento-claro); font-size:13px; margin:2px 4px 2px 0; }
+.motivo{ font-size:14px; color:var(--aviso); margin:8px 0 0; }
+.pend{ display:flex; gap:12px; align-items:flex-start; padding:10px 0; border-bottom:1px solid var(--linea); }
+.pend:last-child{ border-bottom:0; }
+.pend input{ width:24px; height:24px; margin:2px 0 0; flex:none; accent-color:var(--acento); }
+.pend.hecho .txt{ text-decoration:line-through; color:var(--suave); }
+.dos{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px; }
+details.tarjeta > summary{ list-style:none; display:flex; align-items:center; gap:8px; min-height:32px; cursor:pointer; }
+details.tarjeta > summary::-webkit-details-marker{ display:none; }
+details.tarjeta > summary .modo{ margin-left:auto; font-size:13px; color:var(--suave); white-space:nowrap; }
+
+/* ── la plática ── */
+.charla{ display:flex; flex-direction:column; gap:8px; padding-bottom:8px; }
+.burbuja{ max-width:85%; padding:10px 12px; border-radius:14px; white-space:pre-wrap; overflow-wrap:anywhere; }
+.burbuja.carlos{ align-self:flex-end; background:var(--acento); color:var(--acento-tinta); border-bottom-right-radius:4px; }
+.burbuja.secre{ align-self:flex-start; background:var(--hoja); border:1px solid var(--linea); border-bottom-left-radius:4px; }
+.burbuja time{ display:block; font-size:11px; opacity:.7; margin-top:4px; }
+.escribir{ position:sticky; bottom:calc(68px + env(safe-area-inset-bottom)); display:flex; gap:8px; background:var(--fondo); padding:8px 0; }
+@media (min-width:900px){ .escribir{ bottom:0; } }
+.escribir .campo{ min-height:48px; }
+
+#avisito{ position:fixed; left:50%; top:calc(12px + env(safe-area-inset-top)); transform:translateX(-50%); background:var(--tinta); color:var(--fondo); padding:10px 16px; border-radius:10px; font-size:15px; opacity:0; pointer-events:none; transition:opacity .2s; z-index:9; max-width:calc(100% - 32px); }
+#avisito.ver{ opacity:1; }
+
+/* ── entrar ── */
+.entrar{ max-width:360px; margin:18vh auto 0; padding:0 16px; }
+.entrar p{ color:var(--suave); }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="avisito" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+/* ══════════════════════════════════════════════════════════════════════════
+   Panel de Secre. Una sola página, sin nada de fuera: habla con correr.mjs.
+   Lo mismo que se puede hacer escribiéndole en «Mensaje a ti mismo», aquí con
+   botones, y la pestaña «Platica» es ese mismo chat.
+   ═════════════════════════════════════════════════════════════════════════ */
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+const TZ = 'America/Mexico_City';
+const hora = (t) => new Date(t).toLocaleTimeString('es-MX', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
+const dia = (t) => new Date(t).toLocaleDateString('es-MX', { timeZone: TZ, day: 'numeric', month: 'short' });
+const cuando = (t) => { const d = new Date(t).toLocaleDateString('en-CA', { timeZone: TZ }), h = new Date().toLocaleDateString('en-CA', { timeZone: TZ }); return d === h ? hora(t) : dia(t) + ' ' + hora(t); };
+
+let cuentas = [], actual = '', datos = null, pestana = 'propuestas', huella = '';
+try{ pestana = localStorage.getItem('secre-pestana') || pestana; }catch{}
+
+function avisito(t){ const a = $('#avisito'); a.textContent = t; a.classList.add('ver'); clearTimeout(avisito.t); avisito.t = setTimeout(() => a.classList.remove('ver'), 2600); }
+
+async function api(ruta, cuerpo){
+  const r = await fetch('/api/' + ruta, cuerpo ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(cuerpo) } : {});
+  const j = await r.json().catch(() => ({}));
+  if(r.status === 401 && ruta !== 'entrar'){ pintarEntrar(); throw new Error(j.error || 'Entra otra vez'); }
+  if(!r.ok) throw new Error(j.error || 'Algo falló (' + r.status + ')');
+  return j;
+}
+const accion = (a) => api(actual + '/accion', a);
+
+/* ── entrar ── */
+function pintarEntrar(){
+  clearInterval(pintarEntrar.reloj);
+  $('#app').innerHTML = `<form class="entrar" id="fEntrar">
+    <h1>Secre</h1><p>Tu secretaria de WhatsApp. Escribe la contraseña que pusiste al prenderla.</p>
+    <label class="etq" for="clave">Contraseña</label>
+    <input class="campo" id="clave" type="password" autocomplete="current-password" required>
+    <div class="acciones"><button class="boton principal">Entrar</button></div>
+    <p id="errEntrar" role="alert"></p></form>`;
+  $('#fEntrar').onsubmit = async (e) => {
+    e.preventDefault();
+    try{ await api('entrar', { clave: $('#clave').value }); arrancar(); }
+    catch(err){ $('#errEntrar').textContent = err.message; }
+  };
+}
+
+/* ── el armazón ── */
+const PESTANAS = [
+  ['propuestas', '✉️', 'Por mandar'],
+  ['pendientes', '✅', 'Pendientes'],
+  ['chats', '👥', 'Chats'],
+  ['ajustes', '⏰', 'Saludos'],
+  ['platica', '💬', 'Platica'],
+];
+function pintarArmazon(){
+  $('#app').innerHTML = `<div class="envoltura">
+    <header><div class="fila"><h1>Secre</h1><button class="boton pausa" id="bPausa"></button></div>
+      <div class="cuentas" id="cuentas" role="group" aria-label="Cuenta"></div><div id="conexion"></div></header>
+    <main id="hoja"></main></div>
+    <nav class="pestanas" role="tablist">${PESTANAS.map(([k, i, n]) => `<button role="tab" data-p="${k}" aria-selected="${k === pestana}"><span class="ico" aria-hidden="true">${i}</span>${n}<span class="globo" hidden></span></button>`).join('')}</nav>`;
+  document.querySelectorAll('nav.pestanas button').forEach(b => b.onclick = () => {
+    pestana = b.dataset.p; try{ localStorage.setItem('secre-pestana', pestana); }catch{}
+    document.querySelectorAll('nav.pestanas button').forEach(x => x.setAttribute('aria-selected', x === b));
+    huella = ''; pintar(true); window.scrollTo(0, pestana === 'platica' ? document.body.scrollHeight : 0);
+  });
+  $('#bPausa').onclick = async () => {
+    try{
+      const pausado = datos && datos.config.pausaHasta > Date.now();
+      const r = await accion(pausado ? { accion: 'reanudar' } : { accion: 'pausa', cuanto: '2h' });
+      avisito(r.hecho); await cargar(true);
+    }catch(e){ avisito(e.message); }
+  };
+}
+
+async function arrancar(){
+  try{ cuentas = (await api('cuentas')).cuentas; }catch{ return; }
+  if(!cuentas.find(c => c.id === actual)) actual = cuentas[0] && cuentas[0].id;
+  pintarArmazon();
+  await cargar(true);
+  clearInterval(pintarEntrar.reloj);
+  pintarEntrar.reloj = setInterval(() => cargar(false).catch(() => {}), 4000);
+}
+
+async function cargar(forzar){
+  const [cs, d] = await Promise.all([api('cuentas'), api(actual)]);
+  cuentas = cs.cuentas; datos = d;
+  pintar(forzar);
+}
+
+/* no se repinta lo que no cambió, ni mientras se escribe en un campo de la hoja */
+function pintar(forzar){
+  if(!datos) return;
+  $('#cuentas').innerHTML = cuentas.map(c => `<button class="cuenta" data-c="${esc(c.id)}" aria-pressed="${c.id === actual}"><span class="punto ${c.conectado ? 'si' : ''}" aria-hidden="true"></span>${esc(c.id)}<span class="oculto">${c.conectado ? ' (conectada)' : ' (sin conectar)'}</span></button>`).join('');
+  document.querySelectorAll('.cuenta').forEach(b => b.onclick = async () => { actual = b.dataset.c; huella = ''; await cargar(true); });
+  const k = datos.conexion || {};
+  $('#conexion').innerHTML = k.conectado ? '' : k.codigo
+    ? `<div class="aviso"><b>Falta vincular «${esc(datos.cuenta)}».</b> En ese teléfono: WhatsApp → Dispositivos vinculados → Vincular un dispositivo → <b>Vincular con número de teléfono</b>, y escribe:<span class="codigo">${esc(k.codigo)}</span></div>`
+    : `<div class="aviso">«${esc(datos.cuenta)}» no está conectada${k.error ? ': ' + esc(k.error) : '. Esperando a WhatsApp…'}</div>`;
+  const pausado = datos.config.pausaHasta > Date.now();
+  $('#bPausa').textContent = pausado ? `▶ Seguir (pausa hasta ${hora(datos.config.pausaHasta)})` : '⏸ Pausa 2 h';
+  const nProp = datos.propuestas.length, nPend = datos.pendientes.filter(p => !p.hecho).length;
+  globo('propuestas', nProp); globo('pendientes', nPend);
+
+  const h = pestana + JSON.stringify(pestana === 'platica' ? datos.charla : pestana === 'propuestas' ? datos.propuestas : pestana === 'pendientes' ? datos.pendientes : [datos.chats, datos.config]);
+  if(!forzar && h === huella) return;
+  const enfocado = document.activeElement;
+  if(!forzar && enfocado && $('#hoja').contains(enfocado) && /INPUT|TEXTAREA|SELECT/.test(enfocado.tagName)) return;
+  if(!forzar && $('#hoja details[open]') && pestana === 'chats') return;
+  huella = h;
+  ({ propuestas: hojaPropuestas, pendientes: hojaPendientes, chats: hojaChats, ajustes: hojaAjustes, platica: hojaPlatica })[pestana]();
+}
+function globo(p, n){ const g = $(`nav.pestanas [data-p="${p}"] .globo`); if(!g) return; g.hidden = !n; g.textContent = n > 99 ? '99+' : n; }
+const nombreDe = (jid) => (datos.chats.find(c => c.id === jid) || {}).nombre || String(jid).split('@')[0];
+
+/* ══ Por mandar ══════════════════════════════════════════════════════════ */
+function hojaPropuestas(){
+  const ps = [...datos.propuestas].sort((a, b) => b.t - a.t);
+  $('#hoja').innerHTML = `<h2>Por mandar</h2>` + (ps.length ? ps.map(p => `
+    <article class="tarjeta" data-n="${p.n}">
+      <div class="fila"><span class="quien">${esc(p.nombre)}</span><span class="meta">#${p.n} · ${p.tipo === 'manana' ? 'buenos días' : p.tipo === 'noche' ? 'buenas noches' : 'respuesta'} · ${cuando(p.t)}</span></div>
+      ${p.dijo ? `<p class="meta">Te escribió: «${esc(p.dijo)}»</p>` : ''}
+      <label class="etq" for="t${p.n}">Lo que se mandaría (puedes cambiarlo)</label>
+      <textarea class="campo" id="t${p.n}">${esc(p.texto)}</textarea>
+      ${p.motivo ? `<p class="motivo">⚠️ ${esc(p.motivo)}</p>` : ''}
+      <div class="acciones"><button class="boton principal" data-mandar>Mandar</button><button class="boton peligro" data-tirar>Tirar</button></div>
+    </article>`).join('') : `<p class="vacio">Nada por mandar. Cuando alguien te escriba, aquí aparece la respuesta lista.</p>`);
+  document.querySelectorAll('#hoja article[data-n]').forEach(el => {
+    const n = +el.dataset.n, p = datos.propuestas.find(x => x.n === n);
+    $('[data-mandar]', el).onclick = async (e) => {
+      const texto = $('textarea', el).value.trim(); if(!texto) return avisito('Está vacío');
+      e.target.disabled = true;
+      try{ await api(actual + '/propuesta', { n, texto: texto === p.texto ? '' : texto }); avisito('Mandado a ' + p.nombre); await cargar(true); }
+      catch(err){ e.target.disabled = false; avisito(err.message); }
+    };
+    $('[data-tirar]', el).onclick = async () => { try{ await api(actual + '/propuesta', { n, tirar: true }); avisito('Tirada'); await cargar(true); }catch(err){ avisito(err.message); } };
+  });
+}
+
+/* ══ Pendientes ══════════════════════════════════════════════════════════ */
+function hojaPendientes(){
+  const ps = datos.pendientes;
+  $('#hoja').innerHTML = `<h2>Pendientes</h2>
+    <form class="fila" id="fAnota" style="flex-wrap:nowrap"><label class="oculto" for="nuevoP">Nuevo pendiente</label><input class="campo" id="nuevoP" placeholder="Anota algo…" autocomplete="off"><button class="boton principal">Anotar</button></form>
+    <div class="tarjeta" style="margin-top:12px">${ps.length ? ps.map(p => `
+      <label class="pend ${p.hecho ? 'hecho' : ''}"><input type="checkbox" data-n="${p.n}" ${p.hecho ? 'checked' : ''}>
+        <span><span class="txt">${esc(p.texto)}</span><br><span class="meta">${p.nombre ? esc(p.nombre) + ' · ' : ''}${cuando(p.t)}</span></span></label>`).join('') : '<p class="vacio">Sin pendientes. Los saco de lo que te escriben.</p>'}</div>`;
+  $('#fAnota').onsubmit = async (e) => { e.preventDefault(); const t = $('#nuevoP').value.trim(); if(!t) return; try{ await accion({ accion: 'anota', texto: t }); await cargar(true); }catch(err){ avisito(err.message); } };
+  document.querySelectorAll('#hoja .pend input').forEach(c => c.onchange = async () => { try{ await api(actual + '/pendiente', { n: +c.dataset.n, hecho: c.checked }); await cargar(true); }catch(err){ avisito(err.message); } });
+}
+
+/* ══ Chats ═══════════════════════════════════════════════════════════════ */
+const NOMBRE_MODO = { borrador: 'te propongo respuestas', callado: 'sólo anoto pendientes' };
+function hojaChats(){
+  const cs = datos.chats;
+  $('#hoja').innerHTML = `<h2>Chats</h2><p class="meta">Aparecen cuando te escriben. Toca uno para decirle a Secre cómo tratarlo.</p>` + (cs.length ? cs.map(c => `
+    <details class="tarjeta" data-id="${esc(c.id)}"><summary><span class="quien">${c.grupo ? '👥 ' : ''}${esc(c.nombre)}</span><span class="modo">${NOMBRE_MODO[c.modoAhora] || c.modoAhora}</span></summary>
+      <label class="etq">Qué hace Secre con este chat</label>
+      <select class="campo" data-modo>
+        <option value="" ${!c.modo ? 'selected' : ''}>Lo normal (${NOMBRE_MODO[c.grupo ? datos.config.grupos : datos.config.porDefecto]})</option>
+        <option value="borrador" ${c.modo === 'borrador' ? 'selected' : ''}>Proponerme respuestas</option>
+        <option value="callado" ${c.modo === 'callado' ? 'selected' : ''}>Sólo anotar pendientes</option></select>
+      <label class="etq">Quién es (para que las respuestas le hablen bien)</label>
+      <textarea class="campo" data-nota placeholder="ej. es mi novia, háblale bonito · es el profe de mate, de usted">${esc(c.nota || '')}</textarea>
+      <label class="etq">Grupos (separados por coma)</label>
+      <input class="campo" data-etq value="${esc((c.etiquetas || []).join(', '))}" placeholder="escuela, familia">
+      <div class="acciones"><button class="boton principal" data-guardar>Guardar</button></div>
+    </details>`).join('') : '<p class="vacio">Todavía no te ha escrito nadie desde que prendiste a Secre.</p>');
+  document.querySelectorAll('#hoja details[data-id]').forEach(el => {
+    $('[data-guardar]', el).onclick = async () => {
+      try{ await api(actual + '/chat', { id: el.dataset.id, modo: $('[data-modo]', el).value, nota: $('[data-nota]', el).value, etiquetas: $('[data-etq]', el).value }); el.open = false; avisito('Guardado'); await cargar(true); }
+      catch(err){ avisito(err.message); }
+    };
+  });
+}
+
+/* ══ Saludos, reglas y ajustes ═══════════════════════════════════════════ */
+function opcionesChats(sel){ return datos.chats.filter(c => !c.grupo).map(c => `<option value="${esc(c.id)}" ${c.id === sel ? 'selected' : ''}>${esc(c.nombre)}</option>`).join(''); }
+function textoRegla(r){
+  const p = [];
+  if(r.palabras) p.push('si hablan de ' + r.palabras.join(', '));
+  if(r.etiquetas) p.push('con los de ' + r.etiquetas.join(', '));
+  if(r.chats) p.push('con ' + r.chats.map(nombreDe).join(', '));
+  if(r.de) p.push(`de ${r.de} a ${r.a}`);
+  if(r.hasta) p.push('hasta el ' + dia(r.hasta - 1));
+  return `<b>${r.modo === 'callado' ? 'No proponer' : 'Proponer'}</b> ${esc(p.join(' · '))}`;
+}
+function hojaAjustes(){
+  const c = datos.config;
+  $('#hoja').innerHTML = `<h2>Buenos días y buenas noches</h2>
+    <p class="meta">A la hora que pongas, Secre te deja el saludo listo en «Por mandar». Tú lo mandas con un toque.</p>
+    ${c.saludos.map((s, i) => `<div class="tarjeta" data-i="${i}"><div class="fila"><span class="quien">${esc(nombreDe(s.chat))}</span></div>
+      <div class="dos"><div><label class="etq">Buenos días</label><input class="campo" type="time" data-m value="${esc(s.manana)}"></div>
+      <div><label class="etq">Buenas noches</label><input class="campo" type="time" data-n value="${esc(s.noche)}"></div></div>
+      <label class="etq">Que varíe hasta ± minutos (para que no sea siempre la misma hora)</label><input class="campo" type="number" min="0" max="60" data-v value="${s.variacion ?? 10}">
+      <div class="acciones"><button class="boton principal" data-g>Guardar</button><button class="boton peligro" data-q>Quitar</button></div></div>`).join('')}
+    <div class="tarjeta"><label class="etq" for="sChat">Agregar saludos para…</label>
+      ${datos.chats.some(x => !x.grupo) ? `<select class="campo" id="sChat">${opcionesChats()}</select>
+      <div class="dos"><div><label class="etq" for="sM">Buenos días</label><input class="campo" id="sM" type="time" value="07:00"></div><div><label class="etq" for="sN">Buenas noches</label><input class="campo" id="sN" type="time" value="22:30"></div></div>
+      <div class="acciones"><button class="boton principal" id="bSaludo">Agregar</button></div>` : '<p class="meta">Primero tiene que escribirte esa persona (o tú a ella) para que Secre la conozca.</p>'}</div>
+
+    <h2>Reglas</h2>
+    <p class="meta">Para cambiar lo que hace Secre según el tema, el grupo o la hora. La más nueva gana.</p>
+    ${c.reglas.map(r => `<div class="tarjeta fila" style="flex-wrap:nowrap"><span style="flex:1">${textoRegla(r)}</span><button class="boton peligro" data-quitar="${esc(r.id)}">Quitar</button></div>`).join('') || '<p class="meta">Sin reglas.</p>'}
+    <details class="tarjeta"><summary><span class="quien">＋ Nueva regla</span></summary>
+      <label class="etq" for="rModo">Qué hacer</label><select class="campo" id="rModo"><option value="callado">No proponer respuestas (sólo pendientes)</option><option value="borrador">Sí proponer respuestas</option></select>
+      <label class="etq" for="rPal">Si hablan de… (palabras separadas por coma)</label><input class="campo" id="rPal" placeholder="tarea, examen">
+      <label class="etq" for="rEtq">Con los de estos grupos</label><input class="campo" id="rEtq" placeholder="escuela">
+      <div class="dos"><div><label class="etq" for="rDe">Desde las</label><input class="campo" id="rDe" type="time"></div><div><label class="etq" for="rA">Hasta las</label><input class="campo" id="rA" type="time"></div></div>
+      <label class="etq" for="rHasta">Vale hasta el día (vacío = siempre)</label><input class="campo" id="rHasta" type="date">
+      <div class="acciones"><button class="boton principal" id="bRegla">Crear regla</button></div></details>
+
+    <h2>Lo general</h2>
+    <div class="tarjeta">
+      <label class="etq" for="gDef">Chats sin ajuste propio</label>
+      <select class="campo" id="gDef"><option value="borrador" ${c.porDefecto === 'borrador' ? 'selected' : ''}>Proponerme respuestas</option><option value="callado" ${c.porDefecto === 'callado' ? 'selected' : ''}>Sólo anotar pendientes</option></select>
+      <label class="etq" for="gRes">Resumen de pendientes del día, a las</label><input class="campo" id="gRes" type="time" value="${esc(c.resumen)}">
+      <div class="acciones"><button class="boton principal" id="bGeneral">Guardar</button></div></div>`;
+
+  document.querySelectorAll('#hoja [data-i]').forEach(el => {
+    const s = c.saludos[+el.dataset.i];
+    $('[data-g]', el).onclick = async () => { try{ const r = await accion({ accion: 'saludos', chat: s.chat, manana: $('[data-m]', el).value, noche: $('[data-n]', el).value, variacion: +$('[data-v]', el).value }); avisito(r.hecho); await cargar(true); }catch(e){ avisito(e.message); } };
+    $('[data-q]', el).onclick = async () => { try{ await accion({ accion: 'quitarSaludos', chat: s.chat }); await cargar(true); }catch(e){ avisito(e.message); } };
+  });
+  const bS = $('#bSaludo'); if(bS) bS.onclick = async () => { try{ const r = await accion({ accion: 'saludos', chat: $('#sChat').value, manana: $('#sM').value, noche: $('#sN').value, variacion: 10 }); avisito(r.hecho); await cargar(true); }catch(e){ avisito(e.message); } };
+  document.querySelectorAll('#hoja [data-quitar]').forEach(b => b.onclick = async () => { try{ await accion({ accion: 'quitarRegla', id: b.dataset.quitar }); await cargar(true); }catch(e){ avisito(e.message); } });
+  const lista = (v) => v.split(',').map(x => x.trim()).filter(Boolean);
+  $('#bRegla').onclick = async () => {
+    const a = { accion: 'regla', modo: $('#rModo').value, palabras: lista($('#rPal').value), etiquetas: lista($('#rEtq').value), de: $('#rDe').value, a: $('#rA').value, hasta: $('#rHasta').value };
+    try{ const r = await accion(a); avisito(r.hecho); await cargar(true); }catch(e){ avisito('Ponle al menos un tema, un grupo o un horario'); }
+  };
+  $('#bGeneral').onclick = async () => {
+    try{ await accion({ accion: 'porDefecto', modo: $('#gDef').value }); await accion({ accion: 'resumen', hora: $('#gRes').value }); avisito('Guardado'); await cargar(true); }catch(e){ avisito(e.message); }
+  };
+}
+
+/* ══ Platica: lo mismo que escribirle en «Mensaje a ti mismo» ═══════════ */
+function hojaPlatica(){
+  const ch = datos.charla;
+  $('#hoja').innerHTML = `<h2>Platica con Secre</h2>
+    <div class="charla">${ch.length ? ch.map(m => `<div class="burbuja ${m.de === 'carlos' ? 'carlos' : 'secre'}">${esc(m.texto)}<time>${cuando(m.t)}</time></div>`).join('') : `<div class="burbuja secre">${esc(datos.ayuda)}</div>`}</div>
+    <form class="escribir" id="fOrden"><label class="oculto" for="orden">Escríbele a Secre</label><input class="campo" id="orden" placeholder="ej. a Ana dale buenos días a las 7" autocomplete="off" enterkeyhint="send"><button class="boton principal">Enviar</button></form>`;
+  $('#fOrden').onsubmit = async (e) => {
+    e.preventDefault(); const t = $('#orden').value.trim(); if(!t) return;
+    const b = $('#fOrden button'); b.disabled = true; $('#orden').value = '';
+    try{ await api(actual + '/orden', { texto: t }); await cargar(true); window.scrollTo(0, document.body.scrollHeight); $('#orden').focus(); }
+    catch(err){ $('#orden').value = t; avisito(err.message); }
+    finally{ b.disabled = false; }
+  };
+}
+
+arrancar().catch(() => pintarEntrar());
+</script>
+</body>
+</html>
