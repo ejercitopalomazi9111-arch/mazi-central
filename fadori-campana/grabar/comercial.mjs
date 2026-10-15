@@ -25,7 +25,8 @@ const DUR = await pg.evaluate(() => window.DUR), SONIDOS = await pg.evaluate(() 
 const dir = path.join(SAL, PREVIA ? 'previa-v3' : 'cuadros-v3');
 fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
 const total = Math.ceil(DUR * FPS);
-for(let i = 0; i < total; i += PREVIA || 1){
+const DESDE = Number(process.env.DESDE) || 0, HASTA = Number(process.env.HASTA) || DUR;   /* para revisar un tramo */
+for(let i = PREVIA ? Math.round(DESDE * FPS) : 0; i < (PREVIA ? Math.min(total, HASTA * FPS) : total); i += PREVIA || 1){
   await pg.evaluate(t => window.pintar(t), i / FPS);
   await pg.screenshot({ path: path.join(dir, String(i).padStart(5, '0') + '.jpg'), type: 'jpeg', quality: PREVIA ? 80 : 93 });
 }
