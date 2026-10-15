@@ -23,18 +23,25 @@ await pg.goto('file://' + path.join(RAIZ, 'comercial.html'));
 await pg.evaluate(() => window.listo);
 const DUR = await pg.evaluate(() => window.DUR), SONIDOS = await pg.evaluate(() => window.SONIDOS);
 const dir = path.join(SAL, PREVIA ? 'previa-v3' : 'cuadros-v3');
-fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
 const total = Math.ceil(DUR * FPS);
 const DESDE = Number(process.env.DESDE) || 0, HASTA = Number(process.env.HASTA) || DUR;   /* para revisar un tramo */
-for(let i = PREVIA ? Math.round(DESDE * FPS) : 0; i < (PREVIA ? Math.min(total, HASTA * FPS) : total); i += PREVIA || 1){
-  await pg.evaluate(t => window.pintar(t), i / FPS);
-  await pg.screenshot({ path: path.join(dir, String(i).padStart(5, '0') + '.jpg'), type: 'jpeg', quality: PREVIA ? 80 : 93 });
+const SOLOAUDIO = !!process.env.SOLOAUDIO;     /* rehace sólo la mezcla con los cuadros que ya están */
+if(!SOLOAUDIO){
+  fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
+  for(let i = PREVIA ? Math.round(DESDE * FPS) : 0; i < (PREVIA ? Math.min(total, HASTA * FPS) : total); i += PREVIA || 1){
+    await pg.evaluate(t => window.pintar(t), i / FPS);
+    await pg.screenshot({ path: path.join(dir, String(i).padStart(5, '0') + '.jpg'), type: 'jpeg', quality: PREVIA ? 80 : 93 });
+  }
 }
 await br.close();
 if(errores.length){ console.log('✗ errores en la página:', errores.slice(0, 5)); process.exit(1); }
 if(PREVIA){ console.log('✓ previa: uno de cada', PREVIA, 'a', FPS, '→', path.relative(process.cwd(), dir)); process.exit(0); }
 
-/* la mezcla: voz al frente, efectos debajo y la música agachándose con la voz */
+/* LA MEZCLA: la voz al frente, los efectos debajo y la música agachándose con la voz.
+   Carlos, 15 de octubre: «la música y efectos suelen estar más fuertes que la voz».
+   Los niveles están medidos con grabar/medir-mezcla.py: debajo de cada frase la
+   cama (música + efectos) queda al menos 12 dB por debajo de la voz. */
+const NIVEL = { musica: Number(process.env.NIVEL_MUSICA) || 0.24, efectos: Number(process.env.NIVEL_EFECTOS) || 0.4 };
 const A = path.join(SAL, 'audio'), musica = path.join(SAL, 'Funky-Chunk.mp3');
 const ent = ['-framerate', String(FPS), '-i', path.join(dir, '%05d.jpg'), '-i', musica];
 const fil = [], voces = [], efectos = [];
@@ -42,14 +49,25 @@ SONIDOS.forEach(([archivo, t, vol = 1], i) => {
   ent.push('-i', path.join(A, archivo));
   const ms = Math.round(t * 1000), et = 's' + i;
   const esVoz = archivo.startsWith('voz/');
-  fil.push(`[${i + 2}:a]aformat=sample_rates=44100:channel_layouts=stereo,adelay=${ms}|${ms},volume=${esVoz ? 1.0 : vol * 0.8}[${et}]`);
+  fil.push(`[${i + 2}:a]aformat=sample_rates=44100:channel_layouts=stereo,adelay=${ms}|${ms},volume=${esVoz ? 1.0 : vol * NIVEL.efectos}[${et}]`);
   (esVoz ? voces : efectos).push(`[${et}]`);
 });
-fil.push(`${voces.join('')}amix=inputs=${voces.length}:normalize=0,apad=whole_dur=${DUR}[voz]`);
-fil.push(`[voz]asplit=2[voz1][vozsc]`);
-fil.push(`${efectos.join('')}amix=inputs=${efectos.length}:normalize=0,apad=whole_dur=${DUR}[fx]`);
-fil.push(`[1:a]aformat=sample_rates=44100:channel_layouts=stereo,atrim=0:${DUR},afade=t=in:d=1.2,afade=t=out:st=${DUR - 3}:d=3,volume=0.55[mus]`);
-fil.push(`[mus][vozsc]sidechaincompress=threshold=0.03:ratio=8:attack=20:release=350[musb]`);
+/* la voz, comprimida para que se oiga pareja y presente aun en la bocina del teléfono */
+fil.push(`${voces.join('')}amix=inputs=${voces.length}:normalize=0,acompressor=threshold=0.1:ratio=3:attack=5:release=120:makeup=2,apad=whole_dur=${DUR}[voz]`);
+fil.push(`[voz]asplit=3[voz1][vozsc][vozfx]`);
+fil.push(`${efectos.join('')}amix=inputs=${efectos.length}:normalize=0,apad=whole_dur=${DUR}[fx0]`);
+fil.push(`[fx0][vozfx]sidechaincompress=threshold=0.02:ratio=4:attack=10:release=250[fx]`);
+fil.push(`[1:a]aformat=sample_rates=44100:channel_layouts=stereo,atrim=0:${DUR},afade=t=in:d=1.2,afade=t=out:st=${DUR - 3}:d=3,volume=${NIVEL.musica}[mus]`);
+fil.push(`[mus][vozsc]sidechaincompress=threshold=0.015:ratio=10:attack=15:release=400[musb]`);
+if(process.env.MEDIR){
+  /* las tres pistas por separado, sin la normalización final, para medir cuánto sobresale la voz */
+  fil.push('[voz1]anull[mv]', '[fx]anull[mf]', '[musb]anull[mm]');
+  const m = path.join(SAL, 'mezcla');
+  fs.mkdirSync(m, { recursive: true });
+  execFileSync(ff, ['-y', '-v', 'error', ...ent, '-filter_complex', fil.join(';'),
+    '-map', '[mv]', path.join(m, 'voz.wav'), '-map', '[mf]', path.join(m, 'efectos.wav'), '-map', '[mm]', path.join(m, 'musica.wav')]);
+  console.log('✓ pistas en', path.relative(process.cwd(), m)); process.exit(0);
+}
 fil.push(`[voz1][fx][musb]amix=inputs=3:normalize=0,loudnorm=I=-14:TP=-1.5:LRA=11[a]`);
 const mp4 = path.join(SAL, 'Fadori-comercial-v3' + (FPS === 60 ? '-60fps' : '') + '.mp4');
 execFileSync(ff, ['-y', '-v', 'error', ...ent, '-filter_complex', fil.join(';'), '-map', '0:v', '-map', '[a]',

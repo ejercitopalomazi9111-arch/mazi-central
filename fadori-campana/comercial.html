@@ -195,9 +195,9 @@ window.SONIDOS = [
   ['voz/07.mp3', 23.5], ['voz/08.mp3', 26.7], ['voz/09.mp3', 30.9], ['voz/10.mp3', 32.3], ['voz/11.mp3', 33.7], ['voz/12.mp3', 36.15],
   ['voz/13.mp3', 40.0], ['voz/14.mp3', 44.85], ['voz/15.mp3', 48.7],
   ['timbre.wav', 0.05, 0.55], ['latido.wav', 1.2, .5], ['latido.wav', 2.0, .5], ['latido.wav', 2.8, .55], ['latido.wav', 3.6, .6], ['latido.wav', 4.4, .7], ['subida.wav', 3.5, .45],
-  ['golpe.wav', 5.6, .9], ['whoosh.wav', 6.85, .6], ['toque.wav', 13.3, .7], ['toque.wav', 15.55, .7], ['toque.wav', 16.15, .7], ['toque.wav', 17.05, .7],
+  ['golpe.wav', 5.6, .5], ['whoosh.wav', 6.85, .6], ['toque.wav', 13.3, .7], ['toque.wav', 15.55, .7], ['toque.wav', 16.15, .7], ['toque.wav', 17.05, .7],
   ['whoosh.wav', 18.5, .55], ['ding.wav', 23.05, .8], ['whoosh.wav', 26.3, .55], ['whoosh.wav', 30.75, .45], ['whoosh.wav', 32.15, .45], ['whoosh.wav', 33.55, .45],
-  ['subida.wav', 34.0, .5], ['golpe.wav', 36.0, .8], ['gol.wav', 36.3, .7],   /* el grito de la tribuna del mismo video del partido */ ['whoosh.wav', 39.5, .55], ['whoosh.wav', 41.2, .5], ['golpe.wav', 44.4, .85], ['toque.wav', 48.6, .6],
+  ['subida.wav', 34.0, .5], ['golpe.wav', 36.0, .8], ['gol.wav', 36.3, .7],   /* el grito de la tribuna del mismo video del partido */ ['whoosh.wav', 39.5, .3], ['whoosh.wav', 41.2, .25], ['golpe.wav', 44.4, .85], ['toque.wav', 48.6, .6],
 ];
 
 /* las grabaciones: carpeta, cuadros por segundo y la función que dice qué cuadro toca */
@@ -225,16 +225,25 @@ function poner(img, src){ if(img.dataset.src === src) return; img.dataset.src = 
 
 
 /* EL RITMO de «Funky Chunk»: 115 golpes por minuto, el primero a los 0.03 s
-   (medido de la canción, no a ojo). Cada patrón se mueve a golpes */
+   (medido de la canción, no a ojo). Los patrones del fondo se DESLIZAN parejo
+   al tempo, sin brincar en cada golpe (Carlos, 15 de octubre: «deben hacerlo
+   suavemente, no en brincos»): corren media celda por golpe y respiran
+   con una onda lenta de 4 golpes, nunca con un salto. */
 const GOLPE = 60 / 115, FASE = 0.03;
-function ritmo(t){ const b = (t - FASE) / GOLPE, n = Math.floor(b), f = b - n; return { n, f, pulso: Math.exp(-f * 5), paso: n + eo(Math.min(1, f * 3)) }; }
+function ritmo(t){ const b = (t - FASE) / GOLPE, n = Math.floor(b), f = b - n; return { b, n, f, pulso: Math.exp(-f * 5), paso: n + eo(Math.min(1, f * 3)) }; }
+const lento = (b) => 0.5 - 0.5 * Math.cos(b * Math.PI / 2);          /* 0→1→0 cada 4 golpes, suave */
+/* corrimiento continuo: `v` px por golpe, dando la vuelta justo en el periodo del
+   dibujo para que el salto del módulo no se note (rayas a 45°: 68·√2 en horizontal) */
+const RAYA = 68 * Math.SQRT2;
+const deslizar = (t, celda = RAYA, v = 24) => -(((t - FASE) / GOLPE * v) % celda);
 function moverPatron(pa, t){
-  const r = ritmo(t), modo = pa.dataset.ritmo || 'paso';
-  if(pa.classList.contains('rayas')) pa.style.transform = 'translateX(' + (-(r.paso % 8) * 48) + 'px)';
-  else if(pa.classList.contains('anillos')) pa.style.transform = 'scale(' + (1 + 0.05 * r.pulso + (r.paso % 2) * 0.03) + ')';
-  else if(modo === 'latido') pa.style.transform = 'translate(' + ((r.paso * 12) % 48) + 'px,' + ((r.paso * 12) % 48) + 'px) scale(' + (1 + 0.06 * r.pulso) + ')';
-  else pa.style.transform = 'translate(' + ((r.paso * 24) % 48) + 'px,' + (-(t * 14) % 48) + 'px) scale(' + (1 + 0.03 * r.pulso) + ')';
-  pa.style.opacity = (0.75 + 0.25 * r.pulso).toFixed(3);
+  const r = ritmo(t), modo = pa.dataset.ritmo || 'paso', s = lento(r.b), c = pa.classList;
+  const celda = c.contains('reja') ? 64 : 48;
+  if(c.contains('rayas')) pa.style.transform = 'translateX(' + deslizar(t).toFixed(2) + 'px)';
+  else if(c.contains('anillos')) pa.style.transform = 'scale(' + (1 + 0.04 * s).toFixed(4) + ')';
+  else if(modo === 'latido'){ const d = deslizar(t, celda, 12); pa.style.transform = 'translate(' + (-d).toFixed(2) + 'px,' + (-d).toFixed(2) + 'px)'; }
+  else pa.style.transform = 'translate(' + (-deslizar(t, celda, 24)).toFixed(2) + 'px,' + deslizar(t, celda, 7).toFixed(2) + 'px)';
+  pa.style.opacity = (0.82 + 0.1 * s).toFixed(3);
 }
 
 window.pintar = async function(t){
@@ -291,7 +300,7 @@ const escenas = {
     $('e1anillo').style.transform = 'rotate(' + (-90 + l * 4) + 'deg) scale(' + (0.96 + 0.04 * eo(l / 2)) + ')';
     $('e1num').style.color = p > .5 ? '#FF6A4D' : '#fff';
   },
-  e3(l){ const k = rebote(l / 0.45); $('e3t').style.transform = 'scale(' + (2.4 - 1.4 * k) + ') rotate(' + (1 - eo(l / 0.45)) * -9 + 'deg) translate(' + Math.sin(l * 70) * 6 * Math.exp(-l * 6) + 'px,0)'; $('e3ray').style.transform = 'translateX(' + (-(ritmo(l + 5.6).paso % 8) * 48) + 'px)'; },
+  e3(l){ const k = rebote(l / 0.45); $('e3t').style.transform = 'scale(' + (2.4 - 1.4 * k) + ') rotate(' + (1 - eo(l / 0.45)) * -9 + 'deg) translate(' + Math.sin(l * 70) * 6 * Math.exp(-l * 6) + 'px,0)'; $('e3ray').style.transform = 'translateX(' + deslizar(l + 5.6).toFixed(2) + 'px)'; },
   e4(l, d){
     const r = appEn(l);
     poner($('e4img'), REC('app', tope('app', r * RF)));
@@ -413,7 +422,7 @@ const escenas = {
     palabras('#e9t', l, 0.45, 0.32);
     $('e9sub').style.opacity = cl((l - 4.3) / 0.4); $('e9sub').style.transform = 'translateY(' + (1 - eo((l - 4.3) / 0.5)) * 30 + 'px)';
     const q = rebote((l - 4.1) / 0.6); $('e9qr').style.transform = 'scale(' + q + ') rotate(' + ((1 - q) * 20 + Math.sin(l * 1.3) * 1.5) + 'deg)';
-    $('e9ray').style.transform = 'translateX(' + (-(ritmo(l + 44.4).paso % 8) * 48) + 'px)';
+    $('e9ray').style.transform = 'translateX(' + deslizar(l + 44.4).toFixed(2) + 'px)';
   },
   e10(l){ $('e10txt').style.transform = 'translateY(' + (1 - eo(l / 0.6)) * 30 + 'px) scale(' + (1 + l * 0.008) + ')'; },
 };
