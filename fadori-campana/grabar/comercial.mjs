@@ -29,12 +29,35 @@ await pg.addInitScript(c => { window.CUADROS = c; }, cuadros);
 const errores = []; pg.on('pageerror', e => errores.push(e.message));
 await pg.goto('file://' + path.join(RAIZ, 'comercial.html'));
 await pg.evaluate(() => window.listo);
-const DUR = await pg.evaluate(() => window.DUR), SONIDOS = await pg.evaluate(() => window.SONIDOS);
-const dir = path.join(SAL, PREVIA ? 'previa-v3' : 'cuadros-v3');
+const DUR = await pg.evaluate(() => window.DUR);
+let SONIDOS = await pg.evaluate(() => window.SONIDOS);
+/* OTRA VOZ (Carlos: «dame 2 nuevas versiones con voces distintas»): VOZ=voz-sarah
+   usa salida/audio/voz-sarah/NN.mp3, con su tiempos.json (cuándo entra cada frase,
+   alineada a la palabra clave) y su palabras.json (cuándo sale cada palabra de los
+   letreros). El video es el mismo: sólo se vuelven a pintar los tramos con letreros
+   que siguen a la voz, sobre una copia enlazada de los cuadros de la versión base. */
+const VOZ = process.env.VOZ || '';
+const TRAMOS = [[7, 18.6], [23, 26.4], [44.4, 52.6]];
+if(VOZ){
+  const dv = path.join(SAL, 'audio', VOZ), T = JSON.parse(fs.readFileSync(path.join(dv, 'tiempos.json'), 'utf8'));
+  SONIDOS = SONIDOS.map(([a, t, v]) => a.startsWith('voz/') ? [VOZ + '/' + a.slice(4), T[a.slice(4, 6)] ?? t, v] : [a, t, v]);
+  await pg.evaluate(p => { window.PALABRAS = p; }, JSON.parse(fs.readFileSync(path.join(dv, 'palabras.json'), 'utf8')));
+}
+const dir = path.join(SAL, PREVIA ? 'previa-v3' : 'cuadros-v3' + (VOZ ? '-' + VOZ : ''));
 const total = Math.ceil(DUR * FPS);
 const DESDE = Number(process.env.DESDE) || 0, HASTA = Number(process.env.HASTA) || DUR;   /* para revisar un tramo */
 const SOLOAUDIO = !!process.env.SOLOAUDIO;     /* rehace sólo la mezcla con los cuadros que ya están */
-if(!SOLOAUDIO){
+if(!SOLOAUDIO && VOZ && !PREVIA){
+  /* copia enlazada (no ocupa disco) y se repintan sólo los tramos con letreros;
+     cada cuadro se BORRA antes de escribirlo para no tocar el de la versión base */
+  if(!fs.existsSync(dir)) execFileSync('cp', ['-al', path.join(SAL, 'cuadros-v3'), dir]);
+  for(const [a, b] of TRAMOS) for(let i = Math.round(a * FPS); i < Math.min(total, b * FPS); i++){
+    const f = path.join(dir, String(i).padStart(5, '0') + '.jpg');
+    await pg.evaluate(t => window.pintar(t), i / FPS);
+    fs.rmSync(f, { force: true });
+    await pg.screenshot({ path: f, type: 'jpeg', quality: 93 });
+  }
+} else if(!SOLOAUDIO){
   fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
   for(let i = PREVIA ? Math.round(DESDE * FPS) : 0; i < (PREVIA ? Math.min(total, HASTA * FPS) : total); i += PREVIA || 1){
     await pg.evaluate(t => window.pintar(t), i / FPS);
@@ -77,7 +100,7 @@ if(process.env.MEDIR){
   console.log('✓ pistas en', path.relative(process.cwd(), m)); process.exit(0);
 }
 fil.push(`[voz1][fx][musb]amix=inputs=3:normalize=0,loudnorm=I=-14:TP=-1.5:LRA=11[a]`);
-const mp4 = path.join(SAL, 'Fadori-comercial-v3' + (FPS === 60 ? '-60fps' : '') + '.mp4');
+const mp4 = path.join(SAL, 'Fadori-comercial-v3' + (FPS === 60 ? '-60fps' : '') + (VOZ ? '-' + VOZ : '') + '.mp4');
 execFileSync(ff, ['-y', '-v', 'error', ...ent, '-filter_complex', fil.join(';'), '-map', '0:v', '-map', '[a]',
   '-c:v', 'libx264', '-preset', 'slow', '-crf', '18', '-profile:v', 'high', '-level:v', '4.2', '-pix_fmt', 'yuv420p',
   '-c:a', 'aac', '-b:a', '192k', '-ar', '44100', '-ac', '2', '-movflags', '+faststart', '-t', String(DUR), mp4]);
@@ -85,8 +108,8 @@ console.log('✓', DUR.toFixed(1) + ' s →', path.relative(process.cwd(), mp4))
 
 /* la copia para mandar por el chat (tope de 30 MB): dos pasadas al bitrate que cabe,
    mismo 1080p y mismos cuadros; el audio, AAC estéreo 44.1 kHz, el que el iPhone lee siempre */
-const chico = path.join(SAL, 'Fadori-comercial-para-mandar.mp4'), kbps = Math.floor((27.5 * 8192) / DUR) - 160;
-const log = path.join(SAL, 'dospasadas');
+const chico = path.join(SAL, 'Fadori-comercial-para-mandar' + (VOZ ? '-' + VOZ : '') + '.mp4'), kbps = Math.floor((27.5 * 8192) / DUR) - 160;
+const log = path.join(SAL, 'dospasadas' + (VOZ ? '-' + VOZ : ''));
 execFileSync(ff, ['-y', '-v', 'error', '-i', mp4, '-c:v', 'libx264', '-preset', 'slow', '-b:v', kbps + 'k', '-pass', '1', '-passlogfile', log, '-an', '-f', 'mp4', '/dev/null']);
 execFileSync(ff, ['-y', '-v', 'error', '-i', mp4, '-c:v', 'libx264', '-preset', 'slow', '-b:v', kbps + 'k', '-maxrate', Math.round(kbps * 1.6) + 'k', '-bufsize', Math.round(kbps * 2) + 'k',
   '-pass', '2', '-passlogfile', log, '-profile:v', 'high', '-level:v', '4.2', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '160k', '-ar', '44100', '-ac', '2', '-movflags', '+faststart', chico]);
