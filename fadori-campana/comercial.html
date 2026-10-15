@@ -29,6 +29,12 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
 .chip{display:inline-flex;align-items:center;gap:14px;background:#E8590C;color:#fff;font:800 30px/1 Pop;letter-spacing:.08em;text-transform:uppercase;padding:16px 28px;border-radius:99px}
 .ilus{position:absolute;right:26px;bottom:22px;z-index:50;font:600 17px/1 Pop;color:rgba(255,255,255,.92);background:rgba(0,0,0,.45);padding:7px 12px;border-radius:8px;opacity:0}
 #grano{position:absolute;inset:0;z-index:90;mix-blend-mode:overlay;opacity:.22;pointer-events:none;width:1920px;height:1080px}
+/* el color de cine: sombras frías, luces cálidas */
+#grado{position:absolute;inset:0;z-index:88;pointer-events:none;mix-blend-mode:soft-light;background:linear-gradient(180deg,rgba(255,176,96,.28),rgba(255,140,60,.08) 45%,rgba(0,96,120,.26))}
+#destello{position:absolute;inset:-20%;z-index:91;pointer-events:none;mix-blend-mode:screen;opacity:0;background:radial-gradient(40% 55% at 50% 50%,rgba(255,214,150,.95),rgba(255,120,40,.45) 45%,transparent 72%)}
+#lugar{position:absolute;left:96px;bottom:150px;z-index:96;color:#F5EADF;font:600 26px/1.3 Pop;letter-spacing:.22em;text-transform:uppercase;opacity:0}
+#lugar b{display:block;font:800 30px/1.3 Pop;letter-spacing:.28em}
+#lugar span{color:#F4B63A}
 #vin{position:absolute;inset:0;z-index:89;background:radial-gradient(ellipse at center,transparent 58%,rgba(0,0,0,.42) 100%);pointer-events:none}
 #franjas::before,#franjas::after{content:"";position:absolute;left:0;right:0;height:var(--f,0px);background:#000;z-index:95}
 #franjas::before{top:0}#franjas::after{bottom:0}
@@ -139,7 +145,10 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
 </section>
 
 <canvas id="grano" width="480" height="270"></canvas>
+<div id="grado"></div>
+<div id="destello"></div>
 <div id="vin"></div>
+<div id="lugar"><b>Instituto Rembrandt</b><span id="lugarHora">10:00 a.m. · suena el timbre</span></div>
 <div id="franjas" style="position:absolute;inset:0;pointer-events:none;z-index:95"></div>
 </div>
 <script>
@@ -164,6 +173,7 @@ window.SONIDOS = [
 ];
 
 /* las grabaciones: carpeta, cuadros por segundo y la función que dice qué cuadro toca */
+const RF = 60;                                  /* las grabaciones van a 60 cuadros por segundo */
 const REC = (dir, k) => 'salida/rec/' + dir + '/' + String(Math.max(0, Math.round(k))).padStart(5, '0') + '.jpg';
 const N = window.CUADROS || {};                /* comercial.mjs dice cuántos cuadros hay de cada una */
 const tope = (dir, k) => Math.min(k, (N[dir] || 1e9) - 1);
@@ -178,25 +188,39 @@ function poner(img, src){ if(img.dataset.src === src) return; img.dataset.src = 
 
 function pintarGrano(t){
   const c = $('grano'), g = c.getContext('2d'), d = g.createImageData(480, 270), a = d.data;
-  let s = (Math.floor(t * 30) * 2654435761) >>> 0;
+  let s = (Math.floor(t * 30) * 2654435761) >>> 0;   /* el grano cambia a 30: a 60 hierve de más */
   for(let i = 0; i < a.length; i += 4){ s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; const v = s & 255; a[i] = a[i + 1] = a[i + 2] = v; a[i + 3] = 255; }
   g.putImageData(d, 0, 0);
 }
 
 window.pintar = async function(t){
   pendientes.length = 0;
-  for(const [id, a, b] of E){
-    const el = $(id), dentro = t >= a - 0.3 && t < b + 0.3;
-    if(!dentro){ el.style.opacity = 0; continue; }
-    const ent = id === 'e1' ? 1 : eo((t - a + 0.3) / 0.35), sal = id === 'e10' ? 0 : eo((t - b + 0.3) / 0.3);
-    el.style.opacity = Math.min(ent, 1 - sal);
-    /* cada corte entra con un empujón de cámara y sale acercándose */
-    el.style.transform = 'scale(' + (1.06 - 0.06 * ent + 0.08 * sal) + ')';
-    el.style.zIndex = Math.round(t * 10);
+  /* CORTES DE CINE: la escena que sale se barre a la izquierda con desenfoque
+     de movimiento y la que entra llega de la derecha; en el corte, un destello */
+  const W = 0.2;                                 /* medio corte, en segundos */
+  E.forEach(([id, a, b], i) => {
+    const el = $(id), primera = i === 0, ultima = i === E.length - 1;
+    if(t < a - W || t >= b + W){ el.style.opacity = 0; el.style.filter = ''; return; }
+    const pe = primera ? 1 : cl((t - (a - W)) / (2 * W)), px = ultima ? 0 : cl((t - (b - W)) / (2 * W));
+    const x = (1 - eio(pe)) * 640 - eio(px) * 640, bl = 30 * Math.sin(Math.PI * pe) + 30 * Math.sin(Math.PI * px);
+    el.style.opacity = Math.min(cl(pe * 2.2), cl((1 - px) * 2.2));
+    el.style.transform = 'translateX(' + x + 'px) scale(' + (1.04 - 0.04 * eo(pe) + 0.05 * eo(px)) + ')';
+    el.style.filter = bl > 0.5 ? 'blur(' + bl.toFixed(1) + 'px)' : '';
+    el.style.zIndex = i + 1;
     escenas[id](t - a, b - a);
-  }
-  /* franjas de cine al principio, que se abren cuando entra la app */
-  $('franjas').style.setProperty('--f', (110 * (1 - eio((t - 6.6) / 0.9))) + 'px');
+  });
+  let fl = 0; for(const [, , b] of E.slice(0, -1)) fl = Math.max(fl, Math.exp(-Math.pow((t - b) / 0.13, 2)));
+  $('destello').style.opacity = (0.85 * fl).toFixed(3);
+  $('destello').style.transform = 'translateX(' + (Math.sin(t * 3) * 300) + 'px)';
+  /* cámara en mano: un vaivén chiquito, nunca quieta del todo */
+  const mano = 'translate(' + (Math.sin(t * 0.9) * 3 + Math.sin(t * 2.3) * 1.2).toFixed(2) + 'px,' + (Math.cos(t * 0.7) * 2.5 + Math.sin(t * 1.9)).toFixed(2) + 'px) rotate(' + (Math.sin(t * 0.5) * 0.12).toFixed(3) + 'deg)';
+  E.forEach(([id]) => { const el = $(id); if(el.style.opacity !== '0') el.style.transform += ' ' + mano; });
+  /* franjas de cine: anchas al principio, finas el resto, fuera en los créditos */
+  const fin = E[E.length - 1][1];
+  $('franjas').style.setProperty('--f', ((60 + 70 * (1 - eio((t - 6.6) / 0.9))) * (1 - cl((t - fin + 0.2) / 0.4))) + 'px');
+  /* el letrero de lugar, como en las películas */
+  $('lugar').style.opacity = (cl((t - 0.5) / 0.6) * (1 - cl((t - 4.6) / 0.5))).toFixed(3);
+  $('lugar').style.transform = 'translateY(' + ((1 - eo((t - 0.5) / 0.8)) * 16) + 'px)';
   pintarGrano(t);
   await Promise.all(pendientes);
 };
@@ -223,7 +247,7 @@ const escenas = {
   e3(l){ const k = rebote(l / 0.45); $('e3t').style.transform = 'scale(' + (2.4 - 1.4 * k) + ') rotate(' + (1 - eo(l / 0.45)) * -9 + 'deg) translate(' + Math.sin(l * 70) * 6 * Math.exp(-l * 6) + 'px,0)'; $('e3ray').style.transform = 'translateX(' + (-l * 120) + 'px)'; },
   e4(l, d){
     const r = appEn(l);
-    poner($('e4img'), REC('app', tope('app', r * 30)));
+    poner($('e4img'), REC('app', tope('app', r * RF)));
     $('e4tel').style.transform = 'translateY(' + (1 - eo(l / 0.7)) * 700 + 'px) rotate(' + (5 - 5 * eo(l / 0.9) + Math.sin(l * 0.8) * 0.6) + 'deg)';
     document.querySelectorAll('#e4fondo .flota').forEach((f, i) => { f.style.transform = 'translate(' + Math.sin(l * 0.5 + i * 2) * 40 + 'px,' + (Math.cos(l * 0.4 + i) * 30 - l * 8) + 'px) rotate(' + l * (i % 2 ? 6 : -6) + 'deg)'; });
     $('e4chip').style.transform = 'scale(' + rebote((l - 0.4) / 0.5) + ')';
@@ -236,14 +260,14 @@ const escenas = {
     $('e4ilus').style.opacity = cl((l - 3.2) / 0.3);
   },
   e5(l, d){
-    poner($('e5tvimg'), REC('tv-episodio', tope('tv-episodio', l * 30)));
-    poner($('e5img'), REC('app', tope('app', (20.0 + l * 0.55) * 30)));
+    poner($('e5tvimg'), REC('tv-episodio', tope('tv-episodio', l * RF)));
+    poner($('e5img'), REC('app', tope('app', (20.0 + l * 0.55) * RF)));
     $('e5tv').style.transform = 'rotateY(' + (16 - 6 * eio(l / d)) + 'deg) translateX(' + (1 - eo(l / 0.7)) * -400 + 'px) scale(' + (0.96 + 0.06 * l / d) + ')';
     $('e5tel').style.transform = 'translateX(' + (1 - eo((l - 0.2) / 0.7)) * 600 + 'px) rotate(' + Math.sin(l * 0.9) * 1.5 + 'deg)';
     $('e5t').style.opacity = cl((l - 0.9) / 0.3); $('e5t').style.transform = 'translateY(' + (1 - eo((l - 0.9) / 0.5)) * 50 + 'px)';
   },
   e6(l, d){
-    poner($('e6img'), REC('app', tope('app', (22.4 + l) * 30)));
+    poner($('e6img'), REC('app', tope('app', (22.4 + l) * RF)));
     $('e6tel').style.transform = 'scale(' + (0.7 + 0.3 * rebote(l / 0.6) + 0.04 * l / d) + ')';
     const g = rebote((l - 0.35) / 0.5); $('e6t').style.transform = 'scale(' + g + ') rotate(' + (1 - g) * -12 + 'deg)'; $('e6t').style.opacity = cl((l - 0.35) / 0.1);
     $('e6s').style.opacity = cl((l - 1.2) / 0.3); $('e6s').style.transform = 'translateX(' + (1 - eo((l - 1.2) / 0.5)) * 120 + 'px)';
@@ -256,7 +280,7 @@ const escenas = {
     const T = [[0, 'tv-episodio', 6.5, 'Radio Divergentes'], [4.4, 'tv-pelicula', 1.0, 'Películas'], [5.8, 'tv-musica', 0.5, 'Música'], [7.2, 'tv-tanda', 14.0, 'Los proyectos de<br>tus compañeros'], [9.6, 'tv-vivo', 1.5, 'Partidos<br>en vivo']];
     let k = 0; for(let i = 0; i < T.length; i++) if(l >= T[i][0]) k = i;
     const [t0, dir, desde, nom] = T[k], u = l - t0;
-    const src = REC(dir, tope(dir, (desde + u) * 30));
+    const src = REC(dir, tope(dir, (desde + u) * RF));
     poner($('e7img'), src);
     $('e7fondo').style.backgroundImage = 'url("' + src + '")';
     /* cada toma: entra de lado con giro y la cámara se sigue acercando */
@@ -268,7 +292,7 @@ const escenas = {
   },
   e8(l){
     const r = 3.6 + l;   /* el menú bajando, igual en los dos */
-    poner($('e8a'), REC('app', tope('app', r * 30))); poner($('e8b'), REC('app-oscuro', tope('app-oscuro', r * 30)));
+    poner($('e8a'), REC('app', tope('app', r * RF))); poner($('e8b'), REC('app-oscuro', tope('app-oscuro', r * RF)));
     /* el corte diagonal de claro a oscuro, al decir «o en modo oscuro» */
     const w = eio((l - 1.55) / 0.8), X0 = (-10 + w * 180) / 100 * 1920, X1 = X0 - 0.3 * 1920;
     const en = (y) => X0 + (X1 - X0) * y / 1080;   /* dónde va la línea a la altura y */

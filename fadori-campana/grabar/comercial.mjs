@@ -10,7 +10,7 @@
 import { createRequire } from 'module'; import fs from 'fs'; import path from 'path'; import { execFileSync } from 'child_process';
 const require = createRequire('/opt/node22/lib/node_modules/'); const { chromium } = require('playwright');
 const RAIZ = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..'), SAL = path.join(RAIZ, 'salida');
-const PREVIA = Number(process.env.PREVIA) || 0, FPS = 30;
+const PREVIA = Number(process.env.PREVIA) || 0, FPS = Number(process.env.FPS) || 60;   /* Carlos: «hazlo a 60fps» */
 const ff = execFileSync('python3', ['-c', 'import imageio_ffmpeg;print(imageio_ffmpeg.get_ffmpeg_exe())']).toString().trim();
 
 const cuadros = {};
@@ -31,7 +31,7 @@ for(let i = 0; i < total; i += PREVIA || 1){
 }
 await br.close();
 if(errores.length){ console.log('✗ errores en la página:', errores.slice(0, 5)); process.exit(1); }
-if(PREVIA){ console.log('✓ previa: uno de cada', PREVIA, '→', path.relative(process.cwd(), dir)); process.exit(0); }
+if(PREVIA){ console.log('✓ previa: uno de cada', PREVIA, 'a', FPS, '→', path.relative(process.cwd(), dir)); process.exit(0); }
 
 /* la mezcla: voz al frente, efectos debajo y la música agachándose con la voz */
 const A = path.join(SAL, 'audio'), musica = path.join(SAL, 'Funky-Chunk.mp3');
@@ -50,7 +50,7 @@ fil.push(`${efectos.join('')}amix=inputs=${efectos.length}:normalize=0,apad=whol
 fil.push(`[1:a]aformat=sample_rates=44100:channel_layouts=stereo,atrim=0:${DUR},afade=t=in:d=1.2,afade=t=out:st=${DUR - 3}:d=3,volume=0.55[mus]`);
 fil.push(`[mus][vozsc]sidechaincompress=threshold=0.03:ratio=8:attack=20:release=350[musb]`);
 fil.push(`[voz1][fx][musb]amix=inputs=3:normalize=0,loudnorm=I=-14:TP=-1.5:LRA=11[a]`);
-const mp4 = path.join(SAL, 'Fadori-comercial-v3.mp4');
+const mp4 = path.join(SAL, 'Fadori-comercial-v3' + (FPS === 60 ? '-60fps' : '') + '.mp4');
 execFileSync(ff, ['-y', '-v', 'error', ...ent, '-filter_complex', fil.join(';'), '-map', '0:v', '-map', '[a]',
   '-c:v', 'libx264', '-preset', 'slow', '-crf', '18', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-ar', '48000', '-movflags', '+faststart', '-t', String(DUR), mp4]);
 console.log('✓', DUR.toFixed(1) + ' s →', path.relative(process.cwd(), mp4));
