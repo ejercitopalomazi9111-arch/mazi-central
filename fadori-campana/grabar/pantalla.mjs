@@ -58,6 +58,8 @@ await tv.context().addInitScript(() => { const D = Date; class Recreo extends D 
 await lento(tv.context(), K);
 await tv.reload(); await tv.waitForTimeout(2500 * K);
 await tv.click('#bArranque').catch(() => {}); await tv.waitForTimeout(4000 * K);
+/* con cámara lenta corren 5 minutos reales por cada uno del video: el reloj brincaba de 10:13 a 10:17 entre tomas */
+await tv.evaluate(() => { const r = document.querySelector('#reloj'); const fijo = () => { if(r.textContent !== '10:12 a.m.') r.textContent = '10:12 a.m.'; }; fijo(); new MutationObserver(fijo).observe(r, { childList: true, characterData: true, subtree: true }); });
 
 const parte = async (nombre, hacer, seg) => {
   const rec = await grabar(tv, { escala: 1 });
