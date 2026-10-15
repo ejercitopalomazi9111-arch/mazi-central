@@ -46,6 +46,9 @@ export async function abrirMesa(nombre = 'flujos'){
   const px = process.env.HTTPS_PROXY ? new URL(process.env.HTTPS_PROXY) : null;
   /* cámara y micrófono de mentira para la transmisión en vivo (WebRTC) */
   const MEDIOS = ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', '--autoplay-policy=no-user-gesture-required'];
+  /* ESCALA=2 para grabar videos: sin la bandera, el screencast de Chromium sin pantalla sale a 1x
+     aunque el contexto diga deviceScaleFactor 2 */
+  if(process.env.ESCALA) MEDIOS.push('--force-device-scale-factor=' + process.env.ESCALA);
   const br = await chromium.launch(Object.assign({ args: MEDIOS }, px && !API_LOCAL ? { proxy: { server: `${px.protocol}//${px.host}`, username: decodeURIComponent(px.username), password: decodeURIComponent(px.password) } } : {}));
   const fallas = [];
   const ok = (q, c, extra) => { console.log((c ? '  ✓ ' : '  ✗ ') + q + (!c && extra ? ' · ' + extra : '')); if(!c) fallas.push(q); };

@@ -5,13 +5,14 @@ import fs from 'fs'; import path from 'path';
    cambia (hasta ~60 por segundo) con su hora; al parar se vuelve una
    secuencia fija de 30 por segundo repitiendo el último cuadro cuando no
    cambió nada, que es lo que necesita el video. */
-export async function grabar(pg, { calidad = 92 } = {}){
+export async function grabar(pg, { calidad = 92, escala = 2 } = {}){
   const cdp = await pg.context().newCDPSession(pg), cuadros = [];
   cdp.on('Page.screencastFrame', async (f) => {
     cuadros.push({ t: f.metadata.timestamp, b: Buffer.from(f.data, 'base64') });
     try{ await cdp.send('Page.screencastFrameAck', { sessionId: f.sessionId }); }catch(e){}
   });
-  const vp = pg.viewportSize(), dpr = await pg.evaluate(() => devicePixelRatio).catch(() => 1);
+  /* el tope va en pixeles del aparato: con el devicePixelRatio de una pestaña en blanco salía a 1x */
+  const vp = pg.viewportSize(), dpr = escala;
   await cdp.send('Page.startScreencast', { format: 'jpeg', quality: calidad, maxWidth: Math.round(vp.width * Math.max(dpr, 1)), maxHeight: Math.round(vp.height * Math.max(dpr, 1)), everyNthFrame: 1 });
   return {
     async parar(dir, fps = 30){

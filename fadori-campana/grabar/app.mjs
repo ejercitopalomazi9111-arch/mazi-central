@@ -10,7 +10,8 @@
    Correr (con el servidor de Fadori en local):
      LOCAL=1 API_LOCAL=http://127.0.0.1:8791 node fadori-campana/grabar/app.mjs
    Sale en fadori-campana/salida/rec/app/%05d.jpg (con TEMA=oscuro, en rec/app-oscuro/) */
-import { abrirMesa, PROD } from '../../fadori/mesa-de-pruebas.mjs';
+process.env.ESCALA ||= '2';                                             /* a doble resolución, para un video 1080p */
+const { abrirMesa, PROD } = await import('../../fadori/mesa-de-pruebas.mjs');
 import { grabar, dedo, tocar, deslizar } from './comun.mjs';
 import path from 'path';
 
