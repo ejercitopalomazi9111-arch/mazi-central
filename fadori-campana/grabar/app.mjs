@@ -12,7 +12,8 @@
    Sale en fadori-campana/salida/rec/app/%05d.jpg (con TEMA=oscuro, en rec/app-oscuro/) */
 process.env.ESCALA ||= '2';                                             /* a doble resolución, para un video 1080p */
 const { abrirMesa, PROD } = await import('../../fadori/mesa-de-pruebas.mjs');
-import { grabar, dedo, tocar, deslizar } from './comun.mjs';
+import { grabar, dedo, tocar, deslizar, mover, lento } from './comun.mjs';
+const K = Number(process.env.LENTO || 5);                               /* cámara lenta: la página corre K veces más despacio */
 import path from 'path';
 
 const TEMA = process.env.TEMA || '';                                    /* TEMA=oscuro graba la misma demo en modo oscuro */
@@ -31,29 +32,30 @@ for(const [n, g, i] of [['Beto Ruiz', '2B', 4], ['Caro Silva', '1A', 6], ['Dani 
 
 /* la alumna que sale en el video: su cuenta se hace antes de grabar */
 const prev = await M.aparato('/fadori/', { desfase, escala: 2, zona: ZONA, tema: TEMA || 'claro' }); await M.alumno('Ana Pérez', '3.1', prev); await prev.waitForTimeout(2500);
+await lento(prev.context(), K);
 const ana = await prev.context().newPage();                              /* pestaña nueva = la animación de entrada sale otra vez */
 await dedo(ana);
 const rec = await grabar(ana);
 await ana.goto(PROD + '/fadori/');
-await ana.waitForTimeout(4200);                                          /* la animación de entrada completa */
-await ana.mouse.move(195, 600);
-await deslizar(ana, 520, 1500); await ana.waitForTimeout(500);
-await deslizar(ana, 380, 1200); await ana.waitForTimeout(400);
-await tocar(ana, '#rejilla button[aria-label="Agregar Hamburguesa"]');
-await ana.waitForTimeout(700);
-await deslizar(ana, 700, 1300); await ana.waitForTimeout(400);
-await tocar(ana, '#rejilla button[aria-label="Agregar Taco de arrachera"]').catch(() => tocar(ana, '#rejilla button[aria-label^="Agregar"] >> nth=6'));
-await ana.waitForTimeout(800);
-await tocar(ana, '#bPedir'); await ana.waitForTimeout(1600);
-await tocar(ana, '#bConfirmar'); await ana.waitForTimeout(3800);
+await ana.waitForTimeout(4200 * K);                                          /* la animación de entrada completa */
+await mover(ana, 195, 600, K);
+await deslizar(ana, 520, 1500); await ana.waitForTimeout(500 * K);
+await deslizar(ana, 380, 1200); await ana.waitForTimeout(400 * K);
+await tocar(ana, '#rejilla button[aria-label="Agregar Hamburguesa"]', K);
+await ana.waitForTimeout(700 * K);
+await deslizar(ana, 700, 1300); await ana.waitForTimeout(400 * K);
+await tocar(ana, '#rejilla button[aria-label="Agregar Taco de arrachera"]', K).catch(() => tocar(ana, '#rejilla button[aria-label^="Agregar"] >> nth=6', K));
+await ana.waitForTimeout(800 * K);
+await tocar(ana, '#bPedir', K); await ana.waitForTimeout(1600 * K);
+await tocar(ana, '#bConfirmar', K); await ana.waitForTimeout(3800 * K);
 /* la cooperativa lo prepara */
 const id = await ana.evaluate(() => { const F = FADORI, c = F.yo().codigo; return F.estado().pedidos.filter(p => p.alumno === c).pop().id; });
-await M.tarda(most, (i) => !!FADORI.pedido(i), id, 10000);
+await M.tarda(most, (i) => !!FADORI.pedido(i), id, 10000 * K);
 await most.evaluate((i) => { const F = FADORI; F.estado().pedidos.filter(p => p.estado === 'en_cola' && p.id !== i).forEach(p => { F.tomar(p.id, 'S'); F.marcarListo(p.id); F.entregar && F.entregar(p.id); }); F.tomar(i, 'S'); }, id);
-await ana.waitForTimeout(2600);
+await ana.waitForTimeout(2600 * K);
 await most.evaluate((i) => FADORI.marcarListo(i), id);
-await M.tarda(ana, (i) => FADORI.pedido(i) && FADORI.pedido(i).estado === 'listo', id, 12000);
-await ana.waitForTimeout(3500);
-const n = await rec.parar(SAL);
-console.log('✓ app:', n, 'cuadros a 30 por segundo →', path.relative(process.cwd(), SAL));
+await M.tarda(ana, (i) => FADORI.pedido(i) && FADORI.pedido(i).estado === 'listo', id, 12000 * K);
+await ana.waitForTimeout(3500 * K);
+const n = await rec.parar(SAL, 60, K);
+console.log('✓ app:', n, 'cuadros a 60 por segundo →', path.relative(process.cwd(), SAL));
 await M.cerrar();

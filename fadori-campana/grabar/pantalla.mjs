@@ -13,7 +13,8 @@
    Sale en fadori-campana/salida/rec/tv-<parte>/%05d.jpg */
 process.env.ESCALA ||= '1';
 const { abrirMesa, PROD } = await import('../../fadori/mesa-de-pruebas.mjs');
-import { grabar } from './comun.mjs';
+import { grabar, lento } from './comun.mjs';
+const K = Number(process.env.LENTO || 5);                               /* cámara lenta, igual que en app.mjs */
 import fs from 'fs'; import path from 'path';
 
 const MEDIOS = process.env.MEDIOS || '/tmp/claude-0/medios';
@@ -54,32 +55,45 @@ await tv.evaluate(async (base) => {
 await tv.context().addInitScript(() => { Element.prototype.requestFullscreen = function(){ return Promise.resolve(); }; });
 /* el reloj de la tele usa `new Date()`, y la mesa sólo adelanta `Date.now()`: sin esto marca la hora real */
 await tv.context().addInitScript(() => { const D = Date; class Recreo extends D { constructor(...a){ a.length ? super(...a) : super(D.now()); } static now(){ return D.now(); } } window.Date = Recreo; });
-await tv.reload(); await tv.waitForTimeout(2500);
-await tv.click('#bArranque').catch(() => {}); await tv.waitForTimeout(4000);
+await lento(tv.context(), K);
+await tv.reload(); await tv.waitForTimeout(2500 * K);
+await tv.click('#bArranque').catch(() => {}); await tv.waitForTimeout(4000 * K);
+/* con cámara lenta corren 5 minutos reales por cada uno del video: el reloj brincaba de 10:13 a 10:17 entre tomas */
+await tv.evaluate(() => { const r = document.querySelector('#reloj'); const fijo = () => { if(r.textContent !== '10:12 a.m.') r.textContent = '10:12 a.m.'; }; fijo(); new MutationObserver(fijo).observe(r, { childList: true, characterData: true, subtree: true }); });
 
+const SOLO = process.env.SOLO;                                         /* SOLO=vivo graba nada más esa parte */
 const parte = async (nombre, hacer, seg) => {
+  if(SOLO && SOLO !== nombre){ await hacer(); await tv.waitForTimeout(seg * 1000 * K); return; }   /* mismo tiempo, para que la fila llegue igual */
   const rec = await grabar(tv, { escala: 1 });
-  await hacer(); await tv.waitForTimeout(seg * 1000);
-  const n = await rec.parar(path.join(REC, 'tv-' + nombre));
+  await hacer(); await tv.waitForTimeout(seg * 1000 * K);
+  const n = await rec.parar(path.join(REC, 'tv-' + nombre), 60, K);
   console.log('✓ tv-' + nombre + ':', n, 'cuadros');
 };
 const P = (f, ...a) => tv.evaluate(f, a);
 
-await parte('episodio', async () => { setTimeout(() => listo(1), 3500); }, 11);
+await parte('episodio', async () => { setTimeout(() => listo(1), 3500 * K); }, 11);
 await parte('pelicula', () => P(() => TELE.Programa.poner(TELE.Programa.rell.find(r => r.id === 'peli'), 3)), 9);
 await tomar(2);
-await parte('musica', async () => { await P(() => TELE.Programa.poner(TELE.Programa.rell.find(r => r.id === 'musica'), 20)); setTimeout(() => listo(2), 3000); }, 9);
+await parte('musica', async () => { await P(() => TELE.Programa.poner(TELE.Programa.rell.find(r => r.id === 'musica'), 20)); setTimeout(() => listo(2), 3000 * K); }, 9);
 await parte('tanda', async () => { P(() => TELE.Programa.corte()); }, 26);
 
 /* el partido en vivo: lo transmite la cooperativa desde el mostrador */
 const vivo = (activa) => most.evaluate(async ([api, casa, url, activa]) => {
   const e = { activa, fuente: { tipo: 'enlace', url, emisor: '' }, voz: { activa: false, emisor: '' },
     marcador: { visible: true, deporte: 'Fútbol', periodo: '2T', local: { nombre: '3.1', color: '#E8590C', puntos: 2 }, visita: { nombre: '2B', color: '#2563EB', puntos: 1 },
-      reloj: { corriendo: true, base: (34 * 60 + 12) * 1000, desde: Date.now() } },
+      reloj: { corriendo: false, base: (34 * 60 + 12) * 1000, desde: 0 } },   /* parado: con cámara lenta el reloj de la fecha correría 5 veces más rápido */
     llaves: { visible: false, titulo: 'Copa Rembrandt', rondas: [] }, v: Date.now() };
   return (await fetch(api + '/api/transmision?casa=' + casa, { method: 'POST', headers: { 'content-type': 'application/json', 'x-fadori-admin': FADORI.llaveMostrador(), 'x-fadori-aparato': localStorage.getItem('fadori_aparato') }, body: JSON.stringify({ estado: e }) })).status;
 }, ['https://fadori.palomazi9111.workers.dev', M.CASA, PROD + '/fadori/medios-comercial/partido.webm', activa]);
 await tomar(3);
-await parte('vivo', async () => { console.log('  transmisión', await vivo(true)); setTimeout(() => listo(3), 6000); }, 13);
+/* el reloj del partido va PARADO en el servidor (con cámara lenta correría 5 veces
+   más rápido) y en la tele se le da cuerda con performance.now, que sí va lento:
+   así avanza un segundo por cada segundo del video. Carlos: «el cronómetro del
+   partido en vivo no cambia el tiempo» */
+const darCuerda = () => P(() => { const p0 = performance.now(), base = 34 * 60 + 12;
+  setInterval(() => { const el = document.querySelector('.tm-reloj'); if(!el) return;
+    const s = base + Math.floor((performance.now() - p0) / 1000), t = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+    if(el.textContent !== t) el.textContent = t; }, 100); });
+await parte('vivo', async () => { console.log('  transmisión', await vivo(true)); await darCuerda(); setTimeout(() => listo(3), 6000 * K); }, 13);
 await vivo(false);
 await M.cerrar();

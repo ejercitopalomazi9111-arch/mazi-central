@@ -7,6 +7,7 @@
      Todo lo que sale en el teléfono y en la tele son GRABACIONES de la app de
      verdad (fadori-campana/grabar/). La voz es de ElevenLabs; los efectos,
      de grabar/efectos.py. Se arma con: node fadori-campana/grabar/comercial.mjs -->
+<link rel="stylesheet" href="grabar/cortinilla.css">
 <style>
 @font-face{font-family:Anton;src:url(f/Anton-Regular.ttf)}
 @font-face{font-family:Pop;font-weight:600;src:url(f/Poppins-SemiBold.ttf)}
@@ -16,6 +17,13 @@
 html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
 #lienzo{position:relative;width:1920px;height:1080px;overflow:hidden;font-family:Pop,sans-serif;color:#fff}
 .esc{position:absolute;inset:0;opacity:0;overflow:hidden;will-change:opacity,transform}
+/* LA CORTINILLA DE LA APP en grande: el CSS es el de fadori/estilo.css, copiado
+   tal cual a grabar/cortinilla.css por comercial.mjs; aquí sólo se agranda. */
+#e4cort{position:absolute;left:0;top:0;width:1920px;height:1080px;z-index:6;transform-origin:0 0;overflow:hidden;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+#e4cort .cortinilla{position:absolute;gap:44px}
+#e4cort .burger{width:620px}
+#e4cort .cort-marca{font-size:118px}   /* al encogerse (×0.44) mide lo mismo que en el teléfono */
+#e4cort .cort-pie{font-size:32px}
 .anton{font-family:Anton,sans-serif;text-transform:uppercase;line-height:.92}
 .full{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 /* el teléfono: marco negro con la grabación adentro (780×1688) */
@@ -28,8 +36,31 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
 .tv img{display:block;width:100%;height:100%;border-radius:8px}
 .chip{display:inline-flex;align-items:center;gap:14px;background:#E8590C;color:#fff;font:800 30px/1 Pop;letter-spacing:.08em;text-transform:uppercase;padding:16px 28px;border-radius:99px}
 .ilus{position:absolute;right:26px;bottom:22px;z-index:50;font:600 17px/1 Pop;color:rgba(255,255,255,.92);background:rgba(0,0,0,.45);padding:7px 12px;border-radius:8px;opacity:0}
-#grano{position:absolute;inset:0;z-index:90;mix-blend-mode:overlay;opacity:.22;pointer-events:none;width:1920px;height:1080px}
-#vin{position:absolute;inset:0;z-index:89;background:radial-gradient(ellipse at center,transparent 58%,rgba(0,0,0,.42) 100%);pointer-events:none}
+/* el color de cine: sombras frías, luces cálidas */
+#grado{position:absolute;inset:0;z-index:88;pointer-events:none;mix-blend-mode:soft-light;background:linear-gradient(180deg,rgba(255,176,96,.28),rgba(255,140,60,.08) 45%,rgba(0,96,120,.26))}
+/* PATRONES AL RITMO (Carlos: «fondos como los de Express TV, puntos, líneas o patrones
+   moviéndose acorde al ritmo»): sólo sobre los colores sólidos, como en los pósters */
+.patron{position:absolute;inset:-160px;pointer-events:none;will-change:transform}
+.patron.puntos{background-image:radial-gradient(var(--c) 4.6px,transparent 5.2px);background-size:48px 48px}
+.patron.rayas{background:repeating-linear-gradient(-45deg,var(--c) 0 34px,transparent 34px 68px)}
+.patron.anillos{background:repeating-radial-gradient(circle at 50% 50%,var(--c) 0 3px,transparent 3px 46px)}
+.patron.reja{background-image:linear-gradient(var(--c) 1.5px,transparent 1.5px),linear-gradient(90deg,var(--c) 1.5px,transparent 1.5px);background-size:64px 64px}
+/* la cortina de cada corte: un panel de color con rayas que barre la pantalla */
+#cortina{position:absolute;top:-10%;bottom:-10%;left:0;width:150%;z-index:80;pointer-events:none;transform:translateX(120%) skewX(-12deg)}
+#cortina .patron{inset:0}
+/* la pantalla del recreo, toma por toma */
+.vista{position:absolute;overflow:hidden;box-shadow:0 40px 90px rgba(0,0,0,.55)}
+.vista img{position:absolute;display:block;max-width:none}
+#e7eti{position:absolute;left:120px;bottom:96px;z-index:5}
+#e7eq{position:absolute;right:170px;top:620px;display:flex;align-items:flex-end;gap:14px;height:200px}
+#e7eq b{width:26px;border-radius:8px;background:#FF8A4C}
+#e7vivo{position:absolute;right:110px;top:110px;z-index:6;display:flex;align-items:center;gap:14px;background:#D72638;color:#fff;font:900 34px/1 Pop;letter-spacing:.12em;padding:16px 26px;border-radius:12px;opacity:0}
+#e7vivo i{width:18px;height:18px;border-radius:50%;background:#fff}
+#e7cine{position:absolute;left:0;right:0;top:50%;z-index:6;text-align:center;font:400 150px/1 Serif;font-style:italic;color:#FFF6EC;opacity:0;text-shadow:0 4px 18px rgba(0,0,0,.85),0 10px 60px rgba(0,0,0,.8)}
+@font-face{font-family:Serif;src:url(f/DMSerifDisplay-Italic.ttf)}
+#lugar{position:absolute;left:96px;bottom:150px;z-index:96;color:#F5EADF;font:600 26px/1.3 Pop;letter-spacing:.22em;text-transform:uppercase;opacity:0}
+#lugar b{display:block;font:800 30px/1.3 Pop;letter-spacing:.28em}
+#lugar span{color:#F4B63A}
 #franjas::before,#franjas::after{content:"";position:absolute;left:0;right:0;height:var(--f,0px);background:#000;z-index:95}
 #franjas::before{top:0}#franjas::after{bottom:0}
 .flota{position:absolute;border-radius:50%;object-fit:cover;filter:blur(2px) saturate(1.1);opacity:.9;box-shadow:0 30px 60px rgba(60,30,10,.25)}
@@ -39,6 +70,7 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
 
 <!-- 1 · el reloj del recreo -->
 <section class="esc" id="e1" style="background:#0d0a08">
+  <div class="patron puntos" data-ritmo="latido" style="--c:rgba(244,182,58,.30)"></div>
   <svg id="e1anillo" viewBox="0 0 100 100" style="position:absolute;left:50%;top:50%;width:760px;height:760px;margin:-380px 0 0 -380px;transform:rotate(-90deg)">
     <circle cx="50" cy="50" r="45" fill="none" stroke="#2a201a" stroke-width="3"/>
     <circle id="e1arco" cx="50" cy="50" r="45" fill="none" stroke="#F4B63A" stroke-width="3" stroke-linecap="round" stroke-dasharray="282.7" stroke-dashoffset="0"/>
@@ -58,6 +90,7 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
 
 <!-- 4 · la app de verdad: se abre, se escoge y se pide -->
 <section class="esc" id="e4" style="background:#FDF6EC">
+  <div class="patron puntos" data-ritmo="deriva" style="--c:rgba(194,65,12,.16)"></div>
   <div id="e4fondo" style="position:absolute;inset:0">
     <img class="flota" src="img/foto/hamburguesa.jpg" style="width:300px;height:300px;left:-60px;top:640px">
     <img class="flota" src="img/foto/tacos.jpg" style="width:250px;height:250px;left:820px;top:-70px">
@@ -68,14 +101,30 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
   <div style="position:absolute;left:140px;top:250px;width:820px;color:#2E1B10">
     <div id="e4chip" class="chip">Fadori</div>
     <div class="anton" id="e4t1" style="font-size:150px;margin-top:34px"><span class="palabra">Pide</span> <span class="palabra">desde</span><br><span class="palabra">el</span> <span class="palabra">primer</span><br><span class="palabra" style="color:#C2410C">momento.</span></div>
-    <div class="anton" id="e4t2" style="font-size:150px;margin-top:34px;position:absolute;top:84px;left:0"><span class="palabra">Escoge.</span><br><span class="palabra">Pide.</span><br><span class="palabra" style="color:#C2410C">Tu turno.</span></div>
+    <div class="anton" id="e4t2" style="font-size:150px;margin-top:34px;position:absolute;top:84px;left:0"><span class="palabra">Pide.</span><br><span class="palabra">Disfruta.</span><br><span class="palabra" style="color:#C2410C">Saborea.</span></div>
   </div>
   <div class="tel" id="e4tel" style="left:1210px;top:66px"><div class="pant"><img id="e4img"></div></div>
+  <!-- «Con Fadori»: la presentación de la app en grande (Carlos, 15 de octubre),
+       que luego se encoge hasta caber en la pantalla del teléfono -->
+  <div id="e4cort"><div class="cortinilla" role="presentation">
+    <div class="burger" aria-hidden="true">
+      <img class="cap sombra" src="../fadori/marca/capa-sombra.png" alt="">
+      <img class="cap pan-abajo" src="../fadori/marca/capa-pan-abajo.png" alt="">
+      <img class="cap carne" src="../fadori/marca/capa-carne.png" alt="">
+      <img class="cap queso" src="../fadori/marca/capa-queso.png" alt="">
+      <img class="cap jitomate" src="../fadori/marca/capa-jitomate.png" alt="">
+      <img class="cap lechuga" src="../fadori/marca/capa-lechuga.png" alt="">
+      <img class="cap pan-arriba" src="../fadori/marca/capa-pan-arriba.png" alt="">
+    </div>
+    <div class="cort-marca">Fadori<b>.</b></div>
+    <div class="cort-pie">Proyecto Sin Filas</div>
+  </div></div>
   <div class="ilus" id="e4ilus">Imágenes ilustrativas</div>
 </section>
 
 <!-- 5 · mientras lo preparan -->
 <section class="esc" id="e5" style="background:#1A100A">
+  <div class="patron anillos" data-ritmo="latido" style="--c:rgba(244,182,58,.12);z-index:1"></div>
   <div style="position:absolute;inset:0;background:radial-gradient(70% 70% at 30% 50%,#4A1F0E,#1A100A)"></div>
   <div style="position:absolute;left:0;top:0;width:1300px;height:1080px;perspective:1800px">
     <div class="tv" id="e5tv" style="left:110px;top:250px;width:1060px;height:628px;transform:rotateY(14deg)"><img id="e5tvimg"></div>
@@ -86,28 +135,36 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
 
 <!-- 6 · ¿ya está? te avisa -->
 <section class="esc" id="e6" style="background:#2F5419">
+  <div class="patron puntos" data-ritmo="latido" style="--c:rgba(233,255,217,.22)"></div>
   <div id="e6ondas" style="position:absolute;left:50%;top:50%;width:0;height:0"></div>
-  <div class="anton" id="e6t" style="position:absolute;left:120px;top:330px;font-size:220px;color:#E9FFD9">¡Ya<br>está!</div>
-  <div class="anton" id="e6s" style="position:absolute;right:130px;top:420px;font-size:96px;color:#BFF09B;text-align:right">Te<br>avisa.</div>
+  <div class="anton" id="e6t" style="position:absolute;left:110px;top:340px;font-size:190px;color:#E9FFD9">¡A<br>comer!</div>
+  <div class="anton" id="e6s" style="position:absolute;right:130px;top:420px;font-size:78px;color:#BFF09B;text-align:right">Tu teléfono<br>te avisa.</div>
   <div class="tel" id="e6tel" style="left:734px;top:66px"><div class="pant"><img id="e6img"></div></div>
 </section>
 
-<!-- 7 · la pantalla del recreo -->
+<!-- 7 · la pantalla del recreo: cada cosa que pasa se presenta con su propio
+     encuadre, como los cortos de cine (Carlos: «se ven repetitivos… más como los
+     anuncios de Cinépolis o Cinemex») -->
 <section class="esc" id="e7" style="background:#0d0a08">
-  <div id="e7fondo" style="position:absolute;inset:-60px;background-size:cover;background-position:center;filter:blur(40px) brightness(.55) saturate(1.3)"></div>
-  <div style="position:absolute;inset:0;perspective:2000px">
-    <div class="tv" id="e7tv" style="left:250px;top:110px;width:1420px;height:831px"><img id="e7img"></div>
-  </div>
-  <div id="e7eti" style="position:absolute;left:120px;bottom:86px;z-index:5">
+  <div id="e7fondo" style="position:absolute;inset:0"></div>
+  <div class="patron rayas" id="e7rayas" style="--c:rgba(255,255,255,.08)"></div>
+  <div class="patron anillos" id="e7anillos" style="--c:rgba(255,138,76,.22)"></div>
+  <div class="vista" id="e7v0"><img></div>
+  <div class="vista" id="e7v1"><img></div>
+  <div class="vista" id="e7v2"><img></div>
+  <div id="e7eq"></div>
+  <div id="e7vivo"><i></i>EN VIVO</div>
+  <div id="e7eti">
     <div class="chip" id="e7chip" style="background:#fff;color:#1A100A">En la pantalla del recreo</div>
     <div class="anton" id="e7nom" style="font-size:132px;margin-top:20px;text-shadow:0 10px 40px rgba(0,0,0,.6)"></div>
   </div>
+  <div id="e7cine"></div>
 </section>
 
 <!-- 8 · de día o en modo oscuro -->
 <section class="esc" id="e8">
-  <div id="e8claro" style="position:absolute;inset:0;background:#FDF6EC"></div>
-  <div id="e8oscuro" style="position:absolute;inset:0;background:#17110D"></div>
+  <div id="e8claro" style="position:absolute;inset:0;background:#FDF6EC;overflow:hidden"><div class="patron puntos" data-ritmo="latido" style="--c:rgba(194,65,12,.10)"></div></div>
+  <div id="e8oscuro" style="position:absolute;inset:0;background:#17110D;overflow:hidden"><div class="patron puntos" data-ritmo="latido" style="--c:rgba(255,138,76,.14)"></div></div>
   <div class="tel" id="e8tel" style="left:734px;top:66px"><div class="pant"><img id="e8a"><img id="e8b"></div></div>
   <div class="anton" id="e8t1" style="position:absolute;left:150px;top:400px;font-size:150px;color:#2E1B10">De día…</div>
   <div class="anton" id="e8t2" style="position:absolute;right:120px;top:400px;font-size:150px;color:#F5EADF;text-align:right">o en modo<br><span style="color:#FF8A4C">oscuro.</span></div>
@@ -116,30 +173,33 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
 
 <!-- 9 · el cierre -->
 <section class="esc" id="e9" style="background:#E8590C">
+  <div class="patron puntos" data-ritmo="deriva" style="--c:rgba(255,255,255,.20)"></div>
   <div id="e9ray" style="position:absolute;inset:-200px;background:repeating-linear-gradient(-45deg,rgba(255,255,255,.07) 0 34px,transparent 34px 68px)"></div>
   <img id="e9logo" src="img/logo-fadori.png" style="position:absolute;left:130px;top:120px;width:260px;background:#fff;border-radius:40px;box-shadow:0 30px 60px rgba(90,25,0,.35)">
   <div class="anton" id="e9t" style="position:absolute;left:130px;top:430px;width:1080px;font-size:132px"><span class="palabra">El</span> <span class="palabra">recreo</span> <span class="palabra">es</span> <span class="palabra">para</span> <span class="palabra" style="color:#FFE27A">comer,</span><br><span class="palabra" style="color:#2E1B10">no</span> <span class="palabra" style="color:#2E1B10">para</span> <span class="palabra" style="color:#2E1B10">formarte.</span></div>
-  <div id="e9sub" style="position:absolute;left:134px;top:810px;font:800 46px/1.3 Pop;opacity:0">Escanea y pide desde el primer momento.</div>
+  <div id="e9sub" style="position:absolute;left:134px;top:790px;font:800 46px/1.3 Pop;opacity:0">Escanea el código<br>y pide desde el primer momento.</div>
   <div id="e9qr" style="position:absolute;right:150px;top:210px;width:540px;background:#fff;border-radius:34px;padding:24px;box-shadow:0 40px 80px rgba(90,25,0,.35)"><img src="img/abrir.svg" style="width:100%;display:block"><div style="text-align:center;font:900 30px/1 Pop;color:#2E1B10;margin-top:14px;letter-spacing:.06em;text-transform:uppercase">Apunta tu cámara</div></div>
 </section>
 
 <!-- 10 · créditos -->
 <section class="esc" id="e10" style="background:#111;color:#DDD;padding:110px 120px;font:600 29px/1.45 Pop">
+  <div class="patron reja" data-ritmo="deriva" style="--c:rgba(255,255,255,.035)"></div>
   <div style="font:900 56px/1 Pop;color:#fff;margin-bottom:34px">Créditos</div>
   <div id="e10txt" style="columns:2;column-gap:80px">
     <p><b style="color:#F4B63A">Pantallas:</b> la app Fadori y la pantalla del recreo de verdad, grabadas con datos de prueba.</p>
     <p style="margin-top:12px"><b style="color:#F4B63A">Voz:</b> generada con ElevenLabs.</p>
     <p style="margin-top:12px"><b style="color:#F4B63A">Música:</b> «Funky Chunk» y «Carefree», Kevin MacLeod (incompetech.com), CC BY 4.0.</p>
     <p style="margin-top:12px"><b style="color:#F4B63A">Película en la tele:</b> «Big Buck Bunny», © Blender Foundation (peach.blender.org), CC BY 3.0.</p>
-    <p style="margin-top:12px"><b style="color:#F4B63A">Partido:</b> «TB vs ÍF», EileenSanda, Wikimedia Commons, CC BY-SA 3.0.</p>
+    <p style="margin-top:12px"><b style="color:#F4B63A">Partido:</b> «Sevilla-Rangers: Kanouté marca de penalti», Juan Jiménez Martínez (Flickr), CC BY 2.0. Recortado.</p>
     <p style="margin-top:12px"><b style="color:#F4B63A">Fotos de comida:</b> dominio público (CC0), StockSnap y Rawpixel. Imágenes ilustrativas.</p>
     <p style="margin-top:12px"><b style="color:#F4B63A">Letras:</b> Anton y Poppins (SIL Open Font License). Efectos de sonido hechos por nosotros.</p>
     <p style="margin-top:12px"><b style="color:#F4B63A">Hecho por</b> Grupo Mazi para Fadori · Instituto Rembrandt.</p>
   </div>
 </section>
 
-<canvas id="grano" width="480" height="270"></canvas>
-<div id="vin"></div>
+<div id="cortina"><div class="patron rayas" style="--c:rgba(255,255,255,.14)"></div></div>
+<div id="grado"></div>
+<div id="lugar"><b>Instituto Rembrandt</b><span id="lugarHora">10:00 a.m. · suena el timbre</span></div>
 <div id="franjas" style="position:absolute;inset:0;pointer-events:none;z-index:95"></div>
 </div>
 <script>
@@ -154,55 +214,111 @@ const E = [ ['e1', 0, 5.6], ['e3', 5.6, 7.0], ['e4', 7.0, 18.6], ['e5', 18.6, 23
 window.DUR = 56.2;
 /* lo que suena: voz (ElevenLabs), efectos y música. comercial.mjs lo mezcla */
 window.SONIDOS = [
-  ['voz/01.mp3', 0.9], ['voz/02.mp3', 2.95], ['voz/03.mp3', 5.75], ['voz/04.mp3', 7.6], ['voz/05.mp3', 13.4], ['voz/06.mp3', 18.95],
-  ['voz/07.mp3', 23.5], ['voz/08.mp3', 26.7], ['voz/09.mp3', 30.9], ['voz/10.mp3', 32.3], ['voz/11.mp3', 33.7], ['voz/12.mp3', 36.15],
+  ['voz/01.mp3', 0.9], ['voz/02.mp3', 2.95], ['voz/03.mp3', 5.75], ['voz/04.mp3', 8.55], ['voz/05.mp3', 13.8], ['voz/06.mp3', 18.95],
+  ['voz/07.mp3', 23.4], ['voz/08.mp3', 26.7], ['voz/09.mp3', 30.9], ['voz/10.mp3', 32.3], ['voz/11.mp3', 33.7], ['voz/12.mp3', 36.15],
   ['voz/13.mp3', 40.0], ['voz/14.mp3', 44.85], ['voz/15.mp3', 48.7],
   ['timbre.wav', 0.05, 0.55], ['latido.wav', 1.2, .5], ['latido.wav', 2.0, .5], ['latido.wav', 2.8, .55], ['latido.wav', 3.6, .6], ['latido.wav', 4.4, .7], ['subida.wav', 3.5, .45],
-  ['golpe.wav', 5.6, .9], ['whoosh.wav', 6.85, .6], ['toque.wav', 13.3, .7], ['toque.wav', 15.55, .7], ['toque.wav', 16.15, .7], ['toque.wav', 17.05, .7],
+  ['golpe.wav', 5.6, .5], ['whoosh.wav', 6.85, .6], ['toque.wav', 13.45, .7], ['toque.wav', 15.72, .7], ['toque.wav', 16.32, .7], ['toque.wav', 17.23, .7],
   ['whoosh.wav', 18.5, .55], ['ding.wav', 23.05, .8], ['whoosh.wav', 26.3, .55], ['whoosh.wav', 30.75, .45], ['whoosh.wav', 32.15, .45], ['whoosh.wav', 33.55, .45],
-  ['subida.wav', 34.0, .5], ['golpe.wav', 36.0, .8], ['whoosh.wav', 39.5, .55], ['whoosh.wav', 41.2, .5], ['golpe.wav', 44.4, .85], ['toque.wav', 48.6, .6],
+  ['subida.wav', 34.0, .5], ['golpe.wav', 36.0, .8], ['gol.wav', 36.3, .7],   /* el grito de la tribuna del mismo video del partido */ ['whoosh.wav', 39.5, .3], ['whoosh.wav', 41.2, .25], ['golpe.wav', 44.4, .85], ['toque.wav', 48.6, .6],
 ];
 
 /* las grabaciones: carpeta, cuadros por segundo y la función que dice qué cuadro toca */
+const RF = 60;                                  /* las grabaciones van a 60 cuadros por segundo */
 const REC = (dir, k) => 'salida/rec/' + dir + '/' + String(Math.max(0, Math.round(k))).padStart(5, '0') + '.jpg';
 const N = window.CUADROS || {};                /* comercial.mjs dice cuántos cuadros hay de cada una */
 const tope = (dir, k) => Math.min(k, (N[dir] || 1e9) - 1);
-/* el teléfono en la escena 4: la animación de entrada a velocidad normal, el menú al doble y el pedido a 1.5 */
+/* el teléfono en la escena 4: los primeros 3 s la presentación va EN GRANDE
+   (#e4cort); al caber en el teléfono, la grabación sigue desde 2.6 s, donde
+   su propia cortinilla ya está completa, a velocidad normal hasta que se va;
+   el menú al 2.2 y el pedido a 1.5 */
+const CORT = { encoge: 2.4, cabe: 3.0 };
 function appEn(l){
-  if(l < 3.3) return l;
-  if(l < 6.15) return 3.3 + (l - 3.3) * 2;
-  return Math.min(16.9, 9.0 + (l - 6.15) * 1.5);
+  if(l < CORT.cabe) return 2.6;
+  if(l < 3.7) return 2.6 + (l - CORT.cabe);
+  if(l < 6.3) return 3.3 + (l - 3.7) * (5.7 / 2.6);
+  return Math.min(16.9, 9.0 + (l - 6.3) * 1.49);
 }
 const pendientes = [];
+const mezclaR = (a, b, k) => ({ x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k, w: a.w + (b.w - a.w) * k, h: a.h + (b.h - a.h) * k });
+/* muestra el pedazo `r` de una grabación de la tele dentro de la caja de la pantalla */
+function recorte(vista, src, r, caja){
+  vista.style.left = caja.x + 'px'; vista.style.top = caja.y + 'px'; vista.style.width = caja.w + 'px'; vista.style.height = caja.h + 'px';
+  const img = vista.firstElementChild, s = Math.max(caja.w / r.w, caja.h / r.h);
+  poner(img, src);
+  img.style.width = 1920 * s + 'px'; img.style.height = 1080 * s + 'px';
+  img.style.left = (-r.x * s + (caja.w - r.w * s) / 2) + 'px'; img.style.top = (-r.y * s + (caja.h - r.h * s) / 2) + 'px';
+}
 function poner(img, src){ if(img.dataset.src === src) return; img.dataset.src = src; img.src = src; pendientes.push(img.decode().catch(() => {})); }
 
-function pintarGrano(t){
-  const c = $('grano'), g = c.getContext('2d'), d = g.createImageData(480, 270), a = d.data;
-  let s = (Math.floor(t * 30) * 2654435761) >>> 0;
-  for(let i = 0; i < a.length; i += 4){ s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; const v = s & 255; a[i] = a[i + 1] = a[i + 2] = v; a[i + 3] = 255; }
-  g.putImageData(d, 0, 0);
+
+/* EL RITMO de «Funky Chunk»: 115 golpes por minuto, el primero a los 0.03 s
+   (medido de la canción, no a ojo). Los patrones del fondo se DESLIZAN parejo
+   al tempo, sin brincar en cada golpe (Carlos, 15 de octubre: «deben hacerlo
+   suavemente, no en brincos»): corren media celda por golpe y respiran
+   con una onda lenta de 4 golpes, nunca con un salto. */
+const GOLPE = 60 / 115, FASE = 0.03;
+function ritmo(t){ const b = (t - FASE) / GOLPE, n = Math.floor(b), f = b - n; return { b, n, f, pulso: Math.exp(-f * 5), paso: n + eo(Math.min(1, f * 3)) }; }
+const lento = (b) => 0.5 - 0.5 * Math.cos(b * Math.PI / 2);          /* 0→1→0 cada 4 golpes, suave */
+/* corrimiento continuo: `v` px por golpe, dando la vuelta justo en el periodo del
+   dibujo para que el salto del módulo no se note (rayas a 45°: 68·√2 en horizontal) */
+const RAYA = 68 * Math.SQRT2;
+const deslizar = (t, celda = RAYA, v = 24) => -(((t - FASE) / GOLPE * v) % celda);
+function moverPatron(pa, t){
+  const r = ritmo(t), modo = pa.dataset.ritmo || 'paso', s = lento(r.b), c = pa.classList;
+  const celda = c.contains('reja') ? 64 : 48;
+  if(c.contains('rayas')) pa.style.transform = 'translateX(' + deslizar(t).toFixed(2) + 'px)';
+  else if(c.contains('anillos')) pa.style.transform = 'scale(' + (1 + 0.04 * s).toFixed(4) + ')';
+  else if(modo === 'latido'){ const d = deslizar(t, celda, 12); pa.style.transform = 'translate(' + (-d).toFixed(2) + 'px,' + (-d).toFixed(2) + 'px)'; }
+  else pa.style.transform = 'translate(' + (-deslizar(t, celda, 24)).toFixed(2) + 'px,' + deslizar(t, celda, 7).toFixed(2) + 'px)';
+  pa.style.opacity = (0.82 + 0.1 * s).toFixed(3);
 }
 
 window.pintar = async function(t){
   pendientes.length = 0;
-  for(const [id, a, b] of E){
-    const el = $(id), dentro = t >= a - 0.3 && t < b + 0.3;
-    if(!dentro){ el.style.opacity = 0; continue; }
-    const ent = id === 'e1' ? 1 : eo((t - a + 0.3) / 0.35), sal = id === 'e10' ? 0 : eo((t - b + 0.3) / 0.3);
-    el.style.opacity = Math.min(ent, 1 - sal);
-    /* cada corte entra con un empujón de cámara y sale acercándose */
-    el.style.transform = 'scale(' + (1.06 - 0.06 * ent + 0.08 * sal) + ')';
-    el.style.zIndex = Math.round(t * 10);
+  /* CORTES: la escena cambia de golpe detrás de una cortina de color con rayas
+     que barre la pantalla (sin desenfoques ni destellos: Carlos los vio como
+     «estática y túnel»). La que entra llega con un empujoncito de cámara. */
+  const CORTE = 0.3;
+  E.forEach(([id, a, b], i) => {
+    const el = $(id);
+    if(t < a || t >= b){ el.style.opacity = 0; return; }
+    const pe = i === 0 ? 1 : eo((t - a) / 0.5);
+    el.style.opacity = 1;
+    el.style.transform = 'scale(' + (1.035 - 0.035 * pe) + ')';
+    el.style.zIndex = i + 1;
     escenas[id](t - a, b - a);
-  }
-  /* franjas de cine al principio, que se abren cuando entra la app */
-  $('franjas').style.setProperty('--f', (110 * (1 - eio((t - 6.6) / 0.9))) + 'px');
-  pintarGrano(t);
+    for(const pa of el.querySelectorAll('.patron')) moverPatron(pa, t);
+  });
+  /* la cortina del corte más cercano */
+  const COLORES = ['#C2410C', '#2E1B10', '#F4B63A', '#2F5419', '#E8590C', '#5A3624', '#C2410C', '#2E1B10'];
+  let ci = -1, cp = 0;
+  E.slice(0, -1).forEach(([, , b], i) => { const p = (t - (b - CORTE)) / (2 * CORTE); if(p > 0 && p < 1){ ci = i; cp = p; } });
+  const cor = $('cortina');
+  if(ci < 0) cor.style.transform = 'translateX(120%) skewX(-12deg)';
+  else { cor.style.background = COLORES[ci % COLORES.length]; cor.style.transform = 'translateX(' + (110 - 260 * eio(cp)) + '%) skewX(-12deg)'; moverPatron(cor.firstElementChild, t); }
+  /* cámara en mano: un vaivén chiquito, nunca quieta del todo */
+  const mano = 'translate(' + (Math.sin(t * 0.9) * 3 + Math.sin(t * 2.3) * 1.2).toFixed(2) + 'px,' + (Math.cos(t * 0.7) * 2.5 + Math.sin(t * 1.9)).toFixed(2) + 'px) rotate(' + (Math.sin(t * 0.5) * 0.12).toFixed(3) + 'deg)';
+  E.forEach(([id]) => { const el = $(id); if(el.style.opacity !== '0') el.style.transform += ' ' + mano; });
+  /* franjas de cine: anchas al principio, finas el resto, fuera en los créditos */
+  const fin = E[E.length - 1][1];
+  $('franjas').style.setProperty('--f', ((60 + 70 * (1 - eio((t - 6.6) / 0.9))) * (1 - cl((t - fin + 0.2) / 0.4))) + 'px');
+  /* el letrero de lugar, como en las películas */
+  $('lugar').style.opacity = (cl((t - 0.5) / 0.6) * (1 - cl((t - 4.6) / 0.5))).toFixed(3);
+  $('lugar').style.transform = 'translateY(' + ((1 - eo((t - 0.5) / 0.8)) * 16) + 'px)';
   await Promise.all(pendientes);
 };
 
 const palabras = (sel, l, t0, paso) => document.querySelectorAll(sel + ' .palabra').forEach((p, i) => {
   const k = rebote((l - t0 - i * paso) / 0.42); p.style.opacity = cl((l - t0 - i * paso) / 0.08);
+  p.style.transform = 'translateY(' + (1 - k) * 60 + 'px) scale(' + (0.6 + 0.4 * k) + ')';
+});
+/* lo mismo, pero cada palabra en el momento en que la dice la voz (medido con
+   Whisper sobre el mp3: grabar/medir-mezcla.py no, esto es a mano por frase) */
+/* con otra voz (VOZ=… en comercial.mjs) los tiempos vienen de su palabras.json */
+const PAL = window.PALABRAS || {};
+const palabrasEn = (sel, l, ts) => document.querySelectorAll(sel + ' .palabra').forEach((p, i) => {
+  const t0 = ts[Math.min(i, ts.length - 1)], k = rebote((l - t0) / 0.42); p.style.opacity = cl((l - t0) / 0.08);
   p.style.transform = 'translateY(' + (1 - k) * 60 + 'px) scale(' + (0.6 + 0.4 * k) + ')';
 });
 const escenas = {
@@ -220,55 +336,126 @@ const escenas = {
     $('e1anillo').style.transform = 'rotate(' + (-90 + l * 4) + 'deg) scale(' + (0.96 + 0.04 * eo(l / 2)) + ')';
     $('e1num').style.color = p > .5 ? '#FF6A4D' : '#fff';
   },
-  e3(l){ const k = rebote(l / 0.45); $('e3t').style.transform = 'scale(' + (2.4 - 1.4 * k) + ') rotate(' + (1 - eo(l / 0.45)) * -9 + 'deg) translate(' + Math.sin(l * 70) * 6 * Math.exp(-l * 6) + 'px,0)'; $('e3ray').style.transform = 'translateX(' + (-l * 120) + 'px)'; },
+  e3(l){ const k = rebote(l / 0.45); $('e3t').style.transform = 'scale(' + (2.4 - 1.4 * k) + ') rotate(' + (1 - eo(l / 0.45)) * -9 + 'deg) translate(' + Math.sin(l * 70) * 6 * Math.exp(-l * 6) + 'px,0)'; $('e3ray').style.transform = 'translateX(' + deslizar(l + 5.6).toFixed(2) + 'px)'; },
   e4(l, d){
+    /* la presentación de la app, en grande: su propia animación CSS, puesta en
+       el instante l (no corre sola: cada cuadro sale igual cada vez) */
+    const co = $('e4cort'), ci = co.firstElementChild;
+    for(const an of co.getAnimations({ subtree: true })){ an.pause(); an.currentTime = Math.min(l, 2.9) * 1000; }
+    /* se encoge hasta la pantalla del teléfono (1224, 80, 424 × 920) */
+    const p = eio(cl((l - CORT.encoge) / (CORT.cabe - CORT.encoge)));
+    const x = 1224 * p, y = 80 * p, w = 1920 + (424 - 1920) * p, h = 1080 + (920 - 1080) * p, z = 1 + (0.44 - 1) * p;
+    co.style.left = x + 'px'; co.style.top = y + 'px'; co.style.width = w + 'px'; co.style.height = h + 'px';
+    co.style.borderRadius = 54 * p + 'px';
+    ci.style.width = w / z + 'px'; ci.style.height = h / z + 'px'; ci.style.transformOrigin = '0 0'; ci.style.transform = 'scale(' + z + ')';
+    co.style.opacity = 1 - cl((l - 2.85) / 0.15);
+    co.style.display = l > 3.05 ? 'none' : '';
     const r = appEn(l);
-    poner($('e4img'), REC('app', tope('app', r * 30)));
-    $('e4tel').style.transform = 'translateY(' + (1 - eo(l / 0.7)) * 700 + 'px) rotate(' + (5 - 5 * eo(l / 0.9) + Math.sin(l * 0.8) * 0.6) + 'deg)';
+    poner($('e4img'), REC('app', tope('app', r * RF)));
+    $('e4tel').style.transform = 'rotate(' + Math.sin(l * 0.8) * 0.6 * cl((l - 3) / 0.5) + 'deg)';
     document.querySelectorAll('#e4fondo .flota').forEach((f, i) => { f.style.transform = 'translate(' + Math.sin(l * 0.5 + i * 2) * 40 + 'px,' + (Math.cos(l * 0.4 + i) * 30 - l * 8) + 'px) rotate(' + l * (i % 2 ? 6 : -6) + 'deg)'; });
-    $('e4chip').style.transform = 'scale(' + rebote((l - 0.4) / 0.5) + ')';
-    const cambio = 6.25;
+    $('e4chip').style.transform = 'scale(' + rebote((l - 2.5) / 0.5) + ')';
+    /* las palabras, cuando las dice la voz: 04 a los 8.55 s (l 1.55), 05 a los 13.8 (l 6.8) */
+    const cambio = 6.7;
     $('e4t1').style.opacity = 1 - cl((l - cambio) / 0.25);
-    palabras('#e4t1', l, 0.8, 0.22);
+    palabrasEn('#e4t1', l, PAL.e4t1 || [2.71, 3.11, 3.29, 3.51, 3.73]);
     $('e4t2').style.opacity = cl((l - cambio) / 0.2);
-    palabras('#e4t2', l, cambio + 0.1, 0.9);
+    palabrasEn('#e4t2', l, PAL.e4t2 || [6.8, 7.62, 8.74]);
     /* «imágenes ilustrativas»: en cuanto se ve comida en el menú */
-    $('e4ilus').style.opacity = cl((l - 3.2) / 0.3);
+    $('e4ilus').style.opacity = cl((l - 3.6) / 0.3);
   },
   e5(l, d){
-    poner($('e5tvimg'), REC('tv-episodio', tope('tv-episodio', l * 30)));
-    poner($('e5img'), REC('app', tope('app', (20.0 + l * 0.55) * 30)));
+    poner($('e5tvimg'), REC('tv-episodio', tope('tv-episodio', l * RF)));
+    poner($('e5img'), REC('app', tope('app', (20.0 + l * 0.55) * RF)));
     $('e5tv').style.transform = 'rotateY(' + (16 - 6 * eio(l / d)) + 'deg) translateX(' + (1 - eo(l / 0.7)) * -400 + 'px) scale(' + (0.96 + 0.06 * l / d) + ')';
     $('e5tel').style.transform = 'translateX(' + (1 - eo((l - 0.2) / 0.7)) * 600 + 'px) rotate(' + Math.sin(l * 0.9) * 1.5 + 'deg)';
     $('e5t').style.opacity = cl((l - 0.9) / 0.3); $('e5t').style.transform = 'translateY(' + (1 - eo((l - 0.9) / 0.5)) * 50 + 'px)';
   },
   e6(l, d){
-    poner($('e6img'), REC('app', tope('app', (22.4 + l) * 30)));
+    poner($('e6img'), REC('app', tope('app', (22.4 + l) * RF)));
     $('e6tel').style.transform = 'scale(' + (0.7 + 0.3 * rebote(l / 0.6) + 0.04 * l / d) + ')';
     const g = rebote((l - 0.35) / 0.5); $('e6t').style.transform = 'scale(' + g + ') rotate(' + (1 - g) * -12 + 'deg)'; $('e6t').style.opacity = cl((l - 0.35) / 0.1);
-    $('e6s').style.opacity = cl((l - 1.2) / 0.3); $('e6s').style.transform = 'translateX(' + (1 - eo((l - 1.2) / 0.5)) * 120 + 'px)';
+    const ts = PAL.e6s != null ? PAL.e6s : 1.25; $('e6s').style.opacity = cl((l - ts) / 0.25); $('e6s').style.transform = 'translateX(' + (1 - eo((l - ts) / 0.5)) * 120 + 'px)';
     /* ondas de aviso que salen del teléfono */
     const o = $('e6ondas'); if(!o.children.length) for(let i = 0; i < 4; i++){ const c = document.createElement('div'); c.style.cssText = 'position:absolute;border:6px solid rgba(233,255,217,.5);border-radius:50%'; o.appendChild(c); }
     [...o.children].forEach((c, i) => { const k = ((l + i * 0.45) % 1.8) / 1.8, r = 300 + k * 900; c.style.width = c.style.height = r + 'px'; c.style.left = c.style.top = -r / 2 + 'px'; c.style.opacity = (1 - k) * .7; });
   },
   e7(l){
-    /* cinco tomas de la tele, cada una con su grabación y su letrero */
-    const T = [[0, 'tv-episodio', 6.5, 'Radio Divergentes'], [4.4, 'tv-pelicula', 1.0, 'Películas'], [5.8, 'tv-musica', 0.5, 'Música'], [7.2, 'tv-tanda', 14.0, 'Los proyectos de<br>tus compañeros'], [9.6, 'tv-vivo', 1.5, 'Partidos<br>en vivo']];
-    let k = 0; for(let i = 0; i < T.length; i++) if(l >= T[i][0]) k = i;
-    const [t0, dir, desde, nom] = T[k], u = l - t0;
-    const src = REC(dir, tope(dir, (desde + u) * 30));
-    poner($('e7img'), src);
-    $('e7fondo').style.backgroundImage = 'url("' + src + '")';
-    /* cada toma: entra de lado con giro y la cámara se sigue acercando */
-    const lado = k % 2 ? -1 : 1, e = eo(u / 0.45);
-    $('e7tv').style.transform = 'translateX(' + (1 - e) * 500 * lado + 'px) rotateY(' + ((1 - e) * 25 * lado + Math.sin(l * 0.7) * 3) + 'deg) scale(' + (0.94 + 0.06 * e + 0.012 * u) + ')';
-    $('e7nom').innerHTML = nom; $('e7nom').style.transform = 'translateY(' + (1 - eo(u / 0.35)) * 70 + 'px)'; $('e7nom').style.opacity = cl(u / 0.15);
-    $('e7nom').style.color = k === 4 ? '#FFE27A' : '#fff';
-    $('e7chip').style.transform = 'scale(' + rebote(l / 0.5) + ')';
+    /* dónde vive cada cosa en la grabación de la tele (1920×1080) */
+    const PROG = { x: 30, y: 80, w: 1155, h: 645 }, TODO = { x: 0, y: 0, w: 1920, h: 1080 }, PORT = { x: 112, y: 215, w: 380, h: 380 };
+    const T = [0, 4.4, 5.8, 7.2, 9.6];
+    let k = 0; for(let i = 0; i < T.length; i++) if(l >= T[i]) k = i;
+    const u = l - T[k], r = ritmo(l + 26.4);
+    const v = [$('e7v0'), $('e7v1'), $('e7v2')];
+    v.forEach(x => { x.style.display = 'none'; x.style.transform = ''; x.style.borderRadius = '0'; });
+    for(const id of ['e7eq', 'e7vivo', 'e7cine']) $(id).style.opacity = 0;
+    for(const id of ['e7rayas', 'e7anillos']) $(id).style.display = 'none';   /* con display: el ciclo general les pone opacidad a todos los patrones */
+    $('e7eti').style.display = ''; $('e7nom').style.color = '#fff'; $('e7eti').style.left = '120px'; $('e7eti').style.bottom = '96px'; v[0].style.filter = '';
+    $('e7fondo').style.background = '#0d0a08';
+    const titulo = (html, color) => { $('e7nom').innerHTML = html; $('e7nom').style.transform = 'translateX(' + (1 - eo(u / 0.4)) * -160 + 'px)'; $('e7nom').style.opacity = cl(u / 0.15); if(color) $('e7nom').style.color = color; };
+    if(k === 0){
+      /* RADIO DIVERGENTES: de un acercamiento al episodio, la cámara se abre a la tele entera */
+      const f = REC('tv-episodio', tope('tv-episodio', (6.5 + u) * RF));
+      const cerca = { x: 70, y: 110, w: 820, h: 461 }, k1 = eio((u - 0.4) / 1.4), k2 = eio((u - 2.0) / 1.6);
+      v[0].style.display = '';
+      recorte(v[0], f, mezclaR(mezclaR(cerca, PROG, k1), TODO, k2), { x: 0, y: 0, w: 1920, h: 1080 });
+      v[0].style.transform = 'scale(' + (1.04 - 0.04 * eo(u / 4.4)) + ')';
+      $('e7eti').style.left = '1040px'; $('e7eti').style.bottom = '96px';
+      titulo('Radio<br>Divergentes');
+    } else if(k === 1){
+      /* PELÍCULAS: en pantalla de cine, con su título al centro */
+      const f = REC('tv-pelicula', tope('tv-pelicula', (1.0 + u) * RF));
+      v[0].style.display = '';
+      recorte(v[0], f, { x: 30, y: 161, w: 1155, h: 483 }, { x: 0, y: 138, w: 1920, h: 803 });
+      v[0].style.transform = 'scale(' + (1 + 0.05 * u) + ')'; v[0].style.filter = 'brightness(.72)';
+      $('e7eti').style.display = 'none';
+      const c = $('e7cine'); c.textContent = 'Películas'; c.style.opacity = cl(u / 0.3) * (1 - cl((u - 1.15) / 0.25));
+      c.style.letterSpacing = (0.5 - 0.42 * eo(u / 1.2)) + 'em'; c.style.transform = 'translateY(-50%)';
+    } else if(k === 2){
+      /* MÚSICA: la portada en grande, girando al ritmo, con su ecualizador */
+      const f = REC('tv-musica', tope('tv-musica', (0.5 + u) * RF));
+      $('e7fondo').style.background = 'radial-gradient(80% 90% at 30% 50%,#6A2A0E,#1A0C06)';
+      $('e7anillos').style.display = '';
+      v[0].style.display = ''; v[0].style.borderRadius = '36px';
+      recorte(v[0], f, PORT, { x: 230, y: 200, w: 640, h: 640 });
+      v[0].style.transform = 'rotate(' + (-6 + 4 * eo(u / 0.6)) + 'deg) scale(' + (0.9 + 0.1 * rebote(u / 0.5) + 0.03 * r.pulso) + ')';
+      const eq = $('e7eq'); if(!eq.children.length) for(let i = 0; i < 12; i++) eq.appendChild(document.createElement('b'));
+      eq.style.opacity = cl(u / 0.2);
+      [...eq.children].forEach((b, i) => { const s = Math.sin(i * 1.7 + r.n * 2.3) * 0.5 + 0.5; b.style.height = (30 + 170 * s * (0.35 + 0.65 * r.pulso)) + 'px'; });
+      $('e7eti').style.left = '1000px'; $('e7eti').style.bottom = '520px';
+      titulo('Música', '#FFE27A');
+    } else if(k === 3){
+      /* PROYECTOS: tres anuncios de la escuela como tarjetas que entran una tras otra */
+      $('e7eti').style.left = '120px'; $('e7eti').style.bottom = '96px';
+      $('e7fondo').style.background = '#8A1D1D';
+      $('e7rayas').style.display = '';
+      const CAJAS = [{ x: 110, y: 80, w: 720, h: 405, g: -5, de: [-1, 0] }, { x: 1080, y: 60, w: 720, h: 405, g: 4, de: [1, 0] }, { x: 620, y: 320, w: 720, h: 405, g: -2, de: [0, 1] }];
+      [8.0, 17.5, 25.0].forEach((desde, i) => {
+        const e = rebote((u - i * 0.35) / 0.55); if(u < i * 0.35) return;
+        const c = CAJAS[i], f = REC('tv-tanda', tope('tv-tanda', (desde + u) * RF));
+        v[i].style.display = ''; v[i].style.borderRadius = '22px';
+        recorte(v[i], f, PROG, c);
+        v[i].style.transform = 'translate(' + (1 - e) * 1400 * c.de[0] + 'px,' + (1 - e) * 900 * c.de[1] + 'px) rotate(' + c.g + 'deg)';
+      });
+      titulo('Los proyectos de<br>tus compañeros');
+      $('e7eti').style.zIndex = 7;
+    } else {
+      /* PARTIDOS EN VIVO: el partido a pantalla completa, golpe de cámara a cada tiempo, y al final la tele con los turnos */
+      $('e7eti').style.left = '120px'; $('e7eti').style.bottom = '96px';
+      const f = REC('tv-vivo', tope('tv-vivo', (1.5 + u) * RF));
+      v[0].style.display = '';
+      const ab = eio((u - 2.3) / 0.9);
+      recorte(v[0], f, mezclaR(PROG, TODO, ab), { x: 0, y: 0, w: 1920, h: 1080 });
+      v[0].style.transform = 'scale(' + (1 + 0.045 * r.pulso * (1 - ab)) + ')';
+      const vv = $('e7vivo'); vv.style.opacity = cl(u / 0.2) * (1 - ab); vv.firstElementChild.style.opacity = r.f < 0.5 ? 1 : 0.25;
+      titulo('Partidos<br>en vivo', '#FFE27A');
+    }
+    $('e7chip').style.transform = 'scale(' + rebote(u / 0.45) + ')';
   },
+
   e8(l){
     const r = 3.6 + l;   /* el menú bajando, igual en los dos */
-    poner($('e8a'), REC('app', tope('app', r * 30))); poner($('e8b'), REC('app-oscuro', tope('app-oscuro', r * 30)));
+    poner($('e8a'), REC('app', tope('app', r * RF))); poner($('e8b'), REC('app-oscuro', tope('app-oscuro', r * RF)));
     /* el corte diagonal de claro a oscuro, al decir «o en modo oscuro» */
     const w = eio((l - 1.55) / 0.8), X0 = (-10 + w * 180) / 100 * 1920, X1 = X0 - 0.3 * 1920;
     const en = (y) => X0 + (X1 - X0) * y / 1080;   /* dónde va la línea a la altura y */
@@ -281,10 +468,10 @@ const escenas = {
   },
   e9(l){
     const g = rebote(l / 0.6); $('e9logo').style.transform = 'scale(' + g + ') rotate(' + ((1 - g) * -30 - 5 + Math.sin(l * 1.5) * 2) + 'deg)';
-    palabras('#e9t', l, 0.45, 0.32);
+    palabrasEn('#e9t', l, PAL.e9t || [1.29, 1.49, 1.89, 2.01, 2.15, 2.59, 2.67, 2.85]);
     $('e9sub').style.opacity = cl((l - 4.3) / 0.4); $('e9sub').style.transform = 'translateY(' + (1 - eo((l - 4.3) / 0.5)) * 30 + 'px)';
     const q = rebote((l - 4.1) / 0.6); $('e9qr').style.transform = 'scale(' + q + ') rotate(' + ((1 - q) * 20 + Math.sin(l * 1.3) * 1.5) + 'deg)';
-    $('e9ray').style.transform = 'translateX(' + (-l * 60) + 'px)';
+    $('e9ray').style.transform = 'translateX(' + deslizar(l + 44.4).toFixed(2) + 'px)';
   },
   e10(l){ $('e10txt').style.transform = 'translateY(' + (1 - eo(l / 0.6)) * 30 + 'px) scale(' + (1 + l * 0.008) + ')'; },
 };

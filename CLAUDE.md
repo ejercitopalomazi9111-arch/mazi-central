@@ -415,7 +415,12 @@ dependemos.
    | `desfase` en la mesa basta para que la app crea que son las 10:12 en México | la app arma el recreo con `new Date().setHours(10,30)`, que usa la ZONA del navegador: en UTC el recreo «ya había terminado» | el comercial salía con «el recreo terminó». `aparato(…, { zona: 'America/Mexico_City' })` |
    | el screencast de Chromium graba con el `deviceScaleFactor` del contexto | sin pantalla graba a **1x** aunque el contexto diga 2; sólo `--force-device-scale-factor=2` al lanzar lo sube | la app del comercial salía a 390 px, borrosa en 1080p. `ESCALA=2` en la mesa |
    | `x || valorDeFábrica` sólo entra cuando falta el dato | también entra cuando el dato es **cero**: `setHours(h || 10, m || 30)` volvía «10:00» en 10:30 | la app esperó el recreo media hora tarde desde el 9 de octubre, con el servidor bien puesto en 10:00; salió porque la captura del póster decía «para el recreo 46 min» a las 9:43. Para números se usa `Number.isFinite`, y `fadori/pruebas-recreo.mjs` lo mide |
+   | un screencast a 30 o 60 por segundo graba 30 o 60 cuadros distintos | Chromium sin pantalla entrega **15-25** cuadros distintos: el resto son repetidos, y el video «se traba» | Carlos lo vio en el comercial. Ahora la página corre 5 veces más lenta (`lento` en `fadori-campana/grabar/comun.mjs`) y se acelera al guardar: 60 de verdad. **La fecha no se frena**: con `Date` lento el servidor rechazaba los pedidos |
    | pedir pantalla completa en una prueba no cambia nada | el Chromium sin pantalla la hace de **800×600** y la página se encoge a eso | la tele del comercial se grabó recortada a una esquina; se tapa `requestFullscreen` antes de tocar «Empezar» |
+
+   | una voz que sale en `/v1/voices` de la cuenta se puede usar | en plan gratis sólo las **premade**: Araceli y Diego (mexicanas, «professional») salen en la lista y dan **402** al pedirles audio | dos veces se prometió acento mexicano para el comercial; se probó con una frase y `curl` antes de generar las 15 |
+
+   | el lector de la credencial encuentra el nombre arriba de «Matrícula» | la credencial nueva (2026-2027) **ya no trae «Matrícula»**: nombre, apellidos y «BACHILLERATO», con el logo de la SEP en el mismo renglón | con las fotos de Carlos leía «GO» por «DIEGO» y proponía «Sep C». Ahora ancla en Matrícula o Bachillerato, relee de cerca la franja del nombre y `fadori/pruebas-lector.mjs` dibuja los dos formatos |
 
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
