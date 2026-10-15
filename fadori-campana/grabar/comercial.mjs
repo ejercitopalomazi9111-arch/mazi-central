@@ -79,7 +79,7 @@ const fil = [], voces = [], efectos = [];
 SONIDOS.forEach(([archivo, t, vol = 1], i) => {
   ent.push('-i', path.join(A, archivo));
   const ms = Math.round(t * 1000), et = 's' + i;
-  const esVoz = archivo.startsWith('voz/');
+  const esVoz = /^voz(-[\w-]+)?\//.test(archivo);     /* voz/ o voz-<otra>/ */
   fil.push(`[${i + 2}:a]aformat=sample_rates=44100:channel_layouts=stereo,adelay=${ms}|${ms},volume=${esVoz ? 1.0 : vol * NIVEL.efectos}[${et}]`);
   (esVoz ? voces : efectos).push(`[${et}]`);
 });
