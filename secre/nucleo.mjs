@@ -34,6 +34,7 @@ export function configBase(){
     chats: {},                     /* jid → { nombre, modo, nota, etiquetas: [] } */
     saludos: [],                   /* { chat, manana: '07:00', noche: '22:30', variacion: 10 } */
     reglas: [],                    /* { id, palabras?, etiquetas?, chats?, de?, a?, modo, hasta? } */
+    datos: [],                     /* lo que Carlos le cuenta para contestar: { n, texto, hasta? } — «el viernes hay examen de mate a las 8» */
     pausaHasta: 0,
     resumen: '21:30',              /* el resumen de pendientes del día */
     juntar: 45,                    /* segundos que espera a que la otra persona termine de escribir */
@@ -206,7 +207,7 @@ export class Secre {
     const nombre = this.nombreDe(jid);
     let r = null;
     try{
-      r = await this.ia.leer({ dueno: this.config.nombre, nombre, nota: this.chat(jid).nota || '', historial: h, nuevos, estilo: this.estado.estilo.slice(-40), redactar: modo === 'borrador', grupo });
+      r = await this.ia.leer({ dueno: this.config.nombre, nombre, nota: this.chat(jid).nota || '', historial: h, nuevos, estilo: this.estado.estilo.slice(-40), redactar: modo === 'borrador', grupo, datos: this.datosVigentes().map(d => d.texto) });
     }catch(e){ r = null; this.anotar(`la IA falló con ${nombre}: ${e.message}`); }
     for(const p of (r && r.pendientes) || []) this.agregarPendiente(jid, nombre, p);
     if(modo !== 'borrador'){ this.guardar(); return; }
@@ -221,6 +222,19 @@ export class Secre {
       (propuesta ? `Propuesta: «${propuesta}»\n→ «${n}» la manda · «${n} tu texto» manda el tuyo · «x${n}» la tira` : 'No supe qué contestarle: te toca.') +
       (r && r.motivo ? `\n(${r.motivo})` : ''));
     this.guardar();
+  }
+
+  /* lo que Carlos le contó y no ha caducado */
+  datosVigentes(){ const ahora = this.reloj(); return (this.config.datos || []).filter(d => !d.hasta || d.hasta > ahora); }
+  agregarDato(texto, hasta){
+    const t = String(texto || '').trim(); if(!t) return null;
+    if(!this.config.datos) this.config.datos = [];
+    if(this.config.datos.some(d => sinAcentos(d.texto) === sinAcentos(t))) return null;
+    const n = this.config.datos.reduce((m, d) => Math.max(m, d.n), 0) + 1;
+    const d = { n, texto: t.slice(0, 600), t: this.reloj() };
+    const fin = finDe(hasta, this.reloj()); if(fin) d.hasta = fin;
+    this.config.datos.push(d); this.config.datos = this.config.datos.slice(-80);
+    return d;
   }
 
   agregarPendiente(jid, nombre, texto){
@@ -323,6 +337,20 @@ export class Secre {
       this.agregarPendiente('', '', m[2]); this.guardar();
       return this.avisar(`Anotado: ${m[2].trim()}`);
     }
+    /* «dato: el viernes hay examen de mate a las 8» · «datos» · «olvida 2» */
+    if((m = /^\/?(dato|recuerda|ojo|toma en cuenta)[:\s]+([\s\S]+)$/i.exec(t))){
+      const d = this.agregarDato(m[2]); this.guardar();
+      return this.avisar(d ? `Lo tengo (dato ${d.n}). Lo uso cuando venga al caso en lo que te propongo.` : 'Eso ya lo sabía.');
+    }
+    if(/^\/?(datos|que sabes|qué sabes|lo que sabes)$/.test(s)){
+      const ds = this.datosVigentes();
+      return this.avisar(ds.length ? 'Lo que me has contado:\n' + ds.map(d => `${d.n}. ${d.texto}${d.hasta ? ' (hasta el ' + fechaMx(d.hasta - 1) + ')' : ''}`).join('\n') + '\n→ «olvida 2» para quitar uno' : 'No me has contado nada todavía. Escribe «dato: …».');
+    }
+    if((m = /^\/?(olvida|borra el dato)\s+(\d+)$/.exec(s))){
+      const antes = (this.config.datos || []).length;
+      this.config.datos = (this.config.datos || []).filter(d => d.n !== +m[2]); this.guardar();
+      return this.avisar(antes === this.config.datos.length ? `No tengo el dato ${m[2]}.` : `Olvidado el dato ${m[2]}.`);
+    }
     if((m = /^\/?pausa(?:\s+(.+))?$/.exec(s))){
       const d = duracion(m[1] || '1h', this.reloj()) || HORA;
       this.config.pausaHasta = this.reloj() + d; this.guardar();
@@ -405,6 +433,8 @@ export class Secre {
       case 'hecho': { const p = this.estado.pendientes.find(x => x.n === +a.n && !x.hecho); if(!p) return ''; p.hecho = true; return `Tachado: ${p.texto}`; }
       case 'resumen': { if(aMin(a.hora) == null) return ''; this.config.resumen = a.hora; return `Resumen de pendientes a las ${a.hora}`; }
       case 'porDefecto': { if(!MODOS.includes(a.modo)) return ''; this.config.porDefecto = a.modo; return `Chats sin modo propio: ${a.modo}`; }
+      case 'dato': { const d = this.agregarDato(a.texto, a.hasta); return d ? `Lo tengo (dato ${d.n})${d.hasta ? ', hasta el ' + fechaMx(d.hasta - 1) : ''}` : ''; }
+      case 'olvidaDato': { const antes = (this.config.datos || []).length; this.config.datos = (this.config.datos || []).filter(d => d.n !== +a.n); return antes === this.config.datos.length ? '' : `Olvidado el dato ${a.n}`; }
       default: return '';
     }
   }
@@ -420,7 +450,7 @@ export class Secre {
     return [`Cuenta: ${this.cuenta}`, c.pausaHasta > this.reloj() ? `⏸ En pausa hasta las ${horaMx(c.pausaHasta)}` : '▶ Activa',
       `${this.estado.propuestas.length} propuesta(s) esperando · ${a} pendiente(s)`,
       `Saludos: ${c.saludos.length ? c.saludos.map(s => `${this.nombreDe(s.chat)} (${s.manana || '—'} / ${s.noche || '—'})`).join(', ') : 'ninguno'}`,
-      `Reglas: ${c.reglas.length}`].join('\n');
+      `Reglas: ${c.reglas.length}`, `Datos que me contaste: ${this.datosVigentes().length}`].join('\n');
   }
   textoChats(){
     const l = Object.entries(this.config.chats).filter(([, c]) => c.nombre).slice(0, 40);
@@ -431,6 +461,7 @@ export class Secre {
 export const AYUDA = `Lo que sé hacer (escríbelo aquí, en tu chat):
 · «3» manda la propuesta #3 · «3 tu texto» manda el tuyo · «x3» la tira
 · «pendientes» · «hecho 2» · «anota comprar pilas»
+· «dato: el viernes hay examen de mate a las 8, temas: derivadas» · «datos» · «olvida 2»
 · «pausa 2h» / «pausa hoy» · «sigue»
 · «estado» · «chats»
 Y en palabras normales, por ejemplo:
