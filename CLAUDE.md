@@ -413,6 +413,8 @@ dependemos.
    | el `desfase` de la mesa de pruebas pone el reloj a la hora que le pido | la hora va en **UTC** (10:12 UTC son las 4:12 en México) y sólo mueve `Date.now()`: el reloj de la tele usa `new Date()` | la pantalla salió en un póster con «03:56 a.m.»; lo vi recortando la esquina. Para México se suman 6 h y en una foto para cartel el reloj se fija a mano antes de capturar |
    | una variable de color con nombre de color (`--cafe`) es ese color en los dos temas | `--cafe` es la TINTA del tema: en oscuro se vuelve crema, y los cuatro fondos que la usaban con letra blanca encima quedaron crema sobre crema (1.19:1) | «Ya están preparando tu pedido» ilegible en modo oscuro desde siempre; lo vi grabando el comercial en oscuro. Los fondos con letra fija usan `--cafe-solido`, y `fadori/pruebas-contraste.mjs` mide cada aviso en los dos temas |
    | `desfase` en la mesa basta para que la app crea que son las 10:12 en México | la app arma el recreo con `new Date().setHours(10,30)`, que usa la ZONA del navegador: en UTC el recreo «ya había terminado» | el comercial salía con «el recreo terminó». `aparato(…, { zona: 'America/Mexico_City' })` |
+   | el screencast de Chromium graba con el `deviceScaleFactor` del contexto | sin pantalla graba a **1x** aunque el contexto diga 2; sólo `--force-device-scale-factor=2` al lanzar lo sube | la app del comercial salía a 390 px, borrosa en 1080p. `ESCALA=2` en la mesa |
+   | pedir pantalla completa en una prueba no cambia nada | el Chromium sin pantalla la hace de **800×600** y la página se encoge a eso | la tele del comercial se grabó recortada a una esquina; se tapa `requestFullscreen` antes de tocar «Empezar» |
 
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
