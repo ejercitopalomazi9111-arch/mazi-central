@@ -1048,6 +1048,27 @@
         "no se sincroniza el estado"
       ],
       "salioDe": "Cancelar en 5 minutos de Fadori, 15 de octubre."
+    },
+    {
+      "id": "tinta-usada-de-fondo",
+      "titulo": "Un aviso crema sobre crema en modo oscuro",
+      "gravedad": "media",
+      "sintoma": "En modo oscuro «Ya están preparando tu pedido», el tostón y la etiqueta «Agotado» no se leen: letra blanca sobre fondo crema.",
+      "causa": "Los cuatro usaban de fondo var(--cafe), que es la tinta del tema: en oscuro se invierte a crema. La letra blanca no se invierte.",
+      "porque": "Un nombre de color en una variable de tema no dice qué ES sino qué PAPEL juega; el papel de --cafe es «tinta», no «café».",
+      "arreglo": "Fondos con letra fija van con --cafe-solido, que en oscuro es un café hondo (#5A3624).",
+      "comoCazarlo": "LOCAL=1 API_LOCAL=http://127.0.0.1:8791 node fadori/pruebas-contraste.mjs — pinta cada aviso en claro y oscuro y mide 4.5:1.",
+      "consejo": "Antes de poner una variable de tema de FONDO, pregúntate qué vale en el otro tema.",
+      "senales": [
+        "modo oscuro",
+        "no se lee",
+        "contraste",
+        "crema",
+        "aviso",
+        "tostón",
+        "--cafe"
+      ],
+      "salioDe": "Grabando el comercial de Fadori en modo oscuro, 15 de octubre de 2026"
     }
   ]
 }
