@@ -605,5 +605,137 @@ console.log('\n11 · Avisos cruzados: cada cuenta le escribe a la otra para que 
   ok('«repaso 0» lo apaga', S.A.config.repaso.cada === 0);
 }
 
+console.log('\n12 · «¿Qué me llegó?», notas de voz y llamadas (Carlos, 16 de octubre)');
+{
+  ahora = Date.UTC(2026, 9, 20, 17, 0);   /* 11:00 en México */
+  const env3 = []; let n3 = 1, oirFalla = false, vozFalla = false, oidos = 0;
+  const t3 = {
+    yo: () => [YO], otrosYo: () => [],
+    async enviar(jid, texto){ const id = 'V' + (n3++); env3.push({ jid, texto, id }); return id; },
+    async enviarAudio(jid, ogg, sg){ const id = 'V' + (n3++); env3.push({ jid, texto: '[audio]', ogg, sg, id }); return id; },
+    async escribiendo(){}, async leido(){}, async grabando(){},
+  };
+  const ia3 = { ...ia,
+    async leer(x){
+      const t = x.nuevos.map(y => y.texto).join(' ');
+      if(x.auto && /hospital|urgente/i.test(t)) return { pendientes: [], respuesta: 'Ya le aviso a Carlos ahora mismo.', motivo: 'una emergencia', urgente: true, decide: true };
+      return ia.leer(x);
+    },
+    async oir({ b64 }){ oidos++; if(oirFalla) throw new Error('sin red'); return Buffer.from(b64, 'base64').toString(); },
+    async voz(texto){ if(vozFalla) throw new Error('la voz no contestó'); return { ogg: Buffer.from('OggS' + texto), segundos: 3 }; },
+    async resumir({ chats }){ return { resumen: `Te escribieron ${chats.length} personas.`, importantes: chats.filter(c => c.mensajes.some(m => /mamá/.test(m.dijo))).map(c => c.nombre) }; },
+  };
+  const llamadas = []; let listas = false;
+  const tel = { listas: () => listas, async llamar(x){ llamadas.push(x); return { bien: true }; } };
+  const alm = (() => { const d = {}; return { leer: (k, x) => d[k] ? JSON.parse(d[k]) : x, guardar: (k, v) => { d[k] = JSON.stringify(v); } }; })();
+  const s5 = new Secre({ cuenta: 'R', transporte: t3, ia: ia3, almacen: alm, reloj, azar: () => 0.5, telefono: tel });
+  const ROSA = '5215550002222@s.whatsapp.net', PEPE = '5215550003333@s.whatsapp.net', MARY = '5215550004444@s.whatsapp.net';
+  const llega5 = async (jid, nombre, texto, extra = {}) => { await s5.alMensaje({ id: 'm' + (n3++), chat: jid, de: jid, nombre, texto, mio: false, t: ahora, ...extra }); pasar(7); await s5.tic(); };
+  const dice = async (texto) => { await s5.orden(texto); return (env3.filter(e => e.jid === YO && e.texto !== '[audio]').slice(-1)[0] || {}).texto || ''; };
+  await llega5(ANA, 'Ana', 'hola, tienen termos?');
+  await llega5(MARY, 'Doña Mary', 'me apartas el vestido?');
+  await llega5(ROSA, 'Rosa', 'dice mi mamá que si vienes el domingo');
+  await llega5(PEPE, 'Pepe', 'urgente, estoy en el hospital');
+  ok('sin pedirlo, con llamadas apagadas, no le llama', !llamadas.length);
+  let r = await dice('¿Qué me llegó?');
+  ok('«qué me llegó» le resume todo lo que llegó desde ayer', /Lo que te llegó desde las/.test(r) && /4 mensaje\(s\) de 4 chat\(s\)/.test(r), r);
+  ok('arriba, en corto (con la IA)', /En corto: Te escribieron 4 personas\./.test(r));
+  const imp = r.split('✓ Lo demás')[0];
+  ok('lo importante va primero: lo urgente, lo que necesita tu decisión y lo que la IA vio importante (aunque ya se contestó)', /Importante:/.test(imp) && /Pepe.*⚠️/.test(imp) && /Doña Mary/.test(imp) && /Rosa/.test(imp), r);
+  ok('lo demás va abajo, con lo que dijeron y lo que contesté', /Lo demás:\n· Ana: «hola, tienen termos\?» → «Hola, sí tenemos/.test(r), r);
+  r = await dice('resumen');
+  ok('si lo vuelve a pedir, sólo lo nuevo desde la última vez', /no te ha llegado nada nuevo/.test(r), r);
+  r = await dice('resumen de hoy');
+  ok('«resumen de hoy» vuelve a contar desde la medianoche', /4 mensaje\(s\)/.test(r) && /desde las 00:00/.test(r), r);
+  r = await dice('resumen a las 22:00');
+  ok('«resumen a las 22:00» sigue siendo cambiar la hora del resumen, no pedirlo', !/Lo que te llegó/.test(r), r);
+  /* notas de voz */
+  const b = (t) => Buffer.from(t).toString('base64');
+  await llega5(BETO, 'Beto', '[nota de voz]', { audio: { b64: b('oye, a qué hora abren mañana?'), mime: 'audio/ogg; codecs=opus' } });
+  ok('una nota de voz que le mandan se oye y se escribe con 🎤', (s5.estado.historial[BETO] || []).some(x => x.texto === '🎤 oye, a qué hora abren mañana?'), s5.estado.historial[BETO]);
+  ok('y se contesta como cualquier mensaje', env3.some(e => e.jid === BETO && /Asistente de Carlos/.test(e.texto)));
+  oirFalla = true; await llega5(LALO, 'Lalo', '[nota de voz]', { audio: { b64: b('x'), mime: 'audio/ogg' } }); oirFalla = false;
+  ok('si no la pudo oír, queda como [nota de voz] y no truena', (s5.estado.historial[LALO] || []).some(x => x.texto === '[nota de voz]'));
+  const o0 = oidos; await s5.alMensaje({ id: 'mio1', chat: ANA, de: YO, texto: '[nota de voz]', mio: true, t: ahora, audio: { b64: b('te llamo'), mime: 'audio/ogg' } });
+  ok('las notas de voz que Carlos manda en otros chats no se mandan a oír (no hace falta)', oidos === o0);
+  await s5.alMensaje({ id: 'yo1', chat: YO, de: YO, texto: '[nota de voz]', mio: true, t: ahora, audio: { b64: b('pendientes'), mime: 'audio/ogg' } });
+  ok('Carlos le puede dar órdenes por nota de voz en su chat', /Pendientes|No tienes pendientes/.test((env3.filter(e => e.jid === YO).slice(-1)[0] || {}).texto), env3.slice(-1));
+  /* mandar audios */
+  r = await dice('audio Ana: ya voy para allá');
+  const au = env3.filter(e => e.jid === ANA && e.texto === '[audio]');
+  ok('«audio Ana: …» le manda una nota de voz a Ana', au.length === 1 && /ya voy para allá/.test(au[0].ogg.toString()) && /🎤 Listo, le mandé el audio a Ana \(3 s\)/.test(r), r);
+  ok('y en su historial queda como 🎤 lo que dijo', (s5.estado.historial[ANA] || []).some(x => x.texto === '🎤 ya voy para allá'));
+  r = await dice('audio Fulanito: hola');
+  ok('a quien no conoce no le manda nada', /No tengo a «Fulanito»/.test(r));
+  vozFalla = true; r = await dice('audio Ana: otra cosa'); vozFalla = false;
+  ok('si la voz falla, lo dice (y no manda nada)', /No pude mandarle el audio/.test(r) && env3.filter(e => e.jid === ANA && e.texto === '[audio]').length === 1, r);
+  s5.config.chats[BETO].modo = 'borrador';
+  await llega5(BETO, 'Beto', 'y tienen envíos?');
+  const pb = s5.estado.propuestas.find(p => p.chat === BETO);
+  r = await dice(`${pb.n} audio`);
+  ok('«3 audio» manda la propuesta en nota de voz', env3.some(e => e.jid === BETO && e.texto === '[audio]') && /en audio/.test(r) && !s5.estado.propuestas.some(p => p.n === pb.n), r);
+  const a0 = env3.filter(e => e.jid === YO && e.texto === '[audio]').length;
+  await s5.orden('pendientes en audio');
+  ok('«pendientes en audio» se lo escribe y además se lo dice en audio', env3.filter(e => e.jid === YO && e.texto === '[audio]').length === a0 + 1 && /Pendientes|No tienes/.test(env3.filter(e => e.jid === YO && e.texto !== '[audio]').slice(-1)[0].texto));
+  ok('el audio se dice sin emojis ni signos raros', !/[🎉📌#«»]/u.test(env3.filter(e => e.jid === YO && e.texto === '[audio]').slice(-1)[0].ogg.toString()));
+  /* llamadas */
+  r = await dice('llámame si es urgente');
+  ok('«llámame si es urgente» lo prende y, sin cuenta de llamadas, dice qué falta', s5.config.llamar.activo && /TWILIO_ACCOUNT_SID/.test(r), r);
+  await llega5(PEPE, 'Pepe', 'urgente, contesta por favor');
+  ok('sin cuenta de llamadas no intenta llamar', !llamadas.length);
+  listas = true; pasar(60);
+  await llega5(PEPE, 'Pepe', 'es urgente!! estoy en el hospital');
+  ok('con todo listo, algo urgente → le llama, y la voz dice quién y qué', llamadas.length === 1 && /Pepe/.test(llamadas[0].texto) && /hospital/.test(llamadas[0].texto) && llamadas[0].a === YO.split('@')[0], llamadas);
+  ok('y le avisa por escrito que le llamó', /📞 Te llamé/.test(env3.filter(e => e.jid === YO).slice(-1)[0].texto) || env3.some(e => /📞 Te llamé/.test(e.texto)));
+  pasar(300); await llega5(MARY, 'Doña Mary', 'urgente, ya llegué');
+  ok('no más de una llamada cada 20 minutos', llamadas.length === 1);
+  ahora = Date.UTC(2026, 9, 21, 9, 0);   /* 3:00 de la mañana en México */
+  await llega5(PEPE, 'Pepe', 'urgente otra vez');
+  ok('de madrugada no llama', llamadas.length === 1);
+  ahora = Date.UTC(2026, 9, 21, 16, 0);
+  await llega5(ANA, 'Ana', 'hola, otra pregunta');
+  ok('lo que no es urgente no le llama', llamadas.length === 1);
+  r = await dice('llámame si es urgente al 442 111 2233');
+  ok('se le puede dar otro número', s5.config.llamar.tel === '4421112233' && /4421112233/.test(r), r);
+  r = await dice('llámame');
+  ok('«llámame» hace una llamada de prueba', llamadas.length === 2 && llamadas[1].a === '4421112233' && /Ya te estoy llamando/.test(r));
+  r = await dice('no me llames');
+  ok('«no me llames» lo apaga', !s5.config.llamar.activo);
+  pasar(3600); await llega5(PEPE, 'Pepe', 'urgente urgente');
+  ok('y apagado, ya no llama', llamadas.length === 2);
+  ok('nada le llegó a nadie sin que Carlos lo pidiera (sólo respuestas en automático y los audios que ordenó)', env3.filter(e => e.texto === '[audio]' && e.jid !== YO).every(e => [ANA, BETO].includes(e.jid)));
+
+  console.log('\n12b · La llamada por dentro (llamada.mjs) y la nota de voz (audio.mjs)');
+  const L = await import('./llamada.mjs');
+  ok('un número de WhatsApp se vuelve número de teléfono (sin el 1 de WhatsApp)', L.aTelefono('5214421234567') === '+524421234567' && L.aTelefono('4421234567') === '+524421234567' && L.aTelefono('12') === '');
+  ok('lo que dice la llamada no rompe el TwiML (se escapan < & ")', /&lt;b&gt; &amp; &quot;/.test(L.twimlDe('<b> & "')) && /es-MX/.test(L.twimlDe('x')));
+  ok('sin cuenta dice exactamente qué variables faltan', /TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM/.test((await L.llamar({ a: '4421234567', texto: 'x' }, {})).error));
+  const vistas = [];
+  const env = { TWILIO_ACCOUNT_SID: 'AC123', TWILIO_AUTH_TOKEN: 'tok', TWILIO_FROM: '+15550001111' };
+  const rr = await L.llamar({ a: '5214421234567', texto: 'Hola' }, env, async (url, op) => { vistas.push({ url, op }); return new Response(JSON.stringify({ sid: 'CA1' }), { status: 201 }); });
+  const q = new URLSearchParams(vistas[0].op.body);
+  ok('llama a Twilio con su cuenta, a su número y con lo que tiene que decir', rr.bien && rr.id === 'CA1' && /Accounts\/AC123\/Calls\.json$/.test(vistas[0].url) && q.get('To') === '+524421234567' && q.get('From') === '+15550001111' && /Hola/.test(q.get('Twiml')) && vistas[0].op.headers.authorization === 'Basic ' + Buffer.from('AC123:tok').toString('base64'));
+  ok('si Twilio rechaza la cuenta, lo dice en cristiano', /rechazó la cuenta/.test((await L.llamar({ a: '4421234567', texto: 'x' }, env, async () => new Response('{}', { status: 401 }))).error));
+  try{
+    const A = await import('./audio.mjs');
+    const pcm = Buffer.alloc(48000); for(let i = 0; i < 24000; i++) pcm.writeInt16LE(Math.round(6000 * Math.sin(i / 24000 * 2 * Math.PI * 330)), i * 2);
+    const ogg = await A.aNotaDeVoz(pcm.toString('base64'), 'audio/L16;codec=pcm;rate=24000');
+    ok('la voz de la IA (PCM 24 kHz) sale como nota de voz OGG/Opus, con su duración', ogg.toString('ascii', 0, 4) === 'OggS' && A.segundosOgg(ogg) === 1 && ogg.includes(Buffer.from('OpusHead')));
+  }catch(e){ ok('la conversión a nota de voz corre', false, e.message); }
+}
+
+console.log('\n13 · El puente de correr.mjs pasa TODO lo que el núcleo le pide al WhatsApp');
+{
+  /* ya pasó dos veces: los stickers (enviarSticker) y casi las notas de voz. El núcleo
+     pregunta si existe la función y, si no, se calla: ninguna prueba del núcleo lo ve */
+  const fs = await import('fs');
+  const nucleo = fs.readFileSync(new URL('./nucleo.mjs', import.meta.url), 'utf8');
+  const correr = fs.readFileSync(new URL('./correr.mjs', import.meta.url), 'utf8');
+  const puente = (/const puente = \{([\s\S]*?)\};/.exec(correr) || [])[1] || '';
+  const usa = [...new Set([...nucleo.matchAll(/this\.transporte\.(\w+)/g)].map(m => m[1]))];
+  const faltan = usa.filter(f => !new RegExp('\\b' + f + '\\s*:').test(puente));
+  ok(`el puente trae las ${usa.length} funciones que usa el núcleo`, usa.length > 5 && !faltan.length, faltan);
+}
+
 console.log(fallas.length ? `\n✗ ${pasan} pasan · ${fallas.length} fallan` : `\n✓ ${pasan}/${pasan}`);
 process.exit(fallas.length ? 1 : 0);

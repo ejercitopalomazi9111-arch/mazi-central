@@ -1132,6 +1132,17 @@ console.log('\n· Las sillas');
     ok('y se le pide JSON cuando se quiere JSON', enviado?.generationConfig?.responseMimeType === 'application/json');
     const [c6, r6] = await leer(await pedir(s, 'POST', 'ia-texto', { motor: 'negro', texto: 'describe', imagenes: [foto] }, 'MAESTRA'));
     ok('Negro no ve imágenes y lo dice (no las ignora callado)', c6 === 502 && /no ve imágenes/.test(r6.error), JSON.stringify(r6));
+    /* las notas de voz de Secre: Paulina las oye para escribirlas */
+    const nota = { mime: 'audio/ogg', data: 'T2dnUw' + 'A'.repeat(200) };
+    const [c7] = await leer(await pedir(s, 'POST', 'ia-texto', { motor: 'gemini', texto: 'escribe lo que dice', imagenes: [nota] }, 'MAESTRA'));
+    ok('una nota de voz (ogg) le llega a Paulina como audio', c7 === 200 && cuerpos.at(-1)?.contents?.at(-1)?.parts?.[0]?.inlineData?.mimeType === 'audio/ogg', JSON.stringify(cuerpos.at(-1)).slice(0, 200));
+    const [, r8] = await leer(await pedir(s, 'POST', 'ia-texto', { motor: 'gemini', texto: 'x', imagenes: [{ mime: 'application/x-sh', data: 'A'.repeat(200) }] }, 'MAESTRA'));
+    ok('pero un archivo que no es imagen ni audio no pasa', !cuerpos.at(-1)?.contents?.at(-1)?.parts?.some(p => p.inlineData), JSON.stringify(r8).slice(0, 100));
+    globalThis.fetch = async (url) => new Response(JSON.stringify(String(url).includes('interactions') ? { steps: [{ type: 'audio', mime_type: 'audio/wav', data: 'R'.repeat(400) }] } : {}));
+    const [c9, r9] = await leer(await pedir(s, 'POST', 'ia-voz', { texto: 'Hola, soy la asistente de Carlos' }, 'MAESTRA'));
+    ok('/ia-voz devuelve la nota de voz', c9 === 200 && r9.bien && r9.data.length === 400, JSON.stringify(r9).slice(0, 120));
+    const [c10] = await leer(await pedir(s, 'POST', 'ia-voz', { texto: 'x' }, 'ajena'));
+    ok('y sin la llave de la sala, nada', c10 === 401);
     globalThis.fetch = antes;
   }
 

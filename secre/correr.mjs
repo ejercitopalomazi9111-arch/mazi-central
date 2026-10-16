@@ -20,6 +20,7 @@
    ═════════════════════════════════════════════════════════════════════════ */
 import fs from 'fs'; import path from 'path'; import http from 'http'; import crypto from 'crypto';
 import { Secre, AYUDA, configBase } from './nucleo.mjs';
+import { faltaParaLlamar } from './llamada.mjs';
 const FALSO = !!process.env.SECRE_FALSO;
 const { ia } = await import(FALSO ? './falso.mjs' : './ia.mjs');
 
@@ -65,6 +66,8 @@ async function prender(c){
   const puente = { yo: () => (v.transporte ? v.transporte.yo() : []), enviar: (j, t) => v.transporte.enviar(j, t),
     /* sin esto el rol nunca mandaba stickers: quizaSticker pregunta si existe y se callaba */
     enviarSticker: (j, b) => v.transporte.enviarSticker(j, b),
+    /* y las notas de voz (16 de octubre): sin esto, «audio Ana: …» se quedaba mudo igual que los stickers */
+    enviarAudio: (j, o, sg) => v.transporte.enviarAudio(j, o, sg), grabando: (j, ms) => v.transporte.grabando && v.transporte.grabando(j, ms),
     /* los números de sus OTRAS cuentas: dos Secres no se contestan entre ellas */
     otrosYo: () => Object.entries(vivas).filter(([k, x]) => k !== c.id && x.transporte).flatMap(([, x]) => x.transporte.yo()),
     escribiendo: (j, ms) => v.transporte.escribiendo(j, ms), leido: (j) => v.transporte.leido(j) };
@@ -120,6 +123,7 @@ function vista(v, id){
     chats: Object.entries(c.chats).filter(([, x]) => x.nombre).map(([id, x]) => { const { stickers, ...resto } = x; return { id, ...resto, nStickers: (stickers || []).length, modoAhora: s.modo(id, '', !!x.grupo) }; }).sort((a, b) => a.nombre.localeCompare(b.nombre)),
     propuestas: e.propuestas, pendientes: e.pendientes.filter(p => !p.hecho).concat(e.pendientes.filter(p => p.hecho).slice(-10)),
     charla: e.charla.slice(-60), registro: e.registro.slice(-60), contestadas: (e.contestadas || []).slice(0, 40), ahora: Date.now(), ayuda: AYUDA,
+    llamadas: { listas: s.telefono.listas(), falta: faltaParaLlamar() },
   };
 }
 

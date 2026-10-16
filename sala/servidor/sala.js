@@ -382,7 +382,7 @@ import { atenderBanco } from './banco.js';
 import { atenderElementos } from './elementos.js';
 import { atenderSecre } from './secre.js';
 import { MOTORES, preguntar, motoresVivos, motoresApagados, motorDe,
-         PAPEL_SILLA, PAPEL_RESUMEN, PAPEL_LIGUE, generarImagen } from './modelos.js';
+         PAPEL_SILLA, PAPEL_RESUMEN, PAPEL_LIGUE, generarImagen, generarVoz } from './modelos.js';
 
 const ahora = () => Date.now();
 
@@ -2337,7 +2337,7 @@ export class Sala {
       return Response.json({ bien: true, llaves: estado() });
     }
 
-    if(pedido.method === 'POST' && (ruta === 'ia-texto' || ruta === 'ia-imagen')){
+    if(pedido.method === 'POST' && (ruta === 'ia-texto' || ruta === 'ia-imagen' || ruta === 'ia-voz')){
       const crudo = await pedido.text().catch(() => '');
       if(crudo.length > 30_000_000) return Response.json({ error: 'Es demasiado grande (más de 30 MB).' }, { status: 413 });
       let c; try{ c = JSON.parse(crudo || '{}'); }catch{ return Response.json({ error: 'No entendí la petición.' }, { status: 400 }); }
@@ -2345,12 +2345,19 @@ export class Sala {
         const r = await generarImagen(this.env, c);
         return Response.json(r, { status: r.bien ? 200 : 502 });
       }
+      /* notas de voz para Secre (16 de octubre: «que pueda grabar audios») */
+      if(ruta === 'ia-voz'){
+        const r = await generarVoz(this.env, c);
+        return Response.json(r, { status: r.bien ? 200 : 502 });
+      }
       const motor = motorDe(c.motor) || 'gemini';
       const mensajes = (Array.isArray(c.mensajes) ? c.mensajes : [{ de: 'tu', texto: String(c.texto || '') }])
         .slice(-30).map((m) => ({ de: m.de === 'yo' ? 'yo' : 'tu', texto: String(m.texto || '').slice(0, 60_000) }));
       if(!mensajes.some((m) => m.texto.trim())) return Response.json({ error: 'No le escribiste nada.' }, { status: 400 });
       /* Con `imagenes`, la IA las VE (para describir las del banco). Hasta 4, de 7 MB cada una. */
-      const imagenes = (Array.isArray(c.imagenes) ? c.imagenes : []).filter((x) => x && /^image\/(jpeg|png|webp|gif)$/.test(x.mime) && typeof x.data === 'string' && x.data.length < 7_000_000).slice(0, 4);
+      /* …y desde el 16 de octubre también OYE: las notas de voz que le llegan a Secre
+         (ogg, mp3, m4a, wav) van igual, como inlineData, para que Paulina las escriba */
+      const imagenes = (Array.isArray(c.imagenes) ? c.imagenes : []).filter((x) => x && /^(image\/(jpeg|png|webp|gif)|audio\/(ogg|mpeg|mp3|mp4|aac|wav|webm|amr|x-m4a|flac))$/.test(x.mime) && typeof x.data === 'string' && x.data.length < 7_000_000).slice(0, 4);
       const r = await preguntar(motor, this.env, String(c.sistema || 'Eres un asistente útil. Contesta en español de México.').slice(0, 20_000), mensajes,
         { tope: Math.min(Math.max(Number(c.tope) || 1500, 100), 8000), esperaMs: 90_000, imagenes, json: !!c.json });
       return Response.json(r, { status: r.bien ? 200 : 502 });

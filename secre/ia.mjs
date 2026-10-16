@@ -113,7 +113,64 @@ Contesta SÓLO JSON: {"pendientes":[], ${marca ? '"lineas":[], ' : ''}"respuesta
   return { pendientes: Array.isArray(j.pendientes) ? j.pendientes.map(String).slice(0, 3) : [], lineas, respuesta: String(j.respuesta || ''), motivo: String(j.motivo || ''), urgente: !!j.urgente, decide: !!j.decide, sticker: Number.isFinite(+j.sticker) ? +j.sticker : 0 };
 }
 
+/* ── oír y hablar (16 de octubre: «que pueda grabar audios») ──────────────
+   Oír: la nota de voz va a Gemini como audio y regresa escrita. Hablar: la voz
+   la hace Gemini (en La Sala, /ia-voz) y audio.mjs la vuelve nota de voz. */
+const MIME_AUDIO = (m) => { const t = String(m || '').split(';')[0].trim().toLowerCase(); return t === 'audio/mp3' ? 'audio/mpeg' : t === 'audio/m4a' ? 'audio/mp4' : t || 'audio/ogg'; };
+const ESCRIBIR = 'Escribe EXACTAMENTE lo que dice esta nota de voz, en el idioma en que viene, con puntuación normal. Si no se entiende nada o sólo hay ruido, contesta «[no se entiende]». Sólo el texto, nada más.';
+async function transcribir(b64, mime){
+  const llaveSala = process.env.SECRE_SALA_LLAVE || process.env.MAZI_LLAVE;
+  const audio = { mime: MIME_AUDIO(mime), data: b64 };
+  if(llaveSala){
+    const r = await fetch(`${SALA}/api/sala/${SALA_NOMBRE}/ia-texto`, {
+      method: 'POST', headers: { 'content-type': 'application/json', 'X-Llave': llaveSala },
+      body: JSON.stringify({ motor: 'gemini', sistema: 'Eres una transcriptora cuidadosa.', mensajes: [{ de: 'tu', texto: ESCRIBIR }], imagenes: [audio], tope: 2500 }),
+      signal: AbortSignal.timeout(90_000),
+    });
+    const j = await r.json().catch(() => ({}));
+    if(!r.ok || j.bien === false) throw new Error(j.error || `La Sala contestó ${r.status}`);
+    return String(j.texto || '').trim();
+  }
+  if(!process.env.GEMINI_API_KEY) throw new Error('Para oír notas de voz hace falta SECRE_SALA_LLAVE o GEMINI_API_KEY.');
+  const modelo = process.env.SECRE_GEMINI || 'gemini-2.5-flash';
+  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
+    method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': process.env.GEMINI_API_KEY },
+    body: JSON.stringify({ contents: [{ role: 'user', parts: [{ inlineData: { mimeType: audio.mime, data: audio.data } }, { text: ESCRIBIR }] }], generationConfig: { maxOutputTokens: 2500 } }),
+    signal: AbortSignal.timeout(90_000),
+  });
+  const j = await r.json().catch(() => ({}));
+  if(!r.ok) throw new Error((j.error && j.error.message) || `Gemini contestó ${r.status}`);
+  return ((((j.candidates || [])[0] || {}).content || {}).parts || []).map(p => p.text || '').join('').trim();
+}
+async function hablar(texto, voz){
+  const llaveSala = process.env.SECRE_SALA_LLAVE || process.env.MAZI_LLAVE;
+  if(llaveSala){
+    const r = await fetch(`${SALA}/api/sala/${SALA_NOMBRE}/ia-voz`, {
+      method: 'POST', headers: { 'content-type': 'application/json', 'X-Llave': llaveSala },
+      body: JSON.stringify({ texto, voz }), signal: AbortSignal.timeout(100_000),
+    });
+    const j = await r.json().catch(() => ({}));
+    if(!r.ok || !j.bien) throw new Error(j.error || `La Sala contestó ${r.status}`);
+    return { b64: j.data, mime: j.mime };
+  }
+  if(!process.env.GEMINI_API_KEY) throw new Error('Para mandar audios hace falta SECRE_SALA_LLAVE o GEMINI_API_KEY.');
+  /* sin La Sala, la misma pieza que usa La Sala (el repo viene completo en Render) */
+  const { generarVoz } = await import('../sala/servidor/modelos.js');
+  const r = await generarVoz({ GEMINI_API_KEY: process.env.GEMINI_API_KEY }, { texto, voz });
+  if(!r.bien) throw new Error(r.error);
+  return { b64: r.data, mime: r.mime };
+}
+
 export const ia = {
+  /* una nota de voz → texto */
+  async oir({ b64, mime }){ const t = await transcribir(b64, mime); return /^\[no se entiende\]$/i.test(t) ? '' : t; },
+  /* un texto → nota de voz (OGG/Opus) */
+  async voz(texto, voz){
+    const { aNotaDeVoz, segundosOgg } = await import('./audio.mjs');
+    const a = await hablar(String(texto).slice(0, 1500), voz);
+    const ogg = await aNotaDeVoz(a.b64, a.mime);
+    return { ogg, segundos: segundosOgg(ogg) };
+  },
   async leer({ dueno, nombre, nota, historial, nuevos, estilo, redactar, auto = false, rol = false, personaje = '', mundo = '', marca = '', instrucciones = '', comunidad = '', stickers = [], grupo, datos = [] }){
     if(rol) return leerRol({ dueno, nombre, nota, historial, nuevos, personaje, mundo, marca, instrucciones, comunidad, stickers, datos });
     const sistema = `Ayudas a ${dueno}, un estudiante de prepa en Querétaro, con su WhatsApp. Te paso un chat${grupo ? ' de grupo' : ''} con ${nombre}${nota ? ` (${nota})` : ''}.
@@ -150,6 +207,14 @@ Contesta SÓLO JSON: {"texto":""}`;
     return String(j.texto || '').trim();
   },
 
+  /* el resumen que pide Carlos: en corto y qué es importante aunque ya se haya contestado */
+  async resumir({ dueno = 'Carlos', chats = [] }){
+    const sistema = `Eres la asistente de WhatsApp de ${dueno}. Te pasan lo que le escribieron y qué hiciste con cada mensaje ("contesto" = le contestaste tú, "decide" = le dijiste que ${dueno} le respondía, "nada" = no hacía falta, "propuesta" = le dejaste propuesta a ${dueno}).
+Escríbele un resumen MUY corto (2 a 4 renglones, mexicano, sin tecnicismos) de lo que pasó, y di qué chats son IMPORTANTES para él: dinero, citas, compromisos, emergencias, familia, alguien molesto, algo con fecha o que necesite su respuesta — aunque tú ya hayas contestado. No inventes nada que no esté en los mensajes.
+Contesta SÓLO JSON: {"resumen":"", "importantes":["nombre del chat tal como viene"]}`;
+    const j = sacarJson(await preguntar(sistema, JSON.stringify(chats).slice(0, 24_000), { tope: 1500 })) || {};
+    return { resumen: String(j.resumen || ''), importantes: Array.isArray(j.importantes) ? j.importantes.map(String).slice(0, 20) : [] };
+  },
   async orden({ quien = 'Secre', texto, hoy, hora, chats, config }){
     const sistema = `Eres ${quien}, ${PERSONA[quien] || PERSONA.Secre} Hoy te toca el turno de secretaria de WhatsApp de Carlos. Él te da órdenes en palabras normales y tú las conviertes en acciones. Hoy es ${hoy}, son las ${hora} en México.
 Los modos de un chat son: "borrador" (le propones respuestas para que él las mande), "callado" (no le propones nada, sólo anotas pendientes) y "auto" (le contestas tú sola, firmada como su asistente; lo que necesite su decisión se lo dejas a él).

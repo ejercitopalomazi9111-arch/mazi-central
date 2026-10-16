@@ -138,7 +138,14 @@ export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () =
             const buf = await downloadMediaMessage(msg, 'buffer', {}).catch(() => null);
             if(buf && buf.length <= 100_000) sticker = { b64: buf.toString('base64'), animado: !!(normalizeMessageContent(msg.message).stickerMessage || {}).isAnimated };
           }
-          await alMensaje({ id: k.id, chat, de: grupo ? (k.participantAlt || k.participant || '') : chat, nombre, nombreChat: grupo ? grupos.get(chat) : nombre, texto, mio: !!k.fromMe, grupo, t, sticker });
+          /* una nota de voz (fuera de grupos) se baja para que Secre la oiga; hasta 8 MB */
+          let audio = null;
+          const au = !grupo && /^\[(nota de voz|audio)\]$/.test(texto) && normalizeMessageContent(msg.message).audioMessage;
+          if(au && Number(au.fileLength || 0) <= 8_000_000){
+            const buf = await downloadMediaMessage(msg, 'buffer', {}).catch(() => null);
+            if(buf && buf.length <= 8_000_000) audio = { b64: buf.toString('base64'), mime: au.mimetype || 'audio/ogg', segundos: Number(au.seconds || 0) };
+          }
+          await alMensaje({ id: k.id, chat, de: grupo ? (k.participantAlt || k.participant || '') : chat, nombre, nombreChat: grupo ? grupos.get(chat) : nombre, texto, mio: !!k.fromMe, grupo, t, sticker, audio });
         }catch(e){ logger.warn({ err: e.message }, 'secre: mensaje que no pude leer'); }
       }
     });
@@ -148,6 +155,9 @@ export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () =
   return {
     yo: () => yoJids,
     async enviar(jid, texto){ const r = await sock.sendMessage(jid, { text: texto }, { messageId: idPropio() }); return r && r.key && r.key.id; },
+    /* nota de voz: OGG/Opus mono, con ptt para que salga con su onda y su micrófono */
+    async enviarAudio(jid, ogg, segundos){ const r = await sock.sendMessage(jid, { audio: ogg, mimetype: 'audio/ogg; codecs=opus', ptt: true, ...(segundos ? { seconds: segundos } : {}) }, { messageId: idPropio() }); return r && r.key && r.key.id; },
+    async grabando(jid, ms){ try{ await sock.sendPresenceUpdate('recording', jid); await new Promise(r => setTimeout(r, ms)); await sock.sendPresenceUpdate('paused', jid); }catch{} },
     async enviarSticker(jid, b64){ const r = await sock.sendMessage(jid, { sticker: Buffer.from(b64, 'base64') }, { messageId: idPropio() }); return r && r.key && r.key.id; },
     /* las comunidades de WhatsApp y sus grupos, para el botón «Comunidad de rol» del panel.
        El grupo de avisos de la comunidad no es para jugar: se deja fuera. */

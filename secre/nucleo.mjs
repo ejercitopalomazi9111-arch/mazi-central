@@ -33,6 +33,7 @@
                  16 de octubre: «me gusta que la historia se desarrolle en
                  automático cuando yo no puedo»).
    ═════════════════════════════════════════════════════════════════════════ */
+import { llamar, llamadasListas } from './llamada.mjs';
 
 export const MODOS = ['borrador', 'callado', 'auto'];
 const MIN = 60_000, HORA = 60 * MIN;
@@ -65,6 +66,11 @@ export function configBase(){
     /* el repaso corto: cada `cada` horas, entre `desde` y `hasta`, qué hizo y qué
        sigue pendiente — sólo si pasó algo desde el anterior. cada: 0 lo apaga */
     repaso: { cada: 3, desde: '09:00', hasta: '22:00' },
+    /* llamarle por teléfono cuando algo es urgente (16 de octubre: «que me pueda
+       hacer llamadas»). Apagado hasta que él lo pida y haya cuenta de llamadas.
+       tel vacío = el número de su otra cuenta (o el de ésta) */
+    llamar: { activo: false, tel: '', desde: '08:00', hasta: '23:00' },
+    voz: 'Kore',                   /* la voz de los audios que manda */
     /* turnos de secretaria (Carlos, 16 de octubre: «que pueda responder
        cualquiera de los 3, Secre, Paulina o Negro, como si rotaran turnos»).
        Bloques de `horas` contados desde la medianoche de México. `fijo` = una
@@ -124,8 +130,9 @@ export function finDe(x, ahora){
 }
 
 export class Secre {
-  constructor({ cuenta = 'principal', transporte, ia, almacen, reloj = () => Date.now(), azar = Math.random }){
-    Object.assign(this, { cuenta, transporte, ia, almacen, reloj, azar });
+  constructor({ cuenta = 'principal', transporte, ia, almacen, reloj = () => Date.now(), azar = Math.random, telefono = null }){
+    /* telefono: { listas(), llamar({ a, texto }) } — por omisión, Twilio (llamada.mjs) */
+    Object.assign(this, { cuenta, transporte, ia, almacen, reloj, azar, telefono: telefono || { listas: () => llamadasListas(), llamar: (x) => llamar(x) } });
     const guardada = almacen.leer('config', {});
     this.config = Object.assign(configBase(), guardada);
     /* las cuentas que ya estaban guardadas traen los valores viejos (45 s de espera,
@@ -159,6 +166,8 @@ export class Secre {
       charla: [],          /* la plática de Carlos con Secre, también para el panel */
       resumenFecha: '',
       repasoT: 0,          /* cuándo mandó el último repaso */
+      resumioT: 0,         /* hasta cuándo le resumió lo que llegó (al pedírselo) */
+      llamoT: 0,           /* cuándo le llamó por última vez */
       sigN: 1, sigP: 1,
     }, almacen.leer('estado', {}));
     this.ocupados = new Set();
@@ -270,6 +279,15 @@ export class Secre {
     const ahora = m.t || this.reloj();
     /* lo que mandó Secre misma no se vuelve a procesar */
     if(m.id && this.estado.enviados.includes(m.id)) return;
+    /* una nota de voz se oye y se vuelve texto (16 de octubre). Las de Carlos en
+       chats ajenos no: ésas no las tiene que contestar nadie */
+    const suyo = this.esMiChat(m.chat) || this.esOtraCuenta(m.chat);
+    if(m.audio && m.audio.b64 && this.ia && this.ia.oir && (suyo || !m.mio) && !m.grupo){
+      try{
+        const t = await this.ia.oir(m.audio);
+        if(t) m = { ...m, texto: suyo ? t : '🎤 ' + t };
+      }catch(e){ this.anotar(`no pude oír la nota de voz de ${m.nombre || this.nombreDe(m.chat)}: ${e.message}`); }
+    }
     if(this.esMiChat(m.chat)){
       if(m.mio && !/^🤖/.test(m.texto)) await this.orden(m.texto.trim());
       return;
@@ -357,6 +375,7 @@ export class Secre {
       r = await this.ia.leer({ dueno: this.config.nombre, nombre, nota: c.nota || '', historial: h, nuevos: paraIA.length ? paraIA : nuevos, estilo: this.estado.estilo.slice(-40), redactar: modo !== 'callado', auto: modo === 'auto', rol: modo === 'auto' && !!c.rol, ...this.rolDe(jid), stickers: (c.stickers || []).map(x => ({ n: x.n, cuando: x.cuando })), grupo, datos: this.datosVigentes().map(d => d.texto) });
     }catch(e){ r = null; this.anotar(`la IA falló con ${nombre}: ${e.message}`); }
     for(const p of (r && r.pendientes) || []) this.agregarPendiente(jid, nombre, p);
+    if(r && r.urgente && !esGrupo) await this.quizaLlamar(nombre, nuevos.slice(-2).map(x => x.texto).join(' / '), r.motivo);
     if(modo === 'auto' && r) return this.contestarSola(jid, nombre, paraIA.length ? paraIA : nuevos, r);
     /* sin IA no hay qué contestar sola: se le deja a Carlos, y a la persona se le
        avisa que su mensaje sí llegó (una vez cada 3 h por chat; nunca en grupos) */
@@ -369,7 +388,8 @@ export class Secre {
         (this.estado.acuse || (this.estado.acuse = {}))[jid] = this.reloj();
         this.bitacora(jid, nombre, nuevos, 'error', txt, 'la IA no contestó; le avisé que llegó su mensaje y a ti te dejé la propuesta');
       } else this.bitacora(jid, nombre, nuevos, 'error', '', 'la IA no contestó; te dejé la propuesta');
-    } else if(modo === 'borrador') this.bitacora(jid, nombre, nuevos, 'propuesta', r && r.respuesta, 'este chat está en «Propone»: espera tu número');
+    } else if(modo === 'borrador') this.bitacora(jid, nombre, nuevos, 'propuesta', r && r.respuesta, 'este chat está en «Propone»: espera tu número', !!(r && r.urgente));
+    else if(modo === 'callado') this.bitacora(jid, nombre, nuevos, 'nada', '', 'este chat está en «Callada»: sólo anoto pendientes', !!(r && r.urgente));
     if(modo !== 'borrador'){ this.guardar(); return; }
     const propuesta = r && r.respuesta ? String(r.respuesta).trim() : '';
     if(!propuesta && !(r && r.urgente)){ this.guardar(); return; }
@@ -455,7 +475,7 @@ export class Secre {
       this.estado.autoHoy.lista.push({ nombre, dijo: cita.slice(0, 120), resp: resp.slice(0, 160), decide });
     }
     this.bitacora(jid, nombre, nuevos, decide ? 'decide' : resp ? 'contesto' : 'nada', resp,
-      decide ? 'necesita tu decisión' + (r.motivo ? ': ' + r.motivo : '') : (r.porque || (resp ? this.porqueModo(jid) : 'no hacía falta contestar')));
+      decide ? 'necesita tu decisión' + (r.motivo ? ': ' + r.motivo : '') : (r.porque || (resp ? this.porqueModo(jid) : 'no hacía falta contestar')), !!r.urgente);
     if(c.rol && !decide) await this.quizaSticker(jid, c, r, !!resp);
     if(decide){
       /* lo que sólo Carlos puede decidir se queda con él, con número para contestar */
@@ -472,10 +492,10 @@ export class Secre {
   }
 
   /* «Por mandar» también enseña lo que llegó, qué hizo Secre y por qué (Carlos, 16 de octubre) */
-  bitacora(jid, nombre, nuevos, que, resp, porque){
+  bitacora(jid, nombre, nuevos, que, resp, porque, urgente = false){
     const dijo = nuevos.slice(-3).map(x => (x.quien ? x.quien + ': ' : '') + x.texto).join(' / ').slice(0, 300);
     const l = this.estado.contestadas || (this.estado.contestadas = []);
-    l.unshift({ t: this.reloj(), chat: jid, nombre, dijo, que, resp: String(resp || '').slice(0, 600), porque: String(porque || '').slice(0, 240) });
+    l.unshift({ t: this.reloj(), chat: jid, nombre, dijo, que, resp: String(resp || '').slice(0, 600), porque: String(porque || '').slice(0, 240), ...(urgente ? { urgente: true } : {}) });
     this.estado.contestadas = l.slice(0, 150);
   }
   /* por qué este chat está en automático, dicho en cristiano */
@@ -607,8 +627,89 @@ export class Secre {
   async avisar(texto){
     const quien = this.deTurno();
     this.charlar(quien.toLowerCase(), texto);
+    if(this.captura) this.captura.push(texto);
     const id = await this.transporte.enviar(this.destinoAvisos(), `🤖 ${quien}: ` + texto);
     if(id){ this.estado.enviados.push(id); this.estado.enviados = this.estado.enviados.slice(-500); }
+  }
+  /* un aviso dicho en voz (después del escrito): «resumen en audio», «pendientes en audio» */
+  async avisarVoz(texto){
+    const dicho = String(texto).replace(/[#*_~>«»]/g, '').replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').replace(/\n+/g, '. ').replace(/\s+/g, ' ').trim().slice(0, 1400);
+    if(!dicho) return;
+    try{
+      const { ogg, segundos } = await this.ia.voz(dicho, this.config.voz);
+      const id = await this.transporte.enviarAudio(this.destinoAvisos(), ogg, segundos);
+      if(id){ this.estado.enviados.push(id); this.estado.enviados = this.estado.enviados.slice(-500); }
+    }catch(e){ await this.avisar('No pude grabar el audio: ' + e.message); }
+  }
+  /* una nota de voz a otra persona: SÓLO por orden de Carlos */
+  async mandarAudio(jid, texto){
+    const { ogg, segundos } = await this.ia.voz(texto, this.config.voz);
+    try{ await this.transporte.grabando && this.transporte.grabando(jid, Math.min(4000, segundos * 300)); }catch{}
+    const id = await this.transporte.enviarAudio(jid, ogg, segundos);
+    if(id){ this.estado.enviados.push(id); this.estado.enviados = this.estado.enviados.slice(-500); }
+    const h = this.estado.historial[jid] || (this.estado.historial[jid] = []);
+    h.push({ de: 'yo', secre: true, texto: '🎤 ' + texto, t: this.reloj() }); this.estado.historial[jid] = h.slice((this.config.chats[jid] || {}).grupo ? -60 : -30);
+    this.anotar(`mandó un audio a ${this.nombreDe(jid)}: ${texto.slice(0, 80)}`);
+    return segundos;
+  }
+
+  /* ── llamarle por teléfono cuando algo es urgente ── */
+  numeroDeCarlos(){
+    const L = this.config.llamar || {};
+    if(L.tel) return L.tel;
+    return String(this.destinoAvisos() || '').split('@')[0];
+  }
+  async quizaLlamar(nombre, dijo, motivo){
+    const L = Object.assign({ activo: false, desde: '08:00', hasta: '23:00' }, this.config.llamar || {});
+    if(!L.activo) return;
+    const ahora = this.reloj();
+    if(!entreHoras(ahora, L.desde, L.hasta)) return;
+    if(ahora - (this.estado.llamoT || 0) < 20 * MIN) return;   /* no más de una cada 20 min */
+    if(!this.telefono.listas()){ return; }
+    this.estado.llamoT = ahora;
+    const texto = `Hola ${this.config.nombre}, soy ${this.deTurno()}, tu asistente. ${nombre} te escribió algo urgente: ${String(dijo).slice(0, 300)}.` + (motivo ? ` ${motivo}.` : '') + ' Revisa tu WhatsApp.';
+    const r = await this.telefono.llamar({ a: this.numeroDeCarlos(), texto });
+    await this.avisar(r.bien ? `📞 Te llamé: ${nombre} escribió algo urgente.` : `📞 Quise llamarte por ${nombre} y no pude: ${r.error}`);
+    this.guardar();
+  }
+
+  textoSinLlamadas(){
+    return 'Para llamarte por teléfono falta la cuenta de llamadas (Twilio): en Render se ponen TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN y TWILIO_FROM. Los pasos están en la página de Secre. Mientras, te aviso por WhatsApp desde tu otra cuenta, que sí suena.';
+  }
+  /* ── el resumen de lo que llegó, cuando él lo pide ── */
+  async resumenLlegadas(desde){
+    const ahora = this.reloj();
+    const l = (this.estado.contestadas || []).filter(x => x.t > desde).reverse();
+    const abiertos = this.estado.pendientes.filter(p => !p.hecho && p.t > desde);
+    const esperan = this.estado.propuestas;
+    this.estado.resumioT = ahora; this.guardar();
+    if(!l.length && !abiertos.length) return `Desde las ${horaMx(desde)} no te ha llegado nada nuevo.` +
+      (esperan.length ? `\n⏳ Siguen esperando tu número: ` + esperan.slice(-8).map(p => `#${p.n} ${p.nombre}`).join(', ') : '');
+    const porChat = new Map();
+    for(const x of l){ const c = porChat.get(x.chat) || { nombre: x.nombre, items: [] }; c.items.push(x); porChat.set(x.chat, c); }
+    const importante = (c) => c.items.some(x => x.urgente || x.que === 'decide' || x.que === 'error' || x.que === 'freno') || esperan.some(p => p.chat === c.chat);
+    const chats = [...porChat.entries()].map(([chat, c]) => ({ chat, ...c }));
+    const imp = chats.filter(importante), resto = chats.filter(c => !importante(c));
+    const corto = (t, n) => { t = String(t || '').replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n - 1) + '…' : t; };
+    const linea = (c) => {
+      const u = c.items[c.items.length - 1], n = c.items.length;
+      const que = { contesto: 'le contesté', decide: 'le dije que te pasaba su mensaje', nada: 'no hacía falta contestar', freno: 'no le contesté', error: 'no pude contestarle', propuesta: 'te dejé propuesta' }[u.que] || '';
+      return `· ${c.nombre}${n > 1 ? ` (${n})` : ''}${u.urgente ? ' ⚠️' : ''}: «${corto(u.dijo, 110)}»` + (u.resp ? ` → «${corto(u.resp, 90)}»` : que ? ` → ${que}` : '');
+    };
+    const L = [`Lo que te llegó desde las ${horaMx(desde)} (${l.length} mensaje(s) de ${chats.length} chat(s)):`];
+    /* en corto, con la IA: lo que de verdad importa dicho en dos renglones */
+    if(this.ia && this.ia.resumir && chats.length){
+      try{
+        const r = await this.ia.resumir({ dueno: this.config.nombre, chats: chats.map(c => ({ nombre: c.nombre, mensajes: c.items.map(x => ({ dijo: corto(x.dijo, 200), hice: x.que, respuesta: corto(x.resp, 160), urgente: !!x.urgente })) })) });
+        if(r && r.resumen) L.push('En corto: ' + corto(r.resumen, 600));
+        for(const n of (r && r.importantes) || []){ const c = resto.find(x => x.nombre === n); if(c){ resto.splice(resto.indexOf(c), 1); imp.push(c); } }
+      }catch(e){ this.anotar('el resumen de la IA falló: ' + e.message); }
+    }
+    if(imp.length) L.push('', '⚠️ Importante:', ...imp.map(linea));
+    if(esperan.length) L.push('', `⏳ Esperan tu número: ` + esperan.slice(-8).map(p => `#${p.n} ${p.nombre}`).join(', '));
+    if(resto.length) L.push('', '✓ Lo demás:', ...resto.slice(0, 25).map(linea), ...(resto.length > 25 ? [`…y ${resto.length - 25} chat(s) más`] : []));
+    if(abiertos.length) L.push('', '📌 Pendientes nuevos:', this.listaPendientes(abiertos.slice(-8)));
+    return L.join('\n').slice(0, 3800);
   }
   /* mandar a otra persona: SÓLO desde una orden de Carlos (aprobar una propuesta) */
   async mandar(jid, texto){
@@ -628,9 +729,58 @@ export class Secre {
   /* ══ las órdenes de Carlos, en su chat propio ══════════════════════════ */
   charlar(de, texto){ this.estado.charla.push({ de, texto, t: this.reloj() }); this.estado.charla = this.estado.charla.slice(-150); }
   async orden(texto){
+    /* «… en audio»: hace lo mismo y además se lo dice en una nota de voz */
+    const enAudio = /\s+(?:en|por|con) (?:audio|voz|nota de voz)\s*[.!?]*$/i.exec(texto.trim());
+    if(enAudio && !this.captura){
+      this.captura = [];
+      try{ await this.orden(texto.trim().slice(0, enAudio.index)); }
+      finally{ const dicho = this.captura.join('\n'); this.captura = null; if(dicho) await this.avisarVoz(dicho); }
+      return;
+    }
     const t = texto.trim(), s = sinAcentos(t);
     this.charlar('carlos', t);
     let m;
+    /* «resumen», «qué me llegó», «qué pasó», «algo importante?» → lo que llegó y qué hizo */
+    if(/^\/?(?:resumen|resumeme|resume|novedades|que (?:me )?(?:llego|ha llegado|han escrito|me escribieron|hubo|paso|ha pasado|me perdi|contestaste|respondiste|hiciste)|que hay de nuevo|(?:hay )?algo importante|me escribio alguien)\b(?!.*\d{1,2}:\d{2})/.test(s.replace(/[¿?¡!.]/g, '').trim())){
+      const ahora = this.reloj(), mx = minDelDia(ahora) * MIN;
+      const desde = /\bhoy\b/.test(s) ? ahora - mx : /\bayer\b/.test(s) ? ahora - mx - 24 * HORA
+        : (this.estado.resumioT && ahora - this.estado.resumioT < 24 * HORA ? this.estado.resumioT : ahora - 24 * HORA);
+      return this.avisar(await this.resumenLlegadas(desde));
+    }
+    /* audios: «audio Ana: ya voy para allá» · «3 audio» manda la propuesta 3 como nota de voz */
+    if((m = /^audio (?:a |para )?([^:]{1,60}):\s*([\s\S]+)$/i.exec(t))){
+      const j = this.buscarChat(m[1]);
+      if(!j) return this.avisar(`No tengo a «${m[1].trim()}» en tus chats.`);
+      try{ const sg = await this.mandarAudio(j, m[2].trim()); return this.avisar(`🎤 Listo, le mandé el audio a ${this.nombreDe(j)}${sg ? ` (${sg} s)` : ''}.`); }
+      catch(e){ return this.avisar(`No pude mandarle el audio a ${this.nombreDe(j)}: ${e.message}`); }
+    }
+    if((m = /^#?(\d+)\s+(?:en\s+)?audio(?:\s+([\s\S]+))?$/i.exec(t))){
+      const p = this.estado.propuestas.find(x => x.n === +m[1]);
+      if(!p) return this.avisar(`No tengo la #${m[1]} (o ya caducó).`);
+      const final = (m[2] || '').trim() || p.texto;
+      if(!final) return this.avisar(`La #${m[1]} no trae texto: escribe «${m[1]} audio lo que quieras decir».`);
+      try{ await this.mandarAudio(p.chat, final); }catch(e){ return this.avisar(`No pude grabar el audio: ${e.message}`); }
+      this.estado.propuestas = this.estado.propuestas.filter(x => x.n !== p.n); this.guardar();
+      return this.avisar(`🎤 Listo, a ${p.nombre} en audio: «${final}»`);
+    }
+    /* llamadas por teléfono */
+    if(/^\/?(?:llamame|llamada de prueba|prueba la llamada)$/.test(s)){
+      if(!this.telefono.listas()) return this.avisar(this.textoSinLlamadas());
+      const r = await this.telefono.llamar({ a: this.numeroDeCarlos(), texto: `Hola ${this.config.nombre}, soy ${this.deTurno()}. Así te voy a llamar cuando te llegue algo urgente.` });
+      return this.avisar(r.bien ? '📞 Ya te estoy llamando.' : '📞 No pude llamarte: ' + r.error);
+    }
+    if((m = /^\/?(?:llamame|llamadas?)(?: (?:si|cuando) (?:es|sea|algo es|haya algo) urgente| si| prendidas?| activas?)?(?: al? ([+\d][\d\s-]{9,}))?$/.exec(s)) && !/^\/?llamame$/.test(s)){
+      const L = this.config.llamar = Object.assign({ desde: '08:00', hasta: '23:00', tel: '' }, this.config.llamar || {}, { activo: true });
+      if(m[1]) L.tel = m[1].replace(/\D/g, '');
+      this.guardar();
+      return this.avisar(this.telefono.listas()
+        ? `📞 Listo: si te llega algo urgente te llamo al ${this.numeroDeCarlos()} (de ${L.desde} a ${L.hasta}, máximo una cada 20 min). «no me llames» lo apaga.`
+        : 'Anotado: te llamaré cuando algo sea urgente. ' + this.textoSinLlamadas());
+    }
+    if(/^\/?(?:no me llames|ya no me llames|llamadas no|apaga (?:las )?llamadas)$/.test(s)){
+      this.config.llamar = { ...(this.config.llamar || {}), activo: false }; this.guardar();
+      return this.avisar('Listo, ya no te llamo. Te sigo avisando por aquí.');
+    }
     /* aprobar / cambiar / tirar una propuesta: «3», «3 sí voy», «x3» */
     if((m = /^#?(\d+)(?:\s+([\s\S]+))?$/.exec(t))){
       const p = this.estado.propuestas.find(x => x.n === +m[1]);
@@ -882,6 +1032,14 @@ export class Secre {
       case 'reanudar': this.config.pausaHasta = 0; return 'De vuelta';
       case 'anota': { this.agregarPendiente('', '', a.texto); return a.texto ? `Anotado: ${a.texto}` : ''; }
       case 'hecho': { const p = this.estado.pendientes.find(x => x.n === +a.n && !x.hecho); if(!p) return ''; p.hecho = true; return `Tachado: ${p.texto}`; }
+      case 'llamar': {
+        const L = this.config.llamar = Object.assign({ activo: false, tel: '', desde: '08:00', hasta: '23:00' }, this.config.llamar || {});
+        if(a.activo !== undefined) L.activo = !!a.activo;
+        if(a.tel !== undefined) L.tel = String(a.tel || '').replace(/\D/g, '').slice(0, 15);
+        if(aMin(a.desde) != null) L.desde = a.desde; if(aMin(a.hasta) != null) L.hasta = a.hasta;
+        return L.activo ? `Te llamo si algo es urgente (${L.desde}–${L.hasta})` : 'No te llamo';
+      }
+      case 'voz': { if(!/^[A-Z][a-z]+$/.test(a.voz || '')) return ''; this.config.voz = a.voz; return `Voz de los audios: ${a.voz}`; }
       case 'avisos': { this.config.avisarA = a.a === 'yo' ? 'yo' : 'otra'; return this.config.avisarA === 'yo' ? 'Te aviso en tu chat propio' : 'Te aviso desde tu otra cuenta'; }
       case 'repaso': { const k = Math.max(0, Math.min(12, Math.round(+a.cada || 0))); this.config.repaso = { ...(this.config.repaso || { desde: '09:00', hasta: '22:00' }), cada: k }; return k ? `Repaso cada ${k} h` : 'Repaso apagado'; }
       case 'resumen': { if(aMin(a.hora) == null) return ''; this.config.resumen = a.hora; return `Resumen de pendientes a las ${a.hora}`; }
@@ -945,6 +1103,10 @@ export const AYUDA = `Lo que sé hacer (escríbelo aquí, en tu chat):
 · «pausa 2h» / «pausa hoy» · «sigue»
 · «repaso» qué hice y qué falta, ya · «repaso cada 2h» · «repaso 0» lo apaga
 · «avisos a la otra» te escribo desde tu otra cuenta (suena) · «avisos aquí» en tu chat propio
+· «resumen» o «qué me llegó» todo lo que te escribieron y qué contesté, lo importante arriba («resumen de hoy», «… de ayer»)
+· «audio Ana: ya voy» le mando una nota de voz · «3 audio» manda la propuesta 3 en audio · «pendientes en audio» te lo digo en voz
+· me puedes mandar notas de voz: las oigo y las hago orden
+· «llámame si es urgente» te llamo por teléfono cuando algo urja · «llámame» prueba · «no me llames»
 · «estado» · «chats»
 Y en palabras normales, por ejemplo:
 · «a Ana dale buenos días a las 7 y buenas noches a las 10:30»
