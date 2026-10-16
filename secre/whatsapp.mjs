@@ -41,9 +41,10 @@ export function textoDe(msg){
 /* conecta UNA cuenta. Devuelve el transporte que usa el núcleo.
    alMensaje(m) recibe { id, chat, de, nombre, texto, mio, grupo, t }
    alEstado(e) recibe { conectado, codigo, error } para el panel */
-export async function conectar({ dir, telefono, alMensaje, alEstado = () => {}, registro = 'warn' }){
+export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () => {}, registro = 'warn' }){
   const logger = pino({ level: registro });
-  const { state, saveCreds } = await useMultiFileAuthState(dir);
+  /* `auth` viene de nube.mjs cuando el disco no sobrevive a un reinicio (servidor gratis) */
+  const { state, saveCreds } = auth || await useMultiFileAuthState(dir);
   let sock = null, yoJids = [], vivo = true, codigoPedido = false;
   const ultimas = new Map();          /* jid → llaves de lo último que llegó, para marcar leído */
   const grupos = new Map();           /* jid → nombre del grupo */
@@ -69,7 +70,7 @@ export async function conectar({ dir, telefono, alMensaje, alEstado = () => {}, 
       }
       if(u.connection === 'close'){
         const codigo = u.lastDisconnect && u.lastDisconnect.error && u.lastDisconnect.error.output && u.lastDisconnect.error.output.statusCode;
-        if(codigo === DisconnectReason.loggedOut){ vivo = false; alEstado({ conectado: false, error: 'WhatsApp cerró la sesión (te saliste desde el teléfono). Hay que vincular otra vez.' }); return; }
+        if(codigo === DisconnectReason.loggedOut){ vivo = false; alEstado({ conectado: false, cerrada: true, error: 'WhatsApp cerró la sesión (te saliste desde el teléfono). Hay que vincular otra vez.' }); return; }
         alEstado({ conectado: false, error: 'Se cortó; reconectando…' });
         if(vivo) setTimeout(() => arrancar().catch(e => alEstado({ conectado: false, error: e.message })), 3000);
       }

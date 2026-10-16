@@ -348,6 +348,7 @@ import { buscar as buscarNeuronas, vecinas, CAMPOS, claseDe } from '../../cerebr
 import { generarVapid, empujarATodos } from './push.mjs';
 import { atenderBanco } from './banco.js';
 import { atenderElementos } from './elementos.js';
+import { atenderSecre } from './secre.js';
 import { MOTORES, preguntar, motoresVivos, motoresApagados, motorDe,
          PAPEL_SILLA, PAPEL_RESUMEN, PAPEL_LIGUE, generarImagen } from './modelos.js';
 
@@ -2166,6 +2167,11 @@ export class Sala {
     if(ruta === 'banco') return atenderBanco(this.ctx.storage, pedido, url, cuenta);
     /* ── /elementos · lo que Carlos arma y guarda para reusar (elementos.js) ── */
     if(ruta === 'elementos') return atenderElementos(this.ctx.storage, pedido, url, cuenta);
+    /* ── /secre · el cajón cifrado de Secre (secre.js). Sólo la cuenta dueña ── */
+    if(ruta === 'secre'){
+      if(cuenta !== (this.dueno || 'carlos')) return Response.json({ error: 'Esto es sólo de la cuenta dueña de la sala.' }, { status: 403 });
+      return atenderSecre(this.ctx.storage, pedido, url);
+    }
 
     /* ── /llaves-ia · pegar la llave de Gemini o Groq desde la app ─────────
        Carlos puso las dos en el panel de Cloudflare como «Secret», vio «Value
