@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>All's fashion · comercial</title>
+<!--
+  EL COMERCIAL DE ALL'S FASHION, cuadro por cuadro.
+  Carlos, 16 de octubre: «hazme un comercial para All's fashion del estilo del
+  de fadori». Mismo oficio que fadori-campana/comercial.html: la página no se
+  anima sola, `pintar(t)` la deja exacta en el segundo t y comercial.mjs le saca
+  la foto a 60 por segundo. Así cada corte cae en el golpe de la música.
+
+  ?f=h → 1920×1080 (como el de Fadori) · ?f=v → 1080×1920 (Instagram, WhatsApp)
+  All's fashion es de Grupo Mazi (Carlos, 16 de octubre). Las fotos pesan 144 MB y viven en el
+  banco de La Sala, no en el repo: llegan en window.FOTOS.
+
+  Lo que NO dice, igual que los anuncios: ni precios, ni «originales», ni
+  envíos, ni dirección. Todo manda a DM.
+-->
+<style>
+@font-face{font-family:Anton;src:url(../../fadori-campana/f/Anton-Regular.ttf)}
+@font-face{font-family:Pop;font-weight:600;src:url(../../fadori-campana/f/Poppins-SemiBold.ttf)}
+@font-face{font-family:Pop;font-weight:800;src:url(../../fadori-campana/f/Poppins-ExtraBold.ttf)}
+@font-face{font-family:Play;font-style:italic;src:url(PlayfairItalic.woff2)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{overflow:hidden;background:#000}
+#lienzo{position:relative;overflow:hidden;font-family:Pop,sans-serif;color:#fff;background:#0C0B0A}
+.esc{position:absolute;inset:0;opacity:0;overflow:hidden}
+.anton{font-family:Anton,sans-serif;text-transform:uppercase;line-height:.9;letter-spacing:.005em}
+.play{font-family:Play,serif;font-style:italic;text-transform:none;letter-spacing:0}
+.foto{position:absolute;overflow:hidden;background:#222}
+.foto img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.carta{border-radius:22px;box-shadow:0 30px 70px rgba(0,0,0,.28)}
+.oro{color:#D4AE6E}
+.pild{display:inline-block;background:#D4AE6E;color:#0C0B0A;font-weight:800;border-radius:999px}
+</style></head>
+<body><div id="lienzo"></div>
+<script>
+'use strict';
+const V = new URLSearchParams(location.search).get('f') === 'v';
+const W = V ? 1080 : 1920, H = V ? 1920 : 1080;
+const L = document.getElementById('lienzo');
+L.style.width = W + 'px'; L.style.height = H + 'px';
+document.body.style.width = W + 'px'; document.body.style.height = H + 'px';
+
+/* ── el reloj de la música: Funkorama (Kevin MacLeod, CC BY 4.0) a 100.97 por
+   minuto, medido con el detector de Palomazo y con una autocorrelación aparte.
+   La banda completa entra en el golpe 12 (7.16 s): ahí arranca la ráfaga. */
+const GOLPE = 60 / 100.97, F0 = 0.03;
+const T = (k) => F0 + k * GOLPE;
+const DUR = T(64) + 2.6;
+window.DUR = DUR;
+
+const FOTO = (i) => (window.FOTOS || 'web/') + i + '.jpg';
+const LOGO_B = (window.FOTOS || 'web/') + 'logo-blanco.png', LOGO_N = (window.FOTOS || 'web/') + 'logo-negro.png';
+
+/* ── las secciones (número = foto en la hoja de contacto) ─────────────────── */
+const RAFAGAS = [
+  { de:12, a:20, titulo:'Sudaderas',          fotos:[78, 82, 90, 95, 109, 115, 84, 97] },
+  { de:20, a:28, titulo:'Tenis y botas',      fotos:[36, 37, 40, 45, 46, 47, 38, 41] },
+  { de:28, a:32, titulo:'Bolsas',             fotos:[3, 31, 125, 127] },
+  { de:36, a:40, titulo:'Perfumes y termos',  fotos:[29, 56, 33, 39] },
+];
+const REJILLA = { de:32, a:36, titulo:'Playeras y pantalones', fotos:[9, 13, 54, 14, 55, 58] };
+
+/* ── ayudas ─────────────────────────────────────────────────────────────── */
+const sat = (x) => Math.max(0, Math.min(1, x));
+const sale = (x) => 1 - Math.pow(1 - sat(x), 3);          /* entra rápido, frena suave */
+const pico = (x) => { x = sat(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+function el(tag, css, html){ const e = document.createElement(tag); if(css) e.style.cssText = css; if(html != null) e.innerHTML = html; return e; }
+function foto(i, css, cls){ const d = el('div', css); d.className = 'foto ' + (cls || ''); const im = el('img'); im.src = FOTO(i); d.appendChild(im); d.img = im; return d; }
+function escena(fondo){ const s = el('section', 'background:' + fondo); s.className = 'esc'; L.appendChild(s); return s; }
+const ver = (s, a) => { s.style.opacity = a; s.style.visibility = a > 0 ? 'visible' : 'hidden'; };
+
+/* ═══ 1 · el logo (0 → golpe 6) ═══════════════════════════════════════════ */
+const e1 = escena('#0C0B0A');
+const e1logo = el('img', `position:absolute;left:50%;top:50%;width:${V ? 820 : 900}px;transform:translate(-50%,-50%)`); e1logo.src = LOGO_B; e1.appendChild(e1logo);
+const e1brillo = el('div', 'position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.22) 50%,transparent 60%);mix-blend-mode:overlay'); e1.appendChild(e1brillo);
+
+/* ═══ 2 · la pregunta (golpes 6 → 12) ═════════════════════════════════════ */
+const e2 = escena('#0C0B0A');
+const tam2 = V ? 190 : 210;
+const e2w = [
+  el('div', `position:absolute;left:0;right:0;top:${V ? 560 : 170}px;text-align:center;font-size:${tam2}px`, '¿Qué te vas'),
+  el('div', `position:absolute;left:0;right:0;top:${V ? 560 + tam2 * .95 : 170 + tam2 * .95}px;text-align:center;font-size:${tam2}px`, 'a poner'),
+  el('div', `position:absolute;left:0;right:0;top:${V ? 560 + tam2 * 1.9 : 170 + tam2 * 1.9}px;text-align:center;font-size:${tam2 * 1.15}px`, '<span class="play oro">hoy?</span>'),
+];
+e2w.forEach(w => { w.className = 'anton'; e2.appendChild(w); });
+
+/* ═══ 3 · las ráfagas: una foto por golpe ═════════════════════════════════
+   Horizontal: tres cartas en fila que corren a la izquierda en cada golpe.
+   Vertical: la foto a todo lo alto, con un empujón de zoom en cada golpe. */
+const CW = 600, CH = 840, HUECO = 40;
+for(const r of RAFAGAS){
+  r.s = escena(V ? '#0C0B0A' : '#F3EEE6');
+  if(V){
+    r.capas = r.fotos.map(i => { const f = foto(i, 'inset:0'); r.s.appendChild(f); return f; });
+    r.s.appendChild(el('div', 'position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.6) 0,transparent 26%,transparent 70%,rgba(0,0,0,.55) 100%)'));
+    r.tit = el('div', 'position:absolute;left:64px;right:64px;top:110px;font-size:150px;color:#fff', r.titulo); r.tit.className = 'anton';
+    r.marca = el('img', 'position:absolute;left:50%;bottom:90px;width:300px;transform:translateX(-50%)'); r.marca.src = LOGO_B;
+  } else {
+    r.capas = r.fotos.map(i => { const f = foto(i, `top:${H - CH - 60}px;width:${CW}px;height:${CH}px`, 'carta'); r.s.appendChild(f); return f; });
+    r.tit = el('div', 'position:absolute;left:60px;top:40px;font-size:118px;color:#0C0B0A;white-space:nowrap', r.titulo); r.tit.className = 'anton';
+    r.marca = el('img', 'position:absolute;right:60px;top:52px;width:220px'); r.marca.src = LOGO_N;
+  }
+  r.s.appendChild(r.tit); r.s.appendChild(r.marca);
+}
+
+/* ═══ 4 · la rejilla (golpes 32 → 36) ═════════════════════════════════════ */
+const g = REJILLA; g.s = escena('#F3EEE6');
+{
+  const cols = V ? 2 : 3, filas = V ? 3 : 2, x0 = 60, y0 = V ? 300 : 210, gw = W - 120, gh = H - y0 - 60;
+  const cw = (gw - (cols - 1) * 24) / cols, ch = (gh - (filas - 1) * 24) / filas;
+  g.capas = g.fotos.map((i, n) => { const c = n % cols, f_ = Math.floor(n / cols);
+    const d = foto(i, `left:${x0 + c * (cw + 24)}px;top:${y0 + f_ * (ch + 24)}px;width:${cw}px;height:${ch}px`, 'carta'); g.s.appendChild(d); return d; });
+  g.tit = el('div', `position:absolute;left:60px;top:${V ? 110 : 40}px;font-size:${V ? 130 : 118}px;color:#0C0B0A;${V ? '' : 'white-space:nowrap'}`, V ? 'Playeras y<br>pantalones' : g.titulo);
+  g.tit.className = 'anton'; g.s.appendChild(g.tit);
+  if(V) g.tit.style.top = '70px';
+}
+
+/* ═══ 5 · la bodega (golpes 40 → 48) ══════════════════════════════════════ */
+const e5 = escena('#0C0B0A');
+const e5a = foto(0, 'inset:-6%'), e5b = foto(V ? 21 : 19, 'inset:-6%');
+e5.appendChild(e5a); e5.appendChild(e5b);
+e5.appendChild(el('div', 'position:absolute;inset:0;background:radial-gradient(ellipse at 50% 60%,rgba(0,0,0,.25),rgba(0,0,0,.72))'));
+const e5t1 = el('div', `position:absolute;left:0;right:0;top:50%;text-align:center;font-size:${V ? 210 : 260}px;transform:translateY(-50%)`, 'Todo esto.'); e5t1.className = 'anton';
+const e5t2 = el('div', `position:absolute;left:0;right:0;top:50%;text-align:center;font-size:${V ? 140 : 170}px;line-height:1.05;transform:translateY(-50%)`, V ? 'En un solo<br><span class="oro">lugar.</span>' : 'En un solo <span class="oro">lugar.</span>'); e5t2.className = 'play';
+e5.appendChild(e5t1); e5.appendChild(e5t2);
+
+/* ═══ 6 · la tanda (golpes 48 → 56) ═══════════════════════════════════════
+   Lo que confirmó Carlos el 9 de octubre: 15 personas, 15 días, cada día
+   alguien estrena; playeras, sudaderas, pantalones y chamarras. Ni montos. */
+const e6 = escena('#F3EEE6');
+const e6t = el('div', `position:absolute;left:0;right:0;top:${V ? 260 : 90}px;text-align:center;font-size:${V ? 150 : 150}px;color:#0C0B0A`, V ? 'Únete a<br>la tanda' : 'Únete a la tanda'); e6t.className = 'anton'; e6.appendChild(e6t);
+const DIAS = [];
+{
+  const cols = V ? 5 : 15, d = V ? 150 : 104, gap = V ? 26 : 14;
+  const ancho = cols * d + (cols - 1) * gap, x0 = (W - ancho) / 2, y0 = V ? 700 : 400;
+  for(let n = 0; n < 15; n++){
+    const c = n % cols, f_ = Math.floor(n / cols);
+    const b = el('div', `position:absolute;left:${x0 + c * (d + gap)}px;top:${y0 + f_ * (d + gap)}px;width:${d}px;height:${d}px;border-radius:50%;border:4px solid #0C0B0A;display:grid;place-items:center;font:800 ${d * .36}px/1 Pop;color:#0C0B0A`, String(n + 1));
+    e6.appendChild(b); DIAS.push(b);
+  }
+}
+const e6s = el('div', `position:absolute;left:0;right:0;top:${V ? 1340 : 610}px;text-align:center;font-size:${V ? 150 : 170}px;color:#0C0B0A`, 'y estrena.'); e6s.className = 'play'; e6.appendChild(e6s);
+const e6p = el('div', `position:absolute;left:0;right:0;top:${V ? 1560 : 850}px;text-align:center;font:600 ${V ? 38 : 40}px/1.3 Pop;color:#5A5148;letter-spacing:.02em`, V ? 'Playeras · Sudaderas<br>Pantalones · Chamarras' : 'Playeras · Sudaderas · Pantalones · Chamarras'); e6.appendChild(e6p);
+
+/* ═══ 7 · el cierre (golpe 56 → fin) ══════════════════════════════════════ */
+const e7 = escena('#0C0B0A');
+const e7logo = el('img', `position:absolute;left:50%;top:${V ? 560 : 300}px;width:${V ? 820 : 760}px;transform:translate(-50%,-50%)`); e7logo.src = LOGO_B; e7.appendChild(e7logo);
+const e7l = el('div', `position:absolute;left:0;right:0;top:${V ? 900 : 590}px;text-align:center;font:600 ${V ? 46 : 46}px/1.45 Pop;color:#E9E4DC`, V ? 'Ropa · Calzado · Bolsas<br>Perfumes · y más' : 'Ropa · Calzado · Bolsas · Perfumes · y más'); e7.appendChild(e7l);
+const e7p = el('div', `position:absolute;left:50%;top:${V ? 1180 : 740}px;transform:translateX(-50%);font-size:${V ? 64 : 60}px;padding:${V ? '26px 56px' : '24px 54px'}`, 'Escríbenos por DM'); e7p.className = 'pild'; e7.appendChild(e7p);
+const e7n = el('div', 'position:absolute;inset:0;background:#000;opacity:0'); e7.appendChild(e7n);
+
+/* destello del corte grande */
+const flash = el('div', 'position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none'); L.appendChild(flash);
+
+/* ═══ pintar(t): deja todo exacto en el segundo t ════════════════════════ */
+window.pintar = function(t){
+  const k = (t - F0) / GOLPE;              /* golpe en que vamos (con fracción) */
+  const dentro = (a, b) => k >= a && k < b;
+
+  /* 1 · logo: aparece con desenfoque que se aclara, brillo que cruza, se va hacia arriba */
+  ver(e1, dentro(-1, 6) ? 1 : 0);
+  if(dentro(-1, 6)){
+    const a = sale(t / 1.6), sube = sat((k - 5.2) / .8);
+    e1logo.style.opacity = a * (1 - sube);
+    e1logo.style.filter = `blur(${(1 - a) * 14}px)`;
+    e1logo.style.transform = `translate(-50%,${-50 - sube * 30}%) scale(${.92 + a * .08})`;
+    e1brillo.style.transform = `translateX(${-60 + sat((t - 1.4) / 1.4) * 140}%)`;
+  }
+
+  /* 2 · pregunta: una frase por cada dos golpes, con golpe de escala */
+  ver(e2, dentro(6, 12) ? 1 : 0);
+  if(dentro(6, 12)) e2w.forEach((w, i) => {
+    const d = k - (6 + i * 2), a = d >= 0 ? 1 : 0, gol = sale(d * 4);
+    const fuera = sat((k - 11.6) / .4);
+    w.style.opacity = a * (1 - fuera);
+    w.style.transform = `scale(${a ? 1.18 - .18 * gol + fuera * .3 : 1})`;
+    w.style.color = '#F3EEE6';
+  });
+
+  /* 3 · ráfagas */
+  for(const r of RAFAGAS){
+    const en = dentro(r.de, r.a); ver(r.s, en ? 1 : 0); if(!en) continue;
+    const p = k - r.de, n = Math.floor(p), f = p - n;            /* foto n, fracción del golpe */
+    const llega = sale(f * 3.2);                                  /* la entrada dura ~0.19 s */
+    if(V){
+      r.capas.forEach((c, i) => {
+        const vis = i === n || (i === n - 1 && llega < 1);
+        c.style.visibility = vis ? 'visible' : 'hidden';
+        if(i === n){ c.style.zIndex = 2; c.style.clipPath = `inset(0 0 0 ${(1 - llega) * 100}%)`; c.img.style.transform = `scale(${1.12 - .08 * sale(f)})`; }
+        else { c.style.zIndex = 1; c.style.clipPath = 'none'; c.img.style.transform = 'scale(1.04)'; }
+      });
+    } else {
+      /* la fila: la foto n entra por la derecha y empuja; se ven n-2, n-1, n */
+      const paso = CW + HUECO, x0 = (W - (3 * CW + 2 * HUECO)) / 2;
+      r.capas.forEach((c, i) => {
+        const pos = i - n + 2 + (1 - llega);                      /* 0, 1, 2 = las tres de la fila */
+        c.style.left = (x0 + pos * paso) + 'px';
+        c.style.visibility = (pos > -1 && pos < 3.5) ? 'visible' : 'hidden';
+        c.img.style.transform = `scale(${1.06 - .06 * sale(f)})`;
+      });
+    }
+    const tIn = sale((k - r.de) * 2.5);
+    r.tit.style.transform = `translateY(${(1 - tIn) * -40}px)`; r.tit.style.opacity = tIn;
+  }
+
+  /* 4 · rejilla: cada foto aparece en medio golpe */
+  ver(g.s, dentro(32, 36) ? 1 : 0);
+  if(dentro(32, 36)){
+    g.capas.forEach((c, i) => { const a = sale((k - 32 - i * .5) * 3); c.style.opacity = a; c.style.transform = `scale(${.85 + .15 * a})`; });
+    const a = sale((k - 32) * 2.5); g.tit.style.opacity = a; g.tit.style.transform = `translateY(${(1 - a) * -40}px)`;
+  }
+
+  /* 5 · bodega: dos fotos que se acercan despacio, texto en cada mitad */
+  ver(e5, dentro(40, 48) ? 1 : 0);
+  if(dentro(40, 48)){
+    const p = (k - 40) / 8, segunda = sat((k - 43.7) / .6);
+    e5a.img.style.transform = `scale(${1.02 + p * .12}) translateX(${-p * 3}%)`;
+    e5b.img.style.transform = `scale(${1.1 - p * .06}) translateY(${p * 2}%)`;
+    e5b.style.opacity = segunda;
+    const a1 = sale((k - 40.2) * 2.5) * (1 - segunda);
+    e5t1.style.opacity = a1; e5t1.style.transform = `translateY(-50%) scale(${1.15 - .15 * sale((k - 40.2) * 2.5)})`;
+    const a2 = sale((k - 44.2) * 2); e5t2.style.opacity = a2; e5t2.style.transform = `translateY(calc(-50% + ${(1 - a2) * 40}px))`;
+  }
+
+  /* 6 · tanda: los 15 días se llenan, uno cada medio golpe */
+  ver(e6, dentro(48, 56) ? 1 : 0);
+  if(dentro(48, 56)){
+    const a = sale((k - 48) * 2.5); e6t.style.opacity = a; e6t.style.transform = `translateY(${(1 - a) * -40}px)`;
+    DIAS.forEach((b, i) => {
+      const x = sale((k - 49 - i * .3) * 4);
+      b.style.background = x > .5 ? '#D4AE6E' : 'transparent';
+      b.style.borderColor = x > .5 ? '#D4AE6E' : '#0C0B0A';
+      b.style.transform = `scale(${1 + .18 * Math.sin(Math.PI * sat((k - 49 - i * .3) * 2.5))})`;
+    });
+    const s = sale((k - 53) * 2); e6s.style.opacity = s; e6s.style.transform = `translateY(${(1 - s) * 30}px)`;
+    e6p.style.opacity = sale((k - 54) * 2);
+  }
+
+  /* 7 · cierre */
+  ver(e7, k >= 56 ? 1 : 0);
+  if(k >= 56){
+    const a = sale((k - 56) * 1.6);
+    e7logo.style.opacity = a; e7logo.style.transform = `translate(-50%,-50%) scale(${.9 + .1 * a})`;
+    e7l.style.opacity = sale((k - 58) * 2);
+    const pp = sale((k - 60) * 2.5);
+    e7p.style.opacity = pp; e7p.style.transform = `translateX(-50%) scale(${.7 + .3 * pp})`;
+    e7n.style.opacity = sat((t - (DUR - .8)) / .8);
+  }
+
+  /* destello en el golpe grande (12) y en el cierre (56) */
+  const fl = (c) => Math.max(0, 1 - Math.abs(k - c) * 8) * (k >= c ? 1 : 0);
+  flash.style.opacity = Math.max(fl(12), fl(56)) * .85;
+};
+
+/* los efectos que van con la imagen: [archivo, segundo, volumen] */
+window.SONIDOS = [
+  ['subida.wav', T(10), .5], ['golpe.wav', T(12), .9], ['whoosh.wav', T(12) - .12, .6],
+  ['whoosh.wav', T(20) - .12, .5], ['whoosh.wav', T(28) - .12, .5], ['whoosh.wav', T(32) - .12, .5],
+  ['whoosh.wav', T(36) - .12, .5], ['whoosh.wav', T(40) - .12, .6], ['whoosh.wav', T(48) - .12, .5],
+  ['golpe.wav', T(56), .8],
+];
+/* listo cuando cargaron las fotos y las letras */
+window.listo = Promise.all([...document.images].map(i => i.decode().catch(() => {}))).then(() => document.fonts.ready).then(() => { window.pintar(0); return true; });
+</script>
+</body></html>

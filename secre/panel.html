@@ -232,7 +232,7 @@ const nombreDe = (jid) => (datos.chats.find(c => c.id === jid) || {}).nombre || 
 /* ══ Por mandar ══════════════════════════════════════════════════════════ */
 function hojaPropuestas(){
   const ps = [...datos.propuestas].sort((a, b) => b.t - a.t);
-  $('#hoja').innerHTML = `<h2>Por mandar</h2>` + (ps.length ? ps.map(p => `
+  $('#hoja').innerHTML = `<h2>Por mandar</h2>` + (ps.length > 1 ? `<button class="boton principal" id="bTodas" style="width:100%;margin-bottom:12px">Mandar todas (${ps.length})</button>` : '') + (ps.length ? ps.map(p => `
     <article class="tarjeta" data-n="${p.n}">
       <div class="fila"><span class="quien">${esc(p.nombre)}</span><span class="meta">#${p.n} · ${p.tipo === 'manana' ? 'buenos días' : p.tipo === 'noche' ? 'buenas noches' : 'respuesta'} · ${cuando(p.t)}</span></div>
       ${p.dijo ? `<p class="meta">Te escribió: «${esc(p.dijo)}»</p>` : ''}
@@ -251,6 +251,18 @@ function hojaPropuestas(){
     };
     $('[data-tirar]', el).onclick = async () => { try{ await api(actual + '/propuesta', { n, tirar: true }); avisito('Tirada'); await cargar(true); }catch(err){ avisito(err.message); } };
   });
+  /* «Mandar todas»: las que cambiaste aquí salen con TU texto; las demás, como están */
+  if($('#bTodas')) $('#bTodas').onclick = async (e) => {
+    e.target.disabled = true;
+    try{
+      for(const el of document.querySelectorAll('#hoja article[data-n]')){
+        const n = +el.dataset.n, p = datos.propuestas.find(x => x.n === n), t = $('textarea', el).value.trim();
+        if(p && t && t !== p.texto) await api(actual + '/propuesta', { n, texto: t });
+      }
+      await api(actual + '/propuesta', { todas: true });
+      avisito('Mandadas'); await cargar(true);
+    }catch(err){ e.target.disabled = false; avisito(err.message); }
+  };
 }
 
 /* ══ Pendientes ══════════════════════════════════════════════════════════ */

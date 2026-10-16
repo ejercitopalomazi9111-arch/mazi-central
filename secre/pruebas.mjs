@@ -59,7 +59,13 @@ const s = new Secre({ cuenta: 'prueba', transporte, ia, almacen, reloj, azar: ()
 
 /* lo que manda Carlos en su chat propio, y el eco de lo que manda Secre */
 let aprobaciones = 0;
-const carlos = async (texto) => { if(/^#?\d+(\s|$)/.test(texto.trim())) aprobaciones++; await s.alMensaje({ id: 'C' + (sig++), chat: YO, de: YO, texto, mio: true, t: ahora }); };
+const carlos = async (texto) => {
+  if(/^#?\d+(\s|$)/.test(texto.trim())) aprobaciones++;
+  /* «todas» aprueba de un jalón las que hay listas (menos las que excluya) */
+  const t = /^(?:ok\s+|manda(?:las)?\s+)?(?:todas|todo)(?:\s+menos\s+([\d\s,y#]+))?$/i.exec(texto.trim());
+  if(t){ const menos = (t[1] || '').match(/\d+/g)?.map(Number) || []; aprobaciones += s.estado.propuestas.filter(p => String(p.texto || '').trim() && !menos.includes(p.n)).length; }
+  await s.alMensaje({ id: 'C' + (sig++), chat: YO, de: YO, texto, mio: true, t: ahora });
+};
 const llega = (jid, texto, extra = {}) => s.alMensaje({ id: 'M' + (sig++), chat: jid, de: jid, nombre: jid === ANA ? 'Ana' : jid === BETO ? 'Beto' : 'Alguien', texto, mio: false, t: ahora, ...extra });
 const nProp = () => { const m = /#(\d+)/.exec(ultimoAviso()); return m ? m[1] : ''; };
 
@@ -219,8 +225,48 @@ ok('cuando le hablas en palabras normales, contesta la de turno', ordenQuien ===
 await carlos('turnos');
 ok('«turnos» las vuelve a rotar', !s.config.turnos.fijo && /Turnos de 8 h/.test(ultimoAviso()), ultimoAviso());
 
+console.log('\n8d · «todas» y los saludos fijos (Carlos no tiene tiempo de tomar el teléfono en el día)');
+const PEPE = '5214424444444@s.whatsapp.net', LUPE = '5214425555555@s.whatsapp.net', TERE = '5214426666666@s.whatsapp.net';
+s.estado.propuestas = []; s.config.pausaHasta = 0;
+ahora = Date.UTC(2026, 9, 22, 18, 0);   /* 12:00 en México */
+for(const [j, nom] of [[PEPE, 'Pepe'], [LUPE, 'Lupe']]) await llega(j, 'oye una pregunta', { nombre: nom });
+pasar(70); await s.tic();
+ok('hay dos respuestas listas', s.estado.propuestas.length === 2, s.estado.propuestas.map(p => p.nombre));
+let o1 = aOtros().length;
+await carlos('todas');
+ok('«todas» las manda de un jalón', aOtros().length === o1 + 2 && s.estado.propuestas.length === 0, aOtros().slice(-2));
+ok('y le dice a quién', /mandé 2: Pepe, Lupe/i.test(ultimoAviso()), ultimoAviso());
+for(const [j, nom] of [[PEPE, 'Pepe'], [LUPE, 'Lupe'], [TERE, 'Tere']]) await llega(j, 'otra pregunta', { nombre: nom });
+pasar(70); await s.tic();
+const deLupe = s.estado.propuestas.find(p => p.nombre === 'Lupe');
+o1 = aOtros().length;
+await carlos(`todas menos ${deLupe.n}`);
+ok('«todas menos N» deja ésa', aOtros().length === o1 + 2 && s.estado.propuestas.length === 1 && s.estado.propuestas[0].nombre === 'Lupe', s.estado.propuestas);
+await carlos(`x${deLupe.n}`);
+await carlos('todas');
+ok('sin nada listo, «todas» no manda nada y lo dice', /No hay nada listo/.test(ultimoAviso()));
+/* saludo fijo */
+s.aplicar({ accion: 'saludos', chat: TERE, manana: '07:00', noche: '', variacion: 0 });
+ahora = Date.UTC(2026, 9, 23, 13, 1); await s.tic();   /* 07:01 */
+const sal = s.estado.propuestas.find(p => p.tipo === 'manana' && p.chat === TERE);
+ok('el primer día, el buenos días se propone', !!sal, s.estado.propuestas);
+o1 = aOtros().length;
+await carlos(`${sal.n} siempre buenos días Tere, que te vaya bonito ☀️`);
+ok('«N siempre texto» lo manda con ese texto', aOtros().length === o1 + 1 && aOtros().slice(-1)[0].texto === 'buenos días Tere, que te vaya bonito ☀️', aOtros().slice(-1));
+ok('y avisa que desde mañana sale solo', /Desde mañana se lo mando así, solo/.test(ultimoAviso()), ultimoAviso());
+ahora = Date.UTC(2026, 9, 24, 13, 1); o1 = aOtros().length; const p1 = s.estado.propuestas.length;
+await s.tic();
+ok('al día siguiente sale SOLO, con el texto exacto, sin proponer', aOtros().length === o1 + 1 && aOtros().slice(-1)[0].texto === 'buenos días Tere, que te vaya bonito ☀️' && s.estado.propuestas.length === p1, aOtros().slice(-1));
+ok('y le avisa a Carlos que lo mandó', /Mandé el buenos días fijo a Tere/.test(ultimoAviso()), ultimoAviso());
+const fijosMandados = aCarlos().filter(e => /Mandé el (buenos días|buenas noches) fijo/.test(e.texto)).length;
+await s.tic();
+ok('una sola vez al día', aOtros().length === o1 + 1);
+await carlos('quita fijo Tere');
+ahora = Date.UTC(2026, 9, 25, 13, 1); o1 = aOtros().length; await s.tic();
+ok('«quita fijo Tere» lo regresa a proponerse', aOtros().length === o1 && s.estado.propuestas.some(p => p.tipo === 'manana' && p.chat === TERE));
+
 console.log('\n9 · LA REGLA: nada sale sin que Carlos lo apruebe');
-ok(`cada envío a otra persona corresponde a una aprobación (${aOtros().length} envíos, ${aprobaciones} aprobaciones con número)`, aOtros().length <= aprobaciones, { envios: aOtros().length, aprobaciones });
+ok(`cada envío a otra persona corresponde a una aprobación (${aOtros().length} envíos, ${aprobaciones} aprobaciones, ${fijosMandados} saludos que dejó fijos)`, aOtros().length <= aprobaciones + fijosMandados, { envios: aOtros().length, aprobaciones, fijosMandados });
 ok('y todos los avisos a Carlos empiezan con 🤖', aCarlos().every(e => e.texto.startsWith('🤖')));
 
 console.log(fallas.length ? `\n✗ ${pasan} pasan · ${fallas.length} fallan` : `\n✓ ${pasan}/${pasan}`);
