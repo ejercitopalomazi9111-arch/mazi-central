@@ -77,6 +77,13 @@ label.etq{ display:block; font-size:14px; color:var(--suave); margin:10px 0 4px;
 details.tarjeta > summary{ list-style:none; display:flex; align-items:center; gap:8px; min-height:32px; cursor:pointer; }
 details.tarjeta > summary::-webkit-details-marker{ display:none; }
 details.tarjeta > summary .modo{ margin-left:auto; font-size:13px; color:var(--suave); white-space:nowrap; }
+/* el cambio rápido de modo, en el renglón mismo (16 de octubre: «una manera más rápida de cambiar tipo de respuesta») */
+details.tarjeta > summary{ flex-wrap:wrap; }
+.seg{ display:flex; flex-wrap:wrap; gap:6px; width:100%; }
+.seg button, .filtros button{ min-height:44px; padding:0 12px; border-radius:999px; border:1px solid var(--linea); background:var(--hoja); font-size:14px; font-weight:600; color:inherit; }
+.seg button[aria-pressed="true"], .filtros button[aria-pressed="true"]{ background:var(--acento); color:var(--acento-tinta); border-color:var(--acento); }
+.filtros{ display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }
+.masivo{ margin:4px 0 12px; }
 
 /* ── la plática ── */
 .charla{ display:flex; flex-direction:column; gap:8px; padding-bottom:8px; }
@@ -280,10 +287,27 @@ function hojaPendientes(){
 /* ══ Chats ═══════════════════════════════════════════════════════════════ */
 const NOMBRE_MODO = { borrador: 'te propongo respuestas', callado: 'sólo anoto pendientes', auto: 'contesto sola', rol: 'sigo la historia sola' };
 const modoDe = (c) => c.modo === 'auto' && c.rol ? 'rol' : c.modo;
+const RAPIDOS = { persona: [['auto', 'Sola'], ['borrador', 'Propone'], ['callado', 'Callada']], grupo: [['auto', 'Si me hablan'], ['rol', 'Rol'], ['borrador', 'Propone'], ['callado', 'Callada']] };
+let filtroChats = 'todos', buscaChats = '';
+const sinAc = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+function chatsVisibles(){
+  const q = sinAc(buscaChats.trim());
+  return datos.chats.filter(c => (filtroChats === 'todos' || (filtroChats === 'grupos') === !!c.grupo) && (!q || sinAc(c.nombre).includes(q) || c.id.startsWith(q.replace(/\D/g, '') || '¬')));
+}
 function hojaChats(){
-  const cs = datos.chats;
-  $('#hoja').innerHTML = `<h2>Chats</h2><p class="meta">Aparecen cuando te escriben. Toca uno para decirle a Secre cómo tratarlo.</p>` + (cs.length ? cs.map(c => `
-    <details class="tarjeta" data-id="${esc(c.id)}"><summary><span class="quien">${c.grupo ? '👥 ' : ''}${esc(c.nombre)}</span><span class="modo">${NOMBRE_MODO[c.modoAhora === 'auto' && c.rol ? 'rol' : c.modoAhora] || c.modoAhora}</span></summary>
+  const todos = chatsVisibles(), cs = todos.slice(0, 80);
+  const tipo = filtroChats === 'grupos' ? 'grupo' : filtroChats === 'personas' ? 'persona' : '';
+  $('#hoja').innerHTML = `<h2>Chats</h2><p class="meta">${datos.chats.length} chats. Toca un botón para cambiar cómo contesta Secre; abre el chat para más.</p>
+    <div class="acciones" style="margin-top:0"><button class="boton" id="bContactos">📇 Cargar contactos y grupos</button></div>
+    <label class="oculto" for="busChats">Buscar chat</label><input class="campo" id="busChats" type="search" placeholder="Buscar por nombre o número…" value="${esc(buscaChats)}" autocomplete="off">
+    <div class="filtros" role="group" aria-label="Qué chats ver">${[['todos', 'Todos'], ['personas', 'Personas'], ['grupos', 'Grupos']].map(([k, n]) => `<button data-filtro="${k}" aria-pressed="${filtroChats === k}">${n}</button>`).join('')}</div>
+    ${tipo ? `<div class="tarjeta masivo"><span class="meta">${tipo === 'grupo' ? 'Todos estos grupos' : 'Todas estas personas'} (${todos.length}), de un toque:</span>
+      <div class="seg" style="margin-top:8px">${RAPIDOS[tipo].filter(([m]) => m !== 'rol').map(([m, n]) => `<button data-masivo="${m}">${n}</button>`).join('')}</div>
+      ${tipo === 'grupo' ? `<p class="meta" style="margin:10px 0 4px">Grupos nuevos que no tengan modo:</p><div class="seg">${[['callado', 'Callada'], ['borrador', 'Propone']].map(([m, n]) => `<button data-defgrupos="${m}" aria-pressed="${datos.config.grupos === m}">${n}</button>`).join('')}</div>` : ''}</div>` : ''}
+    <details class="tarjeta comunidad" id="dCom"><summary><span class="quien">🎭 Comunidad de rol</span><span class="modo">todos sus grupos de un jalón</span></summary>
+      <div id="comCuerpo"><p class="meta">Buscando tus comunidades…</p></div></details>` + (cs.length ? cs.map(c => `
+    <details class="tarjeta" data-id="${esc(c.id)}"><summary><span class="quien">${c.grupo ? '👥 ' : ''}${esc(c.nombre)}</span><span class="modo">${NOMBRE_MODO[c.modoAhora === 'auto' && c.rol ? 'rol' : c.modoAhora] || c.modoAhora}</span>
+      <span class="seg" role="group" aria-label="Cómo contesta en ${esc(c.nombre)}">${RAPIDOS[c.grupo ? 'grupo' : 'persona'].map(([m, n]) => `<button type="button" data-rapido="${m}" aria-pressed="${(c.modoAhora === 'auto' && c.rol ? 'rol' : c.modoAhora) === m}">${n}</button>`).join('')}</span></summary>
       <label class="etq">Qué hace Secre con este chat</label>
       <select class="campo" data-modo>
         <option value="" ${!c.modo ? 'selected' : ''}>Lo normal (${NOMBRE_MODO[c.grupo ? datos.config.grupos : datos.config.porDefecto]})</option>
@@ -303,13 +327,74 @@ function hojaChats(){
       <label class="etq">Grupos (separados por coma)</label>
       <input class="campo" data-etq value="${esc((c.etiquetas || []).join(', '))}" placeholder="escuela, familia">
       <div class="acciones"><button class="boton principal" data-guardar>Guardar</button></div>
-    </details>`).join('') : '<p class="vacio">Todavía no te ha escrito nadie desde que prendiste a Secre.</p>');
+    </details>`).join('') + (todos.length > cs.length ? `<p class="meta">Y ${todos.length - cs.length} más: búscalos por nombre.</p>` : '') : `<p class="vacio">${datos.chats.length ? 'Nada con ese nombre.' : 'Todavía no hay chats. Toca «Cargar contactos y grupos».'}</p>`);
+  $('#busChats').oninput = () => { buscaChats = $('#busChats').value; const pos = $('#busChats').selectionStart; huella = ''; hojaChats(); const b = $('#busChats'); b.focus(); try{ b.setSelectionRange(pos, pos); }catch{} };
+  document.querySelectorAll('[data-filtro]').forEach(b => b.onclick = () => { filtroChats = b.dataset.filtro; huella = ''; hojaChats(); });
+  $('#bContactos').onclick = async () => {
+    $('#bContactos').disabled = true; $('#bContactos').textContent = 'Cargando…';
+    try{ const r = await api(actual + '/contactos', {}); avisito(`Listo: ${r.total} chats (${r.grupos} grupos y ${r.personas} contactos de tu agenda)`); huella = ''; await cargar(true); }
+    catch(e){ avisito(e.message); $('#bContactos').disabled = false; $('#bContactos').textContent = '📇 Cargar contactos y grupos'; }
+  };
+  const cambiar = async (ids, modo, extra = {}) => { try{ const r = await api(actual + '/modos', { ids, modo, ...extra }); avisito(extra.porDefectoGrupos ? `Listo: los grupos nuevos quedan en «${extra.porDefectoGrupos === 'callado' ? 'Callada' : 'Propone'}»` : `Listo: ${r.n} chat(s)`); huella = ''; await cargar(true); }catch(e){ avisito(e.message); } };
+  document.querySelectorAll('[data-rapido]').forEach(b => b.onclick = (e) => { e.preventDefault(); e.stopPropagation(); cambiar([b.closest('details').dataset.id], b.dataset.rapido); });
+  document.querySelectorAll('[data-masivo]').forEach(b => b.onclick = () => cambiar(chatsVisibles().map(c => c.id), b.dataset.masivo));
+  document.querySelectorAll('[data-defgrupos]').forEach(b => b.onclick = () => cambiar([], '', { porDefectoGrupos: b.dataset.defgrupos }));
+  $('#dCom').ontoggle = () => { if($('#dCom').open) abrirComunidad(); };
   document.querySelectorAll('#hoja details[data-id]').forEach(el => {
     $('[data-guardar]', el).onclick = async () => {
       try{ await api(actual + '/chat', { id: el.dataset.id, modo: $('[data-modo]', el).value, nota: $('[data-nota]', el).value, etiquetas: $('[data-etq]', el).value, ...($('[data-personaje]', el) ? { personaje: $('[data-personaje]', el).value, mundo: $('[data-mundo]', el).value, marca: $('[data-marca]', el).value } : {}) }); el.open = false; avisito('Guardado'); await cargar(true); }
       catch(err){ avisito(err.message); }
     };
   });
+}
+
+/* ══ Comunidad de rol ════════════════════════════════════════════════════
+   Carlos, 16 de octubre: «en un botón aparte pon todo para seleccionar la
+   comunidad donde están todos los grupos del rol y darle contexto e
+   instrucciones». Lo que se pone aquí lo heredan todos los grupos; lo que un
+   grupo tenga en su propia tarjeta le gana. */
+let comLista = [], comGuardadas = {};
+async function abrirComunidad(){
+  const caja = $('#comCuerpo');
+  try{ const r = await api(actual + '/comunidades', {}); comLista = r.comunidades || []; comGuardadas = r.guardadas || {}; }
+  catch(e){ caja.innerHTML = `<p class="meta">${esc(e.message)}</p>`; return; }
+  if(!comLista.length){ caja.innerHTML = '<p class="meta">No encontré comunidades en esta cuenta. Si tus grupos de rol están en una, revisa que sigas dentro.</p>'; return; }
+  const ya = comLista.find(c => comGuardadas[c.id]) || comLista[0];
+  caja.innerHTML = `<label class="etq" for="comSel">Comunidad</label>
+    <select class="campo" id="comSel">${comLista.map(c => `<option value="${esc(c.id)}" ${c.id === ya.id ? 'selected' : ''}>${esc(c.nombre)} (${c.grupos.length} grupos)</option>`).join('')}</select>
+    <div id="comForma"></div>`;
+  $('#comSel').onchange = () => pintarComunidad($('#comSel').value);
+  pintarComunidad(ya.id);
+}
+function pintarComunidad(id){
+  const com = comLista.find(c => c.id === id), g = comGuardadas[id] || {};
+  const prendido = (gid) => { const c = datos.chats.find(x => x.id === gid); return !!(c && c.rol && c.modo === 'auto'); };
+  const nuevo = !comGuardadas[id];
+  $('#comForma').innerHTML = `<label class="etq">En qué grupos sigo la historia sola</label>
+    <label class="pend"><input type="checkbox" id="comTodos"><span><b>Todos los grupos</b></span></label>
+    <div id="comGrupos">${com.grupos.map(x => `<label class="pend"><input type="checkbox" data-g="${esc(x.id)}" ${nuevo || prendido(x.id) ? 'checked' : ''}><span>👥 ${esc(x.nombre)}</span></label>`).join('') || '<p class="meta">Esta comunidad no tiene grupos donde estés.</p>'}</div>
+    <label class="etq" for="comPersonaje">Tu personaje (vale para todos sus grupos)</label>
+    <textarea class="campo" id="comPersonaje" maxlength="800" placeholder="ej. Kael, mercenario callado que odia a los magos">${esc(g.personaje || '')}</textarea>
+    <label class="etq" for="comMarca">Marca de tu personaje</label>
+    <input class="campo" id="comMarca" maxlength="30" placeholder="ej. 🌌⚛️-" value="${esc(g.marca || '')}">
+    <label class="etq" for="comMundo">El mundo y la historia (lo lee en cada grupo antes de jugar)</label>
+    <textarea class="campo" id="comMundo" rows="7" maxlength="6000" placeholder="ej. Reino de Valdor. La magia está prohibida. Taberna = el pueblo, Bosque = la frontera. Ana juega a Lyra, la ladrona.">${esc(g.mundo || '')}</textarea>
+    <label class="etq" for="comInstr">Instrucciones (cómo quieres que juegue)</label>
+    <textarea class="campo" id="comInstr" rows="5" maxlength="3000" placeholder="ej. Nunca ataques primero. Respeta los turnos del narrador. Nada de romance. Si te retan a duelo, acepta pero no mates a nadie.">${esc(g.instrucciones || '')}</textarea>
+    <p class="meta">Si un grupo tiene su propio personaje, marca o mundo en su tarjeta, eso le gana o se suma a esto.</p>
+    <div class="acciones"><button class="boton principal" id="bComGuardar">Guardar la comunidad</button></div>`;
+  const marcas = () => [...document.querySelectorAll('#comGrupos input')];
+  const alTodos = () => { const m = marcas(); $('#comTodos').checked = m.length > 0 && m.every(x => x.checked); };
+  $('#comTodos').onchange = () => { marcas().forEach(x => x.checked = $('#comTodos').checked); };
+  marcas().forEach(x => x.onchange = alTodos); alTodos();
+  $('#bComGuardar').onclick = async () => {
+    try{
+      const r = await api(actual + '/comunidad', { id: com.id, nombre: com.nombre, grupos: com.grupos,
+        activos: marcas().filter(x => x.checked).map(x => x.dataset.g),
+        personaje: $('#comPersonaje').value, marca: $('#comMarca').value, mundo: $('#comMundo').value, instrucciones: $('#comInstr').value });
+      $('#dCom').open = false; avisito(r.hecho); await cargar(true);
+    }catch(e){ avisito(e.message); }
+  };
 }
 
 /* ══ Saludos, reglas y ajustes ═══════════════════════════════════════════ */

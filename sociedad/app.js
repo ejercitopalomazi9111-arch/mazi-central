@@ -875,7 +875,7 @@ async function pintarRadioChico(caja){
     '<div><div class="meta"><span>' + ico('radio') + 'Radio Divergentes</span></div><b>' + e(u ? u.nombre : 'El podcast de Ética del 3.1') + '</b><div class="meta"><span>' + (u ? 'Episodio nuevo' : 'Próximamente') + '</span></div></div>' + ico('chevron-right') + '</a>';
 }
 async function vRadio(c){
-  c.innerHTML = '<div class="cabeza"><div><h1>Radio Divergentes</h1><p class="sub">El podcast del 3.1. Los episodios que ya salieron y los que vienen.</p></div><a class="btn" href="../podcast/">' + ico('mic-vocal') + 'Abrir el estudio</a></div>' +
+  c.innerHTML = '<div class="cabeza"><div><h1>Radio Divergentes</h1><p class="sub">Para quien piensa diferente. El podcast del 3.1, para la comunidad: los episodios que ya salieron y los que vienen.</p></div><a class="btn" href="../podcast/">' + ico('mic-vocal') + 'Abrir el estudio</a></div>' +
     '<h2>' + ico('headphones') + 'Ya salieron</h2><div id="epsYa" class="lista"><div class="cargando-s" style="min-height:80px">Cargando…</div></div><h2>' + ico('calendar-days') + 'Los temas</h2><div id="epsPlan" class="lista dos"></div>';
   const eps = await traerRadio(), ya = $('#epsYa', c); if(!ya) return;
   ya.innerHTML = eps.length ? eps.map((m, i) => '<div class="tarjeta"><div class="episodio">' + (m.portada ? '<img src="' + m.portada + '" alt="">' : '<span class="num">' + ico(m.esAudio ? 'headphones' : 'tv') + '</span>') + '<div><b>' + e(m.nombre) + '</b><div class="meta"><span>' + hace(m.t) + '</span><span>' + (m.tam / 1048576).toFixed(0) + ' MB</span></div></div>' +

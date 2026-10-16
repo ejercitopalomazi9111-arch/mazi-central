@@ -15,12 +15,32 @@ const SALA_NOMBRE = process.env.SECRE_SALA || 'GRUPAZ';
 
 /* quién de las tres contesta: Negro va con Groq, Secre y Paulina con Gemini */
 const MOTOR = { Negro: 'groq', Paulina: 'gemini', Secre: 'gemini' };
-async function preguntar(sistema, texto, { json = true, tope = 900, motor = '' } = {}){
+/* ⚠ «a veces responde y a veces no» (16 de octubre): Gemini 2.5 PIENSA dentro de
+   su tope de respuesta, y con 900 a veces se le acababa antes de escribir el JSON:
+   llegaba vacío o cortado y Secre se quedaba sin qué mandar. Ahora el tope es de
+   2,500 y, si un motor falla o regresa algo que no se puede leer, se pregunta al
+   otro (Gemini ↔ Groq) antes de rendirse. */
+async function preguntar(sistema, texto, op = {}){
+  const primero = op.motor || process.env.SECRE_MOTOR || 'gemini', otro = primero === 'groq' ? 'gemini' : 'groq';
+  let ultimo = null;
+  for(const motor of [primero, otro]){
+    for(let intento = 0; intento < 2; intento++){
+      try{
+        const r = await preguntarUna(sistema, texto, { ...op, motor, tope: Math.max(op.tope || 0, 2500) });
+        if(op.json === false || sacarJson(r)) return r;
+        ultimo = new Error(`${motor} regresó algo que no se puede leer`);
+      }catch(e){ ultimo = e; }
+      if(intento === 0) await new Promise(r => setTimeout(r, 1200));
+    }
+  }
+  throw ultimo || new Error('la IA no contestó');
+}
+async function preguntarUna(sistema, texto, { json = true, tope = 2500, motor = '' } = {}){
   const llaveSala = process.env.SECRE_SALA_LLAVE || process.env.MAZI_LLAVE;
   if(llaveSala){
     const r = await fetch(`${SALA}/api/sala/${SALA_NOMBRE}/ia-texto`, {
       method: 'POST', headers: { 'content-type': 'application/json', 'X-Llave': llaveSala },
-      body: JSON.stringify({ motor: motor || process.env.SECRE_MOTOR || 'gemini', sistema, mensajes: [{ de: 'tu', texto }], tope, json }),
+      body: JSON.stringify({ motor: motor || 'gemini', sistema, mensajes: [{ de: 'tu', texto }], tope, json }),
       signal: AbortSignal.timeout(90_000),
     });
     const j = await r.json().catch(() => ({}));
@@ -71,9 +91,9 @@ const PERSONA = {
   Negro: 'una IA mexicana de barrio, sarcástica y mamona, de las de La Sala de Grupo Mazi: contestas corto, con carrilla, pero cumples y no inventas nada.',
 };
 /* el rol: Carlos juega en un grupo y quiere que la historia siga cuando él no puede */
-async function leerRol({ dueno, nombre, nota, historial, nuevos, personaje, mundo = '', marca = '', stickers = [], datos }){
-  const sistema = `Estás en «${nombre}», un grupo de WhatsApp donde juegan rol${nota ? ` (${nota})` : ''}. ${dueno} no puede estar ahorita y tú llevas SU personaje${personaje ? `: ${personaje}` : ' (sácalo de cómo ha jugado él en la conversación)'}.
-${mundo ? `El mundo y la historia, como te los contó ${dueno} (es canon: no lo contradigas ni lo cambies):\n${mundo}\n` : ''}En el grupo también puede haber otros bots (narrador, dados, árbitro; sus mensajes suelen empezar con 🤖): lo que digan es parte del juego y les contestas igual que a los demás.
+async function leerRol({ dueno, nombre, nota, historial, nuevos, personaje, mundo = '', marca = '', instrucciones = '', comunidad = '', stickers = [], datos }){
+  const sistema = `Estás en «${nombre}», un grupo de WhatsApp donde juegan rol${comunidad ? ` (de la comunidad «${comunidad}»)` : ''}${nota ? ` (${nota})` : ''}. ${dueno} no puede estar ahorita y tú llevas SU personaje${personaje ? `: ${personaje}` : ' (sácalo de cómo ha jugado él en la conversación)'}.
+${mundo ? `El mundo y la historia, como te los contó ${dueno} (es canon: no lo contradigas ni lo cambies):\n${mundo}\n` : ''}${instrucciones ? `Instrucciones de ${dueno} para este rol (síguelas siempre):\n${instrucciones}\n` : ''}En el grupo también puede haber otros bots (narrador, dados, árbitro; sus mensajes suelen empezar con 🤖): lo que digan es parte del juego y les contestas igual que a los demás.
 Tu trabajo:
 1) "pendientes": sólo cosas de la VIDA REAL que ${dueno} tenga que hacer por lo que escribieron fuera del rol. Casi siempre vacía.
 2) ${marca ? `"lineas": la siguiente jugada de su personaje, renglón por renglón: [{"tipo":"dice","texto":"lo que dice"},{"tipo":"hace","texto":"lo que hace"}]. En el grupo cada personaje habla con su marca de emojis al inicio (la de él es «${marca}») y las acciones van en renglón aparte con «> » al inicio: NO pongas tú la marca ni el «>», el programa los pone. Deja "respuesta" vacía salvo lo de fuera del rol.` : `"respuesta": la siguiente jugada de su personaje.`} Sigue lo que acaba de pasar y reacciona a lo que hicieron los demás (cada quien con el nombre de su personaje), y mueve la historia un poquito.
@@ -92,16 +112,19 @@ Contesta SÓLO JSON: {"pendientes":[], ${marca ? '"lineas":[], ' : ''}"respuesta
 }
 
 export const ia = {
-  async leer({ dueno, nombre, nota, historial, nuevos, estilo, redactar, auto = false, rol = false, personaje = '', mundo = '', marca = '', stickers = [], grupo, datos = [] }){
-    if(rol) return leerRol({ dueno, nombre, nota, historial, nuevos, personaje, mundo, marca, stickers, datos });
+  async leer({ dueno, nombre, nota, historial, nuevos, estilo, redactar, auto = false, rol = false, personaje = '', mundo = '', marca = '', instrucciones = '', comunidad = '', stickers = [], grupo, datos = [] }){
+    if(rol) return leerRol({ dueno, nombre, nota, historial, nuevos, personaje, mundo, marca, instrucciones, comunidad, stickers, datos });
     const sistema = `Ayudas a ${dueno}, un estudiante de prepa en Querétaro, con su WhatsApp. Te paso un chat${grupo ? ' de grupo' : ''} con ${nombre}${nota ? ` (${nota})` : ''}.
 Tu trabajo:
 1) "pendientes": cosas que ${dueno} tiene que HACER por lo que le escribieron (entregar algo, confirmar, pagar, ir a algún lado, contestar una pregunta importante). Frases cortas en infinitivo, con fecha u hora si la hay. Lista vacía si no hay.
-${redactar && auto ? `2) "respuesta": el mensaje que se le manda YA a ${nombre}, SIN que ${dueno} lo revise. Lo escribes tú como asistente de ${dueno} (sale firmado como su asistente, no como él): español mexicano, amable, breve y claro.
-   - Sólo afirmas lo que sale del chat o de "Lo que ${dueno} te contó". NUNCA inventes precios, horas, lugares, existencias, fechas ni compromisos, ni digas que ${dueno} va a hacer algo.
-   - Si piden algo que sólo ${dueno} puede decidir o saber (dinero, un precio que no está en lo que te contó, apartar algo, una cita, un sí o un no, algo personal o delicado), pon "decide": true, en "respuesta" di que ya le pasaste su mensaje a ${dueno} y que él le confirma (sin prometer hora), y en "motivo" qué tiene que decidir él.
-   - Si ya no hace falta contestar (un "ok", un gracias, un sticker, una despedida), deja "respuesta" vacía.${grupo ? `
+${redactar && auto ? `2) "respuesta": el mensaje que se le manda YA a ${nombre}, SIN que ${dueno} lo revise. Eres el ASISTENTE de ${dueno} en su WhatsApp (el programa pone la firma; tú no firmes ni digas que eres un bot): español mexicano, cálido, natural y breve, como una persona que atiende bien.
+   - PLATICA de verdad: contesta lo que te dicen, sigue el hilo de la conversación, saluda si saludan, pregunta lo que falte para entender qué necesitan.
+   - RESUELVE DUDAS: si preguntan algo general (cómo se hace algo, qué significa, una explicación, una tarea, una recomendación), contéstalo bien y corto. Si se contesta con "Lo que ${dueno} te contó", usa esos datos exactos.
+   - Sobre ${dueno} y sus cosas sólo afirmas lo que sale del chat o de "Lo que ${dueno} te contó". NUNCA inventes precios, horas, lugares, existencias, fechas ni compromisos suyos, ni digas que él va a hacer algo.
+   - Si piden algo que sólo ${dueno} puede decidir o saber (dinero, un precio que no está en lo que te contó, apartar algo, una cita, un sí o un no, algo personal o delicado), di que ya se lo pasaste y que él confirma (sin prometer hora), pon "decide": true y en "motivo" qué tiene que decidir él. Aun así, contesta lo demás que sí puedes.
+   - Si de verdad no hace falta contestar (un "ok" suelto, un sticker, una despedida que ya se contestó), deja "respuesta" vacía. Ante la duda, contesta.${grupo ? `
    - Es un GRUPO: sólo contestas si le hablan a ${dueno}, lo mencionan o le preguntan algo a él. Si la plática es entre los demás, deja "respuesta" vacía. Si contestas, dirígete por su nombre a quien le habló.` : ''}
+   - Los "pendientes" son para ${dueno}: todo lo que quedó por hacer o decidir de esta plática (entregar, confirmar, pagar, ir, devolver una llamada).
 3) "urgente": true sólo si algo no puede esperar (una emergencia, algo para dentro de una hora).` : ''}
 ${redactar && !auto ? `2) "respuesta": una propuesta de lo que ${dueno} contestaría, escrita como él (español mexicano, informal). ${dueno} la va a revisar antes de mandarla.
    - NO inventes datos: si piden una hora, un lugar, dinero o una decisión que no sale del chat, propón algo que gane tiempo ("déjame ver y ahorita te digo") y explica en "motivo" qué tiene que decidir él.

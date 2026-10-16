@@ -47,7 +47,7 @@ ok('se fabricó el video de prueba', b64.length > 10000, b64.length);
 
 console.log('\n0b · Radio Divergentes viene puesto');
 ok('el nombre del podcast ya dice Radio Divergentes', await pg.inputValue('#pNombre') === 'Radio Divergentes');
-ok('con la paloma de logo', await pg.getAttribute('[data-logo="divergentes"]', 'aria-pressed') === 'true');
+ok('con la insignia de logo', await pg.getAttribute('[data-logo="divergentes"]', 'aria-pressed') === 'true');
 ok('y los colores Divergentes', await pg.getAttribute('[data-tema="divergentes"]', 'aria-checked') === 'true');
 ok('los 12 episodios en el orden del pizarrón, en dos semanas', await pg.locator('.ep').count() === 12 && await pg.locator('.semana-t').count() >= 2);
 await pg.click('[data-ep="5"]');
@@ -56,7 +56,7 @@ const g = await pg.textContent('#epGuion');
 ok('y enseña su escaleta de 30 minutos con el dilema', /24:00/.test(g) && /El dilema/.test(g) && /verdad o evitar el pánico/.test(g));
 const pinta = await pg.evaluate(() => { const c = document.querySelector('#cvLogo'), d = c.getContext('2d').getImageData(0, 0, 160, 160).data;
   let claros = 0; for(let i = 0; i < d.length; i += 4) if(d[i] > 180 && d[i + 1] > 170) claros++; return claros; });
-ok('la paloma se dibuja (trazos claros sobre el fondo)', pinta > 300, pinta);
+ok('la insignia se dibuja (trazos claros sobre el fondo)', pinta > 300, pinta);
 
 console.log('\n1 · el clip entra');
 ok('el modo video viene de entrada', await pg.evaluate(() => document.body.classList.contains('modo-video')));

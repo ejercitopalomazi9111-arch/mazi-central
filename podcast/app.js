@@ -123,8 +123,9 @@ document.querySelector('.modo').addEventListener('click', (e) => { const b = e.t
    LOS DATOS DEL EPISODIO (sirven a la entrada, la portada y la miniatura)
    ═════════════════════════════════════════════════════════════════════ */
 let tema = 'noche', foto = null;
-/* el logo: el de Radio Divergentes (la paloma, en blanco puro para pintarse
-   del color del fondo) o uno que suban; sin logo, la entrada usa el nombre */
+/* el logo: el de Radio Divergentes (la insignia del micrófono que ganó en
+   octubre, con sus colores: no se tiñe) o uno que suban; sin logo, la entrada
+   usa el nombre */
 let logo = { fuente: null, completo: null, chico: null, mascara: false };
 const tintes = new Map();
 function tenido(img, color){
@@ -142,8 +143,7 @@ const datos = () => {
     titulo: $('#pTitulo').value.trim(), escuela: $('#pEscuela').value.trim(), tema,
     logo: tenido(logo.completo, T.tinta), logoChico: tenido(logo.chico, '#FFFFFF'),
     marcaAgua: $('#vMarca').checked,
-    /* con la paloma de fábrica, la entrada la anima en vectores */
-    logoVector: logo.fuente === 'divergentes', tinta: T.tinta };
+    tinta: T.tinta };
 };
 async function cargarImagen(src){
   const im = new Image(); im.src = src; await im.decode(); return im;
@@ -171,7 +171,8 @@ async function prepararLogoPropio(blob){
 async function ponerLogo(fuente, blob){
   tintes.clear();
   if(fuente === 'divergentes'){
-    logo = { fuente, mascara: true, completo: await cargarImagen('marca/radio-divergentes.png'), chico: await cargarImagen('marca/paloma.png') };
+    const ins = await cargarImagen('marca/radio-divergentes.png');
+    logo = { fuente, mascara: false, completo: ins, chico: ins };
   } else if(fuente === 'propio' && blob){
     const c = await prepararLogoPropio(blob);
     logo = { fuente, mascara: false, completo: c, chico: c };

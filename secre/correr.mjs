@@ -62,7 +62,12 @@ async function prender(c){
     almacen = cajon.almacen; auth = cajon.auth;
   } else almacen = almacenEn(dir);
   /* el transporte llega después de conectar; mientras, el núcleo no manda nada */
-  const puente = { yo: () => (v.transporte ? v.transporte.yo() : []), enviar: (j, t) => v.transporte.enviar(j, t), escribiendo: (j, ms) => v.transporte.escribiendo(j, ms), leido: (j) => v.transporte.leido(j) };
+  const puente = { yo: () => (v.transporte ? v.transporte.yo() : []), enviar: (j, t) => v.transporte.enviar(j, t),
+    /* sin esto el rol nunca mandaba stickers: quizaSticker pregunta si existe y se callaba */
+    enviarSticker: (j, b) => v.transporte.enviarSticker(j, b),
+    /* los números de sus OTRAS cuentas: dos Secres no se contestan entre ellas */
+    otrosYo: () => Object.entries(vivas).filter(([k, x]) => k !== c.id && x.transporte).flatMap(([, x]) => x.transporte.yo()),
+    escribiendo: (j, ms) => v.transporte.escribiendo(j, ms), leido: (j) => v.transporte.leido(j) };
   v.secre = new Secre({ cuenta: c.id, transporte: puente, ia, almacen });
   /* con qué número se pide el código: el de SECRE_CUENTAS, o el que se eligió en el panel
      (en México WhatsApp puede tener la cuenta como 52… o como 521…) */
@@ -71,6 +76,7 @@ async function prender(c){
   const enchufar = async () => {
     v.transporte = await conectar({ dir: path.join(dir, 'sesion'), auth, telefono: numero,
       alMensaje: (m) => v.secre.alMensaje(m).catch(e => console.error(`[${c.id}]`, e.message)),
+      alContactos: (l) => { try{ v.secre.cargarContactos(l); }catch(e){ console.error(`[${c.id}]`, e.message); } },
       alEstado: (e) => {
         v.estado = { ...v.estado, ...e };
         if(e.codigo){ console.log(`\n📱 [${c.id}] Código para vincular: ${e.codigo}\n   WhatsApp → Dispositivos vinculados → Vincular con número de teléfono\n`); v.estado.error = ''; }
@@ -160,6 +166,32 @@ http.createServer(async (req, res) => {
     return json(res, 200, { bien: true });
   }
   if(!v.estado.conectado && (que === 'orden' || que === 'propuesta')) return json(res, 409, { error: 'Esa cuenta no está conectada a WhatsApp todavía.' });
+  /* el botón «Cargar contactos»: la agenda y los grupos de WhatsApp */
+  if(que === 'contactos'){
+    if(!v.estado.conectado || !v.transporte || !v.transporte.cargarContactos) return json(res, 409, { error: 'Esa cuenta no está conectada a WhatsApp todavía.' });
+    try{ const r = await v.transporte.cargarContactos(); return json(res, 200, { bien: true, ...r, total: Object.values(s.config.chats).filter(x => x.nombre).length }); }
+    catch(e){ return json(res, 502, { error: 'WhatsApp no me dio los contactos: ' + e.message }); }
+  }
+  /* cambiar el modo de muchos chats de un toque (los grupos, o los que se vean filtrados) */
+  if(que === 'modos'){
+    const ids = Array.isArray(b.ids) ? b.ids.slice(0, 2000) : [];
+    if(!['', 'borrador', 'callado', 'auto', 'rol'].includes(b.modo)) return json(res, 400, { error: 'Modo raro.' });
+    let n = 0;
+    for(const id of ids){ const c = s.config.chats[id]; if(!c) continue; if(b.modo === 'rol' && !c.grupo) continue; c.rol = b.modo === 'rol'; c.modo = b.modo === 'rol' ? 'auto' : b.modo; n++; }
+    if(b.porDefectoGrupos !== undefined && ['borrador', 'callado'].includes(b.porDefectoGrupos)) s.config.grupos = b.porDefectoGrupos;
+    s.guardar(); return json(res, 200, { bien: true, n });
+  }
+  /* el botón «Comunidad de rol»: qué comunidades hay y guardar una */
+  if(que === 'comunidades'){
+    if(!v.estado.conectado || !v.transporte || !v.transporte.comunidades) return json(res, 409, { error: 'Esa cuenta no está conectada a WhatsApp todavía.' });
+    try{ return json(res, 200, { comunidades: await v.transporte.comunidades(), guardadas: s.config.comunidades || {} }); }
+    catch(e){ return json(res, 502, { error: 'WhatsApp no me dio las comunidades: ' + e.message }); }
+  }
+  if(que === 'comunidad'){
+    const hecho = s.ponerComunidad({ id: String(b.id || ''), nombre: b.nombre, grupos: Array.isArray(b.grupos) ? b.grupos : [], activos: Array.isArray(b.activos) ? b.activos : [],
+      personaje: b.personaje, mundo: b.mundo, marca: b.marca, instrucciones: b.instrucciones });
+    return json(res, hecho ? 200 : 400, hecho ? { bien: true, hecho } : { error: 'Esa no es una comunidad.' });
+  }
   if(que === 'accion'){ const hecho = s.aplicar(b); s.guardar(); return json(res, hecho ? 200 : 400, hecho ? { bien: true, hecho } : { error: 'No pude aplicar eso.' }); }
   /* hablarle a Secre desde el panel es lo mismo que escribirle en el chat propio */
   if(que === 'orden'){ await s.orden(String(b.texto || '').slice(0, 2000)); return json(res, 200, { bien: true }); }

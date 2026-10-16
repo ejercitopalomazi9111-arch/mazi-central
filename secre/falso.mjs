@@ -7,7 +7,7 @@
    ═════════════════════════════════════════════════════════════════════════ */
 export const enviados = [];
 
-export async function conectar({ telefono, alMensaje, alEstado }){
+export async function conectar({ telefono, alMensaje, alEstado, alContactos = () => {} }){
   const tel = String((typeof telefono === 'function' ? telefono() : telefono) || '5210000000000');
   const yo = [`${tel}@s.whatsapp.net`];
   /* SECRE_FALSO_SIN_VINCULAR=1: se queda esperando a que pongas el código, para probar esa pantalla */
@@ -18,6 +18,17 @@ export async function conectar({ telefono, alMensaje, alEstado }){
     async enviar(jid, texto){ enviados.push({ jid, texto, t: Date.now() }); return 'falso-' + enviados.length; },
     async enviarSticker(jid){ enviados.push({ jid, texto: '[sticker]', t: Date.now() }); return 'falso-' + enviados.length; },
     async escribiendo(){}, async leido(){}, async cerrar(){},
+    /* una agenda de mentiras: tres contactos y dos grupos */
+    async cargarContactos(){
+      alContactos([{ id: '5214423330001@s.whatsapp.net', nombre: 'Mamá' }, { id: '5214423330002@s.whatsapp.net', nombre: 'Profe Omar' }, { id: '5214423330003@s.whatsapp.net', nombre: 'Rosa clienta', lid: '98765@lid' },
+        { id: '120363000000000002@g.us', nombre: 'Taberna', grupo: true }, { id: '120363000000000009@g.us', nombre: 'Equipo de fut', grupo: true }]);
+      return { grupos: 2, personas: 3 };
+    },
+    /* una comunidad de rol de mentiras con tres grupos, para probar el panel */
+    async comunidades(){
+      return [{ id: '120363000000000001@g.us', nombre: 'Reino de Valdor', grupos: [
+        { id: '120363000000000002@g.us', nombre: 'Taberna' }, { id: '120363000000000003@g.us', nombre: 'Bosque' }, { id: '120363000000000004@g.us', nombre: 'Castillo' }] }];
+    },
     /* para las pruebas: hacer como que llegó un mensaje */
     llega: (m) => alMensaje({ id: 'm' + Math.random().toString(36).slice(2), mio: false, grupo: false, t: Date.now(), ...m }),
   };

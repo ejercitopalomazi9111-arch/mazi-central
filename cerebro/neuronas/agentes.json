@@ -467,6 +467,50 @@
       "vecinas": [
         "discusion-sin-freno"
       ]
+    },
+    {
+      "id": "puente-que-no-pasa-una-funcion",
+      "titulo": "Una función nueva del transporte no llega al núcleo si el puente que los une no la pasa",
+      "gravedad": "media",
+      "sintoma": "Los stickers del rol de Secre pasaban todas sus pruebas y en WhatsApp de verdad nunca se habrían mandado.",
+      "causa": "correr.mjs no le da al núcleo el transporte entero: le arma un `puente` con yo, enviar, escribiendo y leido. `enviarSticker` se agregó a whatsapp.mjs y a falso.mjs, pero no al puente.",
+      "porque": "quizaSticker pregunta `if(!this.transporte.enviarSticker) return` para no tronar en transportes viejos: el hueco se convertía en silencio en vez de en error. Y las pruebas del núcleo le pasan su propio transporte, nunca el puente.",
+      "arreglo": "El puente ahora pasa enviarSticker. Lo encontró la revisión al agregar `comunidades()` (16 de octubre): cada función nueva del transporte se revisa en tres lugares — whatsapp.mjs, falso.mjs y el puente de correr.mjs.",
+      "comoCazarlo": "grep de la función nueva en secre/correr.mjs. Una comprobación que se calla cuando falta algo («si no existe, no hago nada») esconde justo este defecto: hay que preguntarse quién se lo pasa.",
+      "consejo": "Cuando un componente recibe una copia recortada de otro, toda función nueva se agrega también a la copia.",
+      "salioDe": "secre/correr.mjs",
+      "senales": [
+        "no manda stickers",
+        "el sticker no sale en whatsapp",
+        "función del transporte que no llega",
+        "puente de secre"
+      ],
+      "vecinas": [
+        "aprobador-automatico-encima-del-candado"
+      ]
+    },
+    {
+      "id": "eco-del-bot-leido-como-dueno",
+      "titulo": "El eco de lo que manda el bot se leía como si el dueño hubiera escrito, y el bot se callaba",
+      "gravedad": "alta",
+      "sintoma": "Secre «a veces responde y a veces no»: contestaba una vez y luego se quedaba muda en ese chat un rato, sobre todo cuando Carlos tenía el teléfono abierto.",
+      "causa": "Baileys avisa de cada mensaje propio con un process.nextTick que puede llegar antes de que sendMessage regrese. Secre apuntaba el id DESPUÉS de mandar, así que su propio eco entraba como «Carlos escribió a mano» → 15 min callada en ese chat. Aparte, la IA iba con tope de 900 fichas y Gemini 2.5 las gasta pensando: a veces regresaba JSON vacío o cortado y no había qué mandar.",
+      "porque": "Con un transporte de mentiras el eco nunca llega antes; y una respuesta vacía de la IA se ve igual que «no hacía falta contestar».",
+      "arreglo": "El id se genera antes de mandar (generateMessageIDV2 y la opción messageId) y el transporte descarta su eco; el núcleo además reconoce su eco por chat+texto mientras está mandando. La IA va con tope de 2,500, segundo intento y el otro motor (Gemini ↔ Groq) si falla o no se puede leer. Ya no se calla cuando Carlos escribe (salvo en el rol).",
+      "comoCazarlo": "secre/pruebas.mjs §10: un transporte que manda el eco DENTRO de enviar, con otro id, antes de regresar. Mutación: quitar el reconocimiento del eco → Secre aprende su propio texto como estilo de Carlos.",
+      "consejo": "Lo que se manda se apunta antes de mandarlo, no después: cualquier aviso del envío puede llegar primero.",
+      "salioDe": "secre/whatsapp.mjs",
+      "senales": [
+        "a veces responde y a veces no",
+        "el bot se calla después de contestar",
+        "eco del mensaje propio",
+        "secre no contesta cuando estoy conectado",
+        "responde una vez y ya no"
+      ],
+      "vecinas": [
+        "puente-que-no-pasa-una-funcion",
+        "aprobador-automatico-encima-del-candado"
+      ]
     }
   ]
 }

@@ -25,13 +25,15 @@ Propuesta: «sí voy, nomás confirmo la hora y te digo»
 | `pendientes` · `hecho 2` · `anota comprar pilas` | tus pendientes |
 | `turno de Paulina` · `que conteste Negro` · `turnos` | quién de las tres está de guardia (Secre, Paulina, Negro se rotan cada 8 h y se recorren cada día) |
 | `dato: el viernes hay examen de mate a las 8, temas: derivadas` · `datos` · `olvida 2` | lo que Secre sabe y usa al escribirte las respuestas |
-| `automático Ana` · `automático todos` | le contesta **sola**, firmada «🤖 Asistente de Carlos:». «Todos» no incluye grupos |
+| `automático Ana` · `automático todos` | le contesta **sola**, firmada «Asistente de Carlos:» (sin 🤖; el nombre de la firma se cambia en Ajustes). «Todos» no incluye grupos |
 | `automático Equipo` (un grupo, por su nombre) | en ese grupo contesta sola **sólo cuando te hablan o te preguntan a ti** |
 | `rol Taberna: Kael, mercenario callado` | en ese grupo **sigue la historia de rol** con tu personaje mientras no estás · `personaje Taberna: …` lo cambia |
 | `mundo Taberna: reino de Valdor, la magia está prohibida…` | **el contexto del mundo** (dónde pasa, reglas, quién juega a quién, qué ha pasado); lo lee antes de cada jugada · `mundo Taberna: + lo nuevo` agrega · `mundo Taberna` te lo enseña. También en el panel |
 | `marca Taberna: 🌌⚛️-` | lo que dice tu personaje sale como `🌌⚛️- lo que dice` y lo que hace en renglón aparte como `> lo que hace`. Lo pone el programa, así que no se le olvida · `quita marca Taberna` |
 | `stickers Taberna` · `borra stickers Taberna` | los stickers que **tú** mandas en ese grupo se guardan (hasta 8, con lo que estaba pasando cuando los mandaste) y tu personaje los usa de vez en cuando: nunca dos en menos de 10 min |
-| `sin firma Taberna` · `firma Taberna: 🎭 Kael` · `firma normal Taberna` | cómo firma en ese chat (de fábrica: 🤖; con marca de personaje va al final del mensaje) |
+| `sin firma Taberna` · `firma Taberna: 🎭 Kael` · `firma normal Taberna` | cómo firma en ese chat (de fábrica en el rol: sin firma) |
+| Panel → Chats → **📇 Cargar contactos y grupos** | trae tu agenda y todos tus grupos aunque no te hayan escrito. Arriba hay **buscador** y filtro **Personas / Grupos**; cada chat tiene sus botones (**Sola · Propone · Callada**, y en grupos **Si me hablan · Rol**) que cambian el modo de un toque, sin abrirlo, y con el filtro puesto cambias **todos los de la lista** de un jalón |
+| Panel → Chats → **🎭 Comunidad de rol** | eliges la **comunidad de WhatsApp** donde están tus grupos de rol, palomeas en cuáles sigue la historia («Todos los grupos» de un toque) y le das **personaje, marca, mundo e instrucciones** que valen para todos. Lo que un grupo tenga en su propia tarjeta le gana (personaje, marca) o se suma (mundo, instrucciones) |
 | `manual Ana` · `apaga automático` · `automático` | lo regresa a propuestas · lo apaga para todos · dice con quién está prendido |
 | `pausa 2h` · `pausa hoy` · `sigue` | la callas un rato |
 | `estado` · `chats` · `ayuda` | qué está haciendo |
@@ -50,11 +52,12 @@ Para cuando no puedes tomar el teléfono en el día. En un chat en automático:
   persona «ya le pasé tu mensaje a Carlos, él te confirma» y a ti te lo deja con ⚠️ y número:
   `3 la negra está en 450` y se lo manda.
 - **Te avisa** en tu chat cada cosa que contestó, y en la noche cuántas fueron.
-- **Se frena sola:** máximo 4 por hora y 20 al día con cada quien, no le contesta a otro bot
-  (mensajes que empiezan con 🤖), y se calla 15 min si tú entras al chat.
+- **Contesta a cualquier número, a los segundos** (16 de octubre): de fábrica está en automático para todos, espera 6 s a que terminen de escribir y, si la IA falla o se corta, lo vuelve a intentar con el otro motor antes de rendirse.
+- **Se frena sola:** máximo 20 por hora y 150 al día con cada quien, no le contesta a otro bot
+  (mensajes que empiezan con 🤖) ni a tu otra cuenta. **Ya no se calla si tú escribes** (16 de octubre): sólo en el rol, porque ahí tu personaje no puede salir doble.
   Si un freno salta, ese mensaje vuelve a ser propuesta.
 - **Grupos, sólo los que tú nombres.** Ni `automático todos` ni una regla los prenden. Ahí el
-  tope es de 30 por hora y 300 al día; si un grupo no para de escribir, a los 2 minutos contesta
+  tope es de 30 por hora y 300 al día; si un grupo no para de escribir, a los 25 segundos contesta
   igual juntando lo de todos (sabe quién dijo qué). Si topa, se calla y te avisa una sola vez.
 - **En un grupo sí platica con otros bots** (narrador, dados): lo que los frena es el tope de 30
   por hora. En un chat de una sola persona sigue sin contestarle a un bot.

@@ -354,7 +354,7 @@ const Programa = {
       return;
     }
     if(e.esAudio){
-      $('#ptTapa').src = e.tapa || 'marca/paloma.png';
+      $('#ptTapa').src = e.tapa || 'marca/radio-divergentes.png';
       $('#ptFondo').style.backgroundImage = 'url("' + (e.tapa || 'marca/icon-512.png') + '")';
       portada.classList.toggle('sin-tapa', !e.tapa);
       $('#ptTitulo').textContent = e.nombre; $('#ptArtista').textContent = e.artista || '';

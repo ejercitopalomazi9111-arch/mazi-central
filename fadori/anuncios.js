@@ -20,11 +20,11 @@ export const ANUNCIOS = [
   { id: 'rembrandt', marca: 'Instituto Rembrandt', titulo: 'Orgullo Rembrandt', texto: 'Lo que construimos aquí, lo hacemos juntos.',
     color: '#002060', color2: '#0B2F77', acento: '#F2C94C', logo: 'marca/escudo-rembrandt.png', icono: 'graduation-cap', fondoLogo: '#FFFFFF' },
   { id: 'grupo31', marca: 'Grupo 3.1', titulo: 'Esto lo hace el 3.1', texto: 'Radio Divergentes, Fadori y lo que sigue.',
-    color: '#A3242F', color2: '#3B0B12', acento: '#EDE6DC', logo: 'marca/paloma.png', icono: 'users' },
+    color: '#A3242F', color2: '#3B0B12', acento: '#EDE6DC', logo: 'marca/radio-divergentes.png', logoLleno: true, icono: 'users' },
   { id: 'fadori', marca: 'Fadori', titulo: 'Pide sin hacer fila', texto: 'Escanea el código, pide desde tu teléfono y vuelve cuando salga tu número.',
     color: '#C2410C', color2: '#5C1A04', acento: '#FFE8D6', logo: 'marca/icon-192.png', icono: 'smartphone', qr: 'qr/abrir.svg' },
-  { id: 'divergentes', marca: 'Radio Divergentes', titulo: 'El podcast de Ética', texto: 'Temas que dividen opiniones, cuatro voces en la mesa. Aquí, en el recreo.',
-    color: '#4A1219', color2: '#0E0B0D', acento: '#EDE6DC', logo: 'marca/paloma.png', icono: 'mic' },
+  { id: 'divergentes', marca: 'Radio Divergentes', titulo: 'Para quien piensa diferente', texto: 'El podcast de Ética del 3.1. Para la comunidad. Aquí, en el recreo.',
+    color: '#4A1219', color2: '#0E0B0D', acento: '#EDE6DC', logo: 'marca/radio-divergentes.png', logoLleno: true, icono: 'mic' },
   { id: 'sociales', marca: 'Proyectos sociales', titulo: 'Súmate a un proyecto social', texto: 'Pregunta en tu grupo cómo participar.',
     color: '#1F6B4A', color2: '#0B3324', acento: '#C9F0D8', icono: 'hand-heart' },
   { id: 'negocios', marca: 'Desarrollo de negocios', titulo: 'Emprende desde la escuela', texto: 'Los proyectos de negocio de los grupos, ya funcionando.',
@@ -110,7 +110,8 @@ function emblema(g, P, cx, cy, r, giro = 1, brillo = 0){
   if(!reverso){
     const im = P.logo || P.icono;
     if(im){
-      const k = (P.logo ? 1.5 : 1.15) * r / Math.max(im.width, im.height);
+      /* logoLleno: una insignia redonda (Radio Divergentes) llena el disco entero */
+      const k = (P.logo ? (a.logoLleno ? 1.95 : 1.5) : 1.15) * r / Math.max(im.width, im.height);
       g.save(); g.beginPath(); g.arc(0, 0, r * 0.93, 0, Math.PI * 2); g.clip();
       g.drawImage(im, -im.width * k / 2, -im.height * k / 2, im.width * k, im.height * k);
       g.restore();

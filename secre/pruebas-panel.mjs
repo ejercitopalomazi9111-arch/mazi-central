@@ -18,7 +18,7 @@ const ok = (que, si, extra) => { if(si){ pasan++; console.log('  ✓', que); } e
 
 /* datos de prueba en una carpeta temporal: juntar 1 s para no esperar 45 */
 const DATOS = fs.mkdtempSync(path.join(os.tmpdir(), 'secre-'));
-for(const c of ['principal', 'segunda']){ fs.mkdirSync(path.join(DATOS, c), { recursive: true }); fs.writeFileSync(path.join(DATOS, c, 'config.json'), JSON.stringify({ juntar: 1 })); }
+for(const c of ['principal', 'segunda']){ fs.mkdirSync(path.join(DATOS, c), { recursive: true }); fs.writeFileSync(path.join(DATOS, c, 'config.json'), JSON.stringify({ version: 2, porDefecto: 'borrador', juntar: 1 })); }
 const PUERTO = 8790 + Math.floor(Math.random() * 500);
 const srv = spawn(process.execPath, [path.join(RAIZ, 'correr.mjs')], { env: { ...process.env, SECRE_FALSO: '1', SECRE_DATOS: DATOS, SECRE_PUERTO: String(PUERTO), SECRE_CLAVE: 'clave-de-prueba', SECRE_CUENTAS: 'principal:5214420000000,segunda:5214429999999' }, stdio: ['ignore', 'pipe', 'pipe'] });
 let salida = ''; srv.stdout.on('data', d => salida += d); srv.stderr.on('data', d => salida += d);
@@ -110,7 +110,7 @@ async function probar(tema){
   /* ── chats ── */
   await page.click('nav [data-p="chats"]');
   const ana = page.locator('#hoja details', { hasText: 'Ana ' + tema });
-  await ana.locator('summary').click();
+  await ana.locator('summary .quien').click();
   await ana.locator('[data-modo]').selectOption('callado');
   await ana.locator('[data-nota]').fill('es mi compañera de mate');
   await ana.locator('[data-etq]').fill('Escuela, amigos');
@@ -120,13 +120,13 @@ async function probar(tema){
   ok('el chat dice ahora «sólo anoto pendientes»', await espera(async () => /sólo anoto pendientes/.test(await page.locator('#hoja details', { hasText: 'Ana ' + tema }).locator('summary').textContent()), 'resumen del chat'));
   /* el modo automático también se prende desde aquí, chat por chat */
   const ana2 = page.locator('#hoja details', { hasText: 'Ana ' + tema });
-  if(!(await ana2.getAttribute('open'))) await ana2.locator('summary').click();
+  if(!(await ana2.getAttribute('open'))) await ana2.locator('summary .quien').click();
   await ana2.locator('[data-modo]').selectOption('auto');
   await ana2.locator('[data-guardar]').click();
   await espera(async () => ((await estado()).chats.find(x => x.nombre === 'Ana ' + tema) || {}).modoAhora === 'auto', 'elegir «contestarle sola» la pone en automático');
   ok('y el chat dice «contesto sola»', await espera(async () => /contesto sola/.test(await page.locator('#hoja details', { hasText: 'Ana ' + tema }).locator('summary').textContent()), 'resumen auto'));
   const ana3 = page.locator('#hoja details', { hasText: 'Ana ' + tema });
-  if(!(await ana3.getAttribute('open'))) await ana3.locator('summary').click();
+  if(!(await ana3.getAttribute('open'))) await ana3.locator('summary .quien').click();
   await ana3.locator('[data-modo]').selectOption('callado');
   await ana3.locator('[data-guardar]').click();
   await espera(async () => ((await estado()).chats.find(x => x.nombre === 'Ana ' + tema) || {}).modoAhora === 'callado', 'y se regresa');
@@ -136,7 +136,7 @@ async function probar(tema){
   await page.click('nav [data-p="pendientes"]'); await page.click('nav [data-p="chats"]');
   const rol = page.locator('#hoja details', { hasText: nomRol });
   await espera(async () => (await rol.count()) === 1, 'el grupo aparece en Chats');
-  await rol.locator('summary').click();
+  await rol.locator('summary .quien').click();
   await rol.locator('[data-modo]').selectOption('rol');
   await rol.locator('[data-personaje]').fill('Kael, mercenario callado');
   await rol.locator('[data-mundo]').fill('Reino de Valdor. La magia está prohibida.');
@@ -188,6 +188,48 @@ async function probar(tema){
   ok('y Secre queda en pausa', (await estado()).config.pausaHasta > Date.now());
   await page.click('#bPausa');
   await espera(async () => /Pausa 2 h/.test(await page.textContent('#bPausa')), 'seguir: quita la pausa');
+
+  /* ── la comunidad de rol: un botón aparte, todos sus grupos de un jalón ── */
+  await page.click('nav [data-p="pendientes"]'); await page.click('nav [data-p="chats"]');
+  await page.locator('#dCom summary').click();
+  await espera(async () => (await page.locator('#comGrupos input').count()) === 3, 'abrir «Comunidad de rol» enseña los 3 grupos de la comunidad');
+  ok('la comunidad sale con su nombre', /Reino de Valdor \(3 grupos\)/.test(await page.locator('#comSel').textContent()));
+  await page.locator('#comTodos').setChecked(true);
+  ok('«Todos los grupos» los marca todos', (await page.locator('#comGrupos input:checked').count()) === 3);
+  await page.locator('#comGrupos label', { hasText: 'Castillo' }).locator('input').setChecked(false);
+  ok('quitar uno quita la palomita de «Todos»', !(await page.locator('#comTodos').isChecked()));
+  await page.fill('#comPersonaje', 'Kael, mercenario ' + tema);
+  await page.fill('#comMarca', '🌌⚛️-');
+  await page.fill('#comMundo', 'Reino de Valdor: la magia está prohibida.');
+  await page.fill('#comInstr', 'Nunca ataques primero.');
+  ok('sin desborde con la comunidad abierta', (await desborde()) <= 0, await desborde());
+  await foto('3c-comunidad');
+  await page.click('#bComGuardar');
+  await espera(async () => { const e = await estado(), ch = (n) => e.chats.find(x => x.nombre === n) || {}, com = (e.config.comunidades || {})['120363000000000001@g.us'] || {};
+    return ch('Taberna').rol && ch('Bosque').rol && !ch('Castillo').rol && com.instrucciones === 'Nunca ataques primero.' && com.personaje === 'Kael, mercenario ' + tema && com.marca === '🌌⚛️-'; },
+    'guardar la comunidad prende el rol en los marcados, deja fuera el otro y guarda el contexto y las instrucciones');
+  ok('y avisa en cuántos grupos sigue la historia', await espera(async () => /sigo la historia en 2 grupo/.test(await page.textContent('body')), 'aviso de la comunidad'));
+
+  /* ── los contactos de la agenda, el buscador y el cambio rápido de modo ── */
+  await page.click('#bContactos');
+  await espera(async () => (await estado()).chats.some(c => c.nombre === 'Profe Omar'), '«Cargar contactos y grupos» trae la agenda aunque no te hayan escrito');
+  await page.click('nav [data-p="pendientes"]'); await page.click('nav [data-p="chats"]');
+  await page.fill('#busChats', 'omar');
+  await espera(async () => (await page.locator('#hoja details[data-id]').count()) === 1, 'el buscador deja sólo al Profe Omar (sin acentos ni mayúsculas)');
+  const omar = page.locator('#hoja details[data-id]', { hasText: 'Profe Omar' });
+  await omar.locator('[data-rapido="callado"]').click();
+  await espera(async () => ((await estado()).chats.find(c => c.nombre === 'Profe Omar') || {}).modoAhora === 'callado', 'un toque en «Callada» le cambia el modo sin abrir el chat');
+  ok('y el chat no se abrió al tocar el botón', !(await page.locator('#hoja details[data-id]', { hasText: 'Profe Omar' }).getAttribute('open')));
+  await page.fill('#busChats', ''); await page.locator('#busChats').dispatchEvent('input');
+  await page.click('[data-filtro="grupos"]');
+  ok('el filtro «Grupos» sólo enseña grupos', await page.evaluate(() => [...document.querySelectorAll('#hoja details[data-id] .quien')].every(q => q.textContent.startsWith('👥'))));
+  await page.click('[data-masivo="callado"]');
+  await espera(async () => (await estado()).chats.filter(c => c.grupo).every(c => c.modoAhora === 'callado'), '«Todos estos grupos → Callada» los calla de un toque');
+  await page.click('[data-defgrupos="borrador"]');
+  await espera(async () => (await estado()).config.grupos === 'borrador', 'y los grupos nuevos pueden quedar en «Propone» de un toque');
+  ok('sin desborde con los botones rápidos', (await desborde()) <= 0, await desborde());
+  await foto('3d-rapido');
+  await page.click('[data-defgrupos="callado"]'); await page.click('[data-filtro="todos"]');
 
   /* ── la otra cuenta no se mezcla ── */
   await page.click('.cuenta[data-c="segunda"]');

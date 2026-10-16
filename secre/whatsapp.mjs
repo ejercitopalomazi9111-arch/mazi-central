@@ -13,7 +13,7 @@
    descargas robaba sesiones y mensajes. Aquí sólo va la librería principal.
    ═════════════════════════════════════════════════════════════════════════ */
 import makeWASocket, { useMultiFileAuthState, DisconnectReason, Browsers, fetchLatestBaileysVersion,
-  jidNormalizedUser, isJidGroup, normalizeMessageContent, getContentType, downloadMediaMessage } from 'baileys';
+  jidNormalizedUser, isJidGroup, normalizeMessageContent, getContentType, downloadMediaMessage, generateMessageIDV2 } from 'baileys';
 import pino from 'pino';
 
 /* el texto de un mensaje, o una etiqueta si no es texto (para que la IA sepa qué llegó) */
@@ -41,7 +41,7 @@ export function textoDe(msg){
 /* conecta UNA cuenta. Devuelve el transporte que usa el núcleo.
    alMensaje(m) recibe { id, chat, de, nombre, texto, mio, grupo, t }
    alEstado(e) recibe { conectado, codigo, error } para el panel */
-export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () => {}, registro = 'warn' }){
+export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () => {}, alContactos = () => {}, registro = 'warn' }){
   const logger = pino({ level: registro });
   /* `auth` viene de nube.mjs cuando el disco no sobrevive a un reinicio (servidor gratis) */
   const { state, saveCreds } = auth || await useMultiFileAuthState(dir);
@@ -51,6 +51,13 @@ export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () =
   const numero = () => String(typeof telefono === 'function' ? telefono() : telefono || '').replace(/\D/g, '');
   const ultimas = new Map();          /* jid → llaves de lo último que llegó, para marcar leído */
   const grupos = new Map();           /* jid → nombre del grupo */
+  /* ⚠ los ids de lo que manda Secre, apuntados ANTES de mandarlo. Baileys avisa
+     de un mensaje propio con un process.nextTick que puede llegar antes de que
+     sendMessage regrese: sin esto, la copia de lo que mandó Secre se leía como
+     si Carlos hubiera escrito a mano y Secre se callaba 15 min en ese chat
+     («a veces responde y a veces no», 16 de octubre) */
+  const propios = new Set();
+  const idPropio = () => { const id = generateMessageIDV2(sock && sock.user && sock.user.id); propios.add(id); if(propios.size > 500) propios.delete(propios.values().next().value); return id; };
 
   async function arrancar(){
     /* ⚠ requestPairingCode apunta el número en creds.me ANTES de que el teléfono
@@ -71,6 +78,13 @@ export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () =
       syncFullHistory: false });
     const este = sock;
     sock.ev.on('creds.update', saveCreds);
+    /* los contactos y grupos de Carlos, para que Secre los conozca aunque no le
+       hayan escrito (16 de octubre: «carga todos los contactos a Secre») */
+    const deContacto = (x) => ({ id: x.phoneNumber || x.id, lid: x.lid || (String(x.id).endsWith('@lid') ? x.id : ''), nombre: x.name || x.notify || x.verifiedName || x.username || '' });
+    const avisarContactos = (lista) => { const l = (lista || []).map(deContacto).filter(x => x.id && x.nombre); if(l.length) try{ alContactos(l); }catch{} };
+    sock.ev.on('contacts.upsert', avisarContactos);
+    sock.ev.on('contacts.update', avisarContactos);
+    sock.ev.on('messaging-history.set', ({ contacts }) => avisarContactos(contacts));
     sock.ev.on('connection.update', async (u) => {
       /* el código se pide cuando llega `qr`: ahí el servidor ya terminó el saludo.
          Pedirlo en 'connecting' (como antes) truena con «Connection Closed». */
@@ -85,6 +99,9 @@ export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () =
         const me = state.creds.me || {};
         yoJids = [me.id, me.lid].filter(Boolean).map(jidNormalizedUser);
         alEstado({ conectado: true, yo: yoJids[0] });
+        /* los grupos donde está, al conectar: así salen en el panel desde el principio */
+        este.groupFetchAllParticipating().then(gs => { for(const g of Object.values(gs)) grupos.set(g.id, g.subject || '');
+          try{ alContactos(Object.values(gs).filter(g => !g.isCommunity && !g.isCommunityAnnounce).map(g => ({ id: g.id, nombre: g.subject || '', grupo: true }))); }catch{} }).catch(() => {});
       }
       if(u.connection === 'close'){
         const codigo = u.lastDisconnect && u.lastDisconnect.error && u.lastDisconnect.error.output && u.lastDisconnect.error.output.statusCode;
@@ -99,6 +116,7 @@ export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () =
       for(const msg of messages || []){
         try{
           const k = msg.key || {};
+          if(k.fromMe && propios.has(k.id)) continue;   /* lo mandó Secre, no Carlos */
           if(!k.remoteJid || k.remoteJid === 'status@broadcast') continue;
           const t = (Number(msg.messageTimestamp) || Math.floor(Date.now() / 1000)) * 1000;
           /* lo que baja del historial al vincular no es nuevo */
@@ -129,8 +147,37 @@ export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () =
 
   return {
     yo: () => yoJids,
-    async enviar(jid, texto){ const r = await sock.sendMessage(jid, { text: texto }); return r && r.key && r.key.id; },
-    async enviarSticker(jid, b64){ const r = await sock.sendMessage(jid, { sticker: Buffer.from(b64, 'base64') }); return r && r.key && r.key.id; },
+    async enviar(jid, texto){ const r = await sock.sendMessage(jid, { text: texto }, { messageId: idPropio() }); return r && r.key && r.key.id; },
+    async enviarSticker(jid, b64){ const r = await sock.sendMessage(jid, { sticker: Buffer.from(b64, 'base64') }, { messageId: idPropio() }); return r && r.key && r.key.id; },
+    /* las comunidades de WhatsApp y sus grupos, para el botón «Comunidad de rol» del panel.
+       El grupo de avisos de la comunidad no es para jugar: se deja fuera. */
+    /* el botón «Cargar contactos»: los grupos y, de la agenda de WhatsApp, los
+       contactos guardados (se vuelven a pedir; llegan por contacts.upsert) */
+    async cargarContactos(){
+      const gs = Object.values(await sock.groupFetchAllParticipating()).filter(g => !g.isCommunity && !g.isCommunityAnnounce);
+      try{ alContactos(gs.map(g => ({ id: g.id, nombre: g.subject || '', grupo: true }))); }catch{}
+      let personas = 0;
+      const contar = (l) => { personas += (l || []).length; };
+      sock.ev.on('contacts.upsert', contar);
+      try{ await sock.resyncAppState(['critical_unblock_low'], true); }catch{}
+      await new Promise(r => setTimeout(r, 2500));
+      sock.ev.off('contacts.upsert', contar);
+      return { grupos: gs.length, personas };
+    },
+    async comunidades(){
+      const todos = Object.values(await sock.groupFetchAllParticipating());
+      const coms = new Map();
+      for(const g of todos) if(g.isCommunity) coms.set(g.id, { id: g.id, nombre: g.subject || '', grupos: [] });
+      for(const g of todos){
+        if(!g.linkedParent || g.isCommunityAnnounce) continue;
+        if(!coms.has(g.linkedParent)){
+          const p = await sock.groupMetadata(g.linkedParent).catch(() => ({}));
+          coms.set(g.linkedParent, { id: g.linkedParent, nombre: p.subject || 'Comunidad sin nombre', grupos: [] });
+        }
+        coms.get(g.linkedParent).grupos.push({ id: g.id, nombre: g.subject || '' });
+      }
+      return [...coms.values()].map(c => ({ ...c, grupos: c.grupos.sort((a, b) => a.nombre.localeCompare(b.nombre)) }));
+    },
     /* «escribiendo…» un rato proporcional al largo, como una persona */
     async escribiendo(jid, ms){
       await sock.sendPresenceUpdate('composing', jid).catch(() => {});

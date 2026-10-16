@@ -36,12 +36,12 @@ const ultimoAviso = () => (aCarlos().slice(-1)[0] || {}).texto || '';
 let iaFalla = false;
 let vioDatos = [], ordenQuien = '', vioAuto = false, vioRol = null;
 const ia = {
-  async leer({ nuevos, redactar, auto, rol, personaje, mundo, marca, stickers = [], grupo, datos = [] }){
+  async leer({ nuevos, redactar, auto, rol, personaje, mundo, marca, instrucciones = '', comunidad = '', stickers = [], grupo, datos = [] }){
     if(iaFalla) throw new Error('sin internet');
     const t = nuevos.map(x => x.texto).join(' ');
     vioAuto = !!auto;
     if(auto && rol){
-      vioRol = { personaje, mundo, quienes: nuevos.map(x => x.quien) };
+      vioRol = { personaje, mundo, marca, instrucciones, comunidad, quienes: nuevos.map(x => x.quien) };
       if(marca && /eco/.test(t)) return { pendientes: [], lineas: [{ tipo: 'dice', texto: marca + ' ya voy' }, { tipo: 'hace', texto: '> camina a la puerta' }], respuesta: '', motivo: '', urgente: false };
       if(marca) return { pendientes: [], lineas: [{ tipo: 'dice', texto: '¿Quién anda ahí?' }, { tipo: 'hace', texto: 'Kael se levanta de la mesa' }], respuesta: '', motivo: '', urgente: false, sticker: /jaja/.test(t) && stickers.length ? stickers[0].n : 0 };
       if(/fuera de rol/i.test(t)) return { pendientes: [], respuesta: '(ahorita no está, luego te contesta)', motivo: 'te piden algo fuera del rol', urgente: false, decide: true };
@@ -68,7 +68,10 @@ const ia = {
     return { respuesta: '', acciones: [] };
   },
 };
-const datos = {};
+/* estas pruebas nacieron con las reglas de antes (propuestas por defecto, 45 s de
+   espera, 15 min callada si Carlos escribe, 4 por hora): se dejan puestas a mano
+   para que sigan probando lo mismo. Las de ahora se prueban en el §10 */
+const datos = { config: JSON.stringify({ version: 2, porDefecto: 'borrador', juntar: 45, juntarMax: 120, esperaSiContesto: 15, auto: { firma: '🤖 Asistente de Carlos', porHora: 4, alDia: 20, grupoPorHora: 30, grupoAlDia: 300 } }) };
 const almacen = { leer: (k, d) => datos[k] ? JSON.parse(datos[k]) : d, guardar: (k, v) => { datos[k] = JSON.stringify(v); } };
 const s = new Secre({ cuenta: 'prueba', transporte, ia, almacen, reloj, azar: () => 0.5 });
 
@@ -281,7 +284,7 @@ ahora = Date.UTC(2026, 9, 25, 13, 1); o1 = aOtros().length; await s.tic();
 ok('«quita fijo Tere» lo regresa a proponerse', aOtros().length === o1 && s.estado.propuestas.some(p => p.tipo === 'manana' && p.chat === TERE));
 
 console.log('\n8e · El modo automático: contesta sola donde Carlos lo pidió, y sólo ahí');
-const FIRMA = /^🤖 Asistente de Carlos: /;
+const FIRMA = /^Asistente de Carlos: /;   /* sin 🤖 desde el 16 de octubre */
 const autorizados = new Set();   /* los chats que Carlos puso en automático, para la regla del final */
 ahora = Date.UTC(2026, 9, 26, 17, 0);   /* 11:00 en México */
 s.estado.propuestas = [];
@@ -293,7 +296,7 @@ await carlos('automático Pepe'); autorizados.add(PEPE);
 ok('«automático Pepe» lo prende y le explica cómo regresarlo', s.config.chats[PEPE].modo === 'auto' && /manual Pepe/.test(ultimoAviso()), ultimoAviso());
 await llega(PEPE, 'hola tienen sudaderas negras?', { nombre: 'Pepe' }); pasar(70); await s.tic();
 ok('le contesta SOLA, sin esperar a Carlos', FIRMA.test((aPepe().slice(-1)[0] || {}).texto || ''), aPepe().slice(-1));
-ok('firmado como asistente, no como si fuera Carlos', aPepe().slice(-1)[0].texto === '🤖 Asistente de Carlos: Hola, sí tenemos. ¿Qué talla buscas?');
+ok('firmado como asistente (sin 🤖), no como si fuera Carlos', aPepe().slice(-1)[0].texto === 'Asistente de Carlos: Hola, sí tenemos. ¿Qué talla buscas?', aPepe().slice(-1)[0].texto);
 ok('a la IA le pidió el mensaje para mandar, no una propuesta', vioAuto);
 ok('y a Carlos le avisa qué contestó', /✓ Le contesté sola a Pepe: «Hola, sí tenemos/.test(ultimoAviso()), ultimoAviso());
 const pp0 = aPepe().length;
@@ -370,10 +373,10 @@ await enGrupo(ROL, 'Ana', '*mira a Kael* ¿vienes o no?'); pasar(70); await s.ti
 ok('el rol tampoco se juega solo sin permiso', aG(ROL).length === 0);
 await carlos('rol taberna del cuervo: Kael, mercenario callado que odia a los magos');
 ok('«rol Taberna: personaje» lo prende con su personaje', s.config.chats[ROL].rol && s.config.chats[ROL].modo === 'auto' && s.config.chats[ROL].personaje.startsWith('Kael') && /sigo la historia sola/.test(ultimoAviso()), ultimoAviso());
-ok('y le avisa que sus mensajes salen con 🤖 y cómo quitarlo', /salen con 🤖/.test(ultimoAviso()) && /sin firma/.test(ultimoAviso()));
+ok('y le dice cómo firmar y cómo pararlo', /firma taberna/i.test(ultimoAviso()) && /manual/.test(ultimoAviso()), ultimoAviso());
 const avisosRol = aCarlos().length;
 await enGrupo(ROL, 'Ana', '*desenvaina* ¡Kael, cuidado!'); pasar(70); await s.tic();
-ok('sigue la historia en personaje', aG(ROL).length === 1 && /^🤖 \*Kael avanza\*/.test(aG(ROL)[0].texto), aG(ROL));
+ok('sigue la historia en personaje, sin 🤖', aG(ROL).length === 1 && /^\*Kael avanza\*/.test(aG(ROL)[0].texto), aG(ROL));
 ok('la IA recibe el personaje y quién dijo qué', vioRol && vioRol.personaje.startsWith('Kael') && vioRol.quienes.includes('Ana'), vioRol);
 ok('y no le avisa a Carlos cada jugada (van en el resumen)', aCarlos().length === avisosRol);
 const g0r = aG(ROL).length;
@@ -433,7 +436,7 @@ await enGrupo(ROL, 'Ana', 'eco'); pasar(70); await s.tic();
 ok('si la IA pone la marca o el «>» ella misma, no salen dobles', aG(ROL).slice(-1)[0].texto === '🌌⚛️- ya voy\n> camina a la puerta', aG(ROL).slice(-1)[0].texto);
 await carlos('firma normal taberna del cuervo');
 await enGrupo(ROL, 'Ana', '🌸- ¿y bien?'); pasar(70); await s.tic();
-ok('con marca, el 🤖 va al final y no rompe el primer renglón', /^🌌⚛️- ¿Quién anda ahí\?\n> Kael se levanta de la mesa 🤖$/.test(aG(ROL).slice(-1)[0].texto), aG(ROL).slice(-1)[0].texto);
+ok('con marca y firma normal, el renglón sale limpio (sin 🤖 pegado)', /^🌌⚛️- ¿Quién anda ahí\?\n> Kael se levanta de la mesa$/.test(aG(ROL).slice(-1)[0].texto), aG(ROL).slice(-1)[0].texto);
 /* los stickers */
 await enGrupo(ROL, 'Ana', 'jajajaja no puede ser'); pasar(5);
 await s.alMensaje({ id: 'C' + (sig++), chat: ROL, de: YO, texto: '[sticker]', mio: true, grupo: true, t: ahora, sticker: { b64: 'UklGRiQAAABXRUJQ' } });
@@ -448,11 +451,77 @@ await carlos('stickers taberna del cuervo');
 ok('«stickers Taberna» dice cuántos tiene', /Tengo 1 sticker/.test(ultimoAviso()), ultimoAviso());
 ok('en un chat de una persona no se guardan stickers', (() => { s.alMensaje({ id: 'C' + (sig++), chat: ANA, de: YO, texto: '[sticker]', mio: true, t: ahora, sticker: { b64: 'UklGRiQAAABXRUJQ' } }); return !(s.config.chats[ANA].stickers || []).length; })());
 await carlos('manual taberna del cuervo');
-const enGrupos = aOtros().filter(e => [EQUIPO, ROL].includes(e.jid)).length;
+
+console.log('\n8h · La comunidad de rol: todos sus grupos de un jalón, con su contexto y sus instrucciones');
+const COM = '120363900000@g.us', TAB2 = '120363900001@g.us', BOS = '120363900002@g.us', CAS = '120363900003@g.us';
+const enCom = (g, quien, texto) => llega(g, texto, { grupo: true, nombre: quien, nombreChat: { [TAB2]: 'Taberna', [BOS]: 'Bosque', [CAS]: 'Castillo' }[g] });
+const gruposCom = [{ id: TAB2, nombre: 'Taberna' }, { id: BOS, nombre: 'Bosque' }, { id: CAS, nombre: 'Castillo' }];
+const hecho = s.ponerComunidad({ id: COM, nombre: 'Reino de Valdor', grupos: gruposCom, activos: [TAB2, BOS],
+  personaje: 'Kael, mercenario callado', mundo: 'La magia está prohibida en Valdor.', marca: '🌌⚛️-', instrucciones: 'Nunca ataques primero.' });
+ok('guardar la comunidad dice en cuántos grupos sigue la historia', /Reino de Valdor: sigo la historia en 2 grupo/.test(hecho), hecho);
+ok('prende el rol SÓLO en los grupos marcados', s.config.chats[TAB2].rol && s.config.chats[BOS].rol && !s.config.chats[CAS].rol && s.config.chats[CAS].modo !== 'auto');
+vioRol = null;
+await enCom(BOS, 'Ana', '🌸- Algo se mueve entre los árboles'); pasar(70); await s.tic();
+ok('en un grupo de la comunidad juega con el personaje, el mundo y las instrucciones de la comunidad',
+  vioRol && /Kael/.test(vioRol.personaje) && /magia está prohibida/.test(vioRol.mundo) && /Nunca ataques primero/.test(vioRol.instrucciones) && vioRol.comunidad === 'Reino de Valdor', vioRol);
+ok('y con la marca de la comunidad', aG(BOS).slice(-1)[0] && aG(BOS).slice(-1)[0].texto.startsWith('🌌⚛️- '), aG(BOS).slice(-1)[0]);
+const enCas = aG(CAS).length;
+await enCom(CAS, 'Beto', '🔥- ¿Quién vigila la muralla?'); pasar(70); await s.tic();
+ok('en el grupo que no se marcó no juega', aG(CAS).length === enCas);
+s.config.chats[BOS].personaje = 'Lyra, la ladrona'; s.config.chats[BOS].mundo = 'En el Bosque viven los elfos.';
+await enCom(BOS, 'Ana', '🌸- ¿Quién anda?'); pasar(70); await s.tic();
+ok('lo que el grupo tiene en su tarjeta le gana (personaje) o se suma (mundo)', vioRol.personaje === 'Lyra, la ladrona' && /prohibida/.test(vioRol.mundo) && /elfos/.test(vioRol.mundo), vioRol);
+s.ponerComunidad({ id: COM, nombre: 'Reino de Valdor', grupos: gruposCom, activos: [TAB2] });
+ok('quitarle la palomita a un grupo lo apaga, y lo demás se queda como estaba', !s.config.chats[BOS].rol && s.config.chats[TAB2].rol && /Nunca ataques/.test(s.config.comunidades[COM].instrucciones));
+ok('una comunidad que no es grupo de WhatsApp no se guarda', s.ponerComunidad({ id: 'ana@s.whatsapp.net', grupos: [] }) === '');
+s.ponerComunidad({ id: COM, nombre: 'Reino de Valdor', grupos: gruposCom, activos: [] });
+const enGrupos = aOtros().filter(e => [EQUIPO, ROL, TAB2, BOS, CAS].includes(e.jid)).length;
 
 console.log('\n9 · LA REGLA: nada sale sin que Carlos lo apruebe (o sin que haya prendido el automático en ese chat)');
 ok(`cada envío a otra persona corresponde a una aprobación (${aOtros().length} envíos, ${aprobaciones} aprobaciones, ${fijosMandados} saludos que dejó fijos, ${autosMandados.length} en automático, ${enGrupos} en grupos autorizados)`, aOtros().length <= aprobaciones + fijosMandados + autosMandados.length + enGrupos, { envios: aOtros().length, aprobaciones, fijosMandados });
 ok('y todos los avisos a Carlos empiezan con 🤖', aCarlos().every(e => e.texto.startsWith('🤖')));
+
+console.log('\n10 · Asistente de verdad: contesta siempre y al instante (Carlos, 16 de octubre)');
+{
+  const env2 = []; let eco = null, sig2 = 1;
+  const t2 = {
+    yo: () => [YO], otrosYo: () => ['5214429999999@s.whatsapp.net'],
+    /* el eco de Baileys puede llegar ANTES de que enviar regrese, con otro id: aquí llega así a propósito */
+    async enviar(jid, texto){ const id = 'N' + (sig2++); env2.push({ jid, texto, id }); if(eco && jid !== YO) await eco({ id: 'eco-' + id, chat: jid, de: YO, texto, mio: true, t: ahora }); return id; },
+    async escribiendo(){}, async leido(){},
+  };
+  const datos2 = {}, alm2 = { leer: (k, d) => datos2[k] ? JSON.parse(datos2[k]) : d, guardar: (k, v) => { datos2[k] = JSON.stringify(v); } };
+  const s2 = new Secre({ cuenta: 'nueva', transporte: t2, ia, almacen: alm2, reloj, azar: () => 0.5 });
+  eco = (m) => s2.alMensaje(m);
+  ok('de fábrica contesta sola a cualquier número, espera 6 s y no se calla si Carlos escribe', s2.config.porDefecto === 'auto' && s2.config.juntar === 6 && s2.config.esperaSiContesto === 0);
+  const DESCONOCIDO = '5215550001111@s.whatsapp.net', a2 = () => env2.filter(e => e.jid === DESCONOCIDO);
+  await s2.alMensaje({ id: 'n1', chat: DESCONOCIDO, de: DESCONOCIDO, nombre: 'Rosa', texto: 'hola, tienen sudaderas?', mio: false, t: ahora }); pasar(7); await s2.tic();
+  ok('un número que nunca había escrito recibe respuesta a los segundos', a2().length === 1, env2);
+  ok('firmado como asistente, sin 🤖', a2()[0] && a2()[0].texto === 'Asistente de Carlos: Hola, sí tenemos. ¿Qué talla buscas?', a2()[0]);
+  ok('su propio eco no se toma como si Carlos hubiera escrito (no aprende su estilo de sí misma)', !s2.estado.estilo.some(x => /Asistente de Carlos/.test(x)) && !s2.estado.tomado[DESCONOCIDO], s2.estado.estilo);
+  ok('y en el historial queda una sola vez', (s2.estado.historial[DESCONOCIDO] || []).filter(x => x.de === 'yo').length === 1);
+  /* Carlos contesta a mano y la persona sigue: Secre no se calla 15 minutos */
+  await s2.alMensaje({ id: 'c1', chat: DESCONOCIDO, de: YO, texto: 'sí, ahorita te paso fotos', mio: true, t: ahora }); pasar(5);
+  await s2.alMensaje({ id: 'n2', chat: DESCONOCIDO, de: DESCONOCIDO, nombre: 'Rosa', texto: 'va, y de qué colores hay?', mio: false, t: ahora }); pasar(7); await s2.tic();
+  ok('aunque Carlos esté escribiendo en ese chat, a lo nuevo le contesta igual', a2().length === 2, a2());
+  /* su otra cuenta no se contesta sola: dos Secres no paran nunca */
+  const OTRA = '5214429999999@s.whatsapp.net';
+  await s2.alMensaje({ id: 'n3', chat: OTRA, de: OTRA, nombre: 'Carlos 2', texto: 'prueba', mio: false, t: ahora }); pasar(7); await s2.tic();
+  ok('a su otra cuenta no le contesta sola (se lo deja de propuesta)', !env2.some(e => e.jid === OTRA) && s2.estado.propuestas.some(p => p.chat === OTRA));
+  /* en el rol sí se hace a un lado si Carlos juega: su personaje no puede salir doble */
+  const R2 = '120363777777@g.us';
+  s2.chat(R2).grupo = true; s2.chat(R2).rol = true; s2.chat(R2).modo = 'auto'; s2.chat(R2).nombre = 'Taberna 2';
+  await s2.alMensaje({ id: 'c2', chat: R2, de: YO, texto: '*Kael entra*', mio: true, grupo: true, t: ahora }); pasar(5);
+  await s2.alMensaje({ id: 'n4', chat: R2, de: ANA, nombre: 'Ana', nombreChat: 'Taberna 2', texto: '*Lyra lo mira*', mio: false, grupo: true, t: ahora }); pasar(7); await s2.tic();
+  ok('en el rol, si Carlos está jugando, no juega por él', !env2.some(e => e.jid === R2));
+  /* las cuentas guardadas con lo de antes se pasan solas a lo nuevo */
+  const viejo = { config: JSON.stringify({ porDefecto: 'borrador', juntar: 45, juntarMax: 120, esperaSiContesto: 15, auto: { firma: '🤖 Asistente de Carlos', porHora: 4, alDia: 20 } }) };
+  const s3 = new Secre({ cuenta: 'vieja', transporte: t2, ia, almacen: { leer: (k, d) => viejo[k] ? JSON.parse(viejo[k]) : d, guardar(){} }, reloj });
+  ok('una cuenta con la configuración vieja se pasa sola a la nueva (una vez)', s3.config.version === 2 && s3.config.porDefecto === 'auto' && s3.config.juntar === 6 && s3.config.esperaSiContesto === 0 && s3.config.auto.porHora === 20 && s3.config.auto.firma === 'Asistente de Carlos', s3.config);
+  const ya = { config: JSON.stringify({ version: 2, porDefecto: 'borrador', juntar: 30 }) };
+  const s4 = new Secre({ cuenta: 'ya', transporte: t2, ia, almacen: { leer: (k, d) => ya[k] ? JSON.parse(ya[k]) : d, guardar(){} }, reloj });
+  ok('y lo que Carlos cambie después ya no se lo pisa', s4.config.porDefecto === 'borrador' && s4.config.juntar === 30);
+}
 
 console.log(fallas.length ? `\n✗ ${pasan} pasan · ${fallas.length} fallan` : `\n✓ ${pasan}/${pasan}`);
 process.exit(fallas.length ? 1 : 0);
