@@ -60,6 +60,7 @@ nav.pestanas button[aria-selected="true"]{ color:var(--acento); font-weight:700;
 .campo{ width:100%; min-height:44px; padding:10px 12px; border-radius:10px; border:1px solid var(--linea); background:var(--fondo); }
 textarea.campo{ min-height:88px; resize:vertical; }
 label.etq{ display:block; font-size:14px; color:var(--suave); margin:10px 0 4px; }
+.elenco{ border:0; padding:0; margin:8px 0 0; }
 .dias{ border:0; padding:0; margin:0; display:flex; flex-wrap:wrap; gap:6px; }
 .dias legend{ width:100%; }
 .dia{ position:relative; }
@@ -342,6 +343,7 @@ function hojaChats(){
       <label class="etq">Marca de tu personaje (lo que dice sale con ella; lo que hace, con «> »)</label>
       <input class="campo" data-marca maxlength="30" placeholder="ej. 🌌⚛️-" value="${esc(c.marca || '')}">
       <p class="meta">${c.nStickers ? `Tengo ${c.nStickers} sticker(s) tuyos de aquí y los uso de vez en cuando.` : 'Manda stickers en el grupo y los aprendo para usarlos de vez en cuando.'}</p>
+      <fieldset class="elenco"><legend class="etq">También juegan aquí, cada una con su personaje (aunque tú estés jugando)</legend>${elencoChecks(c.elenco, 'data-elenco')}</fieldset>
       <label class="etq">El mundo y la historia (lo lee antes de cada jugada)</label>
       <textarea class="campo" data-mundo rows="6" maxlength="4000" placeholder="ej. Reino de Valdor. La magia está prohibida. Ana juega a Lyra, la ladrona. Lo último: el rey murió y nadie sabe quién fue.">${esc(c.mundo || '')}</textarea>` : ''}
       <label class="etq">Quién es (para que las respuestas le hablen bien)</label>
@@ -364,7 +366,7 @@ function hojaChats(){
   $('#dCom').ontoggle = () => { if($('#dCom').open) abrirComunidad(); };
   document.querySelectorAll('#hoja details[data-id]').forEach(el => {
     $('[data-guardar]', el).onclick = async () => {
-      try{ await api(actual + '/chat', { id: el.dataset.id, modo: $('[data-modo]', el).value, nota: $('[data-nota]', el).value, etiquetas: $('[data-etq]', el).value, ...($('[data-personaje]', el) ? { personaje: $('[data-personaje]', el).value, mundo: $('[data-mundo]', el).value, marca: $('[data-marca]', el).value } : {}) }); el.open = false; avisito('Guardado'); await cargar(true); }
+      try{ await api(actual + '/chat', { id: el.dataset.id, modo: $('[data-modo]', el).value, nota: $('[data-nota]', el).value, etiquetas: $('[data-etq]', el).value, ...($('[data-personaje]', el) ? { personaje: $('[data-personaje]', el).value, mundo: $('[data-mundo]', el).value, marca: $('[data-marca]', el).value, elenco: [...el.querySelectorAll('[data-elenco]:checked')].map(x => x.dataset.elenco) } : {}) }); el.open = false; avisito('Guardado'); await cargar(true); }
       catch(err){ avisito(err.message); }
     };
   });
@@ -403,6 +405,7 @@ function pintarComunidad(id){
     <textarea class="campo" id="comMundo" rows="7" maxlength="6000" placeholder="ej. Reino de Valdor. La magia está prohibida. Taberna = el pueblo, Bosque = la frontera. Ana juega a Lyra, la ladrona.">${esc(g.mundo || '')}</textarea>
     <label class="etq" for="comInstr">Instrucciones (cómo quieres que juegue)</label>
     <textarea class="campo" id="comInstr" rows="5" maxlength="3000" placeholder="ej. Nunca ataques primero. Respeta los turnos del narrador. Nada de romance. Si te retan a duelo, acepta pero no mates a nadie.">${esc(g.instrucciones || '')}</textarea>
+    <fieldset class="elenco"><legend class="etq">En todos sus grupos juegan también</legend>${elencoChecks(g.elenco, 'data-comelenco')}</fieldset>
     <p class="meta">Si un grupo tiene su propio personaje, marca o mundo en su tarjeta, eso le gana o se suma a esto.</p>
     <div class="acciones"><button class="boton principal" id="bComGuardar">Guardar la comunidad</button></div>`;
   const marcas = () => [...document.querySelectorAll('#comGrupos input')];
@@ -413,7 +416,8 @@ function pintarComunidad(id){
     try{
       const r = await api(actual + '/comunidad', { id: com.id, nombre: com.nombre, grupos: com.grupos,
         activos: marcas().filter(x => x.checked).map(x => x.dataset.g),
-        personaje: $('#comPersonaje').value, marca: $('#comMarca').value, mundo: $('#comMundo').value, instrucciones: $('#comInstr').value });
+        personaje: $('#comPersonaje').value, marca: $('#comMarca').value, mundo: $('#comMundo').value, instrucciones: $('#comInstr').value,
+        elenco: [...document.querySelectorAll('[data-comelenco]:checked')].map(x => x.dataset.comelenco) });
       $('#dCom').open = false; avisito(r.hecho); await cargar(true);
     }catch(e){ avisito(e.message); }
   };
@@ -430,6 +434,8 @@ function textoRegla(r){
   if(r.hasta) p.push('hasta el ' + dia(r.hasta - 1));
   return `<b>${r.modo === 'callado' ? 'No proponer' : r.modo === 'auto' ? 'Contestar sola' : 'Proponer'}</b> ${esc(p.join(' · '))}`;
 }
+/* el elenco del rol: Paulina y Negro con sus personajes */
+const elencoChecks = (sel, attr) => ['Paulina', 'Negro'].map(q => { const P = (datos.config.personajes || {})[q] || {}; return `<label class="fila-check"><input type="checkbox" ${attr}="${q}" ${(sel || []).includes(q) ? 'checked' : ''}> ${q} juega como <b>${esc(P.nombre || q)}</b> <span class="meta">${esc(P.marca || '')}</span></label>`; }).join('');
 const DIAS_CORTOS = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
 const DIAS_LARGOS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 function textoDias(d){
@@ -472,6 +478,14 @@ function hojaAjustes(){
       <div class="dos"><div><label class="etq" for="rDe">Desde las</label><input class="campo" id="rDe" type="time"></div><div><label class="etq" for="rA">Hasta las</label><input class="campo" id="rA" type="time"></div></div>
       <label class="etq" for="rHasta">Vale hasta el día (vacío = siempre)</label><input class="campo" id="rHasta" type="date">
       <div class="acciones"><button class="boton principal" id="bRegla">Crear regla</button></div></details>
+
+    <h2>Los personajes de Paulina y Negro</h2>
+    <p class="meta">En los grupos de rol donde los prendas, cada una juega su personaje aparte del tuyo.</p>
+    ${['Paulina', 'Negro'].map(q => { const P = (c.personajes || {})[q] || {}; return `<details class="tarjeta"><summary>${q} · <b>${esc(P.nombre || q)}</b> <span class="meta">${esc(P.marca || '')}</span></summary>
+      <label class="etq" for="pn${q}">Nombre del personaje</label><input class="campo" id="pn${q}" maxlength="40" value="${esc(P.nombre || '')}">
+      <label class="etq" for="pm${q}">Marca (lo que dice sale con ella)</label><input class="campo" id="pm${q}" maxlength="30" value="${esc(P.marca || '')}">
+      <label class="etq" for="pf${q}">Ficha (edad, poderes, historia, apariencia…)</label><textarea class="campo" id="pf${q}" rows="6" maxlength="1500">${esc(P.ficha || '')}</textarea>
+      <div class="acciones"><button class="boton principal" data-guardapers="${q}">Guardar a ${esc(P.nombre || q)}</button></div></details>`; }).join('')}
 
     <h2>Lo que sale solo</h2>
     <p class="meta">Mensajes que manda a su hora (la clase que toca, recordatorios…) y fotos de tu banco que publica sola con su nombre.</p>
@@ -531,6 +545,8 @@ function hojaAjustes(){
     const a = { accion: 'regla', modo: $('#rModo').value, palabras: lista($('#rPal').value), etiquetas: lista($('#rEtq').value), de: $('#rDe').value, a: $('#rA').value, hasta: $('#rHasta').value };
     try{ const r = await accion(a); avisito(r.hecho); await cargar(true); }catch(e){ avisito('Ponle al menos un tema, un grupo o un horario'); }
   };
+  document.querySelectorAll('[data-guardapers]').forEach(b => b.onclick = async () => { const q = b.dataset.guardapers;
+    try{ const r = await accion({ accion: 'personaje', quien: q, nombre: $('#pn' + q).value.trim(), marca: $('#pm' + q).value.trim(), ficha: $('#pf' + q).value.trim() }); avisito(r.hecho); await cargar(true); }catch(e){ avisito(e.message); } });
   const diasDe = (id) => [...document.querySelectorAll(`#${id} input:checked`)].map(i => +i.value);
   $('#bProg').onclick = async () => {
     const texto = $('#pTexto').value.trim(), tema = $('#pTema').value.trim();

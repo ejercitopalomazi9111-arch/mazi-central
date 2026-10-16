@@ -845,6 +845,81 @@ console.log('\n14 · Mensajes programados, banco de imágenes y fotos (Carlos, 1
   ok('al aprobarla salen el texto y la foto', env4.filter(e => e.jid === LALO).length === 2 && env4.filter(e => e.jid === LALO)[1].texto === '[foto]' && /y 1 foto/.test(r), r);
 }
 
+console.log('\n15 · El elenco del rol: Paulina como Astrael y Negro como Nox Veyr (Carlos, 16 de octubre)');
+{
+  ahora = Date.UTC(2026, 9, 27, 2, 0);   /* lunes 26, 20:00 en México */
+  const env5 = []; let n5 = 1;
+  /* mandar tarda: el reloj avanza con cada envío (con el reloj quieto, «lo nuevo desde mi
+     última jugada» nunca incluía la de la otra y dos frenos quedaban sin probar) */
+  const t5 = { yo: () => [YO], otrosYo: () => [], async enviar(jid, texto){ pasar(1); const id = 'E' + (n5++); env5.push({ jid, texto, id }); return id; }, async escribiendo(){}, async leido(){} };
+  const jugadas = [];
+  const ia5 = { ...ia,
+    async jugarElenco(x){
+      jugadas.push(x);
+      if(/fuera de rol/i.test(x.nuevos)) return { lineas: [] };
+      return x.quien === 'Paulina' ? { lineas: [{ tipo: 'dice', texto: 'Esto ya lo vi pasar.' }, { tipo: 'hace', texto: 'Astrael dobla la gravedad del cuarto' }] }
+        : { lineas: [{ tipo: 'dice', texto: '💫⏳- No confíes en las sombras.' }, { tipo: 'hace', texto: '> abre un portal y desaparece' }] };
+    },
+  };
+  const alm5 = (() => { const d = {}; return { leer: (k, x) => d[k] ? JSON.parse(d[k]) : x, guardar: (k, v) => { d[k] = JSON.stringify(v); } }; })();
+  const s7 = new Secre({ cuenta: 'E', transporte: t5, ia: ia5, almacen: alm5, reloj, azar: () => 0.4, banco: null });
+  const TAB = '120363555555@g.us', OTRO = '120363666666@g.us';
+  for(const [j, n] of [[TAB, 'Taberna'], [OTRO, 'Grupo de la escuela']]){ s7.chat(j).nombre = n; s7.chat(j).grupo = true; }
+  const dice7 = async (t) => { await s7.orden(t); return (env5.filter(e => e.jid === YO).slice(-1)[0] || {}).texto || ''; };
+  const enTab = () => env5.filter(e => e.jid === TAB);
+  const llega7 = async (jid, quien, texto, extra = {}) => { await s7.alMensaje({ id: 'r' + (n5++), chat: jid, de: ANA, nombre: quien, nombreChat: s7.nombreDe(jid), texto, mio: false, grupo: true, t: ahora, ...extra }); };
+  const correr = async (seg) => { for(let k = 0; k < seg; k += 2){ pasar(2); await s7.tic(); } };
+
+  ok('Paulina y Negro ya traen sus personajes: Astrael y Nox Veyr', s7.config.personajes.Paulina.nombre === 'Astrael' && s7.config.personajes.Negro.nombre === 'Nox Veyr' && /gravitacional/.test(s7.config.personajes.Paulina.ficha) && /no proyecta sombra/i.test(s7.config.personajes.Negro.ficha));
+  let r = await dice7('Paulina y Negro juegan en Taberna');
+  ok('«Paulina y Negro juegan en Taberna» las mete al grupo', s7.elencoDe(TAB).join() === 'Paulina,Negro' && /Paulina como Astrael/.test(r) && /Negro como Nox Veyr/.test(r), r);
+  await llega7(TAB, 'Lyra', '*Lyra entra a la taberna y mira alrededor*');
+  await correr(20);
+  ok('cuando alguien juega, cada una contesta APARTE, con su personaje', enTab().length === 2, enTab());
+  const de = (marca) => enTab().find(e => e.texto.startsWith(marca));
+  ok('Astrael sale con su marca y lo que hace con «> »', de('💫⏳-') && de('💫⏳-').texto === '💫⏳- Esto ya lo vi pasar.\n> Astrael dobla la gravedad del cuarto', enTab().map(e => e.texto));
+  ok('Nox Veyr con la suya: si la IA le pone la marca de Astrael o un «>» de más, se lo quita', de('🌑🌀-') && de('🌑🌀-').texto === '🌑🌀- No confíes en las sombras.\n> abre un portal y desaparece', enTab().map(e => e.texto));
+  ok('cada una juega con SU ficha y sabe quiénes son los otros (no decide por ellos)', jugadas.some(x => x.quien === 'Paulina' && x.personaje === 'Astrael' && x.otros.includes('Nox Veyr')) && jugadas.some(x => x.quien === 'Negro' && x.personaje === 'Nox Veyr' && x.otros.includes('Astrael')), jugadas.map(x => [x.quien, x.otros]));
+  ok('la segunda que juega ya vio la jugada de la primera', /Astrael: |Nox Veyr: /.test(jugadas[1].nuevos + jugadas[1].historia), jugadas[1] && jugadas[1].nuevos);
+  const j0 = jugadas.length;
+  await correr(120);
+  ok('entre ellas no se encadenan: sin una persona de por medio, no vuelven a jugar', jugadas.length === j0 && enTab().length === 2);
+  await s7.jugarElenco(TAB);
+  ok('aunque algo las despertara, sin una persona nueva no juegan sobre lo que dijo la otra ni sobre lo suyo', jugadas.length === j0 && enTab().length === 2, jugadas.slice(j0).map(x => [x.quien, x.nuevos]));
+  /* Carlos juega a mano: su personaje no lo lleva Secre, pero ellas siguen */
+  await s7.alMensaje({ id: 'c7', chat: TAB, de: YO, texto: '🌌⚛️- ¿Quién anda ahí?', mio: true, grupo: true, t: ahora });
+  await correr(20);
+  ok('aunque tú estés jugando, ellas juegan (son otros personajes)', enTab().length === 4, enTab().length);
+  ok('y lo que tú escribiste les llega como tu jugada', jugadas.slice(-2).every(x => /Carlos: 🌌⚛️- ¿Quién anda ahí\?/.test(x.nuevos)));
+  await llega7(TAB, 'Lyra', 'jaja ya me voy a dormir, fuera de rol');
+  await correr(80);
+  ok('si no les toca (plática fuera del rol), se callan', enTab().length === 4);
+  /* una jugada por minuto cada una */
+  await llega7(TAB, 'Lyra', '*Lyra regresa*'); await correr(12);
+  const k1 = enTab().length;
+  await llega7(TAB, 'Lyra', '*Lyra saca su daga*'); await correr(12);
+  ok('no juegan más de una vez por minuto cada una (no inundan el grupo)', enTab().length === k1, [k1, enTab().length]);
+  r = await dice7('saca a Negro de Taberna');
+  ok('«saca a Negro de Taberna» deja sólo a Paulina', s7.elencoDe(TAB).join() === 'Paulina' && /sólo|Paulina como Astrael/.test(r), r);
+  await correr(70);
+  await llega7(TAB, 'Lyra', '*Lyra corre*'); await correr(20);
+  const ult = enTab().slice(k1);
+  ok('y ya sólo juega Astrael', ult.length >= 1 && ult.every(e => e.texto.startsWith('💫⏳-')), ult.map(e => e.texto));
+  await llega7(OTRO, 'Beto', 'oigan mañana hay examen?'); await correr(20);
+  ok('en un grupo donde no las metiste, no juegan', !env5.some(e => e.jid === OTRO));
+  /* la ficha se cambia pegándola tal cual (con los ╔══ y el «Olvidar» que se cuela al copiar) */
+  r = await dice7('personaje de Paulina: ╔══ PERSONAJE Paulina ══╗ Nombre: Selene Edad: 19 años. Habilidades: luz. Olvidar');
+  ok('«personaje de Paulina: …» toma el nombre de la ficha y limpia lo que se cuela al copiar', s7.config.personajes.Paulina.nombre === 'Selene' && !/╔|Olvidar/.test(s7.config.personajes.Paulina.ficha) && /Selene/.test(r), s7.config.personajes.Paulina);
+  r = await dice7('marca de Negro: 🌑-');
+  ok('«marca de Negro: …» le cambia la marca', s7.config.personajes.Negro.marca === '🌑-');
+  /* por comunidad: todos sus grupos */
+  const COM = '120363000000000077@g.us';
+  s7.chat(OTRO).comunidad = COM;
+  s7.ponerComunidad({ id: COM, nombre: 'Reino', grupos: [OTRO], activos: [], elenco: ['Negro'] });
+  ok('en la comunidad de rol se prenden para todos sus grupos', s7.elencoDe(OTRO).join() === 'Negro');
+  ok('la ayuda lo explica', /Paulina y Negro juegan en Taberna/.test((await import('./nucleo.mjs')).AYUDA));
+}
+
 console.log('\n13 · El puente de correr.mjs pasa TODO lo que el núcleo le pide al WhatsApp');
 {
   /* ya pasó dos veces: los stickers (enviarSticker) y casi las notas de voz. El núcleo

@@ -193,7 +193,7 @@ http.createServer(async (req, res) => {
   }
   if(que === 'comunidad'){
     const hecho = s.ponerComunidad({ id: String(b.id || ''), nombre: b.nombre, grupos: Array.isArray(b.grupos) ? b.grupos : [], activos: Array.isArray(b.activos) ? b.activos : [],
-      personaje: b.personaje, mundo: b.mundo, marca: b.marca, instrucciones: b.instrucciones });
+      personaje: b.personaje, mundo: b.mundo, marca: b.marca, instrucciones: b.instrucciones, elenco: b.elenco });
     return json(res, hecho ? 200 : 400, hecho ? { bien: true, hecho } : { error: 'Esa no es una comunidad.' });
   }
   if(que === 'accion'){ const hecho = s.aplicar(b); s.guardar(); return json(res, hecho ? 200 : 400, hecho ? { bien: true, hecho } : { error: 'No pude aplicar eso.' }); }
@@ -216,6 +216,7 @@ http.createServer(async (req, res) => {
     if(b.personaje !== undefined) c.personaje = String(b.personaje).slice(0, 800);
     if(b.mundo !== undefined) c.mundo = String(b.mundo).slice(0, 4000);
     if(b.marca !== undefined){ const mk = String(b.marca).trim().slice(0, 30); if(mk) c.marca = mk; else delete c.marca; }
+    if(Array.isArray(b.elenco)) c.elenco = b.elenco.filter(q => (s.config.personajes || {})[q]);
     if(b.nota !== undefined) c.nota = String(b.nota).slice(0, 500);
     if(b.etiquetas !== undefined) c.etiquetas = String(b.etiquetas).split(',').map(x => x.trim().toLowerCase()).filter(Boolean).slice(0, 10);
     s.guardar(); return json(res, 200, { bien: true });
