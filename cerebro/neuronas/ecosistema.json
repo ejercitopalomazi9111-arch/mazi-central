@@ -344,7 +344,7 @@
    "titulo": "Dónde corre Secre (WhatsApp 24/7) sin compu y sin gastar",
    "que": "Render gratis (render.yaml en la raíz) con la sesión y la configuración guardadas cifradas en La Sala (/api/sala/GRUPAZ/secre); Secre se visita sola cada 10 min para no dormirse.",
    "porque": "Carlos no tiene compu y dijo «no vamos a gastar un peso». WhatsApp necesita una conexión abierta todo el tiempo, que no cabe en Cloudflare Workers.",
-   "alternativas": "Railway gratis: $1 al mes y sólo cargar Baileys son ~110 MB (más de $1). Railway Hobby: $5 al mes, descartado por costo. Oracle/Google gratis: piden tarjeta. GitHub Actions: sus términos no permiten un bot permanente y no recibe visitas para el panel.",
+   "alternativas": "Se descartó: Railway gratis: $1 al mes y sólo cargar Baileys son ~110 MB (más de $1). Railway Hobby: $5 al mes, descartado por costo. Oracle/Google gratis: piden tarjeta. GitHub Actions: sus términos no permiten un bot permanente y no recibe visitas para el panel.",
    "ojo": "Render gratis BORRA el disco en cada reinicio y se duerme a los 15 min sin visitas entrantes; si se cambia SECRE_CLAVE lo guardado no se abre y hay que vincular de nuevo.",
    "senales": [
     "dónde prendo el bot de whatsapp",
