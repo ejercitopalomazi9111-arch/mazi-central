@@ -130,6 +130,20 @@ async function probar(tema){
   await ana3.locator('[data-modo]').selectOption('callado');
   await ana3.locator('[data-guardar]').click();
   await espera(async () => ((await estado()).chats.find(x => x.nombre === 'Ana ' + tema) || {}).modoAhora === 'callado', 'y se regresa');
+  /* un grupo de rol: se prende desde aquí con su personaje */
+  const ROL = `1203632222${tema === 'claro' ? 11 : 22}@g.us`, nomRol = 'Taberna ' + tema;
+  await page.request.post(URL0 + 'api/principal/llega', { data: { chat: ROL, de: ANA, nombre: 'Ana', nombreChat: nomRol, grupo: true, texto: '*entra a la taberna*' } });
+  await page.click('nav [data-p="pendientes"]'); await page.click('nav [data-p="chats"]');
+  const rol = page.locator('#hoja details', { hasText: nomRol });
+  await espera(async () => (await rol.count()) === 1, 'el grupo aparece en Chats');
+  await rol.locator('summary').click();
+  await rol.locator('[data-modo]').selectOption('rol');
+  await rol.locator('[data-personaje]').fill('Kael, mercenario callado');
+  await foto('3b-rol');
+  await rol.locator('[data-guardar]').click();
+  await espera(async () => { const c = (await estado()).chats.find(x => x.nombre === nomRol) || {}; return c.modoAhora === 'auto' && c.rol && c.personaje === 'Kael, mercenario callado'; }, 'en un grupo, «seguir la historia» prende el rol con su personaje');
+  ok('y el grupo dice «sigo la historia sola»', await espera(async () => /sigo la historia sola/.test(await page.locator('#hoja details', { hasText: nomRol }).locator('summary').textContent()), 'resumen rol'));
+  ok('a un chat de una persona no le ofrece el rol', (await page.locator('#hoja details', { hasText: 'Ana ' + tema }).locator('[data-modo] option[value="rol"]').count()) === 0);
 
   /* ── saludos y reglas ── */
   await page.click('nav [data-p="ajustes"]');

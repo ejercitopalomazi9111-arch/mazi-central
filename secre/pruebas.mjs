@@ -33,12 +33,18 @@ const aOtros = () => enviados.filter(e => e.jid !== YO);
 const ultimoAviso = () => (aCarlos().slice(-1)[0] || {}).texto || '';
 
 let iaFalla = false;
-let vioDatos = [], ordenQuien = '', vioAuto = false;
+let vioDatos = [], ordenQuien = '', vioAuto = false, vioRol = null;
 const ia = {
-  async leer({ nuevos, redactar, auto, datos = [] }){
+  async leer({ nuevos, redactar, auto, rol, personaje, grupo, datos = [] }){
     if(iaFalla) throw new Error('sin internet');
     const t = nuevos.map(x => x.texto).join(' ');
     vioAuto = !!auto;
+    if(auto && rol){
+      vioRol = { personaje, quienes: nuevos.map(x => x.quien) };
+      if(/fuera de rol/i.test(t)) return { pendientes: [], respuesta: '(ahorita no está, luego te contesta)', motivo: 'te piden algo fuera del rol', urgente: false, decide: true };
+      return { pendientes: [], respuesta: `*Kael avanza* (${nuevos.length})`, motivo: '', urgente: false };
+    }
+    if(auto && grupo) return { pendientes: [], respuesta: /carlos/i.test(t) ? 'Carlos no está ahorita, ya le pasé tu mensaje.' : '', motivo: '', urgente: false };
     if(auto){
       if(/cu[aá]nto|aparta/i.test(t)) return { pendientes: [], respuesta: 'Ya le pasé tu mensaje a Carlos, él te confirma.', motivo: 'decidir el precio', urgente: false, decide: true };
       if(/^(gracias|ok)$/i.test(t.trim())) return { pendientes: [], respuesta: '', motivo: '', urgente: false };
@@ -321,11 +327,10 @@ ok('a Lalo (sin modo propio) le contesta solo', FIRMA.test((aOtros().filter(e =>
 const g1 = aOtros().length;
 await llega(GRUPO, 'alguien sabe a qué hora es la junta?', { grupo: true, nombre: 'Luis' }); pasar(70); await s.tic();
 ok('en un GRUPO nunca contesta solo, aunque esté en todos', aOtros().length === g1 && !aOtros().some(e => e.jid === GRUPO));
-ok('ni dejándolo en automático a mano', s.aplicar({ accion: 'modo', chat: GRUPO, modo: 'auto' }) === '' && s.modo(GRUPO, '', true) !== 'auto');
-s.config.chats[GRUPO].modo = 'auto'; const g2 = aOtros().length;   /* como si viniera así del panel o de una configuración vieja */
-await llega(GRUPO, 'y entonces qué onda con la junta', { grupo: true, nombre: 'Luis' }); pasar(70); await s.tic();
-ok('aunque el grupo tenga «auto» guardado, tampoco contesta solo', aOtros().length === g2);
-s.config.chats[GRUPO].modo = '';
+s.aplicar({ accion: 'regla', modo: 'auto', palabras: ['junta'] }); const g2 = aOtros().length;
+await llega(GRUPO, 'Carlos, y entonces qué onda con la junta', { grupo: true, nombre: 'Luis' }); pasar(70); await s.tic();
+ok('ni una regla «contestar sola» lo prende en un grupo: tiene que ser por nombre', aOtros().length === g2);
+s.config.reglas = s.config.reglas.filter(r => r.modo !== 'auto');
 ok('Pepe sigue en manual aunque los demás estén en automático', s.modo(PEPE) === 'borrador');
 iaFalla = true; const f0 = aOtros().length;
 await llega(LALO, 'oye?', { nombre: 'Lalo' }); pasar(70); await s.tic(); iaFalla = false;
@@ -344,8 +349,62 @@ ok('y vuelve a ser propuesta', aOtros().length === l0 && /Propuesta:/.test(ultim
 const autosMandados = aOtros().filter(e => FIRMA.test(e.texto));
 ok(`cada mensaje que mandó sola fue a un chat que Carlos puso en automático (${autosMandados.length})`, autosMandados.every(e => [PEPE, LALO].includes(e.jid)) && autosMandados.length === 3, autosMandados.map(e => e.jid));
 
+console.log('\n8f · Grupos: sólo los que Carlos autoriza por nombre, y el rol que sigue la historia');
+const EQUIPO = '120363111111@g.us', ROL = '120363222222@g.us';
+const enGrupo = (g, quien, texto) => llega(g, texto, { grupo: true, nombre: quien, nombreChat: g === ROL ? 'Taberna del Cuervo' : 'Equipo Ventas' });
+const aG = (g) => aOtros().filter(e => e.jid === g);
+await enGrupo(EQUIPO, 'Luis', 'oigan quién trae las bocinas'); pasar(70); await s.tic();
+ok('un grupo que nadie autorizó no se contesta solo', aG(EQUIPO).length === 0);
+await carlos('automático equipo ventas');
+ok('«automático Equipo Ventas» lo autoriza por nombre', s.config.chats[EQUIPO].modo === 'auto' && /contesto sola cuando te hablen/.test(ultimoAviso()), ultimoAviso());
+await enGrupo(EQUIPO, 'Luis', 'y las extensiones?'); pasar(70); await s.tic();
+ok('si la plática no es con Carlos, no se mete', aG(EQUIPO).length === 0);
+await enGrupo(EQUIPO, 'Luis', 'oye Carlos tú traes el proyector?'); pasar(70); await s.tic();
+ok('si le hablan a Carlos, contesta solo en el grupo, firmado', aG(EQUIPO).length === 1 && FIRMA.test(aG(EQUIPO)[0].texto), aG(EQUIPO));
+ok('y a Carlos le dice quién le habló', /dijo: «Luis: oye Carlos/.test(ultimoAviso()), ultimoAviso());
+/* el rol */
+await enGrupo(ROL, 'Ana', '*mira a Kael* ¿vienes o no?'); pasar(70); await s.tic();
+ok('el rol tampoco se juega solo sin permiso', aG(ROL).length === 0);
+await carlos('rol taberna del cuervo: Kael, mercenario callado que odia a los magos');
+ok('«rol Taberna: personaje» lo prende con su personaje', s.config.chats[ROL].rol && s.config.chats[ROL].modo === 'auto' && s.config.chats[ROL].personaje.startsWith('Kael') && /sigo la historia sola/.test(ultimoAviso()), ultimoAviso());
+ok('y le avisa que sus mensajes salen con 🤖 y cómo quitarlo', /salen con 🤖/.test(ultimoAviso()) && /sin firma/.test(ultimoAviso()));
+const avisosRol = aCarlos().length;
+await enGrupo(ROL, 'Ana', '*desenvaina* ¡Kael, cuidado!'); pasar(70); await s.tic();
+ok('sigue la historia en personaje', aG(ROL).length === 1 && /^🤖 \*Kael avanza\*/.test(aG(ROL)[0].texto), aG(ROL));
+ok('la IA recibe el personaje y quién dijo qué', vioRol && vioRol.personaje.startsWith('Kael') && vioRol.quienes.includes('Ana'), vioRol);
+ok('y no le avisa a Carlos cada jugada (van en el resumen)', aCarlos().length === avisosRol);
+const g0r = aG(ROL).length;
+for(let k = 0; k < 10; k++){ await enGrupo(ROL, k % 2 ? 'Ana' : 'Beto', `*ataca* ronda ${k}`); pasar(20); await s.tic(); }
+ok('en un grupo que no para de escribir, contesta a los 2 minutos aunque sigan', aG(ROL).length > g0r, aG(ROL).length);
+ok('juntando lo de varios en una sola jugada', +((/\((\d+)\)/.exec(aG(ROL).slice(-1)[0].texto) || [])[1]) >= 3, aG(ROL).slice(-1)[0].texto);
+pasar(70); await s.tic();
+const g1r = aG(ROL).length;
+await enGrupo(ROL, 'BotDado', '🤖 Dado: salió 17'); pasar(70); await s.tic();
+ok('si sólo escribió otro bot, no contesta (no se enciclan)', aG(ROL).length === g1r);
+await s.alMensaje({ id: 'C' + (sig++), chat: ROL, de: YO, texto: '*Kael gruñe*', mio: true, grupo: true, t: ahora });
+pasar(60); await enGrupo(ROL, 'Ana', '¿y luego?'); pasar(70); await s.tic();
+ok('si Carlos entra a jugar, se hace a un lado', aG(ROL).length === g1r);
+pasar(16 * 60);
+await enGrupo(ROL, 'Ana', 'fuera de rol: Carlos me prestas 200?'); pasar(70); await s.tic();
+ok('lo de la vida real que sólo él decide se lo deja con número', /⚠️ necesita tu decisión/.test(ultimoAviso()), ultimoAviso());
+s.estado.autos[ROL] = Array.from({ length: 30 }, (_, k) => ahora - k * 60e3);
+const g2r = aG(ROL).length, av2 = aCarlos().length;
+await enGrupo(ROL, 'Ana', '*sigue la pelea*'); pasar(70); await s.tic();
+await enGrupo(ROL, 'Ana', '*más pelea*'); pasar(70); await s.tic();
+ok('con el tope del grupo (30 por hora) se calla y avisa UNA vez', aG(ROL).length === g2r && aCarlos().length === av2 + 1 && /me detuve/.test(ultimoAviso()), aCarlos().slice(av2).map(e => e.texto));
+s.estado.autos[ROL] = [];
+await carlos('sin firma taberna del cuervo');
+await enGrupo(ROL, 'Ana', '*abre la puerta*'); pasar(70); await s.tic();
+ok('«sin firma» manda la jugada tal cual', aG(ROL).slice(-1)[0].texto.startsWith('*Kael avanza*'), aG(ROL).slice(-1));
+await carlos('manual taberna del cuervo');
+const g3r = aG(ROL).length;
+await enGrupo(ROL, 'Ana', '*se va*'); pasar(70); await s.tic();
+ok('«manual Taberna» lo para', aG(ROL).length === g3r && !s.config.chats[ROL].rol);
+ok('nada salió solo a un grupo que Carlos no autorizó', aOtros().filter(e => e.jid.endsWith('@g.us')).every(e => [EQUIPO, ROL].includes(e.jid)));
+const enGrupos = aOtros().filter(e => [EQUIPO, ROL].includes(e.jid)).length;
+
 console.log('\n9 · LA REGLA: nada sale sin que Carlos lo apruebe (o sin que haya prendido el automático en ese chat)');
-ok(`cada envío a otra persona corresponde a una aprobación (${aOtros().length} envíos, ${aprobaciones} aprobaciones, ${fijosMandados} saludos que dejó fijos, ${autosMandados.length} en automático)`, aOtros().length <= aprobaciones + fijosMandados + autosMandados.length, { envios: aOtros().length, aprobaciones, fijosMandados });
+ok(`cada envío a otra persona corresponde a una aprobación (${aOtros().length} envíos, ${aprobaciones} aprobaciones, ${fijosMandados} saludos que dejó fijos, ${autosMandados.length} en automático, ${enGrupos} en grupos autorizados)`, aOtros().length <= aprobaciones + fijosMandados + autosMandados.length + enGrupos, { envios: aOtros().length, aprobaciones, fijosMandados });
 ok('y todos los avisos a Carlos empiezan con 🤖', aCarlos().every(e => e.texto.startsWith('🤖')));
 
 console.log(fallas.length ? `\n✗ ${pasan} pasan · ${fallas.length} fallan` : `\n✓ ${pasan}/${pasan}`);
