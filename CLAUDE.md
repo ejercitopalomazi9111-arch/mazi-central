@@ -194,6 +194,13 @@ que nos distingue.
 
 **Contacto oficial:** WhatsApp empresarial **442 883 3786** · **grupomazi.oficial@gmail.com**
 
+**Subdivisiones · dicho por Carlos el 16 de octubre:** **All's fashion · clothes & more** es
+**de Grupo Mazi y de Carlos**, no un cliente de fuera: *«all's fashion es una subdivisión que forma
+parte de grupo Mazi y es mía»*. Vende ropa, calzado, bolsas, perfumes, termos y tandas; sus fotos
+viven en el banco de La Sala (carpeta «All's fashion»). Para sus anuncios se usa la herramienta de
+**carteles** (`carteles/`, pestaña Campaña) y `herramientas/moda/`; el comercial en video, en
+`herramientas/moda/comercial.html`.
+
 ---
 
 ## 2. LA REGLA
