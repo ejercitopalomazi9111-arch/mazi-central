@@ -424,6 +424,8 @@ dependemos.
 
    | a una silla de La Sala se le habla eligiéndola en «¿a quién le hablas?» | Carlos les escribe por su NOMBRE («Negro cómo estás?», «@negro»), y la sala sólo miraba el destinatario; y cuando sí la elegía, Groq gratis (8,000 fichas por minuto CON la respuesta) recibía los 24 últimos mensajes enteros —26 mil caracteres en GRUPAZ— y contestaba 413 | «en la sala no responden nunca ni Negro ni Paulina», con las llaves bien puestas y `/motores` diciendo que estaban vivas. Ahora el nombre al inicio o con arroba cuenta como destinatario, y el hilo va con tope de 12 mil caracteres (`hiloParaModelo` en `sala/servidor/sala.js`) |
 
+   | un `ctx.waitUntil` dentro de otro trabajo de fondo sigue vivo | en el Durable Object de Cloudflare, el que se pide cuando el primer encargo ya terminó **se pierde**; en las pruebas locales sí corre | Paulina nombraba a Negro y Negro nunca contestaba en la sala real, con 443 pruebas en verde. La cadena de sillas va con `await` dentro del mismo encargo. Y Gemini PIENSA dentro de su tope de respuesta: con 700 a Paulina se le cortaba la frase; va con 2,500 |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---
