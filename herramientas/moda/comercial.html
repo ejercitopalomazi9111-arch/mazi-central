@@ -89,7 +89,7 @@ e2w.forEach(w => { w.className = 'anton'; e2.appendChild(w); });
    Vertical: la foto a todo lo alto, con un empujón de zoom en cada golpe. */
 const CW = 600, CH = 840, HUECO = 40;
 for(const r of RAFAGAS){
-  r.s = escena(V ? '#0C0B0A' : '#F3EEE6');
+  r.s = escena('#0C0B0A');
   if(V){
     r.capas = r.fotos.map(i => { const f = foto(i, 'inset:0'); r.s.appendChild(f); return f; });
     /* ⚠ las fotos llevan z-index 1-2 para la cortinilla: sin z-index aquí, el título quedaba DEBAJO */
@@ -97,9 +97,13 @@ for(const r of RAFAGAS){
     r.tit = el('div', 'position:absolute;left:64px;right:64px;top:110px;font-size:150px;color:#fff;z-index:4;text-shadow:0 4px 24px rgba(0,0,0,.35)', r.titulo); r.tit.className = 'anton';
     r.marca = el('img', 'position:absolute;left:50%;bottom:90px;width:300px;transform:translateX(-50%);z-index:4'); r.marca.src = LOGO_B;
   } else {
-    r.capas = r.fotos.map(i => { const f = foto(i, `top:${H - CH - 60}px;width:${CW}px;height:${CH}px`, 'carta'); r.s.appendChild(f); return f; });
-    r.tit = el('div', 'position:absolute;left:60px;top:40px;font-size:118px;color:#0C0B0A;white-space:nowrap', r.titulo); r.tit.className = 'anton';
-    r.marca = el('img', 'position:absolute;right:60px;top:34px;width:180px'); r.marca.src = LOGO_N;
+    /* atrás, la foto del centro en grande y desenfocada: llena el cuadro con su
+       propio color (antes era una tira de fotos sobre crema vacío) */
+    r.fondos = r.fotos.map(i => { const f = foto(i, 'inset:-8%;filter:blur(40px) brightness(.4) saturate(1.2)'); r.s.appendChild(f); return f; });
+    r.s.appendChild(el('div', 'position:absolute;inset:0;background:linear-gradient(180deg,rgba(12,11,10,.75) 0,rgba(12,11,10,0) 22%,rgba(12,11,10,0) 80%,rgba(12,11,10,.6) 100%)'));
+    r.capas = r.fotos.map(i => { const f = foto(i, `top:${H - CH - 50}px;width:${CW}px;height:${CH}px`, 'carta'); r.s.appendChild(f); return f; });
+    r.tit = el('div', 'position:absolute;left:60px;top:40px;font-size:118px;color:#F3EEE6;white-space:nowrap;text-shadow:0 4px 30px rgba(0,0,0,.4)', r.titulo); r.tit.className = 'anton';
+    r.marca = el('img', 'position:absolute;right:60px;top:34px;width:180px'); r.marca.src = LOGO_B;
   }
   r.s.appendChild(r.tit); r.s.appendChild(r.marca);
 }
@@ -121,8 +125,11 @@ const e5 = escena('#0C0B0A');
 const e5a = foto(0, 'inset:-6%'), e5b = foto(V ? 21 : 19, 'inset:-6%');
 e5.appendChild(e5a); e5.appendChild(e5b);
 e5.appendChild(el('div', 'position:absolute;inset:0;background:radial-gradient(ellipse at 50% 60%,rgba(0,0,0,.25),rgba(0,0,0,.72))'));
+/* una franja oscura detrás de la frase: sobre la pila de playeras de colores, la cursiva no se leía */
+e5.appendChild(el('div', `position:absolute;left:0;right:0;top:50%;height:${V ? 760 : 520}px;transform:translateY(-50%);background:linear-gradient(180deg,transparent,rgba(8,7,6,.62) 28%,rgba(8,7,6,.62) 72%,transparent)`));
 const e5t1 = el('div', `position:absolute;left:0;right:0;top:50%;text-align:center;font-size:${V ? 210 : 260}px;transform:translateY(-50%)`, 'Todo esto.'); e5t1.className = 'anton';
 const e5t2 = el('div', `position:absolute;left:0;right:0;top:50%;text-align:center;font-size:${V ? 140 : 170}px;line-height:1.05;transform:translateY(-50%)`, V ? 'En un solo<br><span class="oro">lugar.</span>' : 'En un solo <span class="oro">lugar.</span>'); e5t2.className = 'play';
+e5t1.style.textShadow = e5t2.style.textShadow = '0 6px 40px rgba(0,0,0,.7)';
 e5.appendChild(e5t1); e5.appendChild(e5t2);
 
 /* ═══ 6 · la tanda (golpes 48 → 56) ═══════════════════════════════════════
@@ -140,11 +147,14 @@ const DIAS = [];
     e6.appendChild(b); DIAS.push(b);
   }
 }
-const e6s = el('div', `position:absolute;left:0;right:0;top:${V ? 1340 : 610}px;text-align:center;font-size:${V ? 150 : 170}px;color:#0C0B0A`, 'y estrena.'); e6s.className = 'play'; e6.appendChild(e6s);
-const e6p = el('div', `position:absolute;left:0;right:0;top:${V ? 1560 : 850}px;text-align:center;font:600 ${V ? 38 : 40}px/1.3 Pop;color:#5A5148;letter-spacing:.02em`, V ? 'Playeras · Sudaderas<br>Pantalones · Chamarras' : 'Playeras · Sudaderas · Pantalones · Chamarras'); e6.appendChild(e6p);
+const e6i = el('div', `position:absolute;left:0;right:0;top:${V ? 1215 : 535}px;text-align:center;font:600 ${V ? 40 : 44}px/1.3 Pop;color:#0C0B0A`, V ? '15 personas · 15 días<br>cada día alguien estrena' : '15 personas · 15 días · cada día alguien estrena'); e6.appendChild(e6i);
+const e6s = el('div', `position:absolute;left:0;right:0;top:${V ? 1390 : 650}px;text-align:center;font-size:${V ? 150 : 170}px;color:#0C0B0A`, 'y estrena.'); e6s.className = 'play'; e6.appendChild(e6s);
+const e6p = el('div', `position:absolute;left:0;right:0;top:${V ? 1600 : 885}px;text-align:center;font:600 ${V ? 38 : 40}px/1.3 Pop;color:#5A5148;letter-spacing:.02em`, V ? 'Playeras · Sudaderas<br>Pantalones · Chamarras' : 'Playeras · Sudaderas · Pantalones · Chamarras'); e6.appendChild(e6p);
 
 /* ═══ 7 · el cierre (golpe 56 → fin) ══════════════════════════════════════ */
 const e7 = escena('#0C0B0A');
+/* atrás del logo, la bodega muy oscura y desenfocada que se acerca despacio: el cierre ya no es negro plano */
+const e7bg = foto(0, 'inset:-8%;filter:blur(26px) brightness(.26) saturate(1.1)'); e7.appendChild(e7bg);
 const e7logo = el('img', `position:absolute;left:50%;top:${V ? 560 : 300}px;width:${V ? 820 : 760}px;transform:translate(-50%,-50%)`); e7logo.src = LOGO_B; e7.appendChild(e7logo);
 const e7l = el('div', `position:absolute;left:0;right:0;top:${V ? 900 : 590}px;text-align:center;font:600 ${V ? 46 : 46}px/1.45 Pop;color:#E9E4DC`, V ? 'Ropa · Calzado · Bolsas<br>Perfumes · y más' : 'Ropa · Calzado · Bolsas · Perfumes · y más'); e7.appendChild(e7l);
 const e7p = el('div', `position:absolute;left:50%;top:${V ? 1180 : 740}px;transform:translateX(-50%);font-size:${V ? 64 : 60}px;padding:${V ? '26px 56px' : '24px 54px'}`, 'Escríbenos por DM'); e7p.className = 'pild'; e7.appendChild(e7p);
@@ -197,6 +207,12 @@ window.pintar = function(t){
       const paso = CW + HUECO, x0 = (W - (3 * CW + 2 * HUECO)) / 2, maxC = Math.max(0, r.capas.length - 3);
       const corre = Math.min(n, maxC), mueve = (n > 0 && n <= maxC) ? (1 - llega) : 0, entra = n === 0 ? (1 - llega) * 3.3 : 0;
       const late = n > maxC ? .035 * (1 - sale(f * 2.5)) : 0;
+      /* el fondo es la foto que queda al centro; al correr, se funde con la anterior */
+      const cen = Math.min(r.capas.length - 1, corre + 1);
+      r.fondos.forEach((fo, i) => {
+        fo.style.opacity = i === cen ? (mueve > 0 ? llega : 1) : (i === cen - 1 && mueve > 0 ? 1 : 0);
+        fo.img.style.transform = `scale(${1.05 + .05 * sat((k - r.de) / (r.a - r.de))})`;
+      });
       r.capas.forEach((c, i) => {
         const pos = i - corre + mueve + entra;                    /* 0, 1, 2 = las tres de la fila */
         c.style.left = (x0 + pos * paso) + 'px';
@@ -238,6 +254,7 @@ window.pintar = function(t){
       b.style.borderColor = x > .5 ? '#D4AE6E' : '#0C0B0A';
       b.style.transform = `scale(${1 + .18 * Math.sin(Math.PI * sat((k - 49 - i * .3) * 2.5))})`;
     });
+    const ii = sale((k - 51.5) * 2); e6i.style.opacity = ii; e6i.style.transform = `translateY(${(1 - ii) * 20}px)`;
     const s = sale((k - 53) * 2); e6s.style.opacity = s; e6s.style.transform = `translateY(${(1 - s) * 30}px)`;
     e6p.style.opacity = sale((k - 54) * 2);
   }
@@ -246,6 +263,7 @@ window.pintar = function(t){
   ver(e7, k >= 56 ? 1 : 0);
   if(k >= 56){
     const a = sale((k - 56) * 1.6);
+    e7bg.style.opacity = a; e7bg.img.style.transform = `scale(${1.04 + .08 * sat((k - 56) / 10)})`;
     e7logo.style.opacity = a; e7logo.style.transform = `translate(-50%,-50%) scale(${.9 + .1 * a})`;
     e7l.style.opacity = sale((k - 58) * 2);
     const pp = sale((k - 60) * 2.5);

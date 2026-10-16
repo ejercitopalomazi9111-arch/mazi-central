@@ -28,6 +28,7 @@ Propuesta: «sí voy, nomás confirmo la hora y te digo»
 | `automático Ana` · `automático todos` | le contesta **sola**, firmada «🤖 Asistente de Carlos:». «Todos» no incluye grupos |
 | `automático Equipo` (un grupo, por su nombre) | en ese grupo contesta sola **sólo cuando te hablan o te preguntan a ti** |
 | `rol Taberna: Kael, mercenario callado` | en ese grupo **sigue la historia de rol** con tu personaje mientras no estás · `personaje Taberna: …` lo cambia |
+| `mundo Taberna: reino de Valdor, la magia está prohibida…` | **el contexto del mundo** (dónde pasa, reglas, quién juega a quién, qué ha pasado); lo lee antes de cada jugada · `mundo Taberna: + lo nuevo` agrega · `mundo Taberna` te lo enseña. También en el panel |
 | `sin firma Taberna` · `firma Taberna: 🎭 Kael` · `firma normal Taberna` | cómo firma en ese chat (de fábrica: 🤖) |
 | `manual Ana` · `apaga automático` · `automático` | lo regresa a propuestas · lo apaga para todos · dice con quién está prendido |
 | `pausa 2h` · `pausa hoy` · `sigue` | la callas un rato |
@@ -53,6 +54,8 @@ Para cuando no puedes tomar el teléfono en el día. En un chat en automático:
 - **Grupos, sólo los que tú nombres.** Ni `automático todos` ni una regla los prenden. Ahí el
   tope es de 30 por hora y 300 al día; si un grupo no para de escribir, a los 2 minutos contesta
   igual juntando lo de todos (sabe quién dijo qué). Si topa, se calla y te avisa una sola vez.
+- **En un grupo sí platica con otros bots** (narrador, dados): lo que los frena es el tope de 30
+  por hora. En un chat de una sola persona sigue sin contestarle a un bot.
 - **El rol** no te avisa cada jugada (serían cientos): van en el resumen de la noche. Nunca
   decide por los personajes de otros ni cierra tramas solo. Si alguien te pide algo de la vida
   real (fuera del rol), contesta «ahorita no está» y te lo deja con ⚠️ y número.

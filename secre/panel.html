@@ -292,7 +292,9 @@ function hojaChats(){
         <option value="auto" ${modoDe(c) === 'auto' ? 'selected' : ''}>${c.grupo ? 'Contestar sola cuando me hablen' : 'Contestarle sola, como mi asistente'}</option>
         ${c.grupo ? `<option value="rol" ${modoDe(c) === 'rol' ? 'selected' : ''}>Seguir la historia sola (rol)</option>` : ''}</select>
       ${c.grupo ? `<label class="etq">Tu personaje (para el rol)</label>
-      <textarea class="campo" data-personaje placeholder="ej. Kael, mercenario callado que odia a los magos">${esc(c.personaje || '')}</textarea>` : ''}
+      <textarea class="campo" data-personaje placeholder="ej. Kael, mercenario callado que odia a los magos">${esc(c.personaje || '')}</textarea>
+      <label class="etq">El mundo y la historia (lo lee antes de cada jugada)</label>
+      <textarea class="campo" data-mundo rows="6" maxlength="4000" placeholder="ej. Reino de Valdor. La magia está prohibida. Ana juega a Lyra, la ladrona. Lo último: el rey murió y nadie sabe quién fue.">${esc(c.mundo || '')}</textarea>` : ''}
       <label class="etq">Quién es (para que las respuestas le hablen bien)</label>
       <textarea class="campo" data-nota placeholder="ej. es mi novia, háblale bonito · es el profe de mate, de usted">${esc(c.nota || '')}</textarea>
       <label class="etq">Grupos (separados por coma)</label>
@@ -301,7 +303,7 @@ function hojaChats(){
     </details>`).join('') : '<p class="vacio">Todavía no te ha escrito nadie desde que prendiste a Secre.</p>');
   document.querySelectorAll('#hoja details[data-id]').forEach(el => {
     $('[data-guardar]', el).onclick = async () => {
-      try{ await api(actual + '/chat', { id: el.dataset.id, modo: $('[data-modo]', el).value, nota: $('[data-nota]', el).value, etiquetas: $('[data-etq]', el).value, ...($('[data-personaje]', el) ? { personaje: $('[data-personaje]', el).value } : {}) }); el.open = false; avisito('Guardado'); await cargar(true); }
+      try{ await api(actual + '/chat', { id: el.dataset.id, modo: $('[data-modo]', el).value, nota: $('[data-nota]', el).value, etiquetas: $('[data-etq]', el).value, ...($('[data-personaje]', el) ? { personaje: $('[data-personaje]', el).value, mundo: $('[data-mundo]', el).value } : {}) }); el.open = false; avisito('Guardado'); await cargar(true); }
       catch(err){ avisito(err.message); }
     };
   });
