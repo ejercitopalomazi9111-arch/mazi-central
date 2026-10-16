@@ -77,6 +77,13 @@ label.etq{ display:block; font-size:14px; color:var(--suave); margin:10px 0 4px;
 details.tarjeta > summary{ list-style:none; display:flex; align-items:center; gap:8px; min-height:32px; cursor:pointer; }
 details.tarjeta > summary::-webkit-details-marker{ display:none; }
 details.tarjeta > summary .modo{ margin-left:auto; font-size:13px; color:var(--suave); white-space:nowrap; }
+/* el cambio rápido de modo, en el renglón mismo (16 de octubre: «una manera más rápida de cambiar tipo de respuesta») */
+details.tarjeta > summary{ flex-wrap:wrap; }
+.seg{ display:flex; flex-wrap:wrap; gap:6px; width:100%; }
+.seg button, .filtros button{ min-height:44px; padding:0 12px; border-radius:999px; border:1px solid var(--linea); background:var(--hoja); font-size:14px; font-weight:600; color:inherit; }
+.seg button[aria-pressed="true"], .filtros button[aria-pressed="true"]{ background:var(--acento); color:var(--acento-tinta); border-color:var(--acento); }
+.filtros{ display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }
+.masivo{ margin:4px 0 12px; }
 
 /* ── la plática ── */
 .charla{ display:flex; flex-direction:column; gap:8px; padding-bottom:8px; }
@@ -280,12 +287,27 @@ function hojaPendientes(){
 /* ══ Chats ═══════════════════════════════════════════════════════════════ */
 const NOMBRE_MODO = { borrador: 'te propongo respuestas', callado: 'sólo anoto pendientes', auto: 'contesto sola', rol: 'sigo la historia sola' };
 const modoDe = (c) => c.modo === 'auto' && c.rol ? 'rol' : c.modo;
+const RAPIDOS = { persona: [['auto', 'Sola'], ['borrador', 'Propone'], ['callado', 'Callada']], grupo: [['auto', 'Si me hablan'], ['rol', 'Rol'], ['borrador', 'Propone'], ['callado', 'Callada']] };
+let filtroChats = 'todos', buscaChats = '';
+const sinAc = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+function chatsVisibles(){
+  const q = sinAc(buscaChats.trim());
+  return datos.chats.filter(c => (filtroChats === 'todos' || (filtroChats === 'grupos') === !!c.grupo) && (!q || sinAc(c.nombre).includes(q) || c.id.startsWith(q.replace(/\D/g, '') || '¬')));
+}
 function hojaChats(){
-  const cs = datos.chats;
-  $('#hoja').innerHTML = `<h2>Chats</h2><p class="meta">Aparecen cuando te escriben. Toca uno para decirle a Secre cómo tratarlo.</p>
+  const todos = chatsVisibles(), cs = todos.slice(0, 80);
+  const tipo = filtroChats === 'grupos' ? 'grupo' : filtroChats === 'personas' ? 'persona' : '';
+  $('#hoja').innerHTML = `<h2>Chats</h2><p class="meta">${datos.chats.length} chats. Toca un botón para cambiar cómo contesta Secre; abre el chat para más.</p>
+    <div class="acciones" style="margin-top:0"><button class="boton" id="bContactos">📇 Cargar contactos y grupos</button></div>
+    <label class="oculto" for="busChats">Buscar chat</label><input class="campo" id="busChats" type="search" placeholder="Buscar por nombre o número…" value="${esc(buscaChats)}" autocomplete="off">
+    <div class="filtros" role="group" aria-label="Qué chats ver">${[['todos', 'Todos'], ['personas', 'Personas'], ['grupos', 'Grupos']].map(([k, n]) => `<button data-filtro="${k}" aria-pressed="${filtroChats === k}">${n}</button>`).join('')}</div>
+    ${tipo ? `<div class="tarjeta masivo"><span class="meta">${tipo === 'grupo' ? 'Todos estos grupos' : 'Todas estas personas'} (${todos.length}), de un toque:</span>
+      <div class="seg" style="margin-top:8px">${RAPIDOS[tipo].filter(([m]) => m !== 'rol').map(([m, n]) => `<button data-masivo="${m}">${n}</button>`).join('')}</div>
+      ${tipo === 'grupo' ? `<p class="meta" style="margin:10px 0 4px">Grupos nuevos que no tengan modo:</p><div class="seg">${[['callado', 'Callada'], ['borrador', 'Propone']].map(([m, n]) => `<button data-defgrupos="${m}" aria-pressed="${datos.config.grupos === m}">${n}</button>`).join('')}</div>` : ''}</div>` : ''}
     <details class="tarjeta comunidad" id="dCom"><summary><span class="quien">🎭 Comunidad de rol</span><span class="modo">todos sus grupos de un jalón</span></summary>
       <div id="comCuerpo"><p class="meta">Buscando tus comunidades…</p></div></details>` + (cs.length ? cs.map(c => `
-    <details class="tarjeta" data-id="${esc(c.id)}"><summary><span class="quien">${c.grupo ? '👥 ' : ''}${esc(c.nombre)}</span><span class="modo">${NOMBRE_MODO[c.modoAhora === 'auto' && c.rol ? 'rol' : c.modoAhora] || c.modoAhora}</span></summary>
+    <details class="tarjeta" data-id="${esc(c.id)}"><summary><span class="quien">${c.grupo ? '👥 ' : ''}${esc(c.nombre)}</span><span class="modo">${NOMBRE_MODO[c.modoAhora === 'auto' && c.rol ? 'rol' : c.modoAhora] || c.modoAhora}</span>
+      <span class="seg" role="group" aria-label="Cómo contesta en ${esc(c.nombre)}">${RAPIDOS[c.grupo ? 'grupo' : 'persona'].map(([m, n]) => `<button type="button" data-rapido="${m}" aria-pressed="${(c.modoAhora === 'auto' && c.rol ? 'rol' : c.modoAhora) === m}">${n}</button>`).join('')}</span></summary>
       <label class="etq">Qué hace Secre con este chat</label>
       <select class="campo" data-modo>
         <option value="" ${!c.modo ? 'selected' : ''}>Lo normal (${NOMBRE_MODO[c.grupo ? datos.config.grupos : datos.config.porDefecto]})</option>
@@ -305,7 +327,18 @@ function hojaChats(){
       <label class="etq">Grupos (separados por coma)</label>
       <input class="campo" data-etq value="${esc((c.etiquetas || []).join(', '))}" placeholder="escuela, familia">
       <div class="acciones"><button class="boton principal" data-guardar>Guardar</button></div>
-    </details>`).join('') : '<p class="vacio">Todavía no te ha escrito nadie desde que prendiste a Secre.</p>');
+    </details>`).join('') + (todos.length > cs.length ? `<p class="meta">Y ${todos.length - cs.length} más: búscalos por nombre.</p>` : '') : `<p class="vacio">${datos.chats.length ? 'Nada con ese nombre.' : 'Todavía no hay chats. Toca «Cargar contactos y grupos».'}</p>`);
+  $('#busChats').oninput = () => { buscaChats = $('#busChats').value; const pos = $('#busChats').selectionStart; huella = ''; hojaChats(); const b = $('#busChats'); b.focus(); try{ b.setSelectionRange(pos, pos); }catch{} };
+  document.querySelectorAll('[data-filtro]').forEach(b => b.onclick = () => { filtroChats = b.dataset.filtro; huella = ''; hojaChats(); });
+  $('#bContactos').onclick = async () => {
+    $('#bContactos').disabled = true; $('#bContactos').textContent = 'Cargando…';
+    try{ const r = await api(actual + '/contactos', {}); avisito(`Listo: ${r.total} chats (${r.grupos} grupos y ${r.personas} contactos de tu agenda)`); huella = ''; await cargar(true); }
+    catch(e){ avisito(e.message); $('#bContactos').disabled = false; $('#bContactos').textContent = '📇 Cargar contactos y grupos'; }
+  };
+  const cambiar = async (ids, modo, extra = {}) => { try{ const r = await api(actual + '/modos', { ids, modo, ...extra }); avisito(extra.porDefectoGrupos ? `Listo: los grupos nuevos quedan en «${extra.porDefectoGrupos === 'callado' ? 'Callada' : 'Propone'}»` : `Listo: ${r.n} chat(s)`); huella = ''; await cargar(true); }catch(e){ avisito(e.message); } };
+  document.querySelectorAll('[data-rapido]').forEach(b => b.onclick = (e) => { e.preventDefault(); e.stopPropagation(); cambiar([b.closest('details').dataset.id], b.dataset.rapido); });
+  document.querySelectorAll('[data-masivo]').forEach(b => b.onclick = () => cambiar(chatsVisibles().map(c => c.id), b.dataset.masivo));
+  document.querySelectorAll('[data-defgrupos]').forEach(b => b.onclick = () => cambiar([], '', { porDefectoGrupos: b.dataset.defgrupos }));
   $('#dCom').ontoggle = () => { if($('#dCom').open) abrirComunidad(); };
   document.querySelectorAll('#hoja details[data-id]').forEach(el => {
     $('[data-guardar]', el).onclick = async () => {

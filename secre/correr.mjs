@@ -76,6 +76,7 @@ async function prender(c){
   const enchufar = async () => {
     v.transporte = await conectar({ dir: path.join(dir, 'sesion'), auth, telefono: numero,
       alMensaje: (m) => v.secre.alMensaje(m).catch(e => console.error(`[${c.id}]`, e.message)),
+      alContactos: (l) => { try{ v.secre.cargarContactos(l); }catch(e){ console.error(`[${c.id}]`, e.message); } },
       alEstado: (e) => {
         v.estado = { ...v.estado, ...e };
         if(e.codigo){ console.log(`\n📱 [${c.id}] Código para vincular: ${e.codigo}\n   WhatsApp → Dispositivos vinculados → Vincular con número de teléfono\n`); v.estado.error = ''; }
@@ -165,6 +166,21 @@ http.createServer(async (req, res) => {
     return json(res, 200, { bien: true });
   }
   if(!v.estado.conectado && (que === 'orden' || que === 'propuesta')) return json(res, 409, { error: 'Esa cuenta no está conectada a WhatsApp todavía.' });
+  /* el botón «Cargar contactos»: la agenda y los grupos de WhatsApp */
+  if(que === 'contactos'){
+    if(!v.estado.conectado || !v.transporte || !v.transporte.cargarContactos) return json(res, 409, { error: 'Esa cuenta no está conectada a WhatsApp todavía.' });
+    try{ const r = await v.transporte.cargarContactos(); return json(res, 200, { bien: true, ...r, total: Object.values(s.config.chats).filter(x => x.nombre).length }); }
+    catch(e){ return json(res, 502, { error: 'WhatsApp no me dio los contactos: ' + e.message }); }
+  }
+  /* cambiar el modo de muchos chats de un toque (los grupos, o los que se vean filtrados) */
+  if(que === 'modos'){
+    const ids = Array.isArray(b.ids) ? b.ids.slice(0, 2000) : [];
+    if(!['', 'borrador', 'callado', 'auto', 'rol'].includes(b.modo)) return json(res, 400, { error: 'Modo raro.' });
+    let n = 0;
+    for(const id of ids){ const c = s.config.chats[id]; if(!c) continue; if(b.modo === 'rol' && !c.grupo) continue; c.rol = b.modo === 'rol'; c.modo = b.modo === 'rol' ? 'auto' : b.modo; n++; }
+    if(b.porDefectoGrupos !== undefined && ['borrador', 'callado'].includes(b.porDefectoGrupos)) s.config.grupos = b.porDefectoGrupos;
+    s.guardar(); return json(res, 200, { bien: true, n });
+  }
   /* el botón «Comunidad de rol»: qué comunidades hay y guardar una */
   if(que === 'comunidades'){
     if(!v.estado.conectado || !v.transporte || !v.transporte.comunidades) return json(res, 409, { error: 'Esa cuenta no está conectada a WhatsApp todavía.' });

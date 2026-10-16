@@ -41,7 +41,7 @@ export function textoDe(msg){
 /* conecta UNA cuenta. Devuelve el transporte que usa el núcleo.
    alMensaje(m) recibe { id, chat, de, nombre, texto, mio, grupo, t }
    alEstado(e) recibe { conectado, codigo, error } para el panel */
-export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () => {}, registro = 'warn' }){
+export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () => {}, alContactos = () => {}, registro = 'warn' }){
   const logger = pino({ level: registro });
   /* `auth` viene de nube.mjs cuando el disco no sobrevive a un reinicio (servidor gratis) */
   const { state, saveCreds } = auth || await useMultiFileAuthState(dir);
@@ -78,6 +78,13 @@ export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () =
       syncFullHistory: false });
     const este = sock;
     sock.ev.on('creds.update', saveCreds);
+    /* los contactos y grupos de Carlos, para que Secre los conozca aunque no le
+       hayan escrito (16 de octubre: «carga todos los contactos a Secre») */
+    const deContacto = (x) => ({ id: x.phoneNumber || x.id, lid: x.lid || (String(x.id).endsWith('@lid') ? x.id : ''), nombre: x.name || x.notify || x.verifiedName || x.username || '' });
+    const avisarContactos = (lista) => { const l = (lista || []).map(deContacto).filter(x => x.id && x.nombre); if(l.length) try{ alContactos(l); }catch{} };
+    sock.ev.on('contacts.upsert', avisarContactos);
+    sock.ev.on('contacts.update', avisarContactos);
+    sock.ev.on('messaging-history.set', ({ contacts }) => avisarContactos(contacts));
     sock.ev.on('connection.update', async (u) => {
       /* el código se pide cuando llega `qr`: ahí el servidor ya terminó el saludo.
          Pedirlo en 'connecting' (como antes) truena con «Connection Closed». */
@@ -92,6 +99,9 @@ export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () =
         const me = state.creds.me || {};
         yoJids = [me.id, me.lid].filter(Boolean).map(jidNormalizedUser);
         alEstado({ conectado: true, yo: yoJids[0] });
+        /* los grupos donde está, al conectar: así salen en el panel desde el principio */
+        este.groupFetchAllParticipating().then(gs => { for(const g of Object.values(gs)) grupos.set(g.id, g.subject || '');
+          try{ alContactos(Object.values(gs).filter(g => !g.isCommunity && !g.isCommunityAnnounce).map(g => ({ id: g.id, nombre: g.subject || '', grupo: true }))); }catch{} }).catch(() => {});
       }
       if(u.connection === 'close'){
         const codigo = u.lastDisconnect && u.lastDisconnect.error && u.lastDisconnect.error.output && u.lastDisconnect.error.output.statusCode;
@@ -141,6 +151,19 @@ export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () =
     async enviarSticker(jid, b64){ const r = await sock.sendMessage(jid, { sticker: Buffer.from(b64, 'base64') }, { messageId: idPropio() }); return r && r.key && r.key.id; },
     /* las comunidades de WhatsApp y sus grupos, para el botón «Comunidad de rol» del panel.
        El grupo de avisos de la comunidad no es para jugar: se deja fuera. */
+    /* el botón «Cargar contactos»: los grupos y, de la agenda de WhatsApp, los
+       contactos guardados (se vuelven a pedir; llegan por contacts.upsert) */
+    async cargarContactos(){
+      const gs = Object.values(await sock.groupFetchAllParticipating()).filter(g => !g.isCommunity && !g.isCommunityAnnounce);
+      try{ alContactos(gs.map(g => ({ id: g.id, nombre: g.subject || '', grupo: true }))); }catch{}
+      let personas = 0;
+      const contar = (l) => { personas += (l || []).length; };
+      sock.ev.on('contacts.upsert', contar);
+      try{ await sock.resyncAppState(['critical_unblock_low'], true); }catch{}
+      await new Promise(r => setTimeout(r, 2500));
+      sock.ev.off('contacts.upsert', contar);
+      return { grupos: gs.length, personas };
+    },
     async comunidades(){
       const todos = Object.values(await sock.groupFetchAllParticipating());
       const coms = new Map();

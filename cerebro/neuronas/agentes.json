@@ -488,6 +488,29 @@
       "vecinas": [
         "aprobador-automatico-encima-del-candado"
       ]
+    },
+    {
+      "id": "eco-del-bot-leido-como-dueno",
+      "titulo": "El eco de lo que manda el bot se leía como si el dueño hubiera escrito, y el bot se callaba",
+      "gravedad": "alta",
+      "sintoma": "Secre «a veces responde y a veces no»: contestaba una vez y luego se quedaba muda en ese chat un rato, sobre todo cuando Carlos tenía el teléfono abierto.",
+      "causa": "Baileys avisa de cada mensaje propio con un process.nextTick que puede llegar antes de que sendMessage regrese. Secre apuntaba el id DESPUÉS de mandar, así que su propio eco entraba como «Carlos escribió a mano» → 15 min callada en ese chat. Aparte, la IA iba con tope de 900 fichas y Gemini 2.5 las gasta pensando: a veces regresaba JSON vacío o cortado y no había qué mandar.",
+      "porque": "Con un transporte de mentiras el eco nunca llega antes; y una respuesta vacía de la IA se ve igual que «no hacía falta contestar».",
+      "arreglo": "El id se genera antes de mandar (generateMessageIDV2 y la opción messageId) y el transporte descarta su eco; el núcleo además reconoce su eco por chat+texto mientras está mandando. La IA va con tope de 2,500, segundo intento y el otro motor (Gemini ↔ Groq) si falla o no se puede leer. Ya no se calla cuando Carlos escribe (salvo en el rol).",
+      "comoCazarlo": "secre/pruebas.mjs §10: un transporte que manda el eco DENTRO de enviar, con otro id, antes de regresar. Mutación: quitar el reconocimiento del eco → Secre aprende su propio texto como estilo de Carlos.",
+      "consejo": "Lo que se manda se apunta antes de mandarlo, no después: cualquier aviso del envío puede llegar primero.",
+      "salioDe": "secre/whatsapp.mjs",
+      "senales": [
+        "a veces responde y a veces no",
+        "el bot se calla después de contestar",
+        "eco del mensaje propio",
+        "secre no contesta cuando estoy conectado",
+        "responde una vez y ya no"
+      ],
+      "vecinas": [
+        "puente-que-no-pasa-una-funcion",
+        "aprobador-automatico-encima-del-candado"
+      ]
     }
   ]
 }

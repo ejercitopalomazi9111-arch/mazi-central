@@ -189,6 +189,24 @@ export class Secre {
     this.guardar();
     return `${com.nombre || 'La comunidad'}: sigo la historia en ${n} grupo(s)`;
   }
+  /* los contactos y grupos que manda WhatsApp: se apuntan con su nombre aunque
+     no hayan escrito, para poder elegirles modo desde el panel. Nunca pisa un
+     nombre que ya tenía (el que Carlos le puso o el del chat). */
+  cargarContactos(lista = []){
+    const nombres = this.config.nombres || (this.config.nombres = {});
+    let nuevos = 0;
+    for(const x of lista.slice(0, 5000)){
+      const id = String(x && x.id || ''), nombre = String(x && x.nombre || '').trim().slice(0, 100);
+      if(!nombre || !/@(s\.whatsapp\.net|lid|g\.us)$/.test(id) || this.esMiChat(id)) continue;
+      if(x.lid && x.lid !== id) nombres[x.lid] = nombre;   /* por si escribe desde su LID */
+      const ya = this.config.chats[id];
+      if(ya && ya.nombre) continue;
+      const c = this.chat(id); c.nombre = nombre; if(x.grupo || id.endsWith('@g.us')) c.grupo = true;
+      nuevos++;
+    }
+    if(nuevos) this.guardar();
+    return nuevos;
+  }
   nombreDe(jid){ const c = this.config.chats[jid]; return (c && c.nombre) || String(jid).split('@')[0]; }
   /* «Ana», «ana p», «la de la escuela»… → el jid que más se parece */
   buscarChat(texto){
@@ -243,7 +261,7 @@ export class Secre {
     if(m.mio && this.mandando.has(m.chat + '|' + m.texto)) return;
     const c = this.chat(m.chat);
     /* en un grupo, el chat se llama como el grupo, no como quien escribió */
-    const nc = m.grupo ? m.nombreChat : m.nombre;
+    const nc = m.grupo ? m.nombreChat : ((this.config.nombres || {})[m.chat] || m.nombre);
     if(nc && !c.nombre && (m.grupo || !m.mio)) c.nombre = nc;
     if(m.grupo) c.grupo = true;
     const h = this.estado.historial[m.chat] || (this.estado.historial[m.chat] = []);
