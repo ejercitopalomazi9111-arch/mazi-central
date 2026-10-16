@@ -33,7 +33,7 @@ const aOtros = () => enviados.filter(e => e.jid !== YO);
 const ultimoAviso = () => (aCarlos().slice(-1)[0] || {}).texto || '';
 
 let iaFalla = false;
-let vioDatos = [];
+let vioDatos = [], ordenQuien = '';
 const ia = {
   async leer({ nuevos, redactar, datos = [] }){
     if(iaFalla) throw new Error('sin internet');
@@ -44,7 +44,8 @@ const ia = {
     return { pendientes: /mañana|entregar/i.test(t) ? ['Llevar el proyecto mañana'] : [], respuesta: redactar ? `va, ahorita te digo (${nuevos.length})` : '', motivo: /hora/.test(t) ? 'tienes que decidir la hora' : '', urgente: /urgente/i.test(t) };
   },
   async saludo({ cual, nombre }){ return cual === 'manana' ? `buen día ${nombre} ☀️` : `descansa ${nombre} 🌙`; },
-  async orden({ texto }){
+  async orden({ texto, quien }){
+    ordenQuien = quien;
     if(/buenos d[ií]as a las 7/.test(texto)) return { respuesta: 'Va.', acciones: [{ accion: 'saludos', chat: 'Ana', manana: '07:00', noche: '22:30', variacion: 0 }] };
     if(/beto es de la escuela/i.test(texto)) return { respuesta: '', acciones: [{ accion: 'etiqueta', chat: 'Beto', etiqueta: 'escuela' }] };
     if(/nadie de la escuela/.test(texto)) return { respuesta: '', acciones: [{ accion: 'regla', modo: 'callado', etiquetas: ['escuela'], hasta: '2026-10-18' }] };
@@ -202,6 +203,21 @@ await carlos('datos');
 ok('«datos» lista lo que sabe, sin lo caducado', /1\. el viernes 17 hay examen/.test(ultimoAviso()) && !/junta de padres/.test(ultimoAviso()), ultimoAviso());
 await carlos('olvida 1');
 ok('«olvida 1» lo quita', /Olvidado el dato 1/.test(ultimoAviso()) && !s.datosVigentes().length);
+
+console.log('\n8c · Turnos de secretaria: Secre, Paulina y Negro');
+const turnoA = (h) => { ahora = Date.UTC(2026, 9, 20, h + 6, 5); return s.deTurno(); };
+ok('de 00 a 08 le toca a una, de 08 a 16 a otra y de 16 a 24 a la tercera', new Set([turnoA(1), turnoA(9), turnoA(17)]).size === 3, [turnoA(1), turnoA(9), turnoA(17)]);
+ok('y al día siguiente siguen rotando (no siempre la misma a la misma hora)', (() => { const hoy = turnoA(1); ahora = Date.UTC(2026, 9, 21, 7, 5); return s.deTurno() !== hoy; })());
+await carlos('estado');
+ok('cada aviso dice quién está de turno', new RegExp('^🤖 (Secre|Paulina|Negro): ').test(ultimoAviso()), ultimoAviso());
+await carlos('turno de Paulina');
+ok('«turno de Paulina» la deja de guardia fija', s.deTurno() === 'Paulina' && /^🤖 Paulina: De guardia fija: Paulina/.test(ultimoAviso()), ultimoAviso());
+ahora += 9 * 3600e3;
+ok('aunque pasen las horas', s.deTurno() === 'Paulina');
+await carlos('oye qué onda con mis pendientes de la semana');
+ok('cuando le hablas en palabras normales, contesta la de turno', ordenQuien === 'Paulina', ordenQuien);
+await carlos('turnos');
+ok('«turnos» las vuelve a rotar', !s.config.turnos.fijo && /Turnos de 8 h/.test(ultimoAviso()), ultimoAviso());
 
 console.log('\n9 · LA REGLA: nada sale sin que Carlos lo apruebe');
 ok(`cada envío a otra persona corresponde a una aprobación (${aOtros().length} envíos, ${aprobaciones} aprobaciones con número)`, aOtros().length <= aprobaciones, { envios: aOtros().length, aprobaciones });

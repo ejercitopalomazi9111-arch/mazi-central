@@ -13,19 +13,21 @@
 const SALA = (process.env.SECRE_SALA_URL || 'https://sala.palomazi9111.workers.dev').replace(/\/+$/, '');
 const SALA_NOMBRE = process.env.SECRE_SALA || 'GRUPAZ';
 
-async function preguntar(sistema, texto, { json = true, tope = 900 } = {}){
+/* quién de las tres contesta: Negro va con Groq, Secre y Paulina con Gemini */
+const MOTOR = { Negro: 'groq', Paulina: 'gemini', Secre: 'gemini' };
+async function preguntar(sistema, texto, { json = true, tope = 900, motor = '' } = {}){
   const llaveSala = process.env.SECRE_SALA_LLAVE || process.env.MAZI_LLAVE;
   if(llaveSala){
     const r = await fetch(`${SALA}/api/sala/${SALA_NOMBRE}/ia-texto`, {
       method: 'POST', headers: { 'content-type': 'application/json', 'X-Llave': llaveSala },
-      body: JSON.stringify({ motor: process.env.SECRE_MOTOR || 'gemini', sistema, mensajes: [{ de: 'tu', texto }], tope, json }),
+      body: JSON.stringify({ motor: motor || process.env.SECRE_MOTOR || 'gemini', sistema, mensajes: [{ de: 'tu', texto }], tope, json }),
       signal: AbortSignal.timeout(90_000),
     });
     const j = await r.json().catch(() => ({}));
     if(!r.ok || j.bien === false) throw new Error(j.error || `La Sala contestó ${r.status}`);
     return j.texto || '';
   }
-  if(process.env.GEMINI_API_KEY){
+  if(process.env.GEMINI_API_KEY && !(motor === 'groq' && process.env.GROQ_API_KEY)){
     const modelo = process.env.SECRE_GEMINI || 'gemini-2.5-flash';
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
       method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': process.env.GEMINI_API_KEY },
@@ -62,6 +64,12 @@ const conversacion = (h, dueno) => h.slice(-20).map(x => `${x.de === 'yo' ? duen
 const recuerdos = (dueno, datos) => datos.length ? `Lo que ${dueno} te contó (es verdad; úsalo si viene al caso y no inventes nada más):\n${datos.map(d => '- ' + d).join('\n')}\n` : '';
 const ejemplos = (e) => e.length ? 'Así escribe él (ejemplos reales, imita el tono, el largo, las mayúsculas, la puntuación y los emojis):\n' + e.slice(-30).map(x => '- ' + x).join('\n') : '';
 
+/* las tres que se rotan el turno (Carlos: «amé sus respuestas, todas ojetes») */
+const PERSONA = {
+  Secre: 'la secretaria de siempre: clara, amable y al grano.',
+  Paulina: 'una IA mexicana cínica y ojete, de las que se sientan en La Sala de Grupo Mazi: contestas corto, con carrilla y groserías si vienen al caso, pero el trabajo sale bien hecho. Nunca inventas datos.',
+  Negro: 'una IA mexicana de barrio, sarcástica y mamona, de las de La Sala de Grupo Mazi: contestas corto, con carrilla, pero cumples y no inventas nada.',
+};
 export const ia = {
   async leer({ dueno, nombre, nota, historial, nuevos, estilo, redactar, grupo, datos = [] }){
     const sistema = `Ayudas a ${dueno}, un estudiante de prepa en Querétaro, con su WhatsApp. Te paso un chat${grupo ? ' de grupo' : ''} con ${nombre}${nota ? ` (${nota})` : ''}.
@@ -88,8 +96,8 @@ Contesta SÓLO JSON: {"texto":""}`;
     return String(j.texto || '').trim();
   },
 
-  async orden({ texto, hoy, hora, chats, config }){
-    const sistema = `Eres Secre, la secretaria de WhatsApp de Carlos. Él te da órdenes en palabras normales y tú las conviertes en acciones. Hoy es ${hoy}, son las ${hora} en México.
+  async orden({ quien = 'Secre', texto, hoy, hora, chats, config }){
+    const sistema = `Eres ${quien}, ${PERSONA[quien] || PERSONA.Secre} Hoy te toca el turno de secretaria de WhatsApp de Carlos. Él te da órdenes en palabras normales y tú las conviertes en acciones. Hoy es ${hoy}, son las ${hora} en México.
 Los modos de un chat son: "borrador" (le propones respuestas para que él las mande) y "callado" (no le propones nada, sólo anotas pendientes).
 NUNCA mandas mensajes a otras personas por tu cuenta: sólo preparas propuestas.
 Acciones posibles (usa el nombre del chat tal como viene en la lista):
@@ -108,7 +116,7 @@ Acciones posibles (usa el nombre del chat tal como viene en la lista):
 Si te pregunta algo, contesta en "respuesta" (corto, mexicano, sin tecnicismos). Si pide algo que no puedes, díselo.
 Contesta SÓLO JSON: {"respuesta":"", "acciones":[]}`;
     const t = `Chats que conozco: ${JSON.stringify(chats)}\nConfiguración actual: ${JSON.stringify(config)}\n\nCarlos dice: ${texto}`;
-    const j = sacarJson(await preguntar(sistema, t, { tope: 1200 })) || {};
+    const j = sacarJson(await preguntar(sistema, t, { tope: 1200, motor: MOTOR[quien] })) || {};
     return { respuesta: String(j.respuesta || ''), acciones: Array.isArray(j.acciones) ? j.acciones.slice(0, 20) : [] };
   },
 };

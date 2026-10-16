@@ -37,6 +37,11 @@ export function configBase(){
     datos: [],                     /* lo que Carlos le cuenta para contestar: { n, texto, hasta? } — «el viernes hay examen de mate a las 8» */
     pausaHasta: 0,
     resumen: '21:30',              /* el resumen de pendientes del día */
+    /* turnos de secretaria (Carlos, 16 de octubre: «que pueda responder
+       cualquiera de los 3, Secre, Paulina o Negro, como si rotaran turnos»).
+       Bloques de `horas` contados desde la medianoche de México. `fijo` = una
+       sola de guardia hasta que se diga otra cosa. */
+    turnos: { activo: true, horas: 8, quienes: ['Secre', 'Paulina', 'Negro'], fijo: '' },
     juntar: 45,                    /* segundos que espera a que la otra persona termine de escribir */
     esperaSiContesto: 15,          /* minutos que Secre se calla en un chat donde Carlos acaba de escribir */
     caducan: 6,                    /* horas que vive una propuesta sin aprobar */
@@ -280,10 +285,24 @@ export class Secre {
   }
   listaPendientes(ps){ return ps.map(p => `${p.n}. ${p.texto}${p.nombre ? ' (' + p.nombre + ')' : ''}`).join('\n'); }
 
-  /* a Carlos, en su chat propio; siempre empieza con 🤖 para no confundirse con él */
+  /* quién está de guardia ahora */
+  deTurno(){
+    const T = Object.assign({ activo: true, horas: 8, quienes: ['Secre', 'Paulina', 'Negro'], fijo: '' }, this.config.turnos || {});
+    if(T.fijo) return T.fijo;
+    if(!T.activo || !T.quienes.length) return 'Secre';
+    const min = aMin(horaMx(this.reloj())), dia = Math.floor(Date.parse(fechaMx(this.reloj()) + 'T00:00:00Z') / 86_400_000);
+    const bloquesPorDia = Math.max(1, Math.round(24 / Math.max(1, T.horas)));
+    /* + dia: que se recorra cada día — con 3 turnos y 3 secretarias, sin eso a
+       la misma hora siempre le tocaría a la misma (Negro siempre de noche) */
+    const bloque = dia * bloquesPorDia + Math.floor(min / (Math.max(1, T.horas) * 60)) + dia;
+    return T.quienes[bloque % T.quienes.length];
+  }
+  /* a Carlos, en su chat propio; siempre empieza con 🤖 para no confundirse con él,
+     y dice quién de las tres está de turno */
   async avisar(texto){
-    this.charlar('secre', texto);
-    const id = await this.transporte.enviar(this.transporte.yo()[0], '🤖 ' + texto);
+    const quien = this.deTurno();
+    this.charlar(quien.toLowerCase(), texto);
+    const id = await this.transporte.enviar(this.transporte.yo()[0], `🤖 ${quien}: ` + texto);
     if(id){ this.estado.enviados.push(id); this.estado.enviados = this.estado.enviados.slice(-500); }
   }
   /* mandar a otra persona: SÓLO desde una orden de Carlos (aprobar una propuesta) */
@@ -356,6 +375,9 @@ export class Secre {
       this.config.pausaHasta = this.reloj() + d; this.guardar();
       return this.avisar(`En pausa hasta las ${horaMx(this.config.pausaHasta)}. No te propongo nada (sí anoto pendientes).`);
     }
+    /* «turno de Paulina» · «que conteste Negro» · «turnos» (vuelven a rotar) */
+    if((m = /^(?:\/?turno de|que (?:conteste|responda|atienda)|guardia)\s+(secre|paulina|negro)$/.exec(s))){ const h = this.aplicar({ accion: 'turnos', fijo: m[1] }); this.guardar(); return this.avisar(h); }
+    if(/^\/?(turnos|que roten|rotar)$/.test(s)){ const h = this.aplicar({ accion: 'turnos', activo: true, fijo: '' }); this.guardar(); return this.avisar(h); }
     if(/^\/?(sigue|reanuda|despierta)$/.test(s)){ this.config.pausaHasta = 0; this.guardar(); return this.avisar('De vuelta.'); }
     if(/^\/?(estado|como vas|cómo vas)$/.test(s)) return this.avisar(this.textoEstado());
     if(/^\/?chats$/.test(s)) return this.avisar(this.textoChats());
@@ -365,7 +387,7 @@ export class Secre {
 
   async ordenLibre(texto){
     let r;
-    try{ r = await this.ia.orden({ texto, ahora: this.reloj(), hoy: fechaMx(this.reloj()), hora: horaMx(this.reloj()), chats: Object.entries(this.config.chats).filter(([, c]) => c.nombre).map(([j, c]) => ({ id: j, nombre: c.nombre, modo: c.modo || '', etiquetas: c.etiquetas || [] })), config: this.resumenConfig() }); }
+    try{ r = await this.ia.orden({ quien: this.deTurno(), texto, ahora: this.reloj(), hoy: fechaMx(this.reloj()), hora: horaMx(this.reloj()), chats: Object.entries(this.config.chats).filter(([, c]) => c.nombre).map(([j, c]) => ({ id: j, nombre: c.nombre, modo: c.modo || '', etiquetas: c.etiquetas || [] })), config: this.resumenConfig() }); }
     catch(e){ return this.avisar('No te entendí (y la IA no contestó). Escribe «ayuda» para ver lo que sé hacer.'); }
     const hechos = [];
     for(const a of (r && r.acciones) || []){ const h = this.aplicar(a); if(h) hechos.push(h); }
@@ -433,6 +455,15 @@ export class Secre {
       case 'hecho': { const p = this.estado.pendientes.find(x => x.n === +a.n && !x.hecho); if(!p) return ''; p.hecho = true; return `Tachado: ${p.texto}`; }
       case 'resumen': { if(aMin(a.hora) == null) return ''; this.config.resumen = a.hora; return `Resumen de pendientes a las ${a.hora}`; }
       case 'porDefecto': { if(!MODOS.includes(a.modo)) return ''; this.config.porDefecto = a.modo; return `Chats sin modo propio: ${a.modo}`; }
+      case 'turnos': {
+        const T = this.config.turnos = Object.assign({ activo: true, horas: 8, quienes: ['Secre', 'Paulina', 'Negro'], fijo: '' }, this.config.turnos || {});
+        const valido = (n) => ['Secre', 'Paulina', 'Negro'].find(x => sinAcentos(x) === sinAcentos(n || '')) || '';
+        if(a.activo !== undefined) T.activo = !!a.activo;
+        if(a.horas !== undefined && +a.horas >= 1 && +a.horas <= 24) T.horas = Math.round(+a.horas);
+        if(Array.isArray(a.quienes)){ const q = a.quienes.map(valido).filter(Boolean); if(q.length) T.quienes = [...new Set(q)]; }
+        if(a.fijo !== undefined) T.fijo = valido(a.fijo);
+        return T.fijo ? `De guardia fija: ${T.fijo}` : T.activo ? `Turnos de ${T.horas} h entre ${T.quienes.join(', ')} · ahorita le toca a ${this.deTurno()}` : 'Sin turnos: sólo Secre';
+      }
       case 'dato': { const d = this.agregarDato(a.texto, a.hasta); return d ? `Lo tengo (dato ${d.n})${d.hasta ? ', hasta el ' + fechaMx(d.hasta - 1) : ''}` : ''; }
       case 'olvidaDato': { const antes = (this.config.datos || []).length; this.config.datos = (this.config.datos || []).filter(d => d.n !== +a.n); return antes === this.config.datos.length ? '' : `Olvidado el dato ${a.n}`; }
       default: return '';
@@ -450,7 +481,7 @@ export class Secre {
     return [`Cuenta: ${this.cuenta}`, c.pausaHasta > this.reloj() ? `⏸ En pausa hasta las ${horaMx(c.pausaHasta)}` : '▶ Activa',
       `${this.estado.propuestas.length} propuesta(s) esperando · ${a} pendiente(s)`,
       `Saludos: ${c.saludos.length ? c.saludos.map(s => `${this.nombreDe(s.chat)} (${s.manana || '—'} / ${s.noche || '—'})`).join(', ') : 'ninguno'}`,
-      `Reglas: ${c.reglas.length}`, `Datos que me contaste: ${this.datosVigentes().length}`].join('\n');
+      `Reglas: ${c.reglas.length}`, `Datos que me contaste: ${this.datosVigentes().length}`, `De turno: ${this.deTurno()}`].join('\n');
   }
   textoChats(){
     const l = Object.entries(this.config.chats).filter(([, c]) => c.nombre).slice(0, 40);

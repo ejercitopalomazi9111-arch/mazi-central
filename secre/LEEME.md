@@ -20,6 +20,7 @@ Propuesta: «sí voy, nomás confirmo la hora y te digo»
 | `3 sí, a las 5` | manda TU texto |
 | `x3` | la tira |
 | `pendientes` · `hecho 2` · `anota comprar pilas` | tus pendientes |
+| `turno de Paulina` · `que conteste Negro` · `turnos` | quién de las tres está de guardia (Secre, Paulina, Negro se rotan cada 8 h y se recorren cada día) |
 | `dato: el viernes hay examen de mate a las 8, temas: derivadas` · `datos` · `olvida 2` | lo que Secre sabe y usa al escribirte las respuestas |
 | `pausa 2h` · `pausa hoy` · `sigue` | la callas un rato |
 | `estado` · `chats` · `ayuda` | qué está haciendo |
