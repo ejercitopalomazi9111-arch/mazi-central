@@ -426,6 +426,8 @@ dependemos.
 
    | un `ctx.waitUntil` dentro de otro trabajo de fondo sigue vivo | en el Durable Object de Cloudflare, el que se pide cuando el primer encargo ya terminó **se pierde**; en las pruebas locales sí corre | Paulina nombraba a Negro y Negro nunca contestaba en la sala real, con 443 pruebas en verde. La cadena de sillas va con `await` dentro del mismo encargo. Y Gemini PIENSA dentro de su tope de respuesta: con 700 a Paulina se le cortaba la frase; va con 2,500 |
 
+   | un simulador de la IA que contesta bien sirve para probar a las dos sillas | contestaba en el formato de Groq (`choices`) y Gemini lee `candidates`: Paulina «contestaba» un error y la prueba de «no se duplica el recordatorio» salía verde **con el filtro quitado** | la mutación lo cazó. Una prueba de dos sillas comprueba primero que **las dos hablaron**; si no, no prueba nada |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---

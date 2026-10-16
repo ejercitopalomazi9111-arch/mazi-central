@@ -1424,6 +1424,13 @@ export class Sala {
       const m = /^\s*⏰\s*([^|]{1,40})\|\s*(.{1,500})$/u.exec(l);
       const cuando = m && cuandoDe(m[1]);
       if(!m || !cuando || (this.programados || []).filter(p => p.de === motorId).length >= 20){ quedan.push(l); continue; }
+      /* La otra silla lee el ⏰ de la primera en el hilo y lo copia: en GRUPAZ
+         Negro repitió el de Paulina y salían dos avisos iguales. Si ya hay uno
+         que dice lo mismo (uno dentro del otro) a menos de 15 min, no se duplica. */
+      const plano = (x) => String(x).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+      const nuevo = plano(m[2]);
+      if((this.programados || []).some(p => Math.abs(p.cuando - cuando) < 15 * 60_000
+           && (plano(p.texto).includes(nuevo) || nuevo.includes(plano(p.texto))))) continue;
       const a = (evento.de && evento.de.id) || null;
       const cita = { id:`p${++this.serie}`, de: motorId, a, texto: m[2].trim(), cuando, proyecto: null, puesto: ahora() };
       this.programados = [...(this.programados || []), cita].sort((x, y) => x.cuando - y.cuando);
@@ -1561,7 +1568,10 @@ export class Sala {
        se queda callada, desde afuera eso es idéntico a que la silla ignore a
        Carlos — y él se queda esperando a alguien que no va a llegar. Se dice
        qué pasó y se dice como `sistema`, que no cuenta como vuelta. */
-    const texto = r.bien ? await this.recordatoriosDe(motorId, r.texto, evento) : '';
+    /* Negro a veces firma su propio mensaje («Negro: ya, aquí…») y la mesa ya
+       dice quién habla: se le quita. */
+    const crudo = r.bien ? String(r.texto).replace(new RegExp('^\\s*\\**' + M.nombre + '\\**\\s*:\\s*', 'i'), '') : '';
+    const texto = r.bien ? await this.recordatoriosDe(motorId, crudo, evento) : '';
     const publicado = await this.publicar(r.bien
       ? { de: this.tarjeta(silla), a: (evento.de && evento.de.id) || null,
           tipo: resumiendo ? 'resumen' : 'mensaje', texto,
