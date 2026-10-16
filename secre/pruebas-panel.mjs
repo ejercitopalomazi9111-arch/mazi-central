@@ -118,6 +118,18 @@ async function probar(tema){
   await ana.locator('[data-guardar]').click();
   await espera(async () => { const c = (await estado()).chats.find(x => x.nombre === 'Ana ' + tema); return c && c.modoAhora === 'callado' && c.nota === 'es mi compañera de mate' && c.etiquetas.join() === 'escuela,amigos'; }, 'cambiar el modo, la nota y los grupos se guarda');
   ok('el chat dice ahora «sólo anoto pendientes»', await espera(async () => /sólo anoto pendientes/.test(await page.locator('#hoja details', { hasText: 'Ana ' + tema }).locator('summary').textContent()), 'resumen del chat'));
+  /* el modo automático también se prende desde aquí, chat por chat */
+  const ana2 = page.locator('#hoja details', { hasText: 'Ana ' + tema });
+  if(!(await ana2.getAttribute('open'))) await ana2.locator('summary').click();
+  await ana2.locator('[data-modo]').selectOption('auto');
+  await ana2.locator('[data-guardar]').click();
+  await espera(async () => ((await estado()).chats.find(x => x.nombre === 'Ana ' + tema) || {}).modoAhora === 'auto', 'elegir «contestarle sola» la pone en automático');
+  ok('y el chat dice «contesto sola»', await espera(async () => /contesto sola/.test(await page.locator('#hoja details', { hasText: 'Ana ' + tema }).locator('summary').textContent()), 'resumen auto'));
+  const ana3 = page.locator('#hoja details', { hasText: 'Ana ' + tema });
+  if(!(await ana3.getAttribute('open'))) await ana3.locator('summary').click();
+  await ana3.locator('[data-modo]').selectOption('callado');
+  await ana3.locator('[data-guardar]').click();
+  await espera(async () => ((await estado()).chats.find(x => x.nombre === 'Ana ' + tema) || {}).modoAhora === 'callado', 'y se regresa');
 
   /* ── saludos y reglas ── */
   await page.click('nav [data-p="ajustes"]');

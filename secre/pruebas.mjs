@@ -33,11 +33,17 @@ const aOtros = () => enviados.filter(e => e.jid !== YO);
 const ultimoAviso = () => (aCarlos().slice(-1)[0] || {}).texto || '';
 
 let iaFalla = false;
-let vioDatos = [], ordenQuien = '';
+let vioDatos = [], ordenQuien = '', vioAuto = false;
 const ia = {
-  async leer({ nuevos, redactar, datos = [] }){
+  async leer({ nuevos, redactar, auto, datos = [] }){
     if(iaFalla) throw new Error('sin internet');
     const t = nuevos.map(x => x.texto).join(' ');
+    vioAuto = !!auto;
+    if(auto){
+      if(/cu[aá]nto|aparta/i.test(t)) return { pendientes: [], respuesta: 'Ya le pasé tu mensaje a Carlos, él te confirma.', motivo: 'decidir el precio', urgente: false, decide: true };
+      if(/^(gracias|ok)$/i.test(t.trim())) return { pendientes: [], respuesta: '', motivo: '', urgente: false };
+      return { pendientes: [], respuesta: 'Hola, sí tenemos. ¿Qué talla buscas?', motivo: '', urgente: false };
+    }
     vioDatos = datos;
     const sabe = datos.find(d => /examen/.test(d));
     if(redactar && /examen/.test(t) && sabe) return { pendientes: [], respuesta: 'según yo: ' + sabe, motivo: '', urgente: false };
@@ -265,8 +271,81 @@ await carlos('quita fijo Tere');
 ahora = Date.UTC(2026, 9, 25, 13, 1); o1 = aOtros().length; await s.tic();
 ok('«quita fijo Tere» lo regresa a proponerse', aOtros().length === o1 && s.estado.propuestas.some(p => p.tipo === 'manana' && p.chat === TERE));
 
-console.log('\n9 · LA REGLA: nada sale sin que Carlos lo apruebe');
-ok(`cada envío a otra persona corresponde a una aprobación (${aOtros().length} envíos, ${aprobaciones} aprobaciones, ${fijosMandados} saludos que dejó fijos)`, aOtros().length <= aprobaciones + fijosMandados, { envios: aOtros().length, aprobaciones, fijosMandados });
+console.log('\n8e · El modo automático: contesta sola donde Carlos lo pidió, y sólo ahí');
+const FIRMA = /^🤖 Asistente de Carlos: /;
+const autorizados = new Set();   /* los chats que Carlos puso en automático, para la regla del final */
+ahora = Date.UTC(2026, 9, 26, 17, 0);   /* 11:00 en México */
+s.estado.propuestas = [];
+const aPepe = () => aOtros().filter(e => e.jid === PEPE);
+await llega(PEPE, 'tienen sudaderas?', { nombre: 'Pepe' }); pasar(70); await s.tic();
+ok('sin prenderlo, nadie recibe nada solo: es propuesta', !aPepe().some(e => FIRMA.test(e.texto)) && s.estado.propuestas.some(p => p.chat === PEPE));
+await carlos(`x${s.estado.propuestas.find(p => p.chat === PEPE).n}`);
+await carlos('automático Pepe'); autorizados.add(PEPE);
+ok('«automático Pepe» lo prende y le explica cómo regresarlo', s.config.chats[PEPE].modo === 'auto' && /manual Pepe/.test(ultimoAviso()), ultimoAviso());
+await llega(PEPE, 'hola tienen sudaderas negras?', { nombre: 'Pepe' }); pasar(70); await s.tic();
+ok('le contesta SOLA, sin esperar a Carlos', FIRMA.test((aPepe().slice(-1)[0] || {}).texto || ''), aPepe().slice(-1));
+ok('firmado como asistente, no como si fuera Carlos', aPepe().slice(-1)[0].texto === '🤖 Asistente de Carlos: Hola, sí tenemos. ¿Qué talla buscas?');
+ok('a la IA le pidió el mensaje para mandar, no una propuesta', vioAuto);
+ok('y a Carlos le avisa qué contestó', /✓ Le contesté sola a Pepe: «Hola, sí tenemos/.test(ultimoAviso()), ultimoAviso());
+const pp0 = aPepe().length;
+await llega(PEPE, 'cuánto cuesta la negra?', { nombre: 'Pepe' }); pasar(70); await s.tic();
+ok('lo que necesita su decisión (precio): le contesta que ya le pasó el mensaje', aPepe().length === pp0 + 1 && /Ya le pasé tu mensaje a Carlos/.test(aPepe().slice(-1)[0].texto));
+ok('y a Carlos se lo deja con ⚠️ y número', /⚠️ necesita tu decisión: «cuánto cuesta la negra\?»/.test(ultimoAviso()) && /decidir el precio/.test(ultimoAviso()), ultimoAviso());
+const nDec = nProp();
+await carlos(`${nDec} la negra está en 450`);
+ok('Carlos contesta con «N su texto» y se lo manda', aPepe().slice(-1)[0].texto === 'la negra está en 450');
+const pp1 = aPepe().length;
+await llega(PEPE, 'gracias', { nombre: 'Pepe' }); pasar(70); await s.tic();
+ok('a un «gracias» no le contesta nada', aPepe().length === pp1);
+await llega(PEPE, '🤖 Asistente de Pepe: Gracias por tu mensaje, en un momento te atiendo.', { nombre: 'Pepe' }); pasar(70); await s.tic();
+ok('si del otro lado contesta OTRO BOT, no le contesta solo (no se enciclan)', aPepe().length === pp1 && /No le contesté sola: parece otro bot/.test(ultimoAviso()), ultimoAviso());
+s.estado.propuestas = [];
+s.estado.autos[PEPE] = [ahora - 50 * 60e3, ahora - 40 * 60e3, ahora - 30 * 60e3, ahora - 20 * 60e3];
+await llega(PEPE, 'oye y en talla M?', { nombre: 'Pepe' }); pasar(70); await s.tic();
+ok('tope: más de 4 en una hora con el mismo chat → se frena y se lo deja a Carlos', aPepe().length === pp1 && /4 veces en la última hora/.test(ultimoAviso()), ultimoAviso());
+s.estado.autos[PEPE] = [];
+await s.alMensaje({ id: 'C' + (sig++), chat: PEPE, de: YO, texto: 'yo le sigo', mio: true, t: ahora });
+pasar(60); await llega(PEPE, 'va, y la gris?', { nombre: 'Pepe' }); pasar(70); await s.tic();
+ok('si Carlos se mete al chat a mano, se calla esos 15 minutos', aPepe().length === pp1, aPepe().slice(-1));
+pasar(20 * 60);
+await carlos('manual Pepe');
+await llega(PEPE, 'y la gris?', { nombre: 'Pepe' }); pasar(70); await s.tic();
+ok('«manual Pepe» lo regresa a propuestas', aPepe().length === pp1 && s.config.chats[PEPE].modo === 'borrador' && /Propuesta:/.test(ultimoAviso()));
+s.estado.propuestas = [];
+/* para todos, pero nunca en grupos */
+await carlos('automático todos');
+ok('«automático todos» prende a todos los que no tengan modo propio', s.config.porDefecto === 'auto' && /menos grupos/.test(ultimoAviso()), ultimoAviso());
+autorizados.add('*');
+await llega(LALO, 'buenas, venden termos?', { nombre: 'Lalo' }); pasar(70); await s.tic();
+ok('a Lalo (sin modo propio) le contesta solo', FIRMA.test((aOtros().filter(e => e.jid === LALO).slice(-1)[0] || {}).texto || ''));
+const g1 = aOtros().length;
+await llega(GRUPO, 'alguien sabe a qué hora es la junta?', { grupo: true, nombre: 'Luis' }); pasar(70); await s.tic();
+ok('en un GRUPO nunca contesta solo, aunque esté en todos', aOtros().length === g1 && !aOtros().some(e => e.jid === GRUPO));
+ok('ni dejándolo en automático a mano', s.aplicar({ accion: 'modo', chat: GRUPO, modo: 'auto' }) === '' && s.modo(GRUPO, '', true) !== 'auto');
+s.config.chats[GRUPO].modo = 'auto'; const g2 = aOtros().length;   /* como si viniera así del panel o de una configuración vieja */
+await llega(GRUPO, 'y entonces qué onda con la junta', { grupo: true, nombre: 'Luis' }); pasar(70); await s.tic();
+ok('aunque el grupo tenga «auto» guardado, tampoco contesta solo', aOtros().length === g2);
+s.config.chats[GRUPO].modo = '';
+ok('Pepe sigue en manual aunque los demás estén en automático', s.modo(PEPE) === 'borrador');
+iaFalla = true; const f0 = aOtros().length;
+await llega(LALO, 'oye?', { nombre: 'Lalo' }); pasar(70); await s.tic(); iaFalla = false;
+ok('si la IA falla, no manda nada solo', aOtros().length === f0);
+await carlos('estado');
+ok('«estado» dice que está en automático', /Automático: le contesto sola a todos/.test(ultimoAviso()), ultimoAviso());
+ahora = Date.UTC(2026, 9, 27, 3, 31); await s.tic();   /* 21:31 */
+ok('en la noche le dice cuántos contestó sola y cuáles esperan su decisión', aCarlos().some(e => /Hoy contesté sola 3 mensaje\(s\): Pepe \(2\), Lalo \(1\)/.test(e.texto) && /Esperan tu decisión: Pepe/.test(e.texto)), aCarlos().slice(-2).map(e => e.texto));
+await carlos('apaga automático');
+ok('«apaga automático» lo apaga para todos', s.config.porDefecto === 'borrador' && !Object.values(s.config.chats).some(c => c.modo === 'auto'), s.config.porDefecto);
+autorizados.clear();
+const l0 = aOtros().length;
+ahora = Date.UTC(2026, 9, 27, 17, 0);
+await llega(LALO, 'sigues ahí?', { nombre: 'Lalo' }); pasar(70); await s.tic();
+ok('y vuelve a ser propuesta', aOtros().length === l0 && /Propuesta:/.test(ultimoAviso()));
+const autosMandados = aOtros().filter(e => FIRMA.test(e.texto));
+ok(`cada mensaje que mandó sola fue a un chat que Carlos puso en automático (${autosMandados.length})`, autosMandados.every(e => [PEPE, LALO].includes(e.jid)) && autosMandados.length === 3, autosMandados.map(e => e.jid));
+
+console.log('\n9 · LA REGLA: nada sale sin que Carlos lo apruebe (o sin que haya prendido el automático en ese chat)');
+ok(`cada envío a otra persona corresponde a una aprobación (${aOtros().length} envíos, ${aprobaciones} aprobaciones, ${fijosMandados} saludos que dejó fijos, ${autosMandados.length} en automático)`, aOtros().length <= aprobaciones + fijosMandados + autosMandados.length, { envios: aOtros().length, aprobaciones, fijosMandados });
 ok('y todos los avisos a Carlos empiezan con 🤖', aCarlos().every(e => e.texto.startsWith('🤖')));
 
 console.log(fallas.length ? `\n✗ ${pasan} pasan · ${fallas.length} fallan` : `\n✓ ${pasan}/${pasan}`);

@@ -71,21 +71,26 @@ const PERSONA = {
   Negro: 'una IA mexicana de barrio, sarcástica y mamona, de las de La Sala de Grupo Mazi: contestas corto, con carrilla, pero cumples y no inventas nada.',
 };
 export const ia = {
-  async leer({ dueno, nombre, nota, historial, nuevos, estilo, redactar, grupo, datos = [] }){
+  async leer({ dueno, nombre, nota, historial, nuevos, estilo, redactar, auto = false, grupo, datos = [] }){
     const sistema = `Ayudas a ${dueno}, un estudiante de prepa en Querétaro, con su WhatsApp. Te paso un chat${grupo ? ' de grupo' : ''} con ${nombre}${nota ? ` (${nota})` : ''}.
 Tu trabajo:
 1) "pendientes": cosas que ${dueno} tiene que HACER por lo que le escribieron (entregar algo, confirmar, pagar, ir a algún lado, contestar una pregunta importante). Frases cortas en infinitivo, con fecha u hora si la hay. Lista vacía si no hay.
-${redactar ? `2) "respuesta": una propuesta de lo que ${dueno} contestaría, escrita como él (español mexicano, informal). ${dueno} la va a revisar antes de mandarla.
+${redactar && auto ? `2) "respuesta": el mensaje que se le manda YA a ${nombre}, SIN que ${dueno} lo revise. Lo escribes tú como asistente de ${dueno} (sale firmado como su asistente, no como él): español mexicano, amable, breve y claro.
+   - Sólo afirmas lo que sale del chat o de "Lo que ${dueno} te contó". NUNCA inventes precios, horas, lugares, existencias, fechas ni compromisos, ni digas que ${dueno} va a hacer algo.
+   - Si piden algo que sólo ${dueno} puede decidir o saber (dinero, un precio que no está en lo que te contó, apartar algo, una cita, un sí o un no, algo personal o delicado), pon "decide": true, en "respuesta" di que ya le pasaste su mensaje a ${dueno} y que él le confirma (sin prometer hora), y en "motivo" qué tiene que decidir él.
+   - Si ya no hace falta contestar (un "ok", un gracias, un sticker, una despedida), deja "respuesta" vacía.
+3) "urgente": true sólo si algo no puede esperar (una emergencia, algo para dentro de una hora).` : ''}
+${redactar && !auto ? `2) "respuesta": una propuesta de lo que ${dueno} contestaría, escrita como él (español mexicano, informal). ${dueno} la va a revisar antes de mandarla.
    - NO inventes datos: si piden una hora, un lugar, dinero o una decisión que no sale del chat, propón algo que gane tiempo ("déjame ver y ahorita te digo") y explica en "motivo" qué tiene que decidir él.
    - Si ya no hace falta contestar (un "ok", un sticker, una despedida), deja "respuesta" vacía.
 3) "urgente": true sólo si algo no puede esperar (una emergencia, algo para dentro de una hora).
 ${ejemplos(estilo)}
    - Si lo que preguntan se contesta con "Lo que ${dueno} te contó", úsalo con sus datos exactos (día, hora, temas, precios).` : ''}
 ${recuerdos(dueno, datos)}
-Contesta SÓLO JSON: {"pendientes":[], "respuesta":"", "motivo":"", "urgente":false}`;
+Contesta SÓLO JSON: {"pendientes":[], "respuesta":"", "motivo":"", "urgente":false${auto ? ', "decide":false' : ''}}`;
     const texto = `Conversación (lo más nuevo al final):\n${conversacion(historial, dueno)}\n\nLo nuevo que no ha contestado:\n${nuevos.map(x => x.texto).join('\n')}`;
     const j = sacarJson(await preguntar(sistema, texto)) || {};
-    return { pendientes: Array.isArray(j.pendientes) ? j.pendientes.map(String).slice(0, 5) : [], respuesta: redactar ? String(j.respuesta || '') : '', motivo: String(j.motivo || ''), urgente: !!j.urgente };
+    return { pendientes: Array.isArray(j.pendientes) ? j.pendientes.map(String).slice(0, 5) : [], respuesta: redactar ? String(j.respuesta || '') : '', motivo: String(j.motivo || ''), urgente: !!j.urgente, decide: !!j.decide };
   },
 
   async saludo({ dueno, nombre, cual, nota, estilo, antes }){
@@ -98,8 +103,8 @@ Contesta SÓLO JSON: {"texto":""}`;
 
   async orden({ quien = 'Secre', texto, hoy, hora, chats, config }){
     const sistema = `Eres ${quien}, ${PERSONA[quien] || PERSONA.Secre} Hoy te toca el turno de secretaria de WhatsApp de Carlos. Él te da órdenes en palabras normales y tú las conviertes en acciones. Hoy es ${hoy}, son las ${hora} en México.
-Los modos de un chat son: "borrador" (le propones respuestas para que él las mande) y "callado" (no le propones nada, sólo anotas pendientes).
-NUNCA mandas mensajes a otras personas por tu cuenta: sólo preparas propuestas.
+Los modos de un chat son: "borrador" (le propones respuestas para que él las mande), "callado" (no le propones nada, sólo anotas pendientes) y "auto" (le contestas tú sola, firmada como su asistente; lo que necesite su decisión se lo dejas a él).
+Fuera de los chats en "auto", NUNCA mandas mensajes a otras personas por tu cuenta. Pon un chat en "auto" SÓLO si Carlos lo pide con claridad («contéstale tú a…», «automático…»), nunca porque se te ocurra. En grupos no hay "auto".
 Acciones posibles (usa el nombre del chat tal como viene en la lista):
 - {"accion":"saludos","chat":"Ana","manana":"07:00","noche":"22:30","variacion":10}  (pon "" para quitar uno de los dos)
 - {"accion":"quitarSaludos","chat":"Ana"}
@@ -110,7 +115,8 @@ Acciones posibles (usa el nombre del chat tal como viene en la lista):
 - {"accion":"quitarRegla","id":"..."}
 - {"accion":"pausa","cuanto":"2h"} · {"accion":"reanudar"}
 - {"accion":"anota","texto":"..."} · {"accion":"hecho","n":3}
-- {"accion":"resumen","hora":"21:30"} · {"accion":"porDefecto","modo":"borrador"}
+- {"accion":"resumen","hora":"21:30"} · {"accion":"porDefecto","modo":"borrador"}  ("auto" = contestar sola a todos los que no tengan modo propio)
+- {"accion":"auto","firma":"Asistente de Carlos","porHora":4,"alDia":20}  (cómo firma y cuántas veces contesta sola por chat)
 - {"accion":"dato","texto":"el viernes 17 hay examen de mate a las 8, temas: derivadas","hasta":"AAAA-MM-DD"}  (algo que te cuenta para usarlo al proponer respuestas; "hasta" = cuando deja de servir, si se deduce)
 - {"accion":"olvidaDato","n":2}
 Si te pregunta algo, contesta en "respuesta" (corto, mexicano, sin tecnicismos). Si pide algo que no puedes, díselo.
