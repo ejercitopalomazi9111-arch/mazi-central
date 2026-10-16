@@ -81,7 +81,7 @@ export function sacarJson(t){
 }
 /* quién dijo qué: lo que contestó la asistente NO es de Carlos (antes salía como suyo
    y la IA se confundía), y la otra persona va con su nombre, no «Él/Ella» */
-const conversacion = (h, dueno, n = 30, nombre = '') => h.slice(-n).map(x => `${x.secre ? 'Tú (su asistente)' : x.de === 'yo' ? dueno : (x.quien || nombre || 'La otra persona')}: ${x.texto}`).join('\n');
+const conversacion = (h, dueno, n = 30, nombre = '') => h.slice(-n).map(x => `${x.elenco ? (x.quien || x.elenco) : x.secre ? 'Tú (su asistente)' : x.de === 'yo' ? dueno : (x.quien || nombre || 'La otra persona')}: ${x.texto}`).join('\n');
 /* lo que Carlos le contó a Secre («el viernes hay examen de mate a las 8»): es lo único que puede afirmar además del chat */
 const recuerdos = (dueno, datos) => datos.length ? `Lo que ${dueno} te contó (es verdad; úsalo si viene al caso y no inventes nada más):\n${datos.map(d => '- ' + d).join('\n')}\n` : '';
 const ejemplos = (e) => e.length ? 'Así escribe él (ejemplos reales, imita el tono, el largo, las mayúsculas, la puntuación y los emojis):\n' + e.slice(-30).map(x => '- ' + x).join('\n') : '';
@@ -111,6 +111,23 @@ Contesta SÓLO JSON: {"pendientes":[], ${marca ? '"lineas":[], ' : ''}"respuesta
   const j = sacarJson(await preguntar(sistema, texto, { tope: 1500 })) || {};
   const lineas = Array.isArray(j.lineas) ? j.lineas.filter(l => l && typeof l.texto === 'string').map(l => ({ tipo: l.tipo === 'hace' ? 'hace' : 'dice', texto: l.texto })).slice(0, 8) : [];
   return { pendientes: Array.isArray(j.pendientes) ? j.pendientes.map(String).slice(0, 3) : [], lineas, respuesta: String(j.respuesta || ''), motivo: String(j.motivo || ''), urgente: !!j.urgente, decide: !!j.decide, sticker: Number.isFinite(+j.sticker) ? +j.sticker : 0 };
+}
+
+/* el elenco del rol: Paulina y Negro juegan SU propio personaje en el grupo,
+   cada una con su IA (Paulina con Gemini, Negro con Groq) */
+async function jugarElenco({ quien, personaje, ficha, nombre, mundo = '', instrucciones = '', comunidad = '', otros = [], historia, nuevos }){
+  const sistema = `Estás en «${nombre}», un grupo de WhatsApp donde juegan rol${comunidad ? ` (de la comunidad «${comunidad}»)` : ''}. Tú juegas a TU personaje, ${personaje}, como una jugadora más del grupo:
+${ficha}
+${mundo ? `El mundo y la historia (es canon: no lo contradigas):\n${mundo}\n` : ''}${instrucciones ? `Instrucciones del grupo (síguelas):\n${instrucciones}\n` : ''}Otros personajes que también juegan y NO son tuyos: ${otros.join(', ') || '(los demás del grupo)'}.
+Tu trabajo: "lineas", la siguiente jugada de ${personaje}, renglón por renglón: [{"tipo":"dice","texto":"lo que dice"},{"tipo":"hace","texto":"lo que hace"}]. NO pongas marca ni «>»: el programa los pone.
+- Juega con la personalidad, los poderes y la historia de tu ficha; reacciona a lo que acaba de pasar y mueve la historia un poquito.
+- Escribe como se juega en ESE grupo: mismo idioma y tono. Corto: de 1 a 4 renglones.
+- NUNCA decidas por los personajes de los demás (tampoco por ${otros.join(' ni por ') || 'los otros'}), ni los mates, ni cierres tramas grandes tú solo. No uses tus poderes para ganar todo: que haya juego.
+- Si a tu personaje no le toca (la escena es de otros, nadie lo involucra, o es plática fuera del rol), deja "lineas" vacía. Mejor callar que meterte en todo.
+Contesta SÓLO JSON: {"lineas":[]}`;
+  const texto = `La historia hasta ahora (lo más nuevo al final):\n${historia}\n\nLo nuevo desde tu última jugada:\n${nuevos}`;
+  const j = sacarJson(await preguntar(sistema, texto, { tope: 1500, motor: MOTOR[quien] })) || {};
+  return { lineas: Array.isArray(j.lineas) ? j.lineas.filter(l => l && typeof l.texto === 'string').map(l => ({ tipo: l.tipo === 'hace' ? 'hace' : 'dice', texto: l.texto })).slice(0, 6) : [] };
 }
 
 /* ── oír y hablar (16 de octubre: «que pueda grabar audios») ──────────────
@@ -162,6 +179,7 @@ async function hablar(texto, voz){
 }
 
 export const ia = {
+  jugarElenco,
   /* una nota de voz → texto */
   async oir({ b64, mime }){ const t = await transcribir(b64, mime); return /^\[no se entiende\]$/i.test(t) ? '' : t; },
   /* un texto → nota de voz (OGG/Opus) */

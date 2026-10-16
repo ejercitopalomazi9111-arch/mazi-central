@@ -75,6 +75,18 @@ Para cuando no puedes tomar el teléfono en el día. En un chat en automático:
   contesta a lo que avisa la otra. Necesita **las dos cuentas vinculadas en la misma Secre**
   (`SECRE_CUENTAS`); con una sola, avisa en tu chat propio como antes. `avisos aquí` lo regresa
   al chat propio, `avisos a la otra` lo vuelve a mandar a la otra cuenta.
+- **El elenco del rol** (16 de octubre: «que en rol puedan participar individualmente pero a la
+  vez Paulina y Negro con sus personajes»). En un grupo de rol, además de tu personaje, juegan
+  **Paulina como Astrael** (control gravitacional, duplicación temporal, visión de futuros; marca
+  `💫⏳-`) y **Negro como Nox Veyr** (sombras y portales; marca `🌑🌀-`). Cada una manda SUS
+  mensajes, con su marca y su propia IA (Astrael con Gemini, Nox con Groq), **aunque tú estés
+  jugando**, y no deciden por ti ni por la otra. Sólo juegan cuando escribe una persona (entre
+  ellas no se encadenan), una vez por minuto como mucho cada una, y se callan si no les toca.
+  - `Paulina y Negro juegan en Taberna` · `Paulina juega en Taberna` · `saca a Negro de Taberna`
+    · `elenco Taberna`. También en la tarjeta del grupo y en «Comunidad de rol» del panel.
+  - `personaje de Paulina: …` pega la ficha completa (se aceptan los `╔══` de WhatsApp) y
+    `marca de Negro: 🌑-` le cambia la marca. En el panel: Ajustes → Los personajes de Paulina y Negro.
+  - Funciona aunque tu personaje no lo juegue Secre: puedes jugar tú y que ellas te acompañen.
 - **Mensajes que salen solos** (16 de octubre: «a un grupo quiero ponerle que pueda enviar un
   mensaje a x hora… qué clase toca en cada hora»): `programa Tareas 7:00 lunes a viernes: 📚
   Ahorita toca Matemáticas`. O en palabras: «en Tareas avisa cada hora qué clase toca: lunes

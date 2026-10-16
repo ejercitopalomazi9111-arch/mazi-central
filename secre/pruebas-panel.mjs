@@ -144,9 +144,14 @@ async function probar(tema){
   await rol.locator('[data-personaje]').fill('Kael, mercenario callado');
   await rol.locator('[data-mundo]').fill('Reino de Valdor. La magia está prohibida.');
   await rol.locator('[data-marca]').fill('🌌⚛️-');
+  /* el elenco: Paulina (Astrael) y Negro (Nox Veyr) juegan también, cada una con su personaje */
+  const etqElenco = async (q) => (await page.locator(`#hoja details[open] [data-elenco="${q}"]`).locator('xpath=..').textContent()) || '';
+  const PP = (await estado()).config.personajes;
+  ok('en la tarjeta del grupo salen Paulina y Negro con el nombre de su personaje', (await etqElenco('Paulina')).includes('Paulina juega como ' + PP.Paulina.nombre) && (await etqElenco('Negro')).includes('Negro juega como ' + PP.Negro.nombre) && /Astrael/.test(PP.Paulina.nombre + (await etqElenco('Paulina'))), [await etqElenco('Paulina'), await etqElenco('Negro')]);
+  await page.locator('#hoja details[open] [data-elenco="Paulina"]').check(); await page.locator('#hoja details[open] [data-elenco="Negro"]').check();
   await foto('3b-rol');
   await rol.locator('[data-guardar]').click();
-  await espera(async () => { const c = (await estado()).chats.find(x => x.nombre === nomRol) || {}; return c.modoAhora === 'auto' && c.rol && c.personaje === 'Kael, mercenario callado' && c.mundo === 'Reino de Valdor. La magia está prohibida.' && c.marca === '🌌⚛️-'; }, 'en un grupo, «seguir la historia» prende el rol con su personaje');
+  await espera(async () => { const c = (await estado()).chats.find(x => x.nombre === nomRol) || {}; return c.modoAhora === 'auto' && c.rol && c.personaje === 'Kael, mercenario callado' && c.mundo === 'Reino de Valdor. La magia está prohibida.' && c.marca === '🌌⚛️-' && (c.elenco || []).join() === 'Paulina,Negro'; }, 'en un grupo, «seguir la historia» prende el rol con su personaje y el elenco');
   ok('y el grupo dice «sigo la historia sola»', await espera(async () => /sigo la historia sola/.test(await page.locator('#hoja details', { hasText: nomRol }).locator('summary').textContent()), 'resumen rol'));
   ok('a un chat de una persona no le ofrece el rol', (await page.locator('#hoja details', { hasText: 'Ana ' + tema }).locator('[data-modo] option[value="rol"]').count()) === 0);
 
@@ -184,6 +189,11 @@ async function probar(tema){
   await espera(async () => { const c = (await estado()).config; return c.avisarA === 'yo' && c.repaso.cada === 2; }, '«Dónde te escribo» y el repaso se guardan desde Ajustes');
   await page.focus('#gAvisos'); await page.selectOption('#gAvisos', 'otra'); await page.click('#bGeneral');
   await espera(async () => (await estado()).config.avisarA === 'otra', 'y se regresa a «desde tu otra cuenta»');
+  /* la ficha de Paulina y Negro, desde Ajustes */
+  await page.locator('#hoja details summary', { hasText: 'Negro ·' }).click();
+  await page.fill('#pnNegro', 'Nox'); await page.fill('#pmNegro', '🌑-');
+  await page.click('[data-guardapers="Negro"]');
+  await espera(async () => { const P = (await estado()).config.personajes.Negro; return P.nombre === 'Nox' && P.marca === '🌑-' && /no proyecta sombra/i.test(P.ficha); }, 'cambiar el nombre y la marca del personaje de Negro desde Ajustes (sin perder su ficha)');
   /* lo que sale solo: un mensaje programado y una publicación del banco, desde el teléfono */
   await page.locator('#hoja details summary', { hasText: 'Nuevo mensaje programado' }).click();
   await page.fill('#pHora', '07:50'); await page.fill('#pTexto', '📚 Ahorita toca Física');

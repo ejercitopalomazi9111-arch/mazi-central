@@ -84,6 +84,14 @@ export function configBase(){
     /* contestar con fotos del banco cuando vengan al caso: de fábrica en chats de
        una persona; cada chat puede decir sí o no (c.fotos) */
     fotos: { responder: true, carpeta: '' },
+    /* el ELENCO del rol (16 de octubre: «que en rol puedan participar individualmente
+       pero a la vez Paulina y Negro con sus personajes»): cada una juega SU personaje,
+       con su marca y su IA, aparte del de Carlos y aunque Carlos esté jugando.
+       En un grupo se prende con c.elenco = ['Paulina','Negro'] (o en su comunidad). */
+    personajes: {
+      Paulina: { nombre: 'Astrael', marca: '💫⏳-', ficha: 'Astrael. Edad: 17 años aparentes. Habilidades y poderes: control gravitacional, duplicación temporal y visión de futuros posibles. Historia principal: una anomalía nacida de la colisión de dos universos. Datos curiosos: recuerda acontecimientos que todavía no han sucedido. Apariencia: cabello azul oscuro, ojos dorados y marcas luminosas que flotan sobre su piel.' },
+      Negro: { nombre: 'Nox Veyr', marca: '🌑🌀-', ficha: 'Nox Veyr. Edad: 2,400 años. Habilidades y poderes: manipulación de sombras y creación de portales dimensionales. Historia principal: un viajero que busca una dimensión que desapareció de la existencia. Datos curiosos: no proyecta sombra. Apariencia: alto, cabello blanco, ojos negros con pupilas violetas y abrigo oscuro.' },
+    },
     /* turnos de secretaria (Carlos, 16 de octubre: «que pueda responder
        cualquiera de los 3, Secre, Paulina o Negro, como si rotaran turnos»).
        Bloques de `horas` contados desde la medianoche de México. `fijo` = una
@@ -216,6 +224,9 @@ export class Secre {
       programadosHoy: {},  /* id → fecha en que ya salió */
       publicadoHoy: {},    /* id → fecha en que ya se publicó */
       publicados: {},      /* id → [fotos ya publicadas] (para no repetir hasta acabarse la carpeta) */
+      colaElenco: {},      /* jid → cuándo le toca jugar al elenco */
+      elencoVisto: {},     /* jid → { Paulina: t, Negro: t } lo último que ya leyó cada una */
+      elencoUltimo: {},    /* jid → { Paulina: t } cuándo jugó por última vez */
       sigN: 1, sigP: 1,
     }, almacen.leer('estado', {}));
     this.ocupados = new Set();
@@ -235,7 +246,7 @@ export class Secre {
       comunidad: com.nombre || '' };
   }
   /* guardar la comunidad desde el panel: sus grupos, cuáles juegan solos y el contexto de todos */
-  ponerComunidad({ id, nombre, grupos = [], activos = [], personaje, mundo, marca, instrucciones }){
+  ponerComunidad({ id, nombre, grupos = [], activos = [], personaje, mundo, marca, instrucciones, elenco }){
     if(!id || !/@g\.us$/.test(id)) return '';
     const cs = this.config.comunidades || (this.config.comunidades = {});
     const com = cs[id] || (cs[id] = {});
@@ -243,6 +254,7 @@ export class Secre {
     if(personaje !== undefined) com.personaje = String(personaje).slice(0, 800);
     if(mundo !== undefined) com.mundo = String(mundo).slice(0, 6000);
     if(marca !== undefined) com.marca = String(marca).trim().slice(0, 30);
+    if(Array.isArray(elenco)) com.elenco = elenco.filter(q => (this.config.personajes || {})[q]);
     if(instrucciones !== undefined) com.instrucciones = String(instrucciones).slice(0, 3000);
     const prender = new Set(activos.map(String));
     let n = 0;
@@ -358,6 +370,13 @@ export class Secre {
     h.push({ de: m.mio ? 'yo' : 'el', quien: m.grupo && !m.mio ? m.nombre || '' : '', texto: m.texto.slice(0, 2000), t: ahora });
     this.estado.historial[m.chat] = h.slice(m.grupo ? -60 : -30);
     if(m.mio && m.grupo && m.sticker && m.sticker.b64) this.guardarSticker(m.chat, m.sticker);
+    /* el elenco juega aparte: también cuando Carlos está jugando (son otros personajes).
+       Espera unos segundos más que Secre, para que primero salga el personaje de Carlos */
+    if(this.elencoDe(m.chat).length){
+      const ce = this.estado.colaElenco || (this.estado.colaElenco = {});
+      const pe = ce[m.chat], de = pe && pe.desde ? pe.desde : ahora;
+      ce[m.chat] = { en: Math.min(ahora + ((this.config.juntar || 6) + 4) * 1000, de + 40_000), desde: de };
+    }
     if(m.mio){
       /* Carlos escribió a mano: su estilo, y Secre se hace a un lado en ese chat */
       this.estado.estilo.push(m.texto.slice(0, 300)); this.estado.estilo = this.estado.estilo.slice(-120);
@@ -381,6 +400,13 @@ export class Secre {
       if(q.en > ahora || this.ocupados.has(jid)) continue;
       this.ocupados.add(jid);
       try{ delete this.estado.cola[jid]; await this.atender(jid, q.grupo); }
+      finally { this.ocupados.delete(jid); }
+    }
+    for(const [jid, q] of Object.entries(this.estado.colaElenco || {})){
+      if(q.en > ahora || this.ocupados.has(jid) || (this.estado.cola[jid] && this.estado.cola[jid].en <= ahora + 1000)) continue;
+      this.ocupados.add(jid);
+      try{ delete this.estado.colaElenco[jid]; await this.jugarElenco(jid); }
+      catch(e){ this.anotar('el elenco falló: ' + e.message); }
       finally { this.ocupados.delete(jid); }
     }
     await this.saludos(ahora);
@@ -477,6 +503,57 @@ export class Secre {
     if(veces.filter(t => ahora - t < HORA).length >= porHora) return `ya contesté ${porHora} veces en la última hora`;
     if(veces.filter(t => fechaMx(t) === fechaMx(ahora)).length >= alDia) return `ya contesté ${alDia} veces hoy`;
     return '';
+  }
+  /* ── el elenco del rol: Paulina y Negro con sus propios personajes ── */
+  elencoDe(jid){
+    const c = this.config.chats[jid] || {}, com = (c.comunidad && (this.config.comunidades || {})[c.comunidad]) || {};
+    const l = Array.isArray(c.elenco) ? c.elenco : (Array.isArray(com.elenco) ? com.elenco : []);
+    return l.filter(q => (this.config.personajes || {})[q]);
+  }
+  async jugarElenco(jid){
+    const quienes = this.elencoDe(jid);
+    if(!quienes.length || !this.ia.jugarElenco) return;
+    if(this.config.pausaHasta > this.reloj()) return;
+    const c = this.chat(jid), R = this.rolDe(jid), P = this.config.personajes || {};
+    const visto = (this.estado.elencoVisto[jid] || (this.estado.elencoVisto[jid] = {}));
+    const ultimo = (this.estado.elencoUltimo || (this.estado.elencoUltimo = {}))[jid] || (this.estado.elencoUltimo[jid] = {});
+    /* el orden cambia cada vez: que no conteste siempre la misma primero */
+    const orden = quienes.slice().sort(() => this.azar() - 0.5);
+    for(const quien of orden){
+      const ficha = P[quien], ahora = this.reloj();
+      const h = this.estado.historial[jid] || [];
+      const nuevos = h.filter(x => x.t > (visto[quien] || 0) && x.elenco !== quien);
+      if(!nuevos.length) continue;
+      visto[quien] = h[h.length - 1].t;
+      /* sólo juega si escribió una PERSONA (o un bot del juego): entre las dos IAs no se encadenan */
+      if(!nuevos.some(x => x.de === 'el' || (x.de === 'yo' && !x.secre))) continue;
+      if(ahora - (ultimo[quien] || 0) < 60_000) continue;          /* una jugada por minuto cada una */
+      const freno = this.frenoAuto(jid, nuevos, true);
+      if(freno){ this.bitacora(jid, this.nombreDe(jid), nuevos, 'freno', '', `${ficha.nombre} no jugó: ${freno}`); continue; }
+      const quienEs = (x) => x.elenco ? (P[x.elenco] || {}).nombre || x.elenco : x.de === 'yo' ? `${this.config.nombre}${R.personaje ? ` (su personaje: ${R.personaje.split(/[,.]/)[0]})` : ''}` : (x.quien || 'Alguien');
+      let r;
+      try{
+        r = await this.ia.jugarElenco({ quien, personaje: ficha.nombre, ficha: ficha.ficha, nombre: this.nombreDe(jid), mundo: R.mundo, instrucciones: R.instrucciones, comunidad: R.comunidad,
+          otros: quienes.filter(q => q !== quien).map(q => P[q].nombre).concat(R.personaje ? [`${this.config.nombre} (${R.personaje.split(/[,.]/)[0]})`] : [this.config.nombre]),
+          historia: h.slice(-45).map(x => `${quienEs(x)}: ${x.texto}`).join('\n'), nuevos: nuevos.map(x => `${quienEs(x)}: ${x.texto}`).join('\n') });
+      }catch(e){ this.anotar(`${ficha.nombre} (${quien}) no pudo jugar: ${e.message}`); continue; }
+      /* si la IA le pone a su línea la marca de otro personaje (el de Carlos o la de la otra), se la quita */
+      const ajenas = [R.marca, ...quienes.filter(q => q !== quien).map(q => P[q].marca)].filter(Boolean);
+      const limpias = ((r && r.lineas) || []).map(l => { let t = String(l.texto || '').trim(); for(const mk of ajenas) if(t.startsWith(mk)) t = t.slice(mk.length).trim(); return { ...l, texto: t }; });
+      const texto = this.formatoRol({ marca: ficha.marca || '' }, { ...(r || {}), lineas: limpias });
+      if(!texto){ continue; }
+      await this.mandar(jid, texto);
+      const ult = h[h.length - 1]; if(ult && ult.secre && ult.texto === texto){ ult.elenco = quien; ult.quien = ficha.nombre; }
+      visto[quien] = this.reloj();
+      ultimo[quien] = this.reloj();
+      this.estado.autos[jid] = [...(this.estado.autos[jid] || []).filter(t => ahora - t < 24 * HORA), ahora];
+      this.bitacora(jid, this.nombreDe(jid), nuevos, 'contesto', texto, `${quien} jugó con ${ficha.nombre}`);
+    }
+    this.guardar();
+  }
+  textoElenco(jid){
+    const P = this.config.personajes || {}, l = this.elencoDe(jid);
+    return l.length ? `En ${this.nombreDe(jid)} juegan también: ` + l.map(q => `${q} como ${P[q].nombre} (${P[q].marca})`).join(' y ') + '.' : `En ${this.nombreDe(jid)} no juega nadie del elenco.`;
   }
   /* ── el formato del rol: «🌌⚛️- lo que dice» y «> lo que hace» ── */
   formatoRol(c, r){
@@ -926,6 +1003,35 @@ export class Secre {
       this.estado.propuestas = this.estado.propuestas.filter(x => x.n !== p.n); this.guardar();
       return this.avisar(`🎤 Listo, a ${p.nombre} en audio: «${final}»`);
     }
+    /* ── el elenco del rol ──
+       «Paulina y Negro juegan en Taberna» · «Paulina juega en Taberna» · «elenco Taberna: Negro»
+       · «saca a Negro de Taberna» · «elenco Taberna» · «personaje de Paulina: Nombre: …» · «marca de Negro: 🌑-» */
+    if((m = /^\/?(paulina|negro)(?: y (paulina|negro))? (?:juegan?|participan?|entran?) (?:tambien )?(?:en|al|a) (.+)$/.exec(s)) || (m = /^\/?elenco (?!de )(.+?):\s*(paulina|negro)(?:,? y |, | )?(paulina|negro)?$/.exec(s)) && (m = [m[0], m[2], m[3], m[1]])){
+      const j = this.buscarChat(m[3]); if(!j) return this.avisar(`No tengo a «${m[3]}» en tus chats.`);
+      const quienes = [...new Set([m[1], m[2]].filter(Boolean).map(q => q[0].toUpperCase() + q.slice(1)))];
+      const c = this.chat(j); c.elenco = [...new Set([...(c.elenco || []), ...quienes])];
+      this.guardar();
+      return this.avisar(this.textoElenco(j) + (c.rol ? '' : `\n(Tu personaje no lo juego ahí: para eso «rol ${this.nombreDe(j)}». Ellas juegan igual.)`));
+    }
+    if((m = /^\/?(?:saca|quita) a (paulina|negro)(?: y (?:a )?(paulina|negro))? (?:de|del) (.+)$/.exec(s))){
+      const j = this.buscarChat(m[3]); if(!j) return this.avisar(`No tengo a «${m[3]}» en tus chats.`);
+      const fuera = [m[1], m[2]].filter(Boolean).map(q => q[0].toUpperCase() + q.slice(1));
+      const c = this.chat(j); c.elenco = this.elencoDe(j).filter(q => !fuera.includes(q));
+      this.guardar(); return this.avisar(this.textoElenco(j));
+    }
+    if((m = /^\/?elenco (?:de |en )?(.+)$/.exec(s)) && this.buscarChat(m[1])) return this.avisar(this.textoElenco(this.buscarChat(m[1])));
+    if((m = /^\/?(?:personaje|ficha) de (paulina|negro)\s*:\s*([\s\S]+)$/i.exec(t))){
+      const q = m[1][0].toUpperCase() + m[1].slice(1).toLowerCase(), P = this.config.personajes || (this.config.personajes = {});
+      const ficha = m[2].replace(/[╔═╗╚╝║]+/g, ' ').replace(/\bolvidar\s*$/i, '').replace(/\s+/g, ' ').trim().slice(0, 1500);
+      const nom = (/nombre\s*:\s*([^.\n]+?)(?:\s+edad\s*:|\.|$)/i.exec(ficha) || [])[1];
+      P[q] = { ...(P[q] || {}), ficha, ...(nom ? { nombre: nom.trim().slice(0, 40) } : {}) };
+      this.guardar(); return this.avisar(`Listo: ${q} juega como ${P[q].nombre || q}.`);
+    }
+    if((m = /^\/?marca de (paulina|negro)\s*:\s*(.+)$/i.exec(t))){
+      const q = m[1][0].toUpperCase() + m[1].slice(1).toLowerCase(), P = this.config.personajes || (this.config.personajes = {});
+      P[q] = { ...(P[q] || {}), marca: m[2].trim().slice(0, 30) }; this.guardar();
+      return this.avisar(`Lo que dice ${P[q].nombre || q} sale como «${P[q].marca} …».`);
+    }
     /* ── programados y publicaciones ── */
     if(/^\/?(programados|programadas|publicaciones|que tienes programado)$/.test(s)) return this.avisar(this.textoProgramados());
     if((m = /^\/?(?:quita|borra|elimina) (?:el )?programad[oa] (\d+)$/.exec(s))){
@@ -1249,6 +1355,17 @@ export class Secre {
       case 'reanudar': this.config.pausaHasta = 0; return 'De vuelta';
       case 'anota': { this.agregarPendiente('', '', a.texto); return a.texto ? `Anotado: ${a.texto}` : ''; }
       case 'hecho': { const p = this.estado.pendientes.find(x => x.n === +a.n && !x.hecho); if(!p) return ''; p.hecho = true; return `Tachado: ${p.texto}`; }
+      case 'elenco': {
+        const j = chatDe(a.chat); if(!j) return '';
+        this.chat(j).elenco = (Array.isArray(a.quienes) ? a.quienes : []).filter(q => (this.config.personajes || {})[q]);
+        return this.textoElenco(j);
+      }
+      case 'personaje': {
+        const q = a.quien, P = this.config.personajes || (this.config.personajes = {});
+        if(!['Paulina', 'Negro'].includes(q)) return '';
+        P[q] = { ...(P[q] || {}), ...(a.nombre !== undefined ? { nombre: String(a.nombre).slice(0, 40) } : {}), ...(a.marca !== undefined ? { marca: String(a.marca).slice(0, 30) } : {}), ...(a.ficha !== undefined ? { ficha: String(a.ficha).slice(0, 1500) } : {}) };
+        return `${q} juega como ${P[q].nombre}`;
+      }
       case 'programar': {
         const j = chatDe(a.chat); const hora = horaDe(a.hora);
         if(!j || !hora || !(a.texto || a.tema)) return '';
@@ -1351,6 +1468,7 @@ export const AYUDA = `Lo que sé hacer (escríbelo aquí, en tu chat):
 · «audio Ana: ya voy» le mando una nota de voz · «3 audio» manda la propuesta 3 en audio · «pendientes en audio» te lo digo en voz
 · me puedes mandar notas de voz: las oigo y las hago orden
 · «llámame si es urgente» te llamo por teléfono cuando algo urja · «llámame» prueba · «no me llames»
+· «Paulina y Negro juegan en Taberna» (Astrael y Nox Veyr, cada una con su personaje) · «saca a Negro de Taberna» · «elenco Taberna» · «personaje de Paulina: …» · «marca de Negro: 🌑-»
 · «programa Tareas 7:00 lunes a viernes: toca Matemáticas» sale solo a esa hora · «programados» · «quita programado 2»
   (o en palabras: «en Tareas avisa cada hora qué clase toca: lunes 7:00 Mate, 7:50 Física…»)
 · «fotos de sudaderas» te las mando · «mándale a Ana fotos de termos» · «publica en All's 3 fotos de la carpeta All's fashion diario a las 10» · «publica ahora en All's»
