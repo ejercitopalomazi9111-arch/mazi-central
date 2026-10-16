@@ -112,6 +112,8 @@ async function probar(tema){
   const nDatos = (await estado()).config.datos.length;
   await page.locator('#hoja .tarjeta', { hasText: 'examen de mate a las 8 ' + tema }).locator('[data-olvida]').click();
   ok('«Olvidar» lo quita', await espera(async () => (await estado()).config.datos.length === nDatos - 1, '«Olvidar» lo quita'));
+  /* que la pantalla termine de repintarse antes de seguir escribiendo (si no, el repintado borra lo escrito) */
+  ok('y se va de la lista', await espera(async () => !(await page.textContent('#hoja')).includes('examen de mate a las 8 ' + tema), 'y se va de la lista'));
   await page.selectOption('#sChat', { label: 'Ana ' + tema });
   await page.fill('#sM', '06:45'); await page.fill('#sN', '23:10'); await page.click('#bSaludo');
   await espera(async () => (await estado()).config.saludos.some(s => s.manana === '06:45' && s.noche === '23:10'), 'agregar saludos los guarda');

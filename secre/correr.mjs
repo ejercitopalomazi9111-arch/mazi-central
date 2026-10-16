@@ -25,7 +25,8 @@ const { ia } = await import(FALSO ? './falso.mjs' : './ia.mjs');
 
 const RAIZ = path.dirname(new URL(import.meta.url).pathname);
 const DATOS = process.env.SECRE_DATOS || path.join(RAIZ, 'datos');
-const PUERTO = Number(process.env.SECRE_PUERTO) || 8790;
+/* en un servidor (Railway y similares) el puerto lo pone el servidor en PORT */
+const PUERTO = Number(process.env.SECRE_PUERTO) || Number(process.env.PORT) || 8790;
 let CLAVE = process.env.SECRE_CLAVE || '';
 if(!CLAVE){ CLAVE = crypto.randomBytes(9).toString('base64url'); console.log(`\n🔑 No pusiste SECRE_CLAVE. La contraseña del panel por esta vez es: ${CLAVE}\n`); }
 
@@ -90,14 +91,21 @@ http.createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-frame-options': 'DENY', 'referrer-policy': 'no-referrer' });
     return res.end(fs.readFileSync(path.join(RAIZ, 'panel.html')));
   }
+  /* para que el servidor sepa que sigue vivo; no dice nada de nadie */
+  if(url.pathname === '/salud') return json(res, 200, { bien: true });
   if(url.pathname === '/api/entrar' && req.method === 'POST'){
-    const ip = req.socket.remoteAddress || '?', n = (intentos.get(ip) || 0) + 1; intentos.set(ip, n);
-    if(n > 8) return json(res, 429, { error: 'Demasiados intentos. Espera un rato.' });
+    /* detrás del proxy del servidor, la IP de verdad viene en x-forwarded-for; 8 intentos fallidos cada 15 minutos */
+    const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '?').split(',')[0].trim();
+    const ahora = Date.now(), prev = intentos.get(ip);
+    const n = (prev && ahora - prev.desde < 15 * 60_000 ? prev.n : 0) + 1;
+    intentos.set(ip, { n, desde: prev && n > 1 ? prev.desde : ahora });
+    if(n > 8) return json(res, 429, { error: 'Demasiados intentos. Espera 15 minutos.' });
     const b = await cuerpo(req);
     if(!igual(b.clave || '', CLAVE)) return json(res, 401, { error: 'Esa no es la contraseña.' });
     intentos.delete(ip);
     const tok = crypto.randomBytes(24).toString('base64url'); sesiones.add(tok);
-    res.writeHead(200, { 'content-type': 'application/json', 'set-cookie': `secre=${tok}; HttpOnly; SameSite=Strict; Path=/; Max-Age=2592000` });
+    const segura = req.headers['x-forwarded-proto'] === 'https' ? '; Secure' : '';
+    res.writeHead(200, { 'content-type': 'application/json', 'set-cookie': `secre=${tok}; HttpOnly; SameSite=Strict; Path=/; Max-Age=2592000${segura}` });
     return res.end('{"bien":true}');
   }
   if(!url.pathname.startsWith('/api/')) return json(res, 404, { error: 'No existe.' });
