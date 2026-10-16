@@ -171,10 +171,12 @@ http.createServer(async (req, res) => {
   if(que === 'chat'){
     const c = s.config.chats[b.id]; if(!c) return json(res, 404, { error: 'No conozco ese chat.' });
     if(b.modo !== undefined){
-      if(!['', 'borrador', 'callado', 'auto'].includes(b.modo)) return json(res, 400, { error: 'Modo raro.' });
-      if(b.modo === 'auto' && c.grupo) return json(res, 400, { error: 'En grupos no contesto sola.' });
-      c.modo = b.modo;
+      if(!['', 'borrador', 'callado', 'auto', 'rol'].includes(b.modo)) return json(res, 400, { error: 'Modo raro.' });
+      if(b.modo === 'rol' && !c.grupo) return json(res, 400, { error: 'El rol es para grupos.' });
+      /* un grupo en automático lo prende Carlos aquí, con su nombre a la vista: eso es autorizarlo */
+      c.rol = b.modo === 'rol'; c.modo = b.modo === 'rol' ? 'auto' : b.modo;
     }
+    if(b.personaje !== undefined) c.personaje = String(b.personaje).slice(0, 800);
     if(b.nota !== undefined) c.nota = String(b.nota).slice(0, 500);
     if(b.etiquetas !== undefined) c.etiquetas = String(b.etiquetas).split(',').map(x => x.trim().toLowerCase()).filter(Boolean).slice(0, 10);
     s.guardar(); return json(res, 200, { bien: true });

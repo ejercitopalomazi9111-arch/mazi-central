@@ -25,7 +25,10 @@ Propuesta: «sí voy, nomás confirmo la hora y te digo»
 | `pendientes` · `hecho 2` · `anota comprar pilas` | tus pendientes |
 | `turno de Paulina` · `que conteste Negro` · `turnos` | quién de las tres está de guardia (Secre, Paulina, Negro se rotan cada 8 h y se recorren cada día) |
 | `dato: el viernes hay examen de mate a las 8, temas: derivadas` · `datos` · `olvida 2` | lo que Secre sabe y usa al escribirte las respuestas |
-| `automático Ana` · `automático todos` | le contesta **sola**, firmada «🤖 Asistente de Carlos:». Nunca en grupos |
+| `automático Ana` · `automático todos` | le contesta **sola**, firmada «🤖 Asistente de Carlos:». «Todos» no incluye grupos |
+| `automático Equipo` (un grupo, por su nombre) | en ese grupo contesta sola **sólo cuando te hablan o te preguntan a ti** |
+| `rol Taberna: Kael, mercenario callado` | en ese grupo **sigue la historia de rol** con tu personaje mientras no estás · `personaje Taberna: …` lo cambia |
+| `sin firma Taberna` · `firma Taberna: 🎭 Kael` · `firma normal Taberna` | cómo firma en ese chat (de fábrica: 🤖) |
 | `manual Ana` · `apaga automático` · `automático` | lo regresa a propuestas · lo apaga para todos · dice con quién está prendido |
 | `pausa 2h` · `pausa hoy` · `sigue` | la callas un rato |
 | `estado` · `chats` · `ayuda` | qué está haciendo |
@@ -45,8 +48,16 @@ Para cuando no puedes tomar el teléfono en el día. En un chat en automático:
   `3 la negra está en 450` y se lo manda.
 - **Te avisa** en tu chat cada cosa que contestó, y en la noche cuántas fueron.
 - **Se frena sola:** máximo 4 por hora y 20 al día con cada quien, no le contesta a otro bot
-  (mensajes que empiezan con 🤖), nunca en grupos, y se calla 15 min si tú entras al chat.
+  (mensajes que empiezan con 🤖), y se calla 15 min si tú entras al chat.
   Si un freno salta, ese mensaje vuelve a ser propuesta.
+- **Grupos, sólo los que tú nombres.** Ni `automático todos` ni una regla los prenden. Ahí el
+  tope es de 30 por hora y 300 al día; si un grupo no para de escribir, a los 2 minutos contesta
+  igual juntando lo de todos (sabe quién dijo qué). Si topa, se calla y te avisa una sola vez.
+- **El rol** no te avisa cada jugada (serían cientos): van en el resumen de la noche. Nunca
+  decide por los personajes de otros ni cierra tramas solo. Si alguien te pide algo de la vida
+  real (fuera del rol), contesta «ahorita no está» y te lo deja con ⚠️ y número.
+- **Tus dos cuentas** tienen sus propios interruptores: lo que prendas en una no se prende en la
+  otra. Se escribe en el «Mensaje a ti mismo» de cada una, o en el panel eligiendo la cuenta arriba.
 
 Lo mismo se hace con botones en **el panel** (una página para el teléfono, con contraseña):
 *Por mandar*, *Pendientes*, *Chats*, *Saludos* y *Platica*.

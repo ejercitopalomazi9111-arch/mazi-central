@@ -278,17 +278,21 @@ function hojaPendientes(){
 }
 
 /* ══ Chats ═══════════════════════════════════════════════════════════════ */
-const NOMBRE_MODO = { borrador: 'te propongo respuestas', callado: 'sólo anoto pendientes', auto: 'contesto sola' };
+const NOMBRE_MODO = { borrador: 'te propongo respuestas', callado: 'sólo anoto pendientes', auto: 'contesto sola', rol: 'sigo la historia sola' };
+const modoDe = (c) => c.modo === 'auto' && c.rol ? 'rol' : c.modo;
 function hojaChats(){
   const cs = datos.chats;
   $('#hoja').innerHTML = `<h2>Chats</h2><p class="meta">Aparecen cuando te escriben. Toca uno para decirle a Secre cómo tratarlo.</p>` + (cs.length ? cs.map(c => `
-    <details class="tarjeta" data-id="${esc(c.id)}"><summary><span class="quien">${c.grupo ? '👥 ' : ''}${esc(c.nombre)}</span><span class="modo">${NOMBRE_MODO[c.modoAhora] || c.modoAhora}</span></summary>
+    <details class="tarjeta" data-id="${esc(c.id)}"><summary><span class="quien">${c.grupo ? '👥 ' : ''}${esc(c.nombre)}</span><span class="modo">${NOMBRE_MODO[c.modoAhora === 'auto' && c.rol ? 'rol' : c.modoAhora] || c.modoAhora}</span></summary>
       <label class="etq">Qué hace Secre con este chat</label>
       <select class="campo" data-modo>
         <option value="" ${!c.modo ? 'selected' : ''}>Lo normal (${NOMBRE_MODO[c.grupo ? datos.config.grupos : datos.config.porDefecto]})</option>
         <option value="borrador" ${c.modo === 'borrador' ? 'selected' : ''}>Proponerme respuestas</option>
         <option value="callado" ${c.modo === 'callado' ? 'selected' : ''}>Sólo anotar pendientes</option>
-        ${c.grupo ? '' : `<option value="auto" ${c.modo === 'auto' ? 'selected' : ''}>Contestarle sola, como mi asistente</option>`}</select>
+        <option value="auto" ${modoDe(c) === 'auto' ? 'selected' : ''}>${c.grupo ? 'Contestar sola cuando me hablen' : 'Contestarle sola, como mi asistente'}</option>
+        ${c.grupo ? `<option value="rol" ${modoDe(c) === 'rol' ? 'selected' : ''}>Seguir la historia sola (rol)</option>` : ''}</select>
+      ${c.grupo ? `<label class="etq">Tu personaje (para el rol)</label>
+      <textarea class="campo" data-personaje placeholder="ej. Kael, mercenario callado que odia a los magos">${esc(c.personaje || '')}</textarea>` : ''}
       <label class="etq">Quién es (para que las respuestas le hablen bien)</label>
       <textarea class="campo" data-nota placeholder="ej. es mi novia, háblale bonito · es el profe de mate, de usted">${esc(c.nota || '')}</textarea>
       <label class="etq">Grupos (separados por coma)</label>
@@ -297,7 +301,7 @@ function hojaChats(){
     </details>`).join('') : '<p class="vacio">Todavía no te ha escrito nadie desde que prendiste a Secre.</p>');
   document.querySelectorAll('#hoja details[data-id]').forEach(el => {
     $('[data-guardar]', el).onclick = async () => {
-      try{ await api(actual + '/chat', { id: el.dataset.id, modo: $('[data-modo]', el).value, nota: $('[data-nota]', el).value, etiquetas: $('[data-etq]', el).value }); el.open = false; avisito('Guardado'); await cargar(true); }
+      try{ await api(actual + '/chat', { id: el.dataset.id, modo: $('[data-modo]', el).value, nota: $('[data-nota]', el).value, etiquetas: $('[data-etq]', el).value, ...($('[data-personaje]', el) ? { personaje: $('[data-personaje]', el).value } : {}) }); el.open = false; avisito('Guardado'); await cargar(true); }
       catch(err){ avisito(err.message); }
     };
   });
