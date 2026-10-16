@@ -147,7 +147,7 @@ const PESTANAS = [
   ['propuestas', '✉️', 'Por mandar'],
   ['pendientes', '✅', 'Pendientes'],
   ['chats', '👥', 'Chats'],
-  ['ajustes', '⏰', 'Saludos'],
+  ['ajustes', '⚙️', 'Ajustes'],
   ['platica', '💬', 'Platica'],
 ];
 function pintarArmazon(){
@@ -284,7 +284,16 @@ function textoRegla(r){
 }
 function hojaAjustes(){
   const c = datos.config;
-  $('#hoja').innerHTML = `<h2>Buenos días y buenas noches</h2>
+  const datosV = (c.datos || []).filter(d => !d.hasta || d.hasta > Date.now());
+  $('#hoja').innerHTML = `<h2>Lo que Secre sabe</h2>
+    <p class="meta">Lo que le cuentes lo usa al escribirte las respuestas: exámenes, horarios, precios, lo que sea.</p>
+    ${datosV.map(d => `<div class="tarjeta fila" style="flex-wrap:nowrap"><span style="flex:1">${esc(d.texto)}${d.hasta ? `<br><span class="meta">hasta el ${dia(d.hasta - 1)}</span>` : ''}</span><button class="boton peligro" data-olvida="${d.n}">Olvidar</button></div>`).join('') || '<p class="meta">Todavía no le has contado nada.</p>'}
+    <div class="tarjeta"><label class="etq" for="dTexto">Cuéntale algo</label>
+      <textarea class="campo" id="dTexto" placeholder="ej. el viernes 17 hay examen de mate a las 8, temas: derivadas"></textarea>
+      <label class="etq" for="dHasta">Deja de servir el día (vacío = siempre)</label><input class="campo" id="dHasta" type="date">
+      <div class="acciones"><button class="boton principal" id="bDato">Guardar</button></div></div>
+
+    <h2>Buenos días y buenas noches</h2>
     <p class="meta">A la hora que pongas, Secre te deja el saludo listo en «Por mandar». Tú lo mandas con un toque.</p>
     ${c.saludos.map((s, i) => `<div class="tarjeta" data-i="${i}"><div class="fila"><span class="quien">${esc(nombreDe(s.chat))}</span></div>
       <div class="dos"><div><label class="etq">Buenos días</label><input class="campo" type="time" data-m value="${esc(s.manana)}"></div>
@@ -314,6 +323,11 @@ function hojaAjustes(){
       <label class="etq" for="gRes">Resumen de pendientes del día, a las</label><input class="campo" id="gRes" type="time" value="${esc(c.resumen)}">
       <div class="acciones"><button class="boton principal" id="bGeneral">Guardar</button></div></div>`;
 
+  $('#bDato').onclick = async () => {
+    const t = $('#dTexto').value.trim(); if(!t) return avisito('Escribe qué quieres que sepa');
+    try{ const r = await accion({ accion: 'dato', texto: t, hasta: $('#dHasta').value }); avisito(r.hecho); await cargar(true); }catch(e){ avisito('Eso ya lo sabía'); }
+  };
+  document.querySelectorAll('#hoja [data-olvida]').forEach(b => b.onclick = async () => { try{ await accion({ accion: 'olvidaDato', n: +b.dataset.olvida }); avisito('Olvidado'); await cargar(true); }catch(e){ avisito(e.message); } });
   document.querySelectorAll('#hoja [data-i]').forEach(el => {
     const s = c.saludos[+el.dataset.i];
     $('[data-g]', el).onclick = async () => { try{ const r = await accion({ accion: 'saludos', chat: s.chat, manana: $('[data-m]', el).value, noche: $('[data-n]', el).value, variacion: +$('[data-v]', el).value }); avisito(r.hecho); await cargar(true); }catch(e){ avisito(e.message); } };

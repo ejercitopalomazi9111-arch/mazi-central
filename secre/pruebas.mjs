@@ -16,7 +16,7 @@ import { Secre, horaMx, fechaMx, entreHoras, duracion } from './nucleo.mjs';
 const fallas = []; let pasan = 0;
 const ok = (que, si, extra) => { if(si){ pasan++; console.log('  ✓', que); } else { fallas.push(que); console.log('  ✗', que, extra !== undefined ? '· ' + JSON.stringify(extra) : ''); } };
 
-const YO = '5214420000000@s.whatsapp.net', ANA = '5214421111111@s.whatsapp.net', BETO = '5214422222222@s.whatsapp.net', GRUPO = '120363000000@g.us';
+const YO = '5214420000000@s.whatsapp.net', ANA = '5214421111111@s.whatsapp.net', BETO = '5214422222222@s.whatsapp.net', GRUPO = '120363000000@g.us', LALO = '5214423333333@s.whatsapp.net';
 /* 16 de octubre de 2026, 06:50 en México (12:50 UTC) */
 let ahora = Date.UTC(2026, 9, 16, 12, 50);
 const reloj = () => ahora;
@@ -33,10 +33,14 @@ const aOtros = () => enviados.filter(e => e.jid !== YO);
 const ultimoAviso = () => (aCarlos().slice(-1)[0] || {}).texto || '';
 
 let iaFalla = false;
+let vioDatos = [];
 const ia = {
-  async leer({ nuevos, redactar }){
+  async leer({ nuevos, redactar, datos = [] }){
     if(iaFalla) throw new Error('sin internet');
     const t = nuevos.map(x => x.texto).join(' ');
+    vioDatos = datos;
+    const sabe = datos.find(d => /examen/.test(d));
+    if(redactar && /examen/.test(t) && sabe) return { pendientes: [], respuesta: 'según yo: ' + sabe, motivo: '', urgente: false };
     return { pendientes: /mañana|entregar/i.test(t) ? ['Llevar el proyecto mañana'] : [], respuesta: redactar ? `va, ahorita te digo (${nuevos.length})` : '', motivo: /hora/.test(t) ? 'tienes que decidir la hora' : '', urgente: /urgente/i.test(t) };
   },
   async saludo({ cual, nombre }){ return cual === 'manana' ? `buen día ${nombre} ☀️` : `descansa ${nombre} 🌙`; },
@@ -183,6 +187,21 @@ ok('aprobar una propuesta vacía no manda un mensaje vacío', aOtros().length ==
 const o0 = aOtros().length;
 await carlos('mándale un mensaje a mi mamá diciendo que ya llegué');
 ok('aunque se lo pidan en palabras, NO manda nada por su cuenta', aOtros().length === o0);
+
+console.log('\n8b · Lo que Carlos le cuenta, y lo usa');
+await carlos('dato: el viernes 17 hay examen de mate a las 8, temas: derivadas');
+ok('«dato: …» lo guarda y le dice qué número quedó', /Lo tengo \(dato 1\)/.test(ultimoAviso()), ultimoAviso());
+await carlos('dato: el viernes 17 hay examen de mate a las 8, temas: derivadas');
+ok('el mismo dato dos veces no se duplica', s.config.datos.length === 1 && /ya lo sabía/.test(ultimoAviso()));
+s.aplicar({ accion: 'dato', texto: 'la junta de padres fue el lunes 12', hasta: '2026-10-12' });
+await llega(LALO, 'oye a qué hora es el examen de mate?', { nombre: 'Lalo' }); pasar(60); await s.tic();
+ok('al proponer, la IA recibe lo que Carlos le contó', vioDatos.some(d => /examen de mate a las 8/.test(d)), vioDatos);
+ok('lo que ya caducó NO se lo pasa', !vioDatos.some(d => /junta de padres/.test(d)), vioDatos);
+ok('y la propuesta lo usa', /según yo: el viernes 17 hay examen de mate a las 8/.test(ultimoAviso()), ultimoAviso());
+await carlos('datos');
+ok('«datos» lista lo que sabe, sin lo caducado', /1\. el viernes 17 hay examen/.test(ultimoAviso()) && !/junta de padres/.test(ultimoAviso()), ultimoAviso());
+await carlos('olvida 1');
+ok('«olvida 1» lo quita', /Olvidado el dato 1/.test(ultimoAviso()) && !s.datosVigentes().length);
 
 console.log('\n9 · LA REGLA: nada sale sin que Carlos lo apruebe');
 ok(`cada envío a otra persona corresponde a una aprobación (${aOtros().length} envíos, ${aprobaciones} aprobaciones con número)`, aOtros().length <= aprobaciones, { envios: aOtros().length, aprobaciones });

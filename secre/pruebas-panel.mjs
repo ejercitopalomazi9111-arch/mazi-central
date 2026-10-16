@@ -104,6 +104,14 @@ async function probar(tema){
 
   /* ── saludos y reglas ── */
   await page.click('nav [data-p="ajustes"]');
+  /* lo que Secre sabe: contarle algo y que lo guarde; olvidarlo y que lo quite */
+  await page.fill('#dTexto', 'el viernes hay examen de mate a las 8 ' + tema);
+  await page.click('#bDato');
+  ok('contarle algo desde el panel lo guarda', await espera(async () => (await estado()).config.datos.some(d => d.texto === 'el viernes hay examen de mate a las 8 ' + tema), 'contarle algo desde el panel lo guarda'));
+  ok('y sale en la lista', await espera(async () => /examen de mate a las 8/.test(await page.textContent('#hoja')), 'y sale en la lista'));
+  const nDatos = (await estado()).config.datos.length;
+  await page.locator('#hoja .tarjeta', { hasText: 'examen de mate a las 8 ' + tema }).locator('[data-olvida]').click();
+  ok('«Olvidar» lo quita', await espera(async () => (await estado()).config.datos.length === nDatos - 1, '«Olvidar» lo quita'));
   await page.selectOption('#sChat', { label: 'Ana ' + tema });
   await page.fill('#sM', '06:45'); await page.fill('#sN', '23:10'); await page.click('#bSaludo');
   await espera(async () => (await estado()).config.saludos.some(s => s.manana === '06:45' && s.noche === '23:10'), 'agregar saludos los guarda');

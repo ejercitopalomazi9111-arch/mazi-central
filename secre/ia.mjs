@@ -58,10 +58,12 @@ export function sacarJson(t){
   return null;
 }
 const conversacion = (h, dueno) => h.slice(-20).map(x => `${x.de === 'yo' ? dueno : (x.quien || 'Él/Ella')}: ${x.texto}`).join('\n');
+/* lo que Carlos le contó a Secre («el viernes hay examen de mate a las 8»): es lo único que puede afirmar además del chat */
+const recuerdos = (dueno, datos) => datos.length ? `Lo que ${dueno} te contó (es verdad; úsalo si viene al caso y no inventes nada más):\n${datos.map(d => '- ' + d).join('\n')}\n` : '';
 const ejemplos = (e) => e.length ? 'Así escribe él (ejemplos reales, imita el tono, el largo, las mayúsculas, la puntuación y los emojis):\n' + e.slice(-30).map(x => '- ' + x).join('\n') : '';
 
 export const ia = {
-  async leer({ dueno, nombre, nota, historial, nuevos, estilo, redactar, grupo }){
+  async leer({ dueno, nombre, nota, historial, nuevos, estilo, redactar, grupo, datos = [] }){
     const sistema = `Ayudas a ${dueno}, un estudiante de prepa en Querétaro, con su WhatsApp. Te paso un chat${grupo ? ' de grupo' : ''} con ${nombre}${nota ? ` (${nota})` : ''}.
 Tu trabajo:
 1) "pendientes": cosas que ${dueno} tiene que HACER por lo que le escribieron (entregar algo, confirmar, pagar, ir a algún lado, contestar una pregunta importante). Frases cortas en infinitivo, con fecha u hora si la hay. Lista vacía si no hay.
@@ -69,7 +71,9 @@ ${redactar ? `2) "respuesta": una propuesta de lo que ${dueno} contestaría, esc
    - NO inventes datos: si piden una hora, un lugar, dinero o una decisión que no sale del chat, propón algo que gane tiempo ("déjame ver y ahorita te digo") y explica en "motivo" qué tiene que decidir él.
    - Si ya no hace falta contestar (un "ok", un sticker, una despedida), deja "respuesta" vacía.
 3) "urgente": true sólo si algo no puede esperar (una emergencia, algo para dentro de una hora).
-${ejemplos(estilo)}` : ''}
+${ejemplos(estilo)}
+   - Si lo que preguntan se contesta con "Lo que ${dueno} te contó", úsalo con sus datos exactos (día, hora, temas, precios).` : ''}
+${recuerdos(dueno, datos)}
 Contesta SÓLO JSON: {"pendientes":[], "respuesta":"", "motivo":"", "urgente":false}`;
     const texto = `Conversación (lo más nuevo al final):\n${conversacion(historial, dueno)}\n\nLo nuevo que no ha contestado:\n${nuevos.map(x => x.texto).join('\n')}`;
     const j = sacarJson(await preguntar(sistema, texto)) || {};
@@ -99,6 +103,8 @@ Acciones posibles (usa el nombre del chat tal como viene en la lista):
 - {"accion":"pausa","cuanto":"2h"} · {"accion":"reanudar"}
 - {"accion":"anota","texto":"..."} · {"accion":"hecho","n":3}
 - {"accion":"resumen","hora":"21:30"} · {"accion":"porDefecto","modo":"borrador"}
+- {"accion":"dato","texto":"el viernes 17 hay examen de mate a las 8, temas: derivadas","hasta":"AAAA-MM-DD"}  (algo que te cuenta para usarlo al proponer respuestas; "hasta" = cuando deja de servir, si se deduce)
+- {"accion":"olvidaDato","n":2}
 Si te pregunta algo, contesta en "respuesta" (corto, mexicano, sin tecnicismos). Si pide algo que no puedes, díselo.
 Contesta SÓLO JSON: {"respuesta":"", "acciones":[]}`;
     const t = `Chats que conozco: ${JSON.stringify(chats)}\nConfiguración actual: ${JSON.stringify(config)}\n\nCarlos dice: ${texto}`;

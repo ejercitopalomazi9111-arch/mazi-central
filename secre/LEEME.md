@@ -20,6 +20,7 @@ Propuesta: «sí voy, nomás confirmo la hora y te digo»
 | `3 sí, a las 5` | manda TU texto |
 | `x3` | la tira |
 | `pendientes` · `hecho 2` · `anota comprar pilas` | tus pendientes |
+| `dato: el viernes hay examen de mate a las 8, temas: derivadas` · `datos` · `olvida 2` | lo que Secre sabe y usa al escribirte las respuestas |
 | `pausa 2h` · `pausa hoy` · `sigue` | la callas un rato |
 | `estado` · `chats` · `ayuda` | qué está haciendo |
 | en palabras normales | «a Ana dale buenos días a las 7 y buenas noches a las 10:30», «Beto es mi primo, háblale con confianza», «esta semana no me propongas nada de la escuela» |
@@ -81,5 +82,5 @@ Todo lo tuyo (la sesión de WhatsApp, tus chats, tu configuración) se guarda en
 | `correr.mjs` | prende las cuentas, el reloj y el panel |
 | `panel.html` | el panel |
 | `falso.mjs` | WhatsApp e IA de mentiras: `SECRE_FALSO=1 npm start` prueba todo sin teléfono |
-| `pruebas.mjs` | el núcleo (52) — la última prueba revisa que **cada envío a otra persona tenga una aprobación tuya** |
-| `pruebas-panel.mjs` | el panel en un navegador de verdad a 390 px, claro y oscuro (30) |
+| `pruebas.mjs` | el núcleo (59) — la última prueba revisa que **cada envío a otra persona tenga una aprobación tuya** |
+| `pruebas-panel.mjs` | el panel en un navegador de verdad a 390 px, claro y oscuro (36) |
