@@ -1,0 +1,9 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "deploy": {
+    "startCommand": "node correr.mjs",
+    "healthcheckPath": "/salud",
+    "healthcheckTimeout": 120,
+    "restartPolicyType": "ALWAYS"
+  }
+}
