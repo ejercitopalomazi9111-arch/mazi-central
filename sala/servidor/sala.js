@@ -1428,9 +1428,13 @@ export class Sala {
          Negro repitió el de Paulina y salían dos avisos iguales. Si ya hay uno
          que dice lo mismo (uno dentro del otro) a menos de 15 min, no se duplica. */
       const plano = (x) => String(x).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
-      const nuevo = plano(m[2]);
-      if((this.programados || []).some(p => Math.abs(p.cuando - cuando) < 15 * 60_000
-           && (plano(p.texto).includes(nuevo) || nuevo.includes(plano(p.texto))))) continue;
+      /* «Uno dentro del otro» no bastó: Negro lo copió como «Sylred» y salió
+         doble. Cuenta igual si 3 de cada 4 palabras del más corto están en el otro. */
+      const nuevo = plano(m[2]), pal = new Set(nuevo.split(' '));
+      const igual = (t) => { const o = plano(t); if(o.includes(nuevo) || nuevo.includes(o)) return true;
+        const w = new Set(o.split(' ')); let n = 0; for(const x of pal) if(w.has(x)) n++;
+        return n >= 3 && n / Math.min(pal.size, w.size) >= 0.75; };
+      if((this.programados || []).some(p => Math.abs(p.cuando - cuando) < 15 * 60_000 && igual(p.texto))) continue;
       const a = (evento.de && evento.de.id) || null;
       const cita = { id:`p${++this.serie}`, de: motorId, a, texto: m[2].trim(), cuando, proyecto: null, puesto: ahora() };
       this.programados = [...(this.programados || []), cita].sort((x, y) => x.cuando - y.cuando);
