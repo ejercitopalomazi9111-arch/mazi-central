@@ -36,12 +36,12 @@ const ultimoAviso = () => (aCarlos().slice(-1)[0] || {}).texto || '';
 let iaFalla = false;
 let vioDatos = [], ordenQuien = '', vioAuto = false, vioRol = null;
 const ia = {
-  async leer({ nuevos, redactar, auto, rol, personaje, mundo, marca, stickers = [], grupo, datos = [] }){
+  async leer({ nuevos, redactar, auto, rol, personaje, mundo, marca, instrucciones = '', comunidad = '', stickers = [], grupo, datos = [] }){
     if(iaFalla) throw new Error('sin internet');
     const t = nuevos.map(x => x.texto).join(' ');
     vioAuto = !!auto;
     if(auto && rol){
-      vioRol = { personaje, mundo, quienes: nuevos.map(x => x.quien) };
+      vioRol = { personaje, mundo, marca, instrucciones, comunidad, quienes: nuevos.map(x => x.quien) };
       if(marca && /eco/.test(t)) return { pendientes: [], lineas: [{ tipo: 'dice', texto: marca + ' ya voy' }, { tipo: 'hace', texto: '> camina a la puerta' }], respuesta: '', motivo: '', urgente: false };
       if(marca) return { pendientes: [], lineas: [{ tipo: 'dice', texto: '¿Quién anda ahí?' }, { tipo: 'hace', texto: 'Kael se levanta de la mesa' }], respuesta: '', motivo: '', urgente: false, sticker: /jaja/.test(t) && stickers.length ? stickers[0].n : 0 };
       if(/fuera de rol/i.test(t)) return { pendientes: [], respuesta: '(ahorita no está, luego te contesta)', motivo: 'te piden algo fuera del rol', urgente: false, decide: true };
@@ -448,7 +448,31 @@ await carlos('stickers taberna del cuervo');
 ok('«stickers Taberna» dice cuántos tiene', /Tengo 1 sticker/.test(ultimoAviso()), ultimoAviso());
 ok('en un chat de una persona no se guardan stickers', (() => { s.alMensaje({ id: 'C' + (sig++), chat: ANA, de: YO, texto: '[sticker]', mio: true, t: ahora, sticker: { b64: 'UklGRiQAAABXRUJQ' } }); return !(s.config.chats[ANA].stickers || []).length; })());
 await carlos('manual taberna del cuervo');
-const enGrupos = aOtros().filter(e => [EQUIPO, ROL].includes(e.jid)).length;
+
+console.log('\n8h · La comunidad de rol: todos sus grupos de un jalón, con su contexto y sus instrucciones');
+const COM = '120363900000@g.us', TAB2 = '120363900001@g.us', BOS = '120363900002@g.us', CAS = '120363900003@g.us';
+const enCom = (g, quien, texto) => llega(g, texto, { grupo: true, nombre: quien, nombreChat: { [TAB2]: 'Taberna', [BOS]: 'Bosque', [CAS]: 'Castillo' }[g] });
+const gruposCom = [{ id: TAB2, nombre: 'Taberna' }, { id: BOS, nombre: 'Bosque' }, { id: CAS, nombre: 'Castillo' }];
+const hecho = s.ponerComunidad({ id: COM, nombre: 'Reino de Valdor', grupos: gruposCom, activos: [TAB2, BOS],
+  personaje: 'Kael, mercenario callado', mundo: 'La magia está prohibida en Valdor.', marca: '🌌⚛️-', instrucciones: 'Nunca ataques primero.' });
+ok('guardar la comunidad dice en cuántos grupos sigue la historia', /Reino de Valdor: sigo la historia en 2 grupo/.test(hecho), hecho);
+ok('prende el rol SÓLO en los grupos marcados', s.config.chats[TAB2].rol && s.config.chats[BOS].rol && !s.config.chats[CAS].rol && s.config.chats[CAS].modo !== 'auto');
+vioRol = null;
+await enCom(BOS, 'Ana', '🌸- Algo se mueve entre los árboles'); pasar(70); await s.tic();
+ok('en un grupo de la comunidad juega con el personaje, el mundo y las instrucciones de la comunidad',
+  vioRol && /Kael/.test(vioRol.personaje) && /magia está prohibida/.test(vioRol.mundo) && /Nunca ataques primero/.test(vioRol.instrucciones) && vioRol.comunidad === 'Reino de Valdor', vioRol);
+ok('y con la marca de la comunidad', aG(BOS).slice(-1)[0] && aG(BOS).slice(-1)[0].texto.startsWith('🌌⚛️- '), aG(BOS).slice(-1)[0]);
+const enCas = aG(CAS).length;
+await enCom(CAS, 'Beto', '🔥- ¿Quién vigila la muralla?'); pasar(70); await s.tic();
+ok('en el grupo que no se marcó no juega', aG(CAS).length === enCas);
+s.config.chats[BOS].personaje = 'Lyra, la ladrona'; s.config.chats[BOS].mundo = 'En el Bosque viven los elfos.';
+await enCom(BOS, 'Ana', '🌸- ¿Quién anda?'); pasar(70); await s.tic();
+ok('lo que el grupo tiene en su tarjeta le gana (personaje) o se suma (mundo)', vioRol.personaje === 'Lyra, la ladrona' && /prohibida/.test(vioRol.mundo) && /elfos/.test(vioRol.mundo), vioRol);
+s.ponerComunidad({ id: COM, nombre: 'Reino de Valdor', grupos: gruposCom, activos: [TAB2] });
+ok('quitarle la palomita a un grupo lo apaga, y lo demás se queda como estaba', !s.config.chats[BOS].rol && s.config.chats[TAB2].rol && /Nunca ataques/.test(s.config.comunidades[COM].instrucciones));
+ok('una comunidad que no es grupo de WhatsApp no se guarda', s.ponerComunidad({ id: 'ana@s.whatsapp.net', grupos: [] }) === '');
+s.ponerComunidad({ id: COM, nombre: 'Reino de Valdor', grupos: gruposCom, activos: [] });
+const enGrupos = aOtros().filter(e => [EQUIPO, ROL, TAB2, BOS, CAS].includes(e.jid)).length;
 
 console.log('\n9 · LA REGLA: nada sale sin que Carlos lo apruebe (o sin que haya prendido el automático en ese chat)');
 ok(`cada envío a otra persona corresponde a una aprobación (${aOtros().length} envíos, ${aprobaciones} aprobaciones, ${fijosMandados} saludos que dejó fijos, ${autosMandados.length} en automático, ${enGrupos} en grupos autorizados)`, aOtros().length <= aprobaciones + fijosMandados + autosMandados.length + enGrupos, { envios: aOtros().length, aprobaciones, fijosMandados });

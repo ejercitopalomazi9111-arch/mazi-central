@@ -131,6 +131,22 @@ export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () =
     yo: () => yoJids,
     async enviar(jid, texto){ const r = await sock.sendMessage(jid, { text: texto }); return r && r.key && r.key.id; },
     async enviarSticker(jid, b64){ const r = await sock.sendMessage(jid, { sticker: Buffer.from(b64, 'base64') }); return r && r.key && r.key.id; },
+    /* las comunidades de WhatsApp y sus grupos, para el botón «Comunidad de rol» del panel.
+       El grupo de avisos de la comunidad no es para jugar: se deja fuera. */
+    async comunidades(){
+      const todos = Object.values(await sock.groupFetchAllParticipating());
+      const coms = new Map();
+      for(const g of todos) if(g.isCommunity) coms.set(g.id, { id: g.id, nombre: g.subject || '', grupos: [] });
+      for(const g of todos){
+        if(!g.linkedParent || g.isCommunityAnnounce) continue;
+        if(!coms.has(g.linkedParent)){
+          const p = await sock.groupMetadata(g.linkedParent).catch(() => ({}));
+          coms.set(g.linkedParent, { id: g.linkedParent, nombre: p.subject || 'Comunidad sin nombre', grupos: [] });
+        }
+        coms.get(g.linkedParent).grupos.push({ id: g.id, nombre: g.subject || '' });
+      }
+      return [...coms.values()].map(c => ({ ...c, grupos: c.grupos.sort((a, b) => a.nombre.localeCompare(b.nombre)) }));
+    },
     /* «escribiendo…» un rato proporcional al largo, como una persona */
     async escribiendo(jid, ms){
       await sock.sendPresenceUpdate('composing', jid).catch(() => {});

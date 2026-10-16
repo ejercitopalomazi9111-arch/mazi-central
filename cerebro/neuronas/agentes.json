@@ -467,6 +467,27 @@
       "vecinas": [
         "discusion-sin-freno"
       ]
+    },
+    {
+      "id": "puente-que-no-pasa-una-funcion",
+      "titulo": "Una función nueva del transporte no llega al núcleo si el puente que los une no la pasa",
+      "gravedad": "media",
+      "sintoma": "Los stickers del rol de Secre pasaban todas sus pruebas y en WhatsApp de verdad nunca se habrían mandado.",
+      "causa": "correr.mjs no le da al núcleo el transporte entero: le arma un `puente` con yo, enviar, escribiendo y leido. `enviarSticker` se agregó a whatsapp.mjs y a falso.mjs, pero no al puente.",
+      "porque": "quizaSticker pregunta `if(!this.transporte.enviarSticker) return` para no tronar en transportes viejos: el hueco se convertía en silencio en vez de en error. Y las pruebas del núcleo le pasan su propio transporte, nunca el puente.",
+      "arreglo": "El puente ahora pasa enviarSticker. Lo encontró la revisión al agregar `comunidades()` (16 de octubre): cada función nueva del transporte se revisa en tres lugares — whatsapp.mjs, falso.mjs y el puente de correr.mjs.",
+      "comoCazarlo": "grep de la función nueva en secre/correr.mjs. Una comprobación que se calla cuando falta algo («si no existe, no hago nada») esconde justo este defecto: hay que preguntarse quién se lo pasa.",
+      "consejo": "Cuando un componente recibe una copia recortada de otro, toda función nueva se agrega también a la copia.",
+      "salioDe": "secre/correr.mjs",
+      "senales": [
+        "no manda stickers",
+        "el sticker no sale en whatsapp",
+        "función del transporte que no llega",
+        "puente de secre"
+      ],
+      "vecinas": [
+        "aprobador-automatico-encima-del-candado"
+      ]
     }
   ]
 }

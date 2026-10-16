@@ -18,6 +18,11 @@ export async function conectar({ telefono, alMensaje, alEstado }){
     async enviar(jid, texto){ enviados.push({ jid, texto, t: Date.now() }); return 'falso-' + enviados.length; },
     async enviarSticker(jid){ enviados.push({ jid, texto: '[sticker]', t: Date.now() }); return 'falso-' + enviados.length; },
     async escribiendo(){}, async leido(){}, async cerrar(){},
+    /* una comunidad de rol de mentiras con tres grupos, para probar el panel */
+    async comunidades(){
+      return [{ id: '120363000000000001@g.us', nombre: 'Reino de Valdor', grupos: [
+        { id: '120363000000000002@g.us', nombre: 'Taberna' }, { id: '120363000000000003@g.us', nombre: 'Bosque' }, { id: '120363000000000004@g.us', nombre: 'Castillo' }] }];
+    },
     /* para las pruebas: hacer como que llegó un mensaje */
     llega: (m) => alMensaje({ id: 'm' + Math.random().toString(36).slice(2), mio: false, grupo: false, t: Date.now(), ...m }),
   };

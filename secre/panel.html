@@ -282,7 +282,9 @@ const NOMBRE_MODO = { borrador: 'te propongo respuestas', callado: 'sólo anoto 
 const modoDe = (c) => c.modo === 'auto' && c.rol ? 'rol' : c.modo;
 function hojaChats(){
   const cs = datos.chats;
-  $('#hoja').innerHTML = `<h2>Chats</h2><p class="meta">Aparecen cuando te escriben. Toca uno para decirle a Secre cómo tratarlo.</p>` + (cs.length ? cs.map(c => `
+  $('#hoja').innerHTML = `<h2>Chats</h2><p class="meta">Aparecen cuando te escriben. Toca uno para decirle a Secre cómo tratarlo.</p>
+    <details class="tarjeta comunidad" id="dCom"><summary><span class="quien">🎭 Comunidad de rol</span><span class="modo">todos sus grupos de un jalón</span></summary>
+      <div id="comCuerpo"><p class="meta">Buscando tus comunidades…</p></div></details>` + (cs.length ? cs.map(c => `
     <details class="tarjeta" data-id="${esc(c.id)}"><summary><span class="quien">${c.grupo ? '👥 ' : ''}${esc(c.nombre)}</span><span class="modo">${NOMBRE_MODO[c.modoAhora === 'auto' && c.rol ? 'rol' : c.modoAhora] || c.modoAhora}</span></summary>
       <label class="etq">Qué hace Secre con este chat</label>
       <select class="campo" data-modo>
@@ -304,12 +306,62 @@ function hojaChats(){
       <input class="campo" data-etq value="${esc((c.etiquetas || []).join(', '))}" placeholder="escuela, familia">
       <div class="acciones"><button class="boton principal" data-guardar>Guardar</button></div>
     </details>`).join('') : '<p class="vacio">Todavía no te ha escrito nadie desde que prendiste a Secre.</p>');
+  $('#dCom').ontoggle = () => { if($('#dCom').open) abrirComunidad(); };
   document.querySelectorAll('#hoja details[data-id]').forEach(el => {
     $('[data-guardar]', el).onclick = async () => {
       try{ await api(actual + '/chat', { id: el.dataset.id, modo: $('[data-modo]', el).value, nota: $('[data-nota]', el).value, etiquetas: $('[data-etq]', el).value, ...($('[data-personaje]', el) ? { personaje: $('[data-personaje]', el).value, mundo: $('[data-mundo]', el).value, marca: $('[data-marca]', el).value } : {}) }); el.open = false; avisito('Guardado'); await cargar(true); }
       catch(err){ avisito(err.message); }
     };
   });
+}
+
+/* ══ Comunidad de rol ════════════════════════════════════════════════════
+   Carlos, 16 de octubre: «en un botón aparte pon todo para seleccionar la
+   comunidad donde están todos los grupos del rol y darle contexto e
+   instrucciones». Lo que se pone aquí lo heredan todos los grupos; lo que un
+   grupo tenga en su propia tarjeta le gana. */
+let comLista = [], comGuardadas = {};
+async function abrirComunidad(){
+  const caja = $('#comCuerpo');
+  try{ const r = await api(actual + '/comunidades', {}); comLista = r.comunidades || []; comGuardadas = r.guardadas || {}; }
+  catch(e){ caja.innerHTML = `<p class="meta">${esc(e.message)}</p>`; return; }
+  if(!comLista.length){ caja.innerHTML = '<p class="meta">No encontré comunidades en esta cuenta. Si tus grupos de rol están en una, revisa que sigas dentro.</p>'; return; }
+  const ya = comLista.find(c => comGuardadas[c.id]) || comLista[0];
+  caja.innerHTML = `<label class="etq" for="comSel">Comunidad</label>
+    <select class="campo" id="comSel">${comLista.map(c => `<option value="${esc(c.id)}" ${c.id === ya.id ? 'selected' : ''}>${esc(c.nombre)} (${c.grupos.length} grupos)</option>`).join('')}</select>
+    <div id="comForma"></div>`;
+  $('#comSel').onchange = () => pintarComunidad($('#comSel').value);
+  pintarComunidad(ya.id);
+}
+function pintarComunidad(id){
+  const com = comLista.find(c => c.id === id), g = comGuardadas[id] || {};
+  const prendido = (gid) => { const c = datos.chats.find(x => x.id === gid); return !!(c && c.rol && c.modo === 'auto'); };
+  const nuevo = !comGuardadas[id];
+  $('#comForma').innerHTML = `<label class="etq">En qué grupos sigo la historia sola</label>
+    <label class="pend"><input type="checkbox" id="comTodos"><span><b>Todos los grupos</b></span></label>
+    <div id="comGrupos">${com.grupos.map(x => `<label class="pend"><input type="checkbox" data-g="${esc(x.id)}" ${nuevo || prendido(x.id) ? 'checked' : ''}><span>👥 ${esc(x.nombre)}</span></label>`).join('') || '<p class="meta">Esta comunidad no tiene grupos donde estés.</p>'}</div>
+    <label class="etq" for="comPersonaje">Tu personaje (vale para todos sus grupos)</label>
+    <textarea class="campo" id="comPersonaje" maxlength="800" placeholder="ej. Kael, mercenario callado que odia a los magos">${esc(g.personaje || '')}</textarea>
+    <label class="etq" for="comMarca">Marca de tu personaje</label>
+    <input class="campo" id="comMarca" maxlength="30" placeholder="ej. 🌌⚛️-" value="${esc(g.marca || '')}">
+    <label class="etq" for="comMundo">El mundo y la historia (lo lee en cada grupo antes de jugar)</label>
+    <textarea class="campo" id="comMundo" rows="7" maxlength="6000" placeholder="ej. Reino de Valdor. La magia está prohibida. Taberna = el pueblo, Bosque = la frontera. Ana juega a Lyra, la ladrona.">${esc(g.mundo || '')}</textarea>
+    <label class="etq" for="comInstr">Instrucciones (cómo quieres que juegue)</label>
+    <textarea class="campo" id="comInstr" rows="5" maxlength="3000" placeholder="ej. Nunca ataques primero. Respeta los turnos del narrador. Nada de romance. Si te retan a duelo, acepta pero no mates a nadie.">${esc(g.instrucciones || '')}</textarea>
+    <p class="meta">Si un grupo tiene su propio personaje, marca o mundo en su tarjeta, eso le gana o se suma a esto.</p>
+    <div class="acciones"><button class="boton principal" id="bComGuardar">Guardar la comunidad</button></div>`;
+  const marcas = () => [...document.querySelectorAll('#comGrupos input')];
+  const alTodos = () => { const m = marcas(); $('#comTodos').checked = m.length > 0 && m.every(x => x.checked); };
+  $('#comTodos').onchange = () => { marcas().forEach(x => x.checked = $('#comTodos').checked); };
+  marcas().forEach(x => x.onchange = alTodos); alTodos();
+  $('#bComGuardar').onclick = async () => {
+    try{
+      const r = await api(actual + '/comunidad', { id: com.id, nombre: com.nombre, grupos: com.grupos,
+        activos: marcas().filter(x => x.checked).map(x => x.dataset.g),
+        personaje: $('#comPersonaje').value, marca: $('#comMarca').value, mundo: $('#comMundo').value, instrucciones: $('#comInstr').value });
+      $('#dCom').open = false; avisito(r.hecho); await cargar(true);
+    }catch(e){ avisito(e.message); }
+  };
 }
 
 /* ══ Saludos, reglas y ajustes ═══════════════════════════════════════════ */

@@ -32,6 +32,7 @@ Propuesta: «sí voy, nomás confirmo la hora y te digo»
 | `marca Taberna: 🌌⚛️-` | lo que dice tu personaje sale como `🌌⚛️- lo que dice` y lo que hace en renglón aparte como `> lo que hace`. Lo pone el programa, así que no se le olvida · `quita marca Taberna` |
 | `stickers Taberna` · `borra stickers Taberna` | los stickers que **tú** mandas en ese grupo se guardan (hasta 8, con lo que estaba pasando cuando los mandaste) y tu personaje los usa de vez en cuando: nunca dos en menos de 10 min |
 | `sin firma Taberna` · `firma Taberna: 🎭 Kael` · `firma normal Taberna` | cómo firma en ese chat (de fábrica: 🤖; con marca de personaje va al final del mensaje) |
+| Panel → Chats → **🎭 Comunidad de rol** | eliges la **comunidad de WhatsApp** donde están tus grupos de rol, palomeas en cuáles sigue la historia («Todos los grupos» de un toque) y le das **personaje, marca, mundo e instrucciones** que valen para todos. Lo que un grupo tenga en su propia tarjeta le gana (personaje, marca) o se suma (mundo, instrucciones) |
 | `manual Ana` · `apaga automático` · `automático` | lo regresa a propuestas · lo apaga para todos · dice con quién está prendido |
 | `pausa 2h` · `pausa hoy` · `sigue` | la callas un rato |
 | `estado` · `chats` · `ayuda` | qué está haciendo |

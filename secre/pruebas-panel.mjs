@@ -189,6 +189,27 @@ async function probar(tema){
   await page.click('#bPausa');
   await espera(async () => /Pausa 2 h/.test(await page.textContent('#bPausa')), 'seguir: quita la pausa');
 
+  /* ── la comunidad de rol: un botón aparte, todos sus grupos de un jalón ── */
+  await page.click('nav [data-p="pendientes"]'); await page.click('nav [data-p="chats"]');
+  await page.locator('#dCom summary').click();
+  await espera(async () => (await page.locator('#comGrupos input').count()) === 3, 'abrir «Comunidad de rol» enseña los 3 grupos de la comunidad');
+  ok('la comunidad sale con su nombre', /Reino de Valdor \(3 grupos\)/.test(await page.locator('#comSel').textContent()));
+  await page.locator('#comTodos').setChecked(true);
+  ok('«Todos los grupos» los marca todos', (await page.locator('#comGrupos input:checked').count()) === 3);
+  await page.locator('#comGrupos label', { hasText: 'Castillo' }).locator('input').setChecked(false);
+  ok('quitar uno quita la palomita de «Todos»', !(await page.locator('#comTodos').isChecked()));
+  await page.fill('#comPersonaje', 'Kael, mercenario ' + tema);
+  await page.fill('#comMarca', '🌌⚛️-');
+  await page.fill('#comMundo', 'Reino de Valdor: la magia está prohibida.');
+  await page.fill('#comInstr', 'Nunca ataques primero.');
+  ok('sin desborde con la comunidad abierta', (await desborde()) <= 0, await desborde());
+  await foto('3c-comunidad');
+  await page.click('#bComGuardar');
+  await espera(async () => { const e = await estado(), ch = (n) => e.chats.find(x => x.nombre === n) || {}, com = (e.config.comunidades || {})['120363000000000001@g.us'] || {};
+    return ch('Taberna').rol && ch('Bosque').rol && !ch('Castillo').rol && com.instrucciones === 'Nunca ataques primero.' && com.personaje === 'Kael, mercenario ' + tema && com.marca === '🌌⚛️-'; },
+    'guardar la comunidad prende el rol en los marcados, deja fuera el otro y guarda el contexto y las instrucciones');
+  ok('y avisa en cuántos grupos sigue la historia', await espera(async () => /sigo la historia en 2 grupo/.test(await page.textContent('body')), 'aviso de la comunidad'));
+
   /* ── la otra cuenta no se mezcla ── */
   await page.click('.cuenta[data-c="segunda"]');
   await espera(async () => (await page.getAttribute('.cuenta[data-c="segunda"]', 'aria-pressed')) === 'true', 'cambiar a la segunda cuenta');
