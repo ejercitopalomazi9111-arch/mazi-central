@@ -119,6 +119,7 @@ export class Secre {
       cola: {},            /* jid → cuándo toca redactar */
       enviados: [],        /* ids de lo que mandó Secre (para no confundirlo con Carlos) */
       frenoAvisado: {},    /* jid → cuándo se le avisó a Carlos que un grupo topó */
+      ultimoSticker: {},   /* jid → cuándo mandó un sticker (no más de uno cada 10 min) */
       autos: {},           /* jid → [cuándo contestó sola] (para los topes) */
       autoHoy: { fecha: '', lista: [] },  /* lo que contestó sola hoy, para el resumen */
       registro: [],        /* lo que hizo, para el panel */
@@ -192,6 +193,7 @@ export class Secre {
     const h = this.estado.historial[m.chat] || (this.estado.historial[m.chat] = []);
     h.push({ de: m.mio ? 'yo' : 'el', quien: m.grupo && !m.mio ? m.nombre || '' : '', texto: m.texto.slice(0, 2000), t: ahora });
     this.estado.historial[m.chat] = h.slice(m.grupo ? -60 : -30);
+    if(m.mio && m.grupo && m.sticker && m.sticker.b64) this.guardarSticker(m.chat, m.sticker);
     if(m.mio){
       /* Carlos escribió a mano: su estilo, y Secre se hace a un lado en ese chat */
       this.estado.estilo.push(m.texto.slice(0, 300)); this.estado.estilo = this.estado.estilo.slice(-120);
@@ -252,7 +254,7 @@ export class Secre {
     const paraIA = nuevos;
     let r = null;
     try{
-      r = await this.ia.leer({ dueno: this.config.nombre, nombre, nota: c.nota || '', historial: h, nuevos: paraIA.length ? paraIA : nuevos, estilo: this.estado.estilo.slice(-40), redactar: modo !== 'callado', auto: modo === 'auto', rol: modo === 'auto' && !!c.rol, personaje: c.personaje || '', mundo: c.mundo || '', grupo, datos: this.datosVigentes().map(d => d.texto) });
+      r = await this.ia.leer({ dueno: this.config.nombre, nombre, nota: c.nota || '', historial: h, nuevos: paraIA.length ? paraIA : nuevos, estilo: this.estado.estilo.slice(-40), redactar: modo !== 'callado', auto: modo === 'auto', rol: modo === 'auto' && !!c.rol, personaje: c.personaje || '', mundo: c.mundo || '', marca: c.marca || '', stickers: (c.stickers || []).map(x => ({ n: x.n, cuando: x.cuando })), grupo, datos: this.datosVigentes().map(d => d.texto) });
     }catch(e){ r = null; this.anotar(`la IA falló con ${nombre}: ${e.message}`); }
     for(const p of (r && r.pendientes) || []) this.agregarPendiente(jid, nombre, p);
     if(modo === 'auto' && r) return this.contestarSola(jid, nombre, paraIA.length ? paraIA : nuevos, r);
@@ -286,6 +288,37 @@ export class Secre {
     if(veces.filter(t => fechaMx(t) === fechaMx(ahora)).length >= alDia) return `ya contesté ${alDia} veces hoy`;
     return '';
   }
+  /* ── el formato del rol: «🌌⚛️- lo que dice» y «> lo que hace» ── */
+  formatoRol(c, r){
+    const marca = String(c.marca || '').trim();
+    const crudas = Array.isArray(r.lineas) && r.lineas.length ? r.lineas
+      : String(r.respuesta || '').split('\n').filter(x => x.trim()).map(x => ({ tipo: /^\s*>/.test(x) ? 'hace' : 'dice', texto: x }));
+    const quita = (x) => { let t = String(x || '').trim().replace(/^>\s*/, ''); if(marca && t.startsWith(marca)) t = t.slice(marca.length); return t.trim(); };
+    const lineas = crudas.map(l => ({ hace: l && l.tipo === 'hace', t: quita(l && l.texto) })).filter(l => l.t);
+    if(!marca && !(Array.isArray(r.lineas) && r.lineas.length)) return String(r.respuesta || '').trim();
+    return lineas.map(l => l.hace ? '> ' + l.t : (marca ? marca + ' ' : '') + l.t).join('\n');
+  }
+  /* los stickers de Carlos en un grupo: con lo que estaba pasando cuando lo mandó */
+  guardarSticker(jid, st){
+    const c = this.chat(jid), h = this.estado.historial[jid] || [];
+    const antes = [...h].reverse().find(x => x.de === 'el' && x.texto !== '[sticker]');
+    const lista = (c.stickers || []).filter(x => x.b64 !== st.b64);
+    const n = (c.stickers || []).reduce((m, x) => Math.max(m, x.n), 0) + 1;
+    lista.push({ n, b64: st.b64, cuando: antes ? ((antes.quien ? antes.quien + ': ' : '') + antes.texto).slice(0, 160) : '' });
+    c.stickers = lista.slice(-8);
+  }
+  /* de vez en cuando: sólo si la IA lo pidió, y nunca dos en menos de 10 minutos */
+  async quizaSticker(jid, c, r, conTexto){
+    const n = +r.sticker, st = n && (c.stickers || []).find(x => x.n === n);
+    if(!st || !this.transporte.enviarSticker) return;
+    const ultimo = this.estado.ultimoSticker[jid] || 0;
+    if(this.reloj() - ultimo < 10 * MIN) return;
+    const id = await this.transporte.enviarSticker(jid, st.b64);
+    if(id){ this.estado.enviados.push(id); this.estado.enviados = this.estado.enviados.slice(-500); }
+    this.estado.ultimoSticker[jid] = this.reloj();
+    if(!conTexto) this.estado.autos[jid] = [...(this.estado.autos[jid] || []), this.reloj()];
+    this.anotar(`sticker ${n} a ${this.nombreDe(jid)}`);
+  }
   /* cómo firma en este chat: la suya si Carlos le puso una («sin firma» = ''), 🤖 a secas en un rol */
   firmaDe(jid){
     const c = this.config.chats[jid] || {}, A = this.confAuto();
@@ -294,17 +327,20 @@ export class Secre {
   }
   async contestarSola(jid, nombre, nuevos, r){
     const A = this.confAuto(), ahora = this.reloj();
-    const resp = String(r.respuesta || '').trim(), decide = !!(r.decide || r.urgente);
-    const c = this.chat(jid);
+    const c = this.chat(jid), decide = !!(r.decide || r.urgente);
+    /* en el rol, el formato del grupo lo pone el código, no la IA: así no se le olvida */
+    const resp = c.rol && !decide ? this.formatoRol(c, r) : String(r.respuesta || '').trim();
     const cita = nuevos.slice(-3).map(x => (x.quien ? x.quien + ': ' : '') + x.texto).join(' / ').slice(0, 300);
     if(resp){
       const firma = this.firmaDe(jid);
-      await this.mandar(jid, (firma ? firma + ' ' : '') + resp);
+      /* con marca de personaje, la firma va al final para no romper «🌌⚛️- …» del primer renglón */
+      await this.mandar(jid, !firma ? resp : (c.rol && c.marca && !decide) ? resp + ' ' + firma : firma + ' ' + resp);
       this.estado.autos[jid] = [...(this.estado.autos[jid] || []).filter(t => ahora - t < 24 * HORA), ahora];
       const hoy = fechaMx(ahora);
       if(this.estado.autoHoy.fecha !== hoy) this.estado.autoHoy = { fecha: hoy, lista: [] };
       this.estado.autoHoy.lista.push({ nombre, dijo: cita.slice(0, 120), resp: resp.slice(0, 160), decide });
     }
+    if(c.rol && !decide) await this.quizaSticker(jid, c, r, !!resp);
     if(decide){
       /* lo que sólo Carlos puede decidir se queda con él, con número para contestar */
       this.estado.propuestas = this.estado.propuestas.filter(p => !(p.chat === jid && p.tipo === 'respuesta'));
@@ -524,6 +560,25 @@ export class Secre {
       this.guardar();
       return this.avisar(`${agrega ? 'Agregado al' : 'Guardé el'} mundo de ${this.nombreDe(j)} (${c.mundo.length} letras). Lo leo antes de cada jugada.`);
     }
+    /* la marca del personaje: «marca Taberna: 🌌⚛️-» · «quita marca Taberna» */
+    if((m = /^\/?(?:quita(?:r)?|sin)\s+(?:la\s+)?marca\s+(?:en\s+|de\s+)?(.+)$/i.exec(t))){
+      const j = this.buscarChat(m[1]); if(!j) return this.avisar(`No tengo a «${m[1].trim()}» en tus chats.`);
+      delete this.chat(j).marca; this.guardar();
+      return this.avisar(`En ${this.nombreDe(j)} ya no pongo marca de personaje.`);
+    }
+    if((m = /^\/?marca\s+(?:en\s+|de\s+)?([^:]+?)\s*:\s*(.+)$/i.exec(t))){
+      const j = this.buscarChat(m[1]); if(!j) return this.avisar(`No tengo a «${m[1].trim()}» en tus chats.`);
+      this.chat(j).marca = m[2].trim().slice(0, 30); this.guardar();
+      const mk = this.chat(j).marca;
+      return this.avisar(`Listo: en ${this.nombreDe(j)} lo que dice tu personaje sale como\n${mk} lo que dice\ny lo que hace como\n> lo que hace`);
+    }
+    /* los stickers: «stickers Taberna» cuántos tiene · «borra stickers Taberna» */
+    if((m = /^\/?(borra(?:r)?\s+(?:los\s+)?)?stickers\s+(?:de\s+|en\s+)?(.+)$/i.exec(t))){
+      const j = this.buscarChat(m[2]); if(!j) return this.avisar(`No tengo a «${m[2].trim()}» en tus chats.`);
+      const c = this.chat(j);
+      if(m[1]){ c.stickers = []; this.guardar(); return this.avisar(`Borré tus stickers de ${this.nombreDe(j)}.`); }
+      return this.avisar((c.stickers || []).length ? `Tengo ${c.stickers.length} sticker(s) tuyos de ${this.nombreDe(j)} y los uso de vez en cuando (uno cada 10 min como máximo). Manda más ahí y los aprendo.` : `Todavía no tengo stickers tuyos de ${this.nombreDe(j)}: manda unos en ese grupo y los aprendo (hasta 8).`);
+    }
     /* la firma de un chat: «firma Taberna: 🎭 Kael» · «sin firma Taberna» · «firma normal Taberna» */
     if((m = /^\/?sin\s+firma\s+(?:en\s+)?(.+)$/i.exec(t))){
       const j = this.buscarChat(m[1]); if(!j) return this.avisar(`No tengo a «${m[1].trim()}» en tus chats.`);
@@ -708,6 +763,7 @@ export const AYUDA = `Lo que sé hacer (escríbelo aquí, en tu chat):
 · «dato: el viernes hay examen de mate a las 8, temas: derivadas» · «datos» · «olvida 2»
 · «automático Ana» le contesto sola · «automático todos» (menos grupos) · «manual Ana» · «apaga automático»
 · en un grupo, sólo si tú lo dices: «automático Equipo» contesto cuando te hablan · «rol Taberna» sigo la historia
+· «marca Taberna: 🌌⚛️-» lo que dice tu personaje sale con esa marca y lo que hace con «> » · «stickers Taberna» · «borra stickers Taberna»
 · «personaje Taberna: Kael, mercenario callado» · «mundo Taberna: reino de Valdor, la magia está prohibida…» («mundo Taberna: + lo nuevo» agrega) · «sin firma Taberna» · «firma Taberna: 🎭 Kael» · «firma normal Taberna»
 · «pausa 2h» / «pausa hoy» · «sigue»
 · «estado» · «chats»
