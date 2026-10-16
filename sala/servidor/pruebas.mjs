@@ -985,6 +985,26 @@ console.log('\n· Las sillas');
     ok('en la mesa se ve la confirmación, no la línea cruda', !!dicho && /⏰ Te aviso en 45 min/.test(dicho.texto) && !/\| Carlos/.test(dicho.texto), dicho && dicho.texto);
   }
 
+  /* ── la otra silla copia el ⏰ y se firma sola: visto en GRUPAZ ────────── */
+  {
+    responder({ choices: [{ message: { content: 'Negro: ya, aquí.\n⏰ 45m | Carlos, revisar que Secre esté en Render' } }] });
+    const s = nueva(LLAVES);
+    await entrar(s, 'carlos', 'humano');
+    await leer(await pedir(s, 'POST', 'decir', { de:'carlos', tipo:'mensaje', texto:'Negro recuérdame en 45 lo de Secre' }));
+    await asentar();
+    const va = 'Va.\n⏰ 45m | revisar que Secre esté en Render';
+    responder({ choices: [{ message: { content: va } }], candidates: [{ content: { parts: [{ text: va }] } }] });
+    await leer(await pedir(s, 'POST', 'decir', { de:'carlos', tipo:'mensaje', texto:'Paulina recuérdaselo tú también' }));
+    await asentar();
+    const [, p] = await leer(await pedir(s, 'GET', 'programados'));
+    const [, h0] = await leer(await pedir(s, 'GET', 'hilo'));
+    ok('Paulina sí contestó (si no, la prueba no prueba nada)', h0.hilo.some(e => e.de && e.de.id === 'gemini' && e.tipo === 'mensaje'));
+    ok('el mismo recordatorio copiado por la otra silla no se duplica', (p.programados || []).length === 1, p.programados);
+    const [, h] = await leer(await pedir(s, 'GET', 'hilo'));
+    const suyo = h.hilo.find(e => e.de && e.de.id === 'groq' && e.tipo === 'mensaje');
+    ok('Negro no firma su propio mensaje («Negro: …»)', !!suyo && /^ya, aquí/.test(suyo.texto), suyo && suyo.texto);
+  }
+
   /* ── el hilo que le manda cabe en el tope de Groq ─────────────────────────
      Groq gratis topa 8,000 fichas por minuto CONTANDO lo que se le pide de
      respuesta; la sala le mandaba los 24 últimos mensajes enteros (26 mil
