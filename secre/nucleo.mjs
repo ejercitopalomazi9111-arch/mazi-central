@@ -34,6 +34,7 @@
                  automático cuando yo no puedo»).
    ═════════════════════════════════════════════════════════════════════════ */
 import { llamar, llamadasListas } from './llamada.mjs';
+import { bancoDeSala, buscarFotos, nombreDe as nombreFoto, pieDe } from './banco.mjs';
 
 export const MODOS = ['borrador', 'callado', 'auto'];
 const MIN = 60_000, HORA = 60 * MIN;
@@ -71,6 +72,18 @@ export function configBase(){
        tel vacío = el número de su otra cuenta (o el de ésta) */
     llamar: { activo: false, tel: '', desde: '08:00', hasta: '23:00' },
     voz: 'Kore',                   /* la voz de los audios que manda */
+    /* mensajes que salen solos a su hora (16 de octubre: «a un grupo quiero ponerle
+       que pueda enviar un mensaje a x hora… qué clase toca en cada hora… y en otros
+       grupos, chats individuales y sobre otros temas»).
+       { id, chat, hora:'07:00', dias:[0-6, 0=domingo], texto (fijo) | tema (lo escribe la IA), sinFirma } */
+    programados: [],
+    /* fotos del banco que se publican solas (16 de octubre: «que en el chat de All's
+       publique algunas fotos del banco con su nombre… todos los días»).
+       { id, chat, carpeta, buscar, cuantas, hora, dias, intro } */
+    publicar: [],
+    /* contestar con fotos del banco cuando vengan al caso: de fábrica en chats de
+       una persona; cada chat puede decir sí o no (c.fotos) */
+    fotos: { responder: true, carpeta: '' },
     /* turnos de secretaria (Carlos, 16 de octubre: «que pueda responder
        cualquiera de los 3, Secre, Paulina o Negro, como si rotaran turnos»).
        Bloques de `horas` contados desde la medianoche de México. `fijo` = una
@@ -101,6 +114,36 @@ export function entreHoras(t, de, a){
   if(d == null || h == null) return false;
   return d <= h ? (x >= d && x < h) : (x >= d || x < h);
 }
+/* el día de la semana en México (0 = domingo) */
+export const diaMx = (t) => new Date(Date.parse(fechaMx(t) + 'T12:00:00Z')).getUTCDay();
+const DIAS = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+/* «lunes a viernes», «diario», «lunes, miércoles y viernes», «fines de semana» → [1,2,3,4,5]… */
+export function diasDe(t){
+  const s = String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  if(!s.trim() || /diario|todos los dias|cada dia|diariamente|toda la semana/.test(s)) return [0, 1, 2, 3, 4, 5, 6];
+  if(/entre semana|dias de escuela|dias habiles/.test(s)) return [1, 2, 3, 4, 5];
+  if(/fin(es)? de semana/.test(s)) return [0, 6];
+  const r = /(domingo|lunes|martes|miercoles|jueves|viernes|sabado)s? (?:a|al|hasta(?: el)?) (domingo|lunes|martes|miercoles|jueves|viernes|sabado)/.exec(s);
+  if(r){ const out = []; let d = DIAS.indexOf(r[1]); const fin = DIAS.indexOf(r[2]); for(let k = 0; k < 7; k++){ out.push(d); if(d === fin) break; d = (d + 1) % 7; } return out.sort((a, b) => a - b); }
+  const sueltos = DIAS.map((d, i) => new RegExp('\\b' + d).test(s) ? i : -1).filter(i => i >= 0);
+  return sueltos.length ? sueltos : [0, 1, 2, 3, 4, 5, 6];
+}
+export function textoDias(d){
+  const x = (Array.isArray(d) && d.length ? d : [0, 1, 2, 3, 4, 5, 6]).slice().sort((a, b) => a - b).join(',');
+  if(x === '0,1,2,3,4,5,6') return 'diario';
+  if(x === '1,2,3,4,5') return 'de lunes a viernes';
+  if(x === '0,6') return 'fines de semana';
+  return 'los ' + d.map(i => ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][i]).join(', ');
+}
+/* «7», «7:5», «7:50», «7pm», «19:30» → «07:00»… ('' si no se entiende) */
+export function horaDe(x){
+  const m = /^(\d{1,2})(?::(\d{1,2}))?\s*(am|pm|a\.m\.|p\.m\.)?$/i.exec(String(x || '').trim());
+  if(!m) return '';
+  let h = +m[1]; const mi = +(m[2] || 0);
+  if(m[3] && /p/i.test(m[3]) && h < 12) h += 12;
+  if(m[3] && /a/i.test(m[3]) && h === 12) h = 0;
+  return h < 24 && mi < 60 ? String(h).padStart(2, '0') + ':' + String(mi).padStart(2, '0') : '';
+}
 export const sinAcentos = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 /* «30m», «2h», «hoy», «1d» → milisegundos */
 export function duracion(s, ahora){
@@ -130,9 +173,11 @@ export function finDe(x, ahora){
 }
 
 export class Secre {
-  constructor({ cuenta = 'principal', transporte, ia, almacen, reloj = () => Date.now(), azar = Math.random, telefono = null }){
+  constructor({ cuenta = 'principal', transporte, ia, almacen, reloj = () => Date.now(), azar = Math.random, telefono = null, banco = undefined }){
     /* telefono: { listas(), llamar({ a, texto }) } — por omisión, Twilio (llamada.mjs) */
     Object.assign(this, { cuenta, transporte, ia, almacen, reloj, azar, telefono: telefono || { listas: () => llamadasListas(), llamar: (x) => llamar(x) } });
+    /* el banco de imágenes de La Sala; null = sin banco */
+    this.banco = banco === undefined ? bancoDeSala() : banco;
     const guardada = almacen.leer('config', {});
     this.config = Object.assign(configBase(), guardada);
     /* las cuentas que ya estaban guardadas traen los valores viejos (45 s de espera,
@@ -168,6 +213,9 @@ export class Secre {
       repasoT: 0,          /* cuándo mandó el último repaso */
       resumioT: 0,         /* hasta cuándo le resumió lo que llegó (al pedírselo) */
       llamoT: 0,           /* cuándo le llamó por última vez */
+      programadosHoy: {},  /* id → fecha en que ya salió */
+      publicadoHoy: {},    /* id → fecha en que ya se publicó */
+      publicados: {},      /* id → [fotos ya publicadas] (para no repetir hasta acabarse la carpeta) */
       sigN: 1, sigP: 1,
     }, almacen.leer('estado', {}));
     this.ocupados = new Set();
@@ -338,6 +386,8 @@ export class Secre {
     await this.saludos(ahora);
     await this.resumen(ahora);
     await this.repaso(ahora);
+    await this.programadosTic(ahora);
+    await this.publicarTic(ahora);
     /* las propuestas viejas se tiran: contestar algo de hace 6 horas confunde */
     const antes = this.estado.propuestas.length;
     this.estado.propuestas = this.estado.propuestas.filter(p => ahora - p.t < this.config.caducan * HORA);
@@ -370,10 +420,17 @@ export class Secre {
     /* en un grupo SÍ platica con otros bots (el narrador, el de los dados…, Carlos,
        16 de octubre): lo que evita que se enciclen es el tope del grupo */
     const paraIA = nuevos;
+    /* fotos del banco que podrían venir al caso con lo que preguntan */
+    let fotos = [];
+    if(modo !== 'callado' && this.fotosEn(jid, esGrupo)){
+      try{ fotos = buscarFotos(await this.banco.fichas(), nuevos.map(x => x.texto).join(' '), { carpeta: c.carpetaFotos || (this.config.fotos || {}).carpeta || '', n: 8 }); }
+      catch(e){ this.anotar('el banco no contestó: ' + e.message); }
+    }
     let r = null;
     try{
-      r = await this.ia.leer({ dueno: this.config.nombre, nombre, nota: c.nota || '', historial: h, nuevos: paraIA.length ? paraIA : nuevos, estilo: this.estado.estilo.slice(-40), redactar: modo !== 'callado', auto: modo === 'auto', rol: modo === 'auto' && !!c.rol, ...this.rolDe(jid), stickers: (c.stickers || []).map(x => ({ n: x.n, cuando: x.cuando })), grupo, datos: this.datosVigentes().map(d => d.texto) });
+      r = await this.ia.leer({ fotos: fotos.map((f, i) => ({ n: i + 1, nombre: nombreFoto(f), descripcion: String(f.descripcion || '').slice(0, 160), carpeta: f.carpeta || '' })), dueno: this.config.nombre, nombre, nota: c.nota || '', historial: h, nuevos: paraIA.length ? paraIA : nuevos, estilo: this.estado.estilo.slice(-40), redactar: modo !== 'callado', auto: modo === 'auto', rol: modo === 'auto' && !!c.rol, ...this.rolDe(jid), stickers: (c.stickers || []).map(x => ({ n: x.n, cuando: x.cuando })), grupo, datos: this.datosVigentes().map(d => d.texto) });
     }catch(e){ r = null; this.anotar(`la IA falló con ${nombre}: ${e.message}`); }
+    if(r) r.elegidas = [...new Set((r.fotos || []).map(Number))].map(n => fotos[n - 1]).filter(Boolean).slice(0, 3);
     for(const p of (r && r.pendientes) || []) this.agregarPendiente(jid, nombre, p);
     if(r && r.urgente && !esGrupo) await this.quizaLlamar(nombre, nuevos.slice(-2).map(x => x.texto).join(' / '), r.motivo);
     if(modo === 'auto' && r) return this.contestarSola(jid, nombre, paraIA.length ? paraIA : nuevos, r);
@@ -397,9 +454,10 @@ export class Secre {
     this.estado.propuestas = this.estado.propuestas.filter(p => !(p.chat === jid && p.tipo === 'respuesta'));
     const n = this.estado.sigN++;
     const cita = nuevos.slice(-3).map(x => (x.quien ? x.quien + ': ' : '') + x.texto).join(' / ').slice(0, 300);
-    this.estado.propuestas.push({ n, chat: jid, nombre, texto: propuesta, motivo: (r && r.motivo) || '', dijo: cita, urgente: !!(r && r.urgente), t: this.reloj(), tipo: 'respuesta' });
+    const conFotos = (r && r.elegidas) || [];
+    this.estado.propuestas.push({ n, chat: jid, nombre, texto: propuesta, motivo: (r && r.motivo) || '', dijo: cita, urgente: !!(r && r.urgente), t: this.reloj(), tipo: 'respuesta', ...(conFotos.length ? { fotos: conFotos.map(f => f.id) } : {}) });
     await this.avisar(`#${n} · ${nombre}${r && r.urgente ? ' ⚠️' : ''}: «${cita}»\n` +
-      (propuesta ? `Propuesta: «${propuesta}»\n→ «${n}» la manda · «${n} tu texto» manda el tuyo · «x${n}» la tira` : 'No supe qué contestarle: te toca.') +
+      (propuesta ? `Propuesta: «${propuesta}»` + (conFotos.length ? `\n📷 + ${conFotos.length} foto(s): ${conFotos.map(f => nombreFoto(f)).join(', ')}` : '') + `\n→ «${n}» la manda · «${n} tu texto» manda el tuyo · «x${n}» la tira` : 'No supe qué contestarle: te toca.') +
       (r && r.motivo ? `\n(${r.motivo})` : '') + (freno ? `\n(No le contesté sola: ${freno}.)` : ''));
     this.guardar();
   }
@@ -469,6 +527,7 @@ export class Secre {
       const firma = this.firmaDe(jid);
       /* con marca de personaje, la firma va al final para no romper «🌌⚛️- …» del primer renglón */
       await this.mandar(jid, !firma ? resp : (c.rol && marca && !decide) ? resp + ' ' + firma : firma + ' ' + resp);
+      if(r.elegidas && r.elegidas.length) await this.mandarFotos(jid, r.elegidas);
       this.estado.autos[jid] = [...(this.estado.autos[jid] || []).filter(t => ahora - t < 24 * HORA), ahora];
       const hoy = fechaMx(ahora);
       if(this.estado.autoHoy.fecha !== hoy) this.estado.autoHoy = { fecha: hoy, lista: [] };
@@ -673,6 +732,110 @@ export class Secre {
     this.guardar();
   }
 
+  /* ── fotos del banco ── */
+  fotosEn(jid, esGrupo){
+    if(!this.banco || !(this.banco.listo ? this.banco.listo() : true)) return false;
+    const c = this.config.chats[jid] || {};
+    if(c.fotos !== undefined) return !!c.fotos;
+    if((this.config.fotos || {}).responder === false) return false;
+    return !esGrupo;
+  }
+  /* manda fotos del banco con su nombre; regresa cuántas salieron */
+  async mandarFotos(jid, fichas, { conDescripcion = true } = {}){
+    let n = 0;
+    for(const f of fichas){
+      try{
+        const { buf, mime } = await this.banco.bajar(f.id);
+        const id = await this.transporte.enviarImagen(jid, buf, mime, pieDe(f, conDescripcion));
+        if(id){ this.estado.enviados.push(id); this.estado.enviados = this.estado.enviados.slice(-500); }
+        const h = this.estado.historial[jid] || (this.estado.historial[jid] = []);
+        h.push({ de: 'yo', secre: true, texto: `[foto: ${nombreFoto(f)}]`, t: this.reloj() }); this.estado.historial[jid] = h.slice((this.config.chats[jid] || {}).grupo ? -60 : -30);
+        n++;
+      }catch(e){ this.anotar(`no pude mandar la foto ${nombreFoto(f)} a ${this.nombreDe(jid)}: ${e.message}`); }
+    }
+    if(n) this.anotar(`mandó ${n} foto(s) a ${this.nombreDe(jid)}`);
+    return n;
+  }
+
+  /* ── lo que sale solo a su hora: mensajes programados y publicaciones ── */
+  tocaHoy(x, ahora){
+    if(x.pausa) return false;
+    const dias = Array.isArray(x.dias) && x.dias.length ? x.dias : [0, 1, 2, 3, 4, 5, 6];
+    if(!dias.includes(diaMx(ahora))) return false;
+    const m = minDelDia(ahora), h = aMin(x.hora);
+    /* si Secre estuvo dormida, no manda «toca Mate» una hora tarde: hasta 20 min */
+    return h != null && m >= h && m - h <= 20;
+  }
+  async programadosTic(ahora){
+    const hoy = fechaMx(ahora), ya = this.estado.programadosHoy || (this.estado.programadosHoy = {});
+    for(const p of this.config.programados || []){
+      if(ya[p.id] === hoy || !this.tocaHoy(p, ahora) || !p.chat) continue;
+      ya[p.id] = hoy; this.guardar();
+      let texto = String(p.texto || '').trim();
+      if(!texto && p.tema){
+        try{ texto = String(await this.ia.escribir({ dueno: this.config.nombre, nombre: this.nombreDe(p.chat), tema: p.tema, estilo: this.estado.estilo.slice(-30), grupo: !!(this.config.chats[p.chat] || {}).grupo, hoy, hora: horaMx(ahora) }) || '').trim(); }
+        catch(e){ this.anotar('el programado no se pudo escribir: ' + e.message); }
+      }
+      if(!texto){ await this.avisar(`⏰ No pude escribir el mensaje programado de las ${p.hora} para ${this.nombreDe(p.chat)}.`); continue; }
+      const firma = p.sinFirma ? '' : this.firmaDe(p.chat);
+      await this.mandar(p.chat, firma ? firma + ' ' + texto : texto);
+    }
+  }
+  async publicarTic(ahora){
+    const hoy = fechaMx(ahora), ya = this.estado.publicadoHoy || (this.estado.publicadoHoy = {});
+    for(const pub of this.config.publicar || []){
+      if(ya[pub.id] === hoy || !this.tocaHoy(pub, ahora) || !pub.chat) continue;
+      ya[pub.id] = hoy; this.guardar();
+      const r = await this.publicarAhora(pub);
+      if(r.error) await this.avisar(`📷 No pude publicar en ${this.nombreDe(pub.chat)}: ${r.error}`);
+    }
+  }
+  /* escoge fotos que no se hayan publicado (hasta que se acaben y vuelve a empezar) y las manda */
+  async publicarAhora(pub){
+    if(!this.banco) return { error: 'no hay banco de imágenes' };
+    let fichas;
+    try{ fichas = await this.banco.fichas(); }catch(e){ return { error: e.message }; }
+    const car = pub.carpeta ? String(pub.carpeta) : '';
+    const cand = pub.buscar ? buscarFotos(fichas, pub.buscar, { carpeta: car, n: 5000 })
+      : fichas.filter(f => (!car || String(f.carpeta || '').toLowerCase() === car.toLowerCase()) && f.estado !== 'cambios');
+    if(!cand.length) return { error: car ? `no hay fotos en la carpeta «${car}» del banco` : 'no encontré fotos para eso en el banco' };
+    const cuantas = Math.max(1, Math.min(10, +pub.cuantas || 3));
+    const pubs = this.estado.publicados || (this.estado.publicados = {});
+    let ya = new Set(pubs[pub.id] || []);
+    let libres = cand.filter(f => !ya.has(f.id));
+    if(libres.length < cuantas){ ya = new Set(); pubs[pub.id] = []; libres = cand.slice(); }
+    /* al azar entre las que faltan, para que no salgan siempre en el mismo orden */
+    const hoy = [];
+    while(hoy.length < cuantas && libres.length) hoy.push(libres.splice(Math.floor(this.azar() * libres.length), 1)[0]);
+    let intro = String(pub.intro || '').trim();
+    if(!intro && this.ia.escribir){
+      try{ intro = String(await this.ia.escribir({ dueno: this.config.nombre, nombre: this.nombreDe(pub.chat), tema: `presentar en pocas palabras lo de hoy: ${hoy.map(f => nombreFoto(f)).join(', ')}. Corto, con ganas, sin precios que no te den`, estilo: this.estado.estilo.slice(-30), grupo: true, hoy: fechaMx(this.reloj()), hora: horaMx(this.reloj()) }) || '').trim(); }catch{}
+    }
+    if(intro && intro !== '-') await this.mandar(pub.chat, intro);
+    const n = await this.mandarFotos(pub.chat, hoy);
+    pubs[pub.id] = [...(pubs[pub.id] || []), ...hoy.map(f => f.id)];
+    this.guardar();
+    return n ? { n } : { error: 'ninguna foto se pudo mandar' };
+  }
+  textoProgramados(){
+    const ps = this.config.programados || [], us = this.config.publicar || [];
+    if(!ps.length && !us.length) return 'No hay nada programado. Ej.: «programa Tareas 7:00 lunes a viernes: toca Matemáticas» o «publica en All\'s 3 fotos de la carpeta All\'s fashion diario a las 10».';
+    return [ps.length ? '⏰ Mensajes programados:\n' + ps.map((p, i) => `${i + 1}. ${this.nombreDe(p.chat)} · ${p.hora} ${textoDias(p.dias)}: ${p.texto ? '«' + p.texto.slice(0, 80) + '»' : 'sobre ' + p.tema}${p.pausa ? ' (en pausa)' : ''}`).join('\n') : '',
+      us.length ? '📷 Publicaciones:\n' + us.map((p, i) => `${i + 1}. ${this.nombreDe(p.chat)} · ${p.hora} ${textoDias(p.dias)}: ${p.cuantas || 3} foto(s)${p.carpeta ? ' de «' + p.carpeta + '»' : ''}${p.buscar ? ' de ' + p.buscar : ''}`).join('\n') : ''].filter(Boolean).join('\n\n') +
+      '\n→ «quita programado 2» · «quita publicación 1» · «publica ahora en All\'s»';
+  }
+
+  async fotosA(jid, que, n = 4, aCarlos = false){
+    if(!this.banco) return 'No tengo el banco de imágenes conectado.';
+    let fichas;
+    try{ fichas = await this.banco.fichas(); }catch(e){ return 'El banco no contestó: ' + e.message; }
+    /* si lo que pide es una carpeta, la carpeta entera */
+    const car = [...new Set(fichas.map(f => f.carpeta).filter(Boolean))].find(c => sinAcentos(c) === sinAcentos(que) || sinAcentos('la carpeta ' + c) === sinAcentos(que));
+    const fs = (car ? fichas.filter(f => f.carpeta === car && f.estado !== 'cambios') : buscarFotos(fichas, que, { n: 50 })).slice(0, Math.min(10, n));
+    if(!fs.length) return `No encontré fotos de «${que}» en el banco.`;
+    const k = await this.mandarFotos(jid, fs);
+    return k ? (aCarlos ? `📷 Ahí van ${k} foto(s) de «${que}».` : `📷 Listo, le mandé ${k} foto(s) a ${this.nombreDe(jid)}: ${fs.slice(0, k).map(f => nombreFoto(f)).join(', ')}.`) : 'No pude mandar las fotos.';
+  }
   textoSinLlamadas(){
     return 'Para llamarte por teléfono falta la cuenta de llamadas (Twilio): en Render se ponen TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN y TWILIO_FROM. Los pasos están en la página de Secre. Mientras, te aviso por WhatsApp desde tu otra cuenta, que sí suena.';
   }
@@ -763,6 +926,54 @@ export class Secre {
       this.estado.propuestas = this.estado.propuestas.filter(x => x.n !== p.n); this.guardar();
       return this.avisar(`🎤 Listo, a ${p.nombre} en audio: «${final}»`);
     }
+    /* ── programados y publicaciones ── */
+    if(/^\/?(programados|programadas|publicaciones|que tienes programado)$/.test(s)) return this.avisar(this.textoProgramados());
+    if((m = /^\/?(?:quita|borra|elimina) (?:el )?programad[oa] (\d+)$/.exec(s))){
+      const ps = this.config.programados || [], p = ps[+m[1] - 1];
+      if(!p) return this.avisar(`No tengo el programado ${m[1]}. «programados» para verlos.`);
+      ps.splice(+m[1] - 1, 1); this.guardar();
+      return this.avisar(`Quitado: ${this.nombreDe(p.chat)} a las ${p.hora}.`);
+    }
+    if((m = /^\/?(?:quita|borra|elimina) (?:la )?publicacion (\d+)$/.exec(s))){
+      const ps = this.config.publicar || [], p = ps[+m[1] - 1];
+      if(!p) return this.avisar(`No tengo la publicación ${m[1]}.`);
+      ps.splice(+m[1] - 1, 1); this.guardar();
+      return this.avisar(`Quitada la publicación de ${this.nombreDe(p.chat)}.`);
+    }
+    /* «programa Tareas 7:00 lunes a viernes: toca Matemáticas» */
+    if((m = /^\/?programa(?:r)? (?:en |a )?(.+?) (?:a las )?(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)(?: ([^:]+?))?\s*:\s*([\s\S]+)$/i.exec(t))){
+      const h = this.aplicar({ accion: 'programar', chat: m[1], hora: m[2], dias: m[3] || '', texto: m[4] });
+      this.guardar();
+      return this.avisar(h || `No tengo a «${m[1]}» en tus chats, o la hora no se entiende.`);
+    }
+    if((m = /^\/?publica (?:ahora|ya) en (.+)$/.exec(s))){
+      const j = this.buscarChat(m[1]);
+      if(!j) return this.avisar(`No tengo a «${m[1]}» en tus chats.`);
+      const ps = (this.config.publicar || []).filter(p => p.chat === j);
+      if(!ps.length) return this.avisar(`En ${this.nombreDe(j)} no hay publicación programada. Ej.: «publica en ${this.nombreDe(j)} 3 fotos de la carpeta All's fashion diario a las 10».`);
+      let tot = 0, err = '';
+      for(const p of ps){ const r = await this.publicarAhora(p); tot += r.n || 0; if(r.error) err = r.error; }
+      return this.avisar(tot ? `📷 Listo: publiqué ${tot} foto(s) en ${this.nombreDe(j)}.` : `No pude publicar: ${err}`);
+    }
+    /* «fotos de sudaderas» → te las manda a ti · «mándale a Ana fotos de sudaderas» → a Ana */
+    if((m = /^\/?(?:manda(?:le|les)?|envia(?:le|les)?|pasa(?:le|les)?) (?:a )?(.+?) (?:(\d+) )?(?:fotos?|imagenes?) (?:de |del |de la |de los |de las )?(.+)$/.exec(s))){
+      const j = this.buscarChat(m[1]);
+      if(!j) return this.avisar(`No tengo a «${m[1]}» en tus chats.`);
+      return this.avisar(await this.fotosA(j, m[3], +m[2] || 4));
+    }
+    if((m = /^\/?(?:(?:mandame |pasame |ensename )?(?:fotos?|imagenes?) (?:de |del |de la |de los |de las )|busca (?:fotos? |imagenes? )?(?:de )?)(.+)$/.exec(s)) && this.banco){
+      return this.avisar(await this.fotosA(this.destinoAvisos(), m[1], 5, true));
+    }
+    if((m = /^\/?(sin fotos|fotos no|no mandes fotos)(?: (?:a |en |con )?(.+))?$/.exec(s))){
+      if(!m[2]){ this.config.fotos = { ...(this.config.fotos || {}), responder: false }; this.guardar(); return this.avisar('Listo: ya no contesto con fotos (salvo los chats que pongas con «fotos Ana»).'); }
+      const j = this.buscarChat(m[2]); if(!j) return this.avisar(`No tengo a «${m[2]}» en tus chats.`);
+      this.chat(j).fotos = false; this.guardar(); return this.avisar(`En ${this.nombreDe(j)} no mando fotos.`);
+    }
+    if((m = /^\/?(?:fotos si|con fotos|contesta con fotos|responde con fotos|fotos)(?: (?:a |en |con )?(.+))?$/.exec(s))){
+      if(!m[1] || /^(todos|todas|a todos)$/.test(m[1])){ this.config.fotos = { ...(this.config.fotos || {}), responder: true }; this.guardar(); return this.avisar('Listo: si alguien pregunta por algo que está en tu banco de imágenes, le mando la foto (en chats de una persona; en grupos sólo donde digas «fotos Equipo»).'); }
+      const j = this.buscarChat(m[1]); if(!j) return this.avisar(`No tengo a «${m[1]}» en tus chats.`);
+      this.chat(j).fotos = true; this.guardar(); return this.avisar(`En ${this.nombreDe(j)} contesto con fotos del banco cuando vengan al caso.`);
+    }
     /* llamadas por teléfono */
     if(/^\/?(?:llamame|llamada de prueba|prueba la llamada)$/.test(s)){
       if(!this.telefono.listas()) return this.avisar(this.textoSinLlamadas());
@@ -793,6 +1004,10 @@ export class Secre {
       this.estado.propuestas = this.estado.propuestas.filter(x => x !== p);
       await this.mandar(p.chat, final);
       let extra = '';
+      if(p.fotos && p.fotos.length){
+        try{ const fs = await this.banco.fichas(); const n = await this.mandarFotos(p.chat, p.fotos.map(id => fs.find(f => f.id === id)).filter(Boolean)); if(n) extra += `\n📷 y ${n} foto(s)`; }
+        catch(e){ extra += `\n(las fotos no salieron: ${e.message})`; }
+      }
       if(siempre && (p.tipo === 'manana' || p.tipo === 'noche')){
         const sal = this.config.saludos.find(x => x.chat === p.chat);
         if(sal){ sal[p.tipo === 'manana' ? 'fijoManana' : 'fijoNoche'] = final; extra = `\nDesde mañana se lo mando así, solo, a su hora. «quita fijo ${p.nombre}» para que te lo vuelva a proponer.`; }
@@ -966,7 +1181,9 @@ export class Secre {
 
   async ordenLibre(texto){
     let r;
-    try{ r = await this.ia.orden({ quien: this.deTurno(), texto, ahora: this.reloj(), hoy: fechaMx(this.reloj()), hora: horaMx(this.reloj()), chats: Object.entries(this.config.chats).filter(([, c]) => c.nombre).map(([j, c]) => ({ id: j, nombre: c.nombre, modo: c.modo || '', etiquetas: c.etiquetas || [] })), config: this.resumenConfig() }); }
+    let carpetas = [];
+    if(this.banco && (this.banco.listo ? this.banco.listo() : true)){ try{ carpetas = [...new Set((await this.banco.fichas()).map(f => f.carpeta).filter(Boolean))].slice(0, 60); }catch{} }
+    try{ r = await this.ia.orden({ carpetas, quien: this.deTurno(), texto, ahora: this.reloj(), hoy: fechaMx(this.reloj()), hora: horaMx(this.reloj()), chats: Object.entries(this.config.chats).filter(([, c]) => c.nombre).map(([j, c]) => ({ id: j, nombre: c.nombre, modo: c.modo || '', etiquetas: c.etiquetas || [] })), config: this.resumenConfig() }); }
     catch(e){ return this.avisar('No te entendí (y la IA no contestó). Escribe «ayuda» para ver lo que sé hacer.'); }
     const hechos = [];
     for(const a of (r && r.acciones) || []){ const h = this.aplicar(a); if(h) hechos.push(h); }
@@ -1032,6 +1249,31 @@ export class Secre {
       case 'reanudar': this.config.pausaHasta = 0; return 'De vuelta';
       case 'anota': { this.agregarPendiente('', '', a.texto); return a.texto ? `Anotado: ${a.texto}` : ''; }
       case 'hecho': { const p = this.estado.pendientes.find(x => x.n === +a.n && !x.hecho); if(!p) return ''; p.hecho = true; return `Tachado: ${p.texto}`; }
+      case 'programar': {
+        const j = chatDe(a.chat); const hora = horaDe(a.hora);
+        if(!j || !hora || !(a.texto || a.tema)) return '';
+        const ps = this.config.programados || (this.config.programados = []);
+        const dias = Array.isArray(a.dias) ? a.dias.map(Number).filter(d => d >= 0 && d <= 6) : diasDe(a.dias);
+        const p = { id: 'p' + Math.round(this.reloj() / 1000).toString(36) + ps.length + Math.floor(this.azar() * 1000), chat: j, hora, dias, texto: String(a.texto || '').slice(0, 1500), tema: String(a.tema || '').slice(0, 400), ...(a.sinFirma ? { sinFirma: true } : {}) };
+        ps.push(p);
+        return `⏰ A ${this.nombreDe(j)} a las ${hora} ${textoDias(dias)}: ${p.texto ? '«' + p.texto.slice(0, 60) + '»' : 'sobre ' + p.tema}`;
+      }
+      case 'quitarProgramado': { const ps = this.config.programados || [], i = ps.findIndex(p => p.id === a.id); if(i < 0) return ''; ps.splice(i, 1); return 'Quitado el programado'; }
+      case 'publicar': {
+        const j = chatDe(a.chat); const hora = horaDe(a.hora);
+        if(!j || !hora || !(a.carpeta || a.buscar)) return '';
+        const us = this.config.publicar || (this.config.publicar = []);
+        const dias = Array.isArray(a.dias) ? a.dias.map(Number).filter(d => d >= 0 && d <= 6) : diasDe(a.dias);
+        const p = { id: 'u' + Math.round(this.reloj() / 1000).toString(36) + us.length + Math.floor(this.azar() * 1000), chat: j, hora, dias, carpeta: String(a.carpeta || '').slice(0, 80), buscar: String(a.buscar || '').slice(0, 200), cuantas: Math.max(1, Math.min(10, +a.cuantas || 3)), intro: String(a.intro || '').slice(0, 600) };
+        us.push(p);
+        return `📷 En ${this.nombreDe(j)} a las ${hora} ${textoDias(dias)}: ${p.cuantas} foto(s)${p.carpeta ? ' de «' + p.carpeta + '»' : ''}${p.buscar ? ' de ' + p.buscar : ''}, con su nombre`;
+      }
+      case 'quitarPublicacion': { const us = this.config.publicar || [], i = us.findIndex(p => p.id === a.id); if(i < 0) return ''; us.splice(i, 1); return 'Quitada la publicación'; }
+      case 'fotos': {
+        if(!a.chat){ this.config.fotos = { ...(this.config.fotos || {}), responder: a.si !== false, ...(a.carpeta !== undefined ? { carpeta: String(a.carpeta || '') } : {}) }; return a.si === false ? 'No contesto con fotos' : 'Contesto con fotos del banco cuando vengan al caso'; }
+        const j = chatDe(a.chat); if(!j) return '';
+        this.chat(j).fotos = a.si !== false; return `${this.nombreDe(j)}: ${a.si === false ? 'sin fotos' : 'con fotos'}`;
+      }
       case 'llamar': {
         const L = this.config.llamar = Object.assign({ activo: false, tel: '', desde: '08:00', hasta: '23:00' }, this.config.llamar || {});
         if(a.activo !== undefined) L.activo = !!a.activo;
@@ -1070,7 +1312,9 @@ export class Secre {
     const c = this.config;
     return { porDefecto: c.porDefecto, grupos: c.grupos, resumen: c.resumen, pausaHasta: c.pausaHasta ? horaMx(c.pausaHasta) : '',
       saludos: c.saludos.map(s => ({ chat: this.nombreDe(s.chat), manana: s.manana, noche: s.noche })),
-      reglas: c.reglas.map(r => ({ id: r.id, modo: r.modo, palabras: r.palabras, etiquetas: r.etiquetas, chats: (r.chats || []).map(j => this.nombreDe(j)), de: r.de, a: r.a, hasta: r.hasta ? fechaMx(r.hasta - 1) : '' })) };
+      reglas: c.reglas.map(r => ({ id: r.id, modo: r.modo, palabras: r.palabras, etiquetas: r.etiquetas, chats: (r.chats || []).map(j => this.nombreDe(j)), de: r.de, a: r.a, hasta: r.hasta ? fechaMx(r.hasta - 1) : '' })),
+      programados: (c.programados || []).map(p => ({ id: p.id, chat: this.nombreDe(p.chat), hora: p.hora, dias: p.dias, texto: p.texto, tema: p.tema })),
+      publicar: (c.publicar || []).map(p => ({ id: p.id, chat: this.nombreDe(p.chat), hora: p.hora, dias: p.dias, carpeta: p.carpeta, buscar: p.buscar, cuantas: p.cuantas })) };
   }
   textoEstado(){
     const c = this.config, a = this.estado.pendientes.filter(p => !p.hecho).length;
@@ -1107,6 +1351,10 @@ export const AYUDA = `Lo que sé hacer (escríbelo aquí, en tu chat):
 · «audio Ana: ya voy» le mando una nota de voz · «3 audio» manda la propuesta 3 en audio · «pendientes en audio» te lo digo en voz
 · me puedes mandar notas de voz: las oigo y las hago orden
 · «llámame si es urgente» te llamo por teléfono cuando algo urja · «llámame» prueba · «no me llames»
+· «programa Tareas 7:00 lunes a viernes: toca Matemáticas» sale solo a esa hora · «programados» · «quita programado 2»
+  (o en palabras: «en Tareas avisa cada hora qué clase toca: lunes 7:00 Mate, 7:50 Física…»)
+· «fotos de sudaderas» te las mando · «mándale a Ana fotos de termos» · «publica en All's 3 fotos de la carpeta All's fashion diario a las 10» · «publica ahora en All's»
+· si alguien pregunta por algo que está en tu banco, le mando la foto · «sin fotos Equipo» · «fotos Equipo»
 · «estado» · «chats»
 Y en palabras normales, por ejemplo:
 · «a Ana dale buenos días a las 7 y buenas noches a las 10:30»
