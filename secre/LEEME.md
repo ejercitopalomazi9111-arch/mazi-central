@@ -92,5 +92,5 @@ Con `SECRE_NUBE=no` guarda en `secre/datos/` (nunca entra al repo) en vez de La 
 | `pruebas.mjs` | el núcleo (59) — la última prueba revisa que **cada envío a otra persona tenga una aprobación tuya** |
 | `pruebas-panel.mjs` | el panel en un navegador de verdad a 390 px, claro y oscuro (38) |
 | `pruebas-vincular.mjs` | vincular contra WhatsApp DE VERDAD con un número de ficción (1-555-0100): código a tiempo y código nuevo tras un corte (5) |
-| `pruebas-vincular-panel.mjs` | la pantalla del código: número, «Pedir otro código» y el formato 52/521 (11) |
+| `pruebas-vincular-panel.mjs` | la pantalla del código: número, «Pedir otro código», el formato 52/521 y escribir otro número (14) |
 | `nube.mjs` · `pruebas-nube.mjs` | guardar cifrado en La Sala; la prueba apaga y prende Secre y revisa que se acuerde de todo (12) |

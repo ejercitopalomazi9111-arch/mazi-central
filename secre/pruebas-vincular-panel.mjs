@@ -30,7 +30,14 @@ ok('el número elegido se queda guardado', JSON.parse(fs.readFileSync(path.join(
 await page.click('#bOtroCodigo');
 ok('«Pedir otro código» no truena', await espera(async () => /ABCD-0000/.test(await page.textContent('#conexion'))));
 await page.click('.cuenta[data-c="personal"]');
-ok('la de EU no ofrece el formato de México', await espera(async () => /\+1 786 000 0000/.test(await page.textContent('#conexion'))) && await page.locator('#bOtroNumero').count() === 0);
+ok('la de +1 no ofrece el formato de México', await espera(async () => /\+1 786 000 0000/.test(await page.textContent('#conexion'))) && await page.locator('#bOtroNumero').count() === 0);
+/* Carlos: «mis números son de México los 2» — el segundo se había puesto como +1 */
+await page.fill('#iNumero', '786 000 0000');
+await page.waitForTimeout(5000);   /* más que el repintado de 4 s */
+ok('lo que escribes en el número no se borra con el repintado', (await page.inputValue('#iNumero')) === '786 000 0000');
+await page.click('#fNumero button');
+ok('10 dígitos se toman como de México (+52)', await espera(async () => /\+52 786 000 0000\./.test(await page.textContent('#conexion'))), await page.textContent('#conexion'));
+ok('y ya ofrece el formato con 1', /Probar como \+52 1 786/.test(await page.textContent('#bOtroNumero').catch(() => '')));
 ok('sin desborde', await page.evaluate(() => document.documentElement.scrollWidth - innerWidth) <= 0);
 ok('botones de 44 px o más', (await page.evaluate(() => [...document.querySelectorAll('#conexion button')].map(b => b.getBoundingClientRect().height))).every(h => h >= 44));
 ok('cero errores de consola', errores.length === 0, errores);
