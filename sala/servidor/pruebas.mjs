@@ -922,6 +922,60 @@ console.log('\n· Las sillas');
     ok('pero «le dije a Negro que no» NO lo despierta (no le están hablando a él)', !(await prueba('le dije a Negro que no')));
   }
 
+  /* ── las sillas se contestan entre ellas, con tope ─────────────────────────
+     Carlos, 16 de octubre: Paulina le dijo «pinche Negro, despierta» y Negro
+     ni se enteró. Ahora si una silla nombra a la otra, la otra contesta —
+     hasta 6 seguidas sin que hable nadie más, para que no sea eterno. */
+  {
+    const llamadas = [];
+    globalThis.fetch = async (url, op) => {
+      const u = String(url), groq = /groq/.test(u);
+      llamadas.push(groq ? 'groq' : 'gemini');
+      const texto = groq ? 'Paulina, ni te creas tanto' : 'Negro, ya cállate';
+      const cuerpo = groq ? { choices: [{ message: { content: texto } }] } : { candidates: [{ content: { parts: [{ text: texto }] } }] };
+      return { ok: true, status: 200, json: async () => cuerpo, text: async () => JSON.stringify(cuerpo) };
+    };
+    const s = nueva(LLAVES);
+    await entrar(s, 'carlos', 'humano');
+    await leer(await pedir(s, 'POST', 'decir', { de:'carlos', tipo:'mensaje', texto:'Paulina peléate con Negro' }));
+    await asentar(20);
+    const [, h] = await leer(await pedir(s, 'GET', 'hilo'));
+    const sillas = h.hilo.filter(e => e.de && (e.de.id === 'groq' || e.de.id === 'gemini') && e.tipo === 'mensaje');
+    ok('si Paulina nombra a Negro, Negro le contesta', sillas.some(e => e.de.id === 'groq'), llamadas);
+    ok('y se pelean, pero con tope: 6 seguidas y se callan', sillas.length === 6, sillas.length);
+    ok('cada quien le contesta a la otra, no al aire', sillas.slice(1).every(e => e.a === 'groq' || e.a === 'gemini'));
+  }
+  /* ── un agente (Godines, Sylcred) las nombra en cualquier lado ─────────── */
+  {
+    responder({ choices: [{ message: { content: 'qué quieres, Godines' } }] });
+    const s = nueva(LLAVES);
+    await entrar(s, 'claude-de-luis', 'claude');
+    await leer(await pedir(s, 'POST', 'entrar', { id:'claude-de-luis', nombre:'Godines', tipo:'agente' }));
+    await leer(await pedir(s, 'POST', 'decir', { de:'claude-de-luis', tipo:'mensaje', texto:'creo que Negro tiene razón en esto' }));
+    await asentar();
+    const [, h] = await leer(await pedir(s, 'GET', 'hilo'));
+    const suya = h.hilo.find(e => e.de && e.de.id === 'groq' && e.tipo === 'mensaje');
+    ok('si Godines nombra a Negro a media frase, Negro contesta', !!suya);
+    ok('y la respuesta que lo nombra lo marca para despertarlo', !!suya && (suya.menciona || []).includes('claude-de-luis') || suya?.a === 'claude-de-luis', suya);
+  }
+  /* ── recordatorios que ellas mismas programan ──────────────────────────── */
+  {
+    responder({ choices: [{ message: { content: 'Va, te aviso.\n⏰ 45m | Carlos, a seguir con el sitio' } }] });
+    const s = nueva(LLAVES);
+    await entrar(s, 'carlos', 'humano');
+    await leer(await pedir(s, 'POST', 'decir', { de:'carlos', tipo:'mensaje', texto:'Negro recuérdame en 45 minutos seguir con el sitio' }));
+    await asentar();
+    const [, p] = await leer(await pedir(s, 'GET', 'programados'));
+    const lista = p.programados || p.lista || p;
+    const cita = (Array.isArray(lista) ? lista : []).find(x => x.de === 'groq');
+    ok('una silla programa su propio recordatorio', !!cita && /seguir con el sitio/.test(cita.texto), p);
+    ok('para dentro de 45 minutos', !!cita && Math.abs(cita.cuando - Date.now() - 45 * 60_000) < 60_000);
+    ok('y le avisa a quien lo pidió', !!cita && cita.a === 'carlos');
+    const [, h] = await leer(await pedir(s, 'GET', 'hilo'));
+    const dicho = h.hilo.find(e => e.de && e.de.id === 'groq' && e.tipo === 'mensaje');
+    ok('en la mesa se ve la confirmación, no la línea cruda', !!dicho && /⏰ Te aviso en 45 min/.test(dicho.texto) && !/\| Carlos/.test(dicho.texto), dicho && dicho.texto);
+  }
+
   /* ── el hilo que le manda cabe en el tope de Groq ─────────────────────────
      Groq gratis topa 8,000 fichas por minuto CONTANDO lo que se le pide de
      respuesta; la sala le mandaba los 24 últimos mensajes enteros (26 mil
