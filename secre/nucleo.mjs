@@ -145,6 +145,8 @@ export class Secre {
       ultimoSticker: {},   /* jid → cuándo mandó un sticker (no más de uno cada 10 min) */
       autos: {},           /* jid → [cuándo contestó sola] (para los topes) */
       autoHoy: { fecha: '', lista: [] },  /* lo que contestó sola hoy, para el resumen */
+      contestadas: [],     /* lo que llegó, qué hizo Secre y por qué (lo más nuevo primero), para «Por mandar» */
+      acuse: {},           /* jid → cuándo le dijo «recibí tu mensaje» porque la IA no contestó */
       registro: [],        /* lo que hizo, para el panel */
       charla: [],          /* la plática de Carlos con Secre, también para el panel */
       resumenFecha: '',
@@ -320,9 +322,10 @@ export class Secre {
         this.estado.frenoAvisado[jid] = this.reloj();
         await this.avisar(`⏸ En ${nombre} me detuve: ${freno}. Sigo en cuanto baje el ritmo.`);
       }
+      this.bitacora(jid, nombre, nuevos, 'freno', '', `me detuve: ${freno}`);
       this.guardar(); return;
     }
-    if(freno) modo = 'borrador';
+    if(freno){ modo = 'borrador'; this.bitacora(jid, nombre, nuevos, 'freno', '', `no contesté sola: ${freno}; te lo dejé de propuesta`); }
     /* en un grupo SÍ platica con otros bots (el narrador, el de los dados…, Carlos,
        16 de octubre): lo que evita que se enciclen es el tope del grupo */
     const paraIA = nuevos;
@@ -332,8 +335,18 @@ export class Secre {
     }catch(e){ r = null; this.anotar(`la IA falló con ${nombre}: ${e.message}`); }
     for(const p of (r && r.pendientes) || []) this.agregarPendiente(jid, nombre, p);
     if(modo === 'auto' && r) return this.contestarSola(jid, nombre, paraIA.length ? paraIA : nuevos, r);
-    /* sin IA no hay qué contestar sola: se le deja a Carlos como siempre */
-    if(modo === 'auto') modo = 'borrador';
+    /* sin IA no hay qué contestar sola: se le deja a Carlos, y a la persona se le
+       avisa que su mensaje sí llegó (una vez cada 3 h por chat; nunca en grupos) */
+    if(modo === 'auto'){
+      modo = 'borrador';
+      const ultimo = (this.estado.acuse || {})[jid] || 0;
+      if(!esGrupo && this.reloj() - ultimo > 3 * HORA){
+        const firma = this.firmaDe(jid), txt = 'Recibí tu mensaje, en un momento te contesto.';
+        await this.mandar(jid, firma ? firma + ' ' + txt : txt);
+        (this.estado.acuse || (this.estado.acuse = {}))[jid] = this.reloj();
+        this.bitacora(jid, nombre, nuevos, 'error', txt, 'la IA no contestó; le avisé que llegó su mensaje y a ti te dejé la propuesta');
+      } else this.bitacora(jid, nombre, nuevos, 'error', '', 'la IA no contestó; te dejé la propuesta');
+    } else if(modo === 'borrador') this.bitacora(jid, nombre, nuevos, 'propuesta', r && r.respuesta, 'este chat está en «Propone»: espera tu número');
     if(modo !== 'borrador'){ this.guardar(); return; }
     const propuesta = r && r.respuesta ? String(r.respuesta).trim() : '';
     if(!propuesta && !(r && r.urgente)){ this.guardar(); return; }
@@ -418,6 +431,8 @@ export class Secre {
       if(this.estado.autoHoy.fecha !== hoy) this.estado.autoHoy = { fecha: hoy, lista: [] };
       this.estado.autoHoy.lista.push({ nombre, dijo: cita.slice(0, 120), resp: resp.slice(0, 160), decide });
     }
+    this.bitacora(jid, nombre, nuevos, decide ? 'decide' : resp ? 'contesto' : 'nada', resp,
+      decide ? 'necesita tu decisión' + (r.motivo ? ': ' + r.motivo : '') : (r.porque || (resp ? this.porqueModo(jid) : 'no hacía falta contestar')));
     if(c.rol && !decide) await this.quizaSticker(jid, c, r, !!resp);
     if(decide){
       /* lo que sólo Carlos puede decidir se queda con él, con número para contestar */
@@ -431,6 +446,21 @@ export class Secre {
       await this.avisar(`✓ Le contesté sola a ${nombre}: «${resp}»\n(dijo: «${cita}»)`);
     }
     this.guardar();
+  }
+
+  /* «Por mandar» también enseña lo que llegó, qué hizo Secre y por qué (Carlos, 16 de octubre) */
+  bitacora(jid, nombre, nuevos, que, resp, porque){
+    const dijo = nuevos.slice(-3).map(x => (x.quien ? x.quien + ': ' : '') + x.texto).join(' / ').slice(0, 300);
+    const l = this.estado.contestadas || (this.estado.contestadas = []);
+    l.unshift({ t: this.reloj(), chat: jid, nombre, dijo, que, resp: String(resp || '').slice(0, 600), porque: String(porque || '').slice(0, 240) });
+    this.estado.contestadas = l.slice(0, 150);
+  }
+  /* por qué este chat está en automático, dicho en cristiano */
+  porqueModo(jid){
+    const c = this.config.chats[jid] || {};
+    if(c.rol) return 'sigo la historia del rol';
+    if(c.grupo) return 'en este grupo contesto cuando te hablan';
+    return c.modo === 'auto' ? 'este chat está en «Sola»' : 'contesto sola a cualquier número';
   }
 
   /* lo que Carlos le contó y no ha caducado */
@@ -532,7 +562,7 @@ export class Secre {
     const id = await this.transporte.enviar(jid, texto);
     if(id){ this.estado.enviados.push(id); this.estado.enviados = this.estado.enviados.slice(-500); }
     const h = this.estado.historial[jid] || (this.estado.historial[jid] = []);
-    h.push({ de: 'yo', texto, t: this.reloj() }); this.estado.historial[jid] = h.slice((this.config.chats[jid] || {}).grupo ? -60 : -30);
+    h.push({ de: 'yo', secre: true, texto, t: this.reloj() }); this.estado.historial[jid] = h.slice((this.config.chats[jid] || {}).grupo ? -60 : -30);
     this.anotar(`mandó a ${this.nombreDe(jid)}: ${texto.slice(0, 80)}`);
     return id;
   }

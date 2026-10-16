@@ -59,6 +59,9 @@ async function probar(tema){
   await page.request.post(URL0 + 'api/principal/llega', { data: { chat: ANA, de: ANA, nombre: 'Ana ' + tema, texto: '¿mañana me traes el libro?' } });
   ok('llega un mensaje y la propuesta aparece sola (sin recargar)', await espera(async () => (await art('Ana ' + tema).count()) === 1, 'propuesta', 15000));
   ok('trae lo que le escribieron', /mañana me traes el libro/.test(await page.textContent('#hoja')));
+  const bit = page.locator('#hoja article.bitacora', { hasText: 'Ana ' + tema }).first();
+  ok('abajo, «Lo que llegó y lo que hice» dice qué llegó, qué hizo y por qué', await espera(async () => (await bit.count()) === 1 && /mañana me traes el libro/.test(await bit.textContent()) && /Te lo dejé de propuesta/.test(await bit.textContent()) && !/Contesté:/.test(await bit.textContent()) && /Por qué:/.test(await bit.textContent()), 'bitácora'));
+  await bit.scrollIntoViewIfNeeded().catch(() => {}); await foto('1b-bitacora'); await page.evaluate(() => window.scrollTo(0, 0));
   ok('el globo de la pestaña cuenta las propuestas', (await page.textContent('nav [data-p="propuestas"] .globo')) === String(await page.locator('#hoja article[data-n]').count()));
   ok('la propuesta trae el pendiente detectado', (await estado()).pendientes.some(p => /Llevar/.test(p.texto)));
   await foto('1-propuesta');

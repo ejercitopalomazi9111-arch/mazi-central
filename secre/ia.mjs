@@ -79,7 +79,9 @@ export function sacarJson(t){
   if(m) try{ return JSON.parse(m[0]); }catch{}
   return null;
 }
-const conversacion = (h, dueno, n = 20) => h.slice(-n).map(x => `${x.de === 'yo' ? dueno : (x.quien || 'Él/Ella')}: ${x.texto}`).join('\n');
+/* quién dijo qué: lo que contestó la asistente NO es de Carlos (antes salía como suyo
+   y la IA se confundía), y la otra persona va con su nombre, no «Él/Ella» */
+const conversacion = (h, dueno, n = 30, nombre = '') => h.slice(-n).map(x => `${x.secre ? 'Tú (su asistente)' : x.de === 'yo' ? dueno : (x.quien || nombre || 'La otra persona')}: ${x.texto}`).join('\n');
 /* lo que Carlos le contó a Secre («el viernes hay examen de mate a las 8»): es lo único que puede afirmar además del chat */
 const recuerdos = (dueno, datos) => datos.length ? `Lo que ${dueno} te contó (es verdad; úsalo si viene al caso y no inventes nada más):\n${datos.map(d => '- ' + d).join('\n')}\n` : '';
 const ejemplos = (e) => e.length ? 'Así escribe él (ejemplos reales, imita el tono, el largo, las mayúsculas, la puntuación y los emojis):\n' + e.slice(-30).map(x => '- ' + x).join('\n') : '';
@@ -133,10 +135,11 @@ ${redactar && !auto ? `2) "respuesta": una propuesta de lo que ${dueno} contesta
 ${ejemplos(estilo)}
    - Si lo que preguntan se contesta con "Lo que ${dueno} te contó", úsalo con sus datos exactos (día, hora, temas, precios).` : ''}
 ${recuerdos(dueno, datos)}
-Contesta SÓLO JSON: {"pendientes":[], "respuesta":"", "motivo":"", "urgente":false${auto ? ', "decide":false' : ''}}`;
-    const texto = `Conversación (lo más nuevo al final):\n${conversacion(historial, dueno)}\n\nLo nuevo que no ha contestado:\n${nuevos.map(x => x.texto).join('\n')}`;
+${auto ? `4) "porque": en pocas palabras, para ${dueno}, por qué contestaste así (o por qué no contestaste).
+` : ''}Contesta SÓLO JSON: {"pendientes":[], "respuesta":"", "motivo":"", "urgente":false${auto ? ', "decide":false, "porque":""' : ''}}`;
+    const texto = `Conversación (lo más nuevo al final):\n${conversacion(historial, dueno, 30, nombre)}\n\nLo nuevo que no ha contestado:\n${nuevos.map(x => x.texto).join('\n')}`;
     const j = sacarJson(await preguntar(sistema, texto)) || {};
-    return { pendientes: Array.isArray(j.pendientes) ? j.pendientes.map(String).slice(0, 5) : [], respuesta: redactar ? String(j.respuesta || '') : '', motivo: String(j.motivo || ''), urgente: !!j.urgente, decide: !!j.decide };
+    return { pendientes: Array.isArray(j.pendientes) ? j.pendientes.map(String).slice(0, 5) : [], respuesta: redactar ? String(j.respuesta || '') : '', motivo: String(j.motivo || ''), urgente: !!j.urgente, decide: !!j.decide, porque: String(j.porque || '').slice(0, 200) };
   },
 
   async saludo({ dueno, nombre, cual, nota, estilo, antes }){
