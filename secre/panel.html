@@ -462,6 +462,11 @@ function hojaAjustes(){
       <label class="etq" for="gFirma">Cuando contesta sola, firma como</label><input class="campo" id="gFirma" value="${esc((c.auto || {}).firma ?? 'Asistente de Carlos')}" placeholder="Asistente de Carlos">
       <p class="meta">Lo que necesite tu decisión (dinero, citas, compromisos) no lo contesta: le dice a la persona que ya te pasó su mensaje y te lo deja aquí. Máximo ${(c.auto || {}).porHora || 4} por hora y ${(c.auto || {}).alDia || 20} al día con cada quien, y nunca a otro bot.</p>
       <label class="etq" for="gRes">Resumen de pendientes del día, a las</label><input class="campo" id="gRes" type="time" value="${esc(c.resumen)}">
+      <label class="etq" for="gAvisos">Dónde te escribo</label>
+      <select class="campo" id="gAvisos"><option value="otra" ${c.avisarA !== 'yo' ? 'selected' : ''}>Desde tu otra cuenta (te suena la notificación)</option><option value="yo" ${c.avisarA === 'yo' ? 'selected' : ''}>En tu chat propio (no suena)</option></select>
+      <label class="etq" for="gRepaso">Repaso de qué hice y qué falta</label>
+      <select class="campo" id="gRepaso">${[0, 1, 2, 3, 4, 6].map(k => `<option value="${k}" ${((c.repaso || {}).cada ?? 3) === k ? 'selected' : ''}>${k ? `Cada ${k} h (9:00 a 22:00, sólo si pasó algo)` : 'Apagado'}</option>`).join('')}</select>
+      <p class="meta">Para que te escriba desde la otra cuenta, las dos tienen que estar vinculadas aquí. Contéstale ahí mismo («3», «pendientes», «repaso»…).</p>
       <div class="acciones"><button class="boton principal" id="bGeneral">Guardar</button></div></div>`;
 
   $('#bDato').onclick = async () => {
@@ -482,7 +487,7 @@ function hojaAjustes(){
     try{ const r = await accion(a); avisito(r.hecho); await cargar(true); }catch(e){ avisito('Ponle al menos un tema, un grupo o un horario'); }
   };
   $('#bGeneral').onclick = async () => {
-    try{ await accion({ accion: 'porDefecto', modo: $('#gDef').value }); await accion({ accion: 'auto', firma: $('#gFirma').value.trim() }); await accion({ accion: 'resumen', hora: $('#gRes').value }); avisito('Guardado'); await cargar(true); }catch(e){ avisito(e.message); }
+    try{ await accion({ accion: 'porDefecto', modo: $('#gDef').value }); await accion({ accion: 'auto', firma: $('#gFirma').value.trim() }); await accion({ accion: 'resumen', hora: $('#gRes').value }); await accion({ accion: 'avisos', a: $('#gAvisos').value }); await accion({ accion: 'repaso', cada: +$('#gRepaso').value }); avisito('Guardado'); await cargar(true); }catch(e){ avisito(e.message); }
   };
 }
 

@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>Radio Divergentes · el video</title>
+<!-- EL VIDEO QUE EXPLICA RADIO DIVERGENTES, al estilo de los de Fadori y All's:
+     letra Anton grande, una palabra de color, cortinilla de rayas en cada corte,
+     cámara en mano y escenas que entran con la voz. Se pinta cuadro por cuadro
+     con pintar(t) y lo arma video.mjs (?f=h horizontal, ?f=v vertical).
+     window.TL trae cuándo empieza cada renglón de la voz (lo mide video.mjs). -->
+<style>
+@font-face{font-family:Anton;src:url(../../fadori-campana/f/Anton-Regular.ttf)}
+@font-face{font-family:Pop;font-weight:900;src:url(../../fadori-campana/f/Poppins-Black.ttf)}
+@font-face{font-family:Pop;font-weight:800;src:url(../../fadori-campana/f/Poppins-ExtraBold.ttf)}
+@font-face{font-family:Serif;src:url(../../fadori-campana/f/DMSerifDisplay-Regular.ttf)}
+:root{--vino:#2C0F14;--vino2:#1C070B;--rojo:#A3242F;--rojo2:#8E2438;--crema:#EDE2DA;--oro:#F4B63A;--u:1px}
+*{box-sizing:border-box;margin:0}
+html,body{background:#000;overflow:hidden}
+#lienzo{position:relative;overflow:hidden;background:var(--vino2);color:var(--crema);font-family:Pop,sans-serif}
+#cam{position:absolute;inset:0}
+.esc{position:absolute;inset:0;display:none;overflow:hidden}
+.anton{font-family:Anton,sans-serif;text-transform:uppercase;line-height:.92;letter-spacing:.005em}
+.centro{position:absolute;left:0;right:0;text-align:center}
+.rayas{position:absolute;inset:-20%;background:repeating-linear-gradient(-45deg,var(--c) 0 calc(var(--u)*30),transparent 0 calc(var(--u)*60))}
+.chip{display:inline-block;background:var(--crema);color:var(--vino2);font:800 calc(var(--u)*30)/1 Pop;letter-spacing:.06em;padding:calc(var(--u)*12) calc(var(--u)*24);border-radius:999px;text-transform:uppercase}
+#cort{position:absolute;top:-10%;bottom:-10%;left:0;width:150%;z-index:20;pointer-events:none}
+#cort .rayas{--c:rgba(0,0,0,.14)}
+/* 1 · la pregunta */
+#q{position:absolute;inset:0;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:0 calc(var(--u)*28);padding:0 8%;text-align:center}
+#q span{display:inline-block;font-size:calc(var(--u)*150)}
+/* 2 · el logo */
+#logo2{position:absolute;width:calc(var(--u)*620);height:calc(var(--u)*620)}
+#onda2{position:absolute;left:0;right:0;display:flex;justify-content:center;align-items:center;gap:calc(var(--u)*10)}
+#onda2 b{display:block;width:calc(var(--u)*14);border-radius:99px;background:var(--crema);opacity:.25}
+/* 3 · el grupo */
+#g31{font-size:calc(var(--u)*520);color:var(--crema)}
+/* 4 · cuatro voces */
+.silla{position:absolute;width:calc(var(--u)*230);text-align:center}
+.silla i{display:block;width:calc(var(--u)*200);height:calc(var(--u)*200);margin:0 auto calc(var(--u)*18);border-radius:50%;background:var(--vino);border:calc(var(--u)*8) solid var(--crema);position:relative}
+.silla i::after{content:'';position:absolute;left:50%;top:50%;width:calc(var(--u)*60);height:calc(var(--u)*90);border-radius:calc(var(--u)*30);background:var(--crema);transform:translate(-50%,-62%)}
+.silla b{font:800 calc(var(--u)*30)/1.1 Pop;text-transform:uppercase;letter-spacing:.04em}
+/* 5 · los temas */
+.tema{position:absolute;background:var(--crema);color:var(--vino2);border-radius:calc(var(--u)*22);padding:calc(var(--u)*22) calc(var(--u)*30);box-shadow:0 calc(var(--u)*20) calc(var(--u)*50) rgba(0,0,0,.45);width:calc(var(--u)*560)}
+.tema small{display:block;font:800 calc(var(--u)*22)/1 Pop;color:var(--rojo);letter-spacing:.08em;margin-bottom:calc(var(--u)*8)}
+.tema span{font:calc(var(--u)*40)/1.08 Serif}
+/* 6 · STEAM */
+.letra{position:absolute;text-align:center}
+.letra .anton{font-size:calc(var(--u)*300);display:block}
+.letra b{display:block;font:800 calc(var(--u)*28)/1.15 Pop;text-transform:uppercase;letter-spacing:.04em;margin-top:calc(var(--u)*10)}
+/* 7 · el salón */
+#escudo{position:absolute;width:calc(var(--u)*300)}
+/* 8 · la tele */
+#tele{position:absolute;background:#0b0b0b;border-radius:calc(var(--u)*26);padding:calc(var(--u)*16);box-shadow:0 calc(var(--u)*40) calc(var(--u)*90) rgba(0,0,0,.6)}
+#tele img{display:block;width:100%;height:100%;object-fit:cover;border-radius:calc(var(--u)*12)}
+/* 9 · la recaudación */
+.cosa{position:absolute;width:calc(var(--u)*300);text-align:center}
+.cosa svg{width:calc(var(--u)*200);height:calc(var(--u)*200);display:block;margin:0 auto calc(var(--u)*18)}
+.cosa b{font:800 calc(var(--u)*32)/1.1 Pop;text-transform:uppercase}
+/* créditos */
+#cred{position:absolute;left:8%;right:8%;font:600 calc(var(--u)*24)/1.5 Pop;color:#cdb9b3}
+#cred h3{font:800 calc(var(--u)*30)/1.2 Pop;color:var(--crema);margin-bottom:calc(var(--u)*14)}
+</style></head><body>
+<div id="lienzo"><div id="cam">
+  <section class="esc" id="e1"><div class="rayas" style="--c:rgba(237,226,218,.04)"></div><div id="q"></div></section>
+  <section class="esc" id="e2" style="background:radial-gradient(70% 70% at 50% 45%,#5A1622,#1C070B)"><div id="onda2"></div><img id="logo2" src="../marca/radio-divergentes.svg" alt="">
+    <div class="centro anton" id="t2" style="font-size:calc(var(--u)*120)">Radio Divergentes</div>
+    <div class="centro anton" id="t2b" style="font-size:calc(var(--u)*70);color:var(--oro)">Para quien piensa diferente</div></section>
+  <section class="esc" id="e3" style="background:var(--rojo)"><div class="rayas" style="--c:rgba(0,0,0,.10)"></div>
+    <div class="centro anton" id="g31">3.1</div>
+    <div class="centro" id="t3"><span class="chip">Ética · Instituto Rembrandt</span></div></section>
+  <section class="esc" id="e4" style="background:var(--vino2)"><div id="sillas"></div>
+    <div class="centro anton" id="t4" style="font-size:calc(var(--u)*96)">4 voces · 1 tema · <span style="color:var(--oro)">1 dilema</span></div></section>
+  <section class="esc" id="e5" style="background:#3B0B12"><div class="rayas" style="--c:rgba(255,255,255,.05)"></div><div id="temas"></div>
+    <div class="centro anton" id="t5" style="font-size:calc(var(--u)*130)"><span style="color:var(--oro)">12</span> episodios</div></section>
+  <section class="esc" id="e6" style="background:var(--vino2)"><div id="steam"></div></section>
+  <section class="esc" id="e7" style="background:var(--crema);color:var(--vino2)"><img id="escudo" src="../../reportes/escudo-rembrandt.png" alt="">
+    <div class="centro anton" id="t7" style="font-size:calc(var(--u)*104)">Un salón del <span style="color:var(--rojo)">Rembrandt</span></div>
+    <div class="centro" id="t7b" style="font:800 calc(var(--u)*38)/1.2 Pop">Profesor encargado: Omar Ávila Cruz</div></section>
+  <section class="esc" id="e8" style="background:radial-gradient(80% 80% at 50% 40%,#3a1a10,#0e0805)"><div id="tele"><img id="teleimg" alt=""></div>
+    <div class="centro anton" id="t8" style="font-size:calc(var(--u)*96)">En la pantalla de <span style="color:#F08A3C">Fadori</span></div>
+    <div class="centro" id="t8b"><span class="chip">Circuito cerrado · en el recreo</span></div></section>
+  <section class="esc" id="e9" style="background:var(--rojo2)"><div class="rayas" style="--c:rgba(0,0,0,.10)"></div><div id="cosas"></div>
+    <div class="centro anton" id="t9" style="font-size:calc(var(--u)*92)">Podría haber <span style="color:var(--oro)">recaudación</span></div>
+    <div class="centro" id="t9b" style="font:800 calc(var(--u)*32)/1.2 Pop">Sólo con autorización de Dirección · cada peso con su comprobante</div></section>
+  <section class="esc" id="e10" style="background:radial-gradient(70% 70% at 50% 42%,#5A1622,#1C070B)"><img id="logo10" src="../marca/radio-divergentes.svg" alt="" style="position:absolute">
+    <div class="centro anton" id="t10" style="font-size:calc(var(--u)*120)">Para la <span style="color:var(--oro)">comunidad</span></div></section>
+  <section class="esc" id="e11" style="background:#0d0507"><div id="cred">
+    <h3>Radio Divergentes · grupo 3.1 · Instituto Rembrandt</h3>
+    Profesor encargado: Omar Ávila Cruz<br>Voz: ElevenLabs<br>Música: «Inspired», Kevin MacLeod (incompetech.com), CC BY 4.0<br>Letras: Anton, Poppins y DM Serif Display (SIL Open Font License)<br>Hecho con el Estudio de podcast y la pantalla de Fadori</div></section>
+</div><div id="cort"><div class="rayas"></div></div></div>
+<script>
+const F = new URLSearchParams(location.search).get('f') === 'v' ? 'v' : 'h';
+const W = F === 'v' ? 1080 : 1920, H = F === 'v' ? 1920 : 1080, U = Math.min(W, H) / 1080, V = F === 'v';
+const L = document.getElementById('lienzo'); L.style.width = W + 'px'; L.style.height = H + 'px';
+document.documentElement.style.setProperty('--u', U + 'px');
+const $ = (id) => document.getElementById(id);
+const cl = (x) => Math.max(0, Math.min(1, x)), eo = (x) => 1 - Math.pow(1 - cl(x), 3), eio = (x) => { x = cl(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const rebote = (x) => { x = cl(x); const c = 1.70158 * 1.4, c3 = c + 1; return 1 + c3 * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const px = (v) => v * U + 'px';
+/* cuándo empieza cada renglón de la voz (video.mjs lo mide); de fábrica, un cálculo a mano */
+const TL = window.TL || [0.8, 3.65, 7.6, 10.75, 17.1, 23.7, 33.1, 38.2, 42.3, 48.8];
+const FIN_VOZ = window.FIN_VOZ || 52;
+const ESC = TL.map((t, i) => ['e' + (i + 1), i ? t - 0.18 : 0]).concat([['e11', FIN_VOZ + 1.6]]);
+const DUR = FIN_VOZ + 5.4;
+const COLORES = ['#A3242F', '#EDE2DA', '#F4B63A', '#2C0F14', '#A3242F', '#F4B63A', '#EDE2DA', '#F08A3C', '#A3242F', '#2C0F14', '#111'];
+
+/* lo que se arma una vez */
+'¿Y si el recreo también sirviera para pensar?'.split(' ').forEach(w => { const s = document.createElement('span'); s.className = 'anton'; s.textContent = w; $('q').appendChild(s); });
+for(let i = 0; i < 28; i++) $('onda2').appendChild(document.createElement('b'));
+const SILLAS = ['Presenta', 'Invitado 1', 'Invitado 2', 'Invitado 3'];
+SILLAS.forEach(n => { const d = document.createElement('div'); d.className = 'silla'; d.innerHTML = '<i></i><b>' + n + '</b>'; $('sillas').appendChild(d); });
+const TEMAS = [['1', 'Las culturas'], ['2', 'Holocausto'], ['3', 'Libro de Enoc'], ['4', 'La moda y la aceptación'], ['5', 'Chernóbil'], ['6', 'Torres Gemelas'], ['7', '¿La verdad o vivir feliz?'], ['8', 'La corrupción'], ['9', 'La creación de la vida'], ['10', 'El narco y la economía'], ['11', 'Gentrificación'], ['12', 'Paranormal']];
+TEMAS.forEach(([n, t]) => { const d = document.createElement('div'); d.className = 'tema'; d.innerHTML = '<small>EPISODIO ' + n + '</small><span>' + t + '</span>'; $('temas').appendChild(d); });
+const STEAM = [['S', 'Investigar con fuentes'], ['T', 'Grabar y editar'], ['E', 'Acondicionar el salón'], ['A', 'Voz, imagen y música'], ['M', 'Tiempos y presupuesto']];
+STEAM.forEach(([l, b], i) => { const d = document.createElement('div'); d.className = 'letra'; d.innerHTML = '<span class="anton" style="color:' + (i % 2 ? '#F4B63A' : '#EDE2DA') + '">' + l + '</span><b>' + b + '</b>'; $('steam').appendChild(d); });
+const ICO = {
+  mic: '<svg viewBox="0 0 24 24" fill="none" stroke="#EDE2DA" stroke-width="1.6" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v4M8 21h8"/></svg>',
+  area: '<svg viewBox="0 0 24 24" fill="none" stroke="#EDE2DA" stroke-width="1.6" stroke-linecap="round"><path d="M3 21V9l9-6 9 6v12z"/><path d="M8 21v-6h8v6M7 11h2M15 11h2"/></svg>',
+  silla: '<svg viewBox="0 0 24 24" fill="none" stroke="#EDE2DA" stroke-width="1.6" stroke-linecap="round"><path d="M7 3h10v8H7zM5 11h14l-1 4H6zM7 15v6M17 15v6"/></svg>',
+};
+[['mic', 'Micrófonos'], ['area', 'El área'], ['silla', 'Asientos']].forEach(([k, n]) => { const d = document.createElement('div'); d.className = 'cosa'; d.innerHTML = ICO[k] + '<b>' + n + '</b>'; $('cosas').appendChild(d); });
+
+/* acomodo por formato */
+const P = V ? {
+  logo2: [W / 2 - 310 * U, 380 * U], t2: 1150, t2b: 1300, onda: 690, g31: 520, t3: 1180, sillas: [[270, 420], [810, 420], [270, 900], [810, 900]], t4: 1400,
+  temas: (i) => [70 + (i % 2) * 480, 160 + Math.floor(i / 2) * 230], t5: 1620, steam: (i) => [i < 3 ? 60 + i * 330 : 225 + (i - 3) * 330, i < 3 ? 380 : 1000],
+  escudo: [W / 2 - 150 * U, 380 * U], t7: 860, t7b: 1150, tele: [60, 420, 960, 540], t8: 1060, t8b: 1300, cosas: (i) => [i < 2 ? 160 + i * 460 : 390, i < 2 ? 380 : 900], t9: 1350, t9b: 1520,
+  logo10: [W / 2 - 330 * U, 420 * U, 660], t10: 1200, cred: 640,
+} : {
+  logo2: [W / 2 - 900 * U, H / 2 - 310 * U], t2: 380, t2b: 540, onda: 540, g31: 110, t3: 820, sillas: [[220, 200], [660, 200], [1100, 200], [1540, 200]], t4: 720,
+  temas: (i) => [70 + (i % 3) * 600, 60 + Math.floor(i / 3) * 175], t5: 800, steam: (i) => [80 + i * 360, 220],
+  escudo: [W / 2 - 150 * U, 110 * U], t7: 520, t7b: 700, tele: [380, 70, 1160, 652], t8: 790, t8b: 940, cosas: (i) => [300 + i * 460, 150], t9: 640, t9b: 800,
+  logo10: [W / 2 - 300 * U, 120 * U, 600], t10: 820, cred: 300,
+};
+const pon = (el, x, y) => { el.style.left = px(x); el.style.top = px(y); };
+if(V){ $('t4').style.fontSize = px(78); $('t7').style.fontSize = px(84); $('t8').style.fontSize = px(84); document.querySelectorAll('.tema').forEach(c => c.style.width = px(460)); }
+if(!V){ $('t2').style.left = $('t2b').style.left = px(820); $('t2').style.textAlign = $('t2b').style.textAlign = 'left'; }
+$('logo10').style.width = $('logo10').style.height = px(P.logo10[2]);
+
+/* la cámara en mano y la cortinilla en cada corte */
+function cortina(t){
+  let ci = 0, cp = 9;
+  ESC.forEach(([, a], i) => { if(i && Math.abs(t - a) < 0.5){ ci = i; cp = (t - a + 0.5) / 1.0; } });
+  const c = $('cort');
+  if(cp > 1){ c.style.transform = 'translateX(200%)'; return; }
+  c.style.background = COLORES[ci % COLORES.length];
+  c.style.transform = 'translateX(' + (W * 1.1 - W * 2.7 * eio(cp)) / W * 100 + '%) skewX(-12deg)';
+}
+function camara(t){ $('cam').style.transform = 'translate(' + Math.sin(t * 1.3) * 5 * U + 'px,' + Math.cos(t * 1.7) * 4 * U + 'px) rotate(' + Math.sin(t * 0.9) * 0.25 + 'deg) scale(1.02)'; }
+
+const escenas = {
+  e1(l){
+    [...$('q').children].forEach((s, i) => { const k = rebote((l - 0.35 - i * 0.22) / 0.45); s.style.opacity = cl((l - 0.35 - i * 0.22) / 0.12); s.style.transform = 'translateY(' + (1 - k) * 80 * U + 'px) scale(' + (0.6 + 0.4 * k) + ')'; s.style.color = i >= 6 ? '#F4B63A' : '#EDE2DA'; });
+  },
+  e2(l){
+    const k = rebote(l / 0.7); pon($('logo2'), P.logo2[0] / U, P.logo2[1] / U);
+    $('logo2').style.transform = 'scale(' + k + ') rotate(' + (1 - k) * -90 + 'deg)';
+    $('onda2').style.top = px(P.onda); $('onda2').style.opacity = V ? 1 : .0;
+    [...$('onda2').children].forEach((b, i) => { b.style.height = px(30 + 160 * Math.abs(Math.sin(i * 0.7 + l * 5))); });
+    [['t2', P.t2, 0.6], ['t2b', P.t2b, 1.3]].forEach(([id, y, d]) => { const e = $(id); e.style.top = px(y); e.style.opacity = cl((l - d) / 0.2); e.style.transform = 'translateX(' + (1 - eo((l - d) / 0.5)) * 140 * U + 'px)'; });
+  },
+  e3(l){
+    const k = rebote(l / 0.6); $('g31').style.top = px(P.g31); $('g31').style.transform = 'scale(' + (1.6 - 0.6 * k) + ')'; $('g31').style.opacity = cl(l / 0.15);
+    $('t3').style.top = px(P.t3); $('t3').style.opacity = cl((l - 0.6) / 0.2); $('t3').style.transform = 'translateY(' + (1 - eo((l - 0.6) / 0.4)) * 40 * U + 'px)';
+  },
+  e4(l){
+    [...$('sillas').children].forEach((s, i) => { const [x, y] = P.sillas[i], k = rebote((l - i * 0.25) / 0.5); pon(s, x, y); s.style.transform = 'scale(' + k + ')';
+      const habla = Math.floor(l * 1.6) % 4 === i && l > 1.2; s.querySelector('i').style.background = habla ? '#A3242F' : '#2C0F14'; s.querySelector('i').style.boxShadow = habla ? '0 0 0 ' + px(18) + ' rgba(237,226,218,.18)' : 'none'; });
+    $('t4').style.top = px(P.t4); $('t4').style.opacity = cl((l - 1.6) / 0.2); $('t4').style.transform = 'scale(' + (0.8 + 0.2 * rebote((l - 1.6) / 0.5)) + ')';
+  },
+  e5(l, d){
+    [...$('temas').children].forEach((c, i) => { const [x, y] = P.temas(i), k = eo((l - i * 0.28) / 0.45); pon(c, x, y); c.style.opacity = cl((l - i * 0.28) / 0.15);
+      c.style.transform = 'translateY(' + (1 - k) * 120 * U + 'px) rotate(' + ((i % 3) - 1) * 2 * (1 - k * 0.6) + 'deg)';
+      c.style.background = [1, 4, 7, 10].includes(i) && l > 1.5 ? '#F4B63A' : '#EDE2DA'; });
+    $('t5').style.top = px(P.t5); $('t5').style.opacity = cl((l - 3.6) / 0.2); $('t5').style.transform = 'translateY(' + (1 - eo((l - 3.6) / 0.4)) * 60 * U + 'px)';
+    if(V) $('t5').style.textShadow = '0 ' + px(8) + ' ' + px(30) + ' rgba(0,0,0,.7)';
+  },
+  e6(l){
+    /* cada letra entra cuando la voz la nombra (después de «editamos») */
+    const tLetra = [2.95, 3.75, 4.6, 5.65, 6.25];
+    [...$('steam').querySelectorAll('.letra')].forEach((d, i) => { const [x, y] = P.steam(i), k = rebote((l - tLetra[i]) / 0.45); pon(d, x, y); d.style.width = px(V ? 320 : 330);
+      d.style.opacity = cl((l - tLetra[i]) / 0.1); d.style.transform = 'scale(' + k + ')'; });
+    const tit = $('steam').querySelector('.titulo') || (() => { const t = document.createElement('div'); t.className = 'centro anton titulo'; t.innerHTML = '<span style="color:#F4B63A">STEAM</span> de verdad'; t.style.fontSize = px(120); $('steam').appendChild(t); return t; })();
+    tit.style.top = px(V ? 1500 : 700); tit.style.opacity = cl((l - 7.0) / 0.2); tit.style.transform = 'scale(' + (0.8 + 0.2 * rebote((l - 7.0) / 0.5)) + ')';
+    const intro = $('steam').querySelector('.intro') || (() => { const t = document.createElement('div'); t.className = 'centro anton intro'; t.textContent = 'Investigar · grabar · editar'; t.style.fontSize = px(110); $('steam').appendChild(t); return t; })();
+    intro.style.top = px(V ? 860 : 440); intro.style.opacity = cl(l / 0.2) * (1 - cl((l - 2.85) / 0.12));
+  },
+  e7(l){
+    pon($('escudo'), P.escudo[0] / U, P.escudo[1] / U); const k = rebote(l / 0.6); $('escudo').style.transform = 'scale(' + k + ')';
+    $('t7').style.top = px(P.t7); $('t7').style.opacity = cl((l - 0.4) / 0.2); $('t7').style.transform = 'translateY(' + (1 - eo((l - 0.4) / 0.4)) * 50 * U + 'px)';
+    $('t7b').style.top = px(P.t7b); $('t7b').style.opacity = cl((l - 2.1) / 0.2);
+  },
+  e8(l){
+    const [x, y, w, h] = P.tele, t = $('tele'); pon(t, x, y); t.style.width = px(w); t.style.height = px(h);
+    t.style.transform = 'perspective(' + px(2000) + ') rotateY(' + (1 - eo(l / 0.9)) * 25 + 'deg) scale(' + (0.9 + 0.1 * eo(l / 0.9)) + ')';
+    if(window.TV && window.TVN){ const n = Math.min(window.TVN - 1, Math.floor((6.5 + l) * 30)); const src = window.TV + String(n + 1).padStart(5, '0') + '.jpg'; if($('teleimg').getAttribute('src') !== src) $('teleimg').src = src; }
+    $('t8').style.top = px(P.t8); $('t8').style.opacity = cl((l - 0.5) / 0.2);
+    $('t8b').style.top = px(P.t8b); $('t8b').style.opacity = cl((l - 1.4) / 0.2);
+  },
+  e9(l){
+    const tc = [2.0, 2.75, 3.4];
+    [...$('cosas').children].forEach((c, i) => { const [x, y] = P.cosas(i), k = rebote((l - tc[i]) / 0.45); pon(c, x, y); c.style.opacity = cl((l - tc[i]) / 0.1); c.style.transform = 'scale(' + k + ')'; });
+    $('t9').style.top = px(P.t9); $('t9').style.opacity = cl((l - 0.3) / 0.2);
+    $('t9b').style.top = px(P.t9b); $('t9b').style.opacity = cl((l - 4.2) / 0.3);
+  },
+  e10(l){
+    pon($('logo10'), P.logo10[0] / U, P.logo10[1] / U); const k = rebote(l / 0.8);
+    $('logo10').style.transform = 'scale(' + k + ') rotate(' + ((1 - k) * 120 + Math.sin(l * 1.2) * 2) + 'deg)';
+    $('t10').style.top = px(P.t10); $('t10').style.opacity = cl((l - 1.2) / 0.2); $('t10').style.transform = 'translateY(' + (1 - eo((l - 1.2) / 0.5)) * 60 * U + 'px)';
+  },
+  e11(l){ $('cred').style.top = px(P.cred); $('cred').style.opacity = cl(l / 0.4); },
+};
+window.pintar = (t) => {
+  let k = 0; ESC.forEach(([, a], i) => { if(t >= a) k = i; });
+  document.querySelectorAll('.esc').forEach(e => e.style.display = 'none');
+  const [id, a] = ESC[k]; $(id).style.display = 'block'; escenas[id](t - a);
+  camara(t); cortina(t);
+};
+window.DUR = DUR;
+/* la voz y los efectos (video.mjs los mezcla) */
+window.SONIDOS = [...TL.map((t, i) => ['voz/' + String(i + 1).padStart(2, '0') + '.mp3', t, 1]),
+  ...ESC.slice(1).map(([, a]) => ['whoosh.wav', a - 0.3, 0.45]), ['golpe.wav', TL[1] + 0.1, 0.7], ['golpe.wav', TL[9] + 0.2, 0.7], ['subida.wav', TL[8] + 3, 0.35]];
+window.listo = Promise.all([...document.images].filter(i => i.getAttribute('src')).map(i => i.decode().catch(() => {}))).then(() => document.fonts.ready).then(() => { window.pintar(0); return true; });
+</script></body></html>

@@ -352,7 +352,7 @@ autorizados.clear();
 const l0 = aOtros().length;
 ahora = Date.UTC(2026, 9, 27, 17, 0);
 await llega(LALO, 'sigues ahí?', { nombre: 'Lalo' }); pasar(70); await s.tic();
-ok('y vuelve a ser propuesta', aOtros().length === l0 && /Propuesta:/.test(ultimoAviso()));
+ok('y vuelve a ser propuesta', aOtros().length === l0 && aCarlos().slice(-2).some(e => /Propuesta:/.test(e.texto)), aCarlos().slice(-2));
 const autosMandados = aOtros().filter(e => FIRMA.test(e.texto));
 ok(`cada mensaje que mandó sola fue a un chat que Carlos puso en automático (${autosMandados.length})`, autosMandados.every(e => [PEPE, LALO].includes(e.jid)) && autosMandados.length === 4, autosMandados.map(e => e.jid));
 
@@ -516,8 +516,9 @@ console.log('\n10 · Asistente de verdad: contesta siempre y al instante (Carlos
   ok('aunque Carlos esté escribiendo en ese chat, a lo nuevo le contesta igual', a2().length === 2, a2());
   /* su otra cuenta no se contesta sola: dos Secres no paran nunca */
   const OTRA = '5214429999999@s.whatsapp.net';
-  await s2.alMensaje({ id: 'n3', chat: OTRA, de: OTRA, nombre: 'Carlos 2', texto: 'prueba', mio: false, t: ahora }); pasar(7); await s2.tic();
-  ok('a su otra cuenta no le contesta sola (se lo deja de propuesta)', !env2.some(e => e.jid === OTRA) && s2.estado.propuestas.some(p => p.chat === OTRA));
+  const antesOtra = env2.filter(e => e.jid === OTRA).length;
+  await s2.alMensaje({ id: 'n3', chat: OTRA, de: OTRA, nombre: 'Carlos 2', texto: '🤖 Negro: #4 · Ana: «hola»', mio: false, t: ahora }); pasar(7); await s2.tic();
+  ok('a lo que le avisa la Secre de su otra cuenta no le contesta ni le propone nada', env2.filter(e => e.jid === OTRA).length === antesOtra && !s2.estado.propuestas.some(p => p.chat === OTRA) && !s2.estado.historial[OTRA]);
   /* en el rol sí se hace a un lado si Carlos juega: su personaje no puede salir doble */
   const R2 = '120363777777@g.us';
   s2.chat(R2).grupo = true; s2.chat(R2).rol = true; s2.chat(R2).modo = 'auto'; s2.chat(R2).nombre = 'Taberna 2';
@@ -531,6 +532,77 @@ console.log('\n10 · Asistente de verdad: contesta siempre y al instante (Carlos
   const ya = { config: JSON.stringify({ version: 2, porDefecto: 'borrador', juntar: 30 }) };
   const s4 = new Secre({ cuenta: 'ya', transporte: t2, ia, almacen: { leer: (k, d) => ya[k] ? JSON.parse(ya[k]) : d, guardar(){} }, reloj });
   ok('y lo que Carlos cambie después ya no se lo pisa', s4.config.porDefecto === 'borrador' && s4.config.juntar === 30);
+}
+
+console.log('\n11 · Avisos cruzados: cada cuenta le escribe a la otra para que suene (Carlos, 16 de octubre)');
+{
+  /* dos Secres en el mismo despliegue, una por número, y un WhatsApp de mentira entre ellas */
+  const A_YO = '5217862447707@s.whatsapp.net', A_LID = '111@lid', B_YO = '5214428833786@s.whatsapp.net';
+  const red = []; const S = {}; let n = 1;
+  const hacer = (cuenta, mios, otros) => ({
+    yo: () => mios, otrosYo: () => otros,
+    async enviar(jid, texto){
+      const id = cuenta + (n++); red.push({ de: cuenta, jid, texto, id });
+      /* el eco en la propia cuenta, y si va al otro número, le llega a la otra Secre */
+      await S[cuenta].alMensaje({ id: 'eco' + id, chat: jid, de: mios[0], texto, mio: true, t: ahora });
+      const otra = cuenta === 'A' ? 'B' : 'A', suyos = cuenta === 'A' ? [B_YO] : [A_YO, A_LID];
+      if(suyos.includes(jid)) await S[otra].alMensaje({ id: 'in' + id, chat: mios[0], de: mios[0], nombre: 'Carlos', texto, mio: false, t: ahora });
+      return id;
+    },
+    async escribiendo(){}, async leido(){},
+  });
+  const alm = () => { const d = {}; return { leer: (k, x) => d[k] ? JSON.parse(d[k]) : x, guardar: (k, v) => { d[k] = JSON.stringify(v); } }; };
+  S.A = new Secre({ cuenta: 'A', transporte: hacer('A', [A_YO, A_LID], [B_YO]), ia, almacen: alm(), reloj, azar: () => 0.5 });
+  S.B = new Secre({ cuenta: 'B', transporte: hacer('B', [B_YO], [A_YO, A_LID]), ia, almacen: alm(), reloj, azar: () => 0.5 });
+  ok('de fábrica los avisos van a la otra cuenta', S.A.destinoAvisos() === B_YO && S.B.destinoAvisos() === A_YO, [S.A.destinoAvisos(), S.B.destinoAvisos()]);
+  /* alguien le escribe a la cuenta A y algo necesita a Carlos */
+  const CLI = '5215551112222@s.whatsapp.net';
+  await S.A.alMensaje({ id: 'x1', chat: CLI, de: CLI, nombre: 'Doña Mary', texto: 'cuánto cuesta el vestido?', mio: false, t: ahora }); pasar(7); await S.A.tic(); await S.B.tic();
+  const avA = red.filter(e => e.de === 'A' && e.jid === B_YO);
+  ok('lo de la cuenta 786 le llega al 442 (con notificación), con 🤖 y número', avA.length === 1 && /^🤖 \w+: #\d+ · Doña Mary/.test(avA[0].texto), red);
+  ok('…y no a su chat propio, que no suena', !red.some(e => e.de === 'A' && e.jid === A_YO));
+  ok('la Secre del 442 no se lo contesta ni lo vuelve propuesta', !red.some(e => e.de === 'B' && e.jid === A_YO && !/^🤖/.test(e.texto)) && !S.B.estado.propuestas.length && !S.B.estado.historial[A_YO], S.B.estado.propuestas);
+  /* Carlos contesta desde el 442, en ese mismo chat */
+  const pn = S.A.estado.propuestas[0].n, antes = red.length;
+  await S.B.alMensaje({ id: 'c1', chat: A_YO, de: B_YO, texto: `${pn} sí, cuesta 350`, mio: true, t: ahora });
+  await S.A.alMensaje({ id: 'c1in', chat: B_YO, de: B_YO, nombre: 'Carlos', texto: `${pn} sí, cuesta 350`, mio: false, t: ahora });
+  ok('lo que Carlos contesta desde la otra cuenta es una orden: sale a la persona', red.slice(antes).some(e => e.jid === CLI && /350/.test(e.texto)), red.slice(antes));
+  ok('y la confirmación le llega ahí mismo', red.slice(antes).some(e => e.de === 'A' && e.jid === B_YO && /Listo, a Doña Mary/.test(e.texto)));
+  ok('en la cuenta 442 eso no cuenta como escribir a mano (no aprende ni se calla)', !S.B.estado.estilo.length && !S.B.estado.tomado[A_YO]);
+  /* desde la cuenta B también: le escriben al 442 y avisa al 786 */
+  const red0 = red.length;
+  await S.B.alMensaje({ id: 'x2', chat: LALO, de: LALO, nombre: 'Lalo', texto: 'oye a qué hora es mañana?', mio: false, t: ahora }); pasar(7); await S.B.tic();
+  ok('y al revés: lo del 442 le llega al 786', red.slice(red0).some(e => e.de === 'B' && e.jid === A_YO && /Lalo/.test(e.texto)), red.slice(red0));
+  ok('ninguna Secre se pone a platicar con la otra (cero mensajes sin 🤖 entre los dos números)', !red.some(e => [A_YO, A_LID, B_YO].includes(e.jid) && !/^🤖/.test(e.texto)), red.filter(e => [A_YO, B_YO].includes(e.jid)).map(e => e.texto.slice(0, 40)));
+  /* «avisos aquí» lo regresa al chat propio */
+  await S.A.orden('avisos aquí');
+  ok('«avisos aquí» la regresa a su chat propio', S.A.destinoAvisos() === A_YO && red.slice(-1)[0].jid === A_YO, red.slice(-1));
+  await S.A.orden('avisos a la otra');
+  ok('«avisos a la otra» la vuelve a mandar a la otra cuenta', S.A.destinoAvisos() === B_YO);
+  /* sin otra cuenta vinculada, al chat propio */
+  const solo = new Secre({ cuenta: 'S', transporte: { yo: () => [YO], otrosYo: () => [], async enviar(){ return 'z'; } }, ia, almacen: alm(), reloj });
+  ok('con una sola cuenta vinculada, los avisos van a su chat propio', solo.destinoAvisos() === YO);
+
+  console.log('\n11b · El repaso corto: qué hizo y qué falta, cada 3 h de día');
+  const r0 = red.length;
+  /* mover el reloj a las 12:30 de México, día siguiente: ya pasaron más de 3 h */
+  ahora = Date.UTC(2026, 9, 17, 18, 30);
+  S.A.estado.repasoT = ahora - 4 * 3_600_000;
+  await S.A.alMensaje({ id: 'x3', chat: ANA, de: ANA, nombre: 'Ana', texto: 'hola! me apartas un termo?', mio: false, t: ahora }); pasar(7); await S.A.tic();
+  pasar(60); S.A.estado.repasoT = ahora - 4 * 3_600_000; await S.A.tic();
+  const rep = red.slice(r0).find(e => /Repaso desde/.test(e.texto));
+  ok('cada 3 h le llega un repaso a la otra cuenta', !!rep && rep.jid === B_YO, red.slice(r0).map(e => e.texto.slice(0, 50)));
+  ok('dice a quién contestó, qué espera su número y los pendientes', rep && /Contesté sola: .*Ana/.test(rep.texto) && /Esperan tu número/.test(rep.texto), rep && rep.texto);
+  const r1 = red.length; pasar(3600); await S.A.tic();
+  ok('si no pasó nada nuevo, no manda repaso (que la notificación valga la pena)', !red.slice(r1).some(e => /Repaso/.test(e.texto)));
+  ahora = Date.UTC(2026, 9, 18, 8, 0);   /* 2:00 de la mañana en México */
+  S.A.estado.repasoT = ahora - 5 * 3_600_000;
+  await S.A.alMensaje({ id: 'x4', chat: ANA, de: ANA, nombre: 'Ana', texto: 'y de qué colores?', mio: false, t: ahora }); pasar(7); const r2 = red.length; await S.A.tic();
+  ok('de madrugada no manda repaso', !red.slice(r2).some(e => /Repaso/.test(e.texto)));
+  await S.A.orden('repaso');
+  ok('«repaso» lo manda en el momento', /Repaso desde/.test(red.slice(-1)[0].texto), red.slice(-1));
+  await S.A.orden('repaso 0');
+  ok('«repaso 0» lo apaga', S.A.config.repaso.cada === 0);
 }
 
 console.log(fallas.length ? `\n✗ ${pasan} pasan · ${fallas.length} fallan` : `\n✓ ${pasan}/${pasan}`);
