@@ -60,6 +60,8 @@ nav.pestanas button[aria-selected="true"]{ color:var(--acento); font-weight:700;
 .campo{ width:100%; min-height:44px; padding:10px 12px; border-radius:10px; border:1px solid var(--linea); background:var(--fondo); }
 textarea.campo{ min-height:88px; resize:vertical; }
 label.etq{ display:block; font-size:14px; color:var(--suave); margin:10px 0 4px; }
+.fila-check{ display:flex; align-items:center; gap:10px; min-height:44px; margin:12px 0 0; font-size:15px; }
+.fila-check input{ width:22px; height:22px; accent-color:var(--acento, currentColor); }
 .acciones{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
 .acciones .boton{ flex:1 1 auto; }
 .vacio{ color:var(--suave); text-align:center; padding:32px 8px; }
@@ -467,6 +469,11 @@ function hojaAjustes(){
       <label class="etq" for="gRepaso">Repaso de qué hice y qué falta</label>
       <select class="campo" id="gRepaso">${[0, 1, 2, 3, 4, 6].map(k => `<option value="${k}" ${((c.repaso || {}).cada ?? 3) === k ? 'selected' : ''}>${k ? `Cada ${k} h (9:00 a 22:00, sólo si pasó algo)` : 'Apagado'}</option>`).join('')}</select>
       <p class="meta">Para que te escriba desde la otra cuenta, las dos tienen que estar vinculadas aquí. Contéstale ahí mismo («3», «pendientes», «repaso»…).</p>
+      <label class="etq" for="gVoz">Voz de los audios que manda</label>
+      <select class="campo" id="gVoz">${['Kore', 'Aoede', 'Leda', 'Despina', 'Callirrhoe', 'Puck', 'Charon', 'Orus'].map(v => `<option ${c.voz === v || (!c.voz && v === 'Kore') ? 'selected' : ''}>${v}</option>`).join('')}</select>
+      <label class="fila-check"><input type="checkbox" id="gLlamar" ${(c.llamar || {}).activo ? 'checked' : ''}> Llámame por teléfono cuando algo sea urgente</label>
+      <label class="etq" for="gTel">A qué número (vacío = el de tu otra cuenta)</label><input class="campo" id="gTel" inputmode="tel" value="${esc((c.llamar || {}).tel || '')}" placeholder="4421234567">
+      <p class="meta" id="mLlamadas">${datos.llamadas && datos.llamadas.listas ? 'Las llamadas están listas. De 8:00 a 23:00 y máximo una cada 20 min.' : 'Para que pueda llamarte falta la cuenta de llamadas (Twilio) en Render: ' + esc(((datos.llamadas || {}).falta || ['TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_FROM']).join(', ')) + '.'}</p>
       <div class="acciones"><button class="boton principal" id="bGeneral">Guardar</button></div></div>`;
 
   $('#bDato').onclick = async () => {
@@ -487,7 +494,7 @@ function hojaAjustes(){
     try{ const r = await accion(a); avisito(r.hecho); await cargar(true); }catch(e){ avisito('Ponle al menos un tema, un grupo o un horario'); }
   };
   $('#bGeneral').onclick = async () => {
-    try{ await accion({ accion: 'porDefecto', modo: $('#gDef').value }); await accion({ accion: 'auto', firma: $('#gFirma').value.trim() }); await accion({ accion: 'resumen', hora: $('#gRes').value }); await accion({ accion: 'avisos', a: $('#gAvisos').value }); await accion({ accion: 'repaso', cada: +$('#gRepaso').value }); avisito('Guardado'); await cargar(true); }catch(e){ avisito(e.message); }
+    try{ await accion({ accion: 'porDefecto', modo: $('#gDef').value }); await accion({ accion: 'auto', firma: $('#gFirma').value.trim() }); await accion({ accion: 'resumen', hora: $('#gRes').value }); await accion({ accion: 'avisos', a: $('#gAvisos').value }); await accion({ accion: 'repaso', cada: +$('#gRepaso').value }); await accion({ accion: 'voz', voz: $('#gVoz').value }); await accion({ accion: 'llamar', activo: $('#gLlamar').checked, tel: $('#gTel').value }); avisito('Guardado'); await cargar(true); }catch(e){ avisito(e.message); }
   };
 }
 

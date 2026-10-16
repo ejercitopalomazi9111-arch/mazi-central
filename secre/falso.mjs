@@ -16,6 +16,8 @@ export async function conectar({ telefono, alMensaje, alEstado, alContactos = ()
   return {
     yo: () => yo,
     async enviar(jid, texto){ enviados.push({ jid, texto, t: Date.now() }); return 'falso-' + enviados.length; },
+    async enviarAudio(jid, ogg, segundos){ enviados.push({ jid, texto: `[nota de voz ${segundos || 0} s]`, t: Date.now() }); return 'falso-' + enviados.length; },
+    async grabando(){},
     async enviarSticker(jid){ enviados.push({ jid, texto: '[sticker]', t: Date.now() }); return 'falso-' + enviados.length; },
     async escribiendo(){}, async leido(){}, async cerrar(){},
     /* una agenda de mentiras: tres contactos y dos grupos */

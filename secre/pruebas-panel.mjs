@@ -175,6 +175,9 @@ async function probar(tema){
   const nReglas = (await estado()).config.reglas.length;
   await page.locator('#hoja [data-quitar]').first().click();
   await espera(async () => (await estado()).config.reglas.length === nReglas - 1, 'quitar una regla la quita');
+  /* y que la hoja ya se haya repintado: el repintado forzado de después de quitar la
+     regla borraba lo que se eligiera en los selectores de abajo (la prueba salía roja a veces) */
+  await espera(async () => (await page.locator('#hoja [data-quitar]').count()) === nReglas - 1, 'la hoja ya enseña la regla quitada');
   /* dónde le escribe y el repaso (16 de octubre: «que me escriba desde la otra cuenta para tener las notificaciones») */
   /* con el foco en un campo de la hoja, el repintado de cada 4 s no le cambia lo que eligió */
   await page.focus('#gAvisos'); await page.selectOption('#gAvisos', 'yo'); await page.focus('#gRepaso'); await page.selectOption('#gRepaso', '2'); await page.click('#bGeneral');
@@ -229,6 +232,9 @@ async function probar(tema){
   await omar.locator('[data-rapido="callado"]').click();
   await espera(async () => ((await estado()).chats.find(c => c.nombre === 'Profe Omar') || {}).modoAhora === 'callado', 'un toque en «Callada» le cambia el modo sin abrir el chat');
   ok('y el chat no se abrió al tocar el botón', !(await page.locator('#hoja details[data-id]', { hasText: 'Profe Omar' }).getAttribute('open')));
+  /* el repintado de después del toque tiene que haber llegado antes de seguir: si llega
+     encima de lo que sigue, lo pisa (la prueba de abajo salía roja a veces) */
+  await espera(async () => (await page.locator('#hoja details[data-id] [data-rapido="callado"][aria-pressed="true"]').count()) === 1, 'el botón de Omar ya se ve en «Callada»');
   await page.fill('#busChats', ''); await page.locator('#busChats').dispatchEvent('input');
   await page.click('[data-filtro="grupos"]');
   ok('el filtro «Grupos» sólo enseña grupos', await page.evaluate(() => [...document.querySelectorAll('#hoja details[data-id] .quien')].every(q => q.textContent.startsWith('👥'))));

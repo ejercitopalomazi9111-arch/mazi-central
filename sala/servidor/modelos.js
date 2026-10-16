@@ -472,3 +472,73 @@ export async function generarImagen(env, pedido = {}, hacer = fetch){
     return { bien: false, error: `La imagen falló: ${e && e.message || e}` };
   }finally{ clearTimeout(reloj); }
 }
+
+/* ── LA VOZ · notas de voz para Secre ──────────────────────────────────────
+   Carlos, 16 de octubre: «ponle que me pueda … grabar audios». Verificado ese
+   día contra ai.google.dev/gemini-api/docs/speech-generation y la referencia
+   de generateContent: los modelos de voz son `gemini-3.8-flash-tts` (y su
+   «lite»); se les habla por `v1beta/interactions` con
+   `response_format:{type:'audio'}` y `generation_config.speech_config:[{voice}]`,
+   y generateContent sigue aceptando `responseModalities:['AUDIO']` con
+   `speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName`. Sale PCM de 16 bits,
+   24 kHz, mono (en WAV o crudo). Aquí no se convierte: un Worker no tiene
+   ffmpeg; lo vuelve nota de voz quien la pide (Secre, en Node).
+   Igual que la imagen: se recorre la respuesta buscando el audio, y si un
+   modelo o una ruta da 404 se prueba la siguiente — los nombres cambian. */
+export const MODELOS_VOZ = ['gemini-3.8-flash-tts', 'gemini-3.8-flash-lite-tts', 'gemini-3.1-flash-tts-preview', 'gemini-2.5-flash-preview-tts'];
+export const VOCES = ['Kore', 'Aoede', 'Leda', 'Puck', 'Charon', 'Fenrir', 'Orus', 'Zephyr', 'Callirrhoe', 'Autonoe', 'Despina', 'Sulafat'];
+
+/** El último audio que haya en cualquier parte de una respuesta. */
+export function buscarAudio(j){
+  let hallado = null;
+  const ver = (x) => {
+    if(!x || typeof x !== 'object') return;
+    if(Array.isArray(x)){ x.forEach(ver); return; }
+    const inl = x.inlineData || x.inline_data;
+    const mime = inl && (inl.mimeType || inl.mime_type);
+    if(inl && typeof inl.data === 'string' && inl.data.length > 100 && (!mime || /^audio\//.test(mime))) hallado = { mime: mime || 'audio/L16;rate=24000', data: inl.data };
+    else if(x.type === 'audio' && typeof x.data === 'string' && x.data.length > 100) hallado = { mime: x.mime_type || x.mimeType || 'audio/wav', data: x.data };
+    for(const v of Object.values(x)) if(v && typeof v === 'object') ver(v);
+  };
+  ver(j);
+  return hallado;
+}
+
+/** pedido: { texto, voz?, estilo? } → { bien, mime, data (base64), modelo } */
+export async function generarVoz(env, pedido = {}, hacer = fetch){
+  const k = env && env.GEMINI_API_KEY;
+  if(!k) return { bien: false, error: 'La voz está apagada: falta el secreto GEMINI_API_KEY en el proyecto sala de Cloudflare.' };
+  const texto = String(pedido.texto || '').trim().slice(0, 1500);
+  if(!texto) return { bien: false, error: 'Falta qué decir.' };
+  const voz = VOCES.includes(pedido.voz) ? pedido.voz : 'Kore';
+  const estilo = String(pedido.estilo || 'Dilo en español de México, natural y amable, como una asistente platicando por WhatsApp').slice(0, 300);
+  const dicho = `${estilo}: ${texto}`;
+  const corta = new AbortController();
+  const reloj = setTimeout(() => corta.abort(), 90_000);
+  const cab = { 'x-goog-api-key': k, 'Content-Type': 'application/json' };
+  let ultimo = { bien: false, error: 'Ningún modelo de voz contestó.' };
+  try{
+    for(const modelo of MODELOS_VOZ){
+      const rutas = [
+        ['https://generativelanguage.googleapis.com/v1beta/interactions',
+          { model: modelo, input: [{ type: 'text', text: dicho }], response_format: { type: 'audio' }, generation_config: { speech_config: [{ voice: voz }] } }],
+        [`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`,
+          { contents: [{ role: 'user', parts: [{ text: dicho }] }], generationConfig: { responseModalities: ['AUDIO'], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voz } } } } }],
+      ];
+      for(const [url, cuerpo] of rutas){
+        const r = await hacer(url, { method: 'POST', signal: corta.signal, headers: cab, body: JSON.stringify(cuerpo) });
+        if(r.status === 401 || r.status === 403) return { bien: false, error: `Google rechazó la llave (${r.status}). GEMINI_API_KEY está puesta pero no sirve.` };
+        if(r.status === 429) return { bien: false, error: 'Google dice que vamos muy seguido (429). Espera un momento.' };
+        if(r.status === 404 || r.status === 400){ ultimo = { bien: false, error: `El modelo de voz ${modelo} contestó ${r.status}.` }; continue; }
+        if(!r.ok){ ultimo = { bien: false, error: `Google contestó ${r.status}. ${(await r.text().catch(() => '')).slice(0, 200)}` }; continue; }
+        const a = buscarAudio(await r.json().catch(() => ({})));
+        if(a) return { bien: true, ...a, modelo, voz };
+        ultimo = { bien: false, error: 'La IA contestó sin audio.' };
+      }
+    }
+    return ultimo;
+  }catch(e){
+    if(e && e.name === 'AbortError') return { bien: false, error: 'La voz no terminó en 90 s.' };
+    return { bien: false, error: `La voz falló: ${e && e.message || e}` };
+  }finally{ clearTimeout(reloj); }
+}

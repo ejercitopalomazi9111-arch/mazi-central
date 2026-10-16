@@ -34,7 +34,7 @@
  * ===========================================================================*/
 import {
   MOTORES, preguntar, motoresVivos, motoresApagados,
-  PAPEL_SILLA, PAPEL_RESUMEN, generarImagen, buscarImagen, MODELO_IMAGEN,
+  PAPEL_SILLA, PAPEL_RESUMEN, generarImagen, buscarImagen, MODELO_IMAGEN, generarVoz, buscarAudio, MODELOS_VOZ,
 } from './modelos.js';
 
 let pasan = 0, fallan = 0;
@@ -268,6 +268,32 @@ console.log('\n· Hacer y rehacer imágenes');
   ok('429 dice que esperes', /espera/i.test((await generarImagen(env, { prompt: 'x' }, falso([{ estado: 429, cuerpo: '' }]))).error));
   ok('200 sin imagen no se hace pasar por imagen', !(await generarImagen(env, { prompt: 'x' }, falso([{ cuerpo: { steps: [{ type: 'text', text: 'no puedo' }] } }]))).bien);
   ok('buscarImagen toma la ÚLTIMA imagen (la final, no un borrador)', buscarImagen({ a: { type: 'image', data: 'B'.repeat(150) }, b: [{ inlineData: { data: 'C'.repeat(150) } }] }).data.startsWith('C'));
+}
+
+/* ══ LA VOZ (notas de voz para Secre) ═══════════════════════════════════════ */
+console.log('\n· Notas de voz');
+{
+  const pcm = 'UklGR' + 'A'.repeat(300);
+  const llamadas = [];
+  const falso = (respuestas) => async (url, op) => { llamadas.push({ url, cuerpo: JSON.parse(op.body), cab: op.headers }); const r = respuestas.shift() || { estado: 404, cuerpo: 'no' }; return new Response(typeof r.cuerpo === 'string' ? r.cuerpo : JSON.stringify(r.cuerpo), { status: r.estado || 200 }); };
+  const env = { GEMINI_API_KEY: 'llave-falsa' };
+  ok('sin llave no llama y dice cuál falta', (await generarVoz({}, { texto: 'hola' }, async () => { throw new Error('no'); })).error.includes('GEMINI_API_KEY'));
+  ok('sin texto no llama', !(await generarVoz(env, { texto: ' ' }, async () => { throw new Error('no'); })).bien);
+  llamadas.length = 0;
+  const r1 = await generarVoz(env, { texto: 'Ya llegó tu pedido', voz: 'Aoede' }, falso([{ cuerpo: { steps: [{ type: 'model_output', content: [{ type: 'audio', mime_type: 'audio/wav', data: pcm }] }] } }]));
+  ok('interactions: el audio sale de donde venga, con el primer modelo verificado', r1.bien && r1.data === pcm && r1.mime === 'audio/wav' && llamadas[0].cuerpo.model === MODELOS_VOZ[0], JSON.stringify(r1).slice(0, 160));
+  ok('pide audio, con la voz elegida y la llave en la cabecera', llamadas[0].cuerpo.response_format.type === 'audio' && llamadas[0].cuerpo.generation_config.speech_config[0].voice === 'Aoede' && llamadas[0].cab['x-goog-api-key'] === 'llave-falsa' && !llamadas[0].url.includes('llave'));
+  ok('el texto va con la indicación de hablar en español de México', /español de México/.test(llamadas[0].cuerpo.input[0].text) && /Ya llegó tu pedido/.test(llamadas[0].cuerpo.input[0].text));
+  llamadas.length = 0;
+  const r2 = await generarVoz(env, { texto: 'hola', voz: 'Inventada' }, falso([{ estado: 404, cuerpo: 'no' }, { cuerpo: { candidates: [{ content: { parts: [{ inlineData: { mimeType: 'audio/L16;codec=pcm;rate=24000', data: pcm } }] } }] } }]));
+  ok('si interactions da 404, generateContent con AUDIO y lee inlineData', r2.bien && /L16/.test(r2.mime) && llamadas[1].cuerpo.generationConfig.responseModalities[0] === 'AUDIO', JSON.stringify(r2).slice(0, 160));
+  ok('una voz inventada no se manda: va la de siempre', llamadas[1].cuerpo.generationConfig.speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName === 'Kore');
+  llamadas.length = 0;
+  const r3 = await generarVoz(env, { texto: 'hola' }, falso([{ estado: 404, cuerpo: '' }, { estado: 404, cuerpo: '' }, { cuerpo: { steps: [{ type: 'audio', data: pcm }] } }]));
+  ok('si un modelo ya no existe, prueba el siguiente', r3.bien && r3.modelo === MODELOS_VOZ[1], JSON.stringify(r3).slice(0, 120));
+  ok('401 dice que la llave no sirve', /no sirve/.test((await generarVoz(env, { texto: 'x' }, falso([{ estado: 401, cuerpo: '' }]))).error));
+  ok('200 sin audio no se hace pasar por audio', !(await generarVoz(env, { texto: 'x' }, falso(MODELOS_VOZ.flatMap(() => [{ cuerpo: { steps: [{ type: 'text', text: 'no' }] } }, { cuerpo: {} }])))).bien);
+  ok('buscarAudio no confunde una imagen con audio', !buscarAudio({ inlineData: { mimeType: 'image/png', data: 'B'.repeat(200) } }));
 }
 
 /* ══════════════════════════════════════════════════════════════════════════ */
