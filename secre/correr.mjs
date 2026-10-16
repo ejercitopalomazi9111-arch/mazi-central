@@ -177,6 +177,7 @@ http.createServer(async (req, res) => {
       c.rol = b.modo === 'rol'; c.modo = b.modo === 'rol' ? 'auto' : b.modo;
     }
     if(b.personaje !== undefined) c.personaje = String(b.personaje).slice(0, 800);
+    if(b.mundo !== undefined) c.mundo = String(b.mundo).slice(0, 4000);
     if(b.nota !== undefined) c.nota = String(b.nota).slice(0, 500);
     if(b.etiquetas !== undefined) c.etiquetas = String(b.etiquetas).split(',').map(x => x.trim().toLowerCase()).filter(Boolean).slice(0, 10);
     s.guardar(); return json(res, 200, { bien: true });

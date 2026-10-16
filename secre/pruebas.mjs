@@ -35,12 +35,12 @@ const ultimoAviso = () => (aCarlos().slice(-1)[0] || {}).texto || '';
 let iaFalla = false;
 let vioDatos = [], ordenQuien = '', vioAuto = false, vioRol = null;
 const ia = {
-  async leer({ nuevos, redactar, auto, rol, personaje, grupo, datos = [] }){
+  async leer({ nuevos, redactar, auto, rol, personaje, mundo, grupo, datos = [] }){
     if(iaFalla) throw new Error('sin internet');
     const t = nuevos.map(x => x.texto).join(' ');
     vioAuto = !!auto;
     if(auto && rol){
-      vioRol = { personaje, quienes: nuevos.map(x => x.quien) };
+      vioRol = { personaje, mundo, quienes: nuevos.map(x => x.quien) };
       if(/fuera de rol/i.test(t)) return { pendientes: [], respuesta: '(ahorita no está, luego te contesta)', motivo: 'te piden algo fuera del rol', urgente: false, decide: true };
       return { pendientes: [], respuesta: `*Kael avanza* (${nuevos.length})`, motivo: '', urgente: false };
     }
@@ -380,10 +380,11 @@ ok('juntando lo de varios en una sola jugada', +((/\((\d+)\)/.exec(aG(ROL).slice
 pasar(70); await s.tic();
 const g1r = aG(ROL).length;
 await enGrupo(ROL, 'BotDado', '🤖 Dado: salió 17'); pasar(70); await s.tic();
-ok('si sólo escribió otro bot, no contesta (no se enciclan)', aG(ROL).length === g1r);
+ok('en un grupo SÍ le contesta a otro bot (el de los dados, el narrador)', aG(ROL).length === g1r + 1, aG(ROL).slice(-1));
+const g1b = aG(ROL).length;
 await s.alMensaje({ id: 'C' + (sig++), chat: ROL, de: YO, texto: '*Kael gruñe*', mio: true, grupo: true, t: ahora });
 pasar(60); await enGrupo(ROL, 'Ana', '¿y luego?'); pasar(70); await s.tic();
-ok('si Carlos entra a jugar, se hace a un lado', aG(ROL).length === g1r);
+ok('si Carlos entra a jugar, se hace a un lado', aG(ROL).length === g1b);
 pasar(16 * 60);
 await enGrupo(ROL, 'Ana', 'fuera de rol: Carlos me prestas 200?'); pasar(70); await s.tic();
 ok('lo de la vida real que sólo él decide se lo deja con número', /⚠️ necesita tu decisión/.test(ultimoAviso()), ultimoAviso());
@@ -393,6 +394,23 @@ await enGrupo(ROL, 'Ana', '*sigue la pelea*'); pasar(70); await s.tic();
 await enGrupo(ROL, 'Ana', '*más pelea*'); pasar(70); await s.tic();
 ok('con el tope del grupo (30 por hora) se calla y avisa UNA vez', aG(ROL).length === g2r && aCarlos().length === av2 + 1 && /me detuve/.test(ultimoAviso()), aCarlos().slice(av2).map(e => e.texto));
 s.estado.autos[ROL] = [];
+/* dos bots platicando sin parar: el tope del grupo los frena */
+s.estado.frenoAvisado = {};   /* el aviso de la otra prueba fue hace minutos: una vez por hora */
+const g4r = aG(ROL).length, av4 = aCarlos().length;
+for(let k = 0; k < 40; k++){ await enGrupo(ROL, 'Narrador', `🤖 Narrador: la tormenta sigue (${k})`); pasar(70); await s.tic(); }
+const deMas = aG(ROL).length - g4r;
+ok(`con otro bot que contesta todo, se frena sola en 30 por hora (contestó ${deMas} de 40)`, deMas === 30, deMas);
+ok('y a Carlos le avisa una sola vez', aCarlos().slice(av4).filter(e => /me detuve/.test(e.texto)).length === 1, aCarlos().slice(av4).map(e => e.texto));
+s.estado.autos[ROL] = []; pasar(3600);
+/* el mundo del rol */
+await carlos('mundo taberna del cuervo: Reino de Valdor. La magia está prohibida y los magos se esconden.');
+ok('«mundo Taberna: …» guarda el contexto del mundo', /Guardé el mundo de Taberna del Cuervo/.test(ultimoAviso()) && s.config.chats[ROL].mundo.startsWith('Reino de Valdor'), ultimoAviso());
+await carlos('mundo taberna del cuervo: + El rey murió anoche.');
+ok('«mundo Taberna: + …» le agrega sin borrar lo de antes', /Agregado/.test(ultimoAviso()) && /magos se esconden\.\nEl rey murió anoche\./.test(s.config.chats[ROL].mundo), s.config.chats[ROL].mundo);
+await enGrupo(ROL, 'Ana', '*mira al mago encapuchado*'); pasar(70); await s.tic();
+ok('y la IA lo recibe en cada jugada', vioRol && /Valdor/.test(vioRol.mundo) && /rey murió/.test(vioRol.mundo), vioRol);
+await carlos('mundo taberna del cuervo');
+ok('«mundo Taberna» se lo enseña', /El mundo de Taberna del Cuervo:\nReino de Valdor/.test(ultimoAviso()), ultimoAviso());
 await carlos('sin firma taberna del cuervo');
 await enGrupo(ROL, 'Ana', '*abre la puerta*'); pasar(70); await s.tic();
 ok('«sin firma» manda la jugada tal cual', aG(ROL).slice(-1)[0].texto.startsWith('*Kael avanza*'), aG(ROL).slice(-1));

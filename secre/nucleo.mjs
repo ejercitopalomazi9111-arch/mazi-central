@@ -240,18 +240,19 @@ export class Secre {
     const freno = modo === 'auto' ? this.frenoAuto(jid, nuevos, esGrupo) : '';
     if(freno && esGrupo){
       /* en un grupo, un freno no llena a Carlos de propuestas: se calla y le avisa una vez por hora */
-      if(freno !== 'sólo escribieron bots' && !(this.estado.frenoAvisado[jid] > this.reloj() - HORA)){
+      if(!(this.estado.frenoAvisado[jid] > this.reloj() - HORA)){
         this.estado.frenoAvisado[jid] = this.reloj();
         await this.avisar(`⏸ En ${nombre} me detuve: ${freno}. Sigo en cuanto baje el ritmo.`);
       }
       this.guardar(); return;
     }
     if(freno) modo = 'borrador';
-    /* en un grupo, lo que escribieron otros bots no cuenta como plática */
-    const paraIA = esGrupo ? nuevos.filter(x => !/^\s*🤖/.test(x.texto)) : nuevos;
+    /* en un grupo SÍ platica con otros bots (el narrador, el de los dados…, Carlos,
+       16 de octubre): lo que evita que se enciclen es el tope del grupo */
+    const paraIA = nuevos;
     let r = null;
     try{
-      r = await this.ia.leer({ dueno: this.config.nombre, nombre, nota: c.nota || '', historial: h, nuevos: paraIA.length ? paraIA : nuevos, estilo: this.estado.estilo.slice(-40), redactar: modo !== 'callado', auto: modo === 'auto', rol: modo === 'auto' && !!c.rol, personaje: c.personaje || '', grupo, datos: this.datosVigentes().map(d => d.texto) });
+      r = await this.ia.leer({ dueno: this.config.nombre, nombre, nota: c.nota || '', historial: h, nuevos: paraIA.length ? paraIA : nuevos, estilo: this.estado.estilo.slice(-40), redactar: modo !== 'callado', auto: modo === 'auto', rol: modo === 'auto' && !!c.rol, personaje: c.personaje || '', mundo: c.mundo || '', grupo, datos: this.datosVigentes().map(d => d.texto) });
     }catch(e){ r = null; this.anotar(`la IA falló con ${nombre}: ${e.message}`); }
     for(const p of (r && r.pendientes) || []) this.agregarPendiente(jid, nombre, p);
     if(modo === 'auto' && r) return this.contestarSola(jid, nombre, paraIA.length ? paraIA : nuevos, r);
@@ -276,10 +277,9 @@ export class Secre {
   /* por qué NO contestar sola esta vez ('' = sí puede) */
   frenoAuto(jid, nuevos, esGrupo = false){
     const A = this.confAuto(), ahora = this.reloj();
-    /* otro bot (o un eco de lo nuestro): dos bots contestándose no paran nunca.
-       En un chat de uno, basta un mensaje de bot; en un grupo, sólo si NADIE más escribió */
-    const bot = (x) => /^\s*🤖/.test(x.texto);
-    if(esGrupo ? nuevos.every(bot) : nuevos.some(bot)) return esGrupo ? 'sólo escribieron bots' : 'parece otro bot';
+    /* otro bot: en un chat de uno, dos bots contestándose no paran nunca, así que ahí
+       no. En un grupo autorizado sí (Carlos lo pidió para el rol), y el freno es el tope */
+    if(!esGrupo && nuevos.some(x => /^\s*🤖/.test(x.texto))) return 'parece otro bot';
     const porHora = esGrupo ? A.grupoPorHora : A.porHora, alDia = esGrupo ? A.grupoAlDia : A.alDia;
     const veces = (this.estado.autos[jid] || []).filter(t => ahora - t < 24 * HORA);
     if(veces.filter(t => ahora - t < HORA).length >= porHora) return `ya contesté ${porHora} veces en la última hora`;
@@ -504,6 +504,7 @@ export class Secre {
       this.guardar();
       return this.avisar(`Listo: en ${this.nombreDe(j)} sigo la historia sola mientras no estás` + (c.personaje ? `, como ${c.personaje.split(/[,.]/)[0]}` : '') + `. Si entras a escribir me hago a un lado 15 min.` +
         (c.personaje ? '' : `\nDime quién es tu personaje: «personaje ${this.nombreDe(j)}: nombre, cómo es, qué quiere».`) +
+        (c.mundo ? '' : `\nY cuéntame del mundo: «mundo ${this.nombreDe(j)}: dónde pasa, reglas, quién es quién, qué ha pasado».`) +
         `\nMis mensajes ahí salen con 🤖 para que el grupo sepa que soy yo; «sin firma ${this.nombreDe(j)}» lo quita.\n«manual ${this.nombreDe(j)}» para pararlo.`);
     }
     if((m = /^\/?personaje\s+(?:en\s+|de\s+)?([^:]+?)\s*:\s*([\s\S]+)$/i.exec(t))){
@@ -511,6 +512,17 @@ export class Secre {
       if(!j) return this.avisar(`No tengo a «${m[1].trim()}» en tus chats.`);
       this.chat(j).personaje = m[2].trim().slice(0, 800); this.guardar();
       return this.avisar(`Anotado tu personaje en ${this.nombreDe(j)}.`);
+    }
+    /* el mundo del rol: «mundo Taberna: reino de Valdor, la magia está prohibida…»
+       · «mundo Taberna: + lo que pasó hoy» lo agrega · «mundo Taberna» lo enseña */
+    if((m = /^\/?(?:mundo|historia|lore|contexto)\s+(?:de\s+|en\s+|del\s+)?([^:]+?)(?:\s*:\s*([\s\S]*))?$/i.exec(t))){
+      const j = this.buscarChat(m[1]); if(!j) return this.avisar(`No tengo a «${m[1].trim()}» en tus chats.`);
+      const c = this.chat(j), nuevo = (m[2] || '').trim();
+      if(!nuevo) return this.avisar(c.mundo ? `El mundo de ${this.nombreDe(j)}:\n${c.mundo}` : `No me has contado nada del mundo de ${this.nombreDe(j)}. Escribe «mundo ${this.nombreDe(j)}: …».`);
+      const agrega = /^\+\s*/.exec(nuevo);
+      c.mundo = (agrega && c.mundo ? c.mundo + '\n' + nuevo.slice(agrega[0].length) : nuevo.replace(/^\+\s*/, '')).slice(-4000);
+      this.guardar();
+      return this.avisar(`${agrega ? 'Agregado al' : 'Guardé el'} mundo de ${this.nombreDe(j)} (${c.mundo.length} letras). Lo leo antes de cada jugada.`);
     }
     /* la firma de un chat: «firma Taberna: 🎭 Kael» · «sin firma Taberna» · «firma normal Taberna» */
     if((m = /^\/?sin\s+firma\s+(?:en\s+)?(.+)$/i.exec(t))){
@@ -696,7 +708,7 @@ export const AYUDA = `Lo que sé hacer (escríbelo aquí, en tu chat):
 · «dato: el viernes hay examen de mate a las 8, temas: derivadas» · «datos» · «olvida 2»
 · «automático Ana» le contesto sola · «automático todos» (menos grupos) · «manual Ana» · «apaga automático»
 · en un grupo, sólo si tú lo dices: «automático Equipo» contesto cuando te hablan · «rol Taberna» sigo la historia
-· «personaje Taberna: Kael, mercenario callado» · «sin firma Taberna» · «firma Taberna: 🎭 Kael» · «firma normal Taberna»
+· «personaje Taberna: Kael, mercenario callado» · «mundo Taberna: reino de Valdor, la magia está prohibida…» («mundo Taberna: + lo nuevo» agrega) · «sin firma Taberna» · «firma Taberna: 🎭 Kael» · «firma normal Taberna»
 · «pausa 2h» / «pausa hoy» · «sigue»
 · «estado» · «chats»
 Y en palabras normales, por ejemplo:
