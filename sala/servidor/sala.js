@@ -1380,7 +1380,11 @@ export class Sala {
   /** La primera silla con llave que aparezca NOMBRADA en el texto (por apodo o
    *  por id, como palabra entera), sin contar a `salvo`. */
   sillaNombrada(texto, salvo){
-    for(const palabra of String(texto || '').split(/[^\p{L}]+/u)){
+    /* «Negro» con mayúscula o «@negro»: «el fondo negro queda bien» habla del
+       COLOR, no de él (lo cazó Paulina revisando este mismo código) */
+    for(const m of String(texto || '').matchAll(/(@?)([\p{L}]+)/gu)){
+      const palabra = m[2];
+      if(!m[1] && palabra[0] !== palabra[0].toUpperCase()) continue;
       const id = motorDe(palabra);
       if(id && id !== salvo && MOTORES[id] && this.env && this.env[MOTORES[id].llave]) return id;
     }

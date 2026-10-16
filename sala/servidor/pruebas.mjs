@@ -945,6 +945,15 @@ console.log('\n· Las sillas');
     ok('y se pelean, pero con tope: 6 seguidas y se callan', sillas.length === 6, sillas.length);
     ok('cada quien le contesta a la otra, no al aire', sillas.slice(1).every(e => e.a === 'groq' || e.a === 'gemini'));
   }
+  {
+    responder({ choices: [{ message: { content: 'ok' } }] });
+    visto = null;
+    const s = nueva(LLAVES);
+    await entrar(s, 'claude-de-luis', 'claude');
+    await leer(await pedir(s, 'POST', 'decir', { de:'claude-de-luis', tipo:'mensaje', texto:'el fondo negro del logo queda bien' }));
+    await asentar();
+    ok('«el fondo negro» (minúscula) habla del color: Negro no se despierta', visto === null);
+  }
   /* ── un agente (Godines, Sylcred) las nombra en cualquier lado ─────────── */
   {
     responder({ choices: [{ message: { content: 'qué quieres, Godines' } }] });
