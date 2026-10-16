@@ -64,8 +64,12 @@ async function prender(c){
   /* el transporte llega después de conectar; mientras, el núcleo no manda nada */
   const puente = { yo: () => (v.transporte ? v.transporte.yo() : []), enviar: (j, t) => v.transporte.enviar(j, t), escribiendo: (j, ms) => v.transporte.escribiendo(j, ms), leido: (j) => v.transporte.leido(j) };
   v.secre = new Secre({ cuenta: c.id, transporte: puente, ia, almacen });
+  /* con qué número se pide el código: el de SECRE_CUENTAS, o el que se eligió en el panel
+     (en México WhatsApp puede tener la cuenta como 52… o como 521…) */
+  v.almacen = almacen;
+  const numero = () => (almacen.leer('vinculo', {}).tel) || c.telefono;
   const enchufar = async () => {
-    v.transporte = await conectar({ dir: path.join(dir, 'sesion'), auth, telefono: c.telefono,
+    v.transporte = await conectar({ dir: path.join(dir, 'sesion'), auth, telefono: numero,
       alMensaje: (m) => v.secre.alMensaje(m).catch(e => console.error(`[${c.id}]`, e.message)),
       alEstado: (e) => {
         v.estado = { ...v.estado, ...e };
@@ -75,6 +79,14 @@ async function prender(c){
         /* te saliste desde el teléfono: sesión nueva y código nuevo, sin reiniciar nada */
         if(e.cerrada && NUBE){ auth = cajones[c.id].olvidarSesion(); setTimeout(() => enchufar().catch(err => console.error(err.message)), 2000); }
       } });
+  };
+  /* «Pedir otro código» del panel: suelta la conexión y la sesión a medias y empieza de cero */
+  v.reenchufar = async () => {
+    try{ await v.transporte?.cerrar(); }catch{}
+    if(NUBE) auth = cajones[c.id].olvidarSesion();
+    else fs.rmSync(path.join(dir, 'sesion'), { recursive: true, force: true });
+    v.estado = { ...v.estado, conectado: false, codigo: '', error: 'Pidiendo un código nuevo…' };
+    await enchufar();
   };
   await enchufar();
 }
@@ -138,6 +150,14 @@ http.createServer(async (req, res) => {
   const b = await cuerpo(req), s = v.secre;
   /* sólo en modo de prueba: hacer como que alguien escribió */
   if(FALSO && que === 'llega'){ await v.transporte.llega(b); return json(res, 200, { bien: true }); }
+  if(que === 'numero'){
+    if(v.estado.conectado) return json(res, 409, { error: 'Esa cuenta ya está vinculada.' });
+    const tel = String(b.tel || '').replace(/\D/g, '');
+    if(tel.length < 10 || tel.length > 15) return json(res, 400, { error: 'Ese número no se ve bien: lleva lada del país y sin espacios.' });
+    v.almacen.guardar('vinculo', { tel });
+    v.reenchufar().catch(e => { v.estado.error = e.message; });
+    return json(res, 200, { bien: true });
+  }
   if(!v.estado.conectado && (que === 'orden' || que === 'propuesta')) return json(res, 409, { error: 'Esa cuenta no está conectada a WhatsApp todavía.' });
   if(que === 'accion'){ const hecho = s.aplicar(b); s.guardar(); return json(res, hecho ? 200 : 400, hecho ? { bien: true, hecho } : { error: 'No pude aplicar eso.' }); }
   /* hablarle a Secre desde el panel es lo mismo que escribirle en el chat propio */

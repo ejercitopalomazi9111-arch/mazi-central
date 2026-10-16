@@ -65,6 +65,8 @@ label.etq{ display:block; font-size:14px; color:var(--suave); margin:10px 0 4px;
 .vacio{ color:var(--suave); text-align:center; padding:32px 8px; }
 .aviso{ background:var(--aviso-fondo); color:var(--aviso); border-radius:var(--radio); padding:12px 14px; margin:8px 0; }
 .codigo{ font:700 28px/1.2 ui-monospace,Menlo,monospace; letter-spacing:.08em; color:var(--tinta); display:block; margin:6px 0; }
+.aviso small{ display:block; margin-top:4px; opacity:.8; }
+.fila-vinculo{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
 .chip{ display:inline-block; padding:2px 10px; border-radius:999px; background:var(--acento-claro); font-size:13px; margin:2px 4px 2px 0; }
 .motivo{ font-size:14px; color:var(--aviso); margin:8px 0 0; }
 .pend{ display:flex; gap:12px; align-items:flex-start; padding:10px 0; border-bottom:1px solid var(--linea); }
@@ -191,9 +193,17 @@ function pintar(forzar){
   $('#cuentas').innerHTML = cuentas.map(c => `<button class="cuenta" data-c="${esc(c.id)}" aria-pressed="${c.id === actual}"><span class="punto ${c.conectado ? 'si' : ''}" aria-hidden="true"></span>${esc(c.id)}<span class="oculto">${c.conectado ? ' (conectada)' : ' (sin conectar)'}</span></button>`).join('');
   document.querySelectorAll('.cuenta').forEach(b => b.onclick = async () => { actual = b.dataset.c; huella = ''; await cargar(true); });
   const k = datos.conexion || {};
+  /* en México la cuenta puede estar como 52… o como 521…: si un formato no deja, el otro */
+  const otro = /^521\d{10}$/.test(k.para || '') ? '52' + k.para.slice(3) : /^52\d{10}$/.test(k.para || '') ? '521' + k.para.slice(2) : '';
+  const bonito = (t) => '+' + t.replace(/^(52)(1?)(\d{3})(\d{3})(\d{4})$/, (m, a, b, c, d, e) => `${a} ${b ? b + ' ' : ''}${c} ${d} ${e}`).replace(/^(1)(\d{3})(\d{3})(\d{4})$/, '$1 $2 $3 $4');
   $('#conexion').innerHTML = (k.aviso ? `<div class="aviso">⚠️ ${esc(k.aviso)}</div>` : '') + (k.conectado ? '' : k.codigo
-    ? `<div class="aviso"><b>Falta vincular «${esc(datos.cuenta)}».</b> En ese teléfono: WhatsApp → Dispositivos vinculados → Vincular un dispositivo → <b>Vincular con número de teléfono</b>, y escribe:<span class="codigo">${esc(k.codigo)}</span></div>`
+    ? `<div class="aviso"><b>Falta vincular «${esc(datos.cuenta)}».</b> En ese teléfono: WhatsApp → Dispositivos vinculados → Vincular un dispositivo → <b>Vincular con número de teléfono</b>, y escribe:<span class="codigo">${esc(k.codigo)}</span>`
+      + `<small>Código para ${esc(bonito(k.para || ''))}. Sirve unos minutos; si cambia aquí, usa el nuevo.</small>`
+      + `<div class="fila-vinculo"><button class="boton" id="bOtroCodigo">Pedir otro código</button>${otro ? `<button class="boton" id="bOtroNumero" data-tel="${esc(otro)}">¿No te deja? Probar como ${esc(bonito(otro))}</button>` : ''}</div></div>`
     : `<div class="aviso">«${esc(datos.cuenta)}» no está conectada${k.error ? ': ' + esc(k.error) : '. Esperando a WhatsApp…'}</div>`);
+  const pedirCodigo = async (tel, msj) => { try{ await api(actual + '/numero', { tel }); avisito(msj); }catch(e){ avisito(e.message); } };
+  if($('#bOtroCodigo')) $('#bOtroCodigo').onclick = () => pedirCodigo(k.para, 'Pidiendo otro código…');
+  if($('#bOtroNumero')) $('#bOtroNumero').onclick = (ev) => pedirCodigo(ev.currentTarget.dataset.tel, 'Pidiendo código para ' + bonito(ev.currentTarget.dataset.tel) + '…');
   /* quién de las tres (Secre, Paulina, Negro) está de guardia */
   $('#titulo').textContent = datos.deTurno || 'Secre';
   const pausado = datos.config.pausaHasta > Date.now();
