@@ -1174,6 +1174,25 @@
     "las ias de la sala no hablan",
     "request too large 413 groq"
    ]
+  },
+  {
+   "id": "codigo-de-whatsapp-que-no-vincula",
+   "titulo": "Secre da códigos para vincular WhatsApp y el teléfono dice «No se pudo vincular el dispositivo»",
+   "gravedad": "alta",
+   "sintoma": "El panel de Secre enseña un código de 8 letras, se escribe en WhatsApp → Vincular con número de teléfono y sale «No se pudo vincular el dispositivo», con todos los códigos que se pidan.",
+   "causa": "Dos a la vez en secre/whatsapp.mjs: el código se pedía en 'connecting', antes del saludo con WhatsApp («Connection Closed»), y requestPairingCode de Baileys apunta el número en creds.me antes de que el teléfono acepte; la reconexión siguiente intentaba ENTRAR en vez de vincularse y WhatsApp contestaba 401, que además se leía como «te saliste».",
+   "porque": "Se probó sólo con el WhatsApp de mentiras (falso.mjs), que se «conecta» solo: el camino de vincular nunca corrió contra el servidor de verdad.",
+   "arreglo": "Pedir el código cuando llega `qr`, uno por conexión; antes de cada conexión, borrar creds.me si no hay vinculación hecha (sin registered ni account); un 401 sin vincular reconecta en vez de cerrar. Y en el panel: para qué número es el código, «Pedir otro código» y probar el formato 52/521 de México.",
+   "comoCazarlo": "secre/pruebas-vincular.mjs corre contra WhatsApp de verdad con el 1-555-0100 (de ficción, no le llega nada a nadie): pide código, corta la conexión y exige un código nuevo sin 401.",
+   "consejo": "Un adaptador que habla con un servicio de fuera se prueba una vez contra el servicio de verdad, aunque sea con un número de ficción; el de mentiras sólo prueba lo de adentro.",
+   "salioDe": "secre/whatsapp.mjs",
+   "senales": [
+    "no se pudo vincular el dispositivo",
+    "el código de whatsapp no sirve",
+    "secre no se conecta",
+    "401 connection failure baileys",
+    "vincular con número de teléfono"
+   ]
   }
  ]
 }

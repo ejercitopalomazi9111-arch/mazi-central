@@ -46,6 +46,11 @@ Desde el iPhone: **Central → Secre** y sigue los pasos. En corto:
 3. Cuando diga **Live**, pegas su link en la página de la Central y abres el panel.
 4. En el panel sale un **código de 8 letras por cuenta**: WhatsApp → Dispositivos
    vinculados → Vincular un dispositivo → Vincular con número de teléfono.
+   - Abajo del código dice **para qué número es**. Cada código sirve unos minutos; si
+     cambia en el panel, usa el nuevo. **«Pedir otro código»** saca uno al momento.
+   - En México WhatsApp puede tener tu cuenta como `52…` o como `521…`. Si con uno sale
+     «No se pudo vincular», toca **«¿No te deja? Probar como…»** y usa el código nuevo.
+     Se queda guardado el que funcione.
 
 **Por qué así y no de paga:** Render gratis da 750 horas al mes (alcanza para el mes
 entero) pero se duerme a los 15 minutos sin visitas y **borra su disco al reiniciar**.
@@ -86,4 +91,6 @@ Con `SECRE_NUBE=no` guarda en `secre/datos/` (nunca entra al repo) en vez de La 
 | `falso.mjs` | WhatsApp e IA de mentiras: `SECRE_FALSO=1 npm start` prueba todo sin teléfono |
 | `pruebas.mjs` | el núcleo (59) — la última prueba revisa que **cada envío a otra persona tenga una aprobación tuya** |
 | `pruebas-panel.mjs` | el panel en un navegador de verdad a 390 px, claro y oscuro (38) |
+| `pruebas-vincular.mjs` | vincular contra WhatsApp DE VERDAD con un número de ficción (1-555-0100): código a tiempo y código nuevo tras un corte (5) |
+| `pruebas-vincular-panel.mjs` | la pantalla del código: número, «Pedir otro código» y el formato 52/521 (11) |
 | `nube.mjs` · `pruebas-nube.mjs` | guardar cifrado en La Sala; la prueba apaga y prende Secre y revisa que se acuerde de todo (12) |

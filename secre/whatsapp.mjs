@@ -45,23 +45,41 @@ export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () =
   const logger = pino({ level: registro });
   /* `auth` viene de nube.mjs cuando el disco no sobrevive a un reinicio (servidor gratis) */
   const { state, saveCreds } = auth || await useMultiFileAuthState(dir);
-  let sock = null, yoJids = [], vivo = true, codigoPedido = false;
+  let sock = null, yoJids = [], vivo = true;
+  /* `registered` lo pone la vinculación con código; `account`, cualquier vinculación que cuajó */
+  const vinculada = () => !!(state.creds.registered || state.creds.account);
+  const numero = () => String(typeof telefono === 'function' ? telefono() : telefono || '').replace(/\D/g, '');
   const ultimas = new Map();          /* jid → llaves de lo último que llegó, para marcar leído */
   const grupos = new Map();           /* jid → nombre del grupo */
 
   async function arrancar(){
+    /* ⚠ requestPairingCode apunta el número en creds.me ANTES de que el teléfono
+       acepte. Si ese intento no se completa, la siguiente conexión trae creds.me
+       y Baileys intenta ENTRAR en vez de VINCULARSE: WhatsApp contesta 401 y
+       todos los códigos que siguen nacen muertos. Reproducido el 16 de octubre
+       contra WhatsApp de verdad («No se pudo vincular el dispositivo» de Carlos). */
+    if(!state.creds.registered && !state.creds.account && state.creds.me){
+      delete state.creds.me; delete state.creds.pairingCode;
+      try{ await saveCreds(); }catch{}
+    }
     const { version } = await fetchLatestBaileysVersion().catch(() => ({ version: undefined }));
-    sock = makeWASocket({ ...(version ? { version } : {}), auth: state, logger, browser: Browsers.macOS('Desktop'),
+    let pedido = false;                  /* un código por conexión: el de una conexión vieja ya no sirve */
+    sock = makeWASocket({ ...(version ? { version } : {}), auth: state, logger,
+      browser: Browsers.macOS('Chrome'), /* «Chrome (Mac OS)»: la forma que WhatsApp acepta al vincular con código */
+      qrTimeout: 60_000,                 /* cada código vive ~6 min en vez de ~2: da tiempo de escribirlo */
       markOnlineOnConnect: false,        /* que no salga «en línea» todo el día por el bot */
       syncFullHistory: false });
+    const este = sock;
     sock.ev.on('creds.update', saveCreds);
     sock.ev.on('connection.update', async (u) => {
-      if((u.qr || u.connection === 'connecting') && !state.creds.registered && telefono && !codigoPedido){
-        codigoPedido = true;
+      /* el código se pide cuando llega `qr`: ahí el servidor ya terminó el saludo.
+         Pedirlo en 'connecting' (como antes) truena con «Connection Closed». */
+      if(u.qr && !vinculada() && numero() && !pedido){
+        pedido = true;
         try{
-          const codigo = await sock.requestPairingCode(String(telefono).replace(/\D/g, ''));
-          alEstado({ conectado: false, codigo: codigo.match(/.{1,4}/g).join('-') });
-        }catch(e){ codigoPedido = false; alEstado({ conectado: false, error: 'No pude pedir el código: ' + e.message }); }
+          const codigo = await este.requestPairingCode(numero());
+          alEstado({ conectado: false, codigo: codigo.match(/.{1,4}/g).join('-'), para: numero(), desde: Date.now() });
+        }catch(e){ alEstado({ conectado: false, error: 'No pude pedir el código: ' + e.message }); }
       }
       if(u.connection === 'open'){
         const me = state.creds.me || {};
@@ -70,9 +88,11 @@ export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () =
       }
       if(u.connection === 'close'){
         const codigo = u.lastDisconnect && u.lastDisconnect.error && u.lastDisconnect.error.output && u.lastDisconnect.error.output.statusCode;
-        if(codigo === DisconnectReason.loggedOut){ vivo = false; alEstado({ conectado: false, cerrada: true, error: 'WhatsApp cerró la sesión (te saliste desde el teléfono). Hay que vincular otra vez.' }); return; }
-        alEstado({ conectado: false, error: 'Se cortó; reconectando…' });
-        if(vivo) setTimeout(() => arrancar().catch(e => alEstado({ conectado: false, error: e.message })), 3000);
+        /* sin vincular, un 401 es un intento de vinculación que no cuajó, no «te saliste» */
+        if(codigo === DisconnectReason.loggedOut && vinculada()){ vivo = false; alEstado({ conectado: false, cerrada: true, error: 'WhatsApp cerró la sesión (te saliste desde el teléfono). Hay que vincular otra vez.' }); return; }
+        if(!vivo || este !== sock) return;   /* se cerró a propósito o ya hay otra conexión */
+        alEstado({ conectado: false, codigo: '', error: vinculada() ? 'Se cortó; reconectando…' : 'Pidiendo un código nuevo…' });
+        setTimeout(() => arrancar().catch(e => alEstado({ conectado: false, error: e.message })), 3000);
       }
     });
     sock.ev.on('messages.upsert', async ({ messages, type }) => {
@@ -111,5 +131,7 @@ export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () =
     },
     async leido(jid){ const ks = ultimas.get(jid); if(ks && ks.length){ await sock.readMessages(ks).catch(() => {}); ultimas.delete(jid); } },
     async cerrar(){ vivo = false; try{ sock.end(undefined); }catch{} },
+    /* para las pruebas: cortar la conexión como la corta la red o WhatsApp, sin apagar a Secre */
+    _soltar(){ sock.end(new Error('corte de prueba')); },
   };
 }

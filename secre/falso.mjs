@@ -8,8 +8,11 @@
 export const enviados = [];
 
 export async function conectar({ telefono, alMensaje, alEstado }){
-  const yo = [`${telefono || '5210000000000'}@s.whatsapp.net`];
-  setTimeout(() => alEstado({ conectado: true, yo: yo[0] }), 50);
+  const tel = String((typeof telefono === 'function' ? telefono() : telefono) || '5210000000000');
+  const yo = [`${tel}@s.whatsapp.net`];
+  /* SECRE_FALSO_SIN_VINCULAR=1: se queda esperando a que pongas el código, para probar esa pantalla */
+  if(process.env.SECRE_FALSO_SIN_VINCULAR) setTimeout(() => alEstado({ conectado: false, codigo: 'ABCD-' + tel.slice(-4), para: tel, desde: Date.now() }), 50);
+  else setTimeout(() => alEstado({ conectado: true, yo: yo[0] }), 50);
   return {
     yo: () => yo,
     async enviar(jid, texto){ enviados.push({ jid, texto, t: Date.now() }); return 'falso-' + enviados.length; },
