@@ -278,7 +278,7 @@ function hojaPendientes(){
 }
 
 /* ══ Chats ═══════════════════════════════════════════════════════════════ */
-const NOMBRE_MODO = { borrador: 'te propongo respuestas', callado: 'sólo anoto pendientes' };
+const NOMBRE_MODO = { borrador: 'te propongo respuestas', callado: 'sólo anoto pendientes', auto: 'contesto sola' };
 function hojaChats(){
   const cs = datos.chats;
   $('#hoja').innerHTML = `<h2>Chats</h2><p class="meta">Aparecen cuando te escriben. Toca uno para decirle a Secre cómo tratarlo.</p>` + (cs.length ? cs.map(c => `
@@ -287,7 +287,8 @@ function hojaChats(){
       <select class="campo" data-modo>
         <option value="" ${!c.modo ? 'selected' : ''}>Lo normal (${NOMBRE_MODO[c.grupo ? datos.config.grupos : datos.config.porDefecto]})</option>
         <option value="borrador" ${c.modo === 'borrador' ? 'selected' : ''}>Proponerme respuestas</option>
-        <option value="callado" ${c.modo === 'callado' ? 'selected' : ''}>Sólo anotar pendientes</option></select>
+        <option value="callado" ${c.modo === 'callado' ? 'selected' : ''}>Sólo anotar pendientes</option>
+        ${c.grupo ? '' : `<option value="auto" ${c.modo === 'auto' ? 'selected' : ''}>Contestarle sola, como mi asistente</option>`}</select>
       <label class="etq">Quién es (para que las respuestas le hablen bien)</label>
       <textarea class="campo" data-nota placeholder="ej. es mi novia, háblale bonito · es el profe de mate, de usted">${esc(c.nota || '')}</textarea>
       <label class="etq">Grupos (separados por coma)</label>
@@ -311,7 +312,7 @@ function textoRegla(r){
   if(r.chats) p.push('con ' + r.chats.map(nombreDe).join(', '));
   if(r.de) p.push(`de ${r.de} a ${r.a}`);
   if(r.hasta) p.push('hasta el ' + dia(r.hasta - 1));
-  return `<b>${r.modo === 'callado' ? 'No proponer' : 'Proponer'}</b> ${esc(p.join(' · '))}`;
+  return `<b>${r.modo === 'callado' ? 'No proponer' : r.modo === 'auto' ? 'Contestar sola' : 'Proponer'}</b> ${esc(p.join(' · '))}`;
 }
 function hojaAjustes(){
   const c = datos.config;
@@ -340,7 +341,7 @@ function hojaAjustes(){
     <p class="meta">Para cambiar lo que hace Secre según el tema, el grupo o la hora. La más nueva gana.</p>
     ${c.reglas.map(r => `<div class="tarjeta fila" style="flex-wrap:nowrap"><span style="flex:1">${textoRegla(r)}</span><button class="boton peligro" data-quitar="${esc(r.id)}">Quitar</button></div>`).join('') || '<p class="meta">Sin reglas.</p>'}
     <details class="tarjeta"><summary><span class="quien">＋ Nueva regla</span></summary>
-      <label class="etq" for="rModo">Qué hacer</label><select class="campo" id="rModo"><option value="callado">No proponer respuestas (sólo pendientes)</option><option value="borrador">Sí proponer respuestas</option></select>
+      <label class="etq" for="rModo">Qué hacer</label><select class="campo" id="rModo"><option value="callado">No proponer respuestas (sólo pendientes)</option><option value="borrador">Sí proponer respuestas</option><option value="auto">Contestar sola (menos en grupos)</option></select>
       <label class="etq" for="rPal">Si hablan de… (palabras separadas por coma)</label><input class="campo" id="rPal" placeholder="tarea, examen">
       <label class="etq" for="rEtq">Con los de estos grupos</label><input class="campo" id="rEtq" placeholder="escuela">
       <div class="dos"><div><label class="etq" for="rDe">Desde las</label><input class="campo" id="rDe" type="time"></div><div><label class="etq" for="rA">Hasta las</label><input class="campo" id="rA" type="time"></div></div>
@@ -350,7 +351,9 @@ function hojaAjustes(){
     <h2>Lo general</h2>
     <div class="tarjeta">
       <label class="etq" for="gDef">Chats sin ajuste propio</label>
-      <select class="campo" id="gDef"><option value="borrador" ${c.porDefecto === 'borrador' ? 'selected' : ''}>Proponerme respuestas</option><option value="callado" ${c.porDefecto === 'callado' ? 'selected' : ''}>Sólo anotar pendientes</option></select>
+      <select class="campo" id="gDef"><option value="borrador" ${c.porDefecto === 'borrador' ? 'selected' : ''}>Proponerme respuestas</option><option value="callado" ${c.porDefecto === 'callado' ? 'selected' : ''}>Sólo anotar pendientes</option><option value="auto" ${c.porDefecto === 'auto' ? 'selected' : ''}>Contestarles sola (menos grupos)</option></select>
+      <label class="etq" for="gFirma">Cuando contesta sola, firma como</label><input class="campo" id="gFirma" value="${esc((c.auto || {}).firma ?? 'Asistente de Carlos')}" placeholder="Asistente de Carlos">
+      <p class="meta">Lo que necesite tu decisión (dinero, citas, compromisos) no lo contesta: le dice a la persona que ya te pasó su mensaje y te lo deja aquí. Máximo ${(c.auto || {}).porHora || 4} por hora y ${(c.auto || {}).alDia || 20} al día con cada quien, y nunca a otro bot.</p>
       <label class="etq" for="gRes">Resumen de pendientes del día, a las</label><input class="campo" id="gRes" type="time" value="${esc(c.resumen)}">
       <div class="acciones"><button class="boton principal" id="bGeneral">Guardar</button></div></div>`;
 
@@ -372,7 +375,7 @@ function hojaAjustes(){
     try{ const r = await accion(a); avisito(r.hecho); await cargar(true); }catch(e){ avisito('Ponle al menos un tema, un grupo o un horario'); }
   };
   $('#bGeneral').onclick = async () => {
-    try{ await accion({ accion: 'porDefecto', modo: $('#gDef').value }); await accion({ accion: 'resumen', hora: $('#gRes').value }); avisito('Guardado'); await cargar(true); }catch(e){ avisito(e.message); }
+    try{ await accion({ accion: 'porDefecto', modo: $('#gDef').value }); await accion({ accion: 'auto', firma: $('#gFirma').value.trim() }); await accion({ accion: 'resumen', hora: $('#gRes').value }); avisito('Guardado'); await cargar(true); }catch(e){ avisito(e.message); }
   };
 }
 

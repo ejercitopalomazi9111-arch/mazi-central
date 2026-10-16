@@ -20,9 +20,16 @@
    Modos por chat:
      borrador  → redacta la respuesta y se la deja lista a Carlos (el normal)
      callado   → no redacta; sólo anota pendientes
+     auto      → contesta SOLA, firmada como su asistente (Carlos, 16 de octubre:
+                 «no tengo tiempo de tomar mi teléfono en el día y necesito que
+                 mis clientes estén bien atendidos solos»). Sólo en los chats que
+                 él puso en automático, nunca en grupos. Lo que necesite su
+                 decisión (dinero, citas, compromisos) le contesta «ya le pasé tu
+                 mensaje» y se lo deja a Carlos. Con frenos: tope por hora y por
+                 día en cada chat, y no le contesta a otro bot.
    ═════════════════════════════════════════════════════════════════════════ */
 
-export const MODOS = ['borrador', 'callado'];
+export const MODOS = ['borrador', 'callado', 'auto'];
 const MIN = 60_000, HORA = 60 * MIN;
 const TZ = 'America/Mexico_City';
 
@@ -45,6 +52,8 @@ export function configBase(){
     juntar: 45,                    /* segundos que espera a que la otra persona termine de escribir */
     esperaSiContesto: 15,          /* minutos que Secre se calla en un chat donde Carlos acaba de escribir */
     caducan: 6,                    /* horas que vive una propuesta sin aprobar */
+    /* el modo automático: cómo firma y cuántas veces contesta sola por chat */
+    auto: { firma: 'Asistente de Carlos', porHora: 4, alDia: 20 },
   };
 }
 
@@ -103,6 +112,8 @@ export class Secre {
       atendido: {},        /* jid → hasta qué mensaje ya se le propuso algo */
       cola: {},            /* jid → cuándo toca redactar */
       enviados: [],        /* ids de lo que mandó Secre (para no confundirlo con Carlos) */
+      autos: {},           /* jid → [cuándo contestó sola] (para los topes) */
+      autoHoy: { fecha: '', lista: [] },  /* lo que contestó sola hoy, para el resumen */
       registro: [],        /* lo que hizo, para el panel */
       charla: [],          /* la plática de Carlos con Secre, también para el panel */
       resumenFecha: '',
@@ -131,6 +142,11 @@ export class Secre {
 
   /* ── el modo que toca en este chat, ahora ── */
   modo(jid, texto = '', grupo = false){
+    const m = this.modoCrudo(jid, texto, grupo);
+    /* en un grupo nunca contesta sola: ahí le habla a mucha gente a la vez */
+    return m === 'auto' && (grupo || (this.config.chats[jid] || {}).grupo) ? 'borrador' : m;
+  }
+  modoCrudo(jid, texto, grupo){
     const ahora = this.reloj(), c = this.config.chats[jid] || {};
     if(this.config.pausaHasta > ahora) return 'callado';
     const tomado = this.estado.tomado[jid];
@@ -208,13 +224,19 @@ export class Secre {
     if(!nuevos.length) return;
     this.estado.atendido[jid] = nuevos[nuevos.length - 1].t;
     const texto = nuevos.map(x => x.texto).join('\n');
-    const modo = this.modo(jid, texto, grupo);
+    let modo = this.modo(jid, texto, grupo);
     const nombre = this.nombreDe(jid);
+    /* en automático, los frenos: si alguno salta, se porta como borrador */
+    const freno = modo === 'auto' ? this.frenoAuto(jid, nuevos) : '';
+    if(freno) modo = 'borrador';
     let r = null;
     try{
-      r = await this.ia.leer({ dueno: this.config.nombre, nombre, nota: this.chat(jid).nota || '', historial: h, nuevos, estilo: this.estado.estilo.slice(-40), redactar: modo === 'borrador', grupo, datos: this.datosVigentes().map(d => d.texto) });
+      r = await this.ia.leer({ dueno: this.config.nombre, nombre, nota: this.chat(jid).nota || '', historial: h, nuevos, estilo: this.estado.estilo.slice(-40), redactar: modo !== 'callado', auto: modo === 'auto', grupo, datos: this.datosVigentes().map(d => d.texto) });
     }catch(e){ r = null; this.anotar(`la IA falló con ${nombre}: ${e.message}`); }
     for(const p of (r && r.pendientes) || []) this.agregarPendiente(jid, nombre, p);
+    if(modo === 'auto' && r) return this.contestarSola(jid, nombre, nuevos, r);
+    /* sin IA no hay qué contestar sola: se le deja a Carlos como siempre */
+    if(modo === 'auto') modo = 'borrador';
     if(modo !== 'borrador'){ this.guardar(); return; }
     const propuesta = r && r.respuesta ? String(r.respuesta).trim() : '';
     if(!propuesta && !(r && r.urgente)){ this.guardar(); return; }
@@ -225,7 +247,43 @@ export class Secre {
     this.estado.propuestas.push({ n, chat: jid, nombre, texto: propuesta, motivo: (r && r.motivo) || '', dijo: cita, urgente: !!(r && r.urgente), t: this.reloj(), tipo: 'respuesta' });
     await this.avisar(`#${n} · ${nombre}${r && r.urgente ? ' ⚠️' : ''}: «${cita}»\n` +
       (propuesta ? `Propuesta: «${propuesta}»\n→ «${n}» la manda · «${n} tu texto» manda el tuyo · «x${n}» la tira` : 'No supe qué contestarle: te toca.') +
-      (r && r.motivo ? `\n(${r.motivo})` : ''));
+      (r && r.motivo ? `\n(${r.motivo})` : '') + (freno ? `\n(No le contesté sola: ${freno}.)` : ''));
+    this.guardar();
+  }
+
+  /* ── el modo automático ── */
+  confAuto(){ return Object.assign({ firma: 'Asistente de Carlos', porHora: 4, alDia: 20 }, this.config.auto || {}); }
+  /* por qué NO contestar sola esta vez ('' = sí puede) */
+  frenoAuto(jid, nuevos){
+    const A = this.confAuto(), ahora = this.reloj();
+    /* otro bot (o un eco de lo nuestro): dos bots contestándose no paran nunca */
+    if(nuevos.some(x => /^\s*🤖/.test(x.texto))) return 'parece otro bot';
+    const veces = (this.estado.autos[jid] || []).filter(t => ahora - t < 24 * HORA);
+    if(veces.filter(t => ahora - t < HORA).length >= A.porHora) return `ya le contesté ${A.porHora} veces en la última hora`;
+    if(veces.filter(t => fechaMx(t) === fechaMx(ahora)).length >= A.alDia) return `ya le contesté ${A.alDia} veces hoy`;
+    return '';
+  }
+  async contestarSola(jid, nombre, nuevos, r){
+    const A = this.confAuto(), ahora = this.reloj();
+    const resp = String(r.respuesta || '').trim(), decide = !!(r.decide || r.urgente);
+    const cita = nuevos.slice(-3).map(x => x.texto).join(' / ').slice(0, 300);
+    if(resp){
+      await this.mandar(jid, (A.firma ? `🤖 ${A.firma}: ` : '') + resp);
+      this.estado.autos[jid] = [...(this.estado.autos[jid] || []).filter(t => ahora - t < 24 * HORA), ahora];
+      const hoy = fechaMx(ahora);
+      if(this.estado.autoHoy.fecha !== hoy) this.estado.autoHoy = { fecha: hoy, lista: [] };
+      this.estado.autoHoy.lista.push({ nombre, dijo: cita.slice(0, 120), resp: resp.slice(0, 160), decide });
+    }
+    if(decide){
+      /* lo que sólo Carlos puede decidir se queda con él, con número para contestar */
+      this.estado.propuestas = this.estado.propuestas.filter(p => !(p.chat === jid && p.tipo === 'respuesta'));
+      const n = this.estado.sigN++;
+      this.estado.propuestas.push({ n, chat: jid, nombre, texto: '', motivo: r.motivo || '', dijo: cita, urgente: !!r.urgente, t: ahora, tipo: 'respuesta' });
+      await this.avisar(`#${n} · ${nombre} ⚠️ necesita tu decisión: «${cita}»` + (r.motivo ? `\n(${r.motivo})` : '') +
+        (resp ? `\nYa le contesté: «${resp}»` : '') + `\n→ «${n} tu respuesta» y se la mando`);
+    } else if(resp){
+      await this.avisar(`✓ Le contesté sola a ${nombre}: «${resp}»\n(dijo: «${cita}»)`);
+    }
     this.guardar();
   }
 
@@ -288,6 +346,12 @@ export class Secre {
     this.estado.resumenFecha = hoy;
     const abiertos = this.estado.pendientes.filter(p => !p.hecho);
     if(abiertos.length) await this.avisar('Pendientes de hoy:\n' + this.listaPendientes(abiertos) + '\n→ «hecho 3» para tacharlo');
+    const solos = this.estado.autoHoy && this.estado.autoHoy.fecha === hoy ? this.estado.autoHoy.lista : [];
+    if(solos.length){
+      const cuenta = {}; for(const x of solos) cuenta[x.nombre] = (cuenta[x.nombre] || 0) + 1;
+      await this.avisar(`Hoy contesté sola ${solos.length} mensaje(s): ` + Object.entries(cuenta).map(([n, k]) => `${n} (${k})`).join(', ') +
+        (solos.some(x => x.decide) ? `\nEsperan tu decisión: ${[...new Set(solos.filter(x => x.decide).map(x => x.nombre))].join(', ')}` : ''));
+    }
     this.guardar();
   }
   listaPendientes(ps){ return ps.map(p => `${p.n}. ${p.texto}${p.nombre ? ' (' + p.nombre + ')' : ''}`).join('\n'); }
@@ -373,6 +437,32 @@ export class Secre {
       delete sal.fijoManana; delete sal.fijoNoche; this.guardar();
       return this.avisar(`Listo: a ${this.nombreDe(j)} te vuelvo a proponer los saludos antes de mandarlos.`);
     }
+    /* el modo automático: «automático Ana» · «automático todos» · «manual Ana» · «apaga automático» */
+    if(/^\/?(?:apaga(?:r)?\s+(?:el\s+)?(?:modo\s+)?automatico|automatico\s+(?:no|off|apagado)|sin automatico|ya no contestes sola?)$/.test(s)){
+      if(this.config.porDefecto === 'auto') this.config.porDefecto = 'borrador';
+      for(const c of Object.values(this.config.chats)) if(c.modo === 'auto') c.modo = 'borrador';
+      this.config.reglas = this.config.reglas.filter(r => r.modo !== 'auto');
+      this.guardar();
+      return this.avisar('Apagado: ya no le contesto sola a nadie. Todo vuelve a ser propuesta para que tú la mandes.');
+    }
+    if(/^\/?(?:modo\s+)?automatico$/.test(s)) return this.avisar(this.textoAuto());
+    if((m = /^\/?(?:modo\s+)?(?:automatico|auto|contesta(?:le)? sola?)\s+(?:a\s+|con\s+)?(.+)$/.exec(s))){
+      if(/^(todos|todas|todo|a todos|todo el mundo)$/.test(m[1].trim())){
+        this.config.porDefecto = 'auto'; this.guardar();
+        return this.avisar(`Listo: le contesto sola a todos los que te escriban (menos grupos y los que tengas en manual o callado), firmado como «${this.confAuto().firma}». Lo que necesite tu decisión te lo dejo aquí con número.\n«apaga automático» para regresar a propuestas.`);
+      }
+      const j = this.buscarChat(m[1]);
+      if(!j) return this.avisar(`No tengo a «${m[1]}» en tus chats (tiene que haberte escrito antes).`);
+      if(this.config.chats[j].grupo) return this.avisar(`${this.nombreDe(j)} es un grupo: ahí no contesto sola.`);
+      this.chat(j).modo = 'auto'; this.guardar();
+      return this.avisar(`Listo: a ${this.nombreDe(j)} le contesto sola, como tu asistente. Lo que necesite tu decisión (dinero, citas, compromisos) te lo dejo aquí.\n«manual ${this.nombreDe(j)}» para regresarlo.`);
+    }
+    if((m = /^\/?manual\s+(?:a\s+|con\s+)?(.+)$/.exec(s))){
+      const j = this.buscarChat(m[1]);
+      if(!j) return this.avisar(`No tengo a «${m[1]}» en tus chats.`);
+      this.chat(j).modo = 'borrador'; this.guardar();
+      return this.avisar(`${this.nombreDe(j)}: otra vez te propongo y tú mandas.`);
+    }
     if(/^\/?(ayuda|help|\?)$/.test(s)) return this.avisar(AYUDA);
     if(/^\/?(pendientes|que tengo|qué tengo)$/.test(s)){
       const a = this.estado.pendientes.filter(p => !p.hecho);
@@ -438,7 +528,8 @@ export class Secre {
     switch(a.accion){
       case 'modo': {
         const j = chatDe(a.chat); if(!j || !MODOS.includes(a.modo)) return '';
-        this.chat(j).modo = a.modo; return `${this.nombreDe(j)}: ${a.modo === 'callado' ? 'ya no te propongo respuestas (sí anoto pendientes)' : 'te propongo respuestas'}`;
+        if(a.modo === 'auto' && this.chat(j).grupo) return '';
+        this.chat(j).modo = a.modo; return `${this.nombreDe(j)}: ${a.modo === 'callado' ? 'ya no te propongo respuestas (sí anoto pendientes)' : a.modo === 'auto' ? 'le contesto sola, como tu asistente' : 'te propongo respuestas'}`;
       }
       case 'saludos': {
         const j = chatDe(a.chat); if(!j) return '';
@@ -474,7 +565,7 @@ export class Secre {
         if(hasta) r.hasta = hasta;
         if(!r.palabras && !r.etiquetas && !r.chats && !r.de) return '';
         this.config.reglas.push(r);
-        return `Regla: ${a.modo === 'callado' ? 'no proponer' : 'sí proponer'}${r.palabras ? ' si hablan de ' + r.palabras.join(', ') : ''}${r.etiquetas ? ' con los de ' + r.etiquetas.join(', ') : ''}${r.chats ? ' con ' + r.chats.map(j => this.nombreDe(j)).join(', ') : ''}${r.de ? ` de ${r.de} a ${r.a}` : ''}${r.hasta ? ' hasta el ' + fechaMx(r.hasta - 1) : ''}`;
+        return `Regla: ${a.modo === 'callado' ? 'no proponer' : a.modo === 'auto' ? 'contestar sola' : 'sí proponer'}${r.palabras ? ' si hablan de ' + r.palabras.join(', ') : ''}${r.etiquetas ? ' con los de ' + r.etiquetas.join(', ') : ''}${r.chats ? ' con ' + r.chats.map(j => this.nombreDe(j)).join(', ') : ''}${r.de ? ` de ${r.de} a ${r.a}` : ''}${r.hasta ? ' hasta el ' + fechaMx(r.hasta - 1) : ''}`;
       }
       case 'quitarRegla': {
         const antes = this.config.reglas.length;
@@ -486,7 +577,14 @@ export class Secre {
       case 'anota': { this.agregarPendiente('', '', a.texto); return a.texto ? `Anotado: ${a.texto}` : ''; }
       case 'hecho': { const p = this.estado.pendientes.find(x => x.n === +a.n && !x.hecho); if(!p) return ''; p.hecho = true; return `Tachado: ${p.texto}`; }
       case 'resumen': { if(aMin(a.hora) == null) return ''; this.config.resumen = a.hora; return `Resumen de pendientes a las ${a.hora}`; }
-      case 'porDefecto': { if(!MODOS.includes(a.modo)) return ''; this.config.porDefecto = a.modo; return `Chats sin modo propio: ${a.modo}`; }
+      case 'porDefecto': { if(!MODOS.includes(a.modo)) return ''; this.config.porDefecto = a.modo; return `Chats sin modo propio: ${a.modo === 'auto' ? 'contesto sola' : a.modo}`; }
+      case 'auto': {
+        const A = this.config.auto = this.confAuto();
+        if(a.firma !== undefined) A.firma = String(a.firma || '').slice(0, 40);
+        if(a.porHora !== undefined && +a.porHora >= 1 && +a.porHora <= 30) A.porHora = Math.round(+a.porHora);
+        if(a.alDia !== undefined && +a.alDia >= 1 && +a.alDia <= 200) A.alDia = Math.round(+a.alDia);
+        return `Automático: firma «${A.firma || '(sin firma)'}» · hasta ${A.porHora} por hora y ${A.alDia} al día en cada chat`;
+      }
       case 'turnos': {
         const T = this.config.turnos = Object.assign({ activo: true, horas: 8, quienes: ['Secre', 'Paulina', 'Negro'], fijo: '' }, this.config.turnos || {});
         const valido = (n) => ['Secre', 'Paulina', 'Negro'].find(x => sinAcentos(x) === sinAcentos(n || '')) || '';
@@ -513,7 +611,12 @@ export class Secre {
     return [`Cuenta: ${this.cuenta}`, c.pausaHasta > this.reloj() ? `⏸ En pausa hasta las ${horaMx(c.pausaHasta)}` : '▶ Activa',
       `${this.estado.propuestas.length} propuesta(s) esperando · ${a} pendiente(s)`,
       `Saludos: ${c.saludos.length ? c.saludos.map(s => `${this.nombreDe(s.chat)} (${s.manana || '—'} / ${s.noche || '—'})`).join(', ') : 'ninguno'}`,
-      `Reglas: ${c.reglas.length}`, `Datos que me contaste: ${this.datosVigentes().length}`, `De turno: ${this.deTurno()}`].join('\n');
+      `Reglas: ${c.reglas.length}`, `Datos que me contaste: ${this.datosVigentes().length}`, `De turno: ${this.deTurno()}`, this.textoAuto()].join('\n');
+  }
+  textoAuto(){
+    const solos = Object.entries(this.config.chats).filter(([, c]) => c.modo === 'auto' && c.nombre).map(([, c]) => c.nombre);
+    if(this.config.porDefecto === 'auto') return 'Automático: le contesto sola a todos (menos grupos' + (Object.values(this.config.chats).some(c => c.modo && c.modo !== 'auto') ? ' y los que pusiste aparte' : '') + ').';
+    return solos.length ? `Automático con: ${solos.join(', ')}.` : 'Automático: apagado (todo es propuesta). «automático Ana» o «automático todos» para prenderlo.';
   }
   textoChats(){
     const l = Object.entries(this.config.chats).filter(([, c]) => c.nombre).slice(0, 40);
@@ -527,6 +630,7 @@ export const AYUDA = `Lo que sé hacer (escríbelo aquí, en tu chat):
 · en un saludo, «3 siempre» lo deja fijo: sale solo cada día · «quita fijo Ana»
 · «pendientes» · «hecho 2» · «anota comprar pilas»
 · «dato: el viernes hay examen de mate a las 8, temas: derivadas» · «datos» · «olvida 2»
+· «automático Ana» le contesto sola · «automático todos» · «manual Ana» · «apaga automático»
 · «pausa 2h» / «pausa hoy» · «sigue»
 · «estado» · «chats»
 Y en palabras normales, por ejemplo:

@@ -2,7 +2,8 @@
 
 Lee lo que te escriben en tus dos cuentas, **te deja la respuesta lista** con tu forma de
 escribir, anota tus pendientes y te prepara los buenos días y las buenas noches a la hora
-que digas. **No le manda nada a nadie sin que tú lo apruebes.**
+que digas. **No le manda nada a nadie sin que tú lo apruebes**, salvo en los chats que tú
+pongas en **automático**: ahí contesta sola, firmada como tu asistente.
 
 ## Cómo se usa (desde el teléfono)
 
@@ -24,12 +25,28 @@ Propuesta: «sí voy, nomás confirmo la hora y te digo»
 | `pendientes` · `hecho 2` · `anota comprar pilas` | tus pendientes |
 | `turno de Paulina` · `que conteste Negro` · `turnos` | quién de las tres está de guardia (Secre, Paulina, Negro se rotan cada 8 h y se recorren cada día) |
 | `dato: el viernes hay examen de mate a las 8, temas: derivadas` · `datos` · `olvida 2` | lo que Secre sabe y usa al escribirte las respuestas |
+| `automático Ana` · `automático todos` | le contesta **sola**, firmada «🤖 Asistente de Carlos:». Nunca en grupos |
+| `manual Ana` · `apaga automático` · `automático` | lo regresa a propuestas · lo apaga para todos · dice con quién está prendido |
 | `pausa 2h` · `pausa hoy` · `sigue` | la callas un rato |
 | `estado` · `chats` · `ayuda` | qué está haciendo |
 | en palabras normales | «a Ana dale buenos días a las 7 y buenas noches a las 10:30», «Beto es mi primo, háblale con confianza», «esta semana no me propongas nada de la escuela» |
 
 Si **tú** contestas a mano en un chat, Secre se hace a un lado 15 minutos en ese chat y
 aprende de cómo escribiste.
+
+### El automático, con sus frenos
+
+Para cuando no puedes tomar el teléfono en el día. En un chat en automático:
+
+- **Contesta sola** lo que sale del chat o de lo que le contaste con `dato:` (horarios,
+  precios, qué hay). Nunca inventa precios, horas, citas ni compromisos.
+- **Lo que necesita tu decisión** (dinero, apartar, una cita, un sí o un no) le contesta a la
+  persona «ya le pasé tu mensaje a Carlos, él te confirma» y a ti te lo deja con ⚠️ y número:
+  `3 la negra está en 450` y se lo manda.
+- **Te avisa** en tu chat cada cosa que contestó, y en la noche cuántas fueron.
+- **Se frena sola:** máximo 4 por hora y 20 al día con cada quien, no le contesta a otro bot
+  (mensajes que empiezan con 🤖), nunca en grupos, y se calla 15 min si tú entras al chat.
+  Si un freno salta, ese mensaje vuelve a ser propuesta.
 
 Lo mismo se hace con botones en **el panel** (una página para el teléfono, con contraseña):
 *Por mandar*, *Pendientes*, *Chats*, *Saludos* y *Platica*.

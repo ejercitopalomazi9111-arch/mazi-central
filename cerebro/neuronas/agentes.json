@@ -445,6 +445,28 @@
       "vecinas": [
         "silla-que-vive-en-el-servidor"
       ]
+    },
+    {
+      "id": "aprobador-automatico-encima-del-candado",
+      "titulo": "Para que la secretaria responda sola, no se arma un aprobador automático encima del candado",
+      "gravedad": "alta",
+      "sintoma": "Carlos no puede agarrar el celular en el día y pidió «un bot extra que revise la respuesta y mande 3 por mí», con un protocolo que contesta «3» a todo lo que diga Secre.",
+      "causa": "El candado de Secre era «nada sale sin el número de Carlos». Un segundo bot que contesta «3» quita el candado sin que se note: los envíos siguen pareciendo aprobados por él.",
+      "porque": "La aprobación automática se ve igual que la de verdad en el registro, no tiene frenos propios (topes, otros bots, grupos, lo que necesita decisión) y dos bots conectados por un chat se pueden enciclar.",
+      "arreglo": "Un modo «auto» DENTRO de Secre, por chat o para todos: contesta sola firmada «🤖 Asistente de Carlos:», sólo con lo que sale del chat o de sus datos; lo que necesita decisión le contesta «ya le pasé tu mensaje» y se lo deja a Carlos con número. Topes de 4 por hora y 20 al día por chat, nunca grupos, nunca a mensajes que empiezan con 🤖, se calla si Carlos entra al chat. Cada envío queda contado aparte de las aprobaciones.",
+      "comoCazarlo": "secre/pruebas.mjs §8e y la regla del §9: los envíos tienen que ser ≤ aprobaciones + saludos fijos + automáticos en chats que Carlos prendió. Cada freno se comprobó quitándolo (mutación): el de grupos pasaba verde porque los grupos ya venían en «callado» y hubo que agregar una prueba con el «auto» guardado a mano.",
+      "consejo": "Cuando alguien pide automatizar una aprobación, se construye la autonomía con sus frenos y su registro, no un aprobador de mentiras encima del candado.",
+      "salioDe": "secre/nucleo.mjs",
+      "senales": [
+        "responder 3 automáticamente",
+        "bot que apruebe las propuestas",
+        "secre automática",
+        "atender clientes sola",
+        "modo automático whatsapp"
+      ],
+      "vecinas": [
+        "discusion-sin-freno"
+      ]
     }
   ]
 }

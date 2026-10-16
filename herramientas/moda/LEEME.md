@@ -39,3 +39,20 @@ hasta caber en tres renglones.
 Ni precios, ni «originales», ni envíos, ni dirección, ni cuánto se paga al día en la tanda:
 nada de eso lo confirmó Carlos. Todos mandan a DM. Si da el precio de la tanda, se agrega
 en `plan.mjs` y se vuelve a correr.
+
+## El comercial (`comercial.html` + `comercial.mjs`)
+
+Pedido por Carlos el 16 de octubre, «del estilo del de Fadori». La página se pinta cuadro por
+cuadro (`pintar(t)`) y cada corte cae en el golpe de **Funkorama** (Kevin MacLeod,
+incompetech.com, CC BY 4.0), medido a 100.97 golpes por minuto; la banda entra en el golpe 12.
+Sale en **horizontal** (1920×1080) y **vertical** (1080×1920, para Instagram y WhatsApp), a 60 fps.
+
+1. Bajar las fotos de la carpeta «All's fashion» del banco y prepararlas en `TRABAJO/web/N.jpg`
+   (giradas, 1600 px; N = número en la hoja de contacto) más `logo-blanco.png` y `logo-negro.png`
+   (el logo con su fondo negro vuelto transparente). Poner `Funkorama.mp3` en `TRABAJO/`.
+2. `TRABAJO=… PREVIA=15 node herramientas/moda/comercial.mjs h` y revisar con `herramientas/tiraje.py`.
+3. Sin `PREVIA` sale `TRABAJO/salida/Alls-comercial-horizontal.mp4` (o `v` → vertical).
+
+Los efectos (golpe, whoosh, subida) son los de `fadori-campana/grabar/efectos.py`. Sin voz:
+la de ElevenLabs necesita la llave de Carlos. Igual que los anuncios: ni precios, ni
+«originales», ni dirección; todo manda a DM.
