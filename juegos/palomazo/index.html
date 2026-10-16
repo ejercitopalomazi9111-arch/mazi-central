@@ -197,6 +197,15 @@ p{margin:0;max-width:34ch;font-size:clamp(14px,4vw,17px);color:#C9C2D4}
 .canc .info b{display:block;font-size:16px}
 .canc .info small{color:#9F95B4;font-size:12.5px}
 .canc .mejor{font-size:12px;color:var(--oro);font-weight:800;white-space:nowrap}
+/* «Tus canciones»: la tarjeta y su × para quitarla, sin botón dentro de botón */
+.fila-tuya{width:100%;max-width:440px;display:flex;gap:8px;align-items:stretch}
+.fila-tuya .canc{flex:1;min-width:0}
+.fila-tuya .quitar{flex:0 0 48px;border:0;border-radius:16px;background:var(--superficie);color:#9F95B4;
+  font:700 22px/1 inherit;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(233,228,228,.11)}
+.fila-tuya .quitar:focus-visible{outline:3px solid var(--oro);outline-offset:2px}
+#bTuya{width:100%;max-width:440px;text-align:center;cursor:pointer}
+#bTuya:focus-within{outline:3px solid var(--oro);outline-offset:2px}
+#listaAviso:empty{display:none}
 
 /* Menos movimiento: se quitan los adornos que laten, NUNCA la mecánica —
    un juego de ritmo sin notas moviéndose no es un juego accesible, es un
@@ -264,6 +273,7 @@ p{margin:0;max-width:34ch;font-size:clamp(14px,4vw,17px);color:#C9C2D4}
 <!-- ── LISTA DE CANCIONES ──────────────────────────────────────────────── -->
 <section class="pant" id="pantLista">
   <h2>El repertorio</h2>
+  <p class="chico" id="listaAviso" role="status" aria-live="polite"></p>
   <div class="fila" id="listaCanc" style="flex-direction:column;width:100%;align-items:center"></div>
   <div class="fila">
     <button class="btn fantasma" id="bListaVolver">Volver</button>
@@ -854,6 +864,260 @@ function armarCancion(c){
 <script>
 'use strict';
 /* ═══════════════════════════════════════════════════════════════════════════
+   3-ter · CANCIONES DE VERDAD, CON AUDIO
+   Carlos, 16 de octubre: «cárgale música aunque sea de licencia, ponle al
+   menos 2 canciones chidas».
+
+   ⚠ Canciones comerciales NO van aquí, y no por remilgo: este repo y el sitio
+   son públicos, y subir la música de un artista es distribuirla — lo que hace
+   que GitHub tumbe el repo entero (aviso DMCA). Así que dos caminos:
+     · las de la casa: grabaciones reales con licencia libre (Kevin MacLeod,
+       CC BY 4.0: se usan gratis con su crédito, que va en la tarjeta);
+     · «Tu canción»: cualquier archivo de TU teléfono. Se guarda sólo ahí
+       (IndexedDB) y nunca sube a ningún lado.
+
+   Las notas NO se escriben a mano: salen del audio (mapaDeAudio). Se parte la
+   canción en tres bandas —graves, medios, agudos— y cada golpe de una banda es
+   una nota de su carril: el bombo a la izquierda, la voz o el sinte en medio,
+   los platillos a la derecha. Luego se encuadra al pulso de la canción para
+   que se toque al ritmo y no a los tropezones del detector.
+   ═════════════════════════════════════════════════════════════════════════ */
+const CREDITO_KM = 'Kevin MacLeod (incompetech.com) · CC BY 4.0';
+const TEMAS = [
+  { id:'pamgaea',   nombre:'Pamgaea',          autor:'Kevin MacLeod', sub:'Sinte con prisa',     archivo:'musica/pamgaea.mp3',   audio:true, credito:CREDITO_KM },
+  { id:'voxel',     nombre:'Voxel Revolution', autor:'Kevin MacLeod', sub:'Electro de 8 bits',   archivo:'musica/voxel.mp3',     audio:true, credito:CREDITO_KM },
+  { id:'funkorama', nombre:'Funkorama',        autor:'Kevin MacLeod', sub:'Funk para el pulgar', archivo:'musica/funkorama.mp3', audio:true, credito:CREDITO_KM },
+];
+
+/* ── De audio a notas ──────────────────────────────────────────────────── */
+const BANDAS = [
+  { tipo:'lowpass',  f:150,  q:0.7 },   /* carril 0 · bombo y bajo */
+  { tipo:'bandpass', f:1100, q:0.6 },   /* carril 1 · voz, sinte, guitarra */
+  { tipo:'highpass', f:5200, q:0.7 },   /* carril 2 · platillos, charol */
+];
+const SR_MAPA = 22050, HOP = 512;      /* ~23 ms por cuadro de análisis */
+
+async function bandasDe(buffer){
+  const Off = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+  const largo = Math.ceil(buffer.duration * SR_MAPA);
+  const off = new Off(3, largo, SR_MAPA);
+  const src = off.createBufferSource(); src.buffer = buffer;
+  const junta = off.createChannelMerger(3);
+  BANDAS.forEach((b, i) => {
+    const f = off.createBiquadFilter(); f.type = b.tipo; f.frequency.value = b.f; f.Q.value = b.q;
+    /* dos en serie: con uno solo, el bombo se cuela a los medios */
+    const f2 = off.createBiquadFilter(); f2.type = b.tipo; f2.frequency.value = b.f; f2.Q.value = b.q;
+    src.connect(f); f.connect(f2); f2.connect(junta, 0, i);
+  });
+  junta.connect(off.destination);
+  src.start(0);
+  const r = await off.startRendering();
+  return [0, 1, 2].map(i => r.getChannelData(i));
+}
+
+/* energía en dB por cuadro → cuánto SUBIÓ (la subida es el golpe) */
+function subidas(x){
+  const n = Math.floor(x.length / HOP), e = new Float32Array(n), s = new Float32Array(n);
+  for(let i = 0; i < n; i++){
+    let a = 0; for(let k = i * HOP, f = k + HOP; k < f; k++) a += x[k] * x[k];
+    e[i] = 10 * Math.log10(a / HOP + 1e-10);
+  }
+  for(let i = 2; i < n; i++) s[i] = Math.max(0, e[i] - Math.max(e[i - 1], e[i - 2]));
+  return { e, s };
+}
+
+/* golpes de una banda: subida que es pico local y sobresale de su vecindario */
+function golpes(s, e){
+  const out = [], V = 64;              /* vecindario de ±1.5 s */
+  let suma = 0, suma2 = 0, cuenta = 0;
+  const ini = Math.min(V, s.length);
+  for(let i = 0; i < ini; i++){ suma += s[i]; suma2 += s[i] * s[i]; cuenta++; }
+  for(let i = 3; i < s.length - 3; i++){
+    const entra = i + V, sale = i - V - 1;
+    if(entra < s.length){ suma += s[entra]; suma2 += s[entra] * s[entra]; cuenta++; }
+    if(sale >= 0){ suma -= s[sale]; suma2 -= s[sale] * s[sale]; cuenta--; }
+    const m = suma / cuenta, d = Math.sqrt(Math.max(0, suma2 / cuenta - m * m));
+    const umbral = m + 1.4 * d + 1.5;  /* +1.5 dB: el ruido de fondo no es golpe */
+    if(s[i] < umbral || e[i] < -55) continue;
+    if(s[i] < s[i-1] || s[i] < s[i-2] || s[i] < s[i-3] || s[i] <= s[i+1] || s[i] <= s[i+2] || s[i] <= s[i+3]) continue;
+    out.push({ t: i * HOP / SR_MAPA, fuerza: s[i] / umbral });
+  }
+  return out;
+}
+
+/* el pulso: autocorrelación de las subidas juntas, de 80 a 170 por minuto */
+function pulsoDe(total){
+  const fps = SR_MAPA / HOP;
+  let mejor = 0, bpm = 120;
+  for(let b = 80; b <= 170; b += 0.5){
+    const lag = 60 / b * fps;
+    let a = 0;
+    for(let i = Math.ceil(lag) + 1; i < total.length; i++){
+      const j = i - lag, j0 = Math.floor(j), fr = j - j0;
+      a += total[i] * (total[j0] * (1 - fr) + total[j0 + 1] * fr);
+    }
+    a /= (total.length - lag);
+    if(a > mejor){ mejor = a; bpm = b; }
+  }
+  /* fase: dónde cae el primer tiempo */
+  const per = 60 / bpm * fps;
+  let fase = 0, mf = -1;
+  for(let f = 0; f < per; f += 0.5){
+    let a = 0; for(let k = f; k < total.length; k += per) a += total[Math.round(k)] || 0;
+    if(a > mf){ mf = a; fase = f; }
+  }
+  return { bpm, fase: fase / fps };
+}
+
+/* El peine: para cada periodo posible (octavos de 80 a 170 por minuto, de
+   0.02 en 0.02), cada golpe es una flecha en el círculo t/periodo; si el
+   periodo es el bueno, todas apuntan al mismo lado. El largo de la suma dice
+   qué tan bien alinea, y su ángulo, dónde cae el primer octavo. */
+function peineDe(todos){
+  const g = todos.slice().sort((a, b) => b.fuerza - a.fuerza).slice(0, 600);
+  let mejor = -1, bpm = 120, fase = 0;
+  for(let b = 80; b <= 170; b += 0.02){
+    const per = 60 / b / 2; let x = 0, y = 0, w = 0;
+    for(const o of g){ const a = 2 * Math.PI * o.t / per, p = Math.min(o.fuerza, 3); x += p * Math.cos(a); y += p * Math.sin(a); w += p; }
+    const r = Math.hypot(x, y) / w;
+    if(r > mejor + 1e-6){ mejor = r; bpm = b; fase = ((Math.atan2(y, x) / (2 * Math.PI)) * per + per) % per; }
+  }
+  return { bpm, fase };
+}
+
+/* La autocorrelación da el pulso a ±2 % (los cuadros son de 23 ms y gana el
+   retraso entero): 117.5 en vez de 120, y en un minuto eso ya es medio tiempo
+   de desfase. Se afina con los golpes MISMOS: a cada golpe se le asigna su
+   tiempo de octavo más cercano y se ajusta la recta t = fase + k·periodo por
+   mínimos cuadrados. Dos vueltas, quedándose con los que caen cerca. */
+function afinarPulso({ bpm, fase }, todos){
+  let per = 60 / bpm / 2, f0 = fase;            /* en octavos */
+  for(let vuelta = 0; vuelta < 3; vuelta++){
+    const pts = [];
+    for(const g of todos){
+      const k = Math.round((g.t - f0) / per);
+      if(Math.abs(g.t - (f0 + k * per)) < per * (vuelta ? 0.2 : 0.3)) pts.push([k, g.t]);
+    }
+    if(pts.length < 8) break;
+    let sk = 0, st = 0, skk = 0, skt = 0;
+    for(const [k, t] of pts){ sk += k; st += t; skk += k * k; skt += k * t; }
+    const n = pts.length, den = n * skk - sk * sk;
+    if(!den) break;
+    per = (n * skt - sk * st) / den;
+    f0 = (st - per * sk) / n;
+  }
+  /* la fase se trae al primer octavo positivo */
+  f0 = ((f0 % per) + per) % per;
+  return { bpm: 60 / per / 2, fase: f0 };
+}
+
+async function mapaDeAudio(buffer){
+  const bandas = await bandasDe(buffer);
+  const pistas = bandas.map(subidas);
+  const total = new Float32Array(pistas[0].s.length);
+  pistas.forEach(p => { for(let i = 0; i < total.length; i++) total[i] += p.s[i]; });
+  const crudos = pistas.map(p => golpes(p.s, p.e));
+  const { bpm, fase } = afinarPulso(peineDe(crudos.flat()), crudos.flat());
+  const paso = 60 / bpm / 4, octavo = paso * 2;
+
+  /* candidatos de las tres bandas, encuadrados a octavos del pulso */
+  let cand = [];
+  crudos.forEach((lista, carril) => {
+    for(const g of lista){
+      const k = Math.round((g.t - fase) / octavo), tq = fase + k * octavo;
+      if(Math.abs(tq - g.t) > octavo * 0.4) continue;      /* fuera del pulso: no es golpe de la canción */
+      cand.push({ t: tq, carril, fuerza: g.fuerza * (k % 2 === 0 ? 1.25 : 1) });   /* los tiempos pesan más */
+    }
+  });
+  /* de los fuertes a los débiles, con aire: ~2.4 notas por segundo como tope */
+  cand.sort((a, b) => b.fuerza - a.fuerza);
+  const tope = Math.round(buffer.duration * 2.4);
+  const elegidas = [];
+  const choca = (c) => elegidas.some(x => Math.abs(x.t - c.t) < 0.2 || (x.carril === c.carril && Math.abs(x.t - c.t) < 0.3));
+  for(const c of cand){
+    if(elegidas.length >= tope) break;
+    if(c.t < 1 || c.t > buffer.duration - 1.5) continue;
+    if(!choca(c)) elegidas.push(c);
+  }
+  elegidas.sort((a, b) => a.t - b.t);
+
+  /* que ningún carril se quede sin trabajo: mientras uno tenga menos del
+     22 %, las notas más débiles del más cargado se le pasan (si no chocan con
+     otra del mismo carril). Las fuertes se quedan donde sonaron. */
+  const cuenta = [0, 0, 0]; elegidas.forEach(n => cuenta[n.carril]++);
+  const libre = (n, c) => !elegidas.some(x => x !== n && x.carril === c && Math.abs(x.t - n.t) < 0.3);
+  for(let vuelta = 0; vuelta < elegidas.length; vuelta++){
+    const flaco = cuenta.indexOf(Math.min(...cuenta)), gordo = cuenta.indexOf(Math.max(...cuenta));
+    if(cuenta[flaco] >= elegidas.length * 0.22 || flaco === gordo) break;
+    const cand = elegidas.filter(n => n.carril === gordo && libre(n, flaco)).sort((a, b) => a.fuerza - b.fuerza)[0];
+    if(!cand) break;
+    cand.carril = flaco; cuenta[gordo]--; cuenta[flaco]++;
+  }
+
+  /* aleteo: si después hay más de un segundo de aire, la nota se sostiene */
+  const notas = elegidas.map((n, i) => {
+    const sig = elegidas[i + 1], aire = sig ? sig.t - n.t : 0;
+    const dur = aire > 1.05 ? Math.min(aire - 0.35, 2.4) : octavo;
+    return { p: n.t / paso, n: 60 + n.carril * 12, d: dur / paso, carril: n.carril, larga: dur / paso >= 6 };
+  });
+  return { notas, fondo: [], pasos: Math.ceil(buffer.duration / paso), compases: Math.ceil(buffer.duration / paso / 16), bpm, fase };
+}
+
+/* ── Cargar y preparar ─────────────────────────────────────────────────── */
+async function prepararTema(c){
+  if(c.buffer && c.mapa) return;
+  if(!A.ctx) audioArranca();
+  if(!A.ctx) throw new Error('Este navegador no tiene audio');
+  let datos;
+  if(c.blob) datos = await c.blob.arrayBuffer();
+  else{
+    const r = await fetch(c.archivo);
+    if(!r.ok) throw new Error('No pude bajar la canción (' + r.status + ')');
+    datos = await r.arrayBuffer();
+  }
+  /* decodeAudioData con promesa no existe en Safari viejito: se envuelve */
+  c.buffer = await new Promise((si, no) => {
+    const p = A.ctx.decodeAudioData(datos, si, no);
+    if(p && p.then) p.then(si, no);
+  });
+  c.mapa = c.mapaGuardado || await mapaDeAudio(c.buffer);
+  /* se ESPERA a que quede escrita: si no, cerrar la app al momento la pierde */
+  if(c.blob && !c.mapaGuardado){ await guardarTuya({ id:c.id, nombre:c.nombre, blob:c.blob, mapa:c.mapa }).catch(() => {}); c.mapaGuardado = c.mapa; }
+}
+
+/* ── «Tu canción»: en el teléfono y en ningún otro lado ────────────────── */
+const TUYAS = [];
+function base(){
+  return new Promise((si, no) => {
+    const r = indexedDB.open('palomazo-tuyas', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('canciones', { keyPath:'id' });
+    r.onsuccess = () => si(r.result); r.onerror = () => no(r.error);
+  });
+}
+async function tienda(modo){ return (await base()).transaction('canciones', modo).objectStore('canciones'); }
+const pide = (q) => new Promise((si, no) => { q.onsuccess = () => si(q.result); q.onerror = () => no(q.error); });
+async function guardarTuya(x){ await pide((await tienda('readwrite')).put(x)); }
+async function borrarTuya(id){ await pide((await tienda('readwrite')).delete(id)); }
+async function cargarTuyas(){
+  try{
+    const todas = await pide((await tienda('readonly')).getAll());
+    TUYAS.length = 0;
+    for(const x of todas) TUYAS.push({ id:x.id, nombre:x.nombre, sub:'De tu teléfono', autor:'Tú', audio:true, tuya:true, blob:x.blob, mapaGuardado:x.mapa || null });
+  }catch(e){ /* sin IndexedDB (privado): «Tu canción» funciona, pero no se guarda */ }
+}
+async function agregarTuya(archivo){
+  const id = 'tuya-' + Date.now().toString(36);
+  const nombre = archivo.name.replace(/\.[a-z0-9]+$/i, '').replace(/[_-]+/g, ' ').slice(0, 60) || 'Mi canción';
+  const c = { id, nombre, sub:'De tu teléfono', autor:'Tú', audio:true, tuya:true, blob:archivo, mapaGuardado:null };
+  await prepararTema(c);           /* si no se puede leer, truena AQUÍ, antes de guardarla */
+  TUYAS.push(c);
+  return c;
+}
+</script>
+
+<script>
+'use strict';
+/* ═══════════════════════════════════════════════════════════════════════════
    4 · EL VESTIDOR
    Cada cosmético es una función que dibuja. Nada de imágenes: son formas
    propias encima de la paloma de la marca, así que no hay arte de nadie más
@@ -1151,8 +1415,9 @@ function empezarCancion(c){
   audioArranca();
   if(!A.listo){ return false; }
   J.canc = c;
-  J.arm = armarCancion(c);
-  J.pasoDur = 60 / c.bpm / 4;
+  pararFuente();
+  J.arm = c.audio ? c.mapa : armarCancion(c);
+  J.pasoDur = 60 / (c.audio ? c.mapa.bpm : c.bpm) / 4;
   J.notas = J.arm.notas.map(n => Object.assign({}, n, { est:0, sostHasta:0 }));
   /* est: 0 esperando · 1 sostenida · 2 juzgada */
   J.idxFondo = 0;
@@ -1160,8 +1425,19 @@ function empezarCancion(c){
   J.cuenta = { perfecto:0, bien:0, casi:0, fallo:0 };
   J.sost = [null,null,null]; J.aviso = null; J.sacude = 0; J.part = []; J.pulso = 0;
   J.t0 = A.ctx.currentTime + PREPARA;
+  /* la grabación arranca EXACTO en t0, en el mismo reloj que el juicio: las
+     notas salieron del audio con el segundo 0 en t0 */
+  if(c.audio){
+    const f = A.ctx.createBufferSource(); f.buffer = c.buffer;
+    const g = A.ctx.createGain(); g.gain.value = 0.9;
+    f.connect(g); g.connect(A.master); f.start(J.t0);
+    J.fuente = f;
+  }
   J.activo = true; J.pausa = false;
   return true;
+}
+function pararFuente(){
+  if(J.fuente){ try{ J.fuente.stop(); }catch(e){} J.fuente = null; }
 }
 
 /* Programador con vista adelantada. Se llama seguido y agenda lo que caiga en
@@ -1231,8 +1507,9 @@ function tocar(carril){
   J.puntos += Math.round(pts * mult);
   J.energia = Math.min(100, J.energia + (clase === 'perfecto' ? 2 : clase === 'bien' ? 1 : 0));
 
-  /* ── Y aquí está el corazón: suena LA nota de la melodía. ── */
-  if(A.listo){
+  /* ── Y aquí está el corazón: suena LA nota de la melodía. ──
+     (en las de audio la canción ya suena entera: no se le encima nada) */
+  if(A.listo && !J.canc.audio){
     const vol = clase === 'perfecto' ? 1 : clase === 'bien' ? 0.85 : 0.6;
     melodia(A.ctx.currentTime, mejor.n, Math.max(mejor.d * J.pasoDur, 0.12), vol, J.canc.timbre);
   }
@@ -1580,7 +1857,7 @@ function tarjetaCanc(c, i, bloqueada){
   b.querySelector('.num').textContent = c.autor ? '♪' : (i + 1);
   b.querySelector('b').textContent = bloqueada ? 'Todavía no' : c.nombre;
   b.querySelector('small').textContent = bloqueada
-    ? 'Se abre al pasar la anterior' : (c.autor ? c.autor + ' · ' + c.sub : c.sub);
+    ? 'Se abre al pasar la anterior' : (c.credito ? c.sub + ' · ' + c.credito : c.autor ? c.autor + ' · ' + c.sub : c.sub);
   b.querySelector('.mejor').textContent = mej ? (mej.letra + ' · ' + mej.puntos) : '';
   if(!bloqueada) b.onclick = () => { audioArranca(); lanzar(c); };
   return b;
@@ -1600,6 +1877,27 @@ function pintarLista(){
   /* Las piezas de verdad NO se bloquean: son el modo suelto, como en Piano
      Tiles. La historia es lo que se desbloquea, porque ahí sí hay un orden
      que contar. */
+  cont.appendChild(rotulo('Canciones de verdad'));
+  TEMAS.forEach((c, i) => cont.appendChild(tarjetaCanc(c, i, false)));
+  cont.appendChild(rotulo('Tus canciones'));
+  TUYAS.forEach((c, i) => {
+    const fila = document.createElement('div'); fila.className = 'fila-tuya';
+    fila.appendChild(tarjetaCanc(c, i, false));
+    const x = document.createElement('button'); x.className = 'quitar'; x.textContent = '×';
+    x.setAttribute('aria-label', 'Quitar ' + c.nombre);
+    x.onclick = async () => { await borrarTuya(c.id).catch(() => {}); TUYAS.splice(TUYAS.indexOf(c), 1); pintarLista(); };
+    fila.appendChild(x); cont.appendChild(fila);
+  });
+  const mas = document.createElement('label'); mas.className = 'btn fantasma'; mas.id = 'bTuya';
+  mas.textContent = '＋ Cargar una canción de tu teléfono';
+  const ent = document.createElement('input'); ent.type = 'file'; ent.accept = 'audio/*,.mp3,.m4a,.wav,.aac,.ogg'; ent.hidden = true; ent.id = 'archivoTuya';
+  ent.onchange = async () => {
+    const f = ent.files && ent.files[0]; if(!f) return;
+    const av = $('listaAviso'); av.textContent = 'Escuchando «' + f.name + '» para sacarle las notas…';
+    try{ audioArranca(); await agregarTuya(f); av.textContent = 'Lista. Se queda guardada en este teléfono.'; pintarLista(); }
+    catch(e){ av.textContent = 'No pude leer ese archivo. Prueba con un MP3 o M4A (las de Apple Music vienen protegidas y no se dejan).'; }
+  };
+  mas.appendChild(ent); cont.appendChild(mas);
   cont.appendChild(rotulo('Piano · piezas de verdad'));
   PIEZAS.forEach((c, i) => cont.appendChild(tarjetaCanc(c, i, false)));
   cont.appendChild(rotulo('La historia de Mazi'));
@@ -1703,7 +2001,13 @@ function pintarTienda(){
 }
 
 /* ── Lanzar y terminar ──────────────────────────────────────────────────── */
-function lanzar(c){
+async function lanzar(c){
+  if(c.audio && !c.mapa){
+    const av = $('listaAviso');
+    av.textContent = 'Escuchando «' + c.nombre + '» para sacarle las notas…';
+    try{ audioArranca(); await prepararTema(c); av.textContent = ''; }
+    catch(e){ av.textContent = 'No pude leer esa canción: ' + (e && e.message || e); return; }
+  }
   if(!empezarCancion(c)){
     /* Si el audio no arrancó no se entra a una pista muda: se dice por qué. */
     $('tiendaPista').textContent = 'Este navegador no dejó abrir el audio.';
@@ -1726,6 +2030,7 @@ function letraDe(prec){
 
 function terminar(cayo){
   J.activo = false;
+  pararFuente();
   const c = J.canc;
   const tot = J.cuenta.perfecto + J.cuenta.bien + J.cuenta.casi + J.cuenta.fallo;
   const acertadas = J.cuenta.perfecto + J.cuenta.bien + J.cuenta.casi;
@@ -1739,9 +2044,11 @@ function terminar(cayo){
   G.plumas += Math.max(0, ganadas);
 
   const idx = CANCIONES.indexOf(c);
-  if(!cayo && idx >= 0){
+  if(!cayo){
     const ant = G.mejores[c.id];
     if(!ant || J.puntos > ant.puntos) G.mejores[c.id] = { puntos:J.puntos, letra:letra };
+  }
+  if(!cayo && idx >= 0){
     if(idx >= G.hasta) G.hasta = Math.min(CANCIONES.length - 1, idx + 1);
     if(idx > G.vistoHist) G.vistoHist = idx;
   }
@@ -1769,10 +2076,12 @@ function terminar(cayo){
   $('finPlumas').textContent = '+' + Math.max(0, ganadas) + ' plumas 🪶';
 
   const ultima = idx === CANCIONES.length - 1;
-  $('bFinSeguir').textContent = cayo ? 'Volver al repertorio'
+  /* las sueltas (piezas, canciones de verdad, las tuyas) no son de la historia */
+  const suelta = idx < 0;
+  $('bFinSeguir').textContent = (cayo || suelta) ? 'Volver al repertorio'
     : (ultima ? 'Ver cómo acaba' : 'Siguiente');
   $('bFinSeguir').onclick = () => {
-    if(cayo){ pintarLista(); ver('pantLista'); return; }
+    if(cayo || suelta){ pintarLista(); ver('pantLista'); return; }
     if(ultima){ verHistoria(0, true); return; }
     verHistoria(Math.min(idx + 1, HISTORIA.length - 1), false);
   };
@@ -1846,7 +2155,7 @@ $('bSeguirJugando').onclick = () => {
 };
 $('bReiniciar').onclick = () => { J.pausa = false; if(A.ctx) A.ctx.resume(); lanzar(J.canc); };
 $('bSalir').onclick = () => {
-  J.pausa = false; J.activo = false;
+  J.pausa = false; J.activo = false; pararFuente();
   if(A.ctx) A.ctx.resume();
   pintarLista(); ver('pantLista');
 };
@@ -1933,6 +2242,8 @@ function cuadro(ms){
 
 /* ── Arranque ───────────────────────────────────────────────────────────── */
 cargar();
+/* las guardadas llegan después de pintar: si ya se ve la lista, se repinta */
+cargarTuyas().then(() => { if(pantalla === 'pantLista') pintarLista(); });
 ver('pantMenu');
 requestAnimationFrame(cuadro);
 /* Se expone lo justo para que las pruebas puedan JUGAR el juego, no sólo
@@ -1940,7 +2251,7 @@ requestAnimationFrame(cuadro);
    tocar en el instante exacto. Un juego de ritmo que sólo se prueba por
    fuera no está probado — lo único que importa es si el juicio cae donde
    debe, y eso sólo se ve tocando. */
-window.PALOMAZO = { J, G, CANCIONES, PIEZAS, armarCancion, ver, lanzar, CATEGORIAS,
+window.PALOMAZO = { J, G, CANCIONES, PIEZAS, TEMAS, TUYAS, mapaDeAudio, prepararTema, agregarTuya, armarCancion, ver, lanzar, CATEGORIAS,
                     pasoAhora, tocar, soltar, terminar, A, pista, guardar };
 </script>
 </body>
