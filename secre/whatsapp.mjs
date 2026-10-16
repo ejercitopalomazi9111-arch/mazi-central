@@ -13,7 +13,7 @@
    descargas robaba sesiones y mensajes. Aquí sólo va la librería principal.
    ═════════════════════════════════════════════════════════════════════════ */
 import makeWASocket, { useMultiFileAuthState, DisconnectReason, Browsers, fetchLatestBaileysVersion,
-  jidNormalizedUser, isJidGroup, normalizeMessageContent, getContentType } from 'baileys';
+  jidNormalizedUser, isJidGroup, normalizeMessageContent, getContentType, downloadMediaMessage } from 'baileys';
 import pino from 'pino';
 
 /* el texto de un mensaje, o una etiqueta si no es texto (para que la IA sepa qué llegó) */
@@ -113,7 +113,14 @@ export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () =
             if(!grupos.has(chat)) grupos.set(chat, (await sock.groupMetadata(chat).catch(() => ({}))).subject || '');
             nombre = k.fromMe ? '' : (msg.pushName || '');
           }
-          await alMensaje({ id: k.id, chat, de: grupo ? (k.participantAlt || k.participant || '') : chat, nombre, nombreChat: grupo ? grupos.get(chat) : nombre, texto, mio: !!k.fromMe, grupo, t });
+          /* los stickers que manda CARLOS en un grupo se guardan, para que en el rol
+             los use su personaje (Carlos, 16 de octubre: «de vez en cuando usamos stickers») */
+          let sticker = null;
+          if(grupo && k.fromMe && texto === '[sticker]'){
+            const buf = await downloadMediaMessage(msg, 'buffer', {}).catch(() => null);
+            if(buf && buf.length <= 100_000) sticker = { b64: buf.toString('base64'), animado: !!(normalizeMessageContent(msg.message).stickerMessage || {}).isAnimated };
+          }
+          await alMensaje({ id: k.id, chat, de: grupo ? (k.participantAlt || k.participant || '') : chat, nombre, nombreChat: grupo ? grupos.get(chat) : nombre, texto, mio: !!k.fromMe, grupo, t, sticker });
         }catch(e){ logger.warn({ err: e.message }, 'secre: mensaje que no pude leer'); }
       }
     });
@@ -123,6 +130,7 @@ export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () =
   return {
     yo: () => yoJids,
     async enviar(jid, texto){ const r = await sock.sendMessage(jid, { text: texto }); return r && r.key && r.key.id; },
+    async enviarSticker(jid, b64){ const r = await sock.sendMessage(jid, { sticker: Buffer.from(b64, 'base64') }); return r && r.key && r.key.id; },
     /* «escribiendo…» un rato proporcional al largo, como una persona */
     async escribiendo(jid, ms){
       await sock.sendPresenceUpdate('composing', jid).catch(() => {});

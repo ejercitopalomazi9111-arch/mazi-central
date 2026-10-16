@@ -71,27 +71,29 @@ const PERSONA = {
   Negro: 'una IA mexicana de barrio, sarcástica y mamona, de las de La Sala de Grupo Mazi: contestas corto, con carrilla, pero cumples y no inventas nada.',
 };
 /* el rol: Carlos juega en un grupo y quiere que la historia siga cuando él no puede */
-async function leerRol({ dueno, nombre, nota, historial, nuevos, personaje, mundo = '', datos }){
+async function leerRol({ dueno, nombre, nota, historial, nuevos, personaje, mundo = '', marca = '', stickers = [], datos }){
   const sistema = `Estás en «${nombre}», un grupo de WhatsApp donde juegan rol${nota ? ` (${nota})` : ''}. ${dueno} no puede estar ahorita y tú llevas SU personaje${personaje ? `: ${personaje}` : ' (sácalo de cómo ha jugado él en la conversación)'}.
 ${mundo ? `El mundo y la historia, como te los contó ${dueno} (es canon: no lo contradigas ni lo cambies):\n${mundo}\n` : ''}En el grupo también puede haber otros bots (narrador, dados, árbitro; sus mensajes suelen empezar con 🤖): lo que digan es parte del juego y les contestas igual que a los demás.
 Tu trabajo:
 1) "pendientes": sólo cosas de la VIDA REAL que ${dueno} tenga que hacer por lo que escribieron fuera del rol. Casi siempre vacía.
-2) "respuesta": la siguiente jugada de su personaje. Sigue lo que acaba de pasar y reacciona a lo que hicieron los demás (cada quien con el nombre de su personaje), y mueve la historia un poquito.
-   - Escribe como se juega en ESE grupo: mismo idioma, tono y formato (si usan *acciones entre asteriscos*, tercera persona o diálogo con guion, tú igual). Corto: de 1 a 3 párrafos breves.
+2) ${marca ? `"lineas": la siguiente jugada de su personaje, renglón por renglón: [{"tipo":"dice","texto":"lo que dice"},{"tipo":"hace","texto":"lo que hace"}]. En el grupo cada personaje habla con su marca de emojis al inicio (la de él es «${marca}») y las acciones van en renglón aparte con «> » al inicio: NO pongas tú la marca ni el «>», el programa los pone. Deja "respuesta" vacía salvo lo de fuera del rol.` : `"respuesta": la siguiente jugada de su personaje.`} Sigue lo que acaba de pasar y reacciona a lo que hicieron los demás (cada quien con el nombre de su personaje), y mueve la historia un poquito.
+   - Escribe como se juega en ESE grupo: mismo idioma, tono y vocabulario. Corto: de 1 a 4 renglones.
    - NUNCA decidas por los personajes de los demás, ni los mates, ni cierres tramas grandes tú solo. No inventes reglas del mundo que nadie ha puesto.
-   - Si no le toca actuar a su personaje (no lo involucra, es una escena de otros, o es plática fuera del rol), deja "respuesta" vacía.
+   - Si no le toca actuar a su personaje (no lo involucra, es una escena de otros, o es plática fuera del rol), deja ${marca ? '"lineas"' : '"respuesta"'} vacía.${stickers.length ? `
+   - Stickers suyos que puedes mandar de vez en cuando (casi nunca: sólo cuando de verdad queda, como él los usa), con lo que estaba pasando cuando él los mandó:\n${stickers.map(x => `     ${x.n}: ${x.cuando || '(sin contexto)'}`).join('\n')}\n     Pon su número en "sticker" (0 = ninguno).` : ''}
    - Si alguien le habla a ${dueno} de la VIDA REAL (fuera del rol) y pide algo que sólo él puede decidir (dinero, quedar, un sí o un no), pon "decide": true, en "respuesta" algo corto fuera del rol como "(ahorita no está, luego te contesta)" y en "motivo" qué le piden.
 3) "urgente": true sólo si en la vida real algo no puede esperar.
 ${recuerdos(dueno, datos)}
-Contesta SÓLO JSON: {"pendientes":[], "respuesta":"", "motivo":"", "urgente":false, "decide":false}`;
+Contesta SÓLO JSON: {"pendientes":[], ${marca ? '"lineas":[], ' : ''}"respuesta":"", "motivo":"", "urgente":false, "decide":false${stickers.length ? ', "sticker":0' : ''}}`;
   const texto = `La historia hasta ahora (lo más nuevo al final; lo que dice «${dueno}» es su personaje):\n${conversacion(historial, dueno, 45)}\n\nLo nuevo desde su última jugada:\n${nuevos.map(x => `${x.quien || 'Alguien'}: ${x.texto}`).join('\n')}`;
   const j = sacarJson(await preguntar(sistema, texto, { tope: 1500 })) || {};
-  return { pendientes: Array.isArray(j.pendientes) ? j.pendientes.map(String).slice(0, 3) : [], respuesta: String(j.respuesta || ''), motivo: String(j.motivo || ''), urgente: !!j.urgente, decide: !!j.decide };
+  const lineas = Array.isArray(j.lineas) ? j.lineas.filter(l => l && typeof l.texto === 'string').map(l => ({ tipo: l.tipo === 'hace' ? 'hace' : 'dice', texto: l.texto })).slice(0, 8) : [];
+  return { pendientes: Array.isArray(j.pendientes) ? j.pendientes.map(String).slice(0, 3) : [], lineas, respuesta: String(j.respuesta || ''), motivo: String(j.motivo || ''), urgente: !!j.urgente, decide: !!j.decide, sticker: Number.isFinite(+j.sticker) ? +j.sticker : 0 };
 }
 
 export const ia = {
-  async leer({ dueno, nombre, nota, historial, nuevos, estilo, redactar, auto = false, rol = false, personaje = '', mundo = '', grupo, datos = [] }){
-    if(rol) return leerRol({ dueno, nombre, nota, historial, nuevos, personaje, mundo, datos });
+  async leer({ dueno, nombre, nota, historial, nuevos, estilo, redactar, auto = false, rol = false, personaje = '', mundo = '', marca = '', stickers = [], grupo, datos = [] }){
+    if(rol) return leerRol({ dueno, nombre, nota, historial, nuevos, personaje, mundo, marca, stickers, datos });
     const sistema = `Ayudas a ${dueno}, un estudiante de prepa en Querétaro, con su WhatsApp. Te paso un chat${grupo ? ' de grupo' : ''} con ${nombre}${nota ? ` (${nota})` : ''}.
 Tu trabajo:
 1) "pendientes": cosas que ${dueno} tiene que HACER por lo que le escribieron (entregar algo, confirmar, pagar, ir a algún lado, contestar una pregunta importante). Frases cortas en infinitivo, con fecha u hora si la hay. Lista vacía si no hay.

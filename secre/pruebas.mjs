@@ -26,6 +26,7 @@ const enviados = []; let sig = 1;
 const transporte = {
   yo: () => [YO],
   async enviar(jid, texto){ const id = 'S' + (sig++); enviados.push({ jid, texto, id, t: ahora }); return id; },
+  async enviarSticker(jid, b64){ const id = 'S' + (sig++); enviados.push({ jid, texto: '[sticker]', b64, id, t: ahora }); return id; },
   async escribiendo(){}, async leido(){},
 };
 const aCarlos = () => enviados.filter(e => e.jid === YO);
@@ -35,12 +36,14 @@ const ultimoAviso = () => (aCarlos().slice(-1)[0] || {}).texto || '';
 let iaFalla = false;
 let vioDatos = [], ordenQuien = '', vioAuto = false, vioRol = null;
 const ia = {
-  async leer({ nuevos, redactar, auto, rol, personaje, mundo, grupo, datos = [] }){
+  async leer({ nuevos, redactar, auto, rol, personaje, mundo, marca, stickers = [], grupo, datos = [] }){
     if(iaFalla) throw new Error('sin internet');
     const t = nuevos.map(x => x.texto).join(' ');
     vioAuto = !!auto;
     if(auto && rol){
       vioRol = { personaje, mundo, quienes: nuevos.map(x => x.quien) };
+      if(marca && /eco/.test(t)) return { pendientes: [], lineas: [{ tipo: 'dice', texto: marca + ' ya voy' }, { tipo: 'hace', texto: '> camina a la puerta' }], respuesta: '', motivo: '', urgente: false };
+      if(marca) return { pendientes: [], lineas: [{ tipo: 'dice', texto: '¿Quién anda ahí?' }, { tipo: 'hace', texto: 'Kael se levanta de la mesa' }], respuesta: '', motivo: '', urgente: false, sticker: /jaja/.test(t) && stickers.length ? stickers[0].n : 0 };
       if(/fuera de rol/i.test(t)) return { pendientes: [], respuesta: '(ahorita no está, luego te contesta)', motivo: 'te piden algo fuera del rol', urgente: false, decide: true };
       return { pendientes: [], respuesta: `*Kael avanza* (${nuevos.length})`, motivo: '', urgente: false };
     }
@@ -419,6 +422,32 @@ const g3r = aG(ROL).length;
 await enGrupo(ROL, 'Ana', '*se va*'); pasar(70); await s.tic();
 ok('«manual Taberna» lo para', aG(ROL).length === g3r && !s.config.chats[ROL].rol);
 ok('nada salió solo a un grupo que Carlos no autorizó', aOtros().filter(e => e.jid.endsWith('@g.us')).every(e => [EQUIPO, ROL].includes(e.jid)));
+
+console.log('\n8g · El formato del rol (🌌⚛️- habla, > hace) y los stickers de Carlos');
+await carlos('rol taberna del cuervo');
+await carlos('marca taberna del cuervo: 🌌⚛️-');
+ok('«marca Taberna: 🌌⚛️-» la guarda y enseña cómo va a salir', s.config.chats[ROL].marca === '🌌⚛️-' && /🌌⚛️- lo que dice\ny lo que hace como\n> lo que hace/.test(ultimoAviso()), ultimoAviso());
+await enGrupo(ROL, 'Ana', '🌸- ¿Hay alguien en la taberna?'); pasar(70); await s.tic();
+ok('lo que dice sale con su marca y lo que hace con «> », renglón por renglón', aG(ROL).slice(-1)[0].texto === '🌌⚛️- ¿Quién anda ahí?\n> Kael se levanta de la mesa', aG(ROL).slice(-1)[0].texto);
+await enGrupo(ROL, 'Ana', 'eco'); pasar(70); await s.tic();
+ok('si la IA pone la marca o el «>» ella misma, no salen dobles', aG(ROL).slice(-1)[0].texto === '🌌⚛️- ya voy\n> camina a la puerta', aG(ROL).slice(-1)[0].texto);
+await carlos('firma normal taberna del cuervo');
+await enGrupo(ROL, 'Ana', '🌸- ¿y bien?'); pasar(70); await s.tic();
+ok('con marca, el 🤖 va al final y no rompe el primer renglón', /^🌌⚛️- ¿Quién anda ahí\?\n> Kael se levanta de la mesa 🤖$/.test(aG(ROL).slice(-1)[0].texto), aG(ROL).slice(-1)[0].texto);
+/* los stickers */
+await enGrupo(ROL, 'Ana', 'jajajaja no puede ser'); pasar(5);
+await s.alMensaje({ id: 'C' + (sig++), chat: ROL, de: YO, texto: '[sticker]', mio: true, grupo: true, t: ahora, sticker: { b64: 'UklGRiQAAABXRUJQ' } });
+ok('los stickers que manda Carlos en el grupo se guardan, con lo que estaba pasando', (s.config.chats[ROL].stickers || []).length === 1 && /jajajaja no puede ser/.test(s.config.chats[ROL].stickers[0].cuando), s.config.chats[ROL].stickers);
+pasar(16 * 60);
+const st0 = aG(ROL).filter(e => e.texto === '[sticker]').length;
+await enGrupo(ROL, 'Ana', 'jaja Kael qué cara pusiste'); pasar(70); await s.tic();
+ok('cuando queda, manda uno de SUS stickers además de la jugada', aG(ROL).filter(e => e.texto === '[sticker]').length === st0 + 1 && aG(ROL).slice(-1)[0].b64 === 'UklGRiQAAABXRUJQ', aG(ROL).slice(-2));
+await enGrupo(ROL, 'Ana', 'jaja otra vez'); pasar(70); await s.tic();
+ok('pero no dos seguidos (uno cada 10 min como máximo)', aG(ROL).filter(e => e.texto === '[sticker]').length === st0 + 1);
+await carlos('stickers taberna del cuervo');
+ok('«stickers Taberna» dice cuántos tiene', /Tengo 1 sticker/.test(ultimoAviso()), ultimoAviso());
+ok('en un chat de una persona no se guardan stickers', (() => { s.alMensaje({ id: 'C' + (sig++), chat: ANA, de: YO, texto: '[sticker]', mio: true, t: ahora, sticker: { b64: 'UklGRiQAAABXRUJQ' } }); return !(s.config.chats[ANA].stickers || []).length; })());
+await carlos('manual taberna del cuervo');
 const enGrupos = aOtros().filter(e => [EQUIPO, ROL].includes(e.jid)).length;
 
 console.log('\n9 · LA REGLA: nada sale sin que Carlos lo apruebe (o sin que haya prendido el automático en ese chat)');

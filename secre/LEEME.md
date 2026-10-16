@@ -29,7 +29,9 @@ Propuesta: «sí voy, nomás confirmo la hora y te digo»
 | `automático Equipo` (un grupo, por su nombre) | en ese grupo contesta sola **sólo cuando te hablan o te preguntan a ti** |
 | `rol Taberna: Kael, mercenario callado` | en ese grupo **sigue la historia de rol** con tu personaje mientras no estás · `personaje Taberna: …` lo cambia |
 | `mundo Taberna: reino de Valdor, la magia está prohibida…` | **el contexto del mundo** (dónde pasa, reglas, quién juega a quién, qué ha pasado); lo lee antes de cada jugada · `mundo Taberna: + lo nuevo` agrega · `mundo Taberna` te lo enseña. También en el panel |
-| `sin firma Taberna` · `firma Taberna: 🎭 Kael` · `firma normal Taberna` | cómo firma en ese chat (de fábrica: 🤖) |
+| `marca Taberna: 🌌⚛️-` | lo que dice tu personaje sale como `🌌⚛️- lo que dice` y lo que hace en renglón aparte como `> lo que hace`. Lo pone el programa, así que no se le olvida · `quita marca Taberna` |
+| `stickers Taberna` · `borra stickers Taberna` | los stickers que **tú** mandas en ese grupo se guardan (hasta 8, con lo que estaba pasando cuando los mandaste) y tu personaje los usa de vez en cuando: nunca dos en menos de 10 min |
+| `sin firma Taberna` · `firma Taberna: 🎭 Kael` · `firma normal Taberna` | cómo firma en ese chat (de fábrica: 🤖; con marca de personaje va al final del mensaje) |
 | `manual Ana` · `apaga automático` · `automático` | lo regresa a propuestas · lo apaga para todos · dice con quién está prendido |
 | `pausa 2h` · `pausa hoy` · `sigue` | la callas un rato |
 | `estado` · `chats` · `ayuda` | qué está haciendo |

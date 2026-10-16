@@ -16,6 +16,7 @@ export async function conectar({ telefono, alMensaje, alEstado }){
   return {
     yo: () => yo,
     async enviar(jid, texto){ enviados.push({ jid, texto, t: Date.now() }); return 'falso-' + enviados.length; },
+    async enviarSticker(jid){ enviados.push({ jid, texto: '[sticker]', t: Date.now() }); return 'falso-' + enviados.length; },
     async escribiendo(){}, async leido(){}, async cerrar(){},
     /* para las pruebas: hacer como que llegó un mensaje */
     llega: (m) => alMensaje({ id: 'm' + Math.random().toString(36).slice(2), mio: false, grupo: false, t: Date.now(), ...m }),

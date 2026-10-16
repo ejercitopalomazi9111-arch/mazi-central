@@ -109,8 +109,9 @@ function vista(v, id){
   if(!v.secre) return { cuenta: id, conexion: v.estado, config: configBase(), chats: [], propuestas: [], pendientes: [], charla: [], registro: [], ahora: Date.now(), ayuda: AYUDA };
   const s = v.secre, c = s.config, e = s.estado;
   return {
-    cuenta: s.cuenta, conexion: v.estado, config: c, deTurno: s.deTurno(),
-    chats: Object.entries(c.chats).filter(([, x]) => x.nombre).map(([id, x]) => ({ id, ...x, modoAhora: s.modo(id, '', !!x.grupo) })).sort((a, b) => a.nombre.localeCompare(b.nombre)),
+    /* los stickers (imágenes) no viajan al panel en cada repaso: pesan y no se pintan */
+    cuenta: s.cuenta, conexion: v.estado, config: { ...c, chats: Object.fromEntries(Object.entries(c.chats).map(([k, x]) => { const { stickers, ...r } = x; return [k, r]; })) }, deTurno: s.deTurno(),
+    chats: Object.entries(c.chats).filter(([, x]) => x.nombre).map(([id, x]) => { const { stickers, ...resto } = x; return { id, ...resto, nStickers: (stickers || []).length, modoAhora: s.modo(id, '', !!x.grupo) }; }).sort((a, b) => a.nombre.localeCompare(b.nombre)),
     propuestas: e.propuestas, pendientes: e.pendientes.filter(p => !p.hecho).concat(e.pendientes.filter(p => p.hecho).slice(-10)),
     charla: e.charla.slice(-60), registro: e.registro.slice(-60), ahora: Date.now(), ayuda: AYUDA,
   };
@@ -178,6 +179,7 @@ http.createServer(async (req, res) => {
     }
     if(b.personaje !== undefined) c.personaje = String(b.personaje).slice(0, 800);
     if(b.mundo !== undefined) c.mundo = String(b.mundo).slice(0, 4000);
+    if(b.marca !== undefined){ const mk = String(b.marca).trim().slice(0, 30); if(mk) c.marca = mk; else delete c.marca; }
     if(b.nota !== undefined) c.nota = String(b.nota).slice(0, 500);
     if(b.etiquetas !== undefined) c.etiquetas = String(b.etiquetas).split(',').map(x => x.trim().toLowerCase()).filter(Boolean).slice(0, 10);
     s.guardar(); return json(res, 200, { bien: true });
