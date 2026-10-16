@@ -119,7 +119,7 @@ function vista(v, id){
     cuenta: s.cuenta, conexion: v.estado, config: { ...c, chats: Object.fromEntries(Object.entries(c.chats).map(([k, x]) => { const { stickers, ...r } = x; return [k, r]; })) }, deTurno: s.deTurno(),
     chats: Object.entries(c.chats).filter(([, x]) => x.nombre).map(([id, x]) => { const { stickers, ...resto } = x; return { id, ...resto, nStickers: (stickers || []).length, modoAhora: s.modo(id, '', !!x.grupo) }; }).sort((a, b) => a.nombre.localeCompare(b.nombre)),
     propuestas: e.propuestas, pendientes: e.pendientes.filter(p => !p.hecho).concat(e.pendientes.filter(p => p.hecho).slice(-10)),
-    charla: e.charla.slice(-60), registro: e.registro.slice(-60), ahora: Date.now(), ayuda: AYUDA,
+    charla: e.charla.slice(-60), registro: e.registro.slice(-60), contestadas: (e.contestadas || []).slice(0, 40), ahora: Date.now(), ayuda: AYUDA,
   };
 }
 

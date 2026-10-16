@@ -225,7 +225,7 @@ function pintar(forzar){
   const nProp = datos.propuestas.length, nPend = datos.pendientes.filter(p => !p.hecho).length;
   globo('propuestas', nProp); globo('pendientes', nPend);
 
-  const h = pestana + JSON.stringify(pestana === 'platica' ? datos.charla : pestana === 'propuestas' ? datos.propuestas : pestana === 'pendientes' ? datos.pendientes : [datos.chats, datos.config]);
+  const h = pestana + JSON.stringify(pestana === 'platica' ? datos.charla : pestana === 'propuestas' ? [datos.propuestas, (datos.contestadas || [])[0]] : pestana === 'pendientes' ? datos.pendientes : [datos.chats, datos.config]);
   if(!forzar && h === huella) return;
   const enfocado = document.activeElement;
   if(!forzar && enfocado && $('#hoja').contains(enfocado) && /INPUT|TEXTAREA|SELECT/.test(enfocado.tagName)) return;
@@ -237,6 +237,19 @@ function globo(p, n){ const g = $(`nav.pestanas [data-p="${p}"] .globo`); if(!g)
 const nombreDe = (jid) => (datos.chats.find(c => c.id === jid) || {}).nombre || String(jid).split('@')[0];
 
 /* ══ Por mandar ══════════════════════════════════════════════════════════ */
+/* lo que llegó, qué hizo Secre y por qué (Carlos, 16 de octubre: «que en por enviar
+   también muestre qué recibió, qué respondió y por qué») */
+const QUE = { contesto: ['✓', 'Contesté'], decide: ['⚠️', 'Te toca decidir'], nada: ['·', 'No hacía falta contestar'], freno: ['⏸', 'No contesté sola'], propuesta: ['✎', 'Te lo dejé de propuesta'], error: ['!', 'Falló la IA'] };
+function hojaBitacora(){
+  const l = datos.contestadas || [];
+  return `<h2 style="margin-top:28px">Lo que llegó y lo que hice</h2>` + (l.length ? l.map(x => { const [i, n] = QUE[x.que] || ['·', x.que];
+    return `<article class="tarjeta bitacora" data-que="${esc(x.que)}">
+      <div class="fila"><span class="quien">${esc(x.nombre)}</span><span class="meta">${i} ${n} · ${cuando(x.t)}</span></div>
+      <p class="meta">Te escribió: «${esc(x.dijo)}»</p>
+      ${x.resp ? `<p>${x.que === 'propuesta' ? 'Te propuse (no se ha mandado)' : 'Contesté'}: «${esc(x.resp)}»</p>` : ''}
+      ${x.porque ? `<p class="motivo">Por qué: ${esc(x.porque)}</p>` : ''}
+    </article>`; }).join('') : '<p class="vacio">Todavía no ha llegado nada desde que se prendió.</p>');
+}
 function hojaPropuestas(){
   const ps = [...datos.propuestas].sort((a, b) => b.t - a.t);
   $('#hoja').innerHTML = `<h2>Por mandar</h2>` + (ps.length > 1 ? `<button class="boton principal" id="bTodas" style="width:100%;margin-bottom:12px">Mandar todas (${ps.length})</button>` : '') + (ps.length ? ps.map(p => `
@@ -247,7 +260,7 @@ function hojaPropuestas(){
       <textarea class="campo" id="t${p.n}">${esc(p.texto)}</textarea>
       ${p.motivo ? `<p class="motivo">⚠️ ${esc(p.motivo)}</p>` : ''}
       <div class="acciones"><button class="boton principal" data-mandar>Mandar</button><button class="boton peligro" data-tirar>Tirar</button></div>
-    </article>`).join('') : `<p class="vacio">Nada por mandar. Cuando alguien te escriba, aquí aparece la respuesta lista.</p>`);
+    </article>`).join('') : `<p class="vacio">Nada por mandar. Lo que necesite tu número aparece aquí.</p>`) + hojaBitacora();
   document.querySelectorAll('#hoja article[data-n]').forEach(el => {
     const n = +el.dataset.n, p = datos.propuestas.find(x => x.n === n);
     $('[data-mandar]', el).onclick = async (e) => {

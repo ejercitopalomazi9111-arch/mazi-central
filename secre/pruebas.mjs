@@ -340,7 +340,8 @@ s.config.reglas = s.config.reglas.filter(r => r.modo !== 'auto');
 ok('Pepe sigue en manual aunque los demás estén en automático', s.modo(PEPE) === 'borrador');
 iaFalla = true; const f0 = aOtros().length;
 await llega(LALO, 'oye?', { nombre: 'Lalo' }); pasar(70); await s.tic(); iaFalla = false;
-ok('si la IA falla, no manda nada solo', aOtros().length === f0);
+ok('si la IA falla, no inventa nada: sólo le avisa que su mensaje llegó', aOtros().length === f0 + 1 && /Recibí tu mensaje, en un momento te contesto\.$/.test(aOtros().slice(-1)[0].texto), aOtros().slice(-1));
+ok('y en «Por mandar» queda por qué', (s.estado.contestadas[0] || {}).que === 'error' && /la IA no contestó/.test(s.estado.contestadas[0].porque), s.estado.contestadas[0]);
 await carlos('estado');
 ok('«estado» dice que está en automático', /Automático: le contesto sola a todos/.test(ultimoAviso()), ultimoAviso());
 ahora = Date.UTC(2026, 9, 27, 3, 31); await s.tic();   /* 21:31 */
@@ -353,7 +354,7 @@ ahora = Date.UTC(2026, 9, 27, 17, 0);
 await llega(LALO, 'sigues ahí?', { nombre: 'Lalo' }); pasar(70); await s.tic();
 ok('y vuelve a ser propuesta', aOtros().length === l0 && /Propuesta:/.test(ultimoAviso()));
 const autosMandados = aOtros().filter(e => FIRMA.test(e.texto));
-ok(`cada mensaje que mandó sola fue a un chat que Carlos puso en automático (${autosMandados.length})`, autosMandados.every(e => [PEPE, LALO].includes(e.jid)) && autosMandados.length === 3, autosMandados.map(e => e.jid));
+ok(`cada mensaje que mandó sola fue a un chat que Carlos puso en automático (${autosMandados.length})`, autosMandados.every(e => [PEPE, LALO].includes(e.jid)) && autosMandados.length === 4, autosMandados.map(e => e.jid));
 
 console.log('\n8f · Grupos: sólo los que Carlos autoriza por nombre, y el rol que sigue la historia');
 const EQUIPO = '120363111111@g.us', ROL = '120363222222@g.us';
@@ -480,6 +481,15 @@ const enGrupos = aOtros().filter(e => [EQUIPO, ROL, TAB2, BOS, CAS].includes(e.j
 console.log('\n9 · LA REGLA: nada sale sin que Carlos lo apruebe (o sin que haya prendido el automático en ese chat)');
 ok(`cada envío a otra persona corresponde a una aprobación (${aOtros().length} envíos, ${aprobaciones} aprobaciones, ${fijosMandados} saludos que dejó fijos, ${autosMandados.length} en automático, ${enGrupos} en grupos autorizados)`, aOtros().length <= aprobaciones + fijosMandados + autosMandados.length + enGrupos, { envios: aOtros().length, aprobaciones, fijosMandados });
 ok('y todos los avisos a Carlos empiezan con 🤖', aCarlos().every(e => e.texto.startsWith('🤖')));
+
+console.log('\n9b · «Por mandar» enseña lo que llegó, qué contestó y por qué');
+{
+  const l = s.estado.contestadas || [];
+  ok('cada respuesta sola queda con lo que dijeron, lo que contestó y por qué', l.some(x => x.que === 'contesto' && x.dijo && x.resp && x.porque), l.slice(0, 3));
+  ok('lo que necesitaba a Carlos queda marcado así', l.some(x => x.que === 'decide' && /necesita tu decisión/.test(x.porque)));
+  ok('cuando un freno la detuvo, dice cuál', l.some(x => x.que === 'freno' && /ya contesté|otro bot|otra cuenta|me detuve/.test(x.porque)), l.filter(x => x.que === 'freno').slice(0, 2));
+  ok('lo que dejó de propuesta, también', l.some(x => x.que === 'propuesta'));
+}
 
 console.log('\n10 · Asistente de verdad: contesta siempre y al instante (Carlos, 16 de octubre)');
 {
