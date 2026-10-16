@@ -184,6 +184,23 @@ async function probar(tema){
   await espera(async () => { const c = (await estado()).config; return c.avisarA === 'yo' && c.repaso.cada === 2; }, '«Dónde te escribo» y el repaso se guardan desde Ajustes');
   await page.focus('#gAvisos'); await page.selectOption('#gAvisos', 'otra'); await page.click('#bGeneral');
   await espera(async () => (await estado()).config.avisarA === 'otra', 'y se regresa a «desde tu otra cuenta»');
+  /* lo que sale solo: un mensaje programado y una publicación del banco, desde el teléfono */
+  await page.locator('#hoja details summary', { hasText: 'Nuevo mensaje programado' }).click();
+  await page.fill('#pHora', '07:50'); await page.fill('#pTexto', '📚 Ahorita toca Física');
+  await page.locator('#pDias label.dia').filter({ hasText: 'viernes' }).locator('input').setChecked(false);
+  await page.click('#bProg');
+  await espera(async () => { const p = ((await estado()).config.programados || []).slice(-1)[0] || {}; return p.hora === '07:50' && p.dias.join() === '1,2,3,4' && /Física/.test(p.texto); }, 'programar un mensaje desde el panel (hora, días y texto)');
+  await espera(async () => /07:50 los lunes, martes, miércoles, jueves/.test(await page.textContent('#hoja')), 'y se ve en la lista en cristiano');
+  await page.locator('#hoja details summary', { hasText: 'Publicar fotos del banco' }).click();
+  await page.fill('#uCarpeta', "All's fashion"); await page.fill('#uCuantas', '2'); await page.fill('#uHora', '10:00');
+  await page.click('#bPub');
+  await espera(async () => { const p = ((await estado()).config.publicar || []).slice(-1)[0] || {}; return p.carpeta === "All's fashion" && p.cuantas === 2 && p.hora === '10:00' && p.dias.length === 7; }, 'programar una publicación del banco desde el panel');
+  ok('sin desborde con lo programado', (await desborde()) <= 0, await desborde());
+  ok('ningún control chico en Ajustes', !(await chicos()).length, await chicos());
+  await foto('4b-programados');
+  const nP = ((await estado()).config.programados || []).length;
+  await page.locator('#hoja [data-quitaprog]').last().click();
+  await espera(async () => ((await estado()).config.programados || []).length === nP - 1, 'quitar un programado desde el panel');
 
   /* ── la plática ── */
   await page.click('nav [data-p="platica"]');
