@@ -92,13 +92,14 @@ for(const r of RAFAGAS){
   r.s = escena(V ? '#0C0B0A' : '#F3EEE6');
   if(V){
     r.capas = r.fotos.map(i => { const f = foto(i, 'inset:0'); r.s.appendChild(f); return f; });
-    r.s.appendChild(el('div', 'position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.6) 0,transparent 26%,transparent 70%,rgba(0,0,0,.55) 100%)'));
-    r.tit = el('div', 'position:absolute;left:64px;right:64px;top:110px;font-size:150px;color:#fff', r.titulo); r.tit.className = 'anton';
-    r.marca = el('img', 'position:absolute;left:50%;bottom:90px;width:300px;transform:translateX(-50%)'); r.marca.src = LOGO_B;
+    /* ⚠ las fotos llevan z-index 1-2 para la cortinilla: sin z-index aquí, el título quedaba DEBAJO */
+    r.s.appendChild(el('div', 'position:absolute;inset:0;z-index:3;background:linear-gradient(180deg,rgba(0,0,0,.6) 0,transparent 26%,transparent 70%,rgba(0,0,0,.55) 100%)'));
+    r.tit = el('div', 'position:absolute;left:64px;right:64px;top:110px;font-size:150px;color:#fff;z-index:4;text-shadow:0 4px 24px rgba(0,0,0,.35)', r.titulo); r.tit.className = 'anton';
+    r.marca = el('img', 'position:absolute;left:50%;bottom:90px;width:300px;transform:translateX(-50%);z-index:4'); r.marca.src = LOGO_B;
   } else {
     r.capas = r.fotos.map(i => { const f = foto(i, `top:${H - CH - 60}px;width:${CW}px;height:${CH}px`, 'carta'); r.s.appendChild(f); return f; });
     r.tit = el('div', 'position:absolute;left:60px;top:40px;font-size:118px;color:#0C0B0A;white-space:nowrap', r.titulo); r.tit.className = 'anton';
-    r.marca = el('img', 'position:absolute;right:60px;top:52px;width:220px'); r.marca.src = LOGO_N;
+    r.marca = el('img', 'position:absolute;right:60px;top:34px;width:180px'); r.marca.src = LOGO_N;
   }
   r.s.appendChild(r.tit); r.s.appendChild(r.marca);
 }
@@ -190,12 +191,17 @@ window.pintar = function(t){
         else { c.style.zIndex = 1; c.style.clipPath = 'none'; c.img.style.transform = 'scale(1.04)'; }
       });
     } else {
-      /* la fila: la foto n entra por la derecha y empuja; se ven n-2, n-1, n */
-      const paso = CW + HUECO, x0 = (W - (3 * CW + 2 * HUECO)) / 2;
+      /* la fila: en el primer golpe entran las tres juntas desde la derecha;
+         en cada golpe siguiente corre una; cuando ya no hay más fotos se queda
+         quieta y late con la música (antes empezaba con UNA foto y dos huecos) */
+      const paso = CW + HUECO, x0 = (W - (3 * CW + 2 * HUECO)) / 2, maxC = Math.max(0, r.capas.length - 3);
+      const corre = Math.min(n, maxC), mueve = (n > 0 && n <= maxC) ? (1 - llega) : 0, entra = n === 0 ? (1 - llega) * 3.3 : 0;
+      const late = n > maxC ? .035 * (1 - sale(f * 2.5)) : 0;
       r.capas.forEach((c, i) => {
-        const pos = i - n + 2 + (1 - llega);                      /* 0, 1, 2 = las tres de la fila */
+        const pos = i - corre + mueve + entra;                    /* 0, 1, 2 = las tres de la fila */
         c.style.left = (x0 + pos * paso) + 'px';
         c.style.visibility = (pos > -1 && pos < 3.5) ? 'visible' : 'hidden';
+        c.style.transform = `scale(${1 + late})`;
         c.img.style.transform = `scale(${1.06 - .06 * sale(f)})`;
       });
     }
