@@ -11,7 +11,7 @@
 
    Correr:  node secre/pruebas.mjs
    ═════════════════════════════════════════════════════════════════════════ */
-import { Secre, horaMx, fechaMx, entreHoras, duracion } from './nucleo.mjs';
+import { Secre, horaMx, fechaMx, entreHoras, duracion, diasDe, horaDe, textoDias, diaMx } from './nucleo.mjs';
 
 const fallas = []; let pasan = 0;
 const ok = (que, si, extra) => { if(si){ pasan++; console.log('  ✓', que); } else { fallas.push(que); console.log('  ✗', que, extra !== undefined ? '· ' + JSON.stringify(extra) : ''); } };
@@ -722,6 +722,127 @@ console.log('\n12 · «¿Qué me llegó?», notas de voz y llamadas (Carlos, 16 
     const ogg = await A.aNotaDeVoz(pcm.toString('base64'), 'audio/L16;codec=pcm;rate=24000');
     ok('la voz de la IA (PCM 24 kHz) sale como nota de voz OGG/Opus, con su duración', ogg.toString('ascii', 0, 4) === 'OggS' && A.segundosOgg(ogg) === 1 && ogg.includes(Buffer.from('OpusHead')));
   }catch(e){ ok('la conversión a nota de voz corre', false, e.message); }
+}
+
+console.log('\n14 · Mensajes programados, banco de imágenes y fotos (Carlos, 16 de octubre)');
+{
+  ok('«lunes a viernes», «diario», «fines de semana», «lunes, miércoles y viernes», «martes a jueves»',
+    diasDe('lunes a viernes').join() === '1,2,3,4,5' && diasDe('diario').length === 7 && diasDe('').length === 7 && diasDe('fines de semana').join() === '0,6' && diasDe('lunes, miércoles y viernes').join() === '1,3,5' && diasDe('martes a jueves').join() === '2,3,4' && diasDe('viernes a lunes').join() === '0,1,5,6');
+  ok('horas como las escribe una persona', horaDe('7') === '07:00' && horaDe('7:50') === '07:50' && horaDe('7pm') === '19:00' && horaDe('12 am') === '00:00' && horaDe('25') === '' && horaDe('hola') === '');
+  ok('los días se leen en cristiano', textoDias([1, 2, 3, 4, 5]) === 'de lunes a viernes' && textoDias([]) === 'diario' && textoDias([1, 3]) === 'los lunes, miércoles');
+
+  /* lunes 19 de octubre de 2026, 6:55 en México */
+  ahora = Date.UTC(2026, 9, 19, 12, 55);
+  ok('el 19 de octubre de 2026 es lunes en México', diaMx(ahora) === 1);
+  const env4 = []; let n4 = 1;
+  const t4 = {
+    yo: () => [YO], otrosYo: () => [],
+    async enviar(jid, texto){ const id = 'W' + (n4++); env4.push({ jid, texto, id }); return id; },
+    async enviarImagen(jid, buf, mime, pie){ const id = 'W' + (n4++); env4.push({ jid, texto: '[foto]', buf: buf.toString(), mime, pie, id }); return id; },
+    async enviarAudio(){ return 'W' + (n4++); }, async escribiendo(){}, async leido(){}, async grabando(){},
+  };
+  const FICHAS = [
+    { id: 'f1', nombre: 'IMG_001.jpg', titulo: 'Sudadera Nike gris', descripcion: 'Talla M y L, original', carpeta: "All's fashion", palabras: ['sudadera', 'nike'], temas: ['ropa'], estado: 'lista', creado: 1 },
+    { id: 'f2', nombre: 'termo_stanley.jpg', titulo: '', descripcion: 'Termo Stanley 1.2 L', carpeta: "All's fashion", palabras: ['termo'], temas: [], estado: 'lista', creado: 2 },
+    { id: 'f3', nombre: 'bolsa.jpg', titulo: 'Bolsa Michael Kors', descripcion: '', carpeta: "All's fashion", palabras: ['bolsa'], temas: ['bolsas'], estado: 'sin-revisar', creado: 3 },
+    { id: 'f4', nombre: 'tenis.jpg', titulo: 'Tenis Nike rojos', descripcion: '', carpeta: "All's fashion", palabras: ['tenis'], temas: [], estado: 'lista', creado: 4 },
+    { id: 'f5', nombre: 'sudadera_rota.jpg', titulo: 'Sudadera Adidas', descripcion: '', carpeta: "All's fashion", palabras: ['sudadera'], temas: [], estado: 'cambios', creado: 5 },
+    { id: 'k9', nombre: 'perro.png', titulo: 'Perro de rescate', descripcion: 'K-9', carpeta: 'Cursos', palabras: ['perro'], temas: [], estado: 'lista', creado: 6 },
+  ];
+  let bancoFalla = false;
+  const banco = { listo: () => true, async fichas(){ if(bancoFalla) throw new Error('sin red'); return FICHAS; }, async bajar(id){ return { buf: Buffer.from('JPG-' + id), mime: 'image/jpeg' }; } };
+  let vioFotos = null, escribio = [];
+  const ia4 = { ...ia,
+    async leer(x){
+      vioFotos = x.fotos;
+      const t = x.nuevos.map(y => y.texto).join(' ');
+      if(x.fotos && x.fotos.length && /sudadera|termo/i.test(t)) return { pendientes: [], respuesta: 'mira, este es', motivo: '', urgente: false, fotos: [1] };
+      return ia.leer(x);
+    },
+    async escribir({ tema }){ escribio.push(tema); return /clase/.test(tema) ? 'ya casi toca mate eh' : 'llegaron cositas nuevas 🔥'; },
+  };
+  const alm4 = (() => { const d = {}; return { leer: (k, x) => d[k] ? JSON.parse(d[k]) : x, guardar: (k, v) => { d[k] = JSON.stringify(v); } }; })();
+  let giro = 0;   /* un azar que se mueve: con uno fijo siempre se escogen las mismas posiciones */
+  const s6 = new Secre({ cuenta: 'B', transporte: t4, ia: ia4, almacen: alm4, reloj, azar: () => (giro = (giro + 0.37) % 1), banco });
+  const TAREAS = '120363111111@g.us', ALLS = '120363222222@g.us';
+  for(const [j, n] of [[TAREAS, 'Tareas 3.1'], [ALLS, "All's fashion clientas"]]){ s6.chat(j).nombre = n; s6.chat(j).grupo = true; }
+  s6.chat(ANA).nombre = 'Ana';
+  const dice6 = async (t) => { await s6.orden(t); return (env4.filter(e => e.jid === YO).slice(-1)[0] || {}).texto || ''; };
+  const aTareas = () => env4.filter(e => e.jid === TAREAS);
+
+  let r = await dice6('programa Tareas 7:00 lunes a viernes: 📚 Ahorita toca Matemáticas');
+  ok('«programa Tareas 7:00 lunes a viernes: …» lo deja programado', (s6.config.programados || []).length === 1 && s6.config.programados[0].hora === '07:00' && s6.config.programados[0].dias.join() === '1,2,3,4,5' && /Tareas 3\.1 a las 07:00 de lunes a viernes/.test(r), r);
+  s6.aplicar({ accion: 'programar', chat: 'Tareas', hora: '7:50', dias: [1, 2, 3, 4, 5], texto: '📚 Ahorita toca Física' });
+  s6.aplicar({ accion: 'programar', chat: 'Ana', hora: '21:00', dias: 'diario', tema: 'recordarle que mañana hay clase de mate' });
+  ok('la IA también los arma (uno por clase, o con un tema que escribe cada vez)', s6.config.programados.length === 3);
+  await s6.tic();
+  ok('antes de la hora no sale nada', !aTareas().length);
+  pasar(6 * 60); await s6.tic();
+  ok('a las 7:01 sale solo en el grupo, con su firma', aTareas().length === 1 && /Asistente de Carlos: 📚 Ahorita toca Matemáticas/.test(aTareas()[0].texto), aTareas());
+  pasar(120); await s6.tic();
+  ok('y no se repite ese día', aTareas().length === 1);
+  pasar(50 * 60); await s6.tic();
+  ok('a las 7:51 sale el de Física', aTareas().length === 2 && /Física/.test(aTareas()[1].texto));
+  ahora = Date.UTC(2026, 9, 20, 13, 30); await s6.tic();   /* martes 7:30 */
+  ok('si Secre estuvo dormida y ya pasaron 30 min, no lo manda tarde', aTareas().filter(e => /Matemáticas/.test(e.texto)).length === 1);
+  ahora = Date.UTC(2026, 9, 24, 13, 1); await s6.tic();   /* sábado 7:01 */
+  ok('en sábado no sale (es de lunes a viernes)', aTareas().length === 2);
+  ahora = Date.UTC(2026, 9, 25, 3, 2); await s6.tic();   /* sábado 21:02 */
+  ok('el programado «sobre un tema» lo escribe la IA cada vez', env4.some(e => e.jid === ANA && /ya casi toca mate/.test(e.texto)) && /mate/.test(escribio.slice(-1)[0]), env4.filter(e => e.jid === ANA));
+  r = await dice6('programados');
+  ok('«programados» los enseña con número', /1\. Tareas 3\.1 · 07:00 de lunes a viernes/.test(r) && /3\. Ana · 21:00 diario: sobre/.test(r), r);
+  r = await dice6('quita programado 2');
+  ok('«quita programado 2» lo quita', s6.config.programados.length === 2 && !s6.config.programados.some(p => /Física/.test(p.texto)), r);
+
+  /* publicaciones del banco */
+  ahora = Date.UTC(2026, 9, 26, 15, 55);   /* lunes 9:55 */
+  const h = s6.aplicar({ accion: 'publicar', chat: "All's fashion clientas", carpeta: "All's fashion", cuantas: 2, hora: '10:00', dias: [] });
+  ok('«publica en All\'s 2 fotos de la carpeta All\'s fashion diario a las 10» queda programado', /2 foto\(s\) de «All's fashion»/.test(h), h);
+  pasar(6 * 60); await s6.tic();
+  const dia1 = env4.filter(e => e.jid === ALLS && e.texto === '[foto]');
+  ok('a las 10 publica 2 fotos con su nombre en el pie', dia1.length === 2 && dia1.every(e => /^\*.+\*/.test(e.pie)), dia1.map(e => e.pie));
+  ok('antes, un textito como persona', env4.some(e => e.jid === ALLS && /llegaron cositas/.test(e.texto)));
+  ok('nunca publica una foto marcada «requiere cambios»', !dia1.some(e => /Adidas/.test(e.pie)));
+  ok('si la foto no tiene título, usa el nombre del archivo limpio', FICHAS.length && dia1.concat().every(e => !/\.jpg/.test(e.pie)));
+  ahora += 24 * 3600_000; await s6.tic();
+  const dia2 = env4.filter(e => e.jid === ALLS && e.texto === '[foto]').slice(2);
+  ok('al día siguiente, otras fotos (no repite hasta que se acaben)', dia2.length === 2 && !dia2.some(e => dia1.some(d => d.pie === e.pie)), [dia1.map(e => e.pie), dia2.map(e => e.pie)]);
+  r = await dice6("publica ahora en All's");
+  ok('«publica ahora en All\'s» publica en el momento', /publiqué 2 foto/.test(r), r);
+  for(let k = 0; k < 4; k++) await s6.orden("publica ahora en All's");
+  ok('en ninguna publicación sale una foto marcada «requiere cambios» (ni al volver a empezar)', !env4.some(e => e.jid === ALLS && /Adidas/.test(e.pie || '')) && env4.filter(e => e.jid === ALLS && e.texto === '[foto]').length >= 14);
+
+  /* contestar con fotos */
+  const aAna = () => env4.filter(e => e.jid === ANA);
+  await s6.alMensaje({ id: 'q1', chat: ANA, de: ANA, nombre: 'Ana', texto: 'oye tienes sudaderas?', mio: false, t: ahora }); pasar(7); await s6.tic();
+  ok('le preguntan por algo del banco → la IA ve las fotos que van con eso', vioFotos && vioFotos.length >= 1 && /Sudadera Nike/.test(vioFotos[0].nombre) && !vioFotos.some(f => /Adidas|Perro/.test(f.nombre)), vioFotos);
+  ok('y contesta con texto y la foto', aAna().slice(-2)[0] && /mira, este es/.test(aAna().slice(-2)[0].texto) && aAna().slice(-1)[0].texto === '[foto]' && /Sudadera Nike gris/.test(aAna().slice(-1)[0].pie), aAna().slice(-2));
+  await s6.alMensaje({ id: 'q2', chat: TAREAS, de: BETO, nombre: 'Beto', nombreChat: 'Tareas 3.1', texto: 'alguien tiene sudaderas? jaja', mio: false, grupo: true, t: ahora }); pasar(30); await s6.tic();
+  ok('en un grupo no busca fotos si no se lo pidieron', !vioFotos || !vioFotos.length);
+  r = await dice6('sin fotos Ana');
+  await s6.alMensaje({ id: 'q3', chat: ANA, de: ANA, nombre: 'Ana', texto: 'y termos?', mio: false, t: ahora }); pasar(7); await s6.tic();
+  ok('«sin fotos Ana» y ya no le manda fotos', !vioFotos.length && aAna().slice(-1)[0].texto !== '[foto]');
+  await dice6('fotos Ana');
+  bancoFalla = true;
+  await s6.alMensaje({ id: 'q4', chat: ANA, de: ANA, nombre: 'Ana', texto: 'tienes termos?', mio: false, t: ahora }); pasar(7); await s6.tic();
+  bancoFalla = false;
+  ok('si el banco no contesta, igual le contesta (sin fotos)', aAna().slice(-1)[0].texto !== '[foto]' && /Asistente de Carlos/.test(aAna().slice(-1)[0].texto));
+  /* a pedido de Carlos */
+  const f0 = env4.filter(e => e.jid === YO && e.texto === '[foto]').length;
+  r = await dice6('fotos de termos');
+  ok('«fotos de termos» se las manda a él', env4.filter(e => e.jid === YO && e.texto === '[foto]').length === f0 + 1 && /Termo Stanley/.test(env4.filter(e => e.jid === YO && e.texto === '[foto]').slice(-1)[0].pie), r);
+  r = await dice6('mándale a Ana 2 fotos de nike');
+  ok('«mándale a Ana 2 fotos de nike» se las manda a Ana', /le mandé 2 foto/.test(r) && aAna().slice(-2).every(e => e.texto === '[foto]'), r);
+  r = await dice6('fotos de unicornios');
+  ok('si no hay, lo dice', /No encontré fotos de «unicornios»/.test(r), r);
+  /* en una propuesta: las fotos salen cuando Carlos la aprueba */
+  s6.chat(LALO).nombre = 'Lalo'; s6.chat(LALO).modo = 'borrador';
+  await s6.alMensaje({ id: 'q5', chat: LALO, de: LALO, nombre: 'Lalo', texto: 'tienes sudaderas?', mio: false, t: ahora }); pasar(50); await s6.tic();
+  const pl = s6.estado.propuestas.find(x => x.chat === LALO);
+  ok('la propuesta dice qué foto llevaría', pl && pl.fotos && pl.fotos[0] === 'f1' && /📷 \+ 1 foto\(s\): Sudadera Nike gris/.test(env4.filter(e => e.jid === YO).slice(-1)[0].texto), env4.filter(e => e.jid === YO).slice(-1));
+  ok('y hasta que la aprueba no se le manda nada a Lalo', !env4.some(e => e.jid === LALO));
+  r = await dice6(String(pl.n));
+  ok('al aprobarla salen el texto y la foto', env4.filter(e => e.jid === LALO).length === 2 && env4.filter(e => e.jid === LALO)[1].texto === '[foto]' && /y 1 foto/.test(r), r);
 }
 
 console.log('\n13 · El puente de correr.mjs pasa TODO lo que el núcleo le pide al WhatsApp');

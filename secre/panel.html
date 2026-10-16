@@ -60,6 +60,13 @@ nav.pestanas button[aria-selected="true"]{ color:var(--acento); font-weight:700;
 .campo{ width:100%; min-height:44px; padding:10px 12px; border-radius:10px; border:1px solid var(--linea); background:var(--fondo); }
 textarea.campo{ min-height:88px; resize:vertical; }
 label.etq{ display:block; font-size:14px; color:var(--suave); margin:10px 0 4px; }
+.dias{ border:0; padding:0; margin:0; display:flex; flex-wrap:wrap; gap:6px; }
+.dias legend{ width:100%; }
+.dia{ position:relative; }
+.dia input{ position:absolute; opacity:0; inset:0; margin:0; width:100%; height:100%; cursor:pointer; }
+.dia span[aria-hidden]{ display:grid; place-items:center; width:44px; height:44px; border-radius:50%; border:1px solid var(--linea); font-weight:600; }
+.dia input:checked + span{ background:var(--acento); color:var(--acento-tinta); border-color:var(--acento); }
+.dia input:focus-visible + span{ outline:2px solid var(--acento); outline-offset:2px; }
 .fila-check{ display:flex; align-items:center; gap:10px; min-height:44px; margin:12px 0 0; font-size:15px; }
 .fila-check input{ width:22px; height:22px; accent-color:var(--acento, currentColor); }
 .acciones{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
@@ -423,6 +430,15 @@ function textoRegla(r){
   if(r.hasta) p.push('hasta el ' + dia(r.hasta - 1));
   return `<b>${r.modo === 'callado' ? 'No proponer' : r.modo === 'auto' ? 'Contestar sola' : 'Proponer'}</b> ${esc(p.join(' · '))}`;
 }
+const DIAS_CORTOS = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
+const DIAS_LARGOS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+function textoDias(d){
+  const x = (d && d.length ? d : [0, 1, 2, 3, 4, 5, 6]).slice().sort((a, b) => a - b).join(',');
+  return x === '0,1,2,3,4,5,6' ? 'diario' : x === '1,2,3,4,5' ? 'de lunes a viernes' : x === '0,6' ? 'fines de semana' : 'los ' + d.map(i => DIAS_LARGOS[i]).join(', ');
+}
+const diasChecks = (marcados) => [1, 2, 3, 4, 5, 6, 0].map(i => `<label class="dia"><input type="checkbox" value="${i}" ${marcados.includes(i) ? 'checked' : ''}><span aria-hidden="true">${DIAS_CORTOS[i]}</span><span class="oculto">${DIAS_LARGOS[i]}</span></label>`).join('');
+const nombreChat = (id) => ((datos.chats || []).find(c => c.id === id) || {}).nombre || id.split('@')[0];
+const opcionesTodos = () => (datos.chats || []).map(c => `<option value="${esc(c.id)}">${c.grupo ? '👥 ' : ''}${esc(c.nombre)}</option>`).join('');
 function hojaAjustes(){
   const c = datos.config;
   const datosV = (c.datos || []).filter(d => !d.hasta || d.hasta > Date.now());
@@ -456,6 +472,28 @@ function hojaAjustes(){
       <div class="dos"><div><label class="etq" for="rDe">Desde las</label><input class="campo" id="rDe" type="time"></div><div><label class="etq" for="rA">Hasta las</label><input class="campo" id="rA" type="time"></div></div>
       <label class="etq" for="rHasta">Vale hasta el día (vacío = siempre)</label><input class="campo" id="rHasta" type="date">
       <div class="acciones"><button class="boton principal" id="bRegla">Crear regla</button></div></details>
+
+    <h2>Lo que sale solo</h2>
+    <p class="meta">Mensajes que manda a su hora (la clase que toca, recordatorios…) y fotos de tu banco que publica sola con su nombre.</p>
+    ${(c.programados || []).map(p => `<div class="tarjeta fila" style="flex-wrap:nowrap"><span style="flex:1">⏰ <b>${esc(nombreChat(p.chat))}</b> · ${esc(p.hora)} ${esc(textoDias(p.dias))}<br><span class="meta">${p.texto ? esc(p.texto) : 'sobre: ' + esc(p.tema)}</span></span><button class="boton peligro" data-quitaprog="${esc(p.id)}">Quitar</button></div>`).join('')}
+    ${(c.publicar || []).map(p => `<div class="tarjeta fila" style="flex-wrap:nowrap"><span style="flex:1">📷 <b>${esc(nombreChat(p.chat))}</b> · ${esc(p.hora)} ${esc(textoDias(p.dias))}<br><span class="meta">${p.cuantas || 3} foto(s)${p.carpeta ? ' de «' + esc(p.carpeta) + '»' : ''}${p.buscar ? ' de ' + esc(p.buscar) : ''}</span></span><button class="boton peligro" data-quitapub="${esc(p.id)}">Quitar</button></div>`).join('')}
+    ${!(c.programados || []).length && !(c.publicar || []).length ? '<p class="meta">Nada programado todavía.</p>' : ''}
+    <details class="tarjeta"><summary>⏰ Nuevo mensaje programado</summary>
+      <label class="etq" for="pChat">A qué chat</label><select class="campo" id="pChat">${opcionesTodos()}</select>
+      <label class="etq" for="pHora">A qué hora</label><input class="campo" id="pHora" type="time" value="07:00">
+      <fieldset class="dias" id="pDias"><legend class="etq">Qué días</legend>${diasChecks([1, 2, 3, 4, 5])}</fieldset>
+      <label class="etq" for="pTexto">Qué dice (tal cual)</label><textarea class="campo" id="pTexto" placeholder="📚 Ahorita toca Matemáticas"></textarea>
+      <label class="etq" for="pTema">…o sobre qué tema lo escribe Secre cada vez (si dejas vacío lo de arriba)</label><input class="campo" id="pTema" placeholder="recordar la tarea de la semana">
+      <div class="acciones"><button class="boton principal" id="bProg">Programar</button></div></details>
+    <details class="tarjeta"><summary>📷 Publicar fotos del banco cada día</summary>
+      <label class="etq" for="uChat">En qué chat</label><select class="campo" id="uChat">${opcionesTodos()}</select>
+      <label class="etq" for="uCarpeta">De qué carpeta del banco</label><input class="campo" id="uCarpeta" placeholder="All's fashion">
+      <label class="etq" for="uBuscar">…o de qué (palabras)</label><input class="campo" id="uBuscar" placeholder="sudaderas, termos">
+      <label class="etq" for="uCuantas">Cuántas fotos</label><input class="campo" id="uCuantas" type="number" min="1" max="10" value="3" inputmode="numeric">
+      <label class="etq" for="uHora">A qué hora</label><input class="campo" id="uHora" type="time" value="10:00">
+      <fieldset class="dias" id="uDias"><legend class="etq">Qué días</legend>${diasChecks([0, 1, 2, 3, 4, 5, 6])}</fieldset>
+      <label class="etq" for="uIntro">Texto antes de las fotos (vacío = lo escribe Secre; «-» = sin texto)</label><input class="campo" id="uIntro">
+      <div class="acciones"><button class="boton principal" id="bPub">Programar publicación</button></div></details>
 
     <h2>Lo general</h2>
     <div class="tarjeta">
@@ -493,6 +531,18 @@ function hojaAjustes(){
     const a = { accion: 'regla', modo: $('#rModo').value, palabras: lista($('#rPal').value), etiquetas: lista($('#rEtq').value), de: $('#rDe').value, a: $('#rA').value, hasta: $('#rHasta').value };
     try{ const r = await accion(a); avisito(r.hecho); await cargar(true); }catch(e){ avisito('Ponle al menos un tema, un grupo o un horario'); }
   };
+  const diasDe = (id) => [...document.querySelectorAll(`#${id} input:checked`)].map(i => +i.value);
+  $('#bProg').onclick = async () => {
+    const texto = $('#pTexto').value.trim(), tema = $('#pTema').value.trim();
+    if(!texto && !tema) return avisito('Escribe qué dice o sobre qué tema');
+    try{ const r = await accion({ accion: 'programar', chat: $('#pChat').value, hora: $('#pHora').value, dias: diasDe('pDias'), texto, tema }); avisito(r.hecho); await cargar(true); }catch(e){ avisito('No pude programarlo: revisa el chat y la hora'); }
+  };
+  $('#bPub').onclick = async () => {
+    if(!$('#uCarpeta').value.trim() && !$('#uBuscar').value.trim()) return avisito('Pon la carpeta o de qué son las fotos');
+    try{ const r = await accion({ accion: 'publicar', chat: $('#uChat').value, carpeta: $('#uCarpeta').value.trim(), buscar: $('#uBuscar').value.trim(), cuantas: +$('#uCuantas').value || 3, hora: $('#uHora').value, dias: diasDe('uDias'), intro: $('#uIntro').value.trim() }); avisito(r.hecho); await cargar(true); }catch(e){ avisito('No pude programarla'); }
+  };
+  document.querySelectorAll('[data-quitaprog]').forEach(b => b.onclick = async () => { try{ await accion({ accion: 'quitarProgramado', id: b.dataset.quitaprog }); await cargar(true); }catch(e){ avisito(e.message); } });
+  document.querySelectorAll('[data-quitapub]').forEach(b => b.onclick = async () => { try{ await accion({ accion: 'quitarPublicacion', id: b.dataset.quitapub }); await cargar(true); }catch(e){ avisito(e.message); } });
   $('#bGeneral').onclick = async () => {
     try{ await accion({ accion: 'porDefecto', modo: $('#gDef').value }); await accion({ accion: 'auto', firma: $('#gFirma').value.trim() }); await accion({ accion: 'resumen', hora: $('#gRes').value }); await accion({ accion: 'avisos', a: $('#gAvisos').value }); await accion({ accion: 'repaso', cada: +$('#gRepaso').value }); await accion({ accion: 'voz', voz: $('#gVoz').value }); await accion({ accion: 'llamar', activo: $('#gLlamar').checked, tel: $('#gTel').value }); avisito('Guardado'); await cargar(true); }catch(e){ avisito(e.message); }
   };

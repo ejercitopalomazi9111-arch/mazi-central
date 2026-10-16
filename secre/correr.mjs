@@ -67,7 +67,7 @@ async function prender(c){
     /* sin esto el rol nunca mandaba stickers: quizaSticker pregunta si existe y se callaba */
     enviarSticker: (j, b) => v.transporte.enviarSticker(j, b),
     /* y las notas de voz (16 de octubre): sin esto, «audio Ana: …» se quedaba mudo igual que los stickers */
-    enviarAudio: (j, o, sg) => v.transporte.enviarAudio(j, o, sg), grabando: (j, ms) => v.transporte.grabando && v.transporte.grabando(j, ms),
+    enviarAudio: (j, o, sg) => v.transporte.enviarAudio(j, o, sg), enviarImagen: (j, b, m, p) => v.transporte.enviarImagen(j, b, m, p), grabando: (j, ms) => v.transporte.grabando && v.transporte.grabando(j, ms),
     /* los números de sus OTRAS cuentas: dos Secres no se contestan entre ellas */
     otrosYo: () => Object.entries(vivas).filter(([k, x]) => k !== c.id && x.transporte).flatMap(([, x]) => x.transporte.yo()),
     escribiendo: (j, ms) => v.transporte.escribiendo(j, ms), leido: (j) => v.transporte.leido(j) };

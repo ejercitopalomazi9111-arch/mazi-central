@@ -171,20 +171,23 @@ export const ia = {
     const ogg = await aNotaDeVoz(a.b64, a.mime);
     return { ogg, segundos: segundosOgg(ogg) };
   },
-  async leer({ dueno, nombre, nota, historial, nuevos, estilo, redactar, auto = false, rol = false, personaje = '', mundo = '', marca = '', instrucciones = '', comunidad = '', stickers = [], grupo, datos = [] }){
+  async leer({ fotos = [], dueno, nombre, nota, historial, nuevos, estilo, redactar, auto = false, rol = false, personaje = '', mundo = '', marca = '', instrucciones = '', comunidad = '', stickers = [], grupo, datos = [] }){
     if(rol) return leerRol({ dueno, nombre, nota, historial, nuevos, personaje, mundo, marca, instrucciones, comunidad, stickers, datos });
     const sistema = `Ayudas a ${dueno}, un estudiante de prepa en Querétaro, con su WhatsApp. Te paso un chat${grupo ? ' de grupo' : ''} con ${nombre}${nota ? ` (${nota})` : ''}.
 Tu trabajo:
 1) "pendientes": cosas que ${dueno} tiene que HACER por lo que le escribieron (entregar algo, confirmar, pagar, ir a algún lado, contestar una pregunta importante). Frases cortas en infinitivo, con fecha u hora si la hay. Lista vacía si no hay.
-${redactar && auto ? `2) "respuesta": el mensaje que se le manda YA a ${nombre}, SIN que ${dueno} lo revise. Eres el ASISTENTE de ${dueno} en su WhatsApp (el programa pone la firma; tú no firmes ni digas que eres un bot): español mexicano, cálido, natural y breve, como una persona que atiende bien.
-   - PLATICA de verdad: contesta lo que te dicen, sigue el hilo de la conversación, saluda si saludan, pregunta lo que falte para entender qué necesitan.
+${redactar && auto ? `2) "respuesta": el mensaje que se le manda YA a ${nombre}, SIN que ${dueno} lo revise. Eres el ASISTENTE de ${dueno} en su WhatsApp (el programa pone la firma; tú no firmes ni digas que eres un bot).
+   - ESCRIBE COMO PERSONA, NO COMO IA (Carlos, 16 de octubre: «que escriba más humana, no tan IA, más como yo»): mensajes cortos, como se escribe en WhatsApp, en minúsculas si así escribe él, con su tono y su forma de hablar (mira sus ejemplos abajo). Nada de frases de asistente de banco: PROHIBIDO «¿en qué te puedo ayudar?», «¿hay algo más en lo que pueda ayudarte?», «con gusto», «estoy aquí para ayudarte», «¡excelente pregunta!», «entiendo perfectamente». Sin listas, sin viñetas, sin despedidas largas, sin signos de admiración de más. Un emoji de vez en cuando si él los usa, no en cada mensaje.
+   - A veces la gente sólo quiere PLATICAR: si te saludan o te cuentan algo, contesta como lo haría un cuate (pregunta cómo le fue, comenta, échale carrilla tranqui si hay confianza) y NO ofrezcas ayuda ni preguntes «qué necesitas». Sólo pregunta lo que de verdad falte para entender lo que piden.
+   - Sigue el hilo de la conversación y no repitas lo que ya dijiste.
    - RESUELVE DUDAS: si preguntan algo general (cómo se hace algo, qué significa, una explicación, una tarea, una recomendación), contéstalo bien y corto. Si se contesta con "Lo que ${dueno} te contó", usa esos datos exactos.
    - Sobre ${dueno} y sus cosas sólo afirmas lo que sale del chat o de "Lo que ${dueno} te contó". NUNCA inventes precios, horas, lugares, existencias, fechas ni compromisos suyos, ni digas que él va a hacer algo.
    - Si piden algo que sólo ${dueno} puede decidir o saber (dinero, un precio que no está en lo que te contó, apartar algo, una cita, un sí o un no, algo personal o delicado), di que ya se lo pasaste y que él confirma (sin prometer hora), pon "decide": true y en "motivo" qué tiene que decidir él. Aun así, contesta lo demás que sí puedes.
    - Si de verdad no hace falta contestar (un "ok" suelto, un sticker, una despedida que ya se contestó), deja "respuesta" vacía. Ante la duda, contesta.${grupo ? `
    - Es un GRUPO: sólo contestas si le hablan a ${dueno}, lo mencionan o le preguntan algo a él. Si la plática es entre los demás, deja "respuesta" vacía. Si contestas, dirígete por su nombre a quien le habló.` : ''}
    - Los "pendientes" son para ${dueno}: todo lo que quedó por hacer o decidir de esta plática (entregar, confirmar, pagar, ir, devolver una llamada).
-3) "urgente": true sólo si algo no puede esperar (una emergencia, algo para dentro de una hora).` : ''}
+3) "urgente": true sólo si algo no puede esperar (una emergencia, algo para dentro de una hora).
+${ejemplos(estilo)}` : ''}
 ${redactar && !auto ? `2) "respuesta": una propuesta de lo que ${dueno} contestaría, escrita como él (español mexicano, informal). ${dueno} la va a revisar antes de mandarla.
    - NO inventes datos: si piden una hora, un lugar, dinero o una decisión que no sale del chat, propón algo que gane tiempo ("déjame ver y ahorita te digo") y explica en "motivo" qué tiene que decidir él.
    - Si ya no hace falta contestar (un "ok", un sticker, una despedida), deja "respuesta" vacía.
@@ -192,11 +195,14 @@ ${redactar && !auto ? `2) "respuesta": una propuesta de lo que ${dueno} contesta
 ${ejemplos(estilo)}
    - Si lo que preguntan se contesta con "Lo que ${dueno} te contó", úsalo con sus datos exactos (día, hora, temas, precios).` : ''}
 ${recuerdos(dueno, datos)}
-${auto ? `4) "porque": en pocas palabras, para ${dueno}, por qué contestaste así (o por qué no contestaste).
-` : ''}Contesta SÓLO JSON: {"pendientes":[], "respuesta":"", "motivo":"", "urgente":false${auto ? ', "decide":false, "porque":""' : ''}}`;
+${fotos.length && redactar ? `FOTOS: tienes estas fotos del banco de ${dueno} que podrían venir al caso:
+${fotos.map(f => `${f.n}. ${f.nombre}${f.carpeta ? ' [' + f.carpeta + ']' : ''}${f.descripcion ? ' — ' + f.descripcion : ''}`).join('\n')}
+Si te piden ver algo, preguntan por un producto o una foto ayuda a contestar, pon en "fotos" los números de las que van (máximo 3) y en "respuesta" algo corto como lo diría una persona («mira, este es» / «tengo estos»). Si ninguna va con lo que preguntan, "fotos": []. NUNCA mandes fotos que no tengan que ver.
+` : ''}${auto ? `4) "porque": en pocas palabras, para ${dueno}, por qué contestaste así (o por qué no contestaste).
+` : ''}Contesta SÓLO JSON: {"pendientes":[], "respuesta":"", "motivo":"", "urgente":false${auto ? ', "decide":false, "porque":""' : ''}${fotos.length && redactar ? ', "fotos":[]' : ''}}`;
     const texto = `Conversación (lo más nuevo al final):\n${conversacion(historial, dueno, 30, nombre)}\n\nLo nuevo que no ha contestado:\n${nuevos.map(x => x.texto).join('\n')}`;
     const j = sacarJson(await preguntar(sistema, texto)) || {};
-    return { pendientes: Array.isArray(j.pendientes) ? j.pendientes.map(String).slice(0, 5) : [], respuesta: redactar ? String(j.respuesta || '') : '', motivo: String(j.motivo || ''), urgente: !!j.urgente, decide: !!j.decide, porque: String(j.porque || '').slice(0, 200) };
+    return { pendientes: Array.isArray(j.pendientes) ? j.pendientes.map(String).slice(0, 5) : [], respuesta: redactar ? String(j.respuesta || '') : '', motivo: String(j.motivo || ''), urgente: !!j.urgente, decide: !!j.decide, porque: String(j.porque || '').slice(0, 200), fotos: Array.isArray(j.fotos) ? j.fotos.map(Number).filter(n => n >= 1 && n <= fotos.length).slice(0, 3) : [] };
   },
 
   async saludo({ dueno, nombre, cual, nota, estilo, antes }){
@@ -207,6 +213,15 @@ Contesta SÓLO JSON: {"texto":""}`;
     return String(j.texto || '').trim();
   },
 
+  /* un mensaje programado «sobre un tema» y el texto que acompaña las fotos del día */
+  async escribir({ dueno = 'Carlos', nombre = '', tema, estilo = [], grupo = false, hoy = '', hora = '' }){
+    const sistema = `Escribes UN mensaje de WhatsApp que ${dueno} manda ${grupo ? 'al grupo' : 'a'} ${nombre}${hoy ? ` (hoy es ${hoy}, son las ${hora})` : ''}, sobre esto: ${tema}.
+Como lo escribiría una persona, no una IA: corto (1 a 3 renglones), español mexicano, con su tono. Nada de «¡Hola a todos!», listas, hashtags ni frases de anuncio de tele. No inventes precios, fechas ni datos que no te den.
+${ejemplos(estilo)}
+Contesta SÓLO JSON: {"texto":""}`;
+    const j = sacarJson(await preguntar(sistema, tema)) || {};
+    return String(j.texto || '').trim();
+  },
   /* el resumen que pide Carlos: en corto y qué es importante aunque ya se haya contestado */
   async resumir({ dueno = 'Carlos', chats = [] }){
     const sistema = `Eres la asistente de WhatsApp de ${dueno}. Te pasan lo que le escribieron y qué hiciste con cada mensaje ("contesto" = le contestaste tú, "decide" = le dijiste que ${dueno} le respondía, "nada" = no hacía falta, "propuesta" = le dejaste propuesta a ${dueno}).
@@ -215,7 +230,7 @@ Contesta SÓLO JSON: {"resumen":"", "importantes":["nombre del chat tal como vie
     const j = sacarJson(await preguntar(sistema, JSON.stringify(chats).slice(0, 24_000), { tope: 1500 })) || {};
     return { resumen: String(j.resumen || ''), importantes: Array.isArray(j.importantes) ? j.importantes.map(String).slice(0, 20) : [] };
   },
-  async orden({ quien = 'Secre', texto, hoy, hora, chats, config }){
+  async orden({ quien = 'Secre', texto, hoy, hora, chats, config, carpetas = [] }){
     const sistema = `Eres ${quien}, ${PERSONA[quien] || PERSONA.Secre} Hoy te toca el turno de secretaria de WhatsApp de Carlos. Él te da órdenes en palabras normales y tú las conviertes en acciones. Hoy es ${hoy}, son las ${hora} en México.
 Los modos de un chat son: "borrador" (le propones respuestas para que él las mande), "callado" (no le propones nada, sólo anotas pendientes) y "auto" (le contestas tú sola, firmada como su asistente; lo que necesite su decisión se lo dejas a él).
 Fuera de los chats en "auto", NUNCA mandas mensajes a otras personas por tu cuenta. Pon un chat en "auto" SÓLO si Carlos lo pide con claridad («contéstale tú a…», «automático…»), nunca porque se te ocurra. Un GRUPO sólo va en "auto" si Carlos lo nombra; para seguir una historia de rol en un grupo, dile que escriba «rol Nombre del grupo: su personaje».
@@ -233,10 +248,15 @@ Acciones posibles (usa el nombre del chat tal como viene en la lista):
 - {"accion":"auto","firma":"Asistente de Carlos","porHora":4,"alDia":20}  (cómo firma y cuántas veces contesta sola por chat)
 - {"accion":"dato","texto":"el viernes 17 hay examen de mate a las 8, temas: derivadas","hasta":"AAAA-MM-DD"}  (algo que te cuenta para usarlo al proponer respuestas; "hasta" = cuando deja de servir, si se deduce)
 - {"accion":"olvidaDato","n":2}
+- {"accion":"programar","chat":"Tareas","hora":"07:00","dias":[1,2,3,4,5],"texto":"📚 Ahorita toca Matemáticas"}  (un mensaje que sale SOLO a esa hora; dias: 0=domingo…6=sábado, [] = diario. En vez de "texto" fijo puede ir "tema" y lo escribes tú cada vez. Para un HORARIO de clases pon una acción por cada clase con su día y hora)
+- {"accion":"quitarProgramado","id":"..."}
+- {"accion":"publicar","chat":"All's","carpeta":"All's fashion","buscar":"","cuantas":3,"hora":"10:00","dias":[],"intro":""}  (publica sola fotos del banco de imágenes con su nombre; "carpeta" es una carpeta del banco, o "buscar" unas palabras; "intro" un texto fijo antes de las fotos, vacío = lo escribes tú)
+- {"accion":"quitarPublicacion","id":"..."}
+- {"accion":"fotos","chat":"Ana","si":true}  (contestar con fotos del banco en ese chat; sin "chat" = para todos)
 Si te pregunta algo, contesta en "respuesta" (corto, mexicano, sin tecnicismos). Si pide algo que no puedes, díselo.
 Contesta SÓLO JSON: {"respuesta":"", "acciones":[]}`;
-    const t = `Chats que conozco: ${JSON.stringify(chats)}\nConfiguración actual: ${JSON.stringify(config)}\n\nCarlos dice: ${texto}`;
-    const j = sacarJson(await preguntar(sistema, t, { tope: 1200, motor: MOTOR[quien] })) || {};
-    return { respuesta: String(j.respuesta || ''), acciones: Array.isArray(j.acciones) ? j.acciones.slice(0, 20) : [] };
+    const t = `Chats que conozco: ${JSON.stringify(chats)}\nConfiguración actual: ${JSON.stringify(config)}${carpetas.length ? `\nCarpetas del banco de imágenes: ${JSON.stringify(carpetas)}` : ''}\n\nCarlos dice: ${texto}`;
+    const j = sacarJson(await preguntar(sistema, t, { tope: 4000, motor: MOTOR[quien] })) || {};
+    return { respuesta: String(j.respuesta || ''), acciones: Array.isArray(j.acciones) ? j.acciones.slice(0, 80) : [] };
   },
 };

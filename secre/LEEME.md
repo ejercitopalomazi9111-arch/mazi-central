@@ -75,6 +75,22 @@ Para cuando no puedes tomar el teléfono en el día. En un chat en automático:
   contesta a lo que avisa la otra. Necesita **las dos cuentas vinculadas en la misma Secre**
   (`SECRE_CUENTAS`); con una sola, avisa en tu chat propio como antes. `avisos aquí` lo regresa
   al chat propio, `avisos a la otra` lo vuelve a mandar a la otra cuenta.
+- **Mensajes que salen solos** (16 de octubre: «a un grupo quiero ponerle que pueda enviar un
+  mensaje a x hora… qué clase toca en cada hora»): `programa Tareas 7:00 lunes a viernes: 📚
+  Ahorita toca Matemáticas`. O en palabras: «en Tareas avisa cada hora qué clase toca: lunes
+  7:00 Mate, 7:50 Física…» y arma uno por clase. También «sobre un tema» (lo escribe la IA cada
+  vez). Si Secre estuvo dormida y ya pasaron más de 20 min, no lo manda tarde. `programados` los
+  lista y `quita programado 2` quita uno. En el panel: Ajustes → Lo que sale solo.
+- **El banco de imágenes** (el mismo de Presentaciones y Carteles, en La Sala; Secre sólo lo lee):
+  - **Publica sola** fotos con su nombre en un chat cada día: «publica en All's 3 fotos de la
+    carpeta All's fashion diario a las 10». No repite una foto hasta que se acaba la carpeta y
+    nunca publica las marcadas «requiere cambios». `publica ahora en All's` lo hace ya.
+  - **Contesta con fotos** cuando alguien pregunta por algo que está en el banco (en chats de una
+    persona; en un grupo sólo con `fotos Equipo`). `sin fotos Ana` lo apaga en un chat. En una
+    propuesta, las fotos salen hasta que la apruebas.
+  - **Te las manda a pedido**: `fotos de sudaderas` a ti, `mándale a Ana fotos de termos` a ella.
+- **Escribe como persona** (16 de octubre: «más humana, no tan IA, más como yo»): corto, con tu
+  forma de escribir, sin «¿en qué te puedo ayudar?», y si la gente sólo quiere platicar, platica.
 - **El repaso corto**: cada 3 h, de 9:00 a 22:00, y sólo si pasó algo, a quién contestó, qué
   espera tu número y qué pendientes siguen. `repaso` te lo manda en el momento, `repaso cada 2h`
   cambia el ritmo y `repaso 0` lo apaga. Lo mismo en el panel, en Ajustes → Lo general.

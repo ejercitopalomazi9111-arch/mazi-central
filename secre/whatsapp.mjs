@@ -157,6 +157,8 @@ export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () =
     async enviar(jid, texto){ const r = await sock.sendMessage(jid, { text: texto }, { messageId: idPropio() }); return r && r.key && r.key.id; },
     /* nota de voz: OGG/Opus mono, con ptt para que salga con su onda y su micrófono */
     async enviarAudio(jid, ogg, segundos){ const r = await sock.sendMessage(jid, { audio: ogg, mimetype: 'audio/ogg; codecs=opus', ptt: true, ...(segundos ? { seconds: segundos } : {}) }, { messageId: idPropio() }); return r && r.key && r.key.id; },
+    /* una foto con su pie (las del banco de imágenes) */
+    async enviarImagen(jid, buf, mime, pie){ const r = await sock.sendMessage(jid, { image: buf, mimetype: mime || 'image/jpeg', ...(pie ? { caption: pie } : {}) }, { messageId: idPropio() }); return r && r.key && r.key.id; },
     async grabando(jid, ms){ try{ await sock.sendPresenceUpdate('recording', jid); await new Promise(r => setTimeout(r, ms)); await sock.sendPresenceUpdate('paused', jid); }catch{} },
     async enviarSticker(jid, b64){ const r = await sock.sendMessage(jid, { sticker: Buffer.from(b64, 'base64') }, { messageId: idPropio() }); return r && r.key && r.key.id; },
     /* las comunidades de WhatsApp y sus grupos, para el botón «Comunidad de rol» del panel.
