@@ -57,6 +57,14 @@ export function configBase(){
     datos: [],                     /* lo que Carlos le cuenta para contestar: { n, texto, hasta? } — «el viernes hay examen de mate a las 8» */
     pausaHasta: 0,
     resumen: '21:30',              /* el resumen de pendientes del día */
+    /* a dónde le escribe a Carlos (16 de octubre: «que me escriba los pendientes
+       del 7862447707 al 4428833786 y viceversa, para tener las notificaciones»):
+       'otra' = al chat con su OTRA cuenta, que sí suena; 'yo' = al chat propio,
+       que no suena. Sin otra cuenta vinculada, siempre al propio */
+    avisarA: 'otra',
+    /* el repaso corto: cada `cada` horas, entre `desde` y `hasta`, qué hizo y qué
+       sigue pendiente — sólo si pasó algo desde el anterior. cada: 0 lo apaga */
+    repaso: { cada: 3, desde: '09:00', hasta: '22:00' },
     /* turnos de secretaria (Carlos, 16 de octubre: «que pueda responder
        cualquiera de los 3, Secre, Paulina o Negro, como si rotaran turnos»).
        Bloques de `horas` contados desde la medianoche de México. `fijo` = una
@@ -150,6 +158,7 @@ export class Secre {
       registro: [],        /* lo que hizo, para el panel */
       charla: [],          /* la plática de Carlos con Secre, también para el panel */
       resumenFecha: '',
+      repasoT: 0,          /* cuándo mandó el último repaso */
       sigN: 1, sigP: 1,
     }, almacen.leer('estado', {}));
     this.ocupados = new Set();
@@ -221,6 +230,12 @@ export class Secre {
         || lista.find(([j]) => j.startsWith(q.replace(/\D/g, '') || '¬')) || [null])[0];
   }
   esMiChat(jid){ return this.transporte.yo && this.transporte.yo().includes(jid); }
+  esOtraCuenta(jid){ return !!(this.transporte.otrosYo && this.transporte.otrosYo().includes(jid)); }
+  /* a quién le llegan los avisos: a su otra cuenta (suena) o a su chat propio (no suena) */
+  destinoAvisos(){
+    const otros = this.transporte.otrosYo ? this.transporte.otrosYo().filter(j => /@s\.whatsapp\.net$/.test(j)) : [];
+    return this.config.avisarA !== 'yo' && otros.length ? otros[0] : this.transporte.yo()[0];
+  }
 
   /* ── el modo que toca en este chat, ahora ── */
   modo(jid, texto = '', grupo = false){
@@ -257,6 +272,13 @@ export class Secre {
     if(m.id && this.estado.enviados.includes(m.id)) return;
     if(this.esMiChat(m.chat)){
       if(m.mio && !/^🤖/.test(m.texto)) await this.orden(m.texto.trim());
+      return;
+    }
+    /* el chat con su OTRA cuenta es el canal de avisos: lo que manda la otra Secre
+       (🤖) no se contesta, lo que Carlos escribe ahí desde esta cuenta no es «escribir
+       a mano», y lo que escribe desde la otra cuenta es una orden para ésta */
+    if(this.esOtraCuenta(m.chat)){
+      if(!m.mio && !/^🤖/.test(m.texto) && this.config.avisarA !== 'yo') await this.orden(m.texto.trim());
       return;
     }
     /* el eco de lo que mandó Secre (si el transporte no lo reconoció por su id) no es Carlos */
@@ -297,6 +319,7 @@ export class Secre {
     }
     await this.saludos(ahora);
     await this.resumen(ahora);
+    await this.repaso(ahora);
     /* las propuestas viejas se tiran: contestar algo de hace 6 horas confunde */
     const antes = this.estado.propuestas.length;
     this.estado.propuestas = this.estado.propuestas.filter(p => ahora - p.t < this.config.caducan * HORA);
@@ -530,6 +553,41 @@ export class Secre {
     }
     this.guardar();
   }
+  /* el repaso corto: qué hizo desde el anterior, qué espera su número y qué sigue
+     pendiente. Sólo de día y sólo si pasó algo: que la notificación valga la pena */
+  async repaso(ahora){
+    const R = Object.assign({ cada: 3, desde: '09:00', hasta: '22:00' }, this.config.repaso || {});
+    if(!(R.cada > 0)) return;
+    const min = minDelDia(ahora);
+    if(aMin(R.desde) == null || aMin(R.hasta) == null || min < aMin(R.desde) || min > aMin(R.hasta)) return;
+    const desde = this.estado.repasoT || 0;
+    /* recién prendida empieza a contar: el primero sale `cada` horas después */
+    if(!desde){ this.estado.repasoT = ahora; this.guardar(); return; }
+    if(ahora - desde < R.cada * HORA) return;
+    /* el primero de la mañana cuenta lo de la noche (desde el último repaso) */
+    const corte = desde && ahora - desde < 24 * HORA ? desde : ahora - R.cada * HORA;
+    this.estado.repasoT = ahora;
+    const txt = this.textoRepaso(corte);
+    if(txt) await this.avisar(txt);
+    this.guardar();
+  }
+  /* '' si no pasó nada desde `corte` */
+  textoRepaso(corte){
+    const hechas = (this.estado.contestadas || []).filter(x => x.t > corte);
+    const esperan = this.estado.propuestas.filter(p => p.t > corte);
+    const nuevosP = this.estado.pendientes.filter(p => !p.hecho && p.t > corte);
+    if(!hechas.length && !esperan.length && !nuevosP.length) return '';
+    const porChat = (que) => { const k = {}; for(const x of hechas.filter(h => que.includes(h.que))) k[x.nombre] = (k[x.nombre] || 0) + 1; return Object.entries(k).map(([n, c]) => c > 1 ? `${n} (${c})` : n).join(', '); };
+    const contesto = porChat(['contesto', 'decide']), solo = porChat(['nada']), frenos = porChat(['freno', 'error']);
+    const abiertos = this.estado.pendientes.filter(p => !p.hecho), vivas = this.estado.propuestas;
+    const lineas = [`Repaso desde las ${horaMx(corte)}:`];
+    if(contesto) lineas.push(`✓ Contesté sola: ${contesto}`);
+    if(solo) lineas.push(`· Leí sin contestar: ${solo}`);
+    if(frenos) lineas.push(`⏸ No pude o me detuve: ${frenos}`);
+    if(vivas.length) lineas.push(`⏳ Esperan tu número (${vivas.length}): ` + vivas.slice(-8).map(p => `#${p.n} ${p.nombre}`).join(', '));
+    if(abiertos.length) lineas.push(`📌 Pendientes (${abiertos.length}):\n` + this.listaPendientes(abiertos.slice(-8)) + (abiertos.length > 8 ? '\n…«pendientes» para verlos todos' : ''));
+    return lineas.join('\n');
+  }
   listaPendientes(ps){ return ps.map(p => `${p.n}. ${p.texto}${p.nombre ? ' (' + p.nombre + ')' : ''}`).join('\n'); }
 
   /* quién está de guardia ahora */
@@ -549,7 +607,7 @@ export class Secre {
   async avisar(texto){
     const quien = this.deTurno();
     this.charlar(quien.toLowerCase(), texto);
-    const id = await this.transporte.enviar(this.transporte.yo()[0], `🤖 ${quien}: ` + texto);
+    const id = await this.transporte.enviar(this.destinoAvisos(), `🤖 ${quien}: ` + texto);
     if(id){ this.estado.enviados.push(id); this.estado.enviados = this.estado.enviados.slice(-500); }
   }
   /* mandar a otra persona: SÓLO desde una orden de Carlos (aprobar una propuesta) */
@@ -705,6 +763,13 @@ export class Secre {
       this.chat(j).firma = m[2].trim().slice(0, 40); this.guardar();
       return this.avisar(`En ${this.nombreDe(j)} firmo «${this.chat(j).firma}».`);
     }
+    if(/^\/?avisos? (aqui|aca|a mi chat|al mio|aqui mismo)$/.test(s)){ this.config.avisarA = 'yo'; this.guardar(); return this.avisar('Listo: te aviso en tu chat propio de esta cuenta (ahí no suena).'); }
+    if(/^\/?avisos? (a la otra|a mi otra cuenta|a la otra cuenta|al otro numero|con notificacion)$/.test(s)){
+      this.config.avisarA = 'otra'; this.guardar();
+      return this.avisar(this.destinoAvisos() === this.transporte.yo()[0] ? 'Anotado, pero tu otra cuenta no está vinculada en esta Secre: sigo avisándote aquí.' : 'Listo: te aviso en el chat con tu otra cuenta, para que te suene. Contéstame ahí mismo.');
+    }
+    if(/^\/?repaso$/.test(s)){ const ahora = this.reloj(); return this.avisar(this.textoRepaso(this.estado.repasoT || ahora - 12 * HORA) || 'Desde el último repaso no ha pasado nada. «pendientes» para ver lo que sigue abierto.'); }
+    if((m = /^\/?repaso (?:cada )?(\d+)\s*(?:h|horas?)?$/.exec(s))){ this.config.repaso = { ...(this.config.repaso || {}), cada: +m[1] }; this.guardar(); return this.avisar(+m[1] ? `Listo: te mando un repaso cada ${m[1]} h (de ${this.config.repaso.desde || '09:00'} a ${this.config.repaso.hasta || '22:00'}), sólo si pasó algo.` : 'Repaso apagado. Queda el resumen de la noche.'); }
     if(/^\/?(ayuda|help|\?)$/.test(s)) return this.avisar(AYUDA);
     if(/^\/?(pendientes|que tengo|qué tengo)$/.test(s)){
       const a = this.estado.pendientes.filter(p => !p.hecho);
@@ -817,6 +882,8 @@ export class Secre {
       case 'reanudar': this.config.pausaHasta = 0; return 'De vuelta';
       case 'anota': { this.agregarPendiente('', '', a.texto); return a.texto ? `Anotado: ${a.texto}` : ''; }
       case 'hecho': { const p = this.estado.pendientes.find(x => x.n === +a.n && !x.hecho); if(!p) return ''; p.hecho = true; return `Tachado: ${p.texto}`; }
+      case 'avisos': { this.config.avisarA = a.a === 'yo' ? 'yo' : 'otra'; return this.config.avisarA === 'yo' ? 'Te aviso en tu chat propio' : 'Te aviso desde tu otra cuenta'; }
+      case 'repaso': { const k = Math.max(0, Math.min(12, Math.round(+a.cada || 0))); this.config.repaso = { ...(this.config.repaso || { desde: '09:00', hasta: '22:00' }), cada: k }; return k ? `Repaso cada ${k} h` : 'Repaso apagado'; }
       case 'resumen': { if(aMin(a.hora) == null) return ''; this.config.resumen = a.hora; return `Resumen de pendientes a las ${a.hora}`; }
       case 'porDefecto': { if(!MODOS.includes(a.modo)) return ''; this.config.porDefecto = a.modo; return `Chats sin modo propio: ${a.modo === 'auto' ? 'contesto sola' : a.modo}`; }
       case 'auto': {
@@ -876,6 +943,8 @@ export const AYUDA = `Lo que sé hacer (escríbelo aquí, en tu chat):
 · «marca Taberna: 🌌⚛️-» lo que dice tu personaje sale con esa marca y lo que hace con «> » · «stickers Taberna» · «borra stickers Taberna»
 · «personaje Taberna: Kael, mercenario callado» · «mundo Taberna: reino de Valdor, la magia está prohibida…» («mundo Taberna: + lo nuevo» agrega) · «sin firma Taberna» · «firma Taberna: 🎭 Kael» · «firma normal Taberna»
 · «pausa 2h» / «pausa hoy» · «sigue»
+· «repaso» qué hice y qué falta, ya · «repaso cada 2h» · «repaso 0» lo apaga
+· «avisos a la otra» te escribo desde tu otra cuenta (suena) · «avisos aquí» en tu chat propio
 · «estado» · «chats»
 Y en palabras normales, por ejemplo:
 · «a Ana dale buenos días a las 7 y buenas noches a las 10:30»

@@ -175,6 +175,12 @@ async function probar(tema){
   const nReglas = (await estado()).config.reglas.length;
   await page.locator('#hoja [data-quitar]').first().click();
   await espera(async () => (await estado()).config.reglas.length === nReglas - 1, 'quitar una regla la quita');
+  /* dónde le escribe y el repaso (16 de octubre: «que me escriba desde la otra cuenta para tener las notificaciones») */
+  /* con el foco en un campo de la hoja, el repintado de cada 4 s no le cambia lo que eligió */
+  await page.focus('#gAvisos'); await page.selectOption('#gAvisos', 'yo'); await page.focus('#gRepaso'); await page.selectOption('#gRepaso', '2'); await page.click('#bGeneral');
+  await espera(async () => { const c = (await estado()).config; return c.avisarA === 'yo' && c.repaso.cada === 2; }, '«Dónde te escribo» y el repaso se guardan desde Ajustes');
+  await page.focus('#gAvisos'); await page.selectOption('#gAvisos', 'otra'); await page.click('#bGeneral');
+  await espera(async () => (await estado()).config.avisarA === 'otra', 'y se regresa a «desde tu otra cuenta»');
 
   /* ── la plática ── */
   await page.click('nav [data-p="platica"]');

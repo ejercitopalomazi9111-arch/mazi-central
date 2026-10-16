@@ -67,6 +67,17 @@ Para cuando no puedes tomar el teléfono en el día. En un chat en automático:
   real (fuera del rol), contesta «ahorita no está» y te lo deja con ⚠️ y número.
 - **Tus dos cuentas** tienen sus propios interruptores: lo que prendas en una no se prende en la
   otra. Se escribe en el «Mensaje a ti mismo» de cada una, o en el panel eligiendo la cuenta arriba.
+- **Cada cuenta te avisa desde la otra** (16 de octubre: «que me escriba los pendientes del
+  7862447707 al 4428833786 y viceversa, para tener las notificaciones»). El «Mensaje a ti mismo»
+  no suena; un mensaje de otro número sí. Así que la Secre del 786 te escribe al 442 y la del 442
+  te escribe al 786, siempre con 🤖. **Le contestas ahí mismo** («3», «pendientes», «repaso»…) y
+  esa Secre lo toma como orden; la otra no lo cuenta como que escribiste a mano, y ninguna le
+  contesta a lo que avisa la otra. Necesita **las dos cuentas vinculadas en la misma Secre**
+  (`SECRE_CUENTAS`); con una sola, avisa en tu chat propio como antes. `avisos aquí` lo regresa
+  al chat propio, `avisos a la otra` lo vuelve a mandar a la otra cuenta.
+- **El repaso corto**: cada 3 h, de 9:00 a 22:00, y sólo si pasó algo, a quién contestó, qué
+  espera tu número y qué pendientes siguen. `repaso` te lo manda en el momento, `repaso cada 2h`
+  cambia el ritmo y `repaso 0` lo apaga. Lo mismo en el panel, en Ajustes → Lo general.
 
 Lo mismo se hace con botones en **el panel** (una página para el teléfono, con contraseña):
 *Por mandar*, *Pendientes*, *Chats*, *Saludos* y *Platica*.
