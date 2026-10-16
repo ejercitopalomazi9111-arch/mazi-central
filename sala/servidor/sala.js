@@ -1316,7 +1316,16 @@ export class Sala {
   /** ¿Este evento le habla a una silla? Devuelve el motor, o null.
    *  La nota manda sobre el destinatario: es el «oye, tú» del final. */
   sillaDestino(evento){
-    const quien = (evento.nota && evento.nota.a) || evento.a;
+    let quien = (evento.nota && evento.nota.a) || evento.a;
+    /* Sin destinatario elegido, cuenta que le hablen por su NOMBRE: al empezar
+       («Negro cómo estás?», «Paulina,…») o con arroba en cualquier lado
+       («oye @negro»). Carlos les escribía así y nadie contestaba (15 de
+       octubre). «le dije a Negro que no» no la despierta: ahí se habla DE ella. */
+    if(!quien && evento.tipo !== 'sistema'){
+      const t = String(evento.texto || '');
+      const arroba = /@([\p{L}]+)/u.exec(t), inicio = /^\s*([\p{L}]+)/u.exec(t);
+      quien = (arroba && motorDe(arroba[1]) && arroba[1]) || (inicio && motorDe(inicio[1]) && inicio[1]) || null;
+    }
     if(!quien) return null;
     /* Por NOMBRE o por id: Carlos les puso «Negro» y «Paulina» y va a escribir
        eso, no `groq`. `motorDe` traduce las dos cosas y quita acentos. */
@@ -1395,10 +1404,25 @@ export class Sala {
   }
 
   /** El hilo en el formato que entiende `preguntar()`. */
-  hiloParaModelo(motorId, cuantos){
-    return this.hilo
+  hiloParaModelo(motorId, cuantos, tope = 12_000){
+    /* Con TOPE de caracteres, del más nuevo al más viejo: Groq gratis topa 8,000
+       fichas por minuto contando la respuesta, y 24 mensajes enteros de GRUPAZ
+       eran 26 mil caracteres → 413 «Request too large». Cada mensaje viejo se
+       recorta; el último (lo que le acaban de decir) va completo. */
+    const lista = this.hilo
       .filter(e => e.tipo !== 'sistema' && e.tipo !== 'limite' && (e.texto || '').trim())
-      .slice(-cuantos)
+      .slice(-cuantos);
+    const salen = [];
+    let usados = 0;
+    for(let i = lista.length - 1; i >= 0; i--){
+      const e = lista[i], ultimo = i === lista.length - 1;
+      let texto = String(e.texto);
+      if(!ultimo && texto.length > 1200) texto = texto.slice(0, 1200) + ' […]';
+      if(!ultimo && usados + texto.length > tope) break;
+      usados += texto.length;
+      salen.unshift({ ...e, texto });
+    }
+    return salen
       .map(e => ({
         de: (e.de && e.de.id) === motorId ? 'yo' : 'otro',
         /* Se le dice QUIÉN habló. Sin el nombre, un resumen no puede decir
@@ -1419,7 +1443,7 @@ export class Sala {
 
     /* Un resumen necesita el hilo entero; una respuesta normal, el hilo
        reciente. Mandar 700 mensajes para contestar «sí» es tirar cuota. */
-    const mensajes = this.hiloParaModelo(motorId, resumiendo ? 400 : 24);
+    const mensajes = this.hiloParaModelo(motorId, resumiendo ? 400 : 24, resumiendo ? 15_000 : 12_000);
     const sistema  = resumiendo ? PAPEL_RESUMEN : PAPEL_SILLA(M.nombre);
 
     /* La marca de «está escribiendo» se enciende ANTES de preguntar. No es

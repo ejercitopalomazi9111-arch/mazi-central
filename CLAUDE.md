@@ -422,6 +422,8 @@ dependemos.
 
    | el lector de la credencial encuentra el nombre arriba de «Matrícula» | la credencial nueva (2026-2027) **ya no trae «Matrícula»**: nombre, apellidos y «BACHILLERATO», con el logo de la SEP en el mismo renglón | con las fotos de Carlos leía «GO» por «DIEGO» y proponía «Sep C». Ahora ancla en Matrícula o Bachillerato, relee de cerca la franja del nombre y `fadori/pruebas-lector.mjs` dibuja los dos formatos |
 
+   | a una silla de La Sala se le habla eligiéndola en «¿a quién le hablas?» | Carlos les escribe por su NOMBRE («Negro cómo estás?», «@negro»), y la sala sólo miraba el destinatario; y cuando sí la elegía, Groq gratis (8,000 fichas por minuto CON la respuesta) recibía los 24 últimos mensajes enteros —26 mil caracteres en GRUPAZ— y contestaba 413 | «en la sala no responden nunca ni Negro ni Paulina», con las llaves bien puestas y `/motores` diciendo que estaban vivas. Ahora el nombre al inicio o con arroba cuenta como destinatario, y el hilo va con tope de 12 mil caracteres (`hiloParaModelo` en `sala/servidor/sala.js`) |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---

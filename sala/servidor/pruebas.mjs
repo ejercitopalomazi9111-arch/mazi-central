@@ -902,6 +902,43 @@ console.log('\n· Las sillas');
        !!aviso && aviso.tipo === 'sistema' && /⚠/.test(aviso.texto), JSON.stringify(aviso && aviso.texto));
   }
 
+  /* ── le hablan por su NOMBRE, sin elegirla de destinatario ───────────────
+     Así le escribía Carlos el 15 de octubre: «Negro cómo estás?», «@negro»,
+     «Paulina», sin tocar el «¿a quién le hablas?» — y ninguna contestaba. */
+  {
+    const prueba = async (texto) => {
+      responder({ choices: [{ message: { content: 'aquí ando' } }] });
+      visto = null;
+      const s = nueva(LLAVES);
+      await entrar(s, 'carlos', 'humano');
+      await leer(await pedir(s, 'POST', 'decir', { de:'carlos', tipo:'mensaje', texto }));
+      await asentar();
+      const [, h] = await leer(await pedir(s, 'GET', 'hilo'));
+      return h.hilo.find(e => e.de && e.de.id === 'groq' && e.tipo === 'mensaje');
+    };
+    ok('«Negro cómo estás?» sin elegirlo de destinatario: Negro contesta', !!(await prueba('Negro cómo estás?')));
+    ok('«oye @negro qué tal» también', !!(await prueba('oye @negro qué tal')));
+    ok('«Negro» solito también', !!(await prueba('Negro')));
+    ok('pero «le dije a Negro que no» NO lo despierta (no le están hablando a él)', !(await prueba('le dije a Negro que no')));
+  }
+
+  /* ── el hilo que le manda cabe en el tope de Groq ─────────────────────────
+     Groq gratis topa 8,000 fichas por minuto CONTANDO lo que se le pide de
+     respuesta; la sala le mandaba los 24 últimos mensajes enteros (26 mil
+     caracteres en GRUPAZ) y contestaba 413 «Request too large». */
+  {
+    responder({ choices: [{ message: { content: 'ok' } }] });
+    const s = nueva(LLAVES);
+    await entrar(s, 'carlos', 'humano');
+    for(let i = 0; i < 30; i++)
+      await leer(await pedir(s, 'POST', 'decir', { de:'carlos', tipo:'mensaje', texto: `mensaje largo ${i} ` + 'x'.repeat(4000) }));
+    await leer(await pedir(s, 'POST', 'decir', { de:'carlos', tipo:'mensaje', a:'groq', texto:'¿y el último?' }));
+    await asentar();
+    const total = visto.cuerpo.messages.reduce((n, m) => n + String(m.content).length, 0);
+    ok(`con mensajes enormes, lo que se le manda cabe (${total} caracteres, tope 16,000)`, total <= 16000, total);
+    ok('y lo último que le dijeron va completo', visto.cuerpo.messages.some(m => /¿y el último\?/.test(m.content)));
+  }
+
   /* ── sin llave no hay silla ───────────────────────────────────────────── */
   {
     responder({ choices: [{ message: { content: 'no debería' } }] });

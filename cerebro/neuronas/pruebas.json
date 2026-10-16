@@ -1156,6 +1156,24 @@
     "puse una hora y se mandó luego luego",
     "prendí el bot y soltó todo lo atrasado"
    ]
+  },
+  {
+   "id": "silla-que-no-oye-su-nombre",
+   "titulo": "Negro y Paulina no contestan en La Sala aunque tienen llave",
+   "gravedad": "alta",
+   "sintoma": "Carlos les escribe en la sala y ninguna contesta; /motores dice que las dos están vivas y /ia-texto sí responde.",
+   "causa": "Dos a la vez: la sala sólo despertaba a la silla si se elegía de destinatario (no por su nombre en el texto), y al elegirla Groq daba 413 porque el hilo de 24 mensajes pasaba su tope de 8,000 fichas por minuto.",
+   "porque": "Se probó con mensajes cortos y con el destinatario puesto, que no es como escribe Carlos ni como crece un hilo real.",
+   "arreglo": "El nombre al inicio o con @ cuenta como destinatario (sillaDestino) y el hilo va con tope de caracteres del más nuevo al más viejo (hiloParaModelo).",
+   "comoCazarlo": "Leer el hilo de producción: los avisos ⚠ de la silla dicen el código del proveedor. sala/servidor/pruebas.mjs prueba «Negro cómo estás?» y 30 mensajes de 4 mil caracteres.",
+   "consejo": "Antes de culpar a la llave, pedirle a la silla directo por /ia-texto: si ahí contesta, el problema es de la mesa.",
+   "salioDe": "sala/servidor/sala.js",
+   "senales": [
+    "negro no contesta",
+    "paulina no responde en la sala",
+    "las ias de la sala no hablan",
+    "request too large 413 groq"
+   ]
   }
  ]
 }
