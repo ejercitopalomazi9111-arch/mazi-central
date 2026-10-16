@@ -18,7 +18,7 @@ const ok = (que, si, extra) => { if(si){ pasan++; console.log('  ✓', que); } e
 
 /* datos de prueba en una carpeta temporal: juntar 1 s para no esperar 45 */
 const DATOS = fs.mkdtempSync(path.join(os.tmpdir(), 'secre-'));
-for(const c of ['principal', 'segunda']){ fs.mkdirSync(path.join(DATOS, c), { recursive: true }); fs.writeFileSync(path.join(DATOS, c, 'config.json'), JSON.stringify({ juntar: 1 })); }
+for(const c of ['principal', 'segunda']){ fs.mkdirSync(path.join(DATOS, c), { recursive: true }); fs.writeFileSync(path.join(DATOS, c, 'config.json'), JSON.stringify({ version: 2, porDefecto: 'borrador', juntar: 1 })); }
 const PUERTO = 8790 + Math.floor(Math.random() * 500);
 const srv = spawn(process.execPath, [path.join(RAIZ, 'correr.mjs')], { env: { ...process.env, SECRE_FALSO: '1', SECRE_DATOS: DATOS, SECRE_PUERTO: String(PUERTO), SECRE_CLAVE: 'clave-de-prueba', SECRE_CUENTAS: 'principal:5214420000000,segunda:5214429999999' }, stdio: ['ignore', 'pipe', 'pipe'] });
 let salida = ''; srv.stdout.on('data', d => salida += d); srv.stderr.on('data', d => salida += d);

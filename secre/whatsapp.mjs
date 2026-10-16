@@ -13,7 +13,7 @@
    descargas robaba sesiones y mensajes. Aquí sólo va la librería principal.
    ═════════════════════════════════════════════════════════════════════════ */
 import makeWASocket, { useMultiFileAuthState, DisconnectReason, Browsers, fetchLatestBaileysVersion,
-  jidNormalizedUser, isJidGroup, normalizeMessageContent, getContentType, downloadMediaMessage } from 'baileys';
+  jidNormalizedUser, isJidGroup, normalizeMessageContent, getContentType, downloadMediaMessage, generateMessageIDV2 } from 'baileys';
 import pino from 'pino';
 
 /* el texto de un mensaje, o una etiqueta si no es texto (para que la IA sepa qué llegó) */
@@ -51,6 +51,13 @@ export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () =
   const numero = () => String(typeof telefono === 'function' ? telefono() : telefono || '').replace(/\D/g, '');
   const ultimas = new Map();          /* jid → llaves de lo último que llegó, para marcar leído */
   const grupos = new Map();           /* jid → nombre del grupo */
+  /* ⚠ los ids de lo que manda Secre, apuntados ANTES de mandarlo. Baileys avisa
+     de un mensaje propio con un process.nextTick que puede llegar antes de que
+     sendMessage regrese: sin esto, la copia de lo que mandó Secre se leía como
+     si Carlos hubiera escrito a mano y Secre se callaba 15 min en ese chat
+     («a veces responde y a veces no», 16 de octubre) */
+  const propios = new Set();
+  const idPropio = () => { const id = generateMessageIDV2(sock && sock.user && sock.user.id); propios.add(id); if(propios.size > 500) propios.delete(propios.values().next().value); return id; };
 
   async function arrancar(){
     /* ⚠ requestPairingCode apunta el número en creds.me ANTES de que el teléfono
@@ -99,6 +106,7 @@ export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () =
       for(const msg of messages || []){
         try{
           const k = msg.key || {};
+          if(k.fromMe && propios.has(k.id)) continue;   /* lo mandó Secre, no Carlos */
           if(!k.remoteJid || k.remoteJid === 'status@broadcast') continue;
           const t = (Number(msg.messageTimestamp) || Math.floor(Date.now() / 1000)) * 1000;
           /* lo que baja del historial al vincular no es nuevo */
@@ -129,8 +137,8 @@ export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () =
 
   return {
     yo: () => yoJids,
-    async enviar(jid, texto){ const r = await sock.sendMessage(jid, { text: texto }); return r && r.key && r.key.id; },
-    async enviarSticker(jid, b64){ const r = await sock.sendMessage(jid, { sticker: Buffer.from(b64, 'base64') }); return r && r.key && r.key.id; },
+    async enviar(jid, texto){ const r = await sock.sendMessage(jid, { text: texto }, { messageId: idPropio() }); return r && r.key && r.key.id; },
+    async enviarSticker(jid, b64){ const r = await sock.sendMessage(jid, { sticker: Buffer.from(b64, 'base64') }, { messageId: idPropio() }); return r && r.key && r.key.id; },
     /* las comunidades de WhatsApp y sus grupos, para el botón «Comunidad de rol» del panel.
        El grupo de avisos de la comunidad no es para jugar: se deja fuera. */
     async comunidades(){

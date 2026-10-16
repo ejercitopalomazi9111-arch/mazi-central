@@ -64,7 +64,10 @@ async function prender(c){
   /* el transporte llega después de conectar; mientras, el núcleo no manda nada */
   const puente = { yo: () => (v.transporte ? v.transporte.yo() : []), enviar: (j, t) => v.transporte.enviar(j, t),
     /* sin esto el rol nunca mandaba stickers: quizaSticker pregunta si existe y se callaba */
-    enviarSticker: (j, b) => v.transporte.enviarSticker(j, b), escribiendo: (j, ms) => v.transporte.escribiendo(j, ms), leido: (j) => v.transporte.leido(j) };
+    enviarSticker: (j, b) => v.transporte.enviarSticker(j, b),
+    /* los números de sus OTRAS cuentas: dos Secres no se contestan entre ellas */
+    otrosYo: () => Object.entries(vivas).filter(([k, x]) => k !== c.id && x.transporte).flatMap(([, x]) => x.transporte.yo()),
+    escribiendo: (j, ms) => v.transporte.escribiendo(j, ms), leido: (j) => v.transporte.leido(j) };
   v.secre = new Secre({ cuenta: c.id, transporte: puente, ia, almacen });
   /* con qué número se pide el código: el de SECRE_CUENTAS, o el que se eligió en el panel
      (en México WhatsApp puede tener la cuenta como 52… o como 521…) */

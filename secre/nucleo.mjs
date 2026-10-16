@@ -41,7 +41,10 @@ const TZ = 'America/Mexico_City';
 export function configBase(){
   return {
     nombre: 'Carlos',
-    porDefecto: 'borrador',        /* chats que no tienen modo propio */
+    version: 2,
+    /* Carlos, 16 de octubre: «que responda siempre de inmediato al llegarme un
+       mensaje de cualquier número», como asistente real de su WhatsApp */
+    porDefecto: 'auto',            /* chats que no tienen modo propio */
     grupos: 'callado',             /* en grupos sólo anota pendientes */
     chats: {},                     /* jid → { nombre, modo, nota, etiquetas: [] } */
     /* comunidades de WhatsApp donde Carlos juega rol (16 de octubre: «un botón
@@ -59,12 +62,15 @@ export function configBase(){
        Bloques de `horas` contados desde la medianoche de México. `fijo` = una
        sola de guardia hasta que se diga otra cosa. */
     turnos: { activo: true, horas: 8, quienes: ['Secre', 'Paulina', 'Negro'], fijo: '' },
-    juntar: 45,                    /* segundos que espera a que la otra persona termine de escribir */
-    esperaSiContesto: 15,          /* minutos que Secre se calla en un chat donde Carlos acaba de escribir */
+    juntar: 6,                     /* segundos que espera a que la otra persona termine de escribir */
+    /* minutos que Secre se calla donde Carlos acaba de escribir. 0 desde el 16 de
+       octubre: «aunque yo esté conectado mi bot responda sin importar qué». En el
+       rol sí se hace a un lado (si él juega, su personaje no puede salir doble) */
+    esperaSiContesto: 0,
     caducan: 6,                    /* horas que vive una propuesta sin aprobar */
     /* el modo automático: cómo firma y cuántas veces contesta sola por chat */
-    auto: { firma: 'Asistente de Carlos', porHora: 4, alDia: 20, grupoPorHora: 30, grupoAlDia: 300 },
-    juntarMax: 120,                /* aunque sigan escribiendo, a los 2 min contesta (grupos que no paran) */
+    auto: { firma: 'Asistente de Carlos', porHora: 20, alDia: 150, grupoPorHora: 30, grupoAlDia: 300 },
+    juntarMax: 25,                 /* aunque sigan escribiendo, a los 25 s contesta (grupos que no paran) */
   };
 }
 
@@ -112,7 +118,19 @@ export function finDe(x, ahora){
 export class Secre {
   constructor({ cuenta = 'principal', transporte, ia, almacen, reloj = () => Date.now(), azar = Math.random }){
     Object.assign(this, { cuenta, transporte, ia, almacen, reloj, azar });
-    this.config = Object.assign(configBase(), almacen.leer('config', {}));
+    const guardada = almacen.leer('config', {});
+    this.config = Object.assign(configBase(), guardada);
+    /* las cuentas que ya estaban guardadas traen los valores viejos (45 s de espera,
+       15 min callada si Carlos escribe, 4 por hora): se pasan una sola vez a los nuevos.
+       ⚠ la versión se lee de lo GUARDADO: la mezcla ya trae la de fábrica y nunca migraba */
+    if(Object.keys(guardada).length && (guardada.version || 1) < 2){
+      const c = this.config, a = c.auto || (c.auto = {});
+      c.esperaSiContesto = 0; c.juntar = Math.min(c.juntar ?? 6, 6); c.juntarMax = Math.min(c.juntarMax ?? 25, 25);
+      if(c.porDefecto === 'borrador') c.porDefecto = 'auto';
+      a.porHora = Math.max(a.porHora || 0, 20); a.alDia = Math.max(a.alDia || 0, 150);
+      if(typeof a.firma === 'string') a.firma = a.firma.replace(/^🤖\s*/, '');
+      c.version = 2;
+    }
     this.estado = Object.assign({
       historial: {},       /* jid → [{ de: 'el'|'yo', texto, t }] (los últimos 30) */
       estilo: [],          /* lo que Carlos escribe a mano: para que las propuestas suenen a él */
@@ -133,6 +151,7 @@ export class Secre {
       sigN: 1, sigP: 1,
     }, almacen.leer('estado', {}));
     this.ocupados = new Set();
+    this.mandando = new Map();   /* jid|texto → cuándo: lo que Secre está mandando ahorita, para no confundir su eco con Carlos */
   }
 
   guardar(){ this.almacen.guardar('config', this.config); this.almacen.guardar('estado', this.estado); }
@@ -194,7 +213,7 @@ export class Secre {
     const ahora = this.reloj(), c = this.config.chats[jid] || {};
     if(this.config.pausaHasta > ahora) return 'callado';
     const tomado = this.estado.tomado[jid];
-    if(tomado && ahora - tomado < this.config.esperaSiContesto * MIN) return 'callado';
+    if(tomado && ahora - tomado < (c.rol ? 15 : this.config.esperaSiContesto) * MIN) return 'callado';
     const t = sinAcentos(texto);
     /* la regla más nueva gana */
     for(const r of [...this.config.reglas].reverse()){
@@ -220,6 +239,8 @@ export class Secre {
       if(m.mio && !/^🤖/.test(m.texto)) await this.orden(m.texto.trim());
       return;
     }
+    /* el eco de lo que mandó Secre (si el transporte no lo reconoció por su id) no es Carlos */
+    if(m.mio && this.mandando.has(m.chat + '|' + m.texto)) return;
     const c = this.chat(m.chat);
     /* en un grupo, el chat se llama como el grupo, no como quien escribió */
     const nc = m.grupo ? m.nombreChat : m.nombre;
@@ -317,6 +338,8 @@ export class Secre {
     /* otro bot: en un chat de uno, dos bots contestándose no paran nunca, así que ahí
        no. En un grupo autorizado sí (Carlos lo pidió para el rol), y el freno es el tope */
     if(!esGrupo && nuevos.some(x => /^\s*🤖/.test(x.texto))) return 'parece otro bot';
+    /* su otra cuenta: las dos Secres se contestarían para siempre */
+    if(!esGrupo && this.transporte.otrosYo && this.transporte.otrosYo().includes(jid)) return 'es tu otra cuenta';
     const porHora = esGrupo ? A.grupoPorHora : A.porHora, alDia = esGrupo ? A.grupoAlDia : A.alDia;
     const veces = (this.estado.autos[jid] || []).filter(t => ahora - t < 24 * HORA);
     if(veces.filter(t => ahora - t < HORA).length >= porHora) return `ya contesté ${porHora} veces en la última hora`;
@@ -354,11 +377,12 @@ export class Secre {
     if(!conTexto) this.estado.autos[jid] = [...(this.estado.autos[jid] || []), this.reloj()];
     this.anotar(`sticker ${n} a ${this.nombreDe(jid)}`);
   }
-  /* cómo firma en este chat: la suya si Carlos le puso una («sin firma» = ''), 🤖 a secas en un rol */
+  /* cómo firma en este chat: la suya si Carlos le puso una («sin firma» = ''); sin 🤖 desde el
+     16 de octubre («quita el emoji de robot, yo ya doy quién lo envía en ajustes»). En el rol, nada */
   firmaDe(jid){
     const c = this.config.chats[jid] || {}, A = this.confAuto();
     if(typeof c.firma === 'string') return c.firma;
-    return c.rol ? '🤖' : (A.firma ? `🤖 ${A.firma}:` : '');
+    return c.rol ? '' : (A.firma ? `${A.firma.replace(/^🤖\s*/, '')}:` : '');
   }
   async contestarSola(jid, nombre, nuevos, r){
     const A = this.confAuto(), ahora = this.reloj();
@@ -482,7 +506,9 @@ export class Secre {
   }
   /* mandar a otra persona: SÓLO desde una orden de Carlos (aprobar una propuesta) */
   async mandar(jid, texto){
-    const largo = Math.min(6000, 600 + texto.length * 45);
+    const largo = Math.min(2500, 400 + texto.length * 15);   /* «escribiendo…» corto: que conteste ya */
+    const llave = jid + '|' + texto; this.mandando.set(llave, this.reloj());
+    for(const [k, t] of this.mandando) if(this.reloj() - t > 2 * MIN) this.mandando.delete(k);
     try{ await this.transporte.leido && this.transporte.leido(jid); }catch{}
     try{ await this.transporte.escribiendo && this.transporte.escribiendo(jid, largo); }catch{}
     const id = await this.transporte.enviar(jid, texto);
@@ -577,7 +603,7 @@ export class Secre {
       return this.avisar(`Listo: en ${this.nombreDe(j)} sigo la historia sola mientras no estás` + (c.personaje ? `, como ${c.personaje.split(/[,.]/)[0]}` : '') + `. Si entras a escribir me hago a un lado 15 min.` +
         (c.personaje ? '' : `\nDime quién es tu personaje: «personaje ${this.nombreDe(j)}: nombre, cómo es, qué quiere».`) +
         (c.mundo ? '' : `\nY cuéntame del mundo: «mundo ${this.nombreDe(j)}: dónde pasa, reglas, quién es quién, qué ha pasado».`) +
-        `\nMis mensajes ahí salen con 🤖 para que el grupo sepa que soy yo; «sin firma ${this.nombreDe(j)}» lo quita.\n«manual ${this.nombreDe(j)}» para pararlo.`);
+        `\n«firma ${this.nombreDe(j)}: …» para que el grupo sepa que soy yo.\n«manual ${this.nombreDe(j)}» para pararlo.`);
     }
     if((m = /^\/?personaje\s+(?:en\s+|de\s+)?([^:]+?)\s*:\s*([\s\S]+)$/i.exec(t))){
       const j = this.buscarChat(m[1]);
