@@ -1549,8 +1549,11 @@ export class Sala {
     silla.escribeHasta = ahora() + 60_000;
     this.avisarEscribiendo();
 
-    const r = await preguntar(motorId, this.env, sistema, mensajes,
-                              { tope: resumiendo ? 1400 : 700 });
+    /* Paulina (Gemini) PIENSA antes de contestar y lo pensado cuenta contra el
+       tope: con 700 se le cortaba la frase a la mitad («Pero a ver, Negro…»).
+       Groq va justo por su tope de 8,000 fichas por minuto. */
+    const tope = motorId === 'gemini' ? (resumiendo ? 4000 : 2500) : (resumiendo ? 1400 : 700);
+    const r = await preguntar(motorId, this.env, sistema, mensajes, { tope });
 
     silla.escribeHasta = 0;
 
@@ -1576,7 +1579,11 @@ export class Sala {
        Negro ni se enteraba. */
     if(r.bien && !resumiendo){
       const otra = this.sillaNombrada(texto, motorId);
-      if(otra && this.sillasSeguidas() < TOPE_SILLAS) this.luego(this.responderSilla(otra, publicado));
+      /* `await` y NO `luego()`: en Cloudflare, un waitUntil que se pide cuando
+         el primero ya terminó se pierde — en las pruebas locales corría y en
+         la sala de verdad Negro nunca contestaba. Así queda dentro del mismo
+         encargo que ya está vivo. */
+      if(otra && this.sillasSeguidas() < TOPE_SILLAS) await this.responderSilla(otra, publicado).catch(() => {});
     }
   }
 
