@@ -164,7 +164,7 @@ http.createServer(async (req, res) => {
   if(que === 'orden'){ await s.orden(String(b.texto || '').slice(0, 2000)); return json(res, 200, { bien: true }); }
   if(que === 'propuesta'){
     const n = +b.n;
-    await s.orden(b.tirar ? `x${n}` : (b.texto ? `${n} ${String(b.texto).slice(0, 4000)}` : `${n}`));
+    await s.orden(b.todas ? 'todas' : b.tirar ? `x${n}` : (b.texto ? `${n} ${String(b.texto).slice(0, 4000)}` : `${n}`));
     return json(res, 200, { bien: true });
   }
   if(que === 'pendiente'){ const p = s.estado.pendientes.find(x => x.n === +b.n); if(p){ p.hecho = !!b.hecho; s.guardar(); } return json(res, 200, { bien: !!p }); }

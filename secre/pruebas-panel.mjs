@@ -81,6 +81,23 @@ async function probar(tema){
   e = await estado();
   ok('tirarla no manda nada', e.registro.filter(r => /^mandó/.test(r.que)).length === antes);
 
+  /* ── «Mandar todas»: las cambiadas salen con el texto nuevo, las demás como están ── */
+  {
+    const M1 = `52144255555${tema === 'claro' ? 11 : 22}@s.whatsapp.net`, M2 = `52144266666${tema === 'claro' ? 11 : 22}@s.whatsapp.net`;
+    await page.request.post(URL0 + 'api/principal/llega', { data: { chat: M1, de: M1, nombre: 'Mimi ' + tema, texto: 'hola' } });
+    await page.request.post(URL0 + 'api/principal/llega', { data: { chat: M2, de: M2, nombre: 'Toño ' + tema, texto: 'qué tal' } });
+    ok('con dos o más listas sale «Mandar todas»', await espera(async () => (await art('Toño ' + tema).count()) === 1 && /Mandar todas \(\d+\)/.test(await page.textContent('#hoja')), 'botón Mandar todas', 15000));
+    const cuantas = (await estado()).propuestas.length;
+    ok('y dice cuántas son', (await page.textContent('#bTodas')).includes(`(${cuantas})`));
+    await art('Mimi ' + tema).locator('textarea').fill('ya mero llego ' + tema);
+    const antesT = (await estado()).registro.filter(r => /^mandó/.test(r.que)).length;
+    await page.click('#bTodas');
+    await espera(async () => (await estado()).propuestas.length === 0, 'se vacía Por mandar');
+    const eT = await estado(), mand = eT.registro.filter(r => /^mandó/.test(r.que));
+    ok('«Mandar todas» manda todas las que había', mand.length === antesT + cuantas, mand.slice(-cuantas));
+    ok('y la que cambiaste sale con TU texto', mand.some(r => r.que === `mandó a Mimi ${tema}: ya mero llego ${tema}`), mand.slice(-2));
+  }
+
   /* ── pendientes ── */
   await page.click('nav [data-p="pendientes"]');
   await page.fill('#nuevoP', 'comprar pilas ' + tema); await page.click('#fAnota button');

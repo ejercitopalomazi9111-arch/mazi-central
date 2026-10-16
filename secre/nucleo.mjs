@@ -263,6 +263,13 @@ export class Secre {
         /* si ya pasó más de una hora (se puso a media tarde, o Secre estuvo apagada), hoy ya no: un «buenos días» a las 3 de la tarde no sirve */
         if(minDelDia(ahora) - r[cual + 'En'] > 60){ this.guardar(); continue; }
         const nombre = this.nombreDe(s.chat);
+        /* el que Carlos dejó fijo con «N siempre»: sale tal cual, sin preguntar */
+        const fijo = String(s[cual === 'manana' ? 'fijoManana' : 'fijoNoche'] || '').trim();
+        if(fijo){
+          await this.mandar(s.chat, fijo);
+          await this.avisar(`Mandé el ${cual === 'manana' ? 'buenos días' : 'buenas noches'} fijo a ${nombre}: «${fijo}»`);
+          this.guardar(); continue;
+        }
         let texto = '';
         try{ texto = await this.ia.saludo({ dueno: this.config.nombre, nombre, cual, nota: this.chat(s.chat).nota || '', estilo: this.estado.estilo.slice(-40), antes: (this.estado.historial[s.chat] || []).filter(x => x.de === 'yo').slice(-6).map(x => x.texto) }); }
         catch(e){ texto = ''; }
@@ -328,18 +335,43 @@ export class Secre {
     if((m = /^#?(\d+)(?:\s+([\s\S]+))?$/.exec(t))){
       const p = this.estado.propuestas.find(x => x.n === +m[1]);
       if(!p) return this.avisar(`No tengo la #${m[1]} (o ya caducó).`);
-      const final = (m[2] || p.texto).trim();
+      /* «3 siempre» (o «3 siempre otro texto») en un saludo: lo manda y lo deja
+         FIJO — desde mañana sale solo a su hora, con ese texto exacto */
+      const siempre = /^siempre\b[:\s]*/i.exec(m[2] || '');
+      const final = (siempre ? (m[2].slice(siempre[0].length) || p.texto) : (m[2] || p.texto)).trim();
       if(!final) return this.avisar(`La #${m[1]} no trae texto: escribe «${m[1]} lo que quieras decir».`);
       this.estado.propuestas = this.estado.propuestas.filter(x => x !== p);
       await this.mandar(p.chat, final);
+      let extra = '';
+      if(siempre && (p.tipo === 'manana' || p.tipo === 'noche')){
+        const sal = this.config.saludos.find(x => x.chat === p.chat);
+        if(sal){ sal[p.tipo === 'manana' ? 'fijoManana' : 'fijoNoche'] = final; extra = `\nDesde mañana se lo mando así, solo, a su hora. «quita fijo ${p.nombre}» para que te lo vuelva a proponer.`; }
+      }
       this.guardar();
-      return this.avisar(`Listo, a ${p.nombre}: «${final}»`);
+      return this.avisar(`Listo, a ${p.nombre}: «${final}»` + extra);
     }
     if((m = /^x\s*#?(\d+)$/.exec(s))){
       const antes = this.estado.propuestas.length;
       this.estado.propuestas = this.estado.propuestas.filter(x => x.n !== +m[1]);
       this.guardar();
       return this.avisar(antes === this.estado.propuestas.length ? `No tengo la #${m[1]}.` : `Tirada la #${m[1]}.`);
+    }
+    /* «todas» manda de golpe las que estén listas; «todas menos 3 5» deja ésas.
+       Carlos, 16 de octubre: no tiene tiempo de aprobar una por una en el día. */
+    if((m = /^\/?(?:manda(?:las)?\s+|ok\s+)?(?:todas|todo)(?:\s+menos\s+([\d\s,y#]+))?$/.exec(s))){
+      const menos = new Set((m[1] || '').match(/\d+/g)?.map(Number) || []);
+      const van = this.estado.propuestas.filter(p => String(p.texto || '').trim() && !menos.has(p.n));
+      if(!van.length) return this.avisar('No hay nada listo para mandar.');
+      this.estado.propuestas = this.estado.propuestas.filter(p => !van.includes(p));
+      for(const p of van) await this.mandar(p.chat, p.texto.trim());
+      this.guardar();
+      return this.avisar(`Listo, mandé ${van.length}: ${van.map(p => p.nombre).join(', ')}` + (menos.size ? ` (me quedo con la ${[...menos].map(n => '#' + n).join(', ')})` : ''));
+    }
+    if((m = /^\/?(?:quita(?:r)?|ya no)\s+(?:el\s+)?fijo\s+(?:a\s+|de\s+)?(.+)$/.exec(s))){
+      const j = this.buscarChat(m[1]), sal = j && this.config.saludos.find(x => x.chat === j);
+      if(!sal) return this.avisar(`No tengo saludos para «${m[1]}».`);
+      delete sal.fijoManana; delete sal.fijoNoche; this.guardar();
+      return this.avisar(`Listo: a ${this.nombreDe(j)} te vuelvo a proponer los saludos antes de mandarlos.`);
     }
     if(/^\/?(ayuda|help|\?)$/.test(s)) return this.avisar(AYUDA);
     if(/^\/?(pendientes|que tengo|qué tengo)$/.test(s)){
@@ -491,6 +523,8 @@ export class Secre {
 
 export const AYUDA = `Lo que sé hacer (escríbelo aquí, en tu chat):
 · «3» manda la propuesta #3 · «3 tu texto» manda el tuyo · «x3» la tira
+· «todas» manda todas las que estén listas · «todas menos 3 5» deja ésas
+· en un saludo, «3 siempre» lo deja fijo: sale solo cada día · «quita fijo Ana»
 · «pendientes» · «hecho 2» · «anota comprar pilas»
 · «dato: el viernes hay examen de mate a las 8, temas: derivadas» · «datos» · «olvida 2»
 · «pausa 2h» / «pausa hoy» · «sigue»

@@ -17,6 +17,8 @@ Propuesta: «sí voy, nomás confirmo la hora y te digo»
 | Escribes | Pasa |
 |---|---|
 | `3` | manda la propuesta #3 tal cual |
+| `todas` · `todas menos 3 5` | manda de golpe todas las que estén listas (menos ésas). En el panel: «Mandar todas» |
+| `3 siempre` en un buenos días / buenas noches | lo manda y lo deja **fijo**: desde mañana sale solo a su hora con ese texto · `quita fijo Ana` lo regresa |
 | `3 sí, a las 5` | manda TU texto |
 | `x3` | la tira |
 | `pendientes` · `hecho 2` · `anota comprar pilas` | tus pendientes |
@@ -89,7 +91,7 @@ Con `SECRE_NUBE=no` guarda en `secre/datos/` (nunca entra al repo) en vez de La 
 | `correr.mjs` | prende las cuentas, el reloj y el panel |
 | `panel.html` | el panel |
 | `falso.mjs` | WhatsApp e IA de mentiras: `SECRE_FALSO=1 npm start` prueba todo sin teléfono |
-| `pruebas.mjs` | el núcleo (59) — la última prueba revisa que **cada envío a otra persona tenga una aprobación tuya** |
+| `pruebas.mjs` | el núcleo (78) — la última prueba revisa que **cada envío a otra persona tenga una aprobación tuya** |
 | `pruebas-panel.mjs` | el panel en un navegador de verdad a 390 px, claro y oscuro (38) |
 | `pruebas-vincular.mjs` | vincular contra WhatsApp DE VERDAD con un número de ficción (1-555-0100): código a tiempo y código nuevo tras un corte (5) |
 | `pruebas-vincular-panel.mjs` | la pantalla del código: número, «Pedir otro código», el formato 52/521 y escribir otro número (14) |
