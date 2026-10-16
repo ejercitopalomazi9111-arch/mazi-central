@@ -1089,6 +1089,29 @@ console.log('\n· Las sillas');
     globalThis.fetch = antes;
   }
 
+  /* ── /secre · el cajón cifrado de Secre (secre.js) ───────────────────── */
+  {
+    const s = nueva({ LLAVES: 'carlos:MAESTRA,luis:DELUIS' });
+    const [c0] = await leer(await pedir(s, 'GET', 'secre?k=principal', undefined, 'ajena'));
+    ok('el cajón de Secre no se abre sin llave', c0 === 401);
+    const [c1] = await leer(await pedir(s, 'GET', 'secre?k=principal', undefined, 'DELUIS'));
+    ok('ni con la llave de otra cuenta de la sala (la de Luis)', c1 === 403, c1);
+    const [, v] = await leer(await pedir(s, 'GET', 'secre?k=principal', undefined, 'MAESTRA'));
+    ok('vacío al principio', v.bien && v.datos === null);
+    const grande = 'a'.repeat(1_000_000) + 'b'.repeat(1_000_000) + 'c'.repeat(1_200_000);   // 3.2 MB: en trozos
+    const [c2, r2] = await leer(await pedir(s, 'POST', 'secre', { k: 'principal', datos: grande }, 'MAESTRA'));
+    ok('guarda 3.2 MB (más que un registro, va en trozos)', c2 === 200 && r2.bytes === grande.length, r2);
+    const [, l2] = await leer(await pedir(s, 'GET', 'secre?k=principal', undefined, 'MAESTRA'));
+    ok('y lo devuelve idéntico', l2.datos === grande);
+    await leer(await pedir(s, 'POST', 'secre', { k: 'principal', datos: 'chiquito' }, 'MAESTRA'));
+    const [, l3] = await leer(await pedir(s, 'GET', 'secre?k=principal', undefined, 'MAESTRA'));
+    ok('al guardar algo más chico no quedan trozos viejos pegados', l3.datos === 'chiquito', (l3.datos || '').slice(0, 20));
+    const [, l4] = await leer(await pedir(s, 'GET', 'secre?k=segunda', undefined, 'MAESTRA'));
+    ok('cada cuenta de WhatsApp tiene su cajón aparte', l4.datos === null);
+    const [c5] = await leer(await pedir(s, 'POST', 'secre', { k: '../x', datos: 'x' }, 'MAESTRA'));
+    ok('un nombre raro se rechaza', c5 === 400);
+  }
+
   /* ── /banco · las 300 imágenes de Carlos (banco.js) ─────────────────── */
   {
     const s = nueva({ LLAVES: 'carlos:MAESTRA' });

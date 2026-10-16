@@ -31,34 +31,35 @@ aprende de cómo escribiste.
 Lo mismo se hace con botones en **el panel** (una página para el teléfono, con contraseña):
 *Por mandar*, *Pendientes*, *Chats*, *Saludos* y *Platica*.
 
-## Prenderla (una vez)
+## Prenderla gratis, sin compu (Render)
 
-Tiene que correr en una máquina que **no se apague**: tu compu o un servidor. No cabe en
-Cloudflare porque WhatsApp necesita una conexión abierta todo el tiempo.
+Desde el iPhone: **Central → Secre** y sigue los pasos. En corto:
 
-1. Node 20 o más nuevo.
-2. En la carpeta del repo:
-   ```bash
-   cd secre && npm install
-   ```
-3. Prenderla con tus dos números (con 521 adelante, sin espacios):
-   ```bash
-   SECRE_CUENTAS="principal:5214421234567,segunda:5214427654321" \
-   SECRE_CLAVE="una-contraseña-larga-para-el-panel" \
-   SECRE_SALA_LLAVE="la llave de La Sala" \
-   npm start
-   ```
-   - `SECRE_SALA_LLAVE` usa las llaves de Gemini y Groq que ya están en La Sala.
-     Si prefieres otra: `GEMINI_API_KEY=…` o `GROQ_API_KEY=…`.
-   - **Las llaves van así, en la línea de comandos o en un archivo `.env` tuyo. Nunca en el repo.**
-4. En la consola sale un **código de 8 letras por cuenta**. En ese teléfono:
-   WhatsApp → **Dispositivos vinculados** → **Vincular un dispositivo** →
-   **Vincular con número de teléfono** → escribes el código. Ya no se vuelve a pedir.
-5. El panel: `http://<la IP de la compu>:8790` desde el teléfono en la misma red. Desde
-   fuera de la casa, con Tailscale (gratis) — **no abras el puerto a internet**.
+1. **Crear en Render** (botón de la página): entras con GitHub. Render lee `render.yaml`
+   (en la raíz del repo) y arma el servicio gratis.
+2. Te pide tres datos, que te pasa Sylcred por el chat (no van al repo):
+   - `SECRE_CUENTAS` — tus cuentas, por ejemplo `negocio:524421234567,personal:17861234567`
+   - `SECRE_CLAVE` — la contraseña del panel. **También es la llave del candado de lo
+     guardado: si la cambias, Secre arranca de cero y hay que vincular otra vez.**
+   - `SECRE_SALA_LLAVE` — la llave de La Sala (la IA y el cajón donde guarda todo).
+3. Cuando diga **Live**, pegas su link en la página de la Central y abres el panel.
+4. En el panel sale un **código de 8 letras por cuenta**: WhatsApp → Dispositivos
+   vinculados → Vincular un dispositivo → Vincular con número de teléfono.
 
-Todo lo tuyo (la sesión de WhatsApp, tus chats, tu configuración) se guarda en
-`secre/datos/`, que **nunca** se sube al repo.
+**Por qué así y no de paga:** Render gratis da 750 horas al mes (alcanza para el mes
+entero) pero se duerme a los 15 minutos sin visitas y **borra su disco al reiniciar**.
+Secre se visita sola cada 10 minutos (`RENDER_EXTERNAL_URL`) y guarda todo **cifrado**
+(AES-256-GCM con `SECRE_CLAVE`) en La Sala (`/api/sala/GRUPAZ/secre`, sólo la cuenta
+dueña), así que un reinicio no le hace nada. Railway gratis no alcanza: sólo cargar la
+parte de WhatsApp gasta ~110 MB, más que el dólar al mes que regala.
+
+## Prenderla en una compu propia
+
+```bash
+cd secre && npm ci
+SECRE_CUENTAS="principal:5214421234567,segunda:5214427654321" SECRE_CLAVE="…" SECRE_SALA_LLAVE="…" npm start
+```
+Con `SECRE_NUBE=no` guarda en `secre/datos/` (nunca entra al repo) en vez de La Sala.
 
 ## Lo que hay que saber
 
@@ -83,4 +84,5 @@ Todo lo tuyo (la sesión de WhatsApp, tus chats, tu configuración) se guarda en
 | `panel.html` | el panel |
 | `falso.mjs` | WhatsApp e IA de mentiras: `SECRE_FALSO=1 npm start` prueba todo sin teléfono |
 | `pruebas.mjs` | el núcleo (59) — la última prueba revisa que **cada envío a otra persona tenga una aprobación tuya** |
-| `pruebas-panel.mjs` | el panel en un navegador de verdad a 390 px, claro y oscuro (36) |
+| `pruebas-panel.mjs` | el panel en un navegador de verdad a 390 px, claro y oscuro (38) |
+| `nube.mjs` · `pruebas-nube.mjs` | guardar cifrado en La Sala; la prueba apaga y prende Secre y revisa que se acuerde de todo (12) |

@@ -96,6 +96,9 @@ const VA = [
      la sociedad y el reloj de clases. Habla con el servidor de Fadori y usa
      la misma cuenta. */
   'sociedad',
+  /* Secre, la secretaria de WhatsApp: SÓLO la página de pasos y el botón al
+     panel. El código de `secre/` (el servidor) NO se publica: corre en Render. */
+  'secretaria',
 ];
 
 /* ── Lo que tiene sitio adentro y NO se publica, dicho a propósito ──────────

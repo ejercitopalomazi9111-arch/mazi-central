@@ -1,0 +1,25 @@
+# Secre (la secretaria de WhatsApp) en Render GRATIS · la usa el botón
+# «Crear en Render» de la página secretaria/ de la Central.
+# El disco de Render gratis se borra al reiniciar: Secre guarda todo, cifrado,
+# en La Sala (secre/nube.mjs). Las llaves y los números NO van aquí: Render
+# los pide al crearla (sync: false) y viven sólo en Render.
+services:
+  - type: web
+    name: secre
+    runtime: node
+    plan: free
+    region: oregon
+    rootDir: secre
+    buildCommand: npm ci
+    startCommand: node correr.mjs
+    healthCheckPath: /salud
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: SECRE_CUENTAS
+        sync: false
+      - key: SECRE_CLAVE
+        sync: false
+      - key: SECRE_SALA_LLAVE
+        sync: false

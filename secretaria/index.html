@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0f1714">
+<title>Secre</title>
+<style>
+:root{ --fondo:#f4f5f2; --hoja:#fff; --linea:#dfe3dc; --tinta:#16201b; --suave:#5b665f; --acento:#127a52; --acento-tinta:#fff; --aviso:#8a5a00; --aviso-fondo:#fff3d6; color-scheme: light; }
+@media (prefers-color-scheme: dark){ :root{ --fondo:#0f1714; --hoja:#18221e; --linea:#2a3631; --tinta:#e8ede9; --suave:#a3afa8; --acento:#3cc68a; --acento-tinta:#06231a; --aviso:#ffd27a; --aviso-fondo:#3a2e10; color-scheme: dark; } }
+*{ box-sizing:border-box; }
+body{ margin:0; background:var(--fondo); color:var(--tinta); font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+main{ max-width:560px; margin:0 auto; padding:24px 16px calc(32px + env(safe-area-inset-bottom)); }
+h1{ font-size:28px; margin:0 0 4px; letter-spacing:-.01em; }
+h2{ font-size:18px; margin:28px 0 8px; }
+p{ margin:8px 0; } .suave{ color:var(--suave); }
+.tarjeta{ background:var(--hoja); border:1px solid var(--linea); border-radius:12px; padding:16px; margin:12px 0; }
+.boton{ display:flex; align-items:center; justify-content:center; min-height:52px; padding:0 18px; border-radius:12px; border:1px solid var(--linea); background:var(--hoja); color:var(--tinta); font-family:inherit; font-size:17px; font-weight:600; line-height:1; text-decoration:none; width:100%; cursor:pointer; }
+.boton.principal{ background:var(--acento); color:var(--acento-tinta); border-color:var(--acento); }
+.fila{ display:flex; gap:8px; margin-top:12px; }
+.campo{ width:100%; min-height:48px; padding:10px 12px; border-radius:10px; border:1px solid var(--linea); background:var(--fondo); color:inherit; font:inherit; }
+ol{ padding-left:22px; margin:8px 0; } li{ margin:10px 0; }
+code{ font:600 14px ui-monospace,Menlo,monospace; background:var(--fondo); border:1px solid var(--linea); border-radius:6px; padding:1px 6px; }
+.estado{ display:flex; align-items:center; gap:8px; color:var(--suave); }
+.punto{ width:10px; height:10px; border-radius:50%; background:var(--suave); } .punto.si{ background:var(--acento); }
+.aviso{ background:var(--aviso-fondo); color:var(--aviso); border-radius:12px; padding:12px 14px; }
+[hidden]{ display:none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Secre</h1>
+  <p class="suave">Tu secretaria de WhatsApp: te deja las respuestas listas, recuerda lo que le cuentas y tú mandas con un número.</p>
+
+  <!-- ya está prendida: abrir el panel -->
+  <section id="lista" hidden>
+    <div class="tarjeta">
+      <div class="estado"><span class="punto" id="punto"></span><span id="estado">Revisando…</span></div>
+      <div class="fila"><a class="boton principal" id="abrir" href="#">Abrir el panel de Secre</a></div>
+      <div class="fila"><button class="boton" id="cambiar" type="button">Cambiar el link</button></div>
+    </div>
+  </section>
+
+  <!-- todavía no: los pasos -->
+  <section id="pasos" hidden>
+    <h2>Prenderla gratis (una sola vez, desde el iPhone)</h2>
+    <div class="tarjeta">
+      <ol>
+        <li>Toca <b>Crear en Render</b> y entra con tu cuenta de <b>GitHub</b>. Render es el servidor gratis donde vive Secre.</li>
+        <li>Te va a pedir tres datos. <b>Cópialos del chat con Sylcred</b> (aquí no se escriben porque esta página es pública):
+          <br><code>SECRE_CUENTAS</code> · <code>SECRE_CLAVE</code> · <code>SECRE_SALA_LLAVE</code></li>
+        <li>Toca <b>Deploy</b> / <b>Apply</b> y espera unos 3 minutos a que diga <b>Live</b>.</li>
+        <li>Arriba sale su link, algo como <code>secre-xxxx.onrender.com</code>. Cópialo y pégalo aquí abajo.</li>
+      </ol>
+      <div class="fila"><a class="boton principal" href="https://render.com/deploy?repo=https://github.com/ejercitopalomazi9111-arch/mazi-central" target="_blank" rel="noopener">Crear en Render</a></div>
+    </div>
+    <div class="tarjeta">
+      <label for="url"><b>El link de Secre</b></label>
+      <div class="fila"><input class="campo" id="url" type="url" inputmode="url" placeholder="https://secre-xxxx.onrender.com" autocomplete="off"></div>
+      <div class="fila"><button class="boton principal" id="guardar" type="button">Guardar</button></div>
+      <p class="suave" id="error" role="alert"></p>
+    </div>
+    <p class="aviso">Ya en el panel: te sale un <b>código de 8 letras</b> por cuenta. En ese teléfono abre WhatsApp → <b>Dispositivos vinculados</b> → <b>Vincular un dispositivo</b> → <b>Vincular con número de teléfono</b>, y escríbelo.</p>
+  </section>
+</main>
+<script>
+'use strict';
+/* El link de Secre se guarda en ESTE teléfono (no va en la página: es pública). */
+const CLAVE = 'secre-link';
+const leer = () => { try{ return localStorage.getItem(CLAVE) || ''; }catch{ return ''; } };
+const escribir = (v) => { try{ v ? localStorage.setItem(CLAVE, v) : localStorage.removeItem(CLAVE); }catch{} };
+const $ = (s) => document.querySelector(s);
+
+function limpiar(t){
+  t = String(t || '').trim();
+  if(!t) return '';
+  if(!/^https?:\/\//i.test(t)) t = 'https://' + t;
+  try{ const u = new URL(t); return u.protocol === 'https:' ? u.origin : ''; }catch{ return ''; }
+}
+
+async function pintar(){
+  const link = leer();
+  $('#lista').hidden = !link; $('#pasos').hidden = !!link;
+  if(!link) return;
+  $('#abrir').href = link + '/';
+  /* Render gratis duerme si nadie la visita: preguntar la despierta (tarda ~1 min) */
+  $('#estado').textContent = 'Revisando si está prendida…'; $('#punto').className = 'punto';
+  const t0 = Date.now();
+  for(let i = 0; i < 12; i++){
+    try{
+      const r = await fetch(link + '/salud', { cache: 'no-store' });
+      if(r.ok){ $('#punto').className = 'punto si'; $('#estado').textContent = 'Prendida'; return; }
+    }catch{}
+    $('#estado').textContent = `Despertándola… (${Math.round((Date.now() - t0) / 1000)} s)`;
+    await new Promise(r => setTimeout(r, 8000));
+  }
+  $('#estado').textContent = 'No contesta. Revisa en Render que diga «Live».';
+}
+
+$('#guardar').onclick = () => {
+  const v = limpiar($('#url').value);
+  if(!v || !/onrender\.com$|^https:\/\/[\w.-]+$/.test(v)){ $('#error').textContent = 'Ese link no se ve bien. Debe empezar con https://'; return; }
+  escribir(v); $('#error').textContent = ''; pintar();
+};
+$('#cambiar').onclick = () => { $('#url').value = leer(); escribir(''); pintar(); };
+pintar();
+</script>
+</body>
+</html>

@@ -19,7 +19,7 @@
    secre/datos/, que NUNCA entra al repo (.gitignore).
    ═════════════════════════════════════════════════════════════════════════ */
 import fs from 'fs'; import path from 'path'; import http from 'http'; import crypto from 'crypto';
-import { Secre, AYUDA } from './nucleo.mjs';
+import { Secre, AYUDA, configBase } from './nucleo.mjs';
 const FALSO = !!process.env.SECRE_FALSO;
 const { ia } = await import(FALSO ? './falso.mjs' : './ia.mjs');
 
@@ -46,23 +46,40 @@ function almacenEn(dir){
 const vivas = {};     /* id → { secre, estado: { conectado, codigo, error }, transporte } */
 const { conectar } = await import(FALSO ? './falso.mjs' : './whatsapp.mjs');
 if(FALSO) console.log('🧪 Modo de prueba: nada sale a WhatsApp ni a la IA.');
-for(const c of CUENTAS){
+/* En un servidor gratis (Render) el disco se borra al reiniciar: todo se guarda
+   cifrado en La Sala (nube.mjs). En una compu propia, en secre/datos/. */
+const NUBE = (!FALSO || process.env.SECRE_NUBE === 'si') && process.env.SECRE_NUBE !== 'no' && !!(process.env.SECRE_SALA_LLAVE || process.env.MAZI_LLAVE) && !!process.env.SECRE_CLAVE;
+if(!FALSO && !NUBE) console.log('💾 Guardando en disco (secre/datos/). Para guardar en La Sala pon SECRE_SALA_LLAVE y SECRE_CLAVE.');
+const cajones = {};
+async function prender(c){
   const dir = path.join(DATOS, c.id);
-  const v = vivas[c.id] = { estado: { conectado: false }, secre: null };
+  const v = vivas[c.id] = { estado: { conectado: false, error: 'Arrancando…' }, secre: null };
+  let almacen = null, auth = null;
+  if(NUBE){
+    const { abrirCajon } = await import('./nube.mjs');
+    const cajon = cajones[c.id] = await abrirCajon(c.id, { clave: CLAVE, llaveSala: process.env.SECRE_SALA_LLAVE || process.env.MAZI_LLAVE });
+    if(cajon.aviso) v.estado.aviso = cajon.aviso;   /* aparte de `error`: conectar no lo borra */
+    almacen = cajon.almacen; auth = cajon.auth;
+  } else almacen = almacenEn(dir);
   /* el transporte llega después de conectar; mientras, el núcleo no manda nada */
   const puente = { yo: () => (v.transporte ? v.transporte.yo() : []), enviar: (j, t) => v.transporte.enviar(j, t), escribiendo: (j, ms) => v.transporte.escribiendo(j, ms), leido: (j) => v.transporte.leido(j) };
-  v.secre = new Secre({ cuenta: c.id, transporte: puente, ia, almacen: almacenEn(dir) });
-  v.transporte = await conectar({ dir: path.join(dir, 'sesion'), telefono: c.telefono,
-    alMensaje: (m) => v.secre.alMensaje(m).catch(e => console.error(`[${c.id}]`, e.message)),
-    alEstado: (e) => {
-      v.estado = { ...v.estado, ...e };
-      if(e.codigo) console.log(`\n📱 [${c.id}] Código para vincular: ${e.codigo}\n   WhatsApp → Dispositivos vinculados → Vincular con número de teléfono\n`);
-      if(e.conectado){ console.log(`✅ [${c.id}] conectada`); v.estado.codigo = ''; }
-      if(e.error) console.log(`⚠️  [${c.id}] ${e.error}`);
-    } });
+  v.secre = new Secre({ cuenta: c.id, transporte: puente, ia, almacen });
+  const enchufar = async () => {
+    v.transporte = await conectar({ dir: path.join(dir, 'sesion'), auth, telefono: c.telefono,
+      alMensaje: (m) => v.secre.alMensaje(m).catch(e => console.error(`[${c.id}]`, e.message)),
+      alEstado: (e) => {
+        v.estado = { ...v.estado, ...e };
+        if(e.codigo){ console.log(`\n📱 [${c.id}] Código para vincular: ${e.codigo}\n   WhatsApp → Dispositivos vinculados → Vincular con número de teléfono\n`); v.estado.error = ''; }
+        if(e.conectado){ console.log(`✅ [${c.id}] conectada`); v.estado.codigo = ''; v.estado.error = ''; }
+        if(e.error) console.log(`⚠️  [${c.id}] ${e.error}`);
+        /* te saliste desde el teléfono: sesión nueva y código nuevo, sin reiniciar nada */
+        if(e.cerrada && NUBE){ auth = cajones[c.id].olvidarSesion(); setTimeout(() => enchufar().catch(err => console.error(err.message)), 2000); }
+      } });
+  };
+  await enchufar();
 }
 /* el reloj: cada 5 segundos cada cuenta revisa su cola, saludos y resumen */
-setInterval(() => { for(const v of Object.values(vivas)) if(v.estado.conectado) v.secre.tic().catch(e => console.error(e.message)); }, 5000);
+setInterval(() => { for(const v of Object.values(vivas)) if(v.estado.conectado && v.secre) v.secre.tic().catch(e => console.error(e.message)); }, 5000);
 
 /* ══ el panel ══════════════════════════════════════════════════════════════
    Una página para el teléfono, con contraseña. Desde la misma red de la casa:
@@ -75,7 +92,9 @@ const cuerpo = (req) => new Promise((si) => { let d = ''; req.on('data', x => { 
 const galleta = (req) => (String(req.headers.cookie || '').match(/(?:^|;\s*)secre=([\w-]+)/) || [])[1] || '';
 const intentos = new Map();
 
-function vista(v){
+function vista(v, id){
+  /* una cuenta que no pudo arrancar se enseña con su error, no rompe el panel */
+  if(!v.secre) return { cuenta: id, conexion: v.estado, config: configBase(), chats: [], propuestas: [], pendientes: [], charla: [], registro: [], ahora: Date.now(), ayuda: AYUDA };
   const s = v.secre, c = s.config, e = s.estado;
   return {
     cuenta: s.cuenta, conexion: v.estado, config: c,
@@ -92,7 +111,7 @@ http.createServer(async (req, res) => {
     return res.end(fs.readFileSync(path.join(RAIZ, 'panel.html')));
   }
   /* para que el servidor sepa que sigue vivo; no dice nada de nadie */
-  if(url.pathname === '/salud') return json(res, 200, { bien: true });
+  if(url.pathname === '/salud'){ res.setHeader('access-control-allow-origin', '*'); return json(res, 200, { bien: true }); }   /* la Central pregunta si está prendida */
   if(url.pathname === '/api/entrar' && req.method === 'POST'){
     /* detrás del proxy del servidor, la IP de verdad viene en x-forwarded-for; 8 intentos fallidos cada 15 minutos */
     const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '?').split(',')[0].trim();
@@ -113,7 +132,8 @@ http.createServer(async (req, res) => {
   const [, , id, que] = url.pathname.split('/');
   if(id === 'cuentas') return json(res, 200, { cuentas: Object.entries(vivas).map(([k, v]) => ({ id: k, ...v.estado })) });
   const v = vivas[id]; if(!v) return json(res, 404, { error: 'No conozco esa cuenta.' });
-  if(req.method === 'GET' && !que) return json(res, 200, vista(v));
+  if(req.method === 'GET' && !que) return json(res, 200, vista(v, id));
+  if(!v.secre) return json(res, 409, { error: v.estado.error || 'Esa cuenta todavía está arrancando.' });
   if(req.method !== 'POST') return json(res, 405, { error: 'Así no.' });
   const b = await cuerpo(req), s = v.secre;
   /* sólo en modo de prueba: hacer como que alguien escribió */
@@ -136,4 +156,19 @@ http.createServer(async (req, res) => {
     s.guardar(); return json(res, 200, { bien: true });
   }
   return json(res, 404, { error: 'No existe.' });
-}).listen(PUERTO, '0.0.0.0', () => console.log(`\n🗂  Panel de Secre: http://localhost:${PUERTO}  (desde el teléfono, con la IP de esta máquina)\n`));
+}).listen(PUERTO, '0.0.0.0', async () => {
+  console.log(`\n🗂  Panel de Secre: http://localhost:${PUERTO}  (desde el teléfono, con la IP de esta máquina)\n`);
+  /* el panel primero (el servidor revisa /salud al arrancar), las cuentas después */
+  for(const c of CUENTAS){
+    try{ await prender(c); }
+    catch(e){ console.error(`[${c.id}] no arrancó: ${e.message}`); vivas[c.id] = vivas[c.id] || { estado: {}, secre: null }; vivas[c.id].estado = { conectado: false, error: e.message }; }
+  }
+});
+
+/* Render gratis se duerme a los 15 minutos sin visitas: Secre se visita sola cada 10 */
+if(process.env.RENDER_EXTERNAL_URL) setInterval(() => fetch(process.env.RENDER_EXTERNAL_URL.replace(/\/+$/, '') + '/salud').catch(() => {}), 10 * 60_000).unref();
+/* al apagarse (reinicio del servidor), subir lo último antes de irse */
+for(const senal of ['SIGTERM', 'SIGINT']) process.on(senal, async () => {
+  await Promise.race([Promise.all(Object.values(cajones).map(c => c.subir())), new Promise(r => setTimeout(r, 8000))]);
+  process.exit(0);
+});

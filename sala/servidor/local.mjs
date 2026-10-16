@@ -36,8 +36,11 @@ function traer(codigo){
   const datos = new Map();
   const ctx = {
     storage: {
-      async get(k){ return datos.get(k); },
+      /* como el de Cloudflare: una clave da su valor; una lista da un Map
+         (lo usan el cajón de Secre y Mis elementos para leer trozos) */
+      async get(k){ if(Array.isArray(k)){ const m = new Map(); for(const x of k) if(datos.has(x)) m.set(x, datos.get(x)); return m; } return datos.get(k); },
       async put(o){ for(const k in o) datos.set(k, o[k]); },
+      async delete(k){ for(const x of [].concat(k)) datos.delete(x); },
       async deleteAll(){ datos.clear(); },
       /* ⚠ `getAlarm` HACE FALTA AUNQUE AQUÍ NADA SE OLVIDE SOLO. La clase lo
          lee antes de escribir la alarma —para no reescribirla si la puesta ya
