@@ -176,6 +176,38 @@ const TOPE_RETRATO = 200_000;
 const TOPE_IMAGEN = 1_500_000;
 const TOPE_EVENTO = 2_000_000;
 const TOPE_TEXTO  = 20_000;
+/* Cuántas veces seguidas se contestan las sillas entre ellas sin que hable
+   nadie más. Carlos pidió peleas de 4; con 6 cabe y no se van al infinito. */
+const TOPE_SILLAS = 6;
+
+/* «45m», «2h», «1h30», «18:30» → milisegundos. México va en UTC-6 todo el año
+   desde 2022 (se quitó el horario de verano), así que la hora se arma así.
+   null si no se entiende o si cae a más de 30 días. */
+export function cuandoDe(t, base = Date.now()){
+  const s = String(t || '').trim().toLowerCase().replace(/^en\s+/, '');
+  let m, ms = null;
+  if((m = /^(\d+)\s*(m|min|mins|minutos?)$/.exec(s))) ms = base + +m[1] * 60_000;
+  else if((m = /^(\d+(?:[.,]\d+)?)\s*(h|hr|hrs|horas?)$/.exec(s))) ms = base + parseFloat(m[1].replace(',', '.')) * 3_600_000;
+  else if((m = /^(\d+)\s*h\s*(\d+)\s*(m|min)?$/.exec(s))) ms = base + +m[1] * 3_600_000 + +m[2] * 60_000;
+  else if((m = /^(\d+)\s*(d|dias?|días?)$/.exec(s))) ms = base + +m[1] * 86_400_000;
+  else if((m = /^(?:a las\s*)?(\d{1,2}):(\d{2})$/.exec(s))){
+    const h = +m[1], mi = +m[2];
+    if(h > 23 || mi > 59) return null;
+    const mx = new Date(base - 6 * 3_600_000);            // «ahora» en reloj de México
+    let t2 = Date.UTC(mx.getUTCFullYear(), mx.getUTCMonth(), mx.getUTCDate(), h, mi) + 6 * 3_600_000;
+    if(t2 <= base) t2 += 86_400_000;                       // ya pasó hoy: mañana
+    ms = t2;
+  }
+  if(ms == null || !isFinite(ms) || ms <= base || ms - base > 30 * 86_400_000) return null;
+  return ms;
+}
+function horaBonita(ms, base = Date.now()){
+  const min = Math.round((ms - base) / 60_000);
+  if(min < 60) return `en ${min} min`;
+  const mx = new Date(ms - 6 * 3_600_000);
+  const hh = String(mx.getUTCHours()).padStart(2, '0'), mm = String(mx.getUTCMinutes()).padStart(2, '0');
+  return (ms - base < 86_400_000 ? 'a las ' : `el ${mx.getUTCDate()} a las `) + `${hh}:${mm}`;
+}
 
 const TIPOS = new Set([
   'mensaje',      /* lo que escribe un humano */
@@ -1326,6 +1358,14 @@ export class Sala {
       const t = String(evento.texto || '');
       const arroba = /@([\p{L}]+)/u.exec(t), inicio = /^\s*([\p{L}]+)/u.exec(t);
       quien = (arroba && motorDe(arroba[1]) && arroba[1]) || (inicio && motorDe(inicio[1]) && inicio[1]) || null;
+      /* Entre agentes no hay «hablar de»: si Godines o Sylcred nombran a una
+         silla en cualquier lado, le están hablando (Carlos, 16 de octubre:
+         «no se responden entre sí Paulina y Godines»). A una PERSONA se le
+         sigue pidiendo el nombre al inicio o con arroba. */
+      if(!quien && evento.de && evento.de.tipo !== 'humano'){
+        const nombrada = this.sillaNombrada(t, evento.de.id);
+        if(nombrada) return nombrada;
+      }
     }
     if(!quien) return null;
     /* Por NOMBRE o por id: Carlos les puso «Negro» y «Paulina» y va a escribir
@@ -1335,6 +1375,62 @@ export class Sala {
     /* Se comprueba la llave AHORA, no al arrancar: un secreto puede aparecer
        o desaparecer sin que se despliegue nada. */
     return (this.env && this.env[MOTORES[id].llave]) ? id : null;
+  }
+
+  /** La primera silla con llave que aparezca NOMBRADA en el texto (por apodo o
+   *  por id, como palabra entera), sin contar a `salvo`. */
+  sillaNombrada(texto, salvo){
+    /* «Negro» con mayúscula o «@negro»: «el fondo negro queda bien» habla del
+       COLOR, no de él (lo cazó Paulina revisando este mismo código) */
+    for(const m of String(texto || '').matchAll(/(@?)([\p{L}]+)/gu)){
+      const palabra = m[2];
+      if(!m[1] && palabra[0] !== palabra[0].toUpperCase()) continue;
+      const id = motorDe(palabra);
+      if(id && id !== salvo && MOTORES[id] && this.env && this.env[MOTORES[id].llave]) return id;
+    }
+    return null;
+  }
+
+  /** Cuántas sillas han hablado seguidas, sin que hable nadie más. Es el tope
+   *  de una pelea entre Negro y Paulina: sin él se contestarían para siempre. */
+  sillasSeguidas(){
+    let n = 0;
+    for(let i = this.hilo.length - 1; i >= 0; i--){
+      const e = this.hilo[i];
+      if(e.tipo === 'sistema' || e.tipo === 'limite' || e.tipo === 'programado') continue;
+      if(e.de && this.gente[e.de.id] && this.gente[e.de.id].silla) n++; else break;
+    }
+    return n;
+  }
+
+  /** A quién del censo (que no sea silla) nombra el texto: para despertarlo. */
+  mencionados(texto, salvo){
+    const t = String(texto || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return Object.values(this.gente)
+      .filter(g => g.id !== salvo && !g.silla && g.tipo !== 'humano' && g.nombre && g.nombre.length > 2)
+      .filter(g => new RegExp('(^|[^a-z])' + g.nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '') + '([^a-z]|$)').test(t))
+      .map(g => g.id);
+  }
+
+  /** «⏰ 45m | texto» al final de lo que contesta una silla = un recordatorio
+   *  que ELLA programa. Lo pidió Carlos: «que puedan programarse
+   *  recordatorios en la sala ellos mismos para que nos avisen cuando
+   *  tengamos que continuar chambeando». Se quita la línea cruda y en su
+   *  lugar queda la confirmación. */
+  async recordatoriosDe(motorId, texto, evento){
+    const lineas = String(texto || '').split('\n');
+    const quedan = [], hechos = [];
+    for(const l of lineas){
+      const m = /^\s*⏰\s*([^|]{1,40})\|\s*(.{1,500})$/u.exec(l);
+      const cuando = m && cuandoDe(m[1]);
+      if(!m || !cuando || (this.programados || []).filter(p => p.de === motorId).length >= 20){ quedan.push(l); continue; }
+      const a = (evento.de && evento.de.id) || null;
+      const cita = { id:`p${++this.serie}`, de: motorId, a, texto: m[2].trim(), cuando, proyecto: null, puesto: ahora() };
+      this.programados = [...(this.programados || []), cita].sort((x, y) => x.cuando - y.cuando);
+      hechos.push(`⏰ Te aviso ${horaBonita(cuando)}: ${cita.texto}`);
+    }
+    if(hechos.length){ await this.ctx.storage.put({ programados: this.programados, serie: this.serie }); await this.armar(); }
+    return [...quedan, ...hechos].join('\n').trim();
   }
 
   /** Que la silla exista en el censo. Se sienta sola la primera vez que le
@@ -1462,15 +1558,26 @@ export class Sala {
        se queda callada, desde afuera eso es idéntico a que la silla ignore a
        Carlos — y él se queda esperando a alguien que no va a llegar. Se dice
        qué pasó y se dice como `sistema`, que no cuenta como vuelta. */
-    await this.publicar(r.bien
+    const texto = r.bien ? await this.recordatoriosDe(motorId, r.texto, evento) : '';
+    const publicado = await this.publicar(r.bien
       ? { de: this.tarjeta(silla), a: (evento.de && evento.de.id) || null,
-          tipo: resumiendo ? 'resumen' : 'mensaje', texto: r.texto,
+          tipo: resumiendo ? 'resumen' : 'mensaje', texto,
+          /* a quién más nombró (Godines, Sylcred): para que /esperar los despierte */
+          menciona: this.mencionados(texto, motorId),
           nota: null, adjuntos: [], proyecto: evento.proyecto || null }
       : { de: this.tarjeta(silla), a: (evento.de && evento.de.id) || null,
           tipo: 'sistema', texto: '⚠ ' + r.error,
           nota: null, adjuntos: [], proyecto: null });
 
     this.avisarEscribiendo();
+
+    /* ¿le habló a la otra silla? Que conteste — hasta 6 seguidas sin que
+       hable nadie más. Antes Paulina le decía «pinche Negro, despierta» y
+       Negro ni se enteraba. */
+    if(r.bien && !resumiendo){
+      const otra = this.sillaNombrada(texto, motorId);
+      if(otra && this.sillasSeguidas() < TOPE_SILLAS) this.luego(this.responderSilla(otra, publicado));
+    }
   }
 
   /* ══════════════════════════════════════════════════════════════════════════
@@ -2260,7 +2367,8 @@ export class Sala {
          aunque el cuerpo sea para toda la sala. Un mensaje sin destinatario y
          sin nota es «para todos» y sí despierta a todos: es una decisión de
          quien escribe, no un descuido del sistema. */
-      const paraMi = (e) => (!e.a && !(e.nota && e.nota.a))
+      const paraMi = (e) => (Array.isArray(e.menciona) && e.menciona.includes(yo))
+                         || (!e.a && !(e.nota && e.nota.a))
                          || dirigido(e.a)
                          || dirigido(e.nota && e.nota.a);
       const sirve = (e) => e.tipo !== 'sistema'

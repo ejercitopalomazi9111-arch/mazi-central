@@ -97,7 +97,7 @@ function vista(v, id){
   if(!v.secre) return { cuenta: id, conexion: v.estado, config: configBase(), chats: [], propuestas: [], pendientes: [], charla: [], registro: [], ahora: Date.now(), ayuda: AYUDA };
   const s = v.secre, c = s.config, e = s.estado;
   return {
-    cuenta: s.cuenta, conexion: v.estado, config: c,
+    cuenta: s.cuenta, conexion: v.estado, config: c, deTurno: s.deTurno(),
     chats: Object.entries(c.chats).filter(([, x]) => x.nombre).map(([id, x]) => ({ id, ...x, modoAhora: s.modo(id, '', !!x.grupo) })).sort((a, b) => a.nombre.localeCompare(b.nombre)),
     propuestas: e.propuestas, pendientes: e.pendientes.filter(p => !p.hecho).concat(e.pendientes.filter(p => p.hecho).slice(-10)),
     charla: e.charla.slice(-60), registro: e.registro.slice(-60), ahora: Date.now(), ayuda: AYUDA,

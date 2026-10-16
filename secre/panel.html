@@ -152,7 +152,7 @@ const PESTANAS = [
 ];
 function pintarArmazon(){
   $('#app').innerHTML = `<div class="envoltura">
-    <header><div class="fila"><h1>Secre</h1><button class="boton pausa" id="bPausa"></button></div>
+    <header><div class="fila"><h1 id="titulo">Secre</h1><button class="boton pausa" id="bPausa"></button></div>
       <div class="cuentas" id="cuentas" role="group" aria-label="Cuenta"></div><div id="conexion"></div></header>
     <main id="hoja"></main></div>
     <nav class="pestanas" role="tablist">${PESTANAS.map(([k, i, n]) => `<button role="tab" data-p="${k}" aria-selected="${k === pestana}"><span class="ico" aria-hidden="true">${i}</span>${n}<span class="globo" hidden></span></button>`).join('')}</nav>`;
@@ -194,6 +194,8 @@ function pintar(forzar){
   $('#conexion').innerHTML = (k.aviso ? `<div class="aviso">⚠️ ${esc(k.aviso)}</div>` : '') + (k.conectado ? '' : k.codigo
     ? `<div class="aviso"><b>Falta vincular «${esc(datos.cuenta)}».</b> En ese teléfono: WhatsApp → Dispositivos vinculados → Vincular un dispositivo → <b>Vincular con número de teléfono</b>, y escribe:<span class="codigo">${esc(k.codigo)}</span></div>`
     : `<div class="aviso">«${esc(datos.cuenta)}» no está conectada${k.error ? ': ' + esc(k.error) : '. Esperando a WhatsApp…'}</div>`);
+  /* quién de las tres (Secre, Paulina, Negro) está de guardia */
+  $('#titulo').textContent = datos.deTurno || 'Secre';
   const pausado = datos.config.pausaHasta > Date.now();
   $('#bPausa').textContent = pausado ? `▶ Seguir (pausa hasta ${hora(datos.config.pausaHasta)})` : '⏸ Pausa 2 h';
   const nProp = datos.propuestas.length, nPend = datos.pendientes.filter(p => !p.hecho).length;
