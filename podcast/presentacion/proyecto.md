@@ -1,19 +1,49 @@
 [img:1]
 
-> **Radio Divergentes: para quien piensa diferente.** Un podcast hecho por el grupo 3.1, para la comunidad del Instituto Rembrandt.
+> **Radio Divergentes: para quien piensa diferente.** Proyecto de la materia de **Ética** del grupo **3.1** del **Bachillerato Rembrandt**.
 
 ## Qué es
 
-Radio Divergentes es el podcast del grupo **3.1**, nacido en la clase de **Ética** y coordinado por el profesor **Omar Ávila Cruz**. En cada episodio, cuatro alumnos —un presentador y tres invitados— investigan un tema que divide opiniones, lo platican con datos verificados y cierran con un **dilema ético** en el que cada quien defiende su postura y explica por qué.
+Un **podcast** es un programa por capítulos, en audio o en video, que se puede ver y escuchar cuando uno quiera. **En este caso, Radio Divergentes es un espacio donde los estudiantes exponen y comparten sus ideas y pensamientos sobre distintos temas de interés**, y donde cada quien defiende su punto de vista con argumentos.
 
-- **12 episodios** de unos **30 minutos**, con guía fija: pregunta inicial, tres bloques, el dilema y un cierre. **Guías, no guiones**: hablan con sus palabras, nada se lee de memoria.
-- Forma parte de la **modalidad STEAM** del Instituto.
+Es un **proyecto de la materia de Ética**, iniciado en **tercer semestre** por el grupo **3.1** y coordinado por el profesor **Omar Ávila Cruz**. Une la materia con la **modalidad STEAM** del bachillerato: además de pensar y discutir, los alumnos investigan, graban, editan y producen cada episodio.
 
-## Por qué hacerlo
+## A quién va dirigido y dónde se va a ver
 
-- **Convierte la clase en algo que se produce y se comparte.** Lo aprendido en Ética no se queda en un cuaderno: se investiga, se discute y se publica para la escuela.
-- **Enseña a diferir con respeto.** Cada episodio obliga a escuchar una postura distinta y a responderla con argumentos, no con gritos ni descalificaciones.
-- **Le da a la comunidad algo propio que ver y escuchar** en el recreo, hecho por sus compañeros.
+- **Es para los alumnos del grupo 3.1.** Se graba, se ve y se comenta **dentro de nuestro salón**.
+- **Por ahora no se publica para la escuela ni fuera de ella.** Más adelante podría volverse un proyecto institucional del Bachillerato; por ahora, es de la materia de Ética y del grupo.
+
+## Para qué hacerlo
+
+- **Para llevar la Ética a la práctica.** Lo que se ve en clase —el respeto, la responsabilidad, la libertad, la verdad— se aplica a temas reales, en voz alta y con compañeros que piensan distinto.
+- **Para aprender a sostener una opinión y a escuchar otra.** Cada episodio obliga a argumentar con datos y a responder con respeto, no con gritos ni descalificaciones.
+- **Para que cada alumno tenga voz.** Hay quien no participa en clase y sí se anima frente a un micrófono, con un papel definido y un tema que preparó.
+- **Para unir la materia con STEAM.** El podcast no sólo se platica: se investiga, se graba, se edita y se entrega a tiempo, como un producto de verdad.
+
+## Cómo está dividido
+
+- **12 episodios**, uno por tema, de unos **30 minutos** cada uno.
+- En cada episodio hay **un presentador y tres invitados** del grupo, con papeles que van rotando.
+- Todos siguen la misma guía: **pregunta inicial**, **tres bloques de plática** y un **cierre** en el que cada quien dice su postura y por qué.
+- **Guías, no guiones:** cada quien habla con sus palabras; nada se lee de memoria.
+
+## Los temas
+
+| # | Tema |
+| 1 | Cómo surgieron las culturas en los continentes |
+| 2 | Holocausto |
+| 3 | Libro de Enoc |
+| 4 | La moda y la aceptación de las personas |
+| 5 | Chernóbil |
+| 6 | Torres Gemelas |
+| 7 | ¿Es mejor saber la verdad o vivir feliz? |
+| 8 | La corrupción |
+| 9 | La creación de la vida |
+| 10 | El narco en la economía actual |
+| 11 | Gentrificación |
+| 12 | Paranormal |
+
+Los temas sensibles se tratan con cuidado: **sin acusar a nadie con nombre y apellido** y siempre desde el análisis, no desde el morbo.
 
 ## Habilidades que desarrollan los participantes
 
@@ -22,43 +52,24 @@ Radio Divergentes es el podcast del grupo **3.1**, nacido en la clase de **Étic
 | Tecnología | Graban, editan audio y video, manejan micrófonos | Producción digital real, con el estudio de grabación del proyecto |
 | Ingeniería | Acondicionan el salón y resuelven fallas técnicas | Diseñar un espacio con un fin y resolver problemas en el momento |
 | Artes | Locución, identidad del programa, música y portadas | Comunicar con voz, imagen y ritmo |
-| Matemáticas | Ajustan cada episodio a 30 minutos y llevan las cuentas de la recaudación | Planear tiempos y administrar un presupuesto |
+| Matemáticas | Ajustan cada episodio a 30 minutos y organizan el calendario de grabación | Planear tiempos y cumplir con lo planeado |
 
 Además: **hablar en público**, **argumentar y escuchar**, **trabajar en equipo con roles definidos** y **cumplir fechas de entrega**.
 
-## Los temas
+## Dónde se graba
 
-| # | Tema | El dilema que se discute |
-| 1 | Cómo surgieron las culturas en los continentes | Respetar una costumbre aunque dañe a alguien |
-| 2 | Holocausto | Obedecer o hacerle caso a la conciencia |
-| 3 | Libro de Enoc | Que una institución decida por todos |
-| 4 | La moda y la aceptación de las personas | ¿Culpa de quien vende o de quien compra? |
-| 5 | Chernóbil | Ocultar información «para no alarmar» |
-| 6 | Torres Gemelas | Seguridad contra privacidad |
-| 7 | ¿Es mejor saber la verdad o vivir feliz? | Decirle a un amigo algo que le va a doler |
-| 8 | La corrupción | Denunciar a un amigo que hace trampa |
-| 9 | La creación de la vida | Crear vida en un laboratorio |
-| 10 | El narco en la economía actual | ¿Compartir narcocorridos es hacerles publicidad? |
-| 11 | Gentrificación | ¿El progreso de unos justifica que otros se vayan? |
-| 12 | Paranormal | Ganar dinero con el miedo de otros |
-
-Los temas sensibles se tratan con cuidado: **sin acusar a nadie con nombre y apellido** y siempre desde el análisis, no desde el morbo.
-
-## Dónde y cómo se transmite
-
-- **Se graba en un salón del Instituto Rembrandt**, acondicionado como cabina.
-- **Podrá transmitirse en la pantalla escolar de Fadori** durante el recreo, como **circuito cerrado de entretenimiento**: sólo dentro de la escuela, junto con los turnos de la cafetería, avisos y proyectos de los demás grupos.
-- **Nada se publica fuera de la escuela** sin autorización de Dirección y de los padres de quienes aparecen.
+- **En un salón del Bachillerato Rembrandt**, acondicionado como cabina.
+- **Nada sale del grupo** sin autorización de Dirección y de los padres de quienes aparecen.
 
 ## Lo que se necesita
 
 - **Micrófonos** para las cuatro voces, **acondicionamiento del área** de grabación y **asientos** para la mesa de cuatro.
 
-> **Aviso: podría organizarse una recaudación de fondos** para comprar este equipo. Se haría sólo con la autorización de Dirección, y cada peso se reportaría con su comprobante.
+> **¿Quieres apoyar?** Cada quien puede ayudar como pueda: prestando equipo, con material, con su tiempo o con lo que se le ocurra. **Acércate con nosotros.**
 
 ## Lo que pedimos
 
-1. **A Dirección:** autorizar el uso de un salón para grabar, la transmisión en la pantalla de Fadori y, en su caso, la recaudación.
-2. **A los padres de familia:** su apoyo y su permiso para que sus hijos participen y aparezcan en los episodios.
+1. **Al profesor de Ética y a Dirección:** autorizar el uso de un salón para grabar.
+2. **A los padres de familia:** su apoyo y su permiso para que sus hijos participen y aparezcan en los episodios, que se ven sólo dentro del grupo.
 
-Radio Divergentes, **para la comunidad.**
+Radio Divergentes · **proyecto de la materia de Ética del grupo 3.1.**
