@@ -24,7 +24,10 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 TRAB = os.path.join(AQUI, 'trabajo')
 PLANTILLA = os.path.join(AQUI, 'formato-institucional.pptx')
 SALIDA = os.path.join(AQUI, 'Fadori-STEAM.pptx')
-ADD = '/root/.claude/skills/synced/pptx/scripts/add_slide.py'
+# el script de la skill de pptx: su carpeta cambia de nombre según la sesión
+import glob
+ADD = next(iter(glob.glob('/root/.claude/skills/synced/**/pptx/scripts/add_slide.py', recursive=True)
+                + glob.glob('/mnt/skills/public/pptx/scripts/add_slide.py')), None)
 EMU = 914400
 
 # ── 1 · desempacar limpio ──────────────────────────────────────────────────
@@ -45,7 +48,9 @@ def escribir(p, s):
 # ── 2 · clonar la 8 para cada lámina nueva ─────────────────────────────────
 # La 8 (Visión) es la más limpia: decoración + título + un cuerpo. Clonarla
 # es cómo las nuevas nacen ya con el formato de la escuela.
-NUEVAS = ['que-es', 'como', 'enfoque', 'S', 'T', 'E', 'A', 'M', 'estado']
+NUEVAS = ['que-es', 'como', 'enfoque', 'S', 'T', 'E', 'A', 'M',
+          # lo nuevo desde el 9 de octubre (actualizada el 21)
+          'cuenta', 'tele', 'tablet', 'cobro', 'fiados', 'papas', 'estado']
 clon = {}
 for nombre in NUEVAS:
     r = subprocess.run([sys.executable, ADD, TRAB, 'slide8.xml'],
@@ -293,8 +298,8 @@ cambiar(3, [
   (t('Objetivo'),     'Misión'),
   (t('Misión '),      'Visión'),
   (t('Visión '),      'Propósitos'),
-  (t('Proposito específico '), 'Enfoque'),
-  (t('proposito general'),     'STEAM'),
+  (t('Proposito específico '), 'Lo nuevo'),
+  (t('proposito general'),     'Enfoque · STEAM'),
 ])
 
 # 4 · El Problema · de 27 palabras a 15
@@ -366,14 +371,14 @@ TIT = (1.9, 0.85, 16.2, 1.55)     # título: ancho de sobra para UN solo rengló
 TIT_SZ = 62                        # 92 pt sólo cabía para «Visión»
 CUERPO_SZ = 30
 
-def lamina(n, titulo, cuerpo, imagen=None, caja=None, cuerpo_izq=False):
+def lamina(n, titulo, cuerpo, imagen=None, caja=None, cuerpo_izq=False, tit=None):
     p = sl(n); s = leer(p)
     s = poner_texto(s, 'TextBox 6', [titulo])
     s = poner_texto(s, 'TextBox 7', cuerpo if isinstance(cuerpo, list) else [cuerpo])
     # El título se ensancha y se achica hasta caber en un renglón. Si no, la
     # caja crece hacia abajo y se come el cuerpo — que es exactamente lo que
     # pasaba en «¿Cómo funciona?», «Objetivo» y «M · Matemáticas».
-    s = mover(s, 'TextBox 6', *TIT)
+    s = mover(s, 'TextBox 6', *(tit or TIT))
     s = formato(s, 'TextBox 6', sz=TIT_SZ, algn='ctr')
     # El cuerpo va ALINEADO A LA IZQUIERDA. Centrado, cada renglón arranca en
     # un lugar distinto y una frase de once palabras se lee como un poema.
@@ -433,9 +438,35 @@ STEAM = [
 for letra, nombre, texto, img, caja in STEAM:
     lamina(clon[letra], letra + ' · ' + nombre, texto, img, caja, cuerpo_izq=True)
 
+# ═══ LO NUEVO · lo que se le sumó después del 9 de octubre ═══════════════
+# Carlos, 21 de octubre: «actualiza la presentación de Fadori con todo lo
+# nuevo». Una lámina por cosa, con su captura de la app de verdad (las tomó
+# /tmp/claude-0/pres/capturas.mjs contra el servidor local, a las 10:05 del
+# recreo) y la regla de siempre: 15 palabras o menos.
+NUEVO = [
+  ('cuenta', 'Cuenta con credencial', 'Cada alumno entra con su correo y su credencial escolar.',
+   '09-credencial.png', (12.60, 3.40, 5.60, 6.60)),
+  ('tele',   'Pantalla del recreo', 'Turnos en grande, voz que te llama y anuncios de la escuela.',
+   '11-anuncios.png',   (10.40, 3.70, 8.20, 4.62)),
+  ('tablet', 'Modo tablet', 'Quien no trae celular pide tocando la pantalla.',
+   '10-tablet.png',     (10.40, 3.70, 8.20, 4.62)),
+  ('cobro',  'Cobro rápido', 'Calculadora grande: los billetes se suman con un toque.',
+   '12-cobro.png',      (11.60, 3.30, 6.40, 6.80)),
+  ('fiados', 'Fiados en orden', 'Cada deuda queda apuntada, aunque cobren dos mostradores.',
+   '13-fiados.png',     (10.40, 4.00, 8.20, 3.60)),
+  ('papas',  'Estado de cuenta', 'Los papás reciben qué se compró, qué se pagó y cuánto falta.',
+   '14-estado-cuenta.png', (11.60, 3.30, 6.60, 6.80)),
+]
+# los títulos largos («Cuenta con credencial», «Estado de cuenta») centrados en
+# la lámina pisaban la bandera de la esquina, que llega hasta 6.4": se centran
+# en lo que queda libre a la derecha
+TIT_DER = (6.70, 0.85, 11.60, 1.55)
+for clave, titulo, texto, img, caja in NUEVO:
+    lamina(clon[clave], titulo, texto, img, caja, cuerpo_izq=True, tit=TIT_DER)
+
 lamina(clon['estado'], 'Estado actual',
-       ['Terminada, publicada y en línea. Cuatro pantallas.'],
-       '04-pantalla-turnos.png', (10.60, 4.30, 8.00, 4.50), cuerpo_izq=True)
+       ['Publicada y en uso: alumno, mostrador, pantalla, tablet y medidor.'],
+       '04-pantalla-turnos.png', (10.40, 3.70, 8.20, 4.62), cuerpo_izq=True, tit=TIT_DER)
 
 # ═══ AFINAR LAS LÁMINAS ORIGINALES ═══════════════════════════════════════
 # Al renderizar por fin la presentación salieron encimados en las láminas que
@@ -561,7 +592,8 @@ acomodar(10, { 'TextBox 7': (4.20, 1.00, 12.40, 2.41),
 # ═══ EL ORDEN ═════════════════════════════════════════════════════════════
 ORDEN = [1, 2, 3, 4, clon['que-es'], 5, clon['como'], 6, 7, 8, 9, 10,
          clon['enfoque'], clon['S'], clon['T'], clon['E'], clon['A'],
-         clon['M'], clon['estado']]
+         clon['M'], clon['cuenta'], clon['tele'], clon['tablet'], clon['cobro'],
+         clon['fiados'], clon['papas'], clon['estado']]
 
 pres_p = os.path.join(TRAB, 'ppt', 'presentation.xml')
 pres = leer(pres_p)
