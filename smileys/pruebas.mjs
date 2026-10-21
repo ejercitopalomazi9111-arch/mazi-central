@@ -51,6 +51,22 @@ console.log('----\n'+msg+'\n----');
 v('el mensaje trae las alitas con su precio', msg.includes('2 × Alitas (2 órdenes) — $540'));
 v('trae la receta sin precio inventado', msg.includes('2 × Pepperoni Especial (Familiar · con orilla de queso)') && !/Pepperoni Especial[^\n]*\$/.test(msg));
 v('suma lo que tiene precio: 540+289+109 = 938', msg.includes('$938'));
+v('dice para cuándo', msg.includes('Para: lo antes posible'));
+// a una hora: sin hora no se manda
+await pg.check('input[name=cuando][value=hora]');
+await pg.evaluate(()=>{ window.__abiertas=[]; });
+await pg.click('#enviar');
+v('«a una hora» sin hora no se manda', (await pg.evaluate(()=>window.__abiertas.length))===0 && (await pg.$$('#cCuando[data-mal]')).length===1);
+await pg.fill('#fHora','14:30'); await pg.click('#enviar');
+v('y con hora la lleva en el mensaje', decodeURIComponent((await pg.evaluate(()=>window.__abiertas[0]||'')).split('text=')[1]||'').includes('Para: las 14:30'));
+// vaciar pide segundo toque, y luego se puede repetir el último
+await pg.click('#vaciar');
+v('vaciar pide un segundo toque', (await pg.textContent('#cuentaBarra')).trim()==='6');
+await pg.click('#vaciar');
+v('al segundo toque se vacía', (await pg.textContent('#cuentaBarra')).trim()==='0');
+v('y ofrece repetir el último pedido', await pg.$eval('#repetir', e=>!e.hidden && /6 cosas/.test(e.textContent)));
+await pg.click('#repetir');
+v('repetir lo vuelve a poner', (await pg.textContent('#cuentaBarra')).trim()==='6');
 // persiste
 await pg.reload({waitUntil:'networkidle'});
 v('el pedido sigue al recargar', (await pg.textContent('#cuentaBarra')).trim()==='6');

@@ -10,6 +10,9 @@
 <meta property="og:description" content="El que sabe de calidad y gusto sabe que es un precio justo. Pide por WhatsApp.">
 <meta property="og:image" content="img/hero.jpg">
 <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="img/icono-180.png">
+<meta name="apple-mobile-web-app-title" content="Smiley's">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Figtree:wght@400;500;600;700;800&display=swap">
@@ -380,6 +383,18 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
 .cuentas .total{font-size:20px; font-weight:800}
 .cuentas small{color:var(--gris)}
 
+.radios--fila{grid-template-columns:repeat(2, minmax(0,1fr))}
+.campo input[type=time]{max-width:200px; color-scheme:dark}
+.pie-acc{display:flex; justify-content:center; gap:8px}
+.pie-acc button{min-height:44px; padding:0 14px; border:0; background:transparent; color:var(--gris); font-weight:600; font-size:14px; cursor:pointer; text-decoration:underline; text-underline-offset:3px}
+.pie-acc button:hover{color:var(--hueso)}
+.pie__acc{grid-column:1/-1}
+.vacio .btn{display:inline-flex}
+.vuela{position:fixed; z-index:70; width:44px; height:44px; margin:-22px 0 0 -22px; border-radius:50%; pointer-events:none; background:var(--rojo) url(img/favicon.svg) center/70% no-repeat; box-shadow:0 10px 24px rgba(0,0,0,.5)}
+@keyframes salta{40%{transform:scale(1.12)} 100%{transform:none}}
+.salta{animation:salta .4s cubic-bezier(.2,.7,.1,1)}
+.flota.ver.salta{animation:salta .4s cubic-bezier(.2,.7,.1,1)}
+
 /* ───────── revelado ───────── */
 .rev{transition:opacity .8s ease, transform .8s cubic-bezier(.2,.7,.1,1)}
 .rev--off{opacity:0; transform:translateY(28px)}
@@ -610,6 +625,7 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
       <div class="qr__caja" id="qrCaja" aria-hidden="true"></div>
       <p style="margin:0">Escanéalo para abrir la carta en otro teléfono.</p>
     </div>
+    <div class="pie__acc"><button class="btn btn--linea" type="button" id="compartir">Compartir la carta</button></div>
     <p class="pie__legal">Precios en pesos mexicanos, sujetos a cambio en sucursal. Fotografías ilustrativas.</p>
   </div>
 </footer>
@@ -651,7 +667,7 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
   <div class="hoja__cab"><h2 id="t-pedido">Tu pedido</h2><button class="cerrar" type="button" data-cerrar aria-label="Cerrar"><svg aria-hidden="true"><use href="#i-x"/></svg></button></div>
   <div class="hoja__cuerpo" id="pedidoCuerpo">
     <ul class="renglones" id="renglones"></ul>
-    <div class="vacio" id="vacio" hidden><strong>Todavía no hay nada</strong>Agrega una pizza de la carta, arma la tuya o escoge unas alitas.</div>
+    <div class="vacio" id="vacio" hidden><strong>Todavía no hay nada</strong>Agrega una pizza de la carta, arma la tuya o escoge unas alitas.<button class="btn btn--linea" type="button" id="repetir" hidden style="margin-top:20px"></button></div>
     <div id="datos" class="datos">
       <fieldset class="campo" id="cSuc"><legend>¿A qué sucursal?</legend><div class="radios" id="radiosSuc"></div><span class="error" hidden></span></fieldset>
       <fieldset class="campo"><legend>¿Cómo lo quieres?</legend>
@@ -659,6 +675,13 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
           <label class="radio"><input type="radio" name="entrega" value="Recoger en sucursal" checked><span>Paso por él<small>Te avisan cuando esté listo</small></span></label>
           <label class="radio"><input type="radio" name="entrega" value="A domicilio"><span>A domicilio<small>La sucursal te confirma si llega a tu zona</small></span></label>
         </div>
+      </fieldset>
+      <fieldset class="campo" id="cCuando"><legend>¿Para cuándo?</legend>
+        <div class="radios radios--fila">
+          <label class="radio"><input type="radio" name="cuando" value="ya" checked><span>Lo antes posible</span></label>
+          <label class="radio"><input type="radio" name="cuando" value="hora"><span>A una hora</span></label>
+        </div>
+        <input id="fHora" type="time" aria-label="Hora" hidden style="margin-top:8px"><span class="error" hidden></span>
       </fieldset>
       <div class="campo" id="cNombre"><label for="fNombre">Tu nombre</label><input id="fNombre" autocomplete="given-name" enterkeyhint="next"><span class="error" hidden></span></div>
       <div class="campo" id="cDir" hidden><label for="fDir">Dirección y referencias</label><textarea id="fDir" autocomplete="street-address" placeholder="Calle, número, colonia y cómo reconocer la casa"></textarea><span class="error" hidden></span></div>
@@ -668,6 +691,7 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
   <div class="hoja__pie" id="pedidoPie">
     <div class="cuentas" id="cuentas"></div>
     <button class="btn btn--rojo" type="button" id="enviar"><svg aria-hidden="true"><use href="#i-wa"/></svg> Mandar pedido por WhatsApp</button>
+    <div class="pie-acc"><button type="button" id="copiar">Copiar el pedido</button><button type="button" id="vaciar">Vaciar</button></div>
   </div>
 </dialog>
 
@@ -733,15 +757,32 @@ var ORILLA = 35, SENCILLA = 109;
 
 /* ═══════════ el pedido: se guarda en este teléfono ═══════════ */
 var LLAVE = "smileys-pedido-v1";
-var pedido = { renglones:[], suc:"", entrega:"Recoger en sucursal", nombre:"", dir:"", nota:"" };
+var pedido = { renglones:[], suc:"", entrega:"Recoger en sucursal", cuando:"ya", hora:"", nombre:"", dir:"", nota:"" };
+var ultimo = null;
+try{ ultimo = JSON.parse(localStorage.getItem(LLAVE + "-ultimo") || "null"); }catch(e){}
 try{ var g = JSON.parse(localStorage.getItem(LLAVE) || "null"); if(g && Array.isArray(g.renglones)) pedido = Object.assign(pedido, g); }catch(e){}
 function guardar(){ try{ localStorage.setItem(LLAVE, JSON.stringify(pedido)); }catch(e){} }
 var sigId = Date.now();
-function agregar(r){
+/* lo agregado vuela hasta el pedido: así se ve a dónde se fue */
+function volar(desde){
+  var dest = $("#flota").classList.contains("ver") ? $("#flota") : $("#cuentaBarra");
+  if(quieto || !desde || !desde.getBoundingClientRect || !document.body.animate){ return saltar(dest); }
+  var a = desde.getBoundingClientRect(), b = dest.getBoundingClientRect();
+  if(!a.width){ return saltar(dest); }
+  var x0 = a.left + a.width / 2, y0 = a.top + a.height / 2;
+  var x1 = $("#flota").classList.contains("ver") ? b.left + b.width - 60 : b.left + b.width / 2, y1 = b.top + b.height / 2;
+  var d = el("div", {class:"vuela", "aria-hidden":"true"}); d.style.left = x0 + "px"; d.style.top = y0 + "px";
+  document.body.appendChild(d);
+  var dx = x1 - x0, dy = y1 - y0;
+  d.animate([{transform:"translate(0,0) scale(1)"}, {transform:"translate(" + dx * .5 + "px," + (dy * .5 - 80) + "px) scale(.9)", offset:.5}, {transform:"translate(" + dx + "px," + dy + "px) scale(.35)", opacity:.7}],
+    {duration:650, easing:"cubic-bezier(.4,0,.2,1)"}).onfinish = function(){ d.remove(); saltar(dest); };
+}
+function saltar(e){ var t = e.closest(".flota, .barra__pedido") || e; t.classList.remove("salta"); void t.offsetWidth; t.classList.add("salta"); }
+function agregar(r, desde){
   /* lo mismo dos veces se junta en un solo renglón */
   var igual = pedido.renglones.filter(function(x){ return x.clave === r.clave; })[0];
   if(igual) igual.cant += r.cant; else { r.id = ++sigId; pedido.renglones.push(r); }
-  guardar(); pintarPedido(); avisar("Listo: " + r.nombre + (r.cant > 1 ? " ×" + r.cant : ""));
+  guardar(); pintarPedido(); avisar("Listo: " + r.nombre + (r.cant > 1 ? " ×" + r.cant : "")); volar(desde);
 }
 function contar(){ return pedido.renglones.reduce(function(n, r){ return n + r.cant; }, 0); }
 function sumas(){
@@ -822,14 +863,14 @@ $$("#hojaReceta [data-cant]").forEach(function(b){ b.addEventListener("click", f
 $("#hrAgregar").addEventListener("click", function(){
   var tam = valorSeg($("#hrTam")), ori = $("#hrOrilla").checked;
   agregar({ tipo:"receta", nombre:actual.n, detalle:tam + (ori ? " · con orilla de queso" : ""), precio:null,
-            cant:cantHR, clave:"r:" + actual.s + ":" + tam + ":" + ori });
+            cant:cantHR, clave:"r:" + actual.s + ":" + tam + ":" + ori }, actual.li.querySelector(".plato__mas"));
   $("#hojaReceta").close();
 });
 
 /* promoción */
 var promoActual = null, listaPromos = $("#promosLista");
 PROMOS.forEach(function(pr){
-  var b = el("button", {class:"btn", type:"button"}, [icono("i-mas"), "Agregar"]);
+  var b = el("button", {class:"btn", type:"button"}, [icono("i-mas"), "Agregar"]); pr.boton = b;
   b.addEventListener("click", function(){
     promoActual = pr; $("#t-hp").textContent = pr.n; $("#hpDesc").textContent = pr.d + " " + pesos(pr.p) + ".";
     $("#hpPregunta").textContent = pr.pregunta + " (opcional)"; $("#hpNota").value = "";
@@ -845,7 +886,7 @@ PROMOS.forEach(function(pr){
 $("#hpAgregar").addEventListener("click", function(){
   var nota = $("#hpNota").value.trim();
   agregar({ tipo:"promo", nombre:"Promo " + promoActual.n, detalle:nota, precio:promoActual.p, cant:1,
-            clave:"p:" + promoActual.id + ":" + nota.toLowerCase() });
+            clave:"p:" + promoActual.id + ":" + nota.toLowerCase() }, promoActual.boton);
   $("#hojaPromo").close();
 });
 
@@ -854,8 +895,8 @@ var cajaExtras = $("#extras");
 COMPLEMENTOS.forEach(function(c){
   var uno = el("button", {type:"button", "aria-label":"Agregar 1 orden de " + c.n + ", " + pesos(c.p)}, [el("em", {text:"1 orden"}), pesos(c.p)]);
   var dos = el("button", {type:"button", "aria-label":"Agregar 2 órdenes de " + c.n + ", " + pesos(c.dos)}, [el("em", {text:"2 órdenes"}), pesos(c.dos)]);
-  uno.addEventListener("click", function(){ agregar({tipo:"comp", nombre:c.n, detalle:"1 orden", precio:c.p, cant:1, clave:"c:" + c.id + ":1"}); });
-  dos.addEventListener("click", function(){ agregar({tipo:"comp", nombre:c.n, detalle:"2 órdenes", precio:c.dos, cant:1, clave:"c:" + c.id + ":2"}); });
+  uno.addEventListener("click", function(){ agregar({tipo:"comp", nombre:c.n, detalle:"1 orden", precio:c.p, cant:1, clave:"c:" + c.id + ":1"}, uno); });
+  dos.addEventListener("click", function(){ agregar({tipo:"comp", nombre:c.n, detalle:"2 órdenes", precio:c.dos, cant:1, clave:"c:" + c.id + ":2"}, dos); });
   cajaExtras.appendChild(el("article", {class:"extra rev"}, [
     el("img", {src:"img/" + c.f + ".jpg", alt:c.n, loading:"lazy", width:"760", height:"560"}),
     el("div", null, [ el("h3", {text:c.n}), el("div", {class:"extra__precios"}, [uno, dos]) ])
@@ -915,7 +956,7 @@ $("#agregarMia").addEventListener("click", function(){
   var tam = valorSeg($("#tamMia")), ori = $("#orillaMia").checked;
   var ings = elegidos.length ? elegidos.map(function(k){ return ETIQUETAS[k][0]; }).join(", ") : "queso solo";
   agregar({ tipo:"mia", nombre:"Pizza armada", detalle:tam + " · " + ings + (ori ? " · con orilla de queso" : ""),
-            precio:precioMia(), cant:1, clave:"m:" + tam + ":" + ori + ":" + elegidos.slice().sort().join(",") });
+            precio:precioMia(), cant:1, clave:"m:" + tam + ":" + ori + ":" + elegidos.slice().sort().join(",") }, $("#mia"));
 });
 
 /* ═══════════ la hoja del pedido ═══════════ */
@@ -926,6 +967,8 @@ function pintarPedido(){
   $("#flotaCuenta").textContent = n + (n === 1 ? " cosa en tu pedido" : " cosas en tu pedido");
   $("#flotaDetalle").textContent = s.con ? pesos(s.con) + (s.sin ? " + lo que confirma la sucursal" : "") : "Precio lo confirma la sucursal";
   var ul = $("#renglones"); ul.textContent = "";
+  var rep = $("#repetir"), nu = ultimo && ultimo.renglones ? ultimo.renglones.reduce(function(t, r){ return t + r.cant; }, 0) : 0;
+  rep.hidden = !nu || n > 0; if(nu) rep.textContent = "Repetir mi último pedido (" + nu + (nu === 1 ? " cosa)" : " cosas)");
   $("#vacio").hidden = n > 0; $("#datos").hidden = n === 0; $("#pedidoPie").hidden = n === 0;
   pedido.renglones.forEach(function(r){
     var menos = el("button", {type:"button", "aria-label":"Quitar uno de " + r.nombre, text:r.cant === 1 ? "×" : "−"});
@@ -945,6 +988,8 @@ function pintarPedido(){
 function cargarDatos(){
   $$("#radiosSuc input").forEach(function(i){ i.checked = i.value === pedido.suc; });
   $$("input[name=entrega]").forEach(function(i){ i.checked = i.value === pedido.entrega; });
+  $$("input[name=cuando]").forEach(function(i){ i.checked = i.value === pedido.cuando; });
+  $("#fHora").value = pedido.hora; $("#fHora").hidden = pedido.cuando !== "hora";
   $("#fNombre").value = pedido.nombre; $("#fDir").value = pedido.dir; $("#fNota").value = pedido.nota;
   $("#cDir").hidden = pedido.entrega !== "A domicilio";
 }
@@ -952,13 +997,16 @@ $("#hojaPedido").addEventListener("input", function(){
   var s = $("#radiosSuc input:checked"); pedido.suc = s ? s.value : "";
   var e = $("input[name=entrega]:checked"); pedido.entrega = e ? e.value : "Recoger en sucursal";
   pedido.nombre = $("#fNombre").value; pedido.dir = $("#fDir").value; pedido.nota = $("#fNota").value;
+  var c = $("input[name=cuando]:checked"); pedido.cuando = c ? c.value : "ya"; pedido.hora = $("#fHora").value;
+  $("#fHora").hidden = pedido.cuando !== "hora";
   $("#cDir").hidden = pedido.entrega !== "A domicilio";
-  ["cSuc","cNombre","cDir"].forEach(function(id){ var c = $("#" + id); if(c.hasAttribute("data-mal")) revisar(c); });
+  ["cSuc","cCuando","cNombre","cDir"].forEach(function(id){ var c = $("#" + id); if(c.hasAttribute("data-mal")) revisar(c); });
   guardar();
 });
 function marcar(c, txt){ var e = $(".error", c); if(txt){ c.setAttribute("data-mal",""); e.textContent = txt; e.hidden = false; } else { c.removeAttribute("data-mal"); e.hidden = true; } return !txt; }
 function revisar(c){
   if(c.id === "cSuc") return marcar(c, pedido.suc ? "" : "Elige la sucursal que va a preparar tu pedido.");
+  if(c.id === "cCuando") return marcar(c, pedido.cuando !== "hora" || pedido.hora ? "" : "Elige la hora a la que lo quieres.");
   if(c.id === "cNombre") return marcar(c, pedido.nombre.trim() ? "" : "Escribe tu nombre para que sepan de quién es.");
   if(c.id === "cDir") return marcar(c, (pedido.entrega !== "A domicilio" || pedido.dir.trim()) ? "" : "Escribe a dónde lo llevan.");
   return true;
@@ -976,15 +1024,39 @@ function mensaje(){
   L.push("");
   L.push("Nombre: " + pedido.nombre.trim());
   L.push("Entrega: " + pedido.entrega);
+  L.push("Para: " + (pedido.cuando === "hora" && pedido.hora ? "las " + pedido.hora : "lo antes posible"));
   if(pedido.entrega === "A domicilio") L.push("Dirección: " + pedido.dir.trim());
   if(pedido.nota.trim()) L.push("Nota: " + pedido.nota.trim());
   return L.join("\n");
 }
 $("#enviar").addEventListener("click", function(){
-  var bien = ["cSuc","cNombre","cDir"].map(function(id){ return revisar($("#" + id)); }).every(Boolean);
+  var bien = ["cSuc","cCuando","cNombre","cDir"].map(function(id){ return revisar($("#" + id)); }).every(Boolean);
   if(!bien){ var p = $("[data-mal]", $("#hojaPedido")); if(p){ p.scrollIntoView({block:"center", behavior: quieto ? "auto" : "smooth"}); var i = $("input,textarea", p); if(i) i.focus({preventScroll:true}); } return; }
   var suc = SUCURSALES.filter(function(x){ return x.id === pedido.suc; })[0];
+  ultimo = { renglones: JSON.parse(JSON.stringify(pedido.renglones)), cuando: Date.now() };
+  try{ localStorage.setItem(LLAVE + "-ultimo", JSON.stringify(ultimo)); }catch(e){}
   window.open("https://wa.me/" + suc.wa + "?text=" + encodeURIComponent(mensaje()), "_blank", "noopener");
+});
+/* por si WhatsApp no abre (en una computadora sin él): el pedido se copia y se pega donde sea */
+$("#copiar").addEventListener("click", function(){
+  if(!pedido.suc) pedido.suc = SUCURSALES[0].id;
+  var t = mensaje();
+  (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function(){ avisar("Pedido copiado"); }, function(){ window.prompt("Copia tu pedido:", t); });
+});
+var vaciarArmado = 0;
+$("#vaciar").addEventListener("click", function(){
+  /* segundo toque para confirmar: borrar el pedido por accidente cuesta volver a armarlo */
+  if(Date.now() - vaciarArmado > 2500){ vaciarArmado = Date.now(); this.textContent = "¿Seguro? Toca otra vez"; var b = this; setTimeout(function(){ b.textContent = "Vaciar"; }, 2500); return; }
+  pedido.renglones = []; guardar(); pintarPedido(); this.textContent = "Vaciar";
+});
+$("#repetir").addEventListener("click", function(){
+  if(!ultimo) return;
+  pedido.renglones = JSON.parse(JSON.stringify(ultimo.renglones)); guardar(); cargarDatos(); pintarPedido(); avisar("Listo: tu último pedido");
+});
+$("#compartir").addEventListener("click", function(){
+  var liga = location.href.split("#")[0];
+  if(navigator.share) navigator.share({title:"Smiley's Wings & Pizza", text:"La carta de Smiley's: pide por WhatsApp", url:liga}).catch(function(){});
+  else (navigator.clipboard ? navigator.clipboard.writeText(liga) : Promise.reject()).then(function(){ avisar("Liga copiada"); }, function(){ window.prompt("Copia la liga:", liga); });
 });
 
 /* ═══════════ QR de esta misma página ═══════════ */
