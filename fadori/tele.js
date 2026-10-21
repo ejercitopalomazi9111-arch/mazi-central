@@ -316,7 +316,9 @@ const web = $('#progWeb'), portada = $('#portada');
 const VISTOS = 'fadori_tele_vistos';
 let vistos = {}; try{ vistos = JSON.parse(localStorage.getItem(VISTOS) || '{}') || {}; }catch(e){}
 const guardarVistos = () => { try{ localStorage.setItem(VISTOS, JSON.stringify(vistos)); }catch(e){} };
-const DE = { ep: 'Radio Divergentes', youtube: 'YouTube', spotify: 'Spotify' };
+/* Carlos, 21 de octubre: Radio Divergentes todavía no va en Fadori, así que
+   la pantalla no lo nombra: un episodio es un episodio */
+const DE = { ep: 'Programa', youtube: 'YouTube', spotify: 'Spotify' };
 let dejarDeOir = null;
 const Programa = {
   eps: [],              /* [{id, tipo:'ep', nombre, url}] */
@@ -376,7 +378,7 @@ const Programa = {
       return;
     }
     if(e.esAudio){
-      $('#ptTapa').src = e.tapa || 'marca/radio-divergentes.png';
+      $('#ptTapa').src = e.tapa || 'marca/icon-512.png';
       $('#ptFondo').style.backgroundImage = 'url("' + (e.tapa || 'marca/icon-512.png') + '")';
       portada.classList.toggle('sin-tapa', !e.tapa);
       $('#ptTitulo').textContent = e.nombre; $('#ptArtista').textContent = e.artista || '';
@@ -435,7 +437,7 @@ const Programa = {
     this.enCorte = true; this.callar(); this.desdeCorte = 0; ocultarPop();
     if(solo){ acomodar(); await new Promise(r => setTimeout(r, quieto() ? 0 : 650)); }
     $('#tercio').style.opacity = 0; document.querySelector('.bicho').style.opacity = 0;
-    const canal = anuncios.find(a => a.id === cfg.canal) || anuncios[0];
+    const canal = anuncios.find(a => a.id === cfg.canal && a.id !== 'divergentes') || anuncios[0];   /* una tablet que ya lo tenía puesto ya no abre con Radio Divergentes */
     const piezas = [{ tipo: 'canal', a: canal, dur: 2.6 }];
     for(let k = 0; k < Math.min(cfg.porCorte, lista.length); k++){
       const a = lista[(cfg.sigAnuncio + k) % lista.length];
@@ -745,7 +747,7 @@ function pintarAjustes(){
     '<p class="aj-nota">Anuncios de la escuela, nada de fuera. Se abre y se cierra con el logo que gira.</p>' +
     '<p class="aj-nota" style="margin-bottom:6px">Cada cuánto</p>' + chips('cadaMin', [[5, '5 min'], [8, '8 min'], [10, '10 min'], [15, '15 min']]) +
     '<p class="aj-nota" style="margin:12px 0 6px">Anuncios por tanda</p>' + chips('porCorte', [[1, '1'], [2, '2'], [3, '3']]) +
-    '<p class="aj-nota" style="margin:12px 0 6px">El logo de la tanda</p>' + chips('canal', [['rembrandt', 'Rembrandt'], ['divergentes', 'Radio Divergentes'], ['fadori', 'Fadori'], ['grupo31', 'Grupo 3.1']]) +
+    '<p class="aj-nota" style="margin:12px 0 6px">El logo de la tanda</p>' + chips('canal', [['rembrandt', 'Rembrandt'], ['fadori', 'Fadori'], ['grupo31', 'Grupo 3.1']]) +
     '<ul class="aj-lista" style="margin-top:12px">' + anuncios.map(a => a.video
       ? '<li><span class="aj-color" style="width:40px;height:40px;border-radius:8px;display:grid;place-items:center;background:var(--tv-fondo)">' + F.ico('clapperboard') + '</span>' +
         '<span><b>' + esc(a.marca) + '</b><small>Anuncio en video</small></span>' +
@@ -862,7 +864,7 @@ function conectarAjustes(){
   c.querySelectorAll('[data-nombre-ep]').forEach(i => i.onchange = async () => {
     const id = i.dataset.nombreEp, g = await leer('ep:' + id); if(!g) return;
     g.nombre = i.value.trim() || g.nombre; await guardar('ep:' + id, g);
-    const e = Programa.eps.find(x => x.id === id); if(e){ e.nombre = g.nombre; if(Programa.actual === e) $('#progQue').innerHTML = esc(e.nombre) + '<small>Radio Divergentes</small>'; }
+    const e = Programa.eps.find(x => x.id === id); if(e){ e.nombre = g.nombre; if(Programa.actual === e) $('#progQue').innerHTML = esc(e.nombre) + '<small>' + DE.ep + '</small>'; }
   });
   c.querySelectorAll('[data-sube]').forEach(b => b.onclick = async () => {
     const orden = (await leer('eps')) || [], k = orden.indexOf(b.dataset.sube);
