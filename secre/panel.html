@@ -489,9 +489,14 @@ function hojaAjustes(){
 
     <h2>Lo que sale solo</h2>
     <p class="meta">Mensajes que manda a su hora (la clase que toca, recordatorios…) y fotos de tu banco que publica sola con su nombre.</p>
-    ${(c.programados || []).map(p => `<div class="tarjeta fila" style="flex-wrap:nowrap"><span style="flex:1">⏰ <b>${esc(nombreChat(p.chat))}</b> · ${esc(p.hora)} ${esc(textoDias(p.dias))}<br><span class="meta">${p.texto ? esc(p.texto) : 'sobre: ' + esc(p.tema)}</span></span><button class="boton peligro" data-quitaprog="${esc(p.id)}">Quitar</button></div>`).join('')}
+    ${[...new Set((c.programados || []).filter(p => p.origen === 'horario').map(p => p.chat))].map(j => `<div class="tarjeta fila" style="flex-wrap:nowrap"><span style="flex:1">📚 <b>${esc(nombreChat(j))}</b> · horario de clases<br><span class="meta">a cada hora, qué clase toca y cuál sigue (${(c.programados || []).filter(p => p.chat === j && p.origen === 'horario').length} avisos de lunes a viernes)</span></span><button class="boton peligro" data-quitahorario="${esc(j)}">Quitar</button></div>`).join('')}
+    ${(c.programados || []).filter(p => p.origen !== 'horario').map(p => `<div class="tarjeta fila" style="flex-wrap:nowrap"><span style="flex:1">⏰ <b>${esc(nombreChat(p.chat))}</b> · ${esc(p.hora)} ${esc(textoDias(p.dias))}<br><span class="meta">${p.texto ? esc(p.texto) : 'sobre: ' + esc(p.tema)}</span></span><button class="boton peligro" data-quitaprog="${esc(p.id)}">Quitar</button></div>`).join('')}
     ${(c.publicar || []).map(p => `<div class="tarjeta fila" style="flex-wrap:nowrap"><span style="flex:1">📷 <b>${esc(nombreChat(p.chat))}</b> · ${esc(p.hora)} ${esc(textoDias(p.dias))}<br><span class="meta">${p.cuantas || 3} foto(s)${p.carpeta ? ' de «' + esc(p.carpeta) + '»' : ''}${p.buscar ? ' de ' + esc(p.buscar) : ''}</span></span><button class="boton peligro" data-quitapub="${esc(p.id)}">Quitar</button></div>`).join('')}
     ${!(c.programados || []).length && !(c.publicar || []).length ? '<p class="meta">Nada programado todavía.</p>' : ''}
+    <details class="tarjeta"><summary>📚 Horario de clases en un grupo</summary>
+      <p class="meta">A cada hora avisa qué clase toca y cuál sigue (con el horario del 3.1, tercer semestre).</p>
+      <label class="etq" for="hChat">En qué grupo</label><select class="campo" id="hChat">${opcionesTodos()}</select>
+      <div class="acciones"><button class="boton principal" id="bHorario">Poner el horario</button></div></details>
     <details class="tarjeta"><summary>⏰ Nuevo mensaje programado</summary>
       <label class="etq" for="pChat">A qué chat</label><select class="campo" id="pChat">${opcionesTodos()}</select>
       <label class="etq" for="pHora">A qué hora</label><input class="campo" id="pHora" type="time" value="07:00">
@@ -557,6 +562,8 @@ function hojaAjustes(){
     if(!$('#uCarpeta').value.trim() && !$('#uBuscar').value.trim()) return avisito('Pon la carpeta o de qué son las fotos');
     try{ const r = await accion({ accion: 'publicar', chat: $('#uChat').value, carpeta: $('#uCarpeta').value.trim(), buscar: $('#uBuscar').value.trim(), cuantas: +$('#uCuantas').value || 3, hora: $('#uHora').value, dias: diasDe('uDias'), intro: $('#uIntro').value.trim() }); avisito(r.hecho); await cargar(true); }catch(e){ avisito('No pude programarla'); }
   };
+  $('#bHorario').onclick = async () => { try{ const r = await accion({ accion: 'horario', chat: $('#hChat').value, cual: '3.1' }); avisito(r.hecho); await cargar(true); }catch(e){ avisito('No pude poner el horario'); } };
+  document.querySelectorAll('[data-quitahorario]').forEach(b => b.onclick = async () => { try{ await accion({ accion: 'horario', chat: b.dataset.quitahorario, cual: '3.1', quitar: true }); await cargar(true); }catch(e){ avisito(e.message); } });
   document.querySelectorAll('[data-quitaprog]').forEach(b => b.onclick = async () => { try{ await accion({ accion: 'quitarProgramado', id: b.dataset.quitaprog }); await cargar(true); }catch(e){ avisito(e.message); } });
   document.querySelectorAll('[data-quitapub]').forEach(b => b.onclick = async () => { try{ await accion({ accion: 'quitarPublicacion', id: b.dataset.quitapub }); await cargar(true); }catch(e){ avisito(e.message); } });
   $('#bGeneral').onclick = async () => {

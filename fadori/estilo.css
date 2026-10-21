@@ -557,6 +557,9 @@ body.publica{--rescoldo-hondo:#3D2618; --naranja-hondo:#FF8A3D}
 .cifra b{display:block; font-size:28px; font-weight:900; letter-spacing:-.03em; line-height:1.1;
   font-variant-numeric:tabular-nums}
 .cifra span{font-size:12px; color:var(--tenue); font-weight:700; text-transform:uppercase; letter-spacing:.06em}
+.deuda-fila{flex-wrap:wrap}
+.deuda-botones{flex-basis:100%; margin-top:8px}
+.pago-grande{font-size:34px; font-weight:900; text-align:right; font-variant-numeric:tabular-nums; letter-spacing:-.02em}
 .cifra.malo b{color:var(--ambar)}
 
 table{width:100%; border-collapse:collapse; font-size:14px}
@@ -1778,3 +1781,4 @@ label small.tenue{font-weight:600; color:var(--tenue); opacity:.85}
 @keyframes late{50%{transform:scale(1.06)}}
 @keyframes corre{0%{transform:translateX(-100%)} 100%{transform:translateX(260%)}}
 @media (prefers-reduced-motion: reduce){ .cargando img, .cargando .barra-c i{animation:none} }
+#fmProds [hidden]{display:none}

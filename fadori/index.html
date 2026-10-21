@@ -378,6 +378,7 @@
 
 <script src="iconos.js"></script>
 <script src="nucleo.js"></script>
+<script src="constancia.js"></script>
 <script type="module" src="lector.js"></script>
 <script>
 (function(){
@@ -908,8 +909,11 @@ function pintarYo(){
 
   $('#miDeuda').innerHTML = yo.deuda > 0
     ? '<div class="aviso malo">Debes <b>'+F.pesos(yo.deuda)+'</b>. '+
-      'Lo pagas en la cooperativa. <b>Sólo tú y ellos lo ven.</b></div>'
+      'Lo pagas en la cooperativa. <b>Sólo tú y ellos lo ven.</b></div>'+
+      /* para reenviárselo a sus papás: qué se compró, cuánto pagó y cuánto falta */
+      '<button class="btn ancho" type="button" id="bMiCuenta" style="margin-top:10px">Ver mi estado de cuenta (para mis papás)</button>'
     : '<div class="aviso bueno">No debes nada.</div>';
+  if($('#bMiCuenta')) $('#bMiCuenta').addEventListener('click', () => FadoriConstancia.abrir(yo.codigo));
 
   $('#misFavoritos').innerHTML = n.favoritos.length
     ? n.favoritos.slice(0,5).map(f => '<div class="renglon"><span class="n">'+f.veces+'×</span>'+

@@ -1,7 +1,7 @@
 /* EL DOCUMENTO DE RADIO DIVERGENTES, hecho con la herramienta de Reportes.
-   Llena Reportes como lo haría Carlos en el teléfono —tipo «Propuesta», los
+   Llena Reportes como lo haría Carlos en el teléfono —tipo «Proyecto», los
    datos, el texto de proyecto.md y el logo como evidencia 1— y lo guarda en
-   PDF con el membrete del Instituto Rembrandt.
+   PDF con el membrete oficial del Bachillerato Rembrandt.
 
      python3 -m http.server 8800        (desde la raíz del repo)
      node podcast/presentacion/pdf.mjs [http://localhost:8800] [salida.pdf] */
@@ -17,16 +17,18 @@ const pg = await br.newPage({ viewport: { width: 390, height: 844 } });
 const errores = []; pg.on('pageerror', e => errores.push(String(e)));
 await pg.goto(BASE + '/reportes/', { waitUntil: 'networkidle' });
 await pg.click('[data-modo="reporte"].modo');
-await pg.click('[data-tipo="propuesta"]');
+await pg.click('[data-tipo="proyecto"]');
 const poner = (sel, v) => pg.evaluate(([s, v]) => { const e = document.querySelector(s); e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true })); }, [sel, v]);
-await poner('#fTitulo', 'Radio Divergentes · podcast del grupo 3.1');
-await poner('#fFecha', '2026-10-16');
+/* Carlos, 21 de octubre: «Proyecto podcast Radio Divergentes», de la materia
+   de Ética para el grupo 3.1; Bachillerato Rembrandt, no Instituto */
+await poner('#fTitulo', 'Proyecto podcast Radio Divergentes');
+await poner('#fFecha', '2026-10-21');
 await poner('#fGrupo', '3.1');
 await poner('#fPara', 'Dirección y padres de familia');
 await poner('#fLugar', 'Santiago de Querétaro, Qro.');
 await poner('#fSemestre', 'Tercero');
 await poner('#fTutor', '');
-await poner('#fPeriodo', 'Ciclo escolar 2026-2027 · modalidad STEAM');
+await poner('#fPeriodo', 'Materia de Ética · ciclo 2026-2027 · modalidad STEAM');
 await poner('#fAutor', 'Omar Ávila Cruz');
 await poner('#fCargo', 'Profesor encargado del proyecto');
 await poner('#fAutor2', 'Carlos Eduardo Gutiérrez Guevara');

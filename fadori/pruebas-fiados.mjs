@@ -80,6 +80,68 @@ ok('perdonar la deja en cero', (await deudaEn(most)) === 0);
 ok('y desaparece de «Fiados»', /Nadie debe nada/.test(await most.textContent('#listaDeudas')));
 ok('Ana ve que ya no debe', (await tarda(ana, () => (FADORI.yo() || {}).deuda === 0, null, 10000)) != null);
 
+console.log('\n6 · El teclado del cobro (21 de octubre: «tipo calculadora, para no usar el teclado»)');
+const id6 = await pedir();
+const total6 = await ana.evaluate((i) => FADORI.pedido(i).total, id6);
+await tarda(most, (i) => !!FADORI.pedido(i) && FADORI.pedido(i).turno != null, id6, 10000);
+await most.evaluate((i) => { FADORI.tomar(i, 'prueba'); FADORI.marcarListo(i); }, id6);
+await most.click('[data-vista="despachar"]');
+await most.click(`[data-cobrar="${id6}"]`, { timeout: 10000 });
+const pago = () => most.inputValue('#hPago');
+const tecla = (t) => most.click(`#hCalc button:text-is("${t}")`);
+ok('el campo no abre el teclado del sistema', (await most.getAttribute('#hPago', 'inputmode')) === 'none');
+ok('trae puesto el total', parseFloat(await pago()) === total6 / 100, await pago());
+await tecla('5'); await tecla('0');
+ok('la primera tecla reemplaza el total (como calculadora): 5, 0 → 50', (await pago()) === '50', await pago());
+ok('y la hoja recalcula el cambio', /Cambio|Pago exacto|Queda a deber/.test(await most.textContent('#hCambio')));
+await tecla("C · borrar todo"); await tecla("$50"); await tecla('$20');
+ok('dos billetes seguidos se suman: $50 + $20 = 70', (await pago()) === '70', await pago());
+await tecla('Exacto');
+ok('«Exacto» pone el total', parseFloat(await pago()) === total6 / 100 && /Pago exacto/.test(await most.textContent('#hCambio')));
+await tecla("C · borrar todo");
+ok('«C» lo deja vacío y la hoja dice que queda a deber todo', (await pago()) === '' && /Queda a deber/.test(await most.textContent('#hCambio')));
+await most.click('#hCobrar');
+ok('cobrar con $0 le fía todo a Ana', (await deudaEn(most)) === total6, await deudaEn(most));
+
+console.log('\n7 · Fiado a mano (21 de octubre: «que el vendedor pueda poner a mano si alguien debe más»)');
+await most.click('[data-vista="deudas"]');
+await most.click(`[data-fiarmano="${cod}"]`);
+const prod = await most.evaluate(() => { const p = FADORI.productos(true)[0]; return { id: p.id, nombre: p.nombre, precio: p.precio }; });
+await most.click(`[data-fmprod="${prod.id}"]`);
+ok('tocar un producto escribe qué se llevó y suma su precio', (await most.inputValue('#fmMotivo')) === prod.nombre && parseFloat(await most.inputValue('#fmMonto')) === prod.precio / 100);
+await most.click('#fmSi');
+ok(`queda apuntado: ${total6 / 100} + ${prod.precio / 100}`, (await deudaEn(most)) === total6 + prod.precio, await deudaEn(most));
+/* el de arriba: buscando a la persona y con la calculadora */
+await most.click('#bFiarMano');
+await most.click('#fmSi');
+ok('sin elegir a nadie no se apunta', /elige quién/.test(await most.textContent('body')));
+await most.fill('#fmBusca', 'Ana Pé');
+await most.click(`[data-fmquien="${cod}"]`);
+await most.click('#fmCalc button:text-is("1")'); await most.click('#fmCalc button:text-is("5")');
+await most.fill('#fmMotivo', 'refresco de ayer que no se apuntó');
+await most.click('#fmSi');
+const debe7 = total6 + prod.precio + 1500;
+ok('buscándola y con el teclado: +15', (await deudaEn(most)) === debe7, await deudaEn(most));
+ok('el otro mostrador y Ana ven la deuda que sumó el servidor', (await tarda(most2, ([c, e]) => (FADORI.estado().alumnos[c] || {}).deuda === e, [cod, debe7], 15000)) != null &&
+  (await tarda(ana, (e) => (FADORI.yo() || {}).deuda === e, debe7, 15000)) != null);
+
+console.log('\n8 · El estado de cuenta para los papás');
+const llego = await tarda(most2, ([c, e]) => { const x = FADORI.estadoDeCuenta(c); return !!x && x.deuda === e && x.movimientos.length === 3; }, [cod, debe7], 15000);
+const ec = await most2.evaluate((c) => FADORI.estadoDeCuenta(c), cod);
+ok('desde el último cero (cuando se perdonó): la compra y los dos fiados, en el OTRO mostrador (la historia viaja por el servidor)', llego != null, ec && ec.movimientos);
+ok('dice desde qué día, cuánto se fió y cuánto falta', ec && ec.desde > 0 && ec.cargado === debe7 && ec.abonado === 0 && ec.completo);
+ok('la compra trae qué se llevó, cuánto costó y cuánto pagó', ec && ec.movimientos[0].k === 'compra' && ec.movimientos[0].q.length > 2 && ec.movimientos[0].tot === total6 && ec.movimientos[0].pag === 0);
+const txt = await most.evaluate((c) => FADORI.constanciaTexto(c), cod);
+ok('el texto para WhatsApp lo dice todo', /Estado de cuenta/.test(txt) && /Ana Pérez/.test(txt) && /Debe hoy/.test(txt) && /refresco de ayer/.test(txt) && new RegExp(prod.nombre).test(txt) && /Falta/.test(txt), txt);
+ok('y lo de antes del perdón no sale (ya está saldado)', !/abonó/.test(txt));
+await most.click(`[data-constancia="${cod}"]`);
+const ticket = await most.textContent('#fconsTicket');
+ok('«Estado de cuenta» abre el ticket', /Debe/.test(ticket) && /refresco de ayer/.test(ticket), ticket.slice(0, 200));
+const png = await most.evaluate(async (c) => { const b = await FadoriConstancia.imagen(c); const i = await createImageBitmap(b); return { tam: b.size, w: i.width, h: i.height, tipo: b.type }; }, cod);
+ok(`sale una imagen de ticket para mandar (${png.w}×${png.h}, ${Math.round(png.tam / 1024)} KB)`, png.tipo === 'image/png' && png.w === 1080 && png.h > 900);
+await most.click('.fcons-x');
+ok('Ana también lo ve en su teléfono, para reenviarlo', await ana.evaluate((c) => { const x = FADORI.estadoDeCuenta(c); return !!x && x.movimientos.length === 3 && /refresco/.test(FADORI.constanciaTexto(c)); }, cod));
+
 for(const [n, pg] of [['mostrador', most], ['mostrador 2', most2], ['Ana', ana]])
   ok(`${n}: sin errores (${pg.errores.slice(0, 2).join(' | ')})`, !pg.errores.length);
 console.log(`\n${fallas.length ? '✗ ' + fallas.length + ' fallas' : '✓ todo bien'} · escuela de prueba ${CASA}`);

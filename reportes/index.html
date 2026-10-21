@@ -1736,6 +1736,30 @@ Una sola frase. Qué queremos que sea distinto y para cuándo.
 > Esta propuesta se somete a consideración de la dirección y de la comunidad
 > estudiantil.` },
 
+  /* Carlos, 21 de octubre: el de Radio Divergentes «en lugar de plan de
+     trabajo / propuesta, es proyecto». Para lo que ya se decidió hacer y se
+     presenta: qué es, para quién, para qué y cómo está dividido. */
+  { area:'general', id:'proyecto', nombre:'Proyecto', etiqueta:'Proyecto',
+    titulo:'Proyecto', para:'Dirección académica',
+    cuerpo:
+`## Qué es
+Una o dos frases: qué es y de qué materia o grupo sale.
+
+## A quién va dirigido y dónde se va a ver
+- 
+
+## Para qué hacerlo
+- 
+
+## Cómo está dividido
+- 
+
+## Lo que se necesita
+- 
+
+## Lo que pedimos
+1. ` },
+
   { area:'sociedad', id:'actividad', nombre:'Informe de actividad', etiqueta:'Informe de actividad',
     titulo:'Informe de actividad', para:'Dirección académica',
     cuerpo:
@@ -1989,9 +2013,11 @@ const INSTITUCIONES = {
   rembrandt: {
     nombre: 'Instituto Rembrandt',
     membrete: { sup:'formato/membrete-superior.png', inf:'formato/membrete-inferior.png' },
-    pie:'Instituto Rembrandt · Bachillerato Tecnológico del Estado de Querétaro',
+    /* Carlos, 21 de octubre: «Bachillerato Rembrandt, no Instituto». El
+       membrete de arriba es la imagen oficial de la escuela y se queda tal cual */
+    pie:'Bachillerato Rembrandt · Bachillerato Tecnológico del Estado de Querétaro',
     agua:{ logo:'escudo-rembrandt.png', ancho:80,
-           leyenda:'INSTITUTO REMBRANDT · DOCUMENTO ORIGINAL' },
+           leyenda:'BACHILLERATO REMBRANDT · DOCUMENTO ORIGINAL' },
     tinta:'#002060', acento:'#C00000',
     tope:34, fondo:42,
   },
@@ -2082,7 +2108,7 @@ const FORMATO_OFICIAL = {
      Antes decía GRUPO MAZI con `institucion:'rembrandt'` puesto dos renglones
      abajo: un documento de la escuela firmado con la marca de agua de la
      empresa. */
-  agua:'paloma', opacidad:6, leyenda:'INSTITUTO REMBRANDT · DOCUMENTO ORIGINAL',
+  agua:'paloma', opacidad:6, leyenda:'BACHILLERATO REMBRANDT · DOCUMENTO ORIGINAL',
   sello:'si', membrete:'todas', institucion:'rembrandt',
   /* Cuánto se encoge la hoja al imprimir. Safari en iPhone se queda con un
      margen suyo que no se puede apagar; sin esto, cada hoja se parte en dos. */
@@ -4940,7 +4966,7 @@ repintar();
   ok('el semanal completo trae todos los apartados',
      leer(TIPOS.find(t=>t.id==='grupo').cuerpo,[]).filter(b=>b.tipo==='h2').length >= 13);
   ok('hay tipo para cada cosa que usa',
-     ['incidencia','grupo','semanal','limpieza','aviso','solicitud','general','minuta','propuesta','actividad','libre']
+     ['incidencia','grupo','semanal','limpieza','aviso','solicitud','general','minuta','propuesta','proyecto','actividad','libre']
        .every(id => TIPOS.some(t=>t.id===id)));
   ok('todos los tipos tienen área', TIPOS.every(t => !!t.area));
   ok('el fundamento del reglamento llega al texto',

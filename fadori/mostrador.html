@@ -126,6 +126,7 @@
     <h2>Quién debe</h2>
     <p class="sub">Esta pantalla es <b>sólo de la cooperativa</b>. Ningún alumno ve lo que
       debe otro: eso es humillación, no administración.</p>
+    <button class="btn fuerte ancho" id="bFiarMano" type="button" style="margin:4px 0 14px">Apuntar un fiado a mano</button>
     <div class="pila" id="listaDeudas"></div>
   </section>
 
@@ -230,6 +231,7 @@
 <script src="iconos.js"></script>
 <script src="nucleo.js"></script>
 <script src="pad.js"></script>
+<script src="constancia.js"></script>
 <script type="module" src="transmision.js"></script>
 <script>
 (function(){
@@ -509,7 +511,10 @@ function abrirCobro(oid){
     (marcaCuenta(p) ? '<div class="aviso malo" style="margin-bottom:12px">'+F.ico('id-card')+' <b>Cuenta sin verificar.</b> Antes de entregar, pídele su credencial y revisa que sea '+esc(p.nombre)+'.</div>' : '')+
     '<div class="cifras"><div class="cifra"><b>'+F.pesos(p.total)+'</b><span>total</span></div></div>'+
     '<label for="hPago">¿Con cuánto paga?</label>'+
-    '<input id="hPago" type="number" inputmode="decimal" min="0" step="0.5" value="'+(p.total/100)+'">'+
+    /* inputmode="none": que NO salga el teclado del sistema (en la compu de
+       pantalla táctil sale chiquito y se traba); para eso está la calculadora */
+    '<input id="hPago" class="pago-grande" type="text" inputmode="none" autocomplete="off" value="'+(p.total/100)+'" aria-describedby="hCambio">'+
+    '<div id="hCalc"></div>'+
     '<div id="hCambio" class="aviso" style="margin-top:12px"></div>'+
     '<div id="hFiado" style="margin-top:12px" hidden></div>'+
     '<div class="chips" style="margin-top:16px">'+
@@ -581,7 +586,9 @@ function abrirCobro(oid){
       : 'Pago exacto.';
     pintarFiado(-dif);
   };
-  $('#hPago').addEventListener('input', calcular); calcular();
+  $('#hPago').addEventListener('input', calcular);
+  FadoriPad.dinero($('#hCalc'), { campo: $('#hPago'), total: p.total / 100 });
+  calcular();
   $('#hCerrar').addEventListener('click', () => { $('#velo').hidden = true; });
   $('#hCobrar').addEventListener('click', () => {
     const paga = Math.round(parseFloat($('#hPago').value || 0) * 100);
@@ -1053,15 +1060,100 @@ function pintarDeudas(){
   const d = F.estado();
   const deben = Object.values(d.alumnos).filter(a => a.deuda > 0)
     .sort((a,b) => b.deuda - a.deuda);
+  /* el nombre y el monto arriba, los botones abajo: con cuatro botones en
+     un renglón, en el teléfono se salían */
   $('#listaDeudas').innerHTML = deben.length ? deben.map(a =>
-    '<div class="renglon" style="border-width:2px">'+
-    '<span class="q" style="flex:1"><b>'+esc(a.nombre)+'</b> · '+esc(a.grupo)+
+    '<div class="renglon deuda-fila" style="border-width:2px">'+
+    '<span class="q" style="flex:1"><b>'+esc(a.nombre)+'</b>'+(a.grupo ? ' · '+esc(a.grupo) : '')+
       '<small>código '+esc(a.codigo)+'</small></span>'+
     '<span style="font-weight:900; font-size:19px">'+F.pesos(a.deuda)+'</span>'+
-    '<button class="btn chico" data-abonar="'+a.codigo+'" type="button">Abonar</button>'+
-    '<button class="btn chico" data-perdonar="'+a.codigo+'" type="button">Perdonar</button>'+
-    '</div>').join('')
+    '<div class="chips deuda-botones">'+
+      '<button class="btn chico" data-abonar="'+a.codigo+'" type="button">Abonar</button>'+
+      '<button class="btn chico" data-fiarmano="'+a.codigo+'" type="button">Fiarle más</button>'+
+      '<button class="btn chico" data-constancia="'+a.codigo+'" type="button">Estado de cuenta</button>'+
+      '<button class="btn chico" data-perdonar="'+a.codigo+'" type="button">Perdonar</button>'+
+    '</div></div>').join('')
     : '<div class="aviso bueno">Nadie debe nada.</div>';
+}
+
+/* FIADO A MANO · Carlos, 21 de octubre: «que el vendedor pueda poner a mano si
+   alguien debe más». Quién (si no viene ya), cuánto con la calculadora, y qué
+   se llevó: tocando productos del menú se escribe solo y se suma el precio. */
+function abrirFiarMano(cod){
+  let deudor = cod || null;
+  $('#hojitaT').textContent = 'Apuntar un fiado';
+  const pintarQuien = () => {
+    const caja = $('#fmQuien');
+    if(deudor && F.estado().alumnos[deudor]){
+      const a = F.estado().alumnos[deudor];
+      caja.innerHTML = '<div class="aviso">A <b>'+esc(a.nombre)+'</b>'+(a.grupo ? ' · '+esc(a.grupo) : '')+' · código '+esc(a.codigo)+
+        (a.deuda ? '<br><small>Ya debe '+F.pesos(a.deuda)+'</small>' : '')+'</div>'+
+        (cod ? '' : '<button class="btn chico" id="fmOtro" type="button">Es otra persona</button>');
+      const o = $('#fmOtro'); if(o) o.addEventListener('click', () => { deudor = null; pintarQuien(); });
+      return;
+    }
+    caja.innerHTML =
+      '<label for="fmBusca" style="margin-top:0">¿Quién debe?</label>'+
+      '<input id="fmBusca" placeholder="Buscar por nombre, grupo o código" autocomplete="off">'+
+      '<div class="pila" id="fmLista" style="margin-top:8px"></div>'+
+      '<details style="margin-top:8px"><summary class="btn chico">No está: apuntar a alguien nuevo</summary>'+
+        '<label for="fmNombre">Nombre</label><input id="fmNombre" maxlength="24" placeholder="Primer nombre e inicial del apellido">'+
+        '<label for="fmGrupo">Grupo</label><input id="fmGrupo" maxlength="6">'+
+        '<button class="btn chico" id="fmNueva" type="button" style="margin-top:8px">Usar a esta persona</button></details>';
+    const lista = () => {
+      const res = F.buscarPersonas($('#fmBusca').value || '').slice(0, 8);
+      $('#fmLista').innerHTML = res.length
+        ? res.map(a => '<button class="btn chico" data-fmquien="'+esc(a.codigo)+'" type="button" style="justify-content:flex-start">'+
+            esc(a.nombre)+(a.grupo ? ' · '+esc(a.grupo) : '')+(a.deuda ? ' · debe '+F.pesos(a.deuda) : '')+'</button>').join('')
+        : '<p class="sub">Nadie con ese nombre todavía.</p>';
+      $$('#fmLista [data-fmquien]').forEach(b => b.addEventListener('click', () => { deudor = b.dataset.fmquien; pintarQuien(); }));
+    };
+    $('#fmBusca').addEventListener('input', lista); lista();
+    $('#fmNueva').addEventListener('click', () => {
+      try{ deudor = F.nuevaPersona($('#fmNombre').value, $('#fmGrupo').value).codigo; pintarQuien(); }
+      catch(e){ aviso(e.message, 'malo'); }
+    });
+  };
+  const prods = F.productos(true);
+  const sinAc = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  $('#hojitaC').innerHTML =
+    '<div id="fmQuien"></div>'+
+    '<label for="fmMonto">¿Cuánto debe?</label>'+
+    '<input id="fmMonto" class="pago-grande" type="text" inputmode="none" autocomplete="off" value="">'+
+    '<div id="fmCalc"></div>'+
+    '<label for="fmMotivo">¿Qué se llevó, o por qué?</label>'+
+    '<input id="fmMotivo" maxlength="120" placeholder="Ej. torta y refresco del lunes">'+
+    (prods.length ? '<p class="sub" style="margin:8px 0 6px">O toca lo que se llevó (se escribe y se suma solo):</p>'+
+      '<input id="fmBuscaProd" type="search" placeholder="Buscar: torta, agua, papas…" autocomplete="off" aria-label="Buscar producto">'+
+      '<div class="chips" id="fmProds" style="margin-top:8px">'+prods.map((p, i) => '<button class="btn chico" type="button" data-fmprod="'+p.id+'" data-busca="'+esc(sinAc(p.nombre))+'"'+(i >= 8 ? ' hidden' : '')+'>'+esc(p.nombre)+' · '+F.pesos(p.precio)+'</button>').join('')+'</div>' : '')+
+    '<div class="chips" style="margin-top:16px">'+
+      '<button class="btn fuerte" id="fmSi" type="button" style="flex:1">Apuntar el fiado</button>'+
+      '<button class="btn" id="hCerrar" type="button">Cancelar</button></div>';
+  pintarQuien();
+  const calc = FadoriPad.dinero($('#fmCalc'), { campo: $('#fmMonto'), total: 0 });
+  /* con el menú real son decenas: se ven 8 y el resto se busca */
+  if($('#fmBuscaProd')) $('#fmBuscaProd').addEventListener('input', () => {
+    const q = sinAc($('#fmBuscaProd').value.trim()); let n = 0;
+    $$('#fmProds [data-fmprod]').forEach(b => { b.hidden = q ? b.dataset.busca.indexOf(q) < 0 : n >= 8; n++; });
+  });
+  const llevo = {};
+  $$('#fmProds [data-fmprod]').forEach(b => b.addEventListener('click', () => {
+    const p = F.producto(b.dataset.fmprod); if(!p) return;
+    llevo[p.id] = (llevo[p.id] || 0) + 1;
+    $('#fmMotivo').value = Object.keys(llevo).map(id => (llevo[id] > 1 ? llevo[id]+' ' : '') + F.producto(id).nombre).join(', ');
+    calc.poner((parseFloat($('#fmMonto').value) || 0) + p.precio / 100);
+  }));
+  $('#hCerrar').addEventListener('click', () => { $('#velo').hidden = true; });
+  $('#fmSi').addEventListener('click', () => {
+    if(!deudor) return aviso('Primero elige quién debe.', 'malo');
+    try{
+      const a = F.fiarAMano(deudor, Math.round(parseFloat($('#fmMonto').value || 0) * 100), $('#fmMotivo').value, quien);
+      $('#velo').hidden = true; pintar();
+      aviso('Apuntado. '+a.nombre+' debe '+F.pesos(a.deuda)+'.', 'bueno');
+    }catch(e){ aviso(e.message, 'malo'); }
+  });
+  $('#velo').hidden = false;
+  $('#hojitaC').scrollTop = 0;
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -1206,6 +1298,8 @@ document.addEventListener('click', (e) => {
     });
     return;
   }
+  if((b = t('data-constancia'))) return FadoriConstancia.abrir(b.dataset.constancia);
+  if((b = t('data-fiarmano'))) return abrirFiarMano(b.dataset.fiarmano);
   if((b = t('data-perdonar'))){
     const cod = b.dataset.perdonar, a = F.estado().alumnos[cod];
     preguntar({
@@ -1220,6 +1314,7 @@ document.addEventListener('click', (e) => {
 });
 
 $('#bDeAPie').addEventListener('click', abrirDeAPie);
+$('#bFiarMano').addEventListener('click', () => abrirFiarMano(null));
 $('#bPapel').addEventListener('click', abrirPapel);
 $('#bNuevoProd').addEventListener('click', () => abrirProducto(null));
 $('#bCSV').addEventListener('click', () => {

@@ -41,7 +41,18 @@
   .fpad-caja h2{margin:0; font-size:22px} .fpad-caja p{margin:6px 0 0; color:#C9AE96; font-size:14px}
   .fpad-x{position:absolute; top:12px; right:12px; width:44px; height:44px; border-radius:14px; border:1px solid #3A271A; background:#24170F;
     color:#FFF4E8; font-size:22px; cursor:pointer}
-  @media (prefers-reduced-motion: reduce){ .fpad.tiembla, .fpad-caja{animation:none} }`;
+  @media (prefers-reduced-motion: reduce){ .fpad.tiembla, .fpad-caja{animation:none} }
+  .fcalc{display:grid; gap:10px; user-select:none; -webkit-user-select:none; margin-top:10px}
+  .fcalc-billetes{display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px}
+  .fcalc-teclas{display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px}
+  .fcalc button{min-height:60px; border-radius:16px; border:1px solid var(--linea, rgba(128,100,80,.35)); background:var(--tarjeta, rgba(255,255,255,.08));
+    color:inherit; font:inherit; font-size:28px; font-weight:800; font-variant-numeric:tabular-nums; cursor:pointer;
+    -webkit-tap-highlight-color:transparent; touch-action:manipulation; transition:transform .08s}
+  .fcalc button:active{transform:scale(.95)}
+  .fcalc .fcalc-billetes button{min-height:52px; font-size:19px}
+  .fcalc .fcalc-exacto{font-size:17px}
+  .fcalc .fcalc-borra{font-size:22px}
+  .fcalc .fcalc-c{min-height:48px; font-size:16px}`;
   function estilos(){
     if(document.getElementById('fpad-css')) return;
     const s = document.createElement('style'); s.id = 'fpad-css'; s.textContent = CSS; document.head.appendChild(s);
@@ -125,5 +136,56 @@
     caja.appendChild(pad.raiz);
     return pad;
   }
-  global.FadoriPad = { abrir, montar };
+  /* EL TECLADO DEL DINERO · tipo calculadora, para «¿con cuánto paga?»
+     Carlos, 21 de octubre: en la computadora de pantalla táctil de la
+     cooperativa el teclado del sistema sale chiquito y se traba. Teclas
+     grandes, y los billetes de un toque: si dan uno de 50 y uno de 20, se
+     toca 50 y 20 y suma 70. La primera tecla después de abrir REEMPLAZA (como
+     una calculadora): no hay que borrar el total que viene puesto.
+
+     FadoriPad.dinero(caja, { campo, total, alCambiar }) → { poner(pesos) }
+       `campo` es el <input> que se ve (y que también se puede escribir con
+       un teclado de verdad); `total` en pesos, para el botón «Exacto». */
+  function dinero(caja, { campo, total = 0, alCambiar } = {}){
+    estilos();
+    let v = String(campo && campo.value || ''), fresco = true, ultimoBillete = false;
+    const raiz = document.createElement('div'); raiz.className = 'fcalc';
+    const bill = document.createElement('div'); bill.className = 'fcalc-billetes';
+    const teclas = document.createElement('div'); teclas.className = 'fcalc-teclas';
+    const avisar = () => { if(campo){ campo.value = v; campo.dispatchEvent(new Event('input', { bubbles: true })); } alCambiar && alCambiar(v); };
+    const boton = (txt, clase, fn, etiqueta) => {
+      const b = document.createElement('button'); b.type = 'button'; b.textContent = txt;
+      if(clase) b.className = clase; if(etiqueta) b.setAttribute('aria-label', etiqueta);
+      b.addEventListener('click', fn); return b;
+    };
+    const fmt = (n) => (Math.round(n * 100) / 100).toString();
+    bill.appendChild(boton('Exacto', 'fcalc-exacto', () => { v = fmt(total); fresco = true; ultimoBillete = false; avisar(); }, 'Pago exacto'));
+    [20, 50, 100, 200, 500].forEach(b => bill.appendChild(boton('$' + b, '', () => {
+      v = fmt((ultimoBillete ? (parseFloat(v) || 0) : 0) + b);
+      fresco = true; ultimoBillete = true; avisar();
+    }, b + ' pesos')));
+    const tecla = (k) => {
+      if(fresco){ v = ''; fresco = false; }
+      ultimoBillete = false;
+      if(k === '.'){ if(v.indexOf('.') >= 0) return; v = (v || '0') + '.'; }
+      else {
+        const [ent, dec] = v.split('.');
+        if(dec !== undefined ? dec.length >= 2 : ent.replace(/^0+/, '').length >= 5) return;
+        v = (v === '0' ? '' : v) + k;
+      }
+      avisar();
+    };
+    ['7', '8', '9', '4', '5', '6', '1', '2', '3'].forEach(k => { const b = boton(k, '', () => tecla(k)); b.dataset.d = k; teclas.appendChild(b); });
+    const punto = boton('.', '', () => tecla('.'), 'Punto decimal'); punto.dataset.d = '.'; teclas.appendChild(punto);
+    const cero = boton('0', '', () => tecla('0')); cero.dataset.d = '0'; teclas.appendChild(cero);
+    teclas.appendChild(boton('⌫', 'fcalc-borra', () => { if(fresco){ fresco = false; } ultimoBillete = false; v = v.slice(0, -1); avisar(); }, 'Borrar uno'));
+    const c = boton('C · borrar todo', 'fcalc-c', () => { v = ''; fresco = false; ultimoBillete = false; avisar(); }, 'Borrar todo');
+    raiz.append(bill, teclas, c);
+    /* si escriben con un teclado de verdad, que la calculadora siga desde ahí */
+    if(campo) campo.addEventListener('keydown', () => { fresco = false; ultimoBillete = false; });
+    if(campo) campo.addEventListener('input', (e) => { if(e.isTrusted) v = campo.value; });
+    caja.appendChild(raiz);
+    return { raiz, poner(p){ v = fmt(p); fresco = true; ultimoBillete = false; avisar(); }, valor: () => v };
+  }
+  global.FadoriPad = { abrir, montar, dinero };
 })(typeof window !== 'undefined' ? window : globalThis);

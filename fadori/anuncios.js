@@ -19,12 +19,14 @@ const ICONOS = {"graduation-cap": "<path d=\"M21.42 10.922a1 1 0 0 0-.019-1.838L
 export const ANUNCIOS = [
   { id: 'rembrandt', marca: 'Instituto Rembrandt', titulo: 'Orgullo Rembrandt', texto: 'Lo que construimos aquí, lo hacemos juntos.',
     color: '#002060', color2: '#0B2F77', acento: '#F2C94C', logo: 'marca/escudo-rembrandt.png', icono: 'graduation-cap', fondoLogo: '#FFFFFF' },
-  { id: 'grupo31', marca: 'Grupo 3.1', titulo: 'Esto lo hace el 3.1', texto: 'Radio Divergentes, Fadori y lo que sigue.',
-    color: '#A3242F', color2: '#3B0B12', acento: '#EDE6DC', logo: 'marca/radio-divergentes.png', logoLleno: true, icono: 'users' },
+  { id: 'grupo31', marca: 'Grupo 3.1', titulo: 'Esto lo hace el 3.1', texto: 'Fadori y los proyectos que siguen.',
+    color: '#A3242F', color2: '#3B0B12', acento: '#EDE6DC', icono: 'users' },
   { id: 'fadori', marca: 'Fadori', titulo: 'Pide sin hacer fila', texto: 'Escanea el código, pide desde tu teléfono y vuelve cuando salga tu número.',
     color: '#C2410C', color2: '#5C1A04', acento: '#FFE8D6', logo: 'marca/icon-192.png', icono: 'smartphone', qr: 'qr/abrir.svg' },
-  { id: 'divergentes', marca: 'Radio Divergentes', titulo: 'Para quien piensa diferente', texto: 'El podcast de Ética del 3.1. Para la comunidad. Aquí, en el recreo.',
-    color: '#4A1219', color2: '#0E0B0D', acento: '#EDE6DC', logo: 'marca/radio-divergentes.png', logoLleno: true, icono: 'mic' },
+  /* Carlos, 21 de octubre: Radio Divergentes es por ahora sólo del 3.1 y «no se
+     pondrá en Fadori aún». Se queda guardado y APAGADO: se prende en los ajustes */
+  { id: 'divergentes', marca: 'Radio Divergentes', titulo: 'Para quien piensa diferente', texto: 'El podcast de la materia de Ética del grupo 3.1.',
+    color: '#4A1219', color2: '#0E0B0D', acento: '#EDE6DC', logo: 'marca/radio-divergentes.png', logoLleno: true, icono: 'mic', activo: false },
   { id: 'sociales', marca: 'Proyectos sociales', titulo: 'Súmate a un proyecto social', texto: 'Pregunta en tu grupo cómo participar.',
     color: '#1F6B4A', color2: '#0B3324', acento: '#C9F0D8', icono: 'hand-heart' },
   { id: 'negocios', marca: 'Desarrollo de negocios', titulo: 'Emprende desde la escuela', texto: 'Los proyectos de negocio de los grupos, ya funcionando.',
@@ -42,7 +44,7 @@ export const CANALES = { rembrandt: 'rembrandt', divergentes: 'divergentes', fad
 /* lo guardado (cambios a los de fábrica y anuncios nuevos) encima de los de fábrica */
 export function mezclarAnuncios(guardado){
   const g = guardado || {}, cambios = g.cambios || {}, nuevos = g.nuevos || [];
-  return ANUNCIOS.map(a => Object.assign({}, a, { activo: true }, cambios[a.id] || {}))
+  return ANUNCIOS.map(a => Object.assign({}, a, { activo: a.activo !== false }, cambios[a.id] || {}))
     .concat(nuevos.map(a => Object.assign({ color: '#2E1B10', color2: '#120A06', acento: '#FFE8D6', icono: 'megaphone', activo: true }, a)));
 }
 

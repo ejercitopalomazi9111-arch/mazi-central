@@ -438,7 +438,7 @@ console.log('\n── La escala vieja que se quedó guardada en el reporte ─�
     mazi:        { firma:/grupo mazi/i,   imagen:false, agua:/paloma-simple\.svg$/,
                    leyenda:/grupo mazi/i },
     rembrandt:   { firma:/rembrandt/i,    imagen:true,  agua:/escudo-rembrandt\.png$/,
-                   leyenda:/instituto rembrandt/i },
+                   leyenda:/bachillerato rembrandt/i },
     presidencia: { firma:/sociedad/i,     imagen:false, agua:/escudo-rembrandt\.png$/,
                    leyenda:/sociedad de alumnos/i },
     /* La marca de agua de GERALDMED es la ESTRELLA, no el logo de la

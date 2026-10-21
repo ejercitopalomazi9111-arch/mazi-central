@@ -228,6 +228,46 @@ const desdeEstudio = await cel.evaluate(async () => {
 ok('el Estudio manda su episodio al buzón con la llave que ya tenía el teléfono', desdeEstudio.llave && /^e[a-z0-9]+$/.test(desdeEstudio.id), JSON.stringify(desdeEstudio));
 ok('…y la tablet lo baja como episodio NUEVO', (await tarda(tablita, () => { window.TELE.Nube.revisar(); return window.TELE.Programa.eps.some(e => e.nombre === 'Episodio 7 · Verdad o felicidad'); }, null, 20000)) != null);
 
+console.log('\n3d · anuncios en video, y los anuncios que se cambian en el teléfono llegan a la tablet (21 de octubre)');
+ok('Radio Divergentes viene apagado en la tanda («no se pondrá en Fadori aún»)', await tablita.evaluate(() => window.TELE.anuncios.find(a => a.id === 'divergentes').activo === false));
+if(!(await cel.evaluate(() => document.querySelector('#ajustes, dialog[open]') && document.querySelector('dialog[open]')))) await cel.click('#bAjustes');
+await cel.waitForSelector('#ajAnunVideo', { state: 'attached' });
+await cel.evaluate(async () => {
+  /* un anuncio de 3 s, naranja, hecho aquí */
+  const c = document.createElement('canvas'); c.width = 320; c.height = 180; const g = c.getContext('2d');
+  const rec = new MediaRecorder(c.captureStream(20), { mimeType: 'video/webm' }), tr = []; rec.ondataavailable = e => tr.push(e.data);
+  const fin = new Promise(r => rec.onstop = r); rec.start();
+  await new Promise(r => { const t0 = performance.now(); const p = () => { g.fillStyle = '#E8590C'; g.fillRect(0, 0, 320, 180); if(performance.now() - t0 < 3000) requestAnimationFrame(p); else r(); }; p(); });
+  rec.stop(); await fin;
+  const dt = new DataTransfer(); dt.items.add(new File(tr, 'promo-torneo.webm', { type: 'video/webm' }));
+  const i = document.querySelector('#ajAnunVideo'); i.files = dt.files; i.dispatchEvent(new Event('change'));
+});
+ok('subir un video en «Anuncio en video» lo pone en la lista de anuncios', (await tarda(cel, () => window.TELE.anuncios.some(a => a.video && a.marca === 'promo torneo'), null, 8000)) != null);
+ok('…y se va al buzón', (await tarda(cel, () => /ya está en el buzón/.test(window.TELE.Nube.estado), null, 20000)) != null, await cel.evaluate(() => window.TELE.Nube.estado));
+ok('la tablet lo baja sola y lo mete a la tanda', (await tarda(tablita, () => { window.TELE.Nube.revisar(); return window.TELE.anuncios.some(a => a.video && a.marca === 'promo torneo' && a.activo); }, null, 20000)) != null);
+const pinta = await tablita.evaluate(async () => {
+  const a = window.TELE.anuncios.find(x => x.video);
+  const P = window.TELE.Programa; P.enCorte = true;
+  const hecho = P.tanda([{ tipo: 'video', a, dur: 30 }]); const t0 = performance.now();
+  await new Promise(r => setTimeout(r, 1200));
+  const c = document.querySelector('#tanda'), d = c.getContext('2d').getImageData(c.width / 2, c.height / 2, 1, 1).data;
+  await hecho; P.enCorte = false;
+  return { rgb: [d[0], d[1], d[2]], seg: (performance.now() - t0) / 1000 };
+});
+ok(`en la tanda se ve el video (el centro sale naranja: ${pinta.rgb})`, pinta.rgb[0] > 180 && pinta.rgb[1] > 50 && pinta.rgb[1] < 140 && pinta.rgb[2] < 80);
+ok(`y la tanda sigue en cuanto el video se acaba, no a los 30 s (duró ${pinta.seg.toFixed(1)} s)`, pinta.seg < 6);
+/* editar un anuncio en el teléfono */
+await cel.evaluate(() => { const b = document.querySelector('[data-edita="futbol"]'); b.click(); });
+await cel.waitForSelector('[data-campo="titulo"][data-de="futbol"]');
+await cel.fill('[data-campo="titulo"][data-de="futbol"]', 'Final de fútbol el viernes');
+await cel.dispatchEvent('[data-campo="titulo"][data-de="futbol"]', 'change');
+ok('lo que se cambia de un anuncio en el teléfono llega a la tablet', (await tarda(tablita, () => { window.TELE.Nube.revisar(); return window.TELE.anuncios.find(a => a.id === 'futbol').titulo === 'Final de fútbol el viernes'; }, null, 20000)) != null);
+await cel.evaluate(() => { const i = document.querySelector('[data-activo="voleibol"]'); i.checked = false; i.dispatchEvent(new Event('change')); });
+ok('y apagar uno en el teléfono lo apaga en la tablet', (await tarda(tablita, () => { window.TELE.Nube.revisar(); return window.TELE.anuncios.find(a => a.id === 'voleibol').activo === false; }, null, 20000)) != null);
+await cel.waitForSelector('[data-borra-video]');
+await cel.click('[data-borra-video]'); await cel.click('[data-borra-video]');
+ok('borrar el video en el teléfono lo borra en la tablet', (await tarda(tablita, () => { window.TELE.Nube.revisar(); return !window.TELE.anuncios.some(a => a.video); }, null, 20000)) != null);
+
 console.log('\n4 · la tablet de la fila: tocar, pedir y ver el turno');
 const tab = await pantalla();
 await tab.click('#bArranque').catch(() => {});
