@@ -268,6 +268,7 @@ Acciones posibles (usa el nombre del chat tal como viene en la lista):
 - {"accion":"olvidaDato","n":2}
 - {"accion":"programar","chat":"Tareas","hora":"07:00","dias":[1,2,3,4,5],"texto":"📚 Ahorita toca Matemáticas"}  (un mensaje que sale SOLO a esa hora; dias: 0=domingo…6=sábado, [] = diario. En vez de "texto" fijo puede ir "tema" y lo escribes tú cada vez. Para un HORARIO de clases pon una acción por cada clase con su día y hora)
 - {"accion":"quitarProgramado","id":"..."}
+- {"accion":"horario","chat":"Tareas","cual":"3.1"}  (pone el horario de clases del 3.1 en ese grupo: a cada hora avisa qué clase toca y cuál sigue; con "quitar":true lo quita)
 - {"accion":"publicar","chat":"All's","carpeta":"All's fashion","buscar":"","cuantas":3,"hora":"10:00","dias":[],"intro":""}  (publica sola fotos del banco de imágenes con su nombre; "carpeta" es una carpeta del banco, o "buscar" unas palabras; "intro" un texto fijo antes de las fotos, vacío = lo escribes tú)
 - {"accion":"quitarPublicacion","id":"..."}
 - {"accion":"fotos","chat":"Ana","si":true}  (contestar con fotos del banco en ese chat; sin "chat" = para todos)

@@ -933,5 +933,47 @@ console.log('\n13 · El puente de correr.mjs pasa TODO lo que el núcleo le pide
   ok(`el puente trae las ${usa.length} funciones que usa el núcleo`, usa.length > 5 && !faltan.length, faltan);
 }
 
+console.log('\n15 · El horario de clases del 3.1 en el grupo de Tareas (Carlos, 16 de octubre)');
+{
+  const { HORARIOS, mensajesDeHorario, cualHorario } = await import('./horarios.mjs');
+  const ms = mensajesDeHorario('3.1');
+  ok('el 3.1 sale de la captura: 43 avisos de lunes a viernes, sin nombres de maestros', ms.length === 43 && !ms.some(m => /Mtro|Mtra|Prof/i.test(m.texto)), ms.length);
+  ok('«3.1», «tercero» o nada → el horario del 3.1', cualHorario('3.1') === '3.1' && cualHorario('el de tercero') === '3.1' && cualHorario('') === '3.1' && cualHorario('5.2') === '');
+  const lun7 = ms.find(m => m.dia === 1 && m.hora === '07:00'), lun9 = ms.find(m => m.dia === 1 && m.hora === '09:00'), rec = ms.find(m => m.dia === 1 && m.hora === '10:00'), lunFin = ms.find(m => m.dia === 1 && m.hora === '13:00');
+  ok('cada aviso dice qué toca y cuál sigue', /Admón\. y Estruc\. de redes/.test(lun7.texto) && /Después: Inglés III a las 08:00/.test(lun7.texto), lun7.texto);
+  ok('antes del receso lo avisa, y el receso dice qué toca al regresar', /Después: receso/.test(lun9.texto) && /Receso hasta las 10:30\. Regresando toca Metodología/.test(rec.texto), [lun9.texto, rec.texto]);
+  ok('la última del día lo dice (el lunes acaba a las 13:50)', /última del día/.test(lunFin.texto) && !ms.some(m => m.dia === 1 && m.hora === '13:50'), lunFin.texto);
+  ok('se corrigieron «Geografía» e «Inglés I» de la captura', !ms.some(m => /Geograf|Inglés I\b/.test(m.texto)) && HORARIOS['3.1'].bloques[1].dias[2] === 'Geometría Analítica');
+
+  ahora = Date.UTC(2026, 9, 19, 12, 55);   /* lunes 6:55 en México */
+  const env = []; let n = 1;
+  const t = { yo: () => [YO], otrosYo: () => [], async enviar(jid, texto){ env.push({ jid, texto }); pasar(1); return 'H' + (n++); }, async escribiendo(){}, async leido(){} };
+  const alm = (() => { const d = {}; return { leer: (k, x) => d[k] ? JSON.parse(d[k]) : x, guardar: (k, v) => { d[k] = JSON.stringify(v); } }; })();
+  const s = new Secre({ cuenta: 'H', transporte: t, ia, almacen: alm, reloj, azar: () => 0.5, banco: null });
+  const TAREAS = '120363999999@g.us';
+  s.chat(TAREAS).nombre = 'Tareas 3.1'; s.chat(TAREAS).grupo = true;
+  const dice = async (x) => { await s.orden(x); return (env.filter(e => e.jid === YO).slice(-1)[0] || {}).texto || ''; };
+  const aTareas = () => env.filter(e => e.jid === TAREAS);
+  s.config.programados = [{ id: 'p1', chat: TAREAS, hora: '21:00', dias: [], texto: 'a dormir', tema: '' }];
+
+  let r = await dice('horario 3.1 en Tareas');
+  ok('«horario 3.1 en Tareas» lo pone (43 avisos)', s.config.programados.filter(p => p.origen === 'horario').length === 43 && /Listo: en Tareas 3\.1/.test(r), r);
+  await dice('pon el horario en Tareas');
+  ok('ponerlo otra vez no lo duplica, y no toca los otros programados', s.config.programados.filter(p => p.origen === 'horario').length === 43 && s.config.programados.some(p => p.id === 'p1'));
+  const ver = async (h, m) => { ahora = Date.UTC(2026, 9, 19, h + 6, m); await s.tic(); };
+  await ver(7, 1);
+  ok('a las 7:01 del lunes sale qué toca', aTareas().length === 1 && /Admón\. y Estruc/.test(aTareas()[0].texto), aTareas());
+  await ver(10, 1);
+  ok('a las 10:01 sale el receso (y no el de las 8 y 9, que ya pasaron de su ventana)', aTareas().length === 2 && /Receso/.test(aTareas()[1].texto), aTareas().map(e => e.texto));
+  r = await dice('programados');
+  ok('«programados» lo resume en un renglón y numera sólo los demás', /Horario de clases: 3\.1 en Tareas 3\.1 \(43 avisos\)/.test(r) && /1\. Tareas 3\.1 · 21:00/.test(r) && !/Ahorita toca/.test(r), r);
+  r = await dice('quita programado 1');
+  ok('«quita programado 1» quita el suyo, no un aviso del horario', !s.config.programados.some(p => p.id === 'p1') && s.config.programados.length === 43, r);
+  r = await dice('quita el horario de Tareas');
+  ok('«quita el horario de Tareas» lo apaga', !s.config.programados.length && /Quitado el horario de Tareas 3\.1 \(43/.test(r), r);
+  ok('la IA también lo pone', /43 avisos/.test(s.aplicar({ accion: 'horario', chat: 'Tareas', cual: '3.1' })) && s.config.programados.length === 43);
+  ok('la ayuda lo explica', /horario 3\.1 en Tareas/.test((await import('./nucleo.mjs')).AYUDA));
+}
+
 console.log(fallas.length ? `\n✗ ${pasan} pasan · ${fallas.length} fallan` : `\n✓ ${pasan}/${pasan}`);
 process.exit(fallas.length ? 1 : 0);

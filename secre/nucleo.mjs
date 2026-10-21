@@ -34,6 +34,7 @@
                  automático cuando yo no puedo»).
    ═════════════════════════════════════════════════════════════════════════ */
 import { llamar, llamadasListas } from './llamada.mjs';
+import { HORARIOS, cualHorario, mensajesDeHorario } from './horarios.mjs';
 import { bancoDeSala, buscarFotos, nombreDe as nombreFoto, pieDe } from './banco.mjs';
 
 export const MODOS = ['borrador', 'callado', 'auto'];
@@ -894,10 +895,27 @@ export class Secre {
     this.guardar();
     return n ? { n } : { error: 'ninguna foto se pudo mandar' };
   }
+  /* el horario de clases en un grupo: un mensaje por clase, a su hora, con lo que sigue.
+     Volver a ponerlo reemplaza el anterior de ese chat (no duplica) */
+  ponerHorario(jid, clave){
+    const msgs = mensajesDeHorario(clave); if(!msgs.length) return 0;
+    const ps = (this.config.programados || []).filter(p => !(p.chat === jid && p.origen === 'horario'));
+    msgs.forEach((x, i) => ps.push({ id: `h${clave.replace(/\W/g, '')}-${x.dia}-${x.hora.replace(':', '')}-${i}`, chat: jid, hora: x.hora, dias: [x.dia], texto: x.texto, tema: '', origen: 'horario', horario: clave }));
+    this.config.programados = ps;
+    return msgs.length;
+  }
+  quitarHorario(jid){
+    const antes = (this.config.programados || []).length;
+    this.config.programados = (this.config.programados || []).filter(p => !(p.chat === jid && p.origen === 'horario'));
+    return antes - this.config.programados.length;
+  }
   textoProgramados(){
-    const ps = this.config.programados || [], us = this.config.publicar || [];
-    if(!ps.length && !us.length) return 'No hay nada programado. Ej.: «programa Tareas 7:00 lunes a viernes: toca Matemáticas» o «publica en All\'s 3 fotos de la carpeta All\'s fashion diario a las 10».';
-    return [ps.length ? '⏰ Mensajes programados:\n' + ps.map((p, i) => `${i + 1}. ${this.nombreDe(p.chat)} · ${p.hora} ${textoDias(p.dias)}: ${p.texto ? '«' + p.texto.slice(0, 80) + '»' : 'sobre ' + p.tema}${p.pausa ? ' (en pausa)' : ''}`).join('\n') : '',
+    const todos = this.config.programados || [], us = this.config.publicar || [];
+    const hs = [...new Set(todos.filter(p => p.origen === 'horario').map(p => p.chat + '|' + p.horario))];
+    const ps = todos.filter(p => p.origen !== 'horario');
+    if(!todos.length && !us.length) return 'No hay nada programado. Ej.: «programa Tareas 7:00 lunes a viernes: toca Matemáticas» o «publica en All\'s 3 fotos de la carpeta All\'s fashion diario a las 10».';
+    return [hs.length ? '📚 Horario de clases: ' + hs.map(k => { const [j, h] = k.split('|'); return `${h} en ${this.nombreDe(j)} (${todos.filter(p => p.chat === j && p.origen === 'horario').length} avisos)`; }).join(', ') + '\n→ «quita el horario de Tareas»' : '',
+      ps.length ? '⏰ Mensajes programados:\n' + ps.map((p, i) => `${i + 1}. ${this.nombreDe(p.chat)} · ${p.hora} ${textoDias(p.dias)}: ${p.texto ? '«' + p.texto.slice(0, 80) + '»' : 'sobre ' + p.tema}${p.pausa ? ' (en pausa)' : ''}`).join('\n') : '',
       us.length ? '📷 Publicaciones:\n' + us.map((p, i) => `${i + 1}. ${this.nombreDe(p.chat)} · ${p.hora} ${textoDias(p.dias)}: ${p.cuantas || 3} foto(s)${p.carpeta ? ' de «' + p.carpeta + '»' : ''}${p.buscar ? ' de ' + p.buscar : ''}`).join('\n') : ''].filter(Boolean).join('\n\n') +
       '\n→ «quita programado 2» · «quita publicación 1» · «publica ahora en All\'s»';
   }
@@ -1035,9 +1053,9 @@ export class Secre {
     /* ── programados y publicaciones ── */
     if(/^\/?(programados|programadas|publicaciones|que tienes programado)$/.test(s)) return this.avisar(this.textoProgramados());
     if((m = /^\/?(?:quita|borra|elimina) (?:el )?programad[oa] (\d+)$/.exec(s))){
-      const ps = this.config.programados || [], p = ps[+m[1] - 1];
+      const ps = this.config.programados || [], p = ps.filter(x => x.origen !== 'horario')[+m[1] - 1];
       if(!p) return this.avisar(`No tengo el programado ${m[1]}. «programados» para verlos.`);
-      ps.splice(+m[1] - 1, 1); this.guardar();
+      ps.splice(ps.indexOf(p), 1); this.guardar();
       return this.avisar(`Quitado: ${this.nombreDe(p.chat)} a las ${p.hora}.`);
     }
     if((m = /^\/?(?:quita|borra|elimina) (?:la )?publicacion (\d+)$/.exec(s))){
@@ -1045,6 +1063,20 @@ export class Secre {
       if(!p) return this.avisar(`No tengo la publicación ${m[1]}.`);
       ps.splice(+m[1] - 1, 1); this.guardar();
       return this.avisar(`Quitada la publicación de ${this.nombreDe(p.chat)}.`);
+    }
+    /* «horario 3.1 en Tareas» · «pon el horario en Tareas» · «quita el horario de Tareas» */
+    if((m = /^\/?(?:quita|borra|apaga) (?:el )?horario (?:de |del |en )(.+)$/.exec(s))){
+      const j = this.buscarChat(m[1]); if(!j) return this.avisar(`No tengo a «${m[1]}» en tus chats.`);
+      const n = this.quitarHorario(j); this.guardar();
+      return this.avisar(n ? `Quitado el horario de ${this.nombreDe(j)} (${n} avisos).` : `En ${this.nombreDe(j)} no había horario.`);
+    }
+    if((m = /^\/?(?:pon(?:me)?|carga|programa)? ?(?:el )?horario(?: de clases)?(?: (?:del |de )?([\w.\-° ]+?))? (?:en|al|a) (?:el (?:grupo )?)?(.+)$/.exec(s))){
+      const clave = cualHorario(m[1] || '');
+      const j = this.buscarChat(m[2]);
+      if(!j) return this.avisar(`No tengo a «${m[2]}» en tus chats.`);
+      if(!HORARIOS[clave]) return this.avisar(`No tengo ese horario. Tengo: ${Object.keys(HORARIOS).join(', ')}.`);
+      const n = this.ponerHorario(j, clave); this.guardar();
+      return this.avisar(`📚 Listo: en ${this.nombreDe(j)} aviso qué clase toca (y cuál sigue) a cada hora, de lunes a viernes, con el horario del ${HORARIOS[clave].nombre}. Son ${n} avisos.\n«quita el horario de ${this.nombreDe(j)}» lo apaga.`);
     }
     /* «programa Tareas 7:00 lunes a viernes: toca Matemáticas» */
     if((m = /^\/?programa(?:r)? (?:en |a )?(.+?) (?:a las )?(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)(?: ([^:]+?))?\s*:\s*([\s\S]+)$/i.exec(t))){
@@ -1366,6 +1398,12 @@ export class Secre {
         P[q] = { ...(P[q] || {}), ...(a.nombre !== undefined ? { nombre: String(a.nombre).slice(0, 40) } : {}), ...(a.marca !== undefined ? { marca: String(a.marca).slice(0, 30) } : {}), ...(a.ficha !== undefined ? { ficha: String(a.ficha).slice(0, 1500) } : {}) };
         return `${q} juega como ${P[q].nombre}`;
       }
+      case 'horario': {
+        const j = chatDe(a.chat); const clave = cualHorario(a.cual || '');
+        if(!j || !HORARIOS[clave]) return '';
+        if(a.quitar){ const n = this.quitarHorario(j); return n ? `Quitado el horario de ${this.nombreDe(j)}` : ''; }
+        return `📚 Horario del ${HORARIOS[clave].nombre} en ${this.nombreDe(j)} (${this.ponerHorario(j, clave)} avisos)`;
+      }
       case 'programar': {
         const j = chatDe(a.chat); const hora = horaDe(a.hora);
         if(!j || !hora || !(a.texto || a.tema)) return '';
@@ -1469,6 +1507,7 @@ export const AYUDA = `Lo que sé hacer (escríbelo aquí, en tu chat):
 · me puedes mandar notas de voz: las oigo y las hago orden
 · «llámame si es urgente» te llamo por teléfono cuando algo urja · «llámame» prueba · «no me llames»
 · «Paulina y Negro juegan en Taberna» (Astrael y Nox Veyr, cada una con su personaje) · «saca a Negro de Taberna» · «elenco Taberna» · «personaje de Paulina: …» · «marca de Negro: 🌑-»
+· «horario 3.1 en Tareas» aviso en el grupo qué clase toca y cuál sigue, cada hora · «quita el horario de Tareas»
 · «programa Tareas 7:00 lunes a viernes: toca Matemáticas» sale solo a esa hora · «programados» · «quita programado 2»
   (o en palabras: «en Tareas avisa cada hora qué clase toca: lunes 7:00 Mate, 7:50 Física…»)
 · «fotos de sudaderas» te las mando · «mándale a Ana fotos de termos» · «publica en All's 3 fotos de la carpeta All's fashion diario a las 10» · «publica ahora en All's»
