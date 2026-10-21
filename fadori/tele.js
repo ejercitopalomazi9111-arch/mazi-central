@@ -279,7 +279,29 @@ function siguienteAviso(){
    ═════════════════════════════════════════════════════════════════════ */
 const video = $('#prog'), lienzo = $('#tanda');
 let anuncios = [];
-async function cargarAnuncios(){ anuncios = mezclarAnuncios(await leer('anuncios')); }
+/* ANUNCIOS EN VIDEO · Carlos, 21 de octubre: «poder poner videos de anuncios».
+   Un video que se sube en los ajustes (o en el teléfono, y llega por el buzón)
+   entra a la tanda como un anuncio más: se prende, se apaga y se borra igual.
+   Viven aparte (`anv` y `anv:<id>`) porque pesan; lo demás de los anuncios
+   cabe en un renglón y viaja entero al servidor. */
+let anunVideos = [];
+async function cargarAnuncios(){
+  anunVideos.forEach(v => URL.revokeObjectURL(v.url));
+  const g = await leer('anuncios'), cambios = (g && g.cambios) || {};
+  anunVideos = [];
+  for(const id of ((await leer('anv')) || [])){
+    const x = await leer('anv:' + id);
+    if(x && x.blob) anunVideos.push(Object.assign({ id, video: true, marca: x.nombre, titulo: 'Anuncio en video', texto: '', color: '#1A1A1A', color2: '#000', acento: '#FFFFFF', icono: 'megaphone', url: URL.createObjectURL(x.blob), activo: true }, cambios[id] || {}));
+  }
+  anuncios = mezclarAnuncios(g).concat(anunVideos);
+}
+/* cuánto dura un video, sin pasarlo (tope de 2 minutos por anuncio) */
+function durDeVideo(url){
+  return new Promise(r => { const v = document.createElement('video'); v.preload = 'metadata'; v.muted = true;
+    const fin = (d) => { v.removeAttribute('src'); v.load(); r(d); };
+    v.onloadedmetadata = () => fin(Math.min(120, isFinite(v.duration) && v.duration > 0 ? v.duration : 30)); v.onerror = () => fin(0); v.src = url;
+    setTimeout(() => fin(30), 8000); });
+}
 const activos = () => anuncios.filter(a => a.activo !== false);
 
 /* QUÉ PASA EN EL PROGRAMA, en orden (lo pidió Carlos el 10 de octubre):
@@ -417,11 +439,12 @@ const Programa = {
     const piezas = [{ tipo: 'canal', a: canal, dur: 2.6 }];
     for(let k = 0; k < Math.min(cfg.porCorte, lista.length); k++){
       const a = lista[(cfg.sigAnuncio + k) % lista.length];
+      if(a.video){ const d = await durDeVideo(a.url); if(d > 0) piezas.push({ tipo: 'video', a, dur: d }); continue; }
       piezas.push({ tipo: 'ident', a, dur: DURA_IDENT }, { tipo: 'anuncio', a, dur: DURA_ANUNCIO });
     }
     cfg.sigAnuncio = (cfg.sigAnuncio + Math.min(cfg.porCorte, lista.length)) % lista.length; guardarCfg();
     piezas.push({ tipo: 'canal', a: canal, dur: 2.2, regreso: true });
-    for(const p of piezas) p.P = await prepararAnuncio(p.a);
+    for(const p of piezas) if(p.tipo !== 'video') p.P = await prepararAnuncio(p.a);
     window.__corte = { piezas: piezas.map(p => p.tipo + ':' + p.a.id), t: Date.now() };
     await this.tanda(piezas);
     $('#tercio').style.opacity = 1; document.querySelector('.bicho').style.opacity = '';
@@ -437,15 +460,32 @@ const Programa = {
         const w = Math.max(320, Math.min(1920, Math.round(r.width * k))), h = Math.round(w * 9 / 16);
         if(lienzo.width !== w) lienzo.width = w; if(lienzo.height !== h) lienzo.height = h; };
       let i = -1, t0 = 0;
+      /* el anuncio en video se pinta en el mismo lienzo (así le tocan igual la
+         cortinilla y el marco), con su sonido y de borde a borde sin deformarse */
+      const vid = $('#tandaVid') || Object.assign(document.createElement('video'), { id: 'tandaVid', playsInline: true, hidden: true });
+      if(!vid.isConnected){ vid.setAttribute('playsinline', ''); document.body.appendChild(vid); }
+      const pararVid = () => { vid.pause(); vid.onended = vid.onerror = null; };
       const paso = (ahora) => {
         medir();
-        if(i < 0 || (ahora - t0) / 1000 >= piezas[i].dur){
+        if(i < 0 || (ahora - t0) / 1000 >= piezas[i].dur || piezas[i].acabo){
+          if(i >= 0 && piezas[i].tipo === 'video') pararVid();
           i++; t0 = ahora;
           if(i >= piezas.length){ lienzo.hidden = true; fin(); return; }
-          if(piezas[i].tipo !== 'anuncio') Sonido.cortinilla();
+          if(piezas[i].tipo === 'canal' || piezas[i].tipo === 'ident') Sonido.cortinilla();
+          if(piezas[i].tipo === 'video'){
+            const p = piezas[i];
+            vid.src = p.a.url; vid.currentTime = 0;
+            vid.volume = Math.max(0, Math.min(1, cfg.volumen)); vid.muted = !Sonido.ac || Sonido.ac.state !== 'running';
+            vid.onended = vid.onerror = () => { p.acabo = true; };
+            vid.play().catch(() => { p.acabo = true; });
+          }
         }
         const p = piezas[i], t = (ahora - t0) / 1000, W = lienzo.width, H = lienzo.height;
-        if(p.tipo === 'canal') dibujarIdent(g, W, H, t, p.P, { dur: p.dur, aterriza: false });
+        if(p.tipo === 'video'){
+          g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+          if(vid.videoWidth){ const k = Math.min(W / vid.videoWidth, H / vid.videoHeight), w = vid.videoWidth * k, h = vid.videoHeight * k; g.drawImage(vid, (W - w) / 2, (H - h) / 2, w, h); }
+        }
+        else if(p.tipo === 'canal') dibujarIdent(g, W, H, t, p.P, { dur: p.dur, aterriza: false });
         else if(p.tipo === 'ident') dibujarIdent(g, W, H, t, p.P, { dur: p.dur, aterriza: true });
         else dibujarAnuncio(g, W, H, t, p.P, { dur: p.dur });
         requestAnimationFrame(paso);
@@ -677,6 +717,7 @@ function pintarAjustes(){
       : 'Para que lo que subas llegue a las otras pantallas, esta pantalla necesita el pasador de la cooperativa.' +
         (F.motor() === 'servidor' ? ' <button class="aj-btn" type="button" id="ajNubePase" style="margin-top:6px">' + F.ico('lock') + 'Poner el pasador</button>' : '')) + '</p>' +
     '<p class="aj-nota" id="ajNube" aria-live="polite" style="font-weight:800">' + esc(Nube.estado) + '</p>' +
+    (Nube.activa() ? '<div class="aj-fila"><button class="aj-btn" type="button" id="ajRevisar">' + F.ico('rotate-ccw') + 'Revisar si hay algo nuevo</button></div>' : '') +
     chips('recibir', [[true, 'Esta pantalla baja lo que se sube'], [false, 'No bajar nada aquí']]) +
 
     '<h3>' + F.ico('music') + 'Si no hay episodio nuevo</h3>' +
@@ -705,8 +746,13 @@ function pintarAjustes(){
     '<p class="aj-nota" style="margin-bottom:6px">Cada cuánto</p>' + chips('cadaMin', [[5, '5 min'], [8, '8 min'], [10, '10 min'], [15, '15 min']]) +
     '<p class="aj-nota" style="margin:12px 0 6px">Anuncios por tanda</p>' + chips('porCorte', [[1, '1'], [2, '2'], [3, '3']]) +
     '<p class="aj-nota" style="margin:12px 0 6px">El logo de la tanda</p>' + chips('canal', [['rembrandt', 'Rembrandt'], ['divergentes', 'Radio Divergentes'], ['fadori', 'Fadori'], ['grupo31', 'Grupo 3.1']]) +
-    '<ul class="aj-lista" style="margin-top:12px">' + anuncios.map(a =>
-      '<li style="flex-wrap:wrap"><span class="aj-color" style="background:' + esc(a.color) + '"></span><span><b>' + esc(a.marca) + '</b><small>' + esc(a.titulo) + (a.fecha ? ' · ' + esc(a.fecha) : '') + '</small></span>' +
+    '<ul class="aj-lista" style="margin-top:12px">' + anuncios.map(a => a.video
+      ? '<li><span class="aj-color" style="width:40px;height:40px;border-radius:8px;display:grid;place-items:center;background:var(--tv-fondo)">' + F.ico('clapperboard') + '</span>' +
+        '<span><b>' + esc(a.marca) + '</b><small>Anuncio en video</small></span>' +
+        '<button class="aj-btn" type="button" data-ver-video="' + a.id + '">' + F.ico('play') + 'Verlo</button>' +
+        '<button class="aj-btn" type="button" data-borra-video="' + a.id + '" aria-label="Borrar">' + F.ico('trash') + '</button>' +
+        '<input type="checkbox" data-activo="' + a.id + '" aria-label="Pasar este anuncio"' + (a.activo !== false ? ' checked' : '') + ' style="width:24px;height:24px;accent-color:var(--tv-naranja)"></li>'
+      : '<li style="flex-wrap:wrap"><span class="aj-color" style="background:' + esc(a.color) + '"></span><span><b>' + esc(a.marca) + '</b><small>' + esc(a.titulo) + (a.fecha ? ' · ' + esc(a.fecha) : '') + '</small></span>' +
       '<button class="aj-btn" type="button" data-edita="' + a.id + '">Editar</button>' +
       '<input type="checkbox" data-activo="' + a.id + '" aria-label="Pasar este anuncio"' + (a.activo !== false ? ' checked' : '') + ' style="width:24px;height:24px;accent-color:var(--tv-naranja)">' +
       '<div class="aj-edita" style="flex-basis:100%"' + (editando === a.id ? '' : ' hidden') + '>' +
@@ -718,6 +764,7 @@ function pintarAjustes(){
         (a.nuevo ? '<button class="aj-btn" type="button" data-borra-anuncio="' + a.id + '">' + F.ico('trash') + 'Borrar</button>' : '') + '</div>' +
       '</div></li>').join('') + '</ul>' +
     '<div class="aj-fila" style="margin-top:10px"><button class="aj-btn" type="button" id="ajNuevo">' + F.ico('plus') + 'Anuncio nuevo</button>' +
+    '<label class="aj-btn" for="ajAnunVideo">' + F.ico('upload') + 'Anuncio en video</label><input type="file" id="ajAnunVideo" accept="video/*" multiple hidden>' +
     '<button class="aj-btn fuerte" type="button" id="ajCorte">' + F.ico('play') + 'Ver una tanda ahora</button></div>' +
 
     '<h3>' + F.ico('volume-2') + 'Sonido</h3>' +
@@ -844,14 +891,39 @@ function conectarAjustes(){
   });
   c.querySelectorAll('[data-borra-anuncio]').forEach(b => b.onclick = async () => {
     const g = (await leer('anuncios')) || {}; g.nuevos = (g.nuevos || []).filter(x => x.id !== b.dataset.borraAnuncio);
-    await guardar('anuncios', g); await cargarAnuncios(); pintarAjustes();
+    await guardarAnuncios(g); pintarAjustes();
   });
   $('#ajNuevo').onclick = async () => {
     const g = (await leer('anuncios')) || {}; g.nuevos = g.nuevos || [];
     const id = 'n' + Date.now().toString(36);
     g.nuevos.push({ id, nuevo: true, marca: 'Anuncio de la escuela', titulo: 'Escribe el título', texto: 'Y aquí el detalle', color: '#7C2D12', color2: '#2A0E05', acento: '#FFE8D6', icono: 'megaphone' });
-    await guardar('anuncios', g); await cargarAnuncios(); editando = id; pintarAjustes();
+    await guardarAnuncios(g); editando = id; pintarAjustes();
   };
+  $('#ajAnunVideo').onchange = async (e) => {
+    const fs = [...e.target.files]; e.target.value = '';
+    const orden = (await leer('anv')) || [], subidos = [];
+    for(const f of fs){
+      const id = 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      const g = { blob: f, nombre: f.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim() || 'Anuncio' };
+      await guardar('anv:' + id, g); orden.push(id); subidos.push([id, g]);
+    }
+    await guardar('anv', orden); await cargarAnuncios(); pintarAjustes();
+    for(const [id, g] of subidos) await Nube.subir(id, 'anun', g);
+  };
+  c.querySelectorAll('[data-borra-video]').forEach(b => b.onclick = async () => {
+    if(!otraVez(b)) return;
+    const id = b.dataset.borraVideo, p = Nube.borrar(id);
+    await guardar('anv:' + id, undefined); await guardar('anv', ((await leer('anv')) || []).filter(x => x !== id));
+    await cargarAnuncios(); pintarAjustes(); await p;
+  });
+  c.querySelectorAll('[data-ver-video]').forEach(b => b.onclick = async () => {
+    const a = anuncios.find(x => x.id === b.dataset.verVideo); if(!a) return;
+    dlg.close();
+    Programa.enCorte = true; Programa.callar();
+    await Programa.tanda([{ tipo: 'video', a, dur: await durDeVideo(a.url) || 30 }]);
+    Programa.enCorte = false; Programa.seguir();
+  });
+  const rev = $('#ajRevisar'); if(rev) rev.onclick = async () => { rev.disabled = true; Nube.aviso('Revisando…'); const n = await Nube.revisar(); if(n === 0) Nube.aviso('Todo al día: no hay nada nuevo.'); rev.disabled = false; };
   const no = $('#ajTabletNo'); if(no) no.onclick = () => { cfg.tablet = false; guardarCfg(); pintarTablet(); pintarAjustes(); };
   const si = $('#ajTabletSi');
   if(si) si.onclick = async () => {
@@ -888,14 +960,23 @@ async function cambiarAnuncio(id, cambio){
   const g = (await leer('anuncios')) || {}; g.cambios = g.cambios || {}; g.nuevos = g.nuevos || [];
   const n = g.nuevos.find(x => x.id === id);
   if(n) Object.assign(n, cambio); else g.cambios[id] = Object.assign({}, g.cambios[id] || {}, cambio);
-  await guardar('anuncios', g); await cargarAnuncios();
+  await guardarAnuncios(g);
   if(cambio.logoData || cambio.activo !== undefined) pintarAjustes();
 }
-/* el logo que se sube se achica a 512 px: un PNG de 4 MB no hace falta */
+/* los anuncios (textos, colores, prendidos y logos) viajan enteros a las
+   otras pantallas: lo que se cambia en el teléfono le llega a la tablet.
+   Gana el más reciente, con la hora de quien lo cambió */
+async function guardarAnuncios(g){
+  g.t = Date.now();
+  await guardar('anuncios', g); await cargarAnuncios();
+  Nube.subirAnuncios(g);
+}
+/* el logo que se sube se achica a 256 px: un PNG de 4 MB no hace falta, y
+   así caben varios en lo que viaja a las otras pantallas */
 async function achicar(f){
   const url = URL.createObjectURL(f), im = await new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = url; });
   URL.revokeObjectURL(url); if(!im) return '';
-  const k = Math.min(1, 512 / Math.max(im.width, im.height)), c = document.createElement('canvas');
+  const k = Math.min(1, 256 / Math.max(im.width, im.height)), c = document.createElement('canvas');
   c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
   c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
   return c.toDataURL('image/png');
@@ -939,6 +1020,12 @@ const Nube = {
       setTimeout(() => { if(/ya está en el buzón/.test(this.estado)) this.aviso(''); }, 8000);
     }catch(e){ this.aviso('No se pudo subir «' + g.nombre + '»: ' + e.message); }
   },
+  async subirAnuncios(g){
+    if(!this.activa()) return;
+    const cuerpo = JSON.stringify({ g });
+    if(cuerpo.length > 120000) return this.aviso('Los logos de los anuncios pesan mucho para mandarlos a las otras pantallas: usa logos más sencillos.');
+    try{ await this.pide('/api/medios/anuncios', { cuerpo: { g } }); }catch(e){ this.aviso('No se pudieron mandar los anuncios: ' + e.message); }
+  },
   /* lo que se quita aquí se apunta para no volver a bajarlo: si el buzón
      todavía lo tenía cuando se revisó, regresaba solo (se cazó en la prueba) */
   quitados(){ try{ return JSON.parse(localStorage.getItem('fadori_tele_quitados') || '[]'); }catch(e){ return []; } },
@@ -951,17 +1038,23 @@ const Nube = {
     if(!this.activa() || this.ocupada || cfg.recibir === false) return;
     this.ocupada = true;
     try{
-      const { medios, borrados } = await (await this.pide('/api/medios/lista', { cuerpo: {} })).json();
-      const eps = (await leer('eps')) || [], rel = (await leer('relleno')) || [];
+      const { medios, borrados, anuncios: anunServ } = await (await this.pide('/api/medios/lista', { cuerpo: {} })).json();
+      /* los anuncios que se cambiaron en otro aparato */
+      let llegaron = 0, anunCambio = false;
+      const mios = (await leer('anuncios')) || {};
+      if(anunServ && anunServ.g && (anunServ.g.t || 0) > (mios.t || 0)){ await guardar('anuncios', anunServ.g); anunCambio = true; }
+      const eps = (await leer('eps')) || [], rel = (await leer('relleno')) || [], anv = (await leer('anv')) || [];
       let cambio = false;
       for(const b of borrados || []){
         if(eps.indexOf(b.id) >= 0){ eps.splice(eps.indexOf(b.id), 1); await guardar('ep:' + b.id, undefined); cambio = true; }
         if(rel.indexOf(b.id) >= 0){ rel.splice(rel.indexOf(b.id), 1); await guardar('rel:' + b.id, undefined); cambio = true; }
+        if(anv.indexOf(b.id) >= 0){ anv.splice(anv.indexOf(b.id), 1); await guardar('anv:' + b.id, undefined); anunCambio = true; }
       }
       if(cambio){ await guardar('eps', eps); await guardar('relleno', rel); }
+      if(anunCambio) await guardar('anv', anv);
       const quitados = this.quitados();
       for(const m of medios || []){
-        if(eps.indexOf(m.id) >= 0 || rel.indexOf(m.id) >= 0 || quitados.indexOf(m.id) >= 0) continue;
+        if(eps.indexOf(m.id) >= 0 || rel.indexOf(m.id) >= 0 || anv.indexOf(m.id) >= 0 || quitados.indexOf(m.id) >= 0) continue;
         const g = { nombre: m.nombre, nube: true };
         if(m.clase !== 'archivo'){ if(!m.embed) continue; Object.assign(g, { tipo: m.clase, embed: m.embed }); }
         else {
@@ -978,16 +1071,20 @@ const Nube = {
             if(m.portada) g.portada = await (await fetch(m.portada)).blob(); }
         }
         if(m.tipo === 'ep'){ await guardar('ep:' + m.id, g); eps.push(m.id); await guardar('eps', eps); }
+        else if(m.tipo === 'anun'){ await guardar('anv:' + m.id, { blob: g.blob, nombre: g.nombre }); anv.push(m.id); await guardar('anv', anv); anunCambio = true; }
         else { await guardar('rel:' + m.id, g); rel.push(m.id); await guardar('relleno', rel); }
+        llegaron++;
         for(let k = 0; k < (m.partes || 0); k++) await guardar('baja:' + m.id + ':' + k, undefined);
         this.pide('/api/medios/bajado', { cuerpo: { id: m.id } }).catch(() => {});
         cambio = true;
         this.aviso('Llegó «' + m.nombre + '»');
         setTimeout(() => { if(/^Llegó/.test(this.estado)) this.aviso(''); }, 6000);
       }
-      if(cambio){ await Programa.cargar(); Programa.revisar(); if(dlg.open) pintarAjustes(); }
+      if(anunCambio) await cargarAnuncios();
+      if(cambio || anunCambio){ if(cambio){ await Programa.cargar(); Programa.revisar(); } if(dlg.open) pintarAjustes(); }
       window.__nube = { t: Date.now(), medios: (medios || []).length };
-    }catch(e){ this.aviso(''); window.__nube = { t: Date.now(), error: e.message }; }
+      return llegaron + (anunCambio ? 1 : 0);
+    }catch(e){ this.aviso(''); window.__nube = { t: Date.now(), error: e.message }; return -1; }
     finally{ this.ocupada = false; }
   },
 };
@@ -1004,7 +1101,14 @@ async function chiquita(blob){
     c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); return c.toDataURL('image/jpeg', 0.8);
   } finally { URL.revokeObjectURL(u); }
 }
-setInterval(() => Nube.revisar(), 120000);
+/* Carlos, 21 de octubre: «que se actualice el contenido de mejor manera».
+   Antes revisaba cada 2 minutos y sólo eso: lo que subía desde el teléfono
+   tardaba en aparecer y parecía que no había llegado. Ahora cada 30 s, en
+   cuanto la pantalla vuelve a estar a la vista, y en cuanto regresa el
+   internet; y en los ajustes hay «Revisar si hay algo nuevo». */
+setInterval(() => Nube.revisar(), 30000);
+document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') Nube.revisar(); });
+addEventListener('online', () => setTimeout(() => Nube.revisar(), 1500));
 
 /* ── el reloj y el arranque ─────────────────────────────────────────── */
 function reloj(){
@@ -1035,4 +1139,4 @@ const Vivo = montarPantalla({ marco: $('#marco'), alCambiar: (ver, est) => {
   acomodar();
 } });
 
-window.TELE = { Vivo, Programa, cfg, anunciar, Sonido, abrirTablet, cerrarTablet, verPop, Nube, acomodar, listo: true };
+window.TELE = { Vivo, Programa, cfg, anunciar, Sonido, abrirTablet, cerrarTablet, verPop, Nube, acomodar, get anuncios(){ return anuncios; }, listo: true };

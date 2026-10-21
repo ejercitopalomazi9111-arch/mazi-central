@@ -444,7 +444,21 @@ export class Cooperativa {
     let c = {}; try{ c = JSON.parse(await pedido.text()) || {}; }catch(e){}
     if(que === 'lista'){
       const borrados = (await this.ctx.storage.get('medios-borrados')) || [];
-      return json({ medios: Object.values(M).filter(m => m.listo).map(m => Object.assign({}, m)), borrados });
+      return json({ medios: Object.values(M).filter(m => m.listo).map(m => Object.assign({}, m)), borrados,
+        anuncios: (await this.ctx.storage.get('anuncios-pantalla')) || null });
+    }
+    /* los anuncios de la pantalla (textos, colores, cuáles van y sus logos),
+       iguales en todas las pantallas: gana el cambio más reciente */
+    if(que === 'anuncios'){
+      const g = c.g;
+      if(!g || typeof g !== 'object' || Array.isArray(g)) return json({ error: 'Faltan los anuncios.' }, 400);
+      const crudo = JSON.stringify(g);
+      if(crudo.length > 120000) return json({ error: 'Los anuncios pesan mucho (los logos): usa logos más sencillos.' }, 413);
+      const viejo = await this.ctx.storage.get('anuncios-pantalla');
+      const t = entero(g.t, 0, Date.now() + DIA, 0);
+      if(viejo && (Number(viejo.g && viejo.g.t) || 0) >= t) return json({ bien: true, viejo: true });
+      await this.ctx.storage.put('anuncios-pantalla', { g: Object.assign(JSON.parse(crudo), { t }) });
+      return json({ bien: true });
     }
     if(que === 'alta'){
       const nid = String(c.id || '');
@@ -459,7 +473,7 @@ export class Cooperativa {
       if(M[nid]) await this.quitarMedio(nid, false);
       const partes = clase === 'archivo' ? Math.ceil(tam / TOPE.medioParte) : 0;
       const portada = typeof c.portada === 'string' && /^data:image\/(jpeg|png|webp);base64,/.test(c.portada) && c.portada.length < 120000 ? c.portada : '';
-      const m = { id: nid, tipo: c.tipo === 'rel' ? 'rel' : 'ep', clase, nombre: texto(c.nombre, 80) || 'Sin nombre', mime: texto(c.mime, 60),
+      const m = { id: nid, tipo: c.tipo === 'rel' || c.tipo === 'anun' ? c.tipo : 'ep', clase, nombre: texto(c.nombre, 80) || 'Sin nombre', mime: texto(c.mime, 60),
         tam, partes, esAudio: !!c.esAudio, artista: texto(c.artista, 60), portada,
         embed: clase !== 'archivo' && /^https:\/\/(www\.youtube-nocookie\.com|open\.spotify\.com)\//.test(String(c.embed || '')) ? String(c.embed).slice(0, 500) : '',
         listo: clase !== 'archivo', llegaron: 0, de: quien.aparato, t: Date.now(), bajado: 0 };
