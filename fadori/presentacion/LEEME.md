@@ -1,6 +1,6 @@
 # La presentación del proyecto STEAM
 
-`Fadori-STEAM.pptx` · 25 diapositivas · Bachillerato Rembrandt · Instituto Tecnológico en
+`Fadori-STEAM.pptx` · 15 diapositivas · Bachillerato Rembrandt · Instituto Tecnológico en
 Programación · grupo 3.1 · ciclo **Agosto – Diciembre 2026**.
 
 ## Va sobre el formato institucional, y eso no se toca
@@ -50,8 +50,8 @@ no cuentan: la rúbrica los pide.
 | Enfoque (cualitativo / cuantitativo / deductivo) | 13 |
 | Imágenes y su relación con cada apartado de STEAM | 14 a 18, una por letra |
 | ¿Qué? ¿Por qué? ¿Cómo? ¿Para qué? | 5 · 4 · 7 · 8 |
-| Lo nuevo (cuenta con credencial, pantalla del recreo, modo tablet, cobro, fiados, estado de cuenta) | 19 a 24 |
-| Estado actual | 25 |
+| Lo nuevo (credencial, pantalla del recreo, cobro, estado de cuenta) | 14 |
+| Estado actual | 15 |
 | Ortografía | revisada, con acentos |
 
 ## Cómo se revisó

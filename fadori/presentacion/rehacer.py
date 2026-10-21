@@ -48,9 +48,10 @@ def escribir(p, s):
 # ── 2 · clonar la 8 para cada lámina nueva ─────────────────────────────────
 # La 8 (Visión) es la más limpia: decoración + título + un cuerpo. Clonarla
 # es cómo las nuevas nacen ya con el formato de la escuela.
-NUEVAS = ['que-es', 'como', 'enfoque', 'S', 'T', 'E', 'A', 'M',
-          # lo nuevo desde el 9 de octubre (actualizada el 21)
-          'cuenta', 'tele', 'tablet', 'cobro', 'fiados', 'papas', 'estado']
+# Carlos, 21 de octubre: «usa pocas diapositivas». Lo que se repetía va junto:
+# las cinco letras de STEAM en una, lo nuevo en una, y «¿Qué es Fadori?» sale
+# porque «¿Cómo funciona?» ya lo dice con sus tres capturas. 25 → 15.
+NUEVAS = ['como', 'enfoque', 'steam', 'nuevo', 'estado']
 clon = {}
 for nombre in NUEVAS:
     r = subprocess.run([sys.executable, ADD, TRAB, 'slide8.xml'],
@@ -392,9 +393,6 @@ def lamina(n, titulo, cuerpo, imagen=None, caja=None, cuerpo_izq=False, tit=None
     if imagen:
         poner_imagen(n, imagen, caja or (10.2, 3.1, 8.2, 6.6))
 
-lamina(clon['que-es'], '¿Qué es Fadori?',
-       'App que ordena la cafetería sin filas.',
-       '02-menu.png', (12.20, 3.45, 5.40, 7.00), cuerpo_izq=True)
 
 lamina(clon['como'], '¿Cómo funciona?',
        'Dejas tu pedido, recibes turno, vas cuando esté listo.',
@@ -423,46 +421,36 @@ lamina(clon['enfoque'], 'Enfoque',
 # «S · Ciencia» habla de medir antes y después, así que le toca la gráfica. Cada caja se midió aparte porque las capturas de teléfono son altas
 # y angostas y las de escritorio anchas y bajas; una sola caja para todas dejaba
 # a unas nadando y a otras desbordadas.
-STEAM = [
-  ('S', 'Ciencia',     'Medimos la fila antes y después.',
-   '08-grafica.png',   (10.60, 4.40, 8.00, 4.15)),
-  ('T', 'Tecnología',  'App web, servidor propio, funciona sin internet.',
-   '03-mi-turno.png',  (12.90, 3.60, 5.20, 5.70)),
-  ('E', 'Ingeniería',  'La fila se ordena sola, con tope justo.',
-   '05-mostrador.png', (10.50, 4.50, 8.20, 3.48)),
-  ('A', 'Arte',        'Identidad propia: logo, color y tipografía.',
-   '01-cortinilla.png',(12.50, 3.60, 5.60, 5.50)),
-  ('M', 'Matemáticas', 'Turnos, promedios y porcentajes calculados solos.',
-   '07-cifras.png',    (10.60, 4.60, 8.00, 3.00)),
-]
-for letra, nombre, texto, img, caja in STEAM:
-    lamina(clon[letra], letra + ' · ' + nombre, texto, img, caja, cuerpo_izq=True)
+# las cinco letras en UNA lámina: el renglón de arriba dice qué hace cada una, en
+# el mismo orden que las capturas de abajo
+lamina(clon['steam'], 'STEAM en Fadori',
+       'S medir · T programar · E ordenar · A diseñar · M calcular', tit=(6.70, 0.85, 11.60, 1.55))
+_p = sl(clon['steam']); _s = leer(_p)
+_s = mover(_s, 'TextBox 7', 2.20, 2.55, 16.00, 1.10)
+escribir(_p, _s)
+for img, caja in [('08-grafica.png',    ( 2.20, 4.30, 3.00, 4.60)),
+                  ('03-mi-turno.png',   ( 5.45, 4.30, 3.00, 4.60)),
+                  ('05-mostrador.png',  ( 8.70, 4.30, 3.20, 4.60)),
+                  ('01-cortinilla.png', (12.15, 4.30, 3.00, 4.60)),
+                  ('07-cifras.png',     (15.40, 4.30, 3.00, 4.60))]:
+    poner_imagen(clon['steam'], img, caja)
 
 # ═══ LO NUEVO · lo que se le sumó después del 9 de octubre ═══════════════
 # Carlos, 21 de octubre: «actualiza la presentación de Fadori con todo lo
 # nuevo». Una lámina por cosa, con su captura de la app de verdad (las tomó
 # /tmp/claude-0/pres/capturas.mjs contra el servidor local, a las 10:05 del
 # recreo) y la regla de siempre: 15 palabras o menos.
-NUEVO = [
-  ('cuenta', 'Cuenta con credencial', 'Cada alumno entra con su correo y su credencial escolar.',
-   '09-credencial.png', (12.60, 3.40, 5.60, 6.60)),
-  ('tele',   'Pantalla del recreo', 'Turnos en grande, voz que te llama y anuncios de la escuela.',
-   '11-anuncios.png',   (10.40, 3.70, 8.20, 4.62)),
-  ('tablet', 'Modo tablet', 'Quien no trae celular pide tocando la pantalla.',
-   '10-tablet.png',     (10.40, 3.70, 8.20, 4.62)),
-  ('cobro',  'Cobro rápido', 'Calculadora grande: los billetes se suman con un toque.',
-   '12-cobro.png',      (11.60, 3.30, 6.40, 6.80)),
-  ('fiados', 'Fiados en orden', 'Cada deuda queda apuntada, aunque cobren dos mostradores.',
-   '13-fiados.png',     (10.40, 4.00, 8.20, 3.60)),
-  ('papas',  'Estado de cuenta', 'Los papás reciben qué se compró, qué se pagó y cuánto falta.',
-   '14-estado-cuenta.png', (11.60, 3.30, 6.60, 6.80)),
-]
-# los títulos largos («Cuenta con credencial», «Estado de cuenta») centrados en
-# la lámina pisaban la bandera de la esquina, que llega hasta 6.4": se centran
-# en lo que queda libre a la derecha
 TIT_DER = (6.70, 0.85, 11.60, 1.55)
-for clave, titulo, texto, img, caja in NUEVO:
-    lamina(clon[clave], titulo, texto, img, caja, cuerpo_izq=True, tit=TIT_DER)
+lamina(clon['nuevo'], 'Lo nuevo',
+       'Credencial, pantalla del recreo, cobro rápido y estado de cuenta para papás.')
+_p = sl(clon['nuevo']); _s = leer(_p)
+_s = mover(_s, 'TextBox 7', 2.20, 2.55, 16.00, 1.10)
+escribir(_p, _s)
+for img, caja in [('09-credencial.png',    ( 2.20, 4.20, 3.00, 5.00)),
+                  ('11-anuncios.png',      ( 5.45, 4.20, 5.60, 5.00)),
+                  ('12-cobro.png',         (11.30, 4.20, 3.30, 5.00)),
+                  ('14-estado-cuenta.png', (14.85, 4.20, 3.60, 5.00))]:
+    poner_imagen(clon['nuevo'], img, caja)
 
 lamina(clon['estado'], 'Estado actual',
        ['Publicada y en uso: alumno, mostrador, pantalla, tablet y medidor.'],
@@ -590,10 +578,8 @@ acomodar(10, { 'TextBox 7': (4.20, 1.00, 12.40, 2.41),
                'TextBox 2': (2.86, 4.20, 14.00, 2.60) })
 
 # ═══ EL ORDEN ═════════════════════════════════════════════════════════════
-ORDEN = [1, 2, 3, 4, clon['que-es'], 5, clon['como'], 6, 7, 8, 9, 10,
-         clon['enfoque'], clon['S'], clon['T'], clon['E'], clon['A'],
-         clon['M'], clon['cuenta'], clon['tele'], clon['tablet'], clon['cobro'],
-         clon['fiados'], clon['papas'], clon['estado']]
+ORDEN = [1, 2, 3, 4, 5, clon['como'], 6, 7, 8, 9, 10,
+         clon['enfoque'], clon['steam'], clon['nuevo'], clon['estado']]
 
 pres_p = os.path.join(TRAB, 'ppt', 'presentation.xml')
 pres = leer(pres_p)
