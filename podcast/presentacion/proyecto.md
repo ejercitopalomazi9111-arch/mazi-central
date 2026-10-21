@@ -1,6 +1,6 @@
 [img:1]
 
-> **Radio Divergentes: para quien piensa diferente.** Proyecto de la materia de **Ética** del grupo **3.1** del **Bachillerato Rembrandt**.
+> **Radio Divergentes: una radio para quienes piensan diferente.** Proyecto de la materia de **Ética** del grupo **3.1** del **Bachillerato Rembrandt**.
 
 ## Qué es
 
