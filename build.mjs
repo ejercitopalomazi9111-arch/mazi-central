@@ -84,6 +84,9 @@ const VA = [
      casa es BigTigerMX/smileys-wp, pero esta sesión no puede escribir ahí; Carlos
      pidió subirla aquí mientras tanto. El QR de la página apunta a donde se abra. */
   'smileys',
+  /* District Roll: menú digital con pedido por WhatsApp. Por ahora con carta de EJEMPLO y el
+     WhatsApp de Grupo Mazi para probar; la página lo avisa arriba hasta que llegue la carta real. */
+  'district-roll',
   /* Tres moscas con el cerebro real de FlyWire (proyecto personal de Carlos). Lleva el conectoma
      comprimido en dos piezas de < 20 MB: Cloudflare no sirve archivos de más de 25 MiB. */
   'mosca',

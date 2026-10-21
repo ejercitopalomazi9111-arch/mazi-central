@@ -1,0 +1,45 @@
+/* Prueba el menú de District Roll en un navegador de verdad, a 390 px: buscar, agregar, que no
+   se mande sin nombre ni dirección, que el mensaje lleve lo correcto, y que el pedido siga al
+   recargar.   node district-roll/pruebas.mjs [base] */
+const pw = await import('/opt/node22/lib/node_modules/playwright/index.js');
+const chromium = pw.chromium || pw.default.chromium;
+const BASE = (process.argv[2] || 'http://localhost:8800') + '/district-roll/';
+const br = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+const pg = await br.newPage({ viewport:{width:390,height:844}, deviceScaleFactor:2 });
+const err=[]; pg.on('pageerror',e=>err.push(String(e))); pg.on('console',m=>{ if(m.type()==='error') err.push(m.text()); });
+let ok=0, mal=0; const v=(q,c,d='')=>{ if(c){ok++;console.log('  ✓',q)} else {mal++;console.log('  ✗',q,d)} };
+await pg.goto(BASE, {waitUntil:'networkidle'});
+await pg.evaluate(()=>{ localStorage.clear(); window.__abiertas=[]; window.open=(u)=>{ window.__abiertas.push(u); return null; }; });
+v('ni un desborde a lo ancho', await pg.evaluate(()=>document.documentElement.scrollWidth <= innerWidth));
+await pg.evaluate(()=>scrollTo(0, 3000)); await pg.waitForTimeout(900);
+v('bajar no regresa la página (la fila de categorías se mueve sola)', await pg.evaluate(()=>scrollY) > 2500, String(await pg.evaluate(()=>scrollY)));
+await pg.fill('#buscar', 'salmon');
+const vis = await pg.$$eval('.plato', l=>l.filter(e=>!e.hidden).map(e=>e.querySelector('.plato__n').textContent));
+v('buscar «salmon» sin acento encuentra los de salmón', vis.includes('Philadelphia') && vis.includes('District Roll') && !vis.includes('Gyozas'), vis.join(', '));
+await pg.fill('#buscar', 'zzzz');
+v('si no hay nada, lo dice', await pg.$eval('.nada', e=>!e.hidden));
+await pg.fill('#buscar', '');
+await pg.click('[aria-label="Agregar Philadelphia"]');
+await pg.click('#hojaPlato [data-cant="1"]'); await pg.fill('#hplNota', 'sin aguacate'); await pg.click('#hplAgregar');
+await pg.click('[aria-label="Agregar Gyozas"]'); await pg.click('#hplAgregar');
+await pg.waitForTimeout(400);
+v('la barra flotante dice 3 platillos y $397', (await pg.textContent('#flotaCuenta')).includes('3') && (await pg.textContent('#flotaTotal')) === '$397', await pg.textContent('#flotaTotal'));
+await pg.click('#flota'); await pg.waitForTimeout(400);
+await pg.click('#enviar');
+v('sin nombre no se manda', (await pg.evaluate(()=>window.__abiertas.length)) === 0 && (await pg.$$('#cNombre[data-mal]')).length === 1);
+await pg.check('input[name=entrega][value="A domicilio"]'); await pg.fill('#fNombre', 'Luis');
+await pg.click('#enviar');
+v('a domicilio pide la dirección', (await pg.$$('#cDir[data-mal]')).length === 1);
+await pg.fill('#fDir', 'Av. Zaragoza 100'); await pg.check('input[name=pago][value="Tarjeta"]');
+await pg.click('#enviar');
+const url = await pg.evaluate(()=>window.__abiertas[0] || '');
+const msg = decodeURIComponent(url.split('text=')[1] || '');
+console.log('----\n' + msg + '\n----');
+v('va al WhatsApp del local', url.startsWith('https://wa.me/'));
+v('lleva el cambio y el total', msg.includes('2 × Philadelphia (sin aguacate) — $298') && msg.includes('Total: $397') && msg.includes('Pago: Tarjeta'));
+await pg.reload({waitUntil:'networkidle'});
+v('el pedido sigue al recargar', (await pg.textContent('#flotaTotal')) === '$397');
+v('ni un error de consola', err.length === 0, err.join(' | '));
+console.log(ok, 'bien ·', mal, 'mal');
+await br.close();
+process.exit(mal ? 1 : 0);
