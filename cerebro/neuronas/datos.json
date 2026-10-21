@@ -291,6 +291,27 @@
       ],
       "salioDe": "Clientes y Mi cuenta de la tienda, 24 de septiembre de 2026 (se puso antes de que mordiera: ya había pasado con existencias en el Bloque 0).",
       "vecinas": []
+    },
+    {
+      "id": "historia-que-se-borra-con-los-eventos",
+      "titulo": "La constancia de un mes con eventos de tres días",
+      "gravedad": "alta",
+      "sintoma": "Se pide un estado de cuenta «desde qué día, qué se compró, cuánto pagó» y la deuda de hace dos semanas sale sin un solo renglón.",
+      "causa": "El servidor de Fadori borra los eventos a los 3 días y los pedidos a los 7 (GUARDA en servidor/src/index.js). Armar la historia de una deuda leyendo eventos o pedidos sólo alcanza para lo de esta semana.",
+      "porque": "Los eventos son materia prima del medidor y de la fila, no un libro de cuentas: se diseñaron para tirarse.",
+      "arreglo": "Cada movimiento de deuda se apunta también en el alumno (`a.mov`, con lo que se llevó, cuánto costó y cuánto pagó). En el servidor esa lista la lleva él, igual que la deuda: lo que mande un aparato en `mov` no cuenta, cuentan los movimientos (`movDe`, igual en fadori/nucleo.js y en el servidor). La constancia camina hacia atrás desde la deuda de hoy hasta el último cero.",
+      "comoCazarlo": "fadori/pruebas-fiados.mjs §8 lee el estado de cuenta en el OTRO mostrador: si el servidor no arma la lista, no llega. Quitar el `mov` del servidor lo pone en rojo.",
+      "consejo": "Antes de construir un reporte sobre datos viejos, preguntar cuánto vive cada cajón en el servidor.",
+      "senales": [
+        "constancia deuda",
+        "estado de cuenta",
+        "historial de fiado",
+        "desde que dia debe",
+        "que se compro y cuanto pago",
+        "eventos se borran"
+      ],
+      "salioDe": "La constancia de fiados para los papás, pedida por Carlos el 21 de octubre de 2026.",
+      "vecinas": []
     }
   ]
 }

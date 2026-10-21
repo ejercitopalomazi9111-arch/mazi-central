@@ -1468,8 +1468,10 @@ function estado(){ return D || cargar(); }
 function anotar(tipo, datos){
   /* con id, porque el servidor mezcla por registro: sin id, cada
      sincronización volvería a meter el mismo evento */
-  D.eventos.push(Object.assign({ id: id('e'), t: ahora(), tipo }, datos || {}));
+  const e = Object.assign({ id: id('e'), t: ahora(), tipo }, datos || {});
+  D.eventos.push(e);
   if(D.eventos.length > 5000) D.eventos = D.eventos.slice(-4000);
+  return e;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -2393,7 +2395,8 @@ function entregar(oid, pagado, aQuien){
     deudor.deuda += falta;
     p.debio = falta;
     p.deudor = deudor.codigo;
-    anotar('deuda', { pedido:oid, alumno:deudor.codigo, monto:falta });
+    apuntarMov(deudor, anotar('deuda', { pedido:oid, alumno:deudor.codigo, monto:falta,
+      que: queSeLlevo(p), total:p.total, pagado:paga, turno:p.turno || null }));
   }
   anotar('entregado', { pedido:oid, total:p.total, pagado:paga,
     dur: Math.round((p.entregado - (p.tomado || p.creado))/1000),
@@ -2408,7 +2411,7 @@ function ajustarDeuda(cod, nuevaEnCentavos, quien){
   const d = estado(), a = d.alumnos[cod]; if(!a) return null;
   const antes = a.deuda;
   a.deuda = Math.max(0, Math.round(nuevaEnCentavos));
-  anotar('deuda_ajuste', { alumno:cod, antes, despues:a.deuda, quien: quien || 'cooperativa' });
+  apuntarMov(a, anotar('deuda_ajuste', { alumno:cod, antes, despues:a.deuda, quien: quien || 'cooperativa' }));
   guardar();
   return a;
 }
@@ -2419,9 +2422,110 @@ function abonar(cod, centavos){
      la suma de los movimientos, y abonar 20 sobre 10 no deja «−10» */
   const monto = Math.min(a.deuda, Math.max(0, Math.round(centavos)));
   a.deuda -= monto;
-  anotar('abono', { alumno:cod, monto });
+  apuntarMov(a, anotar('abono', { alumno:cod, monto }));
   guardar();
   return a;
+}
+
+/* FIADO A MANO · Carlos, 21 de octubre: «que el vendedor pueda poner a mano
+   si alguien debe más. Ignora si está bien o mal: es lo que nos pidió el
+   cliente». Para lo que se llevó sin pedido en la app (lo de ayer que no se
+   apuntó, un refresco al paso). Va como un movimiento de deuda igual que los
+   del cobro: el servidor lo suma una vez, y sale en la constancia con su
+   porqué y quién lo apuntó. */
+function fiarAMano(cod, centavos, motivo, quien){
+  const d = estado(), a = d.alumnos[String(cod || '').toUpperCase()];
+  if(!a) throw new Error('No encuentro a esa persona.');
+  const monto = Math.round(centavos);
+  if(!(monto > 0)) throw new Error('Pon cuánto debe (más de $0).');
+  if(monto > 1e6) throw new Error('Eso es demasiado para un fiado.');
+  a.deuda += monto;
+  apuntarMov(a, anotar('deuda', { alumno:a.codigo, monto, manual:true,
+    motivo: String(motivo || '').replace(/\s+/g, ' ').trim().slice(0, 120), quien: quien || 'cooperativa' }));
+  guardar();
+  return a;
+}
+
+/* EL ESTADO DE CUENTA · Carlos, 21 de octubre: «mandar una constancia de
+   cuánto se debe, por qué, desde qué día, qué se compró, cuánto se pagó y
+   cuánto se debe… para que los papás ya sepan, con un ticket aunque sea
+   electrónico».
+
+   ⚠ Con los eventos NO alcanza: el servidor los borra a los 3 días y los
+   pedidos a los 7 (GUARDA en servidor/src/index.js), y una deuda de un mes
+   se quedaba sin historia. Por eso cada movimiento se apunta TAMBIÉN en el
+   alumno (`a.mov`), con lo que se llevó. En el servidor esa lista la lleva él
+   (como la deuda): lo que mande un aparato en `mov` no cuenta, cuentan los
+   movimientos. `movDe` está igual en servidor/src/index.js. */
+const TOPE_MOV = 120;
+function movDe(e){
+  const n = (x) => Math.max(0, Math.round(Number(x) || 0));
+  const dif = e.tipo === 'deuda' ? n(e.monto) : e.tipo === 'abono' ? -n(e.monto) : n(e.despues) - n(e.antes);
+  return { id: String(e.id), t: Number(e.t) || 0,
+    k: e.tipo === 'deuda' ? (e.manual ? 'mano' : 'compra') : e.tipo === 'abono' ? 'abono' : 'ajuste',
+    d: dif, q: String(e.que || '').slice(0, 200), tot: n(e.total), pag: n(e.pagado),
+    mo: String(e.motivo || '').slice(0, 120), por: String(e.quien || '').slice(0, 30) };
+}
+function apuntarMov(a, e){
+  const m = movDe(e);
+  a.mov = (Array.isArray(a.mov) ? a.mov : []).filter(x => x && x.id !== m.id).concat([m]).slice(-TOPE_MOV);
+}
+function queSeLlevo(p){
+  return (p.renglones || []).map(r => (r.cant > 1 ? r.cant + ' ' : '') + ((producto(r.prod) || {}).nombre || 'producto')).join(', ');
+}
+
+/* Lo que va en la constancia: desde que la deuda arrancó (la última vez que
+   estuvo en cero) hasta hoy. Se camina hacia atrás desde la deuda de ahorita;
+   si la lista no llega hasta el cero (más de TOPE_MOV movimientos), arranca
+   en el más viejo que se tiene, y se dice. */
+function estadoDeCuenta(cod){
+  const a = estado().alumnos[String(cod || '').toUpperCase()]; if(!a) return null;
+  const movs = (Array.isArray(a.mov) ? a.mov : []).slice().sort((x, y) => (x.t || 0) - (y.t || 0));
+  let saldo = a.deuda || 0, i = movs.length;
+  while(i > 0 && saldo > 0){ i--; saldo -= movs[i].d; }
+  const completo = saldo <= 0;
+  const tramo = a.deuda > 0 ? movs.slice(i) : [];
+  const cargos = tramo.filter(m => m.d > 0), abonos = tramo.filter(m => m.k === 'abono');
+  return {
+    alumno: { codigo: a.codigo, nombre: a.nombre, grupo: a.grupo || '' },
+    deuda: a.deuda || 0,
+    desde: tramo.length ? tramo[0].t : null,
+    completo,
+    sinDetalle: completo ? 0 : Math.max(0, saldo),   /* de antes de que se guardara la historia */
+    movimientos: tramo,
+    cargado: cargos.reduce((s, m) => s + m.d, 0),
+    abonado: abonos.reduce((s, m) => s - m.d, 0),
+    pagadoEnCompras: cargos.reduce((s, m) => s + (m.pag || 0), 0),
+    hoy: ahora(),
+  };
+}
+
+/* La constancia en texto, para mandarla por WhatsApp a los papás */
+function constanciaTexto(cod){
+  const c = estadoDeCuenta(cod); if(!c) return '';
+  const dia = (t) => new Date(t).toLocaleDateString('es-MX', { weekday:'short', day:'numeric', month:'short' });
+  const lugar = 'Fadori · ' + (estado().config.nombreLugar || 'Cooperativa');
+  const r = [];
+  r.push('*' + lugar + ' · Estado de cuenta*');
+  r.push(c.alumno.nombre + (c.alumno.grupo ? ' · ' + c.alumno.grupo : '') + ' · código ' + c.alumno.codigo);
+  r.push(new Date(c.hoy).toLocaleString('es-MX', { day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' }));
+  r.push('');
+  if(!c.deuda){ r.push('✅ No debe nada.'); return r.join('\n'); }
+  r.push('*Debe hoy: ' + pesos(c.deuda) + '*');
+  if(c.desde) r.push('Desde el ' + dia(c.desde) + (c.completo ? '' : ' (o antes)'));
+  r.push('');
+  if(c.sinDetalle) r.push('• De antes, sin detalle guardado: ' + pesos(c.sinDetalle));
+  for(const m of c.movimientos){
+    const f = dia(m.t);
+    if(m.k === 'compra') r.push('• ' + f + ' · ' + (m.q || 'compra') + ' · costó ' + pesos(m.tot) + ', pagó ' + pesos(m.pag) + ' → quedó a deber ' + pesos(m.d));
+    else if(m.k === 'mano') r.push('• ' + f + ' · ' + (m.mo || 'fiado') + ' → ' + pesos(m.d));
+    else if(m.k === 'abono') r.push('• ' + f + ' · abonó ' + pesos(-m.d));
+    else r.push('• ' + f + ' · ajuste de la cooperativa: ' + (m.d < 0 ? '−' + pesos(-m.d) : '+' + pesos(m.d)));
+  }
+  r.push('');
+  r.push('Se fió: ' + pesos(c.cargado) + ' · Abonado: ' + pesos(c.abonado) + ' · *Falta: ' + pesos(c.deuda) + '*');
+  r.push('Se paga en la cooperativa. Cualquier duda, ahí mismo.');
+  return r.join('\n');
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -2901,7 +3005,7 @@ const FADORI = {
   cuentaRegresiva, relojCorto,
   ritmoDespacho, segReales,
   /* mostrador */
-  tomar, renglonListo, marcarListo, entregar, ajustarDeuda, abonar,
+  tomar, renglonListo, marcarListo, entregar, ajustarDeuda, abonar, fiarAMano, estadoDeCuenta, constanciaTexto, movDe,
   /* medición */
   contarFila, resumenDelDia, curvaDeFila, csvDePedidos, csvDeConteos, bajarCSV, cerrarCiclo,
   /* el pasador */

@@ -112,6 +112,19 @@ const DELTA_DEUDA = {
   abono: (e) => -entero(e.monto, 0, 1e7, 0),
   deuda_ajuste: (e) => entero(e.despues, 0, 1e7, 0) - entero(e.antes, 0, 1e7, 0),
 };
+/* cada movimiento de deuda también se apunta en el alumno, con lo que se llevó:
+   los eventos se borran a los 3 días y la constancia para los papás (21 de
+   octubre) tiene que contar desde que la deuda empezó. Igual que `movDe` en
+   fadori/nucleo.js: si se cambia uno, se cambia el otro */
+const TOPE_MOV = 120;
+function movDe(e){
+  const n = (x) => Math.max(0, Math.round(Number(x) || 0));
+  const dif = e.tipo === 'deuda' ? n(e.monto) : e.tipo === 'abono' ? -n(e.monto) : n(e.despues) - n(e.antes);
+  return { id: String(e.id), t: Number(e.t) || 0,
+    k: e.tipo === 'deuda' ? (e.manual ? 'mano' : 'compra') : e.tipo === 'abono' ? 'abono' : 'ajuste',
+    d: dif, q: String(e.que || '').slice(0, 200), tot: n(e.total), pag: n(e.pagado),
+    mo: String(e.motivo || '').slice(0, 120), por: String(e.quien || '').slice(0, 30) };
+}
 const PLAZO_CANCELAR = 6 * 60000;   /* 5 min que ve el alumno + 1 de gracia */
 const EVENTOS_DEL_ALUMNO = ['pedido', 'cancelado', 'terminos', 'apartado', 'en_camino', 'revivido', 'cambio_por_falta', 'renuncia'];
 const EVENTOS_A_LA_VISTA = ['renglon_listo', 'listo', 'tomado', 'producto_agotado', 'producto_vuelve', 'pedido'];
@@ -729,10 +742,12 @@ export class Cooperativa {
                el último: la tablet fiaba $45, el teléfono abonaba $10 al mismo
                tiempo, y los $45 se perdían. Ahora la de un registro que llega no
                cuenta: la mueven sólo los movimientos (abajo) */
-            rec.deuda = Number(viejo.deuda) || 0; }
+            rec.deuda = Number(viejo.deuda) || 0;
+            /* y su historia también (la constancia para los papás): la arman los movimientos */
+            rec.mov = Array.isArray(viejo.mov) ? viejo.mov : []; }
           /* el que da de alta la cooperativa en persona ya está visto; su deuda
              nace en cero y la suben los movimientos que vienen detrás */
-          else if(c === 'alumnos'){ rec.verif = 'si'; rec.deuda = 0; }
+          else if(c === 'alumnos'){ rec.verif = 'si'; rec.deuda = 0; rec.mov = []; }
           if(c === 'eventos' && !viejo && DELTA_DEUDA[rec.tipo] && rec.alumno) movimientos.push(rec);
           if(c === 'pedidos'){
             const teniaTurno = rec.turno !== null && rec.turno !== undefined;
@@ -748,7 +763,8 @@ export class Cooperativa {
       for(const e of movimientos){
         const a = this.datos.alumnos[String(e.alumno).toUpperCase()]; if(!a) continue;
         const deuda = Math.max(0, Math.round((Number(a.deuda) || 0) + DELTA_DEUDA[e.tipo](e)));
-        poner('alumnos', Object.assign({}, a, { deuda, t: Math.max(Number(a.t) || 0, ahora, Number(e.t) || 0) + 1 }));
+        const m = movDe(e), mov = (Array.isArray(a.mov) ? a.mov : []).filter(x => x && x.id !== m.id).concat([m]).slice(-TOPE_MOV);
+        poner('alumnos', Object.assign({}, a, { deuda, mov, t: Math.max(Number(a.t) || 0, ahora, Number(e.t) || 0) + 1 }));
       }
     } else {
       /* ── un teléfono de alumno: sólo lo suyo, y sólo lo permitido ───── */

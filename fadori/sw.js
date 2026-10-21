@@ -15,7 +15,7 @@
    sin red abre el menú, tus pedidos y tu turno (los datos ya viven en el
    teléfono). Lo del servidor (/api/) y lo de otros sitios no se toca. */
 const CAJA = 'fadori-v1';
-const BASE_OFF = ['./', 'index.html', 'nucleo.js', 'estilo.css', 'iconos.js', 'manifest.webmanifest',
+const BASE_OFF = ['./', 'index.html', 'nucleo.js', 'constancia.js', 'estilo.css', 'iconos.js', 'manifest.webmanifest',
   'marca/icon-192.png', 'marca/logo-fadori.png', 'marca/capa-pan-arriba.png', 'marca/capa-pan-abajo.png', 'marca/capa-carne.png',
   'marca/capa-queso.png', 'marca/capa-jitomate.png', 'marca/capa-lechuga.png', 'marca/capa-sombra.png', 'marca/capa-fadori.png'];
 self.addEventListener('install', (e) => {
