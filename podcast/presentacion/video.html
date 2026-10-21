@@ -45,8 +45,14 @@ html,body{background:#000;overflow:hidden}
 .letra{position:absolute;text-align:center}
 .letra .anton{font-size:calc(var(--u)*300);display:block}
 .letra b{display:block;font:800 calc(var(--u)*28)/1.15 Pop;text-transform:uppercase;letter-spacing:.04em;margin-top:calc(var(--u)*10)}
-/* 7 · el salón */
+/* 7 · para qué */
+.para{position:absolute;left:0;right:0;text-align:center}
+.para span{display:inline-block;background:var(--crema);color:var(--vino2);font:800 calc(var(--u)*44)/1.1 Pop;text-transform:uppercase;letter-spacing:.03em;padding:calc(var(--u)*18) calc(var(--u)*34);border-radius:calc(var(--u)*20);box-shadow:0 calc(var(--u)*20) calc(var(--u)*50) rgba(0,0,0,.4)}
+/* 8 · el salón */
 #escudo{position:absolute;width:calc(var(--u)*300)}
+/* el logo de la escuela en la esquina, como la mosca de un canal (Carlos, 21 de octubre: «poner el logo institucional») */
+#mosca{position:absolute;z-index:15;width:calc(var(--u)*118);height:calc(var(--u)*118);border-radius:50%;background:var(--crema);display:grid;place-items:center;box-shadow:0 calc(var(--u)*8) calc(var(--u)*24) rgba(0,0,0,.35)}
+#mosca img{width:72%}
 /* 8 · la tele */
 #tele{position:absolute;background:#0b0b0b;border-radius:calc(var(--u)*26);padding:calc(var(--u)*16);box-shadow:0 calc(var(--u)*40) calc(var(--u)*90) rgba(0,0,0,.6)}
 #tele img{display:block;width:100%;height:100%;object-fit:cover;border-radius:calc(var(--u)*12)}
@@ -65,27 +71,30 @@ html,body{background:#000;overflow:hidden}
     <div class="centro anton" id="t2b" style="font-size:calc(var(--u)*70);color:var(--oro)">Para quien piensa diferente</div></section>
   <section class="esc" id="e3" style="background:var(--rojo)"><div class="rayas" style="--c:rgba(0,0,0,.10)"></div>
     <div class="centro anton" id="g31">3.1</div>
-    <div class="centro" id="t3"><span class="chip">Ética · Instituto Rembrandt</span></div></section>
+    <div class="centro" id="t3"><span class="chip">Materia de Ética · Bachillerato Rembrandt</span></div></section>
   <section class="esc" id="e4" style="background:var(--vino2)"><div id="sillas"></div>
-    <div class="centro anton" id="t4" style="font-size:calc(var(--u)*96)">4 voces · 1 tema · <span style="color:var(--oro)">1 dilema</span></div></section>
+    <div class="centro anton" id="t4" style="font-size:calc(var(--u)*96)">Un espacio para <span style="color:var(--oro)">exponer y compartir</span></div></section>
   <section class="esc" id="e5" style="background:#3B0B12"><div class="rayas" style="--c:rgba(255,255,255,.05)"></div><div id="temas"></div>
     <div class="centro anton" id="t5" style="font-size:calc(var(--u)*130)"><span style="color:var(--oro)">12</span> episodios</div></section>
   <section class="esc" id="e6" style="background:var(--vino2)"><div id="steam"></div></section>
-  <section class="esc" id="e7" style="background:var(--crema);color:var(--vino2)"><img id="escudo" src="../../reportes/escudo-rembrandt.png" alt="">
+  <section class="esc" id="e7" style="background:var(--rojo)"><div class="rayas" style="--c:rgba(0,0,0,.10)"></div>
+    <div class="centro anton" id="t7q" style="font-size:calc(var(--u)*170)">¿Para <span style="color:var(--oro)">qué</span>?</div>
+    <div class="para" id="pq1"><span>La Ética, en la práctica</span></div>
+    <div class="para" id="pq2"><span>Argumentar con datos</span></div>
+    <div class="para" id="pq3"><span>Escuchar con respeto</span></div></section>
+  <section class="esc" id="e8" style="background:var(--crema);color:var(--vino2)"><img id="escudo" src="../../reportes/escudo-rembrandt.png" alt="">
     <div class="centro anton" id="t7" style="font-size:calc(var(--u)*104)">Un salón del <span style="color:var(--rojo)">Rembrandt</span></div>
     <div class="centro" id="t7b" style="font:800 calc(var(--u)*38)/1.2 Pop">Profesor encargado: Omar Ávila Cruz</div></section>
-  <section class="esc" id="e8" style="background:radial-gradient(80% 80% at 50% 40%,#3a1a10,#0e0805)"><div id="tele"><img id="teleimg" alt=""></div>
-    <div class="centro anton" id="t8" style="font-size:calc(var(--u)*96)">En la pantalla de <span style="color:#F08A3C">Fadori</span></div>
-    <div class="centro" id="t8b"><span class="chip">Circuito cerrado · en el recreo</span></div></section>
   <section class="esc" id="e9" style="background:var(--rojo2)"><div class="rayas" style="--c:rgba(0,0,0,.10)"></div><div id="cosas"></div>
-    <div class="centro anton" id="t9" style="font-size:calc(var(--u)*92)">Podría haber <span style="color:var(--oro)">recaudación</span></div>
-    <div class="centro" id="t9b" style="font:800 calc(var(--u)*32)/1.2 Pop">Sólo con autorización de Dirección · cada peso con su comprobante</div></section>
+    <div class="centro" id="t9c"><span class="chip">Por ahora, sólo para el grupo 3.1</span></div>
+    <div class="centro anton" id="t9" style="font-size:calc(var(--u)*110)">¿Quieres <span style="color:var(--oro)">apoyar</span>?</div>
+    <div class="centro" id="t9b" style="font:800 calc(var(--u)*36)/1.2 Pop">Como cada quien pueda · acércate con nosotros</div></section>
   <section class="esc" id="e10" style="background:radial-gradient(70% 70% at 50% 42%,#5A1622,#1C070B)"><img id="logo10" src="../marca/radio-divergentes.svg" alt="" style="position:absolute">
-    <div class="centro anton" id="t10" style="font-size:calc(var(--u)*120)">Para la <span style="color:var(--oro)">comunidad</span></div></section>
+    <div class="centro anton" id="t10" style="font-size:calc(var(--u)*120)">Para quien piensa <span style="color:var(--oro)">diferente</span></div></section>
   <section class="esc" id="e11" style="background:#0d0507"><div id="cred">
-    <h3>Radio Divergentes · grupo 3.1 · Instituto Rembrandt</h3>
-    Profesor encargado: Omar Ávila Cruz<br>Voz: ElevenLabs<br>Música: «Inspired», Kevin MacLeod (incompetech.com), CC BY 4.0<br>Letras: Anton, Poppins y DM Serif Display (SIL Open Font License)<br>Hecho con el Estudio de podcast y la pantalla de Fadori</div></section>
-</div><div id="cort"><div class="rayas"></div></div></div>
+    <h3>Radio Divergentes · proyecto de la materia de Ética · grupo 3.1 · Bachillerato Rembrandt</h3>
+    Profesor encargado: Omar Ávila Cruz<br>Voz: <span id="credVoz">Carlos Eduardo Gutiérrez Guevara</span><br>Música: «Inspired», Kevin MacLeod (incompetech.com), CC BY 4.0<br>Letras: Anton, Poppins y DM Serif Display (SIL Open Font License)<br>Hecho con el Estudio de podcast</div></section>
+</div><div id="mosca"><img src="../../reportes/escudo-rembrandt.png" alt=""></div><div id="cort"><div class="rayas"></div></div></div>
 <script>
 const F = new URLSearchParams(location.search).get('f') === 'v' ? 'v' : 'h';
 const W = F === 'v' ? 1080 : 1920, H = F === 'v' ? 1920 : 1080, U = Math.min(W, H) / 1080, V = F === 'v';
@@ -98,18 +107,19 @@ const px = (v) => v * U + 'px';
 /* cuándo empieza cada renglón de la voz (video.mjs lo mide); de fábrica, un cálculo a mano */
 const TL = window.TL || [0.8, 3.65, 7.6, 10.75, 17.1, 23.7, 33.1, 38.2, 42.3, 48.8];
 const FIN_VOZ = window.FIN_VOZ || 52;
+if(window.CRED_VOZ) document.getElementById('credVoz').textContent = window.CRED_VOZ;
 const ESC = TL.map((t, i) => ['e' + (i + 1), i ? t - 0.18 : 0]).concat([['e11', FIN_VOZ + 1.6]]);
 const DUR = FIN_VOZ + 5.4;
 const COLORES = ['#A3242F', '#EDE2DA', '#F4B63A', '#2C0F14', '#A3242F', '#F4B63A', '#EDE2DA', '#F08A3C', '#A3242F', '#2C0F14', '#111'];
 
 /* lo que se arma una vez */
-'¿Y si el recreo también sirviera para pensar?'.split(' ').forEach(w => { const s = document.createElement('span'); s.className = 'anton'; s.textContent = w; $('q').appendChild(s); });
+'¿Y si en Ética dijéramos lo que pensamos?'.split(' ').forEach(w => { const s = document.createElement('span'); s.className = 'anton'; s.textContent = w; $('q').appendChild(s); });
 for(let i = 0; i < 28; i++) $('onda2').appendChild(document.createElement('b'));
 const SILLAS = ['Presenta', 'Invitado 1', 'Invitado 2', 'Invitado 3'];
 SILLAS.forEach(n => { const d = document.createElement('div'); d.className = 'silla'; d.innerHTML = '<i></i><b>' + n + '</b>'; $('sillas').appendChild(d); });
 const TEMAS = [['1', 'Las culturas'], ['2', 'Holocausto'], ['3', 'Libro de Enoc'], ['4', 'La moda y la aceptación'], ['5', 'Chernóbil'], ['6', 'Torres Gemelas'], ['7', '¿La verdad o vivir feliz?'], ['8', 'La corrupción'], ['9', 'La creación de la vida'], ['10', 'El narco y la economía'], ['11', 'Gentrificación'], ['12', 'Paranormal']];
 TEMAS.forEach(([n, t]) => { const d = document.createElement('div'); d.className = 'tema'; d.innerHTML = '<small>EPISODIO ' + n + '</small><span>' + t + '</span>'; $('temas').appendChild(d); });
-const STEAM = [['S', 'Investigar con fuentes'], ['T', 'Grabar y editar'], ['E', 'Acondicionar el salón'], ['A', 'Voz, imagen y música'], ['M', 'Tiempos y presupuesto']];
+const STEAM = [['S', 'Investigar con fuentes'], ['T', 'Grabar y editar'], ['E', 'Acondicionar el salón'], ['A', 'Voz, imagen y música'], ['M', 'Tiempos y calendario']];
 STEAM.forEach(([l, b], i) => { const d = document.createElement('div'); d.className = 'letra'; d.innerHTML = '<span class="anton" style="color:' + (i % 2 ? '#F4B63A' : '#EDE2DA') + '">' + l + '</span><b>' + b + '</b>'; $('steam').appendChild(d); });
 const ICO = {
   mic: '<svg viewBox="0 0 24 24" fill="none" stroke="#EDE2DA" stroke-width="1.6" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v4M8 21h8"/></svg>',
@@ -122,16 +132,16 @@ const ICO = {
 const P = V ? {
   logo2: [W / 2 - 310 * U, 380 * U], t2: 1150, t2b: 1300, onda: 690, g31: 520, t3: 1180, sillas: [[270, 420], [810, 420], [270, 900], [810, 900]], t4: 1400,
   temas: (i) => [70 + (i % 2) * 480, 160 + Math.floor(i / 2) * 230], t5: 1620, steam: (i) => [i < 3 ? 60 + i * 330 : 225 + (i - 3) * 330, i < 3 ? 380 : 1000],
-  escudo: [W / 2 - 150 * U, 380 * U], t7: 860, t7b: 1150, tele: [60, 420, 960, 540], t8: 1060, t8b: 1300, cosas: (i) => [i < 2 ? 160 + i * 460 : 390, i < 2 ? 380 : 900], t9: 1350, t9b: 1520,
+  escudo: [W / 2 - 150 * U, 380 * U], t7: 860, t7b: 1150, pq: [520, 900, 1060, 1220], cosas: (i) => [i < 2 ? 160 + i * 460 : 390, i < 2 ? 380 : 900], t9: 1350, t9b: 1520, mosca: [W - 160 * U, 60 * U],
   logo10: [W / 2 - 330 * U, 420 * U, 660], t10: 1200, cred: 640,
 } : {
   logo2: [W / 2 - 900 * U, H / 2 - 310 * U], t2: 380, t2b: 540, onda: 540, g31: 110, t3: 820, sillas: [[220, 200], [660, 200], [1100, 200], [1540, 200]], t4: 720,
   temas: (i) => [70 + (i % 3) * 600, 60 + Math.floor(i / 3) * 175], t5: 800, steam: (i) => [80 + i * 360, 220],
-  escudo: [W / 2 - 150 * U, 110 * U], t7: 520, t7b: 700, tele: [380, 70, 1160, 652], t8: 790, t8b: 940, cosas: (i) => [300 + i * 460, 150], t9: 640, t9b: 800,
+  escudo: [W / 2 - 150 * U, 110 * U], t7: 520, t7b: 700, pq: [170, 470, 610, 750], cosas: (i) => [300 + i * 460, 150], t9: 640, t9b: 800, mosca: [W - 170 * U, 50 * U],
   logo10: [W / 2 - 300 * U, 120 * U, 600], t10: 820, cred: 300,
 };
 const pon = (el, x, y) => { el.style.left = px(x); el.style.top = px(y); };
-if(V){ $('t4').style.fontSize = px(78); $('t7').style.fontSize = px(84); $('t8').style.fontSize = px(84); document.querySelectorAll('.tema').forEach(c => c.style.width = px(460)); }
+if(V){ $('t4').style.fontSize = px(78); $('t7').style.fontSize = px(84); $('t9').style.fontSize = px(96); document.querySelectorAll('.tema').forEach(c => c.style.width = px(460)); }
 if(!V){ $('t2').style.left = $('t2b').style.left = px(820); $('t2').style.textAlign = $('t2b').style.textAlign = 'left'; }
 $('logo10').style.width = $('logo10').style.height = px(P.logo10[2]);
 
@@ -148,7 +158,7 @@ function camara(t){ $('cam').style.transform = 'translate(' + Math.sin(t * 1.3) 
 
 const escenas = {
   e1(l){
-    [...$('q').children].forEach((s, i) => { const k = rebote((l - 0.35 - i * 0.22) / 0.45); s.style.opacity = cl((l - 0.35 - i * 0.22) / 0.12); s.style.transform = 'translateY(' + (1 - k) * 80 * U + 'px) scale(' + (0.6 + 0.4 * k) + ')'; s.style.color = i >= 6 ? '#F4B63A' : '#EDE2DA'; });
+    [...$('q').children].forEach((s, i) => { const k = rebote((l - 0.35 - i * 0.22) / 0.45); s.style.opacity = cl((l - 0.35 - i * 0.22) / 0.12); s.style.transform = 'translateY(' + (1 - k) * 80 * U + 'px) scale(' + (0.6 + 0.4 * k) + ')'; s.style.color = i >= 4 ? '#F4B63A' : '#EDE2DA'; });
   },
   e2(l){
     const k = rebote(l / 0.7); pon($('logo2'), P.logo2[0] / U, P.logo2[1] / U);
@@ -173,33 +183,37 @@ const escenas = {
     $('t5').style.top = px(P.t5); $('t5').style.opacity = cl((l - 3.6) / 0.2); $('t5').style.transform = 'translateY(' + (1 - eo((l - 3.6) / 0.4)) * 60 * U + 'px)';
     if(V) $('t5').style.textShadow = '0 ' + px(8) + ' ' + px(30) + ' rgba(0,0,0,.7)';
   },
-  e6(l){
-    /* cada letra entra cuando la voz la nombra (después de «editamos») */
-    const tLetra = [2.95, 3.75, 4.6, 5.65, 6.25];
+  e6(l, d){
+    /* cada letra entra cuando la voz la nombra (después de «editamos»). En
+       fracciones del renglón y no en segundos: la voz cambia (Carlos la va a
+       grabar con la suya) y los segundos de la de antes ya no caen */
+    const tLetra = [0.31, 0.40, 0.49, 0.60, 0.66].map(f => f * d);
     [...$('steam').querySelectorAll('.letra')].forEach((d, i) => { const [x, y] = P.steam(i), k = rebote((l - tLetra[i]) / 0.45); pon(d, x, y); d.style.width = px(V ? 320 : 330);
       d.style.opacity = cl((l - tLetra[i]) / 0.1); d.style.transform = 'scale(' + k + ')'; });
-    const tit = $('steam').querySelector('.titulo') || (() => { const t = document.createElement('div'); t.className = 'centro anton titulo'; t.innerHTML = '<span style="color:#F4B63A">STEAM</span> de verdad'; t.style.fontSize = px(120); $('steam').appendChild(t); return t; })();
-    tit.style.top = px(V ? 1500 : 700); tit.style.opacity = cl((l - 7.0) / 0.2); tit.style.transform = 'scale(' + (0.8 + 0.2 * rebote((l - 7.0) / 0.5)) + ')';
+    const tit = $('steam').querySelector('.titulo') || (() => { const t = document.createElement('div'); t.className = 'centro anton titulo'; t.innerHTML = 'Ética con <span style="color:#F4B63A">STEAM</span>'; t.style.fontSize = px(120); $('steam').appendChild(t); return t; })();
+    const tt = 0.745 * d;
+    tit.style.top = px(V ? 1500 : 700); tit.style.opacity = cl((l - tt) / 0.2); tit.style.transform = 'scale(' + (0.8 + 0.2 * rebote((l - tt) / 0.5)) + ')';
     const intro = $('steam').querySelector('.intro') || (() => { const t = document.createElement('div'); t.className = 'centro anton intro'; t.textContent = 'Investigar · grabar · editar'; t.style.fontSize = px(110); $('steam').appendChild(t); return t; })();
-    intro.style.top = px(V ? 860 : 440); intro.style.opacity = cl(l / 0.2) * (1 - cl((l - 2.85) / 0.12));
+    intro.style.top = px(V ? 860 : 440); intro.style.opacity = cl(l / 0.2) * (1 - cl((l - 0.30 * d) / 0.12));
   },
-  e7(l){
+  e7(l, d){
+    /* ¿para qué? y las tres razones, cada una cuando la voz llega a ella */
+    $('t7q').style.top = px(P.pq[0]); $('t7q').style.opacity = cl(l / 0.15); $('t7q').style.transform = 'scale(' + (1.3 - 0.3 * rebote(l / 0.5)) + ')';
+    [0.22, 0.55, 0.76].forEach((f, i) => { const e = $('pq' + (i + 1)), a = f * d, k = rebote((l - a) / 0.45);
+      e.style.top = px(P.pq[i + 1]); e.style.opacity = cl((l - a) / 0.1); e.style.transform = 'translateX(' + (1 - k) * (i % 2 ? -1 : 1) * 160 * U + 'px)'; });
+  },
+  e8(l){
     pon($('escudo'), P.escudo[0] / U, P.escudo[1] / U); const k = rebote(l / 0.6); $('escudo').style.transform = 'scale(' + k + ')';
     $('t7').style.top = px(P.t7); $('t7').style.opacity = cl((l - 0.4) / 0.2); $('t7').style.transform = 'translateY(' + (1 - eo((l - 0.4) / 0.4)) * 50 * U + 'px)';
     $('t7b').style.top = px(P.t7b); $('t7b').style.opacity = cl((l - 2.1) / 0.2);
   },
-  e8(l){
-    const [x, y, w, h] = P.tele, t = $('tele'); pon(t, x, y); t.style.width = px(w); t.style.height = px(h);
-    t.style.transform = 'perspective(' + px(2000) + ') rotateY(' + (1 - eo(l / 0.9)) * 25 + 'deg) scale(' + (0.9 + 0.1 * eo(l / 0.9)) + ')';
-    if(window.TV && window.TVN){ const n = Math.min(window.TVN - 1, Math.floor((6.5 + l) * 30)); const src = window.TV + String(n + 1).padStart(5, '0') + '.jpg'; if($('teleimg').getAttribute('src') !== src) $('teleimg').src = src; }
-    $('t8').style.top = px(P.t8); $('t8').style.opacity = cl((l - 0.5) / 0.2);
-    $('t8b').style.top = px(P.t8b); $('t8b').style.opacity = cl((l - 1.4) / 0.2);
-  },
-  e9(l){
-    const tc = [2.0, 2.75, 3.4];
+  e9(l, d){
+    /* «por ahora es sólo para nuestro grupo» primero; luego «si quieres apoyar…» con lo que hace falta */
+    const tc = [0.47, 0.56, 0.64].map(f => f * d), ta = 0.36 * d;
     [...$('cosas').children].forEach((c, i) => { const [x, y] = P.cosas(i), k = rebote((l - tc[i]) / 0.45); pon(c, x, y); c.style.opacity = cl((l - tc[i]) / 0.1); c.style.transform = 'scale(' + k + ')'; });
-    $('t9').style.top = px(P.t9); $('t9').style.opacity = cl((l - 0.3) / 0.2);
-    $('t9b').style.top = px(P.t9b); $('t9b').style.opacity = cl((l - 4.2) / 0.3);
+    $('t9c').style.top = px(P.t9); $('t9c').style.opacity = cl((l - 0.2) / 0.2) * (1 - cl((l - ta) / 0.2));
+    $('t9').style.top = px(P.t9); $('t9').style.opacity = cl((l - ta) / 0.2); $('t9').style.transform = 'scale(' + (0.8 + 0.2 * rebote((l - ta) / 0.5)) + ')';
+    $('t9b').style.top = px(P.t9b); $('t9b').style.opacity = cl((l - 0.80 * d) / 0.3);
   },
   e10(l){
     pon($('logo10'), P.logo10[0] / U, P.logo10[1] / U); const k = rebote(l / 0.8);
@@ -211,7 +225,9 @@ const escenas = {
 window.pintar = (t) => {
   let k = 0; ESC.forEach(([, a], i) => { if(t >= a) k = i; });
   document.querySelectorAll('.esc').forEach(e => e.style.display = 'none');
-  const [id, a] = ESC[k]; $(id).style.display = 'block'; escenas[id](t - a);
+  const [id, a] = ESC[k], fin = ESC[k + 1] ? ESC[k + 1][1] : DUR; $(id).style.display = 'block'; escenas[id](t - a, fin - a);
+  /* la mosca: en todas menos los temas, donde el escudo ya sale en grande y los créditos */
+  $('mosca').style.display = id === 'e5' || id === 'e8' || id === 'e11' ? 'none' : 'grid';   /* en e5 tapaba la tarjeta del episodio 3 */ pon($('mosca'), P.mosca[0] / U, P.mosca[1] / U);
   camara(t); cortina(t);
 };
 window.DUR = DUR;
