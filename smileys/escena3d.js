@@ -7,7 +7,7 @@
 
    Modelos: Food Kit de Kenney (CC0): la caja trae la tapa como pieza aparte y la pizza
    viene en 8 rebanadas sueltas, así que sí se separan de verdad. Ver 3d/LICENCIA-kenney.txt.
-   Textura: la foto real (img/pizza-textura.jpg, de scripts/textura-pizza.py) proyectada desde
+   Textura: una foto real de Pexels (img/pizza-textura.jpg, de scripts/textura-pizza.py) proyectada desde
    arriba sobre las rebanadas; los pepperonis de bulto del modelo se aplanan bajo el queso
    para que manden los de la foto.
 
@@ -42,7 +42,7 @@ async function arrancar() {
   r.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
   r.outputColorSpace = THREE.SRGBColorSpace;
   r.toneMapping = THREE.ACESFilmicToneMapping;
-  r.toneMappingExposure = 1.08;
+  r.toneMappingExposure = 0.98;
   r.shadowMap.enabled = true;
   r.shadowMap.type = THREE.PCFShadowMap;
 
@@ -51,7 +51,7 @@ async function arrancar() {
   escena.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
   escena.environmentIntensity = 0.55;
 
-  const sol = new THREE.DirectionalLight(0xffe2bf, 2.4);
+  const sol = new THREE.DirectionalLight(0xffe2bf, 2.1);
   sol.position.set(1.6, 3.2, 1.9);
   sol.castShadow = true;
   sol.shadow.mapSize.set(2048, 2048);
@@ -111,7 +111,7 @@ async function arrancar() {
   const pizza = gPizza.scene;
   let R = 0;
   pizza.traverse((o) => { if (o.isMesh) { const p = o.geometry.attributes.position; for (let i = 0; i < p.count; i++) R = Math.max(R, Math.hypot(p.getX(i), p.getZ(i))); } });
-  const matPizza = new THREE.MeshPhysicalMaterial({ map: fotoPizza, roughness: 0.55, metalness: 0, clearcoat: 0.28, clearcoatRoughness: 0.45 });
+  const matPizza = new THREE.MeshPhysicalMaterial({ map: fotoPizza, color: 0xece6de, roughness: 0.6, metalness: 0, clearcoat: 0.18, clearcoatRoughness: 0.5 });
   /* el corte de cada rebanada (los lados planos): masa dorada abajo, pan, y salsa con queso arriba.
      Con la foto proyectada desde arriba esos lados salían como rayas estiradas */
   const matCorte = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8 });
