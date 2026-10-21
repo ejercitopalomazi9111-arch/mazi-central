@@ -439,6 +439,8 @@ dependemos.
 
    | lo que manda mi bot por WhatsApp regresa como eco DESPUÉS de que `sendMessage` me da su id | Baileys lo avisa con un `process.nextTick` que puede ganarle al `await`: el eco llegaba con un id que Secre todavía no apuntaba y se leía como si Carlos hubiera escrito a mano. Y la IA con tope de 900: Gemini lo gastaba pensando y regresaba vacío | «a veces responde y a veces no»: Secre se callaba 15 min en ese chat creyendo que Carlos estaba ahí. El id se genera ANTES de mandar (`generateMessageIDV2` + `messageId`), el núcleo reconoce su eco por texto, y la IA va con tope de 2,500 y segundo motor (`secre/pruebas.mjs` §10) |
 
+   | la caja de un contenedor (`getBoundingClientRect` de `.doc`) mide todo lo que trae adentro | NO cuenta el margen de arriba del primer hijo: se sale por el colapso de márgenes. El paginador de Reportes medía «título + lo que sigue» así y luego cobraba cada pieza CON márgenes | en el documento de Fadori quedaron solos al pie «2.2 Delimitación», «Anexo C» y «Tabla 6.» (ésta porque `partirTabla` también medía sin márgenes y la tabla se iba entera a la hoja siguiente). Todo se mide con `alturaCon`, y a `partirTabla` se le pasa el hueco sin márgenes |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---
