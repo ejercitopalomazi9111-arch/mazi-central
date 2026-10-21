@@ -1,34 +1,35 @@
 # Smiley's Wings & Pizza
 
-Página del local y menú digital para abrir con QR. Sitio estático, un solo
-archivo `index.html` más la carpeta `img/`. No necesita compilación.
+Sitio completo del local: portada, la caja que se abre, carta, «Ármala tú», alitas y más,
+promociones, sucursales y **pedido por WhatsApp** a la sucursal que elija el cliente.
+Un solo `index.html` con la carpeta `img/`, sin compilación.
 
-## Qué incluye
+## Cómo se edita
 
-- Las 15 pizzas de la carta con su descripción, y filtros (sin carne, con
-  picante, con piña).
-- **Ármala tú**: se eligen hasta 5 ingredientes, la pizza se compone en vivo
-  sobre una base fotográfica y el pedido sale por WhatsApp ya redactado.
-- Promociones, rebanada suelta, orilla de queso y complementos.
-- Las tres sucursales con enlace directo a WhatsApp.
-- Código QR generado en la propia página, que apunta a su propia dirección.
-- Fondo animado de ingredientes en todo el documento.
+La página se escribe en `scripts/fuente.html` y se arma con:
+
+    python3 smileys/scripts/armar.py
+
+El armador le mete el logo y la sonrisa en vector (`img/logo.svg`, `img/sonrisa.svg`,
+trazados con potrace de la foto de la caja) y los pinceles del armador de pizzas que hizo
+Godines en la versión anterior (`anterior.html`, que se queda como estaba).
+
+## El pedido
+
+- Recetas (con tamaño, orilla y cantidad), pizza armada, complementos y promociones.
+- Se guarda en el teléfono: si se cierra la página, el pedido sigue ahí.
+- Pide sucursal, nombre y, si es a domicilio, dirección. El mensaje sale ya redactado.
+- **El precio de cada receta por tamaño no lo tenemos**, así que la página no lo inventa:
+  suma lo que sí tiene precio y le pide a la sucursal que confirme el resto. La grande de un
+  ingrediente sí vale $109 y la página la cobra así.
 
 ## Fotografía
 
-Propias del local: `img/mostrador.jpg`, `img/caja.jpg`, `img/cartel.jpg`.
-
-Provisionales de Unsplash (licencia libre para uso comercial): el resto.
-**Hay que sustituirlas por fotos reales del producto antes de publicarlo bajo
-el nombre del negocio.** Las que menos se parecen a lo que sirven son
-chilorio, pastor, atun, vivamexico y c-bake.
-
-`img/textura.jpg` no es fotografía: la genera `scripts/textura.py`, que dibuja
-190 ingredientes repartidos al azar con envoltura en los bordes para que la
-baldosa repita sin costura. Para variar el reparto se cambia la semilla.
+Del local: `mostrador.jpg`, `caja.jpg`, `cartel.jpg` y `kraft.jpg` (recortada de la caja).
+Provisionales de Unsplash: `hero`, `base`, `orilla`, `pz/*` y `c-*`. **Hay que cambiarlas por
+fotos del producto real** antes de usar la página como oficial.
 
 ## Datos
 
-Todo el contenido —menú, precios, los tres teléfonos y la frase del cartel—
-salió de fotografías del local tomadas en septiembre de 2026. Conviene
-revalidar precios antes de publicar.
+Carta, precios, teléfonos y la frase del cartel salen de fotos del local de septiembre de
+2026. Conviene revalidar precios antes de publicar.
