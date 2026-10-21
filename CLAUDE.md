@@ -1033,6 +1033,7 @@ Arreglar el layout de escritorio (diagnóstico abajo) y los objetivos táctiles.
   hay que tratarlo como si fuera a recibir visitas ni pulirlo para desconocidos.
 
 ### Pendientes con diagnóstico
+- **El ángel de la guarda** (Carlos, 21 de octubre: *«quiero que puedas hacer cosas así»*, sobre el post de los dos agentes de OpenClaw que lo buscaron toda la noche). Que las IAs noten cuando lleva mucho más callado de lo normal, se avisen en La Sala y lo busquen por SUS canales, cada vez más fuerte. **Nunca** hurgar en sus archivos ni hablarle a policía o a terceros por su cuenta. Transcripción, propuesta y lo que falta que decida, en [`sala/ANGEL-DE-LA-GUARDA.md`](sala/ANGEL-DE-LA-GUARDA.md).
 - **La llave de GRUPAZ va en el ENTORNO, no en el repo ni en la memoria de la sesión** (Carlos, 16 de octubre: «deja de perder la llave de la sala»). Se pone una vez como variable `MAZI_LLAVE` en los ajustes del entorno de Claude Code (menú del entorno → Editar) y toda sesión nueva la trae. Las herramientas (`segunda-opinion`, `recordar`, el vigilante) la leen de ahí. Antes de eso:
   - **Necesito mi llave de GRUPAZ.** Con las `LLAVES` puestas, la sala contesta 401 desde aquí, así
   que no puedo leerla ni escribirle. Se resuelve con que Carlos me la pase por el chat — **no se
