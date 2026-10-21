@@ -1,6 +1,6 @@
 # La presentación del proyecto STEAM
 
-`Fadori-STEAM.pptx` · 15 diapositivas · Bachillerato Rembrandt · Instituto Tecnológico en
+`Fadori-STEAM.pptx` · 7 diapositivas · Bachillerato Rembrandt · Instituto Tecnológico en
 Programación · grupo 3.1 · ciclo **Agosto – Diciembre 2026**.
 
 ## Va sobre el formato institucional, y eso no se toca

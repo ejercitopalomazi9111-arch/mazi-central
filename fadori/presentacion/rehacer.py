@@ -51,7 +51,9 @@ def escribir(p, s):
 # Carlos, 21 de octubre: «usa pocas diapositivas». Lo que se repetía va junto:
 # las cinco letras de STEAM en una, lo nuevo en una, y «¿Qué es Fadori?» sale
 # porque «¿Cómo funciona?» ya lo dice con sus tres capturas. 25 → 15.
-NUEVAS = ['como', 'enfoque', 'steam', 'nuevo', 'estado']
+# Y luego: «como 7 láminas sólo». Se quedan las que cuentan el proyecto de
+# principio a fin; lo nuevo va dentro de «Estado actual».
+NUEVAS = ['como', 'steam', 'estado']
 clon = {}
 for nombre in NUEVAS:
     r = subprocess.run([sys.executable, ADD, TRAB, 'slide8.xml'],
@@ -411,9 +413,6 @@ poner_imagen(clon['como'], '02-menu.png',           ( 2.40, 4.90, 3.40, 5.76))
 poner_imagen(clon['como'], '03-mi-turno.png',       ( 7.40, 4.90, 4.40, 4.81))
 poner_imagen(clon['como'], '04-pantalla-turnos.png',(12.80, 4.90, 5.60, 3.15))
 
-lamina(clon['enfoque'], 'Enfoque',
-       'Cuantitativo y deductivo: medimos tiempos y comprobamos la hipótesis.',
-       '06-medidor.png', (10.60, 4.40, 8.00, 4.10), cuerpo_izq=True)
 
 # Una captura DISTINTA por letra. Antes «Enfoque» y «S · Ciencia» llevaban la
 # misma gráfica en láminas seguidas: se leía como si nos hubiéramos quedado sin
@@ -441,20 +440,18 @@ for img, caja in [('08-grafica.png',    ( 2.20, 4.30, 3.00, 4.60)),
 # /tmp/claude-0/pres/capturas.mjs contra el servidor local, a las 10:05 del
 # recreo) y la regla de siempre: 15 palabras o menos.
 TIT_DER = (6.70, 0.85, 11.60, 1.55)
-lamina(clon['nuevo'], 'Lo nuevo',
-       'Credencial, pantalla del recreo, cobro rápido y estado de cuenta para papás.')
-_p = sl(clon['nuevo']); _s = leer(_p)
+
+lamina(clon['estado'], 'Estado actual',
+       'En uso. Nuevo: credencial, pantalla, cobro y estado de cuenta.',
+       tit=TIT_DER)
+_p = sl(clon['estado']); _s = leer(_p)
 _s = mover(_s, 'TextBox 7', 2.20, 2.55, 16.00, 1.10)
 escribir(_p, _s)
 for img, caja in [('09-credencial.png',    ( 2.20, 4.20, 3.00, 5.00)),
                   ('11-anuncios.png',      ( 5.45, 4.20, 5.60, 5.00)),
                   ('12-cobro.png',         (11.30, 4.20, 3.30, 5.00)),
                   ('14-estado-cuenta.png', (14.85, 4.20, 3.60, 5.00))]:
-    poner_imagen(clon['nuevo'], img, caja)
-
-lamina(clon['estado'], 'Estado actual',
-       ['Publicada y en uso: alumno, mostrador, pantalla, tablet y medidor.'],
-       '04-pantalla-turnos.png', (10.40, 3.70, 8.20, 4.62), cuerpo_izq=True, tit=TIT_DER)
+    poner_imagen(clon['estado'], img, caja)
 
 # ═══ AFINAR LAS LÁMINAS ORIGINALES ═══════════════════════════════════════
 # Al renderizar por fin la presentación salieron encimados en las láminas que
@@ -578,8 +575,7 @@ acomodar(10, { 'TextBox 7': (4.20, 1.00, 12.40, 2.41),
                'TextBox 2': (2.86, 4.20, 14.00, 2.60) })
 
 # ═══ EL ORDEN ═════════════════════════════════════════════════════════════
-ORDEN = [1, 2, 3, 4, 5, clon['como'], 6, 7, 8, 9, 10,
-         clon['enfoque'], clon['steam'], clon['nuevo'], clon['estado']]
+ORDEN = [1, 2, 4, clon['como'], 6, clon['steam'], clon['estado']]
 
 pres_p = os.path.join(TRAB, 'ppt', 'presentation.xml')
 pres = leer(pres_p)
@@ -593,6 +589,12 @@ lista = ''.join('<p:sldId id="%d" r:id="%s"/>' % (256 + i, por_slide[n])
 pres = re.sub(r'<p:sldIdLst>.*?</p:sldIdLst>', '<p:sldIdLst>' + lista + '</p:sldIdLst>',
               pres, flags=re.S)
 escribir(pres_p, pres)
+
+# las láminas que ya no van (índice, misión, visión…) se quitan del paquete:
+# fuera del orden pero adentro del archivo, PowerPoint las puede dar por dañadas
+LIMPIAR = next(iter(glob.glob('/root/.claude/skills/synced/**/pptx/scripts/clean.py', recursive=True)
+                    + glob.glob('/mnt/skills/public/pptx/scripts/clean.py')), None)
+if LIMPIAR: subprocess.run([sys.executable, LIMPIAR, TRAB], check=True, capture_output=True)
 
 # ═══ EMPACAR ══════════════════════════════════════════════════════════════
 if os.path.exists(SALIDA): os.remove(SALIDA)
