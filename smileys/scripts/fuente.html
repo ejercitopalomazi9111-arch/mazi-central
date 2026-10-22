@@ -300,6 +300,7 @@ button{font:inherit; color:inherit}
   font:800 13px/1 var(--display); text-transform:uppercase; box-shadow:0 12px 30px rgba(0,0,0,.45)}
 .horno__precio b{display:block; font-size:30px; margin-top:2px}
 .horno__precio[hidden]{display:none}
+.horno__precio.sin-precio b{font-size:14px; line-height:1.05; margin-top:4px; text-transform:none; padding:0 8px}
 /* mientras la pizza vive en la barra de abajo, la grande no se pinta: es la misma, no dos */
 .horno.en-barra canvas,.horno.en-barra .horno__precio,.horno.en-barra .vapor{visibility:hidden}
 /* el precio cae como sello: grande y ladeado, golpea, rebota y se queda */
@@ -1143,6 +1144,9 @@ var ORILLA = 35, SENCILLA = 109;
 /* las especialidades van en 2×1: dos grandes $289, dos familiares $350 (la carta del mostrador).
    A domicilio las dos grandes salen en $319 (Carlos, 22 de octubre); de las familiares no se sabe. */
 var DOSXUNO = { Grande:289, Familiar:350 }, DOMICILIO_GRANDES = 30;
+/* la chica (6 rebanadas) no trae precio en la carta del mostrador. En cuanto Carlos lo confirme,
+   se pone AQUÍ y sale solo en la carta, en Ármala, en la hoja, en el carrito y en el WhatsApp. */
+var PRECIO_CHICA = null;
 /* horario: lo dijo Carlos el 22 de octubre, de 11 am a 10 pm las tres */
 var ABRE = 11, CIERRA = 22;
 function horaQro(){
@@ -1237,13 +1241,18 @@ var actual = null, cantHR = 1, desdeHR = null;
 segmento($("#hrTam"), function(){ totalHR(); });
 /* la chica (6 rebanadas) no viene en la carta con precio: va suelta y la sucursal la cotiza */
 function chicaHR(){ return valorSeg($("#hrTam")) === "Chica"; }
-function precioHR(){ return chicaHR() ? null : (DOSXUNO[valorSeg($("#hrTam"))] + ($("#hrOrilla").checked ? ORILLA * 2 : 0)) * cantHR; }
+function precioHR(){
+  var ori = $("#hrOrilla").checked;
+  if(chicaHR()) return PRECIO_CHICA == null ? null : (PRECIO_CHICA + (ori ? ORILLA : 0)) * cantHR;
+  return (DOSXUNO[valorSeg($("#hrTam"))] + (ori ? ORILLA * 2 : 0)) * cantHR;
+}
 function totalHR(){
   var t = $("#hrTotal"), ch = chicaHR(); t.textContent = "";
   $("#hrSegundaCaja").hidden = ch;
   $("#hrCantT").textContent = ch ? "Cuántas" : "Cuántos 2×1";
   $("#hrOrillaT").textContent = ch ? "+$35" : "En las dos pizzas · +$35 cada una";
-  if(ch){ t.appendChild(el("span", null, ["Total ", el("small", {text:"· " + cantHR + (cantHR === 1 ? " chica" : " chicas")})])); t.appendChild(el("small", {text:"te lo confirma la sucursal"})); return; }
+  if(ch && PRECIO_CHICA == null){ t.appendChild(el("span", null, ["Total ", el("small", {text:"· " + cantHR + (cantHR === 1 ? " chica" : " chicas")})])); t.appendChild(el("small", {text:"te lo confirma la sucursal"})); totalHR.antes = null; return; }
+  if(ch){ var cc = el("span", {class:"cifra"}); t.appendChild(el("span", null, ["Total ", el("small", {text:"· " + cantHR + (cantHR === 1 ? " chica" : " chicas")})])); t.appendChild(cc); rodar(cc, precioHR(), null, totalHR.antes); totalHR.antes = precioHR(); return; }
   var cifra = el("span", {class:"cifra"}); t.appendChild(el("span", null, ["Total ", el("small", {text:"· te llevas " + cantHR * 2 + " pizzas"})])); t.appendChild(cifra);
   rodar(cifra, precioHR(), null, totalHR.antes); totalHR.antes = precioHR();
 }
@@ -1270,7 +1279,7 @@ $("#hrAgregar").addEventListener("click", function(){
   var sv = $("#hrSegunda").value, seg = sv === "?" ? "la segunda la elijo con ustedes" : (sv ? porS[sv].n : "otra igual");
   var primera = otra ? "Mitad " + actual.n + " / mitad " + otra.n : actual.n;
   if(tam === "Chica"){
-    agregar({ tipo:"receta", nombre:primera + " (chica, 6 rebanadas)", detalle:ori ? "Con orilla de queso" : "", precio:null,
+    agregar({ tipo:"receta", nombre:primera + " (chica, 6 rebanadas)", detalle:ori ? "Con orilla de queso" : "", precio:PRECIO_CHICA == null ? null : PRECIO_CHICA + (ori ? ORILLA : 0),
               cant:cantHR, clave:"r:" + actual.s + (otra ? "+" + otra.s : "") + ":Chica:" + ori }, desdeHR || actual.li.querySelector(".plato__mas"), actual.f);
     return;
   }
@@ -1390,7 +1399,7 @@ $("#calcAgregar").addEventListener("click", function(){
       }
     });
   };
-  foto.src = "img/armar/base.webp";
+  foto.src = "img/armar/base-lisa.webp";
 })();
 
 /* ═══════════ la carta ═══════════ */
@@ -1422,15 +1431,16 @@ var tamCarta = "Grande";
 function preciosCarta(){
   PIZZAS.forEach(function(p){
     var sm = $("small", p.precio), b = $("b", p.precio);
-    if(tamCarta === "Chica"){ sm.textContent = "Chica · 6 rebanadas"; pararRueda(b); b.__valor = null; b.textContent = "Precio en sucursal"; return; }
+    if(tamCarta === "Chica"){ sm.textContent = "Chica · 6 rebanadas"; if(PRECIO_CHICA == null){ pararRueda(b); b.__valor = null; b.textContent = "Precio en sucursal"; } else rodar(b, PRECIO_CHICA); return; }
     sm.textContent = (tamCarta === "Grande" ? "2 grandes" : "2 familiares") + " · 2×1";
     rodar(b, DOSXUNO[tamCarta]);
   });
   var av = $("#avisoCarta");
-  av.textContent = tamCarta === "Chica" ? "La chica no viene con precio en la carta: la sucursal te la cotiza al recibir tu pedido." :
+  av.textContent = tamCarta === "Chica" ? (PRECIO_CHICA == null ? "La chica no viene con precio en la carta: la sucursal te la cotiza al recibir tu pedido." : "La chica, de 6 rebanadas, sale en " + pesos(PRECIO_CHICA) + ".") :
     "En " + tamCarta.toLowerCase() + ", cualquier receta va en 2×1: dos por " + pesos(DOSXUNO[tamCarta]) + (tamCarta === "Grande" ? " ($319 a domicilio). Con un solo ingrediente, la grande sale en $109." : ". Puedes pedir mitad y mitad.");
 }
 segmento($("#tamCarta"), function(v){ tamCarta = v; preciosCarta(); });
+if(PRECIO_CHICA != null) $("#tamCarta [data-v='Chica'] em").textContent = pesos(PRECIO_CHICA);
 preciosCarta();
 $$(".chip").forEach(function(ch){
   ch.addEventListener("click", function(){
@@ -1585,7 +1595,7 @@ function sellar(){
   st.style.visibility = "";
   st.classList.remove("estampa"); h.classList.remove("golpe"); void st.offsetWidth;
   st.classList.add("estampa");
-  var v = b.__valor; b.textContent = "$0";
+  var v = b.__valor; if(v != null) b.textContent = "$0";
   setTimeout(function(){ h.classList.add("golpe"); if(v != null) rodar(b, v, null, 0); }, 300);
 }
 /* la pizza de la barra y la grande son la misma: al llegar a la grande, la chica vuela y crece hasta
@@ -1655,7 +1665,7 @@ $("#orillaMia").addEventListener("change", function(){ pintarMia(this.checked ? 
 function sencillaMia(){ return valorSeg($("#tamMia")) === "Grande" && elegidos.length <= 1; }
 function precioMia(){
   var ori = $("#orillaMia").checked;
-  if(valorSeg($("#tamMia")) === "Chica") return null;
+  if(valorSeg($("#tamMia")) === "Chica") return PRECIO_CHICA == null ? null : PRECIO_CHICA + (ori ? ORILLA : 0);
   if(sencillaMia()) return SENCILLA + (ori ? ORILLA : 0);
   return DOSXUNO[valorSeg($("#tamMia"))] + (ori ? ORILLA * 2 : 0);
 }
@@ -1670,10 +1680,14 @@ function pintarMia(nuevo){
   else { c.appendChild(el("b", {text:elegidos.length + " de " + MAX + ": "})); c.appendChild(document.createTextNode(elegidos.map(function(k){ return Horno.NOMBRES[k]; }).join(", ") + ".")); }
   var p = precioMia();
   var sen = sencillaMia();
-  if(p == null){ $("#precioMia").textContent = "La chica (6 rebanadas) te la cotiza la sucursal al recibir tu pedido."; $("#sticker").hidden = true; }
-  else $("#precioMia").textContent = sen ? "Grande de un ingrediente: " + pesos(p) + ". No aplica con otras promociones." : "Va en 2×1: te llevas dos iguales por " + pesos(p) + (valorSeg($("#tamMia")) === "Grande" ? " (con un solo ingrediente sale en $109 la grande)." : ".");
-  if(p != null){ $("#sticker").hidden = false; $("#sticker").firstChild.textContent = sen ? "Grande" : "2×1"; rodar($("#sticker b"), p); }
-  if(armarVisto) Horno.pintar(cv, { ings:elegidos, orilla:$("#orillaMia").checked, nuevo:quieto ? null : nuevo });
+  var chica = valorSeg($("#tamMia")) === "Chica", st = $("#sticker");
+  st.hidden = false; st.classList.toggle("sin-precio", p == null);
+  if(p == null){ $("#precioMia").textContent = "La chica (6 rebanadas) te la cotiza la sucursal al recibir tu pedido."; st.firstChild.textContent = "Chica"; pararRueda($("#sticker b")); $("#sticker b").__valor = null; $("#sticker b").textContent = "Precio en sucursal"; }
+  else {
+    $("#precioMia").textContent = chica ? "Chica de 6 rebanadas: " + pesos(p) + "." : sen ? "Grande de un ingrediente: " + pesos(p) + ". No aplica con otras promociones." : "Va en 2×1: te llevas dos iguales por " + pesos(p) + (valorSeg($("#tamMia")) === "Grande" ? " (con un solo ingrediente sale en $109 la grande)." : ".");
+    st.firstChild.textContent = chica ? "Chica" : sen ? "Grande" : "2×1"; rodar($("#sticker b"), p);
+  }
+  if(armarVisto) Horno.pintar(cv, { ings:elegidos, orilla:$("#orillaMia").checked, reb:rebMia(), nuevo:quieto ? null : nuevo });
   avisarMini();
 }
 $("#limpiarMia").addEventListener("click", function(){ elegidos = []; $("#orillaMia").checked = false; ponerSeg($("#tamMia"), "Grande"); pintarMia(); });
@@ -1686,7 +1700,9 @@ $("#agregarMia").addEventListener("click", function(){
 });
 /* la pizza y sus fotos se cargan cuando la sección se acerca, no antes */
 var armarVisto = false;
-function verArmar(){ if(armarVisto) return; armarVisto = true; Horno.pintar(cv, { ings:elegidos, orilla:$("#orillaMia").checked }); muestras(); }
+function verArmar(){ if(armarVisto) return; armarVisto = true; Horno.pintar(cv, { ings:elegidos, orilla:$("#orillaMia").checked, reb:rebMia() }); muestras(); }
+/* chica 6, grande 8, familiar 10: la pizza de Ármala se corta en las que trae su tamaño */
+function rebMia(){ return { Chica:6, Grande:8, Familiar:10 }[valorSeg($("#tamMia"))] || 8; }
 if("IntersectionObserver" in window){
   var obA = new IntersectionObserver(function(es){ if(es[0].isIntersecting){ verArmar(); obA.disconnect(); } }, {rootMargin:"900px 0px"});
   obA.observe($("#armar"));

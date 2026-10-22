@@ -44,6 +44,12 @@ se ahorra en par salen de los precios del cartel.
   cambian con los botones. Los botones no hacen zoom al tocarlos rápido (`touch-action`).
 - **Papel tapiz:** el logo y la sonrisa en baldosa (`img/tapiz.svg`), casi transparente y del color
   de la letra de cada sección.
+- **Tamaños en Ármala:** la chica se ve más chica y en 6 rebanadas, la grande en 8 y la familiar
+  más grande y en 10. La foto venía cortada en 8, así que `scripts/base-lisa.py` arma la misma
+  pizza sin cortes (`img/armar/base-lisa.webp`, con gajos de las rebanadas más anchas girados) y
+  `horno.js` dibuja los cortes que toquen. **El precio de la chica** va en `PRECIO_CHICA`
+  (`scripts/fuente.html`): hoy es `null` porque no está confirmado, y en cuanto se ponga sale solo en
+  la carta, Ármala, la hoja, el carrito y el WhatsApp.
 - **Ármala tú:** ingredientes en tres grupos (carnes, verduras y fruta, toque final), todos a la
   vista y antes que la pizza. Mientras se escogen, una pizza chiquita abajo a la izquierda se
   actualiza en vivo; al tocarla baja a la grande.

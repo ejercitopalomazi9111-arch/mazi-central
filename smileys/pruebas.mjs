@@ -161,7 +161,7 @@ const quietos = await pg.evaluate(async ()=>{
   const antes=JSON.stringify(cv.__plan.reparto.pepperoni.map(p=>[p.x,p.y]));
   Horno.pintar(cv,{ings:['pepperoni','champinon','jalapeno']}); await new Promise(r=>setTimeout(r,600));
   const despues=JSON.stringify(cv.__plan.reparto.pepperoni.map(p=>[p.x,p.y]));
-  const C=260, R=520*.47, orilla=cv.__plan.reparto.pepperoni.filter(p=>Math.hypot(p.x-C,p.y-C)>R*.8*.6).length;
+  const C=260, R=520*.43, orilla=cv.__plan.reparto.pepperoni.filter(p=>Math.hypot(p.x-C,p.y-C)>R*.8*.6).length;
   return {igual:antes===despues, n:cv.__plan.reparto.pepperoni.length, orilla};
 });
 v('al sumar ingredientes, los que ya estaban no se mueven', quietos.igual);
