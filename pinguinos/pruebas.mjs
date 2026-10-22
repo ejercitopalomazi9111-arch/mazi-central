@@ -10,10 +10,13 @@ const ok = (nombre, cond, extra = '') => { cond ? bien++ : mal++; console.log((c
 
 const navegador = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
 const ctx = await navegador.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, acceptDownloads: true });
+/* La nube se prueba aparte (pruebas-nube.mjs, contra el servidor de verdad). Aquí se
+   corta: estas pruebas son de la app en el teléfono y no deben depender de la red. */
+await ctx.route(/^https:\/\/sala\.palomazi9111\.workers\.dev\//, (r) => r.abort('internetdisconnected'));
 const p = await ctx.newPage();
 const errores = [];
 p.on('pageerror', (e) => errores.push(e.message));
-p.on('console', (m) => { if(m.type() === 'error') errores.push(m.text()); });
+p.on('console', (m) => { if(m.type() === 'error' && !/ERR_INTERNET_DISCONNECTED|Failed to load resource/.test(m.text())) errores.push(m.text()); });
 
 /* una foto de mentiras, hecha con el lienzo del propio navegador */
 async function foto(color){
