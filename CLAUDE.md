@@ -448,6 +448,9 @@ dependemos.
 
    | un nombre nuevo de clase o de `@keyframes` en una página grande es mío y no choca | en CSS todo es global: el último `@keyframes gira` pisa al primero y una clase `.vuela` que ya existía trae su fondo y su aro | en Smiley's, el precio que «rodaba» salía **de cabeza** (era el `gira` de 360° de otra animación) y la pizza que vuela a la grande traía un aro blanco color cartón (el `.vuela` de agregar al carrito). **Y con las funciones de JS es peor:** dos `function volar` en el mismo `<script>` no truenan, gana la última en silencio — agregar cualquier cosa al carrito disparaba la animación de la pizza de Ármala, con las 59 pruebas en verde porque ninguna miraba la bolita que vuela a la caja. Antes de inventar un nombre, `grep` en el archivo; y antes de cerrar, `grep -o "@keyframes [a-z-]*" archivo | sort | uniq -d` (salió un tercer choque: dos `@keyframes salta`) |
 
+   | `getComputedStyle(el).getPropertyValue('--ancho')` da el ancho | da el TEXTO de la variable sin resolver: con `clamp(74px, 23vw, 116px)` el `parseFloat` es NaN y cae al respaldo | el abanico de Puercos calculaba el encime con 100 px fijos; al crecer las cartas a 113 se salió del tapete. Se mide la carta (`offsetWidth`). **Y una carta que gira alrededor de un punto muy abajo (`transform-origin: 50% 155%`) se corre hacia afuera** 1.55·alto·sen θ: 33 px por lado que movían la página de lado |
+   | «la mano cambió» se arregla volviendo a pintar la mano | volver a pintar es BORRAR y crear todo: cada carta nueva arranca sin dibujo (fondo negro) y con su animación de reparto | Carlos: «que no se cambien las cartas al usar una» y «aparecen en negro», en cada ronda. Se actualiza por llave: la jugada se va, la nueva entra, las demás no se tocan; y el fondo mientras carga es el reverso |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---

@@ -1043,6 +1043,59 @@ console.log('\n── Abrir el juego por primera vez ──');
   await limpio.close();
 }
 
+/* ── LO QUE REPORTÓ CARLOS EL 22 DE OCTUBRE ───────────────────────────────
+   «que no se cambien las cartas al usar una» y «que no se traben después de
+   jugar y aparezcan en negro». Se juega como en el teléfono —con el dedo—,
+   seis rondas, y se mide lo que antes pasaba: la mano entera se borraba y se
+   volvía a repartir en cada ronda. */
+console.log('\n── Jugar una carta no vuelve a repartir la mano (22 de octubre) ──');
+{
+  const tel = await b.newContext({ viewport:{ width:390, height:844 }, hasTouch:true, isMobile:true, deviceScaleFactor:2 });
+  const p3 = await tel.newPage();
+  const rotos3 = [];
+  p3.on('pageerror', e => rotos3.push(e.message));
+  await p3.goto(BASE + '/juegos/guerra-de-puercos/');
+  await p3.click('[data-modo="maquina"]');
+  await p3.waitForSelector('#mMano .carta');
+  await p3.waitForTimeout(900);
+  let mismas = true, soloUnaNueva = true, sinDesborde = true, montones = true, negras = 0;
+  for(let r = 0; r < 6; r++){
+    /* Se marca cada botón de la mano con una etiqueta que sólo vive en ESE
+       nodo: si después de la ronda sigue ahí, el botón no se volvió a crear. */
+    await p3.evaluate(() => document.querySelectorAll('#mMano .carta').forEach(b => { b.__viejo = true; }));
+    const jugada = await p3.evaluate(() => [...document.querySelectorAll('#mMano .carta')].reverse().find(b => !b.dataset.esp).dataset.llave);
+    for(let i = 0; i < 3; i++){ await p3.tap('#mMano .carta[data-llave="' + jugada + '"]', { position:{ x:12, y:60 } }); await p3.waitForTimeout(90); }
+    await p3.waitForFunction(() => !document.querySelector('#fDuelo').classList.contains('oculto'), null, { timeout:4000 });
+    if(await p3.evaluate(() => !!J.acabo)) break;
+    await p3.click('#bSeguir');
+    await p3.waitForTimeout(60);
+    const m = await p3.evaluate((jugada) => {
+      const bs = [...document.querySelectorAll('#mMano .carta')];
+      const esp = bs.filter(b => b.dataset.esp).map(b => b.dataset.esp);
+      return {
+        viejas: bs.filter(b => b.__viejo).length, nuevas: bs.filter(b => !b.__viejo).length, total: bs.length,
+        sigueLaJugada: bs.some(b => b.dataset.llave === jugada),
+        repetidas: esp.length !== new Set(esp).size,
+        desborde: document.documentElement.scrollWidth - innerWidth,
+        /* una carta sin dibujo pintaría su fondo: tiene que ser el reverso, no negro */
+        fondoNegro: bs.filter(b => /^rgb\(27, 14, 22\)/.test(getComputedStyle(b).backgroundColor) && !/reverso/.test(getComputedStyle(b).backgroundImage)).length,
+      };
+    }, jugada);
+    if(m.sigueLaJugada || m.viejas < m.total - 2) mismas = false;
+    if(m.nuevas > 2) soloUnaNueva = false;
+    if(m.desborde > 0) sinDesborde = false;
+    if(m.repetidas) montones = false;
+    negras += m.fondoNegro;
+  }
+  ok('las cartas que no se jugaron son las MISMAS (no se vuelven a crear)', mismas);
+  ok('después de jugar sólo entra la carta que llega del mazo', soloUnaNueva);
+  ok('con la mano llena la página no se recorre de lado', sinDesborde);
+  ok('los +5 y −5 iguales van en un solo montón con su «×N»', montones);
+  ok('ninguna carta tiene fondo negro mientras carga su dibujo', negras === 0, String(negras));
+  ok('jugar con el dedo no tiró ningún error', rotos3.length === 0, rotos3[0] || '');
+  await tel.close();
+}
+
 ok('la página no tiró ningún error', errores.length === 0, errores[0] || '');
 
 await b.close();
