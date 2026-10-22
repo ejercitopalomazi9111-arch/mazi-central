@@ -941,8 +941,10 @@ sin framework**, que es el argumento de que sabemos hacerlo a mano.
 
 - Repo principal: `mazi-central` · rama de trabajo: `claude/juego-oregon-3kmicc`
 - **`main` es lo que se publica**, **a propósito** y no por accidente. Pero el que publica ya no es
-  GitHub Pages: **es Cloudflare**. No hay `.github/workflows/` en este repo; lo que hay es
-  `wrangler.jsonc` en la raíz, y está ahí justo para esto.
+  GitHub Pages: **es Cloudflare**, con `wrangler.jsonc` en la raíz. En `.github/workflows/` sólo
+  hay dos tareas de La Sala que no publican el sitio: «Desplegar la sala» (a mano) y el
+  «Buzón» (apagado desde el 22 de octubre: su llave era la quemada de Luis y salía en rojo
+  cada corrida).
 - **Nunca se sirve la raíz del repo.** Cloudflare corre `node build.mjs`, que arma `dist/` con una
   lista explícita de lo que sí va. Servir la raíz publicaría `.claude/`, **este archivo** —que trae
   cosas del negocio— y el código del servidor. Si algo no apareció publicado, la lista está a la

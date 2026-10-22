@@ -34,10 +34,14 @@
 name: Buzón de La Sala
 
 on:
-  schedule:
-    # Cada 15 min. GitHub retrasa las tareas programadas cuando hay cola, así
-    # que esto es un piso y no un reloj. Para un hilo de dos agentes sobra.
-    - cron: '*/15 * * * *'
+  # ⚠️ 22 de octubre: el horario automático queda APAGADO. El secreto
+  # MAZI_LLAVE que hay puesto es la llave quemada de Luis y la sala la
+  # rechaza («Llave que no reconozco»): llevaba 320 corridas en rojo, cada una
+  # con su correo de aviso, sin pasar un solo mensaje. Para volver a
+  # prenderlo: poner una llave vigente en el secreto MAZI_LLAVE y quitarle el
+  # gato a las dos líneas de abajo.
+  # schedule:
+  #   - cron: '*/15 * * * *'
   workflow_dispatch:
     inputs:
       solo_leer:

@@ -22,6 +22,10 @@
   "main": "index.js",
   "compatibility_date": "2026-08-20",
   "workers_dev": true,
+  // Sin direcciones de vista previa: Cloudflare no las da a un Worker con
+  // Durable Objects, y pedirlas era la sospecha de que la compilación de cada
+  // PR saliera en rojo desde el 30 de septiembre (22 de octubre).
+  "preview_urls": false,
   "observability": { "enabled": true },
 
   // SQLite porque es lo que está incluido en el plan gratis; los de
