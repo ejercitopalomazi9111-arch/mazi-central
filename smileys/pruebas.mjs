@@ -51,8 +51,8 @@ v('abre WhatsApp de Peñaflor', url.startsWith('https://wa.me/524421497989?text=
 const msg = decodeURIComponent(url.split('text=')[1]||'');
 console.log('----\n'+msg+'\n----');
 v('el mensaje trae las alitas con su precio', msg.includes('2 × Alitas (2 órdenes) — $540'));
-v('trae la receta sin precio inventado', msg.includes('2 × Pepperoni Especial (Familiar · con orilla de queso)') && !/Pepperoni Especial[^\n]*\$/.test(msg));
-v('suma lo que tiene precio: 540+289+109 = 938', msg.includes('$938'));
+v('la receta va en 2×1 con su precio: (350 + 2 orillas) × 2 = $840', msg.includes('2 × 2×1 familiares: Pepperoni Especial + otra igual (Con orilla de queso en las dos) — $840'));
+v('suma todo: 840+540+289+109 = 1,778, sin pedir que confirmen', msg.includes('Total: $1,778') && !msg.includes('confirman'));
 v('dice para cuándo', msg.includes('Para: lo antes posible'));
 // a una hora: sin hora no se manda
 await pg.check('input[name=cuando][value=hora]');
@@ -102,13 +102,20 @@ await pg.click('#hojaPedido [data-cerrar]');
 await pg.evaluate(()=>document.getElementById('carta').scrollIntoView());
 await pg.click('[aria-label="Agregar Hawai al pedido"], [aria-label="Agregar Fiesta en Hawai al pedido"]');
 await pg.check('#hrMitad'); await pg.selectOption('#hrOtra', 'pastor'); await pg.click('#hrAgregar');
-v('mitad y mitad entra al pedido con las dos', await pg.evaluate(()=>JSON.parse(localStorage.getItem('smileys-pedido-v1')).renglones.some(r=>r.nombre==='Mitad Fiesta en Hawai / mitad Pastor')));
+v('mitad y mitad entra al pedido con las dos', await pg.evaluate(()=>JSON.parse(localStorage.getItem('smileys-pedido-v1')).renglones.some(r=>r.nombre==='2×1 grandes: Mitad Fiesta en Hawai / mitad Pastor + otra igual' && r.precio===289)));
 // ármala: hasta 4, como en la sucursal
 await pg.click('#limpiarMia');
 for(let i=0;i<5;i++) await pg.click(`#ings .ing:nth-child(${i+1})`, {force:true}).catch(()=>{});
 v('ármala deja hasta 4 ingredientes', (await pg.$$('#ings .ing[aria-pressed="true"]')).length===4);
 // el horario se ve en cada sucursal
 v('cada sucursal dice su horario', (await pg.$$eval('.suc__hora', e=>e.map(x=>x.textContent))).length===3 && (await pg.$$eval('.suc__dias', e=>e.map(x=>x.textContent))).every(t=>t.includes('11 am a 10 pm')));
+// smileys burger: hamburguesa con tocino
+await pg.evaluate(()=>document.getElementById('burger').scrollIntoView());
+await pg.check('#burgers .burger:first-child input[value=tocino]');
+v('la hamburguesa con tocino sube a $135', (await pg.textContent('#burgers .burger:first-child .btn')).includes('$135'));
+await pg.click('#burgers .burger:first-child .btn');
+v('y entra al pedido con su precio', await pg.evaluate(()=>JSON.parse(localStorage.getItem('smileys-pedido-v1')).renglones.some(r=>r.nombre==='Hamburguesa' && r.detalle==='Con tocino' && r.precio===135)));
+v('los combos de la carta están: 1 a 5', (await pg.$$eval('#promosLista .promo__etq', e=>e.map(x=>x.textContent).join('|'))).match(/Combo [1-5]/g).length===5);
 v('ni un error de consola', err.length===0, err.join(' | '));
 console.log(ok,'bien ·',mal,'mal');
 await br.close();

@@ -311,7 +311,9 @@ button{font:inherit; color:inherit}
 .anclas p{margin:0; font-size:16px; color:#5A4A3E}
 .anclas strong{display:block; font:800 30px/1 var(--display); font-variation-settings:"wdth" 80; color:var(--tinta); text-transform:uppercase}
 .anclas s{color:var(--rojo); text-decoration-thickness:3px}
-.promos{display:grid; gap:16px}
+.promos{display:flex; gap:14px; overflow-x:auto; scroll-snap-type:x mandatory; margin:0 calc(var(--lado) * -1); padding:4px var(--lado) 18px; scrollbar-width:none}
+.promos::-webkit-scrollbar{display:none}
+.promos > .promo{flex:0 0 min(84vw, 380px); scroll-snap-align:start}
 .promo{position:relative; display:grid; gap:18px; padding:26px 24px; border-radius:24px; background:#fff; color:var(--tinta); overflow:hidden;
   -webkit-mask:radial-gradient(circle 14px at 0 62%, transparent 98%, #000) , radial-gradient(circle 14px at 100% 62%, transparent 98%, #000); -webkit-mask-composite:source-in; mask:radial-gradient(circle 14px at 0 62%, transparent 98%, #000), radial-gradient(circle 14px at 100% 62%, transparent 98%, #000); mask-composite:intersect}
 .promo::after{content:""; position:absolute; left:22px; right:22px; top:62%; border-top:2px dashed rgba(28,21,18,.18)}
@@ -336,6 +338,22 @@ button{font:inherit; color:inherit}
 .promo--combo::after{display:none}
 .promo--combo{-webkit-mask:none; mask:none}
 .promo__foto{width:calc(100% + 48px); max-width:none; margin:-26px -24px 0; aspect-ratio:16/10; height:auto; object-fit:cover; object-position:50% 70%}
+.burgers{display:grid; gap:14px}
+.burger{display:grid; grid-template-columns:120px minmax(0,1fr); gap:14px; align-items:center; padding:10px; border-radius:24px; background:var(--carbon); box-shadow:inset 0 0 0 1px var(--linea)}
+.burger img{width:120px; height:100px; object-fit:cover; border-radius:16px}
+.burger h3{margin:0; font:800 28px/.95 var(--display); font-variation-settings:"wdth" 78; text-transform:uppercase}
+.burger .btn{min-height:46px; padding:0 18px; margin-top:10px}
+.burger__extras{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px}
+.burger__extras label{display:inline-flex; align-items:center; gap:6px; min-height:40px; padding:0 12px; border-radius:99px; background:rgba(255,246,232,.08); font-weight:700; font-size:14px; cursor:pointer}
+.burger__extras input{accent-color:var(--amarillo); width:18px; height:18px; margin:0}
+.combos-b{display:grid; gap:10px; margin-top:22px}
+.combo-b{display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:12px; align-items:center; padding:14px 14px 14px 18px; border-radius:18px; background:var(--amarillo); color:var(--negro)}
+.combo-b b{font:800 20px/1.05 var(--display); font-variation-settings:"wdth" 80; text-transform:uppercase}
+.combo-b small{display:block; font-weight:700; font-size:12px; color:#6B4E00}
+.combo-b strong{font:800 30px/1 var(--display)}
+.combo-b button{width:46px; height:46px; border-radius:50%; border:0; background:var(--negro); color:#fff; display:grid; place-items:center; cursor:pointer}
+.combo-b button svg{width:20px; height:20px}
+@media (min-width:860px){ .burgers{grid-template-columns:repeat(3, minmax(0,1fr))} .combos-b{grid-template-columns:repeat(2, minmax(0,1fr))} }
 .opiniones{display:grid; gap:14px}
 .opiniones__cab{display:flex; align-items:center; gap:16px; padding:18px 20px; border-radius:24px; background:var(--amarillo); color:var(--negro)}
 .opiniones__cab strong{font:800 64px/.8 var(--display); font-variation-settings:"wdth" 76}
@@ -362,7 +380,7 @@ button{font:inherit; color:inherit}
 .vitrina__precios{display:flex; gap:26px}
 .vitrina__precios strong{display:block; font:800 48px/1 var(--display); color:var(--amarillo)}
 .vitrina__precios span{color:#DDD2C4; font-size:14px}
-@media (min-width:860px){ .promos{grid-template-columns:repeat(3, minmax(0,1fr))} .vitrina{min-height:420px} .vitrina__in{padding:44px; grid-template-columns:1fr auto; align-items:end} }
+@media (min-width:860px){ .promos{display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); overflow:visible; margin:0; padding:0} .promos > .promo{flex:none} .vitrina{min-height:420px} .vitrina__in{padding:44px; grid-template-columns:1fr auto; align-items:end} }
 
 /* ───────── sucursales ───────── */
 .sucs{display:grid; gap:14px}
@@ -460,6 +478,8 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
 .campo input[type=time]{max-width:200px; color-scheme:dark}
 .campo-select{display:block; width:100%; min-height:52px; margin-top:10px; padding:0 14px; border-radius:14px; border:0; background:var(--negro); color:var(--hueso); box-shadow:inset 0 0 0 1px var(--linea); font:600 16px/1 var(--texto)}
 .campo-select[hidden]{display:none}
+.hr-total{margin:0; display:flex; justify-content:space-between; font-weight:800; font-size:18px}
+.hr-total small{color:var(--gris); font-weight:600; font-size:13px}
 .renglones{margin:0; padding:0; list-style:none; display:grid; gap:2px}
 .renglon{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px 12px; align-items:center; padding:14px 0; border-bottom:1px solid var(--linea)}
 .renglon__n{font-weight:800} .renglon__d{display:block; color:var(--gris); font-size:14px}
@@ -532,7 +552,7 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
   <div class="ancho barra__in">
     <a class="barra__logo" href="#inicio" aria-label="Smiley's, inicio"><svg viewBox="0 0 1570.000000 637.000000" aria-hidden="true"><use href="#logo"/></svg></a>
     <nav aria-label="Secciones">
-      <a href="#favoritas">Favoritas</a><a href="#cuantos">¿Cuántos son?</a><a href="#carta">Carta</a><a href="#armar">Ármala</a><a href="#alitas">Alitas</a><a href="#promos">Promos</a><a href="#sucursales">Sucursales</a>
+      <a href="#favoritas">Favoritas</a><a href="#cuantos">¿Cuántos son?</a><a href="#carta">Carta</a><a href="#armar">Ármala</a><a href="#alitas">Alitas</a><a href="#burger">Burger</a><a href="#promos">Promos</a><a href="#sucursales">Sucursales</a>
     </nav>
     <button class="btn btn--rojo barra__pedido" type="button" data-abrir-pedido>Mi pedido <b id="cuentaBarra">0</b></button>
   </div>
@@ -683,16 +703,28 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
     </div>
   </section>
 
+  <section class="sec negro" id="burger" aria-labelledby="t-burger">
+    <div class="ancho">
+      <div class="cab cab--lado rev">
+        <p class="ojo">Smileys Burger</p>
+        <h2 class="t-display" id="t-burger">También hay<br>hamburguesa</h2>
+        <p>Hamburguesa, hot dog y papas a la francesa, con sus combos.</p>
+      </div>
+      <div class="burgers" id="burgers"></div>
+      <div class="combos-b rev" id="combosB"></div>
+    </div>
+  </section>
+
   <section class="sec claro" id="promos" aria-labelledby="t-promos">
     <div class="ancho">
       <div class="cab cab--lado rev">
         <p class="ojo">Promociones</p>
         <h2 class="t-display" id="t-promos">Haz cuentas:<br>rinde más</h2>
-        <p>Vigentes en las tres sucursales. Al agregarla, dinos qué recetas quieres.</p>
+        <p>Las de la carta del mostrador. Desliza para verlas todas, y al agregarla dinos qué recetas quieres.</p>
       </div>
       <div class="anclas rev">
         <img src="img/rebanada.webp" alt="" width="800" height="1000" loading="lazy">
-        <p>Una rebanada suelta en el mostrador: <s>$40</s><strong>En promo, desde $18</strong>Haz cuentas abajo: es la misma pizza.</p>
+        <p>Una rebanada suelta en el mostrador: <s>$40</s><strong>En combo, desde $16</strong>Haz cuentas abajo: es la misma pizza.</p>
       </div>
       <div class="promos" id="promosLista"></div>
       <div class="vitrina rev">
@@ -782,15 +814,17 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
     <div class="ficha"><div class="ficha__foto"><img id="hrFoto" alt="" width="620" height="620"></div><h3 id="hrNombre"></h3><p id="hrIngs"></p></div>
     <div><span class="opcion__t" id="t-hr-tam">Tamaño</span>
       <div class="seg" role="group" aria-labelledby="t-hr-tam" id="hrTam">
-        <button type="button" data-v="Grande" aria-pressed="true">Grande · 8</button><button type="button" data-v="Familiar" aria-pressed="false">Familiar · 10</button>
+        <button type="button" data-v="Grande" aria-pressed="true">2 grandes · $289</button><button type="button" data-v="Familiar" aria-pressed="false">2 familiares · $350</button>
       </div>
     </div>
     <div><label class="interruptor"><input type="checkbox" id="hrMitad"> Mitad y mitad <small>con otra especialidad</small></label>
       <select id="hrOtra" class="campo-select" hidden aria-label="La otra mitad"></select></div>
-    <label class="mejora"><img src="img/orilla.jpg" alt="" width="1600" height="620" loading="lazy"><span><b>Orilla rellena de queso</b><small>La orilla también se estira · +$35</small></span><input type="checkbox" id="hrOrilla"></label>
-    <div><span class="opcion__t">Cuántas</span><div class="cantidad"><button type="button" data-cant="-1" aria-label="Una menos">−</button><output id="hrCant">1</output><button type="button" data-cant="1" aria-label="Una más">+</button></div></div>
+    <label class="mejora"><img src="img/orilla.jpg" alt="" width="1600" height="620" loading="lazy"><span><b>Orilla rellena de queso</b><small>En las dos pizzas · +$35 cada una</small></span><input type="checkbox" id="hrOrilla"></label>
+    <div><span class="opcion__t">Es 2×1: ¿cuál es la segunda?</span>
+      <select id="hrSegunda" class="campo-select" style="margin-top:0" aria-label="La segunda pizza"></select></div>
+    <div><span class="opcion__t">Cuántos 2×1</span><div class="cantidad"><button type="button" data-cant="-1" aria-label="Uno menos">−</button><output id="hrCant">1</output><button type="button" data-cant="1" aria-label="Uno más">+</button></div></div>
   </div>
-  <div class="hoja__pie"><button class="btn btn--rojo" type="button" id="hrAgregar">Agregar al pedido</button></div>
+  <div class="hoja__pie"><p class="hr-total" id="hrTotal"></p><button class="btn btn--rojo" type="button" id="hrAgregar">Agregar al pedido</button></div>
 </dialog>
 
 <!-- hoja: agregar una promoción -->
@@ -900,13 +934,31 @@ var COMPLEMENTOS = [
  {id:"boneless",  n:"Boneless",     p:129, dos:240, f:"img/c-boneless.jpg"},
  {id:"papas",     n:"Papas gajo",   p:49,  dos:80,  f:"img/c-papas.jpg"},
  {id:"spaguetti", n:"Spaguetti",    p:65,  dos:109, f:"img/c-spaguetti.jpg"},
- {id:"bake",      n:"Chicken Bake", p:69,  dos:119, f:"img/c-bake.jpg"}
+ {id:"bake",      n:"Chicken Bake", p:69,  dos:119, f:"img/c-bake.jpg"},
+ {id:"muffins",   n:"Muffins de pizza", p:49, f:"img/m-muffins.jpg", uno:"4 muffins"}
 ];
+/* Smileys Burger: su carta aparte (foto del 22 de octubre) */
+var BURGER = [
+ {id:"hamburguesa", n:"Hamburguesa", p:110, f:"img/m-burger.jpg", extras:1},
+ {id:"hotdog",      n:"Hot dog",     p:55,  f:"img/m-hotdog.jpg"},
+ {id:"francesa",    n:"Papas a la francesa", p:49, f:"img/m-papas-francesa.jpg"}
+];
+var COMBOS_BURGER = [
+ {id:"cb1", n:"Hamburguesa + papas y refresco", p:159},
+ {id:"cb2", n:"2 hamburguesas", p:210},
+ {id:"cb3", n:"Hamburguesa + hot dog", p:149},
+ {id:"cb4", n:"2 combos (hamburguesa, papas y refresco)", p:269, temporal:1}
+];
+var EXTRA_BURGER = 25;
 var PROMOS = [
- {id:"2grandes",   n:"2 pizzas grandes",   etq:"2×1 · 16 rebanadas", d:"Dos grandes, con los ingredientes que quieras en cada una.", p:289, reb:16, clase:"promo--rojo", pregunta:"¿Qué lleva cada una?"},
- {id:"2familiares",n:"2 pizzas familiares",etq:"2×1 · 20 rebanadas · la que más rinde", d:"La de la reunión: veinte rebanadas en total.", p:350, reb:20, clase:"promo--negro", pregunta:"¿Qué lleva cada una?"},
- {id:"sencilla",   n:"Grande sencilla",    etq:"8 rebanadas · 1 ingrediente", d:"Grande, con el ingrediente que elijas.", p:109, reb:8, clase:"", nota:"No aplica con otras promociones.", pregunta:"¿Qué ingrediente?"},
- {id:"combos",     n:"2 combos de hamburguesa", etq:"Por tiempo limitado", d:"Hamburguesa con papas y refresco, dos combos.", p:269, cada:2, clase:"promo--combo", img:"img/real-combo.jpg", nota:"Promoción del cartel de la sucursal: por 30 días. Pregunta si sigue vigente.", pregunta:"¿Algo que quitarle o ponerle?"}
+ {id:"2grandes",   n:"2 pizzas grandes",   etq:"2×1 · 16 rebanadas", d:"Dos grandes de especialidad, mitad y mitad o de 1 a 4 ingredientes.", p:289, reb:16, clase:"promo--rojo", pregunta:"¿Qué lleva cada una?"},
+ {id:"combo4",     n:"3 pizzas grandes",   etq:"Combo 4 · 24 rebanadas · la que más rinde", d:"Tres grandes de especialidad: para la reunión.", p:389, reb:24, clase:"promo--negro", pregunta:"¿Qué especialidades?"},
+ {id:"2familiares",n:"2 pizzas familiares",etq:"2×1 · 20 rebanadas", d:"Dos familiares de especialidad, mitad y mitad o de 1 a 4 ingredientes.", p:350, reb:20, clase:"", pregunta:"¿Qué lleva cada una?"},
+ {id:"combo1",     n:"Grande + spaguetti o papas", etq:"Combo 1", d:"Pizza grande de especialidad con spaguetti o papas gajo.", p:199, clase:"promo--rojo", pregunta:"¿Qué especialidad, y spaguetti o papas?"},
+ {id:"combo2",     n:"Grande + alitas o boneless", etq:"Combo 2", d:"Pizza grande de especialidad con alitas o boneless.", p:289, clase:"promo--negro", pregunta:"¿Qué especialidad, y alitas o boneless?"},
+ {id:"combo5",     n:"Familiar + spaguetti o papas", etq:"Combo 5", d:"Pizza familiar con spaguetti o papas gajo.", p:259, clase:"", pregunta:"¿Qué especialidad, y spaguetti o papas?"},
+ {id:"combo3",     n:"Chicken bake + spaguetti o refresco", etq:"Combo 3", d:"Chicken bake con spaguetti o refresco de 400 ml.", p:129, clase:"promo--rojo", pregunta:"¿Spaguetti o refresco?"},
+ {id:"sencilla",   n:"Grande sencilla",    etq:"8 rebanadas · 1 ingrediente", d:"Grande, con el ingrediente que elijas.", p:109, reb:8, clase:"promo--negro", nota:"No aplica con otras promociones.", pregunta:"¿Qué ingrediente?"}
 ];
 var SUCURSALES = [
  {id:"sanjose",    n:"Lomas de San José",  tel:"442-680-29-01", wa:"524426802901"},
@@ -914,6 +966,8 @@ var SUCURSALES = [
  {id:"balvanera",  n:"Lomas de Balvanera", tel:"442-612-37-73", wa:"524426123773"}
 ];
 var ORILLA = 35, SENCILLA = 109;
+/* las especialidades van en 2×1: dos grandes $289, dos familiares $350 (la carta del mostrador) */
+var DOSXUNO = { Grande:289, Familiar:350 };
 /* horario: lo dijo Carlos el 22 de octubre, de 11 am a 10 pm las tres */
 var ABRE = 11, CIERRA = 22;
 function horaQro(){
@@ -991,24 +1045,33 @@ function ponerSeg(caja, v){ $$("button", caja).forEach(function(o){ o.setAttribu
 
 /* receta */
 var actual = null, cantHR = 1, desdeHR = null;
-segmento($("#hrTam"));
+segmento($("#hrTam"), function(){ totalHR(); });
+function precioHR(){ return (DOSXUNO[valorSeg($("#hrTam"))] + ($("#hrOrilla").checked ? ORILLA * 2 : 0)) * cantHR; }
+function totalHR(){ var t = $("#hrTotal"); t.textContent = ""; t.appendChild(el("span", null, ["Total ", el("small", {text:"· te llevas " + cantHR * 2 + " pizzas"})])); t.appendChild(el("span", {text:pesos(precioHR())})); }
+$("#hrOrilla").addEventListener("change", totalHR);
 function abrirReceta(p, desde){
   actual = p; cantHR = 1; desdeHR = desde || null;
   $("#hrFoto").src = p.f; $("#hrNombre").textContent = p.n; $("#hrIngs").textContent = p.antojo + " " + p.d;
   ponerSeg($("#hrTam"), "Grande"); $("#hrOrilla").checked = false; $("#hrCant").textContent = "1";
   $("#hrMitad").checked = false; $("#hrOtra").hidden = true; $("#hrOtra").textContent = "";
   PIZZAS.filter(function(x){ return x.s !== p.s; }).forEach(function(x){ $("#hrOtra").appendChild(el("option", {value:x.s, text:x.n})); });
+  var sg = $("#hrSegunda"); sg.textContent = ""; sg.appendChild(el("option", {value:"", text:"Otra " + p.n}));
+  PIZZAS.filter(function(x){ return x.s !== p.s; }).forEach(function(x){ sg.appendChild(el("option", {value:x.s, text:x.n})); });
+  sg.appendChild(el("option", {value:"?", text:"La elijo con la sucursal"}));
+  totalHR();
   abrir($("#hojaReceta"));
 }
 $("#hrMitad").addEventListener("change", function(){ $("#hrOtra").hidden = !this.checked; });
 $$("#hojaReceta [data-cant]").forEach(function(b){ b.addEventListener("click", function(){
-  cantHR = Math.max(1, Math.min(20, cantHR + Number(b.dataset.cant))); $("#hrCant").textContent = String(cantHR);
+  cantHR = Math.max(1, Math.min(20, cantHR + Number(b.dataset.cant))); $("#hrCant").textContent = String(cantHR); totalHR();
 }); });
 $("#hrAgregar").addEventListener("click", function(){
   var tam = valorSeg($("#hrTam")), ori = $("#hrOrilla").checked, otra = $("#hrMitad").checked ? porS[$("#hrOtra").value] : null;
   $("#hojaReceta").close();
-  agregar({ tipo:"receta", nombre:otra ? "Mitad " + actual.n + " / mitad " + otra.n : actual.n, detalle:tam + (ori ? " · con orilla de queso" : ""), precio:null,
-            cant:cantHR, clave:"r:" + actual.s + (otra ? "+" + otra.s : "") + ":" + tam + ":" + ori }, desdeHR || actual.li.querySelector(".plato__mas"), actual.f);
+  var sv = $("#hrSegunda").value, seg = sv === "?" ? "la segunda la elijo con ustedes" : (sv ? porS[sv].n : "otra igual");
+  var primera = otra ? "Mitad " + actual.n + " / mitad " + otra.n : actual.n;
+  agregar({ tipo:"receta", nombre:"2×1 " + (tam === "Grande" ? "grandes" : "familiares") + ": " + primera + " + " + seg, detalle:(ori ? "Con orilla de queso en las dos" : ""), precio:DOSXUNO[tam] + (ori ? ORILLA * 2 : 0),
+            cant:cantHR, clave:"r:" + actual.s + (otra ? "+" + otra.s : "") + ":" + sv + ":" + tam + ":" + ori }, desdeHR || actual.li.querySelector(".plato__mas"), actual.f);
 });
 
 /* ═══════════ las favoritas ═══════════ */
@@ -1030,23 +1093,25 @@ favs.addEventListener("scroll", function(){
 $("#sello").addEventListener("click", function(){ abrirReceta(Object.assign({}, porS.pepperoni, {f:"img/hero-queso.webp"}), $("#sello")); });
 
 /* ═══════════ ¿cuántos van a comer? ═══════════
-   Con los precios que sí tenemos: 2 grandes $289 (16 rebanadas), 2 familiares $350 (20) y la
+   Con los precios de la carta: 3 grandes $389 (combo 4, 24 rebanadas), 2 grandes $289 (16), 2 familiares $350 (20) y la
    grande sencilla $109 (8, un ingrediente, no se junta con otras promos). Se busca lo más barato
    que alcance, y si la sencilla sale más barata se dice aparte. */
 var gente = 6, hambre = 3;
 function mejorCombo(reb){
   var mejor = null;
-  for(var f = 0; f <= Math.ceil(reb / 20) + 1; f++) for(var g2 = 0; g2 <= Math.ceil(reb / 16) + 1; g2++){
-    if(f * 20 + g2 * 16 < reb || (f + g2) === 0) continue;
-    var costo = f * 350 + g2 * 289, sobra = f * 20 + g2 * 16 - reb;
-    if(!mejor || costo < mejor.costo || (costo === mejor.costo && sobra < mejor.sobra)) mejor = {f:f, g:g2, costo:costo, sobra:sobra, reb:f * 20 + g2 * 16};
+  for(var t = 0; t <= Math.ceil(reb / 24) + 1; t++) for(var f = 0; f <= Math.ceil(reb / 20) + 1; f++) for(var g2 = 0; g2 <= Math.ceil(reb / 16) + 1; g2++){
+    var r = t * 24 + f * 20 + g2 * 16;
+    if(r < reb || (t + f + g2) === 0) continue;
+    var costo = t * 389 + f * 350 + g2 * 289, sobra = r - reb;
+    if(!mejor || costo < mejor.costo || (costo === mejor.costo && sobra < mejor.sobra)) mejor = {t:t, f:f, g:g2, costo:costo, sobra:sobra, reb:r};
   }
   return mejor;
 }
 function pintarCalc(){
-  var reb = gente * hambre, m = mejorCombo(reb), cajas = (m.f + m.g) * 2;
+  var reb = gente * hambre, m = mejorCombo(reb), cajas = (m.f + m.g) * 2 + m.t * 3;
   $("#personas b").textContent = String(gente); $("#personas span").textContent = gente === 1 ? "persona" : "personas";
   var partes = [];
+  if(m.t) partes.push(m.t === 1 ? "3 grandes (combo 4)" : m.t + " combos de 3 grandes");
   if(m.f) partes.push(m.f === 1 ? "2 familiares" : m.f + " promos de 2 familiares");
   if(m.g) partes.push(m.g === 1 ? "2 grandes" : m.g + " promos de 2 grandes");
   $("#calcFrase").innerHTML = "";
@@ -1077,6 +1142,7 @@ $("#mas").addEventListener("click", function(){ gente = Math.min(40, gente + 1);
 segmento($("#hambre"), function(v){ hambre = Number(v); pintarCalc(); });
 $("#calcAgregar").addEventListener("click", function(){
   var m = pintarCalc.m, b = $("#calcAgregar");
+  if(m.t) agregar({ tipo:"promo", nombre:"Combo 4: 3 pizzas grandes", detalle:"Para " + gente + " · las recetas se eligen con la sucursal", precio:389, cant:m.t, clave:"p:combo4:calc" + gente }, b, "img/pepperoni-caja.webp");
   if(m.f) agregar({ tipo:"promo", nombre:"Promo 2 pizzas familiares", detalle:"Para " + gente + " · las recetas se eligen con la sucursal", precio:350, cant:m.f, clave:"p:2familiares:calc" + gente }, b, "img/pepperoni-caja.webp");
   if(m.g) agregar({ tipo:"promo", nombre:"Promo 2 pizzas grandes", detalle:"Para " + gente + " · las recetas se eligen con la sucursal", precio:289, cant:m.g, clave:"p:2grandes:calc" + gente }, b, "img/pepperoni-caja.webp");
 });
@@ -1121,9 +1187,9 @@ PROMOS.forEach(function(pr){
     $("#hpPregunta").textContent = pr.pregunta + " (opcional)"; $("#hpNota").value = "";
     abrir($("#hojaPromo"));
   });
-  var porReb = pr.reb ? pr.p / pr.reb : pr.p / pr.cada;
+  var porReb = pr.reb ? pr.p / pr.reb : 0;
   var precio = el("div", null, [ el("div", {class:"promo__precio"}, [el("sup", {text:"$"}), String(pr.p)]),
-    el("span", {class:"promo__reb", text:"$" + (Math.round(porReb * 2) / 2).toFixed(porReb % 1 ? 2 : 0).replace(/\.00$/,"") + (pr.reb ? " la rebanada" : " cada combo")}) ]);
+    porReb ? el("span", {class:"promo__reb", text:"$" + (Math.round(porReb * 100) / 100).toFixed(porReb % 1 ? 2 : 0) + " la rebanada"}) : null ]);
   listaPromos.appendChild(el("article", {class:"promo rev " + pr.clase}, [ pr.img ? el("img", {class:"promo__foto", src:pr.img, alt:"", loading:"lazy", width:"680", height:"510"}) : null,
     el("div", null, [ el("span", {class:"promo__etq", text:pr.etq}), el("h3", {text:pr.n}), el("p", {text:pr.d}),
       pr.nota ? el("p", {class:"promo__nota", text:pr.nota}) : null ]),
@@ -1133,25 +1199,44 @@ PROMOS.forEach(function(pr){
 $("#hpAgregar").addEventListener("click", function(){
   var nota = $("#hpNota").value.trim();
   $("#hojaPromo").close();
-  agregar({ tipo:"promo", nombre:"Promo " + promoActual.n, detalle:nota, precio:promoActual.p, cant:1,
+  agregar({ tipo:"promo", nombre:(/^combo/.test(promoActual.id) ? promoActual.etq.split(" ·")[0] + ": " : "Promo ") + promoActual.n, detalle:nota, precio:promoActual.p, cant:1,
             clave:"p:" + promoActual.id + ":" + nota.toLowerCase() }, promoActual.boton, "img/pepperoni-caja.webp");
 });
 
 /* complementos */
 var cajaExtras = $("#extras");
 function agregarComp(c, dos, desde){
-  agregar({tipo:"comp", nombre:c.n, detalle:dos ? "2 órdenes" : "1 orden", precio:dos ? c.dos : c.p, cant:1, clave:"c:" + c.id + ":" + (dos ? 2 : 1)}, desde, c.f);
+  agregar({tipo:"comp", nombre:c.n, detalle:dos ? "2 órdenes" : (c.uno || "1 orden"), precio:dos ? c.dos : c.p, cant:1, clave:"c:" + c.id + ":" + (dos ? 2 : 1)}, desde, c.f);
 }
 COMPLEMENTOS.forEach(function(c){
   var uno = el("button", {type:"button", "aria-label":"Agregar 1 orden de " + c.n + ", " + pesos(c.p)}, [el("em", {text:"1 orden"}), pesos(c.p)]);
-  var dos = el("button", {type:"button", "aria-label":"Agregar 2 órdenes de " + c.n + ", " + pesos(c.dos)}, [el("em", {text:"2 órdenes"}), pesos(c.dos)]);
+  if(c.uno) uno = el("button", {type:"button", "aria-label":"Agregar " + c.uno + ", " + pesos(c.p)}, [el("em", {text:c.uno}), pesos(c.p)]);
+  var dos = c.dos ? el("button", {type:"button", "aria-label":"Agregar 2 órdenes de " + c.n + ", " + pesos(c.dos)}, [el("em", {text:"2 órdenes"}), pesos(c.dos)]) : null;
   uno.addEventListener("click", function(){ agregarComp(c, false, uno); });
-  dos.addEventListener("click", function(){ agregarComp(c, true, dos); });
+  if(dos) dos.addEventListener("click", function(){ agregarComp(c, true, dos); });
   cajaExtras.appendChild(el("article", {class:"extra rev" + (c.grande ? " extra--grande" : "")}, [
     el("img", {src:c.f, alt:c.n, loading:"lazy", width:"760", height:"560"}),
     el("div", null, [ el("h3", {text:c.n}), c.antojo ? el("p", {text:c.antojo, style:"margin:8px 0 0;opacity:.9"}) : null,
-      el("div", {class:"extra__precios"}, [uno, dos]), el("span", {class:"extra__ahorro", text:"En par te ahorras " + pesos(c.p * 2 - c.dos)}) ])
+      el("div", {class:"extra__precios"}, [uno, dos]), c.dos ? el("span", {class:"extra__ahorro", text:"En par te ahorras " + pesos(c.p * 2 - c.dos)}) : null ])
   ]));
+});
+
+/* smileys burger */
+BURGER.forEach(function(b){
+  var extras = b.extras ? el("div", {class:"burger__extras"}, ["piña","tocino"].map(function(x){ return el("label", null, [el("input", {type:"checkbox", value:x}), "+ " + x + " $25"]); })) : null;
+  var boton = el("button", {class:"btn btn--rojo", type:"button"}, [icono("i-mas"), "Agregar · " + pesos(b.p)]);
+  function cuanto(){ return b.p + (extras ? $$("input:checked", extras).length * EXTRA_BURGER : 0); }
+  if(extras) extras.addEventListener("change", function(){ boton.lastChild.textContent = "Agregar · " + pesos(cuanto()); });
+  boton.addEventListener("click", function(){
+    var con = extras ? $$("input:checked", extras).map(function(i){ return i.value; }) : [];
+    agregar({tipo:"burger", nombre:b.n, detalle:con.length ? "Con " + con.join(" y ") : "", precio:cuanto(), cant:1, clave:"b:" + b.id + ":" + con.join(",")}, boton, b.f);
+  });
+  $("#burgers").appendChild(el("article", {class:"burger rev"}, [el("img", {src:b.f, alt:b.n, loading:"lazy", width:"300", height:"230"}), el("div", null, [el("h3", {text:b.n}), extras, boton])]));
+});
+COMBOS_BURGER.forEach(function(c){
+  var b = el("button", {type:"button", "aria-label":"Agregar " + c.n + ", " + pesos(c.p)}, [icono("i-mas")]);
+  b.addEventListener("click", function(){ agregar({tipo:"combo-b", nombre:"Combo burger: " + c.n, detalle:c.temporal ? "Promoción por tiempo limitado" : "", precio:c.p, cant:1, clave:"cb:" + c.id}, b, c.temporal ? "img/real-combo.jpg" : "img/m-burger.jpg"); });
+  $("#combosB").appendChild(el("div", {class:"combo-b"}, [el("span", null, [el("b", {text:c.n}), c.temporal ? el("small", {text:"Por tiempo limitado · cartel de la sucursal"}) : null]), el("strong", {text:pesos(c.p)}), b]));
 });
 
 /* sucursales */
@@ -1202,10 +1287,12 @@ function muestras(){
 }
 segmento($("#tamMia"), function(){ pintarMia(); });
 $("#orillaMia").addEventListener("change", function(){ pintarMia(); });
+/* un ingrediente en grande: la sencilla de $109. Lo demás va en 2×1 (te llevas dos iguales) */
+function sencillaMia(){ return valorSeg($("#tamMia")) === "Grande" && elegidos.length <= 1; }
 function precioMia(){
-  var tam = valorSeg($("#tamMia"));
-  if(tam !== "Grande" || elegidos.length !== 1) return null;
-  return SENCILLA + ($("#orillaMia").checked ? ORILLA : 0);
+  var ori = $("#orillaMia").checked;
+  if(sencillaMia()) return SENCILLA + (ori ? ORILLA : 0);
+  return DOSXUNO[valorSeg($("#tamMia"))] + (ori ? ORILLA * 2 : 0);
 }
 function pintarMia(nuevo){
   Object.keys(botones).forEach(function(k){
@@ -1217,8 +1304,9 @@ function pintarMia(nuevo){
   if(!elegidos.length) c.appendChild(document.createTextNode("Por ahora: queso solo. Toca un ingrediente."));
   else { c.appendChild(el("b", {text:elegidos.length + " de " + MAX + ": "})); c.appendChild(document.createTextNode(elegidos.map(function(k){ return Horno.NOMBRES[k]; }).join(", ") + ".")); }
   var p = precioMia();
-  $("#precioMia").textContent = p != null ? "Grande de un ingrediente: " + pesos(p) + "." : "El precio te lo confirma la sucursal. Grande con un solo ingrediente: $109.";
-  $("#sticker").hidden = p == null; if(p != null) $("#sticker b").textContent = pesos(p);
+  var sen = sencillaMia();
+  $("#precioMia").textContent = sen ? "Grande de un ingrediente: " + pesos(p) + ". No aplica con otras promociones." : "Va en 2×1: te llevas dos iguales por " + pesos(p) + (valorSeg($("#tamMia")) === "Grande" ? " (con un solo ingrediente sale en $109 la grande)." : ".");
+  $("#sticker").hidden = false; $("#sticker").firstChild.textContent = sen ? "Grande" : "2×1"; $("#sticker b").textContent = pesos(p);
   if(armarVisto) Horno.pintar(cv, { ings:elegidos, orilla:$("#orillaMia").checked, nuevo:quieto ? null : nuevo });
 }
 $("#limpiarMia").addEventListener("click", function(){ elegidos = []; $("#orillaMia").checked = false; ponerSeg($("#tamMia"), "Grande"); pintarMia(); });
@@ -1226,7 +1314,7 @@ $("#agregarMia").addEventListener("click", function(){
   var tam = valorSeg($("#tamMia")), ori = $("#orillaMia").checked;
   var ings = elegidos.length ? elegidos.map(function(k){ return Horno.NOMBRES[k]; }).join(", ") : "queso solo";
   var foto = null; try{ foto = cv.toDataURL("image/jpeg", .6); }catch(e){}
-  agregar({ tipo:"mia", nombre:"Pizza armada", detalle:tam + " · " + ings + (ori ? " · con orilla de queso" : ""),
+  agregar({ tipo:"mia", nombre:sencillaMia() ? "Pizza armada (grande sencilla)" : "2×1 " + (tam === "Grande" ? "grandes" : "familiares") + " armadas, iguales", detalle:ings + (ori ? " · con orilla de queso" : ""),
             precio:precioMia(), cant:1, clave:"m:" + tam + ":" + ori + ":" + elegidos.slice().sort().join(",") }, cv, foto);
 });
 /* la pizza y sus fotos se cargan cuando la sección se acerca, no antes */

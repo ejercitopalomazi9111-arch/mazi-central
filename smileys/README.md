@@ -39,13 +39,17 @@ se ahorra en par salen de los precios del cartel.
 - Recetas (con tamaño, orilla y cantidad), pizza armada, complementos y promociones.
 - Se guarda en el teléfono: si se cierra la página, el pedido sigue ahí.
 - Pide sucursal, nombre y, si es a domicilio, dirección. El mensaje sale ya redactado.
-- **El precio de cada receta por tamaño no lo tenemos**, así que la página no lo inventa:
-  suma lo que sí tiene precio y le pide a la sucursal que confirme el resto.
+- **Las especialidades van en 2×1** (carta del mostrador, 22 de octubre): dos grandes $289, dos
+  familiares $350, de 1 a 4 ingredientes, especialidad o mitad y mitad. La segunda se elige en la
+  hoja. Orilla de queso +$35 por pizza (en el 2×1 se cobra en las dos: falta que Carlos lo confirme).
+- Combos 1 a 5, snacks (4 muffins $49, 2 chicken bake $119) y Smileys Burger salen de las fotos
+  de la carta del 22 de octubre. El letrero del mostrador dice «2 pizzas grandes por $319»: no se
+  usó, falta saber qué es.
 
 ## Fotografía
 
 Del local: `mostrador.jpg`, `caja.jpg`, `cartel.jpg`, `kraft.jpg` (recortada de la caja), `real-queso.jpg`
-(de la portada de su Facebook) y `real-combo.jpg` (del cartel de los combos, octubre de 2026).
+(de la portada de su Facebook), `m-*` (recortadas de su carta) y `real-combo.jpg` (del cartel de los combos, octubre de 2026).
 Provisionales, de Unsplash y Pexels (licencia libre): `hero-queso` (Unsplash
 1541745537411), `alitas-glaseadas` (1567620832903), `pepperoni-caja` (1534308983496),
 `rebanada` (1544982503), `queso-jala` (1520201163981), `pz/*`, `c-*`, y las de `img/armar/`.
