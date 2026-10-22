@@ -167,6 +167,21 @@ const quietos = await pg.evaluate(async ()=>{
 v('al sumar ingredientes, los que ya estaban no se mueven', quietos.igual);
 v('cada rebanada lleva en la orilla: 16 de 24 pepperonis van en la parte de afuera', quietos.n===24 && quietos.orilla>=16, JSON.stringify(quietos));
 v('la pizza de la barra da vueltas', await pg.$eval('#miniPizza canvas', c=>getComputedStyle(c).animationName==='vuelta'));
+// los tamaños de la carta ponen el precio de cada receta
+await pg.evaluate(()=>document.getElementById('carta').scrollIntoView()); await pg.waitForTimeout(400);
+v('de entrada, cada receta dice 2 grandes por $289', (await pg.textContent('#lista .plato:first-child .plato__precio')).includes('$289'));
+await pg.click('#tamCarta [data-v="Familiar"]'); await pg.waitForTimeout(900);
+v('al picar Familiar, las recetas pasan a $350', (await pg.$$eval('#lista .plato__precio b', bs=>bs.every(b=>b.textContent==='$350'))));
+await pg.click('#lista .plato:first-child .plato__mas'); await pg.waitForTimeout(300);
+v('y la receta abre ya en familiar', await pg.$eval('#hrTam [data-v="Familiar"]', b=>b.getAttribute('aria-pressed')==='true'));
+await pg.click('#hojaReceta [data-cerrar]');
+await pg.click('#tamCarta [data-v="Chica"]'); await pg.waitForTimeout(300);
+v('en chica dice que la cotiza la sucursal', (await pg.textContent('#lista .plato:first-child .plato__precio')).includes('Precio en sucursal'));
+await pg.click('#tamCarta [data-v="Grande"]');
+// agregar al carrito usa su propia animación (la caja), no la de la pizza de Ármala
+await pg.evaluate(()=>document.getElementById('c-boneless').scrollIntoView({block:'center'})); await pg.waitForTimeout(400);
+await pg.click('#c-boneless .extra__precios button >> nth=0');
+v('agregar al carrito hace volar la bolita hacia la caja', await pg.waitForSelector('.vuela', {timeout:600}).then(()=>true).catch(()=>false));
 v('ármala: ingredientes en 3 grupos, antes que la pizza', (await pg.$$('#ings .ings__grupo')).length===3 && await pg.evaluate(()=>!!(document.getElementById('ings').compareDocumentPosition(document.getElementById('mia')) & 4)));
 v('ni un error de consola', err.length===0, err.join(' | '));
 console.log(ok,'bien ·',mal,'mal');

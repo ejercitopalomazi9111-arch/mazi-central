@@ -282,7 +282,14 @@ button{font:inherit; color:inherit}
 .tamanos .tamano{flex-direction:column; align-items:flex-start; gap:8px; padding:12px}
 
 .tamano .reb{width:78px; height:78px; flex:none; margin:-4px 0 0 -4px}
-.tamano{display:flex; align-items:center; gap:12px; padding:14px; border-radius:16px; background:#fff; box-shadow:0 1px 0 rgba(28,21,18,.08)}
+.tamano{display:flex; align-items:center; gap:12px; padding:14px; border:0; border-radius:16px; background:#fff; color:var(--tinta); font:inherit; text-align:left; cursor:pointer; box-shadow:0 1px 0 rgba(28,21,18,.08), inset 0 0 0 2px transparent; transition:box-shadow .2s ease, transform .2s ease, background .2s ease}
+.tamano:active{transform:scale(.97)}
+.tamano[aria-pressed="true"]{background:#FFF3DF; box-shadow:0 12px 26px -14px rgba(184,20,26,.55), inset 0 0 0 2px var(--rojo)}
+.tamano em{display:inline-block; margin-top:8px; padding:5px 8px; border-radius:99px; background:rgba(28,21,18,.07); font:800 12px/1.1 var(--texto); font-style:normal; color:var(--tinta)}
+.tamano[aria-pressed="true"] em{background:var(--rojo); color:#fff}
+.tamanos__t{margin:0 0 10px; font-weight:800; font-size:15px; color:#6B5A4D}
+.plato__precio{position:absolute; left:8px; bottom:8px; max-width:calc(100% - 62px); padding:7px 10px; border-radius:99px; background:rgba(14,11,10,.82); color:#fff; font:800 13px/1.05 var(--texto); font-variant-numeric:tabular-nums; pointer-events:none}
+.plato__precio small{display:block; font-size:10px; font-weight:700; color:var(--amarillo); letter-spacing:.06em; text-transform:uppercase; margin-bottom:2px}
 .tamano strong{display:block; font:800 22px/1 var(--display); font-variation-settings:"wdth" 80; text-transform:uppercase}
 .tamano span{display:block; color:#6B5A4D; font-size:13px; line-height:1.3}
 
@@ -306,8 +313,16 @@ button{font:inherit; color:inherit}
 @media (min-width:980px){ .armar__der{position:sticky; top:84px} }
 /* la pizza en chiquito: sigue a quien está escogiendo ingredientes y la pizza grande no está a la vista */
 .mini-pizza{position:fixed; left:10px; right:10px; bottom:calc(10px + env(safe-area-inset-bottom)); z-index:46; display:grid; grid-template-columns:150px minmax(0,1fr); align-items:center; gap:14px; padding:10px 14px 10px 10px; border-radius:26px; background:var(--carbon); color:var(--hueso); box-shadow:0 18px 40px rgba(0,0,0,.6), inset 0 0 0 1px var(--linea);
-  opacity:0; transform:translateY(30px); pointer-events:none; transition:opacity .2s ease, transform .3s cubic-bezier(.2,.8,.2,1)}
-.mini-pizza.ver{opacity:1; transform:none; pointer-events:auto}
+  opacity:0; transform:translateY(calc(100% + 40px)) scale(.92); pointer-events:none; transition:opacity .25s ease, transform .35s cubic-bezier(.5,0,.75,0)}
+.mini-pizza.ver{opacity:1; transform:none; pointer-events:auto; transition:opacity .2s ease, transform .6s cubic-bezier(.2,1.35,.35,1)}
+/* al entrar: la pizza llega rodando y lo de la derecha aparece en cascada; al salir, todo se va junto */
+.mini-pizza__plato{transform:translateX(-90px) rotate(-200deg) scale(.5); opacity:0; transition:transform .3s ease-in, opacity .2s ease}
+.mini-pizza.ver .mini-pizza__plato{transform:none; opacity:1; transition:transform .8s cubic-bezier(.2,1.2,.3,1) .08s, opacity .3s ease .08s}
+.mini-pizza__info > *{opacity:0; transform:translateY(12px); transition:opacity .15s ease, transform .2s ease}
+.mini-pizza.ver .mini-pizza__info > *{opacity:1; transform:none; transition:opacity .35s ease, transform .45s cubic-bezier(.2,1.3,.4,1)}
+.mini-pizza.ver .mini-pizza__info > :nth-child(1){transition-delay:.18s} .mini-pizza.ver .mini-pizza__info > :nth-child(2){transition-delay:.24s}
+.mini-pizza.ver .mini-pizza__info > :nth-child(3){transition-delay:.3s} .mini-pizza.ver .mini-pizza__info > :nth-child(4){transition-delay:.36s}
+.mini-pizza.vuela-sin-plato .mini-pizza__plato{transition:none; transform:none; opacity:0}
 .mini-pizza__plato{display:block; width:150px; height:150px; margin:-34px 0 0; filter:drop-shadow(0 10px 18px rgba(0,0,0,.55))}
 /* la pizza chica da vueltas despacio, como en la charola */
 .mini-pizza canvas{width:150px; height:150px; border-radius:50%; display:block; cursor:pointer; animation:vuelta 26s linear infinite}
@@ -737,10 +752,11 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
         <h2 class="t-display" id="t-carta">Quince recetas<br>de la casa</h2>
         <p>Salen en chica, grande o familiar, <b>o mitad y mitad</b>, y a cualquiera se le pone orilla de queso. Grandes y familiares, en 2×1.</p>
       </div>
-      <div class="tamanos rev">
-        <div class="tamano tamano--c"><canvas class="reb" data-n="6" data-r=".74" width="132" height="132" aria-hidden="true"></canvas><div><strong>Chica</strong><span>6 rebanadas</span></div></div>
-        <div class="tamano"><canvas class="reb" data-n="8" data-r=".87" width="132" height="132" aria-hidden="true"></canvas><div><strong>Grande</strong><span>8 rebanadas<br>1 a 4 ingredientes</span></div></div>
-        <div class="tamano tamano--f"><canvas class="reb" data-n="10" data-r="1" width="132" height="132" aria-hidden="true"></canvas><div><strong>Familiar</strong><span>10 rebanadas<br>1 a 4 ingredientes</span></div></div>
+      <p class="tamanos__t" id="t-tamanos">Toca un tamaño y te decimos cuánto sale cada receta</p>
+      <div class="tamanos rev" id="tamCarta" role="group" aria-labelledby="t-tamanos">
+        <button type="button" class="tamano tamano--c" data-v="Chica" aria-pressed="false"><canvas class="reb" data-n="6" data-r=".74" width="132" height="132" aria-hidden="true"></canvas><div><strong>Chica</strong><span>6 rebanadas</span><em>Precio en sucursal</em></div></button>
+        <button type="button" class="tamano" data-v="Grande" aria-pressed="true"><canvas class="reb" data-n="8" data-r=".87" width="132" height="132" aria-hidden="true"></canvas><div><strong>Grande</strong><span>8 rebanadas<br>1 a 4 ingredientes</span><em>2 por $289</em></div></button>
+        <button type="button" class="tamano tamano--f" data-v="Familiar" aria-pressed="false"><canvas class="reb" data-n="10" data-r="1" width="132" height="132" aria-hidden="true"></canvas><div><strong>Familiar</strong><span>10 rebanadas<br>1 a 4 ingredientes</span><em>2 por $350</em></div></button>
       </div>
       <div class="filtros" role="group" aria-label="Filtrar recetas">
         <button class="chip" type="button" data-f="todas" aria-pressed="true">Todas</button>
@@ -750,7 +766,7 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
         <button class="chip" type="button" data-f="veg" aria-pressed="false">Sin carne</button>
       </div>
       <ol class="carta" id="lista"></ol>
-      <p class="aviso"><span>El precio de cada receta según el tamaño <b>te lo confirma la sucursal</b> al recibir tu pedido. La <b>grande de un ingrediente</b> cuesta <b>$109</b>, y en promo salen <b>2 grandes por $289</b>.</span></p>
+      <p class="aviso"><span id="avisoCarta" aria-live="polite"></span></p>
     </div>
   </section>
 
@@ -1222,7 +1238,7 @@ $("#hrOrilla").addEventListener("change", totalHR);
 function abrirReceta(p, desde){
   actual = p; cantHR = 1; desdeHR = desde || null; totalHR.antes = null;
   $("#hrFoto").src = p.f; $("#hrNombre").textContent = p.n; $("#hrIngs").textContent = p.antojo + " " + p.d;
-  ponerSeg($("#hrTam"), "Grande"); $("#hrOrilla").checked = false; $("#hrCant").textContent = "1";
+  ponerSeg($("#hrTam"), tamCarta); $("#hrOrilla").checked = false; $("#hrCant").textContent = "1";
   $("#hrMitad").checked = false; $("#hrOtra").hidden = true; $("#hrOtra").textContent = "";
   PIZZAS.filter(function(x){ return x.s !== p.s; }).forEach(function(x){ $("#hrOtra").appendChild(el("option", {value:x.s, text:x.n})); });
   var sg = $("#hrSegunda"); sg.textContent = ""; sg.appendChild(el("option", {value:"", text:"Otra " + p.n}));
@@ -1379,14 +1395,30 @@ PIZZAS.forEach(function(p, k){
   var mas = el("button", {class:"plato__mas", type:"button", "aria-label":"Agregar " + p.n + " al pedido"}, [icono("i-mas")]);
   var foto = el("button", {class:"plato__foto", type:"button", "aria-label":"Ver " + p.n, tabindex:"-1"}, [
     el("img", {src:p.f, alt:"", loading:"lazy", width:"620", height:"620"}), el("span", {class:"plato__n", text:String(k+1).padStart(2,"0")})]);
+  var precio = el("span", {class:"plato__precio"}, [el("small"), el("b", {class:"cifra"})]);
   var li = el("li", {class:"plato rev"}, [
-    el("div", {style:"position:relative"}, [foto, mas]),
+    el("div", {style:"position:relative"}, [foto, precio, mas]),
     el("h3", {class:"plato__nombre", text:p.n}), el("p", {class:"plato__ings", text:p.d}), tags.children.length ? tags : null
   ]);
   mas.addEventListener("click", function(){ abrirReceta(p, mas); });
   foto.addEventListener("click", function(){ abrirReceta(p, mas); });
-  lista.appendChild(li); p.li = li;
+  lista.appendChild(li); p.li = li; p.precio = precio;
 });
+/* el tamaño que se pique arriba pone el precio de cada receta, y la hoja abre ya en ese tamaño */
+var tamCarta = "Grande";
+function preciosCarta(){
+  PIZZAS.forEach(function(p){
+    var sm = $("small", p.precio), b = $("b", p.precio);
+    if(tamCarta === "Chica"){ sm.textContent = "Chica · 6 rebanadas"; b.__valor = null; b.textContent = "Precio en sucursal"; return; }
+    sm.textContent = (tamCarta === "Grande" ? "2 grandes" : "2 familiares") + " · 2×1";
+    rodar(b, DOSXUNO[tamCarta]);
+  });
+  var av = $("#avisoCarta");
+  av.textContent = tamCarta === "Chica" ? "La chica no viene con precio en la carta: la sucursal te la cotiza al recibir tu pedido." :
+    "En " + tamCarta.toLowerCase() + ", cualquier receta va en 2×1: dos por " + pesos(DOSXUNO[tamCarta]) + (tamCarta === "Grande" ? " ($319 a domicilio). Con un solo ingrediente, la grande sale en $109." : ". Puedes pedir mitad y mitad.");
+}
+segmento($("#tamCarta"), function(v){ tamCarta = v; preciosCarta(); });
+preciosCarta();
 $$(".chip").forEach(function(ch){
   ch.addEventListener("click", function(){
     $$(".chip").forEach(function(o){ o.setAttribute("aria-pressed", String(o === ch)); });
@@ -1532,27 +1564,43 @@ function verMini(){
   mini.classList.toggle("ver", ver);
   document.body.classList.toggle("con-mini", ver);
 }
-/* al llegar a la pizza grande, la de la barra vuela y crece hasta ocupar su lugar */
-function volar(){
-  var a = miniCv.getBoundingClientRect(), giro = 0, m = getComputedStyle(miniCv).transform;
-  if(m && m !== "none"){ var v = m.match(/matrix\(([^)]+)\)/); if(v){ var n = v[1].split(",").map(Number); giro = Math.atan2(n[1], n[0]); } }
+/* la pizza de la barra y la grande son la misma: al llegar a la grande, la chica vuela y crece hasta
+   su lugar; al regresar a los ingredientes, la grande se encoge y vuela de vuelta a la barra.
+   (Ojo: «volar» ya es la de agregar al carrito; ésta es otra.) */
+function giroDe(e){ var m = getComputedStyle(e).transform, v = m && m !== "none" && m.match(/matrix\(([^)]+)\)/); if(!v) return 0; var n = v[1].split(",").map(Number); return Math.atan2(n[1], n[0]); }
+function volarPizza(aBarra){
   var c = document.createElement("canvas"); c.width = c.height = 520; c.className = "pizza-vuela";
   try{ c.getContext("2d").drawImage(cv, 0, 0, 520, 520); }catch(e){ return; }
+  var a0 = aBarra ? cv.getBoundingClientRect() : miniCv.getBoundingClientRect(), g0 = aBarra ? 0 : giroDe(miniCv);
+  if(!a0.width) return;
   document.body.appendChild(c); cv.style.opacity = "0";
-  var t0 = performance.now(), dur = 620;
+  if(aBarra) mini.classList.add("vuela-sin-plato");
+  var t0 = performance.now(), dur = aBarra ? 560 : 620;
   (function paso(t){
-    var k = Math.min(1, (t - t0) / dur), e = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2, b = cv.getBoundingClientRect();
-    var x = a.left + (b.left - a.left) * e, y = a.top + (b.top - a.top) * e, w = a.width + (b.width - a.width) * e;
-    c.style.cssText = "left:" + x + "px;top:" + y + "px;width:" + w + "px;height:" + w + "px;transform:rotate(" + (giro * (1 - e)) + "rad)";
-    if(k < 1) requestAnimationFrame(paso); else { c.remove(); cv.style.opacity = ""; }
+    var k = Math.min(1, (t - t0) / dur), e = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+    /* el destino se lee en cada cuadro: la barra está entrando y la grande se mueve con el scroll */
+    var b = aBarra ? miniCv.getBoundingClientRect() : cv.getBoundingClientRect(), g1 = aBarra ? giroDe(miniCv) : 0;
+    var x = a0.left + (b.left - a0.left) * e, y = a0.top + (b.top - a0.top) * e, w = a0.width + (b.width - a0.width) * e;
+    c.style.cssText = "left:" + x + "px;top:" + y + "px;width:" + w + "px;height:" + w + "px;transform:rotate(" + (g0 + (g1 - g0) * e) + "rad)";
+    if(k < 1) requestAnimationFrame(paso);
+    else {
+      /* aterriza sin parpadeo: la pizza de la barra aparece de golpe justo donde quedó la que volaba */
+      var pl = $(".mini-pizza__plato", mini); pl.style.transition = "none";
+      mini.classList.remove("vuela-sin-plato"); void pl.offsetWidth; pl.style.transition = "";
+      c.remove(); cv.style.opacity = "";
+    }
   })(t0);
 }
 if("IntersectionObserver" in window){
   new IntersectionObserver(function(es){ ingsVisto = es[0].isIntersecting; verMini(); }).observe(cajaIngs);
   new IntersectionObserver(function(es){
     var antes = hornoVisto; hornoVisto = es[0].isIntersecting;
-    if(hornoVisto && !antes && mini.classList.contains("ver") && !quieto) volar();
+    var veia = mini.classList.contains("ver");
     verMini();
+    if(!quieto && armarVisto){
+      if(hornoVisto && !antes && veia) volarPizza(false);
+      else if(!hornoVisto && antes && mini.classList.contains("ver")) volarPizza(true);
+    }
   }, {threshold:.45}).observe($(".horno"));
 }
 function verGrande(){ $(".horno").scrollIntoView({behavior: quieto ? "auto" : "smooth", block:"center"}); }
