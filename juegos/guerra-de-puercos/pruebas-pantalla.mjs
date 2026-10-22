@@ -1096,6 +1096,58 @@ console.log('\n── Jugar una carta no vuelve a repartir la mano (22 de octubr
   await tel.close();
 }
 
+console.log('\n── La economía y el tutorial (22 de octubre) ──');
+{
+  const ctx4 = await b.newContext({ viewport:{ width:390, height:844 }, hasTouch:true, isMobile:true });
+  const p4 = await ctx4.newPage();
+  const rotos4 = [];
+  p4.on('pageerror', e => rotos4.push(e.message));
+  await p4.goto(BASE + '/juegos/guerra-de-puercos/');
+  await p4.waitForFunction(() => CAT.listo);
+  await p4.waitForTimeout(300);
+  ok('el primero que abre el juego trae monedas para su primer sobre', await p4.evaluate(() => CARTERA.monedas >= SOBRES[0].precio), String(await p4.evaluate(() => CARTERA.monedas)));
+  ok('perder una partida paga lo bastante para volver a la tienda', await p4.evaluate(() => PAGA.pierde + 10 >= SOBRES[0].precio / 2));
+  const sobres = await p4.evaluate(() => {
+    CARTERA.monedas = 10000;
+    const salio = []; for(let i = 0; i < 40; i++) salio.push(...abrirSobre(SOBRES[0]));
+    return { especiales: salio.filter(x => !'SABCD'.includes(x.f.nivel) || x.f.nivel.length !== 1).length,
+             devuelve: salio.filter(x => x.repetida).every(x => x.vuelven === DEVUELVE[x.f.nivel]) };
+  });
+  ok('ningún sobre da la Alcancía ni las Carnitas (no se coleccionan)', sobres.especiales === 0, String(sobres.especiales));
+  ok('una repetida devuelve según su nivel', sobres.devuelve);
+  ok('mientras falte alguna, cada sobre trae al menos una nueva', await p4.evaluate(() => {
+    CARTERA.tengo = {}; regalarArranque && 0;
+    const todas = CAT.todas.filter(c => 'SABCD'.includes(c.nivel) && c.nivel.length === 1);
+    for(const f of todas.slice(0, todas.length - 3)) CARTERA.tengo[f.nombre + '·' + f.puntos] = 1;   /* faltan 3 */
+    CARTERA.monedas = 1000;
+    const r = abrirSobre(SOBRES[0]);
+    return r.some(x => !x.repetida);
+  }));
+  ok('la primera victoria del día paga de más, y sólo la primera', await p4.evaluate(() => {
+    try{ localStorage.removeItem('puercos_victoria_dia'); }catch(e){}
+    const a = pagarPartida('gana', 10), c = pagarPartida('gana', 10);
+    return a.bono === PAGA.primeraDelDia && c.bono === 0 && a.total === c.total + PAGA.primeraDelDia;
+  }));
+  /* El tutorial: se abre solo desde «Aprender a jugar» y señala la mano. */
+  await p4.reload(); await p4.waitForFunction(() => CAT.listo);
+  await p4.click('#bGuia');
+  await p4.waitForSelector('#guia:not([hidden])', { timeout:4000 });
+  ok('«Aprender a jugar» abre el tutorial señalando la mano', (await p4.textContent('#guiaTit')).includes('mano')
+     && await p4.evaluate(() => document.querySelector('#mMano').classList.contains('guiado')));
+  ok('el globo no tapa la mano', await p4.evaluate(() => {
+    const g = document.querySelector('#guia').getBoundingClientRect(), m = document.querySelector('#mMano').getBoundingClientRect();
+    return g.bottom <= m.top || g.top >= m.bottom;
+  }));
+  const k = await p4.evaluate(() => [...document.querySelectorAll('#mMano .carta')].reverse().find(x => !x.dataset.esp).dataset.llave);
+  await p4.tap('#mMano .carta[data-llave="' + k + '"]', { position:{ x:12, y:60 } });
+  await p4.waitForTimeout(200);
+  ok('al elegir carta, el tutorial pasa a «mándala a la mesa»', /mesa/.test(await p4.textContent('#guiaTit')));
+  await p4.click('#guiaSaltar');
+  ok('«Saltar tutorial» lo apaga para siempre', await p4.evaluate(() => guiaTerminada() && document.querySelector('#guia').hidden));
+  ok('el tutorial no tiró errores', rotos4.length === 0, rotos4[0] || '');
+  await ctx4.close();
+}
+
 ok('la página no tiró ningún error', errores.length === 0, errores[0] || '');
 
 await b.close();
