@@ -1018,9 +1018,12 @@ var pesos = function(n){ return "$" + Math.round(n).toLocaleString("es-MX"); };
 function rodar(elm, valor, fmt, desde){
   fmt = fmt || pesos;
   var antes = desde != null ? desde : elm.__valor; elm.__valor = valor;
-  if(elm.__giro) cancelAnimationFrame(elm.__giro);
+  var caja = elm.classList ? elm : elm.parentNode;
+  if(elm.__giro){ cancelAnimationFrame(elm.__giro); elm.__giro = 0; }
+  /* si se cortó a media vuelta, que no se quede temblando */
+  if(caja && caja.classList) caja.classList.remove("girando");
   if(antes == null || valor == null || antes === valor || quieto){ elm.textContent = valor == null ? "" : fmt(valor); return; }
-  var caja = elm.classList ? elm : elm.parentNode, t0 = performance.now(), dur = 650, salto = Math.max(Math.abs(valor - antes), Math.max(antes, valor) * .45, 20);
+  var t0 = performance.now(), dur = 650, salto = Math.max(Math.abs(valor - antes), Math.max(antes, valor) * .45, 20);
   if(caja && caja.classList) caja.classList.add("girando");
   (function paso(t){
     var k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
@@ -1341,7 +1344,7 @@ $("#calcAgregar").addEventListener("click", function(){
   var foto = new Image();
   foto.onload = function(){
     $$("canvas.reb").forEach(function(cv){
-      var x = cv.getContext("2d"), L = cv.width, C = L / 2, n = +cv.dataset.n, r = L * .44 * +cv.dataset.r, hueco = L * .022;
+      var x = cv.getContext("2d"), L = cv.width, C = L / 2, n = +cv.dataset.n, r = L * .415 * +cv.dataset.r, hueco = L * .06;
       /* la foto: la pizza mide 508 px de radio en su lienzo de 1100 */
       var lado = 1100 * r / 508;
       for(var k = 0; k < n; k++){
