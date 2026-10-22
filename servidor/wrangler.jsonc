@@ -21,10 +21,6 @@
   // El sitio se sirve aparte y la API por aquí. Si algún día viven en el mismo
   // dominio, se le pone una ruta y se acabaron los CORS.
   "workers_dev": true,
-  // Sin direcciones de vista previa: Cloudflare no las da a un Worker con
-  // Durable Objects, y pedirlas era la sospecha de que la compilación de cada
-  // PR saliera en rojo desde el 30 de septiembre (22 de octubre).
-  "preview_urls": false,
   "observability": { "enabled": true },
 
   "durable_objects": {
