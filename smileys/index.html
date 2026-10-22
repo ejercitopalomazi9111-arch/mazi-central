@@ -49,6 +49,8 @@
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%; scroll-padding-top:76px; overflow-x:clip; touch-action:manipulation}
+.girando{display:inline-block; animation:tiembla .09s linear infinite; font-variant-numeric:tabular-nums}
+@keyframes tiembla{0%{transform:translateY(-1.5px)} 50%{transform:translateY(1.5px)} 100%{transform:translateY(-1.5px)}}
 /* sin zoom al tocar rápido (doble toque) en nada que se pique; pellizcar para acercar sigue sirviendo */
 button,a,input,label,select,textarea,summary,[role="button"]{touch-action:manipulation}
 body{margin:0; background:var(--negro); color:var(--hueso); font:400 17px/1.55 var(--texto); overflow-x:clip; -webkit-font-smoothing:antialiased}
@@ -422,15 +424,15 @@ body.con-mini .flota{opacity:0; pointer-events:none}
 .suc__hora.cerrado i{background:#FF8A73; box-shadow:0 0 0 4px rgba(255,138,115,.2)}
 .aviso-hora{margin:0; padding:12px 14px; border-radius:14px; background:rgba(255,138,115,.12); color:#FFD2C7; font-size:14px}
 .aviso-hora[hidden]{display:none}
-.vitrina{position:relative; display:grid; align-items:end; min-height:360px; margin-top:16px; border-radius:24px; overflow:hidden; color:#fff}
-.vitrina img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover}
-.vitrina::before{content:""; position:absolute; inset:0; background:linear-gradient(0deg, rgba(14,11,10,.95) 8%, rgba(14,11,10,.3) 60%, rgba(14,11,10,.05))}
-.vitrina__in{position:relative; padding:26px; display:grid; gap:14px}
+/* la foto arriba y el texto en su propio fondo: nada de letras encima de la foto */
+.vitrina{display:grid; margin-top:16px; border-radius:24px; overflow:hidden; color:#fff; background:var(--negro)}
+.vitrina img{display:block; width:100%; height:auto; aspect-ratio:1200/510; object-fit:cover}
+.vitrina__in{padding:24px 24px 26px; display:grid; gap:16px}
 .vitrina h3{margin:0; font:800 clamp(38px, 9vw, 60px)/.9 var(--display); font-variation-settings:"wdth" 78; text-transform:uppercase}
 .vitrina__precios{display:flex; gap:26px}
 .vitrina__precios strong{display:block; font:800 48px/1 var(--display); color:var(--amarillo)}
-.vitrina__precios span{color:#DDD2C4; font-size:14px}
-@media (min-width:860px){ .promos{display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); overflow:visible; margin:0; padding:0} .promos > .promo{flex:none} .vitrina{min-height:420px} .vitrina__in{padding:44px; grid-template-columns:1fr auto; align-items:end} }
+.vitrina__precios span{color:var(--hueso); font-size:15px; font-weight:700}
+@media (min-width:860px){ .promos{display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); overflow:visible; margin:0; padding:0} .promos > .promo{flex:none} .vitrina{grid-template-columns:1.3fr 1fr; align-items:stretch} .vitrina img{height:100%; aspect-ratio:auto} .vitrina__in{padding:40px; align-content:center} }
 
 /* ───────── sucursales ───────── */
 .sucs{display:grid; gap:14px}
@@ -828,7 +830,7 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
       <div class="vitrina rev">
         <img src="img/mostrador.jpg" alt="La vitrina de Smiley's con rebanadas listas" loading="lazy" width="1200" height="510">
         <div class="vitrina__in">
-          <div><p class="ojo" style="color:var(--amarillo)">En el mostrador</p><h3>¿Vas de pasada?</h3><p style="margin:10px 0 0;color:#DDD2C4">Siempre hay rebanada lista en la vitrina.</p></div>
+          <div><p class="ojo" style="color:var(--amarillo)">En el mostrador</p><h3>¿Vas de pasada?</h3><p style="margin:10px 0 0;color:var(--hueso)">Siempre hay rebanada lista en la vitrina.</p></div>
           <div class="vitrina__precios">
             <div><strong>$40</strong><span>1 rebanada</span></div>
             <div><strong>$65</strong><span>2 rebanadas</span></div>
@@ -1006,6 +1008,22 @@ function el(tag, attrs, hijos){
 function icono(id){ var s = document.createElementNS("http://www.w3.org/2000/svg","svg"); s.setAttribute("aria-hidden","true");
   var u = document.createElementNS("http://www.w3.org/2000/svg","use"); u.setAttribute("href","#"+id); s.appendChild(u); return s; }
 var pesos = function(n){ return "$" + Math.round(n).toLocaleString("es-MX"); };
+/* un precio que cambia no brinca: pasan varios números, como tragamonedas, y se asienta en el nuevo.
+   «desde» sirve cuando el elemento se acaba de crear y el número de antes vivía en otro. */
+function rodar(elm, valor, fmt, desde){
+  fmt = fmt || pesos;
+  var antes = desde != null ? desde : elm.__valor; elm.__valor = valor;
+  if(elm.__giro) cancelAnimationFrame(elm.__giro);
+  if(antes == null || valor == null || antes === valor || quieto){ elm.textContent = valor == null ? "" : fmt(valor); return; }
+  var caja = elm.classList ? elm : elm.parentNode, t0 = performance.now(), dur = 650, salto = Math.max(Math.abs(valor - antes), Math.max(antes, valor) * .45, 20);
+  if(caja && caja.classList) caja.classList.add("girando");
+  (function paso(t){
+    var k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+    elm.textContent = fmt(k < 1 ? Math.max(0, antes + (valor - antes) * e + (Math.random() - .5) * salto * .6 * (1 - k)) : valor);
+    if(k < 1) elm.__giro = requestAnimationFrame(paso);
+    else { elm.__giro = 0; if(caja && caja.classList) caja.classList.remove("girando"); }
+  })(t0);
+}
 
 /* ═══════════ datos del local (fotos de septiembre de 2026) ═══════════
    «d» es lo que lleva (de la caja); «antojo» es cómo se lo contamos al que tiene hambre.
@@ -1189,11 +1207,12 @@ function totalHR(){
   $("#hrCantT").textContent = ch ? "Cuántas" : "Cuántos 2×1";
   $("#hrOrillaT").textContent = ch ? "+$35" : "En las dos pizzas · +$35 cada una";
   if(ch){ t.appendChild(el("span", null, ["Total ", el("small", {text:"· " + cantHR + (cantHR === 1 ? " chica" : " chicas")})])); t.appendChild(el("small", {text:"te lo confirma la sucursal"})); return; }
-  t.appendChild(el("span", null, ["Total ", el("small", {text:"· te llevas " + cantHR * 2 + " pizzas"})])); t.appendChild(el("span", {text:pesos(precioHR())}));
+  var cifra = el("span", {class:"cifra"}); t.appendChild(el("span", null, ["Total ", el("small", {text:"· te llevas " + cantHR * 2 + " pizzas"})])); t.appendChild(cifra);
+  rodar(cifra, precioHR(), null, totalHR.antes); totalHR.antes = precioHR();
 }
 $("#hrOrilla").addEventListener("change", totalHR);
 function abrirReceta(p, desde){
-  actual = p; cantHR = 1; desdeHR = desde || null;
+  actual = p; cantHR = 1; desdeHR = desde || null; totalHR.antes = null;
   $("#hrFoto").src = p.f; $("#hrNombre").textContent = p.n; $("#hrIngs").textContent = p.antojo + " " + p.d;
   ponerSeg($("#hrTam"), "Grande"); $("#hrOrilla").checked = false; $("#hrCant").textContent = "1";
   $("#hrMitad").checked = false; $("#hrOtra").hidden = true; $("#hrOtra").textContent = "";
@@ -1267,7 +1286,7 @@ function pintarCalc(){
   $("#calcFrase").appendChild(document.createTextNode("Pidan "));
   $("#calcFrase").appendChild(el("em", {text:partes.join(" + ")}));
   $("#calcDet").textContent = reb + " rebanadas para " + gente + (gente === 1 ? " persona" : " personas") + "; salen " + m.reb + (m.sobra ? " (sobran " + m.sobra + " para el recalentado)" : "") + ". Total: " + pesos(m.costo) + ".";
-  $("#calcPor").textContent = pesos(m.costo / gente);
+  rodar($("#calcPor"), m.costo / gente);
   var sen = Math.ceil(reb / 8), costoSen = sen * SENCILLA;
   var alt = $("#calcAlt");
   alt.hidden = costoSen >= m.costo;
@@ -1432,7 +1451,8 @@ BURGER.forEach(function(b){
   var extras = b.extras ? el("div", {class:"burger__extras"}, ["piña","tocino"].map(function(x){ return el("label", null, [el("input", {type:"checkbox", value:x}), "+ " + x + " $25"]); })) : null;
   var boton = el("button", {class:"btn btn--rojo", type:"button"}, [icono("i-mas"), "Agregar · " + pesos(b.p)]);
   function cuanto(){ return b.p + (extras ? $$("input:checked", extras).length * EXTRA_BURGER : 0); }
-  if(extras) extras.addEventListener("change", function(){ boton.lastChild.textContent = "Agregar · " + pesos(cuanto()); });
+  if(extras) extras.addEventListener("change", function(){ rodar(boton.lastChild, cuanto(), function(v){ return "Agregar · " + pesos(v); }); });
+  boton.lastChild.__valor = b.p;
   boton.addEventListener("click", function(){
     var con = extras ? $$("input:checked", extras).map(function(i){ return i.value; }) : [];
     agregar({tipo:"burger", nombre:b.n, detalle:con.length ? "Con " + con.join(" y ") : "", precio:cuanto(), cant:1, clave:"b:" + b.id + ":" + con.join(",")}, boton, b.f);
@@ -1493,7 +1513,8 @@ function copiarMini(){
 function avisarMini(){
   $("#miniCuenta").textContent = elegidos.length ? elegidos.length + " de " + MAX + " ingredientes" : "Queso solo";
   $("#miniIngs").textContent = elegidos.length ? elegidos.map(function(k){ return Horno.NOMBRES[k]; }).join(", ") : "Toca un ingrediente y míralo caer aquí.";
-  var p = precioMia(); $("#miniPrecio").textContent = p == null ? "Chica · la cotiza la sucursal" : (sencillaMia() ? "Grande " : "2×1 ") + pesos(p);
+  var p = precioMia(), pre = sencillaMia() ? "Grande " : "2×1 ";
+  if(p == null){ $("#miniPrecio").textContent = "Chica · la cotiza la sucursal"; $("#miniPrecio").__valor = null; } else rodar($("#miniPrecio"), p, function(v){ return pre + pesos(v); });
   miniHasta = performance.now() + 2200; requestAnimationFrame(copiarMini);
   mini.classList.remove("salta"); void mini.offsetWidth; mini.classList.add("salta");
 }
@@ -1550,7 +1571,7 @@ function pintarMia(nuevo){
   var sen = sencillaMia();
   if(p == null){ $("#precioMia").textContent = "La chica (6 rebanadas) te la cotiza la sucursal al recibir tu pedido."; $("#sticker").hidden = true; }
   else $("#precioMia").textContent = sen ? "Grande de un ingrediente: " + pesos(p) + ". No aplica con otras promociones." : "Va en 2×1: te llevas dos iguales por " + pesos(p) + (valorSeg($("#tamMia")) === "Grande" ? " (con un solo ingrediente sale en $109 la grande)." : ".");
-  if(p != null){ $("#sticker").hidden = false; $("#sticker").firstChild.textContent = sen ? "Grande" : "2×1"; $("#sticker b").textContent = pesos(p); }
+  if(p != null){ $("#sticker").hidden = false; $("#sticker").firstChild.textContent = sen ? "Grande" : "2×1"; rodar($("#sticker b"), p); }
   if(armarVisto) Horno.pintar(cv, { ings:elegidos, orilla:$("#orillaMia").checked, nuevo:quieto ? null : nuevo });
   avisarMini();
 }
@@ -1589,7 +1610,8 @@ function pintarPedido(){
   $("#cuentaBarra").textContent = String(n); $("#cuentaCaja").textContent = String(n);
   $("#flota").classList.toggle("ver", n > 0);
   $("#flotaCuenta").textContent = n + (n === 1 ? " cosa" : " cosas") + " · Ver pedido";
-  $("#flotaDetalle").textContent = s.con ? pesos(s.con) + (s.sin ? " + lo que confirma la sucursal" : "") : "Precio lo confirma la sucursal";
+  var fd = $("#flotaDetalle");
+  if(s.con && !s.sin) rodar(fd, s.con); else { fd.textContent = s.con ? pesos(s.con) + " + lo que confirma la sucursal" : "Precio lo confirma la sucursal"; fd.__valor = null; }
   var ul = $("#renglones"); ul.textContent = "";
   var rep = $("#repetir"), nu = ultimo && ultimo.renglones ? ultimo.renglones.reduce(function(t, r){ return t + r.cant; }, 0) : 0;
   rep.hidden = !nu || n > 0; if(nu) rep.textContent = "Repetir mi último pedido (" + nu + (nu === 1 ? " cosa)" : " cosas)");
@@ -1607,16 +1629,23 @@ function pintarPedido(){
     ul.appendChild(el("li", {class:"renglon"}, [
       el("img", {class:"renglon__foto", src:r.f || fotoDe(r), alt:"", width:"52", height:"52", loading:"lazy"}),
       el("div", null, [ el("span", {class:"renglon__n", text:r.nombre}), r.detalle ? el("span", {class:"renglon__d", text:r.detalle}) : null ]),
-      el("div", {class:"renglon__p"}, r.precio != null ? [pesos(precioDe(r) * r.cant)] : [el("small", {text:"La confirma"}), el("small", {text:"la sucursal"})]),
+      el("div", {class:"renglon__p"}, r.precio != null ? [renglonPrecio(r)] : [el("small", {text:"La confirma"}), el("small", {text:"la sucursal"})]),
       el("div", {class:"cantidad"}, [menos, el("output", {text:String(r.cant)}), mas])
     ]));
   });
-  $("#continuar").firstChild.textContent = "Continuar" + (s.con && !s.sin ? " · " + pesos(s.con) + " " : " ");
+  if(s.con && !s.sin) rodar($("#continuar").firstChild, s.con, function(v){ return "Continuar · " + pesos(v) + " "; }); else { $("#continuar").firstChild.textContent = "Continuar "; $("#continuar").firstChild.__valor = null; }
   var cu = $("#cuentas"); cu.textContent = "";
-  if(s.con) cu.appendChild(el("div", {class:"total"}, [el("span", {text: s.sin ? "Lo que ya tiene precio" : "Total"}), el("span", {text:pesos(s.con)})]));
+  if(s.con){ var tot = el("span", {class:"cifra"}); cu.appendChild(el("div", {class:"total"}, [el("span", {text: s.sin ? "Lo que ya tiene precio" : "Total"}), tot])); rodar(tot, s.con, null, pintarPedido.total); }
+  pintarPedido.total = s.con || null;
   if(s.domi) cu.appendChild(el("small", {text:"A domicilio, la promo de 2 grandes es de $319 (en mostrador, $289)."}));
   if(s.sin) cu.appendChild(el("small", {text:(s.sin === 1 ? "1 pizza" : s.sin + " pizzas") + " de la carta: la sucursal te dice el precio al confirmar."}));
   antojos();
+}
+/* el precio del renglón rueda desde el que tenía antes de tocar − o + */
+var antesR = {};
+function renglonPrecio(r){
+  var c = el("span", {class:"cifra"}), v = precioDe(r) * r.cant;
+  rodar(c, v, null, antesR[r.id]); antesR[r.id] = v; return c;
 }
 /* la foto de cada renglón: la que traía al agregarse o la de su tipo */
 function fotoDe(r){

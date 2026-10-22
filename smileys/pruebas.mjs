@@ -133,8 +133,14 @@ v('y entra como chica de 6 rebanadas, sin precio', await pg.evaluate(()=>JSON.pa
 v('las tarjetas de tamaño dicen 6, 8 y 10', (await pg.textContent('.tamanos')).replace(/\s+/g,' ').match(/6 rebanadas.*8 rebanadas.*10 rebanadas/) !== null);
 // smileys burger: hamburguesa con tocino
 await pg.evaluate(()=>document.getElementById('burger').scrollIntoView());
-await pg.check('#burgers .burger:first-child input[value=tocino]');
+await pg.check('#burgers .burger:first-child input[value=tocino]'); await pg.waitForTimeout(800);
 v('la hamburguesa con tocino sube a $135', (await pg.textContent('#burgers .burger:first-child .btn')).includes('$135'));
+await pg.uncheck('#burgers .burger:first-child input[value=tocino]');
+const vistos = await pg.evaluate(()=>new Promise(ok=>{ const b=document.querySelector('#burgers .burger:first-child .btn'), set=new Set(); const t0=performance.now(); (function f(){ set.add(b.textContent.trim()); if(performance.now()-t0<500) requestAnimationFrame(f); else ok([...set]); })(); }));
+v('al cambiar, el precio pasa por varios números antes de quedarse', vistos.length>=4, vistos.join(' | '));
+await pg.waitForTimeout(700);
+v('y se asienta en el nuevo: $110', (await pg.textContent('#burgers .burger:first-child .btn')).includes('$110'));
+await pg.check('#burgers .burger:first-child input[value=tocino]'); await pg.waitForTimeout(800);
 await pg.click('#burgers .burger:first-child .btn');
 v('y entra al pedido con su precio', await pg.evaluate(()=>JSON.parse(localStorage.getItem('smileys-pedido-v1')).renglones.some(r=>r.nombre==='Hamburguesa' && r.detalle==='Con tocino' && r.precio===135)));
 v('los combos de la carta están: 1 a 5', (await pg.$$eval('#promosLista .promo__etq', e=>e.map(x=>x.textContent).join('|'))).match(/Combo [1-5]/g).length===5);
