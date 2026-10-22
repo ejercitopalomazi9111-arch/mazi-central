@@ -44,7 +44,8 @@ se ahorra en par salen de los precios del cartel.
 
 ## Fotografía
 
-Del local: `mostrador.jpg`, `caja.jpg`, `cartel.jpg` y `kraft.jpg` (recortada de la caja).
+Del local: `mostrador.jpg`, `caja.jpg`, `cartel.jpg`, `kraft.jpg` (recortada de la caja), `real-queso.jpg`
+(de la portada de su Facebook) y `real-combo.jpg` (del cartel de los combos, octubre de 2026).
 Provisionales, de Unsplash y Pexels (licencia libre): `hero-queso` (Unsplash
 1541745537411), `alitas-glaseadas` (1567620832903), `pepperoni-caja` (1534308983496),
 `rebanada` (1544982503), `queso-jala` (1520201163981), `pz/*`, `c-*`, y las de `img/armar/`.
@@ -54,4 +55,6 @@ recetas tienen foto de otra pizza.
 ## Datos
 
 Carta, precios, teléfonos y la frase del cartel salen de fotos del local de septiembre de
-2026. Conviene revalidar precios antes de publicar. Falta: horario de cada sucursal.
+2026. Horario: todos los días de 11 am a 10 pm (Carlos, 22 de octubre). Opiniones: las de su Facebook
+(88 % de 7 lo recomienda), con nombre corto y fecha. Duda abierta: Facebook (2023) dice «Begonias
+442 654 4858» donde la caja dice «Lomas de San José 442-680-29-01»; se dejó lo de la caja.

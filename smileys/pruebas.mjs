@@ -98,6 +98,17 @@ await pg.click('#flota'); await pg.waitForTimeout(300);
 const ofrece = await pg.$$eval('#antojoFila button', bs=>bs.map(b=>b.textContent));
 v('ofrece complementos y no repite las alitas', ofrece.length>0 && !ofrece.some(t=>/Alitas/.test(t)), JSON.stringify(ofrece));
 await pg.click('#hojaPedido [data-cerrar]');
+// mitad y mitad
+await pg.evaluate(()=>document.getElementById('carta').scrollIntoView());
+await pg.click('[aria-label="Agregar Hawai al pedido"], [aria-label="Agregar Fiesta en Hawai al pedido"]');
+await pg.check('#hrMitad'); await pg.selectOption('#hrOtra', 'pastor'); await pg.click('#hrAgregar');
+v('mitad y mitad entra al pedido con las dos', await pg.evaluate(()=>JSON.parse(localStorage.getItem('smileys-pedido-v1')).renglones.some(r=>r.nombre==='Mitad Fiesta en Hawai / mitad Pastor')));
+// ármala: hasta 4, como en la sucursal
+await pg.click('#limpiarMia');
+for(let i=0;i<5;i++) await pg.click(`#ings .ing:nth-child(${i+1})`, {force:true}).catch(()=>{});
+v('ármala deja hasta 4 ingredientes', (await pg.$$('#ings .ing[aria-pressed="true"]')).length===4);
+// el horario se ve en cada sucursal
+v('cada sucursal dice su horario', (await pg.$$eval('.suc__hora', e=>e.map(x=>x.textContent))).length===3 && (await pg.$$eval('.suc__dias', e=>e.map(x=>x.textContent))).every(t=>t.includes('11 am a 10 pm')));
 v('ni un error de consola', err.length===0, err.join(' | '));
 console.log(ok,'bien ·',mal,'mal');
 await br.close();

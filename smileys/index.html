@@ -253,7 +253,7 @@ button{font:inherit; color:inherit}
 .tamano i{flex:none; width:44px; height:44px; border-radius:50%; background:conic-gradient(var(--rojo) 0 12.5%, #F2B34A 0 25%, var(--rojo) 0 37.5%, #F2B34A 0 50%, var(--rojo) 0 62.5%, #F2B34A 0 75%, var(--rojo) 0 87.5%, #F2B34A 0)}
 .tamano--f i{width:52px; height:52px; background:conic-gradient(var(--rojo) 0 10%, #F2B34A 0 20%, var(--rojo) 0 30%, #F2B34A 0 40%, var(--rojo) 0 50%, #F2B34A 0 60%, var(--rojo) 0 70%, #F2B34A 0 80%, var(--rojo) 0 90%, #F2B34A 0)}
 .tamano strong{display:block; font:800 22px/1 var(--display); font-variation-settings:"wdth" 80; text-transform:uppercase}
-.tamano span{color:#6B5A4D; font-size:13px}
+.tamano span{display:block; color:#6B5A4D; font-size:13px; line-height:1.3}
 
 /* ───────── ármala ───────── */
 .armar__in{display:grid; gap:30px}
@@ -331,6 +331,29 @@ button{font:inherit; color:inherit}
 .promo--rojo .btn{background:#fff; color:var(--rojo)}
 .promo--negro .btn{background:var(--amarillo); color:var(--negro)}
 .promo__nota{font-size:12px; opacity:.7}
+.promo--combo{background:#2A1A16; color:#fff}
+.promo--combo .btn{background:var(--amarillo); color:var(--negro)}
+.promo--combo::after{display:none}
+.promo--combo{-webkit-mask:none; mask:none}
+.promo__foto{width:calc(100% + 48px); max-width:none; margin:-26px -24px 0; aspect-ratio:16/10; height:auto; object-fit:cover; object-position:50% 70%}
+.opiniones{display:grid; gap:14px}
+.opiniones__cab{display:flex; align-items:center; gap:16px; padding:18px 20px; border-radius:24px; background:var(--amarillo); color:var(--negro)}
+.opiniones__cab strong{font:800 64px/.8 var(--display); font-variation-settings:"wdth" 76}
+.opiniones__cab span{font-weight:700; font-size:15px; line-height:1.3}
+.opinion{margin:0; padding:22px; border-radius:24px; background:var(--carbon); box-shadow:inset 0 0 0 1px var(--linea)}
+.opinion blockquote{margin:0; font:800 clamp(24px, 6vw, 32px)/1.05 var(--display); font-variation-settings:"wdth" 82; letter-spacing:-.01em}
+.opinion blockquote::before{content:"“"; color:var(--amarillo)} .opinion blockquote::after{content:"”"; color:var(--amarillo)}
+.opinion figcaption{margin-top:12px; color:var(--gris); font-size:14px}
+.opinion figcaption b{color:var(--hueso)}
+@media (min-width:860px){ .opiniones{grid-template-columns:repeat(4, minmax(0,1fr)); align-items:stretch} .opiniones__cab{flex-direction:column; align-items:flex-start; justify-content:center} }
+.filosofia{display:flex; flex-wrap:wrap; gap:8px; margin:22px 0 0; padding:0; list-style:none}
+.filosofia li{padding:9px 14px; border-radius:99px; background:#7D1A2B; color:#fff; font:800 14px/1 var(--display); font-variation-settings:"wdth" 82; text-transform:uppercase; letter-spacing:.02em}
+.suc__hora{display:flex; align-items:center; gap:8px; margin:10px 0 0; color:var(--gris); font-size:15px}
+.suc__hora i{width:9px; height:9px; border-radius:50%; background:#5BD16B; box-shadow:0 0 0 4px rgba(91,209,107,.2)}
+.suc__dias{margin:4px 0 0; color:var(--gris2); font-size:13px}
+.suc__hora.cerrado i{background:#FF8A73; box-shadow:0 0 0 4px rgba(255,138,115,.2)}
+.aviso-hora{margin:0; padding:12px 14px; border-radius:14px; background:rgba(255,138,115,.12); color:#FFD2C7; font-size:14px}
+.aviso-hora[hidden]{display:none}
 .vitrina{position:relative; display:grid; align-items:end; min-height:360px; margin-top:16px; border-radius:24px; overflow:hidden; color:#fff}
 .vitrina img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover}
 .vitrina::before{content:""; position:absolute; inset:0; background:linear-gradient(0deg, rgba(14,11,10,.95) 8%, rgba(14,11,10,.3) 60%, rgba(14,11,10,.05))}
@@ -435,6 +458,8 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
 .radio:has(input:checked){box-shadow:inset 0 0 0 2px var(--rojo)}
 .radio span{display:grid; min-width:0} .radio small{color:var(--gris); font-size:13px}
 .campo input[type=time]{max-width:200px; color-scheme:dark}
+.campo-select{display:block; width:100%; min-height:52px; margin-top:10px; padding:0 14px; border-radius:14px; border:0; background:var(--negro); color:var(--hueso); box-shadow:inset 0 0 0 1px var(--linea); font:600 16px/1 var(--texto)}
+.campo-select[hidden]{display:none}
 .renglones{margin:0; padding:0; list-style:none; display:grid; gap:2px}
 .renglon{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px 12px; align-items:center; padding:14px 0; border-bottom:1px solid var(--linea)}
 .renglon__n{font-weight:800} .renglon__d{display:block; color:var(--gris); font-size:14px}
@@ -523,7 +548,7 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
       <p class="saludo" id="saludo"><i></i><span>Recién salida del horno</span></p>
       <h1 class="t-display" id="t-portada"><span class="l"><span>El que sabe,</span></span><span class="l"><span>sabe.</span></span></h1>
       <div class="portada__sonrisa" aria-hidden="true"><svg viewBox="0 0 510.000000 150.000000"><use href="#sonrisa"/></svg></div>
-      <p class="portada__lede">Queso que se estira, orilla dorada y alitas que no llegan ni a la mesa. <b>Hecho al momento</b> en tres sucursales de Querétaro, y lo pides por <b>WhatsApp</b>.</p>
+      <p class="portada__lede"><b>Sabor que encanta, el precio te cambia el día.</b> Pizza, alitas y boneless al momento. Pide por <b>WhatsApp</b>.</p>
       <div class="portada__cta">
         <a class="btn btn--rojo" href="#favoritas">Pedir ahora <svg aria-hidden="true"><use href="#i-flecha"/></svg></a>
         <a class="btn btn--linea" href="#cuantos"><svg aria-hidden="true"><use href="#i-gente"/></svg> ¿Cuántos son?</a>
@@ -543,8 +568,8 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
 
   <div class="cinta-marco"><div class="cinta" aria-label="Precios del mostrador">
     <div class="cinta__pista">
-      <ul><li>2 grandes $289</li><li>2 familiares $350</li><li>Rebanada $40</li><li>2 rebanadas $65</li><li>Orilla de queso +$35</li><li>Alitas · Boneless · Papas gajo</li></ul>
-      <ul aria-hidden="true"><li>2 grandes $289</li><li>2 familiares $350</li><li>Rebanada $40</li><li>2 rebanadas $65</li><li>Orilla de queso +$35</li><li>Alitas · Boneless · Papas gajo</li></ul>
+      <ul><li>2 grandes $289</li><li>2 familiares $350</li><li>Rebanada $40</li><li>2 rebanadas $65</li><li>Orilla de queso +$35</li><li>Alitas · Boneless · Papas gajo</li><li>Say yes to pizza</li><li>100% empresa queretana</li></ul>
+      <ul aria-hidden="true"><li>2 grandes $289</li><li>2 familiares $350</li><li>Rebanada $40</li><li>2 rebanadas $65</li><li>Orilla de queso +$35</li><li>Alitas · Boneless · Papas gajo</li><li>Say yes to pizza</li><li>100% empresa queretana</li></ul>
     </div>
   </div></div>
 
@@ -597,11 +622,11 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
       <div class="cab cab--lado rev">
         <p class="ojo">La carta</p>
         <h2 class="t-display" id="t-carta">Quince recetas<br>de la casa</h2>
-        <p>Todas salen en grande o familiar, y a cualquiera se le pone orilla de queso.</p>
+        <p>Todas salen en grande o familiar, <b>o mitad y mitad</b>, y a cualquiera se le pone orilla de queso.</p>
       </div>
       <div class="tamanos rev">
-        <div class="tamano"><i aria-hidden="true"></i><div><strong>Grande</strong><span>8 rebanadas</span></div></div>
-        <div class="tamano tamano--f"><i aria-hidden="true"></i><div><strong>Familiar</strong><span>10 rebanadas</span></div></div>
+        <div class="tamano"><i aria-hidden="true"></i><div><strong>Grande</strong><span>8 rebanadas<br>1 a 4 ingredientes</span></div></div>
+        <div class="tamano tamano--f"><i aria-hidden="true"></i><div><strong>Familiar</strong><span>10 rebanadas<br>1 a 4 ingredientes</span></div></div>
       </div>
       <div class="filtros" role="group" aria-label="Filtrar recetas">
         <button class="chip" type="button" data-f="todas" aria-pressed="true">Todas</button>
@@ -626,7 +651,7 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
         <div class="cab" style="margin-bottom:24px">
           <p class="ojo">Ármala tú</p>
           <h2 class="t-display" id="t-armar">A tu<br>antojo</h2>
-          <p>Hasta cinco ingredientes. Tócalos y míralos caer.</p>
+          <p>De uno a cuatro ingredientes, como en la sucursal. Tócalos y míralos caer.</p>
         </div>
         <div class="ings" id="ings" role="group" aria-label="Ingredientes"></div>
         <p class="armar__cuenta" id="cuenta" aria-live="polite"></p>
@@ -683,6 +708,23 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
     </div>
   </section>
 
+  <section class="sec negro" id="opiniones" aria-labelledby="t-opi" style="padding-bottom:0">
+    <div class="ancho">
+      <div class="cab cab--lado rev">
+        <p class="ojo">Lo que dicen</p>
+        <h2 class="t-display" id="t-opi">El que ya<br>probó, sabe</h2>
+        <p>Opiniones reales de su página de Facebook, con su fecha.</p>
+      </div>
+      <div class="opiniones rev">
+        <div class="opiniones__cab"><strong>88%</strong><span>lo recomienda en Facebook<br><small style="font-weight:600">según 7 opiniones</small></span></div>
+        <figure class="opinion"><blockquote>Deliciosas, son lo que prometen y tienen un buen servicio.</blockquote><figcaption><b>Monzerrat L.</b> · octubre de 2021</figcaption></figure>
+        <figure class="opinion"><blockquote>Excelente servicio y pizzas muy económicas y buenas.</blockquote><figcaption><b>Manuel V.</b> · agosto de 2021</figcaption></figure>
+        <figure class="opinion"><blockquote>Servicio de delivery súper rápido y la pizza de carnes frías estaba muy rica.</blockquote><figcaption><b>Vic C.</b> · abril de 2021</figcaption></figure>
+      </div>
+      <ul class="filosofia rev" aria-label="Su filosofía"><li>Sabor</li><li>Mejor precio</li><li>Inmediato</li><li>Limpieza</li><li>100% queretana</li></ul>
+    </div>
+  </section>
+
   <section class="sec negro" id="sucursales" aria-labelledby="t-sucs">
     <div class="ancho">
       <div class="cab cab--lado rev">
@@ -698,7 +740,7 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
     <div class="ancho">
       <h2 class="t-display" id="t-cierre">¿Ya se te<br>antojó?</h2>
       <div class="cierre__sonrisa" aria-hidden="true"><svg viewBox="0 0 510.000000 150.000000"><use href="#sonrisa"/></svg></div>
-      <p>Calidad, gusto y un precio justo. Arma tu pedido en un minuto y mándalo por WhatsApp.</p>
+      <p>No es pizza, ¡es felicidad! Arma tu pedido en un minuto y mándalo por WhatsApp, de 11 am a 10 pm.</p>
       <a class="btn btn--hueso" href="#favoritas">Empezar mi pedido <svg aria-hidden="true"><use href="#i-flecha"/></svg></a>
     </div>
   </section>
@@ -716,14 +758,14 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
     </div>
     <div>
       <h4>Síguenos</h4>
-      <ul><li><a href="https://www.facebook.com/smileyswp/" rel="noopener" target="_blank">Facebook · @smileyswp</a></li><li><a href="https://www.instagram.com/smileyswp/" rel="noopener" target="_blank">Instagram · @smileyswp</a></li></ul>
+      <ul><li><a href="https://www.facebook.com/smileyswp/" rel="noopener" target="_blank">Facebook · @smileyswp</a></li><li><a href="https://www.instagram.com/smileyswp/" rel="noopener" target="_blank">Instagram · @smileyswp</a></li><li><a href="mailto:smileyswp@gmail.com">smileyswp@gmail.com</a></li><li>Todos los días, 11 am a 10 pm</li></ul>
     </div>
     <div class="qr">
       <div class="qr__caja" id="qrCaja" aria-hidden="true"></div>
       <p style="margin:0">Escanéalo para abrir la carta en otro teléfono.</p>
     </div>
     <div class="pie__acc"><button class="btn btn--linea" type="button" id="compartir">Compartir la carta</button></div>
-    <p class="pie__legal">Precios en pesos mexicanos, sujetos a cambio en sucursal. Fotografías ilustrativas (Unsplash y Pexels, licencia libre). Caja 3D: modelo de Kenney (CC0).</p>
+    <p class="pie__legal">Precios en pesos mexicanos, sujetos a cambio en sucursal. Fotografías ilustrativas (Unsplash y Pexels, licencia libre; la de Mr. Cheese y la del combo son de Smiley's). Caja 3D: modelo de Kenney (CC0).</p>
   </div>
 </footer>
 
@@ -743,6 +785,8 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
         <button type="button" data-v="Grande" aria-pressed="true">Grande · 8</button><button type="button" data-v="Familiar" aria-pressed="false">Familiar · 10</button>
       </div>
     </div>
+    <div><label class="interruptor"><input type="checkbox" id="hrMitad"> Mitad y mitad <small>con otra especialidad</small></label>
+      <select id="hrOtra" class="campo-select" hidden aria-label="La otra mitad"></select></div>
     <label class="mejora"><img src="img/orilla.jpg" alt="" width="1600" height="620" loading="lazy"><span><b>Orilla rellena de queso</b><small>La orilla también se estira · +$35</small></span><input type="checkbox" id="hrOrilla"></label>
     <div><span class="opcion__t">Cuántas</span><div class="cantidad"><button type="button" data-cant="-1" aria-label="Una menos">−</button><output id="hrCant">1</output><button type="button" data-cant="1" aria-label="Una más">+</button></div></div>
   </div>
@@ -767,6 +811,7 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
     <div class="antojo" id="antojo" hidden><h3>¿Le agregas algo?</h3><div class="antojo__fila" id="antojoFila"></div></div>
     <div class="vacio" id="vacio" hidden><strong>Todavía no hay nada</strong>Agrega una pizza de la carta, arma la tuya o escoge unas alitas.<br><button class="btn btn--linea" type="button" id="repetir" hidden style="margin-top:20px"></button></div>
     <div id="datos" class="datos">
+      <p class="aviso-hora" id="avisoHora" hidden>Ahorita las sucursales están cerradas (abren de 11 am a 10 pm). Tu pedido les llega por WhatsApp y lo ven al abrir: elige «A una hora» para decirles cuándo lo quieres.</p>
       <fieldset class="campo" id="cSuc"><legend>¿A qué sucursal?</legend><div class="radios" id="radiosSuc"></div><span class="error" hidden></span></fieldset>
       <fieldset class="campo"><legend>¿Cómo lo quieres?</legend>
         <div class="radios">
@@ -825,12 +870,12 @@ var pesos = function(n){ return "$" + Math.round(n).toLocaleString("es-MX"); };
    «d» es lo que lleva (de la caja); «antojo» es cómo se lo contamos al que tiene hambre.
    «f» es la foto: provisionales hasta que lleguen las del producto real. */
 var PIZZAS = [
- {s:"pepperoni",   n:"Pepperoni Especial", d:"Pepperoni ¡con mucho queso!",                antojo:"Pepperoni que se dora en las orillas y queso que no se acaba.", i:["pepperoni","queso"], top:1, f:"img/pz/pepperoni.jpg"},
+ {s:"pepperoni",   n:"Pepperoni Especial", d:"La más vendida pero… ¡con mucho queso!",                antojo:"Pepperoni que se dora en las orillas y queso que no se acaba.", i:["pepperoni","queso"], top:1, f:"img/pz/pepperoni.jpg"},
  {s:"smileys",     n:"Smiley's",           d:"Pepperoni, champiñón, pimiento y cebolla.",   antojo:"La de la casa: de todo un poco y todo bien puesto.", i:["pepperoni","champinon","pimiento","cebolla"], casa:1, f:"img/pz/smileys.jpg"},
  {s:"hawai",       n:"Fiesta en Hawai",    d:"Jamón, piña y extra queso.",                  antojo:"Jamón, piña dulce y queso de más. Sí, con piña.", i:["jamon","pina","queso"], f:"img/pz/hawai.jpg"},
  {s:"meatlovers",  n:"Meat Lovers",        d:"Jamón y salchicha viena.",                    antojo:"Para el que viene con hambre de carne.", i:["jamon","salchicha"], f:"img/pz/meatlovers.jpg"},
  {s:"carnesfrias", n:"Carnes Frías",       d:"Jamón, pepperoni y chorizo.",                 antojo:"Tres carnes en cada mordida.", i:["jamon","pepperoni","chorizo"], f:"img/pz/carnesfrias.jpg"},
- {s:"mrcheese",    n:"Mr. Cheese",         d:"Deliciosa mezcla de quesos.",                 antojo:"Queso sobre queso. La que más se estira.", i:["queso","parmesano"], f:"img/queso-jala.webp"},
+ {s:"mrcheese",    n:"Mr. Cheese",         d:"Deliciosa mezcla de quesos.",                 antojo:"Queso sobre queso. La que más se estira.", i:["queso","parmesano"], f:"img/real-queso.jpg"},
  {s:"margarita",   n:"Margarita",          d:"Toque de parmesano, jitomate y orégano.",     antojo:"Jitomate fresco, parmesano y orégano. Sencilla y redonda.", i:["parmesano","jitomate","oregano"], f:"img/pz/margarita.jpg"},
  {s:"ranchera",    n:"Ranchera",           d:"Chorizo con jalapeño.",                       antojo:"Chorizo dorado y jalapeño. Pica rico.", i:["chorizo","jalapeno"], f:"img/pz/ranchera.jpg"},
  {s:"alemana",     n:"Alemana",            d:"Salchicha con chorizo.",                      antojo:"Salchicha y chorizo, sin rodeos.", i:["salchicha","chorizo"], f:"img/pz/alemana.jpg"},
@@ -838,13 +883,13 @@ var PIZZAS = [
  {s:"tony",        n:"Tony Special",       d:"Jamón, salchicha y champiñón.",               antojo:"La clásica de tres que nunca falla.", i:["jamon","salchicha","champinon"], f:"img/pz/tony.jpg"},
  {s:"vivamexico",  n:"Viva México",        d:"Jamón, chorizo, jalapeño, jitomate, aguacate y cebolla.", antojo:"Seis ingredientes y todos mexicanos.", i:["jamon","chorizo","jalapeno","jitomate","aguacate","cebolla"], f:"img/pz/vivamexico.jpg"},
  {s:"pastor",      n:"Pastor",             d:"Cebolla, cilantro, pastor y piña.",           antojo:"Como el taco, pero en rebanada.", i:["cebolla","cilantro","pastor","pina"], f:"img/pz/pastor.jpg"},
- {s:"atun",        n:"Atún",               d:"Atún, cebolla, elote y pimienta.",            antojo:"Atún con elote y cebolla. La de los que ya saben.", i:["atun","cebolla","elote"], f:"img/pz/atun.jpg"},
+ {s:"atun",        n:"Atún",               d:"Atún, cebolla, elote y pimiento.",            antojo:"Atún con elote y cebolla. La de los que ya saben.", i:["atun","cebolla","elote","pimiento"], f:"img/pz/atun.jpg"},
  {s:"chilorio",    n:"Chilorio",           d:"Chilorio, cebolla, jalapeño y champiñones.",  antojo:"Chilorio con jalapeño: la norteña.", i:["chilorio","cebolla","jalapeno","champinon"], f:"img/pz/chilorio.jpg"}
 ];
 var FAVORITAS = [
  {s:"pepperoni", tag:"La más vendida", f:"img/hero-queso.webp"},
  {s:"smileys",   tag:"La de la casa"},
- {s:"mrcheese",  tag:"La que más se estira"},
+ {s:"mrcheese",  tag:"La que más se estira", f:"img/queso-jala.webp"},
  {s:"hawai",     tag:"Con piña"},
  {s:"carnesfrias", tag:"Tres carnes"},
  {s:"ranchera",  tag:"Pica rico"}
@@ -858,9 +903,10 @@ var COMPLEMENTOS = [
  {id:"bake",      n:"Chicken Bake", p:69,  dos:119, f:"img/c-bake.jpg"}
 ];
 var PROMOS = [
- {id:"2grandes",   n:"2 pizzas grandes",   etq:"16 rebanadas", d:"Dos grandes, con los ingredientes que quieras en cada una.", p:289, reb:16, clase:"promo--rojo", pregunta:"¿Qué lleva cada una?"},
- {id:"2familiares",n:"2 pizzas familiares",etq:"20 rebanadas · la que más rinde", d:"La de la reunión: veinte rebanadas en total.", p:350, reb:20, clase:"promo--negro", pregunta:"¿Qué lleva cada una?"},
- {id:"sencilla",   n:"Grande sencilla",    etq:"8 rebanadas · 1 ingrediente", d:"Grande, con el ingrediente que elijas.", p:109, reb:8, clase:"", nota:"No aplica con otras promociones.", pregunta:"¿Qué ingrediente?"}
+ {id:"2grandes",   n:"2 pizzas grandes",   etq:"2×1 · 16 rebanadas", d:"Dos grandes, con los ingredientes que quieras en cada una.", p:289, reb:16, clase:"promo--rojo", pregunta:"¿Qué lleva cada una?"},
+ {id:"2familiares",n:"2 pizzas familiares",etq:"2×1 · 20 rebanadas · la que más rinde", d:"La de la reunión: veinte rebanadas en total.", p:350, reb:20, clase:"promo--negro", pregunta:"¿Qué lleva cada una?"},
+ {id:"sencilla",   n:"Grande sencilla",    etq:"8 rebanadas · 1 ingrediente", d:"Grande, con el ingrediente que elijas.", p:109, reb:8, clase:"", nota:"No aplica con otras promociones.", pregunta:"¿Qué ingrediente?"},
+ {id:"combos",     n:"2 combos de hamburguesa", etq:"Por tiempo limitado", d:"Hamburguesa con papas y refresco, dos combos.", p:269, cada:2, clase:"promo--combo", img:"img/real-combo.jpg", nota:"Promoción del cartel de la sucursal: por 30 días. Pregunta si sigue vigente.", pregunta:"¿Algo que quitarle o ponerle?"}
 ];
 var SUCURSALES = [
  {id:"sanjose",    n:"Lomas de San José",  tel:"442-680-29-01", wa:"524426802901"},
@@ -868,6 +914,14 @@ var SUCURSALES = [
  {id:"balvanera",  n:"Lomas de Balvanera", tel:"442-612-37-73", wa:"524426123773"}
 ];
 var ORILLA = 35, SENCILLA = 109;
+/* horario: lo dijo Carlos el 22 de octubre, de 11 am a 10 pm las tres */
+var ABRE = 11, CIERRA = 22;
+function horaQro(){
+  try{ var p = new Intl.DateTimeFormat("es-MX", {timeZone:"America/Mexico_City", hour:"numeric", minute:"numeric", hourCycle:"h23"}).formatToParts(new Date());
+    var h = +p.filter(function(x){ return x.type === "hour"; })[0].value, m = +p.filter(function(x){ return x.type === "minute"; })[0].value; return h + m / 60; }
+  catch(e){ var d = new Date(); return d.getHours() + d.getMinutes() / 60; }
+}
+function abierto(){ var h = horaQro(); return h >= ABRE && h < CIERRA; }
 var porS = {}; PIZZAS.forEach(function(p){ porS[p.s] = p; });
 
 /* ═══════════ el pedido: se guarda en este teléfono ═══════════ */
@@ -942,16 +996,19 @@ function abrirReceta(p, desde){
   actual = p; cantHR = 1; desdeHR = desde || null;
   $("#hrFoto").src = p.f; $("#hrNombre").textContent = p.n; $("#hrIngs").textContent = p.antojo + " " + p.d;
   ponerSeg($("#hrTam"), "Grande"); $("#hrOrilla").checked = false; $("#hrCant").textContent = "1";
+  $("#hrMitad").checked = false; $("#hrOtra").hidden = true; $("#hrOtra").textContent = "";
+  PIZZAS.filter(function(x){ return x.s !== p.s; }).forEach(function(x){ $("#hrOtra").appendChild(el("option", {value:x.s, text:x.n})); });
   abrir($("#hojaReceta"));
 }
+$("#hrMitad").addEventListener("change", function(){ $("#hrOtra").hidden = !this.checked; });
 $$("#hojaReceta [data-cant]").forEach(function(b){ b.addEventListener("click", function(){
   cantHR = Math.max(1, Math.min(20, cantHR + Number(b.dataset.cant))); $("#hrCant").textContent = String(cantHR);
 }); });
 $("#hrAgregar").addEventListener("click", function(){
-  var tam = valorSeg($("#hrTam")), ori = $("#hrOrilla").checked;
+  var tam = valorSeg($("#hrTam")), ori = $("#hrOrilla").checked, otra = $("#hrMitad").checked ? porS[$("#hrOtra").value] : null;
   $("#hojaReceta").close();
-  agregar({ tipo:"receta", nombre:actual.n, detalle:tam + (ori ? " · con orilla de queso" : ""), precio:null,
-            cant:cantHR, clave:"r:" + actual.s + ":" + tam + ":" + ori }, desdeHR || actual.li.querySelector(".plato__mas"), actual.f);
+  agregar({ tipo:"receta", nombre:otra ? "Mitad " + actual.n + " / mitad " + otra.n : actual.n, detalle:tam + (ori ? " · con orilla de queso" : ""), precio:null,
+            cant:cantHR, clave:"r:" + actual.s + (otra ? "+" + otra.s : "") + ":" + tam + ":" + ori }, desdeHR || actual.li.querySelector(".plato__mas"), actual.f);
 });
 
 /* ═══════════ las favoritas ═══════════ */
@@ -1064,10 +1121,10 @@ PROMOS.forEach(function(pr){
     $("#hpPregunta").textContent = pr.pregunta + " (opcional)"; $("#hpNota").value = "";
     abrir($("#hojaPromo"));
   });
-  var porReb = pr.p / pr.reb;
+  var porReb = pr.reb ? pr.p / pr.reb : pr.p / pr.cada;
   var precio = el("div", null, [ el("div", {class:"promo__precio"}, [el("sup", {text:"$"}), String(pr.p)]),
-    el("span", {class:"promo__reb", text:"$" + (Math.round(porReb * 2) / 2).toFixed(porReb % 1 ? 2 : 0).replace(/\.00$/,"").replace(/\.50$/, ".50") + " la rebanada"}) ]);
-  listaPromos.appendChild(el("article", {class:"promo rev " + pr.clase}, [
+    el("span", {class:"promo__reb", text:"$" + (Math.round(porReb * 2) / 2).toFixed(porReb % 1 ? 2 : 0).replace(/\.00$/,"") + (pr.reb ? " la rebanada" : " cada combo")}) ]);
+  listaPromos.appendChild(el("article", {class:"promo rev " + pr.clase}, [ pr.img ? el("img", {class:"promo__foto", src:pr.img, alt:"", loading:"lazy", width:"680", height:"510"}) : null,
     el("div", null, [ el("span", {class:"promo__etq", text:pr.etq}), el("h3", {text:pr.n}), el("p", {text:pr.d}),
       pr.nota ? el("p", {class:"promo__nota", text:pr.nota}) : null ]),
     el("div", {class:"promo__pie"}, [precio, b])
@@ -1105,7 +1162,9 @@ SUCURSALES.forEach(function(s, k){
   var tel = el("a", {class:"btn btn--linea", href:"tel:+52" + s.tel.replace(/\D/g,"")}, [icono("i-tel"), "Llamar"]);
   var ir = el("a", {class:"btn btn--linea", href:mapa, target:"_blank", rel:"noopener"}, [icono("i-mapa"), "Cómo llegar"]);
   cajaSucs.appendChild(el("article", {class:"suc rev"}, [
-    el("div", null, [ el("span", {class:"suc__n", text:"Sucursal " + (k+1)}), el("h3", {text:s.n}), el("p", {class:"suc__tel", text:s.tel}) ]),
+    el("div", null, [ el("span", {class:"suc__n", text:"Sucursal " + (k+1)}), el("h3", {text:s.n}), el("p", {class:"suc__tel", text:s.tel}),
+      el("p", {class:"suc__hora" + (abierto() ? "" : " cerrado")}, [el("i"), (abierto() ? "Abierto · hasta las 10 pm" : "Cerrado · abre a las 11 am")]),
+      el("p", {class:"suc__dias", text:"Todos los días, 11 am a 10 pm"}) ]),
     el("div", {class:"suc__acc"}, [wa, tel, ir])
   ]));
   var inp = el("input", {type:"radio", name:"suc", value:s.id});
@@ -1113,7 +1172,7 @@ SUCURSALES.forEach(function(s, k){
 });
 
 /* ═══════════ ármala tú ═══════════ */
-var MAX = 5, elegidos = [], cv = $("#mia");
+var MAX = 4, elegidos = [], cv = $("#mia");
 var cajaIngs = $("#ings"), botones = {};
 Horno.lista.forEach(function(k){
   var b = el("button", {type:"button", class:"ing", "aria-pressed":"false"}, [el("i", {style:"--c:" + Horno.MUESTRA[k]}), Horno.NOMBRES[k]]);
@@ -1242,7 +1301,7 @@ function revisar(c){
   if(c.id === "cDir") return marcar(c, (pedido.entrega !== "A domicilio" || pedido.dir.trim()) ? "" : "Escribe a dónde lo llevan.");
   return true;
 }
-$$("[data-abrir-pedido]").forEach(function(b){ b.addEventListener("click", function(){ cargarDatos(); pintarPedido(); abrir($("#hojaPedido")); }); });
+$$("[data-abrir-pedido]").forEach(function(b){ b.addEventListener("click", function(){ cargarDatos(); pintarPedido(); $("#avisoHora").hidden = abierto(); abrir($("#hojaPedido")); }); });
 function mensaje(){
   var s = sumas(), suc = SUCURSALES.filter(function(x){ return x.id === pedido.suc; })[0];
   var L = ["¡Hola, Smiley's " + suc.n + "! Quiero hacer un pedido:", ""];
@@ -1301,12 +1360,12 @@ try{
 
 /* ═══════════ el saludo según la hora de este teléfono ═══════════ */
 (function(){
-  var h = new Date().getHours(), d = new Date().getDay(), t;
-  if(h >= 5 && h < 12) t = "¿Pizza de desayuno? Aquí no juzgamos";
+  var h = Math.floor(horaQro()), d = new Date().getDay(), t;
+  if(h >= 5 && h < 12) t = "¿Pizza de desayuno? No juzgamos";
   else if(h < 17 && h >= 12) t = "Ya es hora de la comida";
   else if(h < 22 && h >= 17) t = (d === 5 || d === 6) ? "Es fin de semana: noche de pizza" : "Noche de pizza";
   else t = "Antojo de medianoche";
-  $("#saludo span").textContent = t;
+  $("#saludo span").textContent = abierto() ? t + " · abierto hasta las 10 pm" : t + " · abre a las 11";
 })();
 
 /* ═══════════ movimiento: poquito y barato ═══════════ */
