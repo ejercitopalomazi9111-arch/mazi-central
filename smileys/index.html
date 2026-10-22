@@ -248,7 +248,9 @@ button{font:inherit; color:inherit}
 @media (min-width:1100px){ .carta{grid-template-columns:repeat(5, minmax(0,1fr))} }
 .aviso{display:flex; gap:12px; align-items:flex-start; margin:30px 0 0; padding:16px 18px; border-radius:16px; background:rgba(28,21,18,.06); color:#5A4A3E; font-size:15px}
 .aviso b{color:var(--tinta)}
-.tamanos{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; margin:0 0 22px}
+.tamanos{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px; margin:0 0 22px}
+.tamanos .tamano{flex-direction:column; align-items:flex-start; gap:8px; padding:12px}
+.tamano--c i{width:36px !important; height:36px !important; background:conic-gradient(var(--rojo) 0 16.66%, #F2B34A 0 33.33%, var(--rojo) 0 50%, #F2B34A 0 66.66%, var(--rojo) 0 83.33%, #F2B34A 0) !important}
 .tamano{display:flex; align-items:center; gap:12px; padding:14px; border-radius:16px; background:#fff; box-shadow:0 1px 0 rgba(28,21,18,.08)}
 .tamano i{flex:none; width:44px; height:44px; border-radius:50%; background:conic-gradient(var(--rojo) 0 12.5%, #F2B34A 0 25%, var(--rojo) 0 37.5%, #F2B34A 0 50%, var(--rojo) 0 62.5%, #F2B34A 0 75%, var(--rojo) 0 87.5%, #F2B34A 0)}
 .tamano--f i{width:52px; height:52px; background:conic-gradient(var(--rojo) 0 10%, #F2B34A 0 20%, var(--rojo) 0 30%, #F2B34A 0 40%, var(--rojo) 0 50%, #F2B34A 0 60%, var(--rojo) 0 70%, #F2B34A 0 80%, var(--rojo) 0 90%, #F2B34A 0)}
@@ -642,9 +644,10 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
       <div class="cab cab--lado rev">
         <p class="ojo">La carta</p>
         <h2 class="t-display" id="t-carta">Quince recetas<br>de la casa</h2>
-        <p>Todas salen en grande o familiar, <b>o mitad y mitad</b>, y a cualquiera se le pone orilla de queso.</p>
+        <p>Salen en chica, grande o familiar, <b>o mitad y mitad</b>, y a cualquiera se le pone orilla de queso. Grandes y familiares, en 2×1.</p>
       </div>
       <div class="tamanos rev">
+        <div class="tamano tamano--c"><i aria-hidden="true"></i><div><strong>Chica</strong><span>6 rebanadas</span></div></div>
         <div class="tamano"><i aria-hidden="true"></i><div><strong>Grande</strong><span>8 rebanadas<br>1 a 4 ingredientes</span></div></div>
         <div class="tamano tamano--f"><i aria-hidden="true"></i><div><strong>Familiar</strong><span>10 rebanadas<br>1 a 4 ingredientes</span></div></div>
       </div>
@@ -677,8 +680,8 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
         <p class="armar__cuenta" id="cuenta" aria-live="polite"></p>
         <div class="opciones">
           <div><span class="opcion__t" id="t-tam-mia">Tamaño</span>
-            <div class="seg" role="group" aria-labelledby="t-tam-mia" id="tamMia" style="max-width:340px">
-              <button type="button" data-v="Grande" aria-pressed="true">Grande · 8</button><button type="button" data-v="Familiar" aria-pressed="false">Familiar · 10</button>
+            <div class="seg" role="group" aria-labelledby="t-tam-mia" id="tamMia" style="max-width:420px">
+              <button type="button" data-v="Chica" aria-pressed="false">Chica · 6</button><button type="button" data-v="Grande" aria-pressed="true">Grande · 8</button><button type="button" data-v="Familiar" aria-pressed="false">Familiar · 10</button>
             </div>
           </div>
           <label class="interruptor"><input type="checkbox" id="orillaMia"> Orilla rellena de queso <small>+$35</small></label>
@@ -814,15 +817,15 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
     <div class="ficha"><div class="ficha__foto"><img id="hrFoto" alt="" width="620" height="620"></div><h3 id="hrNombre"></h3><p id="hrIngs"></p></div>
     <div><span class="opcion__t" id="t-hr-tam">Tamaño</span>
       <div class="seg" role="group" aria-labelledby="t-hr-tam" id="hrTam">
-        <button type="button" data-v="Grande" aria-pressed="true">2 grandes · $289</button><button type="button" data-v="Familiar" aria-pressed="false">2 familiares · $350</button>
+        <button type="button" data-v="Chica" aria-pressed="false">1 chica<br>6 reb.</button><button type="button" data-v="Grande" aria-pressed="true">2 grandes<br>$289</button><button type="button" data-v="Familiar" aria-pressed="false">2 familiares<br>$350</button>
       </div>
     </div>
     <div><label class="interruptor"><input type="checkbox" id="hrMitad"> Mitad y mitad <small>con otra especialidad</small></label>
       <select id="hrOtra" class="campo-select" hidden aria-label="La otra mitad"></select></div>
-    <label class="mejora"><img src="img/orilla.jpg" alt="" width="1600" height="620" loading="lazy"><span><b>Orilla rellena de queso</b><small>En las dos pizzas · +$35 cada una</small></span><input type="checkbox" id="hrOrilla"></label>
-    <div><span class="opcion__t">Es 2×1: ¿cuál es la segunda?</span>
+    <label class="mejora"><img src="img/orilla.jpg" alt="" width="1600" height="620" loading="lazy"><span><b>Orilla rellena de queso</b><small id="hrOrillaT">En las dos pizzas · +$35 cada una</small></span><input type="checkbox" id="hrOrilla"></label>
+    <div id="hrSegundaCaja"><span class="opcion__t">Es 2×1: ¿cuál es la segunda?</span>
       <select id="hrSegunda" class="campo-select" style="margin-top:0" aria-label="La segunda pizza"></select></div>
-    <div><span class="opcion__t">Cuántos 2×1</span><div class="cantidad"><button type="button" data-cant="-1" aria-label="Uno menos">−</button><output id="hrCant">1</output><button type="button" data-cant="1" aria-label="Uno más">+</button></div></div>
+    <div><span class="opcion__t" id="hrCantT">Cuántos 2×1</span><div class="cantidad"><button type="button" data-cant="-1" aria-label="Uno menos">−</button><output id="hrCant">1</output><button type="button" data-cant="1" aria-label="Uno más">+</button></div></div>
   </div>
   <div class="hoja__pie"><p class="hr-total" id="hrTotal"></p><button class="btn btn--rojo" type="button" id="hrAgregar">Agregar al pedido</button></div>
 </dialog>
@@ -1046,8 +1049,17 @@ function ponerSeg(caja, v){ $$("button", caja).forEach(function(o){ o.setAttribu
 /* receta */
 var actual = null, cantHR = 1, desdeHR = null;
 segmento($("#hrTam"), function(){ totalHR(); });
-function precioHR(){ return (DOSXUNO[valorSeg($("#hrTam"))] + ($("#hrOrilla").checked ? ORILLA * 2 : 0)) * cantHR; }
-function totalHR(){ var t = $("#hrTotal"); t.textContent = ""; t.appendChild(el("span", null, ["Total ", el("small", {text:"· te llevas " + cantHR * 2 + " pizzas"})])); t.appendChild(el("span", {text:pesos(precioHR())})); }
+/* la chica (6 rebanadas) no viene en la carta con precio: va suelta y la sucursal la cotiza */
+function chicaHR(){ return valorSeg($("#hrTam")) === "Chica"; }
+function precioHR(){ return chicaHR() ? null : (DOSXUNO[valorSeg($("#hrTam"))] + ($("#hrOrilla").checked ? ORILLA * 2 : 0)) * cantHR; }
+function totalHR(){
+  var t = $("#hrTotal"), ch = chicaHR(); t.textContent = "";
+  $("#hrSegundaCaja").hidden = ch;
+  $("#hrCantT").textContent = ch ? "Cuántas" : "Cuántos 2×1";
+  $("#hrOrillaT").textContent = ch ? "+$35" : "En las dos pizzas · +$35 cada una";
+  if(ch){ t.appendChild(el("span", null, ["Total ", el("small", {text:"· " + cantHR + (cantHR === 1 ? " chica" : " chicas")})])); t.appendChild(el("small", {text:"te lo confirma la sucursal"})); return; }
+  t.appendChild(el("span", null, ["Total ", el("small", {text:"· te llevas " + cantHR * 2 + " pizzas"})])); t.appendChild(el("span", {text:pesos(precioHR())}));
+}
 $("#hrOrilla").addEventListener("change", totalHR);
 function abrirReceta(p, desde){
   actual = p; cantHR = 1; desdeHR = desde || null;
@@ -1070,6 +1082,11 @@ $("#hrAgregar").addEventListener("click", function(){
   $("#hojaReceta").close();
   var sv = $("#hrSegunda").value, seg = sv === "?" ? "la segunda la elijo con ustedes" : (sv ? porS[sv].n : "otra igual");
   var primera = otra ? "Mitad " + actual.n + " / mitad " + otra.n : actual.n;
+  if(tam === "Chica"){
+    agregar({ tipo:"receta", nombre:primera + " (chica, 6 rebanadas)", detalle:ori ? "Con orilla de queso" : "", precio:null,
+              cant:cantHR, clave:"r:" + actual.s + (otra ? "+" + otra.s : "") + ":Chica:" + ori }, desdeHR || actual.li.querySelector(".plato__mas"), actual.f);
+    return;
+  }
   agregar({ tipo:"receta", nombre:"2×1 " + (tam === "Grande" ? "grandes" : "familiares") + ": " + primera + " + " + seg, detalle:(ori ? "Con orilla de queso en las dos" : ""), precio:DOSXUNO[tam] + (ori ? ORILLA * 2 : 0),
             cant:cantHR, clave:"r:" + actual.s + (otra ? "+" + otra.s : "") + ":" + sv + ":" + tam + ":" + ori }, desdeHR || actual.li.querySelector(".plato__mas"), actual.f);
 });
@@ -1291,6 +1308,7 @@ $("#orillaMia").addEventListener("change", function(){ pintarMia(); });
 function sencillaMia(){ return valorSeg($("#tamMia")) === "Grande" && elegidos.length <= 1; }
 function precioMia(){
   var ori = $("#orillaMia").checked;
+  if(valorSeg($("#tamMia")) === "Chica") return null;
   if(sencillaMia()) return SENCILLA + (ori ? ORILLA : 0);
   return DOSXUNO[valorSeg($("#tamMia"))] + (ori ? ORILLA * 2 : 0);
 }
@@ -1305,8 +1323,9 @@ function pintarMia(nuevo){
   else { c.appendChild(el("b", {text:elegidos.length + " de " + MAX + ": "})); c.appendChild(document.createTextNode(elegidos.map(function(k){ return Horno.NOMBRES[k]; }).join(", ") + ".")); }
   var p = precioMia();
   var sen = sencillaMia();
-  $("#precioMia").textContent = sen ? "Grande de un ingrediente: " + pesos(p) + ". No aplica con otras promociones." : "Va en 2×1: te llevas dos iguales por " + pesos(p) + (valorSeg($("#tamMia")) === "Grande" ? " (con un solo ingrediente sale en $109 la grande)." : ".");
-  $("#sticker").hidden = false; $("#sticker").firstChild.textContent = sen ? "Grande" : "2×1"; $("#sticker b").textContent = pesos(p);
+  if(p == null){ $("#precioMia").textContent = "La chica (6 rebanadas) te la cotiza la sucursal al recibir tu pedido."; $("#sticker").hidden = true; }
+  else $("#precioMia").textContent = sen ? "Grande de un ingrediente: " + pesos(p) + ". No aplica con otras promociones." : "Va en 2×1: te llevas dos iguales por " + pesos(p) + (valorSeg($("#tamMia")) === "Grande" ? " (con un solo ingrediente sale en $109 la grande)." : ".");
+  if(p != null){ $("#sticker").hidden = false; $("#sticker").firstChild.textContent = sen ? "Grande" : "2×1"; $("#sticker b").textContent = pesos(p); }
   if(armarVisto) Horno.pintar(cv, { ings:elegidos, orilla:$("#orillaMia").checked, nuevo:quieto ? null : nuevo });
 }
 $("#limpiarMia").addEventListener("click", function(){ elegidos = []; $("#orillaMia").checked = false; ponerSeg($("#tamMia"), "Grande"); pintarMia(); });
@@ -1314,7 +1333,7 @@ $("#agregarMia").addEventListener("click", function(){
   var tam = valorSeg($("#tamMia")), ori = $("#orillaMia").checked;
   var ings = elegidos.length ? elegidos.map(function(k){ return Horno.NOMBRES[k]; }).join(", ") : "queso solo";
   var foto = null; try{ foto = cv.toDataURL("image/jpeg", .6); }catch(e){}
-  agregar({ tipo:"mia", nombre:sencillaMia() ? "Pizza armada (grande sencilla)" : "2×1 " + (tam === "Grande" ? "grandes" : "familiares") + " armadas, iguales", detalle:ings + (ori ? " · con orilla de queso" : ""),
+  agregar({ tipo:"mia", nombre:tam === "Chica" ? "Pizza armada (chica, 6 rebanadas)" : sencillaMia() ? "Pizza armada (grande sencilla)" : "2×1 " + (tam === "Grande" ? "grandes" : "familiares") + " armadas, iguales", detalle:ings + (ori ? " · con orilla de queso" : ""),
             precio:precioMia(), cant:1, clave:"m:" + tam + ":" + ori + ":" + elegidos.slice().sort().join(",") }, cv, foto);
 });
 /* la pizza y sus fotos se cargan cuando la sección se acerca, no antes */

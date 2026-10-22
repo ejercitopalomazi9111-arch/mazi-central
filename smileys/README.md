@@ -39,6 +39,8 @@ se ahorra en par salen de los precios del cartel.
 - Recetas (con tamaño, orilla y cantidad), pizza armada, complementos y promociones.
 - Se guarda en el teléfono: si se cierra la página, el pedido sigue ahí.
 - Pide sucursal, nombre y, si es a domicilio, dirección. El mensaje sale ya redactado.
+- **Tamaños:** chica 6 rebanadas, grande 8, familiar 10 (Carlos, 22 de octubre). La chica no trae precio
+  en la carta: se pide suelta y la sucursal la cotiza.
 - **Las especialidades van en 2×1** (carta del mostrador, 22 de octubre): dos grandes $289, dos
   familiares $350, de 1 a 4 ingredientes, especialidad o mitad y mitad. La segunda se elige en la
   hoja. Orilla de queso +$35 por pizza (en el 2×1 se cobra en las dos: falta que Carlos lo confirme).

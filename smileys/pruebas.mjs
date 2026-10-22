@@ -109,6 +109,14 @@ for(let i=0;i<5;i++) await pg.click(`#ings .ing:nth-child(${i+1})`, {force:true}
 v('ármala deja hasta 4 ingredientes', (await pg.$$('#ings .ing[aria-pressed="true"]')).length===4);
 // el horario se ve en cada sucursal
 v('cada sucursal dice su horario', (await pg.$$eval('.suc__hora', e=>e.map(x=>x.textContent))).length===3 && (await pg.$$eval('.suc__dias', e=>e.map(x=>x.textContent))).every(t=>t.includes('11 am a 10 pm')));
+// la chica: 6 rebanadas, sin 2×1 y con precio de la sucursal
+await pg.evaluate(()=>document.getElementById('carta').scrollIntoView());
+await pg.click('[aria-label="Agregar Margarita al pedido"]');
+await pg.click('#hrTam button[data-v="Chica"]');
+v('la chica esconde el 2×1 y no inventa precio', await pg.$eval('#hrSegundaCaja', e=>e.hidden) && (await pg.textContent('#hrTotal')).includes('confirma la sucursal'));
+await pg.click('#hrAgregar');
+v('y entra como chica de 6 rebanadas, sin precio', await pg.evaluate(()=>JSON.parse(localStorage.getItem('smileys-pedido-v1')).renglones.some(r=>r.nombre==='Margarita (chica, 6 rebanadas)' && r.precio==null)));
+v('las tarjetas de tamaño dicen 6, 8 y 10', (await pg.textContent('.tamanos')).replace(/\s+/g,' ').match(/6 rebanadas.*8 rebanadas.*10 rebanadas/) !== null);
 // smileys burger: hamburguesa con tocino
 await pg.evaluate(()=>document.getElementById('burger').scrollIntoView());
 await pg.check('#burgers .burger:first-child input[value=tocino]');
