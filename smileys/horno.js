@@ -54,35 +54,27 @@ function cargar(k){
 }
 
 /* dónde va cada pieza. Cada ingrediente aparta sus lugares una sola vez y los conserva: al sumar
-   otro, los que ya estaban NO se mueven, el nuevo busca los huecos. Y se reparte por rebanada
-   (entre los 8 cortes de la foto), con lugar en la orilla y en el centro de cada una, sin caer
-   sobre el corte: así cada rebanada lleva de todo, hasta el borde. */
+   otro, los que ya estaban NO se mueven, el nuevo busca los huecos. */
 /* el tamaño: cuántas rebanadas y qué tan grande se ve en el plato */
 var TAMANO = { 6:.37, 8:.43, 10:.47 };
 function cortesDe(n){ var c = []; for(var i = 0; i < n; i++) c.push(12 + i * 360 / n); return c; }
-var BANDAS = [[.64, .97], [.26, .62]];          /* fracción del radio con queso: primero la orilla */
+/* el reparto es como el de la mano del pizzero: suelto por toda la pizza, parejo y hasta la orilla,
+   sin fijarse en dónde va a caer el corte (el cuchillo pasa después y corta lo que encuentre).
+   Cada pieza busca, de 30 lugares al azar, el más lejos de todo lo que ya hay. */
 function colocar(P, k, S){
   var ya = [], a = semilla("lugar-" + k), mios = [], antes = Object.keys(P.puntos).length;
   Object.keys(P.puntos).forEach(function(o){ ya = ya.concat(P.puntos[o]); });
-  /* los dos primeros ingredientes llevan dos en la orilla de cada rebanada; los demás, uno */
-  var huecos = antes < 2 ? [[BANDAS[0], 0, .5], [BANDAS[0], .5, 1], [BANDAS[1], 0, 1]] : [[BANDAS[0], 0, 1], [BANDAS[1], 0, 1]];
-  var CORTES = P.cortes;
-  CORTES.forEach(function(g0, i){
-    var g1 = CORTES[(i + 1) % CORTES.length] + (i === CORTES.length - 1 ? 360 : 0);
-    huecos.forEach(function(h){
-      var b = h[0], mejor = null, dist = -1;
-      for(var n = 0; n < 40; n++){                 /* de 40 candidatos, el más lejos de todo lo que ya hay */
-        var d = Math.sqrt(b[0] * b[0] + a() * (b[1] * b[1] - b[0] * b[0])) * P.rQ;
-        var pad = (S * .045 * P.k) / d * 180 / Math.PI;    /* lejos del corte: que no quede partido */
-        var libre = Math.max(1, g1 - g0 - pad * 2);
-        var ang = (g0 + pad + libre * (h[1] + a() * (h[2] - h[1]))) * Math.PI / 180;
-        var x = P.C + Math.cos(ang) * d, y = P.C + Math.sin(ang) * d, m = Infinity;
-        ya.concat(mios).forEach(function(q){ var dd = (q[0] - x) * (q[0] - x) + (q[1] - y) * (q[1] - y); if(dd < m) m = dd; });
-        if(m > dist){ dist = m; mejor = [x, y]; }
-      }
-      mios.push(mejor);
-    });
-  });
+  var n = antes < 2 ? 24 : 16, borde = P.rQ * .97;
+  for(var p = 0; p < n; p++){
+    var mejor = null, dist = -1;
+    for(var m = 0; m < 30; m++){
+      var t = a() * 6.2832, d = Math.sqrt(a()) * borde, x = P.C + Math.cos(t) * d, y = P.C + Math.sin(t) * d, cerca = Infinity;
+      ya.concat(mios).forEach(function(q){ var dd = (q[0] - x) * (q[0] - x) + (q[1] - y) * (q[1] - y); if(dd < cerca) cerca = dd; });
+      if(cerca > dist){ dist = cerca; mejor = [x, y]; }
+    }
+    /* un empujoncito al azar para que no quede de cuadrícula */
+    mios.push([mejor[0] + (a() - .5) * S * .012 * P.k, mejor[1] + (a() - .5) * S * .012 * P.k]);
+  }
   P.puntos[k] = mios;
   var lista = [], mm = MONTON[k] || 1;
   mios.forEach(function(q, i){
@@ -96,7 +88,7 @@ function colocar(P, k, S){
 }
 function planear(cv, S, ings, reb){
   var P = cv.__plan;
-  /* otro tamaño es otra pizza: se vuelven a acomodar los ingredientes en sus nuevas rebanadas */
+  /* otro tamaño es otra pizza: se vuelven a acomodar los ingredientes */
   if(!P || P.S !== S || P.reb !== reb){ var R = S * TAMANO[reb]; P = cv.__plan = { S:S, reb:reb, cortes:cortesDe(reb), C:S / 2, R:R, rQ:R * .8, k:TAMANO[reb] / .47, reparto:{}, puntos:{} }; }
   /* lo que se quitó suelta sus lugares; lo que ya estaba se queda donde estaba */
   Object.keys(P.reparto).forEach(function(k){ if(ings.indexOf(k) < 0){ delete P.reparto[k]; delete P.puntos[k]; } });
@@ -189,15 +181,29 @@ function orilla(c, S, P, t){
 }
 
 /* los cortes del cuchillo: una raya oscura con su filo de luz, de centro a orilla */
+/* los cortes van ENCIMA de todo, como el cortador que pasa al final: parten el queso, la orilla y
+   los ingredientes. Una raya oscura que tiembla tantito (pulso de mano), su sombra y el filo de luz
+   del queso recién cortado, y la muesca donde la rueda sale por la orilla. */
 function cortes(c, S, P){
-  c.save(); c.lineCap = "round";
-  P.cortes.forEach(function(g){
-    var a = g * Math.PI / 180, x = P.C + Math.cos(a) * P.R * 1.01, y = P.C + Math.sin(a) * P.R * 1.01;
-    var nx = -Math.sin(a) * S * .0028, ny = Math.cos(a) * S * .0028;
-    c.strokeStyle = "rgba(255,238,196,.55)"; c.lineWidth = S * .0035;
-    c.beginPath(); c.moveTo(P.C + nx, P.C + ny); c.lineTo(x + nx, y + ny); c.stroke();
-    c.strokeStyle = "rgba(96,44,8,.62)"; c.lineWidth = S * .0042;
-    c.beginPath(); c.moveTo(P.C, P.C); c.lineTo(x, y); c.stroke();
+  c.save(); c.lineCap = "round"; c.lineJoin = "round";
+  /* el cortador cruza toda la pizza de orilla a orilla: con 6, 8 o 10 rebanadas son 3, 4 o 5 pasadas */
+  P.cortes.slice(0, P.cortes.length / 2).forEach(function(g, i){
+    var a = g * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a), nx = -sa, ny = ca, r = semilla("corte" + i + P.reb);
+    var pts = [], largo = P.R * 1.025, paso = S * .012, fase = r() * 6.28;
+    for(var d = -largo; d <= largo; d += paso){
+      var off = (Math.sin(d / S * 38 + fase) * .7 + (r() - .5) * .6) * S * .0013;
+      pts.push([P.C + ca * d + nx * off, P.C + sa * d + ny * off]);
+    }
+    function trazo(dx, dy){ c.beginPath(); pts.forEach(function(q, k){ if(k) c.lineTo(q[0] + dx, q[1] + dy); else c.moveTo(q[0] + dx, q[1] + dy); }); c.stroke(); }
+    c.strokeStyle = "rgba(40,16,2,.22)"; c.lineWidth = S * .01; trazo(S * .001, S * .002);                   /* la sombra del corte */
+    c.strokeStyle = "rgba(255,240,205,.42)"; c.lineWidth = S * .0024; trazo(nx * S * .0032, ny * S * .0032); /* el filo con luz */
+    c.strokeStyle = "rgba(74,30,4,.82)"; c.lineWidth = S * .0034; trazo(0, 0);                               /* la raya */
+    /* la muesca donde la rueda sale por la orilla, en los dos lados */
+    [1, -1].forEach(function(lado){
+      var mx = P.C + ca * P.R * .995 * lado, my = P.C + sa * P.R * .995 * lado;
+      c.fillStyle = "rgba(40,16,2,.5)"; c.beginPath();
+      c.moveTo(mx + nx * S * .006, my + ny * S * .006); c.lineTo(P.C + ca * P.R * 1.03 * lado, P.C + sa * P.R * 1.03 * lado); c.lineTo(mx - nx * S * .006, my - ny * S * .006); c.closePath(); c.fill();
+    });
   });
   c.restore();
 }
@@ -221,7 +227,6 @@ function pintar(cv, o){
       /* la base: 508 px de radio en su foto de 1100 */
       var lado = 1100 * P.R / 508 * (o.orilla ? 1.015 : 1);
       c.drawImage(lisa, P.C - lado / 2, P.C - lado / 2, lado, lado);
-      cortes(c, S, P);
       if(o.orilla) orilla(c, S, P, o.nuevo === "orilla" ? t : 1);
       orden.forEach(function(k){
         if(POLVO[k]){ c.globalAlpha = k === o.nuevo ? t : 1; polvo(c, S, k, P); c.globalAlpha = 1; return; }
@@ -237,6 +242,7 @@ function pintar(cv, o){
           c.globalAlpha = 1;
         });
       });
+      cortes(c, S, P);
     }
     if(!o.nuevo || o.quieto){ dibuja(1); return; }
     var t0 = performance.now(), dur = 650;

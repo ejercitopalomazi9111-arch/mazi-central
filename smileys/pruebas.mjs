@@ -166,7 +166,7 @@ const quietos = await pg.evaluate(async ()=>{
   return {igual:antes===despues, n:cv.__plan.reparto.pepperoni.length, orilla};
 });
 v('al sumar ingredientes, los que ya estaban no se mueven', quietos.igual);
-v('cada rebanada lleva en la orilla: 16 de 24 pepperonis van en la parte de afuera', quietos.n===24 && quietos.orilla>=16, JSON.stringify(quietos));
+v('el reparto llega a la orilla: al menos la mitad de los 24 pepperonis van en la parte de afuera', quietos.n===24 && quietos.orilla>=12, JSON.stringify(quietos));
 v('la pizza de la barra da vueltas', await pg.$eval('#miniPizza canvas', c=>getComputedStyle(c).animationName==='vuelta'));
 // los tamaños de la carta ponen el precio de cada receta
 await pg.evaluate(()=>document.getElementById('carta').scrollIntoView()); await pg.waitForTimeout(400);
