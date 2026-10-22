@@ -49,8 +49,6 @@
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%; scroll-padding-top:76px; overflow-x:clip; touch-action:manipulation}
-.girando{display:inline-block; animation:tiembla .09s linear infinite; font-variant-numeric:tabular-nums}
-@keyframes tiembla{0%{transform:translateY(-1.5px)} 50%{transform:translateY(1.5px)} 100%{transform:translateY(-1.5px)}}
 /* sin zoom al tocar rápido (doble toque) en nada que se pique; pellizcar para acercar sigue sirviendo */
 button,a,input,label,select,textarea,summary,[role="button"]{touch-action:manipulation}
 body{margin:0; background:var(--negro); color:var(--hueso); font:400 17px/1.55 var(--texto); overflow-x:clip; -webkit-font-smoothing:antialiased}
@@ -302,6 +300,13 @@ button{font:inherit; color:inherit}
   font:800 13px/1 var(--display); text-transform:uppercase; box-shadow:0 12px 30px rgba(0,0,0,.45)}
 .horno__precio b{display:block; font-size:30px; margin-top:2px}
 .horno__precio[hidden]{display:none}
+/* mientras la pizza vive en la barra de abajo, la grande no se pinta: es la misma, no dos */
+.horno.en-barra canvas,.horno.en-barra .horno__precio,.horno.en-barra .vapor{visibility:hidden}
+/* el precio cae como sello: grande y ladeado, golpea, rebota y se queda */
+.horno__precio.estampa{animation:estampa .55s cubic-bezier(.3,0,.4,1) both}
+@keyframes estampa{0%{opacity:0; transform:rotate(-28deg) scale(2.8)} 55%{opacity:1; transform:rotate(12deg) scale(.86)} 75%{transform:rotate(6deg) scale(1.07)} 100%{opacity:1; transform:rotate(8deg) scale(1)}}
+.horno.golpe canvas{animation:golpe .32s ease-out}
+@keyframes golpe{30%{transform:translateY(5px) scale(.985)} 100%{transform:none}}
 .ings{display:grid; gap:16px}
 .ings__grupo h3{margin:0 0 8px; font:800 13px/1 var(--texto); letter-spacing:.12em; text-transform:uppercase; color:var(--amarillo)}
 .ings__fila{display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:6px}
@@ -1031,21 +1036,29 @@ function icono(id){ var s = document.createElementNS("http://www.w3.org/2000/svg
 var pesos = function(n){ return "$" + Math.round(n).toLocaleString("es-MX"); };
 /* un precio que cambia no brinca: pasan varios números, como tragamonedas, y se asienta en el nuevo.
    «desde» sirve cuando el elemento se acaba de crear y el número de antes vivía en otro. */
+function pararRueda(elm){
+  if(elm.__giro) cancelAnimationFrame(elm.__giro);
+  clearTimeout(elm.__fin); elm.__giro = 0;
+  if(elm.nodeType === 1){ elm.style.top = ""; elm.style.position = ""; }
+}
 function rodar(elm, valor, fmt, desde){
   fmt = fmt || pesos;
   var antes = desde != null ? desde : elm.__valor; elm.__valor = valor;
-  var caja = elm.classList ? elm : elm.parentNode;
-  if(elm.__giro){ cancelAnimationFrame(elm.__giro); elm.__giro = 0; }
-  /* si se cortó a media vuelta, que no se quede temblando */
-  if(caja && caja.classList) caja.classList.remove("girando");
+  pararRueda(elm);
   if(antes == null || valor == null || antes === valor || quieto){ elm.textContent = valor == null ? "" : fmt(valor); return; }
-  var t0 = performance.now(), dur = 650, salto = Math.max(Math.abs(valor - antes), Math.max(antes, valor) * .45, 20);
-  if(caja && caja.classList) caja.classList.add("girando");
+  var t0 = performance.now(), dur = 650, salto = Math.max(Math.abs(valor - antes), Math.max(antes, valor) * .45, 20), caja = elm.nodeType === 1 ? elm : null;
+  /* el final no depende de que el teléfono siga dando cuadros: Safari los pausa al hacer scroll,
+     y sin esto el precio se quedaba a medias y temblando */
+  function fin(){ pararRueda(elm); elm.textContent = fmt(valor); }
+  elm.__fin = setTimeout(fin, dur + 120);
+  if(caja) caja.style.position = "relative";
   (function paso(t){
-    var k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
-    elm.textContent = fmt(k < 1 ? Math.max(0, antes + (valor - antes) * e + (Math.random() - .5) * salto * .6 * (1 - k)) : valor);
-    if(k < 1) elm.__giro = requestAnimationFrame(paso);
-    else { elm.__giro = 0; if(caja && caja.classList) caja.classList.remove("girando"); }
+    var k = Math.min(1, (t - t0) / dur);
+    if(k >= 1) return fin();
+    var e = 1 - Math.pow(1 - k, 3);
+    elm.textContent = fmt(Math.max(0, antes + (valor - antes) * e + (Math.random() - .5) * salto * .6 * (1 - k)));
+    if(caja) caja.style.top = ((Math.random() - .5) * 3 * (1 - k)).toFixed(1) + "px";   /* el temblor de tragamonedas, que se apaga solo */
+    elm.__giro = requestAnimationFrame(paso);
   })(t0);
 }
 
@@ -1409,7 +1422,7 @@ var tamCarta = "Grande";
 function preciosCarta(){
   PIZZAS.forEach(function(p){
     var sm = $("small", p.precio), b = $("b", p.precio);
-    if(tamCarta === "Chica"){ sm.textContent = "Chica · 6 rebanadas"; b.__valor = null; b.textContent = "Precio en sucursal"; return; }
+    if(tamCarta === "Chica"){ sm.textContent = "Chica · 6 rebanadas"; pararRueda(b); b.__valor = null; b.textContent = "Precio en sucursal"; return; }
     sm.textContent = (tamCarta === "Grande" ? "2 grandes" : "2 familiares") + " · 2×1";
     rodar(b, DOSXUNO[tamCarta]);
   });
@@ -1554,7 +1567,7 @@ function avisarMini(){
   $("#miniCuenta").textContent = elegidos.length ? elegidos.length + " de " + MAX + " ingredientes" : "Queso solo";
   $("#miniIngs").textContent = elegidos.length ? elegidos.map(function(k){ return Horno.NOMBRES[k]; }).join(", ") : "Toca un ingrediente y míralo caer aquí.";
   var p = precioMia(), pre = sencillaMia() ? "Grande " : "2×1 ";
-  if(p == null){ $("#miniPrecio").textContent = "Chica · la cotiza la sucursal"; $("#miniPrecio").__valor = null; } else rodar($("#miniPrecio"), p, function(v){ return pre + pesos(v); });
+  if(p == null){ pararRueda($("#miniPrecio")); $("#miniPrecio").textContent = "Chica · la cotiza la sucursal"; $("#miniPrecio").__valor = null; } else rodar($("#miniPrecio"), p, function(v){ return pre + pesos(v); });
   miniHasta = performance.now() + 2200; requestAnimationFrame(copiarMini);
   mini.classList.remove("salta"); void mini.offsetWidth; mini.classList.add("salta");
 }
@@ -1563,6 +1576,17 @@ function verMini(){
   if(ver && !mini.classList.contains("ver")){ miniHasta = Math.max(miniHasta, performance.now() + 1200); requestAnimationFrame(copiarMini); }
   mini.classList.toggle("ver", ver);
   document.body.classList.toggle("con-mini", ver);
+  $(".horno").classList.toggle("en-barra", ver);
+}
+/* el sello del precio: cae cuando la pizza ya está grande, golpea, y el precio se carga rodando desde cero */
+function sellar(){
+  var st = $("#sticker"), b = $("b", st), h = $(".horno");
+  if(st.hidden || quieto) return;
+  st.style.visibility = "";
+  st.classList.remove("estampa"); h.classList.remove("golpe"); void st.offsetWidth;
+  st.classList.add("estampa");
+  var v = b.__valor; b.textContent = "$0";
+  setTimeout(function(){ h.classList.add("golpe"); if(v != null) rodar(b, v, null, 0); }, 300);
 }
 /* la pizza de la barra y la grande son la misma: al llegar a la grande, la chica vuela y crece hasta
    su lugar; al regresar a los ingredientes, la grande se encoge y vuela de vuelta a la barra.
@@ -1574,7 +1598,7 @@ function volarPizza(aBarra){
   var a0 = aBarra ? cv.getBoundingClientRect() : miniCv.getBoundingClientRect(), g0 = aBarra ? 0 : giroDe(miniCv);
   if(!a0.width) return;
   document.body.appendChild(c); cv.style.opacity = "0";
-  if(aBarra) mini.classList.add("vuela-sin-plato");
+  if(aBarra) mini.classList.add("vuela-sin-plato"); else $("#sticker").style.visibility = "hidden";
   var t0 = performance.now(), dur = aBarra ? 560 : 620;
   (function paso(t){
     var k = Math.min(1, (t - t0) / dur), e = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
@@ -1588,6 +1612,7 @@ function volarPizza(aBarra){
       var pl = $(".mini-pizza__plato", mini); pl.style.transition = "none";
       mini.classList.remove("vuela-sin-plato"); void pl.offsetWidth; pl.style.transition = "";
       c.remove(); cv.style.opacity = "";
+      if(!aBarra) sellar();
     }
   })(t0);
 }
@@ -1599,6 +1624,7 @@ if("IntersectionObserver" in window){
     verMini();
     if(!quieto && armarVisto){
       if(hornoVisto && !antes && veia) volarPizza(false);
+      else if(hornoVisto && !antes) sellar();
       else if(!hornoVisto && antes && mini.classList.contains("ver")) volarPizza(true);
     }
   }, {threshold:.45}).observe($(".horno"));
@@ -1686,7 +1712,7 @@ function pintarPedido(){
   $("#flota").classList.toggle("ver", n > 0);
   $("#flotaCuenta").textContent = n + (n === 1 ? " cosa" : " cosas") + " · Ver pedido";
   var fd = $("#flotaDetalle");
-  if(s.con && !s.sin) rodar(fd, s.con); else { fd.textContent = s.con ? pesos(s.con) + " + lo que confirma la sucursal" : "Precio lo confirma la sucursal"; fd.__valor = null; }
+  if(s.con && !s.sin) rodar(fd, s.con); else { pararRueda(fd); fd.textContent = s.con ? pesos(s.con) + " + lo que confirma la sucursal" : "Precio lo confirma la sucursal"; fd.__valor = null; }
   var ul = $("#renglones"); ul.textContent = "";
   var rep = $("#repetir"), nu = ultimo && ultimo.renglones ? ultimo.renglones.reduce(function(t, r){ return t + r.cant; }, 0) : 0;
   rep.hidden = !nu || n > 0; if(nu) rep.textContent = "Repetir mi último pedido (" + nu + (nu === 1 ? " cosa)" : " cosas)");
@@ -1708,7 +1734,7 @@ function pintarPedido(){
       el("div", {class:"cantidad"}, [menos, el("output", {text:String(r.cant)}), mas])
     ]));
   });
-  if(s.con && !s.sin) rodar($("#continuar").firstChild, s.con, function(v){ return "Continuar · " + pesos(v) + " "; }); else { $("#continuar").firstChild.textContent = "Continuar "; $("#continuar").firstChild.__valor = null; }
+  if(s.con && !s.sin) rodar($("#continuar").firstChild, s.con, function(v){ return "Continuar · " + pesos(v) + " "; }); else { pararRueda($("#continuar").firstChild); $("#continuar").firstChild.textContent = "Continuar "; $("#continuar").firstChild.__valor = null; }
   var cu = $("#cuentas"); cu.textContent = "";
   if(s.con){ var tot = el("span", {class:"cifra"}); cu.appendChild(el("div", {class:"total"}, [el("span", {text: s.sin ? "Lo que ya tiene precio" : "Total"}), tot])); rodar(tot, s.con, null, pintarPedido.total); }
   pintarPedido.total = s.con || null;
