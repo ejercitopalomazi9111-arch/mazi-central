@@ -38,6 +38,15 @@ se ahorra en par salen de los precios del cartel.
 
 - Recetas (con tamaño, orilla y cantidad), pizza armada, complementos y promociones.
 - Se guarda en el teléfono: si se cierra la página, el pedido sigue ahí.
+- **Índice «¿Qué se te antoja?»** justo después de la portada y en el botón «Menú» de la barra:
+  alitas, boneless, pizzas, burgers, promos, papas, Ármala, ¿Cuántos son? y sucursales, de un toque.
+- **¿Cuántos van a comer?** El número de personas y las rebanadas por persona se escriben o se
+  cambian con los botones. Los botones no hacen zoom al tocarlos rápido (`touch-action`).
+- **Papel tapiz:** el logo y la sonrisa en baldosa (`img/tapiz.svg`), casi transparente y del color
+  de la letra de cada sección.
+- **Ármala tú:** ingredientes en tres grupos (carnes, verduras y fruta, toque final), todos a la
+  vista y antes que la pizza. Mientras se escogen, una pizza chiquita abajo a la izquierda se
+  actualiza en vivo; al tocarla baja a la grande.
 - Pide sucursal, nombre y, si es a domicilio, dirección. El mensaje sale ya redactado.
 - **Tamaños:** chica 6 rebanadas, grande 8, familiar 10 (Carlos, 22 de octubre). La chica no trae precio
   en la carta: se pide suelta y la sucursal la cotiza.

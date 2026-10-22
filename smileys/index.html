@@ -48,7 +48,9 @@
   color-scheme:dark;
 }
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%; scroll-padding-top:76px; overflow-x:clip}
+html{-webkit-text-size-adjust:100%; scroll-padding-top:76px; overflow-x:clip; touch-action:manipulation}
+/* sin zoom al tocar rápido (doble toque) en nada que se pique; pellizcar para acercar sigue sirviendo */
+button,a,input,label,select,textarea,summary,[role="button"]{touch-action:manipulation}
 body{margin:0; background:var(--negro); color:var(--hueso); font:400 17px/1.55 var(--texto); overflow-x:clip; -webkit-font-smoothing:antialiased}
 img{display:block; max-width:100%}
 a{color:inherit}
@@ -101,7 +103,7 @@ button{font:inherit; color:inherit}
 .barra nav a:hover{color:var(--hueso); background:rgba(255,246,232,.07)}
 .barra__pedido{margin-left:auto; min-height:44px; padding:0 18px; font-size:15px}
 .barra__pedido b{display:inline-grid; place-items:center; min-width:24px; height:24px; padding:0 6px; border-radius:99px; background:#fff; color:var(--rojo); font-size:13px}
-@media (min-width:980px){ .barra nav{display:flex} .barra__pedido{margin-left:8px} }
+@media (min-width:980px){ .barra nav{display:flex} .barra__pedido{margin-left:8px} .barra__menu{display:none} }
 
 /* ───────── portada ───────── */
 .portada{position:relative; min-height:100svh; overflow:hidden; background:var(--negro); isolation:isolate}
@@ -163,7 +165,29 @@ button{font:inherit; color:inherit}
 @keyframes corre{to{transform:translateX(-50%)}}
 
 /* ───────── secciones ───────── */
-.sec{position:relative; padding:clamp(76px, 11vw, 140px) 0}
+.sec{position:relative; padding:clamp(76px, 11vw, 140px) 0; isolation:isolate}
+/* papel tapiz: el logo y la sonrisa en baldosa, del color de la letra de cada sección y casi transparente */
+.sec::before,.pie::before{content:""; position:absolute; inset:0; z-index:-1; pointer-events:none; background:currentColor; opacity:.045;
+  -webkit-mask:url(img/tapiz.svg) 0 0/320px 260px repeat; mask:url(img/tapiz.svg) 0 0/320px 260px repeat}
+.claro::before{opacity:.035} .rojo::before{opacity:.07} .amarillo::before{opacity:.06}
+/* índice: ve directo a lo que se te antoja */
+.indice-sec{padding:44px 0 52px}
+.indice-sec .cab{margin-bottom:18px}
+.indice{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:10px; margin:0; padding:0; list-style:none}
+.ind{position:relative; display:block; aspect-ratio:1; border-radius:18px; overflow:hidden; color:#fff; text-decoration:none; background:var(--carbon2); box-shadow:inset 0 0 0 1px var(--linea); -webkit-tap-highlight-color:transparent}
+.ind img{width:100%; height:100%; object-fit:cover; display:block; transition:transform .3s ease}
+.ind:hover img{transform:scale(1.05)}
+.ind:active{transform:scale(.97)}
+.ind span{position:absolute; inset:auto 0 0 0; display:grid; gap:2px; padding:26px 10px 9px; background:linear-gradient(transparent, rgba(8,6,5,.86)); line-height:1.05}
+.ind b{font:800 17px/1 var(--display); font-variation-settings:"wdth" 82; text-transform:uppercase; letter-spacing:.01em}
+.ind small{font-size:12px; font-weight:700; color:var(--amarillo)}
+@media (min-width:700px){ .indice{grid-template-columns:repeat(5, minmax(0,1fr))} }
+@media (min-width:1100px){ .indice{grid-template-columns:repeat(9, minmax(0,1fr))} }
+.barra__menu{display:inline-flex; align-items:center; gap:8px; min-height:44px; padding:0 14px; margin-left:auto; border:0; border-radius:99px; background:rgba(255,246,232,.1); color:var(--hueso); font:700 15px/1 var(--texto); cursor:pointer}
+.barra__menu svg{width:18px; height:18px}
+.barra__menu + .barra__pedido{margin-left:0}
+#hojaMenu .indice{grid-template-columns:repeat(3, minmax(0,1fr))}
+@media (min-width:980px){ .barra__menu{display:none} }
 .cab{display:grid; gap:12px; margin-bottom:clamp(28px, 5vw, 52px)}
 .cab h2{margin:0; font-size:clamp(48px, 12vw, 112px)}
 .cab p{margin:0; max-width:46ch; font-size:18px}
@@ -200,9 +224,13 @@ button{font:inherit; color:inherit}
 .contador{display:flex; align-items:center; justify-content:space-between; gap:12px}
 .contador button{width:58px; height:58px; border-radius:50%; border:0; background:var(--amarillo); color:var(--negro); font:800 30px/1 var(--display); cursor:pointer; flex:none}
 .contador button:active{transform:scale(.92)}
-.contador output{display:grid; justify-items:center; line-height:1}
-.contador output b{font:800 84px/.85 var(--display); font-variation-settings:"wdth" 78; font-variant-numeric:tabular-nums}
-.contador output span{font-size:14px; color:var(--gris); margin-top:6px}
+.contador__n{display:grid; justify-items:center; line-height:1; min-width:0; flex:1}
+.contador__n input{width:100%; max-width:170px; padding:0; border:0; border-bottom:2px dashed rgba(255,246,232,.25); border-radius:0; background:transparent; color:var(--hueso); text-align:center; font:800 84px/.95 var(--display); font-variation-settings:"wdth" 78; font-variant-numeric:tabular-nums; caret-color:var(--amarillo)}
+.contador__n input:focus{outline:none; border-bottom-color:var(--amarillo)}
+.contador__n span{font-size:14px; color:var(--gris); margin-top:8px}
+.calc__reb{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:12px; font-size:15px; color:var(--gris); font-weight:700}
+.calc__reb input{width:72px; min-height:46px; border:0; border-radius:14px; background:rgba(255,246,232,.08); box-shadow:inset 0 0 0 1px var(--linea); color:var(--hueso); text-align:center; font:800 22px/1 var(--texto)}
+.calc__reb input:focus{outline:none; box-shadow:inset 0 0 0 2px var(--amarillo)}
 .seg{display:flex; padding:4px; border-radius:99px; background:rgba(255,246,232,.08); box-shadow:inset 0 0 0 1px var(--linea)}
 .seg button{flex:1; min-height:46px; padding:0 12px; border:0; border-radius:99px; background:transparent; font-weight:800; font-size:14px; cursor:pointer; color:var(--gris); line-height:1.1}
 .seg button[aria-pressed="true"]{background:var(--hueso); color:var(--negro)}
@@ -265,9 +293,23 @@ button{font:inherit; color:inherit}
   font:800 13px/1 var(--display); text-transform:uppercase; box-shadow:0 12px 30px rgba(0,0,0,.45)}
 .horno__precio b{display:block; font-size:30px; margin-top:2px}
 .horno__precio[hidden]{display:none}
-.ings{display:flex; flex-wrap:wrap; gap:8px}
-.ing{display:inline-flex; align-items:center; gap:8px; min-height:46px; padding:0 14px 0 6px; border-radius:99px; border:0; background:rgba(255,246,232,.07); box-shadow:inset 0 0 0 1px var(--linea); cursor:pointer; font-weight:700; font-size:15px; transition:background .15s ease, transform .15s ease}
-.ing canvas,.ing i{width:34px; height:34px; border-radius:50%; flex:none}
+.ings{display:grid; gap:16px}
+.ings__grupo h3{margin:0 0 8px; font:800 13px/1 var(--texto); letter-spacing:.12em; text-transform:uppercase; color:var(--amarillo)}
+.ings__fila{display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:6px}
+.ing{display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:6px; min-width:0; min-height:46px; padding:8px 3px 9px; border-radius:16px; text-align:center; line-height:1.1; color:var(--hueso); border:0; background:rgba(255,246,232,.07); box-shadow:inset 0 0 0 1px var(--linea); cursor:pointer; font-weight:700; font-size:15px; transition:background .15s ease, transform .15s ease}
+.ing canvas,.ing i{width:44px; height:44px; border-radius:50%; flex:none}
+.ing span{min-width:0; font-size:13px; font-weight:700}
+@media (min-width:560px){ .ings__fila{grid-template-columns:repeat(5, minmax(0,1fr))} }
+.armar__der{display:grid; gap:0}
+@media (min-width:980px){ .armar__der{position:sticky; top:84px} }
+/* la pizza en chiquito: sigue a quien está escogiendo ingredientes y la pizza grande no está a la vista */
+.mini-pizza{position:fixed; left:12px; bottom:calc(12px + env(safe-area-inset-bottom)); z-index:44; display:flex; align-items:center; gap:8px; padding:5px 14px 5px 5px; border:0; border-radius:99px; background:var(--carbon); color:var(--hueso); font:800 14px/1 var(--texto); box-shadow:0 10px 30px rgba(0,0,0,.5), inset 0 0 0 1px var(--linea); cursor:pointer;
+  opacity:0; transform:translateY(20px) scale(.9); pointer-events:none; transition:opacity .2s ease, transform .25s cubic-bezier(.2,.8,.2,1.2)}
+.mini-pizza.ver{opacity:1; transform:none; pointer-events:auto}
+.mini-pizza canvas{width:64px; height:64px; border-radius:50%; display:block}
+.mini-pizza.salta canvas{animation:salta .35s ease}
+@keyframes salta{40%{transform:scale(1.12)}}
+@media (min-width:980px){ .mini-pizza{display:none} }
 .ing i{background:var(--c); box-shadow:inset 0 0 0 2px rgba(0,0,0,.2)}
 .ing[aria-pressed="true"]{background:var(--amarillo); color:var(--negro); box-shadow:none}
 .ing:active{transform:scale(.95)}
@@ -284,7 +326,7 @@ button{font:inherit; color:inherit}
 .interruptor small{color:var(--gris); font-weight:600}
 .armar__acciones{display:flex; flex-wrap:wrap; gap:10px; margin-top:24px}
 .armar__precio{margin:12px 0 0; color:var(--gris); font-size:14px}
-@media (min-width:980px){ .armar__in{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr); align-items:center; gap:64px} }
+@media (min-width:980px){ .armar__in{grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-items:start; gap:64px} }
 
 /* ───────── alitas y más ───────── */
 .extras{display:grid; gap:14px}
@@ -401,7 +443,7 @@ button{font:inherit; color:inherit}
 .cierre.rev--on .cierre__sonrisa{animation:sonrie .7s .3s cubic-bezier(.3,1.8,.5,1)}
 .cierre p{margin:20px auto 0; max-width:34ch; font-size:19px}
 .cierre .btn{margin-top:28px; min-height:60px; padding:0 34px; font-size:18px}
-.pie{padding:64px 0 calc(120px + env(safe-area-inset-bottom)); background:var(--negro); color:var(--gris); font-size:15px}
+.pie{position:relative; isolation:isolate; padding:64px 0 calc(120px + env(safe-area-inset-bottom)); background:var(--negro); color:var(--gris); font-size:15px}
 .pie__in{display:grid; gap:34px}
 .pie__logo{width:160px; color:var(--hueso)}
 .pie__logo svg{width:100%; height:auto; display:block}
@@ -550,6 +592,7 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
     <symbol id="logo" viewBox="0 0 1570.000000 637.000000"><g transform="translate(0.000000,637.000000) scale(0.100000,-0.100000)" fill="currentColor" stroke="none"> <path d="M13283 6075 c-12 -8 -29 -36 -39 -62 -21 -59 -75 -185 -119 -279 -19 -40 -43 -96 -54 -125 -30 -82 -95 -239 -118 -284 -11 -22 -28 -63 -37 -92 -25 -76 -66 -126 -151 -183 -124 -84 -155 -169 -118 -327 15 -66 15 -75 1 -110 -73 -173 -101 -239 -133 -313 -20 -47 -49 -116 -65 -155 -15 -38 -53 -123 -84 -187 -86 -179 -76 -195 56 -95 46 35 110 82 143 105 33 23 103 74 156 114 53 40 167 125 253 188 87 63 216 158 287 210 72 52 151 110 177 128 26 17 92 64 147 104 117 83 134 91 253 117 50 11 106 27 124 37 60 30 178 126 182 148 3 11 7 39 10 61 7 49 29 80 91 125 26 19 94 69 151 112 95 71 352 241 424 280 37 21 37 49 0 59 -14 4 -79 23 -145 43 -66 20 -192 56 -280 81 -154 44 -277 80 -545 160 -88 26 -489 140 -545 155 0 0 -10 -7 -22 -15z m187 -116 c95 -25 328 -95 380 -114 25 -9 126 -38 225 -66 331 -92 360 -100 420 -120 133 -45 143 -98 23 -130 -43 -12 -52 -11 -100 9 -29 12 -111 38 -183 58 -208 58 -436 125 -818 238 -93 28 -107 39 -107 80 0 51 33 81 75 69 11 -4 49 -14 85 -24z m12 -208 c68 -22 164 -49 213 -60 50 -11 164 -45 255 -76 185 -62 196 -66 333 -96 147 -33 151 -56 24 -150 -114 -83 -128 -82 -206 19 -69 89 -113 118 -232 151 -90 25 -131 26 -211 5 -248 -64 -354 -233 -287 -457 20 -66 28 -78 100 -149 99 -97 100 -119 4 -172 -35 -20 -99 -66 -257 -187 -62 -47 -159 -119 -216 -160 -128 -92 -267 -194 -323 -237 -78 -59 -123 -25 -76 58 15 28 27 56 27 64 0 8 16 44 35 80 19 36 40 86 46 111 15 61 44 80 107 71 132 -19 135 -19 207 8 81 31 179 118 194 173 10 35 -9 145 -34 193 -18 36 -87 94 -152 129 -61 33 -69 71 -29 132 15 21 40 76 57 121 17 46 42 111 55 145 13 35 37 89 52 120 16 32 37 81 46 110 10 28 27 64 38 79 27 34 59 30 230 -25z"/> <path d="M7329 4846 c-6 -6 -275 -36 -323 -36 -76 0 -79 -8 -66 -145 6 -66 17 -160 25 -210 7 -49 16 -133 20 -185 3 -52 11 -115 16 -140 6 -24 16 -117 24 -205 8 -89 25 -242 39 -340 13 -99 29 -229 35 -290 28 -280 34 -328 51 -440 11 -66 24 -172 30 -235 7 -63 16 -151 21 -195 5 -44 12 -133 16 -198 7 -142 13 -151 103 -137 64 10 252 27 393 36 127 9 134 17 113 121 -9 39 -18 119 -21 179 -6 107 -36 364 -55 475 -6 30 -10 87 -10 127 0 82 -15 209 -65 542 -8 52 -21 147 -29 210 -17 130 -60 434 -75 525 -6 33 -16 105 -22 160 -6 55 -13 103 -15 107 -3 4 -8 59 -13 123 -11 148 -16 155 -116 155 -39 0 -74 -2 -76 -4z"/> <path d="M6254 4720 c-242 -96 -260 -411 -29 -525 54 -27 211 -27 282 0 241 89 238 403 -5 521 -56 28 -183 30 -248 4z"/> <path d="M14335 4670 c-367 -50 -619 -367 -549 -690 21 -99 82 -199 174 -283 90 -83 344 -218 510 -272 223 -72 332 -209 237 -298 -68 -65 -171 -87 -251 -53 -44 18 -257 157 -275 179 -27 34 -66 21 -112 -35 -24 -29 -66 -78 -94 -108 -84 -91 -165 -198 -165 -218 0 -26 18 -40 149 -111 388 -212 778 -230 1115 -53 311 163 373 531 138 822 -91 114 -252 220 -451 299 -430 172 -448 183 -422 272 14 46 38 64 103 78 58 13 208 -29 275 -78 128 -93 134 -91 280 82 67 78 131 150 142 159 48 41 22 69 -144 161 -205 112 -475 173 -660 147z"/> <path d="M12259 4495 c-3 -2 -50 -9 -105 -15 -217 -22 -360 -43 -381 -56 -13 -8 -27 -32 -33 -56 -6 -24 -21 -68 -34 -98 -13 -30 -27 -70 -31 -88 -4 -18 -19 -61 -35 -95 -15 -34 -30 -80 -34 -102 -4 -22 -21 -66 -37 -97 -16 -32 -34 -81 -40 -110 -6 -29 -24 -78 -40 -108 -15 -30 -31 -75 -35 -100 -4 -25 -19 -70 -34 -100 -16 -31 -33 -75 -40 -98 -20 -76 -72 -105 -105 -59 -38 53 -109 166 -130 207 -13 25 -57 96 -99 159 -42 62 -76 118 -76 124 0 6 -24 47 -53 91 -30 45 -69 108 -87 141 -18 33 -48 80 -65 105 -18 25 -44 68 -58 95 -51 102 -64 106 -267 89 -85 -7 -198 -16 -250 -20 -130 -9 -147 -27 -91 -94 15 -19 43 -64 61 -100 18 -36 47 -85 65 -110 18 -25 44 -67 58 -95 14 -27 50 -88 80 -135 117 -180 146 -226 165 -271 11 -25 35 -68 53 -96 19 -28 51 -79 72 -114 21 -35 63 -104 94 -154 30 -49 74 -124 97 -165 24 -41 64 -110 89 -152 133 -220 137 -228 137 -266 0 -44 -31 -149 -93 -317 -24 -66 -66 -183 -92 -260 -26 -77 -58 -164 -71 -194 -44 -99 -28 -125 66 -109 30 5 80 13 111 19 30 5 80 9 110 9 80 1 257 26 273 39 8 7 21 44 30 83 9 39 25 85 35 102 11 17 27 60 36 96 9 35 27 82 40 105 13 22 33 78 45 125 12 47 34 114 49 150 15 36 42 112 60 170 19 58 49 144 67 191 19 48 34 93 34 101 0 7 16 46 35 86 19 41 42 103 50 138 8 36 22 79 31 96 15 28 100 264 144 398 18 55 70 197 135 365 19 50 48 133 64 185 16 52 38 118 49 145 53 128 71 203 51 216 -15 9 -62 12 -70 4z"/> <path d="M4950 4285 c-247 -37 -537 -171 -726 -336 -68 -60 -83 -60 -158 8 -49 44 -188 143 -201 143 -4 0 -37 13 -73 29 -192 84 -431 102 -627 46 -128 -37 -321 -133 -400 -200 -110 -94 -165 -90 -165 10 0 12 -8 33 -18 45 l-18 23 -160 -17 c-88 -9 -178 -16 -201 -16 -25 0 -50 -7 -63 -18 l-23 -19 12 -184 c6 -101 16 -238 20 -304 20 -272 32 -508 41 -820 9 -311 26 -606 50 -845 5 -58 10 -124 10 -146 0 -75 -17 -73 419 -35 110 10 138 29 127 86 -4 16 -11 93 -16 170 -6 77 -14 187 -19 245 -44 494 -36 917 20 1055 16 40 29 78 29 84 0 17 109 173 153 219 59 62 155 129 227 158 148 60 340 19 436 -94 141 -164 177 -291 204 -727 6 -99 15 -234 20 -300 5 -66 16 -219 24 -340 25 -357 28 -389 38 -409 9 -17 19 -18 122 -12 305 18 397 28 407 47 6 12 4 68 -5 166 -9 81 -20 265 -26 408 -5 143 -13 283 -16 310 -14 132 -21 381 -14 475 8 113 94 404 126 431 9 7 29 32 45 56 105 152 322 218 490 149 202 -83 313 -306 340 -681 5 -71 13 -186 18 -255 5 -69 14 -181 20 -250 15 -170 28 -333 43 -529 14 -196 14 -196 107 -188 263 23 398 40 428 52 l35 15 -7 92 c-3 51 -11 126 -16 166 -5 40 -9 99 -9 130 0 31 -6 118 -14 192 -20 176 -34 333 -47 500 -24 313 -32 390 -58 595 -12 91 -60 249 -94 307 -145 248 -466 368 -837 313z"/> <path d="M8965 4280 c-285 -28 -590 -178 -753 -371 -109 -129 -121 -147 -176 -265 -69 -148 -79 -194 -80 -369 -1 -158 32 -331 83 -432 37 -74 185 -277 218 -299 16 -9 53 -41 83 -69 95 -89 189 -144 315 -184 38 -13 81 -29 97 -37 45 -23 252 -54 364 -54 191 0 404 47 541 120 170 91 326 210 384 295 23 33 52 73 65 88 28 34 31 72 7 82 -10 4 -63 23 -118 42 -55 19 -113 42 -130 51 -16 8 -64 28 -105 43 -41 15 -89 33 -106 40 -30 12 -36 10 -109 -37 -42 -27 -98 -67 -125 -89 -95 -79 -311 -125 -451 -96 -83 17 -197 92 -264 174 -78 94 -73 137 14 137 26 0 100 6 166 14 118 15 245 27 480 46 66 6 183 17 260 25 77 8 214 19 305 25 246 16 312 25 327 47 19 25 8 152 -22 268 -133 502 -700 861 -1270 805z m222 -495 c148 -31 299 -101 310 -143 13 -55 -17 -61 -527 -103 -63 -5 -166 -14 -228 -21 -124 -13 -139 -8 -128 37 8 31 65 87 156 153 109 79 269 109 417 77z"/> <path d="M6500 4085 c-41 -8 -133 -18 -205 -23 -175 -14 -184 -26 -144 -207 5 -22 9 -60 9 -85 0 -46 19 -212 46 -400 8 -58 19 -152 24 -210 15 -172 58 -567 73 -680 8 -58 20 -170 27 -250 19 -243 18 -241 164 -215 49 8 118 15 155 15 36 0 111 5 166 10 141 14 141 13 120 166 -9 65 -20 182 -26 259 -6 77 -14 190 -19 250 -4 61 -13 126 -19 145 -11 33 -20 101 -55 425 -27 246 -46 396 -72 565 -13 91 -24 175 -24 188 0 65 -52 76 -220 47z"/> <path d="M982 3680 c-277 -73 -471 -288 -504 -561 -12 -97 5 -177 62 -289 66 -129 280 -273 575 -387 179 -70 221 -98 250 -166 21 -52 19 -62 -21 -106 -118 -132 -294 -98 -502 97 -19 17 -45 32 -57 32 -25 0 -345 -360 -345 -389 0 -23 33 -52 95 -86 28 -14 73 -39 100 -55 60 -34 272 -103 370 -120 173 -30 399 -6 590 63 55 20 200 123 247 176 96 107 151 288 129 427 -44 283 -306 501 -814 676 -153 53 -185 148 -69 207 89 45 177 25 337 -74 39 -25 82 -45 94 -45 25 0 103 79 208 210 33 41 74 88 92 103 58 50 46 64 -139 168 -230 128 -492 173 -698 119z"/> <path d="M3090 1517 c-190 -76 -302 -174 -515 -449 -41 -53 -80 -100 -86 -103 -23 -15 -79 -6 -135 23 -32 16 -92 41 -132 56 -57 22 -73 33 -78 53 -10 40 8 48 101 45 96 -3 93 -5 115 91 22 95 -7 111 -154 86 -71 -11 -267 -103 -347 -161 -85 -62 -255 -309 -247 -360 10 -68 72 -43 128 51 67 116 73 116 278 8 86 -46 172 -89 191 -95 19 -7 55 -25 80 -41 107 -69 502 -229 726 -296 44 -13 118 -37 165 -54 171 -60 547 -113 830 -115 377 -2 803 68 1016 168 40 19 87 37 105 41 19 4 81 29 139 55 58 26 139 62 180 80 108 46 575 344 730 466 52 41 132 100 177 131 109 76 113 85 102 258 -7 107 -29 121 -96 62 -37 -32 -109 -86 -184 -137 -211 -144 -320 -209 -469 -282 -47 -22 -96 -49 -110 -58 -36 -25 -344 -150 -535 -216 -122 -43 -416 -115 -530 -130 -60 -8 -117 -17 -126 -19 -65 -21 -564 -48 -593 -33 -20 11 -20 6 4 158 57 367 -88 630 -395 721 -158 46 -212 45 -335 -4z m416 -186 c55 -40 69 -58 93 -119 37 -92 30 -170 -31 -351 -75 -226 -75 -226 -268 -190 -221 41 -225 50 -76 212 54 60 102 101 149 129 60 35 68 43 65 66 -4 38 -48 46 -140 27 -107 -22 -205 -96 -366 -277 -63 -71 -212 -22 -171 55 18 32 87 125 134 178 22 25 59 69 83 97 50 61 118 107 227 155 109 47 101 45 186 46 68 1 80 -2 115 -28z"/> </g></symbol>
     <symbol id="sonrisa" viewBox="0 0 510.000000 150.000000"><g transform="translate(0.000000,150.000000) scale(0.100000,-0.100000)" fill="currentColor" stroke="none"> <path d="M1590 1347 c-190 -76 -302 -174 -515 -449 -41 -53 -80 -100 -86 -103 -23 -15 -79 -6 -135 23 -32 16 -92 41 -132 56 -57 22 -73 33 -78 53 -10 40 8 48 101 45 96 -3 93 -5 115 91 22 95 -7 111 -154 86 -71 -11 -267 -103 -347 -161 -85 -62 -255 -309 -247 -360 10 -68 72 -43 128 51 67 116 73 116 278 8 86 -46 172 -89 191 -95 19 -7 55 -25 80 -41 107 -69 502 -229 726 -296 44 -13 118 -37 165 -54 171 -60 547 -113 830 -115 377 -2 803 68 1016 168 40 19 87 37 105 41 19 4 81 29 139 55 58 26 139 62 180 80 108 46 575 344 730 466 52 41 132 100 177 131 109 76 113 85 102 258 -7 107 -29 121 -96 62 -37 -32 -109 -86 -184 -137 -211 -144 -320 -209 -469 -282 -47 -22 -96 -49 -110 -58 -36 -25 -344 -150 -535 -216 -122 -43 -416 -115 -530 -130 -60 -8 -117 -17 -126 -19 -65 -21 -564 -48 -593 -33 -20 11 -20 6 4 158 57 367 -88 630 -395 721 -158 46 -212 45 -335 -4z m416 -186 c55 -40 69 -58 93 -119 37 -92 30 -170 -31 -351 -75 -226 -75 -226 -268 -190 -221 41 -225 50 -76 212 54 60 102 101 149 129 60 35 68 43 65 66 -4 38 -48 46 -140 27 -107 -22 -205 -96 -366 -277 -63 -71 -212 -22 -171 55 18 32 87 125 134 178 22 25 59 69 83 97 50 61 118 107 227 155 109 47 101 45 186 46 68 1 80 -2 115 -28z"/> </g></symbol>
     <symbol id="i-mas" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
     <symbol id="i-bolsa" viewBox="0 0 24 24"><path d="M5 8h14l-1 12H6L5 8zm4 0V6a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
     <symbol id="i-wa" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.3-.4.8-1.300.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7.5-.1 1.5-.6 1.700-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></symbol>
@@ -578,6 +621,7 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
     <nav aria-label="Secciones">
       <a href="#favoritas">Favoritas</a><a href="#cuantos">¿Cuántos son?</a><a href="#carta">Carta</a><a href="#armar">Ármala</a><a href="#alitas">Alitas</a><a href="#burger">Burger</a><a href="#promos">Promos</a><a href="#sucursales">Sucursales</a>
     </nav>
+    <button class="barra__menu" type="button" id="abrirMenu" aria-haspopup="dialog"><svg aria-hidden="true"><use href="#i-menu"/></svg> Menú</button>
     <button class="btn btn--rojo barra__pedido" type="button" data-abrir-pedido>Mi pedido <b id="cuentaBarra">0</b></button>
   </div>
 </header>
@@ -594,7 +638,7 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
       <div class="portada__sonrisa" aria-hidden="true"><svg viewBox="0 0 510.000000 150.000000"><use href="#sonrisa"/></svg></div>
       <p class="portada__lede"><b>Sabor que encanta, el precio te cambia el día.</b> Pizza, alitas y boneless al momento. Pide por <b>WhatsApp</b>.</p>
       <div class="portada__cta">
-        <a class="btn btn--rojo" href="#favoritas">Pedir ahora <svg aria-hidden="true"><use href="#i-flecha"/></svg></a>
+        <a class="btn btn--rojo" href="#menu">Pedir ahora <svg aria-hidden="true"><use href="#i-flecha"/></svg></a>
         <a class="btn btn--linea" href="#cuantos"><svg aria-hidden="true"><use href="#i-gente"/></svg> ¿Cuántos son?</a>
       </div>
       <ul class="datos-portada" aria-label="En pocas palabras">
@@ -616,6 +660,16 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
       <ul aria-hidden="true"><li>2 grandes $289</li><li>2 familiares $350</li><li>Rebanada $40</li><li>2 rebanadas $65</li><li>Orilla de queso +$35</li><li>Alitas · Boneless · Papas gajo</li><li>Say yes to pizza</li><li>100% empresa queretana</li></ul>
     </div>
   </div></div>
+
+  <section class="sec negro indice-sec" id="menu" aria-labelledby="t-menu">
+    <div class="ancho">
+      <div class="cab">
+        <p class="ojo">Ve directo a lo tuyo</p>
+        <h2 class="t-display" id="t-menu">¿Qué se te antoja?</h2>
+      </div>
+      <ul class="indice" data-indice></ul>
+    </div>
+  </section>
 
   <section class="sec claro" id="favoritas" aria-labelledby="t-fav">
     <div class="ancho">
@@ -640,13 +694,14 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
         <div class="calc__panel rev">
           <div class="contador">
             <button type="button" id="menos" aria-label="Uno menos">−</button>
-            <output id="personas" aria-live="polite"><b>6</b><span>personas</span></output>
+            <label class="contador__n"><input id="personas" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" value="6" autocomplete="off" aria-label="Cuántas personas van a comer"><span id="personasT">personas</span></label>
             <button type="button" id="mas" aria-label="Uno más">+</button>
           </div>
           <div><span class="opcion__t" id="t-hambre">¿Qué tanta hambre traen?</span>
             <div class="seg" role="group" aria-labelledby="t-hambre" id="hambre">
               <button type="button" data-v="2" aria-pressed="false">Antojito</button><button type="button" data-v="3" aria-pressed="true">Con hambre</button><button type="button" data-v="4" aria-pressed="false">De lobo</button>
             </div>
+            <label class="calc__reb">Rebanadas por persona <input id="porPersona" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" value="3" autocomplete="off"></label>
           </div>
         </div>
       </div>
@@ -687,19 +742,21 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
 
   <section class="sec negro" id="armar" aria-labelledby="t-armar">
     <div class="ancho armar__in">
-      <div class="horno rev">
-        <canvas id="mia" width="1040" height="1040" role="img" aria-label="Tu pizza"></canvas>
-        <div class="vapor" aria-hidden="true"><span></span><span></span><span></span></div>
-        <p class="horno__precio" id="sticker" hidden>Grande<b>$109</b></p>
-      </div>
-      <div class="rev">
-        <div class="cab" style="margin-bottom:24px">
+      <div class="armar__izq">
+        <div class="cab rev" style="margin-bottom:22px">
           <p class="ojo">Ármala tú</p>
-          <h2 class="t-display" id="t-armar">A tu<br>antojo</h2>
-          <p>De uno a cuatro ingredientes, como en la sucursal. Tócalos y míralos caer.</p>
+          <h2 class="t-display" id="t-armar">A tu antojo</h2>
+          <p>Escoge de uno a cuatro ingredientes, igual que en el mostrador: carnes, verduras y el toque final. Cada uno cae en tu pizza en cuanto lo tocas, así ves cómo queda antes de pedirla. Con uno solo, la grande sale en $109; con más, va en 2×1 y te llevas dos iguales.</p>
         </div>
         <div class="ings" id="ings" role="group" aria-label="Ingredientes"></div>
         <p class="armar__cuenta" id="cuenta" aria-live="polite"></p>
+      </div>
+      <div class="armar__der">
+        <div class="horno">
+          <canvas id="mia" width="1040" height="1040" role="img" aria-label="Tu pizza"></canvas>
+          <div class="vapor" aria-hidden="true"><span></span><span></span><span></span></div>
+          <p class="horno__precio" id="sticker" hidden>Grande<b>$109</b></p>
+        </div>
         <div class="opciones">
           <div><span class="opcion__t" id="t-tam-mia">Tamaño</span>
             <div class="seg" role="group" aria-labelledby="t-tam-mia" id="tamMia" style="max-width:420px">
@@ -715,6 +772,7 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
         <p class="armar__precio" id="precioMia"></p>
       </div>
     </div>
+    <button class="mini-pizza" type="button" id="miniPizza" aria-label="Ver tu pizza"><canvas width="168" height="168" aria-hidden="true"></canvas><span id="miniCuenta">Tu pizza</span></button>
   </section>
 
   <section class="sec rojo" id="alitas" aria-labelledby="t-alitas">
@@ -853,6 +911,11 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
 </dialog>
 
 <!-- hoja: agregar una promoción -->
+<dialog id="hojaMenu" aria-labelledby="t-hm">
+  <div class="hoja__cab"><h2 id="t-hm">¿Qué se te antoja?</h2><button class="cerrar" type="button" data-cerrar aria-label="Cerrar"><svg aria-hidden="true"><use href="#i-x"/></svg></button></div>
+  <div class="hoja__cuerpo"><ul class="indice" data-indice></ul></div>
+</dialog>
+
 <dialog id="hojaPromo" aria-labelledby="t-hp">
   <div class="hoja__cab"><h2 id="t-hp">Promoción</h2><button class="cerrar" type="button" data-cerrar aria-label="Cerrar"><svg aria-hidden="true"><use href="#i-x"/></svg></button></div>
   <div class="hoja__cuerpo">
@@ -965,6 +1028,18 @@ var COMPLEMENTOS = [
  {id:"spaguetti", n:"Spaguetti",    p:65,  dos:109, f:"img/c-spaguetti.jpg"},
  {id:"bake",      n:"Chicken Bake", p:69,  dos:119, f:"img/c-bake.jpg"},
  {id:"muffins",   n:"Muffins de pizza", p:49, f:"img/m-muffins.jpg", uno:"4 muffins"}
+];
+/* el índice: lo que la gente busca con hambre, primero lo que no es pizza */
+var INDICE = [
+ {n:"Alitas",       a:"#c-alitas",  f:"img/alitas-glaseadas.webp", d:"desde $149"},
+ {n:"Boneless",     a:"#c-boneless",f:"img/c-boneless.jpg",        d:"desde $129"},
+ {n:"Pizzas",       a:"#carta",     f:"img/rebanada.webp",         d:"2 por $289"},
+ {n:"Burgers",      a:"#burger",    f:"img/m-burger.jpg",          d:"desde $110"},
+ {n:"Promos",       a:"#promos",    f:"img/real-combo.jpg",        d:"desde $109"},
+ {n:"Papas y más",  a:"#c-papas",   f:"img/c-papas.jpg",           d:"desde $49"},
+ {n:"Ármala tú",    a:"#armar",     f:"img/armar/base.webp",       d:"a tu gusto"},
+ {n:"¿Cuántos son?",a:"#cuantos",   f:"img/pepperoni-caja.webp",   d:"te decimos qué pedir"},
+ {n:"Sucursales",   a:"#sucursales",f:"img/mostrador.jpg",         d:"11 am a 10 pm"}
 ];
 /* Smileys Burger: su carta aparte (foto del 22 de octubre) */
 var BURGER = [
@@ -1167,7 +1242,8 @@ function mejorCombo(reb){
 }
 function pintarCalc(){
   var reb = gente * hambre, m = mejorCombo(reb), cajas = (m.f + m.g) * 2 + m.t * 3;
-  $("#personas b").textContent = String(gente); $("#personas span").textContent = gente === 1 ? "persona" : "personas";
+  var cp = $("#personas"); if(document.activeElement !== cp) cp.value = String(gente); $("#personasT").textContent = gente === 1 ? "persona" : "personas";
+  var cr = $("#porPersona"); if(document.activeElement !== cr) cr.value = String(hambre);
   var partes = [];
   if(m.t) partes.push(m.t === 1 ? "3 grandes (combo 4)" : m.t + " combos de 3 grandes");
   if(m.f) partes.push(m.f === 1 ? "2 familiares" : m.f + " promos de 2 familiares");
@@ -1196,8 +1272,24 @@ function pintarCalc(){
   pintarCalc.m = m;
 }
 $("#menos").addEventListener("click", function(){ gente = Math.max(1, gente - 1); pintarCalc(); });
-$("#mas").addEventListener("click", function(){ gente = Math.min(40, gente + 1); pintarCalc(); });
+$("#mas").addEventListener("click", function(){ gente = Math.min(150, gente + 1); pintarCalc(); });
 segmento($("#hambre"), function(v){ hambre = Number(v); pintarCalc(); });
+/* escribir el número: se recalcula al teclear, y al salir se acomoda a lo que vale (1 a 150, 1 a 12 rebanadas) */
+function numero(inp, min, max, alCambiar){
+  inp.addEventListener("input", function(){
+    inp.value = inp.value.replace(/\D/g, "");
+    var n = parseInt(inp.value, 10); if(Number.isFinite(n) && n >= min) alCambiar(Math.min(max, n));
+  });
+  inp.addEventListener("focus", function(){ inp.select(); });
+  inp.addEventListener("blur", function(){ pintarCalc(); });
+  inp.addEventListener("keydown", function(e){ if(e.key === "Enter") inp.blur(); });
+}
+numero($("#personas"), 1, 150, function(n){ gente = n; pintarCalc(); });
+numero($("#porPersona"), 1, 12, function(n){
+  hambre = n;
+  $$("#hambre button").forEach(function(b){ b.setAttribute("aria-pressed", String(Number(b.dataset.v) === n)); });
+  pintarCalc();
+});
 $("#calcAgregar").addEventListener("click", function(){
   var m = pintarCalc.m, b = $("#calcAgregar");
   if(m.t) agregar({ tipo:"promo", nombre:"Combo 4: 3 pizzas grandes", detalle:"Para " + gente + " · las recetas se eligen con la sucursal", precio:389, cant:m.t, clave:"p:combo4:calc" + gente }, b, "img/pepperoni-caja.webp");
@@ -1286,6 +1378,22 @@ $("#hpAgregar").addEventListener("click", function(){
             clave:"p:" + promoActual.id + ":" + nota.toLowerCase() }, promoActual.boton, "img/pepperoni-caja.webp");
 });
 
+/* el índice, en la página y en la hoja del botón «Menú» */
+$$("[data-indice]").forEach(function(ul){
+  INDICE.forEach(function(x){
+    var a = el("a", {class:"ind", href:x.a}, [el("img", {src:x.f, alt:"", loading:"lazy", width:"240", height:"240"}), el("span", null, [el("b", {text:x.n}), el("small", {text:x.d})])]);
+    a.addEventListener("click", function(e){
+      var d = a.closest("dialog"), t = $(x.a); if(!t) return;
+      e.preventDefault();
+      if(d) d.close();
+      t.scrollIntoView({behavior: quieto ? "auto" : "smooth", block:"start"});
+      history.replaceState(null, "", x.a);
+    });
+    ul.appendChild(el("li", null, [a]));
+  });
+});
+$("#abrirMenu").addEventListener("click", function(){ abrir($("#hojaMenu")); });
+
 /* complementos */
 var cajaExtras = $("#extras");
 function agregarComp(c, dos, desde){
@@ -1297,7 +1405,7 @@ COMPLEMENTOS.forEach(function(c){
   var dos = c.dos ? el("button", {type:"button", "aria-label":"Agregar 2 órdenes de " + c.n + ", " + pesos(c.dos)}, [el("em", {text:"2 órdenes"}), pesos(c.dos)]) : null;
   uno.addEventListener("click", function(){ agregarComp(c, false, uno); });
   if(dos) dos.addEventListener("click", function(){ agregarComp(c, true, dos); });
-  cajaExtras.appendChild(el("article", {class:"extra rev" + (c.grande ? " extra--grande" : "")}, [
+  cajaExtras.appendChild(el("article", {class:"extra rev" + (c.grande ? " extra--grande" : ""), id:"c-" + c.id}, [
     el("img", {src:c.f, alt:c.n, loading:"lazy", width:"760", height:"560"}),
     el("div", null, [ el("h3", {text:c.n}), c.antojo ? el("p", {text:c.antojo, style:"margin:8px 0 0;opacity:.9"}) : null,
       el("div", {class:"extra__precios"}, [uno, dos]), c.dos ? el("span", {class:"extra__ahorro", text:"En par te ahorras " + pesos(c.p * 2 - c.dos)}) : null ])
@@ -1342,15 +1450,46 @@ SUCURSALES.forEach(function(s, k){
 /* ═══════════ ármala tú ═══════════ */
 var MAX = 4, elegidos = [], cv = $("#mia");
 var cajaIngs = $("#ings"), botones = {};
-Horno.lista.forEach(function(k){
-  var b = el("button", {type:"button", class:"ing", "aria-pressed":"false"}, [el("i", {style:"--c:" + Horno.MUESTRA[k]}), Horno.NOMBRES[k]]);
-  b.addEventListener("click", function(){
-    var i = elegidos.indexOf(k), nuevo = null;
-    if(i >= 0) elegidos.splice(i, 1); else if(elegidos.length < MAX){ elegidos.push(k); nuevo = k; }
-    pintarMia(nuevo);
+var GRUPOS = [
+ ["Carnes", ["pepperoni","jamon","salchicha","chorizo","pastor","chilorio","atun"]],
+ ["Verduras y fruta", ["champinon","jalapeno","cebolla","jitomate","pimiento","aguacate","elote","cilantro","pina"]],
+ ["El toque final", ["queso","parmesano","oregano"]]
+];
+GRUPOS.forEach(function(g){
+  var fila = el("div", {class:"ings__fila"});
+  g[1].filter(function(k){ return Horno.NOMBRES[k]; }).forEach(function(k){
+    var b = el("button", {type:"button", class:"ing", "aria-pressed":"false"}, [el("i", {style:"--c:" + Horno.MUESTRA[k]}), el("span", {text:Horno.NOMBRES[k]})]);
+    b.addEventListener("click", function(){
+      var i = elegidos.indexOf(k), nuevo = null;
+      if(i >= 0) elegidos.splice(i, 1); else if(elegidos.length < MAX){ elegidos.push(k); nuevo = k; }
+      pintarMia(nuevo);
+    });
+    botones[k] = b; fila.appendChild(b);
   });
-  botones[k] = b; cajaIngs.appendChild(b);
+  cajaIngs.appendChild(el("div", {class:"ings__grupo"}, [el("h3", {text:g[0]}), fila]));
 });
+/* la pizza en chiquito: se copia del lienzo grande mientras cae lo que se tocó */
+var mini = $("#miniPizza"), miniCv = $("canvas", mini), miniHasta = 0, ingsVisto = false, hornoVisto = false;
+function copiarMini(){
+  var x = miniCv.getContext("2d"); x.clearRect(0, 0, miniCv.width, miniCv.height);
+  try{ x.drawImage(cv, 0, 0, miniCv.width, miniCv.height); }catch(e){}
+  if(performance.now() < miniHasta) requestAnimationFrame(copiarMini);
+}
+function avisarMini(){
+  $("#miniCuenta").textContent = elegidos.length ? elegidos.length + " de " + MAX + " · Ver" : "Tu pizza";
+  miniHasta = performance.now() + 2200; requestAnimationFrame(copiarMini);
+  mini.classList.remove("salta"); void mini.offsetWidth; mini.classList.add("salta");
+}
+function verMini(){
+  var ver = ingsVisto && !hornoVisto;
+  if(ver && !mini.classList.contains("ver")){ miniHasta = Math.max(miniHasta, performance.now() + 1200); requestAnimationFrame(copiarMini); }
+  mini.classList.toggle("ver", ver);
+}
+if("IntersectionObserver" in window){
+  new IntersectionObserver(function(es){ ingsVisto = es[0].isIntersecting; verMini(); }).observe(cajaIngs);
+  new IntersectionObserver(function(es){ hornoVisto = es[0].isIntersecting; verMini(); }, {threshold:.45}).observe($(".horno"));
+}
+mini.addEventListener("click", function(){ $(".horno").scrollIntoView({behavior: quieto ? "auto" : "smooth", block:"center"}); });
 /* la muestra de cada botón es la foto del ingrediente, cuando ya cargó */
 function muestras(){
   Horno.preparar().then(function(){
@@ -1393,6 +1532,7 @@ function pintarMia(nuevo){
   else $("#precioMia").textContent = sen ? "Grande de un ingrediente: " + pesos(p) + ". No aplica con otras promociones." : "Va en 2×1: te llevas dos iguales por " + pesos(p) + (valorSeg($("#tamMia")) === "Grande" ? " (con un solo ingrediente sale en $109 la grande)." : ".");
   if(p != null){ $("#sticker").hidden = false; $("#sticker").firstChild.textContent = sen ? "Grande" : "2×1"; $("#sticker b").textContent = pesos(p); }
   if(armarVisto) Horno.pintar(cv, { ings:elegidos, orilla:$("#orillaMia").checked, nuevo:quieto ? null : nuevo });
+  avisarMini();
 }
 $("#limpiarMia").addEventListener("click", function(){ elegidos = []; $("#orillaMia").checked = false; ponerSeg($("#tamMia"), "Grande"); pintarMia(); });
 $("#agregarMia").addEventListener("click", function(){

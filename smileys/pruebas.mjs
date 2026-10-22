@@ -87,6 +87,12 @@ v('6 con hambre: 2 familiares, $350, $58 por cabeza', /2 FAMILIARES/i.test(await
 await pg.click('#mas'); await pg.click('#mas'); await pg.click('#hambre button[data-v="4"]');
 v('8 de lobo (32 rebanadas): 2 promos de 2 grandes, $578', /2 promos de 2 grandes/i.test(await pg.textContent('#calcFrase')) && (await pg.textContent('#calcDet')).includes('$578'), await pg.textContent('#calcFrase'));
 v('y avisa que con sencillas sale más barato: 4 por $436', (await pg.textContent('#calcAlt')).includes('$436'));
+v('el número de personas también se escribe', await pg.$eval('#personas', e=>e.tagName==='INPUT' && e.value==='8'));
+await pg.fill('#personas','20'); await pg.waitForTimeout(100);
+v('escribir 20 recalcula (80 rebanadas de lobo)', (await pg.textContent('#calcDet')).startsWith('80 rebanadas para 20 personas'), await pg.textContent('#calcDet'));
+await pg.fill('#porPersona','2'); await pg.waitForTimeout(100);
+v('y las rebanadas por persona: 2 c/u marca «Antojito»', (await pg.textContent('#calcDet')).startsWith('40 rebanadas') && await pg.$eval('#hambre button[data-v="2"]', b=>b.getAttribute('aria-pressed')==='true'));
+await pg.fill('#personas','8'); await pg.click('#hambre button[data-v="4"]'); await pg.waitForTimeout(100);
 await pg.click('#calcAgregar'); await pg.waitForTimeout(300);
 v('la calculadora agrega 2 promos al pedido', (await pg.textContent('#cuentaBarra')).trim()==='8');
 // las favoritas y el sello
@@ -139,6 +145,11 @@ const viejos = await pg.evaluate(()=>JSON.parse(localStorage.getItem('smileys-pe
 await pg.click('#flota'); await pg.waitForTimeout(300);
 v('lo viejo sale con precio: 2×1 familiares con orilla $420 c/u y la armada sencilla $109', (await pg.textContent('#cuentas')).includes('$949') && !(await pg.textContent('#cuentas')).includes('confirma'), await pg.textContent('#cuentas'));
 await pg.click('#hojaPedido [data-cerrar]');
+v('los botones no hacen zoom con toques rápidos (touch-action)', await pg.$eval('#mas', e=>getComputedStyle(e).touchAction==='manipulation'));
+v('el índice trae 9 apartados, y Alitas lleva a su tarjeta', (await pg.$$('#menu .ind')).length===9 && await pg.$eval('#menu .ind', a=>a.getAttribute('href')==='#c-alitas') && !!(await pg.$('#c-alitas')));
+await pg.click('#menu .ind:has-text("Alitas")'); await pg.waitForTimeout(900);
+v('tocar Alitas en el índice baja hasta las alitas', await pg.$eval('#c-alitas', e=>{ const r=e.getBoundingClientRect(); return r.top>=0 && r.top<innerHeight/2; }));
+v('ármala: ingredientes en 3 grupos, antes que la pizza', (await pg.$$('#ings .ings__grupo')).length===3 && await pg.evaluate(()=>!!(document.getElementById('ings').compareDocumentPosition(document.getElementById('mia')) & 4)));
 v('ni un error de consola', err.length===0, err.join(' | '));
 console.log(ok,'bien ·',mal,'mal');
 await br.close();
