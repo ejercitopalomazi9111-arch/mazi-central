@@ -25,8 +25,8 @@ r.setClearColor(0x000000, 0);
 const escena = new THREE.Scene();
 escena.environment = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.04).texture;
 escena.environmentIntensity = 0.6;
-const sol = new THREE.DirectionalLight(0xffe6c8, 2.2); sol.position.set(1.4, 3.4, 2.0); sol.castShadow = true;
-sol.shadow.mapSize.set(2048, 2048); Object.assign(sol.shadow.camera, { left: -1.2, right: 1.2, top: 1.2, bottom: -1.2, near: .5, far: 8 });
+const sol = new THREE.DirectionalLight(0xffe6c8, 2.2); sol.position.set(0.5, 4.2, 0.9); sol.castShadow = true;
+sol.shadow.mapSize.set(2048, 2048); Object.assign(sol.shadow.camera, { left: -2.5, right: 2.5, top: 2.5, bottom: -2.5, near: .5, far: 9 });
 sol.shadow.bias = -0.0004; sol.shadow.normalBias = 0.02; sol.shadow.radius = 4;
 escena.add(sol);
 const contra = new THREE.DirectionalLight(0xff6a40, 1.0); contra.position.set(-2.2, 1.4, -1.6); escena.add(contra);
@@ -68,13 +68,13 @@ pizza.traverse((o) => {
   p.needsUpdate = true; g.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); g.computeVertexNormals();
   o.material = matPizza; o.castShadow = o.receiveShadow = true;
 });
-pizza.position.y = .021; escena.add(pizza);
+pizza.position.y = .006; escena.add(pizza);
 
 const cam = new THREE.PerspectiveCamera(30, 1, .05, 30);
 function pose(abre, giro, alto, dist){
   bisagra.rotation.z = THREE.MathUtils.degToRad(abre);
   cam.position.set(Math.sin(giro) * dist, alto, Math.cos(giro) * dist);
-  cam.lookAt(0, .16, 0);
+  cam.lookAt(0, .26, 0);
   r.render(escena, cam);
   return lienzo.toDataURL('image/png');
 }

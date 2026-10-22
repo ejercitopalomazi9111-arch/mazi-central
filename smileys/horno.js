@@ -116,6 +116,60 @@ function polvo(c, S, k, P){
   }
 }
 
+/* la orilla rellena: la orilla se infla y el queso se asoma por los cortes, como cuando la partes.
+   t va de 0 a 1 para que el queso salga al prenderla */
+function orilla(c, S, P, t){
+  var C = P.C, R = P.R, e = 1 - Math.pow(1 - t, 3), a = semilla("orilla" + S);
+  c.save();
+  /* la orilla más gorda y dorada: un tubo de pan encima del borde de la foto */
+  c.globalAlpha = .85 * e;
+  var g = c.createRadialGradient(C, C, R * .84, C, C, R * 1.03);
+  g.addColorStop(0, "rgba(120,60,15,0)"); g.addColorStop(.12, "rgba(140,70,20,.55)");
+  g.addColorStop(.3, "rgba(226,160,74,.95)"); g.addColorStop(.55, "rgba(246,198,118,1)");
+  g.addColorStop(.82, "rgba(208,134,56,1)"); g.addColorStop(.97, "rgba(150,82,26,.9)"); g.addColorStop(1, "rgba(150,82,26,0)");
+  c.fillStyle = g; c.beginPath(); c.arc(C, C, R * 1.03, 0, 6.2832); c.arc(C, C, R * .84, 0, 6.2832, true); c.fill("evenodd");
+  /* el tostado del pan */
+  for(var i = 0; i < 220; i++){
+    var ang = a() * 6.2832, rr = R * (.88 + a() * .13), x = C + Math.cos(ang) * rr, y = C + Math.sin(ang) * rr;
+    c.fillStyle = a() < .6 ? "rgba(140,72,20,.35)" : "rgba(255,226,160,.45)";
+    c.beginPath(); c.arc(x, y, S * (.002 + a() * .004), 0, 6.2832); c.fill();
+  }
+  c.globalAlpha = 1;
+  /* el queso que se asoma donde cortaron cada rebanada (los 8 cortes de la foto, medidos) */
+  var CORTES = [12, 54, 105, 151, 201, 240, 284, 322];
+  CORTES.forEach(function(gr){
+    var an = gr * Math.PI / 180, r0 = R * .915, x = C + Math.cos(an) * r0, y = C + Math.sin(an) * r0;
+    var largo = R * .105 * e, ancho = R * .042 * e;
+    if(largo < 1) return;
+    c.save(); c.translate(x, y); c.rotate(an);
+    /* el queso derretido: la mancha se rellena con el queso de la misma foto (de la rebanada de al lado),
+       así tiene su textura y su tostado de verdad */
+    c.beginPath();
+    var m = 22;
+    for(var k = 0; k <= m; k++){
+      var tt = k / m * 6.2832, rr = 1 + .14 * Math.sin(tt * 3 + gr) + .07 * Math.sin(tt * 5 + gr * 2);
+      var px = Math.cos(tt) * largo * rr, py = Math.sin(tt) * ancho * 1.5 * rr;
+      if(k === 0) c.moveTo(px, py); else c.lineTo(px, py);
+    }
+    c.closePath();
+    c.shadowColor = "rgba(80,34,4,.6)"; c.shadowBlur = S * .01; c.shadowOffsetY = S * .003;
+    c.fillStyle = "#EDBA55"; c.fill();
+    c.shadowColor = "transparent";
+    c.save(); c.clip();
+    /* un pedazo de queso de la foto: a 0.55 del radio, en la misma dirección */
+    var ao = an + .35, fx = 550 + Math.cos(ao) * 508 * .62, fy = 550 + Math.sin(ao) * 508 * .62, fl = 508 * .09;
+    c.rotate(-an + .3);
+    c.drawImage(base, fx - fl, fy - fl, fl * 2, fl * 2, -largo * 1.3, -largo * 1.3, largo * 2.6, largo * 2.6);
+    c.restore();
+    /* volumen: más claro arriba, más tostado en el borde */
+    var v = c.createRadialGradient(-largo * .2, -ancho * .4, 0, 0, 0, largo * 1.15);
+    v.addColorStop(0, "rgba(255,248,215,.35)"); v.addColorStop(.6, "rgba(255,240,200,0)"); v.addColorStop(1, "rgba(120,60,10,.45)");
+    c.fillStyle = v; c.fill();
+    c.restore();
+  });
+  c.restore();
+}
+
 function pintar(cv, o){
   o = o || {};
   var S = cv.width, c = cv.getContext("2d");
@@ -135,12 +189,7 @@ function pintar(cv, o){
       /* la base: 508 px de radio en su foto de 1100 */
       var lado = 1100 * P.R / 508 * (o.orilla ? 1.015 : 1);
       c.drawImage(base, P.C - lado / 2, P.C - lado / 2, lado, lado);
-      if(o.orilla){        /* la orilla rellena: más dorada */
-        c.save(); c.globalCompositeOperation = "source-atop";
-        var h = c.createRadialGradient(P.C, P.C, P.R * .84, P.C, P.C, P.R * 1.02);
-        h.addColorStop(0, "rgba(255,200,90,0)"); h.addColorStop(.6, "rgba(255,196,80,.28)"); h.addColorStop(1, "rgba(160,90,20,.2)");
-        c.fillStyle = h; c.fillRect(0, 0, S, S); c.restore();
-      }
+      if(o.orilla) orilla(c, S, P, o.nuevo === "orilla" ? t : 1);
       orden.forEach(function(k){
         if(POLVO[k]){ c.globalAlpha = k === o.nuevo ? t : 1; polvo(c, S, k, P); c.globalAlpha = 1; return; }
         var lista = P.reparto[k] || [];

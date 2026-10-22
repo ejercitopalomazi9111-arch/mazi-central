@@ -250,10 +250,9 @@ button{font:inherit; color:inherit}
 .aviso b{color:var(--tinta)}
 .tamanos{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px; margin:0 0 22px}
 .tamanos .tamano{flex-direction:column; align-items:flex-start; gap:8px; padding:12px}
-.tamano--c i{width:36px !important; height:36px !important; background:conic-gradient(var(--rojo) 0 16.66%, #F2B34A 0 33.33%, var(--rojo) 0 50%, #F2B34A 0 66.66%, var(--rojo) 0 83.33%, #F2B34A 0) !important}
+
+.tamano .reb{width:78px; height:78px; flex:none; margin:-4px 0 0 -4px}
 .tamano{display:flex; align-items:center; gap:12px; padding:14px; border-radius:16px; background:#fff; box-shadow:0 1px 0 rgba(28,21,18,.08)}
-.tamano i{flex:none; width:44px; height:44px; border-radius:50%; background:conic-gradient(var(--rojo) 0 12.5%, #F2B34A 0 25%, var(--rojo) 0 37.5%, #F2B34A 0 50%, var(--rojo) 0 62.5%, #F2B34A 0 75%, var(--rojo) 0 87.5%, #F2B34A 0)}
-.tamano--f i{width:52px; height:52px; background:conic-gradient(var(--rojo) 0 10%, #F2B34A 0 20%, var(--rojo) 0 30%, #F2B34A 0 40%, var(--rojo) 0 50%, #F2B34A 0 60%, var(--rojo) 0 70%, #F2B34A 0 80%, var(--rojo) 0 90%, #F2B34A 0)}
 .tamano strong{display:block; font:800 22px/1 var(--display); font-variation-settings:"wdth" 80; text-transform:uppercase}
 .tamano span{display:block; color:#6B5A4D; font-size:13px; line-height:1.3}
 
@@ -423,7 +422,7 @@ button{font:inherit; color:inherit}
 .flota__txt{display:grid; line-height:1.15; text-align:right; padding:10px 46px 10px 18px; margin-right:-40px; border-radius:99px; background:var(--hueso); color:var(--negro); box-shadow:0 14px 34px -10px rgba(0,0,0,.7); min-width:0}
 .flota__txt b{font-size:15px; white-space:nowrap}
 .flota__txt span{font-size:12px; color:#6B5A4D; white-space:nowrap; max-width:46vw; overflow:hidden; text-overflow:ellipsis}
-.cajita{position:relative; width:92px; height:85px; flex:none; background:url(img/caja-cuadros.webp) 0 0/1400% 100% no-repeat; filter:drop-shadow(0 10px 14px rgba(0,0,0,.5))}
+.cajita{position:relative; width:96px; height:79px; flex:none; background:url(img/caja-cuadros.webp) 0 0/1400% 100% no-repeat; filter:drop-shadow(0 10px 14px rgba(0,0,0,.5))}
 .cajita b{position:absolute; right:2px; top:-4px; min-width:28px; height:28px; padding:0 7px; border-radius:99px; background:var(--rojo); color:#fff; display:grid; place-items:center; font:800 14px/1 var(--texto); box-shadow:0 0 0 3px var(--negro)}
 .flota.salta .cajita{animation:salta .5s cubic-bezier(.3,1.6,.5,1)}
 @keyframes salta{30%{transform:scale(1.15) rotate(-4deg)} 100%{transform:none}}
@@ -443,7 +442,7 @@ dialog::backdrop{background:rgba(5,4,3,.72); backdrop-filter:blur(4px)}
 .cerrar svg{width:20px; height:20px}
 .hoja__cuerpo{flex:1 1 auto; min-height:0; padding:20px 22px; overflow:auto; overscroll-behavior:contain; display:grid; align-content:start; gap:20px; min-width:0}
 .datos{display:grid; gap:20px; min-width:0}
-.datos[hidden],.hoja__pie[hidden]{display:none}
+.datos[hidden],.hoja__pie[hidden],.btn[hidden],.pie-acc[hidden],.pasos[hidden]{display:none}
 .hoja__pie{padding:14px 22px calc(14px + env(safe-area-inset-bottom)); border-top:1px solid var(--linea); display:grid; gap:10px; background:var(--carbon)}
 .hoja__pie .btn{width:100%}
 .ficha__foto{position:relative; margin:-20px -22px 0; aspect-ratio:16/10; overflow:hidden}
@@ -474,20 +473,43 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
 .radios{display:grid; gap:8px}
 .radios--fila{grid-template-columns:repeat(2, minmax(0,1fr))}
 .radio{display:flex; align-items:center; gap:12px; min-height:54px; padding:10px 14px; border-radius:14px; background:var(--negro); box-shadow:inset 0 0 0 1px var(--linea); cursor:pointer}
-.radio input{accent-color:var(--rojo); width:20px; height:20px; margin:0; flex:none}
+.radio{position:relative}
+.campo label.radio{padding:10px 14px; font-weight:700}
+.radio input{position:absolute; inset:0; width:100%; height:100%; margin:0; opacity:0; cursor:pointer}
+.radio::before{content:""; flex:none; width:20px; height:20px; border-radius:50%; box-shadow:inset 0 0 0 2px var(--gris); transition:box-shadow .15s}
+.radio:has(input:checked)::before{box-shadow:inset 0 0 0 6px var(--rojo)}
+.radio:has(input:focus-visible){outline:2px solid var(--amarillo); outline-offset:2px}
+.radios--sucs .radio::before{display:none}
 .radio:has(input:checked){box-shadow:inset 0 0 0 2px var(--rojo)}
-.radio span{display:grid; min-width:0} .radio small{color:var(--gris); font-size:13px}
+.radio span{display:grid; min-width:0; line-height:1.25} .radio small{color:var(--gris); font-size:13px}
 .campo input[type=time]{max-width:200px; color-scheme:dark}
 .campo-select{display:block; width:100%; min-height:52px; margin-top:10px; padding:0 14px; border-radius:14px; border:0; background:var(--negro); color:var(--hueso); box-shadow:inset 0 0 0 1px var(--linea); font:600 16px/1 var(--texto)}
 .campo-select[hidden]{display:none}
 .hr-total{margin:0; display:flex; justify-content:space-between; font-weight:800; font-size:18px}
 .hr-total small{color:var(--gris); font-weight:600; font-size:13px}
-.renglones{margin:0; padding:0; list-style:none; display:grid; gap:2px}
-.renglon{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px 12px; align-items:center; padding:14px 0; border-bottom:1px solid var(--linea)}
-.renglon__n{font-weight:800} .renglon__d{display:block; color:var(--gris); font-size:14px}
-.renglon__p{font-weight:800; font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap}
-.renglon__p small{display:block; color:var(--gris2); font-weight:700; font-size:12px}
-.renglon .cantidad{grid-column:1/-1; justify-self:start}
+.pasos{display:flex; gap:6px; margin:8px 0 0; padding:0; list-style:none}
+.pasos li{padding:5px 10px; border-radius:99px; background:rgba(255,246,232,.07); color:var(--gris2); font-size:12px; font-weight:800}
+.pasos li.on{background:var(--amarillo); color:var(--negro)}
+.paso1{display:grid; gap:18px; min-width:0}
+.paso1[hidden]{display:none}
+.atras{justify-self:start; display:inline-flex; align-items:center; gap:8px; min-height:40px; padding:0 14px 0 10px; border-radius:99px; border:0; background:rgba(255,246,232,.08); font-weight:800; font-size:14px; cursor:pointer}
+.atras svg{width:16px; height:16px; transform:rotate(180deg)}
+.renglones{margin:0; padding:0; list-style:none; display:grid; gap:8px}
+.renglon{display:grid; grid-template-columns:52px minmax(0,1fr) auto; gap:4px 12px; align-items:center; padding:10px; border-radius:18px; background:var(--negro)}
+.renglon__foto{grid-row:1 / 3; width:52px; height:52px; border-radius:12px; object-fit:cover; background:#3a2c22}
+.renglon__n{font-weight:800; font-size:15px; line-height:1.25} .renglon__d{display:block; color:var(--gris); font-size:13px; line-height:1.3; margin-top:2px}
+.renglon__p{font-weight:800; font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap; align-self:start}
+.renglon__p small{display:block; color:var(--gris2); font-weight:700; font-size:11px}
+.renglon .cantidad{grid-column:2 / 4; justify-self:start; padding:2px}
+.renglon .cantidad button{width:34px; height:34px; font-size:18px}
+.radios--sucs{grid-template-columns:repeat(3, minmax(0,1fr))}
+.campo .radios--sucs .radio{position:relative; flex-direction:column; align-items:flex-start; gap:6px; padding:12px 10px; min-height:0}
+.radios--sucs .radio input{position:absolute; opacity:0; inset:0; width:100%; height:100%; cursor:pointer}
+.radios--sucs .radio:has(input:focus-visible){outline:2px solid var(--amarillo); outline-offset:2px}
+.radios--sucs .radio:has(input:checked){background:color-mix(in srgb, var(--rojo) 14%, var(--negro))}
+.radios--sucs .radio:has(input:checked)::after{content:"✓"; position:absolute; top:8px; right:8px; width:20px; height:20px; border-radius:50%; background:var(--rojo); color:#fff; font-size:12px; font-weight:900; display:grid; place-items:center}
+.radios--sucs .radio span{font-size:14px; font-weight:800; line-height:1.15}
+.radios--sucs .radio small{font-size:11px; font-weight:600}
 .antojo{display:grid; gap:10px}
 .antojo h3{margin:0; font:800 13px/1 var(--texto); letter-spacing:.14em; text-transform:uppercase; color:var(--amarillo)}
 .antojo__fila{display:flex; gap:8px; overflow-x:auto; margin:0 -22px; padding:0 22px 4px; scrollbar-width:none}
@@ -647,9 +669,9 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
         <p>Salen en chica, grande o familiar, <b>o mitad y mitad</b>, y a cualquiera se le pone orilla de queso. Grandes y familiares, en 2×1.</p>
       </div>
       <div class="tamanos rev">
-        <div class="tamano tamano--c"><i aria-hidden="true"></i><div><strong>Chica</strong><span>6 rebanadas</span></div></div>
-        <div class="tamano"><i aria-hidden="true"></i><div><strong>Grande</strong><span>8 rebanadas<br>1 a 4 ingredientes</span></div></div>
-        <div class="tamano tamano--f"><i aria-hidden="true"></i><div><strong>Familiar</strong><span>10 rebanadas<br>1 a 4 ingredientes</span></div></div>
+        <div class="tamano tamano--c"><canvas class="reb" data-n="6" data-r=".74" width="132" height="132" aria-hidden="true"></canvas><div><strong>Chica</strong><span>6 rebanadas</span></div></div>
+        <div class="tamano"><canvas class="reb" data-n="8" data-r=".87" width="132" height="132" aria-hidden="true"></canvas><div><strong>Grande</strong><span>8 rebanadas<br>1 a 4 ingredientes</span></div></div>
+        <div class="tamano tamano--f"><canvas class="reb" data-n="10" data-r="1" width="132" height="132" aria-hidden="true"></canvas><div><strong>Familiar</strong><span>10 rebanadas<br>1 a 4 ingredientes</span></div></div>
       </div>
       <div class="filtros" role="group" aria-label="Filtrar recetas">
         <button class="chip" type="button" data-f="todas" aria-pressed="true">Todas</button>
@@ -842,14 +864,17 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
 
 <!-- hoja: el pedido -->
 <dialog id="hojaPedido" aria-labelledby="t-pedido">
-  <div class="hoja__cab"><h2 id="t-pedido">Tu pedido</h2><button class="cerrar" type="button" data-cerrar aria-label="Cerrar"><svg aria-hidden="true"><use href="#i-x"/></svg></button></div>
+  <div class="hoja__cab"><div><h2 id="t-pedido">Tu pedido</h2><ol class="pasos" id="pasos" aria-label="Pasos"><li class="on">1 · Lo que llevas</li><li>2 · Entrega</li></ol></div><button class="cerrar" type="button" data-cerrar aria-label="Cerrar"><svg aria-hidden="true"><use href="#i-x"/></svg></button></div>
   <div class="hoja__cuerpo" id="pedidoCuerpo">
-    <ul class="renglones" id="renglones"></ul>
-    <div class="antojo" id="antojo" hidden><h3>¿Le agregas algo?</h3><div class="antojo__fila" id="antojoFila"></div></div>
+    <div id="paso1" class="paso1">
+      <ul class="renglones" id="renglones"></ul>
+      <div class="antojo" id="antojo" hidden><h3>¿Le agregas algo?</h3><div class="antojo__fila" id="antojoFila"></div></div>
+    </div>
     <div class="vacio" id="vacio" hidden><strong>Todavía no hay nada</strong>Agrega una pizza de la carta, arma la tuya o escoge unas alitas.<br><button class="btn btn--linea" type="button" id="repetir" hidden style="margin-top:20px"></button></div>
     <div id="datos" class="datos">
+      <button class="atras" type="button" id="atras"><svg aria-hidden="true"><use href="#i-flecha"/></svg> Volver a lo que llevas</button>
       <p class="aviso-hora" id="avisoHora" hidden>Ahorita las sucursales están cerradas (abren de 11 am a 10 pm). Tu pedido les llega por WhatsApp y lo ven al abrir: elige «A una hora» para decirles cuándo lo quieres.</p>
-      <fieldset class="campo" id="cSuc"><legend>¿A qué sucursal?</legend><div class="radios" id="radiosSuc"></div><span class="error" hidden></span></fieldset>
+      <fieldset class="campo" id="cSuc"><legend>¿A qué sucursal?</legend><div class="radios radios--sucs" id="radiosSuc"></div><span class="error" hidden></span></fieldset>
       <fieldset class="campo"><legend>¿Cómo lo quieres?</legend>
         <div class="radios">
           <label class="radio"><input type="radio" name="entrega" value="Recoger en sucursal" checked><span>Paso por él<small>Te avisan cuando esté listo</small></span></label>
@@ -870,8 +895,9 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
   </div>
   <div class="hoja__pie" id="pedidoPie">
     <div class="cuentas" id="cuentas"></div>
-    <button class="btn btn--rojo" type="button" id="enviar"><svg aria-hidden="true"><use href="#i-wa"/></svg> Mandar pedido por WhatsApp</button>
-    <div class="pie-acc"><button type="button" id="copiar">Copiar el pedido</button><button type="button" id="vaciar">Vaciar</button></div>
+    <button class="btn btn--rojo" type="button" id="continuar">Continuar <svg aria-hidden="true"><use href="#i-flecha"/></svg></button>
+    <button class="btn btn--rojo" type="button" id="enviar" hidden><svg aria-hidden="true"><use href="#i-wa"/></svg> Mandar pedido por WhatsApp</button>
+    <div class="pie-acc" id="pieAcc"><button type="button" id="copiar">Copiar el pedido</button><button type="button" id="vaciar">Vaciar</button></div>
   </div>
 </dialog>
 
@@ -987,6 +1013,16 @@ var pedido = { renglones:[], suc:"", entrega:"Recoger en sucursal", cuando:"ya",
 var ultimo = null;
 try{ ultimo = JSON.parse(localStorage.getItem(LLAVE + "-ultimo") || "null"); }catch(e){}
 try{ var g = JSON.parse(localStorage.getItem(LLAVE) || "null"); if(g && Array.isArray(g.renglones)) pedido = Object.assign(pedido, g); }catch(e){}
+pedido.renglones.forEach(function(r){
+  if(r.precio != null || (r.tipo !== "receta" && r.tipo !== "mia")) return;
+  var m = /^(Grande|Familiar)\b(.*)$/.exec(r.detalle || "");
+  if(!m) return;
+  var ori = /orilla/.test(m[2]);
+  if(r.tipo === "mia" && m[1] === "Grande" && !/,/.test(m[2])){ r.precio = SENCILLA + (ori ? ORILLA : 0); r.nombre = "Pizza armada (grande sencilla)"; r.detalle = m[2].replace(/^\s*·\s*/, ""); return; }
+  r.precio = DOSXUNO[m[1]] + (ori ? ORILLA * 2 : 0);
+  r.nombre = "2×1 " + (m[1] === "Grande" ? "grandes" : "familiares") + ": " + r.nombre + " + otra igual";
+  r.detalle = (m[2].replace(/^\s*·\s*/, "").replace(/con orilla de queso/, "con orilla de queso en las dos")) ;
+});
 function guardar(){ try{ localStorage.setItem(LLAVE, JSON.stringify(pedido)); }catch(e){} }
 var sigId = Date.now();
 
@@ -1018,6 +1054,7 @@ function volar(desde, foto){
 }
 function saltar(){ var f = $("#flota"); f.classList.remove("salta"); void f.offsetWidth; f.classList.add("salta"); }
 function agregar(r, desde, foto){
+  if(foto && !/^data:/.test(foto)) r.f = foto;
   var igual = pedido.renglones.filter(function(x){ return x.clave === r.clave; })[0];
   if(igual) igual.cant += r.cant; else { r.id = ++sigId; pedido.renglones.push(r); }
   guardar(); pintarPedido(); avisar("¡Va! " + r.nombre + (r.cant > 1 ? " ×" + r.cant : "")); volar(desde, foto);
@@ -1164,6 +1201,31 @@ $("#calcAgregar").addEventListener("click", function(){
   if(m.g) agregar({ tipo:"promo", nombre:"Promo 2 pizzas grandes", detalle:"Para " + gente + " · las recetas se eligen con la sucursal", precio:289, cant:m.g, clave:"p:2grandes:calc" + gente }, b, "img/pepperoni-caja.webp");
 });
 
+/* los tamaños: una pizza de verdad partida en 6, 8 o 10, con las rebanadas apenas separadas */
+(function(){
+  var foto = new Image();
+  foto.onload = function(){
+    $$("canvas.reb").forEach(function(cv){
+      var x = cv.getContext("2d"), L = cv.width, C = L / 2, n = +cv.dataset.n, r = L * .44 * +cv.dataset.r, hueco = L * .022;
+      /* la foto: la pizza mide 508 px de radio en su lienzo de 1100 */
+      var lado = 1100 * r / 508;
+      for(var k = 0; k < n; k++){
+        var a0 = -Math.PI / 2 + k / n * 6.2832, a1 = a0 + 6.2832 / n, am = (a0 + a1) / 2;
+        x.save();
+        x.translate(Math.cos(am) * hueco, Math.sin(am) * hueco);
+        x.beginPath(); x.moveTo(C, C); x.arc(C, C, r, a0, a1); x.closePath();
+        x.shadowColor = "rgba(60,25,5,.35)"; x.shadowBlur = L * .03; x.shadowOffsetY = L * .01;
+        x.fillStyle = "#E9B860"; x.fill(); x.shadowColor = "transparent";
+        x.clip();
+        x.drawImage(foto, C - lado / 2, C - lado / 2, lado, lado);
+        x.lineWidth = L * .008; x.strokeStyle = "rgba(120,60,15,.5)"; x.stroke();
+        x.restore();
+      }
+    });
+  };
+  foto.src = "img/armar/base.webp";
+})();
+
 /* ═══════════ la carta ═══════════ */
 var lista = $("#lista");
 PIZZAS.forEach(function(p, k){
@@ -1303,7 +1365,7 @@ function muestras(){
   }).catch(function(){});
 }
 segmento($("#tamMia"), function(){ pintarMia(); });
-$("#orillaMia").addEventListener("change", function(){ pintarMia(); });
+$("#orillaMia").addEventListener("change", function(){ pintarMia(this.checked ? "orilla" : null); });
 /* un ingrediente en grande: la sencilla de $109. Lo demás va en 2×1 (te llevas dos iguales) */
 function sencillaMia(){ return valorSeg($("#tamMia")) === "Grande" && elegidos.length <= 1; }
 function precioMia(){
@@ -1356,8 +1418,10 @@ function antojos(){
   });
   $("#antojo").hidden = !fila.children.length || !contar();
 }
+var paso = 1;
 function pintarPedido(){
   var n = contar(), s = sumas();
+  if(n === 0) paso = 1;
   $("#cuentaBarra").textContent = String(n); $("#cuentaCaja").textContent = String(n);
   $("#flota").classList.toggle("ver", n > 0);
   $("#flotaCuenta").textContent = n + (n === 1 ? " cosa" : " cosas") + " · Ver pedido";
@@ -1365,23 +1429,41 @@ function pintarPedido(){
   var ul = $("#renglones"); ul.textContent = "";
   var rep = $("#repetir"), nu = ultimo && ultimo.renglones ? ultimo.renglones.reduce(function(t, r){ return t + r.cant; }, 0) : 0;
   rep.hidden = !nu || n > 0; if(nu) rep.textContent = "Repetir mi último pedido (" + nu + (nu === 1 ? " cosa)" : " cosas)");
-  $("#vacio").hidden = n > 0; $("#datos").hidden = n === 0; $("#pedidoPie").hidden = n === 0;
+  $("#vacio").hidden = n > 0; $("#pedidoPie").hidden = n === 0;
+  $("#paso1").hidden = n === 0 || paso === 2; $("#datos").hidden = n === 0 || paso === 1;
+  $("#continuar").hidden = paso === 2; $("#enviar").hidden = paso === 1; $("#pieAcc").hidden = paso === 2;
+  $("#t-pedido").textContent = paso === 1 ? "Tu pedido" : "¿Para quién?";
+  $$("#pasos li").forEach(function(li, k){ li.classList.toggle("on", k + 1 === paso); });
+  $("#pasos").hidden = n === 0;
   pedido.renglones.forEach(function(r){
     var menos = el("button", {type:"button", "aria-label":"Quitar uno de " + r.nombre, text:r.cant === 1 ? "×" : "−"});
     var mas = el("button", {type:"button", "aria-label":"Uno más de " + r.nombre, text:"+"});
     menos.addEventListener("click", function(){ r.cant--; if(r.cant <= 0) pedido.renglones = pedido.renglones.filter(function(x){ return x !== r; }); guardar(); pintarPedido(); });
     mas.addEventListener("click", function(){ r.cant = Math.min(20, r.cant + 1); guardar(); pintarPedido(); });
     ul.appendChild(el("li", {class:"renglon"}, [
+      el("img", {class:"renglon__foto", src:r.f || fotoDe(r), alt:"", width:"52", height:"52", loading:"lazy"}),
       el("div", null, [ el("span", {class:"renglon__n", text:r.nombre}), r.detalle ? el("span", {class:"renglon__d", text:r.detalle}) : null ]),
       el("div", {class:"renglon__p"}, r.precio != null ? [pesos(r.precio * r.cant)] : [el("small", {text:"La confirma"}), el("small", {text:"la sucursal"})]),
       el("div", {class:"cantidad"}, [menos, el("output", {text:String(r.cant)}), mas])
     ]));
   });
+  $("#continuar").firstChild.textContent = "Continuar" + (s.con && !s.sin ? " · " + pesos(s.con) + " " : " ");
   var cu = $("#cuentas"); cu.textContent = "";
   if(s.con) cu.appendChild(el("div", {class:"total"}, [el("span", {text: s.sin ? "Lo que ya tiene precio" : "Total"}), el("span", {text:pesos(s.con)})]));
   if(s.sin) cu.appendChild(el("small", {text:(s.sin === 1 ? "1 pizza" : s.sin + " pizzas") + " de la carta: la sucursal te dice el precio al confirmar."}));
   antojos();
 }
+/* la foto de cada renglón: la que traía al agregarse o la de su tipo */
+function fotoDe(r){
+  if(r.tipo === "comp"){ var c = COMPLEMENTOS.filter(function(x){ return r.clave.indexOf("c:" + x.id + ":") === 0; })[0]; if(c) return c.f; }
+  if(r.tipo === "burger" || r.tipo === "combo-b") return "img/m-burger.jpg";
+  if(r.tipo === "receta"){ var p = PIZZAS.filter(function(x){ return r.clave.indexOf("r:" + x.s) === 0; })[0]; if(p) return p.f; }
+  if(r.tipo === "mia") return "img/armar/base.webp";
+  return "img/pepperoni-caja.webp";
+}
+function irPaso(n){ paso = n; pintarPedido(); $("#pedidoCuerpo").scrollTop = 0; }
+$("#continuar").addEventListener("click", function(){ irPaso(2); var f = $(pedido.suc ? "#fNombre" : "#radiosSuc input"); if(f && !("ontouchstart" in window)) f.focus({preventScroll:true}); });
+$("#atras").addEventListener("click", function(){ irPaso(1); });
 function cargarDatos(){
   $$("#radiosSuc input").forEach(function(i){ i.checked = i.value === pedido.suc; });
   $$("input[name=entrega]").forEach(function(i){ i.checked = i.value === pedido.entrega; });
@@ -1408,7 +1490,7 @@ function revisar(c){
   if(c.id === "cDir") return marcar(c, (pedido.entrega !== "A domicilio" || pedido.dir.trim()) ? "" : "Escribe a dónde lo llevan.");
   return true;
 }
-$$("[data-abrir-pedido]").forEach(function(b){ b.addEventListener("click", function(){ cargarDatos(); pintarPedido(); $("#avisoHora").hidden = abierto(); abrir($("#hojaPedido")); }); });
+$$("[data-abrir-pedido]").forEach(function(b){ b.addEventListener("click", function(){ paso = 1; cargarDatos(); pintarPedido(); $("#avisoHora").hidden = abierto(); abrir($("#hojaPedido")); }); });
 function mensaje(){
   var s = sumas(), suc = SUCURSALES.filter(function(x){ return x.id === pedido.suc; })[0];
   var L = ["¡Hola, Smiley's " + suc.n + "! Quiero hacer un pedido:", ""];

@@ -34,6 +34,12 @@ await pg.click('#flota');
 await pg.waitForTimeout(500);
 const ancho = await pg.evaluate(()=>{ const d=document.querySelector('#hojaPedido'); return [d.scrollWidth, d.clientWidth, ...[...d.querySelectorAll('*')].filter(e=>e.getBoundingClientRect().right>d.getBoundingClientRect().right+1).map(e=>e.className).slice(0,3)]; });
 v('la hoja del pedido no se desborda', ancho[0]<=ancho[1], JSON.stringify(ancho));
+v('primero enseña lo que llevas, sin el formulario', await pg.$eval('#datos', e=>e.hidden) && !(await pg.$eval('#renglones', e=>e.closest('[hidden]'))));
+const vis = (q)=>pg.$eval(q, e=>e.getBoundingClientRect().height>0 && getComputedStyle(e).display!=='none');
+v('en el paso 1 se ve «Continuar» y no «Mandar»', await vis('#continuar') && !(await vis('#enviar')));
+await pg.click('#continuar');
+v('en el paso 2 se ve «Mandar» y ya no «Continuar» ni «Vaciar»', await vis('#enviar') && !(await vis('#continuar')) && !(await vis('#vaciar')));
+v('al continuar pide la entrega', !(await pg.$eval('#datos', e=>e.hidden)) && await pg.$eval('#paso1', e=>e.hidden));
 await pg.click('#enviar');
 v('sin datos no se manda', (await pg.evaluate(()=>window.__abiertas.length))===0);
 v('marca la sucursal y el nombre', (await pg.$$('#hojaPedido [data-mal]')).length===2);
@@ -45,7 +51,7 @@ v('a domicilio pide la dirección', (await pg.$$('#cDir[data-mal]')).length===1)
 await pg.fill('#fDir','Calle 5 #12, Peñaflor');
 await pg.click('#enviar');
 v('después de mandar sale el «¡Ya casi!»', await pg.$eval('#hojaGracias', d=>d.open));
-await pg.click('#hojaGracias [data-cerrar]'); await pg.click('#flota');
+await pg.click('#hojaGracias [data-cerrar]'); await pg.click('#flota'); await pg.click('#continuar');
 const url = await pg.evaluate(()=>window.__abiertas[0]||'');
 v('abre WhatsApp de Peñaflor', url.startsWith('https://wa.me/524421497989?text='), url.slice(0,60));
 const msg = decodeURIComponent(url.split('text=')[1]||'');
@@ -60,9 +66,10 @@ await pg.evaluate(()=>{ window.__abiertas=[]; });
 await pg.click('#enviar');
 v('«a una hora» sin hora no se manda', (await pg.evaluate(()=>window.__abiertas.length))===0 && (await pg.$$('#cCuando[data-mal]')).length===1);
 await pg.fill('#fHora','14:30'); await pg.click('#enviar');
-await pg.click('#hojaGracias [data-cerrar]'); await pg.click('#flota');
+await pg.click('#hojaGracias [data-cerrar]'); await pg.click('#flota'); await pg.click('#continuar');
 v('y con hora la lleva en el mensaje', decodeURIComponent((await pg.evaluate(()=>window.__abiertas[0]||'')).split('text=')[1]||'').includes('Para: las 14:30'));
 // vaciar pide segundo toque, y luego se puede repetir el último
+await pg.click('#atras');
 await pg.click('#vaciar');
 v('vaciar pide un segundo toque', (await pg.textContent('#cuentaBarra')).trim()==='6');
 await pg.click('#vaciar');
@@ -124,6 +131,13 @@ v('la hamburguesa con tocino sube a $135', (await pg.textContent('#burgers .burg
 await pg.click('#burgers .burger:first-child .btn');
 v('y entra al pedido con su precio', await pg.evaluate(()=>JSON.parse(localStorage.getItem('smileys-pedido-v1')).renglones.some(r=>r.nombre==='Hamburguesa' && r.detalle==='Con tocino' && r.precio===135)));
 v('los combos de la carta están: 1 a 5', (await pg.$$eval('#promosLista .promo__etq', e=>e.map(x=>x.textContent).join('|'))).match(/Combo [1-5]/g).length===5);
+// un pedido guardado con la versión de antes (sin precio) se pone al día con el 2×1
+await pg.evaluate(()=>localStorage.setItem('smileys-pedido-v1', JSON.stringify({renglones:[{tipo:'receta', nombre:'Chilorio', detalle:'Familiar · con orilla de queso', precio:null, cant:2, clave:'r:chilorio:Familiar:true', id:1},{tipo:'mia', nombre:'Pizza armada', detalle:'Grande · queso solo', precio:null, cant:1, clave:'m:x', id:2}]})));
+await pg.reload({waitUntil:'networkidle'});
+const viejos = await pg.evaluate(()=>JSON.parse(localStorage.getItem('smileys-pedido-v1')||'{}').renglones||[]);
+await pg.click('#flota'); await pg.waitForTimeout(300);
+v('lo viejo sale con precio: 2×1 familiares con orilla $420 c/u y la armada sencilla $109', (await pg.textContent('#cuentas')).includes('$949') && !(await pg.textContent('#cuentas')).includes('confirma'), await pg.textContent('#cuentas'));
+await pg.click('#hojaPedido [data-cerrar]');
 v('ni un error de consola', err.length===0, err.join(' | '));
 console.log(ok,'bien ·',mal,'mal');
 await br.close();

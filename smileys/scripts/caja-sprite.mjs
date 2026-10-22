@@ -14,7 +14,7 @@ const dir = '/tmp/claude-0/caja'; mkdirSync(dir, { recursive: true });
 const N = 14;
 for (let i = 0; i < N; i++) {
   const t = i / (N - 1), e = 1 - Math.pow(1 - t, 2);
-  const url = await pg.evaluate(([a]) => window.pose(a, -0.7, 1.55, 2.55), [e * 104]);
+  const url = await pg.evaluate(([a]) => window.pose(a, -0.7, 1.75, 3.5), [e * 104]);
   writeFileSync(`${dir}/f${String(i).padStart(2, '0')}.png`, Buffer.from(url.split(',')[1], 'base64'));
 }
 const url = await pg.evaluate(() => window.pose(0, -0.5, 0.9, 2.9));
