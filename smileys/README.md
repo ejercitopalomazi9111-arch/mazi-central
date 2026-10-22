@@ -5,6 +5,15 @@ portada, las favoritas, «¿Cuántos van a comer?», la carta, «Ármala tú», 
 promociones por rebanada, sucursales y **pedido por WhatsApp** a la sucursal que elija el cliente.
 Un solo `index.html` con la carpeta `img/`, sin compilación. Pruebas: `node smileys/pruebas.mjs <base>`.
 
+## El paquete básico · `basica/`
+
+Carlos, 22 de octubre: «la web básica pero llamativa, por si contratan ese paquete». Una sola
+página (`basica/index.html`): portada con foto, cinta de promos, promociones, las 15 pizzas con
+foto, alitas y más, Smiley's Burger, sucursales y un botón flotante de WhatsApp que pregunta a qué
+sucursal escribir. **Sin** carrito, «Ármala tú», «¿Cuántos van a comer?» ni la caja 3D: eso es lo
+que separa la completa. Usa las mismas fotos (`../img/`) y los mismos precios; si cambia uno, se
+cambia en los dos lados.
+
 ## Cómo se edita
 
 La página se escribe en `scripts/fuente.html` y se arma con:
