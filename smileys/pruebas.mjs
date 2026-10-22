@@ -57,9 +57,9 @@ v('Begonias trae el número del volante', await pg.evaluate(()=>document.body.in
 const msg = decodeURIComponent(url.split('text=')[1]||'');
 console.log('----\n'+msg+'\n----');
 v('el mensaje trae las alitas con su precio', msg.includes('2 × Alitas (2 órdenes) — $540'));
-v('la receta va en 2×1 con su precio: (350 + 2 orillas) × 2 = $840', msg.includes('2 × 2×1 familiares: Pepperoni Especial + otra igual (Con orilla de queso en las dos) — $840'));
+v('la receta va en 2×1 con su precio: (350 + orilla 35) × 2 = $770', msg.includes('2 × 2×1 familiares: Pepperoni Especial + otra igual (Con orilla de queso) — $770'));
 v('a domicilio la promo de 2 grandes sale en $319', msg.includes('1 × Promo 2 pizzas grandes (una hawai y una pastor) — $319'));
-v('suma todo: 840+540+289+109 + 30 de domicilio = 1,808, sin pedir que confirmen', msg.includes('Total: $1,808') && !msg.includes('confirman'));
+v('suma todo: 770+540+289+109 + 30 de domicilio = 1,738, sin pedir que confirmen', msg.includes('Total: $1,738') && !msg.includes('confirman'));
 v('dice para cuándo', msg.includes('Para: lo antes posible'));
 // a una hora: sin hora no se manda
 await pg.check('input[name=cuando][value=hora]');
@@ -123,13 +123,14 @@ for(let i=0;i<5;i++) await pg.click(`#ings .ing:nth-child(${i+1})`, {force:true}
 v('ármala deja hasta 4 ingredientes', (await pg.$$('#ings .ing[aria-pressed="true"]')).length===4);
 // el horario se ve en cada sucursal
 v('cada sucursal dice su horario', (await pg.$$eval('.suc__hora', e=>e.map(x=>x.textContent))).length===3 && (await pg.$$eval('.suc__dias', e=>e.map(x=>x.textContent))).every(t=>t.includes('11 am a 10 pm')));
-// la chica: 6 rebanadas, sin 2×1 y con precio de la sucursal
+// la chica: 6 rebanadas, sin 2×1, a $69
 await pg.evaluate(()=>document.getElementById('carta').scrollIntoView());
 await pg.click('[aria-label="Agregar Margarita al pedido"]');
 await pg.click('#hrTam button[data-v="Chica"]');
-v('la chica esconde el 2×1 y no inventa precio', await pg.$eval('#hrSegundaCaja', e=>e.hidden) && (await pg.textContent('#hrTotal')).includes('confirma la sucursal'));
+await pg.waitForTimeout(800);
+v('la chica esconde el 2×1 y cuesta $69', await pg.$eval('#hrSegundaCaja', e=>e.hidden) && (await pg.textContent('#hrTotal')).includes('$69'), await pg.textContent('#hrTotal'));
 await pg.click('#hrAgregar');
-v('y entra como chica de 6 rebanadas, sin precio', await pg.evaluate(()=>JSON.parse(localStorage.getItem('smileys-pedido-v1')).renglones.some(r=>r.nombre==='Margarita (chica, 6 rebanadas)' && r.precio==null)));
+v('y entra como chica de 6 rebanadas a $69', await pg.evaluate(()=>JSON.parse(localStorage.getItem('smileys-pedido-v1')).renglones.some(r=>r.nombre==='Margarita (chica, 6 rebanadas)' && r.precio===69)));
 v('las tarjetas de tamaño dicen 6, 8 y 10', (await pg.textContent('.tamanos')).replace(/\s+/g,' ').match(/6 rebanadas.*8 rebanadas.*10 rebanadas/) !== null);
 // smileys burger: hamburguesa con tocino
 await pg.evaluate(()=>document.getElementById('burger').scrollIntoView());
@@ -149,7 +150,7 @@ await pg.evaluate(()=>localStorage.setItem('smileys-pedido-v1', JSON.stringify({
 await pg.reload({waitUntil:'networkidle'});
 const viejos = await pg.evaluate(()=>JSON.parse(localStorage.getItem('smileys-pedido-v1')||'{}').renglones||[]);
 await pg.click('#flota'); await pg.waitForTimeout(300);
-v('lo viejo sale con precio: 2×1 familiares con orilla $420 c/u y la armada sencilla $109', (await pg.textContent('#cuentas')).includes('$949') && !(await pg.textContent('#cuentas')).includes('confirma'), await pg.textContent('#cuentas'));
+v('lo viejo sale con precio: 2×1 familiares con orilla $385 c/u y la armada sencilla $109', (await pg.textContent('#cuentas')).includes('$879') && !(await pg.textContent('#cuentas')).includes('confirma'), await pg.textContent('#cuentas'));
 await pg.click('#hojaPedido [data-cerrar]');
 v('los botones no hacen zoom con toques rápidos (touch-action)', await pg.$eval('#mas', e=>getComputedStyle(e).touchAction==='manipulation'));
 v('el índice trae 9 apartados, y Alitas lleva a su tarjeta', (await pg.$$('#menu .ind')).length===9 && await pg.$eval('#menu .ind', a=>a.getAttribute('href')==='#c-alitas') && !!(await pg.$('#c-alitas')));
@@ -176,7 +177,8 @@ await pg.click('#lista .plato:first-child .plato__mas'); await pg.waitForTimeout
 v('y la receta abre ya en familiar', await pg.$eval('#hrTam [data-v="Familiar"]', b=>b.getAttribute('aria-pressed')==='true'));
 await pg.click('#hojaReceta [data-cerrar]');
 await pg.click('#tamCarta [data-v="Chica"]'); await pg.waitForTimeout(300);
-v('en chica dice que la cotiza la sucursal', (await pg.textContent('#lista .plato:first-child .plato__precio')).includes('Precio en sucursal'));
+await pg.waitForTimeout(800);
+v('en chica, cada receta dice $69', (await pg.textContent('#lista .plato:first-child .plato__precio')).includes('$69'));
 await pg.click('#tamCarta [data-v="Grande"]');
 // agregar al carrito usa su propia animación (la caja), no la de la pizza de Ármala
 await pg.evaluate(()=>document.getElementById('c-boneless').scrollIntoView({block:'center'})); await pg.waitForTimeout(400);

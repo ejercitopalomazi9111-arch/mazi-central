@@ -948,7 +948,7 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
     </div>
     <div><label class="interruptor"><input type="checkbox" id="hrMitad"> Mitad y mitad <small>con otra especialidad</small></label>
       <select id="hrOtra" class="campo-select" hidden aria-label="La otra mitad"></select></div>
-    <label class="mejora"><img src="img/orilla.jpg" alt="" width="1600" height="620" loading="lazy"><span><b>Orilla rellena de queso</b><small id="hrOrillaT">En las dos pizzas · +$35 cada una</small></span><input type="checkbox" id="hrOrilla"></label>
+    <label class="mejora"><img src="img/orilla.jpg" alt="" width="1600" height="620" loading="lazy"><span><b>Orilla rellena de queso</b><small id="hrOrillaT">+$35 en tu 2×1</small></span><input type="checkbox" id="hrOrilla"></label>
     <div id="hrSegundaCaja"><span class="opcion__t">Es 2×1: ¿cuál es la segunda?</span>
       <select id="hrSegunda" class="campo-select" style="margin-top:0" aria-label="La segunda pizza"></select></div>
     <div><span class="opcion__t" id="hrCantT">Cuántos 2×1</span><div class="cantidad"><button type="button" data-cant="-1" aria-label="Uno menos">−</button><output id="hrCant">1</output><button type="button" data-cant="1" aria-label="Uno más">+</button></div></div>
@@ -1148,7 +1148,10 @@ var ORILLA = 35, SENCILLA = 109;
 var DOSXUNO = { Grande:289, Familiar:350 }, DOMICILIO_GRANDES = 30;
 /* la chica (6 rebanadas) no trae precio en la carta del mostrador. En cuanto Carlos lo confirme,
    se pone AQUÍ y sale solo en la carta, en Ármala, en la hoja, en el carrito y en el WhatsApp. */
-var PRECIO_CHICA = null;
+var PRECIO_CHICA = 69;               /* Carlos, 22 de octubre */
+/* la orilla en un 2×1: por ahora $35 por el par (Carlos, 22 de octubre: «luego pregunto, por ahora
+   actívala en 35»). Si resulta que es por pizza, aquí va ORILLA * 2 y sale solo en todos lados. */
+var ORILLA_2X1 = 35;
 /* horario: lo dijo Carlos el 22 de octubre, de 11 am a 10 pm las tres */
 var ABRE = 11, CIERRA = 22;
 function horaQro(){
@@ -1171,9 +1174,9 @@ pedido.renglones.forEach(function(r){
   if(!m) return;
   var ori = /orilla/.test(m[2]);
   if(r.tipo === "mia" && m[1] === "Grande" && !/,/.test(m[2])){ r.precio = SENCILLA + (ori ? ORILLA : 0); r.nombre = "Pizza armada (grande sencilla)"; r.detalle = m[2].replace(/^\s*·\s*/, ""); return; }
-  r.precio = DOSXUNO[m[1]] + (ori ? ORILLA * 2 : 0);
+  r.precio = DOSXUNO[m[1]] + (ori ? ORILLA_2X1 : 0);
   r.nombre = "2×1 " + (m[1] === "Grande" ? "grandes" : "familiares") + ": " + r.nombre + " + otra igual";
-  r.detalle = (m[2].replace(/^\s*·\s*/, "").replace(/con orilla de queso/, "con orilla de queso en las dos")) ;
+  r.detalle = (m[2].replace(/^\s*·\s*/, "").replace(/con orilla de queso/, "con orilla de queso")) ;
 });
 function guardar(){ try{ localStorage.setItem(LLAVE, JSON.stringify(pedido)); }catch(e){} }
 var sigId = Date.now();
@@ -1246,13 +1249,13 @@ function chicaHR(){ return valorSeg($("#hrTam")) === "Chica"; }
 function precioHR(){
   var ori = $("#hrOrilla").checked;
   if(chicaHR()) return PRECIO_CHICA == null ? null : (PRECIO_CHICA + (ori ? ORILLA : 0)) * cantHR;
-  return (DOSXUNO[valorSeg($("#hrTam"))] + (ori ? ORILLA * 2 : 0)) * cantHR;
+  return (DOSXUNO[valorSeg($("#hrTam"))] + (ori ? ORILLA_2X1 : 0)) * cantHR;
 }
 function totalHR(){
   var t = $("#hrTotal"), ch = chicaHR(); t.textContent = "";
   $("#hrSegundaCaja").hidden = ch;
   $("#hrCantT").textContent = ch ? "Cuántas" : "Cuántos 2×1";
-  $("#hrOrillaT").textContent = ch ? "+$35" : "En las dos pizzas · +$35 cada una";
+  $("#hrOrillaT").textContent = "+" + pesos(ch ? ORILLA : ORILLA_2X1) + (ch ? "" : " en tu 2×1");
   if(ch && PRECIO_CHICA == null){ t.appendChild(el("span", null, ["Total ", el("small", {text:"· " + cantHR + (cantHR === 1 ? " chica" : " chicas")})])); t.appendChild(el("small", {text:"te lo confirma la sucursal"})); totalHR.antes = null; return; }
   if(ch){ var cc = el("span", {class:"cifra"}); t.appendChild(el("span", null, ["Total ", el("small", {text:"· " + cantHR + (cantHR === 1 ? " chica" : " chicas")})])); t.appendChild(cc); rodar(cc, precioHR(), null, totalHR.antes); totalHR.antes = precioHR(); return; }
   var cifra = el("span", {class:"cifra"}); t.appendChild(el("span", null, ["Total ", el("small", {text:"· te llevas " + cantHR * 2 + " pizzas"})])); t.appendChild(cifra);
@@ -1285,7 +1288,7 @@ $("#hrAgregar").addEventListener("click", function(){
               cant:cantHR, clave:"r:" + actual.s + (otra ? "+" + otra.s : "") + ":Chica:" + ori }, desdeHR || actual.li.querySelector(".plato__mas"), actual.f);
     return;
   }
-  agregar({ tipo:"receta", nombre:"2×1 " + (tam === "Grande" ? "grandes" : "familiares") + ": " + primera + " + " + seg, detalle:(ori ? "Con orilla de queso en las dos" : ""), precio:DOSXUNO[tam] + (ori ? ORILLA * 2 : 0),
+  agregar({ tipo:"receta", nombre:"2×1 " + (tam === "Grande" ? "grandes" : "familiares") + ": " + primera + " + " + seg, detalle:(ori ? "Con orilla de queso" : ""), precio:DOSXUNO[tam] + (ori ? ORILLA_2X1 : 0),
             cant:cantHR, clave:"r:" + actual.s + (otra ? "+" + otra.s : "") + ":" + sv + ":" + tam + ":" + ori }, desdeHR || actual.li.querySelector(".plato__mas"), actual.f);
 });
 
@@ -1669,7 +1672,7 @@ function precioMia(){
   var ori = $("#orillaMia").checked;
   if(valorSeg($("#tamMia")) === "Chica") return PRECIO_CHICA == null ? null : PRECIO_CHICA + (ori ? ORILLA : 0);
   if(sencillaMia()) return SENCILLA + (ori ? ORILLA : 0);
-  return DOSXUNO[valorSeg($("#tamMia"))] + (ori ? ORILLA * 2 : 0);
+  return DOSXUNO[valorSeg($("#tamMia"))] + (ori ? ORILLA_2X1 : 0);
 }
 function pintarMia(nuevo){
   Object.keys(botones).forEach(function(k){

@@ -47,9 +47,8 @@ se ahorra en par salen de los precios del cartel.
 - **Tamaños en Ármala:** la chica se ve más chica y en 6 rebanadas, la grande en 8 y la familiar
   más grande y en 10. La foto venía cortada en 8, así que `scripts/base-lisa.py` arma la misma
   pizza sin cortes (`img/armar/base-lisa.webp`, con gajos de las rebanadas más anchas girados) y
-  `horno.js` dibuja los cortes que toquen. **El precio de la chica** va en `PRECIO_CHICA`
-  (`scripts/fuente.html`): hoy es `null` porque no está confirmado, y en cuanto se ponga sale solo en
-  la carta, Ármala, la hoja, el carrito y el WhatsApp.
+  `horno.js` dibuja los cortes que toquen. **La chica cuesta $69** (`PRECIO_CHICA`, Carlos, 22 de octubre):
+  sale en la carta, Ármala, la hoja, el carrito y el WhatsApp.
 - **Ármala tú:** ingredientes en tres grupos (carnes, verduras y fruta, toque final), todos a la
   vista y antes que la pizza. Mientras se escogen, una pizza chiquita abajo a la izquierda se
   actualiza en vivo; al tocarla baja a la grande.
@@ -58,7 +57,7 @@ se ahorra en par salen de los precios del cartel.
   en la carta: se pide suelta y la sucursal la cotiza.
 - **Las especialidades van en 2×1** (carta del mostrador, 22 de octubre): dos grandes $289, dos
   familiares $350, de 1 a 4 ingredientes, especialidad o mitad y mitad. La segunda se elige en la
-  hoja. Orilla de queso +$35 por pizza (en el 2×1 se cobra en las dos: falta que Carlos lo confirme).
+  hoja. Orilla de queso +$35; en el 2×1, por ahora $35 por el par (`ORILLA_2X1`, Carlos lo va a confirmar).
 - Combos 1 a 5, snacks (4 muffins $49, 2 chicken bake $119) y Smileys Burger salen de las fotos
   de la carta del 22 de octubre. Las dos grandes son $289 en mostrador y $319 a domicilio
   (Carlos, 22 de octubre): el carrito cambia el precio al elegir «A domicilio». De las familiares a
