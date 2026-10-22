@@ -1,0 +1,7 @@
+<!doctype html><meta charset="utf-8"><body style="margin:0;background:#111;display:flex;flex-wrap:wrap;gap:10px;padding:10px">
+<script src="../horno.js"></script>
+<script>
+var casos = (new URLSearchParams(location.search).get("c") || "pepperoni|jamon,pina|champinon,jalapeno,chorizo,cebolla|pastor,pina,cebolla,cilantro|jitomate,aguacate,elote,pimiento|salchicha,atun,chilorio,queso,parmesano,oregano").split("|");
+casos.forEach(function(k, i){ var cv = document.createElement("canvas"); cv.width = cv.height = 1040; cv.style.width = cv.style.height = "520px"; document.body.appendChild(cv);
+  Horno.pintar(cv, {ings:k ? k.split(",") : [], orilla: i % 2 == 1}); });
+</script>
