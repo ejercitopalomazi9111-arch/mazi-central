@@ -29,9 +29,16 @@
   // SQLite porque es lo que está incluido en el plan gratis; los de
   // key-value no. Igual que la Cooperativa de Fadori y que Puercos.
   "durable_objects": {
-    "bindings": [{ "name": "SALA", "class_name": "Sala" }]
+    "bindings": [
+      { "name": "SALA", "class_name": "Sala" },
+      // El respaldo de «Mis pingüinos»: un objeto por colección (pinguinos.js).
+      { "name": "PINGUINOS", "class_name": "Coleccion" }
+    ]
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Sala"] }],
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["Sala"] },
+    { "tag": "v2", "new_sqlite_classes": ["Coleccion"] }
+  ],
 
   "vars": {
     // De dónde se acepta que llamen. En claro y sin comodín.
