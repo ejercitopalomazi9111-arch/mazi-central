@@ -189,6 +189,7 @@ v('al agregar, la pastilla del pedido no cambia de tamaño y no sale ninguna piz
 v('ningún precio se queda temblando al terminar de rodar', await pg.evaluate(async ()=>{ await new Promise(r=>setTimeout(r,900)); return [...document.querySelectorAll('.cifra,#calcPor,#sticker b,#miniPrecio,#flotaDetalle')].every(e=>!e.style.top); }));
 v('mientras la pizza está en la barra, la grande no se pinta (no hay dos)', await pg.evaluate(()=>{ document.body.classList.add('x'); const h=document.querySelector('.horno'); h.classList.add('en-barra'); const v=getComputedStyle(document.getElementById('mia')).visibility; h.classList.remove('en-barra'); return v==='hidden'; }));
 v('ármala: ingredientes en 3 grupos, antes que la pizza', (await pg.$$('#ings .ings__grupo')).length===3 && await pg.evaluate(()=>!!(document.getElementById('ings').compareDocumentPosition(document.getElementById('mia')) & 4)));
+v('ninguna ventana cerrada se pinta en la página (el «¡Ya casi!» salía al fondo)', await pg.evaluate(()=>[...document.querySelectorAll('dialog:not([open])')].every(d=>d.getBoundingClientRect().height===0)));
 v('ni un error de consola', err.length===0, err.join(' | '));
 console.log(ok,'bien ·',mal,'mal');
 await br.close();

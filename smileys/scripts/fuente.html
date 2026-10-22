@@ -8,7 +8,12 @@
 <meta name="theme-color" content="#0E0B0A">
 <meta property="og:title" content="Smiley's Wings &amp; Pizza">
 <meta property="og:description" content="El que sabe de calidad y gusto sabe que es un precio justo. Pide por WhatsApp.">
-<meta property="og:image" content="img/hero-queso.jpg">
+<meta property="og:type" content="website">
+<meta property="og:url" content="@@URL@@">
+<meta property="og:image" content="@@URL@@img/compartir.jpg">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Smiley's: 2 pizzas grandes por $289 en mostrador. Pide por WhatsApp.">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="img/icono-180.png">
@@ -48,6 +53,8 @@
   color-scheme:dark;
 }
 *{box-sizing:border-box}
+/* una ventana cerrada no se pinta: el «display» de su clase le ganaba al del navegador y el «¡Ya casi!» salía al fondo de la página */
+dialog:not([open]){display:none !important}
 html{-webkit-text-size-adjust:100%; scroll-padding-top:76px; overflow-x:clip; touch-action:manipulation}
 /* sin zoom al tocar rápido (doble toque) en nada que se pique; pellizcar para acercar sigue sirviendo */
 button,a,input,label,select,textarea,summary,[role="button"]{touch-action:manipulation}
@@ -188,6 +195,8 @@ button{font:inherit; color:inherit}
 .barra__menu + .barra__pedido{margin-left:0}
 #hojaMenu .indice{grid-template-columns:repeat(3, minmax(0,1fr))}
 @media (min-width:980px){ .barra__menu{display:none} }
+@media (max-width:359px){ .barra__menu span{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0)} .barra__menu{padding:0 12px} .barra__in{gap:10px} .barra__logo{width:96px; flex:none} }
+.barra__logo{flex:none}
 .cab{display:grid; gap:12px; margin-bottom:clamp(28px, 5vw, 52px)}
 .cab h2{margin:0; font-size:clamp(48px, 12vw, 112px)}
 .cab p{margin:0; max-width:46ch; font-size:18px}
@@ -342,7 +351,7 @@ button{font:inherit; color:inherit}
 .mini-pizza__info p{margin:0; font-size:14px; line-height:1.3; color:var(--gris); overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical}
 .mini-pizza__info strong{font:800 26px/1 var(--display); font-variation-settings:"wdth" 80}
 .mini-pizza__acc{display:flex; gap:6px; flex-wrap:wrap}
-.mini-pizza__acc .btn{min-height:42px; padding:0 14px; font-size:14px}
+.mini-pizza__acc .btn{min-height:44px; padding:0 14px; font-size:14px}
 body.con-mini .flota{opacity:0; pointer-events:none}
 @media (min-width:980px){ .mini-pizza{display:none} }
 .ing i{background:var(--c); box-shadow:inset 0 0 0 2px rgba(0,0,0,.2)}
@@ -446,7 +455,7 @@ body.con-mini .flota{opacity:0; pointer-events:none}
 .filosofia li{padding:9px 14px; border-radius:99px; background:#7D1A2B; color:#fff; font:800 14px/1 var(--display); font-variation-settings:"wdth" 82; text-transform:uppercase; letter-spacing:.02em}
 .suc__hora{display:flex; align-items:center; gap:8px; margin:10px 0 0; color:var(--gris); font-size:15px}
 .suc__hora i{width:9px; height:9px; border-radius:50%; background:#5BD16B; box-shadow:0 0 0 4px rgba(91,209,107,.2)}
-.suc__dias{margin:4px 0 0; color:var(--gris2); font-size:13px}
+.suc__dias,.suc__dir{margin:4px 0 0; color:var(--gris2); font-size:13px}
 .suc__hora.cerrado i{background:#FF8A73; box-shadow:0 0 0 4px rgba(255,138,115,.2)}
 .aviso-hora{margin:0; padding:12px 14px; border-radius:14px; background:rgba(255,138,115,.12); color:#FFD2C7; font-size:14px}
 .aviso-hora[hidden]{display:none}
@@ -485,6 +494,7 @@ body.con-mini .flota{opacity:0; pointer-events:none}
 .pie h4{margin:0 0 12px; color:var(--hueso); font-size:13px; letter-spacing:.16em; text-transform:uppercase}
 .pie ul{margin:0; padding:0; list-style:none; display:grid; gap:8px}
 .pie a{text-decoration:none} .pie a:hover{color:var(--hueso)}
+.pie ul{gap:0} .pie li a{display:inline-flex; align-items:center; min-height:44px}
 .qr{display:flex; gap:16px; align-items:center}
 .qr__caja{width:112px; height:112px; padding:10px; border-radius:12px; background:#fff; flex:none}
 .qr__caja svg{width:100%; height:100%; display:block}
@@ -605,6 +615,8 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
 .cuentas .total{font-size:20px; font-weight:800}
 .cuentas small{color:var(--gris)}
 .pie-acc{display:flex; justify-content:center; gap:8px}
+.hoja__nota{margin:0; text-align:center; font-size:12px; color:var(--gris)} .hoja__nota a{color:var(--hueso)}
+.hoja__nota[hidden]{display:none}
 .pie-acc button{min-height:44px; padding:0 14px; border:0; background:transparent; color:var(--gris); font-weight:700; font-size:14px; cursor:pointer; text-decoration:underline; text-underline-offset:3px}
 .gracias{text-align:center; padding:34px 24px calc(30px + env(safe-area-inset-bottom)); display:grid; gap:12px; justify-items:center}
 .gracias__sonrisa{width:200px; color:var(--amarillo)}
@@ -658,7 +670,7 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
     <nav aria-label="Secciones">
       <a href="#favoritas">Favoritas</a><a href="#cuantos">¿Cuántos son?</a><a href="#carta">Carta</a><a href="#armar">Ármala</a><a href="#alitas">Alitas</a><a href="#burger">Burger</a><a href="#promos">Promos</a><a href="#sucursales">Sucursales</a>
     </nav>
-    <button class="barra__menu" type="button" id="abrirMenu" aria-haspopup="dialog"><svg aria-hidden="true"><use href="#i-menu"/></svg> Menú</button>
+    <button class="barra__menu" type="button" id="abrirMenu" aria-haspopup="dialog"><svg aria-hidden="true"><use href="#i-menu"/></svg> <span>Menú</span></button>
     <button class="btn btn--rojo barra__pedido" type="button" data-abrir-pedido>Mi pedido <b id="cuentaBarra">0</b></button>
   </div>
 </header>
@@ -919,7 +931,7 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
     </div>
     <div>
       <h4>Síguenos</h4>
-      <ul><li><a href="https://www.facebook.com/smileyswp/" rel="noopener" target="_blank">Facebook · @smileyswp</a></li><li><a href="https://www.instagram.com/smileyswp/" rel="noopener" target="_blank">Instagram · @smileyswp</a></li><li><a href="mailto:smileyswp@gmail.com">smileyswp@gmail.com</a></li><li>Todos los días, 11 am a 10 pm</li></ul>
+      <ul><li><a href="https://www.facebook.com/smileyswp/" rel="noopener" target="_blank">Facebook · @smileyswp</a></li><li><a href="mailto:smileyswp@gmail.com">smileyswp@gmail.com</a></li><li>Todos los días, 11 am a 10 pm</li></ul>
     </div>
     <div class="qr">
       <div class="qr__caja" id="qrCaja" aria-hidden="true"></div>
@@ -927,6 +939,7 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
     </div>
     <div class="pie__acc"><button class="btn btn--linea" type="button" id="compartir">Compartir la carta</button></div>
     <p class="pie__legal">Precios en pesos mexicanos, sujetos a cambio en sucursal. Fotografías ilustrativas (Unsplash y Pexels, licencia libre; la de Mr. Cheese y la del combo son de Smiley's). Caja 3D: modelo de Kenney (CC0).</p>
+    <p class="pie__legal" id="privacidad" style="border-top:0; padding-top:0"><b style="color:var(--gris)">Tus datos.</b> Tu nombre, tu dirección y tu pedido no se mandan a ningún servidor: van sólo en el mensaje de WhatsApp que tú envías a la sucursal, y se guardan en este teléfono para que tu próximo pedido sea más rápido. Para borrarlos, toca «Vaciar» en tu pedido o borra los datos de esta página en tu navegador.</p>
   </div>
 </footer>
 
@@ -1006,6 +1019,7 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
     <div class="cuentas" id="cuentas"></div>
     <button class="btn btn--rojo" type="button" id="continuar">Continuar <svg aria-hidden="true"><use href="#i-flecha"/></svg></button>
     <button class="btn btn--rojo" type="button" id="enviar" hidden><svg aria-hidden="true"><use href="#i-wa"/></svg> Mandar pedido por WhatsApp</button>
+    <p class="hoja__nota" id="notaDatos">Tus datos sólo van en tu mensaje de WhatsApp. <a href="#privacidad" data-cerrar>Más</a></p>
     <div class="pie-acc" id="pieAcc"><button type="button" id="copiar">Copiar el pedido</button><button type="button" id="vaciar">Vaciar</button></div>
   </div>
 </dialog>
@@ -1019,7 +1033,7 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
 </dialog>
 
 <script src="horno.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="vendor/qrcode.min.js" defer></script>
 <script>
 (function(){
 "use strict";
@@ -1104,15 +1118,15 @@ var COMPLEMENTOS = [
 ];
 /* el índice: lo que la gente busca con hambre, primero lo que no es pizza */
 var INDICE = [
- {n:"Alitas",       a:"#c-alitas",  f:"img/alitas-glaseadas.webp", d:"desde $149"},
- {n:"Boneless",     a:"#c-boneless",f:"img/c-boneless.jpg",        d:"desde $129"},
- {n:"Pizzas",       a:"#carta",     f:"img/rebanada.webp",         d:"2 por $289"},
- {n:"Burgers",      a:"#burger",    f:"img/m-burger.jpg",          d:"desde $110"},
- {n:"Promos",       a:"#promos",    f:"img/real-combo.jpg",        d:"desde $109"},
- {n:"Papas y más",  a:"#c-papas",   f:"img/c-papas.jpg",           d:"desde $49"},
- {n:"Ármala tú",    a:"#armar",     f:"img/armar/base.webp",       d:"a tu gusto"},
- {n:"¿Cuántos son?",a:"#cuantos",   f:"img/pepperoni-caja.webp",   d:"te decimos qué pedir"},
- {n:"Sucursales",   a:"#sucursales",f:"img/mostrador.jpg",         d:"11 am a 10 pm"}
+ {n:"Alitas",       a:"#c-alitas",  f:"img/ind/alitas.webp", d:"desde $149"},
+ {n:"Boneless",     a:"#c-boneless",f:"img/ind/boneless.webp",        d:"desde $129"},
+ {n:"Pizzas",       a:"#carta",     f:"img/ind/pizzas.webp",         d:"2 por $289"},
+ {n:"Burgers",      a:"#burger",    f:"img/ind/burgers.webp",          d:"desde $110"},
+ {n:"Promos",       a:"#promos",    f:"img/ind/promos.webp",        d:"desde $109"},
+ {n:"Papas y más",  a:"#c-papas",   f:"img/ind/papas.webp",           d:"desde $49"},
+ {n:"Ármala tú",    a:"#armar",     f:"img/ind/armala.webp",       d:"a tu gusto"},
+ {n:"¿Cuántos son?",a:"#cuantos",   f:"img/ind/cuantos.webp",   d:"te decimos qué pedir"},
+ {n:"Sucursales",   a:"#sucursales",f:"img/ind/sucursales.webp",         d:"11 am a 10 pm"}
 ];
 /* Smileys Burger: su carta aparte (foto del 22 de octubre) */
 var BURGER = [
@@ -1139,7 +1153,7 @@ var PROMOS = [
 ];
 var SUCURSALES = [
  {id:"begonias",   n:"Begonias",           tel:"442-654-48-58", wa:"524426544858"},
- {id:"penaflor",   n:"Zona Peñaflor",      tel:"442-149-79-89", wa:"524421497989"},
+ {id:"penaflor",   n:"Zona Peñaflor",      tel:"442-149-79-89", wa:"524421497989", dir:"Cto. Puerta del Sol 223, local 6, C.P. 76116"},
  {id:"balvanera",  n:"Lomas de Balvanera", tel:"442-612-37-73", wa:"524426123773"}
 ];
 var ORILLA = 35, SENCILLA = 109;
@@ -1389,7 +1403,7 @@ $("#calcAgregar").addEventListener("click", function(){
     $$("canvas.reb").forEach(function(cv){
       var x = cv.getContext("2d"), L = cv.width, C = L / 2, n = +cv.dataset.n, r = L * .415 * +cv.dataset.r, hueco = L * .06;
       /* la foto: la pizza mide 508 px de radio en su lienzo de 1100 */
-      var lado = 1100 * r / 508;
+      var lado = foto.naturalWidth * r / (508 * foto.naturalWidth / 1100);
       for(var k = 0; k < n; k++){
         var a0 = -Math.PI / 2 + k / n * 6.2832, a1 = a0 + 6.2832 / n, am = (a0 + a1) / 2;
         x.save();
@@ -1404,7 +1418,7 @@ $("#calcAgregar").addEventListener("click", function(){
       }
     });
   };
-  foto.src = "img/armar/base-lisa.webp";
+  foto.src = "img/armar/base-lisa-chica.webp";
 })();
 
 /* ═══════════ la carta ═══════════ */
@@ -1536,12 +1550,12 @@ COMBOS_BURGER.forEach(function(c){
 /* sucursales */
 var cajaSucs = $("#sucs"), radiosSuc = $("#radiosSuc");
 SUCURSALES.forEach(function(s, k){
-  var mapa = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent("Smiley's Wings & Pizza " + s.n + " Querétaro");
+  var mapa = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(s.dir ? s.dir + ", Querétaro" : "Smiley's Wings & Pizza " + s.n + " Querétaro");
   var wa = el("a", {class:"btn btn--rojo", href:"https://wa.me/" + s.wa, target:"_blank", rel:"noopener"}, [icono("i-wa"), "WhatsApp"]);
   var tel = el("a", {class:"btn btn--linea", href:"tel:+52" + s.tel.replace(/\D/g,"")}, [icono("i-tel"), "Llamar"]);
   var ir = el("a", {class:"btn btn--linea", href:mapa, target:"_blank", rel:"noopener"}, [icono("i-mapa"), "Cómo llegar"]);
   cajaSucs.appendChild(el("article", {class:"suc rev"}, [
-    el("div", null, [ el("span", {class:"suc__n", text:"Sucursal " + (k+1)}), el("h3", {text:s.n}), el("p", {class:"suc__tel", text:s.tel}),
+    el("div", null, [ el("span", {class:"suc__n", text:"Sucursal " + (k+1)}), el("h3", {text:s.n}), el("p", {class:"suc__tel", text:s.tel}), s.dir ? el("p", {class:"suc__dir", text:s.dir}) : null,
       el("p", {class:"suc__hora" + (abierto() ? "" : " cerrado")}, [el("i"), (abierto() ? "Abierto · hasta las 10 pm" : "Cerrado · abre a las 11 am")]),
       el("p", {class:"suc__dias", text:"Todos los días, 11 am a 10 pm"}) ]),
     el("div", {class:"suc__acc"}, [wa, tel, ir])
@@ -1738,7 +1752,7 @@ function pintarPedido(){
   rep.hidden = !nu || n > 0; if(nu) rep.textContent = "Repetir mi último pedido (" + nu + (nu === 1 ? " cosa)" : " cosas)");
   $("#vacio").hidden = n > 0; $("#pedidoPie").hidden = n === 0;
   $("#paso1").hidden = n === 0 || paso === 2; $("#datos").hidden = n === 0 || paso === 1;
-  $("#continuar").hidden = paso === 2; $("#enviar").hidden = paso === 1; $("#pieAcc").hidden = paso === 2;
+  $("#continuar").hidden = paso === 2; $("#enviar").hidden = paso === 1; $("#pieAcc").hidden = paso === 2; $("#notaDatos").hidden = paso === 1;
   $("#t-pedido").textContent = paso === 1 ? "Tu pedido" : "¿Para quién?";
   $$("#pasos li").forEach(function(li, k){ li.classList.toggle("on", k + 1 === paso); });
   $("#pasos").hidden = n === 0;
@@ -1773,7 +1787,7 @@ function fotoDe(r){
   if(r.tipo === "comp"){ var c = COMPLEMENTOS.filter(function(x){ return r.clave.indexOf("c:" + x.id + ":") === 0; })[0]; if(c) return c.f; }
   if(r.tipo === "burger" || r.tipo === "combo-b") return "img/m-burger.jpg";
   if(r.tipo === "receta"){ var p = PIZZAS.filter(function(x){ return r.clave.indexOf("r:" + x.s) === 0; })[0]; if(p) return p.f; }
-  if(r.tipo === "mia") return "img/armar/base.webp";
+  if(r.tipo === "mia") return "img/ind/armala.webp";
   return "img/pepperoni-caja.webp";
 }
 function irPaso(n){ paso = n; pintarPedido(); $("#pedidoCuerpo").scrollTop = 0; }
@@ -1854,14 +1868,16 @@ $("#compartir").addEventListener("click", function(){
   else (navigator.clipboard ? navigator.clipboard.writeText(liga) : Promise.reject()).then(function(){ avisar("Liga copiada"); }, function(){ window.prompt("Copia la liga:", liga); });
 });
 
-/* ═══════════ QR de esta misma página ═══════════ */
-try{
-  var liga = location.href.split("#")[0].split("?")[0];
-  if(typeof qrcode === "function" && /^https?:/.test(liga)){
-    var q = qrcode(0, "M"); q.addData(liga); q.make();
-    $("#qrCaja").innerHTML = q.createSvgTag({cellSize:4, margin:0, scalable:true});
-  } else $(".qr").hidden = true;
-}catch(e){ $(".qr").hidden = true; }
+/* ═══════════ QR de esta misma página (la librería carga con «defer»: se arma al terminar) ═══════════ */
+window.addEventListener("load", function(){
+  try{
+    var liga = location.href.split("#")[0].split("?")[0];
+    if(typeof qrcode === "function" && /^https?:/.test(liga)){
+      var q = qrcode(0, "M"); q.addData(liga); q.make();
+      $("#qrCaja").innerHTML = q.createSvgTag({cellSize:4, margin:0, scalable:true});
+    } else $(".qr").hidden = true;
+  }catch(e){ $(".qr").hidden = true; }
+});
 
 /* ═══════════ el saludo según la hora de este teléfono ═══════════ */
 (function(){

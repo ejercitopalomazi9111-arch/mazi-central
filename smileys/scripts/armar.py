@@ -1,6 +1,7 @@
 """Arma smileys/index.html desde scripts/fuente.html.
 
   python3 smileys/scripts/armar.py
+  SMILEYS_URL=https://<sitio final>/smileys/ python3 smileys/scripts/armar.py   ← para publicar
 
 Mete en la página, como símbolos SVG, el logo y la sonrisa trazados de la foto de la caja
 (img/logo.svg, img/sonrisa.svg), y los pinceles del armador de la versión de Godines
@@ -43,6 +44,15 @@ pagina = (fuente.replace('@@LOGO_VB@@', lvb).replace('@@LOGO@@', lg)
 # el <svg> que usa un símbolo necesita la misma proporción, o el navegador le da 150 px de alto
 pagina = re.sub(r'<svg([^>]*)><use href="#logo"/>', lambda m: f'<svg viewBox="{lvb}"{m.group(1)}><use href="#logo"/>', pagina)
 pagina = re.sub(r'<svg([^>]*)><use href="#sonrisa"/>', lambda m: f'<svg viewBox="{svb}"{m.group(1)}><use href="#sonrisa"/>', pagina)
+# WhatsApp y Facebook sólo leen la imagen de compartir con la dirección COMPLETA. Al publicar en
+# el sitio final: SMILEYS_URL=https://<sitio>/smileys/ python3 smileys/scripts/armar.py
+import os
+url = os.environ.get('SMILEYS_URL', '').strip()
+if url and not url.endswith('/'):
+    url += '/'
+if not url:
+    print('⚠ sin SMILEYS_URL: la imagen de compartir queda con dirección relativa (WhatsApp no la va a enseñar)')
+pagina = pagina.replace('@@URL@@', url)
 assert '@@' not in pagina, 'quedó un hueco sin llenar'
 (AQUI / 'index.html').write_text(pagina)
 

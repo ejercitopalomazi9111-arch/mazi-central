@@ -80,3 +80,17 @@ Carta, precios, teléfonos y la frase del cartel salen de fotos del local de sep
 (88 % lo recomienda; la página dice «88% de reseñas positivas en su Facebook» sin el número de reseñas, que es chico: es cierto y no se esconde nada, sólo no se presume la cantidad), con nombre corto y fecha. Sucursales: las del volante de su Facebook
 (Peñaflor, Begonias y Balvanera); Carlos pidió seguir el volante, así que va «Begonias 442 654 4858»
 y no «Lomas de San José 442-680-29-01», que decía la caja.
+
+## Publicar
+
+- `SMILEYS_URL=https://<sitio final>/smileys/ python3 smileys/scripts/armar.py`: WhatsApp y Facebook
+  sólo enseñan la imagen de compartir (`img/compartir.jpg`, la pinta `scripts/compartir.mjs`) con la
+  dirección completa. Hoy está armada con la vista previa; al pasarla al sitio final se vuelve a armar.
+- Los datos de quien pide no salen a ningún servidor: van en su mensaje de WhatsApp y se guardan en su
+  teléfono. Lo dice el pie («Tus datos») y una nota junto al botón de mandar.
+- Sin dependencias de fuera salvo Google Fonts: el QR del pie va en `vendor/qrcode.min.js` (MIT).
+- Peñaflor lleva su dirección (Cto. Puerta del Sol 223, local 6, de su Facebook, con el mismo teléfono
+  del volante) y «Cómo llegar» abre esa dirección. Instagram se quitó: no está confirmado que su cuenta
+  sea @smileyswp.
+- Al abrir carga ~770 KB (antes 1.7 MB): el índice usa miniaturas (`img/ind/`) y las tarjetas de
+  tamaño una pizza chica (`img/armar/base-lisa-chica.webp`).

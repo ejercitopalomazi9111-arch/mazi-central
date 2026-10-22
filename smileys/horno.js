@@ -28,7 +28,7 @@ var POLVO = { parmesano:1, oregano:1, queso:1 };
 var ENCIMA = { cilantro:1, queso:0 };
 
 var RAIZ = (document.currentScript && document.currentScript.src.replace(/[^/]*$/, "")) || "";
-var piezas = null, fotos = {}, base = null, lisa = null, esperando = [];
+var piezas = null, fotos = {}, lisa = null, esperando = [];
 
 function semilla(txt){
   var h = 2166136261;
@@ -44,9 +44,8 @@ function preparar(){
   if(preparar.p) return preparar.p;
   return (preparar.p = Promise.all([
     fetch(RAIZ + "img/armar/piezas.json").then(function(r){ return r.json(); }),
-    imagen(RAIZ + "img/armar/base.webp"),
-    imagen(RAIZ + "img/armar/base-lisa.webp")          /* la misma pizza sin cortes (scripts/base-lisa.py) */
-  ]).then(function(r){ piezas = r[0]; base = r[1]; lisa = r[2]; }));
+    imagen(RAIZ + "img/armar/base-lisa.webp")          /* la pizza de la foto sin cortes (scripts/base-lisa.py) */
+  ]).then(function(r){ piezas = r[0]; lisa = r[1]; }));
 }
 function cargar(k){
   if(fotos[k] || POLVO[k] || !piezas || !piezas[k]) return Promise.resolve();
@@ -178,7 +177,7 @@ function orilla(c, S, P, t){
     /* un pedazo de queso de la foto: a 0.55 del radio, en la misma dirección */
     var ao = an + .35, fx = 550 + Math.cos(ao) * 508 * .62, fy = 550 + Math.sin(ao) * 508 * .62, fl = 508 * .09;
     c.rotate(-an + .3);
-    c.drawImage(base, fx - fl, fy - fl, fl * 2, fl * 2, -largo * 1.3, -largo * 1.3, largo * 2.6, largo * 2.6);
+    c.drawImage(lisa, fx - fl, fy - fl, fl * 2, fl * 2, -largo * 1.3, -largo * 1.3, largo * 2.6, largo * 2.6);
     c.restore();
     /* volumen: más claro arriba, más tostado en el borde */
     var v = c.createRadialGradient(-largo * .2, -ancho * .4, 0, 0, 0, largo * 1.15);
