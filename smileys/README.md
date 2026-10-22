@@ -78,6 +78,6 @@ recetas tienen foto de otra pizza.
 
 Carta, precios, teléfonos y la frase del cartel salen de fotos del local de septiembre de
 2026. Horario: todos los días de 11 am a 10 pm (Carlos, 22 de octubre). Opiniones: las de su Facebook
-(88 % de 7 lo recomienda), con nombre corto y fecha. Sucursales: las del volante de su Facebook
+(88 % lo recomienda; la página dice «88% de reseñas positivas en su Facebook» sin el número de reseñas, que es chico: es cierto y no se esconde nada, sólo no se presume la cantidad), con nombre corto y fecha. Sucursales: las del volante de su Facebook
 (Peñaflor, Begonias y Balvanera); Carlos pidió seguir el volante, así que va «Begonias 442 654 4858»
 y no «Lomas de San José 442-680-29-01», que decía la caja.
