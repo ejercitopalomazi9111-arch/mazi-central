@@ -56,11 +56,17 @@ a{color:inherit} button{font:inherit; color:inherit}
 /* ───────── portada ───────── */
 .portada{position:relative; min-height:100svh; display:grid; align-content:end; overflow:hidden; padding:96px 0 40px; isolation:isolate}
 .portada__sol{position:absolute; z-index:-1; width:min(92vw, 640px); aspect-ratio:1; border-radius:50%; background:var(--shu);
-  top:12svh; right:-22vw; will-change:transform; animation:sol 1.6s cubic-bezier(.2,.7,.1,1) both}
+  top:max(64px, 7svh); right:-20vw; will-change:transform; animation:sol 1.6s cubic-bezier(.2,.7,.1,1) both}
+@media (max-width:959px){ .portada__sol{width:min(84vw, 520px)} .portada{padding-top:min(92vw, 560px)} }
 @keyframes sol{from{transform:translateY(18%) scale(.86); opacity:0}}
-.portada__kanji{position:absolute; z-index:-1; top:calc(12svh + 8vw); right:8vw; writing-mode:vertical-rl; font:800 clamp(44px, 12vw, 110px)/1 var(--serif); color:rgba(255,255,255,.9);
+/* El plato gira dentro del sol: un anillo rojo alrededor y los rolls dando la vuelta despacio.
+   Es una FOTO recortada en círculo (img/plato.webp), no un dibujo. */
+.portada__plato{position:absolute; inset:9%; border-radius:50%; background:url(img/plato.webp) center/cover; box-shadow:0 30px 70px -20px rgba(0,0,0,.75), 0 0 0 1px rgba(0,0,0,.15);
+  animation:gira 70s linear infinite, aparece 1.4s .3s both}
+@keyframes gira{to{transform:rotate(360deg)}}
+.portada__kanji{position:absolute; z-index:-1; top:calc(10svh); left:var(--lado); writing-mode:vertical-rl; font:800 clamp(40px, 11vw, 100px)/1 var(--serif); color:transparent; -webkit-text-stroke:1px var(--oro);
   letter-spacing:.08em; animation:aparece 1.6s .5s both}
-.portada__marca{margin:0; font:800 clamp(56px, 15.5vw, 210px)/.86 var(--serif); letter-spacing:-.02em; text-transform:uppercase}
+.portada__marca{margin:0; font:800 clamp(56px, 15.5vw, 210px)/.86 var(--serif); letter-spacing:-.02em; text-transform:uppercase; text-shadow:0 4px 30px rgba(0,0,0,.55)}
 .portada__marca span{display:block; overflow:hidden}
 .portada__marca span > b{display:block; font-weight:inherit; animation:sube 1.2s cubic-bezier(.2,.7,.1,1) both}
 .portada__marca span:nth-child(2) > b{animation-delay:.12s; padding-left:.42em}
@@ -74,7 +80,11 @@ a{color:inherit} button{font:inherit; color:inherit}
 @media (min-width:960px){
   .portada{align-content:center}
   .portada__sol{width:min(46vw, 640px); right:7vw; top:50%; margin-top:calc(min(46vw, 640px) / -2)}
-  .portada__kanji{right:calc(7vw + min(46vw, 640px) * .5 - .5em); top:50%; transform:translateY(-50%); animation:none; font-size:clamp(70px, 7vw, 120px)}
+  .portada__kanji{display:none}
+  /* el título vive a la izquierda del plato: encima de la foto blanca no se leería */
+  .portada__marca{font-size:clamp(56px, 7.4vw, 150px)}
+  .portada .ancho{width:100%}
+  .portada .ancho > *{max-width:min(40vw, 560px)}
 }
 
 /* ───────── barra de categorías ───────── */
@@ -94,6 +104,11 @@ a{color:inherit} button{font:inherit; color:inherit}
 /* ───────── la carta ───────── */
 .carta{padding:24px 0 120px}
 .cat{padding:64px 0 8px}
+.cat__foto{position:relative; margin:0 0 26px; aspect-ratio:16/8; border-radius:var(--radio); overflow:hidden; background:var(--sumi3)}
+.cat__foto img{width:100%; height:100%; object-fit:cover; transform:scale(1.001); transition:transform 1.6s cubic-bezier(.2,.7,.1,1)}
+.cat__foto.rev--off img{transform:scale(1.14)}
+.cat__foto::after{content:""; position:absolute; inset:0; background:linear-gradient(180deg, rgba(11,10,9,0) 45%, rgba(11,10,9,.85))}
+@media (min-width:900px){ .cat__foto{aspect-ratio:16/5} }
 .cat__cab{display:grid; grid-template-columns:auto minmax(0,1fr); gap:0 18px; align-items:end; margin-bottom:28px}
 .cat__num{grid-row:span 2; font:800 clamp(56px, 12vw, 96px)/.8 var(--serif); color:transparent; -webkit-text-stroke:1px var(--oro)}
 .cat h2{margin:0; font:700 clamp(32px, 6.6vw, 54px)/1 var(--serif); letter-spacing:.01em}
@@ -113,6 +128,11 @@ a{color:inherit} button{font:inherit; color:inherit}
 .plato__mas{grid-column:2; grid-row:1 / span 3; align-self:center; width:44px; height:44px; border-radius:50%; border:0; background:transparent; box-shadow:inset 0 0 0 1px var(--linea2); display:grid; place-items:center; cursor:pointer; transition:background .2s ease, box-shadow .2s ease}
 .plato__mas svg{width:18px; height:18px}
 .plato:hover .plato__mas,.plato__mas:focus-visible{background:var(--shu); box-shadow:none}
+.plato--mini{grid-template-columns:minmax(0,1fr) 96px}
+.plato__mini{grid-column:2; grid-row:1 / span 3; align-self:center; position:relative; width:96px; height:96px}
+.plato__mini img{width:96px; height:96px; border-radius:50%; object-fit:cover; box-shadow:0 0 0 1px var(--linea2); transition:transform .5s cubic-bezier(.2,.7,.1,1)}
+.plato:hover .plato__mini img{transform:rotate(-8deg) scale(1.05)}
+.plato__mini .plato__mas{position:absolute; right:-6px; bottom:-6px; background:var(--sumi); box-shadow:inset 0 0 0 1px var(--linea2), 0 0 0 4px var(--sumi)}
 .plato__foto{grid-column:1 / -1; margin:14px 0 4px; aspect-ratio:16/9; border-radius:var(--radio); overflow:hidden; background:var(--sumi3)}
 .plato__foto img{width:100%; height:100%; object-fit:cover}
 .plato--casa .plato__n::after{content:"推"; display:inline-grid; place-items:center; width:24px; height:24px; margin-left:10px; border-radius:50%; background:var(--shu); color:#fff; font:700 12px/1 var(--serif); vertical-align:.15em}
@@ -126,6 +146,13 @@ a{color:inherit} button{font:inherit; color:inherit}
 .recom{scroll-snap-align:start; position:relative; display:grid; align-content:space-between; gap:40px; min-height:300px; padding:26px; border-radius:var(--radio); background:var(--sumi2); box-shadow:inset 0 0 0 1px var(--linea); overflow:hidden; cursor:pointer; text-align:left; border:0}
 .recom::before{content:""; position:absolute; width:220px; height:220px; border-radius:50%; background:var(--shu); right:-70px; top:-70px; opacity:.92; transition:transform .5s cubic-bezier(.2,.7,.1,1)}
 .recom:hover::before{transform:scale(1.08)}
+.recom__img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:transform .8s cubic-bezier(.2,.7,.1,1)}
+.recom:hover .recom__img{transform:scale(1.05)}
+.recom--foto::after{content:""; position:absolute; inset:0; background:linear-gradient(180deg, rgba(11,10,9,.05) 20%, rgba(11,10,9,.55) 55%, rgba(11,10,9,.95))}
+.recom--foto::before{z-index:1; width:120px; height:120px; right:-30px; top:-30px}
+.recom--foto .recom__k{z-index:2; font-size:36px}
+.recom--foto > div{z-index:2}
+.recom--foto{min-height:380px}
 .recom__k{position:relative; font:800 44px/1 var(--serif); color:#fff; align-self:start; justify-self:end; margin:-6px -4px 0 0}
 .recom h3{position:relative; margin:0; font:700 30px/1.1 var(--serif)}
 .recom p{position:relative; margin:8px 0 0; color:var(--gris); font-size:15px}
@@ -153,6 +180,7 @@ a{color:inherit} button{font:inherit; color:inherit}
 @media (min-width:960px){ .flota{left:auto; right:24px; bottom:24px; width:420px} }
 .pop{position:fixed; left:50%; top:128px; z-index:60; transform:translate(-50%,-16px); opacity:0; pointer-events:none; padding:12px 18px; background:var(--washi); color:var(--sumi); font-weight:700; font-size:15px; white-space:nowrap; transition:opacity .25s ease, transform .25s ease; box-shadow:0 18px 40px -10px rgba(0,0,0,.7)}
 .pop.ver{opacity:1; transform:translate(-50%,0)}
+.vuela{position:fixed; z-index:70; width:18px; height:18px; margin:-9px 0 0 -9px; border-radius:50%; background:var(--shu); box-shadow:0 0 0 4px rgba(210,58,44,.25); pointer-events:none}
 
 /* ───────── hojas ───────── */
 dialog{padding:0; border:0; color:var(--washi); background:var(--sumi2); width:min(100%, 560px); max-width:100%; max-height:92svh; margin:auto auto 0; border-radius:10px 10px 0 0; box-shadow:0 -10px 60px rgba(0,0,0,.6); overflow:hidden}
@@ -198,7 +226,7 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
 .total{display:flex; justify-content:space-between; font:700 22px var(--serif)}
 .rev{transition:opacity .9s ease, transform .9s cubic-bezier(.2,.7,.1,1)} .rev--off{opacity:0; transform:translateY(24px)}
 @media (prefers-reduced-motion:reduce){
-  .portada__sol,.portada__kanji,.portada__marca span > b,.portada__filo,.portada__lede,.portada__cta,.portada__baja{animation:none}
+  .portada__sol,.portada__plato,.portada__kanji,.portada__marca span > b,.portada__filo,.portada__lede,.portada__cta,.portada__baja{animation:none}
   .rev,.rev--off{transition:none; opacity:1; transform:none}
 }
 </style>
@@ -215,7 +243,7 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
 <p class="ejemplo" id="ejemplo">Carta de ejemplo: los platillos y precios se cambian por los de District Roll.</p>
 
 <header class="portada" id="inicio">
-  <div class="portada__sol" id="sol" aria-hidden="true"></div>
+  <div class="portada__sol" id="sol" aria-hidden="true"><div class="portada__plato"></div></div>
   <div class="portada__kanji" aria-hidden="true">巻寿司</div>
   <div class="ancho">
     <p class="sello" id="tipoLocal">Sushi &amp; Rolls</p>
@@ -309,7 +337,9 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
 /* ════════════════════ LO ÚNICO QUE SE EDITA ════════════════════
    LOCAL: datos del negocio. CARTA: categorías y platillos.
    Platillo: n nombre · d descripción · p precio · casa (lo recomienda) · pic (picante)
-             · k (letra grande de la tarjeta de recomendación) · f foto en img/ (opcional)  */
+             · k (letra grande de la tarjeta de recomendación) · f foto en img/ (opcional)
+   Categoría: foto (franja con foto arriba, en img/). Las fotos de hoy son de EJEMPLO
+   (Unsplash, ver img/CREDITOS.md): se cambian por las de District Roll con el mismo nombre. */
 var LOCAL = {
   ejemplo: true,                 /* ⚠ quitar en cuanto la carta sea la de verdad */
   nombre: "District Roll",
@@ -318,35 +348,35 @@ var LOCAL = {
   lugar: "", horario: "", instagram: ""
 };
 var CARTA = [
- {id:"rolls", n:"Rolls", jp:"巻", nota:"Ocho piezas. Por fuera o por dentro, como lo pidas.", platos:[
-  {n:"District Roll", d:"Camarón empanizado, queso crema y aguacate, cubierto de salmón y salsa de anguila.", p:189, casa:1, k:"巻"},
-  {n:"California", d:"Kanikama, pepino, aguacate y ajonjolí.", p:129},
-  {n:"Philadelphia", d:"Salmón, queso crema y aguacate.", p:149},
+ {id:"rolls", n:"Rolls", jp:"巻", foto:"cat-rolls.webp", nota:"Ocho piezas. Por fuera o por dentro, como lo pidas.", platos:[
+  {n:"District Roll", d:"Camarón empanizado, queso crema y aguacate, cubierto de salmón y salsa de anguila.", p:189, casa:1, k:"巻", f:"district.webp"},
+  {n:"California", d:"Kanikama, pepino, aguacate y ajonjolí.", p:129, f:"california.webp"},
+  {n:"Philadelphia", d:"Salmón, queso crema y aguacate.", p:149, f:"philadelphia.webp"},
   {n:"Mar y Tierra", d:"Camarón, res, queso crema y aguacate.", p:169},
   {n:"Tempura Roll", d:"Todo el rollo empanizado: camarón, queso crema y pepino.", p:159},
   {n:"Spicy Tuna", d:"Atún picado con salsa picante, pepino y cebollín.", p:169, pic:1},
-  {n:"Dragon Roll", d:"Anguila y pepino, cubierto de aguacate en escamas.", p:199, casa:1, k:"龍"},
+  {n:"Dragon Roll", d:"Anguila y pepino, cubierto de aguacate en escamas.", p:199, casa:1, k:"龍", f:"dragon.webp"},
   {n:"Veggie", d:"Pepino, zanahoria, aguacate, espárrago y queso crema.", p:119}
  ]},
- {id:"entradas", n:"Entradas", jp:"前菜", nota:"Para empezar o para compartir.", platos:[
-  {n:"Gyozas", d:"Cinco piezas de cerdo y verdura, a la plancha.", p:99},
+ {id:"entradas", n:"Entradas", jp:"前菜", foto:"cat-entradas.webp", nota:"Para empezar o para compartir.", platos:[
+  {n:"Gyozas", d:"Cinco piezas de cerdo y verdura, a la plancha.", p:99, f:"gyozas.webp"},
   {n:"Edamames", d:"Con sal de grano o en salsa picante de la casa.", p:79},
   {n:"Kushiages", d:"Brochetas empanizadas de queso, plátano o camarón.", p:89},
   {n:"Tostada de atún", d:"Atún fresco, aguacate, salsa ponzu y chile serrano.", p:119, pic:1, casa:1, k:"鮪"}
  ]},
- {id:"calientes", n:"Calientes", jp:"温", nota:"Recién salidos del wok.", platos:[
-  {n:"Yakimeshi", d:"Arroz frito con verdura, huevo y la proteína que elijas.", p:129},
-  {n:"Ramen de la casa", d:"Caldo de cerdo, fideo, huevo marinado, cebollín y alga.", p:179},
+ {id:"calientes", n:"Calientes", jp:"温", foto:"cat-calientes.webp", nota:"Recién salidos del wok.", platos:[
+  {n:"Yakimeshi", d:"Arroz frito con verdura, huevo y la proteína que elijas.", p:129, f:"yakimeshi.webp"},
+  {n:"Ramen de la casa", d:"Caldo de cerdo, fideo, huevo marinado, cebollín y alga.", p:179, f:"ramen.webp"},
   {n:"Teppanyaki", d:"Res, pollo o camarón a la plancha con verdura y arroz.", p:189}
  ]},
- {id:"bebidas", n:"Bebidas", jp:"飲", nota:"", platos:[
-  {n:"Té verde", d:"Frío o caliente.", p:45},
+ {id:"bebidas", n:"Bebidas", jp:"飲", foto:"cat-bebidas.webp", nota:"", platos:[
+  {n:"Té verde", d:"Frío o caliente.", p:45, f:"te.webp"},
   {n:"Calpis", d:"Refresco japonés de yogur.", p:55},
   {n:"Refresco", d:"De lata.", p:35},
   {n:"Agua mineral", d:"", p:35}
  ]},
- {id:"postres", n:"Postres", jp:"甘", nota:"", platos:[
-  {n:"Mochis", d:"Tres piezas de helado envueltas en arroz dulce.", p:89},
+ {id:"postres", n:"Postres", jp:"甘", foto:"cat-postres.webp", nota:"", platos:[
+  {n:"Mochis", d:"Tres piezas de helado envueltas en arroz dulce.", p:89, f:"mochis.webp"},
   {n:"Plátano tempura", d:"Con helado de vainilla y miel.", p:79}
  ]}
 ];
@@ -379,6 +409,7 @@ var todos = [], cartaIn = $("#cartaIn"), cats = $("#cats");
 CARTA.forEach(function(c, ci){
   var ul = el("ul", {class:"platos"});
   var sec = el("section", {class:"cat", id:c.id, "aria-labelledby":"t-" + c.id}, [
+    c.foto ? el("figure", {class:"cat__foto rev"}, [el("img", {src:"img/" + c.foto, alt:"", loading:"lazy"})]) : null,
     el("div", {class:"cat__cab rev"}, [ el("span", {class:"cat__num", "aria-hidden":"true", text:c.jp || String(ci+1)}),
       el("h2", {id:"t-" + c.id, text:c.n}), c.nota ? el("p", {class:"cat__nota", text:c.nota}) : null ]), ul ]);
   c.platos.forEach(function(p){
@@ -387,12 +418,13 @@ CARTA.forEach(function(c, ci){
     var tags = el("div", {class:"plato__tags"});
     if(p.casa) tags.appendChild(el("span", {class:"tag", text:"Recomienda la casa"}));
     if(p.pic) tags.appendChild(el("span", {class:"tag tag--pic", text:"Picante"}));
-    var li = el("li", {class:"plato rev" + (p.casa ? " plato--casa" : "")}, [
+    /* con foto: miniatura redonda y el «+» encima; sin foto, el «+» solo */
+    var lado = p.f ? el("div", {class:"plato__mini"}, [el("img", {src:"img/" + p.f, alt:"", loading:"lazy", width:"96", height:"96"}), mas]) : mas;
+    var li = el("li", {class:"plato rev" + (p.casa ? " plato--casa" : "") + (p.f ? " plato--mini" : "")}, [
       el("div", {class:"plato__linea"}, [ el("h3", {class:"plato__n", text:p.n}), el("span", {class:"plato__puntos", "aria-hidden":"true"}), el("span", {class:"plato__p", text:pesos(p.p)}) ]),
-      mas,
+      lado,
       p.d ? el("p", {class:"plato__d", text:p.d}) : null,
-      tags.children.length ? tags : null,
-      p.f ? el("div", {class:"plato__foto"}, [el("img", {src:"img/" + p.f, alt:p.n, loading:"lazy"})]) : null
+      tags.children.length ? tags : null
     ]);
     li.addEventListener("click", function(e){ abrirPlato(p); });
     p.li = li; p.busca = sinAcentos(p.n + " " + p.d + " " + c.n);
@@ -405,7 +437,8 @@ var nada = el("div", {class:"nada", hidden:""}, [el("strong", {text:"No encontra
 cartaIn.appendChild(nada);
 var fila = $("#casaFila");
 todos.filter(function(p){ return p.casa; }).forEach(function(p){
-  var b = el("button", {class:"recom rev", type:"button"}, [ el("span", {class:"recom__k", "aria-hidden":"true", text:p.k || "推"}),
+  var b = el("button", {class:"recom rev" + (p.f ? " recom--foto" : ""), type:"button"}, [ p.f ? el("img", {class:"recom__img", src:"img/" + p.f, alt:"", loading:"lazy"}) : null,
+    el("span", {class:"recom__k", "aria-hidden":"true", text:p.k || "推"}),
     el("div", null, [ el("h3", {text:p.n}), el("p", {text:p.d}), el("div", {class:"recom__p"}, [el("span", {text:p.cat.n}), pesos(p.p)]) ]) ]);
   b.addEventListener("click", function(){ abrirPlato(p); });
   fila.appendChild(b);
@@ -456,8 +489,25 @@ $("#hplAgregar").addEventListener("click", function(){
   var nota = $("#hplNota").value.trim(), clave = actual.cat.id + ":" + actual.n + ":" + nota.toLowerCase();
   var igual = ped.renglones.filter(function(r){ return r.clave === clave; })[0];
   if(igual) igual.cant += cant; else ped.renglones.push({clave:clave, n:actual.n, d:nota, p:actual.p, cant:cant});
+  var desde = $("#hplAgregar").getBoundingClientRect();
   guardar(); pintar(); $("#hojaPlato").close(); avisar("Agregado: " + actual.n + (cant > 1 ? " ×" + cant : ""));
+  volar(desde);
 });
+/* Una bolita roja sale del botón y cae en el pedido, que da un saltito al recibirla.
+   Sólo transform y opacity; con «reducir movimiento» no sale. */
+function volar(desde){
+  var f = $("#flota"); if(quieto || !f.animate) return;
+  setTimeout(function(){
+    var a = f.getBoundingClientRect(), x0 = desde.left + desde.width / 2, y0 = desde.top + desde.height / 2;
+    var x1 = a.left + 34, y1 = a.top + a.height / 2, b = el("span", {class:"vuela"});
+    b.style.left = x0 + "px"; b.style.top = y0 + "px"; document.body.appendChild(b);
+    var dx = x1 - x0, dy = y1 - y0;
+    b.animate([{transform:"translate(0,0) scale(1)"}, {transform:"translate(" + dx * .5 + "px," + (dy * .5 - 120) + "px) scale(1.3)", offset:.45},
+               {transform:"translate(" + dx + "px," + dy + "px) scale(.5)", opacity:.6}], {duration:650, easing:"cubic-bezier(.3,.1,.3,1)"}).onfinish = function(){
+      b.remove(); f.animate([{transform:"scale(1)"}, {transform:"scale(1.04)"}, {transform:"scale(1)"}], {duration:320, easing:"ease-out"});
+    };
+  }, 380);
+}
 function total(){ return ped.renglones.reduce(function(s, r){ return s + r.p * r.cant; }, 0); }
 function pintar(){
   var n = ped.renglones.reduce(function(s, r){ return s + r.cant; }, 0), t = total();
