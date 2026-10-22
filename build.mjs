@@ -87,6 +87,9 @@ const VA = [
   /* District Roll: menú digital con pedido por WhatsApp. Por ahora con carta de EJEMPLO y el
      WhatsApp de Grupo Mazi para probar; la página lo avisa arriba hasta que llegue la carta real. */
   'district-roll',
+  /* Mis pingüinos: el registro de los peluches de pingüino de una amiga de Carlos (foto,
+     nombre y cuántos tiene). Todo se guarda en su teléfono; trae respaldo a archivo. */
+  'pinguinos',
   /* Tres moscas con el cerebro real de FlyWire (proyecto personal de Carlos). Lleva el conectoma
      comprimido en dos piezas de < 20 MB: Cloudflare no sirve archivos de más de 25 MiB. */
   'mosca',
