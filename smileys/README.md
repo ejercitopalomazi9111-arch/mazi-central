@@ -45,8 +45,9 @@ se ahorra en par salen de los precios del cartel.
   familiares $350, de 1 a 4 ingredientes, especialidad o mitad y mitad. La segunda se elige en la
   hoja. Orilla de queso +$35 por pizza (en el 2×1 se cobra en las dos: falta que Carlos lo confirme).
 - Combos 1 a 5, snacks (4 muffins $49, 2 chicken bake $119) y Smileys Burger salen de las fotos
-  de la carta del 22 de octubre. El letrero del mostrador dice «2 pizzas grandes por $319»: no se
-  usó, falta saber qué es.
+  de la carta del 22 de octubre. Las dos grandes son $289 en mostrador y $319 a domicilio
+  (Carlos, 22 de octubre): el carrito cambia el precio al elegir «A domicilio». De las familiares a
+  domicilio no se sabe, se quedan en $350.
 
 ## Fotografía
 
@@ -62,5 +63,6 @@ recetas tienen foto de otra pizza.
 
 Carta, precios, teléfonos y la frase del cartel salen de fotos del local de septiembre de
 2026. Horario: todos los días de 11 am a 10 pm (Carlos, 22 de octubre). Opiniones: las de su Facebook
-(88 % de 7 lo recomienda), con nombre corto y fecha. Duda abierta: Facebook (2023) dice «Begonias
-442 654 4858» donde la caja dice «Lomas de San José 442-680-29-01»; se dejó lo de la caja.
+(88 % de 7 lo recomienda), con nombre corto y fecha. Sucursales: las del volante de su Facebook
+(Peñaflor, Begonias y Balvanera); Carlos pidió seguir el volante, así que va «Begonias 442 654 4858»
+y no «Lomas de San José 442-680-29-01», que decía la caja.

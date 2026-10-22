@@ -53,12 +53,13 @@ await pg.click('#enviar');
 v('después de mandar sale el «¡Ya casi!»', await pg.$eval('#hojaGracias', d=>d.open));
 await pg.click('#hojaGracias [data-cerrar]'); await pg.click('#flota'); await pg.click('#continuar');
 const url = await pg.evaluate(()=>window.__abiertas[0]||'');
-v('abre WhatsApp de Peñaflor', url.startsWith('https://wa.me/524421497989?text='), url.slice(0,60));
+v('Begonias trae el número del volante', await pg.evaluate(()=>document.body.innerHTML.includes('442-654-48-58'))); v('abre WhatsApp de Peñaflor', url.startsWith('https://wa.me/524421497989?text='), url.slice(0,60));
 const msg = decodeURIComponent(url.split('text=')[1]||'');
 console.log('----\n'+msg+'\n----');
 v('el mensaje trae las alitas con su precio', msg.includes('2 × Alitas (2 órdenes) — $540'));
 v('la receta va en 2×1 con su precio: (350 + 2 orillas) × 2 = $840', msg.includes('2 × 2×1 familiares: Pepperoni Especial + otra igual (Con orilla de queso en las dos) — $840'));
-v('suma todo: 840+540+289+109 = 1,778, sin pedir que confirmen', msg.includes('Total: $1,778') && !msg.includes('confirman'));
+v('a domicilio la promo de 2 grandes sale en $319', msg.includes('1 × Promo 2 pizzas grandes (una hawai y una pastor) — $319'));
+v('suma todo: 840+540+289+109 + 30 de domicilio = 1,808, sin pedir que confirmen', msg.includes('Total: $1,808') && !msg.includes('confirman'));
 v('dice para cuándo', msg.includes('Para: lo antes posible'));
 // a una hora: sin hora no se manda
 await pg.check('input[name=cuando][value=hora]');

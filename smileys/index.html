@@ -980,7 +980,7 @@ var COMBOS_BURGER = [
 ];
 var EXTRA_BURGER = 25;
 var PROMOS = [
- {id:"2grandes",   n:"2 pizzas grandes",   etq:"2×1 · 16 rebanadas", d:"Dos grandes de especialidad, mitad y mitad o de 1 a 4 ingredientes.", p:289, reb:16, clase:"promo--rojo", pregunta:"¿Qué lleva cada una?"},
+ {id:"2grandes",   n:"2 pizzas grandes",   etq:"2×1 · 16 rebanadas", d:"Dos grandes de especialidad, mitad y mitad o de 1 a 4 ingredientes.", p:289, reb:16, clase:"promo--rojo", nota:"Precio en mostrador. A domicilio: $319.", pregunta:"¿Qué lleva cada una?"},
  {id:"combo4",     n:"3 pizzas grandes",   etq:"Combo 4 · 24 rebanadas · la que más rinde", d:"Tres grandes de especialidad: para la reunión.", p:389, reb:24, clase:"promo--negro", pregunta:"¿Qué especialidades?"},
  {id:"2familiares",n:"2 pizzas familiares",etq:"2×1 · 20 rebanadas", d:"Dos familiares de especialidad, mitad y mitad o de 1 a 4 ingredientes.", p:350, reb:20, clase:"", pregunta:"¿Qué lleva cada una?"},
  {id:"combo1",     n:"Grande + spaguetti o papas", etq:"Combo 1", d:"Pizza grande de especialidad con spaguetti o papas gajo.", p:199, clase:"promo--rojo", pregunta:"¿Qué especialidad, y spaguetti o papas?"},
@@ -990,13 +990,14 @@ var PROMOS = [
  {id:"sencilla",   n:"Grande sencilla",    etq:"8 rebanadas · 1 ingrediente", d:"Grande, con el ingrediente que elijas.", p:109, reb:8, clase:"promo--negro", nota:"No aplica con otras promociones.", pregunta:"¿Qué ingrediente?"}
 ];
 var SUCURSALES = [
- {id:"sanjose",    n:"Lomas de San José",  tel:"442-680-29-01", wa:"524426802901"},
+ {id:"begonias",   n:"Begonias",           tel:"442-654-48-58", wa:"524426544858"},
  {id:"penaflor",   n:"Zona Peñaflor",      tel:"442-149-79-89", wa:"524421497989"},
  {id:"balvanera",  n:"Lomas de Balvanera", tel:"442-612-37-73", wa:"524426123773"}
 ];
 var ORILLA = 35, SENCILLA = 109;
-/* las especialidades van en 2×1: dos grandes $289, dos familiares $350 (la carta del mostrador) */
-var DOSXUNO = { Grande:289, Familiar:350 };
+/* las especialidades van en 2×1: dos grandes $289, dos familiares $350 (la carta del mostrador).
+   A domicilio las dos grandes salen en $319 (Carlos, 22 de octubre); de las familiares no se sabe. */
+var DOSXUNO = { Grande:289, Familiar:350 }, DOMICILIO_GRANDES = 30;
 /* horario: lo dijo Carlos el 22 de octubre, de 11 am a 10 pm las tres */
 var ABRE = 11, CIERRA = 22;
 function horaQro(){
@@ -1060,10 +1061,13 @@ function agregar(r, desde, foto){
   guardar(); pintarPedido(); avisar("¡Va! " + r.nombre + (r.cant > 1 ? " ×" + r.cant : "")); volar(desde, foto);
 }
 function contar(){ return pedido.renglones.reduce(function(n, r){ return n + r.cant; }, 0); }
+/* la promo de dos grandes sube $30 a domicilio: el precio de cada renglón se lee de aquí */
+function dosGrandes(r){ return /^p:2grandes/.test(r.clave) || /^(2×1 grandes|Promo 2 pizzas grandes)/.test(r.nombre); }
+function precioDe(r){ return r.precio == null ? null : r.precio + (pedido.entrega === "A domicilio" && dosGrandes(r) ? DOMICILIO_GRANDES : 0); }
 function sumas(){
-  var con = 0, sin = 0;
-  pedido.renglones.forEach(function(r){ if(r.precio == null) sin += r.cant; else con += r.precio * r.cant; });
-  return { con:con, sin:sin };
+  var con = 0, sin = 0, domi = false;
+  pedido.renglones.forEach(function(r){ if(r.precio == null) sin += r.cant; else con += precioDe(r) * r.cant; if(precioDe(r) !== r.precio) domi = true; });
+  return { con:con, sin:sin, domi:domi };
 }
 var tPop;
 function avisar(txt){ var p = $("#pop"); p.textContent = txt; p.classList.add("ver"); clearTimeout(tPop); tPop = setTimeout(function(){ p.classList.remove("ver"); }, 1800); }
@@ -1443,13 +1447,14 @@ function pintarPedido(){
     ul.appendChild(el("li", {class:"renglon"}, [
       el("img", {class:"renglon__foto", src:r.f || fotoDe(r), alt:"", width:"52", height:"52", loading:"lazy"}),
       el("div", null, [ el("span", {class:"renglon__n", text:r.nombre}), r.detalle ? el("span", {class:"renglon__d", text:r.detalle}) : null ]),
-      el("div", {class:"renglon__p"}, r.precio != null ? [pesos(r.precio * r.cant)] : [el("small", {text:"La confirma"}), el("small", {text:"la sucursal"})]),
+      el("div", {class:"renglon__p"}, r.precio != null ? [pesos(precioDe(r) * r.cant)] : [el("small", {text:"La confirma"}), el("small", {text:"la sucursal"})]),
       el("div", {class:"cantidad"}, [menos, el("output", {text:String(r.cant)}), mas])
     ]));
   });
   $("#continuar").firstChild.textContent = "Continuar" + (s.con && !s.sin ? " · " + pesos(s.con) + " " : " ");
   var cu = $("#cuentas"); cu.textContent = "";
   if(s.con) cu.appendChild(el("div", {class:"total"}, [el("span", {text: s.sin ? "Lo que ya tiene precio" : "Total"}), el("span", {text:pesos(s.con)})]));
+  if(s.domi) cu.appendChild(el("small", {text:"A domicilio, la promo de 2 grandes es de $319 (en mostrador, $289)."}));
   if(s.sin) cu.appendChild(el("small", {text:(s.sin === 1 ? "1 pizza" : s.sin + " pizzas") + " de la carta: la sucursal te dice el precio al confirmar."}));
   antojos();
 }
@@ -1474,7 +1479,8 @@ function cargarDatos(){
 }
 $("#hojaPedido").addEventListener("input", function(){
   var s = $("#radiosSuc input:checked"); pedido.suc = s ? s.value : "";
-  var e = $("input[name=entrega]:checked"); pedido.entrega = e ? e.value : "Recoger en sucursal";
+  var e = $("input[name=entrega]:checked"), antes = pedido.entrega; pedido.entrega = e ? e.value : "Recoger en sucursal";
+  if(antes !== pedido.entrega) pintarPedido();
   pedido.nombre = $("#fNombre").value; pedido.dir = $("#fDir").value; pedido.nota = $("#fNota").value;
   var c = $("input[name=cuando]:checked"); pedido.cuando = c ? c.value : "ya"; pedido.hora = $("#fHora").value;
   $("#fHora").hidden = pedido.cuando !== "hora";
@@ -1495,7 +1501,7 @@ function mensaje(){
   var s = sumas(), suc = SUCURSALES.filter(function(x){ return x.id === pedido.suc; })[0];
   var L = ["¡Hola, Smiley's " + suc.n + "! Quiero hacer un pedido:", ""];
   pedido.renglones.forEach(function(r){
-    L.push("• " + r.cant + " × " + r.nombre + (r.detalle ? " (" + r.detalle + ")" : "") + (r.precio != null ? " — " + pesos(r.precio * r.cant) : ""));
+    L.push("• " + r.cant + " × " + r.nombre + (r.detalle ? " (" + r.detalle + ")" : "") + (r.precio != null ? " — " + pesos(precioDe(r) * r.cant) : ""));
   });
   L.push("");
   if(s.con) L.push((s.sin ? "Lo que ya tiene precio: " : "Total: ") + pesos(s.con));
