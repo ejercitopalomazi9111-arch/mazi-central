@@ -64,7 +64,7 @@ def escena_paso(n, titulo, que, fotos):
     d.text((x, 96), 'BACHILLERATO REMBRANDT · FÍSICA', font=letra(NEG, 26), fill=(191, 214, 234))
     d.ellipse((x, 300, x + 130, 430), fill=NARANJA)
     d.text((x + 65, 365), str(n), font=letra(NEG, 84), fill=AZUL, anchor='mm')
-    d.text((x + 160, 345), f'Paso {n} de 6', font=letra(REG, 34), fill=(191, 214, 234), anchor='lm')
+    d.text((x + 160, 345), f'Paso {n} de {len(PASOS)}', font=letra(REG, 34), fill=(191, 214, 234), anchor='lm')
     y = 480
     for r in renglones(d, titulo, letra(NEG, 66), 650):
         d.text((x, y), r, font=letra(NEG, 66), fill='white'); y += 80
@@ -74,6 +74,10 @@ def escena_paso(n, titulo, que, fotos):
     d.rectangle((x, 990, x + 120, 996), fill=ROJO)    # la firma roja de la plantilla
     ruta = os.path.join(ESC, f'paso{n}.png'); fondo.save(ruta); return ruta
 
+ARCH = os.path.join(AQUI, '..', 'equipo.txt')
+_n = [x.strip() for x in open(ARCH, encoding='utf-8') if x.strip()] if os.path.exists(ARCH) else []
+NOMBRES = ', '.join(_n[:-1]) + ' y ' + _n[-1] if len(_n) > 1 else ''.join(_n)
+
 def escena_creditos():
     im = Image.new('RGB', (W, H), AZUL); d = ImageDraw.Draw(im)
     lineas = [('Física · El movimiento en dos dimensiones y la catapulta', NEG, 52, 'white'),
@@ -82,6 +86,7 @@ def escena_creditos():
               ('', REG, 30, 'white'),
               ('Música: «Inspired», Kevin MacLeod (incompetech.com) · CC BY 4.0', REG, 30, (191, 214, 234)),
               ('Fotos de apoyo: Unsplash y Wikipedia · Fotos del proyecto: el equipo', REG, 30, (191, 214, 234))]
+    if NOMBRES: lineas.insert(3, ('Equipo: ' + NOMBRES, NEG, 34, 'white'))
     y = 330
     for t, f, tam, c in lineas:
         if t: d.text((W / 2, y), t, font=letra(f, tam), fill=c, anchor='mm')
@@ -92,15 +97,20 @@ def escena_creditos():
 
 # ── el guion: (imagen, voz o None, segundos si no hay voz) ──────────────────
 PASOS = [('Planos y medidas', 'Dibujamos cada pieza con su medida.', ['01.jpg', '02.jpg']),
+         ('Herramientas', 'Pegamento, engrapadora, lija y cinta métrica.', ['14-herramientas.jpg']),
          ('Piezas y pesas', 'Cortamos la melamina; las pesas son el contrapeso.', ['03.jpg']),
          ('Medir el brazo', 'Medimos y marcamos la tabla del brazo.', ['06.jpg']),
-         ('Perforar el eje', 'El hueco por donde pasa el tubo del eje.', ['07.jpg']),
+         ('Perforar', 'Los huecos para el eje y los pernos.', ['11-perforar.jpg', '07.jpg']),
          ('El pivote', 'El tubo en el poste y los pernos donde gira el brazo.', ['08.jpg', '09.jpg']),
+         ('El marco', 'Unimos las tablas de la base.', ['15-mesa.jpg', '13-marco.jpg']),
+         ('Revisar piezas', 'Algunas piezas de aglomerado se desmoronaron.', ['16-aglomerado.jpg', '12-piezas.jpg']),
          ('La estructura', 'La base y las patas en A, ya armadas.', ['10.jpg'])]
 GUION = [(lam(1), 1, 0), (lam(2), None, 4.0), (lam(3), 2, 0), (lam(4), 3, 0), (lam(5), 4, 0), (lam(6), 5, 0),
          (lam(7), 6, 0), (lam(8), 7, 0)]
 GUION += [(escena_paso(i + 1, *p), 8 + i, 0) for i, p in enumerate(PASOS)]
-GUION += [(lam(11), 14, 0), (lam(12), 15, 0), (lam(13), 16, 0), (lam(14), 17, 0), (escena_creditos(), None, 6.0)]
+EQUIPO = os.path.exists(voz(17))                    # la lámina del equipo (selfie y nombres) sólo si hay voz
+GUION += [(lam(12), 17, 0)] * EQUIPO + [(lam(13), 18, 0), (lam(14), 19, 0), (lam(15), 20, 0), (lam(16), 21, 0),
+                                         (escena_creditos(), None, 6.0)]
 
 ANTES, DESPUES = 0.6, 0.9                          # aire antes y después de cada frase
 duraciones = [max(3.0, ANTES + dura(voz(v)) + DESPUES) if v else s for _, v, s in GUION]

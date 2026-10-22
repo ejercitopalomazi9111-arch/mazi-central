@@ -6,8 +6,14 @@ const DIR = path.join(path.dirname(new URL(import.meta.url).pathname), 'voz');
 const LLAVE = process.env.ELEVENLABS_API_KEY, VOZ = process.env.VOZ_ID || 'TX3LPaxmHKxFdv7VOQHJ';
 if(!LLAVE){ console.error('Falta ELEVENLABS_API_KEY'); process.exit(1); }
 const solo = process.argv.slice(2);
+/* los nombres del equipo no van en el repo: salen de ../equipo.txt (git lo ignora) */
+const archivo = path.join(DIR, '..', '..', 'equipo.txt');
+const nombres = fs.existsSync(archivo) ? fs.readFileSync(archivo, 'utf8').split('\n').map(n => n.trim()).filter(Boolean) : [];
+const EQUIPO = nombres.length > 1 ? nombres.slice(0, -1).join(', ') + ' y ' + nombres.at(-1) : nombres.join('');
 for(const renglon of fs.readFileSync(path.join(DIR, 'lineas.tsv'), 'utf8').trim().split('\n')){
-  const [n, texto] = renglon.split('\t');
+  const [n, crudo] = renglon.split('\t');
+  if(crudo.includes('{EQUIPO}') && !EQUIPO) continue;
+  const texto = crudo.replace('{EQUIPO}', EQUIPO);
   if(solo.length && !solo.includes(n)) continue;
   const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOZ}?output_format=mp3_44100_128`, {
     method: 'POST', headers: { 'xi-api-key': LLAVE, 'content-type': 'application/json' },
