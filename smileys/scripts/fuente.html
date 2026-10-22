@@ -303,12 +303,19 @@ button{font:inherit; color:inherit}
 .armar__der{display:grid; gap:0}
 @media (min-width:980px){ .armar__der{position:sticky; top:84px} }
 /* la pizza en chiquito: sigue a quien está escogiendo ingredientes y la pizza grande no está a la vista */
-.mini-pizza{position:fixed; left:12px; bottom:calc(12px + env(safe-area-inset-bottom)); z-index:44; display:flex; align-items:center; gap:8px; padding:5px 14px 5px 5px; border:0; border-radius:99px; background:var(--carbon); color:var(--hueso); font:800 14px/1 var(--texto); box-shadow:0 10px 30px rgba(0,0,0,.5), inset 0 0 0 1px var(--linea); cursor:pointer;
-  opacity:0; transform:translateY(20px) scale(.9); pointer-events:none; transition:opacity .2s ease, transform .25s cubic-bezier(.2,.8,.2,1.2)}
+.mini-pizza{position:fixed; left:10px; right:10px; bottom:calc(10px + env(safe-area-inset-bottom)); z-index:46; display:grid; grid-template-columns:150px minmax(0,1fr); align-items:center; gap:14px; padding:10px 14px 10px 10px; border-radius:26px; background:var(--carbon); color:var(--hueso); box-shadow:0 18px 40px rgba(0,0,0,.6), inset 0 0 0 1px var(--linea);
+  opacity:0; transform:translateY(30px); pointer-events:none; transition:opacity .2s ease, transform .3s cubic-bezier(.2,.8,.2,1)}
 .mini-pizza.ver{opacity:1; transform:none; pointer-events:auto}
-.mini-pizza canvas{width:64px; height:64px; border-radius:50%; display:block}
+.mini-pizza canvas{width:150px; height:150px; border-radius:50%; display:block; margin:-34px 0 0; filter:drop-shadow(0 10px 18px rgba(0,0,0,.55)); cursor:pointer}
 .mini-pizza.salta canvas{animation:salta .35s ease}
-@keyframes salta{40%{transform:scale(1.12)}}
+@keyframes salta{40%{transform:scale(1.07)}}
+.mini-pizza__info{display:grid; gap:6px; min-width:0}
+.mini-pizza__info small{color:var(--amarillo); font:800 12px/1 var(--texto); letter-spacing:.1em; text-transform:uppercase}
+.mini-pizza__info p{margin:0; font-size:14px; line-height:1.3; color:var(--gris); overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical}
+.mini-pizza__info strong{font:800 26px/1 var(--display); font-variation-settings:"wdth" 80}
+.mini-pizza__acc{display:flex; gap:6px; flex-wrap:wrap}
+.mini-pizza__acc .btn{min-height:42px; padding:0 14px; font-size:14px}
+body.con-mini .flota{opacity:0; pointer-events:none}
 @media (min-width:980px){ .mini-pizza{display:none} }
 .ing i{background:var(--c); box-shadow:inset 0 0 0 2px rgba(0,0,0,.2)}
 .ing[aria-pressed="true"]{background:var(--amarillo); color:var(--negro); box-shadow:none}
@@ -772,7 +779,15 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
         <p class="armar__precio" id="precioMia"></p>
       </div>
     </div>
-    <button class="mini-pizza" type="button" id="miniPizza" aria-label="Ver tu pizza"><canvas width="168" height="168" aria-hidden="true"></canvas><span id="miniCuenta">Tu pizza</span></button>
+    <div class="mini-pizza" id="miniPizza" role="region" aria-label="Tu pizza mientras la armas">
+      <canvas width="300" height="300" role="img" aria-label="Tu pizza"></canvas>
+      <div class="mini-pizza__info">
+        <small id="miniCuenta">Queso solo</small>
+        <p id="miniIngs">Toca un ingrediente y míralo caer aquí.</p>
+        <strong id="miniPrecio"></strong>
+        <div class="mini-pizza__acc"><button class="btn btn--rojo" type="button" id="miniAgregar">Agregar</button><button class="btn btn--linea" type="button" id="miniVer">Ver grande</button></div>
+      </div>
+    </div>
   </section>
 
   <section class="sec rojo" id="alitas" aria-labelledby="t-alitas">
@@ -1476,7 +1491,9 @@ function copiarMini(){
   if(performance.now() < miniHasta) requestAnimationFrame(copiarMini);
 }
 function avisarMini(){
-  $("#miniCuenta").textContent = elegidos.length ? elegidos.length + " de " + MAX + " · Ver" : "Tu pizza";
+  $("#miniCuenta").textContent = elegidos.length ? elegidos.length + " de " + MAX + " ingredientes" : "Queso solo";
+  $("#miniIngs").textContent = elegidos.length ? elegidos.map(function(k){ return Horno.NOMBRES[k]; }).join(", ") : "Toca un ingrediente y míralo caer aquí.";
+  var p = precioMia(); $("#miniPrecio").textContent = p == null ? "Chica · la cotiza la sucursal" : (sencillaMia() ? "Grande " : "2×1 ") + pesos(p);
   miniHasta = performance.now() + 2200; requestAnimationFrame(copiarMini);
   mini.classList.remove("salta"); void mini.offsetWidth; mini.classList.add("salta");
 }
@@ -1484,12 +1501,15 @@ function verMini(){
   var ver = ingsVisto && !hornoVisto;
   if(ver && !mini.classList.contains("ver")){ miniHasta = Math.max(miniHasta, performance.now() + 1200); requestAnimationFrame(copiarMini); }
   mini.classList.toggle("ver", ver);
+  document.body.classList.toggle("con-mini", ver);
 }
 if("IntersectionObserver" in window){
   new IntersectionObserver(function(es){ ingsVisto = es[0].isIntersecting; verMini(); }).observe(cajaIngs);
   new IntersectionObserver(function(es){ hornoVisto = es[0].isIntersecting; verMini(); }, {threshold:.45}).observe($(".horno"));
 }
-mini.addEventListener("click", function(){ $(".horno").scrollIntoView({behavior: quieto ? "auto" : "smooth", block:"center"}); });
+function verGrande(){ $(".horno").scrollIntoView({behavior: quieto ? "auto" : "smooth", block:"center"}); }
+miniCv.addEventListener("click", verGrande); $("#miniVer").addEventListener("click", verGrande);
+$("#miniAgregar").addEventListener("click", function(){ $("#agregarMia").click(); });
 /* la muestra de cada botón es la foto del ingrediente, cuando ya cargó */
 function muestras(){
   Horno.preparar().then(function(){
@@ -1540,7 +1560,7 @@ $("#agregarMia").addEventListener("click", function(){
   var ings = elegidos.length ? elegidos.map(function(k){ return Horno.NOMBRES[k]; }).join(", ") : "queso solo";
   var foto = null; try{ foto = cv.toDataURL("image/jpeg", .6); }catch(e){}
   agregar({ tipo:"mia", nombre:tam === "Chica" ? "Pizza armada (chica, 6 rebanadas)" : sencillaMia() ? "Pizza armada (grande sencilla)" : "2×1 " + (tam === "Grande" ? "grandes" : "familiares") + " armadas, iguales", detalle:ings + (ori ? " · con orilla de queso" : ""),
-            precio:precioMia(), cant:1, clave:"m:" + tam + ":" + ori + ":" + elegidos.slice().sort().join(",") }, cv, foto);
+            precio:precioMia(), cant:1, clave:"m:" + tam + ":" + ori + ":" + elegidos.slice().sort().join(",") }, mini.classList.contains("ver") ? miniCv : cv, foto);
 });
 /* la pizza y sus fotos se cargan cuando la sección se acerca, no antes */
 var armarVisto = false;

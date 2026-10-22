@@ -107,8 +107,8 @@ await pg.click('#hojaReceta [data-cerrar]');
 await pg.evaluate(()=>document.getElementById('armar').scrollIntoView()); await pg.waitForTimeout(1500);
 const pinto = await pg.evaluate(()=>{ const c=document.getElementById('mia'), d=c.getContext('2d').getImageData(520,520,1,1).data; return d[3]>0; });
 v('el horno pintó la pizza', pinto);
-// en el pedido se ofrece qué agregar, sin lo que ya lleva
-await pg.click('#flota'); await pg.waitForTimeout(300);
+// en el pedido se ofrece qué agregar, sin lo que ya lleva (aquí la barra de la pizza tapa el botón flotante: se abre desde arriba)
+await pg.click('.barra__pedido'); await pg.waitForTimeout(300);
 const ofrece = await pg.$$eval('#antojoFila button', bs=>bs.map(b=>b.textContent));
 v('ofrece complementos y no repite las alitas', ofrece.length>0 && !ofrece.some(t=>/Alitas/.test(t)), JSON.stringify(ofrece));
 await pg.click('#hojaPedido [data-cerrar]');
