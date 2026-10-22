@@ -7,8 +7,8 @@ hagas el forms». Dos pestañas:
                     energía, la gráfica de barras y el patrón. Todo con fórmulas.
   · «Datos»       — donde se anotan las respuestas del grupo, una fila por persona.
 
-Sin datos inventados: los pone el grupo. Mientras no haya, las celdas quedan
-vacías en vez de enseñar ceros.
+Trae las 10 respuestas del Forms que mandó Carlos en captura (VACIO=1 la saca
+sin ellas). Sin datos, las celdas quedan vacías en vez de enseñar ceros.
 
   python3.13 escuela/patrones/formato.py  →  escuela/patrones/mis-patrones-saludables.xlsx
 """
@@ -50,30 +50,64 @@ def rejilla(ws, rango):
 wb = Workbook()
 
 # ══ Datos ═════════════════════════════════════════════════════════════════
+# Igual que la hoja de respuestas del Forms (captura de Carlos, 22 de octubre):
+# marca temporal, vasos de agua, horas de sueño y horas de actividad. Ahí la gente
+# contestó a veces «3 vasos», «9 horas xd» o «1 o 2 horas», así que A–E guardan lo
+# que se pegue tal cual y G–I sacan el número que de verdad se usa (con «1 o 2»
+# toma el punto medio). El Forms no preguntó el nivel de energía: E se llena a mano.
 da = wb.active; da.title = 'Datos'
-cab = ['Nombre', 'Agua (vasos al día)', 'Sueño (horas)', 'Actividad (minutos al día)', 'Nivel de energía']
+cab = ['Marca temporal', 'Vasos de agua que tomas', 'Horas de sueño promedio', 'Horas de actividad física',
+       'Nivel de energía', None, 'Agua (número)', 'Sueño (número)', 'Actividad (número)']
 for i, t in enumerate(cab, start=1):
+    if t is None: continue
     c = da.cell(row=1, column=i, value=t)
-    c.font = F(11, True, 'FFFFFF'); c.fill = PatternFill('solid', fgColor=AZUL); c.alignment = centro; c.border = caja
-for col, w in zip('ABCDE', [26, 18, 16, 22, 18]): da.column_dimensions[col].width = w
-da.row_dimensions[1].height = 32
+    gris = i >= 7
+    c.font = F(11, True, NEGRO if gris else 'FFFFFF')
+    c.fill = PatternFill('solid', fgColor='E5E7EB' if gris else AZUL); c.alignment = centro; c.border = caja
+for col, w in zip('ABCDEFGHI', [21, 17, 17, 17, 15, 3, 13, 13, 13]): da.column_dimensions[col].width = w
+da.row_dimensions[1].height = 34
 da.freeze_panes = 'A2'
-for r in range(2, 42):
+da['G' + str(N + 3)] = 'G, H e I salen solas: sacan el número de lo que se escribió («3 vasos» → 3, «1 o 2 horas» → 1.5).'
+da['G' + str(N + 3)].font = F(9, color=GRIS, italica=True)
+
+def numero(ref):
+    """El número de una respuesta: 5 → 5, «3 vasos» → 3, «1 o 2 horas» → 1.5, vacío → ''."""
+    x = f'TRIM({ref})'
+    o = f'SEARCH(" o ",{x})'
+    antes = f'VALUE(LEFT({x},{o}-1))'
+    despues = f'VALUE(LEFT(MID({x},{o}+3,99),FIND(" ",MID({x},{o}+3,99)&" ")-1))'
+    primero = f'VALUE(LEFT({x},FIND(" ",{x}&" ")-1))'
+    return (f'=IF({x}="","",IFERROR(VALUE({ref}),IFERROR(({antes}+{despues})/2,IFERROR({primero},""))))')
+
+for r in range(2, N + 2):
     for col in 'ABCDE':
-        da[f'{col}{r}'].border = caja; da[f'{col}{r}'].font = F()
-        da[f'{col}{r}'].alignment = centro if col != 'A' else izquierda
-reglas = [
-    ('C', DataValidation(type='decimal', operator='between', formula1='0', formula2='24', allow_blank=True,
-                         errorTitle='Sueño', error='Horas de sueño: de 0 a 24.', showErrorMessage=True)),
-    ('B', DataValidation(type='whole', operator='between', formula1='0', formula2='30', allow_blank=True,
-                         errorTitle='Agua', error='Vasos de agua al día: un número entero de 0 a 30.', showErrorMessage=True)),
-    ('D', DataValidation(type='whole', operator='between', formula1='0', formula2='600', allow_blank=True,
-                         errorTitle='Actividad', error='Minutos de actividad al día: de 0 a 600.', showErrorMessage=True)),
-    ('E', DataValidation(type='list', formula1='"Bajo,Medio,Alto"', allow_blank=True,
-                         errorTitle='Nivel de energía', error='Elige Bajo, Medio o Alto.', showErrorMessage=True)),
+        da[f'{col}{r}'].font = F(); da[f'{col}{r}'].alignment = centro
+        if r < 42: da[f'{col}{r}'].border = caja
+    da[f'A{r}'].number_format = 'dd/mm/yyyy hh:mm:ss'
+    for src, dst in zip('BCD', 'GHI'):
+        da[f'{dst}{r}'] = numero(f'{src}{r}')
+        da[f'{dst}{r}'].font = F(color=GRIS); da[f'{dst}{r}'].alignment = centro
+        if r < 42: da[f'{dst}{r}'].border = caja
+energia = DataValidation(type='list', formula1='"Bajo,Medio,Alto"', allow_blank=True,
+                         errorTitle='Nivel de energía', error='Elige Bajo, Medio o Alto.', showErrorMessage=True)
+da.add_data_validation(energia); energia.add(f'E2:E{N + 1}')
+da.print_area = 'A1:E41'
+da.page_setup.fitToWidth = 1; da.page_setup.fitToHeight = 0
+da.sheet_properties.pageSetUpPr.fitToPage = True
+
+# las respuestas que ya llegaron, copiadas de la captura tal como se contestaron
+from datetime import datetime
+RESPUESTAS = [
+    ('12:45:53', 1, 4, 4), ('12:46:32', 5, 6, 8), ('12:46:32', 8, 10, 3),
+    ('12:46:50', '3 vasos', '7 horas', '1 hora'), ('12:46:55', 4, 8, 2), ('12:47:14', 7, 3, 7),
+    ('12:47:35', 9, 7, 1), ('12:47:50', '5 vasos', '6 horas', '1 hora'), ('12:48:19', 5, 6, 1),
+    ('12:48:32', 4, '9 horas xd', '1 o 2 horas'),
 ]
-for col, v in reglas:
-    da.add_data_validation(v); v.add(f'{col}2:{col}{N + 1}')
+if os.environ.get('VACIO') != '1':
+    for i, (hora, agua, sueno, act) in enumerate(RESPUESTAS):
+        r = 2 + i
+        da[f'A{r}'] = datetime.strptime('22/10/2026 ' + hora, '%d/%m/%Y %H:%M:%S')
+        da[f'B{r}'], da[f'C{r}'], da[f'D{r}'] = agua, sueno, act
 
 def R(col): return f"Datos!${col}$2:${col}${N + 1}"
 
@@ -110,7 +144,7 @@ ws.merge_cells('G8:G8')
 for ref in ['C8', 'G8', 'H8', 'I8']: ws[ref].font = F(12, True); ws[ref].alignment = centro
 # E queda dentro de «Variable»: la columna del nombre se ensancha con D y E
 ws.unmerge_cells('C8:E8'); ws.merge_cells('C8:F8')
-filas = [('🥛', 'Agua', 'B'), ('😴', 'Sueño', 'C'), ('🏃', 'Actividad', 'D')]
+filas = [('🥛', 'Agua', 'G'), ('😴', 'Sueño', 'H'), ('🏃', 'Actividad', 'I')]
 for i, (ico, nombre, col) in enumerate(filas):
     r = 9 + i
     ws[f'C{r}'] = ico; ws[f'C{r}'].font = Font(size=18); ws[f'C{r}'].alignment = centro
@@ -135,7 +169,7 @@ for i, nivel in enumerate(['Bajo', 'Medio', 'Alto']):
     r = 16 + i
     ws.merge_cells(f'C{r}:E{r}'); ws[f'C{r}'] = nivel; ws[f'C{r}'].font = F(11); ws[f'C{r}'].alignment = izquierda
     n = f'COUNTIF({R("E")},"{nivel}")'
-    ws[f'F{r}'] = f'=IF({n}=0,"",ROUND(AVERAGEIF({R("E")},"{nivel}",{R("B")}),1))'
+    ws[f'F{r}'] = f'=IF({n}=0,"",ROUND(AVERAGEIF({R("E")},"{nivel}",{R("G")}),1))'
     ws[f'F{r}'].font = F(11); ws[f'F{r}'].alignment = centro
     ws.row_dimensions[r].height = 26
 rejilla(ws, 'C15:F18')
@@ -161,8 +195,16 @@ ws.add_chart(graf, 'G14')
 ws.merge_cells('C20:I20')
 ws['C20'] = 'El patrón que encontramos fue…'; ws['C20'].font = F(12, True); ws['C20'].alignment = izquierda
 ws.row_dimensions[20].height = 24
-patron = ('=IF(COUNTA(' + R('A') + ')<3,"",'
-          'IF(OR(F16="",F18=""),"",'
+# Con nivel de energía, el patrón sale de la comparativa. Sin él (el Forms no lo
+# preguntó), sale del sueño: quienes duermen 7 h o más contra quienes duermen menos.
+mucho = f'AVERAGEIF({R("H")},">=7",{R("G")})'
+poco = f'AVERAGEIF({R("H")},"<7",{R("G")})'
+por_sueno = (f'IF(OR(COUNTIF({R("H")},">=7")=0,COUNTIF({R("H")},"<7")=0),"",'
+             f'IF(ROUND({mucho},1)>ROUND({poco},1),"Quienes duermen 7 horas o más toman más agua ("&ROUND({mucho},1)&" vasos) que quienes duermen menos ("&ROUND({poco},1)&").",'
+             f'IF(ROUND({mucho},1)<ROUND({poco},1),"Quienes duermen menos de 7 horas toman más agua ("&ROUND({poco},1)&" vasos) que quienes duermen 7 o más ("&ROUND({mucho},1)&").",'
+             f'"Duerman mucho o poco, toman la misma agua ("&ROUND({mucho},1)&" vasos).")))')
+patron = ('=IF(COUNT(' + R('G') + ')<3,"",'
+          'IF(OR(F16="",F18=""),' + por_sueno + ','
           'IF(F18>F16,"Quienes tienen energía ALTA toman más agua ("&F18&" vasos) que quienes la tienen BAJA ("&F16&").",'
           'IF(F18<F16,"Quienes tienen energía BAJA toman más agua ("&F16&" vasos) que quienes la tienen ALTA ("&F18&").",'
           '"Energía alta y baja toman la misma agua ("&F16&" vasos)."))))')
