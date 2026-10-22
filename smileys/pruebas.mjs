@@ -155,6 +155,18 @@ v('los botones no hacen zoom con toques rápidos (touch-action)', await pg.$eval
 v('el índice trae 9 apartados, y Alitas lleva a su tarjeta', (await pg.$$('#menu .ind')).length===9 && await pg.$eval('#menu .ind', a=>a.getAttribute('href')==='#c-alitas') && !!(await pg.$('#c-alitas')));
 await pg.click('#menu .ind:has-text("Alitas")'); await pg.waitForTimeout(900);
 v('tocar Alitas en el índice baja hasta las alitas', await pg.$eval('#c-alitas', e=>{ const r=e.getBoundingClientRect(); return r.top>=0 && r.top<innerHeight/2; }));
+const quietos = await pg.evaluate(async ()=>{
+  const cv=document.createElement('canvas'); cv.width=cv.height=520;
+  Horno.pintar(cv,{ings:['pepperoni']}); await new Promise(r=>setTimeout(r,600));
+  const antes=JSON.stringify(cv.__plan.reparto.pepperoni.map(p=>[p.x,p.y]));
+  Horno.pintar(cv,{ings:['pepperoni','champinon','jalapeno']}); await new Promise(r=>setTimeout(r,600));
+  const despues=JSON.stringify(cv.__plan.reparto.pepperoni.map(p=>[p.x,p.y]));
+  const C=260, R=520*.47, orilla=cv.__plan.reparto.pepperoni.filter(p=>Math.hypot(p.x-C,p.y-C)>R*.8*.6).length;
+  return {igual:antes===despues, n:cv.__plan.reparto.pepperoni.length, orilla};
+});
+v('al sumar ingredientes, los que ya estaban no se mueven', quietos.igual);
+v('cada rebanada lleva en la orilla: 16 de 24 pepperonis van en la parte de afuera', quietos.n===24 && quietos.orilla>=16, JSON.stringify(quietos));
+v('la pizza de la barra da vueltas', await pg.$eval('#miniPizza canvas', c=>getComputedStyle(c).animationName==='vuelta'));
 v('ármala: ingredientes en 3 grupos, antes que la pizza', (await pg.$$('#ings .ings__grupo')).length===3 && await pg.evaluate(()=>!!(document.getElementById('ings').compareDocumentPosition(document.getElementById('mia')) & 4)));
 v('ni un error de consola', err.length===0, err.join(' | '));
 console.log(ok,'bien ·',mal,'mal');

@@ -308,8 +308,13 @@ button{font:inherit; color:inherit}
 .mini-pizza{position:fixed; left:10px; right:10px; bottom:calc(10px + env(safe-area-inset-bottom)); z-index:46; display:grid; grid-template-columns:150px minmax(0,1fr); align-items:center; gap:14px; padding:10px 14px 10px 10px; border-radius:26px; background:var(--carbon); color:var(--hueso); box-shadow:0 18px 40px rgba(0,0,0,.6), inset 0 0 0 1px var(--linea);
   opacity:0; transform:translateY(30px); pointer-events:none; transition:opacity .2s ease, transform .3s cubic-bezier(.2,.8,.2,1)}
 .mini-pizza.ver{opacity:1; transform:none; pointer-events:auto}
-.mini-pizza canvas{width:150px; height:150px; border-radius:50%; display:block; margin:-34px 0 0; filter:drop-shadow(0 10px 18px rgba(0,0,0,.55)); cursor:pointer}
-.mini-pizza.salta canvas{animation:salta .35s ease}
+.mini-pizza__plato{display:block; width:150px; height:150px; margin:-34px 0 0; filter:drop-shadow(0 10px 18px rgba(0,0,0,.55))}
+/* la pizza chica da vueltas despacio, como en la charola */
+.mini-pizza canvas{width:150px; height:150px; border-radius:50%; display:block; cursor:pointer; animation:vuelta 26s linear infinite}
+@keyframes vuelta{to{transform:rotate(360deg)}}
+.mini-pizza.salta .mini-pizza__plato{animation:salta .35s ease}
+/* la que vuela de la barra a la pizza grande */
+.pizza-vuela{position:fixed; z-index:47; border-radius:50%; pointer-events:none; will-change:transform}
 @keyframes salta{40%{transform:scale(1.07)}}
 .mini-pizza__info{display:grid; gap:6px; min-width:0}
 .mini-pizza__info small{color:var(--amarillo); font:800 12px/1 var(--texto); letter-spacing:.1em; text-transform:uppercase}
@@ -782,7 +787,7 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
       </div>
     </div>
     <div class="mini-pizza" id="miniPizza" role="region" aria-label="Tu pizza mientras la armas">
-      <canvas width="300" height="300" role="img" aria-label="Tu pizza"></canvas>
+      <span class="mini-pizza__plato"><canvas width="300" height="300" role="img" aria-label="Tu pizza"></canvas></span>
       <div class="mini-pizza__info">
         <small id="miniCuenta">Queso solo</small>
         <p id="miniIngs">Toca un ingrediente y míralo caer aquí.</p>
@@ -1524,9 +1529,28 @@ function verMini(){
   mini.classList.toggle("ver", ver);
   document.body.classList.toggle("con-mini", ver);
 }
+/* al llegar a la pizza grande, la de la barra vuela y crece hasta ocupar su lugar */
+function volar(){
+  var a = miniCv.getBoundingClientRect(), giro = 0, m = getComputedStyle(miniCv).transform;
+  if(m && m !== "none"){ var v = m.match(/matrix\(([^)]+)\)/); if(v){ var n = v[1].split(",").map(Number); giro = Math.atan2(n[1], n[0]); } }
+  var c = document.createElement("canvas"); c.width = c.height = 520; c.className = "pizza-vuela";
+  try{ c.getContext("2d").drawImage(cv, 0, 0, 520, 520); }catch(e){ return; }
+  document.body.appendChild(c); cv.style.opacity = "0";
+  var t0 = performance.now(), dur = 620;
+  (function paso(t){
+    var k = Math.min(1, (t - t0) / dur), e = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2, b = cv.getBoundingClientRect();
+    var x = a.left + (b.left - a.left) * e, y = a.top + (b.top - a.top) * e, w = a.width + (b.width - a.width) * e;
+    c.style.cssText = "left:" + x + "px;top:" + y + "px;width:" + w + "px;height:" + w + "px;transform:rotate(" + (giro * (1 - e)) + "rad)";
+    if(k < 1) requestAnimationFrame(paso); else { c.remove(); cv.style.opacity = ""; }
+  })(t0);
+}
 if("IntersectionObserver" in window){
   new IntersectionObserver(function(es){ ingsVisto = es[0].isIntersecting; verMini(); }).observe(cajaIngs);
-  new IntersectionObserver(function(es){ hornoVisto = es[0].isIntersecting; verMini(); }, {threshold:.45}).observe($(".horno"));
+  new IntersectionObserver(function(es){
+    var antes = hornoVisto; hornoVisto = es[0].isIntersecting;
+    if(hornoVisto && !antes && mini.classList.contains("ver") && !quieto) volar();
+    verMini();
+  }, {threshold:.45}).observe($(".horno"));
 }
 function verGrande(){ $(".horno").scrollIntoView({behavior: quieto ? "auto" : "smooth", block:"center"}); }
 miniCv.addEventListener("click", verGrande); $("#miniVer").addEventListener("click", verGrande);

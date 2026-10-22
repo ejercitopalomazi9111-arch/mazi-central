@@ -4,7 +4,7 @@
    pieza, cuánto gira, su sombra, y que el nuevo caiga pieza por pieza.
 
    Horno.pintar(canvas, { ings:["pepperoni", …], orilla:false, nuevo:"pepperoni" })
-   Todo sale de una semilla fija: la misma pizza se pinta igual cada vez. */
+   Todo sale de semillas fijas, y cada lienzo recuerda dónde puso cada ingrediente. */
 (function(){
 "use strict";
 
@@ -53,36 +53,51 @@ function cargar(k){
   return cargar[k];
 }
 
-/* dónde va cada pieza: separadas, sin encimarse de más, dentro del queso */
-function lugares(n, rQ, C, a){
-  var pts = [], min = rQ * 1.8 / Math.sqrt(n + 3), intentos = 0;
-  while(pts.length < n && intentos < 5000){
-    intentos++;
-    var t = a() * 6.2832, d = Math.sqrt(a()) * rQ, x = C + Math.cos(t) * d, y = C + Math.sin(t) * d;
-    var ok = intentos > 4000 || pts.every(function(p){ return (p[0] - x) * (p[0] - x) + (p[1] - y) * (p[1] - y) > min * min; });
-    if(ok) pts.push([x, y]);
-  }
-  return pts;
-}
-
-function planear(cv, S, ings){
-  var llave = S + "|" + ings.join(","), plan = cv.__plan;
-  if(plan && plan.llave === llave) return plan;
-  var C = S / 2, R = S * .47, rQ = R * .74;
-  var conFoto = ings.filter(function(k){ return !POLVO[k]; });
-  var n = conFoto.length ? Math.min(44, 20 + conFoto.length * 5) : 0;
-  var pts = lugares(n, rQ, C, semilla("lugares" + n));
-  var reparto = {};
-  conFoto.forEach(function(k){ reparto[k] = []; });
-  /* se reparten salteados para que no queden por manchas, y cada pieza ya sabe cuál foto, cuánto gira y su tamaño */
-  pts.forEach(function(p, i){
-    var k = conFoto[i % conFoto.length], a = semilla(k + i), m = MONTON[k] || 1;
-    for(var j = 0; j < m; j++){
-      var dx = m > 1 ? (a() - .5) * S * .05 : 0, dy = m > 1 ? (a() - .5) * S * .05 : 0;
-      reparto[k].push({ x:p[0] + dx, y:p[1] + dy, g:a() * 6.2832, e:.88 + a() * .24, f:a(), espejo:a() < .5 });
+/* dónde va cada pieza. Cada ingrediente aparta sus lugares una sola vez y los conserva: al sumar
+   otro, los que ya estaban NO se mueven, el nuevo busca los huecos. Y se reparte por rebanada
+   (entre los 8 cortes de la foto), con lugar en la orilla y en el centro de cada una, sin caer
+   sobre el corte: así cada rebanada lleva de todo, hasta el borde. */
+var CORTES = [12, 54, 105, 151, 201, 240, 284, 322];
+var BANDAS = [[.64, .97], [.26, .62]];          /* fracción del radio con queso: primero la orilla */
+function colocar(P, k, S){
+  var ya = [], a = semilla("lugar-" + k), mios = [], antes = Object.keys(P.puntos).length;
+  Object.keys(P.puntos).forEach(function(o){ ya = ya.concat(P.puntos[o]); });
+  /* los dos primeros ingredientes llevan dos en la orilla de cada rebanada; los demás, uno */
+  var huecos = antes < 2 ? [[BANDAS[0], 0, .5], [BANDAS[0], .5, 1], [BANDAS[1], 0, 1]] : [[BANDAS[0], 0, 1], [BANDAS[1], 0, 1]];
+  CORTES.forEach(function(g0, i){
+    var g1 = CORTES[(i + 1) % CORTES.length] + (i === CORTES.length - 1 ? 360 : 0);
+    huecos.forEach(function(h){
+      var b = h[0], mejor = null, dist = -1;
+      for(var n = 0; n < 40; n++){                 /* de 40 candidatos, el más lejos de todo lo que ya hay */
+        var d = Math.sqrt(b[0] * b[0] + a() * (b[1] * b[1] - b[0] * b[0])) * P.rQ;
+        var pad = (S * .045) / d * 180 / Math.PI;    /* lejos del corte: que no quede partido */
+        var libre = Math.max(1, g1 - g0 - pad * 2);
+        var ang = (g0 + pad + libre * (h[1] + a() * (h[2] - h[1]))) * Math.PI / 180;
+        var x = P.C + Math.cos(ang) * d, y = P.C + Math.sin(ang) * d, m = Infinity;
+        ya.concat(mios).forEach(function(q){ var dd = (q[0] - x) * (q[0] - x) + (q[1] - y) * (q[1] - y); if(dd < m) m = dd; });
+        if(m > dist){ dist = m; mejor = [x, y]; }
+      }
+      mios.push(mejor);
+    });
+  });
+  P.puntos[k] = mios;
+  var lista = [], mm = MONTON[k] || 1;
+  mios.forEach(function(q, i){
+    var r = semilla(k + i);
+    for(var j = 0; j < mm; j++){
+      var dx = mm > 1 ? (r() - .5) * S * .045 : 0, dy = mm > 1 ? (r() - .5) * S * .045 : 0;
+      lista.push({ x:q[0] + dx, y:q[1] + dy, g:r() * 6.2832, e:.88 + r() * .24, f:r(), espejo:r() < .5 });
     }
   });
-  return (cv.__plan = { llave:llave, C:C, R:R, rQ:rQ, reparto:reparto });
+  P.reparto[k] = lista;
+}
+function planear(cv, S, ings){
+  var P = cv.__plan;
+  if(!P || P.S !== S){ var R = S * .47; P = cv.__plan = { S:S, C:S / 2, R:R, rQ:R * .8, reparto:{}, puntos:{} }; }
+  /* lo que se quitó suelta sus lugares; lo que ya estaba se queda donde estaba */
+  Object.keys(P.reparto).forEach(function(k){ if(ings.indexOf(k) < 0){ delete P.reparto[k]; delete P.puntos[k]; } });
+  ings.forEach(function(k){ if(!POLVO[k] && !P.reparto[k]) colocar(P, k, S); });
+  return P;
 }
 
 function pieza(c, S, k, p, extra){
@@ -136,7 +151,6 @@ function orilla(c, S, P, t){
   }
   c.globalAlpha = 1;
   /* el queso que se asoma donde cortaron cada rebanada (los 8 cortes de la foto, medidos) */
-  var CORTES = [12, 54, 105, 151, 201, 240, 284, 322];
   CORTES.forEach(function(gr){
     var an = gr * Math.PI / 180, r0 = R * .915, x = C + Math.cos(an) * r0, y = C + Math.sin(an) * r0;
     var largo = R * .105 * e, ancho = R * .042 * e;

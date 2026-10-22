@@ -446,6 +446,8 @@ dependemos.
    | `pip install x` y luego `python3 -c "import x"` | aquí `pip` es el de **Python 3.13** y `python3` es 3.11: instala bien y el import dice que no existe | rembg «no se instaló» dos veces; se corre con `python3.13` |
    | pintar comida con código, si se cuida la luz y la sombra, se ve real | se ve de **caricatura**: el primer «Ármala tú» con piezas dibujadas no daba hambre. Lo que sí: una pizza de queso fotografiada y cada ingrediente **recortado de una foto** (rembg, o un disco del tamaño justo sobre un pepperoni horneado) | Carlos: «nada da hambre». La regla 1 ya lo decía: el arte de relleno se busca real |
 
+   | un nombre nuevo de clase o de `@keyframes` en una página grande es mío y no choca | en CSS todo es global: el último `@keyframes gira` pisa al primero y una clase `.vuela` que ya existía trae su fondo y su aro | en Smiley's, el precio que «rodaba» salía **de cabeza** (era el `gira` de 360° de otra animación) y la pizza que vuela a la grande traía un aro blanco color cartón (el `.vuela` de agregar al carrito). Antes de inventar un nombre, `grep` en el archivo |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---
