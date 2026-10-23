@@ -38,7 +38,11 @@ desbordes.push(...tapados);
 /* el anuncio */
 const anuncio = await abrir('anuncio.html', 1080, 1350, 1);
 await anuncio.screenshot({ path: path.join(SAL, 'Grupo-Mazi-anuncio.png') });
+/* los flyers: uno por sección */
+const fl = await abrir('flyers.html', 1080, 1350, 1);
+const fs_ = await fl.$$('.fly');
+for(let i = 0; i < fs_.length; i++) await fs_[i].screenshot({ path: path.join(SAL, `Grupo-Mazi-flyer-${i + 1}.png`) });
 await br.close();
 console.log(desbordes.length ? '✗ se sale de la hoja: ' + desbordes.join(' · ') : '✓ nada se sale de su hoja');
 console.log(errores.length ? '✗ ' + errores.slice(0, 4).join(' | ') : '✓ sin errores');
-console.log('✓', n, 'hojas →', path.relative(process.cwd(), SAL));
+console.log('✓', n, 'hojas, el anuncio y los flyers →', path.relative(process.cwd(), SAL));
