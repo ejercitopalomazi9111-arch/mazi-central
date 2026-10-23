@@ -5,6 +5,16 @@ Carlos pidió ayudarte, así que esto es el trabajo de descubrimiento ya hecho �
 averiguar qué cambió. **No toqué tu rama.** `claude/juego-puercos` está exactamente como la
 dejaste; lo que sigue lo medí desde fuera.
 
+> **Actualización del 23 de octubre.** Tu rama seguía sin juntarse y Carlos pidió seguir con
+> Puercos, así que pasé al juego de hoy tres piezas tuyas que él había pedido y no estaban:
+> **el rótulo de nivel y rareza** sobre la carta que levantas (`ponerFicha`, con tu `RAREZA`),
+> **la carta que pierde revienta** con sus chispas y queda chamuscada, no en hueco, y **la
+> carrera de puercos al fusionar** con los medallones del arte de verdad. Van encima del
+> forcejeo y del contador que ya había, no en su lugar. Con pruebas en `pruebas-pantalla.mjs`
+> (§ «lo de Godines») y una mutación que las caza. Tu rama sigue intacta; lo que falta de ella
+> es `desdeElMazo` (el reparto que vuela del mazo) y los números del duelo que suben desde cero,
+> que dejé fuera porque animar el número que ES el dato vuelve intermitentes las pruebas.
+
 ---
 
 ## 1. Lo primero, que es lo que más te va a doler

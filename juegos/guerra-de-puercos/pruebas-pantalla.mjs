@@ -1148,6 +1148,55 @@ console.log('\n── La economía y el tutorial (22 de octubre) ──');
   await ctx4.close();
 }
 
+console.log('\n── El rótulo, la carta que revienta y la carrera (lo de Godines, 23 de octubre) ──');
+{
+  const ctx5 = await b.newContext({ viewport:{ width:390, height:844 }, hasTouch:true, isMobile:true });
+  const p5 = await ctx5.newPage();
+  const rotos5 = [];
+  p5.on('pageerror', e => rotos5.push(e.message));
+  await p5.goto(BASE + '/juegos/guerra-de-puercos/');
+  await p5.waitForFunction(() => CAT.listo);
+  await p5.evaluate(() => { try{ localStorage.setItem('puercos_guia', 'hecha'); }catch(e){} });
+  await p5.click('[data-modo="maquina"]');
+  await p5.waitForSelector('#mMano .carta');
+  if(await p5.$('#guia:not([hidden])')) await p5.click('#guiaSaltar');
+  await p5.waitForFunction(() => !document.querySelector('#mMano .carta.llega'), null, { timeout:8000 }).catch(() => {});
+  ok('sin carta levantada no hay rótulo', await p5.$eval('#mFicha', e => e.hidden));
+  await p5.evaluate(() => [...document.querySelectorAll('#mMano .carta')].find(x => !x.dataset.esp).click());
+  await p5.waitForTimeout(300);
+  const ficha = await p5.evaluate(() => {
+    const f = document.querySelector('#mFicha'), c = document.querySelector('#mMano .carta.marcada');
+    const fr = f.getBoundingClientRect(), cr = c.getBoundingClientRect(), dato = cartaDe(c);
+    return { visible: !f.hidden, texto: f.textContent, rareza: RAREZA[dato.nivel], nivel: dato.nivel,
+             encima: fr.bottom <= cr.top + 4, dentro: fr.left >= 0 && fr.right <= innerWidth };
+  });
+  ok('al levantar una carta sale su rótulo con nivel y rareza', ficha.visible && ficha.texto.includes(ficha.rareza) && ficha.texto.startsWith(ficha.nivel), ficha.texto);
+  ok('el rótulo va ARRIBA de la carta, no encima del dibujo', ficha.encima);
+  ok('y no se sale de la pantalla', ficha.dentro);
+  /* jugarla: el rótulo se va y, si hubo daño, la perdedora revienta en la mesa */
+  await p5.evaluate(() => { const c = document.querySelector('#mMano .carta.marcada'); c.click(); c.click(); });
+  await p5.waitForSelector('#fDuelo:not(.oculto)', { timeout:6000 });
+  ok('al jugar la carta el rótulo se esconde', await p5.$eval('#mFicha', e => e.hidden));
+  await p5.waitForTimeout(1100);
+  const golpe = await p5.evaluate(() => { const h = J.historia[J.historia.length - 1];
+    const perdio = h.dano ? (h.perdio === 'a' ? '#mSlotA' : '#mSlotB') : null;
+    return { dano: h.dano, revento: perdio ? document.querySelectorAll(perdio + ' .carta.revienta').length : 0,
+             otra: perdio ? document.querySelectorAll((perdio === '#mSlotA' ? '#mSlotB' : '#mSlotA') + ' .carta.revienta').length : 0,
+             combinada: h.a.combinada || h.b.combinada }; });
+  ok('la carta que pierde revienta, y sólo ésa', golpe.dano ? golpe.revento > 0 && golpe.otra === 0 : golpe.revento === 0, JSON.stringify(golpe));
+  ok('sin combinación no corren puercos', golpe.combinada || await p5.$$eval('.carrera', a => a.length) === 0);
+  await p5.evaluate(() => carreraDePuercos());
+  const carrera = await p5.evaluate(() => { const i = [...document.querySelectorAll('.carrera i')];
+    return { n: i.length, arte: i.every(x => /arte\/web\/\d+-(normal|mamado|manada)\.webp/.test(x.style.backgroundImage)) }; });
+  ok('la carrera usa los puercos del arte de verdad', carrera.n >= 7 && carrera.arte, JSON.stringify(carrera));   /* 14 si la ronda ya traía combinación */
+  ok('y su arte existe', (await Promise.all(['003-normal', '069-mamado', '085-manada'].map(n => p5.evaluate(u => fetch(u).then(r => r.ok), 'arte/web/' + n + '.webp')))).every(Boolean));
+  await p5.waitForTimeout(3200);
+  ok('la carrera se limpia sola', await p5.$$eval('.carrera', a => a.length) === 0);
+  ok('ni la carrera ni el rótulo ensanchan la página', await p5.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  ok('lo de Godines no tiró errores', rotos5.length === 0, rotos5[0] || '');
+  await ctx5.close();
+}
+
 ok('la página no tiró ningún error', errores.length === 0, errores[0] || '');
 
 await b.close();

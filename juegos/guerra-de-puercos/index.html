@@ -603,6 +603,65 @@ body.fieltro .sin-esp{ color:var(--hueso) }
 .n-S{background:var(--S)} .n-A{background:var(--A)} .n-B{background:var(--B)}
 .n-C{background:var(--C)} .n-D{background:var(--D)}
 
+/* ══ EL RÓTULO DE LA CARTA QUE LEVANTAS ═══════════════════════════════════
+   Carlos: «al picarle a una ésta se ponga en la capa de hasta el frente, se
+   ilumine, se levante y enseñe su rareza y su nivel arriba». Lo de subir y
+   encenderse ya estaba; faltaba DECIR qué es. Viene del trabajo de Godines
+   (rama claude/juego-puercos, 2 de septiembre), que nunca se juntó. Va fuera
+   de `#mMano` a propósito: la mano ordena sus hijos por índice y un rótulo
+   adentro le movería la cuenta. */
+#mLadoA{ position:relative }
+.ficha-carta{
+  position:absolute; top:var(--y, 0); left:var(--x, 50%); transform:translateX(-50%);
+  z-index:70; display:flex; align-items:center; gap:7px; white-space:nowrap;
+  padding:5px 12px 5px 6px; border-radius:99px; border:3px solid var(--tinta);
+  background:var(--hueso); color:var(--tinta); box-shadow:0 3px 0 var(--tinta);
+  font-size:12px; font-weight:900; letter-spacing:.04em; pointer-events:none;
+  animation:fichaSube .22s cubic-bezier(.2,.9,.3,1.3);
+}
+.ficha-carta[hidden]{ display:none }
+.ficha-carta .sello{
+  display:inline-grid; place-items:center; width:22px; height:22px; border-radius:7px;
+  border:2px solid var(--tinta); color:#fff; font-size:12px; flex:0 0 auto;
+}
+.ficha-carta .rareza{ text-transform:uppercase; letter-spacing:.12em; font-size:10.5px; color:var(--rosa-hondo) }
+@keyframes fichaSube{ from{ transform:translate(-50%, 8px) scale(.9) } to{ transform:translate(-50%, 0) } }
+
+/* ══ LA CARTA QUE PIERDE REVIENTA ═════════════════════════════════════════
+   Sólo transform y opacidad sobre la IMAGEN de la carta, nunca sobre el texto
+   que se lee. Y NO termina en opacidad 0 (Godines lo vio en la foto): la mesa
+   se queda hasta «Siguiente ronda», y un hueco se lee como «se rompió el
+   juego», no como «explotó». Queda chamuscada. */
+@keyframes revienta{
+  0%  { transform:scale(1) rotate(0); filter:none }
+  30% { transform:scale(1.14) rotate(-4deg) }
+  100%{ transform:scale(.8) rotate(8deg); opacity:.4; filter:grayscale(.75) }
+}
+.slot .carta.revienta{ animation:revienta .55s ease-in forwards }
+.chispa{
+  position:absolute; width:10px; height:10px; border-radius:50%; background:#FFD35A;
+  border:2px solid var(--tinta); pointer-events:none; z-index:5;
+  animation:chispa .5s ease-out forwards;
+}
+@keyframes chispa{ to{ transform:translate(var(--x), var(--y)) scale(.2); opacity:0 } }
+
+/* ══ LOS PUERCOS QUE CORREN AL FUSIONAR ═══════════════════════════════════
+   Carlos, por nombre: «haz que aparezcan puercos corriendo al fusionar». Y
+   lo que corrigió después: «si tú dibujaste los cerdos y no parecen los del
+   arte me voy a enojar». Son medallones recortados de las cartas DE VERDAD
+   —Normal, Mamado y Manada, las tres que son un puerco y nada más—. */
+.carrera{ position:absolute; left:0; right:0; bottom:4px; height:52px; pointer-events:none; overflow:hidden; z-index:6 }
+.carrera i{
+  position:absolute; left:0; bottom:0; width:48px; height:48px; border-radius:50%;
+  border:3px solid var(--tinta); box-shadow:2px 2px 0 rgba(0,0,0,.3);
+  background-size:230%; background-position:50% 38%; background-repeat:no-repeat;
+  animation:corre var(--dur, 1.5s) linear both;
+}
+.carrera b{ display:block; width:100%; height:100%; animation:brinca .3s ease-in-out infinite }
+@keyframes corre{ from{ transform:translateX(-70px) } to{ transform:translateX(calc(100vw + 70px)) } }
+@keyframes brinca{ 0%, 100%{ transform:translateY(0) } 50%{ transform:translateY(-10px) } }
+@media (prefers-reduced-motion: reduce){ .ficha-carta, .slot .carta.revienta{ animation:none } .carrera, .chispa{ display:none } }
+
 /* ── especiales ── */
 /* ⚠ SE ENVUELVE, y no es precaución: desde que la mano se cuenta en cartas
    JUGABLES, las especiales que no gastes se van quedando además de tus cinco.
@@ -1097,6 +1156,7 @@ body.fieltro .pie, body.fieltro .pie a{color:var(--hueso); opacity:.9}
         <div class="pila mazo" id="mMazoA"><b>0</b></div>
         <div class="mano" id="mMano"></div>
         <div class="pila cementerio" id="mCemA"></div>
+        <div class="ficha-carta" id="mFicha" hidden aria-hidden="true"></div>
       </div>
       <p class="aviso" id="mAviso" hidden></p>
       <p class="pie" id="mPistas"></p>
@@ -1942,6 +2002,90 @@ function pintarMano(){
   }
   ajustarEncime(m, total);
   rotularMano();
+  ponerFicha();
+}
+
+/* El rótulo de la carta levantada: nivel, rareza y nombre. Se mide con la
+   posición de MAQUETA de la carta (offsetLeft/Top), no con su caja en
+   pantalla: la carta todavía va subiendo cuando esto corre y su caja visible
+   daría una altura a medio camino. Lo que suma la subida (−22 px y ×1.06) es
+   la regla de `.carta.marcada`. */
+const RAREZA = { S:'Legendaria', A:'Épica', B:'Rara', C:'Común', D:'Básica' };
+function ponerFicha(){
+  const caja = $('#mFicha'), lado = $('#mLadoA'), m = $('#mMano');
+  if(!caja || !lado || !m) return;
+  const el = m.querySelector('.carta.marcada:not([data-esp])') || m.querySelector('.carta.marcada');
+  const c = el && cartaDe(el);
+  if(!c){ caja.hidden = true; caja.dataset.k = ''; return; }
+  const f = fichaDe(c);
+  const esp = c.nivel === 'ESP';
+  const k = el.dataset.id;
+  if(caja.dataset.k !== k){
+    caja.innerHTML = esp
+      ? '<span class="sello" style="background:var(--rosa-hondo)">★</span><span class="rareza">Especial</span>' + (f ? '<span>' + f.nombre + '</span>' : '')
+      : '<span class="sello n-' + c.nivel + '">' + c.nivel + '</span><span class="rareza">' + (RAREZA[c.nivel] || 'Nivel ' + c.nivel) + '</span>'
+        + (f ? '<span>' + f.nombre + '</span>' : '');
+    caja.dataset.k = k;
+    caja.hidden = false;
+    caja.style.animation = 'none'; void caja.offsetWidth; caja.style.animation = '';
+  }
+  caja.hidden = false;
+  /* el desplazamiento de la carta cuenta desde su `offsetParent`, que puede ser
+     la mano o ya el lado entero: se suma la mano sólo si hace falta */
+  const ox = el.offsetParent === m ? m.offsetLeft : 0, oy = el.offsetParent === m ? m.offsetTop : 0;
+  const x = ox + el.offsetLeft + el.offsetWidth / 2;
+  const mitad = caja.offsetWidth / 2;
+  caja.style.setProperty('--x', Math.max(mitad + 2, Math.min(lado.clientWidth - mitad - 2, x)).toFixed(0) + 'px');
+  /* la subida de `.carta.marcada` (−22 px y ×1.06) se mide desde el origen de
+     giro del abanico, que va MUY abajo de la carta: escalar desde ahí sube el
+     borde de arriba 0.06 × esa distancia, no la mitad de la carta */
+  const origen = parseFloat((getComputedStyle(el).transformOrigin || '').split(' ')[1]);
+  const sube = 22 + .06 * (Number.isFinite(origen) ? origen : el.offsetHeight / 2);
+  const arriba = oy + el.offsetTop - sube - caja.offsetHeight - 6;
+  caja.style.setProperty('--y', Math.max(-caja.offsetHeight, arriba).toFixed(0) + 'px');
+}
+
+/* Los puercos que corren cuando alguien juega una COMBINACIÓN (hay cuatro en
+   toda la partida). Sólo ahí: si salieran en cada ronda, a la tercera partida
+   serían ruido. Se limpian solos. */
+const PUERCOS_QUE_CORREN = ['arte/web/003-normal.webp', 'arte/web/069-mamado.webp', 'arte/web/085-manada.webp'];
+function carreraDePuercos(cuantos = 7){
+  if(quieto()) return;
+  const tapete = $('#mMesa');
+  if(!tapete) return;
+  if(getComputedStyle(tapete).position === 'static') tapete.style.position = 'relative';
+  const pista = document.createElement('div');
+  pista.className = 'carrera';
+  for(let k = 0; k < cuantos; k++){
+    const p = document.createElement('i');
+    p.style.setProperty('--dur', (1.2 + Math.random() * .9).toFixed(2) + 's');
+    p.style.animationDelay = (k * .13).toFixed(2) + 's';
+    p.style.backgroundImage = 'url(' + PUERCOS_QUE_CORREN[k % PUERCOS_QUE_CORREN.length] + ')';
+    p.appendChild(document.createElement('b'));
+    pista.appendChild(p);
+  }
+  tapete.appendChild(pista);
+  setTimeout(() => pista.remove(), 3000);
+}
+
+/* La carta que perdió revienta en la mesa, con chispas, justo cuando la barra
+   cede: antes, se sabría el resultado antes de verlo. */
+function reventar(donde){
+  if(quieto()) return;
+  const slot = $(donde);
+  if(!slot) return;
+  slot.style.position = 'relative';
+  slot.querySelectorAll('.carta').forEach(c => c.classList.add('revienta'));
+  for(let i = 0; i < 8; i++){
+    const ch = document.createElement('i');
+    ch.className = 'chispa';
+    ch.style.left = (35 + Math.random() * 30) + '%';
+    ch.style.top = (30 + Math.random() * 30) + '%';
+    ch.style.setProperty('--x', (Math.random() * 140 - 70).toFixed(0) + 'px');
+    ch.style.setProperty('--y', (Math.random() * -100 - 20).toFixed(0) + 'px');
+    slot.appendChild(ch);
+    setTimeout(() => ch.remove(), 650);
+  }
 }
 
 /* ⚠ CUÁNTO SE ENCIMAN LAS CARTAS SE CALCULA, NO SE ELIGE A OJO. El 58 % fijo
@@ -2385,6 +2529,7 @@ function limpiarMesa(){
 /* ── el duelo ── */
 function mostrarDuelo(antes, despues, jugadaA, jugadaB){
   fase('Duelo');
+  const ficha = $('#mFicha'); if(ficha){ ficha.hidden = true; ficha.dataset.k = ''; }
   const h = despues.historia[despues.historia.length - 1];
   const pinta = (lado, jugada, p, dondePts, dondeCta) => {
     $(dondePts).textContent = p.puntos;
@@ -2402,6 +2547,7 @@ function mostrarDuelo(antes, despues, jugadaA, jugadaB){
      acabaron donde tenían que acabar. */
   ponerEnMesa('#mSlotA', jugadaA.cartas);
   ponerEnMesa('#mSlotB', jugadaB.cartas);
+  if(h.a.combinada || h.b.combinada) setTimeout(carreraDePuercos, 250);
 
   /* ── EL FORCEJEO ────────────────────────────────────────────────────────
      La barra arranca a la mitad y se va hacia el que pierde. El destino no es
@@ -2472,6 +2618,7 @@ function mostrarDuelo(antes, despues, jugadaA, jugadaB){
       ? '<small>La diferencia era ' + h.crudo + ', pero el daño nunca pasa de '
         + MOTOR.DANO_TOPE + '.</small>' : '';
     setTimeout(() => son(h.perdio === 'a' ? 'pierdes' : 'ganas'), cuandoCede);
+    setTimeout(() => reventar(h.perdio === 'a' ? '#mSlotA' : '#mSlotB'), cuandoCede + 60);
     etq.textContent = h.perdio === 'a' ? '◀ PIERDES' : 'GANAS ▶';
     /* ⚠ «Recibes el golpe de vida» — así quedó al pegar la frase con el sufijo,
        y no quiere decir nada. La frase ya termina en «el golpe»; lo que faltaba
