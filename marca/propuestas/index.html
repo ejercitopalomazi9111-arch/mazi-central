@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grupo Mazi · 200 propuestas de logo</title>
+<!--
+  200 PROPUESTAS DE LOGO PARA GRUPO MAZI (24 de octubre de 2026), para que la junta directiva
+  elija. Carlos: «tráete 200 propuestas de logos con un par de tipografías… algo que no te cueste
+  tanto a ti, pero sí tráete una barbaridad».
+
+  Cómo están hechas: 25 letras × 8 estilos. Cada HOJA es un estilo (?hoja=1…8) y cada logo trae
+  su número (001-200), para que se pueda decir «me gusta el 047». ?hoja=9 son las letras para
+  todo lo demás (títulos y texto), que sustituyen a la letra Mazi.
+
+  Reglas que se respetan (CLAUDE.md §3.1 y lo que pidió Carlos para la marca):
+  · Los colores de la casa no se tocan: vacío, violeta, lila, hueso.
+  · La paloma NO se redibuja ni la genera ningún modelo: es marca/logo/paloma.svg tal cual.
+  · El nombre tiene que reconocerse SIN la paloma (como McDonald's): en todos los estilos
+    «Grupo Mazi» se lee completo, y en dos (E y H) va sin paloma a propósito.
+  · Todas las letras son de Google Fonts con licencia OFL: se pueden usar en un logo comercial.
+  Se arma con armar.mjs (sale una imagen por hoja y un PDF).
+-->
+<style>
+:root{ --vacio:#100A18; --sup:#1E1428; --violeta:#AC27FF; --lila:#C878FF; --hueso:#EAE5E3; --gris:#A79CB4; --linea:#2C2238 }
+*{ box-sizing:border-box; margin:0 }
+html, body{ background:var(--vacio); color:var(--hueso); font:400 16px/1.4 system-ui, sans-serif }
+.hoja{ width:2120px; padding:56px 60px 48px }
+.cab{ display:flex; align-items:end; gap:24px; margin-bottom:32px }
+.cab .letra{ width:88px; height:88px; border-radius:22px; background:var(--violeta); color:#fff; display:grid; place-items:center; font:800 52px/1 system-ui }
+.cab h1{ font:800 44px/1.05 system-ui; letter-spacing:-.02em }
+.cab p{ margin-top:6px; color:var(--gris); font-size:21px; max-width:70ch }
+.cab .rango{ margin-left:auto; text-align:right; color:var(--gris); font-size:19px }
+.cab .rango b{ display:block; color:var(--hueso); font-size:30px }
+.rej{ display:grid; grid-template-columns:repeat(5, 1fr); gap:16px }
+.ficha{ position:relative; height:330px; border-radius:22px; background:#160F21; box-shadow:inset 0 0 0 1.5px var(--linea); overflow:hidden }
+.ficha.claro{ background:var(--hueso); color:var(--vacio) }
+.ficha.morado{ background:var(--violeta); color:#fff }
+.lienzo{ position:absolute; inset:28px 28px 54px; display:grid; place-items:center }
+.logo{ transform-origin:center; white-space:nowrap }
+.num{ position:absolute; left:18px; bottom:14px; font:700 18px/1 ui-monospace, Menlo, monospace; color:var(--gris) }
+.fuente{ position:absolute; right:18px; bottom:15px; font:500 14px/1 system-ui; color:#7D7290 }
+.claro .num, .claro .fuente{ color:#7A7080 }
+.morado .num, .morado .fuente{ color:rgba(255,255,255,.75) }
+.pie{ margin-top:26px; display:flex; justify-content:space-between; color:#6E6380; font-size:17px }
+svg.paloma{ display:block }
+
+/* las letras de la casa (hoja 9) */
+.pares{ display:grid; grid-template-columns:repeat(3, 1fr); gap:20px }
+.par{ padding:34px 34px 30px; border-radius:24px; background:#160F21; box-shadow:inset 0 0 0 1.5px var(--linea) }
+.par .k{ font:700 16px/1 ui-monospace, Menlo, monospace; color:var(--lila) }
+.par h2{ margin-top:16px; font-size:58px; line-height:.98; letter-spacing:-.02em }
+.par h2 em{ font-style:normal; color:var(--lila) }
+.par p{ margin-top:16px; font-size:21px; line-height:1.5; color:#D8D0E0 }
+.par .nombres{ margin-top:22px; padding-top:16px; border-top:1px solid var(--linea); color:var(--gris); font-size:17px }
+</style>
+</head>
+<body>
+<div class="hoja" id="hoja"></div>
+<script>
+const LETRAS = [
+  { n:'Archivo', css:'family=Archivo:wdth,wght@62..125,100..900', f:"'Archivo'", w:900, extra:'font-stretch:125%;' },
+  { n:'Unbounded', css:'family=Unbounded:wght@400..900', f:"'Unbounded'", w:800 },
+  { n:'Syne', css:'family=Syne:wght@400..800', f:"'Syne'", w:800 },
+  { n:'Space Grotesk', css:'family=Space+Grotesk:wght@300..700', f:"'Space Grotesk'", w:700 },
+  { n:'Sora', css:'family=Sora:wght@100..800', f:"'Sora'", w:800 },
+  { n:'Outfit', css:'family=Outfit:wght@100..900', f:"'Outfit'", w:800 },
+  { n:'Lexend', css:'family=Lexend:wght@100..900', f:"'Lexend'", w:800 },
+  { n:'Urbanist', css:'family=Urbanist:wght@100..900', f:"'Urbanist'", w:900 },
+  { n:'Manrope', css:'family=Manrope:wght@200..800', f:"'Manrope'", w:800 },
+  { n:'Bricolage Grotesque', css:'family=Bricolage+Grotesque:opsz,wght@12..96,200..800', f:"'Bricolage Grotesque'", w:800 },
+  { n:'Familjen Grotesk', css:'family=Familjen+Grotesk:wght@400..700', f:"'Familjen Grotesk'", w:700 },
+  { n:'Red Hat Display', css:'family=Red+Hat+Display:wght@300..900', f:"'Red Hat Display'", w:900 },
+  { n:'Plus Jakarta Sans', css:'family=Plus+Jakarta+Sans:wght@200..800', f:"'Plus Jakarta Sans'", w:800 },
+  { n:'Instrument Sans', css:'family=Instrument+Sans:wdth,wght@75..100,400..700', f:"'Instrument Sans'", w:700 },
+  { n:'Big Shoulders Display', css:'family=Big+Shoulders+Display:wght@100..900', f:"'Big Shoulders Display'", w:900 },
+  { n:'Michroma', css:'family=Michroma', f:"'Michroma'", w:400 },
+  { n:'Krona One', css:'family=Krona+One', f:"'Krona One'", w:400 },
+  { n:'Dela Gothic One', css:'family=Dela+Gothic+One', f:"'Dela Gothic One'", w:400 },
+  { n:'Tilt Warp', css:'family=Tilt+Warp', f:"'Tilt Warp'", w:400 },
+  { n:'Fraunces', css:'family=Fraunces:opsz,wght@9..144,100..900', f:"'Fraunces'", w:900 },
+  { n:'DM Serif Display', css:'family=DM+Serif+Display', f:"'DM Serif Display'", w:400 },
+  { n:'Instrument Serif', css:'family=Instrument+Serif', f:"'Instrument Serif'", w:400 },
+  { n:'Young Serif', css:'family=Young+Serif', f:"'Young Serif'", w:400 },
+  { n:'Playfair Display', css:'family=Playfair+Display:wght@400..900', f:"'Playfair Display'", w:900 },
+  { n:'Gloock', css:'family=Gloock', f:"'Gloock'", w:400 },
+];
+for(const l of LETRAS){ const k = document.createElement('link'); k.rel = 'stylesheet'; k.href = 'https://fonts.googleapis.com/css2?' + l.css + '&display=block'; document.head.appendChild(k); }
+/* letras para lo demás (hoja 9): Inter Tight ya es la del texto de la casa */
+for(const css of ['family=Inter+Tight:wght@400..800', 'family=Figtree:wght@400..800', 'family=Newsreader:opsz,wght@6..72,400..700'])
+  { const k = document.createElement('link'); k.rel = 'stylesheet'; k.href = 'https://fonts.googleapis.com/css2?' + css + '&display=block'; document.head.appendChild(k); }
+
+const V = '#AC27FF', L = '#C878FF', H = '#EAE5E3', VA = '#100A18';
+let PALOMA = '';
+/* la paloma TAL CUAL (original) o de un solo color (para fondos de color) */
+const paloma = (alto, color) => {
+  let s = PALOMA.replace('<svg ', `<svg class="paloma" style="height:${alto}px;width:auto" `);
+  if(color) s = s.replace(/fill="#[0-9A-Fa-f]{6}"/g, `fill="${color}"`);
+  return s;
+};
+
+/* LOS 8 ESTILOS. Cada uno recibe la letra y regresa el HTML del logo y el fondo de la ficha. */
+const ESTILOS = [
+  { k:'A', nombre:'Paloma al lado', d:'La paloma a la izquierda y el nombre en dos pisos. El acomodo de todos los días: papelería, firma de correo, encabezado de la página.',
+    fondo:'', hacer:(l) => `<div class="logo" style="display:flex;align-items:center;gap:22px">${paloma(92)}
+      <div style="font-family:${l.f};font-weight:${l.w};${l.extra||''}color:${H};line-height:.9">
+      <div style="font-size:30px;letter-spacing:.32em;color:${L}">GRUPO</div><div style="font-size:78px;letter-spacing:.01em">MAZI</div></div></div>` },
+  { k:'B', nombre:'Centrado, apilado', d:'La paloma arriba, MAZI grande y GRUPO chiquito abajo. Para portada, perfil de redes y letreros.',
+    fondo:'', hacer:(l) => `<div class="logo" style="display:grid;justify-items:center;gap:10px">${paloma(78)}
+      <div style="font-family:${l.f};font-weight:${l.w};${l.extra||''}color:${H};font-size:76px;line-height:.9;letter-spacing:.02em">MAZI</div>
+      <div style="font-family:${l.f};font-weight:${l.w};${l.extra||''}color:${L};font-size:20px;letter-spacing:.6em;margin-right:-.6em">GRUPO</div></div>` },
+  { k:'C', nombre:'La i con paloma', d:'«mazi» en minúsculas y el punto de la i es la paloma. Se reconoce aunque la paloma sea un punto.',
+    fondo:'', hacer:(l) => `<div class="logo" style="font-family:${l.f};font-weight:${l.w};${l.extra||''}color:${H};position:relative;line-height:1">
+      <div style="font-size:24px;letter-spacing:.26em;color:${L};margin:0 0 4px 6px">grupo</div>
+      <div style="font-size:112px;letter-spacing:-.01em;position:relative">maz<span style="position:relative;display:inline-block">ı<span style="position:absolute;left:50%;top:.02em;transform:translateX(-50%)">${paloma(30)}</span></span></div></div>` },
+  { k:'D', nombre:'Calcomanía', d:'El nombre recortado en un bloque violeta, como una etiqueta. Funciona chiquito y se ve igual de lejos.',
+    fondo:'', hacer:(l) => `<div class="logo" style="display:flex;align-items:center;gap:18px">${paloma(84)}
+      <div style="background:${V};border-radius:20px;padding:14px 24px 16px;font-family:${l.f};font-weight:${l.w};${l.extra||''}color:#fff;line-height:.92;transform:rotate(-3deg)">
+      <div style="font-size:26px;letter-spacing:.3em">GRUPO</div><div style="font-size:74px;letter-spacing:.01em">MAZI</div></div></div>` },
+  { k:'E', nombre:'Sólo palabra, con punto', d:'Sin paloma a propósito: «Mazi.» con el punto violeta. Así se prueba que el nombre se sostiene solo.',
+    fondo:'claro', hacer:(l) => `<div class="logo" style="font-family:${l.f};font-weight:${l.w};${l.extra||''}color:${VA};line-height:.9">
+      <div style="font-size:22px;letter-spacing:.42em;margin:0 0 8px 4px;color:#6B5F78">GRUPO</div>
+      <div style="font-size:118px;letter-spacing:-.02em">Mazi<span style="color:${V}">.</span></div></div>` },
+  { k:'F', nombre:'Sello', d:'Un sello redondo con el nombre alrededor y la paloma al centro. Para empaques, stickers, el sello de «hecho por nosotros».',
+    fondo:'', hacer:(l, i) => `<svg class="logo" width="236" height="236" viewBox="0 0 236 236" style="overflow:visible">
+      <defs><path id="c${i}" d="M118,118 m-88,0 a88,88 0 1,1 176,0 a88,88 0 1,1 -176,0"/></defs>
+      <circle cx="118" cy="118" r="114" fill="none" stroke="${V}" stroke-width="3"/><circle cx="118" cy="118" r="66" fill="${V}"/>
+      <text style="font-family:${l.f};font-weight:${l.w};${l.extra||''}font-size:22px" fill="${H}" style="letter-spacing:.06em"><textPath href="#c${i}" textLength="547" lengthAdjust="spacing">GRUPO MAZI · JUNTOS · </textPath></text>
+      <foreignObject x="68" y="88" width="100" height="60"><div xmlns="http://www.w3.org/1999/xhtml" style="display:grid;place-items:center;height:60px">${paloma(54, '#FFFFFF')}</div></foreignObject></svg>` },
+  { k:'G', nombre:'Monograma', d:'Una M en un cuadro redondeado (la cara de la app y del perfil) y el nombre a su lado.',
+    fondo:'', hacer:(l) => `<div class="logo" style="display:flex;align-items:center;gap:20px">
+      <div style="width:112px;height:112px;border-radius:30px;background:${V};display:grid;place-items:center;font-family:${l.f};font-weight:${l.w};${l.extra||''}color:#fff;font-size:76px;line-height:1">M</div>
+      <div style="font-family:${l.f};font-weight:${l.w};${l.extra||''}color:${H};line-height:.95"><div style="font-size:52px">Grupo</div><div style="font-size:52px;color:${L}">Mazi</div></div></div>` },
+  { k:'H', nombre:'Una línea, sin paloma', d:'«grupo mazi» en una sola línea, con MAZI en violeta. Para el pie de un video, una pluma, un bordado: donde la paloma no cabe.',
+    fondo:'morado', hacer:(l) => `<div class="logo" style="font-family:${l.f};font-weight:${l.w};${l.extra||''}color:#fff;font-size:72px;line-height:1;letter-spacing:-.01em">grupo<span style="color:${VA}">mazi</span></div>` },
+];
+
+const p = new URLSearchParams(location.search), h = +(p.get('hoja') || 1);
+const raiz = document.getElementById('hoja');
+(async () => {
+  PALOMA = await (await fetch('../logo/paloma.svg')).text();
+  if(h <= ESTILOS.length){
+    const e = ESTILOS[h - 1], desde = (h - 1) * LETRAS.length + 1;
+    raiz.innerHTML = `<div class="cab"><div class="letra">${e.k}</div><div><h1>Estilo ${e.k} · ${e.nombre}</h1><p>${e.d}</p></div>
+      <div class="rango">propuestas<b>${String(desde).padStart(3, '0')} – ${String(desde + LETRAS.length - 1).padStart(3, '0')}</b></div></div>
+      <div class="rej">${LETRAS.map((l, i) => `<div class="ficha ${e.fondo}"><div class="lienzo">${e.hacer(l, h * 100 + i)}</div>
+        <span class="num">${String(desde + i).padStart(3, '0')}</span><span class="fuente">${l.n}</span></div>`).join('')}</div>
+      <div class="pie"><span>Grupo Mazi · propuestas de logo · hoja ${h} de 9</span><span>La paloma es la original (marca/logo/paloma.svg). Letras de Google Fonts, licencia OFL.</span></div>`;
+  } else {
+    const PARES = [
+      { k:'Par 1', t:"'Unbounded'", tw:800, x:"'Inter Tight'", nt:'Unbounded', nx:'Inter Tight' },
+      { k:'Par 2', t:"'Bricolage Grotesque'", tw:800, x:"'Figtree'", nt:'Bricolage Grotesque', nx:'Figtree' },
+      { k:'Par 3', t:"'Fraunces'", tw:800, x:"'Inter Tight'", nt:'Fraunces', nx:'Inter Tight' },
+      { k:'Par 4', t:"'Space Grotesk'", tw:700, x:"'Space Grotesk'", nt:'Space Grotesk', nx:'Space Grotesk (una sola familia)' },
+      { k:'Par 5', t:"'Archivo'", tw:900, tx:'font-stretch:125%;', x:"'Figtree'", nt:'Archivo ancha', nx:'Figtree' },
+      { k:'Par 6', t:"'Instrument Serif'", tw:400, x:"'Instrument Sans'", nt:'Instrument Serif', nx:'Instrument Sans' },
+    ];
+    raiz.innerHTML = `<div class="cab"><div class="letra">Aa</div><div><h1>Las letras de la casa</h1><p>La letra Mazi se queda sólo para muy pocos usos. Para todo lo demás (títulos, texto, la página, las redes), seis parejas para escoger. Todas traen acentos y ñ.</p></div>
+      <div class="rango">hoja<b>9 de 9</b></div></div>
+      <div class="pares">${PARES.map(x => `<div class="par"><div class="k">${x.k}</div>
+        <h2 style="font-family:${x.t};font-weight:${x.tw};${x.tx||''}">Si no existe la herramienta, <em>se construye.</em></h2>
+        <p style="font-family:${x.x}">Páginas web, apps, video y diseño hechos a la medida. Entregamos rápido y nos quedamos contigo después de entregar. ¿Cuánto cuesta? Te lo decimos antes de empezar.</p>
+        <div class="nombres">Títulos: <b style="color:var(--hueso)">${x.nt}</b> · Texto: <b style="color:var(--hueso)">${x.nx}</b></div></div>`).join('')}</div>
+      <div class="pie"><span>Grupo Mazi · propuestas de logo · hoja 9 de 9</span><span>Letras de Google Fonts, licencia OFL.</span></div>`;
+  }
+  await document.fonts.ready;
+  /* cada logo se encoge (nunca crece) y se centra, midiendo TODO lo que dibuja: la paloma de la
+     «i» va encima con position:absolute y la caja del logo no la cuenta (salía cortada en Syne) */
+  for(const lz of document.querySelectorAll('.lienzo')){
+    const g = lz.querySelector('.logo'), a = lz.getBoundingClientRect(), r = g.getBoundingClientRect();
+    let u = { l:r.left, t:r.top, d:r.right, b:r.bottom };
+    for(const e of g.querySelectorAll('*')){ const q = e.getBoundingClientRect(); if(!q.width || !q.height) continue;
+      u = { l:Math.min(u.l, q.left), t:Math.min(u.t, q.top), d:Math.max(u.d, q.right), b:Math.max(u.b, q.bottom) }; }
+    const s = Math.min(1, a.width / (u.d - u.l), a.height / (u.b - u.t)), cx = (u.l + u.d) / 2, cy = (u.t + u.b) / 2;
+    g.style.transformOrigin = `${(cx - r.left).toFixed(1)}px ${(cy - r.top).toFixed(1)}px`;
+    g.style.transform = `translate(${(a.left + a.width / 2 - cx).toFixed(1)}px, ${(a.top + a.height / 2 - cy).toFixed(1)}px) scale(${s.toFixed(3)})`;
+  }
+  document.body.dataset.listo = '1';
+})();
+</script>
+</body>
+</html>

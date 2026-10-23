@@ -453,6 +453,8 @@ dependemos.
    | `visibility: hidden` en una capa esconde todo lo que trae adentro | un hijo con `visibility: visible` **se sigue viendo** aunque el papá esté escondido (con `display` no pasa) | en el comercial de Smiley's las tarjetas del montaje se quedaron pegadas encima del cierre y de la escena siguiente; lo vio la hoja de cuadros, no el código. En `herramientas/video/` las escenas se apagan con `display:none` |
    | la copia «para mandar» de un video siempre pesa menos que el original | se hace a un bitrate FIJO pensado para 27 MB: si el original ya pesaba 14, la copia salió de **26** | el primer comercial casi se manda al doble de peso. `armar.mjs` ya no la hace cuando el original cabe |
 
+   | si cada logo dice qué letra usa y la revisión dice «todas cargadas», salieron con su letra | `font-family:"Archivo"` dentro de `style="…"` **cierra el atributo**: las 25 letras cayeron a la del sistema, y la revisión miraba la letra que QUEDÓ puesta (la del sistema, que siempre está) | las 200 propuestas de logo salieron iguales la primera vez. Ahora se compara el nombre de la ficha con la letra puesta y se mide el ancho con dos respaldos distintos (`marca/propuestas/armar.mjs`). Y `document.fonts.check()` dice que NO con letras japonesas (Dela Gothic viene en cien pedazos) aunque sí se usen: no sirve de testigo |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---
