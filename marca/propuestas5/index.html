@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grupo Mazi · ronda 5 de logos</title>
+<!--
+  RONDA 5 DE LOGOS (24 de octubre de 2026). Carlos: «olvida lo de aureola y cuerno, dame los 200,
+  ninguno igual al otro». 200 logos en 8 hojas de 25 (?hoja=1 … 8): la M · la M con la Z · sólo
+  letra · geometría · México, Querétaro y movimiento · herramientas y oficio · aves y naturaleza ·
+  emblemas. Cada uno con su símbolo (marcas.js), su letra (letras.js: 200 letras de Google Fonts,
+  ninguna de las rondas 1 a 4) y su acomodo. Nada de aureolas ni cuernos. Se arma con armar.mjs.
+-->
+<style>
+:root{ --vacio:#100A18; --hueso:#EAE5E3; --gris:#A79CB4 }
+*{ box-sizing:border-box; margin:0 }
+html, body{ background:var(--vacio); color:var(--hueso); font:400 16px/1.4 system-ui, sans-serif }
+.hoja{ width:2120px; padding:56px 60px 48px }
+.cab{ display:flex; align-items:end; gap:24px; margin-bottom:32px }
+.cab h1{ font:800 44px/1.05 system-ui; letter-spacing:-.02em }
+.cab p{ margin-top:6px; color:var(--gris); font-size:21px; max-width:84ch }
+.cab .rango{ margin-left:auto; text-align:right; color:var(--gris); font-size:19px; white-space:nowrap }
+.cab .rango b{ display:block; color:var(--hueso); font-size:30px }
+.rej{ display:grid; grid-template-columns:repeat(5, 1fr); gap:16px }
+.ficha{ position:relative; height:340px; border-radius:22px; overflow:hidden; box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.07) }
+.lienzo{ position:absolute; inset:40px 34px 58px; display:grid; place-items:center }
+.logo{ white-space:nowrap; line-height:1 }
+.num{ position:absolute; left:18px; bottom:15px; font:700 18px/1 ui-monospace, Menlo, monospace; opacity:.6 }
+.fuente{ position:absolute; right:18px; bottom:16px; font:500 14px/1 system-ui; opacity:.5 }
+.fam{ position:absolute; left:18px; top:15px; font:600 12px/1 system-ui; letter-spacing:.12em; text-transform:uppercase; opacity:.45 }
+.pie{ margin-top:26px; display:flex; justify-content:space-between; color:#6E6380; font-size:17px }
+svg{ display:block; overflow:visible }
+</style>
+</head>
+<body>
+<div class="hoja" id="hoja"></div>
+<script type="module">
+import { M } from './marcas.js';
+import { LETRAS } from './letras.js';
+const VA = '#100A18', H = '#EAE5E3', V = '#AC27FF', L = '#C878FF', N = '#07050A';
+const F = { d:[VA, H], dv:[VA, V], l:[H, VA], lv:[H, V], v:[V, '#FFFFFF'], n:[N, L], b:['#FFFFFF', '#0B0B0F'], k:['#0B0B0F', '#FFFFFF'] };
+const FONDOS = ['d', 'lv', 'k', 'v', 'l', 'n', 'b', 'dv'];
+const HOJAS = ['la M', 'la M con la Z', 'sólo letra', 'geometría', 'México, Querétaro y movimiento', 'herramientas y oficio', 'aves y naturaleza', 'emblemas'];
+if(M.length !== 200 || LETRAS.length !== 200) throw new Error(`deben ser 200 y son ${M.length} símbolos y ${LETRAS.length} letras`);
+const vistas = new Set(); for(const [l] of LETRAS){ if(vistas.has(l)) throw new Error('letra repetida: ' + l); vistas.add(l); }
+
+const t = (txt, f, w, s, mas = '') => `<span style="font-family:'${f}';font-weight:${w};font-size:${s}px;${mas}">${txt}</span>`;
+const fila = (gap, ...x) => `<div style="display:flex;align-items:center;gap:${gap}px">${x.join('')}</div>`;
+const filaB = (gap, ...x) => `<div style="display:flex;align-items:baseline;gap:${gap}px">${x.join('')}</div>`;
+const col = (gap, al, ...x) => `<div style="display:flex;flex-direction:column;align-items:${al};gap:${gap}px">${x.join('')}</div>`;
+const ancho = (e) => `letter-spacing:${e}em;margin-right:-${e}em`;
+const NOMBRES = [['GRUPO', 'MAZI'], ['Grupo', 'Mazi'], ['grupo', 'mazi']];
+
+/* los acomodos: el símbolo (s = su función) con el nombre (g, m) */
+const ACOMODOS = [
+  (s, f, w, g, m) => fila(20, s(92), t(g + ' ' + m, f, w, 48)),
+  (s, f, w, g, m) => fila(18, s(92), col(2, 'flex-start', t(g, f, w, 24, 'letter-spacing:.32em'), t(m, f, w, 66))),
+  (s, f, w, g, m) => col(12, 'center', s(100), t(m, f, w, 80), t(g, f, w, 18, ancho(.6))),
+  (s, f, w, g, m) => col(14, 'center', s(90), t(g + ' ' + m, f, w, 44)),
+  (s, f, w, g, m) => fila(18, col(0, 'flex-end', t(g, f, w, 26), t(m, f, w, 62)), s(88)),
+  (s, f, w, g, m) => col(12, 'center', t(g + ' ' + m, f, w, 46), s(110)),
+  (s, f, w, g, m) => col(16, 'center', s(140), t(g + ' ' + m, f, w, 20, ancho(.5))),
+  (s, f, w, g, m) => `<div style="border:3px solid currentColor;border-radius:16px;padding:22px 30px">${fila(16, s(70), t(g + ' ' + m, f, w, 38))}</div>`,
+  (s, f, w, g, m) => fila(20, s(80), '<div style="width:3px;height:84px;background:currentColor"></div>', col(0, 'flex-start', t(g, f, w, 26), t(m, f, w, 56))),
+  (s, f, w, g, m, c) => fila(18, `<div style="background:currentColor;border-radius:22px;padding:16px"><div style="color:${c[0]};--fondo:${c[1]}">${s(70, c[1])}</div></div>`, t(m, f, w, 70)),
+  (s, f, w, g, m) => col(12, 'center', s(84), fila(14, '<div style="width:46px;height:2px;background:currentColor"></div>', t(g + ' ' + m, f, w, 32), '<div style="width:46px;height:2px;background:currentColor"></div>')),
+  (s, f, w, g, m) => fila(10, t(m, f, w, 92), `<div style="align-self:flex-start">${s(68)}</div>`),
+];
+
+/* las letras de mano en MAYÚSCULAS no se leen: van con mayúscula sólo al principio */
+const DE_MANO = new Set(['Dancing Script', 'Gloria Hallelujah', 'Indie Flower', 'Zeyada', 'Shadows Into Light', 'La Belle Aurore', 'Allura', 'Courgette', 'Mr Dafoe', 'Marck Script', 'Pacifico', 'Sacramento', 'Great Vibes', 'Allison', 'Damion', 'Norican', 'Playball', 'Lobster', 'Seaweed Script', 'Lily Script One', 'Oleo Script', 'Sail', 'Kalam']);
+/* los que necesitan su propio acomodo: la i con punto cuadrado va DENTRO de la palabra */
+const ESPECIAL = {
+  'i con punto cuadrado': (s, f, w) => col(10, 'flex-start', filaB(3, t('maz', f, w, 104), s(37)), t('GRUPO', f, w, 20, 'letter-spacing:.5em')),
+};
+/* la hoja 3: la palabra misma es el logo */
+const caja = (x, css) => `<div style="${css}">${x}</div>`;
+const LETRA = {
+  'contorno': (f, w) => col(10, 'center', t('MAZI', f, w, 104, '-webkit-text-stroke:2.5px var(--tinta);color:transparent'), t('GRUPO', f, w, 20, ancho(.7))),
+  'mitad y mitad': (f, w) => col(8, 'flex-start', filaB(0, t('MA', f, w, 100), t('ZI', f, w, 100, '-webkit-text-stroke:2.5px var(--tinta);color:transparent')), t('grupo', f, w, 22, 'letter-spacing:.4em')),
+  'en cuadro de dos': (f, w) => caja(['M', 'A', 'Z', 'I'].map(x => t(x, f, w, 84, 'display:block;text-align:center')).join(''), 'display:grid;grid-template-columns:repeat(2,90px);line-height:.95;border:3px solid currentColor;padding:14px 10px'),
+  'muy abierta': (f, w) => t('GRUPO MAZI', f, w, 28, ancho(.9)),
+  'calada en barra': (f, w, c) => caja(t('MAZI', f, w, 86, `color:${c[0]};display:block`), 'background:currentColor;padding:10px 30px;border-radius:6px'),
+  'subrayado grueso': (f, w) => col(10, 'stretch', t('mazi', f, w, 96), '<div style="height:14px;background:currentColor;border-radius:7px"></div>', t('grupo', f, w, 20, 'letter-spacing:.5em;text-align:right')),
+  'tachada': (f, w) => t('GRUPO MAZI', f, w, 52, 'text-decoration:line-through;text-decoration-thickness:6px'),
+  'la A brinca': (f, w) => filaB(2, t('M', f, w, 100), t('A', f, w, 100, 'position:relative;top:-26px'), t('ZI', f, w, 100)),
+  'cortada': (f, w) => col(10, 'center', `<div style="position:relative">${t('MAZI', f, w, 104, 'display:block')}<div style="position:absolute;left:-8px;right:-8px;top:50%;height:8px;background:var(--fondo)"></div></div>`, t('grupo', f, w, 20, ancho(.6))),
+  'diagonal': (f, w) => `<div style="display:flex;align-items:flex-start;gap:4px">${['M', 'A', 'Z', 'I'].map((x, i) => t(x, f, w, 80, `margin-top:${i * 22}px`)).join('')}</div>`,
+  'entre corchetes': (f, w) => t('[ mazi ]', f, w, 84),
+  'entre comillas': (f, w) => t('«Mazi»', f, w, 96),
+  'con estela': (f, w) => fila(10, `<svg viewBox="0 0 60 50" width="60" stroke="currentColor" stroke-width="5" stroke-linecap="round"><path d="M10 12 H56 M2 26 H56 M18 40 H56"/></svg>`, t('MAZI', f, w, 84, 'display:inline-block;transform:skewX(-12deg)')),
+  'en anillo': (f, w) => caja(t('mazi', f, w, 56), 'width:190px;height:190px;border:5px solid currentColor;border-radius:50%;display:grid;place-items:center'),
+  'mitades corridas': (f, w) => `<div style="position:relative">${t('MAZI', f, w, 104, 'display:block;clip-path:inset(0 0 50% 0)')}${t('MAZI', f, w, 104, 'display:block;position:absolute;left:18px;top:0;clip-path:inset(50% 0 0 0)')}</div>`,
+  'con puntos': (f, w) => t('M·A·Z·I', f, w, 72),
+  'maZi': (f, w) => t('maZi', f, w, 104),
+  'grande y chica': (f, w) => filaB(12, t('MAZI', f, w, 96), t('grupo', f, w, 24)),
+  'escalera': (f, w) => col(0, 'flex-start', t('GRUPO', f, w, 52), t('MAZI', f, w, 52, 'margin-left:70px')),
+  'M grande': (f, w) => fila(8, t('M', f, w, 160), col(4, 'flex-start', t('azi', f, w, 64), t('grupo', f, w, 22, 'letter-spacing:.3em'))),
+  'marcador': (f, w) => t('grupo mazi', f, w, 64, 'background:linear-gradient(transparent 58%, color-mix(in srgb, currentColor 32%, transparent) 58%);padding:0 8px'),
+  'teclas': (f, w) => fila(10, ...['M', 'A', 'Z', 'I'].map(x => caja(t(x, f, w, 54), 'border:3px solid currentColor;border-radius:12px;width:74px;height:78px;display:grid;place-items:center'))),
+  'boleto': (f, w) => caja(fila(18, t('GRUPO', f, w, 30), '<div style="width:0;height:70px;border-left:3px dashed currentColor"></div>', t('MAZI', f, w, 56)), 'border:3px solid currentColor;border-radius:12px;padding:12px 26px'),
+  'doble marco': (f, w) => caja(t('GRUPO MAZI', f, w, 40, 'display:block'), 'border:8px double currentColor;padding:18px 28px'),
+  'con raya': (f, w) => t('GRUPO — MAZI', f, w, 50),
+};
+
+const hoja = +(new URLSearchParams(location.search).get('hoja') || 1), el = document.getElementById('hoja');
+const desde = (hoja - 1) * 25;
+const fichas = [];
+for(let i = desde; i < desde + 25; i++){
+  const [nombre, s] = M[i], [f, w] = LETRAS[i], fo = FONDOS[(i * 3 + Math.floor(i / 5)) % 8], c = F[fo];
+  const [g, m] = DE_MANO.has(f) ? NOMBRES[1] : NOMBRES[(i + Math.floor(i / 7)) % 3];
+  const k = document.createElement('link'); k.rel = 'stylesheet';
+  k.href = 'https://fonts.googleapis.com/css2?family=' + f.replace(/ /g, '+') + (w === 400 ? '' : ':wght@' + w) + '&display=block'; document.head.appendChild(k);
+  const logo = s ? ESPECIAL[nombre] ? ESPECIAL[nombre](s, f, w, c) : ACOMODOS[(i * 5 + Math.floor(i / 12)) % ACOMODOS.length]((x, cc) => s(x, cc || c[0]), f, w, g, m, c) : LETRA[nombre.replace('letra · ', '')](f, w, c);
+  fichas.push(`<div class="ficha" style="background:${c[0]};color:${c[1]};--fondo:${c[0]};--tinta:${c[1]}"><span class="fam">${nombre}</span><div class="lienzo"><div class="logo">${logo}</div></div>
+    <span class="num">${String(i + 1).padStart(3, '0')}</span><span class="fuente">${f}</span></div>`);
+}
+el.innerHTML = `<div class="cab"><div><h1>Grupo Mazi · ronda 5 · ${HOJAS[hoja - 1]} · ${String(desde + 1).padStart(3, '0')} al ${String(desde + 25).padStart(3, '0')}</h1>
+  <p>Doscientos que no se parecen entre sí ni a las rondas anteriores: cada uno con su letra, su acomodo y su símbolo. De un solo color y sin aureolas ni cuernos.</p></div>
+  <div class="rango">hoja<b>${hoja} de 8</b></div></div>
+  <div class="rej">${fichas.join('')}</div>
+  <div class="pie"><span>Grupo Mazi · ronda 5 de logos · hoja ${hoja} de 8</span><span>Símbolos dibujados en vector. Letras de Google Fonts, licencia OFL.</span></div>`;
+(async () => {
+  await document.fonts.ready;
+  for(const lz of document.querySelectorAll('.lienzo')){
+    const g = lz.querySelector('.logo'), a = lz.getBoundingClientRect(), r = g.getBoundingClientRect();
+    let u = { l:r.left, t:r.top, d:r.right, b:r.bottom };
+    for(const e of g.querySelectorAll('*')){ const q = e.getBoundingClientRect(); if(!q.width || !q.height) continue;
+      u = { l:Math.min(u.l, q.left), t:Math.min(u.t, q.top), d:Math.max(u.d, q.right), b:Math.max(u.b, q.bottom) }; }
+    const sc = Math.min(1, a.width / (u.d - u.l), a.height / (u.b - u.t)), cx = (u.l + u.d) / 2, cy = (u.t + u.b) / 2;
+    g.style.transformOrigin = `${(cx - r.left).toFixed(1)}px ${(cy - r.top).toFixed(1)}px`;
+    g.style.transform = `translate(${(a.left + a.width / 2 - cx).toFixed(1)}px, ${(a.top + a.height / 2 - cy).toFixed(1)}px) scale(${sc.toFixed(3)})`;
+  }
+  document.body.dataset.listo = '1';
+})();
+</script>
+</body>
+</html>

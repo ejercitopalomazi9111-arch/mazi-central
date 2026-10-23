@@ -24,7 +24,10 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 TRAB = os.path.join(AQUI, 'trabajo')
 PLANTILLA = os.path.join(AQUI, 'formato-institucional.pptx')
 SALIDA = os.path.join(AQUI, 'Fadori-STEAM.pptx')
-ADD = '/root/.claude/skills/synced/pptx/scripts/add_slide.py'
+# el script de la skill de pptx: su carpeta cambia de nombre según la sesión
+import glob
+ADD = next(iter(glob.glob('/root/.claude/skills/synced/**/pptx/scripts/add_slide.py', recursive=True)
+                + glob.glob('/mnt/skills/public/pptx/scripts/add_slide.py')), None)
 EMU = 914400
 
 # ── 1 · desempacar limpio ──────────────────────────────────────────────────
@@ -45,7 +48,12 @@ def escribir(p, s):
 # ── 2 · clonar la 8 para cada lámina nueva ─────────────────────────────────
 # La 8 (Visión) es la más limpia: decoración + título + un cuerpo. Clonarla
 # es cómo las nuevas nacen ya con el formato de la escuela.
-NUEVAS = ['que-es', 'como', 'enfoque', 'S', 'T', 'E', 'A', 'M', 'estado']
+# Carlos, 21 de octubre: «usa pocas diapositivas». Lo que se repetía va junto:
+# las cinco letras de STEAM en una, lo nuevo en una, y «¿Qué es Fadori?» sale
+# porque «¿Cómo funciona?» ya lo dice con sus tres capturas. 25 → 15.
+# Y luego: «como 7 láminas sólo». Se quedan las que cuentan el proyecto de
+# principio a fin; lo nuevo va dentro de «Estado actual».
+NUEVAS = ['como', 'steam', 'estado']
 clon = {}
 for nombre in NUEVAS:
     r = subprocess.run([sys.executable, ADD, TRAB, 'slide8.xml'],
@@ -293,8 +301,8 @@ cambiar(3, [
   (t('Objetivo'),     'Misión'),
   (t('Misión '),      'Visión'),
   (t('Visión '),      'Propósitos'),
-  (t('Proposito específico '), 'Enfoque'),
-  (t('proposito general'),     'STEAM'),
+  (t('Proposito específico '), 'Lo nuevo'),
+  (t('proposito general'),     'Enfoque · STEAM'),
 ])
 
 # 4 · El Problema · de 27 palabras a 15
@@ -366,14 +374,14 @@ TIT = (1.9, 0.85, 16.2, 1.55)     # título: ancho de sobra para UN solo rengló
 TIT_SZ = 62                        # 92 pt sólo cabía para «Visión»
 CUERPO_SZ = 30
 
-def lamina(n, titulo, cuerpo, imagen=None, caja=None, cuerpo_izq=False):
+def lamina(n, titulo, cuerpo, imagen=None, caja=None, cuerpo_izq=False, tit=None):
     p = sl(n); s = leer(p)
     s = poner_texto(s, 'TextBox 6', [titulo])
     s = poner_texto(s, 'TextBox 7', cuerpo if isinstance(cuerpo, list) else [cuerpo])
     # El título se ensancha y se achica hasta caber en un renglón. Si no, la
     # caja crece hacia abajo y se come el cuerpo — que es exactamente lo que
     # pasaba en «¿Cómo funciona?», «Objetivo» y «M · Matemáticas».
-    s = mover(s, 'TextBox 6', *TIT)
+    s = mover(s, 'TextBox 6', *(tit or TIT))
     s = formato(s, 'TextBox 6', sz=TIT_SZ, algn='ctr')
     # El cuerpo va ALINEADO A LA IZQUIERDA. Centrado, cada renglón arranca en
     # un lugar distinto y una frase de once palabras se lee como un poema.
@@ -387,9 +395,6 @@ def lamina(n, titulo, cuerpo, imagen=None, caja=None, cuerpo_izq=False):
     if imagen:
         poner_imagen(n, imagen, caja or (10.2, 3.1, 8.2, 6.6))
 
-lamina(clon['que-es'], '¿Qué es Fadori?',
-       'App que ordena la cafetería sin filas.',
-       '02-menu.png', (12.20, 3.45, 5.40, 7.00), cuerpo_izq=True)
 
 lamina(clon['como'], '¿Cómo funciona?',
        'Dejas tu pedido, recibes turno, vas cuando esté listo.',
@@ -408,9 +413,6 @@ poner_imagen(clon['como'], '02-menu.png',           ( 2.40, 4.90, 3.40, 5.76))
 poner_imagen(clon['como'], '03-mi-turno.png',       ( 7.40, 4.90, 4.40, 4.81))
 poner_imagen(clon['como'], '04-pantalla-turnos.png',(12.80, 4.90, 5.60, 3.15))
 
-lamina(clon['enfoque'], 'Enfoque',
-       'Cuantitativo y deductivo: medimos tiempos y comprobamos la hipótesis.',
-       '06-medidor.png', (10.60, 4.40, 8.00, 4.10), cuerpo_izq=True)
 
 # Una captura DISTINTA por letra. Antes «Enfoque» y «S · Ciencia» llevaban la
 # misma gráfica en láminas seguidas: se leía como si nos hubiéramos quedado sin
@@ -418,24 +420,38 @@ lamina(clon['enfoque'], 'Enfoque',
 # «S · Ciencia» habla de medir antes y después, así que le toca la gráfica. Cada caja se midió aparte porque las capturas de teléfono son altas
 # y angostas y las de escritorio anchas y bajas; una sola caja para todas dejaba
 # a unas nadando y a otras desbordadas.
-STEAM = [
-  ('S', 'Ciencia',     'Medimos la fila antes y después.',
-   '08-grafica.png',   (10.60, 4.40, 8.00, 4.15)),
-  ('T', 'Tecnología',  'App web, servidor propio, funciona sin internet.',
-   '03-mi-turno.png',  (12.90, 3.60, 5.20, 5.70)),
-  ('E', 'Ingeniería',  'La fila se ordena sola, con tope justo.',
-   '05-mostrador.png', (10.50, 4.50, 8.20, 3.48)),
-  ('A', 'Arte',        'Identidad propia: logo, color y tipografía.',
-   '01-cortinilla.png',(12.50, 3.60, 5.60, 5.50)),
-  ('M', 'Matemáticas', 'Turnos, promedios y porcentajes calculados solos.',
-   '07-cifras.png',    (10.60, 4.60, 8.00, 3.00)),
-]
-for letra, nombre, texto, img, caja in STEAM:
-    lamina(clon[letra], letra + ' · ' + nombre, texto, img, caja, cuerpo_izq=True)
+# las cinco letras en UNA lámina: el renglón de arriba dice qué hace cada una, en
+# el mismo orden que las capturas de abajo
+lamina(clon['steam'], 'STEAM en Fadori',
+       'S medir · T programar · E ordenar · A diseñar · M calcular', tit=(6.70, 0.85, 11.60, 1.55))
+_p = sl(clon['steam']); _s = leer(_p)
+_s = mover(_s, 'TextBox 7', 2.20, 2.55, 16.00, 1.10)
+escribir(_p, _s)
+for img, caja in [('08-grafica.png',    ( 2.20, 4.30, 3.00, 4.60)),
+                  ('03-mi-turno.png',   ( 5.45, 4.30, 3.00, 4.60)),
+                  ('05-mostrador.png',  ( 8.70, 4.30, 3.20, 4.60)),
+                  ('01-cortinilla.png', (12.15, 4.30, 3.00, 4.60)),
+                  ('07-cifras.png',     (15.40, 4.30, 3.00, 4.60))]:
+    poner_imagen(clon['steam'], img, caja)
+
+# ═══ LO NUEVO · lo que se le sumó después del 9 de octubre ═══════════════
+# Carlos, 21 de octubre: «actualiza la presentación de Fadori con todo lo
+# nuevo». Una lámina por cosa, con su captura de la app de verdad (las tomó
+# /tmp/claude-0/pres/capturas.mjs contra el servidor local, a las 10:05 del
+# recreo) y la regla de siempre: 15 palabras o menos.
+TIT_DER = (6.70, 0.85, 11.60, 1.55)
 
 lamina(clon['estado'], 'Estado actual',
-       ['Terminada, publicada y en línea. Cuatro pantallas.'],
-       '04-pantalla-turnos.png', (10.60, 4.30, 8.00, 4.50), cuerpo_izq=True)
+       'En uso. Nuevo: credencial, pantalla, cobro y estado de cuenta.',
+       tit=TIT_DER)
+_p = sl(clon['estado']); _s = leer(_p)
+_s = mover(_s, 'TextBox 7', 2.20, 2.55, 16.00, 1.10)
+escribir(_p, _s)
+for img, caja in [('09-credencial.png',    ( 2.20, 4.20, 3.00, 5.00)),
+                  ('11-anuncios.png',      ( 5.45, 4.20, 5.60, 5.00)),
+                  ('12-cobro.png',         (11.30, 4.20, 3.30, 5.00)),
+                  ('14-estado-cuenta.png', (14.85, 4.20, 3.60, 5.00))]:
+    poner_imagen(clon['estado'], img, caja)
 
 # ═══ AFINAR LAS LÁMINAS ORIGINALES ═══════════════════════════════════════
 # Al renderizar por fin la presentación salieron encimados en las láminas que
@@ -559,9 +575,7 @@ acomodar(10, { 'TextBox 7': (4.20, 1.00, 12.40, 2.41),
                'TextBox 2': (2.86, 4.20, 14.00, 2.60) })
 
 # ═══ EL ORDEN ═════════════════════════════════════════════════════════════
-ORDEN = [1, 2, 3, 4, clon['que-es'], 5, clon['como'], 6, 7, 8, 9, 10,
-         clon['enfoque'], clon['S'], clon['T'], clon['E'], clon['A'],
-         clon['M'], clon['estado']]
+ORDEN = [1, 2, 4, clon['como'], 6, clon['steam'], clon['estado']]
 
 pres_p = os.path.join(TRAB, 'ppt', 'presentation.xml')
 pres = leer(pres_p)
@@ -575,6 +589,12 @@ lista = ''.join('<p:sldId id="%d" r:id="%s"/>' % (256 + i, por_slide[n])
 pres = re.sub(r'<p:sldIdLst>.*?</p:sldIdLst>', '<p:sldIdLst>' + lista + '</p:sldIdLst>',
               pres, flags=re.S)
 escribir(pres_p, pres)
+
+# las láminas que ya no van (índice, misión, visión…) se quitan del paquete:
+# fuera del orden pero adentro del archivo, PowerPoint las puede dar por dañadas
+LIMPIAR = next(iter(glob.glob('/root/.claude/skills/synced/**/pptx/scripts/clean.py', recursive=True)
+                    + glob.glob('/mnt/skills/public/pptx/scripts/clean.py')), None)
+if LIMPIAR: subprocess.run([sys.executable, LIMPIAR, TRAB], check=True, capture_output=True)
 
 # ═══ EMPACAR ══════════════════════════════════════════════════════════════
 if os.path.exists(SALIDA): os.remove(SALIDA)

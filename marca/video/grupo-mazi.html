@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Grupo Mazi · comercial de la casa</title>
+<!-- COMERCIAL 4 · lo que hace Grupo Mazi (9:16, sin voz: se entiende en silencio).
+     Carlos, 23 de octubre: «uno publicitario de nuestro trabajo general… apps, webs,
+     software… sólo donde se vea realmente increíble, incluye a arco». Cada pantalla es
+     el trabajo DE VERDAD, grabado con marca/video/grabar.mjs (y la app de Fadori con
+     fadori-campana/grabar/app.mjs). Música: «Volatile Reaction», 152 bpm, con el
+     golpe grande de la canción (29.87 s) cayendo en el golpe 56 del video.
+     Fuera, por decisión de Carlos: Torre Infinita, El Pacto Roto, Hoja de Romero,
+     KERNEL://LOCK y el software de ICAMP. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700;800;900&display=swap">
+<style>
+@font-face{font-family:"Mazi"; src:url(../../sitio/fuente/mazi.woff2) format("woff2")}
+:root{ --vacio:#100A18; --superficie:#1E1428; --linea:#2A2036; --hueso:#E9E4E4; --apagado:#8B8296; --violeta:#AC27FF; --t:"Inter Tight", sans-serif }
+*{box-sizing:border-box; margin:0}
+html,body{width:1080px; height:1920px; overflow:hidden; background:var(--vacio); color:var(--hueso); font-family:var(--t)}
+.capa{position:absolute; inset:0; overflow:hidden}
+.k{font-weight:900; letter-spacing:-.05em; line-height:.86; text-transform:uppercase}
+/* fondo de los capítulos */
+#fondo{background:radial-gradient(90% 55% at 50% 32%, #2E1B45 0%, #190F26 50%, var(--vacio) 85%)}
+#halo{position:absolute; left:50%; top:46%; width:1600px; height:1600px; margin:-800px 0 0 -800px; border-radius:50%; background:radial-gradient(closest-side, rgba(172,39,255,.34), rgba(172,39,255,.06) 60%, transparent)}
+#rejilla{position:absolute; inset:-200px; background-image:linear-gradient(rgba(233,228,228,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(233,228,228,.05) 1px, transparent 1px); background-size:90px 90px;
+  -webkit-mask:radial-gradient(60% 50% at 50% 50%, #000, transparent); mask:radial-gradient(60% 50% at 50% 50%, #000, transparent)}
+#palabra{position:absolute; left:-40px; top:1230px; white-space:nowrap; font-size:420px; color:transparent; -webkit-text-stroke:3px rgba(172,39,255,.22)}
+#ceja{position:absolute; left:70px; top:120px; font-weight:800; font-size:34px; letter-spacing:.2em; text-transform:uppercase; color:var(--violeta)}
+#nombre{position:absolute; left:66px; right:60px; top:170px; font-size:128px}
+#desc{position:absolute; left:70px; right:70px; bottom:110px; font-weight:600; font-size:42px; line-height:1.2; color:#d8cfe3}
+/* el teléfono */
+.tel{position:absolute; width:640px; height:1344px; left:50%; top:50%; margin:-672px 0 0 -320px; z-index:2}
+.tel .caja{position:absolute; inset:0; border-radius:92px; background:linear-gradient(145deg,#3d3846,#141019 40%,#2b2533); padding:20px;
+  box-shadow:0 0 0 2px #4a4356, 0 70px 140px -30px rgba(0,0,0,.95), 0 0 160px -30px rgba(172,39,255,.55)}
+.tel .pantalla{position:relative; width:600px; height:1299px; border-radius:72px; overflow:hidden; background:#000}
+.tel .pantalla img, .pc .pantalla img{width:100%; height:100%; display:block; object-fit:cover; object-position:top}
+.tel .isla{position:absolute; top:22px; left:50%; width:170px; height:48px; margin-left:-85px; border-radius:30px; background:#000; z-index:2}
+.brillo{position:absolute; pointer-events:none; background:linear-gradient(115deg, rgba(255,255,255,.14), rgba(255,255,255,0) 32%)}
+.tel .brillo{inset:20px; border-radius:72px}
+/* la computadora */
+.pc{position:absolute; width:980px; height:660px; left:50%; top:50%; margin:-330px 0 0 -490px; z-index:1}
+.pc .tapa{position:absolute; left:20px; right:20px; top:0; height:622px; border-radius:30px 30px 8px 8px; background:#141019; padding:18px 18px 26px;
+  box-shadow:0 0 0 2px #3a3346, 0 60px 120px -30px rgba(0,0,0,.95), 0 0 160px -40px rgba(172,39,255,.5)}
+.pc .pantalla{position:relative; width:904px; height:565px; border-radius:10px; overflow:hidden; background:#000}
+.pc .brillo{left:38px; right:38px; top:18px; height:565px; border-radius:10px}
+.pc .base{position:absolute; left:0; right:0; bottom:0; height:40px; border-radius:4px 4px 30px 30px; background:linear-gradient(180deg,#4a4356,#221c2c 40%,#15111c)}
+.pc .base::before{content:""; position:absolute; left:50%; top:0; width:180px; height:12px; margin-left:-90px; border-radius:0 0 12px 12px; background:#0d0a12}
+/* la apertura */
+#intro{background:var(--vacio)}
+#intro .lin{position:absolute; left:0; right:0; text-align:center; font-size:110px; white-space:nowrap; word-spacing:.14em}
+.k{word-spacing:.08em}
+#intro .lin.v{color:var(--violeta)}
+#intro .barra{position:absolute; left:0; top:0; bottom:0; width:100%; background:var(--violeta); transform-origin:0 50%}
+/* el muro */
+#muro{background:var(--vacio)}
+#muro .plano{position:absolute; left:50%; top:50%; width:1800px; height:2600px; margin:-1300px 0 0 -900px; display:flex; gap:28px; justify-content:center}
+#muro .col{display:flex; flex-direction:column; gap:28px; width:330px}
+#muro .losa{width:330px; height:520px; border-radius:30px; overflow:hidden; flex:none; background:#000; box-shadow:0 30px 60px -20px rgba(0,0,0,.8), 0 0 0 2px rgba(172,39,255,.25)}
+#muro .losa.ancha{height:220px}
+#muro .losa img{width:100%; height:100%; object-fit:cover; object-position:top; display:block}
+#muro .velo{position:absolute; inset:0; background:radial-gradient(70% 45% at 50% 50%, rgba(16,10,24,.25), rgba(16,10,24,.88))}
+#muro .lema{position:absolute; left:0; right:0; top:50%; transform:translateY(-50%); text-align:center; font-size:118px; line-height:.95; word-spacing:.1em; white-space:nowrap; padding:56px 0 64px; background:linear-gradient(90deg, transparent, rgba(16,10,24,.9) 18%, rgba(16,10,24,.9) 82%, transparent)}
+#muro .lema em{font-style:normal; color:var(--violeta)}
+/* la ráfaga */
+#rafaga{background:#000}
+#rafaga img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:top; filter:saturate(1.15) contrast(1.05)}
+#rafaga .sombra{position:absolute; inset:0; background:linear-gradient(180deg, rgba(16,10,24,.0) 40%, rgba(16,10,24,.92))}
+#rafaga .n{position:absolute; left:60px; right:40px; bottom:200px; font-size:170px}
+#rafaga .q{position:absolute; left:64px; bottom:140px; font-weight:800; font-size:36px; letter-spacing:.18em; text-transform:uppercase; color:var(--violeta)}
+/* el cierre */
+#cierre{background:radial-gradient(80% 55% at 50% 38%, #2E1B45, var(--vacio) 80%)}
+#cierre .paloma{position:absolute; left:50%; top:330px; width:760px; height:447px; margin-left:-380px; background:url(../logo/paloma.svg) center/contain no-repeat; filter:drop-shadow(0 0 70px rgba(172,39,255,.6))}
+#cierre .nom{position:absolute; left:0; right:0; top:820px; text-align:center; font-family:"Mazi", var(--t); font-size:132px; white-space:nowrap}
+#cierre .serv{position:absolute; left:60px; right:60px; top:1020px; display:flex; flex-wrap:wrap; justify-content:center; gap:16px 18px}
+#cierre .serv span{padding:14px 28px; border-radius:99px; background:rgba(172,39,255,.16); box-shadow:inset 0 0 0 2px rgba(172,39,255,.5); font-weight:700; font-size:40px}
+#cierre .lema{position:absolute; left:80px; right:80px; top:1290px; text-align:center; font-size:48px; font-weight:600; line-height:1.25; color:#cfc6da}
+#cierre .wa{position:absolute; left:50%; top:1480px; transform:translateX(-50%); display:flex; align-items:center; gap:24px; padding:34px 60px; border-radius:99px;
+  background:#25D366; color:#0b2a17; font-weight:900; font-size:64px; letter-spacing:-.02em; white-space:nowrap; box-shadow:0 30px 80px -20px rgba(37,211,102,.8)}
+#cierre .wa svg{width:70px; height:70px}
+#cierre .correo{position:absolute; left:0; right:0; top:1670px; text-align:center; font-size:38px; font-weight:600; color:var(--apagado)}
+#flash{position:absolute; inset:0; background:#fff; opacity:0}
+#grano{position:absolute; inset:-50%; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E"); opacity:.06; mix-blend-mode:overlay}
+</style>
+</head>
+<body>
+<div class="capa" id="fondo"><div id="rejilla"></div><div id="halo"></div><div id="palabra" class="k"></div>
+  <div id="ceja"></div><div id="nombre" class="k"></div>
+  <div class="pc" id="pc"><div class="tapa"><div class="pantalla"><img alt=""></div></div><div class="brillo"></div><div class="base"></div></div>
+  <div class="tel" id="tel"><div class="caja"><div class="pantalla"><div class="isla"></div><img alt=""></div><div class="brillo"></div></div></div>
+  <div id="desc"></div>
+</div>
+<div class="capa" id="muro"><div class="plano" id="plano"></div><div class="velo"></div><div class="lema k">Todo, hecho<br><em>por nosotros.</em></div></div>
+<div class="capa" id="rafaga"><img alt=""><div class="sombra"></div><div class="q"></div><div class="n k"></div></div>
+<div class="capa" id="intro"><div class="barra"></div>
+  <div class="lin k" style="top:600px">Si no existe</div><div class="lin k" style="top:725px">la herramienta,</div>
+  <div class="lin k v" style="top:930px">se construye</div><div class="lin k v" style="top:1055px">la herramienta.</div></div>
+<div class="capa" id="cierre">
+  <div class="paloma"></div><div class="nom">GRUPO MAZI</div>
+  <div class="serv"><span>Webs</span><span>Apps</span><span>Software</span><span>Video</span><span>Presentaciones</span><span>Documentos</span><span>Herramientas a la medida</span></div>
+  <div class="lema">Si no existe la herramienta,<br>se construye la herramienta.</div>
+  <div class="wa"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.3-.4.8-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg>442 883 3786</div>
+  <div class="correo">grupomazi.oficial@gmail.com</div>
+</div>
+<div id="grano"></div><div id="flash"></div>
+<script>
+const B = 60 / 152, at = (n) => n * B;
+const cl = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), p = (t, a, b) => cl((t - a) / (b - a));
+const oe = (x) => x >= 1 ? 1 : 1 - Math.pow(2, -10 * x), ioc = (x) => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const ob = (x) => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const $ = (s) => document.querySelector(s), vis = (el, si) => { el.style.display = si ? '' : 'none'; };
+const DUR = at(96) + .6;
+let IX = {};
+const ruta = (f, seg) => { const s = IX[f]; const i = cl(Math.round(seg * 60), 0, s.n - 1); return s.dir + '/' + String(i).padStart(5, '0') + '.jpg'; };
+const ult = new Map();
+async function poner(img, f, seg){ const r = ruta(f, seg); if(ult.get(img) === r) return; ult.set(img, r); img.src = r; try{ await img.decode(); }catch(e){} }
+
+/* los capítulos: [desde, hasta (golpes), ceja, nombre, qué es, acomodo, pc, tel]; pc/tel = [fuente, seg desde, seg hasta] o tramos */
+const SC = [
+  [8, 16, '01 · Webs', "Smiley's", 'Pizzería · la carta, «Ármala tú» y el pedido por WhatsApp', 'tel', null, [['smileys', .25, 5.4]]],
+  [16, 24, '01 · Webs', 'District Roll', 'Sushi · una carta digital que da hambre', 'ambos', [['district-pc', .5, 5.4]], [['district-tel', .6, 6.6]]],
+  [24, 32, '01 · Webs', 'ARCO', 'Arquitectura · el portafolio de Rodrigo Cabrera', 'ambos', [['arco-pc', 1.6, 8.4]], [['arco-tel', 1.3, 5.4]]],
+  [32, 40, '02 · Apps', 'Fadori', 'La cafetería de la escuela, sin filas: pides, pagas y te avisa', 'tel', null, [['fadori', .4, 3.6], ['fadori', 14.2, 16.6]]],
+  [40, 44, '02 · Apps', 'Ligas Mazi', 'Ligas deportivas: cuentas, pagos y marcador en vivo', 'pc', [['ligas-pc', .2, 4.2]], null],
+  [44, 48, '03 · Juegos', 'Guerra de Puercos', 'Un juego de cartas, para dos o en línea', 'tel', null, [['puercos-tel', .2, 3.4]]],
+  [48, 51, '04 · A la medida', 'Tres moscas', 'Simulación de comportamiento, en vivo', 'pc', [['mosca-pc', 3.0, 5.35]], null],
+  [51, 53.5, '04 · A la medida', 'Reportes', 'Documentos con formato oficial, en un minuto', 'pc', [['reportes-pc', .3, 3.9]], null],
+  [53.5, 56, '04 · A la medida', 'Banco de pruebas', 'Nuestro laboratorio de interfaz', 'pc', [['laboratorio-pc', .3, 3.9]], null],
+];
+const PALABRA = { '01 · Webs': 'Webs', '02 · Apps': 'Apps', '03 · Juegos': 'Juegos', '04 · A la medida': 'Software' };
+function tramo(lista, t, a, b){            /* reparte el capítulo entre sus tramos, en partes iguales */
+  const k = Math.min(lista.length - 1, Math.floor(p(t, a, b) * lista.length)), u = (p(t, a, b) * lista.length) - k, [f, r0, r1] = lista[k];
+  return [f, r0 + (r1 - r0) * u];
+}
+const RAF = [ // la ráfaga: un trabajo por golpe
+  ['smileys', 9.5, "Smiley's", 'Web'], ['district-pc', 3.4, 'District Roll', 'Web'], ['arco-pc', 7.2, 'ARCO', 'Web'], ['fadori', 15.2, 'Fadori', 'App'],
+  ['ligas-pc', 2, 'Ligas Mazi', 'App'], ['puercos-tel', 1.2, 'Puercos', 'Juego'], ['mosca-pc', 3, 'Tres moscas', 'Simulación'], ['sitio-pc', 7.5, 'Grupo Mazi', 'Nuestra casa'],
+];
+const LOSAS = [ // el muro: cuatro columnas que corren
+  [['smileys', 4.2], ['arco-pc', 7, 1], ['fadori', 1.2], ['district-tel', 4.5], ['mosca-pc', 3, 1], ['smileys', 24]],
+  [['district-tel', 1.2], ['ligas-pc', 2, 1], ['puercos-tel', 1], ['arco-tel', 4.2], ['reportes-pc', 3, 1], ['fadori', 15.2]],
+  [['arco-tel', 1.5], ['sitio-pc', 7.5, 1], ['smileys', 36.8], ['fadori', 7], ['district-pc', 4, 1], ['puercos-tel', 3.2]],
+  [['fadori', 2.6], ['laboratorio-pc', 3, 1], ['smileys', 13], ['district-tel', 6.6], ['arco-pc', 3, 1], ['smileys', 30.5]],
+];
+
+window.pintar = async (t) => {
+  /* ── la apertura: el lema, palabra por palabra en el golpe ── */
+  const I = $('#intro'), enI = t < at(8.2); vis(I, enI);
+  if(enI){
+    [...I.querySelectorAll('.lin')].forEach((l, k) => { const a = at([0, 1.5, 3.5, 5][k]), q = oe(p(t, a, a + .3));
+      l.style.opacity = q; l.style.transform = `translateY(${(1 - q) * 70}px) scale(${1 + (1 - q) * .4})`; l.style.filter = `blur(${(1 - q) * 14}px)`; });
+    const w = ioc(p(t, at(7), at(7.6))), w2 = ioc(p(t, at(7.6), at(8.2)));
+    const br = I.querySelector('.barra'); br.style.transform = `scaleX(${w * (1 - w2)})`; br.style.transformOrigin = w2 > 0 ? '100% 50%' : '0 50%';
+    if(w2 > 0){ br.style.transform = `scaleX(${1 - w2})`; }
+    I.style.background = w2 > 0 ? 'transparent' : 'var(--vacio)';
+    I.querySelectorAll('.lin').forEach(l => { if(w2 > 0) l.style.opacity = 0; });
+  }
+
+  /* ── los capítulos ── */
+  const sc = SC.find(([a, b]) => t >= at(a) && t < at(b)), F = $('#fondo'); vis(F, !!sc);
+  if(sc){
+    const [a, b, ceja, nombre, desc, aco, fpc, ftel] = sc, A = at(a), Bf = at(b), pc = $('#pc'), tel = $('#tel');
+    $('#halo').style.transform = `scale(${1 + Math.sin(t * 1.4) * .05})`;
+    $('#rejilla').style.transform = `translateY(${(t * 40) % 90}px)`;
+    const P = $('#palabra'); P.textContent = PALABRA[ceja]; P.style.transform = `translateX(${-t * 90 % 600}px)`;
+    $('#desc').style.right = aco === 'ambos' ? '440px' : '70px';
+    if($('#nombre').dataset.k !== nombre){ $('#nombre').textContent = nombre; $('#ceja').textContent = ceja; $('#desc').textContent = desc; $('#nombre').dataset.k = nombre; }
+    const corto = (Bf - A) < 2;
+    const q = oe(p(t, A, A + (corto ? .25 : .45)));
+    $('#nombre').style.opacity = q; $('#nombre').style.transform = `translateY(${(1 - q) * 60}px)`; $('#nombre').style.filter = `blur(${(1 - q) * 10}px)`;
+    $('#ceja').style.opacity = q; $('#ceja').style.transform = `translateX(${(1 - q) * -40}px)`;
+    const qd = oe(p(t, A + .2, A + .7)); $('#desc').style.opacity = qd; $('#desc').style.transform = `translateY(${(1 - qd) * 30}px)`;
+    vis(pc, !!fpc); vis(tel, !!ftel);
+    const ent = oe(p(t, A, A + (corto ? .35 : .6))), flota = Math.sin(t * 1.3) * 10, gir = Math.sin(t * .9) * 4;
+    if(fpc){ const [f, s] = tramo(fpc, t, A, Bf); await poner(pc.querySelector('img'), f, s);
+      const y = aco === 'ambos' ? -150 : 40;
+      pc.style.transform = `perspective(2600px) translate(${(1 - ent) * -900}px, ${y + flota}px) rotateY(${(1 - ent) * 30 + gir}deg) rotateX(${4}deg) scale(${aco === 'ambos' ? .98 : 1.04})`; }
+    if(ftel){ const [f, s] = tramo(ftel, t, A, Bf); await poner(tel.querySelector('img'), f, s);
+      if(aco === 'ambos') tel.style.transform = `perspective(2200px) translate(${250 + (1 - ent) * 800}px, ${400 - flota}px) rotateY(${-10 - (1 - ent) * 30}deg) scale(.6)`;
+      else tel.style.transform = `perspective(2200px) translate(0px, ${110 + flota + (1 - ent) * 1400}px) rotateX(${(1 - ent) * 35}deg) rotateY(${gir}deg) scale(.86)`; }
+  }
+
+  /* ── el golpe grande: el muro de trabajos ── */
+  const M = $('#muro'), enM = t >= at(56) && t < at(72); vis(M, enM);
+  if(enM){
+    const u = t - at(56);
+    $('#plano').style.transform = `perspective(2400px) rotateX(18deg) rotateZ(-12deg) scale(${1.25 - .12 * oe(p(u, 0, 1.2))})`;
+    [...$('#plano').children].forEach((c, k) => { c.style.transform = `translateY(${(k % 2 ? 1 : -1) * (u * 120 + 200) - (k % 2 ? 600 : 0)}px)`; });
+    const ql = ob(p(u, .15, .7)), sal = ioc(p(t, at(71.4), at(72)));
+    $('#muro .lema').style.transform = `translateY(-50%) scale(${(.6 + .4 * ql) * (1 + sal * .3)})`; $('#muro .lema').style.opacity = cl(ql) * (1 - sal);
+  }
+
+  /* ── la ráfaga: un trabajo por golpe ── */
+  const R = $('#rafaga'), enR = t >= at(72) && t < at(80); vis(R, enR);
+  if(enR){
+    const k = Math.min(7, Math.floor((t - at(72)) / B)), [f, s, n, q] = RAF[k], u = (t - at(72 + k)) / B;
+    await poner(R.querySelector('img'), f, s);
+    R.querySelector('img').style.transform = `scale(${1.18 - .1 * u})`;
+    R.querySelector('.n').textContent = n; R.querySelector('.q').textContent = q;
+    R.querySelector('.n').style.transform = `translateX(${(1 - oe(cl(u * 3))) * -80}px)`;
+  }
+
+  /* ── el cierre ── */
+  const C = $('#cierre'), enC = t >= at(80); vis(C, enC);
+  if(enC){
+    const a = at(80), qp = ob(p(t, a, a + .7));
+    $('#cierre .paloma').style.transform = `translateY(${(1 - qp) * 140 + Math.sin(t * 1.5) * 8}px) scale(${.6 + .4 * qp})`; $('#cierre .paloma').style.opacity = cl(qp); $('#cierre .paloma').style.filter = `drop-shadow(0 0 70px rgba(172,39,255,.6)) blur(${(1 - cl(qp)) * 20}px)`;
+    const qn = oe(p(t, at(81), at(81) + .5)); $('#cierre .nom').style.opacity = qn; $('#cierre .nom').style.letterSpacing = (.25 - .25 * qn) + 'em';
+    [...document.querySelectorAll('#cierre .serv span')].forEach((s, k) => { const qs = ob(p(t, at(82 + k * .5), at(82 + k * .5) + .3)); s.style.opacity = cl(qs); s.style.transform = `scale(${qs})`; s.style.display = 'inline-block'; });
+    const ql = oe(p(t, at(86.5), at(86.5) + .5)); $('#cierre .lema').style.opacity = ql;
+    const qw = ob(p(t, at(88), at(88) + .45)); $('#cierre .wa').style.transform = `translateX(-50%) scale(${qw})`; $('#cierre .wa').style.opacity = cl(qw);
+    $('#cierre .correo').style.opacity = oe(p(t, at(89), at(89) + .5));
+    C.style.opacity = 1 - p(t, DUR - .6, DUR);
+  }
+
+  const cortes = [at(8), ...SC.map(s => at(s[0])), at(56), at(72), at(80)];
+  const fl = cortes.map(x => Math.max(0, 1 - Math.abs(t - x) / .07)).reduce((m, v) => Math.max(m, v), 0);
+  $('#flash').style.opacity = fl * (Math.abs(t - at(56)) < .1 ? .9 : .35);
+  $('#grano').style.transform = `translate(${(Math.floor(t * 24) * 37) % 160 - 80}px, ${(Math.floor(t * 24) * 53) % 160 - 80}px)`;
+};
+
+const FX = '../../herramientas/video/efectos/';
+window.VIDEO = { w: 1080, h: 1920, fps: 60, dur: DUR,
+  /* 7.77 s de la canción = golpe 19: el golpe grande (29.87 s) cae en el golpe 56 del video */
+  musica: { archivo: '/tmp/claude-0/musica/Volatile_Reaction.mp3', desde: 7.77, vol: 0.6, entrada: .3, fin: 2 },
+  sonidos: [
+    [FX + 'golpe.wav', at(0), .9], [FX + 'golpe.wav', at(1.5), .8], [FX + 'golpe.wav', at(3.5), 1], [FX + 'golpe.wav', at(5), 1],
+    [FX + 'whoosh.wav', at(7.2), .9],
+    ...SC.slice(1).map(s => [FX + 'whoosh.wav', at(s[0]) - .25, .55]),
+    [FX + 'subida.wav', at(50), .6], [FX + 'golpe.wav', at(56), 1.2],
+    [FX + 'whoosh.wav', at(72) - .25, .8], [FX + 'whoosh.wav', at(80) - .3, .9], [FX + 'ding.wav', at(81), .7], [FX + 'timbre.wav', at(88), .5],
+  ] };
+window.listo = (async () => {
+  IX = await (await fetch('rec/indice.json')).json();
+  /* el muro se arma una vez: losas quietas, columnas que corren */
+  for(const col of LOSAS){ const c = document.createElement('div'); c.className = 'col';
+    for(const [f, s, ancha] of [...col, ...col]){ const d = document.createElement('div'); d.className = 'losa' + (ancha ? ' ancha' : ''); const i = new Image(); i.src = ruta(f, s); d.appendChild(i); c.appendChild(d); }
+    $('#plano').appendChild(c); }
+  await document.fonts.ready;
+  await Promise.all([...document.images].map(i => i.decode().catch(() => {})));
+  await window.pintar(0);
+})();
+</script>
+</body>
+</html>

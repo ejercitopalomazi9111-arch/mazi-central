@@ -1,6 +1,6 @@
 # La presentación del proyecto STEAM
 
-`Fadori-STEAM.pptx` · 19 diapositivas · Bachillerato Rembrandt · Instituto Tecnológico en
+`Fadori-STEAM.pptx` · 7 diapositivas · Bachillerato Rembrandt · Instituto Tecnológico en
 Programación · grupo 3.1 · ciclo **Agosto – Diciembre 2026**.
 
 ## Va sobre el formato institucional, y eso no se toca
@@ -25,7 +25,7 @@ python3 recortar.py         # capturas enteras → recortes/ (sólo lo que impor
 python3 rehacer.py          # → Fadori-STEAM.pptx
 ```
 
-Las capturas (`01`–`08`) salen de la app de verdad, no son maquetas. Si la app cambia, se
+Las capturas (`01`–`14`) salen de la app de verdad, no son maquetas. Las del 21 de octubre (`02`–`05` y `09`–`14`) se tomaron con la app rediseñada contra el servidor local, a las 10:05 del recreo. Si la app cambia, se
 vuelven a sacar y se corre `rehacer.py` otra vez.
 
 `armar.mjs` es el generador **viejo**, el que dibujaba la presentación desde cero antes de que
@@ -50,7 +50,8 @@ no cuentan: la rúbrica los pide.
 | Enfoque (cualitativo / cuantitativo / deductivo) | 13 |
 | Imágenes y su relación con cada apartado de STEAM | 14 a 18, una por letra |
 | ¿Qué? ¿Por qué? ¿Cómo? ¿Para qué? | 5 · 4 · 7 · 8 |
-| Estado actual | 19 |
+| Lo nuevo (credencial, pantalla del recreo, cobro, estado de cuenta) | 14 |
+| Estado actual | 15 |
 | Ortografía | revisada, con acentos |
 
 ## Cómo se revisó

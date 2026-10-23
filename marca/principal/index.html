@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grupo Mazi · aureola y cuerno</title>
+<!--
+  LA PRINCIPAL, OTRA VEZ (24 de octubre). Carlos mandó diez imágenes hechas con IA («horribles, pero
+  es referencia de a qué me refiero: simplifica y mejora»): una aureola de ángel vista de lado, un
+  óvalo acostado, que a la derecha se quiebra y se vuelve un cuerno que sube. Dorado y rojo.
+  Aquí va lo mismo dibujado a mano en vector: plano, sin brillos ni texturas, de dos colores o de
+  uno, que aguante en 20 px. El símbolo sale de UNA función (marca()) con perillas, así que todas
+  las versiones son el mismo dibujo. ?hoja=1 las versiones · ?hoja=2 aplicado (nombre, ícono, chico).
+-->
+<style>
+:root{ --vacio:#100A18; --hueso:#EAE5E3; --gris:#A79CB4 }
+*{ box-sizing:border-box; margin:0 }
+html, body{ background:var(--vacio); color:var(--hueso); font:400 16px/1.4 system-ui, sans-serif }
+.hoja{ width:2120px; padding:56px 60px 48px }
+.cab{ display:flex; align-items:end; gap:24px; margin-bottom:32px }
+.cab h1{ font:800 44px/1.05 system-ui; letter-spacing:-.02em }
+.cab p{ margin-top:6px; color:var(--gris); font-size:21px; max-width:86ch }
+.rej{ display:grid; grid-template-columns:repeat(4, 1fr); gap:16px }
+.ficha{ position:relative; height:400px; border-radius:22px; overflow:hidden; display:grid; place-items:center; box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.07) }
+.ficha .et{ position:absolute; left:20px; bottom:16px; font:600 15px/1.2 system-ui; opacity:.6 }
+.ficha .n{ position:absolute; left:20px; top:16px; font:700 18px/1 ui-monospace, Menlo, monospace; opacity:.55 }
+.pie{ margin-top:26px; color:#6E6380; font-size:17px }
+svg{ display:block; overflow:visible }
+</style>
+</head>
+<body>
+<div class="hoja" id="hoja"></div>
+<script>
+const RAD = Math.PI / 180;
+/* el símbolo. Aureola: un óvalo acostado (rx × ry) hecho como anillo relleno, más grueso adelante
+   (abajo) que atrás, como se ve una aureola de lado. Va de «corte» grados arriba a la derecha, por la
+   izquierda, a «corte» grados abajo. Cuerno: nace donde se quiebra el óvalo y sube en media luna. */
+function marca(o = {}){
+  const { halo = '#E8B23A', cuerno = '#D7262E', grueso = 12, corte = 36, hueco = 6, astillas = false, destello = false,
+    linea = 0, w = 380, cx = 84, cy = 80, rx = 72, ry = 27 } = o;
+  const ix = rx - grueso, iy = ry - grueso * .7, icy = cy - grueso * .1;          /* el óvalo de adentro, un poco subido */
+  const P = (x, y, a, bx, by) => [x + bx * Math.cos(a * RAD), y + by * Math.sin(a * RAD)];
+  const f = (p) => p.map(v => v.toFixed(1)).join(' ');
+  const o0 = P(cx, cy, -corte, rx, ry), o1 = P(cx, cy, corte, rx, ry), i0 = P(cx, icy, -corte, ix, iy), i1 = P(cx, icy, corte, ix, iy);
+  /* cada punta del óvalo se corta en zigzag: de afuera, un pico hacia el cuerno, y de vuelta adentro */
+  const pico = (a, b, s) => [(a[0] + b[0]) / 2 + 5, (a[1] + b[1]) / 2 + s];
+  const anillo = `M${f(o0)} A${rx} ${ry} 0 1 0 ${f(o1)} L${f(pico(o1, i1, 0))} L${f(i1)} A${ix} ${iy} 0 1 1 ${f(i0)} L${f(pico(o0, i0, 0))} Z`;
+  /* el cuerno: su base es un borde quebrado paralelo al corte, a «hueco» de distancia */
+  const bx = Math.max(o0[0], o1[0]) + hueco + 5;
+  const base = [[bx, o0[1] - 4], [bx - 4, (o0[1] + o1[1]) / 2 - 10], [bx + 3, (o0[1] + o1[1]) / 2], [bx - 3, (o0[1] + o1[1]) / 2 + 12], [bx + 2, o1[1] + 4]];
+  const fin = base[base.length - 1], ini = base[0];
+  const cuernoD = `M${f(ini)} ${base.slice(1).map(p => 'L' + f(p)).join(' ')} C${f([fin[0] + 54, fin[1] + 2])} ${f([bx + 78, ini[1] - 34])} ${f([bx + 46, -20])} C${f([bx + 54, 8])} ${f([bx + 36, ini[1] - 8])} ${f(ini)} Z`;
+  const pintar = (d, c) => linea ? `<path d="${d}" fill="none" stroke="${c}" stroke-width="${linea}" stroke-linejoin="round"/>` : `<path d="${d}" fill="${c}"/>`;
+  let extra = '';
+  if(astillas) extra += [`M${bx - hueco - 1} ${o0[1] - 14} l6 -9 l3 10 Z`, `M${bx - hueco + 2} ${o1[1] + 10} l7 8 l-9 3 Z`].map((d, i) => pintar(d, i ? cuerno : halo)).join('');
+  if(destello){ const x = cx - rx * .42, y = cy - ry * .9, L = 46, A = 3.2;
+    extra += pintar(`M${x} ${y - L} L${x + A} ${y - A} L${x + L * .42} ${y} L${x + A} ${y + A} L${x} ${y + L} L${x - A} ${y + A} L${x - L * .42} ${y} L${x - A} ${y - A} Z`, halo); }
+  return `<svg viewBox="0 -40 ${bx + 90} ${cy + ry + 76}" width="${w}">${pintar(anillo, halo)}${pintar(cuernoD, cuerno)}${extra}</svg>`;
+}
+const N = '#0B0A0F', ORO = '#E8B23A', ROJO = '#D7262E', HU = '#EAE5E3', VIO = '#AC27FF', LILA = '#C878FF', VA = '#100A18';
+const hoja = +(new URLSearchParams(location.search).get('hoja') || 1), el = document.getElementById('hoja');
+const ficha = (n, et, fondo, svg, mas = '') => `<div class="ficha" style="background:${fondo};${mas}"><span class="n" style="color:${fondo === HU || fondo === '#FFFFFF' ? N : '#fff'}">${n}</span>${svg}<span class="et" style="color:${fondo === HU || fondo === '#FFFFFF' ? N : '#fff'}">${et}</span></div>`;
+if(hoja === 1){
+  const V = [
+    ['oro y rojo', N, marca()],
+    ['oro y rojo, con destello', N, marca({ destello: true })],
+    ['oro y rojo, con astillas', N, marca({ astillas: true })],
+    ['delgada', N, marca({ grueso: 7, hueco: 5 })],
+    ['de un color · blanco', N, marca({ halo: '#fff', cuerno: '#fff' })],
+    ['de un color · negro', HU, marca({ halo: N, cuerno: N })],
+    ['la de la casa · hueso y violeta', VA, marca({ halo: HU, cuerno: VIO })],
+    ['violeta y lila', VA, marca({ halo: LILA, cuerno: VIO, destello: true })],
+    ['sólo línea', N, marca({ linea: 3, halo: ORO, cuerno: ROJO })],
+    ['sólo línea, de un color', VA, marca({ linea: 3, halo: HU, cuerno: HU })],
+    ['sobre violeta', VIO, marca({ halo: '#fff', cuerno: N })],
+    ['oro sobre negro, cuerno vino', N, marca({ cuerno: '#8E1A22', destello: true, astillas: true })],
+  ];
+  el.innerHTML = `<div class="cab"><div><h1>Aureola y cuerno · simplificada</h1>
+    <p>La aureola de lado, como óvalo acostado, se quiebra a la derecha y de ahí sale el cuerno. Plana, sin brillos ni texturas, para que se lea igual en un letrero que en el ícono de la app.</p></div></div>
+    <div class="rej">${V.map(([et, fo, s], i) => ficha(String(i + 1).padStart(2, '0'), et, fo, s)).join('')}</div>
+    <div class="pie">Grupo Mazi · la principal · dibujada a mano en vector, sin imágenes generadas</div>`;
+} else {
+  const k = document.createElement('link'); k.rel = 'stylesheet'; k.href = 'https://fonts.googleapis.com/css2?family=Onest:wght@300;600&display=block'; document.head.appendChild(k);
+  const t = (s, w, px, mas = '') => `<span style="font-family:'Onest';font-weight:${w};font-size:${px}px;${mas}">${s}</span>`;
+  const icono = (px, fondo, o) => `<div style="width:${px}px;height:${px}px;border-radius:${px * .22}px;background:${fondo};display:grid;place-items:center">${marca({ w: px * .8, ...o })}</div>`;
+  el.innerHTML = `<div class="cab"><div><h1>Aplicada</h1><p>Con el nombre, como ícono y en chiquito.</p></div></div>
+    <div class="rej" style="grid-template-columns:1.6fr 1fr">
+      <div class="ficha" style="background:${N};height:520px"><div style="display:flex;align-items:center;gap:40px">${marca({ w: 360 })}<div style="display:flex;flex-direction:column;gap:6px">${t('MAZI', 600, 120, 'letter-spacing:.06em;color:#fff')}${t('GRUPO', 300, 30, 'letter-spacing:.62em;color:' + ORO)}</div></div></div>
+      <div class="ficha" style="background:${HU};height:520px"><div style="display:flex;flex-direction:column;align-items:center;gap:26px">${marca({ w: 300, halo: N, cuerno: N })}${t('GRUPO MAZI', 600, 52, 'letter-spacing:.14em;color:' + N)}</div></div>
+      <div class="ficha" style="background:${VA};height:360px"><div style="display:flex;gap:40px;align-items:center">${icono(200, N, {})}${icono(140, VIO, { halo: '#fff', cuerno: N })}${icono(90, HU, { halo: N, cuerno: N })}</div><span class="et" style="color:#fff">ícono de la app</span></div>
+      <div class="ficha" style="background:${N};height:360px"><div style="display:flex;gap:40px;align-items:center">${marca({ w: 64 })}${marca({ w: 40, grueso: 13 })}${marca({ w: 24, grueso: 15, hueco: 8 })}</div><span class="et" style="color:#fff">chiquito: 64, 40 y 24 px</span></div>
+    </div><div class="pie">Grupo Mazi · la principal aplicada</div>`;
+}
+(async () => { await document.fonts.ready; document.body.dataset.listo = '1'; })();
+</script>
+</body>
+</html>

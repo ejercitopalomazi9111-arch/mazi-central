@@ -1,0 +1,103 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Caja · cuadros</title>
+<!-- Pinta la caja 3D de Smiley's cuadro por cuadro (la tapa abriéndose) para el botón del pedido.
+     La página no corre 3D en vivo: lo corre esto una vez, lo junta scripts/caja-sprite.mjs
+     en img/caja-cuadros.webp, y en la página es una tira de imágenes. -->
+<script type="importmap">{"imports":{"three":"../vendor/three.module.min.js"}}</script>
+<body style="margin:0;background:transparent">
+<canvas id="c" width="640" height="640"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from '../vendor/loaders/GLTFLoader.js';
+import { RoomEnvironment } from '../vendor/environments/RoomEnvironment.js';
+
+const q = new URLSearchParams(location.search);
+const L = +(q.get('lado') || 640);
+const lienzo = document.getElementById('c'); lienzo.width = lienzo.height = L;
+const r = new THREE.WebGLRenderer({ canvas: lienzo, antialias: true, alpha: true, preserveDrawingBuffer: true });
+r.setSize(L, L, false);
+r.outputColorSpace = THREE.SRGBColorSpace;
+r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.02;
+r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
+r.setClearColor(0x000000, 0);
+
+const escena = new THREE.Scene();
+escena.environment = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.04).texture;
+escena.environmentIntensity = 0.6;
+const sol = new THREE.DirectionalLight(0xffe6c8, 2.2); sol.position.set(0.5, 4.2, 0.9); sol.castShadow = true;
+sol.shadow.mapSize.set(2048, 2048); Object.assign(sol.shadow.camera, { left: -2.5, right: 2.5, top: 2.5, bottom: -2.5, near: .5, far: 9 });
+sol.shadow.bias = -0.0004; sol.shadow.normalBias = 0.02; sol.shadow.radius = 4;
+escena.add(sol);
+const contra = new THREE.DirectionalLight(0xff6a40, 1.0); contra.position.set(-2.2, 1.4, -1.6); escena.add(contra);
+escena.add(new THREE.HemisphereLight(0xfff4e6, 0x2a1d14, 0.4));
+const piso = new THREE.Mesh(new THREE.PlaneGeometry(6, 6), new THREE.ShadowMaterial({ opacity: 0.38 }));
+piso.rotation.x = -Math.PI / 2; piso.receiveShadow = true; escena.add(piso);
+
+const tl = new THREE.TextureLoader();
+const tex = (u) => new Promise((ok, mal) => tl.load(u, ok, undefined, mal));
+const img = (u) => new Promise((ok, mal) => { const i = new Image(); i.onload = () => ok(i); i.onerror = mal; i.src = u; });
+const [foto, kraft, logo, sonrisa, gCaja, gPizza] = await Promise.all([
+  tex('../img/pizza-textura.jpg'), tex('../img/kraft.jpg'), img('../img/logo.svg'), img('../img/sonrisa.svg'),
+  new GLTFLoader().loadAsync('../3d/pizza-box.glb'), new GLTFLoader().loadAsync('../3d/pizza.glb')
+]);
+foto.colorSpace = kraft.colorSpace = THREE.SRGBColorSpace;
+kraft.wrapS = kraft.wrapT = THREE.RepeatWrapping; kraft.anisotropy = foto.anisotropy = 8;
+
+const matKraft = new THREE.MeshStandardMaterial({ map: kraft, color: 0xd9b888, roughness: .92 });
+const caja = gCaja.scene;
+caja.traverse((o) => { if (o.isMesh) { proyeccion(o.geometry, 1.25); o.material = matKraft; o.castShadow = o.receiveShadow = true; } });
+const tapa = caja.getObjectByName('lid');
+const bisagra = new THREE.Group(); bisagra.position.set(-0.471, 0.09, 0); tapa.parent.add(bisagra); bisagra.add(tapa);
+tapa.position.set(0.457, 0, 0); tapa.quaternion.setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI);
+const impreso = new THREE.Mesh(new THREE.PlaneGeometry(.9, .88), new THREE.MeshStandardMaterial({ map: lienzoTapa(), transparent: true, roughness: .85, polygonOffset: true, polygonOffsetFactor: -2 }));
+impreso.rotation.x = Math.PI / 2; impreso.rotation.z = Math.PI / 2; impreso.position.set(0, -0.0015, 0); tapa.add(impreso);
+escena.add(caja);
+
+const pizza = gPizza.scene; let R = 0;
+pizza.traverse((o) => { if (o.isMesh) { const p = o.geometry.attributes.position; for (let i = 0; i < p.count; i++) R = Math.max(R, Math.hypot(p.getX(i), p.getZ(i))); } });
+const matPizza = new THREE.MeshPhysicalMaterial({ map: foto, color: 0xf2ece4, roughness: .55, clearcoat: .2, clearcoatRoughness: .5 });
+pizza.traverse((o) => {
+  if (!o.isMesh) return;
+  const g = o.geometry, p = g.attributes.position, uv = new Float32Array(p.count * 2);
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+    if (Math.hypot(x, z) < R * .84 && y > .027) p.setY(i, .0252);
+    uv[i * 2] = .5 + x / (2 * R); uv[i * 2 + 1] = .5 - z / (2 * R);
+  }
+  p.needsUpdate = true; g.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); g.computeVertexNormals();
+  o.material = matPizza; o.castShadow = o.receiveShadow = true;
+});
+pizza.position.y = .006; escena.add(pizza);
+
+const cam = new THREE.PerspectiveCamera(30, 1, .05, 30);
+function pose(abre, giro, alto, dist){
+  bisagra.rotation.z = THREE.MathUtils.degToRad(abre);
+  cam.position.set(Math.sin(giro) * dist, alto, Math.cos(giro) * dist);
+  cam.lookAt(0, .26, 0);
+  r.render(escena, cam);
+  return lienzo.toDataURL('image/png');
+}
+window.pose = pose;
+window.listo = true;
+
+function proyeccion(g, e){
+  const p = g.attributes.position, n = g.attributes.normal, uv = new Float32Array(p.count * 2);
+  for (let i = 0; i < p.count; i++) {
+    const ax = Math.abs(n.getX(i)), ay = Math.abs(n.getY(i)), az = Math.abs(n.getZ(i)); let u, v;
+    if (ay >= ax && ay >= az) { u = p.getX(i); v = p.getZ(i); } else if (ax >= az) { u = p.getZ(i); v = p.getY(i); } else { u = p.getX(i); v = p.getY(i); }
+    uv[i * 2] = u * e; uv[i * 2 + 1] = v * e;
+  }
+  g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+}
+function lienzoTapa(){
+  const L = 2048, c = document.createElement('canvas'); c.width = c.height = L; const x = c.getContext('2d');
+  const tinta = (im, dx, dy, w, rot) => {
+    const h = w * (im.naturalHeight / im.naturalWidth || .4), t = document.createElement('canvas'); t.width = Math.ceil(w); t.height = Math.ceil(h);
+    const tx = t.getContext('2d'); tx.drawImage(im, 0, 0, w, h); tx.globalCompositeOperation = 'source-in'; tx.fillStyle = '#2b241f'; tx.fillRect(0, 0, w, h);
+    x.save(); x.translate(dx, dy); x.rotate(rot || 0); x.globalAlpha = .92; x.drawImage(t, -w / 2, -h / 2); x.restore();
+  };
+  tinta(logo, L * .27, L * .16, L * .4, -.05); tinta(sonrisa, L * .5, L * .56, L * 1.02, -.12);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+}
+</script>

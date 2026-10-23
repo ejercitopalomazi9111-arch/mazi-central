@@ -6,6 +6,7 @@
 <title>Guerra de Puercos</title>
 <meta name="description" content="El juego de cartas de Guerra de Puercos, para jugar en el teléfono.">
 <meta name="theme-color" content="#E84A8A">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 48 48%22%3E%3Cellipse cx=%2224%22 cy=%2224%22 rx=%2221%22 ry=%2217%22 fill=%22%23FFD6E6%22 stroke=%22%231B0E16%22 stroke-width=%223.5%22/%3E%3Cellipse cx=%2217%22 cy=%2224%22 rx=%223.6%22 ry=%225.4%22 fill=%22%231B0E16%22/%3E%3Cellipse cx=%2231%22 cy=%2224%22 rx=%223.6%22 ry=%225.4%22 fill=%22%231B0E16%22/%3E%3C/svg%3E">
 <style>
 /* ══════════════════════════════════════════════════════════════════════════
    GUERRA DE PUERCOS · la mesa
@@ -267,6 +268,29 @@ body.fieltro .rot-rival{ color:var(--hueso) }
    apagado, hay que tocarlo para saber en qué está. */
 .salir.apagado{ opacity:.45 }
 
+/* ══ LA GUÍA ═══════════════════════════════════════════════════════════════
+   Un globo amarillo —el color de «te falta un toque»— que no tapa la mesa:
+   va arriba si lo que señala está abajo, y al revés. Lo señalado se enciende
+   con el mismo contorno, para que el ojo una el globo con la carta. */
+.guia{
+  position:fixed; left:12px; right:12px; z-index:950; max-width:440px; margin:0 auto;
+  background:#FFE9B8; color:#2A1508; border:3px solid var(--tinta); border-radius:16px;
+  padding:12px 14px 12px; box-shadow:0 10px 28px rgba(0,0,0,.45);
+  animation:guiaEntra .28s cubic-bezier(.2,.9,.3,1.25);
+}
+.guia[hidden]{ display:none }
+.guia.arriba{ top:calc(10px + env(safe-area-inset-top)) }
+.guia.abajo{ bottom:calc(12px + env(safe-area-inset-bottom)) }
+@keyframes guiaEntra{ from{ transform:scale(.9); opacity:0 } to{ transform:none; opacity:1 } }
+.guia__paso{ margin:0 0 2px; font-size:11px; font-weight:900; letter-spacing:.14em; text-transform:uppercase; color:#9A5A00 }
+.guia h3{ margin:0 0 4px; font-size:18px; line-height:1.2 }
+.guia p{ margin:0; font-size:15px; line-height:1.4; font-weight:600 }
+.guia__botones{ display:flex; gap:8px; margin-top:10px; justify-content:flex-end; align-items:center }
+.guia__saltar{ background:none; border:0; color:#6B4A2A; font-weight:800; font-size:14px; padding:10px 6px; margin-right:auto; min-height:44px }
+.guia__ok{ background:var(--tinta); color:#fff; border:0; border-radius:12px; font-weight:900; font-size:15px; padding:0 18px; min-height:44px }
+.guiado{ outline:3px solid #FFD166 !important; outline-offset:4px; border-radius:14px; animation:late 1s ease-in-out infinite }
+@media (prefers-reduced-motion: reduce){ .guia, .guiado{ animation:none } }
+
 /* ══ LA TIENDA ═════════════════════════════════════════════════════════════ */
 .cartera{
   display:flex; align-items:center; justify-content:center; gap:8px;
@@ -275,11 +299,13 @@ body.fieltro .rot-rival{ color:var(--hueso) }
 .cartera .moneda{ font-size:24px }
 .cartera .u{ font-size:13px; font-weight:800; opacity:.7 }
 .paga{
-  margin:10px 0 0; padding:8px 12px; border-radius:99px; display:inline-block;
+  margin:10px 0 0; padding:8px 14px; border-radius:14px; display:inline-block;
   font-size:15px; font-weight:800; background:rgba(255,209,102,.16);
   border:2px solid rgba(255,209,102,.5); color:#FFD166;
 }
 .paga[hidden]{ display:none }
+.paga small{ font-weight:700; opacity:.85 }
+.sobre .falta{ font-style:normal; font-weight:800; color:#FFD166 }
 .sobres{ display:grid; gap:12px }
 .sobre{
   display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:12px;
@@ -481,6 +507,21 @@ body:not(.fieltro) .linea-media span{ color:rgba(0,0,0,.4) }
   grid-template-columns:none;
 }
 @media (min-width:560px){ .mano.abanico{ --encime:calc(var(--ancho-carta) * .26) } }
+/* ⚠ EN EL TELÉFONO, MI MAZO Y MI CEMENTERIO SUBEN A UN RENGLÓN PROPIO. Pegados
+   a los costados del abanico le robaban 120 px de ancho a la mano —las cartas
+   quedaban de 90 px y una encima de otra— mientras abajo sobraban casi 300 px
+   de pantalla vacía. Con las pilas arriba de la mano, el abanico usa el ancho
+   entero y las cartas crecen un tercio. Medido a 390×844, 22 de octubre. */
+@media (max-width:559px){
+  .lado.mio{
+    grid-template-columns:var(--pila) minmax(0,1fr) var(--pila);
+    grid-template-areas:"mazo . cem" "mano mano mano"; row-gap:0;
+  }
+  .lado.mio #mMazoA{ grid-area:mazo; margin-bottom:0 }
+  .lado.mio #mCemA{ grid-area:cem; margin-bottom:0 }
+  .lado.mio .mano{ grid-area:mano }
+  .lado.mio .mano.abanico{ --ancho-carta:clamp(84px, 29vw, 130px); padding-top:18px }
+}
 .mano.abanico .carta{
   width:var(--ancho-carta); flex:0 0 auto;
   margin-left:calc(var(--encime) * -1);
@@ -544,7 +585,15 @@ body.fieltro .sin-esp{ color:var(--hueso) }
    grandes». Tenía razón — el valor está impreso en la ilustración desde el
    principio, así que superponerlo era taparle el dibujo a la carta para
    repetir un dato que ya estaba ahí. */
-.carta.con-arte{ background:var(--tinta); overflow:hidden; padding:0 }
+.carta.con-arte{ background:var(--rosa-hondo) url(arte/web/reverso.webp) center/cover; overflow:hidden; padding:0 }
+/* ↑ Mientras baja el dibujo se ve el REVERSO, no un cuadro negro: una carta
+   que se está volteando se lee como carta; una negra, como un error. */
+/* El montón de especiales iguales: «×3» en la esquina. */
+.carta .cuantas{
+  position:absolute; top:4px; right:4px; z-index:2; min-width:28px; height:28px; padding:0 7px;
+  border-radius:999px; background:var(--tinta); color:#fff; border:2px solid #fff;
+  font-size:14px; font-weight:900; display:grid; place-items:center; font-variant-numeric:tabular-nums;
+}
 .carta .ilustra{
   position:absolute; inset:0; background-size:cover; background-position:center;
   border-radius:8px;
@@ -553,6 +602,65 @@ body.fieltro .sin-esp{ color:var(--hueso) }
 .carta.con-arte .niv{ display:none }
 .n-S{background:var(--S)} .n-A{background:var(--A)} .n-B{background:var(--B)}
 .n-C{background:var(--C)} .n-D{background:var(--D)}
+
+/* ══ EL RÓTULO DE LA CARTA QUE LEVANTAS ═══════════════════════════════════
+   Carlos: «al picarle a una ésta se ponga en la capa de hasta el frente, se
+   ilumine, se levante y enseñe su rareza y su nivel arriba». Lo de subir y
+   encenderse ya estaba; faltaba DECIR qué es. Viene del trabajo de Godines
+   (rama claude/juego-puercos, 2 de septiembre), que nunca se juntó. Va fuera
+   de `#mMano` a propósito: la mano ordena sus hijos por índice y un rótulo
+   adentro le movería la cuenta. */
+#mLadoA{ position:relative }
+.ficha-carta{
+  position:absolute; top:var(--y, 0); left:var(--x, 50%); transform:translateX(-50%);
+  z-index:70; display:flex; align-items:center; gap:7px; white-space:nowrap;
+  padding:5px 12px 5px 6px; border-radius:99px; border:3px solid var(--tinta);
+  background:var(--hueso); color:var(--tinta); box-shadow:0 3px 0 var(--tinta);
+  font-size:12px; font-weight:900; letter-spacing:.04em; pointer-events:none;
+  animation:fichaSube .22s cubic-bezier(.2,.9,.3,1.3);
+}
+.ficha-carta[hidden]{ display:none }
+.ficha-carta .sello{
+  display:inline-grid; place-items:center; width:22px; height:22px; border-radius:7px;
+  border:2px solid var(--tinta); color:#fff; font-size:12px; flex:0 0 auto;
+}
+.ficha-carta .rareza{ text-transform:uppercase; letter-spacing:.12em; font-size:10.5px; color:var(--rosa-hondo) }
+@keyframes fichaSube{ from{ transform:translate(-50%, 8px) scale(.9) } to{ transform:translate(-50%, 0) } }
+
+/* ══ LA CARTA QUE PIERDE REVIENTA ═════════════════════════════════════════
+   Sólo transform y opacidad sobre la IMAGEN de la carta, nunca sobre el texto
+   que se lee. Y NO termina en opacidad 0 (Godines lo vio en la foto): la mesa
+   se queda hasta «Siguiente ronda», y un hueco se lee como «se rompió el
+   juego», no como «explotó». Queda chamuscada. */
+@keyframes revienta{
+  0%  { transform:scale(1) rotate(0); filter:none }
+  30% { transform:scale(1.14) rotate(-4deg) }
+  100%{ transform:scale(.8) rotate(8deg); opacity:.4; filter:grayscale(.75) }
+}
+.slot .carta.revienta{ animation:revienta .55s ease-in forwards }
+.chispa{
+  position:absolute; width:10px; height:10px; border-radius:50%; background:#FFD35A;
+  border:2px solid var(--tinta); pointer-events:none; z-index:5;
+  animation:chispa .5s ease-out forwards;
+}
+@keyframes chispa{ to{ transform:translate(var(--x), var(--y)) scale(.2); opacity:0 } }
+
+/* ══ LOS PUERCOS QUE CORREN AL FUSIONAR ═══════════════════════════════════
+   Carlos, por nombre: «haz que aparezcan puercos corriendo al fusionar». Y
+   lo que corrigió después: «si tú dibujaste los cerdos y no parecen los del
+   arte me voy a enojar». Son medallones recortados de las cartas DE VERDAD
+   —Normal, Mamado y Manada, las tres que son un puerco y nada más—. */
+.carrera{ position:absolute; left:0; right:0; bottom:4px; height:52px; pointer-events:none; overflow:hidden; z-index:6 }
+.carrera i{
+  position:absolute; left:0; bottom:0; width:48px; height:48px; border-radius:50%;
+  border:3px solid var(--tinta); box-shadow:2px 2px 0 rgba(0,0,0,.3);
+  background-size:230%; background-position:50% 38%; background-repeat:no-repeat;
+  animation:corre var(--dur, 1.5s) linear both;
+}
+.carrera b{ display:block; width:100%; height:100%; animation:brinca .3s ease-in-out infinite }
+@keyframes corre{ from{ transform:translateX(-70px) } to{ transform:translateX(calc(100vw + 70px)) } }
+@keyframes brinca{ 0%, 100%{ transform:translateY(0) } 50%{ transform:translateY(-10px) } }
+@media (prefers-reduced-motion: reduce){ .ficha-carta, .slot .carta.revienta{ animation:none } .carrera, .chispa{ display:none } }
 
 /* ── especiales ── */
 /* ⚠ SE ENVUELVE, y no es precaución: desde que la mano se cuenta en cartas
@@ -800,6 +908,7 @@ body.fieltro .pie, body.fieltro .pie a{color:var(--hueso); opacity:.9}
     <button class="btn ancho" data-modo="dos">Dos en este teléfono</button>
         <button class="btn ancho" id="bTienda">La tienda</button>
     <button class="btn ancho" id="bCartas">Ver las 100 cartas</button>
+    <button class="btn ancho" id="bGuia">Aprender a jugar</button>
     <button class="btn ancho" id="bReglas">Cómo se juega</button>
   </div>
   <p class="pie">El juego y su reglamento son de su autora.<br>Esta versión para
@@ -1046,6 +1155,7 @@ body.fieltro .pie, body.fieltro .pie a{color:var(--hueso); opacity:.9}
         <div class="pila mazo" id="mMazoA"><b>0</b></div>
         <div class="mano" id="mMano"></div>
         <div class="pila cementerio" id="mCemA"></div>
+        <div class="ficha-carta" id="mFicha" hidden aria-hidden="true"></div>
       </div>
       <p class="aviso" id="mAviso" hidden></p>
       <p class="pie" id="mPistas"></p>
@@ -1113,6 +1223,21 @@ body.fieltro .pie, body.fieltro .pie a{color:var(--hueso); opacity:.9}
     <h2 id="corQuien">Pásale el teléfono</h2>
     <p id="corTexto">Que el otro no vea tus cartas.</p>
     <button class="btn ancho" id="bCortina" style="max-width:280px">Ya soy yo, ver mis cartas</button>
+  </div>
+</div>
+
+<!-- ══ LA GUÍA · el tutorial (Carlos, 22 de octubre: «pon un tutorial») ══
+     No es una pantalla de reglas antes de jugar: es la primera partida contra
+     la máquina con alguien que te va diciendo qué hacer JUSTO cuando hace
+     falta. Cada globo sale una sola vez, se puede saltar entero y se vuelve a
+     ver desde «Aprender a jugar». -->
+<div class="guia" id="guia" hidden role="dialog" aria-live="polite" aria-labelledby="guiaTit">
+  <p class="guia__paso" id="guiaPaso"></p>
+  <h3 id="guiaTit"></h3>
+  <p id="guiaTxt"></p>
+  <div class="guia__botones">
+    <button type="button" class="guia__saltar" id="guiaSaltar">Saltar tutorial</button>
+    <button type="button" class="guia__ok" id="guiaOk">Entendido</button>
   </div>
 </div>
 
@@ -1775,16 +1900,41 @@ cargarCartera();
 /* Cuánto se gana. Perder también paga: un juego que sólo premia ganar castiga
    dos veces al que va perdiendo, y el que va perdiendo es justo el que
    necesita una razón para jugar otra. */
-const PAGA = { gana: 25, empata: 12, pierde: 8, porRonda: 1 };
+/* ⚠ LA ECONOMÍA SE REVISÓ EL 22 DE OCTUBRE (Carlos: «arregla la economía»).
+   Jugada de verdad, la primera partida PERDIDA pagaba 23 y el sobre más barato
+   costaba 30: el primer contacto con la tienda era «no te alcanza». Ahora:
+     · perder paga 14 y ganar 30, más 1 por ronda (tope 15);
+     · la PRIMERA VICTORIA DEL DÍA trae 25 de más, para que valga volver;
+     · al empezar se regalan 40 monedas con las cartas: el primer sobre se
+       abre en la primera visita a la tienda y así se entiende para qué sirve. */
+const PAGA = { gana: 30, empata: 18, pierde: 14, porRonda: 1, primeraDelDia: 25 };
+const MONEDAS_DE_REGALO = 40;
 
+function hoyEs(){ const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+
+/* Devuelve { total, bono } para que la pantalla pueda decir de dónde salió. */
 function pagarPartida(comoAcabo, rondas){
   const base = comoAcabo === 'gana' ? PAGA.gana
              : comoAcabo === 'empata' ? PAGA.empata : PAGA.pierde;
-  const ganado = base + Math.min(15, Math.max(0, rondas | 0) * PAGA.porRonda);
-  CARTERA.monedas += ganado;
+  let bono = 0;
+  if(comoAcabo === 'gana'){
+    let ultimo = '';
+    try{ ultimo = localStorage.getItem('puercos_victoria_dia') || ''; }catch(e){}
+    if(ultimo !== hoyEs()){
+      bono = PAGA.primeraDelDia;
+      try{ localStorage.setItem('puercos_victoria_dia', hoyEs()); }catch(e){}
+    }
+  }
+  const total = base + Math.min(15, Math.max(0, rondas | 0) * PAGA.porRonda) + bono;
+  CARTERA.monedas += total;
   guardarCartera();
-  return ganado;
+  return { total, bono };
 }
+
+/* Lo que devuelve una repetida, según qué tan buena es. Antes eran 4 parejas
+   para todas: una S repetida —la más difícil de sacar— valía lo mismo que una
+   D, y el sobre fino se sentía a robo justo cuando ya tenías medio álbum. */
+const DEVUELVE = { D:3, C:5, B:8, A:12, S:20 };
 
 /* Los sobres. El caro no da MÁS cartas: da cartas de mejor nivel, que es lo
    que de verdad se quiere cuando ya tienes medio álbum. */
@@ -1792,12 +1942,15 @@ const SOBRES = [
   { id:'chico',  nombre:'Sobre sencillo', dice:'3 cartas de cualquier nivel',
     precio:30,  cuantas:3, niveles:null },
   { id:'bueno',  nombre:'Sobre bueno',    dice:'3 cartas, ninguna de nivel D',
-    precio:70,  cuantas:3, niveles:['S','A','B','C'] },
+    precio:75,  cuantas:3, niveles:['S','A','B','C'] },
   { id:'fino',   nombre:'Sobre fino',     dice:'2 cartas de nivel A o S',
-    precio:140, cuantas:2, niveles:['S','A'] },
+    precio:150, cuantas:2, niveles:['S','A'] },
 ];
 
-function cuantasTengo(){ return Object.keys(CARTERA.tengo).length; }
+/* Sólo cuentan las que se coleccionan: una Alcancía que un sobre viejo haya
+   dado no es una carta del álbum. */
+function cuantasTengo(){ return CAT.listo ? misCartas().length : Object.keys(CARTERA.tengo).length; }
+function cuantasHay(){ return CAT.listo ? CAT.todas.filter(c => 'SABCD'.includes(c.nivel) && c.nivel.length === 1).length : 98; }
 
 /* ── EL REGALO DE ARRANQUE ────────────────────────────────────────────────
    Carlos: «al abrirlo inicies con súper poquitas cartas». OCHO, y malas.
@@ -1830,6 +1983,7 @@ function regalarArranque(){
     .slice(0, CUANTAS_DE_REGALO);
   if(!baratas.length) return false;
   for(const f of baratas) CARTERA.tengo[f.nombre + '·' + f.puntos] = 1;
+  CARTERA.monedas += MONEDAS_DE_REGALO;
   try{ localStorage.setItem('puercos_arranque', 'si'); }catch(e){}
   guardarCartera();
   return true;
@@ -1865,21 +2019,33 @@ function miMazo(){
 function abrirSobre(sobre){
   if(!CAT.listo || !CAT.todas.length) return null;
   if(CARTERA.monedas < sobre.precio) return null;
+  /* ⚠ SIN LAS ESPECIALES. El sobre sencillo sacaba de TODO el catálogo, y
+     en el catálogo también están la Alcancía (+5) y las Carnitas (−5), que
+     no se coleccionan: ese lugar del sobre se perdía y además contaba como
+     «carta nueva» en el álbum. Lo cazó una partida jugada, no una prueba. */
+  const coleccionables = CAT.todas.filter(c => 'SABCD'.includes(c.nivel) && c.nivel.length === 1);
   const bolsa = sobre.niveles
-    ? CAT.todas.filter(c => sobre.niveles.includes(c.nivel))
-    : CAT.todas.slice();
+    ? coleccionables.filter(c => sobre.niveles.includes(c.nivel))
+    : coleccionables;
   if(!bolsa.length) return null;
   CARTERA.monedas -= sobre.precio;
   const salen = [];
+  /* ⚠ AL MENOS UNA NUEVA, MIENTRAS TE FALTE ALGUNA DE ESE SOBRE. Al azar
+     puro, con 90 de 100 cartas un sobre de tres sale todo repetido casi tres
+     de cada cuatro veces: el álbum se vuelve imposible de terminar justo al
+     final, que es cuando más ganas hay. La primera carta se saca de las que
+     te faltan; las demás, de toda la bolsa. */
+  const faltan = bolsa.filter(c => !CARTERA.tengo[c.nombre + '·' + c.puntos]);
   for(let i = 0; i < sobre.cuantas; i++){
-    const f = bolsa[Math.floor(Math.random() * bolsa.length)];
+    const de = i === 0 && faltan.length ? faltan : bolsa;
+    const f = de[Math.floor(Math.random() * de.length)];
     const clave = f.nombre + '·' + f.puntos;
     const repetida = !!CARTERA.tengo[clave];
-    /* Una repetida NO se tira: devuelve monedas. Si no, abrir un sobre caro y
-       que salgan tres que ya tienes se siente a robo, y con razón. */
-    if(repetida) CARTERA.monedas += 4;
-    else CARTERA.tengo[clave] = 1;
-    salen.push({ f, repetida });
+    /* Una repetida NO se tira: devuelve monedas, más mientras mejor sea. */
+    const vuelven = repetida ? (DEVUELVE[f.nivel] || 3) : 0;
+    CARTERA.monedas += vuelven;
+    if(!repetida) CARTERA.tengo[clave] = 1;
+    salen.push({ f, repetida, vuelven });
   }
   guardarCartera();
   return salen;
@@ -1888,7 +2054,7 @@ function abrirSobre(sobre){
 function pintarTienda(){
   $('#tMonedas').textContent = CARTERA.monedas;
   const n = cuantasTengo();
-  const total = CAT.listo ? CAT.todas.length : 100;
+  const total = cuantasHay();
   /* ⚠ AQUÍ SE DICE PARA QUÉ SIRVEN LAS MONEDAS, y antes no se decía en ningún
      lado. La tienda contaba cuántas cartas llevabas y ya; con el mazo saliendo
      de la colección, lo que importa es OTRA cosa: cuántas de tus 30 son
@@ -1909,8 +2075,12 @@ function pintarTienda(){
     b.type = 'button';
     b.className = 'sobre';
     b.disabled = CARTERA.monedas < so.precio || !CAT.listo;
+    /* El que no alcanza dice cuánto falta: un botón apagado sin razón se lee
+       como roto; «te faltan 7» se lee como una meta. */
+    const falta = so.precio - CARTERA.monedas;
     b.innerHTML = '<span class="cara"></span>'
-      + '<span class="que"><b>' + so.nombre + '</b><small>' + so.dice + '</small></span>'
+      + '<span class="que"><b>' + so.nombre + '</b><small>' + so.dice
+      + (falta > 0 ? '<br><em class="falta">Te faltan ' + falta + ' monedas</em>' : '') + '</small></span>'
       + '<span class="precio">🪙 ' + so.precio + '</span>';
     b.addEventListener('click', () => {
       const salen = abrirSobre(so);
@@ -1918,9 +2088,11 @@ function pintarTienda(){
       son('poner');
       const nuevas = salen.filter(x => !x.repetida).length;
       setTimeout(() => son(nuevas ? 'ganas' : 'soltar'), 260);
-      $('#tQueSalio').textContent = nuevas
+      const devueltas = salen.reduce((s, x) => s + (x.vuelven || 0), 0);
+      $('#tQueSalio').textContent = (nuevas
         ? (nuevas === 1 ? 'Te salió 1 carta nueva' : 'Te salieron ' + nuevas + ' cartas nuevas')
-        : 'Todas repetidas — te devolvemos monedas';
+        : 'Todas repetidas')
+        + (devueltas ? ' · las repetidas te devolvieron 🪙 ' + devueltas : '');
       const r = $('#tSalidas'); r.innerHTML = '';
       for(const x of salen){
         const cont = document.createElement('div');
@@ -2077,6 +2249,14 @@ function pantalla(cual){
   /* La música sólo vive en la mesa: en la portada estorba, y en la colección
      alguien está leyendo cartas. */
   musica(cual === 'mesa');
+  /* El globo de la guía es de la mesa: fuera de ella se esconde sin contarse
+     como visto, y vuelve a salir la próxima vez que toque. */
+  const g = document.getElementById('guia');
+  if(cual !== 'mesa' && g && !g.hidden){
+    g.hidden = true;
+    document.querySelectorAll('.guiado').forEach(e => e.classList.remove('guiado'));
+    try{ GUIA.visible = null; }catch(e){}
+  }
   window.scrollTo(0, 0);
 }
 function fase(cual){
@@ -2144,12 +2324,25 @@ function fichaDe(c){
   return lista[c.valor % lista.length];
 }
 
+/* ⚠ EL DIBUJO SE PIDE ANTES DE NECESITARLO, Y SE QUEDA. Una carta con arte
+   es negra hasta que su imagen termina de bajar y decodificarse; el iPhone
+   además suelta las imágenes que nadie sostiene. Guardando la `Image` aquí la
+   carta nueva llega ya pintada y no parpadea en negro al repartirse. */
+const ARTE = new Map();
+function precargar(url){
+  if(!url || ARTE.has(url)) return;
+  const im = new Image(); im.decoding = 'async'; im.src = url;
+  if(im.decode) im.decode().catch(() => {});
+  ARTE.set(url, im);
+}
+
 function laCarta(c, opciones = {}){
   const b = document.createElement('button');
   b.type = 'button';
   b.className = 'carta' + (opciones.chica ? ' chica' : '');
   b.dataset.id = c.id;
   const f = fichaDe(c);
+  if(f) precargar(f.arte);
   /* Una especial no vale 0: vale +5 o −5, y eso es lo que hay que leer en la
      carta. Poner el `valor` crudo pintaría un 0 enorme y sin sentido. */
   const esEsp = c.nivel === 'ESP';
@@ -2253,78 +2446,201 @@ function pintarRival(){
    Ahora se compara la mano con la que ya está pintada. Si son las mismas
    cartas, no se toca el DOM: sólo se actualizan las clases de elegida. El
    reparto se ve cuando de verdad hay reparto. */
-let manoPintada = '';
+/* ⚠ Y CUANDO SÍ CAMBIA, SÓLO CAMBIA LO QUE CAMBIÓ. Carlos, 22 de octubre:
+   «que no se cambien las cartas al usar una» y «que no se traben después de
+   jugar y aparezcan en negro». Las dos eran lo mismo: al jugar UNA carta la
+   mano ya no era la misma, así que se borraba entera y se volvían a repartir
+   las nueve o diez con su animación escalonada. Cada carta nueva arrancaba sin
+   su dibujo —el fondo de una carta con arte es negro— y en el iPhone se veía
+   un abanico de cuadros negros encimados casi un segundo, cada ronda.
+
+   Ahora cada carta del DOM se queda mientras siga en la mano: la jugada se va,
+   la que llega del mazo entra sola con su animación, y las demás sólo se
+   recorren a su nuevo lugar del abanico. El dibujo se pide desde antes
+   (`ARTE`), así que la nueva tampoco llega en negro.
+
+   ⚠ LAS ESPECIALES DEL MISMO TIPO VAN EN UN SOLO MONTÓN, con un «×3». Quien
+   no gasta sus +5 y −5 terminaba con diez cartas en la mano —cinco suyas y
+   cinco especiales— y el abanico se volvía tiras de 20 px. La regla no cambia:
+   siguen siendo cartas y se gastan de una en una; sólo se dibujan apiladas. */
+let manoDe = '';           /* de quién es la mano pintada: en «dos» cambia de dueño */
+
+function vistaDeMano(){
+  const vistas = [], grupos = {};
+  for(const c of yo().mano){
+    if(c.nivel === 'ESP'){
+      const g = grupos[c.esp];
+      if(g){ g.ids.push(c.id); if(c.id === especialId) g.c = c; continue; }
+      const nuevo = { llave:'esp:' + c.esp, c, ids:[c.id] };
+      grupos[c.esp] = nuevo; vistas.push(nuevo);
+    } else vistas.push({ llave:c.id, c, ids:[c.id] });
+  }
+  /* Las especiales a la derecha, siempre: si la nueva del mazo cayera detrás
+     de ellas, la mano cambiaría de forma cada ronda. */
+  return vistas.filter(v => v.c.nivel !== 'ESP').concat(vistas.filter(v => v.c.nivel === 'ESP'));
+}
+/* La carta que representa a un botón AHORA. No se guarda en el cierre del
+   manejador: el mismo botón vive varias rondas y su montón de especiales
+   cambia de carta cuando se gasta una. */
+function cartaDe(b){
+  const mano = yo().mano;
+  if(b.dataset.esp){
+    return mano.find(c => c.nivel === 'ESP' && c.esp === b.dataset.esp && c.id === especialId)
+        || mano.find(c => c.nivel === 'ESP' && c.esp === b.dataset.esp) || null;
+  }
+  return mano.find(c => c.id === b.dataset.llave) || null;
+}
 
 function pintarMano(){
   const m = $('#mMano');
   m.classList.add('abanico');
-  const huella = yo().mano.map(c => c.id).join(',');
-  if(huella === manoPintada){
-    /* Misma mano: sólo cambia qué está elegido. */
-    for(const b of m.querySelectorAll('.carta')) pintarEstadoDe(b);
-    rotularMano();
-    return;
-  }
-  manoPintada = huella;
-  m.innerHTML = '';
+  const dueno = (modo || '') + ':' + turnoDe;
+  if(dueno !== manoDe){ m.innerHTML = ''; manoDe = dueno; }
 
-  /* ⚠ LAS ESPECIALES VAN DENTRO DEL ABANICO, NO EN SU PROPIA FILA. Carlos:
-     «la carta bonificación no le des otro espacio, métela a la mano como otra
-     carta más». Y tiene razón por dónde no me lo esperaba: mientras vivieron
-     en una fila aparte se leían como un panel de poderes, y este juego no
-     tiene poderes — tiene CARTAS, y una de ellas resulta ser un +5. Lo que la
-     hace distinta no es dónde se guarda, es que se pone ENCIMA de otra, y eso
-     se explica al tocarla, no reservándole un cajón.
+  const vistas = vistaDeMano();
+  const hay = new Map([...m.querySelectorAll('.carta')].map(b => [b.dataset.llave, b]));
+  const quedan = new Set(vistas.map(v => v.llave));
+  for(const [llave, b] of hay) if(!quedan.has(llave)){ b.remove(); hay.delete(llave); }
 
-     ⚠ Y LA MANO SIGUE SIENDO DE CINCO JUGABLES. Que se pinten juntas no
-     significa que cuenten igual: si un +5 ocupara uno de los cinco sitios,
-     quien no los gasta acaba con cinco especiales y ninguna carta que jugar
-     —el juego se quedaba quieto para siempre, medido en 45 de 200 partidas—.
-     Así que el abanico puede traer seis o siete cartas: cinco tuyas y los
-     modificadores que te hayan salido. */
-  const mano  = yo().mano;
-  const total = mano.length;
-  let idx = 0;
-  for(const c of mano){
-    const esp = c.nivel === 'ESP';
-    const b = laCarta(c);
-    b.dataset.id = c.id;
-    if(esp) b.dataset.esp = c.esp;
-    b.classList.toggle('es-esp', esp);
+  const total = vistas.length;
+  /* Con muchas cartas el abanico se abre menos: cada grado de más en las
+     puntas empuja la carta de la orilla hacia afuera del tapete. */
+  const abre = total > 5 ? 15 * 5 / total : 15;
+  m.dataset.abre = String(abre);
+  let idx = 0, nuevas = 0;
+  for(const v of vistas){
+    let b = hay.get(v.llave);
+    if(!b){
+      b = laCarta(v.c);
+      b.dataset.llave = v.llave;
+      if(v.c.nivel === 'ESP'){ b.dataset.esp = v.c.esp; b.classList.add('es-esp'); }
+      b.addEventListener('click', () => {
+        if(arrastre.hubo){ arrastre.hubo = false; return; }   /* fue un arrastre */
+        const c = cartaDe(b); if(!c) return;
+        /* Al frente ANTES de decidir qué significa el toque: aunque `marcar` la
+           rechace, quien la tocó tiene derecho a verla entera. */
+        for(const o of m.querySelectorAll('.carta.frente')) o.classList.remove('frente');
+        b.classList.add('frente');
+        marcar(c);
+      });
+      atarArrastre(b);
+      /* Sólo la que llega se reparte. Escalonadas entre ellas —al empezar la
+         partida son cinco—, no contra las que ya estaban. */
+      b.classList.add('llega');
+      b.addEventListener('animationend', () => b.classList.remove('llega'), { once:true });
+      b.style.animationDelay = (nuevas * 45) + 'ms';
+      if(!quieto()) setTimeout(() => son('reparto', nuevas), nuevas * 45);
+      nuevas++;
+    }
+    b.dataset.id = v.c.id;
+    /* El montón dice cuántas trae. Con una sola no se pinta nada. */
+    let cuantas = b.querySelector('.cuantas');
+    if(v.ids.length > 1){
+      if(!cuantas){ cuantas = document.createElement('span'); cuantas.className = 'cuantas'; b.appendChild(cuantas); }
+      cuantas.textContent = '×' + v.ids.length;
+    } else if(cuantas) cuantas.remove();
+    b.classList.toggle('monton', v.ids.length > 1);
+    b.dataset.ids = v.ids.join(',');
     pintarEstadoDe(b);
     /* El abanico: de −t a +t repartido entre las que haya. Con UNA carta no
        hay abanico que abrir y `total-1` sería cero. */
     const t = total > 1 ? (idx / (total - 1)) - .5 : 0;
-    b.style.setProperty('--giro', (t * 15).toFixed(2) + 'deg');
+    b.style.setProperty('--giro', (t * abre).toFixed(2) + 'deg');
     /* Las de las puntas bajan un poco: es lo que hace que el borde de arriba
        dibuje un arco en vez de una recta inclinada. */
     b.style.setProperty('--sube', (Math.abs(t) * 15).toFixed(1) + 'px');
     b.style.setProperty('--i', String(idx));
     idx++;
-    /* NINGUNA carta de la mano se apaga: se puede picar cualquiera siempre, y
-       `marcar` decide qué significa el toque. */
-    b.addEventListener('click', () => {
-      if(arrastre.hubo){ arrastre.hubo = false; return; }   /* fue un arrastre */
-      /* Al frente ANTES de decidir qué significa el toque: aunque `marcar` la
-         rechace, quien la tocó tiene derecho a verla entera. */
-      for(const o of m.querySelectorAll('.carta.frente')) o.classList.remove('frente');
-      b.classList.add('frente');
-      marcar(c);
-    });
-    atarArrastre(b, c);
-    /* Escalonado, no todas de golpe: así se lee como un reparto y no como un
-       parpadeo. 45 ms por carta. */
-    b.classList.add('llega');
-    /* La clase se va sola al aterrizar: mientras `llega` esté puesta, su
-       fotograma final gana sobre `.frente` y `.marcada`. */
-    b.addEventListener('animationend', () => b.classList.remove('llega'), { once:true });
-    const cuantasVan = m.children.length;
-    b.style.animationDelay = (cuantasVan * 45) + 'ms';
-    if(!quieto()) setTimeout(() => son('reparto', cuantasVan), cuantasVan * 45);
-    m.appendChild(b);
+    /* `appendChild` de una que ya está la MUEVE, no la copia: así el orden
+       del DOM es el de la mano sin volver a crear nada. */
+    if(m.children[idx - 1] !== b) m.insertBefore(b, m.children[idx - 1] || null);
   }
   ajustarEncime(m, total);
   rotularMano();
+  ponerFicha();
+}
+
+/* El rótulo de la carta levantada: nivel, rareza y nombre. Se mide con la
+   posición de MAQUETA de la carta (offsetLeft/Top), no con su caja en
+   pantalla: la carta todavía va subiendo cuando esto corre y su caja visible
+   daría una altura a medio camino. Lo que suma la subida (−22 px y ×1.06) es
+   la regla de `.carta.marcada`. */
+const RAREZA = { S:'Legendaria', A:'Épica', B:'Rara', C:'Común', D:'Básica' };
+function ponerFicha(){
+  const caja = $('#mFicha'), lado = $('#mLadoA'), m = $('#mMano');
+  if(!caja || !lado || !m) return;
+  const el = m.querySelector('.carta.marcada:not([data-esp])') || m.querySelector('.carta.marcada');
+  const c = el && cartaDe(el);
+  if(!c){ caja.hidden = true; caja.dataset.k = ''; return; }
+  const f = fichaDe(c);
+  const esp = c.nivel === 'ESP';
+  const k = el.dataset.id;
+  if(caja.dataset.k !== k){
+    caja.innerHTML = esp
+      ? '<span class="sello" style="background:var(--rosa-hondo)">★</span><span class="rareza">Especial</span>' + (f ? '<span>' + f.nombre + '</span>' : '')
+      : '<span class="sello n-' + c.nivel + '">' + c.nivel + '</span><span class="rareza">' + (RAREZA[c.nivel] || 'Nivel ' + c.nivel) + '</span>'
+        + (f ? '<span>' + f.nombre + '</span>' : '');
+    caja.dataset.k = k;
+    caja.hidden = false;
+    caja.style.animation = 'none'; void caja.offsetWidth; caja.style.animation = '';
+  }
+  caja.hidden = false;
+  /* el desplazamiento de la carta cuenta desde su `offsetParent`, que puede ser
+     la mano o ya el lado entero: se suma la mano sólo si hace falta */
+  const ox = el.offsetParent === m ? m.offsetLeft : 0, oy = el.offsetParent === m ? m.offsetTop : 0;
+  const x = ox + el.offsetLeft + el.offsetWidth / 2;
+  const mitad = caja.offsetWidth / 2;
+  caja.style.setProperty('--x', Math.max(mitad + 2, Math.min(lado.clientWidth - mitad - 2, x)).toFixed(0) + 'px');
+  /* la subida de `.carta.marcada` (−22 px y ×1.06) se mide desde el origen de
+     giro del abanico, que va MUY abajo de la carta: escalar desde ahí sube el
+     borde de arriba 0.06 × esa distancia, no la mitad de la carta */
+  const origen = parseFloat((getComputedStyle(el).transformOrigin || '').split(' ')[1]);
+  const sube = 22 + .06 * (Number.isFinite(origen) ? origen : el.offsetHeight / 2);
+  const arriba = oy + el.offsetTop - sube - caja.offsetHeight - 6;
+  caja.style.setProperty('--y', Math.max(-caja.offsetHeight, arriba).toFixed(0) + 'px');
+}
+
+/* Los puercos que corren cuando alguien juega una COMBINACIÓN (hay cuatro en
+   toda la partida). Sólo ahí: si salieran en cada ronda, a la tercera partida
+   serían ruido. Se limpian solos. */
+const PUERCOS_QUE_CORREN = ['arte/web/003-normal.webp', 'arte/web/069-mamado.webp', 'arte/web/085-manada.webp'];
+function carreraDePuercos(cuantos = 7){
+  if(quieto()) return;
+  const tapete = $('#mMesa');
+  if(!tapete) return;
+  if(getComputedStyle(tapete).position === 'static') tapete.style.position = 'relative';
+  const pista = document.createElement('div');
+  pista.className = 'carrera';
+  for(let k = 0; k < cuantos; k++){
+    const p = document.createElement('i');
+    p.style.setProperty('--dur', (1.2 + Math.random() * .9).toFixed(2) + 's');
+    p.style.animationDelay = (k * .13).toFixed(2) + 's';
+    p.style.backgroundImage = 'url(' + PUERCOS_QUE_CORREN[k % PUERCOS_QUE_CORREN.length] + ')';
+    p.appendChild(document.createElement('b'));
+    pista.appendChild(p);
+  }
+  tapete.appendChild(pista);
+  setTimeout(() => pista.remove(), 3000);
+}
+
+/* La carta que perdió revienta en la mesa, con chispas, justo cuando la barra
+   cede: antes, se sabría el resultado antes de verlo. */
+function reventar(donde){
+  if(quieto()) return;
+  const slot = $(donde);
+  if(!slot) return;
+  slot.style.position = 'relative';
+  slot.querySelectorAll('.carta').forEach(c => c.classList.add('revienta'));
+  for(let i = 0; i < 8; i++){
+    const ch = document.createElement('i');
+    ch.className = 'chispa';
+    ch.style.left = (35 + Math.random() * 30) + '%';
+    ch.style.top = (30 + Math.random() * 30) + '%';
+    ch.style.setProperty('--x', (Math.random() * 140 - 70).toFixed(0) + 'px');
+    ch.style.setProperty('--y', (Math.random() * -100 - 20).toFixed(0) + 'px');
+    slot.appendChild(ch);
+    setTimeout(() => ch.remove(), 650);
+  }
 }
 
 /* ⚠ CUÁNTO SE ENCIMAN LAS CARTAS SE CALCULA, NO SE ELIGE A OJO. El 58 % fijo
@@ -2341,9 +2657,24 @@ function ajustarEncime(m, total){
   if(total < 2) return;
   const util = m.clientWidth;
   if(!util) return;                     /* la mesa aún no se ve: no hay qué medir */
-  const ac = parseFloat(getComputedStyle(m).getPropertyValue('--ancho-carta')) || 100;
-  const necesario = (total * ac - (util - 6)) / (total - 1);
-  m.style.setProperty('--encime', Math.max(ac * .26, Math.min(ac * .72, necesario)) + 'px');
+  /* ⚠ SE MIDE LA CARTA, NO LA VARIABLE. `--ancho-carta` vale `clamp(…)` y
+     `getComputedStyle` devuelve ese texto tal cual, sin resolver: el
+     `parseFloat` daba NaN y caía al 100 de respaldo. Mientras las cartas
+     medían 90 nadie lo notó; al crecer a 113 el abanico se salió de la
+     pantalla por los dos lados (22 de octubre). */
+  const una = m.querySelector('.carta');
+  const ac = (una && una.offsetWidth) || parseFloat(getComputedStyle(m).getPropertyValue('--ancho-carta')) || 100;
+  /* ⚠ Y SE CUENTA EL GIRO. Cada carta gira alrededor de un punto que está
+     MUY por debajo de ella (`transform-origin: 50% 155%`), así que la de la
+     orilla no sólo se inclina: se recorre hacia afuera. A 7.5° y con cartas
+     de 113 px eran 33 px de más por lado, y la página entera se movía de
+     lado en el teléfono. Las cuentas: la esquina de arriba está a 1.55 alturas
+     del eje, y al girar θ se corre 1.55·alto·sen θ. */
+  const alto = ac * 92 / 64;
+  const th = (parseFloat(m.dataset.abre) || 15) / 2 * Math.PI / 180;
+  const sobra = 1.55 * alto * Math.sin(th) + ac / 2 * (Math.cos(th) - 1);
+  const necesario = (total * ac - (util - 2 * sobra - 4)) / (total - 1);
+  m.style.setProperty('--encime', Math.max(ac * .26, Math.min(ac * .8, necesario)) + 'px');
 }
 
 /* Cómo se ve una carta según lo que esté pasando con ella. Está aparte porque
@@ -2352,7 +2683,7 @@ function ajustarEncime(m, total){
    mano no cambiaba. */
 function pintarEstadoDe(b){
   const esp = !!b.dataset.esp;
-  const puesta = esp ? (especial === b.dataset.esp && especialId === b.dataset.id)
+  const puesta = esp ? (especial === b.dataset.esp && (b.dataset.ids || '').split(',').includes(especialId))
                      : elegidas.some(x => x.id === b.dataset.id);
   b.classList.toggle('marcada', puesta);
   /* Los toques que lleva: la carta elegida enseña cuántos le faltan para
@@ -2444,7 +2775,7 @@ function pintarPilas(){
    entiende un gesto deja fuera a quien no dio con él. */
 let toques = 0;              /* cuántas veces seguidas se tocó la elegida */
 const PARA_JUGAR = 3;        /* la de seleccionar y dos más */
-const arrastre = { hubo:false, fantasma:null, carta:null, x0:0, y0:0, activo:false };
+const arrastre = { hubo:false, fantasma:null, carta:null, boton:null, x0:0, y0:0, activo:false };
 
 /* ── DÓNDE VALE SOLTAR UNA CARTA ──────────────────────────────────────────
    Carlos: «deslizar no es fácil». Lo medí antes de tocar nada, en un teléfono
@@ -2468,15 +2799,16 @@ function zonaDeSoltar(x, y){
   return y < r.top + 8;
 }
 
-function atarArrastre(b, c){
+function atarArrastre(b){
   b.addEventListener('pointerdown', (e) => {
     if(e.button && e.button !== 0) return;
-    arrastre.carta = c; arrastre.x0 = e.clientX; arrastre.y0 = e.clientY;
+    arrastre.boton = b; arrastre.carta = cartaDe(b);
+    arrastre.x0 = e.clientX; arrastre.y0 = e.clientY;
     arrastre.activo = false;
-    b.setPointerCapture(e.pointerId);
+    try{ b.setPointerCapture(e.pointerId); }catch(err){}
   });
   b.addEventListener('pointermove', (e) => {
-    if(arrastre.carta !== c) return;
+    if(arrastre.boton !== b || !arrastre.carta) return;
     const dx = e.clientX - arrastre.x0, dy = e.clientY - arrastre.y0;
     /* 12 px de margen: por debajo de eso es un dedo tembloroso tocando, no
        alguien arrastrando. Sin el margen, cada toque se volvía un arrastre de
@@ -2494,32 +2826,25 @@ function atarArrastre(b, c){
     }
     arrastre.fantasma.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(1.06)';
     /* ⚠ EL RECUADRO SE ENCIENDE DONDE DE VERDAD VALE, NO DESDE EL PRIMER PÍXEL.
-       Antes se encendía al arrancar el arrastre y se quedaba encendido hasta
-       soltar, dijera lo que dijera el dedo. O sea que decía «suéltala aquí»
-       también mientras ibas a fallar, y al fallar no pasaba nada y no había
-       forma de aprender dónde sí. Un indicador que siempre dice que sí no es
-       un indicador. */
+       Un indicador que siempre dice que sí no es un indicador. */
     $('#mSlotA').classList.toggle('apuntado', zonaDeSoltar(e.clientX, e.clientY));
   });
   const soltar = (e) => {
-    if(arrastre.carta !== c) return;
-    const activo = arrastre.activo;
+    if(arrastre.boton !== b) return;
+    const activo = arrastre.activo, c = arrastre.carta;
     if(arrastre.fantasma){ arrastre.fantasma.remove(); arrastre.fantasma = null; }
     $('#mSlotA').classList.remove('apuntado');
-    arrastre.carta = null; arrastre.activo = false;
-    if(!activo) return;
+    arrastre.carta = null; arrastre.boton = null; arrastre.activo = false;
+    if(!activo || !c) return;
     arrastre.hubo = true;                 /* que el `click` de después no cuente */
     setTimeout(() => { arrastre.hubo = false; }, 60);
     if(!zonaDeSoltar(e.clientX, e.clientY)){
-      /* ⚠ Y SE DICE. Antes fallar el tiro no hacía absolutamente nada: la
-         carta volvía a su sitio en silencio y quien juega concluye que el
-         arrastre no sirve. Carlos: «deslizar no es fácil». */
+      /* ⚠ Y SE DICE: fallar el tiro en silencio enseña que el arrastre no sirve. */
       avisar('Suéltala más arriba, sobre la mesa.');
       return;
     }
     /* Se soltó en el campo. Si es una especial, se pone encima de lo elegido;
-       si es una carta, se elige y se juega de una vez — que es lo que quiere
-       decir el gesto de empujarla a la mesa. */
+       si es una carta, se elige y se juega de una vez. */
     if(c.nivel === 'ESP'){ marcar(c); return; }
     if(!elegidas.some(x => x.id === c.id)) marcar(c);
     if(elegidas.some(x => x.id === c.id)) intentarJugar();
@@ -2579,7 +2904,7 @@ function marcar(c){
        ahí que «si deselecciono la otra vuelve a la normalidad»: la otra sí
        limpiaba el `.frente` de todas. Ahora la que se suelta se baja ella. */
     if(!especial){
-      const suya = $('#mMano').querySelector('.carta[data-id="' + c.id + '"]');
+      const suya = $('#mMano').querySelector('.carta[data-esp="' + c.esp + '"]');
       if(suya) suya.classList.remove('frente');
     }
     son(especial ? 'elegir' : 'soltar');
@@ -2615,6 +2940,7 @@ function marcar(c){
   if(elegidas.length === 2){ especial = null; especialId = null; }   /* regla 8 */
   son(elegidas.length === 2 ? 'lista' : 'elegir');
   pintarMano(); pintarBotones();
+  guiaAl('elegi');
 }
 
 function avisar(texto){
@@ -2717,8 +3043,13 @@ function pensarMaquina(j){
       const mejorSola = Math.max(...j.mano.map(c => c.valor));
       v = p.puntos - 22 - (p.puntos <= mejorSola ? 40 : 0);
     }
-    /* Los especiales también se acaban. Que no los tire en cualquier ronda. */
-    if(jugada.especial) v -= 7;
+    /* Los especiales también se acaban. Que no los tire en cualquier ronda…
+       salvo que ya traiga un montón: guardándolas todas, la máquina llegaba
+       a once cartas en la mano y su abanico se volvía una pared de reversos. */
+    if(jugada.especial){
+      const iguales = j.mano.filter(c => c.nivel === 'ESP' && c.esp === jugada.especial).length;
+      v -= iguales >= 2 ? 1 : 7;
+    }
     return v + (Math.random() * 9 - 4.5);   /* un pelo de azar, para que no sea un robot */
   };
   return posibles.reduce((mejor, x) => valor(x) > valor(mejor) ? x : mejor, posibles[0]);
@@ -2753,6 +3084,7 @@ function limpiarMesa(){
 /* ── el duelo ── */
 function mostrarDuelo(antes, despues, jugadaA, jugadaB){
   fase('Duelo');
+  const ficha = $('#mFicha'); if(ficha){ ficha.hidden = true; ficha.dataset.k = ''; }
   const h = despues.historia[despues.historia.length - 1];
   const pinta = (lado, jugada, p, dondePts, dondeCta) => {
     $(dondePts).textContent = p.puntos;
@@ -2770,6 +3102,7 @@ function mostrarDuelo(antes, despues, jugadaA, jugadaB){
      acabaron donde tenían que acabar. */
   ponerEnMesa('#mSlotA', jugadaA.cartas);
   ponerEnMesa('#mSlotB', jugadaB.cartas);
+  if(h.a.combinada || h.b.combinada) setTimeout(carreraDePuercos, 250);
 
   /* ── EL FORCEJEO ────────────────────────────────────────────────────────
      La barra arranca a la mitad y se va hacia el que pierde. El destino no es
@@ -2840,6 +3173,7 @@ function mostrarDuelo(antes, despues, jugadaA, jugadaB){
       ? '<small>La diferencia era ' + h.crudo + ', pero el daño nunca pasa de '
         + MOTOR.DANO_TOPE + '.</small>' : '';
     setTimeout(() => son(h.perdio === 'a' ? 'pierdes' : 'ganas'), cuandoCede);
+    setTimeout(() => reventar(h.perdio === 'a' ? '#mSlotA' : '#mSlotB'), cuandoCede + 60);
     etq.textContent = h.perdio === 'a' ? '◀ PIERDES' : 'GANAS ▶';
     /* ⚠ «Recibes el golpe de vida» — así quedó al pegar la frase con el sufijo,
        y no quiere decir nada. La frase ya termina en «el golpe»; lo que faltaba
@@ -2859,6 +3193,7 @@ function mostrarDuelo(antes, despues, jugadaA, jugadaB){
     m.classList.add('golpeado');
   }
   $('#bSeguir').textContent = despues.acabo ? 'Ver el resultado' : 'Siguiente ronda';
+  guiaAl('duelo');
 }
 
 function terminar(){
@@ -2869,11 +3204,12 @@ function terminar(){
      una vez —en línea llega un estado por cada teléfono— y pagar en cada
      llamada sería una máquina de monedas. La marca va en el estado, que se
      tira al empezar la siguiente. */
-  let ganado = 0;
+  let ganado = 0, bonoDia = 0;
   if(J && !J.__pagada){
     J.__pagada = true;
-    ganado = pagarPartida(J.acabo === 'empate' ? 'empata' : gane ? 'gana' : 'pierde',
-                          (J.historia || []).length);
+    const pago = pagarPartida(J.acabo === 'empate' ? 'empata' : gane ? 'gana' : 'pierde',
+                              (J.historia || []).length);
+    ganado = pago.total; bonoDia = pago.bono;
   }
   if(J.acabo === 'empate'){
     $('#finTitulo').textContent = 'Empate';
@@ -2896,8 +3232,18 @@ function terminar(){
   const cob = $('#finPaga');
   if(cob){
     cob.hidden = !ganado;
-    if(ganado) cob.innerHTML = '🪙 <b>+' + ganado + '</b> monedas · llevas <b>'
-      + CARTERA.monedas + '</b>';
+    if(ganado) setTimeout(() => guiaAl('fin'), 400);
+    if(ganado){
+      /* Y qué alcanza con eso: el siguiente sobre, o cuánto le falta. */
+      const sig = SOBRES.find(s => s.precio > CARTERA.monedas);
+      const puede = SOBRES.filter(s => s.precio <= CARTERA.monedas).pop();
+      cob.innerHTML = '🪙 <b>+' + ganado + '</b> monedas'
+        + (bonoDia ? ' <small>(incluye +' + bonoDia + ' por la primera victoria del día)</small>' : '')
+        + ' · llevas <b>' + CARTERA.monedas + '</b>'
+        + '<br><small>' + (puede ? 'Ya te alcanza para el ' + puede.nombre.toLowerCase() + '.'
+                                 : 'Te faltan ' + (sig.precio - CARTERA.monedas) + ' para el ' + sig.nombre.toLowerCase() + '.')
+        + '</small>';
+    }
   }
 }
 
@@ -2914,10 +3260,14 @@ function cortina(quien, texto, luego){
 /* ── el turno ── */
 function pedirJugada(){
   elegidas = []; especial = null; especialId = null;
+  /* Las dos que siguen en el mazo se piden desde ya: así llegan pintadas. */
+  const mz = yo() && Array.isArray(yo().mazo) ? yo().mazo : [];
+  for(const c of mz.slice(-2)){ const f = fichaDe(c); if(f) precargar(f.arte); }
   fase('Elegir');
   limpiarMesa();
   toques = 0;
   pintarMarcador(); pintarRival(); pintarMano(); pintarBotones();
+  guiaAl('turno');
 }
 
 function jugar(){
@@ -2993,7 +3343,7 @@ function esperandoAlOtro(){
   /* ⚠ SE BORRA LA HUELLA, no sólo el HTML. `pintarMano` no redibuja cuando la
      mano es la misma; si se vacía la caja a mano y la huella se queda, al
      volver el turno el abanico no se vuelve a pintar nunca. */
-  manoPintada = '';
+  manoDe = '';
   $('#mMano').innerHTML = '<p style="grid-column:1/-1; text-align:center; font-weight:800;'
     + ' margin:16px 0">Esperando a que el otro elija su carta…</p>';
   $('#mAviso').hidden = true;
@@ -3135,6 +3485,89 @@ $('#fCodigo').addEventListener('input', () => {
 $('#bEntrar').addEventListener('click', () => {
   avisoSala(null);
   conectar($('#fCodigo').value.toUpperCase());
+});
+
+/* ══ LA GUÍA ══════════════════════════════════════════════════════════════
+   Siete globos que salen cuando pasa lo que explican, no en fila al empezar:
+   nadie aprende la penalización antes de tener una en la mano. Se guardan los
+   que ya salieron, así que la guía sigue en la partida siguiente si alguien
+   se salió a la mitad. Sólo contra la máquina: en «dos en este teléfono» un
+   globo le estaría hablando al que no tiene el teléfono. */
+const GUIA = {
+  pasos: [
+    { id:'mano', en:'turno', donde:'#mMano', tit:'Ésta es tu mano',
+      txt:'Cada carta vale los puntos que trae impresos. Toca la que quieras jugar.' },
+    { id:'elegida', en:'elegi', donde:'#mMano .carta.marcada', tit:'¡Ésa! Ahora mándala a la mesa',
+      txt:'Tócala dos veces más, o arrástrala hacia arriba. Si cambias de opinión, toca otra.' },
+    { id:'duelo', en:'duelo', donde:'#dPulso', tit:'Gana la que vale más',
+      txt:'El que pierde recibe la diferencia como daño, pero nunca más de 15 por ronda. Si empatan, nadie pierde vida.' },
+    { id:'vida', en:'turno', donde:'.marcador', tit:'Último puerco en pie',
+      txt:'Los dos empiezan con 200 de vida. Gana quien deje al otro en cero… o quien tenga más vida cuando se acaben las cartas.' },
+    { id:'especial', en:'turno', donde:'#mMano .carta[data-esp]', si:() => yo().mano.some(c => c.nivel === 'ESP'),
+      tit:'Te salió una carta especial',
+      txt:'El +5 se pone encima de TU carta y el −5 encima de la del rival. Primero elige tu carta y luego toca la especial.' },
+    { id:'combo', en:'turno', donde:'#mMano', si:() => hayCombo(),
+      tit:'Puedes combinar dos cartas',
+      txt:'Dos del mismo nivel D, C o B: cuenta la más alta más un extra (D +30, C +20, B +15). Toca una y luego la otra. Sólo tienes 4 combinaciones por partida.' },
+    { id:'tienda', en:'fin', donde:'#bAlaTienda', tit:'Las monedas compran sobres',
+      txt:'Ganes o pierdas, cada partida paga. En la tienda abres sobres con cartas mejores para tu mazo.' },
+  ],
+  hechos: new Set(), visible: null,
+};
+try{ for(const id of JSON.parse(localStorage.getItem('puercos_guia') || '[]')) GUIA.hechos.add(id); }catch(e){}
+const guiaTerminada = () => GUIA.hechos.has('*');
+function guardarGuia(){ try{ localStorage.setItem('puercos_guia', JSON.stringify([...GUIA.hechos])); }catch(e){} }
+
+function hayCombo(){
+  const j = yo(); if(!j || j.combosUsados >= MOTOR.COMBOS_POR_JUGADOR) return false;
+  const cuenta = {};
+  for(const c of j.mano) if('DCB'.includes(c.nivel) && c.nivel.length === 1) cuenta[c.nivel] = (cuenta[c.nivel] || 0) + 1;
+  return Object.values(cuenta).some(n => n >= 2);
+}
+
+function guiaCerrar(){
+  if(!GUIA.visible) return;
+  GUIA.hechos.add(GUIA.visible.id); guardarGuia();
+  for(const e of document.querySelectorAll('.guiado')) e.classList.remove('guiado');
+  $('#guia').hidden = true;
+  GUIA.visible = null;
+}
+/* Algunos globos se cierran solos cuando ya se hizo lo que pedían: el de «tu
+   mano» al elegir, el de «mándala a la mesa» al jugarla. */
+const SE_CIERRA_CON = { mano:'elegi', elegida:'duelo', duelo:'turno', vida:'elegi', especial:'duelo', combo:'duelo' };
+
+function guiaAl(evento){
+  if(modo !== 'maquina' || guiaTerminada()) return;
+  if(GUIA.visible && SE_CIERRA_CON[GUIA.visible.id] === evento) guiaCerrar();
+  if(GUIA.visible) return;
+  /* El de la mano siempre primero: los demás esperan a que ya se haya jugado una. */
+  const paso = GUIA.pasos.find(p => p.en === evento && !GUIA.hechos.has(p.id)
+    && (p.id === 'mano' || GUIA.hechos.has('mano')) && (!p.si || p.si()));
+  if(!paso) return;
+  /* Un cuadro después: la pantalla de la ronda tiene que estar ya pintada para
+     saber dónde quedó lo que se señala. */
+  requestAnimationFrame(() => {
+    const blanco = document.querySelector(paso.donde);
+    if(!blanco || GUIA.visible) return;
+    GUIA.visible = paso;
+    blanco.classList.add('guiado');
+    const n = GUIA.pasos.indexOf(paso) + 1;
+    $('#guiaPaso').textContent = 'Tutorial · ' + n + ' de ' + GUIA.pasos.length;
+    $('#guiaTit').textContent = paso.tit;
+    $('#guiaTxt').textContent = paso.txt;
+    const r = blanco.getBoundingClientRect();
+    const g = $('#guia');
+    g.classList.toggle('arriba', r.top > innerHeight * .45);
+    g.classList.toggle('abajo', r.top <= innerHeight * .45);
+    g.hidden = false;
+    if(paso.id === 'tienda'){ GUIA.hechos.add('*'); guardarGuia(); }
+  });
+}
+$('#guiaOk').addEventListener('click', guiaCerrar);
+$('#guiaSaltar').addEventListener('click', () => { guiaCerrar(); GUIA.hechos.add('*'); guardarGuia(); });
+$('#bGuia').addEventListener('click', () => {
+  GUIA.hechos.clear(); guardarGuia();
+  modo = 'maquina'; nuevaPartida();
 });
 
 /* ── conexiones ── */

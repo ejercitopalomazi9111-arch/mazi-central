@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Smiley's · comercial de la página (paquete básico)</title>
+<!-- COMERCIAL 1 · la página básica de Smiley's, para sus clientes (redes, 9:16).
+     Carlos, 23 de octubre: «el video publicitario de la sencilla… nivel mil por ciento».
+     Se pinta cuadro por cuadro con herramientas/video/armar.mjs; el teléfono muestra la
+     página DE VERDAD grabada con grabar.mjs (rec/basica). Los cortes caen en los golpes
+     de «Life of Riley» (103.4 bpm, el primer golpe en 0.390 s de la canción). -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Figtree:wght@400;500;600;700;800&display=swap">
+<style>
+:root{ --negro:#0E0B0A; --carbon:#1A1513; --hueso:#FFF6E8; --rojo:#E3262B; --amarillo:#FFC72C; --kraft:#C9A473;
+  --display:"Bricolage Grotesque", sans-serif; --texto:"Figtree", sans-serif; }
+*{box-sizing:border-box; margin:0}
+html,body{width:1080px; height:1920px; overflow:hidden; background:var(--negro); color:var(--hueso); font-family:var(--texto)}
+.capa{position:absolute; inset:0; overflow:hidden}
+.d{font-family:var(--display); font-variation-settings:"wdth" 76; font-weight:800; text-transform:uppercase; letter-spacing:-.02em; line-height:.86}
+/* fondo de las escenas del teléfono */
+#fondo{background:radial-gradient(60% 45% at 50% 46%, rgba(227,38,43,.55), rgba(227,38,43,.12) 55%, transparent 75%), var(--negro)}
+.cinta-txt{position:absolute; left:-200px; white-space:nowrap; font-size:230px; color:transparent; -webkit-text-stroke:2px rgba(255,246,232,.12)}
+#grano{position:absolute; inset:-50%; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E"); opacity:.07; mix-blend-mode:overlay; pointer-events:none}
+/* el teléfono */
+#tel{position:absolute; left:50%; top:400px; width:640px; height:1344px; margin-left:-320px; transform-style:preserve-3d}
+#tel .caja{position:absolute; inset:0; border-radius:92px; background:linear-gradient(145deg,#3a3532,#121010 40%,#2a2522); padding:20px;
+  box-shadow:0 0 0 2px #4a4440, 0 60px 120px -30px rgba(0,0,0,.9), 0 0 140px -20px rgba(227,38,43,.45)}
+#tel .pantalla{position:relative; width:600px; height:1299px; border-radius:72px; overflow:hidden; background:#000}
+#tel .pantalla img{width:100%; height:100%; display:block}
+#tel .isla{position:absolute; top:22px; left:50%; width:170px; height:48px; margin-left:-85px; border-radius:30px; background:#000; z-index:2}
+#tel .brillo{position:absolute; inset:20px; border-radius:72px; background:linear-gradient(115deg, rgba(255,255,255,.16) 0%, rgba(255,255,255,0) 32%); pointer-events:none}
+#titulo{position:absolute; left:60px; right:60px; top:96px; font-size:118px; text-align:center}
+#titulo small{display:block; font-family:var(--texto); font-weight:700; font-size:36px; letter-spacing:.01em; text-transform:none; color:var(--amarillo); margin-bottom:18px}
+#pie{position:absolute; left:60px; right:60px; bottom:120px; text-align:center; font-size:40px; font-weight:700}
+.sello{position:absolute; width:300px; height:300px; border-radius:50%; display:grid; place-items:center; text-align:center; background:var(--amarillo); color:var(--negro);
+  box-shadow:0 30px 60px -20px rgba(0,0,0,.7)}
+.sello b{display:block; font-family:var(--display); font-variation-settings:"wdth" 78; font-weight:800; font-size:96px; line-height:.9; letter-spacing:-.03em}
+.sello span{display:block; font-weight:800; font-size:30px; text-transform:uppercase; letter-spacing:.04em}
+.sello.rojo{background:var(--rojo); color:#fff}
+/* el gancho */
+#gancho .foto{position:absolute; inset:0; background:url(../img/hero-queso.webp) center/cover}
+#gancho .sombra{position:absolute; inset:0; background:linear-gradient(180deg, rgba(14,11,10,.15), rgba(14,11,10,.0) 35%, rgba(14,11,10,.85) 78%, var(--negro))}
+#gancho .palabras{position:absolute; left:70px; right:70px; bottom:250px}
+#gancho .palabras div{font-size:250px}
+#gancho .palabras div:nth-child(2n){color:var(--amarillo)}
+/* el montaje */
+.tarjeta{position:absolute; left:60px; right:60px; top:400px; height:1180px; border-radius:48px; overflow:hidden; box-shadow:0 50px 100px -30px rgba(0,0,0,.9)}
+.tarjeta .img{position:absolute; inset:0; background-size:cover; background-position:center}
+.tarjeta::after{content:""; position:absolute; inset:0; background:linear-gradient(180deg, transparent 55%, rgba(14,11,10,.85))}
+.tarjeta .et{position:absolute; z-index:1; left:56px; bottom:56px; right:56px; display:flex; justify-content:space-between; align-items:flex-end}
+.tarjeta .et b{font-size:132px}
+.tarjeta .et span{font-family:var(--display); font-variation-settings:"wdth" 78; font-weight:800; font-size:112px; color:var(--amarillo); letter-spacing:-.03em}
+#montajeTit{position:absolute; left:60px; right:60px; top:110px; font-size:120px}
+/* el cierre */
+#cierre{background:radial-gradient(70% 50% at 50% 42%, #2a1210, var(--negro) 75%)}
+.logo{position:absolute; background:currentColor; -webkit-mask:url(../img/logo.svg) center/contain no-repeat; mask:url(../img/logo.svg) center/contain no-repeat}
+#cierre .logo{left:50%; top:560px; width:880px; height:357px; margin-left:-440px; color:var(--hueso)}
+#cierre .cta{position:absolute; left:80px; right:80px; top:1150px; text-align:center; font-size:132px}
+#cierre .cta em{font-style:normal; color:var(--amarillo)}
+#cierre .boton{position:absolute; left:50%; top:1440px; transform:translateX(-50%); display:flex; align-items:center; gap:18px; padding:30px 54px; border-radius:99px; background:var(--rojo); color:#fff; font-weight:800; font-size:44px; white-space:nowrap; box-shadow:0 20px 60px -10px rgba(227,38,43,.8)}
+#cierre .datos{position:absolute; left:60px; right:60px; top:1620px; text-align:center; font-size:34px; font-weight:600; color:#d8cbbd; line-height:1.45}
+#flash{position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none}
+#barras{position:absolute; inset:0; pointer-events:none}
+</style>
+</head>
+<body>
+<div class="capa" id="fondo">
+  <div class="cinta-txt d" id="cinta1" style="top:230px">Pizza · Alitas · Boneless · Pizza · Alitas · Boneless ·</div>
+  <div class="cinta-txt d" id="cinta2" style="top:1560px">Smiley's · Smiley's · Smiley's · Smiley's · Smiley's ·</div>
+  <div id="titulo" class="d"></div>
+  <div id="tel"><div class="caja"><div class="pantalla"><div class="isla"></div><img id="pant" alt=""></div><div class="brillo"></div></div></div>
+  <div class="sello" id="sello1"><div><span>2 grandes</span><b>$289</b></div></div>
+  <div class="sello rojo" id="sello2"><div><span>2 familiares</span><b>$350</b></div></div>
+  <div class="sello" id="sello3"><div><span>especialidades</span><b id="cuenta">15</b></div></div>
+  <div id="pie"></div>
+</div>
+<div class="capa" id="montaje">
+  <div id="montajeTit" class="d">Y para<br>acompañar</div>
+  <div class="tarjeta" id="t1"><div class="img" style="background-image:url(../img/alitas-glaseadas.webp)"></div><div class="et d"><b>Alitas</b><span>$149</span></div></div>
+  <div class="tarjeta" id="t2"><div class="img" style="background-image:url(../img/c-boneless.jpg)"></div><div class="et d"><b>Boneless</b><span>$129</span></div></div>
+  <div class="tarjeta" id="t3"><div class="img" style="background-image:url(../img/rebanada.webp)"></div><div class="et d"><b>Pizza</b><span>2×1</span></div></div>
+  <div class="tarjeta" id="t4"><div class="img" style="background-image:url(../img/queso-jala.webp)"></div><div class="et d"><b>Queso</b><span>+$35</span></div></div>
+</div>
+<div class="capa" id="gancho"><div class="foto"></div><div class="sombra"></div>
+  <div class="palabras d"><div>Queso</div><div>que se</div><div>estira</div></div></div>
+<div class="capa" id="cierre">
+  <div class="logo"></div>
+  <div class="cta d">Pide<br><em>en línea</em></div>
+  <div class="boton">Link en nuestra bio</div>
+  <div class="datos">Begonias · Zona Peñaflor · Lomas de Balvanera<br>Todos los días, de 11 am a 10 pm</div>
+</div>
+<div id="grano"></div>
+<div id="flash"></div>
+<script>
+const B = 60 / 103.4;                              /* un golpe de la canción */
+const at = (n) => n * B;
+const cl = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const p = (t, a, b) => cl((t - a) / (b - a));
+const oc = (x) => 1 - Math.pow(1 - x, 3), oe = (x) => x >= 1 ? 1 : 1 - Math.pow(2, -10 * x), ioc = (x) => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const ob = (x) => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const $ = (s) => document.querySelector(s);
+const vis = (el, si) => { el.style.display = si ? '' : 'none'; };
+
+/* las escenas, en golpes */
+const S = { gancho: [0, 4], tel: [4, 24], montaje: [24, 28], pedido: [28, 36], cierre: [36, 44] };
+const DUR = at(42) + 0.4;
+
+/* la grabación: en qué segundo de rec/basica va cada tramo del video */
+let REC = { cuadros: 1 };
+const tramos = [ // [desde (s video), hasta, rec desde, rec hasta]
+  [at(4), at(8), 0.55, 2.9],
+  [at(8), at(16), 3.25, 7.75],
+  [at(16), at(24), 9.0, 13.4],
+  [at(28), at(36), 16.7, 20.9],
+];
+function recEn(t){ for(const [a, b, r0, r1] of tramos) if(t >= a && t < b) return r0 + (r1 - r0) * ((t - a) / (b - a)); return null; }
+const pant = $('#pant'); let ultimo = -1;
+async function cuadro(seg){
+  const i = cl(Math.round(seg * 60), 0, REC.cuadros - 1);
+  if(i === ultimo) return; ultimo = i;
+  pant.src = 'rec/basica/' + String(i).padStart(5, '0') + '.jpg';
+  try{ await pant.decode(); }catch(e){}
+}
+
+const TIT = [ [at(4), at(8), '<small>Smiley\'s ya tiene página</small>Tu antojo,<br>a un toque'],
+              [at(8), at(16), '<small>Precios de verdad, a la vista</small>Promos<br>que rinden'],
+              [at(16), at(24), '<small>Cada una con su foto</small>Toda la<br>carta'],
+              [at(28), at(36), '<small>Sin apps, sin comisiones</small>Directo a tu<br>sucursal'] ];
+const PIE = [ [at(28), at(36), 'Elige tu sucursal y te abre WhatsApp'] ];
+
+window.pintar = async (t) => {
+  /* ── el gancho ── */
+  const g = $('#gancho'), enG = t < at(S.gancho[1]) + 0.25;
+  vis(g, enG);
+  if(enG){
+    $('#gancho .foto').style.transform = `scale(${1.18 - 0.1 * oc(p(t, 0, at(4)))}) translateY(${-30 * p(t, 0, at(4))}px)`;
+    [...document.querySelectorAll('#gancho .palabras div')].forEach((w, k) => {
+      const q = oe(p(t, at(k + 0.15) - 0.02, at(k + 0.15) + 0.32));
+      w.style.opacity = q; w.style.transform = `translateY(${(1 - q) * 120}px) scale(${1 + (1 - q) * .35})`;
+      w.style.filter = `blur(${(1 - q) * 14}px)`;
+    });
+    /* sale con un latigazo hacia arriba */
+    const s = p(t, at(4) - 0.12, at(4) + 0.25);
+    g.style.transform = `translateY(${-1920 * ioc(s)}px)`; g.style.filter = s > 0 && s < 1 ? `blur(${Math.sin(s * Math.PI) * 24}px)` : 'none';
+  }
+
+  /* ── el teléfono y su fondo ── */
+  const f = $('#fondo'), enT = (t >= at(4) - 0.2 && t < at(24) + 0.1) || (t >= at(28) - 0.1 && t < at(36) + 0.2);
+  vis(f, enT);
+  if(enT){
+    $('#cinta1').style.transform = `rotate(-8deg) translateX(${-t * 120}px)`;
+    $('#cinta2').style.transform = `rotate(-8deg) translateX(${-900 + t * 90}px)`;
+    const rec = recEn(t); if(rec != null) await cuadro(rec);
+    /* entra desde abajo, inclinado, y se endereza; luego flota suave */
+    const ent = t < at(24) ? oe(p(t, at(4), at(4) + 0.85)) : oe(p(t, at(28), at(28) + 0.7));
+    const sal = t < at(24) ? ioc(p(t, at(24) - 0.25, at(24) + 0.1)) : ioc(p(t, at(36) - 0.25, at(36) + 0.2));
+    const flota = Math.sin(t * 1.3) * 10, giro = Math.sin(t * .8) * 5;
+    let x = 0;
+    if(t >= at(8) && t < at(16)) x = -70 * ioc(p(t, at(8), at(9)));                 /* deja sitio a los sellos */
+    if(t >= at(16) && t < at(24)) x = -70 + 70 * ioc(p(t, at(16), at(17)));
+    $('#tel').style.transform = `perspective(2200px) translate(${x}px, ${(1 - ent) * 1500 + flota + sal * 1700}px) rotateX(${(1 - ent) * 38}deg) rotateY(${giro + (1 - ent) * -12}deg) scale(${.84 + .16 * ent})`;
+    /* títulos: cada uno entra por renglones */
+    const ti = TIT.find(([a, b]) => t >= a && t < b);
+    const T = $('#titulo');
+    if(ti){ if(T.dataset.k !== String(ti[0])){ T.innerHTML = ti[2]; T.dataset.k = String(ti[0]); }
+      const q = oe(p(t, ti[0] + .05, ti[0] + .55)), fuera = ioc(p(t, ti[1] - .2, ti[1]));
+      T.style.opacity = q * (1 - fuera); T.style.transform = `translateY(${(1 - q) * 60 - fuera * 40}px)`; T.style.filter = `blur(${(1 - q) * 10}px)`;
+    } else T.style.opacity = 0;
+    const pi = PIE.find(([a, b]) => t >= a && t < b), P = $('#pie');
+    if(pi){ P.textContent = pi[2]; const q = oe(p(t, pi[0] + .6, pi[0] + 1.1)); P.style.opacity = q * (1 - ioc(p(t, pi[1] - .2, pi[1]))); P.style.transform = `translateY(${(1 - q) * 30}px)`; } else P.style.opacity = 0;
+    /* los sellos de precio caen girando en el golpe */
+    const sello = (el, ta, tb, x0, y0, rot) => {
+      const q = ob(p(t, ta, ta + .45)), fuera = ioc(p(t, tb - .2, tb));
+      el.style.opacity = t >= ta && t < tb ? 1 - fuera : 0;
+      el.style.transform = `translate(${x0}px, ${y0}px) rotate(${rot + (1 - q) * -40 + Math.sin(t * 2) * 3}deg) scale(${q * (1 - fuera * .3)})`;
+    };
+    sello($('#sello1'), at(10), at(16), 700, 760, 12);
+    sello($('#sello2'), at(13), at(16), 640, 1150, -10);
+    sello($('#sello3'), at(18), at(24), 700, 900, 10);
+    $('#cuenta').textContent = String(Math.round(15 * oc(p(t, at(18), at(20)))));
+  }
+
+  /* ── el montaje: una tarjeta por golpe, cada una empuja a la anterior ── */
+  const m = $('#montaje'), enM = t >= at(24) - .05 && t < at(28) + .1;
+  vis(m, enM);
+  if(enM){
+    m.style.background = '#0E0B0A';
+    const q0 = oe(p(t, at(24), at(24) + .4)); $('#montajeTit').style.opacity = q0; $('#montajeTit').style.transform = `translateX(${(1 - q0) * -80}px)`;
+    ['#t1', '#t2', '#t3', '#t4'].forEach((s, k) => {
+      const el = $(s), a = at(24 + k), q = oe(p(t, a, a + .35)), viene = t >= a;
+      el.style.visibility = viene ? 'visible' : 'hidden';
+      el.style.transform = `translateX(${(1 - q) * 1100}px) rotate(${(1 - q) * 8 + (k % 2 ? -1.5 : 1.5)}deg) scale(${1 - .04 * Math.max(0, (t - a - .35))})`;
+      el.style.zIndex = 10 + k;
+      el.querySelector('.img').style.transform = `scale(${1.12 - .08 * p(t, a, a + B)})`;
+    });
+  }
+
+  /* ── el cierre ── */
+  const c = $('#cierre'), enC = t >= at(36) - .05;
+  vis(c, enC);
+  if(enC){
+    const a = at(36);
+    const ql = ob(p(t, a + .05, a + .7)); $('#cierre .logo').style.transform = `scale(${.6 + .4 * ql})`; $('#cierre .logo').style.opacity = cl(ql * 1.4);
+        const qc = oe(p(t, at(37), at(37) + .5)); $('#cierre .cta').style.opacity = qc; $('#cierre .cta').style.transform = `translateY(${(1 - qc) * 70}px)`;
+    const qb = ob(p(t, at(38), at(38) + .45)); $('#cierre .boton').style.transform = `translateX(-50%) scale(${qb})`; $('#cierre .boton').style.opacity = cl(qb);
+    const qd = oe(p(t, at(38.5), at(38.5) + .6)); $('#cierre .datos').style.opacity = qd;
+    c.style.opacity = 1 - p(t, DUR - .5, DUR);
+  }
+
+  /* destellos en los cortes fuertes */
+  const fl = [at(4), at(24), at(28), at(36)].map(x => Math.max(0, 1 - Math.abs(t - x) / .09)).reduce((a, b) => Math.max(a, b), 0);
+  $('#flash').style.opacity = fl * .55;
+  $('#grano').style.transform = `translate(${(Math.floor(t * 24) * 37) % 160 - 80}px, ${(Math.floor(t * 24) * 53) % 160 - 80}px)`;
+};
+
+/* el sonido: un golpe en cada palabra del gancho, latigazos en los cortes,
+   toques cuando caen los sellos y el ding del cierre */
+const FX = '../../herramientas/video/efectos/';
+window.VIDEO = { w: 1080, h: 1920, fps: 60, dur: DUR,
+  musica: { archivo: '/tmp/claude-0/musica/Life_of_Riley.mp3', desde: 0.390, vol: 0.55, fin: 1.6 },
+  sonidos: [
+    [FX + 'golpe.wav', at(0.15), .9], [FX + 'golpe.wav', at(1.15), .9], [FX + 'golpe.wav', at(2.15), 1.1],
+    [FX + 'whoosh.wav', at(4) - .35, 1], [FX + 'subida.wav', at(4) + .1, .5],
+    [FX + 'toque.wav', at(10), 1], [FX + 'toque.wav', at(13), 1], [FX + 'whoosh.wav', at(16) - .3, .7], [FX + 'toque.wav', at(18), 1],
+    [FX + 'whoosh.wav', at(24) - .3, .8], [FX + 'toque.wav', at(25), .8], [FX + 'toque.wav', at(26), .8], [FX + 'toque.wav', at(27), .8],
+    [FX + 'whoosh.wav', at(28) - .3, .8], [FX + 'toque.wav', at(28) + (19.0 - 16.7) * (at(36) - at(28)) / (20.9 - 16.7) - .05, .7],
+    [FX + 'whoosh.wav', at(36) - .35, .9], [FX + 'ding.wav', at(36) + .5, .8], [FX + 'golpe.wav', at(38), .7],
+  ] };
+window.listo = (async () => {
+  REC = await (await fetch('rec/basica.json')).json();
+  await document.fonts.ready;
+  await Promise.all(['../img/hero-queso.webp', '../img/alitas-glaseadas.webp', '../img/c-boneless.jpg', '../img/rebanada.webp', '../img/queso-jala.webp']
+    .map(src => new Promise(r => { const i = new Image(); i.onload = i.onerror = r; i.src = src; })));
+  await window.pintar(0);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+video/laminas/
+video/escenas/
+video/clips/
+video/*.mp4
+# lo que lleva caras y nombres del equipo NO va al repo (es público)
+equipo.txt
+evidencia/equipo.jpg
+video/voz/17.mp3
+# las salidas llevan la selfie y los nombres: se entregan, no se suben
+Fisica-catapulta.pptx
+Fisica-catapulta.pdf

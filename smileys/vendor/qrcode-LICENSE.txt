@@ -1,0 +1,3 @@
+qrcode-generator 1.4.4 · https://github.com/kazuhikoarase/qrcode-generator
+Copyright (c) 2009 Kazuhiko Arase · Licencia MIT (https://opensource.org/licenses/MIT)
+Se usa para el código QR del pie de página. Copiado aquí para no depender de un CDN.

@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grupo Mazi · ronda 4 de logos</title>
+<!--
+  RONDA 4 DE LOGOS (24 de octubre de 2026). Carlos: «haz algunos relacionados a nuestro rubro en
+  general, algo que lo veas y pienses en lo que hacemos, y otros que los veas y pienses en la marca,
+  y otros que te den ambas sensaciones, así como algunas cosas relacionadas a la mitología que hayan
+  hecho alguna referencia a nuestro rubro, como el libro 1984 o un deus ex machina».
+
+  ?hoja=1  01-12 el rubro, 13-24 la marca, 25 el primero de los dos a la vez
+  ?hoja=2  26-36 los dos a la vez, 37-50 mitos, libros y leyendas
+  ?hoja=3  de dónde sale cada referencia
+  Misma rúbrica: un solo color, nada encimado, 50 letras nuevas (ninguna de las rondas 1, 2 y 3).
+  Los símbolos están dibujados a mano en vector (marcas.js). Se arma con armar.mjs.
+-->
+<style>
+:root{ --vacio:#100A18; --violeta:#AC27FF; --lila:#C878FF; --hueso:#EAE5E3; --gris:#A79CB4; --linea:#2C2238 }
+*{ box-sizing:border-box; margin:0 }
+html, body{ background:var(--vacio); color:var(--hueso); font:400 16px/1.4 system-ui, sans-serif }
+.hoja{ width:2120px; padding:56px 60px 48px }
+.cab{ display:flex; align-items:end; gap:24px; margin-bottom:32px }
+.cab h1{ font:800 44px/1.05 system-ui; letter-spacing:-.02em }
+.cab p{ margin-top:6px; color:var(--gris); font-size:21px; max-width:84ch }
+.cab .rango{ margin-left:auto; text-align:right; color:var(--gris); font-size:19px; white-space:nowrap }
+.cab .rango b{ display:block; color:var(--hueso); font-size:30px }
+.rej{ display:grid; grid-template-columns:repeat(5, 1fr); gap:16px }
+.ficha{ position:relative; height:340px; border-radius:22px; overflow:hidden; box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.07) }
+.lienzo{ position:absolute; inset:40px 34px 58px; display:grid; place-items:center }
+.logo{ white-space:nowrap; line-height:1 }
+.num{ position:absolute; left:18px; bottom:15px; font:700 18px/1 ui-monospace, Menlo, monospace; opacity:.6 }
+.fuente{ position:absolute; right:18px; bottom:16px; font:500 14px/1 system-ui; opacity:.5 }
+.fam{ position:absolute; left:18px; top:15px; font:600 12px/1 system-ui; letter-spacing:.12em; text-transform:uppercase; opacity:.45 }
+.pie{ margin-top:26px; display:flex; justify-content:space-between; color:#6E6380; font-size:17px }
+svg{ display:block; overflow:visible }
+/* la principal */
+.heroe{ display:grid; grid-template-columns:1.25fr 1fr; gap:16px }
+.panel{ position:relative; border-radius:22px; overflow:hidden; display:grid; place-items:center; box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.07) }
+.panel .et{ position:absolute; left:22px; top:18px; font:600 13px/1 system-ui; letter-spacing:.12em; text-transform:uppercase; opacity:.5 }
+.der{ display:grid; grid-template-rows:repeat(3, 1fr); gap:16px }
+.abajo{ display:grid; grid-template-columns:1fr 1fr 1fr 1.3fr; gap:16px; margin-top:16px }
+/* la competencia */
+.rubros{ display:grid; grid-template-columns:repeat(3, 1fr); gap:16px }
+.rubro{ background:#1E1428; border-radius:22px; padding:30px 32px; box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.06) }
+.rubro h2{ font:800 28px/1.1 system-ui; letter-spacing:-.01em; margin-bottom:14px }
+.rubro li{ margin:0 0 10px 1.1em; color:#D6CEDD; font-size:19px; line-height:1.4 }
+.rubro li b{ color:var(--hueso) }
+.rubro .hueco{ margin-top:16px; padding-top:14px; border-top:1.5px solid var(--linea); color:var(--lila); font-size:19px; line-height:1.4 }
+.fuentes{ margin-top:22px; color:#8A7E99; font-size:16px; line-height:1.5 }
+</style>
+</head>
+<body>
+<div class="hoja" id="hoja"></div>
+<script type="module">
+import { M, svg, R, punto } from './marcas.js';
+const VA = '#100A18', H = '#EAE5E3', V = '#AC27FF', L = '#C878FF', N = '#07050A';
+const F = { d:[VA, H], dv:[VA, V], l:[H, VA], lv:[H, V], v:[V, '#FFFFFF'], n:[N, L], b:['#FFFFFF', '#0B0B0F'], k:['#0B0B0F', '#FFFFFF'] };
+const t = (txt, f, w, s, mas = '') => `<span style="font-family:'${f}';font-weight:${w};font-size:${s}px;${mas}">${txt}</span>`;
+const fila = (gap, ...x) => `<div style="display:flex;align-items:center;gap:${gap}px">${x.join('')}</div>`;
+const filaB = (gap, ...x) => `<div style="display:flex;align-items:baseline;gap:${gap}px">${x.join('')}</div>`;
+const col = (gap, al, ...x) => `<div style="display:flex;flex-direction:column;align-items:${al};gap:${gap}px">${x.join('')}</div>`;
+const ancho = (e) => `letter-spacing:${e}em;margin-right:-${e}em`;
+
+/* LOS 50. fam = familia; ref = de qué mito o libro sale (va explicado en la hoja 3) */
+const LOGOS = [
+ /* ── el rubro: que al verlo pienses en lo que hacemos ── */
+ { f:'Fira Code', w:[300, 600], fo:'d', fam:'rubro · web y software', h:(f) => col(8, 'flex-start', t('&lt;mazi/&gt;', f, 600, 78), t('grupo', f, 300, 22, 'letter-spacing:.5em;margin-left:58px')) },
+ { f:'Courier Prime', w:[400, 700], fo:'n', fam:'rubro · software', h:(f) => col(6, 'flex-start', t('~/grupo', f, 400, 24, 'opacity:.7'), fila(10, t('&gt; mazi', f, 700, 78), svg('0 0 36 64', 32, `<rect x="0" y="0" width="36" height="64" ${R}/>`))) },
+ { f:'Libre Barcode 39 Text', w:[], fo:'b', fam:'rubro · gestión', h:(f) => t('*MAZI*', f, 400, 120) },
+ { f:'Chivo', w:[700], fo:'l', fam:'rubro · web', h:(f) => M.navegador(t('mazi', f, 700, 64, 'letter-spacing:-.02em')) },
+ { f:'Play', w:[400, 700], fo:'k', fam:'rubro · foto y video', h:(f) => fila(20, M.visor(110), col(0, 'flex-start', t('GRUPO', f, 400, 24, 'letter-spacing:.42em'), t('MAZI', f, 700, 62))) },
+ { f:'Jura', w:[500], fo:'lv', fam:'rubro · gestión', h:(f) => col(14, 'flex-start', M.gantt(120), t('grupo mazi', f, 500, 48)) },
+ { f:'Maven Pro', w:[800], fo:'v', fam:'rubro · marketing', h:(f) => fila(16, M.megafono(96), t('MAZI', f, 800, 72)) },
+ { f:'Squada One', w:[], fo:'d', fam:'rubro · fotografía', h:(f) => col(14, 'center', M.diafragma(84), t('GRUPO MAZI', f, 400, 46, 'letter-spacing:.08em')) },
+ { f:'Staatliches', w:[], fo:'dv', fam:'rubro · web', h:(f) => fila(14, M.cursor(64), t('GRUPO MAZI', f, 400, 58)) },
+ { f:'Bebas Neue', w:[], fo:'l', fam:'rubro · video', h:(f) => fila(18, M.pelicula(46), col(-6, 'flex-start', t('GRUPO', f, 400, 44, 'letter-spacing:.12em'), t('MAZI', f, 400, 96))) },
+ { f:'Anton', w:[], fo:'n', fam:'rubro · software', h:(f) => fila(14, t('{', f, 400, 120), col(0, 'center', t('GRUPO', f, 400, 26, ancho(.3)), t('MAZI', f, 400, 74)), t('}', f, 400, 120)) },
+ { f:'Fjalla One', w:[], fo:'b', fam:'rubro · tiempos y movimientos', h:(f) => col(10, 'center', M.movimiento(140), t('GRUPO MAZI', f, 400, 44, 'letter-spacing:.06em')) },
+ /* ── la marca: que al verlo pienses en Grupo Mazi ── */
+ { f:'Bodoni Moda', w:[500], fo:'d', fam:'marca · la paloma', h:(f) => col(12, 'center', M.paloma(120), t('Grupo Mazi', f, 500, 54)) },
+ { f:'Libre Baskerville', w:[400], fo:'lv', fam:'marca · paloma y olivo', h:(f) => fila(18, M.olivo(80), col(0, 'flex-start', t('Grupo', f, 400, 30), t('Mazi', f, 400, 62))) },
+ { f:'Vollkorn', w:[600], fo:'v', fam:'marca · monograma', h:(f) => col(14, 'center', M.mz(110), t('GRUPO MAZI', f, 600, 30, ancho(.32))) },
+ { f:'Philosopher', w:[700], fo:'n', fam:'marca · la M con alas', h:(f) => col(12, 'center', M.mAlas(120), t('GRUPO MAZI', f, 700, 32, ancho(.2))) },
+ { f:'Alegreya Sans', w:[300], fo:'l', fam:'marca · ala y aureola', h:(f) => fila(18, M.alaHalo(100), t('grupo mazi', f, 300, 54)) },
+ { f:'Didact Gothic', w:[], fo:'k', fam:'marca · el lema', h:(f) => col(10, 'flex-start', t('GRUPO MAZI', f, 400, 52, 'letter-spacing:.06em'), t('si no existe la herramienta, se construye', f, 400, 17, 'opacity:.7')) },
+ { f:'Belleza', w:[], fo:'dv', fam:'marca · ángel y diablo', h:(f) => fila(20, M.mitad(84), col(2, 'flex-start', t('GRUPO', f, 400, 26, 'letter-spacing:.4em'), t('MAZI', f, 400, 66, 'letter-spacing:.05em'))) },
+ { f:'Mada', w:[800], fo:'lv', fam:'marca · se construye', h:(f) => fila(14, M.martillo(70), t('mazi', f, 800, 88, 'letter-spacing:-.03em')) },
+ { f:'Rosario', w:[600], fo:'d', fam:'marca · nos quedamos', h:(f) => col(14, 'center', M.eslabones(110), t('grupo mazi', f, 600, 44)) },
+ { f:'Proza Libre', w:[700], fo:'b', fam:'marca · rápido y a la larga', h:(f) => col(12, 'flex-start', t('Grupo Mazi', f, 700, 58), M.entrega(300)) },
+ { f:'Unna', w:[700], fo:'l', fam:'marca · la aureola en la i', h:(f) => filaB(0, t('maz', f, 700, 104), `<span style="position:relative;display:inline-block">${t('ı', f, 700, 104)}<span style="position:absolute;left:50%;top:16px;transform:translateX(-50%)">${M.anillito(30)}</span></span>`) },
+ { f:'Sofia Sans', w:[800], fo:'k', fam:'marca · el sello', h:(f, c) => fila(18, `<div style="background:currentColor;border-radius:16px;padding:16px 18px">${t('MZ', f, 800, 54, `color:${c[0]};display:block`)}</div>`, col(0, 'flex-start', t('Grupo', f, 800, 30), t('Mazi', f, 800, 30))) },
+ /* ── las dos cosas a la vez ── */
+ { f:'Black Ops One', w:[], fo:'d', fam:'rubro + marca · la herramienta', h:(f) => fila(18, M.llaveCircuito(84), col(0, 'flex-start', t('GRUPO', f, 400, 28), t('MAZI', f, 400, 58))) },
+ { f:'Passion One', w:[400], fo:'v', fam:'rubro + marca · paloma digital', h:(f) => fila(16, M.palomaPixel(120), t('mazi', f, 400, 92)) },
+ { f:'Lilita One', w:[], fo:'l', fam:'rubro + marca · el clic con aureola', h:(f) => fila(14, M.cursorHalo(66), t('mazi', f, 400, 92)) },
+ { f:'Titan One', w:[], fo:'lv', fam:'rubro + marca · paloma mensajera', h:(f, c) => col(10, 'center', M.mensajera(120, c[0]), t('grupo mazi', f, 400, 44)) },
+ { f:'Secular One', w:[], fo:'n', fam:'rubro + marca · pluma que dibuja', h:(f) => fila(14, M.plumaPunta(56), t('GRUPO MAZI', f, 400, 50)) },
+ { f:'Suez One', w:[], fo:'d', fam:'rubro + marca · cuerno de la abundancia', h:(f, c) => fila(18, M.cornucopia(100, c[0]), col(0, 'flex-start', t('Grupo', f, 400, 32), t('Mazi', f, 400, 64))) },
+ { f:'Mohave', w:[600], fo:'dv', fam:'rubro + marca · aureola de señal', h:(f) => col(8, 'center', M.wifiHalo(120), t('GRUPO MAZI', f, 600, 50, 'letter-spacing:.1em')) },
+ { f:'Smooch Sans', w:[800], fo:'k', fam:'rubro + marca · aureola que carga', h:(f) => fila(18, M.cargando(84), t('MAZI', f, 800, 110, 'letter-spacing:.04em')) },
+ { f:'Unica One', w:[], fo:'l', fam:'rubro + marca · el cuerno que anuncia', h:(f) => col(10, 'center', M.cornetin(150), t('grupo mazi', f, 400, 50, ancho(.1))) },
+ { f:'Nixie One', w:[], fo:'b', fam:'rubro + marca · sale de la pantalla', h:(f) => fila(18, M.palomaVentana(110), t('GRUPO MAZI', f, 400, 40)) },
+ { f:'Wire One', w:[], fo:'d', fam:'rubro + marca · la pluma en curvas', h:(f) => fila(14, M.bezier(110), t('MAZI', f, 400, 112, 'letter-spacing:.14em')) },
+ { f:'Metrophobic', w:[], fo:'lv', fam:'rubro + marca · la M que crece', h:(f) => fila(18, M.mGrafica(96), t('grupo mazi', f, 400, 52)) },
+ /* ── mitos, libros y leyendas ── */
+ { f:'Uncial Antiqua', w:[], fo:'d', fam:'mito · Hefesto', h:(f) => col(12, 'center', M.yunque(110), t('Grupo Mazi', f, 400, 48)) },
+ { f:'Metamorphous', w:[], fo:'dv', fam:'mito · Prometeo', h:(f) => fila(16, M.antorcha(52), t('GRUPO MAZI', f, 400, 46)) },
+ { f:'Macondo', w:[], fo:'l', fam:'mito · Dédalo', h:(f) => col(12, 'center', M.alaDedalo(130), t('Grupo Mazi', f, 400, 54)) },
+ { f:'Special Elite', w:[], fo:'b', fam:'libro · 1984', h:(f) => fila(18, M.telepantalla(96), col(4, 'flex-start', t('GRUPO', f, 400, 30), t('MAZI', f, 400, 64))) },
+ { f:'Cutive Mono', w:[], fo:'k', fam:'teatro · deus ex machina', h:(f) => fila(14, M.grua(96), t('mazi', f, 400, 88)) },
+ { f:'Pirata One', w:[], fo:'lv', fam:'leyenda · el gólem', h:(f, c) => fila(18, M.golem(80, c[0]), t('Grupo Mazi', f, 400, 64)) },
+ { f:'El Messiri', w:[600], fo:'v', fam:'mito · Quetzalcóatl', h:(f, c) => col(8, 'center', M.serpiente(130, c[0]), t('GRUPO MAZI', f, 600, 44, 'letter-spacing:.08em')) },
+ { f:'Fondamento', w:[], fo:'n', fam:'mito · Tezcatlipoca', h:(f) => fila(18, M.espejo(80), t('Grupo Mazi', f, 400, 56)) },
+ { f:'Aboreto', w:[], fo:'d', fam:'mito · Ollin', h:(f, c) => col(14, 'center', M.ollin(84, c[0]), t('GRUPO MAZI', f, 400, 34, ancho(.2))) },
+ { f:'IM Fell English', w:[], fo:'l', fam:'mito · Hermes', h:(f) => col(10, 'center', M.petaso(120), t('Grupo Mazi', f, 400, 60)) },
+ { f:'Cardo', w:[700], fo:'dv', fam:'mito · Argos', h:(f) => col(10, 'center', M.argos(130), t('GRUPO MAZI', f, 700, 40, ancho(.14))) },
+ { f:'Castoro', w:[], fo:'k', fam:'mito · Uróboros', h:(f, c) => fila(18, M.uroboros(84, c[0]), t('mazi', f, 400, 90)) },
+ { f:'Gelasio', w:[500], fo:'lv', fam:'mito · Ariadna', h:(f) => fila(18, M.laberinto(84), col(0, 'flex-start', t('Grupo', f, 500, 30), t('Mazi', f, 500, 62))) },
+ { f:'MedievalSharp', w:[], fo:'n', fam:'mito · Kairós', h:(f) => col(10, 'center', M.reloj(120), t('Grupo Mazi', f, 400, 52)) },
+];
+if(LOGOS.length !== 50) throw new Error('deben ser 50 y son ' + LOGOS.length);
+const vistas = new Set(); for(const l of LOGOS){ if(vistas.has(l.f)) throw new Error('letra repetida: ' + l.f); vistas.add(l.f); }
+
+const pedir = (f, w) => { const k = document.createElement('link'); k.rel = 'stylesheet';
+  k.href = 'https://fonts.googleapis.com/css2?family=' + f.replace(/ /g, '+') + (w.length ? ':wght@' + w.join(';') : '') + '&display=block'; document.head.appendChild(k); };
+const hoja = +(new URLSearchParams(location.search).get('hoja') ?? 1), el = document.getElementById('hoja');
+const pie = (txt) => `<div class="pie"><span>Grupo Mazi · ronda 4 de logos · ${txt}</span><span>Símbolos dibujados en vector. Letras de Google Fonts, licencia OFL.</span></div>`;
+
+if(hoja === 1 || hoja === 2){
+  const desde = (hoja - 1) * 25, mios = LOGOS.slice(desde, desde + 25);
+  for(const l of mios) pedir(l.f, l.w);
+  el.innerHTML = `<div class="cab"><div><h1>Grupo Mazi · ronda 4 · logos ${String(desde + 1).padStart(2, '0')} al ${String(desde + 25).padStart(2, '0')}</h1>
+    <p>${hoja === 1 ? 'Unos que al verlos piensas en lo que hacemos, otros que te hacen pensar en la marca, y los primeros que dan las dos cosas.' : 'Más de los que dan las dos cosas, y los de mitos, libros y leyendas que hablan de nuestro oficio. Cada referencia va explicada en la hoja 3.'} De un solo color y sin nada encimado.</p></div>
+    <div class="rango">hoja<b>${hoja} de 3</b></div></div>
+    <div class="rej">${mios.map((l, i) => { const c = F[l.fo]; return `<div class="ficha" style="background:${c[0]};color:${c[1]}"><span class="fam">${l.fam}</span><div class="lienzo"><div class="logo">${l.h(l.f, c)}</div></div>
+      <span class="num">${String(desde + i + 1).padStart(2, '0')}</span><span class="fuente">${l.f}</span></div>`; }).join('')}</div>${pie(`hoja ${hoja} de 3`)}`;
+} else {
+  /* las referencias: de dónde sale cada mito y qué tiene que ver con lo que hacemos */
+  const REF = [
+    ['37 · Hefesto', 'El dios herrero. Cuando le faltaba una herramienta, la forjaba él mismo: es nuestro lema hecho dios. Y la punta del yunque se llama «cuerno».'],
+    ['38 · Prometeo', 'Robó el fuego a los dioses para dárselo a la gente: la tecnología que se entrega, no que se guarda.'],
+    ['39 · Dédalo', 'El inventor que se construyó unas alas con plumas y cera para salir del laberinto. Ala, pluma e ingenio.'],
+    ['40 · 1984', 'La novela de Orwell: la telepantalla que todo lo ve y el Ministerio de la Verdad que fabrica lo que la gente cree. La publicidad y las pantallas, contadas como advertencia.'],
+    ['41 · Deus ex machina', '«El dios que baja de la máquina»: en el teatro griego una grúa bajaba al dios que resolvía todo al final. Lo que hacemos cuando el cliente ya no sabe por dónde.'],
+    ['42 · El gólem', 'La leyenda de Praga: una figura de barro que cobra vida con una palabra escrita. Es lo que hace el código con una idea.'],
+    ['43 · Quetzalcóatl', 'La serpiente emplumada, dios del saber, de los oficios y del arte. Es nuestro y lleva pluma.'],
+    ['44 · Tezcatlipoca', '«El espejo humeante»: un dios que veía todo en un espejo negro de obsidiana. La primera pantalla negra de la historia.'],
+    ['45 · Ollin', '«Movimiento» en náhuatl, el signo del quinto sol. Tiempos y movimientos con raíz mexicana.'],
+    ['46 · Hermes', 'El mensajero de los dioses, con su casco de alas, y dios del comercio: el marketing.'],
+    ['47 · Argos', 'El gigante de cien ojos que nunca dormía; cuando murió, Hera puso sus ojos en la cola del pavo real. Cola de ave y los datos que todo lo miden.'],
+    ['48 · Uróboros', 'La serpiente que se muerde la cola: lo que no se acaba. Entregamos y nos quedamos.'],
+    ['49 · Ariadna', 'Le dio a Teseo un hilo para salir del laberinto: guiar a la gente por donde se pierde. Eso es diseñar una página.'],
+    ['50 · Kairós', 'Los griegos tenían dos tiempos: Cronos, el que se cuenta, y Kairós, el momento justo, con alas. Entregar rápido y a tiempo.'],
+  ];
+  el.innerHTML = `<div class="cab"><div><h1>De dónde sale cada uno</h1>
+    <p>Mitos, libros y leyendas que hablan de nuestro oficio: hacer herramientas, mostrar, comunicar, mover. Ninguno es marca de nadie: son de todos desde hace siglos (1984 sí tiene autor, pero el logo no copia nada del libro, sólo la idea de la telepantalla).</p></div>
+    <div class="rango">hoja<b>3 de 3</b></div></div>
+    <div class="rubros">${REF.map(([h2, p]) => `<div class="rubro"><h2>${h2}</h2><p style="color:#D6CEDD;font-size:20px;line-height:1.45">${p}</p></div>`).join('')}</div>${pie('las referencias')}`;
+}
+(async () => {
+  await document.fonts.ready;
+  for(const lz of document.querySelectorAll('.lienzo')){
+    const g = lz.querySelector('.logo'), a = lz.getBoundingClientRect(), r = g.getBoundingClientRect();
+    let u = { l:r.left, t:r.top, d:r.right, b:r.bottom };
+    for(const e of g.querySelectorAll('*')){ const q = e.getBoundingClientRect(); if(!q.width || !q.height) continue;
+      u = { l:Math.min(u.l, q.left), t:Math.min(u.t, q.top), d:Math.max(u.d, q.right), b:Math.max(u.b, q.bottom) }; }
+    const s = Math.min(1, a.width / (u.d - u.l), a.height / (u.b - u.t)), cx = (u.l + u.d) / 2, cy = (u.t + u.b) / 2;
+    g.style.transformOrigin = `${(cx - r.left).toFixed(1)}px ${(cy - r.top).toFixed(1)}px`;
+    g.style.transform = `translate(${(a.left + a.width / 2 - cx).toFixed(1)}px, ${(a.top + a.height / 2 - cy).toFixed(1)}px) scale(${s.toFixed(3)})`;
+  }
+  document.body.dataset.listo = '1';
+})();
+</script>
+</body>
+</html>
