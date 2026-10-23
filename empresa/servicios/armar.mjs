@@ -30,6 +30,11 @@ for(let i = 0; i < n; i++) await (await hoja.$$('.hoja'))[i].screenshot({ path: 
 const desbordes = await hoja.$$eval('.hoja', hs => hs.flatMap((h, i) => { const b = h.getBoundingClientRect();
   return [...h.querySelectorAll('*')].filter(e => { const r = e.getBoundingClientRect(); return r.width && (r.bottom > b.bottom + 1 || r.right > b.right + 1) && !e.closest('.cabeza, .cierre'); })
     .map(e => `hoja ${i + 1}: ${e.className || e.tagName}`).slice(0, 3); }));
+/* y lo que queda DEBAJO del pie oscuro tampoco se ve: se mide contra su borde de arriba */
+const tapados = await hoja.$$eval('.hoja', hs => hs.flatMap((h, i) => { const c = h.querySelector('.cierre') || h.querySelector('.pie-hoja'); if(!c) return [];
+  const tope = c.getBoundingClientRect().top;
+  return [...h.querySelectorAll('.pad *')].filter(e => { const r = e.getBoundingClientRect(); return r.height && r.bottom > tope - 6; }).map(e => `hoja ${i + 1}: ${e.className || e.tagName} bajo el pie`).slice(0, 3); }));
+desbordes.push(...tapados);
 /* el anuncio */
 const anuncio = await abrir('anuncio.html', 1080, 1350, 1);
 await anuncio.screenshot({ path: path.join(SAL, 'Grupo-Mazi-anuncio.png') });

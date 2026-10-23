@@ -15,6 +15,7 @@
 | Tienda en línea | desde $15,000 (antes $12,000) | **propuesta** |
 | Mantenimiento | $450 / $650 al mes | **propuesta** |
 | Herramientas a la medida | 10k / 35k / 80k | **propuesta** |
+| 2 videos de ~30 s | $1,200 (antes $1,200 por uno) | Carlos, 23 oct |
 | Todo lo demás de la hoja | | **propuesta** |
 
 Si Carlos cambia un número, se cambia en `servicios.html`, en `anuncio.html` y aquí.
@@ -91,6 +92,20 @@ de 10 horas, ya es un proyecto y se cotiza con la tabla de precios.
 - **Completa:** «Una página que vende sola, y te regalamos 2 videos para tus redes.»
 - **A la medida:** «Lo que tu competencia no tiene: lo diseñamos contigo.»
 - **Mantenimiento:** «Es como un seguro: tu página siempre al día y alguien que responde.»
+
+## Cambios mientras se construye · Carlos, 23 de octubre
+
+*«Hay muchos clientes que te van a pedir 1000 cambios sobre la marcha… no vamos a permitir que se
+nos reestructure todo el proyecto mientras se está haciendo, y cambios a partir del límite cuestan
+caritos.»* Así quedó en la hoja:
+
+- **Incluido:** 2 rondas de ajustes chicos o medianos — textos, fotos, colores, acomodo.
+- **Se cobra a $450 la hora** (más que la hora de mantenimiento, $350, a propósito): pasar del
+  límite, cambiar algo que el cliente ya aprobó o cambiar la idea del proyecto.
+- **Fechas:** toda fecha de entrega es un estimado, y corre desde que tenemos su material.
+
+Cómo decirlo en la plática: *«Los ajustes van incluidos; si a medio camino cambiamos la idea, se
+vuelve otro proyecto y se cotiza.»* Se dice ANTES de empezar, no cuando ya pidió el cambio.
 
 ## Pendientes de confirmar con Carlos
 

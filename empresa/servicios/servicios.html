@@ -75,7 +75,7 @@ h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
 
 /* ── los tres niveles de lo hecho a la medida ── */
 .niveles{ display:grid; grid-template-columns:repeat(3, 1fr); border-radius:18px; overflow:hidden; box-shadow:0 0 0 1.5px var(--linea) }
-.nivel{ padding:16px 17px 15px; background:#fff }
+.nivel{ padding:13px 16px 12px; background:#fff }
 .nivel + .nivel{ border-left:1.5px solid var(--linea) }
 .nivel .barras{ display:flex; gap:3px; margin-bottom:9px }
 .nivel .barras i{ width:16px; height:5px; border-radius:3px; background:var(--linea) }
@@ -100,16 +100,16 @@ h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
 
 /* ── cómo trabajamos ── */
 .pasos{ display:grid; grid-template-columns:repeat(4, 1fr); gap:12px }
-.paso{ padding:14px 14px 13px; border-radius:14px; background:#fff; box-shadow:0 0 0 1.5px var(--linea) }
+.paso{ padding:11px 13px 10px; border-radius:14px; background:#fff; box-shadow:0 0 0 1.5px var(--linea) }
 .paso .k{ width:26px; height:26px; border-radius:8px; display:grid; place-items:center; background:var(--vacio); color:#fff; font-weight:900; font-size:13px }
-.paso .t{ margin-top:9px; font-weight:800; font-size:13px }
+.paso .t{ margin-top:6px; font-weight:800; font-size:13px }
 .paso .d{ margin-top:3px; font-size:11px; color:var(--gris); line-height:1.38 }
-.letra-chica{ display:grid; grid-template-columns:1fr 1fr; gap:4px 30px; font-size:11px; color:var(--gris); line-height:1.4 }
+.letra-chica{ display:grid; grid-template-columns:1fr 1fr; gap:3px 26px; font-size:10.5px; color:var(--gris); line-height:1.4 }
 .letra-chica b{ color:var(--tinta) }
 
 /* ── los planes de mantenimiento ── */
 .mant{ display:grid; grid-template-columns:1fr 1fr; gap:14px }
-.mplan{ padding:18px 20px 16px; border-radius:18px; background:#fff; box-shadow:0 0 0 1.5px var(--linea) }
+.mplan{ padding:15px 20px 14px; border-radius:18px; background:#fff; box-shadow:0 0 0 1.5px var(--linea) }
 .mplan.plus{ background:var(--vacio); color:#F3EEF7; box-shadow:0 0 0 2px var(--violeta) }
 .mplan .nom{ font-weight:800; font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--violeta-hondo) }
 .mplan.plus .nom{ color:#C878FF }
@@ -127,7 +127,7 @@ h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
 .mplan li::before{ content:""; position:absolute; left:0; top:2px; width:12px; height:12px; border-radius:50%;
   background:var(--violeta) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.3l2.6 2.5L12 5.4' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat }
 .reglas{ margin-top:12px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px }
-.regla{ padding:13px 15px; border-radius:14px; background:#F2F0F4; font-size:11.2px; line-height:1.4; color:var(--gris) }
+.regla{ padding:11px 14px; border-radius:14px; background:#F2F0F4; font-size:11.2px; line-height:1.4; color:var(--gris) }
 .regla b{ display:block; color:var(--tinta); font-size:12.5px; margin-bottom:3px }
 .regla.no{ background:#FFF1F1 } .regla.no b{ color:#A3122E }
 .ejemplos{ display:flex; flex-wrap:wrap; gap:7px; margin-top:12px }
@@ -141,13 +141,13 @@ h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
 
 /* ── el pie de cada hoja y el cierre ── */
 .pie-hoja{ position:absolute; left:52px; right:52px; bottom:22px; display:flex; justify-content:space-between; font-size:10px; color:var(--suave); letter-spacing:.04em }
-.cierre{ position:absolute; left:0; right:0; bottom:0; padding:30px 52px 34px; background:var(--vacio); color:#F3EEF7; overflow:hidden }
+.cierre{ position:absolute; left:0; right:0; bottom:0; padding:22px 52px 24px; background:var(--vacio); color:#F3EEF7; overflow:hidden }
 .cierre::before{ content:""; position:absolute; left:-140px; bottom:-260px; width:560px; height:560px; border-radius:50%; background:radial-gradient(closest-side, rgba(172,39,255,.5), transparent) }
 .cierre > *{ position:relative }
-.cierre .grande{ font-size:30px; font-weight:900; letter-spacing:-.04em; line-height:1.02; max-width:420px }
+.cierre .grande{ font-size:26px; font-weight:900; letter-spacing:-.04em; line-height:1.02; max-width:420px }
 .cierre .grande em{ font-style:normal; color:#C878FF }
 .cierre .lema{ margin-top:10px; font-size:12.5px; color:#BFB4CC }
-.contacto{ position:absolute; right:52px; top:30px; display:grid; gap:10px; justify-items:end }
+.contacto{ position:absolute; right:52px; top:20px; display:grid; gap:7px; justify-items:end }
 .wa{ display:flex; align-items:center; gap:10px; padding:12px 20px; border-radius:99px; background:#25D366; color:#062B14; font-weight:900; font-size:19px; letter-spacing:-.01em }
 .wa svg{ width:24px; height:24px }
 .contacto .correo{ font-size:12.5px; font-weight:600; color:#DCD3E6 }
@@ -179,7 +179,7 @@ h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
           <li>Ubicación, horarios y redes</li>
           <li>Diseño hecho para tu marca</li>
         </ul>
-        <div class="pie"><b>Incluye 3 meses de mantenimiento.</b><br>Lista en 3 a 5 días.</div>
+        <div class="pie"><b>Incluye 3 meses de mantenimiento.</b><br>Lista en unos 3 a 5 días.</div>
       </article>
       <article class="plan estrella">
         <span class="cinta">Recomendada</span>
@@ -194,7 +194,7 @@ h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
           <li>Lista para aparecer en Google</li>
         </ul>
         <div class="regalo"><i>🎁</i>De regalo: 2 videos publicitarios para tus redes</div>
-        <div class="pie"><b>Incluye 3 meses de mantenimiento.</b><br>Lista en 1 a 2 semanas.</div>
+        <div class="pie"><b>Incluye 3 meses de mantenimiento.</b><br>Lista en unas 1 a 2 semanas.</div>
       </article>
       <article class="plan">
         <div class="nom">A la medida</div>
@@ -252,7 +252,7 @@ h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
       <div class="regla no"><b>Lo que se cotiza aparte</b>Secciones o páginas nuevas, rediseños, funciones nuevas o cambios a la base de datos. Si tienes plan activo, con 15% de descuento.</div>
     </div>
 
-    <div class="sec" style="margin-top:28px"><span class="num">03</span><h2>Herramientas a tu medida</h2><p>Si la herramienta que tu negocio necesita no existe, la construimos.</p></div>
+    <div class="sec" style="margin-top:22px"><span class="num">03</span><h2>Herramientas a tu medida</h2><p>Si la herramienta que tu negocio necesita no existe, la construimos.</p></div>
     <div class="niveles">
       <div class="nivel"><div class="barras"><i class="on"></i><i></i><i></i></div>
         <div class="n">Sencillo</div><div class="p"><small>desde $</small>10,000</div>
@@ -268,16 +268,17 @@ h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
         <ul><li>Varias áreas conectadas</li><li>Pagos y datos en tiempo real</li><li>Conexión con WhatsApp y otros sistemas</li></ul></div>
     </div>
     <div class="ejemplos">
-      <span>Punto de venta</span><span>Inventario y almacén</span><span>Citas y reservaciones</span><span>Cotizador automático</span><span>Control de clientes</span><span>Pedidos y reparto</span><span>Reportes que se arman solos</span><span>Respuestas de WhatsApp</span><span>Excel que se vuelve sistema</span>
+      <span>Punto de venta</span><span>Inventario</span><span>Citas y reservaciones</span><span>Cotizador automático</span><span>Pedidos y reparto</span><span>Excel que se vuelve sistema</span>
     </div>
     <p class="hechos"><b>Ya lo hemos hecho:</b> pedidos sin filas para una cafetería escolar, ligas deportivas con marcador en vivo, y una app de venta y reparto para una distribuidora.</p>
-    <div class="lista" style="margin-top:12px; grid-template-columns:1fr 1fr">
-      <div class="grupo">
-        <div class="fila"><span class="q">Automatización suelta<small>Una tarea repetitiva que se hace sola</small></span><span class="v"><small>desde</small> $3,500</span></div>
-      </div>
-      <div class="grupo">
-        <div class="fila"><span class="q">Diagnóstico de tiempos y movimientos<small>Dónde se te va el tiempo y el dinero</small></span><span class="v"><small>desde</small> $3,000</span></div>
-      </div>
+    <h3 style="font-size:12px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--violeta-hondo); margin:16px 0 6px">Condiciones de todos los proyectos</h3>
+    <div class="letra-chica" style="font-size:11px">
+      <span><b>Pago:</b> 50% para empezar y 50% al entregar.</span>
+      <span><b>Fechas:</b> toda fecha de entrega es un estimado y corre desde que tenemos tu material.</span>
+      <span><b>Cambios incluidos:</b> 2 rondas de ajustes chicos o medianos (textos, fotos, colores, acomodo).</span>
+      <span><b>Cambios extra:</b> pasando ese límite, o si se cambia lo ya aprobado o la idea del proyecto, se cobra a $450 la hora.</span>
+      <span><b>Factura:</b> si la necesitas, se agrega el IVA.</span>
+      <span><b>Dominio:</b> queda a tu nombre; lo pagas directo al proveedor.</span>
     </div>
   </div>
   <div class="pie-hoja"><span>Grupo Mazi · grupomazi.oficial@gmail.com</span><span>WhatsApp 442 883 3786 · 2 de 3</span></div>
@@ -290,7 +291,7 @@ h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
     <div class="lista">
       <div class="grupo">
         <h3>Video y foto</h3>
-        <div class="fila"><span class="q">Video publicitario para redes<small>15 a 30 s, vertical, con tu material o el nuestro</small></span><span class="v">$1,200</span></div>
+        <div class="fila"><span class="q">2 videos publicitarios para redes<small>De unos 30 s, verticales, con tu material o el nuestro</small></span><span class="v">$1,200</span></div>
         <div class="fila"><span class="q">Grabación en tu negocio + 2 videos<small>Camarógrafo hasta 2 horas, videos editados</small></span><span class="v">$3,500</span></div>
         <div class="fila"><span class="q">Comercial con voz<small>Hasta 60 segundos</small></span><span class="v">$2,500</span></div>
         <div class="fila"><span class="q">Sesión de fotos en tu negocio<small>Fotógrafo hasta 2 horas, 20 fotos editadas</small></span><span class="v">$2,000</span></div>
@@ -310,31 +311,28 @@ h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
       <div><div class="k">Premium</div><div class="v">$950</div><div class="d">Pieza de campaña: ilustración, retoque y variantes</div></div>
     </div>
 
-    <div class="sec" style="margin-top:20px"><span class="num">05</span><h2>Redes y publicidad</h2><p>Contenido que sale de tu negocio real, no de plantillas.</p></div>
+    <div class="sec" style="margin-top:16px"><span class="num">05</span><h2>Redes, publicidad y negocio</h2><p>Contenido que sale de tu negocio real, no de plantillas.</p></div>
     <div class="lista">
       <div class="grupo">
         <div class="fila"><span class="q">Manejo de redes<small>12 publicaciones al mes en 2 redes, diseño y textos</small></span><span class="v">$3,500 <small>/mes</small></span></div>
         <div class="fila"><span class="q">Manejo de redes + 4 videos<small>Incluye una grabación al mes en tu negocio</small></span><span class="v">$6,500 <small>/mes</small></span></div>
+        <div class="fila"><span class="q">Diagnóstico de tiempos y movimientos<small>Dónde se te va el tiempo y el dinero</small></span><span class="v"><small>desde</small> $3,000</span></div>
       </div>
       <div class="grupo">
         <div class="fila"><span class="q">Publicidad pagada en Facebook e Instagram<small>Armado, segmentación y reporte. Lo que inviertes en anuncios va aparte</small></span><span class="v">$1,500 <small>/mes</small></span></div>
         <div class="fila"><span class="q">Publicidad con creadores de contenido<small>Tu marca en cuentas con seguidores reales</small></span><span class="v"><small>según el creador</small></span></div>
+        <div class="fila"><span class="q">Automatización suelta<small>Una tarea repetitiva que se hace sola</small></span><span class="v"><small>desde</small> $3,500</span></div>
       </div>
     </div>
 
-    <div class="sec" style="margin-top:20px"><span class="num">06</span><h2>Cómo trabajamos</h2></div>
+    <div class="sec" style="margin-top:16px"><span class="num">06</span><h2>Cómo trabajamos</h2></div>
     <div class="pasos">
       <div class="paso"><div class="k">1</div><div class="t">Platicamos</div><div class="d">Nos cuentas qué necesitas. La primera plática no cuesta.</div></div>
       <div class="paso"><div class="k">2</div><div class="t">Propuesta</div><div class="d">Te decimos qué incluye, cuánto cuesta y cuándo queda.</div></div>
-      <div class="paso"><div class="k">3</div><div class="t">Construimos</div><div class="d">Ves avances en tu celular y pides cambios sobre la marcha.</div></div>
+      <div class="paso"><div class="k">3</div><div class="t">Construimos</div><div class="d">Ves avances en tu celular y pides ajustes sobre la marcha.</div></div>
       <div class="paso"><div class="k">4</div><div class="t">Entregamos</div><div class="d">Y nos quedamos contigo con el mantenimiento.</div></div>
     </div>
-    <div class="letra-chica" style="margin-top:12px">
-      <span><b>Pago:</b> 50% para empezar y 50% al entregar.</span>
-      <span><b>Cambios:</b> cada proyecto incluye 2 rondas de ajustes.</span>
-      <span><b>Factura:</b> si la necesitas, se agrega el IVA.</span>
-      <span><b>Dominio:</b> queda a tu nombre; lo pagas directo al proveedor.</span>
-    </div>
+
   </div>
 
   <footer class="cierre">
