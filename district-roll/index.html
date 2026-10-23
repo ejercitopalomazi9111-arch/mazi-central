@@ -4,31 +4,36 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>District Roll · Carta</title>
-<meta name="description" content="La carta de District Roll. Elige, arma tu pedido y mándalo por WhatsApp.">
-<meta name="theme-color" content="#0B0A09">
+<meta name="description" content="District Roll Sushi, el sushi de Mayorazgo (Querétaro). Rollos empanizados y fríos, gohan y yakimeshi hechos al momento. Pide por WhatsApp.">
+<meta name="theme-color" content="#0A0A0A">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230B0A09'/%3E%3Ccircle cx='32' cy='32' r='17' fill='%23D23A2C'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@500;600;700&family=Figtree:wght@400;500;600;700;800&display=swap">
 <!--
   DISTRICT ROLL · menú digital con pedido por WhatsApp (21 de octubre de 2026).
   Lo hizo Sylcred a pedido de Carlos.
 
-  ⚠ CARTA DE EJEMPLO. District Roll no aparece en internet y Carlos manda mañana logo, carta,
-  precios y número. Hasta entonces:
-    · los platillos y los precios de CARTA son de muestra y la página lo dice con un aviso;
-    · el pedido llega al WhatsApp de Grupo Mazi (442 883 3786), para probar;
-    · el nombre va escrito con la letra de la página, no es el logo.
-  Para dejarla de verdad sólo se cambia el bloque LOCAL y CARTA del script y se pone
-  LOCAL.ejemplo = false. Las fotos van en img/ con el nombre que diga cada platillo (f:).
+  23 de octubre: YA ES LA DE VERDAD. Carlos mandó la foto de la carta impresa, el logo, el local
+  y su Facebook. La carta, los precios, el WhatsApp (461 344 1696), la dirección y las promos
+  de cada día salen de ahí, copiados y revisados con zoom contra la foto de la carta.
+  Su marca es amarillo sobre negro con la ciudad y los palillos: la página dejó el rojo y el
+  aire japonés de la primera versión y se viste como sus publicaciones.
+  Las fotos «real-*» están recortadas de SUS publicaciones de Facebook (son suyas; en baja
+  resolución porque salen de capturas de pantalla). Las de Unsplash ya no se usan.
+  Lo que NO sabemos y por eso no sale: horario, Instagram y si las promos aplican a domicilio.
 -->
 <style>
 :root{
-  --sumi:#0B0A09; --sumi2:#141210; --sumi3:#1C1916; --linea:rgba(239,232,218,.12); --linea2:rgba(239,232,218,.22);
-  --washi:#EFE8DA; --gris:#ABA293; --gris2:#7E766A;
-  --shu:#D23A2C; --shu-osc:#A92A1F; --oro:#BC9A5F;
-  --serif:"Shippori Mincho", "Hiragino Mincho ProN", Georgia, serif;
-  --sans:"Zen Kaku Gothic New", system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Los de SU marca: el amarillo del letrero, el dorado de la carta impresa y el azul de
+     «rollos fríos», sobre negro. Los nombres viejos (sumi, washi, shu) se quedan para no
+     tocar las 200 reglas que los usan: --shu ya es el amarillo. */
+  --sumi:#0A0A0A; --sumi2:#151413; --sumi3:#1E1D1B; --linea:rgba(255,248,230,.12); --linea2:rgba(255,248,230,.24);
+  --washi:#FFF8E6; --gris:#BDB5A3; --gris2:#8C8574;
+  --shu:#FFC21A; --shu-osc:#F2A51A; --oro:#F2A23A; --hielo:#7CC4FF; --tinta:#111;
+  --display:"Anton", "Oswald", Impact, sans-serif;
+  --serif:"Oswald", "Arial Narrow", sans-serif;
+  --sans:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
   --lado:clamp(16px, 5vw, 56px); --max:1180px; --radio:4px;
   color-scheme:dark;
 }
@@ -38,14 +43,14 @@ html{scroll-behavior:smooth; -webkit-text-size-adjust:100%; scroll-padding-top:1
 body{margin:0; background:var(--sumi); color:var(--washi); font:400 16px/1.65 var(--sans); overflow-x:clip; -webkit-font-smoothing:antialiased}
 img{display:block; max-width:100%}
 a{color:inherit} button{font:inherit; color:inherit}
-::selection{background:var(--shu); color:#fff}
+::selection{background:var(--shu); color:var(--tinta)}
 :focus-visible{outline:2px solid var(--oro); outline-offset:3px}
 .oculto{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; top:0; left:0}
 .ancho{max-width:var(--max); margin:0 auto; padding:0 var(--lado)}
 .sello{font:500 11px/1 var(--sans); letter-spacing:.32em; text-transform:uppercase; color:var(--oro)}
 .btn{display:inline-flex; align-items:center; justify-content:center; gap:10px; min-height:52px; padding:0 28px; border:0; border-radius:2px;
   font:700 14px/1 var(--sans); letter-spacing:.14em; text-transform:uppercase; text-decoration:none; cursor:pointer; transition:background .2s ease, color .2s ease, box-shadow .2s ease}
-.btn--shu{background:var(--shu); color:#fff} .btn--shu:hover{background:var(--shu-osc)}
+.btn--shu{background:var(--shu); color:var(--tinta)} .btn--shu:hover{background:var(--shu-osc)}
 .btn--linea{background:transparent; box-shadow:inset 0 0 0 1px var(--linea2)} .btn--linea:hover{box-shadow:inset 0 0 0 1px var(--washi)}
 .btn svg{width:18px; height:18px; flex:none}
 
@@ -53,45 +58,54 @@ a{color:inherit} button{font:inherit; color:inherit}
 .ejemplo{position:relative; z-index:50; background:var(--oro); color:var(--sumi); font:700 13px/1.4 var(--sans); text-align:center; padding:9px 16px}
 .ejemplo[hidden]{display:none}
 
-/* ───────── portada ───────── */
-.portada{position:relative; min-height:100svh; display:grid; align-content:end; overflow:hidden; padding:96px 0 40px; isolation:isolate}
-.portada__sol{position:absolute; z-index:-1; width:min(92vw, 640px); aspect-ratio:1; border-radius:50%; background:var(--shu);
-  top:max(64px, 7svh); right:-20vw; will-change:transform; animation:sol 1.6s cubic-bezier(.2,.7,.1,1) both}
-@media (max-width:959px){ .portada__sol{width:min(84vw, 520px)} .portada{padding-top:min(92vw, 560px)} }
-@keyframes sol{from{transform:translateY(18%) scale(.86); opacity:0}}
-/* El plato gira dentro del sol: un anillo rojo alrededor y los rolls dando la vuelta despacio.
-   Es una FOTO recortada en círculo (img/plato.webp), no un dibujo. */
-.portada__plato{position:absolute; inset:9%; border-radius:50%; background:url(img/plato.webp) center/cover; box-shadow:0 30px 70px -20px rgba(0,0,0,.75), 0 0 0 1px rgba(0,0,0,.15);
-  animation:gira 70s linear infinite, aparece 1.4s .3s both}
-@keyframes gira{to{transform:rotate(360deg)}}
-.portada__kanji{position:absolute; z-index:-1; top:calc(10svh); left:var(--lado); writing-mode:vertical-rl; font:800 clamp(40px, 11vw, 100px)/1 var(--serif); color:transparent; -webkit-text-stroke:1px var(--oro);
-  letter-spacing:.08em; animation:aparece 1.6s .5s both}
-.portada__marca{margin:0; font:800 clamp(56px, 15.5vw, 210px)/.86 var(--serif); letter-spacing:-.02em; text-transform:uppercase; text-shadow:0 4px 30px rgba(0,0,0,.55)}
-.portada__marca span{display:block; overflow:hidden}
-.portada__marca span > b{display:block; font-weight:inherit; animation:sube 1.2s cubic-bezier(.2,.7,.1,1) both}
-.portada__marca span:nth-child(2) > b{animation-delay:.12s; padding-left:.42em}
-@keyframes sube{from{transform:translateY(104%)}}
+/* ───────── portada ─────────
+   Como sus publicaciones: negro con textura, el logo de verdad, el rollo empanizado enorme y
+   la promo del día en amarillo. Las fotos son SUYAS (recortadas de su Facebook). */
+.portada{position:relative; min-height:100svh; display:grid; align-content:end; overflow:hidden; padding:88px 0 34px; isolation:isolate; background:var(--sumi)}
+.portada__foto{position:absolute; z-index:-2; top:24px; right:-22%; width:min(112vw, 700px); aspect-ratio:454/540; background:url(img/real-empanizado.webp) center/cover;
+  -webkit-mask:radial-gradient(closest-side, #000 62%, transparent); mask:radial-gradient(closest-side, #000 62%, transparent); animation:aparece 1.4s .1s both}
+.portada::before{content:""; position:absolute; z-index:-1; inset:0; background:
+  radial-gradient(60% 40% at 80% 30%, rgba(255,194,26,.18), transparent 70%), linear-gradient(180deg, rgba(10,10,10,0) 18%, rgba(10,10,10,.7) 46%, var(--sumi) 62%)}
 @keyframes aparece{from{opacity:0; transform:translateY(14px)}}
-.portada__filo{display:flex; align-items:center; gap:16px; margin:26px 0 0; animation:aparece 1s .6s both}
-.portada__filo::before{content:""; width:56px; height:1px; background:var(--oro)}
-.portada__lede{max-width:36ch; margin:18px 0 0; color:var(--gris); font-size:17px; animation:aparece 1s .75s both}
-.portada__cta{display:flex; flex-wrap:wrap; gap:12px; margin-top:30px; animation:aparece 1s .9s both}
-.portada__baja{display:flex; justify-content:space-between; gap:16px; margin-top:52px; padding-top:18px; border-top:1px solid var(--linea); font-size:13px; color:var(--gris2); letter-spacing:.06em; animation:aparece 1s 1s both}
+.portada__logo{display:block; width:min(92vw, 520px); height:auto; margin:0 0 6px -8px; filter:drop-shadow(0 6px 24px rgba(0,0,0,.6)); animation:aparece 1s .2s both}
+.portada__lede{max-width:34ch; margin:12px 0 0; color:var(--washi); font-size:18px; font-weight:500; animation:aparece 1s .5s both}
+.portada__lede b{color:var(--shu)}
+.hoy{display:flex; align-items:center; gap:14px; margin-top:22px; padding:14px 18px; max-width:440px; background:var(--shu); color:var(--tinta); transform:rotate(-1.5deg); animation:aparece 1s .65s both; text-decoration:none}
+.hoy__dia{font:400 15px/1 var(--display); letter-spacing:.06em; text-transform:uppercase; padding:8px 10px; background:var(--tinta); color:var(--shu); white-space:nowrap}
+.hoy__txt{font:700 17px/1.2 var(--serif); text-transform:uppercase}
+.hoy__txt small{display:block; font:600 13px/1.3 var(--sans); text-transform:none; margin-top:2px}
+.portada__cta{display:flex; flex-wrap:wrap; gap:12px; margin-top:24px; animation:aparece 1s .8s both}
+.portada__baja{display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px 16px; margin-top:34px; padding-top:16px; border-top:1px solid var(--linea); font-size:13px; color:var(--gris); letter-spacing:.04em; animation:aparece 1s 1s both}
+.oculto-h{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0)}
 @media (min-width:960px){
   .portada{align-content:center}
-  .portada__sol{width:min(46vw, 640px); right:7vw; top:50%; margin-top:calc(min(46vw, 640px) / -2)}
-  .portada__kanji{display:none}
-  /* el título vive a la izquierda del plato: encima de la foto blanca no se leería */
-  .portada__marca{font-size:clamp(56px, 7.4vw, 150px)}
-  .portada .ancho{width:100%}
-  .portada .ancho > *{max-width:min(40vw, 560px)}
+  .portada__foto{inset:50% 4% auto auto; width:min(44vw, 620px); transform:translateY(-50%); animation:none}
+  .portada::before{background:radial-gradient(50% 50% at 75% 50%, rgba(255,194,26,.16), transparent 70%), linear-gradient(90deg, var(--sumi) 30%, rgba(10,10,10,.6) 60%, rgba(10,10,10,.1))}
+  .portada .ancho{width:100%} .portada .ancho > *{max-width:min(46vw, 560px)}
 }
+
+/* ───────── las promos de la semana ───────── */
+.promos{padding:56px 0 8px}
+.promos__fila{display:grid; grid-auto-flow:column; grid-auto-columns:min(70vw, 240px); gap:12px; overflow-x:auto; scroll-snap-type:x mandatory; padding:0 var(--lado) 8px; scrollbar-width:none; max-width:var(--max); margin:0 auto}
+.promos__fila::-webkit-scrollbar{display:none}
+.promo{scroll-snap-align:start; position:relative; display:grid; align-content:space-between; gap:18px; min-height:200px; padding:18px; background:var(--sumi2); box-shadow:inset 0 0 0 1px var(--linea)}
+.promo__dia{font:400 22px/1 var(--display); letter-spacing:.04em; text-transform:uppercase; color:var(--shu)}
+.promo__grande{font:400 54px/.9 var(--display); color:var(--washi)}
+.promo__d{font:600 15px/1.3 var(--serif); text-transform:uppercase; color:var(--washi)}
+.promo__d small{display:block; font:500 12.5px/1.35 var(--sans); text-transform:none; color:var(--gris); margin-top:4px}
+.promo.es-hoy{background:var(--shu); box-shadow:none} .promo.es-hoy *{color:var(--tinta)}
+.promo.es-hoy::after{content:"HOY"; position:absolute; top:14px; right:14px; padding:5px 8px; background:var(--tinta); color:var(--shu); font:400 13px/1 var(--display); letter-spacing:.08em}
+@media (min-width:960px){ .promos__fila{grid-auto-flow:row; grid-template-columns:repeat(5, minmax(0,1fr)); overflow:visible} }
+.titulo-sec{margin:10px 0 0; font:400 clamp(38px, 8vw, 64px)/.95 var(--display); text-transform:uppercase}
+.visita{display:grid; gap:18px; align-items:start}
+.visita img{width:100%; max-width:360px; aspect-ratio:3/4; object-fit:cover}
+@media (min-width:860px){ .visita{grid-template-columns:360px 1fr} }
 
 /* ───────── barra de categorías ───────── */
 .barra{position:sticky; top:0; z-index:40; background:rgba(11,10,9,.9); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border-bottom:1px solid var(--linea)}
 .barra__top{display:flex; align-items:center; gap:14px; height:62px}
-.barra__marca{font:800 20px/1 var(--serif); letter-spacing:.04em; text-transform:uppercase; text-decoration:none; white-space:nowrap}
-.barra__marca i{display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--shu); margin-left:6px; vertical-align:.1em}
+.barra__marca{display:block; flex:none; text-decoration:none}
+.barra__marca img{display:block; height:40px; width:auto; }
 .buscar{position:relative; margin-left:auto; flex:1 1 auto; max-width:320px; min-width:0}
 .buscar input{width:100%; height:42px; padding:0 14px 0 40px; border:0; border-radius:2px; background:var(--sumi3); color:var(--washi); box-shadow:inset 0 0 0 1px var(--linea); font:500 16px var(--sans)}
 .buscar input:focus{outline:none; box-shadow:inset 0 0 0 1px var(--oro)}
@@ -104,30 +118,30 @@ a{color:inherit} button{font:inherit; color:inherit}
 /* ───────── la carta ───────── */
 .carta{padding:24px 0 120px}
 .cat{padding:64px 0 8px}
-.cat__foto{position:relative; margin:0 0 26px; aspect-ratio:16/8; border-radius:var(--radio); overflow:hidden; background:var(--sumi3)}
+.cat__foto{position:relative; margin:0 0 26px; max-width:720px; aspect-ratio:16/8; border-radius:var(--radio); overflow:hidden; background:var(--sumi3)}
 .cat__foto img{width:100%; height:100%; object-fit:cover; transform:scale(1.001); transition:transform 1.6s cubic-bezier(.2,.7,.1,1)}
 .cat__foto.rev--off img{transform:scale(1.14)}
 .cat__foto::after{content:""; position:absolute; inset:0; background:linear-gradient(180deg, rgba(11,10,9,0) 45%, rgba(11,10,9,.85))}
-@media (min-width:900px){ .cat__foto{aspect-ratio:16/5} }
+
 .cat__cab{display:grid; grid-template-columns:auto minmax(0,1fr); gap:0 18px; align-items:end; margin-bottom:28px}
-.cat__num{grid-row:span 2; font:800 clamp(56px, 12vw, 96px)/.8 var(--serif); color:transparent; -webkit-text-stroke:1px var(--oro)}
-.cat h2{margin:0; font:700 clamp(32px, 6.6vw, 54px)/1 var(--serif); letter-spacing:.01em}
+.cat__num{grid-row:span 2; font:800 clamp(50px, 11vw, 88px)/.8 "Hiragino Sans", "Noto Sans JP", sans-serif; color:transparent; -webkit-text-stroke:1.5px var(--shu)}
+.cat h2{margin:0; font:400 clamp(38px, 8vw, 64px)/.95 var(--display); letter-spacing:.01em; text-transform:uppercase}
 .cat__nota{margin:6px 0 0; color:var(--gris); font-size:15px}
 .platos{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:minmax(0,1fr); column-gap:72px}
 @media (min-width:900px){ .platos{grid-template-columns:repeat(2, minmax(0,1fr))} }
 .plato{position:relative; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 16px; padding:22px 0; border-bottom:1px solid var(--linea); cursor:pointer}
 .plato[hidden]{display:none}
 .plato__linea{display:flex; align-items:baseline; gap:10px; min-width:0}
-.plato__n{margin:0; font:700 22px/1.2 var(--serif); letter-spacing:.01em}
+.plato__n{margin:0; font:600 21px/1.2 var(--serif); letter-spacing:.02em; text-transform:uppercase}
 .plato__puntos{flex:1 1 auto; min-width:16px; border-bottom:1px dotted var(--linea2); transform:translateY(-5px)}
-.plato__p{font:700 20px/1 var(--serif); color:var(--washi); font-variant-numeric:tabular-nums; white-space:nowrap}
+.plato__p{font:600 21px/1 var(--serif); color:var(--shu); font-variant-numeric:tabular-nums; white-space:nowrap}
 .plato__d{grid-column:1; margin:0; color:var(--gris); font-size:15px; max-width:46ch}
 .plato__tags{grid-column:1; display:flex; flex-wrap:wrap; gap:8px; margin-top:6px}
 .tag{font:500 11px/1 var(--sans); letter-spacing:.18em; text-transform:uppercase; color:var(--oro)}
 .tag--pic{color:#FF8566}
 .plato__mas{grid-column:2; grid-row:1 / span 3; align-self:center; width:44px; height:44px; border-radius:50%; border:0; background:transparent; box-shadow:inset 0 0 0 1px var(--linea2); display:grid; place-items:center; cursor:pointer; transition:background .2s ease, box-shadow .2s ease}
 .plato__mas svg{width:18px; height:18px}
-.plato:hover .plato__mas,.plato__mas:focus-visible{background:var(--shu); box-shadow:none}
+.plato:hover .plato__mas,.plato__mas:focus-visible{background:var(--shu); color:var(--tinta); box-shadow:none}
 .plato--mini{grid-template-columns:minmax(0,1fr) 96px}
 .plato__mini{grid-column:2; grid-row:1 / span 3; align-self:center; position:relative; width:96px; height:96px}
 .plato__mini img{width:96px; height:96px; border-radius:50%; object-fit:cover; box-shadow:0 0 0 1px var(--linea2); transition:transform .5s cubic-bezier(.2,.7,.1,1)}
@@ -135,7 +149,7 @@ a{color:inherit} button{font:inherit; color:inherit}
 .plato__mini .plato__mas{position:absolute; right:-6px; bottom:-6px; background:var(--sumi); box-shadow:inset 0 0 0 1px var(--linea2), 0 0 0 4px var(--sumi)}
 .plato__foto{grid-column:1 / -1; margin:14px 0 4px; aspect-ratio:16/9; border-radius:var(--radio); overflow:hidden; background:var(--sumi3)}
 .plato__foto img{width:100%; height:100%; object-fit:cover}
-.plato--casa .plato__n::after{content:"推"; display:inline-grid; place-items:center; width:24px; height:24px; margin-left:10px; border-radius:50%; background:var(--shu); color:#fff; font:700 12px/1 var(--serif); vertical-align:.15em}
+.plato--casa .plato__n::after{content:"★"; display:inline-grid; place-items:center; width:24px; height:24px; margin-left:10px; border-radius:50%; background:var(--shu); color:var(--tinta); font:700 13px/1 var(--sans); vertical-align:.15em}
 .nada{padding:48px 0; text-align:center; color:var(--gris)}
 .nada strong{display:block; color:var(--washi); font:700 26px/1.2 var(--serif); margin-bottom:6px}
 
@@ -144,7 +158,7 @@ a{color:inherit} button{font:inherit; color:inherit}
 .casa__fila{display:grid; grid-auto-flow:column; grid-auto-columns:min(78vw, 340px); gap:14px; overflow-x:auto; scroll-snap-type:x mandatory; padding:0 var(--lado) 6px; scrollbar-width:none; max-width:var(--max); margin:0 auto}
 .casa__fila::-webkit-scrollbar{display:none}
 .recom{scroll-snap-align:start; position:relative; display:grid; align-content:space-between; gap:40px; min-height:300px; padding:26px; border-radius:var(--radio); background:var(--sumi2); box-shadow:inset 0 0 0 1px var(--linea); overflow:hidden; cursor:pointer; text-align:left; border:0}
-.recom::before{content:""; position:absolute; width:220px; height:220px; border-radius:50%; background:var(--shu); right:-70px; top:-70px; opacity:.92; transition:transform .5s cubic-bezier(.2,.7,.1,1)}
+.recom::before{content:""; position:absolute; width:220px; height:220px; border-radius:50%; background:var(--shu-osc); right:-70px; top:-70px; opacity:.92; transition:transform .5s cubic-bezier(.2,.7,.1,1)}
 .recom:hover::before{transform:scale(1.08)}
 .recom__img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:transform .8s cubic-bezier(.2,.7,.1,1)}
 .recom:hover .recom__img{transform:scale(1.05)}
@@ -153,8 +167,8 @@ a{color:inherit} button{font:inherit; color:inherit}
 .recom--foto .recom__k{z-index:2; font-size:36px}
 .recom--foto > div{z-index:2}
 .recom--foto{min-height:380px}
-.recom__k{position:relative; font:800 44px/1 var(--serif); color:#fff; align-self:start; justify-self:end; margin:-6px -4px 0 0}
-.recom h3{position:relative; margin:0; font:700 30px/1.1 var(--serif)}
+.recom__k{position:relative; font:800 40px/1 var(--sans); color:var(--tinta); align-self:start; justify-self:end; margin:-6px -4px 0 0}
+.recom h3{position:relative; margin:0; font:400 34px/1 var(--display); text-transform:uppercase; letter-spacing:.01em}
 .recom p{position:relative; margin:8px 0 0; color:var(--gris); font-size:15px}
 .recom__p{position:relative; display:flex; justify-content:space-between; align-items:center; margin-top:18px; font:700 22px var(--serif)}
 .recom__p span{font:700 12px/1 var(--sans); letter-spacing:.16em; text-transform:uppercase; color:var(--oro)}
@@ -163,7 +177,7 @@ a{color:inherit} button{font:inherit; color:inherit}
 /* ───────── pie ───────── */
 .pie{padding:72px 0 calc(120px + env(safe-area-inset-bottom)); border-top:1px solid var(--linea); color:var(--gris); font-size:15px}
 .pie__in{display:grid; gap:32px}
-.pie__marca{font:800 40px/.9 var(--serif); text-transform:uppercase; color:var(--washi)}
+.pie__marca img{display:block; width:min(100%, 300px); height:auto; ; margin-left:-10px}
 .qr{display:flex; gap:16px; align-items:center}
 .qr__caja{width:108px; height:108px; padding:9px; background:#fff; border-radius:2px; flex:none}
 .qr__caja svg{width:100%; height:100%; display:block}
@@ -171,16 +185,16 @@ a{color:inherit} button{font:inherit; color:inherit}
 
 /* ───────── pedido flotante ───────── */
 .flota{position:fixed; left:12px; right:12px; bottom:calc(12px + env(safe-area-inset-bottom)); z-index:45; display:flex; align-items:center; gap:14px; min-height:62px;
-  padding:8px 8px 8px 20px; border:0; border-radius:2px; background:var(--washi); color:var(--sumi); box-shadow:0 18px 40px -10px rgba(0,0,0,.8); cursor:pointer; text-align:left;
+  padding:8px 8px 8px 20px; border:0; border-radius:2px; background:var(--shu); color:var(--tinta); box-shadow:0 18px 40px -10px rgba(0,0,0,.8); cursor:pointer; text-align:left;
   transform:translateY(140%); transition:transform .35s cubic-bezier(.2,.7,.1,1)}
 .flota.ver{transform:none}
 .flota__txt{display:grid; line-height:1.25; min-width:0}
-.flota__txt b{font:700 16px var(--serif)} .flota__txt span{font-size:13px; color:#6B6358}
-.flota__ir{margin-left:auto; display:inline-flex; align-items:center; gap:8px; min-height:46px; padding:0 18px; background:var(--shu); color:#fff; font:700 13px/1 var(--sans); letter-spacing:.14em; text-transform:uppercase; white-space:nowrap}
+.flota__txt b{font:700 17px var(--serif); text-transform:uppercase} .flota__txt span{font-size:13px; color:#3B3524; font-weight:700}
+.flota__ir{margin-left:auto; display:inline-flex; align-items:center; gap:8px; min-height:46px; padding:0 18px; background:var(--tinta); color:var(--shu); font:700 13px/1 var(--sans); letter-spacing:.14em; text-transform:uppercase; white-space:nowrap}
 @media (min-width:960px){ .flota{left:auto; right:24px; bottom:24px; width:420px} }
 .pop{position:fixed; left:50%; top:128px; z-index:60; transform:translate(-50%,-16px); opacity:0; pointer-events:none; padding:12px 18px; background:var(--washi); color:var(--sumi); font-weight:700; font-size:15px; white-space:nowrap; transition:opacity .25s ease, transform .25s ease; box-shadow:0 18px 40px -10px rgba(0,0,0,.7)}
 .pop.ver{opacity:1; transform:translate(-50%,0)}
-.vuela{position:fixed; z-index:70; width:18px; height:18px; margin:-9px 0 0 -9px; border-radius:50%; background:var(--shu); box-shadow:0 0 0 4px rgba(210,58,44,.25); pointer-events:none}
+.vuela{position:fixed; z-index:70; width:18px; height:18px; margin:-9px 0 0 -9px; border-radius:50%; background:var(--shu); box-shadow:0 0 0 4px rgba(255,194,26,.3); pointer-events:none}
 
 /* ───────── hojas ───────── */
 dialog{padding:0; border:0; color:var(--washi); background:var(--sumi2); width:min(100%, 560px); max-width:100%; max-height:92svh; margin:auto auto 0; border-radius:10px 10px 0 0; box-shadow:0 -10px 60px rgba(0,0,0,.6); overflow:hidden}
@@ -226,7 +240,7 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
 .total{display:flex; justify-content:space-between; font:700 22px var(--serif)}
 .rev{transition:opacity .9s ease, transform .9s cubic-bezier(.2,.7,.1,1)} .rev--off{opacity:0; transform:translateY(24px)}
 @media (prefers-reduced-motion:reduce){
-  .portada__sol,.portada__plato,.portada__kanji,.portada__marca span > b,.portada__filo,.portada__lede,.portada__cta,.portada__baja{animation:none}
+  .portada__foto,.portada__logo,.portada__lede,.hoy,.portada__cta,.portada__baja{animation:none}
   .rev,.rev--off{transition:none; opacity:1; transform:none}
 }
 </style>
@@ -240,19 +254,18 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
   <symbol id="i-wa" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.3-.4.8-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></symbol>
 </defs></svg>
 
-<p class="ejemplo" id="ejemplo">Carta de ejemplo: los platillos y precios se cambian por los de District Roll.</p>
+<p class="ejemplo" id="ejemplo" hidden>Carta de ejemplo.</p>
 
 <header class="portada" id="inicio">
-  <div class="portada__sol" id="sol" aria-hidden="true"><div class="portada__plato"></div></div>
-  <div class="portada__kanji" aria-hidden="true">巻寿司</div>
+  <div class="portada__foto" aria-hidden="true"></div>
   <div class="ancho">
-    <p class="sello" id="tipoLocal">Sushi &amp; Rolls</p>
-    <h1 class="portada__marca" aria-label="District Roll"><span><b>District</b></span><span><b>Roll</b></span></h1>
-    <p class="portada__filo sello">La carta</p>
-    <p class="portada__lede">Elige lo que se te antoje, arma tu pedido y mándalo por WhatsApp. Te confirman en un momento.</p>
+    <h1 class="oculto-h">District Roll Sushi</h1>
+    <img class="portada__logo" src="img/logo.webp" alt="District Roll Sushi" width="1167" height="528">
+    <p class="portada__lede"><b>El sushi de Mayorazgo.</b> Rollos empanizados y fríos, gohan y yakimeshi, hechos al momento. Arma tu pedido y mándalo por WhatsApp.</p>
+    <a class="hoy" href="#promos" id="hoy"><span class="hoy__dia" id="hoyDia">Hoy</span><span class="hoy__txt" id="hoyTxt"></span></a>
     <div class="portada__cta">
       <a class="btn btn--shu" href="#carta">Ver la carta <svg aria-hidden="true"><use href="#i-flecha"/></svg></a>
-      <a class="btn btn--linea" href="#casa">Lo que recomienda la casa</a>
+      <a class="btn btn--linea" href="#promos">Promos de la semana</a>
     </div>
     <div class="portada__baja"><span id="lugar"></span><span id="horario"></span></div>
   </div>
@@ -260,15 +273,20 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
 
 <nav class="barra" id="barra" aria-label="Categorías de la carta">
   <div class="ancho barra__top">
-    <a class="barra__marca" href="#inicio">District Roll<i aria-hidden="true"></i></a>
+    <a class="barra__marca" href="#inicio"><img src="img/logo.webp" alt="District Roll · arriba" width="80" height="40"></a>
     <label class="buscar"><span class="oculto">Buscar en la carta</span><svg aria-hidden="true"><use href="#i-lupa"/></svg><input id="buscar" type="search" placeholder="Buscar en la carta" autocomplete="off" enterkeyhint="search"></label>
   </div>
   <div class="cats" id="cats"></div>
 </nav>
 
 <main>
+  <section class="promos" id="promos" aria-labelledby="t-promos">
+    <div class="ancho" style="margin-bottom:22px"><p class="sello">#ElSushiDeLasPromo</p><h2 class="titulo-sec" id="t-promos">Una promo cada día</h2></div>
+    <div class="promos__fila" id="promosFila"></div>
+    <p class="ancho" style="margin-top:12px;color:var(--gris);font-size:14px">Pregunta por WhatsApp si la promo aplica a domicilio.</p>
+  </section>
   <section class="casa" id="casa" aria-labelledby="t-casa">
-    <div class="ancho" style="margin-bottom:24px"><p class="sello">お勧め · Recomendación</p><h2 id="t-casa" style="margin:10px 0 0;font:700 clamp(32px,6.6vw,54px)/1 var(--serif)">Lo que recomienda la casa</h2></div>
+    <div class="ancho" style="margin-bottom:24px"><p class="sello">Hecho al momento para ti</p><h2 class="titulo-sec" id="t-casa">Para antojarse</h2></div>
     <div class="casa__fila" id="casaFila"></div>
   </section>
   <div class="carta" id="carta"><div class="ancho" id="cartaIn"></div></div>
@@ -276,8 +294,8 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
 
 <footer class="pie">
   <div class="ancho pie__in">
-    <div><div class="pie__marca">District<br>Roll</div><p style="margin:14px 0 0">Precios en pesos mexicanos.</p></div>
-    <div id="pieDatos"></div>
+    <div><div class="pie__marca"><img src="img/logo.webp" alt="District Roll Sushi" width="1167" height="528" loading="lazy"></div><p style="margin:14px 0 0">Ingredientes frescos, sabores que enamoran. いただきます!</p><p style="margin:6px 0 0">Precios en pesos mexicanos.</p></div>
+    <div class="visita"><img src="img/real-local.webp" alt="El local de District Roll de noche, con su letrero encendido" width="900" height="1200" loading="lazy"><div id="pieDatos"></div></div>
     <div class="qr"><div class="qr__caja" id="qrCaja" aria-hidden="true"></div><p style="margin:0">Escanéalo para abrir la carta en otro teléfono.</p></div>
   </div>
 </footer>
@@ -341,43 +359,57 @@ fieldset.campo{border:0; margin:0; padding:0; min-width:0}
    Categoría: foto (franja con foto arriba, en img/). Las fotos de hoy son de EJEMPLO
    (Unsplash, ver img/CREDITOS.md): se cambian por las de District Roll con el mismo nombre. */
 var LOCAL = {
-  ejemplo: true,                 /* ⚠ quitar en cuanto la carta sea la de verdad */
+  ejemplo: false,
   nombre: "District Roll",
-  tipo: "Sushi & Rolls",
-  whatsapp: "524428833786",      /* ⚠ PRUEBA: el de Grupo Mazi. Cambiar por el del local */
-  lugar: "", horario: "", instagram: ""
+  tipo: "Sushi",
+  whatsapp: "524613441696",      /* el de su Facebook y sus carteles: 461 344 1696 */
+  lugar: "Av. Punta Norte 139, Mayorazgo, Querétaro · frente al Oxxo de Misión Mayorazgo, en la nueva plaza gastronómica",
+  mapa: "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent("District Roll Sushi, Av. Punta Norte 139, Querétaro"),
+  horario: "", instagram: ""
 };
+/* Las promos de cada día, como las publican (getDay: 1 lunes … 5 viernes). */
+var PROMOS = [
+  {dia:1, n:"Lunes", g:"3×2", d:"En rollos fríos"},
+  {dia:2, n:"Martes", g:"2×1", d:"En rollos empanizados"},
+  {dia:3, n:"Miércoles", g:"2 por $109", d:"Yakimeshis"},
+  {dia:4, n:"Jueves", g:"$1", d:"El segundo platillo", nota:"Aplica en platillo diferente"},
+  {dia:5, n:"Viernes", g:"Gratis", d:"1 orden de kushiages", nota:"En la compra de 2 rollos"}
+];
 var CARTA = [
- {id:"rolls", n:"Rolls", jp:"巻", foto:"cat-rolls.webp", nota:"Ocho piezas. Por fuera o por dentro, como lo pidas.", platos:[
-  {n:"District Roll", d:"Camarón empanizado, queso crema y aguacate, cubierto de salmón y salsa de anguila.", p:189, casa:1, k:"巻", f:"district.webp"},
-  {n:"California", d:"Kanikama, pepino, aguacate y ajonjolí.", p:129, f:"california.webp"},
-  {n:"Philadelphia", d:"Salmón, queso crema y aguacate.", p:149, f:"philadelphia.webp"},
-  {n:"Mar y Tierra", d:"Camarón, res, queso crema y aguacate.", p:169},
-  {n:"Tempura Roll", d:"Todo el rollo empanizado: camarón, queso crema y pepino.", p:159},
-  {n:"Spicy Tuna", d:"Atún picado con salsa picante, pepino y cebollín.", p:169, pic:1},
-  {n:"Dragon Roll", d:"Anguila y pepino, cubierto de aguacate en escamas.", p:199, casa:1, k:"龍", f:"dragon.webp"},
-  {n:"Veggie", d:"Pepino, zanahoria, aguacate, espárrago y queso crema.", p:119}
+ {id:"empanizados", n:"Rollos empanizados", jp:"揚", foto:"real-empanizados.webp", nota:"Los martes, 2×1.", platos:[
+  {n:"Camaroncito Roll", d:"Pepino, zanahoria, aguacate, queso Philadelphia y camarón.", p:139},
+  {n:"Camaroncito Hot", d:"Pepino, zanahoria, aguacate, queso Philadelphia, camarón y chiles toreados por dentro.", p:149, pic:1, casa:1, k:"辛"},
+  {n:"Res Roll", d:"Pepino, zanahoria, aguacate, queso manchego y carne de res a la plancha.", p:139},
+  {n:"Chicken Roll", d:"Pepino, zanahoria, aguacate, queso manchego y pollo.", p:139},
+  {n:"3 Quesos", d:"Pepino, zanahoria, aguacate, queso manchego, Philadelphia, queso americano y surimi.", p:149},
+  {n:"Texano", d:"Pepino, zanahoria, aguacate, queso manchego, tocino y res.", p:149},
+  {n:"Mar y Tierra", d:"Pepino, zanahoria, aguacate, queso manchego, camarón, res y pollo.", p:149, casa:1, k:"海", f:"real-mar-y-tierra.webp"},
+  {n:"Supremo", d:"Por dentro: pepino, zanahoria, aguacate, queso Philadelphia y camarón. Por fuera: gratinado con queso manchego, tampico, salsa de anguila y chipotle.", p:169}
  ]},
- {id:"entradas", n:"Entradas", jp:"前菜", foto:"cat-entradas.webp", nota:"Para empezar o para compartir.", platos:[
-  {n:"Gyozas", d:"Cinco piezas de cerdo y verdura, a la plancha.", p:99, f:"gyozas.webp"},
-  {n:"Edamames", d:"Con sal de grano o en salsa picante de la casa.", p:79},
-  {n:"Kushiages", d:"Brochetas empanizadas de queso, plátano o camarón.", p:89},
-  {n:"Tostada de atún", d:"Atún fresco, aguacate, salsa ponzu y chile serrano.", p:119, pic:1, casa:1, k:"鮪"}
+ {id:"frios", n:"Rollos fríos", jp:"冷", foto:"real-frios.webp", nota:"Los lunes, 3×2.", platos:[
+  {n:"California", d:"Por dentro: pepino, zanahoria, Philadelphia, aguacate y camarón. Por fuera: ajonjolí tostado.", p:139},
+  {n:"Avocado", d:"Por dentro: pepino, zanahoria, Philadelphia, aguacate y surimi. Por fuera: aguacate.", p:149},
+  {n:"Bananito", d:"Por dentro: pepino, zanahoria y Philadelphia. Por fuera: plátano macho frito.", p:139, casa:1, k:"蕉", f:"real-bananito.webp"},
+  {n:"Lorensushi", d:"Por dentro: pepino, zanahoria, Philadelphia, aguacate y surimi. Por fuera: alga.", p:139},
+  {n:"Philadelphia", d:"Por dentro: pepino, zanahoria, aguacate, surimi y Philadelphia. Por fuera: ajonjolí tostado.", p:139},
+  {n:"Salmoncito", d:"Por dentro: pepino, zanahoria, Philadelphia y aguacate. Por fuera: lonjas de salmón.", p:159, casa:1, k:"鮭", f:"real-salmoncito.webp"}
  ]},
- {id:"calientes", n:"Calientes", jp:"温", foto:"cat-calientes.webp", nota:"Recién salidos del wok.", platos:[
-  {n:"Yakimeshi", d:"Arroz frito con verdura, huevo y la proteína que elijas.", p:129, f:"yakimeshi.webp"},
-  {n:"Ramen de la casa", d:"Caldo de cerdo, fideo, huevo marinado, cebollín y alga.", p:179, f:"ramen.webp"},
-  {n:"Teppanyaki", d:"Res, pollo o camarón a la plancha con verdura y arroz.", p:189}
+ {id:"entradas", n:"Entradas", jp:"串", foto:"real-kushiages.webp", nota:"Brochetas de camarón, queso manchego, plátano o mixtas.", platos:[
+  {n:"Brocheta", d:"Una pieza: camarón, queso manchego, plátano o mixta.", p:25, f:"real-kushiages.webp"},
+  {n:"Orden de 3 brochetas", d:"Camarón, queso manchego, plátano o mixtas.", p:70}
  ]},
- {id:"bebidas", n:"Bebidas", jp:"飲", foto:"cat-bebidas.webp", nota:"", platos:[
-  {n:"Té verde", d:"Frío o caliente.", p:45, f:"te.webp"},
-  {n:"Calpis", d:"Refresco japonés de yogur.", p:55},
-  {n:"Refresco", d:"De lata.", p:35},
-  {n:"Agua mineral", d:"", p:35}
+ {id:"gohan", n:"Gohan", jp:"飯", nota:"Arroz vaporizado.", platos:[
+  {n:"Gohan sencillo", d:"Arroz vaporizado con ajonjolí.", p:89},
+  {n:"Gohan especial", d:"Arroz vaporizado con ensalada tampico, aguacate, queso Philadelphia y un toque de salsa de anguila.", p:99},
+  {n:"Gohan de salmón", d:"Arroz vaporizado con lonjas de salmón ahumado, aguacate y Philadelphia.", p:149}
  ]},
- {id:"postres", n:"Postres", jp:"甘", foto:"cat-postres.webp", nota:"", platos:[
-  {n:"Mochis", d:"Tres piezas de helado envueltas en arroz dulce.", p:89, f:"mochis.webp"},
-  {n:"Plátano tempura", d:"Con helado de vainilla y miel.", p:79}
+ {id:"yakimeshi", n:"Yakimeshi", jp:"炒", foto:"real-mesa.webp", nota:"Los miércoles, 2 por $109.", platos:[
+  {n:"Yakimeshi sencillo", d:"", p:79},
+  {n:"Yakimeshi de pollo", d:"", p:89},
+  {n:"Yakimeshi de res", d:"", p:89},
+  {n:"Yakimeshi de camarón", d:"", p:89},
+  {n:"Yakimeshi mixto", d:"", p:109},
+  {n:"Yakimeshi especial", d:"Tampico, aguacate y queso Philadelphia.", p:109}
  ]}
 ];
 
@@ -394,15 +426,17 @@ var pesos = function(n){ return "$" + n.toLocaleString("es-MX"); };
 var sinAcentos = function(t){ return t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); };
 
 $("#ejemplo").hidden = !LOCAL.ejemplo;
-document.title = LOCAL.nombre + " · Carta";
-$("#tipoLocal").textContent = LOCAL.tipo;
-$("#lugar").textContent = LOCAL.lugar || "Pedidos por WhatsApp";
-$("#horario").textContent = LOCAL.horario || "";
+document.title = "District Roll Sushi · Carta y promos";
+$("#lugar").textContent = "Av. Punta Norte 139 · Mayorazgo, Querétaro";
+$("#horario").textContent = "WhatsApp 461 344 1696";
 var pd = $("#pieDatos");
-if(LOCAL.lugar) pd.appendChild(el("p", {style:"margin:0", text:LOCAL.lugar}));
+pd.appendChild(el("p", {style:"margin:0;font:400 28px/1 var(--display);text-transform:uppercase;color:var(--washi)", text:"Visítanos"}));
+if(LOCAL.lugar) pd.appendChild(el("p", {style:"margin:12px 0 0", text:LOCAL.lugar}));
+pd.appendChild(el("p", {style:"margin:6px 0 0"}, [el("a", {href:LOCAL.mapa, target:"_blank", rel:"noopener", text:"Cómo llegar"})]));
+pd.appendChild(el("p", {style:"margin:6px 0 0", text:"Recoges en el local o te lo llevan dentro de la zona."}));
 if(LOCAL.horario) pd.appendChild(el("p", {style:"margin:6px 0 0", text:LOCAL.horario}));
 if(LOCAL.instagram) pd.appendChild(el("p", {style:"margin:6px 0 0"}, [el("a", {href:"https://www.instagram.com/" + LOCAL.instagram.replace("@","") + "/", target:"_blank", rel:"noopener", text:"Instagram · " + LOCAL.instagram})]));
-pd.appendChild(el("p", {style:"margin:6px 0 0"}, [el("a", {href:"https://wa.me/" + LOCAL.whatsapp, target:"_blank", rel:"noopener", text:"WhatsApp del local"})]));
+pd.appendChild(el("p", {style:"margin:6px 0 0"}, [el("a", {href:"https://wa.me/" + LOCAL.whatsapp, target:"_blank", rel:"noopener", text:"Pedir por WhatsApp · 461 344 1696"})]));
 
 /* ───────── pintar la carta ───────── */
 var todos = [], cartaIn = $("#cartaIn"), cats = $("#cats");
@@ -416,7 +450,7 @@ CARTA.forEach(function(c, ci){
     p.cat = c;
     var mas = el("button", {class:"plato__mas", type:"button", "aria-label":"Agregar " + p.n}, [icono("i-mas")]);
     var tags = el("div", {class:"plato__tags"});
-    if(p.casa) tags.appendChild(el("span", {class:"tag", text:"Recomienda la casa"}));
+    if(p.casa) tags.appendChild(el("span", {class:"tag", text:"Para antojarse"}));
     if(p.pic) tags.appendChild(el("span", {class:"tag tag--pic", text:"Picante"}));
     /* con foto: miniatura redonda y el «+» encima; sin foto, el «+» solo */
     var lado = p.f ? el("div", {class:"plato__mini"}, [el("img", {src:"img/" + p.f, alt:"", loading:"lazy", width:"96", height:"96"}), mas]) : mas;
@@ -433,7 +467,7 @@ CARTA.forEach(function(c, ci){
   c.sec = sec; cartaIn.appendChild(sec);
   c.liga = el("a", {href:"#" + c.id, text:c.n}); cats.appendChild(c.liga);
 });
-var nada = el("div", {class:"nada", hidden:""}, [el("strong", {text:"No encontramos eso"}), "Prueba con otra palabra, como «salmón» o «empanizado»."]);
+var nada = el("div", {class:"nada", hidden:""}, [el("strong", {text:"No encontramos eso"}), "Prueba con otra palabra, como «camarón» o «salmón»."]);
 cartaIn.appendChild(nada);
 var fila = $("#casaFila");
 todos.filter(function(p){ return p.casa; }).forEach(function(p){
@@ -442,6 +476,17 @@ todos.filter(function(p){ return p.casa; }).forEach(function(p){
     el("div", null, [ el("h3", {text:p.n}), el("p", {text:p.d}), el("div", {class:"recom__p"}, [el("span", {text:p.cat.n}), pesos(p.p)]) ]) ]);
   b.addEventListener("click", function(){ abrirPlato(p); });
   fila.appendChild(b);
+});
+
+/* ───────── la promo de hoy y las de la semana ───────── */
+var hoyN = new Date().getDay(), dHoy = PROMOS.filter(function(x){ return x.dia === hoyN; })[0];
+if(dHoy){ $("#hoyDia").textContent = "Hoy " + dHoy.n; $("#hoyTxt").textContent = dHoy.g + " · " + dHoy.d;
+  if(dHoy.nota) $("#hoyTxt").appendChild(el("small", {text:dHoy.nota})); }
+else { $("#hoyDia").textContent = "Lunes"; $("#hoyTxt").textContent = "Arranca la semana con 3×2 en rollos fríos"; }
+PROMOS.forEach(function(x){
+  $("#promosFila").appendChild(el("article", {class:"promo rev" + (x === dHoy ? " es-hoy" : "")}, [
+    el("span", {class:"promo__dia", text:x.n}), el("span", {class:"promo__grande", text:x.g}),
+    el("span", {class:"promo__d"}, [x.d, x.nota ? el("small", {text:x.nota}) : null]) ]));
 });
 
 /* buscar */
@@ -563,10 +608,6 @@ try{ var liga = location.href.split("#")[0].split("?")[0];
   if(typeof qrcode === "function" && /^https?:/.test(liga)){ var q = qrcode(0,"M"); q.addData(liga); q.make(); $("#qrCaja").innerHTML = q.createSvgTag({cellSize:4, margin:0, scalable:true}); }
   else $(".qr").hidden = true; }catch(e){ $(".qr").hidden = true; }
 
-/* el sol baja despacio con el scroll */
-var sol = $("#sol"), pend = false;
-if(!quieto) window.addEventListener("scroll", function(){ if(pend) return; pend = true; requestAnimationFrame(function(){ pend = false;
-  var y = window.scrollY; if(y < innerHeight * 1.2) sol.style.transform = "translateY(" + (y * .28).toFixed(1) + "px)"; }); }, {passive:true});
 
 if(!quieto && "IntersectionObserver" in window){
   var fuera = $$(".rev").filter(function(e){ return e.getBoundingClientRect().top > innerHeight * .92; });
