@@ -30,3 +30,10 @@ Carlos pidió el 21: «aprovecha todo el espacio del tríptico y hazlo más visu
 - **Los nombres del equipo NO están en el repo** (es público): van en `visuales/integrantes.txt`, que no se sube. Lo que sale (`visuales/salida/`, el .pptx y el PDF) sí los lleva.
 - **El PDF va hecho de fotos de cada hoja**, para que el visor del iPhone no pinte cuadros (ver CLAUDE.md); el editable es el .pptx, para Canva.
 - **Rehacerlos:** `NODE_PATH=<node_modules con pptxgenjs, sharp, react, react-dom, react-icons> node visuales/hacer.js`. Si algo no cabe, el generador truena y dice cuánto se sale.
+
+## Con el estilo de la referencia (24 de octubre) · `referencia/`
+
+Carlos mandó una referencia («Nutrición y Vida Saludable», verde) y dos trípticos de la competencia («Malos hábitos» e «IMC»). Sale uno: **Muévete y prevén**, con lo que hace buena a la referencia (bloques verde oscuro · limón · verde oscuro, letra Lilita One, fotos en círculo como platos que se salen del panel, números en bolita, píldoras y estrellitas) y sin lo que le falla: el texto sobre el limón va en verde muy oscuro y no en blanco, y cada dato trae su fuente. Nada de texto de relleno ni faltas, que es lo que le quedó a la competencia.
+
+- **Letras:** Lilita One y Poppins, las dos en Canva.
+- **Rehacerlo:** `NODE_PATH=<node_modules con pptxgenjs, sharp, react, react-dom, react-icons> node referencia/hacer.js`. Las fotos en círculo y la frase curva se hornean con Chromium; los textos quedan editables. Si algo no cabe, truena.
