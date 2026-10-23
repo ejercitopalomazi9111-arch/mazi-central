@@ -5,6 +5,22 @@ portada, las favoritas, «¿Cuántos van a comer?», la carta, «Ármala tú», 
 promociones por rebanada, sucursales y **pedido por WhatsApp** a la sucursal que elija el cliente.
 Un solo `index.html` con la carpeta `img/`, sin compilación. Pruebas: `node smileys/pruebas.mjs <base>`.
 
+## ✅ VENDIDA · 23 de octubre de 2026
+
+Carlos cerró la **página completa** con Smiley's: **$6,000** (la Completa vale $6,500; le bajó
+$500). Es la primera venta grande a un cliente de fuera. Lo que quedó platicado:
+
+- **Pago:** 50 % para empezar ($3,000) y 50 % al entregar. El domingo el cliente dice cómo paga.
+- **Entrega:** unas **3 semanas**, contadas desde que paga los primeros $3,000.
+- **Fotos reales:** Carlos lleva a su fotógrafo y le **regala** unas fotos de sus productos para
+  la página; quizá también de los ingredientes (para «Ármala tú»). Cuando lleguen, reemplazan a
+  las de ahora en `img/`.
+- **Dominio:** primero uno gratis cuando pague los $3,000; después uno **de paga** a su nombre
+  (la cotización dice que el dominio queda a nombre del cliente y lo paga él).
+- **Lo que viene:** va a querer mucha publicidad —flyers y más—. Se cotiza con la hoja de
+  servicios (`empresa/servicios/`).
+- Los 2 videos de regalo de la Completa y los 3 meses de mantenimiento van incluidos.
+
 ## El paquete básico · `basica/`
 
 Carlos, 22 de octubre: «la web básica pero llamativa, por si contratan ese paquete». Una sola
