@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grupo Mazi · ronda 3 de logos</title>
+<!--
+  RONDA 3 DE LOGOS (24 de octubre de 2026). Carlos: «haz uno que sea la mitad una aureola rota y la
+  otra mitad un cuerno, y haz otros 100 misma rúbrica, solo que mete ahora algunos que recuerden al
+  personaje Temmie de Undertale y algunos que recuerden a Detroit: Become Human… e investiga a
+  nuestra competencia para ver qué hay de logos en cada rubro».
+
+  ?hoja=0  la principal (mitad aureola rota, mitad cuerno) con sus versiones y su ícono
+  ?hoja=1…4  los 100, de 25 en 25, agrupados por familia (aureola, cuerno, pluma, ala, cola,
+             circuito, Iron Man, Detroit, Temmie y otros)
+  ?hoja=5  la competencia por rubro y qué hueco nos deja
+  Se arma con armar.mjs. Rúbrica de la ronda 2: sencillos, de un solo color, sin nada encimado y
+  ninguno parecido a otro: 100 letras distintas (ninguna de las rondas 1 y 2), acomodos y símbolos
+  distintos. Los símbolos están dibujados a mano en vector (marcas.js); ningún modelo de imagen.
+  De Temmie y de Detroit van GUIÑOS (criatura de garabato, el aro LED de la sien, la banda del
+  brazo), nunca el personaje ni la marca: son de Toby Fox y de Quantic Dream.
+  Letras de Google Fonts, licencia OFL: se pueden usar en un logo comercial.
+-->
+<style>
+:root{ --vacio:#100A18; --violeta:#AC27FF; --lila:#C878FF; --hueso:#EAE5E3; --gris:#A79CB4; --linea:#2C2238 }
+*{ box-sizing:border-box; margin:0 }
+html, body{ background:var(--vacio); color:var(--hueso); font:400 16px/1.4 system-ui, sans-serif }
+.hoja{ width:2120px; padding:56px 60px 48px }
+.cab{ display:flex; align-items:end; gap:24px; margin-bottom:32px }
+.cab h1{ font:800 44px/1.05 system-ui; letter-spacing:-.02em }
+.cab p{ margin-top:6px; color:var(--gris); font-size:21px; max-width:84ch }
+.cab .rango{ margin-left:auto; text-align:right; color:var(--gris); font-size:19px; white-space:nowrap }
+.cab .rango b{ display:block; color:var(--hueso); font-size:30px }
+.rej{ display:grid; grid-template-columns:repeat(5, 1fr); gap:16px }
+.ficha{ position:relative; height:340px; border-radius:22px; overflow:hidden; box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.07) }
+.lienzo{ position:absolute; inset:40px 34px 58px; display:grid; place-items:center }
+.logo{ white-space:nowrap; line-height:1 }
+.num{ position:absolute; left:18px; bottom:15px; font:700 18px/1 ui-monospace, Menlo, monospace; opacity:.6 }
+.fuente{ position:absolute; right:18px; bottom:16px; font:500 14px/1 system-ui; opacity:.5 }
+.fam{ position:absolute; left:18px; top:15px; font:600 12px/1 system-ui; letter-spacing:.12em; text-transform:uppercase; opacity:.45 }
+.pie{ margin-top:26px; display:flex; justify-content:space-between; color:#6E6380; font-size:17px }
+svg{ display:block; overflow:visible }
+/* la principal */
+.heroe{ display:grid; grid-template-columns:1.25fr 1fr; gap:16px }
+.panel{ position:relative; border-radius:22px; overflow:hidden; display:grid; place-items:center; box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.07) }
+.panel .et{ position:absolute; left:22px; top:18px; font:600 13px/1 system-ui; letter-spacing:.12em; text-transform:uppercase; opacity:.5 }
+.der{ display:grid; grid-template-rows:repeat(3, 1fr); gap:16px }
+.abajo{ display:grid; grid-template-columns:1fr 1fr 1fr 1.3fr; gap:16px; margin-top:16px }
+/* la competencia */
+.rubros{ display:grid; grid-template-columns:repeat(3, 1fr); gap:16px }
+.rubro{ background:#1E1428; border-radius:22px; padding:30px 32px; box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.06) }
+.rubro h2{ font:800 28px/1.1 system-ui; letter-spacing:-.01em; margin-bottom:14px }
+.rubro li{ margin:0 0 10px 1.1em; color:#D6CEDD; font-size:19px; line-height:1.4 }
+.rubro li b{ color:var(--hueso) }
+.rubro .hueco{ margin-top:16px; padding-top:14px; border-top:1.5px solid var(--linea); color:var(--lila); font-size:19px; line-height:1.4 }
+.fuentes{ margin-top:22px; color:#8A7E99; font-size:16px; line-height:1.5 }
+</style>
+</head>
+<body>
+<div class="hoja" id="hoja"></div>
+<script type="module">
+import { M, svg, R, arco, HALO_CUERNO, HALO_CUERNO_B, HALO_CUERNO_C } from './marcas.js';
+const VA = '#100A18', H = '#EAE5E3', V = '#AC27FF', L = '#C878FF', N = '#07050A';
+/* fondos de un solo color de tinta: oscuro con hueso, oscuro con violeta, hueso con oscuro, hueso con
+   violeta, violeta con blanco, negro con lila, blanco con negro, negro con blanco */
+const F = { d:[VA, H], dv:[VA, V], l:[H, VA], lv:[H, V], v:[V, '#FFFFFF'], n:[N, L], b:['#FFFFFF', '#0B0B0F'], k:['#0B0B0F', '#FFFFFF'] };
+const t = (txt, f, w, s, mas = '') => `<span style="font-family:'${f}';font-weight:${w};font-size:${s}px;${mas}">${txt}</span>`;
+const fila = (gap, ...x) => `<div style="display:flex;align-items:center;gap:${gap}px">${x.join('')}</div>`;
+/* el símbolo se para en la línea de las letras (para cuando hace de letra) */
+const filaB = (gap, ...x) => `<div style="display:flex;align-items:baseline;gap:${gap}px">${x.join('')}</div>`;
+const col = (gap, al, ...x) => `<div style="display:flex;flex-direction:column;align-items:${al};gap:${gap}px">${x.join('')}</div>`;
+const ancho = (e) => `letter-spacing:${e}em;margin-right:-${e}em`;
+/* la aureola hecha de dos cuernos: uno lleno y el otro roto */
+const lunas = (w) => svg('0 0 100 100', w, `<path d="M50 94 C22 92 6 72 6 50 C6 28 22 8 50 6 C34 18 26 34 26 50 C26 68 34 84 50 94 Z" ${R}/><path d="${arco(50, 50, 44, -80, -20)}"/><path d="${arco(50, 50, 44, -4, 44)}"/><path d="${arco(50, 50, 44, 60, 84)}"/>`, 4);
+
+/* la aureola con dos cuernitos encima: ángel y diablo en una sola pieza */
+const haloCuernitos = (w) => svg('0 0 120 80', w, `<ellipse cx="60" cy="56" rx="50" ry="16"/><path d="M34 44 C30 30 32 16 40 4 C42 18 46 30 52 40 Z" ${R}/><path d="M86 44 C90 30 88 16 80 4 C78 18 74 30 68 40 Z" ${R}/>`, 4);
+/* el globo de diálogo: la letra va adentro, el globo es un marco */
+const globo = (x) => `<div style="display:flex;flex-direction:column;align-items:flex-start"><div style="border:3px solid currentColor;border-radius:14px;padding:12px 18px 8px">${x}</div>${svg('0 0 40 22', 40, `<path d="M10 0 L12 18 L28 0" />`, 3)}</div>`;
+/* el puente: acompañar de un lado al otro */
+const puente = (w) => svg('0 0 130 60', w, `<path d="M4 56 H126"/><path d="M14 56 C30 10 100 10 116 56"/><path d="M40 56 V26 M65 56 V20 M90 56 V26"/>`, 3.5);
+/* LOS 100. f = letra, w = pesos que se piden, fo = fondo, fam = familia, h = el logo */
+const LOGOS = [
+ /* ── aureola rota ── */
+ { f:'Inter', w:[200, 700], fo:'d', fam:'aureola', h:(f) => col(14, 'center', M.haloDos(150), t('MAZI', f, 700, 88, 'letter-spacing:-.02em'), t('grupo', f, 200, 20, ancho(.6))) },
+ { f:'Roboto', w:[300], fo:'l', fam:'aureola', h:(f) => col(4, 'center', M.haloTres(230), t('grupo mazi', f, 300, 58, 'letter-spacing:-.01em')) },
+ { f:'Open Sans', w:[800], fo:'v', fam:'aureola', h:(f) => fila(22, M.haloInclinado(120), col(0, 'flex-start', t('GRUPO', f, 800, 30, 'letter-spacing:.3em'), t('MAZI', f, 800, 74))) },
+ { f:'Lato', w:[900], fo:'dv', fam:'aureola', h:(f) => col(12, 'center', M.haloPuntos(170), t('MAZI', f, 900, 96, 'letter-spacing:.04em'), t('GRUPO', f, 900, 15, ancho(.9))) },
+ { f:'Mulish', w:[300], fo:'lv', fam:'aureola', h:(f) => `<div style="border:2px solid currentColor;border-radius:999px;padding:22px 40px">${fila(18, M.haloGrieta(116), t('Grupo Mazi', f, 300, 44))}</div>` },
+ { f:'Karla', w:[700], fo:'n', fam:'aureola', h:(f) => col(6, 'center', M.haloChispas(110), t('mazi', f, 700, 92, 'letter-spacing:-.04em'), t('— grupo —', f, 700, 16, 'letter-spacing:.4em')) },
+ { f:'Cabin', w:[600], fo:'b', fam:'aureola', h:(f) => col(6, 'flex-end', M.haloDoble(100), t('GRUPO MAZI', f, 600, 52)) },
+ { f:'Asap', w:[800], fo:'k', fam:'aureola', h:(f) => fila(26, M.haloSombra(110), col(0, 'flex-start', t('Mazi', f, 800, 80), t('grupo', f, 800, 26, 'letter-spacing:.35em;opacity:.7'))) },
+ { f:'Overpass', w:[900], fo:'l', fam:'aureola', h:(f) => col(18, 'center', M.haloCorona(160), t('GRUPO MAZI', f, 900, 22, ancho(.5))) },
+ { f:'Heebo', w:[300], fo:'d', fam:'aureola', h:(f) => col(10, 'flex-start', filaB(6, M.haloSobreM(124), t('AZI', f, 300, 100)), t('GRUPO', f, 300, 18, 'letter-spacing:.8em')) },
+ /* ── cuerno ── */
+ { f:'Varela Round', w:[], fo:'dv', fam:'cuerno', h:(f) => fila(18, M.cuernoSolo(46), t('grupo mazi', f, 400, 52)) },
+ { f:'M PLUS Rounded 1c', w:[300, 800], fo:'l', fam:'cuerno', h:(f) => col(12, 'center', M.cuernoLinea(52), t('MAZI', f, 800, 86), t('grupo', f, 300, 20, ancho(.5))) },
+ { f:'Baloo 2', w:[700], fo:'v', fam:'cuerno', h:(f) => fila(16, M.cuernoCircuito(64), col(-6, 'flex-start', t('grupo', f, 700, 34), t('mazi', f, 700, 78))) },
+ { f:'Fredoka', w:[600], fo:'d', fam:'cuerno', h:(f, c) => col(10, 'center', M.cuernoGrietas(60, c[0]), t('Mazi', f, 600, 84), t('GRUPO', f, 600, 16, ancho(.7))) },
+ { f:'Nunito Sans', w:[300], fo:'lv', fam:'cuerno', h:(f) => fila(20, t('GRUPO MAZI', f, 300, 46, 'letter-spacing:.18em'), M.cuernoEspiral(70)) },
+ { f:'Ubuntu', w:[300, 500], fo:'n', fam:'cuerno', h:(f) => col(10, 'center', M.cuernosPar(120), t('MAZI', f, 500, 80, ancho(.2)), t('grupo', f, 300, 20, ancho(.5))) },
+ { f:'Titillium Web', w:[700], fo:'k', fam:'cuerno', h:(f) => fila(14, t('GRUPO', f, 700, 20, 'writing-mode:vertical-rl;transform:rotate(180deg);letter-spacing:.3em'), M.cuernoAnillos(56), t('MAZI', f, 700, 100, 'letter-spacing:-.02em')) },
+ { f:'Signika', w:[600], fo:'b', fam:'cuerno', h:(f) => fila(18, M.cuernoPixel(48), col(0, 'flex-start', t('Grupo', f, 600, 30), t('Mazi', f, 600, 64))) },
+ { f:'Prompt', w:[200], fo:'dv', fam:'cuerno', h:(f, c) => fila(18, M.cuernoCorte(70, c[0]), t('grupo&nbsp;mazi', f, 200, 40, 'letter-spacing:.1em')) },
+ { f:'Hanken Grotesk', w:[300, 800], fo:'l', fam:'cuerno', h:(f) => col(12, 'center', filaB(4, t('MAZ', f, 800, 100), M.cuernoSolo(40)), t('GRUPO', f, 300, 18, ancho(.8))) },
+ /* ── mitad aureola, mitad cuerno ── */
+ { f:'Schibsted Grotesk', w:[700], fo:'d', fam:'aureola + cuerno', h:(f) => col(14, 'center', M.mezclaElipse(140), t('GRUPO MAZI', f, 700, 40, 'letter-spacing:.04em')) },
+ { f:'Geologica', w:[300], fo:'v', fam:'aureola + cuerno', h:(f) => fila(22, M.mezclaMitad(96), t('mazi', f, 300, 96, 'letter-spacing:-.03em')) },
+ { f:'Albert Sans', w:[900], fo:'lv', fam:'aureola + cuerno', h:(f) => col(6, 'center', M.mezclaDiadema(150), t('MAZI', f, 900, 104, 'letter-spacing:-.04em'), t('GRUPO', f, 900, 16, ancho(.9))) },
+ { f:'Be Vietnam Pro', w:[600], fo:'n', fam:'aureola + cuerno', h:(f) => fila(18, haloCuernitos(110), col(2, 'flex-start', t('GRUPO', f, 600, 24, 'letter-spacing:.42em'), t('MAZI', f, 600, 58, 'letter-spacing:.08em'))) },
+ { f:'DM Sans', w:[500], fo:'k', fam:'aureola + cuerno', h:(f) => col(14, 'center', lunas(96), t('grupo mazi', f, 500, 40, 'letter-spacing:.02em')) },
+ /* ── pluma ── */
+ { f:'Epilogue', w:[800], fo:'l', fam:'pluma', h:(f) => fila(16, M.plumaLinea(46), t('Grupo Mazi', f, 800, 54, 'letter-spacing:-.03em')) },
+ { f:'Anybody', w:[900], fo:'d', fam:'pluma', h:(f) => fila(20, M.plumaSolida(58), col(8, 'flex-start', t('MAZI', f, 900, 92, 'letter-spacing:.06em'), t('GRUPO', f, 900, 15, 'letter-spacing:.9em'))) },
+ { f:'Encode Sans Expanded', w:[300], fo:'lv', fam:'pluma', h:(f) => fila(20, col(4, 'flex-end', t('GRUPO', f, 300, 22, ancho(.5)), t('MAZI', f, 300, 66)), M.plumaCircuito(84)) },
+ { f:'Golos Text', w:[600], fo:'v', fam:'pluma', h:(f) => fila(20, M.plumaPixel(58), t('grupo mazi', f, 600, 50)) },
+ { f:'Funnel Display', w:[300, 800], fo:'n', fam:'pluma', h:(f, c) => fila(16, col(2, 'flex-end', t('MAZI', f, 800, 80), t('grupo', f, 300, 20, 'letter-spacing:.5em')), M.plumaHueco(58, c[0])) },
+ { f:'Host Grotesk', w:[400], fo:'b', fam:'pluma', h:(f) => fila(16, M.plumaLineas(64), col(4, 'flex-start', t('Grupo', f, 400, 26, 'letter-spacing:.2em'), t('Mazi', f, 400, 70))) },
+ { f:'Reddit Sans', w:[700], fo:'dv', fam:'pluma', h:(f) => fila(14, t('mazi', f, 700, 96, 'letter-spacing:-.03em'), M.plumaTinta(50)) },
+ { f:'Wix Madefor Display', w:[500], fo:'l', fam:'pluma', h:(f) => col(14, 'center', M.plumasCruzadas(110), t('GRUPO MAZI', f, 500, 36, ancho(.3))) },
+ { f:'Radio Canada', w:[700], fo:'k', fam:'pluma', h:(f, c) => fila(18, M.plumaCirculo(92, c[0]), col(0, 'flex-start', t('Grupo', f, 700, 30), t('Mazi', f, 700, 60))) },
+ { f:'Afacad', w:[600], fo:'d', fam:'pluma', h:(f) => col(10, 'center', M.plumaM(120), t('GRUPO MAZI', f, 600, 30, ancho(.4))) },
+ /* ── ala ── */
+ { f:'Atkinson Hyperlegible', w:[700], fo:'v', fam:'ala', h:(f) => fila(16, M.alaAngular(96), col(0, 'flex-start', t('MAZI', f, 700, 72, 'letter-spacing:.04em'), t('GRUPO', f, 700, 20, 'letter-spacing:.62em'))) },
+ { f:'Readex Pro', w:[300], fo:'l', fam:'ala', h:(f) => col(12, 'flex-start', M.alaPixel(90), t('grupo mazi', f, 300, 52)) },
+ { f:'Kumbh Sans', w:[800], fo:'d', fam:'ala', h:(f) => fila(18, col(-6, 'flex-end', t('GRUPO', f, 800, 40), t('MAZI', f, 800, 64)), M.alaPildoras(96)) },
+ { f:'Commissioner', w:[200], fo:'lv', fam:'ala', h:(f) => col(6, 'center', t('Grupo Mazi', f, 200, 62, 'letter-spacing:.02em'), M.alaHoja(260)) },
+ { f:'Spline Sans', w:[600], fo:'n', fam:'ala', h:(f) => fila(14, M.alaCirculo(110), t('mazi', f, 600, 80)) },
+ { f:'Geist', w:[300], fo:'k', fam:'ala', h:(f) => col(16, 'center', M.alaPlumas(140), t('GRUPO MAZI', f, 300, 24, ancho(.6))) },
+ { f:'Geist Mono', w:[500], fo:'dv', fam:'ala', h:(f) => fila(18, M.alaMecanica(110), t('grupo_mazi', f, 500, 38)) },
+ /* ── cola de ave ── */
+ { f:'Lora', w:[500], fo:'l', fam:'cola', h:(f) => col(10, 'center', M.colaAbanico(120), t('Grupo Mazi', f, 500, 50)) },
+ { f:'Merriweather', w:[300, 900], fo:'d', fam:'cola', h:(f) => fila(16, M.colaGolondrina(46), col(0, 'flex-start', t('GRUPO', f, 300, 24, 'letter-spacing:.3em'), t('MAZI', f, 900, 70))) },
+ { f:'EB Garamond', w:[500], fo:'lv', fam:'cola', h:(f) => col(12, 'center', M.colaPuntos(130), t('GRUPO MAZI', f, 500, 40, ancho(.2))) },
+ { f:'Crimson Pro', w:[300], fo:'v', fam:'cola', h:(f) => fila(14, M.colaCometa(120), t('mazi', f, 300, 90)) },
+ { f:'Prata', w:[], fo:'n', fam:'cola', h:(f) => col(12, 'center', M.colaOjo(70), t('GRUPO MAZI', f, 400, 26, ancho(.35))) },
+ /* ── circuito, placa madre ── */
+ { f:'Rozha One', w:[], fo:'l', fam:'circuito', h:(f) => col(12, 'center', M.circuitoM(100), t('GRUPO MAZI', f, 400, 30, 'letter-spacing:.12em')) },
+ { f:'Kode Mono', w:[600], fo:'d', fam:'circuito', h:(f) => fila(16, M.chip(80), col(0, 'flex-start', t('GRUPO', f, 600, 22, 'letter-spacing:.3em'), t('MAZI', f, 600, 56))) },
+ { f:'Sometype Mono', w:[400], fo:'b', fam:'circuito', h:(f) => fila(18, t('mazi', f, 400, 80), M.vias(70)) },
+ { f:'Red Hat Mono', w:[300], fo:'dv', fam:'circuito', h:(f) => filaB(6, M.circuitoG(60), t('RUPO MAZI', f, 300, 56)) },
+ { f:'Martian Mono', w:[700], fo:'lv', fam:'circuito', h:(f) => fila(16, M.esquinaPCB(70), col(4, 'flex-start', t('GRUPO', f, 700, 30), t('MAZI', f, 700, 30))) },
+ { f:'Azeret Mono', w:[200], fo:'k', fam:'circuito', h:(f) => col(10, 'flex-start', t('grupo mazi', f, 200, 50), M.circuitoFlecha(120)) },
+ { f:'Syne Mono', w:[], fo:'v', fam:'circuito', h:(f) => col(14, 'center', M.bga(80), t('GRUPO·MAZI', f, 400, 30, 'letter-spacing:.1em')) },
+ { f:'Handjet', w:[500], fo:'n', fam:'circuito', h:(f) => fila(16, M.pulso(110), t('MAZI', f, 500, 96)) },
+ /* ── Iron Man ── */
+ { f:'Quantico', w:[400, 700], fo:'d', fam:'iron man', h:(f) => fila(18, M.reactor(92), col(0, 'flex-start', t('GRUPO', f, 400, 24, 'letter-spacing:.4em'), t('MAZI', f, 700, 64))) },
+ { f:'Tektur', w:[400, 600], fo:'l', fam:'iron man', h:(f) => col(12, 'center', M.reactorTriangulo(76), t('MAZI', f, 600, 80, ancho(.1)), t('grupo', f, 400, 18, ancho(.6))) },
+ { f:'Goldman', w:[700], fo:'dv', fam:'iron man', h:(f) => fila(22, M.ojos(110), t('MAZI', f, 700, 84)) },
+ { f:'Bruno Ace', w:[], fo:'lv', fam:'iron man', h:(f) => fila(18, M.mascara(70), t('GRUPO MAZI', f, 400, 40)) },
+ { f:'Iceland', w:[], fo:'k', fam:'iron man', h:(f) => col(12, 'center', M.repulsor(90), t('GRUPO MAZI', f, 400, 40, ancho(.2))) },
+ { f:'Aldrich', w:[], fo:'v', fam:'iron man', h:(f) => fila(16, M.hud(90), t('mazi', f, 400, 80)) },
+ { f:'Nova Square', w:[], fo:'n', fam:'iron man', h:(f) => col(12, 'center', M.casco(66), t('GRUPO MAZI', f, 400, 30, ancho(.2))) },
+ { f:'Sixtyfour', w:[], fo:'b', fam:'iron man', h:(f) => col(8, 'center', M.energia(140), t('MAZI', f, 400, 60)) },
+ /* ── guiño a Detroit: Become Human ── */
+ { f:'B612', w:[700], fo:'l', fam:'guiño Detroit', h:(f) => fila(18, M.led(70), t('GRUPO MAZI', f, 700, 40, 'letter-spacing:.06em')) },
+ { f:'Doto', w:[400, 700], fo:'d', fam:'guiño Detroit', h:(f) => fila(16, M.ledPerfil(76), col(0, 'flex-start', t('MAZI', f, 700, 66), t('GRUPO', f, 400, 22, 'letter-spacing:.4em'))) },
+ { f:'Bellefair', w:[], fo:'dv', fam:'guiño Detroit', h:(f) => col(10, 'center', M.banda(140), t('GRUPO MAZI', f, 400, 44, ancho(.3))) },
+ { f:'Pixelify Sans', w:[500], fo:'lv', fam:'guiño Detroit', h:(f) => col(10, 'flex-start', t('MAZI', f, 500, 84), fila(10, M.serie(110), t('MZ-001', f, 500, 22))) },
+ { f:'Jersey 10', w:[], fo:'n', fam:'guiño Detroit', h:(f) => fila(18, M.ledAnillos(84), t('MAZI', f, 400, 100, 'letter-spacing:.06em')) },
+ { f:'Forum', w:[], fo:'k', fam:'guiño Detroit', h:(f) => fila(18, M.caraDividida(70), col(2, 'flex-start', t('Grupo', f, 400, 30), t('Mazi', f, 400, 70))) },
+ { f:'Tiny5', w:[], fo:'v', fam:'guiño Detroit', h:(f) => col(12, 'center', M.hexCelda(84), t('GRUPO MAZI', f, 400, 34, 'letter-spacing:.1em')) },
+ { f:'Gilda Display', w:[], fo:'l', fam:'guiño Detroit', h:(f) => fila(16, t('Grupo Mazi', f, 400, 56), M.ledGota(34)) },
+ /* ── guiño a Temmie ── */
+ { f:'Gochi Hand', w:[], fo:'lv', fam:'guiño Temmie', h:(f) => col(4, 'center', M.criatura(120), t('grupo mazi', f, 400, 52)) },
+ { f:'Press Start 2P', w:[], fo:'d', fam:'guiño Temmie', h:(f) => fila(18, M.criaturaPixel(80), col(10, 'flex-start', t('GRUPO', f, 400, 16), t('MAZI', f, 400, 36))) },
+ { f:'Patrick Hand', w:[], fo:'v', fam:'guiño Temmie', h:(f) => fila(16, globo(t('hOI!', f, 400, 40)), t('grupo mazi', f, 400, 48)) },
+ { f:'VT323', w:[], fo:'n', fam:'guiño Temmie', h:(f) => fila(16, M.huella(60), t('GRUPO MAZI', f, 400, 60)) },
+ { f:'Gaegu', w:[700], fo:'b', fam:'guiño Temmie', h:(f) => col(2, 'center', M.asomada(170), t('gRuPo mAzI', f, 700, 56)) },
+ { f:'Short Stack', w:[], fo:'l', fam:'guiño Temmie', h:(f) => fila(16, M.criaturaHalo(90), t('mazi', f, 400, 70)) },
+ { f:'Comic Neue', w:[700], fo:'dv', fam:'guiño Temmie', h:(f) => col(6, 'center', M.bigotes(120), t('MAZI', f, 700, 80)) },
+ { f:'Chewy', w:[], fo:'k', fam:'guiño Temmie', h:(f) => col(10, 'center', M.copo(70), t('grupo mazi', f, 400, 48)) },
+ /* ── otros ── */
+ { f:'Grandstander', w:[800], fo:'lv', fam:'otro', h:(f) => col(10, 'center', M.mDeCuernos(100), t('GRUPO MAZI', f, 800, 32)) },
+ { f:'Sniglet', w:[800], fo:'d', fam:'otro', h:(f) => filaB(4, M.mDeArcos(84), t('azi', f, 800, 90)) },
+ { f:'Literata', w:[600], fo:'l', fam:'otro', h:(f) => fila(16, M.juntos(90), t('Grupo Mazi', f, 600, 48)) },
+ { f:'Zilla Slab', w:[700], fo:'v', fam:'otro', h:(f) => col(12, 'center', puente(130), t('GRUPO MAZI', f, 700, 40)) },
+ { f:'Roboto Slab', w:[200], fo:'n', fam:'otro', h:(f) => fila(10, t('mazi', f, 200, 96), `<div style="align-self:flex-start">${M.chispa(40)}</div>`) },
+ { f:'Arvo', w:[700], fo:'k', fam:'otro', h:(f) => col(12, 'center', M.ojo(110), t('MAZI', f, 700, 70, ancho(.2))) },
+ { f:'Alfa Slab One', w:[], fo:'lv', fam:'otro', h:(f) => fila(16, M.escudo(64), col(0, 'flex-start', t('GRUPO', f, 400, 28), t('MAZI', f, 400, 60))) },
+ { f:'Ultra', w:[], fo:'d', fam:'otro', h:(f) => fila(12, M.flama(54), t('mazi', f, 400, 80)) },
+ { f:'Bevan', w:[], fo:'dv', fam:'otro', h:(f) => fila(12, t('GRUPO', f, 400, 44), M.rayo(30), t('MAZI', f, 400, 44)) },
+ { f:'Permanent Marker', w:[], fo:'b', fam:'otro', h:(f) => col(6, 'center', t('Grupo Mazi', f, 400, 56), M.infinito(120)) },
+ { f:'Kaushan Script', w:[], fo:'l', fam:'otro', h:(f) => col(8, 'center', M.diamante(70), t('Grupo Mazi', f, 400, 58)) },
+ { f:'Yellowtail', w:[], fo:'v', fam:'otro', h:(f) => fila(10, t('Mazi', f, 400, 100), M.orbita(80)) },
+ { f:'Sen', w:[700], fo:'n', fam:'otro', h:(f) => fila(14, M.luna(60), t('grupo mazi', f, 700, 50)) },
+ { f:'Monoton', w:[], fo:'k', fam:'otro', h:(f) => col(14, 'center', t('MAZI', f, 400, 80), M.montana(110)) },
+ { f:'Bungee Hairline', w:[], fo:'d', fam:'otro', h:(f) => fila(14, M.comillas(60), t('MAZI', f, 400, 78)) },
+ { f:'Nova Mono', w:[], fo:'lv', fam:'otro', h:(f) => col(10, 'center', M.corona(80), t('grupo mazi', f, 400, 42)) },
+ { f:'Rubik Mono One', w:[], fo:'v', fam:'otro', h:(f) => fila(16, M.estrellaRota(70), col(4, 'flex-start', t('GRUPO', f, 400, 22), t('MAZI', f, 400, 50))) },
+ { f:'Rubik Glitch', w:[], fo:'n', fam:'otro', h:(f) => col(10, 'center', M.ancla(50), t('MAZI', f, 400, 70)) },
+ { f:'Yeseva One', w:[], fo:'l', fam:'otro', h:(f) => fila(14, M.llave(90), t('Mazi', f, 400, 72)) },
+ { f:'Caveat', w:[400, 700], fo:'dv', fam:'sólo letra', h:(f) => col(-10, 'flex-start', t('grupo', f, 400, 40), t('Mazi', f, 700, 124)) },
+ { f:'Silkscreen', w:[400], fo:'b', fam:'sólo letra', h:(f) => fila(18, col(2, 'center', ...'MAZI'.split('').map(x => t(x, f, 400, 46))), t('GRUPO', f, 400, 18, 'writing-mode:vertical-rl;letter-spacing:.5em')) },
+];
+if(LOGOS.length !== 100) throw new Error('deben ser 100 y son ' + LOGOS.length);
+const vistas = new Set(); for(const l of LOGOS){ if(vistas.has(l.f)) throw new Error('letra repetida: ' + l.f); vistas.add(l.f); }
+
+const pedir = (f, w) => { const k = document.createElement('link'); k.rel = 'stylesheet';
+  k.href = 'https://fonts.googleapis.com/css2?family=' + f.replace(/ /g, '+') + (w.length ? ':wght@' + w.join(';') : '') + '&display=block'; document.head.appendChild(k); };
+const hoja = +(new URLSearchParams(location.search).get('hoja') ?? 1), el = document.getElementById('hoja');
+const pie = (txt) => `<div class="pie"><span>Grupo Mazi · ronda 3 de logos · ${txt}</span><span>Símbolos dibujados en vector. Letras de Google Fonts, licencia OFL.</span></div>`;
+
+if(hoja >= 1 && hoja <= 4){
+  const desde = (hoja - 1) * 25, mios = LOGOS.slice(desde, desde + 25);
+  for(const l of mios) pedir(l.f, l.w);
+  const fams = [...new Set(mios.map(l => l.fam))].join(' · ');
+  el.innerHTML = `<div class="cab"><div><h1>Grupo Mazi · ronda 3 · logos ${String(desde + 1).padStart(3, '0')} al ${String(desde + 25).padStart(3, '0')}</h1>
+    <p>Misma rúbrica: de un solo color, sin nada encimado y cada uno con su letra, su acomodo y su símbolo. En esta hoja: ${fams}.</p></div>
+    <div class="rango">hoja<b>${hoja} de 4</b></div></div>
+    <div class="rej">${mios.map((l, i) => { const c = F[l.fo]; return `<div class="ficha" style="background:${c[0]};color:${c[1]}"><span class="fam">${l.fam}</span><div class="lienzo"><div class="logo">${l.h(l.f, c)}</div></div>
+      <span class="num">${String(desde + i + 1).padStart(3, '0')}</span><span class="fuente">${l.f}</span></div>`; }).join('')}</div>${pie(`hoja ${hoja} de 4`)}`;
+} else if(hoja === 0){
+  pedir('Onest', [300, 600]);
+  const f = 'Onest';
+  /* el candado: el símbolo y el nombre. La letra va en peso medio y abierta, para que el símbolo mande */
+  const horiz = (w, s) => fila(Math.round(w * .2), HALO_CUERNO(w), col(Math.round(s * .06), 'flex-start', t('MAZI', f, 600, s, 'letter-spacing:.06em'), t('GRUPO', f, 300, Math.round(s * .25), 'letter-spacing:.62em')));
+  const vert = (w, s) => col(Math.round(w * .16), 'center', HALO_CUERNO(w), t('MAZI', f, 600, s, ancho(.12)), t('GRUPO', f, 300, Math.round(s * .24), ancho(.7) + `;margin-top:-${Math.round(s * .1)}px`));
+  const panel = (fo, et, x, mas = '') => { const c = F[fo] || fo; return `<div class="panel" style="background:${c[0]};color:${c[1]};${mas}"><span class="et">${et}</span>${x}</div>`; };
+  const icono = (px, rad, fondo, tinta) => `<div style="width:${px}px;height:${px}px;border-radius:${rad}px;background:${fondo};color:${tinta};display:grid;place-items:center">${HALO_CUERNO(px * .62, px < 40 ? 7 : 5)}</div>`;
+  el.innerHTML = `<div class="cab"><div><h1>La principal · mitad aureola rota, mitad cuerno</h1>
+    <p>De un lado la aureola, rota en tres pedazos; del otro, el cuerno que la abraza y remata en punta. Se lee igual en grande que en el ícono de la app, y de un solo color.</p></div>
+    <div class="rango">hoja<b>principal</b></div></div>
+    <div class="heroe">
+      ${panel('d', 'el candado', `<div style="padding:60px 0">${horiz(300, 150)}</div>`, 'min-height:700px')}
+      <div class="der">
+        ${panel('l', 'en claro', vert(86, 58))}
+        ${panel('v', 'sobre violeta', horiz(110, 62))}
+        ${panel('k', 'en negro y blanco', fila(36, HALO_CUERNO(110), t('grupo mazi', f, 300, 60, 'letter-spacing:.02em')))}
+      </div>
+    </div>
+    <div class="abajo">
+      ${panel('n', 'ícono de la app', fila(28, icono(170, 38, V, '#FFFFFF'), icono(110, 25, H, VA), icono(64, 15, VA, H)), 'height:300px')}
+      ${panel('d', 'chiquito: 48, 32 y 20 px', fila(34, HALO_CUERNO(48, 6), HALO_CUERNO(32, 7), HALO_CUERNO(20, 8)), 'height:300px')}
+      ${panel('lv', 'sólo el símbolo', HALO_CUERNO(170), 'height:300px')}
+      ${panel('d', 'otras dos versiones del mismo', fila(70, col(16, 'center', HALO_CUERNO_B(130), `<span style="opacity:.55;font-size:16px">B · cuerno más ancho</span>`), col(16, 'center', HALO_CUERNO_C(130), `<span style="opacity:.55;font-size:16px">C · cuerno más alto</span>`)), 'height:300px')}
+    </div>${pie('la principal')}`;
+} else {
+  /* la competencia, por rubro. Lo de Querétaro se vio en sus páginas (23 de octubre); lo demás es
+     el patrón conocido del rubro, dicho como patrón y no como estudio */
+  const R3 = [
+    ['Agencias web y marketing en Querétaro', ['<b>Genotipo</b>: una «G» con punto.', '<b>Fencode</b>: una «F» dentro de un sello de texto que gira.', '<b>Society Monkey</b>: letra de mano con una de palo grueso.', '<b>Querétaro Web</b> e <b>Impulzo</b>: el nombre en una letra de palo cualquiera.', '<b>NetClick</b>: la página no cargó. <b>primeweb.mx</b>: dominio estacionado.'], 'Nadie tiene un símbolo propio que se recuerde: o es la inicial, o es el nombre solo.'],
+    ['Software', ['Lo de siempre: el nombre en letra geométrica y una figura abstracta (cubos, llaves «{ }», hexágonos).', 'Los que sí se recuerdan tienen <b>mascota</b>: el pulpo-gato de GitHub, el chango de Mailchimp.', 'Azul casi siempre.'], 'Una criatura propia (el guiño a Temmie) es el hueco más grande: casi nadie en México la usa.'],
+    ['Video y fotografía', ['En Querétaro son casi todos independientes (Cronoshare): su nombre y una cámara, un lente o el triángulo de «play».', 'Mucho negro y dorado, mucha letra de firma.'], 'Cero cámaras, cero «play»: si el símbolo dice qué aparato usamos, se parece a todos.'],
+    ['Gestión de negocios y consultoría', ['Letra con remate (serif) o iniciales, azul marino o verde, a veces un punto o una barra de color.', 'Se ven serios y se ven iguales entre ellos.'], 'Podemos ser serios sin ser grises: un símbolo de una sola línea y un solo color.'],
+    ['Tiempos y movimientos', ['Engranes, cronómetros, palomitas y flechas que suben.', 'Casi siempre de despacho de ingeniería, sin marca.'], 'Fuera engranes y cronómetros: ya los usa todo el rubro.'],
+    ['Lo que viene en 2026', ['Minimalismo duro: pocas formas y que se lean del tamaño de una foto de perfil.', 'Letra con personalidad en vez de la de palo de siempre.', 'Un símbolo que cuente algo, no que adorne.'], 'Lo que nos deja: un solo símbolo, de un solo color, que aguante en 20 px. La principal se probó a 20.'],
+  ];
+  el.innerHTML = `<div class="cab"><div><h1>La competencia, rubro por rubro</h1>
+    <p>Qué usan los demás en su logo y qué hueco nos deja. Lo que evitamos en las 100: la inicial con punto, el sello que gira, la letra de palo genérica, las cámaras y los engranes.</p></div>
+    <div class="rango">hoja<b>competencia</b></div></div>
+    <div class="rubros">${R3.map(([h2, li, hueco]) => `<div class="rubro"><h2>${h2}</h2><ul>${li.map(x => `<li>${x}</li>`).join('')}</ul><div class="hueco">${hueco}</div></div>`).join('')}</div>
+    <div class="fuentes">Fuentes: marketing4ecommerce.mx (agencias de Querétaro) · designrush.com · goodfirms.co (Genotipo) · fencode.dev · cronoshare.com.mx · logoworks.com, andacademy.com, uxstudioteam.com y gdusa.com (tendencias 2026). Las páginas de sube.mx, digiclic, tribalo y musemedia no abrieron.</div>${pie('competencia')}`;
+}
+(async () => {
+  await document.fonts.ready;
+  for(const lz of document.querySelectorAll('.lienzo')){
+    const g = lz.querySelector('.logo'), a = lz.getBoundingClientRect(), r = g.getBoundingClientRect();
+    let u = { l:r.left, t:r.top, d:r.right, b:r.bottom };
+    for(const e of g.querySelectorAll('*')){ const q = e.getBoundingClientRect(); if(!q.width || !q.height) continue;
+      u = { l:Math.min(u.l, q.left), t:Math.min(u.t, q.top), d:Math.max(u.d, q.right), b:Math.max(u.b, q.bottom) }; }
+    const s = Math.min(1, a.width / (u.d - u.l), a.height / (u.b - u.t)), cx = (u.l + u.d) / 2, cy = (u.t + u.b) / 2;
+    g.style.transformOrigin = `${(cx - r.left).toFixed(1)}px ${(cy - r.top).toFixed(1)}px`;
+    g.style.transform = `translate(${(a.left + a.width / 2 - cx).toFixed(1)}px, ${(a.top + a.height / 2 - cy).toFixed(1)}px) scale(${s.toFixed(3)})`;
+  }
+  document.body.dataset.listo = '1';
+})();
+</script>
+</body>
+</html>
