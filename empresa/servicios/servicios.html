@@ -31,10 +31,11 @@ h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
 /* ── la portada ── */
 .cabeza{ position:relative; background:var(--vacio); color:#F3EEF7; padding:30px 52px 28px; overflow:hidden }
 .cabeza::before{ content:""; position:absolute; right:-160px; top:-220px; width:620px; height:620px; border-radius:50%;
-  background:radial-gradient(closest-side, rgba(172,39,255,.55), rgba(172,39,255,.12) 55%, transparent) }
-.cabeza::after{ content:""; position:absolute; inset:0; background-image:linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px);
-  background-size:36px 36px; -webkit-mask:linear-gradient(90deg, transparent, #000 70%); mask:linear-gradient(90deg, transparent, #000 70%) }
+  background:radial-gradient(closest-side, #661A97, #230E34 55%, #100A18) }
 .cabeza > *{ position:relative; z-index:1 }
+/* SIN transparencias con degradado ni sombras difuminadas: en el PDF se vuelven máscaras (smask)
+   y el visor del iPhone las pinta como RECUADROS SÓLIDOS (Carlos, 23 oct: «este recuadro morado
+   está feísimo», era la sombra de la Recomendada). Los brillos van en colores opacos. */
 .marca{ display:flex; align-items:center; gap:12px }
 .marca .paloma{ width:58px; height:34px; background:url(../../marca/logo/paloma.svg) center/contain no-repeat }
 .marca b{ font-family:"Mazi", var(--t); font-weight:400; font-size:23px; letter-spacing:.04em }
@@ -47,7 +48,7 @@ h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
 
 /* ── las tarjetas de las webs ── */
 .planes{ display:grid; grid-template-columns:repeat(3, 1fr); gap:14px }
-.plan{ position:relative; display:flex; flex-direction:column; padding:20px 18px 16px; border-radius:18px; background:#fff; box-shadow:0 0 0 1.5px var(--linea), 0 10px 26px -18px rgba(40,10,70,.35) }
+.plan{ position:relative; display:flex; flex-direction:column; padding:20px 18px 16px; border-radius:18px; background:#fff; box-shadow:0 0 0 1.5px var(--linea) }
 .plan .nom{ font-weight:800; font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--violeta-hondo) }
 .plan .precio{ margin-top:8px; font-size:36px; font-weight:900; letter-spacing:-.045em; line-height:1 }
 .plan .precio small{ font-size:13px; font-weight:700; letter-spacing:0; color:var(--suave); margin-right:3px; vertical-align:6px }
@@ -59,12 +60,12 @@ h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
 .plan li.mas{ font-weight:700 }
 .plan .pie{ margin-top:14px; padding-top:11px; border-top:1.5px dashed var(--linea); font-size:11px; color:var(--gris); line-height:1.4 }
 .plan .pie b{ color:var(--tinta) }
-.plan.estrella{ background:var(--vacio); color:#F3EEF7; box-shadow:0 0 0 2px var(--violeta), 0 22px 40px -20px rgba(122,18,196,.75) }
+.plan.estrella{ background:var(--vacio); color:#F3EEF7; box-shadow:0 0 0 2px var(--violeta) }
 .plan.estrella .nom{ color:#C878FF } .plan.estrella .para, .plan.estrella .pie{ color:#BFB4CC } .plan.estrella .pie b{ color:#fff }
 .plan.estrella .pie{ border-color:rgba(255,255,255,.16) }
 .cinta{ position:absolute; top:-10px; right:16px; padding:5px 11px; border-radius:99px; background:var(--violeta); color:#fff; font-size:10.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase }
 .regalo{ margin-top:10px; display:flex; gap:7px; align-items:center; font-size:11.5px; font-weight:700; color:#E3C6FF; line-height:1.25 }
-.regalo i{ flex:none; font-style:normal; font-size:16px }
+.regalo svg{ flex:none; width:17px; height:17px }
 .extra{ margin-top:14px; display:grid; grid-template-columns:1.25fr 1fr; gap:14px }
 .caja{ border-radius:16px; padding:15px 18px; background:var(--lila); display:flex; gap:14px; align-items:center }
 .caja .t{ font-weight:800; font-size:14px; letter-spacing:-.01em }
@@ -148,7 +149,7 @@ h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
 /* ── el pie de cada hoja y el cierre ── */
 .pie-hoja{ position:absolute; left:52px; right:52px; bottom:22px; display:flex; justify-content:space-between; font-size:10px; color:var(--suave); letter-spacing:.04em }
 .cierre{ position:absolute; left:0; right:0; bottom:0; padding:22px 52px 24px; background:var(--vacio); color:#F3EEF7; overflow:hidden }
-.cierre::before{ content:""; position:absolute; left:-140px; bottom:-260px; width:560px; height:560px; border-radius:50%; background:radial-gradient(closest-side, rgba(172,39,255,.5), transparent) }
+.cierre::before{ content:""; position:absolute; left:-140px; bottom:-260px; width:560px; height:560px; border-radius:50%; background:radial-gradient(closest-side, #5E188B, #100A18) }
 .cierre > *{ position:relative }
 .cierre .grande{ font-size:26px; font-weight:900; letter-spacing:-.04em; line-height:1.02; max-width:420px }
 .cierre .grande em{ font-style:normal; color:#C878FF }
@@ -199,7 +200,7 @@ h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
           <li>Herramientas para tu cliente (calculadoras, armar su pedido)</li>
           <li>Lista para aparecer en Google</li>
         </ul>
-        <div class="regalo"><i>🎁</i>De regalo: 2 videos publicitarios para tus redes</div>
+        <div class="regalo"><svg viewBox="0 0 24 24" fill="none" stroke="#C878FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8v13M3 12h18M12 8c-2-4-6-4-6-1.5S9 8 12 8zm0 0c2-4 6-4 6-1.5S15 8 12 8z"/></svg>De regalo: 2 videos publicitarios para tus redes</div>
         <div class="pie"><b>Incluye 3 meses de mantenimiento.</b><br>Lista en unas 1 a 2 semanas.</div>
       </article>
       <article class="plan">
