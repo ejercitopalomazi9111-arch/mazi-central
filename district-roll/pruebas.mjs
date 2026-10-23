@@ -3,7 +3,8 @@
    recargar.   node district-roll/pruebas.mjs [base] */
 const pw = await import('/opt/node22/lib/node_modules/playwright/index.js');
 const chromium = pw.chromium || pw.default.chromium;
-const BASE = (process.argv[2] || 'http://localhost:8800') + '/district-roll/';
+/* RUTA=/district-roll/elegante/ prueba el respaldo elegante con las mismas reglas */
+const BASE = (process.argv[2] || 'http://localhost:8800') + (process.env.RUTA || '/district-roll/');
 const br = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
 const pg = await br.newPage({ viewport:{width:390,height:844}, deviceScaleFactor:2 });
 const err=[]; pg.on('pageerror',e=>err.push(String(e))); pg.on('console',m=>{ if(m.type()==='error') err.push(m.text()); });
