@@ -1,7 +1,9 @@
 /* ARMA LA HOJA DE SERVICIOS Y SU ANUNCIO para mandárselos al cliente:
      python3 -m http.server 8765        (en la raíz del repo)
      node empresa/servicios/armar.mjs
-   Sale en empresa/servicios/salida/: Grupo-Mazi-servicios-2026.pdf, una imagen por
+   Sale en empresa/servicios/salida/: Grupo-Mazi-cotizacion-2026.pdf (LA QUE SE MANDA: cada hoja
+   es una foto, así el iPhone no tiene nada que pintar mal), Grupo-Mazi-servicios-2026.pdf (con
+   texto, para imprimir), una imagen por
    hoja (para revisarla o mandarla suelta por WhatsApp) y Grupo-Mazi-anuncio.png. */
 import { createRequire } from 'module'; import fs from 'fs'; import path from 'path';
 const require = createRequire('/opt/node22/lib/node_modules/'); const { chromium } = require('playwright');
@@ -32,6 +34,22 @@ await hoja.pdf({ path: path.join(SAL, 'Grupo-Mazi-servicios-2026.pdf'), width: '
   console.log(n ? `✗ el PDF trae ${n} máscaras de transparencia: en el iPhone salen como recuadros` : '✓ el PDF no trae máscaras (se ve igual en el iPhone)'); }
 const n = await hoja.$$eval('.hoja', h => h.length);
 for(let i = 0; i < n; i++) await (await hoja.$$('.hoja'))[i].screenshot({ path: path.join(SAL, `Grupo-Mazi-servicios-${i + 1}.png`) });
+/* LA QUE SE MANDA POR WHATSAPP: cada hoja como una foto opaca dentro del PDF. Con cero máscaras
+   el iPhone siguió enseñando el bloque morado en las capturas de Carlos (23 oct), y su visor tiene
+   errores que no se arreglan desde el archivo (ver la tabla de CLAUDE.md, el .pptx «para celular»).
+   Una foto por hoja no tiene nada que el visor pueda pintar mal. Nombre nuevo para que ningún
+   visor enseñe la copia vieja guardada. */
+{ const ctx = await br.newContext({ viewport: { width: 816, height: 1056 }, deviceScaleFactor: 2.5 }); await red(ctx);
+  const pg = await ctx.newPage(); await pg.goto(BASE + 'servicios.html', { waitUntil: 'networkidle' }); await pg.evaluate(() => document.fonts.ready);
+  const fotos = [];
+  for(const h of await pg.$$('.hoja')) fotos.push((await h.screenshot({ type: 'jpeg', quality: 90 })).toString('base64'));
+  const plano = await ctx.newPage();
+  await plano.setContent(`<style>@page{size:8.5in 11in;margin:0}*{margin:0}img{display:block;width:8.5in;height:11in;break-after:page}</style>` +
+    fotos.map(f => `<img src="data:image/jpeg;base64,${f}">`).join(''));
+  await plano.pdf({ path: path.join(SAL, 'Grupo-Mazi-cotizacion-2026.pdf'), width: '8.5in', height: '11in', printBackground: true, preferCSSPageSize: true });
+  const p = fs.readFileSync(path.join(SAL, 'Grupo-Mazi-cotizacion-2026.pdf'), 'latin1');
+  console.log(`✓ PDF para mandar: ${(p.match(/\/Type\s*\/Page\b/g) || []).length} hojas en foto, ${(p.match(/\/SMask/g) || []).length} máscaras, ${(fs.statSync(path.join(SAL, 'Grupo-Mazi-cotizacion-2026.pdf')).size / 1e6).toFixed(1)} MB`);
+  await ctx.close(); }
 /* lo que no cabe en su hoja se corta callado: se mide */
 const desbordes = await hoja.$$eval('.hoja', hs => hs.flatMap((h, i) => { const b = h.getBoundingClientRect();
   return [...h.querySelectorAll('*')].filter(e => { const r = e.getBoundingClientRect(); return r.width && (r.bottom > b.bottom + 1 || r.right > b.right + 1) && !e.closest('.cabeza, .cierre'); })
