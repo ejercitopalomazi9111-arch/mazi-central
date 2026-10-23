@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grupo Mazi · Servicios y precios 2026</title>
+<!-- LA HOJA DE SERVICIOS Y PRECIOS para mandarle al cliente (sale en PDF con armar.mjs).
+     Carlos, 23 de octubre: «una tableta de cotización… sencilla… que incluya todo lo que
+     podemos hacer con precio… más baratos que toda nuestra competencia… que el cliente
+     quiera leer rápido». Los precios de las webs ($2,000 con 3 meses de mantenimiento y
+     luego $250, $6,500 con 2 videos de regalo, $9,000 a la medida) son los que ya se le
+     ofrecieron a Smiley's; el resto es PROPUESTA, puesta abajo de los rangos del mercado
+     mexicano (ver PRECIOS.md), y la confirma Carlos. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800;900&display=swap">
+<style>
+@font-face{font-family:"Mazi"; src:url(../../sitio/fuente/mazi.woff2) format("woff2")}
+@page{ size:8.5in 11in; margin:0 }
+:root{ --vacio:#100A18; --superficie:#1E1428; --linea:#E6E1EA; --tinta:#17111F; --gris:#5E5668; --suave:#8B8296;
+  --violeta:#AC27FF; --violeta-hondo:#7A12C4; --lila:#F4ECFC; --hueso:#FBFAFC; --t:"Inter Tight", system-ui, sans-serif }
+*{ box-sizing:border-box; margin:0; padding:0 }
+html{ background:#d9d4de; -webkit-print-color-adjust:exact; print-color-adjust:exact }
+body{ font-family:var(--t); color:var(--tinta); font-size:12.5px; line-height:1.45; font-variant-numeric:tabular-nums }
+.hoja{ position:relative; width:8.5in; height:11in; margin:0 auto 24px; background:var(--hueso); overflow:hidden; page-break-after:always; break-after:page }
+@media print{ html{ background:none } .hoja{ margin:0 } }
+.pad{ padding:0 52px }
+h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
+.sec{ display:flex; align-items:baseline; gap:14px; margin:0 0 14px }
+.sec .num{ font-weight:800; font-size:12px; letter-spacing:.16em; color:var(--violeta) }
+.sec p{ margin-left:auto; color:var(--gris); font-size:12px; text-align:right; max-width:300px; line-height:1.35 }
+
+/* ── la portada ── */
+.cabeza{ position:relative; background:var(--vacio); color:#F3EEF7; padding:36px 52px 34px; overflow:hidden }
+.cabeza::before{ content:""; position:absolute; right:-160px; top:-220px; width:620px; height:620px; border-radius:50%;
+  background:radial-gradient(closest-side, rgba(172,39,255,.55), rgba(172,39,255,.12) 55%, transparent) }
+.cabeza::after{ content:""; position:absolute; inset:0; background-image:linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px);
+  background-size:36px 36px; -webkit-mask:linear-gradient(90deg, transparent, #000 70%); mask:linear-gradient(90deg, transparent, #000 70%) }
+.cabeza > *{ position:relative; z-index:1 }
+.marca{ display:flex; align-items:center; gap:12px }
+.marca .paloma{ width:58px; height:34px; background:url(../../marca/logo/paloma.svg) center/contain no-repeat }
+.marca b{ font-family:"Mazi", var(--t); font-weight:400; font-size:23px; letter-spacing:.04em }
+.marca span{ margin-left:auto; font-size:11px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:#B9AEC6 }
+.cabeza h1{ margin-top:30px; font-size:43px; line-height:.98; font-weight:900; letter-spacing:-.045em; max-width:560px }
+.cabeza h1 em{ font-style:normal; color:#C878FF }
+.cabeza .bajada{ margin-top:14px; font-size:15px; color:#CFC6DA; max-width:520px; line-height:1.4 }
+.sellos{ display:flex; gap:10px; margin-top:20px; flex-wrap:wrap }
+.sellos span{ padding:7px 13px; border-radius:99px; background:rgba(172,39,255,.16); box-shadow:inset 0 0 0 1.5px rgba(200,120,255,.45); font-size:11.5px; font-weight:700; color:#EBDDF7 }
+
+/* ── las tarjetas de las webs ── */
+.planes{ display:grid; grid-template-columns:repeat(3, 1fr); gap:14px }
+.plan{ position:relative; display:flex; flex-direction:column; padding:20px 18px 16px; border-radius:18px; background:#fff; box-shadow:0 0 0 1.5px var(--linea), 0 10px 26px -18px rgba(40,10,70,.35) }
+.plan .nom{ font-weight:800; font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--violeta-hondo) }
+.plan .precio{ margin-top:8px; font-size:36px; font-weight:900; letter-spacing:-.045em; line-height:1 }
+.plan .precio small{ font-size:13px; font-weight:700; letter-spacing:0; color:var(--suave); margin-right:3px; vertical-align:6px }
+.plan .para{ margin-top:8px; font-size:12.5px; font-weight:600; color:var(--gris); line-height:1.35; min-height:34px }
+.plan ul{ list-style:none; margin-top:12px; display:grid; gap:7px; flex:1 }
+.plan li{ position:relative; padding-left:20px; font-size:12px; line-height:1.35 }
+.plan li::before{ content:""; position:absolute; left:0; top:2.5px; width:13px; height:13px; border-radius:50%;
+  background:var(--violeta) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.3l2.6 2.5L12 5.4' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat }
+.plan li.mas{ font-weight:700 }
+.plan .pie{ margin-top:14px; padding-top:11px; border-top:1.5px dashed var(--linea); font-size:11px; color:var(--gris); line-height:1.4 }
+.plan .pie b{ color:var(--tinta) }
+.plan.estrella{ background:var(--vacio); color:#F3EEF7; box-shadow:0 0 0 2px var(--violeta), 0 22px 40px -20px rgba(122,18,196,.75) }
+.plan.estrella .nom{ color:#C878FF } .plan.estrella .para, .plan.estrella .pie{ color:#BFB4CC } .plan.estrella .pie b{ color:#fff }
+.plan.estrella .pie{ border-color:rgba(255,255,255,.16) }
+.cinta{ position:absolute; top:-10px; right:16px; padding:5px 11px; border-radius:99px; background:var(--violeta); color:#fff; font-size:10.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase }
+.regalo{ margin-top:10px; display:flex; gap:8px; align-items:center; padding:9px 11px; border-radius:12px; background:rgba(172,39,255,.18); box-shadow:inset 0 0 0 1.5px rgba(200,120,255,.5); font-size:11.5px; font-weight:700; color:#fff; line-height:1.25 }
+.regalo i{ flex:none; font-style:normal; font-size:16px }
+.extra{ margin-top:14px; display:grid; grid-template-columns:1.25fr 1fr; gap:14px }
+.caja{ border-radius:16px; padding:15px 18px; background:var(--lila); display:flex; gap:14px; align-items:center }
+.caja .t{ font-weight:800; font-size:14px; letter-spacing:-.01em }
+.caja .d{ font-size:11.5px; color:var(--gris); margin-top:2px; line-height:1.35 }
+.caja .p{ margin-left:auto; text-align:right; font-weight:900; font-size:20px; letter-spacing:-.03em; white-space:nowrap }
+.caja .p small{ display:block; font-size:10.5px; font-weight:700; color:var(--suave); letter-spacing:0 }
+.caja.gris{ background:#F2F0F4 }
+
+/* ── los tres niveles de lo hecho a la medida ── */
+.niveles{ display:grid; grid-template-columns:repeat(3, 1fr); border-radius:18px; overflow:hidden; box-shadow:0 0 0 1.5px var(--linea) }
+.nivel{ padding:16px 17px 15px; background:#fff }
+.nivel + .nivel{ border-left:1.5px solid var(--linea) }
+.nivel .barras{ display:flex; gap:3px; margin-bottom:9px }
+.nivel .barras i{ width:16px; height:5px; border-radius:3px; background:var(--linea) }
+.nivel .barras i.on{ background:var(--violeta) }
+.nivel .n{ font-weight:800; font-size:15px; letter-spacing:-.01em }
+.nivel .p{ margin-top:3px; font-size:24px; font-weight:900; letter-spacing:-.04em }
+.nivel .p small{ font-size:11px; font-weight:700; color:var(--suave); letter-spacing:0; margin-right:2px }
+.nivel p{ margin-top:6px; font-size:11.5px; color:var(--gris); line-height:1.4 }
+.nivel ul{ list-style:none; margin-top:8px; display:grid; gap:4px; font-size:11.5px }
+.nivel li::before{ content:"— "; color:var(--violeta) }
+.hechos{ margin-top:10px; font-size:11.5px; color:var(--gris) }
+.hechos b{ color:var(--tinta) }
+
+/* ── la lista de precios ── */
+.lista{ display:grid; grid-template-columns:1fr 1fr; gap:6px 34px }
+.grupo h3{ font-size:12px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--violeta-hondo); margin:0 0 6px }
+.fila{ display:flex; align-items:baseline; gap:8px; padding:7px 0; border-bottom:1.5px solid var(--linea) }
+.fila .q{ font-weight:700; font-size:12.5px }
+.fila .q small{ display:block; font-weight:500; font-size:11px; color:var(--gris); margin-top:1px }
+.fila .v{ margin-left:auto; font-weight:900; font-size:15px; letter-spacing:-.02em; white-space:nowrap }
+.fila .v small{ font-size:10.5px; font-weight:700; color:var(--suave); letter-spacing:0 }
+
+/* ── cómo trabajamos ── */
+.pasos{ display:grid; grid-template-columns:repeat(4, 1fr); gap:12px }
+.paso{ padding:14px 14px 13px; border-radius:14px; background:#fff; box-shadow:0 0 0 1.5px var(--linea) }
+.paso .k{ width:26px; height:26px; border-radius:8px; display:grid; place-items:center; background:var(--vacio); color:#fff; font-weight:900; font-size:13px }
+.paso .t{ margin-top:9px; font-weight:800; font-size:13px }
+.paso .d{ margin-top:3px; font-size:11px; color:var(--gris); line-height:1.38 }
+.letra-chica{ display:grid; grid-template-columns:1fr 1fr; gap:4px 30px; font-size:11px; color:var(--gris); line-height:1.4 }
+.letra-chica b{ color:var(--tinta) }
+
+/* ── los planes de mantenimiento ── */
+.mant{ display:grid; grid-template-columns:1fr 1fr; gap:14px }
+.mplan{ padding:18px 20px 16px; border-radius:18px; background:#fff; box-shadow:0 0 0 1.5px var(--linea) }
+.mplan.plus{ background:var(--vacio); color:#F3EEF7; box-shadow:0 0 0 2px var(--violeta) }
+.mplan .nom{ font-weight:800; font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--violeta-hondo) }
+.mplan.plus .nom{ color:#C878FF }
+.mplan .para{ font-size:11.5px; color:var(--gris); margin-top:3px }
+.mplan.plus .para{ color:#BFB4CC }
+.mplan .precios{ display:flex; gap:22px; align-items:flex-end; margin-top:10px }
+.mplan .precio{ font-size:32px; font-weight:900; letter-spacing:-.045em; line-height:1 }
+.mplan .precio small{ font-size:12px; font-weight:700; letter-spacing:0; color:var(--suave) }
+.mplan .suelto{ font-size:11px; color:var(--gris); line-height:1.3; padding-bottom:3px }
+.mplan.plus .suelto{ color:#BFB4CC }
+.mplan .suelto b{ font-size:15px; color:var(--tinta); letter-spacing:-.02em }
+.mplan.plus .suelto b{ color:#fff }
+.mplan ul{ list-style:none; margin-top:12px; display:grid; gap:5px }
+.mplan li{ position:relative; padding-left:19px; font-size:11.5px; line-height:1.35 }
+.mplan li::before{ content:""; position:absolute; left:0; top:2px; width:12px; height:12px; border-radius:50%;
+  background:var(--violeta) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.3l2.6 2.5L12 5.4' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat }
+.reglas{ margin-top:12px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px }
+.regla{ padding:13px 15px; border-radius:14px; background:#F2F0F4; font-size:11.2px; line-height:1.4; color:var(--gris) }
+.regla b{ display:block; color:var(--tinta); font-size:12.5px; margin-bottom:3px }
+.regla.no{ background:#FFF1F1 } .regla.no b{ color:#A3122E }
+.ejemplos{ display:flex; flex-wrap:wrap; gap:7px; margin-top:12px }
+.ejemplos span{ padding:6px 11px; border-radius:99px; background:var(--lila); font-size:11.2px; font-weight:700; color:#4B1C73 }
+.tri{ display:grid; grid-template-columns:repeat(3, 1fr); border-radius:14px; overflow:hidden; box-shadow:0 0 0 1.5px var(--linea); margin-top:4px }
+.tri > div{ padding:10px 12px; background:#fff; text-align:center }
+.tri > div + div{ border-left:1.5px solid var(--linea) }
+.tri .k{ font-size:10.5px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--suave) }
+.tri .v{ font-size:17px; font-weight:900; letter-spacing:-.02em; margin-top:2px }
+.tri .d{ font-size:10.5px; color:var(--gris); margin-top:2px; line-height:1.3 }
+
+/* ── el pie de cada hoja y el cierre ── */
+.pie-hoja{ position:absolute; left:52px; right:52px; bottom:22px; display:flex; justify-content:space-between; font-size:10px; color:var(--suave); letter-spacing:.04em }
+.cierre{ position:absolute; left:0; right:0; bottom:0; padding:30px 52px 34px; background:var(--vacio); color:#F3EEF7; overflow:hidden }
+.cierre::before{ content:""; position:absolute; left:-140px; bottom:-260px; width:560px; height:560px; border-radius:50%; background:radial-gradient(closest-side, rgba(172,39,255,.5), transparent) }
+.cierre > *{ position:relative }
+.cierre .grande{ font-size:30px; font-weight:900; letter-spacing:-.04em; line-height:1.02; max-width:420px }
+.cierre .grande em{ font-style:normal; color:#C878FF }
+.cierre .lema{ margin-top:10px; font-size:12.5px; color:#BFB4CC }
+.contacto{ position:absolute; right:52px; top:30px; display:grid; gap:10px; justify-items:end }
+.wa{ display:flex; align-items:center; gap:10px; padding:12px 20px; border-radius:99px; background:#25D366; color:#062B14; font-weight:900; font-size:19px; letter-spacing:-.01em }
+.wa svg{ width:24px; height:24px }
+.contacto .correo{ font-size:12.5px; font-weight:600; color:#DCD3E6 }
+.contacto .chico{ font-size:10.5px; color:#9E93AB }
+</style>
+</head>
+<body>
+
+<!-- ═════════════════ HOJA 1 ═════════════════ -->
+<section class="hoja">
+  <header class="cabeza">
+    <div class="marca"><i class="paloma"></i><b>GRUPO MAZI</b><span>Servicios y precios · 2026</span></div>
+    <h1>Tu negocio, <em>en internet</em> y trabajando por ti.</h1>
+    <p class="bajada">Páginas web, apps, video y marca hechos a la medida. Entregamos rápido y nos quedamos contigo después de entregar.</p>
+    <div class="sellos"><span>Precios claros, sin letras chiquitas</span><span>Tu página es tuya</span><span>Sin comisiones por venta</span><span>Avances que puedes ver</span></div>
+  </header>
+
+  <div class="pad" style="margin-top:28px">
+    <div class="sec"><span class="num">01</span><h2>Páginas web</h2><p>Se ven perfectas en el celular, que es donde te buscan tus clientes.</p></div>
+    <div class="planes">
+      <article class="plan">
+        <div class="nom">Esencial</div>
+        <div class="precio"><small>$</small>2,000</div>
+        <div class="para">Tu negocio en internet, listo para recibir clientes.</div>
+        <ul>
+          <li>Una página con todo lo importante</li>
+          <li>Tus productos o servicios con foto y precio</li>
+          <li>Botón de WhatsApp y de llamada</li>
+          <li>Ubicación, horarios y redes</li>
+          <li>Diseño hecho para tu marca</li>
+        </ul>
+        <div class="pie"><b>Incluye 3 meses de mantenimiento.</b><br>Lista en 3 a 5 días.</div>
+      </article>
+      <article class="plan estrella">
+        <span class="cinta">Recomendada</span>
+        <div class="nom">Completa</div>
+        <div class="precio"><small>$</small>6,500</div>
+        <div class="para">Una página que vende sola, de día y de noche.</div>
+        <ul>
+          <li class="mas">Todo lo de Esencial, y además:</li>
+          <li>Diseño con animación y fotos protagonistas</li>
+          <li>Pedidos, citas o cotizaciones que llegan armados por WhatsApp</li>
+          <li>Herramientas para tu cliente (calculadoras, armar su pedido)</li>
+          <li>Lista para aparecer en Google</li>
+        </ul>
+        <div class="regalo"><i>🎁</i>De regalo: 2 videos publicitarios para tus redes</div>
+        <div class="pie"><b>Incluye 3 meses de mantenimiento.</b><br>Lista en 1 a 2 semanas.</div>
+      </article>
+      <article class="plan">
+        <div class="nom">A la medida</div>
+        <div class="precio"><small>desde $</small>9,000</div>
+        <div class="para">Una experiencia que tu competencia no tiene.</div>
+        <ul>
+          <li>Animación 3D o interactiva</li>
+          <li>Carrito, cotizador o reservaciones</li>
+          <li>Panel para que tú cambies precios y fotos</li>
+          <li>Varios idiomas</li>
+          <li>Lo que tu negocio necesite: se diseña contigo</li>
+        </ul>
+        <div class="pie"><b>Incluye 3 meses de mantenimiento.</b><br>El tiempo depende de lo que lleve: te lo decimos antes de empezar.</div>
+      </article>
+    </div>
+    <div class="extra">
+      <div class="caja"><div><div class="t">Tienda en línea</div><div class="d">Catálogo, carrito, pagos con tarjeta o transferencia e inventario.</div></div><div class="p">desde $15,000</div></div>
+      <div class="caja gris"><div><div class="t">Mantenimiento</div><div class="d">Tu página siempre al día. Los planes, en la hoja 2.</div></div><div class="p"><small>desde</small>$450<small>al mes</small></div></div>
+    </div>
+  </div>
+  <div class="pie-hoja"><span>Grupo Mazi · grupomazi.oficial@gmail.com</span><span>WhatsApp 442 883 3786 · 1 de 3</span></div>
+</section>
+
+<!-- ═════════════════ HOJA 2 ═════════════════ -->
+<section class="hoja">
+  <div class="pad" style="padding-top:40px">
+    <div class="sec"><span class="num">02</span><h2>Mantenimiento</h2><p>Los primeros 3 meses van incluidos. Después, eliges tu plan.</p></div>
+    <div class="mant">
+      <article class="mplan">
+        <div class="nom">Plan Esencial</div>
+        <div class="para">Para páginas Esenciales.</div>
+        <div class="precios"><div class="precio">$450<small> /mes</small></div><div class="suelto">Mes suelto<br><b>$550</b></div></div>
+        <ul>
+          <li>Tu página en línea, segura y con respaldo</li>
+          <li>Revisamos cada mes que todo funcione</li>
+          <li>Hasta 4 cambios chicos al mes: precios, fotos, textos, horarios o promociones</li>
+          <li>Respuesta en 48 horas</li>
+        </ul>
+      </article>
+      <article class="mplan plus">
+        <div class="nom">Plan Plus</div>
+        <div class="para">Para páginas Completas y A la medida.</div>
+        <div class="precios"><div class="precio">$650<small> /mes</small></div><div class="suelto">Mes suelto<br><b>$750</b></div></div>
+        <ul>
+          <li>Todo lo del Plan Esencial</li>
+          <li>Hasta 10 cambios chicos al mes, incluidos productos nuevos</li>
+          <li>Una promoción o temporada nueva al mes</li>
+          <li>Prioridad: si algo falla, lo atendemos el mismo día</li>
+        </ul>
+      </article>
+    </div>
+    <div class="reglas">
+      <div class="regla"><b>Pago continuo y mes suelto</b>El precio mensual es para quien paga sin cortes. Si un mes se deja de pagar, desde ahí cada mes cuesta como mes suelto.</div>
+      <div class="regla"><b>Pago por año</b>12 meses por el precio de 10. Tu página queda cubierta todo el año sin pensarle.</div>
+      <div class="regla no"><b>Lo que se cotiza aparte</b>Secciones o páginas nuevas, rediseños, funciones nuevas o cambios a la base de datos. Si tienes plan activo, con 15% de descuento.</div>
+    </div>
+
+    <div class="sec" style="margin-top:28px"><span class="num">03</span><h2>Herramientas a tu medida</h2><p>Si la herramienta que tu negocio necesita no existe, la construimos.</p></div>
+    <div class="niveles">
+      <div class="nivel"><div class="barras"><i class="on"></i><i></i><i></i></div>
+        <div class="n">Sencillo</div><div class="p"><small>desde $</small>10,000</div>
+        <p>Una tarea de tu negocio, bien resuelta.</p>
+        <ul><li>Registro, inventario o reservas</li><li>Se instala en el celular como app</li><li>Funciona aunque no haya internet</li></ul></div>
+      <div class="nivel"><div class="barras"><i class="on"></i><i class="on"></i><i></i></div>
+        <div class="n">Medio</div><div class="p"><small>desde $</small>35,000</div>
+        <p>Tu operación en un solo lugar.</p>
+        <ul><li>Cuentas para tu equipo y tus clientes</li><li>Panel de administración</li><li>Reportes y exportar a Excel</li></ul></div>
+      <div class="nivel"><div class="barras"><i class="on"></i><i class="on"></i><i class="on"></i></div>
+        <div class="n">Avanzado</div><div class="p"><small>desde $</small>80,000</div>
+        <p>Un sistema completo para crecer.</p>
+        <ul><li>Varias áreas conectadas</li><li>Pagos y datos en tiempo real</li><li>Conexión con WhatsApp y otros sistemas</li></ul></div>
+    </div>
+    <div class="ejemplos">
+      <span>Punto de venta</span><span>Inventario y almacén</span><span>Citas y reservaciones</span><span>Cotizador automático</span><span>Control de clientes</span><span>Pedidos y reparto</span><span>Reportes que se arman solos</span><span>Respuestas de WhatsApp</span><span>Excel que se vuelve sistema</span>
+    </div>
+    <p class="hechos"><b>Ya lo hemos hecho:</b> pedidos sin filas para una cafetería escolar, ligas deportivas con marcador en vivo, y una app de venta y reparto para una distribuidora.</p>
+    <div class="lista" style="margin-top:12px; grid-template-columns:1fr 1fr">
+      <div class="grupo">
+        <div class="fila"><span class="q">Automatización suelta<small>Una tarea repetitiva que se hace sola</small></span><span class="v"><small>desde</small> $3,500</span></div>
+      </div>
+      <div class="grupo">
+        <div class="fila"><span class="q">Diagnóstico de tiempos y movimientos<small>Dónde se te va el tiempo y el dinero</small></span><span class="v"><small>desde</small> $3,000</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="pie-hoja"><span>Grupo Mazi · grupomazi.oficial@gmail.com</span><span>WhatsApp 442 883 3786 · 2 de 3</span></div>
+</section>
+
+<!-- ═════════════════ HOJA 3 ═════════════════ -->
+<section class="hoja">
+  <div class="pad" style="padding-top:40px">
+    <div class="sec"><span class="num">04</span><h2>Video, foto y diseño</h2><p>Con camarógrafo y fotógrafo en tu negocio, o con tu material.</p></div>
+    <div class="lista">
+      <div class="grupo">
+        <h3>Video y foto</h3>
+        <div class="fila"><span class="q">Video publicitario para redes<small>15 a 30 s, vertical, con tu material o el nuestro</small></span><span class="v">$1,200</span></div>
+        <div class="fila"><span class="q">Grabación en tu negocio + 2 videos<small>Camarógrafo hasta 2 horas, videos editados</small></span><span class="v">$3,500</span></div>
+        <div class="fila"><span class="q">Comercial con voz<small>Hasta 60 segundos</small></span><span class="v">$2,500</span></div>
+        <div class="fila"><span class="q">Sesión de fotos en tu negocio<small>Fotógrafo hasta 2 horas, 20 fotos editadas</small></span><span class="v">$2,000</span></div>
+      </div>
+      <div class="grupo">
+        <h3>Marca</h3>
+        <div class="fila"><span class="q">Logotipo<small>Tres propuestas y archivos para todo uso</small></span><span class="v">$1,800</span></div>
+        <div class="fila"><span class="q">Identidad de marca<small>Logo, colores, letra, papelería y plantillas</small></span><span class="v">$5,500</span></div>
+        <div class="fila"><span class="q">Menú digital con código QR</span><span class="v">$1,500</span></div>
+        <div class="fila"><span class="q">Presentación o documento profesional<small>Hasta 15 láminas o 10 páginas</small></span><span class="v">$900</span></div>
+      </div>
+    </div>
+    <h3 style="font-size:12px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--violeta-hondo); margin:16px 0 6px">Diseño gráfico · flyer, cartel, banner o publicación</h3>
+    <div class="tri">
+      <div><div class="k">Estándar</div><div class="v">$350</div><div class="d">Limpio y claro, con tu marca</div></div>
+      <div><div class="k">Pro</div><div class="v">$600</div><div class="d">Con fotos trabajadas y composición a la medida</div></div>
+      <div><div class="k">Premium</div><div class="v">$950</div><div class="d">Pieza de campaña: ilustración, retoque y variantes</div></div>
+    </div>
+
+    <div class="sec" style="margin-top:20px"><span class="num">05</span><h2>Redes y publicidad</h2><p>Contenido que sale de tu negocio real, no de plantillas.</p></div>
+    <div class="lista">
+      <div class="grupo">
+        <div class="fila"><span class="q">Manejo de redes<small>12 publicaciones al mes en 2 redes, diseño y textos</small></span><span class="v">$3,500 <small>/mes</small></span></div>
+        <div class="fila"><span class="q">Manejo de redes + 4 videos<small>Incluye una grabación al mes en tu negocio</small></span><span class="v">$6,500 <small>/mes</small></span></div>
+      </div>
+      <div class="grupo">
+        <div class="fila"><span class="q">Publicidad pagada en Facebook e Instagram<small>Armado, segmentación y reporte. Lo que inviertes en anuncios va aparte</small></span><span class="v">$1,500 <small>/mes</small></span></div>
+        <div class="fila"><span class="q">Publicidad con creadores de contenido<small>Tu marca en cuentas con seguidores reales</small></span><span class="v"><small>según el creador</small></span></div>
+      </div>
+    </div>
+
+    <div class="sec" style="margin-top:20px"><span class="num">06</span><h2>Cómo trabajamos</h2></div>
+    <div class="pasos">
+      <div class="paso"><div class="k">1</div><div class="t">Platicamos</div><div class="d">Nos cuentas qué necesitas. La primera plática no cuesta.</div></div>
+      <div class="paso"><div class="k">2</div><div class="t">Propuesta</div><div class="d">Te decimos qué incluye, cuánto cuesta y cuándo queda.</div></div>
+      <div class="paso"><div class="k">3</div><div class="t">Construimos</div><div class="d">Ves avances en tu celular y pides cambios sobre la marcha.</div></div>
+      <div class="paso"><div class="k">4</div><div class="t">Entregamos</div><div class="d">Y nos quedamos contigo con el mantenimiento.</div></div>
+    </div>
+    <div class="letra-chica" style="margin-top:12px">
+      <span><b>Pago:</b> 50% para empezar y 50% al entregar.</span>
+      <span><b>Cambios:</b> cada proyecto incluye 2 rondas de ajustes.</span>
+      <span><b>Factura:</b> si la necesitas, se agrega el IVA.</span>
+      <span><b>Dominio:</b> queda a tu nombre; lo pagas directo al proveedor.</span>
+    </div>
+  </div>
+
+  <footer class="cierre">
+    <div class="grande">¿Lo platicamos? <em>Te respondemos hoy.</em></div>
+    <div class="lema">Si no existe la herramienta, se construye la herramienta.</div>
+    <div class="contacto">
+      <div class="wa"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.3-.4.8-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg>442 883 3786</div>
+      <div class="correo">grupomazi.oficial@gmail.com</div>
+      <div class="chico">Precios en pesos mexicanos · vigentes por 30 días</div>
+    </div>
+  </footer>
+</section>
+</body>
+</html>
