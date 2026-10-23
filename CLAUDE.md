@@ -450,6 +450,8 @@ dependemos.
 
    | `getComputedStyle(el).getPropertyValue('--ancho')` da el ancho | da el TEXTO de la variable sin resolver: con `clamp(74px, 23vw, 116px)` el `parseFloat` es NaN y cae al respaldo | el abanico de Puercos calculaba el encime con 100 px fijos; al crecer las cartas a 113 se salió del tapete. Se mide la carta (`offsetWidth`). **Y una carta que gira alrededor de un punto muy abajo (`transform-origin: 50% 155%`) se corre hacia afuera** 1.55·alto·sen θ: 33 px por lado que movían la página de lado |
    | «la mano cambió» se arregla volviendo a pintar la mano | volver a pintar es BORRAR y crear todo: cada carta nueva arranca sin dibujo (fondo negro) y con su animación de reparto | Carlos: «que no se cambien las cartas al usar una» y «aparecen en negro», en cada ronda. Se actualiza por llave: la jugada se va, la nueva entra, las demás no se tocan; y el fondo mientras carga es el reverso |
+   | `visibility: hidden` en una capa esconde todo lo que trae adentro | un hijo con `visibility: visible` **se sigue viendo** aunque el papá esté escondido (con `display` no pasa) | en el comercial de Smiley's las tarjetas del montaje se quedaron pegadas encima del cierre y de la escena siguiente; lo vio la hoja de cuadros, no el código. En `herramientas/video/` las escenas se apagan con `display:none` |
+   | la copia «para mandar» de un video siempre pesa menos que el original | se hace a un bitrate FIJO pensado para 27 MB: si el original ya pesaba 14, la copia salió de **26** | el primer comercial casi se manda al doble de peso. `armar.mjs` ya no la hace cuando el original cabe |
 
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
