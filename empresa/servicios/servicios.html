@@ -29,7 +29,7 @@ h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
 .sec p{ margin-left:auto; color:var(--gris); font-size:12px; text-align:right; max-width:300px; line-height:1.35 }
 
 /* ── la portada ── */
-.cabeza{ position:relative; background:var(--vacio); color:#F3EEF7; padding:36px 52px 34px; overflow:hidden }
+.cabeza{ position:relative; background:var(--vacio); color:#F3EEF7; padding:30px 52px 28px; overflow:hidden }
 .cabeza::before{ content:""; position:absolute; right:-160px; top:-220px; width:620px; height:620px; border-radius:50%;
   background:radial-gradient(closest-side, rgba(172,39,255,.55), rgba(172,39,255,.12) 55%, transparent) }
 .cabeza::after{ content:""; position:absolute; inset:0; background-image:linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px);
@@ -39,10 +39,10 @@ h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
 .marca .paloma{ width:58px; height:34px; background:url(../../marca/logo/paloma.svg) center/contain no-repeat }
 .marca b{ font-family:"Mazi", var(--t); font-weight:400; font-size:23px; letter-spacing:.04em }
 .marca span{ margin-left:auto; font-size:11px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:#B9AEC6 }
-.cabeza h1{ margin-top:30px; font-size:43px; line-height:.98; font-weight:900; letter-spacing:-.045em; max-width:560px }
+.cabeza h1{ margin-top:22px; font-size:43px; line-height:.98; font-weight:900; letter-spacing:-.045em; max-width:560px }
 .cabeza h1 em{ font-style:normal; color:#C878FF }
 .cabeza .bajada{ margin-top:14px; font-size:15px; color:#CFC6DA; max-width:520px; line-height:1.4 }
-.sellos{ display:flex; gap:10px; margin-top:20px; flex-wrap:wrap }
+.sellos{ display:flex; gap:10px; margin-top:16px; flex-wrap:wrap }
 .sellos span{ padding:7px 13px; border-radius:99px; background:rgba(172,39,255,.16); box-shadow:inset 0 0 0 1.5px rgba(200,120,255,.45); font-size:11.5px; font-weight:700; color:#EBDDF7 }
 
 /* ── las tarjetas de las webs ── */
@@ -63,7 +63,7 @@ h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
 .plan.estrella .nom{ color:#C878FF } .plan.estrella .para, .plan.estrella .pie{ color:#BFB4CC } .plan.estrella .pie b{ color:#fff }
 .plan.estrella .pie{ border-color:rgba(255,255,255,.16) }
 .cinta{ position:absolute; top:-10px; right:16px; padding:5px 11px; border-radius:99px; background:var(--violeta); color:#fff; font-size:10.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase }
-.regalo{ margin-top:10px; display:flex; gap:8px; align-items:center; padding:9px 11px; border-radius:12px; background:rgba(172,39,255,.18); box-shadow:inset 0 0 0 1.5px rgba(200,120,255,.5); font-size:11.5px; font-weight:700; color:#fff; line-height:1.25 }
+.regalo{ margin-top:10px; display:flex; gap:7px; align-items:center; font-size:11.5px; font-weight:700; color:#E3C6FF; line-height:1.25 }
 .regalo i{ flex:none; font-style:normal; font-size:16px }
 .extra{ margin-top:14px; display:grid; grid-template-columns:1.25fr 1fr; gap:14px }
 .caja{ border-radius:16px; padding:15px 18px; background:var(--lila); display:flex; gap:14px; align-items:center }
@@ -139,6 +139,12 @@ h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
 .tri .v{ font-size:17px; font-weight:900; letter-spacing:-.02em; margin-top:2px }
 .tri .d{ font-size:10.5px; color:var(--gris); margin-top:2px; line-height:1.3 }
 
+.presu{ margin-top:12px; display:flex; align-items:center; gap:14px; padding:13px 18px; border-radius:16px; background:var(--vacio); color:#F3EEF7 }
+.presu__ico{ flex:none; width:38px; height:38px; border-radius:11px; display:grid; place-items:center; background:rgba(172,39,255,.25); color:#D9A6FF }
+.presu__ico svg{ width:20px; height:20px }
+.presu .t{ font-weight:800; font-size:14px }
+.presu .d{ font-size:11.3px; color:#CFC6DA; line-height:1.35; margin-top:2px }
+.presu__tag{ margin-left:auto; flex:none; padding:7px 12px; border-radius:99px; background:var(--violeta); color:#fff; font-size:10.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; white-space:nowrap }
 /* ── el pie de cada hoja y el cierre ── */
 .pie-hoja{ position:absolute; left:52px; right:52px; bottom:22px; display:flex; justify-content:space-between; font-size:10px; color:var(--suave); letter-spacing:.04em }
 .cierre{ position:absolute; left:0; right:0; bottom:0; padding:22px 52px 24px; background:var(--vacio); color:#F3EEF7; overflow:hidden }
@@ -165,7 +171,7 @@ h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
     <div class="sellos"><span>Precios claros, sin letras chiquitas</span><span>Tu página es tuya</span><span>Sin comisiones por venta</span><span>Avances que puedes ver</span></div>
   </header>
 
-  <div class="pad" style="margin-top:28px">
+  <div class="pad" style="margin-top:22px">
     <div class="sec"><span class="num">01</span><h2>Páginas web</h2><p>Se ven perfectas en el celular, que es donde te buscan tus clientes.</p></div>
     <div class="planes">
       <article class="plan">
@@ -213,6 +219,12 @@ h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
     <div class="extra">
       <div class="caja"><div><div class="t">Tienda en línea</div><div class="d">Catálogo, carrito, pagos con tarjeta o transferencia e inventario.</div></div><div class="p">desde $15,000</div></div>
       <div class="caja gris"><div><div class="t">Mantenimiento</div><div class="d">Tu página siempre al día. Los planes, en la hoja 2.</div></div><div class="p"><small>desde</small>$450<small>al mes</small></div></div>
+    </div>
+    <div class="presu">
+      <div class="presu__ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/></svg></div>
+      <div><div class="t">¿Tienes un presupuesto? Platícanos.</div>
+        <div class="d">Dinos todo lo que quieres y cuánto puedes invertir. Te decimos de forma realista qué te alcanza y armamos un plan accesible: por etapas o en pagos.</div></div>
+      <div class="presu__tag">Cotización a tu medida</div>
     </div>
   </div>
   <div class="pie-hoja"><span>Grupo Mazi · grupomazi.oficial@gmail.com</span><span>WhatsApp 442 883 3786 · 1 de 3</span></div>

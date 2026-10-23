@@ -107,6 +107,20 @@ caritos.»* Así quedó en la hoja:
 Cómo decirlo en la plática: *«Los ajustes van incluidos; si a medio camino cambiamos la idea, se
 vuelve otro proyecto y se cotiza.»* Se dice ANTES de empezar, no cuando ya pidió el cambio.
 
+## Cotización a presupuesto · Carlos, 23 de octubre
+
+*«Platícanos de tu presupuesto y vemos qué podemos entregarte… se pueden hacer planes accesibles…
+cualquier cosa que salga del presupuesto se puede llegar a poner a crédito, pero hay que ir viendo
+eso.»* En la hoja va como «¿Tienes un presupuesto? Platícanos» (hoja 1). Cómo se maneja:
+
+1. **Primero lo que quiere, después cuánto tiene.** Se le pide la lista completa y la cifra.
+2. **Se le dice qué alcanza, de forma realista**, con la tabla de precios: lo que entra ya, lo que
+   va en una segunda etapa y lo que no conviene.
+3. **Por etapas:** la primera ya funciona y se cobra; la segunda se agenda.
+4. **En pagos:** lo que se pase del presupuesto se puede ver a pagos. **No está definido** cuántos
+   pagos, si lleva enganche ni si cobra interés: Carlos dijo «hay que ir viendo eso». Hasta que lo
+   decida, la hoja sólo dice «en pagos» y cada caso se platica con él.
+
 ## Pendientes de confirmar con Carlos
 
 - Los precios de la columna «propuesta».
@@ -114,3 +128,4 @@ vuelve otro proyecto y se cotiza.»* Se dice ANTES de empezar, no cuando ya pidi
 - Si la Completa también lleva sus 3 meses (en la hoja ya dice que sí, porque Carlos dijo «los 3
   meses sí, de huevos que sí»).
 - El IVA y la factura: la hoja dice «si la necesitas, se agrega el IVA».
+- Las reglas de los pagos a crédito (número de pagos, enganche, interés).
