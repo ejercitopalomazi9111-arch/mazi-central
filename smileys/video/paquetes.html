@@ -26,14 +26,14 @@ html,body{width:1080px; height:1920px; overflow:hidden; background:var(--vacio);
 .titulo em{font-style:normal; color:var(--violeta)}
 .eti{position:absolute; left:0; right:0; text-align:center; font-weight:700; font-size:34px; letter-spacing:.14em; text-transform:uppercase; color:var(--apagado)}
 /* el teléfono */
-.tel{position:absolute; width:640px; height:1344px; left:50%; top:50%; margin:-672px 0 0 -320px; transform-style:preserve-3d}
+.tel{z-index:1; position:absolute; width:640px; height:1344px; left:50%; top:50%; margin:-672px 0 0 -320px; transform-style:preserve-3d}
 .tel .caja{position:absolute; inset:0; border-radius:92px; background:linear-gradient(145deg,#3d3846,#141019 40%,#2b2533); padding:20px;
   box-shadow:0 0 0 2px #4a4356, 0 70px 140px -30px rgba(0,0,0,.95), 0 0 160px -30px rgba(172,39,255,.6)}
 .tel .pantalla{position:relative; width:600px; height:1299px; border-radius:72px; overflow:hidden; background:#000}
 .tel .pantalla img{width:100%; height:100%; display:block}
 .tel .isla{position:absolute; top:22px; left:50%; width:170px; height:48px; margin-left:-85px; border-radius:30px; background:#000; z-index:2}
 .tel .brillo{position:absolute; inset:20px; border-radius:72px; background:linear-gradient(115deg, rgba(255,255,255,.16), rgba(255,255,255,0) 32%); pointer-events:none}
-.placa{position:absolute; padding:16px 30px; border-radius:99px; font-weight:800; font-size:40px; letter-spacing:-.01em; white-space:nowrap;
+.placa{z-index:5; position:absolute; padding:16px 30px; border-radius:99px; font-weight:800; font-size:40px; letter-spacing:-.01em; white-space:nowrap;
   background:var(--hueso); color:var(--vacio); box-shadow:0 20px 50px -15px rgba(0,0,0,.8)}
 .placa.v{background:var(--violeta); color:#fff}
 /* el gancho */
@@ -47,7 +47,7 @@ html,body{width:1080px; height:1920px; overflow:hidden; background:var(--vacio);
 .precio{position:absolute; left:80px; right:80px; top:50%; transform:translateY(-50%); padding:80px 70px 70px; border-radius:64px;
   background:linear-gradient(160deg, #241833, #170F22); box-shadow:inset 0 0 0 2px var(--linea), 0 80px 160px -40px rgba(0,0,0,.9), 0 0 200px -60px rgba(172,39,255,.7)}
 .precio .nom{font-weight:800; font-size:44px; letter-spacing:.12em; text-transform:uppercase; color:var(--violeta)}
-.precio .cifra{font-weight:900; font-size:290px; letter-spacing:-.06em; line-height:.86; margin:26px 0 30px; font-variant-numeric:tabular-nums}
+.precio .cifra{font-weight:900; font-size:210px; letter-spacing:-.06em; line-height:.86; margin:26px 0 30px; font-variant-numeric:tabular-nums}
 .precio .cifra small{font-size:.32em; letter-spacing:-.02em; color:var(--apagado); margin-left:12px}
 .precio ul{list-style:none; padding:0; display:grid; gap:22px}
 .precio li{display:flex; align-items:center; gap:22px; font-size:46px; font-weight:700; letter-spacing:-.02em}
@@ -64,7 +64,7 @@ html,body{width:1080px; height:1920px; overflow:hidden; background:var(--vacio);
 .col.b{background:linear-gradient(170deg, #3a1460, #1d0f30); box-shadow:inset 0 0 0 3px var(--violeta), 0 0 140px -30px rgba(172,39,255,.8)}
 .col h3{font-weight:800; font-size:40px; letter-spacing:.1em; text-transform:uppercase; color:var(--apagado)}
 .col.b h3{color:#d9a6ff}
-.col .n{font-weight:900; font-size:150px; letter-spacing:-.06em; margin:14px 0 34px; line-height:.9}
+.col .n{font-weight:900; font-size:100px; letter-spacing:-.06em; margin:14px 0 34px; line-height:.9}
 .col p{font-size:36px; font-weight:600; line-height:1.3; color:#cfc6da; margin-bottom:22px}
 .col p b{color:#fff}
 #sin{top:1450px; font-size:62px}
@@ -72,8 +72,8 @@ html,body{width:1080px; height:1920px; overflow:hidden; background:var(--vacio);
 #cierre{background:radial-gradient(80% 55% at 50% 40%, #2E1B45, var(--vacio) 80%)}
 #cierre .paloma{position:absolute; left:50%; top:430px; width:720px; height:423px; margin-left:-360px; background:url(../../marca/logo/paloma.svg) center/contain no-repeat;
   filter:drop-shadow(0 0 60px rgba(172,39,255,.55))}
-#cierre .nombre{position:absolute; left:0; right:0; top:900px; text-align:center; font-family:"Mazi", var(--t); font-size:170px; letter-spacing:.02em}
-#cierre .lema{position:absolute; left:90px; right:90px; top:1110px; text-align:center; font-size:46px; font-weight:600; color:#cfc6da; line-height:1.25}
+#cierre .nombre{position:absolute; left:0; right:0; top:900px; text-align:center; font-family:"Mazi", var(--t); font-size:120px; letter-spacing:.02em; white-space:nowrap}
+#cierre .lema{position:absolute; left:90px; right:90px; top:1090px; text-align:center; font-size:46px; font-weight:600; color:#cfc6da; line-height:1.25}
 #cierre .wa{position:absolute; left:50%; top:1330px; transform:translateX(-50%); display:flex; align-items:center; gap:24px; padding:34px 60px; border-radius:99px;
   background:#25D366; color:#0b2a17; font-weight:900; font-size:64px; letter-spacing:-.02em; white-space:nowrap; box-shadow:0 30px 80px -20px rgba(37,211,102,.8)}
 #cierre .wa svg{width:70px; height:70px}
@@ -88,7 +88,7 @@ html,body{width:1080px; height:1920px; overflow:hidden; background:var(--vacio);
   <div class="tel" id="telA"><div class="caja"><div class="pantalla"><div class="isla"></div><img alt=""></div><div class="brillo"></div></div></div>
   <div class="tel" id="telB"><div class="caja"><div class="pantalla"><div class="isla"></div><img alt=""></div><div class="brillo"></div></div></div>
   <div class="placa" id="pA">Sencilla</div><div class="placa v" id="pB">Completa</div>
-  <div id="chips"></div>
+  <div id="chips" style="position:absolute; inset:0; z-index:5"></div>
 </div>
 <div class="capa" id="precio1"><div class="precio">
   <div class="nom">Página sencilla</div><div class="cifra">$2,000</div>
@@ -147,8 +147,8 @@ async function cuadro(img, dir, R, seg){
   try{ await img.decode(); }catch(e){}
 }
 const CHIPS = [ // [t, texto, x, y, violeta]
-  [V[3] + 1.0, 'Carta completa', 640, 560, 0], [V[3] + 2.0, 'Promos', 90, 820, 1], [V[3] + 3.0, '3 sucursales', 660, 1150, 0], [V[3] + 4.3, 'Pide por WhatsApp', 70, 1420, 1],
-  [V[5] - .2, 'La caja que se abre', 520, 470, 1], [V[5] + 2.2, 'Ármala tú', 60, 760, 0], [V[5] + 4.4, '¿Cuántos van a comer?', 420, 1120, 1], [V[5] + 6.6, 'Pedido listo', 80, 1420, 0],
+  [V[3] + 1.0, 'Carta completa', 600, 440, 0], [V[3] + 2.0, 'Promos', 40, 760, 1], [V[3] + 3.0, '3 sucursales', 700, 1120, 0], [V[3] + 4.3, 'Pide por WhatsApp', 40, 1500, 1],
+  [V[5] - .2, 'La caja que se abre', 560, 440, 1], [V[5] + 2.2, 'Ármala tú', 40, 760, 0], [V[5] + 4.4, '¿Cuántos van a comer?', 520, 1120, 1], [V[5] + 6.6, 'Pedido listo', 40, 1500, 0],
 ];
 const chips = CHIPS.map(c => { const d = document.createElement('div'); d.className = 'placa' + (c[4] ? ' v' : ''); d.textContent = c[1]; $('#chips').appendChild(d); return d; });
 const TIT = [[V[2], V[3], 'Dos páginas.<br><em>Escojan.</em>'], [V[3], V[4] + .3, 'La <em>sencilla</em>'], [V[5] - .3, V[6] + .3, 'La <em>completa</em>']];
@@ -182,10 +182,9 @@ window.pintar = async (t) => {
       B.style.transform = `perspective(2400px) translate(${250 + (1 - q) * 700 + sal * 900}px, ${80 - flota}px) rotateY(${-18 * q}deg) rotateZ(${4 * q}deg) scale(.72)`;
       A.style.zIndex = 1; B.style.zIndex = 2;
       const qa = ob(p(t, V[2] + .7, V[2] + 1.1)), qb = ob(p(t, V[2] + .95, V[2] + 1.35));
-      $('#pA').style.cssText += `;left:170px; top:1660px; transform:scale(${qa}); opacity:${cl(qa) * (1 - sal)}`;
-      $('#pB').style.cssText += `;left:640px; top:1660px; transform:scale(${qb}); opacity:${cl(qb) * (1 - sal)}`;
+      for(const [el, x, q] of [[$('#pA'), 170, qa], [$('#pB'), 640, qb]]){ el.style.display = ''; el.style.left = x + 'px'; el.style.top = '1660px'; el.style.transform = `scale(${q})`; el.style.opacity = cl(q) * (1 - sal); }
     } else {
-      $('#pA').style.opacity = 0; $('#pB').style.opacity = 0;
+      $('#pA').style.display = 'none'; $('#pB').style.display = 'none';
       const solo = (el, a, b, desde) => {                  /* uno al centro, con giro suave */
         const q = oe(p(t, a, a + .7)), sal = ioc(p(t, b - .35, b));
         el.style.transform = `perspective(2200px) translate(${desde * (1 - q) * 900 - sal * desde * 900}px, ${110 + flota}px) rotateY(${Math.sin(t * .7) * 6 + desde * (1 - q) * 30}deg) scale(.86)`;
@@ -212,7 +211,7 @@ window.pintar = async (t) => {
     const el = $(id), en = t >= a - .05 && t < b + .1; vis(el, en); if(!en) return;
     const q = oe(p(t, a, a + .6)), sal = ioc(p(t, b - .3, b));
     const c = el.querySelector('.precio'); c.style.transform = `translateY(calc(-50% + ${(1 - q) * 300 - sal * 200}px)) scale(${.9 + .1 * q}) rotate(${(1 - q) * -4}deg)`; c.style.opacity = cl(q * 1.5) * (1 - sal);
-    const v = Math.round(n * oe(p(t, a + .15, a + 1.2)) / 50) * 50; c.querySelector('.cifra').innerHTML = '$' + v.toLocaleString('en-US') + '<small>MXN</small>';
+    const v = Math.round(n * oe(p(t, a + .15, a + 1.2)) / 50) * 50; c.querySelector('.cifra').textContent = '$' + v.toLocaleString('en-US');
     [...c.querySelectorAll('li')].forEach((li, k) => { const ql = oe(p(t, a + .9 + k * .55, a + 1.3 + k * .55)); li.style.opacity = ql; li.style.transform = `translateX(${(1 - ql) * 60}px)`; });
     return [q, sal];
   };
