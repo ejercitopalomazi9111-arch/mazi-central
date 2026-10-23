@@ -1002,7 +1002,7 @@ Arreglar el layout de escritorio (diagnóstico abajo) y los objetivos táctiles.
 ### Hecho
 
 - **🎉 Primera venta grande a un cliente de fuera (23 de octubre):** la página completa de
-  Smiley's, **$6,000**. Pago 50/50, entrega en ~3 semanas desde el primer pago, fotos reales con el
+  Smiley's, **$6,000**. Paga $1,000 a la semana: a las 3 semanas lleva el 50 % y se publica; el resto, otras 3 semanas, fotos reales con el
   fotógrafo de Carlos, dominio gratis primero y de paga después. Detalle en `smileys/README.md`.
 
 - **El Cerebro (§4-bis).** 65 neuronas, 9 áreas, 105 enlaces, 7 comunidades, 58 pruebas. Nació

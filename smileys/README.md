@@ -10,8 +10,10 @@ Un solo `index.html` con la carpeta `img/`, sin compilación. Pruebas: `node smi
 Carlos cerró la **página completa** con Smiley's: **$6,000** (la Completa vale $6,500; le bajó
 $500). Es la primera venta grande a un cliente de fuera. Lo que quedó platicado:
 
-- **Pago:** 50 % para empezar ($3,000) y 50 % al entregar. El domingo el cliente dice cómo paga.
-- **Entrega:** unas **3 semanas**, contadas desde que paga los primeros $3,000.
+- **Pago: $1,000 a la semana** (ahorita no tiene para pagar de golpe). En 3 semanas, contando la
+  del 23 de octubre, junta los primeros **$3,000 (el 50 %)**, y **ahí se publica la página**.
+  Los otros $3,000 siguen igual: $1,000 cada semana, 3 semanas más. El domingo confirma.
+- **Entrega:** la página tiene que estar lista para publicarse en esas **3 semanas**.
 - **Fotos reales:** Carlos lleva a su fotógrafo y le **regala** unas fotos de sus productos para
   la página; quizá también de los ingredientes (para «Ármala tú»). Cuando lleguen, reemplazan a
   las de ahora en `img/`.
