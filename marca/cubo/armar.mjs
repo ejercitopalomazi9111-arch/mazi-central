@@ -2,6 +2,7 @@
      python3 -m http.server 8765     (en la raíz del repo)
      node marca/cubo/armar.mjs                      (las 25 del cubo al lado del nombre)
      PAGINA=simbolo node marca/cubo/armar.mjs       (el cubo que es la M)
+     PAGINA=cubos node marca/cubo/armar.mjs         (el cubo oscuro de techo morado y los de cubitos)
    Sale en marca/cubo/salida/ (no se sube). El PDF va hecho de una foto: el visor del iPhone no
    tiene nada que pintar mal (CLAUDE.md, regla 12). Revisa que cada logo salga con SU letra. */
 import { createRequire } from 'module'; import fs from 'fs'; import path from 'path';
@@ -13,7 +14,7 @@ const br = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' }
 const ctx = await br.newContext({ viewport: { width: 2120, height: 1400 }, deviceScaleFactor: 1 }); await red(ctx);
 const pg = await ctx.newPage(), errores = [];
 pg.on('pageerror', e => errores.push(e.message)); pg.on('requestfailed', r => errores.push('no cargó ' + r.url()));
-const PAGINA = process.env.PAGINA || '', NOM = PAGINA ? 'Grupo-Mazi-cubo-M-25-opciones' : 'Grupo-Mazi-cubo-25-opciones';
+const PAGINA = process.env.PAGINA || '', NOM = { '': 'Grupo-Mazi-cubo-25-opciones', simbolo: 'Grupo-Mazi-cubo-M-25-opciones', cubos: 'Grupo-Mazi-cubo-oscuro-25-opciones' }[PAGINA];
 await pg.goto((process.env.BASE || 'http://localhost:8765') + '/marca/cubo/' + (PAGINA ? PAGINA + '.html' : ''), { waitUntil: 'networkidle' });
 await pg.waitForSelector('body[data-listo]');
 /* la letra que quedó puesta es la que dice la ficha, y de verdad cargó (mide distinto con dos respaldos) */
