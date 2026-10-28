@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grupo Mazi · el cubo se arma</title>
+<!--
+  LA ANIMACIÓN DEL LOGO. Carlos, 28 de octubre: «haz que caiga primero la forma del hueco entre las
+  patas de la M y luego la M cubo sobre de éste, volviéndose el cubo». (La primera versión, la del
+  reloj de arena que dejaba una Z, la descartó: «la Z está muy fea».)
+  Cae la cuña del hueco y rebota en su lugar; cae encima la M cubo con su techo morado, encaja y es
+  el cubo completo; el cubo se hace chico junto al nombre y queda el logo.
+
+     python3 -m http.server 8765        (en la raíz del repo)
+     node herramientas/video/armar.mjs marca/cubo/final/animacion.html marca/cubo/final/salida/Grupo-Mazi-logo-animado.mp4
+  Abierta en el navegador corre sola en bucle (y ?t=1.2 la deja quieta en ese segundo).
+  Todo sale de piezas.js (armar.py): las mismas letras y el mismo cubo que el logo.
+-->
+<style>
+*{ margin:0 } html, body{ background:#0B0B0F; overflow:hidden }
+canvas{ display:block; width:100vmin; height:100vmin; margin:auto }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1080"></canvas>
+<script type="module">
+import { PIEZAS as P } from './piezas.js';
+const W = 1080, H = 1080, cv = document.getElementById('c'), x = cv.getContext('2d');
+/* los tiempos: cae la cuña, cae la M encima, el cubo va a su lugar junto al nombre */
+const T = { cuna: [.25, .85], m: [1.05, 1.65], junta: 1.65, viaje: [2.35, 3.15], nombre: [2.6, 3.35] };
+const toca = (r) => r[0] + .7 * (r[1] - r[0]);                                // cuando la pieza toca el piso
+window.VIDEO = { w: W, h: H, fps: 60, dur: 5.2, sonidos: [['sonidos/caida.wav', toca(T.cuna) - .01, .75], ['sonidos/golpe.wav', toca(T.m) - .01, 1]] };
+const C = P.col, ruta = {}, pth = (d) => ruta[d] || (ruta[d] = new Path2D(d));
+const MAZI = new Path2D(P.mazi.join(' '));
+
+const cl = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const tramo = (t, a, b) => cl((t - a) / (b - a));
+const suave = (u) => u * u * (3 - 2 * u);
+const sale = (u) => 1 - Math.pow(1 - u, 3);
+const mezcla = (a, b, u) => a + (b - a) * u;
+/* caer: cuánto le falta para llegar, en unidades del cubo. Acelera como con gravedad y al tocar da
+   un saltito de 3 unidades que se apaga (es un bloque, no una pelota: más salto deja ver el hueco) */
+const caer = (u, alto) => { if(u < .7) { const v = u / .7; return -(1 - v * v) * alto; } const v = (u - .7) / .3; return -Math.abs(Math.sin(v * Math.PI * 2)) * 3 * (1 - v) * (1 - v); };
+
+/* ── dónde va cada cosa ── el logo final (nombre + cubo) cabe en 860 px; el cubo, al centro y grande */
+const kc = 100 / 98, ANCHO_LOGO = P.ancho + 24 + 92 * kc, eL = 860 / ANCHO_LOGO;
+const LX = (W - ANCHO_LOGO * eL) / 2, LY = H / 2 + 50 * eL;                     // la base de las letras
+const enLogo = { x: LX + (P.ancho + 24) * eL, y: LY - (100 + 6 * kc) * eL, k: kc * eL };
+const K = 3.6, alCentro = { x: W / 2 - 50 * K, y: H / 2 - 55 * K, k: K };
+
+function pieza(p, partes, dy = 0, aplasta = 0){
+  x.save(); x.translate(p.x, p.y + dy * p.k);
+  /* al aterrizar se aplasta un pelo desde el piso del cubo (y = 104) y se recupera */
+  if(aplasta){ x.translate(50 * p.k, 104 * p.k); x.scale(p.k * (1 + aplasta * .5), p.k * (1 - aplasta)); x.translate(-50, -104); }
+  else x.scale(p.k, p.k);
+  for(const [k, d] of Object.entries(partes)){ x.fillStyle = C[k]; x.fill(pth(d)); }
+  x.restore();
+}
+const golpe = (t, t0) => { const u = tramo(t, t0, t0 + .22); return u > 0 && u < 1 ? Math.sin(u * Math.PI) * .06 : 0; };
+
+window.pintar = (t) => {
+  x.setTransform(1, 0, 0, 1, 0, 0); x.fillStyle = C.fondo; x.fillRect(0, 0, W, H);
+  /* el cubo viaja del centro a su lugar en el logo */
+  const uV = suave(tramo(t, ...T.viaje));
+  const p = { x: mezcla(alCentro.x, enLogo.x, uV), y: mezcla(alCentro.y, enLogo.y, uV), k: mezcla(alCentro.k, enLogo.k, uV) };
+  /* una sacudida chiquita de todo el cuadro cuando cae la M */
+  const s = golpe(t, toca(T.m)) * 60; x.translate(Math.sin(t * 160) * s * .15, s * .2);
+  const ALTO = H / p.k + 20;                                                      // desde arriba del cuadro
+  if(t < T.junta){
+    /* 1 · la cuña: cae sola y rebota en su lugar */
+    const uC = tramo(t, ...T.cuna);
+    if(uC > 0) pieza(p, P.cuna, caer(uC, ALTO), golpe(t, T.cuna[0] + .7 * (T.cuna[1] - T.cuna[0])));
+    /* 2 · la M cubo, con su techo morado, cae encima */
+    const uM = tramo(t, ...T.m);
+    if(uM > 0) pieza(p, { arriba: P.cubo.arriba, ...P.m }, caer(uM, ALTO));
+  } else {
+    /* 3 · ya encajó: el cubo va de una pieza (en dos se notaría la costura) y se aplasta un pelo al juntarse */
+    pieza(p, P.cubo, 0, golpe(t, toca(T.m)) * .7);
+    /* un destello en el techo cuando encaja */
+    const b = tramo(t, T.junta, T.junta + .45);
+    if(b > 0 && b < 1){ x.save(); x.translate(p.x, p.y); x.scale(p.k, p.k); x.globalAlpha = (1 - b) * .55; x.fillStyle = '#FFFFFF'; x.fill(pth(P.cubo.arriba)); x.restore(); }
+  }
+  /* 4 · entra el nombre, de izquierda a derecha, mientras el cubo llega */
+  const uN = tramo(t, ...T.nombre);
+  if(uN > 0){
+    x.save(); x.beginPath(); x.rect(LX - 20, LY - 100 * eL - 20, (P.ancho * eL + 40) * sale(uN), 100 * eL + 40); x.clip();
+    x.globalAlpha = sale(uN); x.translate(LX - (1 - sale(uN)) * 60, LY); x.scale(eL, eL); x.fillStyle = C.letra; x.fill(MAZI); x.restore();
+  }
+};
+window.listo = Promise.resolve();
+const q = new URLSearchParams(location.search).get('t');
+if(q !== null) pintar(+q);
+else if(!navigator.webdriver){ const t0 = performance.now(); const v = () => { pintar(((performance.now() - t0) / 1000) % (VIDEO.dur + .8)); requestAnimationFrame(v); }; v(); }
+else pintar(0);
+</script>
+</body>
+</html>
