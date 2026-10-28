@@ -76,3 +76,48 @@ export const SOLOS = {
   diamanteAve: (w, c) => svg('0 0 100 100', w, `<path d="M50 4 L96 50 L50 96 L4 50 Z"/>` + `<path d="M30 60 C30 40 52 32 62 44 L78 48 L62 52 C58 48 50 48 48 56 V70 H30 Z" fill="${c}"/>`),
   escudoMZ: (w, c) => svg('0 0 90 110', w, `<path d="M45 4 L86 16 V56 C86 82 66 98 45 106 C24 98 4 82 4 56 V16 Z"/>` + `<g fill="none" stroke="${c}" stroke-width="8" stroke-linejoin="miter"><path d="M22 74 V36 L40 56 L48 46"/><path d="M44 36 H70 L44 76 H70"/></g>`),
 };
+
+/* ── la paloma M (Carlos, 28 oct, sobre el 029: «une las plumas y parecerán una M, y la Z ya medio
+   se divisa; el acomodo de las plumas hace una cara enfadada»). Las plumas se vuelven las cuatro
+   patas de la M: la pierna izquierda y la primera diagonal son plumas; la segunda diagonal y la
+   pierna derecha son pistas de circuito. El cuello sigue siendo la Z (cabeza, diagonal, base) y
+   las terminales quedan donde estaban, que es lo que hace la cara.
+   o.m: 'hojas' (plumas llenas) | 'trazo' (todo en línea) | 'filo' (plumas en punta, más agresivas)
+   o.sw: grosor; o.base: la base de la Z se alarga hasta la pierna derecha (la M y la Z se unen) */
+const cuerpoPalomaM = (o = {}) => {
+  const sw = o.sw ?? 6, m = o.m || 'hojas';
+  const pluma = (d) => m === 'trazo' ? linea(d, sw * .8) : P(d);
+  const filo = m === 'filo';
+  /* pierna izquierda y primera diagonal: dos plumas que se tocan arriba */
+  let s = pluma(filo ? 'M8 94 C2 66 4 40 16 18 C14 46 14 72 8 94 Z' : 'M8 94 C1 68 4 42 16 18 C19 44 17 70 8 94 Z');
+  s += pluma(filo ? 'M16 18 C30 44 46 56 62 64 C40 62 22 48 16 18 Z' : 'M16 18 C28 44 46 56 62 64 C42 68 20 54 16 18 Z');
+  /* el cuello: la Z */
+  s += linea(`M24 4 C36 30 62 42 66 62 C68 78 58 88 40 92 H${o.base ? 92 : 62}`, sw);
+  /* segunda diagonal y pierna derecha: pistas con terminal arriba */
+  s += linea('M62 66 L88 40', sw * .8) + linea(`M92 ${40 + sw * 1.2} V${o.base ? 92 : 86}`, sw * .8);
+  s += `<circle cx="92" cy="36" r="${sw}" fill="none" stroke="currentColor" stroke-width="${sw * .7}"/>`;
+  if(!o.base) s += `<circle cx="92" cy="92" r="${sw * .8}" fill="none" stroke="currentColor" stroke-width="${sw * .6}"/>`;
+  /* la segunda terminal, el «ojo» de abajo: adentro de la M, sin tocar la pierna */
+  if(o.ojo !== false) s += linea('M66 82 L72 76', sw * .7) + `<circle cx="${74 + sw * .5}" cy="${74 - sw * .5}" r="${sw * .75}" fill="none" stroke="currentColor" stroke-width="${sw * .6}"/>`;
+  /* la cabeza, igual que en el 029 */
+  return s + P('M20 4 C20 -4 30 -6 34 0 L42 2 L34 6 C32 4 28 4 26 8 Z');
+};
+export const palomaM = (w, o = {}) => svg('0 -8 106 106', w, cuerpoPalomaM(o));
+
+/* ── todo junto, como la última referencia de Carlos (la MZ en hexágono con terminales arriba):
+   la paloma M adentro de un hexágono. o.lleno: hexágono relleno y la paloma calada en o.c;
+   o.pins: 0 a 3 terminales arriba; o.roto: el contorno con cortes como en la referencia */
+export function hexPaloma(w, o = {}){
+  const g = o.g ?? 7, pins = o.pins ?? 3, c = o.c;
+  const H = (r) => Array.from({ length: 6 }, (_, i) => { const a = (-90 + i * 60) * RAD; return [60 + r * Math.cos(a), 64 + r * Math.sin(a)]; });
+  const h = H(54), f = (v) => v.toFixed(1);
+  let s = '';
+  if(o.lleno) s += `<polygon points="${h.map(q => q.map(f).join(' ')).join(' ')}" stroke="currentColor" stroke-width="${g}" stroke-linejoin="round"/>`;
+  else if(o.roto) s += linea(`M${f(h[5][0])} ${f(h[5][1])} L${f(h[0][0] - 16)} ${f(h[0][1] + 9)} M${f(h[0][0] + 16)} ${f(h[0][1] + 9)} L${f(h[1][0])} ${f(h[1][1])} V${f(h[2][1])} L${f(h[3][0] + 16)} ${f(h[3][1] - 9)} M${f(h[3][0] - 16)} ${f(h[3][1] - 9)} L${f(h[4][0])} ${f(h[4][1])} V${f(h[5][1])}`, g);
+  else s += `<polygon points="${h.map(q => q.map(f).join(' ')).join(' ')}" fill="none" stroke="currentColor" stroke-width="${g}" stroke-linejoin="round"/>`;
+  s += `<g transform="translate(26 33) scale(.68)"${o.lleno ? ` fill="${c}" color="${c}"` : ''}>${cuerpoPalomaM(o)}</g>`;
+  const xs = pins === 1 ? [60] : pins === 2 ? [50, 70] : pins === 3 ? [44, 60, 76] : [];
+  xs.forEach((x, i) => { const alto = pins === 1 || i === 1, y = alto ? -16 : -6;
+    s += linea(`M${x} ${y + 7} V${(alto ? 10 : 18) + (o.lleno ? 4 : 0)}`, g * .6) + `<circle cx="${x}" cy="${y}" r="6" fill="none" stroke="currentColor" stroke-width="${g * .6}"/>`; });
+  return svg('0 -26 120 150', w, s);
+}

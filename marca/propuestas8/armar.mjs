@@ -1,4 +1,4 @@
-/* ARMA LA RONDA 8: 100 logos en 4 hojas y la de las frases, en imágenes y un PDF.
+/* ARMA LA RONDA 8: 125 logos en 5 hojas y la de las frases, en imágenes y un PDF.
      python3 -m http.server 8765     (en la raíz del repo)
      node marca/propuestas8/armar.mjs
    Sale en marca/propuestas8/salida/ (no se sube al repo). El PDF va hecho de FOTOS de cada hoja:
@@ -12,7 +12,10 @@ fs.mkdirSync(SAL, { recursive: true });
 const br = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
 const ctx = await br.newContext({ viewport: { width: 2120, height: 1400 }, deviceScaleFactor: 1 }); await red(ctx);
 const errores = [], fotos = [];
-const HOJAS = [1, 2, 3, 4, 5].map(h => [h, h === 5 ? 'frases' : 'hoja-' + h]);
+/* SOLO=6 arma nada más esa hoja y su propio PDF */
+const SOLO = process.env.SOLO ? process.env.SOLO.split(',').map(Number) : null;
+const HOJAS = [1, 2, 3, 4, 5, 6].filter(h => !SOLO || SOLO.includes(h)).map(h => [h, h === 5 ? 'frases' : 'hoja-' + h]);
+const PDF = SOLO ? `Grupo-Mazi-ronda-8-hoja-${SOLO.join('-')}.pdf` : 'Grupo-Mazi-ronda-8.pdf';
 for(const [h, nombre] of HOJAS){
   const pg = await ctx.newPage();
   pg.on('pageerror', e => errores.push(`hoja ${h}: ${e.message}`));
@@ -46,8 +49,8 @@ const pdf = await ctx.newPage();
 const dim = await pdf.evaluate(async (b64) => { const i = new Image(); i.src = 'data:image/jpeg;base64,' + b64; await i.decode(); return [i.naturalWidth, i.naturalHeight]; }, fotos[0]);
 await pdf.setContent(`<style>@page{size:${dim[0]}px ${dim[1]}px;margin:0}*{margin:0}img{display:block;width:${dim[0]}px;height:${dim[1]}px;object-fit:contain;background:#100A18;break-after:page}</style>` +
   fotos.map(f => `<img src="data:image/jpeg;base64,${f}">`).join(''));
-await pdf.pdf({ path: path.join(SAL, 'Grupo-Mazi-100-logos-ronda-8.pdf'), width: dim[0] + 'px', height: dim[1] + 'px', printBackground: true });
-const p = fs.readFileSync(path.join(SAL, 'Grupo-Mazi-100-logos-ronda-8.pdf'), 'latin1');
-console.log(`✓ ${HOJAS.length} hojas → salida/ · PDF ${(fs.statSync(path.join(SAL, 'Grupo-Mazi-100-logos-ronda-8.pdf')).size / 1e6).toFixed(1)} MB, ${(p.match(/\/SMask/g) || []).length} máscaras`);
+await pdf.pdf({ path: path.join(SAL, PDF), width: dim[0] + 'px', height: dim[1] + 'px', printBackground: true });
+const p = fs.readFileSync(path.join(SAL, PDF), 'latin1');
+console.log(`✓ ${HOJAS.length} hojas → salida/ · PDF ${(fs.statSync(path.join(SAL, PDF)).size / 1e6).toFixed(1)} MB, ${(p.match(/\/SMask/g) || []).length} máscaras`);
 console.log(errores.length ? '✗ ' + errores.join('\n✗ ') : '✓ sin errores y con todas las letras cargadas');
 await br.close();

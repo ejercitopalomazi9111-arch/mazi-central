@@ -11,7 +11,8 @@
   trae algunos que sean más símbolo que otra cosa». Antes había pedido otros colores («prueba
   morado oscuro con vino»), más comerciales, y una frase de dos palabras para la empresa.
   ?hoja=1 la MZ con ave · 2 paloma de circuito y hexágono · 3 sólo símbolo · 4 estilo Black Hat ·
-  5 las frases. Las referencias eran imágenes hechas con IA: aquí se dibujan en vector (marcas.js),
+  5 las frases · 6 lo que le gustó, junto (el 029 con las plumas hechas M, la MZI de Black Hat con la
+  A de ave, y todo en un hexágono con terminales como su última referencia). Las referencias eran imágenes hechas con IA: aquí se dibujan en vector (marcas.js),
   porque un logo que sale de un modelo de imagen no es nuestro ni se repite igual dos veces.
 -->
 <style>
@@ -42,7 +43,7 @@ svg{ display:block; overflow:visible }
 <body>
 <div class="hoja" id="hoja"></div>
 <script type="module">
-import { mzAve, palomaCircuito, hexMZ, SOLOS } from './marcas.js';
+import { mzAve, palomaCircuito, hexMZ, SOLOS, palomaM, hexPaloma } from './marcas.js';
 import { LETRAS } from '../propuestas7/letras.js';
 
 /* los colores: fondo, letra y símbolo. Carlos (28 oct): «prueba morado oscuro con vino también» */
@@ -94,8 +95,8 @@ const AES = [
   (h) => `<svg viewBox="0 0 80 70" height="${h}" fill="currentColor"><path d="M40 0 L80 70 H54 L40 44 L26 70 H0 Z"/><path d="M40 36 L48 52 H32 Z"/></svg>`,
   (h) => `<svg viewBox="0 0 80 70" height="${h}" fill="currentColor"><path d="M40 0 L80 70 H0 Z M40 26 L58 58 H22 Z" fill-rule="evenodd"/></svg>`,
   (h) => `<svg viewBox="0 0 80 70" height="${h}" fill="currentColor"><path d="M40 0 L80 70 H58 L40 34 L22 70 H0 Z"/></svg>`,
-  (h) => `<svg viewBox="0 0 80 70" height="${h}" fill="currentColor"><path d="M30 0 H50 L80 70 H60 L40 22 L20 70 H0 Z"/><circle cx="40" cy="54" r="7"/></svg>`,
-  (h) => `<svg viewBox="0 0 80 70" height="${h}" fill="currentColor"><path d="M0 70 L35 0 L44 18 L18 70 Z"/><path d="M49 28 L80 70 H28 Z"/></svg>`,
+  (h) => `<svg viewBox="0 0 80 70" height="${h}" fill="currentColor"><path d="M40 0 L74 34 L40 70 L6 34 Z M40 22 L54 34 L40 48 L26 34 Z" fill-rule="evenodd"/></svg>`,
+  (h) => `<svg viewBox="0 0 80 70" height="${h}" fill="currentColor"><path d="M26 70 L40 30 C36 16 46 4 58 8 L76 12 L60 18 L46 70 Z"/><path d="M50 70 H80 L66 40 Z"/></svg>`,
 ];
 const lema = (fr) => '&lt;  ' + fr.toUpperCase().replace(/I/g, '/').replace(/Í/g, '/') + '  &gt;';
 const BLACKHAT = [
@@ -108,12 +109,50 @@ const BLACKHAT = [
 
 const hoja = +(new URLSearchParams(location.search).get('hoja') || 1), el = document.getElementById('hoja');
 const pedir = (f, w) => { const k = document.createElement('link'); k.rel = 'stylesheet'; k.href = 'https://fonts.googleapis.com/css2?family=' + f.replace(/ /g, '+') + (w === 400 ? '' : ':wght@' + w) + '&display=block'; document.head.appendChild(k); };
-const NOMBRES_HOJA = ['la MZ con cabeza de ave', 'la paloma de circuito y la MZ en hexágono', 'sólo el símbolo', 'al estilo Black Hat', 'la frase'];
+const NOMBRES_HOJA = ['la MZ con cabeza de ave', 'la paloma de circuito y la MZ en hexágono', 'sólo el símbolo', 'al estilo Black Hat', 'la frase', 'lo que te gustó, junto'];
+/* hoja 6 · todo junto: el hexágono con la paloma M arriba y la MAZI de Black Hat abajo */
+const marcaBH = (f, w, p, A, s) => fila(4, t('M', f, w, s), tinta(p[3], A(s * .73)), t('ZI', f, w, s));
+const UNIDO = [
+  (h, f, w, p, fr, A) => col(18, 'center', tinta(p[3], h(170)), marcaBH(f, w, p, A, 80), t(lema(fr), f, w, 14, 'letter-spacing:.4em;white-space:pre')),
+  (h, f, w, p, fr, A) => col(6, 'center', tinta(p[3], h(150)), marcaBH(f, w, p, A, 78), `<div style="transform:scaleY(-1);opacity:.28;line-height:.8;margin-top:-4px">${fila(4, t('M', f, w, 78), A(57), t('ZI', f, w, 78))}</div>`, t(lema(fr), f, w, 13, 'letter-spacing:.4em;margin-top:6px;white-space:pre')),
+  (h, f, w, p, fr, A) => fila(26, tinta(p[3], h(170)), col(8, 'flex-start', t('GRUPO', f, w, 24, 'letter-spacing:.5em'), marcaBH(f, w, p, A, 92), t(lema(fr), f, w, 13, 'letter-spacing:.36em;white-space:pre'))),
+  (h, f, w, p, fr, A) => col(8, 'center', tinta(p[3], h(150)), marcaBH(f, w, p, A, 82), t('GRUPO', f, w, 82, 'display:block;transform:rotate(180deg);line-height:.8;opacity:.9')),
+  (h, f, w, p, fr, A) => `<div style="border:4px solid currentColor;padding:22px 34px">${fila(24, tinta(p[3], h(140)), col(8, 'flex-start', marcaBH(f, w, p, A, 84), t(lema(fr), f, w, 12, 'letter-spacing:.34em;white-space:pre')))}</div>`,
+];
 const fichas = [];
-if(hoja <= 4){
+if(hoja <= 4 || hoja === 6){
   for(let k = 0; k < 25; k++){
     const i = (hoja - 1) * 25 + k, p = PALETAS[(k * 5 + hoja * 3) % PALETAS.length], fr = FRASES[(k * 7 + hoja * 4) % FRASES.length];
     let nombre, logo, f, w;
+    if(hoja === 6){
+      const P6 = ['hueso y vino', 'morado y vino', 'vino y lila', 'arena y terracota', 'morado oscuro', 'negro y oro', 'blanco y negro', 'vino y oro', 'morado y rosa', 'carbón y lima', 'hueso y cobalto', 'bosque y oro'];
+      const pp = PALETAS.find(x => x[0] === P6[k % P6.length]);
+      if(k < 8){
+        /* el 029 con las plumas hechas M: los tres modos, con y sin la base que une la M con la Z */
+        const o = { m: ['hojas', 'filo', 'trazo', 'hojas'][k % 4], base: k >= 4, ojo: k !== 3, sw: [6, 6, 5, 7][k % 4] };
+        [f, w] = k === 0 ? ['Roboto Slab', 700] : RESTO[50 + k];
+        const s = (x) => palomaM(x, o);
+        nombre = `paloma M · ${o.m}${o.base ? ', M y Z unidas' : ''}`;
+        logo = ACOMODOS[k % ACOMODOS.length](s, f, w, pp, fr);
+      } else if(k < 15){
+        /* la MAZI de Black Hat con la A de ave (098), y dos con la A de rombo (093) */
+        const q = k - 8; f = ['Lexend Zetta', 'Unbounded', 'Michroma', 'Krona One', 'Syncopate', 'Lexend Zetta', 'Russo One'][q]; w = PESOS_ANCHAS[f] || 400;
+        const A = AES[q >= 5 ? 3 : 4];
+        nombre = `Black Hat · A ${q >= 5 ? 'de rombo' : 'de ave'}`;
+        logo = BLACKHAT[[2, 0, 1, 3, 4, 2, 0][q]](f, w, pp, fr, A);
+      } else {
+        /* todo junto: hexágono con la paloma M y terminales, y la MAZI de Black Hat */
+        const q = k - 15; f = ['Lexend Zetta', 'Unbounded', 'Michroma', 'Orbitron', 'Krona One', 'Syncopate', 'Lexend Zetta', 'Oxanium', 'Tektur', 'Zen Dots'][q]; w = PESOS_ANCHAS[f] || 400;
+        const o = { roto: q % 3 === 0, lleno: q % 3 === 2, pins: [3, 2, 3, 1, 3][q % 5], m: ['hojas', 'filo', 'hojas', 'trazo', 'filo'][q % 5], base: q % 2 === 1 };
+        const h = (x) => hexPaloma(x, { ...o, c: pp[1] });
+        nombre = `todo junto · hexágono ${o.lleno ? 'lleno' : o.roto ? 'roto' : 'entero'}`;
+        logo = UNIDO[q % 5](h, f, w, pp, fr, AES[4]);
+      }
+      pedir(f, w);
+      fichas.push(`<div class="ficha" style="background:${pp[1]};color:${pp[2]}"><span class="fam">${nombre} · ${pp[0]}</span><div class="lienzo"><div class="logo">${logo}</div></div>
+      <span class="num">6.${String(k + 1).padStart(2, '0')}</span><span class="fuente">${f}</span></div>`);
+      continue;
+    }
     if(hoja === 4){ f = ANCHAS[k]; w = PESOS_ANCHAS[f] || 400; nombre = 'estilo Black Hat'; logo = BLACKHAT[k % 5](f, w, p, fr, AES[Math.floor(k / 5) % 5]); }
     else {
       [f, w] = RESTO[(hoja - 1) * 25 + k];
@@ -142,18 +181,18 @@ if(hoja <= 4){
       <span class="num">${String(i + 1).padStart(3, '0')}</span><span class="fuente">${f}</span></div>`);
   }
   el.innerHTML = `<div class="cab"><div><h1>Grupo Mazi · ronda 8 · ${NOMBRES_HOJA[hoja - 1]}</h1>
-    <p>Con las referencias de Carlos, dibujadas en vector para que sean nuestras. Colores nuevos, entre ellos morado oscuro con vino, y debajo del nombre las frases candidatas (la hoja 5 las junta).</p></div>
-    <div class="rango">hoja<b>${hoja} de 5</b></div></div><div class="rej">${fichas.join('')}</div>
-    <div class="pie"><span>Grupo Mazi · ronda 8 · hoja ${hoja} de 5</span><span>Símbolos dibujados en vector. Letras de Google Fonts, licencia OFL.</span></div>`;
+    <p>${hoja === 6 ? 'El 029 con las plumas unidas en M (la Z sigue en el cuello y la cara enojada se queda), la MAZI de Black Hat con su A de ave sin tocar, y las dos juntas en un hexágono con terminales como tu última referencia.' : 'Con las referencias de Carlos, dibujadas en vector para que sean nuestras. Colores nuevos, entre ellos morado oscuro con vino, y debajo del nombre las frases candidatas (la hoja 5 las junta).'}</p></div>
+    <div class="rango">hoja<b>${hoja} de 6</b></div></div><div class="rej">${fichas.join('')}</div>
+    <div class="pie"><span>Grupo Mazi · ronda 8 · hoja ${hoja} de 6</span><span>Símbolos dibujados en vector. Letras de Google Fonts, licencia OFL.</span></div>`;
 } else {
   /* la hoja de frases: todas, con las cinco que recomiendo marcadas */
   const REC = { 'Socio digital': 'Dice cómo trabajamos: cobramos por comisión y nos quedamos con el cliente.', 'Consultora digital': 'La más clara para una empresa que nunca nos ha visto.', 'Estudio digital': 'Abarca web, video, foto y software sin sonar a agencia de redes.', 'Taller digital': 'Es el lema hecho dos palabras: si no existe la herramienta, se construye.', 'Tecnología a la medida': 'Lo que vendemos: hecho para tu negocio, no de plantilla.' };
   const MAS = [...FRASES, 'Agencia digital', 'Transformación digital', 'Innovación aplicada', 'Laboratorio digital', 'Fábrica digital', 'Estrategia digital', 'Hacemos que funcione', 'Estudio de producto', 'Sistemas y marketing', 'Optimización de negocios', 'Desarrollo y estrategia', 'Consultoría tecnológica', 'Marketing y tecnología', 'Soluciones a la medida', 'Asesora digital empresarial'];
   const OJO = { 'Agencia digital': 'genérica', 'Transformación digital': 'muy usada', 'Innovación aplicada': 'suena a gobierno', 'Ideas que funcionan': 'no dice qué hacemos' };
-  el.innerHTML = `<div class="cab"><div><h1>La frase · qué somos en dos palabras</h1><p>Va debajo del nombre: «Grupo Mazi · ____». Las cinco de arriba son las que recomiendo; abajo, todas las demás.</p></div><div class="rango">hoja<b>5 de 5</b></div></div>
+  el.innerHTML = `<div class="cab"><div><h1>La frase · qué somos en dos palabras</h1><p>Va debajo del nombre: «Grupo Mazi · ____». Las cinco de arriba son las que recomiendo; abajo, todas las demás.</p></div><div class="rango">hoja<b>5 de 6</b></div></div>
     <div class="rubros" style="grid-template-columns:repeat(5,1fr)">${Object.entries(REC).map(([f, por]) => `<div class="rubro"><h2>${f}</h2><p style="color:#D6CEDD;font-size:18px;line-height:1.4">${por}</p></div>`).join('')}</div>
     <div style="margin-top:28px;display:flex;flex-wrap:wrap;gap:12px">${[...new Set(MAS)].filter(f => !REC[f]).map(f => `<span style="padding:12px 20px;border-radius:99px;background:#1E1428;font-size:21px;font-weight:600">${f}${OJO[f] ? ` <small style="color:#A79CB4;font-weight:500">· ${OJO[f]}</small>` : ''}</span>`).join('')}</div>
-    <div class="pie"><span>Grupo Mazi · ronda 8 · hoja 5 de 5</span><span>Las frases salen debajo del nombre en los logos de las hojas 1 a 4.</span></div>`;
+    <div class="pie"><span>Grupo Mazi · ronda 8 · hoja 5 de 6</span><span>Las frases salen debajo del nombre en los logos de las hojas 1 a 4.</span></div>`;
 }
 (async () => {
   await document.fonts.ready;
