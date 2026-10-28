@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grupo Mazi · el cubo M</title>
+<!--
+  EL CUBO HECHO SÍMBOLO. Carlos, 28 de octubre, sobre las 25 del cubo: «simbolízalo y dale un estilo
+  único, mantén el minimalismo». La idea: las dos caras de los lados de un cubo, con las patas planas,
+  SON una M, y la cara de arriba es el techo (simbolos.js). Así el cubo deja de ir al lado del
+  nombre: es la primera letra. Fila 1, el símbolo solo; filas 2 y 3, el símbolo como la M de MAZI
+  con las letras juntas; filas 4 y 5, el logo completo.
+-->
+<style>
+:root{ --vacio:#100A18; --hueso:#EAE5E3; --gris:#A79CB4 }
+*{ box-sizing:border-box; margin:0 }
+html, body{ background:var(--vacio); color:var(--hueso); font:400 16px/1.4 system-ui, sans-serif }
+.hoja{ width:2120px; padding:56px 60px 48px }
+.cab{ display:flex; align-items:end; gap:24px; margin-bottom:32px }
+.cab h1{ font:800 44px/1.05 system-ui; letter-spacing:-.02em }
+.cab p{ margin-top:6px; color:var(--gris); font-size:21px; max-width:92ch }
+.cab .rango{ margin-left:auto; text-align:right; color:var(--gris); font-size:19px; white-space:nowrap }
+.cab .rango b{ display:block; color:var(--hueso); font-size:30px }
+.rej{ display:grid; grid-template-columns:repeat(5, 1fr); gap:16px }
+.ficha{ position:relative; height:320px; border-radius:22px; overflow:hidden; box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.07) }
+.lienzo{ position:absolute; inset:46px 34px 56px; display:grid; place-items:center }
+.logo{ position:relative; line-height:1 }
+.logo > span, .logo > svg, .logo > i{ position:absolute; white-space:pre; display:block; overflow:visible }
+.num{ position:absolute; left:18px; bottom:15px; font:700 18px/1 ui-monospace, Menlo, monospace; opacity:.6 }
+.fuente{ position:absolute; right:18px; bottom:16px; font:500 14px/1 system-ui; opacity:.5 }
+.fam{ position:absolute; left:18px; top:15px; font:600 12px/1 system-ui; letter-spacing:.12em; text-transform:uppercase; opacity:.45 }
+.pie{ margin-top:26px; display:flex; justify-content:space-between; color:#6E6380; font-size:17px }
+</style>
+</head>
+<body>
+<div class="hoja" id="hoja"></div>
+<script type="module">
+import { SIMBOLOS, VB } from './simbolos.js';
+const PAL = { blanco: ['#FFFFFF', '#0B0B0F', '#AC27FF'], negro: ['#0B0B0F', '#FFFFFF', '#AC27FF'], hueso: ['#F4F1EC', '#16181C', '#AC27FF'],
+  morado: ['#100A18', '#F4EEF0', '#AC27FF'], violeta: ['#AC27FF', '#FFFFFF', '#16181C'], mono: ['#FFFFFF', '#0B0B0F', '#0B0B0F'], 'mono negro': ['#0B0B0F', '#FFFFFF', '#FFFFFF'] };
+/* [tipo, símbolo, letra, peso, paleta] · tipo: solo | letra (el símbolo es la M) | lado | arriba | icono */
+const F = [
+  ['solo', 0, 'Poppins', 700, 'blanco'], ['solo', 0, 'Poppins', 700, 'negro'], ['solo', 1, 'Poppins', 700, 'hueso'], ['solo', 4, 'Poppins', 700, 'morado'], ['solo', 3, 'Poppins', 700, 'violeta'],
+  ['letra', 0, 'Poppins', 700, 'blanco'], ['letra', 0, 'Work Sans', 800, 'negro'], ['letra', 1, 'Manrope', 800, 'hueso'], ['letra', 5, 'Montserrat', 800, 'morado'], ['letra', 0, 'Outfit', 700, 'mono'],
+  ['letra', 4, 'Sora', 700, 'blanco'], ['letra', 2, 'Plus Jakarta Sans', 800, 'hueso'], ['letra', 0, 'Inter Tight', 800, 'mono negro'], ['letra', 1, 'Red Hat Display', 800, 'negro'], ['letra', 3, 'Urbanist', 800, 'blanco'],
+  ['lado', 0, 'Poppins', 700, 'blanco'], ['lado', 1, 'Work Sans', 800, 'morado'], ['arriba', 0, 'Manrope', 800, 'hueso'], ['arriba', 4, 'Outfit', 700, 'negro'], ['icono', 0, 'Poppins', 700, 'morado'],
+  ['icono', 1, 'Poppins', 700, 'blanco'], ['lado', 3, 'Sora', 700, 'blanco'], ['arriba', 2, 'Inter Tight', 800, 'mono'], ['icono', 3, 'Work Sans', 800, 'violeta'], ['letra', 0, 'Kanit', 700, 'morado'],
+];
+const NOMBRE = { solo: 'símbolo', letra: 'el cubo es la M', lado: 'símbolo y nombre', arriba: 'símbolo arriba', icono: 'ícono de app' };
+const el = document.getElementById('hoja'), fichas = [];
+const pedir = (f, w) => { const k = document.createElement('link'); k.rel = 'stylesheet'; k.href = 'https://fonts.googleapis.com/css2?family=' + f.replace(/ /g, '+') + ':wght@' + w + '&display=block'; document.head.appendChild(k); };
+F.forEach(([tipo, si, f, w, pa], k) => { pedir(f, w); const p = PAL[pa];
+  fichas.push(`<div class="ficha" style="background:${p[0]};color:${p[1]}" data-k="${k}"><span class="fam">${NOMBRE[tipo]} · ${SIMBOLOS[si][0]} · ${pa}</span>
+    <div class="lienzo"><div class="logo"></div></div><span class="num">${String(k + 1).padStart(2, '0')}</span><span class="fuente">${f}</span></div>`); });
+el.innerHTML = `<div class="cab"><div><h1>Grupo Mazi · el cubo es la M</h1>
+  <p>Las dos caras de los lados de un cubo, con las patas planas, son una M; la de arriba es el techo. El cubo deja de ir al lado del nombre: es la primera letra. Arriba el símbolo solo, en medio como la M de MAZI, abajo el logo completo.</p></div>
+  <div class="rango">opciones<b>25</b></div></div><div class="rej">${fichas.join('')}</div>
+  <div class="pie"><span>Grupo Mazi · el cubo M</span><span>Símbolo dibujado en retícula isométrica. Letras de Google Fonts, licencia OFL.</span></div>`;
+
+const S = 120, cv = document.createElement('canvas').getContext('2d');
+const svgSim = (si, p, alto, x, y, g = 9) => { const ancho = alto * 100 / 110;
+  return [`<svg viewBox="${VB}" width="${ancho.toFixed(1)}" height="${alto.toFixed(1)}" style="left:${x.toFixed(1)}px;top:${y.toFixed(1)}px">${SIMBOLOS[si][1](p[1], p[2], p[0], g)}</svg>`, ancho]; };
+/* escribe una palabra con las letras juntas (midiendo la tinta), empezando en x0; base = línea de base */
+function palabra(txt, f, w, sz, x0, base, enc = .03, extra = '') {
+  cv.font = `${w} ${sz}px "${f}"`; const asc = cv.measureText('M').fontBoundingBoxAscent; let x = x0, h = '';
+  for(const ch of txt){ const m = cv.measureText(ch), pen = x + m.actualBoundingBoxLeft;
+    h += `<span style="left:${pen.toFixed(2)}px;top:${(base - asc).toFixed(2)}px;font:${w} ${sz}px '${f}';${extra}">${ch}</span>`; x = pen + m.actualBoundingBoxRight - sz * enc; }
+  return [h, x + sz * enc];
+}
+function armar(ficha){
+  const [tipo, si, f, w, pa] = F[+ficha.dataset.k], p = PAL[pa];
+  cv.font = `${w} ${S}px "${f}"`; const cap = cv.measureText('M').actualBoundingBoxAscent;
+  let h = '', ancho = 0, alto = 0;
+  if(tipo === 'solo'){ const [s] = svgSim(si, p, 240, 0, 0); h = s; ancho = 218; alto = 240; }
+  else if(tipo === 'letra'){
+    /* el cuerpo de la M (y 30 a 104 en el símbolo) mide lo que la mayúscula; el techo sale arriba */
+    const alt = cap * 110 / 74, base = alt * 104 / 110, [s, an] = svgSim(si, p, alt, 0, 0, 10);
+    const [t, x] = palabra('AZI', f, w, S, an * 92 / 100 - S * .03, base); h = s + t; ancho = x; alto = base + 4;
+  } else if(tipo === 'lado'){
+    const alt = cap * 1.55, [s, an] = svgSim(si, p, alt, 0, 0), base = alt * 104 / 110;
+    const [t, x] = palabra('MAZI', f, w, S, an + cap * .32, base);
+    /* «GRUPO» chiquito encima, para que el símbolo se lea como ícono y no como una M repetida */
+    const [g2] = palabra('GRUPO', f, 500, S * .3, an + cap * .36, base - cap - cap * .22, -.4, 'opacity:.7');
+    h = s + t + g2; ancho = x; alto = base;
+  } else if(tipo === 'arriba'){
+    const alt = cap * 2.1, [s, an] = svgSim(si, p, alt, 0, 0);
+    cv.font = `${w} ${S}px "${f}"`; let [t, x] = palabra('MAZI', f, w, S, 0, 0); const largo = x;
+    const base = alt + cap * .5 + cap; [t, x] = palabra('MAZI', f, w, S, 0, base);
+    h = svgSim(si, p, alt, (largo - an) / 2, 0)[0] + t;
+    const [g2] = palabra('GRUPO', f, 500, S * .3, 0, base + cap * .55, -.35, 'opacity:.7');
+    h += `<i style="left:0;top:0;width:${largo}px">${''}</i>` + g2.replace(/left:(-?[\d.]+)px/g, (m, v) => `left:${(+v + largo * .5 - S * .3 * 1.9).toFixed(2)}px`);
+    ancho = largo; alto = base + cap * .6;
+  } else {
+    const lado = 200, r = 46, [s] = svgSim(si, [p[2] === '#16181C' ? p[0] : p[0], p[1], p[2]], 130, (lado - 118) / 2, 30);
+    h = `<i style="left:0;top:0;width:${lado}px;height:${lado}px;border-radius:${r}px;background:${pa === 'violeta' ? '#16181C' : p[1]}"></i>` +
+      svgSim(si, pa === 'violeta' ? ['#16181C', '#FFFFFF', '#AC27FF'] : [p[1], p[0], p[2]], 130, (lado - 118) / 2, 30)[0];
+    ancho = lado; alto = lado;
+  }
+  const g = ficha.querySelector('.logo'); g.innerHTML = h; g.style.width = ancho + 'px'; g.style.height = alto + 'px';
+}
+(async () => {
+  await document.fonts.ready;
+  for(const [, , f, w] of F) await document.fonts.load(`${w} ${S}px "${f}"`, 'MAZIGRUPO');
+  document.querySelectorAll('.ficha').forEach(armar);
+  for(const lz of document.querySelectorAll('.lienzo')){
+    const g = lz.querySelector('.logo'), a = lz.getBoundingClientRect(), r = g.getBoundingClientRect();
+    let u = { l:1e9, t:1e9, d:-1e9, b:-1e9 };
+    for(const e of g.children){ const q = e.getBoundingClientRect(); if(!q.width) continue; u = { l:Math.min(u.l, q.left), t:Math.min(u.t, q.top), d:Math.max(u.d, q.right), b:Math.max(u.b, q.bottom) }; }
+    const sc = Math.min(a.width / (u.d - u.l), a.height / (u.b - u.t)) * .9, cx = (u.l + u.d) / 2, cy = (u.t + u.b) / 2;
+    g.style.transformOrigin = `${(cx - r.left).toFixed(1)}px ${(cy - r.top).toFixed(1)}px`;
+    g.style.transform = `translate(${(a.left + a.width / 2 - cx).toFixed(1)}px, ${(a.top + a.height / 2 - cy).toFixed(1)}px) scale(${sc.toFixed(3)})`;
+  }
+  document.body.dataset.listo = '1';
+})();
+</script>
+</body>
+</html>
