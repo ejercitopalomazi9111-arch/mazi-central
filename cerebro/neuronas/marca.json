@@ -87,6 +87,24 @@
         "no se siente propio"
       ],
       "salioDe": "El arco y la doble regla del banco y del sitio del Instituto, derivados de la papelería."
+    },
+    {
+      "id": "vectorizar-una-captura-copia-su-serrucho",
+      "titulo": "Vectorizar una captura «idéntica» copia también su ruido",
+      "gravedad": "media",
+      "sintoma": "El logo vectorizado coincide 99 % con la imagen y aun así en grande se ve tembloroso: círculos chuecos, rectas que ondulan, rebabas en las uniones.",
+      "causa": "La referencia era una captura de pantalla de 935 px de una imagen hecha con IA: el borde trae compresión y suavizado, y potrace lo calca fiel.",
+      "porque": "«Idéntico» medido en pixeles premia copiar el defecto: el temblor mide menos de un pixel y no baja la cuenta.",
+      "arreglo": "Separar lo geométrico de lo orgánico (marca/ala/ajustar.py): los círculos se miden y se dibujan perfectos; el contorno se parte en esquinas; las rectas del circuito se juntan, se enderezan a 0/45/90° y las esquinas se recalculan donde se cruzan; las curvas se alisan y se ajustan con Bézier (Schneider). Al mover un extremo, el cambio se reparte en los primeros px de la curva, o salen muescas.",
+      "comoCazarlo": "Pintar el vector a 2× o 4× y mirarlo junto a la referencia, no sólo la cifra de coincidencia. Medir: IoU ≈ 0.96 limpio contra 0.99 con serrucho es la señal de que el 3 % que falta es ruido.",
+      "consejo": "Para letras, medir la fuente contra la referencia (marca/ala/letra.mjs) y convertirla en trazos: así sale idéntica sin calcar pixeles.",
+      "senales": [
+        "vectorizar idéntico",
+        "el logo se ve tembloroso",
+        "círculos chuecos al ampliar",
+        "calcar una imagen de IA"
+      ],
+      "salioDe": "La paloma del ala que Carlos pidió vectorizar «hasta que esté idéntico», 28 de octubre de 2026."
     }
   ]
 }
