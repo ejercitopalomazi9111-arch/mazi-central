@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grupo Mazi · el cubo</title>
+<!--
+  EL 093 («MAZI» + el cubo, ronda 5, en Hammersmith One), hecho minimalista. Carlos, 28 de octubre:
+  «basándote en este por completo hazlo minimalista, junta por completo las letras y cambia la
+  tipografía, y dame algunas opciones». Las letras se juntan MIDIENDO la tinta de cada una (no con
+  un letter-spacing a ojo): cada letra empieza donde termina la anterior, encimada un pelo para que
+  sea una sola pieza. El cubo se simplifica en siete versiones. ?hoja=1
+-->
+<style>
+:root{ --vacio:#100A18; --hueso:#EAE5E3; --gris:#A79CB4 }
+*{ box-sizing:border-box; margin:0 }
+html, body{ background:var(--vacio); color:var(--hueso); font:400 16px/1.4 system-ui, sans-serif }
+.hoja{ width:2120px; padding:56px 60px 48px }
+.cab{ display:flex; align-items:end; gap:24px; margin-bottom:32px }
+.cab h1{ font:800 44px/1.05 system-ui; letter-spacing:-.02em }
+.cab p{ margin-top:6px; color:var(--gris); font-size:21px; max-width:90ch }
+.cab .rango{ margin-left:auto; text-align:right; color:var(--gris); font-size:19px; white-space:nowrap }
+.cab .rango b{ display:block; color:var(--hueso); font-size:30px }
+.rej{ display:grid; grid-template-columns:repeat(5, 1fr); gap:16px }
+.ficha{ position:relative; height:300px; border-radius:22px; overflow:hidden; box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.07) }
+.lienzo{ position:absolute; inset:44px 34px 54px; display:grid; place-items:center }
+.logo{ position:relative; line-height:1 }
+.logo span{ position:absolute; top:0; white-space:pre }
+.logo svg{ position:absolute; display:block; overflow:visible }
+.num{ position:absolute; left:18px; bottom:15px; font:700 18px/1 ui-monospace, Menlo, monospace; opacity:.6 }
+.fuente{ position:absolute; right:18px; bottom:16px; font:500 14px/1 system-ui; opacity:.5 }
+.fam{ position:absolute; left:18px; top:15px; font:600 12px/1 system-ui; letter-spacing:.12em; text-transform:uppercase; opacity:.45 }
+.pie{ margin-top:26px; display:flex; justify-content:space-between; color:#6E6380; font-size:17px }
+</style>
+</head>
+<body>
+<div class="hoja" id="hoja"></div>
+<script type="module">
+/* las letras: gruesas y geométricas, ninguna es la del 093 (Hammersmith One) */
+const LETRAS = [['Montserrat', 800], ['Poppins', 700], ['Outfit', 700], ['Sora', 700], ['Space Grotesk', 700],
+  ['Manrope', 800], ['Lexend', 700], ['Urbanist', 800], ['Red Hat Display', 800], ['Archivo', 800],
+  ['Inter Tight', 800], ['Plus Jakarta Sans', 800], ['Unbounded', 700], ['Syne', 800], ['Bricolage Grotesque', 800],
+  ['Figtree', 800], ['Kanit', 700], ['League Spartan', 800], ['Jost', 700], ['DM Sans', 800],
+  ['Work Sans', 800], ['Rubik', 700], ['Albert Sans', 800], ['Onest', 800], ['Geologica', 800]];
+/* fondo, tinta, acento (para la cara de color) */
+const PALETAS = [['blanco', '#FFFFFF', '#0B0B0F', '#0B0B0F'], ['negro', '#0B0B0F', '#FFFFFF', '#FFFFFF'],
+  ['hueso', '#F4F1EC', '#16181C', '#AC27FF'], ['morado', '#100A18', '#F4EEF0', '#AC27FF'], ['blanco y violeta', '#FFFFFF', '#0B0B0F', '#AC27FF']];
+/* el cubo, en siete versiones; se dibuja en 100 × 110 y la cara de arriba empieza en y = 6 */
+const C = 'M50 6 L92 30 L50 54 L8 30 Z', IZQ = 'M8 30 V80 L50 104 V54 Z', DER = 'M92 30 V80 L50 104 V54 Z', HEX = 'M50 6 L92 30 V80 L50 104 L8 80 V30 Z';
+const CUBOS = [
+  ['tres caras', (t, a, g) => `<path d="${C}" fill="${t}"/><path d="${IZQ}" fill="${t}" opacity=".55"/><path d="M92 30 V80 L50 104" fill="none" stroke="${t}" stroke-width="${g}" stroke-linejoin="miter"/>`],
+  ['tres tonos', (t) => `<path d="${C}" fill="${t}"/><path d="${IZQ}" fill="${t}" opacity=".6"/><path d="${DER}" fill="${t}" opacity=".3"/>`],
+  ['dos caras', (t) => `<path d="${C}" fill="${t}"/><path d="${IZQ}" fill="${t}" opacity=".5"/>`],
+  ['contorno', (t, a, g) => `<path d="${HEX} M8 30 L50 54 L92 30 M50 54 V104" fill="none" stroke="${t}" stroke-width="${g}" stroke-linejoin="miter"/>`],
+  ['calado', (t, a, g, f) => `<path d="${HEX}" fill="${t}"/><path d="M8 30 L50 54 L92 30 M50 54 V104" fill="none" stroke="${f}" stroke-width="${g * .8}"/>`],
+  ['cara de color', (t, a) => `<path d="${C}" fill="${a}"/><path d="${IZQ}" fill="${t}"/><path d="${DER}" fill="${t}" opacity=".55"/>`],
+  ['una cara', (t, a) => `<path d="${C}" fill="${a}"/><path d="M8 30 V80 L50 104 V54 Z M92 30 V80 L50 104 V54 Z" fill="none" stroke="${t}" stroke-width="6" opacity=".9"/>`],
+];
+const hoja = 1, el = document.getElementById('hoja'), fichas = [];
+const pedir = (f, w) => { const k = document.createElement('link'); k.rel = 'stylesheet'; k.href = 'https://fonts.googleapis.com/css2?family=' + f.replace(/ /g, '+') + ':wght@' + w + '&display=block'; document.head.appendChild(k); };
+LETRAS.forEach(([f, w], k) => {
+  pedir(f, w);
+  const p = PALETAS[[0, 0, 1, 0, 2, 0, 3, 0, 1, 4][k % 10]], cubo = (k * 3) % CUBOS.length;
+  /* cubo de color sólo donde la paleta tiene acento; si no, la versión monocroma que le toca */
+  const ci = (CUBOS[cubo][0] === 'cara de color' || CUBOS[cubo][0] === 'una cara') && p[3] === p[2] ? 1 : cubo;
+  fichas.push(`<div class="ficha" style="background:${p[1]};color:${p[2]}" data-f="${f}" data-w="${w}" data-c="${ci}" data-p="${PALETAS.indexOf(p)}">
+    <span class="fam">${CUBOS[ci][0]} · ${p[0]}</span><div class="lienzo"><div class="logo"></div></div>
+    <span class="num">${String(k + 1).padStart(2, '0')}</span><span class="fuente">${f}</span></div>`);
+});
+el.innerHTML = `<div class="cab"><div><h1>Grupo Mazi · el cubo, minimalista</h1>
+  <p>Del 093: las letras juntas en una sola pieza (cada una empieza donde termina la tinta de la anterior), otra tipografía en cada una, y el cubo simplificado en siete versiones.</p></div>
+  <div class="rango">opciones<b>25</b></div></div><div class="rej">${fichas.join('')}</div>
+  <div class="pie"><span>Grupo Mazi · el cubo</span><span>Letras de Google Fonts, licencia OFL. Cubo dibujado en vector.</span></div>`;
+
+/* juntar las letras: se mide la tinta de cada letra con el canvas y se ponen tocándose */
+const S = 120;                       // tamaño de letra de trabajo
+const lienzo = document.createElement('canvas').getContext('2d');
+function armar(ficha){
+  const f = ficha.dataset.f, w = +ficha.dataset.w, p = PALETAS[+ficha.dataset.p], cubo = CUBOS[+ficha.dataset.c];
+  lienzo.font = `${w} ${S}px "${f}"`;
+  const cap = lienzo.measureText('M').actualBoundingBoxAscent, enc = S * .03;    // encimado: lo justo para que no quede rendija
+  let x = 0, html = '';
+  for(const ch of 'MAZI'){
+    const m = lienzo.measureText(ch), izq = -m.actualBoundingBoxLeft;   // dónde empieza la tinta
+    const pen = x - izq;                                                 // la tinta de esta letra arranca en x
+    html += `<span style="left:${pen.toFixed(2)}px;font:${w} ${S}px '${f}'">${ch}</span>`;
+    x = pen + m.actualBoundingBoxRight - enc;
+  }
+  /* el cubo: del alto de la mayúscula, al lado, apoyado en la línea de base */
+  const asc = lienzo.measureText('M').fontBoundingBoxAscent, base = asc;          // línea de base desde arriba del span
+  const alto = cap, ancho = alto * 100 / 98, hueco = cap * .2, g = 6;
+  const top = base - cap - alto * 6 / 98;
+  html += `<svg viewBox="0 0 100 110" width="${ancho.toFixed(1)}" height="${(ancho * 1.1).toFixed(1)}" style="left:${(x + enc + hueco).toFixed(1)}px;top:${top.toFixed(1)}px">${cubo[1](p[2], p[3], g, p[1])}</svg>`;
+  const g2 = ficha.querySelector('.logo'); g2.innerHTML = html;
+  g2.style.width = (x + enc + hueco + ancho) + 'px'; g2.style.height = (base + S * .05) + 'px';
+}
+(async () => {
+  await document.fonts.ready;
+  for(const [f, w] of LETRAS) await document.fonts.load(`${w} ${S}px "${f}"`, 'MAZI');
+  document.querySelectorAll('.ficha').forEach(armar);
+  /* encajar cada logo en su lienzo: la unión de lo que se pinta */
+  for(const lz of document.querySelectorAll('.lienzo')){
+    const g = lz.querySelector('.logo'), a = lz.getBoundingClientRect(), r = g.getBoundingClientRect();
+    let u = { l:1e9, t:1e9, d:-1e9, b:-1e9 };
+    for(const e of g.children){ const q = e.getBoundingClientRect(); u = { l:Math.min(u.l, q.left), t:Math.min(u.t, q.top), d:Math.max(u.d, q.right), b:Math.max(u.b, q.bottom) }; }
+    const sc = Math.min(a.width / (u.d - u.l), a.height / (u.b - u.t)) * .92, cx = (u.l + u.d) / 2, cy = (u.t + u.b) / 2;
+    g.style.transformOrigin = `${(cx - r.left).toFixed(1)}px ${(cy - r.top).toFixed(1)}px`;
+    g.style.transform = `translate(${(a.left + a.width / 2 - cx).toFixed(1)}px, ${(a.top + a.height / 2 - cy).toFixed(1)}px) scale(${sc.toFixed(3)})`;
+  }
+  document.body.dataset.listo = '1';
+})();
+</script>
+</body>
+</html>
