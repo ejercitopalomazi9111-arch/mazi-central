@@ -76,12 +76,12 @@ const tinta = new THREE.MeshStandardMaterial({ color: '#17121D', roughness: .32,
 const morada = new THREE.MeshStandardMaterial({ color: '#AC27FF', roughness: .3, metalness: .1, emissive: '#AC27FF', emissiveIntensity: .35 });
 const X3 = 0, Y3 = 40;                                               // el estudio vive lejos, arriba
 /* cada palabra cabe en el ancho que se ve (1.5 a la distancia de la cámara): si no, se achica */
-const cabe = (p, w = 1.5) => { p.scale.setScalar(Math.min(1, w / p.userData.ancho)); return p; };
+const cabe = (p, w = 1.28) => { p.scale.setScalar(Math.min(1, w / p.userData.ancho)); return p; };
 const pal = (txt, o, x, y, z = 0) => { const p = cabe(palabra3d(txt, o)); p.position.set(X3 + x, Y3 + y, z); s.add(p); return p; };
 const wHazlo = pal('Hazlo', { alto: .5, hondo: .3, mat: tinta }, -.12, .95);
 const wQue = pal('que', { alto: .42, hondo: .3, mat: tinta }, -.42, .3);
-const cajaSe = new THREE.Mesh(new THREE.BoxGeometry(.62, .5, .08), tinta); cajaSe.position.set(X3 + .3, Y3 + .48, -.02); s.add(cajaSe);
-const wSe = pal('se', { alto: .32, hondo: .06, mat: matBlanco }, .3, .34, .06);
+const cajaSe = new THREE.Mesh(new THREE.BoxGeometry(.62, .5, .08), tinta); cajaSe.position.set(X3 + .46, Y3 + .48, -.02); s.add(cajaSe);
+const wSe = pal('se', { alto: .32, hondo: .06, mat: matBlanco }, .46, .34, .06);
 const wMueva = pal('mueva.', { alto: .62, hondo: .34, mat: morada }, 0, -.5);
 const wSin = pal('sin plantillas,', { alto: .3, hondo: .26, mat: tinta }, 2.6, -.66);
 const wMano = pal('hecho a mano.', { alto: .3, hondo: .26, mat: tinta }, 2.6, -1.1);
@@ -91,13 +91,13 @@ const brillo = (c, i = .9) => new THREE.MeshStandardMaterial({ color: c, emissiv
 const X4 = 0, Y4 = 80;
 const pal4 = (txt, o, x, y) => { const p = cabe(palabra3d(txt, o)); p.position.set(X4 + x, Y4 + y, 0); s.add(p); return p; };
 const wPag = pal4('Páginas,', { alto: .4, hondo: .2, mat: brillo('#C77DFF', 1.1) }, -.05, .62);
-const wApps = pal4('apps', { alto: .4, hondo: .2, mat: brillo('#FFFFFF', .7) }, -.3, .08);
-const wVideo = pal4('y video', { alto: .4, hondo: .2, mat: brillo('#FFFFFF', .7) }, .12, -.46);
+const wApps = pal4('apps', { alto: .4, hondo: .2, mat: brillo('#EDE6F2', .28) }, -.3, .08);
+const wVideo = pal4('y video', { alto: .4, hondo: .2, mat: brillo('#EDE6F2', .28) }, .12, -.46);
 const lHechas = letrero('a tu medida · desde Querétaro', { px: 64, peso: 600, familia: '"Inter Tight"', color: '#D9C6E8', alto: .1 }); lHechas.position.set(X4, Y4 - .95, 0); s.add(lHechas);
 
 /* ── 5 · «TU NEGOCIO» detrás de barras de vidrio ── */
 const X5 = 0, Y5 = 120;
-const wTu = cabe(palabra3d('TU', { alto: .5, hondo: .25, mat: brillo('#F4EEF2', .8) })); wTu.position.set(X5, Y5 + .45, 0); s.add(wTu);
+const wTu = cabe(palabra3d('TU', { alto: .5, hondo: .25, mat: brillo('#EDE6F2', .3) })); wTu.position.set(X5, Y5 + .45, 0); s.add(wTu);
 const wNeg = cabe(palabra3d('NEGOCIO', { alto: .4, hondo: .25, mat: brillo('#C77DFF', 1.1) })); wNeg.position.set(X5, Y5 - .15, 0); s.add(wNeg);
 const lMov = letrero('en movimiento.', { px: 90, peso: 700, color: '#F4EEF2', alto: .16 }); lMov.position.set(X5, Y5 - .75, 0); s.add(lMov);
 const vidrio = new THREE.MeshPhysicalMaterial({ color: '#ffffff', transmission: 1, thickness: .6, roughness: .04, ior: 1.45, metalness: 0, transparent: true });
@@ -106,9 +106,10 @@ const barras = [0, 1, 2, 3, 4, 5].map(i => { const b = new THREE.Mesh(new THREE.
 /* ── 6 · el logo, con el foco que se acomoda ── */
 const X6 = 0, Y6 = 160;
 const L = logo3d({ hondo: .22 }); L.grupo.position.set(X6, Y6, 0); L.grupo.scale.setScalar(.36); s.add(L.grupo);
+L.matL[0].emissiveIntensity = .03;
 const ISOv = new THREE.Vector3(1, 1, 1).normalize(), dLogo = (L.medio * 2 * .36 * 1.2) / (2 * Math.tan(cam.fov * Math.PI / 360) * cam.aspect);
 const lLema = letrero('Si no existe la herramienta, se construye.', { px: 64, peso: 600, familia: '"Inter Tight"', color: '#E9E1EF', alto: .085 }); s.add(lLema);
-const lWa = letrero('WhatsApp  442 883 3786', { px: 80, peso: 800, familia: '"Inter Tight"', color: '#FFFFFF', alto: .14, fondo: '#1E9E4C' }); s.add(lWa);
+const lWa = letrero('WhatsApp  442 883 3786', { px: 80, peso: 800, familia: '"Inter Tight"', color: '#F4F4F4', alto: .14, fondo: '#178A42' }); s.add(lWa);
 
 /* las letras de una palabra entran una por una: suben girando sobre su base */
 function entrar(p, t, t0, { d = .4, paso = .045, de = 'abajo' } = {}){
@@ -138,8 +139,8 @@ const PARADAS = [
   [B(8) - .2, V3(X5 - .3, Y5 - .1, 5.6), V3(X5, Y5 - .05, 0), -.04, .001],
   /* el logo: la cámara llega a la vista isométrica (la del logo plano), primero desenfocado y lejos */
   [B(8) + .05, V3(X6, Y6, 0).addScaledVector(V3(1.25, .8, 1).normalize(), dLogo * 1.35), V3(X6, Y6 + .05, 0), 0, .006],
-  [B(9) + .4, V3(X6, Y6 - .18, 0).addScaledVector(ISOv, dLogo * 1.04), V3(X6, Y6 - .18, 0), 0, 0],
-  [FIN, V3(X6, Y6 - .18, 0).addScaledVector(ISOv, dLogo), V3(X6, Y6 - .18, 0), 0, 0]];
+  [B(9) + .4, V3(X6, Y6 - .5, 0).addScaledVector(ISOv, dLogo * 1.04), V3(X6, Y6 - .5, 0), 0, 0],
+  [FIN, V3(X6, Y6 - .5, 0).addScaledVector(ISOv, dLogo), V3(X6, Y6 - .5, 0), 0, 0]];
 const cMundo = (k, t) => { const p = PARADAS[k]; if(p[1] !== 'tel') return { pos: p[1].clone(), mira: p[2].clone(), giro: p[3], ap: p[4] };
   return { pos: tel.localToWorld(p[2].clone()), mira: tel.localToWorld(p[3].clone()), giro: p[4], ap: p[5] }; };
 const ease = (u) => u < .5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;   // de entrada y de salida
@@ -229,7 +230,7 @@ function escena(t){
 
   const o = camara(t);
   /* el brillo sube en los golpes grandes */
-  o.brillo = (.55 + 1.0 * Math.max(0, 1 - Math.abs(t - B(4)) / .25) + .5 * Math.max(0, 1 - Math.abs(t - B(2)) / .3)) * (1 - blanco) * (1 - .55 * tramo(t, B(8) + .5, B(9)));
+  o.brillo = (.55 + 1.0 * Math.max(0, 1 - Math.abs(t - B(4)) / .25) + .5 * Math.max(0, 1 - Math.abs(t - B(2)) / .3)) * (1 - blanco) * (1 - .8 * tramo(t, B(8) + .5, B(9)));
   return o;
 }
 
