@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#07030C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>VS TILES · EXÓRCIST</title>
+<meta name="description" content="VS TILES · EXÓRCIST: THE SONOLUZ PROTOCOL. Demo de juego de ritmo: carriles, flechas, símbolos y círculos, con dificultad demoníaca.">
+<!-- VS TILES · EXÓRCIST: THE SONOLUZ PROTOCOL — demo. El documento de diseño completo está en DISEÑO.md
+     y lo que se usó de fuera, con su licencia, en CREDITOS.md (y en la pantalla de Créditos). -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Zen+Kaku+Gothic+New:wght@500;700;900&family=Cinzel:wght@700;900&display=swap">
+<link rel="stylesheet" href="estilo.css">
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div class="sombra" id="sombra"></div>
+<canvas id="capa"></canvas>
+<button id="pausaB" aria-label="Pausa">II</button>
+<div id="cuenta"></div>
+
+<section class="pantalla" id="arranque">
+  <div class="ojo">El Protocolo SONOLUZ</div>
+  <div class="logo"><i>VS</i>TILES</div>
+  <div class="exo">EXÓRCIST</div>
+  <div class="toca">TOCA PARA ENTRAR</div>
+</section>
+
+<section class="pantalla" id="intro"><button class="b chico saltar" data-ir="saltarIntro">Saltar</button><p id="introTxt"></p></section>
+
+<section class="pantalla" id="perfil">
+  <div class="ojo">Prólogo · La primera nota</div>
+  <h2 class="titulo" style="font-size:30px">Crea tu Resonante</h2>
+  <p class="sub" style="margin-bottom:14px">Entras a los archivos de SONOLUZ para reconstruir las canciones que la Excomunión está borrando.</p>
+  <label class="campo"><span class="ojo">Tu nombre</span><input id="nombre" maxlength="16" autocomplete="off" placeholder="Resonante"></label>
+  <span class="ojo" style="margin-bottom:8px">Tu primera voz (no es por tirada: es tuya)</span>
+  <div class="elige" id="iniciales"></div>
+  <span class="ojo" style="margin-bottom:8px">Color</span>
+  <div class="elige" id="colores"></div>
+  <div class="pie"><button class="b primario grande" data-ir="aCalibrar">Seguir · calibrar</button></div>
+</section>
+
+<section class="pantalla" id="calibrar">
+  <div class="calib panel" style="margin-top:auto">
+    <div class="ojo">Calibración</div>
+    <h2>Toca al ritmo del clic</h2>
+    <p class="sub">Así el juego sabe cuánto tarda tu bocina o tus audífonos. Con audífonos Bluetooth el número sale grande; es normal.</p>
+    <div class="pulso" id="pulso">♪</div>
+    <div class="medida" id="medida">— ms</div>
+    <p class="sub" id="calibNota">Empieza en cuanto toques «Empezar». Son 16 clics.</p>
+  </div>
+  <div class="pie"><button class="b chico" data-ir="saltarCalib">Saltar</button><button class="b primario grande" id="calibB">Empezar</button></div>
+</section>
+
+<section class="pantalla" id="menu">
+  <div class="barra panel" id="barra"></div>
+  <div style="margin-top:6px"><div class="ojo" id="menuCap">Capítulo I · Ecos de GUMI</div><div class="titulo" style="font-size:34px">VS TILES</div><div class="exo" style="font-size:13px;text-align:left">EXÓRCIST · THE SONOLUZ PROTOCOL</div></div>
+  <div class="rejilla">
+    <button class="tarjeta ancha" data-ir="historia" style="--c:#FF2D7A66"><b>Historia</b><span>Prólogo y Capítulo I · las incursiones a los archivos</span></button>
+    <button class="tarjeta" data-ir="libre" style="--c:#38E1FF55"><b>Juego libre</b><span>Cualquier canción, modo y dificultad</span></button>
+    <button class="tarjeta" data-ir="reto" style="--c:#FF2D5566"><span class="tag">⚠ 13+</span><b>EXÓRCIST</b><span>Las reglas cambian a media canción</span></button>
+    <button class="tarjeta" data-ir="lab" style="--c:#5CFFB055"><b>EXÓRCIST Lab</b><span>Tu canción se vuelve carta</span></button>
+    <button class="tarjeta" data-ir="mercado" style="--c:#FFE08A55"><b>Mercado de Ecos</b><span>El archivo · tiradas</span></button>
+    <button class="tarjeta" data-ir="vestidor" style="--c:#B44BFF66"><b>Vestidor</b><span>Voz, notas, carril y efectos</span></button>
+    <button class="tarjeta" data-ir="records" style="--c:#38E1FF44"><b>Récords</b><span>Tus mejores partidas</span></button>
+    <button class="tarjeta" data-ir="ajustes"><b>Ajustes</b><span>Sincronía, velocidad, movimiento</span></button>
+    <button class="tarjeta" data-ir="creditos"><b>Créditos</b><span>Quién hizo todo lo que ves</span></button>
+  </div>
+</section>
+
+<section class="pantalla" id="canciones">
+  <div class="cab"><button class="b chico" data-ir="menu">‹</button><h2 id="cancionesT">Juego libre</h2></div>
+  <div class="modos" id="modos"></div>
+  <div class="portada panel" id="portada"></div>
+  <div class="difs" id="difs"></div>
+  <div class="opciones" id="opciones">
+    <label><input type="checkbox" id="opAuto">Auto</label>
+    <label><input type="checkbox" id="opSin">Sin morir</label>
+    <label><input type="checkbox" id="opPract">Práctica 75 %</label>
+  </div>
+  <div class="lista" id="lista"></div>
+  <div class="pie"><button class="b primario grande" id="jugarB">Jugar</button></div>
+</section>
+
+<section class="pantalla" id="pausa"><div class="ojo">Pausa</div><button class="b primario grande" data-ir="seguir">Seguir</button><button class="b" data-ir="reintentar">Reintentar</button><button class="b" data-ir="salirJuego">Salir</button></section>
+
+<section class="pantalla" id="resultados">
+  <div class="ojo" id="resCancion" style="text-align:center"></div>
+  <div class="rango" id="resRango">S</div>
+  <div class="puntos" id="resPuntos"></div>
+  <div class="sellos" id="resSellos"></div>
+  <div class="juicios" id="resJuicios"></div>
+  <canvas id="histograma"></canvas>
+  <p class="consejo" id="resConsejo"></p>
+  <div class="pie"><button class="b" data-ir="libreVolver">Canciones</button><button class="b primario" data-ir="reintentar">Otra vez</button></div>
+</section>
+
+<section class="pantalla" id="historia">
+  <div class="cab"><button class="b chico" data-ir="menu">‹</button><h2>Historia</h2></div>
+  <div id="capitulos"></div>
+</section>
+<section class="pantalla" id="dialogo"><div class="burbuja panel"><div class="habla" id="habla"></div><div class="dice" id="dice"></div><div class="pie" style="background:none"><button class="b primario" id="dialogoB">Seguir</button></div></div></section>
+
+<section class="pantalla" id="vestidor">
+  <div class="cab"><button class="b chico" data-ir="menu">‹</button><h2>Vestidor</h2></div>
+  <div class="ojo" style="margin-bottom:6px">Equipado</div>
+  <div class="ranuras" id="ranuras"></div>
+  <div class="modos" id="vestCats"></div>
+  <div class="objetos" id="objetos"></div>
+</section>
+
+<section class="pantalla" id="mercado">
+  <div class="cab"><button class="b chico" data-ir="menu">‹</button><h2>Mercado de Ecos</h2></div>
+  <div class="archivo panel"><div class="ojo">Archivo especial · Ecos del Coro</div><div class="orbe"></div>
+    <div class="probas" id="probas"></div>
+    <div style="display:flex;gap:8px;justify-content:center"><button class="b" id="tira1">1 · 100 ◆</button><button class="b primario" id="tira10">10 · 900 ◆</button></div>
+    <div class="tirada" id="tirada"></div></div>
+</section>
+
+<section class="pantalla" id="records"><div class="cab"><button class="b chico" data-ir="menu">‹</button><h2>Récords</h2></div><div id="recordsL"></div></section>
+
+<section class="pantalla" id="ajustes">
+  <div class="cab"><button class="b chico" data-ir="menu">‹</button><h2>Ajustes</h2></div>
+  <div class="panel" id="ajustesL"></div>
+</section>
+
+<section class="pantalla" id="lab">
+  <div class="cab"><button class="b chico" data-ir="menu">‹</button><h2>EXÓRCIST Lab</h2></div>
+  <div class="panel">
+    <div class="ojo">Tu canción → tu carta</div>
+    <p class="sub" style="margin:8px 0 12px">Elige un audio de tu teléfono. Se analiza aquí mismo (no se sube a ningún lado): sus golpes, sus ataques y sus secciones, y sale la carta en el modo y la dificultad que quieras.</p>
+    <label class="b primario grande" style="width:100%">Elegir canción<input type="file" id="labArchivo" accept="audio/*" hidden></label>
+    <p class="sub" id="labEstado" style="margin-top:12px"></p>
+  </div>
+</section>
+
+<section class="pantalla" id="creditos"><div class="cab"><button class="b chico" data-ir="menu">‹</button><h2>Créditos</h2></div><div class="panel creditos" id="creditosL"></div></section>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
