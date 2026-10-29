@@ -28,9 +28,12 @@ export function cine(visible, { fov = 32, sub = 6, obturador = .55, bloom = [.6,
   const composer = new EffectComposer(r); composer.setSize(W, H);
   const dof = new BokehPass(s, cam, { focus: 8, aperture: 0, maxblur: .012 });
   const brillo = new UnrealBloomPass(new THREE.Vector2(W, H), ...bloom);
-  composer.addPass(new RenderPass(s, cam)); composer.addPass(dof); composer.addPass(brillo); composer.addPass(new OutputPass());
+  const rp = new RenderPass(s, cam);
+  composer.addPass(rp); composer.addPass(dof); composer.addPass(brillo); composer.addPass(new OutputPass());
   const x = visible.getContext('2d');
-  return { r, s, cam, dof, brillo,
+  return { r, s, cam, dof, brillo, composer,
+    /* cambiar de escena (varios mundos con la misma cámara: el 16 pasa de dibujo a 3D sencillo a real) */
+    usar(sc){ rp.scene = sc; dof.scene = sc; },
     /* un cuadro: `pinta(tk)` acomoda todo al segundo tk y devuelve el foco y la apertura; el obturador
        abre `obturador` de un cuadro hacia atrás, repartido en `sub` subcuadros */
     cuadro(t, pinta, { fps = 30, n = sub } = {}){
