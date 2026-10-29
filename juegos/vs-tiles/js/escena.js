@@ -215,6 +215,17 @@ export async function crearEscena(lienzo){
      se quede viendo un rato, luego se ría y se vaya como si saltara hacia abajo»). La Miku «Shiteyanyo»
      de Seafoam (Sketchfab, CC BY) trae su propia caminata hacia el frente; va colgada de la cámara para
      que camine hacia la pantalla venga de donde venga la cámara. Tiempos en segundos desde que sale. */
+  /* RESOLUCIÓN AUTOMÁTICA, para los teléfonos que no alcanzan: si el cuadro tarda en promedio más de 22 ms
+     (menos de ~45 por segundo) durante 2 s, se baja la nitidez del 3D un cuarto; si sobra (menos de 12 ms)
+     durante 6 s, se sube. Las notas y el juicio no dependen de esto: van con el reloj del audio. */
+  let tam = [1, 1], ultimo = 0, media = 16, lento = 0, holgado = 0, dtS = 1 / 60;
+  const tope = Math.min(2, devicePixelRatio || 1); let razon = tope;
+  function calidad(ahora){ const dt = ultimo ? Math.min(100, ahora - ultimo) : 16; ultimo = ahora; dtS = Math.min(.05, dt / 1000);
+    media += (dt - media) * .05;
+    if(media > 22){ lento += dt; holgado = 0; } else if(media < 12){ holgado += dt; lento = 0; } else { lento = holgado = 0; }
+    const nueva = lento > 2000 ? Math.max(.75, razon - .25) : holgado > 6000 ? Math.min(tope, razon + .25) : razon;
+    if(nueva !== razon){ razon = nueva; lento = holgado = 0; r.setPixelRatio(razon); r.setSize(tam[0], tam[1], false); } }
+
   s.add(cam);
   let susto = null;
   const SUSTO = { camina: 3.4, mira: 6.0, rie: 7.6, salta: 9.2 };
@@ -249,7 +260,7 @@ export async function crearEscena(lienzo){
     /* proyecta un punto del carril (riel r en la línea) a la pantalla, en px CSS */
     receptor(r, ancho, alto){ const R = piezas.rieles[r]; v3.set(R.x * ANCHO, 0, 0); carril.localToWorld(v3); v3.project(cam); return [(v3.x + 1) / 2 * ancho, (1 - v3.y) / 2 * alto, R.vis]; },
     proyectar(p, ancho, alto){ v3.copy(p).project(cam); return [(v3.x + 1) / 2 * ancho, (1 - v3.y) / 2 * alto]; },
-    medir(ancho, alto){ r.setSize(ancho, alto, false); cam.aspect = ancho / alto; vertical = ancho < alto; cam.fov = vertical ? 64 : 50; cam.updateProjectionMatrix(); },
+    medir(ancho, alto){ tam = [ancho, alto]; r.setSize(ancho, alto, false); cam.aspect = ancho / alto; vertical = ancho < alto; cam.fov = vertical ? 64 : 50; cam.updateProjectionMatrix(); },
 
     /* UN CUADRO. t = segundo de la canción; an = análisis; carta (o null en el menú); est = estado del juego */
     pintar(t, { an, carta, est, modo, bajos }){
@@ -369,8 +380,8 @@ export async function crearEscena(lienzo){
 
       /* destellos */
       for(const c of chispas){ if(!c.sp.visible) continue; const u = (ahoraMs - c.t0) / c.vida; if(u >= 1){ c.sp.visible = false; continue; }
-        c.sp.position.addScaledVector(c.v, 1 / 60); c.v.y -= 9 / 60; c.sp.material.opacity = 1 - u; c.sp.scale.setScalar(c.esc * (1 + u)); }
-      moverSusto(); r.render(s, cam);
+        c.sp.position.addScaledVector(c.v, dtS); c.v.y -= 9 * dtS; c.sp.material.opacity = 1 - u; c.sp.scale.setScalar(c.esc * (1 + u)); }
+      moverSusto(); r.render(s, cam); calidad(ahoraMs);
       return { latido, fase, gi, compas, sacudida };
     },
     /* el destello de un riel al acertar */

@@ -16,6 +16,7 @@ input, select{ font:inherit; color:var(--texto) }
 
 /* las pantallas: una a la vez, encima del 3D */
 .pantalla{ position:fixed; inset:0; z-index:5; display:none; flex-direction:column; padding:max(14px, env(safe-area-inset-top)) 16px max(14px, env(safe-area-inset-bottom)); overflow-y:auto; -webkit-overflow-scrolling:touch }
+.pantalla > *{ flex-shrink:0 }   /* sin esto, en un teléfono chico la pantalla APLASTA a sus hijos en vez de dejar bajar: la fila de modos quedaba de 0 px */
 .pantalla.vis{ display:flex; animation:entra .45s cubic-bezier(.2,.8,.2,1) both }
 @keyframes entra{ from{ opacity:0; transform:translateY(18px) scale(.985); filter:blur(6px) } to{ opacity:1; transform:none; filter:none } }
 .sombra{ position:fixed; inset:0; z-index:4; pointer-events:none; background:linear-gradient(180deg, #07030Ccc 0, #07030C33 30%, #07030C33 62%, #07030Cf0 100%); transition:opacity .4s }
@@ -28,7 +29,7 @@ input, select{ font:inherit; color:var(--texto) }
 .b:active{ transform:scale(.96) } .b:focus-visible{ outline:2px solid var(--cian); outline-offset:3px }
 .b.grande{ min-height:62px; font-size:17px; padding:16px 26px }
 .b.primario{ background:linear-gradient(135deg, var(--magenta), #8A1BFF) } .b.primario::before{ background:linear-gradient(135deg, #fff8, #fff2) }
-.b.chico{ min-height:44px; padding:8px 14px; font-size:12px }
+.b.chico{ min-height:44px; min-width:44px; padding:8px 14px; font-size:12px }
 .b[disabled]{ opacity:.4; pointer-events:none }
 
 /* paneles */
@@ -68,23 +69,23 @@ h2{ font:800 22px/1.1 var(--n); letter-spacing:.06em; margin:0 0 10px }
 .tarjeta:active{ transform:scale(.97) }
 .tarjeta b{ display:block; font:800 15px/1.1 var(--n); letter-spacing:.06em; position:relative; z-index:1 } .tarjeta span{ display:block; margin-top:6px; font-size:12.5px; color:var(--gris); position:relative; z-index:1 }
 .tarjeta.ancha{ grid-column:1 / -1; min-height:110px } .tarjeta.ancha b{ font-size:20px }
-.tarjeta .tag{ position:absolute; right:12px; top:12px; font:800 10px var(--n); letter-spacing:.2em; color:var(--rojo); z-index:1 }
+.tarjeta .tag{ position:absolute; right:12px; top:12px; font:800 11px var(--n); letter-spacing:.2em; color:var(--rojo); z-index:1 }
 
 /* ── la lista de canciones (Arcaea) ── */
 #canciones{ padding-bottom:max(12px, env(safe-area-inset-bottom)) }
 .cab{ display:flex; align-items:center; gap:10px; margin-bottom:10px } .cab h2{ margin:0; flex:1 }
-.modos{ display:flex; gap:6px; overflow-x:auto; padding-bottom:6px; scrollbar-width:none } .modos::-webkit-scrollbar{ display:none }
-.modos button{ flex:none; padding:9px 12px; font:800 11px var(--n); letter-spacing:.16em; text-transform:uppercase; background:#ffffff0d; border:1px solid var(--linea); color:var(--gris) }
+.modos{ display:flex; flex-wrap:wrap; gap:6px; overflow-x:auto; padding-bottom:6px; scrollbar-width:none } .modos::-webkit-scrollbar{ display:none }
+.modos button{ flex:none; min-height:44px; padding:9px 14px; font:800 12px var(--n); letter-spacing:.16em; text-transform:uppercase; background:#ffffff0d; border:1px solid var(--linea); color:var(--gris) }
 .modos button.si{ background:linear-gradient(135deg, var(--magenta), var(--morado)); color:#fff; border-color:transparent }
 .portada{ position:relative; display:grid; grid-template-columns:118px minmax(0, 1fr); gap:14px; align-items:end; margin:8px 0 10px; padding:14px }
 .portada .foto{ width:118px; height:118px; background-size:cover; background-position:center; clip-path:polygon(0 0, 85% 0, 100% 15%, 100% 100%, 15% 100%, 0 85%); box-shadow:0 0 40px #B44BFF55; position:relative }
 .portada .foto::after{ content:""; position:absolute; inset:0; background:linear-gradient(135deg, transparent 40%, #FF2D7A88) }
 .portada h3{ margin:0; font:900 21px/1.05 var(--n) } .portada .art{ color:var(--gris); font-size:12.5px; margin:4px 0 8px }
 .portada .datos{ display:flex; flex-wrap:wrap; gap:6px }
-.pill{ font:800 10.5px var(--n); letter-spacing:.1em; padding:5px 8px; background:#ffffff12; border:1px solid var(--linea) }
+.pill{ font:800 11px var(--n); letter-spacing:.1em; padding:5px 8px; background:#ffffff12; border:1px solid var(--linea) }
 .pill.rojo{ color:#fff; background:#FF2D5533; border-color:#FF2D5588 }
 .difs{ display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:6px; margin-bottom:10px }
-.difs button{ padding:10px 2px 8px; display:flex; flex-direction:column; align-items:center; gap:4px; background:#ffffff0a; border:1px solid var(--linea); font:800 9.5px var(--n); letter-spacing:.06em; text-transform:uppercase; color:var(--gris) }
+.difs button{ padding:10px 2px 8px; display:flex; flex-direction:column; align-items:center; gap:4px; background:#ffffff0a; border:1px solid var(--linea); font:800 clamp(10px, 2.9vw, 12px) var(--n); letter-spacing:0; text-transform:uppercase; color:var(--gris); min-height:64px }
 .difs button em{ font-style:normal; width:30px; height:30px; display:grid; place-items:center; font:900 14px var(--n); color:#fff; transform:rotate(45deg); background:var(--c) } .difs button em s{ text-decoration:none; transform:rotate(-45deg) }
 .difs button.si{ border-color:var(--c); background:color-mix(in srgb, var(--c) 22%, transparent); color:#fff }
 .lista{ display:flex; flex-direction:column; gap:8px; margin-bottom:12px }
@@ -111,17 +112,17 @@ h2{ font:800 22px/1.1 var(--n); letter-spacing:.06em; margin:0 0 10px }
 #resultados .rango{ font:900 clamp(90px, 30vw, 170px)/.8 var(--n); text-align:center; margin:8px 0 0; background:linear-gradient(180deg, #fff, var(--c, var(--magenta))); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 0 30px var(--c, var(--magenta))); animation:sello .7s cubic-bezier(.2,1.6,.4,1) both }
 @keyframes sello{ from{ transform:scale(2.4) rotate(-8deg); opacity:0 } }
 .puntos{ text-align:center; font:900 34px var(--n); letter-spacing:.04em } .puntos small{ display:block; font:700 12px var(--n); color:var(--gris); letter-spacing:.2em }
-.juicios{ display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:6px; margin:12px 0 } .juicios div{ text-align:center; padding:8px 2px; background:#ffffff0a; font:900 18px var(--n) } .juicios div small{ display:block; font:800 8.5px var(--n); letter-spacing:.06em; color:var(--c) }
+.juicios{ display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:6px; margin:12px 0 } .juicios div{ text-align:center; padding:8px 2px; background:#ffffff0a; font:900 18px var(--n) } .juicios div small{ display:block; font:800 clamp(9px, 2.6vw, 11px) var(--n); letter-spacing:.06em; color:var(--c) }
 .sellos{ display:flex; justify-content:center; gap:8px; margin:8px 0 } .sellos span{ font:900 12px var(--n); letter-spacing:.2em; padding:6px 10px; border:1px solid var(--oro); color:var(--oro) }
 #histograma{ position:static; width:100%; height:120px; margin:6px 0 }
 .consejo{ font-size:13px; color:var(--gris); text-align:center; margin:6px 0 10px }
 
 /* ── vestidor (Dead by Daylight) ── */
 .ranuras{ display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:6px; margin-bottom:10px }
-.ranura{ aspect-ratio:1; display:flex; flex-direction:column; justify-content:flex-end; padding:6px; background:linear-gradient(180deg, #ffffff08, #B44BFF22); border:1px solid var(--linea); font:800 9px var(--n); letter-spacing:.06em; text-transform:uppercase; text-align:left; position:relative; overflow:hidden }
-.ranura.si{ border-color:#fff; box-shadow:inset 0 0 0 2px #fff } .ranura em{ font-style:normal; display:block; font-size:8px; color:var(--gris) }
+.ranura{ aspect-ratio:1; display:flex; flex-direction:column; justify-content:flex-end; padding:6px; background:linear-gradient(180deg, #ffffff08, #B44BFF22); border:1px solid var(--linea); font:800 clamp(10px, 2.7vw, 12px) var(--n); letter-spacing:0; text-transform:uppercase; text-align:left; position:relative; overflow:hidden; overflow-wrap:anywhere }
+.ranura.si{ border-color:#fff; box-shadow:inset 0 0 0 2px #fff } .ranura em{ font-style:normal; display:block; font:700 clamp(10px, 2.7vw, 12px)/1.1 var(--t); text-transform:none; color:var(--gris) }
 .objetos{ display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:6px; margin-bottom:12px }
-.obj{ aspect-ratio:.82; position:relative; display:flex; flex-direction:column; justify-content:flex-end; padding:6px; border:1px solid var(--linea); background:linear-gradient(180deg, transparent, var(--r, #555)); font:700 9.5px/1.15 var(--t); text-align:left; overflow:hidden }
+.obj{ aspect-ratio:.82; position:relative; display:flex; flex-direction:column; justify-content:flex-end; padding:6px; border:1px solid var(--linea); background:linear-gradient(180deg, transparent, var(--r, #555)); font:700 11px/1.15 var(--t); text-align:left; overflow:hidden }
 .obj.puesto::after{ content:"✓"; position:absolute; right:6px; top:4px; font:900 14px var(--n); color:var(--verde) } .obj.bloq{ filter:grayscale(1) brightness(.5) } .obj.bloq::before{ content:"🔒"; position:absolute; left:6px; top:4px; font-size:12px }
 .obj .muestra{ position:absolute; inset:8px 8px 34px; display:grid; place-items:center } .obj .muestra img{ max-width:80%; max-height:100%; image-rendering:auto }
 .raro-c{ --r:#3A3A46 } .raro-r{ --r:#1E5BA8 } .raro-e{ --r:#7A2BC4 } .raro-l{ --r:#C4732B } .raro-m{ --r:#C42B4A }
@@ -142,7 +143,7 @@ h2{ font:800 22px/1.1 var(--n); letter-spacing:.06em; margin:0 0 10px }
 .calib{ text-align:center } .calib .pulso{ width:120px; height:120px; margin:18px auto; border-radius:50%; border:3px solid var(--cian); display:grid; place-items:center; font:900 26px var(--n); transition:transform .08s }
 .calib .medida{ font:900 40px var(--n) }
 .ajuste{ display:grid; grid-template-columns:minmax(0, 1fr) auto; gap:4px 10px; align-items:center; padding:12px 0; border-bottom:1px solid var(--linea) } .ajuste small{ grid-column:1 / -1; color:var(--gris); font-size:12px }
-.ajuste input[type=range]{ grid-column:1 / -1; width:100%; accent-color:var(--magenta) } .ajuste b{ font:800 13px var(--n) }
+.ajuste input[type=range]{ grid-column:1 / -1; width:100%; height:44px; accent-color:var(--magenta) } .ajuste b{ font:800 13px var(--n) }
 .creditos p{ margin:0 0 10px; font-size:13px; color:var(--gris) } .creditos b{ color:var(--texto) } .creditos h3{ font:800 14px var(--n); letter-spacing:.14em; margin:16px 0 8px; color:var(--cian) }
 .campo{ display:flex; flex-direction:column; gap:6px; margin-bottom:12px } .campo input{ min-height:48px; padding:10px 14px; background:#ffffff10; border:1px solid var(--linea); font:700 18px var(--n) }
 .elige{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px; margin-bottom:12px }

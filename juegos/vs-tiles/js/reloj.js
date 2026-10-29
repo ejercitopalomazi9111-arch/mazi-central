@@ -12,19 +12,29 @@
 
 export const reloj = {
   ctx: null, inicio: 0, t0: 0, desde: 0, vel: 1, desfase: 0, desfaseVisual: 0, tocando: false, fuente: null, ganancia: null,
-  _off: null, _ult: 0,
+  _off: null, _ult: 0, pausado: false,
 
   preparar(){
     if(this.ctx) return this.ctx;
     const AC = window.AudioContext || window.webkitAudioContext;
+    /* con el switch de silencio del iPhone puesto, Safari calla el audio web salvo que se pida «reproducción»,
+       como una app de música (Safari 16.4+; en los demás no existe y no pasa nada) */
+    try{ if(navigator.audioSession) navigator.audioSession.type = 'playback'; }catch(e){}
     this.ctx = new AC({ latencyHint: 'interactive' });
     this.ganancia = this.ctx.createGain(); this.ganancia.connect(this.ctx.destination);
     return this.ctx;
   },
-  /* el iPhone no deja sonar nada hasta que alguien toca: se llama desde el primer toque */
-  async despertar(){ this.preparar(); if(this.ctx.state !== 'running') await this.ctx.resume().catch(() => {});
-    /* un búfer mudo de un cuadro, que en Safari termina de «abrir» la salida */
-    const b = this.ctx.createBuffer(1, 1, 22050), s = this.ctx.createBufferSource(); s.buffer = b; s.connect(this.ctx.destination); s.start(); },
+  /* el iPhone no deja sonar nada hasta que alguien toca, y cuenta como «toque» SOLTAR el dedo (touchend,
+     click), no ponerlo: un resume() pedido en el pointerdown se puede quedar colgado para siempre. Por eso
+     nunca se espera más de medio segundo aquí, y desbloquear() lo vuelve a intentar al soltar cada toque. */
+  async despertar(){ this.preparar(); this._mudo();
+    if(this.ctx.state !== 'running') await Promise.race([this.ctx.resume().catch(() => {}), new Promise(r => setTimeout(r, 500))]); },
+  /* un búfer mudo de un cuadro, que en Safari termina de «abrir» la salida */
+  _mudo(){ try{ const b = this.ctx.createBuffer(1, 1, 22050), s = this.ctx.createBufferSource(); s.buffer = b; s.connect(this.ctx.destination); s.start(); }catch(e){} },
+  /* se instala una vez: al soltar cualquier toque, si el audio no corre (bloqueado, o «interrumpido» por una
+     llamada o por salir de la app) y no es una pausa a propósito, se despierta */
+  desbloquear(){ const f = () => { if(!this.ctx || this.pausado || this.ctx.state === 'running') return; this.ctx.resume().catch(() => {}); this._mudo(); };
+    for(const n of ['touchend', 'pointerup', 'click', 'keydown']) addEventListener(n, f, { capture: true, passive: true }); },
 
   async cargar(url){ this.preparar(); const r = await fetch(url); const a = await r.arrayBuffer(); return await this.ctx.decodeAudioData(a); },
 
@@ -60,9 +70,11 @@ export const reloj = {
     s.onended = () => { if(this.fuente === s) this.tocando = false; };
     return t0;
   },
-  parar(){ if(this.fuente){ try{ this.fuente.onended = null; this.fuente.stop(); }catch(e){} this.fuente = null; } this.tocando = false; },
-  pausar(){ if(this.ctx && this.ctx.state === 'running') return this.ctx.suspend(); },
-  seguir(){ if(this.ctx) return this.ctx.resume().then(() => { this._off = null; this._medir(); }); },
+  /* parar también quita la pausa: salir desde la pausa dejaba el audio suspendido y la siguiente canción no avanzaba */
+  parar(){ if(this.fuente){ try{ this.fuente.onended = null; this.fuente.stop(); }catch(e){} this.fuente = null; } this.tocando = false;
+    if(this.pausado){ this.pausado = false; this.ctx?.resume().catch(() => {}); } },
+  pausar(){ this.pausado = true; if(this.ctx && this.ctx.state === 'running') return this.ctx.suspend(); },
+  seguir(){ this.pausado = false; if(this.ctx) return this.ctx.resume().then(() => { this._off = null; this._medir(); }); },
 
   /* un sonido corto YA (los golpes): sin programarlo, para que salga lo antes posible */
   golpe(buf, vol = .5){ if(!buf || !this.ctx) return; const s = this.ctx.createBufferSource(), g = this.ctx.createGain(); g.gain.value = vol; s.buffer = buf; s.connect(g); g.connect(this.ctx.destination); s.start(); },

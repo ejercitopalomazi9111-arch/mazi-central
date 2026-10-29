@@ -62,6 +62,7 @@ const aviso = (txt) => { const d = document.createElement('div'); d.className = 
 const escena = await crearEscena($('#gl'));
 const sprites = await cargarSprites();
 const sonidos = {};
+reloj.desbloquear();
 const partida = crearPartida({ escena, capa: $('#capa'), sprites, sonidos, ajustes: Y, alTerminar: resultados });
 Y.alPausar = (p) => mostrar(p ? 'pausa' : null);
 const analisis = {}, bufs = {};
@@ -94,11 +95,14 @@ async function tocarLogo(){ const ahora = performance.now(); toquesLogo = toques
   setTimeout(() => { if(capa) capa.style.opacity = '1'; sustoVivo = false; }, T.salta * 1000 + 200); }
 document.querySelector('#arranque .logo').addEventListener('pointerdown', (e) => { e.stopPropagation(); tocarLogo(); });
 document.querySelector('#menu .titulo').addEventListener('pointerdown', () => tocarLogo());
-$('#arranque').addEventListener('pointerdown', async function entrar(e){
+/* se entra con «click» (al soltar el dedo) y no con pointerdown: en el iPhone sólo soltar cuenta como toque
+   para dejar sonar el audio, y con pointerdown la entrada se podía quedar sin sonido o colgada */
+$('#arranque').addEventListener('click', async function entrar(e){
   if(e.target.closest('.logo') || sustoVivo) return;
-  $('#arranque').removeEventListener('pointerdown', entrar);
+  $('#arranque').removeEventListener('click', entrar);
   await reloj.despertar(); reloj.desfase = Y.desfase / 1000; reloj.desfaseVisual = Y.desfaseVisual / 1000;
-  for(const [k, f] of [['golpe', 'impactGlass_light_002'], ['fallo', 'impactPunch_medium_000'], ['clic', 'tick_001'], ['boton', 'click_002'], ['glitch', 'glitch_003'], ['premio', 'confirmation_002']]) sonidos[k] = await reloj.cargar(`sonidos/${f}.wav`).catch(() => null);
+  await Promise.all([['golpe', 'impactGlass_light_002'], ['fallo', 'impactPunch_medium_000'], ['clic', 'tick_001'], ['boton', 'click_002'], ['glitch', 'glitch_003'], ['premio', 'confirmation_002']]
+    .map(async ([k, f]) => { sonidos[k] = await reloj.cargar(`sonidos/${f}.wav`).catch(() => null); }));
   if(!Y.visto) intro(); else if(!Y.nombre) perfil(); else menu();
 });
 document.addEventListener('click', (e) => { const b = e.target.closest('[data-ir]'); if(!b) return; sonidos.boton && reloj.golpe(sonidos.boton, .25); ir(b.dataset.ir); });
@@ -224,7 +228,7 @@ function vestidor(){ mostrar('vestidor'); const R = $('#ranuras'); R.innerHTML =
   const O = $('#objetos'); O.innerHTML = '';
   OBJETOS.filter(o => o.cat === catSel).forEach(o => { const tiene = Y.tiene.includes(o.id), b = document.createElement('button'); b.className = `obj raro-${o.raro}${tiene ? '' : ' bloq'}${Y.puesto[o.cat] === o.id ? ' puesto' : ''}`;
     const muestra = o.cat === 'golpe' ? `<img src="sprites/${o.sprite}.png" alt="">` : o.cat === 'fondo' ? `<img src="${o.img}" alt="" style="max-width:100%">` : o.cat === 'nota' ? o.colores.slice(0, 4).map(c => `<i style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${c};margin:1px"></i>`).join('') : o.cat === 'voz' ? `<i style="font:900 26px var(--n);color:${o.color}">${o.nombre[0]}</i>` : `<i style="font:900 11px var(--g);color:#FFD7E5">«${o.nombre}»</i>`;
-    b.innerHTML = `<div class="muestra">${muestra}</div>${o.nombre}<small style="display:block;font:700 8px var(--n);color:#ffffffaa">${RAREZA[o.raro].n.toUpperCase()}</small>`;
+    b.innerHTML = `<div class="muestra">${muestra}</div>${o.nombre}<small style="display:block;font:700 10px var(--n);color:#ffffffcc">${RAREZA[o.raro].n.toUpperCase()}</small>`;
     b.onclick = async () => { if(!tiene){ aviso('Sale en el Mercado de Ecos.'); return; } Y.puesto[o.cat] = o.id; guardar(); aplicarCosmeticos(); if(o.cat === 'voz') await escena.ponerCantantes([idVoz()]); vestidor(); };
     O.appendChild(b); });
   if(catSel === 'voz') escena.ponerCantantes([idVoz()]);
@@ -244,7 +248,7 @@ function tirar(n, conSello = false){ const costo = n === 10 ? 900 : 100;
   for(let i = 0; i < n; i++){ Y.pity++; let r = Math.random() * 100, raro = 'c'; for(const [k, v] of Object.entries(RAREZA).reverse()){ if(r < v.p){ raro = k; break; } r -= v.p; }
     if(Y.pity >= 50 && !['l', 'm'].includes(raro)) raro = 'l'; if(['l', 'm'].includes(raro)) Y.pity = 0;
     const pool = OBJETOS.filter(o => o.raro === raro), o = pool[Math.floor(Math.random() * pool.length)]; const nuevo = !Y.tiene.includes(o.id); if(nuevo) Y.tiene.push(o.id); else Y.ecos += { c: 10, r: 25, e: 60, l: 150, m: 300 }[raro]; sale.push({ o, nuevo }); }
-  guardar(); mercado(); const T = $('#tirada'); sale.forEach(({ o, nuevo }, i) => { const d = document.createElement('div'); d.className = `obj raro-${o.raro}`; d.style.animationDelay = i * .08 + 's'; d.innerHTML = `${o.nombre}<small style="display:block;font:700 8px var(--n)">${nuevo ? 'NUEVO' : 'REPETIDO'}</small>`; T.appendChild(d); });
+  guardar(); mercado(); const T = $('#tirada'); sale.forEach(({ o, nuevo }, i) => { const d = document.createElement('div'); d.className = `obj raro-${o.raro}`; d.style.animationDelay = i * .08 + 's'; d.innerHTML = `${o.nombre}<small style="display:block;font:700 10px var(--n)">${nuevo ? 'NUEVO' : 'REPETIDO'}</small>`; T.appendChild(d); });
   if(sale.some(s => ['l', 'm'].includes(s.o.raro))){ sonidos.premio && reloj.golpe(sonidos.premio, .6); aviso('¡' + sale.find(s => ['l', 'm'].includes(s.o.raro)).o.nombre + '!'); } }
 $('#tira1').addEventListener('click', () => tirar(1)); $('#tira10').addEventListener('click', () => tirar(10)); $('#tiraS').addEventListener('click', () => tirar(1, true));
 
