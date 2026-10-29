@@ -37,6 +37,21 @@ redes**: enseñan el trabajo con un gancho escrito arriba y venden sin decir «c
 en blanco y negro (persona, sudadera, funda, libro). El logo **nunca se mueve en el cuadro**: está en el
 centro, del mismo tamaño, y lo que cambia es el mundo alrededor. Se lee como un parpadeo de marca.
 
+**r19 medido cuadro por cuadro, los 240 (Carlos: «cambia muy rápido, ve cada frame»).** El archivo es
+de 30 cuadros por segundo, así que lo más fino que existe es 0.033 s. Contando la diferencia entre cada
+cuadro y el anterior: **50 imágenes en 8 segundos**, y cada una dura (en cuadros):
+
+```
+2 2 2 2 2 2 2 4 2 2 2 2 2 2 2 2 2 2 · 3 3 3 3 3 3 3 3 4 3 3 3 3 3 3 · 4 4 5 10 5 7 7 7 8 9 9 · 12 14 15 17 22
+```
+
+O sea, **no es «rápido»: es un frenado**. Arranca a 15 imágenes por segundo (2 cuadros cada una) durante
+1.3 s, baja a 10 por segundo (3 cuadros) hasta los 3 s, y luego se va frenando —4, 5, 7, 9, 12, 15,
+17— hasta quedarse 22 cuadros (0.73 s) en la toma de la persona, que es la misma con la que empezó: el
+video cierra donde abrió. Las imágenes van en pares: cada soporte morado y enseguida el mismo en blanco
+y negro, así que el ojo lee «parpadeo de marca» y no «diez fotos». El logo jamás se mueve del centro.
+Para usarlo: la lista de duraciones de arriba se copia tal cual y se pone nuestra M cubo en lo nuestro.
+
 **r21, el foco (2 a 7 s).** El foco cae, rebota dos veces y en cada parada **gira de golpe** (3 cuadros)
 apuntando a otro lado. El haz es un cono morado con orilla suave y estela de movimiento, y **el nombre
 sólo existe dentro del haz**: es una máscara de luz. Sale con un latigazo: el foco se va de lado, entra
