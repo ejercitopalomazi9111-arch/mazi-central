@@ -20,12 +20,13 @@ let gastado = 0;
 for(const l of g.lineas){
   const voz = g.voces[l.voz], texto = (l.dice || l.txt).replace(/\*/g, '');
   const ajustes = { stability: .42, similarity_boost: .8, style: .4, use_speaker_boost: true, ...(g.ajustes?.[l.voz] || {}), ...(l.ajustes || {}) };
-  const firma = crypto.createHash('sha1').update(voz + texto + JSON.stringify(ajustes)).digest('hex');
+  const tono = l.tono ?? g.tono?.[l.voz] ?? 0;                     // semitonos, sólo Piper (para que un personaje suene distinto)
+  const firma = crypto.createHash('sha1').update(voz + texto + JSON.stringify(ajustes) + (tono ? 'tono' + tono : '') + ((l.lento ?? g.lento?.[l.voz]) ? 'lento' + (l.lento ?? g.lento?.[l.voz]) : '')).digest('hex');
   const mp3 = path.join(vd, l.id + '.mp3');
   if((hechas[l.id] !== firma || !fs.existsSync(mp3)) && voz.startsWith('piper:')){
     const wav = mp3.replace(/\.mp3$/, '.wav'), modelo = path.join(PIPER, voz.slice(6) + '.onnx');
     execFileSync('python3.13', ['-m', 'piper', '-m', modelo, '-f', wav, '--length-scale', String(l.lento ?? g.lento?.[l.voz] ?? 1), '--sentence-silence', '0.25'], { input: texto });
-    execFileSync('ffmpeg', ['-v', 'error', '-y', '-i', wav, '-af', 'highpass=f=70,acompressor=threshold=0.12:ratio=2.5:attack=8:release=120,aresample=44100', '-ac', '2', '-b:a', '160k', mp3]);
+    execFileSync('ffmpeg', ['-v', 'error', '-y', '-i', wav, '-af', (tono ? `rubberband=pitch=${Math.pow(2, tono / 12).toFixed(4)}:formant=preserved,` : '') + 'highpass=f=70,acompressor=threshold=0.12:ratio=2.5:attack=8:release=120,aresample=44100', '-ac', '2', '-b:a', '160k', mp3]);
     fs.rmSync(wav); hechas[l.id] = firma; console.log('✓', l.id, l.voz, '(piper)');
   }
   else if(hechas[l.id] !== firma || !fs.existsSync(mp3)){

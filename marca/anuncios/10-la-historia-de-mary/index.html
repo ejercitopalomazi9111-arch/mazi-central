@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Grupo Mazi · La historia de Mary</title>
+<!-- GRACIOSO 10 · ~95 s · 9:16 · cuento narrado al estilo de Historias de Chema: fondo de papel, un
+     narrador y los personajes con su propia voz (Piper, local; el saldo de ElevenLabs se acabó).
+     Explica cómo trabajamos sin decir «contrátanos» hasta el final: Mary contrata a tres que no se
+     hablan entre sí y que dicen «eso no es mío», y luego llegamos nosotros con todo junto y nos
+     quedamos. Mary es INVENTADA y el video lo dice en el segundo 3: no presumimos clientes que no
+     son clientes. La página de su estética, los horarios y los mensajes son de mentira.
+     Música: «Life of Riley», Kevin MacLeod (incompetech.com), CC BY 4.0.
+     node herramientas/video/armar.mjs marca/anuncios/10-la-historia-de-mary/index.html marca/anuncios/salida/10-la-historia-de-mary.mp4 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter+Tight:wght@500;600;800;900&family=Caveat:wght@700&display=block">
+<link rel="stylesheet" href="../comun.css">
+<script>window.listo = new Promise(r => window._listo = r);</script>
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>
+:root{ --tinta:#170A26 }
+#fondo{ background:#F4EEF2 }
+#papel{ background-image:radial-gradient(#17121D14 1.4px, transparent 1.6px); background-size:34px 34px; opacity:.6 }
+#subs{ color:var(--tinta); text-shadow:0 0 18px #F4EEF2, 0 0 4px #F4EEF2 }
+#subs em{ color:#A8264B }
+#subs .quien{ color:#7E1735 }
+.mano{ font-family:"Caveat", cursive; font-weight:700; color:var(--tinta) }
+#portada{ position:absolute; left:80px; right:150px; top:300px; opacity:0 }
+#portada .a{ font:700 52px/1 "Caveat"; color:#A8264B }
+#portada .t{ font:700 190px/.86 "Caveat"; color:var(--tinta); letter-spacing:-.01em }
+#nota{ position:absolute; left:90px; top:760px; padding:22px 30px; background:#FFE98A; transform:rotate(-4deg); font:700 50px/1.05 "Caveat"; color:var(--tinta); box-shadow:0 18px 30px -18px #0006; opacity:0 }
+#oficios{ position:absolute; left:80px; right:150px; top:300px; display:flex; flex-wrap:wrap; gap:18px }
+#oficios div{ display:flex; align-items:center; gap:14px; padding:18px 26px; border-radius:999px; background:#fff; box-shadow:0 14px 30px -16px #17121D66; font:800 42px/1 var(--t); color:var(--tinta); opacity:0 }
+#oficios div.wa{ background:#25D366; color:#fff }
+#chats div{ position:absolute; max-width:520px; padding:22px 28px; border-radius:30px 30px 30px 8px; background:#fff; box-shadow:0 16px 34px -18px #17121D88; font:600 38px/1.15 var(--t); color:var(--tinta); opacity:0; white-space:nowrap }
+#chats div small{ display:block; font:700 22px/1 var(--s); letter-spacing:.12em; color:#25A35A; margin-bottom:8px }
+#contador{ position:absolute; left:760px; top:300px; width:150px; height:150px; border-radius:50%; background:#E2263F; color:#fff; display:grid; place-items:center; font:900 76px/1 var(--t); box-shadow:0 20px 40px -18px #E2263F; opacity:0 }
+.etq{ position:absolute; transform:translateX(-50%); padding:10px 18px; border-radius:14px; background:var(--tinta); color:#F4EEF2; font:800 26px/1 var(--s); letter-spacing:.1em; white-space:nowrap; opacity:0 }
+.post{ position:absolute; transform:translateX(-50%); width:250px; padding:20px 18px; text-align:center; font:700 44px/1 "Caveat"; color:var(--tinta); box-shadow:0 18px 30px -18px #0006; opacity:0 }
+#alerta{ position:absolute; left:80px; right:150px; top:300px; display:flex; align-items:center; gap:22px; padding:28px 34px; border-radius:28px; background:#E2263F; color:#fff; font:800 50px/1.05 var(--t); opacity:0 }
+#herr div{ position:absolute; transform:translate(-50%, -50%); display:grid; justify-items:center; gap:10px; width:220px; padding:24px 10px; border-radius:30px; background:#fff; box-shadow:0 18px 40px -20px #17121D88; font:800 32px/1 var(--t); color:var(--tinta); opacity:0 }
+#herr div i{ display:grid; place-items:center; width:92px; height:92px; border-radius:26px; background:var(--tinta) }
+#lineas{ position:absolute; inset:0 }
+#tiempo{ position:absolute; left:80px; right:150px; top:320px; display:grid; gap:30px; opacity:0 }
+#tiempo .f small{ display:block; font:800 30px/1 var(--s); letter-spacing:.14em; color:#7E1735; margin-bottom:12px }
+#tiempo .b{ height:54px; border-radius:27px; background:#17121D18; overflow:hidden }
+#tiempo .b i{ display:block; height:100%; border-radius:27px; background:linear-gradient(90deg, #AC27FF, #A8264B) }
+#sello{ position:absolute; left:120px; top:640px; padding:18px 30px; border:6px solid #A8264B; border-radius:18px; font:900 64px/1 var(--t); color:#A8264B; letter-spacing:-.02em; transform:rotate(-7deg); opacity:0 }
+#tel{ position:absolute; left:520px; top:420px; width:400px; height:820px; border-radius:58px; background:#17121D; padding:16px; box-shadow:0 40px 80px -30px #17121DAA; opacity:0 }
+#tel .p{ width:100%; height:100%; border-radius:44px; overflow:hidden; background:#fff; font-family:var(--t); color:var(--tinta) }
+#tel .cab{ padding:46px 28px 26px; background:linear-gradient(160deg, #A8264B, #7E1735); color:#fff }
+#tel .cab b{ display:block; font:700 60px/.9 "Caveat" } #tel .cab span{ font:600 22px/1 var(--t); opacity:.85 }
+#tel .fila{ display:flex; justify-content:space-between; padding:16px 28px; border-bottom:2px solid #17121D10; font:600 24px/1.2 var(--t) }
+#tel .fila b{ font-weight:900 }
+#tel .btn{ margin:22px 28px; padding:20px; border-radius:20px; background:#25D366; color:#fff; text-align:center; font:800 26px/1 var(--t) }
+#tel .mapa{ margin:0 28px; height:120px; border-radius:18px; background:repeating-linear-gradient(45deg, #EDE4EA 0 18px, #F7F1F4 18px 36px); display:grid; place-items:center }
+#resp{ position:absolute; left:80px; top:1180px; max-width:620px; padding:24px 30px; border-radius:30px 30px 8px 30px; background:#DCF8C6; box-shadow:0 16px 34px -18px #17121D88; font:600 40px/1.15 var(--t); color:var(--tinta); opacity:0 }
+#preg{ position:absolute; left:80px; top:420px; padding:22px 28px; border-radius:30px 30px 30px 8px; background:#fff; box-shadow:0 16px 34px -18px #17121D88; font:600 40px/1.15 var(--t); color:var(--tinta); opacity:0 }
+#oscuro{ position:absolute; inset:0; background:#170A26; opacity:0 }
+#cierre .sub{ color:#D8CCE4 }
+</style>
+</head>
+<body>
+<div id="fondo" class="capa"></div>
+<div id="papel" class="capa"></div>
+<canvas id="gl" class="capa"></canvas>
+<div id="ui" class="capa">
+  <div id="portada"><div class="a">Una historia de Grupo Mazi</div><div class="t">La historia<br>de Mary</div></div>
+  <div id="nota">Mary es inventada.<br>Su problema, no.</div>
+  <div id="oficios"></div>
+  <div id="chats"></div>
+  <div id="contador">0</div>
+  <div id="etiquetas"></div>
+  <div id="posts"></div>
+  <div id="alerta"></div>
+  <svg id="lineas" viewBox="0 0 1080 1920"></svg>
+  <div id="herr"></div>
+  <div id="tiempo"><div class="f"><small>ENTREGA</small><div class="b"><i id="b1"></i></div></div><div class="f"><small>ACOMPAÑAMIENTO</small><div class="b"><i id="b2"></i></div></div></div>
+  <div id="sello">SIN EXCUSAS</div>
+  <div id="preg">¿Tienes lugar hoy? 🙏</div>
+  <div id="tel"><div class="p"><div class="cab"><b>Estética Mary</b><span>Corte · tinte · uñas</span></div>
+    <div class="fila"><span>Lun a sáb</span><b>10:00 – 19:00</b></div><div class="fila"><span>Corte</span><b>$150</b></div><div class="fila"><span>Tinte</span><b>desde $450</b></div><div class="fila"><span>Uñas</span><b>$250</b></div>
+    <div class="btn">Agendar cita</div><div class="mapa" id="pin"></div></div></div>
+  <div id="resp">Ahí está todo en la página, mi reina 💅<br><small style="font:600 26px/1.4 var(--t);color:#25A35A">estetica-mary · Ver horarios y agendar</small></div>
+  <div id="oscuro"></div>
+  <canvas id="c2" class="capa" width="1080" height="1920"></canvas>
+  <div id="cierre"><div class="wa">WhatsApp <b>442 883 3786</b></div><div class="sub">Lo entregamos rápido… y nos quedamos.</div></div>
+</div>
+<div id="subs"></div>
+<div id="grano"></div>
+<script type="module">
+import { THREE, PAL, W, H, cl, tramo, suave, sale, entra, resorte, mezcla, vida, azar, escena3d, cubo, guion, sonidosVoz, subtitulos, grano } from '../motor.js';
+import { logoVivo } from '../logo3d.js';
+import { cubito, habla, parpadeo, salto } from '../personajes.js';
+import { icono } from '../iconos.js';
+const $ = (s) => document.querySelector(s);
+const G = await guion('.'), L = (id) => G.de(id);
+const l = Object.fromEntries(G.lineas.map(z => [z.id, z]));
+const FIN = l['20'].t1 + 2.6, fx = (n) => `../../../herramientas/video/efectos/${n}.wav`;
+/* ── lo que pasa encima: los mensajes de las clientas ── */
+const CHATS = ['¿Tienes lugar hoy?', '¿Cuánto el tinte?', '¿Dónde quedas?', '¿Abres el domingo?', '¿Haces uñas acrílicas?', '¿Tienes lugar hoy? 🙏', '¿Cuánto el corte?', 'Holaaa', '¿Me mandas la ubicación?', '¿A qué hora cierras?', '¿Aceptas tarjeta?', '¿Tienes lugar mañana?'];
+const tChat = (i) => l['04'].t0 - .6 + i * (l['04'].dur + .5) / CHATS.length;
+window.VIDEO = { w: W, h: H, fps: 30, dur: FIN, musica: { archivo: '/tmp/claude-0/musica/Life_of_Riley.mp3', desde: 0, vol: .22, entrada: .3, fin: 2.5 },
+  sonidos: [...sonidosVoz(G, 1.1), [fx('toque'), l['01'].t0 + .2, .5], [fx('toque'), l['02'].t0 + .7, .4],
+    ...[0, 1, 2, 3].map(i => [fx('toque'), l['03'].t0 + l['03'].dur * (.3 + i * .16), .45]),
+    ...CHATS.map((_, i) => [fx('timbre'), tChat(i), .18]), [fx('whoosh'), l['05'].t0 + .1, .5],
+    ...[0, 1, 2].map(i => [fx('toque'), l['06'].t0 + .9 + i * .25, .55]), [fx('golpe'), l['09'].t0 - .1, .5],
+    ['../../cubo/final/sonidos/caida.wav', l['13'].t0 - .1, .7], ['../../cubo/final/sonidos/golpe.wav', l['13'].t0 + .35, 1],
+    ...[0, 1, 2, 3].map(i => [fx('toque'), l['15'].t0 + l['15'].dur * (.05 + i * .17), .45]), [fx('subida'), l['16'].t0, .35], [fx('golpe'), l['16'].t0 + l['16'].dur * .8, .5],
+    [fx('timbre'), l['17'].t0 + 1.5, .3], [fx('ding'), l['18'].t0 + .2, .45], [fx('toque'), l['19'].t0 + 1, .3]] };
+await Promise.all(['700 80px "Space Grotesk"', '800 60px "Inter Tight"', '600 60px "Inter Tight"', '700 60px "Caveat"'].map(f => document.fonts.load(f)));
+
+/* ── la escena: papel blanco, sombras suaves en el piso ── */
+const E = escena3d($('#gl'), { z: 9 });
+E.r.shadowMap.enabled = true; E.r.shadowMap.type = THREE.PCFSoftShadowMap;
+E.s.environmentIntensity = .9; E.luces.borde.intensity = .6; E.luces.morado.intensity = .8;
+const k = E.luces.llave; k.castShadow = true; k.shadow.mapSize.set(2048, 2048); Object.assign(k.shadow.camera, { left: -4, right: 4, top: 4, bottom: -4, near: .5, far: 30 }); k.shadow.radius = 6; k.position.set(-3, 7, 5);
+const PISO = -1;
+const piso = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.ShadowMaterial({ opacity: .16 })); piso.rotation.x = -Math.PI / 2; piso.position.y = PISO; piso.receiveShadow = true; E.s.add(piso);
+const sombra = (o) => { o.traverse(m => { if(m.isMesh) m.castShadow = true; }); E.s.add(o); return o; };
+const mat = (c, r = .6) => new THREE.MeshStandardMaterial({ color: c, roughness: r });
+/* la estética: la silla con su clienta y el espejo */
+const pon = (m, x, y, z) => { m.position.set(x, y, z); return m; };
+const silla = new THREE.Group();
+silla.add(pon(new THREE.Mesh(new THREE.CylinderGeometry(.2, .26, .08, 32), mat('#2A2A33', .4)), 0, .04, 0));
+silla.add(pon(new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, .34, 16), mat('#9A9AA6', .3)), 0, .22, 0));
+silla.add(pon(new THREE.Mesh(new THREE.BoxGeometry(.66, .12, .56), mat('#7E1735', .5)), 0, .44, 0));
+silla.add(pon(new THREE.Mesh(new THREE.BoxGeometry(.66, .62, .1), mat('#7E1735', .5)), 0, .78, -.26));
+silla.position.set(.62, PISO, -.25); sombra(silla);
+const espejo = new THREE.Group();
+espejo.add(new THREE.Mesh(new THREE.BoxGeometry(.9, 1.3, .06), mat('#17121D', .4)));
+espejo.add(pon(new THREE.Mesh(new THREE.PlaneGeometry(.78, 1.18), new THREE.MeshStandardMaterial({ color: '#CFE3EE', roughness: .08, metalness: .6 })), 0, 0, .032));
+espejo.position.set(.62, .45, -1.2); sombra(espejo);
+const mary = sombra(cubito({ color: '#A8264B', techo: '#FF5C8A', tam: .72 }));
+const clienta = sombra(cubito({ color: '#E9C46A', techo: '#6B4A2B', tam: .52 }));
+const tres = [cubito({ color: '#5AC8FA', lentes: true, tam: .54 }), cubito({ color: '#FF9500', gorra: { color: '#17121D' }, tam: .54 }), cubito({ color: '#8E7CFF', techo: '#25D366', tam: .54 })].map(sombra);
+const NOMBRES = ['LA PÁGINA', 'LAS CITAS', 'LAS REDES'], POSTS = [['#BDE8FF', 'Abrimos<br>9 a 7'], ['#FFD9A8', 'Citas de<br>10 a 6'], ['#E5DCFF', '¡24 HORAS!<br>🔥🔥']];
+const mazi = sombra(cubo(.78)); mazi.userData.filo.material.color.set('#17121D');
+/* ── el texto de encima ── */
+$('#oficios').innerHTML = [['scissors', 'Corta'], ['paintbrush', 'Pinta'], ['sparkles', 'Uñas'], ['message-circle', 'WhatsApp']].map(([i, n], k) => `<div class="${k === 3 ? 'wa' : ''}">${icono(i, k === 3 ? '#fff' : '#A8264B', 2.2, 44)}${n}</div>`).join('');
+azar(5); $('#chats').innerHTML = CHATS.map((c, i) => `<div style="left:${70 + Math.round(azar() * 330)}px;top:${250 + (i % 7) * 140 + Math.round(azar() * 40)}px;transform:rotate(${(azar() - .5) * 8}deg)"><small>CLIENTA ${String(i + 1).padStart(2, '0')}</small>${c}</div>`).join('');
+$('#etiquetas').innerHTML = NOMBRES.map(n => `<div class="etq">${n}</div>`).join('');
+$('#posts').innerHTML = POSTS.map(([c, t]) => `<div class="post" style="background:${c}">${t}</div>`).join('');
+$('#alerta').innerHTML = `${icono('triangle-alert', '#fff', 2.4, 72)}<span>Se cayó la página y nadie agenda</span>`;
+const HERR = [['globe', 'Página', 270, 560], ['calendar', 'Citas', 810, 560], ['package', 'Inventario', 270, 1090], ['camera', 'Fotos', 810, 1090]];
+$('#herr').innerHTML = HERR.map(([i, n, x, y]) => `<div style="left:${x - 30}px;top:${y}px"><i>${icono(i, '#F4EEF2', 2, 52)}</i>${n}</div>`).join('');
+$('#lineas').innerHTML = HERR.map(([, , x, y], i) => HERR.slice(i + 1).map(([, , x2, y2]) => `<line x1="${x - 30}" y1="${y}" x2="${x2 - 30}" y2="${y2}" stroke="#A8264B" stroke-width="6" stroke-linecap="round" stroke-dasharray="14 12"/>`).join('')).join('') + HERR.map(([, , x, y]) => `<line x1="${x - 30}" y1="${y}" x2="510" y2="825" stroke="#AC27FF" stroke-width="7" stroke-linecap="round"/>`).join('');
+$('#pin').innerHTML = icono('map-pin', '#A8264B', 2.4, 56);
+const sub = subtitulos($('#subs'), G), gr = grano($('#grano'), .04), c2 = $('#c2').getContext('2d');
+const aPantalla = (v) => { const p = v.clone().project(E.cam); return [(p.x + 1) / 2 * W, (1 - p.y) / 2 * H]; };
+const en = (el, v, dy = 40) => { el.style.opacity = v; el.style.transform = (el.dataset.base || '') + ` translateY(${(1 - v) * dy}px)`; };
+
+/* las tomas: cámara y a dónde mira, por renglón del guion */
+const TOMAS = [
+  ['01', [-.4, .2, 4.6], [-.4, -.45, 0]], ['03', [0, .55, 7.2], [0, -.3, -.2]], ['04', [-.5, .15, 4.4], [-.5, -.45, 0]], ['05', [-.55, -.25, 2.7], [-.55, -.62, 0]],
+  ['06', [0, .6, 7.6], [0, -.45, .7]], ['08', [0, .45, 6.8], [0, -.5, .8]], ['10', [-.62, -.3, 3.9], [-.62, -.68, 1.2]], ['11', [0, -.3, 3.9], [0, -.68, 1.2]],
+  ['12', [.62, -.3, 3.9], [.62, -.68, 1.2]], ['13', [0, .9, 8], [0, -.3, .6]], ['14', [-.2, .35, 5.6], [-.25, -.5, .5]], ['15', [0, .6, 8.6], [0, -.1, .5]],
+  ['16', [.1, .35, 6.4], [0, -.4, .5]], ['17', [-.75, .05, 4.2], [-.25, -.5, 0]], ['19', [.3, .3, 4.6], [.4, -.45, -.1]], ['20', [0, .6, 8], [0, -.2, 0]]];
+window.pintar = async (t) => {
+  let cP = new THREE.Vector3(...TOMAS[0][1]), cM = new THREE.Vector3(...TOMAS[0][2]);
+  for(let i = 1; i < TOMAS.length; i++){ const [id, p, m] = TOMAS[i], u = suave(tramo(t, l[id].t0 - .55, l[id].t0 - .05)); cP.lerp(new THREE.Vector3(...p), u); cM.lerp(new THREE.Vector3(...m), u); }
+  const tiembla = .05 * vida(t, l['05'].t0, l['05'].t1, .05, .3) + .08 * vida(t, l['13'].t0 + .35, l['13'].t0 + .7, .02, .3);
+  E.cam.position.copy(cP).add(new THREE.Vector3(Math.sin(t * .5) * .04 + Math.sin(t * 83) * tiembla, Math.sin(t * .4) * .03 + Math.cos(t * 71) * tiembla, 0)); E.cam.lookAt(cM);
+
+  /* Mary: aparece de un brinco, se estresa, grita, se alegra */
+  const mj = salto(t, l['01'].t0 + .1, .5, .45), mj2 = salto(t, l['05'].t0, .35, .35), mj3 = salto(t, l['19'].t0 + .4, .3, .4);
+  const s3 = mj.y ? mj : mj2.y ? mj2 : mj3;
+  mary.visible = t >= l['01'].t0 + .1; mary.position.set(-.55, PISO + .36 + s3.y, 0); mary.userData.cuerpo.scale.set(s3.sx, s3.sy, s3.sx);
+  const temblorM = t >= l['04'].t0 + 2 && t < l['05'].t1 ? Math.sin(t * 60) * .012 * tramo(t, l['04'].t0 + 2, l['05'].t0) : 0;
+  mary.position.x += temblorM; mary.rotation.y = t < l['06'].t0 ? .25 + Math.sin(t * 1.1) * .06 : t < l['13'].t0 ? .55 : t < l['17'].t0 ? .45 : .2;
+  const hM = Math.max(habla(t, l['05']), habla(t, l['18']));
+  const cejaM = t >= l['04'].t0 + 1.5 && t < l['06'].t0 ? (t >= l['05'].t0 ? 'enojado' : 'triste') : t >= l['08'].t0 && t < l['13'].t0 ? 'sorpresa' : t >= l['17'].t0 ? 'feliz' : t < l['03'].t0 ? 'feliz' : 'normal';
+  mary.userData.cara({ boca: hM, ojos: cejaM === 'triste' ? .7 : parpadeo(t, .4), ceja: cejaM, mira: t >= l['06'].t0 && t < l['13'].t0 ? [.7, .1] : t >= l['13'].t0 && t < l['17'].t0 ? [.6, .2] : [0, 0], rubor: t >= l['17'].t0 ? .8 : 0 });
+  /* la clienta en la silla; al final se le pinta el techo (el tinte) */
+  clienta.position.set(.62, PISO + .5 + .26, -.2); clienta.rotation.y = -.15; clienta.visible = t < l['06'].t0 - .3 || t >= l['17'].t0 - .3;
+  silla.visible = espejo.visible = clienta.visible;
+  clienta.userData.techo.color.lerpColors(new THREE.Color('#6B4A2B'), new THREE.Color('#AC27FF'), suave(tramo(t, l['19'].t0 + .5, l['19'].t1 + .3)));
+  clienta.userData.cara({ ojos: parpadeo(t, 1.3), ceja: t >= l['19'].t0 + 1 ? 'feliz' : 'normal', mira: [-.5, 0], rubor: t >= l['19'].t0 + 1 ? .7 : 0 });
+  /* los tres contratados: caen en fila, se voltean de espaldas al decir «eso no es mío» y salen volando cuando llegamos */
+  const vuelan = tramo(t, l['13'].t0 + .3, l['13'].t0 + 1.1);
+  tres.forEach((p, i) => {
+    const t0 = l['06'].t0 + .7 + i * .25, u = tramo(t, t0, t0 + .45), sj = salto(t, t0 + .45, .2, .35);
+    p.visible = u > 0 && vuelan < 1;
+    const x0 = -.62 + i * .62;
+    p.position.set(x0 + vuelan * (i - 1 || -.4) * 4, PISO + .27 + (1 - sale(u)) * 4 + sj.y + Math.sin(vuelan * Math.PI) * 1.5, 1.2);
+    p.userData.cuerpo.scale.set(sj.sx, sj.sy, sj.sx);
+    const lin = l[['10', '11', '12'][i]], espalda = suave(tramo(t, lin.t1 - .1, lin.t1 + .35));
+    p.rotation.set(vuelan * 6, mezcla(-.15 + i * .15, Math.PI, espalda) + vuelan * 4, vuelan * 3);
+    p.userData.cara({ boca: habla(t, lin), ojos: parpadeo(t, i * .9), ceja: t >= l['09'].t0 && t < lin.t1 ? 'enojado' : vuelan > 0 ? 'sorpresa' : 'normal', mira: t >= l['08'].t0 && t < l['09'].t0 ? [(i - 1) * -.6, 0] : [0, 0] });
+    const [ex, ey] = aPantalla(new THREE.Vector3(x0, PISO - .02, 1.2)), e = $('#etiquetas').children[i];
+    e.style.left = ex + 'px'; e.style.top = (ey + 14) + 'px'; e.style.opacity = vida(t, l['07'].t0 + l['07'].dur * (.05 + i * .3), l['09'].t0, .25, .3);
+    const [px, py] = aPantalla(new THREE.Vector3(x0, PISO + .62, 1.2)), po = $('#posts').children[i];
+    po.style.left = px + 'px'; po.style.top = (py - 180) + 'px'; const vp = vida(t, l['08'].t0 + l['08'].dur * (.32 + i * .2), l['10'].t0 - .1, .2, .3); po.style.opacity = vp;
+    po.style.transform = `translateX(-50%) rotate(${(i - 1) * 5}deg) scale(${.7 + .3 * resorte(tramo(t, l['08'].t0 + l['08'].dur * (.32 + i * .2), l['08'].t0 + l['08'].dur * (.32 + i * .2) + .5))})`;
+  });
+  /* el cubo de Grupo Mazi: cae donde estaba el de en medio y se queda junto a Mary */
+  const uM = tramo(t, l['13'].t0 - .1, l['13'].t0 + .4), caeM = uM < 1 ? entra(uM) : 1, mj4 = salto(t, l['16'].t0 + l['16'].dur * .8, .25, .4);
+  mazi.visible = t > l['13'].t0 - .1; mazi.position.set(t < l['17'].t0 - .5 ? 0 : mezcla(0, .05, 1), PISO + .39 + (1 - caeM) * 6 + mj4.y, 1);
+  mazi.rotation.set(0, .5 + Math.sin(t * .7) * .1 + (1 - sale(tramo(t, l['13'].t0 + .4, l['13'].t0 + 1))) * .8, 0);
+  mazi.userData.techo.emissiveIntensity = .12 + 1.2 * vida(t, l['13'].t0 + .38, l['13'].t0 + .8, .02, .3);
+  E.pintar();
+
+  /* ── 01-02 · la portada y la nota ── */
+  en($('#portada'), vida(t, .2, l['03'].t0 - .3, .4, .3));
+  const vn = vida(t, l['02'].t0 + .5, l['03'].t0 + .4, .2, .3); $('#nota').style.opacity = vn; $('#nota').style.transform = `rotate(-4deg) scale(${.7 + .3 * resorte(tramo(t, l['02'].t0 + .5, l['02'].t0 + 1))})`;
+  /* 03 · los oficios de Mary */
+  [...$('#oficios').children].forEach((d, i) => { const t0 = l['03'].t0 + l['03'].dur * (.3 + i * .16), u = resorte(tramo(t, t0, t0 + .5)); d.style.opacity = Math.min(1, tramo(t, t0, t0 + .1)) * (1 - tramo(t, l['04'].t0 - .3, l['04'].t0)); d.style.transform = `scale(${.6 + .4 * u})`; });
+  /* 04 · los mensajes que no paran; 05 · Mary explota y se van */
+  const sopla = sale(tramo(t, l['05'].t0 + .1, l['05'].t0 + .7));
+  [...$('#chats').children].forEach((d, i) => { const t0 = tChat(i), u = tramo(t, t0, t0 + .25); d.style.opacity = Math.min(1, u * 3) * (1 - sopla);
+    d.style.translate = `${(i % 2 ? 1 : -1) * sopla * 700}px ${(1 - sale(u)) * 40 - sopla * 300}px`; d.style.scale = String(.8 + .2 * sale(u)); });
+  const nC = CHATS.filter((_, i) => t >= tChat(i)).length; $('#contador').textContent = nC ? Math.min(40, Math.round(nC / CHATS.length * 40 * (t > l['04'].t0 + 4 ? 1 : .6))) : 0;
+  $('#contador').style.opacity = vida(t, tChat(0), l['05'].t0 + .3, .15, .3); $('#contador').style.transform = `scale(${1 + .15 * Math.max(0, Math.sin((t - tChat(0)) * 9))})`;
+  /* 09 · la alerta */
+  en($('#alerta'), vida(t, l['09'].t0 - .1, l['10'].t0 + .2, .2, .3));
+  /* 15 · las herramientas de Grupo Mazi, todas conectadas */
+  [...$('#herr').children].forEach((d, i) => { const t0 = l['15'].t0 + l['15'].dur * (.05 + i * .17), u = resorte(tramo(t, t0, t0 + .5)); d.style.opacity = Math.min(1, tramo(t, t0, t0 + .1)) * (1 - tramo(t, l['16'].t0 - .3, l['16'].t0)); d.style.transform = `translate(-50%, -50%) scale(${.5 + .5 * u})`; });
+  const ul = tramo(t, l['15'].t0 + l['15'].dur * .7, l['15'].t1); $('#lineas').style.opacity = Math.min(ul * 3, 1) * (1 - tramo(t, l['16'].t0 - .3, l['16'].t0));
+  [...$('#lineas').children].forEach(z => z.style.strokeDashoffset = String(-t * 60));
+  /* 16 · entregamos rápido y nos quedamos */
+  en($('#tiempo'), vida(t, l['16'].t0 - .1, l['17'].t0 - .2, .3, .3));
+  $('#b1').style.width = (22 * sale(tramo(t, l['16'].t0 + .2, l['16'].t0 + .9))) + '%'; $('#b2').style.width = (100 * suave(tramo(t, l['16'].t0 + 1.2, l['16'].t0 + l['16'].dur * .7))) + '%';
+  const us = tramo(t, l['16'].t0 + l['16'].dur * .8, l['16'].t0 + l['16'].dur * .8 + .3); $('#sello').style.opacity = Math.min(1, us * 3) * (1 - tramo(t, l['17'].t0 - .3, l['17'].t0)); $('#sello').style.transform = `rotate(-7deg) scale(${1.6 - .6 * sale(us)})`;
+  /* 17-18 · la pregunta de siempre, y la respuesta nueva */
+  en($('#preg'), vida(t, l['17'].t0 + 1.4, l['19'].t0, .25, .3));
+  const vt = vida(t, l['17'].t0 + 2.2, l['19'].t0 + .2, .4, .3); $('#tel').style.opacity = vt; $('#tel').style.transform = `translateY(${(1 - vt) * 120}px) rotate(${3 - 3 * vt}deg)`;
+  en($('#resp'), vida(t, l['18'].t0 + .1, l['19'].t0 + 1.5, .25, .3));
+  /* 20 · se oscurece y sale el logo */
+  const uO = suave(tramo(t, l['20'].t0 - .4, l['20'].t0 + .3)); $('#oscuro').style.opacity = uO; $('#subs').style.color = uO > .5 ? '#F4EEF2' : ''; $('#subs').style.textShadow = uO > .5 ? '0 4px 18px #000' : '';
+  c2.clearRect(0, 0, W, H); logoVivo(c2, { t, desde: l['20'].t0 + .1, cx: W / 2, cy: 820, ancho: 820 });
+  $('#cierre').style.opacity = sale(tramo(t, l['20'].t0 + 1.4, l['20'].t0 + 2));
+  sub(t); gr(t);
+};
+await pintar(0); window._listo();
+</script>
+</body>
+</html>

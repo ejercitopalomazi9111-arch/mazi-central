@@ -58,7 +58,7 @@ export function cubito({ color = '#5A5A67', bigote = false, gorra = null, lentes
     tex.needsUpdate = true;
   };
   g.userData.cara({});
-  g.userData.cuerpo = cuerpoG;
+  g.userData.cuerpo = cuerpoG; g.userData.techo = arriba;           // el techo se puede recolorear (el tinte de la clienta)
   return g;
 }
 

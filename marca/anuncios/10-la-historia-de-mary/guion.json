@@ -1,0 +1,150 @@
+{
+ "titulo": "La historia de Mary",
+ "voces": {
+  "Narra": "piper:es_MX-ald-medium",
+  "Mary": "piper:es_MX-claude-high",
+  "Uno": "piper:es_MX-ald-medium",
+  "Dos": "piper:es_MX-claude-high",
+  "Tres": "piper:es_MX-ald-medium"
+ },
+ "tono": {
+  "Mary": 4,
+  "Uno": -3,
+  "Dos": 3,
+  "Tres": 6
+ },
+ "lento": {
+  "Narra": 0.86,
+  "Mary": 0.92,
+  "Uno": 0.95,
+  "Dos": 0.95,
+  "Tres": 0.95
+ },
+ "lineas": [
+  {
+   "id": "01",
+   "voz": "Narra",
+   "en": 0.6,
+   "txt": "Ésta es la historia de Mary."
+  },
+  {
+   "id": "02",
+   "voz": "Narra",
+   "pausa": 0.2,
+   "txt": "Mary es inventada… *pero su problema, no.*"
+  },
+  {
+   "id": "03",
+   "voz": "Narra",
+   "pausa": 0.6,
+   "txt": "Mary tiene una estética. Corta, pinta, hace uñas… y contesta WhatsApp. *Muuucho* WhatsApp."
+  },
+  {
+   "id": "04",
+   "voz": "Narra",
+   "pausa": 0.3,
+   "txt": "¿Tienes lugar hoy? ¿Cuánto el tinte? ¿Dónde quedas? *Cuarenta veces al día,* con las manos llenas de tinte."
+  },
+  {
+   "id": "05",
+   "voz": "Mary",
+   "pausa": 0.5,
+   "txt": "¡Ya no puedo, necesito ayuda!",
+   "quien": "MARY"
+  },
+  {
+   "id": "06",
+   "voz": "Narra",
+   "pausa": 0.4,
+   "txt": "Así que contrató… *a tres.*"
+  },
+  {
+   "id": "07",
+   "voz": "Narra",
+   "pausa": 0.3,
+   "txt": "Uno le hizo una página, otro le vendió un sistema de citas, y otro le manejaba las redes."
+  },
+  {
+   "id": "08",
+   "voz": "Narra",
+   "pausa": 0.4,
+   "txt": "Ninguno se conocía. La página decía un horario, las citas otro… *y las redes, otro.*"
+  },
+  {
+   "id": "09",
+   "voz": "Narra",
+   "pausa": 0.4,
+   "txt": "Y cuando algo fallaba, los tres decían lo mismo:"
+  },
+  {
+   "id": "10",
+   "voz": "Uno",
+   "pausa": 0.2,
+   "txt": "Eso no es mío.",
+   "quien": "EL DE LA PÁGINA"
+  },
+  {
+   "id": "11",
+   "voz": "Dos",
+   "pausa": 0.05,
+   "txt": "Eso no es mío.",
+   "quien": "EL DE LAS CITAS"
+  },
+  {
+   "id": "12",
+   "voz": "Tres",
+   "pausa": 0.05,
+   "txt": "Eso no es mío.",
+   "quien": "LA DE LAS REDES"
+  },
+  {
+   "id": "13",
+   "voz": "Narra",
+   "pausa": 0.7,
+   "txt": "Ahí llegamos *nosotros.*"
+  },
+  {
+   "id": "14",
+   "voz": "Narra",
+   "pausa": 0.5,
+   "txt": "En Grupo Mazi no hacemos chambitas sueltas: entramos a tu negocio y *armamos todo junto.*"
+  },
+  {
+   "id": "15",
+   "voz": "Narra",
+   "pausa": 0.3,
+   "txt": "La página, las citas, el inventario, las fotos para redes. *Todo hecho por nosotros,* y todo hablándose entre sí."
+  },
+  {
+   "id": "16",
+   "voz": "Narra",
+   "pausa": 0.4,
+   "txt": "Lo entregamos rápido… *y nos quedamos.* Si algo cambia, lo cambiamos. Si algo falla, no hay a quién echarle la culpa: *somos nosotros.*"
+  },
+  {
+   "id": "17",
+   "voz": "Narra",
+   "pausa": 0.5,
+   "txt": "Hoy a Mary le siguen preguntando lo mismo. Pero ahora contesta así:"
+  },
+  {
+   "id": "18",
+   "voz": "Mary",
+   "pausa": 0.2,
+   "txt": "Ahí está todo en la página, mi reina.",
+   "quien": "MARY"
+  },
+  {
+   "id": "19",
+   "voz": "Narra",
+   "pausa": 0.4,
+   "txt": "Y ya tiene las manos libres. *Para el tinte.*"
+  },
+  {
+   "id": "20",
+   "voz": "Narra",
+   "pausa": 0.7,
+   "txt": "Grupo Mazi. Si no existe la herramienta, *se construye la herramienta.*"
+  }
+ ]
+}
