@@ -10,8 +10,14 @@
    Las letras del logo salen de marca/cubo/final/piezas.js, las mismas del logo. */
 import * as THREE from 'three';
 import { RoomEnvironment } from './vendor/environments/RoomEnvironment.js';
+import { HDRLoader } from './vendor/loaders/HDRLoader.js';
+/* LA LUZ DE ESTUDIO: un HDRI de verdad (Poly Haven, «Studio Small 09» de Sergej Majboroda, CC0) en
+   vez de la habitación de mentira de three. Carlos, 29 oct: «aprende a usar bien las texturas e
+   iluminación». Se carga una vez, antes que todo (el await de arriba detiene a quien importe esto). */
+const HDR = await new HDRLoader().loadAsync(new URL('./hdri/studio_small_09_1k.hdr', import.meta.url).href).catch(() => null);
+if(HDR) HDR.mapping = THREE.EquirectangularReflectionMapping;
 import { PIEZAS } from '../cubo/final/piezas.js';
-export { THREE, PIEZAS };
+export { THREE, PIEZAS, HDR };
 
 export const PAL = {
   oscuro: '#170A26', oscuro2: '#241036', negro: '#0B0B0F',
@@ -37,10 +43,10 @@ export function escena3d(canvas, { fov = 30, z = 9 } = {}){
   r.setPixelRatio(1); r.setSize(W, H, false);
   r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.NeutralToneMapping; r.toneMappingExposure = 1;   /* ACES volvía rosa el morado */
   const s = new THREE.Scene();
-  const pm = new THREE.PMREMGenerator(r); s.environment = pm.fromScene(new RoomEnvironment(), .04).texture; s.environmentIntensity = .55;
+  const pm = new THREE.PMREMGenerator(r); s.environment = HDR ? pm.fromEquirectangular(HDR).texture : pm.fromScene(new RoomEnvironment(), .04).texture; s.environmentIntensity = HDR ? .75 : .55;
   const cam = new THREE.PerspectiveCamera(fov, W / H, .1, 200); cam.position.set(0, 0, z);
   s.add(new THREE.HemisphereLight('#E8DDF5', '#2A0E1E', .6));
-  const llave = new THREE.DirectionalLight('#FFFFFF', 2.2); llave.position.set(-4, 6, 6); s.add(llave);
+  const llave = new THREE.DirectionalLight('#FFFFFF', HDR ? 1.7 : 2.2); llave.position.set(-4, 6, 6); s.add(llave);
   const borde = new THREE.DirectionalLight(PAL.vino2, 3.2); borde.position.set(5, 2, -4); s.add(borde);
   const morado = new THREE.PointLight(PAL.techo, 4, 12); morado.position.set(0, 4, 2); s.add(morado);
   return { r, s, cam, luces: { llave, borde, morado }, pintar(){ r.render(s, cam); } };

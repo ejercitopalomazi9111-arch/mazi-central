@@ -6,7 +6,7 @@
      L.colocar(camara)    // pone las letras de frente a la cámara isométrica, junto al cubo
    rutaAFormas(d) sirve para cualquier ruta SVG (M L H V Q C Z absolutas, como las de fontTools). */
 import * as THREE from 'three';
-import { PIEZAS, PAL, logo2d } from './motor.js';
+import { PIEZAS, PAL, logo2d, HDR } from './motor.js';
 import { RoomEnvironment } from './vendor/environments/RoomEnvironment.js';
 
 /* ── rutas SVG → formas de three (con hoyos: la A, la O, la B…) ── */
@@ -120,7 +120,7 @@ function preparar(){
   const lienzo = document.createElement('canvas'); lienzo.width = AN; lienzo.height = AL;
   const r = new THREE.WebGLRenderer({ canvas: lienzo, antialias: true, alpha: true, preserveDrawingBuffer: true });
   r.setPixelRatio(1); r.setSize(AN, AL, false); r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.NeutralToneMapping;
-  const s = new THREE.Scene(), pm = new THREE.PMREMGenerator(r); s.environment = pm.fromScene(new RoomEnvironment(), .04).texture; s.environmentIntensity = .55;
+  const s = new THREE.Scene(), pm = new THREE.PMREMGenerator(r); s.environment = HDR ? pm.fromEquirectangular(HDR).texture : pm.fromScene(new RoomEnvironment(), .04).texture; s.environmentIntensity = HDR ? .75 : .55;
   s.add(new THREE.HemisphereLight('#E8DDF5', '#2A0E1E', .6)); const k = new THREE.DirectionalLight('#FFFFFF', 2); k.position.set(-4, 6, 6); s.add(k);
   const b = new THREE.DirectionalLight(PAL.vino2, 1.4); b.position.set(5, 2, -4); s.add(b);
   const cam = new THREE.PerspectiveCamera(FOV, AN / AL, .1, 400), L = logo3d(); s.add(L.grupo);
