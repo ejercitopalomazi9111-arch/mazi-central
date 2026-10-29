@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Grupo Mazi · Al ritmo</title>
+<!-- MOTION GRAPHICS 12 · ~30 s · 9:16 · SIN VOZ, el «más acá»: un corte por golpe de la canción
+     (115 por minuto: un golpe cada 0.52 s, el primero en 0.52; medido de la canción), letras que
+     llenan la pantalla, colores que se voltean (oscuro, vino, claro), el cubo girando y el trabajo
+     real en el teléfono. Carlos, 29 de octubre: «motion graphics… formales, empresariales y más
+     acá jajaja». Sólo lo confirmado: los servicios, que lo hacemos nosotros, desde Querétaro.
+     Música: «Funky Chunk», Kevin MacLeod (incompetech.com), CC BY 4.0.
+     node herramientas/video/armar.mjs marca/anuncios/12-al-ritmo/index.html marca/anuncios/salida/12-al-ritmo.mp4 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter+Tight:wght@600;800;900&display=block">
+<link rel="stylesheet" href="../comun.css">
+<script>window.listo = new Promise(r => window._listo = r);</script>
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>
+#fondo{ transition:none }
+#franja{ position:absolute; left:-200px; right:-200px; top:780px; height:420px; overflow:hidden; opacity:0 }
+#franja div{ position:absolute; top:0; white-space:nowrap; font:700 360px/1.12 "Space Grotesk"; letter-spacing:-.06em; text-transform:uppercase }
+#palabra{ position:absolute; left:70px; top:300px; font:700 260px/.86 "Space Grotesk"; letter-spacing:-.065em; text-transform:uppercase; white-space:nowrap }
+#etq{ position:absolute; left:80px; top:210px; padding:12px 22px; border-radius:99px; font:700 26px/1 "Space Grotesk"; letter-spacing:.18em; text-transform:uppercase; opacity:0 }
+#cuenta{ position:absolute; right:150px; top:222px; font:700 26px/1 "Space Grotesk"; letter-spacing:.18em; opacity:0 }
+#cierre .sub{ color:#C9BCD0 }
+</style>
+</head>
+<body>
+<div id="fondo" class="capa"></div>
+<div id="ui0" class="capa"><div id="franja"><div></div></div></div>
+<canvas id="gl" class="capa"></canvas>
+<div id="ui" class="capa">
+  <div id="etq"></div><div id="cuenta"></div>
+  <div id="palabra"></div>
+  <canvas id="c2" class="capa" width="1080" height="1920"></canvas>
+  <div id="cierre"><div class="wa">WhatsApp <b>442 883 3786</b></div><div class="sub">Desde Querétaro · grupomazi.oficial@gmail.com</div></div>
+</div>
+<div id="grano"></div>
+<script type="module">
+import { THREE, PAL, W, H, cl, tramo, suave, sale, entra, mezcla, vida, escena3d, telefono, laptop, Toma, grano } from '../motor.js';
+import { piezasCubo, logoVivo } from '../logo3d.js';
+const $ = (s) => document.querySelector(s);
+const B = (k) => .52 + .52 * k;                                         // el golpe k
+const O = '#170A26', V = '#7E1735', V2 = '#A8264B', CL = '#F4EEF2', RO = '#FF8FB1';
+/* el guion visual: [golpe en que entra, palabra, fondo, letra, qué se ve atrás] */
+const PLAN = [
+  [0, '¿Tu', O, CL], [1, 'negocio', V, CL], [2, 'sigue', CL, O], [3, 'en una<br>libreta?', O, RO],
+  [5, 'Lo<br>pasamos<br>a…', V, CL],
+  [7, 'Página', O, CL, '', 'tel', 'smileys-tel', 'Web'], [9, 'App', V, CL, '', 'tel', 'fadori-tel', 'Software'], [11, 'Sistema', CL, O, '', 'lap', 'district-pc', 'Gestión'],
+  [13, 'Video', O, CL, '', 'tel', 'smileys-basica', 'Video y foto'], [15, 'Marca', V, CL, '', 'cubo', '', 'Branding'], [17, 'Redes', CL, O, '', 'tel', 'district-tel', 'Marketing'],
+  [19, 'Todo', O, CL], [20, 'hecho', V, CL], [21, 'por', CL, O], [22, 'nosotros.', O, RO],
+  [24, 'Sin<br>plantillas.', V, CL], [26, 'Desde<br>Querétaro.', CL, O],
+  [28, 'Si no<br>existe la<br>herramienta…', O, CL], [30, 'se<br>construye.', V, CL],
+  [33, '', O, CL]];
+const FIN = B(33) + 3.2, fx = (n) => `../../../herramientas/video/efectos/${n}.wav`;
+window.VIDEO = { w: W, h: H, fps: 30, dur: FIN, musica: { archivo: '/tmp/claude-0/musica/Funky_Chunk.mp3', desde: 0, vol: .9, entrada: .02, fin: 2.4 },
+  sonidos: [...PLAN.filter(p => p[1]).map(p => [fx('toque'), B(p[0]), .22]), [fx('whoosh'), B(7) - .12, .35], [fx('whoosh'), B(19) - .12, .35], [fx('subida'), B(28), .3]] };
+await Promise.all(['700 80px "Space Grotesk"', '800 60px "Inter Tight"'].map(f => document.fonts.load(f)));
+/* la escena: el teléfono, la laptop y el cubo partido */
+const E = escena3d($('#gl'), { fov: 26, z: 9 }); E.luces.borde.intensity = 2;
+const tomas = {}; for(const n of ['smileys-tel', 'fadori-tel', 'district-pc', 'smileys-basica', 'district-tel']) tomas[n] = new Toma(n, { desde: n === 'fadori-tel' ? 2 : n === 'district-pc' ? 2.5 : 0, vel: 1.2 });
+const tel = telefono(tomas['smileys-tel'].tex), lap = laptop(tomas['district-pc'].tex); E.s.add(tel, lap);
+const { m, cuna } = piezasCubo(), cubo = new THREE.Group(); cubo.add(m, cuna); E.s.add(cubo);
+const c2 = $('#c2').getContext('2d'), gr = grano($('#grano'), .05);
+const poner = (el, html) => { if(el.dataset.h !== html){ el.innerHTML = html; el.dataset.h = html; } };
+const golpeDe = (t) => Math.floor((t - .52) / .52);
+
+window.pintar = async (t) => {
+  let k = 0; for(let i = 0; i < PLAN.length; i++) if(t >= B(PLAN[i][0]) - .02) k = i;
+  const p = PLAN[k], t0 = B(p[0]), u = t - t0, ini = t < B(0) - .02;
+  const [, txt, bg, ink, cls, cosa, toma, etq] = p;
+  $('#fondo').style.background = ini ? O : bg;
+  /* la palabra: entra de golpe (grande y se asienta) y late con cada golpe */
+  if($('#palabra').dataset.h !== (ini ? '' : txt)){ poner($('#palabra'), ini ? '' : txt);
+    /* que la línea más larga quepa en 860 px (deja libre la orilla derecha de la app) */
+    const el = $('#palabra'); el.style.transform = 'none'; el.style.fontSize = (cosa ? 200 : 300) + 'px'; const w = el.scrollWidth; if(w > 860) el.style.fontSize = Math.floor((cosa ? 200 : 300) * 860 / w) + 'px'; }
+  const late = 1 + .035 * Math.max(0, 1 - ((t - .52) % .52) / .18);
+  const pega = sale(tramo(u, 0, .16));
+  $('#palabra').style.color = ink; $('#palabra').style.top = (cosa ? 310 : 480) + 'px';
+  $('#palabra').style.transform = `scale(${(1.25 - .25 * pega) * late}) rotate(${(1 - pega) * -4}deg)`; $('#palabra').style.transformOrigin = '0 50%';
+  $('#palabra').style.opacity = t >= B(33) - .02 ? 0 : 1;
+  /* la franja de atrás: la palabra repetida corriendo de lado */
+  const conF = !ini && t < B(33) - .02; $('#franja').style.opacity = cosa ? .12 : .07; $('#franja').style.top = cosa ? '780px' : '1250px'; $('#franja div').style.color = ink;
+  poner($('#franja div'), conF ? (txt.replace(/<br>/g, ' ') + ' · ').repeat(6) : '');
+  $('#franja div').style.transform = `translateX(${-((t * 380) % 1800)}px)`;
+  /* la etiqueta del servicio y la cuenta */
+  poner($('#etq'), etq || ''); $('#etq').style.opacity = etq ? sale(tramo(u, .05, .25)) : 0; $('#etq').style.background = ink; $('#etq').style.color = bg;
+  const ns = ['Web', 'Software', 'Gestión', 'Video y foto', 'Branding', 'Marketing'].indexOf(etq);
+  poner($('#cuenta'), ns >= 0 ? `0${ns + 1} / 06` : ''); $('#cuenta').style.opacity = ns >= 0 ? 1 : 0; $('#cuenta').style.color = ink;
+  /* atrás: el trabajo real o el cubo, entrando con un giro por golpe */
+  tel.visible = cosa === 'tel'; lap.visible = cosa === 'lap'; cubo.visible = cosa === 'cubo';
+  const giro = sale(tramo(u, 0, .35)), vaiven = Math.sin(t * Math.PI / .52) * .04;
+  if(cosa === 'tel'){ const tm = tomas[toma]; tel.userData.pantalla.material.map = tm.tex; tel.userData.pantalla.material.needsUpdate = true; await tm.en(u + (toma === 'smileys-tel' ? 3 : 0));
+    tel.position.set(.55, -1.05 + (1 - giro) * -3, 0); tel.rotation.set(-.08, -.35 + (1 - giro) * 1.6 + vaiven, .06); tel.scale.setScalar(1.25); }
+  if(cosa === 'lap'){ await tomas[toma].en(u); lap.position.set(.2, -1.45 + (1 - giro) * -3, 0); lap.rotation.set(.35, -.3 + (1 - giro) * 1.2 + vaiven, 0); lap.scale.setScalar(.95); }
+  if(cubo.visible){ const final = k >= 19, abre = cosa === 'cubo' ? Math.sin(Math.PI * tramo(u, .2, .9)) ** 2 : 0;
+    cuna.position.set(abre * .6, 0, abre * .6); m.position.y = abre * .4;
+    cubo.scale.setScalar(final ? .55 : 1.5); cubo.position.set(final ? 1.05 : .2, final ? -2.3 : -1.1 + (1 - giro) * -3, 0);
+    cubo.rotation.set(.5, t * 1.6, .2); }
+  E.cam.position.set(Math.sin(t * .8) * .15, 0, 9); E.cam.lookAt(0, -.4, 0); E.pintar();
+  /* el cierre: el logo armándose */
+  c2.clearRect(0, 0, W, H); logoVivo(c2, { t, desde: B(33) + .05, cx: W / 2, cy: 820, ancho: 820 });
+  $('#cierre').style.opacity = sale(tramo(t, B(33) + 1.4, B(33) + 2));
+  gr(t);
+};
+await pintar(0); window._listo();
+</script>
+</body>
+</html>
