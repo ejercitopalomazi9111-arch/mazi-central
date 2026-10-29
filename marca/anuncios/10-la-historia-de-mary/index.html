@@ -52,8 +52,8 @@
 #tel .fila b{ font-weight:900 }
 #tel .btn{ margin:22px 28px; padding:20px; border-radius:20px; background:#25D366; color:#fff; text-align:center; font:800 26px/1 var(--t) }
 #tel .mapa{ margin:0 28px; height:120px; border-radius:18px; background:repeating-linear-gradient(45deg, #EDE4EA 0 18px, #F7F1F4 18px 36px); display:grid; place-items:center }
-#resp{ position:absolute; left:80px; top:1180px; max-width:620px; padding:24px 30px; border-radius:30px 30px 8px 30px; background:#DCF8C6; box-shadow:0 16px 34px -18px #17121D88; font:600 40px/1.15 var(--t); color:var(--tinta); opacity:0 }
-#preg{ position:absolute; left:80px; top:420px; padding:22px 28px; border-radius:30px 30px 30px 8px; background:#fff; box-shadow:0 16px 34px -18px #17121D88; font:600 40px/1.15 var(--t); color:var(--tinta); opacity:0 }
+#resp{ position:absolute; left:80px; top:1180px; max-width:470px; padding:24px 30px; border-radius:30px 30px 8px 30px; background:#DCF8C6; box-shadow:0 16px 34px -18px #17121D88; font:600 40px/1.15 var(--t); color:var(--tinta); opacity:0 }
+#preg{ position:absolute; left:80px; top:300px; padding:22px 28px; border-radius:30px 30px 30px 8px; background:#fff; box-shadow:0 16px 34px -18px #17121D88; font:600 40px/1.15 var(--t); color:var(--tinta); opacity:0 }
 #oscuro{ position:absolute; inset:0; background:#170A26; opacity:0 }
 #cierre .sub{ color:#D8CCE4 }
 </style>
@@ -133,7 +133,7 @@ const mary = sombra(cubito({ color: '#A8264B', techo: '#FF5C8A', tam: .72 }));
 const clienta = sombra(cubito({ color: '#E9C46A', techo: '#6B4A2B', tam: .52 }));
 const tres = [cubito({ color: '#5AC8FA', lentes: true, tam: .54 }), cubito({ color: '#FF9500', gorra: { color: '#17121D' }, tam: .54 }), cubito({ color: '#8E7CFF', techo: '#25D366', tam: .54 })].map(sombra);
 const NOMBRES = ['LA PÁGINA', 'LAS CITAS', 'LAS REDES'], POSTS = [['#BDE8FF', 'Abrimos<br>9 a 7'], ['#FFD9A8', 'Citas de<br>10 a 6'], ['#E5DCFF', '¡24 HORAS!<br>🔥🔥']];
-const mazi = sombra(cubo(.78)); mazi.userData.filo.material.color.set('#17121D');
+const mazi = sombra(cubo(.62)); mazi.userData.filo.material.color.set('#17121D');
 /* ── el texto de encima ── */
 $('#oficios').innerHTML = [['scissors', 'Corta'], ['paintbrush', 'Pinta'], ['sparkles', 'Uñas'], ['message-circle', 'WhatsApp']].map(([i, n], k) => `<div class="${k === 3 ? 'wa' : ''}">${icono(i, k === 3 ? '#fff' : '#A8264B', 2.2, 44)}${n}</div>`).join('');
 azar(5); $('#chats').innerHTML = CHATS.map((c, i) => `<div style="left:${70 + Math.round(azar() * 330)}px;top:${250 + (i % 7) * 140 + Math.round(azar() * 40)}px;transform:rotate(${(azar() - .5) * 8}deg)"><small>CLIENTA ${String(i + 1).padStart(2, '0')}</small>${c}</div>`).join('');
@@ -151,7 +151,7 @@ const en = (el, v, dy = 40) => { el.style.opacity = v; el.style.transform = (el.
 /* las tomas: cámara y a dónde mira, por renglón del guion */
 const TOMAS = [
   ['01', [-.4, .2, 4.6], [-.4, -.45, 0]], ['03', [0, .55, 7.2], [0, -.3, -.2]], ['04', [-.5, .15, 4.4], [-.5, -.45, 0]], ['05', [-.55, -.25, 2.7], [-.55, -.62, 0]],
-  ['06', [0, .6, 7.6], [0, -.45, .7]], ['08', [0, .45, 6.8], [0, -.5, .8]], ['10', [-.62, -.3, 3.9], [-.62, -.68, 1.2]], ['11', [0, -.3, 3.9], [0, -.68, 1.2]],
+  ['06', [0, .45, 7.6], [0, -.8, .7]], ['08', [0, .35, 6.8], [0, -.82, .8]], ['10', [-.62, -.3, 3.9], [-.62, -.68, 1.2]], ['11', [0, -.3, 3.9], [0, -.68, 1.2]],
   ['12', [.62, -.3, 3.9], [.62, -.68, 1.2]], ['13', [0, .9, 8], [0, -.3, .6]], ['14', [-.2, .35, 5.6], [-.25, -.5, .5]], ['15', [0, .6, 8.6], [0, -.1, .5]],
   ['16', [.1, .35, 6.4], [0, -.4, .5]], ['17', [-.75, .05, 4.2], [-.25, -.5, 0]], ['19', [.3, .3, 4.6], [.4, -.45, -.1]], ['20', [0, .6, 8], [0, -.2, 0]]];
 window.pintar = async (t) => {
@@ -193,7 +193,8 @@ window.pintar = async (t) => {
   });
   /* el cubo de Grupo Mazi: cae donde estaba el de en medio y se queda junto a Mary */
   const uM = tramo(t, l['13'].t0 - .1, l['13'].t0 + .4), caeM = uM < 1 ? entra(uM) : 1, mj4 = salto(t, l['16'].t0 + l['16'].dur * .8, .25, .4);
-  mazi.visible = t > l['13'].t0 - .1; mazi.position.set(t < l['17'].t0 - .5 ? 0 : mezcla(0, .05, 1), PISO + .39 + (1 - caeM) * 6 + mj4.y, 1);
+  mazi.visible = t > l['13'].t0 - .1; const aLado = suave(tramo(t, l['14'].t0 - .3, l['14'].t0 + .3)), seVa = sale(tramo(t, l['17'].t0 - .6, l['17'].t0)), mj5 = salto(t, l['17'].t0 - .6, .4, .6);
+  mazi.position.set(mezcla(mezcla(0, .35, aLado), -1.35, seVa), PISO + .31 + (1 - caeM) * 6 + mj4.y + mj5.y, mezcla(mezcla(1, .7, aLado), .2, seVa));
   mazi.rotation.set(0, .5 + Math.sin(t * .7) * .1 + (1 - sale(tramo(t, l['13'].t0 + .4, l['13'].t0 + 1))) * .8, 0);
   mazi.userData.techo.emissiveIntensity = .12 + 1.2 * vida(t, l['13'].t0 + .38, l['13'].t0 + .8, .02, .3);
   E.pintar();
