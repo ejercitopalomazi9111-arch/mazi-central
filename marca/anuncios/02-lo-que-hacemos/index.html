@@ -14,7 +14,7 @@
 <script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
 <style>
 #cab{ position:absolute; left:80px; right:150px; top:240px }
-#cab .num{ font:700 40px/1 var(--t); color:#FF5C8A; letter-spacing:.08em }
+#cab .num{ font:700 40px/1 var(--t); color:#B44BFF; letter-spacing:.08em }
 #cab .nom{ margin-top:10px; font:700 104px/.92 var(--t); letter-spacing:-.045em; text-transform:uppercase }
 .post{ position:absolute; width:330px; height:470px; border-radius:26px; overflow:hidden; background:#fff; box-shadow:0 40px 80px -30px #000; color:#111 }
 .post .barra{ height:56px; display:flex; align-items:center; gap:12px; padding:0 16px; font:800 20px/1 var(--s) }
@@ -74,7 +74,7 @@ async function cara(n, ic, nombre){
   const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d');
   const g = x.createLinearGradient(0, 0, 512, 512); g.addColorStop(0, '#3E3448'); g.addColorStop(1, '#231A2E'); x.fillStyle = g; x.fillRect(0, 0, 512, 512);
   x.strokeStyle = '#AC27FF'; x.lineWidth = 10; x.strokeRect(5, 5, 502, 502);
-  x.fillStyle = '#FF5C8A'; x.font = '700 54px "Space Grotesk"'; x.fillText('0' + n, 40, 86);
+  x.fillStyle = '#B44BFF'; x.font = '700 54px "Space Grotesk"'; x.fillText('0' + n, 40, 86);
   const img = new Image(); img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(icono(ic, '#F4EEF2', 1.6, 230)); await img.decode(); x.drawImage(img, 141, 120, 230, 230);
   x.fillStyle = '#F4EEF2'; x.font = '700 46px "Space Grotesk"'; x.textAlign = 'center';
   const pal = nombre.split(' '), r1 = pal.length > 2 ? pal.slice(0, 2).join(' ') : nombre, r2 = pal.length > 2 ? pal.slice(2).join(' ') : '';

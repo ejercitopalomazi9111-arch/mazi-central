@@ -17,7 +17,7 @@
 .rol .ic{ display:grid; place-items:center; width:104px; height:104px; margin:0 auto 14px; border-radius:34px; background:#2A1A3A; box-shadow:0 20px 40px -18px #000 }
 #datos{ position:absolute; left:80px; right:150px; top:620px; display:grid; gap:24px; opacity:0 }
 #datos div{ display:flex; gap:22px; align-items:center; padding:30px 34px; border-radius:28px; background:#2A1A3A; font:700 46px/1.1 var(--t); letter-spacing:-.02em }
-#datos small{ display:block; font:700 26px/1 var(--s); letter-spacing:.16em; color:#FF8FB1; margin-bottom:10px }
+#datos small{ display:block; font:700 26px/1 var(--s); letter-spacing:.16em; color:#C77DFF; margin-bottom:10px }
 #datos div.correo{ font-size:38px }
 </style>
 </head>
@@ -44,14 +44,14 @@ window.VIDEO = { w: W, h: H, fps: 30, dur: FIN, musica: { archivo: '/tmp/claude-
   sonidos: [...sonidosVoz(G, 1.15), [fx('whoosh'), L('03').t0 - .3, .5], ...[0, 1, 2, 3, 4].map(i => [fx('toque'), L('03').t0 + L('03').dur * i / 5, .4]), [fx('subida'), L('06').t0 + L('06').dur * .55, .45]] };
 await Promise.all(['700 80px "Space Grotesk"', '800 60px "Inter Tight"'].map(f => document.fonts.load(f)));
 const E = escena3d($('#gl'));
-const ROLES = [['Fotógrafos', 'camera', '#5AC8FA', { lentes: true }], ['Editores', 'video', '#FF9500', { gorra: { color: '#17121D', atras: true } }], ['Diseñadores', 'pen-tool', '#FF5C8A', {}],
+const ROLES = [['Fotógrafos', 'camera', '#5AC8FA', { lentes: true }], ['Editores', 'video', '#FF9500', { gorra: { color: '#17121D', atras: true } }], ['Diseñadores', 'pen-tool', '#B44BFF', {}],
   ['Ilustradores', 'paintbrush', '#25D366', { gorra: { color: '#AC27FF' } }], ['Programadores', 'code-xml', '#8E7CFF', { lentes: true }]];
 const cubos = ROLES.map(([, , c, extra]) => { const k = cubito({ color: c, tam: .36, ...extra }); E.s.add(k); return k; });
 const mazi = cubo(.8); E.s.add(mazi);
 const sub = subtitulos($('#subs'), G), gr = grano($('#grano'), .05), c2 = $('#c2').getContext('2d');
 const poner = (el, html) => { if(el.dataset.h !== html){ el.innerHTML = html; el.dataset.h = html; } };
 $('#roles').innerHTML = ROLES.map(([n, ic]) => `<div class="rol"><div class="ic">${icono(ic, '#F4EEF2', 1.8, 64)}</div>${n}</div>`).join('');
-$('#datos').innerHTML = `<div>${icono('message-circle', '#25D366', 2.2, 64)}<span><small>WHATSAPP</small>442 883 3786</span></div><div class="correo">${icono('send', '#FF8FB1', 2.2, 60)}<span><small>CORREO</small>grupomazi.oficial@gmail.com</span></div>`;
+$('#datos').innerHTML = `<div>${icono('message-circle', '#25D366', 2.2, 64)}<span><small>WHATSAPP</small>442 883 3786</span></div><div class="correo">${icono('send', '#C77DFF', 2.2, 60)}<span><small>CORREO</small>grupomazi.oficial@gmail.com</span></div>`;
 const aPantalla = (v) => { const p = v.clone().project(E.cam); return [(p.x + 1) / 2 * W, (1 - p.y) / 2 * H]; };
 
 window.pintar = async (t) => {

@@ -11,7 +11,7 @@ html, body{ width:1080px; height:1920px; overflow:hidden; background:var(--oscur
 /* títulos grandes: Space Grotesk, apretados, en mayúsculas; .v = vino claro */
 .grande{ position:absolute; left:80px; right:150px; top:250px; font:700 128px/0.92 var(--t); letter-spacing:-.045em; text-transform:uppercase }
 .grande span{ display:block; will-change:transform }
-.grande .v{ color:#FF5C8A } .grande .xl{ font-size:200px } .grande .m{ font-size:104px }
+.grande .v{ color:#B44BFF } .grande .xl{ font-size:200px } .grande .m{ font-size:104px }
 
 /* las palabras que acompañan a los aparatos */
 #palabras{ position:absolute; left:80px; width:560px; top:250px; display:flex; flex-wrap:wrap; gap:14px 18px }
@@ -21,7 +21,7 @@ html, body{ width:1080px; height:1920px; overflow:hidden; background:var(--oscur
 #subs{ position:absolute; left:50%; top:1345px; width:880px; z-index:10; text-align:center; font:800 58px/1.12 var(--s); letter-spacing:-.01em;
   color:#fff; text-shadow:0 3px 0 #0008, 0 0 24px #000c; -webkit-text-stroke:1.5px #00000055; transform-origin:50% 50% }
 #subs em{ font-style:normal; color:#D9A6FF }
-#subs .quien{ display:block; font:700 30px/1 var(--t); letter-spacing:.16em; text-transform:uppercase; color:#FF8FB1; margin-bottom:10px }
+#subs .quien{ display:block; font:700 30px/1 var(--t); letter-spacing:.16em; text-transform:uppercase; color:#C77DFF; margin-bottom:10px }
 
 /* el cierre */
 #cierre{ position:absolute; left:0; right:0; top:1080px; text-align:center; opacity:0 }

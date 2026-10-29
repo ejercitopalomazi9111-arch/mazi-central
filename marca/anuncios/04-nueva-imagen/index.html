@@ -5,6 +5,7 @@
 <title>Grupo Mazi · Nueva imagen</title>
 <!-- ANUNCIO 04 · ~40 s · 9:16 · voz Matilda. El cambio de logo, de letra y de colores, en 3D. Carlos:
      «presentando el cambio de logo y de colores a morado oscuro, claro y vino, priorizando el oscuro y
+     (el «claro» es el MORADO claro del techo del cubo, #AC27FF: lo aclaró el 29 de octubre)
      el vino» y «métele más dinamismo al logo, modelos 3D y así para presentarlos, lo mismo con la
      muestra de las letras». La paloma se deshace en cubitos; la cuña y la M caen y se vuelven el cubo
      (en 3D, partido de verdad: logo3d.js); llegan las letras; la letra de la casa en 3D; los colores
@@ -21,22 +22,22 @@
 #paloma{ position:absolute; left:50%; top:700px; width:760px; margin-left:-380px; opacity:0 }
 #paloma-et{ position:absolute; left:0; right:0; top:1180px; text-align:center; font:700 34px/1 var(--t); letter-spacing:.2em; color:#B9AEC4; opacity:0 }
 #gl.borroso{ filter:blur(14px) }
-#etiqueta{ position:absolute; left:80px; right:150px; top:1290px; font:700 30px/1.2 var(--s); letter-spacing:.18em; color:#FF8FB1; text-transform:uppercase; opacity:0 }
+#etiqueta{ position:absolute; left:80px; right:150px; top:1290px; font:700 30px/1.2 var(--s); letter-spacing:.18em; color:#C77DFF; text-transform:uppercase; opacity:0 }
 #etiqueta b{ display:block; margin-top:10px; font:700 76px/1 var(--t); letter-spacing:-.03em; color:#F4EEF2; text-transform:none }
 #muestra{ position:absolute; left:0; right:0; top:1390px; height:110px; overflow:hidden; opacity:0 }
 #muestra div{ position:absolute; white-space:nowrap; font:700 96px/1 "Space Grotesk"; letter-spacing:-.02em; color:#F4EEF2 }
-#muestra div.b{ top:0; color:#FF5C8A }
+#muestra div.b{ top:0; color:#B44BFF }
 #colores{ position:absolute; left:80px; right:150px; top:250px; display:grid; gap:22px }
 #colores div{ display:flex; align-items:center; gap:26px; opacity:0 }
 #colores i{ width:96px; height:96px; border-radius:22px; box-shadow:inset 0 0 0 3px #ffffff30, 0 18px 40px -16px #000 }
 #colores span{ font:800 60px/1 var(--t); letter-spacing:-.03em; text-transform:uppercase }
 #colores small{ display:block; margin-top:8px; font:500 32px/1 ui-monospace, Menlo, monospace; color:#D8CCE4 }
 #lema{ position:absolute; left:80px; right:150px; top:1060px; font:700 92px/1 var(--t); letter-spacing:-.04em; text-transform:uppercase }
-#lema span{ display:block } #lema .v{ color:#FF5C8A }
+#lema span{ display:block } #lema .v{ color:#B44BFF }
 #tira{ position:absolute; left:80px; right:150px; height:26px; display:flex; border-radius:13px; overflow:hidden; opacity:0 }
 #tira i{ display:block; height:100% }
 #creditos{ position:absolute; left:80px; right:150px; top:880px; font:500 30px/1.45 var(--t); color:#D8CCE4; opacity:0 }
-#creditos h3{ margin:0 0 18px; font:700 26px/1 var(--s); letter-spacing:.2em; color:#FF8FB1 }
+#creditos h3{ margin:0 0 18px; font:700 26px/1 var(--s); letter-spacing:.2em; color:#C77DFF }
 #creditos p{ margin:0 0 18px } #creditos b{ color:#F4EEF2 }
 #destello{ position:absolute; inset:0; background:#F4EEF2; opacity:0; z-index:6 }
 </style>
@@ -54,10 +55,10 @@
   <div id="colores">
     <div><i style="background:#170A26"></i><span>Morado oscuro<small>#170A26</small></span></div>
     <div><i style="background:#7E1735"></i><span>Vino<small>#7E1735</small></span></div>
-    <div><i style="background:#F4EEF2"></i><span>Claro<small>#F4EEF2</small></span></div>
+    <div><i style="background:#AC27FF"></i><span>Morado claro<small>#AC27FF</small></span></div>
   </div>
   <div id="lema"></div>
-  <div id="tira"><i style="flex:52;background:#170A26;box-shadow:inset 0 0 0 2px #ffffff22"></i><i style="flex:32;background:#7E1735"></i><i style="flex:16;background:#F4EEF2"></i></div>
+  <div id="tira"><i style="flex:52;background:#170A26;box-shadow:inset 0 0 0 2px #ffffff22"></i><i style="flex:32;background:#7E1735"></i><i style="flex:16;background:#AC27FF"></i></div>
   <div id="creditos">
     <h3>CRÉDITOS</h3>
     <p><b>Modelos 3D:</b> Poly Haven (CC0) · megáfono de Ethan Simon-Law, cámara de James Ray Cock y Jenelle van Heerden, termo de PierreB3D y caja de Rahul Chaudhary.</p>
@@ -133,7 +134,7 @@ ABC.forEach((ch, i) => { const m = glifo(ch, i % 7 === 3 ? matMorado : i % 5 ===
 const cuboColor = (c, tam) => { const g = new THREE.Group(), caja = new THREE.BoxGeometry(tam, tam, tam);
   g.add(new THREE.Mesh(caja, new THREE.MeshStandardMaterial({ color: c, roughness: .38, metalness: .05, emissive: c, emissiveIntensity: .12 })));
   g.add(new THREE.LineSegments(new THREE.EdgesGeometry(caja), new THREE.LineBasicMaterial({ color: '#E9DDF7', transparent: true, opacity: .35 }))); g.userData.tam = tam; E.s.add(g); return g; };
-const cOsc = cuboColor(PAL.oscuro, 1.55), cVino = cuboColor(PAL.vino, 1.0), cClaro = cuboColor(PAL.claro, .58);
+const cOsc = cuboColor(PAL.oscuro, 1.55), cVino = cuboColor(PAL.vino, 1.0), cClaro = cuboColor(PAL.techo, .58);                       // «claro» es el morado claro del techo del cubo (Carlos, 29 oct)
 /* los cuatro objetos con la imagen puesta (Poly Haven, CC0) */
 const etiq = (soloCubo, letra, w = 1024, h = 512) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d');
   if(soloCubo === 'pila'){ logo2d(x, { cx: w / 2, cy: h * .34, ancho: h * .42, soloCubo: true }); x.save(); const e = w * .7 / PIEZAS.ancho; x.translate(w * .15, h * .86); x.scale(e, e); x.fillStyle = letra; x.fill(new Path2D(PIEZAS.mazi.join(' '))); x.restore(); }

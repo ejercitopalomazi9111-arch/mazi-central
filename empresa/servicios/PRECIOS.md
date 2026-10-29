@@ -139,3 +139,23 @@ de este el cliente deberá cubrir viáticos y sólo es en casos especiales.»*
 - **Fuera de Querétaro, sólo en casos especiales** (lo decide Carlos), y **el cliente cubre los viáticos**.
 - Está en la hoja (condiciones, hoja 2, y en la sección de video y foto) y en los pósters 7, 8, 12 y 13.
 - Pendiente de afinar con Carlos: si «Querétaro» es la zona metropolitana o todo el estado.
+
+## Todo abajo del promedio de la competencia · Carlos, 29 de octubre
+
+*«Tus precios son algo elevados algunos de ellos, trata de mantener todo más barato que el promedio
+de nuestra competencia.»* Lo que se movió, con el dato del mercado (Cronoshare México, Behance,
+menús QR gratuitos; cifras orientativas, consultadas el 29 de octubre):
+
+| Qué | Antes | Ahora | El mercado |
+|---|---|---|---|
+| Tienda en línea | desde $15,000 | **desde $12,000** | $18,000 – $40,000 |
+| Sesión de fotos (2 h, 20 fotos) | $2,000 | **$1,500** | $460 – $1,100 la hora (2 h ≈ $920 – $2,200, sin edición) |
+| Grabación en tu negocio + 2 videos | $3,500 | **$2,900** | edición $4,600 – $14,000; video de empresa desde $8,000 |
+| Identidad de marca | $5,500 | **$4,500** | desde ~US$300 ($5,500) en Behance; logo solo $4,000 – $28,000 |
+| Diseño gráfico Estándar / Pro / Premium | $350 / $600 / $950 | **$250 / $450 / $750** | flyer suelto, freelance: ~$200 – $600 |
+| Menú digital con QR | $1,500 | **$900** | hay menús QR gratis (Neolo); el nuestro vale por el diseño |
+| Manejo de redes · y con 4 videos | $3,500 · $6,500 | **$2,900 · $5,500** | $3,500 – $12,000 sólo cuentas; $8,000 – $25,000 con pauta |
+
+Lo que NO se movió porque ya está abajo: las tres webs (precio de Carlos), mantenimiento, las
+herramientas a la medida, los 2 videos ($1,200), el comercial con voz, el logo ($1,800), la
+presentación ($900), la publicidad pagada ($1,500), tiempos y movimientos y la hora extra.

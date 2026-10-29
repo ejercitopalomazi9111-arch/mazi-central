@@ -22,9 +22,9 @@
 #burbuja small{ display:block; font:700 30px/1 var(--t); letter-spacing:.14em; color:#A8264B; margin-bottom:14px }
 #letrero{ position:absolute; left:0; right:0; top:300px; text-align:center; font:400 118px/1 "Bangers", sans-serif; letter-spacing:.03em; color:#FFD23F; text-shadow:0 8px 0 #A8264B, 0 16px 30px #000a; opacity:0 }
 #moraleja{ position:absolute; z-index:6; left:60px; right:130px; top:250px; padding:40px 44px 46px; border-radius:36px; background:#170A26F2; box-shadow:0 30px 80px -20px #000; opacity:0 }
-#moraleja .q{ font:700 40px/1 var(--t); letter-spacing:.2em; color:#FF8FB1 }
+#moraleja .q{ font:700 40px/1 var(--t); letter-spacing:.2em; color:#C77DFF }
 #moraleja .d{ margin-top:18px; font:700 96px/.95 var(--t); letter-spacing:-.04em; text-transform:uppercase }
-#moraleja .d span{ color:#FF5C8A }
+#moraleja .d span{ color:#B44BFF }
 </style>
 </head>
 <body>
@@ -55,7 +55,7 @@ await Promise.all(['700 80px "Space Grotesk"', '800 60px "Inter Tight"', '700 60
 const lienzo = (w, h, dibuja) => { const c = document.createElement('canvas'); c.width = w; c.height = h; dibuja(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; };
 const texLetrero = lienzo(1024, 256, (x, w, h) => { x.fillStyle = '#C8402F'; x.fillRect(0, 0, w, h); x.fillStyle = '#FFD23F'; x.font = '400 150px Bangers'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('TACOS DON TOÑO', w / 2, h / 2 + 8); });
 const texCalcas = lienzo(1024, 640, (x, w, h) => { x.fillStyle = '#2A2A33'; x.fillRect(0, 0, w, h);
-  const c = [['#FFD23F', '★'], ['#25D366', 'GG'], ['#FF5C8A', '♥'], ['#5AC8FA', 'PRO'], ['#AC27FF', '404'], ['#FF9500', '😎'], ['#fff', 'NOOB'], ['#34C759', '>_']];
+  const c = [['#FFD23F', '★'], ['#25D366', 'GG'], ['#B44BFF', '♥'], ['#5AC8FA', 'PRO'], ['#AC27FF', '404'], ['#FF9500', '😎'], ['#fff', 'NOOB'], ['#34C759', '>_']];
   c.forEach(([col, s], i) => { const px = 120 + (i % 4) * 250 + (i > 3 ? 60 : 0), py = 170 + Math.floor(i / 4) * 300; x.save(); x.translate(px, py); x.rotate((i * 37 % 60 - 30) * Math.PI / 180);
     x.fillStyle = col; x.beginPath(); x.roundRect(-95, -70, 190, 140, 30); x.fill(); x.fillStyle = '#17121D'; x.font = '800 70px "Inter Tight"'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(s, 0, 4); x.restore(); }); });
 const texFea = lienzo(1080, 2338, (x, w, h) => { x.fillStyle = '#00B526'; x.fillRect(0, 0, w, h);
@@ -78,7 +78,7 @@ E.s.environmentIntensity = .7; E.luces.morado.intensity = 1.5;
 const piso = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshStandardMaterial({ color: '#3A1E2E', roughness: .9 })); piso.rotation.x = -Math.PI / 2; piso.position.y = -1.15; E.s.add(piso);
 const pared = new THREE.Mesh(new THREE.PlaneGeometry(30, 14), new THREE.MeshStandardMaterial({ color: '#4A2236', roughness: .95 })); pared.position.set(0, 4, -3.2); E.s.add(pared);
 /* el papel picado: una tira de banderitas de colores */
-const picado = new THREE.Group(); ['#FF5C8A', '#FFD23F', '#25D366', '#5AC8FA', '#AC27FF', '#FF9500'].forEach((c, i) => {
+const picado = new THREE.Group(); ['#B44BFF', '#FFD23F', '#25D366', '#5AC8FA', '#AC27FF', '#FF9500'].forEach((c, i) => {
   for(let k = 0; k < 3; k++){ const b = new THREE.Mesh(new THREE.PlaneGeometry(.36, .44), new THREE.MeshStandardMaterial({ color: c, side: THREE.DoubleSide, roughness: .8 })); b.position.set(-2.3 + (i + k * 6) * .26, 1.55 - Math.sin((i + k * 6) / 17 * Math.PI) * .2, -1.2); picado.add(b); } });
 E.s.add(picado);
 const mostrador = new THREE.Mesh(new THREE.BoxGeometry(2.3, .8, .7), [0, 1, 2, 3, 4, 5].map(i => new THREE.MeshStandardMaterial(i === 4 ? { map: lienzo(1024, 360, (x, w, h) => { x.fillStyle = '#E9D6C3'; x.fillRect(0, 0, w, h); x.fillStyle = '#C8402F'; for(let k = 0; k < 9; k++) x.fillRect(k * 120, 0, 60, h); }), roughness: .7 } : { color: '#E9D6C3', roughness: .7 })));

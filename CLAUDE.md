@@ -194,6 +194,22 @@ que nos distingue.
 
 **Contacto oficial:** WhatsApp empresarial **442 883 3786** · **grupomazi.oficial@gmail.com**
 
+**La imagen y los anuncios · dicho por Carlos el 29 de octubre:**
+- **Los colores son morado oscuro (#170A26), vino (#7E1735) y morado CLARO (#AC27FF, el del techo
+  del cubo)**, priorizando el oscuro y el vino. «Claro» NO es crema ni blanco. Nada de rosa: el
+  acento de texto sobre oscuro es #C77DFF / #B44BFF.
+- **En toda animación del logo se tiene que NOTAR la M cubo volviéndose el cubo completo.**
+- **La voz de la casa es Chris** (ElevenLabs `iP95p4xoKVk53GoZ742B`, la del anuncio 07 «La
+  plantilla»): «esa se guarda como predeterminada». Cuando no haya saldo, Piper.
+- **Los modelos 3D NO los hago yo**: «te quedan muy chafas». Se usan gratuitos de internet (Poly
+  Haven, Kenney, Quaternius, Sketchfab CC) con crédito, y **texturas e iluminación profesionales**
+  (HDRI de verdad, PBR, sombras). El logo sí se compone (regla 1).
+- **Los precios, siempre abajo del promedio de la competencia** (`empresa/servicios/PRECIOS.md`).
+- **Lo presencial (fotos, grabaciones, citas) sólo dentro de Querétaro**; fuera, en casos
+  especiales y con viáticos a cargo del cliente.
+- **Higgsfield (Seedance 2.5)** está conectado en `herramientas/higgsfield/`; la llave vive en
+  `.env.local` (ignorado) y debe ponerse también en las variables del entorno para no perderla.
+
 **Subdivisiones · dicho por Carlos el 16 de octubre:** **All's fashion · clothes & more** es
 **de Grupo Mazi y de Carlos**, no un cliente de fuera: *«all's fashion es una subdivisión que forma
 parte de grupo Mazi y es mía»*. Vende ropa, calzado, bolsas, perfumes, termos y tandas; sus fotos

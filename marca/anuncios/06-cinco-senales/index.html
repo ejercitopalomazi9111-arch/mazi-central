@@ -14,7 +14,7 @@
 <script>window.listo = new Promise(r => window._listo = r);</script>
 <script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
 <style>
-#num{ position:absolute; left:70px; top:200px; font:700 300px/1 var(--t); letter-spacing:-.06em; color:#FF5C8A; text-shadow:0 16px 40px #0008 }
+#num{ position:absolute; left:70px; top:200px; font:700 300px/1 var(--t); letter-spacing:-.06em; color:#B44BFF; text-shadow:0 16px 40px #0008 }
 #tema{ position:absolute; left:80px; width:620px; top:520px; font:700 64px/.98 var(--t); letter-spacing:-.035em; text-transform:uppercase }
 #prop{ position:absolute; left:0; top:0; width:1080px; height:1920px }
 .tarjeta{ position:absolute; border-radius:34px; background:#fff; color:#17121D; box-shadow:0 40px 90px -30px #000; overflow:hidden }
@@ -72,7 +72,7 @@ const SEN = [
   ['02', 1, 'Tu menú es una foto chueca'], ['03', 2, 'La ubicación<br>es de otro lado'], ['04', 3, 'Tu competencia<br>sale primero'],
   ['05', 4, '40 fotos<br>sueltas'], ['06', 5, '«Una página<br>es carísima»']];
 azar(9); const fotos = Array.from({ length: 40 }, (_, i) => ({ s: `../../../smileys/video/rec/completa/${String(60 + i * 61).padStart(5, '0')}.jpg`, x: 80 + azar() * 760, r: (azar() - .5) * 50, d: azar() * .9 }));
-const confeti = Array.from({ length: 40 }, () => ({ x: azar() * 1080, v: 500 + azar() * 600, r: azar() * 360, c: ['#FF5C8A', '#FFD23F', '#AC27FF', '#25D366', '#5AC8FA'][Math.floor(azar() * 5)], d: azar() * .4 }));
+const confeti = Array.from({ length: 40 }, () => ({ x: azar() * 1080, v: 500 + azar() * 600, r: azar() * 360, c: ['#B44BFF', '#FFD23F', '#AC27FF', '#25D366', '#5AC8FA'][Math.floor(azar() * 5)], d: azar() * .4 }));
 const PROPS = [
   `<div class="tel"><div class="pan"><div class="prog"><b style="width:40%"></b></div><div class="bar"><i></i><div>Mi estado<small>hace 3 horas</small></div></div><div class="menu">MENÚ<br>taco ...... $25<br>gringa .... $45<br>refresco .. $20<br><span style="font-size:30px">(pregunte por los de hoy)</span></div></div></div>`,
   `<div class="tarjeta mapa">${[[0, 140, 840, 40], [0, 380, 840, 46], [220, 0, 40, 600], [560, 0, 46, 600], [0, 520, 840, 30]].map(([x, y, w, h]) => `<i class="calle" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px"></i>`).join('')}

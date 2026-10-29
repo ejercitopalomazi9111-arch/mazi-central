@@ -129,7 +129,7 @@ const espejo = new THREE.Group();
 espejo.add(new THREE.Mesh(new THREE.BoxGeometry(.9, 1.3, .06), mat('#17121D', .4)));
 espejo.add(pon(new THREE.Mesh(new THREE.PlaneGeometry(.78, 1.18), new THREE.MeshStandardMaterial({ color: '#CFE3EE', roughness: .08, metalness: .6 })), 0, 0, .032));
 espejo.position.set(.62, .45, -1.2); sombra(espejo);
-const mary = sombra(cubito({ color: '#A8264B', techo: '#FF5C8A', tam: .72 }));
+const mary = sombra(cubito({ color: '#A8264B', techo: '#B44BFF', tam: .72 }));
 const clienta = sombra(cubito({ color: '#E9C46A', techo: '#6B4A2B', tam: .52 }));
 const tres = [cubito({ color: '#5AC8FA', lentes: true, tam: .54 }), cubito({ color: '#FF9500', gorra: { color: '#17121D' }, tam: .54 }), cubito({ color: '#8E7CFF', techo: '#25D366', tam: .54 })].map(sombra);
 const NOMBRES = ['LA PÁGINA', 'LAS CITAS', 'LAS REDES'], POSTS = [['#BDE8FF', 'Abrimos<br>9 a 7'], ['#FFD9A8', 'Citas de<br>10 a 6'], ['#E5DCFF', '¡24 HORAS!<br>🔥🔥']];
