@@ -57,7 +57,7 @@ const MAS = [['Tienda en línea', 'Carrito, pagos e inventario', 'desde $12,000'
 $('#masPrecios').innerHTML = MAS.map(([q, d, v]) => `<div class="fila sube"><span>${q}<small>${d}</small></span><b>${v.replace('/mes', '<small> /mes</small>')}</b></div>`).join('');
 
 /* los videos: se reproducen callados cuando se ven; el botón les da sonido */
-const VIDS = [['video/nueva-imagen.mp4', 'Nueva imagen'], ['video/la-plantilla.mp4', 'La plantilla'], ['video/la-historia-de-mary.mp4', 'La historia de Mary']];
+const VIDS = [['video/en-movimiento.mp4', 'En movimiento'], ['video/nueva-imagen.mp4', 'Nueva imagen'], ['video/la-historia-de-mary.mp4', 'La historia de Mary'], ['video/la-plantilla.mp4', 'La plantilla']];
 $('#listaVideos').innerHTML = VIDS.map(([src, n]) => `<figure class="vid sube"><video muted playsinline loop preload="none" data-src="${src}" poster="${src.replace('.mp4', '.jpg')}"></video><figcaption>${n}</figcaption><button class="son" type="button" aria-label="Activar el sonido"><svg aria-hidden="true"><use href="#i-mudo"/></svg></button></figure>`).join('');
 const verVid = new IntersectionObserver((es) => es.forEach(({ target: v, isIntersecting }) => {
   if(isIntersecting){ if(!v.src) v.src = v.dataset.src; v.play().catch(() => {}); } else v.pause(); }), { threshold: .45 });
