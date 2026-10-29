@@ -1,0 +1,161 @@
+/* VS TILES · la piel de las pantallas. Oscuro gótico con neón (lo que mandó Carlos: Arcaea,
+   Rhythmetallic, Project Sekai, Dead by Daylight): paneles de vidrio negro con cortes en diagonal,
+   un acento magenta y uno cian, y letra de máquina para los números. */
+:root{
+  --negro:#07030C; --panel:#120A1CE6; --panel2:#1B1029F2; --linea:#ffffff1f; --texto:#F4EEF8; --gris:#B9AECB;
+  --magenta:#FF2D7A; --morado:#B44BFF; --cian:#38E1FF; --oro:#FFE08A; --rojo:#FF2D55; --verde:#5CFFB0;
+  --corte:14px; --t:"Zen Kaku Gothic New", system-ui, sans-serif; --n:Orbitron, "Zen Kaku Gothic New", sans-serif; --g:"Cinzel", serif;
+}
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent }
+html, body{ margin:0; height:100%; background:var(--negro); color:var(--texto); font:500 15px/1.45 var(--t); overflow:hidden;
+  -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; overscroll-behavior:none; touch-action:manipulation }
+canvas{ position:fixed; inset:0; width:100%; height:100%; display:block }
+#gl{ z-index:0 } #capa{ z-index:2; touch-action:none }
+button{ font:inherit; color:inherit; cursor:pointer; border:0; background:none }
+input, select{ font:inherit; color:var(--texto) }
+
+/* las pantallas: una a la vez, encima del 3D */
+.pantalla{ position:fixed; inset:0; z-index:5; display:none; flex-direction:column; padding:max(14px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); overflow-y:auto; -webkit-overflow-scrolling:touch }
+.pantalla > *{ flex-shrink:0 }   /* sin esto, en un teléfono chico la pantalla APLASTA a sus hijos en vez de dejar bajar: la fila de modos quedaba de 0 px */
+.pantalla.vis{ display:flex; animation:entra .45s cubic-bezier(.2,.8,.2,1) both }
+@keyframes entra{ from{ opacity:0; transform:translateY(18px) scale(.985); filter:blur(6px) } to{ opacity:1; transform:none; filter:none } }
+.sombra{ position:fixed; inset:0; z-index:4; pointer-events:none; background:linear-gradient(180deg, #07030Ccc 0, #07030C33 30%, #07030C33 62%, #07030Cf0 100%); transition:opacity .4s }
+
+/* botones con corte */
+.b{ position:relative; display:inline-flex; align-items:center; justify-content:center; gap:10px; min-height:48px; padding:12px 20px; font:800 14px/1 var(--n); letter-spacing:.14em; text-transform:uppercase;
+  background:linear-gradient(135deg, #2A1240, #170A26); clip-path:polygon(var(--corte) 0, 100% 0, 100% calc(100% - var(--corte)), calc(100% - var(--corte)) 100%, 0 100%, 0 var(--corte));
+  transition:transform .15s, filter .15s; }
+.b::before{ content:""; position:absolute; inset:0; padding:1.5px; background:linear-gradient(135deg, var(--magenta), var(--morado) 45%, var(--cian)); clip-path:inherit; -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask-composite:exclude; pointer-events:none }
+.b:active{ transform:scale(.96) } .b:focus-visible{ outline:2px solid var(--cian); outline-offset:3px }
+.b.grande{ min-height:62px; font-size:17px; padding:16px 26px }
+.b.primario{ background:linear-gradient(135deg, var(--magenta), #8A1BFF) } .b.primario::before{ background:linear-gradient(135deg, #fff8, #fff2) }
+.b.chico{ min-height:44px; min-width:44px; padding:8px 14px; font-size:12px }
+.b[disabled]{ opacity:.4; pointer-events:none }
+
+/* paneles */
+.panel{ background:var(--panel); border:1px solid var(--linea); clip-path:polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 22px 100%, 0 calc(100% - 22px)); padding:18px; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px) }
+.ojo{ font:700 11px/1 var(--n); letter-spacing:.32em; text-transform:uppercase; color:var(--cian) }
+.titulo{ font:900 clamp(30px, 8vw, 54px)/.95 var(--n); letter-spacing:.02em; margin:6px 0 4px }
+.sub{ color:var(--gris); margin:0 }
+h2{ font:800 22px/1.1 var(--n); letter-spacing:.06em; margin:0 0 10px }
+
+/* ── el arranque ── */
+#arranque{ justify-content:flex-end; align-items:center; text-align:center; gap:10px; padding-bottom:max(48px, env(safe-area-inset-bottom)) }
+.logo{ font:900 clamp(56px, 19vw, 132px)/.82 var(--n); letter-spacing:-.02em; background:linear-gradient(180deg, #fff, #E3C8FF 55%, var(--magenta)); -webkit-background-clip:text; background-clip:text; color:transparent;
+  filter:drop-shadow(0 0 28px #B44BFF99); animation:respira 2.2s ease-in-out infinite }
+.logo i{ font-style:normal; display:block; font-size:.34em; letter-spacing:.5em; -webkit-text-fill-color:var(--cian); color:var(--cian); margin-bottom:.2em }
+.exo{ font:700 clamp(15px, 4.4vw, 22px)/1.1 var(--g); letter-spacing:.32em; color:#FFD7E5; text-shadow:0 0 14px var(--rojo) }
+@keyframes respira{ 50%{ filter:drop-shadow(0 0 44px #FF2D7Acc); transform:scale(1.015) } }
+.toca{ margin-top:22px; font:700 13px/1 var(--n); letter-spacing:.4em; color:#fff; animation:parpadea 1.3s steps(2, jump-none) infinite }
+@keyframes parpadea{ 50%{ opacity:.25 } }
+
+/* ── la cinemática ── */
+#intro{ justify-content:center; align-items:center; text-align:center; background:#000 }
+#intro p{ font:600 clamp(18px, 5vw, 26px)/1.5 var(--t); max-width:28ch; margin:0; min-height:4.5em }
+#intro .saltar{ position:absolute; right:16px; top:max(16px, env(safe-area-inset-top)) }
+
+/* ── la barra de arriba del menú ── */
+.barra{ display:flex; align-items:center; gap:12px; padding:8px 10px; margin-bottom:12px }
+.avatar{ width:44px; height:44px; display:grid; place-items:center; font:900 18px var(--n); background:linear-gradient(135deg, var(--magenta), var(--cian)); clip-path:polygon(25% 0, 100% 0, 100% 75%, 75% 100%, 0 100%, 0 25%) }
+.barra .quien{ flex:1; min-width:0 } .barra .quien b{ display:block; font:800 15px/1.1 var(--n); white-space:nowrap; overflow:hidden; text-overflow:ellipsis } .barra .quien span{ font-size:12px; color:var(--gris) }
+.moneda{ display:flex; align-items:center; gap:6px; font:800 13px var(--n); padding:6px 10px; background:#ffffff10; border:1px solid var(--linea) }
+.moneda i{ width:10px; height:10px; transform:rotate(45deg); background:var(--cian); box-shadow:0 0 10px var(--cian) } .moneda.sello i{ background:var(--oro); box-shadow:0 0 10px var(--oro) }
+
+/* ── el menú ── */
+#menu .rejilla{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; margin-top:auto }
+.tarjeta{ position:relative; min-height:96px; padding:14px; text-align:left; background:var(--panel2); overflow:hidden;
+  clip-path:polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px)); transition:transform .15s }
+.tarjeta::after{ content:""; position:absolute; inset:auto -20% -60% 40%; height:120%; background:radial-gradient(closest-side, var(--c, #B44BFF55), transparent); transition:opacity .3s }
+.tarjeta:active{ transform:scale(.97) }
+.tarjeta b{ display:block; font:800 15px/1.1 var(--n); letter-spacing:.06em; position:relative; z-index:1 } .tarjeta span{ display:block; margin-top:6px; font-size:12.5px; color:var(--gris); position:relative; z-index:1 }
+.tarjeta.ancha{ grid-column:1 / -1; min-height:110px } .tarjeta.ancha b{ font-size:20px }
+.tarjeta .tag{ position:absolute; right:12px; top:12px; font:800 11px var(--n); letter-spacing:.2em; color:var(--rojo); z-index:1 }
+
+/* ── la lista de canciones (Arcaea) ── */
+#canciones{ padding-bottom:max(12px, env(safe-area-inset-bottom)) }
+.cab{ display:flex; align-items:center; gap:10px; margin-bottom:10px } .cab h2{ margin:0; flex:1 }
+.modos{ display:flex; flex-wrap:wrap; gap:6px; overflow-x:auto; padding-bottom:6px; scrollbar-width:none } .modos::-webkit-scrollbar{ display:none }
+.modos button{ flex:none; min-height:44px; padding:9px 14px; font:800 12px var(--n); letter-spacing:.16em; text-transform:uppercase; background:#ffffff0d; border:1px solid var(--linea); color:var(--gris) }
+.modos button.si{ background:linear-gradient(135deg, var(--magenta), var(--morado)); color:#fff; border-color:transparent }
+.portada{ position:relative; display:grid; grid-template-columns:118px minmax(0, 1fr); gap:14px; align-items:end; margin:8px 0 10px; padding:14px }
+.portada .foto{ width:118px; height:118px; background-size:cover; background-position:center; clip-path:polygon(0 0, 85% 0, 100% 15%, 100% 100%, 15% 100%, 0 85%); box-shadow:0 0 40px #B44BFF55; position:relative }
+.portada .foto::after{ content:""; position:absolute; inset:0; background:linear-gradient(135deg, transparent 40%, #FF2D7A88) }
+.portada h3{ margin:0; font:900 21px/1.05 var(--n) } .portada .art{ color:var(--gris); font-size:12.5px; margin:4px 0 8px }
+.portada .datos{ display:flex; flex-wrap:wrap; gap:6px }
+.pill{ font:800 11px var(--n); letter-spacing:.1em; padding:5px 8px; background:#ffffff12; border:1px solid var(--linea) }
+.pill.rojo{ color:#fff; background:#FF2D5533; border-color:#FF2D5588 }
+.difs{ display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:6px; margin-bottom:10px }
+.difs button{ padding:10px 2px 8px; display:flex; flex-direction:column; align-items:center; gap:4px; background:#ffffff0a; border:1px solid var(--linea); font:800 clamp(10px, 2.9vw, 12px) var(--n); letter-spacing:0; text-transform:uppercase; color:var(--gris); min-height:64px }
+.difs button em{ font-style:normal; width:30px; height:30px; display:grid; place-items:center; font:900 14px var(--n); color:#fff; transform:rotate(45deg); background:var(--c) } .difs button em s{ text-decoration:none; transform:rotate(-45deg) }
+.difs button.si{ border-color:var(--c); background:color-mix(in srgb, var(--c) 22%, transparent); color:#fff }
+.lista{ display:flex; flex-direction:column; gap:8px; margin-bottom:12px }
+.fila{ display:grid; grid-template-columns:52px minmax(0, 1fr) auto; gap:12px; align-items:center; padding:8px; background:var(--panel2); border:1px solid var(--linea); text-align:left;
+  clip-path:polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%); transition:transform .2s, border-color .2s }
+.fila.si{ border-color:var(--magenta); transform:translateX(-6px); box-shadow:inset 3px 0 0 var(--magenta) }
+.fila .mini{ width:52px; height:52px; background-size:cover; background-position:center }
+.fila b{ display:block; font:800 14px/1.15 var(--n); white-space:nowrap; overflow:hidden; text-overflow:ellipsis } .fila span{ font-size:11.5px; color:var(--gris) }
+.fila .mejor{ font:800 11px var(--n); color:var(--oro); text-align:right }
+.opciones{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px }
+.opciones label{ display:flex; align-items:center; gap:6px; padding:8px 10px; background:#ffffff0a; border:1px solid var(--linea); font:700 11px var(--n); letter-spacing:.08em; text-transform:uppercase; cursor:pointer }
+.opciones input{ accent-color:var(--magenta); width:16px; height:16px }
+.pie{ position:sticky; bottom:0; display:flex; gap:8px; padding-top:8px; margin-top:auto; background:linear-gradient(0deg, var(--negro) 60%, transparent) }
+.pie .b{ flex:1 }
+
+/* ── la partida ── */
+#juegoUI{ position:fixed; inset:0; z-index:3; pointer-events:none; display:none } #juegoUI.vis{ display:block }
+#pausaB{ position:fixed; z-index:6; right:max(12px, calc(env(safe-area-inset-right) + 4px)); top:max(74px, calc(env(safe-area-inset-top) + 76px)); width:44px; height:44px; pointer-events:auto; display:none; place-items:center; background:#ffffff14; border:1px solid var(--linea); font:900 14px var(--n) }
+#pausaB.vis{ display:grid }
+#pausa{ justify-content:center; align-items:center; gap:12px; background:#07030Cd8 } #pausa .b{ width:min(320px, 100%) }
+#cuenta{ position:fixed; z-index:6; inset:0; display:none; place-items:center; pointer-events:none; font:900 120px var(--n); color:#fff; text-shadow:0 0 40px var(--magenta) } #cuenta.vis{ display:grid }
+
+/* ── resultados ── */
+#resultados .rango{ font:900 clamp(90px, 30vw, 170px)/.8 var(--n); text-align:center; margin:8px 0 0; background:linear-gradient(180deg, #fff, var(--c, var(--magenta))); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 0 30px var(--c, var(--magenta))); animation:sello .7s cubic-bezier(.2,1.6,.4,1) both }
+@keyframes sello{ from{ transform:scale(2.4) rotate(-8deg); opacity:0 } }
+.puntos{ text-align:center; font:900 34px var(--n); letter-spacing:.04em } .puntos small{ display:block; font:700 12px var(--n); color:var(--gris); letter-spacing:.2em }
+.juicios{ display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:6px; margin:12px 0 } .juicios div{ text-align:center; padding:8px 2px; background:#ffffff0a; font:900 18px var(--n) } .juicios div small{ display:block; font:800 clamp(9px, 2.6vw, 11px) var(--n); letter-spacing:.06em; color:var(--c) }
+.sellos{ display:flex; justify-content:center; gap:8px; margin:8px 0 } .sellos span{ font:900 12px var(--n); letter-spacing:.2em; padding:6px 10px; border:1px solid var(--oro); color:var(--oro) }
+#histograma{ position:static; width:100%; height:120px; margin:6px 0 }
+.consejo{ font-size:13px; color:var(--gris); text-align:center; margin:6px 0 10px }
+
+/* ── vestidor (Dead by Daylight) ── */
+.ranuras{ display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:6px; margin-bottom:10px }
+.ranura{ aspect-ratio:1; display:flex; flex-direction:column; justify-content:flex-end; padding:6px; background:linear-gradient(180deg, #ffffff08, #B44BFF22); border:1px solid var(--linea); font:800 clamp(10px, 2.7vw, 12px) var(--n); letter-spacing:0; text-transform:uppercase; text-align:left; position:relative; overflow:hidden; overflow-wrap:anywhere }
+.ranura.si{ border-color:#fff; box-shadow:inset 0 0 0 2px #fff } .ranura em{ font-style:normal; display:block; font:700 clamp(10px, 2.7vw, 12px)/1.1 var(--t); text-transform:none; color:var(--gris) }
+.objetos{ display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:6px; margin-bottom:12px }
+.obj{ aspect-ratio:.82; position:relative; display:flex; flex-direction:column; justify-content:flex-end; padding:6px; border:1px solid var(--linea); background:linear-gradient(180deg, transparent, var(--r, #555)); font:700 11px/1.15 var(--t); text-align:left; overflow:hidden }
+.obj.puesto::after{ content:"✓"; position:absolute; right:6px; top:4px; font:900 14px var(--n); color:var(--verde) } .obj.bloq{ filter:grayscale(1) brightness(.5) } .obj.bloq::before{ content:"🔒"; position:absolute; left:6px; top:4px; font-size:12px }
+.obj .muestra{ position:absolute; inset:8px 8px 34px; display:grid; place-items:center } .obj .muestra img{ max-width:80%; max-height:100%; image-rendering:auto }
+.raro-c{ --r:#3A3A46 } .raro-r{ --r:#1E5BA8 } .raro-e{ --r:#7A2BC4 } .raro-l{ --r:#C4732B } .raro-m{ --r:#C42B4A }
+
+/* ── mercado (gacha) ── */
+.archivo{ text-align:center; padding:22px 16px } .archivo .orbe{ width:140px; height:140px; margin:6px auto 12px; background:url(sprites/p_magic_03.png) center/contain no-repeat; filter:drop-shadow(0 0 30px var(--magenta)) hue-rotate(0deg); animation:gira 6s linear infinite }
+@keyframes gira{ to{ transform:rotate(360deg); filter:drop-shadow(0 0 30px var(--cian)) hue-rotate(360deg) } }
+.probas{ font-size:12px; color:var(--gris); margin:8px 0 } .tirada{ display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:6px; margin-top:10px }
+.tirada .obj{ animation:carta .6s cubic-bezier(.2,1.4,.4,1) both } @keyframes carta{ from{ transform:rotateY(90deg) scale(.6); opacity:0 } }
+
+/* ── historia ── */
+.cap{ margin-bottom:10px } .cap h3{ margin:0 0 6px; font:900 16px var(--g); letter-spacing:.12em; color:#FFD7E5 }
+.mision{ display:grid; grid-template-columns:28px minmax(0, 1fr) auto; gap:10px; align-items:center; width:100%; padding:10px; margin-bottom:6px; background:var(--panel2); border:1px solid var(--linea); text-align:left }
+.mision .n{ font:900 13px var(--n); color:var(--magenta) } .mision.bloq{ opacity:.4 } .mision.hecha .n{ color:var(--verde) }
+#dialogo{ justify-content:flex-end; background:linear-gradient(0deg, #07030Cf5 30%, transparent) } #dialogo .burbuja{ padding:18px } #dialogo .habla{ font:900 13px var(--n); letter-spacing:.2em; color:var(--c, var(--cian)); margin-bottom:6px } #dialogo .dice{ font-size:17px; min-height:3em }
+
+/* ── calibración ── */
+.calib{ text-align:center } .calib .pulso{ width:120px; height:120px; margin:18px auto; border-radius:50%; border:3px solid var(--cian); display:grid; place-items:center; font:900 26px var(--n); transition:transform .08s }
+.calib .medida{ font:900 40px var(--n) }
+.ajuste{ display:grid; grid-template-columns:minmax(0, 1fr) auto; gap:4px 10px; align-items:center; padding:12px 0; border-bottom:1px solid var(--linea) } .ajuste small{ grid-column:1 / -1; color:var(--gris); font-size:12px }
+.ajuste input[type=range]{ grid-column:1 / -1; width:100%; height:44px; accent-color:var(--magenta) } .ajuste b{ font:800 13px var(--n) }
+.creditos p{ margin:0 0 10px; font-size:13px; color:var(--gris) } .creditos b{ color:var(--texto) } .creditos h3{ font:800 14px var(--n); letter-spacing:.14em; margin:16px 0 8px; color:var(--cian) }
+.campo{ display:flex; flex-direction:column; gap:6px; margin-bottom:12px } .campo input{ min-height:48px; padding:10px 14px; background:#ffffff10; border:1px solid var(--linea); font:700 18px var(--n) }
+.elige{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px; margin-bottom:12px }
+.elige button{ padding:12px 8px; background:var(--panel2); border:1px solid var(--linea); text-align:center; font:800 12px var(--n) } .elige button.si{ border-color:var(--magenta); box-shadow:0 0 20px #FF2D7A55 } .elige button small{ display:block; font:600 10.5px var(--t); color:var(--gris); margin-top:4px }
+.aviso{ position:fixed; z-index:9; left:50%; bottom:max(20px, env(safe-area-inset-bottom)); transform:translateX(-50%); padding:12px 18px; background:#1B1029; border:1px solid var(--magenta); font-weight:700; max-width:min(92vw, 420px); text-align:center; animation:entra .3s both }
+@media (min-width:900px){ #menu .rejilla{ grid-template-columns:repeat(4, minmax(0, 1fr)) } .pantalla > *{ width:min(820px, 100%); margin-left:auto; margin-right:auto } }
+@media (prefers-reduced-motion:reduce){ .pantalla.vis, .logo, .toca, .archivo .orbe{ animation:none } }
+
+/* Mi música */
+.lista .grupo{ margin:10px 0 2px; font-size:11px }
+.fila.agrega .mini{ display:grid; place-items:center; font:900 22px var(--n); color:var(--verde); background:#ffffff0d; border:1px dashed var(--linea) }
+.pill.quitar{ color:#fff; background:#FF2D5522; border-color:#FF2D5566; cursor:pointer; min-height:28px }
+.busca{ width:100%; min-height:44px; margin:4px 0 8px; padding:10px 14px; background:var(--panel2); border:1px solid var(--linea); color:#fff; font:600 16px var(--t) }
+.busca[hidden]{ display:none }
+.nota{ margin-top:14px; font-size:12px; opacity:.75 }

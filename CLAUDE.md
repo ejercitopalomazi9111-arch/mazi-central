@@ -488,6 +488,14 @@ dependemos.
 
    | los vértices de la parte alta de un modelo dan el tamaño de su pantalla | dan lo que cae arriba del corte que escogí: con `y > .45` la pantalla «medía» la mitad y el plano con nuestra página quedó **metido detrás del vidrio** en la mitad de abajo | tres vueltas a ojo con la computadora del anuncio 15. Se mide con **rayos** (`Raycaster` de frente cada 5 cm): da la superficie exacta y su inclinación (30°) en una corrida |
 
+   | si el toque se juzga con su `event.timeStamp`, ya no importa cuándo se atienda | importa: el teléfono ocupado atiende el evento **cientos de ms después** (medido: 220–300 ms en el navegador de pruebas), y para entonces el cuadro ya había dado la nota por FALLO | en VS TILES, 165 de 361 notas perdidas con toques perfectos. El fallo se decide con la hora del cuadro anterior y se cuenta hasta medio segundo después (`pendiente` en `juegos/vs-tiles/js/juego.js`) |
+   | `setPointerCapture` es inofensivo en un `pointerdown` | **truena** si cuando se atiende el evento el dedo ya se levantó (otra vez: teléfono ocupado), y se lleva el toque entero | sólo salió con toques de verdad por CDP; con llamadas directas al juez todo daba perfecto. Va en `try` |
+   | cinco carriles de ancho fijo caben en un teléfono | en vertical con 64° de campo, a 4.6 de distancia se ven ~3 unidades de ancho y el carril medía 5.5: los receptores de las orillas quedaban en x = −69 y 438 con pantalla de 390 | el carril se escala cada cuadro a lo que la cámara alcanza a ver en la línea de golpe |
+   | un modelo cuantizado (`KHR_mesh_quantization`) se puede hornear con `geometry.applyMatrix4` | las posiciones son enteros normalizados: `applyMatrix4` escribe valores fuera de [-1, 1] y **se recortan**: GUMI quedó como una bolita de 2 cm | se pasan a `Float32` antes de transformar (`flotar` en `escena.js`) |
+
+   | un `pointerdown` es un toque, así que ahí se puede despertar el audio | para el navegador, con el dedo sólo SOLTAR (`touchend`, `pointerup`, `click`) cuenta como gesto: un `resume()` pedido al poner el dedo se puede quedar colgado | la entrada de VS TILES despertaba el audio en `pointerdown` y lo esperaba con `await`: en iPhone se podía quedar muda o trabada en «Toca para entrar». Se entra con `click`, nunca se espera más de 0.5 s, y `reloj.desbloquear()` reintenta al soltar cada toque |
+   | una pantalla `display:flex` en columna con `overflow-y:auto` deja bajar cuando no cabe | primero **encoge** a sus hijos (`flex-shrink:1`) y sólo después hace scroll: una fila sin alto fijo queda de 0 px | en un iPhone SE la fila de modos de VS TILES era una rayita y no se leía ningún modo; en 390 no se notaba. `.pantalla > * { flex-shrink: 0 }` |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---
