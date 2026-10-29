@@ -78,11 +78,29 @@ function mostrar(id){ $$('.pantalla').forEach(p => p.classList.toggle('vis', p.i
 (function menuVivo(){ requestAnimationFrame(menuVivo); if(!partida.corriendo) partida.pintarMenu(performance.now() / 1000); })();
 
 mostrar('arranque');
-$('#arranque').addEventListener('pointerdown', async () => {
+/* el huevo de pascua: 10 toques al logo (en el arranque o en el menú) en menos de 5 segundos */
+let toquesLogo = [], sustoVivo = false, sonidosSusto = null;
+async function tocarLogo(){ const ahora = performance.now(); toquesLogo = toquesLogo.filter(x => ahora - x < 5000); toquesLogo.push(ahora);
+  /* el audio se despierta y se carga desde los primeros toques (cada toque es un gesto), sin esperar a que acabe: si el
+     navegador no lo deja sonar, la Miku sale igual */
+  sonidosSusto ||= reloj.despertar().then(() => Promise.all(['paso.wav', 'risa.mp3', 'maximize_006.wav'].map(f => reloj.cargar('sonidos/' + f).catch(() => null))));
+  if(toquesLogo.length < 10 || sustoVivo) return; toquesLogo = []; sustoVivo = true;
+  let paso = null, risa = null, salto = null; sonidosSusto.then(([a, b, c]) => { paso = a; risa = b; salto = c; }, () => {});
+  const T = await escena.asustar(); if(!T){ sustoVivo = false; return; }
+  const capa = document.querySelector('.pantalla.vis'); if(capa) Object.assign(capa.style, { animation: 'none', transition: 'opacity .6s', opacity: '0' });   // la animación de entrada (fill both) le ganaba a la opacidad
+  for(let k = 0; k * .625 < T.camina; k++) setTimeout(() => reloj.golpe(paso, .25 + .5 * k * .625 / T.camina), k * 625);
+  setTimeout(() => reloj.golpe(risa, .9), T.mira * 1000); setTimeout(() => reloj.golpe(risa, .7), (T.mira + 1.05) * 1000);
+  setTimeout(() => reloj.golpe(salto, .6), (T.rie + .2) * 1000);
+  setTimeout(() => { if(capa) capa.style.opacity = '1'; sustoVivo = false; }, T.salta * 1000 + 200); }
+document.querySelector('#arranque .logo').addEventListener('pointerdown', (e) => { e.stopPropagation(); tocarLogo(); });
+document.querySelector('#menu .titulo').addEventListener('pointerdown', () => tocarLogo());
+$('#arranque').addEventListener('pointerdown', async function entrar(e){
+  if(e.target.closest('.logo') || sustoVivo) return;
+  $('#arranque').removeEventListener('pointerdown', entrar);
   await reloj.despertar(); reloj.desfase = Y.desfase / 1000; reloj.desfaseVisual = Y.desfaseVisual / 1000;
   for(const [k, f] of [['golpe', 'impactGlass_light_002'], ['fallo', 'impactPunch_medium_000'], ['clic', 'tick_001'], ['boton', 'click_002'], ['glitch', 'glitch_003'], ['premio', 'confirmation_002']]) sonidos[k] = await reloj.cargar(`sonidos/${f}.wav`).catch(() => null);
   if(!Y.visto) intro(); else if(!Y.nombre) perfil(); else menu();
-}, { once: true });
+});
 document.addEventListener('click', (e) => { const b = e.target.closest('[data-ir]'); if(!b) return; sonidos.boton && reloj.golpe(sonidos.boton, .25); ir(b.dataset.ir); });
 function ir(a){ ({ menu, historia, libre: () => canciones('libre'), reto: () => canciones('reto'), lab: () => mostrar('lab'), mercado, vestidor, records, ajustes, creditos,
   saltarIntro: () => { cortarIntro = true; }, aCalibrar, saltarCalib: () => { Y.calibrado = true; guardar(); menu(); }, seguir: () => { partida.alternarPausa(); }, reintentar: jugarDeNuevo, salirJuego: () => { partida.salir(); canciones(modoLista); }, libreVolver: () => canciones(modoLista) })[a]?.(); }
@@ -247,9 +265,9 @@ function creditos(){ mostrar('creditos');
   $('#creditosL').innerHTML = `<div class="ojo">VS TILES · EXÓRCIST: THE SONOLUZ PROTOCOL</div><p style="margin-top:8px">Idea, mundo y documento de diseño: <b>Carlos «Palomazi»</b>. Programación: Grupo Mazi.</p>
   <p>Es un <b>fan game sin fines de lucro</b>. Los personajes Vocaloid y UTAU son de sus dueños (Crypton Future Media, INTERNET Co., AH-Software, Yamaha y demás); aquí salen como homenaje.</p>
   <h3>MÚSICA</h3><p>${CANCIONES.map(c => `«${c.titulo}»`).join(', ')} — <b>Kevin MacLeod</b> (incompetech.com). Licencia Creative Commons: By Attribution 4.0.</p>
-  <h3>PERSONAJES 3D (Sketchfab, vía Objaverse)</h3><p>${PERSONAJES.map(p => `<b>${p.nombre}</b> — ${p.autor}`).join('<br>')}<br>Licencia CC BY 4.0.</p>
+  <h3>PERSONAJES 3D (Sketchfab, vía Objaverse)</h3><p>${PERSONAJES.map(p => `<b>${p.nombre}</b> — ${p.autor}`).join('<br>')}<br>Y una invitada que sólo sale si la buscas: <b>«Shiteyanyo - Hatsune Miku»</b> — Seafoam.<br>Licencia CC BY 4.0.</p>
   <h3>ESCENARIOS</h3><p>Fotos 360° de <b>Poly Haven</b> (CC0): ${ESCENARIOS.map(e => e.id.replace(/_/g, ' ')).join(', ')}.</p>
-  <h3>BOTONES, PARTÍCULAS Y SONIDOS</h3><p><b>Kenney</b> (kenney.nl, CC0): Input Prompts, Particle Pack, Interface Sounds, Impact Sounds.</p>
+  <h3>BOTONES, PARTÍCULAS Y SONIDOS</h3><p><b>Kenney</b> (kenney.nl, CC0): Input Prompts, Particle Pack, Interface Sounds, Impact Sounds. La risa: <b>AntumDeluge</b> (OpenGameArt, CC0).</p>
   <h3>LETRA Y CÓDIGO DE FUERA</h3><p>Orbitron, Zen Kaku Gothic New y Cinzel (Google Fonts, SIL OFL). three.js (MIT).</p>`; }
 
 /* ── Lab: tu canción ── */

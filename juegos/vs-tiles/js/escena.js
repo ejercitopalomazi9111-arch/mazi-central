@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from '../vendor/loaders/GLTFLoader.js';
 import { DISPOSICIONES } from './cartas.js';
+import { clone as clonarEsqueleto } from '../vendor/utils/SkeletonUtils.js';
 
 export const ESCENARIOS = [
   { id: 'shanghai_bund', nombre: 'Ciudad SONOLUZ', tinte: '#7A4BFF' },
@@ -210,7 +211,41 @@ export async function crearEscena(lienzo){
   const golpeDe = (golpes, t) => { let i = 0, lo = 0, hi = golpes.length - 1; while(hi - lo > 1){ const m = (lo + hi) >> 1; if(golpes[m] < t) lo = m; else hi = m; } i = golpes[hi] <= t ? hi : lo; const a = golpes[i] ?? 0, b = golpes[i + 1] ?? a + .5; return { i, fase: Math.min(1, Math.max(0, (t - a) / Math.max(.05, b - a))) }; };
   let vertical = true, escActual = -1, escCambio = 0, cambioCam = -9, camDe = { p: new THREE.Vector3(...CAMS[0].p), m: new THREE.Vector3(...CAMS[0].m) };
 
-  return { r, s, cam, carril, piezas, cantantes, ponerCantantes, E, chispa, uni, prepararVelocidad, pos, LARGO, ANCHO,
+  /* EL HUEVO DE PASCUA (Carlos, 29 oct: «al tocar el logo 10 veces que salga y camine hacia la pantalla y
+     se quede viendo un rato, luego se ría y se vaya como si saltara hacia abajo»). La Miku «Shiteyanyo»
+     de Seafoam (Sketchfab, CC BY) trae su propia caminata hacia el frente; va colgada de la cámara para
+     que camine hacia la pantalla venga de donde venga la cámara. Tiempos en segundos desde que sale. */
+  s.add(cam);
+  let susto = null;
+  const SUSTO = { camina: 3.4, mira: 6.0, rie: 7.6, salta: 9.2 };
+  async function asustar(){
+    if(susto) return null;
+    const g = await (cacheM['susto'] ||= cargador.loadAsync('modelos/miku-susto.glb'));
+    const m = clonarEsqueleto(g.scene); m.traverse(o => { if(o.isMesh){ o.frustumCulled = false; o.renderOrder = 50; } });
+    const mezclador = new THREE.AnimationMixer(m), paso = mezclador.clipAction(g.animations[0]); paso.play();
+    m.updateMatrixWorld(true); const b = new THREE.Box3().setFromObject(m, true), k = 1.7 / (b.max.y - b.min.y), c = b.getCenter(new THREE.Vector3());
+    const cuerpo = new THREE.Group(); m.position.set(-c.x, -b.min.y, -c.z); cuerpo.add(m); cuerpo.scale.setScalar(k);
+    const raiz = new THREE.Group(); raiz.add(cuerpo); cam.add(raiz);
+    susto = { raiz, cuerpo, mezclador, t0: performance.now() };
+    return SUSTO;
+  }
+  function moverSusto(){
+    if(!susto) return;
+    const t = window.__sustoT ?? (performance.now() - susto.t0) / 1000, { raiz, cuerpo, mezclador } = susto, S = SUSTO;   // __sustoT: las pruebas congelan el instante
+    const sale = (u) => 1 - Math.pow(1 - u, 3), cl = (u) => Math.min(1, Math.max(0, u));
+    let z = -2.4, y = -1.45, giro = 0, esc = 1;
+    if(t < S.camina){ const u = t / S.camina; z = -18 + (18 - 2.4) * u; mezclador.setTime(t % 1.25); y += Math.abs(Math.sin(t * Math.PI / .625)) * .04; }
+    else if(t < S.mira){ const u = cl((t - S.camina) / 1.4); mezclador.setTime(.62); z = -2.4 + .7 * sale(u); giro = .32 * sale(u) * Math.sin(Math.min(1, (t - S.camina) / 2.2) * Math.PI / 2); y += .2 * sale(u); }      // se acerca y ladea la cabeza
+    else if(t < S.rie){ z = -1.7; mezclador.setTime(.62 + Math.sin(t * 40) * .05); giro = .32 * Math.cos((t - S.mira) * 9); y += .2 + Math.abs(Math.sin(t * 26)) * .07; esc = 1 + .04 * Math.sin(t * 30); }    // la risa: tiembla de risa
+    else if(t < S.salta){ const u = (t - S.rie) / (S.salta - S.rie); mezclador.setTime(1.0);
+      /* se agacha, brinca un poco y se deja caer hacia abajo, fuera de la pantalla */
+      const agacha = u < .18 ? Math.sin(u / .18 * Math.PI) * .18 : 0, vuela = u >= .18 ? (u - .18) / .82 : 0;
+      z = -1.7 - vuela * 1.4; y += .2 * (1 - vuela) - agacha + (vuela < .3 ? Math.sin(vuela / .3 * Math.PI / 2) * .5 : .5 - Math.pow((vuela - .3) / .7, 2) * 7); giro = vuela * .5; esc = 1 - agacha * .3; }
+    else { cam.remove(raiz); susto = null; return; }
+    raiz.position.set(Math.sin(giro) * 1.3, y, z);   // ladea la cabeza sin que la cara se salga de cuadro (gira desde los pies) raiz.rotation.z = giro; raiz.scale.set(esc, 2 - esc, esc);
+  }
+
+  return { r, s, cam, carril, piezas, cantantes, ponerCantantes, E, chispa, uni, prepararVelocidad, pos, LARGO, ANCHO, asustar, SUSTO,
     /* proyecta un punto del carril (riel r en la línea) a la pantalla, en px CSS */
     receptor(r, ancho, alto){ const R = piezas.rieles[r]; v3.set(R.x * ANCHO, 0, 0); carril.localToWorld(v3); v3.project(cam); return [(v3.x + 1) / 2 * ancho, (1 - v3.y) / 2 * alto, R.vis]; },
     proyectar(p, ancho, alto){ v3.copy(p).project(cam); return [(v3.x + 1) / 2 * ancho, (1 - v3.y) / 2 * alto]; },
@@ -335,7 +370,7 @@ export async function crearEscena(lienzo){
       /* destellos */
       for(const c of chispas){ if(!c.sp.visible) continue; const u = (ahoraMs - c.t0) / c.vida; if(u >= 1){ c.sp.visible = false; continue; }
         c.sp.position.addScaledVector(c.v, 1 / 60); c.v.y -= 9 / 60; c.sp.material.opacity = 1 - u; c.sp.scale.setScalar(c.esc * (1 + u)); }
-      r.render(s, cam);
+      moverSusto(); r.render(s, cam);
       return { latido, fase, gi, compas, sacudida };
     },
     /* el destello de un riel al acertar */

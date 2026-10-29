@@ -19,6 +19,10 @@ Media, INTERNET Co., AH-Software y demás); aquí salen como homenaje.
 | `modelos/miku-hagane.glb` | Hagane Miku | kirirato | c0d12094df9d4a4e843e4410f72e67fb |
 | `modelos/miku-akuma.glb` | Akuma Miku («Miku Excomulgada») | Tiago.Carneiro | b3018f9de1e84afbacaf7b9561450012 |
 
+**La invitada sorpresa** (el huevo de pascua: 10 toques al logo): `modelos/miku-susto.glb`,
+«Shiteyanyo - Hatsune Miku» de **Seafoam** (Sketchfab, CC BY 4.0, uid 0f4029ba805c4751933bba24dc72dd24),
+con su caminata original.
+
 Se comprimieron con gltf-transform (cuantizado y texturas WebP de 1024 px); la forma no se tocó.
 **Faltan v flower y Momone Momo:** sus modelos en Sketchfab son de 2023 en adelante y no están en el
 espejo; bajarlos de Sketchfab pide una cuenta (un token de su API).
@@ -38,7 +42,8 @@ y el juego las tiñe y las hace latir.
 ## Botones, partículas y sonidos
 
 **Kenney** (kenney.nl, CC0): Input Prompts (los △ ○ × □, flechas y círculos), Particle Pack (destellos,
-estrellas, chispas, remolinos) e Interface / Impact Sounds (golpe, fallo, clic de la calibración).
+estrellas, chispas, remolinos) e Interface / Impact Sounds (golpe, fallo, clic de la calibración) e Impact Sounds para los pasos de la invitada.
+**AntumDeluge** (OpenGameArt, «Witch Cackle», CC0): la risa.
 
 ## Letra y código
 
