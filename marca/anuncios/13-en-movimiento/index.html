@@ -61,6 +61,7 @@ patron.position.set(0, 0, -4); s.add(patron);
 
 /* ── 1 · el teléfono, con nuestra página ── */
 const tel = telefono(await imagen('pantalla.jpg')); s.add(tel);
+tel.userData.pantalla.material.color.set('#C9C4CC');          /* la pantalla no se quema con el brillo */
 const enPantalla = new THREE.Vector3(.27, .338, .03);              // dónde está el cubo dibujado en la página
 
 /* ── 2 · el cubo que sale de la pantalla, con sus anillos de luz ── */
@@ -231,7 +232,10 @@ function escena(t){
 }
 
 const gr = grano($('#grano'), .045);
-window.pintar = async (t) => { C.cuadro(t, escena); gr(t); };
+/* el desenfoque de movimiento sólo trabaja fuerte cuando la cámara corre: medir cuánto se movió en un cuadro */
+const rapidez = (t) => { camara(t - 1 / 30); const a = cam.position.clone(), q = cam.quaternion.clone(); const o = camara(t);
+  return a.distanceTo(cam.position) / Math.max(.3, o.foco) + q.angleTo(cam.quaternion); };
+window.pintar = async (t) => { const v = rapidez(t), n = v > .05 ? 6 : v > .015 ? 4 : 2; C.cuadro(t, escena, { n: t < 1.6 ? 6 : n }); gr(t); };
 await pintar(0); window._listo();
 </script>
 </body>
