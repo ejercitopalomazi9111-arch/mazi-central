@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Grupo Mazi · A la medida</title>
+<!-- FORMAL 14 · 30 s · 9:16 · SIN VOZ. Lo pidió Carlos el 29 de octubre: «2 publicidades super formales y
+     profesionales con modelos 3D existentes gratuitos, por ejemplo de computadora… busca animaciones
+     chingonsísimas en la web y revísalas frame by frame». Lo que se tomó de las referencias (formal.js):
+     oscuro primero y una rendija de luz que revela; macros con poco foco; la tapa que se abre y las
+     teclas que se prenden; entrar a la pantalla y salir de ella; cortes de continuidad donde la laptop
+     no se mueve y cambia el fondo; letra chica, un renglón a la vez. Cada corte cae en un golpe de la
+     canción (frase de 6.0 s, golpe de .75 s, medidos con librosa); la M cubo cae en el golpe grande del 24.
+     Laptop «gaming_laptop» de sabrito84 (CC BY). En la pantalla, NUESTRA página (web/), capturada tal cual.
+     Música: «Impact Prelude», Kevin MacLeod (incompetech.com), CC BY 4.0.
+     node herramientas/video/armar.mjs marca/anuncios/14-a-la-medida/index.html marca/anuncios/salida/14-a-la-medida.mp4 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter+Tight:wght@500;600;700;800&display=block">
+<link rel="stylesheet" href="../comun.css">
+<script>window.listo = new Promise(r => window._listo = r);</script>
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>
+#viñeta{ position:absolute; inset:0; z-index:5; pointer-events:none; background:radial-gradient(120% 80% at 50% 50%, transparent 58%, #000b 100%) }
+#ui{ position:absolute; inset:0; z-index:6; pointer-events:none }
+.r{ position:absolute; left:84px; right:150px }
+.r .m{ display:block; overflow:hidden; padding:.06em 0 .12em }
+.r .i{ display:inline-block; will-change:transform }
+.gr{ font:700 112px/1 "Inter Tight"; letter-spacing:-.035em; color:#F4EEF2 }
+.md{ font:600 76px/1.04 "Inter Tight"; letter-spacing:-.03em; color:#F4EEF2 }
+.md b, .gr b{ font-weight:inherit; color:#C77DFF }
+.ojo{ font:600 26px/1 "Inter Tight"; letter-spacing:.34em; text-transform:uppercase; color:#C77DFF }
+.cen{ left:0; right:0; text-align:center }
+</style>
+</head>
+<body>
+<canvas id="c" class="capa" width="1080" height="1920"></canvas>
+<div id="viñeta"></div>
+<div id="grano"></div>
+<div id="ui"></div>
+<script type="module">
+import { THREE, PAL, W, H, tramo, sale, entra, mezcla, grano } from '../motor.js';
+import { cine } from '../cine.js';
+import { laptop3d, textura, rendija, piso } from '../estudio.js';
+import { V3, tomas, renglones, cierre, fondos, curva, lenta } from '../formal.js';
+const $ = (s) => document.querySelector(s);
+/* el tiempo de la canción: frase de 6.0 s (golpe grande), golpe de .75 s; el primero en .07 */
+const F = 6.0, O = .07, P = (n) => O + n * F, G = .75, fx = (n) => `../../../herramientas/video/efectos/${n}.wav`;
+const LOGO = P(4) - .62, FIN = 30;                                   // la M cae sobre la cuña justo en el golpe del 24
+window.VIDEO = { w: W, h: H, fps: 30, dur: FIN, musica: { archivo: '/tmp/claude-0/musica/Impact_Prelude.mp3', desde: 0, vol: .95, entrada: .02, fin: 2.4 },
+  sonidos: [[fx('toque'), 7.95, .25], [fx('whoosh'), P(2) + 3 - .1, .3], [fx('whoosh'), LOGO - .25, .4], [fx('ding'), P(4) + .05, .25]] };
+await Promise.all(['700 80px "Inter Tight"', '600 60px "Inter Tight"', '800 60px "Inter Tight"'].map(f => document.fonts.load(f)));
+
+const C = cine($('#c'), { sub: 6, obturador: .5, fov: 30, bloom: [.35, .45, .9] });
+const { s, cam } = C; s.add(cam);
+s.background = new THREE.Color('#040306'); s.fog = new THREE.Fog('#040306', 5, 16); s.environmentIntensity = .32;
+C.r.shadowMap.enabled = true; C.r.shadowMap.type = THREE.PCFSoftShadowMap;
+const fondo = fondos(cam, { negro: ['#120A18', '#060409', '#020203'], vino: ['#5C1430', '#24081A', '#070308'], morado: ['#3B1460', '#170A26', '#05030A'] });
+
+/* ── la laptop ── */
+const L = await laptop3d({ ancho: 1.6 }); s.add(L.grupo);
+const texHero = await textura('pantalla.jpg'), texPag = await textura('pagina.jpg');
+texPag.wrapT = THREE.ClampToEdgeWrapping; const VENTANA = (2880 / 1.6) / 7200;   // lo que cabe de la página larga en la pantalla
+const matP = L.pantalla(texHero, { brillo: 0 });
+const suelo = piso({ color: '#050407', aspereza: .55 }); s.add(suelo);
+
+/* ── la luz: la rendija que barre, un borde vino atrás, un morado del otro lado y el brillo de la pantalla ── */
+s.add(new THREE.HemisphereLight('#D8CCE8', '#1A0A12', .06));
+const rj = rendija({ intensidad: 22, angulo: .1, rayas: 1, ancho: .12 }); rj.penumbra = .6; s.add(rj, rj.target);
+/* la llave: suave, de arriba y adelante a la izquierda, para que la laptop tenga forma aun sin rendija */
+const llave = new THREE.SpotLight('#EDE6F5', 0, 14, .55, .9, 1.4); llave.position.set(-2.2, 3.4, 3.2); llave.target.position.set(0, .3, 0); s.add(llave, llave.target);
+const borde = new THREE.DirectionalLight(PAL.vino2, 2.6); borde.position.set(3, 2.2, -4); s.add(borde);
+const morado = new THREE.PointLight('#9B3BFF', 0, 6, 1.6); morado.position.set(-2.2, 1.6, -1.6); s.add(morado);
+const luzPant = new THREE.PointLight('#8A5BD6', 0, 3.2, 1.8); s.add(luzPant);
+const luzTeclas = new THREE.PointLight('#B44BFF', 0, 1.2, 2); luzTeclas.position.set(0, .25, .05); s.add(luzTeclas);
+/* el teclado brilla en morado: el color de las teclas por el morado de la casa */
+L.base.traverse(o => { if(o.isMesh && o.material.emissiveMap) o.material.emissive.set('#D7A8FF'); });
+
+/* dónde queda la pantalla (cambia con la tapa): su centro y hacia dónde mira */
+const centroPant = () => { L.malla.geometry.computeBoundingBox(); const c = L.malla.geometry.boundingBox.getCenter(new THREE.Vector3()); return L.malla.localToWorld(c); };
+L.abrir(1); L.grupo.updateMatrixWorld(true);
+const PC = centroPant(), PN = V3(0, Math.sin(.21), Math.cos(.21));    // abierta: 12° pasada de la vertical
+const frente = (d, dx = 0, dy = 0) => [PC.clone().addScaledVector(PN, d).add(V3(dx, dy, 0)), PC.clone().add(V3(dx, dy, 0)), 0];
+
+/* ── el cierre: la M cubo en su rincón, muy arriba ── */
+const K = cierre(s, cam, { donde: V3(0, 200, 0), desde: LOGO, fov: 30 });
+
+/* ── LAS TOMAS: cada una un solo movimiento lento; entre una y otra, corte seco en el golpe ── */
+const T = tomas(cam, [
+  /* 1 · en lo oscuro: rozando el borde de la laptop cerrada mientras la rendija barre */
+  { t0: 0, t1: P(0) + 4 * G, de: [V3(-1.25, .26, 1.05), V3(-.5, .08, .4), -.06], a: [V3(-.95, .24, 1.0), V3(-.2, .08, .38), -.03], ap: .006 },
+  /* 2 · desde arriba, la tapa cerrada; la luz pasa */
+  { t0: P(0) + 4 * G, t1: P(0) + 7 * G, de: [V3(1.55, 1.55, 1.95), V3(0, .04, 0), .04], a: [V3(1.3, 1.3, 1.65), V3(0, .04, 0), .02], ap: .0012 },
+  /* 3 · de frente y a ras: la tapa se separa y sale una línea de luz */
+  { t0: P(0) + 7 * G, t1: P(1), de: [V3(0, .07, 1.25), V3(0, .085, 0), 0], a: [V3(0, .075, 1.05), V3(0, .09, 0), 0], ap: .006 },
+  /* 4 · golpe: se abre entera */
+  { t0: P(1), t1: P(1) + 3 * G, de: [V3(1.45, .5, 2.75), V3(0, .3, 0), .02], a: [V3(1.0, .62, 2.55), V3(0, .4, -.1), .01], ease: curva, ap: .001 },
+  /* 5 · de tres cuartos: «Páginas web. Software. Sistemas.» */
+  { t0: P(1) + 3 * G, t1: P(1) + 6 * G, de: [V3(2.85, 1.0, 2.75), V3(0, .42, -.1), .02], a: [V3(2.3, .82, 3.2), V3(0, .45, -.1), 0], ap: .001 },
+  /* 6 · el teclado de cerca, encendido */
+  { t0: P(1) + 6 * G, t1: P(2), de: [V3(.66, .24, .62), V3(-.1, .07, .04), .04], a: [V3(.3, .2, .56), V3(-.38, .07, 0), .02], ap: .009 },
+  /* 7 · golpe: la cámara entra a la pantalla */
+  { t0: P(2), t1: P(2) + 2 * G, de: [V3(.9, .8, 2.6), PC.clone(), .02], a: frente(1.6, -.28, .05), ease: curva, ap: .0006 },
+  /* 8 · adentro: la página corre */
+  { t0: P(2) + 2 * G, t1: P(2) + 4 * G, de: frente(1.6, -.28, .05), a: frente(1.45, -.28, .02), ap: 0 },
+  /* 9 · sale de la pantalla y la laptop gira: el fondo cambia en cada golpe y ella no se mueve */
+  { t0: P(2) + 4 * G, t1: P(3), de: frente(1.45, -.28, .02), a: [V3(0, .62, 3.9), V3(0, .45, 0), 0], ease: (u) => sale(Math.min(1, u * 2.6)) },
+  /* 10 · golpe: la toma de héroe, de abajo, girando despacio */
+  { t0: P(3), t1: P(3) + 4 * G, de: [V3(-2.2, .28, 3.1), V3(0, .5, 0), -.03], a: [V3(-1.2, .34, 3.6), V3(0, .5, 0), -.01], ap: .0008 },
+  /* 11 · la bisagra y la esquina de la pantalla, con la rendija */
+  { t0: P(3) + 4 * G, t1: LOGO - .14, de: [V3(1.38, .15, .42), V3(.8, .07, -.3), .05], a: [V3(1.22, .18, .3), V3(.78, .08, -.42), .03], ap: .008 },
+  /* 12 · el latigazo hacia arriba */
+  { t0: LOGO - .14, t1: LOGO, de: [V3(1.22, .18, .3), V3(.78, .08, -.42), .03], a: [V3(1.2, 3.5, .4), V3(.8, 6, -.4), 0], ease: entra },
+  /* 13 · la M cubo */
+  { t0: LOGO, t1: LOGO + 1.9, de: K.lejos, a: K.cerca, ease: curva, ap: .004 },
+  { t0: LOGO + 1.9, t1: FIN, de: K.cerca, a: K.final, ap: 0 }]);
+
+/* ── los renglones ── */
+const R = renglones($('#ui'), [
+  { t: .55, hasta: P(1) - .3, y: 250, texto: 'Grupo Mazi', clase: 'ojo' },
+  { t: 1.15, hasta: P(0) + 4 * G - .1, y: 300, texto: 'Precisión', clase: 'gr' },
+  { t: P(0) + 4 * G + .2, hasta: P(1) - .2, y: 300, texto: 'en cada<br><b>detalle.</b>', clase: 'gr' },
+  { t: P(1) + 3 * G + .05, hasta: P(1) + 6 * G - .05, y: 280, texto: 'Páginas web.\nSoftware.\nSistemas.', clase: 'gr', paso: G },
+  { t: P(2) + 2 * G + .1, hasta: P(2) + 4 * G - .05, y: 270, texto: 'Hecho a la medida\nde <b>tu negocio.</b>', clase: 'md', paso: .3 },
+  { t: P(2) + 5 * G, hasta: P(2) + 6 * G - .05, y: 1400, texto: 'Diseño', clase: 'ojo cen', dur: .35 },
+  { t: P(2) + 6 * G, hasta: P(2) + 7 * G - .05, y: 1400, texto: 'Desarrollo', clase: 'ojo cen', dur: .35 },
+  { t: P(2) + 7 * G, hasta: P(3) - .05, y: 1400, texto: 'Soporte', clase: 'ojo cen', dur: .35 },
+  { t: P(3) + .3, hasta: P(3) + 4 * G - .05, y: 280, texto: 'Entregamos rápido.\n<b>Y nos quedamos.</b>', clase: 'md', paso: G },
+  { t: P(3) + 4 * G + .15, hasta: LOGO - .2, y: 1290, texto: 'Hecho en Querétaro.', clase: 'md' },
+  { t: P(3) + 4 * G + .45, hasta: LOGO - .2, y: 1385, texto: 'Para todo México', clase: 'ojo' }]);
+
+function escena(t){
+  const tk = T.toma(t);
+  /* la tapa: cerrada, se separa en la toma 3 y se abre entera en el golpe del 6 */
+  const abre = t < P(1) ? .055 * sale(tramo(t, P(0) + 7 * G + .15, P(1))) : mezcla(.055, 1, curva(tramo(t, P(1), P(1) + 1.45)));
+  L.abrir(abre);
+  /* las teclas: un hilo de luz por la rendija, luego se prenden en el golpe */
+  const teclas = Math.max(.18 * tramo(t, P(0) + 7 * G, P(1)), sale(tramo(t, P(1) + .55, P(1) + 1.5)));
+  L.teclas(teclas); luzTeclas.intensity = teclas * .9;
+  /* la pantalla: despierta con un parpadeo de blanco a la página */
+  const prende = tramo(t, 7.9, 8.35), b = prende <= 0 ? 0 : Math.min(1, prende * 1.6) * (1 + .5 * Math.max(0, 1 - Math.abs(prende - .25) / .25));
+  matP.color.setScalar(.86 * b); if(b === 0) matP.color.setRGB(.05, .02, .08).multiplyScalar(tramo(t, P(1) + .6, P(1) + 1.6));
+  /* adentro de la pantalla: la página larga corre */
+  const dentro = t >= P(2) + .7 && t < P(3);
+  matP.map = dentro ? texPag : texHero;
+  if(dentro){ const u = curva(tramo(t, P(2) + 2 * G, P(2) + 4 * G + .3)); texPag.repeat.set(1, VENTANA); texPag.offset.set(0, 1 - VENTANA - u * .38 * (1 - VENTANA)); }
+  luzPant.intensity = b * 1.6; luzPant.position.copy(centroPant()).addScaledVector(PN, .55);
+  /* la laptop gira despacio en la toma 9 y en la de héroe se queda viéndonos */
+  L.grupo.rotation.y = t >= P(2) + 4 * G && t < P(3) ? mezcla(-.55, .5, tramo(t, P(2) + 4 * G, P(3))) : 0;
+  L.grupo.visible = t < LOGO;
+  /* la rendija: barre de izquierda a derecha en cada toma oscura */
+  const barrido = (a, b, de, a2) => { const u = tramo(t, a, b); rj.position.set(mezcla(de, a2, u), 3.2, 1.6); rj.target.position.set(mezcla(de, a2, u) * .4, 0, 0); };
+  if(t < P(0) + 4 * G) barrido(0, P(0) + 4 * G, -3.2, 2.4);
+  else if(t < P(1)) barrido(P(0) + 4 * G, P(1), 2.6, -2.6);
+  else if(t < P(3)) barrido(P(1), P(3), -2.5, 2.5);
+  else barrido(P(3), LOGO, -3, 3);
+  rj.intensity = t < P(1) ? 45 : (t >= P(1) + 6 * G && t < P(2)) ? 0 : 14; llave.intensity = t < P(1) ? 1.2 : (t >= P(1) + 6 * G && t < P(2)) ? 1.2 : 6;
+  borde.intensity = t < P(1) ? .5 : 2.6; s.environmentIntensity = t < P(1) ? .1 : t >= LOGO ? .8 : .3;
+  morado.intensity = mezcla(0, 2.2, tramo(t, P(1), P(1) + 1.5));
+  /* los cortes de continuidad: el fondo cambia en cada golpe de la toma 9 */
+  const g9 = Math.floor((t - (P(2) + 5 * G)) / G);
+  const nombre = t < P(2) + 5 * G || t >= P(3) ? 'negro' : ['vino', 'morado', 'negro'][g9] || 'negro';
+  fondo.solo(t >= LOGO ? 'morado' : nombre);
+  borde.color.set(t < P(1) ? '#A89CC4' : nombre === 'vino' ? '#D8335F' : nombre === 'morado' ? '#9B3BFF' : PAL.vino2);
+  s.fog.color.set(nombre === 'vino' ? '#12040A' : nombre === 'morado' ? '#0C0614' : '#040306');
+  s.fog.near = t >= LOGO ? 200 : 5; s.fog.far = t >= LOGO ? 400 : 16;
+  /* el cierre */
+  K.pintar(t);
+  const o = T.poner(t);
+  o.brillo = t >= LOGO ? .5 * (1 - .7 * tramo(t, LOGO + 1, LOGO + 2.5)) : .32 + .25 * b * (1 - tramo(t, 9, 10));
+  return o;
+}
+
+const gr = grano($('#grano'), .04);
+/* el desenfoque de movimiento: subcuadros, pero nunca de la toma anterior (un corte seco no se embarra) */
+const rapidez = (t) => { const t0 = T.toma(t).t0; T.poner(Math.max(t0, t - 1 / 30)); const a = cam.position.clone(), q = cam.quaternion.clone(); const o = T.poner(t);
+  return a.distanceTo(cam.position) / Math.max(.3, o.foco) + q.angleTo(cam.quaternion); };
+window.pintar = async (t) => {
+  const t0 = T.toma(t).t0, v = rapidez(t), mueve = (t > P(1) && t < P(1) + 1.6) || (t > P(2) + 4 * G && t < P(3));
+  const n = window.SUB || (v > .06 ? 8 : v > .025 ? 5 : mueve ? 4 : 2);
+  C.cuadro(t, (tk) => escena(Math.max(t0 + 1e-4, tk)), { n });
+  R(t); gr(t);
+};
+await pintar(0); window._listo();
+</script>
+</body>
+</html>

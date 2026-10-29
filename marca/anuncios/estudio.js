@@ -81,11 +81,11 @@ export async function textura(src, { repetir = false } = {}){
 
 /* LA LUZ DE RENDIJA: una tira de luz que barre el piso y el aparato (la de la referencia de la laptop
    morada, vista cuadro por cuadro). Es un foco con una máscara de persiana: SpotLight.map. */
-export function rendija({ color = '#ffffff', intensidad = 60, rayas = 1, angulo = .5 } = {}){
+export function rendija({ color = '#ffffff', intensidad = 60, rayas = 1, angulo = .5, ancho = .08 } = {}){
   const k = document.createElement('canvas'); k.width = k.height = 256; const x = k.getContext('2d');
   x.fillStyle = '#000'; x.fillRect(0, 0, 256, 256);
-  const g = x.createLinearGradient(0, 0, 256, 0); g.addColorStop(0, '#000'); g.addColorStop(.42, '#000'); g.addColorStop(.5, '#fff'); g.addColorStop(.58, '#000'); g.addColorStop(1, '#000');
-  for(let i = 0; i < rayas; i++){ x.save(); x.translate((i - (rayas - 1) / 2) * 256 / (rayas + 1), 0); x.fillStyle = g; x.fillRect(0, 0, 256, 256); x.restore(); }
+  const g = x.createLinearGradient(0, 0, 256, 0); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(.5 - ancho, 'rgba(0,0,0,0)'); g.addColorStop(.5, '#fff'); g.addColorStop(.5 + ancho, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+  for(let i = 0; i < rayas; i++){ x.save(); x.globalCompositeOperation = 'lighter'; x.translate((i - (rayas - 1) / 2) * 256 * .16, 0); x.fillStyle = g; x.fillRect(0, 0, 256, 256); x.restore(); }
   const tex = new THREE.CanvasTexture(k); tex.colorSpace = THREE.SRGBColorSpace;
   const l = new THREE.SpotLight(color, intensidad, 30, angulo, .25, 1.2); l.map = tex;
   l.castShadow = true; l.shadow.mapSize.set(2048, 2048); l.shadow.bias = -.0003; l.shadow.normalBias = .02; l.shadow.radius = 3;
