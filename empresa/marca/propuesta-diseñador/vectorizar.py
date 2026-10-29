@@ -8,7 +8,7 @@ género neutro»). Del boceto (boceto-original.jpg, líneas finas en un JPG de 9
                   las siluetas: la cabeza se volvía un bloque y las plumas parecían grietas.)
   · icono.svg   — para que se vea en chico: la A, la estrella y dos alas lisas (en tinta y en blanco
                   sobre morado oscuro, icono-oscuro.svg).
-Corre con python3.13 (OpenCV y fontTools) y potrace:  python3.13 marca/propuesta-diseñador/vectorizar.py"""
+Corre con python3.13 (OpenCV y fontTools) y potrace:  python3.13 empresa/marca/propuesta-diseñador/vectorizar.py"""
 import cv2, numpy as np, subprocess, re, os
 from fontTools.ttLib import TTFont
 from fontTools.pens.svgPathPen import SVGPathPen
