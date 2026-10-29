@@ -19,6 +19,7 @@ export const lenta = (u) => 1 - Math.pow(1 - u, 2.2);                           
 
 /* las tomas: dentro de cada una la cámara va de «de» a «a»; entre una y otra, corte seco */
 export function tomas(cam, lista){
+  const base = cam.fov;
   const toma = (t) => { let k = 0; while(k < lista.length - 1 && t >= lista[k + 1].t0) k++; return lista[k]; };
   return { lista, toma,
     /* acomoda la cámara al segundo t; devuelve el foco y la apertura */
@@ -27,7 +28,7 @@ export function tomas(cam, lista){
       const p = typeof T.de === 'function' ? T.de(t) : T.de, q = typeof T.a === 'function' ? T.a(t) : T.a;
       cam.position.lerpVectors(p[0], q[0], u); const mira = p[1].clone().lerp(q[1], u);
       const g = mezcla(p[2] || 0, q[2] || 0, u); cam.up.set(Math.sin(g), Math.cos(g), 0);
-      if(T.fov){ cam.fov = mezcla(T.fov[0], T.fov[1], u); cam.updateProjectionMatrix(); }
+      const f = T.fov ? mezcla(T.fov[0], T.fov[1], u) : base; if(f !== cam.fov){ cam.fov = f; cam.updateProjectionMatrix(); }
       /* un pulso de mano casi nada: la cámara de estudio no está muerta, pero tampoco tiembla */
       cam.position.x += Math.sin(t * .9) * .004; cam.position.y += Math.sin(t * 1.3 + 1) * .003;
       cam.lookAt(mira); cam.updateMatrixWorld();

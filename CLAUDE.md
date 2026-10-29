@@ -477,6 +477,8 @@ dependemos.
    | el brillo (bloom) hace brillar lo que emite luz | brilla todo lo que pase del UMBRAL, emita o no: un fondo blanco y letras blancas con luz de estudio pasan de .78 | en el 13 «En movimiento» el estudio blanco salió lavado, las letras como algodón y el logo con halo de neón. El umbral va en .9 y en lo blanco el brillo se apaga; lo que deba brillar se sube con `emissive`, no bajando el umbral |
    | una cámara a la distancia que «se ve bien» en horizontal se ve bien en vertical | en 9:16 con 32° de campo, a 5 unidades se ven sólo **1.6 de ancho**: una palabra de 0.5 de alto no cabe | todo el 13 salió con las letras cortadas a la orilla. `cabe()` en el anuncio achica cada palabra al ancho que se ve |
 
+   | los vértices de la parte alta de un modelo dan el tamaño de su pantalla | dan lo que cae arriba del corte que escogí: con `y > .45` la pantalla «medía» la mitad y el plano con nuestra página quedó **metido detrás del vidrio** en la mitad de abajo | tres vueltas a ojo con la computadora del anuncio 15. Se mide con **rayos** (`Raycaster` de frente cada 5 cm): da la superficie exacta y su inclinación (30°) en una corrida |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---

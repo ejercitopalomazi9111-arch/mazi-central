@@ -20,6 +20,8 @@
 <style>
 #viñeta{ position:absolute; inset:0; z-index:5; pointer-events:none; background:radial-gradient(120% 80% at 50% 50%, transparent 58%, #000b 100%) }
 #ui{ position:absolute; inset:0; z-index:6; pointer-events:none }
+/* una sombra arriba y otra abajo, para que la letra se lea aunque detrás haya una pantalla prendida */
+#sombra{ position:absolute; inset:0; z-index:5; pointer-events:none; background:linear-gradient(180deg, #050307D0 0, #05030790 330px, #05030700 620px, #05030700 1180px, #05030780 1420px, #050307B0 1920px) }
 .r{ position:absolute; left:84px; right:150px }
 .r .m{ display:block; overflow:hidden; padding:.06em 0 .12em }
 .r .i{ display:inline-block; will-change:transform }
@@ -34,6 +36,7 @@
 <canvas id="c" class="capa" width="1080" height="1920"></canvas>
 <div id="viñeta"></div>
 <div id="grano"></div>
+<div id="sombra"></div>
 <div id="ui"></div>
 <script type="module">
 import { THREE, PAL, W, H, tramo, sale, entra, mezcla, grano } from '../motor.js';
@@ -174,7 +177,7 @@ const rapidez = (t) => { const t0 = T.toma(t).t0; T.poner(Math.max(t0, t - 1 / 3
   return a.distanceTo(cam.position) / Math.max(.3, o.foco) + q.angleTo(cam.quaternion); };
 window.pintar = async (t) => {
   const t0 = T.toma(t).t0, v = rapidez(t), mueve = (t > P(1) && t < P(1) + 1.6) || (t > P(2) + 4 * G && t < P(3));
-  const n = window.SUB || (v > .06 ? 8 : v > .025 ? 5 : mueve ? 4 : 2);
+  const n = window.SUB || (v > .06 ? 7 : v > .025 ? 4 : mueve ? 3 : v > .008 ? 2 : 1);
   C.cuadro(t, (tk) => escena(Math.max(t0 + 1e-4, tk)), { n });
   R(t); gr(t);
 };
