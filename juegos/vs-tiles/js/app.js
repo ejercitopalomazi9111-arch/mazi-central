@@ -7,6 +7,7 @@ import { armarCarta, DIFS, MODOS } from './cartas.js';
 import { crearEscena, ESCENARIOS, PERSONAJES, COLORES_RIEL } from './escena.js';
 import { crearPartida, cargarSprites } from './juego.js';
 import { analizar } from './analisis.js';
+import { biblioteca, etiquetas } from './biblioteca.js';
 const $ = (s) => document.querySelector(s), $$ = (s) => [...document.querySelectorAll(s)];
 
 /* ── el catálogo ── */
@@ -67,7 +68,24 @@ const partida = crearPartida({ escena, capa: $('#capa'), sprites, sonidos, ajust
 Y.alPausar = (p) => mostrar(p ? 'pausa' : null);
 const analisis = {}, bufs = {};
 const datos = async (id) => analisis[id] ||= await (await fetch(`datos/${id}.json`)).json();
-const audio = async (id) => bufs[id] ||= await reloj.cargar(`musica/${id}.mp3`);
+/* el audio ya decodificado pesa 50-90 MB por canción: se guardan sólo las dos últimas, o con mucha música el
+   iPhone cierra la página por memoria */
+let recientes = [];
+const audio = async (id) => {
+  if(!bufs[id]) bufs[id] = CANCIONES.find(c => c.id === id)?.propia
+    ? await biblioteca.uno(id).then(async r => { reloj.preparar(); return reloj.ctx.decodeAudioData(await r.audio.arrayBuffer()); })
+    : await reloj.cargar(`musica/${id}.mp3`);
+  recientes = [id, ...recientes.filter(x => x !== id)]; for(const v of recientes.splice(2)) delete bufs[v];
+  return bufs[id]; };
+const quitarAcentos = (t) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+/* ── Mi música: lo que el jugador metió desde su teléfono (biblioteca.js) ── */
+const portadas = {};
+const hash = (t) => { let h = 2166136261; for(let i = 0; i < t.length; i++){ h ^= t.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
+function agregarPropia(r){ if(CANCIONES.some(c => c.id === r.id)) return; analisis[r.id] = r.an; if(r.portada) portadas[r.id] = URL.createObjectURL(r.portada);
+  CANCIONES.push({ id: r.id, titulo: r.titulo, artista: r.artista, voces: r.voces, escena: r.escena, propia: true }); }
+const listaPropia = biblioteca.listar().then(l => l.forEach(agregarPropia)).catch(() => {});
+const fondoDe = (c) => portadas[c.id] || `escenarios/${ESCENARIOS[c.escena].id}.jpg`;
 await escena.ponerCantantes([idVoz()]);
 function idVoz(){ return (Y.puesto.voz || 'voz:gumi').split(':')[1]; }
 aplicarCosmeticos();
@@ -154,23 +172,35 @@ let modoLista = 'libre', modoSel = 'carril', difSel = 'dificil', cancionSel = CA
 async function canciones(cual){ modoLista = cual; mostrar('canciones'); $('#cancionesT').textContent = cual === 'reto' ? 'EXÓRCIST Challenge' : 'Juego libre';
   if(cual === 'reto'){ modoSel = 'exorcist'; if(!['experto', 'exorcist'].includes(difSel)) difSel = 'exorcist'; }
   const md = $('#modos'); md.innerHTML = ''; Object.entries(MODOS).forEach(([k, m]) => { if(cual === 'reto' && k !== 'exorcist') return; const b = document.createElement('button'); b.textContent = m.nombre; b.className = k === modoSel ? 'si' : ''; b.onclick = () => { modoSel = k; canciones(cual); }; md.appendChild(b); });
-  const L = $('#lista'); L.innerHTML = '';
-  for(const c of CANCIONES){ const b = document.createElement('button'); b.className = 'fila' + (c.id === cancionSel ? ' si' : ''); const r = Y.record[`${c.id}|${modoSel}|${difSel}`];
-    b.innerHTML = `<div class="mini" style="background-image:url(escenarios/${ESCENARIOS[c.escena].id}.jpg)"></div><div><b>${c.titulo}</b><span>${c.artista} · ${c.voces.map(v => PERSONAJES.find(p => p.id === v).nombre).join(' · ')}</span></div><div class="mejor">${r ? r.rango + '<br>' + r.puntaje : ''}</div>`;
-    b.onclick = () => { cancionSel = c.id; canciones(cual); }; L.appendChild(b); }
+  await listaPropia; if(!CANCIONES.some(x => x.id === cancionSel)) cancionSel = CANCIONES[0].id;
+  const L = $('#lista'), filtro = quitarAcentos($('#buscaCancion').value.trim()); L.innerHTML = '';
+  $('#buscaCancion').hidden = CANCIONES.length < 12;
+  const propias = CANCIONES.filter(c => c.propia).length;
+  for(const [titulo, grupo] of [['De la casa', CANCIONES.filter(c => !c.propia)], [`Mi música · ${propias}`, CANCIONES.filter(c => c.propia)]]){
+    const vis = grupo.filter(c => !filtro || quitarAcentos(c.titulo + ' ' + c.artista).includes(filtro)); if(!vis.length) continue;
+    if(propias){ const h = document.createElement('h4'); h.className = 'ojo grupo'; h.textContent = titulo; L.appendChild(h); }
+    for(const c of vis){ const b = document.createElement('button'); b.className = 'fila' + (c.id === cancionSel ? ' si' : ''); const r = Y.record[`${c.id}|${modoSel}|${difSel}`];
+      b.innerHTML = `<div class="mini" style="background-image:url('${fondoDe(c)}')"></div><div><b>${esc(c.titulo)}</b><span>${esc(c.artista)} · ${c.voces.map(v => PERSONAJES.find(p => p.id === v)?.nombre).filter(Boolean).join(' · ')}</span></div><div class="mejor">${r ? r.rango + '<br>' + r.puntaje : ''}</div>`;
+      b.onclick = () => { cancionSel = c.id; canciones(cual); }; L.appendChild(b); } }
+  if(!propias){ const b = document.createElement('button'); b.className = 'fila agrega'; b.innerHTML = '<div class="mini">＋</div><div><b>Mete tu música</b><span>Anime, Vocaloid, lo que tengas en el teléfono</span></div>'; b.onclick = () => mostrar('lab'); L.appendChild(b); }
   const c = CANCIONES.find(x => x.id === cancionSel), an = await datos(c.id);
   const niveles = DIFS.map(d => armarCarta(an, c, modoSel, d.id).nivel), colD = ['#5CFFB0', '#38E1FF', '#FFC24B', '#FF2D7A', '#FF2D55'];
-  $('#portada').innerHTML = `<div class="foto" style="background-image:url(escenarios/${ESCENARIOS[c.escena].id}.jpg)"></div><div><div class="ojo">${MODOS[modoSel].de}</div><h3>${c.titulo}</h3><div class="art">${c.artista} · ${MODOS[modoSel].que}</div>
-    <div class="datos"><span class="pill">BPM ${Math.round(an.bpm)}</span><span class="pill">${fmt(an.dur)}</span>${c.jefe ? '<span class="pill rojo">JEFE</span>' : ''}</div></div>`;
+  $('#portada').innerHTML = `<div class="foto" style="background-image:url('${fondoDe(c)}')"></div><div><div class="ojo">${MODOS[modoSel].de}</div><h3>${esc(c.titulo)}</h3><div class="art">${esc(c.artista)} · ${MODOS[modoSel].que}</div>
+    <div class="datos"><span class="pill">BPM ${Math.round(an.bpm)}</span><span class="pill">${fmt(an.dur)}</span>${c.jefe ? '<span class="pill rojo">JEFE</span>' : ''}${c.propia ? '<button class="pill quitar" id="quitarB">Quitar</button>' : ''}</div></div>`;
+  /* quitar una canción propia pide un segundo toque: se borra del teléfono y no hay cómo deshacerlo */
+  if(c.propia) $('#quitarB').onclick = async (e) => { const q = e.currentTarget; if(!q.dataset.seguro){ q.dataset.seguro = 1; q.textContent = '¿Seguro? Toca otra vez'; setTimeout(() => { if(q.isConnected){ delete q.dataset.seguro; q.textContent = 'Quitar'; } }, 3000); return; }
+    await biblioteca.borrar(c.id); CANCIONES.splice(CANCIONES.indexOf(c), 1); delete analisis[c.id]; delete bufs[c.id]; if(portadas[c.id]){ URL.revokeObjectURL(portadas[c.id]); delete portadas[c.id]; }
+    cancionSel = CANCIONES[0].id; canciones(cual); };
   const dv = $('#difs'); dv.innerHTML = ''; DIFS.forEach((d, i) => { const b = document.createElement('button'); b.style.setProperty('--c', colD[i]); b.className = d.id === difSel ? 'si' : ''; b.innerHTML = `<em><s>${niveles[i]}</s></em>${d.nombre}`; b.onclick = () => { difSel = d.id; canciones(cual); }; dv.appendChild(b); });
   escena.ponerCantantes(c.voces);
 }
 const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
+$('#buscaCancion').addEventListener('input', () => canciones(modoLista));
 $('#jugarB').addEventListener('click', () => jugar(cancionSel, modoSel, difSel));
 
 /* ── jugar ── */
 async function jugar(id, modo, dif, deHistoria = null){
-  const c = CANCIONES.find(x => x.id === id) || ultima?.c, an = c.analisis || await datos(id), buf = c.buf || await audio(id);
+  const c = CANCIONES.find(x => x.id === id) || ultima?.c, an = await datos(c.id), buf = await audio(c.id);
   const carta = armarCarta(an, c, modo, dif); ultima = { c, modo, dif, deHistoria };
   await escena.ponerCantantes(modo === 'flechas' ? [idVoz(), c.voces.find(v => v !== idVoz()) || 'miku'] : [...new Set([idVoz(), ...c.voces])].slice(0, 3));
   mostrar(null); $('#sombra').style.opacity = 0;
@@ -275,12 +305,24 @@ function creditos(){ mostrar('creditos');
   <h3>LETRA Y CÓDIGO DE FUERA</h3><p>Orbitron, Zen Kaku Gothic New y Cinzel (Google Fonts, SIL OFL). three.js (MIT).</p>`; }
 
 /* ── Lab: tu canción ── */
-$('#labArchivo').addEventListener('change', async (e) => { const f = e.target.files[0]; if(!f) return; const st = $('#labEstado');
-  try{ st.textContent = 'Leyendo…'; const buf = await reloj.ctx.decodeAudioData(await f.arrayBuffer()); const an = await analizar(buf, (m) => st.textContent = m);
-    const id = 'lab-' + f.name.replace(/\W+/g, '-').slice(0, 30), c = { id, titulo: f.name.replace(/\.[^.]+$/, '').slice(0, 40), artista: 'Tu canción', voces: [idVoz()], escena: Math.floor(Math.random() * ESCENARIOS.length), analisis: an, buf };
-    analisis[id] = an; bufs[id] = buf; CANCIONES.push(c); cancionSel = id;
-    st.textContent = `Listo: ${Math.round(an.bpm)} golpes por minuto, ${an.ataques.length} ataques, ${an.secciones.length} secciones. Ya está en Juego libre.`; setTimeout(() => canciones('libre'), 900);
-  }catch(err){ st.textContent = 'No se pudo leer ese audio. Prueba con un mp3 o m4a.'; }
+$('#labArchivo').addEventListener('change', async (e) => { const fs = [...e.target.files]; e.target.value = ''; if(!fs.length) return; const st = $('#labEstado');
+  biblioteca.persistir(); let bien = 0, primera = null; const voces = PERSONAJES.filter(p => !p.jefe).map(p => p.id);
+  for(const [i, f] of fs.entries()){ const pre = fs.length > 1 ? `${i + 1} de ${fs.length} · ` : '';
+    try{ st.textContent = `${pre}Leyendo «${f.name}»…`;
+      const et = await etiquetas(f), datosArchivo = await f.arrayBuffer(); reloj.preparar();
+      const buf = await reloj.ctx.decodeAudioData(datosArchivo.slice(0));
+      const an = await analizar(buf, (m) => st.textContent = `${pre}${et.titulo}: ${m}`);
+      const id = 'mia-' + hash(`${et.artista}|${et.titulo}|${f.size}`), h = parseInt(hash(id), 36);
+      const rec = { id, titulo: et.titulo, artista: et.artista, portada: et.portada || null, an, audio: new Blob([datosArchivo], { type: f.type || 'audio/mpeg' }),
+        voces: [idVoz(), voces[h % voces.length]].filter((v, k, a) => a.indexOf(v) === k), escena: h % ESCENARIOS.length, agregada: Date.now() + i };
+      await biblioteca.guardar(rec); agregarPropia(rec); bien++; primera ||= id;
+    }catch(err){ st.textContent = `${pre}No se pudo leer «${f.name}». Prueba con MP3 o M4A.`; await new Promise(r => setTimeout(r, 1800)); } }
+  pintarMiMusica();
+  if(!bien) return; cancionSel = primera;
+  st.textContent = bien === 1 ? 'Lista. Ya está en Juego libre, en «Mi música».' : `Listas ${bien} canciones. Ya están en Juego libre, en «Mi música».`; setTimeout(() => canciones('libre'), 1100);
 });
+function pintarMiMusica(){ const n = CANCIONES.filter(c => c.propia).length; $('#labCuenta').textContent = n ? `Tienes ${n} ${n === 1 ? 'canción' : 'canciones'} en este teléfono.` : ''; }
+listaPropia.then(pintarMiMusica);
+
 
 window.VST = { partida, escena, Y, jugar, CANCIONES, armarCarta, datos };    // para las pruebas

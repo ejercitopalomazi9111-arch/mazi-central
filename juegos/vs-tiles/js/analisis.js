@@ -15,7 +15,7 @@ export async function analizar(buf, avance = () => {}){
   const frames = Math.floor(n / hop);
   const env = (x) => { const e = new Float32Array(frames); for(let i = 0; i < frames; i++){ let s = 0; for(let k = 0; k < hop; k++){ const v = x[i * hop + k] || 0; s += v * v; } e[i] = Math.log1p(Math.sqrt(s / hop) * 1000); } return e; };
   avance('Buscando los golpes…');
-  const E = [env(g), env(m), env(a)], flujo = E.map(e => { const d = new Float32Array(frames); for(let i = 1; i < frames; i++) d[i] = Math.max(0, e[i] - e[i - 1]); const mx = Math.max(1e-6, ...d); for(let i = 0; i < frames; i++) d[i] /= mx; return d; });
+  const E = [env(g), env(m), env(a)], flujo = E.map(e => { const d = new Float32Array(frames); for(let i = 1; i < frames; i++) d[i] = Math.max(0, e[i] - e[i - 1]); let mx = 1e-6; for(const v of d) if(v > mx) mx = v; /* sin «...d»: Safari topa los argumentos y una canción de 13 min pasa de 65 mil cuadros */ for(let i = 0; i < frames; i++) d[i] /= mx; return d; });
   const total = new Float32Array(frames); for(let i = 0; i < frames; i++) total[i] = flujo[0][i] * 1.3 + flujo[1][i] + flujo[2][i] * .9;
   /* los ataques: picos sobre el promedio local */
   const ataques = [], W = Math.round(fps * .35); let mxT = 0; for(const v of total) mxT = Math.max(mxT, v);

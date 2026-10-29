@@ -62,7 +62,7 @@
     <button class="tarjeta ancha" data-ir="historia" style="--c:#FF2D7A66"><b>Historia</b><span>Prólogo y Capítulo I · las incursiones a los archivos</span></button>
     <button class="tarjeta" data-ir="libre" style="--c:#38E1FF55"><b>Juego libre</b><span>Cualquier canción, modo y dificultad</span></button>
     <button class="tarjeta" data-ir="reto" style="--c:#FF2D5566"><span class="tag">⚠ 13+</span><b>EXÓRCIST</b><span>Las reglas cambian a media canción</span></button>
-    <button class="tarjeta" data-ir="lab" style="--c:#5CFFB055"><b>EXÓRCIST Lab</b><span>Tu canción se vuelve carta</span></button>
+    <button class="tarjeta" data-ir="lab" style="--c:#5CFFB055"><b>Mi música</b><span>Mete tus canciones: anime, Vocaloid, lo que quieras</span></button>
     <button class="tarjeta" data-ir="mercado" style="--c:#FFE08A55"><b>Mercado de Ecos</b><span>El archivo · tiradas</span></button>
     <button class="tarjeta" data-ir="vestidor" style="--c:#B44BFF66"><b>Vestidor</b><span>Voz, notas, carril y efectos</span></button>
     <button class="tarjeta" data-ir="records" style="--c:#38E1FF44"><b>Récords</b><span>Tus mejores partidas</span></button>
@@ -81,6 +81,7 @@
     <label><input type="checkbox" id="opSin">Sin morir</label>
     <label><input type="checkbox" id="opPract">Práctica 75 %</label>
   </div>
+  <input id="buscaCancion" class="busca" type="search" placeholder="Buscar canción o artista" autocomplete="off" hidden>
   <div class="lista" id="lista"></div>
   <div class="pie"><button class="b primario grande" id="jugarB">Jugar</button></div>
 </section>
@@ -129,12 +130,14 @@
 </section>
 
 <section class="pantalla" id="lab">
-  <div class="cab"><button class="b chico" data-ir="menu">‹</button><h2>EXÓRCIST Lab</h2></div>
+  <div class="cab"><button class="b chico" data-ir="menu">‹</button><h2>Mi música</h2></div>
   <div class="panel">
-    <div class="ojo">Tu canción → tu carta</div>
-    <p class="sub" style="margin:8px 0 12px">Elige un audio de tu teléfono. Se analiza aquí mismo (no se sube a ningún lado): sus golpes, sus ataques y sus secciones, y sale la carta en el modo y la dificultad que quieras.</p>
-    <label class="b primario grande" style="width:100%">Elegir canción<input type="file" id="labArchivo" accept="audio/*" hidden></label>
+    <div class="ojo">EXÓRCIST Lab · tu canción se vuelve carta</div>
+    <p class="sub" style="margin:8px 0 12px">Elige tus canciones (puedes elegir muchas a la vez). El juego escucha sus golpes y sus partes y arma las notas en los cinco modos y las cinco dificultades. <b>Se quedan guardadas en este teléfono</b> y no se suben a ningún lado.</p>
+    <label class="b primario grande" style="width:100%">Elegir canciones<input type="file" id="labArchivo" accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.flac" multiple hidden></label>
     <p class="sub" id="labEstado" style="margin-top:12px"></p>
+    <p class="sub" id="labCuenta" style="margin-top:6px"></p>
+    <p class="sub nota">Sirven los archivos MP3 o M4A que tengas en la app Archivos. Las de Spotify o Apple Music no: vienen con candado y el teléfono no deja abrirlas. Si las guardas en la pantalla de inicio (Compartir → Agregar a inicio), el iPhone nunca las borra.</p>
   </div>
 </section>
 

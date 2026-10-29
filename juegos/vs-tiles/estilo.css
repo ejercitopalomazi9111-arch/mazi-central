@@ -151,3 +151,11 @@ h2{ font:800 22px/1.1 var(--n); letter-spacing:.06em; margin:0 0 10px }
 .aviso{ position:fixed; z-index:9; left:50%; bottom:max(20px, env(safe-area-inset-bottom)); transform:translateX(-50%); padding:12px 18px; background:#1B1029; border:1px solid var(--magenta); font-weight:700; max-width:min(92vw, 420px); text-align:center; animation:entra .3s both }
 @media (min-width:900px){ #menu .rejilla{ grid-template-columns:repeat(4, minmax(0, 1fr)) } .pantalla > *{ width:min(820px, 100%); margin-left:auto; margin-right:auto } }
 @media (prefers-reduced-motion:reduce){ .pantalla.vis, .logo, .toca, .archivo .orbe{ animation:none } }
+
+/* Mi música */
+.lista .grupo{ margin:10px 0 2px; font-size:11px }
+.fila.agrega .mini{ display:grid; place-items:center; font:900 22px var(--n); color:var(--verde); background:#ffffff0d; border:1px dashed var(--linea) }
+.pill.quitar{ color:#fff; background:#FF2D5522; border-color:#FF2D5566; cursor:pointer; min-height:28px }
+.busca{ width:100%; min-height:44px; margin:4px 0 8px; padding:10px 14px; background:var(--panel2); border:1px solid var(--linea); color:#fff; font:600 16px var(--t) }
+.busca[hidden]{ display:none }
+.nota{ margin-top:14px; font-size:12px; opacity:.75 }
