@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Grupo Mazi · La plantilla</title>
+<!-- GRACIOSO 07 · ~27 s · 9:16 · voz Chris. La plantilla barata contra lo nuestro, sin nombrar a nadie:
+     la plantilla es plana, gris y con música de elevador; cuando entra lo nuestro, cambia la música
+     y todo se vuelve 3D y real. La plantilla y su «foto de stock» están dibujadas aquí: no son de nadie.
+     Música: «Local Forecast – Elevator» y «Funkorama», Kevin MacLeod (incompetech.com), CC BY 4.0.
+     node marca/anuncios/07-la-plantilla/musica.mjs   (arma la música con el corte en su lugar)
+     node herramientas/video/armar.mjs marca/anuncios/07-la-plantilla/index.html marca/anuncios/salida/07-la-plantilla.mp4 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter+Tight:wght@600;800;900&display=block">
+<link rel="stylesheet" href="../comun.css">
+<script>window.listo = new Promise(r => window._listo = r);</script>
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>
+#nav{ position:absolute; left:120px; top:420px; width:840px; height:840px; border-radius:22px; overflow:hidden; background:#fff; box-shadow:0 40px 90px -30px #000; transform-origin:0 0 }
+#nav .cabeza{ height:54px; background:#E4E1E8; display:flex; align-items:center; gap:10px; padding:0 20px } #nav .cabeza i{ width:16px; height:16px; border-radius:50%; background:#C9C4D0 }
+#nav .cabeza b{ margin-left:16px; flex:1; height:30px; border-radius:15px; background:#fff; font:500 18px/30px Arial; color:#9A94A3; padding-left:16px; font-weight:400 }
+#pagina{ position:relative; padding:30px 44px; font-family:Arial, sans-serif; color:#5E5867 }
+#pagina .menu{ display:flex; gap:30px; font:400 22px/1 Arial; color:#8B8594; justify-content:flex-end } #pagina .menu b{ margin-right:auto; color:#5E5867; font-size:26px }
+#pagina h1{ margin-top:46px; font:700 50px/1.1 Arial; color:#4A4553 }
+#stock{ position:relative; margin-top:30px; height:300px; border-radius:14px; background:#D9D5DE; overflow:hidden }
+#stock .gente{ position:absolute; bottom:0; width:120px; height:210px }
+#stock .gente::before{ content:""; position:absolute; left:30px; top:0; width:60px; height:60px; border-radius:50%; background:#B8B2C0 }
+#stock .gente::after{ content:""; position:absolute; left:10px; top:66px; width:100px; height:150px; border-radius:50px 50px 0 0; background:#B8B2C0 }
+#stock .laptop{ position:absolute; bottom:40px; width:110px; height:66px; border-radius:6px; background:#9F99A8 }
+#stock .marca{ position:absolute; left:16px; top:14px; font:700 18px/1 Arial; color:#fff; letter-spacing:.08em; background:#0004; padding:8px 10px; border-radius:6px }
+#lorem{ margin-top:30px; font:400 25px/1.45 Arial; color:#9A94A3 }
+#boton{ display:inline-block; margin-top:26px; font:700 26px/1 Arial; padding:20px 34px; border-radius:10px; background:#B9B3C2; color:#fff }
+.flecha{ position:absolute; z-index:8; font:800 46px/1.05 var(--s); color:#FFD23F; padding:20px 26px; border-radius:22px; background:#17121DEE; box-shadow:0 20px 50px -16px #000; opacity:0; white-space:nowrap }
+#toast{ position:absolute; z-index:8; left:160px; right:220px; top:1120px; padding:26px 30px; border-radius:20px; background:#2A2A33; color:#fff; font:700 34px/1.2 var(--s); display:flex; gap:16px; align-items:center; opacity:0; box-shadow:0 30px 60px -20px #000 }
+#cursor{ position:absolute; z-index:9; left:0; top:0; width:56px; height:56px; opacity:0 }
+#lista{ position:absolute; left:80px; right:150px; top:250px; font:700 56px/1.18 var(--t); letter-spacing:-.03em }
+#lista div{ display:flex; gap:18px; align-items:center; opacity:0 } #lista svg{ flex:none }
+</style>
+</head>
+<body>
+<div id="fondo" class="capa"></div>
+<canvas id="gl" class="capa"></canvas>
+<canvas id="c2" class="capa" width="1080" height="1920"></canvas>
+<div id="ui" class="capa">
+  <div id="titulo" class="grande"></div>
+  <div id="nav"><div class="cabeza"><i></i><i></i><i></i><b>www.tu-empresa-aqui.com</b></div>
+    <div id="pagina"><div class="menu"><b>TU EMPRESA</b><span>Inicio</span><span>Servicios</span><span>Contacto</span></div>
+      <h1>Soluciones innovadoras para tu negocio</h1>
+      <div id="stock"><span class="marca">FOTO DE STOCK</span></div>
+      <div id="lorem">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</div>
+      <div id="boton">Contáctanos</div></div></div>
+  <div class="flecha" id="fl1">↑ no trabajan contigo</div>
+  <div class="flecha" id="fl2">↑ aquí iba tu menú</div>
+  <div id="toast"></div>
+  <div id="lista"></div>
+  <div id="cierre"><div class="wa">WhatsApp <b>442 883 3786</b></div></div>
+</div>
+<div id="cursor"></div>
+<div id="subs"></div>
+<div id="grano"></div>
+<script type="module">
+import { THREE, PAL, W, H, tramo, suave, sale, entra, resorte, mezcla, vida, escena3d, telefono, laptop, Toma, guion, sonidosVoz, subtitulos, grano, logo2d } from '../motor.js';
+import { icono } from '../iconos.js';
+const $ = (s) => document.querySelector(s);
+const G = await guion('.'), L = (id) => G.de(id);
+const FIN = L('07').t1 + 2.3, fx = (n) => `../../../herramientas/video/efectos/${n}.wav`;
+window.VIDEO = { w: W, h: H, fps: 30, dur: FIN, musica: { archivo: '/tmp/claude-0/musica/mezcla-07.mp3', desde: 0, vol: .32, entrada: .2, fin: 2 },
+  sonidos: [...sonidosVoz(G, 1.08), [fx('toque'), L('04').t0 + L('04').dur * .45, .7], [fx('whoosh'), L('05').t0 - .4, .7], [fx('subida'), L('07').t0 - .2, .4]] };
+await Promise.all(['700 80px "Space Grotesk"', '800 60px "Inter Tight"'].map(f => document.fonts.load(f)));
+/* la gente de la foto de stock: tres siluetas grises con su laptop */
+$('#stock').insertAdjacentHTML('beforeend', [90, 330, 570].map((x, i) => `<i class="gente" style="left:${x}px;transform:scale(${[1, 1.12, .96][i]})"></i><i class="laptop" style="left:${x + 40}px"></i>`).join(''));
+$('#cursor').innerHTML = `<svg viewBox="0 0 24 24" width="56" height="56"><path d="M4 2 L4 20 L9 15 L12.5 22 L15.5 20.5 L12 13.5 L19 13.5 Z" fill="#fff" stroke="#000" stroke-width="1.4" stroke-linejoin="round"/></svg>`;
+const E = escena3d($('#gl'));
+const tS = new Toma('smileys-tel', { desde: 9 }), tD = new Toma('district-pc', { desde: 1 });
+const tel = telefono(tS.tex), lap = laptop(tD.tex); E.s.add(tel, lap);
+const sub = subtitulos($('#subs'), G), gr = grano($('#grano'), .05), c2 = $('#c2').getContext('2d');
+const poner = (el, html) => { if(el.dataset.h !== html){ el.innerHTML = html; el.dataset.h = html; } };
+const LISTA = [['Tu comida', 'utensils'], ['Tus precios', 'badge-dollar-sign'], ['Tu pedido por WhatsApp', 'message-circle'], ['Alguien que contesta', 'check']];
+
+window.pintar = async (t) => {
+  const l = Object.fromEntries(G.lineas.map(z => [z.id, z]));
+  const T5 = l['05'].t0;
+  /* la plantilla: entra, la cámara se acerca a la foto, luego al lorem, luego al botón; en «05» se cae */
+  const zFoto = suave(tramo(t, l['02'].t0 - .3, l['02'].t0 + .3)) - suave(tramo(t, l['03'].t0 - .35, l['03'].t0 + .2));
+  const zLorem = suave(tramo(t, l['03'].t0 - .35, l['03'].t0 + .2)) - suave(tramo(t, l['04'].t0 - .35, l['04'].t0 + .2));
+  const zBoton = suave(tramo(t, l['04'].t0 - .35, l['04'].t0 + .2)) - suave(tramo(t, T5 - .5, T5 - .2));
+  /* el acercamiento: a qué punto de la página (en sus coordenadas) y cuánto; se reparte entre los tres */
+  const nav = $('#nav'), centro = (sel) => { const e = $(sel); let x = e.offsetWidth / 2, y = e.offsetHeight / 2; for(let n = e; n && n !== nav; n = n.offsetParent){ x += n.offsetLeft; y += n.offsetTop; } return [x, y]; };
+  const P0 = [420, 420], PF = centro('#stock'), PL = centro('#lorem'), PB = centro('#boton');
+  const wR = 1 - zFoto - zLorem - zBoton, px = P0[0] * wR + PF[0] * zFoto + PL[0] * zLorem + PB[0] * zBoton, py = P0[1] * wR + PF[1] * zFoto + PL[1] * zLorem + PB[1] * zBoton;
+  const esc = wR * 1 + zFoto * 1.25 + zLorem * 1.7 + zBoton * 2;
+  const cae = entra(tramo(t, T5 - .45, T5 + .15)), entraP = sale(tramo(t, .2, .8));
+  const Cx = 540, Cy = 840;                                                      // dónde queda el punto en la pantalla
+  nav.style.left = '0px'; nav.style.top = '0px'; nav.style.transformOrigin = '0 0';
+  nav.style.transform = `translate(${Cx - px * esc}px, ${Cy - py * esc + (1 - entraP) * 300 + cae * 1500}px) scale(${esc}) rotate(${cae * 18}deg)`;
+  nav.style.opacity = entraP * (1 - tramo(t, T5, T5 + .2)); nav.style.filter = 'saturate(.55) brightness(.95)';
+  /* las flechas que se burlan */
+  $('#fl1').style.opacity = vida(t, l['02'].t0 + l['02'].dur * .45, l['03'].t0 - .3, .25, .2); $('#fl1').style.left = '300px'; $('#fl1').style.top = '1120px';
+  $('#fl2').style.opacity = vida(t, l['03'].t0 + .3, l['04'].t0 - .3, .25, .2); $('#fl2').style.left = '300px'; $('#fl2').style.top = '1120px';
+  /* el cursor va al botón y hace clic: no pasa nada (bueno, sí: un error) */
+  const tc = l['04'].t0 + l['04'].dur * .45, uc = suave(tramo(t, l['04'].t0, tc));
+  const b = $('#boton').getBoundingClientRect();
+  const cx = mezcla(900, b.left + b.width * .6, uc), cy = mezcla(1500, b.top + b.height * .5, uc), clic = t > tc && t < tc + .12;
+  $('#cursor').style.opacity = vida(t, l['04'].t0 - .1, T5 - .3, .2, .2); $('#cursor').style.transform = `translate(${cx}px, ${cy}px) scale(${clic ? .85 : 1})`;
+  poner($('#toast'), `${icono('x', '#FF3B5C', 3, 44)}<span>Error: nadie contestó.<br><small style="font-weight:500;opacity:.7">Intente más tarde (o nunca).</small></span>`);
+  $('#toast').style.opacity = vida(t, tc + .15, T5 - .3, .2, .2); $('#toast').style.transform = `translateY(${(1 - sale(tramo(t, tc + .15, tc + .45))) * 40}px)`;
+  /* el título de la plantilla */
+  let tit = '', a = 0, bb = 0;
+  if(t < l['02'].t0 - .3){ tit = '<span class="m">LA PLANTILLA</span><span class="m v">BARATITA</span>'; a = .2; bb = l['02'].t0 - .3; }
+  poner($('#titulo'), tit); $('#titulo').style.opacity = tit ? vida(t, a, bb, .3, .25) : 0;
+  [...$('#titulo').children].forEach((s, i) => { const u = sale(tramo(t, a + i * .12, a + .4 + i * .12)); s.style.transform = `translateY(${(1 - u) * 50}px)`; s.style.opacity = u; });
+  /* lo nuestro: 3D, con color, con trabajo de verdad */
+  const uN = sale(tramo(t, T5 - .1, T5 + .7)), vaN = t >= T5 - .1 && t < l['07'].t0 + .2;
+  tel.visible = lap.visible = vaN;
+  lap.position.set(mezcla(-3, -.2, uN), -.5 + Math.sin(t) * .03, -.7); lap.rotation.set(.3, mezcla(1.4, .3, uN) + Math.sin(t * .5) * .04, 0); lap.scale.setScalar(.74);
+  tel.position.set(mezcla(3, .72, uN), -.3 + Math.sin(t * 1.2) * .04, .6); tel.rotation.set(-.05, mezcla(-1.5, -.4, uN), .03); tel.scale.setScalar(.82);
+  await Promise.all([tS.en(Math.max(0, t - T5 + 1)), tD.en(Math.max(0, t - T5 + 1))]);
+  E.cam.position.set(Math.sin(t * .4) * .12, 0, 9); E.cam.lookAt(0, 0, 0); E.pintar();
+  /* la lista de lo que sí trae */
+  poner($('#lista'), t >= l['06'].t0 - .2 && t < l['07'].t0 + .1 ? LISTA.map(([w, ic]) => `<div>${icono(ic, '#25D366', 2.6, 56)}${w}</div>`).join('') : '');
+  const pal = l['06'].txt.replace(/\*/g, '');
+  [...$('#lista').children].forEach((d, i) => { const at = l['06'].t0 + l['06'].dur * [0, .18, .38, .7][i], u = sale(tramo(t, at, at + .3)); d.style.opacity = u * vida(t, l['06'].t0 - .2, l['07'].t0 + .1, .1, .25); d.style.transform = `translateX(${(1 - u) * -60}px)`; });
+  /* el cierre */
+  c2.clearRect(0, 0, W, H);
+  const uF = sale(tramo(t, l['07'].t0, l['07'].t0 + .7));
+  if(uF > 0){ tel.visible = lap.visible = false; logo2d(c2, { cx: W / 2, cy: 860, ancho: 820 * (.92 + .08 * uF), alfa: uF }); }
+  $('#cierre').style.opacity = sale(tramo(t, l['07'].t0 + .5, l['07'].t0 + 1.1));
+  /* el fondo: gris y triste con la plantilla; morado y vino con lo nuestro */
+  const vivo = sale(tramo(t, T5 - .2, T5 + .5));
+  $('#fondo').style.background = vivo < 1 ? `linear-gradient(180deg, #4A4750, #34313A)` : `radial-gradient(70% 45% at 50% 52%, ${PAL.vino}77, transparent 70%), radial-gradient(120% 80% at 50% 0%, ${PAL.oscuro2}, ${PAL.oscuro} 70%)`;
+  $('#fondo').style.opacity = 1;
+  sub(t); gr(t);
+};
+await pintar(0); window._listo();
+</script>
+</body>
+</html>

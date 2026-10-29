@@ -7,7 +7,7 @@
    habla(t, linea) da la apertura de la boca mientras suena esa línea del guion. */
 import * as THREE from 'three';
 
-export function cubito({ color = '#5A5A67', bigote = false, gorra = null, lentes = false, techo = null, tam = 1 } = {}){
+export function cubito({ color = '#5A5A67', bigote = false, gorra = null, lentes = false, techo = null, corbata = null, tam = 1 } = {}){
   const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d');
   const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
   const m = (col, mapa) => new THREE.MeshStandardMaterial({ color: mapa ? '#ffffff' : col, map: mapa || null, roughness: .55, metalness: .05 });
@@ -52,6 +52,9 @@ export function cubito({ color = '#5A5A67', bigote = false, gorra = null, lentes
     if(bigote){ x.fillStyle = '#F4EEF2'; x.beginPath(); x.moveTo(256, yB - 44);
       x.bezierCurveTo(212, yB - 64, 150, yB - 52, 132, yB - 8); x.bezierCurveTo(170, yB - 24, 214, yB - 18, 256, yB - 22);
       x.bezierCurveTo(298, yB - 18, 342, yB - 24, 380, yB - 8); x.bezierCurveTo(362, yB - 52, 300, yB - 64, 256, yB - 44); x.fill(); }
+    /* la corbata del vendedor, asomando abajo */
+    if(corbata){ x.fillStyle = corbata; x.beginPath(); x.moveTo(236, 448); x.lineTo(276, 448); x.lineTo(268, 470); x.lineTo(288, 512); x.lineTo(224, 512); x.lineTo(244, 470); x.closePath(); x.fill();
+      x.fillStyle = '#F4EEF2'; x.beginPath(); x.moveTo(190, 430); x.lineTo(256, 452); x.lineTo(322, 430); x.lineTo(322, 448); x.lineTo(256, 470); x.lineTo(190, 448); x.closePath(); x.fill(); }
     tex.needsUpdate = true;
   };
   g.userData.cara({});
