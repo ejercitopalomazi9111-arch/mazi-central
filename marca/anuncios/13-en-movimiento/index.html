@@ -83,8 +83,8 @@ const wQue = pal('que', { alto: .42, hondo: .3, mat: tinta }, -.42, .3);
 const cajaSe = new THREE.Mesh(new THREE.BoxGeometry(.62, .5, .08), tinta); cajaSe.position.set(X3 + .46, Y3 + .48, -.02); s.add(cajaSe);
 const wSe = pal('se', { alto: .32, hondo: .06, mat: matBlanco }, .46, .34, .06);
 const wMueva = pal('mueva.', { alto: .62, hondo: .34, mat: morada }, 0, -.5);
-const wSin = pal('sin plantillas,', { alto: .3, hondo: .26, mat: tinta }, 2.6, -.66);
-const wMano = pal('hecho a mano.', { alto: .3, hondo: .26, mat: tinta }, 2.6, -1.1);
+const wSin = pal('sin plantillas,', { alto: .24, hondo: .22, mat: tinta }, 0, -1.08);
+const wMano = pal('hecho a mano.', { alto: .24, hondo: .22, mat: tinta }, 0, -1.42);
 
 /* ── 4 · en negro, lo que brilla: lo que hacemos ── */
 const brillo = (c, i = .9) => new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: i, roughness: .4 });
@@ -131,8 +131,7 @@ const PARADAS = [
   [B(4) + .05, V3(X3 - .5, Y3 + 1.2, 5.0), V3(X3 - .1, Y3 + .7, 0), -.12, .0015], // el estudio blanco: «Hazlo»
   [B(4) + 1.1, V3(X3 + .4, Y3 + .45, 5.6), V3(X3, Y3 + .25, 0), .05, .0012],
   [B(5) + .95, V3(X3 + .1, Y3 - .15, 5.4), V3(X3, Y3 - .1, 0), .1, .0012],    // «mueva.», ya completa
-  [B(5) + 1.25, V3(X3 + 2.75, Y3 - .7, 5.0), V3(X3 + 2.6, Y3 - .88, 0), -.06, .0012], // barrido a «sin plantillas»
-  [B(6) - .2, V3(X3 + 2.75, Y3 - .85, 4.7), V3(X3 + 2.6, Y3 - .88, 0), .06, .0012],
+  [B(6) - .15, V3(X3 + .25, Y3 - .45, 6.4), V3(X3, Y3 - .55, 0), -.05, .001],   // se abre: «sin plantillas, hecho a mano.» debajo
   [B(6) + .05, V3(X4 + .5, Y4 + .7, 5.4), V3(X4, Y4 + .25, 0), .12, .0015],   // a lo negro: lo que hacemos
   [B(7) - .2, V3(X4 - .4, Y4 - .4, 5.6), V3(X4, Y4 - .1, 0), -.1, .0012],
   [B(7) + .05, V3(X5 + .5, Y5 + .3, 5.2), V3(X5, Y5 + .05, 0), .06, .001],    // «TU NEGOCIO»
@@ -201,7 +200,7 @@ function escena(t){
   entrar(wHazlo, t, B(4) + .02); entrar(wQue, t, B(4) + G * 2, { de: 'arriba' });
   const uS = resorte(tramo(t, B(4) + G * 3, B(4) + G * 3 + .6)); cajaSe.scale.set(Math.max(.001, uS), 1, 1); cajaSe.visible = e3 && uS > 0; entrar(wSe, t, B(4) + G * 3 + .15, { d: .25 });
   entrar(wMueva, t, B(5) - .02, { paso: .07, d: .3 });
-  entrar(wSin, t, B(5) + 1.2, { paso: .025, d: .3 }); entrar(wMano, t, B(5) + 1.42, { paso: .025, d: .3, de: 'arriba' });
+  entrar(wSin, t, B(5) + .75, { paso: .02, d: .28 }); entrar(wMano, t, B(5) + 1.0, { paso: .02, d: .28, de: 'arriba' });
 
   /* 4 · lo que hacemos, en luz */
   const e4 = t > B(6) - .1 && t < B(7) + .1; [wPag, wApps, wVideo, lHechas].forEach(o => o.visible = e4);
