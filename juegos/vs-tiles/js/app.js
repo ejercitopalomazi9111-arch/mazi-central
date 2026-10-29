@@ -53,7 +53,7 @@ const CATS = { voz: 'Voz', nota: 'Notas', golpe: 'Golpe', fondo: 'Fondo', titulo
 /* ── lo guardado ── */
 const CLAVE = 'vstiles:v1';
 const base = () => ({ nombre: '', color: 0, tiene: ['voz:gumi', 'voz:miku', 'voz:luka', 'nota:neon', 'golpe:flare', 'fondo:0', 'titulo:resonante'], puesto: { voz: 'voz:gumi', nota: 'nota:neon', golpe: 'golpe:flare', fondo: 'fondo:0', titulo: 'titulo:resonante' },
-  ecos: 600, sellos: 3, nivel: 1, xp: 0, record: {}, historia: {}, desfase: 0, desfaseVisual: 0, vel: 1, sonidoGolpe: true, mostrarDesvio: true, sinMov: false, pity: 0, visto: false, calibrado: false });
+  ecos: 1500, sellos: 3, nivel: 1, xp: 0, record: {}, historia: {}, desfase: 0, desfaseVisual: 0, vel: 1, sonidoGolpe: true, mostrarDesvio: true, sinMov: false, pity: 0, visto: false, calibrado: false });
 let Y = base(); try{ const g = JSON.parse(localStorage.getItem(CLAVE) || 'null'); if(g) Y = { ...base(), ...g, puesto: { ...base().puesto, ...(g.puesto || {}) } }; }catch(e){}
 const guardar = () => { try{ localStorage.setItem(CLAVE, JSON.stringify(Y)); }catch(e){} };
 const aviso = (txt) => { const d = document.createElement('div'); d.className = 'aviso'; d.textContent = txt; document.body.appendChild(d); setTimeout(() => d.remove(), 2600); };

@@ -101,6 +101,14 @@ export async function crearEscena(lienzo){
   const piso = new THREE.Mesh(new THREE.CircleGeometry(7, 64), new THREE.MeshBasicMaterial({ map: reflejo, color: '#B44BFF', transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false }));
   piso.rotation.x = -Math.PI / 2; tarima.add(piso);
   const cantantes = [];
+  /* los haces de luz que barren desde la tarima (planos con el trazo de Kenney, sumados), y las chispas
+     que flotan todo el tiempo: el escenario nunca está quieto */
+  const tHaz = await tex('sprites/p_trace_04.png'), tPolvo = await tex('sprites/p_spark_05.png');
+  const haces = []; for(let i = 0; i < 6; i++){ const m = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 26), new THREE.MeshBasicMaterial({ map: tHaz, color: ['#FF2D7A', '#38E1FF', '#B44BFF'][i % 3], transparent: true, opacity: .0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false }));
+    m.geometry.translate(0, 13, 0); m.position.set((i - 2.5) * 2.6, -.5, -2); tarima.add(m); haces.push(m); }
+  const polvo = new THREE.Points(new THREE.BufferGeometry(), new THREE.PointsMaterial({ map: tPolvo, size: .45, transparent: true, opacity: .7, depthWrite: false, blending: THREE.AdditiveBlending, color: '#E9C8FF', fog: false }));
+  { const n = 220, p = new Float32Array(n * 3); for(let i = 0; i < n; i++){ p[i * 3] = (Math.random() - .5) * 30; p[i * 3 + 1] = Math.random() * 12 - 2; p[i * 3 + 2] = -Math.random() * 30 + 4; } polvo.geometry.setAttribute('position', new THREE.BufferAttribute(p, 3)); }
+  s.add(polvo);
 
   async function modelo(id){
     const P = PERSONAJES.find(p => p.id === id) || PERSONAJES[0];
@@ -216,11 +224,12 @@ export async function crearEscena(lienzo){
       /* el golpe del grave: la cámara salta un poco (precalculado: los ataques graves fuertes) */
       let sacudida = 0; if(bajos){ for(let k = bajos.i || 0; k < bajos.length; k++){ const b = bajos[k]; if(b[0] > t) break; if(t - b[0] < .18) sacudida = Math.max(sacudida, b[1] * (1 - (t - b[0]) / .18)); } }
       /* los eventos vivos en este instante */
-      let ang = 0, giro = 0, onda = 0, abanico = 0, espejo = 0, oculta = null, glitch = 0, compasTxt = '', camN = 0, camT = -9, esc = 0, escT = 0, tono = 0;
+      let ang = 0, giro = 0, onda = 0, abanico = 0, espejo = 0, oculta = null, glitch = 0, compasTxt = '', camN = 0, camT = -9, esc = 0, escT = 0, tono = 0, destelloT = -9;
       const blando = (e, d = .35) => { const u = Math.min(1, (t - e.t) / d), v = e.dur ? Math.min(1, (e.t + e.dur - t) / d) : 1; return Math.max(0, Math.min(u, v)); };
       for(const e of ev){ if(e.t > t + .001) break;
         const vivo = !e.dur || t < e.t + e.dur;
         if(e.tipo === 'escenario'){ esc = e.n; escT = e.t; tono = e.tono; }
+        if(e.tipo === 'destello') destelloT = e.t;
         if(e.tipo === 'camara'){ camN = e.n; camT = e.t; }
         if(!vivo) continue;
         if(e.tipo === 'inclina') ang += e.ang * blando(e);
@@ -232,11 +241,15 @@ export async function crearEscena(lienzo){
         if(e.tipo === 'glitch') glitch = Math.max(glitch, 1 - (t - e.t) / e.dur);
         if(e.tipo === 'compas') compasTxt = e.texto;
       }
-      E.compas = compasTxt; E.glitch = glitch;
+      E.compas = compasTxt; E.glitch = glitch; E.destello = Math.max(0, 1 - (t - destelloT) / .45);
+      /* los haces: barren al compás y se encienden con el golpe */
+      haces.forEach((h, k) => { const lado = k % 2 ? 1 : -1; h.rotation.z = Math.sin(t * (.6 + k * .07) + k) * .55 + lado * .25 * Math.sin((gi + fase) * Math.PI / 4); h.rotation.x = -.25 + Math.sin(t * .4 + k) * .15;
+        h.material.opacity = (.12 + .35 * latido * (gi % 2 === k % 2 ? 1 : .4)) * (carta ? 1 : .6) + E.destello * .5; });
+      { const P = polvo.geometry.attributes.position; for(let i = 0; i < P.count; i++){ let y = P.getY(i) + .012 + latido * .02; if(y > 10) y = -2; P.setY(i, y); P.setX(i, P.getX(i) + Math.sin(t + i) * .004); } P.needsUpdate = true; polvo.material.size = .35 + latido * .3; }
       /* el fondo: cambia de foto con un fundido, y late */
       if(esc !== escActual){ uni.mapa2.value = uni.mapa.value; uni.mapa.value = fondos[esc] || fondos[0]; escActual = esc; escCambio = ahoraMs; uni.tinte.value.set(ESCENARIOS[esc]?.tinte || '#7A4BFF'); }
       uni.mezcla.value = Math.max(0, 1 - (ahoraMs - escCambio) / 600);
-      uni.pulso.value = latido * compas * (carta ? 1 : .5); uni.giro.value = t * .004 + tono; uni.glitch.value = glitch;
+      uni.pulso.value = latido * compas * (carta ? 1 : .5) + E.destello * .8; uni.giro.value = t * .004 + tono; uni.glitch.value = glitch;
       uni.oscuro.value = .5 - latido * .08; uni.sat.value = 1.2;
       borde1.intensity = 20 + 60 * latido * compas; borde2.intensity = 20 + 60 * latido * (1 - compas + .45);
       borde1.position.x = -5 + Math.sin(t * .9) * 2; borde2.position.x = 5 + Math.cos(t * .8) * 2;
@@ -244,7 +257,7 @@ export async function crearEscena(lienzo){
       /* el carril: visible sólo en el modo Carril (sube o se hunde al cambiar de reglas) */
       const enCarril = modo === 'carril';
       E.visible += ((enCarril ? 1 : 0) - E.visible) * .12;
-      carril.visible = E.visible > .02; carril.position.y = (1 - E.visible) * -6; carril.position.z = 0;
+      carril.visible = E.visible > .02; carril.position.y = (1 - E.visible) * -6 - latido * compas * .06 - sacudida * .08; carril.position.z = 0;
       const D = disposicion(ev, t); E.carriles = D.n;
       piezas.rieles.forEach((R, r) => { const d = D.rieles[r]; const x = d.x * (1 - 2 * espejo); R.x = x; R.vis = d.vis;
         R.g.position.x = x * ANCHO; R.g.visible = d.vis > .02;
@@ -303,8 +316,9 @@ export async function crearEscena(lienzo){
 
       /* las cantantes: rebotan al golpe, se balancean y brincan en los acentos */
       cantantes.forEach((c, k) => { const lado = k % 2 ? -1 : 1, sal = Math.max(0, Math.sin(fase * Math.PI)) * (gi % 2 === k % 2 ? 1 : .4);
-        c.raiz.position.y = sal * .18 + sacudida * .25; c.cuerpo.rotation.z = Math.sin((gi + fase) * Math.PI / 2) * .05 * lado;
-        c.raiz.rotation.y = Math.sin(t * .6 + k) * .35 + (est?.ultimoGolpe && ahoraMs - est.ultimoGolpe < 140 ? .06 : 0);
+        const giroSec = Math.max(0, 1 - (t - escT) / .9), vuelta = giroSec > 0 && t >= escT ? (1 - Math.pow(giroSec, 3)) * Math.PI * 2 : 0;
+        c.raiz.position.y = sal * .18 + sacudida * .55 + Math.sin(Math.min(1, (t - escT) / .9) * Math.PI) * (t >= escT && t - escT < .9 ? .9 : 0); c.cuerpo.rotation.z = Math.sin((gi + fase) * Math.PI / 2) * .05 * lado;
+        c.raiz.rotation.y = Math.sin(t * .6 + k) * .35 + vuelta * (k % 2 ? -1 : 1) + (est?.ultimoGolpe && ahoraMs - est.ultimoGolpe < 140 ? .06 : 0);
         const sq = 1 + latido * .05, base = c.base || (c.base = c.raiz.scale.x); c.raiz.scale.set(base * sq, base / sq, base * sq);
         if(c.mezclador) { c.mezclador.setTime((t > 0 ? t : ahoraMs / 1000) % (c.g.animations[0].duration || 1)); }
         if(c.pose){ const b = Math.sin((gi + fase) * Math.PI), b2 = Math.sin((gi + fase) * Math.PI / 2), sube = gi % 8 >= 6 ? 1 : 0;

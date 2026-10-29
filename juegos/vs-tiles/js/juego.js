@@ -289,6 +289,7 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
       x.save(); x.globalAlpha = Math.min(1, u * 5, (1 - u) * 5); x.fillStyle = '#0A0412E0'; x.fillRect(0, H * .44, W, 64); x.fillStyle = '#FF2D55'; x.fillRect(0, H * .44, W, 3); x.fillRect(0, H * .44 + 61, W, 3);
       x.font = '900 13px Orbitron, sans-serif'; x.fillStyle = '#FF2D55'; x.textAlign = 'center'; x.fillText('⚠ LAS REGLAS CAMBIAN', W / 2 + Math.sin(ahora / 40) * 2, H * .44 + 24); x.font = '700 14px "Zen Kaku Gothic New", sans-serif'; x.fillStyle = '#fff'; x.fillText(e.texto, W / 2, H * .44 + 46); x.restore(); } }
     if(escena.E.compas){ x.save(); x.font = '900 30px Orbitron, sans-serif'; x.textAlign = 'left'; x.fillStyle = '#FFF07A'; x.globalAlpha = .6 + .4 * lat; x.fillText(escena.E.compas, 18, 100); x.restore(); }
+    if(escena.E.destello > 0){ x.fillStyle = `rgba(255,255,255,${(.35 * escena.E.destello * escena.E.destello).toFixed(3)})`; x.fillRect(0, 0, W, H); }
     if(escena.E.glitch > 0){ const g = escena.E.glitch; for(let i = 0; i < 6; i++){ const yy = Math.random() * H, hh = 4 + Math.random() * 30; x.drawImage(capa, 0, yy * dpr, W * dpr, hh * dpr, (Math.random() - .5) * 40 * g, yy, W, hh); } x.fillStyle = `rgba(255,45,85,${.15 * g})`; x.fillRect(0, 0, W, H); }
     if(auto){ x.save(); x.font = '800 12px Orbitron, sans-serif'; x.fillStyle = '#FFF07A'; x.textAlign = 'left'; x.fillText('AUTO', 16, 62); x.restore(); }
   }

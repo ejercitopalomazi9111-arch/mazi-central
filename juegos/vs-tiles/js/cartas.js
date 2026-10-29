@@ -206,6 +206,8 @@ function planSecciones(secc, modo, D, R, an){
         if(tipo === 'compas') ev.push({ t: g, tipo, texto: ['7/8', '5/4', '3/4', '6/8', '9/8'][Math.floor(R() * 5)], dur: dur * 1.5 });      // M031
       }
     }
+    /* M077 / M078 · la cámara cambia también DENTRO de la sección, cada 8 compases (desde Difícil) */
+    if(nivel >= 2 && m === 'carril'){ const cada = (golpes[1] - golpes[0] || .5) * 32 / (nivel >= 4 ? 2 : 1); for(let tc = t0 + cada; tc < t1 - 2; tc += cada) ev.push({ t: tc, tipo: 'camara', n: Math.floor(R() * 6), fuerte: e }); }
     /* M110 · el drop: la sección más fuerte arranca con glitch */
     if(e > .7 && i > 0) ev.push({ t: t0, tipo: 'glitch', dur: .35 });
     plan.push(P);
