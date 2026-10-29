@@ -11,3 +11,20 @@ comerciales sin pedir permiso ni pagar). No la exige, pero se da crédito igual 
 | `cardboard_box_01` | Cardboard Box 01 | Rahul Chaudhary | 04 · la caja con logo |
 
 Bajados en 1k (glTF + texturas JPG) de `api.polyhaven.com/files/<nombre>`.
+
+## La luz
+
+| Archivo | Qué es | Autor | Licencia |
+|---|---|---|---|
+| `../hdri/studio_small_09_1k.hdr` | HDRI «Studio Small 09»: la luz de estudio de todos los anuncios y de la portada de la página | Sergej Majboroda · Poly Haven | CC0 |
+
+## La gente y los muebles
+
+| Carpeta | Qué es | Autor | Dónde sale |
+|---|---|---|---|
+| `kenney-personas/` | «Mini Characters» (12 personas con 30 animaciones) | Kenney · kenney.nl | 05, 06, 08, 09, 10 |
+| `kenney-muebles/` | «Furniture Kit» (mostrador, estufa, refri, escritorio, silla, laptop, planta…) | Kenney · kenney.nl | 05, 10 |
+
+Licencia CC0 (viene en el `License.txt` de cada carpeta). Se bajaron con un navegador desde
+`kenney.nl/download-link/<id>`: con `curl` la página contesta 403. Se cargan con `gente.js`
+(`persona`, `mueble`, `actuar`).
