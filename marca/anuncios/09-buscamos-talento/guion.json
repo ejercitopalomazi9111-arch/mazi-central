@@ -1,0 +1,51 @@
+{
+ "titulo": "Buscamos talento",
+ "voces": {
+  "Voz": "piper:es_MX-claude-high"
+ },
+ "ajustes": {},
+ "lineas": [
+  {
+   "id": "01",
+   "voz": "Voz",
+   "en": 0.5,
+   "txt": "¿Dibujas, editas, programas, tomas fotos… *o diseñas?*"
+  },
+  {
+   "id": "02",
+   "voz": "Voz",
+   "pausa": 0.5,
+   "txt": "Grupo Mazi busca *artistas y creadores* para proyectos reales."
+  },
+  {
+   "id": "03",
+   "voz": "Voz",
+   "pausa": 0.5,
+   "txt": "Fotógrafos, editores de video, diseñadores, ilustradores *y programadores.*"
+  },
+  {
+   "id": "04",
+   "voz": "Voz",
+   "pausa": 0.6,
+   "txt": "Trabajas en lo que sabes hacer, y cobras *comisión por proyecto.*"
+  },
+  {
+   "id": "05",
+   "voz": "Voz",
+   "pausa": 0.6,
+   "txt": "Mándanos tu portafolio por WhatsApp, o al correo *grupomazi.oficial@gmail.com.*",
+   "dice": "Mándanos tu portafolio por WhatsApp, o al correo: grupo mazi punto oficial, arroba gmail punto com.",
+   "sinSub": true
+  },
+  {
+   "id": "06",
+   "voz": "Voz",
+   "pausa": 0.7,
+   "txt": "Si no existe la herramienta, la construimos. Y si no existe el equipo… *te estamos buscando.*",
+   "sinSub": true
+  }
+ ],
+ "lento": {
+  "Voz": 1.02
+ }
+}

@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Grupo Mazi · Nueva imagen</title>
+<!-- ANUNCIO 04 · ~40 s · 9:16 · voz Matilda. El cambio de logo, de letra y de colores, en 3D. Carlos:
+     «presentando el cambio de logo y de colores a morado oscuro, claro y vino, priorizando el oscuro y
+     (el «claro» es el MORADO claro del techo del cubo, #AC27FF: lo aclaró el 29 de octubre)
+     el vino» y «métele más dinamismo al logo, modelos 3D y así para presentarlos, lo mismo con la
+     muestra de las letras». La paloma se deshace en cubitos; la cuña y la M caen y se vuelven el cubo
+     (en 3D, partido de verdad: logo3d.js); llegan las letras; la letra de la casa en 3D; los colores
+     como cubos que caen (el oscuro el más grande); la imagen puesta en cuatro modelos de Poly Haven
+     (CC0); y los créditos al final.
+     Música: «Volatile Reaction», Kevin MacLeod (incompetech.com), CC BY 4.0.
+     node herramientas/video/armar.mjs marca/anuncios/04-nueva-imagen/index.html marca/anuncios/salida/04-nueva-imagen.mp4 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&family=Inter+Tight:wght@600;800;900&display=block">
+<link rel="stylesheet" href="../comun.css">
+<script>window.listo = new Promise(r => window._listo = r);</script>
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>
+#titulo{ z-index:5 }
+#paloma{ position:absolute; left:50%; top:700px; width:760px; margin-left:-380px; opacity:0 }
+#paloma-et{ position:absolute; left:0; right:0; top:1180px; text-align:center; font:700 34px/1 var(--t); letter-spacing:.2em; color:#B9AEC4; opacity:0 }
+#gl.borroso{ filter:blur(14px) }
+#etiqueta{ position:absolute; left:80px; right:150px; top:1290px; font:700 30px/1.2 var(--s); letter-spacing:.18em; color:#C77DFF; text-transform:uppercase; opacity:0 }
+#etiqueta b{ display:block; margin-top:10px; font:700 76px/1 var(--t); letter-spacing:-.03em; color:#F4EEF2; text-transform:none }
+#muestra{ position:absolute; left:0; right:0; top:1390px; height:110px; overflow:hidden; opacity:0 }
+#muestra div{ position:absolute; white-space:nowrap; font:700 96px/1 "Space Grotesk"; letter-spacing:-.02em; color:#F4EEF2 }
+#muestra div.b{ top:0; color:#B44BFF }
+#colores{ position:absolute; left:80px; right:150px; top:250px; display:grid; gap:22px }
+#colores div{ display:flex; align-items:center; gap:26px; opacity:0 }
+#colores i{ width:96px; height:96px; border-radius:22px; box-shadow:inset 0 0 0 3px #ffffff30, 0 18px 40px -16px #000 }
+#colores span{ font:800 60px/1 var(--t); letter-spacing:-.03em; text-transform:uppercase }
+#colores small{ display:block; margin-top:8px; font:500 32px/1 ui-monospace, Menlo, monospace; color:#D8CCE4 }
+#lema{ position:absolute; left:80px; right:150px; top:1060px; font:700 92px/1 var(--t); letter-spacing:-.04em; text-transform:uppercase }
+#lema span{ display:block } #lema .v{ color:#B44BFF }
+#tira{ position:absolute; left:80px; right:150px; height:26px; display:flex; border-radius:13px; overflow:hidden; opacity:0 }
+#tira i{ display:block; height:100% }
+#creditos{ position:absolute; left:80px; right:150px; top:880px; font:500 30px/1.45 var(--t); color:#D8CCE4; opacity:0 }
+#creditos h3{ margin:0 0 18px; font:700 26px/1 var(--s); letter-spacing:.2em; color:#C77DFF }
+#creditos p{ margin:0 0 18px } #creditos b{ color:#F4EEF2 }
+#destello{ position:absolute; inset:0; background:#F4EEF2; opacity:0; z-index:6 }
+</style>
+</head>
+<body>
+<div id="fondo" class="capa"></div>
+<canvas id="gl" class="capa"></canvas>
+<canvas id="c2" class="capa" width="1080" height="1920"></canvas>
+<div id="ui" class="capa">
+  <div id="titulo" class="grande"></div>
+  <img id="paloma" src="../../logo/paloma.svg" alt="">
+  <div id="paloma-et">NUESTRA PRIMERA IMAGEN</div>
+  <div id="etiqueta"></div>
+  <div id="muestra"><div class="a">ABCDEFGHIJKLMNÑOPQRSTUVWXYZ ABCDEFGHIJKLMNÑOPQRSTUVWXYZ</div></div>
+  <div id="colores">
+    <div><i style="background:#170A26"></i><span>Morado oscuro<small>#170A26</small></span></div>
+    <div><i style="background:#7E1735"></i><span>Vino<small>#7E1735</small></span></div>
+    <div><i style="background:#AC27FF"></i><span>Morado claro<small>#AC27FF</small></span></div>
+  </div>
+  <div id="lema"></div>
+  <div id="tira"><i style="flex:52;background:#170A26;box-shadow:inset 0 0 0 2px #ffffff22"></i><i style="flex:32;background:#7E1735"></i><i style="flex:16;background:#AC27FF"></i></div>
+  <div id="creditos">
+    <h3>CRÉDITOS</h3>
+    <p><b>Modelos 3D:</b> Poly Haven (CC0) · megáfono de Ethan Simon-Law, cámara de James Ray Cock y Jenelle van Heerden, termo de PierreB3D y caja de Rahul Chaudhary.</p>
+    <p><b>Música:</b> «Volatile Reaction», Kevin MacLeod (incompetech.com), CC BY 4.0.</p>
+    <p><b>Letra:</b> Space Grotesk, SIL Open Font License.</p>
+  </div>
+  <div id="destello"></div>
+</div>
+<div id="subs"></div>
+<div id="grano"></div>
+<script type="module">
+import { THREE, PAL, W, H, cl, tramo, suave, sale, entra, mezcla, vida, azar, escena3d, guion, sonidosVoz, subtitulos, grano, logo2d, PIEZAS } from '../motor.js';
+import { logo3d, extruir, ISO } from '../logo3d.js';
+import { LETRAS } from './letras.js';
+import { GLTFLoader } from '../vendor/loaders/GLTFLoader.js';
+const $ = (s) => document.querySelector(s);
+const G = await guion('.'), L = (id) => G.de(id);
+const l = Object.fromEntries(G.lineas.map(z => [z.id, z]));
+/* ── el reloj del anuncio: cada tramo sale de la voz ── */
+const T = {
+  rompe: l['02'].t1 - .1,                                   // la paloma se deshace en cubitos
+  cuna: l['03'].t0 - .05, m: l['03'].t0 + 1.25,              // caen la cuña y la M
+  abre: l['04'].t0 + .15, cierra: l['04'].t0 + .85,           // se separan y vuelven a encajar
+  letras: l['04'].t0 + 1.4,                                   // llegan M, A, Z, I
+  letra: l['04'].t1 + .25,                                    // la letra de la casa
+  lluvia: l['04'].t1 + 2.0,
+  colores: l['05'].t0 - .35,
+  oscuro: l['05'].t0 + 1.35, vino: l['06'].t0 + .05, claro: l['07'].t0 + .1,
+  usos: l['07'].t1 + .45,                                     // la imagen en cuatro objetos
+  lema: l['08'].t0 - .5,
+  creditos: l['09'].t1 + .6
+};
+const PASO = (l['08'].t0 - .5 - T.usos) / 4;                  // cuánto dura cada objeto
+const FIN = T.creditos + 3.6, fx = (n) => `../../../herramientas/video/efectos/${n}.wav`, cubo_ = (n) => `../../cubo/final/sonidos/${n}.wav`;
+window.VIDEO = { w: W, h: H, fps: 30, dur: FIN, musica: { archivo: '/tmp/claude-0/musica/Volatile_Reaction.mp3', desde: 0, vol: .3, entrada: .3, fin: 2.5 },
+  sonidos: [...sonidosVoz(G, 1.05), [fx('golpe'), .55, .5], [fx('golpe'), 1.05, .45], [fx('whoosh'), T.rompe, .5],
+    [cubo_('caida'), T.cuna + .4, .8], [cubo_('golpe'), T.m + .31, 1], [fx('whoosh'), T.abre, .35], [cubo_('golpe'), T.cierra, .6],
+    ...[0, 1, 2, 3].map(i => [fx('toque'), T.letras + i * .3 + .38, .55]), [fx('whoosh'), T.letra - .1, .5],
+    ...Array.from({ length: 10 }, (_, i) => [fx('toque'), T.lluvia + .35 + i * .13, .25]), [fx('whoosh'), T.colores, .45],
+    [cubo_('golpe'), T.oscuro + .45, .9], [cubo_('golpe'), T.vino + .4, .7], [cubo_('caida'), T.claro + .35, .7],
+    ...[0, 1, 2, 3].map(i => [fx('whoosh'), T.usos + i * PASO - .1, .4]), [fx('subida'), T.lema, .4], [fx('ding'), l['09'].t0 + .1, .35]] };
+await Promise.all(['700 80px "Space Grotesk"', '300 80px "Space Grotesk"', '800 60px "Inter Tight"', '500 30px "Inter Tight"'].map(f => document.fonts.load(f)));
+await $('#paloma').decode();
+
+/* ── la escena ── */
+const E = escena3d($('#gl'), { fov: 24 }); E.s.add(E.cam);
+E.luces.borde.intensity = 1.6; E.luces.morado.intensity = 2.5;
+const LG = logo3d(); E.s.add(LG.grupo);
+const casaCubo = LG.cubo.userData.casa.clone();
+/* el polvo cuando algo cae: un anillo que se abre en el piso */
+const anillo = (c) => { const m = new THREE.Mesh(new THREE.RingGeometry(.86, 1, 64), new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending })); m.rotation.x = -Math.PI / 2; E.s.add(m); return m; };
+const polvo = [anillo('#E9DDF7'), anillo('#E9DDF7'), anillo('#E9DDF7')];
+const golpe = (m, t, t0, x, y, z, r) => { const u = tramo(t, t0, t0 + .55); m.visible = u > 0 && u < 1; m.position.set(x, y, z); m.scale.setScalar(r * (.5 + .9 * sale(u))); m.material.opacity = .45 * (1 - u) * (1 - u); };
+/* los cubitos de fondo: van pegados a la cámara, así siempre hay algo moviéndose atrás */
+const N = 70, campo = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ roughness: .5, metalness: .1 }), N);
+const CC = [PAL.techo, PAL.vino, '#3A3A46', '#5A5A67', PAL.vino2], cubitos = [];
+azar(7); for(let i = 0; i < N; i++){ cubitos.push({ x: (azar() - .5) * 16, y: (azar() - .5) * 26, z: -12 - azar() * 22, s: .12 + azar() * .3, r: azar() * 6, v: .3 + azar() * .9 }); campo.setColorAt(i, new THREE.Color(CC[i % CC.length])); }
+E.cam.add(campo);
+const tmp = new THREE.Object3D();
+function pintarCampo(t, warp){
+  cubitos.forEach((c, i) => { const z = ((c.z + t * (1.2 + warp * 14) * c.v + 34) % 34) - 34; tmp.position.set(c.x, c.y + Math.sin(t * .6 + i) * .3, z);
+    tmp.rotation.set(c.r + t * c.v, c.r * 2 + t * .7 * c.v, 0); tmp.scale.set(c.s, c.s, c.s * (1 + warp * 2.5)); tmp.updateMatrix(); campo.setMatrixAt(i, tmp.matrix); });
+  campo.instanceMatrix.needsUpdate = true;
+}
+/* la letra de la casa: «Aa» grande, y la lluvia de letras que arma la muestra */
+const matClaro = LG.matL, matVino = [new THREE.MeshStandardMaterial({ color: PAL.vino2, roughness: .35, emissive: PAL.vino2, emissiveIntensity: .25 }), new THREE.MeshStandardMaterial({ color: '#5E0F26', roughness: .4 })];
+const matMorado = [new THREE.MeshStandardMaterial({ color: PAL.techo, roughness: .35, emissive: PAL.techo, emissiveIntensity: .3 }), new THREE.MeshStandardMaterial({ color: '#5B1490', roughness: .4 })];
+const glifo = (ch, mat, k = .01, hondo = .25) => { const g = extruir(LETRAS[ch].d, { k, hondo, bisel: k * 1.6 }); g.computeBoundingBox(); const b = g.boundingBox; g.translate(-(b.min.x + b.max.x) / 2, -50 * k, 0); return new THREE.Mesh(g, mat); };
+const aA = new THREE.Group(); const gA = glifo('A', matClaro, .0105, .4), ga = glifo('a', matVino, .0105, .4); gA.position.x = -.52; ga.position.x = .52; ga.position.y = -.0; aA.add(gA, ga); E.s.add(aA);
+const ABC = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ¿?!&'.split(''), lluvia = new THREE.Group(); E.s.add(lluvia);
+ABC.forEach((ch, i) => { const m = glifo(ch, i % 7 === 3 ? matMorado : i % 5 === 1 ? matVino : matClaro, .0033, .1); m.userData.i = i; lluvia.add(m); });
+/* los colores: tres cubos, el oscuro el más grande */
+const cuboColor = (c, tam) => { const g = new THREE.Group(), caja = new THREE.BoxGeometry(tam, tam, tam);
+  g.add(new THREE.Mesh(caja, new THREE.MeshStandardMaterial({ color: c, roughness: .38, metalness: .05, emissive: c, emissiveIntensity: .12 })));
+  g.add(new THREE.LineSegments(new THREE.EdgesGeometry(caja), new THREE.LineBasicMaterial({ color: '#E9DDF7', transparent: true, opacity: .35 }))); g.userData.tam = tam; E.s.add(g); return g; };
+const cOsc = cuboColor(PAL.oscuro, 1.55), cVino = cuboColor(PAL.vino, 1.0), cClaro = cuboColor(PAL.techo, .58);                       // «claro» es el morado claro del techo del cubo (Carlos, 29 oct)
+/* los cuatro objetos con la imagen puesta (Poly Haven, CC0) */
+const etiq = (soloCubo, letra, w = 1024, h = 512) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d');
+  if(soloCubo === 'pila'){ logo2d(x, { cx: w / 2, cy: h * .34, ancho: h * .42, soloCubo: true }); x.save(); const e = w * .7 / PIEZAS.ancho; x.translate(w * .15, h * .86); x.scale(e, e); x.fillStyle = letra; x.fill(new Path2D(PIEZAS.mazi.join(' '))); x.restore(); }
+  else logo2d(x, { cx: w / 2, cy: h / 2, ancho: w * .9, letra });
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; };
+const calca = (tex, an, al) => new THREE.Mesh(new THREE.PlaneGeometry(an, al), new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: .5, polygonOffset: true, polygonOffsetFactor: -4, depthWrite: false }));
+const USOS = [
+  { n: 'Megaphone_01', fondo: PAL.oscuro, de: 'En lo que se anuncia', que: 'Marketing', giro: 0, punto: [.72, .36], lado: 1, tex: etiq(false, PAL.claro), an: .24, al: .12, fuera: .045 },
+  { n: 'vintage_video_camera', fondo: PAL.vino, de: 'En lo que se graba', que: 'Video y foto', giro: Math.PI, punto: [.45, .5], lado: -1, tex: etiq('pila', PAL.claro, 512, 640), an: .3, al: .375, fuera: .006 },
+  { n: 'plastic_thermos', fondo: PAL.oscuro2, de: 'En lo que se regala', que: 'Tu marca, en todo', giro: 0, punto: [.62, .52], lado: 1, tex: etiq('pila', PAL.claro, 512, 640), an: .22, al: .275, fuera: .012 },
+  { n: 'cardboard_box_01', fondo: PAL.vino, de: 'En lo que se entrega', que: 'Hasta en la caja', giro: 0, punto: [.5, .32], lado: 1, tex: etiq(false, PAL.oscuro), an: .62, al: .31, fuera: .02 }];
+const cargador = new GLTFLoader(), rayo = new THREE.Raycaster();
+for(const u of USOS){
+  const g = (await cargador.loadAsync(`../modelos/${u.n}/${u.n}.gltf`)).scene, b = new THREE.Box3().setFromObject(g), sz = b.getSize(new THREE.Vector3()), c = b.getCenter(new THREE.Vector3());
+  g.position.sub(c); const h = new THREE.Group(), modelo = new THREE.Group(); modelo.add(g); h.add(modelo); h.scale.setScalar(1.2 / Math.max(sz.x, sz.y, sz.z)); E.s.add(h); h.updateMatrixWorld(true);
+  /* la calca va donde pega un rayo tirado hacia el objeto, de frente a la cámara de ese lado */
+  const lx = -sz.x / 2 + u.punto[0] * sz.x, ly = sz.y / 2 - u.punto[1] * sz.y;
+  rayo.set(new THREE.Vector3(lx, ly, u.lado * sz.z * 3).applyMatrix4(h.matrixWorld), new THREE.Vector3(0, 0, -u.lado).transformDirection(h.matrixWorld));
+  const hit = rayo.intersectObject(g, true)[0];
+  if(hit){ const k = calca(u.tex, u.an / h.scale.x, u.al / h.scale.x), p = h.worldToLocal(hit.point.clone()); k.position.copy(p).add(new THREE.Vector3(0, 0, u.lado * u.fuera / h.scale.x)); if(u.lado < 0) k.rotation.y = Math.PI; modelo.add(k); }
+  else console.warn('sin calca', u.n);
+  u.obj = h; h.visible = false;
+}
+const sub = subtitulos($('#subs'), G), gr = grano($('#grano'), .05), x = $('#c2').getContext('2d');
+const poner = (el, html) => { if(el.dataset.h !== html){ el.innerHTML = html; el.dataset.h = html; } };
+const titulo = (t, html, a, b) => { poner($('#titulo'), html); $('#titulo').style.opacity = html ? vida(t, a, b, .2, .25) : 0;
+  [...$('#titulo').children].forEach((s, i) => { const u = sale(tramo(t, a + i * .12, a + .4 + i * .12)); s.style.transform = `translateY(${(1 - u) * 80}px) scale(${1.3 - .3 * u})`; s.style.opacity = u; s.style.filter = `blur(${(1 - u) * 10}px)`; }); };
+const dirDe = (yaw, pitch) => new THREE.Vector3(Math.cos(pitch) * Math.sin(yaw), Math.sin(pitch), Math.cos(pitch) * Math.cos(yaw));
+const YI = Math.PI / 4, PI_ = Math.asin(1 / Math.sqrt(3));       // la dirección isométrica
+const camara = (dir, d, mira = new THREE.Vector3(), temblor = 0, t = 0) => { E.cam.position.copy(mira).add(dir.clone().normalize().multiplyScalar(d));
+  E.cam.position.x += Math.sin(t * 91) * temblor; E.cam.position.y += Math.cos(t * 77) * temblor; E.cam.lookAt(mira); };
+const rebote = (u, alto) => { if(u <= 0) return alto; if(u < .62){ const v = u / .62; return alto * (1 - v * v); } const v = (u - .62) / .38; return Math.abs(Math.sin(v * Math.PI * 2)) * alto * .05 * (1 - v) * (1 - v); };
+/* la paloma, hecha cubitos: se muestrea una vez */
+const motas = []; { const c = document.createElement('canvas'), im = $('#paloma'), an = 760, al = Math.round(an * im.naturalHeight / im.naturalWidth); c.width = an; c.height = al;
+  const cx = c.getContext('2d'); cx.drawImage(im, 0, 0, an, al); const d = cx.getImageData(0, 0, an, al).data; azar(11);
+  for(let yy = 0; yy < al; yy += 9) for(let xx = 0; xx < an; xx += 9){ const k = (yy * an + xx) * 4; if(d[k + 3] > 120) motas.push({ x: 160 + xx, y: 700 + yy, c: `rgb(${d[k]},${d[k + 1]},${d[k + 2]})`, a: azar() * Math.PI * 2, v: 300 + azar() * 900, r: azar() }); } }
+$('#muestra .a').textContent = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ  abcdefghijklmnñopqrstuvwxyz  0123456789 ¿?¡!&@  ';
+
+window.pintar = async (t) => {
+  x.clearRect(0, 0, W, H);
+  const fase = t < T.cuna - .2 ? 'inicio' : t < T.letra ? 'cubo' : t < T.colores ? 'letra' : t < T.usos ? 'colores' : t < T.lema ? 'usos' : 'final';
+  /* el fondo: estudio morado; más claro en los colores para que el oscuro se lea */
+  const claroF = vida(t, T.colores, T.usos, .5, .2);
+  $('#fondo').style.background = fase === 'usos' ? USOS[cl(Math.floor((t - T.usos) / PASO), 0, 3)].fondo
+    : `radial-gradient(75% 50% at 50% 48%, ${claroF > .5 ? '#4A3560' : PAL.oscuro2}, ${claroF > .5 ? '#1E1030' : '#0B0710'} 78%)`;
+  /* ── 1 · CAMBIAMOS DE CARA ── */
+  titulo(t, t < l['02'].t0 - .2 ? '<span>CAMBIAMOS</span><span class="v">DE CARA.</span>' : t >= T.cuna && t < T.abre ? '<span>HOY SOMOS</span><span class="v">UN CUBO.</span>'
+    : t >= T.letra && t < T.lluvia - .1 ? '<span>LA LETRA</span><span class="v">DE LA CASA.</span>' : t >= T.colores && t < T.oscuro + .1 ? '<span>COLORES</span><span class="v">NUEVOS.</span>' : t >= T.usos && t < T.lema ? '<span>LA IMAGEN</span><span class="v">EN TODO.</span>' : '',
+    t < l['02'].t0 ? .45 : t < T.abre ? T.cuna + .1 : t < T.colores ? T.letra + .1 : t < T.usos ? T.colores + .1 : T.usos, t < l['02'].t0 ? l['02'].t0 - .1 : t < T.abre ? T.abre : t < T.colores ? T.lluvia - .1 : t < T.usos ? T.oscuro + .15 : T.lema - .1);
+  $('#titulo').style.top = t < l['02'].t0 ? '720px' : '250px';
+  const sacude = t < 1.4 ? (vida(t, .55, .8, .02, .2) + vida(t, 1.05, 1.3, .02, .2)) * 9 : 0;
+  $('#ui').style.transform = `translate(${Math.sin(t * 97) * sacude}px, ${Math.cos(t * 83) * sacude}px)`;
+  /* ── 2 · la paloma, y se deshace en cubitos que se juntan donde va a caer el cubo ── */
+  const vp = vida(t, l['02'].t0 - .1, T.rompe + .05, .6, .05);
+  $('#paloma').style.opacity = vp; $('#paloma').style.transform = `scale(${.9 + .1 * sale(tramo(t, l['02'].t0, l['02'].t0 + 1.2)) + .04 * tramo(t, l['02'].t0, T.rompe)})`;
+  $('#paloma-et').style.opacity = vida(t, l['02'].t0 + .4, T.rompe, .4, .2);
+  const ur = tramo(t, T.rompe, T.cuna + .35);
+  if(ur > 0 && ur < 1){ for(const m of motas){ const sal = sale(Math.min(1, ur * 2.2)), jun = suave(tramo(ur, .35, 1));
+      const px = m.x + Math.cos(m.a) * m.v * sal * .5, py = m.y + Math.sin(m.a) * m.v * sal * .5 - 120 * sal;
+      const fx_ = mezcla(px, W / 2, jun), fy = mezcla(py, 920, jun), s = 8 * (1 - jun * .8);
+      x.globalAlpha = 1 - tramo(ur, .8, 1); x.fillStyle = jun > .5 ? PAL.techo : m.c; x.fillRect(fx_ - s / 2, fy - s / 2, s, s); } x.globalAlpha = 1; }
+  /* ── 3D: qué se ve en cada tramo ── */
+  LG.grupo.visible = fase === 'cubo' || fase === 'final' || false;
+  aA.visible = fase === 'letra' && t < T.lluvia + .3; lluvia.visible = fase === 'letra' && t >= T.lluvia - .2 || (fase === 'colores' && t < T.colores + 1);
+  [cOsc, cVino, cClaro].forEach(c => c.visible = fase === 'colores');
+  USOS.forEach(u => u.obj.visible = false);
+  polvo.forEach(p => p.visible = false);
+  let warp = t < 2.4 ? sale(1 - tramo(t, 0, 2.4)) : 0;
+  $('#gl').style.filter = '';
+  if(fase === 'inicio'){ camara(new THREE.Vector3(0, 0, 1), 9, new THREE.Vector3(), 0, t); }
+  if(fase === 'cubo'){
+    /* la cuña y luego la M caen al centro; se separan y encajan; el cubo se hace a un lado y llegan las letras */
+    const uC = tramo(t, T.cuna, T.cuna + .62), uM = tramo(t, T.m, T.m + .5), s = LG.lado, flota = sale(tramo(t, T.m - .6, T.m - .25));
+    /* la M llega y se queda flotando encima, de frente, para que se lea; luego baja y se vuelve el cubo */
+    LG.cuna.visible = t >= T.cuna; LG.m.visible = t >= T.m - .6;
+    const abre = Math.sin(Math.PI * tramo(t, T.abre, T.cierra)) ** 2;
+    LG.cuna.position.set(abre * .55, rebote(uC, 9 / s) - abre * .25, abre * .55);
+    LG.m.position.set(-abre * .1, (uM > 0 ? rebote(uM, .55 / s) : (.55 + (1 - flota) * 2.5) / s) + abre * .7, -abre * .1);
+    LG.m.rotation.y = abre * .25;
+    const lado = suave(tramo(t, T.letras - .5, T.letras + .7));
+    LG.cubo.position.copy(casaCubo).multiplyScalar(lado);
+    LG.cubo.rotation.set(0, (1 - sale(tramo(t, T.cuna, T.m - .4))) * .8, 0);
+    LG.mat[0].emissiveIntensity = .35 + 2.2 * vida(t, T.m + .4, T.m + .75, .02, .3) + 1.6 * vida(t, T.cierra, T.cierra + .35, .02, .3);
+    LG.letras.forEach((h, i) => { const t0 = T.letras + i * .3, u = tramo(t, t0, t0 + .5); h.visible = u > 0;
+      h.position.copy(h.userData.casa); h.position.y += rebote(u, 4); h.rotation.set((1 - sale(u)) * -1.4, 0, (1 - sale(u)) * (i % 2 ? .5 : -.5)); });
+    golpe(polvo[0], t, T.cuna + .38, 0, -s / 2, 0, .45); golpe(polvo[1], t, T.m + .38, 0, -s / 2, 0, .65); golpe(polvo[2], t, T.cierra - .02, 0, -s / 2, 0, .55);
+    /* la cámara: abajo y de lado mientras cae, sube a isométrico, se aleja y gira cuando llegan las letras */
+    const sube = suave(tramo(t, T.cuna, T.abre + .2)), gira = Math.sin(Math.PI * tramo(t, T.letras - .3, T.letra - .5)) * .75;
+    const yaw = YI + (1 - sube) * .3 + gira, pitch = mezcla(.3, PI_, sube) - gira * .18;
+    const d = mezcla(mezcla(6.5, 5, sube), 19.5, suave(tramo(t, T.letras - 1.1, T.letras + 1.3)));
+    const tiembla = .06 * (vida(t, T.cuna + .38, T.cuna + .6, .02, .2) + 1.8 * vida(t, T.m + .38, T.m + .65, .02, .25) + vida(t, T.cierra, T.cierra + .25, .02, .2));
+    camara(dirDe(yaw, pitch), d, new THREE.Vector3(0, mezcla(.35, 0, sube), 0), tiembla, t);
+  }
+  if(fase === 'letra'){
+    /* «Aa» girando, luego la lluvia de letras que llena la muestra */
+    const ua = sale(tramo(t, T.letra, T.letra + .6));
+    aA.rotation.set(Math.sin(t * 1.3) * .12, (1 - ua) * -2.4 + Math.sin(t * .9) * .35, 0); aA.position.set(0, .25 + (1 - ua) * -2, 0);
+    aA.scale.setScalar(.9 + .1 * ua + .5 * entra(tramo(t, T.lluvia - .4, T.lluvia + .3)));
+    lluvia.children.forEach((m) => { const i = m.userData.i, col = i % 5, fila = Math.floor(i / 5), t0 = T.lluvia + i * .045, u = tramo(t, t0, t0 + .55);
+      m.visible = u > 0; m.position.set((col - 2) * .38, 1.42 - fila * .4 + rebote(u, 3), 0); m.rotation.set((1 - sale(u)) * 2, Math.sin(t * 2 + i) * .25 * (1 - tramo(t, t0 + .6, t0 + 1.2)), 0); });
+    const empuja = suave(tramo(t, T.lluvia, T.colores));
+    camara(dirDe(Math.sin(t * .7) * .2 + empuja * .35, .12 - empuja * .1), mezcla(9.6, 8.6, empuja), new THREE.Vector3(0, mezcla(0, -.1, empuja), 0), 0, t);
+    $('#etiqueta').innerHTML = 'Logotipo<b>Space Grotesk Bold</b>';
+  }
+  $('#etiqueta').style.opacity = vida(t, T.letra + .4, T.lluvia + .1, .3, .3);
+  const vm = vida(t, T.lluvia + .6, T.colores, .3, .3); $('#muestra').style.opacity = vm; $('#muestra .a').style.transform = `translateX(${-((t - T.lluvia) * 520) % 3400}px)`;
+  if(fase === 'colores'){
+    /* las letras se caen; luego los tres cubos, en orden de importancia */
+    lluvia.children.forEach((m) => { const u = tramo(t, T.colores + m.userData.i * .012, T.colores + .9); m.position.y -= entra(u) * 6; m.rotation.x += u * 2; });
+    const piso = -1.1, cae = (c, t0, x_, z_, sobre = 0) => { const u = tramo(t, t0, t0 + .55); c.visible = u > 0; c.position.set(x_, piso + sobre + c.userData.tam / 2 + rebote(u, 6), z_); c.rotation.set(0, (1 - sale(u)) * 1.2 + .35, 0); };
+    cae(cOsc, T.oscuro, -.42, 0); cae(cVino, T.vino, .86, .25); cae(cClaro, T.claro, .86, .25, cVino.userData.tam);
+    golpe(polvo[0], t, T.oscuro + .34, -.42, piso, 0, 1.6); golpe(polvo[1], t, T.vino + .34, .86, piso, .25, 1.1); golpe(polvo[2], t, T.claro + .34, .86, piso + 1, .25, .6);
+    const tiembla = .05 * (vida(t, T.oscuro + .34, T.oscuro + .6, .02, .25) + .6 * vida(t, T.vino + .34, T.vino + .55, .02, .2));
+    camara(dirDe(-.35 + (t - T.colores) * .06, .3), 14.8, new THREE.Vector3(.25, .6, 0), tiembla, t);
+  }
+  [T.oscuro, T.vino, T.claro].forEach((t0, i) => { const d = $('#colores').children[i], u = sale(tramo(t, t0 + .2, t0 + .55)); d.style.opacity = u * (1 - tramo(t, T.usos - .4, T.usos - .05)); d.style.transform = `translateX(${(1 - u) * -80}px)`; });
+  if(fase === 'usos'){
+    /* cuatro objetos, uno tras otro, con un barrido borroso entre cada uno */
+    const k = cl(Math.floor((t - T.usos) / PASO), 0, 3), u = USOS[k], v = (t - T.usos - k * PASO) / PASO;
+    u.obj.visible = true; u.obj.rotation.set(.1, u.giro + mezcla(-.55, .35, v) + (1 - sale(tramo(v, 0, .25))) * -1.4, 0); u.obj.position.set((1 - sale(tramo(v, 0, .22))) * 3 + entra(tramo(v, .9, 1)) * -3, .16 + Math.sin(t * 2) * .04, 0);
+    const borr = Math.max(1 - tramo(v, 0, .15), tramo(v, .9, 1)); $('#gl').style.filter = borr > .05 ? `blur(${borr * 16}px)` : '';
+    camara(new THREE.Vector3(0, .12, 1), 7.5, new THREE.Vector3(0, .1, 0), 0, t);
+    $('#etiqueta').innerHTML = `${u.de}<b>${u.que}</b>`; $('#etiqueta').style.opacity = vida(v, .15, .95, .1, .08);
+  }
+  if(fase === 'final'){
+    /* el logo regresa girando y se para justo en isométrico; luego los créditos */
+    LG.cuna.visible = LG.m.visible = true; LG.cuna.position.set(0, 0, 0); LG.m.position.set(0, 0, 0); LG.m.rotation.y = 0; LG.cubo.rotation.set(0, 0, 0); LG.cubo.position.copy(casaCubo);
+    LG.letras.forEach(h => { h.visible = true; h.position.copy(h.userData.casa); h.rotation.set(0, 0, 0); });
+    LG.mat[0].emissiveIntensity = .35;
+    const ul = tramo(t, T.lema - .2, l['09'].t0 + .2), giro = (1 - suave(ul)) * Math.PI * 2;
+    LG.grupo.rotation.set(0, giro, 0); LG.grupo.scale.setScalar(.8 + .2 * sale(tramo(t, T.lema - .2, T.lema + .6)));
+    const arriba = mezcla(1.9, 1.2, suave(tramo(t, l['09'].t0 - .3, l['09'].t0 + .4)));
+    camara(dirDe(YI, PI_), 19.5, new THREE.Vector3(0, -arriba, 0), 0, t);
+    const va = suave(tramo(t, T.creditos - .7, T.creditos - .3)), uc = sale(tramo(t, T.creditos - .25, T.creditos + .35)); LG.grupo.visible = va < 1;
+    $('#gl').style.opacity = 1 - va;
+    if(uc > 0) logo2d(x, { cx: W / 2, cy: 560 + (1 - uc) * 40, ancho: 760 * (.94 + .06 * uc), alfa: uc });
+  } else { LG.grupo.rotation.set(0, 0, 0); LG.grupo.scale.setScalar(1); $('#gl').style.opacity = 1; }
+  pintarCampo(t, warp); campo.visible = fase !== 'usos';
+  E.pintar();
+  /* los letreros del final */
+  poner($('#lema'), t >= T.lema ? '<span>Misma gente.</span><span>Mismas ganas.</span><span class="v">Nueva imagen.</span>' : '');
+  [...$('#lema').children].forEach((s, i) => { const t0 = l['08'].t0 + l['08'].dur * [0, .33, .64][i] - .1, u = sale(tramo(t, t0, t0 + .4)); s.style.opacity = u * (1 - tramo(t, T.creditos - .6, T.creditos - .2)); s.style.transform = `translateY(${(1 - u) * 50}px)`; });
+  const ut = t < T.creditos - .3 ? vida(t, l['09'].t0, T.creditos - .3, .4, .25) : sale(tramo(t, T.creditos, T.creditos + .4)); $('#tira').style.opacity = ut; $('#tira').style.top = (t < T.creditos - .3 ? 1470 : 720) + 'px'; $('#tira').style.transform = `scaleX(${.6 + .4 * sale(ut)})`;
+  $('#creditos').style.opacity = sale(tramo(t, T.creditos, T.creditos + .5));
+  $('#destello').style.opacity = .55 * vida(t, T.m + .4, T.m + .6, .02, .18) + .35 * vida(t, T.oscuro + .36, T.oscuro + .55, .02, .16);
+  sub(t); gr(t);
+};
+await pintar(0); window._listo();
+</script>
+</body>
+</html>

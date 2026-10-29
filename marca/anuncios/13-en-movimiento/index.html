@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Grupo Mazi · En movimiento</title>
+<!-- MOTION 13 · ~20 s · 9:16 · SIN VOZ. El «de After Effects»: lo pidió Carlos el 29 de octubre con la
+     referencia de ugoki, vista cuadro por cuadro. Lo que se tomó de ella (la gramática, no el dibujo):
+     UNA cámara que nunca corta y recorre un solo espacio 3D; entra a la pantalla del teléfono y de ahí
+     sale el cubo en 3D; desenfoque de profundidad y de movimiento de verdad (cine.js); letras en 3D
+     que la cámara va leyendo; brillo en lo que emite luz; el fondo que se voltea de oscuro a blanco
+     y de regreso; un foco que se acomoda para revelar el logo. Todo cae en los compases de la
+     canción (129 por minuto: un compás cada 1.858 s, medido). La M cubo se vuelve el cubo dos veces.
+     En el teléfono va NUESTRA página (web/), capturada tal cual.
+     Música: «Exit the Premises», Kevin MacLeod (incompetech.com), CC BY 4.0.
+     node herramientas/video/armar.mjs marca/anuncios/13-en-movimiento/index.html marca/anuncios/salida/13-en-movimiento.mp4 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter+Tight:wght@600;800;900&display=block">
+<link rel="stylesheet" href="../comun.css">
+<script>window.listo = new Promise(r => window._listo = r);</script>
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>
+#viñeta{ position:absolute; inset:0; z-index:5; pointer-events:none; background:radial-gradient(120% 75% at 50% 45%, transparent 55%, #000a 100%) }
+</style>
+</head>
+<body>
+<canvas id="c" class="capa" width="1080" height="1920"></canvas>
+<div id="viñeta"></div>
+<div id="grano"></div>
+<script type="module">
+import { THREE, PAL, W, H, cl, tramo, suave, sale, entra, mezcla, resorte, telefono, imagen, grano } from '../motor.js';
+import { piezasCubo, logo3d } from '../logo3d.js';
+import { cine, palabra3d, letrero } from '../cine.js';
+const $ = (s) => document.querySelector(s);
+const C0 = 1.858, B = (n) => n * C0, G = C0 / 4;                    // un compás, y un golpe
+const FIN = B(10) + 1.4, fx = (n) => `../../../herramientas/video/efectos/${n}.wav`;
+window.VIDEO = { w: W, h: H, fps: 30, dur: FIN, musica: { archivo: '/tmp/claude-0/musica/Exit_the_Premises.mp3', desde: 5.95, vol: .9, entrada: .05, fin: 2.2 },
+  sonidos: [[fx('whoosh'), .15, .45], [fx('golpe'), 1.45, .5], [fx('whoosh'), B(1) + .1, .35], [fx('subida'), B(2) - .5, .35], [fx('golpe'), B(2), .45],
+    [fx('whoosh'), B(3) - .3, .45], [fx('golpe'), B(4) - .02, .7], [fx('whoosh'), B(5) + 1.3, .4], [fx('whoosh'), B(6) - .2, .45], [fx('whoosh'), B(7) - .2, .45],
+    [fx('whoosh'), B(8) - .2, .4], [fx('golpe'), B(8) + .62, .6], [fx('ding'), B(9) + .2, .35]] };
+await Promise.all(['700 80px "Space Grotesk"', '800 60px "Inter Tight"', '600 60px "Inter Tight"'].map(f => document.fonts.load(f)));
+
+const C = cine($('#c'), { sub: 6, obturador: .6 });
+const { s, cam } = C; s.add(cam);
+/* la luz: llave blanca, borde vino, relleno morado; el HDRI da los reflejos */
+const llave = new THREE.DirectionalLight('#FFFFFF', 2.2); llave.position.set(-3, 5, 6); s.add(llave);
+const borde = new THREE.DirectionalLight(PAL.vino2, 3); borde.position.set(4, 1, -5); s.add(borde);
+const morado = new THREE.PointLight(PAL.techo, 6, 14); morado.position.set(0, 2, 3); s.add(morado);
+
+/* los fondos van pegados a la cámara: el halo vino sobre negro y el estudio blanco */
+const radial = (a, b, c = b) => { const k = document.createElement('canvas'); k.width = k.height = 512; const x = k.getContext('2d');
+  const g = x.createRadialGradient(256, 230, 0, 256, 256, 300); g.addColorStop(0, a); g.addColorStop(.55, b); g.addColorStop(1, c); x.fillStyle = g; x.fillRect(0, 0, 512, 512);
+  const t = new THREE.CanvasTexture(k); t.colorSpace = THREE.SRGBColorSpace; return t; };
+const fondo = (tex) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, toneMapped: false })); m.position.z = -60; m.scale.set(60, 60 * H / W * .62, 1); m.renderOrder = -10; cam.add(m); return m; };
+const fOscuro = fondo(radial('#5A1030', '#1A0A20', '#07040B')), fBlanco = fondo(radial('#FFFFFF', '#E9E4EC', '#B9B2BF')), fNegro = fondo(radial('#1B0E26', '#050308', '#000000'));
+/* la palabra MAZI repetida, tenue, detrás del cubo (como el «MOVE MOVE» de la referencia) */
+const texPatron = (() => { const k = document.createElement('canvas'); k.width = 1024; k.height = 1024; const x = k.getContext('2d');
+  x.fillStyle = '#ffffff'; x.font = '700 150px "Space Grotesk"'; x.textBaseline = 'top';
+  for(let f = 0; f < 7; f++) x.fillText('MAZI MAZI MAZI', -60 - (f % 2) * 160, f * 150);
+  const t = new THREE.CanvasTexture(k); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+const patron = new THREE.Mesh(new THREE.PlaneGeometry(9, 9), new THREE.MeshBasicMaterial({ map: texPatron, transparent: true, opacity: 0, depthWrite: false, color: '#B44BFF', toneMapped: false }));
+patron.position.set(0, 0, -4); s.add(patron);
+
+/* ── 1 · el teléfono, con nuestra página ── */
+const tel = telefono(await imagen('pantalla.jpg')); s.add(tel);
+tel.userData.pantalla.material.color.set('#C9C4CC');          /* la pantalla no se quema con el brillo */
+const enPantalla = new THREE.Vector3(.27, .338, .03);              // dónde está el cubo dibujado en la página
+
+/* ── 2 · el cubo que sale de la pantalla, con sus anillos de luz ── */
+const P = piezasCubo(); const cubo = new THREE.Group(); cubo.add(P.m, P.cuna); s.add(cubo);
+const anillos = [0, 1, 2, 3].map(i => { const m = new THREE.Mesh(new THREE.TorusGeometry(1, .012, 8, 120), new THREE.MeshBasicMaterial({ color: '#C77DFF', transparent: true, toneMapped: false })); s.add(m); return m; });
+/* las cuatro letras que giran alrededor del cubo */
+const matBlanco = new THREE.MeshStandardMaterial({ color: '#DCD4E2', roughness: .3, metalness: .2 });
+const orbita = [...'MAZI'].map(ch => { const p = palabra3d(ch, { alto: .42, hondo: .25, mat: matBlanco }); s.add(p); return p; });
+
+/* ── 3 · el estudio blanco: «Hazlo que se mueva.» ── */
+const tinta = new THREE.MeshStandardMaterial({ color: '#17121D', roughness: .32, metalness: .2 });
+const morada = new THREE.MeshStandardMaterial({ color: '#AC27FF', roughness: .3, metalness: .1, emissive: '#AC27FF', emissiveIntensity: .35 });
+const X3 = 0, Y3 = 40;                                               // el estudio vive lejos, arriba
+/* cada palabra cabe en el ancho que se ve (1.5 a la distancia de la cámara): si no, se achica */
+const cabe = (p, w = 1.28) => { p.scale.setScalar(Math.min(1, w / p.userData.ancho)); return p; };
+const pal = (txt, o, x, y, z = 0) => { const p = cabe(palabra3d(txt, o)); p.position.set(X3 + x, Y3 + y, z); s.add(p); return p; };
+const wHazlo = pal('Hazlo', { alto: .5, hondo: .3, mat: tinta }, -.12, .95);
+const wQue = pal('que', { alto: .42, hondo: .3, mat: tinta }, -.42, .3);
+const cajaSe = new THREE.Mesh(new THREE.BoxGeometry(.62, .5, .08), tinta); cajaSe.position.set(X3 + .46, Y3 + .48, -.02); s.add(cajaSe);
+const wSe = pal('se', { alto: .32, hondo: .06, mat: matBlanco }, .46, .34, .06);
+const wMueva = pal('mueva.', { alto: .62, hondo: .34, mat: morada }, 0, -.5);
+const wSin = pal('sin plantillas,', { alto: .24, hondo: .22, mat: tinta }, 0, -1.08);
+const wMano = pal('hecho a mano.', { alto: .24, hondo: .22, mat: tinta }, 0, -1.42);
+
+/* ── 4 · en negro, lo que brilla: lo que hacemos ── */
+const brillo = (c, i = .9) => new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: i, roughness: .4 });
+const X4 = 0, Y4 = 80;
+const pal4 = (txt, o, x, y) => { const p = cabe(palabra3d(txt, o)); p.position.set(X4 + x, Y4 + y, 0); s.add(p); return p; };
+const wPag = pal4('Páginas,', { alto: .4, hondo: .2, mat: brillo('#C77DFF', 1.1) }, -.05, .62);
+const wApps = pal4('apps', { alto: .4, hondo: .2, mat: brillo('#E2DAE8', .12) }, -.3, .08);
+const wVideo = pal4('y video', { alto: .4, hondo: .2, mat: brillo('#E2DAE8', .12) }, .12, -.46);
+const lHechas = letrero('a tu medida · desde Querétaro', { px: 64, peso: 600, familia: '"Inter Tight"', color: '#D9C6E8', alto: .1 }); lHechas.position.set(X4, Y4 - .95, 0); s.add(lHechas);
+
+/* ── 5 · «TU NEGOCIO» detrás de barras de vidrio ── */
+const X5 = 0, Y5 = 120;
+const wTu = cabe(palabra3d('TU', { alto: .5, hondo: .25, mat: brillo('#E2DAE8', .1) })); wTu.position.set(X5, Y5 + .45, 0); s.add(wTu);
+const wNeg = cabe(palabra3d('NEGOCIO', { alto: .4, hondo: .25, mat: brillo('#C77DFF', 1.1) })); wNeg.position.set(X5, Y5 - .15, 0); s.add(wNeg);
+const lMov = letrero('en movimiento.', { px: 90, peso: 700, color: '#F4EEF2', alto: .16 }); lMov.position.set(X5, Y5 - .75, 0); s.add(lMov);
+const vidrio = new THREE.MeshPhysicalMaterial({ color: '#ffffff', transmission: 1, thickness: .6, roughness: .04, ior: 1.45, metalness: 0, transparent: true });
+const barras = [0, 1, 2, 3, 4, 5].map(i => { const b = new THREE.Mesh(new THREE.CylinderGeometry(.17, .17, 4, 48), vidrio); s.add(b); return b; });
+
+/* ── 6 · el logo, con el foco que se acomoda ── */
+const X6 = 0, Y6 = 160;
+const L = logo3d({ hondo: .22 }); L.grupo.position.set(X6, Y6, 0); L.grupo.scale.setScalar(.36); s.add(L.grupo);
+L.matL[0].emissiveIntensity = .02; L.matL[0].color.set('#E4DDEA');
+const ISOv = new THREE.Vector3(1, 1, 1).normalize(), dLogo = (L.medio * 2 * .36 * 1.2) / (2 * Math.tan(cam.fov * Math.PI / 360) * cam.aspect);
+const lLema = letrero('Si no existe la herramienta, se construye.', { px: 64, peso: 600, familia: '"Inter Tight"', color: '#E9E1EF', alto: .12 }); s.add(lLema);
+const lWa = letrero('WhatsApp  442 883 3786', { px: 80, peso: 800, familia: '"Inter Tight"', color: '#F4F4F4', alto: .14, fondo: '#178A42' }); s.add(lWa);
+
+/* las letras de una palabra entran una por una: suben girando sobre su base */
+function entrar(p, t, t0, { d = .4, paso = .045, de = 'abajo' } = {}){
+  p.children.forEach((l, i) => { const u = sale(tramo(t, t0 + i * paso, t0 + i * paso + d));
+    l.visible = u > 0; l.rotation.x = (1 - u) * (de === 'abajo' ? 1.3 : -1.3); l.position.y = (1 - u) * (de === 'abajo' ? -.35 : .35) * (p.userData.ancho / Math.max(1, p.children.length) + .2); l.scale.setScalar(.6 + .4 * u); });
+}
+
+/* ── la cámara: una lista de paradas; entre una y otra va suave, y los barridos van rápidos ── */
+const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+const PARADAS = [
+  /* [segundo, posición, a dónde mira, giro de lado, apertura del foco] */
+  [0, V3(0, .05, 6.2), V3(0, 0, 0), 0, .0],
+  [1.55, V3(-.25, -.1, 3.9), V3(0, 0, 0), -.06, .0006],
+  [B(1) + .9, 'tel', V3(-.4, -1.15, 1.25), V3(0, .05, 0), .1, .0035],       // abajo y de lado, rozando la pantalla
+  [B(2) - .15, 'tel', V3(.2, -.2, .8), V3(.27, .34, .04), .04, .004],       // hasta el cubo de la página
+  [B(2) + 1.05, 'tel', V3(.22, -1.5, 2.7), V3(.27, .34, .5), -.05, .0015],  // sale el cubo: la cámara se echa para atrás
+  [B(3) - .05, V3(2.6, 1.4, 8.8), V3(0, .15, 0), .2, .0006],                 // barrido al vacío: el cubo, solo
+  [B(4) - .25, V3(-1.6, 2.3, 8.2), V3(0, .25, 0), -.08, .0006],
+  [B(4) + .05, V3(X3 - .5, Y3 + 1.2, 5.0), V3(X3 - .1, Y3 + .7, 0), -.12, .0015], // el estudio blanco: «Hazlo»
+  [B(4) + 1.1, V3(X3 + .4, Y3 + .45, 5.6), V3(X3, Y3 + .25, 0), .05, .0012],
+  [B(5) + .95, V3(X3 + .1, Y3 - .15, 5.4), V3(X3, Y3 - .1, 0), .1, .0012],    // «mueva.», ya completa
+  [B(6) - .15, V3(X3 + .25, Y3 - .45, 6.4), V3(X3, Y3 - .55, 0), -.05, .001],   // se abre: «sin plantillas, hecho a mano.» debajo
+  [B(6) + .05, V3(X4 + .5, Y4 + .7, 5.4), V3(X4, Y4 + .25, 0), .12, .0015],   // a lo negro: lo que hacemos
+  [B(7) - .2, V3(X4 - .4, Y4 - .4, 5.6), V3(X4, Y4 - .1, 0), -.1, .0012],
+  [B(7) + .05, V3(X5 + .5, Y5 + .3, 5.2), V3(X5, Y5 + .05, 0), .06, .001],    // «TU NEGOCIO»
+  [B(8) - .2, V3(X5 - .3, Y5 - .1, 5.6), V3(X5, Y5 - .05, 0), -.04, .001],
+  /* el logo: la cámara llega a la vista isométrica (la del logo plano), primero desenfocado y lejos */
+  [B(8) + .05, V3(X6, Y6, 0).addScaledVector(V3(1.25, .8, 1).normalize(), dLogo * 1.35), V3(X6, Y6 + .05, 0), 0, .006],
+  [B(9) + .4, V3(X6, Y6 - .5, 0).addScaledVector(ISOv, dLogo * 1.04), V3(X6, Y6 - .5, 0), 0, 0],
+  [FIN, V3(X6, Y6 - .5, 0).addScaledVector(ISOv, dLogo), V3(X6, Y6 - .5, 0), 0, 0]];
+const cMundo = (k, t) => { const p = PARADAS[k]; if(p[1] !== 'tel') return { pos: p[1].clone(), mira: p[2].clone(), giro: p[3], ap: p[4] };
+  return { pos: tel.localToWorld(p[2].clone()), mira: tel.localToWorld(p[3].clone()), giro: p[4], ap: p[5] }; };
+const ease = (u) => u < .5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;   // de entrada y de salida
+function camara(t){
+  let k = 0; while(k < PARADAS.length - 2 && t >= PARADAS[k + 1][0]) k++;
+  const a = cMundo(k, t), b = cMundo(k + 1, t), u = ease(tramo(t, PARADAS[k][0], PARADAS[k + 1][0]));
+  cam.position.lerpVectors(a.pos, b.pos, u); const mira = a.mira.lerp(b.mira, u);
+  /* un temblor de mano muy leve: la cámara nunca está muerta */
+  cam.position.x += Math.sin(t * 1.3) * .012; cam.position.y += Math.sin(t * 1.7 + 1) * .01;
+  cam.up.set(Math.sin(mezcla(a.giro, b.giro, u)), Math.cos(mezcla(a.giro, b.giro, u)), 0);
+  cam.lookAt(mira); cam.updateMatrixWorld();
+  return { foco: cam.position.distanceTo(mira), apertura: mezcla(a.ap, b.ap, u) };
+}
+
+function escena(t){
+  /* el fondo: oscuro → blanco (compases 4-6) → negro → oscuro */
+  const blanco = tramo(t, B(4) - .05, B(4) + .05) * (1 - tramo(t, B(6) - .05, B(6) + .05)), negro = tramo(t, B(6) - .05, B(6) + .05) * (1 - tramo(t, B(8) - .1, B(8) + .3));
+  fBlanco.material.opacity = blanco; fNegro.material.opacity = negro; fOscuro.material.opacity = 1;
+  s.background.set(blanco > .5 ? '#E9E4EC' : '#07040B');
+  s.environmentIntensity = mezcla(.8, 1.15, blanco);
+  morado.intensity = mezcla(6, 0, blanco);
+
+  /* 1 · el teléfono llega dando vueltas desde muy lejos y se planta */
+  const uT = tramo(t, 0, 1.5), lleg = sale(uT);
+  tel.visible = t < B(3) + .2;
+  tel.position.set(mezcla(.6, 0, lleg), mezcla(-.4, 0, lleg), mezcla(-34, 0, Math.pow(lleg, .7)));
+  tel.rotation.set(mezcla(1.4, -.08, lleg) - .2 * tramo(t, B(1), B(2)), (1 - lleg) * Math.PI * 5 + .22, (1 - lleg) * 1.1 + .03);
+  /* cuando sale el cubo, el teléfono se va hacia atrás y abajo, ya desenfocado */
+  const seVa = entra(tramo(t, B(2) + 1.1, B(3) + .1));
+  tel.position.y -= seVa * 2.6; tel.position.z -= seVa * 3; tel.rotation.x -= seVa * .7;
+  tel.updateMatrixWorld(true);
+
+  /* 2 · el cubo: nace del dibujo de la página, sube con sus anillos, y en el vacío se arma la M encima */
+  const nace = tramo(t, B(2) - .08, B(2) + .9);
+  cubo.visible = t >= B(2) - .08 && t < B(4) + .1;
+  const enTel = tel.localToWorld(enPantalla.clone().add(V3(0, 0, .1 * sale(nace) + .4 * suave(nace))));
+  const alVacio = suave(tramo(t, B(2) + 1.2, B(3) - .05));
+  cubo.position.lerpVectors(enTel, V3(0, 0, 0), alVacio);
+  cubo.scale.setScalar(mezcla(.15 * mezcla(.7, 1, sale(nace)), 1, alVacio));
+  cubo.quaternion.copy(tel.quaternion); cubo.rotateY(-Math.PI / 4 + (1 - sale(nace)) * 2.5 + alVacio * 0); cubo.rotateX(.62 * (1 - alVacio));
+  if(alVacio > 0){ const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(.5, -Math.PI / 4 + t * .55, 0)); cubo.quaternion.slerp(q, alVacio); }
+  /* la M: flota arriba (se lee la M) y baja sobre la cuña justo en el golpe del compás 4 */
+  const sube = suave(tramo(t, B(2) + .4, B(3) + .3)), baja = tramo(t, B(4) - .45, B(4));
+  P.m.position.y = baja > 0 ? (1 - entra(baja)) * .75 + Math.abs(Math.sin(tramo(t, B(4), B(4) + .4) * Math.PI)) * .06 * (1 - tramo(t, B(4), B(4) + .4)) : sube * .75;
+  P.mat[0].emissiveIntensity = .35 + 3 * Math.max(0, 1 - Math.abs(t - B(4)) / .18) + 1.2 * (1 - sale(nace)) * (nace > 0 ? 1 : 0);
+  anillos.forEach((a, i) => { const u = tramo(t, B(2) - .05 + i * .14, B(2) + .85 + i * .14); a.visible = u > 0 && u < 1 && cubo.visible;
+    a.position.copy(tel.localToWorld(enPantalla.clone().add(V3(0, 0, .02 + u * .25)))); a.quaternion.copy(tel.quaternion);
+    a.scale.setScalar(.08 + sale(u) * .34); a.material.opacity = (1 - u) * 1.2; });
+  patron.material.opacity = .07 * tramo(t, B(2) + 1.3, B(3)) * (1 - tramo(t, B(4) - .1, B(4)));
+  patron.rotation.z = -.12; patron.position.x = -t * .15;
+  /* las cuatro letras: entran en órbita y se cierran sobre el cubo al armarse */
+  orbita.forEach((p, i) => { const u = sale(tramo(t, B(3) - .2 + i * .12, B(3) + .5 + i * .12)), cierra = entra(tramo(t, B(4) - .5, B(4) - .05));
+    p.visible = u > 0 && t < B(4); const a = t * 1.25 + i * Math.PI / 2, rad = mezcla(3.2, 1.45, u) * (1 - .6 * cierra);
+    p.position.set(Math.cos(a) * rad, .05 + Math.sin(a * 1) * .12, Math.sin(a) * rad); p.rotation.set(0, -a - Math.PI / 2 + Math.PI, 0); p.scale.setScalar(.4 + .6 * u - .4 * cierra); });
+
+  /* 3 · «Hazlo que se mueva. Sin plantillas, hecho a mano.» */
+  const e3 = t > B(4) - .1 && t < B(6) + .1; [wHazlo, wQue, cajaSe, wSe, wMueva, wSin, wMano].forEach(o => o.visible = e3);
+  entrar(wHazlo, t, B(4) + .02); entrar(wQue, t, B(4) + G * 2, { de: 'arriba' });
+  const uS = resorte(tramo(t, B(4) + G * 3, B(4) + G * 3 + .6)); cajaSe.scale.set(Math.max(.001, uS), 1, 1); cajaSe.visible = e3 && uS > 0; entrar(wSe, t, B(4) + G * 3 + .15, { d: .25 });
+  entrar(wMueva, t, B(5) - .02, { paso: .07, d: .3 });
+  entrar(wSin, t, B(5) + .75, { paso: .02, d: .28 }); entrar(wMano, t, B(5) + 1.0, { paso: .02, d: .28, de: 'arriba' });
+
+  /* 4 · lo que hacemos, en luz */
+  const e4 = t > B(6) - .1 && t < B(7) + .1; [wPag, wApps, wVideo, lHechas].forEach(o => o.visible = e4);
+  entrar(wPag, t, B(6) + .02, { paso: .03, d: .3 }); entrar(wApps, t, B(6) + G, { paso: .035, d: .3 }); entrar(wVideo, t, B(6) + G * 2, { paso: .035, d: .3, de: 'arriba' });
+  lHechas.material.opacity = sale(tramo(t, B(6) + 1.0, B(6) + 1.35)); lHechas.position.y = Y4 - .95 - (1 - lHechas.material.opacity) * .08;
+
+  /* 5 · TU NEGOCIO, y las barras de vidrio que pasan por delante */
+  const e5 = t > B(7) - .1 && t < B(8) + .1; [wTu, wNeg, lMov].forEach(o => o.visible = e5);
+  entrar(wTu, t, B(7) + .02, { paso: .06 }); entrar(wNeg, t, B(7) + G, { paso: .035, de: 'arriba' });
+  lMov.material.opacity = sale(tramo(t, B(7) + G * 3, B(7) + G * 3 + .4));
+  barras.forEach((b, i) => { b.visible = e5; const u = tramo(t, B(7) + .25 + i * .05, B(8) + .05);
+    b.position.set(X5 + mezcla(2.6, -2.8, ease(u)) + (i - 2.5) * .4, Y5, .6 + (i % 2) * .12); b.rotation.set(0, 0, .04); });
+
+  /* 6 · el logo: la M flota, baja y se vuelve el cubo; el foco se acomoda; el lema y el WhatsApp */
+  const e6 = t > B(8) - .1; L.grupo.visible = e6;
+  const flota = sale(tramo(t, B(8), B(8) + .3)), cae6 = tramo(t, B(8) + .3, B(8) + .62);
+  L.m.position.y = cae6 > 0 ? (1 - entra(cae6)) * .9 : .9 + (1 - flota) * 2;
+  L.cuna.position.y = (1 - sale(tramo(t, B(8) - .05, B(8) + .3))) * 2.5;
+  L.mat[0].emissiveIntensity = .35 + 2.6 * Math.max(0, 1 - Math.abs(t - (B(8) + .62)) / .2);
+  L.letras.forEach((h, i) => { const u = sale(tramo(t, B(8) + .5 + i * .07, B(8) + .95 + i * .07)); h.visible = u > 0; h.position.copy(h.userData.casa); h.position.y += (1 - u) * -.4; h.rotation.x = (1 - u) * -Math.PI / 2; });
+  /* el lema y el WhatsApp viven en el plano de las letras, debajo */
+  L.grupo.updateMatrixWorld(true);
+  lLema.visible = lWa.visible = e6;
+  lLema.position.copy(L.plano.localToWorld(V3(0, -1.25, 0))); lLema.quaternion.setFromRotationMatrix(L.plano.matrixWorld); lLema.material.opacity = sale(tramo(t, B(9) - .3, B(9) + .3));
+  lWa.position.copy(L.plano.localToWorld(V3(0, -1.95, 0))); lWa.quaternion.copy(lLema.quaternion); lWa.material.opacity = sale(tramo(t, B(9) + .2, B(9) + .7)); lWa.scale.setScalar(.8 + .2 * resorte(tramo(t, B(9) + .2, B(9) + .8)));
+
+  const o = camara(t);
+  /* el brillo sube en los golpes grandes */
+  o.brillo = (.55 + 1.0 * Math.max(0, 1 - Math.abs(t - B(4)) / .25) + .5 * Math.max(0, 1 - Math.abs(t - B(2)) / .3)) * (1 - blanco) * (1 - .8 * tramo(t, B(8) + .5, B(9)));
+  return o;
+}
+
+const gr = grano($('#grano'), .045);
+/* el desenfoque de movimiento sólo trabaja fuerte cuando la cámara corre: medir cuánto se movió en un cuadro */
+const rapidez = (t) => { camara(t - 1 / 30); const a = cam.position.clone(), q = cam.quaternion.clone(); const o = camara(t);
+  return a.distanceTo(cam.position) / Math.max(.3, o.foco) + q.angleTo(cam.quaternion); };
+window.pintar = async (t) => { const v = rapidez(t), n = v > .08 ? 9 : v > .05 ? 6 : v > .015 ? 4 : 2; C.cuadro(t, escena, { n: t < 1.6 ? 6 : n }); gr(t); };
+await pintar(0); window._listo();
+</script>
+</body>
+</html>

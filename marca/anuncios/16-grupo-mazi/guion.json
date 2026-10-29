@@ -1,0 +1,125 @@
+{
+ "titulo": "Grupo Mazi · de un dibujo a lo real",
+ "voces": {
+  "Voz": "piper:es_MX-claude-high"
+ },
+ "lento": {
+  "Voz": 1.05
+ },
+ "lineas": [
+  {
+   "id": "01",
+   "voz": "Voz",
+   "en": 1.0,
+   "txt": "Todo empieza como empiezan las cosas buenas: *con un dibujo.*"
+  },
+  {
+   "id": "02",
+   "voz": "Voz",
+   "en": 5.61,
+   "txt": "Una idea, un cuaderno, y una regla que nunca cambió:"
+  },
+  {
+   "id": "03",
+   "voz": "Voz",
+   "en": 10.27,
+   "txt": "si no existe la herramienta, *se construye.*"
+  },
+  {
+   "id": "04",
+   "voz": "Voz",
+   "en": 13.52,
+   "txt": "Así nació *Grupo Mazi,* en Querétaro."
+  },
+  {
+   "id": "05",
+   "voz": "Voz",
+   "en": 16.8,
+   "txt": "Primero hicimos nuestras propias herramientas. Después, las de los negocios de alrededor:"
+  },
+  {
+   "id": "06",
+   "voz": "Voz",
+   "en": 23.26,
+   "txt": "la tienda sin página, el pedido apuntado en una libreta, la fila larga a la hora del recreo."
+  },
+  {
+   "id": "07",
+   "voz": "Voz",
+   "en": 30.56,
+   "txt": "Y cada problema se volvió *una herramienta.*"
+  },
+  {
+   "id": "08",
+   "voz": "Voz",
+   "en": 35.3,
+   "txt": "Hoy hacemos seis cosas, con un mismo equipo:"
+  },
+  {
+   "id": "09",
+   "voz": "Voz",
+   "en": 39.07,
+   "txt": "*páginas web,* software y apps, marketing, video y fotografía, gestión de negocios, y tiempos y movimientos."
+  },
+  {
+   "id": "10",
+   "voz": "Voz",
+   "en": 48.09,
+   "txt": "¿Por qué emprender? Porque lo que construyes *es tuyo.*"
+  },
+  {
+   "id": "11",
+   "voz": "Voz",
+   "en": 51.89,
+   "txt": "Y no tienes que hacerlo solo."
+  },
+  {
+   "id": "12",
+   "voz": "Voz",
+   "en": 54.12,
+   "txt": "Si te asocias con Grupo Mazi, cobras *comisión por cada proyecto:* tú consigues al cliente o haces tu parte, y ganas por lo que mueves."
+  },
+  {
+   "id": "13",
+   "voz": "Voz",
+   "en": 63.48,
+   "txt": "Mientras más proyectos mueves, *más ganas.*"
+  },
+  {
+   "id": "14",
+   "voz": "Voz",
+   "en": 73.6,
+   "txt": "¿Y si tienes un negocio?"
+  },
+  {
+   "id": "15",
+   "voz": "Voz",
+   "en": 75.65,
+   "txt": "Entregamos *rápido,* y nos quedamos contigo mucho tiempo."
+  },
+  {
+   "id": "16",
+   "voz": "Voz",
+   "en": 80.34,
+   "txt": "Precios abajo del promedio, todo hecho a tu medida, y un solo equipo *que sí contesta.*"
+  },
+  {
+   "id": "17",
+   "voz": "Voz",
+   "en": 86.93,
+   "txt": "Esto no es una maqueta: *es trabajo real,* funcionando."
+  },
+  {
+   "id": "18",
+   "voz": "Voz",
+   "en": 94.2,
+   "txt": "Si tu negocio necesita algo que todavía no existe,"
+  },
+  {
+   "id": "19",
+   "voz": "Voz",
+   "en": 98.02,
+   "txt": "*nosotros lo construimos.*"
+  }
+ ]
+}

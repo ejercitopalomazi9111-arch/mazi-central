@@ -1,0 +1,14 @@
+{
+  "titulo": "La plantilla barata contra la nuestra",
+  "voces": { "Chris": "iP95p4xoKVk53GoZ742B" },
+  "ajustes": { "Chris": { "stability": 0.38, "style": 0.55 } },
+  "lineas": [
+    { "id": "01", "voz": "Chris", "en": 0.5, "txt": "Ésta es la página de plantilla *que te venden barata.*" },
+    { "id": "02", "voz": "Chris", "pausa": 0.5, "txt": "Foto de gente sonriendo con laptops… *que no trabaja contigo.*" },
+    { "id": "03", "voz": "Chris", "pausa": 0.5, "txt": "Lorem ipsum, *donde iba tu menú.*", "dice": "Lórem ípsum, donde iba tu menú." },
+    { "id": "04", "voz": "Chris", "pausa": 0.5, "txt": "Y un botón de contacto *que no contacta a nadie.*" },
+    { "id": "05", "voz": "Chris", "pausa": 0.9, "txt": "Y ésta es una página *hecha por Grupo Mazi.*" },
+    { "id": "06", "voz": "Chris", "pausa": 0.5, "txt": "Tu comida, tus precios, tu pedido por WhatsApp… *y alguien que contesta.*" },
+    { "id": "07", "voz": "Chris", "pausa": 0.7, "txt": "La diferencia se nota *en dos segundos.* Grupo Mazi.", "sinSub": true }
+  ]
+}

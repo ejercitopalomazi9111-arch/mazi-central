@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Smiley's Wings & Pizza · Querétaro</title>
+<meta name="description" content="Pizza, alitas, boneless y burgers en Querétaro. Todos los días de 11 am a 10 pm. Pide por WhatsApp a tu sucursal.">
+<meta name="theme-color" content="#0E0B0A">
+<link rel="icon" href="../img/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../img/icono-180.png">
+<!-- Smiley's · PAQUETE BÁSICO (Carlos, 22 de octubre: «la web básica pero llamativa
+     por si contratan ese paquete»). Una sola página: carta con precios, promos,
+     sucursales y WhatsApp directo. Sin carrito, sin «Ármala tú», sin cuentas: eso
+     es la completa (../index.html). Mismos datos y mismas fotos que la completa;
+     las fotos marcadas como provisionales en ../README.md siguen siéndolo aquí. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Figtree:wght@400;500;600;700;800&display=swap">
+<style>
+:root{
+  --negro:#0E0B0A; --carbon:#1A1513; --carbon2:#26201C; --linea:rgba(255,246,232,.14);
+  --hueso:#FFF6E8; --gris:#B9AEA2; --rojo:#E3262B; --rojo-osc:#B8141A; --amarillo:#FFC72C; --kraft:#C9A473;
+  --display:"Bricolage Grotesque", "Arial Narrow", system-ui, sans-serif;
+  --texto:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --radio:18px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; scroll-padding-top:72px}
+@media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto} *{animation:none!important; transition:none!important} }
+body{margin:0; background:var(--negro); color:var(--hueso); font:400 17px/1.55 var(--texto); overflow-x:clip; -webkit-font-smoothing:antialiased}
+img{max-width:100%; display:block}
+a{color:inherit}
+::selection{background:var(--amarillo); color:var(--negro)}
+:focus-visible{outline:3px solid var(--amarillo); outline-offset:3px; border-radius:8px}
+.envoltura{width:min(1120px, 100% - 32px); margin-inline:auto}
+.display{font-family:var(--display); font-variation-settings:"wdth" 78; font-weight:800; text-transform:uppercase; letter-spacing:-.02em; line-height:.9; margin:0}
+.ceja{font-weight:800; font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:var(--amarillo); margin:0 0 10px}
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:10px; min-height:52px; padding:0 24px; border-radius:99px; border:0;
+  font:800 16px/1 var(--texto); text-decoration:none; cursor:pointer; transition:transform .15s ease, background .15s ease}
+.btn:active{transform:scale(.97)}
+.btn--rojo{background:var(--rojo); color:#fff; box-shadow:0 12px 30px -12px rgba(227,38,43,.9)}
+.btn--rojo:hover{background:var(--rojo-osc)}
+.btn--linea{background:transparent; color:var(--hueso); box-shadow:inset 0 0 0 2px var(--linea)}
+.btn--linea:hover{box-shadow:inset 0 0 0 2px var(--hueso)}
+.ico{width:20px; height:20px; flex:none}
+.logo{display:block; background:currentColor; -webkit-mask:url(../img/logo.svg) center/contain no-repeat; mask:url(../img/logo.svg) center/contain no-repeat; aspect-ratio:1570/637}
+
+/* ── barra ── */
+.barra{position:fixed; inset:0 0 auto; z-index:20; height:60px; display:flex; align-items:center; transition:background .25s ease, box-shadow .25s ease}
+.barra.llena{background:rgba(14,11,10,.92); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); box-shadow:0 1px 0 var(--linea)}
+.barra .envoltura{display:flex; align-items:center; justify-content:space-between; gap:12px}
+.barra .logo{width:104px; color:var(--hueso)}
+.barra nav{display:flex; gap:4px}
+.barra nav a{font-weight:700; font-size:15px; text-decoration:none; padding:10px 12px; border-radius:99px; min-height:44px; display:inline-flex; align-items:center}
+.barra nav a:hover{background:var(--carbon2)}
+@media (max-width:700px){ .barra nav a:not(.siempre){display:none} }
+
+/* ── portada ── */
+.portada{position:relative; min-height:100svh; display:grid; align-items:end; isolation:isolate; overflow:hidden; padding:96px 0 48px}
+.portada__foto{position:absolute; inset:0; z-index:-2; background:url(../img/hero-queso.webp) center 30%/cover; animation:acerca 16s ease-out both}
+.portada::before{content:""; position:absolute; inset:0; z-index:-1;
+  background:linear-gradient(180deg, rgba(14,11,10,.25) 0%, rgba(14,11,10,.35) 40%, rgba(14,11,10,.92) 78%, var(--negro) 100%)}
+@keyframes acerca{from{transform:scale(1.12)}to{transform:scale(1)}}
+.portada .logo{width:min(78vw, 440px); color:var(--hueso); filter:drop-shadow(0 6px 24px rgba(0,0,0,.5)); animation:entra .7s cubic-bezier(.2,.9,.3,1.2) both .1s}
+.sonrisa{display:block; width:min(46vw, 230px); aspect-ratio:510/150; margin:14px 0 0 4px; background:var(--amarillo);
+  -webkit-mask:url(../img/sonrisa.svg) center/contain no-repeat; mask:url(../img/sonrisa.svg) center/contain no-repeat;
+  animation:sonrie .9s cubic-bezier(.2,.9,.3,1.4) both .55s}
+@keyframes entra{from{opacity:0; transform:translateY(24px) scale(.96)}to{opacity:1; transform:none}}
+@keyframes sonrie{from{opacity:0; transform:scaleX(.2) rotate(-8deg)}to{opacity:1; transform:none}}
+.portada h1{font-size:clamp(46px, 13vw, 112px); margin:22px 0 12px; animation:entra .7s ease both .35s}
+.portada h1 em{font-style:normal; color:var(--amarillo)}
+.portada p.sub{font-size:19px; max-width:34ch; color:var(--hueso); margin:0 0 26px; animation:entra .7s ease both .5s}
+.portada .acciones{display:flex; flex-wrap:wrap; gap:12px; animation:entra .7s ease both .65s}
+.horario{display:inline-flex; align-items:center; gap:8px; margin-top:22px; font-weight:700; font-size:15px; color:var(--gris)}
+.horario i{width:9px; height:9px; border-radius:50%; background:#3ED67A; box-shadow:0 0 0 4px rgba(62,214,122,.2)}
+
+/* ── la cinta que corre ── */
+.cinta-caja{overflow:hidden; padding:16px 0}
+.cinta{background:var(--amarillo); color:var(--negro); overflow:hidden; transform:rotate(-2deg); margin:10px -20px 0; padding:14px 0; box-shadow:0 10px 30px -14px rgba(255,199,44,.8)}
+.cinta__fila{display:flex; gap:36px; width:max-content; animation:corre 28s linear infinite}
+.cinta span{font-family:var(--display); font-variation-settings:"wdth" 78; font-weight:800; text-transform:uppercase; font-size:24px; white-space:nowrap; display:flex; align-items:center; gap:36px}
+.cinta span::after{content:"●"; color:var(--rojo); font-size:14px}
+@keyframes corre{to{transform:translateX(-50%)}}
+
+section{padding:88px 0}
+.cabeza{display:flex; flex-wrap:wrap; align-items:end; justify-content:space-between; gap:12px 24px; margin-bottom:32px}
+.cabeza h2{font-size:clamp(40px, 9vw, 76px)}
+.cabeza p{margin:0; max-width:46ch; color:var(--gris)}
+
+/* ── promos ── */
+.promos{display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap:16px}
+.promo{position:relative; border-radius:var(--radio); padding:22px 22px 24px; background:var(--carbon); box-shadow:inset 0 0 0 1px var(--linea); overflow:hidden; min-height:200px; display:flex; flex-direction:column}
+.promo--rojo{background:var(--rojo); box-shadow:none}
+.promo--amarillo{background:var(--amarillo); color:var(--negro); box-shadow:none}
+.promo .etq{font-weight:800; font-size:12px; letter-spacing:.12em; text-transform:uppercase; opacity:.85}
+.promo h3{font-family:var(--display); font-variation-settings:"wdth" 80; font-weight:800; font-size:28px; line-height:1; margin:10px 0 8px; text-transform:uppercase}
+.promo p{margin:0; font-size:15px; opacity:.9}
+.promo .precio{margin-top:auto; padding-top:16px; font-family:var(--display); font-weight:800; font-size:52px; line-height:1; letter-spacing:-.03em}
+.promo .precio small{font-size:16px; font-family:var(--texto); letter-spacing:0; opacity:.85; margin-left:6px}
+.promo .nota{font-size:13px; opacity:.8; margin-top:6px}
+.promo--grande{grid-column:1 / -1; display:grid; grid-template-columns:1.1fr 1fr; gap:0; padding:0; min-height:300px}
+.promo--grande .txt{padding:28px; display:flex; flex-direction:column}
+.promo--grande img{width:100%; height:100%; object-fit:cover}
+.promo--grande h3{font-size:clamp(34px, 6vw, 52px)}
+.promo--grande .precio{font-size:clamp(64px, 12vw, 96px)}
+@media (max-width:640px){ .promo--grande{grid-template-columns:1fr} .promo--grande img{height:220px; order:-1} }
+.sello{position:absolute; top:16px; right:16px; width:84px; height:84px; border-radius:50%; background:var(--amarillo); color:var(--negro);
+  display:grid; place-items:center; text-align:center; font:800 13px/1.05 var(--texto); text-transform:uppercase; transform:rotate(12deg);
+  box-shadow:0 8px 20px -8px rgba(0,0,0,.6); animation:gira 6s ease-in-out infinite alternate}
+@keyframes gira{to{transform:rotate(-6deg) scale(1.04)}}
+
+/* ── carta ── */
+.tamanos{display:flex; flex-wrap:wrap; gap:10px; margin:0 0 28px}
+.tamanos div{background:var(--carbon); box-shadow:inset 0 0 0 1px var(--linea); border-radius:14px; padding:12px 16px}
+.tamanos b{display:block; font-family:var(--display); font-size:22px; text-transform:uppercase}
+.tamanos span{font-size:14px; color:var(--gris)}
+.pizzas{display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, 160px), 1fr)); gap:12px}
+.pizza{background:var(--carbon); border-radius:var(--radio); overflow:hidden; box-shadow:inset 0 0 0 1px var(--linea)}
+.pizza figure{margin:0; aspect-ratio:1; overflow:hidden; background:var(--carbon2)}
+.pizza img{width:100%; height:100%; object-fit:cover; transition:transform .4s ease}
+.pizza:hover img{transform:scale(1.06) rotate(2deg)}
+.pizza div{padding:14px 16px 18px}
+.pizza h3{margin:0 0 4px; font-size:17px; line-height:1.2}
+.pizza p{margin:0; font-size:14px; color:var(--gris)}
+.pizza .tag{display:inline-block; margin-bottom:8px; background:var(--rojo); color:#fff; font-weight:800; font-size:11px; letter-spacing:.08em; text-transform:uppercase; padding:4px 8px; border-radius:99px}
+
+/* ── alitas y más / burger ── */
+.dos{display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap:24px}
+.lista{list-style:none; margin:0; padding:0; background:var(--carbon); border-radius:var(--radio); box-shadow:inset 0 0 0 1px var(--linea); overflow:hidden}
+.lista li{display:grid; grid-template-columns:64px minmax(0, 1fr) auto; gap:14px; align-items:center; padding:12px 16px; border-top:1px solid var(--linea)}
+.lista li:first-child{border-top:0}
+.lista img{width:64px; height:64px; border-radius:12px; object-fit:cover}
+.lista b{display:block; font-size:17px}
+.lista small{color:var(--gris); font-size:13px}
+.lista .p{font-family:var(--display); font-weight:800; font-size:26px; text-align:right; line-height:1}
+.lista .p small{display:block; font-family:var(--texto); font-weight:600; font-size:12px; color:var(--gris)}
+.lista h3{margin:0; padding:16px 16px 4px; font-family:var(--display); text-transform:uppercase; font-size:26px}
+.lista li.sinfoto{grid-template-columns:minmax(0, 1fr) auto}
+
+/* ── sucursales ── */
+.sucursales{display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap:16px}
+.suc{background:var(--carbon); border-radius:var(--radio); padding:24px; box-shadow:inset 0 0 0 1px var(--linea); display:flex; flex-direction:column; gap:6px}
+.suc h3{margin:0; font-family:var(--display); text-transform:uppercase; font-size:30px; line-height:1}
+.suc p{margin:0; color:var(--gris); font-size:15px}
+.suc .botones{display:flex; flex-wrap:wrap; gap:10px; margin-top:14px}
+.suc .botones .btn{flex:1 1 130px; min-height:48px; padding:0 16px}
+
+footer{padding:48px 0 120px; border-top:1px solid var(--linea); color:var(--gris); font-size:15px}
+footer .envoltura{display:flex; flex-wrap:wrap; justify-content:space-between; gap:24px; align-items:center}
+footer .logo{width:130px; color:var(--hueso)}
+footer ul{list-style:none; margin:0; padding:0; display:grid; gap:6px}
+footer a{text-decoration:none} footer a:hover{color:var(--hueso)}
+
+/* ── el botón flotante de WhatsApp y su hoja ── */
+.flota{position:fixed; right:16px; bottom:calc(16px + env(safe-area-inset-bottom)); z-index:30; display:inline-flex; align-items:center; gap:10px;
+  min-height:58px; padding:0 22px 0 18px; border-radius:99px; border:0; background:#25D366; color:#062B14; font:800 16px/1 var(--texto); cursor:pointer;
+  box-shadow:0 14px 34px -10px rgba(37,211,102,.75); animation:late 2.6s ease-in-out infinite 3s}
+@keyframes late{0%,88%,100%{transform:none} 92%{transform:scale(1.08)} 96%{transform:scale(.98)}}
+.flota .ico{width:24px; height:24px}
+dialog.hoja{margin:auto auto 0; width:min(560px, 100%); max-width:100%; border:0; padding:24px 20px calc(24px + env(safe-area-inset-bottom)); border-radius:24px 24px 0 0; background:var(--carbon); color:var(--hueso)}
+dialog.hoja::backdrop{background:rgba(0,0,0,.6)}
+dialog.hoja[open]{animation:sube .25s ease-out}
+@keyframes sube{from{transform:translateY(40px); opacity:0}}
+.hoja h2{margin:0 0 4px; font-family:var(--display); text-transform:uppercase; font-size:30px}
+.hoja p{margin:0 0 16px; color:var(--gris)}
+.hoja a.btn{width:100%; justify-content:space-between; margin-bottom:10px}
+.hoja a.btn span{font-weight:600; opacity:.85}
+.hoja .cerrar{position:absolute; top:12px; right:12px; width:44px; height:44px; border-radius:50%; border:0; background:var(--carbon2); color:var(--hueso); font-size:20px; cursor:pointer}
+
+.aparece{opacity:0; transform:translateY(24px); transition:opacity .6s ease, transform .6s ease}
+.aparece.visto{opacity:1; transform:none}
+@media (prefers-reduced-motion:reduce){ .aparece{opacity:1; transform:none} }
+.oculto-lector{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-wa" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.4.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.3 2.2 2.2 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3z"/></symbol>
+  <symbol id="i-tel" viewBox="0 0 24 24"><path fill="currentColor" d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.2 11.4 11.4 0 0 0 3.6.6 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.4 11.4 0 0 0 .6 3.6 1 1 0 0 1-.3 1z"/></symbol>
+</svg>
+
+<header class="barra" id="barra">
+  <div class="envoltura">
+    <a href="#inicio" aria-label="Smiley's, al inicio"><span class="logo" role="img" aria-label="Smiley's Wings & Pizza"></span></a>
+    <nav aria-label="Secciones">
+      <a href="#promos">Promos</a><a href="#carta">Pizzas</a><a href="#alitas">Alitas</a><a href="#sucursales" class="siempre">Sucursales</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="portada" id="inicio" style="padding-bottom:40px">
+    <div class="portada__foto" role="img" aria-label="Pizza de queso recién salida del horno"></div>
+    <div class="envoltura">
+      <span class="logo" role="img" aria-label="Smiley's Wings & Pizza"></span>
+      <h1 class="display">Pizza, alitas<br>y <em>boneless</em></h1>
+      <p class="sub">Tres sucursales en Querétaro. Pide por WhatsApp y pasa por ella, o te la llevamos.</p>
+      <div class="acciones">
+        <button class="btn btn--rojo" type="button" data-pedir><svg class="ico"><use href="#i-wa"/></svg>Pedir por WhatsApp</button>
+        <a class="btn btn--linea" href="#carta">Ver la carta</a>
+      </div>
+      <p class="horario"><i aria-hidden="true"></i>Todos los días, de 11 am a 10 pm</p>
+    </div>
+  </section>
+
+  <div class="cinta-caja" aria-hidden="true"><div class="cinta"><div class="cinta__fila" id="cinta"></div></div></div>
+
+  <section id="promos">
+    <div class="envoltura">
+      <div class="cabeza aparece">
+        <div><p class="ceja">Para que rinda</p><h2 class="display">Promos</h2></div>
+        <p>Las especialidades van en 2×1. Pídelas de especialidad, mitad y mitad o de 1 a 4 ingredientes.</p>
+      </div>
+      <div class="promos" id="listaPromos"></div>
+    </div>
+  </section>
+
+  <section id="carta" style="padding-top:24px">
+    <div class="envoltura">
+      <div class="cabeza aparece">
+        <div><p class="ceja">La carta</p><h2 class="display">Pizzas</h2></div>
+        <p>Quince especialidades. Orilla de queso por $35 más.</p>
+      </div>
+      <div class="tamanos aparece" id="tamanos"></div>
+      <div class="pizzas" id="listaPizzas"></div>
+    </div>
+  </section>
+
+  <section id="alitas" style="padding-top:24px">
+    <div class="envoltura">
+      <div class="cabeza aparece">
+        <div><p class="ceja">Para acompañar</p><h2 class="display">Alitas y más</h2></div>
+      </div>
+      <div class="dos">
+        <ul class="lista aparece" id="listaComple"></ul>
+        <ul class="lista aparece" id="listaBurger"></ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="sucursales" style="padding-top:24px">
+    <div class="envoltura">
+      <div class="cabeza aparece">
+        <div><p class="ceja">Pide a la más cercana</p><h2 class="display">Sucursales</h2></div>
+        <p>Todos los días, de 11 am a 10 pm.</p>
+      </div>
+      <div class="sucursales" id="listaSuc"></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="envoltura">
+    <span class="logo" role="img" aria-label="Smiley's Wings & Pizza"></span>
+    <ul>
+      <li><a href="https://www.facebook.com/smileyswp/" rel="noopener" target="_blank">Facebook · @smileyswp</a></li>
+      <li><a href="mailto:smileyswp@gmail.com">smileyswp@gmail.com</a></li>
+      <li>Todos los días, 11 am a 10 pm</li>
+    </ul>
+  </div>
+</footer>
+
+<button class="flota" type="button" data-pedir aria-label="Pedir por WhatsApp"><svg class="ico"><use href="#i-wa"/></svg>Pedir</button>
+
+<dialog class="hoja" id="hoja" aria-labelledby="hojaTit">
+  <button class="cerrar" type="button" aria-label="Cerrar">✕</button>
+  <h2 id="hojaTit">¿A qué sucursal?</h2>
+  <p>Te abre WhatsApp con la sucursal que elijas.</p>
+  <div id="hojaSuc"></div>
+</dialog>
+
+<script>
+(function(){
+/* Los datos son los mismos de la página completa (../scripts/fuente.html), que
+   salen de las fotos de la carta del local. Si cambia un precio, se cambia allá
+   y aquí. */
+var PIZZAS = [
+ {n:"Pepperoni Especial", d:"Pepperoni con mucho queso.", f:"pepperoni", tag:"La más vendida"},
+ {n:"Smiley's", d:"Pepperoni, champiñón, pimiento y cebolla.", f:"smileys", tag:"La de la casa"},
+ {n:"Mr. Cheese", d:"Mezcla de quesos.", f:"mrcheese"},
+ {n:"Fiesta en Hawai", d:"Jamón, piña y extra queso.", f:"hawai"},
+ {n:"Meat Lovers", d:"Jamón y salchicha viena.", f:"meatlovers"},
+ {n:"Carnes Frías", d:"Jamón, pepperoni y chorizo.", f:"carnesfrias"},
+ {n:"Margarita", d:"Parmesano, jitomate y orégano.", f:"margarita"},
+ {n:"Ranchera", d:"Chorizo con jalapeño.", f:"ranchera"},
+ {n:"Alemana", d:"Salchicha con chorizo.", f:"alemana"},
+ {n:"Magnífica", d:"Jamón, champiñón y aguacate.", f:"magnifica"},
+ {n:"Tony Special", d:"Jamón, salchicha y champiñón.", f:"tony"},
+ {n:"Viva México", d:"Jamón, chorizo, jalapeño, jitomate, aguacate y cebolla.", f:"vivamexico"},
+ {n:"Pastor", d:"Cebolla, cilantro, pastor y piña.", f:"pastor"},
+ {n:"Atún", d:"Atún, cebolla, elote y pimiento.", f:"atun"},
+ {n:"Chilorio", d:"Chilorio, cebolla, jalapeño y champiñones.", f:"chilorio"}
+];
+var PROMOS = [
+ {n:"2 pizzas grandes", etq:"2×1 · 16 rebanadas", d:"Dos grandes de especialidad, mitad y mitad o de 1 a 4 ingredientes.", p:289, nota:"Precio en mostrador. A domicilio: $319.", grande:1},
+ {n:"2 familiares", etq:"2×1 · 20 rebanadas", d:"Dos familiares de especialidad, mitad y mitad o de 1 a 4 ingredientes.", p:350, c:"promo--amarillo"},
+ {n:"3 pizzas grandes", etq:"Combo 4 · 24 rebanadas", d:"Tres grandes de especialidad: para la reunión.", p:389, c:"promo--rojo"},
+ {n:"Grande + alitas o boneless", etq:"Combo 2", d:"Pizza grande de especialidad con alitas o boneless.", p:289},
+ {n:"Grande + spaguetti o papas", etq:"Combo 1", d:"Pizza grande de especialidad con spaguetti o papas gajo.", p:199},
+ {n:"Familiar + spaguetti o papas", etq:"Combo 5", d:"Pizza familiar con spaguetti o papas gajo.", p:259},
+ {n:"Chicken bake + spaguetti o refresco", etq:"Combo 3", d:"Chicken bake con spaguetti o refresco de 400 ml.", p:129},
+ {n:"Grande sencilla", etq:"8 rebanadas · 1 ingrediente", d:"Grande, con el ingrediente que elijas. No aplica con otras promociones.", p:109, c:"promo--rojo"}
+];
+var COMPLE = [
+ {n:"Alitas", p:149, dos:270, f:"alitas-glaseadas.webp"},
+ {n:"Boneless", p:129, dos:240, f:"c-boneless.jpg"},
+ {n:"Papas gajo", p:49, dos:80, f:"c-papas.jpg"},
+ {n:"Spaguetti", p:65, dos:109, f:"c-spaguetti.jpg"},
+ {n:"Chicken Bake", p:69, dos:119, f:"c-bake.jpg"},
+ {n:"Muffins de pizza", p:49, f:"m-muffins.jpg", uno:"4 muffins"}
+];
+var BURGER = [
+ {n:"Hamburguesa", p:110, f:"m-burger.jpg", d:"Extra por $25"},
+ {n:"Hot dog", p:55, f:"m-hotdog.jpg"},
+ {n:"Papas a la francesa", p:49, f:"m-papas-francesa.jpg"},
+ {n:"Hamburguesa + papas y refresco", p:159},
+ {n:"2 hamburguesas", p:210},
+ {n:"Hamburguesa + hot dog", p:149}
+];
+var SUCURSALES = [
+ {n:"Begonias", tel:"442-654-48-58", wa:"524426544858"},
+ {n:"Zona Peñaflor", tel:"442-149-79-89", wa:"524421497989", dir:"Cto. Puerta del Sol 223, local 6, C.P. 76116"},
+ {n:"Lomas de Balvanera", tel:"442-612-37-73", wa:"524426123773"}
+];
+var MENSAJE = "Hola, Smiley's. Quiero hacer un pedido: ";
+
+var $ = function(s){ return document.querySelector(s); };
+function el(tag, attrs, hijos){
+  var e = document.createElement(tag);
+  for(var k in (attrs || {})){ if(k === "text") e.textContent = attrs[k]; else e.setAttribute(k, attrs[k]); }
+  (hijos || []).forEach(function(h){ if(h != null) e.appendChild(typeof h === "string" ? document.createTextNode(h) : h); });
+  return e;
+}
+var pesos = function(n){ return "$" + n; };
+function icono(id){ var s = document.createElementNS("http://www.w3.org/2000/svg", "svg"); s.setAttribute("class", "ico");
+  var u = document.createElementNS("http://www.w3.org/2000/svg", "use"); u.setAttribute("href", "#" + id); s.appendChild(u); return s; }
+
+/* la cinta: dos vueltas del mismo texto para que corra sin brinco */
+var frases = ["2 grandes $289", "2 familiares $350", "Alitas $149", "Boneless $129", "Grande sencilla $109", "Combo 4 · 3 grandes $389", "Orilla de queso +$35"];
+for(var v = 0; v < 2; v++) frases.forEach(function(t){ $("#cinta").appendChild(el("span", {text:t})); });
+
+PROMOS.forEach(function(p){
+  var txt = el("div", {class:"txt"}, [
+    el("span", {class:"etq", text:p.etq}), el("h3", {text:p.n}), el("p", {text:p.d}),
+    el("div", {class:"precio"}, [pesos(p.p), p.grande ? el("small", {text:"las dos"}) : null]),
+    p.nota ? el("div", {class:"nota", text:p.nota}) : null
+  ]);
+  var card;
+  if(p.grande){
+    card = el("article", {class:"promo promo--grande promo--rojo aparece"}, [txt, el("img", {src:"../img/pepperoni-caja.webp", alt:"Pizza de pepperoni en su caja", loading:"lazy", width:"1200", height:"795"}),
+      el("span", {class:"sello", text:"16 rebanadas"})]);
+  } else {
+    card = el("article", {class:"promo aparece " + (p.c || "")});
+    while(txt.firstChild) card.appendChild(txt.firstChild);
+  }
+  $("#listaPromos").appendChild(card);
+});
+
+[["Chica", "6 rebanadas · $69"], ["Grande", "8 rebanadas · 2×1 en $289"], ["Familiar", "10 rebanadas · 2×1 en $350"]].forEach(function(t){
+  $("#tamanos").appendChild(el("div", null, [el("b", {text:t[0]}), el("span", {text:t[1]})]));
+});
+
+PIZZAS.forEach(function(z){
+  $("#listaPizzas").appendChild(el("article", {class:"pizza aparece"}, [
+    el("figure", null, [el("img", {src:"../img/pz/" + z.f + ".jpg", alt:"Pizza " + z.n, loading:"lazy", width:"620", height:"620"})]),
+    el("div", null, [z.tag ? el("span", {class:"tag", text:z.tag}) : null, el("h3", {text:z.n}), el("p", {text:z.d})])
+  ]));
+});
+
+function fila(x){
+  var precio = el("span", {class:"p"}, [pesos(x.p), x.dos ? el("small", {text:"2 por " + pesos(x.dos)}) : (x.uno ? el("small", {text:x.uno}) : null)]);
+  var datos = el("div", null, [el("b", {text:x.n}), x.d ? el("small", {text:x.d}) : null]);
+  return x.f ? el("li", null, [el("img", {src:"../img/" + x.f, alt:"", loading:"lazy", width:"64", height:"64"}), datos, precio])
+             : el("li", {class:"sinfoto"}, [datos, precio]);
+}
+$("#listaComple").appendChild(el("h3", {text:"Alitas, boneless y más"}));
+COMPLE.forEach(function(x){ $("#listaComple").appendChild(fila(x)); });
+$("#listaBurger").appendChild(el("h3", {text:"Smiley's Burger"}));
+BURGER.forEach(function(x){ $("#listaBurger").appendChild(fila(x)); });
+
+function enlaceWA(s){ return "https://wa.me/" + s.wa + "?text=" + encodeURIComponent(MENSAJE); }
+SUCURSALES.forEach(function(s){
+  $("#listaSuc").appendChild(el("article", {class:"suc aparece"}, [
+    el("h3", {text:s.n}), el("p", {text:s.dir || "Querétaro"}), el("p", {text:"Tel. " + s.tel}),
+    el("div", {class:"botones"}, [
+      el("a", {class:"btn btn--rojo", href:enlaceWA(s), target:"_blank", rel:"noopener"}, [icono("i-wa"), "WhatsApp"]),
+      el("a", {class:"btn btn--linea", href:"tel:+52" + s.tel.replace(/\D/g, "")}, [icono("i-tel"), "Llamar"])
+    ])
+  ]));
+  $("#hojaSuc").appendChild(el("a", {class:"btn btn--rojo", href:enlaceWA(s), target:"_blank", rel:"noopener"}, [
+    el("b", {text:s.n}), el("span", {text:s.tel})]));
+});
+
+var hoja = $("#hoja");
+document.querySelectorAll("[data-pedir]").forEach(function(b){ b.addEventListener("click", function(){ hoja.showModal(); }); });
+hoja.querySelector(".cerrar").addEventListener("click", function(){ hoja.close(); });
+hoja.addEventListener("click", function(e){ if(e.target === hoja) hoja.close(); });
+hoja.querySelectorAll("a").forEach(function(a){ a.addEventListener("click", function(){ setTimeout(function(){ hoja.close(); }, 300); }); });
+
+var barra = $("#barra");
+var mirar = function(){ barra.classList.toggle("llena", scrollY > 40); };
+addEventListener("scroll", mirar, {passive:true}); mirar();
+
+/* lo que entra se asoma al llegar; sin observador (navegador viejo), todo a la vista */
+var cosas = document.querySelectorAll(".aparece");
+if("IntersectionObserver" in window){
+  var io = new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add("visto"); io.unobserve(e.target); } }); }, {rootMargin:"0px 0px -8% 0px"});
+  cosas.forEach(function(c){ io.observe(c); });
+} else cosas.forEach(function(c){ c.classList.add("visto"); });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Grupo Mazi · pósters de precios</title>
+<!-- UN PÓSTER POR SERVICIO, con la imagen nueva (1080×1350, la vertical que Instagram y WhatsApp
+     enseñan completa). Carlos, 29 de octubre: «dame todas las cotizaciones estándar tanto en el
+     documento actualizado como en diversos pósters para cada cosa… las fotos al local y cualquier
+     cosa que requiera cita presencial sólo dentro de QRO; fuera de este el cliente deberá cubrir
+     viáticos y sólo es en casos especiales». Los precios son los de servicios.html (y PRECIOS.md
+     dice cuáles son propuesta); las pantallas son trabajo nuestro de verdad (img/).
+     Se arman con armar.mjs → salida/Grupo-Mazi-poster-NN.png -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700;800;900&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+:root{ --oscuro:#170A26; --oscuro2:#241036; --vino:#7E1735; --vino2:#A8264B; --claro:#F4EEF2; --rosa:#C77DFF; --gris:#C9BCD0; --suave:#9C8EA6;
+  --t:"Inter Tight", sans-serif; --s:"Space Grotesk", var(--t) }
+*{ box-sizing:border-box; margin:0; padding:0 }
+body{ background:#000; font-family:var(--t); color:var(--claro); font-variant-numeric:tabular-nums }
+.fly{ position:relative; width:1080px; height:1350px; overflow:hidden; background:var(--oscuro); margin-bottom:20px }
+/* el brillo vino y la retícula fina, todo en colores opacos */
+.fly::before{ content:""; position:absolute; inset:0; background:radial-gradient(65% 48% at var(--gx, 78%) var(--gy, 38%), #6A1531, #3A0F2E 45%, var(--oscuro) 78%) }
+.fly::after{ content:""; position:absolute; inset:0; background-image:linear-gradient(#ffffff0c 1px, transparent 1px), linear-gradient(90deg, #ffffff0c 1px, transparent 1px); background-size:54px 54px }
+.fly.vino::before{ background:radial-gradient(70% 55% at var(--gx, 70%) var(--gy, 40%), #A8264B, #7E1735 50%, #4A0E22 90%) }
+.fly.claro{ color:var(--oscuro) } .fly.claro::before{ background:radial-gradient(70% 55% at var(--gx, 70%) var(--gy, 40%), #FFFFFF, #F4EEF2 50%, #E6D9E1 95%) }
+.fly.claro::after{ background-image:linear-gradient(#170A260c 1px, transparent 1px), linear-gradient(90deg, #170A260c 1px, transparent 1px) }
+.fly > *{ position:absolute; z-index:1 }
+.marca{ left:56px; top:40px; height:86px }
+.cat{ right:72px; top:66px; padding:11px 20px; border-radius:99px; background:#3A1530; box-shadow:inset 0 0 0 2px #8E2B55; font-weight:800; font-size:19px; letter-spacing:.14em; text-transform:uppercase; color:#EBD8FF }
+.claro .cat{ background:#fff; box-shadow:inset 0 0 0 2px #E2C6D3; color:var(--vino) }
+.num{ right:72px; bottom:150px; font:700 22px/1 var(--s); letter-spacing:.2em; color:var(--suave) }
+h1{ left:68px; font-family:var(--s); font-size:94px; font-weight:700; letter-spacing:-.055em; line-height:.92 }
+h1 em{ font-style:normal; color:var(--rosa) } .claro h1 em, .claro .grande em{ color:var(--vino2) }
+.sub{ left:72px; font-size:29px; font-weight:600; color:var(--gris); line-height:1.3 }
+.sub b{ color:var(--claro) } .claro .sub{ color:#5E5466 } .claro .sub b{ color:var(--oscuro) }
+.grande{ font-family:var(--s); font-size:168px; font-weight:700; letter-spacing:-.065em; line-height:.85 }
+.grande small{ font-size:.28em; letter-spacing:-.01em; color:var(--suave); vertical-align:1.05em; margin-right:8px }
+.grande .mes{ font-size:.24em; vertical-align:0; margin:0 0 0 8px; letter-spacing:0 }
+.precios{ left:72px; right:72px; display:grid; gap:14px }
+.p{ display:flex; align-items:center; gap:18px; padding:20px 26px; border-radius:24px; background:#241036; box-shadow:inset 0 0 0 2px #3C2652 }
+.p .q{ font-size:27px; font-weight:700; line-height:1.15 }
+.p .q small{ display:block; font-size:19px; font-weight:600; color:var(--gris); margin-top:3px }
+.p .v{ margin-left:auto; font-family:var(--s); font-size:46px; font-weight:700; letter-spacing:-.04em; white-space:nowrap }
+.p .v small{ font-family:var(--t); font-size:19px; font-weight:700; color:var(--suave); letter-spacing:0; margin-right:4px }
+.p.e{ background:#4A1430; box-shadow:inset 0 0 0 2px var(--vino2) } .p.e .v{ color:var(--rosa) }
+.vino .p{ background:#5E1028; box-shadow:inset 0 0 0 2px #93294D }
+.claro .p{ background:#fff; box-shadow:inset 0 0 0 2px #E6D6DF } .claro .p .q small{ color:#6E6276 }
+.lista{ display:grid; gap:13px; list-style:none }
+.lista li{ display:flex; gap:14px; align-items:center; font-size:27px; font-weight:600; color:#EADFEA; line-height:1.2 }
+.claro .lista li{ color:#2E2238 }
+.lista li::before{ content:""; flex:none; width:30px; height:30px; border-radius:9px; background:var(--vino2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.3l2.6 2.5L12 5.4' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat }
+.chips{ left:72px; right:72px; display:flex; flex-wrap:wrap; gap:12px }
+.chips span{ padding:12px 20px; border-radius:99px; background:#2E1236; box-shadow:inset 0 0 0 2px #6E2448; font-weight:700; font-size:23px; color:#F4E4EC }
+.aviso{ left:72px; right:72px; display:flex; gap:16px; align-items:center; padding:18px 24px; border-radius:20px; background:#2A1030; box-shadow:inset 0 0 0 2px #6E2448; font-size:21px; font-weight:600; color:#EADFEA; line-height:1.3 }
+.aviso svg{ flex:none; width:34px; height:34px }
+.aviso b{ color:#fff }
+.regalo{ display:flex; align-items:center; gap:12px; padding:12px 22px 12px 14px; border-radius:99px; background:#4A1430; box-shadow:inset 0 0 0 2px var(--vino2); color:#F1E2FF; font-weight:800; font-size:24px; white-space:nowrap }
+.regalo svg{ width:34px; height:34px; flex:none }
+.pie{ left:72px; right:72px; bottom:56px; display:flex; align-items:center; gap:20px }
+.pie .correo{ font-size:21px; font-weight:600; color:var(--suave); line-height:1.35 }
+.pie .correo b{ display:block; color:var(--claro); font-size:23px }
+.claro .pie .correo b{ color:var(--oscuro) } .claro .pie .correo{ color:#6E6276 }
+.wa{ margin-left:auto; display:flex; align-items:center; gap:14px; padding:20px 32px; border-radius:99px; background:#25D366; color:#062B14; font-weight:900; font-size:34px; letter-spacing:-.02em; white-space:nowrap }
+.wa svg{ width:38px; height:38px }
+/* aparatos y piezas */
+.tel{ width:290px; height:610px; border-radius:44px; padding:10px; background:#141019; box-shadow:0 0 0 2px #4a4356, 0 50px 90px -20px #000 }
+.tel img{ display:block; width:100%; height:100%; object-fit:cover; object-position:top; border-radius:35px }
+.tel::after{ content:""; position:absolute; top:19px; left:50%; width:80px; height:23px; margin-left:-40px; border-radius:14px; background:#000 }
+.reel{ border-radius:28px; overflow:hidden; box-shadow:0 0 0 3px #3C2652, 0 40px 80px -20px #000 }
+.reel img{ display:block; width:100%; height:100%; object-fit:cover }
+.reel .play{ position:absolute; left:50%; top:50%; width:84px; height:84px; margin:-42px 0 0 -42px; border-radius:50%; background:#F4EEF2 }
+.reel .play::after{ content:""; position:absolute; left:33px; top:25px; border-left:28px solid var(--oscuro); border-top:17px solid transparent; border-bottom:17px solid transparent }
+.hoja{ border-radius:18px; overflow:hidden; box-shadow:0 40px 80px -20px #000, 0 0 0 2px #3C2652 }
+.hoja img{ display:block; width:100%; height:100%; object-fit:cover; object-position:top }
+.cubo{ width:330px; height:360px; background:url(../../marca/cubo/final/cubo.svg) center/contain no-repeat }
+.icono{ display:grid; place-items:center; width:150px; height:150px; border-radius:40px; background:#2E1236; box-shadow:inset 0 0 0 2px #6E2448 }
+.icono svg{ width:76px; height:76px }
+.tabla{ left:72px; right:72px; display:grid; grid-template-columns:1fr 1fr; gap:0 34px }
+.tabla .f{ display:flex; align-items:baseline; gap:10px; padding:13px 0; border-bottom:2px solid #3A2A4A; font-size:22px; font-weight:600 }
+.tabla .f b{ margin-left:auto; font-family:var(--s); font-size:28px; letter-spacing:-.02em; white-space:nowrap }
+.tabla .f small{ font-size:16px; color:var(--suave) }
+.tabla h3{ grid-column:span 1; margin-top:16px; font-size:17px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:var(--rosa) }
+</style>
+</head>
+<body>
+
+<!-- 1 · WEB ESENCIAL -->
+<section class="fly" style="--gx:80%; --gy:35%">
+  <img class="marca" src="../../marca/cubo/final/logo.svg" alt="Grupo Mazi"><div class="cat">Página web</div>
+  <h1 style="top:190px; width:560px">Tu negocio en internet <em>esta semana.</em></h1>
+  <div class="tel" style="left:700px; top:200px; transform:rotate(5deg) scale(.86)"><img src="img/district.webp" alt=""></div>
+  <div class="grande" style="left:62px; top:560px"><small>$</small>2,000</div>
+  <p class="sub" style="top:720px; width:560px">Web <b>Esencial</b> · lista en unos 3 a 5 días</p>
+  <ul class="lista" style="left:72px; top:820px; width:900px"><li>Tus productos o servicios con foto y precio</li><li>Botón de WhatsApp, llamada y ubicación</li><li>Diseño hecho para tu marca</li><li><b style="font-weight:800">3 meses de mantenimiento incluidos</b></li></ul>
+  <div class="pie"><div class="correo"><b>Escríbenos hoy</b>grupomazi.oficial@gmail.com</div><div class="wa"><svg viewBox="0 0 24 24"><use href="#wa"/></svg>442 883 3786</div></div>
+</section>
+
+<!-- 2 · WEB COMPLETA -->
+<section class="fly vino" style="--gx:30%; --gy:45%">
+  <img class="marca" src="../../marca/cubo/final/logo.svg" alt="Grupo Mazi"><div class="cat">La más pedida</div>
+  <h1 style="top:175px; width:940px">Una página que <em style="color:#DDB3FF">vende sola.</em></h1>
+  <div class="tel" style="left:84px; top:355px; transform:rotate(-4deg) scale(.94)"><img src="img/smileys.webp" alt=""></div>
+  <div class="reel" style="left:470px; top:380px; width:250px; height:400px; transform:rotate(5deg)"><img src="img/v-queso.webp" alt=""><i class="play"></i></div>
+  <div class="reel" style="left:745px; top:420px; width:250px; height:400px; transform:rotate(-4deg)"><img src="img/v-caja.webp" alt=""><i class="play"></i></div>
+  <div class="regalo" style="left:500px; top:850px; background:#5E1028"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8v13M3 12h18M12 8c-2-4-6-4-6-1.5S9 8 12 8zm0 0c2-4 6-4 6-1.5S15 8 12 8z"/></svg>De regalo: 2 videos para redes</div>
+  <div class="grande" style="left:62px; top:1010px"><small style="color:#E3C9F5">$</small>6,500</div>
+  <ul class="lista" style="left:620px; top:1000px; width:400px"><li>Pedidos que llegan armados</li><li>Diseño con animación</li><li>Lista para Google</li></ul>
+  <div class="pie"><div class="correo" style="color:#E3C9F5"><b>3 meses de mantenimiento incluidos</b>Lista en unas 1 a 2 semanas</div><div class="wa"><svg viewBox="0 0 24 24"><use href="#wa"/></svg>442 883 3786</div></div>
+</section>
+
+<!-- 3 · A LA MEDIDA -->
+<section class="fly" style="--gx:70%; --gy:50%">
+  <img class="marca" src="../../marca/cubo/final/logo.svg" alt="Grupo Mazi"><div class="cat">Web a la medida</div>
+  <h1 style="top:180px; width:940px">Lo que tu competencia <em>no tiene.</em></h1>
+  <div class="tel" style="left:730px; top:440px; transform:rotate(6deg) scale(.8)"><img src="img/arco.webp" alt=""></div>
+  <div class="grande" style="left:62px; top:470px"><small>desde $</small>9,000</div>
+  <ul class="lista" style="left:72px; top:660px; width:520px"><li>Animación 3D o interactiva</li><li>Carrito, cotizador o reservas</li><li>Panel para cambiar tus precios y fotos</li><li>Varios idiomas</li><li>Lo que necesites: se diseña contigo</li></ul>
+  <p class="sub" style="top:1060px; width:900px; font-size:25px"><b>3 meses de mantenimiento incluidos.</b> El tiempo de entrega te lo decimos antes de empezar.</p>
+  <div class="pie"><div class="correo"><b>Platiquemos tu idea</b>grupomazi.oficial@gmail.com</div><div class="wa"><svg viewBox="0 0 24 24"><use href="#wa"/></svg>442 883 3786</div></div>
+</section>
+
+<!-- 4 · TIENDA EN LÍNEA -->
+<section class="fly claro" style="--gx:70%; --gy:35%">
+  <img class="marca" src="../../marca/cubo/final/logo-tinta.svg" alt="Grupo Mazi"><div class="cat">Tienda en línea</div>
+  <h1 style="top:190px; width:600px">Vende <em>las 24 horas.</em></h1>
+  <div class="icono" style="left:780px; top:200px; background:var(--oscuro); box-shadow:none"><svg viewBox="0 0 24 24" fill="none" stroke="#C77DFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 10a4 4 0 0 1-8 0"/><path d="M3.103 6.034h17.794"/><path d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z"/></svg></div>
+  <div class="grande" style="left:62px; top:440px"><small>desde $</small>12,000</div>
+  <ul class="lista" style="left:72px; top:640px; width:900px"><li>Catálogo con fotos, precios y existencias</li><li>Carrito y pagos con tarjeta o transferencia</li><li>Inventario que se descuenta solo</li><li>Pedidos y avisos directo a tu WhatsApp</li><li>3 meses de mantenimiento incluidos</li></ul>
+  <p class="sub" style="top:1040px; width:900px; font-size:24px">Sin comisiones por venta: <b>tu tienda es tuya.</b></p>
+  <div class="pie"><div class="correo"><b>Cotiza la tuya</b>grupomazi.oficial@gmail.com</div><div class="wa"><svg viewBox="0 0 24 24"><use href="#wa"/></svg>442 883 3786</div></div>
+</section>
+
+<!-- 5 · MANTENIMIENTO -->
+<section class="fly" style="--gx:75%; --gy:30%">
+  <img class="marca" src="../../marca/cubo/final/logo.svg" alt="Grupo Mazi"><div class="cat">Mantenimiento</div>
+  <h1 style="top:190px; width:940px">Tu página siempre <em>al día.</em></h1>
+  <p class="sub" style="top:400px; width:900px">Es como un seguro: alguien que responde y la mantiene funcionando. <b>Los primeros 3 meses van incluidos.</b></p>
+  <div class="precios" style="top:560px">
+    <div class="p"><div class="q">Plan Esencial<small>Hasta 4 cambios chicos al mes · respuesta en 48 h</small></div><div class="v">$450<small style="margin:0 0 0 4px">/mes</small></div></div>
+    <div class="p e"><div class="q">Plan Plus<small>Hasta 10 cambios, 1 promoción al mes · el mismo día si algo falla</small></div><div class="v">$650<small style="margin:0 0 0 4px">/mes</small></div></div>
+  </div>
+  <div class="chips" style="top:860px"><span>Pago por año: 12 meses por 10</span><span>Mes suelto: $550 / $750</span><span>Lo que no entra: 15% menos</span></div>
+  <div class="pie"><div class="correo"><b>Precios, fotos, horarios y promociones</b>Cambios chicos sin costo extra</div><div class="wa"><svg viewBox="0 0 24 24"><use href="#wa"/></svg>442 883 3786</div></div>
+</section>
+
+<!-- 6 · HERRAMIENTAS A LA MEDIDA -->
+<section class="fly" style="--gx:70%; --gy:50%">
+  <img class="marca" src="../../marca/cubo/final/logo.svg" alt="Grupo Mazi"><div class="cat">Apps y sistemas</div>
+  <h1 style="top:175px; width:940px">Si la herramienta no existe, <em>la construimos.</em></h1>
+  <div class="tel" style="left:90px; top:330px; transform:rotate(-6deg) scale(.74)"><img src="img/fadori-00700.webp" alt=""></div>
+  <div class="tel" style="left:395px; top:310px; transform:scale(.8)"><img src="img/fadori-00950.webp" alt=""></div>
+  <div class="tel" style="left:700px; top:330px; transform:rotate(6deg) scale(.74)"><img src="img/fadori-01200.webp" alt=""></div>
+  <div class="precios" style="top:960px; grid-template-columns:1fr 1fr 1fr; gap:12px">
+    <div class="p" style="flex-direction:column; align-items:flex-start; gap:4px"><div class="q">Sencillo<small>Una tarea bien resuelta</small></div><div class="v" style="margin:0; font-size:40px"><small>desde</small>$10k</div></div>
+    <div class="p e" style="flex-direction:column; align-items:flex-start; gap:4px"><div class="q">Medio<small>Tu operación en un lugar</small></div><div class="v" style="margin:0; font-size:40px"><small>desde</small>$35k</div></div>
+    <div class="p" style="flex-direction:column; align-items:flex-start; gap:4px"><div class="q">Avanzado<small>Un sistema para crecer</small></div><div class="v" style="margin:0; font-size:40px"><small>desde</small>$80k</div></div>
+  </div>
+  <div class="pie"><div class="correo"><b>Punto de venta, inventario, citas</b>pedidos y reparto, cotizadores</div><div class="wa"><svg viewBox="0 0 24 24"><use href="#wa"/></svg>442 883 3786</div></div>
+</section>
+
+<!-- 7 · VIDEO -->
+<section class="fly vino" style="--gx:50%; --gy:40%">
+  <img class="marca" src="../../marca/cubo/final/logo.svg" alt="Grupo Mazi"><div class="cat">Video para redes</div>
+  <h1 style="top:175px; width:940px">Que se te antoje <em style="color:#DDB3FF">desde el celular.</em></h1>
+  <div class="reel" style="left:90px; top:400px; width:270px; height:430px; transform:rotate(-5deg)"><img src="img/v-caja.webp" alt=""><i class="play"></i></div>
+  <div class="reel" style="left:405px; top:380px; width:270px; height:460px"><img src="img/v-queso.webp" alt=""><i class="play"></i></div>
+  <div class="reel" style="left:720px; top:400px; width:270px; height:430px; transform:rotate(5deg)"><img src="img/v-armar.webp" alt=""><i class="play"></i></div>
+  <div class="precios" style="top:880px; grid-template-columns:1fr 1fr 1fr; gap:12px">
+    <div class="p e" style="flex-direction:column; align-items:flex-start; gap:4px"><div class="q">2 videos<small>De unos 30 s</small></div><div class="v" style="margin:0; font-size:40px">$1,200</div></div>
+    <div class="p" style="flex-direction:column; align-items:flex-start; gap:4px"><div class="q">Grabamos + 2<small>Hasta 2 h en tu negocio</small></div><div class="v" style="margin:0; font-size:40px">$2,900</div></div>
+    <div class="p" style="flex-direction:column; align-items:flex-start; gap:4px"><div class="q">Comercial<small>Con voz, hasta 60 s</small></div><div class="v" style="margin:0; font-size:40px">$2,500</div></div>
+  </div>
+  <div class="aviso" style="top:1080px; background:#5E1028; box-shadow:inset 0 0 0 2px #93294D"><svg viewBox="0 0 24 24" fill="none" stroke="#DDB3FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg><span><b>Grabamos en tu negocio dentro de Querétaro.</b> Fuera, sólo en casos especiales y con viáticos a cargo del cliente.</span></div>
+  <div class="pie"><div class="correo" style="color:#E3C9F5"><b>Con tu material o el nuestro</b>grupomazi.oficial@gmail.com</div><div class="wa"><svg viewBox="0 0 24 24"><use href="#wa"/></svg>442 883 3786</div></div>
+</section>
+
+<!-- 8 · FOTOS -->
+<section class="fly" style="--gx:72%; --gy:42%">
+  <img class="marca" src="../../marca/cubo/final/logo.svg" alt="Grupo Mazi"><div class="cat">Sesión de fotos</div>
+  <h1 style="top:190px; width:620px">Tu negocio, <em>como se merece.</em></h1>
+  <div class="hoja" style="left:720px; top:230px; width:290px; height:460px; transform:rotate(5deg)"><img src="img/v-queso.webp" alt="" style="object-position:center"></div>
+  <div class="grande" style="left:62px; top:520px"><small>$</small>1,500</div>
+  <ul class="lista" style="left:72px; top:710px; width:560px"><li>Fotógrafo en tu negocio hasta 2 horas</li><li>20 fotos editadas</li><li>Listas para tu página, menú y redes</li></ul>
+  <div class="aviso" style="top:960px"><svg viewBox="0 0 24 24" fill="none" stroke="#C77DFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg><span><b>Sesiones en tu local dentro de Querétaro.</b> Fuera de Querétaro, sólo en casos especiales y el cliente cubre los viáticos.</span></div>
+  <div class="pie"><div class="correo"><b>Agenda tu sesión</b>grupomazi.oficial@gmail.com</div><div class="wa"><svg viewBox="0 0 24 24"><use href="#wa"/></svg>442 883 3786</div></div>
+</section>
+
+<!-- 9 · MARCA -->
+<section class="fly claro" style="--gx:72%; --gy:38%">
+  <img class="marca" src="../../marca/cubo/final/logo-tinta.svg" alt="Grupo Mazi"><div class="cat">Logo y marca</div>
+  <h1 style="top:190px; width:600px">Una marca que <em>se recuerda.</em></h1>
+  <div class="cubo" style="left:690px; top:170px"></div>
+  <div class="precios" style="top:560px">
+    <div class="p"><div class="q">Logotipo<small>Tres propuestas y archivos para todo uso</small></div><div class="v">$1,800</div></div>
+    <div class="p e" style="background:var(--oscuro); color:var(--claro)"><div class="q">Identidad de marca<small style="color:#C9BCD0">Logo, colores, letra, papelería y plantillas</small></div><div class="v">$4,500</div></div>
+  </div>
+  <p class="sub" style="top:880px; width:900px; font-size:26px">Así hicimos <b>la nuestra:</b> un cubo hecho de piezas que encajan.</p>
+  <div class="pie"><div class="correo"><b>Platiquemos tu marca</b>grupomazi.oficial@gmail.com</div><div class="wa"><svg viewBox="0 0 24 24"><use href="#wa"/></svg>442 883 3786</div></div>
+</section>
+
+<!-- 10 · DISEÑO GRÁFICO -->
+<section class="fly" style="--gx:62%; --gy:42%">
+  <img class="marca" src="../../marca/cubo/final/logo.svg" alt="Grupo Mazi"><div class="cat">Diseño gráfico</div>
+  <h1 style="top:175px; width:940px">Diseño que hace ver <em>grande tu negocio.</em></h1>
+  <div class="hoja" style="left:90px; top:420px; width:330px; height:410px; transform:rotate(-7deg)"><img src="img/v-caja.webp" alt="" style="object-position:center"></div>
+  <div class="hoja" style="left:640px; top:420px; width:330px; height:410px; transform:rotate(6deg)"><img src="salida/Grupo-Mazi-servicios-1.png" alt=""></div>
+  <div class="hoja" style="left:370px; top:390px; width:340px; height:440px"><img src="img/v-armar.webp" alt="" style="object-position:center"></div>
+  <div class="precios" style="top:880px; grid-template-columns:1fr 1fr 1fr; gap:12px">
+    <div class="p" style="flex-direction:column; align-items:flex-start; gap:4px"><div class="q">Estándar<small>Flyer o publicación</small></div><div class="v" style="margin:0; font-size:40px">$250</div></div>
+    <div class="p e" style="flex-direction:column; align-items:flex-start; gap:4px"><div class="q">Pro<small>Fotos trabajadas</small></div><div class="v" style="margin:0; font-size:40px">$450</div></div>
+    <div class="p" style="flex-direction:column; align-items:flex-start; gap:4px"><div class="q">Premium<small>Pieza de campaña</small></div><div class="v" style="margin:0; font-size:40px">$750</div></div>
+  </div>
+  <div class="chips" style="top:1080px"><span>Menú digital con QR · $900</span><span>Presentación o documento · $900</span></div>
+  <div class="pie"><div class="correo"><b>Carteles, banners y más</b>grupomazi.oficial@gmail.com</div><div class="wa"><svg viewBox="0 0 24 24"><use href="#wa"/></svg>442 883 3786</div></div>
+</section>
+
+<!-- 11 · REDES Y PUBLICIDAD -->
+<section class="fly vino" style="--gx:72%; --gy:40%">
+  <img class="marca" src="../../marca/cubo/final/logo.svg" alt="Grupo Mazi"><div class="cat">Redes y publicidad</div>
+  <h1 style="top:190px; width:900px">Redes que <em style="color:#DDB3FF">sí venden.</em></h1>
+  <p class="sub" style="top:330px; width:900px; color:#E3C9F5">Contenido que sale de <b>tu negocio real</b>, no de plantillas.</p>
+  <div class="precios" style="top:470px">
+    <div class="p"><div class="q">Manejo de redes<small>12 publicaciones al mes en 2 redes</small></div><div class="v">$2,900<small style="margin:0 0 0 4px">/mes</small></div></div>
+    <div class="p e" style="background:var(--oscuro)"><div class="q">Redes + 4 videos<small>Incluye una grabación al mes en tu negocio</small></div><div class="v">$5,500<small style="margin:0 0 0 4px">/mes</small></div></div>
+    <div class="p"><div class="q">Publicidad en Facebook e Instagram<small>Armado, segmentación y reporte · la inversión va aparte</small></div><div class="v">$1,500<small style="margin:0 0 0 4px">/mes</small></div></div>
+    <div class="p"><div class="q">Con creadores de contenido<small>Tu marca en cuentas con seguidores reales</small></div><div class="v" style="font-size:26px">según el creador</div></div>
+  </div>
+  <div class="pie"><div class="correo" style="color:#E3C9F5"><b>Escríbenos hoy</b>grupomazi.oficial@gmail.com</div><div class="wa"><svg viewBox="0 0 24 24"><use href="#wa"/></svg>442 883 3786</div></div>
+</section>
+
+<!-- 12 · NEGOCIO: TIEMPOS Y MOVIMIENTOS Y AUTOMATIZACIÓN -->
+<section class="fly" style="--gx:75%; --gy:40%">
+  <img class="marca" src="../../marca/cubo/final/logo.svg" alt="Grupo Mazi"><div class="cat">Gestión de negocio</div>
+  <h1 style="top:190px; width:940px">¿Dónde se te va <em>el tiempo y el dinero?</em></h1>
+  <div class="precios" style="top:520px">
+    <div class="p e"><div class="q">Diagnóstico de tiempos y movimientos<small>Medimos tu operación y te decimos qué cambiar</small></div><div class="v"><small>desde</small>$3,000</div></div>
+    <div class="p"><div class="q">Automatización suelta<small>Una tarea repetitiva que se hace sola</small></div><div class="v"><small>desde</small>$3,500</div></div>
+  </div>
+  <div class="chips" style="top:820px"><span>Excel que se vuelve sistema</span><span>Reportes que salen solos</span><span>Menos filas</span><span>Menos errores</span></div>
+  <div class="aviso" style="top:990px"><svg viewBox="0 0 24 24" fill="none" stroke="#C77DFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg><span><b>Las visitas a tu negocio, dentro de Querétaro.</b> Fuera, sólo en casos especiales y con viáticos a cargo del cliente.</span></div>
+  <div class="pie"><div class="correo"><b>La primera plática no cuesta</b>grupomazi.oficial@gmail.com</div><div class="wa"><svg viewBox="0 0 24 24"><use href="#wa"/></svg>442 883 3786</div></div>
+</section>
+
+<!-- 13 · TODOS LOS PRECIOS -->
+<section class="fly" style="--gx:85%; --gy:15%">
+  <img class="marca" src="../../marca/cubo/final/logo.svg" alt="Grupo Mazi"><div class="cat">Precios 2026</div>
+  <h1 style="top:160px; width:940px; font-size:78px">Todo lo que hacemos, <em>en una hoja.</em></h1>
+  <div class="tabla" style="top:340px">
+    <div><h3>Páginas web</h3>
+      <div class="f">Esencial<b>$2,000</b></div><div class="f">Completa + 2 videos<b>$6,500</b></div><div class="f">A la medida<b><small>desde </small>$9,000</b></div><div class="f">Tienda en línea<b><small>desde </small>$12,000</b></div><div class="f">Mantenimiento<b><small>desde </small>$450<small>/mes</small></b></div>
+      <h3>Apps y sistemas</h3>
+      <div class="f">Sencillo<b><small>desde </small>$10,000</b></div><div class="f">Medio<b><small>desde </small>$35,000</b></div><div class="f">Avanzado<b><small>desde </small>$80,000</b></div></div>
+    <div><h3>Video, foto y marca</h3>
+      <div class="f">2 videos para redes<b>$1,200</b></div><div class="f">Grabamos + 2 videos<b>$2,900</b></div><div class="f">Sesión de fotos<b>$1,500</b></div><div class="f">Logotipo<b>$1,800</b></div><div class="f">Identidad de marca<b>$4,500</b></div><div class="f">Diseño gráfico<b><small>desde </small>$250</b></div>
+      <h3>Redes y negocio</h3>
+      <div class="f">Manejo de redes<b>$2,900<small>/mes</small></b></div><div class="f">Publicidad pagada<b>$1,500<small>/mes</small></b></div><div class="f">Tiempos y movimientos<b><small>desde </small>$3,000</b></div></div>
+  </div>
+  <p class="sub" style="top:1150px; width:940px; font-size:20px; line-height:1.35">Servicios en persona, dentro de Querétaro; fuera, en casos especiales y con viáticos a cargo del cliente. Precios en pesos, vigentes 30 días. Si necesitas factura, se agrega el IVA.</p>
+  <div class="pie"><div class="correo"><b>¿Tienes un presupuesto?</b>Platícanos y lo armamos</div><div class="wa"><svg viewBox="0 0 24 24"><use href="#wa"/></svg>442 883 3786</div></div>
+</section>
+
+<svg width="0" height="0" style="position:absolute"><symbol id="wa" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.3-.4.8-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></symbol></svg>
+</body>
+</html>

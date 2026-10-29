@@ -138,7 +138,16 @@ Salió de una sesión larga donde me corrigió cuatro veces y las cuatro tenía 
   prueba. "Ya está" sin evidencia no vale.
 - Que **guarde el contexto** para que no tenga que repetirlo.
 
-### El link que se entrega NO lleva «palomazi» ni «mazi-central» · 14 de septiembre
+### ⚠️ CORREGIDO EL 29 DE OCTUBRE: lo nuestro se publica en palomazi
+
+Carlos: *«publica nuestra página en palomazi. Bigtiger es para otras cosas, tú no la
+vas a usar casi nunca»*. O sea: **la página de Grupo Mazi y lo de la casa van en
+`mazi-central.palomazi9111.workers.dev`** (se publica fusionando a `main`), y
+`BigTigerMX` queda para lo que él diga, no como destino de fábrica. Lo de abajo se
+deja porque explica de dónde salió la regla vieja, pero **ya no manda**: si un
+cliente necesita una dirección sin «palomazi», se le pregunta a Carlos.
+
+### (vieja) El link que se entrega NO lleva «palomazi» ni «mazi-central» · 14 de septiembre
 
 Lo pidió así: *«para los siguientes trabajos quiero que el link no tenga nada de
 palomazi ni mazi central, así que cuando te pida el link final lo debes de
@@ -193,6 +202,22 @@ que nos distingue.
 **El lema:** *si no existe la herramienta, se construye la herramienta.*
 
 **Contacto oficial:** WhatsApp empresarial **442 883 3786** · **grupomazi.oficial@gmail.com**
+
+**La imagen y los anuncios · dicho por Carlos el 29 de octubre:**
+- **Los colores son morado oscuro (#170A26), vino (#7E1735) y morado CLARO (#AC27FF, el del techo
+  del cubo)**, priorizando el oscuro y el vino. «Claro» NO es crema ni blanco. Nada de rosa: el
+  acento de texto sobre oscuro es #C77DFF / #B44BFF.
+- **En toda animación del logo se tiene que NOTAR la M cubo volviéndose el cubo completo.**
+- **La voz de la casa es Chris** (ElevenLabs `iP95p4xoKVk53GoZ742B`, la del anuncio 07 «La
+  plantilla»): «esa se guarda como predeterminada». Cuando no haya saldo, Piper.
+- **Los modelos 3D NO los hago yo**: «te quedan muy chafas». Se usan gratuitos de internet (Poly
+  Haven, Kenney, Quaternius, Sketchfab CC) con crédito, y **texturas e iluminación profesionales**
+  (HDRI de verdad, PBR, sombras). El logo sí se compone (regla 1).
+- **Los precios, siempre abajo del promedio de la competencia** (`empresa/servicios/PRECIOS.md`).
+- **Lo presencial (fotos, grabaciones, citas) sólo dentro de Querétaro**; fuera, en casos
+  especiales y con viáticos a cargo del cliente.
+- **Higgsfield (Seedance 2.5)** está conectado en `herramientas/higgsfield/`; la llave vive en
+  `.env.local` (ignorado) y debe ponerse también en las variables del entorno para no perderla.
 
 **Subdivisiones · dicho por Carlos el 16 de octubre:** **All's fashion · clothes & more** es
 **de Grupo Mazi y de Carlos**, no un cliente de fuera: *«all's fashion es una subdivisión que forma
@@ -320,8 +345,8 @@ dependemos.
    | GLM va en `glm-5.2` | la documentación de Z.ai ya iba en `glm-5.3` | la guía que trajo Carlos **nació desfasada** |
    | Gemini `2.5-*` estable está disponible | cerrado a cuentas nuevas | media hora buscando un error de permisos que no existía |
    | `Math.max(...[])` truena | devuelve **-Infinity**, calladito | un `NaN` que dejó la red del Cerebro en negro **para siempre** |
-   | `hidden` esconde el elemento | es una regla de CSS de la especificidad más baja: pierde contra el `display` de cualquier clase propia | un botón «escondido» que seguía pintado, **y una prueba que leía `.hidden` y decía que sí** |
-   | `String.replace(a, b)` pega `b` literal | en `b`, `$$` significa **un** dólar — `$&`, `$1`, `$'` también mienten | un guión dejó `$(…)` donde decía `$$(…)` y la página tronó al cargar |
+   | `hidden` esconde el elemento | es una regla de CSS de la especificidad más baja: pierde contra el `display` de cualquier clase propia | un botón «escondido» que seguía pintado, **y una prueba que leía `.hidden` y decía que sí**. **Igual con `<dialog>`:** una clase con `display:grid` le gana al `dialog:not([open]){display:none}` del navegador, y el «¡Ya casi!» de Smiley's salía pintado al fondo de la página |
+   | `String.replace(a, b)` pega `b` literal | en `b`, `$$` significa **un** dólar — `$&`, `$1`, `$'` también mienten | un guión dejó `$(…)` donde decía `$$(…)` y la página tronó al cargar. **Otra vez el 23 de octubre:** el cielo de `sylcred/` metía la tabla entera como JSON con `replace` y salió vacío. Lo que se incrusta va con función: `replace(x, () => texto)` |
    | una variable llamada `yo` guarda un id | guardaba la **persona entera**, y `encodeURIComponent(yo)` no truena: manda `[object Object]` | el socket **nunca** se ató a nadie: la mesa pintaba a **todos** «sin señal» y decía «1 en línea» con cinco adentro — **vivo en producción**, lo reportó Carlos con una captura |
    | probar cada mitad ya es probar el sistema | el servidor pasaba sus 212 y la mesa las suyas, **con datos puestos a mano en las dos** | el defecto vivía justo en el papel que se pasan, y sólo salió al correr la página contra una sala de verdad |
    | `1fr` reparte el resto del ancho | es `minmax(auto,1fr)`: **nunca baja del mínimo del contenido** | el mazo y el cementerio del jugador medían **0 px** con el CSS correcto y el JS pintándolos — no se veían «mal», no se veían |
@@ -373,7 +398,7 @@ dependemos.
    | «Value encrypted» en el panel de Cloudflare es una llave que el servidor lee | es una llave que **se guardó**; el panel tiene dos cajas casi iguales (la del programa y la de «Build», que el programa nunca ve) y el servidor puede no recibirla | Carlos puso Gemini y Groq dos veces y la IA de Presentaciones seguía muda. Se comprueba con `/motores`, no con el panel; y ahora la llave se pega en la propia app (`/llaves-ia`) |
    | si el servidor contesta bien con `curl` y con CORS, el teléfono también lo alcanza | sólo si pruebo desde **la misma dirección** que el teléfono: Carlos abre la Central desde **github.io**, y La Sala sólo aceptaba la de Cloudflare y a los demás les daba 403 **sin CORS** → Safari: «Load failed» | un día entero: primero culpé a que eran «dos sitios» y armé `puerta.js` (sirve, pero github.io no la tiene). Lo cazó el error con detalle —«puerta 404 sin marca»—. Ahora `ORIGENES` lista los dos github.io y el 403 lleva CORS y se lee |
 
-   | si se ve bien en pantalla, se imprime bien | el navegador mezcla las transparencias en pantalla; en el PDF quedan como grupos y máscaras (`smask`) que la impresora tiene que aplanar | la estrella de la credencial salió como **cuadro negro**, el veteado en escalones, los hexágonos no salieron y la imprenta tardó **horas**. Se caza con `pdfimages -list`; lo decorativo que va a papel se **hornea** en una imagen opaca |
+   | si se ve bien en pantalla, se imprime bien | el navegador mezcla las transparencias en pantalla; en el PDF quedan como grupos y máscaras (`smask`) que la impresora tiene que aplanar | la estrella de la credencial salió como **cuadro negro**, el veteado en escalones, los hexágonos no salieron y la imprenta tardó **horas**. Se caza con `pdfimages -list`; lo decorativo que va a papel se **hornea** en una imagen opaca. **Y en el visor del iPhone igual:** la sombra difuminada de la tarjeta «Recomendada» de la cotización salió como un bloque morado sólido encima de la hoja (23 oct). Un PDF para mandar sale con **cero** `/SMask` (`empresa/servicios/armar.mjs` lo cuenta): sombras sólo de anillo, brillos en colores opacos y nada de emoji |
 
    | `zoom` encoge la hoja y el navegador reparte las páginas con el tamaño encogido | Safari del iPhone siguió dando «la normal y una en blanco» con la hoja al 80 %, y se quitaba bajando a 95 % en SU diálogo: reparte las páginas con el alto SIN zoom (no medido en WebKit —aquí sólo hay Chromium—, pero es lo único que cuadra con el 95 %) | días con el defecto «arreglado» por aritmética. Ahora cada hoja va en un marco que YA mide lo impreso y se encoge con `transform`; la prueba simula a Safari quitándole el zoom |
    | `z-index: 2147483000` pone algo encima de todo | no encima de un `<dialog>` abierto con `showModal()`: ése vive en la **capa de encima** del navegador, y ahí no llega ningún z-index | quitar el fondo desde el editor de láminas se pintaba bien y **no se podía tocar «Listo»**; sola pasaba todas sus pruebas. Lo que se abre desde un diálogo, es diálogo |
@@ -395,7 +420,7 @@ dependemos.
 
    | una página que graba bien en local graba bien publicada | `_headers` pone `Permissions-Policy: microphone=()` a **todo** el sitio, y el servidor de pruebas local no manda cabeceras | el Estudio de podcast pasó 24/24 en local y la grabadora estaba muerta en producción; lo cazó correr la misma prueba contra la dirección publicada. La página que use micrófono o cámara lleva su regla en `_headers` (`! Permissions-Policy` y la suya). **Y se repitió** al meter la cabina de video: la regla abría el micrófono y dejaba `camera=()`; otra vez 54/54 en local y la cámara muerta publicada. Cada permiso nuevo que use una página se revisa en su línea de `_headers` |
 
-   | un check rojo de «Workers Builds» en el PR significa que ese servidor no se publicó | `fadori`, `sala` y `ppuercos` salieron en rojo desde el 10 de octubre, **también en `main`** y en commits que ni los tocaban, y aun así producción traía el último cambio del servidor; sin la bitácora del panel no se sabe por qué | casi detengo la fusión del #170. Se comprueba con el COMPORTAMIENTO: un cambio del servidor que se note desde fuera (el `alias` que calcula el servidor lo ve otro teléfono). Y al revés: un verde tampoco basta, se corre la prueba contra producción |
+   | un check rojo de «Workers Builds» en el PR significa que ese servidor no se publicó | `fadori`, `sala` y `ppuercos` salieron en rojo desde el 10 de octubre, **también en `main`** y en commits que ni los tocaban, y aun así producción traía el último cambio del servidor; sin la bitácora del panel no se sabe por qué | casi detengo la fusión del #170. Se comprueba con el COMPORTAMIENTO: un cambio del servidor que se note desde fuera (el `alias` que calcula el servidor lo ve otro teléfono). Y al revés: un verde tampoco basta, se corre la prueba contra producción. **Medido el 22 de octubre** (API pública de GitHub, `commits/<sha>/check-runs`): empezó el **30 de septiembre en la tarde** (#131 verde, #138 rojo) sin que nada tocara los servidores; en los PR salen rojos SIEMPRE; en `main` van a volados y **al revés de `puercos`**: cuando los tres salen verdes, `puercos` sale rojo, y viceversa. `preview_urls: false` NO lo arregló (probado y quitado). Lo que falta es leer UNA bitácora del panel |
    | la dirección que abre la app es la del archivo (`mostrador.html`) | publicada, Cloudflare le quita el `.html`: `/fadori/mostrador?desde=pantalla` | la prueba de la puerta escondida pasaba en local y salía roja contra producción con el mostrador abierto. Las pruebas aceptan las dos (`mostrador(\.html)?`) |
 
    | un candado contra doble toque protege de pedidos dobles | también se come el toque BUENO si el primero lo rechazó una validación: el rechazado cuenta como toque | en la tablet de Fadori, «Pedir» sin nombre → escribes el nombre → «Pedir» otra vez y no pasaba nada. El candado va después de las validaciones (lo cazó `fadori/pruebas-tele.mjs`) |
@@ -438,6 +463,30 @@ dependemos.
    | un adaptador probado con su versión de mentiras está probado | `falso.mjs` se «conecta» solo: el camino de VINCULAR nunca corrió contra WhatsApp. El código se pedía antes del saludo («Connection Closed») y, tras pedir uno, Baileys deja el número en `creds.me` y la reconexión intentaba entrar → 401 | Carlos en Render: «ya lo intenté con varios códigos y aún no deja». Se reprodujo en dos minutos contra WhatsApp de verdad con el 1-555-0100 de ficción (`secre/pruebas-vincular.mjs`) |
 
    | lo que manda mi bot por WhatsApp regresa como eco DESPUÉS de que `sendMessage` me da su id | Baileys lo avisa con un `process.nextTick` que puede ganarle al `await`: el eco llegaba con un id que Secre todavía no apuntaba y se leía como si Carlos hubiera escrito a mano. Y la IA con tope de 900: Gemini lo gastaba pensando y regresaba vacío | «a veces responde y a veces no»: Secre se callaba 15 min en ese chat creyendo que Carlos estaba ahí. El id se genera ANTES de mandar (`generateMessageIDV2` + `messageId`), el núcleo reconoce su eco por texto, y la IA va con tope de 2,500 y segundo motor (`secre/pruebas.mjs` §10) |
+
+   | la caja de un contenedor (`getBoundingClientRect` de `.doc`) mide todo lo que trae adentro | NO cuenta el margen de arriba del primer hijo: se sale por el colapso de márgenes. El paginador de Reportes medía «título + lo que sigue» así y luego cobraba cada pieza CON márgenes | en el documento de Fadori quedaron solos al pie «2.2 Delimitación», «Anexo C» y «Tabla 6.» (ésta porque `partirTabla` también medía sin márgenes y la tabla se iba entera a la hoja siguiente). Todo se mide con `alturaCon`, y a `partirTabla` se le pasa el hueco sin márgenes |
+   | `el.scrollIntoView({inline:'center', block:'nearest'})` sólo mueve la fila donde vive `el` | mueve **todos** los contenedores que lo tienen adentro, incluida la página: con la fila pegada (`sticky`), «nearest» la regresaba a donde estaba la barra | en la carta de District Roll la página no bajaba de la primera categoría: cada vez que se activaba una, el scroll se regresaba solo. Se mueve sólo la fila con `fila.scrollTo({left})` (`district-roll/pruebas.mjs` lo mide) |
+   | si la API de Wikimedia Commons contesta, sus fotos también se bajan | desde este contenedor la API contestó y luego **todo** dio **429** con `retry-after: 600`: originales, miniaturas y la API misma, aun con un `User-Agent` descriptivo. Un reintento cada 2.5 min pasó 4 veces seguidas en rojo | la textura de la pizza 3D de Smiley's se atoró media hora. Pexels sirve la foto grande directo (`images.pexels.com/photos/<id>/pexels-photo-<id>.jpeg`); Openverse ya pide cuenta (401). Los GLB del Food Kit de Kenney piden `Textures/colormap.png` **por fuera**: si no se copia junto, el cargador lo reporta como error |
+   | Unsplash no se puede buscar desde aquí: `curl` da el muro de «not a bot» | lo pasa un Chromium de verdad con `proxy:{server:'http://127.0.0.1:32791'}` y **user-agent de escritorio**; con el de headless sale «Oh noes!» | para el «Ármala tú» de Smiley's hacían falta ~20 fotos de ingredientes; con el buscador andando salieron en minutos (`/tmp`→`unsplash.mjs` en la sesión, la receta está en `smileys/scripts/ingredientes.py`) |
+   | `pip install x` y luego `python3 -c "import x"` | aquí `pip` es el de **Python 3.13** y `python3` es 3.11: instala bien y el import dice que no existe | rembg «no se instaló» dos veces; se corre con `python3.13` |
+   | pintar comida con código, si se cuida la luz y la sombra, se ve real | se ve de **caricatura**: el primer «Ármala tú» con piezas dibujadas no daba hambre. Lo que sí: una pizza de queso fotografiada y cada ingrediente **recortado de una foto** (rembg, o un disco del tamaño justo sobre un pepperoni horneado) | Carlos: «nada da hambre». La regla 1 ya lo decía: el arte de relleno se busca real |
+
+   | un nombre nuevo de clase o de `@keyframes` en una página grande es mío y no choca | en CSS todo es global: el último `@keyframes gira` pisa al primero y una clase `.vuela` que ya existía trae su fondo y su aro | en Smiley's, el precio que «rodaba» salía **de cabeza** (era el `gira` de 360° de otra animación) y la pizza que vuela a la grande traía un aro blanco color cartón (el `.vuela` de agregar al carrito). **Y con las funciones de JS es peor:** dos `function volar` en el mismo `<script>` no truenan, gana la última en silencio — agregar cualquier cosa al carrito disparaba la animación de la pizza de Ármala, con las 59 pruebas en verde porque ninguna miraba la bolita que vuela a la caja. Antes de inventar un nombre, `grep` en el archivo; y antes de cerrar, `grep -o "@keyframes [a-z-]*" archivo | sort | uniq -d` (salió un tercer choque: dos `@keyframes salta`) |
+
+   | `getComputedStyle(el).getPropertyValue('--ancho')` da el ancho | da el TEXTO de la variable sin resolver: con `clamp(74px, 23vw, 116px)` el `parseFloat` es NaN y cae al respaldo | el abanico de Puercos calculaba el encime con 100 px fijos; al crecer las cartas a 113 se salió del tapete. Se mide la carta (`offsetWidth`). **Y una carta que gira alrededor de un punto muy abajo (`transform-origin: 50% 155%`) se corre hacia afuera** 1.55·alto·sen θ: 33 px por lado que movían la página de lado |
+   | «la mano cambió» se arregla volviendo a pintar la mano | volver a pintar es BORRAR y crear todo: cada carta nueva arranca sin dibujo (fondo negro) y con su animación de reparto | Carlos: «que no se cambien las cartas al usar una» y «aparecen en negro», en cada ronda. Se actualiza por llave: la jugada se va, la nueva entra, las demás no se tocan; y el fondo mientras carga es el reverso |
+   | `visibility: hidden` en una capa esconde todo lo que trae adentro | un hijo con `visibility: visible` **se sigue viendo** aunque el papá esté escondido (con `display` no pasa) | en el comercial de Smiley's las tarjetas del montaje se quedaron pegadas encima del cierre y de la escena siguiente; lo vio la hoja de cuadros, no el código. En `herramientas/video/` las escenas se apagan con `display:none` |
+   | la copia «para mandar» de un video siempre pesa menos que el original | se hace a un bitrate FIJO pensado para 27 MB: si el original ya pesaba 14, la copia salió de **26** | el primer comercial casi se manda al doble de peso. `armar.mjs` ya no la hace cuando el original cabe |
+
+   | si cada logo dice qué letra usa y la revisión dice «todas cargadas», salieron con su letra | `font-family:"Archivo"` dentro de `style="…"` **cierra el atributo**: las 25 letras cayeron a la del sistema, y la revisión miraba la letra que QUEDÓ puesta (la del sistema, que siempre está) | las 200 propuestas de logo salieron iguales la primera vez. Ahora se compara el nombre de la ficha con la letra puesta y se mide el ancho con dos respaldos distintos (`marca/propuestas/armar.mjs`). Y `document.fonts.check()` dice que NO con letras japonesas (Dela Gothic viene en cien pedazos) aunque sí se usen: no sirve de testigo |
+
+   | `objeto.lookAt(punto)` lo pone de frente al punto, igual que a una cámara | un `Object3D` mira con **+z** y una cámara con **−z**: copiar el giro de uno al otro voltea la escena | las letras 3D del logo salieron **al revés** («IZAM») sólo en la vista isométrica; se arma la base a mano (`makeBasis(u, v, z)` en `marca/anuncios/logo3d.js`) |
+   | el saldo gratis de ElevenLabs alcanza para varios anuncios | 10,000 caracteres al mes se fueron en **ocho** anuncios con dos o tres tomas cada uno; la llamada contesta `401 quota_exceeded`, que parece llave mala | el 09 salió con Piper (local, acento mexicano). `voces.mjs` acepta `piper:<voz>` en el guion y lo demás no cambia |
+
+   | el brillo (bloom) hace brillar lo que emite luz | brilla todo lo que pase del UMBRAL, emita o no: un fondo blanco y letras blancas con luz de estudio pasan de .78 | en el 13 «En movimiento» el estudio blanco salió lavado, las letras como algodón y el logo con halo de neón. El umbral va en .9 y en lo blanco el brillo se apaga; lo que deba brillar se sube con `emissive`, no bajando el umbral |
+   | una cámara a la distancia que «se ve bien» en horizontal se ve bien en vertical | en 9:16 con 32° de campo, a 5 unidades se ven sólo **1.6 de ancho**: una palabra de 0.5 de alto no cabe | todo el 13 salió con las letras cortadas a la orilla. `cabe()` en el anuncio achica cada palabra al ancho que se ve |
+
+   | los vértices de la parte alta de un modelo dan el tamaño de su pantalla | dan lo que cae arriba del corte que escogí: con `y > .45` la pantalla «medía» la mitad y el plano con nuestra página quedó **metido detrás del vidrio** en la mitad de abajo | tres vueltas a ojo con la computadora del anuncio 15. Se mide con **rayos** (`Raycaster` de frente cada 5 cm): da la superficie exacta y su inclinación (30°) en una corrida |
 
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
@@ -550,6 +599,7 @@ sin skill que la cubra, ahí sí se propone.
 | `herramientas/consejo.js` | **El censo.** Los 24 de la sala más el gato y el perro, más los 4 jueces, con su área y su color. Si entra alguien nuevo, se agrega aquí y en ningún otro lado | ✅ probada |
 | `juegos/crisol/motor.js` | **La física de CRISOL**, aparte de la pantalla. Onda de choque con ecuación de onda, **cuerpos rígidos** que caen y chocan como piezas, **cámaras selladas con ley de los gases** —comprimir hace diamante, funde hidrógeno y revienta el bote—, campo gravitatorio por zonas y puntos, esfuerzos en compresión/tracción/corte, **voltaje** (apilar pilas calienta, mueve y lanza más), fricción, convección del aire, luz, compuertas lógicas y cuerdas con nudo | ✅ probada, 203/203 |
 | `juegos/crisol/pruebas-pantalla.mjs` | **Los ojos de CRISOL.** Lo que Carlos reporta —«el menú se encima al suelo», «el botón de borrar no hace confirmación»— NO es física: es maqueta, y ninguna prueba de motor puede verlo. Comprueba el EFECTO de cada botón, no que exista. Corre en un navegador de verdad a 390×844 | ✅ 52/52 |
+| `juegos/guerra-de-puercos/pruebas-nino.mjs` | **El niño de 4 años.** Juega Puercos sin saber las reglas: arrastra y suelta a medio vuelo, cancela arrastres, triple toque, doble toque a botones que ya cambiaron, toca durante las animaciones y gira el teléfono; cada tantas, una jugada buena para que avance. Revisa que no truene, que no quede una carta fantasma ni el recuadro encendido, que no se salga de lado y que la partida no se trabe. Azar repetible (`SEMILLA`) | ✅ 1 partida, 240 travesuras; la mutación (fantasma sin borrar) la caza en la 5.ª |
 | `juegos/guerra-de-puercos/motor.js` | **Las reglas del juego de la amiga de Carlos**, aparte de la pantalla y probadas contra los ejemplos de su propio reglamento | ✅ probada, 61/61 |
 | `cerebro/cerebro.mjs` | **La memoria que no se borra.** 65 neuronas en 9 áreas: errores con su causa y su arreglo, piezas del proyecto y decisiones con lo que se descartó. Búsqueda con palabras de persona, y un grafo de 105 enlaces en 7 comunidades que se enciende al usarse | ✅ probada, 58/58 |
 | `sala/servidor/` | **La mesa de varias IAs.** N sesiones de N cuentas, cualquier modelo que hable HTTP entra con un link. Figura = modelo, color = cuenta, anillo = subagente | ✅ probada, 91/91 |
@@ -932,8 +982,10 @@ sin framework**, que es el argumento de que sabemos hacerlo a mano.
 
 - Repo principal: `mazi-central` · rama de trabajo: `claude/juego-oregon-3kmicc`
 - **`main` es lo que se publica**, **a propósito** y no por accidente. Pero el que publica ya no es
-  GitHub Pages: **es Cloudflare**. No hay `.github/workflows/` en este repo; lo que hay es
-  `wrangler.jsonc` en la raíz, y está ahí justo para esto.
+  GitHub Pages: **es Cloudflare**, con `wrangler.jsonc` en la raíz. En `.github/workflows/` sólo
+  hay dos tareas de La Sala que no publican el sitio: «Desplegar la sala» (a mano) y el
+  «Buzón» (apagado desde el 22 de octubre: su llave era la quemada de Luis y salía en rojo
+  cada corrida).
 - **Nunca se sirve la raíz del repo.** Cloudflare corre `node build.mjs`, que arma `dist/` con una
   lista explícita de lo que sí va. Servir la raíz publicaría `.claude/`, **este archivo** —que trae
   cosas del negocio— y el código del servidor. Si algo no apareció publicado, la lista está a la
@@ -984,6 +1036,10 @@ Arreglar el layout de escritorio (diagnóstico abajo) y los objetivos táctiles.
 
 ### Hecho
 
+- **🎉 Primera venta grande a un cliente de fuera (23 de octubre):** la página completa de
+  Smiley's, **$6,000**. Paga $1,000 a la semana: a las 3 semanas lleva el 50 % y se publica; el resto, otras 3 semanas, fotos reales con el
+  fotógrafo de Carlos, dominio gratis primero y de paga después. Detalle en `smileys/README.md`.
+
 - **El Cerebro (§4-bis).** 65 neuronas, 9 áreas, 105 enlaces, 7 comunidades, 58 pruebas. Nació
   para que un agente no reconstruya el proyecto cada sesión y luego lo tire. Dos defectos
   salieron construyéndolo y los dos quedaron guardados: la señal «Â» que se normaliza a «a» y
@@ -1030,6 +1086,7 @@ Arreglar el layout de escritorio (diagnóstico abajo) y los objetivos táctiles.
   hay que tratarlo como si fuera a recibir visitas ni pulirlo para desconocidos.
 
 ### Pendientes con diagnóstico
+- **El ángel de la guarda** (Carlos, 21 de octubre: *«quiero que puedas hacer cosas así»*, sobre el post de los dos agentes de OpenClaw que lo buscaron toda la noche). Que las IAs noten cuando lleva mucho más callado de lo normal, se avisen en La Sala y lo busquen por SUS canales, cada vez más fuerte. **Nunca** hurgar en sus archivos ni hablarle a policía o a terceros por su cuenta. Transcripción, propuesta y lo que falta que decida, en [`sala/ANGEL-DE-LA-GUARDA.md`](sala/ANGEL-DE-LA-GUARDA.md).
 - **La llave de GRUPAZ va en el ENTORNO, no en el repo ni en la memoria de la sesión** (Carlos, 16 de octubre: «deja de perder la llave de la sala»). Se pone una vez como variable `MAZI_LLAVE` en los ajustes del entorno de Claude Code (menú del entorno → Editar) y toda sesión nueva la trae. Las herramientas (`segunda-opinion`, `recordar`, el vigilante) la leen de ahí. Antes de eso:
   - **Necesito mi llave de GRUPAZ.** Con las `LLAVES` puestas, la sala contesta 401 desde aquí, así
   que no puedo leerla ni escribirle. Se resuelve con que Carlos me la pase por el chat — **no se

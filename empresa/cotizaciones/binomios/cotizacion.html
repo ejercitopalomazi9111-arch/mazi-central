@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grupo Mazi · Bomberos Tequisquiapan · Cotización · App de binomios caninos</title>
+<!-- COTIZACIÓN para Amairani, Bomberos Tequisquiapan (lo que pidió primero: «cuánto por desarrollar
+     una app para el equipo de Bomberos Tequisquiapan»): app interna para su equipo de binomios caninos (manejador + perro) de búsqueda.
+     Carlos, 28 de octubre: «una con lo de geolocalización y una sin ello». Lo que pidió el
+     cliente, con sus palabras: expedientes del manejador y del perro, agenda sincronizable con
+     Google Calendar, avance en obediencia (pruebas tipo IRO), bitácora de búsqueda, asistencia,
+     checklist de material e incidencias; y aparte, mapa con ruta y ubicación en tiempo real
+     «tipo WhatsApp».
+     Precios: PROPUESTA dentro de nuestros rangos de apps (empresa/servicios/PRECIOS.md: «Medio
+     desde $35,000», «Avanzado desde $80,000»). Los confirma Carlos.
+     Lo verificado el 28 de octubre: una app web en iPhone no manda la ubicación con la pantalla
+     apagada (no existe ubicación en segundo plano para la web; con app nativa sí). Apple cobra
+     99 USD al año y Google Play 25 USD una vez por publicar. Los mapas van en nuestro servidor
+     (mapas libres de OpenStreetMap en un solo archivo), sin pagarle a Google por uso.
+     Se arma con armar.mjs: el PDF que se manda es de fotos (el visor del iPhone no tiene nada que
+     pintar mal) y otro con texto para imprimir. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800;900&display=swap">
+<style>
+@font-face{font-family:"Mazi"; src:url(../../../sitio/fuente/mazi.woff2) format("woff2")}
+@page{ size:8.5in 11in; margin:0 }
+:root{ --vacio:#100A18; --tinta:#17111F; --gris:#5E5668; --suave:#8B8296; --linea:#E6E1EA;
+  --violeta:#AC27FF; --hondo:#7A12C4; --lila:#F4ECFC; --hueso:#FBFAFC; --verde:#127A4B; --t:"Inter Tight", system-ui, sans-serif }
+*{ box-sizing:border-box; margin:0; padding:0 }
+html{ background:#d9d4de; -webkit-print-color-adjust:exact; print-color-adjust:exact }
+body{ font-family:var(--t); color:var(--tinta); font-size:12.5px; line-height:1.45; font-variant-numeric:tabular-nums }
+.hoja{ position:relative; width:8.5in; height:11in; margin:0 auto 24px; background:var(--hueso); overflow:hidden; page-break-after:always; break-after:page }
+@media print{ html{ background:none } .hoja{ margin:0 } }
+.pad{ padding:0 52px }
+/* sin sombras difuminadas ni degradados a transparente: en el PDF serían máscaras (ver servicios.html) */
+.cabeza{ background:var(--vacio); color:#F3EEF7; padding:28px 52px 26px; position:relative; overflow:hidden }
+.cabeza::before{ content:""; position:absolute; right:-170px; top:-230px; width:620px; height:620px; border-radius:50%; background:radial-gradient(closest-side, #661A97, #230E34 55%, #100A18) }
+.cabeza > *{ position:relative }
+.marca{ display:flex; align-items:center; gap:12px }
+.marca .paloma{ width:58px; height:34px; background:url(../../../marca/logo/paloma.svg) center/contain no-repeat }
+.marca b{ font-family:"Mazi", var(--t); font-weight:400; font-size:23px; letter-spacing:.04em }
+.marca span{ margin-left:auto; font-size:11px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:#B9AEC6 }
+.cabeza h1{ margin-top:20px; font-size:38px; line-height:1; font-weight:900; letter-spacing:-.04em; max-width:600px }
+.cabeza h1 em{ font-style:normal; color:#C878FF }
+.cabeza .bajada{ margin-top:12px; font-size:14.5px; color:#CFC6DA; max-width:560px; line-height:1.42 }
+.datos{ display:flex; gap:22px; margin-top:16px; font-size:11.5px; color:#B9AEC6 }
+.datos b{ color:#F3EEF7; font-weight:700 }
+h2{ font-size:22px; font-weight:900; letter-spacing:-.03em; line-height:1.05 }
+.sec{ display:flex; align-items:baseline; gap:12px; margin:24px 0 12px }
+.sec .num{ font-weight:800; font-size:12px; letter-spacing:.16em; color:var(--violeta) }
+.sec p{ margin-left:auto; color:var(--gris); font-size:11.5px; text-align:right; max-width:280px; line-height:1.35 }
+/* las dos opciones */
+.opciones{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:22px }
+.op{ display:flex; flex-direction:column; border-radius:18px; padding:20px 20px 16px; background:#fff; box-shadow:0 0 0 1.5px var(--linea) }
+.op.b{ background:var(--vacio); color:#F3EEF7; box-shadow:0 0 0 2px var(--violeta) }
+.op .et{ font-size:11px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:var(--hondo) }
+.op.b .et{ color:#C878FF }
+.op h3{ margin-top:6px; font-size:19px; font-weight:900; letter-spacing:-.02em; line-height:1.1 }
+.op .precio{ margin-top:12px; font-size:38px; font-weight:900; letter-spacing:-.045em; line-height:1 }
+.op .precio small{ font-size:13px; font-weight:700; letter-spacing:0; color:var(--suave); margin-left:4px }
+.op.b .precio small{ color:#B9AEC6 }
+.op .tiempo{ margin-top:6px; font-size:12px; font-weight:600; color:var(--gris) }
+.op.b .tiempo{ color:#CFC6DA }
+.op ul{ list-style:none; margin-top:14px; display:grid; gap:7px; flex:1 }
+.op li{ position:relative; padding-left:21px; font-size:12px; line-height:1.35 }
+.op li::before{ content:""; position:absolute; left:0; top:2px; width:14px; height:14px; border-radius:50%;
+  background:var(--violeta) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.3l2.6 2.5L12 5.4' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat }
+.op li.mas{ font-weight:800 }
+.op .pie{ margin-top:14px; padding-top:12px; border-top:1.5px solid var(--linea); font-size:11.5px; color:var(--gris); line-height:1.4 }
+.op.b .pie{ border-top-color:#3A2B4C; color:#CFC6DA }
+.nota{ margin-top:14px; padding:12px 16px; border-radius:14px; background:var(--lila); font-size:12px; line-height:1.45 }
+.nota b{ color:var(--hondo) }
+/* los módulos */
+.modulos{ display:grid; grid-template-columns:1fr 1fr; gap:10px }
+.mod{ padding:13px 15px 12px; border-radius:14px; background:#fff; box-shadow:0 0 0 1.5px var(--linea) }
+.mod .t{ display:flex; align-items:center; gap:9px; font-weight:800; font-size:13.5px; letter-spacing:-.01em }
+.mod .t i{ font-style:normal; display:grid; place-items:center; width:24px; height:24px; border-radius:8px; background:var(--lila); color:var(--hondo); font-size:11px; font-weight:900 }
+.mod p{ margin-top:6px; font-size:11.5px; color:var(--gris); line-height:1.42 }
+.mod.geo{ background:var(--vacio); color:#F3EEF7; box-shadow:0 0 0 1.5px #3A2B4C }
+.mod.geo .t i{ background:var(--violeta); color:#fff }
+.mod.geo p{ color:#CFC6DA }
+.todo{ display:flex; flex-wrap:wrap; gap:7px; margin-top:12px }
+.todo span{ padding:6px 11px; border-radius:99px; background:#fff; box-shadow:inset 0 0 0 1.5px var(--linea); font-size:11px; font-weight:700 }
+/* tablas chicas */
+.tabla{ width:100%; border-collapse:collapse; font-size:12px }
+.tabla td{ padding:8px 0; border-bottom:1.5px solid var(--linea); vertical-align:top }
+.tabla td:last-child{ text-align:right; font-weight:800; white-space:nowrap; padding-left:16px }
+.tabla td small{ display:block; font-size:11px; color:var(--gris); font-weight:500; margin-top:2px }
+.dos{ display:grid; grid-template-columns:1fr 1fr; gap:22px }
+.letra{ display:grid; gap:6px; font-size:11px; color:var(--gris); line-height:1.4 }
+.letra b{ color:var(--tinta) }
+.pie-hoja{ position:absolute; left:52px; right:52px; bottom:24px; display:flex; justify-content:space-between; font-size:10.5px; color:var(--suave) }
+.firma{ margin-top:18px; display:flex; justify-content:space-between; align-items:flex-end; gap:20px; padding:16px 18px; border-radius:16px; background:var(--vacio); color:#F3EEF7 }
+.firma .q{ font-size:15px; font-weight:800; line-height:1.3 }
+.firma .q small{ display:block; font-size:11.5px; font-weight:500; color:#CFC6DA; margin-top:4px }
+.firma .c{ text-align:right; font-size:12px; font-weight:700; line-height:1.5 }
+</style>
+</head>
+<body>
+
+<!-- ═════════════ HOJA 1 · las dos opciones ═════════════ -->
+<section class="hoja">
+  <div class="cabeza">
+    <div class="marca"><div class="paloma"></div><b>MAZI</b><span>Cotización</span></div>
+    <h1>La app de <em>binomios caninos</em> de Bomberos Tequisquiapan</h1>
+    <p class="bajada">Todo el equipo en una sola app: el expediente de cada manejador y de cada perro, la agenda, el avance en obediencia y en búsqueda, la asistencia, el material y las incidencias. Y si la quieren completa, el mapa con la ubicación de todos en tiempo real.</p>
+    <div class="datos"><span>Para <b>Amairani</b></span><span>Fecha <b>28 de octubre de 2026</b></span><span>Vigencia <b>30 días</b></span><span>Precios en <b>pesos mexicanos</b></span></div>
+  </div>
+  <div class="pad">
+    <div class="opciones">
+      <article class="op">
+        <div class="et">Opción A</div>
+        <h3>La app del equipo<br>sin geolocalización</h3>
+        <div class="precio">$42,000<small>MXN</small></div>
+        <div class="tiempo">Lista en unas 5 a 6 semanas</div>
+        <ul>
+          <li>Expedientes del manejador y del perro</li>
+          <li>Agenda que se ve en Google Calendar</li>
+          <li>Avance en obediencia y en búsqueda</li>
+          <li>Asistencia y bitácora con fotos</li>
+          <li>Checklist de material e incidencias</li>
+          <li>Panel del jefe de grupo y reportes en Excel y PDF</li>
+          <li>Funciona sin señal y sube todo al volver</li>
+          <li>Se instala en el celular desde un enlace</li>
+        </ul>
+        <div class="pie"><b>Pago:</b> 50% para empezar y 50% al entregar.<br>Incluye 3 meses de mantenimiento y hospedaje.</div>
+      </article>
+      <article class="op b">
+        <div class="et">Opción B · completa</div>
+        <h3>Todo lo de la A<br>+ mapa en tiempo real</h3>
+        <div class="precio">$78,000<small>MXN</small></div>
+        <div class="tiempo">Lista en unas 9 a 10 semanas</div>
+        <ul>
+          <li class="mas">Todo lo de la opción A</li>
+          <li>Ubicación de cada binomio en tiempo real, tipo WhatsApp</li>
+          <li>Rutas, sectores de búsqueda y puesto de mando en el mapa</li>
+          <li>Graba el recorrido de cada búsqueda: distancia, tiempo y zona cubierta</li>
+          <li>Botón de emergencia que manda tu ubicación a todos</li>
+          <li>Mapas descargados para zonas sin señal</li>
+          <li>Apps en App Store y Google Play</li>
+        </ul>
+        <div class="pie"><b>Pago:</b> 40% para empezar, 30% al entregar la app y 30% al entregar el mapa.<br>Incluye 3 meses de mantenimiento y hospedaje.</div>
+      </article>
+    </div>
+    <div class="nota"><b>¿Por qué la B es app de tienda?</b> Para que la ubicación siga mandándose con el celular bloqueado y en la bolsa, como en WhatsApp, el iPhone exige una app instalada desde la App Store. Una app web deja de mandarla cuando se apaga la pantalla. Por eso la B sale en las dos tiendas, y la A, que no lo necesita, se instala desde un enlace.</div>
+    <div class="nota" style="background:#fff;box-shadow:inset 0 0 0 1.5px var(--linea)"><b>¿Empezar con la A y sumar el mapa después?</b> Se puede: la app se construye lista para crecer. Sumar el mapa más adelante cuesta <b>$40,000</b>.</div>
+  </div>
+  <div class="pie-hoja"><span>Grupo Mazi · grupomazi.oficial@gmail.com</span><span>WhatsApp 442 883 3786 · 1 de 3</span></div>
+</section>
+
+<!-- ═════════════ HOJA 2 · lo que trae ═════════════ -->
+<section class="hoja">
+  <div class="pad" style="padding-top:34px">
+    <div class="sec" style="margin-top:0"><span class="num">01</span><h2>Lo que trae la app</h2><p>Opciones A y B. Cada lista de campos se puede ampliar sin tocar código.</p></div>
+    <div class="modulos">
+      <div class="mod"><div class="t"><i>1</i>Expedientes de cada binomio</div><p><b>Manejador:</b> nombre completo, fecha de nacimiento, foto, tipo de sangre, enfermedades, alergias, medicamentos y contacto de emergencia. <b>Perro:</b> foto, nombre, edad (se calcula sola), raza, sexo, chip, vacunas y desparasitación con recordatorio, y su veterinario.</p></div>
+      <div class="mod"><div class="t"><i>2</i>Agenda</div><p>Presentaciones, competencias, capacitaciones y entrenamientos, con quién va y recordatorios. Cada quien la ve en su Google Calendar y se actualiza sola.</p></div>
+      <div class="mod"><div class="t"><i>3</i>Avance en obediencia</div><p>Los ejercicios de las pruebas: sentado, echado, caminar junto, obstáculos tipo IRO (escalera, paso estable, paso inestable…). Calificación por sesión, gráfica del avance y qué le falta a cada perro para su prueba.</p></div>
+      <div class="mod"><div class="t"><i>4</i>Bitácora de búsqueda</div><p>Tipo (entrenamiento, escenario real, capacitación), ánimo del perro, clima, tiempo de búsqueda con cronómetro en la app, terreno, tipo de búsqueda, resultado, fotos y notas. Los campos que falten se agregan desde el panel.</p></div>
+      <div class="mod"><div class="t"><i>5</i>Asistencia y bitácora de eventos</div><p>Pasar lista con hora de entrada y de salida, tipo de evento (capacitación, entrenamiento, evento especial, búsqueda real), fecha, hora, fotos y notas.</p></div>
+      <div class="mod"><div class="t"><i>6</i>Checklist de material</div><p>Botiquín, casco, rodilleras, coderas y lo que el equipo agregue. Se palomea antes de cada salida y avisa qué falta o qué está por caducar.</p></div>
+      <div class="mod"><div class="t"><i>7</i>Incidencias</div><p>Tipo (enfermedad, accidente, lesión…), fecha, binomio, qué pasó y fotos, con seguimiento hasta cerrarla.</p></div>
+      <div class="mod"><div class="t"><i>8</i>Panel del jefe de grupo</div><p>Cada manejador ve lo suyo; el jefe ve todo. Resumen del equipo, horas de entrenamiento por binomio, asistencia del mes, y el expediente o el reporte de una búsqueda en PDF o Excel.</p></div>
+    </div>
+    <div class="sec"><span class="num">02</span><h2>Lo que suma la opción B</h2><p>El mapa del operativo.</p></div>
+    <div class="modulos">
+      <div class="mod geo"><div class="t"><i>9</i>Ubicación en tiempo real</div><p>Durante un operativo, todos ven en el mapa dónde va cada binomio, como la ubicación en tiempo real de WhatsApp. Cada quien la prende y la apaga; fuera del operativo nadie es rastreado.</p></div>
+      <div class="mod geo"><div class="t"><i>10</i>Rutas y sectores</div><p>Trazar la ruta, dibujar los sectores de búsqueda y asignar cada uno a un binomio. Marcar el puesto de mando y el punto de reunión.</p></div>
+      <div class="mod geo"><div class="t"><i>11</i>Recorrido grabado</div><p>Cada búsqueda guarda su trazo en la bitácora: distancia, tiempo y zona cubierta. Se puede abrir en Google Earth.</p></div>
+      <div class="mod geo"><div class="t"><i>12</i>Sin señal y emergencias</div><p>Sin señal, la app sigue grabando y sube el recorrido al volver; los mapas de la zona se descargan antes de salir. Botón de emergencia que manda tu ubicación a todo el equipo.</p></div>
+    </div>
+    <div class="todo"><span>Cuentas para cada integrante</span><span>Respaldo diario</span><span>Fotos guardadas en la nube</span><span>Funciona en iPhone y Android</span><span>Datos sólo para el equipo</span><span>Exportar a Excel</span></div>
+  </div>
+  <div class="pie-hoja"><span>Grupo Mazi · grupomazi.oficial@gmail.com</span><span>WhatsApp 442 883 3786 · 2 de 3</span></div>
+</section>
+
+<!-- ═════════════ HOJA 3 · lo que hay que saber ═════════════ -->
+<section class="hoja">
+  <div class="pad" style="padding-top:34px">
+    <div class="sec" style="margin-top:0"><span class="num">03</span><h2>Después de entregarla</h2><p>Los primeros 3 meses van incluidos.</p></div>
+    <table class="tabla">
+      <tr><td>Mantenimiento opción A<small>Hospedaje, respaldo diario, revisión mensual, hasta 6 cambios chicos al mes y respuesta en 48 horas</small></td><td>$750 al mes</td></tr>
+      <tr><td>Mantenimiento opción B<small>Todo lo anterior, más el servidor del mapa en tiempo real y las actualizaciones de las apps en las tiendas</small></td><td>$1,200 al mes</td></tr>
+      <tr><td>Pago por año<small>12 meses por el precio de 10</small></td><td>2 meses gratis</td></tr>
+      <tr><td>Funciones nuevas<small>Lo que no esté en esta cotización se cotiza aparte; con mantenimiento activo, 15% de descuento</small></td><td>$450 la hora</td></tr>
+    </table>
+    <div class="dos" style="margin-top:22px">
+      <div>
+        <div class="sec" style="margin-top:0"><span class="num">04</span><h2>Lo que se paga aparte</h2></div>
+        <table class="tabla">
+          <tr><td>Cuenta de Apple para publicar<small>Sólo opción B · a nombre del equipo, se paga directo a Apple</small></td><td>99 USD al año</td></tr>
+          <tr><td>Cuenta de Google Play<small>Sólo opción B · a nombre del equipo, se paga directo a Google</small></td><td>25 USD una vez</td></tr>
+          <tr><td>Mapas<small>Van en nuestro servidor, sin pagarle a Google por uso</small></td><td>$0</td></tr>
+          <tr><td>Factura<small>Si la necesitan, se agrega el IVA</small></td><td>+ IVA</td></tr>
+        </table>
+      </div>
+      <div>
+        <div class="sec" style="margin-top:0"><span class="num">05</span><h2>Lo que hay que saber</h2></div>
+        <div class="letra">
+          <span><b>Señal:</b> la ubicación en tiempo real necesita datos. Donde no hay, el mapa enseña la última ubicación conocida y el recorrido se sube al volver la señal.</span>
+          <span><b>Datos de salud:</b> el tipo de sangre, las enfermedades y las alergias son datos sensibles. La app incluye su aviso de privacidad y la firma de consentimiento de cada integrante.</span>
+          <span><b>Los datos son suyos:</b> se pueden bajar completos a Excel cuando quieran.</span>
+          <span><b>Google Calendar:</b> la agenda se ve en el calendario de cada quien y se actualiza sola. Los eventos se crean y se cambian desde la app.</span>
+          <span><b>Fechas:</b> toda fecha de entrega es un estimado y corre desde que tenemos la información del equipo (los ejercicios de sus pruebas, los campos de su bitácora y sus formatos).</span>
+          <span><b>Cambios incluidos:</b> 2 rondas de ajustes. Pasando ese límite, o si cambia lo ya aprobado, $450 la hora.</span>
+        </div>
+      </div>
+    </div>
+    <div class="sec"><span class="num">06</span><h2>Cómo trabajamos</h2></div>
+    <div class="letra" style="grid-template-columns:repeat(4,1fr);gap:12px;font-size:11.5px">
+      <span><b style="color:var(--violeta)">1 · Platicamos.</b><br>Con el jefe de grupo y un manejador, para ver cómo trabajan hoy.</span>
+      <span><b style="color:var(--violeta)">2 · Les enseñamos la app.</b><br>En la primera semana ven las pantallas en su celular.</span>
+      <span><b style="color:var(--violeta)">3 · La prueban.</b><br>Un entrenamiento real antes de entregarla.</span>
+      <span><b style="color:var(--violeta)">4 · Nos quedamos.</b><br>Con el mantenimiento, y capacitación para todo el equipo.</span>
+    </div>
+    <div class="firma">
+      <div class="q">¿Cuál les acomoda más?<small>Escríbenos y la arrancamos esta semana. Podemos enseñarles una muestra antes de empezar.</small></div>
+      <div class="c">grupomazi.oficial@gmail.com<br>WhatsApp 442 883 3786</div>
+    </div>
+  </div>
+  <div class="pie-hoja"><span>Grupo Mazi · grupomazi.oficial@gmail.com</span><span>WhatsApp 442 883 3786 · 3 de 3</span></div>
+</section>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grupo Mazi · cubos</title>
+<!--
+  RONDA DEL CUBO OSCURO. Carlos, 28 de octubre, señalando el 05 (Space Grotesk, el cubo oscuro con la
+  cara de arriba morada): «usa el logo oscuro con el cubo oscuro que tiene la cara morada arriba y
+  básate en algunas propuestas un poco en el logo de GameCube y otras de logos similares, y la M
+  simulando un cubo también se ve bien, haz un par de propuestas».
+  Fila 1, el 05 afinado · filas 2 y 3, el nombre con los cubos de cubitos (cubitos.js) · fila 4, esos
+  cubos solos · fila 5, la M que es un cubo (simbolos.js).
+-->
+<style>
+:root{ --vacio:#100A18; --hueso:#EAE5E3; --gris:#A79CB4 }
+*{ box-sizing:border-box; margin:0 }
+html, body{ background:var(--vacio); color:var(--hueso); font:400 16px/1.4 system-ui, sans-serif }
+.hoja{ width:2120px; padding:56px 60px 48px }
+.cab{ display:flex; align-items:end; gap:24px; margin-bottom:32px }
+.cab h1{ font:800 44px/1.05 system-ui; letter-spacing:-.02em }
+.cab p{ margin-top:6px; color:var(--gris); font-size:21px; max-width:96ch }
+.cab .rango{ margin-left:auto; text-align:right; color:var(--gris); font-size:19px; white-space:nowrap }
+.cab .rango b{ display:block; color:var(--hueso); font-size:30px }
+.rej{ display:grid; grid-template-columns:repeat(5, 1fr); gap:16px }
+.ficha{ position:relative; height:320px; border-radius:22px; overflow:hidden; box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.07) }
+.lienzo{ position:absolute; inset:46px 34px 56px; display:grid; place-items:center }
+.logo{ position:relative; line-height:1 }
+.logo > span, .logo > svg, .logo > i{ position:absolute; white-space:pre; display:block; overflow:visible }
+.num{ position:absolute; left:18px; bottom:15px; font:700 18px/1 ui-monospace, Menlo, monospace; opacity:.6 }
+.fuente{ position:absolute; right:18px; bottom:16px; font:500 14px/1 system-ui; opacity:.5 }
+.fam{ position:absolute; left:18px; top:15px; font:600 12px/1 system-ui; letter-spacing:.12em; text-transform:uppercase; opacity:.45 }
+.pie{ margin-top:26px; display:flex; justify-content:space-between; color:#6E6380; font-size:17px }
+</style>
+</head>
+<body>
+<div class="hoja" id="hoja"></div>
+<script type="module">
+import { SIMBOLOS, VB } from './simbolos.js';
+import { cubitos, FIGURAS } from './cubitos.js';
+const V = '#AC27FF';
+/* fondo, letra, y el cubo: arriba, izquierda, derecha */
+const PAL = { hueso: ['#F4F1EC', '#16181C', V, '#16181C', '#7C7C82'], blanco: ['#FFFFFF', '#0B0B0F', V, '#0B0B0F', '#77777D'],
+  oscuro: ['#100A18', '#F4EEF0', V, '#E9E4E4', '#8C8794'], negro: ['#0B0B0F', '#FFFFFF', V, '#EDEDED', '#8A8A90'], violeta: ['#AC27FF', '#FFFFFF', '#16181C', '#FFFFFF', '#D9B3FF'] };
+/* el cubo del 05: cara de arriba morada, izquierda en tinta, derecha clara */
+const CUBO05 = { vb: '0 6 100 98', ar: 100 / 98, pintar: (a, i, d) => `<path d="M50 6 L92 30 L50 54 L8 30 Z" fill="${a}"/><path d="M8 30 V80 L50 104 V54 Z" fill="${i}"/><path d="M92 30 V80 L50 104 V54 Z" fill="${d}"/>` };
+const fig = (n) => { const f = cubitos(FIGURAS[n], n === 'cubo de piezas' ? .06 : 0); return { vb: f.vb, ar: f.w / f.h, pintar: f.pintar === undefined ? null : (a, i, d) => f.pintar(i, a, d) }; };
+const cuboM = (si) => ({ vb: VB, ar: 100 / 110, pintar: (a, i, d, fondo) => SIMBOLOS[si][1](i, a, fondo, 10) });
+const SG = ['Space Grotesk', 700];
+/* [tipo, figura, paleta, letra] · tipo: lado (nombre y cubo) | junto (cubo pegado) | grande | solo | M (el cubo es la M) | Mlado | icono */
+const F = [
+  ['lado', '05', 'hueso', SG], ['lado', '05', 'blanco', SG], ['lado', '05', 'oscuro', SG], ['junto', '05', 'hueso', SG], ['grande', '05', 'negro', SG],
+  ['lado', 'cubo con hueco y cubito', 'hueso', SG], ['lado', 'cubo con hueco y cubito', 'blanco', ['Outfit', 700]], ['lado', 'escalón', 'hueso', SG], ['lado', 'cubo de piezas', 'blanco', SG], ['lado', 'cubo de piezas', 'hueso', SG],
+  ['lado', 'cubo con hueco y cubito', 'oscuro', SG], ['lado', 'cubo con hueco y cubito', 'negro', ['Outfit', 700]], ['lado', 'escalón', 'oscuro', SG], ['lado', 'cubo de piezas', 'negro', ['Outfit', 700]], ['lado', 'escalón', 'negro', ['Outfit', 700]],
+  ['solo', 'cubo con hueco y cubito', 'oscuro', SG], ['solo', 'cubo con hueco y cubito', 'hueso', SG], ['solo', 'escalón', 'blanco', SG], ['solo', 'cubo de piezas', 'oscuro', SG], ['solo', 'cubo con hueco y cubito', 'violeta', SG],
+  ['M', 'cubo M', 'hueso', SG], ['M', 'cubo M', 'oscuro', SG], ['Mlado', 'cubo M', 'blanco', SG], ['icono', 'cubo M', 'oscuro', SG], ['M', 'cubo M, techo aparte', 'negro', ['Outfit', 700]],
+];
+const forma = (n) => n === '05' ? CUBO05 : n.startsWith('cubo M') ? cuboM(n === 'cubo M' ? 0 : 1) : fig(n);
+const NOMBRE = { lado: 'nombre y cubo', junto: 'cubo pegado', grande: 'cubo grande', solo: 'símbolo', M: 'el cubo es la M', Mlado: 'cubo M y nombre', icono: 'ícono de app' };
+const el = document.getElementById('hoja'), fichas = [];
+const pedir = (f, w) => { const k = document.createElement('link'); k.rel = 'stylesheet'; k.href = 'https://fonts.googleapis.com/css2?family=' + f.replace(/ /g, '+') + ':wght@' + w + ';500&display=block'; document.head.appendChild(k); };
+F.forEach(([tipo, n, pa, [f, w]], k) => { pedir(f, w); const p = PAL[pa];
+  fichas.push(`<div class="ficha" style="background:${p[0]};color:${p[1]}" data-k="${k}"><span class="fam">${NOMBRE[tipo]} · ${n === '05' ? 'el 05' : n} · ${pa}</span>
+    <div class="lienzo"><div class="logo"></div></div><span class="num">${String(k + 1).padStart(2, '0')}</span><span class="fuente">${f}</span></div>`); });
+el.innerHTML = `<div class="cab"><div><h1>Grupo Mazi · el cubo oscuro de techo morado</h1>
+  <p>El 05 afinado; el nombre con cubos de cubitos (la idea del GameCube —un cubo con hueco y un cubito adentro—, no su G); esos cubos solos; y la M que es un cubo. Todo en Space Grotesk con las letras juntas, como el 05.</p></div>
+  <div class="rango">opciones<b>25</b></div></div><div class="rej">${fichas.join('')}</div>
+  <div class="pie"><span>Grupo Mazi · cubos</span><span>Cubos en retícula isométrica, dibujados en vector. Letras de Google Fonts, licencia OFL.</span></div>`;
+
+const S = 120, cv = document.createElement('canvas').getContext('2d');
+const dibujo = (fo, p, alto, x, y) => { const an = alto * fo.ar;
+  return [`<svg viewBox="${fo.vb}" width="${an.toFixed(1)}" height="${alto.toFixed(1)}" style="left:${x.toFixed(1)}px;top:${y.toFixed(1)}px">${fo.pintar(p[2], p[3], p[4], p[0])}</svg>`, an]; };
+function palabra(txt, f, w, sz, x0, base, enc = .03, extra = '') {
+  cv.font = `${w} ${sz}px "${f}"`; const asc = cv.measureText('M').fontBoundingBoxAscent; let x = x0, h = '';
+  for(const ch of txt){ const m = cv.measureText(ch), pen = x + m.actualBoundingBoxLeft;
+    h += `<span style="left:${pen.toFixed(2)}px;top:${(base - asc).toFixed(2)}px;font:${w} ${sz}px '${f}';${extra}">${ch}</span>`; x = pen + m.actualBoundingBoxRight - sz * enc; }
+  return [h, x + sz * enc];
+}
+function armar(ficha){
+  const [tipo, n, pa, [f, w]] = F[+ficha.dataset.k], p = PAL[pa], fo = forma(n);
+  /* el cubo cuboM lleva tinta en la cara izquierda (p[1] en las de luz) */
+  const pM = [p[0], p[1], p[2], p[1], p[4]];
+  cv.font = `${w} ${S}px "${f}"`; const cap = cv.measureText('M').actualBoundingBoxAscent;
+  let h = '', ancho = 0, alto = 0;
+  if(tipo === 'lado' || tipo === 'junto' || tipo === 'grande'){
+    const [t, x] = palabra('MAZI', f, w, S, 0, cap);
+    const alt = tipo === 'grande' ? cap * 1.5 : n === '05' ? cap : cap * 1.08, hueco = tipo === 'junto' ? cap * .06 : cap * .24;
+    const [s, an] = dibujo(fo, p, alt, x + hueco, cap - alt);
+    h = t + s; ancho = x + hueco + an; alto = cap;
+  } else if(tipo === 'solo'){ const [s, an] = dibujo(fo, p, 220, 0, 0); h = s; ancho = an; alto = 220; }
+  else if(tipo === 'M'){
+    const alt = cap * 110 / 74, base = alt * 104 / 110, [s, an] = dibujo(fo, pM, alt, 0, 0);
+    const [t, x] = palabra('AZI', f, w, S, an * 92 / 100 - S * .03, base); h = s + t; ancho = x; alto = base;
+  } else if(tipo === 'Mlado'){
+    const alt = cap * 1.55, [s, an] = dibujo(fo, pM, alt, 0, 0), base = alt * 104 / 110;
+    const [t, x] = palabra('MAZI', f, w, S, an + cap * .32, base);
+    const [g2] = palabra('GRUPO', f, 500, S * .3, an + cap * .36, base - cap - cap * .22, -.4, 'opacity:.7');
+    h = s + t + g2; ancho = x; alto = base;
+  } else {
+    const lado = 200; h = `<i style="left:0;top:0;width:${lado}px;height:${lado}px;border-radius:46px;background:#16181C"></i>` + dibujo(fo, ['#16181C', '#FFFFFF', V, '#FFFFFF', '#8C8794'], 130, (lado - 118) / 2, 30)[0];
+    ancho = alto = lado;
+  }
+  const g = ficha.querySelector('.logo'); g.innerHTML = h; g.style.width = ancho + 'px'; g.style.height = alto + 'px';
+}
+(async () => {
+  await document.fonts.ready;
+  for(const [, , , [f, w]] of F) await document.fonts.load(`${w} ${S}px "${f}"`, 'MAZIGRUPO');
+  document.querySelectorAll('.ficha').forEach(armar);
+  for(const lz of document.querySelectorAll('.lienzo')){
+    const g = lz.querySelector('.logo'), a = lz.getBoundingClientRect(), r = g.getBoundingClientRect();
+    let u = { l:1e9, t:1e9, d:-1e9, b:-1e9 };
+    for(const e of g.children){ const q = e.getBoundingClientRect(); if(!q.width) continue; u = { l:Math.min(u.l, q.left), t:Math.min(u.t, q.top), d:Math.max(u.d, q.right), b:Math.max(u.b, q.bottom) }; }
+    const sc = Math.min(a.width / (u.d - u.l), a.height / (u.b - u.t)) * .9, cx = (u.l + u.d) / 2, cy = (u.t + u.b) / 2;
+    g.style.transformOrigin = `${(cx - r.left).toFixed(1)}px ${(cy - r.top).toFixed(1)}px`;
+    g.style.transform = `translate(${(a.left + a.width / 2 - cx).toFixed(1)}px, ${(a.top + a.height / 2 - cy).toFixed(1)}px) scale(${sc.toFixed(3)})`;
+  }
+  document.body.dataset.listo = '1';
+})();
+</script>
+</body>
+</html>

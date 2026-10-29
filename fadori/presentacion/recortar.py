@@ -17,11 +17,15 @@ from PIL import Image
 
 # archivo: (izquierda, arriba, derecha, abajo) en fracción de la imagen · qué queda
 RECORTES = {
-    '05-mostrador.png':      ((.09, .195, .91, .62), 'el pedido de Beto, con sus dos platillos y el botón'),
+    # las del 21 de octubre, de la app rediseñada
+    '05-mostrador.png':      ((.04, .12, .66, .72), 'el pedido que sigue y la fila, con quién y qué pidió'),
     '06-medidor.png':        ((.00, .01, .99, .385), 'las ocho cifras del día, que es la medición'),
     '01-cortinilla.png':     ((.06, .30, .94, .70), 'la hamburguesa y el logotipo, que es de lo que habla la lámina'),
-    '03-mi-turno.png':       ((.03, .07, .97, .545), 'el número de turno grande'),
-    '02-menu.png':           ((.03, .07, .97, .765), 'la pregunta y el plato del día'),
+    '03-mi-turno.png':       ((.00, .06, 1.0, .60), 'el número de turno grande y cuánto falta'),
+    '02-menu.png':           ((.00, .00, 1.0, .75), 'la pregunta, el buscador y los platillos con su foto'),
+    '09-credencial.png':     ((.00, .06, 1.0, .62), 'el paso de la credencial'),
+    '12-cobro.png':          ((.20, .07, .80, 1.0), 'la hoja de cobro con la calculadora'),
+    '13-fiados.png':         ((.04, .20, .91, .54), 'quién debe y sus botones'),
     '04-pantalla-turnos.png':((.00, .00, 1.0, 1.0), 'ya se lee entera: números enormes sobre negro'),
 }
 

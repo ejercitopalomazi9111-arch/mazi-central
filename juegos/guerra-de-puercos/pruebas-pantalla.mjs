@@ -1043,6 +1043,160 @@ console.log('\n── Abrir el juego por primera vez ──');
   await limpio.close();
 }
 
+/* ── LO QUE REPORTÓ CARLOS EL 22 DE OCTUBRE ───────────────────────────────
+   «que no se cambien las cartas al usar una» y «que no se traben después de
+   jugar y aparezcan en negro». Se juega como en el teléfono —con el dedo—,
+   seis rondas, y se mide lo que antes pasaba: la mano entera se borraba y se
+   volvía a repartir en cada ronda. */
+console.log('\n── Jugar una carta no vuelve a repartir la mano (22 de octubre) ──');
+{
+  const tel = await b.newContext({ viewport:{ width:390, height:844 }, hasTouch:true, isMobile:true, deviceScaleFactor:2 });
+  const p3 = await tel.newPage();
+  const rotos3 = [];
+  p3.on('pageerror', e => rotos3.push(e.message));
+  await p3.goto(BASE + '/juegos/guerra-de-puercos/');
+  await p3.click('[data-modo="maquina"]');
+  await p3.waitForSelector('#mMano .carta');
+  await p3.waitForTimeout(900);
+  let mismas = true, soloUnaNueva = true, sinDesborde = true, montones = true, negras = 0;
+  for(let r = 0; r < 6; r++){
+    /* Se marca cada botón de la mano con una etiqueta que sólo vive en ESE
+       nodo: si después de la ronda sigue ahí, el botón no se volvió a crear. */
+    await p3.evaluate(() => document.querySelectorAll('#mMano .carta').forEach(b => { b.__viejo = true; }));
+    const jugada = await p3.evaluate(() => [...document.querySelectorAll('#mMano .carta')].reverse().find(b => !b.dataset.esp).dataset.llave);
+    for(let i = 0; i < 3; i++){ await p3.tap('#mMano .carta[data-llave="' + jugada + '"]', { position:{ x:12, y:60 } }); await p3.waitForTimeout(90); }
+    await p3.waitForFunction(() => !document.querySelector('#fDuelo').classList.contains('oculto'), null, { timeout:4000 });
+    if(await p3.evaluate(() => !!J.acabo)) break;
+    await p3.click('#bSeguir');
+    await p3.waitForTimeout(60);
+    const m = await p3.evaluate((jugada) => {
+      const bs = [...document.querySelectorAll('#mMano .carta')];
+      const esp = bs.filter(b => b.dataset.esp).map(b => b.dataset.esp);
+      return {
+        viejas: bs.filter(b => b.__viejo).length, nuevas: bs.filter(b => !b.__viejo).length, total: bs.length,
+        sigueLaJugada: bs.some(b => b.dataset.llave === jugada),
+        repetidas: esp.length !== new Set(esp).size,
+        desborde: document.documentElement.scrollWidth - innerWidth,
+        /* una carta sin dibujo pintaría su fondo: tiene que ser el reverso, no negro */
+        fondoNegro: bs.filter(b => /^rgb\(27, 14, 22\)/.test(getComputedStyle(b).backgroundColor) && !/reverso/.test(getComputedStyle(b).backgroundImage)).length,
+      };
+    }, jugada);
+    if(m.sigueLaJugada || m.viejas < m.total - 2) mismas = false;
+    if(m.nuevas > 2) soloUnaNueva = false;
+    if(m.desborde > 0) sinDesborde = false;
+    if(m.repetidas) montones = false;
+    negras += m.fondoNegro;
+  }
+  ok('las cartas que no se jugaron son las MISMAS (no se vuelven a crear)', mismas);
+  ok('después de jugar sólo entra la carta que llega del mazo', soloUnaNueva);
+  ok('con la mano llena la página no se recorre de lado', sinDesborde);
+  ok('los +5 y −5 iguales van en un solo montón con su «×N»', montones);
+  ok('ninguna carta tiene fondo negro mientras carga su dibujo', negras === 0, String(negras));
+  ok('jugar con el dedo no tiró ningún error', rotos3.length === 0, rotos3[0] || '');
+  await tel.close();
+}
+
+console.log('\n── La economía y el tutorial (22 de octubre) ──');
+{
+  const ctx4 = await b.newContext({ viewport:{ width:390, height:844 }, hasTouch:true, isMobile:true });
+  const p4 = await ctx4.newPage();
+  const rotos4 = [];
+  p4.on('pageerror', e => rotos4.push(e.message));
+  await p4.goto(BASE + '/juegos/guerra-de-puercos/');
+  await p4.waitForFunction(() => CAT.listo);
+  await p4.waitForTimeout(300);
+  ok('el primero que abre el juego trae monedas para su primer sobre', await p4.evaluate(() => CARTERA.monedas >= SOBRES[0].precio), String(await p4.evaluate(() => CARTERA.monedas)));
+  ok('perder una partida paga lo bastante para volver a la tienda', await p4.evaluate(() => PAGA.pierde + 10 >= SOBRES[0].precio / 2));
+  const sobres = await p4.evaluate(() => {
+    CARTERA.monedas = 10000;
+    const salio = []; for(let i = 0; i < 40; i++) salio.push(...abrirSobre(SOBRES[0]));
+    return { especiales: salio.filter(x => !'SABCD'.includes(x.f.nivel) || x.f.nivel.length !== 1).length,
+             devuelve: salio.filter(x => x.repetida).every(x => x.vuelven === DEVUELVE[x.f.nivel]) };
+  });
+  ok('ningún sobre da la Alcancía ni las Carnitas (no se coleccionan)', sobres.especiales === 0, String(sobres.especiales));
+  ok('una repetida devuelve según su nivel', sobres.devuelve);
+  ok('mientras falte alguna, cada sobre trae al menos una nueva', await p4.evaluate(() => {
+    CARTERA.tengo = {}; regalarArranque && 0;
+    const todas = CAT.todas.filter(c => 'SABCD'.includes(c.nivel) && c.nivel.length === 1);
+    for(const f of todas.slice(0, todas.length - 3)) CARTERA.tengo[f.nombre + '·' + f.puntos] = 1;   /* faltan 3 */
+    CARTERA.monedas = 1000;
+    const r = abrirSobre(SOBRES[0]);
+    return r.some(x => !x.repetida);
+  }));
+  ok('la primera victoria del día paga de más, y sólo la primera', await p4.evaluate(() => {
+    try{ localStorage.removeItem('puercos_victoria_dia'); }catch(e){}
+    const a = pagarPartida('gana', 10), c = pagarPartida('gana', 10);
+    return a.bono === PAGA.primeraDelDia && c.bono === 0 && a.total === c.total + PAGA.primeraDelDia;
+  }));
+  /* El tutorial: se abre solo desde «Aprender a jugar» y señala la mano. */
+  await p4.reload(); await p4.waitForFunction(() => CAT.listo);
+  await p4.click('#bGuia');
+  await p4.waitForSelector('#guia:not([hidden])', { timeout:4000 });
+  ok('«Aprender a jugar» abre el tutorial señalando la mano', (await p4.textContent('#guiaTit')).includes('mano')
+     && await p4.evaluate(() => document.querySelector('#mMano').classList.contains('guiado')));
+  ok('el globo no tapa la mano', await p4.evaluate(() => {
+    const g = document.querySelector('#guia').getBoundingClientRect(), m = document.querySelector('#mMano').getBoundingClientRect();
+    return g.bottom <= m.top || g.top >= m.bottom;
+  }));
+  const k = await p4.evaluate(() => [...document.querySelectorAll('#mMano .carta')].reverse().find(x => !x.dataset.esp).dataset.llave);
+  await p4.tap('#mMano .carta[data-llave="' + k + '"]', { position:{ x:12, y:60 } });
+  await p4.waitForTimeout(200);
+  ok('al elegir carta, el tutorial pasa a «mándala a la mesa»', /mesa/.test(await p4.textContent('#guiaTit')));
+  await p4.click('#guiaSaltar');
+  ok('«Saltar tutorial» lo apaga para siempre', await p4.evaluate(() => guiaTerminada() && document.querySelector('#guia').hidden));
+  ok('el tutorial no tiró errores', rotos4.length === 0, rotos4[0] || '');
+  await ctx4.close();
+}
+
+console.log('\n── El rótulo, la carta que revienta y la carrera (lo de Godines, 23 de octubre) ──');
+{
+  const ctx5 = await b.newContext({ viewport:{ width:390, height:844 }, hasTouch:true, isMobile:true });
+  const p5 = await ctx5.newPage();
+  const rotos5 = [];
+  p5.on('pageerror', e => rotos5.push(e.message));
+  await p5.goto(BASE + '/juegos/guerra-de-puercos/');
+  await p5.waitForFunction(() => CAT.listo);
+  await p5.evaluate(() => { try{ localStorage.setItem('puercos_guia', 'hecha'); }catch(e){} });
+  await p5.click('[data-modo="maquina"]');
+  await p5.waitForSelector('#mMano .carta');
+  if(await p5.$('#guia:not([hidden])')) await p5.click('#guiaSaltar');
+  await p5.waitForFunction(() => !document.querySelector('#mMano .carta.llega'), null, { timeout:8000 }).catch(() => {});
+  ok('sin carta levantada no hay rótulo', await p5.$eval('#mFicha', e => e.hidden));
+  await p5.evaluate(() => [...document.querySelectorAll('#mMano .carta')].find(x => !x.dataset.esp).click());
+  await p5.waitForTimeout(300);
+  const ficha = await p5.evaluate(() => {
+    const f = document.querySelector('#mFicha'), c = document.querySelector('#mMano .carta.marcada');
+    const fr = f.getBoundingClientRect(), cr = c.getBoundingClientRect(), dato = cartaDe(c);
+    return { visible: !f.hidden, texto: f.textContent, rareza: RAREZA[dato.nivel], nivel: dato.nivel,
+             encima: fr.bottom <= cr.top + 4, dentro: fr.left >= 0 && fr.right <= innerWidth };
+  });
+  ok('al levantar una carta sale su rótulo con nivel y rareza', ficha.visible && ficha.texto.includes(ficha.rareza) && ficha.texto.startsWith(ficha.nivel), ficha.texto);
+  ok('el rótulo va ARRIBA de la carta, no encima del dibujo', ficha.encima);
+  ok('y no se sale de la pantalla', ficha.dentro);
+  /* jugarla: el rótulo se va y, si hubo daño, la perdedora revienta en la mesa */
+  await p5.evaluate(() => { const c = document.querySelector('#mMano .carta.marcada'); c.click(); c.click(); });
+  await p5.waitForSelector('#fDuelo:not(.oculto)', { timeout:6000 });
+  ok('al jugar la carta el rótulo se esconde', await p5.$eval('#mFicha', e => e.hidden));
+  await p5.waitForTimeout(1100);
+  const golpe = await p5.evaluate(() => { const h = J.historia[J.historia.length - 1];
+    const perdio = h.dano ? (h.perdio === 'a' ? '#mSlotA' : '#mSlotB') : null;
+    return { dano: h.dano, revento: perdio ? document.querySelectorAll(perdio + ' .carta.revienta').length : 0,
+             otra: perdio ? document.querySelectorAll((perdio === '#mSlotA' ? '#mSlotB' : '#mSlotA') + ' .carta.revienta').length : 0,
+             combinada: h.a.combinada || h.b.combinada }; });
+  ok('la carta que pierde revienta, y sólo ésa', golpe.dano ? golpe.revento > 0 && golpe.otra === 0 : golpe.revento === 0, JSON.stringify(golpe));
+  ok('sin combinación no corren puercos', golpe.combinada || await p5.$$eval('.carrera', a => a.length) === 0);
+  await p5.evaluate(() => carreraDePuercos());
+  const carrera = await p5.evaluate(() => { const i = [...document.querySelectorAll('.carrera i')];
+    return { n: i.length, arte: i.every(x => /arte\/web\/\d+-(normal|mamado|manada)\.webp/.test(x.style.backgroundImage)) }; });
+  ok('la carrera usa los puercos del arte de verdad', carrera.n >= 7 && carrera.arte, JSON.stringify(carrera));   /* 14 si la ronda ya traía combinación */
+  ok('y su arte existe', (await Promise.all(['003-normal', '069-mamado', '085-manada'].map(n => p5.evaluate(u => fetch(u).then(r => r.ok), 'arte/web/' + n + '.webp')))).every(Boolean));
+  await p5.waitForTimeout(3200);
+  ok('la carrera se limpia sola', await p5.$$eval('.carrera', a => a.length) === 0);
+  ok('ni la carrera ni el rótulo ensanchan la página', await p5.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  ok('lo de Godines no tiró errores', rotos5.length === 0, rotos5[0] || '');
+  await ctx5.close();
+}
+
 ok('la página no tiró ningún error', errores.length === 0, errores[0] || '');
 
 await b.close();

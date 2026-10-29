@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grupo Mazi · ronda 6 · la Z</title>
+<!--
+  RONDA 6 DE LOGOS (24 de octubre de 2026). Carlos: «enfócate más en la Z que en la M en algunos».
+  ?hoja=1  25 símbolos hechos de la Z, con el nombre
+  ?hoja=2  25 maneras de que la Z mande dentro de «MAZI»
+  50 letras nuevas (letras.js), ninguna de las rondas 1 a 5. Se arma con armar.mjs.
+-->
+<style>
+:root{ --vacio:#100A18; --hueso:#EAE5E3; --gris:#A79CB4 }
+*{ box-sizing:border-box; margin:0 }
+html, body{ background:var(--vacio); color:var(--hueso); font:400 16px/1.4 system-ui, sans-serif }
+.hoja{ width:2120px; padding:56px 60px 48px }
+.cab{ display:flex; align-items:end; gap:24px; margin-bottom:32px }
+.cab h1{ font:800 44px/1.05 system-ui; letter-spacing:-.02em }
+.cab p{ margin-top:6px; color:var(--gris); font-size:21px; max-width:84ch }
+.cab .rango{ margin-left:auto; text-align:right; color:var(--gris); font-size:19px; white-space:nowrap }
+.cab .rango b{ display:block; color:var(--hueso); font-size:30px }
+.rej{ display:grid; grid-template-columns:repeat(5, 1fr); gap:16px }
+.ficha{ position:relative; height:340px; border-radius:22px; overflow:hidden; box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.07) }
+.lienzo{ position:absolute; inset:40px 34px 58px; display:grid; place-items:center }
+.logo{ white-space:nowrap; line-height:1 }
+.num{ position:absolute; left:18px; bottom:15px; font:700 18px/1 ui-monospace, Menlo, monospace; opacity:.6 }
+.fuente{ position:absolute; right:18px; bottom:16px; font:500 14px/1 system-ui; opacity:.5 }
+.fam{ position:absolute; left:18px; top:15px; font:600 12px/1 system-ui; letter-spacing:.12em; text-transform:uppercase; opacity:.45 }
+.pie{ margin-top:26px; display:flex; justify-content:space-between; color:#6E6380; font-size:17px }
+svg{ display:block; overflow:visible }
+</style>
+</head>
+<body>
+<div class="hoja" id="hoja"></div>
+<script type="module">
+import { Z, ZD } from './marcas.js';
+import { LETRAS } from './letras.js';
+const VA = '#100A18', H = '#EAE5E3', V = '#AC27FF', L = '#C878FF', N = '#07050A';
+const F = { d:[VA, H], dv:[VA, V], l:[H, VA], lv:[H, V], v:[V, '#FFFFFF'], n:[N, L], b:['#FFFFFF', '#0B0B0F'], k:['#0B0B0F', '#FFFFFF'] };
+const FONDOS = ['k', 'lv', 'd', 'v', 'b', 'n', 'l', 'dv'];
+if(Z.length !== 25 || LETRAS.length !== 50) throw new Error(`son ${Z.length} símbolos y ${LETRAS.length} letras`);
+const vistas = new Set(); for(const [l] of LETRAS){ if(vistas.has(l)) throw new Error('letra repetida: ' + l); vistas.add(l); }
+
+const t = (txt, f, w, s, mas = '') => `<span style="font-family:'${f}';font-weight:${w};font-size:${s}px;${mas}">${txt}</span>`;
+const fila = (gap, ...x) => `<div style="display:flex;align-items:center;gap:${gap}px">${x.join('')}</div>`;
+const filaB = (gap, ...x) => `<div style="display:flex;align-items:baseline;gap:${gap}px">${x.join('')}</div>`;
+const col = (gap, al, ...x) => `<div style="display:flex;flex-direction:column;align-items:${al};gap:${gap}px">${x.join('')}</div>`;
+const ancho = (e) => `letter-spacing:${e}em;margin-right:-${e}em`;
+const NOMBRES = [['GRUPO', 'MAZI'], ['Grupo', 'Mazi'], ['grupo', 'mazi']];
+
+/* hoja 1: el símbolo de la Z con el nombre, en 25 acomodos distintos */
+const ACOMODOS = [
+  (s, f, w, g, m) => fila(20, s(96), col(0, 'flex-start', t(g, f, w, 24, 'letter-spacing:.34em'), t(m, f, w, 66))),
+  (s, f, w, g, m) => col(14, 'center', s(110), t(g + ' ' + m, f, w, 40, 'letter-spacing:.06em')),
+  (s, f, w, g, m) => fila(18, t(g + ' ' + m, f, w, 46), s(80)),
+  (s, f, w, g, m) => col(10, 'center', s(130), t(g + ' ' + m, f, w, 20, ancho(.5))),
+  (s, f, w, g, m) => fila(18, s(90), '<div style="width:3px;height:90px;background:currentColor"></div>', col(0, 'flex-start', t(g, f, w, 28), t(m, f, w, 58))),
+];
+/* hoja 2: la Z manda dentro de la palabra. Cada función recibe la letra, el peso y los colores */
+const DENTRO = [
+  ['la Z gigante', (f, w) => col(6, 'flex-start', filaB(4, t('MA', f, w, 64), t('Z', f, w, 170, 'line-height:.8'), t('I', f, w, 64)), t('GRUPO', f, w, 18, 'letter-spacing:.6em'))],
+  ['sólo la Z en contorno', (f, w) => filaB(2, t('MA', f, w, 100), t('Z', f, w, 100, '-webkit-text-stroke:3px var(--tinta);color:transparent'), t('I', f, w, 100))],
+  ['la Z calada en su caja', (f, w, c) => filaB(6, t('MA', f, w, 96), `<span style="background:currentColor;border-radius:8px;padding:0 10px">${t('Z', f, w, 96, `color:${c[0]}`)}</span>`, t('I', f, w, 96))],
+  ['la Z inclinada', (f, w) => col(8, 'center', filaB(4, t('MA', f, w, 100), t('Z', f, w, 100, 'display:inline-block;transform:rotate(-14deg)'), t('I', f, w, 100)), t('grupo', f, w, 22, ancho(.5)))],
+  ['la Z se baja', (f, w) => filaB(2, t('MA', f, w, 96), t('Z', f, w, 96, 'position:relative;top:30px'), t('I', f, w, 96))],
+  ['la Z subrayada', (f, w) => filaB(2, t('MA', f, w, 100), `<span style="border-bottom:12px solid currentColor;padding-bottom:4px">${t('Z', f, w, 100)}</span>`, t('I', f, w, 100))],
+  ['la Z en un círculo', (f, w) => fila(6, t('MA', f, w, 92), `<span style="width:116px;height:116px;border:5px solid currentColor;border-radius:50%;display:grid;place-items:center">${t('Z', f, w, 80)}</span>`, t('I', f, w, 92))],
+  ['la Z más ancha', (f, w) => filaB(2, t('MA', f, w, 96), t('Z', f, w, 96, 'display:inline-block;transform:scaleX(1.6);margin:0 26px'), t('I', f, w, 96))],
+  ['Z de esténcil', (f, w, c) => filaB(8, t('MA', f, w, 100), ZD.estencil(72, c[0]), t('I', f, w, 100))],
+  ['Z de doble línea', (f, w, c) => col(10, 'center', filaB(8, t('MA', f, w, 100), ZD.doble(70, c[0]), t('I', f, w, 100)), t('GRUPO', f, w, 18, ancho(.7)))],
+  ['Z de puntos', (f, w) => filaB(8, t('MA', f, w, 100), ZD.puntos(72), t('I', f, w, 100))],
+  ['la Z en la cima', (f, w) => filaB(4, t('M', f, w, 56), t('A', f, w, 80), t('Z', f, w, 130), t('I', f, w, 80))],
+  ['entre corchetes', (f, w) => filaB(2, t('MA', f, w, 92), t('[Z]', f, w, 92), t('I', f, w, 92))],
+  ['Z con barra', (f, w) => filaB(8, t('MA', f, w, 100), ZD.barra(72), t('I', f, w, 100))],
+  ['la Z sola, el nombre chico', (f, w) => fila(14, t('Z', f, w, 200, 'line-height:.8'), col(2, 'flex-start', t('grupo', f, w, 26), t('mazi', f, w, 26)))],
+  ['sólo la Z llena', (f, w) => filaB(2, t('MA', f, w, 100, '-webkit-text-stroke:2.5px var(--tinta);color:transparent'), t('Z', f, w, 100), t('I', f, w, 100, '-webkit-text-stroke:2.5px var(--tinta);color:transparent'))],
+  ['fichas: la Z llena', (f, w, c) => fila(8, ...['M', 'A', 'Z', 'I'].map(x => `<span style="width:84px;height:92px;border-radius:12px;display:grid;place-items:center;${x === 'Z' ? `background:currentColor` : 'border:3px solid currentColor'}">${t(x, f, w, 60, x === 'Z' ? `color:${c[0]}` : '')}</span>`))],
+  ['la Z con sombra', (f, w) => filaB(2, t('MA', f, w, 100), t('Z', f, w, 100, 'text-shadow:6px 6px 0 color-mix(in srgb, currentColor 35%, transparent)'), t('I', f, w, 100))],
+  ['la Z y su reflejo', (f, w) => filaB(2, t('MA', f, w, 96), `<span style="display:inline-flex;flex-direction:column;align-items:center">${t('Z', f, w, 96, 'line-height:.8')}${t('Z', f, w, 96, 'line-height:.8;transform:scaleY(-1);opacity:.25;display:block')}</span>`, t('I', f, w, 96))],
+  ['Z redonda', (f, w) => col(10, 'center', filaB(8, t('MA', f, w, 100), ZD.redonda(70), t('I', f, w, 100)), t('grupo', f, w, 22, ancho(.5)))],
+  ['Z doblada', (f, w) => filaB(8, t('MA', f, w, 100), ZD.doblada(72), t('I', f, w, 100))],
+  ['la Z resalta', (f, w) => col(10, 'center', filaB(2, t('MA', f, w, 100, 'opacity:.38'), t('Z', f, w, 100), t('I', f, w, 100, 'opacity:.38')), t('grupo', f, w, 22, ancho(.5)))],
+  ['la Z con chispa', (f, w) => filaB(6, t('MA', f, w, 100), ZD.chispa(72), t('I', f, w, 100))],
+  ['la Z en otra caja', (f, w) => fila(10, t('MA', f, w, 90), `<span style="border:4px solid currentColor;padding:4px 16px">${t('Z', f, w, 90)}</span>`, t('I', f, w, 90))],
+  ['Z de cuadritos', (f, w) => col(10, 'flex-start', filaB(8, t('MA', f, w, 100), ZD.pix(70), t('I', f, w, 100)), t('grupo', f, w, 22, 'letter-spacing:.4em'))],
+];
+
+const hoja = +(new URLSearchParams(location.search).get('hoja') || 1), el = document.getElementById('hoja');
+const fichas = [];
+for(let k = 0; k < 25; k++){
+  const i = (hoja - 1) * 25 + k, [f, w] = LETRAS[i], c = F[FONDOS[(i * 3 + Math.floor(i / 5)) % 8]];
+  const lk = document.createElement('link'); lk.rel = 'stylesheet';
+  lk.href = 'https://fonts.googleapis.com/css2?family=' + f.replace(/ /g, '+') + (w === 400 ? '' : ':wght@' + w) + '&display=block'; document.head.appendChild(lk);
+  let nombre, logo;
+  if(hoja === 1){ const [n, s] = Z[k], [g, m] = NOMBRES[(k + Math.floor(k / 5)) % 3]; nombre = n; logo = ACOMODOS[(k * 2 + Math.floor(k / 5)) % 5]((x) => s(x, c[0]), f, w, g, m); }
+  else { const [n, fn] = DENTRO[k]; nombre = n; logo = fn(f, w, c); }
+  fichas.push(`<div class="ficha" style="background:${c[0]};color:${c[1]};--fondo:${c[0]};--tinta:${c[1]}"><span class="fam">${nombre}</span><div class="lienzo"><div class="logo">${logo}</div></div>
+    <span class="num">${String(i + 1).padStart(2, '0')}</span><span class="fuente">${f}</span></div>`);
+}
+el.innerHTML = `<div class="cab"><div><h1>Grupo Mazi · ronda 6 · la Z · ${hoja === 1 ? 'el símbolo es la Z' : 'la Z manda dentro de MAZI'}</h1>
+  <p>${hoja === 1 ? 'Veinticinco símbolos hechos de la Z, cada uno con su letra y su acomodo.' : 'Veinticinco maneras de que la Z sea la que se ve primero dentro del nombre.'} De un solo color, ninguno igual a otro ni a las rondas anteriores.</p></div>
+  <div class="rango">hoja<b>${hoja} de 2</b></div></div>
+  <div class="rej">${fichas.join('')}</div>
+  <div class="pie"><span>Grupo Mazi · ronda 6 de logos · hoja ${hoja} de 2</span><span>Símbolos dibujados en vector. Letras de Google Fonts, licencia OFL.</span></div>`;
+(async () => {
+  await document.fonts.ready;
+  for(const lz of document.querySelectorAll('.lienzo')){
+    const g = lz.querySelector('.logo'), a = lz.getBoundingClientRect(), r = g.getBoundingClientRect();
+    let u = { l:r.left, t:r.top, d:r.right, b:r.bottom };
+    for(const e of g.querySelectorAll('*')){ const q = e.getBoundingClientRect(); if(!q.width || !q.height) continue;
+      u = { l:Math.min(u.l, q.left), t:Math.min(u.t, q.top), d:Math.max(u.d, q.right), b:Math.max(u.b, q.bottom) }; }
+    const sc = Math.min(1, a.width / (u.d - u.l), a.height / (u.b - u.t)), cx = (u.l + u.d) / 2, cy = (u.t + u.b) / 2;
+    g.style.transformOrigin = `${(cx - r.left).toFixed(1)}px ${(cy - r.top).toFixed(1)}px`;
+    g.style.transform = `translate(${(a.left + a.width / 2 - cx).toFixed(1)}px, ${(a.top + a.height / 2 - cy).toFixed(1)}px) scale(${sc.toFixed(3)})`;
+  }
+  document.body.dataset.listo = '1';
+})();
+</script>
+</body>
+</html>

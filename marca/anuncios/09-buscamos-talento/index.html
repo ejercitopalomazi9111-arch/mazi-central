@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Grupo Mazi · Buscamos talento</title>
+<!-- RECLUTAMIENTO 09 · ~36 s · 9:16 · voz Piper es_MX (local: el saldo de ElevenLabs se acabó en este
+     video; cuando regrese, se cambia la voz en guion.json y voces.mjs lo vuelve a hacer). Buscamos
+     artistas y creadores. Sólo lo confirmado: comisión por proyecto, WhatsApp y correo de la empresa.
+     Música: «Pamgaea», Kevin MacLeod (incompetech.com), CC BY 4.0.
+     node herramientas/video/armar.mjs marca/anuncios/09-buscamos-talento/index.html marca/anuncios/salida/09-buscamos-talento.mp4 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter+Tight:wght@600;800;900&display=block">
+<link rel="stylesheet" href="../comun.css">
+<script>window.listo = new Promise(r => window._listo = r);</script>
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>
+.rol{ position:absolute; transform:translateX(-50%); text-align:center; font:800 30px/1.05 var(--s); opacity:0; white-space:nowrap }
+.rol .ic{ display:grid; place-items:center; width:104px; height:104px; margin:0 auto 14px; border-radius:34px; background:#2A1A3A; box-shadow:0 20px 40px -18px #000 }
+#datos{ position:absolute; left:80px; right:150px; top:620px; display:grid; gap:24px; opacity:0 }
+#datos div{ display:flex; gap:22px; align-items:center; padding:30px 34px; border-radius:28px; background:#2A1A3A; font:700 46px/1.1 var(--t); letter-spacing:-.02em }
+#datos small{ display:block; font:700 26px/1 var(--s); letter-spacing:.16em; color:#C77DFF; margin-bottom:10px }
+#datos div.correo{ font-size:38px }
+</style>
+</head>
+<body>
+<div id="fondo" class="capa"></div>
+<canvas id="gl" class="capa"></canvas>
+<canvas id="c2" class="capa" width="1080" height="1920"></canvas>
+<div id="ui" class="capa">
+  <div id="titulo" class="grande"></div>
+  <div id="roles"></div>
+  <div id="datos"></div>
+</div>
+<div id="subs"></div>
+<div id="grano"></div>
+<script type="module">
+import { THREE, PAL, W, H, tramo, suave, sale, entra, resorte, mezcla, vida, escena3d, cubo, guion, sonidosVoz, subtitulos, grano, logo2d } from '../motor.js';
+import { logoVivo } from '../logo3d.js';
+import { salto } from '../personajes.js';
+import { persona, actuar } from '../gente.js';
+import { icono } from '../iconos.js';
+const $ = (s) => document.querySelector(s);
+const G = await guion('.'), L = (id) => G.de(id);
+const FIN = L('06').t1 + 2.6, fx = (n) => `../../../herramientas/video/efectos/${n}.wav`;
+window.VIDEO = { w: W, h: H, fps: 30, dur: FIN, musica: { archivo: '/tmp/claude-0/musica/Pamgaea.mp3', desde: 0, vol: .26, entrada: .2, fin: 2 },
+  sonidos: [...sonidosVoz(G, 1.15), [fx('whoosh'), L('03').t0 - .3, .5], ...[0, 1, 2, 3, 4].map(i => [fx('toque'), L('03').t0 + L('03').dur * i / 5, .4]), [fx('subida'), L('06').t0 + L('06').dur * .55, .45]] };
+await Promise.all(['700 80px "Space Grotesk"', '800 60px "Inter Tight"'].map(f => document.fonts.load(f)));
+const E = escena3d($('#gl'));
+/* los cinco oficios: gente de Kenney (CC0), con luz de estudio y su sombra */
+const ROLES = [['Fotógrafos', 'camera', 'male-a'], ['Editores', 'video', 'female-a'], ['Diseñadores', 'pen-tool', 'male-f'], ['Ilustradores', 'paintbrush', 'female-d'], ['Programadores', 'code-xml', 'male-e']];
+E.s.environmentIntensity = .7; E.sombras(5, [0, -.5, .3]);
+const gente = await Promise.all(ROLES.map(([, , n]) => persona(n, { alto: .8 }))), cubos = gente.map(p => p.obj); cubos.forEach(k => E.s.add(k));
+const piso = new THREE.Mesh(new THREE.PlaneGeometry(8, 8), new THREE.ShadowMaterial({ opacity: .4 })); piso.rotation.x = -Math.PI / 2; piso.receiveShadow = true; E.s.add(piso);
+const mazi = cubo(.8); E.s.add(mazi);
+const sub = subtitulos($('#subs'), G), gr = grano($('#grano'), .05), c2 = $('#c2').getContext('2d');
+const poner = (el, html) => { if(el.dataset.h !== html){ el.innerHTML = html; el.dataset.h = html; } };
+$('#roles').innerHTML = ROLES.map(([n, ic]) => `<div class="rol"><div class="ic">${icono(ic, '#F4EEF2', 1.8, 64)}</div>${n}</div>`).join('');
+$('#datos').innerHTML = `<div>${icono('message-circle', '#25D366', 2.2, 64)}<span><small>WHATSAPP</small>442 883 3786</span></div><div class="correo">${icono('send', '#C77DFF', 2.2, 60)}<span><small>CORREO</small>grupomazi.oficial@gmail.com</span></div>`;
+const aPantalla = (v) => { const p = v.clone().project(E.cam); return [(p.x + 1) / 2 * W, (1 - p.y) / 2 * H]; };
+
+window.pintar = async (t) => {
+  const l = Object.fromEntries(G.lineas.map(z => [z.id, z]));
+  let tit = '', a = 0, b = 0;
+  if(t < l['02'].t0 - .1){ tit = '<span class="m">¿DIBUJAS?</span><span class="m">¿EDITAS?</span><span class="m">¿PROGRAMAS?</span><span class="m v">¿DISEÑAS?</span>'; a = .3; b = l['02'].t0; }
+  else if(t < l['03'].t0 - .1){ tit = '<span class="m">SE BUSCAN</span><span class="m v">ARTISTAS</span><span class="m">Y CREADORES</span>'; a = l['02'].t0 - .1; b = l['03'].t0; }
+  else if(t >= l['04'].t0 - .1 && t < l['05'].t0 - .1){ tit = '<span class="m">HAZ LO QUE</span><span class="m">SABES HACER.</span><span class="m v">COMISIÓN</span><span class="m v">POR PROYECTO.</span>'; a = l['04'].t0 - .1; b = l['05'].t0; }
+  else if(t >= l['05'].t0 - .1 && t < l['06'].t0){ tit = '<span class="m">MÁNDANOS TU</span><span class="m v">PORTAFOLIO</span>'; a = l['05'].t0 - .1; b = l['06'].t0; }
+  else if(t >= l['06'].t0){ tit = '<span class="m">SI NO EXISTE</span><span class="m">EL EQUIPO…</span><span class="m v">TE ESTAMOS</span><span class="m v">BUSCANDO.</span>'; a = l['06'].t0 + l['06'].dur * .45; b = FIN + 1; }
+  poner($('#titulo'), tit); $('#titulo').style.opacity = tit ? vida(t, a, b, .3, .25) : 0;
+  [...$('#titulo').children].forEach((s, i) => { const u = sale(tramo(t, a + i * .1, a + .35 + i * .1)); s.style.transform = `translateY(${(1 - u) * 60}px)`; s.style.opacity = u; });
+  /* los cubitos: brincan al principio, luego en fila, cada uno con su oficio */
+  const fila = suave(tramo(t, l['03'].t0 - .4, l['03'].t0 + .3)), salen = suave(tramo(t, l['05'].t0 - .3, l['05'].t0 + .3));
+  cubos.forEach((k, i) => {
+    const sj = salto(t, .4 + i * .15 + Math.floor(t / 1.6) * 1.6, .3, .4), ent = sale(tramo(t, .2 + i * .1, .7 + i * .1));
+    const libre = new THREE.Vector3(-.9 + i * .45, -.75 + Math.sin(i * 2.1) * .15, .3), enF = new THREE.Vector3(-1.04 + i * .52, -.15, .4);
+    k.position.lerpVectors(libre, enF, fila); k.position.y += (t < l['03'].t0 ? sj.y : salto(t, l['03'].t0 + l['03'].dur * i / 5, .3, .4).y) + (1 - ent) * -3 - salen * 3;
+    k.position.y -= .22; k.rotation.set(.12, -.3 + i * .15 + Math.sin(t * 1.2 + i) * .1, 0);
+    const suNombre = l['03'].t0 + l['03'].dur * i / 5;
+    actuar(gente[i], t, [[0, 'fall'], [.7 + i * .1, 'jump', { vel: .9 }], [l['03'].t0 - .4, 'idle'], [suNombre, 'emote-yes', { una: true }], [suNombre + 1, 'idle'], [l['04'].t0 + i * .08, 'emote-yes', { una: true }], [l['04'].t0 + 1.2, 'idle'], [l['05'].t0 - .3, 'fall']]);
+    k.visible = salen < 1;
+    const r = $('#roles').children[i], [x, y] = aPantalla(k.position.clone().add(new THREE.Vector3(0, .62, 0))), u = sale(tramo(t, l['03'].t0 + l['03'].dur * i / 5 - .1, l['03'].t0 + l['03'].dur * i / 5 + .25));
+    r.style.left = x + 'px'; r.style.top = (y - 210 - (i % 2) * 125) + 'px'; r.style.opacity = u * (1 - tramo(t, l['04'].t0 - .3, l['04'].t0)); r.style.transform = `translateX(-50%) translateY(${(1 - u) * 30}px)`;
+  });
+  piso.position.set(0, mezcla(-.97 - .15, -.37, fila) - salen * 3, .3); piso.visible = salen < 1;
+  /* el portafolio: WhatsApp y correo */
+  const vd = vida(t, l['05'].t0 + .2, l['06'].t0 + l['06'].dur * .4, .35, .3); $('#datos').style.opacity = vd; $('#datos').style.transform = `translateY(${(1 - vd) * 40}px)`;
+  /* el cubo de Grupo Mazi al final */
+  const uM = tramo(t, l['06'].t0 + l['06'].dur * .4, l['06'].t0 + l['06'].dur * .4 + .5); mazi.visible = uM > 0;
+  mazi.position.set(0, -.55 + (1 - entra(Math.min(1, uM))) * 4, .3); mazi.rotation.set(.45, t * .6, 0);
+  E.cam.position.set(Math.sin(t * .4) * .1, 0, 9); E.cam.lookAt(0, 0, 0); E.pintar();
+  c2.clearRect(0, 0, W, H);
+  const uF = sale(tramo(t, l['06'].t1 + .2, l['06'].t1 + .8));
+  if(uF > 0){ mazi.visible = false; E.pintar(); logoVivo(c2, { t, desde: l['06'].t1 + .2, cx: W / 2, cy: 1180, ancho: 720 }); }
+  $('#fondo').style.background = `radial-gradient(70% 45% at 50% 55%, ${PAL.vino}66, transparent 70%), radial-gradient(120% 80% at 50% 0%, ${PAL.oscuro2}, ${PAL.oscuro} 70%)`;
+  sub(t); gr(t);
+};
+await pintar(0); window._listo();
+</script>
+</body>
+</html>

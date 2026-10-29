@@ -2465,7 +2465,9 @@ function leer(texto, evidencias){
          /^\[(hoja|img:\d+)\]$/i.test(xt) || (parr.length && esCampo(xt))) break;
       parr.push(xt); i++;
     }
-    if(parr.length) bloques.push({tipo:'p', html:'<p>'+enLinea(parr.join(' '))+'</p>'});
+    /* «**Tabla 3.** Variables…» es el título de la tabla que sigue: va pegado a ella */
+    if(parr.length) bloques.push({tipo:'p', pega:/^\*\*(tabla|cuadro|figura|gr[aá]fic[ao])\s+\d+\.?\*\*/i.test(parr[0]),
+      html:'<p>'+enLinea(parr.join(' '))+'</p>'});
   }
 
   /* las evidencias que nadie colocó a mano se van al final, con su apartado */
@@ -2718,6 +2720,17 @@ function alturaCon(el, primero){
   return alto;
 }
 
+/* el principio de una tabla —encabezado y n renglones— para saber si arranca aquí */
+function cabezaDeTabla(tabla, n){
+  const c = tabla.cloneNode(false);
+  const thead = tabla.querySelector('thead');
+  if(thead) c.appendChild(thead.cloneNode(true));
+  const tb = document.createElement('tbody');
+  Array.from(tabla.querySelectorAll('tbody tr')).slice(0, n).forEach(f => tb.appendChild(f.cloneNode(true)));
+  c.appendChild(tb);
+  return c;
+}
+
 /* corta una tabla que no cabe, repitiendo su encabezado */
 function partirTabla(tabla, medidorDoc, disponible){
   const thead = tabla.querySelector('thead');
@@ -2800,18 +2813,36 @@ function paginar(r){
     let h = alturaCon(p.el, primeraDeHoja);
     const libre = altoDe() - usado;
 
-    /* un título no se queda huérfano al pie: se mide junto con lo que sigue */
+    /* un título no se queda huérfano al pie: se mide junto con lo que sigue.
+       ⚠ Antes se medía con la caja de `.doc`, que NO cuenta el margen de arriba
+       del título (se sale por el colapso de márgenes): faltaban unos milímetros,
+       el título cabía «con» la lista y luego la lista sola ya no. Así quedaron
+       «2.2 Delimitación» y «Anexo C» solos al pie del documento de Fadori. Ahora
+       se suma pieza por pieza con alturaCon, y se sigue la cadena: «### 7.3»
+       pega con «Tabla 3.», que pega con la tabla. De una tabla basta que quepan
+       su encabezado y dos renglones, porque la tabla sí se parte. */
     let cabe = h <= libre;
-    if(p.pega && piezas[i+1] && piezas[i+1].el){
-      medDoc.appendChild(piezas[i+1].el);
-      cabe = medDoc.getBoundingClientRect().height <= libre;
-      medDoc.removeChild(piezas[i+1].el);
+    if(p.pega){
+      let total = h, ant = p;
+      for(let k=i+1; ant.pega && piezas[k] && piezas[k].el && k <= i+3; k++){
+        const q = piezas[k];
+        const el = q.tipo === 'tabla' ? cabezaDeTabla(q.el, 2) : q.el;
+        medDoc.appendChild(el);
+        total += alturaCon(el, false);
+        medDoc.removeChild(el);
+        ant = q;
+      }
+      cabe = total <= libre;
     }
 
     if(!cabe && usado > 0){
       /* lo único que se parte a la mitad es una tabla, repitiendo encabezado */
       if(p.tipo === 'tabla'){
-        const cortes = partirTabla(p.el, medDoc, libre);
+        /* ⚠ partirTabla mide la caja SIN márgenes y aquí se cobra CON ellos:
+           el primer pedazo «cabía», al volver a medirlo ya no, y como entero sí
+           cabía en su molde la tabla se iba completa a la hoja siguiente y
+           dejaba su «Tabla 6.» solo al pie. Se le pasa el hueco sin márgenes. */
+        const cortes = partirTabla(p.el, medDoc, libre - (h - p.el.getBoundingClientRect().height));
         if(cortes){
           medDoc.textContent = '';
           piezas.splice(i, 1, {el:cortes[0], tipo:'tabla'}, {el:cortes[1], tipo:'tabla'});

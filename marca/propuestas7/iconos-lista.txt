@@ -1,0 +1,200 @@
+web|pi|PiBrowserDuotone|navegador
+web|tb|TbClick|clic
+web|ri|RiLayoutMasonryFill|maqueta
+web|pi|PiGlobeHemisphereWestFill|globo
+web|lu|LuLink2|enlace
+web|pi|PiDevicesBold|dispositivos
+web|tb|TbAppWindowFilled|ventana
+web|hi2|HiOutlineCursorArrowRays|cursor
+web|pi|PiPaletteDuotone|paleta
+web|pi|PiPenNibFill|plumilla
+web|tb|TbVectorBezier2|curva bézier
+web|pi|PiSelectionPlusBold|selección
+web|ri|RiPencilRuler2Fill|lápiz y regla
+web|pi|PiFrameCornersBold|marco
+web|tb|TbLayoutDashboard|tablero
+web|bs|BsWindowStack|ventanas
+web|pi|PiSwatchesFill|muestrario
+web|lu|LuPanelsTopLeft|página
+web|ri|RiPagesLine|páginas
+web|pi|PiMagnifyingGlassBold|búsqueda
+web|tb|TbWorldWww|www
+web|pi|PiCursorClickDuotone|clic con ondas
+web|ri|RiShapesFill|figuras
+web|lu|LuMousePointerClick|puntero
+web|pi|PiStackDuotone|capas
+sw|pi|PiCodeBold|código
+sw|tb|TbTerminal2|terminal
+sw|pi|PiDatabaseDuotone|base de datos
+sw|ri|RiCloudFill|nube
+sw|pi|PiGitBranchBold|rama
+sw|tb|TbCpu|procesador
+sw|pi|PiPlugsConnectedFill|conexión
+sw|pi|PiRobotDuotone|robot
+sw|tb|TbBrain|cerebro
+sw|pi|PiPuzzlePieceFill|pieza
+sw|lu|LuPackage|paquete
+sw|pi|PiBracketsCurlyBold|llaves
+sw|tb|TbMathFunction|función
+sw|pi|PiFlowArrowBold|flujo
+sw|pi|PiTreeStructureDuotone|estructura
+sw|pi|PiAtomBold|átomo
+sw|pi|PiSparkleFill|chispa
+sw|pi|PiMagicWandDuotone|varita
+sw|ri|RiShieldCheckFill|escudo
+sw|pi|PiFingerprintBold|huella
+sw|tb|TbApi|api
+sw|pi|PiCubeTransparentBold|cubo
+sw|lu|LuServer|servidor
+sw|pi|PiInfinityBold|infinito
+sw|tb|TbBinaryTree|árbol binario
+mk|pi|PiMegaphoneFill|megáfono
+mk|pi|PiTargetBold|diana
+mk|pi|PiChartLineUpBold|gráfica
+mk|tb|TbTrendingUp|tendencia
+mk|pi|PiFunnelDuotone|embudo
+mk|ri|RiChat3Fill|diálogo
+mk|pi|PiHeartFill|corazón
+mk|pi|PiHashBold|almohadilla
+mk|pi|PiAtBold|arroba
+mk|pi|PiShareNetworkFill|compartir
+mk|pi|PiStarFourFill|estrella
+mk|tb|TbBellRinging|campana
+mk|pi|PiMagnetStraightFill|imán
+mk|ri|RiPriceTag3Fill|etiqueta
+mk|pi|PiMapPinFill|ubicación
+mk|pi|PiQrCodeBold|código QR
+mk|pi|PiRocketLaunchFill|cohete
+mk|hi2|HiOutlineEye|ojo
+mk|pi|PiThumbsUpFill|me gusta
+mk|pi|PiUsersThreeFill|comunidad
+mk|pi|PiLightbulbFilamentDuotone|idea
+mk|tb|TbSpeakerphone|bocina
+mk|pi|PiCrownSimpleFill|corona
+mk|pi|PiTrophyFill|trofeo
+mk|pi|PiGiftFill|regalo
+vf|pi|PiFilmSlateFill|claqueta
+vf|pi|PiCameraBold|cámara
+vf|pi|PiVideoCameraFill|videocámara
+vf|tb|TbMovie|película
+vf|pi|PiFilmStripBold|tira de película
+vf|pi|PiMicrophoneFill|micrófono
+vf|pi|PiApertureBold|diafragma
+vf|ri|RiImage2Fill|imagen
+vf|pi|PiPlayCircleFill|reproducir
+vf|tb|TbPlayerRecordFilled|grabar
+vf|pi|PiHeadphonesFill|audífonos
+vf|pi|PiWaveformBold|onda de audio
+vf|pi|PiMonitorPlayDuotone|pantalla
+vf|pi|PiProjectorScreenChartFill|proyector
+vf|tb|TbDrone|dron
+vf|pi|PiLampDuotone|lámpara
+vf|pi|PiSpeakerHighFill|bocina
+vf|pi|PiTelevisionSimpleBold|tele
+vf|pi|PiBroadcastBold|transmisión
+vf|tb|TbCameraSelfie|selfi
+vf|pi|PiFilmReelFill|rollo
+vf|ri|RiMovie2Fill|cine
+vf|pi|PiSunDimFill|luz
+vf|tb|TbBrandAppleArcade|botón
+vf|pi|PiRecordFill|rec
+gn|pi|PiBriefcaseFill|maletín
+gn|pi|PiHandshakeFill|apretón de manos
+gn|pi|PiChartPieSliceFill|pastel
+gn|pi|PiKanbanDuotone|kanban
+gn|pi|PiCalendarCheckFill|calendario
+gn|pi|PiClipboardTextBold|portapapeles
+gn|pi|PiReceiptBold|recibo
+gn|pi|PiCoinsFill|monedas
+gn|pi|PiWalletFill|cartera
+gn|pi|PiBankBold|banco
+gn|pi|PiBuildingsFill|edificios
+gn|tb|TbHierarchy2|organigrama
+gn|pi|PiScalesBold|balanza
+gn|pi|PiSealCheckFill|sello
+gn|pi|PiPresentationChartBold|presentación
+gn|pi|PiStrategyBold|estrategia
+gn|pi|PiNotebookFill|libreta
+gn|pi|PiFolderOpenDuotone|carpeta
+gn|pi|PiCurrencyDollarBold|dinero
+gn|pi|PiPercentBold|porcentaje
+gn|pi|PiPiggyBankFill|alcancía
+gn|pi|PiIdentificationCardBold|credencial
+gn|tb|TbChartDonut3|dona
+gn|pi|PiChartBarFill|barras
+gn|ri|RiAuctionFill|mazo
+tm|pi|PiTimerBold|cronómetro
+tm|pi|PiClockClockwiseBold|reloj
+tm|pi|PiHourglassHighFill|reloj de arena
+tm|pi|PiFootprintsFill|huellas
+tm|pi|PiArrowsClockwiseBold|ciclo
+tm|pi|PiFactoryFill|fábrica
+tm|pi|PiGaugeBold|medidor
+tm|pi|PiPathBold|ruta
+tm|tb|TbStairsUp|escalera
+tm|pi|PiBarcodeBold|código de barras
+tm|pi|PiTruckFill|camión
+tm|tb|TbBuildingFactory2|planta
+tm|pi|PiRulerBold|regla
+tm|pi|PiWrenchFill|llave
+tm|pi|PiHammerFill|martillo
+tm|tb|TbHelmet|casco
+tm|pi|PiLightningFill|rayo
+tm|pi|PiSpeedometerDuotone|velocímetro
+tm|pi|PiRepeatBold|repetir
+tm|pi|PiListChecksBold|lista
+tm|pi|PiCrosshairBold|mira
+tm|pi|PiArrowsOutCardinalBold|cuatro flechas
+tm|pi|PiRecycleBold|reciclar
+tm|tb|TbArrowsShuffle|flujo cruzado
+tm|pi|PiPersonSimpleRunFill|corredor
+cr|pi|PiMountainsFill|montañas
+cr|pi|PiFlagBannerFill|bandera
+cr|pi|PiCompassBold|brújula
+cr|tb|TbBuildingLighthouse|faro
+cr|pi|PiAnchorBold|ancla
+cr|pi|PiPlanetDuotone|planeta
+cr|pi|PiKeyFill|llave
+cr|pi|PiDiamondFill|diamante
+cr|pi|PiPlantFill|planta
+cr|pi|PiTreeEvergreenFill|árbol
+cr|pi|PiSunHorizonFill|amanecer
+cr|pi|PiArrowFatLinesUpFill|subir
+cr|pi|PiChartLineBold|línea
+cr|pi|PiStairsBold|escalones
+cr|pi|PiMedalFill|medalla
+cr|pi|PiShootingStarFill|estrella fugaz
+cr|pi|PiBinocularsFill|binoculares
+cr|pi|PiMapTrifoldBold|mapa
+cr|pi|PiAirplaneTiltFill|avión
+cr|pi|PiPaperPlaneTiltFill|avión de papel
+cr|pi|PiSailboatFill|velero
+cr|pi|PiFlameFill|flama
+cr|pi|PiLighthouseFill|faro lleno
+cr|pi|PiGlobeStandBold|globo terráqueo
+cr|pi|PiSignpostFill|letrero
+ma|pi|PiBirdFill|ave
+ma|pi|PiFeatherFill|pluma
+ma|pi|PiPaintBrushBroadFill|brocha
+ma|pi|PiButterflyFill|mariposa
+ma|pi|PiSpiralBold|espiral
+ma|pi|PiPolygonBold|polígono
+ma|pi|PiHexagonDuotone|hexágono
+ma|pi|PiShieldStarFill|escudo con estrella
+ma|pi|PiHeartbeatBold|latido
+ma|pi|PiSmileyWinkBold|guiño
+ma|pi|PiEyeFill|ojo lleno
+ma|pi|PiHandPointingFill|mano
+ma|pi|PiHandWavingFill|saludo
+ma|pi|PiFireSimpleFill|fuego
+ma|pi|PiSnowflakeBold|copo
+ma|pi|PiCloverFill|trébol
+ma|pi|PiFlowerLotusFill|loto
+ma|pi|PiWaveSineBold|onda
+ma|pi|PiCircleHalfTiltFill|medio círculo
+ma|pi|PiYinYangBold|equilibrio
+ma|pi|PiDiamondsFourFill|cuatro rombos
+ma|pi|PiAsteriskBold|asterisco
+ma|pi|PiCirclesThreeFill|tres círculos
+ma|pi|PiPushPinFill|chincheta
+ma|pi|PiCampfireFill|fogata

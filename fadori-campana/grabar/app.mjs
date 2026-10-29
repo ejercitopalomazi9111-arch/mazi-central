@@ -51,7 +51,7 @@ await tocar(ana, '#bConfirmar', K); await ana.waitForTimeout(3800 * K);
 /* la cooperativa lo prepara */
 const id = await ana.evaluate(() => { const F = FADORI, c = F.yo().codigo; return F.estado().pedidos.filter(p => p.alumno === c).pop().id; });
 await M.tarda(most, (i) => !!FADORI.pedido(i), id, 10000 * K);
-await most.evaluate((i) => { const F = FADORI; F.estado().pedidos.filter(p => p.estado === 'en_cola' && p.id !== i).forEach(p => { F.tomar(p.id, 'S'); F.marcarListo(p.id); F.entregar && F.entregar(p.id); }); F.tomar(i, 'S'); }, id);
+await most.evaluate((i) => { const F = FADORI; F.estado().pedidos.filter(p => p.estado === 'en_cola' && p.id !== i).forEach(p => { F.tomar(p.id, 'S'); F.marcarListo(p.id); }); F.tomar(i, 'S'); }, id);
 await ana.waitForTimeout(2600 * K);
 await most.evaluate((i) => FADORI.marcarListo(i), id);
 await M.tarda(ana, (i) => FADORI.pedido(i) && FADORI.pedido(i).estado === 'listo', id, 12000 * K);

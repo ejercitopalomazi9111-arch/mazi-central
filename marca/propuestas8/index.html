@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grupo Mazi · ronda 8 de logos</title>
+<!--
+  RONDA 8 DE LOGOS (28 de octubre de 2026). Carlos mandó cinco referencias (la MZ con cabeza de ave,
+  la paloma con alas de circuito, la MZ en hexágono con terminales, y de la ronda 5 el 033 y el 038)
+  y el logo de Black Hat Creative Studio: «usa estas referencias para las siguientes propuestas y
+  trae algunos que sean más símbolo que otra cosa». Antes había pedido otros colores («prueba
+  morado oscuro con vino»), más comerciales, y una frase de dos palabras para la empresa.
+  ?hoja=1 la MZ con ave · 2 paloma de circuito y hexágono · 3 sólo símbolo · 4 estilo Black Hat ·
+  5 las frases · 6 lo que le gustó, junto (el 029 con las plumas hechas M, la MZI de Black Hat con la
+  A de ave, y todo en un hexágono con terminales como su última referencia). Las referencias eran imágenes hechas con IA: aquí se dibujan en vector (marcas.js),
+  porque un logo que sale de un modelo de imagen no es nuestro ni se repite igual dos veces.
+-->
+<style>
+:root{ --vacio:#100A18; --hueso:#EAE5E3; --gris:#A79CB4 }
+*{ box-sizing:border-box; margin:0 }
+html, body{ background:var(--vacio); color:var(--hueso); font:400 16px/1.4 system-ui, sans-serif }
+.hoja{ width:2120px; padding:56px 60px 48px }
+.cab{ display:flex; align-items:end; gap:24px; margin-bottom:32px }
+.cab h1{ font:800 44px/1.05 system-ui; letter-spacing:-.02em }
+.cab p{ margin-top:6px; color:var(--gris); font-size:21px; max-width:84ch }
+.cab .rango{ margin-left:auto; text-align:right; color:var(--gris); font-size:19px; white-space:nowrap }
+.cab .rango b{ display:block; color:var(--hueso); font-size:30px }
+.rej{ display:grid; grid-template-columns:repeat(5, 1fr); gap:16px }
+.ficha{ position:relative; height:340px; border-radius:22px; overflow:hidden; box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.07) }
+.lienzo{ position:absolute; inset:40px 34px 58px; display:grid; place-items:center }
+.logo{ white-space:nowrap; line-height:1 }
+.num{ position:absolute; left:18px; bottom:15px; font:700 18px/1 ui-monospace, Menlo, monospace; opacity:.6 }
+.fuente{ position:absolute; right:18px; bottom:16px; font:500 14px/1 system-ui; opacity:.5 }
+.fam{ position:absolute; left:18px; top:15px; font:600 12px/1 system-ui; letter-spacing:.12em; text-transform:uppercase; opacity:.45 }
+.pie{ margin-top:26px; display:flex; justify-content:space-between; color:#6E6380; font-size:17px }
+svg{ display:block; overflow:visible }
+.rubros{ display:grid; gap:16px }
+.rubro{ background:#1E1428; border-radius:22px; padding:28px 28px; box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.06) }
+.rubro h2{ font:800 28px/1.1 system-ui; letter-spacing:-.01em; margin-bottom:12px; color:#C878FF }
+.ficha{ height:380px }
+</style>
+</head>
+<body>
+<div class="hoja" id="hoja"></div>
+<script type="module">
+import { mzAve, palomaCircuito, hexMZ, SOLOS, palomaM, hexPaloma } from './marcas.js';
+import { LETRAS } from '../propuestas7/letras.js';
+
+/* los colores: fondo, letra y símbolo. Carlos (28 oct): «prueba morado oscuro con vino también» */
+const PALETAS = [
+  ['morado y vino', '#1C0A2B', '#F4E9F1', '#A3214F'],
+  ['vino y lila', '#5A1029', '#FBEFF4', '#D9A6FF'],
+  ['blanco y negro', '#FFFFFF', '#0B0B0F', '#0B0B0F'],
+  ['marino y coral', '#14213D', '#FDF6EC', '#FF6B4A'],
+  ['morado oscuro', '#2B0F45', '#FFFFFF', '#C25BFF'],
+  ['hueso y vino', '#F4EEF0', '#2A0A18', '#8E1B3A'],
+  ['bosque y oro', '#16352A', '#F3EFE0', '#E0B04A'],
+  ['negro y blanco', '#0B0B0F', '#FFFFFF', '#FFFFFF'],
+  ['cobalto y amarillo', '#2443B8', '#FFFFFF', '#FFD23F'],
+  ['vino y oro', '#4A0D22', '#F8EDE2', '#E3B04B'],
+  ['arena y terracota', '#EADBC8', '#2B2118', '#C4552D'],
+  ['carbón y lima', '#1C1C1E', '#FFFFFF', '#C6F432'],
+  ['morado y rosa', '#24103A', '#FFFFFF', '#FF5C8A'],
+  ['hueso y cobalto', '#F7F5F0', '#111827', '#2F5BEA'],
+  ['petróleo y menta', '#0F4C5C', '#FFFFFF', '#7FE0C2'],
+  ['negro y oro', '#0E0E0E', '#F5F0E6', '#D4AF37'],
+];
+/* las frases: lo que va debajo del nombre (Carlos: «consultora digital, asesora digital
+   empresarial… invéntate algunas») */
+const FRASES = ['Consultora digital', 'Socio digital', 'Estudio digital', 'Asesoría digital empresarial', 'Taller digital', 'Tecnología a la medida',
+  'Soluciones digitales', 'Estrategia y tecnología', 'Diseño, código y negocio', 'Crecimiento digital', 'Software y marketing', 'Estudio creativo',
+  'Ingeniería de negocio', 'Consultoría integral', 'Creatividad y código', 'Desarrollo de negocios', 'Marca y tecnología', 'Construimos herramientas',
+  'Impulso digital', 'Tu equipo digital', 'Asesoría tecnológica', 'Ideas que funcionan', 'Gestión y tecnología', 'Diseño y tecnología', 'Negocios digitales'];
+const ANCHAS = ['Unbounded', 'Krona One', 'Michroma', 'Syncopate', 'Dela Gothic One', 'Russo One', 'Tilt Warp', 'Orbitron', 'Audiowide', 'Zen Dots', 'Goldman', 'Oxanium',
+  'Chakra Petch', 'Tektur', 'Bruno Ace', 'Archivo Black', 'Anton', 'Bebas Neue', 'Big Shoulders Display', 'Monda', 'Syne', 'Exo 2', 'Lexend Zetta', 'Quantico', 'Sarpanch'];
+const PESOS_ANCHAS = { 'Unbounded': 800, 'Syncopate': 700, 'Oxanium': 800, 'Chakra Petch': 700, 'Tektur': 800, 'Big Shoulders Display': 900, 'Monda': 700, 'Syne': 800, 'Exo 2': 900, 'Lexend Zetta': 800, 'Quantico': 700, 'Sarpanch': 800, 'Goldman': 700 };
+const RESTO = LETRAS.filter(([n]) => !ANCHAS.includes(n)).slice(0, 75);
+
+const t = (txt, f, w, s, mas = '') => `<span style="font-family:'${f}';font-weight:${w};font-size:${s}px;${mas}">${txt}</span>`;
+const fila = (gap, ...x) => `<div style="display:flex;align-items:center;gap:${gap}px">${x.join('')}</div>`;
+const col = (gap, al, ...x) => `<div style="display:flex;flex-direction:column;align-items:${al};gap:${gap}px">${x.join('')}</div>`;
+const ancho = (e) => `letter-spacing:${e}em;margin-right:-${e}em`;
+const tinta = (c, x) => `<div style="color:${c};display:flex">${x}</div>`;
+
+/* los acomodos comerciales: símbolo (en su color), nombre y frase */
+const ACOMODOS = [
+  (s, f, w, p, fr) => col(14, 'center', tinta(p[3], s(150)), t('GRUPO MAZI', f, w, 34, ancho(.18)), t(fr, f, w, 15, ancho(.3) + ';text-transform:uppercase;opacity:.75')),
+  (s, f, w, p, fr) => fila(20, tinta(p[3], s(120)), col(4, 'flex-start', t('GRUPO', f, w, 22, 'letter-spacing:.46em'), t('MAZI', f, w, 64, 'letter-spacing:.04em'), t(fr, f, w, 14, 'opacity:.75'))),
+  (s, f, w, p, fr) => col(10, 'center', tinta(p[3], s(140)), t('GRUPO', f, w, 18, ancho(.7)), t('MAZI', f, w, 62, ancho(.22)), fila(10, '<i style="width:28px;height:1.5px;background:currentColor;display:block"></i>', t(fr, f, w, 13, 'opacity:.8'), '<i style="width:28px;height:1.5px;background:currentColor;display:block"></i>')),
+  (s, f, w, p, fr) => fila(18, `<div style="background:${p[3]};border-radius:26px;padding:14px;display:flex;color:${p[1]}">${s(96, p[3])}</div>`, col(2, 'flex-start', t('Grupo Mazi', f, w, 46), t(fr, f, w, 15, 'opacity:.75'))),
+  (s, f, w, p, fr) => fila(18, tinta(p[3], s(110)), '<i style="width:2px;height:96px;background:currentColor;opacity:.5;display:block"></i>', col(2, 'flex-start', t('MAZI', f, w, 60), t(fr.toUpperCase(), f, w, 13, 'letter-spacing:.24em;opacity:.75'))),
+];
+/* estilo Black Hat: la A es una figura, GRUPO va volteado abajo y el lema lleva «/» en vez de «I» */
+const AES = [
+  (h) => `<svg viewBox="0 0 80 70" height="${h}" fill="currentColor"><path d="M40 0 L80 70 H54 L40 44 L26 70 H0 Z"/><path d="M40 36 L48 52 H32 Z"/></svg>`,
+  (h) => `<svg viewBox="0 0 80 70" height="${h}" fill="currentColor"><path d="M40 0 L80 70 H0 Z M40 26 L58 58 H22 Z" fill-rule="evenodd"/></svg>`,
+  (h) => `<svg viewBox="0 0 80 70" height="${h}" fill="currentColor"><path d="M40 0 L80 70 H58 L40 34 L22 70 H0 Z"/></svg>`,
+  (h) => `<svg viewBox="0 0 80 70" height="${h}" fill="currentColor"><path d="M40 0 L74 34 L40 70 L6 34 Z M40 22 L54 34 L40 48 L26 34 Z" fill-rule="evenodd"/></svg>`,
+  (h) => `<svg viewBox="0 0 80 70" height="${h}" fill="currentColor"><path d="M26 70 L40 30 C36 16 46 4 58 8 L76 12 L60 18 L46 70 Z"/><path d="M50 70 H80 L66 40 Z"/></svg>`,
+];
+const lema = (fr) => '&lt;  ' + fr.toUpperCase().replace(/I/g, '/').replace(/Í/g, '/') + '  &gt;';
+const BLACKHAT = [
+  (f, w, p, fr, A) => col(6, 'center', fila(4, t('M', f, w, 96), tinta(p[3], A(70)), t('ZI', f, w, 96)), t('GRUPO', f, w, 96, 'display:block;transform:rotate(180deg);line-height:.8'), t(lema(fr), f, w, 16, 'letter-spacing:.42em;margin-top:10px;white-space:pre')),
+  (f, w, p, fr, A) => col(10, 'center', fila(4, t('M', f, w, 104), tinta(p[3], A(76)), t('ZI', f, w, 104)), t(lema(fr), f, w, 15, 'letter-spacing:.4em;white-space:pre')),
+  (f, w, p, fr, A) => col(4, 'center', fila(4, t('M', f, w, 96), tinta(p[3], A(70)), t('ZI', f, w, 96)), `<div style="transform:scaleY(-1);opacity:.28;line-height:.8">${fila(4, t('M', f, w, 96), A(70), t('ZI', f, w, 96))}</div>`, t(lema(fr), f, w, 14, 'letter-spacing:.4em;margin-top:6px;white-space:pre')),
+  (f, w, p, fr, A) => col(8, 'flex-start', t('GRUPO', f, w, 30, 'letter-spacing:.32em'), fila(4, t('M', f, w, 110), tinta(p[3], A(80)), t('ZI', f, w, 110)), t(lema(fr), f, w, 14, 'letter-spacing:.36em;white-space:pre')),
+  (f, w, p, fr, A) => `<div style="border:4px solid currentColor;padding:20px 30px">${col(8, 'center', fila(4, t('M', f, w, 90), tinta(p[3], A(64)), t('ZI', f, w, 90)), t(lema(fr), f, w, 13, 'letter-spacing:.36em;white-space:pre'))}</div>`,
+];
+
+const hoja = +(new URLSearchParams(location.search).get('hoja') || 1), el = document.getElementById('hoja');
+const pedir = (f, w) => { const k = document.createElement('link'); k.rel = 'stylesheet'; k.href = 'https://fonts.googleapis.com/css2?family=' + f.replace(/ /g, '+') + (w === 400 ? '' : ':wght@' + w) + '&display=block'; document.head.appendChild(k); };
+const NOMBRES_HOJA = ['la MZ con cabeza de ave', 'la paloma de circuito y la MZ en hexágono', 'sólo el símbolo', 'al estilo Black Hat', 'la frase', 'lo que te gustó, junto'];
+/* hoja 6 · todo junto: el hexágono con la paloma M arriba y la MAZI de Black Hat abajo */
+const marcaBH = (f, w, p, A, s) => fila(4, t('M', f, w, s), tinta(p[3], A(s * .73)), t('ZI', f, w, s));
+const UNIDO = [
+  (h, f, w, p, fr, A) => col(18, 'center', tinta(p[3], h(170)), marcaBH(f, w, p, A, 80), t(lema(fr), f, w, 14, 'letter-spacing:.4em;white-space:pre')),
+  (h, f, w, p, fr, A) => col(6, 'center', tinta(p[3], h(150)), marcaBH(f, w, p, A, 78), `<div style="transform:scaleY(-1);opacity:.28;line-height:.8;margin-top:-4px">${fila(4, t('M', f, w, 78), A(57), t('ZI', f, w, 78))}</div>`, t(lema(fr), f, w, 13, 'letter-spacing:.4em;margin-top:6px;white-space:pre')),
+  (h, f, w, p, fr, A) => fila(26, tinta(p[3], h(170)), col(8, 'flex-start', t('GRUPO', f, w, 24, 'letter-spacing:.5em'), marcaBH(f, w, p, A, 92), t(lema(fr), f, w, 13, 'letter-spacing:.36em;white-space:pre'))),
+  (h, f, w, p, fr, A) => col(8, 'center', tinta(p[3], h(150)), marcaBH(f, w, p, A, 82), t('GRUPO', f, w, 82, 'display:block;transform:rotate(180deg);line-height:.8;opacity:.9')),
+  (h, f, w, p, fr, A) => `<div style="border:4px solid currentColor;padding:22px 34px">${fila(24, tinta(p[3], h(140)), col(8, 'flex-start', marcaBH(f, w, p, A, 84), t(lema(fr), f, w, 12, 'letter-spacing:.34em;white-space:pre')))}</div>`,
+];
+const fichas = [];
+if(hoja <= 4 || hoja === 6){
+  for(let k = 0; k < 25; k++){
+    const i = (hoja - 1) * 25 + k, p = PALETAS[(k * 5 + hoja * 3) % PALETAS.length], fr = FRASES[(k * 7 + hoja * 4) % FRASES.length];
+    let nombre, logo, f, w;
+    if(hoja === 6){
+      const P6 = ['hueso y vino', 'morado y vino', 'vino y lila', 'arena y terracota', 'morado oscuro', 'negro y oro', 'blanco y negro', 'vino y oro', 'morado y rosa', 'carbón y lima', 'hueso y cobalto', 'bosque y oro'];
+      const pp = PALETAS.find(x => x[0] === P6[k % P6.length]);
+      if(k < 8){
+        /* el 029 con las plumas hechas M: los tres modos, con y sin la base que une la M con la Z */
+        const o = { m: ['hojas', 'filo', 'trazo', 'hojas'][k % 4], base: k >= 4, ojo: k !== 3, sw: [6, 6, 5, 7][k % 4] };
+        [f, w] = k === 0 ? ['Roboto Slab', 700] : RESTO[50 + k];
+        const s = (x) => palomaM(x, o);
+        nombre = `paloma M · ${o.m}${o.base ? ', M y Z unidas' : ''}`;
+        logo = ACOMODOS[k % ACOMODOS.length](s, f, w, pp, fr);
+      } else if(k < 15){
+        /* la MAZI de Black Hat con la A de ave (098), y dos con la A de rombo (093) */
+        const q = k - 8; f = ['Lexend Zetta', 'Unbounded', 'Michroma', 'Krona One', 'Syncopate', 'Lexend Zetta', 'Russo One'][q]; w = PESOS_ANCHAS[f] || 400;
+        const A = AES[q >= 5 ? 3 : 4];
+        nombre = `Black Hat · A ${q >= 5 ? 'de rombo' : 'de ave'}`;
+        logo = BLACKHAT[[2, 0, 1, 3, 4, 2, 0][q]](f, w, pp, fr, A);
+      } else {
+        /* todo junto: hexágono con la paloma M y terminales, y la MAZI de Black Hat */
+        const q = k - 15; f = ['Lexend Zetta', 'Unbounded', 'Michroma', 'Orbitron', 'Krona One', 'Syncopate', 'Lexend Zetta', 'Oxanium', 'Tektur', 'Zen Dots'][q]; w = PESOS_ANCHAS[f] || 400;
+        const o = { roto: q % 3 === 0, lleno: q % 3 === 2, pins: [3, 2, 3, 1, 3][q % 5], m: ['hojas', 'filo', 'hojas', 'trazo', 'filo'][q % 5], base: q % 2 === 1 };
+        const h = (x) => hexPaloma(x, { ...o, c: pp[1] });
+        nombre = `todo junto · hexágono ${o.lleno ? 'lleno' : o.roto ? 'roto' : 'entero'}`;
+        logo = UNIDO[q % 5](h, f, w, pp, fr, AES[4]);
+      }
+      pedir(f, w);
+      fichas.push(`<div class="ficha" style="background:${pp[1]};color:${pp[2]}"><span class="fam">${nombre} · ${pp[0]}</span><div class="lienzo"><div class="logo">${logo}</div></div>
+      <span class="num">6.${String(k + 1).padStart(2, '0')}</span><span class="fuente">${f}</span></div>`);
+      continue;
+    }
+    if(hoja === 4){ f = ANCHAS[k]; w = PESOS_ANCHAS[f] || 400; nombre = 'estilo Black Hat'; logo = BLACKHAT[k % 5](f, w, p, fr, AES[Math.floor(k / 5) % 5]); }
+    else {
+      [f, w] = RESTO[(hoja - 1) * 25 + k];
+      let s;
+      if(hoja === 1){
+        const m = ['recta', 'cortada', 'fina', 'piezas'][k % 4], lado = Math.floor(k / 4) % 2 ? 'der' : 'izq', g = [13, 16, 19][Math.floor(k / 8) % 3];
+        const dos = k % 3 === 1;
+        s = (x, cc) => mzAve(x, { m, lado, g, ojo: true, c: cc || p[1], ac: dos ? p[2] : null });
+        nombre = `MZ con ave · ${m}${lado === 'der' ? ', cabeza a la derecha' : ''}`;
+      } else if(hoja === 2){
+        if(k < 13){ const o = { plumas: 1 + k % 3, lleno: k % 2 === 1, cabeza: k % 4 >= 2, pistas: 1 + (k + 1) % 3, sw: [5, 6, 7.5][k % 3] }; s = (x) => palomaCircuito(x, o); nombre = 'paloma de circuito'; }
+        else { const q = k - 13, o = { pins: 1 + q % 3, lleno: q % 2 === 1, g: [9, 11, 13][q % 3] }; s = (x, cc) => hexMZ(x * .8, { ...o, c: cc || p[1] }); nombre = 'MZ en hexágono con circuito'; }
+      } else {
+        const solos = Object.entries(SOLOS);
+        if(k < solos.length){ const [n, fn] = solos[k]; s = (x, cc) => fn(x, cc || p[1]); nombre = 'símbolo · ' + n.replace(/([A-Z])/g, ' $1').toLowerCase(); }
+        else { const q = k - solos.length, tipo = q % 3;
+          s = tipo === 0 ? (x, cc) => mzAve(x, { m: ['recta', 'cortada', 'piezas'][q % 3], lado: q % 2 ? 'der' : 'izq', ojo: true, c: cc || p[1] }) : tipo === 1 ? (x) => palomaCircuito(x, { plumas: 2, lleno: q % 2 === 0, cabeza: true }) : (x, cc) => hexMZ(x * .8, { pins: 3, lleno: q % 2 === 0, c: cc || p[1] });
+          nombre = 'símbolo · ' + ['MZ con ave', 'paloma de circuito', 'hexágono'][tipo]; }
+        /* «más símbolo que otra cosa»: el símbolo enorme y el nombre chiquito */
+        logo = col(18, 'center', tinta(p[3], s(220)), t('GRUPO MAZI', f, w, 16, ancho(.5)));
+      }
+      if(!logo) logo = ACOMODOS[(k + hoja) % ACOMODOS.length](s, f, w, p, fr);
+    }
+    pedir(f, w);
+    fichas.push(`<div class="ficha" style="background:${p[1]};color:${p[2]}"><span class="fam">${nombre} · ${p[0]}</span><div class="lienzo"><div class="logo">${logo}</div></div>
+      <span class="num">${String(i + 1).padStart(3, '0')}</span><span class="fuente">${f}</span></div>`);
+  }
+  el.innerHTML = `<div class="cab"><div><h1>Grupo Mazi · ronda 8 · ${NOMBRES_HOJA[hoja - 1]}</h1>
+    <p>${hoja === 6 ? 'El 029 con las plumas unidas en M (la Z sigue en el cuello y la cara enojada se queda), la MAZI de Black Hat con su A de ave sin tocar, y las dos juntas en un hexágono con terminales como tu última referencia.' : 'Con las referencias de Carlos, dibujadas en vector para que sean nuestras. Colores nuevos, entre ellos morado oscuro con vino, y debajo del nombre las frases candidatas (la hoja 5 las junta).'}</p></div>
+    <div class="rango">hoja<b>${hoja} de 6</b></div></div><div class="rej">${fichas.join('')}</div>
+    <div class="pie"><span>Grupo Mazi · ronda 8 · hoja ${hoja} de 6</span><span>Símbolos dibujados en vector. Letras de Google Fonts, licencia OFL.</span></div>`;
+} else {
+  /* la hoja de frases: todas, con las cinco que recomiendo marcadas */
+  const REC = { 'Socio digital': 'Dice cómo trabajamos: cobramos por comisión y nos quedamos con el cliente.', 'Consultora digital': 'La más clara para una empresa que nunca nos ha visto.', 'Estudio digital': 'Abarca web, video, foto y software sin sonar a agencia de redes.', 'Taller digital': 'Es el lema hecho dos palabras: si no existe la herramienta, se construye.', 'Tecnología a la medida': 'Lo que vendemos: hecho para tu negocio, no de plantilla.' };
+  const MAS = [...FRASES, 'Agencia digital', 'Transformación digital', 'Innovación aplicada', 'Laboratorio digital', 'Fábrica digital', 'Estrategia digital', 'Hacemos que funcione', 'Estudio de producto', 'Sistemas y marketing', 'Optimización de negocios', 'Desarrollo y estrategia', 'Consultoría tecnológica', 'Marketing y tecnología', 'Soluciones a la medida', 'Asesora digital empresarial'];
+  const OJO = { 'Agencia digital': 'genérica', 'Transformación digital': 'muy usada', 'Innovación aplicada': 'suena a gobierno', 'Ideas que funcionan': 'no dice qué hacemos' };
+  el.innerHTML = `<div class="cab"><div><h1>La frase · qué somos en dos palabras</h1><p>Va debajo del nombre: «Grupo Mazi · ____». Las cinco de arriba son las que recomiendo; abajo, todas las demás.</p></div><div class="rango">hoja<b>5 de 6</b></div></div>
+    <div class="rubros" style="grid-template-columns:repeat(5,1fr)">${Object.entries(REC).map(([f, por]) => `<div class="rubro"><h2>${f}</h2><p style="color:#D6CEDD;font-size:18px;line-height:1.4">${por}</p></div>`).join('')}</div>
+    <div style="margin-top:28px;display:flex;flex-wrap:wrap;gap:12px">${[...new Set(MAS)].filter(f => !REC[f]).map(f => `<span style="padding:12px 20px;border-radius:99px;background:#1E1428;font-size:21px;font-weight:600">${f}${OJO[f] ? ` <small style="color:#A79CB4;font-weight:500">· ${OJO[f]}</small>` : ''}</span>`).join('')}</div>
+    <div class="pie"><span>Grupo Mazi · ronda 8 · hoja 5 de 6</span><span>Las frases salen debajo del nombre en los logos de las hojas 1 a 4.</span></div>`;
+}
+(async () => {
+  await document.fonts.ready;
+  for(const lz of document.querySelectorAll('.lienzo')){
+    const g = lz.querySelector('.logo'), a = lz.getBoundingClientRect(), r = g.getBoundingClientRect();
+    let u = { l:r.left, t:r.top, d:r.right, b:r.bottom };
+    for(const e of g.querySelectorAll('*')){ const q = e.getBoundingClientRect(); if(!q.width || !q.height) continue;
+      u = { l:Math.min(u.l, q.left), t:Math.min(u.t, q.top), d:Math.max(u.d, q.right), b:Math.max(u.b, q.bottom) }; }
+    const sc = Math.min(1, a.width / (u.d - u.l), a.height / (u.b - u.t)), cx = (u.l + u.d) / 2, cy = (u.t + u.b) / 2;
+    g.style.transformOrigin = `${(cx - r.left).toFixed(1)}px ${(cy - r.top).toFixed(1)}px`;
+    g.style.transform = `translate(${(a.left + a.width / 2 - cx).toFixed(1)}px, ${(a.top + a.height / 2 - cy).toFixed(1)}px) scale(${sc.toFixed(3)})`;
+  }
+  document.body.dataset.listo = '1';
+})();
+</script>
+</body>
+</html>

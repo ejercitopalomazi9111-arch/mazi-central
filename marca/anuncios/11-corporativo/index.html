@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Grupo Mazi · Corporativo</title>
+<!-- MOTION GRAPHICS 11 · ~31 s · 9:16 · SIN VOZ: tipografía en movimiento sobre la música, al estilo
+     de los videos de empresa (retícula suiza, fondo claro, líneas finas que se dibujan). Carlos,
+     29 de octubre: «un par más estilo motion graphics, más modernos, formales, empresariales».
+     Cada cambio cae en un compás de la canción (95 por minuto, un compás = 2.52 s, el primero en
+     1.92 s; medido de la canción). Lo que dice es lo confirmado: los seis servicios, cómo
+     trabajamos, entregamos rápido y nos quedamos, y el contacto.
+     Música: «Investigations», Kevin MacLeod (incompetech.com), CC BY 4.0.
+     node herramientas/video/armar.mjs marca/anuncios/11-corporativo/index.html marca/anuncios/salida/11-corporativo.mp4 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter+Tight:wght@500;600;700;800&display=block">
+<link rel="stylesheet" href="../comun.css">
+<script>window.listo = new Promise(r => window._listo = r);</script>
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>
+:root{ --o:#170A26; --v:#7E1735; --v2:#A8264B; --c:#F4EEF2; --g:#8C8094 }
+#fondo{ background:#F4EEF2 }
+#oscuro{ position:absolute; inset:0; background:#170A26; clip-path:inset(100% 0 0 0) }
+#reti line{ stroke:#170A2622; stroke-width:1.5 }
+.et{ position:absolute; font:500 26px/1 "Space Grotesk"; letter-spacing:.24em; text-transform:uppercase; color:var(--g) }
+.lin{ display:block; overflow:hidden; padding-bottom:.08em }
+.lin > span{ display:block }
+#tit{ position:absolute; left:80px; right:150px; top:300px; font:700 118px/.94 "Space Grotesk"; letter-spacing:-.05em; color:var(--o) }
+#tit em{ font-style:normal; color:var(--v2) }
+#cifra{ position:absolute; left:72px; top:430px; font:700 560px/.8 "Space Grotesk"; letter-spacing:-.08em; color:var(--o) }
+#cifra-t{ position:absolute; left:84px; top:930px; font:600 54px/1.1 "Inter Tight"; letter-spacing:-.02em; color:var(--o); width:760px }
+#indice{ position:absolute; left:80px; top:300px; display:grid; gap:6px }
+#indice div{ display:flex; gap:22px; align-items:baseline; font:500 30px/1.25 "Space Grotesk"; color:#170A2655 }
+#indice div b{ font-weight:700; font-size:22px; letter-spacing:.14em; width:40px }
+#indice div.on{ color:var(--v2) }
+#serv{ position:absolute; left:80px; right:150px; top:760px }
+#serv .ic{ width:170px; height:170px; border-radius:44px; background:#170A26; display:grid; place-items:center; margin-bottom:34px }
+#serv .ic svg{ width:96px; height:96px }
+#serv .n{ font:700 112px/.92 "Space Grotesk"; letter-spacing:-.05em; color:var(--o) }
+#serv .d{ margin-top:22px; font:500 38px/1.3 "Inter Tight"; color:#5E5466; max-width:760px }
+#proceso{ position:absolute; left:80px; right:150px; top:520px; height:700px }
+#proceso .eje{ position:absolute; left:23px; top:20px; width:4px; height:640px; background:#170A2618; border-radius:2px }
+#proceso .eje i{ display:block; width:100%; background:var(--v2); border-radius:2px; height:0 }
+#proceso .paso{ position:absolute; left:0; display:flex; gap:34px; align-items:center }
+#proceso .paso .pt{ width:50px; height:50px; border-radius:50%; background:#F4EEF2; box-shadow:inset 0 0 0 4px #170A2630; display:grid; place-items:center; font:700 20px/1 "Space Grotesk"; color:#170A2680 }
+#proceso .paso.on .pt{ background:var(--v2); box-shadow:none; color:#fff }
+#proceso .paso .t{ font:700 64px/1 "Space Grotesk"; letter-spacing:-.04em; color:#170A2640 }
+#proceso .paso.on .t{ color:var(--o) }
+#proceso .paso small{ display:block; margin-top:10px; font:500 28px/1.2 "Inter Tight"; letter-spacing:0; color:var(--g) }
+#remate{ position:absolute; left:80px; right:150px; top:620px; font:700 128px/.95 "Space Grotesk"; letter-spacing:-.055em; color:var(--c) }
+#remate em{ font-style:normal; color:#C77DFF }
+#cierre .sub{ color:#C9BCD0 }
+#marcas{ position:absolute; left:80px; right:150px; bottom:470px; display:flex; justify-content:space-between; font:500 22px/1 "Space Grotesk"; letter-spacing:.2em; color:var(--g) }
+</style>
+</head>
+<body>
+<div id="fondo" class="capa"></div>
+<svg id="reti" class="capa" viewBox="0 0 1080 1920"></svg>
+<canvas id="gl" class="capa"></canvas>
+<div id="ui" class="capa">
+  <div class="et" id="e1" style="left:80px; top:170px">Grupo Mazi · 2026</div>
+  <div class="et" id="e2" style="right:150px; top:170px"></div>
+  <div id="tit"></div>
+  <div id="cifra">06</div><div id="cifra-t">servicios.<br>Un mismo equipo.</div>
+  <div id="indice"></div>
+  <div id="serv"><div class="ic"></div><div class="n"></div><div class="d"></div></div>
+  <div id="proceso"><div class="eje"><i></i></div></div>
+  <div id="oscuro"></div>
+  <div id="remate"></div>
+  <div id="marcas"><span>Web</span><span>Software</span><span>Marca</span><span>Video</span></div>
+  <canvas id="c2" class="capa" width="1080" height="1920"></canvas>
+  <div id="cierre"><div class="wa">WhatsApp <b>442 883 3786</b></div><div class="sub">grupomazi.oficial@gmail.com</div></div>
+</div>
+<div id="grano"></div>
+<script type="module">
+import { THREE, PAL, W, H, cl, tramo, suave, sale, entra, mezcla, vida, escena3d, grano } from '../motor.js';
+import { piezasCubo, logoVivo } from '../logo3d.js';
+import { icono } from '../iconos.js';
+const $ = (s) => document.querySelector(s);
+const C = (k) => 1.92 + 2.52 * k;                                      // el compás k de la canción
+const FIN = C(11) + 3.4, fx = (n) => `../../../herramientas/video/efectos/${n}.wav`;
+window.VIDEO = { w: W, h: H, fps: 30, dur: FIN, musica: { archivo: '/tmp/claude-0/musica/Investigations.mp3', desde: 0, vol: .9, entrada: .05, fin: 2.4 },
+  sonidos: [[fx('whoosh'), C(0) - .15, .35], [fx('toque'), C(2), .4], ...[0, 1, 2, 3, 4, 5].map(i => [fx('toque'), C(3) + i * 1.68, .3]), [fx('whoosh'), C(7) - .1, .3], [fx('whoosh'), C(9) - .15, .45], [fx('ding'), C(10) + .2, .35]] };
+await Promise.all(['700 80px "Space Grotesk"', '500 30px "Space Grotesk"', '600 60px "Inter Tight"', '500 30px "Inter Tight"'].map(f => document.fonts.load(f)));
+
+/* la retícula: 6 columnas y renglones de 120, que se dibujan al principio */
+$('#reti').innerHTML = [...[0, 1, 2, 3, 4, 5, 6].map(i => `<line x1="${80 + i * 141.7}" y1="0" x2="${80 + i * 141.7}" y2="1920"/>`), ...Array.from({ length: 17 }, (_, i) => `<line x1="0" y1="${120 + i * 110}" x2="1080" y2="${120 + i * 110}"/>`)].join('');
+const lineas = [...$('#reti').children]; lineas.forEach(l => { const n = l.getTotalLength(); l.style.strokeDasharray = n; l.dataset.n = n; });
+/* el cubo en 3D, partido de verdad (la M y la cuña), girando despacio con su sombra en el piso claro */
+const E = escena3d($('#gl'), { fov: 22, z: 12 });
+E.r.shadowMap.enabled = true; E.r.shadowMap.type = THREE.PCFSoftShadowMap; E.luces.borde.intensity = .8; E.luces.morado.intensity = 1.2; E.s.environmentIntensity = .8;
+const k = E.luces.llave; k.castShadow = true; k.shadow.mapSize.set(2048, 2048); Object.assign(k.shadow.camera, { left: -3, right: 3, top: 3, bottom: -3 }); k.shadow.radius = 8; k.position.set(-2, 8, 4);
+const { m, cuna } = piezasCubo(), cubo = new THREE.Group(); cubo.add(m, cuna); cubo.scale.setScalar(1.25); E.s.add(cubo);
+cubo.traverse(o => { if(o.isMesh) o.castShadow = true; });
+const piso = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.ShadowMaterial({ opacity: .14 })); piso.rotation.x = -Math.PI / 2; piso.position.y = -.63 * 1.25 - .01; piso.receiveShadow = true; E.s.add(piso);
+/* los textos */
+const SERV = [['monitor-smartphone', 'Páginas web', 'Que venden en el celular, que es donde te buscan.'], ['app-window', 'Software y apps', 'Herramientas hechas para cómo trabaja tu negocio.'],
+  ['megaphone', 'Marketing', 'Redes y publicidad que salen de tu negocio real.'], ['aperture', 'Video y fotografía', 'Contenido que se te antoja desde el celular.'],
+  ['chart-column-increasing', 'Gestión de negocios', 'Tu operación en orden, con números claros.'], ['timer', 'Tiempos y movimientos', 'Dónde se te va el tiempo y el dinero.']];
+$('#indice').innerHTML = SERV.map((s, i) => `<div><b>0${i + 1}</b>${s[1]}</div>`).join('');
+const PASOS = [['Platicamos', 'La primera plática no cuesta'], ['Propuesta', 'Qué incluye, cuánto y cuándo'], ['Construimos', 'Ves avances en tu celular'], ['Nos quedamos', 'Mantenimiento y soporte']];
+$('#proceso').insertAdjacentHTML('beforeend', PASOS.map((p, i) => `<div class="paso" style="top:${i * 190}px"><div class="pt">${i + 1}</div><div class="t">${p[0]}<small>${p[1]}</small></div></div>`).join(''));
+const c2 = $('#c2').getContext('2d'), gr = grano($('#grano'), .025);
+const poner = (el, html) => { if(el.dataset.h !== html){ el.innerHTML = html; el.dataset.h = html; } };
+/* un renglón que sube desde su máscara */
+const renglones = (el, t, t0, sale0 = 99) => [...el.querySelectorAll('.lin > span')].forEach((s, i) => { const u = sale(tramo(t, t0 + i * .12, t0 + .55 + i * .12)), f = entra(tramo(t, sale0 + i * .05, sale0 + .35 + i * .05));
+  s.style.transform = `translateY(${(1 - u) * 110 - f * 110}%)`; });
+
+window.pintar = async (t) => {
+  /* 0 · la retícula se dibuja */
+  lineas.forEach((l, i) => { const u = sale(tramo(t, .1 + i * .045, 1.1 + i * .045)); l.style.strokeDashoffset = (+l.dataset.n * (1 - u)).toFixed(1); });
+  $('#reti').style.opacity = 1 - tramo(t, C(9) - .3, C(9));
+  $('#e1').style.opacity = vida(t, .4, C(9) - .2, .4, .2);
+  poner($('#e2'), t < C(3) ? 'Querétaro' : t < C(7) ? 'Servicios' : 'Proceso'); $('#e2').style.opacity = vida(t, .6, C(9) - .2, .4, .2);
+  /* 1 · el titular, con el cubo girando abajo */
+  poner($('#tit'), t < C(3) ? '<span class="lin"><span>Construimos</span></span><span class="lin"><span>lo que tu</span></span><span class="lin"><span>negocio <em>necesita</em></span></span><span class="lin"><span><em>para crecer.</em></span></span>' : '');
+  renglones($('#tit'), t, C(0), C(2) - .45);
+  const vc = vida(t, C(0) + .3, C(2) - .1, .8, .35);
+  cubo.visible = vc > 0 && t < C(2);
+  const abre = Math.sin(Math.PI * tramo(t, C(1), C(1) + 1.4)) ** 2;
+  cuna.position.set(abre * .55, -abre * .05, abre * .55); m.position.y = abre * .35;
+  cubo.rotation.set(0, Math.PI / 4 + t * .35, 0); cubo.position.set(0, -1.6 + (1 - sale(vc)) * -1.5, 0);
+  E.cam.position.set(0, 1.4, 12); E.cam.lookAt(0, -.4, 0); E.pintar();
+  /* 2 · seis servicios, un equipo */
+  const v2 = vida(t, C(2) - .05, C(3) - .1, .3, .25); $('#cifra').style.opacity = v2; $('#cifra').style.transform = `translateY(${(1 - sale(tramo(t, C(2) - .05, C(2) + .4))) * 120}px) scale(${1 + .04 * tramo(t, C(2), C(3))})`;
+  $('#cifra-t').style.opacity = vida(t, C(2) + .25, C(3) - .1, .3, .25);
+  /* 3 · los seis, uno por medio compás, con el índice a un lado */
+  const enS = t >= C(3) - .1 && t < C(7) - .1, iS = cl(Math.floor((t - C(3)) / 1.68), 0, 5), uS = (t - C(3) - iS * 1.68);
+  $('#indice').style.opacity = enS ? Math.min(sale(tramo(t, C(3) - .1, C(3) + .4)), 1 - tramo(t, C(7) - .4, C(7) - .1)) : 0;
+  [...$('#indice').children].forEach((d, i) => d.classList.toggle('on', i === iS));
+  const vs = enS ? Math.min(sale(tramo(uS, 0, .35)), 1 - entra(tramo(uS, 1.4, 1.68))) : 0;
+  $('#serv').style.opacity = vs; $('#serv').style.transform = `translateY(${(1 - vs) * 50}px)`;
+  if(enS){ const [ic, n, d] = SERV[iS]; poner($('#serv .ic'), icono(ic, '#F4EEF2', 1.6, 96)); poner($('#serv .n'), n); poner($('#serv .d'), d);
+    const p = $('#serv .ic svg'); [...p.querySelectorAll('*')].forEach(e => { if(e.getTotalLength){ const L = e.getTotalLength(); e.style.strokeDasharray = L; e.style.strokeDashoffset = L * (1 - sale(tramo(uS, .05, .8))); } }); }
+  /* 4 · cómo trabajamos: la línea baja y se encienden los pasos */
+  const vp = vida(t, C(7) - .1, C(9) - .2, .35, .3); $('#proceso').style.opacity = vp;
+  $('#proceso .eje i').style.height = (100 * suave(tramo(t, C(7), C(9) - .5))) + '%';
+  [...document.querySelectorAll('#proceso .paso')].forEach((p, i) => { const t0 = C(7) + i * 1.15; p.classList.toggle('on', t >= t0); p.style.transform = `translateX(${(1 - sale(tramo(t, t0 - .3, t0 + .2))) * 40}px)`; p.style.opacity = .35 + .65 * tramo(t, t0 - .3, t0 + .2); });
+  /* 5 · se cubre de oscuro: entregamos rápido y nos quedamos */
+  const uo = suave(tramo(t, C(9) - .35, C(9) + .2)); $('#oscuro').style.clipPath = `inset(${(1 - uo) * 100}% 0 0 0)`;
+  poner($('#remate'), t >= C(9) - .1 && t < C(10) + .2 ? '<span class="lin"><span>Entregamos</span></span><span class="lin"><span>rápido.</span></span><span class="lin"><span><em>Y nos</em></span></span><span class="lin"><span><em>quedamos.</em></span></span>' : '');
+  renglones($('#remate'), t, C(9) + .05, C(10) - .1);
+  $('#marcas').style.opacity = vida(t, C(9) + .6, C(10), .3, .2); $('#marcas').style.color = '#9C8EA6';
+  /* 6 · el logo */
+  c2.clearRect(0, 0, W, H); logoVivo(c2, { t, desde: C(10) + .1, cx: W / 2, cy: 820, ancho: 820 });
+  $('#cierre').style.opacity = sale(tramo(t, C(10) + 1.4, C(10) + 2));
+  gr(t);
+};
+await pintar(0); window._listo();
+</script>
+</body>
+</html>

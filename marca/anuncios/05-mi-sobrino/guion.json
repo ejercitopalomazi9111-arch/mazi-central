@@ -1,0 +1,20 @@
+{
+  "titulo": "Mi sobrino sabe de computadoras",
+  "voces": { "Will": "bIHbv24MWmeRgasZH58o", "George": "JBFqnCBsd6RMkjVDRZzb", "Liam": "TX3LPaxmHKxFdv7VOQHJ" },
+  "ajustes": { "Will": { "stability": 0.35, "style": 0.55 }, "George": { "stability": 0.3, "style": 0.7 }, "Liam": { "stability": 0.3, "style": 0.65 } },
+  "lineas": [
+    { "id": "01", "voz": "Will", "en": 0.5, "txt": "Don Toño tiene *la mejor taquería* de la colonia." },
+    { "id": "02", "voz": "Will", "pausa": 0.3, "txt": "Un día decidió que su negocio necesitaba *página web.*" },
+    { "id": "03", "voz": "George", "quien": "Don Toño", "pausa": 0.4, "txt": "¿Pagarle a alguien? ¡Ni loco! *Mi sobrino sabe de computadoras.*" },
+    { "id": "04", "voz": "Will", "pausa": 0.4, "txt": "Kevin, el sobrino, tenía catorce años… y una laptop *llena de calcomanías.*" },
+    { "id": "05", "voz": "Liam", "quien": "Kevin", "pausa": 0.3, "txt": "Fácil, tío. *Para el lunes.*" },
+    { "id": "06", "voz": "Will", "pausa": 0.6, "txt": "Pasó un lunes." },
+    { "id": "07", "voz": "Will", "pausa": 0.35, "txt": "Pasó otro lunes." },
+    { "id": "08", "voz": "Will", "pausa": 0.35, "txt": "Y otro." },
+    { "id": "09", "voz": "Will", "pausa": 0.6, "txt": "Por fin salió la página: música automática, letras amarillas sobre fondo verde… *y el teléfono equivocado.*" },
+    { "id": "10", "voz": "George", "quien": "Don Toño", "pausa": 0.4, "txt": "¿Y por qué me están hablando *de una tintorería?*" },
+    { "id": "11", "voz": "Will", "pausa": 0.4, "txt": "Kevin ya no contestaba. *Estaba en exámenes.*" },
+    { "id": "12", "voz": "Will", "pausa": 0.7, "txt": "Moraleja: a tu sobrino quiérelo mucho… pero tu página, *hazla con quien se queda.*" },
+    { "id": "13", "voz": "Will", "pausa": 0.5, "txt": "Grupo Mazi. Hacemos tu página… *y no nos vamos a exámenes.*" }
+  ]
+}

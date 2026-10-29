@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Grupo Mazi · Un solo equipo</title>
+<!-- FORMAL 15 · 30 s · 9:16 · SIN VOZ. El segundo de los dos formales que pidió Carlos el 29 de octubre.
+     Tres actos, un aparato real por servicio, cada uno en su pedestal: la cámara de cine (video y
+     fotografía), la computadora de escritorio (software y sistemas) y la laptop (páginas web); al final
+     la cámara se echa para atrás y están los tres juntos: «Un solo equipo». Cortes secos en el compás
+     (2.0 s exactos, golpe de .5 s, medidos con librosa) y la M cubo cae en el compás 12.
+     Lo que se tomó de las referencias, en formal.js. Modelos (CC BY): «Cinema Camera» de re1monsen,
+     «All In One Computer» de Sean y «gaming_laptop» de sabrito84. En las pantallas, NUESTRO trabajo:
+     Carteles (campañas) y la página de Grupo Mazi, capturados tal cual.
+     Música: «Digital Lemonade», Kevin MacLeod (incompetech.com), CC BY 4.0.
+     node herramientas/video/armar.mjs marca/anuncios/15-un-solo-equipo/index.html marca/anuncios/salida/15-un-solo-equipo.mp4 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter+Tight:wght@500;600;700;800&display=block">
+<link rel="stylesheet" href="../comun.css">
+<script>window.listo = new Promise(r => window._listo = r);</script>
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>
+#viñeta{ position:absolute; inset:0; z-index:5; pointer-events:none; background:radial-gradient(120% 80% at 50% 50%, transparent 58%, #000a 100%) }
+#ui{ position:absolute; inset:0; z-index:6; pointer-events:none }
+/* una sombra arriba y otra abajo, para que la letra se lea aunque detrás haya una pantalla prendida */
+#sombra{ position:absolute; inset:0; z-index:5; pointer-events:none; background:linear-gradient(180deg, #050307D0 0, #05030790 330px, #05030700 620px, #05030700 1180px, #05030780 1420px, #050307B0 1920px) }
+.r{ position:absolute; left:84px; right:150px }
+.r .m{ display:block; overflow:hidden; padding:.06em 0 .12em }
+.r .i{ display:inline-block; will-change:transform }
+.gr{ font:700 108px/1 "Inter Tight"; letter-spacing:-.035em; color:#F4EEF2 }
+.md{ font:600 74px/1.04 "Inter Tight"; letter-spacing:-.03em; color:#F4EEF2 }
+.md b, .gr b{ font-weight:inherit; color:#C77DFF }
+.ojo{ font:600 26px/1 "Inter Tight"; letter-spacing:.34em; text-transform:uppercase; color:#C77DFF }
+.ojo i{ font-style:normal; color:#F4EEF2; opacity:.55; margin-right:.9em }
+.cen{ left:0; right:0; text-align:center }
+</style>
+</head>
+<body>
+<canvas id="c" class="capa" width="1080" height="1920"></canvas>
+<div id="viñeta"></div>
+<div id="grano"></div>
+<div id="sombra"></div>
+<div id="ui"></div>
+<script type="module">
+import { THREE, PAL, W, H, tramo, sale, entra, mezcla, grano } from '../motor.js';
+import { cine } from '../cine.js';
+import { laptop3d, camara3d, computadora3d, textura, piso } from '../estudio.js';
+import { V3, tomas, renglones, cierre, fondos, curva, lenta } from '../formal.js';
+const $ = (s) => document.querySelector(s);
+/* el compás de la canción: 2.0 s, golpe de .5 s; el primero en .06 */
+const O = .06, B = (n) => O + n * 2, G = .5, fx = (n) => `../../../herramientas/video/efectos/${n}.wav`;
+const LOGO = B(12) - .62, FIN = 30;
+window.VIDEO = { w: W, h: H, fps: 30, dur: FIN, musica: { archivo: '/tmp/claude-0/musica/Digital_Lemonade.mp3', desde: 0, vol: .85, entrada: .02, fin: 2.4 },
+  sonidos: [[fx('toque'), B(5) + .25, .22], [fx('whoosh'), B(10) - .1, .3], [fx('whoosh'), LOGO - .25, .4], [fx('ding'), B(12) + .05, .25]] };
+await Promise.all(['700 80px "Inter Tight"', '600 60px "Inter Tight"', '800 60px "Inter Tight"'].map(f => document.fonts.load(f)));
+
+const C = cine($('#c'), { sub: 6, obturador: .5, fov: 30, bloom: [.3, .45, .92] });
+const { s, cam } = C; s.add(cam);
+s.background = new THREE.Color('#0A090D'); s.fog = new THREE.Fog('#0A090D', 7, 22); s.environmentIntensity = .55;
+C.r.shadowMap.enabled = true; C.r.shadowMap.type = THREE.PCFSoftShadowMap;
+const fondo = fondos(cam, { grafito: ['#2A2532', '#121016', '#060508'], morado: ['#3B1460', '#170A26', '#05030A'] });
+s.add(piso({ color: '#0F0D12', aspereza: .45 }));
+
+/* ── los pedestales: cilindros mate con un hilo de luz morada en el canto ── */
+const matPed = new THREE.MeshStandardMaterial({ color: '#17141C', roughness: .6, metalness: .15 });
+const matHilo = new THREE.MeshBasicMaterial({ color: '#B44BFF', toneMapped: false });
+const ALTO = .42;
+function pedestal(x, r){ const g = new THREE.Group(); const c = new THREE.Mesh(new THREE.CylinderGeometry(r, r, ALTO, 96), matPed); c.position.y = ALTO / 2; c.castShadow = c.receiveShadow = true;
+  const h = new THREE.Mesh(new THREE.TorusGeometry(r - .004, .0045, 8, 160), matHilo); h.rotation.x = Math.PI / 2; h.position.y = ALTO + .001; g.add(c, h); g.position.x = x; s.add(g); return g; }
+/* en triángulo, para que al final quepan los tres en el cuadro vertical: la computadora atrás */
+const PK = V3(-1.08, 0, .95), PD = V3(.05, 0, -.75), PL = V3(1.08, 0, 1.1);
+const pK = pedestal(PK.x, .5), pD = pedestal(PD.x, .84), pL = pedestal(PL.x, .82); pK.position.z = PK.z; pD.position.z = PD.z; pL.position.z = PL.z;
+
+/* ── los tres aparatos ── */
+const K = await camara3d({ largo: .78 }); K.grupo.position.set(PK.x, ALTO, PK.z); K.grupo.rotation.y = .55; s.add(K.grupo);
+const D = await computadora3d({ alto: 1.0 }); D.grupo.position.set(PD.x, ALTO, PD.z); D.grupo.rotation.y = -.12; s.add(D.grupo);
+const L = await laptop3d({ ancho: 1.25 }); L.grupo.position.set(PL.x, ALTO, PL.z); L.grupo.rotation.y = -.35; s.add(L.grupo);
+const texSoft = await textura('software.jpg'), texWeb = await textura('web.jpg');
+const matD = D.pantalla(texSoft), matL = L.pantalla(texWeb);
+L.base.traverse(o => { if(o.isMesh && o.material.emissiveMap) o.material.emissive.set('#D7A8FF'); });
+s.updateMatrixWorld(true);
+/* dónde está cada cosa en el mundo */
+const centro = (o) => new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3());
+const cajaL = new THREE.Box3(); K.grupo.traverse(o => { if(o.isMesh && o.material.name === 'camera_lense') cajaL.expandByObject(o); });
+const lenteC = cajaL.getCenter(new THREE.Vector3()), lenteF = lenteC.clone().add(V3(Math.sin(.55), 0, Math.cos(.55)).multiplyScalar(.22));   // la boca del lente
+const KC = centro(K.grupo);
+const DC = D.plano.getWorldPosition(new THREE.Vector3()), DN = V3(0, .502, .865).applyAxisAngle(V3(0, 1, 0), -.12);
+L.abrir(1); s.updateMatrixWorld(true);
+const LC = centro(L.malla), LN = V3(0, Math.sin(.21), Math.cos(.21)).applyAxisAngle(V3(0, 1, 0), -.35);
+
+/* ── la luz ── */
+s.add(new THREE.HemisphereLight('#D8CCE8', '#1A0A12', .12));
+const llave = new THREE.SpotLight('#F1EAF8', 9, 16, .5, .85, 1.3); llave.position.set(-2.5, 4.2, 3.6); llave.castShadow = true; llave.shadow.mapSize.set(2048, 2048); llave.shadow.bias = -.0003; llave.shadow.normalBias = .02; llave.shadow.radius = 4; s.add(llave, llave.target);
+const borde = new THREE.DirectionalLight(PAL.vino2, 2.4); borde.position.set(3, 2.4, -4); s.add(borde);
+const morado = new THREE.PointLight('#9B3BFF', 2.2, 7, 1.6); s.add(morado);
+const luzPant = new THREE.PointLight('#8A5BD6', 0, 3, 1.8); s.add(luzPant);
+
+/* ── el cierre ── */
+const KK = cierre(s, cam, { donde: V3(0, 200, 0), desde: LOGO, fov: 30 });
+
+/* encuadres a la mano: de frente a una pantalla, a una distancia */
+const frente = (c, n, d, dx = 0, dy = 0) => { const lado = V3(0, 1, 0).cross(n).normalize(); const m = c.clone().addScaledVector(lado, dx).add(V3(0, dy, 0)); return [m.clone().addScaledVector(n, d), m, 0]; };
+const orbita = (c, r, az, y, mira = c) => [V3(c.x + Math.sin(az) * r, y, c.z + Math.cos(az) * r), mira, 0];
+
+const T = tomas(cam, [
+  /* ACTO 1 · la cámara de cine */
+  { t0: 0, t1: B(1), de: [lenteF.clone().add(V3(Math.sin(.55) * .55, .02, Math.cos(.55) * .55)), lenteF, .02], a: [lenteF.clone().add(V3(Math.sin(.55) * .36, .015, Math.cos(.55) * .36)), lenteF, .01], ap: .012 },
+  { t0: B(1), t1: B(2), de: [lenteC.clone().add(V3(.42, .08, -.05)), lenteC.clone().add(V3(0, 0, .12)), .05], a: [lenteC.clone().add(V3(.36, .1, .18)), lenteC.clone().add(V3(0, 0, -.04)), .03], ap: .01 },
+  { t0: B(2), t1: B(3), de: orbita(KC, 1.65, .25, ALTO + .55, KC), a: orbita(KC, 1.5, .6, ALTO + .45, KC), ap: .002 },
+  { t0: B(3), t1: B(3) + 2 * G, de: [KC.clone().add(V3(-.12, .9, .25)), KC.clone().add(V3(0, 0, .02)), .1], a: [KC.clone().add(V3(-.06, .85, .2)), KC.clone(), .08], ap: .004 },
+  { t0: B(3) + 2 * G, t1: B(4), de: [KC.clone().add(V3(-.7, .25, -.55)), KC.clone().add(V3(0, .03, 0)), -.05], a: [KC.clone().add(V3(-.6, .22, -.7)), KC.clone().add(V3(0, .03, 0)), -.04], ap: .005 },
+  /* ACTO 2 · la computadora */
+  { t0: B(4), t1: B(5), de: [PD.clone().add(V3(.75, ALTO + .22, .9)), PD.clone().add(V3(-.1, ALTO + .03, .42)), .05], a: [PD.clone().add(V3(.45, ALTO + .2, .92)), PD.clone().add(V3(-.35, ALTO + .03, .4)), .03], ap: .009 },
+  { t0: B(5), t1: B(6), de: frente(DC, DN, 2.3, 0, -.05), a: frente(DC, DN, 2.0, 0, -.06), ap: .001 },
+  { t0: B(6), t1: B(7), de: orbita(PD, 2.9, -.6, ALTO + 1.3, PD.clone().add(V3(0, ALTO + .5, 0))), a: orbita(PD, 2.7, -.3, ALTO + 1.05, PD.clone().add(V3(0, ALTO + .5, 0))), ap: .0008 },
+  { t0: B(7), t1: B(8), de: frente(DC, DN, 1.7, .05, 0), a: frente(DC, DN, 1.15, -.18, .02), ease: curva, ap: 0 },
+  /* ACTO 3 · la laptop */
+  { t0: B(8), t1: B(9), de: [PL.clone().add(V3(-.75, ALTO + .25, 1.65)), PL.clone().add(V3(0, ALTO + .12, 0)), .03], a: [PL.clone().add(V3(-.6, ALTO + .42, 1.5)), PL.clone().add(V3(0, ALTO + .3, -.05)), .02], ease: curva, ap: .002 },
+  { t0: B(9), t1: B(10), de: [PL.clone().add(V3(.55, ALTO + .7, 1.95)), LC.clone().add(V3(0, -.12, .1)), .02], a: [PL.clone().add(V3(.25, ALTO + .55, 2.1)), LC.clone().add(V3(0, -.12, .1)), 0], ap: .0012 },
+  /* los tres juntos: la cámara se echa para atrás */
+  { t0: B(10), t1: LOGO - .14, de: [PL.clone().add(V3(-.1, ALTO + .6, 2.1)), PL.clone().add(V3(-.4, ALTO + .35, 0)), 0], a: [V3(0, 2.6, 8.4), V3(0, .55, .3), 0], fov: [30, 46], ease: (u) => curva(Math.min(1, u * 1.25)), ap: .0004 },
+  { t0: LOGO - .14, t1: LOGO, de: [V3(0, 2.6, 8.4), V3(0, .55, .3), 0], a: [V3(0, 5.2, 8), V3(0, 9, -1), 0], fov: [46, 30], ease: entra },
+  { t0: LOGO, t1: LOGO + 1.9, de: KK.lejos, a: KK.cerca, ease: curva, ap: .004 },
+  { t0: LOGO + 1.9, t1: FIN, de: KK.cerca, a: KK.final, ap: 0 }]);
+
+const R = renglones($('#ui'), [
+  { t: .35, hasta: B(4) - .1, y: 250, texto: '<i>01</i>Video y fotografía', clase: 'ojo' },
+  { t: B(1) + .1, hasta: B(2) + 1.9, y: 300, texto: 'Tu marca,\nen su mejor <b>luz.</b>', clase: 'gr', paso: G },
+  { t: B(4) + .1, hasta: B(8) - .1, y: 250, texto: '<i>02</i>Software y sistemas', clase: 'ojo' },
+  { t: B(5) + .3, hasta: B(6) + 1.9, y: 300, texto: 'Procesos que\n<b>trabajan solos.</b>', clase: 'gr', paso: G },
+  { t: B(8) + .1, hasta: B(10) - .1, y: 250, texto: '<i>03</i>Páginas web', clase: 'ojo' },
+  { t: B(9) + .1, hasta: B(10) - .05, y: 1230, texto: 'Tu negocio,\n<b>abierto siempre.</b>', clase: 'gr', paso: G },
+  { t: B(10) + 1.0, hasta: LOGO - .2, y: 300, texto: 'Un solo <b>equipo.</b>', clase: 'gr' },
+  { t: B(11) + .1, hasta: LOGO - .2, y: 420, texto: 'Seis servicios · una sola firma', clase: 'ojo' }]);
+
+function escena(t){
+  /* la computadora prende su pantalla en el compás 5 */
+  const pD = tramo(t, B(5) + .2, B(5) + .6); matD.color.setScalar(.9 * Math.min(1, pD * 1.5) * (1 + .4 * Math.max(0, 1 - Math.abs(pD - .3) / .3)));
+  /* la laptop: cerrada hasta el compás 8, se abre y se prende */
+  const abre = curva(tramo(t, B(8) + .1, B(8) + 1.5)); L.abrir(t < B(8) ? 0 : abre);
+  L.teclas(sale(tramo(t, B(8) + .6, B(8) + 1.6)));
+  const pL = tramo(t, B(8) + .55, B(8) + 1.0); matL.color.setScalar(.88 * Math.min(1, pL * 1.5));
+  if(t >= B(10)){ matD.color.setScalar(.9); }
+  /* la luz que acompaña a cada acto */
+  const acto = t < B(4) ? 0 : t < B(8) ? 1 : 2, X = [PK, PD, PL][acto];
+  if(t < B(10)){ llave.target.position.set(X.x, ALTO + .3, X.z); llave.position.set(X.x - 2.4, 4.2, X.z + 3.6); morado.position.set(X.x - 1.6, 1.4, X.z - 1.4); }
+  else { llave.target.position.set(0, .5, 0); llave.position.set(-2.5, 6, 6); llave.angle = .75; morado.position.set(0, 1.6, -2); morado.intensity = 3.5; }
+  luzPant.intensity = acto === 1 ? 1.4 * Math.min(1, pD * 2) : acto === 2 ? 1.4 * pL : 0;
+  luzPant.position.copy(acto === 1 ? DC.clone().addScaledVector(DN, .6) : LC.clone().addScaledVector(LN, .6));
+  fondo.solo(t >= LOGO ? 'morado' : 'grafito');
+  s.fog.near = t >= LOGO ? 200 : 7; s.fog.far = t >= LOGO ? 400 : 22;
+  s.environmentIntensity = t >= LOGO ? .8 : .55;
+  [K.grupo, D.grupo, L.grupo].forEach(o => o.visible = t < LOGO);
+  KK.pintar(t);
+  const o = T.poner(t);
+  o.brillo = t >= LOGO ? .5 * (1 - .7 * tramo(t, LOGO + 1, LOGO + 2.5)) : .3;
+  return o;
+}
+
+const gr = grano($('#grano'), .035);
+const rapidez = (t) => { const t0 = T.toma(t).t0; T.poner(Math.max(t0, t - 1 / 30)); const a = cam.position.clone(), q = cam.quaternion.clone(); const o = T.poner(t);
+  return a.distanceTo(cam.position) / Math.max(.3, o.foco) + q.angleTo(cam.quaternion); };
+window.pintar = async (t) => {
+  const t0 = T.toma(t).t0, v = rapidez(t), mueve = t > B(8) && t < B(8) + 1.6;
+  const n = window.SUB || (v > .06 ? 7 : v > .025 ? 4 : mueve ? 3 : v > .008 ? 2 : 1);
+  C.cuadro(t, (tk) => escena(Math.max(t0 + 1e-4, tk)), { n });
+  R(t); gr(t);
+};
+await pintar(0); window._listo();
+</script>
+</body>
+</html>

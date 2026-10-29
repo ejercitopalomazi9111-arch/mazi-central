@@ -1,0 +1,13 @@
+{
+  "titulo": "¿Se te da vender?",
+  "voces": { "Eric": "cjVigY5qzO86Huf0OWal" },
+  "ajustes": { "Eric": { "stability": 0.4, "style": 0.5 } },
+  "lineas": [
+    { "id": "01", "voz": "Eric", "en": 0.5, "txt": "¿Se te da *vender?*", "sinSub": true },
+    { "id": "02", "voz": "Eric", "pausa": 0.5, "txt": "En Grupo Mazi buscamos *vendedores y comisionistas.*" },
+    { "id": "03", "voz": "Eric", "pausa": 0.6, "txt": "Tú consigues al cliente. Nosotros hacemos *la página, la app o el video.*" },
+    { "id": "04", "voz": "Eric", "pausa": 0.6, "txt": "Y tú cobras *comisión por cada proyecto.*" },
+    { "id": "05", "voz": "Eric", "pausa": 0.6, "txt": "Vendes algo que de verdad sirve, *con trabajo real que enseñar.*" },
+    { "id": "06", "voz": "Eric", "pausa": 0.6, "txt": "Escríbenos por WhatsApp: *442 883 3786.*", "dice": "Escríbenos por WhatsApp: cuatro, cuatro, dos… ocho, ocho, tres… tres, siete, ocho, seis.", "sinSub": true }
+  ]
+}

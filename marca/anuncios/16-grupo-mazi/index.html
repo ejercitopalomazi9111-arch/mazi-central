@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Grupo Mazi · De un dibujo a lo real</title>
+<!-- 16 · 1:48 · 9:16 · CON VOZ. Lo pidió Carlos el 29 de octubre: «un video de 2 minutos hablando de
+     Grupo Mazi, de dónde nace, a qué nos dedicamos, por qué es importante emprender, por qué somos la
+     mejor opción para asociarte con nuestro sistema de comisiones y por qué contratarnos como cliente;
+     todo en 3D: que inicie como dibujos hechos por un niño, luego cambie estilo Inception a modelos 3D
+     sencillos y luego a fotorrealismo puro … terminando usa el logo de la M en cubo sin llenarlo».
+     TRES MUNDOS con la misma cámara, y entre uno y otro la imagen se DOBLA como la ciudad de Inception
+     (la mitad de abajo se levanta sobre la de arriba y la hoja doblada se va por encima de la cámara;
+     detrás ya está el mundo siguiente, ladeado, y se endereza):
+       · 0–34.7   el dibujo: la gente y los muebles de Kenney (CC0) pintados con crayola (estilos.js)
+       · 34.7–72.9 el juguete: los mismos modelos en tres tonos, los seis servicios y las comisiones
+       · 72.9–     lo real: la laptop, la computadora y la cámara de cine (CC BY) en un escritorio de
+                   madera (ambientCG, CC0) con una planta de Poly Haven (CC0); en sus pantallas, NUESTRO
+                   trabajo capturado tal cual
+     Los golpes de la música (medidos con librosa): el primer doblez cae en 34.74, el segundo en 72.9
+     y el logo en 101.4. Voz: Piper (es_MX), porque ElevenLabs se quedó sin saldo este mes.
+     Música: «Rising Game», Kevin MacLeod (incompetech.com), CC BY 4.0.
+     node herramientas/video/armar.mjs marca/anuncios/16-grupo-mazi/index.html marca/anuncios/salida/16-grupo-mazi.mp4 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gochi+Hand&family=Space+Grotesk:wght@500;700&family=Inter+Tight:wght@500;600;700;800;900&display=block">
+<link rel="stylesheet" href="../comun.css">
+<script>window.listo = new Promise(r => window._listo = r);</script>
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>
+#viñeta{ position:absolute; inset:0; z-index:5; pointer-events:none; background:radial-gradient(120% 80% at 50% 50%, transparent 58%, #000a 100%) }
+#ui, #notas{ position:absolute; inset:0; z-index:6; pointer-events:none }
+#sombra{ position:absolute; inset:0; z-index:5; pointer-events:none; background:linear-gradient(180deg, #050307C0 0, #05030780 330px, #05030700 620px, #05030700 1180px, #05030770 1420px, #050307A0 1920px) }
+/* el dibujo: letra de cuaderno, tinta de plumón */
+.nota{ position:absolute; font:400 74px/1 "Gochi Hand"; color:#2B2433; white-space:nowrap; transform-origin:0 50% }
+.nota.chica{ font-size:52px }
+.nota.grande{ font-size:104px; line-height:.95 }
+.nota b{ font-weight:400; color:#7E1735 }
+.nota i{ font-style:normal; color:#8E2BD9 }
+/* los renglones */
+.r{ position:absolute; left:84px; right:84px }
+.r .m{ display:block; overflow:hidden; padding:.06em 0 .14em }
+.r .i{ display:inline-block; will-change:transform }
+.jg{ font:900 112px/.98 "Inter Tight"; letter-spacing:-.04em; color:#fff; text-shadow:0 8px 0 #2A1440, 0 14px 40px #2A144080 }
+.jg b{ font-weight:inherit; color:#FFE08A }
+.jm{ font:800 64px/1.05 "Inter Tight"; letter-spacing:-.02em; color:#fff; text-shadow:0 5px 0 #2A1440 }
+.gr{ font:700 104px/1 "Inter Tight"; letter-spacing:-.035em; color:#F4EEF2 }
+.gr b, .md b{ font-weight:inherit; color:#C77DFF }
+.ojo{ font:600 26px/1 "Inter Tight"; letter-spacing:.34em; text-transform:uppercase; color:#C77DFF }
+.cen{ left:0; right:0; text-align:center }
+/* los subtítulos cambian de mundo con la imagen */
+#subs.a1{ font:400 66px/1.08 "Gochi Hand"; color:#2B2433; text-shadow:0 0 18px #F3EFE6, 0 0 6px #F3EFE6; -webkit-text-stroke:0 }
+#subs.a1 em{ color:#7E1735 }
+#subs.a2{ font:900 58px/1.1 "Inter Tight"; color:#fff; text-shadow:0 4px 0 #2A1440, 0 0 22px #2A1440A0; -webkit-text-stroke:0 }
+#subs.a2 em{ color:#FFE08A }
+#subs.a3{ font:700 54px/1.14 "Inter Tight"; letter-spacing:-.01em }
+</style>
+</head>
+<body>
+<canvas id="c" class="capa" width="1080" height="1920"></canvas>
+<div id="viñeta"></div>
+<div id="sombra"></div>
+<div id="notas"></div>
+<div id="ui"></div>
+<div id="subs"></div>
+<div id="grano"></div>
+<script type="module">
+import { THREE, W, H, tramo, sale, entra, mezcla, resorte, guion, sonidosVoz, subtitulos, grano } from '../motor.js';
+import { cine } from '../cine.js';
+import { letrero } from '../cine.js';
+import { persona, mueble, actuar } from '../gente.js';
+import { crayola, juguete, tic } from '../estilos.js';
+import { laptop3d, camara3d, computadora3d, textura } from '../estudio.js';
+import { V3, tomas, renglones, cierre, fondos, curva, lenta } from '../formal.js';
+import { GLTFLoader } from '../vendor/loaders/GLTFLoader.js';
+const $ = (s) => document.querySelector(s);
+const G = await guion('.'), t0 = (id) => G.de(id).t0, t1 = (id) => G.de(id).t1;
+/* cuándo dice la voz una frase dentro de su renglón (repartido por letras, como los subtítulos) */
+const dice = (id, frase) => { const l = G.de(id), txt = l.txt.replace(/\*/g, ''), k = txt.indexOf(frase); return l.t0 + l.dur * Math.max(0, k) / txt.length; };
+const fx = (n) => `../../../herramientas/video/efectos/${n}.wav`;
+
+/* los tres golpes de la música y los dos dobleces: cada uno empieza en «a», la hoja cae doblada en el
+   golpe y para «b» ya se fue */
+const F1 = { a: 33.9, F: 34.74, b: 35.3 }, F2 = { a: 72.1, F: 72.9, b: 73.6 };
+const LOGO = 101.4, FIN = 108;
+window.VIDEO = { w: W, h: H, fps: 30, dur: FIN, musica: { archivo: '/tmp/claude-0/musica/Rising_Game.mp3', desde: 0, vol: .3, entrada: .02, fin: 2.5 },
+  sonidos: [...sonidosVoz(G, 1.15), [fx('whoosh'), F1.a + .1, .45], [fx('golpe'), F1.F, .35], [fx('whoosh'), F2.a + .1, .45], [fx('golpe'), F2.F, .35],
+    [fx('subida'), F2.a - 2.2, .25], [fx('whoosh'), LOGO - .3, .4], [fx('ding'), LOGO + .65, .3]] };
+await Promise.all(['400 80px "Gochi Hand"', '900 80px "Inter Tight"', '800 60px "Inter Tight"', '700 80px "Inter Tight"', '600 60px "Inter Tight"'].map(f => document.fonts.load(f)));
+
+const C = cine($('#c'), { sub: 6, obturador: .5, fov: 30, bloom: [.3, .45, .92] });
+const { cam } = C;
+C.r.shadowMap.enabled = true; C.r.shadowMap.type = THREE.PCFSoftShadowMap;
+const cargar = (ruta) => new GLTFLoader().loadAsync(ruta).then(g => g.scene);
+/* un modelo de fuera, parado en el suelo, centrado y del alto pedido */
+async function real(ruta, alto){ const m = await cargar(ruta); const b = new THREE.Box3().setFromObject(m), c = b.getCenter(new THREE.Vector3()), k = alto / (b.max.y - b.min.y);
+  m.scale.setScalar(k); m.position.set(-c.x * k, -b.min.y * k, -c.z * k); const g = new THREE.Group(); g.add(m);
+  g.traverse(o => { if(o.isMesh){ o.castShadow = o.receiveShadow = true; } }); return g; }
+const altoDe = (o) => { o.updateMatrixWorld(true); return new THREE.Box3().setFromObject(o).max.y; };
+/* el reloj de dibujo animado: el mundo del niño se mueve «de a dos» (12 cuadros por segundo) */
+const Q = (t) => Math.floor(t * 12) / 12;
+/* algo que aparece con un brinquito */
+const brinca = (o, t, desde, base = 1) => { const u = tramo(t, desde, desde + .55); o.visible = u > 0; o.scale.setScalar(base * Math.max(.001, resorte(u))); };
+
+/* ══════════════ MUNDO 1 · EL DIBUJO ══════════════ */
+const sD = new THREE.Scene(); sD.background = new THREE.Color('#F3EFE6');
+sD.add(new THREE.HemisphereLight('#ffffff', '#8a7aa0', 1.25));
+{ const sol = new THREE.DirectionalLight('#ffffff', 2.2); sol.position.set(-2, 5, 4); sD.add(sol); }
+const papel = await textura('../texturas/papel/color.jpg', { repetir: true }); papel.repeat.set(14, 14);
+{ const p = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshBasicMaterial({ map: papel })); p.rotation.x = -Math.PI / 2; sD.add(p); }
+async function enD(o, x, y, z, ry = 0){ o.position.set(x, y, z); o.rotation.y = ry; sD.add(o); return o; }
+/* la oficina de donde sale todo */
+const yo = await persona('male-a', { alto: 1 }); await enD(yo.obj, -.4, 0, .25, .25);
+const escritorio = await enD(await mueble('desk', { escala: 1.4 }), .38, 0, -.2);
+const lapD = await enD(await mueble('laptop', { escala: 1.1 }), .5, .53, -.25, -.3);
+const librosD = await enD(await mueble('books', { escala: 1.6 }), .02, .53, -.12, .4);
+const oficina = [await enD(await mueble('bookcaseOpen', { escala: 1.4 }), -1.45, 0, -.85, .35), await enD(await mueble('pottedPlant', { escala: 1.5 }), 1.35, 0, -.55),
+  await enD(await mueble('chairDesk', { escala: 1.4 }), .45, 0, .45, Math.PI + .3), await enD(await mueble('lampSquareTable', { escala: 1.6 }), -.95, 0, -.2)];
+/* los negocios de alrededor */
+const TI = V3(-3.0, 0, -1.4), LI = V3(3.0, 0, -1.4), FI = V3(0, 0, -5.6);
+const barra = await enD(await mueble('kitchenBar', { escala: 2 }), TI.x, 0, TI.z + .25, .45);
+const refri = await enD(await mueble('kitchenFridge', { escala: 2 }), TI.x - .75, 0, TI.z - .55, .45);
+const tendera = await persona('female-b', { alto: 1 }); await enD(tendera.obj, TI.x - .2, 0, TI.z - .25, .45);
+const mesa = await enD(await mueble('tableRound', { escala: 2 }), LI.x, 0, LI.z, -.4);
+const libreta = await enD(await mueble('books', { escala: 1.7 }), LI.x + .1, altoDe(mesa), LI.z + .05, -.6);
+const señor = await persona('male-b', { alto: 1 }); await enD(señor.obj, LI.x - .1, 0, LI.z - .75, -.2);
+const mostrador = await enD(await mueble('kitchenCabinet', { escala: 2 }), FI.x, 0, FI.z, 0);
+const cocinera = await persona('female-d', { alto: 1 }); await enD(cocinera.obj, FI.x + .15, 0, FI.z - .7, 0);
+const fila = [];
+for(const [i, n] of ['female-c', 'male-e', 'female-a', 'male-f', 'female-e'].entries()){ const p = await persona(n, { alto: .92 }); await enD(p.obj, FI.x + (i % 2 ? .1 : -.08), 0, FI.z + 1.0 + i * .62, Math.PI + (i % 2 ? .15 : -.1)); fila.push(p); }
+const negocios = [barra, refri, tendera.obj, mesa, libreta, señor.obj, mostrador, cocinera.obj, ...fila.map(p => p.obj)];
+/* y a cada problema, su herramienta */
+const herr = [await enD(await mueble('laptop', { escala: 1.05 }), TI.x + .05, altoDe(barra), TI.z + .2, .45 + Math.PI),
+  await enD(await mueble('computerScreen', { escala: 1.6 }), LI.x - .25, altoDe(mesa), LI.z + .15, -.4),
+  await enD(await mueble('computerScreen', { escala: 1.6 }), FI.x - .1, altoDe(mostrador), FI.z + .05, 0)];
+sD.updateMatrixWorld(true);
+sD.traverse(o => { if(o.isGroup && o.parent === sD) crayola(o, { grosor: .016 }); });
+const BASE = new Map(); [...oficina, ...negocios, ...herr].forEach(o => BASE.set(o, o.scale.x));
+
+/* en vertical, con 30° de campo casi nada cabe a lo ancho: el dibujo y el juguete van con 40° */
+cam.fov = 40; cam.updateProjectionMatrix();
+const TD = tomas(cam, [
+  /* 01 · desde arriba el papel, y la cámara baja hasta el muchacho */
+  { t0: 0, t1: 5.4, de: [V3(0, 7.8, 1.0), V3(0, 0, .05), 0], a: [V3(1.3, 1.9, 4.6), V3(0, .5, -.05), 0], ease: (u) => curva(tramo(u, .2, 1)) },
+  /* 02 · el escritorio: la idea y el cuaderno */
+  { t0: 5.4, t1: 10.1, de: [V3(-1.5, 1.55, 3.2), V3(.1, .58, -.1), .02], a: [V3(-1.15, 1.4, 2.8), V3(.12, .6, -.12), 0] },
+  /* 03 · la regla, desde abajo */
+  { t0: 10.1, t1: 13.4, de: [V3(.7, .34, 3.6), V3(0, .8, 0), 0], a: [V3(.45, .3, 3.15), V3(0, .84, 0), 0] },
+  /* 04 · así nació: la oficina se llena */
+  { t0: 13.4, t1: 16.7, de: [V3(3.5, 2.7, 5.9), V3(0, .45, -.4), 0], a: [V3(2.9, 2.35, 5.2), V3(0, .45, -.4), 0] },
+  /* 05 · se aleja y aparecen los negocios de alrededor */
+  { t0: 16.7, t1: 23.1, de: [V3(2.9, 2.35, 5.2), V3(0, .45, -.4), 0], a: [V3(0, 9.4, 6.2), V3(0, 0, -3.0), 0], ease: curva },
+  /* 06 · la tienda sin página · el pedido en la libreta · la fila del recreo */
+  { t0: 23.1, t1: dice('06', 'el pedido'), de: [TI.clone().add(V3(.55, 1.35, 3.6)), TI.clone().add(V3(-.25, .6, 0)), 0], a: [TI.clone().add(V3(.4, 1.25, 3.2)), TI.clone().add(V3(-.25, .62, 0)), 0] },
+  { t0: dice('06', 'el pedido'), t1: dice('06', 'la fila'), de: [LI.clone().add(V3(.2, 1.5, 3.5)), LI.clone().add(V3(0, .55, -.3)), 0], a: [LI.clone().add(V3(.05, 1.4, 3.1)), LI.clone().add(V3(0, .57, -.3)), 0] },
+  { t0: dice('06', 'la fila'), t1: 30.3, de: [V3(5.4, 1.9, -2.6), V3(0, .45, -3.5), 0], a: [V3(5.0, 1.75, -3.4), V3(0, .45, -3.9), 0] },
+  /* 07 · a cada uno su herramienta, y la cámara sube hasta ver la hoja entera */
+  { t0: 30.3, t1: F1.b, de: [V3(0, 4.6, 4.2), V3(0, .3, -3.0), 0], a: [V3(0, 17.5, -2.1), V3(0, 0, -2.7), 0], ease: (u) => curva(Math.min(1, u * 1.12)) }]);
+
+/* lo escrito a mano en el papel: se escribe letra por letra (a 12 por segundo, como plumón) */
+const NOTAS = [
+  { t: 1.3, hasta: 3.9, txt: 'una idea…', x: 300, y: 560, clase: 'grande', giro: -4 },
+  { t: dice('02', 'una idea') + .1, hasta: 10, txt: 'una <i>idea</i>', p: V3(-.4, 1.25, .25), dx: -30, dy: -40, giro: -6 },
+  { t: dice('02', 'un cuaderno'), hasta: 10, txt: 'un cuaderno', p: V3(.02, .72, -.12), dx: 20, dy: -150, giro: 3 },
+  { t: t0('03') - .1, hasta: 13.3, txt: 'si no existe<br>la herramienta,', x: 130, y: 300, clase: 'grande', giro: -3 },
+  { t: dice('03', 'se construye'), hasta: 13.3, txt: '<b>se construye.</b>', x: 230, y: 520, clase: 'grande', giro: -2 },
+  { t: dice('04', 'Grupo Mazi'), hasta: 16.6, txt: '<b>Grupo Mazi</b>', x: 240, y: 330, clase: 'grande', giro: -3 },
+  { t: dice('04', 'en Querétaro'), hasta: 16.6, txt: 'Querétaro ★', x: 420, y: 470, giro: 2 },
+  { t: dice('06', 'la tienda') + .1, hasta: dice('06', 'el pedido'), txt: '¿y su página?', p: TI.clone().add(V3(0, 1.3, 0)), dx: -300, dy: -60, giro: -5 },
+  { t: dice('06', 'apuntado') , hasta: dice('06', 'la fila'), txt: 'pedidos a mano', p: LI.clone().add(V3(0, 1.0, 0)), dx: -420, dy: -80, giro: 4 },
+  { t: dice('06', 'la fila') + .2, hasta: 30.3, txt: 'la fila del recreo', p: V3(0, 1.2, -4.0), dx: -220, dy: -120, giro: -3 },
+  { t: dice('07', 'cada problema'), hasta: F1.a + .2, txt: '✓', p: TI.clone().add(V3(0, 1.2, 0)), dx: -20, dy: -50, clase: 'grande' },
+  { t: dice('07', 'se volvió'), hasta: F1.a + .2, txt: '✓', p: LI.clone().add(V3(0, 1.2, 0)), dx: -20, dy: -50, clase: 'grande' },
+  { t: dice('07', 'herramienta'), hasta: F1.a + .2, txt: '✓', p: FI.clone().add(V3(0, 1.2, 0)), dx: -20, dy: -50, clase: 'grande' },
+  { t: dice('07', 'una herramienta'), hasta: F1.a + .2, txt: '<b>una herramienta</b>', x: 170, y: 330, clase: 'grande', giro: -3 }];
+const capaNotas = $('#notas');
+NOTAS.forEach(n => { const d = document.createElement('div'); d.className = 'nota ' + (n.clase || ''); d.innerHTML = n.txt; d.style.display = 'none'; capaNotas.appendChild(d); n.el = d; n.letras = n.txt.replace(/<[^>]+>/g, '').length; });
+const proy = (p) => { const v = p.clone().project(cam); return [(v.x + 1) / 2 * W, (1 - v.y) / 2 * H]; };
+function notas(t){
+  for(const n of NOTAS){ const vis = t >= n.t && t < n.hasta; n.el.style.display = vis ? '' : 'none'; if(!vis) continue;
+    const u = Math.min(1, Q(t - n.t) / Math.max(.25, n.letras * .055)), sal = tramo(t, n.hasta - .25, n.hasta);
+    const [x, y] = n.p ? proy(n.p) : [n.x, n.y];
+    /* el plumón tiembla un poco, como el contorno */
+    const tb = Math.sin(Math.floor(t * 8) * 12.9898) * 1.2;
+    n.el.style.left = (x + (n.dx || 0)) + 'px'; n.el.style.top = (y + (n.dy || 0)) + 'px';
+    n.el.style.transform = `rotate(${(n.giro || 0) + tb}deg)`; n.el.style.clipPath = `inset(-20% ${((1 - u) * 100).toFixed(1)}% -20% -5%)`; n.el.style.opacity = 1 - sal; }
+}
+
+function escenaD(t){
+  const q = Q(t); tic(t);
+  actuar(yo, q, [[0, 'idle'], [5.7, 'interact-right'], [10.0, 'idle'], [dice('03', 'se construye'), 'emote-yes', { una: true }], [13.0, 'idle'], [14.2, 'emote-yes', { una: true }], [15.6, 'idle']]);
+  oficina.forEach((o, i) => brinca(o, q, t0('04') + .2 + i * .36, BASE.get(o)));
+  const tn = dice('05', 'Después');
+  negocios.forEach((o, i) => brinca(o, q, tn + .15 + (i % 4) * .2 + Math.floor(i / 4) * .12, BASE.get(o)));
+  herr.forEach((o, i) => brinca(o, q, dice('07', ['cada problema', 'se volvió', 'herramienta'][i]), BASE.get(o)));
+  actuar(tendera, q, [[0, 'idle'], [dice('06', 'la tienda'), 'emote-no', { una: true }], [dice('06', 'el pedido'), 'idle'], [dice('07', 'cada problema') + .3, 'emote-yes', { una: true }]]);
+  actuar(señor, q, [[0, 'interact-right'], [dice('07', 'se volvió') + .3, 'emote-yes', { una: true }]]);
+  actuar(cocinera, q, [[0, 'interact-left'], [dice('07', 'herramienta') + .2, 'emote-yes', { una: true }]]);
+  fila.forEach((p, i) => actuar(p, q + i * .37, [[0, 'idle'], [dice('07', 'herramienta') + .3 + i * .5, 'emote-yes', { una: true }]]));
+  return TD.poner(t);
+}
+
+/* ══════════════ MUNDO 2 · EL JUGUETE ══════════════ */
+const sS = new THREE.Scene();
+{ const k = document.createElement('canvas'); k.width = 16; k.height = 512; const x = k.getContext('2d'), g = x.createLinearGradient(0, 0, 0, 512);
+  g.addColorStop(0, '#9A7BD6'); g.addColorStop(.55, '#CDB6EE'); g.addColorStop(1, '#E6D9F7'); x.fillStyle = g; x.fillRect(0, 0, 16, 512);
+  const tx = new THREE.CanvasTexture(k); tx.colorSpace = THREE.SRGBColorSpace; sS.background = tx; }
+sS.fog = new THREE.Fog('#D9C9F2', 14, 34);
+sS.add(new THREE.HemisphereLight('#ffffff', '#7A5AA8', 1.4));
+const solS = new THREE.DirectionalLight('#FFF6EC', 2.6); solS.castShadow = true; solS.shadow.mapSize.set(2048, 2048); solS.shadow.bias = -.0004; solS.shadow.normalBias = .02;
+Object.assign(solS.shadow.camera, { left: -5, right: 5, top: 5, bottom: -5, near: .5, far: 30 }); sS.add(solS, solS.target);
+{ const p = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshToonMaterial({ color: '#D7C3F1' })); p.rotation.x = -Math.PI / 2; p.receiveShadow = true; sS.add(p); }
+const enS = (o, x, y, z, ry = 0) => { o.position.set(x, y, z); o.rotation.y = ry; sS.add(o); return o; };
+/* el equipo, en fila */
+const EQ = ['male-a', 'female-b', 'male-e', 'female-c', 'male-b', 'female-a'];
+const equipo = []; for(const [i, n] of EQ.entries()){ const p = await persona(n, { alto: 1 }); enS(p.obj, (i - 2.5) * .95, 0, (i % 2) * -.25, (i - 2.5) * -.06); equipo.push(p); }
+/* los seis servicios, en losetas con su ícono (Lucide, ISC) */
+const LUCIDE = (await (await fetch('../../../presentaciones/vendor/lucide-1.48.0.json')).json()).iconos;
+async function icono(n, color = '#fff'){ const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="512" height="512" fill="none" stroke="${color}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${LUCIDE[n]}</svg>`;
+  const img = new Image(); img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg); await img.decode();
+  const k = document.createElement('canvas'); k.width = k.height = 512; k.getContext('2d').drawImage(img, 0, 0); const t = new THREE.CanvasTexture(k); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; }
+const SERV = [['Páginas web', 'monitor', '#7E1735', 'páginas web'], ['Software y apps', 'smartphone', '#5A1F8A', 'software'], ['Marketing', 'megaphone', '#AC27FF', 'marketing'],
+  ['Video y foto', 'camera', '#3B1460', 'video'], ['Gestión de negocios', 'briefcase', '#9E2A55', 'gestión'], ['Tiempos y movimientos', 'timer', '#7A3FC4', 'tiempos']];
+const LO = V3(0, 0, -8);
+const losetas = [];
+for(const [i, [nom, ic, col, frase]] of SERV.entries()){
+  const g = new THREE.Group(), c = i % 2, f = Math.floor(i / 2);
+  const caja = new THREE.Mesh(new THREE.BoxGeometry(1.42, .3, 1.12), new THREE.MeshToonMaterial({ color: col })); caja.position.y = .15; caja.castShadow = caja.receiveShadow = true; g.add(caja);
+  const ico = new THREE.Mesh(new THREE.PlaneGeometry(.52, .52), new THREE.MeshBasicMaterial({ map: await icono(ic), transparent: true, toneMapped: false })); ico.rotation.x = -Math.PI / 2; ico.position.set(0, .302, -.16); g.add(ico);
+  const et = letrero(nom, { px: 90, peso: 800, familia: '"Inter Tight"', color: '#FFFFFF', alto: .2, pad: .2 }); et.rotation.x = -Math.PI / 2; et.position.set(0, .303, .32);
+  const ancho = et.geometry.parameters.width; if(ancho > 1.3) et.scale.setScalar(1.3 / ancho); g.add(et);
+  enS(g, LO.x + (c - .5) * 1.62, 0, LO.z + (f - 1) * 1.3); g.userData.t = dice('09', frase); losetas.push(g);
+}
+/* lo que construyes es tuyo: el muchacho y su torre de cajas */
+const CA = V3(8, 0, 0);
+const yo2 = await persona('male-a', { alto: 1 }); enS(yo2.obj, CA.x - .45, 0, CA.z + .1, .35);
+const cajas = []; for(let i = 0; i < 4; i++){ const b = await real('../modelos/cardboard_box_01/cardboard_box_01.gltf', .4); enS(b, CA.x + .38 + (i === 3 ? .05 : 0), 0, CA.z - .05, i * .35); cajas.push(b); }
+const socia = await persona('female-b', { alto: 1 }); enS(socia.obj, CA.x + 2.6, 0, CA.z + .25, -Math.PI / 2);
+/* la mesa de los socios: cada quien con su montón de monedas */
+const ME = V3(-8, 0, 0);
+const mesaS = enS(await mueble('tableRound', { escala: 2.6 }), ME.x, 0, ME.z); const altoMesa = altoDe(mesaS);
+const socios = []; for(const [i, n] of ['male-a', 'female-b', 'male-e', 'female-c'].entries()){ const a = i * Math.PI / 2 + Math.PI / 4, p = await persona(n, { alto: 1.18 });
+  enS(p.obj, ME.x + Math.sin(a) * 1.35, 0, ME.z + Math.cos(a) * 1.35, a + Math.PI); p.ang = a; socios.push(p); }
+const geoMoneda = new THREE.CylinderGeometry(.075, .075, .026, 40), matMoneda = new THREE.MeshToonMaterial({ color: '#F2B53B' });
+const nueva = () => { const m = new THREE.Mesh(geoMoneda, matMoneda); m.castShadow = true; m.receiveShadow = true; const g = new THREE.Group(); g.add(m); sS.add(g); return g; };
+const PILA = 16, pilas = socios.map(() => Array.from({ length: PILA }, nueva));
+const voladoras = socios.map(() => nueva());
+sS.updateMatrixWorld(true);
+[...equipo.map(p => p.obj), ...losetas.map(g => g.children[0]), yo2.obj, ...cajas, socia.obj, mesaS, ...socios.map(p => p.obj)].forEach(o => juguete(o));
+pilas.flat().concat(voladoras).forEach(o => juguete(o, { grosor: .004 }));
+/* cuándo llega cada moneda: al decir «tú consigues», «o haces tu parte», «y ganas»… y luego en cada golpe */
+const llega = [dice('12', 'tú consigues'), dice('12', 'o haces'), dice('12', 'y ganas'), dice('12', 'lo que mueves')];
+const cuantas = (i, t) => { let n = t >= llega[i] + .5 ? 1 : 0; for(let k = 0; k < 40; k++){ const tk = t0('13') + .2 + k * .534 + i * .13; if(t >= tk) n = Math.min(PILA, n + (k < 6 ? 1 : 2)); } return n; };
+
+const TS = tomas(cam, [
+  /* llega ladeada del doblez y se endereza */
+  { t0: F1.a, t1: 35.9, de: [V3(-3.3, 1.5, 5.4), V3(-1.4, .55, 0), -.42], a: [V3(-3.0, 1.45, 5.3), V3(-1.2, .55, 0), 0], ease: sale },
+  { t0: 35.9, t1: t0('09') - .05, de: [V3(-3.0, 1.45, 5.3), V3(-1.2, .55, 0), 0], a: [V3(2.3, 1.55, 5.7), V3(.6, .55, 0), 0], ease: curva },
+  { t0: t0('09') - .05, t1: t0('10') - .2, de: [LO.clone().add(V3(.2, 5.9, 3.9)), LO.clone().add(V3(0, 0, -.1)), 0], a: [LO.clone().add(V3(-1.0, 5.2, 4.1)), LO.clone().add(V3(0, 0, -.05)), .02], fov: [47, 45] },
+  { t0: t0('10') - .2, t1: t0('11') - .1, de: [CA.clone().add(V3(1.5, .8, 4.4)), CA.clone().add(V3(0, .72, 0)), 0], a: [CA.clone().add(V3(1.15, .7, 3.9)), CA.clone().add(V3(0, .78, 0)), 0] },
+  { t0: t0('11') - .1, t1: t0('12') - .1, de: [CA.clone().add(V3(1.2, 1.5, 6.6)), CA.clone().add(V3(.8, .6, 0)), 0], a: [CA.clone().add(V3(1.0, 1.4, 6.0)), CA.clone().add(V3(.7, .62, 0)), 0] },
+  { t0: t0('12') - .1, t1: t0('13') - .1, de: [ME.clone().add(V3(Math.sin(.5) * 6.2, 3.6, Math.cos(.5) * 6.2)), ME.clone().add(V3(0, .6, 0)), 0], a: [ME.clone().add(V3(Math.sin(-.35) * 5.7, 3.2, Math.cos(-.35) * 5.7)), ME.clone().add(V3(0, .65, 0)), 0], ease: curva },
+  { t0: t0('13') - .1, t1: 67, de: [ME.clone().add(V3(.4, .82, 2.4)), ME.clone().add(V3(0, .95, 0)), .03], a: [ME.clone().add(V3(-.5, .9, 2.25)), ME.clone().add(V3(0, 1.0, 0)), 0], ap: .003 },
+  /* la música sube y la cámara también, hasta ver la mesa desde arriba */
+  { t0: 67, t1: F2.b, de: [ME.clone().add(V3(1.6, 1.6, 3.4)), ME.clone().add(V3(0, .9, 0)), 0], a: [ME.clone().add(V3(0, 9.5, .7)), ME.clone().add(V3(0, .9, 0)), 0], ease: (u) => curva(Math.min(1, u * 1.08)) }]);
+
+function escenaS(t){
+  tic(t);
+  equipo.forEach((p, i) => actuar(p, t + i * .3, [[0, 'idle'], [36.0 + i * .27, 'emote-yes', { una: true }], [37.8 + i * .27, 'idle']]));
+  losetas.forEach((g, i) => { const u = tramo(t, g.userData.t - .35, g.userData.t + .25); g.visible = u > 0; g.position.y = (1 - entra(u)) * 3.2;
+    g.scale.set(1, u >= 1 ? .7 + .3 * resorte(tramo(t, g.userData.t + .25, g.userData.t + .8)) : 1, 1); });
+  /* la torre: cada caja cae en un golpe */
+  const tc = [dice('10', 'Porque'), dice('10', 'lo que'), dice('10', 'construyes'), dice('10', 'es tuyo')];
+  cajas.forEach((b, i) => { const u = tramo(t, tc[i] - .3, tc[i]); b.visible = u > 0; b.position.y = i * .4 + (1 - entra(u)) * 2.5; });
+  actuar(yo2, t, [[0, 'idle'], [tc[0] - .3, 'interact-right'], [tc[3] + .1, 'emote-yes', { una: true }], [t0('11') + .4, 'idle']]);
+  /* no lo haces solo: llega caminando */
+  const tw = t0('11') + .1, uw = tramo(t, tw, tw + 1.3);
+  socia.obj.position.x = CA.x + mezcla(2.6, 1.2, uw); socia.obj.rotation.y = uw < 1 ? -Math.PI / 2 : mezcla(-Math.PI / 2, -.35, sale(tramo(t, tw + 1.3, tw + 1.6)));
+  actuar(socia, t, [[0, 'idle'], [tw, 'walk'], [tw + 1.35, 'emote-yes', { una: true }], [tw + 2.4, 'idle']]);
+  /* las monedas */
+  socios.forEach((p, i) => {
+    const borde = V3(ME.x + Math.sin(p.ang) * .62, altoMesa, ME.z + Math.cos(p.ang) * .62), n = cuantas(i, t);
+    pilas[i].forEach((m, k) => { m.visible = k < n; m.position.copy(borde).add(V3(0, .013 + k * .027, 0)); m.rotation.y = k * .7; });
+    const v = voladoras[i], u = tramo(t, llega[i] - .1, llega[i] + .5); v.visible = u > 0 && u < 1;
+    const ini = V3(ME.x, altoMesa + .2, ME.z); v.position.lerpVectors(ini, borde, sale(u)); v.position.y += Math.sin(u * Math.PI) * .9; v.rotation.x = u * Math.PI * 4;
+    actuar(p, t + i * .4, [[0, 'idle'], [llega[i] + .45, 'emote-yes', { una: true }], [llega[i] + 1.6, 'idle']]);
+  });
+  solS.target.position.copy(t < t0('09') - .05 ? V3(0, 0, 0) : t < t0('10') - .2 ? LO : t < t0('12') - .1 ? CA : ME);
+  solS.position.copy(solS.target.position).add(V3(-3, 7, 4.5));
+  const o = TS.poner(t); return o;
+}
+
+/* ══════════════ MUNDO 3 · LO REAL ══════════════ */
+cam.fov = 30; cam.updateProjectionMatrix();
+const sR = C.s;
+sR.background = new THREE.Color('#0A090D'); sR.fog = new THREE.Fog('#0A090D', 6, 18); sR.environmentIntensity = .5;
+const fondo = fondos(cam, { morado: ['#3B1460', '#170A26', '#05030A'] });
+/* el escritorio: madera de verdad (ambientCG, CC0) */
+const [mCol, mNor, mAsp] = await Promise.all(['color', 'normal', 'aspereza'].map(n => textura(`../texturas/madera/${n}.jpg`, { repetir: true })));
+mNor.colorSpace = mAsp.colorSpace = THREE.NoColorSpace; [mCol, mNor, mAsp].forEach(t => t.repeat.set(3, 1.6));
+{ const p = new THREE.Mesh(new THREE.PlaneGeometry(9, 4.8), new THREE.MeshStandardMaterial({ map: mCol, normalMap: mNor, roughnessMap: mAsp, roughness: 1, color: '#9C8E84' }));
+  p.rotation.x = -Math.PI / 2; p.position.z = -.6; p.receiveShadow = true; sR.add(p); }
+const L = await laptop3d({ ancho: 1.25 }); L.grupo.position.set(0, 0, .15); L.grupo.rotation.y = -.08; sR.add(L.grupo);
+const D = await computadora3d({ alto: 1.0 }); D.grupo.position.set(-1.62, 0, -.72); D.grupo.rotation.y = .38; sR.add(D.grupo);
+const K = await camara3d({ largo: .78 }); K.grupo.position.set(1.55, 0, -.45); K.grupo.rotation.y = -.55; sR.add(K.grupo);
+const planta = await real('../modelos/potted_plant_02/potted_plant_02_1k.gltf', .95); planta.position.set(-2.55, 0, .35); sR.add(planta);
+const TX = Object.fromEntries(await Promise.all(['web', 'pagina', 'carteles', 'fadori', 'presentaciones'].map(async n => [n, await textura(n + '.jpg')])));
+TX.pagina.repeat.set(1, .25); TX.pagina.offset.y = .75;
+const matL = L.pantalla(TX.web), matD = D.pantalla(TX.fadori);
+L.base.traverse(o => { if(o.isMesh && o.material.emissiveMap) o.material.emissive.set('#D7A8FF'); });
+sR.updateMatrixWorld(true);
+const centro = (o) => new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3());
+const cajaLente = new THREE.Box3(); K.grupo.traverse(o => { if(o.isMesh && o.material.name === 'camera_lense') cajaLente.expandByObject(o); });
+const KR = -.55, lenteC = cajaLente.getCenter(new THREE.Vector3()), dirK = V3(Math.sin(KR), 0, Math.cos(KR)), lenteF = lenteC.clone().addScaledVector(dirK, .22), KC = centro(K.grupo);
+const DC = D.plano.getWorldPosition(new THREE.Vector3()), DN = V3(0, .502, .865).applyAxisAngle(V3(0, 1, 0), .38);
+L.abrir(1); sR.updateMatrixWorld(true);
+const LC = centro(L.malla), LN = V3(0, Math.sin(.21), Math.cos(.21)).applyAxisAngle(V3(0, 1, 0), -.08);
+const PC = centro(planta);
+L.abrir(0);
+/* la luz */
+sR.add(new THREE.HemisphereLight('#D8CCE8', '#1A0A12', .14));
+const llave = new THREE.SpotLight('#F6EEE6', 10, 18, .62, .8, 1.3); llave.position.set(-2.2, 4.4, 3.4); llave.target.position.set(-.3, .3, -.2);
+llave.castShadow = true; llave.shadow.mapSize.set(2048, 2048); llave.shadow.bias = -.0003; llave.shadow.normalBias = .02; llave.shadow.radius = 4; sR.add(llave, llave.target);
+const borde = new THREE.DirectionalLight('#C9B8FF', 1.6); borde.position.set(3, 2.6, -4); sR.add(borde);
+const morado = new THREE.PointLight('#9B3BFF', 2.4, 7, 1.6); morado.position.set(-.5, 1.4, -1.8); sR.add(morado);
+const luzPant = new THREE.PointLight('#8A5BD6', 0, 3, 1.8); sR.add(luzPant);
+const KK = cierre(sR, cam, { donde: V3(0, 200, 0), desde: LOGO, fov: 30 });
+KK.L.cuna.visible = false;   // «la M en cubo sin llenarlo»: la M sola, sin la cuña
+
+const frente = (c, n, d, dx = 0, dy = 0) => { const lado = V3(0, 1, 0).cross(n).normalize(); const m = c.clone().addScaledVector(lado, dx).add(V3(0, dy, 0)); return [m.clone().addScaledVector(n, d), m, 0]; };
+/* el carrete: los trabajos uno tras otro, rápido al principio y cada vez más lento (r19, medido cuadro por
+   cuadro), y los últimos se quedan lo bastante para verse completos */
+const R0 = t0('17'), R1 = t0('18') - .05;
+const CUADROS = [4, 4, 4, 4, 4, 5, 5, 6, 7, 8, 10, 12, 15, 19, 26, 36];
+const OBRAS = [['L', 'web'], ['D', 'fadori'], ['L', 'presentaciones'], ['D', 'carteles'], ['L', 'pagina'], ['D', 'fadori'], ['L', 'web'], ['D', 'carteles'],
+  ['L', 'presentaciones'], ['D', 'fadori'], ['L', 'pagina'], ['D', 'carteles'], ['L', 'web'], ['D', 'fadori'], ['L', 'presentaciones'], ['D', 'carteles']];
+const total = CUADROS.reduce((a, b) => a + b, 0), escalaC = (R1 - R0) * 30 / total;
+const carrete = []; { let tt = R0; CUADROS.forEach((c, i) => { const d = c * escalaC / 30, [q, obra] = OBRAS[i], lejos = i > 11;
+  const de = q === 'L' ? frente(LC, LN, lejos ? 4.15 : 1.3 + (i % 3) * .12, (i % 2 ? .08 : -.06), .02) : frente(DC, DN, lejos ? 4.1 : 1.55 + (i % 3) * .1, (i % 2 ? -.07 : .05), 0);
+  const a = q === 'L' ? frente(LC, LN, lejos ? 3.95 : 1.22 + (i % 3) * .12, (i % 2 ? .05 : -.03), .02) : frente(DC, DN, lejos ? 3.9 : 1.47 + (i % 3) * .1, (i % 2 ? -.04 : .03), 0);
+  carrete.push({ t0: tt, t1: tt + d, de, a, q, obra, ap: 0 }); tt += d; }); }
+
+const TR = tomas(cam, [
+  /* llega ladeada: la planta de cerca, la laptop cerrada al fondo */
+  { t0: F2.a, t1: t0('14') - .1, de: [PC.clone().add(V3(.8, .22, 1.0)), PC.clone().add(V3(.05, .12, 0)), .45], a: [PC.clone().add(V3(.68, .2, .92)), PC.clone().add(V3(.05, .12, 0)), 0], ease: sale, ap: .007 },
+  { t0: t0('14') - .1, t1: t0('15') - .05, de: [PC.clone().add(V3(.68, .2, .92)), PC.clone().add(V3(.15, .1, 0)), 0], a: [V3(-1.85, .8, 1.9), V3(-.1, .3, .1), 0], ease: curva, ap: .008 },
+  /* entregamos rápido: la laptop se abre de golpe y se prende */
+  { t0: t0('15') - .05, t1: dice('15', 'y nos'), de: [LC.clone().add(V3(.55, -.05, 1.25)), LC.clone().add(V3(0, -.12, 0)), .03], a: [LC.clone().add(V3(.35, .05, 1.15)), LC.clone().add(V3(0, -.08, 0)), .01], ap: .003 },
+  { t0: dice('15', 'y nos'), t1: t0('16') - .05, de: frente(LC, LN, 4.4), a: frente(LC, LN, 4.0), ap: 0 },
+  /* precios, a tu medida: la computadora con la app de la cooperativa */
+  { t0: t0('16') - .05, t1: dice('16', 'y un solo'), de: frente(DC, DN, 4.3, .1, 0), a: frente(DC, DN, 3.95, -.05, 0), ap: 0 },
+  /* un solo equipo: los tres aparatos en el escritorio */
+  { t0: dice('16', 'y un solo'), t1: R0, de: [V3(.35, 1.9, 5.6), V3(-.2, .42, -.35), 0], a: [V3(.1, 1.6, 4.7), V3(-.2, .45, -.35), 0], ap: .0006, fov: [34, 34] },
+  ...carrete,
+  /* si tu negocio necesita algo que todavía no existe: la cámara de cine, y por su lente hacia adentro */
+  { t0: R1, t1: t0('19') - .1, de: [KC.clone().add(V3(.95, .32, 1.15)), KC.clone().add(V3(0, .05, 0)), .04], a: [KC.clone().add(V3(.55, .25, 1.15)), KC.clone().add(V3(0, .04, 0)), .02], ap: .004 },
+  { t0: t0('19') - .1, t1: LOGO, de: [lenteF.clone().addScaledVector(dirK, .9).add(V3(0, .03, 0)), lenteF, .01], a: [lenteF.clone().addScaledVector(dirK, .02), lenteF.clone().addScaledVector(dirK, -.3), 0], ease: (u) => entra(u) * .4 + curva(u) * .6, ap: .006 },
+  { t0: LOGO, t1: LOGO + 1.9, de: KK.lejos, a: KK.cerca, ease: curva, ap: .004 },
+  { t0: LOGO + 1.9, t1: FIN, de: KK.cerca, a: KK.final, ap: 0 }]);
+
+function escenaR(t){
+  const T = TR.toma(t);
+  /* la laptop: cerrada hasta que dice «rápido», y se abre en un jalón */
+  const ta = dice('15', 'rápido') - .25, abre = curva(tramo(t, ta, ta + .75)); L.abrir(abre);
+  L.teclas(sale(tramo(t, ta + .4, ta + 1.1)));
+  const pL = tramo(t, ta + .45, ta + .8); matL.color.setScalar(.9 * Math.min(1, pL * 1.5));
+  /* lo que sale en cada pantalla */
+  let obraL = t < dice('15', 'y nos') ? 'web' : t < R0 ? (t < dice('16', 'y un solo') ? 'pagina' : 'presentaciones') : 'web', obraD = t < R0 && t >= dice('16', 'y un solo') ? 'carteles' : 'fadori';
+  if(T.obra){ if(T.q === 'L') obraL = T.obra; else obraD = T.obra; }
+  matL.map = TX[obraL]; matD.map = TX[obraD];
+  /* la página baja sola mientras dice «nos quedamos contigo mucho tiempo» */
+  TX.pagina.offset.y = .75 * (1 - curva(tramo(t, dice('15', 'y nos'), t0('16') + 1.2)));
+  if(T.obra === 'pagina') TX.pagina.offset.y = .75 - .1 * tramo(t, T.t0, T.t1);
+  luzPant.intensity = 1.2 * pL; luzPant.position.copy(LC).addScaledVector(LN, .6);
+  const fin = t >= LOGO; fondo.solo(fin ? 'morado' : null);
+  sR.fog.near = fin ? 200 : 6; sR.fog.far = fin ? 400 : 18; sR.environmentIntensity = fin ? .8 : .5;
+  [L.grupo, D.grupo, K.grupo, planta].forEach(o => o.visible = !fin);
+  KK.pintar(t); KK.L.cuna.visible = false;
+  const o = TR.poner(t);
+  o.brillo = fin ? .5 * (1 - .7 * tramo(t, LOGO + 1, LOGO + 2.5)) : .3;
+  return o;
+}
+
+/* ══════════════ EL DOBLEZ (Inception) ══════════════
+   La imagen del mundo que se va se pinta en una hoja pegada a la cámara; la mitad de abajo se levanta
+   sobre la bisagra del centro y cae boca abajo encima de la de arriba (enseña su dorso: papel o juguete),
+   y la hoja doblada se va por encima de la cámara. Detrás ya estaba el mundo que llega. */
+const pag = document.createElement('canvas'); pag.width = W; pag.height = H; const px = pag.getContext('2d');
+const texPag = new THREE.CanvasTexture(pag); texPag.colorSpace = THREE.SRGBColorSpace;
+const DIST = .3, ALT = 2 * DIST * Math.tan(15 * Math.PI / 180), ANC = ALT * W / H;
+function hoja(dorso){
+  const g = new THREE.Group(); g.position.z = -DIST; g.visible = false; cam.add(g);
+  const mitad = (v0, mat) => { const geo = new THREE.PlaneGeometry(ANC, ALT / 2), uv = geo.attributes.uv; for(let i = 0; i < uv.count; i++) uv.setY(i, v0 + uv.getY(i) * .5); const m = new THREE.Mesh(geo, mat); m.renderOrder = 999; return m; };
+  const op = { depthTest: false, depthWrite: false, transparent: true, fog: false, toneMapped: false };
+  const base = new THREE.Color(dorso.color || '#fff');
+  const mSup = new THREE.MeshBasicMaterial({ map: texPag, ...op }), mInf = new THREE.MeshBasicMaterial({ map: texPag, ...op }), mDor = new THREE.MeshBasicMaterial({ ...dorso, side: THREE.BackSide, ...op });
+  const arriba = new THREE.Group(); arriba.position.y = ALT / 2; g.add(arriba);
+  const sup = mitad(.5, mSup); sup.position.y = -ALT / 4; arriba.add(sup);
+  const bis = new THREE.Group(); bis.position.y = -ALT / 2; arriba.add(bis);
+  const inf = mitad(0, mInf); inf.position.y = -ALT / 4; inf.renderOrder = 1000; bis.add(inf);
+  const dor = mitad(0, mDor); dor.position.y = -ALT / 4; dor.renderOrder = 1000; bis.add(dor);
+  return { g, poner(u1, u2){ const a = Math.PI * curva(u1); bis.rotation.x = -a; g.scale.setScalar(Math.tan(cam.fov * Math.PI / 360) / Math.tan(15 * Math.PI / 180));
+    /* la mitad que se levanta se oscurece de canto, como papel que agarra luz de lado */
+    mInf.color.setScalar(1 - .45 * Math.sin(Math.min(a, Math.PI / 2))); mDor.color.copy(base).multiplyScalar(.75 + .25 * Math.abs(Math.cos(a)));
+    arriba.rotation.x = -1.9 * curva(u2); } };
+}
+const dorsoPapel = papel.clone(); dorsoPapel.repeat.set(1.5, 1.5); dorsoPapel.needsUpdate = true;
+const H1 = hoja({ map: dorsoPapel, color: '#ffffff' }), H2 = hoja({ color: '#A98AD8' });
+
+/* ══════════════ el cuadro ══════════════ */
+const ESC = { D: [sD, escenaD, TD], S: [sS, escenaS, TS], R: [sR, escenaR, TR] };
+const fase = (t) => t < F1.a ? ['D'] : t < F1.b ? ['D', 'S', F1, H1] : t < F2.a ? ['S'] : t < F2.b ? ['S', 'R', F2, H2] : ['R'];
+const usar = (k) => { const sc = ESC[k][0]; C.usar(sc); if(cam.parent !== sc) sc.add(cam); };
+function escena(t){
+  const f = fase(t);
+  H1.g.visible = H2.g.visible = false; fondo.solo(null);
+  if(f.length === 1){ usar(f[0]); return ESC[f[0]][1](t); }
+  /* el doblez: primero el mundo que se va, a la hoja */
+  const [va, llega, Fd, Hd] = f;
+  usar(va); const o1 = ESC[va][1](t);
+  C.dof.enabled = false; C.brillo.strength = o1.brillo ?? .3; C.composer.render();
+  px.drawImage(C.r.domElement, 0, 0); texPag.needsUpdate = true;
+  usar(llega); const o2 = ESC[llega][1](t);
+  Hd.g.visible = true; Hd.poner(tramo(t, Fd.a, Fd.F), tramo(t, Fd.F, Fd.b));
+  return { ...o2, apertura: 0, brillo: .22 };
+}
+
+const R = renglones($('#ui'), [
+  { t: dice('08', 'seis cosas'), hasta: t0('09') - .1, y: 250, texto: 'Seis cosas,\n<b>un solo equipo.</b>', clase: 'jg cen', paso: .3 },
+  { t: dice('10', 'es tuyo') - .1, hasta: t0('11') - .1, y: 260, texto: 'Es <b>tuyo.</b>', clase: 'jg cen' },
+  { t: t0('11') + .1, hasta: t0('12') - .1, y: 260, texto: 'No lo haces <b>solo.</b>', clase: 'jg cen' },
+  { t: dice('12', 'comisión'), hasta: t0('13') - .15, y: 230, texto: 'Comisión\npor <b>proyecto.</b>', clase: 'jg cen', paso: .3 },
+  { t: dice('13', 'más ganas') - .2, hasta: F2.a + .1, y: 240, texto: 'Más proyectos,\n<b>más ganas.</b>', clase: 'jg cen', paso: .35 },
+  { t: dice('15', 'y nos'), hasta: t0('16') - .1, y: 250, texto: 'Rápido.\nY nos <b>quedamos.</b>', clase: 'gr', paso: .5 },
+  { t: dice('16', 'Precios'), hasta: dice('16', 'y un solo') - .1, y: 250, texto: 'Abajo del\n<b>promedio.</b>', clase: 'gr', paso: .3 },
+  { t: dice('16', 'y un solo'), hasta: R0 - .1, y: 250, texto: 'Un equipo que\n<b>sí contesta.</b>', clase: 'gr', paso: .3 },
+  { t: R0 + .1, hasta: R1 - .1, y: 230, texto: 'Trabajo real · funcionando', clase: 'ojo cen' }]);
+
+const sub = subtitulos($('#subs'), G), gr = grano($('#grano'), .035);
+const subs = $('#subs');
+const rapidez = (t) => { const k = fase(t).length === 1 ? fase(t)[0] : fase(t)[1];
+  const Tm = ESC[k][2], t0s = Tm.toma(t).t0; Tm.poner(Math.max(t0s, t - 1 / 30)); const a = cam.position.clone(), q = cam.quaternion.clone(); const o = Tm.poner(t);
+  return a.distanceTo(cam.position) / Math.max(.3, o.foco) + q.angleTo(cam.quaternion); };
+window.pintar = async (t) => {
+  const f = fase(t), k = f.length === 1 ? f[0] : f[1], Tm = ESC[k][2], ts = Math.max(Tm.toma(t).t0, f.length > 1 ? f[2].a : 0);
+  const v = rapidez(t), abre = t > dice('15', 'rápido') - .3 && t < dice('15', 'rápido') + 1;
+  /* el dibujo no lleva barrido (los dibujos animados no se barren); el resto, según qué tan rápido va */
+  const n = window.SUB || (k === 'D' ? 1 : v > .06 ? 6 : v > .025 ? 4 : abre ? 3 : v > .008 ? 2 : 1);
+  C.cuadro(t, (tk) => escena(Math.max(ts + 1e-4, tk)), { n });
+  /* lo que va encima: la cámara en su lugar del cuadro (para las notas) */
+  if(k === 'D' || (f.length > 1 && f[0] === 'D' && t < F1.F)) TD.poner(t);
+  notas(t < F1.F ? t : -1); R(t); sub(t); gr(t);
+  subs.className = t < F1.F ? 'a1' : t < F2.F ? 'a2' : 'a3';
+  $('#sombra').style.opacity = t < F2.b ? 0 : 1; $('#viñeta').style.opacity = t < F1.F ? .35 : 1;
+};
+await pintar(0); window._listo();
+</script>
+</body>
+</html>

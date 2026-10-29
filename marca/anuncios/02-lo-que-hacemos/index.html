@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Grupo Mazi · Lo que hacemos</title>
+<!-- ANUNCIO 02 · ~65 s · 9:16 · voz Laura. El explicativo: los seis servicios. La idea: un cubo tiene
+     seis caras y Grupo Mazi hace seis cosas; el cubo gira a la cara de cada servicio mientras abajo
+     sale un ejemplo (las pantallas son trabajo nuestro grabado tal cual). Al final, el cubo de
+     servicios se vuelve el cubo del logo.
+     node herramientas/video/armar.mjs marca/anuncios/02-lo-que-hacemos/index.html marca/anuncios/salida/02-lo-que-hacemos.mp4 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter+Tight:wght@600;800;900&display=block">
+<link rel="stylesheet" href="../comun.css">
+<script>window.listo = new Promise(r => window._listo = r);</script>
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>
+#cab{ position:absolute; left:80px; right:150px; top:240px }
+#cab .num{ font:700 40px/1 var(--t); color:#B44BFF; letter-spacing:.08em }
+#cab .nom{ margin-top:10px; font:700 104px/.92 var(--t); letter-spacing:-.045em; text-transform:uppercase }
+.post{ position:absolute; width:330px; height:470px; border-radius:26px; overflow:hidden; background:#fff; box-shadow:0 40px 80px -30px #000; color:#111 }
+.post .barra{ height:56px; display:flex; align-items:center; gap:12px; padding:0 16px; font:800 20px/1 var(--s) }
+.post .barra i{ width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg, var(--techo), var(--vino2)) }
+.post img{ width:100%; height:330px; object-fit:cover; object-position:top; display:block }
+.post .pie{ padding:14px 16px; display:flex; gap:10px; align-items:center; font:800 22px/1 var(--s) }
+.post .pie svg{ width:30px; height:30px }
+#visor{ position:absolute; left:120px; top:640px; width:840px; height:840px; border-radius:30px; overflow:hidden; box-shadow:0 40px 90px -30px #000 }
+#visor img{ width:100%; height:100%; object-fit:cover; object-position:top }
+#visor .marco{ position:absolute; inset:30px; border:3px solid #fff8; border-radius:14px }
+#visor .rec{ position:absolute; left:56px; top:52px; font:800 30px/1 var(--s); color:#fff; display:flex; align-items:center; gap:12px; text-shadow:0 2px 8px #000 }
+#visor .rec i{ width:22px; height:22px; border-radius:50%; background:#FF3B5C }
+#visor .tc{ position:absolute; right:56px; top:52px; font:600 30px/1 ui-monospace, Menlo, monospace; color:#fff; text-shadow:0 2px 8px #000 }
+#visor .cruz{ position:absolute; left:50%; top:50%; width:80px; height:80px; margin:-40px; border:3px solid #fff6; border-radius:50% }
+.barras2{ position:absolute; left:80px; right:150px; top:1165px; display:grid; gap:22px }
+.barras2 .f{ font:700 34px/1 var(--t); color:var(--gris); display:flex; gap:20px; align-items:center }
+.barras2 .f b{ width:170px; flex:none } .barras2 .f i{ height:54px; border-radius:16px; background:#5A5A67; display:block }
+.barras2 .f.ya i{ background:linear-gradient(90deg, var(--vino2), var(--techo)) }
+#provs{ position:absolute; left:80px; right:150px; top:600px; display:grid; gap:18px }
+#provs div{ font:700 40px/1 var(--s); padding:26px 30px; border-radius:22px; background:#2A1A3A; display:flex; justify-content:space-between; align-items:center }
+#provs div.mazi{ background:var(--vino); }
+.linea{ position:absolute; left:80px; right:150px; top:880px }
+.linea .f{ margin-bottom:34px } .linea b{ display:block; font:700 38px/1 var(--t); margin-bottom:14px; color:var(--gris) }
+.linea i{ display:block; height:70px; border-radius:20px; background:linear-gradient(90deg, var(--vino2), var(--techo)) }
+.dinero{ position:absolute; left:80px; top:560px; font:700 120px/1 var(--t); letter-spacing:-.04em }
+.dinero small{ display:block; font:600 34px/1.2 var(--s); color:var(--gris); letter-spacing:0; margin-top:10px }
+</style>
+</head>
+<body>
+<div id="fondo" class="capa"></div>
+<canvas id="gl" class="capa"></canvas>
+<canvas id="c2" class="capa" width="1080" height="1920"></canvas>
+<div id="ui" class="capa">
+  <div id="titulo" class="grande"></div>
+  <div id="cab"><div class="num"></div><div class="nom"></div></div>
+  <div id="extra"></div>
+  <div id="cierre"><div class="wa">WhatsApp <b>442 883 3786</b></div><div class="sub">grupomazi.oficial@gmail.com</div></div>
+</div>
+<div id="subs"></div>
+<div id="grano"></div>
+<script type="module">
+import { THREE, PAL, W, H, tramo, suave, sale, entra, resorte, mezcla, vida, azar, escena3d, cubo, telefono, laptop, Toma, guion, sonidosVoz, subtitulos, grano, logo2d } from '../motor.js';
+import { logoVivo } from '../logo3d.js';
+import { icono } from '../iconos.js';
+const $ = (s) => document.querySelector(s);
+const G = await guion('.'), L = (id) => G.de(id);
+const FIN = L('13').t1 + 2.2;
+const fx = (n) => `../../../herramientas/video/efectos/${n}.wav`;
+window.VIDEO = { w: W, h: H, fps: 30, dur: FIN, musica: { archivo: '/tmp/claude-0/musica/Inspired.mp3', desde: 0, vol: .34, entrada: .6, fin: 2.5 },
+  sonidos: [...sonidosVoz(G, 1.05), ...['04', '05', '06', '07', '08', '09'].map(id => [fx('whoosh'), L(id).t0 - .35, .35]), [fx('golpe'), L('02').t0, .6], [fx('subida'), L('12').t0 - .5, .45]] };
+
+/* ── los servicios: cara del cubo, ícono y nombre ── */
+const SERV = [
+  ['04', 'pz', 'monitor-smartphone', 'Páginas web'], ['05', 'px', 'app-window', 'Software y apps'], ['06', 'nz', 'megaphone', 'Marketing'],
+  ['07', 'nx', 'aperture', 'Video y fotografía'], ['08', 'py', 'chart-column-increasing', 'Gestión de negocios'], ['09', 'ny', 'timer', 'Tiempos y movimientos']];
+async function cara(n, ic, nombre){
+  const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d');
+  const g = x.createLinearGradient(0, 0, 512, 512); g.addColorStop(0, '#3E3448'); g.addColorStop(1, '#231A2E'); x.fillStyle = g; x.fillRect(0, 0, 512, 512);
+  x.strokeStyle = '#AC27FF'; x.lineWidth = 10; x.strokeRect(5, 5, 502, 502);
+  x.fillStyle = '#B44BFF'; x.font = '700 54px "Space Grotesk"'; x.fillText('0' + n, 40, 86);
+  const img = new Image(); img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(icono(ic, '#F4EEF2', 1.6, 230)); await img.decode(); x.drawImage(img, 141, 120, 230, 230);
+  x.fillStyle = '#F4EEF2'; x.font = '700 46px "Space Grotesk"'; x.textAlign = 'center';
+  const pal = nombre.split(' '), r1 = pal.length > 2 ? pal.slice(0, 2).join(' ') : nombre, r2 = pal.length > 2 ? pal.slice(2).join(' ') : '';
+  x.fillText(r1.toUpperCase(), 256, r2 ? 410 : 432); if(r2) x.fillText(r2.toUpperCase(), 256, 462);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+}
+await document.fonts.load('700 80px "Space Grotesk"'); await document.fonts.load('900 80px "Inter Tight"'); await document.fonts.load('800 60px "Inter Tight"');
+const ORDEN = ['px', 'nx', 'py', 'ny', 'pz', 'nz'];
+const mats = await Promise.all(ORDEN.map(async (f) => { const s = SERV.findIndex(z => z[1] === f); return new THREE.MeshStandardMaterial({ map: await cara(s + 1, SERV[s][2], SERV[s][3]), roughness: .5, metalness: .1 }); }));
+
+const E = escena3d($('#gl'));
+const dado = new THREE.Group(); dado.add(new THREE.Mesh(new THREE.BoxGeometry(1.25, 1.25, 1.25), mats));
+dado.add(new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1.25, 1.25, 1.25)), new THREE.LineBasicMaterial({ color: '#E9DDF7', transparent: true, opacity: .3 })));
+E.s.add(dado);
+const logo = cubo(1.25); E.s.add(logo);
+/* los cubos prestados: grises, iguales, sin techo */
+const grises = []; azar(5);
+for(let i = 0; i < 26; i++){ const m = new THREE.Mesh(new THREE.BoxGeometry(.42, .42, .42), new THREE.MeshStandardMaterial({ color: '#6E6878', roughness: .7 }));
+  m.userData = { x: (azar() - .5) * 2.6, y: (azar() - .5) * 3.6, z: (azar() - .5) * 2 - .5, r: azar() * 6, v: .3 + azar() * .6 }; grises.push(m); E.s.add(m); }
+/* los aparatos de los ejemplos */
+const tS = new Toma('smileys-tel', { desde: 1.5 }), tD = new Toma('district-pc', { desde: .5 }), tF = new Toma('fadori-tel', { desde: 4 });
+const tel = telefono(tS.tex), lap = laptop(tD.tex), app = telefono(tF.tex);
+[tel, lap, app].forEach(o => E.s.add(o));
+/* las barras de la gestión y el reloj de los tiempos */
+const barras = [0, 1, 2, 3, 4].map(i => { const m = new THREE.Mesh(new THREE.BoxGeometry(.32, 1, .32), new THREE.MeshStandardMaterial({ color: i === 4 ? PAL.techo : PAL.vino2, roughness: .45, emissive: i === 4 ? PAL.techo : '#000', emissiveIntensity: .15 })); E.s.add(m); return m; });
+const aro = new THREE.Mesh(new THREE.TorusGeometry(.78, .07, 24, 120), new THREE.MeshStandardMaterial({ color: '#4A4A55', roughness: .5 }));
+const avance = new THREE.Mesh(new THREE.TorusGeometry(.78, .09, 24, 120, Math.PI * 2), new THREE.MeshStandardMaterial({ color: PAL.techo, emissive: PAL.techo, emissiveIntensity: .25, roughness: .4 }));
+const reloj = new THREE.Group(); reloj.add(aro, avance); E.s.add(reloj);
+
+const sub = subtitulos($('#subs'), G), gr = grano($('#grano'), .05), c2 = $('#c2').getContext('2d');
+const poner = (el, html) => { if(el.dataset.h !== html){ el.innerHTML = html; el.dataset.h = html; } };
+const rot = { pz: [0, 0], px: [0, -Math.PI / 2], nx: [0, Math.PI / 2], nz: [0, Math.PI], py: [Math.PI / 2, 0], ny: [-Math.PI / 2, 0] };
+const qDe = (f) => { const [a, b] = rot[f]; const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(a, b, 0, 'XYZ')); return new THREE.Quaternion().setFromEuler(new THREE.Euler(.32, -.42, 0)).multiply(q); };
+const fotos = [1.2, 9.2, 15.2].map(s => `../../../smileys/video/rec/completa/${String(Math.round(s * 60)).padStart(5, '0')}.jpg`);
+const POSTS = fotos.map((f, i) => `<div class="post" data-i="${i}"><div class="barra"><i></i>${['tu_negocio', 'tu_negocio', 'tu_negocio'][i]}</div><img src="${f}"><div class="pie">${icono('heart', '#FF3B5C', 2.2, 30)}<span class="n">0</span></div></div>`).join('');
+
+window.pintar = async (t) => {
+  const l = Object.fromEntries(G.lineas.map(z => [z.id, z]));
+  /* ¿qué servicio va? */
+  const iS = SERV.findIndex(([id], k) => t >= l[id].t0 - .4 && t < (k < 5 ? l[SERV[k + 1][0]].t0 - .4 : l['09b'].t0 - .3));
+  /* ── el título grande de las frases sueltas ── */
+  let tit = '', t0 = 0, t1 = 0;
+  if(t < l['02'].t0){ tit = '<span>HERRAMIENTAS</span><span class="v">PRESTADAS</span>'; t0 = .4; t1 = l['02'].t0 + .1; }
+  else if(t < l['03'].t0){ tit = '<span>O LAS</span><span class="v xl">SUYAS.</span>'; t0 = l['02'].t0; t1 = l['03'].t0; }
+  else if(t < l['04'].t0 - .4){ tit = '<span class="xl">6</span><span>COSAS,</span><span class="v">JUNTAS.</span>'; t0 = l['03'].t0; t1 = l['04'].t0 - .4; }
+  else if(t >= l['10'].t0 && t < l['11'].t0){ tit = '<span class="m">ENTRAMOS</span><span class="m">A TU OPERACIÓN</span><span class="m v">Y NOS QUEDAMOS.</span>'; t0 = l['10'].t0; t1 = l['11'].t0; }
+  else if(t >= l['12'].t0 && t < l['13'].t0){ tit = '<span class="m">SI NO EXISTE</span><span class="m">LA HERRAMIENTA,</span><span class="m v">SE CONSTRUYE.</span>'; t0 = l['12'].t0; t1 = l['13'].t0 + .1; }
+  poner($('#titulo'), tit);
+  $('#titulo').style.opacity = tit ? vida(t, t0, t1, .3, .25) : 0;
+  [...$('#titulo').children].forEach((s, i) => { const u = sale(tramo(t, t0 + .05 + i * .12, t0 + .45 + i * .12)); s.style.transform = `translateY(${(1 - u) * 60}px)`; s.style.opacity = u; });
+  /* ── la cabecera de cada servicio ── */
+  if(iS >= 0){ const [id, , , nom] = SERV[iS]; poner($('#cab .num'), `0${iS + 1} / 06`); poner($('#cab .nom'), nom.replace(' y ', '<br>y ').replace(' de ', '<br>de ')); }
+  const tc = iS >= 0 ? vida(t, l[SERV[iS][0]].t0 - .35, iS < 5 ? l[SERV[iS + 1][0]].t0 - .4 : l['09b'].t0 - .3, .3, .2) : 0;
+  $('#cab').style.opacity = tc; $('#cab').style.transform = `translateX(${(1 - tc) * -40}px)`;
+
+  /* ── el dado de servicios ── */
+  const enServ = t >= l['03'].t0 && t < l['12'].t0 - .2;
+  const subeD = sale(tramo(t, l['02'].t0 - .1, l['02'].t0 + .7));
+  dado.visible = t >= l['02'].t0 - .1 && t < l['12'].t0 + .2;
+  let q;
+  if(iS >= 0){ const f = SERV[iS][1], ant = iS ? SERV[iS - 1][1] : 'pz', u = suave(tramo(t, l[SERV[iS][0]].t0 - .45, l[SERV[iS][0]].t0 + .15)); q = qDe(ant).slerp(qDe(f), u); }
+  else if(t < l['04'].t0) q = new THREE.Quaternion().setFromEuler(new THREE.Euler(.45 + t * .2, t * .9, .1));
+  else q = new THREE.Quaternion().setFromEuler(new THREE.Euler(.45 + t * .6, t * 2.4, .1));          // «mismo equipo»: gira rápido
+  dado.quaternion.copy(q);
+  /* dónde va el dado: al centro en las frases grandes, arriba a la derecha mientras hay ejemplo abajo */
+  const CENTRO = new THREE.Vector3(0, .1, 0), ESQ = new THREE.Vector3(.72, 1.38, -.6);
+  const tramos = [[l['04'].t0 - .5, 1], [l['10'].t0 - .3, 0], [l['11'].t0 - .3, 1], [l['12'].t0 - .3, 0]];
+  let enEsq = 0; for(const [ti, v] of tramos) enEsq = mezcla(enEsq, v, suave(tramo(t, ti, ti + .5)));
+  dado.position.lerpVectors(CENTRO, ESQ, enEsq); dado.position.y += (1 - subeD) * -4;
+  dado.scale.setScalar(mezcla(1, .68, enEsq));
+
+  /* al final el dado se vuelve el cubo del logo: se encoge y crece el otro */
+  const cambia = suave(tramo(t, l['12'].t0 - .3, l['12'].t0 + .4));
+  dado.scale.multiplyScalar(1 - cambia);
+  logo.visible = cambia > 0 && t < l['13'].t0 + .3; logo.scale.setScalar(cambia * 1.05); logo.position.set(0, -.55, 0); logo.rotation.set(.5, t * .5 + .8, 0);
+
+  /* ── 01: los cubos prestados, flotando; 02: salen volando ── */
+  const vuela = sale(tramo(t, l['02'].t0 - .1, l['02'].t0 + 1));
+  grises.forEach(m => { const u = m.userData; m.visible = t < l['03'].t0 + .5;
+    m.position.set(u.x * (1 + vuela * 2.5), u.y + Math.sin(t * u.v + u.r) * .1 + vuela * (u.y > 0 ? 3 : -3), u.z); m.rotation.set(t * u.v + u.r, t * u.v * .7, 0); });
+
+  /* ── los ejemplos de cada servicio ── */
+  const ve = (k) => iS === k ? vida(t, l[SERV[k][0]].t0 - .3, k < 5 ? l[SERV[k + 1][0]].t0 - .35 : l['09b'].t0 - .3, .45, .3) : 0;
+  const v0 = ve(0), v1 = ve(1), v3 = ve(3), v4 = ve(4), v5 = ve(5), v2 = ve(2);
+  lap.visible = v0 > 0; tel.visible = v0 > 0; app.visible = v1 > 0;
+  lap.position.set(-.18 - (1 - v0) * 3, -.42, -.6); lap.rotation.set(.28, .32, 0); lap.scale.setScalar(.78);
+  tel.position.set(.72 + (1 - v0) * 3, -.2, .4); tel.rotation.set(-.04, -.4 + Math.sin(t) * .04, .03); tel.scale.setScalar(.82);
+  app.position.set(-.1, -.18 - (1 - v1) * 3.5, .3); app.rotation.set(-.08, .35 + Math.sin(t * .8) * .06, -.03); app.scale.setScalar(.95);
+  barras.forEach((b, i) => { const alto = [.45, .7, .62, .95, 1.4][i] * sale(tramo(t, l['08'].t0 + i * .12, l['08'].t0 + .8 + i * .12)); b.visible = v4 > 0;
+    b.scale.y = Math.max(.01, alto); b.position.set(-.85 + i * .42, -.95 + alto / 2, 0); b.material.opacity = v4; });
+  reloj.visible = v5 > 0; reloj.position.set(-.1, .1, 0); reloj.rotation.set(-.1, .25, 0); reloj.scale.setScalar(.72 * v5 + .05);
+  const prog = tramo(t, l['09'].t0, l['09'].t1); avance.geometry.dispose?.(); avance.geometry = new THREE.TorusGeometry(.78, .09, 24, 120, Math.PI * 2 * Math.max(.01, prog));
+  avance.rotation.z = Math.PI / 2;
+  await Promise.all([tS.en(Math.max(0, t - l['04'].t0 + 1)), tD.en(Math.max(0, t - l['04'].t0 + 1)), tF.en(Math.max(0, t - l['05'].t0 + 1))]);
+
+  /* ── lo de DOM de cada servicio ── */
+  const ex = $('#extra');
+  let html = '';
+  if(v2 > 0) html = POSTS;
+  else if(v3 > 0) html = `<div id="visor"><img><div class="marco"></div><div class="rec"><i></i>REC</div><div class="tc"></div><div class="cruz"></div></div>`;
+  else if(v4 > 0) html = `<div class="dinero"><span class="n">$0</span><small>lo que de verdad te queda</small></div>`;
+  else if(v5 > 0) html = `<div class="barras2"><div class="f"><b>Antes</b><i style="width:100%"></i></div><div class="f ya"><b>Después</b><i class="d"></i></div></div>`;
+  else if(t >= l['09b'].t0 && t < l['10'].t0) html = `<div id="provs">${['Diseñador', 'Programador', 'Fotógrafo', 'Community manager', 'Contador'].map(p => `<div>${p} <span>${icono('message-circle', '#B9AFC4', 2, 40)}</span></div>`).join('')}<div class="mazi">Grupo Mazi <span>${icono('check', '#fff', 2.6, 44)}</span></div></div>`;
+  else if(t >= l['11'].t0 && t < l['12'].t0) html = `<div class="linea"><div class="f"><b>ENTREGA</b><i class="a"></i></div><div class="f"><b>ACOMPAÑAMIENTO</b><i class="b"></i></div></div>`;
+  poner(ex, html);
+  if(v2 > 0) ex.querySelectorAll('.post').forEach((p, i) => { const u = sale(tramo(t, l['06'].t0 - .2 + i * .25, l['06'].t0 + .4 + i * .25));
+    p.style.left = [90, 380, 640][i] + 'px'; p.style.top = (720 + [60, -20, 90][i] + (1 - u) * 400 + Math.sin(t * 1.2 + i) * 10) + 'px';
+    p.style.transform = `rotate(${[-7, 2, 8][i]}deg) scale(${.85 + .15 * u})`; p.style.opacity = u * v2; p.style.zIndex = i === 1 ? 2 : 1;
+    p.querySelector('.n').textContent = Math.round([847, 1293, 655][i] * sale(tramo(t, l['06'].t0 + i * .25, l['06'].t1 + .3))).toLocaleString('es-MX'); });
+  if(v3 > 0){ const vs = $('#visor'); vs.style.opacity = v3; vs.style.transform = `scale(${.9 + .1 * v3})`;
+    const k = Math.min(1233, Math.round((2 + t - l['07'].t0) * 60)); const im = vs.querySelector('img'), src = `../../../smileys/video/rec/basica/${String(k).padStart(5, '0')}.jpg`;
+    if(!im.src.endsWith(src.slice(-9))){ im.src = src; await im.decode().catch(() => {}); }
+    const s = Math.max(0, t - l['07'].t0); vs.querySelector('.tc').textContent = `00:00:${String(Math.floor(s)).padStart(2, '0')}:${String(Math.floor((s % 1) * 30)).padStart(2, '0')}`;
+    vs.querySelector('.rec i').style.opacity = Math.floor(t * 2) % 2 ? .2 : 1; }
+  if(v4 > 0){ const d = ex.querySelector('.dinero'); d.style.opacity = v4; d.querySelector('.n').textContent = '$' + Math.round(48250 * sale(tramo(t, l['08'].t0 + .3, l['08'].t1))).toLocaleString('es-MX'); }
+  if(v5 > 0){ ex.querySelector('.barras2').style.opacity = v5; ex.querySelector('.d').style.width = (100 - 42 * suave(tramo(t, l['09'].t0 + .4, l['09'].t1))) + '%'; }
+  if(t >= l['09b'].t0 && t < l['10'].t0){ const pv = ex.querySelectorAll('#provs div'), u0 = l['09b'].t0;
+    pv.forEach((d, i) => { const ent = sale(tramo(t, u0 + i * .12, u0 + .4 + i * .12)), tacha = i < 5 ? suave(tramo(t, u0 + l['09b'].dur * .55 + i * .08, u0 + l['09b'].dur * .55 + .3 + i * .08)) : 0;
+      d.style.opacity = i < 5 ? ent * (1 - tacha * .8) : sale(tramo(t, u0 + l['09b'].dur * .7, u0 + l['09b'].dur * .7 + .4));
+      d.style.transform = `translateX(${(1 - ent) * -80}px) ${i === 5 ? `scale(${.9 + .1 * sale(tramo(t, u0 + l['09b'].dur * .7, u0 + l['09b'].dur * .7 + .4))})` : ''}`;
+      d.style.textDecoration = tacha > .5 ? 'line-through' : 'none'; }); }
+  if(t >= l['11'].t0 && t < l['12'].t0){ const u0 = l['11'].t0, d = l['11'].dur; ex.querySelector('.linea').style.opacity = vida(t, u0 - .1, l['12'].t0, .3, .3);
+    ex.querySelector('.a').style.width = (22 * sale(tramo(t, u0 + .2, u0 + .9))) + '%'; ex.querySelector('.b').style.width = (100 * suave(tramo(t, u0 + d * .5, u0 + d + .6))) + '%'; }
+
+  E.cam.position.set(Math.sin(t * .25) * .2, Math.sin(t * .2) * .1, 9); E.cam.lookAt(0, .05, 0);
+  E.pintar();
+  /* ── el cierre ── */
+  c2.clearRect(0, 0, W, H);
+  const uF = sale(tramo(t, l['13'].t0 - .1, l['13'].t0 + .7));
+  if(uF > 0) logoVivo(c2, { t, desde: l['13'].t0 - .1, cx: W / 2, cy: 820, ancho: 820 });
+  $('#cierre').style.opacity = sale(tramo(t, l['13'].t0 + .4, l['13'].t0 + 1));
+  $('#fondo').style.background = `radial-gradient(80% 45% at ${50 + Math.sin(t * .35) * 14}% ${38 + Math.cos(t * .27) * 8}%, ${PAL.vino}5C, transparent 70%), radial-gradient(120% 80% at 50% 0%, ${PAL.oscuro2}, ${PAL.oscuro} 70%)`;
+  sub(t); gr(t);
+};
+await pintar(0); window._listo();
+</script>
+</body>
+</html>

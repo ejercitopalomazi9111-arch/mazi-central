@@ -1,0 +1,75 @@
+{
+  "titulo": "Nueva imagen",
+  "voces": {
+    "Matilda": "XrExE9yKIg1WjnnlVkGX"
+  },
+  "ajustes": {
+    "Matilda": {
+      "stability": 0.45,
+      "style": 0.4
+    }
+  },
+  "lineas": [
+    {
+      "id": "01",
+      "voz": "Matilda",
+      "en": 0.6,
+      "txt": "Grupo Mazi *cambia de cara.*",
+      "sinSub": true
+    },
+    {
+      "id": "02",
+      "voz": "Matilda",
+      "pausa": 0.6,
+      "txt": "Ésta fue nuestra primera imagen: una paloma. *El inicio.*"
+    },
+    {
+      "id": "03",
+      "voz": "Matilda",
+      "pausa": 0.8,
+      "txt": "Hoy somos *un cubo.*",
+      "sinSub": true
+    },
+    {
+      "id": "04",
+      "voz": "Matilda",
+      "pausa": 1.6,
+      "txt": "Piezas que encajan… como *cada parte de tu negocio,* cuando la construimos nosotros."
+    },
+    {
+      "id": "05",
+      "voz": "Matilda",
+      "pausa": 4.4,
+      "txt": "Y estrenamos colores: *morado oscuro…*",
+      "sinSub": true
+    },
+    {
+      "id": "06",
+      "voz": "Matilda",
+      "pausa": 0.5,
+      "txt": "*vino…*",
+      "sinSub": true
+    },
+    {
+      "id": "07",
+      "voz": "Matilda",
+      "pausa": 0.4,
+      "txt": "y *claro.*",
+      "sinSub": true
+    },
+    {
+      "id": "08",
+      "voz": "Matilda",
+      "pausa": 5.2,
+      "txt": "Misma gente. Mismas ganas. *Nueva imagen.*",
+      "sinSub": true
+    },
+    {
+      "id": "09",
+      "voz": "Matilda",
+      "pausa": 0.5,
+      "txt": "Grupo Mazi.",
+      "sinSub": true
+    }
+  ]
+}

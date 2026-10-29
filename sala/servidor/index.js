@@ -13,6 +13,8 @@
    ═════════════════════════════════════════════════════════════════════════ */
 export { Sala } from './sala.js';
 import { traer as traerInkwell } from './inkwell.js';
+import { esColeccion } from './pinguinos.js';
+export { Coleccion } from './pinguinos.js';
 
 /* Sin comodín. Un "*" aquí le abre la puerta a cualquier página del mundo
    para leer y escribir en la mesa de los cuatro. */
@@ -93,6 +95,20 @@ export default {
     if(url.pathname === '/api/sala/inkwell/traer'){
       if(pedido.method !== 'GET') return conCORS(Response.json({ bien:false, error:'Sólo GET.' }, { status:405 }), pedido);
       return conCORS(await traerInkwell(url), pedido);
+    }
+
+    /* MIS PINGÜINOS: el respaldo de la colección (pinguinos.js). Sin llave: el
+       permiso es el código de 20 letras que nace en el teléfono. */
+    const pin = url.pathname.match(/^\/api\/pinguinos\/([^/]+)\/(poner|quitar|lista|foto)$/);
+    if(pin){
+      const col = decodeURIComponent(pin[1]).toUpperCase();
+      if(!esColeccion(col)) return conCORS(Response.json({ bien:false, error:'Ese código de colección no existe.' }, { status:400 }), pedido);
+      if(!env.PINGUINOS) return conCORS(Response.json({ bien:false, error:'El respaldo de pingüinos todavía no está encendido.' }, { status:503 }), pedido);
+      try{
+        return conCORS(await env.PINGUINOS.get(env.PINGUINOS.idFromName(col)).fetch(pedido), pedido);
+      }catch(e){
+        return conCORS(Response.json({ bien:false, error:'El respaldo tuvo un error: ' + String((e && e.message) || e).slice(0, 160) }, { status:503 }), pedido);
+      }
     }
 
     /* ── /entrar/CODIGO · el link que se le pasa a un Claude ───────────────

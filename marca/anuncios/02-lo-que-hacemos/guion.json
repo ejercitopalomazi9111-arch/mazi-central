@@ -1,0 +1,100 @@
+{
+ "titulo": "Lo que hacemos",
+ "voces": {
+  "Laura": "FGY2WhTYpPnrIDTdsKH5"
+ },
+ "ajustes": {
+  "Laura": {
+   "stability": 0.45,
+   "style": 0.35
+  }
+ },
+ "lineas": [
+  {
+   "id": "01",
+   "voz": "Laura",
+   "en": 0.7,
+   "txt": "Hay negocios que trabajan con *herramientas prestadas.*"
+  },
+  {
+   "id": "02",
+   "voz": "Laura",
+   "pausa": 0.3,
+   "txt": "Y hay negocios que tienen *las suyas.*"
+  },
+  {
+   "id": "03",
+   "voz": "Laura",
+   "pausa": 0.5,
+   "txt": "En Grupo Mazi hacemos *seis cosas,* y las hacemos juntas."
+  },
+  {
+   "id": "04",
+   "voz": "Laura",
+   "pausa": 0.6,
+   "txt": "*Páginas web* que se ven increíbles en el teléfono, y que venden de verdad."
+  },
+  {
+   "id": "05",
+   "voz": "Laura",
+   "pausa": 0.7,
+   "txt": "*Software y apps* hechos para como trabaja tu negocio: pedidos, inventario, reportes."
+  },
+  {
+   "id": "06",
+   "voz": "Laura",
+   "pausa": 0.7,
+   "txt": "*Marketing* que cuenta en tus redes lo que ya haces bien."
+  },
+  {
+   "id": "07",
+   "voz": "Laura",
+   "pausa": 0.7,
+   "txt": "*Video y fotografía,* para que tu marca se vea como se siente."
+  },
+  {
+   "id": "08",
+   "voz": "Laura",
+   "pausa": 0.7,
+   "txt": "*Gestión de negocios:* ordenamos tus números para que sepas cuánto ganas."
+  },
+  {
+   "id": "09",
+   "voz": "Laura",
+   "pausa": 0.7,
+   "txt": "Y *tiempos y movimientos:* medimos cómo se trabaja, para hacerlo mejor y más rápido."
+  },
+  {
+   "id": "09b",
+   "voz": "Laura",
+   "pausa": 0.7,
+   "txt": "Todo con el *mismo equipo:* no tienes que perseguir a cinco proveedores distintos."
+  },
+  {
+   "id": "10",
+   "voz": "Laura",
+   "pausa": 0.7,
+   "txt": "No hacemos trabajitos sueltos: *entramos a tu operación y nos quedamos.*"
+  },
+  {
+   "id": "11",
+   "voz": "Laura",
+   "pausa": 0.4,
+   "txt": "Entregamos *rápido,* y te acompañamos *mucho tiempo.*"
+  },
+  {
+   "id": "12",
+   "voz": "Laura",
+   "pausa": 0.6,
+   "txt": "Grupo Mazi. Si no existe la herramienta, *se construye.*",
+   "sinSub": true
+  },
+  {
+   "id": "13",
+   "voz": "Laura",
+   "pausa": 0.4,
+   "txt": "Escríbenos por WhatsApp y platicamos tu proyecto.",
+   "sinSub": true
+  }
+ ]
+}
