@@ -1,6 +1,6 @@
 # Los anuncios de Grupo Mazi · listos para subir
 
-Doce videos verticales (1080 × 1920, 30 cuadros por segundo), para Reels, TikTok y Shorts. Todos traen:
+Trece videos verticales (1080 × 1920, 30 cuadros por segundo), para Reels, TikTok y Shorts. Todos traen:
 
 - subtítulos quemados;
 - la zona de abajo libre, para que no tapen el nombre de la cuenta ni los botones;
@@ -34,6 +34,7 @@ Cada uno sale en dos copias:
 | 10 | 10 · La historia de Mary | el largo explicativo: por qué uno solo y no tres |
 | 11 | 11 · Corporativo | el formal, para LinkedIn y para mandar a empresas |
 | 12 | 12 · Al ritmo | el rápido, para cerrar la semana |
+| 13 | 13 · En movimiento | el «de After Effects»: para presumir que el movimiento es lo nuestro |
 
 ## El texto de cada uno
 
@@ -116,6 +117,12 @@ Cada uno sale en dos copias:
 > Página, app, marketing, video. Al ritmo de tu negocio. 📲 442 883 3786
 > #GrupoMazi #MotionGraphics #PáginasWeb #Apps #Querétaro
 > Música: «Funky Chunk», Kevin MacLeod (incompetech.com), CC BY 4.0.
+
+**13 · En movimiento**
+
+> Hazlo que se mueva. Sin plantillas, hecho a mano: páginas, apps y video desde Querétaro. 📲 442 883 3786
+> #GrupoMazi #MotionDesign #3D #PáginasWeb #Querétaro
+> Música: «Exit the Premises», Kevin MacLeod (incompetech.com), CC BY 4.0. Luz: Poly Haven (CC0).
 
 ## Cómo se vuelven a armar
 

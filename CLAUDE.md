@@ -474,6 +474,9 @@ dependemos.
    | `objeto.lookAt(punto)` lo pone de frente al punto, igual que a una cámara | un `Object3D` mira con **+z** y una cámara con **−z**: copiar el giro de uno al otro voltea la escena | las letras 3D del logo salieron **al revés** («IZAM») sólo en la vista isométrica; se arma la base a mano (`makeBasis(u, v, z)` en `marca/anuncios/logo3d.js`) |
    | el saldo gratis de ElevenLabs alcanza para varios anuncios | 10,000 caracteres al mes se fueron en **ocho** anuncios con dos o tres tomas cada uno; la llamada contesta `401 quota_exceeded`, que parece llave mala | el 09 salió con Piper (local, acento mexicano). `voces.mjs` acepta `piper:<voz>` en el guion y lo demás no cambia |
 
+   | el brillo (bloom) hace brillar lo que emite luz | brilla todo lo que pase del UMBRAL, emita o no: un fondo blanco y letras blancas con luz de estudio pasan de .78 | en el 13 «En movimiento» el estudio blanco salió lavado, las letras como algodón y el logo con halo de neón. El umbral va en .9 y en lo blanco el brillo se apaga; lo que deba brillar se sube con `emissive`, no bajando el umbral |
+   | una cámara a la distancia que «se ve bien» en horizontal se ve bien en vertical | en 9:16 con 32° de campo, a 5 unidades se ven sólo **1.6 de ancho**: una palabra de 0.5 de alto no cabe | todo el 13 salió con las letras cortadas a la orilla. `cabe()` en el anuncio achica cada palabra al ancho que se ve |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---
