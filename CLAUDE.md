@@ -138,7 +138,16 @@ Salió de una sesión larga donde me corrigió cuatro veces y las cuatro tenía 
   prueba. "Ya está" sin evidencia no vale.
 - Que **guarde el contexto** para que no tenga que repetirlo.
 
-### El link que se entrega NO lleva «palomazi» ni «mazi-central» · 14 de septiembre
+### ⚠️ CORREGIDO EL 29 DE OCTUBRE: lo nuestro se publica en palomazi
+
+Carlos: *«publica nuestra página en palomazi. Bigtiger es para otras cosas, tú no la
+vas a usar casi nunca»*. O sea: **la página de Grupo Mazi y lo de la casa van en
+`mazi-central.palomazi9111.workers.dev`** (se publica fusionando a `main`), y
+`BigTigerMX` queda para lo que él diga, no como destino de fábrica. Lo de abajo se
+deja porque explica de dónde salió la regla vieja, pero **ya no manda**: si un
+cliente necesita una dirección sin «palomazi», se le pregunta a Carlos.
+
+### (vieja) El link que se entrega NO lleva «palomazi» ni «mazi-central» · 14 de septiembre
 
 Lo pidió así: *«para los siguientes trabajos quiero que el link no tenga nada de
 palomazi ni mazi central, así que cuando te pida el link final lo debes de
