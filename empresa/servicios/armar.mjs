@@ -79,6 +79,20 @@ const encimados = await fl.$$eval('.fly', fs => fs.flatMap((f, i) => {
   return out; }));
 console.log(encimados.length ? '✗ se encima: ' + encimados.join(' · ') : '✓ nada se encima en los flyers');
 for(let i = 0; i < fs_.length; i++) await fs_[i].screenshot({ path: path.join(SAL, `Grupo-Mazi-flyer-${i + 1}.png`) });
+/* los pósters de precios: uno por servicio, con la imagen nueva (29 de octubre), con la misma revisión */
+const po = await abrir('posters.html', 1080, 1350, 1);
+const pEnc = await po.$$eval('.fly', fs => fs.flatMap((f, i) => {
+  const textos = [...f.querySelectorAll(':scope > h1, :scope > .sub, :scope > .precios, :scope > .chips, :scope > .lista, :scope > .grande, :scope > .regalo, :scope > .pie, :scope > .marca, :scope > .cat, :scope > .aviso, :scope > .tabla')];
+  const cosas = [...f.querySelectorAll(':scope > .tel, :scope > .reel, :scope > .hoja, :scope > .cubo, :scope > .icono')];
+  const caja = (e) => e.getBoundingClientRect(), choca = (a, b, m = 6) => a.left < b.right - m && b.left < a.right - m && a.top < b.bottom - m && b.top < a.bottom - m;
+  const out = [], r = f.getBoundingClientRect();
+  for(const t of textos){ for(const c of cosas) if(choca(caja(t), caja(c))) out.push(`póster ${i + 1}: ${t.className || t.tagName} bajo ${c.className}`);
+    for(const u of textos) if(u !== t && t.compareDocumentPosition(u) & 4 && choca(caja(t), caja(u), 2)) out.push(`póster ${i + 1}: ${t.className || t.tagName} con ${u.className || u.tagName}`);
+    const b = caja(t); if(b.right > r.right - 40 || b.left < r.left + 40 || b.bottom > r.bottom - 20) out.push(`póster ${i + 1}: ${t.className || t.tagName} pegado a la orilla`); }
+  return out; }));
+console.log(pEnc.length ? '✗ se encima en los pósters: ' + pEnc.join(' · ') : '✓ nada se encima en los pósters');
+const pos = await po.$$('.fly');
+for(let i = 0; i < pos.length; i++) await pos[i].screenshot({ path: path.join(SAL, `Grupo-Mazi-poster-${String(i + 1).padStart(2, '0')}.png`) });
 await br.close();
 console.log(desbordes.length ? '✗ se sale de la hoja: ' + desbordes.join(' · ') : '✓ nada se sale de su hoja');
 console.log(errores.length ? '✗ ' + errores.slice(0, 4).join(' | ') : '✓ sin errores');

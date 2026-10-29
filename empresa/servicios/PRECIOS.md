@@ -129,3 +129,13 @@ eso.»* En la hoja va como «¿Tienes un presupuesto? Platícanos» (hoja 1). C�
   meses sí, de huevos que sí»).
 - El IVA y la factura: la hoja dice «si la necesitas, se agrega el IVA».
 - Las reglas de los pagos a crédito (número de pagos, enganche, interés).
+
+## Visitas en persona · Carlos, 29 de octubre
+
+*«Lo de las fotos al local y cualquier cosa que requiera cita presencial sólo dentro de QRO; fuera
+de este el cliente deberá cubrir viáticos y sólo es en casos especiales.»*
+
+- Fotos, grabaciones, diagnósticos y cualquier cita en el negocio del cliente: **dentro de Querétaro**.
+- **Fuera de Querétaro, sólo en casos especiales** (lo decide Carlos), y **el cliente cubre los viáticos**.
+- Está en la hoja (condiciones, hoja 2, y en la sección de video y foto) y en los pósters 7, 8, 12 y 13.
+- Pendiente de afinar con Carlos: si «Querétaro» es la zona metropolitana o todo el estado.

@@ -11,19 +11,22 @@
      luego $250, $6,500 con 2 videos de regalo, $9,000 a la medida) son los que ya se le
      ofrecieron a Smiley's; el resto es PROPUESTA, puesta abajo de los rangos del mercado
      mexicano (ver PRECIOS.md), y la confirma Carlos. -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;700&display=swap">
 <style>
 @font-face{font-family:"Mazi"; src:url(../../sitio/fuente/mazi.woff2) format("woff2")}
 @page{ size:8.5in 11in; margin:0 }
-:root{ --vacio:#100A18; --superficie:#1E1428; --linea:#E6E1EA; --tinta:#17111F; --gris:#5E5668; --suave:#8B8296;
-  --violeta:#AC27FF; --violeta-hondo:#7A12C4; --lila:#F4ECFC; --hueso:#FBFAFC; --t:"Inter Tight", system-ui, sans-serif }
+:root{ --vacio:#170A26; --superficie:#241036; --linea:#E9E0E6; --tinta:#170A26; --gris:#5E5466; --suave:#8C8094;
+  --violeta:#A8264B; --violeta-hondo:#7E1735; --lila:#F6E9EE; --hueso:#FCF9FA; --techo:#AC27FF; --t:"Inter Tight", system-ui, sans-serif; --s:"Space Grotesk", var(--t) }
+/* LA IMAGEN NUEVA (28 de octubre): morado oscuro, vino y claro, priorizando el oscuro y el vino; el
+   morado brillante sólo vive en el techo del cubo. Las variables conservan su nombre viejo para no
+   tocar cada regla: «violeta» ahora es el vino claro y «violeta-hondo» el vino. */
 *{ box-sizing:border-box; margin:0; padding:0 }
 html{ background:#d9d4de; -webkit-print-color-adjust:exact; print-color-adjust:exact }
 body{ font-family:var(--t); color:var(--tinta); font-size:12.5px; line-height:1.45; font-variant-numeric:tabular-nums }
 .hoja{ position:relative; width:8.5in; height:11in; margin:0 auto 24px; background:var(--hueso); overflow:hidden; page-break-after:always; break-after:page }
 @media print{ html{ background:none } .hoja{ margin:0 } }
 .pad{ padding:0 52px }
-h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
+h2{ font-family:var(--s); font-size:25px; font-weight:700; letter-spacing:-.03em; line-height:1 }
 .sec{ display:flex; align-items:baseline; gap:14px; margin:0 0 14px }
 .sec .num{ font-weight:800; font-size:12px; letter-spacing:.16em; color:var(--violeta) }
 .sec p{ margin-left:auto; color:var(--gris); font-size:12px; text-align:right; max-width:300px; line-height:1.35 }
@@ -31,20 +34,19 @@ h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
 /* ── la portada ── */
 .cabeza{ position:relative; background:var(--vacio); color:#F3EEF7; padding:30px 52px 28px; overflow:hidden }
 .cabeza::before{ content:""; position:absolute; right:-160px; top:-220px; width:620px; height:620px; border-radius:50%;
-  background:radial-gradient(closest-side, #661A97, #230E34 55%, #100A18) }
+  background:radial-gradient(closest-side, #8E1B3A, #3A1030 55%, #170A26) }
 .cabeza > *{ position:relative; z-index:1 }
 /* SIN transparencias con degradado ni sombras difuminadas: en el PDF se vuelven máscaras (smask)
    y el visor del iPhone las pinta como RECUADROS SÓLIDOS (Carlos, 23 oct: «este recuadro morado
    está feísimo», era la sombra de la Recomendada). Los brillos van en colores opacos. */
 .marca{ display:flex; align-items:center; gap:12px }
-.marca .paloma{ width:58px; height:34px; background:url(../../marca/logo/paloma.svg) center/contain no-repeat }
-.marca b{ font-family:"Mazi", var(--t); font-weight:400; font-size:23px; letter-spacing:.04em }
+.marca img{ display:block; height:44px; margin:-8px 0 -8px -10px }
 .marca span{ margin-left:auto; font-size:11px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:#B9AEC6 }
-.cabeza h1{ margin-top:22px; font-size:43px; line-height:.98; font-weight:900; letter-spacing:-.045em; max-width:560px }
-.cabeza h1 em{ font-style:normal; color:#C878FF }
+.cabeza h1{ margin-top:22px; font-family:var(--s); font-size:43px; line-height:.98; font-weight:700; letter-spacing:-.045em; max-width:560px }
+.cabeza h1 em{ font-style:normal; color:#FF8FB1 }
 .cabeza .bajada{ margin-top:14px; font-size:15px; color:#CFC6DA; max-width:520px; line-height:1.4 }
 .sellos{ display:flex; gap:10px; margin-top:16px; flex-wrap:wrap }
-.sellos span{ padding:7px 13px; border-radius:99px; background:rgba(172,39,255,.16); box-shadow:inset 0 0 0 1.5px rgba(200,120,255,.45); font-size:11.5px; font-weight:700; color:#EBDDF7 }
+.sellos span{ padding:7px 13px; border-radius:99px; background:#3A1530; box-shadow:inset 0 0 0 1.5px #7E2B4E; font-size:11.5px; font-weight:700; color:#F4E4EC }
 
 /* ── las tarjetas de las webs ── */
 .planes{ display:grid; grid-template-columns:repeat(3, 1fr); gap:14px }
@@ -61,10 +63,10 @@ h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
 .plan .pie{ margin-top:14px; padding-top:11px; border-top:1.5px dashed var(--linea); font-size:11px; color:var(--gris); line-height:1.4 }
 .plan .pie b{ color:var(--tinta) }
 .plan.estrella{ background:var(--vacio); color:#F3EEF7; box-shadow:0 0 0 2px var(--violeta) }
-.plan.estrella .nom{ color:#C878FF } .plan.estrella .para, .plan.estrella .pie{ color:#BFB4CC } .plan.estrella .pie b{ color:#fff }
+.plan.estrella .nom{ color:#FF8FB1 } .plan.estrella .para, .plan.estrella .pie{ color:#BFB4CC } .plan.estrella .pie b{ color:#fff }
 .plan.estrella .pie{ border-color:rgba(255,255,255,.16) }
 .cinta{ position:absolute; top:-10px; right:16px; padding:5px 11px; border-radius:99px; background:var(--violeta); color:#fff; font-size:10.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase }
-.regalo{ margin-top:10px; display:flex; gap:7px; align-items:center; font-size:11.5px; font-weight:700; color:#E3C6FF; line-height:1.25 }
+.regalo{ margin-top:10px; display:flex; gap:7px; align-items:center; font-size:11.5px; font-weight:700; color:#FFC4D6; line-height:1.25 }
 .regalo svg{ flex:none; width:17px; height:17px }
 .extra{ margin-top:14px; display:grid; grid-template-columns:1.25fr 1fr; gap:14px }
 .caja{ border-radius:16px; padding:15px 18px; background:var(--lila); display:flex; gap:14px; align-items:center }
@@ -113,7 +115,7 @@ h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
 .mplan{ padding:15px 20px 14px; border-radius:18px; background:#fff; box-shadow:0 0 0 1.5px var(--linea) }
 .mplan.plus{ background:var(--vacio); color:#F3EEF7; box-shadow:0 0 0 2px var(--violeta) }
 .mplan .nom{ font-weight:800; font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--violeta-hondo) }
-.mplan.plus .nom{ color:#C878FF }
+.mplan.plus .nom{ color:#FF8FB1 }
 .mplan .para{ font-size:11.5px; color:var(--gris); margin-top:3px }
 .mplan.plus .para{ color:#BFB4CC }
 .mplan .precios{ display:flex; gap:22px; align-items:flex-end; margin-top:10px }
@@ -132,7 +134,7 @@ h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
 .regla b{ display:block; color:var(--tinta); font-size:12.5px; margin-bottom:3px }
 .regla.no{ background:#FFF1F1 } .regla.no b{ color:#A3122E }
 .ejemplos{ display:flex; flex-wrap:wrap; gap:7px; margin-top:12px }
-.ejemplos span{ padding:6px 11px; border-radius:99px; background:var(--lila); font-size:11.2px; font-weight:700; color:#4B1C73 }
+.ejemplos span{ padding:6px 11px; border-radius:99px; background:var(--lila); font-size:11.2px; font-weight:700; color:#7E1735 }
 .tri{ display:grid; grid-template-columns:repeat(3, 1fr); border-radius:14px; overflow:hidden; box-shadow:0 0 0 1.5px var(--linea); margin-top:4px }
 .tri > div{ padding:10px 12px; background:#fff; text-align:center }
 .tri > div + div{ border-left:1.5px solid var(--linea) }
@@ -141,7 +143,7 @@ h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
 .tri .d{ font-size:10.5px; color:var(--gris); margin-top:2px; line-height:1.3 }
 
 .presu{ margin-top:12px; display:flex; align-items:center; gap:14px; padding:13px 18px; border-radius:16px; background:var(--vacio); color:#F3EEF7 }
-.presu__ico{ flex:none; width:38px; height:38px; border-radius:11px; display:grid; place-items:center; background:rgba(172,39,255,.25); color:#D9A6FF }
+.presu__ico{ flex:none; width:38px; height:38px; border-radius:11px; display:grid; place-items:center; background:#4A1838; color:#FF8FB1 }
 .presu__ico svg{ width:20px; height:20px }
 .presu .t{ font-weight:800; font-size:14px }
 .presu .d{ font-size:11.3px; color:#CFC6DA; line-height:1.35; margin-top:2px }
@@ -149,10 +151,10 @@ h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
 /* ── el pie de cada hoja y el cierre ── */
 .pie-hoja{ position:absolute; left:52px; right:52px; bottom:22px; display:flex; justify-content:space-between; font-size:10px; color:var(--suave); letter-spacing:.04em }
 .cierre{ position:absolute; left:0; right:0; bottom:0; padding:22px 52px 24px; background:var(--vacio); color:#F3EEF7; overflow:hidden }
-.cierre::before{ content:""; position:absolute; left:-140px; bottom:-260px; width:560px; height:560px; border-radius:50%; background:radial-gradient(closest-side, #5E188B, #100A18) }
+.cierre::before{ content:""; position:absolute; left:-140px; bottom:-260px; width:560px; height:560px; border-radius:50%; background:radial-gradient(closest-side, #6E1832, #170A26) }
 .cierre > *{ position:relative }
-.cierre .grande{ font-size:26px; font-weight:900; letter-spacing:-.04em; line-height:1.02; max-width:420px }
-.cierre .grande em{ font-style:normal; color:#C878FF }
+.cierre .grande{ font-family:var(--s); font-size:26px; font-weight:700; letter-spacing:-.04em; line-height:1.02; max-width:420px }
+.cierre .grande em{ font-style:normal; color:#FF8FB1 }
 .cierre .lema{ margin-top:10px; font-size:12.5px; color:#BFB4CC }
 .contacto{ position:absolute; right:52px; top:20px; display:grid; gap:7px; justify-items:end }
 .wa{ display:flex; align-items:center; gap:10px; padding:12px 20px; border-radius:99px; background:#25D366; color:#062B14; font-weight:900; font-size:19px; letter-spacing:-.01em }
@@ -166,7 +168,7 @@ h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
 <!-- ═════════════════ HOJA 1 ═════════════════ -->
 <section class="hoja">
   <header class="cabeza">
-    <div class="marca"><i class="paloma"></i><b>GRUPO MAZI</b><span>Servicios y precios · 2026</span></div>
+    <div class="marca"><img src="../../marca/cubo/final/logo.svg" alt="Grupo Mazi"><span>Servicios y precios · 2026</span></div>
     <h1>Tu negocio, <em>en internet</em> y trabajando por ti.</h1>
     <p class="bajada">Páginas web, apps, video y marca hechos a la medida. Entregamos rápido y nos quedamos contigo después de entregar.</p>
     <div class="sellos"><span>Precios claros, sin letras chiquitas</span><span>Tu página es tuya</span><span>Sin comisiones por venta</span><span>Avances que puedes ver</span></div>
@@ -200,7 +202,7 @@ h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
           <li>Herramientas para tu cliente (calculadoras, armar su pedido)</li>
           <li>Lista para aparecer en Google</li>
         </ul>
-        <div class="regalo"><svg viewBox="0 0 24 24" fill="none" stroke="#C878FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8v13M3 12h18M12 8c-2-4-6-4-6-1.5S9 8 12 8zm0 0c2-4 6-4 6-1.5S15 8 12 8z"/></svg>De regalo: 2 videos publicitarios para tus redes</div>
+        <div class="regalo"><svg viewBox="0 0 24 24" fill="none" stroke="#FF8FB1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8v13M3 12h18M12 8c-2-4-6-4-6-1.5S9 8 12 8zm0 0c2-4 6-4 6-1.5S15 8 12 8z"/></svg>De regalo: 2 videos publicitarios para tus redes</div>
         <div class="pie"><b>Incluye 3 meses de mantenimiento.</b><br>Lista en unas 1 a 2 semanas.</div>
       </article>
       <article class="plan">
@@ -292,6 +294,7 @@ h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
       <span><b>Cambios extra:</b> pasando ese límite, o si se cambia lo ya aprobado o la idea del proyecto, se cobra a $450 la hora.</span>
       <span><b>Factura:</b> si la necesitas, se agrega el IVA.</span>
       <span><b>Dominio:</b> queda a tu nombre; lo pagas directo al proveedor.</span>
+      <span style="grid-column:1 / -1"><b>Visitas en persona:</b> fotos, grabaciones y cualquier cita en tu negocio, sólo dentro de Querétaro. Fuera de Querétaro, únicamente en casos especiales y con los viáticos a cargo del cliente.</span>
     </div>
   </div>
   <div class="pie-hoja"><span>Grupo Mazi · grupomazi.oficial@gmail.com</span><span>WhatsApp 442 883 3786 · 2 de 3</span></div>
@@ -300,7 +303,7 @@ h2{ font-size:25px; font-weight:900; letter-spacing:-.03em; line-height:1 }
 <!-- ═════════════════ HOJA 3 ═════════════════ -->
 <section class="hoja">
   <div class="pad" style="padding-top:40px">
-    <div class="sec"><span class="num">04</span><h2>Video, foto y diseño</h2><p>Con camarógrafo y fotógrafo en tu negocio, o con tu material.</p></div>
+    <div class="sec"><span class="num">04</span><h2>Video, foto y diseño</h2><p>Con camarógrafo y fotógrafo en tu negocio (en Querétaro), o con tu material.</p></div>
     <div class="lista">
       <div class="grupo">
         <h3>Video y foto</h3>

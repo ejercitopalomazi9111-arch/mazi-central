@@ -37,3 +37,6 @@ cubo sobre de éste, volviéndose el cubo»*.
 | techo | `#AC27FF` |
 | cara izquierda | `#34343D` |
 | cara derecha | `#52525D` |
+
+`logo-tinta.svg` es `logo.svg` con las letras en morado oscuro (#170A26), para fondos claros:
+`sed "s/#FFFFFF/#170A26/g" logo.svg > logo-tinta.svg`.
