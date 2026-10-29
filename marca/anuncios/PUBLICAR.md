@@ -1,6 +1,6 @@
 # Los anuncios de Grupo Mazi · listos para subir
 
-Trece videos verticales (1080 × 1920, 30 cuadros por segundo), para Reels, TikTok y Shorts. Todos traen:
+Quince videos verticales (1080 × 1920, 30 cuadros por segundo), para Reels, TikTok y Shorts. Todos traen:
 
 - subtítulos quemados;
 - la zona de abajo libre, para que no tapen el nombre de la cuenta ni los botones;
@@ -39,6 +39,8 @@ Cada video trae su portada en `portadas/<video>.jpg` (1080 × 1920): un cuadro d
 | 11 | 11 · Corporativo | el formal, para LinkedIn y para mandar a empresas |
 | 12 | 12 · Al ritmo | el rápido, para cerrar la semana |
 | 13 | 13 · En movimiento | el «de After Effects»: para presumir que el movimiento es lo nuestro |
+| 14 | 14 · A la medida | formal, de producto: para LinkedIn, para mandar a empresas y para anuncio pagado |
+| 15 | 15 · Un solo equipo | formal: los tres servicios grandes con aparatos de verdad |
 
 ## El texto de cada uno
 
@@ -127,6 +129,20 @@ Cada video trae su portada en `portadas/<video>.jpg` (1080 × 1920): un cuadro d
 > Hazlo que se mueva. Sin plantillas, hecho a mano: páginas, apps y video desde Querétaro. 📲 442 883 3786
 > #GrupoMazi #MotionDesign #3D #PáginasWeb #Querétaro
 > Música: «Exit the Premises», Kevin MacLeod (incompetech.com), CC BY 4.0. Luz: Poly Haven (CC0).
+
+**14 · A la medida**
+
+> Precisión en cada detalle. Páginas web, software y sistemas hechos a la medida de tu negocio: entregamos rápido y nos quedamos. Grupo Mazi, Querétaro, para todo México. 📲 442 883 3786
+> #GrupoMazi #PáginasWeb #Software #Empresas #Querétaro
+> Música: «Impact Prelude», Kevin MacLeod (incompetech.com), CC BY 4.0. Laptop 3D: «gaming_laptop» de sabrito84 (Sketchfab), CC BY 4.0. Luz: Poly Haven (CC0).
+
+**15 · Un solo equipo**
+
+> Video y fotografía, software y sistemas, páginas web. Seis servicios, una sola firma. 📲 442 883 3786 · ✉️ grupomazi.oficial@gmail.com
+> #GrupoMazi #VideoProfesional #Software #PáginasWeb #Querétaro
+> Música: «Digital Lemonade», Kevin MacLeod (incompetech.com), CC BY 4.0. Modelos 3D (Sketchfab, CC BY 4.0): «Cinema Camera» de re1monsen, «All In One Computer» de Sean, «gaming_laptop» de sabrito84. Luz: Poly Haven (CC0).
+
+**En el 14 y el 15 el crédito de los modelos NO es opcional**: son CC BY, no CC0. Sin el nombre del autor en la descripción, la licencia no se cumple.
 
 ## Cómo se vuelven a armar
 
