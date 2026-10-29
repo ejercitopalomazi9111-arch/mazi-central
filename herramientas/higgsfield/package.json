@@ -1,0 +1,9 @@
+{
+  "name": "mazi-higgsfield",
+  "private": true,
+  "type": "module",
+  "description": "Adaptador de Grupo Mazi para generar video con Higgsfield (Seedance 2.5). La llave vive en .env.local (ignorado por git).",
+  "dependencies": {
+    "@higgsfield/client": "^0.2.6"
+  }
+}
