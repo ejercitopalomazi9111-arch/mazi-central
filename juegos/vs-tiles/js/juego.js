@@ -30,8 +30,10 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
   const x = capa.getContext('2d');
   let W = 0, H = 0, dpr = 1, carta = null, an = null, J = null, est = null, cancion = null, corriendo = false, pausa = false, auto = false, fin = 0, bajos = null;
   const efectos = [], textos = [];
-  function medir(){ dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight; capa.width = W * dpr; capa.height = H * dpr; capa.style.width = W + 'px'; capa.style.height = H + 'px'; escena.medir(W, H); }
-  addEventListener('resize', medir); medir();
+  /* el tamaño de verdad del lienzo (innerHeight miente en el iPhone cuando la barra de Safari aparece o
+     se esconde, y en modo teléfono daba 1040 con una pantalla de 844: los receptores quedaban fuera) */
+  function medir(){ dpr = Math.min(2, devicePixelRatio || 1); W = capa.clientWidth || document.documentElement.clientWidth; H = capa.clientHeight || document.documentElement.clientHeight; capa.width = W * dpr; capa.height = H * dpr; capa.style.width = W + 'px'; capa.style.height = H + 'px'; escena.medir(W, H); }
+  addEventListener('resize', medir); window.visualViewport?.addEventListener('resize', medir); new ResizeObserver(medir).observe(capa); medir();
 
   /* el modo que manda en el segundo t (para la entrada: frontera exacta) y el que se ve (0.3 s antes, para
      que la pantalla ya esté cambiando cuando llegue la sección) */
@@ -54,7 +56,7 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
   function juzgar(n, t, donde){ const j = J.juzgar(t - n.t, n); if(!j) return false; marcar(n, j, t - n.t, donde); return true; }
   /* la nota más temprana todavía viva que cumple `filtro`, dentro del alcance */
   function candidata(t, filtro){ let mejor = null; const wg = J.ventana()[2];
-    for(let k = est.desde; k < carta.notas.length; k++){ const n = carta.notas[k]; if(n.t > t + ALCANCE) break; if(n.rival || est.estado[n.id] || n.t < t - ALCANCE || !filtro(n)) continue;
+    for(let k = est.desde; k < carta.notas.length; k++){ const n = carta.notas[k]; if(n.t > t + ALCANCE) break; if(n.rival || (est.estado[n.id] && est.estado[n.id] !== 'pendiente') || n.t < t - ALCANCE || !filtro(n)) continue;
       /* la más cercana; pero una más vieja que todavía está en GENIAL gana (si no, se «come» la que sigue) */
       if(!mejor) mejor = n; else if(Math.abs(n.t - t) < Math.abs(mejor.t - t) && !(Math.abs(mejor.t - t) <= wg && mejor.t < n.t)) mejor = n; }
     return mejor; }
@@ -137,7 +139,9 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
 
   /* los eventos del navegador → el reloj del audio */
   const opc = { passive: false };
-  function abajo(e){ if(!corriendo) return; e.preventDefault(); capa.setPointerCapture?.(e.pointerId); baja('p' + e.pointerId, reloj.en(e.timeStamp), e.clientX, e.clientY); est && (est.ultimoXY = [e.clientX, e.clientY]); }
+  /* setPointerCapture TRUENA si cuando se atiende el toque el dedo ya se levantó (un teléfono ocupado
+     atiende el evento cientos de ms después): sin el try se perdía el toque entero */
+  function abajo(e){ if(!corriendo) return; e.preventDefault(); try{ capa.setPointerCapture(e.pointerId); }catch(err){} baja('p' + e.pointerId, reloj.en(e.timeStamp), e.clientX, e.clientY); est && (est.ultimoXY = [e.clientX, e.clientY]); }
   function mover(e){ if(!corriendo) return; e.preventDefault(); mueve('p' + e.pointerId, reloj.en(e.timeStamp), e.clientX, e.clientY); est && (est.ultimoXY = [e.clientX, e.clientY]); }
   function arriba(e){ if(!corriendo) return; e.preventDefault(); sube('p' + e.pointerId, reloj.en(e.timeStamp)); }
   capa.addEventListener('pointerdown', abajo, opc); capa.addEventListener('pointermove', mover, opc); capa.addEventListener('pointerup', arriba, opc); capa.addEventListener('pointercancel', arriba, opc);
@@ -175,8 +179,13 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
       if(s === 'sosteniendo'){ if(n.tipo === 'deslice' && !auto && [...dedos.values()].some(d => d.n === n)) continue;
         if(t >= n.fin){ est.estado[n.id] = 'hecha'; J.apuntar(n.tipo === 'deslice' && !auto ? JUICIOS[4] : JUICIOS[1], 0, n); } continue; }
       if(n.tipo === 'giro'){ if(!s && t >= n.fin){ const g = (est.giro[n.id] || 0) / (2 * Math.PI) / Math.max(1, n.vueltas); est.estado[n.id] = 'hecha'; J.apuntar(g >= 1 ? JUICIOS[1] : g >= .6 ? JUICIOS[3] : JUICIOS[4], null, n); } continue; }
-      if(!s && tFallo - n.t > wf){ est.estado[n.id] = 'fallada'; J.fallar(n); if(n.fin) J.fallar(n); textos.push({ j: JUICIOS[4], t0: performance.now() }); }
+      /* la nota se va, pero el FALLO no se cuenta todavía: si el teléfono estaba ocupado, el toque que sí
+         llegó a tiempo está en la cola con su hora real y se atiende hasta después. Se espera medio segundo
+         de reloj de pared; si en ese rato aparece un toque con hora dentro de la ventana, se juzga normal */
+      if(!s && tFallo - n.t > wf){ est.estado[n.id] = 'pendiente'; est.pendientes.push({ n, desde: performance.now() }); }
     }
+    for(let i = est.pendientes.length - 1; i >= 0; i--){ const { n, desde } = est.pendientes[i]; if(est.estado[n.id] !== 'pendiente'){ est.pendientes.splice(i, 1); continue; }
+      if(performance.now() - desde > 450){ est.pendientes.splice(i, 1); est.estado[n.id] = 'fallada'; J.fallar(n); if(n.fin) J.fallar(n); textos.push({ j: JUICIOS[4], t0: performance.now() }); } }
     /* los deslices: ¿el dedo va con la bola? */
     for(const [id, d] of dedos){ if(!d.deslice) continue; const n = d.n, u = Math.min(1, Math.max(0, (t - n.t) / (n.fin - n.t))), [bx, by] = puntoCamino(n, u);
       const sg = est.sigue[n.id]; if(Math.hypot(d.px - bx, d.py - by) < radio() * 2.6) sg.si++; else sg.no++;
@@ -210,7 +219,7 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
         if(n.rival){ const yy = H * .2 + dt * velPx * .42; if(dt < -.05 || yy > H) continue; const xx = 20 + tamR * .6 + c * tamR * 1.05;
           if(n.fin){ x.fillStyle = COLOR_FL[c] + '88'; x.fillRect(xx - tamR * .12, yy, tamR * .24, (n.fin - n.t) * velPx * .42); }
           img(S.teñir(`tecla_arrow_${FLECHA[c]}`, COLOR_FL[c]), xx, yy, tamR, 0, .85); continue; }
-        if(st === 'hecha' || st === 'fallada') continue; const [cx] = flechaXY(c, 0), yy = yRec - (st === 'sosteniendo' ? 0 : dt) * velPx;
+        if(st === 'hecha' || st === 'fallada' || st === 'pendiente') continue; const [cx] = flechaXY(c, 0), yy = yRec - (st === 'sosteniendo' ? 0 : dt) * velPx;
         if(n.fin){ const yf = yRec - (n.fin - t) * velPx; x.fillStyle = COLOR_FL[c] + (st === 'sosteniendo' ? 'EE' : '99'); x.fillRect(cx - tam * .13, Math.min(yf, yy), tam * .26, Math.abs(yy - yf)); }
         if(st !== 'sosteniendo') img(S.teñir(`tecla_arrow_${FLECHA[c]}`, COLOR_FL[c]), cx, yy, tam);
       }
@@ -218,7 +227,7 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
     /* ── Símbolos (DIVA): el blanco con su manecilla, y el símbolo que vuela hacia él ── */
     if(modo === 'diva'){ const tam = radio() * 2.1, B = botonesDiva();
       for(let k = est.desde; k < carta.notas.length; k++){ const n = carta.notas[k]; if(n.modo !== 'diva') continue; const dt = n.t - t; if(dt > AR * 1.15) break; const st = est.estado[n.id];
-        if(st === 'hecha' || st === 'fallada') continue; const [cx, cy] = enArea(n), u = 1 - Math.max(0, dt) / (AR * 1.15);
+        if(st === 'hecha' || st === 'fallada' || st === 'pendiente') continue; const [cx, cy] = enArea(n), u = 1 - Math.max(0, dt) / (AR * 1.15);
         const nom = n.tipo === 'estrella' ? 'p_star_06' : `ps_color_${SIM[n.sim]}`;
         img(n.tipo === 'estrella' ? S.teñir('p_star_01', '#FFF3B0') : `ps_${SIM[n.sim]}_outline`, cx, cy, tam * (1.05 + .08 * lat), 0, Math.min(1, u * 3));
         /* la manecilla del reloj del blanco (M116) */
@@ -240,7 +249,7 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
         if(n.tipo === 'giro'){ if(t < n.t - .3 || t > n.fin || st === 'hecha') continue; const g = (est.giro[n.id] || 0) / (2 * Math.PI) / Math.max(1, n.vueltas);
           img('p_twirl_01', W / 2, H * .45, Math.min(W, H) * .7, (est.giro[n.id] || 0), .8, true); img('gen_circle_outline', W / 2, H * .45, Math.min(W, H) * .62 * (1 - (t - n.t) / (n.fin - n.t)), 0, .8);
           x.save(); x.font = '800 28px Orbitron, sans-serif'; x.fillStyle = '#fff'; x.textAlign = 'center'; x.fillText(`GIRA ${Math.min(100, Math.round(g * 100))}%`, W / 2, H * .45 + 10); x.restore(); continue; }
-        if(st === 'fallada' || (st === 'hecha' && !(n.tipo === 'deslice' && t < n.fin))) continue;
+        if(st === 'fallada' || st === 'pendiente' || (st === 'hecha' && !(n.tipo === 'deslice' && t < n.fin))) continue;
         const [cx, cy] = enArea(n), u = 1 - Math.max(0, dt) / AR, alfa = Math.min(1, u * 2.5), color = COLORES_RIEL[(n.id % 3) + 1];
         if(n.tipo === 'deslice'){ x.save(); x.globalAlpha = alfa * .55; x.lineCap = 'round'; x.lineJoin = 'round'; x.strokeStyle = '#ffffff'; x.lineWidth = R * 2.05; x.beginPath(); n.camino.forEach((p, i) => { const [qx, qy] = [area().x + p[0] * area().w, area().y + p[1] * area().h]; i ? x.lineTo(qx, qy) : x.moveTo(qx, qy); }); x.stroke();
           x.strokeStyle = color; x.lineWidth = R * 1.8; x.stroke(); x.restore();
@@ -292,7 +301,7 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
     async empezar(c, cartaN, analisis, buf, { autoJuego = false, vel = 1, ritmo = 1, desde = null } = {}){
       cancion = c; carta = cartaN; an = analisis; auto = autoJuego;
       J = crearJuez(carta); J.total = carta.notas.filter(n => !n.rival).length + carta.notas.filter(n => !n.rival && n.fin && n.tipo !== 'giro').length;
-      est = { estado: {}, desde: 0, vel: vel, pulsado: [0, 0, 0, 0], pulsadoR: [0, 0, 0, 0], sigue: {}, giro: {}, cola: {}, ultimoGolpe: 0 };
+      est = { estado: {}, pendientes: [], desde: 0, vel: vel, pulsado: [0, 0, 0, 0], pulsadoR: [0, 0, 0, 0], sigue: {}, giro: {}, cola: {}, ultimoGolpe: 0 };
       bajos = an.ataques.filter(a => a[2] === 0 && a[1] > .55).map(a => [a[0], a[1]]);
       escena.prepararVelocidad(carta.eventos);
       fin = Math.min(an.dur - .5, (carta.notas.at(-1)?.fin || carta.notas.at(-1)?.t || an.dur) + 3);

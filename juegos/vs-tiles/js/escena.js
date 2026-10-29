@@ -200,13 +200,13 @@ export async function crearEscena(lienzo){
     { p: [0, 5.4, 7.6], m: [0, 0, -9] }        // lejos
   ];
   const golpeDe = (golpes, t) => { let i = 0, lo = 0, hi = golpes.length - 1; while(hi - lo > 1){ const m = (lo + hi) >> 1; if(golpes[m] < t) lo = m; else hi = m; } i = golpes[hi] <= t ? hi : lo; const a = golpes[i] ?? 0, b = golpes[i + 1] ?? a + .5; return { i, fase: Math.min(1, Math.max(0, (t - a) / Math.max(.05, b - a))) }; };
-  let escActual = -1, escCambio = 0, cambioCam = -9, camDe = { p: new THREE.Vector3(...CAMS[0].p), m: new THREE.Vector3(...CAMS[0].m) };
+  let vertical = true, escActual = -1, escCambio = 0, cambioCam = -9, camDe = { p: new THREE.Vector3(...CAMS[0].p), m: new THREE.Vector3(...CAMS[0].m) };
 
   return { r, s, cam, carril, piezas, cantantes, ponerCantantes, E, chispa, uni, prepararVelocidad, pos, LARGO, ANCHO,
     /* proyecta un punto del carril (riel r en la línea) a la pantalla, en px CSS */
     receptor(r, ancho, alto){ const R = piezas.rieles[r]; v3.set(R.x * ANCHO, 0, 0); carril.localToWorld(v3); v3.project(cam); return [(v3.x + 1) / 2 * ancho, (1 - v3.y) / 2 * alto, R.vis]; },
     proyectar(p, ancho, alto){ v3.copy(p).project(cam); return [(v3.x + 1) / 2 * ancho, (1 - v3.y) / 2 * alto]; },
-    medir(ancho, alto){ r.setSize(ancho, alto, false); cam.aspect = ancho / alto; cam.fov = ancho < alto ? 64 : 50; cam.updateProjectionMatrix(); },
+    medir(ancho, alto){ r.setSize(ancho, alto, false); cam.aspect = ancho / alto; vertical = ancho < alto; cam.fov = vertical ? 64 : 50; cam.updateProjectionMatrix(); },
 
     /* UN CUADRO. t = segundo de la canción; an = análisis; carta (o null en el menú); est = estado del juego */
     pintar(t, { an, carta, est, modo, bajos }){
@@ -253,7 +253,10 @@ export async function crearEscena(lienzo){
         R.rec.scale.setScalar(1 + .12 * latido + Math.max(0, .35 - dg * 2)); R.rec.material.opacity = d.vis; });
       const anchoTotal = (Math.max(...D.rieles.map((d, r) => d.vis > .5 ? Math.abs(d.x) : 0)) * 2 + 1.2) * ANCHO;
       /* con 6 o 7 carriles, en el teléfono se angostan para que quepan (el toque sigue la proyección) */
-      const fac = Math.min(1, (innerWidth < innerHeight ? 5.6 : 8) * ANCHO / anchoTotal); carril.scale.x += (fac - carril.scale.x) * .1;
+      /* el carril siempre cabe: lo que la cámara alcanza a ver a lo ancho en la línea de golpe, menos un margen
+         (en un teléfono vertical, cinco carriles de ancho normal se salían: el de la orilla quedaba en x = −69) */
+      const dLinea = Math.hypot(cam.position.y, cam.position.z) || 5, visto = 2 * dLinea * Math.tan(cam.fov * Math.PI / 360) * cam.aspect;
+      const fac = Math.min(1.15, visto * .9 / anchoTotal); carril.scale.x += (fac - carril.scale.x) * .15;
       linea.scale.set(anchoTotal, 1 + latido * 1.5, 1); linea.material.opacity = .6 + .4 * latido;
       /* las rayas de compás, con la misma integral que las notas */
       if(an){ const p0 = pos(t), vel = 9 * (est?.vel || 1); let k = 0;
@@ -269,7 +272,7 @@ export async function crearEscena(lienzo){
           if(n.modo !== 'carril') continue;
           const z = -(pos(n.t) - p0) * vel; if(z < -LARGO - 2) break;
           const zf = n.fin ? -(pos(n.fin) - p0) * vel : z;
-          const st = est.estado[n.id]; if(st === 'hecha' || st === 'fallada' && !n.fin) continue;
+          const st = est.estado[n.id]; if(st === 'hecha' || (st === 'fallada' || st === 'pendiente') && !n.fin) continue;
           if(z > 2.5 && !(n.fin && zf < 1)) continue;
           const R = piezas.rieles[n.r], ox = Math.sin(z * .35 + t * 2.2) * onda * .9 * (-z / LARGO), fx = R.x * ANCHO * (1 + abanico * -z / LARGO * .6);
           let alfa = 1;
@@ -296,7 +299,7 @@ export async function crearEscena(lienzo){
       cam.position.x += Math.sin(t * .7) * .25 + (Math.random() - .5) * sacudida * .12; cam.position.y += Math.sin(t * 1.1) * .12 + sacudida * .08;
       const roll = ang + giro + Math.sin(t * .5) * .02;
       cam.up.set(Math.sin(roll), Math.cos(roll), 0); cam.lookAt(mira);
-      cam.fov = (innerWidth < innerHeight ? 64 : 50) - latido * compas * 1.6 + sacudida * 2; cam.updateProjectionMatrix();
+      cam.fov = (vertical ? 64 : 50) - latido * compas * 1.6 + sacudida * 2; cam.updateProjectionMatrix();
 
       /* las cantantes: rebotan al golpe, se balancean y brincan en los acentos */
       cantantes.forEach((c, k) => { const lado = k % 2 ? -1 : 1, sal = Math.max(0, Math.sin(fase * Math.PI)) * (gi % 2 === k % 2 ? 1 : .4);
