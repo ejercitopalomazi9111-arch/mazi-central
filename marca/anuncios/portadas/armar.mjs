@@ -17,7 +17,9 @@ const LISTA = [
   ['10-la-historia-de-mary', 22.5, 'Historias', 'La historia *de Mary*'],
   ['11-corporativo', 7.5, 'Grupo Mazi', 'Un solo equipo *para todo*'],
   ['12-al-ritmo', 10, 'Motion', 'Al ritmo *de tu negocio*'],
-  ['13-en-movimiento', 4.0, 'Motion 3D', 'Hazlo que *se mueva*']];
+  ['13-en-movimiento', 4.0, 'Motion 3D', 'Hazlo que *se mueva*'],
+  ['14-a-la-medida', 19.6, 'Páginas · software · sistemas', 'Hecho *a la medida*'],
+  ['15-un-solo-equipo', 4.9, 'Video · software · web', 'Un solo *equipo*']];
 fs.mkdirSync(path.join(AQUI, 'cuadros'), { recursive: true });
 const br = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
 const pg = await br.newPage({ viewport: { width: 1080, height: 1920 } });
