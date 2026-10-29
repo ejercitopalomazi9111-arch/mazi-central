@@ -32,7 +32,13 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
   const efectos = [], textos = [];
   /* el tamaño de verdad del lienzo (innerHeight miente en el iPhone cuando la barra de Safari aparece o
      se esconde, y en modo teléfono daba 1040 con una pantalla de 844: los receptores quedaban fuera) */
-  function medir(){ dpr = Math.min(2, devicePixelRatio || 1); W = capa.clientWidth || document.documentElement.clientWidth; H = capa.clientHeight || document.documentElement.clientHeight; capa.width = W * dpr; capa.height = H * dpr; capa.style.width = W + 'px'; capa.style.height = H + 'px'; escena.medir(W, H); }
+  /* las zonas que el iPhone se queda (la isla dinámica arriba, la rayita para salir abajo, la muesca de lado en
+     horizontal). Se miden con un elemento de prueba: leer env() desde una variable de CSS devuelve el texto sin
+     resolver, no los píxeles */
+  const sonda = document.createElement('div'); sonda.style.cssText = 'position:fixed;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)'; document.body.appendChild(sonda);
+  let SA = { t: 0, r: 0, b: 0, l: 0 };
+  function medir(){ const cs = getComputedStyle(sonda); SA = { t: parseFloat(cs.paddingTop) || 0, r: parseFloat(cs.paddingRight) || 0, b: parseFloat(cs.paddingBottom) || 0, l: parseFloat(cs.paddingLeft) || 0 };
+    dpr = Math.min(2, devicePixelRatio || 1); W = capa.clientWidth || document.documentElement.clientWidth; H = capa.clientHeight || document.documentElement.clientHeight; capa.width = W * dpr; capa.height = H * dpr; capa.style.width = W + 'px'; capa.style.height = H + 'px'; escena.medir(W, H); }
   addEventListener('resize', medir); window.visualViewport?.addEventListener('resize', medir); new ResizeObserver(medir).observe(capa); medir();
 
   /* el modo que manda en el segundo t (para la entrada: frontera exacta) y el que se ve (0.3 s antes, para
@@ -41,7 +47,7 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
   const area = () => { const lado = Math.min(W, H * .78), ax = (W - lado * (W > H ? 1.3 : 1)) / 2; return { x: Math.max(12, ax), y: H * .12, w: Math.min(W - 24, lado * (W > H ? 1.3 : 1)), h: H * .66 }; };
   const enArea = (n) => { const A = area(); return [A.x + n.x * A.w, A.y + n.y * A.h]; };
   const radio = () => Math.min(W, H) * (carta && carta.dif === 'exorcist' ? .062 : carta && carta.dif === 'experto' ? .07 : .08);
-  const botonesDiva = () => { const b = Math.min(W / 4.6, 110), y = H - b * .75 - 18, xs = [b * .65, b * 1.75, W - b * 1.75, W - b * .65]; return xs.map((cx, i) => ({ x: cx, y: y - (i === 1 || i === 2 ? b * .35 : 0), r: b * .5, i })); };
+  const botonesDiva = () => { const b = Math.min(W / 4.6, H / 3.6, 110), y = H - b * .75 - 18 - SA.b, xs = [SA.l + b * .65, SA.l + b * 1.75, W - SA.r - b * 1.75, W - SA.r - b * .65]; return xs.map((cx, i) => ({ x: cx, y: y - (i === 1 || i === 2 ? b * .35 : 0), r: b * .5, i })); };
 
   /* ══ juzgar ══ */
   function marcar(n, j, dt, donde){
@@ -210,13 +216,13 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
     if(!carta) return;
     const ahora = performance.now(), lat = v.latido || 0, AR = ACERCA[carta.dif];
     /* ── Flechas (FNF): las del rival arriba a la izquierda, las tuyas grandes abajo ── */
-    if(modo === 'flechas'){ const tam = Math.min(W / 4.4, 120), yRec = H * .8, velPx = H * .9 / AR / 1.4;
+    if(modo === 'flechas'){ const tam = Math.min(W / 4.4, H / 6.5, 120), yRec = H * .8, velPx = H * .9 / AR / 1.4;
       for(let c = 0; c < 4; c++){ const [cx] = flechaXY(c, 0), pul = Math.max(0, 1 - (ahora - (est.pulsado[c] || 0)) / 160);
         img(`tecla_arrow_${FLECHA[c]}_outline`, cx, yRec, tam * (1 + .12 * lat + .15 * pul), 0, .9); if(pul > 0) img(S.teñir('p_light_01', COLOR_FL[c]), cx, yRec, tam * 2.2, 0, pul, true); }
-      const tamR = tam * .42; for(let c = 0; c < 4; c++){ const pr = Math.max(0, 1 - (ahora - (est.pulsadoR[c] || 0)) / 160); img(`tecla_arrow_${FLECHA[c]}_outline`, 20 + tamR * .6 + c * tamR * 1.05, H * .2, tamR * (1 + .2 * pr), 0, .6); }
+      const tamR = tam * .42, yRiv = Math.max(H * .2, SA.t + 104), xRiv = 20 + SA.l; for(let c = 0; c < 4; c++){ const pr = Math.max(0, 1 - (ahora - (est.pulsadoR[c] || 0)) / 160); img(`tecla_arrow_${FLECHA[c]}_outline`, xRiv + tamR * .6 + c * tamR * 1.05, yRiv, tamR * (1 + .2 * pr), 0, .6); }
       for(let k = est.desde; k < carta.notas.length; k++){ const n = carta.notas[k]; if(n.modo !== 'flechas') continue; const dt = n.t - t; if(dt > AR * 1.6) break;
         const c = RIEL_FL.indexOf(n.r), st = est.estado[n.id];
-        if(n.rival){ const yy = H * .2 + dt * velPx * .42; if(dt < -.05 || yy > H) continue; const xx = 20 + tamR * .6 + c * tamR * 1.05;
+        if(n.rival){ const yy = yRiv + dt * velPx * .42; if(dt < -.05 || yy > H) continue; const xx = xRiv + tamR * .6 + c * tamR * 1.05;
           if(n.fin){ x.fillStyle = COLOR_FL[c] + '88'; x.fillRect(xx - tamR * .12, yy, tamR * .24, (n.fin - n.t) * velPx * .42); }
           img(S.teñir(`tecla_arrow_${FLECHA[c]}`, COLOR_FL[c]), xx, yy, tamR, 0, .85); continue; }
         if(st === 'hecha' || st === 'fallada' || st === 'pendiente') continue; const [cx] = flechaXY(c, 0), yy = yRec - (st === 'sosteniendo' ? 0 : dt) * velPx;
@@ -240,7 +246,7 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
         if(n.fin){ x.save(); x.globalAlpha = .7; x.strokeStyle = COLOR_SIM[n.sim]; x.lineWidth = 6; x.beginPath(); x.arc(cx, cy, tam * .75, -Math.PI / 2, -Math.PI / 2 + Math.min(1, (n.fin - n.t) / 2) * Math.PI * 2); x.stroke(); x.restore(); }
       }
       for(const b of B){ const pul = Math.max(0, 1 - (ahora - (est.pulsado[b.i] || 0)) / 150); img(`ps_color_${SIM[b.i]}`, b.x, b.y, b.r * 2 * (1 - .1 * pul), 0, .92); if(pul) img(S.teñir('p_light_01', COLOR_SIM[b.i]), b.x, b.y, b.r * 4, 0, pul, true); }
-      x.save(); x.font = '600 13px "Zen Kaku Gothic New", sans-serif'; x.fillStyle = '#ffffff99'; x.textAlign = 'center'; x.fillText('★ desliza en cualquier lado', W / 2, H - 14); x.restore();
+      x.save(); x.font = '600 13px "Zen Kaku Gothic New", sans-serif'; x.fillStyle = '#ffffff99'; x.textAlign = 'center'; x.fillText('★ desliza en cualquier lado', W / 2, H - 14 - SA.b); x.restore();
     }
     /* ── Círculos (osu): número, anillo que se cierra, deslices y remolinos ── */
     if(modo === 'circulos'){ const R = radio(), lista = [];
@@ -268,30 +274,39 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
   }
 
   function hud(t, ahora, lat, modo){
-    const p = Math.min(1, Math.max(0, t / carta.dur));
+    const p = Math.min(1, Math.max(0, t / carta.dur)), T = SA.t, L = 16 + SA.l, R = W - 16 - SA.r;
     /* la vida (la «tensión»), arriba */
-    x.fillStyle = '#ffffff22'; x.fillRect(16, 14, W - 32, 6); const vida = J.vida / 100;
-    const gr = x.createLinearGradient(16, 0, W - 16, 0); gr.addColorStop(0, '#FF2D55'); gr.addColorStop(.5, '#B44BFF'); gr.addColorStop(1, '#38E1FF'); x.fillStyle = gr; x.fillRect(16, 14, (W - 32) * vida, 6);
-    x.fillStyle = '#ffffffaa'; x.fillRect(16, 23, (W - 32) * p, 2);
-    x.save(); x.font = '700 12px Orbitron, sans-serif'; x.fillStyle = '#ffffffcc'; x.textAlign = 'left'; x.fillText(`${cancion.titulo.toUpperCase()} · ${carta.D.nombre.toUpperCase()} ${carta.nivel}`, 16, 44);
-    x.textAlign = 'right'; x.font = '800 22px Orbitron, sans-serif'; x.fillStyle = '#fff'; x.fillText(String(J.puntaje).padStart(7, '0'), W - 16, 50);
-    x.font = '600 12px Orbitron, sans-serif'; x.fillStyle = '#ffffffaa'; x.fillText(J.precision.toFixed(2) + '%', W - 16, 66); x.restore();
+    x.fillStyle = '#ffffff22'; x.fillRect(L, T + 14, R - L, 6); const vida = J.vida / 100;
+    const gr = x.createLinearGradient(L, 0, R, 0); gr.addColorStop(0, '#FF2D55'); gr.addColorStop(.5, '#B44BFF'); gr.addColorStop(1, '#38E1FF'); x.fillStyle = gr; x.fillRect(L, T + 14, (R - L) * vida, 6);
+    x.fillStyle = '#ffffffaa'; x.fillRect(L, T + 23, (R - L) * p, 2);
+    x.save(); x.textAlign = 'right'; x.font = `800 ${W < 360 ? 18 : 22}px Orbitron, sans-serif`; x.fillStyle = '#fff'; const pts = String(J.puntaje).padStart(7, '0'); x.fillText(pts, R, T + 50);
+    /* el nombre se recorta para que nunca choque con los puntos (en un teléfono de 320 se enciman) */
+    const libre = R - L - x.measureText(pts).width - 12;
+    x.font = '600 12px Orbitron, sans-serif'; x.fillStyle = '#ffffffaa'; x.fillText(J.precision.toFixed(2) + '%', R, T + 66);
+    x.font = '700 12px Orbitron, sans-serif'; x.fillStyle = '#ffffffcc'; x.textAlign = 'left';
+    let nom = cancion.titulo.toUpperCase(); const dif = ` · ${carta.D.nombre.toUpperCase()} ${carta.nivel}`;
+    if(x.measureText(nom + dif).width <= libre) nom += dif; else { x.fillText(dif.slice(3), L, T + 60); }
+    while(nom.length > 3 && x.measureText(nom).width > libre) nom = nom.slice(0, -2) + '…';
+    x.fillText(nom, L, T + 44); x.restore();
+    /* el combo y el juicio se acomodan DEBAJO del marcador: en pantallas bajitas (un SE, o en horizontal) a una
+       fracción fija de la altura se encimaban con los puntos y entre ellos */
+    const yCombo = Math.max(T + 112, H * (modo === 'carril' ? .21 : .16)), yJuicio = Math.max(yCombo + 60, H * (modo === 'carril' ? .3 : .245));
     /* el combo, grande y latiendo */
     if(J.combo > 2){ const c = String(J.combo), s = 1 + .18 * lat + Math.max(0, .3 - (ahora - (J.ultimo?.t || 0)) / 400);
-      x.save(); x.translate(W / 2, H * (modo === 'carril' ? .21 : .16)); x.scale(s, s); x.textAlign = 'center'; x.font = '900 46px Orbitron, sans-serif';
-      x.fillStyle = J.combo >= 100 ? '#FFF3B0' : '#ffffff'; x.shadowColor = '#B44BFF'; x.shadowBlur = 24; x.fillText(c, 0, 0); x.font = '700 12px Orbitron, sans-serif'; x.shadowBlur = 0; x.fillStyle = '#ffffffbb'; x.fillText('COMBO', 0, 20); x.restore(); }
+      x.save(); x.translate(W / 2, yCombo); x.scale(s, s); x.textAlign = 'center'; x.font = `900 ${H < 450 ? 36 : 46}px Orbitron, sans-serif`;
+      x.fillStyle = J.combo >= 100 ? '#FFF3B0' : '#ffffff'; x.shadowColor = '#B44BFF'; x.shadowBlur = 24; x.fillText(c, 0, 0); x.font = '700 12px Orbitron, sans-serif'; x.shadowBlur = 0; x.fillStyle = '#ffffffbb'; x.fillText('COMBO', 0, 18); x.restore(); }
     /* el juicio del último toque, con «antes» o «tarde» */
     const tx = textos[textos.length - 1]; if(tx){ const u = (ahora - tx.t0) / 520; if(u < 1){ const s = 1 + .5 * Math.max(0, .2 - u) * 5;
-      x.save(); x.translate(W / 2, H * (modo === 'carril' ? .3 : .245)); x.scale(s, s); x.globalAlpha = 1 - u * u; x.textAlign = 'center'; x.font = '900 26px Orbitron, sans-serif'; x.fillStyle = tx.j.color; x.shadowColor = tx.j.color; x.shadowBlur = 16; x.fillText(tx.j.nombre, 0, 0);
+      x.save(); x.translate(W / 2, yJuicio); x.scale(s, s); x.globalAlpha = 1 - u * u; x.textAlign = 'center'; x.font = '900 26px Orbitron, sans-serif'; x.fillStyle = tx.j.color; x.shadowColor = tx.j.color; x.shadowBlur = 16; x.fillText(tx.j.nombre, 0, 0);
       if(tx.dt !== null && tx.dt !== undefined && tx.j.id !== 'sonoluz' && ajustes.mostrarDesvio){ x.font = '600 11px Orbitron, sans-serif'; x.shadowBlur = 0; x.fillStyle = '#ffffffcc'; x.fillText((tx.dt < 0 ? 'ANTES ' : 'TARDE ') + Math.round(Math.abs(tx.dt) * 1000) + ' ms', 0, 16); } x.restore(); } if(textos.length > 8) textos.splice(0, textos.length - 8); }
     /* los avisos de cambio de reglas y el compás (M031) */
     for(const e of carta.eventos){ if(e.tipo === 'aviso' && t > e.t - 1.6 && t < e.t + .4){ const u = (t - (e.t - 1.6)) / 2;
       x.save(); x.globalAlpha = Math.min(1, u * 5, (1 - u) * 5); x.fillStyle = '#0A0412E0'; x.fillRect(0, H * .44, W, 64); x.fillStyle = '#FF2D55'; x.fillRect(0, H * .44, W, 3); x.fillRect(0, H * .44 + 61, W, 3);
       x.font = '900 13px Orbitron, sans-serif'; x.fillStyle = '#FF2D55'; x.textAlign = 'center'; x.fillText('⚠ LAS REGLAS CAMBIAN', W / 2 + Math.sin(ahora / 40) * 2, H * .44 + 24); x.font = '700 14px "Zen Kaku Gothic New", sans-serif'; x.fillStyle = '#fff'; x.fillText(e.texto, W / 2, H * .44 + 46); x.restore(); } }
-    if(escena.E.compas){ x.save(); x.font = '900 30px Orbitron, sans-serif'; x.textAlign = 'left'; x.fillStyle = '#FFF07A'; x.globalAlpha = .6 + .4 * lat; x.fillText(escena.E.compas, 18, 100); x.restore(); }
+    if(escena.E.compas){ x.save(); x.font = '900 30px Orbitron, sans-serif'; x.textAlign = 'left'; x.fillStyle = '#FFF07A'; x.globalAlpha = .6 + .4 * lat; x.fillText(escena.E.compas, L, T + 100); x.restore(); }
     if(escena.E.destello > 0){ x.fillStyle = `rgba(255,255,255,${(.35 * escena.E.destello * escena.E.destello).toFixed(3)})`; x.fillRect(0, 0, W, H); }
     if(escena.E.glitch > 0){ const g = escena.E.glitch; for(let i = 0; i < 6; i++){ const yy = Math.random() * H, hh = 4 + Math.random() * 30; x.drawImage(capa, 0, yy * dpr, W * dpr, hh * dpr, (Math.random() - .5) * 40 * g, yy, W, hh); } x.fillStyle = `rgba(255,45,85,${.15 * g})`; x.fillRect(0, 0, W, H); }
-    if(auto){ x.save(); x.font = '800 12px Orbitron, sans-serif'; x.fillStyle = '#FFF07A'; x.textAlign = 'left'; x.fillText('AUTO', 16, 62); x.restore(); }
+    if(auto){ x.save(); x.font = '800 12px Orbitron, sans-serif'; x.fillStyle = '#FFF07A'; x.textAlign = 'left'; x.fillText('AUTO', L, T + 76); x.restore(); }
   }
 
   function terminar(murio){ if(!corriendo) return; corriendo = false; reloj.parar(); dedos.clear();

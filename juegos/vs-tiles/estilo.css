@@ -15,7 +15,7 @@ button{ font:inherit; color:inherit; cursor:pointer; border:0; background:none }
 input, select{ font:inherit; color:var(--texto) }
 
 /* las pantallas: una a la vez, encima del 3D */
-.pantalla{ position:fixed; inset:0; z-index:5; display:none; flex-direction:column; padding:max(14px, env(safe-area-inset-top)) 16px max(14px, env(safe-area-inset-bottom)); overflow-y:auto; -webkit-overflow-scrolling:touch }
+.pantalla{ position:fixed; inset:0; z-index:5; display:none; flex-direction:column; padding:max(14px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); overflow-y:auto; -webkit-overflow-scrolling:touch }
 .pantalla > *{ flex-shrink:0 }   /* sin esto, en un teléfono chico la pantalla APLASTA a sus hijos en vez de dejar bajar: la fila de modos quedaba de 0 px */
 .pantalla.vis{ display:flex; animation:entra .45s cubic-bezier(.2,.8,.2,1) both }
 @keyframes entra{ from{ opacity:0; transform:translateY(18px) scale(.985); filter:blur(6px) } to{ opacity:1; transform:none; filter:none } }
@@ -103,7 +103,7 @@ h2{ font:800 22px/1.1 var(--n); letter-spacing:.06em; margin:0 0 10px }
 
 /* ── la partida ── */
 #juegoUI{ position:fixed; inset:0; z-index:3; pointer-events:none; display:none } #juegoUI.vis{ display:block }
-#pausaB{ position:fixed; z-index:6; right:12px; top:max(74px, calc(env(safe-area-inset-top) + 60px)); width:44px; height:44px; pointer-events:auto; display:none; place-items:center; background:#ffffff14; border:1px solid var(--linea); font:900 14px var(--n) }
+#pausaB{ position:fixed; z-index:6; right:max(12px, calc(env(safe-area-inset-right) + 4px)); top:max(74px, calc(env(safe-area-inset-top) + 76px)); width:44px; height:44px; pointer-events:auto; display:none; place-items:center; background:#ffffff14; border:1px solid var(--linea); font:900 14px var(--n) }
 #pausaB.vis{ display:grid }
 #pausa{ justify-content:center; align-items:center; gap:12px; background:#07030Cd8 } #pausa .b{ width:min(320px, 100%) }
 #cuenta{ position:fixed; z-index:6; inset:0; display:none; place-items:center; pointer-events:none; font:900 120px var(--n); color:#fff; text-shadow:0 0 40px var(--magenta) } #cuenta.vis{ display:grid }
