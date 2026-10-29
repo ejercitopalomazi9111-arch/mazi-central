@@ -80,7 +80,7 @@ const l = Object.fromEntries(G.lineas.map(z => [z.id, z]));
 /* ── el reloj del anuncio: cada tramo sale de la voz ── */
 const T = {
   rompe: l['02'].t1 - .1,                                   // la paloma se deshace en cubitos
-  cuna: l['03'].t0 - .05, m: l['03'].t0 + .65,               // caen la cuña y la M
+  cuna: l['03'].t0 - .05, m: l['03'].t0 + 1.25,              // caen la cuña y la M
   abre: l['04'].t0 + .15, cierra: l['04'].t0 + .85,           // se separan y vuelven a encajar
   letras: l['04'].t0 + 1.4,                                   // llegan M, A, Z, I
   letra: l['04'].t1 + .25,                                    // la letra de la casa
@@ -95,7 +95,7 @@ const PASO = (l['08'].t0 - .5 - T.usos) / 4;                  // cuánto dura ca
 const FIN = T.creditos + 3.6, fx = (n) => `../../../herramientas/video/efectos/${n}.wav`, cubo_ = (n) => `../../cubo/final/sonidos/${n}.wav`;
 window.VIDEO = { w: W, h: H, fps: 30, dur: FIN, musica: { archivo: '/tmp/claude-0/musica/Volatile_Reaction.mp3', desde: 0, vol: .3, entrada: .3, fin: 2.5 },
   sonidos: [...sonidosVoz(G, 1.05), [fx('golpe'), .55, .5], [fx('golpe'), 1.05, .45], [fx('whoosh'), T.rompe, .5],
-    [cubo_('caida'), T.cuna + .4, .8], [cubo_('golpe'), T.m + .4, 1], [fx('whoosh'), T.abre, .35], [cubo_('golpe'), T.cierra, .6],
+    [cubo_('caida'), T.cuna + .4, .8], [cubo_('golpe'), T.m + .31, 1], [fx('whoosh'), T.abre, .35], [cubo_('golpe'), T.cierra, .6],
     ...[0, 1, 2, 3].map(i => [fx('toque'), T.letras + i * .3 + .38, .55]), [fx('whoosh'), T.letra - .1, .5],
     ...Array.from({ length: 10 }, (_, i) => [fx('toque'), T.lluvia + .35 + i * .13, .25]), [fx('whoosh'), T.colores, .45],
     [cubo_('golpe'), T.oscuro + .45, .9], [cubo_('golpe'), T.vino + .4, .7], [cubo_('caida'), T.claro + .35, .7],
@@ -207,25 +207,26 @@ window.pintar = async (t) => {
   if(fase === 'inicio'){ camara(new THREE.Vector3(0, 0, 1), 9, new THREE.Vector3(), 0, t); }
   if(fase === 'cubo'){
     /* la cuña y luego la M caen al centro; se separan y encajan; el cubo se hace a un lado y llegan las letras */
-    const uC = tramo(t, T.cuna, T.cuna + .62), uM = tramo(t, T.m, T.m + .62), s = LG.lado;
-    LG.cuna.visible = t >= T.cuna; LG.m.visible = t >= T.m;
+    const uC = tramo(t, T.cuna, T.cuna + .62), uM = tramo(t, T.m, T.m + .5), s = LG.lado, flota = sale(tramo(t, T.m - .6, T.m - .25));
+    /* la M llega y se queda flotando encima, de frente, para que se lea; luego baja y se vuelve el cubo */
+    LG.cuna.visible = t >= T.cuna; LG.m.visible = t >= T.m - .6;
     const abre = Math.sin(Math.PI * tramo(t, T.abre, T.cierra)) ** 2;
     LG.cuna.position.set(abre * .55, rebote(uC, 9 / s) - abre * .25, abre * .55);
-    LG.m.position.set(-abre * .1, rebote(uM, 9 / s) + abre * .7, -abre * .1);
+    LG.m.position.set(-abre * .1, (uM > 0 ? rebote(uM, .55 / s) : (.55 + (1 - flota) * 2.5) / s) + abre * .7, -abre * .1);
     LG.m.rotation.y = abre * .25;
     const lado = suave(tramo(t, T.letras - .5, T.letras + .7));
     LG.cubo.position.copy(casaCubo).multiplyScalar(lado);
-    LG.cubo.rotation.set(0, (1 - sale(tramo(t, T.cuna, T.m + .6))) * 1.2, 0);
+    LG.cubo.rotation.set(0, (1 - sale(tramo(t, T.cuna, T.m - .4))) * .8, 0);
     LG.mat[0].emissiveIntensity = .35 + 2.2 * vida(t, T.m + .4, T.m + .75, .02, .3) + 1.6 * vida(t, T.cierra, T.cierra + .35, .02, .3);
     LG.letras.forEach((h, i) => { const t0 = T.letras + i * .3, u = tramo(t, t0, t0 + .5); h.visible = u > 0;
       h.position.copy(h.userData.casa); h.position.y += rebote(u, 4); h.rotation.set((1 - sale(u)) * -1.4, 0, (1 - sale(u)) * (i % 2 ? .5 : -.5)); });
     golpe(polvo[0], t, T.cuna + .38, 0, -s / 2, 0, .45); golpe(polvo[1], t, T.m + .38, 0, -s / 2, 0, .65); golpe(polvo[2], t, T.cierra - .02, 0, -s / 2, 0, .55);
     /* la cámara: abajo y de lado mientras cae, sube a isométrico, se aleja y gira cuando llegan las letras */
     const sube = suave(tramo(t, T.cuna, T.abre + .2)), gira = Math.sin(Math.PI * tramo(t, T.letras - .3, T.letra - .5)) * .75;
-    const yaw = YI + (1 - sube) * .9 + gira, pitch = mezcla(.12, PI_, sube) - gira * .18;
+    const yaw = YI + (1 - sube) * .3 + gira, pitch = mezcla(.3, PI_, sube) - gira * .18;
     const d = mezcla(mezcla(6.5, 5, sube), 19.5, suave(tramo(t, T.letras - 1.1, T.letras + 1.3)));
     const tiembla = .06 * (vida(t, T.cuna + .38, T.cuna + .6, .02, .2) + 1.8 * vida(t, T.m + .38, T.m + .65, .02, .25) + vida(t, T.cierra, T.cierra + .25, .02, .2));
-    camara(dirDe(yaw, pitch), d, new THREE.Vector3(0, mezcla(.2, 0, sube), 0), tiembla, t);
+    camara(dirDe(yaw, pitch), d, new THREE.Vector3(0, mezcla(.35, 0, sube), 0), tiembla, t);
   }
   if(fase === 'letra'){
     /* «Aa» girando, luego la lluvia de letras que llena la muestra */

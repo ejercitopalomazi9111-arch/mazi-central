@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Grupo Mazi · Páginas web, apps, marketing y video en Querétaro</title>
+<meta name="description" content="Páginas web desde $2,000, apps y sistemas a la medida, marketing, video y fotografía. Entregamos rápido y nos quedamos contigo. Querétaro.">
+<meta name="theme-color" content="#170A26">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_MX">
+<meta property="og:title" content="Grupo Mazi · si no existe la herramienta, se construye la herramienta">
+<meta property="og:description" content="Páginas web desde $2,000, apps, marketing, video y fotografía. Entregamos rápido y nos quedamos contigo.">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="img/cubo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter+Tight:wght@400;500;600;700;800&display=swap">
+<!--
+  GRUPO MAZI · la página de la casa, 29 de octubre de 2026. La hizo Sylcred a pedido de Carlos:
+  «que sea una excelente muestra de habilidad… similar a la de Smiley's pero basada en la competencia,
+  súper elegante, profesional y una experiencia interesante de disfrutar».
+  Mismo esqueleto que Smiley's (portada con presencia, cinta de precios, secciones que alternan
+  color, una herramienta para jugar —«Arma tu proyecto»—, trabajo real, precios claros y cierre) con
+  la imagen nueva: morado oscuro y vino, el morado claro del techo del cubo como acento.
+  Los textos son de Carlos (sitio/TEXTOS.md, 30 de julio). Los precios, de empresa/servicios.
+  El 3D de la portada es el logo de verdad (js/logo3d.js) con luz HDRI de Poly Haven (CC0).
+-->
+<style>
+:root{
+  --o:#170A26; --o2:#241036; --o3:#2F1645; --v:#7E1735; --v2:#A8264B; --m:#AC27FF; --m2:#C77DFF; --c:#F4EEF2; --c2:#D7CCE0; --g:#9C8EA6;
+  --wa:#25D366; --s:"Space Grotesk", system-ui, sans-serif; --t:"Inter Tight", system-ui, sans-serif;
+  --ancho:1200px; --r:22px; --facil:cubic-bezier(.2,.7,.2,1);
+}
+*{ box-sizing:border-box; margin:0; padding:0 }
+html{ scroll-behavior:smooth; -webkit-text-size-adjust:100%; background:var(--o); overflow-x:clip }
+body{ font-family:var(--t); color:var(--c); background:var(--o); font-size:17px; line-height:1.55; overflow-x:hidden; -webkit-font-smoothing:antialiased }
+img,svg,video,canvas{ display:block; max-width:100% }
+a{ color:inherit; text-decoration:none }
+button{ font:inherit; color:inherit; background:none; border:0; cursor:pointer }
+::selection{ background:var(--m); color:#fff }
+:focus-visible{ outline:3px solid var(--m2); outline-offset:3px; border-radius:8px }
+.ancho{ width:min(var(--ancho), 100% - 40px); margin-inline:auto }
+.oculto{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); top:0; left:0 }
+.k{ font:500 13px/1 var(--s); letter-spacing:.22em; text-transform:uppercase; color:var(--m2) }
+.t-dis{ font-family:var(--s); font-weight:700; letter-spacing:-.045em; line-height:.95 }
+.t-dis em{ font-style:normal; color:var(--m2) }
+.l{ display:block; overflow:hidden; padding-bottom:.06em }
+.l > span{ display:block; transform:translateY(105%); transition:transform 1s var(--facil) }
+.visto .l > span{ transform:none }
+.visto .l:nth-child(2) > span{ transition-delay:.08s } .visto .l:nth-child(3) > span{ transition-delay:.16s } .visto .l:nth-child(4) > span{ transition-delay:.24s }
+.sube{ opacity:0; transform:translateY(28px); transition:opacity .9s var(--facil), transform .9s var(--facil) }
+.visto .sube, .sube.visto{ opacity:1; transform:none }
+.no-js .l > span, .no-js .sube{ transform:none; opacity:1 }
+
+/* botones */
+.btn{ display:inline-flex; align-items:center; gap:10px; min-height:52px; padding:0 24px; border-radius:99px; font:700 16px/1 var(--t); letter-spacing:-.01em; transition:transform .25s var(--facil), background .25s, box-shadow .25s }
+.btn svg{ width:20px; height:20px; flex:none }
+.btn:active{ transform:scale(.97) }
+.btn--wa{ background:var(--wa); color:#052814 }
+.btn--wa:hover{ box-shadow:0 12px 36px -10px #25D366aa }
+.btn--linea{ box-shadow:inset 0 0 0 1.5px #ffffff3a } .btn--linea:hover{ box-shadow:inset 0 0 0 1.5px var(--m2) }
+.btn--m{ background:var(--m); color:#fff } .btn--m:hover{ box-shadow:0 12px 36px -10px #AC27FFaa }
+
+/* la barra */
+.barra{ position:fixed; z-index:50; inset:0 0 auto; padding-top:env(safe-area-inset-top); transition:background .35s, box-shadow .35s }
+.barra.pegada{ background:#170A26e8; backdrop-filter:blur(14px) saturate(1.3); -webkit-backdrop-filter:blur(14px) saturate(1.3); box-shadow:0 1px 0 #ffffff12 }
+.barra__in{ display:flex; align-items:center; gap:22px; height:68px }
+.barra__logo img{ height:40px; width:auto; margin-left:-10px }
+.barra nav{ display:none; gap:26px; margin-left:auto; font:500 15px/1 var(--t); color:var(--c2) }
+.barra nav a{ position:relative; padding:6px 0 } .barra nav a::after{ content:""; position:absolute; left:0; right:100%; bottom:0; height:1.5px; background:var(--m2); transition:right .3s var(--facil) } .barra nav a:hover::after{ right:0 }
+.barra .btn{ margin-left:auto; min-height:42px; padding:0 18px; font-size:14px }
+.barra__menu{ width:44px; height:44px; display:grid; place-items:center; border-radius:12px; box-shadow:inset 0 0 0 1.5px #ffffff24 }
+.barra__menu svg{ width:22px; height:22px }
+@media (min-width:980px){ .barra nav{ display:flex } .barra .btn{ margin-left:8px } .barra__menu{ display:none } }
+.menu{ position:fixed; inset:0; z-index:60; background:var(--o); padding:90px 24px 40px; display:grid; align-content:start; gap:6px; transform:translateY(-100%); transition:transform .5s var(--facil) }
+.menu.abierto{ transform:none }
+.menu[hidden]{ display:none }
+.menu a{ font:700 40px/1.2 var(--s); letter-spacing:-.04em; padding:6px 0; border-bottom:1px solid #ffffff14 }
+.menu .cerrar{ position:absolute; top:calc(14px + env(safe-area-inset-top)); right:20px; width:44px; height:44px; display:grid; place-items:center }
+
+/* la portada */
+.portada{ position:relative; min-height:100svh; display:grid; grid-template-columns:minmax(0, 1fr); grid-template-rows:min(44svh, 420px) auto; align-content:center; padding-top:68px; overflow:hidden; isolation:isolate }
+.portada::before{ content:""; position:absolute; inset:0; z-index:-1; background:radial-gradient(60% 45% at 70% 30%, #4A1640, transparent 70%), radial-gradient(70% 50% at 10% 90%, #3A0F2E, transparent 70%), var(--o) }
+.portada::after{ content:""; position:absolute; inset:0; z-index:-1; background-image:linear-gradient(#ffffff08 1px, transparent 1px), linear-gradient(90deg, #ffffff08 1px, transparent 1px); background-size:64px 64px; mask:radial-gradient(70% 60% at 60% 35%, #000, transparent) }
+#cubo3d{ width:100%; height:100%; min-height:300px; touch-action:pan-y }
+.portada__toca{ position:absolute; right:20px; top:96px; font:500 12px/1 var(--s); letter-spacing:.2em; text-transform:uppercase; color:var(--g); opacity:0; transition:opacity 1s 3.4s }
+.cargado .portada__toca{ opacity:1 }
+.portada__in{ padding:10px 0 40px }
+.portada h1{ font-size:clamp(44px, 11vw, 64px) }
+@media (min-width:980px){ .portada h1{ font-size:clamp(52px, 4.3vw, 70px) } }
+.portada__lede{ margin-top:22px; max-width:560px; font-size:clamp(17px, 2.1vw, 21px); color:var(--c2) }
+.portada__lede b{ color:var(--c); font-weight:600 }
+.portada__cta{ display:flex; flex-wrap:wrap; gap:12px; margin-top:28px }
+.servs{ margin-top:30px; font:500 13px/1.6 var(--s); letter-spacing:.16em; text-transform:uppercase; color:var(--g) }
+.servs i{ font-style:normal; color:var(--m2); margin:0 6px }
+@media (min-width:980px){ .portada{ grid-template-columns:minmax(0, 1.05fr) minmax(0, 1fr); grid-template-rows:1fr; align-items:center } .portada__3d{ order:2; height:min(78vh, 720px) } .portada__in{ padding:0 0 0 max(20px, calc((100vw - var(--ancho)) / 2)) } .portada .ancho{ width:auto } }
+
+/* la cinta */
+.cinta{ position:relative; overflow:hidden; background:var(--m); color:#fff; transform:rotate(-1.4deg) scale(1.02); margin:-6px 0 0; z-index:2 }
+.cinta__pista{ display:flex; width:max-content; animation:corre 38s linear infinite }
+.cinta ul{ display:flex; list-style:none }
+.cinta li{ padding:15px 26px; font:700 16px/1 var(--s); letter-spacing:.02em; white-space:nowrap; display:flex; align-items:center; gap:26px }
+.cinta li::after{ content:""; width:9px; height:9px; background:#fff; transform:rotate(45deg) }
+@keyframes corre{ to{ transform:translateX(-50%) } }
+
+/* secciones */
+.sec{ position:relative; padding:110px 0 }
+.sec.vino{ background:var(--v) } .sec.claro{ background:var(--c); color:var(--o) } .sec.o2{ background:var(--o2) }
+.claro .k{ color:var(--v) } .claro .t-dis em{ color:var(--v2) }
+.cab{ display:grid; gap:18px; max-width:860px; margin-bottom:56px }
+.cab h2{ font-size:clamp(36px, 6.4vw, 72px) }
+.cab p{ font-size:clamp(17px, 2vw, 20px); color:var(--c2); max-width:640px }
+.claro .cab p{ color:#5E5466 }
+.pide{ margin-top:48px; display:flex; flex-wrap:wrap; align-items:center; gap:16px 24px }
+.pide p{ font:700 clamp(22px, 3vw, 30px)/1.15 var(--s); letter-spacing:-.03em }
+
+/* qué hacemos: tres grupos, seis servicios */
+.grupos{ display:grid; gap:28px }
+.grupo{ display:grid; gap:14px }
+.grupo > h3{ display:flex; align-items:center; gap:14px; font:500 13px/1 var(--s); letter-spacing:.22em; text-transform:uppercase; color:var(--g) }
+.grupo > h3::after{ content:""; flex:1; height:1px; background:#ffffff1a }
+.pareja{ display:grid; gap:14px }
+.serv{ position:relative; overflow:hidden; display:grid; gap:14px; padding:28px; border-radius:var(--r); background:var(--o2); box-shadow:inset 0 0 0 1px #ffffff12; transition:transform .5s var(--facil), box-shadow .5s }
+.serv::before{ content:""; position:absolute; width:340px; height:340px; right:-170px; top:-170px; border-radius:50%; background:radial-gradient(closest-side, #AC27FF55, transparent); opacity:0; transition:opacity .5s }
+.serv:hover{ transform:translateY(-4px); box-shadow:inset 0 0 0 1px #AC27FF66 } .serv:hover::before{ opacity:1 }
+.serv .ic{ width:56px; height:56px; border-radius:16px; display:grid; place-items:center; background:var(--o3) }
+.serv .ic svg{ width:28px; height:28px }
+.serv h4{ font:700 clamp(26px, 3.2vw, 34px)/1 var(--s); letter-spacing:-.04em }
+.serv p{ color:var(--c2); font-size:16px }
+.serv .desde{ justify-self:start; padding:8px 14px; border-radius:99px; background:#AC27FF22; color:var(--m2); font:700 14px/1 var(--s) }
+@media (min-width:760px){ .pareja{ grid-template-columns:1fr 1fr } .grupo{ grid-template-columns:200px 1fr; align-items:start } .grupo > h3{ padding-top:30px } .grupo > h3::after{ display:none } }
+
+/* arma tu proyecto */
+.arma{ display:grid; gap:28px }
+.opciones{ display:flex; flex-wrap:wrap; gap:10px }
+.op{ display:inline-flex; align-items:center; gap:10px; min-height:48px; padding:0 18px; border-radius:99px; background:#fff; color:var(--o); box-shadow:inset 0 0 0 1.5px #E2D6E2; font:600 15px/1 var(--t); transition:background .2s, color .2s, box-shadow .2s, transform .2s }
+.op small{ font:700 13px/1 var(--s); color:#8C8094 }
+.op[aria-pressed="true"]{ background:var(--o); color:var(--c); box-shadow:none }
+.op[aria-pressed="true"] small{ color:var(--m2) }
+.op:active{ transform:scale(.97) }
+.total{ position:relative; overflow:hidden; display:grid; gap:12px; padding:30px; border-radius:28px; background:var(--o); color:var(--c) }
+.total::after{ content:""; position:absolute; right:-80px; bottom:-120px; width:300px; height:300px; background:url(img/cubo.svg) center/contain no-repeat; opacity:.14; transform:rotate(-8deg) }
+.total .k{ color:var(--m2) }
+.total .cifra{ font:700 clamp(52px, 9vw, 92px)/.9 var(--s); letter-spacing:-.06em; font-variant-numeric:tabular-nums }
+.total .cifra small{ font-size:.3em; letter-spacing:0; color:var(--g); vertical-align:.95em; margin-right:6px }
+.total .mes{ font:600 18px/1.3 var(--t); color:var(--c2) }
+.total .nota{ font-size:14px; color:var(--g) }
+.total .btn{ justify-self:start; margin-top:8px; position:relative; z-index:1 }
+@media (min-width:900px){ .arma{ grid-template-columns:1.3fr 1fr; align-items:start } .total{ position:sticky; top:96px } }
+
+/* trabajo */
+.casos{ display:grid; gap:18px }
+.caso{ position:relative; overflow:hidden; display:grid; grid-template-columns:1fr; gap:20px; padding:26px 26px 0; border-radius:28px; background:var(--o2); box-shadow:inset 0 0 0 1px #ffffff12 }
+.caso .tx{ display:grid; gap:10px; align-content:start }
+.caso h3{ font:700 30px/1 var(--s); letter-spacing:-.04em }
+.caso p{ color:var(--c2) }
+.caso .tags{ display:flex; flex-wrap:wrap; gap:8px; margin-top:6px }
+.caso .tags span{ padding:6px 12px; border-radius:99px; background:var(--o3); font:600 13px/1 var(--t); color:var(--c2) }
+.tel{ justify-self:center; width:min(260px, 70%); aspect-ratio:780/1688; border-radius:36px 36px 0 0; padding:9px 9px 0; background:#0c0910; box-shadow:0 0 0 1.5px #3a3046, 0 -30px 80px -30px #AC27FF66; overflow:hidden; transform:translateY(30px); transition:transform 1.2s var(--facil) }
+.tel img{ width:100%; height:auto; border-radius:28px 28px 0 0 }
+.visto .tel{ transform:none }
+@media (min-width:900px){ .casos{ grid-template-columns:repeat(3, 1fr) } }
+
+/* videos */
+.videos{ display:grid; grid-template-columns:repeat(3, minmax(220px, 1fr)); gap:16px; overflow-x:auto; scroll-snap-type:x mandatory; padding-bottom:8px; scrollbar-width:none }
+.videos::-webkit-scrollbar{ display:none }
+.vid{ position:relative; scroll-snap-align:start; border-radius:24px; overflow:hidden; background:#0c0910; aspect-ratio:9/16; box-shadow:inset 0 0 0 1px #ffffff14 }
+.vid video{ width:100%; height:100%; object-fit:cover }
+.vid .son{ position:absolute; right:12px; bottom:12px; width:44px; height:44px; border-radius:50%; display:grid; place-items:center; background:#170A26cc; backdrop-filter:blur(8px) }
+.vid .son svg{ width:20px; height:20px }
+.vid figcaption{ position:absolute; left:14px; top:14px; padding:7px 12px; border-radius:99px; background:#170A26cc; font:700 13px/1 var(--s); backdrop-filter:blur(8px) }
+
+/* cómo trabajamos */
+.pasos{ position:relative; display:grid; gap:0; counter-reset:p }
+.pasos::before{ content:""; position:absolute; left:27px; top:28px; bottom:28px; width:2px; background:#ffffff18 }
+.pasos .avance{ position:absolute; left:27px; top:28px; width:2px; height:0; background:var(--m) }
+.paso{ position:relative; display:grid; grid-template-columns:56px 1fr; gap:20px; padding:18px 0 }
+.paso .n{ width:56px; height:56px; border-radius:50%; display:grid; place-items:center; background:var(--o2); box-shadow:inset 0 0 0 1.5px #ffffff22; font:700 18px/1 var(--s); position:relative; z-index:1; transition:background .4s, box-shadow .4s }
+.paso.on .n{ background:var(--m); box-shadow:0 0 0 8px #AC27FF22 }
+.paso h3{ font:700 clamp(26px, 3.4vw, 36px)/1.05 var(--s); letter-spacing:-.04em; padding-top:10px }
+.paso p{ color:var(--c2); margin-top:6px; max-width:520px }
+.integras{ margin-top:56px; font:700 clamp(28px, 4.6vw, 52px)/1.05 var(--s); letter-spacing:-.045em; max-width:980px }
+.integras em{ font-style:normal; color:var(--m2) }
+
+/* precios */
+.planes{ display:grid; gap:16px }
+.plan{ position:relative; display:grid; gap:12px; align-content:start; padding:30px 26px; border-radius:28px; background:#fff; color:var(--o); box-shadow:inset 0 0 0 1.5px #E6D9E3 }
+.plan .nom{ font:700 13px/1 var(--s); letter-spacing:.2em; text-transform:uppercase; color:var(--v) }
+.plan .precio{ font:700 64px/.9 var(--s); letter-spacing:-.06em } .plan .precio small{ font-size:.32em; letter-spacing:0; vertical-align:1em; color:#8C8094; margin-right:4px }
+.plan p{ color:#5E5466 }
+.plan ul{ list-style:none; display:grid; gap:9px; margin-top:6px }
+.plan li{ position:relative; padding-left:28px; font-size:15.5px }
+.plan li::before{ content:""; position:absolute; left:0; top:4px; width:18px; height:18px; border-radius:6px; background:var(--v2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.3l2.6 2.5L12 5.4' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat }
+.plan .pie{ margin-top:8px; padding-top:14px; border-top:1.5px dashed #E6D9E3; font-size:14px; color:#5E5466 }
+.plan.estrella{ background:var(--o); color:var(--c); box-shadow:0 0 0 2px var(--m) }
+.plan.estrella .nom{ color:var(--m2) } .plan.estrella p, .plan.estrella .pie{ color:var(--c2) } .plan.estrella .pie{ border-color:#ffffff22 } .plan.estrella li::before{ background-color:var(--m) }
+.plan .cinta-p{ position:absolute; top:-12px; right:22px; padding:7px 13px; border-radius:99px; background:var(--m); color:#fff; font:700 12px/1 var(--s); letter-spacing:.1em; text-transform:uppercase }
+.mas-precios{ margin-top:22px; display:grid; gap:0 40px }
+.fila{ display:flex; align-items:baseline; gap:12px; padding:14px 0; border-bottom:1.5px solid #E6D9E3 }
+.fila span{ font-weight:600 } .fila small{ display:block; font-weight:500; font-size:13.5px; color:#6E6276 }
+.fila b{ margin-left:auto; font:700 21px/1 var(--s); letter-spacing:-.02em; white-space:nowrap } .fila b small{ display:inline; font:600 13px var(--t); color:#8C8094 }
+.aviso{ margin-top:26px; display:flex; gap:14px; align-items:flex-start; padding:18px 22px; border-radius:18px; background:#fff; box-shadow:inset 0 0 0 1.5px #E6D9E3; font-size:15px; color:#5E5466 }
+.aviso svg{ flex:none; width:26px; height:26px; color:var(--v) }
+.aviso b{ color:var(--o) }
+@media (min-width:900px){ .planes{ grid-template-columns:repeat(3, 1fr) } .mas-precios{ grid-template-columns:1fr 1fr } }
+
+/* únete */
+.roles{ display:flex; flex-wrap:wrap; gap:10px; margin-top:8px }
+.roles span{ padding:12px 18px; border-radius:99px; background:#ffffff14; box-shadow:inset 0 0 0 1px #ffffff22; font:600 15px/1 var(--t) }
+
+/* cierre */
+.cierre{ position:relative; overflow:hidden; padding:130px 0 70px; text-align:center; background:radial-gradient(60% 60% at 50% 100%, #4A1640, transparent 70%), var(--o) }
+.cierre .lema{ font:700 clamp(40px, 8vw, 96px)/.95 var(--s); letter-spacing:-.055em; max-width:1000px; margin:0 auto }
+.cierre .lema em{ font-style:normal; color:var(--m2) }
+.cierre .btn{ margin-top:36px }
+.cierre .correo{ margin-top:16px; color:var(--g) }
+.pie{ padding:34px 0 calc(34px + env(safe-area-inset-bottom)); border-top:1px solid #ffffff12; font-size:14px; color:var(--g) }
+.pie .ancho{ display:flex; flex-wrap:wrap; gap:14px 30px; align-items:center }
+.pie img{ height:34px; margin-left:-8px }
+.pie .der{ margin-left:auto }
+.wa-flota{ position:fixed; z-index:40; right:16px; bottom:calc(16px + env(safe-area-inset-bottom)); width:58px; height:58px; border-radius:50%; display:grid; place-items:center; background:var(--wa); color:#052814; box-shadow:0 14px 34px -10px #000; transform:scale(0); transition:transform .4s var(--facil) }
+.wa-flota.ve{ transform:none } .wa-flota svg{ width:30px; height:30px }
+@media (prefers-reduced-motion:reduce){ *, *::before, *::after{ animation:none !important; transition:none !important } .l > span, .sube, .tel{ transform:none; opacity:1 } html{ scroll-behavior:auto } }
+</style>
+</head>
+<body class="no-js">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-wa" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.3-.4.8-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-flecha" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 5-5.5 10.2-7.4 11.8a1 1 0 0 1-1.2 0C9.5 20.2 4 15 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></g></symbol>
+  <symbol id="i-son" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></g></symbol>
+  <symbol id="i-mudo" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="m22 9-6 6M16 9l6 6"/></g></symbol>
+</svg>
+
+<header class="barra" id="barra">
+  <div class="ancho barra__in">
+    <a class="barra__logo" href="#inicio" aria-label="Grupo Mazi, inicio"><img src="img/logo.svg" alt="Grupo Mazi" width="183" height="72"></a>
+    <nav aria-label="Secciones"><a href="#servicios">Servicios</a><a href="#arma">Arma tu proyecto</a><a href="#trabajo">Trabajo</a><a href="#precios">Precios</a><a href="#unete">Únete</a></nav>
+    <a class="btn btn--wa" data-wa="Hola, quiero cotizar con Grupo Mazi" href="https://wa.me/524428833786"><svg aria-hidden="true"><use href="#i-wa"/></svg>Cotiza</a>
+    <button class="barra__menu" type="button" id="abrirMenu" aria-label="Abrir el menú" aria-expanded="false" aria-controls="menu"><svg aria-hidden="true"><use href="#i-menu"/></svg></button>
+  </div>
+</header>
+<nav class="menu" id="menu" aria-label="Menú" hidden>
+  <button class="cerrar" type="button" id="cerrarMenu" aria-label="Cerrar el menú"><svg width="24" height="24" aria-hidden="true"><use href="#i-x"/></svg></button>
+  <a href="#servicios">Servicios</a><a href="#arma">Arma tu proyecto</a><a href="#trabajo">Trabajo</a><a href="#precios">Precios</a><a href="#unete">Únete</a>
+</nav>
+
+<main id="inicio">
+  <section class="portada" aria-labelledby="t-portada">
+    <div class="portada__3d"><canvas id="cubo3d" aria-label="El logo de Grupo Mazi armándose en 3D. Tócalo." role="img"></canvas></div>
+    <p class="portada__toca" aria-hidden="true">Toca el cubo</p>
+    <div class="ancho portada__in revela">
+      <h1 class="t-dis" id="t-portada"><span class="l"><span>Todo gran proyecto</span></span><span class="l"><span>comienza con una</span></span><span class="l"><span><em>base sólida.</em></span></span></h1>
+      <p class="portada__lede sube"><b>Nosotros la construimos,</b> y también la última pieza que le da vida. Páginas web desde <b>$2,000</b>, apps, marketing y video, con un mismo equipo.</p>
+      <div class="portada__cta sube">
+        <a class="btn btn--wa" data-wa="Hola, quiero cotizar un proyecto con Grupo Mazi" href="https://wa.me/524428833786"><svg aria-hidden="true"><use href="#i-wa"/></svg>Cotiza por WhatsApp</a>
+        <a class="btn btn--linea" href="#precios">Ver precios <svg aria-hidden="true"><use href="#i-flecha"/></svg></a>
+      </div>
+      <p class="servs sube">Web<i>·</i>Software<i>·</i>Marketing<i>·</i>Video<i>·</i>Gestión<i>·</i>Tiempos y movimientos</p>
+    </div>
+  </section>
+
+  <div class="cinta" aria-label="Precios de entrada"><div class="cinta__pista">
+    <ul><li>Página web desde $2,000</li><li>3 meses de mantenimiento incluidos</li><li>2 videos para redes $1,200</li><li>Logotipo $1,800</li><li>Apps a la medida desde $10,000</li><li>Tienda en línea desde $12,000</li><li>Hecho en Querétaro</li></ul>
+    <ul aria-hidden="true"><li>Página web desde $2,000</li><li>3 meses de mantenimiento incluidos</li><li>2 videos para redes $1,200</li><li>Logotipo $1,800</li><li>Apps a la medida desde $10,000</li><li>Tienda en línea desde $12,000</li><li>Hecho en Querétaro</li></ul>
+  </div></div>
+
+  <section class="sec" id="servicios" aria-labelledby="t-serv">
+    <div class="ancho">
+      <div class="cab revela"><span class="k sube">Qué hacemos</span>
+        <h2 class="t-dis" id="t-serv"><span class="l"><span>Un solo equipo</span></span><span class="l"><span>para <em>todo tu negocio.</em></span></span></h2>
+        <p class="sube">Diseñamos, desarrollamos y conectamos tecnología, herramientas y estrategias para que todo tu negocio funcione como un solo ecosistema.</p></div>
+      <div class="grupos" id="grupos"></div>
+      <div class="pide revela"><p class="sube">Cuéntanos qué se está rompiendo.</p><a class="btn btn--wa sube" data-wa="Hola, les cuento qué se está rompiendo en mi negocio:" href="https://wa.me/524428833786"><svg aria-hidden="true"><use href="#i-wa"/></svg>Escríbenos</a></div>
+    </div>
+  </section>
+
+  <section class="sec claro" id="arma" aria-labelledby="t-arma">
+    <div class="ancho">
+      <div class="cab revela"><span class="k sube">Arma tu proyecto</span>
+        <h2 class="t-dis" id="t-arma"><span class="l"><span>Elige lo que</span></span><span class="l"><span>necesitas. <em>Ve el precio.</em></span></span></h2>
+        <p class="sube">Toca lo que te interesa y te decimos desde cuánto sale. Lo mandas por WhatsApp y te respondemos hoy.</p></div>
+      <div class="arma">
+        <div class="opciones" id="opciones" role="group" aria-label="Servicios"></div>
+        <div class="total" aria-live="polite">
+          <span class="k">Tu proyecto, desde</span>
+          <div class="cifra" id="cifra"><small>$</small>0</div>
+          <div class="mes" id="mes">Elige al menos un servicio.</div>
+          <p class="nota" id="nota">Precios en pesos. Las páginas incluyen 3 meses de mantenimiento.</p>
+          <a class="btn btn--wa" id="mandar" href="https://wa.me/524428833786"><svg aria-hidden="true"><use href="#i-wa"/></svg>Mándalo por WhatsApp</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="trabajo" aria-labelledby="t-trab">
+    <div class="ancho">
+      <div class="cab revela"><span class="k sube">Trabajo real</span>
+        <h2 class="t-dis" id="t-trab"><span class="l"><span>Esto no es</span></span><span class="l"><span>una <em>maqueta.</em></span></span></h2>
+        <p class="sube">Cada proyecto demuestra lo mismo: cuando la base, los procesos y la imagen trabajan como un solo sistema, el negocio deja de tropezarse consigo mismo.</p></div>
+      <div class="casos">
+        <article class="caso revela"><div class="tx sube"><span class="k">Pizzería</span><h3>Una página que vende sola</h3><p>Pedidos que llegan armados por WhatsApp, cuántas pizzas pedir según cuántos son, y una pizza que se arma a tu gusto.</p><div class="tags"><span>Página web</span><span>Pedidos</span><span>Video</span></div></div><div class="tel"><img src="img/smileys.webp" alt="La página de una pizzería en el celular" width="780" height="1688" loading="lazy"></div></article>
+        <article class="caso revela"><div class="tx sube"><span class="k">Restaurante</span><h3>Su menú, en el celular</h3><p>La carta completa con fotos y precios, y el pedido que se manda por WhatsApp sin apps de por medio.</p><div class="tags"><span>Menú digital</span><span>Pedidos</span></div></div><div class="tel"><img src="img/district.webp" alt="El menú digital de un restaurante en el celular" width="780" height="1688" loading="lazy"></div></article>
+        <article class="caso revela"><div class="tx sube"><span class="k">Cooperativa escolar</span><h3>Pedidos sin filas</h3><p>Una app de turnos y pedidos para el recreo: el alumno pide desde su celular y recoge cuando está listo.</p><div class="tags"><span>App</span><span>Sistema</span><span>Pantalla de turnos</span></div></div><div class="tel"><img src="img/fadori-00950.webp" alt="La app de pedidos de una cooperativa escolar" width="780" height="1688" loading="lazy"></div></article>
+      </div>
+      <div class="pide revela"><p class="sube">Tu proyecto es el que sigue.</p><a class="btn btn--wa sube" data-wa="Hola, quiero que mi proyecto sea el que sigue" href="https://wa.me/524428833786"><svg aria-hidden="true"><use href="#i-wa"/></svg>Empecemos</a></div>
+    </div>
+  </section>
+
+  <section class="sec o2" id="videos" aria-labelledby="t-vid">
+    <div class="ancho">
+      <div class="cab revela"><span class="k sube">Video</span>
+        <h2 class="t-dis" id="t-vid"><span class="l"><span>Anuncios que</span></span><span class="l"><span><em>sí se ven.</em></span></span></h2>
+        <p class="sube">Hacemos los nuestros igual que los tuyos: 3D, motion graphics y comerciales con voz, listos para Reels y TikTok.</p></div>
+      <div class="videos revela" id="listaVideos"></div>
+    </div>
+  </section>
+
+  <section class="sec" id="como" aria-labelledby="t-como">
+    <div class="ancho">
+      <div class="cab revela"><span class="k sube">Cómo trabajamos</span>
+        <h2 class="t-dis" id="t-como"><span class="l"><span>Entregamos rápido.</span></span><span class="l"><span><em>Y nos quedamos.</em></span></span></h2></div>
+      <div class="pasos" id="pasos"><i class="avance" id="avance"></i>
+        <div class="paso"><span class="n">1</span><div><h3>Platicamos</h3><p>Nos cuentas qué necesitas. La primera plática no cuesta.</p></div></div>
+        <div class="paso"><span class="n">2</span><div><h3>Propuesta</h3><p>Te decimos qué incluye, cuánto cuesta y cuándo queda. Sin letras chiquitas.</p></div></div>
+        <div class="paso"><span class="n">3</span><div><h3>Construimos</h3><p>Ves avances en tu celular y pides ajustes sobre la marcha.</p></div></div>
+        <div class="paso"><span class="n">4</span><div><h3>Nos quedamos</h3><p>Entregamos y seguimos contigo con el mantenimiento: si algo cambia, lo cambiamos.</p></div></div>
+      </div>
+      <p class="integras revela"><span class="sube" style="display:block">No nos contratas: <em>nos integras.</em> Construimos la base, y nos quedamos a cuidar lo que se levanta sobre ella.</span></p>
+    </div>
+  </section>
+
+  <section class="sec claro" id="precios" aria-labelledby="t-prec">
+    <div class="ancho">
+      <div class="cab revela"><span class="k sube">Precios claros</span>
+        <h2 class="t-dis" id="t-prec"><span class="l"><span>Abajo del promedio.</span></span><span class="l"><span><em>Arriba en calidad.</em></span></span></h2>
+        <p class="sube">Las tres páginas incluyen 3 meses de mantenimiento. Pago 50% al empezar y 50% al entregar.</p></div>
+      <div class="planes">
+        <article class="plan revela"><div class="sube"><div class="nom">Esencial</div><div class="precio"><small>$</small>2,000</div><p>Tu negocio en internet, listo para recibir clientes.</p>
+          <ul><li>Tus productos o servicios con foto y precio</li><li>Botón de WhatsApp, llamada y ubicación</li><li>Diseño hecho para tu marca</li></ul><div class="pie">Lista en unos 3 a 5 días.</div></div></article>
+        <article class="plan estrella revela"><span class="cinta-p">La más pedida</span><div class="sube"><div class="nom">Completa</div><div class="precio"><small>$</small>6,500</div><p>Una página que vende sola, de día y de noche.</p>
+          <ul><li>Todo lo de Esencial</li><li>Animación y fotos protagonistas</li><li>Pedidos, citas o cotizaciones por WhatsApp</li><li>Lista para aparecer en Google</li><li><b>De regalo: 2 videos para redes</b></li></ul><div class="pie">Lista en unas 1 a 2 semanas.</div></div></article>
+        <article class="plan revela"><div class="sube"><div class="nom">A la medida</div><div class="precio"><small>desde $</small>9,000</div><p>Una experiencia que tu competencia no tiene.</p>
+          <ul><li>3D o interactiva</li><li>Carrito, cotizador o reservaciones</li><li>Panel para cambiar tus precios y fotos</li></ul><div class="pie">El tiempo te lo decimos antes de empezar.</div></div></article>
+      </div>
+      <div class="mas-precios revela" id="masPrecios"></div>
+      <div class="aviso revela"><svg aria-hidden="true"><use href="#i-pin"/></svg><p class="sube"><b>Fotos, grabaciones y citas en tu negocio, dentro de Querétaro.</b> Fuera de Querétaro, sólo en casos especiales y con los viáticos a cargo del cliente.</p></div>
+      <div class="pide revela"><p class="sube">¿Tienes un presupuesto? Platícanos.</p><a class="btn btn--m sube" href="Grupo-Mazi-cotizacion-2026.pdf" download>Descarga la cotización completa</a></div>
+    </div>
+  </section>
+
+  <section class="sec vino" id="unete" aria-labelledby="t-unete">
+    <div class="ancho">
+      <div class="cab revela"><span class="k sube" style="color:#E7C9FF">Trabaja con nosotros</span>
+        <h2 class="t-dis" id="t-unete"><span class="l"><span>Tu crecimiento</span></span><span class="l"><span>depende de <em style="color:#E7C9FF">tu impacto.</em></span></span></h2>
+        <p class="sube" style="color:#F0D9E2">Genera clientes, participa en proyectos o haz ambas cosas, y gana en proporción al valor que aportas, definido antes de empezar.</p></div>
+      <div class="roles revela"><span class="sube">Vendedores</span><span class="sube">Comisionistas</span><span class="sube">Fotógrafos</span><span class="sube">Editores de video</span><span class="sube">Diseñadores</span><span class="sube">Ilustradores</span><span class="sube">Programadores</span></div>
+      <div class="pide revela"><p class="sube">Mándanos lo que sabes hacer.</p><a class="btn btn--wa sube" data-wa="Hola, quiero trabajar con Grupo Mazi. Esto es lo que sé hacer:" href="https://wa.me/524428833786"><svg aria-hidden="true"><use href="#i-wa"/></svg>Quiero unirme</a></div>
+    </div>
+  </section>
+
+  <section class="cierre" aria-labelledby="t-cierre">
+    <div class="ancho revela">
+      <h2 class="lema" id="t-cierre"><span class="l"><span>Si no existe la herramienta,</span></span><span class="l"><span><em>se construye la herramienta.</em></span></span></h2>
+      <a class="btn btn--wa sube" data-wa="Hola, quiero cotizar con Grupo Mazi" href="https://wa.me/524428833786"><svg aria-hidden="true"><use href="#i-wa"/></svg>WhatsApp 442 883 3786</a>
+      <p class="correo sube"><a href="mailto:grupomazi.oficial@gmail.com">grupomazi.oficial@gmail.com</a> · Querétaro, México</p>
+    </div>
+  </section>
+</main>
+<footer class="pie"><div class="ancho"><img src="img/logo.svg" alt="Grupo Mazi" width="140" height="55"><span>© 2026 Grupo Mazi · Querétaro</span><span class="der">Luz del 3D: HDRI «Studio Small 09», Poly Haven (CC0)</span></div></footer>
+<a class="wa-flota" id="waFlota" data-wa="Hola, quiero cotizar con Grupo Mazi" href="https://wa.me/524428833786" aria-label="Escríbenos por WhatsApp"><svg aria-hidden="true"><use href="#i-wa"/></svg></a>
+
+<script type="importmap">{ "imports": { "three": "./js/vendor/three.module.min.js" } }</script>
+<script type="module" src="js/portada.js"></script>
+<script type="module" src="js/pagina.js"></script>
+</body>
+</html>

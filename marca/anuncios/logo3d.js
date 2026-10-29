@@ -126,22 +126,27 @@ function preparar(){
   const cam = new THREE.PerspectiveCamera(FOV, AN / AL, .1, 400), L = logo3d(); s.add(L.grupo);
   V = { lienzo, r, s, cam, L, casa: L.cubo.userData.casa.clone(), ancho: L.medio * 2 };
 }
-export function logoVivo(x, { t, desde, cx, cy, ancho, dur = 2.2, alfa = 1 }){
+export function logoVivo(x, { t, desde, cx, cy, ancho, dur = 2.9, alfa = 1 }){
   const u = t - desde; if(u < 0) return;
   const k = _suave(_tr(u, dur - .4, dur));
   if(k < 1){
     if(!V) preparar();
     const { L, cam, casa } = V, s = L.lado;
-    L.cuna.position.y = _cae(_tr(u, 0, .45), 5 / s); L.m.position.y = _cae(_tr(u, .28, .73), 5 / s);
-    L.cuna.visible = true; L.m.visible = u >= .28;
-    L.mat[0].emissiveIntensity = .35 + 2 * Math.max(0, 1 - Math.abs(u - .72) / .2);
-    L.letras.forEach((h, i) => { const v = _tr(u, .6 + i * .11, 1.05 + i * .11); h.visible = v > 0; h.position.copy(h.userData.casa); h.position.y += (1 - _sale(v)) * -.35;
+    /* Carlos, 29 oct: «siempre permite que se note la M cubo convirtiéndose en el cubo completo».
+       La M entra y SE QUEDA flotando encima, de frente, para que se lea como M; luego baja sobre la
+       cuña, encaja y destella: ahí se vuelve el cubo. */
+    const flota = _sale(_tr(u, .35, .7)), baja = _tr(u, .95, 1.3);
+    L.cuna.position.y = _cae(_tr(u, 0, .45), 5 / s);
+    L.m.position.y = baja > 0 ? _cae(baja, 1.15 / s) : (1.15 + (1 - flota) * 3) / s;
+    L.cuna.visible = true; L.m.visible = u >= .35;
+    L.mat[0].emissiveIntensity = .35 + 2.4 * Math.max(0, 1 - Math.abs(u - 1.2) / .22);
+    L.letras.forEach((h, i) => { const v = _tr(u, 1.3 + i * .11, 1.75 + i * .11); h.visible = v > 0; h.position.copy(h.userData.casa); h.position.y += (1 - _sale(v)) * -.35;
       const ov = v >= 1 ? 0 : Math.sin(v * Math.PI) * .25; h.rotation.set((1 - _sale(v)) * -Math.PI / 2 - ov, 0, 0); });
     /* la cámara: de cerca y de lado sobre el cubo, a isométrico con todo el logo */
-    const w = _suave(_tr(u, .15, 1.75)), d = V.ancho * AN / ancho / (2 * Math.tan(FOV * Math.PI / 360) * (AN / AL));
-    const yaw = Math.PI / 4 + (1 - w) * .7, pitch = Math.asin(1 / Math.sqrt(3)) + (1 - w) * .2;
+    const w = _suave(_tr(u, 1.1, 2.4)), d = V.ancho * AN / ancho / (2 * Math.tan(FOV * Math.PI / 360) * (AN / AL));
+    const yaw = Math.PI / 4 + (1 - w) * .22, pitch = Math.asin(1 / Math.sqrt(3)) + (1 - w) * .06;          // casi de frente: la M se lee
     const mira = casa.clone().multiplyScalar(1 - w);
-    cam.position.set(Math.cos(pitch) * Math.sin(yaw), Math.sin(pitch), Math.cos(pitch) * Math.cos(yaw)).multiplyScalar(d * (.32 + .68 * w)).add(mira); cam.lookAt(mira);
+    cam.position.set(Math.cos(pitch) * Math.sin(yaw), Math.sin(pitch), Math.cos(pitch) * Math.cos(yaw)).multiplyScalar(d * (.42 + .58 * w)).add(mira); cam.lookAt(mira);
     V.r.render(V.s, cam);
     x.save(); x.globalAlpha = alfa * _sale(_tr(u, 0, .15)); x.drawImage(V.lienzo, cx - AN / 2, cy - AL / 2); x.restore();
   }

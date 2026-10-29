@@ -29,6 +29,7 @@ const VA = [
   'fadori', 'sitio', 'marca', 'explorador', 'reportes', 'evaluaciones', 'avisos',
   'sala', 'campana', 'cerebro', 'entorno', 'bodega', 'demo', 'laboratorio',
   'jabonera', 'cv',
+  'web',                                        // la página nueva de Grupo Mazi (29 de octubre)
   'juegos',
   'ligas-mazi', 'pacto-roto', 'romero', 'inkwell', 'vitallink', 'life-connect',
   'manzanilla', 'herramientas',
