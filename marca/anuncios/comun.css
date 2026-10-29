@@ -1,0 +1,42 @@
+/* LO QUE COMPARTEN LOS ANUNCIOS. 1080 × 1920. Zonas seguras de Reels y TikTok: arriba 220 px, abajo
+   420 px (ahí van el nombre de la cuenta y el texto) y a la derecha 150 px (los botones). Lo
+   importante vive entre y = 220 y y = 1500, y entre x = 80 y x = 930. */
+:root{ --oscuro:#170A26; --oscuro2:#241036; --vino:#7E1735; --vino2:#A8264B; --claro:#F4EEF2; --gris:#B9AFC4; --techo:#AC27FF;
+  --t:"Space Grotesk", sans-serif; --s:"Inter Tight", sans-serif }
+*{ box-sizing:border-box; margin:0 }
+html, body{ width:1080px; height:1920px; overflow:hidden; background:var(--oscuro); color:var(--claro); font-family:var(--s) }
+.capa{ position:absolute; inset:0; width:1080px; height:1920px }
+#fondo{ z-index:0 } #plantillas{ z-index:1; overflow:hidden } #gl{ z-index:2 } #c2{ z-index:3; pointer-events:none } #ui{ z-index:4 }
+
+/* títulos grandes: Space Grotesk, apretados, en mayúsculas; .v = vino claro */
+.grande{ position:absolute; left:80px; right:150px; top:250px; font:700 128px/0.92 var(--t); letter-spacing:-.045em; text-transform:uppercase }
+.grande span{ display:block; will-change:transform }
+.grande .v{ color:#FF5C8A } .grande .xl{ font-size:200px } .grande .m{ font-size:104px }
+
+/* las palabras que acompañan a los aparatos */
+#palabras{ position:absolute; left:80px; width:560px; top:250px; display:flex; flex-wrap:wrap; gap:14px 18px }
+#palabras span{ font:800 64px/1 var(--s); letter-spacing:-.02em; padding:16px 28px 18px; border-radius:22px; background:var(--vino); box-shadow:0 20px 50px -20px #000 }
+
+/* subtítulos: blancos, con contorno oscuro, la palabra clave en morado claro */
+#subs{ position:absolute; left:50%; top:1345px; width:880px; z-index:10; text-align:center; font:800 58px/1.12 var(--s); letter-spacing:-.01em;
+  color:#fff; text-shadow:0 3px 0 #0008, 0 0 24px #000c; -webkit-text-stroke:1.5px #00000055; transform-origin:50% 50% }
+#subs em{ font-style:normal; color:#D9A6FF }
+#subs .quien{ display:block; font:700 30px/1 var(--t); letter-spacing:.16em; text-transform:uppercase; color:#FF8FB1; margin-bottom:10px }
+
+/* el cierre */
+#cierre{ position:absolute; left:0; right:0; top:1080px; text-align:center; opacity:0 }
+#cierre .wa{ display:inline-block; font:600 46px/1 var(--s); padding:24px 40px; border-radius:999px; background:#25D36622; border:2px solid #25D366; color:#fff }
+#cierre .wa b{ font-weight:900; letter-spacing:.02em }
+#cierre .sub{ margin-top:26px; font:500 34px/1.3 var(--t); color:var(--gris) }
+
+/* la plantilla genérica (la de la competencia): gris, sin alma, repetida */
+.plantilla{ position:absolute; left:0; top:0; width:220px; height:380px; border-radius:18px; background:#E9E6EC; overflow:hidden; padding:16px;
+  box-shadow:0 20px 40px -18px #000; display:flex; flex-direction:column; gap:12px; font-family:Arial, sans-serif; color:#8B8594 }
+.plantilla .nav{ height:12px; border-radius:6px; background:#CFCAD6 }
+.plantilla .foto{ height:120px; border-radius:10px; background:#D6D2DC; display:grid; place-items:center; font:700 15px/1 Arial; letter-spacing:.12em; color:#A7A1B0 }
+.plantilla b{ font:700 22px/1.05 Arial; color:#8B8594 }
+.plantilla .lin{ height:10px; border-radius:5px; background:#D6D2DC } .plantilla .lin.c{ width:70% }
+.plantilla .btn{ margin-top:auto; align-self:flex-start; font:700 15px/1 Arial; padding:10px 14px; border-radius:8px; background:#B9B3C2; color:#fff; font-style:normal }
+
+/* una banda oscura detrás de los títulos cuando hay algo claro atrás */
+.banda{ position:absolute; left:0; right:0; top:0; height:900px; z-index:3; background:linear-gradient(180deg, #170A26F2 0%, #170A26D9 45%, #170A2600 100%); pointer-events:none }

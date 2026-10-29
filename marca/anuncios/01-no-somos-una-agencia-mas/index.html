@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Grupo Mazi · No somos una agencia más</title>
+<!-- ANUNCIO 01 · 30 s · 9:16 · voz Brian. Contra la competencia en general (sin nombrar a nadie):
+     ellos venden la misma plantilla a todos; nosotros construimos a la medida, entregamos rápido y nos
+     quedamos. Lo que sale en las pantallas es trabajo nuestro grabado tal cual corre.
+     node herramientas/video/armar.mjs marca/anuncios/01-no-somos-una-agencia-mas/index.html marca/anuncios/salida/01-no-somos-una-agencia-mas.mp4 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter+Tight:wght@600;800;900&display=block">
+<link rel="stylesheet" href="../comun.css">
+<script>window.listo = new Promise(r => window._listo = r);   /* armar.mjs espera esto antes de leer VIDEO */</script>
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+</head>
+<body>
+<div id="fondo" class="capa"></div>
+<div id="plantillas" class="capa"></div>
+<canvas id="gl" class="capa"></canvas>
+<canvas id="c2" class="capa" width="1080" height="1920"></canvas>
+<div id="banda" class="banda"></div>
+<div id="ui" class="capa">
+  <div id="titulo" class="grande"></div>
+  <div id="palabras"></div>
+  <div id="cierre"><div class="wa">WhatsApp <b>442 883 3786</b></div></div>
+</div>
+<div id="subs"></div>
+<div id="grano"></div>
+<script type="module">
+import { THREE, PAL, W, H, tramo, suave, sale, entra, resorte, mezcla, vida, azar, escena3d, cubo, telefono, laptop, Toma, guion, sonidosVoz, subtitulos, grano, logo2d } from '../motor.js';
+const $ = (s) => document.querySelector(s);
+const G = await guion('.'), L = (id) => G.de(id);
+const FIN = L('06').t1 + 2.4;
+window.VIDEO = { w: W, h: H, fps: 30, dur: FIN, musica: { archivo: '/tmp/claude-0/musica/Ouroboros.mp3', desde: 0, vol: .42, entrada: .4, fin: 2 },
+  sonidos: [...sonidosVoz(G, 1.05), ['../../../herramientas/video/efectos/golpe.wav', L('02').t0 - .05, .9], ['../../../herramientas/video/efectos/whoosh.wav', L('03').t0 - .3, .6], ['../../../herramientas/video/efectos/subida.wav', L('06').t0 - .4, .5]] };
+
+/* ── la pared de plantillas: la misma página repetida, gris y sin alma ── */
+const muro = $('#plantillas'), tarjetas = [];
+for(let fila = 0; fila < 7; fila++) for(let col = 0; col < 5; col++){
+  const d = document.createElement('div'); d.className = 'plantilla';
+  d.innerHTML = `<i class="nav"></i><i class="foto"><span>IMAGEN</span></i><b>TU NEGOCIO AQUÍ</b><i class="lin"></i><i class="lin c"></i><i class="btn">Contáctanos</i>`;
+  muro.appendChild(d); tarjetas.push({ d, fila, col, r: azar(), r2: azar() });
+}
+/* ── la escena 3D ── */
+const E = escena3d($('#gl'));
+const cb = cubo(1.15); E.s.add(cb);
+const tS = new Toma('smileys-tel', { desde: 3 }), tD = new Toma('district-pc', { desde: .5 }), tF = new Toma('fadori-tel', { desde: 6 });
+const tel = telefono(tS.tex), lap = laptop(tD.tex), tel2 = telefono(tF.tex);
+[tel, lap, tel2].forEach(o => E.s.add(o));
+const sub = subtitulos($('#subs'), G), gr = grano($('#grano'), .06);
+const c2 = $('#c2').getContext('2d');
+
+const titulo = (html) => { if($('#titulo').dataset.h !== html){ $('#titulo').innerHTML = html; $('#titulo').dataset.h = html; } };
+window.pintar = async (t) => {
+  const a1 = L('01'), a2 = L('02'), a3 = L('03'), a4 = L('04'), a5 = L('05'), a6 = L('06');
+  /* 1 · la pared: se aleja despacio; al caer el cubo (en «no») sale volando */
+  const rompe = tramo(t, a2.t0, a2.t0 + .9);
+  muro.style.opacity = t < a3.t0 + .3 ? 1 : 0;
+  muro.style.filter = `brightness(${mezcla(.95, .55, suave(tramo(t, .2, 1.4)))})`;
+  $('#banda').style.opacity = t < a2.t0 ? vida(t, .2, a2.t0 + .1, .5, .2) : 0;
+  const zoom = mezcla(1.25, .92, suave(tramo(t, 0, a2.t0)));
+  tarjetas.forEach(({ d, fila, col, r, r2 }) => {
+    const x = (col - 2) * 232, y = (fila - 3) * 400, aleja = rompe ? sale(rompe) : 0;
+    const dx = x * (1 + aleja * 3) + (r - .5) * 600 * aleja, dy = y * (1 + aleja * 2.5) + (r2 - .2) * 900 * aleja;
+    d.style.transform = `translate(${W / 2 + dx * zoom - 110}px, ${H / 2 + dy * zoom - 190}px) scale(${zoom}) rotate(${(r - .5) * 70 * aleja}deg)`;
+    d.style.opacity = 1 - tramo(rompe, .5, 1);
+  });
+  /* el título de la pared */
+  if(t < a2.t0) titulo(`<span>${'LA MISMA'}</span><span class="v">PLANTILLA</span><span>PARA TODOS</span>`);
+  else if(t < a3.t0) titulo(`<span class="xl">NOSOTROS</span><span class="xl v">NO.</span>`);
+  else if(t >= a5.t0 && t < a6.t0) titulo(`<span class="m">SI NO EXISTE</span><span class="m">LA HERRAMIENTA,</span><span class="m v">LA CONSTRUIMOS.</span>`);
+  else titulo('');
+  const tv = t < a2.t0 ? vida(t, .4, a2.t0, .5, .15) : t < a3.t0 ? vida(t, a2.t0, a3.t0 + .1, .2, .3) : vida(t, a5.t0, a6.t0, .4, .3);
+  $('#titulo').style.opacity = tv; $('#titulo').style.transform = `translateY(${(1 - tv) * 40}px)`;
+  [...$('#titulo').children].forEach((s, i) => { const u = sale(tramo(t, (t < a2.t0 ? .5 : t < a3.t0 ? a2.t0 : a5.t0) + i * .14, (t < a2.t0 ? .5 : t < a3.t0 ? a2.t0 : a5.t0) + i * .14 + .4)); s.style.transform = `translateY(${(1 - u) * 60}px)`; s.style.opacity = u; });
+
+  /* 2 · el cubo: cae del cielo justo en «no», rebota y se queda girando */
+  const uC = tramo(t, a2.t0 - .45, a2.t0 + .05), cae = uC < 1 ? entra(uC) : 1;
+  const base = t < a3.t0 ? new THREE.Vector3(0, -.35, 0) : t < a5.t0 ? new THREE.Vector3(0, 1.55, -1.5) : new THREE.Vector3(0, -.2, 0);
+  const viaje = suave(tramo(t, a3.t0 - .2, a3.t0 + .7)), vuelve = suave(tramo(t, a5.t0 - .3, a5.t0 + .5));
+  let pos = new THREE.Vector3(0, -.35, 0).lerp(new THREE.Vector3(.95, 2.1, -3.6), viaje).lerp(new THREE.Vector3(0, -.55, 0), vuelve);
+  if(t >= a6.t0 - .2){ const s6 = suave(tramo(t, a6.t0 - .2, a6.t0 + .4)); pos.lerp(new THREE.Vector3(0, 0, -30), s6); }
+  cb.position.copy(pos); cb.position.y += (1 - cae) * 6;
+  const rebote = t > a2.t0 ? Math.max(0, 1 - resorte(tramo(t, a2.t0, a2.t0 + .8))) : 0;
+  const kk = mezcla(mezcla(1, .62, viaje), 1, vuelve);
+  cb.scale.set(kk * (1 + rebote * .12), kk * (1 - rebote * .18), kk * (1 + rebote * .12));
+  cb.rotation.set(.52 + Math.sin(t * .6) * .05, t * .55 + .78, 0);
+  cb.visible = t > a2.t0 - .45 && t < a6.t0 + .3;
+  cb.userData.techo.emissiveIntensity = .35 + .5 * Math.max(0, 1 - tramo(t, a2.t0, a2.t0 + .6)) + .3 * Math.sin(t * 2) ** 2;
+
+  /* 3 · los aparatos: entran por lados distintos en «página, app, sistema» y se quedan flotando */
+  const pal = a3.txt.replace(/\*/g, ''), dA = a3.dur;
+  const tPag = a3.t0 + dA * pal.indexOf('página') / pal.length, tApp = a3.t0 + dA * pal.indexOf('app') / pal.length, tSis = a3.t0 + dA * pal.indexOf('sistema') / pal.length;
+  const entraEn = (t0) => sale(tramo(t, t0 - .25, t0 + .55));
+  const fuera = suave(tramo(t, a5.t0 - .4, a5.t0 + .3));
+  const flota = (k) => Math.sin(t * 1.3 + k) * .05;
+  const uL = entraEn(tPag), uT = entraEn(tApp), uT2 = entraEn(tSis);
+  lap.position.set(mezcla(-4, -.05, uL), -.35 + flota(1) - fuera * 4, -.9); lap.rotation.set(.32, mezcla(1.2, .28, uL), 0); lap.scale.setScalar(.82);
+  tel.position.set(mezcla(4, .92, uT), .25 + flota(2) + fuera * 4, .5); tel.rotation.set(-.05, mezcla(-1.6, -.38, uT) + Math.sin(t * .7) * .05, .04); tel.scale.setScalar(.92);
+  tel2.position.set(mezcla(-4, -.98, uT2), .65 + flota(3) + fuera * 4, .2); tel2.rotation.set(.04, mezcla(1.6, .42, uT2) + Math.sin(t * .8 + 1) * .05, -.04); tel2.scale.setScalar(.78);
+  lap.visible = uL > 0 && fuera < 1; tel.visible = uT > 0 && fuera < 1; tel2.visible = uT2 > 0 && fuera < 1;
+  const tt = Math.max(0, t - a3.t0 + 1);
+  await Promise.all([tS.en(tt), tD.en(tt), tF.en(tt)]);
+  /* las palabras de los aparatos */
+  const pw = $('#palabras');
+  const etiquetas = t >= a4.t0 && t < a5.t0 ? [['RÁPIDO', a4.t0 + dA * 0 + .6], ['Y NOS QUEDAMOS', a4.t0 + a4.dur * .55]] : t >= a3.t0 && t < a4.t0 ? [['PÁGINA', tPag], ['APP', tApp], ['SISTEMA', tSis]] : [];
+  const html = etiquetas.map(([w]) => `<span>${w}</span>`).join('');
+  if(pw.dataset.h !== html){ pw.innerHTML = html; pw.dataset.h = html; }
+  [...pw.children].forEach((s, i) => { const u = sale(tramo(t, etiquetas[i][1], etiquetas[i][1] + .35)); s.style.opacity = u * (t < a4.t0 ? vida(t, a3.t0, a4.t0, .1, .3) : vida(t, a4.t0, a5.t0, .1, .3)); s.style.transform = `translateY(${(1 - u) * 50}px) scale(${.8 + .2 * u})`; });
+  /* la cámara respira */
+  E.cam.position.set(Math.sin(t * .3) * .25, Math.sin(t * .23) * .12, 9); E.cam.lookAt(0, .1, 0);
+  E.pintar();
+
+  /* 4 · el cierre: el logo y el WhatsApp */
+  c2.clearRect(0, 0, W, H);
+  const uF = sale(tramo(t, a6.t0 - .1, a6.t0 + .7));
+  if(uF > 0) logo2d(c2, { cx: W / 2, cy: 860, ancho: 820 * (.9 + .1 * uF), alfa: uF });
+  $('#cierre').style.opacity = sale(tramo(t, a6.t0 + .5, a6.t0 + 1.1));
+  /* el fondo: morado oscuro con un halo vino que se mueve */
+  $('#fondo').style.background = `radial-gradient(80% 50% at ${50 + Math.sin(t * .4) * 12}% ${42 + Math.cos(t * .3) * 6}%, ${PAL.vino}66, transparent 70%), radial-gradient(120% 80% at 50% 0%, ${PAL.oscuro2}, ${PAL.oscuro} 70%)`;
+  sub(t); gr(t);
+};
+await document.fonts.load('700 80px "Space Grotesk"'); await document.fonts.load('900 80px "Inter Tight"'); await document.fonts.load('800 60px "Inter Tight"');
+await pintar(0); window._listo();
+</script>
+</body>
+</html>

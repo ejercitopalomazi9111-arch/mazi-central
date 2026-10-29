@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Grupo Mazi · Mi sobrino sabe de computadoras</title>
+<!-- GRACIOSO 05 · ~56 s · 9:16 · narra Will, Don Toño es George, Kevin es Liam. Un cuento al estilo
+     de los de YouTube (Casi Creativo, Historias de Chema): habla de nosotros sin ser anuncio hasta el
+     final. Los personajes son cubitos (personajes.js), de la familia del logo. La página fea, la
+     tintorería y el teléfono son inventados: el número es 55 0000 0000 a propósito.
+     Música: «Fluffing a Duck», Kevin MacLeod (incompetech.com), CC BY 4.0.
+     node herramientas/video/armar.mjs marca/anuncios/05-mi-sobrino/index.html marca/anuncios/salida/05-mi-sobrino.mp4 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter+Tight:wght@600;800;900&family=Comic+Neue:wght@700&family=Bangers&display=block">
+<link rel="stylesheet" href="../comun.css">
+<script>window.listo = new Promise(r => window._listo = r);</script>
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>
+#cal{ position:absolute; left:50%; top:420px; width:520px; margin-left:-260px; border-radius:30px; background:#fff; color:#17121D; text-align:center; overflow:hidden; box-shadow:0 40px 90px -30px #000; opacity:0 }
+#cal .cab{ background:#A8264B; color:#fff; font:800 64px/1 var(--s); padding:26px 0; letter-spacing:.04em }
+#cal .dia{ font:800 300px/1 var(--t); letter-spacing:-.06em; padding:20px 0 40px }
+#burbuja{ position:absolute; left:110px; right:180px; top:330px; padding:34px 40px; border-radius:40px; background:#fff; color:#17121D; font:800 52px/1.12 var(--s); opacity:0; box-shadow:0 30px 70px -30px #000 }
+#burbuja::after{ content:""; position:absolute; left:120px; bottom:-38px; border:24px solid transparent; border-top:30px solid #fff }
+#burbuja small{ display:block; font:700 30px/1 var(--t); letter-spacing:.14em; color:#A8264B; margin-bottom:14px }
+#letrero{ position:absolute; left:0; right:0; top:300px; text-align:center; font:400 118px/1 "Bangers", sans-serif; letter-spacing:.03em; color:#FFD23F; text-shadow:0 8px 0 #A8264B, 0 16px 30px #000a; opacity:0 }
+#moraleja{ position:absolute; left:80px; right:150px; top:280px; opacity:0 }
+#moraleja .q{ font:700 40px/1 var(--t); letter-spacing:.2em; color:#FF8FB1 }
+#moraleja .d{ margin-top:18px; font:700 96px/.95 var(--t); letter-spacing:-.04em; text-transform:uppercase }
+#moraleja .d span{ color:#FF5C8A }
+</style>
+</head>
+<body>
+<div id="fondo" class="capa"></div>
+<canvas id="gl" class="capa"></canvas>
+<canvas id="c2" class="capa" width="1080" height="1920"></canvas>
+<div id="ui" class="capa">
+  <div id="letrero"></div>
+  <div id="cal"><div class="cab">LUNES</div><div class="dia">3</div></div>
+  <div id="burbuja"><small>LLAMADA ENTRANTE</small>¿Tintorería La Burbuja? Vengo por mis camisas.</div>
+  <div id="moraleja"><div class="q">MORALEJA</div><div class="d">A tu sobrino, quiérelo.<br>Tu página, <span>hazla con quien se queda.</span></div></div>
+  <div id="cierre"><div class="wa">WhatsApp <b>442 883 3786</b></div><div class="sub">Hacemos tu página… y no nos vamos a exámenes.</div></div>
+</div>
+<div id="subs"></div>
+<div id="grano"></div>
+<script type="module">
+import { THREE, PAL, W, H, tramo, suave, sale, entra, resorte, mezcla, vida, escena3d, cubo, laptop, telefono, guion, sonidosVoz, subtitulos, grano, logo2d, imagen } from '../motor.js';
+import { cubito, habla, parpadeo, salto } from '../personajes.js';
+const $ = (s) => document.querySelector(s);
+const G = await guion('.'), L = (id) => G.de(id);
+const FIN = L('13').t1 + 2.4, fx = (n) => `../../../herramientas/video/efectos/${n}.wav`;
+window.VIDEO = { w: W, h: H, fps: 30, dur: FIN, musica: { archivo: '/tmp/claude-0/musica/Fluffing_a_Duck.mp3', desde: 0, vol: .26, entrada: .3, fin: 2 },
+  sonidos: [...sonidosVoz(G, 1.08), [fx('toque'), L('03').t0 + L('03').dur * .55, .7], ...['06', '07', '08'].map(id => [fx('toque'), L(id).t0 - .1, .6]), [fx('timbre'), L('10').t0 - .9, .55], [fx('ding'), L('12').t0 - .2, .5], ['../../cubo/final/sonidos/golpe.wav', L('13').t0 - .05, .9]] };
+await Promise.all(['700 80px "Space Grotesk"', '800 60px "Inter Tight"', '700 60px "Comic Neue"', '400 60px "Bangers"'].map(f => document.fonts.load(f)));
+
+/* ── lienzos: el letrero, las calcomanías, la página fea ── */
+const lienzo = (w, h, dibuja) => { const c = document.createElement('canvas'); c.width = w; c.height = h; dibuja(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; };
+const texLetrero = lienzo(1024, 256, (x, w, h) => { x.fillStyle = '#C8402F'; x.fillRect(0, 0, w, h); x.fillStyle = '#FFD23F'; x.font = '400 150px Bangers'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('TACOS DON TOÑO', w / 2, h / 2 + 8); });
+const texCalcas = lienzo(1024, 640, (x, w, h) => { x.fillStyle = '#2A2A33'; x.fillRect(0, 0, w, h);
+  const c = [['#FFD23F', '★'], ['#25D366', 'GG'], ['#FF5C8A', '♥'], ['#5AC8FA', 'PRO'], ['#AC27FF', '404'], ['#FF9500', '😎'], ['#fff', 'NOOB'], ['#34C759', '>_']];
+  c.forEach(([col, s], i) => { const px = 120 + (i % 4) * 250 + (i > 3 ? 60 : 0), py = 170 + Math.floor(i / 4) * 300; x.save(); x.translate(px, py); x.rotate((i * 37 % 60 - 30) * Math.PI / 180);
+    x.fillStyle = col; x.beginPath(); x.roundRect(-95, -70, 190, 140, 30); x.fill(); x.fillStyle = '#17121D'; x.font = '800 70px "Inter Tight"'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(s, 0, 4); x.restore(); }); });
+const texFea = lienzo(1080, 2338, (x, w, h) => { x.fillStyle = '#00B526'; x.fillRect(0, 0, w, h);
+  x.fillStyle = '#FFFF00'; x.textAlign = 'center'; x.font = '700 120px "Comic Neue"'; x.fillText('¡¡BIENBENIDOS!!', w / 2, 230);
+  x.font = '700 92px "Comic Neue"'; x.fillText('TACOS', w / 2, 420); x.fillText('DON TOÑO', w / 2, 520);
+  x.fillStyle = '#FF00FF'; x.fillRect(60, 620, w - 120, 110); x.fillStyle = '#FFFF00'; x.font = '700 60px "Comic Neue"'; x.fillText('★ LOS MEJORES TACOS ★ LOS MEJ', w / 2, 695);
+  x.fillStyle = '#000080'; x.fillRect(140, 820, w - 280, 520); x.fillStyle = '#FFFF00'; x.font = '700 64px "Comic Neue"'; x.fillText('[ IMAGEN NO', w / 2, 1060); x.fillText('ENCONTRADA ]', w / 2, 1140);
+  x.fillStyle = '#FFFF00'; x.font = '700 70px "Comic Neue"'; x.fillText('♫ ♪ MÚSICA ♪ ♫', w / 2, 1500);
+  x.fillText('Tel: 55 0000 0000', w / 2, 1680); x.font = '700 52px "Comic Neue"'; x.fillText('visitas: 000001', w / 2, 1900); x.fillText('© 2009 Kevin Productions', w / 2, 2050); });
+
+/* la misma página fea, acostada, para la laptop */
+const texFeaPC = lienzo(1600, 1000, (x, w, h) => { x.fillStyle = '#00B526'; x.fillRect(0, 0, w, h); x.fillStyle = '#FFFF00'; x.textAlign = 'center';
+  x.font = '700 120px "Comic Neue"'; x.fillText('¡¡BIENBENIDOS!!', w / 2, 170); x.font = '700 84px "Comic Neue"'; x.fillText('TACOS DON TOÑO', w / 2, 290);
+  x.fillStyle = '#FF00FF'; x.fillRect(60, 340, w - 120, 90); x.fillStyle = '#FFFF00'; x.font = '700 56px "Comic Neue"'; x.fillText('★ LOS MEJORES TACOS ★ LOS MEJORES TAC', w / 2, 405);
+  x.fillStyle = '#000080'; x.fillRect(80, 480, 700, 400); x.fillStyle = '#FFFF00'; x.font = '700 54px "Comic Neue"'; x.fillText('[ IMAGEN NO', 430, 670); x.fillText('ENCONTRADA ]', 430, 740);
+  x.font = '700 66px "Comic Neue"'; x.fillText('♫ MÚSICA ♫', 1190, 600); x.fillText('Tel: 55 0000 0000', 1190, 720); x.font = '700 46px "Comic Neue"'; x.fillText('visitas: 000001', 1190, 840); });
+/* ── la escena ── */
+const E = escena3d($('#gl'), { z: 9 });
+E.s.environmentIntensity = .7; E.luces.morado.intensity = 1.5;
+const piso = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshStandardMaterial({ color: '#3A1E2E', roughness: .9 })); piso.rotation.x = -Math.PI / 2; piso.position.y = -1.15; E.s.add(piso);
+const pared = new THREE.Mesh(new THREE.PlaneGeometry(30, 14), new THREE.MeshStandardMaterial({ color: '#4A2236', roughness: .95 })); pared.position.set(0, 4, -3.2); E.s.add(pared);
+/* el papel picado: una tira de banderitas de colores */
+const picado = new THREE.Group(); ['#FF5C8A', '#FFD23F', '#25D366', '#5AC8FA', '#AC27FF', '#FF9500'].forEach((c, i) => {
+  for(let k = 0; k < 3; k++){ const b = new THREE.Mesh(new THREE.PlaneGeometry(.36, .44), new THREE.MeshStandardMaterial({ color: c, side: THREE.DoubleSide, roughness: .8 })); b.position.set(-2.3 + (i + k * 6) * .26, 1.55 - Math.sin((i + k * 6) / 17 * Math.PI) * .2, -1.2); picado.add(b); } });
+E.s.add(picado);
+const mostrador = new THREE.Mesh(new THREE.BoxGeometry(2.3, .8, .7), [0, 1, 2, 3, 4, 5].map(i => new THREE.MeshStandardMaterial(i === 4 ? { map: lienzo(1024, 360, (x, w, h) => { x.fillStyle = '#E9D6C3'; x.fillRect(0, 0, w, h); x.fillStyle = '#C8402F'; for(let k = 0; k < 9; k++) x.fillRect(k * 120, 0, 60, h); }), roughness: .7 } : { color: '#E9D6C3', roughness: .7 })));
+mostrador.position.set(0, -.75, .35); E.s.add(mostrador);
+const letrero = new THREE.Mesh(new THREE.PlaneGeometry(2, .5), new THREE.MeshStandardMaterial({ map: texLetrero, roughness: .6 })); letrero.position.set(0, .95, -.9); E.s.add(letrero);
+const toño = cubito({ color: '#8E1B3A', bigote: true, tam: .82 }); E.s.add(toño);
+const kevin = cubito({ color: '#6E6A80', gorra: { color: '#25D366', atras: true }, tam: .66 }); E.s.add(kevin);
+const tPag = { tex: texFea }; const lap = laptop(texFeaPC, { ratio: 1.6 }); E.s.add(lap);
+/* la tapa de la laptop por detrás: las calcomanías */
+const tapaAtras = new THREE.Mesh(new THREE.PlaneGeometry(2.25, 1.42), new THREE.MeshStandardMaterial({ map: texCalcas, roughness: .6 })); tapaAtras.rotation.y = Math.PI; tapaAtras.position.set(0, 1.44 / 2 + .06, -.035);
+lap.children[0].add(tapaAtras);
+const cel = telefono(texFea); E.s.add(cel);
+const mazi = cubo(.9); E.s.add(mazi);
+/* una pantalla de teléfono con la página fea (vertical) */
+const sub = subtitulos($('#subs'), G), gr = grano($('#grano'), .05), c2 = $('#c2').getContext('2d');
+
+/* las tomas: cámara [x, y, z] y a dónde mira, por tramo del guion */
+const TOMAS = [
+  ['01', [0, .2, 7.4], [0, 0, 0]], ['02', [0, .35, 6.2], [0, .1, 0]], ['03', [-.25, .3, 4.2], [-.25, .1, 0]], ['04', [.9, .1, 4.4], [.75, -.1, 0]],
+  ['05', [.7, .15, 3.6], [.7, 0, 0]], ['06', [0, .4, 8], [0, .2, 0]], ['09', [0, .1, 5], [0, 0, 0]], ['10', [-.2, .3, 3.9], [-.2, .1, 0]],
+  ['11', [1, .1, 4.2], [1, -.05, 0]], ['12', [0, .4, 7.2], [0, .1, 0]], ['13', [0, .3, 8.2], [0, 0, 0]]];
+window.pintar = async (t) => {
+  const l = Object.fromEntries(G.lineas.map(z => [z.id, z]));
+  /* la cámara: de toma en toma, con un pequeño empujón hacia adentro en cada una */
+  let cP = new THREE.Vector3(...TOMAS[0][1]), cM = new THREE.Vector3(...TOMAS[0][2]);
+  for(let i = 1; i < TOMAS.length; i++){ const [id, p, m] = TOMAS[i], u = suave(tramo(t, l[id].t0 - .55, l[id].t0 - .05)); cP.lerp(new THREE.Vector3(...p), u); cM.lerp(new THREE.Vector3(...m), u); }
+  E.cam.position.copy(cP).add(new THREE.Vector3(Math.sin(t * .5) * .04, Math.sin(t * .4) * .03, -((t * .08) % 1) * 0));
+  E.cam.lookAt(cM);
+
+  /* Don Toño, detrás del mostrador */
+  const tj = salto(t, l['03'].t0 + l['03'].dur * .5, .25, .4);
+  toño.position.set(-.35, -.05 + tj.y, -.15); toño.userData.cuerpo.scale.set(tj.sx, tj.sy, tj.sx);
+  toño.rotation.y = .12 + Math.sin(t * .8) * .04;
+  const hT = Math.max(habla(t, l['03']), habla(t, l['10']));
+  const cejaT = t >= l['10'].t0 - .9 && t < l['11'].t0 ? 'enojado' : t >= l['06'].t0 && t < l['09'].t0 ? (t > l['08'].t0 ? 'enojado' : 'triste') : t >= l['09'].t0 && t < l['10'].t0 ? 'sorpresa' : t >= l['12'].t0 ? 'feliz' : 'normal';
+  toño.userData.cara({ boca: hT, ojos: parpadeo(t, .3), ceja: cejaT, mira: t >= l['04'].t0 && t < l['06'].t0 ? [.7, 0] : t >= l['09'].t0 && t < l['10'].t0 ? [.5, .3] : [0, 0], rubor: t >= l['12'].t0 ? .8 : 0 });
+  /* Kevin: entra de un brinco cuando el tío lo nombra; luego con su laptop */
+  const llegaK = l['03'].t0 + l['03'].dur * .62, kj = salto(t, llegaK, .6, .45);
+  const kx = t < llegaK ? 2.2 : mezcla(2.2, .75, sale(tramo(t, llegaK, llegaK + .45)));
+  kevin.position.set(kx, -.42 + kj.y, .9); kevin.userData.cuerpo.scale.set(kj.sx, kj.sy, kj.sx); kevin.rotation.y = -.35;
+  kevin.visible = t > llegaK - .1 && t < l['12'].t0 + 10;
+  const enEx = t >= l['11'].t0 - .3 && t < l['12'].t0;
+  kevin.userData.cara({ boca: habla(t, l['05']), ojos: enEx ? .45 : parpadeo(t, 1.7), ceja: enEx ? 'triste' : t >= l['05'].t0 && t < l['06'].t0 ? 'feliz' : 'normal', mira: enEx ? [0, .8] : [-.5, 0] });
+  /* la laptop: por detrás (las calcomanías) en la toma 04, de frente con la página fea en la 09 */
+  const vLap = t >= l['04'].t0 - .4 && t < l['10'].t0 - .4;
+  lap.visible = vLap;
+  const deFrente = suave(tramo(t, l['09'].t0 - .5, l['09'].t0 + .2));
+  lap.position.set(mezcla(1.05, 0, deFrente), mezcla(-.62, -.55, deFrente), mezcla(1.15, 1.6, deFrente)); lap.scale.setScalar(mezcla(.36, .82, deFrente));
+  lap.rotation.set(mezcla(.1, .22, deFrente), mezcla(Math.PI - .5, 0, deFrente), 0);
+  /* el teléfono que suena, junto a Don Toño */
+  const vCel = t >= l['10'].t0 - 1 && t < l['11'].t0 - .2; cel.visible = vCel;
+  const zumba = t < l['10'].t0 ? Math.sin(t * 70) * .03 : 0;
+  cel.position.set(.32 + zumba, .05, .55); cel.rotation.set(-.1, -.5, .12 + zumba); cel.scale.setScalar(.42);
+  /* el cubo de Grupo Mazi: cae al final */
+  const uM = tramo(t, l['13'].t0 - .5, l['13'].t0), cae = uM < 1 ? entra(uM) : 1;
+  mazi.visible = t > l['13'].t0 - .5; mazi.position.set(0, -.68 + (1 - cae) * 5, .9); mazi.rotation.set(0, t * .6, 0);
+  E.pintar();
+
+  /* ── lo de encima ── */
+  const lt = t >= l['01'].t0 && t < l['03'].t0 - .3;
+  $('#letrero').textContent = 'LA MEJOR TAQUERÍA'; $('#letrero').style.opacity = vida(t, l['01'].t0 + .2, l['02'].t0 - .1, .3, .3);
+  $('#letrero').style.transform = `rotate(-4deg) scale(${.9 + .1 * sale(tramo(t, l['01'].t0 + .2, l['01'].t0 + .6))})`;
+  /* el calendario de los lunes */
+  const vc = vida(t, l['06'].t0 - .3, l['09'].t0 - .3, .3, .3); $('#cal').style.opacity = vc;
+  const d = t < l['07'].t0 - .1 ? 3 : t < l['08'].t0 - .1 ? 10 : 17; $('#cal .dia').textContent = d;
+  const giro = [l['07'].t0, l['08'].t0].map(z => Math.max(0, 1 - Math.abs(t - z + .1) / .15)).reduce((a, b) => Math.max(a, b), 0);
+  $('#cal').style.transform = `perspective(900px) rotateX(${giro * 80}deg) scale(${.9 + .1 * vc})`;
+  /* la llamada */
+  const vb = vida(t, l['09'].t1 + .1, l['10'].t1 + .3, .25, .3); $('#burbuja').style.opacity = vb; $('#burbuja').style.transform = `scale(${.8 + .2 * resorte(tramo(t, l['09'].t1 + .1, l['09'].t1 + .6))})`;
+  /* la moraleja */
+  const vm = vida(t, l['12'].t0 - .1, l['13'].t0 - .1, .4, .3); $('#moraleja').style.opacity = vm; $('#moraleja').style.transform = `translateY(${(1 - vm) * 40}px)`;
+  /* el cierre */
+  c2.clearRect(0, 0, W, H);
+  const uF = sale(tramo(t, l['13'].t0 + .6, l['13'].t0 + 1.3));
+  if(uF > 0){ c2.fillStyle = `rgba(23,10,38,${uF * .92})`; c2.fillRect(0, 0, W, H); logo2d(c2, { cx: W / 2, cy: 820, ancho: 820 * (.92 + .08 * uF), alfa: uF }); }
+  $('#cierre').style.opacity = sale(tramo(t, l['13'].t0 + 1, l['13'].t0 + 1.6));
+  $('#fondo').style.background = '#2A1424';
+  sub(t); gr(t);
+};
+await pintar(0); window._listo();
+</script>
+</body>
+</html>

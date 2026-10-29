@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Grupo Mazi · Trabajo real</title>
+<!-- ANUNCIO 03 · ~28 s · 9:16 · voz Charlie. Lo contrario de los anuncios de la competencia (maquetas
+     hechas con IA y marcas que no existen): tres trabajos nuestros, grabados tal cual corren, en
+     aparatos 3D que se acercan a la cámara.
+     node herramientas/video/armar.mjs marca/anuncios/03-trabajo-real/index.html marca/anuncios/salida/03-trabajo-real.mp4 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter+Tight:wght@600;800;900&display=block">
+<link rel="stylesheet" href="../comun.css">
+<script>window.listo = new Promise(r => window._listo = r);</script>
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>
+#chip{ position:absolute; left:80px; right:150px; top:240px }
+#chip .q{ font:700 34px/1 var(--t); letter-spacing:.14em; color:#FF8FB1 }
+#chip .d{ margin-top:14px; font:700 82px/.95 var(--t); letter-spacing:-.04em; text-transform:uppercase }
+#sello{ position:absolute; left:80px; top:500px; transform-origin:0 50%; transform-origin:100% 50%; font:800 30px/1 var(--s); letter-spacing:.1em; padding:16px 22px; border:3px solid #FF5C8A; color:#FF5C8A; border-radius:14px; text-transform:uppercase }
+</style>
+</head>
+<body>
+<div id="fondo" class="capa"></div>
+<canvas id="gl" class="capa"></canvas>
+<canvas id="c2" class="capa" width="1080" height="1920"></canvas>
+<div id="banda" class="banda"></div>
+<div id="ui" class="capa">
+  <div id="titulo" class="grande"></div>
+  <div id="chip"><div class="q"></div><div class="d"></div></div>
+  <div id="sello">Hecho por Grupo Mazi</div>
+  <div id="cierre"><div class="wa">WhatsApp <b>442 883 3786</b></div></div>
+</div>
+<div id="subs"></div>
+<div id="grano"></div>
+<script type="module">
+import { THREE, PAL, W, H, tramo, suave, sale, entra, mezcla, vida, escena3d, telefono, laptop, Toma, guion, sonidosVoz, subtitulos, grano, logo2d } from '../motor.js';
+const $ = (s) => document.querySelector(s);
+const G = await guion('.'), L = (id) => G.de(id);
+const FIN = L('06').t1 + 2.3, fx = (n) => `../../../herramientas/video/efectos/${n}.wav`;
+window.VIDEO = { w: W, h: H, fps: 30, dur: FIN, musica: { archivo: '/tmp/claude-0/musica/Hyperfun.mp3', desde: 0, vol: .36, entrada: .3, fin: 2 },
+  sonidos: [...sonidosVoz(G, 1.05), ...['02', '03', '04'].map(id => [fx('whoosh'), L(id).t0 - .45, .5]), ...['02', '03', '04'].map(id => [fx('toque'), L(id).t0 + .6, .5]), [fx('subida'), L('06').t0 - .3, .45]] };
+await document.fonts.load('700 80px "Space Grotesk"'); await document.fonts.load('800 60px "Inter Tight"');
+
+const E = escena3d($('#gl'));
+const tS = new Toma('smileys-tel', { desde: 0 }), tD = new Toma('district-pc', { desde: 0 }), tDt = new Toma('district-tel', { desde: 0 }), tF = new Toma('fadori-tel', { desde: 2 });
+const tel1 = telefono(tS.tex), lap = laptop(tD.tex), tel2 = telefono(tDt.tex), tel3 = telefono(tF.tex);
+[tel1, lap, tel2, tel3].forEach(o => E.s.add(o));
+const sub = subtitulos($('#subs'), G), gr = grano($('#grano'), .06), c2 = $('#c2').getContext('2d');
+const poner = (el, html) => { if(el.dataset.h !== html){ el.innerHTML = html; el.dataset.h = html; } };
+const P = [
+  ['02', 'PIZZERÍA', 'Una página<br>que vende'], ['03', 'RESTAURANTE', 'Menú con pedido<br>por WhatsApp'], ['04', 'COOPERATIVA ESCOLAR', 'App de turnos<br>y pedidos']];
+
+window.pintar = async (t) => {
+  const l = Object.fromEntries(G.lineas.map(z => [z.id, z]));
+  const fin = (k) => k < 2 ? l[P[k + 1][0]].t0 - .5 : l['05'].t0 + .15;
+  const v = P.map(([id], k) => vida(t, l[id].t0 - .5, fin(k), .55, .4));
+  const k = v.findIndex(x => x > 0);
+  /* los títulos grandes */
+  let tit = '', a = 0, b = 0;
+  if(t < l['02'].t0 - .4){ tit = '<span>ESTO</span><span>NO ES UNA</span><span class="v">MAQUETA.</span>'; a = .3; b = l['02'].t0 - .3; }
+  else if(t >= l['05'].t0 - .2 && t < l['06'].t0){ tit = '<span class="m">TODO HECHO</span><span class="m">POR NOSOTROS.</span><span class="m v">NADA DE</span><span class="m v">PLANTILLAS.</span>'; a = l['05'].t0 - .2; b = l['06'].t0 + .1; }
+  poner($('#titulo'), tit); $('#titulo').style.opacity = tit ? vida(t, a, b, .3, .25) : 0;
+  [...$('#titulo').children].forEach((s, i) => { const u = sale(tramo(t, a + i * .1, a + .4 + i * .1)); s.style.transform = `translateY(${(1 - u) * 60}px)`; s.style.opacity = u; });
+  $('#banda').style.opacity = tit ? 1 : (k >= 0 ? .85 : 0);
+  /* la etiqueta de cada trabajo y el sello */
+  if(k >= 0){ poner($('#chip .q'), P[k][1]); poner($('#chip .d'), P[k][2]); }
+  $('#chip').style.opacity = k >= 0 ? v[k] : 0; $('#chip').style.transform = `translateY(${k >= 0 ? (1 - v[k]) * 30 : 0}px)`;
+  const us = k >= 0 ? sale(tramo(t, l[P[k][0]].t0 + .55, l[P[k][0]].t0 + .85)) : 0;
+  $('#sello').style.opacity = k >= 0 ? Math.min(us, v[k]) : 0; $('#sello').style.transform = `rotate(-4deg) scale(${1.6 - .6 * us})`;
+  /* los aparatos: entran de lejos y girando, se acercan, y el siguiente los empuja */
+  const ac = (i) => { const u = tramo(t, l[P[i][0]].t0 - .5, fin(i) + .4); return u; };
+  const u1 = ac(0), u2 = ac(1), u3 = ac(2);
+  const entraDe = (u) => sale(Math.min(1, u * 3.2)), saleA = (u) => entra(tramo(u, .85, 1));
+  tel1.visible = v[0] > 0; tel1.position.set(mezcla(2.5, .05, entraDe(u1)) - saleA(u1) * 3, -.05 + Math.sin(t) * .03, mezcla(-4, 1.6, entraDe(u1)) + u1 * .5);
+  tel1.rotation.set(-.08, mezcla(-1.4, -.22, entraDe(u1)) + u1 * .25, .05);
+  lap.visible = v[1] > 0; lap.position.set(mezcla(-3, -.15, entraDe(u2)) - saleA(u2) * 3, -.3, mezcla(-4, -.6, entraDe(u2)) + u2 * .3); lap.rotation.set(.3, mezcla(1.2, .3, entraDe(u2)) - u2 * .15, 0); lap.scale.setScalar(.7);
+  tel2.visible = v[1] > 0; tel2.position.set(mezcla(3, .7, entraDe(Math.max(0, u2 - .08))) - saleA(u2) * 3, -.05, .9); tel2.rotation.set(-.05, -.42 + u2 * .1, .03); tel2.scale.setScalar(.78);
+  tel3.visible = v[2] > 0; tel3.position.set(mezcla(-2.5, -.02, entraDe(u3)) - saleA(u3) * 3, -.05 + Math.sin(t * .9) * .03, mezcla(-4, 1.6, entraDe(u3)) + u3 * .5);
+  tel3.rotation.set(-.06, mezcla(1.4, .22, entraDe(u3)) - u3 * .25, -.04);
+  /* al final, los tres juntos, chiquitos, detrás del título */
+  const junta = suave(tramo(t, l['05'].t0 - .2, l['05'].t0 + .6)), vaJ = t >= l['05'].t0 - .2 && t < l['06'].t0 + .1;
+  if(vaJ){ [tel1, lap, tel3].forEach((o, i) => { o.visible = true; o.position.set([-.85, 0, .85][i], -.9 + Math.sin(t + i) * .04, i === 1 ? -.8 : 0); o.rotation.set(.05, [.35, .15, -.35][i] + Math.sin(t * .6) * .05, 0); o.scale.setScalar((i === 1 ? .62 : .58) * junta); });
+    tel2.visible = false; }
+  else { tel1.scale.setScalar(1); tel3.scale.setScalar(1); }
+  if(t >= l['06'].t0 - .1){ [tel1, lap, tel2, tel3].forEach(o => o.visible = false); }
+  await Promise.all([tS.en(Math.max(0, t - l['02'].t0 + 1.5)), tD.en(Math.max(0, t - l['03'].t0 + 1)), tDt.en(Math.max(0, t - l['03'].t0 + 1)), tF.en(Math.max(0, t - l['04'].t0 + 1))]);
+  E.cam.position.set(Math.sin(t * .4) * .15, Math.sin(t * .3) * .08, 9); E.cam.lookAt(0, 0, 0);
+  E.pintar();
+  c2.clearRect(0, 0, W, H);
+  const uF = sale(tramo(t, l['06'].t0, l['06'].t0 + .7));
+  if(uF > 0) logo2d(c2, { cx: W / 2, cy: 860, ancho: 820 * (.92 + .08 * uF), alfa: uF });
+  $('#cierre').style.opacity = sale(tramo(t, l['06'].t0 + .5, l['06'].t0 + 1.1));
+  $('#fondo').style.background = `radial-gradient(70% 45% at 50% ${55 + Math.sin(t * .5) * 8}%, ${PAL.vino}70, transparent 70%), radial-gradient(120% 80% at 50% 0%, ${PAL.oscuro2}, ${PAL.oscuro} 70%)`;
+  sub(t); gr(t);
+};
+await pintar(0); window._listo();
+</script>
+</body>
+</html>

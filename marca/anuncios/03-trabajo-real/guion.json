@@ -1,0 +1,53 @@
+{
+ "titulo": "Trabajo real",
+ "voces": {
+  "Charlie": "IKne3meq5aSn9XLyUdCD"
+ },
+ "ajustes": {
+  "Charlie": {
+   "stability": 0.4,
+   "style": 0.45
+  }
+ },
+ "lineas": [
+  {
+   "id": "01",
+   "voz": "Charlie",
+   "en": 0.5,
+   "txt": "Esto *no es una maqueta.*",
+   "sinSub": true
+  },
+  {
+   "id": "02",
+   "voz": "Charlie",
+   "pausa": 0.4,
+   "txt": "Es una pizzería que *vende por su página.*"
+  },
+  {
+   "id": "03",
+   "voz": "Charlie",
+   "pausa": 2.3,
+   "txt": "Un restaurante que *recibe pedidos por WhatsApp* desde su menú."
+  },
+  {
+   "id": "04",
+   "voz": "Charlie",
+   "pausa": 2.3,
+   "txt": "Y la app de una cooperativa escolar, *con turnos y pedidos.*"
+  },
+  {
+   "id": "05",
+   "voz": "Charlie",
+   "pausa": 2.3,
+   "txt": "Todo hecho por nosotros. *Nada de plantillas.*",
+   "sinSub": true
+  },
+  {
+   "id": "06",
+   "voz": "Charlie",
+   "pausa": 0.5,
+   "txt": "¿El tuyo para cuándo? Grupo Mazi.",
+   "sinSub": true
+  }
+ ]
+}

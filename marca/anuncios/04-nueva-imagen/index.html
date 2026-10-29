@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Grupo Mazi · Nueva imagen</title>
+<!-- ANUNCIO 04 · ~31 s · 9:16 · voz Matilda. El cambio de logo y de colores. Carlos, 28 de octubre:
+     «presentando el cambio de logo y de colores a morado oscuro, claro y vino, priorizando el oscuro y
+     el vino». Se despide la paloma, el cubo se arma como en su animación (cae la cuña, cae la M encima)
+     y entran los colores en franjas: el oscuro y el vino ocupan casi todo, el claro es el filo.
+     node herramientas/video/armar.mjs marca/anuncios/04-nueva-imagen/index.html marca/anuncios/salida/04-nueva-imagen.mp4 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter+Tight:wght@600;800;900&display=block">
+<link rel="stylesheet" href="../comun.css">
+<script>window.listo = new Promise(r => window._listo = r);</script>
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>
+#paloma{ position:absolute; left:50%; top:820px; width:760px; margin-left:-380px; opacity:0 }
+#paloma-et{ position:absolute; left:0; right:0; top:1240px; text-align:center; font:700 34px/1 var(--t); letter-spacing:.2em; color:var(--gris); opacity:0 }
+.franja{ position:absolute; left:0; right:0; overflow:hidden }
+.franja .et{ position:absolute; left:80px; bottom:60px; font:700 92px/.9 var(--t); letter-spacing:-.04em; text-transform:uppercase }
+.franja .hex{ display:block; margin-top:16px; font:500 36px/1 ui-monospace, Menlo, monospace; letter-spacing:.04em; opacity:.75 }
+#f1{ background:#170A26; color:#F4EEF2 } #f2{ background:#7E1735; color:#F4EEF2 } #f3{ background:#F4EEF2; color:#170A26 }
+#f3 .et{ bottom:40px; font-size:64px }
+#lema{ position:absolute; left:80px; right:150px; top:1150px; font:700 84px/1 var(--t); letter-spacing:-.04em; text-transform:uppercase }
+#lema span{ display:block } #lema .v{ color:#FF5C8A }
+#tira{ position:absolute; left:80px; right:150px; top:1560px; height:26px; display:flex; border-radius:13px; overflow:hidden; opacity:0 }
+#tira i{ display:block; height:100% }
+</style>
+</head>
+<body>
+<div id="fondo" class="capa" style="background:#0B0B0F"></div>
+<div id="franjas" class="capa"><div id="f1" class="franja"><div class="et">Morado<br>oscuro<span class="hex">#170A26</span></div></div><div id="f2" class="franja"><div class="et">Vino<span class="hex">#7E1735</span></div></div><div id="f3" class="franja"><div class="et">Claro <span class="hex" style="display:inline;margin-left:16px">#F4EEF2</span></div></div></div>
+<canvas id="c2" class="capa" width="1080" height="1920"></canvas>
+<div id="ui" class="capa">
+  <div id="titulo" class="grande"></div>
+  <img id="paloma" src="../../logo/paloma.svg" alt="">
+  <div id="paloma-et">NUESTRA PRIMERA IMAGEN</div>
+  <div id="lema"></div>
+  <div id="tira"><i style="flex:52;background:#170A26;box-shadow:inset 0 0 0 2px #ffffff22"></i><i style="flex:32;background:#7E1735"></i><i style="flex:16;background:#F4EEF2"></i></div>
+</div>
+<div id="subs"></div>
+<div id="grano"></div>
+<script type="module">
+import { PAL, W, H, tramo, suave, sale, entra, mezcla, vida, guion, sonidosVoz, subtitulos, grano, logo2d, PIEZAS } from '../motor.js';
+const $ = (s) => document.querySelector(s);
+const G = await guion('.'), L = (id) => G.de(id);
+const FIN = L('09').t1 + 2.2, fx = (n) => `../../../herramientas/video/efectos/${n}.wav`;
+const caeC = L('03').t0 + .05, caeM = L('03').t0 + .75;                           // cuándo cae cada pieza
+window.VIDEO = { w: W, h: H, fps: 30, dur: FIN, musica: { archivo: '/tmp/claude-0/musica/Dispersion_Relation.mp3', desde: 0, vol: .32, entrada: .8, fin: 2.5 },
+  sonidos: [...sonidosVoz(G, 1.05), ['../../cubo/final/sonidos/caida.wav', caeC + .42, .8], ['../../cubo/final/sonidos/golpe.wav', caeM + .42, 1], [fx('whoosh'), L('05').t0 - .3, .5], [fx('whoosh'), L('06').t0 - .25, .45], [fx('whoosh'), L('07').t0 - .2, .4], [fx('subida'), L('08').t0 - .3, .4]] };
+await document.fonts.load('700 80px "Space Grotesk"'); await document.fonts.load('800 60px "Inter Tight"');
+await $('#paloma').decode();
+const sub = subtitulos($('#subs'), G), gr = grano($('#grano'), .05), x = $('#c2').getContext('2d');
+const poner = (el, html) => { if(el.dataset.h !== html){ el.innerHTML = html; el.dataset.h = html; } };
+const rutas = {}, pth = (d) => rutas[d] || (rutas[d] = new Path2D(d));
+const COL = { arriba: PAL.techo, izq: PAL.izq, der: PAL.der };
+/* una pieza del cubo: k = px por unidad del cubo (100 × 110), cayendo desde dy unidades arriba */
+function pieza(partes, cx, cy, k, dy = 0, alfa = 1){ x.save(); x.globalAlpha = alfa; x.translate(cx - 50 * k, cy - 55 * k + dy * k); x.scale(k, k);
+  for(const [n, d] of Object.entries(partes)){ x.fillStyle = COL[n]; x.fill(pth(d)); } x.restore(); }
+const caer = (u, alto) => { if(u < .7){ const v = u / .7; return -(1 - v * v) * alto; } const v = (u - .7) / .3; return -Math.abs(Math.sin(v * Math.PI * 2)) * 3 * (1 - v) * (1 - v); };
+
+window.pintar = async (t) => {
+  const l = Object.fromEntries(G.lineas.map(z => [z.id, z]));
+  /* 1 · el título */
+  let tit = '', a = 0, b = 0;
+  if(t < l['02'].t0 - .2){ tit = '<span>CAMBIAMOS</span><span class="v">DE CARA.</span>'; a = .4; b = l['02'].t0 - .1; }
+  poner($('#titulo'), tit); $('#titulo').style.top = '760px'; $('#titulo').style.opacity = tit ? vida(t, a, b, .3, .3) : 0;
+  [...$('#titulo').children].forEach((s, i) => { const u = sale(tramo(t, a + i * .15, a + .5 + i * .15)); s.style.transform = `translateY(${(1 - u) * 60}px)`; s.style.opacity = u; });
+  /* 2 · la paloma: entra, se queda, y se va encogiéndose hacia el centro */
+  const vp = vida(t, l['02'].t0 - .1, l['03'].t0 - .1, .6, .6), se = entra(tramo(t, l['03'].t0 - .7, l['03'].t0 - .1));
+  $('#paloma').style.opacity = vp; $('#paloma').style.transform = `scale(${(.92 + .08 * sale(tramo(t, l['02'].t0, l['02'].t0 + .8))) * (1 - se * .85)}) translateY(${-se * 60}px)`; $('#paloma').style.filter = `blur(${se * 10}px)`;
+  $('#paloma-et').style.opacity = vida(t, l['02'].t0 + .3, l['03'].t0 - .3, .4, .3);
+
+  /* 3 · el cubo se arma (al centro, grande) y 4 · se hace logo con el nombre */
+  x.clearRect(0, 0, W, H);
+  const haciaLogo = suave(tramo(t, l['04'].t0 - .2, l['04'].t0 + .9)), deVuelta = suave(tramo(t, l['08'].t0 - .3, l['08'].t0 + .5));
+  const fuera = suave(tramo(t, l['05'].t0 - .4, l['05'].t0 + .1));               // los colores lo tapan
+  if(t >= caeC && fuera < 1){
+    const k = 5.6, cx = W / 2, cy = 900;
+    if(haciaLogo <= 0){
+      const uC = tramo(t, caeC, caeC + .6), uM = tramo(t, caeM, caeM + .6), alto = 1100 / k;
+      if(t < caeM + .6){ pieza(PIEZAS.cuna, cx, cy, k, caer(uC, alto)); if(uM > 0) pieza({ arriba: PIEZAS.cubo.arriba, ...PIEZAS.m }, cx, cy, k, caer(uM, alto)); }
+      else { pieza(PIEZAS.cubo, cx, cy, k);
+        const fl = tramo(t, caeM + .6, caeM + 1.05); if(fl < 1){ x.save(); x.translate(cx - 50 * k, cy - 55 * k); x.scale(k, k); x.globalAlpha = (1 - fl) * .55; x.fillStyle = '#fff'; x.fill(pth(PIEZAS.cubo.arriba)); x.restore(); } }
+    } else {
+      /* del cubo solo al logo: el cubo se va a la derecha y el nombre entra desde la izquierda */
+      const total = PIEZAS.ancho + 24 + 92 * 100 / 98, an = 860, e = an / total;
+      const cxL = W / 2 - an / 2 + (PIEZAS.ancho + 24) * e + 42 * e, kL = e * 100 / 98;
+      pieza(PIEZAS.cubo, mezcla(cx, cxL, haciaLogo), mezcla(cy, 900, haciaLogo), mezcla(k, kL, haciaLogo), 0, 1 - fuera);
+      x.save(); x.globalAlpha = sale(tramo(haciaLogo, .4, 1)) * (1 - fuera); x.beginPath(); x.rect(0, 0, W / 2 - an / 2 + PIEZAS.ancho * e * sale(tramo(haciaLogo, .3, 1)) + 10, H); x.clip();
+      x.translate(W / 2 - an / 2, 900 + 50 * e); x.scale(e, e); x.fillStyle = PAL.claro; x.fill(pth(PIEZAS.mazi.join(' '))); x.restore();
+    }
+  }
+  /* 5 a 7 · los colores, en franjas que se apilan: oscuro, vino, claro */
+  const f1 = sale(tramo(t, l['05'].t0 - .4, l['05'].t0 + .3)), f2 = sale(tramo(t, l['06'].t0 - .35, l['06'].t0 + .25)), f3 = sale(tramo(t, l['07'].t0 - .3, l['07'].t0 + .25));
+  const junta = suave(tramo(t, l['08'].t0 - .4, l['08'].t0 + .4));               // las franjas se van a la tira de abajo
+  const yV = mezcla(H, 1000, f2), yC = mezcla(H, 1610, f3);
+  $('#f1').style.cssText = `top:0;height:${H}px;transform:translateX(${(1 - f1) * 100}%);opacity:${1 - junta}`;
+  $('#f2').style.cssText = `top:${yV}px;height:${H - yV}px;opacity:${1 - junta}`;
+  $('#f3').style.cssText = `top:${yC}px;height:${H - yC}px;opacity:${1 - junta}`;
+  $('#f1 .et').style.bottom = (H - mezcla(H, 1000, f2) + 60) + 'px';
+  $('#f2 .et').style.bottom = (H - mezcla(H, 1610, f3) + 60 - (H - yV) * 0 ) + 'px';
+  /* 8 · el logo vuelve, sobre el oscuro, con la tira de colores */
+  if(deVuelta > 0){ $('#fondo').style.background = PAL.oscuro; logo2d(x, { cx: W / 2, cy: 860, ancho: 860, alfa: deVuelta }); }
+  else $('#fondo').style.background = fuera > 0 ? PAL.oscuro : `radial-gradient(70% 45% at 50% 46%, ${PAL.oscuro2}, #0B0B0F 75%)`;
+  $('#tira').style.opacity = deVuelta; $('#tira').style.transform = `scaleX(${.6 + .4 * sale(deVuelta)})`;
+  poner($('#lema'), t >= l['08'].t0 - .2 ? '<span>Misma gente.</span><span>Mismas ganas.</span><span class="v">Nueva imagen.</span>' : '');
+  [...$('#lema').children].forEach((s, i) => { const t0 = l['08'].t0 + l['08'].dur * [0, .33, .64][i] - .1, u = sale(tramo(t, t0, t0 + .4)); s.style.opacity = u * (1 - tramo(t, l['09'].t0 + .2, l['09'].t0 + .6) * (i < 2 ? 1 : 0)); s.style.transform = `translateY(${(1 - u) * 40}px)`; });
+  sub(t); gr(t);
+};
+await pintar(0); window._listo();
+</script>
+</body>
+</html>

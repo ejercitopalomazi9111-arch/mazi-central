@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Grupo Mazi · 5 señales</title>
+<!-- GRACIOSO 06 · ~40 s · 9:16 · voz Jessica. Una lista rápida al estilo de los videos de «ideas en 5
+     minutos»: cada señal con su escena chistosa y la mascota (un cubito con techo morado) reaccionando.
+     Todo lo de las escenas es inventado (el rival, la ubicación, el menú); el número de la ubicación y
+     los nombres no son de nadie.
+     Música: «Sneaky Snitch», Kevin MacLeod (incompetech.com), CC BY 4.0.
+     node herramientas/video/armar.mjs marca/anuncios/06-cinco-senales/index.html marca/anuncios/salida/06-cinco-senales.mp4 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter+Tight:wght@500;600;800;900&family=Caveat:wght@700&display=block">
+<link rel="stylesheet" href="../comun.css">
+<script>window.listo = new Promise(r => window._listo = r);</script>
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>
+#num{ position:absolute; left:70px; top:200px; font:700 300px/1 var(--t); letter-spacing:-.06em; color:#FF5C8A; text-shadow:0 16px 40px #0008 }
+#tema{ position:absolute; left:80px; width:620px; top:520px; font:700 64px/.98 var(--t); letter-spacing:-.035em; text-transform:uppercase }
+#prop{ position:absolute; left:0; top:0; width:1080px; height:1920px }
+.tarjeta{ position:absolute; border-radius:34px; background:#fff; color:#17121D; box-shadow:0 40px 90px -30px #000; overflow:hidden }
+.tel{ position:absolute; left:290px; top:700px; width:500px; height:640px; border-radius:50px; background:#111; padding:18px; box-shadow:0 40px 90px -30px #000 }
+.tel .pan{ width:100%; height:100%; border-radius:36px; overflow:hidden; background:#1E1E1E; position:relative }
+.tel .bar{ position:absolute; left:20px; right:20px; top:20px; display:flex; gap:12px; align-items:center; color:#fff; font:700 24px/1.1 var(--s) }
+.tel .bar i{ width:52px; height:52px; border-radius:50%; background:#8E1B3A }
+.tel .bar small{ display:block; font:500 18px/1 var(--s); opacity:.6 }
+.tel .prog{ position:absolute; left:20px; right:20px; top:8px; height:5px; border-radius:3px; background:#fff5 } .tel .prog b{ display:block; height:100%; background:#fff; border-radius:3px }
+.menu{ position:absolute; left:50px; top:140px; width:370px; height:420px; background:#F2E3C6; border-radius:8px; padding:28px; font:700 44px/1.15 "Caveat", cursive; color:#3A2A1A; box-shadow:0 10px 30px #0008; filter:blur(1.2px) contrast(.9) brightness(.85) }
+.mapa{ left:120px; top:690px; width:840px; height:600px; background:#E9E4DA }
+.mapa .calle{ position:absolute; background:#fff; } .mapa .pin{ position:absolute; width:64px; height:64px; margin:-64px 0 0 -32px }
+.mapa .et{ position:absolute; font:800 26px/1 var(--s); padding:10px 14px; border-radius:12px; background:#17121D; color:#fff; white-space:nowrap }
+.busca{ left:110px; top:690px; width:860px; padding:30px }
+.busca .q{ font:600 34px/1 var(--s); padding:22px 28px; border-radius:999px; background:#F1EEF4; display:flex; gap:16px; align-items:center }
+.busca .r{ padding:20px 8px; border-bottom:2px solid #EEE; font:800 34px/1.1 var(--s) } .busca .r small{ display:block; font:600 24px/1.3 var(--s); color:#7A7484 }
+.busca .r.tu{ opacity:.35 }
+.foto{ position:absolute; width:170px; height:170px; border-radius:16px; overflow:hidden; box-shadow:0 10px 24px -8px #000; border:6px solid #fff }
+.foto img{ width:100%; height:100%; object-fit:cover }
+.cuenta{ position:absolute; right:150px; top:700px; font:700 120px/1 var(--t); color:#FFD23F; text-shadow:0 10px 30px #000 }
+.etiqueta{ position:absolute; left:250px; top:760px; width:580px; height:360px; border-radius:40px 40px 40px 40px; background:#FFD23F; color:#17121D; display:grid; place-items:center; font:700 170px/1 var(--t); letter-spacing:-.04em; box-shadow:0 40px 90px -30px #000; transform-origin:30% 0 }
+.etiqueta::before{ content:""; position:absolute; left:40px; top:50%; width:46px; height:46px; margin-top:-23px; border-radius:50%; background:#2A1424 }
+.sello{ position:absolute; font:800 64px/1 var(--s); padding:18px 30px; border:7px solid #FF3B5C; color:#FF3B5C; border-radius:20px; letter-spacing:.06em; text-transform:uppercase; background:#170A26cc }
+.confeti{ position:absolute; width:22px; height:34px; border-radius:4px }
+</style>
+</head>
+<body>
+<div id="fondo" class="capa"></div>
+<div id="prop" class="capa" style="z-index:1"></div>
+<canvas id="gl" class="capa" style="z-index:3"></canvas>
+<canvas id="c2" class="capa" width="1080" height="1920"></canvas>
+<div id="ui" class="capa">
+  <div id="titulo" class="grande"></div>
+  <div id="num"></div><div id="tema"></div>
+  <div id="cierre"><div class="wa">WhatsApp <b>442 883 3786</b></div><div class="sub">Escríbenos y la armamos.</div></div>
+</div>
+<div id="subs"></div>
+<div id="grano"></div>
+<script type="module">
+import { THREE, PAL, W, H, tramo, suave, sale, entra, resorte, mezcla, vida, azar, escena3d, guion, sonidosVoz, subtitulos, grano, logo2d } from '../motor.js';
+import { cubito, parpadeo, salto } from '../personajes.js';
+import { icono } from '../iconos.js';
+const $ = (s) => document.querySelector(s);
+const G = await guion('.'), L = (id) => G.de(id);
+const FIN = L('08').t1 + 2.3, fx = (n) => `../../../herramientas/video/efectos/${n}.wav`;
+window.VIDEO = { w: W, h: H, fps: 30, dur: FIN, musica: { archivo: '/tmp/claude-0/musica/Sneaky_Snitch.mp3', desde: 0, vol: .25, entrada: .2, fin: 2 },
+  sonidos: [...sonidosVoz(G, 1.08), ...['02', '03', '04', '05', '06'].map(id => [fx('whoosh'), L(id).t0 - .35, .45]), [fx('golpe'), L('04').t0 + L('04').dur * .7, .5], [fx('ding'), L('06').t1 + .1, .5], [fx('subida'), L('07').t0 + .3, .45]] };
+await Promise.all(['700 80px "Space Grotesk"', '800 60px "Inter Tight"', '700 60px "Caveat"'].map(f => document.fonts.load(f)));
+const E = escena3d($('#gl'));
+const cubi = cubito({ color: '#3A3A46', techo: PAL.techo, tam: .78 }); E.s.add(cubi);
+const sub = subtitulos($('#subs'), G), gr = grano($('#grano'), .05), c2 = $('#c2').getContext('2d');
+const poner = (el, html) => { if(el.dataset.h !== html){ el.innerHTML = html; el.dataset.h = html; } };
+const SEN = [
+  ['02', 1, 'Tu menú es una foto chueca'], ['03', 2, 'La ubicación<br>es de otro lado'], ['04', 3, 'Tu competencia<br>sale primero'],
+  ['05', 4, '40 fotos<br>sueltas'], ['06', 5, '«Una página<br>es carísima»']];
+azar(9); const fotos = Array.from({ length: 40 }, (_, i) => ({ s: `../../../smileys/video/rec/completa/${String(60 + i * 61).padStart(5, '0')}.jpg`, x: 80 + azar() * 760, r: (azar() - .5) * 50, d: azar() * .9 }));
+const confeti = Array.from({ length: 40 }, () => ({ x: azar() * 1080, v: 500 + azar() * 600, r: azar() * 360, c: ['#FF5C8A', '#FFD23F', '#AC27FF', '#25D366', '#5AC8FA'][Math.floor(azar() * 5)], d: azar() * .4 }));
+const PROPS = [
+  `<div class="tel"><div class="pan"><div class="prog"><b style="width:40%"></b></div><div class="bar"><i></i><div>Mi estado<small>hace 3 horas</small></div></div><div class="menu">MENÚ<br>taco ...... $25<br>gringa .... $45<br>refresco .. $20<br><span style="font-size:30px">(pregunte por los de hoy)</span></div></div></div>`,
+  `<div class="tarjeta mapa">${[[0, 140, 840, 40], [0, 380, 840, 46], [220, 0, 40, 600], [560, 0, 46, 600], [0, 520, 840, 30]].map(([x, y, w, h]) => `<i class="calle" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px"></i>`).join('')}
+    <svg style="position:absolute;inset:0" width="840" height="600"><path d="M240 400 C 420 300, 560 520, 760 120" fill="none" stroke="#FF3B5C" stroke-width="8" stroke-dasharray="18 16" class="ruta"/></svg>
+    <div class="pin" style="left:240px;top:400px">${icono('map-pin', '#25D366', 2.4, 64)}</div><div class="et" style="left:150px;top:420px">Tu negocio</div>
+    <div class="pin lejos" style="left:760px;top:120px">${icono('map-pin', '#FF3B5C', 2.4, 64)}</div><div class="et lejos" style="left:560px;top:140px">Lo que mandaste · 14 km</div></div>`,
+  `<div class="tarjeta busca"><div class="q">${icono('search', '#7A7484', 2.4, 36)} tacos cerca de mí</div>
+    <div class="r">Tacos El Rival<small>★★☆☆☆ · «estaban fríos»</small></div><div class="r">Otro Taco Cualquiera<small>★★☆☆☆ · «tardaron una hora»</small></div>
+    <div class="r">Taquería Promedio<small>★★★☆☆</small></div><div class="r tu">Tu taquería (página 4)<small>★★★★★ · «los mejores de la colonia»</small></div></div>`,
+  `${fotos.map((f, i) => `<div class="foto" data-i="${i}"><img src="${f.s}"></div>`).join('')}<div class="cuenta">0/40</div>`,
+  `<div class="etiqueta">$$$$$</div><div class="sello" style="left:520px;top:1150px">¿De veras?</div>`];
+
+window.pintar = async (t) => {
+  const l = Object.fromEntries(G.lineas.map(z => [z.id, z]));
+  const fin = (k) => k < 4 ? l[SEN[k + 1][0]].t0 - .4 : l['07'].t0 - .3;
+  const k = SEN.findIndex(([id], i) => t >= l[id].t0 - .4 && t < fin(i));
+  /* el título de entrada y el de «para eso estamos» */
+  let tit = '', a = 0, b = 0;
+  if(t < l['02'].t0 - .4){ tit = '<span class="xl">5</span><span>SEÑALES</span><span class="m">de que tu negocio</span><span class="m v">ya necesita página</span>'; a = .2; b = l['02'].t0 - .3; }
+  else if(t >= l['07'].t0 - .2 && t < l['08'].t0){ tit = '<span class="m">¿TE PASÓ</span><span class="m">UNA O MÁS?</span><span class="m v">PARA ESO</span><span class="m v">ESTAMOS.</span>'; a = l['07'].t0 - .2; b = l['08'].t0; }
+  poner($('#titulo'), tit); $('#titulo').style.opacity = tit ? vida(t, a, b, .25, .25) : 0;
+  [...$('#titulo').children].forEach((s, i) => { const u = sale(tramo(t, a + i * .1, a + .35 + i * .1)); s.style.transform = `translateY(${(1 - u) * 60}px) rotate(${(1 - u) * -4}deg)`; s.style.opacity = u; });
+  /* el número y el tema de cada señal */
+  if(k >= 0){ poner($('#num'), SEN[k][1]); poner($('#tema'), SEN[k][2]); }
+  const vk = k >= 0 ? vida(t, l[SEN[k][0]].t0 - .4, fin(k), .3, .25) : 0;
+  $('#num').style.opacity = vk; $('#num').style.transform = `scale(${.6 + .4 * resorte(k >= 0 ? tramo(t, l[SEN[k][0]].t0 - .4, l[SEN[k][0]].t0 + .3) : 0)}) rotate(-6deg)`;
+  $('#tema').style.opacity = vk; $('#tema').style.left = k === 0 ? '80px' : '80px';
+  /* la escena de cada señal */
+  poner($('#prop'), k >= 0 ? PROPS[k] : (t >= l['07'].t0 && t < l['08'].t0 + .5 ? confeti.map(() => '<i class="confeti"></i>').join('') : ''));
+  const pr = $('#prop'); pr.style.opacity = vk || 1;
+  if(k === 0){ const tl = pr.querySelector('.tel'); tl.style.transform = `translateY(${(1 - vk) * 200}px) rotate(${3 * Math.sin(t)}deg)`; pr.querySelector('.menu').style.transform = `rotate(${-11 + Math.sin(t * 2) * 1.5}deg)`; pr.querySelector('.prog b').style.width = (100 * tramo(t, l['02'].t0, l['03'].t0)) + '%'; }
+  if(k === 1){ const u = sale(tramo(t, l['03'].t0 + l['03'].dur * .45, l['03'].t0 + l['03'].dur * .75)); pr.querySelectorAll('.lejos').forEach(e => { e.style.opacity = u; e.style.transform = `translateY(${(1 - u) * -60}px)`; });
+    const ruta = pr.querySelector('.ruta'); ruta.style.strokeDashoffset = 600 * (1 - u); ruta.style.opacity = u; pr.querySelector('.mapa').style.transform = `translateY(${(1 - vk) * 200}px)`; }
+  if(k === 2){ pr.querySelectorAll('.r').forEach((r, i) => { const u = sale(tramo(t, l['04'].t0 + i * .25, l['04'].t0 + .3 + i * .25)); r.style.transform = `translateX(${(1 - u) * 80}px)`; r.style.opacity = u * (i === 3 ? .35 : 1); });
+    pr.querySelector('.busca').style.transform = `translateY(${(1 - vk) * 200}px)`; }
+  if(k === 3){ let n = 0; pr.querySelectorAll('.foto').forEach((f, i) => { const d = fotos[i], u = tramo(t, l['05'].t0 + d.d + i * .045, l['05'].t0 + d.d + i * .045 + .5); if(u > 0) n++;
+    f.style.left = d.x + 'px'; f.style.top = (mezcla(-260, 760 + (i % 8) * 50, sale(u))) + 'px'; f.style.transform = `rotate(${d.r}deg)`; f.style.opacity = u > 0 ? 1 : 0; });
+    pr.querySelector('.cuenta').textContent = n + '/40'; }
+  if(k === 4){ const e = pr.querySelector('.etiqueta'), u = resorte(tramo(t, l['06'].t0 - .3, l['06'].t0 + .5)); e.style.transform = `rotate(${(1 - u) * 30 + Math.sin(t * 3) * 3}deg) scale(${.7 + .3 * u})`;
+    const s = pr.querySelector('.sello'), us = sale(tramo(t, l['06'].t1 - .1, l['06'].t1 + .2)); s.style.opacity = us; s.style.transform = `rotate(-10deg) scale(${1.8 - .8 * us})`; }
+  if(!(k >= 0) && t >= l['07'].t0){ pr.querySelectorAll('.confeti').forEach((c, i) => { const d = confeti[i], s = t - l['07'].t0 - d.d; c.style.left = d.x + 'px'; c.style.top = (-60 + s * d.v) + 'px'; c.style.background = d.c; c.style.transform = `rotate(${d.r + s * 400}deg)`; c.style.opacity = s > 0 ? 1 : 0; }); }
+  /* la mascota: arriba a la derecha, reaccionando */
+  const ceja = k === 0 ? 'triste' : k === 1 ? 'sorpresa' : k === 2 ? 'triste' : k === 3 ? 'sorpresa' : k === 4 ? 'enojado' : t >= l['07'].t0 ? 'feliz' : 'normal';
+  const mira = k === 0 ? [-.6, .5] : k === 1 ? [.7, .2] : k === 2 ? [-.5, .6] : k === 3 ? [0, -.7] : k === 4 ? [-.6, .4] : [0, 0];
+  const saltos = [l['01'].t0 + .3, l['07'].t0 + .2, l['07'].t0 + .8].map(z => salto(t, z, .4, .45)).find(s => s.y > 0 || s.sx !== 1) || { y: 0, sx: 1, sy: 1 };
+  const tiembla = k === 3 ? Math.sin(t * 60) * .02 : 0;
+  const enCierre = t >= l['08'].t0 - .2;
+  cubi.visible = !enCierre;
+  cubi.position.set(.78 + tiembla, (t >= l['07'].t0 - .2 ? -.2 : 1.42) + saltos.y, .5); cubi.userData.cuerpo.scale.set(saltos.sx, saltos.sy, saltos.sx);
+  cubi.rotation.set(.18, -.45 + Math.sin(t * 1.3) * .08, 0);
+  cubi.userData.cara({ boca: k === 3 ? .7 : (t >= l['07'].t0 ? .45 : 0), ojos: parpadeo(t, .8), ceja, mira, rubor: t >= l['07'].t0 ? .7 : 0 });
+  E.cam.position.set(0, 0, 9); E.cam.lookAt(0, 0, 0); E.pintar();
+  c2.clearRect(0, 0, W, H);
+  const uF = sale(tramo(t, l['08'].t0 - .1, l['08'].t0 + .6));
+  if(uF > 0) logo2d(c2, { cx: W / 2, cy: 860, ancho: 820 * (.92 + .08 * uF), alfa: uF });
+  $('#cierre').style.opacity = sale(tramo(t, l['08'].t0 + .4, l['08'].t0 + 1));
+  $('#fondo').style.background = `radial-gradient(70% 40% at 50% 60%, ${PAL.vino}66, transparent 70%), radial-gradient(120% 80% at 50% 0%, ${PAL.oscuro2}, ${PAL.oscuro} 70%)`;
+  sub(t); gr(t);
+};
+await pintar(0); window._listo();
+</script>
+</body>
+</html>

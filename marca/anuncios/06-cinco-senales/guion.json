@@ -1,0 +1,15 @@
+{
+  "titulo": "5 señales de que tu negocio ya necesita página",
+  "voces": { "Jessica": "cgSgspJ2msm6clMCkdW9" },
+  "ajustes": { "Jessica": { "stability": 0.35, "style": 0.6 } },
+  "lineas": [
+    { "id": "01", "voz": "Jessica", "en": 0.4, "txt": "Cinco señales de que tu negocio *ya necesita página.* La tercera duele." },
+    { "id": "02", "voz": "Jessica", "pausa": 0.6, "txt": "Uno: tu menú es *una foto chueca* en tu estado de WhatsApp." },
+    { "id": "03", "voz": "Jessica", "pausa": 0.7, "txt": "Dos: te preguntan dónde estás… y la ubicación que mandas *es de otro lugar.*" },
+    { "id": "04", "voz": "Jessica", "pausa": 0.7, "txt": "Tres: tu competencia, que vende peor que tú, *sale primero en Google.*" },
+    { "id": "05", "voz": "Jessica", "pausa": 0.7, "txt": "Cuatro: te piden catálogo y mandas *cuarenta fotos sueltas.*" },
+    { "id": "06", "voz": "Jessica", "pausa": 0.7, "txt": "Y cinco: sigues pensando que una página *es carísima.*" },
+    { "id": "07", "voz": "Jessica", "pausa": 0.7, "txt": "¿Te pasó una o más? Tranquilo: *para eso estamos.*" },
+    { "id": "08", "voz": "Jessica", "pausa": 0.4, "txt": "Grupo Mazi. Escríbenos y *la armamos.*", "sinSub": true }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "titulo": "No somos una agencia más",
+  "voces": { "Brian": "nPczCjzI2devNBz1zQrb" },
+  "ajustes": { "Brian": { "stability": 0.38, "style": 0.5 } },
+  "lineas": [
+    { "id": "01", "voz": "Brian", "en": 0.6, "txt": "¿Otra agencia que te vende *la misma plantilla* que a todos?" },
+    { "id": "02", "voz": "Brian", "pausa": 0.45, "txt": "Nosotros *no.*", "sinSub": true },
+    { "id": "03", "voz": "Brian", "pausa": 0.5, "txt": "En Grupo Mazi construimos tu *página,* tu *app* y tu *sistema* desde cero, a la medida de tu negocio." },
+    { "id": "04", "voz": "Brian", "pausa": 0.4, "txt": "Lo entregamos *rápido…* y no desaparecemos: *nos quedamos contigo.*" },
+    { "id": "05", "voz": "Brian", "pausa": 0.45, "txt": "Si no existe la herramienta, *la construimos.*", "sinSub": true },
+    { "id": "06", "voz": "Brian", "pausa": 0.5, "txt": "Grupo Mazi. Escríbenos por WhatsApp.", "sinSub": true }
+  ]
+}
