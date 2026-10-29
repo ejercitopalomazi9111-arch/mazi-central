@@ -74,3 +74,16 @@ siguiente escena (4.47 → 4.6 s). Entre dos golpes hay una pausa: sin la pausa 
    en todo lo que ya existe (cotización, tarjeta, termo, caja, página, carteles). Ya tenemos los soportes.
 5. **Cerrar pidiendo algo**: «¿Lo usarías?», «Comenta y te lo mando». La interacción mueve el post.
 6. **Lo que no se copia:** sus marcas, sus personajes, sus logos ni sus canciones. Se toma la gramática.
+
+## Tanda 2 (29 de octubre, tarde): 8 videos más
+
+| # | Qué es | La lección |
+|---|---|---|
+| n1 | «Antes / Después» del color de un video, con el texto que se arma palabra por palabra encima | La edición se vende **comparando**: lo crudo chiquito al lado, lo terminado grande |
+| n2 | Presentación de un editor: «Hello, I'm Aditya» en una interfaz morada, sus reels en fila, «Order now» | El **portafolio como interfaz**: una tarjeta de presentación que se anima |
+| n3 | «Before / After» de fotos de casas | Igual que n1, en foto: el arreglo en el mismo encuadre arriba y abajo |
+| n4 | «Prompt + foto → Omni Flash»: la casa se construye sola en un render | El **proceso a la vista** (de dónde salió) + el resultado |
+| n5 | El prompt de Seedance escrito toma por toma y el video que sale: un rascacielos que **se arma al revés**, los materiales suben del suelo y la cámara empuja en cada corte | **Construir al revés** como transición, y el prompt por tomas con tiempos (sirve tal cual para Higgsfield cuando haya saldo) |
+| n6 | Una playera: tinta, estampado, lavado, macro de la tela, cortes cada 0.4 s | El **oficio en macro** (la tinta, la tela) cuenta calidad sin decir nada |
+| n7 | Un monitor en un cuarto oscuro que pasa un anuncio de interfaz completo (escaneo del producto, elegir sabor, reseñas, la dona que se come) | Filmar la pantalla **en su lugar** hace que lo digital se sienta real |
+| n8 | Microanimaciones de interfaz con su sonido, y la línea de tiempo del audio abajo | **Cada movimiento con su sonido** exacto; enseñar el diseño sonoro es enseñar oficio |
