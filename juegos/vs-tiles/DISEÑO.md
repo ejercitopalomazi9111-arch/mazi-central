@@ -133,6 +133,11 @@ moderación. Subir una canción no equivale a poder distribuirla.
 
 ## VIII–IX. Mercado y progresión
 
+> **Decidido por Carlos el 29 de octubre: «todo será gratuito con monedas del juego y progresión
+> interna».** No hay moneda premium ni nada que se compre con dinero: Ecos por jugar, premio diario,
+> bono de la primera vez, Sellos al subir de nivel y al vencer jefes (un Sello = una tirada), y los
+> personajes de historia se ganan en la historia. **[demo]** ya funciona así.
+
 Gacha sólo de coleccionables (nunca poder), probabilidades publicadas, garantía, duplicados a
 fragmentos. Monedas: **Ecos** (jugar), **Sellos** (eventos), **Fragmentos** (duplicados),
 **Créditos de creador**. Perfil con nivel, precisión, combo, récords, FC/AP, charts creados.

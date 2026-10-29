@@ -122,7 +122,10 @@ $('#calibB').addEventListener('click', async () => {
 function barra(){ const T = OBJETOS.find(o => o.id === Y.puesto.titulo);
   $('#barra').innerHTML = `<div class="avatar">${(Y.nombre || 'R')[0].toUpperCase()}</div><div class="quien"><b>${esc(Y.nombre || 'Resonante')}</b><span>Nv. ${Y.nivel} · ${T ? T.nombre : ''}</span></div><div class="moneda"><i></i>${Y.ecos}</div><div class="moneda sello"><i></i>${Y.sellos}</div>`; }
 const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-async function menu(){ partida.salir(); mostrar('menu'); barra(); await escena.ponerCantantes([idVoz()]); }
+async function menu(){ partida.salir(); mostrar('menu');
+  /* el premio diario: 300 Ecos y un Sello la primera vez que se abre el juego cada día */
+  const hoy = new Date().toISOString().slice(0, 10); if(Y.diario !== hoy){ Y.diario = hoy; Y.ecos += 300; Y.sellos += 1; guardar(); setTimeout(() => aviso('Premio del día: +300 Ecos y +1 Sello'), 600); }
+  barra(); await escena.ponerCantantes([idVoz()]); }
 
 /* ── canciones ── */
 let modoLista = 'libre', modoSel = 'carril', difSel = 'dificil', cancionSel = CANCIONES[0].id, ultima = null;
@@ -176,8 +179,9 @@ function resultados({ cancion, carta, J, murio, auto }){
   const media = J.desvios.length ? J.desvios.reduce((a, b) => a + b, 0) / J.desvios.length * 1000 : 0, peor = J.porSeccion.map((s, i) => [s.mal / Math.max(1, s.bien + s.mal), i]).sort((a, b) => b[0] - a[0])[0];
   $('#resConsejo').textContent = Math.abs(media) > 12 ? `En promedio vas ${Math.round(Math.abs(media))} ms ${media < 0 ? 'antes' : 'tarde'}: si te pasa siempre, mueve la sincronía en Ajustes.` : peor && peor[0] > .25 ? `Donde más fallaste: la sección ${peor[1] + 1} (${MODOS[carta.plan[peor[1]].modo].nombre}). Repítela.` : 'Tu ritmo está centrado. Ahora súbele la dificultad.';
   if(!auto){ const k = `${cancion.id}|${carta.modo}|${carta.dif}`, ant = Y.record[k]; if(!ant || J.puntaje > ant.puntaje) Y.record[k] = { puntaje: J.puntaje, rango: r, precision: +J.precision.toFixed(2), combo: J.comboMax, fc: J.fc, ap: J.ap };
-    const gana = Math.round(J.puntaje / 10000) + (J.fc ? 40 : 0) + (J.ap ? 80 : 0) + (carta.dif === 'exorcist' ? 60 : 0); Y.ecos += gana; Y.xp += gana; while(Y.xp >= Y.nivel * 120){ Y.xp -= Y.nivel * 120; Y.nivel++; Y.sellos++; }
-    if(ultima?.deHistoria && !murio && J.puntaje >= 600000){ Y.historia[ultima.deHistoria] = true; if(ultima.c.jefe) { Y.sellos += 5; } }
+    const primera = !ant && !murio && J.puntaje >= 600000;
+    const gana = Math.round(J.puntaje / 10000) + (J.fc ? 40 : 0) + (J.ap ? 80 : 0) + (carta.dif === 'exorcist' ? 60 : 0) + (primera ? 100 : 0); Y.ecos += gana; Y.xp += gana; while(Y.xp >= Y.nivel * 120){ Y.xp -= Y.nivel * 120; Y.nivel++; Y.sellos++; }
+    if(ultima?.deHistoria && !murio && J.puntaje >= 600000){ Y.historia[ultima.deHistoria] = true; if(ultima.c.jefe) { Y.sellos += 5; if(!Y.tiene.includes('voz:miku-akuma')){ Y.tiene.push('voz:miku-akuma'); setTimeout(() => aviso('Venciste al Coro Nulo: Miku Excomulgada ya es tuya.'), 2200); } } }
     guardar(); setTimeout(() => aviso(`+${gana} Ecos`), 900); sonidos.premio && reloj.golpe(sonidos.premio, .4); }
 }
 
@@ -213,13 +217,18 @@ function aplicarCosmeticos(){ const n = OBJETOS.find(o => o.id === Y.puesto.nota
 /* ── mercado: probabilidades a la vista, garantía a las 50 y los repetidos se vuelven Ecos ── */
 function mercado(){ mostrar('mercado'); barra();
   $('#probas').innerHTML = Object.values(RAREZA).map(r => `${r.n} ${r.p} %`).join(' · ') + `<br>Legendario garantizado en ${50 - Y.pity} tiradas · repetido = Ecos de vuelta`; $('#tirada').innerHTML = ''; }
-function tirar(n){ const costo = n === 10 ? 900 : 100; if(Y.ecos < costo){ aviso('No te alcanzan los Ecos: juega una canción.'); return; } Y.ecos -= costo; const sale = [];
+/* GRATIS: todo se paga con lo que se gana jugando (Carlos, 29 oct: «todo será gratuito con monedas del
+   juego y progresión interna»). Ecos por cada partida, el premio diario, el bono de la primera vez y los
+   Sellos de subir de nivel y de vencer jefes; un Sello es una tirada. */
+function tirar(n, conSello = false){ const costo = n === 10 ? 900 : 100;
+  if(conSello){ if(Y.sellos < 1){ aviso('No tienes Sellos: se ganan subiendo de nivel y venciendo jefes.'); return; } Y.sellos--; }
+  else { if(Y.ecos < costo){ aviso('No te alcanzan los Ecos: juega una canción.'); return; } Y.ecos -= costo; } const sale = [];
   for(let i = 0; i < n; i++){ Y.pity++; let r = Math.random() * 100, raro = 'c'; for(const [k, v] of Object.entries(RAREZA).reverse()){ if(r < v.p){ raro = k; break; } r -= v.p; }
     if(Y.pity >= 50 && !['l', 'm'].includes(raro)) raro = 'l'; if(['l', 'm'].includes(raro)) Y.pity = 0;
     const pool = OBJETOS.filter(o => o.raro === raro), o = pool[Math.floor(Math.random() * pool.length)]; const nuevo = !Y.tiene.includes(o.id); if(nuevo) Y.tiene.push(o.id); else Y.ecos += { c: 10, r: 25, e: 60, l: 150, m: 300 }[raro]; sale.push({ o, nuevo }); }
   guardar(); mercado(); const T = $('#tirada'); sale.forEach(({ o, nuevo }, i) => { const d = document.createElement('div'); d.className = `obj raro-${o.raro}`; d.style.animationDelay = i * .08 + 's'; d.innerHTML = `${o.nombre}<small style="display:block;font:700 8px var(--n)">${nuevo ? 'NUEVO' : 'REPETIDO'}</small>`; T.appendChild(d); });
   if(sale.some(s => ['l', 'm'].includes(s.o.raro))){ sonidos.premio && reloj.golpe(sonidos.premio, .6); aviso('¡' + sale.find(s => ['l', 'm'].includes(s.o.raro)).o.nombre + '!'); } }
-$('#tira1').addEventListener('click', () => tirar(1)); $('#tira10').addEventListener('click', () => tirar(10));
+$('#tira1').addEventListener('click', () => tirar(1)); $('#tira10').addEventListener('click', () => tirar(10)); $('#tiraS').addEventListener('click', () => tirar(1, true));
 
 /* ── récords, ajustes, créditos ── */
 function records(){ mostrar('records'); const L = $('#recordsL'), ks = Object.entries(Y.record).sort((a, b) => b[1].puntaje - a[1].puntaje);
