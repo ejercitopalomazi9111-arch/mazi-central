@@ -89,7 +89,8 @@
 <script type="module">
 import { THREE, PAL, W, H, cl, tramo, suave, sale, entra, resorte, mezcla, vida, azar, escena3d, cubo, guion, sonidosVoz, subtitulos, grano } from '../motor.js';
 import { logoVivo } from '../logo3d.js';
-import { cubito, habla, parpadeo, salto } from '../personajes.js';
+import { salto } from '../personajes.js';
+import { persona, mueble, actuar } from '../gente.js';
 import { icono } from '../iconos.js';
 const $ = (s) => document.querySelector(s);
 const G = await guion('.'), L = (id) => G.de(id);
@@ -119,19 +120,15 @@ const sombra = (o) => { o.traverse(m => { if(m.isMesh) m.castShadow = true; }); 
 const mat = (c, r = .6) => new THREE.MeshStandardMaterial({ color: c, roughness: r });
 /* la estética: la silla con su clienta y el espejo */
 const pon = (m, x, y, z) => { m.position.set(x, y, z); return m; };
-const silla = new THREE.Group();
-silla.add(pon(new THREE.Mesh(new THREE.CylinderGeometry(.2, .26, .08, 32), mat('#2A2A33', .4)), 0, .04, 0));
-silla.add(pon(new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, .34, 16), mat('#9A9AA6', .3)), 0, .22, 0));
-silla.add(pon(new THREE.Mesh(new THREE.BoxGeometry(.66, .12, .56), mat('#7E1735', .5)), 0, .44, 0));
-silla.add(pon(new THREE.Mesh(new THREE.BoxGeometry(.66, .62, .1), mat('#7E1735', .5)), 0, .78, -.26));
-silla.position.set(.62, PISO, -.25); sombra(silla);
+/* la silla y la gente son de Kenney (kenney.nl, CC0) */
+const silla = await mueble('chairDesk', { escala: 1.3 }); silla.rotation.y = Math.PI; silla.position.set(.62, PISO, -.25); sombra(silla);
+const planta = await mueble('pottedPlant', { escala: 1.4 }); planta.position.set(-1.35, PISO, -.9); sombra(planta);
 const espejo = new THREE.Group();
 espejo.add(new THREE.Mesh(new THREE.BoxGeometry(.9, 1.3, .06), mat('#17121D', .4)));
 espejo.add(pon(new THREE.Mesh(new THREE.PlaneGeometry(.78, 1.18), new THREE.MeshStandardMaterial({ color: '#CFE3EE', roughness: .08, metalness: .6 })), 0, 0, .032));
 espejo.position.set(.62, .45, -1.2); sombra(espejo);
-const mary = sombra(cubito({ color: '#A8264B', techo: '#B44BFF', tam: .72 }));
-const clienta = sombra(cubito({ color: '#E9C46A', techo: '#6B4A2B', tam: .52 }));
-const tres = [cubito({ color: '#5AC8FA', lentes: true, tam: .54 }), cubito({ color: '#FF9500', gorra: { color: '#17121D' }, tam: .54 }), cubito({ color: '#8E7CFF', techo: '#25D366', tam: .54 })].map(sombra);
+const [maryP, clientaP, ...tresP] = await Promise.all([['female-f', 1.02], ['female-b', .82], ['male-a', .82], ['male-f', .82], ['female-e', .82]].map(([n, a]) => persona(n, { alto: a })));
+const mary = sombra(maryP.obj), clienta = sombra(clientaP.obj), tres = tresP.map(p => sombra(p.obj));
 const NOMBRES = ['LA PÁGINA', 'LAS CITAS', 'LAS REDES'], POSTS = [['#BDE8FF', 'Abrimos<br>9 a 7'], ['#FFD9A8', 'Citas de<br>10 a 6'], ['#E5DCFF', '¡24 HORAS!<br>🔥🔥']];
 const mazi = sombra(cubo(.62)); mazi.userData.filo.material.color.set('#17121D');
 /* ── el texto de encima ── */
@@ -150,41 +147,42 @@ const en = (el, v, dy = 40) => { el.style.opacity = v; el.style.transform = (el.
 
 /* las tomas: cámara y a dónde mira, por renglón del guion */
 const TOMAS = [
-  ['01', [-.4, .2, 4.6], [-.4, -.45, 0]], ['03', [0, .55, 7.2], [0, -.3, -.2]], ['04', [-.5, .15, 4.4], [-.5, -.45, 0]], ['05', [-.55, -.25, 2.7], [-.55, -.62, 0]],
+  ['01', [-.4, .2, 4.6], [-.4, -.45, 0]], ['03', [0, .55, 7.2], [0, -.3, -.2]], ['04', [-.5, .15, 4.4], [-.5, -.45, 0]], ['05', [-.55, -.2, 3.4], [-.55, -.55, 0]],
   ['06', [0, .45, 7.6], [0, -.8, .7]], ['08', [0, .35, 6.8], [0, -.82, .8]], ['10', [-.62, -.3, 3.9], [-.62, -.68, 1.2]], ['11', [0, -.3, 3.9], [0, -.68, 1.2]],
   ['12', [.62, -.3, 3.9], [.62, -.68, 1.2]], ['13', [0, .9, 8], [0, -.3, .6]], ['14', [-.2, .35, 5.6], [-.25, -.5, .5]], ['15', [0, .6, 8.6], [0, -.1, .5]],
   ['16', [.1, .35, 6.4], [0, -.4, .5]], ['17', [-.75, .05, 4.2], [-.25, -.5, 0]], ['19', [.3, .3, 4.6], [.4, -.45, -.1]], ['20', [0, .6, 8], [0, -.2, 0]]];
 window.pintar = async (t) => {
   let cP = new THREE.Vector3(...TOMAS[0][1]), cM = new THREE.Vector3(...TOMAS[0][2]);
   for(let i = 1; i < TOMAS.length; i++){ const [id, p, m] = TOMAS[i], u = suave(tramo(t, l[id].t0 - .55, l[id].t0 - .05)); cP.lerp(new THREE.Vector3(...p), u); cM.lerp(new THREE.Vector3(...m), u); }
+  /* la gente de Kenney es más alta que los cubitos para los que se armaron las tomas: todo sube un poco */
+  cP.y += .2; cM.y += .24;
   const tiembla = .05 * vida(t, l['05'].t0, l['05'].t1, .05, .3) + .08 * vida(t, l['13'].t0 + .35, l['13'].t0 + .7, .02, .3);
-  E.cam.position.copy(cP).add(new THREE.Vector3(Math.sin(t * .5) * .04 + Math.sin(t * 83) * tiembla, Math.sin(t * .4) * .03 + Math.cos(t * 71) * tiembla, 0)); E.cam.lookAt(cM);
+  E.cam.position.copy(cP).add(new THREE.Vector3(Math.sin(t * .5) * .04 + Math.sin(t * 83) * tiembla, Math.sin(t * .4) * .03 + Math.cos(t * 71) * tiembla, 0)); E.cam.lookAt(cM); E.cam.updateMatrixWorld();
 
   /* Mary: aparece de un brinco, se estresa, grita, se alegra */
   const mj = salto(t, l['01'].t0 + .1, .5, .45), mj2 = salto(t, l['05'].t0, .35, .35), mj3 = salto(t, l['19'].t0 + .4, .3, .4);
   const s3 = mj.y ? mj : mj2.y ? mj2 : mj3;
-  mary.visible = t >= l['01'].t0 + .1; mary.position.set(-.55, PISO + .36 + s3.y, 0); mary.userData.cuerpo.scale.set(s3.sx, s3.sy, s3.sx);
+  mary.visible = t >= l['01'].t0 + .1; mary.position.set(-.55, PISO + s3.y, 0);
   const temblorM = t >= l['04'].t0 + 2 && t < l['05'].t1 ? Math.sin(t * 60) * .012 * tramo(t, l['04'].t0 + 2, l['05'].t0) : 0;
   mary.position.x += temblorM; mary.rotation.y = t < l['06'].t0 ? .25 + Math.sin(t * 1.1) * .06 : t < l['13'].t0 ? .55 : t < l['17'].t0 ? .45 : .2;
-  const hM = Math.max(habla(t, l['05']), habla(t, l['18']));
-  const cejaM = t >= l['04'].t0 + 1.5 && t < l['06'].t0 ? (t >= l['05'].t0 ? 'enojado' : 'triste') : t >= l['08'].t0 && t < l['13'].t0 ? 'sorpresa' : t >= l['17'].t0 ? 'feliz' : t < l['03'].t0 ? 'feliz' : 'normal';
-  mary.userData.cara({ boca: hM, ojos: cejaM === 'triste' ? .7 : parpadeo(t, .4), ceja: cejaM, mira: t >= l['06'].t0 && t < l['13'].t0 ? [.7, .1] : t >= l['13'].t0 && t < l['17'].t0 ? [.6, .2] : [0, 0], rubor: t >= l['17'].t0 ? .8 : 0 });
+  /* el cuerpo dice lo que antes decía la cara: corta y pinta, contesta el teléfono, «¡ya no puedo!», y al final se luce */
+  actuar(maryP, t, [[0, 'idle'], [l['01'].t0 + .1, 'jump', { una: true }], [l['01'].t0 + .8, 'idle'], [l['03'].t0 + l['03'].dur * .25, 'interact-right'], [l['03'].t0 + l['03'].dur * .75, 'holding-right'],
+    [l['05'].t0, 'emote-no', { vel: 1.8 }], [l['05'].t1 + .2, 'idle'], [l['09'].t0, 'emote-no', { una: true, vel: .7 }], [l['10'].t0, 'idle'], [l['13'].t0 + .3, 'fall', { una: true }], [l['13'].t0 + 1.1, 'idle'],
+    [l['14'].t0 + l['14'].dur * .6, 'emote-yes', { una: true }], [l['15'].t0, 'idle'], [l['17'].t0 + .8, 'holding-right'], [l['18'].t0, 'interact-left', { una: true }], [l['19'].t0, 'interact-right'], [l['19'].t1, 'emote-yes', { una: true }], [l['20'].t0, 'idle']]);
   /* la clienta en la silla; al final se le pinta el techo (el tinte) */
-  clienta.position.set(.62, PISO + .5 + .26, -.2); clienta.rotation.y = -.15; clienta.visible = t < l['06'].t0 - .3 || t >= l['17'].t0 - .3;
+  clienta.position.set(.62, PISO + .13, -.18); clienta.rotation.y = -.15; clientaP.anima([['sit', 0, 1, false]]); clienta.visible = t < l['06'].t0 - .3 || t >= l['17'].t0 - .3;
   silla.visible = espejo.visible = clienta.visible;
-  clienta.userData.techo.color.lerpColors(new THREE.Color('#6B4A2B'), new THREE.Color('#AC27FF'), suave(tramo(t, l['19'].t0 + .5, l['19'].t1 + .3)));
-  clienta.userData.cara({ ojos: parpadeo(t, 1.3), ceja: t >= l['19'].t0 + 1 ? 'feliz' : 'normal', mira: [-.5, 0], rubor: t >= l['19'].t0 + 1 ? .7 : 0 });
+
   /* los tres contratados: caen en fila, se voltean de espaldas al decir «eso no es mío» y salen volando cuando llegamos */
   const vuelan = tramo(t, l['13'].t0 + .3, l['13'].t0 + 1.1);
   tres.forEach((p, i) => {
     const t0 = l['06'].t0 + .7 + i * .25, u = tramo(t, t0, t0 + .45), sj = salto(t, t0 + .45, .2, .35);
     p.visible = u > 0 && vuelan < 1;
     const x0 = -.62 + i * .62;
-    p.position.set(x0 + vuelan * (i - 1 || -.4) * 4, PISO + .27 + (1 - sale(u)) * 4 + sj.y + Math.sin(vuelan * Math.PI) * 1.5, 1.2);
-    p.userData.cuerpo.scale.set(sj.sx, sj.sy, sj.sx);
+    p.position.set(x0 + vuelan * (i - 1 || -.4) * 4, PISO + (1 - sale(u)) * 4 + sj.y + Math.sin(vuelan * Math.PI) * 1.5, 1.2);
     const lin = l[['10', '11', '12'][i]], espalda = suave(tramo(t, lin.t1 - .1, lin.t1 + .35));
     p.rotation.set(vuelan * 6, mezcla(-.15 + i * .15, Math.PI, espalda) + vuelan * 4, vuelan * 3);
-    p.userData.cara({ boca: habla(t, lin), ojos: parpadeo(t, i * .9), ceja: t >= l['09'].t0 && t < lin.t1 ? 'enojado' : vuelan > 0 ? 'sorpresa' : 'normal', mira: t >= l['08'].t0 && t < l['09'].t0 ? [(i - 1) * -.6, 0] : [0, 0] });
+    actuar(tresP[i], t, [[0, 'fall'], [t0 + .45, 'idle'], [l['07'].t0 + l['07'].dur * (.05 + i * .3), 'interact-right', { una: true }], [l['08'].t0, 'idle'], [lin.t0, 'emote-no', { una: true }], [lin.t1 + .2, 'idle'], [l['13'].t0 + .3, 'fall']]);
     const [ex, ey] = aPantalla(new THREE.Vector3(x0, PISO - .02, 1.2)), e = $('#etiquetas').children[i];
     e.style.left = ex + 'px'; e.style.top = (ey + 14) + 'px'; e.style.opacity = vida(t, l['07'].t0 + l['07'].dur * (.05 + i * .3), l['09'].t0, .25, .3);
     const [px, py] = aPantalla(new THREE.Vector3(x0, PISO + .62, 1.2)), po = $('#posts').children[i];

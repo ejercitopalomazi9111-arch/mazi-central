@@ -42,7 +42,8 @@
 <script type="module">
 import { THREE, PAL, W, H, tramo, suave, sale, entra, resorte, mezcla, vida, escena3d, cubo, telefono, Toma, guion, sonidosVoz, subtitulos, grano, logo2d } from '../motor.js';
 import { logoVivo } from '../logo3d.js';
-import { cubito, parpadeo, salto, habla } from '../personajes.js';
+import { salto } from '../personajes.js';
+import { persona, actuar } from '../gente.js';
 import { icono } from '../iconos.js';
 const $ = (s) => document.querySelector(s);
 const G = await guion('.'), L = (id) => G.de(id);
@@ -51,10 +52,13 @@ window.VIDEO = { w: W, h: H, fps: 30, dur: FIN, musica: { archivo: '/tmp/claude-
   sonidos: [...sonidosVoz(G, 1.08), [fx('whoosh'), L('03').t0 - .3, .5], [fx('ding'), L('04').t0 + .5, .6], [fx('ding'), L('04').t0 + .9, .5], [fx('subida'), L('06').t0 - .3, .45]] };
 await Promise.all(['700 80px "Space Grotesk"', '800 60px "Inter Tight"'].map(f => document.fonts.load(f)));
 const E = escena3d($('#gl'));
-const yo = cubito({ color: '#8E1B3A', corbata: '#AC27FF', tam: .58 });
-const cliente = cubito({ color: '#C68B3E', lentes: true, tam: .58 });
-const mazi = cubo(.58);
-E.s.add(yo, cliente, mazi);
+/* el vendedor (de traje) y la clienta: gente de Kenney (CC0), con luz de estudio y sombra */
+E.s.environmentIntensity = .7; E.sombras(5, [0, -.5, .3]);
+const yoP = await persona('male-d', { alto: .98 }), clP = await persona('female-b', { alto: .92 });
+const yo = yoP.obj, cliente = clP.obj, mazi = cubo(.58);
+const piso = new THREE.Mesh(new THREE.PlaneGeometry(8, 8), new THREE.ShadowMaterial({ opacity: .4 })); piso.rotation.x = -Math.PI / 2; piso.receiveShadow = true;
+mazi.children[0].castShadow = true;
+E.s.add(yo, cliente, mazi, piso);
 /* monedas: cilindros dorados que brincan de Grupo Mazi al vendedor */
 const monedas = [0, 1, 2].map(() => { const m = new THREE.Mesh(new THREE.CylinderGeometry(.13, .13, .035, 40), new THREE.MeshStandardMaterial({ color: '#E3B04B', metalness: .8, roughness: .25, emissive: '#5A3A00', emissiveIntensity: .3 })); m.rotation.x = Math.PI / 2; E.s.add(m); return m; });
 const tS = new Toma('smileys-tel', { desde: 4 }); const tel = telefono(tS.tex); E.s.add(tel);
@@ -75,14 +79,15 @@ window.pintar = async (t) => {
   const enFila = suave(tramo(t, l['03'].t0 - .4, l['03'].t0 + .3)), salFila = suave(tramo(t, l['06'].t0 - .4, l['06'].t0 + .2));
   const pYo = new THREE.Vector3(mezcla(0, -.74, enFila), mezcla(-.5, -.2, enFila), mezcla(1, .4, enFila)).lerp(new THREE.Vector3(0, -2.4, .4), salFila);
   const sj = salto(t, .5, .35, .45), sj2 = salto(t, l['04'].t0 + .9, .3, .4); const sj3 = sj.y ? sj : sj2;
-  yo.position.copy(pYo); yo.visible = salFila < 1; yo.position.y += sj3.y; yo.userData.cuerpo.scale.set(sj3.sx, sj3.sy, sj3.sx); yo.rotation.set(.12, mezcla(-.3, .35, enFila) + Math.sin(t * 1.4) * .06, 0);
-  yo.userData.cara({ boca: t < l['02'].t0 ? habla(t, l['01']) * .6 : 0, ojos: parpadeo(t, .2), ceja: t >= l['04'].t0 ? 'feliz' : 'normal', mira: enFila > .5 ? [.6, 0] : [0, 0], rubor: t >= l['04'].t0 ? .6 : 0 });
+  yo.position.copy(pYo); yo.position.y -= .29; yo.visible = salFila < 1; yo.position.y += sj3.y; yo.rotation.set(.12, mezcla(-.3, .35, enFila) + Math.sin(t * 1.4) * .06, 0);
+  piso.position.set(0, pYo.y - .29, .3); piso.visible = salFila < 1;
+  actuar(yoP, t, [[0, 'idle'], [l['01'].t0, 'interact-right', { una: true }], [l['02'].t0, 'idle'], [l['03'].t0 + l['03'].dur * .45, 'interact-left', { una: true }], [l['04'].t0, 'emote-yes', { una: true }], [l['04'].t0 + .8, 'jump'], [l['04'].t0 + 1.6, 'idle'], [l['05'].t0, 'interact-right', { una: true }], [l['05'].t1, 'idle']]);
   const entraC = sale(tramo(t, l['03'].t0 - .2, l['03'].t0 + .4)), entraM = sale(tramo(t, l['03'].t0 + l['03'].dur * .45, l['03'].t0 + l['03'].dur * .45 + .5));
-  cliente.visible = entraC > 0 && salFila < 1; cliente.position.set(0, -.2 + (1 - entraC) * 3, .2); cliente.rotation.set(.12, Math.sin(t * 1.1) * .08, 0);
-  cliente.userData.cara({ ojos: parpadeo(t, 1.1), ceja: t >= l['03'].t0 + l['03'].dur * .7 ? 'feliz' : 'normal', mira: [t < l['03'].t0 + l['03'].dur * .45 ? -.6 : .6, 0] });
+  cliente.visible = entraC > 0 && salFila < 1; cliente.position.set(0, -.49 + (1 - entraC) * 3, .2); cliente.rotation.set(.12, Math.sin(t * 1.1) * .08, 0);
+  actuar(clP, t, [[0, 'fall'], [l['03'].t0 + .25, 'idle'], [l['03'].t0 + l['03'].dur * .7, 'emote-yes', { una: true }], [l['03'].t0 + l['03'].dur * .7 + 1.1, 'idle']]);
   mazi.visible = entraM > 0 && salFila < 1; mazi.position.set(.74, -.2 + (1 - entraM) * 3, .4); mazi.rotation.set(.45, -.6 + t * .4, 0);
   /* los rótulos debajo de cada uno */
-  [[yo, '#r1', enFila], [cliente, '#r2', entraC], [mazi, '#r3', entraM]].forEach(([o, id, v]) => { const [x, y] = aPantalla(o.position.clone().add(new THREE.Vector3(0, -.48, 0))); const e = $(id);
+  [[yo, '#r1', enFila], [cliente, '#r2', entraC], [mazi, '#r3', entraM]].forEach(([o, id, v]) => { const [x, y] = aPantalla(o.position.clone().add(new THREE.Vector3(0, o === mazi ? -.48 : -.2, 0))); const e = $(id);
     e.style.left = x + 'px'; e.style.top = y + 'px'; e.style.opacity = Math.min(v, 1 - tramo(t, l['04'].t0 - .3, l['04'].t0)) * (t < l['06'].t0 ? 1 : 0); });
   /* lo que hacemos nosotros: página, app o video */
   const vS = vida(t, l['03'].t0 + l['03'].dur * .5, l['04'].t0 - .1, .3, .3);

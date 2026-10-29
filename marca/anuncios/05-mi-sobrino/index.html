@@ -5,7 +5,7 @@
 <title>Grupo Mazi · Mi sobrino sabe de computadoras</title>
 <!-- GRACIOSO 05 · ~56 s · 9:16 · narra Will, Don Toño es George, Kevin es Liam. Un cuento al estilo
      de los de YouTube (Casi Creativo, Historias de Chema): habla de nosotros sin ser anuncio hasta el
-     final. Los personajes son cubitos (personajes.js), de la familia del logo. La página fea, la
+     final. La gente y los muebles son de Kenney (kenney.nl, CC0), con luz de estudio. La página fea, la
      tintorería y el teléfono son inventados: el número es 55 0000 0000 a propósito.
      Música: «Fluffing a Duck», Kevin MacLeod (incompetech.com), CC BY 4.0.
      node herramientas/video/armar.mjs marca/anuncios/05-mi-sobrino/index.html marca/anuncios/salida/05-mi-sobrino.mp4 -->
@@ -43,7 +43,8 @@
 <script type="module">
 import { THREE, PAL, W, H, tramo, suave, sale, entra, resorte, mezcla, vida, escena3d, cubo, laptop, telefono, guion, sonidosVoz, subtitulos, grano, logo2d, imagen } from '../motor.js';
 import { logoVivo } from '../logo3d.js';
-import { cubito, habla, parpadeo, salto } from '../personajes.js';
+import { salto } from '../personajes.js';
+import { persona, mueble, actuar } from '../gente.js';
 const $ = (s) => document.querySelector(s);
 const G = await guion('.'), L = (id) => G.de(id);
 const FIN = L('13').t1 + 2.4, fx = (n) => `../../../herramientas/video/efectos/${n}.wav`;
@@ -72,69 +73,81 @@ const texFeaPC = lienzo(1600, 1000, (x, w, h) => { x.fillStyle = '#00B526'; x.fi
   x.fillStyle = '#FF00FF'; x.fillRect(60, 340, w - 120, 90); x.fillStyle = '#FFFF00'; x.font = '700 56px "Comic Neue"'; x.fillText('★ LOS MEJORES TACOS ★ LOS MEJORES TAC', w / 2, 405);
   x.fillStyle = '#000080'; x.fillRect(80, 480, 700, 400); x.fillStyle = '#FFFF00'; x.font = '700 54px "Comic Neue"'; x.fillText('[ IMAGEN NO', 430, 670); x.fillText('ENCONTRADA ]', 430, 740);
   x.font = '700 66px "Comic Neue"'; x.fillText('♫ MÚSICA ♫', 1190, 600); x.fillText('Tel: 55 0000 0000', 1190, 720); x.font = '700 46px "Comic Neue"'; x.fillText('visitas: 000001', 1190, 840); });
-/* ── la escena ── */
+/* ── la escena: gente y muebles de Kenney (CC0), luz de estudio y sombras de verdad ── */
 const E = escena3d($('#gl'), { z: 9 });
-E.s.environmentIntensity = .7; E.luces.morado.intensity = 1.5;
-const piso = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshStandardMaterial({ color: '#3A1E2E', roughness: .9 })); piso.rotation.x = -Math.PI / 2; piso.position.y = -1.15; E.s.add(piso);
-const pared = new THREE.Mesh(new THREE.PlaneGeometry(30, 14), new THREE.MeshStandardMaterial({ color: '#4A2236', roughness: .95 })); pared.position.set(0, 4, -3.2); E.s.add(pared);
+E.s.environmentIntensity = .62; E.luces.morado.intensity = 1.2; E.luces.llave.intensity = 2.1; E.sombras(9, [0, -1.15, 0], { suave: 5 });
+const PISO = -1.15;
+const piso = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshStandardMaterial({ color: '#7A4A3A', roughness: .85 })); piso.rotation.x = -Math.PI / 2; piso.position.y = PISO; piso.receiveShadow = true; E.s.add(piso);
+const pared = new THREE.Mesh(new THREE.PlaneGeometry(30, 14), new THREE.MeshStandardMaterial({ color: '#D9B48A', roughness: .95 })); pared.position.set(0, 4, -2.6); pared.receiveShadow = true; E.s.add(pared);
+/* el azulejo de abajo de la pared, como en toda taquería */
+const azulejo = new THREE.Mesh(new THREE.PlaneGeometry(30, 1.2), new THREE.MeshStandardMaterial({ map: lienzo(1024, 64, (x, w, h) => { for(let k = 0; k < 32; k++){ x.fillStyle = k % 2 ? '#F2EDE4' : '#2E6E8E'; x.fillRect(k * 32, 0, 32, 32); x.fillStyle = k % 2 ? '#2E6E8E' : '#F2EDE4'; x.fillRect(k * 32, 32, 32, 32); } }), roughness: .4 }));
+azulejo.material.map.wrapS = THREE.RepeatWrapping; azulejo.material.map.repeat.set(6, 1); azulejo.position.set(0, PISO + .6, -2.59); azulejo.receiveShadow = true; E.s.add(azulejo);
 /* el papel picado: una tira de banderitas de colores */
 const picado = new THREE.Group(); ['#B44BFF', '#FFD23F', '#25D366', '#5AC8FA', '#AC27FF', '#FF9500'].forEach((c, i) => {
-  for(let k = 0; k < 3; k++){ const b = new THREE.Mesh(new THREE.PlaneGeometry(.36, .44), new THREE.MeshStandardMaterial({ color: c, side: THREE.DoubleSide, roughness: .8 })); b.position.set(-2.3 + (i + k * 6) * .26, 1.55 - Math.sin((i + k * 6) / 17 * Math.PI) * .2, -1.2); picado.add(b); } });
+  for(let k = 0; k < 3; k++){ const b = new THREE.Mesh(new THREE.PlaneGeometry(.36, .44), new THREE.MeshStandardMaterial({ color: c, side: THREE.DoubleSide, roughness: .8 })); b.castShadow = true; b.position.set(-2.3 + (i + k * 6) * .26, 1.55 - Math.sin((i + k * 6) / 17 * Math.PI) * .2, -1.2); picado.add(b); } });
 E.s.add(picado);
-const mostrador = new THREE.Mesh(new THREE.BoxGeometry(2.3, .8, .7), [0, 1, 2, 3, 4, 5].map(i => new THREE.MeshStandardMaterial(i === 4 ? { map: lienzo(1024, 360, (x, w, h) => { x.fillStyle = '#E9D6C3'; x.fillRect(0, 0, w, h); x.fillStyle = '#C8402F'; for(let k = 0; k < 9; k++) x.fillRect(k * 120, 0, 60, h); }), roughness: .7 } : { color: '#E9D6C3', roughness: .7 })));
-mostrador.position.set(0, -.75, .35); E.s.add(mostrador);
-const letrero = new THREE.Mesh(new THREE.PlaneGeometry(2, .5), new THREE.MeshStandardMaterial({ map: texLetrero, roughness: .6 })); letrero.position.set(0, .95, -.9); E.s.add(letrero);
-const toño = cubito({ color: '#8E1B3A', bigote: true, tam: .82 }); E.s.add(toño);
-const kevin = cubito({ color: '#6E6A80', gorra: { color: '#25D366', atras: true }, tam: .66 }); E.s.add(kevin);
-const tPag = { tex: texFea }; const lap = laptop(texFeaPC, { ratio: 1.6 }); E.s.add(lap);
-/* la tapa de la laptop por detrás: las calcomanías */
-const tapaAtras = new THREE.Mesh(new THREE.PlaneGeometry(2.25, 1.42), new THREE.MeshStandardMaterial({ map: texCalcas, roughness: .6 })); tapaAtras.rotation.y = Math.PI; tapaAtras.position.set(0, 1.44 / 2 + .06, -.035);
-lap.children[0].add(tapaAtras);
-const cel = telefono(texFea); E.s.add(cel);
+/* el mostrador: tres barras de cocina juntas; atrás, la estufa y el refri */
+const ESC = 1.6, barras = await Promise.all([0, 1, 2].map(() => mueble('kitchenBar', { escala: ESC })));
+barras.forEach((m, i) => { m.position.set((i - 1) * .43 * ESC, PISO, .3); E.s.add(m); });
+const estufa = await mueble('kitchenStove', { escala: ESC }); estufa.position.set(-1.25, PISO, -1.95); E.s.add(estufa);
+const refri = await mueble('kitchenFridge', { escala: ESC }); refri.position.set(1.35, PISO, -2.05); E.s.add(refri);
+const letrero = new THREE.Mesh(new THREE.PlaneGeometry(2, .5), new THREE.MeshStandardMaterial({ map: texLetrero, roughness: .6 })); letrero.position.set(0, .95, -2.5); letrero.castShadow = true; E.s.add(letrero);
+const toño = await persona('male-b', { alto: 1.72 }); E.s.add(toño.obj);
+const kevin = await persona('male-e', { alto: 1.12 }); E.s.add(kevin.obj);
+/* la laptop de Kevin: la de Kenney, con la página fea en la pantalla y las calcomanías en la tapa */
+const lap = await mueble('laptop', { escala: 3.2, pantalla: texFeaPC, tapa: texCalcas }); E.s.add(lap);
+/* los exámenes: el escritorio, la silla y los libros de Kevin */
+const cuarto = new THREE.Group(); E.s.add(cuarto);
+const esc = await mueble('desk', { escala: 1.55 }), silla = await mueble('chairDesk', { escala: 1.55 }), libros = await mueble('books', { escala: 1.8 }), lamp = await mueble('lampSquareTable', { escala: 1.6 });
+esc.position.set(0, 0, 0); silla.position.set(0, 0, -.62); libros.position.set(-.3, .38 * 1.55, .12); lamp.position.set(.4, .38 * 1.55, -.05); cuarto.add(esc, silla, libros, lamp);
+const cel = telefono(texFea); E.s.add(cel);   /* sobre el mostrador, vibrando */
 const mazi = cubo(.9); E.s.add(mazi);
 /* una pantalla de teléfono con la página fea (vertical) */
 const sub = subtitulos($('#subs'), G), gr = grano($('#grano'), .05), c2 = $('#c2').getContext('2d');
 
 /* las tomas: cámara [x, y, z] y a dónde mira, por tramo del guion */
 const TOMAS = [
-  ['01', [0, .2, 7.4], [0, 0, 0]], ['02', [0, .35, 6.2], [0, .1, 0]], ['03', [-.25, .3, 4.2], [-.25, .1, 0]], ['04', [.9, .1, 4.4], [.75, -.1, 0]],
-  ['05', [.7, .15, 3.6], [.7, 0, 0]], ['06', [0, .4, 8], [0, .2, 0]], ['09', [0, .1, 5], [0, 0, 0]], ['10', [-.2, .3, 3.9], [-.2, .1, 0]],
-  ['11', [1, .1, 4.2], [1, -.05, 0]], ['12', [0, .4, 7.2], [0, .1, 0]], ['13', [0, .3, 8.2], [0, 0, 0]]];
+  ['01', [0, .35, 7.4], [0, -.1, 0]], ['02', [0, .4, 6.2], [0, 0, 0]], ['03', [-.3, .3, 4.6], [-.3, -.1, 0]], ['04', [1.55, -.25, 5.3], [.95, -.55, .9]],
+  ['05', [1.2, -.3, 4.4], [.85, -.55, .9]], ['06', [0, .5, 8], [0, .1, 0]], ['09', [0, .05, 5.5], [0, -.25, 1.4]], ['10', [-.3, .3, 4.4], [-.25, -.1, 0]],
+  ['11', [3.75, -.1, 5.3], [3.6, -.6, 2.0]], ['12', [0, .45, 7.2], [0, 0, 0]], ['13', [0, .35, 8.2], [0, -.1, 0]]];
 window.pintar = async (t) => {
   const l = Object.fromEntries(G.lineas.map(z => [z.id, z]));
   /* la cámara: de toma en toma, con un pequeño empujón hacia adentro en cada una */
   let cP = new THREE.Vector3(...TOMAS[0][1]), cM = new THREE.Vector3(...TOMAS[0][2]);
   for(let i = 1; i < TOMAS.length; i++){ const [id, p, m] = TOMAS[i], u = suave(tramo(t, l[id].t0 - .55, l[id].t0 - .05)); cP.lerp(new THREE.Vector3(...p), u); cM.lerp(new THREE.Vector3(...m), u); }
-  E.cam.position.copy(cP).add(new THREE.Vector3(Math.sin(t * .5) * .04, Math.sin(t * .4) * .03, -((t * .08) % 1) * 0));
+  E.cam.position.copy(cP).add(new THREE.Vector3(Math.sin(t * .5) * .04, Math.sin(t * .4) * .03, 0));
   E.cam.lookAt(cM);
 
-  /* Don Toño, detrás del mostrador */
+  /* Don Toño, detrás del mostrador: dice que no, presume al sobrino, espera, contesta el teléfono */
   const tj = salto(t, l['03'].t0 + l['03'].dur * .5, .25, .4);
-  toño.position.set(-.35, -.05 + tj.y, -.15); toño.userData.cuerpo.scale.set(tj.sx, tj.sy, tj.sx);
-  toño.rotation.y = .12 + Math.sin(t * .8) * .04;
-  const hT = Math.max(habla(t, l['03']), habla(t, l['10']));
-  const cejaT = t >= l['10'].t0 - .9 && t < l['11'].t0 ? 'enojado' : t >= l['06'].t0 && t < l['09'].t0 ? (t > l['08'].t0 ? 'enojado' : 'triste') : t >= l['09'].t0 && t < l['10'].t0 ? 'sorpresa' : t >= l['12'].t0 ? 'feliz' : 'normal';
-  toño.userData.cara({ boca: hT, ojos: parpadeo(t, .3), ceja: cejaT, mira: t >= l['04'].t0 && t < l['06'].t0 ? [.7, 0] : t >= l['09'].t0 && t < l['10'].t0 ? [.5, .3] : [0, 0], rubor: t >= l['12'].t0 ? .8 : 0 });
-  /* Kevin: entra de un brinco cuando el tío lo nombra; luego con su laptop */
-  const llegaK = l['03'].t0 + l['03'].dur * .62, kj = salto(t, llegaK, .6, .45);
-  const kx = t < llegaK ? 2.2 : mezcla(2.2, .75, sale(tramo(t, llegaK, llegaK + .45)));
-  kevin.position.set(kx, -.42 + kj.y, .9); kevin.userData.cuerpo.scale.set(kj.sx, kj.sy, kj.sx); kevin.rotation.y = -.35;
-  kevin.visible = t > llegaK - .1 && t < l['12'].t0 + 10;
-  const enEx = t >= l['11'].t0 - .3 && t < l['12'].t0;
-  kevin.userData.cara({ boca: habla(t, l['05']), ojos: enEx ? .45 : parpadeo(t, 1.7), ceja: enEx ? 'triste' : t >= l['05'].t0 && t < l['06'].t0 ? 'feliz' : 'normal', mira: enEx ? [0, .8] : [-.5, 0] });
-  /* la laptop: por detrás (las calcomanías) en la toma 04, de frente con la página fea en la 09 */
-  const vLap = t >= l['04'].t0 - .4 && t < l['10'].t0 - .4;
+  toño.obj.position.set(-.35, PISO + tj.y, -.45);
+  toño.obj.rotation.y = .12 + Math.sin(t * .8) * .04;
+  actuar(toño, t, [[0, 'idle'], [l['03'].t0, 'emote-no', { una: true, vel: 1.2 }], [l['03'].t0 + l['03'].dur * .48, 'interact-right', { una: true }], [l['03'].t1 + .2, 'idle'],
+    [l['06'].t0, 'idle', { vel: .5 }], [l['08'].t0, 'emote-no', { una: true, vel: .7 }], [l['09'].t0, 'idle'], [l['10'].t0 - .9, 'interact-right', { una: true }], [l['10'].t0 + .2, 'emote-no', { una: true }],
+    [l['11'].t0 - .2, 'idle'], [l['12'].t0, 'emote-yes', { una: true, vel: .8 }], [l['12'].t1, 'idle']]);
+  /* Kevin: entra corriendo cuando el tío lo nombra, con su laptop; en los exámenes, sentado con sus libros */
+  const llegaK = l['03'].t0 + l['03'].dur * .58, kx = mezcla(2.6, .78, sale(tramo(t, llegaK, llegaK + .6)));
+  const enEx = t >= l['11'].t0 - .45 && t < l['12'].t0 - .3;
+  kevin.obj.visible = t > llegaK - .1;
+  if(enEx){ cuarto.visible = true; cuarto.position.set(3.6, PISO, 2.0); cuarto.rotation.y = .25;
+    /* detrás del escritorio, de frente a la cámara, sentado en su silla */
+    kevin.obj.position.copy(cuarto.localToWorld(new THREE.Vector3(0, .2, -.55))); kevin.obj.rotation.y = .25; kevin.anima([['sit', 0, 1, false]]); }
+  else { cuarto.visible = false;
+    kevin.obj.position.set(kx, PISO, .95); kevin.obj.rotation.y = t < llegaK + .6 ? -Math.PI / 2 : -.35;
+    actuar(kevin, t, [[0, 'sprint'], [llegaK + .55, 'holding-both'], [l['05'].t0, 'emote-yes', { una: true }], [l['05'].t0 + 1.1, 'holding-both'], [l['06'].t0, 'idle']]); }
+  /* la laptop: en las manos de Kevin enseñando las calcomanías (04), de frente con la página fea (09) */
+  const vLap = t >= llegaK + .3 && t < l['10'].t0 - .4;
   lap.visible = vLap;
   const deFrente = suave(tramo(t, l['09'].t0 - .5, l['09'].t0 + .2));
-  lap.position.set(mezcla(1.05, 0, deFrente), mezcla(-.62, -.55, deFrente), mezcla(1.15, 1.6, deFrente)); lap.scale.setScalar(mezcla(.36, .82, deFrente));
-  lap.rotation.set(mezcla(.1, .22, deFrente), mezcla(Math.PI - .5, 0, deFrente), 0);
-  /* el teléfono que suena, junto a Don Toño */
+  lap.position.set(mezcla(.98, 0, deFrente), mezcla(PISO + .5, PISO + .67, deFrente), mezcla(1.3, 1.25, deFrente)); lap.scale.setScalar(mezcla(2.2, 3.6, deFrente));
+  lap.rotation.set(mezcla(-.15, .1, deFrente), mezcla(Math.PI - .35, 0, deFrente), 0);
+  /* el teléfono que suena, en la mano de Don Toño */
   const vCel = t >= l['10'].t0 - 1 && t < l['11'].t0 - .2; cel.visible = vCel;
   const zumba = t < l['10'].t0 ? Math.sin(t * 70) * .03 : 0;
-  cel.position.set(.32 + zumba, .05, .55); cel.rotation.set(-.1, -.5, .12 + zumba); cel.scale.setScalar(.42);
-  /* el cubo de Grupo Mazi: cae al final */
+  cel.position.set(.12 + zumba, PISO + .67 + .22, .42); cel.rotation.set(-.5, -.35, .08 + zumba); cel.scale.setScalar(.3);
+  /* el cubo de Grupo Mazi: cae al final sobre el mostrador */
   const uM = tramo(t, l['13'].t0 - .5, l['13'].t0), cae = uM < 1 ? entra(uM) : 1;
-  mazi.visible = t > l['13'].t0 - .5; mazi.position.set(0, -.68 + (1 - cae) * 5, .9); mazi.rotation.set(0, t * .6, 0);
+  mazi.visible = t > l['13'].t0 - .5; mazi.position.set(0, PISO + .67 + .45 + (1 - cae) * 5, .25); mazi.rotation.set(0, t * .6, 0);
   E.pintar();
 
   /* ── lo de encima ── */

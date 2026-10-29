@@ -35,7 +35,8 @@
 <script type="module">
 import { THREE, PAL, W, H, tramo, suave, sale, entra, resorte, mezcla, vida, escena3d, cubo, guion, sonidosVoz, subtitulos, grano, logo2d } from '../motor.js';
 import { logoVivo } from '../logo3d.js';
-import { cubito, parpadeo, salto } from '../personajes.js';
+import { salto } from '../personajes.js';
+import { persona, actuar } from '../gente.js';
 import { icono } from '../iconos.js';
 const $ = (s) => document.querySelector(s);
 const G = await guion('.'), L = (id) => G.de(id);
@@ -44,9 +45,11 @@ window.VIDEO = { w: W, h: H, fps: 30, dur: FIN, musica: { archivo: '/tmp/claude-
   sonidos: [...sonidosVoz(G, 1.15), [fx('whoosh'), L('03').t0 - .3, .5], ...[0, 1, 2, 3, 4].map(i => [fx('toque'), L('03').t0 + L('03').dur * i / 5, .4]), [fx('subida'), L('06').t0 + L('06').dur * .55, .45]] };
 await Promise.all(['700 80px "Space Grotesk"', '800 60px "Inter Tight"'].map(f => document.fonts.load(f)));
 const E = escena3d($('#gl'));
-const ROLES = [['Fotógrafos', 'camera', '#5AC8FA', { lentes: true }], ['Editores', 'video', '#FF9500', { gorra: { color: '#17121D', atras: true } }], ['Diseñadores', 'pen-tool', '#B44BFF', {}],
-  ['Ilustradores', 'paintbrush', '#25D366', { gorra: { color: '#AC27FF' } }], ['Programadores', 'code-xml', '#8E7CFF', { lentes: true }]];
-const cubos = ROLES.map(([, , c, extra]) => { const k = cubito({ color: c, tam: .36, ...extra }); E.s.add(k); return k; });
+/* los cinco oficios: gente de Kenney (CC0), con luz de estudio y su sombra */
+const ROLES = [['Fotógrafos', 'camera', 'male-a'], ['Editores', 'video', 'female-a'], ['Diseñadores', 'pen-tool', 'male-f'], ['Ilustradores', 'paintbrush', 'female-d'], ['Programadores', 'code-xml', 'male-e']];
+E.s.environmentIntensity = .7; E.sombras(5, [0, -.5, .3]);
+const gente = await Promise.all(ROLES.map(([, , n]) => persona(n, { alto: .8 }))), cubos = gente.map(p => p.obj); cubos.forEach(k => E.s.add(k));
+const piso = new THREE.Mesh(new THREE.PlaneGeometry(8, 8), new THREE.ShadowMaterial({ opacity: .4 })); piso.rotation.x = -Math.PI / 2; piso.receiveShadow = true; E.s.add(piso);
 const mazi = cubo(.8); E.s.add(mazi);
 const sub = subtitulos($('#subs'), G), gr = grano($('#grano'), .05), c2 = $('#c2').getContext('2d');
 const poner = (el, html) => { if(el.dataset.h !== html){ el.innerHTML = html; el.dataset.h = html; } };
@@ -68,14 +71,16 @@ window.pintar = async (t) => {
   const fila = suave(tramo(t, l['03'].t0 - .4, l['03'].t0 + .3)), salen = suave(tramo(t, l['05'].t0 - .3, l['05'].t0 + .3));
   cubos.forEach((k, i) => {
     const sj = salto(t, .4 + i * .15 + Math.floor(t / 1.6) * 1.6, .3, .4), ent = sale(tramo(t, .2 + i * .1, .7 + i * .1));
-    const libre = new THREE.Vector3(-.72 + i * .36, -.75 + Math.sin(i * 2.1) * .15, .3), enF = new THREE.Vector3(-.8 + i * .4, -.15, .4);
+    const libre = new THREE.Vector3(-.9 + i * .45, -.75 + Math.sin(i * 2.1) * .15, .3), enF = new THREE.Vector3(-1.04 + i * .52, -.15, .4);
     k.position.lerpVectors(libre, enF, fila); k.position.y += (t < l['03'].t0 ? sj.y : salto(t, l['03'].t0 + l['03'].dur * i / 5, .3, .4).y) + (1 - ent) * -3 - salen * 3;
-    k.rotation.set(.15, -.3 + i * .15 + Math.sin(t * 1.2 + i) * .1, 0);
-    k.userData.cara({ ojos: parpadeo(t, i * .7), ceja: t >= l['04'].t0 ? 'feliz' : 'normal', mira: [Math.sin(t * .7 + i) * .5, 0], rubor: t >= l['04'].t0 ? .6 : 0 });
+    k.position.y -= .22; k.rotation.set(.12, -.3 + i * .15 + Math.sin(t * 1.2 + i) * .1, 0);
+    const suNombre = l['03'].t0 + l['03'].dur * i / 5;
+    actuar(gente[i], t, [[0, 'fall'], [.7 + i * .1, 'jump', { vel: .9 }], [l['03'].t0 - .4, 'idle'], [suNombre, 'emote-yes', { una: true }], [suNombre + 1, 'idle'], [l['04'].t0 + i * .08, 'emote-yes', { una: true }], [l['04'].t0 + 1.2, 'idle'], [l['05'].t0 - .3, 'fall']]);
     k.visible = salen < 1;
-    const r = $('#roles').children[i], [x, y] = aPantalla(k.position.clone().add(new THREE.Vector3(0, .32, 0))), u = sale(tramo(t, l['03'].t0 + l['03'].dur * i / 5 - .1, l['03'].t0 + l['03'].dur * i / 5 + .25));
-    r.style.left = x + 'px'; r.style.top = (y - 230 - (i % 2) * 120) + 'px'; r.style.opacity = u * (1 - tramo(t, l['04'].t0 - .3, l['04'].t0)); r.style.transform = `translateX(-50%) translateY(${(1 - u) * 30}px)`;
+    const r = $('#roles').children[i], [x, y] = aPantalla(k.position.clone().add(new THREE.Vector3(0, .62, 0))), u = sale(tramo(t, l['03'].t0 + l['03'].dur * i / 5 - .1, l['03'].t0 + l['03'].dur * i / 5 + .25));
+    r.style.left = x + 'px'; r.style.top = (y - 210 - (i % 2) * 125) + 'px'; r.style.opacity = u * (1 - tramo(t, l['04'].t0 - .3, l['04'].t0)); r.style.transform = `translateX(-50%) translateY(${(1 - u) * 30}px)`;
   });
+  piso.position.set(0, mezcla(-.97 - .15, -.37, fila) - salen * 3, .3); piso.visible = salen < 1;
   /* el portafolio: WhatsApp y correo */
   const vd = vida(t, l['05'].t0 + .2, l['06'].t0 + l['06'].dur * .4, .35, .3); $('#datos').style.opacity = vd; $('#datos').style.transform = `translateY(${(1 - vd) * 40}px)`;
   /* el cubo de Grupo Mazi al final */

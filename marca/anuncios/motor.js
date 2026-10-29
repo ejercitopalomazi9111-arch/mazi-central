@@ -49,7 +49,16 @@ export function escena3d(canvas, { fov = 30, z = 9 } = {}){
   const llave = new THREE.DirectionalLight('#FFFFFF', HDR ? 1.7 : 2.2); llave.position.set(-4, 6, 6); s.add(llave);
   const borde = new THREE.DirectionalLight(PAL.vino2, 3.2); borde.position.set(5, 2, -4); s.add(borde);
   const morado = new THREE.PointLight(PAL.techo, 4, 12); morado.position.set(0, 4, 2); s.add(morado);
-  return { r, s, cam, luces: { llave, borde, morado }, pintar(){ r.render(s, cam); } };
+  /* sombras de verdad desde la luz principal: E.sombras(lado del cuadro que cubren, centro). Suaves y sin
+     acné; la llave apunta al centro para que la sombra caiga donde está la escena */
+  const sombras = (lado = 8, centro = [0, 0, 0], { suave = 4 } = {}) => {
+    r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
+    llave.castShadow = true; llave.target.position.set(...centro); s.add(llave.target);
+    llave.position.set(centro[0] - 4, centro[1] + 7, centro[2] + 5);
+    const c = llave.shadow.camera; c.left = c.bottom = -lado / 2; c.right = c.top = lado / 2; c.near = .5; c.far = 30; c.updateProjectionMatrix();
+    llave.shadow.mapSize.set(2048, 2048); llave.shadow.bias = -.0004; llave.shadow.normalBias = .02; llave.shadow.radius = suave;
+  };
+  return { r, s, cam, luces: { llave, borde, morado }, sombras, pintar(){ r.render(s, cam); } };
 }
 
 /* el cubo del logo: techo morado que brilla un poco, caras oscuras; las aristas casi filosas */
