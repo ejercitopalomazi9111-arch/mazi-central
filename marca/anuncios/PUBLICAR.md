@@ -4,7 +4,7 @@ Nueve videos verticales (1080 × 1920, 30 cuadros por segundo), para Reels, TikT
 
 - subtítulos quemados;
 - la zona de abajo libre, para que no tapen el nombre de la cuenta ni los botones;
-- el cierre con el logo nuevo y el WhatsApp.
+- el cierre con el logo nuevo armándose en 3D (cae la cuña, cae la M, se voltean las letras) y el WhatsApp.
 
 Cada uno sale en dos copias:
 
@@ -15,7 +15,7 @@ Cada uno sale en dos copias:
 
 1. **Smiley's y District Roll** salen en el 01, 02, 03, 07 y 08 con su página real. Conviene un mensaje de *«¿te molesta si te ponemos en nuestro portafolio?»* antes de publicar. Es cortesía, y además casi siempre lo comparten.
 2. **El 09 va con voz de Piper** (local, con acento mexicano) porque se acabó el saldo gratis de ElevenLabs. Cuando regrese el saldo se cambia la voz en su `guion.json` y se vuelve a armar en un comando.
-3. **La música es de Kevin MacLeod, con licencia CC BY 4.0.** El crédito va en la descripción de cada post y ya está escrito abajo. Sin el crédito, la licencia no se cumple.
+3. **La música es de Kevin MacLeod, con licencia CC BY 4.0.** El crédito va en la descripción de cada post y ya está escrito abajo. Sin el crédito, la licencia no se cumple. El 04 además trae los créditos en pantalla al final (modelos 3D de Poly Haven, CC0, con sus autores; la lista está en `modelos/CREDITOS.md`).
 
 ## Orden sugerido: uno al día
 
@@ -61,9 +61,9 @@ Cada uno sale en dos copias:
 
 **04 · Nueva imagen**
 
-> Grupo Mazi cambia de cara: un cubo hecho de piezas que encajan, en morado oscuro, vino y claro. Misma gente, mismas ganas, nueva imagen. 💜🍷
+> Grupo Mazi cambia de cara: un cubo hecho de piezas que encajan, letra nueva y colores nuevos — morado oscuro, vino y claro. Misma gente, mismas ganas, nueva imagen. 💜🍷
 > #GrupoMazi #NuevaImagen #Branding #Rebranding #Querétaro
-> Música: «Dispersion Relation», Kevin MacLeod (incompetech.com), CC BY 4.0.
+> Música: «Volatile Reaction», Kevin MacLeod (incompetech.com), CC BY 4.0. Modelos 3D: Poly Haven (CC0).
 
 **05 · Mi sobrino sabe de computadoras**
 

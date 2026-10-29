@@ -58,6 +58,7 @@
 <div id="grano"></div>
 <script type="module">
 import { THREE, PAL, W, H, tramo, suave, sale, entra, resorte, mezcla, vida, escena3d, telefono, laptop, Toma, guion, sonidosVoz, subtitulos, grano, logo2d } from '../motor.js';
+import { logoVivo } from '../logo3d.js';
 import { icono } from '../iconos.js';
 const $ = (s) => document.querySelector(s);
 const G = await guion('.'), L = (id) => G.de(id);
@@ -121,7 +122,7 @@ window.pintar = async (t) => {
   /* el cierre */
   c2.clearRect(0, 0, W, H);
   const uF = sale(tramo(t, l['07'].t0, l['07'].t0 + .7));
-  if(uF > 0){ tel.visible = lap.visible = false; logo2d(c2, { cx: W / 2, cy: 860, ancho: 820 * (.92 + .08 * uF), alfa: uF }); }
+  if(uF > 0){ tel.visible = lap.visible = false; logoVivo(c2, { t, desde: l['07'].t0, cx: W / 2, cy: 860, ancho: 820 }); }
   $('#cierre').style.opacity = sale(tramo(t, l['07'].t0 + .5, l['07'].t0 + 1.1));
   /* el fondo: gris y triste con la plantilla; morado y vino con lo nuestro */
   const vivo = sale(tramo(t, T5 - .2, T5 + .5));

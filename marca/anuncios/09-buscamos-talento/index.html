@@ -34,6 +34,7 @@
 <div id="grano"></div>
 <script type="module">
 import { THREE, PAL, W, H, tramo, suave, sale, entra, resorte, mezcla, vida, escena3d, cubo, guion, sonidosVoz, subtitulos, grano, logo2d } from '../motor.js';
+import { logoVivo } from '../logo3d.js';
 import { cubito, parpadeo, salto } from '../personajes.js';
 import { icono } from '../iconos.js';
 const $ = (s) => document.querySelector(s);
@@ -83,7 +84,7 @@ window.pintar = async (t) => {
   E.cam.position.set(Math.sin(t * .4) * .1, 0, 9); E.cam.lookAt(0, 0, 0); E.pintar();
   c2.clearRect(0, 0, W, H);
   const uF = sale(tramo(t, l['06'].t1 + .2, l['06'].t1 + .8));
-  if(uF > 0){ mazi.visible = false; E.pintar(); logo2d(c2, { cx: W / 2, cy: 1180, ancho: 720 * (.92 + .08 * uF), alfa: uF }); }
+  if(uF > 0){ mazi.visible = false; E.pintar(); logoVivo(c2, { t, desde: l['06'].t1 + .2, cx: W / 2, cy: 1180, ancho: 720 }); }
   $('#fondo').style.background = `radial-gradient(70% 45% at 50% 55%, ${PAL.vino}66, transparent 70%), radial-gradient(120% 80% at 50% 0%, ${PAL.oscuro2}, ${PAL.oscuro} 70%)`;
   sub(t); gr(t);
 };

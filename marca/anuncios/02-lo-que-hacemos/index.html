@@ -57,6 +57,7 @@
 <div id="grano"></div>
 <script type="module">
 import { THREE, PAL, W, H, tramo, suave, sale, entra, resorte, mezcla, vida, azar, escena3d, cubo, telefono, laptop, Toma, guion, sonidosVoz, subtitulos, grano, logo2d } from '../motor.js';
+import { logoVivo } from '../logo3d.js';
 import { icono } from '../iconos.js';
 const $ = (s) => document.querySelector(s);
 const G = await guion('.'), L = (id) => G.de(id);
@@ -203,7 +204,7 @@ window.pintar = async (t) => {
   /* ── el cierre ── */
   c2.clearRect(0, 0, W, H);
   const uF = sale(tramo(t, l['13'].t0 - .1, l['13'].t0 + .7));
-  if(uF > 0) logo2d(c2, { cx: W / 2, cy: 820, ancho: 820 * (.92 + .08 * uF), alfa: uF });
+  if(uF > 0) logoVivo(c2, { t, desde: l['13'].t0 - .1, cx: W / 2, cy: 820, ancho: 820 });
   $('#cierre').style.opacity = sale(tramo(t, l['13'].t0 + .4, l['13'].t0 + 1));
   $('#fondo').style.background = `radial-gradient(80% 45% at ${50 + Math.sin(t * .35) * 14}% ${38 + Math.cos(t * .27) * 8}%, ${PAL.vino}5C, transparent 70%), radial-gradient(120% 80% at 50% 0%, ${PAL.oscuro2}, ${PAL.oscuro} 70%)`;
   sub(t); gr(t);

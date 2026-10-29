@@ -455,6 +455,9 @@ dependemos.
 
    | si cada logo dice qué letra usa y la revisión dice «todas cargadas», salieron con su letra | `font-family:"Archivo"` dentro de `style="…"` **cierra el atributo**: las 25 letras cayeron a la del sistema, y la revisión miraba la letra que QUEDÓ puesta (la del sistema, que siempre está) | las 200 propuestas de logo salieron iguales la primera vez. Ahora se compara el nombre de la ficha con la letra puesta y se mide el ancho con dos respaldos distintos (`marca/propuestas/armar.mjs`). Y `document.fonts.check()` dice que NO con letras japonesas (Dela Gothic viene en cien pedazos) aunque sí se usen: no sirve de testigo |
 
+   | `objeto.lookAt(punto)` lo pone de frente al punto, igual que a una cámara | un `Object3D` mira con **+z** y una cámara con **−z**: copiar el giro de uno al otro voltea la escena | las letras 3D del logo salieron **al revés** («IZAM») sólo en la vista isométrica; se arma la base a mano (`makeBasis(u, v, z)` en `marca/anuncios/logo3d.js`) |
+   | el saldo gratis de ElevenLabs alcanza para varios anuncios | 10,000 caracteres al mes se fueron en **ocho** anuncios con dos o tres tomas cada uno; la llamada contesta `401 quota_exceeded`, que parece llave mala | el 09 salió con Piper (local, acento mexicano). `voces.mjs` acepta `piper:<voz>` en el guion y lo demás no cambia |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---

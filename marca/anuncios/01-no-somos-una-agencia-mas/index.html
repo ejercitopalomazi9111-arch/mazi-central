@@ -27,6 +27,7 @@
 <div id="grano"></div>
 <script type="module">
 import { THREE, PAL, W, H, tramo, suave, sale, entra, resorte, mezcla, vida, azar, escena3d, cubo, telefono, laptop, Toma, guion, sonidosVoz, subtitulos, grano, logo2d } from '../motor.js';
+import { logoVivo } from '../logo3d.js';
 const $ = (s) => document.querySelector(s);
 const G = await guion('.'), L = (id) => G.de(id);
 const FIN = L('06').t1 + 2.4;
@@ -113,7 +114,7 @@ window.pintar = async (t) => {
   /* 4 · el cierre: el logo y el WhatsApp */
   c2.clearRect(0, 0, W, H);
   const uF = sale(tramo(t, a6.t0 - .1, a6.t0 + .7));
-  if(uF > 0) logo2d(c2, { cx: W / 2, cy: 860, ancho: 820 * (.9 + .1 * uF), alfa: uF });
+  if(uF > 0) logoVivo(c2, { t, desde: a6.t0 - .1, cx: W / 2, cy: 860, ancho: 820 });
   $('#cierre').style.opacity = sale(tramo(t, a6.t0 + .5, a6.t0 + 1.1));
   /* el fondo: morado oscuro con un halo vino que se mueve */
   $('#fondo').style.background = `radial-gradient(80% 50% at ${50 + Math.sin(t * .4) * 12}% ${42 + Math.cos(t * .3) * 6}%, ${PAL.vino}66, transparent 70%), radial-gradient(120% 80% at 50% 0%, ${PAL.oscuro2}, ${PAL.oscuro} 70%)`;

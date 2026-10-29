@@ -21,7 +21,7 @@
 #burbuja::after{ content:""; position:absolute; left:120px; bottom:-38px; border:24px solid transparent; border-top:30px solid #fff }
 #burbuja small{ display:block; font:700 30px/1 var(--t); letter-spacing:.14em; color:#A8264B; margin-bottom:14px }
 #letrero{ position:absolute; left:0; right:0; top:300px; text-align:center; font:400 118px/1 "Bangers", sans-serif; letter-spacing:.03em; color:#FFD23F; text-shadow:0 8px 0 #A8264B, 0 16px 30px #000a; opacity:0 }
-#moraleja{ position:absolute; left:80px; right:150px; top:280px; opacity:0 }
+#moraleja{ position:absolute; z-index:6; left:60px; right:130px; top:250px; padding:40px 44px 46px; border-radius:36px; background:#170A26F2; box-shadow:0 30px 80px -20px #000; opacity:0 }
 #moraleja .q{ font:700 40px/1 var(--t); letter-spacing:.2em; color:#FF8FB1 }
 #moraleja .d{ margin-top:18px; font:700 96px/.95 var(--t); letter-spacing:-.04em; text-transform:uppercase }
 #moraleja .d span{ color:#FF5C8A }
@@ -42,6 +42,7 @@
 <div id="grano"></div>
 <script type="module">
 import { THREE, PAL, W, H, tramo, suave, sale, entra, resorte, mezcla, vida, escena3d, cubo, laptop, telefono, guion, sonidosVoz, subtitulos, grano, logo2d, imagen } from '../motor.js';
+import { logoVivo } from '../logo3d.js';
 import { cubito, habla, parpadeo, salto } from '../personajes.js';
 const $ = (s) => document.querySelector(s);
 const G = await guion('.'), L = (id) => G.de(id);
@@ -152,7 +153,7 @@ window.pintar = async (t) => {
   /* el cierre */
   c2.clearRect(0, 0, W, H);
   const uF = sale(tramo(t, l['13'].t0 + .6, l['13'].t0 + 1.3));
-  if(uF > 0){ c2.fillStyle = `rgba(23,10,38,${uF * .92})`; c2.fillRect(0, 0, W, H); logo2d(c2, { cx: W / 2, cy: 820, ancho: 820 * (.92 + .08 * uF), alfa: uF }); }
+  if(uF > 0){ c2.fillStyle = `rgba(23,10,38,${uF * .92})`; c2.fillRect(0, 0, W, H); logoVivo(c2, { t, desde: l['13'].t0 + .6, cx: W / 2, cy: 820, ancho: 820 }); }
   $('#cierre').style.opacity = sale(tramo(t, l['13'].t0 + 1, l['13'].t0 + 1.6));
   $('#fondo').style.background = '#2A1424';
   sub(t); gr(t);
