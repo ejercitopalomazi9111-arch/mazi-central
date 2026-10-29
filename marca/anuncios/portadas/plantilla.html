@@ -1,0 +1,20 @@
+<!doctype html><html lang="es-MX"><head><meta charset="utf-8">
+<!-- LA PORTADA DE UN ANUNCIO: un cuadro del video y, encima de la franja de los subtítulos, el título.
+     La arma armar.mjs: plantilla.html?c=cuadros/05-mi-sobrino.jpg&t=Mi sobrino sabe&k=GRACIOSO -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter+Tight:wght@700&display=block">
+<style>
+*{margin:0;box-sizing:border-box} html,body{width:1080px;height:1920px;overflow:hidden;background:#170A26}
+#c{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#b{position:absolute;left:0;right:0;top:1080px;bottom:0;background:linear-gradient(#170A2600,#170A26F2 18%,#170A26 26%)}
+#t{position:absolute;left:80px;right:150px;top:1290px;font:700 104px/.92 "Space Grotesk";letter-spacing:-.045em;color:#F4EEF2;text-transform:uppercase}
+#t em{font-style:normal;color:#B44BFF}
+#k{position:absolute;left:80px;top:1230px;font:700 28px/1 "Inter Tight";letter-spacing:.2em;color:#C77DFF;text-transform:uppercase}
+#m{position:absolute;left:80px;top:1700px;height:56px}
+</style></head><body>
+<img id="c"><div id="b"></div><div id="k"></div><div id="t"></div><img id="m" src="../../cubo/final/logo.svg">
+<script>
+const q = new URLSearchParams(location.search);
+document.getElementById('c').src = q.get('c'); document.getElementById('k').textContent = q.get('k') || '';
+document.getElementById('t').innerHTML = (q.get('t') || '').replace(/\*(.+?)\*/g, '<em>$1</em>');
+window.listo = Promise.all([document.fonts.ready, ...[...document.images].map(i => i.decode().catch(() => {}))]);
+</script></body></html>

@@ -18,6 +18,10 @@ Cada uno sale en dos copias:
 2. **El 09 y el 10 van con voz de Piper** (local, con acento mexicano) porque se acabó el saldo gratis de ElevenLabs. **La voz de la casa es Chris** (la del 07, «La plantilla»): cuando regrese el saldo se cambia la voz en su `guion.json` y se vuelve a armar en un comando. El 11 y el 12 van sin voz, sólo música.
 3. **La música es de Kevin MacLeod, con licencia CC BY 4.0.** El crédito va en la descripción de cada post y ya está escrito abajo. Sin el crédito, la licencia no se cumple. Los modelos 3D (Poly Haven y Kenney) y la luz (Poly Haven) son CC0: no piden crédito, pero se da igual. El 04 además los trae en pantalla al final; la lista completa está en `modelos/CREDITOS.md`.
 
+## Las portadas
+
+Cada video trae su portada en `portadas/<video>.jpg` (1080 × 1920): un cuadro del video con el título encima, tapando la franja de los subtítulos. En Reels y TikTok se sube como «portada» o «cover». Se vuelven a armar con `node marca/anuncios/portadas/armar.mjs` (con el servidor de la raíz prendido); el cuadro y el título de cada una están en la lista de arriba de ese archivo.
+
 ## Orden sugerido: uno al día
 
 | Día | Video | Por qué ahí |
