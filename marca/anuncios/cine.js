@@ -18,7 +18,7 @@ import { OutputPass } from './vendor/postprocessing/OutputPass.js';
 import { extruir } from './logo3d.js';
 import { LETRAS } from './letras3d.js';
 
-export function cine(visible, { fov = 32, sub = 6, obturador = .55, bloom = [.85, .55, .78] } = {}){
+export function cine(visible, { fov = 32, sub = 6, obturador = .55, bloom = [.6, .5, .9] } = {}){
   const gl = document.createElement('canvas'); gl.width = W; gl.height = H;
   const r = new THREE.WebGLRenderer({ canvas: gl, antialias: true, preserveDrawingBuffer: true });
   r.setPixelRatio(1); r.setSize(W, H, false); r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.NeutralToneMapping;
