@@ -68,7 +68,7 @@ const enPantalla = new THREE.Vector3(.27, .338, .03);              // dónde est
 const P = piezasCubo(); const cubo = new THREE.Group(); cubo.add(P.m, P.cuna); s.add(cubo);
 const anillos = [0, 1, 2, 3].map(i => { const m = new THREE.Mesh(new THREE.TorusGeometry(1, .012, 8, 120), new THREE.MeshBasicMaterial({ color: '#C77DFF', transparent: true, toneMapped: false })); s.add(m); return m; });
 /* las cuatro letras que giran alrededor del cubo */
-const matBlanco = new THREE.MeshStandardMaterial({ color: '#F4EEF2', roughness: .28, metalness: .15, emissive: '#F4EEF2', emissiveIntensity: .12 });
+const matBlanco = new THREE.MeshStandardMaterial({ color: '#DCD4E2', roughness: .3, metalness: .2 });
 const orbita = [...'MAZI'].map(ch => { const p = palabra3d(ch, { alto: .42, hondo: .25, mat: matBlanco }); s.add(p); return p; });
 
 /* ── 3 · el estudio blanco: «Hazlo que se mueva.» ── */
@@ -91,24 +91,24 @@ const brillo = (c, i = .9) => new THREE.MeshStandardMaterial({ color: c, emissiv
 const X4 = 0, Y4 = 80;
 const pal4 = (txt, o, x, y) => { const p = cabe(palabra3d(txt, o)); p.position.set(X4 + x, Y4 + y, 0); s.add(p); return p; };
 const wPag = pal4('Páginas,', { alto: .4, hondo: .2, mat: brillo('#C77DFF', 1.1) }, -.05, .62);
-const wApps = pal4('apps', { alto: .4, hondo: .2, mat: brillo('#EDE6F2', .28) }, -.3, .08);
-const wVideo = pal4('y video', { alto: .4, hondo: .2, mat: brillo('#EDE6F2', .28) }, .12, -.46);
+const wApps = pal4('apps', { alto: .4, hondo: .2, mat: brillo('#E2DAE8', .12) }, -.3, .08);
+const wVideo = pal4('y video', { alto: .4, hondo: .2, mat: brillo('#E2DAE8', .12) }, .12, -.46);
 const lHechas = letrero('a tu medida · desde Querétaro', { px: 64, peso: 600, familia: '"Inter Tight"', color: '#D9C6E8', alto: .1 }); lHechas.position.set(X4, Y4 - .95, 0); s.add(lHechas);
 
 /* ── 5 · «TU NEGOCIO» detrás de barras de vidrio ── */
 const X5 = 0, Y5 = 120;
-const wTu = cabe(palabra3d('TU', { alto: .5, hondo: .25, mat: brillo('#EDE6F2', .3) })); wTu.position.set(X5, Y5 + .45, 0); s.add(wTu);
+const wTu = cabe(palabra3d('TU', { alto: .5, hondo: .25, mat: brillo('#E2DAE8', .1) })); wTu.position.set(X5, Y5 + .45, 0); s.add(wTu);
 const wNeg = cabe(palabra3d('NEGOCIO', { alto: .4, hondo: .25, mat: brillo('#C77DFF', 1.1) })); wNeg.position.set(X5, Y5 - .15, 0); s.add(wNeg);
 const lMov = letrero('en movimiento.', { px: 90, peso: 700, color: '#F4EEF2', alto: .16 }); lMov.position.set(X5, Y5 - .75, 0); s.add(lMov);
 const vidrio = new THREE.MeshPhysicalMaterial({ color: '#ffffff', transmission: 1, thickness: .6, roughness: .04, ior: 1.45, metalness: 0, transparent: true });
-const barras = [0, 1, 2, 3, 4, 5].map(i => { const b = new THREE.Mesh(new THREE.CylinderGeometry(.11, .11, 4, 40), vidrio); s.add(b); return b; });
+const barras = [0, 1, 2, 3, 4, 5].map(i => { const b = new THREE.Mesh(new THREE.CylinderGeometry(.17, .17, 4, 48), vidrio); s.add(b); return b; });
 
 /* ── 6 · el logo, con el foco que se acomoda ── */
 const X6 = 0, Y6 = 160;
 const L = logo3d({ hondo: .22 }); L.grupo.position.set(X6, Y6, 0); L.grupo.scale.setScalar(.36); s.add(L.grupo);
-L.matL[0].emissiveIntensity = .03;
+L.matL[0].emissiveIntensity = .02; L.matL[0].color.set('#E4DDEA');
 const ISOv = new THREE.Vector3(1, 1, 1).normalize(), dLogo = (L.medio * 2 * .36 * 1.2) / (2 * Math.tan(cam.fov * Math.PI / 360) * cam.aspect);
-const lLema = letrero('Si no existe la herramienta, se construye.', { px: 64, peso: 600, familia: '"Inter Tight"', color: '#E9E1EF', alto: .085 }); s.add(lLema);
+const lLema = letrero('Si no existe la herramienta, se construye.', { px: 64, peso: 600, familia: '"Inter Tight"', color: '#E9E1EF', alto: .12 }); s.add(lLema);
 const lWa = letrero('WhatsApp  442 883 3786', { px: 80, peso: 800, familia: '"Inter Tight"', color: '#F4F4F4', alto: .14, fondo: '#178A42' }); s.add(lWa);
 
 /* las letras de una palabra entran una por una: suben girando sobre su base */
@@ -126,13 +126,13 @@ const PARADAS = [
   [B(1) + .9, 'tel', V3(-.4, -1.15, 1.25), V3(0, .05, 0), .1, .0035],       // abajo y de lado, rozando la pantalla
   [B(2) - .15, 'tel', V3(.2, -.2, .8), V3(.27, .34, .04), .04, .004],       // hasta el cubo de la página
   [B(2) + 1.05, 'tel', V3(.22, -1.5, 2.7), V3(.27, .34, .5), -.05, .0015],  // sale el cubo: la cámara se echa para atrás
-  [B(3) - .05, V3(1.9, 1.1, 6.8), V3(0, 0, 0), .2, .0008],                  // barrido al vacío: el cubo, solo
-  [B(4) - .25, V3(-1.2, 1.8, 6.3), V3(0, .1, 0), -.08, .0008],
+  [B(3) - .05, V3(2.6, 1.4, 8.8), V3(0, .15, 0), .2, .0006],                 // barrido al vacío: el cubo, solo
+  [B(4) - .25, V3(-1.6, 2.3, 8.2), V3(0, .25, 0), -.08, .0006],
   [B(4) + .05, V3(X3 - .5, Y3 + 1.2, 5.0), V3(X3 - .1, Y3 + .7, 0), -.12, .0015], // el estudio blanco: «Hazlo»
   [B(4) + 1.1, V3(X3 + .4, Y3 + .45, 5.6), V3(X3, Y3 + .25, 0), .05, .0012],
-  [B(5) + .6, V3(X3 + .1, Y3 - .15, 5.4), V3(X3, Y3 - .1, 0), .1, .0012],     // «mueva.»
-  [B(5) + 1.0, V3(X3 + 2.75, Y3 - .5, 5.0), V3(X3 + 2.6, Y3 - .85, 0), -.06, .0012], // barrido a «sin plantillas»
-  [B(6) - .2, V3(X3 + 2.8, Y3 - 1.0, 4.4), V3(X3 + 2.6, Y3 - .9, 0), .08, .0015],
+  [B(5) + .95, V3(X3 + .1, Y3 - .15, 5.4), V3(X3, Y3 - .1, 0), .1, .0012],    // «mueva.», ya completa
+  [B(5) + 1.25, V3(X3 + 2.75, Y3 - .7, 5.0), V3(X3 + 2.6, Y3 - .88, 0), -.06, .0012], // barrido a «sin plantillas»
+  [B(6) - .2, V3(X3 + 2.75, Y3 - .85, 4.7), V3(X3 + 2.6, Y3 - .88, 0), .06, .0012],
   [B(6) + .05, V3(X4 + .5, Y4 + .7, 5.4), V3(X4, Y4 + .25, 0), .12, .0015],   // a lo negro: lo que hacemos
   [B(7) - .2, V3(X4 - .4, Y4 - .4, 5.6), V3(X4, Y4 - .1, 0), -.1, .0012],
   [B(7) + .05, V3(X5 + .5, Y5 + .3, 5.2), V3(X5, Y5 + .05, 0), .06, .001],    // «TU NEGOCIO»
@@ -200,20 +200,20 @@ function escena(t){
   const e3 = t > B(4) - .1 && t < B(6) + .1; [wHazlo, wQue, cajaSe, wSe, wMueva, wSin, wMano].forEach(o => o.visible = e3);
   entrar(wHazlo, t, B(4) + .02); entrar(wQue, t, B(4) + G * 2, { de: 'arriba' });
   const uS = resorte(tramo(t, B(4) + G * 3, B(4) + G * 3 + .6)); cajaSe.scale.set(Math.max(.001, uS), 1, 1); cajaSe.visible = e3 && uS > 0; entrar(wSe, t, B(4) + G * 3 + .15, { d: .25 });
-  entrar(wMueva, t, B(5) - .02, { paso: G / 2.5, d: .3 });
-  entrar(wSin, t, B(5) + 1.05, { paso: .03 }); entrar(wMano, t, B(5) + 1.45, { paso: .03, de: 'arriba' });
+  entrar(wMueva, t, B(5) - .02, { paso: .07, d: .3 });
+  entrar(wSin, t, B(5) + 1.2, { paso: .025, d: .3 }); entrar(wMano, t, B(5) + 1.42, { paso: .025, d: .3, de: 'arriba' });
 
   /* 4 · lo que hacemos, en luz */
   const e4 = t > B(6) - .1 && t < B(7) + .1; [wPag, wApps, wVideo, lHechas].forEach(o => o.visible = e4);
-  entrar(wPag, t, B(6) + .02, { paso: .035 }); entrar(wApps, t, B(6) + G * 2, { paso: .04 }); entrar(wVideo, t, B(6) + G * 3, { paso: .04, de: 'arriba' });
-  lHechas.material.opacity = sale(tramo(t, B(6) + 1.1, B(6) + 1.5)); lHechas.position.y = Y4 - .95 - (1 - lHechas.material.opacity) * .08;
+  entrar(wPag, t, B(6) + .02, { paso: .03, d: .3 }); entrar(wApps, t, B(6) + G, { paso: .035, d: .3 }); entrar(wVideo, t, B(6) + G * 2, { paso: .035, d: .3, de: 'arriba' });
+  lHechas.material.opacity = sale(tramo(t, B(6) + 1.0, B(6) + 1.35)); lHechas.position.y = Y4 - .95 - (1 - lHechas.material.opacity) * .08;
 
   /* 5 · TU NEGOCIO, y las barras de vidrio que pasan por delante */
   const e5 = t > B(7) - .1 && t < B(8) + .1; [wTu, wNeg, lMov].forEach(o => o.visible = e5);
   entrar(wTu, t, B(7) + .02, { paso: .06 }); entrar(wNeg, t, B(7) + G, { paso: .035, de: 'arriba' });
   lMov.material.opacity = sale(tramo(t, B(7) + G * 3, B(7) + G * 3 + .4));
   barras.forEach((b, i) => { b.visible = e5; const u = tramo(t, B(7) + .25 + i * .05, B(8) + .05);
-    b.position.set(X5 + mezcla(2.4, -2.6, ease(u)) + (i - 2.5) * .34, Y5, .55 + (i % 2) * .12); b.rotation.set(0, 0, .04); });
+    b.position.set(X5 + mezcla(2.6, -2.8, ease(u)) + (i - 2.5) * .4, Y5, .6 + (i % 2) * .12); b.rotation.set(0, 0, .04); });
 
   /* 6 · el logo: la M flota, baja y se vuelve el cubo; el foco se acomoda; el lema y el WhatsApp */
   const e6 = t > B(8) - .1; L.grupo.visible = e6;
@@ -238,7 +238,7 @@ const gr = grano($('#grano'), .045);
 /* el desenfoque de movimiento sólo trabaja fuerte cuando la cámara corre: medir cuánto se movió en un cuadro */
 const rapidez = (t) => { camara(t - 1 / 30); const a = cam.position.clone(), q = cam.quaternion.clone(); const o = camara(t);
   return a.distanceTo(cam.position) / Math.max(.3, o.foco) + q.angleTo(cam.quaternion); };
-window.pintar = async (t) => { const v = rapidez(t), n = v > .05 ? 6 : v > .015 ? 4 : 2; C.cuadro(t, escena, { n: t < 1.6 ? 6 : n }); gr(t); };
+window.pintar = async (t) => { const v = rapidez(t), n = v > .08 ? 9 : v > .05 ? 6 : v > .015 ? 4 : 2; C.cuadro(t, escena, { n: t < 1.6 ? 6 : n }); gr(t); };
 await pintar(0); window._listo();
 </script>
 </body>
