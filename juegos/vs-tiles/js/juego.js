@@ -17,7 +17,7 @@ const TECLAS_FL = { arrowleft: 0, d: 0, arrowdown: 1, f: 1, arrowup: 2, j: 2, ar
 const ACERCA = { facil: 1.25, normal: 1.0, dificil: .82, experto: .66, exorcist: .52 };
 
 export async function cargarSprites(){
-  const nombres = ['gen_circle_fill', 'gen_circle_outline', 'p_light_01', 'p_flare_01', 'p_star_06', 'p_star_01', 'p_spark_05', 'p_magic_03', 'p_circle_03', 'p_twirl_01', 'p_trace_04', 'p_slash_03', 'p_symbol_01', 'p_window_02',
+  const nombres = ['paloma', 'gen_circle_fill', 'gen_circle_outline', 'p_light_01', 'p_flare_01', 'p_star_06', 'p_star_01', 'p_spark_05', 'p_magic_03', 'p_circle_03', 'p_twirl_01', 'p_trace_04', 'p_slash_03', 'p_symbol_01', 'p_window_02',
     ...SIM.flatMap(s => [`ps_color_${s}`, `ps_color_${s}_outline`, `ps_${s}_outline`]), ...FLECHA.flatMap(f => [`tecla_arrow_${f}`, `tecla_arrow_${f}_outline`])];
   const S = {}; await Promise.all(nombres.map(n => new Promise(r => { const im = new Image(); im.onload = () => { S[n] = im; r(); }; im.onerror = r; im.src = `sprites/${n}.png`; })));
   /* versiones teñidas (el canvas 2D no tiñe solo): se hornean una vez */
@@ -218,7 +218,8 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
     /* ── Flechas (FNF): las del rival arriba a la izquierda, las tuyas grandes abajo ── */
     if(modo === 'flechas'){ const tam = Math.min(W / 4.4, H / 6.5, 120), yRec = H * .8, velPx = H * .9 / AR / 1.4;
       for(let c = 0; c < 4; c++){ const [cx] = flechaXY(c, 0), pul = Math.max(0, 1 - (ahora - (est.pulsado[c] || 0)) / 160);
-        img(`tecla_arrow_${FLECHA[c]}_outline`, cx, yRec, tam * (1 + .12 * lat + .15 * pul), 0, .9); if(pul > 0) img(S.teñir('p_light_01', COLOR_FL[c]), cx, yRec, tam * 2.2, 0, pul, true); }
+        const ef = ajustes.estilos?.flechas || 'contorno';
+        img(ef === 'solida' ? S.teñir(`tecla_arrow_${FLECHA[c]}`, COLOR_FL[c]) : `tecla_arrow_${FLECHA[c]}_outline`, cx, yRec, tam * (1 + .12 * lat + .15 * pul), 0, ef === 'solida' ? .45 : .9); if(pul > 0) img(S.teñir('p_light_01', COLOR_FL[c]), cx, yRec, tam * 2.2, 0, pul, true); }
       const tamR = tam * .42, yRiv = Math.max(H * .2, SA.t + 104), xRiv = 20 + SA.l; for(let c = 0; c < 4; c++){ const pr = Math.max(0, 1 - (ahora - (est.pulsadoR[c] || 0)) / 160); img(`tecla_arrow_${FLECHA[c]}_outline`, xRiv + tamR * .6 + c * tamR * 1.05, yRiv, tamR * (1 + .2 * pr), 0, .6); }
       for(let k = est.desde; k < carta.notas.length; k++){ const n = carta.notas[k]; if(n.modo !== 'flechas') continue; const dt = n.t - t; if(dt > AR * 1.6) break;
         const c = RIEL_FL.indexOf(n.r), st = est.estado[n.id];
@@ -227,14 +228,15 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
           img(S.teñir(`tecla_arrow_${FLECHA[c]}`, COLOR_FL[c]), xx, yy, tamR, 0, .85); continue; }
         if(st === 'hecha' || st === 'fallada' || st === 'pendiente') continue; const [cx] = flechaXY(c, 0), yy = yRec - (st === 'sosteniendo' ? 0 : dt) * velPx;
         if(n.fin){ const yf = yRec - (n.fin - t) * velPx; x.fillStyle = COLOR_FL[c] + (st === 'sosteniendo' ? 'EE' : '99'); x.fillRect(cx - tam * .13, Math.min(yf, yy), tam * .26, Math.abs(yy - yf)); }
-        if(st !== 'sosteniendo') img(S.teñir(`tecla_arrow_${FLECHA[c]}`, COLOR_FL[c]), cx, yy, tam);
+        if(st !== 'sosteniendo'){ if((ajustes.estilos?.flechas) === 'neon') img(S.teñir('p_light_01', COLOR_FL[c]), cx, yy, tam * 2, 0, .7, true);
+          img((ajustes.estilos?.flechas) === 'solida' ? `tecla_arrow_${FLECHA[c]}_outline` : S.teñir(`tecla_arrow_${FLECHA[c]}`, COLOR_FL[c]), cx, yy, tam); }
       }
     }
     /* ── Símbolos (DIVA): el blanco con su manecilla, y el símbolo que vuela hacia él ── */
     if(modo === 'diva'){ const tam = radio() * 2.1, B = botonesDiva();
       for(let k = est.desde; k < carta.notas.length; k++){ const n = carta.notas[k]; if(n.modo !== 'diva') continue; const dt = n.t - t; if(dt > AR * 1.15) break; const st = est.estado[n.id];
         if(st === 'hecha' || st === 'fallada' || st === 'pendiente') continue; const [cx, cy] = enArea(n), u = 1 - Math.max(0, dt) / (AR * 1.15);
-        const nom = n.tipo === 'estrella' ? 'p_star_06' : `ps_color_${SIM[n.sim]}`;
+        const es = ajustes.estilos?.simbolos || 'color', nom = n.tipo === 'estrella' ? 'p_star_06' : es === 'contorno' ? S.teñir(`ps_${SIM[n.sim]}_outline`, COLOR_SIM[n.sim]) : es === 'blanco' ? `ps_color_${SIM[n.sim]}_outline` : `ps_color_${SIM[n.sim]}`;
         img(n.tipo === 'estrella' ? S.teñir('p_star_01', '#FFF3B0') : `ps_${SIM[n.sim]}_outline`, cx, cy, tam * (1.05 + .08 * lat), 0, Math.min(1, u * 3));
         /* la manecilla del reloj del blanco (M116) */
         x.save(); x.globalAlpha = Math.min(1, u * 3); x.strokeStyle = '#FFFFFF'; x.lineWidth = 3; x.beginPath(); x.moveTo(cx, cy); const a = -Math.PI / 2 + u * Math.PI * 2; x.lineTo(cx + Math.cos(a) * tam * .62, cy + Math.sin(a) * tam * .62); x.stroke(); x.restore();
@@ -262,13 +264,26 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
           const [ex, ey] = puntoCamino(n, 1); img('gen_circle_outline', ex, ey, R * 2, 0, alfa);
           if(t >= n.t){ const [bx, by] = puntoCamino(n, Math.min(1, (t - n.t) / (n.fin - n.t))); img(S.teñir('gen_circle_fill', '#FFFFFF'), bx, by, R * 1.6); img('gen_circle_outline', bx, by, R * 4.6, 0, .7); } }
         if(st !== 'hecha'){ img(S.teñir('gen_circle_fill', color), cx, cy, R * 2, 0, alfa); img('gen_circle_outline', cx, cy, R * 2.1, 0, alfa);
-          img('gen_circle_outline', cx, cy, R * 2 * (1 + 2.2 * Math.max(0, dt) / AR), 0, alfa * .9);
+          const ea = ajustes.estilos?.aros || 'clasico', rAro = R * 2 * (1 + 2.2 * Math.max(0, dt) / AR);
+          if(ea === 'magia') img(S.teñir('p_magic_03', color), cx, cy, rAro * 1.15, ahora / 400, alfa * .9, true); else if(ea === 'estelar'){ img(S.teñir('p_star_06', color), cx, cy, R * 3.2, ahora / 900, alfa * .5, true); img('gen_circle_outline', cx, cy, rAro, 0, alfa * .9); } else img('gen_circle_outline', cx, cy, rAro, 0, alfa * .9);
           x.save(); x.globalAlpha = alfa; x.font = `800 ${Math.round(R * .9)}px Orbitron, sans-serif`; x.fillStyle = '#fff'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(String((n.id % 9) + 1), cx, cy + 1); x.restore(); }
       }
     }
+    /* LOS BOTONES DE TOQUE del modo Carril: un aro en cada receptor, que sigue a la pista aunque gire, se
+       incline o cambie de carriles (Carlos, 29 oct: «pon un indicador de dónde tocar»). Siempre tenue; se
+       encienden y laten 1.5 s cuando los carriles se mueven, y destellan al tocarlos */
+    if(modo === 'carril' && escena.E.visible > .5){ const vis = receptores.filter(q => q.vis > .5);
+      let sep = Infinity; for(let i = 1; i < vis.length; i++) sep = Math.min(sep, Math.hypot(vis[i].x - vis[i - 1].x, vis[i].y - vis[i - 1].y));
+      const rad = Math.max(18, Math.min(46, (isFinite(sep) ? sep : 90) * .46)), mov = Math.max(0, 1 - escena.E.movido / 1.5);
+      for(const q of vis){ const golpe = Math.max(0, 1 - (ahora - escena.piezas.rieles[q.r].golpe) / 180), c = COLORES_RIEL[q.r];
+        const a = Math.min(1, .2 + mov * (.55 + .25 * Math.sin(ahora / 70)) + golpe * .6);
+        x.save(); x.globalAlpha = a * q.vis; x.lineWidth = 2.5 + mov * 2; x.strokeStyle = c; x.fillStyle = c + '22';
+        x.beginPath(); x.arc(q.x, q.y, rad * (1 + .15 * golpe + .1 * mov), 0, Math.PI * 2); x.fill(); x.stroke();
+        x.globalAlpha = (.35 + .4 * mov) * q.vis; x.fillStyle = '#fff'; x.beginPath(); x.arc(q.x, q.y, Math.max(3, rad * .12), 0, Math.PI * 2); x.fill(); x.restore(); } }
     /* los destellos de cada acierto */
     for(let i = efectos.length - 1; i >= 0; i--){ const e = efectos[i], u = (ahora - e.t0) / 420; if(u >= 1){ efectos.splice(i, 1); continue; }
-      img(S.teñir('p_flare_01', e.color), e.x, e.y, 110 + 160 * u, u * 2, 1 - u, true); if(e.j.id === 'sonoluz') img(S.teñir('p_star_06', '#FFF3B0'), e.x, e.y, 80 + 220 * u, -u * 3, 1 - u, true); }
+      const sp = ajustes.golpeSprite || 'p_flare_01', paloma = sp === 'paloma';
+      img(paloma ? S.paloma : S.teñir(sp, e.color), e.x, e.y - (paloma ? 40 * u : 0), (paloma ? 70 : 110) + 160 * u, paloma ? 0 : u * 2, 1 - u, !paloma); if(e.j.id === 'sonoluz') img(S.teñir('p_star_06', '#FFF3B0'), e.x, e.y, 80 + 220 * u, -u * 3, 1 - u, true); }
     hud(t, ahora, lat, modo);
     if(enPausa){ x.fillStyle = '#05020Acc'; x.fillRect(0, 0, W, H); }
   }

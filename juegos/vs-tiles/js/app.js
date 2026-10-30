@@ -8,6 +8,7 @@ import { crearEscena, ESCENARIOS, PERSONAJES, COLORES_RIEL } from './escena.js';
 import { crearPartida, cargarSprites } from './juego.js';
 import { analizar } from './analisis.js';
 import { biblioteca, etiquetas } from './biblioteca.js';
+import { montarMercado } from './mercado.js';
 const $ = (s) => document.querySelector(s), $$ = (s) => [...document.querySelectorAll(s)];
 
 /* ── el catálogo ── */
@@ -46,16 +47,30 @@ const OBJETOS = [
   { id: 'golpe:tajo', cat: 'golpe', nombre: 'Tajo', raro: 'l', sprite: 'p_slash_03' },
   { id: 'golpe:remolino', cat: 'golpe', nombre: 'Remolino', raro: 'm', sprite: 'p_twirl_01' },
   ...ESCENARIOS.map((e, i) => ({ id: 'fondo:' + i, cat: 'fondo', nombre: e.nombre, raro: i < 2 ? 'c' : i < 4 ? 'r' : i < 6 ? 'e' : 'l', img: `escenarios/${e.id}.jpg` })),
+  /* cómo se ve cada modo (Carlos, 29 oct: «súmale estilos de notas en cada modo… también estilo de botones») */
+  { id: 'forma:barra', cat: 'forma', nombre: 'Barra', raro: 'c' }, { id: 'forma:pildora', cat: 'forma', nombre: 'Píldora', raro: 'r' },
+  { id: 'forma:cristal', cat: 'forma', nombre: 'Cristal', raro: 'e' }, { id: 'forma:diamante', cat: 'forma', nombre: 'Diamante', raro: 'l' }, { id: 'forma:doble', cat: 'forma', nombre: 'Doble filo', raro: 'm' },
+  { id: 'flechas:contorno', cat: 'flechas', nombre: 'Contorno', raro: 'c' }, { id: 'flechas:solida', cat: 'flechas', nombre: 'Sólidas', raro: 'r' }, { id: 'flechas:neon', cat: 'flechas', nombre: 'Neón', raro: 'e' },
+  { id: 'simbolos:color', cat: 'simbolos', nombre: 'A color', raro: 'c' }, { id: 'simbolos:contorno', cat: 'simbolos', nombre: 'Trazo', raro: 'r' }, { id: 'simbolos:blanco', cat: 'simbolos', nombre: 'Hueso', raro: 'e' },
+  { id: 'aros:clasico', cat: 'aros', nombre: 'Clásico', raro: 'c' }, { id: 'aros:magia', cat: 'aros', nombre: 'Sello mágico', raro: 'e' }, { id: 'aros:estelar', cat: 'aros', nombre: 'Estelar', raro: 'l' },
+  { id: 'boton:neon', cat: 'boton', nombre: 'Neón', raro: 'c' }, { id: 'boton:cristal', cat: 'boton', nombre: 'Cristal', raro: 'r' }, { id: 'boton:gotico', cat: 'boton', nombre: 'Gótico', raro: 'e' }, { id: 'boton:sangre', cat: 'boton', nombre: 'Sangre', raro: 'l' },
   { id: 'titulo:resonante', cat: 'titulo', nombre: 'Resonante', raro: 'c' }, { id: 'titulo:desafinado', cat: 'titulo', nombre: 'Desafinado', raro: 'r' },
+  /* SECRETOS: no salen en tiradas ni en el vestidor hasta que se tienen (el de la paloma: ponerse Mazi o Palomazi) */
+  { id: 'nota:paloma', cat: 'nota', nombre: 'Paloma de la casa', raro: 'm', secreto: true, colores: ['#7E1735', '#AC27FF', '#C77DFF', '#FFFFFF', '#C77DFF', '#AC27FF', '#7E1735'] },
+  { id: 'golpe:paloma', cat: 'golpe', nombre: 'Vuelo de paloma', raro: 'm', secreto: true, sprite: 'paloma' },
+  { id: 'titulo:paloma', cat: 'titulo', nombre: 'Paloma de la casa', raro: 'm', secreto: true },
   { id: 'titulo:eco', cat: 'titulo', nombre: 'Eco sin dueño', raro: 'e' }, { id: 'titulo:exorcista', cat: 'titulo', nombre: 'Exorcista', raro: 'l' }, { id: 'titulo:sonoluz', cat: 'titulo', nombre: 'Voz de SONOLUZ', raro: 'm' }
 ];
-const CATS = { voz: 'Voz', nota: 'Notas', golpe: 'Golpe', fondo: 'Fondo', titulo: 'Título' };
+const CATS = { voz: 'Voz', nota: 'Colores', forma: 'Forma', golpe: 'Golpe', fondo: 'Fondo', flechas: 'Flechas', simbolos: 'Símbolos', aros: 'Aros', boton: 'Botones', titulo: 'Título' };
+const DE_FABRICA = ['forma:barra', 'flechas:contorno', 'simbolos:color', 'aros:clasico', 'boton:neon'];
 
 /* ── lo guardado ── */
 const CLAVE = 'vstiles:v1';
-const base = () => ({ nombre: '', color: 0, tiene: ['voz:gumi', 'voz:miku', 'voz:luka', 'nota:neon', 'golpe:flare', 'fondo:0', 'titulo:resonante'], puesto: { voz: 'voz:gumi', nota: 'nota:neon', golpe: 'golpe:flare', fondo: 'fondo:0', titulo: 'titulo:resonante' },
+const base = () => ({ nombre: '', color: 0, tiene: ['voz:gumi', 'voz:miku', 'voz:luka', 'nota:neon', 'golpe:flare', 'fondo:0', 'titulo:resonante'], puesto: { voz: 'voz:gumi', nota: 'nota:neon', golpe: 'golpe:flare', fondo: 'fondo:0', titulo: 'titulo:resonante', forma: 'forma:barra', flechas: 'flechas:contorno', simbolos: 'simbolos:color', aros: 'aros:clasico', boton: 'boton:neon' },
   ecos: 1500, sellos: 3, nivel: 1, xp: 0, record: {}, historia: {}, desfase: 0, desfaseVisual: 0, vel: 1, sonidoGolpe: true, mostrarDesvio: true, sinMov: false, pity: 0, visto: false, calibrado: false });
 let Y = base(); try{ const g = JSON.parse(localStorage.getItem(CLAVE) || 'null'); if(g) Y = { ...base(), ...g, puesto: { ...base().puesto, ...(g.puesto || {}) } }; }catch(e){}
+/* quien ya jugaba antes de que existieran estas categorías recibe las de fábrica */
+for(const id of DE_FABRICA) if(!Y.tiene.includes(id)) Y.tiene.push(id);
 const guardar = () => { try{ localStorage.setItem(CLAVE, JSON.stringify(Y)); }catch(e){} };
 const aviso = (txt) => { const d = document.createElement('div'); d.className = 'aviso'; d.textContent = txt; document.body.appendChild(d); setTimeout(() => d.remove(), 2600); };
 
@@ -88,7 +103,7 @@ const listaPropia = biblioteca.listar().then(l => l.forEach(agregarPropia)).catc
 const fondoDe = (c) => portadas[c.id] || `escenarios/${ESCENARIOS[c.escena].id}.jpg`;
 await escena.ponerCantantes([idVoz()]);
 function idVoz(){ return (Y.puesto.voz || 'voz:gumi').split(':')[1]; }
-aplicarCosmeticos();
+regaloSecreto(); aplicarCosmeticos();
 
 let pantalla = null;
 function mostrar(id){ $$('.pantalla').forEach(p => p.classList.toggle('vis', p.id === id)); pantalla = id;
@@ -138,7 +153,11 @@ function perfil(){ mostrar('perfil'); $('#nombre').value = Y.nombre;
   const ini = $('#iniciales'); ini.innerHTML = ''; ['gumi', 'miku', 'luka'].forEach(id => { const P = PERSONAJES.find(p => p.id === id), b = document.createElement('button'); b.innerHTML = `${P.nombre}<small>${P.faccion}</small>`;
     b.className = Y.puesto.voz === 'voz:' + id ? 'si' : ''; b.onclick = async () => { Y.puesto.voz = 'voz:' + id; [...ini.children].forEach(x => x.classList.toggle('si', x === b)); await escena.ponerCantantes([id]); }; ini.appendChild(b); });
   const col = $('#colores'); col.innerHTML = ''; ['Magenta', 'Cian', 'Oro'].forEach((n, i) => { const b = document.createElement('button'); b.textContent = n; b.className = Y.color === i ? 'si' : ''; b.style.color = ['#FF2D7A', '#38E1FF', '#FFE08A'][i]; b.onclick = () => { Y.color = i; [...col.children].forEach(x => x.classList.toggle('si', x === b)); }; col.appendChild(b); }); }
-function aCalibrar(){ Y.nombre = ($('#nombre').value || 'Resonante').trim().slice(0, 16); guardar(); mostrar('calibrar'); }
+function aCalibrar(){ Y.nombre = ($('#nombre').value || 'Resonante').trim().slice(0, 16); regaloSecreto(); guardar(); mostrar('calibrar'); }
+/* el secreto de la casa: quien se llame Mazi o Palomazi recibe el estilo de la paloma (no se anuncia en ningún lado) */
+function regaloSecreto(){ const n = (Y.nombre || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '');
+  if(!['mazi', 'palomazi'].includes(n)) return; const nuevos = ['nota:paloma', 'golpe:paloma', 'titulo:paloma'].filter(id => !Y.tiene.includes(id)); if(!nuevos.length) return;
+  Y.tiene.push(...nuevos); guardar(); setTimeout(() => aviso('🕊️ Algo en el archivo te reconoció. Mira tu Vestidor.'), 1200); }
 
 /* ── la calibración: 16 clics a 120 golpes por minuto; se promedia desde el 5.º ── */
 $('#calibB').addEventListener('click', async () => {
@@ -162,10 +181,42 @@ $('#calibB').addEventListener('click', async () => {
 function barra(){ const T = OBJETOS.find(o => o.id === Y.puesto.titulo);
   $('#barra').innerHTML = `<div class="avatar">${(Y.nombre || 'R')[0].toUpperCase()}</div><div class="quien"><b>${esc(Y.nombre || 'Resonante')}</b><span>Nv. ${Y.nivel} · ${T ? T.nombre : ''}</span></div><div class="moneda"><i></i>${Y.ecos}</div><div class="moneda sello"><i></i>${Y.sellos}</div>`; }
 const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-async function menu(){ partida.salir(); mostrar('menu');
+async function menu(){ partida.salir(); mostrar('menu'); musicaMenu();
   /* el premio diario: 300 Ecos y un Sello la primera vez que se abre el juego cada día */
   const hoy = new Date().toISOString().slice(0, 10); if(Y.diario !== hoy){ Y.diario = hoy; Y.ecos += 300; Y.sellos += 1; guardar(); setTimeout(() => aviso('Premio del día: +300 Ecos y +1 Sello'), 600); }
-  barra(); await escena.ponerCantantes([idVoz()]); }
+  barra(); requestAnimationFrame(() => irPanel(panelSel, false)); await escena.ponerCantantes([idVoz()]); }
+
+/* EL MENÚ tipo Ligas Mazi: los modos grandes van en un carrusel con foto (el del centro crece, los de los
+   lados se apagan) y lo secundario va abajo, también con foto. Las fotos salen del propio juego
+   (herramientas/portadas.cjs): las cantantes en sus escenarios */
+const PANELES = [
+  { ir: 'historia', k: 'Capítulo I · Ecos de GUMI', t: 'Historia', corto: 'Historia', s: 'Entra a los archivos de SONOLUZ y vence al Coro Nulo.', c: '#FF2D7A' },
+  { ir: 'libre', k: 'Cualquier canción', t: 'Juego libre', corto: 'Libre', s: 'Cinco modos y cinco dificultades, con tu música o la de la casa.', c: '#38E1FF' },
+  { ir: 'reto', k: '⚠ Dificultad demoníaca', t: 'EXÓRCIST', corto: 'EXÓRCIST', s: 'Las reglas cambian a media canción. Nadie sale igual.', c: '#FF2D55' },
+  { ir: 'lab', k: 'Tu música', t: 'Mi música', corto: 'Mi música', s: 'Mete tus canciones: anime, Vocaloid, lo que tengas en el teléfono.', c: '#5CFFB0' },
+  { ir: 'mercado', k: 'Mercado de Ecos', t: 'Tiradas', corto: 'Mercado', s: 'Garra, sobres y carrusel. Todo se gana jugando.', c: '#FFE08A' }
+];
+const SECUNDARIAS = [{ ir: 'vestidor', t: 'Vestidor', s: 'Voz, notas, golpe y fondo' }, { ir: 'records', t: 'Récords', s: 'Tus mejores partidas' }, { ir: 'ajustes', t: 'Ajustes', s: 'Sincronía y velocidad' }, { ir: 'creditos', t: 'Créditos', s: 'Quién hizo todo' }];
+let panelSel = 0;
+function armarMenu(){ const T = $('#mTira'), C = $('#mCarrusel'), P = $('#mPuntos'), S = $('#mSec'); T.innerHTML = C.innerHTML = P.innerHTML = S.innerHTML = '';
+  PANELES.forEach((p, i) => {
+    const ch = document.createElement('button'); ch.textContent = p.corto; ch.onclick = () => irPanel(i, true); T.appendChild(ch);
+    const b = document.createElement('button'); b.className = 'panelM'; b.setAttribute('role', 'listitem'); b.style.setProperty('--c', p.c);
+    b.innerHTML = `<img src="portadas/${p.ir}.jpg" alt="" loading="${i < 2 ? 'eager' : 'lazy'}"><div class="vel"></div><span class="franja"></span><div class="cuerpo"><div class="k">${p.k}</div><div class="t">${p.t}</div><div class="s">${p.s}</div><span class="entrar">Entrar ›</span></div>`;
+    b.onclick = () => { if(i === panelSel){ sonidos.boton && reloj.golpe(sonidos.boton, .25); ir(p.ir); } else irPanel(i, true); }; C.appendChild(b);
+    P.appendChild(document.createElement('i')); });
+  SECUNDARIAS.forEach(o => { const b = document.createElement('button'); b.className = 'secundaria'; b.dataset.ir = o.ir; b.innerHTML = `<img src="portadas/${o.ir}.jpg" alt="" loading="lazy"><b>${o.t}</b><span>${o.s}</span>`; S.appendChild(b); });
+  let raf = 0; C.addEventListener('scroll', () => { if(raf || programado) return; raf = requestAnimationFrame(() => { raf = 0; const mid = C.scrollLeft + C.clientWidth / 2; let mejor = 0, d0 = 1e9;
+    [...C.children].forEach((el, k) => { const d = Math.abs(el.offsetLeft + el.clientWidth / 2 - mid); if(d < d0){ d0 = d; mejor = k; } }); marcarPanel(mejor); }); }, { passive: true });
+  marcarPanel(panelSel, true); }
+let programado = false;
+function marcarPanel(i, forzar = false){ if(i === panelSel && !forzar) return; panelSel = i;
+  [...$('#mCarrusel').children].forEach((el, k) => el.classList.toggle('si', k === i)); [...$('#mTira').children].forEach((el, k) => el.classList.toggle('si', k === i)); [...$('#mPuntos').children].forEach((el, k) => el.classList.toggle('si', k === i));
+  /* sólo se mueve la tira, con scrollTo: scrollIntoView mueve también la página (está anotado en CLAUDE.md) */
+  const tira = $('#mTira'), ch = tira.children[i]; if(ch) tira.scrollTo({ left: ch.offsetLeft - (tira.clientWidth - ch.clientWidth) / 2, behavior: 'smooth' }); }
+function irPanel(i, suave){ marcarPanel(i); const C = $('#mCarrusel'), el = C.children[i]; if(!el) return; programado = true; setTimeout(() => programado = false, 500);
+  C.scrollTo({ left: el.offsetLeft - (C.clientWidth - el.clientWidth) / 2, behavior: suave ? 'smooth' : 'auto' }); }
+armarMenu();
 
 /* ── canciones ── */
 let modoLista = 'libre', modoSel = 'carril', difSel = 'dificil', cancionSel = CANCIONES[0].id, ultima = null;
@@ -192,23 +243,48 @@ async function canciones(cual){ modoLista = cual; mostrar('canciones'); $('#canc
     await biblioteca.borrar(c.id); CANCIONES.splice(CANCIONES.indexOf(c), 1); delete analisis[c.id]; delete bufs[c.id]; if(portadas[c.id]){ URL.revokeObjectURL(portadas[c.id]); delete portadas[c.id]; }
     cancionSel = CANCIONES[0].id; canciones(cual); };
   const dv = $('#difs'); dv.innerHTML = ''; DIFS.forEach((d, i) => { const b = document.createElement('button'); b.style.setProperty('--c', colD[i]); b.className = d.id === difSel ? 'si' : ''; b.innerHTML = `<em><s>${niveles[i]}</s></em>${d.nombre}`; b.onclick = () => { difSel = d.id; canciones(cual); }; dv.appendChild(b); });
-  escena.ponerCantantes(c.voces);
+  escena.ponerCantantes(c.voces); musica(c.id, 350);
 }
 const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
 $('#buscaCancion').addEventListener('input', () => canciones(modoLista));
 $('#jugarB').addEventListener('click', () => jugar(cancionSel, modoSel, difSel));
 
 /* ── jugar ── */
+/* «al tocar iniciar canción sólo se queda trabado hasta que carga, y si le picas más veces empiezan muchas
+   veces la misma canción» (Carlos, 29 oct): ahora sale la pantalla de carga con lo que está pasando, y un
+   candado deja pasar UN arranque a la vez */
+const TIPS = ['Las reglas cambian a media canción: lee el aviso rojo.', 'Si los carriles giran, los botones de toque los siguen.', 'Calibra en Ajustes si sientes que las notas llegan tarde.', 'Las notas con flecha se deslizan hacia donde apunta la flecha.', 'En EXÓRCIST nada se queda quieto mucho tiempo.', 'Los Ecos se ganan jugando; el premio diario también cuenta.'];
+let arrancando = false;
 async function jugar(id, modo, dif, deHistoria = null){
-  const c = CANCIONES.find(x => x.id === id) || ultima?.c, an = await datos(c.id), buf = await audio(c.id);
-  const carta = armarCarta(an, c, modo, dif); ultima = { c, modo, dif, deHistoria };
-  await escena.ponerCantantes(modo === 'flechas' ? [idVoz(), c.voces.find(v => v !== idVoz()) || 'miku'] : [...new Set([idVoz(), ...c.voces])].slice(0, 3));
-  mostrar(null); $('#sombra').style.opacity = 0;
-  partida.empezar(c, carta, an, buf, { autoJuego: $('#opAuto').checked, vel: Y.vel, ritmo: $('#opPract').checked ? .75 : 1 });
-  Y.sinMorir = $('#opSin').checked || $('#opPract').checked;
-  $('#pausaB').classList.add('vis');
-  cuenta(carta);
+  if(arrancando) return; arrancando = true;
+  const c = CANCIONES.find(x => x.id === id) || ultima?.c, paso = (txt, p) => { $('#cargaP').textContent = txt; $('#cargaB').style.width = Math.round(p * 100) + '%'; };
+  $('#cargaT').textContent = c.titulo; $('#cargaTip').textContent = TIPS[Math.floor(Math.random() * TIPS.length)]; paso('Leyendo la canción', .1); mostrar('carga'); pararFondo();
+  try{
+    const an = await datos(c.id); paso('Despertando el audio', .3);
+    const buf = await audio(c.id); paso('Escribiendo las notas', .65);
+    const carta = armarCarta(an, c, modo, dif, { telefono: TELEFONO }); ultima = { c, modo, dif, deHistoria };
+    paso('Llamando a las voces', .85);
+    await escena.ponerCantantes(modo === 'flechas' ? [idVoz(), c.voces.find(v => v !== idVoz()) || 'miku'] : [...new Set([idVoz(), ...c.voces])].slice(0, 3));
+    paso('¡Listo!', 1);
+    mostrar(null); $('#sombra').style.opacity = 0;
+    partida.empezar(c, carta, an, buf, { autoJuego: $('#opAuto').checked, vel: Y.vel, ritmo: $('#opPract').checked ? .75 : 1 });
+    Y.sinMorir = $('#opSin').checked || $('#opPract').checked;
+    $('#pausaB').classList.add('vis');
+    cuenta(carta);
+  }catch(err){ console.error(err); aviso('No se pudo cargar la canción. Revisa tu internet e inténtalo otra vez.'); canciones(modoLista); }
+  finally{ arrancando = false; }
 }
+/* la música del menú: una canción de la casa (la que toque hoy); en la lista, la canción elegida desde su
+   parte más fuerte, como en Arcaea */
+let fondoId = null, fondoPend = 0;
+function pararFondo(){ fondoId = null; clearTimeout(fondoPend); reloj.pararFondo(); }
+function musica(id, espera = 0){ if(fondoId === id) return; fondoId = id; clearTimeout(fondoPend);
+  fondoPend = setTimeout(async () => { try{ const [an, buf] = await Promise.all([datos(id), audio(id)]); if(fondoId !== id) return;
+    const e = an.energia || [], i = e.indexOf(Math.max(...(e.length ? e : [0]))), desde = Math.max(0, Math.min(buf.duration - 20, i / 2 - 6)); reloj.fondo(buf, { desde }); }catch(err){} }, espera); }
+const musicaMenu = () => musica(CANCIONES[new Date().getDate() % 7].id);
+/* teléfono = pantalla táctil angosta: ahí las cartas no ponen 6 o 7 carriles ni acordes de más de dos notas
+   (se juega con dos pulgares); la dificultad sale de las mecánicas, no de los dedos */
+const TELEFONO = matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 600;
 function cuenta(carta){ const el = $('#cuenta'); el.classList.add('vis'); const primero = carta.notas[0]?.t ?? 2;
   (function paso(){ const t = reloj.ahora(), falta = Math.min(primero, 0) - t; if(!partida.corriendo || t > Math.min(primero, 0) - .1 && t > -.4){ el.classList.remove('vis'); return; } el.textContent = t < -2 ? '3' : t < -1 ? '2' : '1'; requestAnimationFrame(paso); })(); }
 $('#pausaB').addEventListener('click', () => partida.alternarPausa());
@@ -256,31 +332,47 @@ function vestidor(){ mostrar('vestidor'); const R = $('#ranuras'); R.innerHTML =
   Object.entries(CATS).forEach(([k, n]) => { const o = OBJETOS.find(x => x.id === Y.puesto[k]); const b = document.createElement('button'); b.className = 'ranura' + (k === catSel ? ' si' : ''); b.innerHTML = `${n}<em>${o ? o.nombre : '—'}</em>`; b.onclick = () => { catSel = k; vestidor(); }; R.appendChild(b); });
   const C = $('#vestCats'); C.innerHTML = '';
   const O = $('#objetos'); O.innerHTML = '';
-  OBJETOS.filter(o => o.cat === catSel).forEach(o => { const tiene = Y.tiene.includes(o.id), b = document.createElement('button'); b.className = `obj raro-${o.raro}${tiene ? '' : ' bloq'}${Y.puesto[o.cat] === o.id ? ' puesto' : ''}`;
-    const muestra = o.cat === 'golpe' ? `<img src="sprites/${o.sprite}.png" alt="">` : o.cat === 'fondo' ? `<img src="${o.img}" alt="" style="max-width:100%">` : o.cat === 'nota' ? o.colores.slice(0, 4).map(c => `<i style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${c};margin:1px"></i>`).join('') : o.cat === 'voz' ? `<i style="font:900 26px var(--n);color:${o.color}">${o.nombre[0]}</i>` : `<i style="font:900 11px var(--g);color:#FFD7E5">«${o.nombre}»</i>`;
-    b.innerHTML = `<div class="muestra">${muestra}</div>${o.nombre}<small style="display:block;font:700 10px var(--n);color:#ffffffcc">${RAREZA[o.raro].n.toUpperCase()}</small>`;
-    b.onclick = async () => { if(!tiene){ aviso('Sale en el Mercado de Ecos.'); return; } Y.puesto[o.cat] = o.id; guardar(); aplicarCosmeticos(); if(o.cat === 'voz') await escena.ponerCantantes([idVoz()]); vestidor(); };
+  OBJETOS.filter(o => o.cat === catSel && (!o.secreto || Y.tiene.includes(o.id))).forEach(o => { const tiene = Y.tiene.includes(o.id), b = document.createElement('button');
+    /* lo que no se ha descubierto no dice ni nombre ni rareza (Carlos, 29 oct) */
+    if(!tiene){ b.className = 'obj oculto'; b.innerHTML = '<div class="muestra">?</div>???'; b.onclick = () => aviso('Todavía no lo descubres. Sale en el Mercado de Ecos.'); O.appendChild(b); return; }
+    b.className = `obj raro-${o.raro}${Y.puesto[o.cat] === o.id ? ' puesto' : ''}`;
+    b.innerHTML = `<div class="muestra">${vista(o)}</div>${o.nombre}<small style="display:block;font:700 10px var(--n);color:#ffffffcc">${RAREZA[o.raro].n.toUpperCase()}</small>`;
+    b.onclick = async () => { Y.puesto[o.cat] = o.id; guardar(); aplicarCosmeticos(); if(o.cat === 'voz') await escena.ponerCantantes([idVoz()]); vestidor(); };
     O.appendChild(b); });
   if(catSel === 'voz') escena.ponerCantantes([idVoz()]);
 }
 function aplicarCosmeticos(){ const n = OBJETOS.find(o => o.id === Y.puesto.nota); if(n) n.colores.forEach((c, i) => COLORES_RIEL[i] = c);
+  /* el efecto de golpe: antes se elegía en el vestidor y no se leía en ningún lado */
+  Y.golpeSprite = OBJETOS.find(o => o.id === Y.puesto.golpe)?.sprite || 'p_flare_01';
+  const est = (c, def) => (Y.puesto[c] || def).split(':')[1];
+  Y.estilos = { forma: est('forma', 'forma:barra'), flechas: est('flechas', 'flechas:contorno'), simbolos: est('simbolos', 'simbolos:color'), aros: est('aros', 'aros:clasico') };
+  escena.ponerForma?.(Y.estilos.forma); document.body.className = document.body.className.replace(/\bboton-\S+/g, '').trim() + ' boton-' + est('boton', 'boton:neon');
   escena.piezas.rieles.forEach((R, i) => { R.fondoR.material.color.set(COLORES_RIEL[i]); R.lado.material.color.set(COLORES_RIEL[i]); R.rec.material.color.set(COLORES_RIEL[i]); R.brillo.material.color.set(COLORES_RIEL[i]); R.haz.material.color.set(COLORES_RIEL[i]); }); }
 
-/* ── mercado: probabilidades a la vista, garantía a las 50 y los repetidos se vuelven Ecos ── */
-function mercado(){ mostrar('mercado'); barra();
-  $('#probas').innerHTML = Object.values(RAREZA).map(r => `${r.n} ${r.p} %`).join(' · ') + `<br>Legendario garantizado en ${50 - Y.pity} tiradas · repetido = Ecos de vuelta`; $('#tirada').innerHTML = ''; }
-/* GRATIS: todo se paga con lo que se gana jugando (Carlos, 29 oct: «todo será gratuito con monedas del
-   juego y progresión interna»). Ecos por cada partida, el premio diario, el bono de la primera vez y los
-   Sellos de subir de nivel y de vencer jefes; un Sello es una tirada. */
-function tirar(n, conSello = false){ const costo = n === 10 ? 900 : 100;
-  if(conSello){ if(Y.sellos < 1){ aviso('No tienes Sellos: se ganan subiendo de nivel y venciendo jefes.'); return; } Y.sellos--; }
-  else { if(Y.ecos < costo){ aviso('No te alcanzan los Ecos: juega una canción.'); return; } Y.ecos -= costo; } const sale = [];
+/* ── mercado: probabilidades a la vista, garantía a las 50 y los repetidos se vuelven Ecos ──
+   GRATIS: todo se paga con lo que se gana jugando (Carlos, 29 oct: «todo será gratuito con monedas del
+   juego y progresión interna»). Las máquinas (garra, sobre y carrusel) viven en mercado.js */
+function pagar(costo, conSello = false){
+  if(conSello){ if(Y.sellos < 1){ aviso('No tienes Sellos: se ganan subiendo de nivel y venciendo jefes.'); return false; } Y.sellos--; }
+  else { if(Y.ecos < costo){ aviso('No te alcanzan los Ecos: juega una canción.'); return false; } Y.ecos -= costo; }
+  guardar(); return true; }
+function sortear(n){ const sale = [];
   for(let i = 0; i < n; i++){ Y.pity++; let r = Math.random() * 100, raro = 'c'; for(const [k, v] of Object.entries(RAREZA).reverse()){ if(r < v.p){ raro = k; break; } r -= v.p; }
     if(Y.pity >= 50 && !['l', 'm'].includes(raro)) raro = 'l'; if(['l', 'm'].includes(raro)) Y.pity = 0;
-    const pool = OBJETOS.filter(o => o.raro === raro), o = pool[Math.floor(Math.random() * pool.length)]; const nuevo = !Y.tiene.includes(o.id); if(nuevo) Y.tiene.push(o.id); else Y.ecos += { c: 10, r: 25, e: 60, l: 150, m: 300 }[raro]; sale.push({ o, nuevo }); }
-  guardar(); mercado(); const T = $('#tirada'); sale.forEach(({ o, nuevo }, i) => { const d = document.createElement('div'); d.className = `obj raro-${o.raro}`; d.style.animationDelay = i * .08 + 's'; d.innerHTML = `${o.nombre}<small style="display:block;font:700 10px var(--n)">${nuevo ? 'NUEVO' : 'REPETIDO'}</small>`; T.appendChild(d); });
-  if(sale.some(s => ['l', 'm'].includes(s.o.raro))){ sonidos.premio && reloj.golpe(sonidos.premio, .6); aviso('¡' + sale.find(s => ['l', 'm'].includes(s.o.raro)).o.nombre + '!'); } }
-$('#tira1').addEventListener('click', () => tirar(1)); $('#tira10').addEventListener('click', () => tirar(10)); $('#tiraS').addEventListener('click', () => tirar(1, true));
+    const pool = OBJETOS.filter(o => o.raro === raro && !o.secreto), o = pool[Math.floor(Math.random() * pool.length)]; const nuevo = !Y.tiene.includes(o.id); if(nuevo) Y.tiene.push(o.id); else Y.ecos += { c: 10, r: 25, e: 60, l: 150, m: 300 }[raro]; sale.push({ o, nuevo }); }
+  guardar(); return sale; }
+/* cómo se ve un objeto en chiquito (vestidor, tiradas, premio) */
+function vista(o){ const k = o.id.split(':')[1];
+  if(o.cat === 'forma') return `<i class="formaMini f-${k}"></i>`;
+  if(o.cat === 'flechas') return `<img src="sprites/tecla_arrow_up${k === 'contorno' ? '_outline' : ''}.png" alt="" class="${k === 'neon' ? 'brillo' : ''}">`;
+  if(o.cat === 'simbolos') return `<img src="sprites/${k === 'contorno' ? 'ps_triangle_outline' : k === 'blanco' ? 'ps_color_triangle_outline' : 'ps_color_triangle'}.png" alt="">`;
+  if(o.cat === 'aros') return `<img src="sprites/${{ clasico: 'gen_circle_outline', magia: 'p_magic_03', estelar: 'p_star_06' }[k]}.png" alt="">`;
+  if(o.cat === 'boton') return `<span class="b mini boton-${k}">Jugar</span>`;
+  if(o.cat === 'golpe') return `<img src="sprites/${o.sprite}.png" alt="">`; if(o.cat === 'fondo') return `<img src="${o.img}" alt="" class="foto">`;
+  if(o.cat === 'nota') return o.colores.slice(0, 4).map(c => `<i class="punto" style="background:${c}"></i>`).join('');
+  if(o.cat === 'voz') return `<i class="inicial" style="color:${o.color}">${o.nombre[0]}</i>`; return `<i class="tituloObj">«${o.nombre}»</i>`; }
+const mercadoUI = montarMercado({ $, Y, RAREZA, sortear, pagar, barra, reloj, sonidos, vista, pool: () => OBJETOS.filter(o => !o.secreto) });
+function mercado(){ mostrar('mercado'); barra(); $('#probas').innerHTML = Object.values(RAREZA).map(r => `${r.n} ${r.p} %`).join(' · ') + '<br>Repetido = Ecos de vuelta'; mercadoUI.abrir(); }
 
 /* ── récords, ajustes, créditos ── */
 function records(){ mostrar('records'); const L = $('#recordsL'), ks = Object.entries(Y.record).sort((a, b) => b[1].puntaje - a[1].puntaje);

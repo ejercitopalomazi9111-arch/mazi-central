@@ -76,6 +76,14 @@ export const reloj = {
   pausar(){ this.pausado = true; if(this.ctx && this.ctx.state === 'running') return this.ctx.suspend(); },
   seguir(){ this.pausado = false; if(this.ctx) return this.ctx.resume().then(() => { this._off = null; this._medir(); }); },
 
+  /* LA MÚSICA DE FONDO de los menús: aparte del reloj del juego (no toca t0 ni `tocando`), en bucle, con fundido
+     de entrada y de salida para que cambiar de canción en la lista no truene */
+  _fondo: null,
+  fondo(buf, { desde = 0, vol = .32, fundido = .6 } = {}){ if(!buf || !this.ctx) return; this.pararFondo(.35);
+    const c = this.ctx, s = c.createBufferSource(), g = c.createGain(); s.buffer = buf; s.loop = true; s.loopStart = Math.min(desde, buf.duration - 1); s.loopEnd = buf.duration;
+    g.gain.setValueAtTime(0, c.currentTime); g.gain.linearRampToValueAtTime(vol, c.currentTime + fundido); s.connect(g); g.connect(c.destination); s.start(0, Math.min(desde, buf.duration - 1)); this._fondo = { s, g }; },
+  pararFondo(fundido = .4){ const f = this._fondo; if(!f || !this.ctx) return; this._fondo = null; const c = this.ctx;
+    try{ f.g.gain.cancelScheduledValues(c.currentTime); f.g.gain.setValueAtTime(f.g.gain.value, c.currentTime); f.g.gain.linearRampToValueAtTime(0, c.currentTime + fundido); f.s.stop(c.currentTime + fundido + .05); }catch(e){} },
   /* un sonido corto YA (los golpes): sin programarlo, para que salga lo antes posible */
   golpe(buf, vol = .5){ if(!buf || !this.ctx) return; const s = this.ctx.createBufferSource(), g = this.ctx.createGain(); g.gain.value = vol; s.buffer = buf; s.connect(g); g.connect(this.ctx.destination); s.start(); },
   /* un clic de metrónomo en un segundo exacto de la canción (la calibración) */

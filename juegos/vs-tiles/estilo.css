@@ -9,14 +9,17 @@
 *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent }
 html, body{ margin:0; height:100%; background:var(--negro); color:var(--texto); font:500 15px/1.45 var(--t); overflow:hidden;
   -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; overscroll-behavior:none; touch-action:manipulation }
-canvas{ position:fixed; inset:0; width:100%; height:100%; display:block }
+#gl, #capa{ position:fixed; inset:0; width:100%; height:100%; display:block }   /* sólo los dos lienzos de pantalla completa: un «canvas{}» general fijaba también la garra */
 #gl{ z-index:0 } #capa{ z-index:2; touch-action:none }
 button{ font:inherit; color:inherit; cursor:pointer; border:0; background:none }
 input, select{ font:inherit; color:var(--texto) }
 
 /* las pantallas: una a la vez, encima del 3D */
 .pantalla{ position:fixed; inset:0; z-index:5; display:none; flex-direction:column; padding:max(14px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); overflow-y:auto; -webkit-overflow-scrolling:touch }
-.pantalla > *{ flex-shrink:0 }   /* sin esto, en un teléfono chico la pantalla APLASTA a sus hijos en vez de dejar bajar: la fila de modos quedaba de 0 px */
+.pantalla > *{ flex-shrink:0 }
+/* sin scroll de lado: con overflow-y:auto, el eje x se vuelve «auto» solo y en el iPhone la pantalla bailaba de lado
+   con cualquier cosa que se pasara un pixel (Carlos, 29 oct) */
+.pantalla{ overflow-x:hidden; touch-action:pan-y; overscroll-behavior:contain }   /* sin esto, en un teléfono chico la pantalla APLASTA a sus hijos en vez de dejar bajar: la fila de modos quedaba de 0 px */
 .pantalla.vis{ display:flex; animation:entra .45s cubic-bezier(.2,.8,.2,1) both }
 @keyframes entra{ from{ opacity:0; transform:translateY(18px) scale(.985); filter:blur(6px) } to{ opacity:1; transform:none; filter:none } }
 .sombra{ position:fixed; inset:0; z-index:4; pointer-events:none; background:linear-gradient(180deg, #07030Ccc 0, #07030C33 30%, #07030C33 62%, #07030Cf0 100%); transition:opacity .4s }
@@ -118,8 +121,8 @@ h2{ font:800 22px/1.1 var(--n); letter-spacing:.06em; margin:0 0 10px }
 .consejo{ font-size:13px; color:var(--gris); text-align:center; margin:6px 0 10px }
 
 /* ── vestidor (Dead by Daylight) ── */
-.ranuras{ display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:6px; margin-bottom:10px }
-.ranura{ aspect-ratio:1; display:flex; flex-direction:column; justify-content:flex-end; padding:6px; background:linear-gradient(180deg, #ffffff08, #B44BFF22); border:1px solid var(--linea); font:800 clamp(10px, 2.7vw, 12px) var(--n); letter-spacing:0; text-transform:uppercase; text-align:left; position:relative; overflow:hidden; overflow-wrap:anywhere }
+.ranuras{ display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:6px; margin-bottom:10px }   /* 10 categorías: en 5 columnas los nombres se partían a media palabra */
+.ranura{ aspect-ratio:1; display:flex; flex-direction:column; justify-content:flex-end; padding:6px; background:linear-gradient(180deg, #ffffff08, #B44BFF22); border:1px solid var(--linea); font:800 clamp(10px, 2.7vw, 12px) var(--n); letter-spacing:0; text-transform:uppercase; text-align:left; position:relative; overflow:hidden; overflow-wrap:normal; aspect-ratio:auto; min-height:58px }
 .ranura.si{ border-color:#fff; box-shadow:inset 0 0 0 2px #fff } .ranura em{ font-style:normal; display:block; font:700 clamp(10px, 2.7vw, 12px)/1.1 var(--t); text-transform:none; color:var(--gris) }
 .objetos{ display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:6px; margin-bottom:12px }
 .obj{ aspect-ratio:.82; position:relative; display:flex; flex-direction:column; justify-content:flex-end; padding:6px; border:1px solid var(--linea); background:linear-gradient(180deg, transparent, var(--r, #555)); font:700 11px/1.15 var(--t); text-align:left; overflow:hidden }
@@ -149,7 +152,7 @@ h2{ font:800 22px/1.1 var(--n); letter-spacing:.06em; margin:0 0 10px }
 .elige{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px; margin-bottom:12px }
 .elige button{ padding:12px 8px; background:var(--panel2); border:1px solid var(--linea); text-align:center; font:800 12px var(--n) } .elige button.si{ border-color:var(--magenta); box-shadow:0 0 20px #FF2D7A55 } .elige button small{ display:block; font:600 10.5px var(--t); color:var(--gris); margin-top:4px }
 .aviso{ position:fixed; z-index:9; left:50%; bottom:max(20px, env(safe-area-inset-bottom)); transform:translateX(-50%); padding:12px 18px; background:#1B1029; border:1px solid var(--magenta); font-weight:700; max-width:min(92vw, 420px); text-align:center; animation:entra .3s both }
-@media (min-width:900px){ #menu .rejilla{ grid-template-columns:repeat(4, minmax(0, 1fr)) } .pantalla > *{ width:min(820px, 100%); margin-left:auto; margin-right:auto } }
+@media (min-width:900px){ .pantalla > *{ width:min(820px, 100%); margin-left:auto; margin-right:auto } }
 @media (prefers-reduced-motion:reduce){ .pantalla.vis, .logo, .toca, .archivo .orbe{ animation:none } }
 
 /* Mi música */
@@ -159,3 +162,116 @@ h2{ font:800 22px/1.1 var(--n); letter-spacing:.06em; margin:0 0 10px }
 .busca{ width:100%; min-height:44px; margin:4px 0 8px; padding:10px 14px; background:var(--panel2); border:1px solid var(--linea); color:#fff; font:600 16px var(--t) }
 .busca[hidden]{ display:none }
 .nota{ margin-top:14px; font-size:12px; opacity:.75 }
+
+/* la pantalla de carga: tapa el doble toque y dice qué está pasando */
+#carga{ justify-content:center; align-items:center; text-align:center; gap:14px; background:radial-gradient(circle at 50% 40%, #2A0F3Acc, #07030Cf2) }
+#carga .anillo{ width:84px; height:84px; border-radius:50%; border:3px solid #ffffff1a; border-top-color:var(--magenta); border-right-color:var(--cian); animation:cargaGira .9s linear infinite }
+#carga .cancion{ font:900 22px var(--n); letter-spacing:.06em; max-width:90%; overflow-wrap:anywhere }
+#carga .paso{ font:700 13px var(--n); letter-spacing:.18em; color:var(--gris); text-transform:uppercase }
+#carga .barraC{ width:min(280px, 80%); height:4px; background:#ffffff14; overflow:hidden } #carga .barraC i{ display:block; height:100%; width:0; background:linear-gradient(90deg, var(--magenta), var(--cian)); transition:width .25s }
+#carga .tip{ max-width:320px; font-size:13px; color:var(--gris) }
+@keyframes cargaGira{ to{ transform:rotate(360deg) } }
+.obj.oculto{ background:#0B0612; border-style:dashed; color:#ffffff55 } .obj.oculto .muestra{ font:900 30px var(--n); color:#ffffff22 }
+
+/* ── el menú tipo Ligas Mazi (Carlos, 29 oct) ── */
+#menu{ gap:10px; padding-left:0; padding-right:0 } #menu > *{ margin-left:16px; margin-right:16px } #menu > .carrusel{ margin-left:0; margin-right:0 }
+.menuCab .titulo{ font-size:30px; line-height:1 }
+.tiraModos{ display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; touch-action:pan-x pan-y } .tiraModos::-webkit-scrollbar{ display:none }
+.tiraModos button{ flex:none; min-height:40px; padding:8px 14px; font:800 12px var(--n); letter-spacing:.12em; text-transform:uppercase; color:var(--gris); background:#ffffff0d; border:1px solid var(--linea) }
+.tiraModos button.si{ color:#07030C; background:#fff; border-color:transparent }
+.carrusel{ display:flex; gap:14px; overflow-x:auto; overflow-y:hidden; scroll-snap-type:x mandatory; padding:4px 11%; scrollbar-width:none; touch-action:pan-x pan-y; overscroll-behavior-x:contain }
+.carrusel::-webkit-scrollbar{ display:none }
+.panelM{ position:relative; flex:none; scroll-snap-align:center; width:78%; max-width:400px; height:clamp(300px, 50vh, 470px); overflow:hidden; border:1px solid var(--linea); background:#0c0712; text-align:left; padding:0;
+  transform:scale(.92); opacity:.55; transition:transform .18s ease-out, opacity .18s ease-out, border-color .18s }
+.panelM.si{ transform:scale(1); opacity:1; border-color:#ffffff3a; box-shadow:0 24px 60px #000a }
+.panelM img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:saturate(1.08) }
+.panelM .vel{ position:absolute; inset:0; background:linear-gradient(180deg, #07030C66 0%, transparent 30%, #07030C88 60%, #07030Cf2 100%) }
+.panelM .franja{ position:absolute; top:0; left:0; right:0; height:4px; background:var(--c) }
+.panelM .cuerpo{ position:absolute; left:0; right:0; bottom:0; padding:18px 18px 20px }
+.panelM .k{ font:800 11px var(--n); letter-spacing:.16em; text-transform:uppercase; color:var(--c) }
+.panelM .t{ font:900 clamp(30px, 9vw, 42px)/.95 var(--n); color:#fff; text-shadow:0 3px 18px #000c; margin-top:6px }
+.panelM .s{ font-size:13.5px; color:#E8DFF0; margin-top:8px; max-width:30ch }
+.panelM .entrar{ display:inline-flex; margin-top:14px; padding:10px 18px; font:900 13px var(--n); letter-spacing:.14em; text-transform:uppercase; color:#07030C; background:#fff }
+.panelM:not(.si) .s, .panelM:not(.si) .entrar{ opacity:0 }
+.puntos{ display:flex; justify-content:center; gap:7px } .puntos i{ width:7px; height:7px; background:#ffffff38; transition:.2s } .puntos i.si{ width:22px; background:var(--magenta) }
+.secundarias{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; margin-top:auto }
+.secundaria{ position:relative; min-height:84px; overflow:hidden; border:1px solid var(--linea); text-align:left; padding:12px; display:flex; flex-direction:column; justify-content:flex-end }
+.secundaria img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.75 }
+.secundaria::before{ content:""; position:absolute; inset:0; background:linear-gradient(90deg, #07030Ce6, #07030C55); z-index:1 }
+.secundaria b, .secundaria span{ position:relative; z-index:2 } .secundaria b{ font:900 15px var(--n); letter-spacing:.06em; color:#fff } .secundaria span{ font-size:12px; color:var(--gris); margin-top:2px }
+.secundaria:active, .panelM:active{ filter:brightness(1.15) }
+@media (min-width:900px){ .panelM{ width:340px } .secundarias{ grid-template-columns:repeat(4, minmax(0, 1fr)) } }
+/* teléfono acostado: el panel cabe completo en lo bajito de la pantalla */
+@media (orientation:landscape) and (max-height:520px){
+  .menuCab{ display:none } .panelM{ height:calc(100vh - 180px); min-height:160px; width:min(300px, 42vw) } .panelM .t{ font-size:26px } .panelM .s{ display:none } .panelM .entrar{ margin-top:8px; padding:7px 14px }
+  .secundarias{ grid-template-columns:repeat(4, minmax(0, 1fr)) } .secundaria{ min-height:60px } .secundaria span{ display:none }
+}
+
+/* ── Mercado: las tres máquinas ── */
+.gSaldo{ display:flex; flex-wrap:wrap; gap:6px 14px; font:800 12px var(--n); letter-spacing:.06em; color:var(--gris); margin-bottom:8px }
+.gSaldo i{ display:inline-block; width:10px; height:10px; margin-right:6px; transform:rotate(45deg) } .gSaldo .ec{ background:var(--cian) } .gSaldo .se{ background:var(--oro) }
+.maquina{ position:relative; margin:8px 0; padding:10px; background:linear-gradient(180deg, #1B0D2Bcc, #09040Fcc); border:1px solid var(--linea); display:flex; flex-direction:column; align-items:center; gap:8px; min-height:240px }
+.maquina .sub{ text-align:center; margin:0 }
+.gBotones{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center } .gBotones .b{ flex:1 1 auto }
+.muestra .punto{ display:inline-block; width:14px; height:14px; border-radius:50%; margin:1px } .muestra .inicial{ font:900 30px var(--n); font-style:normal }
+.muestra .tituloObj{ font:900 11px var(--g); color:#FFD7E5; font-style:normal } .muestra img{ max-width:72%; max-height:72% } .muestra img.foto{ max-width:100%; max-height:100%; object-fit:cover }
+/* carrusel */
+.gcMarco{ position:relative; width:100%; max-width:420px; height:132px; overflow:hidden; background:#07030C; border:1px solid var(--linea);
+  -webkit-mask-image:linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); mask-image:linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent) }
+.gcPista{ display:flex; height:100%; align-items:center; will-change:transform }
+.gcCelda{ flex:0 0 88px; width:88px; margin:0 4px; height:110px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; background:linear-gradient(180deg, #ffffff08, color-mix(in srgb, var(--rc) 22%, transparent)); border:1px solid #ffffff14; border-bottom:3px solid var(--rc) }
+.gcCelda .muestra{ height:56px; display:grid; place-items:center } .gcCelda span{ font-size:10px; text-align:center; line-height:1.1; padding:0 4px; color:var(--gris) }
+.gcCelda.gana{ transform:scale(1.07); box-shadow:0 0 0 2px var(--rc), 0 0 24px var(--rc); transition:.3s }
+.gcFlecha{ position:absolute; left:50%; transform:translateX(-50%); width:0; height:0; z-index:2 } .gcFlecha.arriba{ top:0; border:10px solid transparent; border-top:14px solid var(--magenta) } .gcFlecha.abajo{ bottom:0; border:10px solid transparent; border-bottom:14px solid var(--magenta) }
+/* sobre */
+.sobreZona{ width:100%; min-height:300px; display:grid; place-items:center; perspective:900px }
+.paquete{ position:relative; width:min(210px, 60vw); aspect-ratio:.68; background:linear-gradient(150deg, #7E1735, #2A0F3A 45%, #AC27FF); border:2px solid #ffffff40; display:grid; place-items:center; overflow:hidden; touch-action:none; box-shadow:0 18px 50px #000a, 0 0 40px #AC27FF55; animation:paqFlota 2.4s ease-in-out infinite }
+.paquete::after{ content:""; position:absolute; inset:-50%; background:linear-gradient(115deg, transparent 40%, #ffffff40 50%, transparent 60%); animation:paqBrillo 2.8s linear infinite }
+.paqLogo{ font:900 34px var(--n); color:#fff; text-align:center } .paqLogo i{ font-style:normal; color:var(--cian); display:block; font-size:18px } .paqSub{ position:absolute; bottom:14px; font:800 9px var(--n); letter-spacing:.2em; color:#ffffffcc }
+.paquete .rasgar{ position:absolute; top:0; left:0; height:18px; width:var(--rasgado, 0%); background:repeating-linear-gradient(90deg, #fff 0 6px, transparent 6px 10px); opacity:.85; z-index:2 }
+.paquete.listo{ outline:2px dashed #ffffff66; outline-offset:6px }
+.paquete.rasgado{ animation:paqSale .65s ease-in forwards }
+@keyframes paqFlota{ 50%{ transform:translateY(-6px) rotate(-1deg) } }
+@keyframes paqBrillo{ from{ transform:translateX(-30%) } to{ transform:translateX(30%) } }
+@keyframes paqSale{ to{ transform:translateY(-120%) rotate(-12deg) scale(.8); opacity:0 } }
+.cartas{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:10px; width:100%; max-width:380px }
+.cartas .carta:nth-child(4){ grid-column:1 / 2; margin-left:50% } .cartas .carta:nth-child(5){ grid-column:2 / 3; margin-left:50% }
+/* el volteo sin 3D: la carta se encoge de lado, cambia de cara a la mitad y vuelve (con rotateY y
+   backface-visibility el botón mostraba el reverso en espejo, «2V», en vez del premio) */
+.carta{ position:relative; aspect-ratio:.7; padding:0; background:none; border:0; animation:cartaEntra .45s var(--d) both }
+.carta.volteando{ animation:cartaVoltea .5s ease-in-out both }
+.carta .frente{ visibility:hidden } .carta.volteada .frente{ visibility:visible } .carta.volteada .atras{ visibility:hidden }
+.carta .cara{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; border:2px solid #ffffff30; padding:6px }
+.carta .atras{ background:linear-gradient(150deg, #2A0F3A, #07030C); font:900 22px var(--n); color:#ffffff44 } .carta .atras i{ font-style:normal }
+.carta .atras.brilla{ border-color:var(--rc); box-shadow:0 0 18px var(--rc), inset 0 0 22px color-mix(in srgb, var(--rc) 50%, transparent); animation:cartaLate 1s ease-in-out infinite }
+.carta .frente{ background:linear-gradient(180deg, #1B0D2B, color-mix(in srgb, var(--rc) 35%, #07030C)); border-color:var(--rc) }
+.carta .frente b{ font:800 11px/1.1 var(--n); text-align:center } .carta .frente small{ font:800 9px var(--n); letter-spacing:.12em; color:var(--rc); text-transform:uppercase } .carta .muestra{ height:46%; display:grid; place-items:center }
+@keyframes cartaEntra{ from{ transform:translateY(40px) scale(.6); opacity:0 } }
+@keyframes cartaLate{ 50%{ filter:brightness(1.35) } }
+@keyframes cartaVoltea{ 50%{ transform:scaleX(0) scale(1.08) } }
+/* garra */
+#garraCv{ display:block; touch-action:none; border:1px solid var(--linea) }
+/* el premio: no se cierra solo */
+.premio{ position:fixed; inset:0; z-index:20; display:none; place-items:center; padding:20px; background:radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--rc, #AC27FF) 30%, #07030C), #07030Cf2) }
+.premio.vis{ display:grid; animation:entra .35s both }
+.premioCaja{ width:min(420px, 100%); max-height:100%; overflow-y:auto; display:flex; flex-direction:column; gap:14px; align-items:center; text-align:center }
+.premioLista{ display:grid; gap:10px; width:100% } .premioLista.varios{ grid-template-columns:repeat(2, minmax(0, 1fr)) }
+.premioObj{ padding:14px 10px; border:2px solid var(--rc); background:linear-gradient(180deg, #ffffff08, color-mix(in srgb, var(--rc) 25%, transparent)); box-shadow:0 0 30px color-mix(in srgb, var(--rc) 45%, transparent); display:flex; flex-direction:column; align-items:center; gap:6px }
+.premioObj .muestra{ height:70px; display:grid; place-items:center } .premioObj b{ font:900 15px var(--n) } .premioObj small{ font:800 10px var(--n); letter-spacing:.14em; color:var(--rc) }
+
+/* ── cosméticos: formas de nota en chiquito y los temas de botones ── */
+.formaMini{ display:inline-block; background:linear-gradient(180deg, #fff, #B44BFF); box-shadow:0 0 12px #B44BFF88 }
+.formaMini.f-barra{ width:46px; height:14px } .formaMini.f-pildora{ width:46px; height:16px; border-radius:9px } .formaMini.f-cristal{ width:40px; height:22px; opacity:.85; background:linear-gradient(180deg, #E9FBFF, #38E1FF88) }
+.formaMini.f-diamante{ width:24px; height:24px; transform:rotate(45deg) scaleY(.55) } .formaMini.f-doble{ width:46px; height:6px; box-shadow:0 10px 0 #B44BFF, 0 0 12px #B44BFF88 }
+.muestra img.brillo{ filter:drop-shadow(0 0 8px #38E1FF) }
+.b.mini{ min-height:28px; padding:6px 10px; font-size:10px; pointer-events:none }
+/* los temas: con la clase en <body> cambian TODOS los botones; la muestra del vestidor lleva la suya */
+.boton-cristal .b, .b.mini.boton-cristal{ background:#ffffff16; -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px) }
+.boton-cristal .b::before, .b.mini.boton-cristal::before{ background:linear-gradient(135deg, #ffffffcc, #38E1FF88) }
+.boton-cristal .b.primario, .b.mini.boton-cristal.primario{ background:linear-gradient(135deg, #ffffff40, #38E1FF40); color:#fff }
+.boton-gotico .b, .b.mini.boton-gotico{ background:linear-gradient(180deg, #1A0A12, #07030C); font-family:var(--g); letter-spacing:.1em; color:#FFE9B0 }
+.boton-gotico .b::before, .b.mini.boton-gotico::before{ background:linear-gradient(135deg, #FFE08A, #8A6A2A 50%, #FFE08A) }
+.boton-gotico .b.primario{ background:linear-gradient(135deg, #FFE08A, #B8892E); color:#1A0A12 }
+.boton-sangre .b, .b.mini.boton-sangre{ background:linear-gradient(135deg, #4A0011, #170A26) }
+.boton-sangre .b::before, .b.mini.boton-sangre::before{ background:linear-gradient(135deg, #FF2D55, #7E1735 50%, #FF6A8A) }
+.boton-sangre .b.primario{ background:linear-gradient(135deg, #C4002B, #7E1735) }
