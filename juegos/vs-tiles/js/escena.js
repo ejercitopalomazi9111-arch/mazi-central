@@ -31,7 +31,9 @@ export const PERSONAJES = [
   { id: 'miku-hagane', nombre: 'Hagane Miku', faccion: 'Desafinados', alto: 1.75, color: '#B8B8C8', autor: 'kirirato' },
   { id: 'miku-akuma', nombre: 'Miku Excomulgada', faccion: 'Coro Nulo', alto: 1.85, color: '#FF2D55', autor: 'Tiago.Carneiro', jefe: true },
   /* el secreto de Palomazi: Temmie (Undertale) no se saca en ninguna máquina. Va sin esqueleto y vibra, como en su juego */
-  { id: 'temmie', nombre: 'Temmie', faccion: 'Tem Village', alto: 1.2, color: '#9AD7FF', autor: 'Stewie_Box', secreto: true, sinBrazos: true, vibra: true }
+  { id: 'temmie', nombre: 'Temmie', faccion: 'Tem Village', alto: 1.2, color: '#9AD7FF', autor: 'Stewie_Box', secreto: true, sinBrazos: true, vibra: true },
+  /* y la de la tienda: la Temmie del TEM SHOP dentro de su caja, recargada en el mostrador (Carlos, 30 oct) */
+  { id: 'temmie-tienda', nombre: 'Temmie del Tem Shop', faccion: 'Tem Village', alto: 1.9, color: '#7FB6C9', autor: 'xunbile', secreto: true, vibra: true }
 ];
 export const COLORES_RIEL = ['#FF3D8B', '#B44BFF', '#38E1FF', '#FFF07A', '#38E1FF', '#B44BFF', '#FF3D8B'];
 
