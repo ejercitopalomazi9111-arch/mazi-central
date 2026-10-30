@@ -16,7 +16,10 @@ input, select{ font:inherit; color:var(--texto) }
 
 /* las pantallas: una a la vez, encima del 3D */
 .pantalla{ position:fixed; inset:0; z-index:5; display:none; flex-direction:column; padding:max(14px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); overflow-y:auto; -webkit-overflow-scrolling:touch }
-.pantalla > *{ flex-shrink:0 }   /* sin esto, en un teléfono chico la pantalla APLASTA a sus hijos en vez de dejar bajar: la fila de modos quedaba de 0 px */
+.pantalla > *{ flex-shrink:0 }
+/* sin scroll de lado: con overflow-y:auto, el eje x se vuelve «auto» solo y en el iPhone la pantalla bailaba de lado
+   con cualquier cosa que se pasara un pixel (Carlos, 29 oct) */
+.pantalla{ overflow-x:hidden; touch-action:pan-y; overscroll-behavior:contain }   /* sin esto, en un teléfono chico la pantalla APLASTA a sus hijos en vez de dejar bajar: la fila de modos quedaba de 0 px */
 .pantalla.vis{ display:flex; animation:entra .45s cubic-bezier(.2,.8,.2,1) both }
 @keyframes entra{ from{ opacity:0; transform:translateY(18px) scale(.985); filter:blur(6px) } to{ opacity:1; transform:none; filter:none } }
 .sombra{ position:fixed; inset:0; z-index:4; pointer-events:none; background:linear-gradient(180deg, #07030Ccc 0, #07030C33 30%, #07030C33 62%, #07030Cf0 100%); transition:opacity .4s }
@@ -159,3 +162,13 @@ h2{ font:800 22px/1.1 var(--n); letter-spacing:.06em; margin:0 0 10px }
 .busca{ width:100%; min-height:44px; margin:4px 0 8px; padding:10px 14px; background:var(--panel2); border:1px solid var(--linea); color:#fff; font:600 16px var(--t) }
 .busca[hidden]{ display:none }
 .nota{ margin-top:14px; font-size:12px; opacity:.75 }
+
+/* la pantalla de carga: tapa el doble toque y dice qué está pasando */
+#carga{ justify-content:center; align-items:center; text-align:center; gap:14px; background:radial-gradient(circle at 50% 40%, #2A0F3Acc, #07030Cf2) }
+#carga .anillo{ width:84px; height:84px; border-radius:50%; border:3px solid #ffffff1a; border-top-color:var(--magenta); border-right-color:var(--cian); animation:cargaGira .9s linear infinite }
+#carga .cancion{ font:900 22px var(--n); letter-spacing:.06em; max-width:90%; overflow-wrap:anywhere }
+#carga .paso{ font:700 13px var(--n); letter-spacing:.18em; color:var(--gris); text-transform:uppercase }
+#carga .barraC{ width:min(280px, 80%); height:4px; background:#ffffff14; overflow:hidden } #carga .barraC i{ display:block; height:100%; width:0; background:linear-gradient(90deg, var(--magenta), var(--cian)); transition:width .25s }
+#carga .tip{ max-width:320px; font-size:13px; color:var(--gris) }
+@keyframes cargaGira{ to{ transform:rotate(360deg) } }
+.obj.oculto{ background:#0B0612; border-style:dashed; color:#ffffff55 } .obj.oculto .muestra{ font:900 30px var(--n); color:#ffffff22 }

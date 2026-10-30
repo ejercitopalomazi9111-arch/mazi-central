@@ -253,7 +253,8 @@ export async function crearEscena(lienzo){
       const agacha = u < .18 ? Math.sin(u / .18 * Math.PI) * .18 : 0, vuela = u >= .18 ? (u - .18) / .82 : 0;
       z = -1.7 - vuela * 1.4; y += .2 * (1 - vuela) - agacha + (vuela < .3 ? Math.sin(vuela / .3 * Math.PI / 2) * .5 : .5 - Math.pow((vuela - .3) / .7, 2) * 7); giro = vuela * .5; esc = 1 - agacha * .3; }
     else { cam.remove(raiz); susto = null; return; }
-    raiz.position.set(Math.sin(giro) * 1.3, y, z);   // ladea la cabeza sin que la cara se salga de cuadro (gira desde los pies) raiz.rotation.z = giro; raiz.scale.set(esc, 2 - esc, esc);
+    /* gira desde los pies: se corre de lado para que la cara no se salga de cuadro al ladear la cabeza */
+    raiz.position.set(Math.sin(giro) * 1.3, y, z); raiz.rotation.z = giro; raiz.scale.set(esc, 2 - esc, esc);
   }
 
   return { r, s, cam, carril, piezas, cantantes, ponerCantantes, E, chispa, uni, prepararVelocidad, pos, LARGO, ANCHO, asustar, SUSTO,
