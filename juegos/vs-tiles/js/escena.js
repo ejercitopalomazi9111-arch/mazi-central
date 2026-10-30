@@ -188,7 +188,7 @@ export async function crearEscena(lienzo){
     c.v.set((Math.random() - .5) * 4, 2 + Math.random() * 4, (Math.random() - .5) * 2).multiplyScalar(fuerza); c.vida = 380 + Math.random() * 300; c.esc = .5 + Math.random() * .9; c.sp.visible = true; } }
 
   /* ── el estado visual del carril, que se arma cada cuadro desde los eventos ── */
-  const E = { zoom: 1, movido: 99, carriles: 5, ang: 0, giro: 0, onda: 0, abanico: 0, espejo: 0, oculta: null, vel: 1, visible: 1, camara: 0, camaraT: 0, glitch: 0, compas: '' };
+  const E = { zoom: 1, centro: 0, movido: 99, carriles: 5, ang: 0, giro: 0, onda: 0, abanico: 0, espejo: 0, oculta: null, vel: 1, visible: 1, camara: 0, camaraT: 0, glitch: 0, compas: '' };
   function disposicion(eventos, t){
     /* el último cambio de carriles y el anterior, para animar el paso */
     let antes = 5, ahora = 5, tc = -99, dur = .5;
@@ -226,9 +226,9 @@ export async function crearEscena(lienzo){
   /* RESOLUCIÓN AUTOMÁTICA, para los teléfonos que no alcanzan: si el cuadro tarda en promedio más de 22 ms
      (menos de ~45 por segundo) durante 2 s, se baja la nitidez del 3D un cuarto; si sobra (menos de 12 ms)
      durante 6 s, se sube. Las notas y el juicio no dependen de esto: van con el reloj del audio. */
-  let tam = [1, 1], ultimo = 0, media = 16, lento = 0, holgado = 0, dtS = 1 / 60;
+  let tam = [1, 1], ultimo = 0, media = 16, lento = 0, holgado = 0, dtS = 1 / 60, dtC = 1 / 60;
   const tope = Math.min(2, devicePixelRatio || 1); let razon = tope;
-  function calidad(ahora){ const dt = ultimo ? Math.min(100, ahora - ultimo) : 16; ultimo = ahora; dtS = Math.min(.05, dt / 1000);
+  function calidad(ahora){ const dt = ultimo ? Math.min(100, ahora - ultimo) : 16; ultimo = ahora; dtS = Math.min(.05, dt / 1000); dtC = Math.min(.3, dt / 1000);
     media += (dt - media) * .05;
     if(media > 22){ lento += dt; holgado = 0; } else if(media < 12){ holgado += dt; lento = 0; } else { lento = holgado = 0; }
     const nueva = lento > 2000 ? Math.max(.75, razon - .25) : holgado > 6000 ? Math.min(tope, razon + .25) : razon;
@@ -289,9 +289,9 @@ export async function crearEscena(lienzo){
         if(e.tipo === 'camara'){ camN = e.n; camT = e.t; }
         if(!vivo) continue;
         if(e.tipo === 'inclina') ang += e.ang * blando(e);
-        /* en vertical, girar 90° acuesta la pista y la línea de golpe se sale de la pantalla (Carlos, 29 oct):
-           ahí un cuarto de vuelta se vuelve un ladeo fuerte; de cabeza (π) sí cabe y se queda */
-        if(e.tipo === 'gira') giro += (vertical && Math.abs(Math.abs(e.ang) - Math.PI / 2) < .1 ? Math.sign(e.ang) * .38 : e.ang) * blando(e, .45);
+        /* girar 90° acuesta la pista y la línea de golpe se sale de la pantalla, en vertical y en horizontal
+           (Carlos, 29 oct): un cuarto de vuelta se vuelve un ladeo fuerte; de cabeza (π) sí cabe y se queda */
+        if(e.tipo === 'gira') giro += (Math.abs(Math.abs(e.ang) - Math.PI / 2) < .1 ? Math.sign(e.ang) * .38 : e.ang) * blando(e, .45);
         if(e.tipo === 'onda') onda += e.fuerza * blando(e);
         if(e.tipo === 'abanico') abanico += e.fuerza * blando(e);
         if(e.tipo === 'espejo') espejo = Math.max(espejo, blando(e, .3));
@@ -365,6 +365,9 @@ export async function crearEscena(lienzo){
       if(camT !== cambioCam){ camDe.p.copy(cam.position); camDe.m.copy(mira); cambioCam = camT; }
       const C = CAMS[enCarril ? camN : 5] || CAMS[0], uc = Math.min(1, (t - camT) / 1.1), ec = 1 - Math.pow(1 - Math.max(0, uc), 3);
       objetivoCam.p.set(...C.p); objetivoCam.m.set(...C.m);
+      /* en vertical las cámaras laterales empujaban los receptores de la orilla fuera de la pantalla: ahí van más
+         cerca del centro, y la mira se corre hacia donde están de verdad los receptores */
+      if(vertical && carta){ objetivoCam.p.x *= .45; objetivoCam.m.x *= .3; objetivoCam.m.x += E.centro * 1.6; }
       if(!carta){ objetivoCam.p.set(Math.sin(t * .15) * 3, 2.6, 6.5); objetivoCam.m.set(0, 1.6, -11); }
       cam.position.lerpVectors(camDe.p, objetivoCam.p, carta ? ec : .03 + .97 * ec);
       mira.lerpVectors(camDe.m, objetivoCam.m, carta ? ec : .03 + .97 * ec);
@@ -376,7 +379,11 @@ export async function crearEscena(lienzo){
       const fov0 = (vertical ? 64 : 50) - latido * compas * 1.6 + sacudida * 2;
       cam.fov = 2 * Math.atan(Math.tan(fov0 * Math.PI / 360) * E.zoom) * 180 / Math.PI; cam.updateProjectionMatrix();
       if(carta && enCarril){ let fuera = false; for(const R of piezas.rieles){ if(R.vis < .5) continue; v3.set(R.x * ANCHO, 0, 0); carril.localToWorld(v3); v3.project(cam); if(Math.abs(v3.x) > .88 || v3.y < -.9 || v3.y > .8) { fuera = true; break; } }
-        E.zoom = fuera ? Math.min(1.9, E.zoom + .04) : Math.max(1, E.zoom - .006); } else E.zoom += (1 - E.zoom) * .05;
+        /* por TIEMPO, no por cuadro: en un teléfono lento (o a 4 cuadros por segundo) la corrección llegaba tarde */
+        E.zoom = fuera ? Math.min(1.9, E.zoom + 3 * dtC) : Math.max(1, E.zoom - .35 * dtC);
+        /* dónde cae el centro de los receptores en la pantalla (−1 a 1): la mira lo persigue poco a poco */
+        let cx = 0, k = 0; for(const R of piezas.rieles){ if(R.vis < .5) continue; v3.set(R.x * ANCHO, 0, 0); carril.localToWorld(v3); v3.project(cam); cx += v3.x; k++; }
+        E.centro += (k ? cx / k : 0) * 3.2 * dtC; E.centro = Math.max(-1.5, Math.min(1.5, E.centro)); } else { E.zoom += (1 - E.zoom) * .05; E.centro *= .9; }
 
       /* las cantantes: rebotan al golpe, se balancean y brincan en los acentos */
       cantantes.forEach((c, k) => { const lado = k % 2 ? -1 : 1, sal = Math.max(0, Math.sin(fase * Math.PI)) * (gi % 2 === k % 2 ? 1 : .4);
