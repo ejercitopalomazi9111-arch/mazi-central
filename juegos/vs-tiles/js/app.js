@@ -162,7 +162,7 @@ $('#calibB').addEventListener('click', async () => {
 function barra(){ const T = OBJETOS.find(o => o.id === Y.puesto.titulo);
   $('#barra').innerHTML = `<div class="avatar">${(Y.nombre || 'R')[0].toUpperCase()}</div><div class="quien"><b>${esc(Y.nombre || 'Resonante')}</b><span>Nv. ${Y.nivel} · ${T ? T.nombre : ''}</span></div><div class="moneda"><i></i>${Y.ecos}</div><div class="moneda sello"><i></i>${Y.sellos}</div>`; }
 const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-async function menu(){ partida.salir(); mostrar('menu');
+async function menu(){ partida.salir(); mostrar('menu'); musicaMenu();
   /* el premio diario: 300 Ecos y un Sello la primera vez que se abre el juego cada día */
   const hoy = new Date().toISOString().slice(0, 10); if(Y.diario !== hoy){ Y.diario = hoy; Y.ecos += 300; Y.sellos += 1; guardar(); setTimeout(() => aviso('Premio del día: +300 Ecos y +1 Sello'), 600); }
   barra(); await escena.ponerCantantes([idVoz()]); }
@@ -192,23 +192,48 @@ async function canciones(cual){ modoLista = cual; mostrar('canciones'); $('#canc
     await biblioteca.borrar(c.id); CANCIONES.splice(CANCIONES.indexOf(c), 1); delete analisis[c.id]; delete bufs[c.id]; if(portadas[c.id]){ URL.revokeObjectURL(portadas[c.id]); delete portadas[c.id]; }
     cancionSel = CANCIONES[0].id; canciones(cual); };
   const dv = $('#difs'); dv.innerHTML = ''; DIFS.forEach((d, i) => { const b = document.createElement('button'); b.style.setProperty('--c', colD[i]); b.className = d.id === difSel ? 'si' : ''; b.innerHTML = `<em><s>${niveles[i]}</s></em>${d.nombre}`; b.onclick = () => { difSel = d.id; canciones(cual); }; dv.appendChild(b); });
-  escena.ponerCantantes(c.voces);
+  escena.ponerCantantes(c.voces); musica(c.id, 350);
 }
 const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
 $('#buscaCancion').addEventListener('input', () => canciones(modoLista));
 $('#jugarB').addEventListener('click', () => jugar(cancionSel, modoSel, difSel));
 
 /* ── jugar ── */
+/* «al tocar iniciar canción sólo se queda trabado hasta que carga, y si le picas más veces empiezan muchas
+   veces la misma canción» (Carlos, 29 oct): ahora sale la pantalla de carga con lo que está pasando, y un
+   candado deja pasar UN arranque a la vez */
+const TIPS = ['Las reglas cambian a media canción: lee el aviso rojo.', 'Si los carriles giran, los botones de toque los siguen.', 'Calibra en Ajustes si sientes que las notas llegan tarde.', 'Las notas con flecha se deslizan hacia donde apunta la flecha.', 'En EXÓRCIST nada se queda quieto mucho tiempo.', 'Los Ecos se ganan jugando; el premio diario también cuenta.'];
+let arrancando = false;
 async function jugar(id, modo, dif, deHistoria = null){
-  const c = CANCIONES.find(x => x.id === id) || ultima?.c, an = await datos(c.id), buf = await audio(c.id);
-  const carta = armarCarta(an, c, modo, dif); ultima = { c, modo, dif, deHistoria };
-  await escena.ponerCantantes(modo === 'flechas' ? [idVoz(), c.voces.find(v => v !== idVoz()) || 'miku'] : [...new Set([idVoz(), ...c.voces])].slice(0, 3));
-  mostrar(null); $('#sombra').style.opacity = 0;
-  partida.empezar(c, carta, an, buf, { autoJuego: $('#opAuto').checked, vel: Y.vel, ritmo: $('#opPract').checked ? .75 : 1 });
-  Y.sinMorir = $('#opSin').checked || $('#opPract').checked;
-  $('#pausaB').classList.add('vis');
-  cuenta(carta);
+  if(arrancando) return; arrancando = true;
+  const c = CANCIONES.find(x => x.id === id) || ultima?.c, paso = (txt, p) => { $('#cargaP').textContent = txt; $('#cargaB').style.width = Math.round(p * 100) + '%'; };
+  $('#cargaT').textContent = c.titulo; $('#cargaTip').textContent = TIPS[Math.floor(Math.random() * TIPS.length)]; paso('Leyendo la canción', .1); mostrar('carga'); pararFondo();
+  try{
+    const an = await datos(c.id); paso('Despertando el audio', .3);
+    const buf = await audio(c.id); paso('Escribiendo las notas', .65);
+    const carta = armarCarta(an, c, modo, dif, { telefono: TELEFONO }); ultima = { c, modo, dif, deHistoria };
+    paso('Llamando a las voces', .85);
+    await escena.ponerCantantes(modo === 'flechas' ? [idVoz(), c.voces.find(v => v !== idVoz()) || 'miku'] : [...new Set([idVoz(), ...c.voces])].slice(0, 3));
+    paso('¡Listo!', 1);
+    mostrar(null); $('#sombra').style.opacity = 0;
+    partida.empezar(c, carta, an, buf, { autoJuego: $('#opAuto').checked, vel: Y.vel, ritmo: $('#opPract').checked ? .75 : 1 });
+    Y.sinMorir = $('#opSin').checked || $('#opPract').checked;
+    $('#pausaB').classList.add('vis');
+    cuenta(carta);
+  }catch(err){ console.error(err); aviso('No se pudo cargar la canción. Revisa tu internet e inténtalo otra vez.'); canciones(modoLista); }
+  finally{ arrancando = false; }
 }
+/* la música del menú: una canción de la casa (la que toque hoy); en la lista, la canción elegida desde su
+   parte más fuerte, como en Arcaea */
+let fondoId = null, fondoPend = 0;
+function pararFondo(){ fondoId = null; clearTimeout(fondoPend); reloj.pararFondo(); }
+function musica(id, espera = 0){ if(fondoId === id) return; fondoId = id; clearTimeout(fondoPend);
+  fondoPend = setTimeout(async () => { try{ const [an, buf] = await Promise.all([datos(id), audio(id)]); if(fondoId !== id) return;
+    const e = an.energia || [], i = e.indexOf(Math.max(...(e.length ? e : [0]))), desde = Math.max(0, Math.min(buf.duration - 20, i / 2 - 6)); reloj.fondo(buf, { desde }); }catch(err){} }, espera); }
+const musicaMenu = () => musica(CANCIONES[new Date().getDate() % 7].id);
+/* teléfono = pantalla táctil angosta: ahí las cartas no ponen 6 o 7 carriles ni acordes de más de dos notas
+   (se juega con dos pulgares); la dificultad sale de las mecánicas, no de los dedos */
+const TELEFONO = matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 600;
 function cuenta(carta){ const el = $('#cuenta'); el.classList.add('vis'); const primero = carta.notas[0]?.t ?? 2;
   (function paso(){ const t = reloj.ahora(), falta = Math.min(primero, 0) - t; if(!partida.corriendo || t > Math.min(primero, 0) - .1 && t > -.4){ el.classList.remove('vis'); return; } el.textContent = t < -2 ? '3' : t < -1 ? '2' : '1'; requestAnimationFrame(paso); })(); }
 $('#pausaB').addEventListener('click', () => partida.alternarPausa());
