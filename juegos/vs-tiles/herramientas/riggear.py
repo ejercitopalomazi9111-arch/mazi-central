@@ -11,8 +11,13 @@
 #    larga se iría con la pierna);
 # 4. cada baile se pasa al esqueleto nuevo como «cuánto giró cada hueso desde su pose de reposo», en el
 #    espacio del mundo; así no importa que el reposo del modelo sea distinto del de la captura;
-# 5. el bailarín se queda en su lugar (sin caminar por el escenario), pero conserva el rebote.
-import bpy, sys, math, re
+# 5. el bailarín se queda en su lugar (sin caminar por el escenario), pero conserva el rebote;
+# 6. (Carlos, 30 oct: «la animación no revisa que nada se toque mal al animar o se deforme») los pesos salen por
+#    DIFUSIÓN (el «bone heat» de Blender: la piel sigue al hueso que la alcanza por dentro del cuerpo, no al más
+#    cercano en línea recta) y, cuadro por cuadro, si un antebrazo o una mano se mete en el torso o en un muslo, o
+#    si las piernas se atraviesan, el brazo o la pierna entera se abre lo justo para que no; el giro se suaviza en
+#    el tiempo para que no tiemble. herramientas/revisar-bailes.py mide cuántos cuadros quedan mal.
+import bpy, sys, math, re, os
 from mathutils import Vector, Matrix, Quaternion
 
 args = sys.argv[sys.argv.index('--') + 1:]
@@ -101,8 +106,9 @@ for lado in ('Left', 'Right'):
         if n != 'UpLeg': b.head += d
 bpy.ops.object.mode_set(mode='OBJECT')
 
-# ── los pesos: cada vértice a sus 2 huesos más cercanos (distancia al segmento), el pelo a la cabeza ──
+# ── los pesos ──
 huesos = [b for b in dest.data.bones if not re.search(r'Finger|Index|Thumb|Toe|HipJoint|LowerBack|Hand', b.name) or b.name in ('LeftToeBase', 'RightToeBase')]
+for b in dest.data.bones: b.use_deform = b in huesos
 segs = [(b.name, dest.matrix_world @ b.head_local, dest.matrix_world @ b.tail_local) for b in huesos]
 # de qué lado está cada hueso de brazo o pierna: un vértice de la pierna izquierda nunca se pega a la derecha
 ladoH = {n: (1 if ((a + b) / 2).x > cx else -1) for n, a, b in segs if re.match(r'(Left|Right)(UpLeg|Leg|Foot|ToeBase|Arm|ForeArm|Hand|Shoulder)', n)}
@@ -122,6 +128,97 @@ for o in mallas:
         w = [1 / max(1e-4, d) ** 4 for d, _ in ds]; t = sum(w)
         for (d, n), wi in zip(ds, w): g[n].add([v.index], wi / t, 'REPLACE')
     mod = o.modifiers.new('Esqueleto', 'ARMATURE'); mod.object = dest; o.parent = dest
+cercanos = {o.name: {v.index: [(o.vertex_groups[g.group].name, g.weight) for g in v.groups] for v in o.data.vertices} for o in mallas}
+
+# por difusión (bone heat), malla por malla; el pelo sigue pegado a la cabeza y lo que la difusión no alcanzó
+# (mallas abiertas o sueltas: Blender avisa «failed to find solution») se queda con los pesos por cercanía
+if os.environ.get('PESOS', 'calor') == 'calor':
+    for o in mallas:
+        es_pelo = bool(PELO.search(o.name + ' ' + ' '.join(m.name for m in o.data.materials if m)))
+        if es_pelo: continue
+        for m in list(o.modifiers): o.modifiers.remove(m)
+        o.vertex_groups.clear(); o.parent = None
+        bpy.ops.object.select_all(action='DESELECT'); o.select_set(True); dest.select_set(True); bpy.context.view_layer.objects.active = dest
+        try: bpy.ops.object.parent_set(type='ARMATURE_AUTO')
+        except Exception as e: print('difusión falló en', o.name, e)
+        if not any(m.type == 'ARMATURE' for m in o.modifiers):
+            mod = o.modifiers.new('Esqueleto', 'ARMATURE'); mod.object = dest; o.parent = dest
+        g = {vg.name: vg for vg in o.vertex_groups}; vacios = 0
+        for v in o.data.vertices:
+            if sum(x.weight for x in v.groups if o.vertex_groups[x.group].name in g) > .05: continue
+            vacios += 1
+            for n, w in cercanos[o.name][v.index]:
+                (g.get(n) or g.setdefault(n, o.vertex_groups.new(name=n))).add([v.index], w, 'REPLACE')
+        print('difusión', o.name, len(o.data.vertices), 'vértices,', vacios, 'por cercanía')
+
+# los grosores (para no meter un brazo en el torso): la distancia típica de la piel a su hueso, en reposo
+def grosor(nombres, a, b):
+    ds = []
+    for o in mallas:
+        idx = {vg.index for vg in o.vertex_groups if vg.name in nombres}
+        for v in o.data.vertices:
+            if v.groups and max(v.groups, key=lambda x: x.weight).group in idx: ds.append(dseg(o.matrix_world @ v.co, a, b))
+    ds.sort(); return ds[len(ds) // 2] if ds else H * .06
+rT = grosor({'Hips', 'LowerBack', 'Spine', 'Spine1'}, mundo(dest, 'Hips'), mundo(dest, 'Neck'))
+rP = grosor({'LeftUpLeg', 'RightUpLeg'}, mundo(dest, 'LeftUpLeg'), mundo(dest, 'LeftUpLeg', True))
+print('grosores: torso', round(rT / H, 3), 'muslo', round(rP / H, 3))
+
+# ── que nada se atraviese: para cada cuadro, cuánto hay que abrir cada brazo y cada pierna ──
+def corregir(N):
+    P = lambda n, cola=False: dest.matrix_world @ (dest.pose.bones[n].tail if cola else dest.pose.bones[n].head)
+    def gira(p, c, eje, a): return c + Quaternion(eje, a) @ (p - c)
+    def ejes():
+        arriba = (P('Neck') - P('Hips')).normalized(); lado = P('LeftUpLeg') - P('RightUpLeg'); lado = (lado - arriba * lado.dot(arriba)).normalized()
+        return arriba, lado, lado.cross(arriba)
+    def brazo_libre(L, q):   # q: el giro que se prueba en el hombro
+        S = P(L + 'Arm'); pts = [P(L + 'ForeArm'), (P(L + 'ForeArm') + P(L + 'ForeArm', True)) / 2, P(L + 'ForeArm', True), P(L + 'Hand', True)]
+        pts = [S + q @ (p - S) for p in pts]; a, b = P('Hips'), P('Neck')
+        if min(dseg(p, a, b) for p in pts) < rT * 1.05: return False
+        return min(dseg(pts[-1], P(x + 'UpLeg'), P(x + 'UpLeg', True)) for x in ('Left', 'Right')) >= rP * .95
+    def piernas_libres(a):
+        _, _, fr = ejes(); pts = {}
+        for L, s in (('Left', 1), ('Right', -1)):
+            c = P(L + 'UpLeg'); q = Quaternion(fr, -s * a)
+            pts[L] = [c + q @ (P(L + 'Leg') - c), c + q @ (P(L + 'Leg', True) - c)]
+        A, B = pts['Left'], pts['Right']; n = 6
+        return min(dseg(A[0] + (A[1] - A[0]) * (i / n), B[0], B[1]) for i in range(n + 1)) >= rP * 1.35
+    abre = {'Left': [], 'Right': [], 'piernas': []}
+    for f in range(1, N + 1):
+        sc.frame_set(f); bpy.context.view_layer.update(); arriba, lado, fr = ejes()
+        for L, s in (('Left', 1), ('Right', -1)):
+            mejor = (0, 0)
+            if not brazo_libre(L, Quaternion()):
+                mejor = None
+                for paso in range(1, 13):                                   # hasta 60°: hacia afuera, luego también al frente
+                    for ab, fl in ((paso * 5, 0), (paso * 5, paso * 3), (paso * 3, paso * 5)):
+                        q = Quaternion(fr, s * math.radians(ab)) @ Quaternion(lado, -math.radians(fl))
+                        if brazo_libre(L, q): mejor = (ab, fl); break
+                    if mejor: break
+                mejor = mejor or (60, 36)
+            abre[L].append(mejor)
+        a = 0
+        while a < 18 and not piernas_libres(math.radians(a)): a += 2
+        abre['piernas'].append(a)
+    # suavizado: el máximo de los vecinos (que no se meta ni un cuadro) y luego un promedio (que no brinque)
+    def suave(xs, r=4, m=3):
+        mx = [max(xs[max(0, i - r):i + r + 1]) for i in range(len(xs))]
+        return [sum(mx[max(0, i - m):i + m + 1]) / len(mx[max(0, i - m):i + m + 1]) for i in range(len(mx))]
+    serie = {L: list(zip(suave([x[0] for x in abre[L]]), suave([x[1] for x in abre[L]]))) for L in ('Left', 'Right')}
+    pier = suave(abre['piernas'])
+    tocados = 0
+    for f in range(1, N + 1):
+        sc.frame_set(f); bpy.context.view_layer.update(); arriba, lado, fr = ejes(); i = f - 1
+        cambios = []
+        for L, s in (('Left', 1), ('Right', -1)):
+            ab, fl = serie[L][i]
+            if ab > .5 or fl > .5: cambios.append((L + 'Arm', Quaternion(fr, s * math.radians(ab)) @ Quaternion(lado, -math.radians(fl))))
+            if pier[i] > .5: cambios.append((L + 'UpLeg', Quaternion(fr, -s * math.radians(pier[i]))))
+        for n, q in cambios:
+            db = dest.pose.bones[n]; c = db.matrix.translation.copy()
+            db.matrix = Matrix.Translation(c) @ q.to_matrix().to_4x4() @ Matrix.Translation(-c) @ db.matrix
+            bpy.context.view_layer.update(); db.keyframe_insert('rotation_quaternion', frame=f)
+        tocados += bool(cambios)
+    print('  corregidos', tocados, 'de', N, 'cuadros')
 
 # ── los bailes ──
 rq = lambda M: M.to_3x3().normalized().to_quaternion()
@@ -162,6 +259,7 @@ for i, bvh in enumerate(BAILES):
             db.keyframe_insert('rotation_quaternion', frame=j + 1)
             if n == 'Hips': db.keyframe_insert('location', frame=j + 1)
     print('baile', nombre, j + 1, 'cuadros')
+    corregir(j + 1)
     src.animation_data.action = None
     if src is not fuente: bpy.data.objects.remove(src)
 bpy.data.objects.remove(fuente)
