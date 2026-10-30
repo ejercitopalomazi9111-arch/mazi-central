@@ -393,23 +393,59 @@ function resultados({ cancion, carta, J, murio, auto }){
    final y acceso a la siguiente canción»): si se ganó, su diálogo final; si no, un ánimo para reintentarla */
 function finDeMision(){ const k = ultima.deHistoria, [ci, mi] = k.split('.').map(Number), m = HISTORIA[ci].misiones[mi], gano = !!Y.historia[k];
   const voz = m.d.find(([q]) => PERSONAJES.some(p => p.nombre === q))?.[0] || 'GUMI';
-  dialogo(gano ? (m.f || [['SONOLUZ', 'Canción restaurada.']]) : [[voz, 'Todavía no. La canción sigue rota.'], ['SONOLUZ', 'Necesitas 600,000 puntos sin que se cierre el archivo. Inténtalo otra vez.']], () => historia()); }
+  dialogo(gano ? (m.f || [['SONOLUZ', 'Canción restaurada.']]) : [[voz, 'Todavía no. La canción sigue rota.'], ['SONOLUZ', 'Necesitas 600,000 puntos sin que se cierre el archivo. Inténtalo otra vez.']], () => historia(), { fondo: fondoDe(CANCIONES.find(x => x.id === m.c)) }); }
 function historia(){ mostrar('historia'); const H = $('#capitulos'); H.innerHTML = ''; let abierto = true;
   /* arriba, la que sigue: un toque y se juega */
   const todas = HISTORIA.flatMap((cap, ci) => cap.misiones.map((m, mi) => ({ m, k: `${ci}.${mi}`, cap: cap.cap }))), sig = todas.find(x => !Y.historia[x.k]);
   if(sig){ const c = CANCIONES.find(x => x.id === sig.m.c), b = document.createElement('button'); b.className = 'mision siguiente';
     b.innerHTML = `<span class="n">▶</span><span><span class="ojo" style="margin:0">${Object.keys(Y.historia).length ? 'Sigue la historia' : 'Empieza aquí'} · ${sig.cap}</span><br><b style="font:800 15px var(--n)">${c.titulo}</b><br><span style="font-size:12px;color:var(--gris)">${MODOS[sig.m.modo].nombre} · ${DIFS.find(x => x.id === sig.m.dif).nombre}${sig.m.jefe ? ' · JEFE' : ''}</span></span><span class="pill">Jugar</span>`;
-    b.onclick = () => dialogo(sig.m.d, () => jugar(sig.m.c, sig.m.modo, sig.m.dif, sig.k)); H.appendChild(b); }
+    b.onclick = () => dialogo(sig.m.d, () => jugar(sig.m.c, sig.m.modo, sig.m.dif, sig.k), { fondo: fondoDe(c) }); H.appendChild(b); }
   HISTORIA.forEach((cap, ci) => { const d = document.createElement('div'); d.className = 'cap'; d.innerHTML = `<h3>${cap.cap}</h3>`;
     cap.misiones.forEach((m, mi) => { const k = `${ci}.${mi}`, hecha = !!Y.historia[k], c = CANCIONES.find(x => x.id === m.c), b = document.createElement('button');
       b.className = 'mision' + (hecha ? ' hecha' : '') + (abierto ? '' : ' bloq'); b.innerHTML = `<span class="n">${hecha ? '✓' : String(mi + 1).padStart(2, '0')}</span><span><b style="font:800 13px var(--n)">${c.titulo}</b><br><span style="font-size:12px;color:var(--gris)">${MODOS[m.modo].nombre} · ${DIFS.find(x => x.id === m.dif).nombre}${m.jefe ? ' · JEFE' : ''}</span></span><span class="pill">${abierto ? 'Jugar' : '🔒'}</span>`;
-      const ab = abierto; b.onclick = () => { if(ab) dialogo(m.d, () => jugar(m.c, m.modo, m.dif, k)); else aviso('Termina la incursión anterior para abrir ésta.'); };
+      const ab = abierto; b.onclick = () => { if(ab) dialogo(m.d, () => jugar(m.c, m.modo, m.dif, k), { fondo: fondoDe(c) }); else aviso('Termina la incursión anterior para abrir ésta.'); };
       d.appendChild(b); if(!hecha) abierto = false; });
     H.appendChild(d); });
   const fin = document.createElement('p'); fin.className = 'sub'; fin.style.marginTop = '8px'; fin.textContent = 'Capítulos II a IV y el final, en la versión completa.'; H.appendChild(fin); }
-function dialogo(lineas, alFinal){ mostrar('dialogo'); let i = 0; const sig = () => { if(i >= lineas.length){ alFinal(); return; } const [quien, txt] = lineas[i++], P = PERSONAJES.find(p => p.nombre === quien);
-    $('#habla').textContent = quien; $('#habla').style.setProperty('--c', P ? P.color : '#38E1FF'); $('#dice').textContent = txt; if(P) escena.ponerCantantes([P.id]); };
-  $('#dialogoB').onclick = sig; sig(); }
+/* LA NOVELA GRÁFICA (Carlos: «historia estilo novela gráfica»). Los que platican salen a los lados con su retrato
+   (herramientas/retratos.cjs, de sus modelos 3D): el que habla al frente y con luz, el otro en sombra. «???» es una
+   silueta del jefe hasta que se presenta. SONOLUZ es el sistema: no tiene cara, habla en letra de máquina.
+   Un toque termina de escribir la frase; otro, pasa a la siguiente. */
+const RETRATO = { '???': 'miku-akuma' };
+function dialogo(lineas, alFinal, { fondo = null } = {}){
+  mostrar('dialogo'); const caja = $('#dice'), log = [];
+  if(fondo) $('#vnFondo').style.backgroundImage = `url('${fondo}')`;
+  const lados = { izq: null, der: null }, ultimo = { izq: 0, der: 0 }; let i = 0, escribiendo = 0, falta = '', auto = false, espera = 0;
+  ['izq', 'der'].forEach(l => { const im = $('#vn' + (l === 'izq' ? 'Izq' : 'Der')); im.hidden = true; im.className = 'vnRetrato ' + l; });
+  $('#vnLogL').hidden = true;
+  function retrato(quien, n){ const P = PERSONAJES.find(p => p.nombre === quien), id = P?.id || RETRATO[quien]; if(!id) return null;
+    /* ¿ya está en escena? si no, entra por el lado que lleva más tiempo sin hablar */
+    let lado = lados.izq === quien ? 'izq' : lados.der === quien ? 'der' : null;
+    /* la revelación: si el que habla es el dueño de la silueta, la silueta se ilumina en su lugar */
+    if(!lado && RETRATO['???'] === id){ lado = lados.izq === '???' ? 'izq' : lados.der === '???' ? 'der' : null; if(lado) lados[lado] = quien; }
+    if(!lado){ lado = !lados.izq ? 'izq' : !lados.der ? 'der' : ultimo.izq <= ultimo.der ? 'izq' : 'der';
+      const im = $('#vn' + (lado === 'izq' ? 'Izq' : 'Der')); im.src = `sprites/retrato-${id}.webp`; im.alt = quien; im.hidden = false;
+      im.classList.remove('entra'); void im.offsetWidth; im.classList.add('entra'); lados[lado] = quien; }
+    ultimo[lado] = n; return lado; }
+  function escribir(){ clearInterval(escribiendo); const paso = () => { if(!falta.length){ clearInterval(escribiendo); escribiendo = 0; $('.vnSigue').classList.remove('no'); if(auto) programar(); return; }
+      caja.textContent += falta[0]; falta = falta.slice(1); };
+    $('.vnSigue').classList.add('no'); escribiendo = setInterval(paso, 28); }
+  const programar = () => { clearTimeout(espera); espera = setTimeout(sig, 1400 + caja.textContent.length * 25); };
+  function sig(){ clearTimeout(espera);
+    if(escribiendo){ clearInterval(escribiendo); escribiendo = 0; caja.textContent += falta; falta = ''; $('.vnSigue').classList.remove('no'); if(auto) programar(); return; }
+    if(i >= lineas.length){ terminar(); return; }
+    const [quien, txt] = lineas[i++], P = PERSONAJES.find(p => p.nombre === quien), color = P ? P.color : quien === '???' ? '#FF2D55' : '#38E1FF';
+    $('#habla').textContent = quien; $('#habla').style.setProperty('--c', color); caja.classList.toggle('sistema', quien === 'SONOLUZ');
+    const lado = retrato(quien, i);
+    ['izq', 'der'].forEach(l => { const im = $('#vn' + (l === 'izq' ? 'Izq' : 'Der')); im.classList.toggle('habla', l === lado); im.classList.toggle('silueta', lados[l] === '???'); });
+    log.push({ quien, txt, color }); caja.textContent = ''; falta = txt; escribir(); }
+  function terminar(){ clearInterval(escribiendo); clearTimeout(espera); escribiendo = 0; $('#dialogoB').onclick = $('#dialogoB').onkeydown = null; alFinal(); }
+  $('#dialogoB').onclick = sig;
+  $('#dialogoB').onkeydown = (e) => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); sig(); } };
+  $('#vnSaltar').onclick = terminar;
+  $('#vnAuto').onclick = () => { auto = !auto; $('#vnAuto').setAttribute('aria-pressed', auto); if(auto && !escribiendo) programar(); if(!auto) clearTimeout(espera); };
+  $('#vnLog').onclick = () => { const L = $('#vnLogL'); L.hidden = !L.hidden; L.innerHTML = log.map(x => `<p><b style="--c:${x.color}">${esc(x.quien)}</b>${esc(x.txt)}</p>`).join(''); L.scrollTop = L.scrollHeight; };
+  sig(); }
 
 /* ── vestidor ── */
 let catSel = 'voz';

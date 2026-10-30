@@ -141,7 +141,30 @@ h2{ font:800 22px/1.1 var(--n); letter-spacing:.06em; margin:0 0 10px }
 .cap{ margin-bottom:10px } .cap h3{ margin:0 0 6px; font:900 16px var(--g); letter-spacing:.12em; color:#FFD7E5 }
 .mision{ display:grid; grid-template-columns:28px minmax(0, 1fr) auto; gap:10px; align-items:center; width:100%; padding:10px; margin-bottom:6px; background:var(--panel2); border:1px solid var(--linea); text-align:left }
 .mision .n{ font:900 13px var(--n); color:var(--magenta) } .mision.bloq{ opacity:.4 } .mision.hecha .n{ color:var(--verde) }
-#dialogo{ justify-content:flex-end; background:linear-gradient(0deg, #07030Cf5 30%, transparent) } #dialogo .burbuja{ padding:18px } #dialogo .habla{ font:900 13px var(--n); letter-spacing:.2em; color:var(--c, var(--cian)); margin-bottom:6px } #dialogo .dice{ font-size:17px; min-height:3em }
+/* LA NOVELA: el escenario de fondo, los dos que platican a los lados (el que habla al frente y con luz, el otro
+   en sombra), la caja de texto abajo y el texto que se escribe solo */
+#dialogo{ justify-content:flex-end; padding:0; overflow:hidden; background:#07030C }
+#dialogo .vnFondo{ position:absolute; inset:0; background:#07030C center / cover no-repeat; filter:saturate(.8) brightness(.55); transform:scale(1.06); animation:vnFondo 18s ease-in-out infinite alternate }
+#dialogo .vnFondo::after{ content:""; position:absolute; inset:0; background:linear-gradient(0deg, #07030C 22%, #07030C00 60%) }
+@keyframes vnFondo{ to{ transform:scale(1.14) translateX(-2%) } }
+#dialogo .vnRetrato{ position:absolute; bottom:calc(150px + env(safe-area-inset-bottom)); height:min(60svh, 560px, calc(100svh - 200px)); width:auto; max-width:72vw; object-fit:contain; object-position:bottom; transition:filter .3s, transform .35s cubic-bezier(.2,.8,.2,1), opacity .3s; filter:brightness(.42) saturate(.6); transform:translateY(10px) scale(.94); pointer-events:none }
+#dialogo .vnRetrato.izq{ left:max(-6vw, -30px) } #dialogo .vnRetrato.der{ right:max(-6vw, -30px) }
+#dialogo .vnRetrato.habla{ filter:none; transform:none; z-index:2 }
+#dialogo .vnRetrato.silueta{ filter:brightness(0) drop-shadow(0 0 18px #FF2D55aa) !important }
+#dialogo .vnRetrato.entra{ animation:vnEntra .45s cubic-bezier(.2,.8,.2,1) }
+@keyframes vnEntra{ from{ opacity:0; transform:translateY(30px) scale(.9) } }
+#dialogo .vnRetrato[hidden]{ display:none }
+#dialogo .vnBarra{ position:absolute; top:calc(12px + env(safe-area-inset-top)); right:12px; display:flex; gap:6px; z-index:4 }
+#dialogo .vnBarra .b[aria-pressed="true"]{ outline:2px solid var(--oro, #FFE08A); outline-offset:-2px }
+#dialogo .vnCaja{ position:relative; z-index:3; margin:0 12px calc(12px + env(safe-area-inset-bottom)); padding:16px 18px 22px; min-height:128px; cursor:pointer; background:#0B0614e8; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px) }
+#dialogo .habla{ font:900 13px var(--n); letter-spacing:.2em; color:var(--c, var(--cian)); margin-bottom:6px } #dialogo .dice{ font-size:17px; line-height:1.5; min-height:3em }
+#dialogo .dice.sistema{ font-family:ui-monospace, "Courier New", monospace; color:#BFF6FF; font-size:15px }
+#dialogo .vnSigue{ position:absolute; right:16px; bottom:8px; font-size:12px; color:#ffffff99; animation:vnSigue .8s ease-in-out infinite alternate } #dialogo .vnSigue.no{ visibility:hidden }
+@keyframes vnSigue{ to{ transform:translateY(3px) } }
+#dialogo .vnLogL{ position:absolute; z-index:5; inset:calc(60px + env(safe-area-inset-top)) 12px calc(160px + env(safe-area-inset-bottom)); overflow-y:auto; padding:16px; background:#0B0614f2 } #dialogo .vnLogL[hidden]{ display:none }
+#dialogo .vnLogL p{ margin:0 0 10px; font-size:14px } #dialogo .vnLogL b{ display:block; font:800 11px var(--n); letter-spacing:.16em; color:var(--c) }
+@media (min-width:900px){ #dialogo .vnCaja{ max-width:860px; margin-left:auto; margin-right:auto; width:calc(100% - 24px) } #dialogo .vnRetrato{ max-width:420px } #dialogo .vnRetrato.izq{ left:8vw } #dialogo .vnRetrato.der{ right:8vw } }
+@media (prefers-reduced-motion:reduce){ #dialogo .vnFondo{ animation:none } #dialogo .vnRetrato.entra{ animation:none } }
 
 /* ── calibración ── */
 .calib{ text-align:center } .calib .pulso{ width:120px; height:120px; margin:18px auto; border-radius:50%; border:3px solid var(--cian); display:grid; place-items:center; font:900 26px var(--n); transition:transform .08s }
