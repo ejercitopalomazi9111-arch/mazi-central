@@ -3,7 +3,7 @@
    Lo que el jugador gana y elige se guarda en el teléfono (localStorage); si el navegador no deja,
    se juega igual y sólo no se recuerda. */
 import { reloj } from './reloj.js';
-import { armarCarta, DIFS, MODOS } from './cartas.js';
+import { armarCarta, armarTutorial, DIFS, MODOS } from './cartas.js';
 import { crearEscena, ESCENARIOS, PERSONAJES, COLORES_RIEL } from './escena.js';
 import { crearPartida, cargarSprites } from './juego.js';
 import { analizar } from './analisis.js';
@@ -176,7 +176,7 @@ $('#arranque').addEventListener('click', async function entrar(e){
 });
 document.addEventListener('click', (e) => { const b = e.target.closest('[data-ir]'); if(!b) return; sonidos.boton && reloj.golpe(sonidos.boton, .25); ir(b.dataset.ir); });
 function ir(a){ ({ menu, historia, libre: () => canciones('libre'), reto: () => canciones('reto'), lab: () => mostrar('lab'), mercado, vestidor, records, ajustes, creditos,
-  saltarIntro: () => { cortarIntro = true; }, aCalibrar, saltarCalib: () => { Y.calibrado = true; guardar(); menu(); }, seguir: () => { partida.alternarPausa(); }, reintentar: jugarDeNuevo, salirJuego: () => { partida.salir(); if(ultima?.deHistoria) historia(); else canciones(modoLista); }, libreVolver: () => ultima?.deHistoria ? finDeMision() : canciones(modoLista) })[a]?.(); }
+  saltarIntro: () => { cortarIntro = true; }, tutorial: () => { Y.tutorialVisto = true; guardar(); jugar('itty-bitty-8-bit', 'carril', 'tutorial'); }, aCalibrar, saltarCalib: () => { Y.calibrado = true; guardar(); if(Y.tutorialVisto) menu(); else ir('tutorial'); }, seguir: () => { partida.alternarPausa(); }, reintentar: jugarDeNuevo, salirJuego: () => { partida.salir(); if(ultima?.deHistoria) historia(); else canciones(modoLista); }, libreVolver: () => ultima?.alMenu ? menu() : ultima?.deHistoria ? finDeMision() : canciones(modoLista) })[a]?.(); }
 
 /* ── la cinemática ── */
 let cortarIntro = false;
@@ -208,7 +208,7 @@ $('#calibB').addEventListener('click', async () => {
   await new Promise(r => setTimeout(r, 9200)); vivo = false; $('#calibrar').removeEventListener('pointerdown', tap);
   const ok = toques.filter(x => x[0] >= 4).map(x => x[1]);
   if(ok.length >= 6){ ok.sort((a, b) => a - b); const med = ok[Math.floor(ok.length / 2)]; Y.desfase = Math.round(Y.desfase + med * 1000); reloj.desfase = Y.desfase / 1000; Y.calibrado = true; guardar();
-    $('#calibNota').textContent = `Listo: ajuste de ${Y.desfase} ms. Lo puedes cambiar en Ajustes.`; setTimeout(menu, 1400); }
+    $('#calibNota').textContent = `Listo: ajuste de ${Y.desfase} ms. Lo puedes cambiar en Ajustes.`; setTimeout(() => Y.tutorialVisto ? menu() : ir('tutorial'), 1400); }   /* la primera vez, del calibrado al tutorial */
   else { $('#calibNota').textContent = 'Casi no tocaste. Inténtalo otra vez.'; }
   b.disabled = false; b.textContent = 'Otra vez';
 });
@@ -232,7 +232,7 @@ const PANELES = [
   { ir: 'lab', k: 'Tu música', t: 'Mi música', corto: 'Mi música', s: 'Mete tus canciones: anime, Vocaloid, lo que tengas en el teléfono.', c: '#5CFFB0' },
   { ir: 'mercado', k: 'Mercado de Ecos', t: 'Tiradas', corto: 'Mercado', s: 'Garra, sobres y carrusel. Todo se gana jugando.', c: '#FFE08A' }
 ];
-const SECUNDARIAS = [{ ir: 'vestidor', t: 'Vestidor', s: 'Voz, notas, golpe y fondo' }, { ir: 'records', t: 'Récords', s: 'Tus mejores partidas' }, { ir: 'ajustes', t: 'Ajustes', s: 'Sincronía y velocidad' }, { ir: 'creditos', t: 'Créditos', s: 'Quién hizo todo' }];
+const SECUNDARIAS = [{ ir: 'tutorial', t: 'Tutorial', s: 'Aprende en un minuto, sin presión', foto: 'libre' }, { ir: 'vestidor', t: 'Vestidor', s: 'Voz, notas, golpe y fondo' }, { ir: 'records', t: 'Récords', s: 'Tus mejores partidas' }, { ir: 'ajustes', t: 'Ajustes', s: 'Sincronía y velocidad' }, { ir: 'creditos', t: 'Créditos', s: 'Quién hizo todo' }];
 let panelSel = 0;
 function armarMenu(){ const T = $('#mTira'), C = $('#mCarrusel'), P = $('#mPuntos'), S = $('#mSec'); T.innerHTML = C.innerHTML = P.innerHTML = S.innerHTML = '';
   PANELES.forEach((p, i) => {
@@ -241,7 +241,7 @@ function armarMenu(){ const T = $('#mTira'), C = $('#mCarrusel'), P = $('#mPunto
     b.innerHTML = `<img src="portadas/${p.ir}.jpg" alt="" loading="${i < 2 ? 'eager' : 'lazy'}"><div class="vel"></div><span class="franja"></span><div class="cuerpo"><div class="k">${p.k}</div><div class="t">${p.t}</div><div class="s">${p.s}</div><span class="entrar">Entrar ›</span></div>`;
     b.onclick = () => { if(i === panelSel){ sonidos.boton && reloj.golpe(sonidos.boton, .25); ir(p.ir); } else irPanel(i, true); }; C.appendChild(b);
     P.appendChild(document.createElement('i')); });
-  SECUNDARIAS.forEach(o => { const b = document.createElement('button'); b.className = 'secundaria'; b.dataset.ir = o.ir; b.innerHTML = `<img src="portadas/${o.ir}.jpg" alt="" loading="lazy"><b>${o.t}</b><span>${o.s}</span>`; S.appendChild(b); });
+  SECUNDARIAS.forEach(o => { const b = document.createElement('button'); b.className = 'secundaria'; b.dataset.ir = o.ir; b.innerHTML = `<img src="portadas/${o.foto || o.ir}.jpg" alt="" loading="lazy"><b>${o.t}</b><span>${o.s}</span>`; S.appendChild(b); });
   let raf = 0; C.addEventListener('scroll', () => { if(raf || programado) return; raf = requestAnimationFrame(() => { raf = 0; const mid = C.scrollLeft + C.clientWidth / 2; let mejor = 0, d0 = 1e9;
     [...C.children].forEach((el, k) => { const d = Math.abs(el.offsetLeft + el.clientWidth / 2 - mid); if(d < d0){ d0 = d; mejor = k; } }); marcarPanel(mejor); }); }, { passive: true });
   marcarPanel(panelSel, true); }
@@ -298,13 +298,13 @@ async function jugar(id, modo, dif, deHistoria = null, prueba = {}){
   try{
     const an = await datos(c.id); paso('Despertando el audio', .3);
     const buf = await audio(c.id); paso('Escribiendo las notas', .65);
-    const carta = armarCarta(an, c, modo, dif, { telefono: TELEFONO }); ultima = { c, modo, dif, deHistoria };
+    const carta = dif === 'tutorial' ? armarTutorial(an, c) : armarCarta(an, c, modo, dif, { telefono: TELEFONO }); ultima = { c, modo, dif, deHistoria };
     escena.precargar(carta.eventos.filter(e => e.tipo === 'escenario').map(e => e.n)); paso('Llamando a las voces', .85);
     await escena.ponerCantantes(modo === 'flechas' ? [idVoz(), c.voces.find(v => v !== idVoz()) || 'miku'] : [...new Set([idVoz(), ...c.voces])].slice(0, 3));
     paso('¡Listo!', 1);
     mostrar(null); $('#sombra').style.opacity = 0;
     partida.empezar(c, carta, an, buf, { autoJuego: $('#opAuto').checked, vel: Y.vel, ritmo: $('#opPract').checked ? .75 : 1, desde: prueba.desde ?? null });   /* `desde`: las pruebas empiezan a media canción */
-    Y.sinMorir = $('#opSin').checked || $('#opPract').checked;
+    Y.sinMorir = $('#opSin').checked || $('#opPract').checked || !!Y.practica || dif === 'tutorial';
     $('#pausaB').classList.add('vis');
     cuenta(carta);
   }catch(err){ console.error(err); aviso('No se pudo cargar la canción. Revisa tu internet e inténtalo otra vez.'); canciones(modoLista); }
@@ -344,6 +344,9 @@ function resultados({ cancion, carta, J, murio, auto }){
   x.fillStyle = '#ffffff88'; x.font = '700 10px Orbitron'; x.fillText('ANTES', 4, 118); x.textAlign = 'right'; x.fillText('TARDE', w - 4, 118);
   const media = J.desvios.length ? J.desvios.reduce((a, b) => a + b, 0) / J.desvios.length * 1000 : 0, peor = J.porSeccion.map((s, i) => [s.mal / Math.max(1, s.bien + s.mal), i]).sort((a, b) => b[0] - a[0])[0];
   $('#resConsejo').textContent = Math.abs(media) > 12 ? `En promedio vas ${Math.round(Math.abs(media))} ms ${media < 0 ? 'antes' : 'tarde'}: si te pasa siempre, mueve la sincronía en Ajustes.` : peor && peor[0] > .25 ? `Donde más fallaste: la sección ${peor[1] + 1} (${MODOS[carta.plan[peor[1]].modo].nombre}). Repítela.` : 'Tu ritmo está centrado. Ahora súbele la dificultad.';
+  /* sin morir (o en modo práctica) se juega hasta el final, pero no se gana nada: si no, morirse no costaría */
+  if(carta.tutorial){ $('#resRango').textContent = '✓'; $('#resRango').style.setProperty('--c', '#5CFFB0'); $('#resSellos').innerHTML = '<span style="border-color:#5CFFB0;color:#5CFFB0">TUTORIAL COMPLETO</span>'; $('#resultados [data-ir="libreVolver"]').textContent = 'Ir al menú'; ultima.alMenu = true; return; }
+  if(Y.sinMorir && !auto){ $('#resSellos').innerHTML += '<span style="border-color:#B9AECB;color:#B9AECB">PRÁCTICA · SIN ECOS</span>'; return; }
   if(!auto){ const k = `${cancion.id}|${carta.modo}|${carta.dif}`, ant = Y.record[k]; if(!ant || J.puntaje > ant.puntaje) Y.record[k] = { puntaje: J.puntaje, rango: r, precision: +J.precision.toFixed(2), combo: J.comboMax, fc: J.fc, ap: J.ap };
     const primera = !ant && !murio && J.puntaje >= 600000;
     const gana = Math.round(J.puntaje / 10000) + (J.fc ? 40 : 0) + (J.ap ? 80 : 0) + (carta.dif === 'exorcist' ? 60 : 0) + (primera ? 100 : 0); Y.ecos += gana; Y.xp += gana; while(Y.xp >= Y.nivel * 120){ Y.xp -= Y.nivel * 120; Y.nivel++; Y.sellos++; }
@@ -431,7 +434,11 @@ function ajustes(){ mostrar('ajustes'); const A = $('#ajustesL');
   A.innerHTML = fila('desfase', 'Sincronía del audio', -250, 250, 1, ' ms', 'Si siempre vas tarde, súbelo; si vas antes, bájalo. La calibración lo pone sola.') + fila('desfaseVisual', 'Sincronía visual', -100, 100, 1, ' ms', 'Si las notas se ven llegar antes o después del sonido.')
     + fila('vel', 'Velocidad de las notas', .5, 2.5, .05, '×', 'Sólo cambia qué tan rápido se ven; la canción y los tiempos no cambian.')
     + tog('sonidoGolpe', 'Sonido al acertar', 'Un golpe corto con cada nota.') + tog('mostrarDesvio', 'Mostrar «antes» / «tarde»', 'Los milisegundos de cada toque, debajo del juicio.')
+    + (Y.practicaVista ? tog('practica', 'Modo práctica', 'Aunque la vida llegue a cero sigues jugando hasta el final. No se ganan Ecos, ni récords, ni se avanza la Historia.') : '')
     + '<div class="pie" style="background:none"><button class="b" id="recalibrar">Calibrar otra vez</button></div>';
+  /* EL MODO PRÁCTICA está escondido (Carlos, 30 oct): se destapa tocando 5 veces el título «Ajustes» */
+  const h = $('#ajustes h2'); let toques = []; h.onclick = () => { const a = performance.now(); toques = toques.filter(x => a - x < 3000); toques.push(a);
+    if(toques.length >= 5 && !Y.practicaVista){ Y.practicaVista = true; guardar(); aviso('* Encontraste algo escondido. Te llenas de determinación.'); ajustes(); } };
   A.querySelectorAll('input[type=range]').forEach(i => i.oninput = () => { Y[i.dataset.k] = +i.value; $('#v_' + i.dataset.k).textContent = i.value + i.dataset.u; reloj.desfase = Y.desfase / 1000; reloj.desfaseVisual = Y.desfaseVisual / 1000; guardar(); });
   A.querySelectorAll('input[type=checkbox]').forEach(i => i.onchange = () => { Y[i.dataset.t] = i.checked; guardar(); });
   $('#recalibrar').onclick = () => mostrar('calibrar'); }

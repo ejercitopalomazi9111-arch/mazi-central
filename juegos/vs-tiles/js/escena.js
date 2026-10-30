@@ -85,7 +85,7 @@ export const MODELOS_NOTA = {
   barra: { archivo: 'lingote', gira: Math.PI / 2, caja: [1.12, .17, .36], sinMapa: true },
   pildora: { archivo: 'arcade', ancho: .9, fijo: /Aro/ }, doble: { archivo: 'holo', ancho: .96 }, diamante: { archivo: 'brillante', ancho: .82, grueso: .62, sinMapa: true },
   disco: { archivo: 'disco', ancho: .96 }, cristal: { archivo: 'cristal', pie: true, alto: .62, sinMapa: true }, gema: { archivo: 'gema', pie: true, alto: .6, sinMapa: true },
-  estrella: { archivo: 'estrella', pie: true, alto: .62 }, nota: { archivo: 'nota', pie: true, alto: .66, sinMapa: true }
+  estrella: { archivo: 'estrella', acuesta: true, ancho: .92 }, nota: { archivo: 'nota', pie: true, alto: .66, sinMapa: true }
 };
 /* el material del autor, listo para pintarse: sin transparencia de vidrio ni metal espejo (en una pista oscura se ven
    negros) y con brillo propio del color, que es lo que hace que se lea a lo lejos */
@@ -219,7 +219,7 @@ export async function crearEscena(lienzo){
       if(!ge.attributes.uv) ge.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(ge.attributes.position.count * 2), 2));
       if(!ge.attributes.normal) ge.computeVertexNormals();
       ge.applyMatrix4(o.matrixWorld); geos.push(ge.index ? ge.toNonIndexed() : ge); mats.push(o.material); });
-    const geo = mergeGeometries(geos, true); if(F.gira) geo.rotateY(F.gira);
+    const geo = mergeGeometries(geos, true); if(F.gira) geo.rotateY(F.gira); if(F.acuesta) geo.rotateX(-Math.PI / 2);   /* acostada: lo que veía a la cámara ahora ve al cielo */
     geo.computeBoundingBox(); const b = geo.boundingBox, c = b.getCenter(new THREE.Vector3()), t = b.getSize(new THREE.Vector3());
     geo.translate(-c.x, -c.y, -c.z);
     /* caja: a esa medida exacta; parado: de frente a la cámara, con el alto pedido; acostado: del ancho del carril, sin pasar de .3 de grueso */
@@ -346,12 +346,12 @@ export async function crearEscena(lienzo){
       /* el golpe del grave: la cámara salta un poco (precalculado: los ataques graves fuertes) */
       let sacudida = 0; if(bajos){ for(let k = bajos.i || 0; k < bajos.length; k++){ const b = bajos[k]; if(b[0] > t) break; if(t - b[0] < .18) sacudida = Math.max(sacudida, b[1] * (1 - (t - b[0]) / .18)); } }
       /* los eventos vivos en este instante */
-      let movT = -9, ang = 0, giro = 0, abanico = 0, peraltes = [], espejo = 0, oculta = null, glitch = 0, compasTxt = '', camN = 0, camT = -9, esc = 0, escT = 0, tono = 0, destelloT = -9;
+      let movT = -9, ang = 0, giro = 0, abanico = 0, peraltes = [], aleja = 0, espejo = 0, oculta = null, glitch = 0, compasTxt = '', camN = 0, camT = -9, esc = 0, escT = 0, tono = 0, destelloT = -9;
       const blando = (e, d = .35) => { const u = Math.min(1, (t - e.t) / d), v = e.dur ? Math.min(1, (e.t + e.dur - t) / d) : 1; return Math.max(0, Math.min(u, v)); };
       for(const e of ev){ if(e.t > t + .001) break;
         const vivo = !e.dur || t < e.t + e.dur;
         if(e.tipo === 'escenario'){ esc = e.n; escT = e.t; tono = e.tono; }
-        if(['carriles', 'gira', 'espejo', 'inclina', 'abanico', 'peralte'].includes(e.tipo) && e.t > 0) movT = e.t;
+        if(['carriles', 'gira', 'espejo', 'inclina', 'abanico', 'peralte', 'aleja'].includes(e.tipo) && e.t > 0) movT = e.t;
         if(e.tipo === 'destello') destelloT = e.t;
         if(e.tipo === 'camara'){ camN = e.n; camT = e.t; }
         if(!vivo) continue;
@@ -359,6 +359,7 @@ export async function crearEscena(lienzo){
         /* girar 90° acuesta la pista y la línea de golpe se sale de la pantalla, en vertical y en horizontal
            (Carlos, 29 oct): un cuarto de vuelta se vuelve un ladeo fuerte; de cabeza (π) sí cabe y se queda */
         if(e.tipo === 'gira') giro += (Math.abs(Math.abs(e.ang) - Math.PI / 2) < .1 ? Math.sign(e.ang) * .38 : e.ang) * blando(e, .45);
+        if(e.tipo === 'aleja') aleja = Math.max(aleja, blando(e, .7));
         if(e.tipo === 'peralte' || e.tipo === 'onda') peraltes.push({ forma: e.forma || 'ola', f: e.fuerza * blando(e, .5), t0: e.t });
         if(e.tipo === 'abanico') abanico += e.fuerza * blando(e);
         if(e.tipo === 'espejo') espejo = Math.max(espejo, blando(e, .3));
@@ -384,7 +385,11 @@ export async function crearEscena(lienzo){
       /* el carril: visible sólo en el modo Carril (sube o se hunde al cambiar de reglas) */
       const enCarril = modo === 'carril';
       E.visible += ((enCarril ? 1 : 0) - E.visible) * .12;
-      carril.visible = E.visible > .02; carril.position.y = (1 - E.visible) * -6 - latido * compas * .06 - sacudida * .08; carril.position.z = 0;
+      carril.visible = E.visible > .02; carril.position.y = (1 - E.visible) * -6 - latido * compas * .06 - sacudida * .08;
+      /* LAS NOTAS SE ALEJAN (Carlos, 30 oct: «que las notas fluyan lejos del jugador y se toquen al alejarse hasta el
+         botón»): la pista entera da media vuelta y sus botones se van al fondo; las notas salen de junto a la cámara y se
+         van hacia ellos. Al voltearse, los carriles también quedan al revés */
+      const al = aleja * aleja * (3 - 2 * aleja); E.aleja = al; carril.rotation.y = Math.PI * al; carril.position.z = -15 * al;
       const D = disposicion(ev, t); E.carriles = D.n;
       /* EL PERALTE: cada carril gira sobre su botón (que se queda en la línea, así el dedo no se mueve): se ladea
          como curva de carreras, se tuerce en diagonal o sube como rampa. En vertical lo diagonal va más suave */
@@ -462,6 +467,7 @@ export async function crearEscena(lienzo){
       /* en vertical las cámaras laterales empujaban los receptores de la orilla fuera de la pantalla: ahí van más
          cerca del centro, y la mira se corre hacia donde están de verdad los receptores */
       if(vertical && carta){ objetivoCam.p.x *= .45; objetivoCam.m.x *= .3; objetivoCam.m.x += E.centro * 1.6; }
+      if(carta && E.aleja){ objetivoCam.m.z -= 7 * E.aleja; objetivoCam.p.y += 1.5 * E.aleja; }
       if(!carta){ objetivoCam.p.set(Math.sin(t * .15) * 4, 4.5, -16); objetivoCam.m.set(0, 4, -36); }
       cam.position.lerpVectors(camDe.p, objetivoCam.p, carta ? ec : .03 + .97 * ec);
       mira.lerpVectors(camDe.m, objetivoCam.m, carta ? ec : .03 + .97 * ec);
