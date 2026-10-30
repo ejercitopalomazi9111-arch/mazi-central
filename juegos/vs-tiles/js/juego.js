@@ -17,7 +17,7 @@ const TECLAS_FL = { arrowleft: 0, d: 0, arrowdown: 1, f: 1, arrowup: 2, j: 2, ar
 const ACERCA = { facil: 1.25, normal: 1.0, dificil: .82, experto: .66, exorcist: .52 };
 
 export async function cargarSprites(){
-  const nombres = ['gen_circle_fill', 'gen_circle_outline', 'p_light_01', 'p_flare_01', 'p_star_06', 'p_star_01', 'p_spark_05', 'p_magic_03', 'p_circle_03', 'p_twirl_01', 'p_trace_04', 'p_slash_03', 'p_symbol_01', 'p_window_02',
+  const nombres = ['paloma', 'gen_circle_fill', 'gen_circle_outline', 'p_light_01', 'p_flare_01', 'p_star_06', 'p_star_01', 'p_spark_05', 'p_magic_03', 'p_circle_03', 'p_twirl_01', 'p_trace_04', 'p_slash_03', 'p_symbol_01', 'p_window_02',
     ...SIM.flatMap(s => [`ps_color_${s}`, `ps_color_${s}_outline`, `ps_${s}_outline`]), ...FLECHA.flatMap(f => [`tecla_arrow_${f}`, `tecla_arrow_${f}_outline`])];
   const S = {}; await Promise.all(nombres.map(n => new Promise(r => { const im = new Image(); im.onload = () => { S[n] = im; r(); }; im.onerror = r; im.src = `sprites/${n}.png`; })));
   /* versiones teñidas (el canvas 2D no tiñe solo): se hornean una vez */
@@ -279,7 +279,8 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
         x.globalAlpha = (.35 + .4 * mov) * q.vis; x.fillStyle = '#fff'; x.beginPath(); x.arc(q.x, q.y, Math.max(3, rad * .12), 0, Math.PI * 2); x.fill(); x.restore(); } }
     /* los destellos de cada acierto */
     for(let i = efectos.length - 1; i >= 0; i--){ const e = efectos[i], u = (ahora - e.t0) / 420; if(u >= 1){ efectos.splice(i, 1); continue; }
-      img(S.teñir('p_flare_01', e.color), e.x, e.y, 110 + 160 * u, u * 2, 1 - u, true); if(e.j.id === 'sonoluz') img(S.teñir('p_star_06', '#FFF3B0'), e.x, e.y, 80 + 220 * u, -u * 3, 1 - u, true); }
+      const sp = ajustes.golpeSprite || 'p_flare_01', paloma = sp === 'paloma';
+      img(paloma ? S.paloma : S.teñir(sp, e.color), e.x, e.y - (paloma ? 40 * u : 0), (paloma ? 70 : 110) + 160 * u, paloma ? 0 : u * 2, 1 - u, !paloma); if(e.j.id === 'sonoluz') img(S.teñir('p_star_06', '#FFF3B0'), e.x, e.y, 80 + 220 * u, -u * 3, 1 - u, true); }
     hud(t, ahora, lat, modo);
     if(enPausa){ x.fillStyle = '#05020Acc'; x.fillRect(0, 0, W, H); }
   }

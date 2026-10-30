@@ -47,6 +47,10 @@ const OBJETOS = [
   { id: 'golpe:remolino', cat: 'golpe', nombre: 'Remolino', raro: 'm', sprite: 'p_twirl_01' },
   ...ESCENARIOS.map((e, i) => ({ id: 'fondo:' + i, cat: 'fondo', nombre: e.nombre, raro: i < 2 ? 'c' : i < 4 ? 'r' : i < 6 ? 'e' : 'l', img: `escenarios/${e.id}.jpg` })),
   { id: 'titulo:resonante', cat: 'titulo', nombre: 'Resonante', raro: 'c' }, { id: 'titulo:desafinado', cat: 'titulo', nombre: 'Desafinado', raro: 'r' },
+  /* SECRETOS: no salen en tiradas ni en el vestidor hasta que se tienen (el de la paloma: ponerse Mazi o Palomazi) */
+  { id: 'nota:paloma', cat: 'nota', nombre: 'Paloma de la casa', raro: 'm', secreto: true, colores: ['#7E1735', '#AC27FF', '#C77DFF', '#FFFFFF', '#C77DFF', '#AC27FF', '#7E1735'] },
+  { id: 'golpe:paloma', cat: 'golpe', nombre: 'Vuelo de paloma', raro: 'm', secreto: true, sprite: 'paloma' },
+  { id: 'titulo:paloma', cat: 'titulo', nombre: 'Paloma de la casa', raro: 'm', secreto: true },
   { id: 'titulo:eco', cat: 'titulo', nombre: 'Eco sin dueño', raro: 'e' }, { id: 'titulo:exorcista', cat: 'titulo', nombre: 'Exorcista', raro: 'l' }, { id: 'titulo:sonoluz', cat: 'titulo', nombre: 'Voz de SONOLUZ', raro: 'm' }
 ];
 const CATS = { voz: 'Voz', nota: 'Notas', golpe: 'Golpe', fondo: 'Fondo', titulo: 'Título' };
@@ -88,7 +92,7 @@ const listaPropia = biblioteca.listar().then(l => l.forEach(agregarPropia)).catc
 const fondoDe = (c) => portadas[c.id] || `escenarios/${ESCENARIOS[c.escena].id}.jpg`;
 await escena.ponerCantantes([idVoz()]);
 function idVoz(){ return (Y.puesto.voz || 'voz:gumi').split(':')[1]; }
-aplicarCosmeticos();
+regaloSecreto(); aplicarCosmeticos();
 
 let pantalla = null;
 function mostrar(id){ $$('.pantalla').forEach(p => p.classList.toggle('vis', p.id === id)); pantalla = id;
@@ -138,7 +142,11 @@ function perfil(){ mostrar('perfil'); $('#nombre').value = Y.nombre;
   const ini = $('#iniciales'); ini.innerHTML = ''; ['gumi', 'miku', 'luka'].forEach(id => { const P = PERSONAJES.find(p => p.id === id), b = document.createElement('button'); b.innerHTML = `${P.nombre}<small>${P.faccion}</small>`;
     b.className = Y.puesto.voz === 'voz:' + id ? 'si' : ''; b.onclick = async () => { Y.puesto.voz = 'voz:' + id; [...ini.children].forEach(x => x.classList.toggle('si', x === b)); await escena.ponerCantantes([id]); }; ini.appendChild(b); });
   const col = $('#colores'); col.innerHTML = ''; ['Magenta', 'Cian', 'Oro'].forEach((n, i) => { const b = document.createElement('button'); b.textContent = n; b.className = Y.color === i ? 'si' : ''; b.style.color = ['#FF2D7A', '#38E1FF', '#FFE08A'][i]; b.onclick = () => { Y.color = i; [...col.children].forEach(x => x.classList.toggle('si', x === b)); }; col.appendChild(b); }); }
-function aCalibrar(){ Y.nombre = ($('#nombre').value || 'Resonante').trim().slice(0, 16); guardar(); mostrar('calibrar'); }
+function aCalibrar(){ Y.nombre = ($('#nombre').value || 'Resonante').trim().slice(0, 16); regaloSecreto(); guardar(); mostrar('calibrar'); }
+/* el secreto de la casa: quien se llame Mazi o Palomazi recibe el estilo de la paloma (no se anuncia en ningún lado) */
+function regaloSecreto(){ const n = (Y.nombre || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '');
+  if(!['mazi', 'palomazi'].includes(n)) return; const nuevos = ['nota:paloma', 'golpe:paloma', 'titulo:paloma'].filter(id => !Y.tiene.includes(id)); if(!nuevos.length) return;
+  Y.tiene.push(...nuevos); guardar(); setTimeout(() => aviso('🕊️ Algo en el archivo te reconoció. Mira tu Vestidor.'), 1200); }
 
 /* ── la calibración: 16 clics a 120 golpes por minuto; se promedia desde el 5.º ── */
 $('#calibB').addEventListener('click', async () => {
@@ -281,14 +289,19 @@ function vestidor(){ mostrar('vestidor'); const R = $('#ranuras'); R.innerHTML =
   Object.entries(CATS).forEach(([k, n]) => { const o = OBJETOS.find(x => x.id === Y.puesto[k]); const b = document.createElement('button'); b.className = 'ranura' + (k === catSel ? ' si' : ''); b.innerHTML = `${n}<em>${o ? o.nombre : '—'}</em>`; b.onclick = () => { catSel = k; vestidor(); }; R.appendChild(b); });
   const C = $('#vestCats'); C.innerHTML = '';
   const O = $('#objetos'); O.innerHTML = '';
-  OBJETOS.filter(o => o.cat === catSel).forEach(o => { const tiene = Y.tiene.includes(o.id), b = document.createElement('button'); b.className = `obj raro-${o.raro}${tiene ? '' : ' bloq'}${Y.puesto[o.cat] === o.id ? ' puesto' : ''}`;
+  OBJETOS.filter(o => o.cat === catSel && (!o.secreto || Y.tiene.includes(o.id))).forEach(o => { const tiene = Y.tiene.includes(o.id), b = document.createElement('button');
+    /* lo que no se ha descubierto no dice ni nombre ni rareza (Carlos, 29 oct) */
+    if(!tiene){ b.className = 'obj oculto'; b.innerHTML = '<div class="muestra">?</div>???'; b.onclick = () => aviso('Todavía no lo descubres. Sale en el Mercado de Ecos.'); O.appendChild(b); return; }
+    b.className = `obj raro-${o.raro}${Y.puesto[o.cat] === o.id ? ' puesto' : ''}`;
     const muestra = o.cat === 'golpe' ? `<img src="sprites/${o.sprite}.png" alt="">` : o.cat === 'fondo' ? `<img src="${o.img}" alt="" style="max-width:100%">` : o.cat === 'nota' ? o.colores.slice(0, 4).map(c => `<i style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${c};margin:1px"></i>`).join('') : o.cat === 'voz' ? `<i style="font:900 26px var(--n);color:${o.color}">${o.nombre[0]}</i>` : `<i style="font:900 11px var(--g);color:#FFD7E5">«${o.nombre}»</i>`;
     b.innerHTML = `<div class="muestra">${muestra}</div>${o.nombre}<small style="display:block;font:700 10px var(--n);color:#ffffffcc">${RAREZA[o.raro].n.toUpperCase()}</small>`;
-    b.onclick = async () => { if(!tiene){ aviso('Sale en el Mercado de Ecos.'); return; } Y.puesto[o.cat] = o.id; guardar(); aplicarCosmeticos(); if(o.cat === 'voz') await escena.ponerCantantes([idVoz()]); vestidor(); };
+    b.onclick = async () => { Y.puesto[o.cat] = o.id; guardar(); aplicarCosmeticos(); if(o.cat === 'voz') await escena.ponerCantantes([idVoz()]); vestidor(); };
     O.appendChild(b); });
   if(catSel === 'voz') escena.ponerCantantes([idVoz()]);
 }
 function aplicarCosmeticos(){ const n = OBJETOS.find(o => o.id === Y.puesto.nota); if(n) n.colores.forEach((c, i) => COLORES_RIEL[i] = c);
+  /* el efecto de golpe: antes se elegía en el vestidor y no se leía en ningún lado */
+  Y.golpeSprite = OBJETOS.find(o => o.id === Y.puesto.golpe)?.sprite || 'p_flare_01';
   escena.piezas.rieles.forEach((R, i) => { R.fondoR.material.color.set(COLORES_RIEL[i]); R.lado.material.color.set(COLORES_RIEL[i]); R.rec.material.color.set(COLORES_RIEL[i]); R.brillo.material.color.set(COLORES_RIEL[i]); R.haz.material.color.set(COLORES_RIEL[i]); }); }
 
 /* ── mercado: probabilidades a la vista, garantía a las 50 y los repetidos se vuelven Ecos ── */
@@ -302,7 +315,7 @@ function tirar(n, conSello = false){ const costo = n === 10 ? 900 : 100;
   else { if(Y.ecos < costo){ aviso('No te alcanzan los Ecos: juega una canción.'); return; } Y.ecos -= costo; } const sale = [];
   for(let i = 0; i < n; i++){ Y.pity++; let r = Math.random() * 100, raro = 'c'; for(const [k, v] of Object.entries(RAREZA).reverse()){ if(r < v.p){ raro = k; break; } r -= v.p; }
     if(Y.pity >= 50 && !['l', 'm'].includes(raro)) raro = 'l'; if(['l', 'm'].includes(raro)) Y.pity = 0;
-    const pool = OBJETOS.filter(o => o.raro === raro), o = pool[Math.floor(Math.random() * pool.length)]; const nuevo = !Y.tiene.includes(o.id); if(nuevo) Y.tiene.push(o.id); else Y.ecos += { c: 10, r: 25, e: 60, l: 150, m: 300 }[raro]; sale.push({ o, nuevo }); }
+    const pool = OBJETOS.filter(o => o.raro === raro && !o.secreto), o = pool[Math.floor(Math.random() * pool.length)]; const nuevo = !Y.tiene.includes(o.id); if(nuevo) Y.tiene.push(o.id); else Y.ecos += { c: 10, r: 25, e: 60, l: 150, m: 300 }[raro]; sale.push({ o, nuevo }); }
   guardar(); mercado(); const T = $('#tirada'); sale.forEach(({ o, nuevo }, i) => { const d = document.createElement('div'); d.className = `obj raro-${o.raro}`; d.style.animationDelay = i * .08 + 's'; d.innerHTML = `${o.nombre}<small style="display:block;font:700 10px var(--n)">${nuevo ? 'NUEVO' : 'REPETIDO'}</small>`; T.appendChild(d); });
   if(sale.some(s => ['l', 'm'].includes(s.o.raro))){ sonidos.premio && reloj.golpe(sonidos.premio, .6); aviso('¡' + sale.find(s => ['l', 'm'].includes(s.o.raro)).o.nombre + '!'); } }
 $('#tira1').addEventListener('click', () => tirar(1)); $('#tira10').addEventListener('click', () => tirar(10)); $('#tiraS').addEventListener('click', () => tirar(1, true));
