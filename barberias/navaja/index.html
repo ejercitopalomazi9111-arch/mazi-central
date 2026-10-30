@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Navaja Norte · Barbería en Querétaro</title>
+<meta name="description" content="Fades, barba con navaja y diseño. Escoge a tu barbero y tu hora desde el teléfono.">
+<meta name="theme-color" content="#0D0D0F">
+<style>
+  :root{ --fondo:#0D0D0F; --capa:#17171B; --capa2:#202026; --tinta:#F2F0EB; --gris:#A3A3AD; --acento:#FF4D1A; --linea:#ffffff1c; --r:14px;
+    --cond:"Avenir Next Condensed", "Arial Narrow", "Roboto Condensed", sans-serif }
+  *{ box-sizing:border-box } html{ scroll-behavior:smooth; -webkit-text-size-adjust:100% }
+  body{ margin:0; background:var(--fondo); color:var(--tinta); font:16px/1.55 "Avenir Next", system-ui, sans-serif }
+  img{ display:block; max-width:100% } a{ color:inherit }
+  .env{ max-width:1180px; margin:0 auto; padding:0 16px }
+  .demo{ font-size:12px; text-align:center; padding:6px 16px; background:var(--acento); color:#0D0D0F; font-weight:700 }
+  header{ position:sticky; top:0; z-index:20; background:#0D0D0Fe6; -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); border-bottom:1px solid var(--linea) }
+  header .env{ display:flex; align-items:center; gap:16px; min-height:62px }
+  .logo{ font:800 22px/1 var(--cond); letter-spacing:.06em; text-transform:uppercase; text-decoration:none } .logo span{ color:var(--acento) }
+  nav{ display:none; gap:22px; margin-left:auto; font-weight:600; font-size:15px } nav a{ text-decoration:none; opacity:.8 } nav a:hover{ opacity:1 }
+  @media (min-width:860px){ nav{ display:flex } }
+  .btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:48px; padding:0 22px; border:0; border-radius:var(--r); background:var(--acento); color:#0D0D0F; font:800 15px/1 var(--cond); letter-spacing:.08em; text-transform:uppercase; text-decoration:none; cursor:pointer }
+  .btn.linea{ background:transparent; color:var(--tinta); border:1px solid var(--linea) } .btn:focus-visible{ outline:3px solid #fff; outline-offset:2px }
+  header .btn{ margin-left:auto; min-height:42px; padding:0 16px; flex-shrink:0 } .logo{ font-size:clamp(17px, 5.6vw, 22px); white-space:nowrap; min-width:0 } @media (min-width:860px){ header .btn{ margin-left:0 } }
+  .portada{ position:relative; min-height:min(92svh, 760px); display:grid; align-items:end; overflow:hidden }
+  .portada img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:50% 25%; filter:saturate(.85) contrast(1.05) }
+  .portada::after{ content:""; position:absolute; inset:0; background:linear-gradient(180deg, #0D0D0F00 20%, #0D0D0F 96%), linear-gradient(90deg, #0D0D0Fcc, #0D0D0F00 70%) }
+  .portada .env{ position:relative; z-index:1; width:100%; padding-bottom:48px }
+  .ojo{ font:700 13px/1 var(--cond); letter-spacing:.22em; text-transform:uppercase; color:var(--acento); margin:0 0 14px }
+  h1{ font:800 clamp(56px, 16vw, 132px)/.86 var(--cond); text-transform:uppercase; letter-spacing:-.01em; margin:0 0 18px }
+  .portada p{ max-width:34ch; font-size:18px; color:#E2E0DA; margin:0 0 26px }
+  .estado{ display:inline-flex; align-items:center; gap:8px; font-size:14px; color:var(--gris); margin-left:12px } .estado i{ width:8px; height:8px; border-radius:50%; background:#666 } .estado.si i{ background:#3DDC84 }
+  section{ padding:72px 0 } h2{ font:800 clamp(40px, 10vw, 72px)/.9 var(--cond); text-transform:uppercase; margin:0 0 12px } .sub{ color:var(--gris); max-width:52ch; margin:0 0 32px }
+  .servs{ display:grid; gap:12px } @media (min-width:700px){ .servs{ grid-template-columns:repeat(2, minmax(0, 1fr)) } } @media (min-width:1050px){ .servs{ grid-template-columns:repeat(3, minmax(0, 1fr)) } }
+  .serv{ display:grid; grid-template-columns:minmax(0, 1fr) auto; gap:6px 12px; padding:20px; background:var(--capa); border:1px solid var(--linea); border-radius:var(--r) }
+  .serv h3{ margin:0; font:800 24px/1.05 var(--cond); text-transform:uppercase } .serv .p{ font:800 26px/1 var(--cond); color:var(--acento); font-variant-numeric:tabular-nums }
+  .serv p{ grid-column:1 / -1; margin:0; color:var(--gris); font-size:14px } .serv button{ grid-column:1 / -1; justify-self:start; margin-top:8px; min-height:44px }
+  .equipo{ display:grid; gap:14px; grid-template-columns:repeat(auto-fill, minmax(min(100%, 250px), 1fr)) }
+  .barb{ position:relative; border-radius:var(--r); overflow:hidden; background:var(--capa); aspect-ratio:3/4 }
+  .barb img{ width:100%; height:100%; object-fit:cover; filter:grayscale(.35) }
+  .barb .info{ position:absolute; inset:auto 0 0; padding:16px; background:linear-gradient(180deg, #0D0D0F00, #0D0D0Ff2 45%) }
+  .barb h3{ margin:0; font:800 28px/1 var(--cond); text-transform:uppercase } .barb p{ margin:4px 0 12px; color:#CFCDC8; font-size:14px }
+  .galeria{ display:grid; grid-auto-flow:column; grid-auto-columns:min(72%, 340px); gap:12px; overflow-x:auto; scroll-snap-type:x mandatory; padding-bottom:8px; scrollbar-width:none } .galeria::-webkit-scrollbar{ display:none }
+  .galeria button{ scroll-snap-align:start; padding:0; border:0; border-radius:var(--r); overflow:hidden; aspect-ratio:4/5; background:var(--capa); cursor:zoom-in } .galeria img{ width:100%; height:100%; object-fit:cover }
+  .resenas{ display:grid; gap:12px } @media (min-width:860px){ .resenas{ grid-template-columns:repeat(3, 1fr) } }
+  blockquote{ margin:0; padding:22px; background:var(--capa); border-radius:var(--r); border:1px solid var(--linea) } blockquote p{ margin:0 0 12px; font-size:17px } blockquote cite{ font-style:normal; color:var(--gris); font-size:14px } .estrellas{ color:var(--acento); letter-spacing:.1em; margin-bottom:8px }
+  .dos{ display:grid; gap:32px } @media (min-width:860px){ .dos{ grid-template-columns:1fr 1fr; align-items:start } }
+  .horario{ display:grid; grid-template-columns:auto 1fr; gap:10px 28px; font-variant-numeric:tabular-nums } .horario span:nth-child(odd){ text-transform:capitalize; color:var(--gris) } .horario .hoy{ color:var(--tinta) !important; font-weight:700 }
+  .foto-local{ border-radius:var(--r); overflow:hidden; aspect-ratio:4/3 } .foto-local img{ width:100%; height:100%; object-fit:cover }
+  footer{ padding:40px 0 calc(40px + env(safe-area-inset-bottom)); border-top:1px solid var(--linea); color:var(--gris); font-size:13px }
+  /* las hojas que suben desde abajo: la reserva, mis citas y la foto en grande */
+  dialog{ border:0; padding:0; background:transparent; color:var(--tinta); max-width:none; max-height:none; width:100%; height:100%; margin:0 }
+  dialog::backdrop{ background:#000a }
+  dialog[open]{ display:flex; align-items:flex-end; justify-content:center }
+  .hoja{ width:100%; max-width:560px; max-height:92svh; overflow-y:auto; overscroll-behavior:contain; background:var(--capa); border-radius:20px 20px 0 0; padding:18px 18px 0; animation:sube .28s cubic-bezier(.2,.8,.2,1) }
+  @media (min-width:700px){ dialog[open]{ align-items:center } .hoja{ border-radius:20px; padding-bottom:6px } }
+  .hoja .cab{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px } .hoja .cab b{ font:800 22px/1 var(--cond); text-transform:uppercase; letter-spacing:.04em }
+  .cerrar{ width:44px; height:44px; border-radius:50%; border:1px solid var(--linea); background:transparent; color:var(--tinta); font-size:20px; cursor:pointer }
+  @keyframes sube{ from{ transform:translateY(40px); opacity:0 } }
+  #grande .hoja{ background:transparent; padding:0; max-width:900px } #grande img{ width:100%; max-height:86svh; object-fit:contain; border-radius:14px }
+  .rv{ --rv-fondo:var(--capa); --rv-tinta:var(--tinta); --rv-suave:#ffffff0a; --rv-linea:#ffffff22; --rv-acento:var(--acento); --rv-sobre:#0D0D0F; --rv-radio:12px }
+  .flota{ position:fixed; z-index:15; right:16px; bottom:calc(16px + env(safe-area-inset-bottom)); box-shadow:0 10px 30px #000a }
+  @media (prefers-reduced-motion:reduce){ html{ scroll-behavior:auto } .hoja{ animation:none } }
+</style>
+</head>
+<body>
+<div class="demo">Página de muestra de Grupo Mazi · negocio ficticio</div>
+<header><div class="env">
+  <a class="logo" href="#">Navaja<span>/</span>Norte</a>
+  <nav><a href="#servicios">Servicios</a><a href="#equipo">Barberos</a><a href="#trabajo">Trabajo</a><a href="#visita">Visítanos</a><a href="#" data-mis>Mis citas</a></nav>
+  <button class="btn" data-reservar>Reservar</button>
+</div></header>
+
+<main>
+<div class="portada">
+  <img src="../img/1836983.webp" alt="Un barbero con mandil peina a su cliente antes del corte" fetchpriority="high">
+  <div class="env">
+    <p class="ojo">Fades · Barba · Diseño</p>
+    <h1>Sales<br>nuevo.</h1>
+    <p>Escoge barbero, día y hora desde tu teléfono. Llegas, te sientas y en 45 minutos sales con otra cara.</p>
+    <button class="btn" data-reservar>Reservar ahora</button><span class="estado" id="estado"><i></i><span></span></span>
+  </div>
+</div>
+
+<section id="servicios"><div class="env">
+  <h2>Servicios</h2><p class="sub">Precios fijos. El tiempo es aproximado, el resultado no.</p>
+  <div class="servs" id="servs"></div>
+</div></section>
+
+<section id="equipo" style="background:#111114"><div class="env">
+  <h2>Los barberos</h2><p class="sub">Cada uno tiene su mano. Si ya tienes al tuyo, resérvale directo.</p>
+  <div class="equipo" id="equipoL"></div>
+</div></section>
+
+<section id="trabajo"><div class="env">
+  <h2>El trabajo</h2><p class="sub">Toca una foto para verla en grande.</p>
+  <div class="galeria" id="galeria"></div>
+</div></section>
+
+<section style="background:#111114"><div class="env">
+  <h2>Lo que dicen</h2><p class="sub">Reseñas de muestra para la demostración.</p>
+  <div class="resenas">
+    <blockquote><div class="estrellas" aria-label="5 de 5">★★★★★</div><p>«Reservé en la noche desde la cama y al otro día ni esperé. El fade quedó perfecto.»</p><cite>— Diego R.</cite></blockquote>
+    <blockquote><div class="estrellas" aria-label="5 de 5">★★★★★</div><p>«La barba con toalla caliente es otra cosa. Ya tengo a mi barbero.»</p><cite>— Luis A.</cite></blockquote>
+    <blockquote><div class="estrellas" aria-label="5 de 5">★★★★★</div><p>«Me gustó que te dicen el precio antes. Nada de sorpresas al pagar.»</p><cite>— Marco T.</cite></blockquote>
+  </div>
+</div></section>
+
+<section id="visita"><div class="env dos">
+  <div>
+    <h2>Visítanos</h2><p class="sub">Calle Ignacio Pérez 88, Querétaro (dirección de muestra). Hay estacionamiento enfrente.</p>
+    <div class="horario" id="horario"></div>
+    <p style="margin-top:26px;display:flex;gap:10px;flex-wrap:wrap"><a class="btn linea" href="https://maps.google.com/?q=Queretaro+centro" target="_blank" rel="noopener">Cómo llegar</a><button class="btn linea" data-mis>Mis citas</button></p>
+  </div>
+  <div class="foto-local"><img src="../img/3993133-c.webp" alt="El interior de la barbería, con sillas negras y espejos iluminados" loading="lazy"></div>
+</div></section>
+</main>
+
+<footer><div class="env">Navaja Norte · Página de muestra de <b>Grupo Mazi</b> (paquete Completa). Fotos: Pexels (Th2city Santana, Antoni Shkraba y otros).</div></footer>
+<button class="btn flota" data-reservar id="flota">Reservar</button>
+
+<dialog id="hojaReserva" aria-label="Reservar"><div class="hoja"><div class="cab"><b>Reserva</b><button class="cerrar" data-cerrar aria-label="Cerrar">✕</button></div><div id="reserva"></div></div></dialog>
+<dialog id="hojaMis" aria-label="Mis citas"><div class="hoja" style="padding-bottom:18px"><div class="cab"><b>Mis citas</b><button class="cerrar" data-cerrar aria-label="Cerrar">✕</button></div><div id="mis"></div></div></dialog>
+<dialog id="grande" aria-label="Foto"><div class="hoja"><img alt=""></div></dialog>
+
+<script type="module">
+import { crearAgenda, hora12, pesos, nombreDia } from '../comun/agenda.js';
+import { montarReserva, pintarMisCitas } from '../comun/reservar.js';
+const $ = (s) => document.querySelector(s), $$ = (s) => [...document.querySelectorAll(s)];
+const SERVICIOS = [
+  { id: 'fade', nombre: 'Fade', dur: 45, precio: 220, nota: 'Bajo, medio, alto o taper', icono: '✂️' },
+  { id: 'clasico', nombre: 'Corte clásico', dur: 40, precio: 190, nota: 'Tijera y máquina, con lavado', icono: '💈' },
+  { id: 'barba', nombre: 'Barba con navaja', dur: 30, precio: 160, nota: 'Toalla caliente y perfilado', icono: '🪒' },
+  { id: 'combo', nombre: 'Fade + barba', dur: 75, precio: 340, nota: 'El completo', icono: '🔥' },
+  { id: 'diseno', nombre: 'Diseño / líneas', dur: 20, precio: 90, nota: 'Rayas y figuras a mano', icono: '✏️' },
+  { id: 'cejas', nombre: 'Cejas', dur: 15, precio: 60, nota: 'Con navaja', icono: '👁️' }
+];
+const BARBEROS = [
+  { id: 'toño', nombre: 'Toño', esp: 'Fades limpios · 9 años', foto: '../img/1836983-c.webp' },
+  { id: 'ivan', nombre: 'Iván', esp: 'Barba y navaja · 6 años', foto: '../img/4625648-c.webp' },
+  { id: 'kike', nombre: 'Kike', esp: 'Diseños y líneas · 4 años', foto: '../img/2061820-c.webp' }
+];
+const H = { 1: [660, 1260], 2: [660, 1260], 3: [660, 1260], 4: [660, 1260], 5: [600, 1290], 6: [600, 1260], 0: [660, 960] };
+const ag = crearAgenda({ negocio: 'Navaja Norte', clave: 'navaja', horario: H, barberos: BARBEROS, direccion: 'Calle Ignacio Pérez 88, Querétaro' });
+
+$('#servs').innerHTML = SERVICIOS.map(s => `<article class="serv"><h3>${s.nombre}</h3><div class="p">${pesos(s.precio)}</div><p>${s.nota} · ${s.dur} min</p><button class="btn linea" data-serv="${s.id}">Reservar este</button></article>`).join('');
+$('#equipoL').innerHTML = BARBEROS.map(b => `<article class="barb"><img src="${b.foto}" alt="${b.nombre}, barbero" loading="lazy"><div class="info"><h3>${b.nombre}</h3><p>${b.esp}</p><button class="btn" data-barb="${b.id}">Reservar con ${b.nombre}</button></div></article>`).join('');
+const FOTOS = ['4625648', '897265', '2061820', '6007400', '4969866', '2035227'];
+$('#galeria').innerHTML = FOTOS.map(f => `<button data-foto="${f}" aria-label="Ver foto en grande"><img src="../img/${f}-c.webp" alt="" loading="lazy"></button>`).join('');
+const hoy = new Date().getDay();
+$('#horario').innerHTML = [1, 2, 3, 4, 5, 6, 0].map(d => { const h = H[d], c = d === hoy ? 'hoy' : ''; return `<span class="${c}">${nombreDia(new Date(2026, 10, 1 + d))}</span><span class="${c}">${h ? hora12(h[0]) + ' – ' + hora12(h[1]) : 'Cerrado'}</span>`; }).join('');
+const e = ag.abiertoAhora(); $('#estado').classList.toggle('si', e.abierto); $('#estado span').textContent = e.texto;
+
+const R = montarReserva($('#reserva'), { ag, servicios: SERVICIOS, barberos: BARBEROS });
+const abrir = (d) => { d.showModal(); };
+$$('[data-reservar]').forEach(b => b.onclick = () => { R.empezar(); abrir($('#hojaReserva')); });
+$('#servs').onclick = (ev) => { const b = ev.target.closest('[data-serv]'); if(!b) return; R.empezar({ servicio: SERVICIOS.find(s => s.id === b.dataset.serv) }); abrir($('#hojaReserva')); };
+$('#equipoL').onclick = (ev) => { const b = ev.target.closest('[data-barb]'); if(!b) return; R.empezar({ barbero: b.dataset.barb }); abrir($('#hojaReserva')); };
+$$('[data-mis]').forEach(b => b.onclick = (ev) => { ev.preventDefault(); pintarMisCitas($('#mis'), ag); abrir($('#hojaMis')); });
+$('#galeria').onclick = (ev) => { const b = ev.target.closest('[data-foto]'); if(!b) return; $('#grande img').src = `../img/${b.dataset.foto}.webp`; abrir($('#grande')); };
+/* se cierra con la ✕, tocando afuera o con Esc */
+$$('dialog').forEach(d => d.addEventListener('click', (ev) => { if(ev.target === d || ev.target.closest('[data-cerrar]') || d.id === 'grande') d.close(); }));
+new IntersectionObserver(([en]) => { $('#flota').style.display = en.isIntersecting ? 'none' : ''; }).observe(document.querySelector('.portada'));
+</script>
+</body>
+</html>

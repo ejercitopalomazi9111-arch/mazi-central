@@ -88,6 +88,9 @@ const VA = [
   /* District Roll: menú digital con pedido por WhatsApp. Por ahora con carta de EJEMPLO y el
      WhatsApp de Grupo Mazi para probar; la página lo avisa arriba hasta que llegue la carta real. */
   'district-roll',
+  /* Cuatro páginas de muestra para vender a barberías (Esencial, dos Completas y una A la medida), con
+     reservas que llegan por WhatsApp. Los negocios son ficticios y la página lo dice arriba. */
+  'barberias',
   /* Mis pingüinos: el registro de los peluches de pingüino de una amiga de Carlos (foto,
      nombre y cuántos tiene). Todo se guarda en su teléfono; trae respaldo a archivo. */
   'pinguinos',

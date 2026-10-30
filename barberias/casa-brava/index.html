@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Casa Brava Barber Club · Querétaro</title>
+<meta name="description" content="Barbería a la antigua: navaja, toalla caliente y buena plática. Paquetes, membresía y reservas en línea.">
+<meta name="theme-color" content="#1F1A17">
+<style>
+  :root{ --papel:#F2EADC; --papel2:#E9DECB; --tinta:#1F1A17; --vino:#8C1C13; --laton:#9C7A45; --gris:#6B6157; --linea:#1F1A1726; --r:4px;
+    --serif:"Didot", "Bodoni 72", "Playfair Display", Georgia, serif; --maq:"American Typewriter", "Courier New", monospace }
+  *{ box-sizing:border-box } html{ scroll-behavior:smooth; -webkit-text-size-adjust:100% }
+  body{ margin:0; background:var(--papel); color:var(--tinta); font:17px/1.6 Georgia, "Times New Roman", serif }
+  img{ display:block; max-width:100% } a{ color:inherit }
+  .env{ max-width:1100px; margin:0 auto; padding:0 18px }
+  .demo{ background:var(--tinta); color:var(--papel); font:12px/1.4 var(--maq); text-align:center; padding:6px 16px }
+  header{ border-bottom:3px double var(--tinta) } header .env{ display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:64px }
+  .logo{ font:700 22px/1 var(--serif); letter-spacing:.04em; text-decoration:none; text-transform:uppercase } .logo small{ display:block; font:11px/1.6 var(--maq); letter-spacing:.3em; color:var(--vino) }
+  .btn{ display:inline-flex; align-items:center; justify-content:center; min-height:48px; padding:0 22px; border:2px solid var(--tinta); border-radius:var(--r); background:var(--tinta); color:var(--papel); font-weight:700; font-size:14px; font-family:var(--maq); letter-spacing:.12em; text-transform:uppercase; text-decoration:none; cursor:pointer }
+  .btn.vino{ background:var(--vino); border-color:var(--vino) } .btn.hueco{ background:transparent; color:var(--tinta) } .btn:focus-visible{ outline:3px solid var(--laton); outline-offset:2px }
+  .portada{ padding:40px 0 56px } .portada .env{ display:grid; gap:28px } @media (min-width:860px){ .portada .env{ grid-template-columns:1.1fr .9fr; align-items:center } }
+  .sello{ font:12px/1 var(--maq); letter-spacing:.32em; text-transform:uppercase; color:var(--vino); margin:0 0 18px; display:flex; align-items:center; gap:12px } .sello::before, .sello::after{ content:""; height:1px; width:32px; background:var(--vino) }
+  h1{ font:400 clamp(44px, 11vw, 88px)/.95 var(--serif); margin:0 0 20px; letter-spacing:-.01em } h1 em{ color:var(--vino) }
+  .portada p{ max-width:38ch; color:#3B332D; margin:0 0 26px }
+  .marco{ padding:10px; background:#fff; box-shadow:0 1px 0 var(--linea), 0 18px 40px #1F1A1726; transform:rotate(1.2deg) } .marco img{ aspect-ratio:4/5; object-fit:cover; width:100%; filter:sepia(.18) contrast(1.05) }
+  .marco figcaption{ font:13px/1.4 var(--maq); text-align:center; padding-top:10px; color:var(--gris) }
+  section{ padding:64px 0; border-top:1px solid var(--linea) } h2{ font:400 clamp(36px, 8vw, 56px)/1 var(--serif); margin:0 0 10px } .sub{ color:var(--gris); max-width:50ch; margin:0 0 30px }
+  .carta{ max-width:720px; background:#FBF7EF; border:1px solid var(--linea); padding:28px 22px; outline:1px solid var(--linea); outline-offset:-8px }
+  .carta h3{ font:14px/1 var(--maq); letter-spacing:.3em; text-transform:uppercase; color:var(--vino); margin:22px 0 10px } .carta h3:first-child{ margin-top:0 }
+  .fila{ display:flex; align-items:baseline; gap:8px; padding:8px 0 } .fila b{ font-weight:400; font-size:19px } .fila .puntos{ flex:1; border-bottom:2px dotted #1F1A1755; transform:translateY(-4px); min-width:20px } .fila .pr{ font-family:var(--maq); font-variant-numeric:tabular-nums }
+  .carta .nota{ display:block; color:var(--gris); font-size:14px; margin:-6px 0 6px }
+  .paquetes{ display:grid; gap:16px } @media (min-width:800px){ .paquetes{ grid-template-columns:repeat(3, 1fr) } }
+  .paq{ background:#FBF7EF; border:1px solid var(--linea); padding:24px; display:flex; flex-direction:column; gap:10px } .paq.mejor{ background:var(--tinta); color:var(--papel); border-color:var(--tinta) }
+  .paq h3{ font:400 28px/1.1 var(--serif); margin:0 } .paq .precio{ font:700 30px/1 var(--maq) } .paq .precio s{ font-size:16px; opacity:.6; font-weight:400 } .paq ul{ margin:0; padding-left:18px } .paq .btn{ margin-top:auto }
+  .paq.mejor .btn{ background:var(--papel); color:var(--tinta); border-color:var(--papel) } .etiqueta{ align-self:flex-start; font:11px/1 var(--maq); letter-spacing:.2em; text-transform:uppercase; padding:6px 8px; background:var(--vino); color:#fff }
+  .club{ background:var(--tinta); color:var(--papel); border-top:0 } .club .sub{ color:#CFC4B2 } .club .dos{ display:grid; gap:28px } @media (min-width:860px){ .club .dos{ grid-template-columns:1fr 1fr; align-items:center } }
+  .club ul{ padding-left:20px; margin:0 0 24px } .club li{ margin:6px 0 } .club img{ aspect-ratio:4/3; object-fit:cover; width:100%; filter:sepia(.15) }
+  .club .btn{ background:var(--laton); border-color:var(--laton); color:var(--tinta) }
+  .reserva-caja{ max-width:600px; background:#FBF7EF; border:1px solid var(--linea); padding:22px 20px 0 }
+  .rv{ --rv-fondo:#FBF7EF; --rv-tinta:var(--tinta); --rv-suave:#1F1A170a; --rv-linea:#1F1A1730; --rv-acento:var(--vino); --rv-sobre:#fff; --rv-radio:4px }
+  .rv h3{ font-family:var(--serif); font-weight:400; font-size:28px }
+  .galeria{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px } @media (min-width:800px){ .galeria{ grid-template-columns:repeat(4, minmax(0, 1fr)) } }
+  .galeria img{ width:100%; aspect-ratio:1; object-fit:cover; filter:sepia(.2) } .galeria img:nth-child(3n+1){ aspect-ratio:3/4 }
+  details{ border-bottom:1px solid var(--linea); max-width:720px } summary{ cursor:pointer; padding:18px 0; font-size:19px; list-style:none; display:flex; justify-content:space-between; gap:12px } summary::-webkit-details-marker{ display:none }
+  summary::after{ content:"+"; font-family:var(--maq); color:var(--vino) } details[open] summary::after{ content:"–" } details p{ margin:0 0 18px; color:#3B332D }
+  .dos{ display:grid; gap:32px } @media (min-width:860px){ .dos{ grid-template-columns:1fr 1fr } }
+  .horario{ display:grid; grid-template-columns:auto 1fr; gap:8px 24px; font-family:var(--maq); font-size:15px } .horario span:nth-child(odd){ text-transform:capitalize } .horario .hoy{ color:var(--vino); font-weight:700 }
+  .estado{ font:14px var(--maq); color:var(--gris) } .estado b{ color:var(--vino) }
+  footer{ padding:36px 0 calc(36px + env(safe-area-inset-bottom)); background:var(--tinta); color:#CFC4B2; font:13px/1.6 var(--maq) }
+  .flota{ position:fixed; right:16px; bottom:calc(16px + env(safe-area-inset-bottom)); z-index:20; box-shadow:0 10px 26px #1F1A1755 }
+</style>
+</head>
+<body>
+<div class="demo">Página de muestra de Grupo Mazi · negocio ficticio</div>
+<header><div class="env">
+  <a class="logo" href="#">Casa Brava<small>Barber Club · 1998</small></a>
+  <a class="btn vino" href="#reservar">Reservar</a>
+</div></header>
+
+<main>
+<div class="portada"><div class="env">
+  <div>
+    <p class="sello">Navaja · Toalla · Plática</p>
+    <h1>La barbería <em>de antes</em>, con la agenda de hoy.</h1>
+    <p>Afeitado con navaja y toalla caliente, cortes clásicos y un café mientras esperas. Aparta tu silla en un minuto, sin llamar.</p>
+    <p style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><a class="btn" href="#reservar">Apartar mi silla</a><span class="estado" id="estado"></span></p>
+  </div>
+  <figure class="marco" style="margin:0"><img src="../img/7518731-c.webp" alt="Un barbero corta el cabello de un cliente frente a una pared de ladrillo" fetchpriority="high"><figcaption>La silla número uno, desde 1998.</figcaption></figure>
+</div></div>
+
+<section id="carta"><div class="env">
+  <h2>La carta</h2><p class="sub">Precios fijos, sin propina obligatoria.</p>
+  <div class="carta" id="carta"></div>
+</div></section>
+
+<section id="paquetes"><div class="env">
+  <h2>Paquetes</h2><p class="sub">Lo que más se pide, junto y más barato.</p>
+  <div class="paquetes" id="paquetesL"></div>
+</div></section>
+
+<section class="club" id="club"><div class="env dos">
+  <div>
+    <h2>El Club</h2><p class="sub">Para el que no falla cada quince días.</p>
+    <ul><li>2 cortes y 2 arreglos de barba al mes</li><li>Prioridad para apartar los sábados</li><li>10 % en productos</li><li>Un afeitado clásico de regalo en tu cumpleaños</li></ul>
+    <p style="font:700 30px/1 var(--maq);margin:0 0 20px">$590<small style="font-size:15px;font-weight:400"> / mes</small></p>
+    <a class="btn" id="unirme" href="#" target="_blank" rel="noopener">Quiero unirme</a>
+  </div>
+  <img src="../img/7518728-c.webp" alt="El salón de la barbería con sus sillas de piel" loading="lazy">
+</div></section>
+
+<section id="reservar"><div class="env">
+  <h2>Aparta tu silla</h2><p class="sub">Puedes escoger varios servicios; el tiempo y el precio se suman solos.</p>
+  <div class="reserva-caja" id="reserva"></div>
+  <h3 style="font:400 26px var(--serif);margin:36px 0 8px">Mis citas</h3>
+  <div id="mis" style="max-width:600px"></div>
+</div></section>
+
+<section><div class="env">
+  <h2>La casa</h2><p class="sub">Así se ve un martes cualquiera.</p>
+  <div class="galeria"><img src="../img/897262-c.webp" alt="Afeitado de barba con navaja" loading="lazy"><img src="../img/995300-c.webp" alt="Navaja, brocha y jabonera" loading="lazy"><img src="../img/7697441-c.webp" alt="Un barbero rasura a un señor" loading="lazy"><img src="../img/9456810-c.webp" alt="Una navaja de mango de madera" loading="lazy"></div>
+</div></section>
+
+<section><div class="env">
+  <h2>Preguntas</h2>
+  <details><summary>¿Tengo que reservar o puedo llegar?</summary><p>Puedes llegar, pero con reserva no esperas. Los sábados casi siempre está lleno.</p></details>
+  <details><summary>¿Qué pasa si llego tarde?</summary><p>Te esperamos 10 minutos. Si no alcanzamos a hacer todo, te movemos a la siguiente hora libre.</p></details>
+  <details><summary>¿Cómo cancelo?</summary><p>Desde «Mis citas» en esta misma página, o por WhatsApp. Avísanos con 2 horas de anticipación, por favor.</p></details>
+  <details><summary>¿Aceptan tarjeta?</summary><p>Sí: tarjeta, transferencia y efectivo.</p></details>
+</div></section>
+
+<section><div class="env dos">
+  <div><h2>Dónde estamos</h2><p class="sub">Andador 5 de Mayo 37, Centro Histórico, Querétaro (dirección de muestra).</p><a class="btn hueco" href="https://maps.google.com/?q=5+de+Mayo+Queretaro" target="_blank" rel="noopener">Cómo llegar</a></div>
+  <div class="horario" id="horario"></div>
+</div></section>
+</main>
+<footer><div class="env">Casa Brava Barber Club · Página de muestra de Grupo Mazi (paquete Completa). Fotos: Pexels (Pavel Danilyuk, RDNE Stock project, Erik Mclean y otros).</div></footer>
+<a class="btn vino flota" href="#reservar" id="flota">Reservar</a>
+
+<script type="module">
+import { crearAgenda, hora12, pesos, nombreDia } from '../comun/agenda.js';
+import { montarReserva, pintarMisCitas } from '../comun/reservar.js';
+const $ = (s) => document.querySelector(s);
+const SERVICIOS = [
+  { id: 'corte', cat: 'Cabello', nombre: 'Corte clásico', dur: 40, precio: 200, nota: 'Tijera, lavado y peinado', icono: '✂️' },
+  { id: 'fade', cat: 'Cabello', nombre: 'Corte degradado', dur: 45, precio: 230, nota: 'Con máquina y navaja en la nuca', icono: '💈' },
+  { id: 'nino', cat: 'Cabello', nombre: 'Corte de niño', dur: 30, precio: 150, nota: 'Hasta 12 años', icono: '🧒' },
+  { id: 'afeitado', cat: 'Barba', nombre: 'Afeitado clásico', dur: 40, precio: 220, nota: 'Navaja, dos toallas calientes y loción', icono: '🪒' },
+  { id: 'barba', cat: 'Barba', nombre: 'Arreglo de barba', dur: 30, precio: 170, nota: 'Perfilado y aceite', icono: '🧔' },
+  { id: 'facial', cat: 'Extras', nombre: 'Facial de barbero', dur: 20, precio: 140, nota: 'Limpieza y mascarilla', icono: '🧖' },
+  { id: 'cejas', cat: 'Extras', nombre: 'Cejas con navaja', dur: 10, precio: 70, nota: 'Rápido y limpio', icono: '👁️' }
+];
+const PAQUETES = [
+  { nombre: 'El de siempre', incluye: ['corte', 'barba'], precio: 330, nota: 'Corte clásico y barba' },
+  { nombre: 'El caballero', incluye: ['corte', 'afeitado', 'facial'], precio: 490, nota: 'La experiencia completa, 1 h 40 min', mejor: true },
+  { nombre: 'Papá e hijo', incluye: ['corte', 'nino'], precio: 310, nota: 'Los dos en la misma hora' }
+];
+const BARBEROS = [{ id: 'memo', nombre: 'Don Memo', esp: 'Navaja clásica · 25 años', foto: '../img/7697441-c.webp' }, { id: 'raul', nombre: 'Raúl', esp: 'Cortes clásicos · 12 años', foto: '../img/7518731-c.webp' }];
+const H = { 2: [600, 1200], 3: [600, 1200], 4: [600, 1200], 5: [600, 1230], 6: [540, 1200], 0: [600, 900] };
+const ag = crearAgenda({ negocio: 'Casa Brava Barber Club', clave: 'casabrava', horario: H, barberos: BARBEROS, direccion: 'Andador 5 de Mayo 37, Querétaro' });
+
+/* la carta, por secciones y con puntitos como las de antes */
+$('#carta').innerHTML = [...new Set(SERVICIOS.map(s => s.cat))].map(c => `<h3>${c}</h3>` + SERVICIOS.filter(s => s.cat === c).map(s => `<div class="fila"><b>${s.nombre}</b><span class="puntos"></span><span class="pr">${pesos(s.precio)}</span></div><small class="nota">${s.nota} · ${s.dur} min</small>`).join('')).join('');
+/* los paquetes cuestan menos que sumar sus piezas; se reservan como un servicio de la duración de todas */
+$('#paquetesL').innerHTML = PAQUETES.map((p, i) => { const piezas = p.incluye.map(id => SERVICIOS.find(s => s.id === id)), suma = piezas.reduce((a, s) => a + s.precio, 0);
+  return `<article class="paq ${p.mejor ? 'mejor' : ''}">${p.mejor ? '<span class="etiqueta">El más pedido</span>' : ''}<h3>${p.nombre}</h3><div class="precio">${pesos(p.precio)} <s>${pesos(suma)}</s></div><p style="margin:0">${p.nota}</p><ul>${piezas.map(s => `<li>${s.nombre}</li>`).join('')}</ul><button class="btn" data-paq="${i}">Reservar paquete</button></article>`; }).join('');
+const hoy = new Date().getDay();
+$('#horario').innerHTML = [1, 2, 3, 4, 5, 6, 0].map(d => { const h = H[d], c = d === hoy ? 'hoy' : ''; return `<span class="${c}">${nombreDia(new Date(2026, 10, 1 + d))}</span><span class="${c}">${h ? hora12(h[0]) + ' – ' + hora12(h[1]) : 'Cerrado'}</span>`; }).join('');
+const e = ag.abiertoAhora(); $('#estado').innerHTML = e.abierto ? `<b>●</b> ${e.texto}` : e.texto;
+$('#unirme').href = ag.whatsappTexto('Hola, Casa Brava. Me interesa unirme al Club ($590 al mes). ¿Cómo le hago?');
+
+const R = montarReserva($('#reserva'), { ag, servicios: SERVICIOS, barberos: BARBEROS, multi: true, alListo: () => pintarMisCitas($('#mis'), ag) });
+pintarMisCitas($('#mis'), ag);
+$('#paquetesL').onclick = (ev) => { const b = ev.target.closest('[data-paq]'); if(!b) return; const p = PAQUETES[+b.dataset.paq], piezas = p.incluye.map(id => SERVICIOS.find(s => s.id === id));
+  R.empezar({ servicio: { id: 'paq' + b.dataset.paq, nombre: `Paquete «${p.nombre}»`, dur: piezas.reduce((a, s) => a + s.dur, 0), precio: p.precio } }); $('#reservar').scrollIntoView({ behavior: 'smooth' }); };
+new IntersectionObserver(([en]) => { $('#flota').style.display = en.isIntersecting ? 'none' : ''; }, { threshold: .2 }).observe($('#reservar'));
+</script>
+</body>
+</html>

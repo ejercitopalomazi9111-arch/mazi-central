@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Barbería Don Chuy · Querétaro</title>
+<meta name="description" content="Cortes clásicos y de moda, barba y afeitado en Querétaro. Reserva tu hora en un minuto.">
+<meta name="theme-color" content="#14213D">
+<style>
+  :root{ --tinta:#14213D; --rojo:#C8102E; --papel:#FFFFFF; --gris:#5B6475; --linea:#E3E6EC; --suave:#F4F6F9; --r:12px }
+  *{ box-sizing:border-box } html{ scroll-behavior:smooth; -webkit-text-size-adjust:100% }
+  body{ margin:0; font:16px/1.5 "Avenir Next", "Segoe UI", system-ui, sans-serif; color:var(--tinta); background:var(--papel) }
+  a{ color:inherit } img{ display:block; max-width:100% }
+  .envoltura{ max-width:1080px; margin:0 auto; padding:0 16px }
+  header{ position:sticky; top:0; z-index:10; background:#ffffffee; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); border-bottom:1px solid var(--linea) }
+  header .envoltura{ display:flex; align-items:center; gap:12px; min-height:60px }
+  .marca{ font-weight:800; letter-spacing:.02em; font-size:18px; text-decoration:none; display:flex; align-items:center; gap:8px }
+  .poste{ width:10px; height:28px; border-radius:5px; background:repeating-linear-gradient(-45deg, var(--rojo) 0 5px, #fff 5px 10px, var(--tinta) 10px 15px, #fff 15px 20px); border:1px solid var(--linea) }
+  .estado{ margin-left:auto; font-size:13px; color:var(--gris); display:flex; align-items:center; gap:6px } .estado i{ width:8px; height:8px; border-radius:50%; background:#9AA3B2 } .estado.si i{ background:#1DB954 }
+  .boton{ display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:48px; padding:0 22px; border-radius:999px; border:0; font-weight:700; font-size:16px; line-height:1; font-family:inherit; font-family:inherit; text-decoration:none; cursor:pointer; background:var(--rojo); color:#fff }
+  .boton.claro{ background:var(--suave); color:var(--tinta) } .boton:focus-visible{ outline:3px solid #2F6BFF; outline-offset:2px }
+  .portada{ position:relative; min-height:min(78vh, 640px); display:grid; align-items:end; color:#fff; overflow:hidden }
+  .portada img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:50% 30% }
+  .portada::after{ content:""; position:absolute; inset:0; background:linear-gradient(180deg, #14213D10 30%, #14213Dee 100%) }
+  .portada .envoltura{ position:relative; z-index:1; padding-bottom:40px; width:100% }
+  h1{ font-size:clamp(36px, 9vw, 64px); line-height:1.02; margin:0 0 12px; letter-spacing:-.02em }
+  .portada p{ font-size:18px; max-width:30ch; margin:0 0 22px; opacity:.92 }
+  section{ padding:56px 0 } h2{ font-size:clamp(28px, 6vw, 40px); line-height:1.1; margin:0 0 8px; letter-spacing:-.01em } .baja{ color:var(--gris); margin:0 0 24px }
+  .servicios{ display:grid; gap:0; border-top:1px solid var(--linea) }
+  .servicio{ display:grid; grid-template-columns:minmax(0, 1fr) auto; gap:4px 16px; padding:16px 0; border-bottom:1px solid var(--linea) }
+  .servicio b{ font-size:18px } .servicio span{ color:var(--gris); font-size:14px; grid-column:1 } .servicio .precio{ grid-row:1 / span 2; grid-column:2; align-self:center; font-weight:800; font-size:20px; font-variant-numeric:tabular-nums }
+  .reserva{ background:var(--suave) }
+  .tarjeta{ background:#fff; border:1px solid var(--linea); border-radius:var(--r); padding:20px; max-width:560px }
+  label{ display:block; font-weight:700; font-size:14px; margin:16px 0 8px }
+  select, input{ width:100%; min-height:48px; padding:0 14px; border:1px solid #C9CFD9; border-radius:10px; font-size:16px; font-family:inherit; font-family:inherit; color:var(--tinta); background:#fff }
+  .dias{ display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none } .dias::-webkit-scrollbar{ display:none }
+  .dia{ flex:0 0 64px; min-height:64px; border:1px solid #C9CFD9; border-radius:10px; background:#fff; font:inherit; display:grid; place-items:center; line-height:1.1; cursor:pointer; color:var(--tinta) }
+  .dia small{ font-size:12px; color:var(--gris); text-transform:capitalize } .dia b{ font-size:20px } .dia[aria-pressed="true"]{ background:var(--tinta); color:#fff; border-color:var(--tinta) } .dia[aria-pressed="true"] small{ color:#ffffffbb }
+  .aviso{ font-size:14px; color:var(--gris); margin:12px 0 0 } .error{ color:var(--rojo); font-weight:600 }
+  .horario{ display:grid; grid-template-columns:auto 1fr; gap:8px 24px; max-width:360px } .horario .hoy{ font-weight:800 } .horario span:nth-child(odd){ text-transform:capitalize }
+  .dos{ display:grid; gap:40px } @media (min-width:860px){ .dos{ grid-template-columns:1fr 1fr } }
+  .mapa{ border-radius:var(--r); overflow:hidden; aspect-ratio:4/3; background:#E8ECF2 url(../img/7518728-c.webp) center / cover }
+  footer{ padding:32px 0 calc(32px + env(safe-area-inset-bottom)); color:var(--gris); font-size:13px; border-top:1px solid var(--linea) }
+  .demo{ background:var(--tinta); color:#fff; font-size:12px; text-align:center; padding:6px 16px }
+  .flotante{ position:fixed; right:16px; bottom:calc(16px + env(safe-area-inset-bottom)); z-index:20; box-shadow:0 8px 24px #14213D40 }
+  @media (prefers-reduced-motion:reduce){ html{ scroll-behavior:auto } }
+</style>
+</head>
+<body>
+<div class="demo">Página de muestra hecha por Grupo Mazi · el negocio es ficticio</div>
+<header><div class="envoltura">
+  <a class="marca" href="#"><span class="poste" aria-hidden="true"></span>Don Chuy</a>
+  <span class="estado" id="estado"><i></i><span></span></span>
+</div></header>
+
+<main>
+<div class="portada">
+  <img src="../img/7697224.webp" alt="Un barbero arregla el corte de un señor en la silla" fetchpriority="high">
+  <div class="envoltura">
+    <h1>Cortes de siempre,<br>a la primera.</h1>
+    <p>Más de 20 años en la colonia. Escoge tu hora y llegas directo a la silla.</p>
+    <a class="boton" href="#reserva">Reservar mi hora</a>
+  </div>
+</div>
+
+<section id="servicios"><div class="envoltura">
+  <h2>Servicios y precios</h2>
+  <p class="baja">Lo que pagas es lo que ves. Sin sorpresas.</p>
+  <div class="servicios" id="listaServicios"></div>
+</div></section>
+
+<section class="reserva" id="reserva"><div class="envoltura">
+  <h2>Reserva en un minuto</h2>
+  <p class="baja">Te llega la confirmación por WhatsApp.</p>
+  <form class="tarjeta" id="forma" novalidate>
+    <label for="servicio">¿Qué te hacemos?</label>
+    <select id="servicio"></select>
+    <label id="lDia">¿Qué día?</label>
+    <div class="dias" id="dias" role="group" aria-labelledby="lDia"></div>
+    <label for="hora">¿A qué hora?</label>
+    <select id="hora"></select>
+    <label for="nombre">Tu nombre</label>
+    <input id="nombre" autocomplete="given-name" placeholder="Como quieres que te llamemos">
+    <p class="aviso" id="msg" role="status"></p>
+    <button class="boton" id="enviar" style="width:100%;margin-top:12px">Mandar por WhatsApp</button>
+  </form>
+</div></section>
+
+<section id="visitanos"><div class="envoltura dos">
+  <div>
+    <h2>Visítanos</h2>
+    <p class="baja">Av. de los Arcos 214, Col. Centro, Querétaro (dirección de muestra)</p>
+    <div class="horario" id="horario"></div>
+    <p style="margin-top:24px"><a class="boton claro" href="https://maps.google.com/?q=Arcos+Queretaro" target="_blank" rel="noopener">Cómo llegar</a></p>
+  </div>
+  <div class="mapa" role="img" aria-label="El interior de la barbería"></div>
+</div></section>
+</main>
+
+<footer><div class="envoltura">Barbería Don Chuy · Página de muestra de <b>Grupo Mazi</b> (paquete Esencial). Fotos: Pexels.</div></footer>
+<a class="boton flotante" href="#reserva" id="flotante">Reservar</a>
+
+<script type="module">
+import { crearAgenda, fechaCorta, hora12, pesos, nombreDia } from '../comun/agenda.js';
+const $ = (s) => document.querySelector(s);
+const SERVICIOS = [
+  { id: 'corte', nombre: 'Corte clásico', dur: 30, precio: 150, nota: 'Tijera o máquina, con lavado' },
+  { id: 'fade', nombre: 'Corte degradado', dur: 45, precio: 180, nota: 'Fade bajo, medio o alto' },
+  { id: 'barba', nombre: 'Arreglo de barba', dur: 30, precio: 120, nota: 'Perfilado con navaja y toalla caliente' },
+  { id: 'combo', nombre: 'Corte + barba', dur: 60, precio: 250, nota: 'El favorito de los sábados' },
+  { id: 'nino', nombre: 'Corte de niño', dur: 30, precio: 120, nota: 'Hasta 12 años' }
+];
+const H = { 1: [600, 1200], 2: [600, 1200], 3: [600, 1200], 4: [600, 1200], 5: [600, 1230], 6: [540, 1140] };
+const ag = crearAgenda({ negocio: 'Barbería Don Chuy', clave: 'donchuy', horario: H, barberos: [{ id: 'chuy', nombre: 'Don Chuy' }, { id: 'beto', nombre: 'Beto' }], direccion: 'Av. de los Arcos 214, Querétaro' });
+
+$('#listaServicios').innerHTML = SERVICIOS.map(s => `<div class="servicio"><b>${s.nombre}</b><span>${s.nota} · ${s.dur} min</span><div class="precio">${pesos(s.precio)}</div></div>`).join('');
+$('#servicio').innerHTML = SERVICIOS.map(s => `<option value="${s.id}">${s.nombre} · ${pesos(s.precio)}</option>`).join('');
+const e = ag.abiertoAhora(); $('#estado').classList.toggle('si', e.abierto); $('#estado span').textContent = e.texto;
+const hoy = new Date().getDay();
+$('#horario').innerHTML = [1, 2, 3, 4, 5, 6, 0].map(d => { const h = H[d], n = nombreDia(new Date(2026, 10, 1 + ((d - 0 + 7) % 7))); return `<span class="${d === hoy ? 'hoy' : ''}">${n}</span><span class="${d === hoy ? 'hoy' : ''}">${h ? hora12(h[0]) + ' – ' + hora12(h[1]) : 'Cerrado'}</span>`; }).join('');
+
+let dia = null;
+const dias = ag.dias(10);
+$('#dias').innerHTML = dias.map((d, i) => { const f = fechaCorta(d); return `<button type="button" class="dia" data-i="${i}" aria-pressed="false"><small>${i === 0 && d.toDateString() === new Date().toDateString() ? 'hoy' : f.dia}</small><b>${f.num}</b></button>`; }).join('');
+$('#dias').onclick = (ev) => { const b = ev.target.closest('.dia'); if(!b) return; dia = dias[+b.dataset.i]; document.querySelectorAll('.dia').forEach(x => x.setAttribute('aria-pressed', x === b)); horas(); };
+function horas(){ const s = SERVICIOS.find(x => x.id === $('#servicio').value), sel = $('#hora');
+  if(!dia){ sel.innerHTML = '<option value="">Primero escoge el día</option>'; return; }
+  const l = ag.libres(dia, s.dur).filter(x => x.libre);
+  sel.innerHTML = l.length ? l.map(x => `<option value="${x.min}">${hora12(x.min)}</option>`).join('') : '<option value="">Ese día ya está lleno, prueba otro</option>'; }
+$('#servicio').onchange = horas; document.querySelector('.dia').click();
+$('#forma').onsubmit = (ev) => { ev.preventDefault(); const msg = $('#msg'), s = SERVICIOS.find(x => x.id === $('#servicio').value), m = $('#hora').value, nombre = $('#nombre').value.trim();
+  const faltan = [!dia && 'el día', !m && 'la hora', !nombre && 'tu nombre'].filter(Boolean);
+  if(faltan.length){ msg.className = 'aviso error'; msg.textContent = `Falta ${faltan.join(', ')}.`; if(!nombre) $('#nombre').focus(); return; }
+  const libre = ag.libres(dia, s.dur).find(x => x.min === +m); const c = ag.reservar({ servicios: [s], barbero: libre?.con[0] || 'chuy', dia, inicio: +m, nombre });
+  msg.className = 'aviso'; msg.textContent = '¡Listo! Se abrió WhatsApp con tu cita; sólo dale enviar.'; location.href = ag.whatsappDe(c); horas(); };
+/* el botón flotante se esconde cuando ya estás en la reserva */
+new IntersectionObserver(([en]) => { $('#flotante').style.display = en.isIntersecting ? 'none' : ''; }).observe($('#reserva'));
+</script>
+</body>
+</html>

@@ -501,6 +501,9 @@ dependemos.
 
    | un `const` escrito justo arriba de la función que lo usa ya existe cuando se llama la función | si algo llama a la función ANTES de que el módulo llegue a ese renglón (el arranque de `app.js` llama `regaloSecreto()` arriba), el `const` está en su «zona muerta» y truena: «Cannot access 'TEMMIE' before initialization» | el juego entero se quedó en la pantalla de «toca para entrar», sin poder tocar nada. La lista va DENTRO de la función |
 
+   | `font: 700 16px/1 inherit` le pone tamaño y grosor al botón y hereda la letra | `inherit` no vale DENTRO del atajo `font`: el navegador tira la declaración ENTERA, y el botón y el campo se quedan con su letra de fábrica (13 px) | en las barberías los campos de la reserva medían 13 px, y con menos de 16 px el iPhone hace zoom al escribir. Se escribe por partes: `font-weight`, `font-size` y `font-family: inherit` |
+   | una regla de colores que se inyecta desde un módulo compartido sólo pone «los de fábrica» | si se agrega al `<head>` DESPUÉS del CSS de la página y tiene la misma especificidad (`.rv{…}` contra `.rv{…}`), GANA ella | en Navaja Norte la hoja de reserva salió con texto oscuro sobre fondo oscuro. Los valores de fábrica van en `:where(.rv)`, que pesa cero |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---
