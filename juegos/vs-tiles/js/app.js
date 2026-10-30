@@ -173,7 +173,39 @@ const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;
 async function menu(){ partida.salir(); mostrar('menu'); musicaMenu();
   /* el premio diario: 300 Ecos y un Sello la primera vez que se abre el juego cada día */
   const hoy = new Date().toISOString().slice(0, 10); if(Y.diario !== hoy){ Y.diario = hoy; Y.ecos += 300; Y.sellos += 1; guardar(); setTimeout(() => aviso('Premio del día: +300 Ecos y +1 Sello'), 600); }
-  barra(); await escena.ponerCantantes([idVoz()]); }
+  barra(); requestAnimationFrame(() => irPanel(panelSel, false)); await escena.ponerCantantes([idVoz()]); }
+
+/* EL MENÚ tipo Ligas Mazi: los modos grandes van en un carrusel con foto (el del centro crece, los de los
+   lados se apagan) y lo secundario va abajo, también con foto. Las fotos salen del propio juego
+   (herramientas/portadas.cjs): las cantantes en sus escenarios */
+const PANELES = [
+  { ir: 'historia', k: 'Capítulo I · Ecos de GUMI', t: 'Historia', corto: 'Historia', s: 'Entra a los archivos de SONOLUZ y vence al Coro Nulo.', c: '#FF2D7A' },
+  { ir: 'libre', k: 'Cualquier canción', t: 'Juego libre', corto: 'Libre', s: 'Cinco modos y cinco dificultades, con tu música o la de la casa.', c: '#38E1FF' },
+  { ir: 'reto', k: '⚠ Dificultad demoníaca', t: 'EXÓRCIST', corto: 'EXÓRCIST', s: 'Las reglas cambian a media canción. Nadie sale igual.', c: '#FF2D55' },
+  { ir: 'lab', k: 'Tu música', t: 'Mi música', corto: 'Mi música', s: 'Mete tus canciones: anime, Vocaloid, lo que tengas en el teléfono.', c: '#5CFFB0' },
+  { ir: 'mercado', k: 'Mercado de Ecos', t: 'Tiradas', corto: 'Mercado', s: 'Garra, sobres y carrusel. Todo se gana jugando.', c: '#FFE08A' }
+];
+const SECUNDARIAS = [{ ir: 'vestidor', t: 'Vestidor', s: 'Voz, notas, golpe y fondo' }, { ir: 'records', t: 'Récords', s: 'Tus mejores partidas' }, { ir: 'ajustes', t: 'Ajustes', s: 'Sincronía y velocidad' }, { ir: 'creditos', t: 'Créditos', s: 'Quién hizo todo' }];
+let panelSel = 0;
+function armarMenu(){ const T = $('#mTira'), C = $('#mCarrusel'), P = $('#mPuntos'), S = $('#mSec'); T.innerHTML = C.innerHTML = P.innerHTML = S.innerHTML = '';
+  PANELES.forEach((p, i) => {
+    const ch = document.createElement('button'); ch.textContent = p.corto; ch.onclick = () => irPanel(i, true); T.appendChild(ch);
+    const b = document.createElement('button'); b.className = 'panelM'; b.setAttribute('role', 'listitem'); b.style.setProperty('--c', p.c);
+    b.innerHTML = `<img src="portadas/${p.ir}.jpg" alt="" loading="${i < 2 ? 'eager' : 'lazy'}"><div class="vel"></div><span class="franja"></span><div class="cuerpo"><div class="k">${p.k}</div><div class="t">${p.t}</div><div class="s">${p.s}</div><span class="entrar">Entrar ›</span></div>`;
+    b.onclick = () => { if(i === panelSel){ sonidos.boton && reloj.golpe(sonidos.boton, .25); ir(p.ir); } else irPanel(i, true); }; C.appendChild(b);
+    P.appendChild(document.createElement('i')); });
+  SECUNDARIAS.forEach(o => { const b = document.createElement('button'); b.className = 'secundaria'; b.dataset.ir = o.ir; b.innerHTML = `<img src="portadas/${o.ir}.jpg" alt="" loading="lazy"><b>${o.t}</b><span>${o.s}</span>`; S.appendChild(b); });
+  let raf = 0; C.addEventListener('scroll', () => { if(raf || programado) return; raf = requestAnimationFrame(() => { raf = 0; const mid = C.scrollLeft + C.clientWidth / 2; let mejor = 0, d0 = 1e9;
+    [...C.children].forEach((el, k) => { const d = Math.abs(el.offsetLeft + el.clientWidth / 2 - mid); if(d < d0){ d0 = d; mejor = k; } }); marcarPanel(mejor); }); }, { passive: true });
+  marcarPanel(panelSel, true); }
+let programado = false;
+function marcarPanel(i, forzar = false){ if(i === panelSel && !forzar) return; panelSel = i;
+  [...$('#mCarrusel').children].forEach((el, k) => el.classList.toggle('si', k === i)); [...$('#mTira').children].forEach((el, k) => el.classList.toggle('si', k === i)); [...$('#mPuntos').children].forEach((el, k) => el.classList.toggle('si', k === i));
+  /* sólo se mueve la tira, con scrollTo: scrollIntoView mueve también la página (está anotado en CLAUDE.md) */
+  const tira = $('#mTira'), ch = tira.children[i]; if(ch) tira.scrollTo({ left: ch.offsetLeft - (tira.clientWidth - ch.clientWidth) / 2, behavior: 'smooth' }); }
+function irPanel(i, suave){ marcarPanel(i); const C = $('#mCarrusel'), el = C.children[i]; if(!el) return; programado = true; setTimeout(() => programado = false, 500);
+  C.scrollTo({ left: el.offsetLeft - (C.clientWidth - el.clientWidth) / 2, behavior: suave ? 'smooth' : 'auto' }); }
+armarMenu();
 
 /* ── canciones ── */
 let modoLista = 'libre', modoSel = 'carril', difSel = 'dificil', cancionSel = CANCIONES[0].id, ultima = null;

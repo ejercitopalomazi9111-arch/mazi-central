@@ -152,7 +152,7 @@ h2{ font:800 22px/1.1 var(--n); letter-spacing:.06em; margin:0 0 10px }
 .elige{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px; margin-bottom:12px }
 .elige button{ padding:12px 8px; background:var(--panel2); border:1px solid var(--linea); text-align:center; font:800 12px var(--n) } .elige button.si{ border-color:var(--magenta); box-shadow:0 0 20px #FF2D7A55 } .elige button small{ display:block; font:600 10.5px var(--t); color:var(--gris); margin-top:4px }
 .aviso{ position:fixed; z-index:9; left:50%; bottom:max(20px, env(safe-area-inset-bottom)); transform:translateX(-50%); padding:12px 18px; background:#1B1029; border:1px solid var(--magenta); font-weight:700; max-width:min(92vw, 420px); text-align:center; animation:entra .3s both }
-@media (min-width:900px){ #menu .rejilla{ grid-template-columns:repeat(4, minmax(0, 1fr)) } .pantalla > *{ width:min(820px, 100%); margin-left:auto; margin-right:auto } }
+@media (min-width:900px){ .pantalla > *{ width:min(820px, 100%); margin-left:auto; margin-right:auto } }
 @media (prefers-reduced-motion:reduce){ .pantalla.vis, .logo, .toca, .archivo .orbe{ animation:none } }
 
 /* Mi música */
@@ -172,3 +172,37 @@ h2{ font:800 22px/1.1 var(--n); letter-spacing:.06em; margin:0 0 10px }
 #carga .tip{ max-width:320px; font-size:13px; color:var(--gris) }
 @keyframes cargaGira{ to{ transform:rotate(360deg) } }
 .obj.oculto{ background:#0B0612; border-style:dashed; color:#ffffff55 } .obj.oculto .muestra{ font:900 30px var(--n); color:#ffffff22 }
+
+/* ── el menú tipo Ligas Mazi (Carlos, 29 oct) ── */
+#menu{ gap:10px; padding-left:0; padding-right:0 } #menu > *{ margin-left:16px; margin-right:16px } #menu > .carrusel{ margin-left:0; margin-right:0 }
+.menuCab .titulo{ font-size:30px; line-height:1 }
+.tiraModos{ display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; touch-action:pan-x pan-y } .tiraModos::-webkit-scrollbar{ display:none }
+.tiraModos button{ flex:none; min-height:40px; padding:8px 14px; font:800 12px var(--n); letter-spacing:.12em; text-transform:uppercase; color:var(--gris); background:#ffffff0d; border:1px solid var(--linea) }
+.tiraModos button.si{ color:#07030C; background:#fff; border-color:transparent }
+.carrusel{ display:flex; gap:14px; overflow-x:auto; overflow-y:hidden; scroll-snap-type:x mandatory; padding:4px 11%; scrollbar-width:none; touch-action:pan-x pan-y; overscroll-behavior-x:contain }
+.carrusel::-webkit-scrollbar{ display:none }
+.panelM{ position:relative; flex:none; scroll-snap-align:center; width:78%; max-width:400px; height:clamp(300px, 50vh, 470px); overflow:hidden; border:1px solid var(--linea); background:#0c0712; text-align:left; padding:0;
+  transform:scale(.92); opacity:.55; transition:transform .18s ease-out, opacity .18s ease-out, border-color .18s }
+.panelM.si{ transform:scale(1); opacity:1; border-color:#ffffff3a; box-shadow:0 24px 60px #000a }
+.panelM img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:saturate(1.08) }
+.panelM .vel{ position:absolute; inset:0; background:linear-gradient(180deg, #07030C66 0%, transparent 30%, #07030C88 60%, #07030Cf2 100%) }
+.panelM .franja{ position:absolute; top:0; left:0; right:0; height:4px; background:var(--c) }
+.panelM .cuerpo{ position:absolute; left:0; right:0; bottom:0; padding:18px 18px 20px }
+.panelM .k{ font:800 11px var(--n); letter-spacing:.16em; text-transform:uppercase; color:var(--c) }
+.panelM .t{ font:900 clamp(30px, 9vw, 42px)/.95 var(--n); color:#fff; text-shadow:0 3px 18px #000c; margin-top:6px }
+.panelM .s{ font-size:13.5px; color:#E8DFF0; margin-top:8px; max-width:30ch }
+.panelM .entrar{ display:inline-flex; margin-top:14px; padding:10px 18px; font:900 13px var(--n); letter-spacing:.14em; text-transform:uppercase; color:#07030C; background:#fff }
+.panelM:not(.si) .s, .panelM:not(.si) .entrar{ opacity:0 }
+.puntos{ display:flex; justify-content:center; gap:7px } .puntos i{ width:7px; height:7px; background:#ffffff38; transition:.2s } .puntos i.si{ width:22px; background:var(--magenta) }
+.secundarias{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; margin-top:auto }
+.secundaria{ position:relative; min-height:84px; overflow:hidden; border:1px solid var(--linea); text-align:left; padding:12px; display:flex; flex-direction:column; justify-content:flex-end }
+.secundaria img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.75 }
+.secundaria::before{ content:""; position:absolute; inset:0; background:linear-gradient(90deg, #07030Ce6, #07030C55); z-index:1 }
+.secundaria b, .secundaria span{ position:relative; z-index:2 } .secundaria b{ font:900 15px var(--n); letter-spacing:.06em; color:#fff } .secundaria span{ font-size:12px; color:var(--gris); margin-top:2px }
+.secundaria:active, .panelM:active{ filter:brightness(1.15) }
+@media (min-width:900px){ .panelM{ width:340px } .secundarias{ grid-template-columns:repeat(4, minmax(0, 1fr)) } }
+/* teléfono acostado: el panel cabe completo en lo bajito de la pantalla */
+@media (orientation:landscape) and (max-height:520px){
+  .menuCab{ display:none } .panelM{ height:calc(100vh - 180px); min-height:160px; width:min(300px, 42vw) } .panelM .t{ font-size:26px } .panelM .s{ display:none } .panelM .entrar{ margin-top:8px; padding:7px 14px }
+  .secundarias{ grid-template-columns:repeat(4, minmax(0, 1fr)) } .secundaria{ min-height:60px } .secundaria span{ display:none }
+}
