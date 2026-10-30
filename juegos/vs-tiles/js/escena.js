@@ -241,7 +241,7 @@ export async function crearEscena(lienzo){
   function pintaNota(m, color, alfa, esc){ cTmp.set(color); for(const mt of m.userData.modelo || []){ mt.opacity = alfa; pintarMaterial(mt, cTmp); } m.scale.setScalar(esc); }
   await ponerForma('barra');
   for(let i = 0; i < 40; i++) cuerpos.push(pieza(null, ANCHO * .4, 1, true));
-  for(let i = 0; i < 60; i++) flechas.push(pieza(tFlecha, ANCHO * .62, ANCHO * .62));
+  for(let i = 0; i < 60; i++){ const f = pieza(tFlecha, ANCHO * .62, ANCHO * .62); f.material.depthTest = false; f.renderOrder = 40; flechas.push(f); }
 
   /* destellos 3D (al acertar) */
   const chispas = [];
@@ -271,7 +271,7 @@ export async function crearEscena(lienzo){
   function pos(t){ let p = t; if(!tramos) return p; for(const tr of tramos){ if(t <= tr.a) break; const fin = Math.min(t, tr.b); p += (fin - tr.a) * (tr.v - 1); } return p; }
 
   /* un punto de la pista en el sistema de un carril (ladeado o torcido) → el sistema del carril entero */
-  const vA = new THREE.Vector3(), vB = new THREE.Vector3(), qA = new THREE.Quaternion(), qB = new THREE.Quaternion(), eB = new THREE.Euler(), qPlano = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0));
+  const vA = new THREE.Vector3(), vB = new THREE.Vector3(), qA = new THREE.Quaternion(), qB = new THREE.Quaternion(), qC = new THREE.Quaternion(), ejeZ = new THREE.Vector3(0, 0, 1), eB = new THREE.Euler(), qPlano = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0));
   function enCarrilDe(R, z, abre, out){ return out.set(R.x * ANCHO * abre, .08, z).applyMatrix4(R.g.matrix); }
   const v3 = new THREE.Vector3(), mira = new THREE.Vector3(), objetivoCam = { p: new THREE.Vector3(), m: new THREE.Vector3() };
   const CAMS = [
@@ -401,7 +401,7 @@ export async function crearEscena(lienzo){
           pf = Math.max(pf, f); }
         R.g.rotation.set(rampa, tuerce * yawK, ladeo, 'YXZ'); R.g.updateMatrix();
         R.fondoR.material.opacity = (.06 + .08 * latido) * d.vis; R.lado.material.opacity = (.35 + .4 * latido) * d.vis;
-        const dg = (ahoraMs - R.golpe) / 1000; R.brillo.material.opacity = Math.max(0, 1 - dg * 5) * d.vis; R.haz.material.opacity = Math.max(0, .8 - dg * 4) * d.vis;
+        const dg = R.tenido ? 0 : (ahoraMs - R.golpe) / 1000;   /* mientras el dedo siga apretado, el carril sigue encendido */ R.brillo.material.opacity = Math.max(0, 1 - dg * 5) * d.vis; R.haz.material.opacity = Math.max(0, .8 - dg * 4) * d.vis;
         R.rec.scale.setScalar(1 + .12 * latido + Math.max(0, .35 - dg * 2)); R.rec.material.opacity = d.vis; });
       const anchoTotal = (Math.max(...D.rieles.map((d, r) => d.vis > .5 ? Math.abs(d.x) : 0)) * 2 + 1.2) * ANCHO;
       /* con 6 o 7 carriles, en el teléfono se angostan para que quepan (el toque sigue la proyección) */
@@ -442,7 +442,12 @@ export async function crearEscena(lienzo){
           if(ir < reserva.length && !(st === 'sosteniendo')){ const m = reserva[ir++]; m.visible = true; m.position.copy(vA); m.quaternion.copy(qA); pintaNota(m, color, alfa * vis, n.prec ? .82 : 1); }
           if(n.fin && ic < cuerpos.length){ const c = cuerpos[ic++]; const a = Math.min(zc, 0.0001), b = Math.max(zf, -LARGO); const largo = Math.max(.01, a - b);
             enCarrilDe(R, (a + b) / 2, abre, vB); vB.y = .02 + (vB.y - .08); c.visible = true; c.position.copy(vB); c.quaternion.copy(R.g.quaternion).multiply(qPlano); c.scale.set(1, largo, 1); c.material.color.set(COLORES_RIEL[n.r]); c.material.opacity = (st === 'sosteniendo' ? .95 : .6) * alfa * R.vis; }
-          if(n.tipo === 'flick' && iff < flechas.length){ const f = flechas[iff++]; f.visible = true; f.position.copy(vA); f.position.y += .09; qB.setFromEuler(eB.set(-Math.PI / 2, 0, -n.dir * Math.PI / 4)); f.quaternion.copy(qA).multiply(qB); f.material.opacity = alfa * vis; f.scale.setScalar(1 + .2 * latido); }
+          /* LA FLECHA DE DESLIZAR: parada de frente a la pantalla (acostada en la pista no se leía) y girada hacia donde hay
+             que deslizar EN LA PANTALLA, igual que la juzga el juez; se asoma un poco hacia esa dirección, como empujando */
+          if(n.tipo === 'flick' && iff < flechas.length){ const f = flechas[iff++], a = -n.dir * Math.PI / 4, emp = .12 * Math.sin(ahoraMs / 90);
+            f.visible = true; carril.worldToLocal(f.position.copy(vA).applyMatrix4(carril.matrixWorld).add(v3.set(0, .62, 0)));
+            qB.setFromAxisAngle(ejeZ, a); qC.copy(carril.quaternion).invert().multiply(cam.quaternion).multiply(qB); f.quaternion.copy(qC);
+            f.translateY(emp); f.material.opacity = alfa * vis; f.scale.setScalar(1.55 + .25 * latido); }
         }
       }
       for(; ir < reserva.length; ir++) reserva[ir].visible = false;
