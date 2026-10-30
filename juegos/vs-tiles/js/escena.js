@@ -149,7 +149,7 @@ export async function crearEscena(lienzo){
   async function modelo(id){
     const P = PERSONAJES.find(p => p.id === id) || PERSONAJES[0];
     const g = await (cacheM[id] ||= cargador.loadAsync(`modelos/${id}.glb`));
-    const m = g.scene.clone(true);
+    const m = clonarEsqueleto(g.scene);   /* con esqueleto: clone() normal deja la piel pegada a los huesos del original */
     m.traverse(o => { if(o.isMesh || o.isSkinnedMesh){ o.frustumCulled = false; const ms = Array.isArray(o.material) ? o.material : [o.material];
       ms.forEach(mt => { if(mt.map) mt.map.anisotropy = 4; if(mt.transparent && mt.opacity > .95){ mt.alphaTest = .4; mt.transparent = false; } mt.side = THREE.DoubleSide; }); } });
     m.updateMatrixWorld(true);
@@ -164,8 +164,9 @@ export async function crearEscena(lienzo){
       else if(/(spine|chest|上半身)/.test(n)) pon('pecho'); else if(/(hips|pelvis|下半身|center|センター)/.test(n)) pon('cadera');
       else if(/(shoulder_l|shoulder\.l|l upperarm|upperarm_l|arm left shoulder 1|leftarm|左腕)/.test(n) && !/part|fore|lower/.test(n)) pon('brazoI');
       else if(/(shoulder_r|shoulder\.r|r upperarm|upperarm_r|arm right shoulder 1|rightarm|右腕)/.test(n) && !/part|fore|lower/.test(n)) pon('brazoD'); });
-    const mezclador = g.animations.length ? new THREE.AnimationMixer(m) : null; let accion = null;
-    if(mezclador){ accion = mezclador.clipAction(g.animations[0]); accion.play(); }
+    /* LOS BAILES: desde el 30 de octubre cada cantante trae esqueleto y cinco bailes capturados de bailarines reales
+       (herramientas/riggear.py; CMU Graphics Lab Motion Capture Database): macarena, salsa, lambada, lindy hop y ballet */
+    const mezclador = g.animations.length ? new THREE.AnimationMixer(m) : null;
     return { P, raiz, cuerpo, huesos, mezclador, g, pose };
   }
   async function ponerCantantes(ids){
@@ -482,9 +483,12 @@ export async function crearEscena(lienzo){
       cantantes.forEach((c, k) => { const lado = k % 2 ? -1 : 1, sal = Math.max(0, Math.sin(fase * Math.PI)) * (gi % 2 === k % 2 ? 1 : .4);
         const giroSec = Math.max(0, 1 - (t - escT) / .9), vuelta = giroSec > 0 && t >= escT ? (1 - Math.pow(giroSec, 3)) * Math.PI * 2 : 0;
         c.raiz.position.y = sal * .18 + sacudida * .55 + Math.sin(Math.min(1, (t - escT) / .9) * Math.PI) * (t >= escT && t - escT < .9 ? .9 : 0); c.cuerpo.rotation.z = Math.sin((gi + fase) * Math.PI / 2) * .05 * lado;
-        c.raiz.rotation.y = Math.sin(t * .6 + k) * .35 + vuelta * (k % 2 ? -1 : 1) + (est?.ultimoGolpe && ahoraMs - est.ultimoGolpe < 140 ? .06 : 0);
+        c.raiz.rotation.y = Math.sin(t * .6 + k) * (c.mezclador ? .12 : .35) + vuelta * (k % 2 ? -1 : 1) + (est?.ultimoGolpe && ahoraMs - est.ultimoGolpe < 140 ? .06 : 0);
         const sq = 1 + latido * .05, base = c.base || (c.base = c.raiz.scale.x); c.raiz.scale.set(base * sq, base / sq, base * sq);
-        if(c.mezclador) { c.mezclador.setTime((t > 0 ? t : ahoraMs / 1000) % (c.g.animations[0].duration || 1)); }
+        /* un baile por sección: cambia cuando cambia el escenario, y cada cantante baila uno distinto */
+        if(c.mezclador){ const A = c.g.animations, i = (k + Math.floor(Math.max(0, escT) * 7.3) + (c.P.jefe ? 0 : 1)) % A.length;
+          if(c.baile !== i){ c.mezclador.stopAllAction(); c.mezclador.clipAction(A[i]).play(); c.baile = i; c.baileT0 = t > 0 ? t : ahoraMs / 1000; }
+          c.mezclador.setTime(((t > 0 ? t : ahoraMs / 1000) - c.baileT0) % (A[i].duration || 1)); }
         if(c.pose){ const b = Math.sin((gi + fase) * Math.PI), b2 = Math.sin((gi + fase) * Math.PI / 2), sube = gi % 8 >= 6 ? 1 : 0;
           const U = c.pose.u; U.uAngI.value = 1.15 - .45 * Math.max(0, b) * (k % 2 ? 1 : .6) - sube * 1.6 * latido; U.uAngD.value = 1.15 - .45 * Math.max(0, -b) - sube * 1.6 * latido;
           U.uVaiven.value = .35 * b2; U.uCab.value = .1 * b + .08 * latido; U.uCabY.value = .25 * b2; }

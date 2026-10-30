@@ -37,6 +37,13 @@ texturas WebP de 256 px (`herramientas/fotos-notas.html` saca sus fotos para el 
 «5 Colored Fantasy Stylized Gems» de Incg5764 (Gema engarzada) · «Gold Star» de Roberto Chiaveri (Estrella) ·
 «CC0 - Muscial Note» de plaggy (Corchea).
 
+## Los bailes
+
+Capturas de movimiento de bailarines reales de la **CMU Graphics Lab Motion Capture Database**
+(mocap.cs.cmu.edu; «free for all uses»), en BVH por Bruce Hahne: macarena (143_35), salsa (60_03), lambada
+(55_02), lindy hop (93_06) y danza moderna (05_11). `herramientas/riggear.py` (Blender) les mete esqueleto a los
+modelos de las cantantes y les pasa esos bailes; los modelos siguen siendo los de sus autores.
+
 ## Música
 
 Kevin MacLeod (incompetech.com), **Creative Commons: By Attribution 4.0**. Recortadas a ~2 min con
