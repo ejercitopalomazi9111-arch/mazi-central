@@ -1,0 +1,28 @@
+<!doctype html>
+<!-- LOS RETRATOS DE LA NOVELA: cada personaje de la cintura para arriba, sobre fondo transparente, con luz de estudio
+     (llave, relleno y contraluz). Lo usa herramientas/retratos.cjs; salen a sprites/retrato-<id>.webp. -->
+<html lang="es-MX"><head><meta charset="utf-8"><title>Retratos</title>
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>html,body{ margin:0; background:transparent } canvas{ display:block }</style></head>
+<body><canvas id="c" width="600" height="800"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from '../vendor/loaders/GLTFLoader.js';
+const r = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true, alpha: true, preserveDrawingBuffer: true });
+r.outputColorSpace = THREE.SRGBColorSpace; r.setClearColor(0x000000, 0); r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.1;
+const s = new THREE.Scene(), cam = new THREE.PerspectiveCamera(26, 600 / 800, .02, 100);
+s.add(new THREE.HemisphereLight('#F4ECFF', '#2A1838', 1.6));
+const llave = new THREE.DirectionalLight('#FFF4E8', 2.6); llave.position.set(-2, 3, 4); s.add(llave);
+const contra = new THREE.DirectionalLight('#B98CFF', 2.2); contra.position.set(2.5, 2, -3); s.add(contra);
+let raiz, mez, clips = [];
+window.cargar = async (url) => { if(raiz) s.remove(raiz); const g = await new GLTFLoader().loadAsync(url); raiz = g.scene; s.add(raiz);
+  raiz.traverse(o => { if(o.isMesh){ o.frustumCulled = false; (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { m.side = THREE.DoubleSide; if(m.transparent && m.opacity > .95){ m.alphaTest = .4; m.transparent = false; } }); } });
+  raiz.updateMatrixWorld(true); { const b = new THREE.Box3().setFromObject(raiz, true); raiz.scale.setScalar(1.7 / Math.max(1e-6, b.max.y - b.min.y)); }
+  mez = new THREE.AnimationMixer(raiz); clips = g.animations; return clips.map(c => [c.name, +c.duration.toFixed(2)]); };
+/* encuadre: de la cabeza a la cintura (la parte de arriba del modelo), un poco girado para que no se vea de pasaporte */
+window.foto = (clip, t, giro = .25, alto = .58, rota = 0) => { mez.stopAllAction(); if(clip >= 0 && clips[clip]){ const a = mez.clipAction(clips[clip]); a.play(); mez.setTime(t); }
+  raiz.rotation.y = rota; raiz.updateMatrixWorld(true); const b = new THREE.Box3().setFromObject(raiz, true), c = b.getCenter(new THREE.Vector3()), h = b.max.y - b.min.y;
+  const mira = new THREE.Vector3(c.x, b.max.y - h * alto / 2, c.z), d = (h * alto / 2) / Math.tan(13 * Math.PI / 180) * 1.05;
+  cam.position.set(mira.x + Math.sin(giro) * d, mira.y + h * .02, mira.z + Math.cos(giro) * d); cam.lookAt(mira); r.render(s, cam); return true; };
+window.listo = true;
+</script></body></html>

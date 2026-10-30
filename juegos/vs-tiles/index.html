@@ -99,7 +99,13 @@
   <div class="cab"><button class="b chico" data-ir="menu">‹</button><h2>Historia</h2></div>
   <div id="capitulos"></div>
 </section>
-<section class="pantalla" id="dialogo"><div class="burbuja panel"><div class="habla" id="habla"></div><div class="dice" id="dice"></div><div class="pie" style="background:none"><button class="b primario" id="dialogoB">Seguir</button></div></div></section>
+<section class="pantalla" id="dialogo">
+  <div class="vnFondo" id="vnFondo"></div>
+  <img class="vnRetrato izq" id="vnIzq" alt="" hidden><img class="vnRetrato der" id="vnDer" alt="" hidden>
+  <div class="vnBarra"><button class="b chico" id="vnAuto" aria-pressed="false">Auto</button><button class="b chico" id="vnLog">Historial</button><button class="b chico" id="vnSaltar">Saltar ›</button></div>
+  <div class="vnLogL panel" id="vnLogL" hidden></div>
+  <div class="burbuja panel vnCaja" id="dialogoB" role="button" tabindex="0" aria-label="Seguir"><div class="habla" id="habla"></div><div class="dice" id="dice" aria-live="polite"></div><span class="vnSigue" aria-hidden="true">▼</span></div>
+</section>
 
 <section class="pantalla" id="vestidor">
   <div class="cab"><button class="b chico" data-ir="menu">‹</button><h2>Vestidor</h2></div>
