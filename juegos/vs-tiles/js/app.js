@@ -59,8 +59,12 @@ const OBJETOS = [
   { id: 'golpe:remolino', cat: 'golpe', nombre: 'Remolino', raro: 'm', sprite: 'p_twirl_01' },
   ...ESCENARIOS.map((e, i) => ({ id: 'fondo:' + i, cat: 'fondo', nombre: e.nombre, raro: i < 2 ? 'c' : i < 4 ? 'r' : i < 6 ? 'e' : 'l', img: `escenarios/${e.id}.jpg` })),
   /* cómo se ve cada modo (Carlos, 29 oct: «súmale estilos de notas en cada modo… también estilo de botones») */
-  { id: 'forma:barra', cat: 'forma', nombre: 'Barra', raro: 'c' }, { id: 'forma:pildora', cat: 'forma', nombre: 'Píldora', raro: 'r' },
-  { id: 'forma:cristal', cat: 'forma', nombre: 'Cristal', raro: 'e' }, { id: 'forma:diamante', cat: 'forma', nombre: 'Diamante', raro: 'l' }, { id: 'forma:doble', cat: 'forma', nombre: 'Doble filo', raro: 'm' },
+  /* las formas son modelos de verdad (escena.js · MODELOS_NOTA); la miniatura es su foto (modelos/notas/*.webp) */
+  { id: 'forma:barra', cat: 'forma', nombre: 'Barra', raro: 'c' }, { id: 'forma:disco', cat: 'forma', nombre: 'Disco', raro: 'c', foto: 'disco' },
+  { id: 'forma:pildora', cat: 'forma', nombre: 'Botón de arcade', raro: 'r', foto: 'arcade' }, { id: 'forma:nota', cat: 'forma', nombre: 'Corchea', raro: 'r', foto: 'nota' },
+  { id: 'forma:cristal', cat: 'forma', nombre: 'Cristal', raro: 'e', foto: 'cristal' }, { id: 'forma:gema', cat: 'forma', nombre: 'Gema engarzada', raro: 'e', foto: 'gema' },
+  { id: 'forma:diamante', cat: 'forma', nombre: 'Brillante', raro: 'l', foto: 'brillante' }, { id: 'forma:estrella', cat: 'forma', nombre: 'Estrella', raro: 'l', foto: 'estrella' },
+  { id: 'forma:doble', cat: 'forma', nombre: 'Holo-disco', raro: 'm', foto: 'holo' },
   { id: 'flechas:contorno', cat: 'flechas', nombre: 'Contorno', raro: 'c' }, { id: 'flechas:solida', cat: 'flechas', nombre: 'Sólidas', raro: 'r' }, { id: 'flechas:neon', cat: 'flechas', nombre: 'Neón', raro: 'e' },
   { id: 'simbolos:color', cat: 'simbolos', nombre: 'A color', raro: 'c' }, { id: 'simbolos:contorno', cat: 'simbolos', nombre: 'Trazo', raro: 'r' }, { id: 'simbolos:blanco', cat: 'simbolos', nombre: 'Hueso', raro: 'e' },
   { id: 'aros:clasico', cat: 'aros', nombre: 'Clásico', raro: 'c' }, { id: 'aros:magia', cat: 'aros', nombre: 'Sello mágico', raro: 'e' }, { id: 'aros:estelar', cat: 'aros', nombre: 'Estelar', raro: 'l' },
@@ -374,7 +378,7 @@ function sortear(n){ const sale = [];
   guardar(); return sale; }
 /* cómo se ve un objeto en chiquito (vestidor, tiradas, premio) */
 function vista(o){ const k = o.id.split(':')[1];
-  if(o.cat === 'forma') return `<i class="formaMini f-${k}"></i>`;
+  if(o.cat === 'forma') return o.foto ? `<img class="formaFoto" src="modelos/notas/${o.foto}.webp" alt="">` : `<i class="formaMini f-${k}"></i>`;
   if(o.cat === 'flechas') return `<img src="sprites/tecla_arrow_up${k === 'contorno' ? '_outline' : ''}.png" alt="" class="${k === 'neon' ? 'brillo' : ''}">`;
   if(o.cat === 'simbolos') return `<img src="sprites/${k === 'contorno' ? 'ps_triangle_outline' : k === 'blanco' ? 'ps_color_triangle_outline' : 'ps_color_triangle'}.png" alt="">`;
   if(o.cat === 'aros') return `<img src="sprites/${{ clasico: 'gen_circle_outline', magia: 'p_magic_03', estelar: 'p_star_06' }[k]}.png" alt="">`;

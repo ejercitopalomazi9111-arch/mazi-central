@@ -27,6 +27,16 @@ Se comprimieron con gltf-transform (cuantizado y texturas WebP de 1024 px); la f
 **Faltan v flower y Momone Momo:** sus modelos en Sketchfab son de 2023 en adelante y no están en el
 espejo; bajarlos de Sketchfab pide una cuenta (un token de su API).
 
+## Formas de nota
+
+Modelos de **Sketchfab**, todos **Creative Commons: By Attribution 4.0**; se dejó sólo la pieza, centrada, con
+texturas WebP de 256 px (`herramientas/fotos-notas.html` saca sus fotos para el vestidor):
+«Arcade push button» de IgorMonasterio (Botón de arcade) · «Holo-Puck» de thekaz.2128 (Holo-disco) ·
+«Gems (21 different shapes)» de Vivien Deroche / blue-odym, el corte redondo inglés (Brillante) ·
+«Stylized Puck» de RiZoRuS77 (Disco) · «Low Poly Stylized Gemstone» de Discover (Cristal) ·
+«5 Colored Fantasy Stylized Gems» de Incg5764 (Gema engarzada) · «Gold Star» de Roberto Chiaveri (Estrella) ·
+«CC0 - Muscial Note» de plaggy (Corchea).
+
 ## Música
 
 Kevin MacLeod (incompetech.com), **Creative Commons: By Attribution 4.0**. Recortadas a ~2 min con

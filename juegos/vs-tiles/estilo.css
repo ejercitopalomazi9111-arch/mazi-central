@@ -260,6 +260,7 @@ h2{ font:800 22px/1.1 var(--n); letter-spacing:.06em; margin:0 0 10px }
 .premioObj .muestra{ height:70px; display:grid; place-items:center } .premioObj b{ font:900 15px var(--n) } .premioObj small{ font:800 10px var(--n); letter-spacing:.14em; color:var(--rc) }
 
 /* ── cosméticos: formas de nota en chiquito y los temas de botones ── */
+.formaFoto{ width:56px; height:56px; object-fit:contain; filter:drop-shadow(0 0 8px #B44BFF88) }
 .formaMini{ display:inline-block; background:linear-gradient(180deg, #fff, #B44BFF); box-shadow:0 0 12px #B44BFF88 }
 .formaMini.f-barra{ width:46px; height:14px } .formaMini.f-pildora{ width:46px; height:16px; border-radius:9px } .formaMini.f-cristal{ width:40px; height:22px; opacity:.85; background:linear-gradient(180deg, #E9FBFF, #38E1FF88) }
 .formaMini.f-diamante{ width:24px; height:24px; transform:rotate(45deg) scaleY(.55) } .formaMini.f-doble{ width:46px; height:6px; box-shadow:0 10px 0 #B44BFF, 0 0 12px #B44BFF88 }
