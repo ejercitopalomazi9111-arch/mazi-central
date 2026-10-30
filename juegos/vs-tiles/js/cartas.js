@@ -145,6 +145,14 @@ export function armarCarta(an, cancion, modo, difId, opc = {}){
   plan.filter(p => p.modo === 'circulos' && p.t1 - p.t0 > 10 && D.sub >= 2).forEach(p => {
     const t1 = p.t1 - beat * .5, t0 = t1 - beat * 3; if(notas.some(n => n.t > t0 - .2 && n.t < t1)) { for(let i = notas.length - 1; i >= 0; i--) if(notas[i].t > t0 - .2 && notas[i].t < t1) notas.splice(i, 1); }
     notas.push({ t: t0, tipo: 'giro', fin: t1, x: .5, y: .45, vueltas: Math.round((t1 - t0) * (D.sub >= 4 ? 2.2 : 1.5)) }); });
+  /* LOS GIROS SUELTOS de Círculos: donde hay un hueco de más de 3 golpes y medio, un remolino que se gira rápido;
+     cada vuelta cuenta como una nota más (juego.js). Desde Normal; hasta tres por sección */
+  if(D.sub >= 2) plan.filter(p => p.modo === 'circulos').forEach(p => { const cs = notas.filter(n => n.modo !== 'x' && n.t >= p.t0 && n.t < p.t1 && (n.tipo === 'circulo' || n.tipo === 'deslice')).sort((a, b) => a.t - b.t); let puestos = 0;
+    for(let i = 0; i < cs.length - 1 && puestos < 3; i++){ const a = cs[i].fin || cs[i].t, b = cs[i + 1].t; if(b - a > beat * 3.5 && R() < (D.sub >= 4 ? .6 : .4)){ const t0 = a + beat * .6, t1 = b - beat * .6;
+      if(!notas.some(n => n.tipo === 'giro' && n.t < t1 && n.fin > t0)){ notas.push({ t: t0, tipo: 'giro', fin: t1, x: .5, y: .45, vueltas: Math.max(1, Math.round((t1 - t0) * (D.sub >= 4 ? 2.2 : 1.5))) }); puestos++; } } } });
+  /* un respiro mientras la pista da media vuelta (al entrar y al salir de «se alejan»): ahí no cae ninguna nota de Carril */
+  for(const e of eventos.filter(e => e.tipo === 'aleja')) for(let i = notas.length - 1; i >= 0; i--){ const n = notas[i];
+    if(!n.camino && n.r !== undefined && ((n.t > e.t - .25 && n.t < e.t + .95) || (n.t > e.t + e.dur - .25 && n.t < e.t + e.dur + .95))) notas.splice(i, 1); }
   notas.sort((a, b) => a.t - b.t);
   notas.forEach((n, i) => { n.id = i; n.modo = (plan.find(p => n.t >= p.t0 && n.t < p.t1) || plan[0]).modo; });
   eventos.sort((a, b) => a.t - b.t);
@@ -203,7 +211,7 @@ function planSecciones(secc, modo, D, R, an, tel = false){
       const gs = golpes.filter(g => g > t0 + 1.5 && g < t1 - 1);
       const num = [1, 2, 4, 9, 12][nivel];
       for(let k = 0; k < num && gs.length; k++){ const g = gs[Math.floor(R() * gs.length)];
-        const op = nivel >= 4 ? ['inclina', 'gira', 'velocidad', 'peralte', 'peralte', 'abanico', 'espejo', 'oculta', 'alto', 'reversa', 'compas'] : nivel >= 3 ? ['inclina', 'gira', 'velocidad', 'peralte', 'peralte', 'abanico', 'espejo', 'oculta', 'alto', 'compas'] : nivel >= 2 ? ['inclina', 'peralte', 'velocidad', 'gira'] : ['inclina', 'peralte'];
+        const op = nivel >= 4 ? ['aleja', 'inclina', 'gira', 'velocidad', 'peralte', 'peralte', 'abanico', 'espejo', 'oculta', 'alto', 'reversa', 'compas'] : nivel >= 3 ? ['aleja', 'inclina', 'gira', 'velocidad', 'peralte', 'peralte', 'abanico', 'espejo', 'oculta', 'alto', 'compas'] : nivel >= 2 ? ['inclina', 'peralte', 'velocidad', 'gira'] : ['inclina', 'peralte'];
         const tipo = op[Math.floor(R() * op.length)], dur = (2 + R() * 6) * (golpes[1] - golpes[0] || .5);
         if(tipo === 'inclina') ev.push({ t: g, tipo, ang: (R() < .5 ? -1 : 1) * (.18 + .3 * R()) * (nivel >= 4 ? 1.5 : 1), dur });        // M046
         if(tipo === 'gira') ev.push({ t: g, tipo, ang: nivel >= 4 ? [Math.PI, -Math.PI, Math.PI / 2, -Math.PI / 2][Math.floor(R() * 4)] : (R() < .5 ? 1 : -1) * Math.PI, dur: Math.max(dur, (nivel >= 3 ? 6 : 4) * (golpes[1] - golpes[0] || .5)) });   /* Carlos, 30 oct: «que a veces den giros de 180°» */                    // M055
@@ -217,6 +225,7 @@ function planSecciones(secc, modo, D, R, an, tel = false){
         if(tipo === 'oculta') ev.push({ t: g, tipo, cual: R() < .5 ? 'hidden' : 'sudden', dur });                                            // M136 / M137
         if(tipo === 'alto') ev.push({ t: g, tipo, dur: (golpes[1] - golpes[0] || .5) * (1 + Math.floor(R() * 2)) });                        // M064
         if(tipo === 'reversa') ev.push({ t: g, tipo, dur });                                                                                 // M065
+        if(tipo === 'aleja'){ const b = golpes[1] - golpes[0] || .5; ev.push({ t: g, tipo, dur: b * (8 + 8 * Math.floor(R() * 2)) }); }   /* las notas se alejan */
         if(tipo === 'compas') ev.push({ t: g, tipo, texto: ['7/8', '5/4', '3/4', '6/8', '9/8'][Math.floor(R() * 5)], dur: dur * 1.5 });      // M031
       }
     }
@@ -229,3 +238,25 @@ function planSecciones(secc, modo, D, R, an, tel = false){
   return plan;
 }
 function avisoDe(m){ return { carril: 'CARRILES · toca, mantén, desliza', circulos: 'CÍRCULOS · toca donde se cierre el anillo', diva: 'SÍMBOLOS · △ ○ × □ cuando lleguen', flechas: 'FLECHAS · regrésale la frase al rival' }[m] || ''; }
+
+/* EL TUTORIAL, excesivamente fácil (Carlos, 30 oct: «olvidaste meter tutorial excesivamente fácil»): tres carriles,
+   notas lentas y separadas, ventanas enormes y un letrero que va diciendo qué hacer. Primero tocar, luego mantener,
+   luego deslizar hacia arriba, y al final las tres revueltas. No se muere nadie */
+export function armarTutorial(an, cancion){
+  const D = { id: 'tutorial', nombre: 'Tutorial', nivel: [0, 0], ventana: 2.2, rapidez: .8 };
+  const g = an.golpes, beat = g.length > 1 ? (g[g.length - 1] - g[0]) / (g.length - 1) : .5, rs = [2, 3, 4];
+  const notas = [], eventos = [{ t: -1, tipo: 'carriles', n: 3, dur: .01 }, { t: 0, tipo: 'escenario', n: 1, tono: .2 }, { t: 0, tipo: 'camara', n: 0, fuerte: 0 }];
+  const t0 = Math.max(2, g[0] || 2), paso = (n) => t0 + n * beat;
+  const fases = [
+    { de: 0, a: 20, texto: 'TOCA el círculo cuando la barra llegue a él', hace: (k, t) => ({ t, tipo: 'tap', r: rs[k % 3] }) },
+    { de: 24, a: 44, texto: 'MANTÉN apretado hasta que se acabe la cola', hace: (k, t) => (k % 4 === 0 ? { t, tipo: 'hold', r: rs[(k / 4) % 3], fin: t + beat * 2 } : null) },
+    { de: 48, a: 64, texto: 'Toca y DESLIZA el dedo hacia donde apunta la flecha', hace: (k, t) => (k % 2 === 0 ? { t, tipo: 'flick', r: rs[(k / 2) % 3], dir: 0 } : null) },
+    { de: 68, a: 88, texto: 'Ahora todo junto. ¡Tú puedes!', hace: (k, t) => (k % 4 === 1 ? { t, tipo: 'hold', r: rs[k % 3], fin: t + beat * 1.5 } : k % 4 === 3 ? { t, tipo: 'flick', r: rs[(k + 1) % 3], dir: 0 } : { t, tipo: 'tap', r: rs[(k * 2) % 3] }) }
+  ];
+  for(const f of fases){ eventos.push({ t: paso(f.de) - .2, tipo: 'tuto', texto: f.texto, dur: (f.a - f.de) * beat + 1.5 });
+    for(let k = f.de + 2; k < f.a; k += 2){ const t = paso(k); if(t > an.dur - 3) break; const n = f.hace((k - f.de) / 2 | 0, t); if(n){ if(n.tipo === 'tap' && notas.length && notas.at(-1).r === n.r && t - notas.at(-1).t < beat * 2.1) n.r = rs[(rs.indexOf(n.r) + 1) % 3]; notas.push(n); } } }
+  const fin = Math.min(an.dur - 2, paso(92)); eventos.push({ t: fin - 1.5, tipo: 'tuto', texto: '¡LISTO! Ya sabes jugar. Lo demás es igual… pero más rápido 😈', dur: 4 });
+  notas.forEach((n, i) => { n.id = i; n.modo = 'carril'; });
+  const plan = [{ t0: 0, t1: fin + 1, modo: 'carril', carriles: 3, eventos: [], aviso: 0, rival: false, precision: false, energia: .3 }];
+  return { cancion: cancion.id, modo: 'carril', dif: 'tutorial', D, nivel: 0, notas, eventos: eventos.sort((a, b) => a.t - b.t), plan, beat, dur: Math.min(an.dur, fin + 2), total: notas.length, tutorial: true };
+}

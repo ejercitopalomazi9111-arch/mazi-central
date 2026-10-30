@@ -1,0 +1,24 @@
+<!doctype html>
+<!-- VER UN BAILE: un modelo riggeado (herramientas/riggear.py) de frente y de lado, en el instante que se pida.
+     Lo usa herramientas/ver-baile.cjs para sacar hojas de cuadros y revisar que el esqueleto no deforme feo. -->
+<html lang="es-MX"><head><meta charset="utf-8"><title>Ver baile</title>
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>html,body{ margin:0; background:#1a1024 } canvas{ display:block }</style></head>
+<body><canvas id="c" width="480" height="640"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from '../vendor/loaders/GLTFLoader.js';
+const r = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true, preserveDrawingBuffer: true });
+r.outputColorSpace = THREE.SRGBColorSpace; r.setClearColor('#1a1024');
+const s = new THREE.Scene(), cam = new THREE.PerspectiveCamera(30, 480 / 640, .05, 100);
+s.add(new THREE.HemisphereLight('#fff', '#334', 2.2)); const l = new THREE.DirectionalLight('#fff', 2); l.position.set(2, 4, 5); s.add(l);
+let mez, clips = [], raiz;
+window.cargar = async (url) => { const g = await new GLTFLoader().loadAsync(url); raiz = g.scene; s.add(raiz);
+  raiz.traverse(o => { if(o.isMesh){ o.frustumCulled = false; (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { m.side = THREE.DoubleSide; if(m.transparent && m.opacity > .95){ m.alphaTest = .4; m.transparent = false; } }); } });
+  raiz.updateMatrixWorld(true); { const b = new THREE.Box3().setFromObject(raiz, true); raiz.scale.setScalar(1.7 / Math.max(1e-6, b.max.y - b.min.y)); }
+  mez = new THREE.AnimationMixer(raiz); clips = g.animations; return clips.map(c => [c.name, +c.duration.toFixed(2)]); };
+window.foto = (clip, t, angulo = 0) => { mez.stopAllAction(); if(clips[clip]){ const a = mez.clipAction(clips[clip]); a.play(); mez.setTime(t); }
+  raiz.updateMatrixWorld(true); const b = new THREE.Box3().setFromObject(raiz, true), c = b.getCenter(new THREE.Vector3()), h = b.max.y - b.min.y;
+  const d = h * 2.1; cam.position.set(c.x + Math.sin(angulo) * d, c.y + h * .05, c.z + Math.cos(angulo) * d); cam.lookAt(c.x, c.y, c.z); r.render(s, cam); return true; };
+window.listo = true;
+</script></body></html>

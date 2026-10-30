@@ -7,6 +7,7 @@ import { GLTFLoader } from '../vendor/loaders/GLTFLoader.js';
 import { DISPOSICIONES } from './cartas.js';
 import { clone as clonarEsqueleto } from '../vendor/utils/SkeletonUtils.js';
 import { mergeGeometries } from '../vendor/utils/BufferGeometryUtils.js';
+import { crearCine, CINES } from './cine.js';
 
 export const ESCENARIOS = [
   { id: 'shanghai_bund', nombre: 'Ciudad SONOLUZ', tinte: '#7A4BFF' },
@@ -28,7 +29,9 @@ export const PERSONAJES = [
   { id: 'luka', nombre: 'Okurine Luka', faccion: 'Desafinados', alto: 1.8, color: '#FF7AB6', autor: 'kirirato' },
   { id: 'una', nombre: 'Otomachi Una', faccion: 'Ecos', alto: 1.6, color: '#8E9BFF', autor: 'theuniversalmodeler' },
   { id: 'miku-hagane', nombre: 'Hagane Miku', faccion: 'Desafinados', alto: 1.75, color: '#B8B8C8', autor: 'kirirato' },
-  { id: 'miku-akuma', nombre: 'Miku Excomulgada', faccion: 'Coro Nulo', alto: 1.85, color: '#FF2D55', autor: 'Tiago.Carneiro', jefe: true }
+  { id: 'miku-akuma', nombre: 'Miku Excomulgada', faccion: 'Coro Nulo', alto: 1.85, color: '#FF2D55', autor: 'Tiago.Carneiro', jefe: true },
+  /* el secreto de Palomazi: Temmie (Undertale) no se saca en ninguna máquina. Va sin esqueleto y vibra, como en su juego */
+  { id: 'temmie', nombre: 'Temmie', faccion: 'Tem Village', alto: 1.2, color: '#9AD7FF', autor: 'Stewie_Box', secreto: true, sinBrazos: true, vibra: true }
 ];
 export const COLORES_RIEL = ['#FF3D8B', '#B44BFF', '#38E1FF', '#FFF07A', '#38E1FF', '#B44BFF', '#FF3D8B'];
 
@@ -85,7 +88,8 @@ export const MODELOS_NOTA = {
   barra: { archivo: 'lingote', gira: Math.PI / 2, caja: [1.12, .17, .36], sinMapa: true },
   pildora: { archivo: 'arcade', ancho: .9, fijo: /Aro/ }, doble: { archivo: 'holo', ancho: .96 }, diamante: { archivo: 'brillante', ancho: .82, grueso: .62, sinMapa: true },
   disco: { archivo: 'disco', ancho: .96 }, cristal: { archivo: 'cristal', pie: true, alto: .62, sinMapa: true }, gema: { archivo: 'gema', pie: true, alto: .6, sinMapa: true },
-  estrella: { archivo: 'estrella', pie: true, alto: .62 }, nota: { archivo: 'nota', pie: true, alto: .66, sinMapa: true }
+  estrella: { archivo: 'estrella', acuesta: true, ancho: .92 }, nota: { archivo: 'nota', pie: true, alto: .66, sinMapa: true },
+  temmie: { archivo: 'flakes', pie: true, alto: .7, propio: true }
 };
 /* el material del autor, listo para pintarse: sin transparencia de vidrio ni metal espejo (en una pista oscura se ven
    negros) y con brillo propio del color, que es lo que hace que se lea a lo lejos */
@@ -93,10 +97,12 @@ export function materialDeNota(base, F, color){ const n = base.clone(); n.side =
   if('metalness' in n){ n.metalness = Math.min(n.metalness ?? 0, .35); n.roughness = Math.max(.22, n.roughness ?? .5); }
   if('transmission' in n) n.transmission = 0;
   if(F.sinMapa){ n.map = n.metalnessMap = n.roughnessMap = n.aoMap = null; }
-  n.userData.fijo = F.fijo ? F.fijo.test(base.name) : false; pintarMaterial(n, color); n.needsUpdate = true; return n; }
+  n.userData.fijo = F.fijo ? F.fijo.test(base.name) : false; n.userData.propio = !!F.propio; pintarMaterial(n, color); n.needsUpdate = true; return n; }
 const blanco = new THREE.Color('#FFFFFF'), plata = new THREE.Color('#E6E3F0');
 export function pintarMaterial(n, color){
   if(n.userData.fijo){ n.color.copy(plata); if(n.emissive) n.emissive.setRGB(.1, .1, .12); return; }
+  /* las que traen su dibujo (la caja de Temmie Flakes) no se pintan: el carril sólo les da un brillo de su color */
+  if(n.userData.propio){ n.color.copy(blanco); if(n.emissive) n.emissive.copy(color).multiplyScalar(.12); return; }
   n.color.copy(color).lerp(blanco, .25); if(n.emissive) n.emissive.copy(color).multiplyScalar(.4); }
 
 export async function crearEscena(lienzo){
@@ -137,6 +143,8 @@ export async function crearEscena(lienzo){
   const piso = new THREE.Mesh(new THREE.CircleGeometry(7, 64), new THREE.MeshBasicMaterial({ map: reflejo, color: '#B44BFF', transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false }));
   piso.rotation.x = -Math.PI / 2; tarima.add(piso);
   const cantantes = [];
+  /* las cinemáticas de fondo de la Historia (cine.js): ciudad que cae, plaga, diluvio, robots, concierto, videojuego */
+  const cine = crearCine({ s, tex, cargador, clonarEsqueleto });
   /* los haces de luz que barren desde la tarima (planos con el trazo de Kenney, sumados), y las chispas
      que flotan todo el tiempo: el escenario nunca está quieto */
   const tHaz = await tex('sprites/p_trace_04.png'), tPolvo = await tex('sprites/p_spark_05.png');
@@ -149,11 +157,11 @@ export async function crearEscena(lienzo){
   async function modelo(id){
     const P = PERSONAJES.find(p => p.id === id) || PERSONAJES[0];
     const g = await (cacheM[id] ||= cargador.loadAsync(`modelos/${id}.glb`));
-    const m = g.scene.clone(true);
+    const m = clonarEsqueleto(g.scene);   /* con esqueleto: clone() normal deja la piel pegada a los huesos del original */
     m.traverse(o => { if(o.isMesh || o.isSkinnedMesh){ o.frustumCulled = false; const ms = Array.isArray(o.material) ? o.material : [o.material];
       ms.forEach(mt => { if(mt.map) mt.map.anisotropy = 4; if(mt.transparent && mt.opacity > .95){ mt.alphaTest = .4; mt.transparent = false; } mt.side = THREE.DoubleSide; }); } });
     m.updateMatrixWorld(true);
-    const pose = g.animations.length ? null : brazosAbajo(m);
+    const pose = g.animations.length || P.sinBrazos ? null : brazosAbajo(m);
     m.updateMatrixWorld(true); const b = new THREE.Box3().setFromObject(m, true), k = P.alto / Math.max(.01, b.max.y - b.min.y), c = b.getCenter(new THREE.Vector3());
     const cuerpo = new THREE.Group(); m.position.set(-c.x, -b.min.y, -c.z); cuerpo.add(m); cuerpo.scale.setScalar(k);
     const raiz = new THREE.Group(); cuerpo.rotation.y = P.rota || 0; raiz.add(cuerpo);
@@ -164,8 +172,9 @@ export async function crearEscena(lienzo){
       else if(/(spine|chest|上半身)/.test(n)) pon('pecho'); else if(/(hips|pelvis|下半身|center|センター)/.test(n)) pon('cadera');
       else if(/(shoulder_l|shoulder\.l|l upperarm|upperarm_l|arm left shoulder 1|leftarm|左腕)/.test(n) && !/part|fore|lower/.test(n)) pon('brazoI');
       else if(/(shoulder_r|shoulder\.r|r upperarm|upperarm_r|arm right shoulder 1|rightarm|右腕)/.test(n) && !/part|fore|lower/.test(n)) pon('brazoD'); });
-    const mezclador = g.animations.length ? new THREE.AnimationMixer(m) : null; let accion = null;
-    if(mezclador){ accion = mezclador.clipAction(g.animations[0]); accion.play(); }
+    /* LOS BAILES: desde el 30 de octubre cada cantante trae esqueleto y cinco bailes capturados de bailarines reales
+       (herramientas/riggear.py; CMU Graphics Lab Motion Capture Database): macarena, salsa, lambada, lindy hop y ballet */
+    const mezclador = g.animations.length ? new THREE.AnimationMixer(m) : null;
     return { P, raiz, cuerpo, huesos, mezclador, g, pose };
   }
   async function ponerCantantes(ids){
@@ -218,7 +227,7 @@ export async function crearEscena(lienzo){
       if(!ge.attributes.uv) ge.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(ge.attributes.position.count * 2), 2));
       if(!ge.attributes.normal) ge.computeVertexNormals();
       ge.applyMatrix4(o.matrixWorld); geos.push(ge.index ? ge.toNonIndexed() : ge); mats.push(o.material); });
-    const geo = mergeGeometries(geos, true); if(F.gira) geo.rotateY(F.gira);
+    const geo = mergeGeometries(geos, true); if(F.gira) geo.rotateY(F.gira); if(F.acuesta) geo.rotateX(-Math.PI / 2);   /* acostada: lo que veía a la cámara ahora ve al cielo */
     geo.computeBoundingBox(); const b = geo.boundingBox, c = b.getCenter(new THREE.Vector3()), t = b.getSize(new THREE.Vector3());
     geo.translate(-c.x, -c.y, -c.z);
     /* caja: a esa medida exacta; parado: de frente a la cámara, con el alto pedido; acostado: del ancho del carril, sin pasar de .3 de grueso */
@@ -331,7 +340,7 @@ export async function crearEscena(lienzo){
     raiz.position.set(Math.sin(giro) * 1.3, y, z); raiz.rotation.z = giro; raiz.scale.set(esc, 2 - esc, esc);
   }
 
-  return { precargar: (ns) => ns.forEach(pedirFondo), ponerForma, r, s, cam, carril, piezas, cantantes, ponerCantantes, E, chispa, uni, prepararVelocidad, pos, LARGO, ANCHO, asustar, SUSTO,
+  return { ponerCine: (c) => { if(c) pedirFondo(CINES[c]?.escenario); return cine.poner(c); }, precargar: (ns) => ns.forEach(pedirFondo), ponerForma, r, s, cam, carril, piezas, cantantes, ponerCantantes, E, chispa, uni, prepararVelocidad, pos, LARGO, ANCHO, asustar, SUSTO,
     /* proyecta un punto del carril (riel r en la línea) a la pantalla, en px CSS */
     receptor(r, ancho, alto){ const R = piezas.rieles[r]; v3.set(R.x * ANCHO, 0, 0); carril.localToWorld(v3); v3.project(cam); return [(v3.x + 1) / 2 * ancho, (1 - v3.y) / 2 * alto, R.vis]; },
     proyectar(p, ancho, alto){ v3.copy(p).project(cam); return [(v3.x + 1) / 2 * ancho, (1 - v3.y) / 2 * alto]; },
@@ -345,12 +354,12 @@ export async function crearEscena(lienzo){
       /* el golpe del grave: la cámara salta un poco (precalculado: los ataques graves fuertes) */
       let sacudida = 0; if(bajos){ for(let k = bajos.i || 0; k < bajos.length; k++){ const b = bajos[k]; if(b[0] > t) break; if(t - b[0] < .18) sacudida = Math.max(sacudida, b[1] * (1 - (t - b[0]) / .18)); } }
       /* los eventos vivos en este instante */
-      let movT = -9, ang = 0, giro = 0, abanico = 0, peraltes = [], espejo = 0, oculta = null, glitch = 0, compasTxt = '', camN = 0, camT = -9, esc = 0, escT = 0, tono = 0, destelloT = -9;
+      let movT = -9, ang = 0, giro = 0, abanico = 0, peraltes = [], aleja = 0, espejo = 0, oculta = null, glitch = 0, compasTxt = '', camN = 0, camT = -9, esc = 0, escT = 0, tono = 0, destelloT = -9;
       const blando = (e, d = .35) => { const u = Math.min(1, (t - e.t) / d), v = e.dur ? Math.min(1, (e.t + e.dur - t) / d) : 1; return Math.max(0, Math.min(u, v)); };
       for(const e of ev){ if(e.t > t + .001) break;
         const vivo = !e.dur || t < e.t + e.dur;
         if(e.tipo === 'escenario'){ esc = e.n; escT = e.t; tono = e.tono; }
-        if(['carriles', 'gira', 'espejo', 'inclina', 'abanico', 'peralte'].includes(e.tipo) && e.t > 0) movT = e.t;
+        if(['carriles', 'gira', 'espejo', 'inclina', 'abanico', 'peralte', 'aleja'].includes(e.tipo) && e.t > 0) movT = e.t;
         if(e.tipo === 'destello') destelloT = e.t;
         if(e.tipo === 'camara'){ camN = e.n; camT = e.t; }
         if(!vivo) continue;
@@ -358,6 +367,7 @@ export async function crearEscena(lienzo){
         /* girar 90° acuesta la pista y la línea de golpe se sale de la pantalla, en vertical y en horizontal
            (Carlos, 29 oct): un cuarto de vuelta se vuelve un ladeo fuerte; de cabeza (π) sí cabe y se queda */
         if(e.tipo === 'gira') giro += (Math.abs(Math.abs(e.ang) - Math.PI / 2) < .1 ? Math.sign(e.ang) * .38 : e.ang) * blando(e, .45);
+        if(e.tipo === 'aleja') aleja = Math.max(aleja, blando(e, .7));
         if(e.tipo === 'peralte' || e.tipo === 'onda') peraltes.push({ forma: e.forma || 'ola', f: e.fuerza * blando(e, .5), t0: e.t });
         if(e.tipo === 'abanico') abanico += e.fuerza * blando(e);
         if(e.tipo === 'espejo') espejo = Math.max(espejo, blando(e, .3));
@@ -365,6 +375,7 @@ export async function crearEscena(lienzo){
         if(e.tipo === 'glitch') glitch = Math.max(glitch, 1 - (t - e.t) / e.dur);
         if(e.tipo === 'compas') compasTxt = e.texto;
       }
+      if(cine.tipo && carta) esc = CINES[cine.tipo].escenario;
       E.movido = t - movT; if(vertical) ang = Math.max(-.45, Math.min(.45, ang));
       E.compas = compasTxt; E.glitch = glitch; E.destello = Math.max(0, 1 - (t - destelloT) / .45);
       /* los haces: barren al compás y se encienden con el golpe */
@@ -377,13 +388,20 @@ export async function crearEscena(lienzo){
       uni.mezcla.value = Math.max(0, 1 - (ahoraMs - escCambio) / 600);
       uni.pulso.value = latido * compas * (carta ? 1 : .5) + E.destello * .8; uni.giro.value = t * .004 + tono; uni.glitch.value = glitch;
       uni.oscuro.value = .5 - latido * .08; uni.sat.value = 1.2;
+      cine.ver(!!carta);
+      if(cine.tipo && carta){ { const C = CINES[cine.tipo]; uni.tinte.value.set(C.tinte); uni.oscuro.value = C.oscuro - latido * .08; uni.sat.value = C.sat;
+        uni.pulso.value += cine.cuadro(t, dtS, { gi, latido, compas }) * .9; } }
       borde1.intensity = 20 + 60 * latido * compas; borde2.intensity = 20 + 60 * latido * (1 - compas + .45);
       borde1.position.x = -5 + Math.sin(t * .9) * 2; borde2.position.x = 5 + Math.cos(t * .8) * 2;
 
       /* el carril: visible sólo en el modo Carril (sube o se hunde al cambiar de reglas) */
       const enCarril = modo === 'carril';
       E.visible += ((enCarril ? 1 : 0) - E.visible) * .12;
-      carril.visible = E.visible > .02; carril.position.y = (1 - E.visible) * -6 - latido * compas * .06 - sacudida * .08; carril.position.z = 0;
+      carril.visible = E.visible > .02; carril.position.y = (1 - E.visible) * -6 - latido * compas * .06 - sacudida * .08;
+      /* LAS NOTAS SE ALEJAN (Carlos, 30 oct: «que las notas fluyan lejos del jugador y se toquen al alejarse hasta el
+         botón»): la pista entera da media vuelta y sus botones se van al fondo; las notas salen de junto a la cámara y se
+         van hacia ellos. Al voltearse, los carriles también quedan al revés */
+      const al = aleja * aleja * (3 - 2 * aleja); E.aleja = al; carril.rotation.y = Math.PI * al; carril.position.z = -15 * al;
       const D = disposicion(ev, t); E.carriles = D.n;
       /* EL PERALTE: cada carril gira sobre su botón (que se queda en la línea, así el dedo no se mueve): se ladea
          como curva de carreras, se tuerce en diagonal o sube como rampa. En vertical lo diagonal va más suave */
@@ -461,6 +479,7 @@ export async function crearEscena(lienzo){
       /* en vertical las cámaras laterales empujaban los receptores de la orilla fuera de la pantalla: ahí van más
          cerca del centro, y la mira se corre hacia donde están de verdad los receptores */
       if(vertical && carta){ objetivoCam.p.x *= .45; objetivoCam.m.x *= .3; objetivoCam.m.x += E.centro * 1.6; }
+      if(carta && E.aleja){ objetivoCam.m.z -= 7 * E.aleja; objetivoCam.p.y += 1.5 * E.aleja; }
       if(!carta){ objetivoCam.p.set(Math.sin(t * .15) * 4, 4.5, -16); objetivoCam.m.set(0, 4, -36); }
       cam.position.lerpVectors(camDe.p, objetivoCam.p, carta ? ec : .03 + .97 * ec);
       mira.lerpVectors(camDe.m, objetivoCam.m, carta ? ec : .03 + .97 * ec);
@@ -482,9 +501,13 @@ export async function crearEscena(lienzo){
       cantantes.forEach((c, k) => { const lado = k % 2 ? -1 : 1, sal = Math.max(0, Math.sin(fase * Math.PI)) * (gi % 2 === k % 2 ? 1 : .4);
         const giroSec = Math.max(0, 1 - (t - escT) / .9), vuelta = giroSec > 0 && t >= escT ? (1 - Math.pow(giroSec, 3)) * Math.PI * 2 : 0;
         c.raiz.position.y = sal * .18 + sacudida * .55 + Math.sin(Math.min(1, (t - escT) / .9) * Math.PI) * (t >= escT && t - escT < .9 ? .9 : 0); c.cuerpo.rotation.z = Math.sin((gi + fase) * Math.PI / 2) * .05 * lado;
-        c.raiz.rotation.y = Math.sin(t * .6 + k) * .35 + vuelta * (k % 2 ? -1 : 1) + (est?.ultimoGolpe && ahoraMs - est.ultimoGolpe < 140 ? .06 : 0);
+        c.raiz.rotation.y = Math.sin(t * .6 + k) * (c.mezclador ? .12 : .35) + vuelta * (k % 2 ? -1 : 1) + (est?.ultimoGolpe && ahoraMs - est.ultimoGolpe < 140 ? .06 : 0);
         const sq = 1 + latido * .05, base = c.base || (c.base = c.raiz.scale.x); c.raiz.scale.set(base * sq, base / sq, base * sq);
-        if(c.mezclador) { c.mezclador.setTime((t > 0 ? t : ahoraMs / 1000) % (c.g.animations[0].duration || 1)); }
+        if(c.P.vibra){ c.cuerpo.position.x = (Math.random() - .5) * .04; c.cuerpo.position.z = (Math.random() - .5) * .04; }
+        /* un baile por sección: cambia cuando cambia el escenario, y cada cantante baila uno distinto */
+        if(c.mezclador){ const A = c.g.animations, i = (k + Math.floor(Math.max(0, escT) * 7.3) + (c.P.jefe ? 0 : 1)) % A.length;
+          if(c.baile !== i){ c.mezclador.stopAllAction(); c.mezclador.clipAction(A[i]).play(); c.baile = i; c.baileT0 = t > 0 ? t : ahoraMs / 1000; }
+          c.mezclador.setTime(((t > 0 ? t : ahoraMs / 1000) - c.baileT0) % (A[i].duration || 1)); }
         if(c.pose){ const b = Math.sin((gi + fase) * Math.PI), b2 = Math.sin((gi + fase) * Math.PI / 2), sube = gi % 8 >= 6 ? 1 : 0;
           const U = c.pose.u; U.uAngI.value = 1.15 - .45 * Math.max(0, b) * (k % 2 ? 1 : .6) - sube * 1.6 * latido; U.uAngD.value = 1.15 - .45 * Math.max(0, -b) - sube * 1.6 * latido;
           U.uVaiven.value = .35 * b2; U.uCab.value = .1 * b + .08 * latido; U.uCabY.value = .25 * b2; }

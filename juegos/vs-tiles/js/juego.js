@@ -14,12 +14,14 @@ const FLECHA = ['left', 'down', 'up', 'right'], COLOR_FL = ['#C24B99', '#00E5FF'
 const TECLAS_CARRIL = { 2: ['f', 'j'], 3: ['f', ' ', 'j'], 4: ['d', 'f', 'j', 'k'], 5: ['d', 'f', ' ', 'j', 'k'], 6: ['s', 'd', 'f', 'j', 'k', 'l'], 7: ['s', 'd', 'f', ' ', 'j', 'k', 'l'] };
 const TECLAS_DIVA = { w: 0, i: 0, arrowup: 0, a: 1, j: 1, arrowleft: 1, s: 2, k: 2, arrowdown: 2, d: 3, l: 3, arrowright: 3 };
 const TECLAS_FL = { arrowleft: 0, d: 0, arrowdown: 1, f: 1, arrowup: 2, j: 2, arrowright: 3, k: 3 };
-const ACERCA = { facil: 1.25, normal: 1.0, dificil: .82, experto: .66, exorcist: .52 };
+const ACERCA = { tutorial: 1.7, facil: 1.25, normal: 1.0, dificil: .82, experto: .66, exorcist: .52 };
 
 export async function cargarSprites(){
   const nombres = ['paloma', 'gen_circle_fill', 'gen_circle_outline', 'p_light_01', 'p_flare_01', 'p_star_06', 'p_star_01', 'p_spark_05', 'p_magic_03', 'p_circle_03', 'p_twirl_01', 'p_trace_04', 'p_slash_03', 'p_symbol_01', 'p_window_02',
     ...SIM.flatMap(s => [`ps_color_${s}`, `ps_color_${s}_outline`, `ps_${s}_outline`]), ...FLECHA.flatMap(f => [`tecla_arrow_${f}`, `tecla_arrow_${f}_outline`])];
   const S = {}; await Promise.all(nombres.map(n => new Promise(r => { const im = new Image(); im.onload = () => { S[n] = im; r(); }; im.onerror = r; im.src = `sprites/${n}.png`; })));
+  /* la cara de Temmie (de su modelo 3D, Stewie_Box, CC BY) para los estilos secretos */
+  await new Promise(r => { const im = new Image(); im.onload = () => { S.temmie = im; r(); }; im.onerror = r; im.src = 'sprites/temmie-cara.webp'; });
   /* versiones teñidas (el canvas 2D no tiñe solo): se hornean una vez */
   S.teñir = (n, color) => { const k = n + color; if(S[k]) return S[k]; const im = S[n]; if(!im) return null; const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d');
     x.drawImage(im, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = color; x.fillRect(0, 0, c.width, c.height); x.globalCompositeOperation = 'destination-over'; x.globalAlpha = .0; x.drawImage(im, 0, 0); return S[k] = c; };
@@ -112,11 +114,18 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
       if(juzgar(n, t, enArea(n)) && n.fin) dedos.set(id, { n, hold: true });
     }
     else if(m === 'circulos'){
-      const n = candidata(t, n => n.modo === 'circulos' && n.tipo !== 'giro');
       const g = carta.notas.find(n => n.tipo === 'giro' && t >= n.t - .1 && t < n.fin && !est.estado[n.id]);
       if(g){ dedos.set(id, { giro: g, ang: Math.atan2(py - H * .45, px - W / 2) }); }
-      if(!n) return;
-      const [cx, cy] = enArea(n); if(Math.hypot(px - cx, py - cy) > radio() * 1.35) return;
+      /* de las que están a tiempo, la que está bajo el dedo (antes: la más temprana, y si no era ésa el toque se perdía) */
+      let n = null, dn = Infinity; for(let k = est.desde; k < carta.notas.length; k++){ const m = carta.notas[k]; if(m.t > t + ALCANCE) break;
+        if(m.modo !== 'circulos' || m.tipo === 'giro' || m.rival || (est.estado[m.id] && est.estado[m.id] !== 'pendiente') || m.t < t - ALCANCE) continue;
+        const [cx, cy] = enArea(m), d = Math.hypot(px - cx, py - cy); if(d < dn){ dn = d; n = m; } }
+      /* un deslice que ya va en camino se puede agarrar tarde tocando la bola: la cabeza cuenta como BIEN */
+      if(!n || dn > radio() * 1.5){ const tarde = carta.notas.find(m => m.tipo === 'deslice' && m.modo === 'circulos' && t > m.t && t < m.fin - .1 && (!est.estado[m.id] || est.estado[m.id] === 'pendiente'));
+        if(tarde){ const [bx, by] = puntoCamino(tarde, (t - tarde.t) / (tarde.fin - tarde.t)); if(Math.hypot(px - bx, py - by) < radio() * 2){
+          marcar(tarde, JUICIOS[3], t - tarde.t, [bx, by]); J.apuntar(JUICIOS[3], t - tarde.t, tarde); dedos.set(id, { n: tarde, deslice: true, px, py }); est.sigue[tarde.id] = { si: 0, no: 0 }; } }
+        return; }
+      const [cx, cy] = enArea(n);
       if(juzgar(n, t, [cx, cy]) && n.tipo === 'deslice'){ dedos.set(id, { n, deslice: true, px, py }); est.sigue[n.id] = { si: 0, no: 0 }; }
     }
   }
@@ -130,11 +139,14 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
       if(dif < Math.PI / 4.2) juzgar(d.n, d.t, recXY(d.n.r)); else { J.fallar(d.n); marcar(d.n, JUICIOS[4], null, recXY(d.n.r)); }
     }
     if(d.deslice){ d.px = px; d.py = py; }
-    if(d.giro){ const a = Math.atan2(py - H * .45, px - W / 2); let da = a - d.ang; if(da > Math.PI) da -= 2 * Math.PI; if(da < -Math.PI) da += 2 * Math.PI; d.ang = a; est.giro[d.giro.id] = (est.giro[d.giro.id] || 0) + Math.abs(da); }
+    if(d.giro){ const a = Math.atan2(py - H * .45, px - W / 2); let da = a - d.ang; if(da > Math.PI) da -= 2 * Math.PI; if(da < -Math.PI) da += 2 * Math.PI; d.ang = a; est.giro[d.giro.id] = (est.giro[d.giro.id] || 0) + Math.abs(da);
+      /* CADA VUELTA ES UNA NOTA MÁS (Carlos, 30 oct): suma al combo y a la cuenta, y entre más rápido gires, más puntos */
+      const g = d.giro, vueltas = Math.floor(est.giro[g.id] / (2 * Math.PI)); est.vueltasG = est.vueltasG || {};
+      while((est.vueltasG[g.id] || 0) < vueltas){ est.vueltasG[g.id] = (est.vueltasG[g.id] || 0) + 1; J.total++; J.apuntar(JUICIOS[1], 0, g); textos.push({ j: { ...JUICIOS[1], nombre: `VUELTA ${est.vueltasG[g.id]}` }, t0: performance.now() }); sonidos.golpe && reloj.golpe(sonidos.golpe, .25); } }
   }
   function sube(id, t){ apretado.delete(id); const d = dedos.get(id); if(!d) return; dedos.delete(id);
     if(d.deslice && est.estado[d.n.id] === 'sosteniendo'){ const n = d.n, u = (t - n.t) / (n.fin - n.t), sg = est.sigue[n.id], p = sg.si / Math.max(1, sg.si + sg.no);
-      est.estado[n.id] = 'hecha'; const j = u > .88 && p > .7 ? JUICIOS[1] : u > .5 ? JUICIOS[3] : JUICIOS[4]; J.apuntar(j, null, n); textos.push({ j, t0: performance.now() }); return; }
+      est.estado[n.id] = 'hecha'; const j = u > .85 && p > .65 ? JUICIOS[1] : u > .45 ? JUICIOS[3] : JUICIOS[4]; J.apuntar(j, null, n); textos.push({ j, t0: performance.now() }); return; }
     if(d.hold && est.estado[d.n.id] === 'sosteniendo'){
       /* M003 · soltar: si suelta antes de tiempo, la cola se pierde */
       if(t < d.n.fin - J.ventana()[3]){ est.estado[d.n.id] = 'fallada'; J.fallar(d.n); textos.push({ j: JUICIOS[4], t0: performance.now() }); }
@@ -189,16 +201,16 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
         if(t >= n.fin){ est.estado[n.id] = 'hecha'; J.apuntar(n.tipo === 'deslice' && !auto ? JUICIOS[4] : JUICIOS[1], 0, n); } continue; }
       if(n.tipo === 'giro'){ if(!s && t >= n.fin){ const g = (est.giro[n.id] || 0) / (2 * Math.PI) / Math.max(1, n.vueltas); est.estado[n.id] = 'hecha'; J.apuntar(g >= 1 ? JUICIOS[1] : g >= .6 ? JUICIOS[3] : JUICIOS[4], null, n); } continue; }
       /* la nota se va, pero el FALLO no se cuenta todavía: si el teléfono estaba ocupado, el toque que sí
-         llegó a tiempo está en la cola con su hora real y se atiende hasta después. Se espera medio segundo
+         llegó a tiempo está en la cola con su hora real y se atiende hasta después. Se espera un momento (140 ms)
          de reloj de pared; si en ese rato aparece un toque con hora dentro de la ventana, se juzga normal */
       if(!s && tFallo - n.t > wf){ est.estado[n.id] = 'pendiente'; est.pendientes.push({ n, desde: performance.now() }); }
     }
     for(let i = est.pendientes.length - 1; i >= 0; i--){ const { n, desde } = est.pendientes[i]; if(est.estado[n.id] !== 'pendiente'){ est.pendientes.splice(i, 1); continue; }
-      if(performance.now() - desde > 450){ est.pendientes.splice(i, 1); est.estado[n.id] = 'fallada'; J.fallar(n); if(n.fin) J.fallar(n); textos.push({ j: JUICIOS[4], t0: performance.now() }); } }
+      if(performance.now() - desde > 140){   /* Carlos, 30 oct: «tarda mucho en detectar que fallaste» (era medio segundo) */ est.pendientes.splice(i, 1); est.estado[n.id] = 'fallada'; J.fallar(n); if(n.fin) J.fallar(n); textos.push({ j: JUICIOS[4], t0: performance.now() }); } }
     /* los deslices: ¿el dedo va con la bola? */
     for(const [id, d] of dedos){ if(!d.deslice) continue; const n = d.n, u = Math.min(1, Math.max(0, (t - n.t) / (n.fin - n.t))), [bx, by] = puntoCamino(n, u);
-      const sg = est.sigue[n.id]; if(Math.hypot(d.px - bx, d.py - by) < radio() * 2.6) sg.si++; else sg.no++;
-      if(t >= n.fin && est.estado[n.id] === 'sosteniendo'){ dedos.delete(id); const p = sg.si / Math.max(1, sg.si + sg.no); est.estado[n.id] = 'hecha'; const j = p > .82 ? JUICIOS[1] : p > .5 ? JUICIOS[3] : JUICIOS[4]; J.apuntar(j, null, n); textos.push({ j, t0: performance.now() }); } }
+      const sg = est.sigue[n.id]; if(Math.hypot(d.px - bx, d.py - by) < radio() * 3.2) sg.si++; else sg.no++;
+      if(t >= n.fin && est.estado[n.id] === 'sosteniendo'){ dedos.delete(id); const p = sg.si / Math.max(1, sg.si + sg.no); est.estado[n.id] = 'hecha'; const j = p > .75 ? JUICIOS[1] : p > .45 ? JUICIOS[3] : JUICIOS[4]; J.apuntar(j, null, n); textos.push({ j, t0: performance.now() }); } }
     while(est.desde < carta.notas.length && est.estado[carta.notas[est.desde].id] && carta.notas[est.desde].t < t - 3) est.desde++;
     /* el 3D */
     escena.piezas.rieles.forEach((R, r) => { R.tenido = tenido('carril', r); });
@@ -210,7 +222,8 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
   /* los receptores en el orden en que se ven a lo largo de la línea (así las teclas siguen al espejo) */
   function receptores0(a, b){ const up = escena.cam.up, ex = up.y, ey = -up.x; return (a.x * ex + a.y * ey) - (b.x * ex + b.y * ey); }
 
-  function puntoCamino(n, u){ const c = n.camino, f = u * (c.length - 1), i = Math.min(c.length - 2, Math.floor(f)), k = f - i; const A = area();
+  /* con `vueltas: 2` la bola va y REGRESA por el mismo camino (antes iba sólo de ida aunque el dibujo prometía vuelta) */
+  function puntoCamino(n, u){ if(n.vueltas === 2) u = u < .5 ? u * 2 : 2 - u * 2; const c = n.camino, f = u * (c.length - 1), i = Math.min(c.length - 2, Math.floor(f)), k = f - i; const A = area();
     return [A.x + (c[i][0] + (c[i + 1][0] - c[i][0]) * k) * A.w, A.y + (c[i][1] + (c[i + 1][1] - c[i][1]) * k) * A.h]; }
 
   /* ══ la capa 2D ══ */
@@ -233,14 +246,15 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
         if(st === 'hecha' || st === 'fallada' || st === 'pendiente') continue; const [cx] = flechaXY(c, 0), yy = yRec - (st === 'sosteniendo' ? 0 : dt) * velPx;
         if(n.fin){ const yf = yRec - (n.fin - t) * velPx; x.fillStyle = COLOR_FL[c] + (st === 'sosteniendo' ? 'EE' : '99'); x.fillRect(cx - tam * .13, Math.min(yf, yy), tam * .26, Math.abs(yy - yf)); }
         if(st !== 'sosteniendo'){ if((ajustes.estilos?.flechas) === 'neon') img(S.teñir('p_light_01', COLOR_FL[c]), cx, yy, tam * 2, 0, .7, true);
-          img((ajustes.estilos?.flechas) === 'solida' ? `tecla_arrow_${FLECHA[c]}_outline` : S.teñir(`tecla_arrow_${FLECHA[c]}`, COLOR_FL[c]), cx, yy, tam); }
+          img((ajustes.estilos?.flechas) === 'solida' ? `tecla_arrow_${FLECHA[c]}_outline` : S.teñir(`tecla_arrow_${FLECHA[c]}`, COLOR_FL[c]), cx, yy, tam);
+          if((ajustes.estilos?.flechas) === 'temmie' && S.temmie) img(S.temmie, cx + (Math.random() - .5) * 3, yy, tam * .5); }
       }
     }
     /* ── Símbolos (DIVA): el blanco con su manecilla, y el símbolo que vuela hacia él ── */
     if(modo === 'diva'){ const tam = radio() * 2.1, B = botonesDiva();
       for(let k = est.desde; k < carta.notas.length; k++){ const n = carta.notas[k]; if(n.modo !== 'diva') continue; const dt = n.t - t; if(dt > AR * 1.15) break; const st = est.estado[n.id];
         if(st === 'hecha' || st === 'fallada' || st === 'pendiente') continue; const [cx, cy] = enArea(n), u = 1 - Math.max(0, dt) / (AR * 1.15);
-        const es = ajustes.estilos?.simbolos || 'color', nom = n.tipo === 'estrella' ? 'p_star_06' : es === 'contorno' ? S.teñir(`ps_${SIM[n.sim]}_outline`, COLOR_SIM[n.sim]) : es === 'blanco' ? `ps_color_${SIM[n.sim]}_outline` : `ps_color_${SIM[n.sim]}`;
+        const es = ajustes.estilos?.simbolos || 'color', nom = n.tipo === 'estrella' ? 'p_star_06' : es === 'temmie' && S.temmie ? S.temmie : es === 'contorno' ? S.teñir(`ps_${SIM[n.sim]}_outline`, COLOR_SIM[n.sim]) : es === 'blanco' ? `ps_color_${SIM[n.sim]}_outline` : `ps_color_${SIM[n.sim]}`;
         img(n.tipo === 'estrella' ? S.teñir('p_star_01', '#FFF3B0') : `ps_${SIM[n.sim]}_outline`, cx, cy, tam * (1.05 + .08 * lat), 0, Math.min(1, u * 3));
         /* la manecilla del reloj del blanco (M116) */
         x.save(); x.globalAlpha = Math.min(1, u * 3); x.strokeStyle = '#FFFFFF'; x.lineWidth = 3; x.beginPath(); x.moveTo(cx, cy); const a = -Math.PI / 2 + u * Math.PI * 2; x.lineTo(cx + Math.cos(a) * tam * .62, cy + Math.sin(a) * tam * .62); x.stroke(); x.restore();
@@ -269,7 +283,7 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
           if(t >= n.t){ const [bx, by] = puntoCamino(n, Math.min(1, (t - n.t) / (n.fin - n.t))); img(S.teñir('gen_circle_fill', '#FFFFFF'), bx, by, R * 1.6); img('gen_circle_outline', bx, by, R * 4.6, 0, .7); } }
         if(st !== 'hecha'){ img(S.teñir('gen_circle_fill', color), cx, cy, R * 2, 0, alfa); img('gen_circle_outline', cx, cy, R * 2.1, 0, alfa);
           const ea = ajustes.estilos?.aros || 'clasico', rAro = R * 2 * (1 + 2.2 * Math.max(0, dt) / AR);
-          if(ea === 'magia') img(S.teñir('p_magic_03', color), cx, cy, rAro * 1.15, ahora / 400, alfa * .9, true); else if(ea === 'estelar'){ img(S.teñir('p_star_06', color), cx, cy, R * 3.2, ahora / 900, alfa * .5, true); img('gen_circle_outline', cx, cy, rAro, 0, alfa * .9); } else img('gen_circle_outline', cx, cy, rAro, 0, alfa * .9);
+          if(ea === 'magia') img(S.teñir('p_magic_03', color), cx, cy, rAro * 1.15, ahora / 400, alfa * .9, true); else if(ea === 'temmie' && S.temmie){ img(S.temmie, cx, cy, rAro * .75, 0, alfa * .45); img('gen_circle_outline', cx, cy, rAro, 0, alfa * .9); } else if(ea === 'estelar'){ img(S.teñir('p_star_06', color), cx, cy, R * 3.2, ahora / 900, alfa * .5, true); img('gen_circle_outline', cx, cy, rAro, 0, alfa * .9); } else img('gen_circle_outline', cx, cy, rAro, 0, alfa * .9);
           x.save(); x.globalAlpha = alfa; x.font = `800 ${Math.round(R * .9)}px Orbitron, sans-serif`; x.fillStyle = '#fff'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(String((n.id % 9) + 1), cx, cy + 1); x.restore(); }
       }
     }
@@ -286,8 +300,8 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
         x.globalAlpha = (.35 + .4 * mov) * q.vis; x.fillStyle = '#fff'; x.beginPath(); x.arc(q.x, q.y, Math.max(3, rad * .12), 0, Math.PI * 2); x.fill(); x.restore(); } }
     /* los destellos de cada acierto */
     for(let i = efectos.length - 1; i >= 0; i--){ const e = efectos[i], u = (ahora - e.t0) / 420; if(u >= 1){ efectos.splice(i, 1); continue; }
-      const sp = ajustes.golpeSprite || 'p_flare_01', paloma = sp === 'paloma';
-      img(paloma ? S.paloma : S.teñir(sp, e.color), e.x, e.y - (paloma ? 40 * u : 0), (paloma ? 70 : 110) + 160 * u, paloma ? 0 : u * 2, 1 - u, !paloma); if(e.j.id === 'sonoluz') img(S.teñir('p_star_06', '#FFF3B0'), e.x, e.y, 80 + 220 * u, -u * 3, 1 - u, true); }
+      const sp = ajustes.golpeSprite || 'p_flare_01', paloma = sp === 'paloma' || sp === 'temmie', propio = sp === 'temmie' ? S.temmie : S.paloma;
+      img(paloma ? propio : S.teñir(sp, e.color), e.x + (sp === 'temmie' ? (Math.random() - .5) * 6 : 0), e.y - (paloma ? 40 * u : 0), (paloma ? 70 : 110) + 160 * u, paloma ? 0 : u * 2, 1 - u, !paloma); if(e.j.id === 'sonoluz') img(S.teñir('p_star_06', '#FFF3B0'), e.x, e.y, 80 + 220 * u, -u * 3, 1 - u, true); }
     hud(t, ahora, lat, modo);
     if(enPausa){ x.fillStyle = '#05020Acc'; x.fillRect(0, 0, W, H); }
   }
@@ -304,7 +318,7 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
     const libre = R - L - x.measureText(pts).width - 12;
     x.font = '600 12px Orbitron, sans-serif'; x.fillStyle = '#ffffffaa'; x.fillText(J.precision.toFixed(2) + '%', R, T + 66);
     x.font = '700 12px Orbitron, sans-serif'; x.fillStyle = '#ffffffcc'; x.textAlign = 'left';
-    let nom = cancion.titulo.toUpperCase(); const dif = ` · ${carta.D.nombre.toUpperCase()} ${carta.nivel}`;
+    let nom = cancion.titulo.toUpperCase(); const dif = ` · ${carta.D.nombre.toUpperCase()}${carta.nivel ? ' ' + carta.nivel : ''}`;
     if(x.measureText(nom + dif).width <= libre) nom += dif; else { x.fillText(dif.slice(3), L, T + 60); }
     while(nom.length > 3 && x.measureText(nom).width > libre) nom = nom.slice(0, -2) + '…';
     x.fillText(nom, L, T + 44); x.restore();
@@ -322,6 +336,12 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
     const tx = textos[textos.length - 1]; if(tx){ const u = (ahora - tx.t0) / 520; if(u < 1){ const s = 1 + .5 * Math.max(0, .2 - u) * 5;
       x.save(); x.translate(W / 2, yJuicio); x.scale(s, s); x.globalAlpha = 1 - u * u; x.textAlign = 'center'; x.font = '900 26px Orbitron, sans-serif'; x.fillStyle = tx.j.color; x.shadowColor = tx.j.color; x.shadowBlur = 16; x.fillText(tx.j.nombre, 0, 0);
       if(tx.dt !== null && tx.dt !== undefined && tx.j.id !== 'sonoluz' && ajustes.mostrarDesvio){ x.font = '600 11px Orbitron, sans-serif'; x.shadowBlur = 0; x.fillStyle = '#ffffffcc'; x.fillText((tx.dt < 0 ? 'ANTES ' : 'TARDE ') + Math.round(Math.abs(tx.dt) * 1000) + ' ms', 0, 16); } x.restore(); } if(textos.length > 8) textos.splice(0, textos.length - 8); }
+    /* el letrero del tutorial: grande, arriba, todo el rato que dura su fase */
+    for(const e of carta.eventos){ if(e.tipo !== 'tuto' || t < e.t || t > e.t + e.dur) continue; const u = Math.min(1, (t - e.t) * 3, (e.t + e.dur - t) * 3);
+      x.save(); x.globalAlpha = u; const yy = Math.max(T + 150, H * .27); x.fillStyle = '#0A0412E6'; x.fillRect(12, yy - 34, W - 24, 68); x.strokeStyle = '#5CFFB0'; x.lineWidth = 2; x.strokeRect(12, yy - 34, W - 24, 68);
+      x.font = `800 ${W < 380 ? 15 : 17}px "Zen Kaku Gothic New", sans-serif`; x.fillStyle = '#fff'; x.textAlign = 'center'; x.textBaseline = 'middle';
+      const ps = e.texto.split(' '); let l1 = '', l2 = ''; for(const w of ps){ if(x.measureText(l1 + ' ' + w).width < W - 60 && !l2) l1 = (l1 + ' ' + w).trim(); else l2 = (l2 + ' ' + w).trim(); }
+      x.fillText(l1, W / 2, l2 ? yy - 11 : yy); if(l2) x.fillText(l2, W / 2, yy + 13); x.restore(); }
     /* los avisos de cambio de reglas y el compás (M031) */
     for(const e of carta.eventos){ if(e.tipo === 'aviso' && t > e.t - 1.6 && t < e.t + .4){ const u = (t - (e.t - 1.6)) / 2;
       x.save(); x.globalAlpha = Math.min(1, u * 5, (1 - u) * 5); x.fillStyle = '#0A0412E0'; x.fillRect(0, H * .44, W, 64); x.fillStyle = '#FF2D55'; x.fillRect(0, H * .44, W, 3); x.fillRect(0, H * .44 + 61, W, 3);
@@ -352,7 +372,7 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
     },
     salir(){ corriendo = false; reloj.parar(); dedos.clear(); apretado.clear(); escena.piezas.rieles.forEach(R => { R.tenido = false; }); x.clearRect(0, 0, capa.width, capa.height); },
     pintarMenu(t){ x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, capa.width, capa.height); escena.pintar(t, { an: null, carta: null, est: null, modo: 'menu', bajos: null }); },
-    get juez(){ return J; }, get estado(){ return est; }, get carta(){ return carta; }, receptores: () => receptores,
+    get juez(){ return J; }, get t(){ return reloj.ahora(); }, punto: (n, u) => n.camino ? puntoCamino(n, u) : enArea(n), get radio(){ return radio(); }, get estado(){ return est; }, get carta(){ return carta; }, receptores: () => receptores,
     /* para las pruebas: dispara un toque como si fuera del navegador */
     _baja: baja, _sube: sube, _mueve: mueve,
     /* dónde tocaría un jugador para esa nota (las pruebas de entrada la usan) */

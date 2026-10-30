@@ -4,7 +4,7 @@ const { chromium } = require('playwright'); const path = require('path'), { exec
   const b = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
   const p = await b.newPage({ viewport: { width: 256, height: 256 } }); const errs = []; p.on('pageerror', e => errs.push(e.message));
   await p.goto('http://127.0.0.1:8765/juegos/vs-tiles/herramientas/fotos-notas.html'); await p.waitForFunction(() => window.listo);
-  for(const id of ['lingote', 'arcade', 'holo', 'brillante', 'disco', 'cristal', 'gema', 'estrella', 'nota']){
+  for(const id of ['lingote', 'arcade', 'holo', 'brillante', 'disco', 'cristal', 'gema', 'estrella', 'nota', 'flakes'].filter(i => !process.argv[2] || process.argv.slice(2).includes(i))){
     await p.evaluate(i => window.foto(i), id); const png = path.join(__dirname, '..', 'modelos', 'notas', id + '.png');
     await p.locator('#c').screenshot({ path: png, omitBackground: true });
     execFileSync('python3', ['-c', `from PIL import Image; im=Image.open('${png}'); im.save('${png.replace('.png', '.webp')}', 'WEBP', quality=86)`]); require('fs').unlinkSync(png); console.log(id); }

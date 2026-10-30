@@ -116,7 +116,8 @@ h2{ font:800 22px/1.1 var(--n); letter-spacing:.06em; margin:0 0 10px }
 @keyframes sello{ from{ transform:scale(2.4) rotate(-8deg); opacity:0 } }
 .puntos{ text-align:center; font:900 34px var(--n); letter-spacing:.04em } .puntos small{ display:block; font:700 12px var(--n); color:var(--gris); letter-spacing:.2em }
 .juicios{ display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:6px; margin:12px 0 } .juicios div{ text-align:center; padding:8px 2px; background:#ffffff0a; font:900 18px var(--n) } .juicios div small{ display:block; font:800 clamp(9px, 2.6vw, 11px) var(--n); letter-spacing:.06em; color:var(--c) }
-.sellos{ display:flex; justify-content:center; gap:8px; margin:8px 0 } .sellos span{ font:900 12px var(--n); letter-spacing:.2em; padding:6px 10px; border:1px solid var(--oro); color:var(--oro) }
+.sellos{ display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin:8px 0 }
+.sellos .frase{ flex-basis:100%; margin:6px 0 0; text-align:center; font:600 14px ui-monospace, "Courier New", monospace; color:#fff } .sellos span{ font:900 12px var(--n); letter-spacing:.2em; padding:6px 10px; border:1px solid var(--oro); color:var(--oro) }
 #histograma{ position:static; width:100%; height:120px; margin:6px 0 }
 .consejo{ font-size:13px; color:var(--gris); text-align:center; margin:6px 0 10px }
 
@@ -276,7 +277,17 @@ h2{ font:800 22px/1.1 var(--n); letter-spacing:.06em; margin:0 0 10px }
 .boton-sangre .b, .b.mini.boton-sangre{ background:linear-gradient(135deg, #4A0011, #170A26) }
 .boton-sangre .b::before, .b.mini.boton-sangre::before{ background:linear-gradient(135deg, #FF2D55, #7E1735 50%, #FF6A8A) }
 .boton-sangre .b.primario{ background:linear-gradient(135deg, #C4002B, #7E1735) }
+/* los botones de Temmie (secretos): blancos y azul cielo, con su cara en el principal, y vibran un poquito como ella */
+.boton-temmie .b, .b.mini.boton-temmie{ background:linear-gradient(135deg, #FFFFFF, #CFEAFF); color:#0B2A4A; text-transform:lowercase }
+.boton-temmie .b::before, .b.mini.boton-temmie::before{ background:linear-gradient(135deg, #16A2F0, #F7C6D9 50%, #16A2F0) }
+.boton-temmie .b.primario{ background:#FFFFFF url(sprites/temmie-cara.webp) right 8px center / 40px 40px no-repeat; padding-right:56px }
+.boton-temmie .b:active{ animation:temVibra .12s steps(2) 3 }
+@keyframes temVibra{ 0%{ translate:-1px 0 } 50%{ translate:1px 1px } 100%{ translate:0 -1px } }
+.avatar img{ width:100%; height:100%; object-fit:cover; display:block }
 
 /* la misión que sigue, arriba de la lista de la Historia */
 .mision.siguiente{ border-color:#FF2D7A; background:linear-gradient(90deg, #7E173566, #170A2600); box-shadow:0 0 18px #FF2D7A44; margin-bottom:14px }
 .mision.siguiente .n{ color:#FF2D7A }
+/* el tutorial va primero y a todo lo ancho: es lo que busca alguien que acaba de llegar */
+.secundaria[data-ir="tutorial"]{ grid-column:1 / -1; min-height:64px; border-color:#5CFFB0 }
+@media (min-width:900px){ .secundarias{ grid-template-columns:repeat(5, minmax(0, 1fr)) } .secundaria[data-ir="tutorial"]{ grid-column:auto } }
