@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Páginas para barberías · Grupo Mazi</title>
+<meta name="description" content="Cuatro páginas de muestra para barberías: de la Esencial a la hecha a la medida. Todas con servicios y reservas.">
+<meta name="theme-color" content="#170A26">
+<style>
+  :root{ --fondo:#170A26; --capa:#221338; --tinta:#F1ECF7; --gris:#B7AACB; --vino:#7E1735; --morado:#AC27FF; --acento:#C77DFF; --linea:#ffffff1a }
+  *{ box-sizing:border-box } body{ margin:0; background:var(--fondo); color:var(--tinta); font:16px/1.55 "Avenir Next", system-ui, sans-serif }
+  .env{ max-width:1120px; margin:0 auto; padding:0 18px } a{ color:inherit }
+  header{ padding:48px 0 24px } .ojo{ font-size:12px; letter-spacing:.3em; text-transform:uppercase; color:var(--acento); margin:0 0 12px }
+  h1{ font-size:clamp(36px, 9vw, 64px); line-height:1; margin:0 0 14px; letter-spacing:-.02em } header p{ color:var(--gris); max-width:56ch; margin:0 }
+  .lista{ display:grid; gap:18px; padding:28px 0 56px } @media (min-width:820px){ .lista{ grid-template-columns:repeat(2, minmax(0, 1fr)) } }
+  .demo{ display:flex; flex-direction:column; border-radius:18px; overflow:hidden; background:var(--capa); border:1px solid var(--linea); text-decoration:none }
+  .demo img{ width:100%; aspect-ratio:16/10; object-fit:cover; object-position:50% 30% }
+  .demo .info{ padding:18px 20px 20px; display:flex; flex-direction:column; gap:8px; flex:1 }
+  .tier{ align-self:flex-start; font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; padding:6px 10px; border-radius:999px; background:#ffffff12; color:var(--acento) }
+  .demo.top .tier{ background:var(--vino); color:#fff }
+  .demo h2{ margin:0; font-size:26px; line-height:1.15 } .demo p{ margin:0; color:var(--gris) } .demo ul{ margin:4px 0 0; padding-left:18px; color:#DCD3E8; font-size:15px }
+  .precio{ margin-top:auto; padding-top:10px; display:flex; justify-content:space-between; align-items:center; font-weight:700 } .precio span{ color:var(--acento) }
+  footer{ padding:24px 0 48px; color:var(--gris); font-size:13px; border-top:1px solid var(--linea) }
+</style>
+</head>
+<body>
+<header><div class="env">
+  <p class="ojo">Grupo Mazi · muestras</p>
+  <h1>Páginas para barberías</h1>
+  <p>Cuatro niveles, todos con servicios, horario y reservas desde el teléfono. Los negocios son inventados: tócalas y pruébalas como si fueras cliente.</p>
+</div></header>
+<main class="env lista">
+  <a class="demo" href="sencilla/"><img src="img/7697224-c.webp" alt=""><div class="info"><span class="tier">Esencial</span><h2>Barbería Don Chuy</h2><p>Una sola página, clara y rápida.</p><ul><li>Servicios con precio</li><li>Reserva sencilla por WhatsApp</li><li>Horario, «abierto ahora» y cómo llegar</li></ul><div class="precio">Desde <span>$2,000</span></div></div></a>
+  <a class="demo" href="navaja/"><img src="img/1836983-c.webp" alt=""><div class="info"><span class="tier">Completa · urbana</span><h2>Navaja Norte</h2><p>Oscura, con fuerza, para barberías de fades.</p><ul><li>Reserva por pasos: servicio, barbero, día y hora</li><li>Horas ocupadas tachadas, mis citas y cancelar</li><li>Equipo, galería, reseñas y calendario del teléfono</li></ul><div class="precio">Desde <span>$6,500</span></div></div></a>
+  <a class="demo" href="casa-brava/"><img src="img/7518731-c.webp" alt=""><div class="info"><span class="tier">Completa · clásica</span><h2>Casa Brava Barber Club</h2><p>De antes, con papel, tinta y navaja.</p><ul><li>Carta de servicios, paquetes con descuento</li><li>Membresía mensual («el Club»)</li><li>Reserva de varios servicios a la vez y preguntas</li></ul><div class="precio">Desde <span>$6,500</span></div></div></a>
+  <a class="demo top" href="obsidiana/"><img src="img/10024234-c.webp" alt=""><div class="info"><span class="tier">A la medida · la chingona</span><h2>OBSIDIANA Barber Studio</h2><p>Para el estudio que cobra caro y lo vale.</p><ul><li>Entrada animada y portada que se mueve con el scroll</li><li>Siguiente hora libre en vivo, por barbero</li><li>Tienda con pedido, tarjetas de regalo y tarjeta de sellos</li></ul><div class="precio">Desde <span>$9,000</span></div></div></a>
+</main>
+<footer><div class="env">Hechas por Grupo Mazi · WhatsApp 442 883 3786. Fotos de muestra: Pexels.</div></footer>
+</body>
+</html>
