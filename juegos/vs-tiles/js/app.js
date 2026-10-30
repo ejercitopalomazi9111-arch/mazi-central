@@ -20,6 +20,21 @@ export const CANCIONES = [
   { id: 'voltaic', titulo: 'Voltaic', artista: 'Kevin MacLeod', voces: ['miku-hagane', 'miku'], escena: 3 },
   { id: 'ouroboros', titulo: 'Ouroboros', artista: 'Kevin MacLeod', voces: ['una', 'luka'], escena: 6 },
   { id: 'volatile-reaction', titulo: 'Volatile Reaction', artista: 'Kevin MacLeod', voces: ['miku-akuma'], escena: 5, jefe: true },
+  /* ANIME Y RITMO: música con estilo de anime, J-pop y juegos de ritmo, con licencia libre (OpenGameArt; autores y
+     licencias en CREDITOS.md). Las de anime con derechos no se pueden subir al juego: ésas entran por «Mi música» */
+  { id: 'play-now', titulo: 'Play Now', artista: 'Cleyton Kauffman', voces: ['miku', 'gumi'], escena: 1, anime: true },
+  { id: 'cheers-for-starlight', titulo: 'Cheers for Starlight', artista: 'Chloe Wolfe', voces: ['miku'], escena: 0, anime: true },
+  { id: 'cutie-pie', titulo: 'Cutie Pie', artista: 'FrancisLeeMusic', voces: ['gumi', 'una'], escena: 4, anime: true },
+  { id: 'kyra-cloud-maid', titulo: 'Kyra the Cloud Maid', artista: 'Tsorthan Grove', voces: ['una'], escena: 6, anime: true },
+  { id: 'determination', titulo: 'Determination', artista: 'HydroGene', voces: ['luka', 'miku'], escena: 2, anime: true },
+  { id: 'glory-days', titulo: 'Glory Days', artista: 'tricksntraps', voces: ['gumi', 'miku'], escena: 3, anime: true },
+  { id: 'ascend', titulo: 'Ascend', artista: 'tricksntraps', voces: ['miku-hagane'], escena: 1, anime: true },
+  { id: 'tokyo-chase', titulo: 'Tokyo Chase', artista: 'Socapex', voces: ['luka', 'miku-hagane'], escena: 0, anime: true },
+  { id: 'technomania-101', titulo: 'Technomania101', artista: 'Fupi', voces: ['miku', 'una'], escena: 2, anime: true },
+  { id: 'mauve-rhopalocera', titulo: 'Mauve Rhopalocera', artista: 'ISAo', voces: ['luka'], escena: 5, anime: true },
+  { id: 'stomper', titulo: 'Stomper', artista: 'tricksntraps', voces: ['miku-hagane', 'gumi'], escena: 4, anime: true },
+  { id: 'fever-stadium', titulo: 'Fever Stadium', artista: 'MintoDog', voces: ['miku', 'luka'], escena: 3, anime: true },
+  { id: 'mental-corruption', titulo: 'Mental Corruption', artista: 'tricksntraps', voces: ['miku-akuma'], escena: 5, anime: true, jefe: true },
   /* EL PIANO IMPOSIBLE: partituras de dominio público (Mutopia) tocadas con el Salamander Grand Piano
      (herramientas/piano.py). Las notas salen de la partitura, no del oído: caen exactas */
   { id: 'vals-del-minuto', titulo: 'Vals del minuto', artista: 'Chopin · Op. 64 n.º 1', voces: ['miku'], escena: 7, piano: true },
@@ -248,7 +263,7 @@ async function canciones(cual){ modoLista = cual; mostrar('canciones'); $('#canc
   const L = $('#lista'), filtro = quitarAcentos($('#buscaCancion').value.trim()); L.innerHTML = '';
   $('#buscaCancion').hidden = CANCIONES.length < 12;
   const propias = CANCIONES.filter(c => c.propia).length;
-  for(const [titulo, grupo] of [['De la casa', CANCIONES.filter(c => !c.propia && !c.piano)], ['Piano imposible', CANCIONES.filter(c => c.piano)], [`Mi música · ${propias}`, CANCIONES.filter(c => c.propia)]]){
+  for(const [titulo, grupo] of [['De la casa', CANCIONES.filter(c => !c.propia && !c.piano && !c.anime)], ['Anime y ritmo', CANCIONES.filter(c => c.anime)], ['Piano imposible', CANCIONES.filter(c => c.piano)], [`Mi música · ${propias}`, CANCIONES.filter(c => c.propia)]]){
     const vis = grupo.filter(c => !filtro || quitarAcentos(c.titulo + ' ' + c.artista).includes(filtro)); if(!vis.length) continue;
     { const h = document.createElement('h4'); h.className = 'ojo grupo'; h.textContent = titulo; L.appendChild(h); }
     for(const c of vis){ const b = document.createElement('button'); b.className = 'fila' + (c.id === cancionSel ? ' si' : ''); const r = Y.record[`${c.id}|${modoSel}|${difSel}`];
