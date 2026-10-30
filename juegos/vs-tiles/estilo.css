@@ -290,4 +290,21 @@ h2{ font:800 22px/1.1 var(--n); letter-spacing:.06em; margin:0 0 10px }
 .mision.siguiente .n{ color:#FF2D7A }
 /* el tutorial va primero y a todo lo ancho: es lo que busca alguien que acaba de llegar */
 .secundaria[data-ir="tutorial"]{ grid-column:1 / -1; min-height:64px; border-color:#5CFFB0 }
-@media (min-width:900px){ .secundarias{ grid-template-columns:repeat(5, minmax(0, 1fr)) } .secundaria[data-ir="tutorial"]{ grid-column:auto } }
+@media (min-width:900px){ .secundarias{ grid-template-columns:repeat(6, minmax(0, 1fr)) } .secundaria[data-ir="tutorial"]{ grid-column:auto } }
+
+/* ── el editor de niveles ── */
+#niveles .pegar{ display:flex; gap:8px; margin:14px 0 6px }
+#niveles .pegar input, #niveles select, #edTitulo{ flex:1; min-width:0; min-height:44px; padding:0 12px; background:#ffffff10; border:1px solid #ffffff2a; color:#fff; font:500 16px var(--t); border-radius:0 }
+#niveles .campo{ display:grid; gap:6px } #niveles .campo span{ font:700 11px var(--n); letter-spacing:.18em; color:#ffffffaa }
+#niveles .fila.nivel{ display:grid; grid-template-columns:minmax(0, 1fr); gap:8px; padding:12px; margin-top:8px; background:#ffffff0a; border:1px solid #ffffff14 }
+#niveles .fila.nivel span{ display:block; color:#ffffff99; font-size:13px; margin-top:2px }
+#niveles .fila.nivel .acc{ display:flex; flex-wrap:wrap; gap:6px }
+#editor{ display:none; flex-direction:column; gap:8px; overflow:hidden; padding:calc(8px + env(safe-area-inset-top)) 10px calc(10px + env(safe-area-inset-bottom)) }
+#editor.vis{ display:flex }
+#editor > *{ flex-shrink:0 }
+.edCab{ display:flex; gap:8px; align-items:center } .edCab #edCancion{ font:600 12px var(--t); color:#ffffff99; max-width:30%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+#edLienzo{ flex:1 1 auto !important; min-height:240px; width:100%; touch-action:none; border:1px solid #ffffff1c; display:block }
+.edEstado{ margin:0; font:600 12px var(--n); letter-spacing:.08em; color:#FFF3B0; text-align:center }
+.edHerr{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center } .edHerr .b.si{ outline:2px solid #FFF3B0; outline-offset:-2px }
+.edHerr[hidden]{ display:none }
+.edAyuda{ margin:0; font-size:12px; color:#ffffff88; text-align:center; line-height:1.4 }

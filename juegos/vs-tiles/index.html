@@ -139,6 +139,36 @@
   </div>
 </section>
 
+<section class="pantalla" id="niveles">
+  <div class="cab"><button class="b chico" data-ir="menu">‹</button><h2>Crea tu nivel</h2></div>
+  <div class="panel">
+    <div class="ojo">Hecho a mano · como Geometry Dash, pero de ritmo</div>
+    <p class="sub" style="margin:8px 0 12px">Elige la canción y pon tú las notas. Luego pruébalo y pásale el código a quien quieras: el nivel viaja dentro del mensaje.</p>
+    <label class="campo"><span>Canción</span><select id="nivCancion"></select></label>
+    <button class="b primario grande" id="nivNuevo" style="width:100%;margin-top:10px">Nuevo nivel</button>
+    <div class="pegar"><input id="nivCodigo" placeholder="Pega aquí un código o un enlace de nivel" autocomplete="off" spellcheck="false"><button class="b chico" id="nivPegar">Abrir</button></div>
+    <p class="sub" id="nivMsg" role="status"></p>
+    <div id="nivLista"></div>
+  </div>
+</section>
+
+<section class="pantalla" id="editor">
+  <div class="edCab"><button class="b chico" id="edSalir">‹ Guardar</button><input id="edTitulo" maxlength="40" aria-label="Nombre del nivel"><span id="edCancion"></span></div>
+  <canvas id="edLienzo"></canvas>
+  <p class="edEstado" id="edEstado"></p>
+  <div class="edHerr" id="edHerr">
+    <button class="b chico si" data-h="toque">Toque</button><button class="b chico" data-h="mantener">Mantener</button><button class="b chico" data-h="deslizar">Deslizar</button>
+  </div>
+  <div class="edHerr" id="edDir" hidden>
+    <button class="b chico" data-d="6">←</button><button class="b chico" data-d="7">↖</button><button class="b chico si" data-d="0">↑</button><button class="b chico" data-d="1">↗</button><button class="b chico" data-d="2">→</button><button class="b chico" data-d="4">↓</button>
+  </div>
+  <div class="edHerr">
+    <button class="b chico" id="edPlay" aria-label="Escuchar">▶</button><button class="b chico" id="edDeshacer" aria-label="Deshacer">↶</button><button class="b chico" id="edSnap" aria-label="Rejilla">1/2</button><button class="b chico" id="edZoom" aria-label="Acercar">🔍</button>
+    <button class="b primario chico" id="edProbar">Probar ▶▶</button>
+  </div>
+  <p class="edAyuda">Toca un hueco para poner una nota y tócala otra vez para quitarla. Arrastra para moverte por la canción (en la regla de la derecha, más rápido). Jala la punta blanca de una larga para estirarla.</p>
+</section>
+
 <section class="pantalla" id="creditos"><div class="cab"><button class="b chico" data-ir="menu">‹</button><h2>Créditos</h2></div><div class="panel creditos" id="creditosL"></div></section>
 
 <script type="module" src="js/app.js"></script>
