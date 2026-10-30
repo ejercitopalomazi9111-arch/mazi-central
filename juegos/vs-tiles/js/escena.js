@@ -91,7 +91,8 @@ export const MODELOS_NOTA = {
   pildora: { archivo: 'arcade', ancho: .9, fijo: /Aro/ }, doble: { archivo: 'holo', ancho: .96 }, diamante: { archivo: 'brillante', ancho: .82, grueso: .62, sinMapa: true },
   disco: { archivo: 'disco', ancho: .96 }, cristal: { archivo: 'cristal', pie: true, alto: .62, sinMapa: true }, gema: { archivo: 'gema', pie: true, alto: .6, sinMapa: true },
   estrella: { archivo: 'estrella', acuesta: true, ancho: .92 }, nota: { archivo: 'nota', pie: true, alto: .66, sinMapa: true },
-  temmie: { archivo: 'flakes', pie: true, alto: .7, propio: true }
+  /* la caja de Temmie Flakes, más ancha y gordita, con un contorno que brilla del color del carril (Carlos, 30 oct) */
+  temmie: { archivo: 'flakes', pie: true, alto: .74, propio: true, ancha: .96, fondo: 2.2, contorno: true }
 };
 /* el material del autor, listo para pintarse: sin transparencia de vidrio ni metal espejo (en una pista oscura se ven
    negros) y con brillo propio del color, que es lo que hace que se lea a lo lejos */
@@ -104,7 +105,7 @@ const blanco = new THREE.Color('#FFFFFF'), plata = new THREE.Color('#E6E3F0');
 export function pintarMaterial(n, color){
   if(n.userData.fijo){ n.color.copy(plata); if(n.emissive) n.emissive.setRGB(.1, .1, .12); return; }
   /* las que traen su dibujo (la caja de Temmie Flakes) no se pintan: el carril sólo les da un brillo de su color */
-  if(n.userData.propio){ n.color.copy(blanco); if(n.emissive) n.emissive.copy(color).multiplyScalar(.12); return; }
+  if(n.userData.propio){ n.color.copy(blanco); if(n.emissive) n.emissive.copy(color).multiplyScalar(.22); return; }
   n.color.copy(color).lerp(blanco, .25); if(n.emissive) n.emissive.copy(color).multiplyScalar(.4); }
 
 export async function crearEscena(lienzo){
@@ -236,9 +237,13 @@ export async function crearEscena(lienzo){
     if(F.caja){ geo.scale(ANCHO * F.caja[0] / t.x, F.caja[1] / t.y, ANCHO * F.caja[2] / t.z); t.y = F.caja[1]; }
     else { let k = F.pie ? F.alto / t.y : Math.min(ANCHO * F.ancho / Math.max(t.x, t.z), (F.grueso || .3) / t.y);
       if(F.pie) k = Math.min(k, ANCHO * .95 / t.x);
-      geo.scale(k, k, k); t.y *= k; }
+      geo.scale(k, k, k); t.multiplyScalar(k); }
+    /* ancha: se estira de lado hasta ese ancho de carril (y `fondo` veces más gruesa), sin cambiar el alto */
+    if(F.ancha){ const sx = ANCHO * F.ancha / t.x; geo.scale(sx, 1, F.fondo || 1); }
+    /* el contorno: la misma figura un poco más grande, por dentro y de un solo color (el truco del casco invertido) */
+    const hull = F.contorno ? geo.clone() : null;
     geo.translate(0, t.y / 2 - .07, 0);   /* apoyado en la pista (la nota va a .08 de altura) */
-    return { geo, mats, F };
+    return { geo, mats, F, hull, centro: t.y / 2 - .07 };
   }
   let formaActual = 'barra';
   async function ponerForma(id){
@@ -247,9 +252,14 @@ export async function crearEscena(lienzo){
     for(const m of reserva){ m.geometry = F.geo;
       /* cada nota con sus propios materiales: el color y la transparencia cambian nota por nota */
       const ms = F.mats.map(base => materialDeNota(base, F.F, cTmp.set('#B44BFF')));
-      m.material = ms; m.userData.modelo = ms; } }
+      m.material = ms; m.userData.modelo = ms;
+      if(m.userData.hull){ m.remove(m.userData.hull); m.userData.hull.material.dispose(); m.userData.hull = null; }
+      if(F.hull){ const h = new THREE.Mesh(F.hull, new THREE.MeshBasicMaterial({ color: '#ffffff', side: THREE.BackSide, transparent: true, depthWrite: false, fog: false }));
+        h.position.y = F.centro; h.scale.set(1.16, 1.1, 1.3); h.renderOrder = -1; m.add(h); m.userData.hull = h; } } }
   const cTmp = new THREE.Color();
-  function pintaNota(m, color, alfa, esc){ cTmp.set(color); for(const mt of m.userData.modelo || []){ mt.opacity = alfa; pintarMaterial(mt, cTmp); } m.scale.setScalar(esc); }
+  function pintaNota(m, color, alfa, esc){ cTmp.set(color); for(const mt of m.userData.modelo || []){ mt.opacity = alfa; pintarMaterial(mt, cTmp); } m.scale.setScalar(esc);
+    const h = m.userData.hull; if(h){ h.material.color.copy(cTmp).lerp(blancoN, .45); h.material.opacity = alfa * (.75 + .25 * Math.sin(performance.now() / 120)); } }
+  const blancoN = new THREE.Color('#FFFFFF');
   await ponerForma('barra');
   for(let i = 0; i < 40; i++) cuerpos.push(pieza(null, ANCHO * .4, 1, true));
   for(let i = 0; i < 60; i++){ const f = pieza(tFlecha, ANCHO * .62, ANCHO * .62); f.material.depthTest = false; f.renderOrder = 40; flechas.push(f); }

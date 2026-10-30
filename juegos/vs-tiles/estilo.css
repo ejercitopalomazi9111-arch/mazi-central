@@ -234,30 +234,21 @@ h2{ font:800 22px/1.1 var(--n); letter-spacing:.06em; margin:0 0 10px }
 /* ── Mercado: las tres máquinas ── */
 .gSaldo{ display:flex; flex-wrap:wrap; gap:6px 14px; font:800 12px var(--n); letter-spacing:.06em; color:var(--gris); margin-bottom:8px }
 .gSaldo i{ display:inline-block; width:10px; height:10px; margin-right:6px; transform:rotate(45deg) } .gSaldo .ec{ background:var(--cian) } .gSaldo .se{ background:var(--oro) }
-.maquina{ position:relative; margin:8px 0; padding:10px; background:linear-gradient(180deg, #1B0D2Bcc, #09040Fcc); border:1px solid var(--linea); display:flex; flex-direction:column; align-items:center; gap:8px; min-height:240px }
-.maquina .sub{ text-align:center; margin:0 }
+/* la vitrina 3D (vitrina.js): un foco de arcade detrás de la máquina, con el borde que brilla del color de la casa */
+.maquina{ position:relative; margin:8px 0; padding:0 0 10px; border-radius:18px; overflow:hidden; display:flex; flex-direction:column; align-items:center; gap:8px;
+  background:radial-gradient(120% 70% at 50% 34%, #3A1A5Ccc, #170A26 58%, #07030C); box-shadow:inset 0 0 0 1px #ffffff1c, inset 0 -40px 60px #7E173540, 0 18px 40px #0009 }
+.maquina::before{ content:""; position:absolute; inset:0 0 auto; height:3px; background:linear-gradient(90deg, var(--magenta), var(--morado), var(--cian)); opacity:.9 }
+#vitrina{ display:block; width:100%; max-width:440px; aspect-ratio:10 / 11; touch-action:none }
+.maquina .sub{ text-align:center; margin:0; padding:0 14px; min-height:2.6em } .maquina .sub2{ opacity:.7 }
+.gCapa{ position:absolute; inset:0 0 auto; aspect-ratio:10 / 11; max-width:440px; margin:auto; display:none; place-items:center; padding:14px; background:radial-gradient(circle at 50% 50%, #170A26cc, #07030Cee) }
+.gCapa.vis{ display:grid; animation:entra .35s both }
+.gCarga{ position:absolute; top:40%; left:0; right:0; text-align:center; font:800 12px var(--n); letter-spacing:.2em; text-transform:uppercase; color:var(--gris); opacity:0; transition:opacity .3s; pointer-events:none }
+.gCarga.vis{ opacity:1 }
+#gTira button{ flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:3px; min-height:52px; padding:9px 10px } #gTira button small{ font:700 10px/1.15 var(--n); letter-spacing:.02em; text-transform:none; opacity:.75; max-width:150px; text-align:left; white-space:normal }
 .gBotones{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center } .gBotones .b{ flex:1 1 auto }
 .muestra .punto{ display:inline-block; width:14px; height:14px; border-radius:50%; margin:1px } .muestra .inicial{ font:900 30px var(--n); font-style:normal }
 .muestra .tituloObj{ font:900 11px var(--g); color:#FFD7E5; font-style:normal } .muestra img{ max-width:72%; max-height:72% } .muestra img.foto{ max-width:100%; max-height:100%; object-fit:cover }
-/* carrusel */
-.gcMarco{ position:relative; width:100%; max-width:420px; height:132px; overflow:hidden; background:#07030C; border:1px solid var(--linea);
-  -webkit-mask-image:linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); mask-image:linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent) }
-.gcPista{ display:flex; height:100%; align-items:center; will-change:transform }
-.gcCelda{ flex:0 0 88px; width:88px; margin:0 4px; height:110px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; background:linear-gradient(180deg, #ffffff08, color-mix(in srgb, var(--rc) 22%, transparent)); border:1px solid #ffffff14; border-bottom:3px solid var(--rc) }
-.gcCelda .muestra{ height:56px; display:grid; place-items:center } .gcCelda span{ font-size:10px; text-align:center; line-height:1.1; padding:0 4px; color:var(--gris) }
-.gcCelda.gana{ transform:scale(1.07); box-shadow:0 0 0 2px var(--rc), 0 0 24px var(--rc); transition:.3s }
-.gcFlecha{ position:absolute; left:50%; transform:translateX(-50%); width:0; height:0; z-index:2 } .gcFlecha.arriba{ top:0; border:10px solid transparent; border-top:14px solid var(--magenta) } .gcFlecha.abajo{ bottom:0; border:10px solid transparent; border-bottom:14px solid var(--magenta) }
-/* sobre */
-.sobreZona{ width:100%; min-height:300px; display:grid; place-items:center; perspective:900px }
-.paquete{ position:relative; width:min(210px, 60vw); aspect-ratio:.68; background:linear-gradient(150deg, #7E1735, #2A0F3A 45%, #AC27FF); border:2px solid #ffffff40; display:grid; place-items:center; overflow:hidden; touch-action:none; box-shadow:0 18px 50px #000a, 0 0 40px #AC27FF55; animation:paqFlota 2.4s ease-in-out infinite }
-.paquete::after{ content:""; position:absolute; inset:-50%; background:linear-gradient(115deg, transparent 40%, #ffffff40 50%, transparent 60%); animation:paqBrillo 2.8s linear infinite }
-.paqLogo{ font:900 34px var(--n); color:#fff; text-align:center } .paqLogo i{ font-style:normal; color:var(--cian); display:block; font-size:18px } .paqSub{ position:absolute; bottom:14px; font:800 9px var(--n); letter-spacing:.2em; color:#ffffffcc }
-.paquete .rasgar{ position:absolute; top:0; left:0; height:18px; width:var(--rasgado, 0%); background:repeating-linear-gradient(90deg, #fff 0 6px, transparent 6px 10px); opacity:.85; z-index:2 }
-.paquete.listo{ outline:2px dashed #ffffff66; outline-offset:6px }
-.paquete.rasgado{ animation:paqSale .65s ease-in forwards }
-@keyframes paqFlota{ 50%{ transform:translateY(-6px) rotate(-1deg) } }
-@keyframes paqBrillo{ from{ transform:translateX(-30%) } to{ transform:translateX(30%) } }
-@keyframes paqSale{ to{ transform:translateY(-120%) rotate(-12deg) scale(.8); opacity:0 } }
+/* las cartas del sobre, encima de la vitrina */
 .cartas{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:10px; width:100%; max-width:380px }
 .cartas .carta:nth-child(4){ grid-column:1 / 2; margin-left:50% } .cartas .carta:nth-child(5){ grid-column:2 / 3; margin-left:50% }
 /* el volteo sin 3D: la carta se encoge de lado, cambia de cara a la mitad y vuelve (con rotateY y
@@ -300,10 +291,14 @@ h2{ font:800 22px/1.1 var(--n); letter-spacing:.06em; margin:0 0 10px }
 .boton-sangre .b, .b.mini.boton-sangre{ background:linear-gradient(135deg, #4A0011, #170A26) }
 .boton-sangre .b::before, .b.mini.boton-sangre::before{ background:linear-gradient(135deg, #FF2D55, #7E1735 50%, #FF6A8A) }
 .boton-sangre .b.primario{ background:linear-gradient(135deg, #C4002B, #7E1735) }
-/* los botones de Temmie (secretos): blancos y azul cielo, con su cara en el principal, y vibran un poquito como ella */
-.boton-temmie .b, .b.mini.boton-temmie{ background:linear-gradient(135deg, #FFFFFF, #CFEAFF); color:#0B2A4A; text-transform:lowercase }
-.boton-temmie .b::before, .b.mini.boton-temmie::before{ background:linear-gradient(135deg, #16A2F0, #F7C6D9 50%, #16A2F0) }
-.boton-temmie .b.primario{ background:#FFFFFF url(sprites/temmie-cara.webp) right 8px center / 40px 40px no-repeat; padding-right:56px }
+/* los botones de Temmie (secretos): los colores de su suéter, amarillo y azul a rayas, con blanco y negro
+   (Carlos, 30 oct: «hazlos amarillo azul blanco y negro para que sean más bonitos»). Vibran un poquito, como ella */
+.boton-temmie .b, .b.mini.boton-temmie{ background:repeating-linear-gradient(180deg, #F6E64B 0 8px, #8ED3F6 8px 16px); color:#0A0A0A; text-transform:lowercase;
+  text-shadow:-1.5px -1.5px 0 #fff, 1.5px -1.5px 0 #fff, -1.5px 1.5px 0 #fff, 1.5px 1.5px 0 #fff, 0 2px 0 #fff }
+.boton-temmie .b::before, .b.mini.boton-temmie::before{ background:#0A0A0A; padding:3px }
+.boton-temmie .b.primario{ background:linear-gradient(#FFFFFF, #FFFFFF) top / 100% 64% no-repeat, repeating-linear-gradient(180deg, #F6E64B 0 6px, #8ED3F6 6px 12px);
+  padding-right:56px; color:#0A0A0A }
+.boton-temmie .b.primario::after{ content:""; position:absolute; right:8px; top:50%; width:40px; height:40px; translate:0 -50%; background:url(sprites/temmie-cara.webp) center / contain no-repeat; pointer-events:none }
 .boton-temmie .b:active{ animation:temVibra .12s steps(2) 3 }
 @keyframes temVibra{ 0%{ translate:-1px 0 } 50%{ translate:1px 1px } 100%{ translate:0 -1px } }
 .avatar img{ width:100%; height:100%; object-fit:cover; display:block }
@@ -331,3 +326,4 @@ h2{ font:800 22px/1.1 var(--n); letter-spacing:.06em; margin:0 0 10px }
 .edHerr{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center } .edHerr .b.si{ outline:2px solid #FFF3B0; outline-offset:-2px }
 .edHerr[hidden]{ display:none }
 .edAyuda{ margin:0; font-size:12px; color:#ffffff88; text-align:center; line-height:1.4 }
+.muestra img.pixel{ image-rendering:pixelated; object-fit:contain }

@@ -22,6 +22,8 @@ export async function cargarSprites(){
   const S = {}; await Promise.all(nombres.map(n => new Promise(r => { const im = new Image(); im.onload = () => { S[n] = im; r(); }; im.onerror = r; im.src = `sprites/${n}.png`; })));
   /* la cara de Temmie (de su modelo 3D, Stewie_Box, CC BY) para los estilos secretos */
   await new Promise(r => { const im = new Image(); im.onload = () => { S.temmie = im; r(); }; im.onerror = r; im.src = 'sprites/temmie-cara.webp'; });
+  /* su golpe es un «hOI!» de letras de pixel, sin fondo (Carlos, 30 oct) */
+  await new Promise(r => { const im = new Image(); im.onload = () => { S.hoi = im; r(); }; im.onerror = r; im.src = 'sprites/temmie-hoi.png'; });
   /* versiones teñidas (el canvas 2D no tiñe solo): se hornean una vez */
   S.teñir = (n, color) => { const k = n + color; if(S[k]) return S[k]; const im = S[n]; if(!im) return null; const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d');
     x.drawImage(im, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = color; x.fillRect(0, 0, c.width, c.height); x.globalCompositeOperation = 'destination-over'; x.globalAlpha = .0; x.drawImage(im, 0, 0); return S[k] = c; };
@@ -55,7 +57,7 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
   function marcar(n, j, dt, donde){
     est.estado[n.id] = n.fin && j.id !== 'fallo' ? 'sosteniendo' : (j.id === 'fallo' ? 'fallada' : 'hecha');
     est.ultimoGolpe = performance.now();
-    if(j.id !== 'fallo'){ if(sonidos.golpe && ajustes.sonidoGolpe) reloj.golpe(sonidos.golpe, .35);
+    if(j.id !== 'fallo'){ if(ajustes.hoiNotas && sonidos.hoi) reloj.golpe(sonidos.hoi, .5); else if(sonidos.golpe && ajustes.sonidoGolpe) reloj.golpe(sonidos.golpe, .35);
       if(n.modo === 'carril') escena.golpeRiel(n.r, j.id === 'sonoluz' ? '#FFF3B0' : null);
       const [px, py] = donde || [W / 2, H * .6]; efectos.push({ x: px, y: py, t0: performance.now(), j, color: j.color }); }
     else if(sonidos.fallo) reloj.golpe(sonidos.fallo, .25);
@@ -300,7 +302,10 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
         x.globalAlpha = (.35 + .4 * mov) * q.vis; x.fillStyle = '#fff'; x.beginPath(); x.arc(q.x, q.y, Math.max(3, rad * .12), 0, Math.PI * 2); x.fill(); x.restore(); } }
     /* los destellos de cada acierto */
     for(let i = efectos.length - 1; i >= 0; i--){ const e = efectos[i], u = (ahora - e.t0) / 420; if(u >= 1){ efectos.splice(i, 1); continue; }
-      const sp = ajustes.golpeSprite || 'p_flare_01', paloma = sp === 'paloma' || sp === 'temmie', propio = sp === 'temmie' ? S.temmie : S.paloma;
+      const sp = ajustes.golpeSprite || 'p_flare_01', paloma = sp === 'paloma', propio = S.paloma;
+      if(sp === 'temmie' && S.hoi){ const w = 96 * (u < .18 ? .6 + 2.6 * u : 1.07 - .07 * u), h = w * S.hoi.height / S.hoi.width, giro = ((e.t0 * 7) % 1 - .5) * .5;
+        x.save(); x.globalAlpha = u < .7 ? 1 : (1 - u) / .3; x.translate(e.x + (Math.random() - .5) * 3, e.y - 30 - 46 * u); x.rotate(giro); x.imageSmoothingEnabled = false; x.drawImage(S.hoi, -w / 2, -h / 2, w, h); x.restore();
+        if(e.j.id === 'sonoluz') img(S.teñir('p_star_06', '#FFF3B0'), e.x, e.y, 80 + 220 * u, -u * 3, 1 - u, true); continue; }
       img(paloma ? propio : S.teñir(sp, e.color), e.x + (sp === 'temmie' ? (Math.random() - .5) * 6 : 0), e.y - (paloma ? 40 * u : 0), (paloma ? 70 : 110) + 160 * u, paloma ? 0 : u * 2, 1 - u, !paloma); if(e.j.id === 'sonoluz') img(S.teñir('p_star_06', '#FFF3B0'), e.x, e.y, 80 + 220 * u, -u * 3, 1 - u, true); }
     hud(t, ahora, lat, modo);
     if(enPausa){ x.fillStyle = '#05020Acc'; x.fillRect(0, 0, W, H); }

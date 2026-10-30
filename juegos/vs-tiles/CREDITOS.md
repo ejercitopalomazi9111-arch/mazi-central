@@ -33,10 +33,26 @@ ese mismo modelo es `sprites/temmie-cara.webp`. La Temmie del TEM SHOP en su caj
 es «undertale temmie» de **xunbile** (Sketchfab, CC BY 4.0), sin el cuarto, el letrero de diálogo ni el contorno. Temmie es personaje de **Undertale**, de **Toby Fox**: este
 es un juego de fans, gratis, y el modelo es de un fan.
 
+**El Tem Shop** (el cuarto de la canción de Temmie, `js/cine.js`): el dibujo del cuarto, el letrero «TEM SHOP» y el
+piso de tablas salen de las texturas del mismo modelo de **xunbile** (CC BY 4.0) (`sprites/temshop-*`); los muebles
+(libros, cajas, perchero, osito, canasta, mesitas, radio, lámpara, planta, cojín y tapete) son del **Furniture Kit**
+de **Kenney** (CC0, `modelos/temshop/`). El «hOI!» de letras de pixel (`sprites/temmie-hoi.png`) y su voz
+(`sonidos/hoi.wav`, la voz «claude» de Piper para español de México, aguda) son nuestros.
+
 **Los robots gigantes** de la cinemática de la Historia (`js/cine.js`): «Medium Mech Striker» de **MSGDI**
 (`modelos/robot-striker.glb`) y «Calibur | VGDC» de **MooKorea** (`modelos/robot-calibur.glb`), Sketchfab,
 **CC BY 4.0**, con sus animaciones de pelea originales (se dejaron sólo las que se usan y texturas de 512 px).
 Las explosiones, el humo, la lluvia, las esporas, el confeti y las luces del público son los sprites de Kenney.
+
+## El Mercado de Ecos (`js/vitrina.js`, `modelos/mercado/`)
+
+Modelos de **Sketchfab**, todos **CC BY 4.0**, con texturas WebP de 512 px (los peluches, de 256):
+«Claw machine (with textures)» de **octopushh8** (la Garra «Star Catcher»; el gancho se separó en carro, tubo,
+cabeza y pinzas para moverlo) · «Basic booster pack (animated)» de **ZwiebelGames** (el Sobre, con sus animaciones
+de abrir y sacudir; la cara se cambió por la del juego y se quitaron sus letras) · «Wheel of Fortune» de
+**nyu_grad_alley_2020** (la Ruleta; el disco de rarezas y el letrero son nuestros, encima del suyo) · los peluches
+de la garra: «Star soft toy» de **CoFate**, «Duck Plush» y «Penguin plush» de **SunnyBuns** y «Low Poly Bunny Plush
+Toy» de **sunsetscorpion**. Los reflejos salen de **neon_photostudio** de **Poly Haven** (CC0), a 1024 px.
 
 ## Formas de nota
 
@@ -47,7 +63,7 @@ texturas WebP de 256 px (`herramientas/fotos-notas.html` saca sus fotos para el 
 «Stylized Puck» de RiZoRuS77 (Disco) · «Low Poly Stylized Gemstone» de Discover (Cristal) ·
 «5 Colored Fantasy Stylized Gems» de Incg5764 (Gema engarzada) · «Gold Star» de Roberto Chiaveri (Estrella) ·
 «CC0 - Muscial Note» de plaggy (Corchea).
-La secreta de Temmie: «Cereal Temmie Flakes» de **RavenBlox** (Temmie Flakes), con su dibujo original.
+La secreta de Temmie: «Temmie flakes» de **josiahzapata14** (Temmie Flakes), con su dibujo original en 512 px (antes era la de RavenBlox; Carlos pidió la caja más ancha y que brillara).
 
 ## Los bailes
 
