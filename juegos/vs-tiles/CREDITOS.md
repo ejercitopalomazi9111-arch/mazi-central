@@ -31,7 +31,7 @@ espejo; bajarlos de Sketchfab pide una cuenta (un token de su API).
 
 Modelos de **Sketchfab**, todos **Creative Commons: By Attribution 4.0**; se dejó sólo la pieza, centrada, con
 texturas WebP de 256 px (`herramientas/fotos-notas.html` saca sus fotos para el vestidor):
-«Arcade push button» de IgorMonasterio (Botón de arcade) · «Holo-Puck» de thekaz.2128 (Holo-disco) ·
+«Lowpoly Gold Bar» de l0wpoly (Barra, la de fábrica) · «Arcade push button» de IgorMonasterio (Botón de arcade) · «Holo-Puck» de thekaz.2128 (Holo-disco) ·
 «Gems (21 different shapes)» de Vivien Deroche / blue-odym, el corte redondo inglés (Brillante) ·
 «Stylized Puck» de RiZoRuS77 (Disco) · «Low Poly Stylized Gemstone» de Discover (Cristal) ·
 «5 Colored Fantasy Stylized Gems» de Incg5764 (Gema engarzada) · «Gold Star» de Roberto Chiaveri (Estrella) ·

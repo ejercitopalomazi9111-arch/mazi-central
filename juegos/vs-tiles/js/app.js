@@ -66,7 +66,7 @@ const OBJETOS = [
   ...ESCENARIOS.map((e, i) => ({ id: 'fondo:' + i, cat: 'fondo', nombre: e.nombre, raro: i < 2 ? 'c' : i < 4 ? 'r' : i < 6 ? 'e' : 'l', img: `escenarios/${e.id}.jpg` })),
   /* cómo se ve cada modo (Carlos, 29 oct: «súmale estilos de notas en cada modo… también estilo de botones») */
   /* las formas son modelos de verdad (escena.js · MODELOS_NOTA); la miniatura es su foto (modelos/notas/*.webp) */
-  { id: 'forma:barra', cat: 'forma', nombre: 'Barra', raro: 'c' }, { id: 'forma:disco', cat: 'forma', nombre: 'Disco', raro: 'c', foto: 'disco' },
+  { id: 'forma:barra', cat: 'forma', nombre: 'Barra', raro: 'c', foto: 'lingote' }, { id: 'forma:disco', cat: 'forma', nombre: 'Disco', raro: 'c', foto: 'disco' },
   { id: 'forma:pildora', cat: 'forma', nombre: 'Botón de arcade', raro: 'r', foto: 'arcade' }, { id: 'forma:nota', cat: 'forma', nombre: 'Corchea', raro: 'r', foto: 'nota' },
   { id: 'forma:cristal', cat: 'forma', nombre: 'Cristal', raro: 'e', foto: 'cristal' }, { id: 'forma:gema', cat: 'forma', nombre: 'Gema engarzada', raro: 'e', foto: 'gema' },
   { id: 'forma:diamante', cat: 'forma', nombre: 'Brillante', raro: 'l', foto: 'brillante' }, { id: 'forma:estrella', cat: 'forma', nombre: 'Estrella', raro: 'l', foto: 'estrella' },
