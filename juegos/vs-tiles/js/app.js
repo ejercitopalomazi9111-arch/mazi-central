@@ -3,7 +3,8 @@
    Lo que el jugador gana y elige se guarda en el teléfono (localStorage); si el navegador no deja,
    se juega igual y sólo no se recuerda. */
 import { reloj } from './reloj.js';
-import { armarCarta, armarTutorial, DIFS, MODOS } from './cartas.js';
+import { armarCarta, armarTutorial, armarNivel, DIFS, MODOS } from './cartas.js';
+import { montarEditor } from './editor.js';
 import { crearEscena, ESCENARIOS, PERSONAJES, COLORES_RIEL } from './escena.js';
 import { crearPartida, cargarSprites } from './juego.js';
 import { analizar } from './analisis.js';
@@ -183,11 +184,13 @@ $('#arranque').addEventListener('click', async function entrar(e){
   await reloj.despertar(); reloj.desfase = Y.desfase / 1000; reloj.desfaseVisual = Y.desfaseVisual / 1000;
   await Promise.all([['golpe', 'impactGlass_light_002'], ['fallo', 'impactPunch_medium_000'], ['clic', 'tick_001'], ['boton', 'click_002'], ['glitch', 'glitch_003'], ['premio', 'confirmation_002']]
     .map(async ([k, f]) => { sonidos[k] = await reloj.cargar(`sonidos/${f}.wav`).catch(() => null); }));
-  if(!Y.visto) intro(); else if(!Y.nombre) perfil(); else menu();
+  if(!Y.visto) intro(); else if(!Y.nombre) perfil(); else if(!(await editorUI.desdeEnlace())) menu();
 });
 document.addEventListener('click', (e) => { const b = e.target.closest('[data-ir]'); if(!b) return; sonidos.boton && reloj.golpe(sonidos.boton, .25); ir(b.dataset.ir); });
 function ir(a){ ({ menu, historia, libre: () => canciones('libre'), reto: () => canciones('reto'), lab: () => mostrar('lab'), mercado, vestidor, records, ajustes, creditos,
-  saltarIntro: () => { cortarIntro = true; }, tutorial: () => { Y.tutorialVisto = true; guardar(); jugar('itty-bitty-8-bit', 'carril', 'tutorial'); }, aCalibrar, saltarCalib: () => { Y.calibrado = true; guardar(); if(Y.tutorialVisto) menu(); else ir('tutorial'); }, seguir: () => { partida.alternarPausa(); }, reintentar: jugarDeNuevo, salirJuego: () => { partida.salir(); if(ultima?.deHistoria) historia(); else canciones(modoLista); }, libreVolver: () => ultima?.alMenu ? menu() : ultima?.deHistoria ? finDeMision() : canciones(modoLista) })[a]?.(); }
+  saltarIntro: () => { cortarIntro = true; }, tutorial: () => { Y.tutorialVisto = true; guardar(); jugar('itty-bitty-8-bit', 'carril', 'tutorial'); }, aCalibrar, saltarCalib: () => { Y.calibrado = true; guardar(); if(Y.tutorialVisto) menu(); else ir('tutorial'); }, seguir: () => { partida.alternarPausa(); }, reintentar: jugarDeNuevo, salirJuego: () => { partida.salir(); if(ultima?.nivel) volverNivel(); else if(ultima?.deHistoria) historia(); else canciones(modoLista); }, libreVolver: () => ultima?.alMenu ? menu() : ultima?.nivel ? volverNivel() : ultima?.deHistoria ? finDeMision() : canciones(modoLista), niveles: () => editorUI.lista() })[a]?.(); }
+/* de un nivel hecho a mano se regresa a donde se vino: al editor si es tuyo, a la lista si te lo pasaron */
+function volverNivel(){ partida.salir(); const n = ultima.nivel; if(!n.de && editorUI.nivel?.id === n.id) editorUI.abrir(n); else editorUI.lista(); }
 
 /* ── la cinemática ── */
 let cortarIntro = false;
@@ -248,7 +251,7 @@ const PANELES = [
   { ir: 'lab', k: 'Tu música', t: 'Mi música', corto: 'Mi música', s: 'Mete tus canciones: anime, Vocaloid, lo que tengas en el teléfono.', c: '#5CFFB0' },
   { ir: 'mercado', k: 'Mercado de Ecos', t: 'Tiradas', corto: 'Mercado', s: 'Garra, sobres y carrusel. Todo se gana jugando.', c: '#FFE08A' }
 ];
-const SECUNDARIAS = [{ ir: 'tutorial', t: 'Tutorial', s: 'Aprende en un minuto, sin presión', foto: 'libre' }, { ir: 'vestidor', t: 'Vestidor', s: 'Voz, notas, golpe y fondo' }, { ir: 'records', t: 'Récords', s: 'Tus mejores partidas' }, { ir: 'ajustes', t: 'Ajustes', s: 'Sincronía y velocidad' }, { ir: 'creditos', t: 'Créditos', s: 'Quién hizo todo' }];
+const SECUNDARIAS = [{ ir: 'tutorial', t: 'Tutorial', s: 'Aprende en un minuto, sin presión', foto: 'libre' }, { ir: 'niveles', t: 'Crea tu nivel', s: 'A mano, y compártelo' }, { ir: 'vestidor', t: 'Vestidor', s: 'Voz, notas, golpe y fondo' }, { ir: 'records', t: 'Récords', s: 'Tus mejores partidas' }, { ir: 'ajustes', t: 'Ajustes', s: 'Sincronía y velocidad' }, { ir: 'creditos', t: 'Créditos', s: 'Quién hizo todo' }];
 let panelSel = 0;
 function armarMenu(){ const T = $('#mTira'), C = $('#mCarrusel'), P = $('#mPuntos'), S = $('#mSec'); T.innerHTML = C.innerHTML = P.innerHTML = S.innerHTML = '';
   PANELES.forEach((p, i) => {
@@ -320,7 +323,7 @@ async function jugar(id, modo, dif, deHistoria = null, prueba = {}){
   try{
     const an = await datos(c.id); paso('Despertando el audio', .3);
     const buf = await audio(c.id); paso('Escribiendo las notas', .65);
-    const carta = dif === 'tutorial' ? armarTutorial(an, c) : armarCarta(an, c, modo, dif, { telefono: TELEFONO }); ultima = { c, modo, dif, deHistoria };
+    const carta = dif === 'tutorial' ? armarTutorial(an, c) : dif === 'nivel' ? armarNivel(an, c, prueba.nivel) : armarCarta(an, c, modo, dif, { telefono: TELEFONO }); ultima = { c, modo, dif, deHistoria, nivel: prueba.nivel || null };
     escena.precargar(carta.eventos.filter(e => e.tipo === 'escenario').map(e => e.n)); paso('Llamando a las voces', .85);
     /* en la Historia, cada misión trae su cinemática de fondo (cine.js); en Juego libre, ninguna */
     { const [ci, mi] = String(deHistoria || '').split('.').map(Number); await escena.ponerCine(prueba.cine ?? (deHistoria ? HISTORIA[ci]?.misiones[mi]?.cine || null : null)); }
@@ -348,7 +351,7 @@ const TELEFONO = matchMedia('(pointer: coarse)').matches && Math.min(innerWidth,
 function cuenta(carta){ const el = $('#cuenta'); el.classList.add('vis'); const primero = carta.notas[0]?.t ?? 2;
   (function paso(){ const t = reloj.ahora(), falta = Math.min(primero, 0) - t; if(!partida.corriendo || t > Math.min(primero, 0) - .1 && t > -.4){ el.classList.remove('vis'); return; } el.textContent = t < -2 ? '3' : t < -1 ? '2' : '1'; requestAnimationFrame(paso); })(); }
 $('#pausaB').addEventListener('click', () => partida.alternarPausa());
-function jugarDeNuevo(){ partida.salir(); if(ultima) jugar(ultima.c.id, ultima.modo, ultima.dif, ultima.deHistoria); }
+function jugarDeNuevo(){ partida.salir(); if(ultima) jugar(ultima.c.id, ultima.modo, ultima.dif, ultima.deHistoria, ultima.nivel ? { nivel: ultima.nivel } : {}); }
 
 /* ── resultados ── */
 function resultados({ cancion, carta, J, murio, auto }){
@@ -375,6 +378,8 @@ function resultados({ cancion, carta, J, murio, auto }){
   $('#resConsejo').textContent = Math.abs(media) > 12 ? `En promedio vas ${Math.round(Math.abs(media))} ms ${media < 0 ? 'antes' : 'tarde'}: si te pasa siempre, mueve la sincronía en Ajustes.` : peor && peor[0] > .25 ? `Donde más fallaste: la sección ${peor[1] + 1} (${MODOS[carta.plan[peor[1]].modo].nombre}). Repítela.` : 'Tu ritmo está centrado. Ahora súbele la dificultad.';
   /* sin morir (o en modo práctica) se juega hasta el final, pero no se gana nada: si no, morirse no costaría */
   if(carta.tutorial){ $('#resRango').textContent = '✓'; $('#resRango').style.setProperty('--c', '#5CFFB0'); $('#resSellos').innerHTML = '<span style="border-color:#5CFFB0;color:#5CFFB0">TUTORIAL COMPLETO</span>'; $('#resultados [data-ir="libreVolver"]').textContent = 'Ir al menú'; ultima.alMenu = true; return; }
+  /* un nivel hecho a mano no da Ecos ni récords (si no, cualquiera se haría uno de tres notas para cobrar) */
+  if(carta.propio){ $('#resSellos').innerHTML += `<span style="border-color:#38E1FF;color:#38E1FF">NIVEL A MANO · ${esc(carta.titulo || '')}</span>`; $('#resultados [data-ir="libreVolver"]').textContent = ultima?.nivel?.de ? 'Mis niveles' : 'Volver al editor'; return; }
   if(Y.sinMorir && !auto){ $('#resSellos').innerHTML += '<span style="border-color:#B9AECB;color:#B9AECB">PRÁCTICA · SIN ECOS</span>'; return; }
   if(!auto){ const k = `${cancion.id}|${carta.modo}|${carta.dif}`, ant = Y.record[k]; if(!ant || J.puntaje > ant.puntaje) Y.record[k] = { puntaje: J.puntaje, rango: r, precision: +J.precision.toFixed(2), combo: J.comboMax, fc: J.fc, ap: J.ap };
     const primera = !ant && !murio && J.puntaje >= 600000;
@@ -452,6 +457,7 @@ function vista(o){ const k = o.id.split(':')[1];
   if(o.cat === 'golpe') return `<img src="sprites/${o.sprite}.png" alt="">`; if(o.cat === 'fondo') return `<img src="${o.img}" alt="" class="foto">`;
   if(o.cat === 'nota') return o.colores.slice(0, 4).map(c => `<i class="punto" style="background:${c}"></i>`).join('');
   if(o.cat === 'voz') return `<i class="inicial" style="color:${o.color}">${o.nombre[0]}</i>`; return `<i class="tituloObj">«${o.nombre}»</i>`; }
+const editorUI = montarEditor({ $, Y, CANCIONES, datos, audio, reloj, sonidos, guardar, aviso, mostrar, esc, jugarNivel: (n, desde = null) => jugar(n.c, 'carril', 'nivel', null, { nivel: n, desde }) });
 const mercadoUI = montarMercado({ $, Y, RAREZA, sortear, pagar, barra, reloj, sonidos, vista, pool: () => OBJETOS.filter(o => !o.secreto) });
 function mercado(){ mostrar('mercado'); barra(); $('#probas').innerHTML = Object.values(RAREZA).map(r => `${r.n} ${r.p} %`).join(' · ') + '<br>Repetido = Ecos de vuelta'; mercadoUI.abrir(); }
 

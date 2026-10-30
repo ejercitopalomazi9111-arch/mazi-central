@@ -260,3 +260,18 @@ export function armarTutorial(an, cancion){
   const plan = [{ t0: 0, t1: fin + 1, modo: 'carril', carriles: 3, eventos: [], aviso: 0, rival: false, precision: false, energia: .3 }];
   return { cancion: cancion.id, modo: 'carril', dif: 'tutorial', D, nivel: 0, notas, eventos: eventos.sort((a, b) => a.t - b.t), plan, beat, dur: Math.min(an.dur, fin + 2), total: notas.length, tutorial: true };
 }
+
+/* UN NIVEL HECHO A MANO (editor.js): las notas las puso una persona, no el analizador. Cinco carriles quietos,
+   sin reglas que cambien a media canción, para que se juegue exactamente como se dibujó. Cada nota guarda su
+   columna (0-4), su segundo, su tipo y, si es de mantener, dónde acaba; si es de deslizar, hacia dónde */
+export function armarNivel(an, cancion, nivel){
+  const D = { ...DIFS.find(d => d.id === 'normal'), id: 'normal', nombre: 'Hecho a mano' }, rs = DISPOSICIONES[5].rieles;
+  const g = an.golpes, beat = g.length > 1 ? (g[g.length - 1] - g[0]) / (g.length - 1) : .5;
+  const notas = (nivel.notas || []).filter(n => n.t > .3 && n.t < an.dur - .2).sort((a, b) => a.t - b.t)
+    .map((n, i) => ({ id: i, modo: 'carril', t: n.t, r: rs[Math.max(0, Math.min(4, n.c))], tipo: n.tipo === 'hold' || n.tipo === 'flick' ? n.tipo : 'tap',
+      ...(n.tipo === 'hold' ? { fin: Math.max(n.t + .1, n.fin || n.t + beat) } : {}), ...(n.tipo === 'flick' ? { dir: n.dir || 0 } : {}) }));
+  const fin = Math.min(an.dur, (notas.at(-1)?.fin || notas.at(-1)?.t || 4) + 3);
+  const eventos = [{ t: -1, tipo: 'carriles', n: 5, dur: .01 }, { t: 0, tipo: 'escenario', n: cancion.escena || 0, tono: .2 }, { t: 0, tipo: 'camara', n: 0, fuerte: 0 }];
+  const plan = [{ t0: 0, t1: fin, modo: 'carril', carriles: 5, eventos: [], aviso: 0, rival: false, precision: false, energia: .5 }];
+  return { cancion: cancion.id, modo: 'carril', dif: 'normal', D, nivel: 0, notas, eventos, plan, beat, dur: fin, total: notas.length, propio: true, titulo: nivel.titulo };
+}
