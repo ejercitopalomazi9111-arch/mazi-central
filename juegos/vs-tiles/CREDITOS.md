@@ -32,6 +32,11 @@ espejo; bajarlos de Sketchfab pide una cuenta (un token de su API).
 ese mismo modelo es `sprites/temmie-cara.webp`. Temmie es personaje de **Undertale**, de **Toby Fox**: este
 es un juego de fans, gratis, y el modelo es de un fan.
 
+**Los robots gigantes** de la cinemática de la Historia (`js/cine.js`): «Medium Mech Striker» de **MSGDI**
+(`modelos/robot-striker.glb`) y «Calibur | VGDC» de **MooKorea** (`modelos/robot-calibur.glb`), Sketchfab,
+**CC BY 4.0**, con sus animaciones de pelea originales (se dejaron sólo las que se usan y texturas de 512 px).
+Las explosiones, el humo, la lluvia, las esporas, el confeti y las luces del público son los sprites de Kenney.
+
 ## Formas de nota
 
 Modelos de **Sketchfab**, todos **Creative Commons: By Attribution 4.0**; se dejó sólo la pieza, centrada, con

@@ -7,6 +7,7 @@ import { GLTFLoader } from '../vendor/loaders/GLTFLoader.js';
 import { DISPOSICIONES } from './cartas.js';
 import { clone as clonarEsqueleto } from '../vendor/utils/SkeletonUtils.js';
 import { mergeGeometries } from '../vendor/utils/BufferGeometryUtils.js';
+import { crearCine, CINES } from './cine.js';
 
 export const ESCENARIOS = [
   { id: 'shanghai_bund', nombre: 'Ciudad SONOLUZ', tinte: '#7A4BFF' },
@@ -142,6 +143,8 @@ export async function crearEscena(lienzo){
   const piso = new THREE.Mesh(new THREE.CircleGeometry(7, 64), new THREE.MeshBasicMaterial({ map: reflejo, color: '#B44BFF', transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false }));
   piso.rotation.x = -Math.PI / 2; tarima.add(piso);
   const cantantes = [];
+  /* las cinemáticas de fondo de la Historia (cine.js): ciudad que cae, plaga, diluvio, robots, concierto, videojuego */
+  const cine = crearCine({ s, tex, cargador, clonarEsqueleto });
   /* los haces de luz que barren desde la tarima (planos con el trazo de Kenney, sumados), y las chispas
      que flotan todo el tiempo: el escenario nunca está quieto */
   const tHaz = await tex('sprites/p_trace_04.png'), tPolvo = await tex('sprites/p_spark_05.png');
@@ -337,7 +340,7 @@ export async function crearEscena(lienzo){
     raiz.position.set(Math.sin(giro) * 1.3, y, z); raiz.rotation.z = giro; raiz.scale.set(esc, 2 - esc, esc);
   }
 
-  return { precargar: (ns) => ns.forEach(pedirFondo), ponerForma, r, s, cam, carril, piezas, cantantes, ponerCantantes, E, chispa, uni, prepararVelocidad, pos, LARGO, ANCHO, asustar, SUSTO,
+  return { ponerCine: (c) => { if(c) pedirFondo(CINES[c]?.escenario); return cine.poner(c); }, precargar: (ns) => ns.forEach(pedirFondo), ponerForma, r, s, cam, carril, piezas, cantantes, ponerCantantes, E, chispa, uni, prepararVelocidad, pos, LARGO, ANCHO, asustar, SUSTO,
     /* proyecta un punto del carril (riel r en la línea) a la pantalla, en px CSS */
     receptor(r, ancho, alto){ const R = piezas.rieles[r]; v3.set(R.x * ANCHO, 0, 0); carril.localToWorld(v3); v3.project(cam); return [(v3.x + 1) / 2 * ancho, (1 - v3.y) / 2 * alto, R.vis]; },
     proyectar(p, ancho, alto){ v3.copy(p).project(cam); return [(v3.x + 1) / 2 * ancho, (1 - v3.y) / 2 * alto]; },
@@ -372,6 +375,7 @@ export async function crearEscena(lienzo){
         if(e.tipo === 'glitch') glitch = Math.max(glitch, 1 - (t - e.t) / e.dur);
         if(e.tipo === 'compas') compasTxt = e.texto;
       }
+      if(cine.tipo && carta) esc = CINES[cine.tipo].escenario;
       E.movido = t - movT; if(vertical) ang = Math.max(-.45, Math.min(.45, ang));
       E.compas = compasTxt; E.glitch = glitch; E.destello = Math.max(0, 1 - (t - destelloT) / .45);
       /* los haces: barren al compás y se encienden con el golpe */
@@ -384,6 +388,9 @@ export async function crearEscena(lienzo){
       uni.mezcla.value = Math.max(0, 1 - (ahoraMs - escCambio) / 600);
       uni.pulso.value = latido * compas * (carta ? 1 : .5) + E.destello * .8; uni.giro.value = t * .004 + tono; uni.glitch.value = glitch;
       uni.oscuro.value = .5 - latido * .08; uni.sat.value = 1.2;
+      cine.ver(!!carta);
+      if(cine.tipo && carta){ { const C = CINES[cine.tipo]; uni.tinte.value.set(C.tinte); uni.oscuro.value = C.oscuro - latido * .08; uni.sat.value = C.sat;
+        uni.pulso.value += cine.cuadro(t, dtS, { gi, latido, compas }) * .9; } }
       borde1.intensity = 20 + 60 * latido * compas; borde2.intensity = 20 + 60 * latido * (1 - compas + .45);
       borde1.position.x = -5 + Math.sin(t * .9) * 2; borde2.position.x = 5 + Math.cos(t * .8) * 2;
 

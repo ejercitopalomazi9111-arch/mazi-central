@@ -51,18 +51,18 @@ export const CANCIONES = [
 ];
 const HISTORIA = [
   { cap: 'Prólogo · La primera nota', misiones: [
-    { c: 'itty-bitty-8-bit', modo: 'carril', dif: 'facil', d: [['SONOLUZ', 'Señal detectada. Un Resonante nuevo entró al archivo.'], ['GUMI', '¡Por fin alguien! Esta canción se está borrando nota por nota. Toca cuando lleguen a la línea… y no las dejes ir.']],
+    { c: 'itty-bitty-8-bit', modo: 'carril', dif: 'facil', cine: 'retro', d: [['SONOLUZ', 'Señal detectada. Un Resonante nuevo entró al archivo.'], ['GUMI', '¡Por fin alguien! Esta canción se está borrando nota por nota. Toca cuando lleguen a la línea… y no las dejes ir.']],
       f: [['GUMI', '¡La salvaste! ¿Oyes? Ya no se corta.'], ['SONOLUZ', 'Primera canción restaurada. Detecto otra señal… alguien está cantando dentro de un eco.']] },
-    { c: 'raving-energy', modo: 'flechas', dif: 'normal', d: [['GUMI', 'Miku quedó atrapada en un eco. Ella canta una frase y tú se la regresas, igualita.'], ['Hatsune Miku', '…¿me oyes? Si fallas la frase, la canción se rompe otra vez.']],
+    { c: 'raving-energy', modo: 'flechas', dif: 'normal', cine: 'concierto', d: [['GUMI', 'Miku quedó atrapada en un eco. Ella canta una frase y tú se la regresas, igualita.'], ['Hatsune Miku', '…¿me oyes? Si fallas la frase, la canción se rompe otra vez.']],
       f: [['Hatsune Miku', 'Me regresaste la voz. Gracias, Resonante.'], ['GUMI', 'Ahora sí: somos tres. Y el archivo tiene muchas más canciones rotas.']] } ] },
   { cap: 'Capítulo I · Ecos de GUMI', misiones: [
-    { c: 'movement-proposition', modo: 'diva', dif: 'normal', d: [['Okurine Luka', 'No todas queremos que nos restauren, Resonante.'], ['GUMI', 'Luka es de los Desafinados. Sus símbolos llegan volando: toca el mismo botón cuando lleguen.']],
+    { c: 'movement-proposition', modo: 'diva', dif: 'normal', cine: 'diluvio', d: [['Okurine Luka', 'No todas queremos que nos restauren, Resonante.'], ['GUMI', 'Luka es de los Desafinados. Sus símbolos llegan volando: toca el mismo botón cuando lleguen.']],
       f: [['Okurine Luka', '…No esperaba que alguien me siguiera el paso.'], ['Okurine Luka', 'No me voy a unir a ustedes. Pero tampoco voy a estorbar.'], ['GUMI', 'Con Luka eso ya es casi un abrazo.']] },
-    { c: 'exit-the-premises', modo: 'circulos', dif: 'dificil', d: [['Otomachi Una', 'Yo soy un Eco: una copia que nadie terminó. Si me sigues el ritmo, quizá me acuerde de quién era.']],
+    { c: 'exit-the-premises', modo: 'circulos', dif: 'dificil', cine: 'plaga', d: [['Otomachi Una', 'Yo soy un Eco: una copia que nadie terminó. Si me sigues el ritmo, quizá me acuerde de quién era.']],
       f: [['Otomachi Una', 'Me acordé de algo: de un escenario lleno, y de una voz que no era igual a ninguna.'], ['Hatsune Miku', 'Esa voz era la tuya, Una. El Coro Nulo te la quitó.']] },
-    { c: 'voltaic', modo: 'carril', dif: 'experto', d: [['Hagane Miku', 'Los carriles ya no obedecen. Se doblan, se inclinan, cambian de número…'], ['GUMI', 'Es el Coro Nulo metiéndose al archivo. Lee el aviso cuando cambien las reglas.']],
+    { c: 'voltaic', modo: 'carril', dif: 'experto', cine: 'robots', d: [['Hagane Miku', 'Los carriles ya no obedecen. Se doblan, se inclinan, cambian de número…'], ['GUMI', 'Es el Coro Nulo metiéndose al archivo. Lee el aviso cuando cambien las reglas.']],
       f: [['Hagane Miku', 'Aguantaste los carriles torcidos. Nada mal.'], ['???', 'Qué ruido tan molesto. Todas las voces deberían sonar igual.'], ['GUMI', 'Ésa es ella. Ya viene.']] },
-    { c: 'volatile-reaction', modo: 'exorcist', dif: 'exorcist', jefe: true, d: [['???', 'Todas las voces deberían sonar igual. Perfectas. Iguales.'], ['Miku Excomulgada', 'Yo soy el Coro Nulo. Demuestra que tu ritmo es tuyo… si puedes.']],
+    { c: 'volatile-reaction', modo: 'exorcist', dif: 'exorcist', jefe: true, cine: 'ciudad', d: [['???', 'Todas las voces deberían sonar igual. Perfectas. Iguales.'], ['Miku Excomulgada', 'Yo soy el Coro Nulo. Demuestra que tu ritmo es tuyo… si puedes.']],
       f: [['Miku Excomulgada', '…Imposible. Ningún ritmo debería sobrevivir a eso.'], ['Hatsune Miku', 'Por eso es suyo. No se puede copiar.'], ['SONOLUZ', 'Capítulo I cerrado. El archivo respira otra vez… por ahora.']] } ] }
 ];
 /* lo que se colecciona: sólo apariencia, nunca ventaja (el documento lo pide así) */
@@ -322,6 +322,8 @@ async function jugar(id, modo, dif, deHistoria = null, prueba = {}){
     const buf = await audio(c.id); paso('Escribiendo las notas', .65);
     const carta = dif === 'tutorial' ? armarTutorial(an, c) : armarCarta(an, c, modo, dif, { telefono: TELEFONO }); ultima = { c, modo, dif, deHistoria };
     escena.precargar(carta.eventos.filter(e => e.tipo === 'escenario').map(e => e.n)); paso('Llamando a las voces', .85);
+    /* en la Historia, cada misión trae su cinemática de fondo (cine.js); en Juego libre, ninguna */
+    { const [ci, mi] = String(deHistoria || '').split('.').map(Number); await escena.ponerCine(prueba.cine ?? (deHistoria ? HISTORIA[ci]?.misiones[mi]?.cine || null : null)); }
     await escena.ponerCantantes(modo === 'flechas' ? [idVoz(), c.voces.find(v => v !== idVoz()) || 'miku'] : [...new Set([idVoz(), ...c.voces])].slice(0, 3));
     paso('¡Listo!', 1);
     mostrar(null); $('#sombra').style.opacity = 0;
@@ -474,7 +476,7 @@ function creditos(){ mostrar('creditos');
   $('#creditosL').innerHTML = `<div class="ojo">VS TILES · EXÓRCIST: THE SONOLUZ PROTOCOL</div><p style="margin-top:8px">Idea, mundo y documento de diseño: <b>Carlos «Palomazi»</b>. Programación: Grupo Mazi.</p>
   <p>Es un <b>fan game sin fines de lucro</b>. Los personajes Vocaloid y UTAU son de sus dueños (Crypton Future Media, INTERNET Co., AH-Software, Yamaha y demás); aquí salen como homenaje.</p>
   <h3>MÚSICA</h3><p>${[...new Set(CANCIONES.filter(c => !c.propia && !c.secreto).map(c => c.artista))].map(a => `${CANCIONES.filter(c => c.artista === a && !c.secreto).map(c => `«${c.titulo}»`).join(', ')} — <b>${a}</b>`).join('<br>')}<br>Las de la casa, de incompetech.com (CC BY 4.0); las de anime y ritmo, de OpenGameArt (CC0, CC BY 3.0 y 4.0); el piano, de partituras de Mutopia (dominio público). Detalle en CREDITOS.md.</p>
-  <h3>PERSONAJES 3D (Sketchfab, vía Objaverse)</h3><p>${PERSONAJES.filter(p => !p.secreto).map(p => `<b>${p.nombre}</b> — ${p.autor}`).join('<br>')}<br>Y una invitada que sólo sale si la buscas: <b>«Shiteyanyo - Hatsune Miku»</b> — Seafoam.<br>Licencia CC BY 4.0.</p>
+  <h3>PERSONAJES 3D (Sketchfab, vía Objaverse)</h3><p>${PERSONAJES.filter(p => !p.secreto).map(p => `<b>${p.nombre}</b> — ${p.autor}`).join('<br>')}<br>Los robots gigantes de la Historia: <b>«Medium Mech Striker»</b> — MSGDI y <b>«Calibur»</b> — MooKorea.<br>Y una invitada que sólo sale si la buscas: <b>«Shiteyanyo - Hatsune Miku»</b> — Seafoam.<br>Licencia CC BY 4.0.</p>
   <h3>ESCENARIOS</h3><p>Fotos 360° de <b>Poly Haven</b> (CC0): ${ESCENARIOS.map(e => e.id.replace(/_/g, ' ')).join(', ')}.</p>
   <h3>A TOBY FOX</h3><p>Por <b>Undertale</b> y <b>Deltarune</b>, que este juego quiere mucho. Temmie (modelo de <b>Stewie_Box</b>), la caja de Temmie Flakes (<b>RavenBlox</b>), CC BY 4.0, Sketchfab. Su canción: «Buy Something!» de <b>Cleyton Kauffman</b> (CC0).<br><i>(El perro molesto se robó el resto de esta línea.)</i></p>
   <h3>BOTONES, PARTÍCULAS Y SONIDOS</h3><p><b>Kenney</b> (kenney.nl, CC0): Input Prompts, Particle Pack, Interface Sounds, Impact Sounds. La risa: <b>AntumDeluge</b> (OpenGameArt, CC0).</p>
