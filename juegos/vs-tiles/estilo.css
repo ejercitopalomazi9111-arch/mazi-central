@@ -9,7 +9,7 @@
 *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent }
 html, body{ margin:0; height:100%; background:var(--negro); color:var(--texto); font:500 15px/1.45 var(--t); overflow:hidden;
   -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; overscroll-behavior:none; touch-action:manipulation }
-canvas{ position:fixed; inset:0; width:100%; height:100%; display:block }
+#gl, #capa{ position:fixed; inset:0; width:100%; height:100%; display:block }   /* sólo los dos lienzos de pantalla completa: un «canvas{}» general fijaba también la garra */
 #gl{ z-index:0 } #capa{ z-index:2; touch-action:none }
 button{ font:inherit; color:inherit; cursor:pointer; border:0; background:none }
 input, select{ font:inherit; color:var(--texto) }
@@ -206,3 +206,55 @@ h2{ font:800 22px/1.1 var(--n); letter-spacing:.06em; margin:0 0 10px }
   .menuCab{ display:none } .panelM{ height:calc(100vh - 180px); min-height:160px; width:min(300px, 42vw) } .panelM .t{ font-size:26px } .panelM .s{ display:none } .panelM .entrar{ margin-top:8px; padding:7px 14px }
   .secundarias{ grid-template-columns:repeat(4, minmax(0, 1fr)) } .secundaria{ min-height:60px } .secundaria span{ display:none }
 }
+
+/* ── Mercado: las tres máquinas ── */
+.gSaldo{ display:flex; flex-wrap:wrap; gap:6px 14px; font:800 12px var(--n); letter-spacing:.06em; color:var(--gris); margin-bottom:8px }
+.gSaldo i{ display:inline-block; width:10px; height:10px; margin-right:6px; transform:rotate(45deg) } .gSaldo .ec{ background:var(--cian) } .gSaldo .se{ background:var(--oro) }
+.maquina{ position:relative; margin:8px 0; padding:10px; background:linear-gradient(180deg, #1B0D2Bcc, #09040Fcc); border:1px solid var(--linea); display:flex; flex-direction:column; align-items:center; gap:8px; min-height:240px }
+.maquina .sub{ text-align:center; margin:0 }
+.gBotones{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center } .gBotones .b{ flex:1 1 auto }
+.muestra .punto{ display:inline-block; width:14px; height:14px; border-radius:50%; margin:1px } .muestra .inicial{ font:900 30px var(--n); font-style:normal }
+.muestra .tituloObj{ font:900 11px var(--g); color:#FFD7E5; font-style:normal } .muestra img{ max-width:72%; max-height:72% } .muestra img.foto{ max-width:100%; max-height:100%; object-fit:cover }
+/* carrusel */
+.gcMarco{ position:relative; width:100%; max-width:420px; height:132px; overflow:hidden; background:#07030C; border:1px solid var(--linea);
+  -webkit-mask-image:linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); mask-image:linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent) }
+.gcPista{ display:flex; height:100%; align-items:center; will-change:transform }
+.gcCelda{ flex:0 0 88px; width:88px; margin:0 4px; height:110px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; background:linear-gradient(180deg, #ffffff08, color-mix(in srgb, var(--rc) 22%, transparent)); border:1px solid #ffffff14; border-bottom:3px solid var(--rc) }
+.gcCelda .muestra{ height:56px; display:grid; place-items:center } .gcCelda span{ font-size:10px; text-align:center; line-height:1.1; padding:0 4px; color:var(--gris) }
+.gcCelda.gana{ transform:scale(1.07); box-shadow:0 0 0 2px var(--rc), 0 0 24px var(--rc); transition:.3s }
+.gcFlecha{ position:absolute; left:50%; transform:translateX(-50%); width:0; height:0; z-index:2 } .gcFlecha.arriba{ top:0; border:10px solid transparent; border-top:14px solid var(--magenta) } .gcFlecha.abajo{ bottom:0; border:10px solid transparent; border-bottom:14px solid var(--magenta) }
+/* sobre */
+.sobreZona{ width:100%; min-height:300px; display:grid; place-items:center; perspective:900px }
+.paquete{ position:relative; width:min(210px, 60vw); aspect-ratio:.68; background:linear-gradient(150deg, #7E1735, #2A0F3A 45%, #AC27FF); border:2px solid #ffffff40; display:grid; place-items:center; overflow:hidden; touch-action:none; box-shadow:0 18px 50px #000a, 0 0 40px #AC27FF55; animation:paqFlota 2.4s ease-in-out infinite }
+.paquete::after{ content:""; position:absolute; inset:-50%; background:linear-gradient(115deg, transparent 40%, #ffffff40 50%, transparent 60%); animation:paqBrillo 2.8s linear infinite }
+.paqLogo{ font:900 34px var(--n); color:#fff; text-align:center } .paqLogo i{ font-style:normal; color:var(--cian); display:block; font-size:18px } .paqSub{ position:absolute; bottom:14px; font:800 9px var(--n); letter-spacing:.2em; color:#ffffffcc }
+.paquete .rasgar{ position:absolute; top:0; left:0; height:18px; width:var(--corte, 0%); background:repeating-linear-gradient(90deg, #fff 0 6px, transparent 6px 10px); opacity:.85; z-index:2 }
+.paquete.listo{ outline:2px dashed #ffffff66; outline-offset:6px }
+.paquete.rasgado{ animation:paqSale .65s ease-in forwards }
+@keyframes paqFlota{ 50%{ transform:translateY(-6px) rotate(-1deg) } }
+@keyframes paqBrillo{ from{ transform:translateX(-30%) } to{ transform:translateX(30%) } }
+@keyframes paqSale{ to{ transform:translateY(-120%) rotate(-12deg) scale(.8); opacity:0 } }
+.cartas{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:10px; width:100%; max-width:380px }
+.cartas .carta:nth-child(4){ grid-column:1 / 2; margin-left:50% } .cartas .carta:nth-child(5){ grid-column:2 / 3; margin-left:50% }
+/* el volteo sin 3D: la carta se encoge de lado, cambia de cara a la mitad y vuelve (con rotateY y
+   backface-visibility el botón mostraba el reverso en espejo, «2V», en vez del premio) */
+.carta{ position:relative; aspect-ratio:.7; padding:0; background:none; border:0; animation:cartaEntra .45s var(--d) both }
+.carta.volteando{ animation:cartaVoltea .5s ease-in-out both }
+.carta .frente{ visibility:hidden } .carta.volteada .frente{ visibility:visible } .carta.volteada .atras{ visibility:hidden }
+.carta .cara{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; border:2px solid #ffffff30; padding:6px }
+.carta .atras{ background:linear-gradient(150deg, #2A0F3A, #07030C); font:900 22px var(--n); color:#ffffff44 } .carta .atras i{ font-style:normal }
+.carta .atras.brilla{ border-color:var(--rc); box-shadow:0 0 18px var(--rc), inset 0 0 22px color-mix(in srgb, var(--rc) 50%, transparent); animation:cartaLate 1s ease-in-out infinite }
+.carta .frente{ background:linear-gradient(180deg, #1B0D2B, color-mix(in srgb, var(--rc) 35%, #07030C)); border-color:var(--rc) }
+.carta .frente b{ font:800 11px/1.1 var(--n); text-align:center } .carta .frente small{ font:800 9px var(--n); letter-spacing:.12em; color:var(--rc); text-transform:uppercase } .carta .muestra{ height:46%; display:grid; place-items:center }
+@keyframes cartaEntra{ from{ transform:translateY(40px) scale(.6); opacity:0 } }
+@keyframes cartaLate{ 50%{ filter:brightness(1.35) } }
+@keyframes cartaVoltea{ 50%{ transform:scaleX(0) scale(1.08) } }
+/* garra */
+#garraCv{ display:block; touch-action:none; border:1px solid var(--linea) }
+/* el premio: no se cierra solo */
+.premio{ position:fixed; inset:0; z-index:20; display:none; place-items:center; padding:20px; background:radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--rc, #AC27FF) 30%, #07030C), #07030Cf2) }
+.premio.vis{ display:grid; animation:entra .35s both }
+.premioCaja{ width:min(420px, 100%); max-height:100%; overflow-y:auto; display:flex; flex-direction:column; gap:14px; align-items:center; text-align:center }
+.premioLista{ display:grid; gap:10px; width:100% } .premioLista.varios{ grid-template-columns:repeat(2, minmax(0, 1fr)) }
+.premioObj{ padding:14px 10px; border:2px solid var(--rc); background:linear-gradient(180deg, #ffffff08, color-mix(in srgb, var(--rc) 25%, transparent)); box-shadow:0 0 30px color-mix(in srgb, var(--rc) 45%, transparent); display:flex; flex-direction:column; align-items:center; gap:6px }
+.premioObj .muestra{ height:70px; display:grid; place-items:center } .premioObj b{ font:900 15px var(--n) } .premioObj small{ font:800 10px var(--n); letter-spacing:.14em; color:var(--rc) }

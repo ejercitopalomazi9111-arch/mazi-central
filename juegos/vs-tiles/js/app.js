@@ -8,6 +8,7 @@ import { crearEscena, ESCENARIOS, PERSONAJES, COLORES_RIEL } from './escena.js';
 import { crearPartida, cargarSprites } from './juego.js';
 import { analizar } from './analisis.js';
 import { biblioteca, etiquetas } from './biblioteca.js';
+import { montarMercado } from './mercado.js';
 const $ = (s) => document.querySelector(s), $$ = (s) => [...document.querySelectorAll(s)];
 
 /* ── el catálogo ── */
@@ -336,21 +337,24 @@ function aplicarCosmeticos(){ const n = OBJETOS.find(o => o.id === Y.puesto.nota
   Y.golpeSprite = OBJETOS.find(o => o.id === Y.puesto.golpe)?.sprite || 'p_flare_01';
   escena.piezas.rieles.forEach((R, i) => { R.fondoR.material.color.set(COLORES_RIEL[i]); R.lado.material.color.set(COLORES_RIEL[i]); R.rec.material.color.set(COLORES_RIEL[i]); R.brillo.material.color.set(COLORES_RIEL[i]); R.haz.material.color.set(COLORES_RIEL[i]); }); }
 
-/* ── mercado: probabilidades a la vista, garantía a las 50 y los repetidos se vuelven Ecos ── */
-function mercado(){ mostrar('mercado'); barra();
-  $('#probas').innerHTML = Object.values(RAREZA).map(r => `${r.n} ${r.p} %`).join(' · ') + `<br>Legendario garantizado en ${50 - Y.pity} tiradas · repetido = Ecos de vuelta`; $('#tirada').innerHTML = ''; }
-/* GRATIS: todo se paga con lo que se gana jugando (Carlos, 29 oct: «todo será gratuito con monedas del
-   juego y progresión interna»). Ecos por cada partida, el premio diario, el bono de la primera vez y los
-   Sellos de subir de nivel y de vencer jefes; un Sello es una tirada. */
-function tirar(n, conSello = false){ const costo = n === 10 ? 900 : 100;
-  if(conSello){ if(Y.sellos < 1){ aviso('No tienes Sellos: se ganan subiendo de nivel y venciendo jefes.'); return; } Y.sellos--; }
-  else { if(Y.ecos < costo){ aviso('No te alcanzan los Ecos: juega una canción.'); return; } Y.ecos -= costo; } const sale = [];
+/* ── mercado: probabilidades a la vista, garantía a las 50 y los repetidos se vuelven Ecos ──
+   GRATIS: todo se paga con lo que se gana jugando (Carlos, 29 oct: «todo será gratuito con monedas del
+   juego y progresión interna»). Las máquinas (garra, sobre y carrusel) viven en mercado.js */
+function pagar(costo, conSello = false){
+  if(conSello){ if(Y.sellos < 1){ aviso('No tienes Sellos: se ganan subiendo de nivel y venciendo jefes.'); return false; } Y.sellos--; }
+  else { if(Y.ecos < costo){ aviso('No te alcanzan los Ecos: juega una canción.'); return false; } Y.ecos -= costo; }
+  guardar(); return true; }
+function sortear(n){ const sale = [];
   for(let i = 0; i < n; i++){ Y.pity++; let r = Math.random() * 100, raro = 'c'; for(const [k, v] of Object.entries(RAREZA).reverse()){ if(r < v.p){ raro = k; break; } r -= v.p; }
     if(Y.pity >= 50 && !['l', 'm'].includes(raro)) raro = 'l'; if(['l', 'm'].includes(raro)) Y.pity = 0;
     const pool = OBJETOS.filter(o => o.raro === raro && !o.secreto), o = pool[Math.floor(Math.random() * pool.length)]; const nuevo = !Y.tiene.includes(o.id); if(nuevo) Y.tiene.push(o.id); else Y.ecos += { c: 10, r: 25, e: 60, l: 150, m: 300 }[raro]; sale.push({ o, nuevo }); }
-  guardar(); mercado(); const T = $('#tirada'); sale.forEach(({ o, nuevo }, i) => { const d = document.createElement('div'); d.className = `obj raro-${o.raro}`; d.style.animationDelay = i * .08 + 's'; d.innerHTML = `${o.nombre}<small style="display:block;font:700 10px var(--n)">${nuevo ? 'NUEVO' : 'REPETIDO'}</small>`; T.appendChild(d); });
-  if(sale.some(s => ['l', 'm'].includes(s.o.raro))){ sonidos.premio && reloj.golpe(sonidos.premio, .6); aviso('¡' + sale.find(s => ['l', 'm'].includes(s.o.raro)).o.nombre + '!'); } }
-$('#tira1').addEventListener('click', () => tirar(1)); $('#tira10').addEventListener('click', () => tirar(10)); $('#tiraS').addEventListener('click', () => tirar(1, true));
+  guardar(); return sale; }
+/* cómo se ve un objeto en chiquito (vestidor, tiradas, premio) */
+function vista(o){ if(o.cat === 'golpe') return `<img src="sprites/${o.sprite}.png" alt="">`; if(o.cat === 'fondo') return `<img src="${o.img}" alt="" class="foto">`;
+  if(o.cat === 'nota') return o.colores.slice(0, 4).map(c => `<i class="punto" style="background:${c}"></i>`).join('');
+  if(o.cat === 'voz') return `<i class="inicial" style="color:${o.color}">${o.nombre[0]}</i>`; return `<i class="tituloObj">«${o.nombre}»</i>`; }
+const mercadoUI = montarMercado({ $, Y, RAREZA, sortear, pagar, barra, reloj, sonidos, vista, pool: () => OBJETOS.filter(o => !o.secreto) });
+function mercado(){ mostrar('mercado'); barra(); $('#probas').innerHTML = Object.values(RAREZA).map(r => `${r.n} ${r.p} %`).join(' · ') + '<br>Repetido = Ecos de vuelta'; mercadoUI.abrir(); }
 
 /* ── récords, ajustes, créditos ── */
 function records(){ mostrar('records'); const L = $('#recordsL'), ks = Object.entries(Y.record).sort((a, b) => b[1].puntaje - a[1].puntaje);
