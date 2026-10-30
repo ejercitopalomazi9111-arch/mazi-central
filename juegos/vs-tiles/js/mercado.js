@@ -52,7 +52,7 @@ export function montarMercado({ $, Y, RAREZA, sortear, pagar, barra, reloj, soni
   /* ═══ RULETA ═══ */
   async function ruleta(){ botones(); leyenda('Gira y frena en la rareza que te tocó.');
     const R = await cargando(V.rueda({ tick })); if(!R) return;
-    botones(boton('1 · 1 Sello', () => girar(1, true)), boton('1 · 100 ◆', () => girar(1)), boton('10 · 900 ◆', () => girar(10), true)); }
+    botones(boton('1 · 1 Sello', () => girar(1, true)), boton('1 · 100 Ecos', () => girar(1)), boton('10 · 900 Ecos', () => girar(10), true)); }
   async function girar(n, conSello = false){ if(ocupado || !V.actual?.girar) return; if(!pagar(n === 10 ? 900 : 100, conSello)) return; ocupado = true; pintarSaldo(); barra();
     const sale = sortear(n, 'ruleta'), mejor = mejorDe(sale); leyenda('Girando…'); tick(.3);
     await V.actual.girar(mejor.o.raro);
@@ -62,7 +62,7 @@ export function montarMercado({ $, Y, RAREZA, sortear, pagar, barra, reloj, soni
   /* ═══ SOBRE ═══ */
   async function sobre(){ botones(); leyenda('Cinco cartas por sobre. Al abrirlo, destápalas una por una.');
     const S = await cargando(V.sobre({ alAbrir: () => repartir() })); if(!S) return;
-    botones(boton('Sobre · 450 ◆', abrirSobre, true)); }
+    botones(boton('Sobre · 450 Ecos', abrirSobre, true)); }
   let cartasSobre = null;
   function abrirSobre(){ if(ocupado || !V.actual?.preparar) return; if(!pagar(450)) return; ocupado = true; pintarSaldo(); barra();
     cartasSobre = sortear(5, 'sobre'); $('#gBotones').innerHTML = ''; V.actual.preparar(); tick(.3);
@@ -80,9 +80,9 @@ export function montarMercado({ $, Y, RAREZA, sortear, pagar, barra, reloj, soni
     const G = await cargando(V.garra({ leyenda, tick, alPremio: () => { reloj.golpe(sonidos.golpe, .4); const sale = pagadoGarra; pagadoGarra = null;
       setTimeout(() => premio(sale, '¡La sacaste!', () => { V.actual?.reiniciar?.(); leyenda('Mueve el gancho y suéltalo sobre un peluche.'); }), 250); } }));
     if(!G) return;
-    const flecha = (d) => { const b = boton(d < 0 ? '◀' : '▶', () => {}); b.classList.add('chico'); b.setAttribute('aria-label', d < 0 ? 'Gancho a la izquierda' : 'Gancho a la derecha');
+    const flecha = (d) => { const b = boton(`<img class="ico" src="sprites/iconos/${d < 0 ? 'arrowLeft' : 'arrowRight'}.png" alt="">`, () => {}); b.classList.add('chico'); b.setAttribute('aria-label', d < 0 ? 'Gancho a la izquierda' : 'Gancho a la derecha');
       b.onpointerdown = () => V.actual?.mover?.(d); b.onpointerup = b.onpointerleave = b.onpointercancel = () => V.actual?.mover?.(0); return b; };
-    botones(flecha(-1), boton('Bajar · 100 ◆', () => bajar(false), true), boton('Bajar · 1 Sello', () => bajar(true)), flecha(1)); }
+    botones(flecha(-1), boton('Bajar · 100 Ecos', () => bajar(false), true), boton('Bajar · 1 Sello', () => bajar(true)), flecha(1)); }
   function bajar(conSello){ const G = V.actual; if(!G?.bajar || G.E.fase !== 'libre') return;
     /* un intento pagado que se fue sigue pagado: se puede volver a bajar sin cobrar */
     if(!pagadoGarra){ if(!pagar(100, conSello)) return; pagadoGarra = sortear(1, 'garra'); ocupado = true; barra(); pintarSaldo(); }

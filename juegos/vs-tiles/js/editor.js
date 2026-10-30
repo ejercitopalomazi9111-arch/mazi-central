@@ -6,7 +6,8 @@
 
 const COLS = ['#FF3D8B', '#B44BFF', '#38E1FF', '#B44BFF', '#FF3D8B'];
 const TIPOS = { toque: 'tap', mantener: 'hold', deslizar: 'flick' };
-const FLECHAS = { 0: '↑', 1: '↗', 2: '→', 6: '←', 7: '↖', 4: '↓' };
+/* la flecha de las notas de deslizar: la de Kenney (Game Icons, CC0), girada 45° por cada paso de dirección */
+const FLECHA = new Image(); FLECHA.src = 'sprites/iconos/arrowUp.png';
 
 /* el código: [segundos en ms, columna, tipo, extra] comprimido y en base64 de URL */
 const aB64 = (u8) => { let s = ''; u8.forEach(b => { s += String.fromCharCode(b); }); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
@@ -37,7 +38,7 @@ export function montarEditor({ $, Y, CANCIONES, datos, audio, reloj, sonidos, gu
     const mios = Y.niveles.filter(n => !n.de), ajenos = Y.niveles.filter(n => n.de);
     const fila = (n) => { const c = CANCIONES.find(x => x.id === n.c), b = document.createElement('div'); b.className = 'fila nivel';
       b.innerHTML = `<div><b>${esc(n.titulo)}</b><span>${c ? esc(c.titulo) : 'Canción que no tienes'} · ${n.notas.length} notas${n.de ? ' · de ' + esc(n.de) : ''}</span></div>
-        <div class="acc"><button class="b chico" data-a="jugar">▶</button>${n.de ? '' : '<button class="b chico" data-a="editar">✎</button><button class="b chico" data-a="compartir">Compartir</button>'}<button class="b chico" data-a="quitar">✕</button></div>`;
+        <div class="acc"><button class="b chico" data-a="jugar" aria-label="Jugar"><img class="ico" src="sprites/iconos/right.png" alt=""></button>${n.de ? '' : '<button class="b chico" data-a="editar">✎</button><button class="b chico" data-a="compartir">Compartir</button>'}<button class="b chico" data-a="quitar">✕</button></div>`;
       b.onclick = async (e) => { const a = e.target.dataset?.a; if(!a) return;
         if(!c && a !== 'quitar'){ aviso('Ese nivel es de una canción que no está en tu teléfono. Métela en «Mi música» con el mismo archivo.'); return; }
         if(a === 'jugar') jugarNivel(n); if(a === 'editar') abrir(n); if(a === 'compartir') compartir(n);
@@ -96,7 +97,7 @@ export function montarEditor({ $, Y, CANCIONES, datos, audio, reloj, sonidos, gu
     for(const n of nv.notas){ const y = yDe(n.t); if(y < -40 || (n.fin ? yDe(n.fin) > H + 40 : y > H + 40)) continue; const cx = colX(n.c), col = COLS[n.c];
       if(n.tipo === 'hold'){ const yf = yDe(n.fin); x.fillStyle = col + '88'; x.fillRect(cx - ac * .18, yf, ac * .36, y - yf); x.fillStyle = '#fff'; x.fillRect(cx - ac * .3, yf - 3, ac * .6, 6); }
       x.fillStyle = col; rect(cx - ac * .4, y - 9, ac * .8, 18, 6); x.fill(); x.strokeStyle = '#ffffffcc'; x.lineWidth = 2; x.stroke();
-      if(n.tipo === 'flick'){ x.fillStyle = '#fff'; x.font = '900 16px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(FLECHAS[n.dir] || '↑', cx, y + 1); x.textBaseline = 'alphabetic'; } }
+      if(n.tipo === 'flick' && FLECHA.complete){ x.save(); x.translate(cx, y); x.rotate((n.dir || 0) * Math.PI / 4); x.drawImage(FLECHA, -8, -8, 16, 16); x.restore(); } }
     /* la línea de golpe */
     x.fillStyle = '#FFF3B0'; x.fillRect(0, linea() - 1.5, W - REGLA, 3); x.fillStyle = '#FFF3B0'; x.font = '700 10px Orbitron, sans-serif'; x.textAlign = 'left'; x.fillText(fmt(cursor), 6, linea() + 16);
   }
@@ -127,11 +128,11 @@ export function montarEditor({ $, Y, CANCIONES, datos, audio, reloj, sonidos, gu
   const recordar = () => { deshacer.push(JSON.stringify(nv.notas)); if(deshacer.length > 60) deshacer.shift(); };
 
   /* ── escuchar: la canción desde donde está la línea, y cada nota suena al pasar ── */
-  async function escuchar(){ if(tocando){ parar(); return; } await reloj.despertar(); reloj.pararFondo(.2); reloj.tocar(buf, { desde: cursor, espera: .12 }); tocando = true; ultimoSonado = cursor; $('#edPlay').textContent = '⏸';
+  async function escuchar(){ if(tocando){ parar(); return; } await reloj.despertar(); reloj.pararFondo(.2); reloj.tocar(buf, { desde: cursor, espera: .12 }); tocando = true; ultimoSonado = cursor; $('#edPlay img').src = 'sprites/iconos/pause.png';
     const vuelta = () => { if(!tocando) return; cursor = Math.min(an.dur, reloj.ahora());
       for(const n of nv.notas){ if(n.t > ultimoSonado && n.t <= cursor && sonidos.golpe) reloj.golpe(sonidos.golpe, .4); } ultimoSonado = cursor;
       if(cursor >= an.dur - .05) parar(); estado(); pintar(); animando = requestAnimationFrame(vuelta); }; vuelta(); }
-  function parar(){ if(!tocando) return; tocando = false; reloj.parar(); cancelAnimationFrame(animando); $('#edPlay').textContent = '▶'; }
+  function parar(){ if(!tocando) return; tocando = false; reloj.parar(); cancelAnimationFrame(animando); $('#edPlay img').src = 'sprites/iconos/right.png'; }
   function herramienta(h){ herr = h; document.querySelectorAll('#edHerr [data-h]').forEach(b => b.classList.toggle('si', b.dataset.h === h)); $('#edDir').hidden = h !== 'deslizar'; }
   function guardarNivel(){ nv.titulo = ($('#edTitulo').value || 'Mi nivel').trim().slice(0, 40); const limpio = { id: nv.id, titulo: nv.titulo, c: nv.c, autor: Y.nombre || 'Anónimo', notas: nv.notas.map(n => ({ ...n })) };
     const i = Y.niveles.findIndex(n => n.id === nv.id); if(i >= 0) Y.niveles[i] = limpio; else Y.niveles.push(limpio); guardar(); return limpio; }

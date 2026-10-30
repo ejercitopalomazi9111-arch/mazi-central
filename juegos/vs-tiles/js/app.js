@@ -215,7 +215,7 @@ function regaloSecreto(){ const TEMMIE = ['voz:temmie', 'voz:temmie-tienda', 'no
     if(nuevos.length){ const primera = nuevos.includes('voz:temmie'); Y.tiene.push(...nuevos); if(primera){ Y.puesto.voz = 'voz:temmie'; Y.puesto.titulo = 'titulo:temmie'; Y.foto = 'temmie'; } guardar();
       setTimeout(() => aviso(primera ? 'hOI! soy temmie!!! temmie es tu ídol ahora!! mira tu Vestidor (y hay una canción nueva)' : 'hOI!! la temmie del tem shop llegó a tu Vestidor!! (es otra ídol)'), 1200); } }
   if(!['mazi', 'palomazi'].includes(n)) return; const nuevos = ['nota:paloma', 'golpe:paloma', 'titulo:paloma'].filter(id => !Y.tiene.includes(id)); if(!nuevos.length) return;
-  Y.tiene.push(...nuevos); guardar(); setTimeout(() => aviso('🕊️ Algo en el archivo te reconoció. Mira tu Vestidor.'), 2600); }
+  Y.tiene.push(...nuevos); guardar(); setTimeout(() => aviso('Algo en el archivo te reconoció. Mira tu Vestidor.'), 2600); }
 
 /* ── la calibración: 16 clics a 120 golpes por minuto; se promedia desde el 5.º ── */
 $('#calibB').addEventListener('click', async () => {
@@ -250,7 +250,7 @@ async function menu(){ partida.salir(); mostrar('menu'); musicaMenu();
 const PANELES = [
   { ir: 'historia', k: 'Capítulo I · Ecos de GUMI', t: 'Historia', corto: 'Historia', s: 'Entra a los archivos de SONOLUZ y vence al Coro Nulo.', c: '#FF2D7A' },
   { ir: 'libre', k: 'Cualquier canción', t: 'Juego libre', corto: 'Libre', s: 'Cinco modos y cinco dificultades, con tu música o la de la casa.', c: '#38E1FF' },
-  { ir: 'reto', k: '⚠ Dificultad demoníaca', t: 'EXÓRCIST', corto: 'EXÓRCIST', s: 'Las reglas cambian a media canción. Nadie sale igual.', c: '#FF2D55' },
+  { ir: 'reto', k: 'Dificultad demoníaca', t: 'EXÓRCIST', corto: 'EXÓRCIST', s: 'Las reglas cambian a media canción. Nadie sale igual.', c: '#FF2D55' },
   { ir: 'lab', k: 'Tu música', t: 'Mi música', corto: 'Mi música', s: 'Mete tus canciones: anime, Vocaloid, lo que tengas en el teléfono.', c: '#5CFFB0' },
   { ir: 'mercado', k: 'Mercado de Ecos', t: 'Tiradas', corto: 'Mercado', s: 'Garra, sobres y ruleta. Todo se gana jugando.', c: '#FFE08A' }
 ];
@@ -401,11 +401,11 @@ function historia(){ mostrar('historia'); const H = $('#capitulos'); H.innerHTML
   /* arriba, la que sigue: un toque y se juega */
   const todas = HISTORIA.flatMap((cap, ci) => cap.misiones.map((m, mi) => ({ m, k: `${ci}.${mi}`, cap: cap.cap }))), sig = todas.find(x => !Y.historia[x.k]);
   if(sig){ const c = CANCIONES.find(x => x.id === sig.m.c), b = document.createElement('button'); b.className = 'mision siguiente';
-    b.innerHTML = `<span class="n">▶</span><span><span class="ojo" style="margin:0">${Object.keys(Y.historia).length ? 'Sigue la historia' : 'Empieza aquí'} · ${sig.cap}</span><br><b style="font:800 15px var(--n)">${c.titulo}</b><br><span style="font-size:12px;color:var(--gris)">${MODOS[sig.m.modo].nombre} · ${DIFS.find(x => x.id === sig.m.dif).nombre}${sig.m.jefe ? ' · JEFE' : ''}</span></span><span class="pill">Jugar</span>`;
+    b.innerHTML = `<span class="n"><img class="ico" src="sprites/iconos/right.png" alt=""></span><span><span class="ojo" style="margin:0">${Object.keys(Y.historia).length ? 'Sigue la historia' : 'Empieza aquí'} · ${sig.cap}</span><br><b style="font:800 15px var(--n)">${c.titulo}</b><br><span style="font-size:12px;color:var(--gris)">${MODOS[sig.m.modo].nombre} · ${DIFS.find(x => x.id === sig.m.dif).nombre}${sig.m.jefe ? ' · JEFE' : ''}</span></span><span class="pill">Jugar</span>`;
     b.onclick = () => dialogo(sig.m.d, () => jugar(sig.m.c, sig.m.modo, sig.m.dif, sig.k), { fondo: fondoDe(c) }); H.appendChild(b); }
   HISTORIA.forEach((cap, ci) => { const d = document.createElement('div'); d.className = 'cap'; d.innerHTML = `<h3>${cap.cap}</h3>`;
     cap.misiones.forEach((m, mi) => { const k = `${ci}.${mi}`, hecha = !!Y.historia[k], c = CANCIONES.find(x => x.id === m.c), b = document.createElement('button');
-      b.className = 'mision' + (hecha ? ' hecha' : '') + (abierto ? '' : ' bloq'); b.innerHTML = `<span class="n">${hecha ? '✓' : String(mi + 1).padStart(2, '0')}</span><span><b style="font:800 13px var(--n)">${c.titulo}</b><br><span style="font-size:12px;color:var(--gris)">${MODOS[m.modo].nombre} · ${DIFS.find(x => x.id === m.dif).nombre}${m.jefe ? ' · JEFE' : ''}</span></span><span class="pill">${abierto ? 'Jugar' : '🔒'}</span>`;
+      b.className = 'mision' + (hecha ? ' hecha' : '') + (abierto ? '' : ' bloq'); b.innerHTML = `<span class="n">${hecha ? '✓' : String(mi + 1).padStart(2, '0')}</span><span><b style="font:800 13px var(--n)">${c.titulo}</b><br><span style="font-size:12px;color:var(--gris)">${MODOS[m.modo].nombre} · ${DIFS.find(x => x.id === m.dif).nombre}${m.jefe ? ' · JEFE' : ''}</span></span><span class="pill">${abierto ? 'Jugar' : '<img class="ico" src="sprites/iconos/locked.png" alt="Bloqueada">'}</span>`;
       const ab = abierto; b.onclick = () => { if(ab) dialogo(m.d, () => jugar(m.c, m.modo, m.dif, k), { fondo: fondoDe(c) }); else aviso('Termina la incursión anterior para abrir ésta.'); };
       d.appendChild(b); if(!hecha) abierto = false; });
     H.appendChild(d); });

@@ -283,6 +283,11 @@ dependemos.
    ícono, una identidad— **se genera**. Pedirle una imagen de Wikipedia a alguien que quiere su
    logo es absurdo.
 
+   **Y nada de emojis, dicho por Carlos el 30 de octubre:** *«jamás usar emojis o arte creado por ti, solo
+   modelos ya existentes»*. Los íconos de una interfaz salen de un paquete hecho (Kenney Game Icons e Input
+   Prompts, CC0, ya en `juegos/vs-tiles/sprites/iconos/`), nunca de un emoji ni de un símbolo que el iPhone
+   pinte como emoji (⚠ ▶ ⏸ 🔒 🔍).
+
    El criterio: *¿existe ya y sólo hay que encontrarlo?* → se busca. *¿Tiene que ser único y de
    él?* → se crea. Si dudo, pregunto.
 

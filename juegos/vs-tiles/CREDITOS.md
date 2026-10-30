@@ -111,3 +111,9 @@ estrellas, chispas, remolinos) e Interface / Impact Sounds (golpe, fallo, clic d
 ## Letra y código
 
 Orbitron, Zen Kaku Gothic New y Cinzel (Google Fonts, SIL Open Font License). three.js (MIT).
+
+## Íconos
+
+Los íconos de los botones (jugar, pausa, deshacer, acercar, candado, flechas y aviso) son de **Game Icons** de
+**Kenney** (CC0, `sprites/iconos/`), y la flecha circular del aviso de giro es de sus **Input Prompts** (CC0,
+`sprites/flair_giro.png`). El juego no usa emojis.
