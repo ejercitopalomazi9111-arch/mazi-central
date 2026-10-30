@@ -17,7 +17,7 @@ const TECLAS_FL = { arrowleft: 0, d: 0, arrowdown: 1, f: 1, arrowup: 2, j: 2, ar
 const ACERCA = { tutorial: 1.7, facil: 1.25, normal: 1.0, dificil: .82, experto: .66, exorcist: .52 };
 
 export async function cargarSprites(){
-  const nombres = ['paloma', 'gen_circle_fill', 'gen_circle_outline', 'p_light_01', 'p_flare_01', 'p_star_06', 'p_star_01', 'p_spark_05', 'p_magic_03', 'p_circle_03', 'p_twirl_01', 'p_trace_04', 'p_slash_03', 'p_symbol_01', 'p_window_02',
+  const nombres = ['paloma', 'iconos/warning', 'flair_giro', 'gen_circle_fill', 'gen_circle_outline', 'p_light_01', 'p_flare_01', 'p_star_06', 'p_star_01', 'p_spark_05', 'p_magic_03', 'p_circle_03', 'p_twirl_01', 'p_trace_04', 'p_slash_03', 'p_symbol_01', 'p_window_02',
     ...SIM.flatMap(s => [`ps_color_${s}`, `ps_color_${s}_outline`, `ps_${s}_outline`]), ...FLECHA.flatMap(f => [`tecla_arrow_${f}`, `tecla_arrow_${f}_outline`])];
   const S = {}; await Promise.all(nombres.map(n => new Promise(r => { const im = new Image(); im.onload = () => { S[n] = im; r(); }; im.onerror = r; im.src = `sprites/${n}.png`; })));
   /* la cara de Temmie (de su modelo 3D, Stewie_Box, CC BY) para los estilos secretos */
@@ -312,6 +312,13 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
   }
 
   let comboAbajo = 0;
+  /* cuándo empieza cada giro de la pista (escena.js: «gira» entra en .45 s, «inclina» en .35 s, y regresan igual) */
+  let giros = null, girosDe = null;
+  function avisosGiro(){ if(girosDe === carta) return giros; girosDe = carta; giros = [];
+    for(const e of carta.eventos){ if(e.tipo !== 'gira' && !(e.tipo === 'inclina' && Math.abs(e.ang) > .1)) continue; const s = Math.sign(e.ang) || 1, d = e.tipo === 'gira' ? .45 : .35;
+      giros.push({ t: e.t, s, cabeza: e.tipo === 'gira' && Math.abs(Math.abs(e.ang) - Math.PI) < .1 });
+      if(e.dur) giros.push({ t: e.t + e.dur - d, s: -s, vuelve: true }); }
+    return giros; }
   function hud(t, ahora, lat, modo){
     const p = Math.min(1, Math.max(0, t / carta.dur)), T = SA.t, L = 16 + SA.l, R = W - 16 - SA.r;
     /* la vida (la «tensión»), arriba */
@@ -347,10 +354,20 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
       x.font = `800 ${W < 380 ? 15 : 17}px "Zen Kaku Gothic New", sans-serif`; x.fillStyle = '#fff'; x.textAlign = 'center'; x.textBaseline = 'middle';
       const ps = e.texto.split(' '); let l1 = '', l2 = ''; for(const w of ps){ if(x.measureText(l1 + ' ' + w).width < W - 60 && !l2) l1 = (l1 + ' ' + w).trim(); else l2 = (l2 + ' ' + w).trim(); }
       x.fillText(l1, W / 2, l2 ? yy - 11 : yy); if(l2) x.fillText(l2, W / 2, yy + 13); x.restore(); }
+    /* EL AVISO DE GIRO (Carlos, 30 oct: «pon un aviso un poco antes de girar la cámara de hacia dónde girará»):
+       1.3 s antes de que la pista se ladee o se voltee, y antes de que regrese, la flecha circular de Kenney (Input
+       Prompts, CC0) gira hacia el mismo lado que va a girar la pantalla. Un ángulo positivo gira la imagen al revés
+       de las manecillas, que es como viene dibujada la flecha; al otro lado se usa su espejo */
+    for(const g of avisosGiro()){ if(t < g.t - 1.3 || t > g.t + .15) continue; const u = (t - (g.t - 1.3)) / 1.45, al = Math.min(1, u * 6, (1 - u) * 8), yy = H * .17;
+      x.save(); x.globalAlpha = al; x.fillStyle = '#0A0412C8'; x.fillRect(0, yy - 46, W, 92); x.fillStyle = '#38E1FF'; x.fillRect(0, yy - 46, W, 2); x.fillRect(0, yy + 44, W, 2);
+      const fl = S.teñir('flair_giro', '#38E1FF'); if(fl){ x.save(); x.translate(W / 2, yy - 12); x.scale(g.s > 0 ? 1 : -1, 1); x.rotate(-Math.min(1, u * 1.3) * 1.2); x.drawImage(fl, -22, -22, 44, 44); x.restore(); }
+      x.textAlign = 'center'; x.font = '900 13px Orbitron, sans-serif'; x.fillStyle = '#fff';
+      x.fillText(g.vuelve ? `REGRESA HACIA LA ${g.s > 0 ? 'IZQUIERDA' : 'DERECHA'}` : g.cabeza ? `SE VOLTEA DE CABEZA · POR LA ${g.s > 0 ? 'IZQUIERDA' : 'DERECHA'}` : `LA CÁMARA GIRA A LA ${g.s > 0 ? 'IZQUIERDA' : 'DERECHA'}`, W / 2, yy + 30); x.restore(); }
     /* los avisos de cambio de reglas y el compás (M031) */
     for(const e of carta.eventos){ if(e.tipo === 'aviso' && t > e.t - 1.6 && t < e.t + .4){ const u = (t - (e.t - 1.6)) / 2;
       x.save(); x.globalAlpha = Math.min(1, u * 5, (1 - u) * 5); x.fillStyle = '#0A0412E0'; x.fillRect(0, H * .44, W, 64); x.fillStyle = '#FF2D55'; x.fillRect(0, H * .44, W, 3); x.fillRect(0, H * .44 + 61, W, 3);
-      x.font = '900 13px Orbitron, sans-serif'; x.fillStyle = '#FF2D55'; x.textAlign = 'center'; x.fillText('⚠ LAS REGLAS CAMBIAN', W / 2 + Math.sin(ahora / 40) * 2, H * .44 + 24); x.font = '700 14px "Zen Kaku Gothic New", sans-serif'; x.fillStyle = '#fff'; x.fillText(e.texto, W / 2, H * .44 + 46); x.restore(); } }
+      x.font = '900 13px Orbitron, sans-serif'; x.fillStyle = '#FF2D55'; x.textAlign = 'center'; const tb = W / 2 + Math.sin(ahora / 40) * 2; x.fillText('LAS REGLAS CAMBIAN', tb + 11, H * .44 + 24);
+      if(S['iconos/warning']){ const iw = x.measureText('LAS REGLAS CAMBIAN').width; x.drawImage(S.teñir('iconos/warning', '#FF2D55') || S['iconos/warning'], tb + 11 - iw / 2 - 22, H * .44 + 11, 16, 16); } x.font = '700 14px "Zen Kaku Gothic New", sans-serif'; x.fillStyle = '#fff'; x.fillText(e.texto, W / 2, H * .44 + 46); x.restore(); } }
     if(escena.E.compas){ x.save(); x.font = '900 30px Orbitron, sans-serif'; x.textAlign = 'left'; x.fillStyle = '#FFF07A'; x.globalAlpha = .6 + .4 * lat; x.fillText(escena.E.compas, L, T + 100); x.restore(); }
     if(escena.E.destello > 0){ x.fillStyle = `rgba(255,255,255,${(.35 * escena.E.destello * escena.E.destello).toFixed(3)})`; x.fillRect(0, 0, W, H); }
     if(escena.E.glitch > 0){ const g = escena.E.glitch; for(let i = 0; i < 6; i++){ const yy = Math.random() * H, hh = 4 + Math.random() * 30; x.drawImage(capa, 0, yy * dpr, W * dpr, hh * dpr, (Math.random() - .5) * 40 * g, yy, W, hh); } x.fillStyle = `rgba(255,45,85,${.15 * g})`; x.fillRect(0, 0, W, H); }

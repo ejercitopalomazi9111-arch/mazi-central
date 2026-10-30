@@ -255,7 +255,7 @@ export function armarTutorial(an, cancion){
   ];
   for(const f of fases){ eventos.push({ t: paso(f.de) - .2, tipo: 'tuto', texto: f.texto, dur: (f.a - f.de) * beat + 1.5 });
     for(let k = f.de + 2; k < f.a; k += 2){ const t = paso(k); if(t > an.dur - 3) break; const n = f.hace((k - f.de) / 2 | 0, t); if(n){ if(n.tipo === 'tap' && notas.length && notas.at(-1).r === n.r && t - notas.at(-1).t < beat * 2.1) n.r = rs[(rs.indexOf(n.r) + 1) % 3]; notas.push(n); } } }
-  const fin = Math.min(an.dur - 2, paso(92)); eventos.push({ t: fin - 1.5, tipo: 'tuto', texto: '¡LISTO! Ya sabes jugar. Lo demás es igual… pero más rápido 😈', dur: 4 });
+  const fin = Math.min(an.dur - 2, paso(92)); eventos.push({ t: fin - 1.5, tipo: 'tuto', texto: '¡LISTO! Ya sabes jugar. Lo demás es igual… pero más rápido.', dur: 4 });
   notas.forEach((n, i) => { n.id = i; n.modo = 'carril'; });
   const plan = [{ t0: 0, t1: fin + 1, modo: 'carril', carriles: 3, eventos: [], aviso: 0, rival: false, precision: false, energia: .3 }];
   return { cancion: cancion.id, modo: 'carril', dif: 'tutorial', D, nivel: 0, notas, eventos: eventos.sort((a, b) => a.t - b.t), plan, beat, dur: Math.min(an.dur, fin + 2), total: notas.length, tutorial: true };
