@@ -99,5 +99,5 @@ for P in PIEZAS:
   k = max(4, min(10, int(dur / 18))); lim = librosa.segment.agglomerative(sync, k)
   secc = [round(float(gs[min(i, len(gs) - 1)]), 3) for i in lim]
   at = ataques_de(ns, desde, desde + dur - .3)
-  json.dump(dict(dur=round(dur, 3), bpm=round(bpm, 2), golpes=gs, ataques=at, energia=energia, secciones=secc), open(os.path.join(RAIZ, 'datos', P['id'] + '.json'), 'w'))
+  json.dump(dict(piano=True, dur=round(dur, 3), bpm=round(bpm, 2), golpes=gs, ataques=at, energia=energia, secciones=secc), open(os.path.join(RAIZ, 'datos', P['id'] + '.json'), 'w'))
   print(f"{P['id']:24} {dur:6.1f} s  bpm {bpm:6.1f}  ataques {len(at):5}  ({len(at) / dur:4.1f}/s)  {os.path.getsize(mp3) / 1e6:.1f} MB")

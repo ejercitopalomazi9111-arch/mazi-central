@@ -15,7 +15,12 @@ export const ESCENARIOS = [
   { id: 'mirrored_hall', nombre: 'Salón del Coro Nulo', tinte: '#C9A2FF' },
   { id: 'rooftop_night', nombre: 'Azotea', tinte: '#FF6A3D' },
   { id: 'kloppenheim_07_puresky', nombre: 'Cielo roto', tinte: '#B0164B' },
-  { id: 'industrial_sunset_02_puresky', nombre: 'Horizonte', tinte: '#2EFFC7' }
+  { id: 'industrial_sunset_02_puresky', nombre: 'Horizonte', tinte: '#2EFFC7' },
+  { id: 'music_hall_01', nombre: 'Sala de conciertos', tinte: '#FFB04A' },
+  { id: 'old_hall', nombre: 'Salón de los retratos', tinte: '#E8C27A' },
+  { id: 'dresden_station_night', nombre: 'La estación', tinte: '#6FB7FF' },
+  { id: 'modern_buildings_night', nombre: 'Ribera de cristal', tinte: '#38E1FF' },
+  { id: 'st_peters_square_night', nombre: 'Plaza del obelisco', tinte: '#C9A2FF' }
 ];
 export const PERSONAJES = [
   { id: 'gumi', nombre: 'GUMI', faccion: 'Resonantes', rota: Math.PI, alto: 1.75, color: '#7CFF6B', autor: 'Saionji' },
@@ -89,7 +94,9 @@ export async function crearEscena(lienzo){
         c = mix(c, c * tinte * 2.2, .55) * (1.0 - oscuro) + tinte * pulso * .35;
         gl_FragColor = vec4(pow(c, vec3(1.0 / 2.2)), 1.0); }` }));
   s.add(fondo);
-  const fondos = await Promise.all(ESCENARIOS.map(e => tex(`escenarios/${e.id}.jpg`)));
+  /* los siete de siempre se cargan al entrar; los de las salas de piano, cuando se piden (4 MB menos al abrir el juego) */
+  const fondos = await Promise.all(ESCENARIOS.slice(0, 7).map(e => tex(`escenarios/${e.id}.jpg`)));
+  const pedirFondo = (i) => { if(fondos[i] === undefined && ESCENARIOS[i]){ fondos[i] = null; tex(`escenarios/${ESCENARIOS[i].id}.jpg`).then(t => { fondos[i] = t; }); } };
   uni.mapa.value = uni.mapa2.value = fondos[0];
 
   /* ── la luz ── */
@@ -98,7 +105,9 @@ export async function crearEscena(lienzo){
   const borde1 = new THREE.PointLight('#FF3D8B', 30, 18, 1.6), borde2 = new THREE.PointLight('#38E1FF', 30, 18, 1.6); borde1.position.set(-5, 3, -9); borde2.position.set(5, 3, -9); s.add(borde1, borde2);
 
   /* ── el escenario de las cantantes: una tarima con sus luces, detrás del carril ── */
-  const tarima = new THREE.Group(); tarima.position.set(0, -1.2, -11); s.add(tarima);
+  /* van AL FONDO, más allá del final de la pista y más grandes (Carlos, 29 oct: «bailando más al fondo, como si algo
+     estuviera pasando relevante a la historia»): son el espectáculo de atrás, no un estorbo encima de las notas */
+  const tarima = new THREE.Group(); tarima.position.set(0, -.6, -20); tarima.scale.setScalar(1.6); s.add(tarima);
   const reflejo = await tex('sprites/p_circle_05.png');
   const piso = new THREE.Mesh(new THREE.CircleGeometry(7, 64), new THREE.MeshBasicMaterial({ map: reflejo, color: '#B44BFF', transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false }));
   piso.rotation.x = -Math.PI / 2; tarima.add(piso);
@@ -280,7 +289,7 @@ export async function crearEscena(lienzo){
     raiz.position.set(Math.sin(giro) * 1.3, y, z); raiz.rotation.z = giro; raiz.scale.set(esc, 2 - esc, esc);
   }
 
-  return { ponerForma, r, s, cam, carril, piezas, cantantes, ponerCantantes, E, chispa, uni, prepararVelocidad, pos, LARGO, ANCHO, asustar, SUSTO,
+  return { precargar: (ns) => ns.forEach(pedirFondo), ponerForma, r, s, cam, carril, piezas, cantantes, ponerCantantes, E, chispa, uni, prepararVelocidad, pos, LARGO, ANCHO, asustar, SUSTO,
     /* proyecta un punto del carril (riel r en la línea) a la pantalla, en px CSS */
     receptor(r, ancho, alto){ const R = piezas.rieles[r]; v3.set(R.x * ANCHO, 0, 0); carril.localToWorld(v3); v3.project(cam); return [(v3.x + 1) / 2 * ancho, (1 - v3.y) / 2 * alto, R.vis]; },
     proyectar(p, ancho, alto){ v3.copy(p).project(cam); return [(v3.x + 1) / 2 * ancho, (1 - v3.y) / 2 * alto]; },
@@ -321,7 +330,8 @@ export async function crearEscena(lienzo){
         h.material.opacity = (.12 + .35 * latido * (gi % 2 === k % 2 ? 1 : .4)) * (carta ? 1 : .6) + E.destello * .5; });
       { const P = polvo.geometry.attributes.position; for(let i = 0; i < P.count; i++){ let y = P.getY(i) + .012 + latido * .02; if(y > 10) y = -2; P.setY(i, y); P.setX(i, P.getX(i) + Math.sin(t + i) * .004); } P.needsUpdate = true; polvo.material.size = .35 + latido * .3; }
       /* el fondo: cambia de foto con un fundido, y late */
-      if(esc !== escActual){ uni.mapa2.value = uni.mapa.value; uni.mapa.value = fondos[esc] || fondos[0]; escActual = esc; escCambio = ahoraMs; uni.tinte.value.set(ESCENARIOS[esc]?.tinte || '#7A4BFF'); }
+      pedirFondo(esc);
+      if(esc !== escActual && fondos[esc]){ uni.mapa2.value = uni.mapa.value; uni.mapa.value = fondos[esc]; escActual = esc; escCambio = ahoraMs; uni.tinte.value.set(ESCENARIOS[esc]?.tinte || '#7A4BFF'); }
       uni.mezcla.value = Math.max(0, 1 - (ahoraMs - escCambio) / 600);
       uni.pulso.value = latido * compas * (carta ? 1 : .5) + E.destello * .8; uni.giro.value = t * .004 + tono; uni.glitch.value = glitch;
       uni.oscuro.value = .5 - latido * .08; uni.sat.value = 1.2;
@@ -404,7 +414,7 @@ export async function crearEscena(lienzo){
       /* en vertical las cámaras laterales empujaban los receptores de la orilla fuera de la pantalla: ahí van más
          cerca del centro, y la mira se corre hacia donde están de verdad los receptores */
       if(vertical && carta){ objetivoCam.p.x *= .45; objetivoCam.m.x *= .3; objetivoCam.m.x += E.centro * 1.6; }
-      if(!carta){ objetivoCam.p.set(Math.sin(t * .15) * 3, 2.6, 6.5); objetivoCam.m.set(0, 1.6, -11); }
+      if(!carta){ objetivoCam.p.set(Math.sin(t * .15) * 3, 3.2, 4.5); objetivoCam.m.set(0, 2.6, -20); }
       cam.position.lerpVectors(camDe.p, objetivoCam.p, carta ? ec : .03 + .97 * ec);
       mira.lerpVectors(camDe.m, objetivoCam.m, carta ? ec : .03 + .97 * ec);
       cam.position.x += Math.sin(t * .7) * .25 + (Math.random() - .5) * sacudida * .12; cam.position.y += Math.sin(t * 1.1) * .12 + sacudida * .08;
