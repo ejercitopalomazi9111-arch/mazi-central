@@ -45,7 +45,9 @@ export const CANCIONES = [
   { id: 'estudio-cascada', titulo: 'Cascada', artista: 'Chopin · Op. 10 n.º 1', voces: ['miku-hagane'], escena: 11, piano: true },
   { id: 'appassionata', titulo: 'Appassionata', artista: 'Beethoven · Op. 57, III', voces: ['luka', 'una'], escena: 8, piano: true },
   { id: 'estudio-revolucionario', titulo: 'Estudio Revolucionario', artista: 'Chopin · Op. 10 n.º 12', voces: ['miku', 'gumi'], escena: 9, piano: true },
-  { id: 'rush-omega', titulo: 'RUSH Ω', artista: 'Arreglo imposible del Revolucionario', voces: ['miku-akuma'], escena: 11, piano: true, jefe: true }
+  { id: 'rush-omega', titulo: 'RUSH Ω', artista: 'Arreglo imposible del Revolucionario', voces: ['miku-akuma'], escena: 11, piano: true, jefe: true },
+  /* la de Temmie: «Buy Something!» de Cleyton Kauffman (CC0), música de tienda. Sólo la ve quien la tiene */
+  { id: 'hoi-tem-shop', titulo: 'hOI! (tEM SHOP)', artista: 'Cleyton Kauffman', voces: ['temmie'], escena: 4, secreto: true }
 ];
 const HISTORIA = [
   { cap: 'Prólogo · La primera nota', misiones: [
@@ -66,7 +68,7 @@ const HISTORIA = [
 /* lo que se colecciona: sólo apariencia, nunca ventaja (el documento lo pide así) */
 const RAREZA = { c: { n: 'Común', p: 58 }, r: { n: 'Raro', p: 28 }, e: { n: 'Épico', p: 10 }, l: { n: 'Legendario', p: 3.4 }, m: { n: 'Mítico', p: .6 } };
 const OBJETOS = [
-  ...PERSONAJES.map((p, i) => ({ id: 'voz:' + p.id, cat: 'voz', nombre: p.nombre, raro: p.jefe ? 'm' : ['gumi', 'miku', 'luka'].includes(p.id) ? 'c' : ['una'].includes(p.id) ? 'r' : i % 2 ? 'e' : 'l', muestra: null, color: p.color })),
+  ...PERSONAJES.map((p, i) => ({ id: 'voz:' + p.id, cat: 'voz', nombre: p.nombre, raro: p.jefe || p.secreto ? 'm' : ['gumi', 'miku', 'luka'].includes(p.id) ? 'c' : ['una'].includes(p.id) ? 'r' : i % 2 ? 'e' : 'l', muestra: null, color: p.color, secreto: p.secreto })),
   { id: 'nota:neon', cat: 'nota', nombre: 'Neón', raro: 'c', colores: ['#FF3D8B', '#B44BFF', '#38E1FF', '#FFF07A', '#38E1FF', '#B44BFF', '#FF3D8B'] },
   { id: 'nota:sangre', cat: 'nota', nombre: 'Sangre', raro: 'r', colores: ['#FF2D55', '#C4002B', '#FF6A8A', '#FFFFFF', '#FF6A8A', '#C4002B', '#FF2D55'] },
   { id: 'nota:hielo', cat: 'nota', nombre: 'Hielo', raro: 'r', colores: ['#9EF7FF', '#38E1FF', '#C7FBFF', '#FFFFFF', '#C7FBFF', '#38E1FF', '#9EF7FF'] },
@@ -95,6 +97,15 @@ const OBJETOS = [
   { id: 'nota:paloma', cat: 'nota', nombre: 'Paloma de la casa', raro: 'm', secreto: true, colores: ['#7E1735', '#AC27FF', '#C77DFF', '#FFFFFF', '#C77DFF', '#AC27FF', '#7E1735'] },
   { id: 'golpe:paloma', cat: 'golpe', nombre: 'Vuelo de paloma', raro: 'm', secreto: true, sprite: 'paloma' },
   { id: 'titulo:paloma', cat: 'titulo', nombre: 'Paloma de la casa', raro: 'm', secreto: true },
+  /* TEMMIE: sólo para quien se llame Palomazi o Temmie (Carlos, 30 oct). Uno de cada cosa, ninguno sale en las máquinas */
+  { id: 'nota:temmie', cat: 'nota', nombre: 'tEMMIE colorz', raro: 'm', secreto: true, colores: ['#9AD7FF', '#F7C6D9', '#FFFFFF', '#16A2F0', '#FFFFFF', '#F7C6D9', '#9AD7FF'] },
+  { id: 'forma:temmie', cat: 'forma', nombre: 'Temmie Flakes', raro: 'm', secreto: true, foto: 'flakes' },
+  { id: 'golpe:temmie', cat: 'golpe', nombre: 'hOI!', raro: 'm', secreto: true, sprite: 'temmie' },
+  { id: 'flechas:temmie', cat: 'flechas', nombre: 'flechaz de tem', raro: 'm', secreto: true },
+  { id: 'simbolos:temmie', cat: 'simbolos', nombre: 'tem simbolz', raro: 'm', secreto: true },
+  { id: 'aros:temmie', cat: 'aros', nombre: 'aro de tem', raro: 'm', secreto: true },
+  { id: 'boton:temmie', cat: 'boton', nombre: 'botonz de tem', raro: 'm', secreto: true },
+  { id: 'titulo:temmie', cat: 'titulo', nombre: 'hOI! soy temmie', raro: 'm', secreto: true },
   { id: 'titulo:eco', cat: 'titulo', nombre: 'Eco sin dueño', raro: 'e' }, { id: 'titulo:exorcista', cat: 'titulo', nombre: 'Exorcista', raro: 'l' }, { id: 'titulo:sonoluz', cat: 'titulo', nombre: 'Voz de SONOLUZ', raro: 'm' }
 ];
 const CATS = { voz: 'Voz', nota: 'Colores', forma: 'Forma', golpe: 'Golpe', fondo: 'Fondo', flechas: 'Flechas', simbolos: 'Símbolos', aros: 'Aros', boton: 'Botones', titulo: 'Título' };
@@ -191,9 +202,14 @@ function perfil(){ mostrar('perfil'); $('#nombre').value = Y.nombre;
   const col = $('#colores'); col.innerHTML = ''; ['Magenta', 'Cian', 'Oro'].forEach((n, i) => { const b = document.createElement('button'); b.textContent = n; b.className = Y.color === i ? 'si' : ''; b.style.color = ['#FF2D7A', '#38E1FF', '#FFE08A'][i]; b.onclick = () => { Y.color = i; [...col.children].forEach(x => x.classList.toggle('si', x === b)); }; col.appendChild(b); }); }
 function aCalibrar(){ Y.nombre = ($('#nombre').value || 'Resonante').trim().slice(0, 16); regaloSecreto(); guardar(); mostrar('calibrar'); }
 /* el secreto de la casa: quien se llame Mazi o Palomazi recibe el estilo de la paloma (no se anuncia en ningún lado) */
-function regaloSecreto(){ const n = (Y.nombre || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '');
+function regaloSecreto(){ const TEMMIE = ['voz:temmie', 'nota:temmie', 'forma:temmie', 'golpe:temmie', 'flechas:temmie', 'simbolos:temmie', 'aros:temmie', 'boton:temmie', 'titulo:temmie', 'cancion:hoi-tem-shop'];
+  const n = (Y.nombre || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '');
+  /* Palomazi y Temmie reciben a Temmie de ídol y de foto DE INMEDIATO, más uno de cada cosa suya (Carlos, 30 oct) */
+  if(['palomazi', 'temmie'].includes(n)){ const nuevos = TEMMIE.filter(id => !Y.tiene.includes(id));
+    if(nuevos.length){ Y.tiene.push(...nuevos); Y.puesto.voz = 'voz:temmie'; Y.puesto.titulo = 'titulo:temmie'; Y.foto = 'temmie'; guardar();
+      setTimeout(() => aviso('hOI! soy temmie!!! temmie es tu ídol ahora!! mira tu Vestidor (y hay una canción nueva)'), 1200); } }
   if(!['mazi', 'palomazi'].includes(n)) return; const nuevos = ['nota:paloma', 'golpe:paloma', 'titulo:paloma'].filter(id => !Y.tiene.includes(id)); if(!nuevos.length) return;
-  Y.tiene.push(...nuevos); guardar(); setTimeout(() => aviso('🕊️ Algo en el archivo te reconoció. Mira tu Vestidor.'), 1200); }
+  Y.tiene.push(...nuevos); guardar(); setTimeout(() => aviso('🕊️ Algo en el archivo te reconoció. Mira tu Vestidor.'), 2600); }
 
 /* ── la calibración: 16 clics a 120 golpes por minuto; se promedia desde el 5.º ── */
 $('#calibB').addEventListener('click', async () => {
@@ -215,7 +231,7 @@ $('#calibB').addEventListener('click', async () => {
 
 /* ── el menú ── */
 function barra(){ const T = OBJETOS.find(o => o.id === Y.puesto.titulo);
-  $('#barra').innerHTML = `<div class="avatar">${(Y.nombre || 'R')[0].toUpperCase()}</div><div class="quien"><b>${esc(Y.nombre || 'Resonante')}</b><span>Nv. ${Y.nivel} · ${T ? T.nombre : ''}</span></div><div class="moneda"><i></i>${Y.ecos}</div><div class="moneda sello"><i></i>${Y.sellos}</div>`; }
+  $('#barra').innerHTML = `<div class="avatar">${Y.foto === 'temmie' ? '<img src="sprites/temmie-cara.webp" alt="Temmie">' : (Y.nombre || 'R')[0].toUpperCase()}</div><div class="quien"><b>${esc(Y.nombre || 'Resonante')}</b><span>Nv. ${Y.nivel} · ${T ? T.nombre : ''}</span></div><div class="moneda"><i></i>${Y.ecos}</div><div class="moneda sello"><i></i>${Y.sellos}</div>`; }
 const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 async function menu(){ partida.salir(); mostrar('menu'); musicaMenu();
   /* el premio diario: 300 Ecos y un Sello la primera vez que se abre el juego cada día */
@@ -263,7 +279,7 @@ async function canciones(cual){ modoLista = cual; mostrar('canciones'); $('#canc
   const L = $('#lista'), filtro = quitarAcentos($('#buscaCancion').value.trim()); L.innerHTML = '';
   $('#buscaCancion').hidden = CANCIONES.length < 12;
   const propias = CANCIONES.filter(c => c.propia).length;
-  for(const [titulo, grupo] of [['De la casa', CANCIONES.filter(c => !c.propia && !c.piano && !c.anime)], ['Anime y ritmo', CANCIONES.filter(c => c.anime)], ['Piano imposible', CANCIONES.filter(c => c.piano)], [`Mi música · ${propias}`, CANCIONES.filter(c => c.propia)]]){
+  for(const [titulo, grupo] of [['hOI! · sólo tuya', CANCIONES.filter(c => c.secreto && Y.tiene.includes('cancion:' + c.id))], ['De la casa', CANCIONES.filter(c => !c.propia && !c.piano && !c.anime && !c.secreto)], ['Anime y ritmo', CANCIONES.filter(c => c.anime)], ['Piano imposible', CANCIONES.filter(c => c.piano)], [`Mi música · ${propias}`, CANCIONES.filter(c => c.propia)]]){
     const vis = grupo.filter(c => !filtro || quitarAcentos(c.titulo + ' ' + c.artista).includes(filtro)); if(!vis.length) continue;
     { const h = document.createElement('h4'); h.className = 'ojo grupo'; h.textContent = titulo; L.appendChild(h); }
     for(const c of vis){ const b = document.createElement('button'); b.className = 'fila' + (c.id === cancionSel ? ' si' : ''); const r = Y.record[`${c.id}|${modoSel}|${difSel}`];
@@ -289,7 +305,13 @@ $('#jugarB').addEventListener('click', () => jugar(cancionSel, modoSel, difSel))
 /* «al tocar iniciar canción sólo se queda trabado hasta que carga, y si le picas más veces empiezan muchas
    veces la misma canción» (Carlos, 29 oct): ahora sale la pantalla de carga con lo que está pasando, y un
    candado deja pasar UN arranque a la vez */
-const TIPS = ['Las reglas cambian a media canción: lee el aviso rojo.', 'Si los carriles giran, los botones de toque los siguen.', 'Calibra en Ajustes si sientes que las notas llegan tarde.', 'Las notas con flecha se deslizan hacia donde apunta la flecha.', 'En EXÓRCIST nada se queda quieto mucho tiempo.', 'Los Ecos se ganan jugando; el premio diario también cuenta.'];
+const TIPS = ['Las reglas cambian a media canción: lee el aviso rojo.', 'Si los carriles giran, los botones de toque los siguen.', 'Calibra en Ajustes si sientes que las notas llegan tarde.', 'Las notas con flecha se deslizan hacia donde apunta la flecha.', 'En EXÓRCIST nada se queda quieto mucho tiempo.', 'Los Ecos se ganan jugando; el premio diario también cuenta.',
+  /* el cariño a Toby Fox (Carlos, 30 oct: «mete un CHINGO de referencias a Undertale y Deltarune») */
+  '* Ver la canción cargar… te llena de DETERMINACIÓN.', '* (El perro molesto se está comiendo la partitura. No pasa nada.)', '* Sans dice que calibrar es de flojos. Sans miente.',
+  '* [[OFERTA]] ¡¡ECOS A PRECIO DE [[1997]]!! (Spamton no trabaja aquí.)', '* Ralsei cree en ti. Siempre.', '* Mettaton pide más rating: haz un FULL COMBO.',
+  '* Papyrus dejó una nota: «EL RITMO ES UN ROMPECABEZAS. NYEH HEH HEH.»', '* Undyne te grita que le eches GANAS.', '* Toriel te pide que no corras por los carriles.',
+  '* Es una canción. La canción sigue siendo una canción.', '* Susie se comió tu combo. Bueno, un pedazo.', '* Noelle tiene miedo de los carriles que giran. Tú no.',
+  '* hOI! (si te llamas de cierta forma, alguien te saluda)', '* Nadie elige a su ídol. Bueno, casi nadie.'];
 let arrancando = false;
 async function jugar(id, modo, dif, deHistoria = null, prueba = {}){
   if(arrancando) return; arrancando = true;
@@ -336,6 +358,11 @@ function resultados({ cancion, carta, J, murio, auto }){
   $('#resCancion').textContent = `${cancion.titulo} · ${MODOS[carta.modo].nombre} · ${carta.D.nombre} ${carta.nivel}${auto ? ' · AUTO' : ''}`;
   $('#resPuntos').innerHTML = `${String(J.puntaje).padStart(7, '0')}<small>PRECISIÓN ${J.precision.toFixed(2)} % · COMBO ${J.comboMax}</small>`;
   $('#resSellos').innerHTML = (J.ap ? '<span>ALL PERFECT</span>' : J.fc ? '<span>FULL COMBO</span>' : '') + (murio ? '<span style="border-color:#FF2D55;color:#FF2D55">EL ARCHIVO SE CERRÓ</span>' : '');
+  /* la frase de cierre, a lo Undertale */
+  const al = a => a[Math.floor(Math.random() * a.length)];
+  const frase = Y.foto === 'temmie' && !murio ? al(['* hOI!! tEM está muy orgulloz!!', '* tem va a ir a la universidá con estoz ecoz!!', '* awawawawa!!!']) : murio ? al(['* ¡Todavía no puedes rendirte! ¡Mantén tu DETERMINACIÓN!', '* Pero te negaste a morir… ¿verdad?', '* El ALMA se rompió. La canción sigue esperando.'])
+    : J.ap ? '* Te llenas de DETERMINACIÓN.' : J.fc ? '* El ritmo de esta canción… te llena de DETERMINACIÓN.' : al(['* Sigues siendo tú.', '* (Guardaste. Bueno, se guardó solo.)', '* Fue una buena canción. La canción lo sabe.']);
+  $('#resSellos').insertAdjacentHTML('beforeend', `<p class="frase">${frase}</p>`);
   $('#resJuicios').innerHTML = [['sonoluz', 'SONOLUZ', '#FFF3B0'], ['perfecto', 'PERFECTO', '#7CF0FF'], ['genial', 'GENIAL', '#8DFF9E'], ['bien', 'BIEN', '#FFC46B'], ['fallo', 'FALLO', '#FF4D6D']].map(([k, n, c]) => `<div style="--c:${c}">${J.cuenta[k]}<small>${n}</small></div>`).join('');
   /* el histograma de desvíos: para mejorar, no sólo para presumir */
   const hc = $('#histograma'), dpr = devicePixelRatio || 1; hc.width = hc.clientWidth * dpr; hc.height = 120 * dpr; const x = hc.getContext('2d'); x.scale(dpr, dpr); const w = hc.clientWidth;
@@ -415,6 +442,7 @@ function sortear(n){ const sale = [];
 /* cómo se ve un objeto en chiquito (vestidor, tiradas, premio) */
 function vista(o){ const k = o.id.split(':')[1];
   if(o.cat === 'forma') return o.foto ? `<img class="formaFoto" src="modelos/notas/${o.foto}.webp" alt="">` : `<i class="formaMini f-${k}"></i>`;
+  if(k === 'temmie' && ['flechas', 'simbolos', 'aros', 'golpe'].includes(o.cat)) return `<img src="sprites/temmie-cara.webp" alt="" class="foto">`;
   if(o.cat === 'flechas') return `<img src="sprites/tecla_arrow_up${k === 'contorno' ? '_outline' : ''}.png" alt="" class="${k === 'neon' ? 'brillo' : ''}">`;
   if(o.cat === 'simbolos') return `<img src="sprites/${k === 'contorno' ? 'ps_triangle_outline' : k === 'blanco' ? 'ps_color_triangle_outline' : 'ps_color_triangle'}.png" alt="">`;
   if(o.cat === 'aros') return `<img src="sprites/${{ clasico: 'gen_circle_outline', magia: 'p_magic_03', estelar: 'p_star_06' }[k]}.png" alt="">`;
@@ -445,15 +473,16 @@ function ajustes(){ mostrar('ajustes'); const A = $('#ajustesL');
 function creditos(){ mostrar('creditos');
   $('#creditosL').innerHTML = `<div class="ojo">VS TILES · EXÓRCIST: THE SONOLUZ PROTOCOL</div><p style="margin-top:8px">Idea, mundo y documento de diseño: <b>Carlos «Palomazi»</b>. Programación: Grupo Mazi.</p>
   <p>Es un <b>fan game sin fines de lucro</b>. Los personajes Vocaloid y UTAU son de sus dueños (Crypton Future Media, INTERNET Co., AH-Software, Yamaha y demás); aquí salen como homenaje.</p>
-  <h3>MÚSICA</h3><p>${CANCIONES.map(c => `«${c.titulo}»`).join(', ')} — <b>Kevin MacLeod</b> (incompetech.com). Licencia Creative Commons: By Attribution 4.0.</p>
-  <h3>PERSONAJES 3D (Sketchfab, vía Objaverse)</h3><p>${PERSONAJES.map(p => `<b>${p.nombre}</b> — ${p.autor}`).join('<br>')}<br>Y una invitada que sólo sale si la buscas: <b>«Shiteyanyo - Hatsune Miku»</b> — Seafoam.<br>Licencia CC BY 4.0.</p>
+  <h3>MÚSICA</h3><p>${[...new Set(CANCIONES.filter(c => !c.propia && !c.secreto).map(c => c.artista))].map(a => `${CANCIONES.filter(c => c.artista === a && !c.secreto).map(c => `«${c.titulo}»`).join(', ')} — <b>${a}</b>`).join('<br>')}<br>Las de la casa, de incompetech.com (CC BY 4.0); las de anime y ritmo, de OpenGameArt (CC0, CC BY 3.0 y 4.0); el piano, de partituras de Mutopia (dominio público). Detalle en CREDITOS.md.</p>
+  <h3>PERSONAJES 3D (Sketchfab, vía Objaverse)</h3><p>${PERSONAJES.filter(p => !p.secreto).map(p => `<b>${p.nombre}</b> — ${p.autor}`).join('<br>')}<br>Y una invitada que sólo sale si la buscas: <b>«Shiteyanyo - Hatsune Miku»</b> — Seafoam.<br>Licencia CC BY 4.0.</p>
   <h3>ESCENARIOS</h3><p>Fotos 360° de <b>Poly Haven</b> (CC0): ${ESCENARIOS.map(e => e.id.replace(/_/g, ' ')).join(', ')}.</p>
+  <h3>A TOBY FOX</h3><p>Por <b>Undertale</b> y <b>Deltarune</b>, que este juego quiere mucho. Temmie (modelo de <b>Stewie_Box</b>), la caja de Temmie Flakes (<b>RavenBlox</b>), CC BY 4.0, Sketchfab. Su canción: «Buy Something!» de <b>Cleyton Kauffman</b> (CC0).<br><i>(El perro molesto se robó el resto de esta línea.)</i></p>
   <h3>BOTONES, PARTÍCULAS Y SONIDOS</h3><p><b>Kenney</b> (kenney.nl, CC0): Input Prompts, Particle Pack, Interface Sounds, Impact Sounds. La risa: <b>AntumDeluge</b> (OpenGameArt, CC0).</p>
   <h3>LETRA Y CÓDIGO DE FUERA</h3><p>Orbitron, Zen Kaku Gothic New y Cinzel (Google Fonts, SIL OFL). three.js (MIT).</p>`; }
 
 /* ── Lab: tu canción ── */
 $('#labArchivo').addEventListener('change', async (e) => { const fs = [...e.target.files]; e.target.value = ''; if(!fs.length) return; const st = $('#labEstado');
-  biblioteca.persistir(); let bien = 0, primera = null; const voces = PERSONAJES.filter(p => !p.jefe).map(p => p.id);
+  biblioteca.persistir(); let bien = 0, primera = null; const voces = PERSONAJES.filter(p => !p.jefe && !p.secreto).map(p => p.id);
   for(const [i, f] of fs.entries()){ const pre = fs.length > 1 ? `${i + 1} de ${fs.length} · ` : '';
     try{ st.textContent = `${pre}Leyendo «${f.name}»…`;
       const et = await etiquetas(f), datosArchivo = await f.arrayBuffer(); reloj.preparar();

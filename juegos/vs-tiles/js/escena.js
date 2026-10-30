@@ -28,7 +28,9 @@ export const PERSONAJES = [
   { id: 'luka', nombre: 'Okurine Luka', faccion: 'Desafinados', alto: 1.8, color: '#FF7AB6', autor: 'kirirato' },
   { id: 'una', nombre: 'Otomachi Una', faccion: 'Ecos', alto: 1.6, color: '#8E9BFF', autor: 'theuniversalmodeler' },
   { id: 'miku-hagane', nombre: 'Hagane Miku', faccion: 'Desafinados', alto: 1.75, color: '#B8B8C8', autor: 'kirirato' },
-  { id: 'miku-akuma', nombre: 'Miku Excomulgada', faccion: 'Coro Nulo', alto: 1.85, color: '#FF2D55', autor: 'Tiago.Carneiro', jefe: true }
+  { id: 'miku-akuma', nombre: 'Miku Excomulgada', faccion: 'Coro Nulo', alto: 1.85, color: '#FF2D55', autor: 'Tiago.Carneiro', jefe: true },
+  /* el secreto de Palomazi: Temmie (Undertale) no se saca en ninguna máquina. Va sin esqueleto y vibra, como en su juego */
+  { id: 'temmie', nombre: 'Temmie', faccion: 'Tem Village', alto: 1.2, color: '#9AD7FF', autor: 'Stewie_Box', secreto: true, sinBrazos: true, vibra: true }
 ];
 export const COLORES_RIEL = ['#FF3D8B', '#B44BFF', '#38E1FF', '#FFF07A', '#38E1FF', '#B44BFF', '#FF3D8B'];
 
@@ -85,7 +87,8 @@ export const MODELOS_NOTA = {
   barra: { archivo: 'lingote', gira: Math.PI / 2, caja: [1.12, .17, .36], sinMapa: true },
   pildora: { archivo: 'arcade', ancho: .9, fijo: /Aro/ }, doble: { archivo: 'holo', ancho: .96 }, diamante: { archivo: 'brillante', ancho: .82, grueso: .62, sinMapa: true },
   disco: { archivo: 'disco', ancho: .96 }, cristal: { archivo: 'cristal', pie: true, alto: .62, sinMapa: true }, gema: { archivo: 'gema', pie: true, alto: .6, sinMapa: true },
-  estrella: { archivo: 'estrella', acuesta: true, ancho: .92 }, nota: { archivo: 'nota', pie: true, alto: .66, sinMapa: true }
+  estrella: { archivo: 'estrella', acuesta: true, ancho: .92 }, nota: { archivo: 'nota', pie: true, alto: .66, sinMapa: true },
+  temmie: { archivo: 'flakes', pie: true, alto: .7, propio: true }
 };
 /* el material del autor, listo para pintarse: sin transparencia de vidrio ni metal espejo (en una pista oscura se ven
    negros) y con brillo propio del color, que es lo que hace que se lea a lo lejos */
@@ -93,10 +96,12 @@ export function materialDeNota(base, F, color){ const n = base.clone(); n.side =
   if('metalness' in n){ n.metalness = Math.min(n.metalness ?? 0, .35); n.roughness = Math.max(.22, n.roughness ?? .5); }
   if('transmission' in n) n.transmission = 0;
   if(F.sinMapa){ n.map = n.metalnessMap = n.roughnessMap = n.aoMap = null; }
-  n.userData.fijo = F.fijo ? F.fijo.test(base.name) : false; pintarMaterial(n, color); n.needsUpdate = true; return n; }
+  n.userData.fijo = F.fijo ? F.fijo.test(base.name) : false; n.userData.propio = !!F.propio; pintarMaterial(n, color); n.needsUpdate = true; return n; }
 const blanco = new THREE.Color('#FFFFFF'), plata = new THREE.Color('#E6E3F0');
 export function pintarMaterial(n, color){
   if(n.userData.fijo){ n.color.copy(plata); if(n.emissive) n.emissive.setRGB(.1, .1, .12); return; }
+  /* las que traen su dibujo (la caja de Temmie Flakes) no se pintan: el carril sólo les da un brillo de su color */
+  if(n.userData.propio){ n.color.copy(blanco); if(n.emissive) n.emissive.copy(color).multiplyScalar(.12); return; }
   n.color.copy(color).lerp(blanco, .25); if(n.emissive) n.emissive.copy(color).multiplyScalar(.4); }
 
 export async function crearEscena(lienzo){
@@ -153,7 +158,7 @@ export async function crearEscena(lienzo){
     m.traverse(o => { if(o.isMesh || o.isSkinnedMesh){ o.frustumCulled = false; const ms = Array.isArray(o.material) ? o.material : [o.material];
       ms.forEach(mt => { if(mt.map) mt.map.anisotropy = 4; if(mt.transparent && mt.opacity > .95){ mt.alphaTest = .4; mt.transparent = false; } mt.side = THREE.DoubleSide; }); } });
     m.updateMatrixWorld(true);
-    const pose = g.animations.length ? null : brazosAbajo(m);
+    const pose = g.animations.length || P.sinBrazos ? null : brazosAbajo(m);
     m.updateMatrixWorld(true); const b = new THREE.Box3().setFromObject(m, true), k = P.alto / Math.max(.01, b.max.y - b.min.y), c = b.getCenter(new THREE.Vector3());
     const cuerpo = new THREE.Group(); m.position.set(-c.x, -b.min.y, -c.z); cuerpo.add(m); cuerpo.scale.setScalar(k);
     const raiz = new THREE.Group(); cuerpo.rotation.y = P.rota || 0; raiz.add(cuerpo);
@@ -491,6 +496,7 @@ export async function crearEscena(lienzo){
         c.raiz.position.y = sal * .18 + sacudida * .55 + Math.sin(Math.min(1, (t - escT) / .9) * Math.PI) * (t >= escT && t - escT < .9 ? .9 : 0); c.cuerpo.rotation.z = Math.sin((gi + fase) * Math.PI / 2) * .05 * lado;
         c.raiz.rotation.y = Math.sin(t * .6 + k) * (c.mezclador ? .12 : .35) + vuelta * (k % 2 ? -1 : 1) + (est?.ultimoGolpe && ahoraMs - est.ultimoGolpe < 140 ? .06 : 0);
         const sq = 1 + latido * .05, base = c.base || (c.base = c.raiz.scale.x); c.raiz.scale.set(base * sq, base / sq, base * sq);
+        if(c.P.vibra){ c.cuerpo.position.x = (Math.random() - .5) * .04; c.cuerpo.position.z = (Math.random() - .5) * .04; }
         /* un baile por sección: cambia cuando cambia el escenario, y cada cantante baila uno distinto */
         if(c.mezclador){ const A = c.g.animations, i = (k + Math.floor(Math.max(0, escT) * 7.3) + (c.P.jefe ? 0 : 1)) % A.length;
           if(c.baile !== i){ c.mezclador.stopAllAction(); c.mezclador.clipAction(A[i]).play(); c.baile = i; c.baileT0 = t > 0 ? t : ahoraMs / 1000; }

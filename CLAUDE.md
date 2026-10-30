@@ -499,6 +499,8 @@ dependemos.
    | un selector de etiqueta (`canvas{ position:fixed; inset:0 }`) es para los lienzos que había cuando lo escribí | agarra **todos los que vengan después**: la garra del Mercado de VS TILES salió fija en la esquina, tapando la cabecera y los botones | lo vio la captura y una prueba que no podía tocar «Sobre». Las reglas de pantalla completa van por id (`#gl, #capa`) |
    | meter un `// comentario` al final de un renglón de código «sólo comenta» | si el renglón sigue, el `//` **se come el resto del código**: sin error, sin aviso | tres veces en VS TILES el 29 y 30 de octubre; una llegó a producción (la Miku del susto perdió el ladeo y el aplastado) y otra dejó `analisis.js` sin compilar. A media línea va `/* … */`, o el comentario en su propio renglón |
 
+   | un `const` escrito justo arriba de la función que lo usa ya existe cuando se llama la función | si algo llama a la función ANTES de que el módulo llegue a ese renglón (el arranque de `app.js` llama `regaloSecreto()` arriba), el `const` está en su «zona muerta» y truena: «Cannot access 'TEMMIE' before initialization» | el juego entero se quedó en la pantalla de «toca para entrar», sin poder tocar nada. La lista va DENTRO de la función |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---

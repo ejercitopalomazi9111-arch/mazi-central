@@ -17,7 +17,7 @@ window.cargar = async (url) => { const g = await new GLTFLoader().loadAsync(url)
   raiz.traverse(o => { if(o.isMesh){ o.frustumCulled = false; (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { m.side = THREE.DoubleSide; if(m.transparent && m.opacity > .95){ m.alphaTest = .4; m.transparent = false; } }); } });
   raiz.updateMatrixWorld(true); { const b = new THREE.Box3().setFromObject(raiz, true); raiz.scale.setScalar(1.7 / Math.max(1e-6, b.max.y - b.min.y)); }
   mez = new THREE.AnimationMixer(raiz); clips = g.animations; return clips.map(c => [c.name, +c.duration.toFixed(2)]); };
-window.foto = (clip, t, angulo = 0) => { mez.stopAllAction(); const a = mez.clipAction(clips[clip]); a.play(); mez.setTime(t);
+window.foto = (clip, t, angulo = 0) => { mez.stopAllAction(); if(clips[clip]){ const a = mez.clipAction(clips[clip]); a.play(); mez.setTime(t); }
   raiz.updateMatrixWorld(true); const b = new THREE.Box3().setFromObject(raiz, true), c = b.getCenter(new THREE.Vector3()), h = b.max.y - b.min.y;
   const d = h * 2.1; cam.position.set(c.x + Math.sin(angulo) * d, c.y + h * .05, c.z + Math.cos(angulo) * d); cam.lookAt(c.x, c.y, c.z); r.render(s, cam); return true; };
 window.listo = true;

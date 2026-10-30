@@ -20,6 +20,8 @@ export async function cargarSprites(){
   const nombres = ['paloma', 'gen_circle_fill', 'gen_circle_outline', 'p_light_01', 'p_flare_01', 'p_star_06', 'p_star_01', 'p_spark_05', 'p_magic_03', 'p_circle_03', 'p_twirl_01', 'p_trace_04', 'p_slash_03', 'p_symbol_01', 'p_window_02',
     ...SIM.flatMap(s => [`ps_color_${s}`, `ps_color_${s}_outline`, `ps_${s}_outline`]), ...FLECHA.flatMap(f => [`tecla_arrow_${f}`, `tecla_arrow_${f}_outline`])];
   const S = {}; await Promise.all(nombres.map(n => new Promise(r => { const im = new Image(); im.onload = () => { S[n] = im; r(); }; im.onerror = r; im.src = `sprites/${n}.png`; })));
+  /* la cara de Temmie (de su modelo 3D, Stewie_Box, CC BY) para los estilos secretos */
+  await new Promise(r => { const im = new Image(); im.onload = () => { S.temmie = im; r(); }; im.onerror = r; im.src = 'sprites/temmie-cara.webp'; });
   /* versiones teñidas (el canvas 2D no tiñe solo): se hornean una vez */
   S.teñir = (n, color) => { const k = n + color; if(S[k]) return S[k]; const im = S[n]; if(!im) return null; const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d');
     x.drawImage(im, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = color; x.fillRect(0, 0, c.width, c.height); x.globalCompositeOperation = 'destination-over'; x.globalAlpha = .0; x.drawImage(im, 0, 0); return S[k] = c; };
@@ -244,14 +246,15 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
         if(st === 'hecha' || st === 'fallada' || st === 'pendiente') continue; const [cx] = flechaXY(c, 0), yy = yRec - (st === 'sosteniendo' ? 0 : dt) * velPx;
         if(n.fin){ const yf = yRec - (n.fin - t) * velPx; x.fillStyle = COLOR_FL[c] + (st === 'sosteniendo' ? 'EE' : '99'); x.fillRect(cx - tam * .13, Math.min(yf, yy), tam * .26, Math.abs(yy - yf)); }
         if(st !== 'sosteniendo'){ if((ajustes.estilos?.flechas) === 'neon') img(S.teñir('p_light_01', COLOR_FL[c]), cx, yy, tam * 2, 0, .7, true);
-          img((ajustes.estilos?.flechas) === 'solida' ? `tecla_arrow_${FLECHA[c]}_outline` : S.teñir(`tecla_arrow_${FLECHA[c]}`, COLOR_FL[c]), cx, yy, tam); }
+          img((ajustes.estilos?.flechas) === 'solida' ? `tecla_arrow_${FLECHA[c]}_outline` : S.teñir(`tecla_arrow_${FLECHA[c]}`, COLOR_FL[c]), cx, yy, tam);
+          if((ajustes.estilos?.flechas) === 'temmie' && S.temmie) img(S.temmie, cx + (Math.random() - .5) * 3, yy, tam * .5); }
       }
     }
     /* ── Símbolos (DIVA): el blanco con su manecilla, y el símbolo que vuela hacia él ── */
     if(modo === 'diva'){ const tam = radio() * 2.1, B = botonesDiva();
       for(let k = est.desde; k < carta.notas.length; k++){ const n = carta.notas[k]; if(n.modo !== 'diva') continue; const dt = n.t - t; if(dt > AR * 1.15) break; const st = est.estado[n.id];
         if(st === 'hecha' || st === 'fallada' || st === 'pendiente') continue; const [cx, cy] = enArea(n), u = 1 - Math.max(0, dt) / (AR * 1.15);
-        const es = ajustes.estilos?.simbolos || 'color', nom = n.tipo === 'estrella' ? 'p_star_06' : es === 'contorno' ? S.teñir(`ps_${SIM[n.sim]}_outline`, COLOR_SIM[n.sim]) : es === 'blanco' ? `ps_color_${SIM[n.sim]}_outline` : `ps_color_${SIM[n.sim]}`;
+        const es = ajustes.estilos?.simbolos || 'color', nom = n.tipo === 'estrella' ? 'p_star_06' : es === 'temmie' && S.temmie ? S.temmie : es === 'contorno' ? S.teñir(`ps_${SIM[n.sim]}_outline`, COLOR_SIM[n.sim]) : es === 'blanco' ? `ps_color_${SIM[n.sim]}_outline` : `ps_color_${SIM[n.sim]}`;
         img(n.tipo === 'estrella' ? S.teñir('p_star_01', '#FFF3B0') : `ps_${SIM[n.sim]}_outline`, cx, cy, tam * (1.05 + .08 * lat), 0, Math.min(1, u * 3));
         /* la manecilla del reloj del blanco (M116) */
         x.save(); x.globalAlpha = Math.min(1, u * 3); x.strokeStyle = '#FFFFFF'; x.lineWidth = 3; x.beginPath(); x.moveTo(cx, cy); const a = -Math.PI / 2 + u * Math.PI * 2; x.lineTo(cx + Math.cos(a) * tam * .62, cy + Math.sin(a) * tam * .62); x.stroke(); x.restore();
@@ -280,7 +283,7 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
           if(t >= n.t){ const [bx, by] = puntoCamino(n, Math.min(1, (t - n.t) / (n.fin - n.t))); img(S.teñir('gen_circle_fill', '#FFFFFF'), bx, by, R * 1.6); img('gen_circle_outline', bx, by, R * 4.6, 0, .7); } }
         if(st !== 'hecha'){ img(S.teñir('gen_circle_fill', color), cx, cy, R * 2, 0, alfa); img('gen_circle_outline', cx, cy, R * 2.1, 0, alfa);
           const ea = ajustes.estilos?.aros || 'clasico', rAro = R * 2 * (1 + 2.2 * Math.max(0, dt) / AR);
-          if(ea === 'magia') img(S.teñir('p_magic_03', color), cx, cy, rAro * 1.15, ahora / 400, alfa * .9, true); else if(ea === 'estelar'){ img(S.teñir('p_star_06', color), cx, cy, R * 3.2, ahora / 900, alfa * .5, true); img('gen_circle_outline', cx, cy, rAro, 0, alfa * .9); } else img('gen_circle_outline', cx, cy, rAro, 0, alfa * .9);
+          if(ea === 'magia') img(S.teñir('p_magic_03', color), cx, cy, rAro * 1.15, ahora / 400, alfa * .9, true); else if(ea === 'temmie' && S.temmie){ img(S.temmie, cx, cy, rAro * .75, 0, alfa * .45); img('gen_circle_outline', cx, cy, rAro, 0, alfa * .9); } else if(ea === 'estelar'){ img(S.teñir('p_star_06', color), cx, cy, R * 3.2, ahora / 900, alfa * .5, true); img('gen_circle_outline', cx, cy, rAro, 0, alfa * .9); } else img('gen_circle_outline', cx, cy, rAro, 0, alfa * .9);
           x.save(); x.globalAlpha = alfa; x.font = `800 ${Math.round(R * .9)}px Orbitron, sans-serif`; x.fillStyle = '#fff'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(String((n.id % 9) + 1), cx, cy + 1); x.restore(); }
       }
     }
@@ -297,8 +300,8 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
         x.globalAlpha = (.35 + .4 * mov) * q.vis; x.fillStyle = '#fff'; x.beginPath(); x.arc(q.x, q.y, Math.max(3, rad * .12), 0, Math.PI * 2); x.fill(); x.restore(); } }
     /* los destellos de cada acierto */
     for(let i = efectos.length - 1; i >= 0; i--){ const e = efectos[i], u = (ahora - e.t0) / 420; if(u >= 1){ efectos.splice(i, 1); continue; }
-      const sp = ajustes.golpeSprite || 'p_flare_01', paloma = sp === 'paloma';
-      img(paloma ? S.paloma : S.teñir(sp, e.color), e.x, e.y - (paloma ? 40 * u : 0), (paloma ? 70 : 110) + 160 * u, paloma ? 0 : u * 2, 1 - u, !paloma); if(e.j.id === 'sonoluz') img(S.teñir('p_star_06', '#FFF3B0'), e.x, e.y, 80 + 220 * u, -u * 3, 1 - u, true); }
+      const sp = ajustes.golpeSprite || 'p_flare_01', paloma = sp === 'paloma' || sp === 'temmie', propio = sp === 'temmie' ? S.temmie : S.paloma;
+      img(paloma ? propio : S.teñir(sp, e.color), e.x + (sp === 'temmie' ? (Math.random() - .5) * 6 : 0), e.y - (paloma ? 40 * u : 0), (paloma ? 70 : 110) + 160 * u, paloma ? 0 : u * 2, 1 - u, !paloma); if(e.j.id === 'sonoluz') img(S.teñir('p_star_06', '#FFF3B0'), e.x, e.y, 80 + 220 * u, -u * 3, 1 - u, true); }
     hud(t, ahora, lat, modo);
     if(enPausa){ x.fillStyle = '#05020Acc'; x.fillRect(0, 0, W, H); }
   }

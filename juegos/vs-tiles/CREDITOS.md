@@ -27,6 +27,11 @@ Se comprimieron con gltf-transform (cuantizado y texturas WebP de 1024 px); la f
 **Faltan v flower y Momone Momo:** sus modelos en Sketchfab son de 2023 en adelante y no están en el
 espejo; bajarlos de Sketchfab pide una cuenta (un token de su API).
 
+**El secreto de Palomazi** (sólo aparece si el jugador se llama Palomazi o Temmie): `modelos/temmie.glb`,
+«Temmie 3d model (basic low poly version)» de **Stewie_Box** (Sketchfab, CC BY 4.0). Su cara recortada de
+ese mismo modelo es `sprites/temmie-cara.webp`. Temmie es personaje de **Undertale**, de **Toby Fox**: este
+es un juego de fans, gratis, y el modelo es de un fan.
+
 ## Formas de nota
 
 Modelos de **Sketchfab**, todos **Creative Commons: By Attribution 4.0**; se dejó sólo la pieza, centrada, con
@@ -36,6 +41,7 @@ texturas WebP de 256 px (`herramientas/fotos-notas.html` saca sus fotos para el 
 «Stylized Puck» de RiZoRuS77 (Disco) · «Low Poly Stylized Gemstone» de Discover (Cristal) ·
 «5 Colored Fantasy Stylized Gems» de Incg5764 (Gema engarzada) · «Gold Star» de Roberto Chiaveri (Estrella) ·
 «CC0 - Muscial Note» de plaggy (Corchea).
+La secreta de Temmie: «Cereal Temmie Flakes» de **RavenBlox** (Temmie Flakes), con su dibujo original.
 
 ## Los bailes
 
@@ -63,6 +69,9 @@ turca, K. 331) y Beethoven (Sonatas Op. 13 y Op. 57, tercer movimiento). Las toc
 Piano** de Alexander Holm (un Yamaha C5 grabado nota por nota), **Creative Commons: By Attribution 3.0**,
 con FluidSynth (`herramientas/piano.py`). «RUSH Ω» es un arreglo nuestro del Estudio Revolucionario: más
 rápido y con cada nota doblada en octavas.
+
+**La de Temmie** (secreta): «Buy Something!» de **Cleyton Kauffman** (OpenGameArt, «Shop Theme»,
+**CC0**), con el título «hOI! (tEM SHOP)».
 
 ## Escenarios
 
