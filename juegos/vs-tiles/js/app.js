@@ -48,7 +48,7 @@ export const CANCIONES = [
   { id: 'estudio-revolucionario', titulo: 'Estudio Revolucionario', artista: 'Chopin · Op. 10 n.º 12', voces: ['miku', 'gumi'], escena: 9, piano: true },
   { id: 'rush-omega', titulo: 'RUSH Ω', artista: 'Arreglo imposible del Revolucionario', voces: ['miku-akuma'], escena: 11, piano: true, jefe: true },
   /* la de Temmie: «Buy Something!» de Cleyton Kauffman (CC0), música de tienda. Sólo la ve quien la tiene */
-  { id: 'hoi-tem-shop', titulo: 'hOI! (tEM SHOP)', artista: 'Cleyton Kauffman', voces: ['temmie'], escena: 4, secreto: true }
+  { id: 'hoi-tem-shop', titulo: 'hOI! (tEM SHOP)', artista: 'Cleyton Kauffman', voces: ['temmie-tienda', 'temmie'], escena: 4, secreto: true }
 ];
 const HISTORIA = [
   { cap: 'Prólogo · La primera nota', misiones: [
@@ -205,12 +205,12 @@ function perfil(){ mostrar('perfil'); $('#nombre').value = Y.nombre;
   const col = $('#colores'); col.innerHTML = ''; ['Magenta', 'Cian', 'Oro'].forEach((n, i) => { const b = document.createElement('button'); b.textContent = n; b.className = Y.color === i ? 'si' : ''; b.style.color = ['#FF2D7A', '#38E1FF', '#FFE08A'][i]; b.onclick = () => { Y.color = i; [...col.children].forEach(x => x.classList.toggle('si', x === b)); }; col.appendChild(b); }); }
 function aCalibrar(){ Y.nombre = ($('#nombre').value || 'Resonante').trim().slice(0, 16); regaloSecreto(); guardar(); mostrar('calibrar'); }
 /* el secreto de la casa: quien se llame Mazi o Palomazi recibe el estilo de la paloma (no se anuncia en ningún lado) */
-function regaloSecreto(){ const TEMMIE = ['voz:temmie', 'nota:temmie', 'forma:temmie', 'golpe:temmie', 'flechas:temmie', 'simbolos:temmie', 'aros:temmie', 'boton:temmie', 'titulo:temmie', 'cancion:hoi-tem-shop'];
+function regaloSecreto(){ const TEMMIE = ['voz:temmie', 'voz:temmie-tienda', 'nota:temmie', 'forma:temmie', 'golpe:temmie', 'flechas:temmie', 'simbolos:temmie', 'aros:temmie', 'boton:temmie', 'titulo:temmie', 'cancion:hoi-tem-shop'];
   const n = (Y.nombre || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '');
   /* Palomazi y Temmie reciben a Temmie de ídol y de foto DE INMEDIATO, más uno de cada cosa suya (Carlos, 30 oct) */
   if(['palomazi', 'temmie'].includes(n)){ const nuevos = TEMMIE.filter(id => !Y.tiene.includes(id));
-    if(nuevos.length){ Y.tiene.push(...nuevos); Y.puesto.voz = 'voz:temmie'; Y.puesto.titulo = 'titulo:temmie'; Y.foto = 'temmie'; guardar();
-      setTimeout(() => aviso('hOI! soy temmie!!! temmie es tu ídol ahora!! mira tu Vestidor (y hay una canción nueva)'), 1200); } }
+    if(nuevos.length){ const primera = nuevos.includes('voz:temmie'); Y.tiene.push(...nuevos); if(primera){ Y.puesto.voz = 'voz:temmie'; Y.puesto.titulo = 'titulo:temmie'; Y.foto = 'temmie'; } guardar();
+      setTimeout(() => aviso(primera ? 'hOI! soy temmie!!! temmie es tu ídol ahora!! mira tu Vestidor (y hay una canción nueva)' : 'hOI!! la temmie del tem shop llegó a tu Vestidor!! (es otra ídol)'), 1200); } }
   if(!['mazi', 'palomazi'].includes(n)) return; const nuevos = ['nota:paloma', 'golpe:paloma', 'titulo:paloma'].filter(id => !Y.tiene.includes(id)); if(!nuevos.length) return;
   Y.tiene.push(...nuevos); guardar(); setTimeout(() => aviso('🕊️ Algo en el archivo te reconoció. Mira tu Vestidor.'), 2600); }
 
