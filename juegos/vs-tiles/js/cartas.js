@@ -15,7 +15,7 @@ export const DIFS = [
   { id: 'facil', nombre: 'Fácil', nivel: [1, 3], sub: 1, umbral: .5, gap: .42, mismo: .6, acorde: 0, hold: .18, flick: 0, rafaga: 0, carriles: 4, ventana: 1.5 },
   { id: 'normal', nombre: 'Normal', nivel: [4, 6], sub: 2, umbral: .34, gap: .2, mismo: .3, acorde: .06, hold: .16, flick: .03, rafaga: 0, carriles: 5, ventana: 1.25 },
   { id: 'dificil', nombre: 'Difícil', nivel: [7, 9], sub: 4, umbral: .22, gap: .115, mismo: .17, acorde: .14, hold: .13, flick: .06, rafaga: .25, carriles: 5, ventana: 1 },
-  { id: 'experto', nombre: 'Experto', nivel: [10, 12], sub: 4, umbral: .12, gap: .08, mismo: .12, acorde: .2, hold: .1, flick: .08, rafaga: .55, carriles: 5, ventana: .85 },
+  { id: 'experto', nombre: 'Experto', nivel: [10, 12], sub: 4, umbral: .1, gap: .072, mismo: .11, acorde: .2, hold: .1, flick: .14, rafaga: .7, carriles: 5, ventana: .85 },
   { id: 'exorcist', nombre: 'EXÓRCIST', nivel: [13, 15], sub: 8, umbral: .06, gap: .052, mismo: .09, acorde: .28, hold: .08, flick: .1, rafaga: 1, carriles: 5, ventana: .7 }
 ];
 export const MODOS = {
@@ -48,7 +48,8 @@ export const DISPOSICIONES = {
 };
 
 /* ── el generador ── */
-export function armarCarta(an, cancion, modo, difId){
+export function armarCarta(an, cancion, modo, difId, opc = {}){
+  const tel = !!(opc && opc.telefono);
   const D = DIFS.find(d => d.id === difId) || DIFS[2], R = azar(cancion.id + '|' + modo + '|' + difId);
   const notas = [], eventos = [];
   const golpes = an.golpes, beat = golpes.length > 1 ? (golpes[golpes.length - 1] - golpes[0]) / (golpes.length - 1) : .5;
@@ -80,7 +81,7 @@ export function armarCarta(an, cancion, modo, difId){
   cand = lim;
 
   /* 4 · secciones: qué se juega en cada una y cómo se mueve todo */
-  const plan = planSecciones(secc, modo, D, R, an);
+  const plan = planSecciones(secc, modo, D, R, an, tel);
   plan.forEach(p => eventos.push(...p.eventos));
 
   /* 5 · asignar cada candidato a su sección y a su riel, con patrones */
@@ -117,7 +118,8 @@ export function armarCarta(an, cancion, modo, difId){
       notas.push(nota); ultRiel = r;
       /* M009 · acordes en los graves fuertes */
       if(c.banda === 0 && c.s > .6 && R() < D.acorde * 2.5 && nota.tipo !== 'flick'){
-        const otros = rs.filter(x => x !== r && libre[x] < c.t - .02); const cuantos = D.id === 'exorcist' && R() < .35 ? 2 : 1;
+        /* en el teléfono: nunca más de dos notas a la vez, y ninguna mientras se sostiene otra (serían tres dedos) */
+        const sosteniendo = rs.some(x => libre[x] >= c.t - .02), otros = rs.filter(x => x !== r && libre[x] < c.t - .02); const cuantos = tel ? (sosteniendo ? 0 : 1) : D.id === 'exorcist' && R() < .35 ? 2 : 1;
         for(let q = 0; q < cuantos && otros.length; q++){ const o = otros.splice(Math.floor(R() * otros.length), 1)[0]; notas.push({ t: c.t, tipo: 'tap', r: o, rival: nota.rival }); } }
     }
     else if(P.modo === 'circulos'){
@@ -167,7 +169,7 @@ function circuloNota(c, hueco, beat, D, R, notas, P){
 
 /* EL PLAN DE CADA SECCIÓN: el modo que se juega, cuántos carriles y TODO el movimiento.
    «Metele muchísimo movimiento al juego» (Carlos, 29 oct): hasta Fácil cambia de cámara y de escenario. */
-function planSecciones(secc, modo, D, R, an){
+function planSecciones(secc, modo, D, R, an, tel = false){
   const plan = [], nivel = DIFS.indexOf(D), golpes = an.golpes;
   const ciclo = ['carril', 'circulos', 'carril', 'diva', 'flechas', 'carril', 'circulos', 'diva'];
   for(let i = 0; i < secc.length - 1; i++){
@@ -182,7 +184,9 @@ function planSecciones(secc, modo, D, R, an){
     if(modo === 'exorcist' && i > 0) ev.push({ t: t0, tipo: 'aviso', modo: m, texto: avisoDe(m) });
     if(m === 'carril'){
       /* M041–M045 · la cantidad de carriles cambia (EXÓRCIST siempre; Experto a veces) */
-      if((modo === 'exorcist' && i > 0) || (nivel >= 3 && R() < .35 && i > 0)){ carriles = [2, 3, 4, 5, 6, 7, 2][Math.floor(R() * 7)]; if(nivel < 4) carriles = [4, 5, 6][Math.floor(R() * 3)]; P.carriles = carriles; }
+      if((modo === 'exorcist' && i > 0) || (nivel >= 3 && R() < .35 && i > 0)){ carriles = [2, 3, 4, 5, 6, 7, 2][Math.floor(R() * 7)]; if(nivel < 4) carriles = [4, 5, 6][Math.floor(R() * 3)];
+        /* en el teléfono, 6 o 7 carriles no caben bajo dos pulgares: se quedan en 4 o 5 */
+        if(tel && carriles > 5) carriles = carriles === 6 ? 4 : 5; P.carriles = carriles; }
       /* el cambio de carriles pasa YA en la sección nueva, dentro del respiro: si pasara antes, el riel
          de la última nota de la sección anterior se escondería bajo el dedo (lo cazó la prueba de entrada) */
       const antes = plan.length ? plan[plan.length - 1].carriles : D.carriles;
@@ -190,7 +194,7 @@ function planSecciones(secc, modo, D, R, an){
       else if(P.carriles !== antes || plan[plan.length - 1].modo !== 'carril'){ ev.push({ t: t0 + .05, tipo: 'carriles', n: P.carriles, dur: .55 }); P.aviso = Math.max(P.aviso, 1.1); }
       /* las transformaciones de dentro de la sección, en golpes */
       const gs = golpes.filter(g => g > t0 + 1.5 && g < t1 - 1);
-      const num = [1, 2, 3, 5, 9][nivel];
+      const num = [1, 2, 3, 7, 10][nivel];
       for(let k = 0; k < num && gs.length; k++){ const g = gs[Math.floor(R() * gs.length)];
         const op = nivel >= 4 ? ['inclina', 'gira', 'velocidad', 'onda', 'abanico', 'espejo', 'oculta', 'alto', 'reversa', 'compas'] : nivel >= 3 ? ['inclina', 'velocidad', 'onda', 'abanico', 'alto', 'compas'] : nivel >= 2 ? ['inclina', 'onda', 'velocidad'] : ['inclina', 'onda'];
         const tipo = op[Math.floor(R() * op.length)], dur = (2 + R() * 6) * (golpes[1] - golpes[0] || .5);

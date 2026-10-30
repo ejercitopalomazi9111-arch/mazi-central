@@ -168,7 +168,15 @@ export async function crearEscena(lienzo){
   /* las notas: una reserva de piezas que se reparten cada cuadro */
   const reserva = [], cuerpos = [], flechas = [];
   const pieza = (map, w, h, add = false) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map, transparent: true, depthWrite: false, blending: add ? THREE.AdditiveBlending : THREE.NormalBlending })); m.rotation.x = -Math.PI / 2; m.visible = false; carril.add(m); return m; };
-  for(let i = 0; i < 160; i++) reserva.push(pieza(tNota, ANCHO * .82, ANCHO * .82));
+  /* las notas son RECTÁNGULOS acostados en su carril, un poco más anchos que él y con grosor, para que se
+     vean de cualquier ángulo de cámara (Carlos, 29 oct: «rectangulitos horizontales que sobresalgan un poco»).
+     Cara de arriba clara, costados del color: así se lee el volumen sin luces */
+  const geoNota = new THREE.BoxGeometry(ANCHO * 1.12, .16, ANCHO * .34);
+  for(let i = 0; i < 160; i++){ const lado = new THREE.MeshBasicMaterial({ transparent: true }), tapa = new THREE.MeshBasicMaterial({ transparent: true });
+    const m = new THREE.Mesh(geoNota, [lado, lado, tapa, lado, lado, lado]); m.visible = false; m.userData = { lado, tapa }; carril.add(m); reserva.push(m); }
+  const cBlanco = new THREE.Color('#FFFFFF'), cTmp = new THREE.Color();
+  function pintaNota(m, color, alfa, esc){ const { lado, tapa } = m.userData; cTmp.set(color); lado.color.copy(cTmp).multiplyScalar(.78); tapa.color.copy(cTmp).lerp(cBlanco, .4);
+    lado.opacity = tapa.opacity = alfa; m.scale.set(esc, 1, esc); }
   for(let i = 0; i < 40; i++) cuerpos.push(pieza(null, ANCHO * .4, 1, true));
   for(let i = 0; i < 60; i++) flechas.push(pieza(tFlecha, ANCHO * .62, ANCHO * .62));
 
@@ -180,7 +188,7 @@ export async function crearEscena(lienzo){
     c.v.set((Math.random() - .5) * 4, 2 + Math.random() * 4, (Math.random() - .5) * 2).multiplyScalar(fuerza); c.vida = 380 + Math.random() * 300; c.esc = .5 + Math.random() * .9; c.sp.visible = true; } }
 
   /* ── el estado visual del carril, que se arma cada cuadro desde los eventos ── */
-  const E = { carriles: 5, ang: 0, giro: 0, onda: 0, abanico: 0, espejo: 0, oculta: null, vel: 1, visible: 1, camara: 0, camaraT: 0, glitch: 0, compas: '' };
+  const E = { zoom: 1, movido: 99, carriles: 5, ang: 0, giro: 0, onda: 0, abanico: 0, espejo: 0, oculta: null, vel: 1, visible: 1, camara: 0, camaraT: 0, glitch: 0, compas: '' };
   function disposicion(eventos, t){
     /* el último cambio de carriles y el anterior, para animar el paso */
     let antes = 5, ahora = 5, tc = -99, dur = .5;
@@ -271,16 +279,19 @@ export async function crearEscena(lienzo){
       /* el golpe del grave: la cámara salta un poco (precalculado: los ataques graves fuertes) */
       let sacudida = 0; if(bajos){ for(let k = bajos.i || 0; k < bajos.length; k++){ const b = bajos[k]; if(b[0] > t) break; if(t - b[0] < .18) sacudida = Math.max(sacudida, b[1] * (1 - (t - b[0]) / .18)); } }
       /* los eventos vivos en este instante */
-      let ang = 0, giro = 0, onda = 0, abanico = 0, espejo = 0, oculta = null, glitch = 0, compasTxt = '', camN = 0, camT = -9, esc = 0, escT = 0, tono = 0, destelloT = -9;
+      let movT = -9, ang = 0, giro = 0, onda = 0, abanico = 0, espejo = 0, oculta = null, glitch = 0, compasTxt = '', camN = 0, camT = -9, esc = 0, escT = 0, tono = 0, destelloT = -9;
       const blando = (e, d = .35) => { const u = Math.min(1, (t - e.t) / d), v = e.dur ? Math.min(1, (e.t + e.dur - t) / d) : 1; return Math.max(0, Math.min(u, v)); };
       for(const e of ev){ if(e.t > t + .001) break;
         const vivo = !e.dur || t < e.t + e.dur;
         if(e.tipo === 'escenario'){ esc = e.n; escT = e.t; tono = e.tono; }
+        if(['carriles', 'gira', 'espejo', 'inclina', 'abanico'].includes(e.tipo) && e.t > 0) movT = e.t;
         if(e.tipo === 'destello') destelloT = e.t;
         if(e.tipo === 'camara'){ camN = e.n; camT = e.t; }
         if(!vivo) continue;
         if(e.tipo === 'inclina') ang += e.ang * blando(e);
-        if(e.tipo === 'gira') giro += e.ang * blando(e, .45);
+        /* en vertical, girar 90° acuesta la pista y la línea de golpe se sale de la pantalla (Carlos, 29 oct):
+           ahí un cuarto de vuelta se vuelve un ladeo fuerte; de cabeza (π) sí cabe y se queda */
+        if(e.tipo === 'gira') giro += (vertical && Math.abs(Math.abs(e.ang) - Math.PI / 2) < .1 ? Math.sign(e.ang) * .38 : e.ang) * blando(e, .45);
         if(e.tipo === 'onda') onda += e.fuerza * blando(e);
         if(e.tipo === 'abanico') abanico += e.fuerza * blando(e);
         if(e.tipo === 'espejo') espejo = Math.max(espejo, blando(e, .3));
@@ -288,6 +299,7 @@ export async function crearEscena(lienzo){
         if(e.tipo === 'glitch') glitch = Math.max(glitch, 1 - (t - e.t) / e.dur);
         if(e.tipo === 'compas') compasTxt = e.texto;
       }
+      E.movido = t - movT; if(vertical) ang = Math.max(-.45, Math.min(.45, ang));
       E.compas = compasTxt; E.glitch = glitch; E.destello = Math.max(0, 1 - (t - destelloT) / .45);
       /* los haces: barren al compás y se encienden con el golpe */
       haces.forEach((h, k) => { const lado = k % 2 ? 1 : -1; h.rotation.z = Math.sin(t * (.6 + k * .07) + k) * .55 + lado * .25 * Math.sin((gi + fase) * Math.PI / 4); h.rotation.x = -.25 + Math.sin(t * .4 + k) * .15;
@@ -339,10 +351,10 @@ export async function crearEscena(lienzo){
           if(oculta && oculta.cual === 'hidden') alfa = Math.min(1, Math.max(0, (-z - 4) / 4)) * oculta.u + (1 - oculta.u);
           if(oculta && oculta.cual === 'sudden') alfa = Math.min(1, Math.max(0, (14 + z) / 4)) * oculta.u + (1 - oculta.u);
           const zc = st === 'sosteniendo' ? 0 : z;
-          if(ir < reserva.length && !(st === 'sosteniendo')){ const m = reserva[ir++]; m.visible = true; m.position.set(fx + ox, .03, zc); m.material.color.set(n.prec ? '#FFFFFF' : COLORES_RIEL[n.r]); m.material.opacity = alfa * R.vis; m.scale.setScalar(n.prec ? .8 : 1); }
+          if(ir < reserva.length && !(st === 'sosteniendo')){ const m = reserva[ir++]; m.visible = true; m.position.set(fx + ox, .08, zc); pintaNota(m, n.prec ? '#FFFFFF' : COLORES_RIEL[n.r], alfa * R.vis, n.prec ? .82 : 1); }
           if(n.fin && ic < cuerpos.length){ const c = cuerpos[ic++]; const a = Math.min(zc, 0.0001), b = Math.max(zf, -LARGO); const largo = Math.max(.01, a - b);
             c.visible = true; c.position.set(fx + ox, .02, (a + b) / 2); c.scale.set(1, largo, 1); c.material.color.set(COLORES_RIEL[n.r]); c.material.opacity = (st === 'sosteniendo' ? .95 : .6) * alfa * R.vis; }
-          if(n.tipo === 'flick' && iff < flechas.length){ const f = flechas[iff++]; f.visible = true; f.position.set(fx + ox, .05, z); f.rotation.set(-Math.PI / 2, 0, -n.dir * Math.PI / 4); f.material.opacity = alfa * R.vis; f.scale.setScalar(1 + .2 * latido); }
+          if(n.tipo === 'flick' && iff < flechas.length){ const f = flechas[iff++]; f.visible = true; f.position.set(fx + ox, .17, z); f.rotation.set(-Math.PI / 2, 0, -n.dir * Math.PI / 4); f.material.opacity = alfa * R.vis; f.scale.setScalar(1 + .2 * latido); }
         }
       }
       for(; ir < reserva.length; ir++) reserva[ir].visible = false;
@@ -359,7 +371,12 @@ export async function crearEscena(lienzo){
       cam.position.x += Math.sin(t * .7) * .25 + (Math.random() - .5) * sacudida * .12; cam.position.y += Math.sin(t * 1.1) * .12 + sacudida * .08;
       const roll = ang + giro + Math.sin(t * .5) * .02;
       cam.up.set(Math.sin(roll), Math.cos(roll), 0); cam.lookAt(mira);
-      cam.fov = (vertical ? 64 : 50) - latido * compas * 1.6 + sacudida * 2; cam.updateProjectionMatrix();
+      /* la cámara se aleja sola si algún botón de toque se sale de la pantalla (giros, inclinaciones, abanicos)
+         y regresa despacio cuando vuelven a caber */
+      const fov0 = (vertical ? 64 : 50) - latido * compas * 1.6 + sacudida * 2;
+      cam.fov = 2 * Math.atan(Math.tan(fov0 * Math.PI / 360) * E.zoom) * 180 / Math.PI; cam.updateProjectionMatrix();
+      if(carta && enCarril){ let fuera = false; for(const R of piezas.rieles){ if(R.vis < .5) continue; v3.set(R.x * ANCHO, 0, 0); carril.localToWorld(v3); v3.project(cam); if(Math.abs(v3.x) > .88 || v3.y < -.9 || v3.y > .8) { fuera = true; break; } }
+        E.zoom = fuera ? Math.min(1.9, E.zoom + .04) : Math.max(1, E.zoom - .006); } else E.zoom += (1 - E.zoom) * .05;
 
       /* las cantantes: rebotan al golpe, se balancean y brincan en los acentos */
       cantantes.forEach((c, k) => { const lado = k % 2 ? -1 : 1, sal = Math.max(0, Math.sin(fase * Math.PI)) * (gi % 2 === k % 2 ? 1 : .4);

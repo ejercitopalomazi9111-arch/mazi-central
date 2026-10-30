@@ -266,6 +266,17 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
           x.save(); x.globalAlpha = alfa; x.font = `800 ${Math.round(R * .9)}px Orbitron, sans-serif`; x.fillStyle = '#fff'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(String((n.id % 9) + 1), cx, cy + 1); x.restore(); }
       }
     }
+    /* LOS BOTONES DE TOQUE del modo Carril: un aro en cada receptor, que sigue a la pista aunque gire, se
+       incline o cambie de carriles (Carlos, 29 oct: «pon un indicador de dónde tocar»). Siempre tenue; se
+       encienden y laten 1.5 s cuando los carriles se mueven, y destellan al tocarlos */
+    if(modo === 'carril' && escena.E.visible > .5){ const vis = receptores.filter(q => q.vis > .5);
+      let sep = Infinity; for(let i = 1; i < vis.length; i++) sep = Math.min(sep, Math.hypot(vis[i].x - vis[i - 1].x, vis[i].y - vis[i - 1].y));
+      const rad = Math.max(18, Math.min(46, (isFinite(sep) ? sep : 90) * .46)), mov = Math.max(0, 1 - escena.E.movido / 1.5);
+      for(const q of vis){ const golpe = Math.max(0, 1 - (ahora - escena.piezas.rieles[q.r].golpe) / 180), c = COLORES_RIEL[q.r];
+        const a = Math.min(1, .2 + mov * (.55 + .25 * Math.sin(ahora / 70)) + golpe * .6);
+        x.save(); x.globalAlpha = a * q.vis; x.lineWidth = 2.5 + mov * 2; x.strokeStyle = c; x.fillStyle = c + '22';
+        x.beginPath(); x.arc(q.x, q.y, rad * (1 + .15 * golpe + .1 * mov), 0, Math.PI * 2); x.fill(); x.stroke();
+        x.globalAlpha = (.35 + .4 * mov) * q.vis; x.fillStyle = '#fff'; x.beginPath(); x.arc(q.x, q.y, Math.max(3, rad * .12), 0, Math.PI * 2); x.fill(); x.restore(); } }
     /* los destellos de cada acierto */
     for(let i = efectos.length - 1; i >= 0; i--){ const e = efectos[i], u = (ahora - e.t0) / 420; if(u >= 1){ efectos.splice(i, 1); continue; }
       img(S.teñir('p_flare_01', e.color), e.x, e.y, 110 + 160 * u, u * 2, 1 - u, true); if(e.j.id === 'sonoluz') img(S.teñir('p_star_06', '#FFF3B0'), e.x, e.y, 80 + 220 * u, -u * 3, 1 - u, true); }
