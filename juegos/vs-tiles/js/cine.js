@@ -12,7 +12,11 @@ export const CINES = {
   diluvio: { nombre: 'Inundación', escenario: 0, tinte: '#2F6BFF', oscuro: .66, sat: .7 },
   plaga: { nombre: 'La plaga', escenario: 2, tinte: '#7CFF4F', oscuro: .64, sat: .45 },
   robots: { nombre: 'Robots gigantes', escenario: 6, tinte: '#FF8A3D', oscuro: .55, sat: 1 },
-  ciudad: { nombre: 'La ciudad cae', escenario: 10, tinte: '#FF3A1A', oscuro: .58, sat: 1.1 }
+  ciudad: { nombre: 'La ciudad cae', escenario: 10, tinte: '#FF3A1A', oscuro: .58, sat: 1.1 },
+  /* el TEM SHOP (Carlos, 30 oct: «un fondo 3D de la tem shop con temmie y todo su lugar»): no es cinemática de la
+     Historia, es el cuarto de la canción de Temmie. Cuarto de madera, muebles de Kenney (CC0), la ilustración del cuarto
+     que trae el modelo de xunbile (CC BY) de telón, y Temmies que vibran y brincan al golpe gritando hOI! */
+  temshop: { nombre: 'Tem Shop', escenario: 4, tinte: '#FFC86B', oscuro: .7, sat: 1 }
 };
 
 export function crearCine({ s, tex, cargador, clonarEsqueleto }){
@@ -24,12 +28,12 @@ export function crearCine({ s, tex, cargador, clonarEsqueleto }){
   const vivos = [];
   const sprite = async (nombre, color, aditivo = true) => { const m = new THREE.SpriteMaterial({ map: await tex(`sprites/${nombre}.png`), color, transparent: true, depthWrite: false, fog: false,
     blending: aditivo ? THREE.AdditiveBlending : THREE.NormalBlending }); return m; };
-  const nacer = (mat, pos, { vel = [0, 0, 0], esc = 4, crece = 1, vida = 1, giro = 0, alfa = 1, cae = 0 } = {}) => {
-    const sp = new THREE.Sprite(mat.clone()); sp.position.copy(pos); sp.scale.setScalar(esc); sp.material.rotation = azar(0, 6.28); raiz.add(sp);
-    vivos.push({ sp, v: new THREE.Vector3(...vel), esc, crece, vida, giro, alfa, cae, t: 0 }); };
+  const nacer = (mat, pos, { vel = [0, 0, 0], esc = 4, crece = 1, vida = 1, giro = 0, alfa = 1, cae = 0, ancho = 1, rot = null } = {}) => {
+    const sp = new THREE.Sprite(mat.clone()); sp.position.copy(pos); sp.scale.set(esc * ancho, esc, 1); sp.material.rotation = rot ?? azar(0, 6.28); raiz.add(sp);
+    vivos.push({ sp, v: new THREE.Vector3(...vel), esc, crece, vida, giro, alfa, cae, ancho, t: 0 }); };
   function moverVivos(dt){ for(let i = vivos.length - 1; i >= 0; i--){ const p = vivos[i]; p.t += dt; const u = p.t / p.vida;
     if(u >= 1){ raiz.remove(p.sp); p.sp.material.dispose(); vivos.splice(i, 1); continue; }
-    p.v.y -= p.cae * dt; p.sp.position.addScaledVector(p.v, dt); p.sp.scale.setScalar(p.esc * (1 + p.crece * u)); p.sp.material.rotation += p.giro * dt;
+    p.v.y -= p.cae * dt; p.sp.position.addScaledVector(p.v, dt); const k = p.esc * (1 + p.crece * u); p.sp.scale.set(k * p.ancho, k, 1); p.sp.material.rotation += p.giro * dt;
     p.sp.material.opacity = p.alfa * (u < .15 ? u / .15 : 1 - (u - .15) / .85); } }
 
   /* una nube de puntos que flota (esporas, barras de luz del público, píxeles) */
@@ -53,6 +57,18 @@ export function crearCine({ s, tex, cargador, clonarEsqueleto }){
     return { r, mez, A, actual: null, x0: x, mira }; }
   function animar(R, nombre, una = false){ const a = R.A[nombre]; if(!a || R.actual === nombre && !una) return;
     R.mez.stopAllAction(); const ac = R.mez.clipAction(a); ac.reset(); if(una){ ac.setLoop(THREE.LoopOnce); ac.clampWhenFinished = true; } ac.play(); R.actual = nombre; }
+
+  /* un modelo parado en el piso del cuarto, del alto pedido (en unidades del mundo) */
+  async function mueble(archivo, x, z, alto, giro = 0, y = -1.2){ const g = await cargador.loadAsync(archivo), m = clonarEsqueleto(g.scene);
+    m.traverse(o => { if(o.isMesh){ const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach(mt => { mt.fog = false; }); } });
+    m.updateMatrixWorld(true); const caja = new THREE.Box3().setFromObject(m, true), t = caja.getSize(new THREE.Vector3()), c = caja.getCenter(new THREE.Vector3()), k = alto / Math.max(.001, t.y);
+    const cuerpo = new THREE.Group(); m.position.set(-c.x, -caja.min.y, -c.z); cuerpo.add(m); cuerpo.scale.setScalar(k);
+    const r = new THREE.Group(); r.add(cuerpo); r.position.set(x, y, z); r.rotation.y = giro; raiz.add(r); piezas.push(r); r.userData.y0 = y; return r; }
+  /* una lámina con dibujo (el telón, el letrero, el piso) */
+  async function lamina(nombre, w, h, pos, { repite = null, color = '#FFFFFF', acostada = false, transparente = false } = {}){
+    let t = await tex(`sprites/${nombre}`); if(repite){ t = t.clone(); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(...repite); t.needsUpdate = true; }   /* la textura viene de la caché: se copia para no cambiarle la repetición a las demás */
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: t, color, fog: false, transparent: transparente, depthWrite: !transparente }));
+    if(acostada) m.rotation.x = -Math.PI / 2; m.position.set(...pos); raiz.add(m); piezas.push(m); return m; }
 
   /* en fila: si se pide otra mientras una carga (salir de una misión y entrar a otra), la segunda espera */
   let cola = Promise.resolve();
@@ -101,6 +117,25 @@ export function crearCine({ s, tex, cargador, clonarEsqueleto }){
       for(const [i, n] of ['ps_color_triangle', 'ps_color_circle', 'ps_color_cross', 'ps_color_square'].entries()) (await fijo(n, '#FFFFFF', [(i - 1.5) * 34, 34 + (i % 2) * 6, -150], 16, false)).userData.boton = i;
       nubes = await puntos(160, 'gen_square_fill', ['#FFE14A', '#FF5FD0', '#38E1FF'], .9, [-70, 70, -4, 40, -140, -40]);
       M.chispa = await sprite('p_star_06', '#FFE14A'); }
+    if(tipo === 'temshop'){
+      /* el cuarto: piso de tablas, dos paredes y el dibujo del Tem Shop de telón, detrás de la tarima */
+      await lamina('temshop-piso.webp', 120, 90, [0, -1.25, -27], { repite: [3, 14], color: '#D9B98A', acostada: true });
+      await lamina('temshop-cuarto.webp', 74, 37, [0, 8.5, -66], { color: '#E8D6B8' });
+      for(const lado of [-1, 1]){ const p = await lamina('temshop-piso.webp', 80, 40, [lado * 37, 18, -26], { repite: [2, 9], color: '#9C7A4C' }); p.rotation.y = -lado * Math.PI / 2; }
+      const letrero = await lamina('temshop-letrero.png', 15, 8.3, [15, 12.5, -56], { transparente: true }); letrero.userData.letrero = true;
+      /* los muebles (Kenney, CC0), como en el dibujo: libros y cajas a la izquierda, la canasta, las tazas y el cofre a la derecha */
+      const D = 'modelos/temshop/';
+      await Promise.all([
+        mueble(D + 'bookcaseOpen.glb', -24, -52, 15, .35), mueble(D + 'books.glb', -24, -52, 2.2, .35, 6.2),
+        mueble(D + 'cardboardBoxClosed.glb', -17, -34, 4.5, .2), mueble(D + 'cardboardBoxClosed.glb', -16.6, -34.4, 4, -.15, 3.3), mueble(D + 'cardboardBoxOpen.glb', -11, -45, 4, .6),
+        mueble(D + 'coatRack.glb', -29, -38, 13, 0), mueble(D + 'bear.glb', -9, -27, 3.4, .5),
+        mueble(D + 'trashcan.glb', 13, -31, 4.2, 0), mueble(D + 'sideTable.glb', 21, -46, 4.6, -.4), mueble(D + 'radio.glb', 21, -46, 2, -.4, 3.4),
+        mueble(D + 'tableCoffee.glb', 11, -50, 2.6, .2), mueble(D + 'lampRoundFloor.glb', 29, -40, 14, 0), mueble(D + 'plantSmall1.glb', 24, -27, 4, 0),
+        mueble(D + 'pillow.glb', 17, -37, 1.6, .7), mueble(D + 'rugRound.glb', 0, -36, .25, 0)
+      ]);
+      /* la aldea entera vino a ver: Temmies que vibran (como en su juego) y brincan al golpe */
+      M.tems = await Promise.all([[-7, -24, .9], [8.5, -23, -.8], [-19, -46, .5], [15, -53, -.4], [4, -56, 0]].map(([x, z, g]) => mueble('modelos/temmie.glb', x, z, 3.6, g)));
+      M.hoi = await sprite('temmie-hoi', '#FFFFFF', false); }
     raiz.userData.M = M;
   }
 
@@ -152,6 +187,14 @@ export function crearCine({ s, tex, cargador, clonarEsqueleto }){
         if(o.userData.boton !== undefined){ const k = o.userData.boton, mio = gi % 4 === k; o.position.y = 34 + (k % 2) * 6 + Math.sin(t + k) * 2 + (mio ? latido * 3 : 0); o.material.opacity = mio ? 1 : .55; } });
       if(nubes){ const P = nubes.geometry.attributes.position, B = nubes.userData.base; for(let i = 0; i < P.count; i++){ let y = P.getY(i) - 3 * dt; if(y < -4) y = 40; P.setY(i, y); } P.needsUpdate = true; }
       if(nuevo && gi % 4 === 0) nacer(M.chispa, new THREE.Vector3(0, 44, -128), { esc: 18, crece: 1.6, vida: .6, alfa: .7 });
+    }
+    if(tipo === 'temshop'){
+      (M.tems || []).forEach((r, i) => { const salta = (gi + i) % 2 === 0 ? latido : 0;
+        r.position.y = r.userData.y0 + salta * 1.4; r.position.x += (Math.random() - .5) * .08; r.children[0].position.x = (Math.random() - .5) * .12; r.children[0].position.z = (Math.random() - .5) * .12; });
+      piezas.forEach(o => { if(o.userData.letrero){ o.position.y = 12.5 + Math.sin(t * 2) * .4; o.scale.setScalar(1 + latido * .06); } });
+      /* hOI! cada dos golpes, encima de alguna Temmie */
+      if(nuevo && gi % 2 === 0 && M.hoi && M.tems?.length){ const r = M.tems[gi / 2 % M.tems.length | 0];
+        nacer(M.hoi, r.position.clone().add(new THREE.Vector3(0, 5, 0)), { vel: [0, 3, 0], esc: 2.2, ancho: 348 / 156, crece: .2, vida: 1.1, rot: azar(-.25, .25) }); }
     }
     moverVivos(dt);
     rayo = Math.max(0, rayo - dt * 4); if(agua?.material.uniforms.luz && tipo === 'diluvio') agua.material.uniforms.luz.value = rayo;

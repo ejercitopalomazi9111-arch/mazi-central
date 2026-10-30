@@ -300,10 +300,14 @@ h2{ font:800 22px/1.1 var(--n); letter-spacing:.06em; margin:0 0 10px }
 .boton-sangre .b, .b.mini.boton-sangre{ background:linear-gradient(135deg, #4A0011, #170A26) }
 .boton-sangre .b::before, .b.mini.boton-sangre::before{ background:linear-gradient(135deg, #FF2D55, #7E1735 50%, #FF6A8A) }
 .boton-sangre .b.primario{ background:linear-gradient(135deg, #C4002B, #7E1735) }
-/* los botones de Temmie (secretos): blancos y azul cielo, con su cara en el principal, y vibran un poquito como ella */
-.boton-temmie .b, .b.mini.boton-temmie{ background:linear-gradient(135deg, #FFFFFF, #CFEAFF); color:#0B2A4A; text-transform:lowercase }
-.boton-temmie .b::before, .b.mini.boton-temmie::before{ background:linear-gradient(135deg, #16A2F0, #F7C6D9 50%, #16A2F0) }
-.boton-temmie .b.primario{ background:#FFFFFF url(sprites/temmie-cara.webp) right 8px center / 40px 40px no-repeat; padding-right:56px }
+/* los botones de Temmie (secretos): los colores de su suéter, amarillo y azul a rayas, con blanco y negro
+   (Carlos, 30 oct: «hazlos amarillo azul blanco y negro para que sean más bonitos»). Vibran un poquito, como ella */
+.boton-temmie .b, .b.mini.boton-temmie{ background:repeating-linear-gradient(180deg, #F6E64B 0 8px, #8ED3F6 8px 16px); color:#0A0A0A; text-transform:lowercase;
+  text-shadow:-1.5px -1.5px 0 #fff, 1.5px -1.5px 0 #fff, -1.5px 1.5px 0 #fff, 1.5px 1.5px 0 #fff, 0 2px 0 #fff }
+.boton-temmie .b::before, .b.mini.boton-temmie::before{ background:#0A0A0A; padding:3px }
+.boton-temmie .b.primario{ background:linear-gradient(#FFFFFF, #FFFFFF) top / 100% 64% no-repeat, repeating-linear-gradient(180deg, #F6E64B 0 6px, #8ED3F6 6px 12px);
+  padding-right:56px; color:#0A0A0A }
+.boton-temmie .b.primario::after{ content:""; position:absolute; right:8px; top:50%; width:40px; height:40px; translate:0 -50%; background:url(sprites/temmie-cara.webp) center / contain no-repeat; pointer-events:none }
 .boton-temmie .b:active{ animation:temVibra .12s steps(2) 3 }
 @keyframes temVibra{ 0%{ translate:-1px 0 } 50%{ translate:1px 1px } 100%{ translate:0 -1px } }
 .avatar img{ width:100%; height:100%; object-fit:cover; display:block }
@@ -331,3 +335,4 @@ h2{ font:800 22px/1.1 var(--n); letter-spacing:.06em; margin:0 0 10px }
 .edHerr{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center } .edHerr .b.si{ outline:2px solid #FFF3B0; outline-offset:-2px }
 .edHerr[hidden]{ display:none }
 .edAyuda{ margin:0; font-size:12px; color:#ffffff88; text-align:center; line-height:1.4 }
+.muestra img.pixel{ image-rendering:pixelated; object-fit:contain }

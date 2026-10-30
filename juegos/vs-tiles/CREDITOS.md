@@ -33,6 +33,12 @@ ese mismo modelo es `sprites/temmie-cara.webp`. La Temmie del TEM SHOP en su caj
 es «undertale temmie» de **xunbile** (Sketchfab, CC BY 4.0), sin el cuarto, el letrero de diálogo ni el contorno. Temmie es personaje de **Undertale**, de **Toby Fox**: este
 es un juego de fans, gratis, y el modelo es de un fan.
 
+**El Tem Shop** (el cuarto de la canción de Temmie, `js/cine.js`): el dibujo del cuarto, el letrero «TEM SHOP» y el
+piso de tablas salen de las texturas del mismo modelo de **xunbile** (CC BY 4.0) (`sprites/temshop-*`); los muebles
+(libros, cajas, perchero, osito, canasta, mesitas, radio, lámpara, planta, cojín y tapete) son del **Furniture Kit**
+de **Kenney** (CC0, `modelos/temshop/`). El «hOI!» de letras de pixel (`sprites/temmie-hoi.png`) y su voz
+(`sonidos/hoi.wav`, la voz «claude» de Piper para español de México, aguda) son nuestros.
+
 **Los robots gigantes** de la cinemática de la Historia (`js/cine.js`): «Medium Mech Striker» de **MSGDI**
 (`modelos/robot-striker.glb`) y «Calibur | VGDC» de **MooKorea** (`modelos/robot-calibur.glb`), Sketchfab,
 **CC BY 4.0**, con sus animaciones de pelea originales (se dejaron sólo las que se usan y texturas de 512 px).
@@ -47,7 +53,7 @@ texturas WebP de 256 px (`herramientas/fotos-notas.html` saca sus fotos para el 
 «Stylized Puck» de RiZoRuS77 (Disco) · «Low Poly Stylized Gemstone» de Discover (Cristal) ·
 «5 Colored Fantasy Stylized Gems» de Incg5764 (Gema engarzada) · «Gold Star» de Roberto Chiaveri (Estrella) ·
 «CC0 - Muscial Note» de plaggy (Corchea).
-La secreta de Temmie: «Cereal Temmie Flakes» de **RavenBlox** (Temmie Flakes), con su dibujo original.
+La secreta de Temmie: «Temmie flakes» de **josiahzapata14** (Temmie Flakes), con su dibujo original en 512 px (antes era la de RavenBlox; Carlos pidió la caja más ancha y que brillara).
 
 ## Los bailes
 

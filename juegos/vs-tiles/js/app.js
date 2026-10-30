@@ -48,7 +48,7 @@ export const CANCIONES = [
   { id: 'estudio-revolucionario', titulo: 'Estudio Revolucionario', artista: 'Chopin · Op. 10 n.º 12', voces: ['miku', 'gumi'], escena: 9, piano: true },
   { id: 'rush-omega', titulo: 'RUSH Ω', artista: 'Arreglo imposible del Revolucionario', voces: ['miku-akuma'], escena: 11, piano: true, jefe: true },
   /* la de Temmie: «Buy Something!» de Cleyton Kauffman (CC0), música de tienda. Sólo la ve quien la tiene */
-  { id: 'hoi-tem-shop', titulo: 'hOI! (tEM SHOP)', artista: 'Cleyton Kauffman', voces: ['temmie-tienda', 'temmie'], escena: 4, secreto: true }
+  { id: 'hoi-tem-shop', titulo: 'hOI! (tEM SHOP)', artista: 'Cleyton Kauffman', voces: ['temmie-tienda', 'temmie'], escena: 4, secreto: true, cine: 'temshop' }
 ];
 const HISTORIA = [
   { cap: 'Prólogo · La primera nota', misiones: [
@@ -182,11 +182,14 @@ $('#arranque').addEventListener('click', async function entrar(e){
   if(e.target.closest('.logo') || sustoVivo) return;
   $('#arranque').removeEventListener('click', entrar);
   await reloj.despertar(); reloj.desfase = Y.desfase / 1000; reloj.desfaseVisual = Y.desfaseVisual / 1000;
-  await Promise.all([['golpe', 'impactGlass_light_002'], ['fallo', 'impactPunch_medium_000'], ['clic', 'tick_001'], ['boton', 'click_002'], ['glitch', 'glitch_003'], ['premio', 'confirmation_002']]
+  await Promise.all([['golpe', 'impactGlass_light_002'], ['fallo', 'impactPunch_medium_000'], ['clic', 'tick_001'], ['boton', 'click_002'], ['glitch', 'glitch_003'], ['premio', 'confirmation_002'], ['hoi', 'hoi']]
     .map(async ([k, f]) => { sonidos[k] = await reloj.cargar(`sonidos/${f}.wav`).catch(() => null); }));
   if(!Y.visto) intro(); else if(!Y.nombre) perfil(); else if(!(await editorUI.desdeEnlace())) menu();
 });
-document.addEventListener('click', (e) => { const b = e.target.closest('[data-ir]'); if(!b) return; sonidos.boton && reloj.golpe(sonidos.boton, .25); ir(b.dataset.ir); });
+document.addEventListener('click', (e) => { const b = e.target.closest('[data-ir]'); if(!b) return; if(!hoi(b)) sonidos.boton && reloj.golpe(sonidos.boton, .25); ir(b.dataset.ir); });
+/* el «hOI!» de Temmie al tocar cualquier botón (Carlos, 30 oct), sólo si se prende en Ajustes */
+function hoi(b){ if(!Y.hoiBotones || !sonidos.hoi || !Y.tiene.includes('boton:temmie') || !b?.closest('button, .b, [data-ir], .obj, .ranura')) return false; reloj.golpe(sonidos.hoi, .45); return true; }
+document.addEventListener('click', (e) => { if(!e.target.closest('[data-ir]')) hoi(e.target); }, true);
 function ir(a){ ({ menu, historia, libre: () => canciones('libre'), reto: () => canciones('reto'), lab: () => mostrar('lab'), mercado, vestidor, records, ajustes, creditos,
   saltarIntro: () => { cortarIntro = true; }, tutorial: () => { Y.tutorialVisto = true; guardar(); jugar('itty-bitty-8-bit', 'carril', 'tutorial'); }, aCalibrar, saltarCalib: () => { Y.calibrado = true; guardar(); if(Y.tutorialVisto) menu(); else ir('tutorial'); }, seguir: () => { partida.alternarPausa(); }, reintentar: jugarDeNuevo, salirJuego: () => { partida.salir(); if(ultima?.nivel) volverNivel(); else if(ultima?.deHistoria) historia(); else canciones(modoLista); }, libreVolver: () => ultima?.alMenu ? menu() : ultima?.nivel ? volverNivel() : ultima?.deHistoria ? finDeMision() : canciones(modoLista), niveles: () => editorUI.lista() })[a]?.(); }
 /* de un nivel hecho a mano se regresa a donde se vino: al editor si es tuyo, a la lista si te lo pasaron */
@@ -325,8 +328,8 @@ async function jugar(id, modo, dif, deHistoria = null, prueba = {}){
     const buf = await audio(c.id); paso('Escribiendo las notas', .65);
     const carta = dif === 'tutorial' ? armarTutorial(an, c) : dif === 'nivel' ? armarNivel(an, c, prueba.nivel) : armarCarta(an, c, modo, dif, { telefono: TELEFONO }); ultima = { c, modo, dif, deHistoria, nivel: prueba.nivel || null };
     escena.precargar(carta.eventos.filter(e => e.tipo === 'escenario').map(e => e.n)); paso('Llamando a las voces', .85);
-    /* en la Historia, cada misión trae su cinemática de fondo (cine.js); en Juego libre, ninguna */
-    { const [ci, mi] = String(deHistoria || '').split('.').map(Number); await escena.ponerCine(prueba.cine ?? (deHistoria ? HISTORIA[ci]?.misiones[mi]?.cine || null : null)); }
+    /* en la Historia, cada misión trae su cinemática de fondo (cine.js); en Juego libre, sólo la canción que trae la suya (la de Temmie, su Tem Shop) */
+    { const [ci, mi] = String(deHistoria || '').split('.').map(Number); await escena.ponerCine(prueba.cine ?? (deHistoria ? HISTORIA[ci]?.misiones[mi]?.cine || null : c.cine || null)); }
     await escena.ponerCantantes(modo === 'flechas' ? [idVoz(), c.voces.find(v => v !== idVoz()) || 'miku'] : [...new Set([idVoz(), ...c.voces])].slice(0, 3));
     paso('¡Listo!', 1);
     mostrar(null); $('#sombra').style.opacity = 0;
@@ -485,7 +488,8 @@ function sortear(n){ const sale = [];
 /* cómo se ve un objeto en chiquito (vestidor, tiradas, premio) */
 function vista(o){ const k = o.id.split(':')[1];
   if(o.cat === 'forma') return o.foto ? `<img class="formaFoto" src="modelos/notas/${o.foto}.webp" alt="">` : `<i class="formaMini f-${k}"></i>`;
-  if(k === 'temmie' && ['flechas', 'simbolos', 'aros', 'golpe'].includes(o.cat)) return `<img src="sprites/temmie-cara.webp" alt="" class="foto">`;
+  if(k === 'temmie' && o.cat === 'golpe') return `<img src="sprites/temmie-hoi.png" alt="hOI!" class="pixel">`;
+  if(k === 'temmie' && ['flechas', 'simbolos', 'aros'].includes(o.cat)) return `<img src="sprites/temmie-cara.webp" alt="" class="foto">`;
   if(o.cat === 'flechas') return `<img src="sprites/tecla_arrow_up${k === 'contorno' ? '_outline' : ''}.png" alt="" class="${k === 'neon' ? 'brillo' : ''}">`;
   if(o.cat === 'simbolos') return `<img src="sprites/${k === 'contorno' ? 'ps_triangle_outline' : k === 'blanco' ? 'ps_color_triangle_outline' : 'ps_color_triangle'}.png" alt="">`;
   if(o.cat === 'aros') return `<img src="sprites/${{ clasico: 'gen_circle_outline', magia: 'p_magic_03', estelar: 'p_star_06' }[k]}.png" alt="">`;
@@ -506,6 +510,7 @@ function ajustes(){ mostrar('ajustes'); const A = $('#ajustesL');
   A.innerHTML = fila('desfase', 'Sincronía del audio', -250, 250, 1, ' ms', 'Si siempre vas tarde, súbelo; si vas antes, bájalo. La calibración lo pone sola.') + fila('desfaseVisual', 'Sincronía visual', -100, 100, 1, ' ms', 'Si las notas se ven llegar antes o después del sonido.')
     + fila('vel', 'Velocidad de las notas', .5, 2.5, .05, '×', 'Sólo cambia qué tan rápido se ven; la canción y los tiempos no cambian.')
     + tog('sonidoGolpe', 'Sonido al acertar', 'Un golpe corto con cada nota.') + tog('mostrarDesvio', 'Mostrar «antes» / «tarde»', 'Los milisegundos de cada toque, debajo del juicio.')
+    + (Y.tiene.includes('boton:temmie') ? tog('hoiBotones', 'hOI! al tocar botones', '* tEMMIE dice hOI!! cada vez que tocas un botón.') + tog('hoiNotas', 'hOI! al acertar notas', '* tEMMIE dice hOI!! en vez del golpe de cada nota. awawa.') : '')
     + (Y.practicaVista ? tog('practica', 'Modo práctica', 'Aunque la vida llegue a cero sigues jugando hasta el final. No se ganan Ecos, ni récords, ni se avanza la Historia.') : '')
     + '<div class="pie" style="background:none"><button class="b" id="recalibrar">Calibrar otra vez</button></div>';
   /* EL MODO PRÁCTICA está escondido (Carlos, 30 oct): se destapa tocando 5 veces el título «Ajustes» */
@@ -520,7 +525,7 @@ function creditos(){ mostrar('creditos');
   <h3>MÚSICA</h3><p>${[...new Set(CANCIONES.filter(c => !c.propia && !c.secreto).map(c => c.artista))].map(a => `${CANCIONES.filter(c => c.artista === a && !c.secreto).map(c => `«${c.titulo}»`).join(', ')} — <b>${a}</b>`).join('<br>')}<br>Las de la casa, de incompetech.com (CC BY 4.0); las de anime y ritmo, de OpenGameArt (CC0, CC BY 3.0 y 4.0); el piano, de partituras de Mutopia (dominio público). Detalle en CREDITOS.md.</p>
   <h3>PERSONAJES 3D (Sketchfab, vía Objaverse)</h3><p>${PERSONAJES.filter(p => !p.secreto).map(p => `<b>${p.nombre}</b> — ${p.autor}`).join('<br>')}<br>Los robots gigantes de la Historia: <b>«Medium Mech Striker»</b> — MSGDI y <b>«Calibur»</b> — MooKorea.<br>Y una invitada que sólo sale si la buscas: <b>«Shiteyanyo - Hatsune Miku»</b> — Seafoam.<br>Licencia CC BY 4.0.</p>
   <h3>ESCENARIOS</h3><p>Fotos 360° de <b>Poly Haven</b> (CC0): ${ESCENARIOS.map(e => e.id.replace(/_/g, ' ')).join(', ')}.</p>
-  <h3>A TOBY FOX</h3><p>Por <b>Undertale</b> y <b>Deltarune</b>, que este juego quiere mucho. Temmie (modelo de <b>Stewie_Box</b>), la caja de Temmie Flakes (<b>RavenBlox</b>), CC BY 4.0, Sketchfab. Su canción: «Buy Something!» de <b>Cleyton Kauffman</b> (CC0).<br><i>(El perro molesto se robó el resto de esta línea.)</i></p>
+  <h3>A TOBY FOX</h3><p>Por <b>Undertale</b> y <b>Deltarune</b>, que este juego quiere mucho. Temmie (modelo de <b>Stewie_Box</b>), la caja de Temmie Flakes (<b>josiahzapata14</b>), la Temmie del Tem Shop y su cuarto (<b>xunbile</b>), CC BY 4.0, Sketchfab. Su canción: «Buy Something!» de <b>Cleyton Kauffman</b> (CC0).<br><i>(El perro molesto se robó el resto de esta línea.)</i></p>
   <h3>BOTONES, PARTÍCULAS Y SONIDOS</h3><p><b>Kenney</b> (kenney.nl, CC0): Input Prompts, Particle Pack, Interface Sounds, Impact Sounds. La risa: <b>AntumDeluge</b> (OpenGameArt, CC0).</p>
   <h3>LETRA Y CÓDIGO DE FUERA</h3><p>Orbitron, Zen Kaku Gothic New y Cinzel (Google Fonts, SIL OFL). three.js (MIT).</p>`; }
 
@@ -545,4 +550,4 @@ function pintarMiMusica(){ const n = CANCIONES.filter(c => c.propia).length; $('
 listaPropia.then(pintarMiMusica);
 
 
-window.VST = { partida, escena, Y, jugar, CANCIONES, armarCarta, datos };    // para las pruebas
+window.VST = { partida, escena, Y, jugar, CANCIONES, armarCarta, datos, sonidos, vestir: (p) => { Object.assign(Y.puesto, p); guardar(); aplicarCosmeticos(); } };    // para las pruebas
