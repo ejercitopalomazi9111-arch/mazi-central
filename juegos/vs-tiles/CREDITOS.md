@@ -44,6 +44,16 @@ de **Kenney** (CC0, `modelos/temshop/`). El «hOI!» de letras de pixel (`sprite
 **CC BY 4.0**, con sus animaciones de pelea originales (se dejaron sólo las que se usan y texturas de 512 px).
 Las explosiones, el humo, la lluvia, las esporas, el confeti y las luces del público son los sprites de Kenney.
 
+## El Mercado de Ecos (`js/vitrina.js`, `modelos/mercado/`)
+
+Modelos de **Sketchfab**, todos **CC BY 4.0**, con texturas WebP de 512 px (los peluches, de 256):
+«Claw machine (with textures)» de **octopushh8** (la Garra «Star Catcher»; el gancho se separó en carro, tubo,
+cabeza y pinzas para moverlo) · «Basic booster pack (animated)» de **ZwiebelGames** (el Sobre, con sus animaciones
+de abrir y sacudir; la cara se cambió por la del juego y se quitaron sus letras) · «Wheel of Fortune» de
+**nyu_grad_alley_2020** (la Ruleta; el disco de rarezas y el letrero son nuestros, encima del suyo) · los peluches
+de la garra: «Star soft toy» de **CoFate**, «Duck Plush» y «Penguin plush» de **SunnyBuns** y «Low Poly Bunny Plush
+Toy» de **sunsetscorpion**. Los reflejos salen de **neon_photostudio** de **Poly Haven** (CC0), a 1024 px.
+
 ## Formas de nota
 
 Modelos de **Sketchfab**, todos **Creative Commons: By Attribution 4.0**; se dejó sólo la pieza, centrada, con

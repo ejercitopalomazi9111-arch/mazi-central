@@ -9,7 +9,7 @@ import { crearEscena, ESCENARIOS, PERSONAJES, COLORES_RIEL } from './escena.js';
 import { crearPartida, cargarSprites } from './juego.js';
 import { analizar } from './analisis.js';
 import { biblioteca, etiquetas } from './biblioteca.js';
-import { montarMercado } from './mercado.js';
+import { montarMercado, MAQUINAS } from './mercado.js';
 const $ = (s) => document.querySelector(s), $$ = (s) => [...document.querySelectorAll(s)];
 
 /* ── el catálogo ── */
@@ -157,7 +157,7 @@ let pantalla = null;
 function mostrar(id){ $$('.pantalla').forEach(p => p.classList.toggle('vis', p.id === id)); pantalla = id;
   $('#sombra').style.opacity = id && id !== 'arranque' ? 1 : .4; $('#pausaB').classList.toggle('vis', !id && partida.corriendo); }
 /* el menú también se mueve: la cámara gira alrededor de la voz equipada, que baila con un pulso falso */
-(function menuVivo(){ requestAnimationFrame(menuVivo); if(!partida.corriendo) partida.pintarMenu(performance.now() / 1000); })();
+(function menuVivo(){ requestAnimationFrame(menuVivo); if(!partida.corriendo && pantalla !== 'mercado') partida.pintarMenu(performance.now() / 1000); })();   /* en el Mercado pinta su vitrina: dos escenas a la vez cansan al teléfono */
 
 mostrar('arranque');
 /* el huevo de pascua: 10 toques al logo (en el arranque o en el menú) en menos de 5 segundos */
@@ -252,7 +252,7 @@ const PANELES = [
   { ir: 'libre', k: 'Cualquier canción', t: 'Juego libre', corto: 'Libre', s: 'Cinco modos y cinco dificultades, con tu música o la de la casa.', c: '#38E1FF' },
   { ir: 'reto', k: '⚠ Dificultad demoníaca', t: 'EXÓRCIST', corto: 'EXÓRCIST', s: 'Las reglas cambian a media canción. Nadie sale igual.', c: '#FF2D55' },
   { ir: 'lab', k: 'Tu música', t: 'Mi música', corto: 'Mi música', s: 'Mete tus canciones: anime, Vocaloid, lo que tengas en el teléfono.', c: '#5CFFB0' },
-  { ir: 'mercado', k: 'Mercado de Ecos', t: 'Tiradas', corto: 'Mercado', s: 'Garra, sobres y carrusel. Todo se gana jugando.', c: '#FFE08A' }
+  { ir: 'mercado', k: 'Mercado de Ecos', t: 'Tiradas', corto: 'Mercado', s: 'Garra, sobres y ruleta. Todo se gana jugando.', c: '#FFE08A' }
 ];
 const SECUNDARIAS = [{ ir: 'tutorial', t: 'Tutorial', s: 'Aprende en un minuto, sin presión', foto: 'libre' }, { ir: 'niveles', t: 'Crea tu nivel', s: 'A mano, y compártelo' }, { ir: 'vestidor', t: 'Vestidor', s: 'Voz, notas, golpe y fondo' }, { ir: 'records', t: 'Récords', s: 'Tus mejores partidas' }, { ir: 'ajustes', t: 'Ajustes', s: 'Sincronía y velocidad' }, { ir: 'creditos', t: 'Créditos', s: 'Quién hizo todo' }];
 let panelSel = 0;
@@ -475,15 +475,18 @@ function aplicarCosmeticos(){ const n = OBJETOS.find(o => o.id === Y.puesto.nota
 
 /* ── mercado: probabilidades a la vista, garantía a las 50 y los repetidos se vuelven Ecos ──
    GRATIS: todo se paga con lo que se gana jugando (Carlos, 29 oct: «todo será gratuito con monedas del
-   juego y progresión interna»). Las máquinas (garra, sobre y carrusel) viven en mercado.js */
+   juego y progresión interna»). Las máquinas (garra, sobre y ruleta) viven en mercado.js y vitrina.js */
 function pagar(costo, conSello = false){
   if(conSello){ if(Y.sellos < 1){ aviso('No tienes Sellos: se ganan subiendo de nivel y venciendo jefes.'); return false; } Y.sellos--; }
   else { if(Y.ecos < costo){ aviso('No te alcanzan los Ecos: juega una canción.'); return false; } Y.ecos -= costo; }
   guardar(); return true; }
-function sortear(n){ const sale = [];
+/* cada máquina trae sus propias categorías (mercado.js · MAQUINAS); si en una no hay nada de esa rareza, baja a la siguiente */
+function sortear(n, maquina = null){ const sale = [], cats = MAQUINAS[maquina]?.cats;
   for(let i = 0; i < n; i++){ Y.pity++; let r = Math.random() * 100, raro = 'c'; for(const [k, v] of Object.entries(RAREZA).reverse()){ if(r < v.p){ raro = k; break; } r -= v.p; }
     if(Y.pity >= 50 && !['l', 'm'].includes(raro)) raro = 'l'; if(['l', 'm'].includes(raro)) Y.pity = 0;
-    const pool = OBJETOS.filter(o => o.raro === raro && !o.secreto), o = pool[Math.floor(Math.random() * pool.length)]; const nuevo = !Y.tiene.includes(o.id); if(nuevo) Y.tiene.push(o.id); else Y.ecos += { c: 10, r: 25, e: 60, l: 150, m: 300 }[raro]; sale.push({ o, nuevo }); }
+    const de = (k) => OBJETOS.filter(o => o.raro === k && !o.secreto && (!cats || cats.includes(o.cat)));
+    let pool = de(raro); for(let k = 'crelm'.indexOf(raro); !pool.length && k > 0; ) pool = de('crelm'[--k]);
+    const o = pool[Math.floor(Math.random() * pool.length)]; const nuevo = !Y.tiene.includes(o.id); if(nuevo) Y.tiene.push(o.id); else Y.ecos += { c: 10, r: 25, e: 60, l: 150, m: 300 }[raro]; sale.push({ o, nuevo }); }
   guardar(); return sale; }
 /* cómo se ve un objeto en chiquito (vestidor, tiradas, premio) */
 function vista(o){ const k = o.id.split(':')[1];
@@ -498,7 +501,7 @@ function vista(o){ const k = o.id.split(':')[1];
   if(o.cat === 'nota') return o.colores.slice(0, 4).map(c => `<i class="punto" style="background:${c}"></i>`).join('');
   if(o.cat === 'voz') return `<i class="inicial" style="color:${o.color}">${o.nombre[0]}</i>`; return `<i class="tituloObj">«${o.nombre}»</i>`; }
 const editorUI = montarEditor({ $, Y, CANCIONES, datos, audio, reloj, sonidos, guardar, aviso, mostrar, esc, jugarNivel: (n, desde = null) => jugar(n.c, 'carril', 'nivel', null, { nivel: n, desde }) });
-const mercadoUI = montarMercado({ $, Y, RAREZA, sortear, pagar, barra, reloj, sonidos, vista, pool: () => OBJETOS.filter(o => !o.secreto) });
+const mercadoUI = montarMercado({ $, Y, RAREZA, sortear, pagar, barra, reloj, sonidos, vista, activo: () => pantalla === 'mercado' });
 function mercado(){ mostrar('mercado'); barra(); $('#probas').innerHTML = Object.values(RAREZA).map(r => `${r.n} ${r.p} %`).join(' · ') + '<br>Repetido = Ecos de vuelta'; mercadoUI.abrir(); }
 
 /* ── récords, ajustes, créditos ── */
@@ -550,4 +553,4 @@ function pintarMiMusica(){ const n = CANCIONES.filter(c => c.propia).length; $('
 listaPropia.then(pintarMiMusica);
 
 
-window.VST = { partida, escena, Y, jugar, CANCIONES, armarCarta, datos, sonidos, vestir: (p) => { Object.assign(Y.puesto, p); guardar(); aplicarCosmeticos(); } };    // para las pruebas
+window.VST = { partida, escena, Y, jugar, CANCIONES, armarCarta, datos, sonidos, ir, mercado: mercadoUI, vestir: (p) => { Object.assign(Y.puesto, p); guardar(); aplicarCosmeticos(); } };    // para las pruebas
