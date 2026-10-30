@@ -200,7 +200,7 @@ export async function crearEscena(lienzo){
     c.v.set((Math.random() - .5) * 4, 2 + Math.random() * 4, (Math.random() - .5) * 2).multiplyScalar(fuerza); c.vida = 380 + Math.random() * 300; c.esc = .5 + Math.random() * .9; c.sp.visible = true; } }
 
   /* ── el estado visual del carril, que se arma cada cuadro desde los eventos ── */
-  const E = { zoom: 1, centro: 0, movido: 99, carriles: 5, ang: 0, giro: 0, onda: 0, abanico: 0, espejo: 0, oculta: null, vel: 1, visible: 1, camara: 0, camaraT: 0, glitch: 0, compas: '' };
+  const E = { zoom: 1, centro: 0, movido: 99, carriles: 5, ang: 0, giro: 0, abanico: 0, espejo: 0, oculta: null, vel: 1, visible: 1, camara: 0, camaraT: 0, glitch: 0, compas: '' };
   function disposicion(eventos, t){
     /* el último cambio de carriles y el anterior, para animar el paso */
     let antes = 5, ahora = 5, tc = -99, dur = .5;
@@ -219,6 +219,9 @@ export async function crearEscena(lienzo){
     tramos.sort((x, y) => x.a - y.a); }
   function pos(t){ let p = t; if(!tramos) return p; for(const tr of tramos){ if(t <= tr.a) break; const fin = Math.min(t, tr.b); p += (fin - tr.a) * (tr.v - 1); } return p; }
 
+  /* un punto de la pista en el sistema de un carril (ladeado o torcido) → el sistema del carril entero */
+  const vA = new THREE.Vector3(), vB = new THREE.Vector3(), qA = new THREE.Quaternion(), qB = new THREE.Quaternion(), eB = new THREE.Euler(), qPlano = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0));
+  function enCarrilDe(R, z, abre, out){ return out.set(R.x * ANCHO * abre, .08, z).applyMatrix4(R.g.matrix); }
   const v3 = new THREE.Vector3(), mira = new THREE.Vector3(), objetivoCam = { p: new THREE.Vector3(), m: new THREE.Vector3() };
   const CAMS = [
     { p: [0, 3.6, 4.6], m: [0, 0, -7] },       // detrás, la de siempre
@@ -291,12 +294,12 @@ export async function crearEscena(lienzo){
       /* el golpe del grave: la cámara salta un poco (precalculado: los ataques graves fuertes) */
       let sacudida = 0; if(bajos){ for(let k = bajos.i || 0; k < bajos.length; k++){ const b = bajos[k]; if(b[0] > t) break; if(t - b[0] < .18) sacudida = Math.max(sacudida, b[1] * (1 - (t - b[0]) / .18)); } }
       /* los eventos vivos en este instante */
-      let movT = -9, ang = 0, giro = 0, onda = 0, abanico = 0, espejo = 0, oculta = null, glitch = 0, compasTxt = '', camN = 0, camT = -9, esc = 0, escT = 0, tono = 0, destelloT = -9;
+      let movT = -9, ang = 0, giro = 0, abanico = 0, peraltes = [], espejo = 0, oculta = null, glitch = 0, compasTxt = '', camN = 0, camT = -9, esc = 0, escT = 0, tono = 0, destelloT = -9;
       const blando = (e, d = .35) => { const u = Math.min(1, (t - e.t) / d), v = e.dur ? Math.min(1, (e.t + e.dur - t) / d) : 1; return Math.max(0, Math.min(u, v)); };
       for(const e of ev){ if(e.t > t + .001) break;
         const vivo = !e.dur || t < e.t + e.dur;
         if(e.tipo === 'escenario'){ esc = e.n; escT = e.t; tono = e.tono; }
-        if(['carriles', 'gira', 'espejo', 'inclina', 'abanico'].includes(e.tipo) && e.t > 0) movT = e.t;
+        if(['carriles', 'gira', 'espejo', 'inclina', 'abanico', 'peralte'].includes(e.tipo) && e.t > 0) movT = e.t;
         if(e.tipo === 'destello') destelloT = e.t;
         if(e.tipo === 'camara'){ camN = e.n; camT = e.t; }
         if(!vivo) continue;
@@ -304,7 +307,7 @@ export async function crearEscena(lienzo){
         /* girar 90° acuesta la pista y la línea de golpe se sale de la pantalla, en vertical y en horizontal
            (Carlos, 29 oct): un cuarto de vuelta se vuelve un ladeo fuerte; de cabeza (π) sí cabe y se queda */
         if(e.tipo === 'gira') giro += (Math.abs(Math.abs(e.ang) - Math.PI / 2) < .1 ? Math.sign(e.ang) * .38 : e.ang) * blando(e, .45);
-        if(e.tipo === 'onda') onda += e.fuerza * blando(e);
+        if(e.tipo === 'peralte' || e.tipo === 'onda') peraltes.push({ forma: e.forma || 'ola', f: e.fuerza * blando(e, .5), t0: e.t });
         if(e.tipo === 'abanico') abanico += e.fuerza * blando(e);
         if(e.tipo === 'espejo') espejo = Math.max(espejo, blando(e, .3));
         if(e.tipo === 'oculta') oculta = { cual: e.cual, u: blando(e) };
@@ -330,8 +333,21 @@ export async function crearEscena(lienzo){
       E.visible += ((enCarril ? 1 : 0) - E.visible) * .12;
       carril.visible = E.visible > .02; carril.position.y = (1 - E.visible) * -6 - latido * compas * .06 - sacudida * .08; carril.position.z = 0;
       const D = disposicion(ev, t); E.carriles = D.n;
+      /* EL PERALTE: cada carril gira sobre su botón (que se queda en la línea, así el dedo no se mueve): se ladea
+         como curva de carreras, se tuerce en diagonal o sube como rampa. En vertical lo diagonal va más suave */
+      let pf = 0; const yawK = vertical ? .6 : 1;
       piezas.rieles.forEach((R, r) => { const d = D.rieles[r]; const x = d.x * (1 - 2 * espejo); R.x = x; R.vis = d.vis;
         R.g.position.x = x * ANCHO; R.g.visible = d.vis > .02;
+        let ladeo = 0, tuerce = 0, rampa = 0; const par = r % 2 ? 1 : -1;
+        for(const P of peraltes){ const f = P.f, u = t - P.t0;
+          if(P.forma === 'ola'){ ladeo += .55 * f * Math.sin(u * 3.1 - d.x * .9); rampa += .07 * f * Math.sin(u * 2.3 - d.x); }
+          if(P.forma === 'tuerce'){ ladeo += .5 * f * par * Math.min(1, u * 2); tuerce += .05 * f * par; }
+          if(P.forma === 'abre') tuerce -= .075 * f * d.x;
+          if(P.forma === 'cierra') tuerce += .07 * f * d.x;
+          if(P.forma === 'rampa'){ rampa += .13 * f * par; ladeo += .18 * f * Math.sin(u * 1.7 + d.x); }
+          if(P.forma === 'trenza') tuerce += .11 * f * Math.sin(u * 2.4 + d.x * Math.PI / 2);
+          pf = Math.max(pf, f); }
+        R.g.rotation.set(rampa, tuerce * yawK, ladeo, 'YXZ'); R.g.updateMatrix();
         R.fondoR.material.opacity = (.06 + .08 * latido) * d.vis; R.lado.material.opacity = (.35 + .4 * latido) * d.vis;
         const dg = (ahoraMs - R.golpe) / 1000; R.brillo.material.opacity = Math.max(0, 1 - dg * 5) * d.vis; R.haz.material.opacity = Math.max(0, .8 - dg * 4) * d.vis;
         R.rec.scale.setScalar(1 + .12 * latido + Math.max(0, .35 - dg * 2)); R.rec.material.opacity = d.vis; });
@@ -345,7 +361,7 @@ export async function crearEscena(lienzo){
       /* las rayas de compás, con la misma integral que las notas */
       if(an){ const p0 = pos(t), vel = 9 * (est?.vel || 1); let k = 0;
         for(let j = Math.max(0, gi - 1); j < an.golpes.length && k < rayas.length; j++){ const z = -(pos(an.golpes[j]) - p0) * vel; if(z > 1) continue; if(z < -LARGO) break; const R = rayas[k++];
-          R.visible = true; R.position.z = z; R.scale.set(anchoTotal * (1 + abanico * -z / LARGO * .6), (j % 4 === 0 ? 2.4 : 1), 1); R.material.opacity = (j % 4 === 0 ? .4 : .15) * Math.min(1, (LARGO + z) / 6); }
+          R.visible = true; R.position.z = z; R.scale.set(anchoTotal * (1 + abanico * -z / LARGO * .6), (j % 4 === 0 ? 2.4 : 1), 1); R.material.opacity = (j % 4 === 0 ? .4 : .15) * Math.min(1, (LARGO + z) / 6) * (1 - Math.min(1, pf * 1.5)); }
         for(; k < rayas.length; k++) rayas[k].visible = false; }
 
       /* las notas */
@@ -358,15 +374,23 @@ export async function crearEscena(lienzo){
           const zf = n.fin ? -(pos(n.fin) - p0) * vel : z;
           const st = est.estado[n.id]; if(st === 'hecha' || (st === 'fallada' || st === 'pendiente') && !n.fin) continue;
           if(z > 2.5 && !(n.fin && zf < 1)) continue;
-          const R = piezas.rieles[n.r], ox = Math.sin(z * .35 + t * 2.2) * onda * .9 * (-z / LARGO), fx = R.x * ANCHO * (1 + abanico * -z / LARGO * .6);
+          const R = piezas.rieles[n.r], abre = abanico * -z / LARGO * .6;
           let alfa = 1;
           if(oculta && oculta.cual === 'hidden') alfa = Math.min(1, Math.max(0, (-z - 4) / 4)) * oculta.u + (1 - oculta.u);
           if(oculta && oculta.cual === 'sudden') alfa = Math.min(1, Math.max(0, (14 + z) / 4)) * oculta.u + (1 - oculta.u);
           const zc = st === 'sosteniendo' ? 0 : z;
-          if(ir < reserva.length && !(st === 'sosteniendo')){ const m = reserva[ir++]; m.visible = true; m.position.set(fx + ox, .08, zc); pintaNota(m, n.prec ? '#FFFFFF' : COLORES_RIEL[n.r], alfa * R.vis, n.prec ? .82 : 1); }
+          /* dónde va: en el sistema de SU carril (que puede estar ladeado o torcido); la que viaja va mezclada entre
+             el carril de donde sale y el suyo, y se asienta `asiento` segundos antes de la línea */
+          enCarrilDe(R, zc, abre, vA); qA.copy(R.g.quaternion); let w = 0, color = n.prec ? '#FFFFFF' : COLORES_RIEL[n.r], vis = R.vis;
+          if(n.viaja){ const O = piezas.rieles[n.viaja.de], asZ = n.viaja.asiento * vel, dist = -z;
+            const u = Math.min(1, Math.max(0, (dist - asZ) / Math.max(.5, LARGO * .8 - asZ)));
+            w = n.viaja.forma === 'zigzag' ? .5 - .5 * Math.cos(u * Math.PI * 3) : u * u * (3 - 2 * u);
+            if(w > .001){ enCarrilDe(O, zc, abre, vB); vA.lerp(vB, w); qA.slerp(O.g.quaternion, w); vis = Math.max(R.vis, O.vis * w);
+              if(n.viaja.ciega && u > 0) color = '#E9E4F0'; } }
+          if(ir < reserva.length && !(st === 'sosteniendo')){ const m = reserva[ir++]; m.visible = true; m.position.copy(vA); m.quaternion.copy(qA); pintaNota(m, color, alfa * vis, n.prec ? .82 : 1); }
           if(n.fin && ic < cuerpos.length){ const c = cuerpos[ic++]; const a = Math.min(zc, 0.0001), b = Math.max(zf, -LARGO); const largo = Math.max(.01, a - b);
-            c.visible = true; c.position.set(fx + ox, .02, (a + b) / 2); c.scale.set(1, largo, 1); c.material.color.set(COLORES_RIEL[n.r]); c.material.opacity = (st === 'sosteniendo' ? .95 : .6) * alfa * R.vis; }
-          if(n.tipo === 'flick' && iff < flechas.length){ const f = flechas[iff++]; f.visible = true; f.position.set(fx + ox, .17, z); f.rotation.set(-Math.PI / 2, 0, -n.dir * Math.PI / 4); f.material.opacity = alfa * R.vis; f.scale.setScalar(1 + .2 * latido); }
+            enCarrilDe(R, (a + b) / 2, abre, vB); vB.y = .02 + (vB.y - .08); c.visible = true; c.position.copy(vB); c.quaternion.copy(R.g.quaternion).multiply(qPlano); c.scale.set(1, largo, 1); c.material.color.set(COLORES_RIEL[n.r]); c.material.opacity = (st === 'sosteniendo' ? .95 : .6) * alfa * R.vis; }
+          if(n.tipo === 'flick' && iff < flechas.length){ const f = flechas[iff++]; f.visible = true; f.position.copy(vA); f.position.y += .09; qB.setFromEuler(eB.set(-Math.PI / 2, 0, -n.dir * Math.PI / 4)); f.quaternion.copy(qA).multiply(qB); f.material.opacity = alfa * vis; f.scale.setScalar(1 + .2 * latido); }
         }
       }
       for(; ir < reserva.length; ir++) reserva[ir].visible = false;

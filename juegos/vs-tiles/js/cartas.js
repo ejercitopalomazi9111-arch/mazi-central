@@ -12,11 +12,11 @@
    Las mecánicas del documento de Carlos (DISEÑO.md) que salen de aquí van con su número: M001… */
 
 export const DIFS = [
-  { id: 'facil', nombre: 'Fácil', nivel: [1, 3], sub: 1, umbral: .5, gap: .42, mismo: .6, acorde: 0, hold: .18, flick: 0, rafaga: 0, carriles: 4, ventana: 1.5 },
-  { id: 'normal', nombre: 'Normal', nivel: [4, 6], sub: 2, umbral: .34, gap: .2, mismo: .3, acorde: .06, hold: .16, flick: .03, rafaga: 0, carriles: 5, ventana: 1.25 },
-  { id: 'dificil', nombre: 'Difícil', nivel: [7, 9], sub: 4, umbral: .22, gap: .115, mismo: .17, acorde: .14, hold: .13, flick: .06, rafaga: .25, carriles: 5, ventana: 1 },
-  { id: 'experto', nombre: 'Experto', nivel: [10, 12], sub: 4, umbral: .1, gap: .072, mismo: .11, acorde: .2, hold: .1, flick: .14, rafaga: .7, carriles: 5, ventana: .85 },
-  { id: 'exorcist', nombre: 'EXÓRCIST', nivel: [13, 15], sub: 8, umbral: .06, gap: .052, mismo: .09, acorde: .28, hold: .08, flick: .1, rafaga: 1, carriles: 5, ventana: .7 }
+  { id: 'facil', nombre: 'Fácil', nivel: [1, 3], sub: 1, umbral: .5, gap: .42, mismo: .6, acorde: 0, hold: .18, flick: 0, rafaga: 0, carriles: 4, ventana: 1.5, viaja: 0, rapidez: 1 },
+  { id: 'normal', nombre: 'Normal', nivel: [4, 6], sub: 2, umbral: .34, gap: .2, mismo: .3, acorde: .06, hold: .16, flick: .03, rafaga: 0, carriles: 5, ventana: 1.25, viaja: 0, rapidez: 1 },
+  { id: 'dificil', nombre: 'Difícil', nivel: [7, 9], sub: 4, umbral: .22, gap: .115, mismo: .17, acorde: .14, hold: .13, flick: .06, rafaga: .25, carriles: 5, ventana: 1, viaja: .08, asiento: .55, rapidez: 1.05 },
+  { id: 'experto', nombre: 'Experto', nivel: [10, 12], sub: 4, umbral: .1, gap: .072, mismo: .11, acorde: .2, hold: .1, flick: .16, rafaga: .7, carriles: 5, ventana: .85, viaja: .18, asiento: .42, rapidez: 1.18 },
+  { id: 'exorcist', nombre: 'EXÓRCIST', nivel: [13, 15], sub: 8, umbral: .06, gap: .052, mismo: .09, acorde: .28, hold: .08, flick: .12, rafaga: 1, carriles: 5, ventana: .7, viaja: .34, asiento: .34, rapidez: 1.3 }
 ];
 export const MODOS = {
   carril: { nombre: 'Carril', de: 'Guitar Hero · Fortnite Festival', que: 'Cinco carriles en 3D: toca, mantén y desliza cuando la nota llegue a la línea.' },
@@ -111,7 +111,14 @@ export function armarCarta(an, cancion, modo, difId, opc = {}){
       /* M002 · mantener: si lo que sigue tarda, la nota se sostiene */
       if(hueco > beat * 1.4 && R() < D.hold * 2.2 && c.e > .25){ nota.tipo = 'hold'; nota.fin = c.t + Math.min(2.6, hueco - Math.max(.12, beat * .5)); }
       /* M004 · deslizar en los acentos más fuertes (en Carril; Flechas no tiene) */
-      else if(P.modo === 'carril' && c.s > .72 && R() < D.flick * 4){ nota.tipo = 'flick'; nota.dir = D.id === 'exorcist' ? [0, 7, 1, 6, 2][Math.floor(R() * 5)] : [0, 7, 1][Math.floor(R() * 3)]; }
+      else if(P.modo === 'carril' && c.s > (D.sub >= 4 ? .58 : .72) && R() < D.flick * 4){ nota.tipo = 'flick'; const dirs = D.id === 'exorcist' ? [0, 7, 1, 6, 2, 4, 3, 5] : D.id === 'experto' ? [0, 7, 1, 6, 2] : [0, 7, 1]; nota.dir = dirs[Math.floor(R() * dirs.length)]; }
+      /* LA NOTA QUE VIAJA (Carlos, 29 oct: «debe deslizarse entre todos los carriles hasta un poco antes de llegar al
+         punto de toque para estar en su posición correcta»): sale de otro carril, cruza la pista y se asienta en el
+         suyo `asiento` segundos antes de la línea. En Experto y EXÓRCIST viaja sin color: no se sabe a dónde va
+         hasta que llega. Sólo en Carril, y nunca la que se sostiene */
+      if(P.modo === 'carril' && nota.tipo !== 'hold' && n >= 3 && R() < D.viaja && c.t - P.t0 > 2.5){
+        const lejos = rs.filter(x => Math.abs(rs.indexOf(x) - idx) >= Math.min(2, n - 1)), de = lejos[Math.floor(R() * lejos.length)];
+        if(de !== undefined) nota.viaja = { de, forma: D.id === 'exorcist' && R() < .5 ? 'zigzag' : 'barre', asiento: D.asiento, ciega: D.id === 'experto' || D.id === 'exorcist' }; }
       if(nota.tipo === 'hold') libre[r] = nota.fin + .05;
       if(P.modo === 'flechas') nota.rival = P.rival && Math.floor((c.t - P.t0) / (beat * 8)) % 2 === 0;
       if(D.id === 'exorcist' && P.precision && c.s > .8) nota.prec = true;    // M019
@@ -194,14 +201,17 @@ function planSecciones(secc, modo, D, R, an, tel = false){
       else if(P.carriles !== antes || plan[plan.length - 1].modo !== 'carril'){ ev.push({ t: t0 + .05, tipo: 'carriles', n: P.carriles, dur: .55 }); P.aviso = Math.max(P.aviso, 1.1); }
       /* las transformaciones de dentro de la sección, en golpes */
       const gs = golpes.filter(g => g > t0 + 1.5 && g < t1 - 1);
-      const num = [1, 2, 3, 7, 10][nivel];
+      const num = [1, 2, 4, 9, 12][nivel];
       for(let k = 0; k < num && gs.length; k++){ const g = gs[Math.floor(R() * gs.length)];
-        const op = nivel >= 4 ? ['inclina', 'gira', 'velocidad', 'onda', 'abanico', 'espejo', 'oculta', 'alto', 'reversa', 'compas'] : nivel >= 3 ? ['inclina', 'velocidad', 'onda', 'abanico', 'alto', 'compas'] : nivel >= 2 ? ['inclina', 'onda', 'velocidad'] : ['inclina', 'onda'];
+        const op = nivel >= 4 ? ['inclina', 'gira', 'velocidad', 'peralte', 'peralte', 'abanico', 'espejo', 'oculta', 'alto', 'reversa', 'compas'] : nivel >= 3 ? ['inclina', 'velocidad', 'peralte', 'peralte', 'abanico', 'espejo', 'oculta', 'alto', 'compas'] : nivel >= 2 ? ['inclina', 'peralte', 'velocidad'] : ['inclina', 'peralte'];
         const tipo = op[Math.floor(R() * op.length)], dur = (2 + R() * 6) * (golpes[1] - golpes[0] || .5);
         if(tipo === 'inclina') ev.push({ t: g, tipo, ang: (R() < .5 ? -1 : 1) * (.18 + .3 * R()) * (nivel >= 4 ? 1.5 : 1), dur });        // M046
         if(tipo === 'gira') ev.push({ t: g, tipo, ang: [Math.PI, Math.PI / 2, -Math.PI / 2][Math.floor(R() * 3)], dur });                    // M055
         if(tipo === 'velocidad') ev.push({ t: g, tipo, v: [.55, 1.6, 2.1, .75][Math.floor(R() * 4)], dur });                                  // M061–M063
-        if(tipo === 'onda') ev.push({ t: g, tipo, fuerza: .4 + R() * .6, dur });                                                              // M050
+        /* M050 · EL PERALTE: cada carril se mueve por su cuenta (se ladea, se tuerce en diagonal, sube como rampa),
+           girando sobre su propio botón, que no se mueve: lo difícil es LEER, no tocar (Carlos, 29 oct) */
+        if(tipo === 'peralte'){ const fs = nivel >= 4 ? ['ola', 'tuerce', 'abre', 'cierra', 'rampa', 'trenza'] : nivel >= 3 ? ['ola', 'tuerce', 'abre', 'rampa', 'trenza'] : ['ola', 'tuerce', 'rampa'];
+          ev.push({ t: g, tipo, forma: fs[Math.floor(R() * fs.length)], fuerza: (.55 + R() * .45) * (nivel >= 4 ? 1.25 : 1), dur: dur * 1.4 }); }
         if(tipo === 'abanico') ev.push({ t: g, tipo, fuerza: R() < .5 ? 1 : -1, dur });                                                       // M047 / M048
         if(tipo === 'espejo') ev.push({ t: g, tipo, dur });                                                                                  // M053
         if(tipo === 'oculta') ev.push({ t: g, tipo, cual: R() < .5 ? 'hidden' : 'sudden', dur });                                            // M136 / M137
