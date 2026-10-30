@@ -31,7 +31,7 @@ espejo; bajarlos de Sketchfab pide una cuenta (un token de su API).
 
 Modelos de **Sketchfab**, todos **Creative Commons: By Attribution 4.0**; se dejó sólo la pieza, centrada, con
 texturas WebP de 256 px (`herramientas/fotos-notas.html` saca sus fotos para el vestidor):
-«Arcade push button» de IgorMonasterio (Botón de arcade) · «Holo-Puck» de thekaz.2128 (Holo-disco) ·
+«Lowpoly Gold Bar» de l0wpoly (Barra, la de fábrica) · «Arcade push button» de IgorMonasterio (Botón de arcade) · «Holo-Puck» de thekaz.2128 (Holo-disco) ·
 «Gems (21 different shapes)» de Vivien Deroche / blue-odym, el corte redondo inglés (Brillante) ·
 «Stylized Puck» de RiZoRuS77 (Disco) · «Low Poly Stylized Gemstone» de Discover (Cristal) ·
 «5 Colored Fantasy Stylized Gems» de Incg5764 (Gema engarzada) · «Gold Star» de Roberto Chiaveri (Estrella) ·
@@ -42,6 +42,13 @@ texturas WebP de 256 px (`herramientas/fotos-notas.html` saca sus fotos para el 
 Kevin MacLeod (incompetech.com), **Creative Commons: By Attribution 4.0**. Recortadas a ~2 min con
 fundido: «Itty Bitty 8 Bit», «Raving Energy», «Movement Proposition», «Exit the Premises», «Voltaic»,
 «Ouroboros», «Volatile Reaction».
+
+**Anime y ritmo** (de OpenGameArt; recortadas a ~2 min con fundido):
+«Play Now» de Cleyton Kauffman (CC0) · «Determination» de HydroGene (CC0) · «Tokyo Chase» de Socapex / tarfmagougou
+(CC BY-SA 3.0) · «Cheers for Starlight», del OST de *cute Bytes*, de Chloe Wolfe (CC BY 4.0) · «Mauve Rhopalocera»
+de ISAo (OGA-BY 3.0) · «Fever Stadium» (versión climax, 180 BPM) de MintoDog (CC0) · «Technomania101» de Fupi (CC0) ·
+«Kyra the Cloud Maid» de Tsorthan Grove (CC BY 4.0) · «Cutie Pie» de FrancisLeeMusic (CC BY 3.0) · «Ascend»,
+«Glory Days», «Stomper» y «Mental Corruption», de los *Free Rhythm Game Music Pack* 1 y 2 de tricksntraps (CC0).
 
 **Piano imposible.** Partituras de **dominio público** del Mutopia Project (mutopiaproject.org), en MIDI:
 Chopin (Vals Op. 64 n.º 1, Fantasía-Impromptu Op. 66, Estudios Op. 10 n.º 1, 5 y 12), Mozart (Rondo alla

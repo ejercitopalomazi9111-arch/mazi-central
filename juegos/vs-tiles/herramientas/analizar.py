@@ -1,10 +1,13 @@
 # analiza una canción: tempo, golpes, ataques por banda (grave, medio, agudo), energía y secciones
 import sys, json, numpy as np, librosa
 ruta, sal = sys.argv[1], sys.argv[2]
+# 3.er argumento opcional: el BPM que da el autor. Librosa a veces lee 2/3 o la mitad (Fever Stadium es de 180 y la
+# leía en 120): con el dato del autor, la rejilla de golpes se ata a ese tempo
+bpm_autor = float(sys.argv[3]) if len(sys.argv) > 3 else None
 y, sr = librosa.load(ruta, sr=22050, mono=True)
 dur = len(y) / sr
 hop = 256
-tempo, beats = librosa.beat.beat_track(y=y, sr=sr, hop_length=hop, tightness=120)
+tempo, beats = librosa.beat.beat_track(y=y, sr=sr, hop_length=hop, tightness=120) if not bpm_autor else librosa.beat.beat_track(y=y, sr=sr, hop_length=hop, start_bpm=bpm_autor, tightness=800)
 bt = librosa.frames_to_time(beats, sr=sr, hop_length=hop)
 S = np.abs(librosa.stft(y, n_fft=2048, hop_length=hop)) ** 2
 f = librosa.fft_frequencies(sr=sr, n_fft=2048)

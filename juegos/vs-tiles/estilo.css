@@ -276,3 +276,7 @@ h2{ font:800 22px/1.1 var(--n); letter-spacing:.06em; margin:0 0 10px }
 .boton-sangre .b, .b.mini.boton-sangre{ background:linear-gradient(135deg, #4A0011, #170A26) }
 .boton-sangre .b::before, .b.mini.boton-sangre::before{ background:linear-gradient(135deg, #FF2D55, #7E1735 50%, #FF6A8A) }
 .boton-sangre .b.primario{ background:linear-gradient(135deg, #C4002B, #7E1735) }
+
+/* la misión que sigue, arriba de la lista de la Historia */
+.mision.siguiente{ border-color:#FF2D7A; background:linear-gradient(90deg, #7E173566, #170A2600); box-shadow:0 0 18px #FF2D7A44; margin-bottom:14px }
+.mision.siguiente .n{ color:#FF2D7A }

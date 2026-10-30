@@ -69,6 +69,9 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
 
   /* ══ la entrada ══ */
   const dedos = new Map();
+  /* lo que está apretado AHORA (aunque no haya nota): mientras el dedo siga abajo, su botón se queda encendido
+     (Carlos, 30 oct: «si mantengo pulsado el botón dentro de cualquier minijuego, que se mantenga encendido») */
+  const apretado = new Map(), tenido = (m, k) => { for(const a of apretado.values()) if(a.m === m && a.k === k) return true; return false; };
   let receptores = [];       // [{r, x, y}] en pantalla, cada cuadro
   let tAhora = null;
   function rielBajo(px, py){
@@ -87,14 +90,14 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
   function baja(id, t, px, py, tecla){
     if(!corriendo || pausa || auto) return;
     const m = modoEn(t);
-    if(m === 'carril'){ tAhora = t; const r = tecla !== undefined ? tecla : rielBajo(px, py); if(r === null || r === undefined) return;
+    if(m === 'carril'){ tAhora = t; const r = tecla !== undefined ? tecla : rielBajo(px, py); if(r === null || r === undefined) return; apretado.set(id, { m, k: r });
       const n = candidata(t, n => n.modo === 'carril' && n.r === r);
       escena.piezas.rieles[r].golpe = performance.now();
       if(!n) return;
       if(n.tipo === 'flick'){ dedos.set(id, { n, t, px, py, flick: true }); if(tecla !== undefined){ juzgar(n, t, recXY(r)); } return; }
       if(juzgar(n, t, recXY(r)) && n.fin) dedos.set(id, { n, hold: true });
     }
-    else if(m === 'flechas'){ const col = tecla !== undefined ? tecla : Math.min(3, Math.max(0, Math.floor(px / (W / 4)))), r = RIEL_FL[col];
+    else if(m === 'flechas'){ const col = tecla !== undefined ? tecla : Math.min(3, Math.max(0, Math.floor(px / (W / 4)))), r = RIEL_FL[col]; apretado.set(id, { m, k: col });
       est.pulsado[col] = performance.now();
       const n = candidata(t, n => n.modo === 'flechas' && n.r === r); if(!n) return;
       if(juzgar(n, t, flechaXY(col, 0)) && n.fin) dedos.set(id, { n, hold: true });
@@ -102,7 +105,7 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
     else if(m === 'diva'){
       let k = tecla; if(k === undefined){ const B = botonesDiva(); let d = 1e9; for(const b of B){ const dd = Math.hypot(px - b.x, py - b.y); if(dd < d){ d = dd; k = b.i; } } if(d > Math.max(W, H) * .5) k = undefined; }
       if(k === 'estrella' || k === undefined){ dedos.set(id, { t, px, py, estrella: true }); if(k === 'estrella') estrella(t); return; }
-      est.pulsado[k] = performance.now();
+      est.pulsado[k] = performance.now(); apretado.set(id, { m, k });
       const n = candidata(t, n => n.modo === 'diva'); if(!n) return;
       if(n.tipo === 'estrella'){ dedos.set(id, { t, px, py, estrella: true }); return; }
       if(n.sim !== k){ if(Math.abs(n.t - t) < J.ventana()[3]){ J.apuntar(JUICIOS[4], null, n); marcar(n, JUICIOS[4], null, enArea(n)); } return; }    // símbolo equivocado
@@ -129,7 +132,7 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
     if(d.deslice){ d.px = px; d.py = py; }
     if(d.giro){ const a = Math.atan2(py - H * .45, px - W / 2); let da = a - d.ang; if(da > Math.PI) da -= 2 * Math.PI; if(da < -Math.PI) da += 2 * Math.PI; d.ang = a; est.giro[d.giro.id] = (est.giro[d.giro.id] || 0) + Math.abs(da); }
   }
-  function sube(id, t){ const d = dedos.get(id); if(!d) return; dedos.delete(id);
+  function sube(id, t){ apretado.delete(id); const d = dedos.get(id); if(!d) return; dedos.delete(id);
     if(d.deslice && est.estado[d.n.id] === 'sosteniendo'){ const n = d.n, u = (t - n.t) / (n.fin - n.t), sg = est.sigue[n.id], p = sg.si / Math.max(1, sg.si + sg.no);
       est.estado[n.id] = 'hecha'; const j = u > .88 && p > .7 ? JUICIOS[1] : u > .5 ? JUICIOS[3] : JUICIOS[4]; J.apuntar(j, null, n); textos.push({ j, t0: performance.now() }); return; }
     if(d.hold && est.estado[d.n.id] === 'sosteniendo'){
@@ -198,6 +201,7 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
       if(t >= n.fin && est.estado[n.id] === 'sosteniendo'){ dedos.delete(id); const p = sg.si / Math.max(1, sg.si + sg.no); est.estado[n.id] = 'hecha'; const j = p > .82 ? JUICIOS[1] : p > .5 ? JUICIOS[3] : JUICIOS[4]; J.apuntar(j, null, n); textos.push({ j, t0: performance.now() }); } }
     while(est.desde < carta.notas.length && est.estado[carta.notas[est.desde].id] && carta.notas[est.desde].t < t - 3) est.desde++;
     /* el 3D */
+    escena.piezas.rieles.forEach((R, r) => { R.tenido = tenido('carril', r); });
     const v = escena.pintar(tv, { an, carta, est, modo, bajos });
     receptores = [0, 1, 2, 3, 4, 5, 6].map(r => { const [px, py, vis] = escena.receptor(r, W, H); return { r, x: px, y: py, vis }; }).sort(receptores0);
     pintar2d(tv, false, v, modo);
@@ -217,7 +221,7 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
     const ahora = performance.now(), lat = v.latido || 0, AR = ACERCA[carta.dif];
     /* ── Flechas (FNF): las del rival arriba a la izquierda, las tuyas grandes abajo ── */
     if(modo === 'flechas'){ const tam = Math.min(W / 4.4, H / 6.5, 120), yRec = H * .8, velPx = H * .9 / AR / 1.4;
-      for(let c = 0; c < 4; c++){ const [cx] = flechaXY(c, 0), pul = Math.max(0, 1 - (ahora - (est.pulsado[c] || 0)) / 160);
+      for(let c = 0; c < 4; c++){ const [cx] = flechaXY(c, 0), pul = Math.max(tenido('flechas', c) ? .85 : 0, 1 - (ahora - (est.pulsado[c] || 0)) / 160);
         const ef = ajustes.estilos?.flechas || 'contorno';
         img(ef === 'solida' ? S.teñir(`tecla_arrow_${FLECHA[c]}`, COLOR_FL[c]) : `tecla_arrow_${FLECHA[c]}_outline`, cx, yRec, tam * (1 + .12 * lat + .15 * pul), 0, ef === 'solida' ? .45 : .9); if(pul > 0) img(S.teñir('p_light_01', COLOR_FL[c]), cx, yRec, tam * 2.2, 0, pul, true); }
       const tamR = tam * .42, yRiv = Math.max(H * .2, SA.t + 104), xRiv = 20 + SA.l; for(let c = 0; c < 4; c++){ const pr = Math.max(0, 1 - (ahora - (est.pulsadoR[c] || 0)) / 160); img(`tecla_arrow_${FLECHA[c]}_outline`, xRiv + tamR * .6 + c * tamR * 1.05, yRiv, tamR * (1 + .2 * pr), 0, .6); }
@@ -247,7 +251,7 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
         img(nom, fx, fy, tam * (1 + .1 * lat), n.tipo === 'estrella' ? ahora / 200 : 0);
         if(n.fin){ x.save(); x.globalAlpha = .7; x.strokeStyle = COLOR_SIM[n.sim]; x.lineWidth = 6; x.beginPath(); x.arc(cx, cy, tam * .75, -Math.PI / 2, -Math.PI / 2 + Math.min(1, (n.fin - n.t) / 2) * Math.PI * 2); x.stroke(); x.restore(); }
       }
-      for(const b of B){ const pul = Math.max(0, 1 - (ahora - (est.pulsado[b.i] || 0)) / 150); img(`ps_color_${SIM[b.i]}`, b.x, b.y, b.r * 2 * (1 - .1 * pul), 0, .92); if(pul) img(S.teñir('p_light_01', COLOR_SIM[b.i]), b.x, b.y, b.r * 4, 0, pul, true); }
+      for(const b of B){ const pul = Math.max(tenido('diva', b.i) ? .85 : 0, 1 - (ahora - (est.pulsado[b.i] || 0)) / 150); img(`ps_color_${SIM[b.i]}`, b.x, b.y, b.r * 2 * (1 - .1 * pul), 0, .92); if(pul) img(S.teñir('p_light_01', COLOR_SIM[b.i]), b.x, b.y, b.r * 4, 0, pul, true); }
       x.save(); x.font = '600 13px "Zen Kaku Gothic New", sans-serif'; x.fillStyle = '#ffffff99'; x.textAlign = 'center'; x.fillText('★ desliza en cualquier lado', W / 2, H - 14 - SA.b); x.restore();
     }
     /* ── Círculos (osu): número, anillo que se cierra, deslices y remolinos ── */
@@ -275,7 +279,7 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
     if(modo === 'carril' && escena.E.visible > .5){ const vis = receptores.filter(q => q.vis > .5);
       let sep = Infinity; for(let i = 1; i < vis.length; i++) sep = Math.min(sep, Math.hypot(vis[i].x - vis[i - 1].x, vis[i].y - vis[i - 1].y));
       const rad = Math.max(18, Math.min(46, (isFinite(sep) ? sep : 90) * .46)), mov = Math.max(0, 1 - escena.E.movido / 1.5);
-      for(const q of vis){ const golpe = Math.max(0, 1 - (ahora - escena.piezas.rieles[q.r].golpe) / 180), c = COLORES_RIEL[q.r];
+      for(const q of vis){ const golpe = Math.max(tenido('carril', q.r) ? .8 : 0, 1 - (ahora - escena.piezas.rieles[q.r].golpe) / 180), c = COLORES_RIEL[q.r];
         const a = Math.min(1, .2 + mov * (.55 + .25 * Math.sin(ahora / 70)) + golpe * .6);
         x.save(); x.globalAlpha = a * q.vis; x.lineWidth = 2.5 + mov * 2; x.strokeStyle = c; x.fillStyle = c + '22';
         x.beginPath(); x.arc(q.x, q.y, rad * (1 + .15 * golpe + .1 * mov), 0, Math.PI * 2); x.fill(); x.stroke();
@@ -288,6 +292,7 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
     if(enPausa){ x.fillStyle = '#05020Acc'; x.fillRect(0, 0, W, H); }
   }
 
+  let comboAbajo = 0;
   function hud(t, ahora, lat, modo){
     const p = Math.min(1, Math.max(0, t / carta.dur)), T = SA.t, L = 16 + SA.l, R = W - 16 - SA.r;
     /* la vida (la «tensión»), arriba */
@@ -305,7 +310,10 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
     x.fillText(nom, L, T + 44); x.restore();
     /* el combo y el juicio se acomodan DEBAJO del marcador: en pantallas bajitas (un SE, o en horizontal) a una
        fracción fija de la altura se encimaban con los puntos y entre ellos */
-    const yCombo = Math.max(T + 112, H * (modo === 'carril' ? .21 : .16)), yJuicio = Math.max(yCombo + 60, H * (modo === 'carril' ? .3 : .245));
+    /* con la pista de cabeza (giro de 180°) los botones quedan ARRIBA: el combo y el juicio se bajan para no taparlos */
+    const vis = modo === 'carril' ? receptores.filter(q => q.vis > .5) : [], recY = vis.length ? vis.reduce((a, q) => a + q.y, 0) / vis.length : H;
+    comboAbajo += ((recY < H * .5 ? 1 : 0) - comboAbajo) * .12;
+    const yCombo = Math.max(T + 112, H * (modo === 'carril' ? .21 : .16)) + comboAbajo * H * .42, yJuicio = Math.max(yCombo + 60, H * (modo === 'carril' ? .3 : .245) + comboAbajo * H * .42);
     /* el combo, grande y latiendo */
     if(J.combo > 2){ const c = String(J.combo), s = 1 + .18 * lat + Math.max(0, .3 - (ahora - (J.ultimo?.t || 0)) / 400);
       x.save(); x.translate(W / 2, yCombo); x.scale(s, s); x.textAlign = 'center'; x.font = `900 ${H < 450 ? 36 : 46}px Orbitron, sans-serif`;
@@ -324,7 +332,7 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
     if(auto){ x.save(); x.font = '800 12px Orbitron, sans-serif'; x.fillStyle = '#FFF07A'; x.textAlign = 'left'; x.fillText('AUTO', L, T + 76); x.restore(); }
   }
 
-  function terminar(murio){ if(!corriendo) return; corriendo = false; reloj.parar(); dedos.clear();
+  function terminar(murio){ if(!corriendo) return; corriendo = false; reloj.parar(); dedos.clear(); apretado.clear(); escena.piezas.rieles.forEach(R => { R.tenido = false; });
     alTerminar?.({ cancion, carta, J, murio, auto }); }
 
   return {
@@ -333,6 +341,8 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
       cancion = c; carta = cartaN; an = analisis; auto = autoJuego;
       J = crearJuez(carta); J.total = carta.notas.filter(n => !n.rival).length + carta.notas.filter(n => !n.rival && n.fin && n.tipo !== 'giro').length;
       est = { estado: {}, pendientes: [], desde: 0, vel: vel * (cartaN.D?.rapidez || 1), pulsado: [0, 0, 0, 0], pulsadoR: [0, 0, 0, 0], sigue: {}, giro: {}, cola: {}, ultimoGolpe: 0 };
+      /* empezar a media canción (sólo las pruebas): lo de antes no cuenta, o se juzgaría todo como fallo y se moriría al instante */
+      if(desde !== null) for(const n of carta.notas) if(n.t < desde + .5) est.estado[n.id] = 'hecha';
       bajos = an.ataques.filter(a => a[2] === 0 && a[1] > .55).map(a => [a[0], a[1]]);
       escena.prepararVelocidad(carta.eventos);
       fin = Math.min(an.dur - .5, (carta.notas.at(-1)?.fin || carta.notas.at(-1)?.t || an.dur) + 3);
@@ -340,7 +350,7 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
       reloj.tocar(buf, { desde: inicio, espera: .15, vel: ritmo });
       corriendo = true; pausa = false; requestAnimationFrame(cuadro);
     },
-    salir(){ corriendo = false; reloj.parar(); dedos.clear(); x.clearRect(0, 0, capa.width, capa.height); },
+    salir(){ corriendo = false; reloj.parar(); dedos.clear(); apretado.clear(); escena.piezas.rieles.forEach(R => { R.tenido = false; }); x.clearRect(0, 0, capa.width, capa.height); },
     pintarMenu(t){ x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, capa.width, capa.height); escena.pintar(t, { an: null, carta: null, est: null, modo: 'menu', bajos: null }); },
     get juez(){ return J; }, get estado(){ return est; }, get carta(){ return carta; }, receptores: () => receptores,
     /* para las pruebas: dispara un toque como si fuera del navegador */

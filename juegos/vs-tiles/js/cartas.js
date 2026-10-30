@@ -203,10 +203,10 @@ function planSecciones(secc, modo, D, R, an, tel = false){
       const gs = golpes.filter(g => g > t0 + 1.5 && g < t1 - 1);
       const num = [1, 2, 4, 9, 12][nivel];
       for(let k = 0; k < num && gs.length; k++){ const g = gs[Math.floor(R() * gs.length)];
-        const op = nivel >= 4 ? ['inclina', 'gira', 'velocidad', 'peralte', 'peralte', 'abanico', 'espejo', 'oculta', 'alto', 'reversa', 'compas'] : nivel >= 3 ? ['inclina', 'velocidad', 'peralte', 'peralte', 'abanico', 'espejo', 'oculta', 'alto', 'compas'] : nivel >= 2 ? ['inclina', 'peralte', 'velocidad'] : ['inclina', 'peralte'];
+        const op = nivel >= 4 ? ['inclina', 'gira', 'velocidad', 'peralte', 'peralte', 'abanico', 'espejo', 'oculta', 'alto', 'reversa', 'compas'] : nivel >= 3 ? ['inclina', 'gira', 'velocidad', 'peralte', 'peralte', 'abanico', 'espejo', 'oculta', 'alto', 'compas'] : nivel >= 2 ? ['inclina', 'peralte', 'velocidad', 'gira'] : ['inclina', 'peralte'];
         const tipo = op[Math.floor(R() * op.length)], dur = (2 + R() * 6) * (golpes[1] - golpes[0] || .5);
         if(tipo === 'inclina') ev.push({ t: g, tipo, ang: (R() < .5 ? -1 : 1) * (.18 + .3 * R()) * (nivel >= 4 ? 1.5 : 1), dur });        // M046
-        if(tipo === 'gira') ev.push({ t: g, tipo, ang: [Math.PI, Math.PI / 2, -Math.PI / 2][Math.floor(R() * 3)], dur });                    // M055
+        if(tipo === 'gira') ev.push({ t: g, tipo, ang: nivel >= 4 ? [Math.PI, -Math.PI, Math.PI / 2, -Math.PI / 2][Math.floor(R() * 4)] : (R() < .5 ? 1 : -1) * Math.PI, dur: Math.max(dur, (nivel >= 3 ? 6 : 4) * (golpes[1] - golpes[0] || .5)) });   /* Carlos, 30 oct: «que a veces den giros de 180°» */                    // M055
         if(tipo === 'velocidad') ev.push({ t: g, tipo, v: [.55, 1.6, 2.1, .75][Math.floor(R() * 4)], dur });                                  // M061–M063
         /* M050 · EL PERALTE: cada carril se mueve por su cuenta (se ladea, se tuerce en diagonal, sube como rampa),
            girando sobre su propio botón, que no se mueve: lo difícil es LEER, no tocar (Carlos, 29 oct) */

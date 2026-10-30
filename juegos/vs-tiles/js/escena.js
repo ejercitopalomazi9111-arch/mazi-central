@@ -77,8 +77,12 @@ function brazosAbajo(m){
 /* LAS FORMAS DE NOTA (cosmético) que son modelos de verdad (Sketchfab, CC BY: ver CREDITOS.md). `pie`: va parado de
    frente a la cámara; si no, acostado en el carril como las gemas de Guitar Hero. `fijo`: los materiales que no se
    pintan del color del carril (el aro del botón va plateado). `sinMapa`: la textura del autor es oscura y con ella el
-   color del carril no se ve. Los ids son los de siempre, para no romper lo que ya tiene cada jugador */
+   color del carril no se ve. `caja`: se ajusta a ese ancho × alto × fondo (en anchos de carril), y `gira` lo voltea
+   sobre su eje vertical antes. Los ids son los de siempre, para no romper lo que ya tiene cada jugador.
+   NINGUNA nota se dibuja por código (Carlos, 30 oct: «cualquier modelo hecho por ti hay que quitarlo y poner uno de
+   licencia gratuita»): hasta la barra de fábrica es un modelo, un lingote low poly acostado de lado a lado */
 export const MODELOS_NOTA = {
+  barra: { archivo: 'lingote', gira: Math.PI / 2, caja: [1.12, .17, .36], sinMapa: true },
   pildora: { archivo: 'arcade', ancho: .9, fijo: /Aro/ }, doble: { archivo: 'holo', ancho: .96 }, diamante: { archivo: 'brillante', ancho: .82, grueso: .62, sinMapa: true },
   disco: { archivo: 'disco', ancho: .96 }, cristal: { archivo: 'cristal', pie: true, alto: .62, sinMapa: true }, gema: { archivo: 'gema', pie: true, alto: .6, sinMapa: true },
   estrella: { archivo: 'estrella', pie: true, alto: .62 }, nota: { archivo: 'nota', pie: true, alto: .66, sinMapa: true }
@@ -127,8 +131,8 @@ export async function crearEscena(lienzo){
 
   /* ── el escenario de las cantantes: una tarima con sus luces, detrás del carril ── */
   /* van AL FONDO, más allá del final de la pista y más grandes (Carlos, 29 oct: «bailando más al fondo, como si algo
-     estuviera pasando relevante a la historia»): son el espectáculo de atrás, no un estorbo encima de las notas */
-  const tarima = new THREE.Group(); tarima.position.set(0, -.6, -20); tarima.scale.setScalar(1.6); s.add(tarima);
+     estuviera pasando relevante a la historia»): detrás del final de la pista (que llega a z = −29), nunca paradas encima de ella */
+  const tarima = new THREE.Group(); tarima.position.set(0, -.8, -36); tarima.scale.setScalar(2.3); s.add(tarima);
   const reflejo = await tex('sprites/p_circle_05.png');
   const piso = new THREE.Mesh(new THREE.CircleGeometry(7, 64), new THREE.MeshBasicMaterial({ map: reflejo, color: '#B44BFF', transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false }));
   piso.rotation.x = -Math.PI / 2; tarima.add(piso);
@@ -199,17 +203,9 @@ export async function crearEscena(lienzo){
   /* las notas: una reserva de piezas que se reparten cada cuadro */
   const reserva = [], cuerpos = [], flechas = [];
   const pieza = (map, w, h, add = false) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map, transparent: true, depthWrite: false, blending: add ? THREE.AdditiveBlending : THREE.NormalBlending })); m.rotation.x = -Math.PI / 2; m.visible = false; carril.add(m); return m; };
-  /* las notas son RECTÁNGULOS acostados en su carril, un poco más anchos que él y con grosor, para que se
-     vean de cualquier ángulo de cámara (Carlos, 29 oct: «rectangulitos horizontales que sobresalgan un poco»).
-     Cara de arriba clara, costados del color: así se lee el volumen sin luces */
-  const geoNota = new THREE.BoxGeometry(ANCHO * 1.12, .16, ANCHO * .34);
-  for(let i = 0; i < 160; i++){ const lado = new THREE.MeshBasicMaterial({ transparent: true }), tapa = new THREE.MeshBasicMaterial({ transparent: true });
-    const caja = [lado, lado, tapa, lado, lado, lado], m = new THREE.Mesh(geoNota, caja); m.visible = false; m.userData = { lado, tapa, caja }; carril.add(m); reserva.push(m); }
-  /* LA FORMA DE LAS NOTAS (cosmético). La barra es la de fábrica (la pidió Carlos el 29 oct); las demás son MODELOS
-     de verdad bajados de Sketchfab (CC BY, ver CREDITOS.md), no figuras dibujadas por código (Carlos, 30 oct: «hazlas
-     con modelos existentes, por ejemplo las del Guitar Hero»). `pie`: va parado de frente a la cámara; si no, acostado
-     en el carril como las gemas de Guitar Hero. `fijo`: los materiales que guardan su color (el aro del botón); todo
-     lo demás se pinta del color del carril. Los ids son los de siempre, para no romper lo que ya tiene cada jugador */
+  /* las notas: la reserva se llena con la forma puesta (MODELOS_NOTA, arriba); la de fábrica es la barra, un rectángulo
+     acostado que sobresale un poco del carril (Carlos, 29 oct: «rectangulitos horizontales que sobresalgan un poco») */
+  for(let i = 0; i < 160; i++){ const m = new THREE.Mesh(new THREE.BufferGeometry(), []); m.visible = false; carril.add(m); reserva.push(m); }
   const cacheForma = {};
   /* un modelo → UNA geometría con un grupo por material (así cabe en la misma reserva de mallas) y la lista de materiales */
   async function formaDeModelo(id){
@@ -222,30 +218,30 @@ export async function crearEscena(lienzo){
       if(!ge.attributes.uv) ge.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(ge.attributes.position.count * 2), 2));
       if(!ge.attributes.normal) ge.computeVertexNormals();
       ge.applyMatrix4(o.matrixWorld); geos.push(ge.index ? ge.toNonIndexed() : ge); mats.push(o.material); });
-    const geo = mergeGeometries(geos, true); geo.computeBoundingBox(); const b = geo.boundingBox, c = b.getCenter(new THREE.Vector3()), t = b.getSize(new THREE.Vector3());
+    const geo = mergeGeometries(geos, true); if(F.gira) geo.rotateY(F.gira);
+    geo.computeBoundingBox(); const b = geo.boundingBox, c = b.getCenter(new THREE.Vector3()), t = b.getSize(new THREE.Vector3());
     geo.translate(-c.x, -c.y, -c.z);
-    /* parado: de frente a la cámara, con el alto pedido; acostado: del ancho del carril, sin pasar de .3 de grueso */
-    let k = F.pie ? F.alto / t.y : Math.min(ANCHO * F.ancho / Math.max(t.x, t.z), (F.grueso || .3) / t.y);
-    if(F.pie) k = Math.min(k, ANCHO * .95 / t.x);
-    geo.scale(k, k, k); geo.translate(0, t.y * k / 2 - .07, 0);   /* apoyado en la pista (la nota va a .08 de altura) */
+    /* caja: a esa medida exacta; parado: de frente a la cámara, con el alto pedido; acostado: del ancho del carril, sin pasar de .3 de grueso */
+    if(F.caja){ geo.scale(ANCHO * F.caja[0] / t.x, F.caja[1] / t.y, ANCHO * F.caja[2] / t.z); t.y = F.caja[1]; }
+    else { let k = F.pie ? F.alto / t.y : Math.min(ANCHO * F.ancho / Math.max(t.x, t.z), (F.grueso || .3) / t.y);
+      if(F.pie) k = Math.min(k, ANCHO * .95 / t.x);
+      geo.scale(k, k, k); t.y *= k; }
+    geo.translate(0, t.y / 2 - .07, 0);   /* apoyado en la pista (la nota va a .08 de altura) */
     return { geo, mats, F };
   }
   let formaActual = 'barra';
   async function ponerForma(id){
-    formaActual = id;
-    if(!MODELOS_NOTA[id]){ for(const m of reserva){ m.geometry = geoNota; m.material = m.userData.caja; m.userData.modelo = null; } return; }
+    if(!MODELOS_NOTA[id]) id = 'barra'; formaActual = id;
     const F = await (cacheForma[id] ||= formaDeModelo(id)); if(formaActual !== id) return;
     for(const m of reserva){ m.geometry = F.geo;
       /* cada nota con sus propios materiales: el color y la transparencia cambian nota por nota */
       const ms = F.mats.map(base => materialDeNota(base, F.F, cTmp.set('#B44BFF')));
       m.material = ms; m.userData.modelo = ms; } }
-  const cBlanco = new THREE.Color('#FFFFFF'), cTmp = new THREE.Color();
-  function pintaNota(m, color, alfa, esc){ cTmp.set(color);
-    if(m.userData.modelo){ for(const mt of m.userData.modelo){ mt.opacity = alfa; pintarMaterial(mt, cTmp); } m.scale.setScalar(esc); return; }
-    const { lado, tapa } = m.userData; lado.color.copy(cTmp).multiplyScalar(.78); tapa.color.copy(cTmp).lerp(cBlanco, .4);
-    lado.opacity = tapa.opacity = alfa; m.scale.set(esc, 1, esc); }
+  const cTmp = new THREE.Color();
+  function pintaNota(m, color, alfa, esc){ cTmp.set(color); for(const mt of m.userData.modelo || []){ mt.opacity = alfa; pintarMaterial(mt, cTmp); } m.scale.setScalar(esc); }
+  await ponerForma('barra');
   for(let i = 0; i < 40; i++) cuerpos.push(pieza(null, ANCHO * .4, 1, true));
-  for(let i = 0; i < 60; i++) flechas.push(pieza(tFlecha, ANCHO * .62, ANCHO * .62));
+  for(let i = 0; i < 60; i++){ const f = pieza(tFlecha, ANCHO * .62, ANCHO * .62); f.material.depthTest = false; f.renderOrder = 40; flechas.push(f); }
 
   /* destellos 3D (al acertar) */
   const chispas = [];
@@ -275,7 +271,7 @@ export async function crearEscena(lienzo){
   function pos(t){ let p = t; if(!tramos) return p; for(const tr of tramos){ if(t <= tr.a) break; const fin = Math.min(t, tr.b); p += (fin - tr.a) * (tr.v - 1); } return p; }
 
   /* un punto de la pista en el sistema de un carril (ladeado o torcido) → el sistema del carril entero */
-  const vA = new THREE.Vector3(), vB = new THREE.Vector3(), qA = new THREE.Quaternion(), qB = new THREE.Quaternion(), eB = new THREE.Euler(), qPlano = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0));
+  const vA = new THREE.Vector3(), vB = new THREE.Vector3(), qA = new THREE.Quaternion(), qB = new THREE.Quaternion(), qC = new THREE.Quaternion(), ejeZ = new THREE.Vector3(0, 0, 1), eB = new THREE.Euler(), qPlano = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0));
   function enCarrilDe(R, z, abre, out){ return out.set(R.x * ANCHO * abre, .08, z).applyMatrix4(R.g.matrix); }
   const v3 = new THREE.Vector3(), mira = new THREE.Vector3(), objetivoCam = { p: new THREE.Vector3(), m: new THREE.Vector3() };
   const CAMS = [
@@ -405,7 +401,7 @@ export async function crearEscena(lienzo){
           pf = Math.max(pf, f); }
         R.g.rotation.set(rampa, tuerce * yawK, ladeo, 'YXZ'); R.g.updateMatrix();
         R.fondoR.material.opacity = (.06 + .08 * latido) * d.vis; R.lado.material.opacity = (.35 + .4 * latido) * d.vis;
-        const dg = (ahoraMs - R.golpe) / 1000; R.brillo.material.opacity = Math.max(0, 1 - dg * 5) * d.vis; R.haz.material.opacity = Math.max(0, .8 - dg * 4) * d.vis;
+        const dg = R.tenido ? 0 : (ahoraMs - R.golpe) / 1000;   /* mientras el dedo siga apretado, el carril sigue encendido */ R.brillo.material.opacity = Math.max(0, 1 - dg * 5) * d.vis; R.haz.material.opacity = Math.max(0, .8 - dg * 4) * d.vis;
         R.rec.scale.setScalar(1 + .12 * latido + Math.max(0, .35 - dg * 2)); R.rec.material.opacity = d.vis; });
       const anchoTotal = (Math.max(...D.rieles.map((d, r) => d.vis > .5 ? Math.abs(d.x) : 0)) * 2 + 1.2) * ANCHO;
       /* con 6 o 7 carriles, en el teléfono se angostan para que quepan (el toque sigue la proyección) */
@@ -446,7 +442,12 @@ export async function crearEscena(lienzo){
           if(ir < reserva.length && !(st === 'sosteniendo')){ const m = reserva[ir++]; m.visible = true; m.position.copy(vA); m.quaternion.copy(qA); pintaNota(m, color, alfa * vis, n.prec ? .82 : 1); }
           if(n.fin && ic < cuerpos.length){ const c = cuerpos[ic++]; const a = Math.min(zc, 0.0001), b = Math.max(zf, -LARGO); const largo = Math.max(.01, a - b);
             enCarrilDe(R, (a + b) / 2, abre, vB); vB.y = .02 + (vB.y - .08); c.visible = true; c.position.copy(vB); c.quaternion.copy(R.g.quaternion).multiply(qPlano); c.scale.set(1, largo, 1); c.material.color.set(COLORES_RIEL[n.r]); c.material.opacity = (st === 'sosteniendo' ? .95 : .6) * alfa * R.vis; }
-          if(n.tipo === 'flick' && iff < flechas.length){ const f = flechas[iff++]; f.visible = true; f.position.copy(vA); f.position.y += .09; qB.setFromEuler(eB.set(-Math.PI / 2, 0, -n.dir * Math.PI / 4)); f.quaternion.copy(qA).multiply(qB); f.material.opacity = alfa * vis; f.scale.setScalar(1 + .2 * latido); }
+          /* LA FLECHA DE DESLIZAR: parada de frente a la pantalla (acostada en la pista no se leía) y girada hacia donde hay
+             que deslizar EN LA PANTALLA, igual que la juzga el juez; se asoma un poco hacia esa dirección, como empujando */
+          if(n.tipo === 'flick' && iff < flechas.length){ const f = flechas[iff++], a = -n.dir * Math.PI / 4, emp = .12 * Math.sin(ahoraMs / 90);
+            f.visible = true; carril.worldToLocal(f.position.copy(vA).applyMatrix4(carril.matrixWorld).add(v3.set(0, .62, 0)));
+            qB.setFromAxisAngle(ejeZ, a); qC.copy(carril.quaternion).invert().multiply(cam.quaternion).multiply(qB); f.quaternion.copy(qC);
+            f.translateY(emp); f.material.opacity = alfa * vis; f.scale.setScalar(1.55 + .25 * latido); }
         }
       }
       for(; ir < reserva.length; ir++) reserva[ir].visible = false;
@@ -460,7 +461,7 @@ export async function crearEscena(lienzo){
       /* en vertical las cámaras laterales empujaban los receptores de la orilla fuera de la pantalla: ahí van más
          cerca del centro, y la mira se corre hacia donde están de verdad los receptores */
       if(vertical && carta){ objetivoCam.p.x *= .45; objetivoCam.m.x *= .3; objetivoCam.m.x += E.centro * 1.6; }
-      if(!carta){ objetivoCam.p.set(Math.sin(t * .15) * 3, 3.2, 4.5); objetivoCam.m.set(0, 2.6, -20); }
+      if(!carta){ objetivoCam.p.set(Math.sin(t * .15) * 4, 4.5, -16); objetivoCam.m.set(0, 4, -36); }
       cam.position.lerpVectors(camDe.p, objetivoCam.p, carta ? ec : .03 + .97 * ec);
       mira.lerpVectors(camDe.m, objetivoCam.m, carta ? ec : .03 + .97 * ec);
       cam.position.x += Math.sin(t * .7) * .25 + (Math.random() - .5) * sacudida * .12; cam.position.y += Math.sin(t * 1.1) * .12 + sacudida * .08;

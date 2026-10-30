@@ -20,6 +20,21 @@ export const CANCIONES = [
   { id: 'voltaic', titulo: 'Voltaic', artista: 'Kevin MacLeod', voces: ['miku-hagane', 'miku'], escena: 3 },
   { id: 'ouroboros', titulo: 'Ouroboros', artista: 'Kevin MacLeod', voces: ['una', 'luka'], escena: 6 },
   { id: 'volatile-reaction', titulo: 'Volatile Reaction', artista: 'Kevin MacLeod', voces: ['miku-akuma'], escena: 5, jefe: true },
+  /* ANIME Y RITMO: música con estilo de anime, J-pop y juegos de ritmo, con licencia libre (OpenGameArt; autores y
+     licencias en CREDITOS.md). Las de anime con derechos no se pueden subir al juego: ésas entran por «Mi música» */
+  { id: 'play-now', titulo: 'Play Now', artista: 'Cleyton Kauffman', voces: ['miku', 'gumi'], escena: 1, anime: true },
+  { id: 'cheers-for-starlight', titulo: 'Cheers for Starlight', artista: 'Chloe Wolfe', voces: ['miku'], escena: 0, anime: true },
+  { id: 'cutie-pie', titulo: 'Cutie Pie', artista: 'FrancisLeeMusic', voces: ['gumi', 'una'], escena: 4, anime: true },
+  { id: 'kyra-cloud-maid', titulo: 'Kyra the Cloud Maid', artista: 'Tsorthan Grove', voces: ['una'], escena: 6, anime: true },
+  { id: 'determination', titulo: 'Determination', artista: 'HydroGene', voces: ['luka', 'miku'], escena: 2, anime: true },
+  { id: 'glory-days', titulo: 'Glory Days', artista: 'tricksntraps', voces: ['gumi', 'miku'], escena: 3, anime: true },
+  { id: 'ascend', titulo: 'Ascend', artista: 'tricksntraps', voces: ['miku-hagane'], escena: 1, anime: true },
+  { id: 'tokyo-chase', titulo: 'Tokyo Chase', artista: 'Socapex', voces: ['luka', 'miku-hagane'], escena: 0, anime: true },
+  { id: 'technomania-101', titulo: 'Technomania101', artista: 'Fupi', voces: ['miku', 'una'], escena: 2, anime: true },
+  { id: 'mauve-rhopalocera', titulo: 'Mauve Rhopalocera', artista: 'ISAo', voces: ['luka'], escena: 5, anime: true },
+  { id: 'stomper', titulo: 'Stomper', artista: 'tricksntraps', voces: ['miku-hagane', 'gumi'], escena: 4, anime: true },
+  { id: 'fever-stadium', titulo: 'Fever Stadium', artista: 'MintoDog', voces: ['miku', 'luka'], escena: 3, anime: true },
+  { id: 'mental-corruption', titulo: 'Mental Corruption', artista: 'tricksntraps', voces: ['miku-akuma'], escena: 5, anime: true, jefe: true },
   /* EL PIANO IMPOSIBLE: partituras de dominio público (Mutopia) tocadas con el Salamander Grand Piano
      (herramientas/piano.py). Las notas salen de la partitura, no del oído: caen exactas */
   { id: 'vals-del-minuto', titulo: 'Vals del minuto', artista: 'Chopin · Op. 64 n.º 1', voces: ['miku'], escena: 7, piano: true },
@@ -34,13 +49,19 @@ export const CANCIONES = [
 ];
 const HISTORIA = [
   { cap: 'Prólogo · La primera nota', misiones: [
-    { c: 'itty-bitty-8-bit', modo: 'carril', dif: 'facil', d: [['SONOLUZ', 'Señal detectada. Un Resonante nuevo entró al archivo.'], ['GUMI', '¡Por fin alguien! Esta canción se está borrando nota por nota. Toca cuando lleguen a la línea… y no las dejes ir.']] },
-    { c: 'raving-energy', modo: 'flechas', dif: 'normal', d: [['GUMI', 'Miku quedó atrapada en un eco. Ella canta una frase y tú se la regresas, igualita.'], ['Hatsune Miku', '…¿me oyes? Si fallas la frase, la canción se rompe otra vez.']] } ] },
+    { c: 'itty-bitty-8-bit', modo: 'carril', dif: 'facil', d: [['SONOLUZ', 'Señal detectada. Un Resonante nuevo entró al archivo.'], ['GUMI', '¡Por fin alguien! Esta canción se está borrando nota por nota. Toca cuando lleguen a la línea… y no las dejes ir.']],
+      f: [['GUMI', '¡La salvaste! ¿Oyes? Ya no se corta.'], ['SONOLUZ', 'Primera canción restaurada. Detecto otra señal… alguien está cantando dentro de un eco.']] },
+    { c: 'raving-energy', modo: 'flechas', dif: 'normal', d: [['GUMI', 'Miku quedó atrapada en un eco. Ella canta una frase y tú se la regresas, igualita.'], ['Hatsune Miku', '…¿me oyes? Si fallas la frase, la canción se rompe otra vez.']],
+      f: [['Hatsune Miku', 'Me regresaste la voz. Gracias, Resonante.'], ['GUMI', 'Ahora sí: somos tres. Y el archivo tiene muchas más canciones rotas.']] } ] },
   { cap: 'Capítulo I · Ecos de GUMI', misiones: [
-    { c: 'movement-proposition', modo: 'diva', dif: 'normal', d: [['Okurine Luka', 'No todas queremos que nos restauren, Resonante.'], ['GUMI', 'Luka es de los Desafinados. Sus símbolos llegan volando: toca el mismo botón cuando lleguen.']] },
-    { c: 'exit-the-premises', modo: 'circulos', dif: 'dificil', d: [['Otomachi Una', 'Yo soy un Eco: una copia que nadie terminó. Si me sigues el ritmo, quizá me acuerde de quién era.']] },
-    { c: 'voltaic', modo: 'carril', dif: 'experto', d: [['Hagane Miku', 'Los carriles ya no obedecen. Se doblan, se inclinan, cambian de número…'], ['GUMI', 'Es el Coro Nulo metiéndose al archivo. Lee el aviso cuando cambien las reglas.']] },
-    { c: 'volatile-reaction', modo: 'exorcist', dif: 'exorcist', jefe: true, d: [['???', 'Todas las voces deberían sonar igual. Perfectas. Iguales.'], ['Miku Excomulgada', 'Yo soy el Coro Nulo. Demuestra que tu ritmo es tuyo… si puedes.']] } ] }
+    { c: 'movement-proposition', modo: 'diva', dif: 'normal', d: [['Okurine Luka', 'No todas queremos que nos restauren, Resonante.'], ['GUMI', 'Luka es de los Desafinados. Sus símbolos llegan volando: toca el mismo botón cuando lleguen.']],
+      f: [['Okurine Luka', '…No esperaba que alguien me siguiera el paso.'], ['Okurine Luka', 'No me voy a unir a ustedes. Pero tampoco voy a estorbar.'], ['GUMI', 'Con Luka eso ya es casi un abrazo.']] },
+    { c: 'exit-the-premises', modo: 'circulos', dif: 'dificil', d: [['Otomachi Una', 'Yo soy un Eco: una copia que nadie terminó. Si me sigues el ritmo, quizá me acuerde de quién era.']],
+      f: [['Otomachi Una', 'Me acordé de algo: de un escenario lleno, y de una voz que no era igual a ninguna.'], ['Hatsune Miku', 'Esa voz era la tuya, Una. El Coro Nulo te la quitó.']] },
+    { c: 'voltaic', modo: 'carril', dif: 'experto', d: [['Hagane Miku', 'Los carriles ya no obedecen. Se doblan, se inclinan, cambian de número…'], ['GUMI', 'Es el Coro Nulo metiéndose al archivo. Lee el aviso cuando cambien las reglas.']],
+      f: [['Hagane Miku', 'Aguantaste los carriles torcidos. Nada mal.'], ['???', 'Qué ruido tan molesto. Todas las voces deberían sonar igual.'], ['GUMI', 'Ésa es ella. Ya viene.']] },
+    { c: 'volatile-reaction', modo: 'exorcist', dif: 'exorcist', jefe: true, d: [['???', 'Todas las voces deberían sonar igual. Perfectas. Iguales.'], ['Miku Excomulgada', 'Yo soy el Coro Nulo. Demuestra que tu ritmo es tuyo… si puedes.']],
+      f: [['Miku Excomulgada', '…Imposible. Ningún ritmo debería sobrevivir a eso.'], ['Hatsune Miku', 'Por eso es suyo. No se puede copiar.'], ['SONOLUZ', 'Capítulo I cerrado. El archivo respira otra vez… por ahora.']] } ] }
 ];
 /* lo que se colecciona: sólo apariencia, nunca ventaja (el documento lo pide así) */
 const RAREZA = { c: { n: 'Común', p: 58 }, r: { n: 'Raro', p: 28 }, e: { n: 'Épico', p: 10 }, l: { n: 'Legendario', p: 3.4 }, m: { n: 'Mítico', p: .6 } };
@@ -60,7 +81,7 @@ const OBJETOS = [
   ...ESCENARIOS.map((e, i) => ({ id: 'fondo:' + i, cat: 'fondo', nombre: e.nombre, raro: i < 2 ? 'c' : i < 4 ? 'r' : i < 6 ? 'e' : 'l', img: `escenarios/${e.id}.jpg` })),
   /* cómo se ve cada modo (Carlos, 29 oct: «súmale estilos de notas en cada modo… también estilo de botones») */
   /* las formas son modelos de verdad (escena.js · MODELOS_NOTA); la miniatura es su foto (modelos/notas/*.webp) */
-  { id: 'forma:barra', cat: 'forma', nombre: 'Barra', raro: 'c' }, { id: 'forma:disco', cat: 'forma', nombre: 'Disco', raro: 'c', foto: 'disco' },
+  { id: 'forma:barra', cat: 'forma', nombre: 'Barra', raro: 'c', foto: 'lingote' }, { id: 'forma:disco', cat: 'forma', nombre: 'Disco', raro: 'c', foto: 'disco' },
   { id: 'forma:pildora', cat: 'forma', nombre: 'Botón de arcade', raro: 'r', foto: 'arcade' }, { id: 'forma:nota', cat: 'forma', nombre: 'Corchea', raro: 'r', foto: 'nota' },
   { id: 'forma:cristal', cat: 'forma', nombre: 'Cristal', raro: 'e', foto: 'cristal' }, { id: 'forma:gema', cat: 'forma', nombre: 'Gema engarzada', raro: 'e', foto: 'gema' },
   { id: 'forma:diamante', cat: 'forma', nombre: 'Brillante', raro: 'l', foto: 'brillante' }, { id: 'forma:estrella', cat: 'forma', nombre: 'Estrella', raro: 'l', foto: 'estrella' },
@@ -155,7 +176,7 @@ $('#arranque').addEventListener('click', async function entrar(e){
 });
 document.addEventListener('click', (e) => { const b = e.target.closest('[data-ir]'); if(!b) return; sonidos.boton && reloj.golpe(sonidos.boton, .25); ir(b.dataset.ir); });
 function ir(a){ ({ menu, historia, libre: () => canciones('libre'), reto: () => canciones('reto'), lab: () => mostrar('lab'), mercado, vestidor, records, ajustes, creditos,
-  saltarIntro: () => { cortarIntro = true; }, aCalibrar, saltarCalib: () => { Y.calibrado = true; guardar(); menu(); }, seguir: () => { partida.alternarPausa(); }, reintentar: jugarDeNuevo, salirJuego: () => { partida.salir(); canciones(modoLista); }, libreVolver: () => canciones(modoLista) })[a]?.(); }
+  saltarIntro: () => { cortarIntro = true; }, aCalibrar, saltarCalib: () => { Y.calibrado = true; guardar(); menu(); }, seguir: () => { partida.alternarPausa(); }, reintentar: jugarDeNuevo, salirJuego: () => { partida.salir(); if(ultima?.deHistoria) historia(); else canciones(modoLista); }, libreVolver: () => ultima?.deHistoria ? finDeMision() : canciones(modoLista) })[a]?.(); }
 
 /* ── la cinemática ── */
 let cortarIntro = false;
@@ -242,7 +263,7 @@ async function canciones(cual){ modoLista = cual; mostrar('canciones'); $('#canc
   const L = $('#lista'), filtro = quitarAcentos($('#buscaCancion').value.trim()); L.innerHTML = '';
   $('#buscaCancion').hidden = CANCIONES.length < 12;
   const propias = CANCIONES.filter(c => c.propia).length;
-  for(const [titulo, grupo] of [['De la casa', CANCIONES.filter(c => !c.propia && !c.piano)], ['Piano imposible', CANCIONES.filter(c => c.piano)], [`Mi música · ${propias}`, CANCIONES.filter(c => c.propia)]]){
+  for(const [titulo, grupo] of [['De la casa', CANCIONES.filter(c => !c.propia && !c.piano && !c.anime)], ['Anime y ritmo', CANCIONES.filter(c => c.anime)], ['Piano imposible', CANCIONES.filter(c => c.piano)], [`Mi música · ${propias}`, CANCIONES.filter(c => c.propia)]]){
     const vis = grupo.filter(c => !filtro || quitarAcentos(c.titulo + ' ' + c.artista).includes(filtro)); if(!vis.length) continue;
     { const h = document.createElement('h4'); h.className = 'ojo grupo'; h.textContent = titulo; L.appendChild(h); }
     for(const c of vis){ const b = document.createElement('button'); b.className = 'fila' + (c.id === cancionSel ? ' si' : ''); const r = Y.record[`${c.id}|${modoSel}|${difSel}`];
@@ -308,6 +329,8 @@ function jugarDeNuevo(){ partida.salir(); if(ultima) jugar(ultima.c.id, ultima.m
 /* ── resultados ── */
 function resultados({ cancion, carta, J, murio, auto }){
   $('#pausaB').classList.remove('vis'); mostrar('resultados');
+  /* en la Historia, el botón de salida regresa a la historia (con su diálogo final), no a Juego libre */
+  $('#resultados [data-ir="libreVolver"]').textContent = ultima?.deHistoria ? 'Seguir la historia ›' : 'Canciones';
   const r = murio ? 'F' : J.rango, colR = { 'Ω': '#FFF3B0', 'EX+': '#FFE08A', EX: '#FFC24B', S: '#FF2D7A', A: '#B44BFF', B: '#38E1FF', C: '#5CFFB0', D: '#B9AECB', F: '#FF2D55' }[r];
   $('#resRango').textContent = r; $('#resRango').style.setProperty('--c', colR);
   $('#resCancion').textContent = `${cancion.titulo} · ${MODOS[carta.modo].nombre} · ${carta.D.nombre} ${carta.nivel}${auto ? ' · AUTO' : ''}`;
@@ -329,7 +352,17 @@ function resultados({ cancion, carta, J, murio, auto }){
 }
 
 /* ── historia ── */
+/* al acabar una misión (Carlos, 30 oct: «que no me lleve al free play sino que me deje en la historia con un diálogo
+   final y acceso a la siguiente canción»): si se ganó, su diálogo final; si no, un ánimo para reintentarla */
+function finDeMision(){ const k = ultima.deHistoria, [ci, mi] = k.split('.').map(Number), m = HISTORIA[ci].misiones[mi], gano = !!Y.historia[k];
+  const voz = m.d.find(([q]) => PERSONAJES.some(p => p.nombre === q))?.[0] || 'GUMI';
+  dialogo(gano ? (m.f || [['SONOLUZ', 'Canción restaurada.']]) : [[voz, 'Todavía no. La canción sigue rota.'], ['SONOLUZ', 'Necesitas 600,000 puntos sin que se cierre el archivo. Inténtalo otra vez.']], () => historia()); }
 function historia(){ mostrar('historia'); const H = $('#capitulos'); H.innerHTML = ''; let abierto = true;
+  /* arriba, la que sigue: un toque y se juega */
+  const todas = HISTORIA.flatMap((cap, ci) => cap.misiones.map((m, mi) => ({ m, k: `${ci}.${mi}`, cap: cap.cap }))), sig = todas.find(x => !Y.historia[x.k]);
+  if(sig){ const c = CANCIONES.find(x => x.id === sig.m.c), b = document.createElement('button'); b.className = 'mision siguiente';
+    b.innerHTML = `<span class="n">▶</span><span><span class="ojo" style="margin:0">${Object.keys(Y.historia).length ? 'Sigue la historia' : 'Empieza aquí'} · ${sig.cap}</span><br><b style="font:800 15px var(--n)">${c.titulo}</b><br><span style="font-size:12px;color:var(--gris)">${MODOS[sig.m.modo].nombre} · ${DIFS.find(x => x.id === sig.m.dif).nombre}${sig.m.jefe ? ' · JEFE' : ''}</span></span><span class="pill">Jugar</span>`;
+    b.onclick = () => dialogo(sig.m.d, () => jugar(sig.m.c, sig.m.modo, sig.m.dif, sig.k)); H.appendChild(b); }
   HISTORIA.forEach((cap, ci) => { const d = document.createElement('div'); d.className = 'cap'; d.innerHTML = `<h3>${cap.cap}</h3>`;
     cap.misiones.forEach((m, mi) => { const k = `${ci}.${mi}`, hecha = !!Y.historia[k], c = CANCIONES.find(x => x.id === m.c), b = document.createElement('button');
       b.className = 'mision' + (hecha ? ' hecha' : '') + (abierto ? '' : ' bloq'); b.innerHTML = `<span class="n">${hecha ? '✓' : String(mi + 1).padStart(2, '0')}</span><span><b style="font:800 13px var(--n)">${c.titulo}</b><br><span style="font-size:12px;color:var(--gris)">${MODOS[m.modo].nombre} · ${DIFS.find(x => x.id === m.dif).nombre}${m.jefe ? ' · JEFE' : ''}</span></span><span class="pill">${abierto ? 'Jugar' : '🔒'}</span>`;
