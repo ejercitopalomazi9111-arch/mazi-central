@@ -19,7 +19,18 @@ export const CANCIONES = [
   { id: 'exit-the-premises', titulo: 'Exit the Premises', artista: 'Kevin MacLeod', voces: ['miku-hagane', 'una'], escena: 4 },
   { id: 'voltaic', titulo: 'Voltaic', artista: 'Kevin MacLeod', voces: ['miku-hagane', 'miku'], escena: 3 },
   { id: 'ouroboros', titulo: 'Ouroboros', artista: 'Kevin MacLeod', voces: ['una', 'luka'], escena: 6 },
-  { id: 'volatile-reaction', titulo: 'Volatile Reaction', artista: 'Kevin MacLeod', voces: ['miku-akuma'], escena: 5, jefe: true }
+  { id: 'volatile-reaction', titulo: 'Volatile Reaction', artista: 'Kevin MacLeod', voces: ['miku-akuma'], escena: 5, jefe: true },
+  /* EL PIANO IMPOSIBLE: partituras de dominio público (Mutopia) tocadas con el Salamander Grand Piano
+     (herramientas/piano.py). Las notas salen de la partitura, no del oído: caen exactas */
+  { id: 'vals-del-minuto', titulo: 'Vals del minuto', artista: 'Chopin · Op. 64 n.º 1', voces: ['miku'], escena: 7, piano: true },
+  { id: 'marcha-turca', titulo: 'Marcha turca', artista: 'Mozart · K. 331', voces: ['gumi', 'una'], escena: 8, piano: true },
+  { id: 'patetica', titulo: 'Patética', artista: 'Beethoven · Op. 13, III', voces: ['luka'], escena: 9, piano: true },
+  { id: 'teclas-negras', titulo: 'Teclas negras', artista: 'Chopin · Op. 10 n.º 5', voces: ['una', 'miku'], escena: 10, piano: true },
+  { id: 'fantasia-impromptu', titulo: 'Fantasía-Impromptu', artista: 'Chopin · Op. 66', voces: ['luka', 'miku-hagane'], escena: 7, piano: true },
+  { id: 'estudio-cascada', titulo: 'Cascada', artista: 'Chopin · Op. 10 n.º 1', voces: ['miku-hagane'], escena: 11, piano: true },
+  { id: 'appassionata', titulo: 'Appassionata', artista: 'Beethoven · Op. 57, III', voces: ['luka', 'una'], escena: 8, piano: true },
+  { id: 'estudio-revolucionario', titulo: 'Estudio Revolucionario', artista: 'Chopin · Op. 10 n.º 12', voces: ['miku', 'gumi'], escena: 9, piano: true },
+  { id: 'rush-omega', titulo: 'RUSH Ω', artista: 'Arreglo imposible del Revolucionario', voces: ['miku-akuma'], escena: 11, piano: true, jefe: true }
 ];
 const HISTORIA = [
   { cap: 'Prólogo · La primera nota', misiones: [
@@ -227,9 +238,9 @@ async function canciones(cual){ modoLista = cual; mostrar('canciones'); $('#canc
   const L = $('#lista'), filtro = quitarAcentos($('#buscaCancion').value.trim()); L.innerHTML = '';
   $('#buscaCancion').hidden = CANCIONES.length < 12;
   const propias = CANCIONES.filter(c => c.propia).length;
-  for(const [titulo, grupo] of [['De la casa', CANCIONES.filter(c => !c.propia)], [`Mi música · ${propias}`, CANCIONES.filter(c => c.propia)]]){
+  for(const [titulo, grupo] of [['De la casa', CANCIONES.filter(c => !c.propia && !c.piano)], ['Piano imposible', CANCIONES.filter(c => c.piano)], [`Mi música · ${propias}`, CANCIONES.filter(c => c.propia)]]){
     const vis = grupo.filter(c => !filtro || quitarAcentos(c.titulo + ' ' + c.artista).includes(filtro)); if(!vis.length) continue;
-    if(propias){ const h = document.createElement('h4'); h.className = 'ojo grupo'; h.textContent = titulo; L.appendChild(h); }
+    { const h = document.createElement('h4'); h.className = 'ojo grupo'; h.textContent = titulo; L.appendChild(h); }
     for(const c of vis){ const b = document.createElement('button'); b.className = 'fila' + (c.id === cancionSel ? ' si' : ''); const r = Y.record[`${c.id}|${modoSel}|${difSel}`];
       b.innerHTML = `<div class="mini" style="background-image:url('${fondoDe(c)}')"></div><div><b>${esc(c.titulo)}</b><span>${esc(c.artista)} · ${c.voces.map(v => PERSONAJES.find(p => p.id === v)?.nombre).filter(Boolean).join(' · ')}</span></div><div class="mejor">${r ? r.rango + '<br>' + r.puntaje : ''}</div>`;
       b.onclick = () => { cancionSel = c.id; canciones(cual); }; L.appendChild(b); } }
@@ -263,7 +274,7 @@ async function jugar(id, modo, dif, deHistoria = null, prueba = {}){
     const an = await datos(c.id); paso('Despertando el audio', .3);
     const buf = await audio(c.id); paso('Escribiendo las notas', .65);
     const carta = armarCarta(an, c, modo, dif, { telefono: TELEFONO }); ultima = { c, modo, dif, deHistoria };
-    paso('Llamando a las voces', .85);
+    escena.precargar(carta.eventos.filter(e => e.tipo === 'escenario').map(e => e.n)); paso('Llamando a las voces', .85);
     await escena.ponerCantantes(modo === 'flechas' ? [idVoz(), c.voces.find(v => v !== idVoz()) || 'miku'] : [...new Set([idVoz(), ...c.voces])].slice(0, 3));
     paso('¡Listo!', 1);
     mostrar(null); $('#sombra').style.opacity = 0;

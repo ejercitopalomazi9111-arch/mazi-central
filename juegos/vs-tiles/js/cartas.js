@@ -185,7 +185,7 @@ function planSecciones(secc, modo, D, R, an, tel = false){
     let carriles = m === 'flechas' ? 4 : D.carriles;
     const ev = [], P = { t0, t1, modo: m, carriles, eventos: ev, aviso: i > 0 && modo === 'exorcist' ? 1.4 : 0, rival: true, precision: e > .6, energia: e };
     /* el escenario cambia en cada sección (con destello en el golpe) */
-    ev.push({ t: t0, tipo: 'escenario', n: Math.floor(R() * 7), tono: R() });
+    ev.push({ t: t0, tipo: 'escenario', n: Math.floor(R() * (an.piano ? 5 : 7)) + (an.piano ? 7 : 0), tono: R() });   /* el piano, en salas de concierto y de noche */
     ev.push({ t: t0, tipo: 'camara', n: i === 0 ? 0 : Math.floor(R() * 6), fuerte: e });
     if(i > 0) ev.push({ t: t0, tipo: 'destello', fuerza: .5 + e * .5 });
     if(modo === 'exorcist' && i > 0) ev.push({ t: t0, tipo: 'aviso', modo: m, texto: avisoDe(m) });

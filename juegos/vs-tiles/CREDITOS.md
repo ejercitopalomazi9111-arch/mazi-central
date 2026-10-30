@@ -33,10 +33,18 @@ Kevin MacLeod (incompetech.com), **Creative Commons: By Attribution 4.0**. Recor
 fundido: «Itty Bitty 8 Bit», «Raving Energy», «Movement Proposition», «Exit the Premises», «Voltaic»,
 «Ouroboros», «Volatile Reaction».
 
+**Piano imposible.** Partituras de **dominio público** del Mutopia Project (mutopiaproject.org), en MIDI:
+Chopin (Vals Op. 64 n.º 1, Fantasía-Impromptu Op. 66, Estudios Op. 10 n.º 1, 5 y 12), Mozart (Rondo alla
+turca, K. 331) y Beethoven (Sonatas Op. 13 y Op. 57, tercer movimiento). Las toca el **Salamander Grand
+Piano** de Alexander Holm (un Yamaha C5 grabado nota por nota), **Creative Commons: By Attribution 3.0**,
+con FluidSynth (`herramientas/piano.py`). «RUSH Ω» es un arreglo nuestro del Estudio Revolucionario: más
+rápido y con cada nota doblada en octavas.
+
 ## Escenarios
 
 Fotos 360° de **Poly Haven** (CC0): shanghai_bund, neon_photostudio, metro_noord, mirrored_hall,
-rooftop_night, kloppenheim_07_puresky, industrial_sunset_02_puresky. Se usan las versiones JPG a 2048 px
+rooftop_night, kloppenheim_07_puresky, industrial_sunset_02_puresky, music_hall_01 y old_hall (Sergej
+Majboroda), dresden_station_night y modern_buildings_night (Greg Zaal), st_peters_square_night (Andreas Mischok). Se usan las versiones JPG a 2048 px
 y el juego las tiñe y las hace latir.
 
 ## Botones, partículas y sonidos
