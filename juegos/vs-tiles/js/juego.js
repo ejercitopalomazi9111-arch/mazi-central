@@ -332,7 +332,7 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
     async empezar(c, cartaN, analisis, buf, { autoJuego = false, vel = 1, ritmo = 1, desde = null } = {}){
       cancion = c; carta = cartaN; an = analisis; auto = autoJuego;
       J = crearJuez(carta); J.total = carta.notas.filter(n => !n.rival).length + carta.notas.filter(n => !n.rival && n.fin && n.tipo !== 'giro').length;
-      est = { estado: {}, pendientes: [], desde: 0, vel: vel, pulsado: [0, 0, 0, 0], pulsadoR: [0, 0, 0, 0], sigue: {}, giro: {}, cola: {}, ultimoGolpe: 0 };
+      est = { estado: {}, pendientes: [], desde: 0, vel: vel * (cartaN.D?.rapidez || 1), pulsado: [0, 0, 0, 0], pulsadoR: [0, 0, 0, 0], sigue: {}, giro: {}, cola: {}, ultimoGolpe: 0 };
       bajos = an.ataques.filter(a => a[2] === 0 && a[1] > .55).map(a => [a[0], a[1]]);
       escena.prepararVelocidad(carta.eventos);
       fin = Math.min(an.dur - .5, (carta.notas.at(-1)?.fin || carta.notas.at(-1)?.t || an.dur) + 3);

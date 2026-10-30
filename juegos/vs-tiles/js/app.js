@@ -255,7 +255,7 @@ $('#jugarB').addEventListener('click', () => jugar(cancionSel, modoSel, difSel))
    candado deja pasar UN arranque a la vez */
 const TIPS = ['Las reglas cambian a media canción: lee el aviso rojo.', 'Si los carriles giran, los botones de toque los siguen.', 'Calibra en Ajustes si sientes que las notas llegan tarde.', 'Las notas con flecha se deslizan hacia donde apunta la flecha.', 'En EXÓRCIST nada se queda quieto mucho tiempo.', 'Los Ecos se ganan jugando; el premio diario también cuenta.'];
 let arrancando = false;
-async function jugar(id, modo, dif, deHistoria = null){
+async function jugar(id, modo, dif, deHistoria = null, prueba = {}){
   if(arrancando) return; arrancando = true;
   const c = CANCIONES.find(x => x.id === id) || ultima?.c, paso = (txt, p) => { $('#cargaP').textContent = txt; $('#cargaB').style.width = Math.round(p * 100) + '%'; };
   $('#cargaT').textContent = c.titulo; $('#cargaTip').textContent = TIPS[Math.floor(Math.random() * TIPS.length)]; paso('Leyendo la canción', .1); mostrar('carga'); pararFondo();
@@ -267,7 +267,7 @@ async function jugar(id, modo, dif, deHistoria = null){
     await escena.ponerCantantes(modo === 'flechas' ? [idVoz(), c.voces.find(v => v !== idVoz()) || 'miku'] : [...new Set([idVoz(), ...c.voces])].slice(0, 3));
     paso('¡Listo!', 1);
     mostrar(null); $('#sombra').style.opacity = 0;
-    partida.empezar(c, carta, an, buf, { autoJuego: $('#opAuto').checked, vel: Y.vel, ritmo: $('#opPract').checked ? .75 : 1 });
+    partida.empezar(c, carta, an, buf, { autoJuego: $('#opAuto').checked, vel: Y.vel, ritmo: $('#opPract').checked ? .75 : 1, desde: prueba.desde ?? null });   /* `desde`: las pruebas empiezan a media canción */
     Y.sinMorir = $('#opSin').checked || $('#opPract').checked;
     $('#pausaB').classList.add('vis');
     cuenta(carta);
