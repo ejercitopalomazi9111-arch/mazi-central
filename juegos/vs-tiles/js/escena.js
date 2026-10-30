@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from '../vendor/loaders/GLTFLoader.js';
 import { DISPOSICIONES } from './cartas.js';
 import { clone as clonarEsqueleto } from '../vendor/utils/SkeletonUtils.js';
+import { mergeGeometries } from '../vendor/utils/BufferGeometryUtils.js';
 
 export const ESCENARIOS = [
   { id: 'shanghai_bund', nombre: 'Ciudad SONOLUZ', tinte: '#7A4BFF' },
@@ -174,6 +175,17 @@ export async function crearEscena(lienzo){
   const geoNota = new THREE.BoxGeometry(ANCHO * 1.12, .16, ANCHO * .34);
   for(let i = 0; i < 160; i++){ const lado = new THREE.MeshBasicMaterial({ transparent: true }), tapa = new THREE.MeshBasicMaterial({ transparent: true });
     const m = new THREE.Mesh(geoNota, [lado, lado, tapa, lado, lado, lado]); m.visible = false; m.userData = { lado, tapa }; carril.add(m); reserva.push(m); }
+  /* LA FORMA DE LAS NOTAS (cosmético): la caja tiene 6 grupos de material (costados y tapa); las demás
+     formas no traen grupos, así que se les pone uno solo con el material de la tapa, o no se dibujarían */
+  const FORMAS = {
+    barra: () => geoNota,
+    pildora: () => new THREE.CapsuleGeometry(ANCHO * .15, ANCHO * .78, 4, 10).rotateZ(Math.PI / 2),
+    cristal: () => new THREE.BoxGeometry(ANCHO * .92, .36, ANCHO * .16),
+    diamante: () => new THREE.OctahedronGeometry(1).scale(ANCHO * .62, .2, ANCHO * .3),
+    doble: () => mergeGeometries([new THREE.BoxGeometry(ANCHO * 1.14, .12, ANCHO * .12).translate(0, 0, -ANCHO * .11), new THREE.BoxGeometry(ANCHO * 1.14, .12, ANCHO * .12).translate(0, 0, ANCHO * .11)])
+  };
+  function ponerForma(id){ const g = (FORMAS[id] || FORMAS.barra)(); if(g !== geoNota){ g.clearGroups(); g.addGroup(0, g.index ? g.index.count : g.attributes.position.count, 2); }
+    for(const m of reserva) m.geometry = g; }
   const cBlanco = new THREE.Color('#FFFFFF'), cTmp = new THREE.Color();
   function pintaNota(m, color, alfa, esc){ const { lado, tapa } = m.userData; cTmp.set(color); lado.color.copy(cTmp).multiplyScalar(.78); tapa.color.copy(cTmp).lerp(cBlanco, .4);
     lado.opacity = tapa.opacity = alfa; m.scale.set(esc, 1, esc); }
@@ -265,7 +277,7 @@ export async function crearEscena(lienzo){
     raiz.position.set(Math.sin(giro) * 1.3, y, z); raiz.rotation.z = giro; raiz.scale.set(esc, 2 - esc, esc);
   }
 
-  return { r, s, cam, carril, piezas, cantantes, ponerCantantes, E, chispa, uni, prepararVelocidad, pos, LARGO, ANCHO, asustar, SUSTO,
+  return { ponerForma, r, s, cam, carril, piezas, cantantes, ponerCantantes, E, chispa, uni, prepararVelocidad, pos, LARGO, ANCHO, asustar, SUSTO,
     /* proyecta un punto del carril (riel r en la línea) a la pantalla, en px CSS */
     receptor(r, ancho, alto){ const R = piezas.rieles[r]; v3.set(R.x * ANCHO, 0, 0); carril.localToWorld(v3); v3.project(cam); return [(v3.x + 1) / 2 * ancho, (1 - v3.y) / 2 * alto, R.vis]; },
     proyectar(p, ancho, alto){ v3.copy(p).project(cam); return [(v3.x + 1) / 2 * ancho, (1 - v3.y) / 2 * alto]; },

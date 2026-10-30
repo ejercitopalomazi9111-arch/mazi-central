@@ -63,7 +63,7 @@ export function montarMercado({ $, Y, RAREZA, sortear, pagar, barra, reloj, soni
     const abre = () => { paq.onpointerdown = paq.onpointermove = paq.onpointerup = null; paq.classList.add('rasgado'); reloj.golpe(sonidos.glitch, .3);
       setTimeout(() => repartir(sale, zona), 650); };
     paq.onpointerdown = (e) => { x0 = e.clientX; recorrido = 0; try{ paq.setPointerCapture(e.pointerId); }catch(err){} };
-    paq.onpointermove = (e) => { if(x0 === null) return; recorrido += Math.abs(e.clientX - x0); x0 = e.clientX; paq.style.setProperty('--corte', Math.min(100, recorrido / paq.clientWidth * 100) + '%'); if(recorrido > paq.clientWidth * .8) abre(); };
+    paq.onpointermove = (e) => { if(x0 === null) return; recorrido += Math.abs(e.clientX - x0); x0 = e.clientX; paq.style.setProperty('--rasgado', Math.min(100, recorrido / paq.clientWidth * 100) + '%'); if(recorrido > paq.clientWidth * .8) abre(); };
     paq.onpointerup = () => { x0 = null; if(++toques >= 3) abre(); }; }
   function repartir(sale, zona){
     zona.innerHTML = `<div class="cartas">${sale.map(({ o }, i) => `<button class="carta" data-i="${i}" style="--rc:${COL[o.raro]};--d:${i * .09}s"><div class="cara atras${['e', 'l', 'm'].includes(o.raro) ? ' brilla' : ''}"><i>VS</i></div><div class="cara frente"><div class="muestra">${vista(o)}</div><b>${o.nombre}</b><small>${RAREZA[o.raro].n}</small></div></button>`).join('')}</div>`;

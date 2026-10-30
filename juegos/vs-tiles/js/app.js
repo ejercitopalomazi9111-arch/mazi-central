@@ -47,6 +47,13 @@ const OBJETOS = [
   { id: 'golpe:tajo', cat: 'golpe', nombre: 'Tajo', raro: 'l', sprite: 'p_slash_03' },
   { id: 'golpe:remolino', cat: 'golpe', nombre: 'Remolino', raro: 'm', sprite: 'p_twirl_01' },
   ...ESCENARIOS.map((e, i) => ({ id: 'fondo:' + i, cat: 'fondo', nombre: e.nombre, raro: i < 2 ? 'c' : i < 4 ? 'r' : i < 6 ? 'e' : 'l', img: `escenarios/${e.id}.jpg` })),
+  /* cómo se ve cada modo (Carlos, 29 oct: «súmale estilos de notas en cada modo… también estilo de botones») */
+  { id: 'forma:barra', cat: 'forma', nombre: 'Barra', raro: 'c' }, { id: 'forma:pildora', cat: 'forma', nombre: 'Píldora', raro: 'r' },
+  { id: 'forma:cristal', cat: 'forma', nombre: 'Cristal', raro: 'e' }, { id: 'forma:diamante', cat: 'forma', nombre: 'Diamante', raro: 'l' }, { id: 'forma:doble', cat: 'forma', nombre: 'Doble filo', raro: 'm' },
+  { id: 'flechas:contorno', cat: 'flechas', nombre: 'Contorno', raro: 'c' }, { id: 'flechas:solida', cat: 'flechas', nombre: 'Sólidas', raro: 'r' }, { id: 'flechas:neon', cat: 'flechas', nombre: 'Neón', raro: 'e' },
+  { id: 'simbolos:color', cat: 'simbolos', nombre: 'A color', raro: 'c' }, { id: 'simbolos:contorno', cat: 'simbolos', nombre: 'Trazo', raro: 'r' }, { id: 'simbolos:blanco', cat: 'simbolos', nombre: 'Hueso', raro: 'e' },
+  { id: 'aros:clasico', cat: 'aros', nombre: 'Clásico', raro: 'c' }, { id: 'aros:magia', cat: 'aros', nombre: 'Sello mágico', raro: 'e' }, { id: 'aros:estelar', cat: 'aros', nombre: 'Estelar', raro: 'l' },
+  { id: 'boton:neon', cat: 'boton', nombre: 'Neón', raro: 'c' }, { id: 'boton:cristal', cat: 'boton', nombre: 'Cristal', raro: 'r' }, { id: 'boton:gotico', cat: 'boton', nombre: 'Gótico', raro: 'e' }, { id: 'boton:sangre', cat: 'boton', nombre: 'Sangre', raro: 'l' },
   { id: 'titulo:resonante', cat: 'titulo', nombre: 'Resonante', raro: 'c' }, { id: 'titulo:desafinado', cat: 'titulo', nombre: 'Desafinado', raro: 'r' },
   /* SECRETOS: no salen en tiradas ni en el vestidor hasta que se tienen (el de la paloma: ponerse Mazi o Palomazi) */
   { id: 'nota:paloma', cat: 'nota', nombre: 'Paloma de la casa', raro: 'm', secreto: true, colores: ['#7E1735', '#AC27FF', '#C77DFF', '#FFFFFF', '#C77DFF', '#AC27FF', '#7E1735'] },
@@ -54,13 +61,16 @@ const OBJETOS = [
   { id: 'titulo:paloma', cat: 'titulo', nombre: 'Paloma de la casa', raro: 'm', secreto: true },
   { id: 'titulo:eco', cat: 'titulo', nombre: 'Eco sin dueño', raro: 'e' }, { id: 'titulo:exorcista', cat: 'titulo', nombre: 'Exorcista', raro: 'l' }, { id: 'titulo:sonoluz', cat: 'titulo', nombre: 'Voz de SONOLUZ', raro: 'm' }
 ];
-const CATS = { voz: 'Voz', nota: 'Notas', golpe: 'Golpe', fondo: 'Fondo', titulo: 'Título' };
+const CATS = { voz: 'Voz', nota: 'Colores', forma: 'Forma', golpe: 'Golpe', fondo: 'Fondo', flechas: 'Flechas', simbolos: 'Símbolos', aros: 'Aros', boton: 'Botones', titulo: 'Título' };
+const DE_FABRICA = ['forma:barra', 'flechas:contorno', 'simbolos:color', 'aros:clasico', 'boton:neon'];
 
 /* ── lo guardado ── */
 const CLAVE = 'vstiles:v1';
-const base = () => ({ nombre: '', color: 0, tiene: ['voz:gumi', 'voz:miku', 'voz:luka', 'nota:neon', 'golpe:flare', 'fondo:0', 'titulo:resonante'], puesto: { voz: 'voz:gumi', nota: 'nota:neon', golpe: 'golpe:flare', fondo: 'fondo:0', titulo: 'titulo:resonante' },
+const base = () => ({ nombre: '', color: 0, tiene: ['voz:gumi', 'voz:miku', 'voz:luka', 'nota:neon', 'golpe:flare', 'fondo:0', 'titulo:resonante'], puesto: { voz: 'voz:gumi', nota: 'nota:neon', golpe: 'golpe:flare', fondo: 'fondo:0', titulo: 'titulo:resonante', forma: 'forma:barra', flechas: 'flechas:contorno', simbolos: 'simbolos:color', aros: 'aros:clasico', boton: 'boton:neon' },
   ecos: 1500, sellos: 3, nivel: 1, xp: 0, record: {}, historia: {}, desfase: 0, desfaseVisual: 0, vel: 1, sonidoGolpe: true, mostrarDesvio: true, sinMov: false, pity: 0, visto: false, calibrado: false });
 let Y = base(); try{ const g = JSON.parse(localStorage.getItem(CLAVE) || 'null'); if(g) Y = { ...base(), ...g, puesto: { ...base().puesto, ...(g.puesto || {}) } }; }catch(e){}
+/* quien ya jugaba antes de que existieran estas categorías recibe las de fábrica */
+for(const id of DE_FABRICA) if(!Y.tiene.includes(id)) Y.tiene.push(id);
 const guardar = () => { try{ localStorage.setItem(CLAVE, JSON.stringify(Y)); }catch(e){} };
 const aviso = (txt) => { const d = document.createElement('div'); d.className = 'aviso'; d.textContent = txt; document.body.appendChild(d); setTimeout(() => d.remove(), 2600); };
 
@@ -326,8 +336,7 @@ function vestidor(){ mostrar('vestidor'); const R = $('#ranuras'); R.innerHTML =
     /* lo que no se ha descubierto no dice ni nombre ni rareza (Carlos, 29 oct) */
     if(!tiene){ b.className = 'obj oculto'; b.innerHTML = '<div class="muestra">?</div>???'; b.onclick = () => aviso('Todavía no lo descubres. Sale en el Mercado de Ecos.'); O.appendChild(b); return; }
     b.className = `obj raro-${o.raro}${Y.puesto[o.cat] === o.id ? ' puesto' : ''}`;
-    const muestra = o.cat === 'golpe' ? `<img src="sprites/${o.sprite}.png" alt="">` : o.cat === 'fondo' ? `<img src="${o.img}" alt="" style="max-width:100%">` : o.cat === 'nota' ? o.colores.slice(0, 4).map(c => `<i style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${c};margin:1px"></i>`).join('') : o.cat === 'voz' ? `<i style="font:900 26px var(--n);color:${o.color}">${o.nombre[0]}</i>` : `<i style="font:900 11px var(--g);color:#FFD7E5">«${o.nombre}»</i>`;
-    b.innerHTML = `<div class="muestra">${muestra}</div>${o.nombre}<small style="display:block;font:700 10px var(--n);color:#ffffffcc">${RAREZA[o.raro].n.toUpperCase()}</small>`;
+    b.innerHTML = `<div class="muestra">${vista(o)}</div>${o.nombre}<small style="display:block;font:700 10px var(--n);color:#ffffffcc">${RAREZA[o.raro].n.toUpperCase()}</small>`;
     b.onclick = async () => { Y.puesto[o.cat] = o.id; guardar(); aplicarCosmeticos(); if(o.cat === 'voz') await escena.ponerCantantes([idVoz()]); vestidor(); };
     O.appendChild(b); });
   if(catSel === 'voz') escena.ponerCantantes([idVoz()]);
@@ -335,6 +344,9 @@ function vestidor(){ mostrar('vestidor'); const R = $('#ranuras'); R.innerHTML =
 function aplicarCosmeticos(){ const n = OBJETOS.find(o => o.id === Y.puesto.nota); if(n) n.colores.forEach((c, i) => COLORES_RIEL[i] = c);
   /* el efecto de golpe: antes se elegía en el vestidor y no se leía en ningún lado */
   Y.golpeSprite = OBJETOS.find(o => o.id === Y.puesto.golpe)?.sprite || 'p_flare_01';
+  const est = (c, def) => (Y.puesto[c] || def).split(':')[1];
+  Y.estilos = { forma: est('forma', 'forma:barra'), flechas: est('flechas', 'flechas:contorno'), simbolos: est('simbolos', 'simbolos:color'), aros: est('aros', 'aros:clasico') };
+  escena.ponerForma?.(Y.estilos.forma); document.body.className = document.body.className.replace(/\bboton-\S+/g, '').trim() + ' boton-' + est('boton', 'boton:neon');
   escena.piezas.rieles.forEach((R, i) => { R.fondoR.material.color.set(COLORES_RIEL[i]); R.lado.material.color.set(COLORES_RIEL[i]); R.rec.material.color.set(COLORES_RIEL[i]); R.brillo.material.color.set(COLORES_RIEL[i]); R.haz.material.color.set(COLORES_RIEL[i]); }); }
 
 /* ── mercado: probabilidades a la vista, garantía a las 50 y los repetidos se vuelven Ecos ──
@@ -350,7 +362,13 @@ function sortear(n){ const sale = [];
     const pool = OBJETOS.filter(o => o.raro === raro && !o.secreto), o = pool[Math.floor(Math.random() * pool.length)]; const nuevo = !Y.tiene.includes(o.id); if(nuevo) Y.tiene.push(o.id); else Y.ecos += { c: 10, r: 25, e: 60, l: 150, m: 300 }[raro]; sale.push({ o, nuevo }); }
   guardar(); return sale; }
 /* cómo se ve un objeto en chiquito (vestidor, tiradas, premio) */
-function vista(o){ if(o.cat === 'golpe') return `<img src="sprites/${o.sprite}.png" alt="">`; if(o.cat === 'fondo') return `<img src="${o.img}" alt="" class="foto">`;
+function vista(o){ const k = o.id.split(':')[1];
+  if(o.cat === 'forma') return `<i class="formaMini f-${k}"></i>`;
+  if(o.cat === 'flechas') return `<img src="sprites/tecla_arrow_up${k === 'contorno' ? '_outline' : ''}.png" alt="" class="${k === 'neon' ? 'brillo' : ''}">`;
+  if(o.cat === 'simbolos') return `<img src="sprites/${k === 'contorno' ? 'ps_triangle_outline' : k === 'blanco' ? 'ps_color_triangle_outline' : 'ps_color_triangle'}.png" alt="">`;
+  if(o.cat === 'aros') return `<img src="sprites/${{ clasico: 'gen_circle_outline', magia: 'p_magic_03', estelar: 'p_star_06' }[k]}.png" alt="">`;
+  if(o.cat === 'boton') return `<span class="b mini boton-${k}">Jugar</span>`;
+  if(o.cat === 'golpe') return `<img src="sprites/${o.sprite}.png" alt="">`; if(o.cat === 'fondo') return `<img src="${o.img}" alt="" class="foto">`;
   if(o.cat === 'nota') return o.colores.slice(0, 4).map(c => `<i class="punto" style="background:${c}"></i>`).join('');
   if(o.cat === 'voz') return `<i class="inicial" style="color:${o.color}">${o.nombre[0]}</i>`; return `<i class="tituloObj">«${o.nombre}»</i>`; }
 const mercadoUI = montarMercado({ $, Y, RAREZA, sortear, pagar, barra, reloj, sonidos, vista, pool: () => OBJETOS.filter(o => !o.secreto) });

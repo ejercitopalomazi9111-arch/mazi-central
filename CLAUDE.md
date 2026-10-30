@@ -496,6 +496,9 @@ dependemos.
    | un `pointerdown` es un toque, así que ahí se puede despertar el audio | para el navegador, con el dedo sólo SOLTAR (`touchend`, `pointerup`, `click`) cuenta como gesto: un `resume()` pedido al poner el dedo se puede quedar colgado | la entrada de VS TILES despertaba el audio en `pointerdown` y lo esperaba con `await`: en iPhone se podía quedar muda o trabada en «Toca para entrar». Se entra con `click`, nunca se espera más de 0.5 s, y `reloj.desbloquear()` reintenta al soltar cada toque |
    | una pantalla `display:flex` en columna con `overflow-y:auto` deja bajar cuando no cabe | primero **encoge** a sus hijos (`flex-shrink:1`) y sólo después hace scroll: una fila sin alto fijo queda de 0 px | en un iPhone SE la fila de modos de VS TILES era una rayita y no se leía ningún modo; en 390 no se notaba. `.pantalla > * { flex-shrink: 0 }` |
 
+   | un selector de etiqueta (`canvas{ position:fixed; inset:0 }`) es para los lienzos que había cuando lo escribí | agarra **todos los que vengan después**: la garra del Mercado de VS TILES salió fija en la esquina, tapando la cabecera y los botones | lo vio la captura y una prueba que no podía tocar «Sobre». Las reglas de pantalla completa van por id (`#gl, #capa`) |
+   | meter un `// comentario` al final de un renglón de código «sólo comenta» | si el renglón sigue, el `//` **se come el resto del código**: sin error, sin aviso | tres veces en VS TILES el 29 y 30 de octubre; una llegó a producción (la Miku del susto perdió el ladeo y el aplastado) y otra dejó `analisis.js` sin compilar. A media línea va `/* … */`, o el comentario en su propio renglón |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---
