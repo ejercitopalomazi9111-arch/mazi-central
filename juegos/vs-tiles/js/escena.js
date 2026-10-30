@@ -74,6 +74,27 @@ function brazosAbajo(m){
   return { u, plano };
 }
 
+/* LAS FORMAS DE NOTA (cosmético) que son modelos de verdad (Sketchfab, CC BY: ver CREDITOS.md). `pie`: va parado de
+   frente a la cámara; si no, acostado en el carril como las gemas de Guitar Hero. `fijo`: los materiales que no se
+   pintan del color del carril (el aro del botón va plateado). `sinMapa`: la textura del autor es oscura y con ella el
+   color del carril no se ve. Los ids son los de siempre, para no romper lo que ya tiene cada jugador */
+export const MODELOS_NOTA = {
+  pildora: { archivo: 'arcade', ancho: .9, fijo: /Aro/ }, doble: { archivo: 'holo', ancho: .96 }, diamante: { archivo: 'brillante', ancho: .82, grueso: .62, sinMapa: true },
+  disco: { archivo: 'disco', ancho: .96 }, cristal: { archivo: 'cristal', pie: true, alto: .62, sinMapa: true }, gema: { archivo: 'gema', pie: true, alto: .6, sinMapa: true },
+  estrella: { archivo: 'estrella', pie: true, alto: .62 }, nota: { archivo: 'nota', pie: true, alto: .66, sinMapa: true }
+};
+/* el material del autor, listo para pintarse: sin transparencia de vidrio ni metal espejo (en una pista oscura se ven
+   negros) y con brillo propio del color, que es lo que hace que se lea a lo lejos */
+export function materialDeNota(base, F, color){ const n = base.clone(); n.side = THREE.DoubleSide; n.transparent = true; n.opacity = 1;
+  if('metalness' in n){ n.metalness = Math.min(n.metalness ?? 0, .35); n.roughness = Math.max(.22, n.roughness ?? .5); }
+  if('transmission' in n) n.transmission = 0;
+  if(F.sinMapa){ n.map = n.metalnessMap = n.roughnessMap = n.aoMap = null; }
+  n.userData.fijo = F.fijo ? F.fijo.test(base.name) : false; pintarMaterial(n, color); n.needsUpdate = true; return n; }
+const blanco = new THREE.Color('#FFFFFF'), plata = new THREE.Color('#E6E3F0');
+export function pintarMaterial(n, color){
+  if(n.userData.fijo){ n.color.copy(plata); if(n.emissive) n.emissive.setRGB(.1, .1, .12); return; }
+  n.color.copy(color).lerp(blanco, .25); if(n.emissive) n.emissive.copy(color).multiplyScalar(.4); }
+
 export async function crearEscena(lienzo){
   const r = new THREE.WebGLRenderer({ canvas: lienzo, antialias: true, alpha: false, powerPreference: 'high-performance' });
   r.setPixelRatio(Math.min(2, devicePixelRatio || 1)); r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.05;
@@ -183,20 +204,45 @@ export async function crearEscena(lienzo){
      Cara de arriba clara, costados del color: así se lee el volumen sin luces */
   const geoNota = new THREE.BoxGeometry(ANCHO * 1.12, .16, ANCHO * .34);
   for(let i = 0; i < 160; i++){ const lado = new THREE.MeshBasicMaterial({ transparent: true }), tapa = new THREE.MeshBasicMaterial({ transparent: true });
-    const m = new THREE.Mesh(geoNota, [lado, lado, tapa, lado, lado, lado]); m.visible = false; m.userData = { lado, tapa }; carril.add(m); reserva.push(m); }
-  /* LA FORMA DE LAS NOTAS (cosmético): la caja tiene 6 grupos de material (costados y tapa); las demás
-     formas no traen grupos, así que se les pone uno solo con el material de la tapa, o no se dibujarían */
-  const FORMAS = {
-    barra: () => geoNota,
-    pildora: () => new THREE.CapsuleGeometry(ANCHO * .15, ANCHO * .78, 4, 10).rotateZ(Math.PI / 2),
-    cristal: () => new THREE.BoxGeometry(ANCHO * .92, .36, ANCHO * .16),
-    diamante: () => new THREE.OctahedronGeometry(1).scale(ANCHO * .62, .2, ANCHO * .3),
-    doble: () => mergeGeometries([new THREE.BoxGeometry(ANCHO * 1.14, .12, ANCHO * .12).translate(0, 0, -ANCHO * .11), new THREE.BoxGeometry(ANCHO * 1.14, .12, ANCHO * .12).translate(0, 0, ANCHO * .11)])
-  };
-  function ponerForma(id){ const g = (FORMAS[id] || FORMAS.barra)(); if(g !== geoNota){ g.clearGroups(); g.addGroup(0, g.index ? g.index.count : g.attributes.position.count, 2); }
-    for(const m of reserva) m.geometry = g; }
+    const caja = [lado, lado, tapa, lado, lado, lado], m = new THREE.Mesh(geoNota, caja); m.visible = false; m.userData = { lado, tapa, caja }; carril.add(m); reserva.push(m); }
+  /* LA FORMA DE LAS NOTAS (cosmético). La barra es la de fábrica (la pidió Carlos el 29 oct); las demás son MODELOS
+     de verdad bajados de Sketchfab (CC BY, ver CREDITOS.md), no figuras dibujadas por código (Carlos, 30 oct: «hazlas
+     con modelos existentes, por ejemplo las del Guitar Hero»). `pie`: va parado de frente a la cámara; si no, acostado
+     en el carril como las gemas de Guitar Hero. `fijo`: los materiales que guardan su color (el aro del botón); todo
+     lo demás se pinta del color del carril. Los ids son los de siempre, para no romper lo que ya tiene cada jugador */
+  const cacheForma = {};
+  /* un modelo → UNA geometría con un grupo por material (así cabe en la misma reserva de mallas) y la lista de materiales */
+  async function formaDeModelo(id){
+    const F = MODELOS_NOTA[id]; const g = await (cacheM['nota:' + F.archivo] ||= cargador.loadAsync(`modelos/notas/${F.archivo}.glb`));
+    g.scene.updateMatrixWorld(true); const geos = [], mats = [];
+    g.scene.traverse(o => { if(!o.isMesh) return; const ge = o.geometry.clone();
+      for(const k of Object.keys(ge.attributes)) if(!['position', 'normal', 'uv'].includes(k)) ge.deleteAttribute(k);
+      for(const k of ['position', 'normal', 'uv']){ const at = ge.attributes[k]; if(!at) continue; const n = at.itemSize, f = new Float32Array(at.count * n);
+        for(let i = 0; i < at.count; i++) for(let c = 0; c < n; c++) f[i * n + c] = at.getComponent(i, c); ge.setAttribute(k, new THREE.BufferAttribute(f, n)); }
+      if(!ge.attributes.uv) ge.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(ge.attributes.position.count * 2), 2));
+      if(!ge.attributes.normal) ge.computeVertexNormals();
+      ge.applyMatrix4(o.matrixWorld); geos.push(ge.index ? ge.toNonIndexed() : ge); mats.push(o.material); });
+    const geo = mergeGeometries(geos, true); geo.computeBoundingBox(); const b = geo.boundingBox, c = b.getCenter(new THREE.Vector3()), t = b.getSize(new THREE.Vector3());
+    geo.translate(-c.x, -c.y, -c.z);
+    /* parado: de frente a la cámara, con el alto pedido; acostado: del ancho del carril, sin pasar de .3 de grueso */
+    let k = F.pie ? F.alto / t.y : Math.min(ANCHO * F.ancho / Math.max(t.x, t.z), (F.grueso || .3) / t.y);
+    if(F.pie) k = Math.min(k, ANCHO * .95 / t.x);
+    geo.scale(k, k, k); geo.translate(0, t.y * k / 2 - .07, 0);   /* apoyado en la pista (la nota va a .08 de altura) */
+    return { geo, mats, F };
+  }
+  let formaActual = 'barra';
+  async function ponerForma(id){
+    formaActual = id;
+    if(!MODELOS_NOTA[id]){ for(const m of reserva){ m.geometry = geoNota; m.material = m.userData.caja; m.userData.modelo = null; } return; }
+    const F = await (cacheForma[id] ||= formaDeModelo(id)); if(formaActual !== id) return;
+    for(const m of reserva){ m.geometry = F.geo;
+      /* cada nota con sus propios materiales: el color y la transparencia cambian nota por nota */
+      const ms = F.mats.map(base => materialDeNota(base, F.F, cTmp.set('#B44BFF')));
+      m.material = ms; m.userData.modelo = ms; } }
   const cBlanco = new THREE.Color('#FFFFFF'), cTmp = new THREE.Color();
-  function pintaNota(m, color, alfa, esc){ const { lado, tapa } = m.userData; cTmp.set(color); lado.color.copy(cTmp).multiplyScalar(.78); tapa.color.copy(cTmp).lerp(cBlanco, .4);
+  function pintaNota(m, color, alfa, esc){ cTmp.set(color);
+    if(m.userData.modelo){ for(const mt of m.userData.modelo){ mt.opacity = alfa; pintarMaterial(mt, cTmp); } m.scale.setScalar(esc); return; }
+    const { lado, tapa } = m.userData; lado.color.copy(cTmp).multiplyScalar(.78); tapa.color.copy(cTmp).lerp(cBlanco, .4);
     lado.opacity = tapa.opacity = alfa; m.scale.set(esc, 1, esc); }
   for(let i = 0; i < 40; i++) cuerpos.push(pieza(null, ANCHO * .4, 1, true));
   for(let i = 0; i < 60; i++) flechas.push(pieza(tFlecha, ANCHO * .62, ANCHO * .62));

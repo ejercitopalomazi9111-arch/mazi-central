@@ -1,0 +1,29 @@
+<!doctype html>
+<!-- LAS FOTOS DE LAS FORMAS DE NOTA para el vestidor y las gachas: cada modelo de modelos/notas/ sobre fondo
+     transparente, pintado de morado como se ve en la pista. Se abre con el servidor de pruebas y la saca
+     herramientas/fotos-notas.cjs (un PNG por modelo → WebP). -->
+<html lang="es-MX"><head><meta charset="utf-8"><title>Fotos de las notas</title>
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>html,body{ margin:0; background:transparent } canvas{ display:block }</style></head>
+<body><canvas id="c" width="256" height="256"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from '../vendor/loaders/GLTFLoader.js';
+import { MODELOS_NOTA, materialDeNota } from '../js/escena.js';
+const r = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), alpha: true, antialias: true, preserveDrawingBuffer: true });
+r.setClearColor(0, 0); r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping;
+const s = new THREE.Scene(), cam = new THREE.PerspectiveCamera(30, 1, .01, 100);
+s.add(new THREE.HemisphereLight('#E9DCFF', '#22102E', 1.6)); const l = new THREE.DirectionalLight('#fff', 2.6); l.position.set(-2, 4, 3); s.add(l);
+
+window.foto = async (id) => {
+  s.children.filter(o => o.userData.modelo).forEach(o => s.remove(o));
+  const g = await new GLTFLoader().loadAsync(`../modelos/notas/${id}.glb`), m = g.scene; m.userData.modelo = true;
+  const F = Object.values(MODELOS_NOTA).find(f => f.archivo === id), morado = new THREE.Color('#B44BFF');
+  m.traverse(o => { if(o.isMesh) o.material = Array.isArray(o.material) ? o.material.map(mt => materialDeNota(mt, F, morado)) : materialDeNota(o.material, F, morado); });
+  const b = new THREE.Box3().setFromObject(m), c = b.getCenter(new THREE.Vector3()), t = b.getSize(new THREE.Vector3()); m.position.sub(c);
+  const R = Math.max(t.x, t.y, t.z) * .5; s.add(m);
+  /* acostadas: vistas desde arriba y de frente, como en la pista; paradas: de frente */
+  const d = R / Math.sin(15 * Math.PI / 180) * 1.05; if(F.pie) cam.position.set(0, R * .3, d); else cam.position.set(0, d * .62, d * .78);
+  cam.lookAt(0, 0, 0); r.render(s, cam); return true; };
+window.listo = true;
+</script></body></html>
