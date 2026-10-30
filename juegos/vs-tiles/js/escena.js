@@ -127,8 +127,8 @@ export async function crearEscena(lienzo){
 
   /* ── el escenario de las cantantes: una tarima con sus luces, detrás del carril ── */
   /* van AL FONDO, más allá del final de la pista y más grandes (Carlos, 29 oct: «bailando más al fondo, como si algo
-     estuviera pasando relevante a la historia»): son el espectáculo de atrás, no un estorbo encima de las notas */
-  const tarima = new THREE.Group(); tarima.position.set(0, -.6, -20); tarima.scale.setScalar(1.6); s.add(tarima);
+     estuviera pasando relevante a la historia»): detrás del final de la pista (que llega a z = −29), nunca paradas encima de ella */
+  const tarima = new THREE.Group(); tarima.position.set(0, -.8, -36); tarima.scale.setScalar(2.3); s.add(tarima);
   const reflejo = await tex('sprites/p_circle_05.png');
   const piso = new THREE.Mesh(new THREE.CircleGeometry(7, 64), new THREE.MeshBasicMaterial({ map: reflejo, color: '#B44BFF', transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false }));
   piso.rotation.x = -Math.PI / 2; tarima.add(piso);
@@ -460,7 +460,7 @@ export async function crearEscena(lienzo){
       /* en vertical las cámaras laterales empujaban los receptores de la orilla fuera de la pantalla: ahí van más
          cerca del centro, y la mira se corre hacia donde están de verdad los receptores */
       if(vertical && carta){ objetivoCam.p.x *= .45; objetivoCam.m.x *= .3; objetivoCam.m.x += E.centro * 1.6; }
-      if(!carta){ objetivoCam.p.set(Math.sin(t * .15) * 3, 3.2, 4.5); objetivoCam.m.set(0, 2.6, -20); }
+      if(!carta){ objetivoCam.p.set(Math.sin(t * .15) * 4, 4.5, -16); objetivoCam.m.set(0, 4, -36); }
       cam.position.lerpVectors(camDe.p, objetivoCam.p, carta ? ec : .03 + .97 * ec);
       mira.lerpVectors(camDe.m, objetivoCam.m, carta ? ec : .03 + .97 * ec);
       cam.position.x += Math.sin(t * .7) * .25 + (Math.random() - .5) * sacudida * .12; cam.position.y += Math.sin(t * 1.1) * .12 + sacudida * .08;

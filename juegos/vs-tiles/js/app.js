@@ -34,13 +34,19 @@ export const CANCIONES = [
 ];
 const HISTORIA = [
   { cap: 'Prólogo · La primera nota', misiones: [
-    { c: 'itty-bitty-8-bit', modo: 'carril', dif: 'facil', d: [['SONOLUZ', 'Señal detectada. Un Resonante nuevo entró al archivo.'], ['GUMI', '¡Por fin alguien! Esta canción se está borrando nota por nota. Toca cuando lleguen a la línea… y no las dejes ir.']] },
-    { c: 'raving-energy', modo: 'flechas', dif: 'normal', d: [['GUMI', 'Miku quedó atrapada en un eco. Ella canta una frase y tú se la regresas, igualita.'], ['Hatsune Miku', '…¿me oyes? Si fallas la frase, la canción se rompe otra vez.']] } ] },
+    { c: 'itty-bitty-8-bit', modo: 'carril', dif: 'facil', d: [['SONOLUZ', 'Señal detectada. Un Resonante nuevo entró al archivo.'], ['GUMI', '¡Por fin alguien! Esta canción se está borrando nota por nota. Toca cuando lleguen a la línea… y no las dejes ir.']],
+      f: [['GUMI', '¡La salvaste! ¿Oyes? Ya no se corta.'], ['SONOLUZ', 'Primera canción restaurada. Detecto otra señal… alguien está cantando dentro de un eco.']] },
+    { c: 'raving-energy', modo: 'flechas', dif: 'normal', d: [['GUMI', 'Miku quedó atrapada en un eco. Ella canta una frase y tú se la regresas, igualita.'], ['Hatsune Miku', '…¿me oyes? Si fallas la frase, la canción se rompe otra vez.']],
+      f: [['Hatsune Miku', 'Me regresaste la voz. Gracias, Resonante.'], ['GUMI', 'Ahora sí: somos tres. Y el archivo tiene muchas más canciones rotas.']] } ] },
   { cap: 'Capítulo I · Ecos de GUMI', misiones: [
-    { c: 'movement-proposition', modo: 'diva', dif: 'normal', d: [['Okurine Luka', 'No todas queremos que nos restauren, Resonante.'], ['GUMI', 'Luka es de los Desafinados. Sus símbolos llegan volando: toca el mismo botón cuando lleguen.']] },
-    { c: 'exit-the-premises', modo: 'circulos', dif: 'dificil', d: [['Otomachi Una', 'Yo soy un Eco: una copia que nadie terminó. Si me sigues el ritmo, quizá me acuerde de quién era.']] },
-    { c: 'voltaic', modo: 'carril', dif: 'experto', d: [['Hagane Miku', 'Los carriles ya no obedecen. Se doblan, se inclinan, cambian de número…'], ['GUMI', 'Es el Coro Nulo metiéndose al archivo. Lee el aviso cuando cambien las reglas.']] },
-    { c: 'volatile-reaction', modo: 'exorcist', dif: 'exorcist', jefe: true, d: [['???', 'Todas las voces deberían sonar igual. Perfectas. Iguales.'], ['Miku Excomulgada', 'Yo soy el Coro Nulo. Demuestra que tu ritmo es tuyo… si puedes.']] } ] }
+    { c: 'movement-proposition', modo: 'diva', dif: 'normal', d: [['Okurine Luka', 'No todas queremos que nos restauren, Resonante.'], ['GUMI', 'Luka es de los Desafinados. Sus símbolos llegan volando: toca el mismo botón cuando lleguen.']],
+      f: [['Okurine Luka', '…No esperaba que alguien me siguiera el paso.'], ['Okurine Luka', 'No me voy a unir a ustedes. Pero tampoco voy a estorbar.'], ['GUMI', 'Con Luka eso ya es casi un abrazo.']] },
+    { c: 'exit-the-premises', modo: 'circulos', dif: 'dificil', d: [['Otomachi Una', 'Yo soy un Eco: una copia que nadie terminó. Si me sigues el ritmo, quizá me acuerde de quién era.']],
+      f: [['Otomachi Una', 'Me acordé de algo: de un escenario lleno, y de una voz que no era igual a ninguna.'], ['Hatsune Miku', 'Esa voz era la tuya, Una. El Coro Nulo te la quitó.']] },
+    { c: 'voltaic', modo: 'carril', dif: 'experto', d: [['Hagane Miku', 'Los carriles ya no obedecen. Se doblan, se inclinan, cambian de número…'], ['GUMI', 'Es el Coro Nulo metiéndose al archivo. Lee el aviso cuando cambien las reglas.']],
+      f: [['Hagane Miku', 'Aguantaste los carriles torcidos. Nada mal.'], ['???', 'Qué ruido tan molesto. Todas las voces deberían sonar igual.'], ['GUMI', 'Ésa es ella. Ya viene.']] },
+    { c: 'volatile-reaction', modo: 'exorcist', dif: 'exorcist', jefe: true, d: [['???', 'Todas las voces deberían sonar igual. Perfectas. Iguales.'], ['Miku Excomulgada', 'Yo soy el Coro Nulo. Demuestra que tu ritmo es tuyo… si puedes.']],
+      f: [['Miku Excomulgada', '…Imposible. Ningún ritmo debería sobrevivir a eso.'], ['Hatsune Miku', 'Por eso es suyo. No se puede copiar.'], ['SONOLUZ', 'Capítulo I cerrado. El archivo respira otra vez… por ahora.']] } ] }
 ];
 /* lo que se colecciona: sólo apariencia, nunca ventaja (el documento lo pide así) */
 const RAREZA = { c: { n: 'Común', p: 58 }, r: { n: 'Raro', p: 28 }, e: { n: 'Épico', p: 10 }, l: { n: 'Legendario', p: 3.4 }, m: { n: 'Mítico', p: .6 } };
@@ -155,7 +161,7 @@ $('#arranque').addEventListener('click', async function entrar(e){
 });
 document.addEventListener('click', (e) => { const b = e.target.closest('[data-ir]'); if(!b) return; sonidos.boton && reloj.golpe(sonidos.boton, .25); ir(b.dataset.ir); });
 function ir(a){ ({ menu, historia, libre: () => canciones('libre'), reto: () => canciones('reto'), lab: () => mostrar('lab'), mercado, vestidor, records, ajustes, creditos,
-  saltarIntro: () => { cortarIntro = true; }, aCalibrar, saltarCalib: () => { Y.calibrado = true; guardar(); menu(); }, seguir: () => { partida.alternarPausa(); }, reintentar: jugarDeNuevo, salirJuego: () => { partida.salir(); canciones(modoLista); }, libreVolver: () => canciones(modoLista) })[a]?.(); }
+  saltarIntro: () => { cortarIntro = true; }, aCalibrar, saltarCalib: () => { Y.calibrado = true; guardar(); menu(); }, seguir: () => { partida.alternarPausa(); }, reintentar: jugarDeNuevo, salirJuego: () => { partida.salir(); if(ultima?.deHistoria) historia(); else canciones(modoLista); }, libreVolver: () => ultima?.deHistoria ? finDeMision() : canciones(modoLista) })[a]?.(); }
 
 /* ── la cinemática ── */
 let cortarIntro = false;
@@ -308,6 +314,8 @@ function jugarDeNuevo(){ partida.salir(); if(ultima) jugar(ultima.c.id, ultima.m
 /* ── resultados ── */
 function resultados({ cancion, carta, J, murio, auto }){
   $('#pausaB').classList.remove('vis'); mostrar('resultados');
+  /* en la Historia, el botón de salida regresa a la historia (con su diálogo final), no a Juego libre */
+  $('#resultados [data-ir="libreVolver"]').textContent = ultima?.deHistoria ? 'Seguir la historia ›' : 'Canciones';
   const r = murio ? 'F' : J.rango, colR = { 'Ω': '#FFF3B0', 'EX+': '#FFE08A', EX: '#FFC24B', S: '#FF2D7A', A: '#B44BFF', B: '#38E1FF', C: '#5CFFB0', D: '#B9AECB', F: '#FF2D55' }[r];
   $('#resRango').textContent = r; $('#resRango').style.setProperty('--c', colR);
   $('#resCancion').textContent = `${cancion.titulo} · ${MODOS[carta.modo].nombre} · ${carta.D.nombre} ${carta.nivel}${auto ? ' · AUTO' : ''}`;
@@ -329,7 +337,17 @@ function resultados({ cancion, carta, J, murio, auto }){
 }
 
 /* ── historia ── */
+/* al acabar una misión (Carlos, 30 oct: «que no me lleve al free play sino que me deje en la historia con un diálogo
+   final y acceso a la siguiente canción»): si se ganó, su diálogo final; si no, un ánimo para reintentarla */
+function finDeMision(){ const k = ultima.deHistoria, [ci, mi] = k.split('.').map(Number), m = HISTORIA[ci].misiones[mi], gano = !!Y.historia[k];
+  const voz = m.d.find(([q]) => PERSONAJES.some(p => p.nombre === q))?.[0] || 'GUMI';
+  dialogo(gano ? (m.f || [['SONOLUZ', 'Canción restaurada.']]) : [[voz, 'Todavía no. La canción sigue rota.'], ['SONOLUZ', 'Necesitas 600,000 puntos sin que se cierre el archivo. Inténtalo otra vez.']], () => historia()); }
 function historia(){ mostrar('historia'); const H = $('#capitulos'); H.innerHTML = ''; let abierto = true;
+  /* arriba, la que sigue: un toque y se juega */
+  const todas = HISTORIA.flatMap((cap, ci) => cap.misiones.map((m, mi) => ({ m, k: `${ci}.${mi}`, cap: cap.cap }))), sig = todas.find(x => !Y.historia[x.k]);
+  if(sig){ const c = CANCIONES.find(x => x.id === sig.m.c), b = document.createElement('button'); b.className = 'mision siguiente';
+    b.innerHTML = `<span class="n">▶</span><span><span class="ojo" style="margin:0">${Object.keys(Y.historia).length ? 'Sigue la historia' : 'Empieza aquí'} · ${sig.cap}</span><br><b style="font:800 15px var(--n)">${c.titulo}</b><br><span style="font-size:12px;color:var(--gris)">${MODOS[sig.m.modo].nombre} · ${DIFS.find(x => x.id === sig.m.dif).nombre}${sig.m.jefe ? ' · JEFE' : ''}</span></span><span class="pill">Jugar</span>`;
+    b.onclick = () => dialogo(sig.m.d, () => jugar(sig.m.c, sig.m.modo, sig.m.dif, sig.k)); H.appendChild(b); }
   HISTORIA.forEach((cap, ci) => { const d = document.createElement('div'); d.className = 'cap'; d.innerHTML = `<h3>${cap.cap}</h3>`;
     cap.misiones.forEach((m, mi) => { const k = `${ci}.${mi}`, hecha = !!Y.historia[k], c = CANCIONES.find(x => x.id === m.c), b = document.createElement('button');
       b.className = 'mision' + (hecha ? ' hecha' : '') + (abierto ? '' : ' bloq'); b.innerHTML = `<span class="n">${hecha ? '✓' : String(mi + 1).padStart(2, '0')}</span><span><b style="font:800 13px var(--n)">${c.titulo}</b><br><span style="font-size:12px;color:var(--gris)">${MODOS[m.modo].nombre} · ${DIFS.find(x => x.id === m.dif).nombre}${m.jefe ? ' · JEFE' : ''}</span></span><span class="pill">${abierto ? 'Jugar' : '🔒'}</span>`;
