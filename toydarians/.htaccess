@@ -1,0 +1,46 @@
+# ─────────────────────────────────────────────────────────────────────────
+# Toydarians · ajustes para hosting Apache / cPanel
+#
+# Este archivo SOLO lo lee Apache (cPanel, Hostinger, GoDaddy y parecidos).
+# En Netlify, Vercel, Cloudflare Pages o GitHub Pages se ignora por completo
+# y no estorba: se puede subir siempre.
+#
+# Resuelve tres cosas que han roto despliegues reales de este sitio:
+# ─────────────────────────────────────────────────────────────────────────
+
+# 1 · LA BARRA FINAL
+#    Si alguien entra a  midominio.com/tienda  (sin la barra), el navegador
+#    resuelve 'fotos/x.webp' como midominio.com/fotos/x.webp — un nivel mas
+#    arriba — y la pagina se queda sin estilos, sin datos y sin fotos, con
+#    un 200 en el HTML y 404 en todo lo demas. Esto hace que Apache redirija
+#    a /tienda/ antes de que pase nada.
+DirectorySlash On
+DirectoryIndex index.html
+
+<IfModule mod_rewrite.c>
+  # 2 · WORDPRESS NO SE LLEVA ESTOS ARCHIVOS
+  #    Si esta carpeta cuelga de una instalacion de WordPress, el .htaccess
+  #    del directorio padre manda cualquier peticion a index.php. Apagar
+  #    mod_rewrite AQUI deja fuera esas reglas para esta carpeta y sus
+  #    subcarpetas, sin tocar nada de la tienda vieja.
+  RewriteEngine Off
+</IfModule>
+
+# 3 · LOS TIPOS DE ARCHIVO
+#    Apache antiguo no conoce .webp ni .woff2 y los entrega como binario
+#    suelto. Casi todos los navegadores lo perdonan; algunos proxies no.
+<IfModule mod_mime.c>
+  AddType image/webp  .webp
+  AddType font/woff2  .woff2
+  AddType text/javascript .js
+  AddType text/css    .css
+</IfModule>
+
+# Cache larga para las fotos (no cambian de nombre nunca) y corta para el
+# HTML, para que un cambio de precio se vea el mismo dia.
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType image/webp "access plus 30 days"
+  ExpiresByType font/woff2 "access plus 30 days"
+  ExpiresByType text/html  "access plus 10 minutes"
+</IfModule>

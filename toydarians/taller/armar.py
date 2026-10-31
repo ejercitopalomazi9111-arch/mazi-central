@@ -7,6 +7,7 @@ sacadas del WooCommerce del cliente y las imagenes van embebidas como data URI
 Los datos entran por activos/, el diseno vive aqui.
 """
 import base64, json, re, pathlib
+import red_seguridad
 
 # ⚠ ESTE `parent.parent` DEJA EL GENERADOR MUERTO, Y YA VOLVIÓ UNA VEZ.
 # Cuando el taller vivía en `scripts/`, subir dos niveles caía en la carpeta del
@@ -2363,6 +2364,7 @@ def documento(pag):
 <link rel="preload" href="marca/bungee-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="marca/logo.webp" as="image">
 <link rel="stylesheet" href="estilo.css">
+<script src="revision.js"></script>
 
 <div class="g-neb" aria-hidden="true"><i class="n1"></i><i class="n3"></i><i class="n4"></i></div>
 <div class="g-cielos" id="g-cielos" aria-hidden="true"><canvas class="c1"></canvas><canvas class="c2"></canvas></div>
@@ -3745,6 +3747,34 @@ if n != 1:
 (RAIZ / 'estilo.css').write_text(BUNGEE_EMPOTRADA + CSS, encoding='utf-8')
 (RAIZ / 'motor.js').write_text(JS, encoding='utf-8')
 
+# ── EL ANCLA DE RUTAS ─────────────────────────────────────────────────────
+# Va EN LINEA en el <head> de las tres paginas, antes del primer <link>, y no
+# en un .js aparte: ese .js seria justo el primero en no cargar cuando hace
+# falta. Fija <base> en la carpeta REAL del documento, asi la direccion venga
+# con barra, sin barra o con el nombre del archivo.
+#
+# ⚠ SIN ESTO, UNA DIRECCION SIN BARRA FINAL DEJA EL SITIO SIN NADA. Si el
+# servidor entrega midominio.com/tienda en vez de midominio.com/tienda/, el
+# navegador resuelve 'fotos/x.webp' un nivel mas arriba: 27 imagenes rotas y
+# 35 peticiones a 404, con el HTML contestando 200 y sin un error a la vista.
+# Medido con Chromium, no supuesto. Con el ancla: 0 rotas.
+ANCLA_DE_RUTAS = """<!-- ANCLA DE RUTAS · va aqui, en linea, y antes del primer <link>.
+     Todas las rutas del sitio son relativas ('fotos/x.webp'). Si el servidor
+     entrega esta pagina en una direccion de carpeta SIN la barra final
+     (midominio.com/tienda en vez de midominio.com/tienda/), el navegador
+     resuelve cada ruta un nivel mas arriba y el sitio se queda sin hoja de
+     estilo, sin datos y sin una sola foto, devolviendo 200 en el HTML. Medido:
+     27 imagenes rotas y 35 peticiones a 404 en ese caso.
+     Esto fija el <base> en la carpeta real del documento, asi la direccion
+     venga con barra, sin barra o con el nombre del archivo. No puede vivir en
+     un .js externo: ese .js seria el primero en no cargar. -->
+<script>(function(){var p=location.pathname,i=p.lastIndexOf('/'),u=p.slice(i+1),b=(u===''||u.indexOf('.')>-1)?p.slice(0,i+1):p+'/';document.write('<base href="'+b.replace(/"/g,'%22')+'">')})()</script>
+"""
+
+# La red de seguridad: revision.js, revisar.html y .htaccess. Viven en
+# red_seguridad.py — ahi esta explicado por que existen los tres.
+RED = red_seguridad.escribir(RAIZ)
+
 # ⚠ ESTO ESCRIBIA EN `publico/index.html` Y LO QUE SE PUBLICA ES `index.html`.
 # Entre los dos habia un copiado A MANO, y ese es el hueco por el que el
 # generador y el archivo servido se separan: se regenera, sale verde, y la
@@ -3918,6 +3948,7 @@ def escribir(pag):
     cabeza, cuerpo = doc.split('\n<div class="barra">', 1)
     (RAIZ / pag['archivo']).write_text(
         '<!doctype html>\n<html lang="es">\n<head>\n<meta charset="utf-8">\n'
+        + ANCLA_DE_RUTAS +
         '<meta name="viewport" content="width=device-width,initial-scale=1">\n'
         f'<meta name="description" content="{esc(pag["descripcion"])}">\n'
         '<meta name="color-scheme" content="dark">\n' + cabeza +

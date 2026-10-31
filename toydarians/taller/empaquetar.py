@@ -32,6 +32,13 @@ CARP = SALE / 'toydarians-sitio'
 PAGS = sorted(RAIZ.glob('*.html'))
 DIRS = ['marca', 'fotos']
 
+# El unico que SI va a mano, porque no es .html y ninguna pagina lo pide:
+# .htaccess son ajustes para hosting Apache/cPanel (barra final, tipos MIME,
+# y apagar el rewrite de un WordPress padre). Netlify, Vercel, Cloudflare y
+# Pages lo ignoran, asi que se sube siempre y no estorba. Si falta, vuelve
+# el fallo de la direccion sin barra en los hostings de toda la vida.
+EXTRA = [n for n in ('.htaccess',) if (RAIZ / n).is_file()]
+
 def _pide(pagina):
     t = pagina.read_text(encoding='utf-8')
     return re.findall(r'(?:src|href)="([^":]+\.(?:js|css))"', t)
@@ -45,8 +52,13 @@ def piezas_de(dato):
     d = json.loads(re.search(r'TOY\.g\.piezas=(\{.*?\});', dato, re.S).group(1))
     return len(d)
 
+# revisar.html es la pagina de comprobacion del despliegue, no del catalogo:
+# va en el ZIP (la copia PAGS la lleva) pero no sale en el recuento de piezas,
+# que si no el instructivo diria «revisar.html 0 piezas» y confunde.
+CATALOGO = [p for p in PAGS if p.name != 'revisar.html']
+
 cuentas = []
-for p in PAGS:
+for p in CATALOGO:
     # De que archivo de datos come cada pagina se lee DE LA PAGINA. Adivinarlo
     # por el nombre falla en la primera: index.html carga
     # datos-vintage-collection.js, que no se parece en nada.
@@ -94,8 +106,16 @@ Descomprime el ZIP. Te queda una carpeta con esto dentro:
     motor.js         el movimiento, el buscador y el carrito
     idioma.js        el botón EN, que traduce el sitio al inglés
     datos-*.js       el catálogo de cada página
+    revision.js      avisa si falta alguna imagen (ver más abajo)
+    revisar.html     página de comprobación del despliegue
+    .htaccess        ajustes para hosting tipo cPanel (se ignora en los demás)
     marca/           logotipo y tipografías
     fotos/           las {len(fotos)} fotos
+
+    Ojo: `.htaccess` empieza con un PUNTO y por eso muchos programas lo
+    esconden. En Windows: pestaña Vista -> "Elementos ocultos". En Mac:
+    Cmd + Shift + punto. Si no lo subes no se rompe nada, pero en un
+    hosting de cPanel conviene que vaya.
 
 SE SUBE TODO, TAL CUAL, SIN CAMBIAR NADA DE SITIO. `index.html` tiene que
 quedar arriba del todo, y `marca/` y `fotos/` como carpetas a su lado.
@@ -123,6 +143,49 @@ todo dentro de `public_html` por FTP y listo.
 COMPROBAR: abre la dirección en el teléfono. Tiene que salir una
 animación de 5 segundos que dibuja el logo, y más abajo las figuras con
 su precio.
+
+   Y para estar seguro, abre esto:
+
+        la-dirección-que-te-dieron/revisar.html
+
+   Es una página que trae el propio sitio. Comprueba una por una las
+   carpetas y los archivos y te dice EN VERDE que está todo, o EN ROJO
+   qué falta y qué hacer. Tarda dos segundos. Cuando esté todo en verde
+   puedes borrar ese archivo si quieres.
+
+
+=====================================================================
+SI LA PÁGINA SALE SIN FOTOS                              léelo antes
+                                                         de rehacer nada
+=====================================================================
+
+Es el fallo más común al subir este sitio, y nunca es que el sitio esté
+roto: los archivos están bien. Son los tres de siempre.
+
+1 · NO SUBIÓ LA CARPETA `fotos/` ENTERA
+    Son más de 300 archivos. Si la subida se cortó o se arrastró sólo
+    una parte, el sitio se ve perfecto —con sus nombres, sus precios y
+    sus recuadros— pero con un hueco donde iba cada figura.
+    SOLUCIÓN: vuelve a subir `fotos/` completa, encima de la que haya.
+
+2 · LA DIRECCIÓN NO TERMINA EN BARRA
+    Si entras a  midominio.com/tienda  en vez de  midominio.com/tienda/
+    algunos servidores entregan la página pero el navegador busca las
+    fotos un nivel más arriba y no encuentra ninguna. Desde esta versión
+    el sitio se corrige solo; si aun así pasa, sube el `.htaccess` que
+    viene en la carpeta, o escribe la dirección con la barra al final.
+
+3 · ALGUIEN LE CAMBIÓ EL NOMBRE A UNA CARPETA
+    `fotos/` y `marca/` se llaman así en el código. `Fotos/`, `images/`
+    o `img/` no sirven: en un servidor Linux una mayúscula ya es otro
+    nombre. Tienen que quedar exactamente así, al lado de `index.html`.
+
+CÓMO SABER CUÁL DE LOS TRES ES: abre `revisar.html` (arriba). Te lo dice
+por su nombre.
+
+Además, desde esta versión, si al sitio le faltan imágenes sale un aviso
+amarillo arriba de la página diciendo qué carpeta no contesta. Ese aviso
+SÓLO aparece cuando algo falta: si el despliegue está bien, nadie lo ve.
 
 
 =====================================================================
@@ -203,6 +266,9 @@ LO QUE NO HAY QUE TOCAR
   · No edites los `.html`, ni `estilo.css`, ni `idioma.js`, ni los
     `datos-*.js`. Se generan desde el proyecto: un cambio a mano se
     pierde la próxima vez que se regenere el sitio.
+  · `revision.js` y `revisar.html` no estorban y no salen a la vista
+    mientras todo esté bien. Si los borras, el sitio sigue funcionando
+    igual; sólo pierdes el aviso cuando algo se suba mal.
   · De `motor.js`, sólo las dos líneas del paso 3.
 
 Si hay que cambiar un precio, una foto o un texto, se avisa y se
@@ -249,7 +315,7 @@ titulares. Este sitio no está afiliado a ellos.
 if CARP.exists(): shutil.rmtree(CARP)
 CARP.mkdir(parents=True)
 (CARP / 'LEEME.txt').write_text(LEEME, encoding='utf-8')
-for f in PAGS + [RAIZ / n for n in RECURSOS]:
+for f in PAGS + [RAIZ / n for n in RECURSOS] + [RAIZ / n for n in EXTRA]:
     shutil.copy2(f, CARP / f.name)
 for d in DIRS:
     shutil.copytree(RAIZ / d, CARP / d)
@@ -270,7 +336,7 @@ shutil.copy2(zip_ruta, RAIZ / 'descarga' / zip_ruta.name)
 # servido —la lista era justo la que estaba mal—; hay que mirar el paquete.
 with zipfile.ZipFile(zip_ruta) as z:
     dentro = {x.split('/', 1)[1] for x in z.namelist() if '/' in x}
-    huecos = [r for r in RECURSOS if r not in dentro]
+    huecos = [r for r in RECURSOS + EXTRA if r not in dentro]
     if huecos:
         raise SystemExit(f'el ZIP sale sin archivos que las paginas piden: {huecos}')
 

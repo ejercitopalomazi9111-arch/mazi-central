@@ -2,6 +2,17 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
+<!-- ANCLA DE RUTAS · va aqui, en linea, y antes del primer <link>.
+     Todas las rutas del sitio son relativas ('fotos/x.webp'). Si el servidor
+     entrega esta pagina en una direccion de carpeta SIN la barra final
+     (midominio.com/tienda en vez de midominio.com/tienda/), el navegador
+     resuelve cada ruta un nivel mas arriba y el sitio se queda sin hoja de
+     estilo, sin datos y sin una sola foto, devolviendo 200 en el HTML. Medido:
+     27 imagenes rotas y 35 peticiones a 404 en ese caso.
+     Esto fija el <base> en la carpeta real del documento, asi la direccion
+     venga con barra, sin barra o con el nombre del archivo. No puede vivir en
+     un .js externo: ese .js seria el primero en no cargar. -->
+<script>(function(){var p=location.pathname,i=p.lastIndexOf('/'),u=p.slice(i+1),b=(u===''||u.indexOf('.')>-1)?p.slice(0,i+1):p+'/';document.write('<base href="'+b.replace(/"/g,'%22')+'">')})()</script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="description" content="Toydarians — Star Wars The Vintage Collection. El catalogo por numero VC.">
 <meta name="color-scheme" content="dark">
@@ -9,6 +20,7 @@
 <link rel="preload" href="marca/bungee-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="marca/logo.webp" as="image">
 <link rel="stylesheet" href="estilo.css">
+<script src="revision.js"></script>
 
 <div class="g-neb" aria-hidden="true"><i class="n1"></i><i class="n3"></i><i class="n4"></i></div>
 <div class="g-cielos" id="g-cielos" aria-hidden="true"><canvas class="c1"></canvas><canvas class="c2"></canvas></div>

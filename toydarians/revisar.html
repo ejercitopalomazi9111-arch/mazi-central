@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Toydarians · revisión del despliegue</title>
+<!-- Esta pagina NO usa estilo.css ni motor.js a proposito: si el despliegue
+     esta roto, esos dos son justo los que no cargan. Tiene que poder
+     explicarse sola, con sus propios estilos dentro. -->
+<style>
+  :root{color-scheme:dark}
+  *{box-sizing:border-box}
+  body{margin:0;background:#0A0A0B;color:#e7e7ea;
+       font:15px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+       padding:28px 18px 60px}
+  .caso{max-width:760px;margin:0 auto}
+  h1{font-size:19px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 4px;color:#f2b705}
+  .sub{color:#8b8b95;margin:0 0 26px;font-size:13px}
+  h2{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#8b8b95;
+     margin:30px 0 10px;border-bottom:1px solid #26262c;padding-bottom:7px;font-weight:400}
+  .f{display:flex;gap:12px;align-items:baseline;padding:7px 0;border-bottom:1px solid #18181c}
+  .e{flex:0 0 76px;font-weight:700;letter-spacing:.08em;font-size:12px}
+  .ok .e{color:#4ec97b} .mal .e{color:#ff5c5c} .esp .e{color:#8b8b95}
+  .q{flex:1;min-width:0;word-break:break-all}
+  .q small{display:block;color:#f6c86b;font-size:13px;margin-top:3px;word-break:normal}
+  .dato{color:#8b8b95;font-size:13px;padding:4px 0}
+  .dato b{color:#e7e7ea;font-weight:400}
+  .caja{border:1px solid #26262c;background:#131317;padding:14px 16px;margin:14px 0}
+  .caja p{margin:0 0 9px} .caja p:last-child{margin:0}
+  code{background:#1d1d22;padding:1px 6px;color:#f2b705}
+  a{color:#f2b705}
+  #resumen{padding:14px 16px;margin:18px 0 0;border-left:3px solid #3a3a42;background:#131317}
+  #resumen.bien{border-left-color:#4ec97b}
+  #resumen.mal{border-left-color:#ff5c5c}
+</style>
+</head>
+<body>
+<div class="caso">
+
+<h1>Revisión del despliegue</h1>
+<p class="sub">Toydarians · esta página comprueba que el sitio quedó bien subido. No forma parte de la tienda; puedes borrarla cuando todo esté en verde.</p>
+
+<div id="resumen">Comprobando…</div>
+
+<h2>Dónde está servida</h2>
+<div id="ctx"></div>
+
+<h2>Archivos y carpetas</h2>
+<div id="lista"></div>
+
+<h2>¿Y el administrador?</h2>
+<div class="caja">
+  <p><b>Este sitio no tiene administrador.</b> Son archivos sueltos: tres páginas HTML, una hoja de estilo y las fotos. No hay WordPress, ni base de datos, ni panel: por eso carga rápido y no se puede hackear por el login.</p>
+  <p>Los precios, las existencias y los textos viven en los archivos <code>datos-*.js</code>, y <b>se generan desde el proyecto</b>. Si se editan a mano, el cambio se pierde la próxima vez que se regeneren: para cambiar un precio o una foto hay que pedirlo y se vuelve a generar.</p>
+  <p>La tienda vieja de WordPress (la de <code>toydarians.com</code>) sigue teniendo el suyo, en su propia dirección, y no cambia nada por haber subido este sitio: son dos cosas separadas.</p>
+  <p>Lo único que se toca a mano aquí es una línea de <code>motor.js</code>, la del Client ID de PayPal. Viene explicada paso a paso en <code>LEEME.txt</code>.</p>
+</div>
+
+</div>
+
+<script>
+(function(){
+  var lista = document.getElementById('lista'),
+      ctx   = document.getElementById('ctx'),
+      res   = document.getElementById('resumen'),
+      local = location.protocol === 'file:',
+      mal = 0, esperando = 0, hechos = 0;
+
+  // ── contexto ────────────────────────────────────────────────────────────
+  var p = location.pathname,
+      i = p.lastIndexOf('/'),
+      u = p.slice(i+1),
+      carpeta = (u === '' || u.indexOf('.') > -1) ? p.slice(0,i+1) : p + '/';
+
+  function dato(k,v){
+    var d = document.createElement('div');
+    d.className = 'dato';
+    d.innerHTML = k + ': <b></b>';
+    d.querySelector('b').textContent = v;
+    ctx.appendChild(d);
+  }
+  dato('Dirección', location.href);
+  dato('Carpeta del sitio', location.origin === 'null' ? carpeta : location.origin + carpeta);
+  dato('Servido desde', local ? 'el disco (file://) — súbelo a un hosting para la prueba de verdad' : 'un servidor web');
+
+  // ── comprobaciones ──────────────────────────────────────────────────────
+  var pruebas = [
+    ['marca/logo.webp',      'img', 'El logotipo. Si falla, la carpeta marca/ no se subió o se le cambió el nombre.'],
+    ['marca/heroe.webp',     'img', 'La foto grande de la portada. Misma carpeta marca/.'],
+    ['marca/letras/l0.webp', 'img', 'Las letras de la animación de entrada. marca/ tiene que subirse con sus subcarpetas dentro.'],
+    ['fotos/vc57-0.webp',    'img', 'Una foto de producto. Si falla, la carpeta fotos/ no llegó completa: son más de 300 archivos y una subida a medias los deja fuera.'],
+    ['fotos/vc01A-0.webp',   'img', 'Foto con MAYÚSCULA en el nombre (vc01A). Si ésta falla y las demás pasan, el servidor o el programa de subida cambió los nombres a minúsculas: en Linux eso ya es otro archivo.'],
+    ['fotos/cat/funko-2.webp','img','Una foto de categoría. fotos/ tiene una subcarpeta cat/ dentro.'],
+    ['estilo.css',           'txt', 'La hoja de estilo. Si falla, la página se ve como texto suelto sin maquetar.'],
+    ['motor.js',             'txt', 'El buscador, los filtros y el carrito. Si falla, no se puede comprar.'],
+    ['datos-vintage-collection.js','txt','El catálogo de las 47 figuras.'],
+    ['marca/bungee-latin.woff2','txt','La tipografía del logotipo.']
+  ];
+
+  function fila(ruta, estado, nota){
+    var d = document.createElement('div');
+    d.className = 'f ' + estado;
+    var e = document.createElement('span'); e.className = 'e';
+    e.textContent = estado === 'ok' ? 'BIEN' : estado === 'mal' ? 'FALLA' : '…';
+    var q = document.createElement('span'); q.className = 'q';
+    q.textContent = ruta;
+    if (nota){ var s = document.createElement('small'); s.textContent = nota; q.appendChild(s); }
+    d.appendChild(e); d.appendChild(q);
+    return d;
+  }
+
+  function cerrar(){
+    if (hechos < esperando) return;
+    res.className = mal ? 'mal' : 'bien';
+    if (!mal){
+      res.innerHTML = '<b>Todo bien.</b> Las ' + esperando + ' comprobaciones pasaron. ' +
+        'El sitio está completo y servido desde la carpeta correcta.' +
+        (local ? ' (Visto desde el disco; repite esta prueba en el hosting.)' : '');
+    } else {
+      res.innerHTML = '<b>' + mal + ' de ' + esperando + ' comprobaciones fallan.</b> ' +
+        'Debajo de cada una está qué significa. Casi siempre es lo mismo: ' +
+        'hay que volver a subir la carpeta <b>completa</b>, tal cual salió del ZIP, ' +
+        'sin mover ni renombrar nada, y dejando <b>index.html</b> al mismo nivel que ' +
+        '<b>fotos/</b> y <b>marca/</b>.';
+    }
+  }
+
+  pruebas.forEach(function(t){
+    var ruta = t[0], tipo = t[1], nota = t[2];
+    var d = fila(ruta, 'esp', '');
+    lista.appendChild(d);
+    esperando++;
+
+    function marcar(bien, extra){
+      hechos++;
+      if (!bien) mal++;
+      var n = d.cloneNode(false);
+      var nuevo = fila(ruta, bien ? 'ok' : 'mal', bien ? '' : (nota + (extra ? ' · ' + extra : '')));
+      d.replaceWith(nuevo); d = nuevo;
+      cerrar();
+    }
+
+    if (tipo === 'img'){
+      var im = new Image();
+      im.onload  = function(){ marcar(true); };
+      im.onerror = function(){ marcar(false, ''); };
+      im.src = ruta + '?r=' + Date.now();
+      return;
+    }
+
+    if (local){
+      // fetch sobre file:// lo bloquea el navegador: no es un fallo del sitio.
+      hechos++;
+      var nuevo = fila(ruta, 'esp', 'No se puede comprobar desde el disco. Súbelo a un hosting y vuelve a abrir esta página.');
+      d.replaceWith(nuevo); d = nuevo;
+      esperando--; cerrar();
+      return;
+    }
+
+    fetch(ruta + '?r=' + Date.now(), { cache: 'no-store' })
+      .then(function(r){ marcar(r.ok, r.ok ? '' : 'el servidor contestó ' + r.status); })
+      .catch(function(){ marcar(false, 'no hubo respuesta'); });
+  });
+})();
+</script>
+</body>
+</html>
