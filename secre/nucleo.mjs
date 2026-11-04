@@ -696,7 +696,7 @@ export class Secre {
     const C = this.config.campana || {}, E = this.estado.campana || {}, MY = this.config.mayoreo || {}, H = this.estado.histMayoreo || {};
     return { cuenta: this.cuenta, version: this.config.version,
       campana: { activo: !!C.activo, porDia: C.porDia, hoy: E.hoy || 0, total: Object.values(E.hechos || {}).filter(x => x.jid).length, revisados: Object.keys(E.hechos || {}).length, proxima: E.proxima || 0, motivo: E.motivo || '' },
-      mayoreo: { activo: !!MY.activo, fuente: !!MY.fuente, destino: !!MY.destino, duena: MY.duena || '', historico: !!MY.historico, pedidas: H.pedidas || 0, sinAvance: H.sinAvance || 0, recibidos: H.recibidos || 0, prendas: (this.config.productos || []).length, enCola: (this.estado.colaFotos || []).length, mandadas: (this.estado.envioMayoreo || {}).total || 0 },
+      mayoreo: { activo: !!MY.activo, fuente: !!MY.fuente, destino: !!MY.destino, duena: MY.duena || '', historico: !!MY.historico, pedidas: H.pedidas || 0, sinAvance: H.sinAvance || 0, enFuente: this.estado.enFuente ?? null, enDestino: this.estado.enDestino ?? null, ancla: !!(H.ancla && H.ancla.key), manda: MY.manda || '', recibidos: H.recibidos || 0, prendas: (this.config.productos || []).length, enCola: (this.estado.colaFotos || []).length, mandadas: (this.estado.envioMayoreo || {}).total || 0 },
       fallas: this.ultimaFalla || {}, registro: (this.estado.registro || []).slice(-8).map(x => x.que).filter(q => /campa|mayoreo|fall|no pude/i.test(q)) };
   }
   /* ── la campaña a negocios sin página: pocos al día, en horario, desde la cuenta del negocio ── */
