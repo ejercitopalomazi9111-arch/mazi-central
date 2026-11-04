@@ -605,11 +605,23 @@ export class Secre {
   }
 
   /* ── Mayoreo → banco → All's (4 nov) ── */
+  /* qué cuenta trabaja Mayoreo: la que está en el grupo del proveedor (la del negocio y la personal
+     comparten la configuración; antes se quedaba la primera que lo tocó, aunque no viera el grupo) */
+  hermana(cuenta){ return [...Secre.hermanas].find(h => h.cuenta === cuenta) || null; }
+  meToca(MY, cual = 'fuente'){
+    const bandera = cual === 'fuente' ? 'enFuente' : 'enDestino', campo = cual === 'fuente' ? 'duena' : 'manda';
+    const actual = MY[campo];
+    if(!actual){ MY[campo] = this.cuenta; return true; }
+    if(actual === this.cuenta) return true;
+    const h = this.hermana(actual);
+    /* la que estaba no está en ese grupo (o no existe) y ésta sí: se queda ésta */
+    if(this.estado[bandera] && (!h || h.estado[bandera] === false)){ MY[campo] = this.cuenta; this.anotar(`Mayoreo: ahora lo trabaja la cuenta ${this.cuenta}`); return true; }
+    return false;
+  }
   async recibirMayoreo(m){
     const MY = this.config.mayoreo, P = this.config.productos || (this.config.productos = []);
     /* las dos cuentas comparten la configuración: si las dos están en el grupo, sólo una trabaja */
-    if(MY.duena && MY.duena !== this.cuenta) return;
-    if(!MY.duena){ MY.duena = this.cuenta; }
+    if(!this.meToca(MY, 'fuente')) return;
     const ahora = m.t || this.reloj();
     /* un texto suelto con precio justo después de unas fotos es el precio de esas fotos */
     if(!m.imagen){
@@ -642,9 +654,13 @@ export class Secre {
   }
   /* manda a All's las fotos que van llegando, de a unas cuantas por vuelta (sin texto) */
   async colaFotosTic(){
-    const MY = this.config.mayoreo || {}, Q = this.estado.colaFotos || [];
-    if(!MY.activo || !MY.destino || !Q.length) return;
-    if(MY.duena && MY.duena !== this.cuenta) return;
+    const MY = this.config.mayoreo || {};
+    if(!MY.activo || !MY.destino) return;
+    /* manda la cuenta que está en All's; la cola es de la que recibe (pueden ser distintas) */
+    if(!this.meToca(MY, 'destino')) return;
+    const duena = (MY.duena && this.hermana(MY.duena)) || this;
+    const Q = duena.estado.colaFotos || [];
+    if(!Q.length) return;
     const ahora = this.reloj(), E = this.estado.envioMayoreo || (this.estado.envioMayoreo = { enTanda: 0, ultima: 0, pausaHasta: 0, total: 0 });
     /* de 100 en 100 (Carlos, 4 nov): una cada `cadaSeg` segundos; al llegar a la tanda, descansa `pausa` minutos */
     if(ahora < E.pausaHasta || ahora - E.ultima < (MY.cadaSeg || 8) * 1000) return;
@@ -652,7 +668,7 @@ export class Secre {
     /* espera a que llegue el precio (el proveedor a veces lo manda después de las fotos), hasta 5 min */
     const x = Q.find(q => { const pr = P.find(p => p.id === q.id); return (pr && pr.precio) || ahora - (q.en || q.t || 0) > 5 * MIN; });
     if(!x) return;
-    this.estado.colaFotos = Q.filter(q => q !== x);
+    duena.estado.colaFotos = Q.filter(q => q !== x);
     E.ultima = ahora;
     const prod = P.find(p => p.id === x.id);
     try{
@@ -664,12 +680,12 @@ export class Secre {
       E.enTanda++; E.total++;
       if(E.enTanda >= (MY.tanda || 100)){
         E.enTanda = 0; E.pausaHasta = ahora + (MY.pausa || 30) * MIN;
-        await this.avisar(`📦 Mayoreo: van ${E.total} fotos mandadas a ${this.nombreDe(MY.destino)}. Faltan ${this.estado.colaFotos.length}; la siguiente tanda sale a las ${horaMx(E.pausaHasta)}.`);
+        await this.avisar(`📦 Mayoreo: van ${E.total} fotos mandadas a ${this.nombreDe(MY.destino)}. Faltan ${duena.estado.colaFotos.length}; la siguiente tanda sale a las ${horaMx(E.pausaHasta)}.`);
       }
-      if(!this.estado.colaFotos.length && E.total){ await this.avisar(`📦 Mayoreo: listo, mandé las ${E.total} fotos a ${this.nombreDe(MY.destino)}.`); E.total = 0; E.enTanda = 0; }
+      if(!duena.estado.colaFotos.length && E.total){ await this.avisar(`📦 Mayoreo: listo, mandé las ${E.total} fotos a ${this.nombreDe(MY.destino)}.`); E.total = 0; E.enTanda = 0; }
     }catch(e){
       this.anotar('Mayoreo: no pude mandar una foto a All\'s: ' + e.message);
-      x.fallas = (x.fallas || 0) + 1; if(x.fallas < 3) this.estado.colaFotos.unshift(x);
+      x.fallas = (x.fallas || 0) + 1; if(x.fallas < 3) duena.estado.colaFotos.unshift(x);
       E.pausaHasta = ahora + MIN;
     }
     const fp = this.estado.fotoProducto || {}, ks = Object.keys(fp); if(ks.length > 4000) for(const k of ks.slice(0, ks.length - 4000)) delete fp[k];
@@ -726,13 +742,13 @@ export class Secre {
     const total = Object.values(E.hechos).filter(x => x.jid).length;
     if(E.hoy === 1) await this.avisar(`📣 Campaña: arranqué la de hoy con ${c.nombre}. Hoy van a ser ${C.porDia || 25}, uno cada ${C.minEntre}-${C.maxEntre} min. Los que contesten los atiendo yo y te aviso.`);
     if(E.hoy >= (C.porDia || 25)) await this.avisar(`📣 Campaña: hoy les escribí a ${E.hoy} negocios (llevamos ${total} de ${lista.length}). Mañana sigo.`);
-    this.guardar();
+    this.guardar(); if(duena !== this) duena.guardar();
   }
   /* encuentra los grupos por su nombre y, la primera vez, baja TODO el historial de fotos del grupo de Mayoreo */
   async mayoreoTic(){
     const MY = this.config.mayoreo; if(!MY || !MY.activo) return;
     const ahora = this.reloj(), T = this.transporte;
-    if((!MY.fuente && MY.fuenteNombre) || (!MY.destino && MY.destinoNombre)){
+    {
       if(T.grupos && ahora - (this.estado.gruposVistos || 0) > 10 * MIN){
         this.estado.gruposVistos = ahora;
         try{
@@ -740,20 +756,27 @@ export class Secre {
           for(const g of gs) if(g.nombre && !this.config.chats[g.id]) this.chat(g.id).nombre = g.nombre, this.chat(g.id).grupo = true;
           const f = !MY.fuente && gs.find(g => mismoGrupo(g.nombre, MY.fuenteNombre)); if(f) MY.fuente = f.id;
           const d = !MY.destino && gs.find(g => mismoGrupo(g.nombre, MY.destinoNombre)); if(d){ MY.destino = d.id; const c = this.chat(d.id); c.tienda = true; if(!c.modo) c.modo = 'auto'; }
+          /* ¿esta cuenta está en cada grupo? decide cuál recibe y cuál manda */
+          this.estado.enFuente = !!MY.fuente && gs.some(g => g.id === MY.fuente);
+          this.estado.enDestino = !!MY.destino && gs.some(g => g.id === MY.destino);
           this.guardar();
         }catch(e){ this.anotar('no pude ver los grupos: ' + e.message); }
       }
     }
-    if(!MY.historico || !MY.fuente || !T.pedirHistorial || (MY.duena && MY.duena !== this.cuenta)) return;
+    if(!MY.historico || !MY.fuente || !T.pedirHistorial) return;
+    if(this.estado.enFuente === false) return;
+    if(!this.meToca(MY, 'fuente')) return;
     if(this.reintentarHistorial){ this.reintentarHistorial = false; this.estado.histMayoreo = null; }
     const H = this.estado.histMayoreo || (this.estado.histMayoreo = { pedidas: 0, ultimoT: 0, sinAvance: 0, ultimaVez: 0 });
     /* el teléfono contesta cuando puede (a veces minutos): entre pedido y pedido se espera minuto y medio */
     if(ahora - H.ultimaVez < 90_000) return;
     H.ultimaVez = ahora;
+    /* el ancla se guarda en cuanto se ve (antes se guardaba hasta el primer pedido y un reinicio la perdía) */
+    if(T.ancla){ const an = T.ancla(MY.fuente); if(an && (!H.ancla || an.t < H.ancla.t)){ H.ancla = an; this.guardar(); } }
     const t0 = T.masViejo ? T.masViejo(MY.fuente) : 0;
     /* WhatsApp sólo da lo viejo «a partir de» un mensaje que ya se vio; si el grupo está quieto desde que
        arrancó Secre, no hay de dónde jalar: se le pide a Carlos que escriba cualquier cosa ahí, una vez */
-    if(!t0 && !H.ancla){
+    if(!t0 && !(H.ancla && H.ancla.key)){
       H.desde = H.desde || ahora;
       if(!H.pidioAncla && ahora - H.desde > 10 * MIN){ H.pidioAncla = true; this.guardar(); await this.avisar(`📦 Para bajar las fotos viejas de ${this.nombreDe(MY.fuente)} necesito que llegue un mensaje nuevo a ese grupo. Escribe ahí cualquier cosa (un punto) y lo borras después; en cuanto lo vea, empiezo.`); }
       return;
@@ -775,7 +798,7 @@ export class Secre {
     /* si el pedido anterior no trajo nada: el tiempo en la otra unidad, y luego otra ancla */
     const opciones = { saltar: H.sinAvance > 0 && H.sinAvance % 2 === 0, seg: H.sinAvance % 2 === 1 };
     if(opciones.saltar) H.ancla = null;
-    try{ if(await T.pedirHistorial(MY.fuente, 50, H.ancla || null, opciones)) H.pedidas++; }catch(e){ this.anotar('Mayoreo: no pude pedir el historial: ' + e.message); }
+    try{ if(await T.pedirHistorial(MY.fuente, 50, H.ancla || null, opciones)){ H.pedidas++; if(H.pedidas === 1) await this.avisar(`📦 Mayoreo: ya vi tu mensaje en ${this.nombreDe(MY.fuente)}. Empiezo a jalar las fotos viejas; te aviso cuando lleguen.`); } }catch(e){ this.anotar('Mayoreo: no pude pedir el historial: ' + e.message); }
     this.guardar();
   }
 
