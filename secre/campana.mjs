@@ -13,7 +13,7 @@
 const SALA = (process.env.SECRE_SALA_URL || 'https://sala.palomazi9111.workers.dev').replace(/\/+$/, '');
 const SALA_NOMBRE = process.env.SECRE_SALA || 'GRUPAZ';
 
-export const CAMPANA_BASE = { activo: false, porDia: 25, desde: '10:00', hasta: '18:30', dias: [1, 2, 3, 4, 5, 6], tel: '4428833786', minEntre: 6, maxEntre: 15 };
+export const CAMPANA_BASE = { activo: false, cuenta: 'negocio', porDia: 25, desde: '10:00', hasta: '18:30', dias: [1, 2, 3, 4, 5, 6], tel: '4428833786', minEntre: 6, maxEntre: 15 };
 
 /* la lista: [{ negocio, giro, tel, resenas, estrellas, tiene }] */
 export function prospectosDeSala({ llave = process.env.SECRE_SALA_LLAVE || process.env.MAZI_LLAVE || '', hacer = fetch } = {}){

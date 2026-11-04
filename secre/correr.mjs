@@ -271,6 +271,17 @@ http.createServer(async (req, res) => {
 });
 
 /* Render gratis se duerme a los 15 minutos sin visitas: Secre se visita sola cada 10 */
+/* el latido: cada 2 min, cómo va cada cuenta (conectada, campaña, Mayoreo) a La Sala, sin cifrar
+   y sin datos de nadie, para poder revisar desde fuera si Secre de verdad está trabajando */
+{
+  const llaveL = process.env.SECRE_SALA_LLAVE || process.env.MAZI_LLAVE, salaL = (process.env.SECRE_SALA_URL || 'https://sala.palomazi9111.workers.dev').replace(/\/+$/, '');
+  if(llaveL && !FALSO) setInterval(() => {
+    for(const [id, v] of Object.entries(vivas)){
+      let d; try{ d = { t: Date.now(), commit: (process.env.RENDER_GIT_COMMIT || '').slice(0, 8), conectado: !!v.estado.conectado, error: v.estado.error || '', ...(v.secre ? v.secre.latido() : {}) }; }catch(e){ d = { t: Date.now(), error: e.message }; }
+      fetch(`${salaL}/api/sala/${process.env.SECRE_SALA || 'GRUPAZ'}/secre`, { method: 'POST', headers: { 'X-Llave': llaveL, 'content-type': 'application/json' }, body: JSON.stringify({ k: 'latido-' + id, datos: JSON.stringify(d) }), signal: AbortSignal.timeout(20_000) }).catch(() => {});
+    }
+  }, 2 * 60_000).unref();
+}
 if(process.env.RENDER_EXTERNAL_URL) setInterval(() => fetch(process.env.RENDER_EXTERNAL_URL.replace(/\/+$/, '') + '/salud').catch(() => {}), 10 * 60_000).unref();
 /* al apagarse (reinicio del servidor), subir lo último antes de irse */
 for(const senal of ['SIGTERM', 'SIGINT']) process.on(senal, async () => {

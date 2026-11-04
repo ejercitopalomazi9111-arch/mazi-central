@@ -501,14 +501,10 @@ export class Secre {
       catch(e){ this.anotar('el elenco falló: ' + e.message); }
       finally { this.ocupados.delete(jid); }
     }
-    await this.saludos(ahora);
-    await this.resumen(ahora);
-    await this.repaso(ahora);
-    await this.programadosTic(ahora);
-    await this.publicarTic(ahora);
-    await this.mayoreoTic();
-    await this.campanaTic(ahora);
-    await this.colaFotosTic();
+    /* cada pieza aparte: si una truena, las demás siguen (antes un error en los saludos frenaba todo lo de abajo) */
+    for(const [n, f] of [['saludos', () => this.saludos(ahora)], ['resumen', () => this.resumen(ahora)], ['repaso', () => this.repaso(ahora)], ['programados', () => this.programadosTic(ahora)], ['publicar', () => this.publicarTic(ahora)], ['mayoreo', () => this.mayoreoTic()], ['campaña', () => this.campanaTic(ahora)], ['fotos', () => this.colaFotosTic()]]){
+      try{ await f(); }catch(e){ const k = 'falla:' + n; if(this.ultimaFalla?.[k] !== e.message){ (this.ultimaFalla || (this.ultimaFalla = {}))[k] = e.message; this.anotar(`${n} falló: ${e.message}`); } }
+    }
     /* las propuestas viejas se tiran: contestar algo de hace 6 horas confunde */
     const antes = this.estado.propuestas.length;
     this.estado.propuestas = this.estado.propuestas.filter(p => ahora - p.t < this.config.caducan * HORA);
@@ -670,20 +666,34 @@ export class Secre {
     const fp = this.estado.fotoProducto || {}, ks = Object.keys(fp); if(ks.length > 4000) for(const k of ks.slice(0, ks.length - 4000)) delete fp[k];
     this.guardar();
   }
+  /* lo que se reporta a La Sala cada tanto, para ver desde fuera si todo jala (sin datos de nadie) */
+  latido(){
+    const C = this.config.campana || {}, E = this.estado.campana || {}, MY = this.config.mayoreo || {}, H = this.estado.histMayoreo || {};
+    return { cuenta: this.cuenta, version: this.config.version,
+      campana: { activo: !!C.activo, porDia: C.porDia, hoy: E.hoy || 0, total: Object.values(E.hechos || {}).filter(x => x.jid).length, revisados: Object.keys(E.hechos || {}).length, proxima: E.proxima || 0, motivo: E.motivo || '' },
+      mayoreo: { activo: !!MY.activo, fuente: !!MY.fuente, destino: !!MY.destino, duena: MY.duena || '', historico: !!MY.historico, pedidas: H.pedidas || 0, prendas: (this.config.productos || []).length, enCola: (this.estado.colaFotos || []).length, mandadas: (this.estado.envioMayoreo || {}).total || 0 },
+      fallas: this.ultimaFalla || {}, registro: (this.estado.registro || []).slice(-8).map(x => x.que).filter(q => /campa|mayoreo|fall|no pude/i.test(q)) };
+  }
   /* ── la campaña a negocios sin página: pocos al día, en horario, desde la cuenta del negocio ── */
   async campanaTic(ahora){
-    const C = this.config.campana; if(!C || !C.activo || !this.prospectos || !this.transporte.existe) return;
-    const yo = (this.transporte.yo() || []).join(' ');
-    if(C.tel && !yo.includes(String(C.tel).replace(/\D/g, '').slice(-10))) return;
+    const C = this.config.campana;
     const E = this.estado.campana || (this.estado.campana = { hechos: {}, dia: '', hoy: 0, proxima: 0 });
+    const por = (m) => { E.motivo = m; };
+    if(!C || !C.activo) return por('apagada');
+    if(!this.prospectos || !this.transporte.existe) return por('sin lista o sin WhatsApp');
+    /* sólo la cuenta del negocio: la que se llama «negocio» o la que tiene el número de la campaña */
+    const yo = (this.transporte.yo() || []).join(' ');
+    const esNegocio = this.cuenta === (C.cuenta || 'negocio') || (C.tel && yo.includes(String(C.tel).replace(/\D/g, '').slice(-10)));
+    if(!esNegocio) return por('ésta no es la cuenta del negocio');
     const hoy = fechaMx(ahora);
     if(E.dia !== hoy){ E.dia = hoy; E.hoy = 0; }
     const m = minDelDia(ahora);
-    if(!(C.dias || [1, 2, 3, 4, 5, 6]).includes(diaMx(ahora)) || m < aMin(C.desde || '10:00') || m >= aMin(C.hasta || '18:30')) return;
-    if(E.hoy >= (C.porDia || 25) || ahora < (E.proxima || 0)) return;
+    if(!(C.dias || [1, 2, 3, 4, 5, 6]).includes(diaMx(ahora)) || m < aMin(C.desde || '10:00') || m >= aMin(C.hasta || '18:30')) return por(`fuera de horario (${C.desde}-${C.hasta})`);
+    if(E.hoy >= (C.porDia || 25)) return por(`ya mandé los ${C.porDia || 25} de hoy`);
+    if(ahora < (E.proxima || 0)) return por(`el siguiente sale a las ${horaMx(E.proxima)}`);
     if(!this.listaCampana || ahora - this.listaCampana.t > 6 * HORA){
       try{ this.listaCampana = { t: ahora, l: await this.prospectos() }; }
-      catch(e){ this.anotar('campaña: no pude leer la lista: ' + e.message); E.proxima = ahora + 30 * MIN; return; }
+      catch(e){ this.anotar('campaña: no pude leer la lista: ' + e.message); E.proxima = ahora + 30 * MIN; return por('no pude leer la lista: ' + e.message); }
     }
     const lista = this.listaCampana.l || [];
     const p = lista.find(x => x.tel && !E.hechos[String(x.tel).replace(/\D/g, '')]);
@@ -695,7 +705,8 @@ export class Secre {
     if(!jid){ E.hechos[tel] = { t: ahora, sin: true }; this.guardar(); return; }   /* fijo o sin WhatsApp: el siguiente */
     if(this.config.chats[jid] && (this.estado.historial[jid] || []).length){ E.hechos[tel] = { t: ahora, ya: true }; this.guardar(); return; }   /* ya hablamos con él */
     const texto = mensajeProspecto(p, { hora: Math.floor(m / 60), variante: Object.keys(E.hechos).length });
-    try{ await this.mandar(jid, texto); }catch(e){ this.anotar('campaña: no pude escribirle a ' + p.negocio + ': ' + e.message); E.proxima = ahora + 10 * MIN; this.guardar(); return; }
+    try{ await this.mandar(jid, texto); }catch(e){ this.anotar('campaña: no pude escribirle a ' + p.negocio + ': ' + e.message); E.proxima = ahora + 10 * MIN; por('no pude mandar: ' + e.message); this.guardar(); return; }
+    por('mandando');
     const c = this.chat(jid);
     c.nombre = c.nombre || String(p.negocio).slice(0, 80); c.modo = c.modo || 'auto';
     c.etiquetas = [...new Set([...(c.etiquetas || []), 'prospecto'])];
