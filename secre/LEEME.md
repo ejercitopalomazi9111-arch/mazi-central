@@ -68,6 +68,24 @@ quién dejó la leche afuera y dijo que yo».*
 - **Tu horario:** sabe cuándo estás en clase (horario del 3.1) y no promete nada encima.
 - Pruebas: `node secre/pruebas-criterio.mjs` (41), cada una es una queja de Carlos.
 
+### Instagram y Facebook (Messenger)
+
+Los DMs de Instagram y de tu página de Facebook entran a Secre como cualquier chat (`ig:…`,
+`fb:…`): mismas reglas, mismo filtro, los avisos te llegan a tu WhatsApp. Lo hace `meta.mjs`
+con la herramienta **oficial** de Meta, así que no hay riesgo de que te bloqueen como con WhatsApp.
+
+- **Lo que Meta no deja:** escribirle primero a alguien (sólo contestar a quien te escribió, dentro
+  de 24 h) y mandar notas de voz (ahí contesta escrito).
+- **LinkedIn no se puede:** su API de mensajes es sólo para empresas socias que ellos aprueban.
+- **Para prenderlo** (lo hace Carlos una vez, desde developers.facebook.com):
+  1. Tu Instagram en cuenta **profesional** (empresa o creador), ligada a tu página de Facebook.
+  2. Crear una app de Meta, caso de uso «Mensajería de Instagram» (y Messenger si quieres la página).
+  3. Webhook: `https://<tu-secre>.onrender.com/meta`, con la palabra que inventes como
+     «verify token». Suscribir `messages`.
+  4. En Render poner: `META_VERIFY_TOKEN` (esa palabra), `META_APP_SECRET`, `IG_ID`, `IG_TOKEN`
+     y, para Messenger, `FB_PAGE_TOKEN`. Nunca en el repo.
+- Pruebas: `node secre/pruebas-meta.mjs` (13).
+
 ### El automático, con sus frenos
 
 Para cuando no puedes tomar el teléfono en el día. En un chat en automático:
