@@ -47,6 +47,11 @@ export function leerDescripcion(texto){
   return (r[0] || '').slice(0, 120);
 }
 
+/* las fotos se achican a 1280 px (JPG 80): mil fotos tienen que caber en el banco gratis */
+export async function comprimir(buf){
+  return sharp(buf).rotate().resize(1280, 1280, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 80, mozjpeg: true }).toBuffer();
+}
+
 export const precioVenta = (costo, margen = 250) => costo ? Math.round(costo + margen) : null;
 
 /* la huella de una foto: 64 bits (dHash de 9×8 en grises, promediando cada bloque).

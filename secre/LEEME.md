@@ -166,6 +166,9 @@ Lo mismo se hace con botones en **el panel** (una página para el teléfono, con
 - **Sin topes de respuestas.**
 - **Llamadas de WhatsApp:** WhatsApp no deja contestar con voz desde un bot. Secre cuelga, le escribe a quien llamó «¿quién eres y para qué?», te avisa y te pasa lo que diga.
 
+- **Todo el historial de «Shopy go mayoreo 1».** Secre encuentra el grupo por su nombre, le pide a WhatsApp las fotos viejas (de 50 en 50, con el teléfono prendido y con internet), las sube al banco achicadas y las manda a All's de 100 en 100, una cada 8 segundos y media hora de descanso entre tandas. Te avisa cada tanda.
+- **Campaña a negocios sin página.** La lista (530 negocios de Querétaro) vive en La Sala, no en el repo. Sale sólo desde el número del negocio (442 883 3786), 25 al día, lunes a sábado de 10:00 a 18:30, uno cada 6 a 15 minutos, primero las barberías. Se salta los fijos y a quien ya conoces. Las respuestas las atiende Secre en automático y te avisa. «para la campaña» la apaga.
+
 ### Lo que falta que pongas tú
 
 **Llamadas de teléfono normales (Twilio).** Para que conteste tu línea y te marque:

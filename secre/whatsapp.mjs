@@ -51,6 +51,11 @@ export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () =
   const numero = () => String(typeof telefono === 'function' ? telefono() : telefono || '').replace(/\D/g, '');
   const ultimas = new Map();          /* jid → llaves de lo último que llegó, para marcar leído */
   const grupos = new Map();           /* jid → nombre del grupo */
+  /* el historial viejo de un chat (las 1,000 fotos del grupo de Mayoreo, 4 nov): el mensaje más
+     viejo que se ha visto de cada chat es el ancla para pedirle a WhatsApp los de antes */
+  const viejos = new Map();           /* chat → { key, t } */
+  const historicos = new Set();       /* chats cuyo historial sí se procesa */
+  const verViejo = (chat, k, t) => { const v = viejos.get(chat); if(!v || t < v.t) viejos.set(chat, { key: { remoteJid: k.remoteJid, id: k.id, fromMe: !!k.fromMe, ...(k.participant ? { participant: k.participant } : {}) }, t }); };
   /* ⚠ los ids de lo que manda Secre, apuntados ANTES de mandarlo. Baileys avisa
      de un mensaje propio con un process.nextTick que puede llegar antes de que
      sendMessage regrese: sin esto, la copia de lo que mandó Secre se leía como
@@ -124,17 +129,33 @@ export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () =
         try{ await alLlamada({ de: jidNormalizedUser(c.from), video: !!c.isVideo, t: Date.now() }); }catch{}
       }
     });
+    /* lo que pidió el historial (pedirHistorial) llega aquí, viejo; sólo de los chats pedidos */
+    sock.ev.on('messaging-history.set', async ({ messages }) => {
+      const ms = (messages || []).filter(x => x.key && x.key.remoteJid).sort((a, b) => Number(a.messageTimestamp || 0) - Number(b.messageTimestamp || 0));
+      for(const msg of ms){
+        const chat = jidNormalizedUser(msg.key.remoteJid), t = (Number(msg.messageTimestamp) || 0) * 1000;
+        if(t) verViejo(chat, msg.key, t);
+        if(historicos.has(chat)) await procesar(msg, true);
+      }
+    });
     sock.ev.on('messages.upsert', async ({ messages, type }) => {
       for(const msg of messages || []){
+        const k = msg.key || {}, t = (Number(msg.messageTimestamp) || Math.floor(Date.now() / 1000)) * 1000;
+        if(k.remoteJid) verViejo(jidNormalizedUser(k.remoteJid), k, t);
+        /* lo que baja del historial al vincular no es nuevo (salvo de un chat cuyo historial se pidió) */
+        const viejo = type !== 'notify' && Date.now() - t > 2 * 60_000;
+        if(viejo && !(k.remoteJid && historicos.has(jidNormalizedUser(k.remoteJid)))) continue;
+        await procesar(msg, viejo);
+      }
+    });
+    async function procesar(msg, historico){
         try{
           const k = msg.key || {};
-          if(k.fromMe && propios.has(k.id)) continue;   /* lo mandó Secre, no Carlos */
-          if(!k.remoteJid || k.remoteJid === 'status@broadcast') continue;
+          if(k.fromMe && propios.has(k.id)) return;   /* lo mandó Secre, no Carlos */
+          if(!k.remoteJid || k.remoteJid === 'status@broadcast') return;
           const t = (Number(msg.messageTimestamp) || Math.floor(Date.now() / 1000)) * 1000;
-          /* lo que baja del historial al vincular no es nuevo */
-          if(type !== 'notify' && Date.now() - t > 2 * 60_000) continue;
           const texto = textoDe(msg);
-          if(!texto) continue;
+          if(!texto) return;
           /* WhatsApp ya manda muchos chats con un LID (un id que esconde el número). La agenda
              viene por número, así que se usa el número cuando Baileys lo trae (remoteJidAlt) */
           const alt = k.remoteJidAlt && /@s\.whatsapp\.net$/.test(k.remoteJidAlt) ? k.remoteJidAlt : '';
@@ -143,11 +164,12 @@ export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () =
           const cont = normalizeMessageContent(msg.message) || {};
           /* una foto: no se baja hasta que alguien la necesita (Mayoreo, o preguntan precio de una) */
           const im = cont.imageMessage;
-          const imagen = im ? { mime: im.mimetype || 'image/jpeg', pie: im.caption || '', bajar: () => downloadMediaMessage(msg, 'buffer', {}) } : null;
+          /* reuploadRequest: una foto vieja ya no está en el servidor de WhatsApp y se le pide al teléfono que la vuelva a subir */
+          const imagen = im ? { mime: im.mimetype || 'image/jpeg', pie: im.caption || '', bajar: () => downloadMediaMessage(msg, 'buffer', {}, { logger, reuploadRequest: sock.updateMediaMessage }) } : null;
           /* si contestan citando un mensaje (la foto de un producto), cuál era */
           const ctx = (cont[getContentType(cont)] || {}).contextInfo || {};
           const citado = ctx.stanzaId || '';
-          if(!k.fromMe) ultimas.set(chat, [...(ultimas.get(chat) || []), k].slice(-10));
+          if(!k.fromMe && !historico) ultimas.set(chat, [...(ultimas.get(chat) || []), k].slice(-10));
           let nombre = msg.pushName || '';
           if(grupo){
             if(!grupos.has(chat)) grupos.set(chat, (await sock.groupMetadata(chat).catch(() => ({}))).subject || '');
@@ -156,21 +178,20 @@ export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () =
           /* los stickers que manda CARLOS en un grupo se guardan, para que en el rol
              los use su personaje (Carlos, 16 de octubre: «de vez en cuando usamos stickers») */
           let sticker = null;
-          if(grupo && k.fromMe && texto === '[sticker]'){
+          if(grupo && k.fromMe && texto === '[sticker]' && !historico){
             const buf = await downloadMediaMessage(msg, 'buffer', {}).catch(() => null);
             if(buf && buf.length <= 100_000) sticker = { b64: buf.toString('base64'), animado: !!(normalizeMessageContent(msg.message).stickerMessage || {}).isAnimated };
           }
           /* una nota de voz (fuera de grupos) se baja para que Secre la oiga; hasta 8 MB */
           let audio = null;
-          const au = !grupo && /^\[(nota de voz|audio)\]$/.test(texto) && normalizeMessageContent(msg.message).audioMessage;
+          const au = !historico && !grupo && /^\[(nota de voz|audio)\]$/.test(texto) && normalizeMessageContent(msg.message).audioMessage;
           if(au && Number(au.fileLength || 0) <= 8_000_000){
             const buf = await downloadMediaMessage(msg, 'buffer', {}).catch(() => null);
             if(buf && buf.length <= 8_000_000) audio = { b64: buf.toString('base64'), mime: au.mimetype || 'audio/ogg', segundos: Number(au.seconds || 0) };
           }
-          await alMensaje({ id: k.id, chat, de: grupo ? (k.participantAlt || k.participant || '') : chat, nombre, nombreChat: grupo ? grupos.get(chat) : nombre, texto, mio: !!k.fromMe, grupo, t, sticker, audio, imagen, citado, lid: String(k.remoteJid).endsWith('@lid') ? jidNormalizedUser(k.remoteJid) : '' });
+          await alMensaje({ id: k.id, chat, de: grupo ? (k.participantAlt || k.participant || '') : chat, nombre, nombreChat: grupo ? grupos.get(chat) : nombre, texto, mio: !!k.fromMe, grupo, t, sticker, audio, imagen, citado, historico: !!historico, lid: String(k.remoteJid).endsWith('@lid') ? jidNormalizedUser(k.remoteJid) : '' });
         }catch(e){ logger.warn({ err: e.message }, 'secre: mensaje que no pude leer'); }
-      }
-    });
+    }
   }
   await arrancar();
 
@@ -187,6 +208,14 @@ export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () =
        El grupo de avisos de la comunidad no es para jugar: se deja fuera. */
     /* el botón «Cargar contactos»: los grupos y, de la agenda de WhatsApp, los
        contactos guardados (se vuelven a pedir; llegan por contacts.upsert) */
+    /* los grupos donde está la cuenta, con su nombre (para encontrar «Shopy go mayoreo 1» por nombre) */
+    async grupos(){ const gs = Object.values(await sock.groupFetchAllParticipating()); for(const g of gs) grupos.set(g.id, g.subject || ''); return gs.map(g => ({ id: g.id, nombre: g.subject || '' })); },
+    /* pide a WhatsApp (al teléfono) los n mensajes de antes del más viejo que se ha visto. false = sin ancla todavía */
+    ancla: (chat) => viejos.get(chat) || null,
+    async pedirHistorial(chat, n = 50, ancla = null){ historicos.add(chat); if(ancla && ancla.key && !viejos.has(chat)) viejos.set(chat, ancla); const v = viejos.get(chat); if(!v) return false; await sock.fetchMessageHistory(Math.min(50, n), v.key, v.t); return true; },
+    masViejo: (chat) => (viejos.get(chat) || {}).t || 0,
+    /* ¿ese número tiene WhatsApp? regresa su jid o '' (52 + 10 dígitos) */
+    async existe(tel){ const d = String(tel || '').replace(/\D/g, '').replace(/^(?:52)?1?(\d{10})$/, '52$1'); if(d.length !== 12) return ''; const [r] = await sock.onWhatsApp(d).catch(() => []); return r && r.exists ? jidNormalizedUser(r.jid) : ''; },
     async cargarContactos(){
       const gs = Object.values(await sock.groupFetchAllParticipating()).filter(g => !g.isCommunity && !g.isCommunityAnnounce);
       try{ alContactos(gs.map(g => ({ id: g.id, nombre: g.subject || '', grupo: true }))); }catch{}

@@ -35,9 +35,10 @@
    ═════════════════════════════════════════════════════════════════════════ */
 import { llamar, llamadasListas, twilioDe } from './llamada.mjs';
 import { HORARIOS, cualHorario, mensajesDeHorario } from './horarios.mjs';
+import { CAMPANA_BASE, mensajeProspecto, prospectosDeSala } from './campana.mjs';
 import { bancoDeSala, buscarFotos, nombreDe as nombreFoto, pieDe } from './banco.mjs';
 import { revisarRespuesta, leerPrecios, textoPrecio, enQueAnda, cantidades, enPrimeraPersona } from './criterio.mjs';
-import { leerCosto, leerTallas, leerDescripcion, precioVenta, huella, masParecido, miniatura, textoProducto, pieVenta, leerMarca, datosVenta } from './mayoreo.mjs';
+import { leerCosto, leerTallas, leerDescripcion, precioVenta, huella, masParecido, miniatura, textoProducto, pieVenta, leerMarca, datosVenta, comprimir } from './mayoreo.mjs';
 import { cargarConocimiento } from './conocimiento.mjs';
 /* lo que comparten las dos cuentas de Carlos (4 nov: «que el güey ya sepa todo en ambos lados») */
 const COMPARTIDO = ['datos', 'prohibidos', 'precios', 'productos', 'mayoreo', 'imitar'];
@@ -169,6 +170,9 @@ export function horaDe(x){
   if(m[3] && /a/i.test(m[3]) && h === 12) h = 0;
   return h < 24 && mi < 60 ? String(h).padStart(2, '0') + ':' + String(mi).padStart(2, '0') : '';
 }
+const MAYOREO_BASE = { activo: false, fuente: '', destino: '', fuenteNombre: '', destinoNombre: '', margen: 250, tanda: 100, pausa: 30, cadaSeg: 8, historico: false };
+/* ¿el nombre de un grupo es éste? sin acentos, sin signos, y aguanta lo que WhatsApp corta («All's Fashion | clothes & more») */
+export const mismoGrupo = (a, b) => { const x = sinAcentos(a).replace(/[^a-z0-9]+/g, ' ').trim(), y = sinAcentos(b).replace(/[^a-z0-9]+/g, ' ').trim(); return !!x && !!y && (x === y || x.startsWith(y + ' ') || y.startsWith(x + ' ')); };
 export const sinAcentos = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 /* «30m», «2h», «hoy», «1d» → milisegundos */
 export function duracion(s, ahora){
@@ -199,9 +203,11 @@ export function finDe(x, ahora){
 
 export class Secre {
   static hermanas = new Set();
-  constructor({ cuenta = 'principal', transporte, ia, almacen, reloj = () => Date.now(), azar = Math.random, telefono = null, banco = undefined, conocimiento = undefined, compartir = false }){
+  constructor({ cuenta = 'principal', transporte, ia, almacen, reloj = () => Date.now(), azar = Math.random, telefono = null, banco = undefined, conocimiento = undefined, compartir = false, prospectos = undefined }){
     /* telefono: { listas(), llamar({ a, texto }) } — por omisión, Twilio (llamada.mjs) */
     Object.assign(this, { cuenta, transporte, ia, almacen, reloj, azar, telefono: telefono || { listas: () => llamadasListas(), llamar: (x) => llamar(x), conversar: async ({ a, url }) => { try{ const sid = await twilioDe().llamar({ a, url }); return { bien: !!sid, id: sid }; }catch(e){ return { bien: false, error: e.message }; } } } });
+    /* la lista de negocios para la campaña (La Sala, k=prospectos); null = sin campaña */
+    this.prospectos = prospectos === undefined ? prospectosDeSala() : prospectos;
     /* el banco de imágenes de La Sala; null = sin banco */
     this.banco = banco === undefined ? bancoDeSala() : banco;
     this.conocimiento = conocimiento === undefined ? cargarConocimiento() : conocimiento;
@@ -222,6 +228,16 @@ export class Secre {
       const a = this.config.auto || (this.config.auto = {});
       Object.assign(a, { porHora: Math.max(a.porHora || 0, 1000), alDia: Math.max(a.alDia || 0, 10000), grupoPorHora: Math.max(a.grupoPorHora || 0, 1000), grupoAlDia: Math.max(a.grupoAlDia || 0, 10000) });
       this.config.version = 3;
+    }
+    /* 4 nov, Carlos: «haz que tome todas las fotos del grupo Shopy go mayoreo 1 … y que envíe TODAS
+       las que están allí de 100 en 100». Los grupos se encuentran por nombre (el jid sale solo) */
+    if(Object.keys(guardada).length && (guardada.version || 1) < 4){
+      const M = this.config.mayoreo = Object.assign({}, MAYOREO_BASE, this.config.mayoreo || {});
+      if(!M.fuente){ M.activo = true; M.fuenteNombre = 'Shopy go mayoreo 1'; M.historico = true; }
+      if(!M.destino) M.destinoNombre = "All's Fashion";
+      /* y «manda lo de los negocios usando Secre»: la campaña, prendida, a 25 por día */
+      this.config.campana = Object.assign({}, CAMPANA_BASE, this.config.campana || {}, { activo: true });
+      this.config.version = 4;
     }
     /* las dos cuentas de Carlos corren en el mismo proceso: lo compartido se junta al arrancar */
     this.compartir = compartir;
@@ -396,6 +412,12 @@ export class Secre {
   async alMensaje(m){
     if(!m || !m.chat || !m.texto) return;
     const ahora = m.t || this.reloj();
+    {
+      const MY = this.config.mayoreo || {};
+      if(MY.activo && !MY.fuente && MY.fuenteNombre && m.grupo && mismoGrupo(m.nombreChat, MY.fuenteNombre)){ MY.fuente = m.chat; this.guardar(); }
+      /* lo viejo que se pidió del historial sólo sirve para Mayoreo: no se contesta nada */
+      if(m.historico){ if(MY.activo && m.chat === MY.fuente) await this.recibirMayoreo(m); return; }
+    }
     /* lo que mandó Secre misma no se vuelve a procesar */
     if(m.id && this.estado.enviados.includes(m.id)) return;
     /* una nota de voz se oye y se vuelve texto (16 de octubre). Las de Carlos en
@@ -484,6 +506,8 @@ export class Secre {
     await this.repaso(ahora);
     await this.programadosTic(ahora);
     await this.publicarTic(ahora);
+    await this.mayoreoTic();
+    await this.campanaTic(ahora);
     await this.colaFotosTic();
     /* las propuestas viejas se tiran: contestar algo de hace 6 horas confunde */
     const antes = this.estado.propuestas.length;
@@ -578,7 +602,10 @@ export class Secre {
   /* ── Mayoreo → banco → All's (4 nov) ── */
   async recibirMayoreo(m){
     const MY = this.config.mayoreo, P = this.config.productos || (this.config.productos = []);
-    const ahora = this.reloj();
+    /* las dos cuentas comparten la configuración: si las dos están en el grupo, sólo una trabaja */
+    if(MY.duena && MY.duena !== this.cuenta) return;
+    if(!MY.duena){ MY.duena = this.cuenta; }
+    const ahora = m.t || this.reloj();
     /* un texto suelto con precio justo después de unas fotos es el precio de esas fotos */
     if(!m.imagen){
       const costo = leerCosto(m.texto); if(!costo) return;
@@ -587,7 +614,7 @@ export class Secre {
       if(lote.length){ this.anotar(`Mayoreo: precio $${costo} a ${lote.length} foto(s)`); this.guardar(); }
       return;
     }
-    let buf; try{ buf = await m.imagen.bajar(); }catch(e){ this.anotar('Mayoreo: no pude bajar la foto: ' + e.message); return; }
+    let buf; try{ buf = await comprimir(await m.imagen.bajar()); }catch(e){ this.anotar('Mayoreo: no pude bajar la foto: ' + e.message); return; }
     if(!this.estado.loteMayoreoT || ahora - this.estado.loteMayoreoT > 3 * MIN) this.estado.loteMayoreo = 'L' + ahora.toString(36);
     this.estado.loteMayoreoT = ahora;
     const pie = m.imagen.pie || '', h = await huella(buf).catch(() => '');
@@ -598,29 +625,121 @@ export class Secre {
     P.push(p); this.config.productos = P.slice(-3000);
     if(this.banco && this.banco.subir){
       try{ const { mini, ancho, alto } = await miniatura(buf);
-        const f = await this.banco.subir({ buf, mime: m.imagen.mime, mini, ancho, alto, nombre: (p.desc || 'mayoreo') + '.jpg', huella: 'mayoreo:' + h,
+        const f = await this.banco.subir({ buf, mime: 'image/jpeg', mini, ancho, alto, nombre: (p.desc || 'mayoreo') + '.jpg', huella: 'mayoreo:' + h,
           campos: { titulo: p.desc || '', carpeta: "All's fashion", temas: ['mayoreo'], notas: `costo $${p.costo || '?'} · venta $${p.precio || '?'}${p.tallas.length ? ' · tallas ' + p.tallas.join(', ') : ''}${p.marca ? ' · marca ' + p.marca : ''}` } });
         p.fotoId = f && f.id || ''; }
       catch(e){ this.anotar('Mayoreo: no pude subirla al banco: ' + e.message); }
     }
-    (this.estado.colaFotos || (this.estado.colaFotos = [])).push({ id: p.id, buf: buf.toString('base64'), mime: m.imagen.mime, t: ahora });
+    /* en la cola va sólo el id: la foto ya está en el banco (mil fotos en base64 no caben en lo guardado) */
+    const Q = this.estado.colaFotos || (this.estado.colaFotos = []);
+    Q.push(p.fotoId || Q.filter(x => x.buf).length > 20 ? { id: p.id, t: ahora, en: this.reloj() } : { id: p.id, t: ahora, en: this.reloj(), buf: buf.toString('base64'), mime: 'image/jpeg' });
     this.guardar();
   }
   /* manda a All's las fotos que van llegando, de a unas cuantas por vuelta (sin texto) */
   async colaFotosTic(){
     const MY = this.config.mayoreo || {}, Q = this.estado.colaFotos || [];
     if(!MY.activo || !MY.destino || !Q.length) return;
+    if(MY.duena && MY.duena !== this.cuenta) return;
+    const ahora = this.reloj(), E = this.estado.envioMayoreo || (this.estado.envioMayoreo = { enTanda: 0, ultima: 0, pausaHasta: 0, total: 0 });
+    /* de 100 en 100 (Carlos, 4 nov): una cada `cadaSeg` segundos; al llegar a la tanda, descansa `pausa` minutos */
+    if(ahora < E.pausaHasta || ahora - E.ultima < (MY.cadaSeg || 8) * 1000) return;
+    const P = this.config.productos || [];
     /* espera a que llegue el precio (el proveedor a veces lo manda después de las fotos), hasta 5 min */
-    const P = this.config.productos || [], ahora = this.reloj();
-    const listas = Q.filter(x => { const pr = P.find(p => p.id === x.id); return (pr && pr.precio) || !x.t || ahora - x.t > 5 * MIN; }).slice(0, 3);
-    this.estado.colaFotos = Q.filter(x => !listas.includes(x));
-    for(const x of listas){
-      try{ const prod = (this.config.productos || []).find(p => p.id === x.id);
-        const id = await this.transporte.enviarImagen(MY.destino, Buffer.from(x.buf, 'base64'), x.mime, prod && prod.precio ? pieVenta({}, prod) : '');
-        if(id){ this.estado.enviados.push(id); (this.estado.fotoProducto || (this.estado.fotoProducto = {}))[id] = x.id; } }
-      catch(e){ this.anotar('Mayoreo: no pude mandar una foto a All\'s: ' + e.message); Q.push(x); break; }
+    const x = Q.find(q => { const pr = P.find(p => p.id === q.id); return (pr && pr.precio) || ahora - (q.en || q.t || 0) > 5 * MIN; });
+    if(!x) return;
+    this.estado.colaFotos = Q.filter(q => q !== x);
+    E.ultima = ahora;
+    const prod = P.find(p => p.id === x.id);
+    try{
+      let buf = x.buf ? Buffer.from(x.buf, 'base64') : null;
+      if(!buf && prod && prod.fotoId && this.banco) buf = (await this.banco.bajar(prod.fotoId)).buf;
+      if(!buf){ this.anotar('Mayoreo: una foto se perdió (no está en el banco)'); this.guardar(); return; }
+      const id = await this.transporte.enviarImagen(MY.destino, buf, 'image/jpeg', prod && prod.precio ? pieVenta({}, prod) : '');
+      if(id){ this.estado.enviados.push(id); this.estado.enviados = this.estado.enviados.slice(-500); (this.estado.fotoProducto || (this.estado.fotoProducto = {}))[id] = x.id; }
+      E.enTanda++; E.total++;
+      if(E.enTanda >= (MY.tanda || 100)){
+        E.enTanda = 0; E.pausaHasta = ahora + (MY.pausa || 30) * MIN;
+        await this.avisar(`📦 Mayoreo: van ${E.total} fotos mandadas a ${this.nombreDe(MY.destino)}. Faltan ${this.estado.colaFotos.length}; la siguiente tanda sale a las ${horaMx(E.pausaHasta)}.`);
+      }
+      if(!this.estado.colaFotos.length && E.total){ await this.avisar(`📦 Mayoreo: listo, mandé las ${E.total} fotos a ${this.nombreDe(MY.destino)}.`); E.total = 0; E.enTanda = 0; }
+    }catch(e){
+      this.anotar('Mayoreo: no pude mandar una foto a All\'s: ' + e.message);
+      x.fallas = (x.fallas || 0) + 1; if(x.fallas < 3) this.estado.colaFotos.unshift(x);
+      E.pausaHasta = ahora + MIN;
     }
     const fp = this.estado.fotoProducto || {}, ks = Object.keys(fp); if(ks.length > 4000) for(const k of ks.slice(0, ks.length - 4000)) delete fp[k];
+    this.guardar();
+  }
+  /* ── la campaña a negocios sin página: pocos al día, en horario, desde la cuenta del negocio ── */
+  async campanaTic(ahora){
+    const C = this.config.campana; if(!C || !C.activo || !this.prospectos || !this.transporte.existe) return;
+    const yo = (this.transporte.yo() || []).join(' ');
+    if(C.tel && !yo.includes(String(C.tel).replace(/\D/g, '').slice(-10))) return;
+    const E = this.estado.campana || (this.estado.campana = { hechos: {}, dia: '', hoy: 0, proxima: 0 });
+    const hoy = fechaMx(ahora);
+    if(E.dia !== hoy){ E.dia = hoy; E.hoy = 0; }
+    const m = minDelDia(ahora);
+    if(!(C.dias || [1, 2, 3, 4, 5, 6]).includes(diaMx(ahora)) || m < aMin(C.desde || '10:00') || m >= aMin(C.hasta || '18:30')) return;
+    if(E.hoy >= (C.porDia || 25) || ahora < (E.proxima || 0)) return;
+    if(!this.listaCampana || ahora - this.listaCampana.t > 6 * HORA){
+      try{ this.listaCampana = { t: ahora, l: await this.prospectos() }; }
+      catch(e){ this.anotar('campaña: no pude leer la lista: ' + e.message); E.proxima = ahora + 30 * MIN; return; }
+    }
+    const lista = this.listaCampana.l || [];
+    const p = lista.find(x => x.tel && !E.hechos[String(x.tel).replace(/\D/g, '')]);
+    if(!p){ if(!E.acabo){ E.acabo = true; await this.avisar(`📣 Campaña: ya les escribí a todos los ${lista.length} negocios de la lista.`); } this.guardar(); return; }
+    const tel = String(p.tel).replace(/\D/g, '');
+    let jid = '';
+    try{ jid = await this.transporte.existe(tel); }catch{}
+    E.proxima = ahora + 20_000;
+    if(!jid){ E.hechos[tel] = { t: ahora, sin: true }; this.guardar(); return; }   /* fijo o sin WhatsApp: el siguiente */
+    if(this.config.chats[jid] && (this.estado.historial[jid] || []).length){ E.hechos[tel] = { t: ahora, ya: true }; this.guardar(); return; }   /* ya hablamos con él */
+    const texto = mensajeProspecto(p, { hora: Math.floor(m / 60), variante: Object.keys(E.hechos).length });
+    try{ await this.mandar(jid, texto); }catch(e){ this.anotar('campaña: no pude escribirle a ' + p.negocio + ': ' + e.message); E.proxima = ahora + 10 * MIN; this.guardar(); return; }
+    const c = this.chat(jid);
+    c.nombre = c.nombre || String(p.negocio).slice(0, 80); c.modo = c.modo || 'auto';
+    c.etiquetas = [...new Set([...(c.etiquetas || []), 'prospecto'])];
+    c.nota = `Negocio al que le escribimos para ofrecerle página web (campaña). Giro: ${p.giro || '?'}. ${p.resenas || '?'} reseñas en Google${p.estrellas ? ', ' + p.estrellas + ' estrellas' : ''}. Hoy: ${p.tiene || 'sin página'}.`;
+    E.hechos[tel] = { t: ahora, jid }; E.hoy++;
+    const gap = (C.minEntre || 6) + this.azar() * Math.max(0, (C.maxEntre || 15) - (C.minEntre || 6));
+    E.proxima = ahora + gap * MIN;
+    const total = Object.values(E.hechos).filter(x => x.jid).length;
+    if(E.hoy === 1) await this.avisar(`📣 Campaña: arranqué la de hoy con ${c.nombre}. Hoy van a ser ${C.porDia || 25}, uno cada ${C.minEntre}-${C.maxEntre} min. Los que contesten los atiendo yo y te aviso.`);
+    if(E.hoy >= (C.porDia || 25)) await this.avisar(`📣 Campaña: hoy les escribí a ${E.hoy} negocios (llevamos ${total} de ${lista.length}). Mañana sigo.`);
+    this.guardar();
+  }
+  /* encuentra los grupos por su nombre y, la primera vez, baja TODO el historial de fotos del grupo de Mayoreo */
+  async mayoreoTic(){
+    const MY = this.config.mayoreo; if(!MY || !MY.activo) return;
+    const ahora = this.reloj(), T = this.transporte;
+    if((!MY.fuente && MY.fuenteNombre) || (!MY.destino && MY.destinoNombre)){
+      if(T.grupos && ahora - (this.estado.gruposVistos || 0) > 10 * MIN){
+        this.estado.gruposVistos = ahora;
+        try{
+          const gs = await T.grupos();
+          for(const g of gs) if(g.nombre && !this.config.chats[g.id]) this.chat(g.id).nombre = g.nombre, this.chat(g.id).grupo = true;
+          const f = !MY.fuente && gs.find(g => mismoGrupo(g.nombre, MY.fuenteNombre)); if(f) MY.fuente = f.id;
+          const d = !MY.destino && gs.find(g => mismoGrupo(g.nombre, MY.destinoNombre)); if(d){ MY.destino = d.id; const c = this.chat(d.id); c.tienda = true; if(!c.modo) c.modo = 'auto'; }
+          this.guardar();
+        }catch(e){ this.anotar('no pude ver los grupos: ' + e.message); }
+      }
+    }
+    if(!MY.historico || !MY.fuente || !T.pedirHistorial || (MY.duena && MY.duena !== this.cuenta)) return;
+    const H = this.estado.histMayoreo || (this.estado.histMayoreo = { pedidas: 0, ultimoT: 0, sinAvance: 0, ultimaVez: 0 });
+    if(ahora - H.ultimaVez < 20_000) return;
+    H.ultimaVez = ahora;
+    const t0 = T.masViejo ? T.masViejo(MY.fuente) : 0;
+    if(t0 && t0 === H.ultimoT) H.sinAvance++; else H.sinAvance = 0;
+    H.ultimoT = t0 || H.ultimoT;
+    /* ya no llega nada más viejo (o ya se pidieron 4,000 mensajes): se acabó el historial */
+    if(H.sinAvance >= 4 || H.pedidas >= 80){
+      MY.historico = false; this.guardar();
+      await this.avisar(`📦 Mayoreo: ya revisé todo el historial de ${this.nombreDe(MY.fuente)}. Tengo ${(this.config.productos || []).length} prendas; las voy mandando a ${MY.destino ? this.nombreDe(MY.destino) : "All's"} de ${MY.tanda || 100} en ${MY.tanda || 100}.`);
+      return;
+    }
+    /* el ancla se guarda: tras un reinicio se sigue desde donde iba, sin esperar a que alguien escriba en el grupo */
+    if(T.ancla){ const an = T.ancla(MY.fuente); if(an && (!H.ancla || an.t < H.ancla.t)) H.ancla = an; }
+    try{ if(await T.pedirHistorial(MY.fuente, 50, H.ancla || null)) H.pedidas++; }catch(e){ this.anotar('Mayoreo: no pude pedir el historial: ' + e.message); }
     this.guardar();
   }
 
@@ -1736,12 +1855,20 @@ export class Secre {
         return T.fijo ? `De guardia fija: ${T.fijo}` : T.activo ? `Turnos de ${T.horas} h entre ${T.quienes.join(', ')} · ahorita le toca a ${this.deTurno()}` : 'Sin turnos: sólo Secre';
       }
       case 'mayoreo': {
-        const M = this.config.mayoreo = Object.assign({ activo: false, fuente: '', destino: '', margen: 250 }, this.config.mayoreo || {});
-        if(a.fuente){ const j = chatDe(a.fuente); if(!j) return `✗ No encontré el grupo «${a.fuente}»`; M.fuente = j; }
-        if(a.destino){ const j = chatDe(a.destino); if(!j) return `✗ No encontré el grupo «${a.destino}»`; M.destino = j; this.chat(j).tienda = true; if(!this.chat(j).modo) this.chat(j).modo = 'auto'; }
+        const M = this.config.mayoreo = Object.assign({}, MAYOREO_BASE, this.config.mayoreo || {});
+        if(a.tanda !== undefined && +a.tanda >= 1) M.tanda = Math.min(500, Math.round(+a.tanda));
+        if(a.historial) M.historico = true;
+        if(a.fuente){ const j = chatDe(a.fuente); if(j) M.fuente = j; else { M.fuente = ''; M.fuenteNombre = a.fuente; } }
+        if(a.destino){ const j = chatDe(a.destino); if(j){ M.destino = j; this.chat(j).tienda = true; if(!this.chat(j).modo) this.chat(j).modo = 'auto'; } else { M.destino = ''; M.destinoNombre = a.destino; } }
         if(a.margen !== undefined && +a.margen >= 0 && +a.margen <= 5000){ M.margen = Math.round(+a.margen); for(const p of this.config.productos || []) if(p.costo) p.precio = precioVenta(p.costo, M.margen); }
         if(a.activo !== undefined) M.activo = !!a.activo;
         return M.activo && M.fuente && M.destino ? `Las fotos de ${this.nombreDe(M.fuente)} se suben al banco y se mandan solas a ${this.nombreDe(M.destino)}, sin texto. Precio de venta = costo + $${M.margen}` : 'Mayoreo: ' + (M.activo ? 'falta decirme de qué grupo a qué grupo' : 'apagado');
+      }
+      case 'campana': {
+        const C = this.config.campana = Object.assign({}, CAMPANA_BASE, this.config.campana || {});
+        if(a.activo !== undefined) C.activo = !!a.activo;
+        if(+a.porDia > 0) C.porDia = Math.min(60, Math.round(+a.porDia));
+        return C.activo ? `Campaña prendida: ${C.porDia} negocios al día, de ${C.desde} a ${C.hasta}` : 'Campaña apagada: ya no les escribo a negocios nuevos';
       }
       case 'tienda': { const j = chatDe(a.chat); if(!j) return ''; const c = this.chat(j); c.tienda = a.si !== false; if(c.tienda && !c.modo) c.modo = 'auto'; return c.tienda ? `En ${this.nombreDe(j)} contesto precios y tallas a las clientas` : `En ${this.nombreDe(j)} ya no contesto como tienda`; }
       case 'tirar': { const antes = this.estado.propuestas.length; this.estado.propuestas = this.estado.propuestas.filter(p => p.n !== +a.n); return antes === this.estado.propuestas.length ? '' : `Tirada la #${a.n}: no le digo nada`; }

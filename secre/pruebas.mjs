@@ -528,7 +528,7 @@ console.log('\n10 · Asistente de verdad: contesta siempre y al instante (Carlos
   /* las cuentas guardadas con lo de antes se pasan solas a lo nuevo */
   const viejo = { config: JSON.stringify({ porDefecto: 'borrador', juntar: 45, juntarMax: 120, esperaSiContesto: 15, auto: { firma: '🤖 Asistente de Carlos', porHora: 4, alDia: 20 } }) };
   const s3 = new Secre({ cuenta: 'vieja', transporte: t2, ia, almacen: { leer: (k, d) => viejo[k] ? JSON.parse(viejo[k]) : d, guardar(){} }, reloj });
-  ok('una cuenta con la configuración vieja se pasa sola a la nueva (una vez, y desde el 4 nov sin topes)', s3.config.version === 3 && s3.config.porDefecto === 'auto' && s3.config.juntar === 6 && s3.config.esperaSiContesto === 0 && s3.config.auto.porHora === 1000 && s3.config.auto.firma === 'Asistente de Carlos', s3.config);
+  ok('una cuenta con la configuración vieja se pasa sola a la nueva (una vez, y desde el 4 nov sin topes y con Mayoreo prendido)', s3.config.version === 4 && s3.config.mayoreo.fuenteNombre === 'Shopy go mayoreo 1' && s3.config.porDefecto === 'auto' && s3.config.juntar === 6 && s3.config.esperaSiContesto === 0 && s3.config.auto.porHora === 1000 && s3.config.auto.firma === 'Asistente de Carlos', s3.config);
   const ya = { config: JSON.stringify({ version: 3, porDefecto: 'borrador', juntar: 30 }) };
   const s4 = new Secre({ cuenta: 'ya', transporte: t2, ia, almacen: { leer: (k, d) => ya[k] ? JSON.parse(ya[k]) : d, guardar(){} }, reloj });
   ok('y lo que Carlos cambie después ya no se lo pisa', s4.config.porDefecto === 'borrador' && s4.config.juntar === 30);

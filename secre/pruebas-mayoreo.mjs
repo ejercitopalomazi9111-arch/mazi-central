@@ -27,7 +27,7 @@ const transporte = { yo: () => [YO], async enviar(jid, texto){ const id = 'S' + 
   async enviarAudio(jid){ const id = 'A' + sig++; env.push({ jid, texto: '[audio]', id }); return id; }, async escribiendo(){}, async leido(){} };
 const a = (jid) => env.filter(e => e.jid === jid), aviso = () => (a(YO).slice(-1)[0] || {}).texto || '';
 const subidas = [];
-const banco = { listo: () => true, async fichas(){ return []; }, async subir(x){ subidas.push(x); return { id: 'B' + subidas.length }; } };
+const banco = { listo: () => true, async fichas(){ return []; }, async subir(x){ subidas.push(x); return { id: 'B' + subidas.length }; }, async bajar(id){ return { buf: subidas[+id.slice(1) - 1].buf, mime: 'image/jpeg' }; } };
 
 let vio = null, ordenDa = null, leerDa = null;
 const ia = {
@@ -70,6 +70,7 @@ ok('cada foto queda como producto, con su costo y su precio de venta', P.length 
 ok('el texto con precio que llega DESPUÉS de unas fotos se les pone a ésas', P[1].costo === 280 && P[2].precio === 530 && P[1].tallas.join() === 'CH,M,G');
 ok('las tres se subieron al banco, en la carpeta de All\'s, con el costo sólo en las notas', subidas.length === 3 && subidas.every(x => x.campos.carpeta === "All's fashion") && /costo \$350/.test(subidas[0].campos.notas) && !/350/.test(subidas[0].campos.titulo));
 for(let k = 0; k < 3; k++){ pasar(10); await s.tic(); }
+ok('en la cola sólo va el id (la foto ya está en el banco)', !(s.estado.colaFotos || []).some(x => x.buf));
 const enAlls = a(ALLS).filter(e => e.texto === '[foto]');
 ok('y se mandaron solas al grupo de All\'s con precio de venta y tallas, sin el costo ni el texto del proveedor', enAlls.length === 3 && /\$600/.test(enAlls[0].pie) && /Tallas S, M, L/.test(enAlls[0].pie) && enAlls.every(e => /\$\d/.test(e.pie) && !/\$(350|280)\b/.test(e.pie)), enAlls);
 ok('en el grupo de Mayoreo no contestó nada', !a(MAYO).length);
@@ -151,6 +152,76 @@ console.log('\n§8 · el pie de venta: precio, tallas y marca, nunca la descripc
   const r = await uno.ponerVenta({ buscar: 'sudadera café', precio: 1200, tallas: ['m'], marca: 'True Religion' });
   ok('«la sudadera café va en 1200, M, True Religion» se guarda en su foto', cambios.length === 1 && cambios[0][0] === 'b1' && /venta \$1200 · tallas M · marca True Religion/.test(cambios[0][1].notas), [r, cambios]);
   ok('y le dice cómo va a salir', /True Religion · Talla M · \$1,200/.test(r), r);
+}
+
+console.log('\n§9 · todo el historial de «Shopy go mayoreo 1», de 100 en 100');
+{
+  const G1 = '120363999999@g.us', G2 = '120363888888@g.us', env9 = [], pedidos = [];
+  let viejo = Date.UTC(2026, 9, 1), hayMas = 3;
+  const t9 = { ...transporte, enviar: async (j, t) => { env9.push({ jid: j, texto: t }); return 'Z' + env9.length; },
+    enviarImagen: async (j, b, m, pie) => { env9.push({ jid: j, texto: '[foto]', pie }); return 'Z' + env9.length; },
+    grupos: async () => [{ id: G1, nombre: 'Shopy go mayoreo 1' }, { id: G2, nombre: "All's Fashion | clothes & more" }],
+    pedirHistorial: async (chat, n) => { pedidos.push([chat, n]); if(hayMas-- > 0) viejo -= 86400000; return true; }, masViejo: () => viejo };
+  const sub9 = [], banco9 = { listo: () => true, async fichas(){ return []; }, async subir(x){ sub9.push(x); return { id: 'B' + sub9.length }; }, async bajar(id){ return { buf: sub9[+id.slice(1) - 1].buf }; } };
+  const alm9 = {}, almac = { leer: (k, x) => alm9[k] ? JSON.parse(alm9[k]) : x, guardar: (k, v) => { alm9[k] = JSON.stringify(v); } };
+  /* una cuenta que ya existía (versión 3) pasa sola a tener Mayoreo prendido por nombre */
+  alm9.config = JSON.stringify({ nombre: 'Carlos', version: 3, chats: {} });
+  const s9 = new Secre({ cuenta: 'principal', transporte: t9, ia, almacen: almac, reloj, banco: banco9, conocimiento: '' });
+  ok('la cuenta vieja queda con Mayoreo prendido para «Shopy go mayoreo 1»', s9.config.mayoreo.activo && s9.config.mayoreo.fuenteNombre === 'Shopy go mayoreo 1' && s9.config.mayoreo.historico);
+  await s9.tic();
+  ok('encuentra los dos grupos por su nombre, aunque WhatsApp le agregue «| clothes & more»', s9.config.mayoreo.fuente === G1 && s9.config.mayoreo.destino === G2, s9.config.mayoreo);
+  ok('y pide el historial del grupo de Mayoreo de 50 en 50', pedidos.length === 1 && pedidos[0][0] === G1 && pedidos[0][1] === 50);
+  /* lo viejo que llega del historial: fotos con su precio en el pie */
+  const fs9 = [foto('flores'), foto('pulgares'), foto('saludo')];
+  for(const [i, f] of fs9.entries()) await s9.alMensaje({ id: 'H' + i, chat: G1, grupo: true, nombre: 'Proveedor', nombreChat: 'Shopy go mayoreo 1', texto: '[foto] Blusa ' + i + ' $' + (200 + i * 10) + ' tallas S M', imagen: img(f, 'Blusa ' + i + ' $' + (200 + i * 10) + ' tallas S M'), t: Date.UTC(2026, 9, 1) + i * 3600000, historico: true });
+  ok('las fotos viejas se vuelven prendas con precio de venta', s9.config.productos.length === 3 && s9.config.productos[2].precio === 470, s9.config.productos.map(p => p.precio));
+  await s9.alMensaje({ id: 'H9', chat: '5214420000000@s.whatsapp.net', nombre: 'Ana', texto: '¿vienes?', t: Date.UTC(2026, 9, 1), historico: true });
+  ok('lo viejo de otros chats no se contesta ni se anota', !env9.some(e => e.jid === '5214420000000@s.whatsapp.net') && !s9.estado.pendientes.length);
+  /* de 2 en 2 para la prueba (Carlos pidió 100) */
+  s9.config.mayoreo.tanda = 2; s9.config.mayoreo.pausa = 30;
+  for(let k = 0; k < 6; k++){ pasar(10); await s9.tic(); }
+  const fotosAlls = () => env9.filter(e => e.jid === G2 && e.texto === '[foto]');
+  ok('manda una tanda y descansa', fotosAlls().length === 2 && env9.some(e => /van 2 fotos mandadas .*Faltan 1/.test(e.texto)), env9.map(e => e.texto));
+  pasar(31 * 60); for(let k = 0; k < 3; k++){ pasar(10); await s9.tic(); }
+  ok('a la media hora manda la siguiente, y avisa cuando acaba', fotosAlls().length === 3 && env9.some(e => /listo, mandé las 3 fotos/.test(e.texto)), env9.map(e => e.texto));
+  ok('cada foto con su precio de venta y tallas', fotosAlls().every(e => /\$4[5-7]0/.test(e.pie) && /Tallas S, M/.test(e.pie)), fotosAlls().map(e => e.pie));
+  /* cuando ya no llega nada más viejo, se acaba el historial */
+  for(let k = 0; k < 8; k++){ pasar(25); await s9.tic(); }
+  ok('cuando ya no hay más historial, para y le avisa a Carlos', s9.config.mayoreo.historico === false && env9.some(e => /ya revisé todo el historial/.test(e.texto)), [pedidos.length, s9.estado.histMayoreo]);
+  const otra = new Secre({ cuenta: 'segunda', transporte: t9, ia, almacen: { leer: (k, x) => x, guardar(){} }, reloj, banco: banco9, conocimiento: '' });
+  otra.config.mayoreo = { ...s9.config.mayoreo };
+  await otra.alMensaje({ id: 'H20', chat: G1, grupo: true, nombre: 'Proveedor', nombreChat: 'Shopy go mayoreo 1', texto: '[foto] Short $150', imagen: img(foto('flores'), 'Short $150'), t: ahora });
+  ok('si las dos cuentas están en el grupo, sólo trabaja una (no se duplican las fotos)', !(otra.config.productos || []).length);
+}
+
+console.log('\n§10 · la campaña a negocios sin página');
+{
+  const env10 = [], lista = [
+    { negocio: 'Barbería Londres Jardines', giro: 'barbería', tel: '+52 442 232 8229', resenas: 383, tiene: 'sin página' },
+    { negocio: 'Teléfono fijo', giro: 'taller', tel: '+52 442 215 0000', resenas: 90, tiene: 'sin página' },
+    { negocio: 'Tacos Los Carnales', giro: 'taquería', tel: '+52 442 353 2851', resenas: 1097, tiene: 'sólo redes (facebook)' },
+    { negocio: 'Casa Flora', giro: 'cafetería', tel: '+52 442 580 5119', resenas: 1356, tiene: 'sin página' } ];
+  const t10 = { ...transporte, yo: () => ['5214428833786@s.whatsapp.net'], enviar: async (j, t) => { env10.push({ jid: j, texto: t }); return 'C' + env10.length; },
+    existe: async (tel) => /2150000/.test(tel) ? '' : '521' + String(tel).replace(/\D/g, '').slice(-10) + '@s.whatsapp.net' };
+  const s10 = new Secre({ cuenta: 'principal', transporte: t10, ia, almacen: { leer: (k, x) => x, guardar(){} }, reloj, banco: null, conocimiento: '', prospectos: async () => lista });
+  s10.config.campana = { activo: true, porDia: 2, desde: '10:00', hasta: '18:30', dias: [0, 1, 2, 3, 4, 5, 6], tel: '4428833786', minEntre: 6, maxEntre: 6 };
+  ahora = Date.UTC(2026, 10, 5, 3, 0);   /* 9 pm en Querétaro */
+  await s10.tic();
+  ok('fuera de horario no le escribe a nadie', !env10.length);
+  ahora = Date.UTC(2026, 10, 5, 17, 0);  /* 11 am */
+  await s10.tic();
+  const aNeg = () => env10.filter(e => /@s\.whatsapp\.net$/.test(e.jid) && !/^🤖/.test(e.texto));
+  ok('a las 11 le escribe al primero, con su nombre, sus reseñas y la salida de «no me interesa»', aNeg().length === 1 && /Barbería Londres Jardines/.test(aNeg()[0].texto) && /383 reseñas/.test(aNeg()[0].texto) && /reservas de citas/.test(aNeg()[0].texto) && /no le vuelvo a escribir/.test(aNeg()[0].texto), aNeg());
+  ok('el chat queda en automático y la IA sabe que es un prospecto', s10.config.chats['5214422328229@s.whatsapp.net'].modo === 'auto' && /campaña/.test(s10.config.chats['5214422328229@s.whatsapp.net'].nota));
+  pasar(60); await s10.tic();
+  ok('no manda el siguiente hasta que pasan los minutos', aNeg().length === 1);
+  pasar(6 * 60); await s10.tic(); pasar(30); await s10.tic();
+  ok('se salta el que no tiene WhatsApp (un fijo) y sigue', aNeg().length === 2 && /Tacos Los Carnales/.test(aNeg()[1].texto) && /sólo tienen redes/.test(aNeg()[1].texto), aNeg().map(e => e.texto.slice(0, 60)));
+  pasar(10 * 60); await s10.tic();
+  ok('al llegar a los del día, para y le avisa a Carlos', aNeg().length === 2 && env10.some(e => /hoy les escribí a 2 negocios/.test(e.texto)));
+  const s11 = new Secre({ cuenta: 'segunda', transporte: { ...t10, yo: () => ['5217861234567@s.whatsapp.net'] }, ia, almacen: { leer: (k, x) => x, guardar(){} }, reloj, banco: null, conocimiento: '', prospectos: async () => lista });
+  s11.config.campana = { ...s10.config.campana }; const antes = env10.length; ahora = Date.UTC(2026, 10, 6, 17, 0); await s11.tic();
+  ok('la cuenta personal no manda la campaña: sólo la del negocio', env10.length === antes);
 }
 
 console.log(fallas.length ? `\n✗ ${fallas.length} fallaron de ${pasan + fallas.length}` : `\n✓ ${pasan}/${pasan}`);
