@@ -140,7 +140,8 @@ export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () =
       }
     });
     /* lo que pidió el historial (pedirHistorial) llega aquí, viejo; sólo de los chats pedidos */
-    sock.ev.on('messaging-history.set', async ({ messages }) => {
+    sock.ev.on('messaging-history.set', async ({ messages, syncType }) => {
+      if(historicos.size) console.log(`[historial] llegaron ${(messages || []).length} mensajes viejos (tipo ${syncType}); de los grupos pedidos: ${(messages || []).filter(x => x.key && historicos.has(jidNormalizedUser(x.key.remoteJid))).length}`);
       const ms = (messages || []).filter(x => x.key && x.key.remoteJid).sort((a, b) => Number(a.messageTimestamp || 0) - Number(b.messageTimestamp || 0));
       for(const msg of ms){
         const chat = jidNormalizedUser(msg.key.remoteJid), t = (Number(msg.messageTimestamp) || 0) * 1000;
@@ -233,6 +234,7 @@ export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () =
       let l = viejos.get(chat) || [];
       if(saltar && l.length > 1){ l = l.slice(1); viejos.set(chat, l); }
       const v = l[0]; if(!v) return false;
+      console.log(`[historial] pido ${Math.min(50, n)} mensajes antes del ${new Date(v.t).toISOString()} (ancla ${l.length} de ${l.length}, ${seg ? 'segundos' : 'milisegundos'}${saltar ? ', ancla nueva' : ''})`);
       await sock.fetchMessageHistory(Math.min(50, n), v.key, seg ? Math.floor(v.t / 1000) : v.t);
       return true;
     },
