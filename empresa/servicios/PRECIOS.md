@@ -164,7 +164,7 @@ presentación ($900), la publicidad pagada ($1,500), tiempos y movimientos y la 
 
 Carlos pidió para el comercial de barberías *«ofrece algunos paquetes que incluyan la página y
 publicidad»*. Salen de sumar precios que ya están en la hoja y quitarles un pedazo, para que el
-paquete valga más que comprar suelto. **Son propuesta: los números los confirma Carlos.**
+paquete valga más que comprar suelto. **Confirmados por Carlos el 4 de noviembre**; ya van en la cotización (hoja 3).
 
 | Paquete | Qué trae | Suelto | Paquete |
 |---|---|---|---|

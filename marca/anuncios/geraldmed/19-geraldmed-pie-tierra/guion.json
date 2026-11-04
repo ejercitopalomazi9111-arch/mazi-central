@@ -1,0 +1,43 @@
+{
+ "titulo": "Geraldmed · Pie tierra",
+ "voces": {
+  "Narra": "piper:es_MX-claude-high"
+ },
+ "lento": {
+  "Narra": 0.97
+ },
+ "lineas": [
+  {
+   "id": "01",
+   "voz": "Narra",
+   "en": 0.9,
+   "txt": "En un evento, una emergencia *no avisa.*"
+  },
+  {
+   "id": "02",
+   "voz": "Narra",
+   "pausa": 0.45,
+   "txt": "Por eso nuestro personal *pie tierra* camina entre la gente,"
+  },
+  {
+   "id": "03",
+   "voz": "Narra",
+   "pausa": 0.2,
+   "txt": "con su equipo encima y *el radio en la mano.*"
+  },
+  {
+   "id": "04",
+   "voz": "Narra",
+   "pausa": 0.45,
+   "txt": "Atentos a todo. *Cerca de todos.*"
+  },
+  {
+   "id": "05",
+   "voz": "Narra",
+   "pausa": 0.5,
+   "txt": "Geraldmed: cubrimos tu evento.",
+   "sinSub": true,
+   "dice": "Yeraldmed: cubrimos tu evento."
+  }
+ ]
+}

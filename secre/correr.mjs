@@ -21,6 +21,7 @@
 import fs from 'fs'; import path from 'path'; import http from 'http'; import crypto from 'crypto';
 import { Secre, AYUDA, configBase } from './nucleo.mjs';
 import { faltaParaLlamar } from './llamada.mjs';
+import { esMeta, enviarMeta, leerAviso, verificar, firmaValida, nombreMeta, canalesMeta } from './meta.mjs';
 const FALSO = !!process.env.SECRE_FALSO;
 const { ia } = await import(FALSO ? './falso.mjs' : './ia.mjs');
 
@@ -63,14 +64,15 @@ async function prender(c){
     almacen = cajon.almacen; auth = cajon.auth;
   } else almacen = almacenEn(dir);
   /* el transporte llega después de conectar; mientras, el núcleo no manda nada */
-  const puente = { yo: () => (v.transporte ? v.transporte.yo() : []), enviar: (j, t) => v.transporte.enviar(j, t),
+  /* Instagram y Messenger (ig:… / fb:…) salen por Meta; lo demás por WhatsApp */
+  const puente = { yo: () => (v.transporte ? v.transporte.yo() : []), enviar: (j, t) => esMeta(j) ? enviarMeta(j, t) : v.transporte.enviar(j, t),
     /* sin esto el rol nunca mandaba stickers: quizaSticker pregunta si existe y se callaba */
     enviarSticker: (j, b) => v.transporte.enviarSticker(j, b),
     /* y las notas de voz (16 de octubre): sin esto, «audio Ana: …» se quedaba mudo igual que los stickers */
-    enviarAudio: (j, o, sg) => v.transporte.enviarAudio(j, o, sg), enviarImagen: (j, b, m, p) => v.transporte.enviarImagen(j, b, m, p), grabando: (j, ms) => v.transporte.grabando && v.transporte.grabando(j, ms),
+    enviarAudio: (j, o, sg) => { if(esMeta(j)) throw new Error('en Instagram/Messenger va escrito'); return v.transporte.enviarAudio(j, o, sg); }, enviarImagen: (j, b, m, p) => v.transporte.enviarImagen(j, b, m, p), grabando: (j, ms) => v.transporte.grabando && v.transporte.grabando(j, ms),
     /* los números de sus OTRAS cuentas: dos Secres no se contestan entre ellas */
     otrosYo: () => Object.entries(vivas).filter(([k, x]) => k !== c.id && x.transporte).flatMap(([, x]) => x.transporte.yo()),
-    escribiendo: (j, ms) => v.transporte.escribiendo(j, ms), leido: (j) => v.transporte.leido(j) };
+    escribiendo: (j, ms) => esMeta(j) ? null : v.transporte.escribiendo(j, ms), leido: (j) => esMeta(j) ? null : v.transporte.leido(j) };
   v.secre = new Secre({ cuenta: c.id, transporte: puente, ia, almacen });
   /* con qué número se pide el código: el de SECRE_CUENTAS, o el que se eligió en el panel
      (en México WhatsApp puede tener la cuenta como 52… o como 521…) */
@@ -149,6 +151,24 @@ http.createServer(async (req, res) => {
     const segura = req.headers['x-forwarded-proto'] === 'https' ? '; Secure' : '';
     res.writeHead(200, { 'content-type': 'application/json', 'set-cookie': `secre=${tok}; HttpOnly; SameSite=Strict; Path=/; Max-Age=2592000${segura}` });
     return res.end('{"bien":true}');
+  }
+  /* Instagram y Messenger: Meta avisa aquí (GET = verificación, POST = mensajes firmados) */
+  if(url.pathname === '/meta'){
+    if(req.method === 'GET'){ const c = verificar(url.searchParams); if(c === null){ res.writeHead(403); return res.end(); } res.writeHead(200, { 'content-type': 'text/plain' }); return res.end(c); }
+    const crudo = await new Promise(r => { const p = []; req.on('data', d => p.push(d)); req.on('end', () => r(Buffer.concat(p))); });
+    if(!firmaValida(crudo, req.headers['x-hub-signature-256'])){ res.writeHead(401); return res.end(); }
+    res.writeHead(200); res.end('EVENT_RECEIVED');      /* Meta quiere el 200 rápido; lo demás va después */
+    const v = vivas[process.env.META_CUENTA] || Object.values(vivas)[0];
+    let body = {}; try{ body = JSON.parse(crudo.toString('utf8')); }catch{}
+    for(const m of leerAviso(body)){
+      try{
+        if(!v || !v.secre) continue;
+        const c = v.secre.config.chats[m.chat];
+        if(!m.mio && !(c && c.nombre)){ const n = await nombreMeta(m.chat); m.nombre = (n || 'Alguien') + ` (${m.canal})`; }
+        await v.secre.alMensaje(m);
+      }catch(e){ console.log('meta:', e.message); }
+    }
+    return;
   }
   if(!url.pathname.startsWith('/api/')) return json(res, 404, { error: 'No existe.' });
   if(!sesiones.has(galleta(req))) return json(res, 401, { error: 'Entra con la contraseña.' });

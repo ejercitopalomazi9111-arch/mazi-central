@@ -271,7 +271,7 @@ const getA = (expr) => RA(/\b(var|let|const|return|try|if|for)\b|;/.test(expr) ?
       await registrarse('Papa Nuevo', 'papa2@t.mx', ['papa'], {}); await wait(60);
       R(`currentRole='papa';buildAlta();`); await wait(20);
       setField('altaName', 'Menor Test'); setField('altaNum', '11'); setField('altaPos', 'Base');
-      setField('altaCurp', 'HEGG560427MVZRRL04');
+      setField('altaNac', '2014-04-27');
       R(`document.getElementById('altaResp').textContent='✓';`);
       R(`saveChild();`); await wait(120);
       const kidCode = get('(userData().children[0]||{}).code');
@@ -346,7 +346,7 @@ const getA = (expr) => RA(/\b(var|let|const|return|try|if|for)\b|;/.test(expr) ?
       // vincula a su hij@ con SU PROPIO numero/posicion (nunca los del papa)
       R(`currentRole='papa';buildAlta();`); await wait(20);
       setField('altaName', 'Hijo Test'); setField('altaNum', '7'); setField('altaPos', 'Alero');
-      setField('altaCurp', 'HEGG560427MVZRRL04');
+      setField('altaNac', '2014-04-27');
       R(`document.getElementById('altaResp').textContent='✓';`);
       R(`saveChild();`); await wait(60);
       const kid = get('(userData().children||[])[0]');

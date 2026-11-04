@@ -1,7 +1,7 @@
 # Ligas Mazi · Pendientes
 
 > Lo que falta, con diagnóstico. Sin diagnóstico no es un pendiente, es un recado.
-> Última revisión: 31 de julio de 2026.
+> Última revisión: 4 de noviembre de 2026 (simulador 36/36).
 
 ---
 
@@ -66,6 +66,10 @@ botones de la pantalla de entrada, o sea los primeros que toca cualquiera.
 ---
 
 ## ✅ Cerrado hace poco (para no volver a abrirlo)
+
+- **4 nov:** la entrada en computadora ya no se estira: marca a la izquierda, formulario de 440 px a la derecha
+- **4 nov:** «Iniciar sesión» y «Crear cuenta» ya miden 44 px de alto
+- **4 nov:** dos metas del simulador fallaban porque la prueba seguía mandando CURP; la app ya pide fecha de nacimiento. Arreglada la prueba, 36/36
 
 - Cerrar sesión ya no te deja fuera de tu propia cuenta (`cuentas-local.js`, el llavero local)
 - Una sola escalera de rarezas, de 20 peldaños, con auto-prueba al cargar

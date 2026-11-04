@@ -48,3 +48,6 @@ marca/cubo/salida/
 marca/cubo/final/salida/
 marca/anuncios/salida/
 herramientas/higgsfield/node_modules/
+
+# prospectos de clientes: nombres y teléfonos de negocios, no van al repo público
+clientes/

@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Grupo Mazi · pósters</title>
+<!-- LOS PÓSTERS DE GRUPO MAZI (Carlos, 4 nov: «hay que hacer un buen bonche de pósters como lo que
+     hicimos con Fadori, pero para nosotros»). 12 de dos caras, carta, para imprenta y para redes.
+     Colores de la casa (morado oscuro, vino, morado claro), el logo original y capturas REALES de lo que
+     hicimos (nada de emojis ni dibujos inventados). Precios de empresa/servicios/servicios.html.
+       node fadori-campana/armar.mjs previa ../marca/posters/posters.html mazi
+       node marca/posters/armar.mjs   → PNG por cara + PDF a 300 ppp -->
+<style>
+@font-face{font-family:Pop;font-weight:500;src:url(../../fadori-campana/f/Poppins-Medium.ttf)}
+@font-face{font-family:Pop;font-weight:600;src:url(../../fadori-campana/f/Poppins-SemiBold.ttf)}
+@font-face{font-family:Pop;font-weight:800;src:url(../../fadori-campana/f/Poppins-ExtraBold.ttf)}
+@font-face{font-family:Pop;font-weight:900;src:url(../../fadori-campana/f/Poppins-Black.ttf)}
+:root{--os:#170A26;--os2:#241036;--vino:#7E1735;--vino2:#A8264B;--lila:#AC27FF;--ac:#C77DFF;--tx:#F4EEF2;--gris:#B9AFC4;--claro:#F3ECF8;--tinta:#170A26;--tenue:#6B5A7A}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#555;font-family:Pop,sans-serif;color:var(--tx)}
+img{display:block}
+.cara{width:816px;height:1056px;position:relative;overflow:hidden;margin:20px auto;background:var(--os)}
+.cara.luz{background:var(--claro);color:var(--tinta)}
+.h{font:900 96px/.9 Pop;letter-spacing:-.045em}
+.h2{font:900 64px/.95 Pop;letter-spacing:-.04em}
+.v{color:var(--ac)} .luz .v{color:var(--vino)} .luz .l{color:#7A1FC2}
+.chip{display:inline-block;border-radius:99px;font:900 14px/1 Pop;letter-spacing:.12em;text-transform:uppercase;padding:10px 16px;background:var(--lila);color:#fff}
+.luz .chip{background:var(--vino)}
+.lead{font:500 22px/1.35 Pop;color:var(--gris);max-width:30ch}
+.luz .lead{color:var(--tenue)}
+.logo{position:absolute;left:52px;top:46px;height:46px}
+.pie{position:absolute;left:0;right:0;bottom:0;height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 40px;font:800 11px/1 Pop;letter-spacing:.16em;text-transform:uppercase;background:#0E0618;color:var(--gris)}
+.luz .pie{background:var(--os);color:var(--gris)}
+.tel{position:absolute;background:#0b0b0e;border-radius:48px;padding:11px;box-shadow:0 40px 70px rgba(0,0,0,.5),inset 0 0 0 2px #2c2c33;overflow:hidden}
+.tel img{width:100%;border-radius:38px}
+.tel::before{content:"";position:absolute;top:20px;left:50%;width:84px;height:24px;margin-left:-42px;border-radius:12px;background:#0b0b0e;z-index:2}
+.sello{position:absolute;border-radius:50%;display:grid;place-items:center;text-align:center;font:900 24px/1.05 Pop;letter-spacing:-.02em;background:var(--vino);color:#fff;box-shadow:0 0 0 6px #ffffff22,0 18px 34px rgba(0,0,0,.4)}
+.sello small{display:block;font:800 13px/1 Pop;letter-spacing:.12em;text-transform:uppercase;opacity:.85;margin-bottom:6px}
+.qr{background:#fff;border-radius:22px;padding:10px;box-shadow:0 0 0 2px #e6dcef}
+.qr img{width:100%}
+.qr small{display:block;text-align:center;font:900 11px/1.2 Pop;letter-spacing:.1em;text-transform:uppercase;margin-top:4px;color:var(--tinta)}
+.cta{position:absolute;left:52px;right:52px;bottom:76px;display:flex;align-items:center;gap:22px;background:#fff;border-radius:26px;padding:16px 22px 16px 16px;box-shadow:0 0 0 2px #e6dcef;color:var(--tinta)}
+.cara:not(.luz) .cta{box-shadow:none}
+.cta .qr{width:132px;flex:none;box-shadow:none;padding:4px}
+.cta b{display:block;font:900 30px/1 Pop;letter-spacing:-.02em;color:var(--vino)}
+.cta span{display:block;font:500 16px/1.35 Pop;color:var(--tenue);margin-top:8px}
+.plan{background:#fff;border-radius:24px;padding:22px 22px 20px;box-shadow:0 0 0 2px #e6dcef;position:relative}
+.plan.top{background:var(--os);color:var(--tx);box-shadow:0 0 0 3px var(--lila)}
+.plan .n{font:900 15px/1 Pop;letter-spacing:.14em;text-transform:uppercase;color:var(--vino)}
+.plan.top .n{color:var(--ac)}
+.plan .p{font:900 50px/1 Pop;letter-spacing:-.04em;margin:10px 0 6px}
+.plan .p small{font:800 18px/1 Pop;letter-spacing:0;margin-right:2px}
+.plan .p s{display:block;font:600 17px/1 Pop;letter-spacing:0;color:var(--tenue);margin-bottom:6px}
+.plan.top .p s{color:var(--gris)}
+.plan ul{list-style:none;font:500 15.5px/1.35 Pop;color:var(--tenue);display:grid;gap:7px;margin-top:10px}
+.plan.top ul{color:var(--gris)}
+.plan li{padding-left:18px;position:relative} .plan li::before{content:"";position:absolute;left:0;top:.5em;width:8px;height:8px;border-radius:50%;background:var(--lila)}
+.cinta{position:absolute;top:-13px;right:18px;background:var(--vino);color:#fff;font:900 12px/1 Pop;letter-spacing:.12em;text-transform:uppercase;padding:8px 12px;border-radius:99px}
+.fila{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:16px 0;border-bottom:2px solid #e2d6ec}
+.fila b{font:800 22px/1.15 Pop;letter-spacing:-.01em}
+.fila small{display:block;font:500 15px/1.3 Pop;color:var(--tenue);margin-top:4px}
+.fila i{font:900 28px/1 Pop;font-style:normal;letter-spacing:-.02em;color:var(--vino);white-space:nowrap}
+.fila i em{font:700 14px/1 Pop;font-style:normal;color:var(--tenue)}
+.paso{display:flex;gap:18px;align-items:flex-start}
+.paso .k{flex:none;width:58px;height:58px;border-radius:50%;display:grid;place-items:center;font:900 26px/1 Pop;background:var(--lila);color:#fff}
+.paso b{display:block;font:900 26px/1.05 Pop;letter-spacing:-.02em}
+.paso span{display:block;font:500 17px/1.35 Pop;color:var(--tenue);margin-top:4px}
+.cara:not(.luz) .paso span{color:var(--gris)}
+.brillo{position:absolute;border-radius:50%;filter:blur(0);background:radial-gradient(closest-side,#AC27FF55,#AC27FF00)}
+.vino-bg{background:radial-gradient(90% 60% at 80% 30%,#A8264B,#7E1735 55%,#4A0C22)}
+.os-bg{background:radial-gradient(80% 55% at 75% 35%,#3A1756,#170A26 70%)}
+.marca-muestra{position:absolute;font:600 11px/1.3 Pop;color:var(--gris);opacity:.8}
+.luz .marca-muestra{color:var(--tenue)}
+</style>
+</head>
+<body>
+
+<!-- ═══ 1 · PÁGINAS WEB ═══ -->
+<section class="cara os-bg">
+  <img class="logo" src="../logo/original-claro.svg" alt="Grupo Mazi">
+  <div style="position:absolute;left:52px;top:150px;width:420px">
+    <span class="chip">Páginas web</span>
+    <h1 class="h" style="margin-top:26px;font-size:80px">Si no te <span class="v">encuentran,</span> no te compran.</h1>
+    <p class="lead" style="margin-top:26px">Tu negocio en el celular de tus clientes, con botón de WhatsApp y todo lo que preguntan.</p>
+  </div>
+  <div class="tel" style="width:270px;right:46px;top:380px;transform:rotate(6deg)"><img src="img/web.jpg"></div>
+  <div class="sello" style="width:178px;height:178px;left:330px;bottom:110px;transform:rotate(-10deg)"><div><small>Desde</small>$2,000</div></div>
+  <div class="pie"><span>Grupo Mazi · Querétaro</span><span>Los precios, atrás →</span></div>
+</section>
+<section class="cara luz">
+  <img class="logo" src="../logo/original-tinta.svg" alt="Grupo Mazi">
+  <div style="position:absolute;left:52px;right:52px;top:140px">
+    <h2 class="h2">Tres páginas,<br><span class="v">tres tamaños.</span></h2>
+    <p class="lead" style="margin-top:14px;max-width:none">Las tres incluyen 3 meses de mantenimiento y se ven perfectas en el celular.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:34px;align-items:start">
+      <div class="plan"><div class="n">Esencial</div><div class="p"><small>$</small>2,000</div><ul><li>Una página con todo lo importante</li><li>Productos o servicios con foto y precio</li><li>Botón de WhatsApp y llamada</li><li>Lista en 3 a 5 días</li></ul></div>
+      <div class="plan top"><span class="cinta">Recomendada</span><div class="n">Completa</div><div class="p"><small>$</small>6,500</div><ul><li>Animación y fotos protagonistas</li><li>Pedidos, citas o cotizaciones por WhatsApp</li><li>Lista para aparecer en Google</li><li>De regalo: 2 videos para tus redes</li></ul></div>
+      <div class="plan"><div class="n">A la medida</div><div class="p"><small>desde $</small>9,000</div><ul><li>3D o interactiva</li><li>Carrito, cotizador o reservas</li><li>Panel para que tú cambies precios y fotos</li><li>Lo que tu negocio necesite</li></ul></div>
+    </div>
+  </div>
+  <div class="cta"><div class="qr"><img src="img/qr-wa.svg"></div><div><b>Escríbenos y la armamos</b><span>Apunta tu cámara: te abre WhatsApp con nosotros. Pago 50% al empezar y 50% al entregar.</span></div></div>
+  <div class="pie"><span>Grupo Mazi · grupomazi.oficial@gmail.com</span><span>WhatsApp 442 883 3786</span></div>
+</section>
+
+<!-- ═══ 2 · BARBERÍAS ═══ -->
+<section class="cara vino-bg">
+  <img class="logo" src="../logo/original-claro.svg" alt="Grupo Mazi">
+  <div style="position:absolute;left:52px;top:150px;width:470px">
+    <span class="chip" style="background:#fff;color:var(--vino)">Barberías</span>
+    <h1 class="h" style="margin-top:26px;font-size:84px">Tu agenda, <span style="color:#FFD1DD">llena sola.</span></h1>
+    <p class="lead" style="margin-top:24px;color:#F3D3DC">El cliente escoge barbero, día y hora desde su celular. Tú ya no contestas a las once de la noche.</p>
+  </div>
+  <div class="tel" style="width:250px;left:90px;bottom:-60px;transform:rotate(-7deg)"><img src="img/navaja.jpg"></div>
+  <div class="tel" style="width:260px;right:70px;bottom:-30px;transform:rotate(6deg)"><img src="img/obsidiana.jpg"></div>
+  <p class="marca-muestra" style="left:52px;top:520px;color:#F3D3DC">Páginas de muestra hechas por Grupo Mazi.</p>
+  <div class="pie" style="background:#3A0716"><span>Grupo Mazi · Querétaro</span><span>Los paquetes, atrás →</span></div>
+</section>
+<section class="cara luz">
+  <img class="logo" src="../logo/original-tinta.svg" alt="Grupo Mazi">
+  <div style="position:absolute;left:52px;right:52px;top:140px">
+    <h2 class="h2">Página + publicidad,<br><span class="v">en un paquete.</span></h2>
+    <p class="lead" style="margin-top:14px;max-width:none">Sale más barato que comprar por separado.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:34px;align-items:start">
+      <div class="plan"><div class="n">Arranque</div><div class="p"><s>$3,500</s><small>$</small>2,900</div><ul><li>Página Esencial con reserva por WhatsApp</li><li>1 mes de anuncios en Facebook e Instagram</li></ul></div>
+      <div class="plan top"><span class="cinta">Recomendado</span><div class="n">Agenda llena</div><div class="p"><s>$9,500</s><small>$</small>7,900</div><ul><li>Página Completa: barbero, día y hora</li><li>Sesión de fotos en tu barbería</li><li>2 videos para tus redes</li><li>1 mes de anuncios</li></ul></div>
+      <div class="plan"><div class="n">Sin competencia</div><div class="p"><s>$16,000</s><small>$</small>13,500</div><ul><li>Página A la medida: horas libres en vivo y tienda</li><li>1 mes de redes con 4 videos</li><li>1 mes de anuncios</li></ul></div>
+    </div>
+    <p class="lead" style="margin-top:22px;max-width:none;font-size:16px">Lo que se le paga a Facebook e Instagram por los anuncios va aparte. Fotos y grabación, dentro de Querétaro.</p>
+  </div>
+  <div class="cta"><div class="qr"><img src="img/qr-wa.svg"></div><div><b>Aparta tu paquete</b><span>Apunta tu cámara y escríbenos por WhatsApp.</span></div></div>
+  <div class="pie"><span>Grupo Mazi · grupomazi.oficial@gmail.com</span><span>WhatsApp 442 883 3786</span></div>
+</section>
+
+<!-- ═══ 3 · EL PRECIO ═══ -->
+<section class="cara" style="background:var(--lila)">
+  <img class="logo" src="../logo/original-claro.svg" alt="Grupo Mazi">
+  <div style="position:absolute;left:52px;right:52px;top:170px">
+    <span class="chip" style="background:var(--os)">Esta semana</span>
+    <div style="font:900 210px/.82 Pop;letter-spacing:-.06em;margin-top:30px;color:#fff">$2,000</div>
+    <h2 class="h2" style="margin-top:24px;color:var(--os)">y tu negocio ya está en internet.</h2>
+    <p class="lead" style="margin-top:22px;color:#2B0D45;font-size:24px">Página Esencial, lista en unos 3 a 5 días, con 3 meses de mantenimiento incluidos.</p>
+  </div>
+  <div class="tel" style="width:230px;right:60px;bottom:-120px;transform:rotate(8deg)"><img src="img/sencilla.jpg"></div>
+  <div class="pie" style="background:var(--os)"><span>Grupo Mazi · Querétaro</span><span>Qué incluye, atrás →</span></div>
+</section>
+<section class="cara luz">
+  <img class="logo" src="../logo/original-tinta.svg" alt="Grupo Mazi">
+  <div style="position:absolute;left:52px;right:52px;top:140px">
+    <h2 class="h2">Lo que trae<br><span class="v">la Esencial.</span></h2>
+    <div style="margin-top:30px;display:grid;gap:20px">
+      <div class="paso"><div class="k">1</div><div><b>Todo lo importante en una página</b><span>Qué haces, dónde estás, horarios y redes.</span></div></div>
+      <div class="paso"><div class="k">2</div><div><b>Tus productos o servicios</b><span>Con foto y precio, para que no te pregunten lo mismo diez veces.</span></div></div>
+      <div class="paso"><div class="k">3</div><div><b>Botón de WhatsApp y de llamada</b><span>Un toque y ya te están escribiendo.</span></div></div>
+      <div class="paso"><div class="k">4</div><div><b>Hecha con tu marca</b><span>Tus colores y tu logo. Y la página es tuya.</span></div></div>
+    </div>
+  </div>
+  <div class="cta"><div class="qr"><img src="img/qr-wa.svg"></div><div><b>Arrancamos hoy</b><span>Escríbenos y te decimos qué necesitamos de ti para empezar.</span></div></div>
+  <div class="pie"><span>Grupo Mazi · grupomazi.oficial@gmail.com</span><span>WhatsApp 442 883 3786</span></div>
+</section>
+
+<!-- ═══ 4 · RESTAURANTES ═══ -->
+<section class="cara os-bg">
+  <img class="logo" src="../logo/original-claro.svg" alt="Grupo Mazi">
+  <div style="position:absolute;left:52px;top:150px;width:400px">
+    <span class="chip">Restaurantes</span>
+    <h1 class="h" style="margin-top:26px;font-size:84px">Que se les <span class="v">antoje</span> antes de llegar.</h1>
+    <p class="lead" style="margin-top:24px;max-width:330px">Tu menú con fotos en el celular de todos, y el pedido les llega armado a tu WhatsApp.</p>
+  </div>
+  <div class="tel" style="width:280px;right:46px;top:300px;transform:rotate(5deg)"><img src="img/smileys.jpg"></div>
+  <p class="marca-muestra" style="right:60px;bottom:56px">Smiley's, cliente de Grupo Mazi.</p>
+  <div class="pie"><span>Grupo Mazi · Querétaro</span><span>Opciones, atrás →</span></div>
+</section>
+<section class="cara luz">
+  <img class="logo" src="../logo/original-tinta.svg" alt="Grupo Mazi">
+  <div style="position:absolute;left:52px;right:52px;top:140px">
+    <h2 class="h2">Para tu cocina,<br><span class="v">lo que te alcance.</span></h2>
+    <div style="margin-top:26px">
+      <div class="fila"><div><b>Menú digital con código QR</b><small>Tu carta en el celular, sin imprimir otra vez cada que cambias un precio.</small></div><i>$900</i></div>
+      <div class="fila"><div><b>Página Completa con pedidos</b><small>El cliente arma su pedido y te llega por WhatsApp. Trae 2 videos de regalo.</small></div><i>$6,500</i></div>
+      <div class="fila"><div><b>Tienda en línea</b><small>Catálogo, carrito, pagos con tarjeta o transferencia e inventario.</small></div><i><em>desde </em>$12,000</i></div>
+      <div class="fila"><div><b>Sesión de fotos de tus platillos</b><small>Fotógrafo hasta 2 horas, 20 fotos editadas. En Querétaro.</small></div><i>$1,500</i></div>
+    </div>
+  </div>
+  <div class="cta"><div class="qr"><img src="img/qr-wa.svg"></div><div><b>Platícanos de tu cocina</b><span>Apunta tu cámara y escríbenos por WhatsApp.</span></div></div>
+  <div class="pie"><span>Grupo Mazi · grupomazi.oficial@gmail.com</span><span>WhatsApp 442 883 3786</span></div>
+</section>
+
+<!-- ═══ 5 · SOFTWARE A LA MEDIDA ═══ -->
+<section class="cara" style="background:var(--os)">
+  <div class="brillo" style="width:900px;height:900px;left:-200px;top:-150px"></div>
+  <img class="logo" src="../logo/original-claro.svg" alt="Grupo Mazi">
+  <div style="position:absolute;left:52px;right:52px;top:160px">
+    <span class="chip">Software a la medida</span>
+    <h1 class="h" style="margin-top:26px;font-size:78px">Si no existe la herramienta, <span class="v">se construye la herramienta.</span></h1>
+  </div>
+  <div class="tel" style="width:240px;left:80px;bottom:-80px;transform:rotate(-6deg)"><img src="img/ligas.jpg"></div>
+  <p class="lead" style="position:absolute;left:380px;right:52px;bottom:120px">Inventarios, citas, punto de venta, pedidos, reportes: el Excel que ya no te alcanza, vuelto sistema.</p>
+  <div class="pie"><span>Grupo Mazi · Querétaro</span><span>Los tamaños, atrás →</span></div>
+</section>
+<section class="cara luz">
+  <img class="logo" src="../logo/original-tinta.svg" alt="Grupo Mazi">
+  <div style="position:absolute;left:52px;right:52px;top:140px">
+    <h2 class="h2">Herramientas<br><span class="v">a tu medida.</span></h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:30px;align-items:start">
+      <div class="plan"><div class="n">Sencillo</div><div class="p"><small>desde $</small>10,000</div><ul><li>Una tarea bien resuelta</li><li>Registro, inventario o reservas</li><li>Se instala en el celular y funciona sin internet</li></ul></div>
+      <div class="plan top"><div class="n">Medio</div><div class="p"><small>desde $</small>35,000</div><ul><li>Tu operación en un solo lugar</li><li>Cuentas para tu equipo y clientes</li><li>Reportes y Excel</li></ul></div>
+      <div class="plan"><div class="n">Avanzado</div><div class="p"><small>desde $</small>80,000</div><ul><li>Varias áreas conectadas</li><li>Pagos y datos en tiempo real</li><li>Conexión con WhatsApp</li></ul></div>
+    </div>
+    <p class="lead" style="margin-top:26px;max-width:none;font-size:18px"><b style="color:var(--tinta)">Ya lo hemos hecho:</b> pedidos sin filas para una cafetería escolar, ligas deportivas con marcador en vivo y una app de venta y reparto para una distribuidora.</p>
+  </div>
+  <div class="cta"><div class="qr"><img src="img/qr-wa.svg"></div><div><b>Cuéntanos qué te estorba</b><span>Desde $3,500 automatizamos una tarea suelta.</span></div></div>
+  <div class="pie"><span>Grupo Mazi · grupomazi.oficial@gmail.com</span><span>WhatsApp 442 883 3786</span></div>
+</section>
+
+<!-- ═══ 6 · VIDEO ═══ -->
+<section class="cara" style="background:#0E0618">
+  <img src="img/video-1.jpg" style="position:absolute;right:-40px;top:120px;width:470px;border-radius:30px;transform:rotate(4deg);box-shadow:0 40px 70px rgba(0,0,0,.6)">
+  <img class="logo" src="../logo/original-claro.svg" alt="Grupo Mazi">
+  <div style="position:absolute;left:52px;top:170px;width:380px">
+    <span class="chip" style="background:var(--vino)">Video</span>
+    <h1 class="h" style="margin-top:26px">Videos que <span class="v">paran el dedo.</span></h1>
+    <p class="lead" style="margin-top:24px">Verticales, para Reels y TikTok, con subtítulos y voz. Grabados en tu negocio o con tu material.</p>
+  </div>
+  <div class="pie"><span>Grupo Mazi · Querétaro</span><span>Los precios, atrás →</span></div>
+</section>
+<section class="cara luz">
+  <img class="logo" src="../logo/original-tinta.svg" alt="Grupo Mazi">
+  <div style="position:absolute;left:52px;right:52px;top:140px">
+    <h2 class="h2">Video y foto,<br><span class="v">claros desde el inicio.</span></h2>
+    <div style="margin-top:26px">
+      <div class="fila"><div><b>2 videos para redes</b><small>De unos 30 segundos, verticales, con tu material o el nuestro.</small></div><i>$1,200</i></div>
+      <div class="fila"><div><b>Grabación en tu negocio + 2 videos</b><small>Camarógrafo hasta 2 horas y los videos editados.</small></div><i>$2,900</i></div>
+      <div class="fila"><div><b>Comercial con voz</b><small>Hasta 60 segundos.</small></div><i>$2,500</i></div>
+      <div class="fila"><div><b>Sesión de fotos</b><small>Fotógrafo hasta 2 horas, 20 fotos editadas.</small></div><i>$1,500</i></div>
+    </div>
+    <p class="lead" style="margin-top:20px;max-width:none;font-size:16px">Grabaciones y fotos dentro de Querétaro. Fuera, sólo en casos especiales y con viáticos.</p>
+  </div>
+  <div class="cta"><div class="qr"><img src="img/qr-wa.svg"></div><div><b>Agenda tu grabación</b><span>Apunta tu cámara y escríbenos por WhatsApp.</span></div></div>
+  <div class="pie"><span>Grupo Mazi · grupomazi.oficial@gmail.com</span><span>WhatsApp 442 883 3786</span></div>
+</section>
+
+<!-- ═══ 7 · REDES ═══ -->
+<section class="cara vino-bg">
+  <img class="logo" src="../logo/original-claro.svg" alt="Grupo Mazi">
+  <div style="position:absolute;left:52px;right:52px;top:160px">
+    <span class="chip" style="background:#fff;color:var(--vino)">Redes sociales</span>
+    <h1 class="h" style="margin-top:26px">Publicar diario <span style="color:#FFD1DD">sin pensarle.</span></h1>
+    <p class="lead" style="margin-top:22px;color:#F3D3DC;max-width:34ch">Contenido que sale de tu negocio real, no de plantillas. Tú atiendes; nosotros publicamos.</p>
+  </div>
+  <img src="img/video-2.jpg" style="position:absolute;left:52px;bottom:-140px;width:290px;border-radius:24px;transform:rotate(-5deg);box-shadow:0 30px 60px rgba(0,0,0,.5)">
+  <div class="tel" style="width:250px;right:70px;bottom:-40px;transform:rotate(6deg)"><img src="img/casa.jpg"></div>
+  <div class="pie" style="background:#3A0716"><span>Grupo Mazi · Querétaro</span><span>Los planes, atrás →</span></div>
+</section>
+<section class="cara luz">
+  <img class="logo" src="../logo/original-tinta.svg" alt="Grupo Mazi">
+  <div style="position:absolute;left:52px;right:52px;top:140px">
+    <h2 class="h2">Redes y anuncios<br><span class="v">que sí traen gente.</span></h2>
+    <div style="margin-top:26px">
+      <div class="fila"><div><b>Manejo de redes</b><small>12 publicaciones al mes en 2 redes, con diseño y textos.</small></div><i>$2,900<em> /mes</em></i></div>
+      <div class="fila"><div><b>Manejo de redes + 4 videos</b><small>Incluye una grabación al mes en tu negocio.</small></div><i>$5,500<em> /mes</em></i></div>
+      <div class="fila"><div><b>Publicidad en Facebook e Instagram</b><small>Armado, a quién se le enseña y reporte. Lo que inviertes en anuncios va aparte.</small></div><i>$1,500<em> /mes</em></i></div>
+    </div>
+  </div>
+  <div class="cta"><div class="qr"><img src="img/qr-wa.svg"></div><div><b>Que te vean esta semana</b><span>Apunta tu cámara y escríbenos por WhatsApp.</span></div></div>
+  <div class="pie"><span>Grupo Mazi · grupomazi.oficial@gmail.com</span><span>WhatsApp 442 883 3786</span></div>
+</section>
+
+<!-- ═══ 8 · MARCA ═══ -->
+<section class="cara os-bg">
+  <div class="brillo" style="width:800px;height:800px;left:8px;top:120px"></div>
+  <img src="../logo/paloma.svg" style="position:absolute;left:50%;top:170px;width:420px;margin-left:-210px">
+  <div style="position:absolute;left:52px;right:52px;bottom:110px;text-align:center">
+    <span class="chip">Marca</span>
+    <h1 class="h" style="margin-top:22px">Que te reconozcan <span class="v">de lejos.</span></h1>
+    <p class="lead" style="margin:20px auto 0">Logo, colores y letra que se ven igual de bien en un letrero, una playera y una historia de Instagram.</p>
+  </div>
+  <div class="pie"><span>Grupo Mazi · Querétaro</span><span>Los precios, atrás →</span></div>
+</section>
+<section class="cara luz">
+  <img class="logo" src="../logo/original-tinta.svg" alt="Grupo Mazi">
+  <div style="position:absolute;left:52px;right:52px;top:140px">
+    <h2 class="h2">Tu marca,<br><span class="v">de una vez bien.</span></h2>
+    <div style="margin-top:26px">
+      <div class="fila"><div><b>Logotipo</b><small>Tres propuestas y archivos para todo uso.</small></div><i>$1,800</i></div>
+      <div class="fila"><div><b>Identidad de marca</b><small>Logo, colores, letra, papelería y plantillas.</small></div><i>$4,500</i></div>
+      <div class="fila"><div><b>Flyer, cartel o publicación</b><small>Estándar, Pro o Premium.</small></div><i>$250 · $450 · $750</i></div>
+      <div class="fila"><div><b>Presentación o documento profesional</b><small>Hasta 15 láminas o 10 páginas.</small></div><i>$900</i></div>
+    </div>
+  </div>
+  <div class="cta"><div class="qr"><img src="img/qr-wa.svg"></div><div><b>Mándanos tu logo de hoy</b><span>Y te decimos cómo hacerlo crecer.</span></div></div>
+  <div class="pie"><span>Grupo Mazi · grupomazi.oficial@gmail.com</span><span>WhatsApp 442 883 3786</span></div>
+</section>
+
+<!-- ═══ 9 · CÓMO TRABAJAMOS ═══ -->
+<section class="cara" style="background:var(--os)">
+  <img class="logo" src="../logo/original-claro.svg" alt="Grupo Mazi">
+  <div style="position:absolute;left:52px;right:52px;top:200px">
+    <h1 class="h" style="font-size:118px">Entregamos <span class="v">rápido.</span></h1>
+    <h1 class="h" style="font-size:118px;margin-top:20px;color:#FFD1DD">Y nos quedamos.</h1>
+    <p class="lead" style="margin-top:34px;font-size:26px;max-width:28ch">No vendemos un trabajo suelto: entramos a tu negocio y lo acompañamos después de entregar.</p>
+  </div>
+  <div class="tel" style="width:200px;left:70px;bottom:-260px;transform:rotate(-8deg)"><img src="img/sencilla.jpg"></div>
+  <div class="tel" style="width:210px;left:303px;bottom:-220px"><img src="img/smileys.jpg"></div>
+  <div class="tel" style="width:200px;right:70px;bottom:-260px;transform:rotate(8deg)"><img src="img/navaja.jpg"></div>
+  <div class="pie"><span>Grupo Mazi · Querétaro</span><span>Cómo, atrás →</span></div>
+</section>
+<section class="cara luz">
+  <img class="logo" src="../logo/original-tinta.svg" alt="Grupo Mazi">
+  <div style="position:absolute;left:52px;right:52px;top:140px">
+    <h2 class="h2">Cuatro pasos,<br><span class="v">sin sorpresas.</span></h2>
+    <div style="margin-top:30px;display:grid;gap:22px">
+      <div class="paso"><div class="k">1</div><div><b>Platicamos</b><span>Nos cuentas qué necesitas. La primera plática no cuesta.</span></div></div>
+      <div class="paso"><div class="k">2</div><div><b>Propuesta</b><span>Te decimos qué incluye, cuánto cuesta y cuándo queda.</span></div></div>
+      <div class="paso"><div class="k">3</div><div><b>Construimos</b><span>Ves avances en tu celular y pides ajustes sobre la marcha.</span></div></div>
+      <div class="paso"><div class="k">4</div><div><b>Entregamos y nos quedamos</b><span>Mantenimiento desde $450 al mes: tu página siempre al día.</span></div></div>
+    </div>
+  </div>
+  <div class="cta"><div class="qr"><img src="img/qr-wa.svg"></div><div><b>Empieza por el paso 1</b><span>Apunta tu cámara y escríbenos por WhatsApp.</span></div></div>
+  <div class="pie"><span>Grupo Mazi · grupomazi.oficial@gmail.com</span><span>WhatsApp 442 883 3786</span></div>
+</section>
+
+<!-- ═══ 10 · PRESUPUESTO ═══ -->
+<section class="cara vino-bg">
+  <img class="logo" src="../logo/original-claro.svg" alt="Grupo Mazi">
+  <div style="position:absolute;left:52px;right:52px;top:220px">
+    <h1 class="h" style="font-size:112px">¿Tienes un presupuesto?</h1>
+    <h1 class="h" style="font-size:112px;margin-top:16px;color:#FFD1DD">Platícanos.</h1>
+    <p class="lead" style="margin-top:30px;font-size:26px;color:#F3D3DC;max-width:30ch">Dinos qué quieres y cuánto puedes invertir. Te decimos de forma realista qué te alcanza.</p>
+  </div>
+  <div style="position:absolute;left:52px;right:52px;bottom:90px;background:#fff;border-radius:30px;padding:26px 30px;display:flex;align-items:center;gap:24px;color:var(--tinta)"><div class="qr" style="width:150px;box-shadow:none;padding:2px"><img src="img/qr-wa.svg"></div><div><p style="font:800 16px/1 Pop;letter-spacing:.14em;text-transform:uppercase;color:var(--vino)">WhatsApp</p><p style="font:900 58px/1 Pop;letter-spacing:-.03em;margin-top:8px">442 883 3786</p></div></div>
+  <div class="pie" style="background:#3A0716"><span>Grupo Mazi · Querétaro</span><span>Cómo, atrás →</span></div>
+</section>
+<section class="cara luz">
+  <img class="logo" src="../logo/original-tinta.svg" alt="Grupo Mazi">
+  <div style="position:absolute;left:52px;right:52px;top:140px">
+    <h2 class="h2">Un plan<br><span class="v">que sí te cabe.</span></h2>
+    <div style="margin-top:30px;display:grid;gap:22px">
+      <div class="paso"><div class="k">1</div><div><b>Por etapas</b><span>Arrancas con lo que más te urge y lo demás se suma después, sin rehacer nada.</span></div></div>
+      <div class="paso"><div class="k">2</div><div><b>En pagos</b><span>50% para empezar y 50% al entregar. Si hace falta, lo platicamos.</span></div></div>
+      <div class="paso"><div class="k">3</div><div><b>Precios claros</b><span>Sin letras chiquitas y sin comisiones por cada venta que hagas.</span></div></div>
+    </div>
+  </div>
+  <div class="cta"><div class="qr"><img src="img/qr-wa.svg"></div><div><b>Dinos tu número</b><span>Te armamos el plan con lo que tienes.</span></div></div>
+  <div class="pie"><span>Grupo Mazi · grupomazi.oficial@gmail.com</span><span>WhatsApp 442 883 3786</span></div>
+</section>
+
+<!-- ═══ 11 · LO QUE NOS DISTINGUE ═══ -->
+<section class="cara os-bg">
+  <img class="logo" src="../logo/original-claro.svg" alt="Grupo Mazi">
+  <div style="position:absolute;left:52px;right:52px;top:180px">
+    <span class="chip">Sin letras chiquitas</span>
+    <h1 class="h" style="margin-top:26px;font-size:120px">Tu página <span class="v">es tuya.</span></h1>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:46px">
+      <div style="border:2px solid #ffffff22;border-radius:22px;padding:22px;font:800 24px/1.15 Pop">Precios claros desde el primer día</div>
+      <div style="border:2px solid #ffffff22;border-radius:22px;padding:22px;font:800 24px/1.15 Pop">Sin comisiones por tus ventas</div>
+      <div style="border:2px solid #ffffff22;border-radius:22px;padding:22px;font:800 24px/1.15 Pop">Avances que ves en tu celular</div>
+      <div style="border:2px solid #ffffff22;border-radius:22px;padding:22px;font:800 24px/1.15 Pop">El dominio queda a tu nombre</div>
+    </div>
+  </div>
+  <div class="pie"><span>Grupo Mazi · Querétaro</span><span>Preguntas, atrás →</span></div>
+</section>
+<section class="cara luz">
+  <img class="logo" src="../logo/original-tinta.svg" alt="Grupo Mazi">
+  <div style="position:absolute;left:52px;right:52px;top:140px">
+    <h2 class="h2">Lo que siempre<br><span class="v">nos preguntan.</span></h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:30px">
+      <div class="plan"><div class="n">¿Cuánto tarda?</div><ul style="margin-top:8px"><li>La Esencial, unos 3 a 5 días.</li><li>La Completa, 1 a 2 semanas, desde que tenemos tu material.</li></ul></div>
+      <div class="plan"><div class="n">¿Y si quiero cambiar algo?</div><ul style="margin-top:8px"><li>Vienen 2 rondas de ajustes.</li><li>Después, el mantenimiento: desde $450 al mes.</li></ul></div>
+      <div class="plan"><div class="n">¿Cómo pago?</div><ul style="margin-top:8px"><li>50% al empezar y 50% al entregar.</li><li>Si necesitas factura, se agrega el IVA.</li></ul></div>
+      <div class="plan"><div class="n">¿Trabajan fuera de Querétaro?</div><ul style="margin-top:8px"><li>Lo digital, sí.</li><li>Fotos y grabaciones, dentro de Querétaro.</li></ul></div>
+    </div>
+  </div>
+  <div class="cta"><div class="qr"><img src="img/qr-wa.svg"></div><div><b>¿Otra duda?</b><span>Escríbenos: te respondemos hoy.</span></div></div>
+  <div class="pie"><span>Grupo Mazi · grupomazi.oficial@gmail.com</span><span>WhatsApp 442 883 3786</span></div>
+</section>
+
+<!-- ═══ 12 · LA MARCA Y EL CONTACTO ═══ -->
+<section class="cara" style="background:var(--os)">
+  <div class="brillo" style="width:1000px;height:1000px;left:-92px;top:-40px"></div>
+  <img src="../logo/original-claro.svg" style="position:absolute;left:50%;top:250px;width:620px;margin-left:-310px">
+  <div style="position:absolute;left:52px;right:52px;top:610px;text-align:center">
+    <p style="font:800 24px/1.4 Pop;letter-spacing:.04em;color:var(--ac)">Web · software · marketing · video y foto · gestión de negocios</p>
+    <p class="lead" style="margin:26px auto 0;font-size:24px">Si no existe la herramienta, se construye la herramienta.</p>
+  </div>
+  <div class="pie"><span>Querétaro</span><span>WhatsApp 442 883 3786</span></div>
+</section>
+<section class="cara luz">
+  <img class="logo" src="../logo/original-tinta.svg" alt="Grupo Mazi">
+  <div style="position:absolute;left:52px;right:52px;top:150px">
+    <h2 class="h2">¿Lo platicamos?<br><span class="v">Te respondemos hoy.</span></h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:46px">
+      <div style="text-align:center"><div class="qr" style="width:280px;margin:0 auto"><img src="img/qr-wa.svg"><small>WhatsApp</small></div><p style="font:900 30px/1 Pop;margin-top:18px">442 883 3786</p></div>
+      <div style="text-align:center"><div class="qr" style="width:280px;margin:0 auto"><img src="img/qr-web.svg"><small>Precios y trabajos</small></div><p style="font:800 20px/1.2 Pop;margin-top:18px">grupomazi.oficial@gmail.com</p></div>
+    </div>
+    <p class="lead" style="margin:44px auto 0;text-align:center;max-width:none;font-size:18px">Precios en pesos mexicanos. Lo presencial, dentro de Querétaro.</p>
+  </div>
+  <div class="pie"><span>Grupo Mazi</span><span>WhatsApp 442 883 3786</span></div>
+</section>
+
+</body>
+</html>
