@@ -84,7 +84,7 @@ footer{ margin-top:40px; color:var(--gris); font-size:14px }
 </style></head><body><div class="env">
 <header><img src="../web/img/logo.svg" alt="Grupo Mazi" width="182" height="44"><h1>Para vendedores</h1>
 <p>Todo lo que se le manda a un cliente. «Copiar link» y lo pegas en WhatsApp.</p></header>
-<h2>Cotización</h2><ul>${fila('Cotización 2026 (PDF)', 'Precios de todo, 3 hojas. Se ve bien en iPhone', BASE + '/web/Grupo-Mazi-cotizacion-2026.pdf').replace('class="fila"', 'class="fila principal"')}</ul>
+<h2>Cotización</h2><ul>${fila('Cotización 2026 (PDF)', 'Precios de todo, 4 hojas. Se ve bien en iPhone', BASE + '/web/Grupo-Mazi-cotizacion-2026.pdf').replace('class="fila"', 'class="fila principal"')}</ul>
 <h2>Páginas de muestra</h2><ul>${DEMOS.map(([t, u, s]) => fila(t, s, BASE + u)).join('')}</ul>
 <h2>Videos</h2><ul>${vids.length ? vids.map(([id, t, s]) => fila(t, s + ' · ' + (fs.statSync(path.join(AQUI, 'videos', id + '.mp4')).size / 1048576).toFixed(0) + ' MB', BASE + '/vendedores/videos/' + id + '.mp4')).join('') : '<li class="fila"><div><b>Se están preparando</b><small>En un rato aparecen aquí</small></div></li>'}</ul>
 <h2>Pósters y flyers</h2><ul>${imgs.map(f => fila(nombreImg(f), 'Imagen para redes o estados', BASE + '/vendedores/img/' + f, `<img class="mini" src="img/${f}" alt="" loading="lazy">`)).join('')}</ul>

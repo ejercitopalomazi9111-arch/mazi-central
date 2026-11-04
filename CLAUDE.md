@@ -209,7 +209,7 @@ que nos distingue.
   acento de texto sobre oscuro es #C77DFF / #B44BFF.
 - **En toda animación del logo se tiene que NOTAR la M cubo volviéndose el cubo completo.**
 - **La voz de la casa es Chris** (ElevenLabs `iP95p4xoKVk53GoZ742B`, la del anuncio 07 «La
-  plantilla»): «esa se guarda como predeterminada». Cuando no haya saldo, Piper.
+  plantilla»): «esa se guarda como predeterminada», y el 4 de noviembre: **«úsala siempre»**. Piper es sólo puente: lo que salga con Piper por falta de saldo se rehace con Chris en cuanto haya, y se le avisa a Carlos. **Ojo:** el plan gratis de ElevenLabs no permite uso comercial; los anuncios piden el Starter (USD 6 al mes, 30 mil caracteres, con licencia comercial; precio visto el 4 nov).
 - **Los modelos 3D NO los hago yo**: «te quedan muy chafas». Se usan gratuitos de internet (Poly
   Haven, Kenney, Quaternius, Sketchfab CC) con crédito, y **texturas e iluminación profesionales**
   (HDRI de verdad, PBR, sombras). El logo sí se compone (regla 1).
