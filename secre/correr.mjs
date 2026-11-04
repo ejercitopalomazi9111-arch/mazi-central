@@ -73,7 +73,7 @@ async function prender(c){
     /* los números de sus OTRAS cuentas: dos Secres no se contestan entre ellas */
     otrosYo: () => Object.entries(vivas).filter(([k, x]) => k !== c.id && x.transporte).flatMap(([, x]) => x.transporte.yo()),
     escribiendo: (j, ms) => esMeta(j) ? null : v.transporte.escribiendo(j, ms), leido: (j) => esMeta(j) ? null : v.transporte.leido(j) };
-  v.secre = new Secre({ cuenta: c.id, transporte: puente, ia, almacen });
+  v.secre = new Secre({ cuenta: c.id, transporte: puente, ia, almacen, compartir: true });
   /* con qué número se pide el código: el de SECRE_CUENTAS, o el que se eligió en el panel
      (en México WhatsApp puede tener la cuenta como 52… o como 521…) */
   v.almacen = almacen;

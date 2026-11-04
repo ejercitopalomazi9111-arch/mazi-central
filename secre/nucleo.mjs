@@ -36,7 +36,11 @@
 import { llamar, llamadasListas } from './llamada.mjs';
 import { HORARIOS, cualHorario, mensajesDeHorario } from './horarios.mjs';
 import { bancoDeSala, buscarFotos, nombreDe as nombreFoto, pieDe } from './banco.mjs';
-import { revisarRespuesta, leerPrecios, textoPrecio, enQueAnda } from './criterio.mjs';
+import { revisarRespuesta, leerPrecios, textoPrecio, enQueAnda, cantidades } from './criterio.mjs';
+import { leerCosto, leerTallas, leerDescripcion, precioVenta, huella, masParecido, miniatura, textoProducto } from './mayoreo.mjs';
+import { cargarConocimiento } from './conocimiento.mjs';
+/* lo que comparten las dos cuentas de Carlos (4 nov: «que el güey ya sepa todo en ambos lados») */
+const COMPARTIDO = ['datos', 'prohibidos', 'precios', 'productos', 'mayoreo', 'imitar'];
 
 export const MODOS = ['borrador', 'callado', 'auto'];
 const MIN = 60_000, HORA = 60 * MIN;
@@ -106,7 +110,8 @@ export function configBase(){
     esperaSiContesto: 0,
     caducan: 6,                    /* horas que vive una propuesta sin aprobar */
     /* el modo automático: cómo firma y cuántas veces contesta sola por chat */
-    auto: { firma: 'Asistente de Carlos', porHora: 20, alDia: 150, grupoPorHora: 30, grupoAlDia: 300 },
+    /* 4 nov: «quítale el límite de respuestas, la mayoría de gente se harta de hablar con un bot rápido» */
+    auto: { firma: 'Asistente de Carlos', porHora: 1000, alDia: 10000, grupoPorHora: 1000, grupoAlDia: 10000 },
     juntarMax: 25,                 /* aunque sigan escribiendo, a los 25 s contesta (grupos que no paran) */
     /* ── 4 de noviembre: la reestructura (Carlos: «se está comprometiendo a cosas sin preguntar») ──
        imitar: hacerse pasar por él (primera persona, sin firma). De fábrica NO: habla como su
@@ -115,6 +120,9 @@ export function configBase(){
     prohibidos: [],                /* { n, texto: 'no hablar de mi novia', palabras: ['novia'] } — se frena en código */
     precios: [],                   /* { nombre, precio, nota } — los únicos precios que puede decir */
     miHorario: '3.1',              /* su horario de clases: para no prometer nada mientras está en clase */
+    /* las fotos del grupo de Mayoreo → banco → grupo de All's, con precio de costo + margen */
+    mayoreo: { activo: false, fuente: '', destino: '', margen: 250 },
+    productos: [],                 /* { id, desc, costo, precio, tallas, huella, fotoId, t } — el costo NUNCA sale a un cliente */
   };
 }
 
@@ -190,11 +198,13 @@ export function finDe(x, ahora){
 }
 
 export class Secre {
-  constructor({ cuenta = 'principal', transporte, ia, almacen, reloj = () => Date.now(), azar = Math.random, telefono = null, banco = undefined }){
+  static hermanas = new Set();
+  constructor({ cuenta = 'principal', transporte, ia, almacen, reloj = () => Date.now(), azar = Math.random, telefono = null, banco = undefined, conocimiento = undefined, compartir = false }){
     /* telefono: { listas(), llamar({ a, texto }) } — por omisión, Twilio (llamada.mjs) */
     Object.assign(this, { cuenta, transporte, ia, almacen, reloj, azar, telefono: telefono || { listas: () => llamadasListas(), llamar: (x) => llamar(x) } });
     /* el banco de imágenes de La Sala; null = sin banco */
     this.banco = banco === undefined ? bancoDeSala() : banco;
+    this.conocimiento = conocimiento === undefined ? cargarConocimiento() : conocimiento;
     const guardada = almacen.leer('config', {});
     this.config = Object.assign(configBase(), guardada);
     /* las cuentas que ya estaban guardadas traen los valores viejos (45 s de espera,
@@ -208,6 +218,17 @@ export class Secre {
       if(typeof a.firma === 'string') a.firma = a.firma.replace(/^🤖\s*/, '');
       c.version = 2;
     }
+    if(Object.keys(guardada).length && (guardada.version || 1) < 3){
+      const a = this.config.auto || (this.config.auto = {});
+      Object.assign(a, { porHora: Math.max(a.porHora || 0, 1000), alDia: Math.max(a.alDia || 0, 10000), grupoPorHora: Math.max(a.grupoPorHora || 0, 1000), grupoAlDia: Math.max(a.grupoAlDia || 0, 10000) });
+      this.config.version = 3;
+    }
+    /* las dos cuentas de Carlos corren en el mismo proceso: lo compartido se junta al arrancar */
+    this.compartir = compartir;
+    if(compartir) for(const h of Secre.hermanas){ for(const k of COMPARTIDO){ const mio = this.config[k], suyo = h.config[k];
+      if(Array.isArray(mio) && Array.isArray(suyo)){ const vistos = new Set(suyo.map(x => JSON.stringify(x))); h.config[k] = [...suyo, ...mio.filter(x => !vistos.has(JSON.stringify(x)))]; }
+      else if(k === 'mayoreo' && mio && mio.activo && !(suyo && suyo.activo)) h.config[k] = mio; } }
+    if(compartir) Secre.hermanas.add(this);
     this.estado = Object.assign({
       historial: {},       /* jid → [{ de: 'el'|'yo', texto, t }] (los últimos 30) */
       estilo: [],          /* lo que Carlos escribe a mano: para que las propuestas suenen a él */
@@ -242,7 +263,11 @@ export class Secre {
     this.mandando = new Map();   /* jid|texto → cuándo: lo que Secre está mandando ahorita, para no confundir su eco con Carlos */
   }
 
-  guardar(){ this.almacen.guardar('config', this.config); this.almacen.guardar('estado', this.estado); }
+  guardar(){
+    /* lo compartido se copia a la otra cuenta en cada guardado (y ella lo guarda en su cajón) */
+    if(this.compartir) for(const h of Secre.hermanas) if(h !== this){ for(const k of COMPARTIDO) h.config[k] = this.config[k]; try{ h.almacen.guardar('config', h.config); }catch{} }
+    this.almacen.guardar('config', this.config); this.almacen.guardar('estado', this.estado);
+  }
   anotar(que){ this.estado.registro.push({ t: this.reloj(), que }); this.estado.registro = this.estado.registro.slice(-300); }
 
   /* ── quién es quién ── */
@@ -287,10 +312,15 @@ export class Secre {
     for(const x of lista.slice(0, 5000)){
       const id = String(x && x.id || ''), nombre = String(x && x.nombre || '').trim().slice(0, 100);
       if(!nombre || !/@(s\.whatsapp\.net|lid|g\.us)$/.test(id) || this.esMiChat(id)) continue;
-      if(x.lid && x.lid !== id) nombres[x.lid] = nombre;   /* por si escribe desde su LID */
+      if(x.lid && x.lid !== id){ nombres[x.lid] = nombre; (this.config.lids || (this.config.lids = {}))[x.lid] = id; }
       const ya = this.config.chats[id];
-      if(ya && ya.nombre) continue;
-      const c = this.chat(id); c.nombre = nombre; if(x.grupo || id.endsWith('@g.us')) c.grupo = true;
+      /* 4 nov: el nombre de SU AGENDA le gana al que la persona se puso en WhatsApp */
+      if(ya && ya.nombre && !(x.guardado && ya.nombre !== nombre && ya.fuente !== 'agenda')) continue;
+      const c = this.chat(id);
+      if(c.nombre && c.nombre !== nombre) c.alias = c.nombre;
+      if(x.alias && x.alias !== nombre) c.alias = String(x.alias).slice(0, 100);
+      c.nombre = nombre; if(x.guardado) c.fuente = 'agenda';
+      if(x.grupo || id.endsWith('@g.us')) c.grupo = true;
       nuevos++;
     }
     if(nuevos) this.guardar();
@@ -299,13 +329,33 @@ export class Secre {
   nombreDe(jid){ const c = this.config.chats[jid]; return (c && c.nombre) || String(jid).split('@')[0]; }
   /* «Ana», «ana p», «la de la escuela»… → el jid que más se parece */
   buscarChat(texto){
-    const q = sinAcentos(texto).replace(/^(a|al|a la|con|de)\s+/, '');
+    const q = sinAcentos(texto).replace(/^(a|al|a la|con|de|del)\s+/, '').replace(/[^a-z0-9ñ ]+/g, ' ').replace(/\s+/g, ' ').trim();
     if(!q) return null;
+    const limpio = (s) => sinAcentos(s).replace(/[^a-z0-9ñ ]+/g, ' ').replace(/\s+/g, ' ').trim();
     const lista = Object.entries(this.config.chats).filter(([, c]) => c.nombre);
-    return (lista.find(([, c]) => sinAcentos(c.nombre) === q)
-        || lista.find(([, c]) => sinAcentos(c.nombre).startsWith(q))
-        || lista.find(([, c]) => sinAcentos(c.nombre).split(/\s+/).some(w => w === q))
-        || lista.find(([j]) => j.startsWith(q.replace(/\D/g, '') || '¬')) || [null])[0];
+    /* 4 nov: Carlos los busca como los tiene en SU agenda; también vale el nombre de WhatsApp,
+       el número, y una falta de dedo (una letra de más o de menos) */
+    const parecida = (a, b) => { if(Math.abs(a.length - b.length) > 1 || a.length < 4) return false; let i = 0, j = 0, d = 0; while(i < a.length && j < b.length){ if(a[i] === b[j]){ i++; j++; continue; } if(++d > 1) return false; if(a.length > b.length) i++; else if(b.length > a.length) j++; else { i++; j++; } } return d + (a.length - i) + (b.length - j) <= 1; };
+    const qw = q.split(' ');
+    let mejor = null, pm = 0;
+    for(const [j, c] of lista){
+      for(const [n, peso] of [[limpio(c.nombre), 1], [limpio(c.alias || ''), .9]]){
+        if(!n) continue;
+        const ws = n.split(' ');
+        let p = 0;
+        if(n === q) p = 100;
+        else if(n.startsWith(q)) p = 80;
+        else if(qw.every(w => ws.some(x => x === w))) p = 70;
+        else if(qw.every(w => ws.some(x => x.startsWith(w)))) p = 60;
+        else if(n.includes(q) && q.length >= 3) p = 45;
+        else if(qw.every(w => ws.some(x => parecida(x, w)))) p = 35;
+        p *= peso; if(c.grupo) p -= 1;
+        if(p > pm){ pm = p; mejor = j; }
+      }
+    }
+    if(mejor) return mejor;
+    const num = q.replace(/\D/g, '');
+    return (num.length >= 6 && (lista.find(([j]) => j.split('@')[0].endsWith(num)) || [])[0]) || null;
   }
   esMiChat(jid){ return this.transporte.yo && this.transporte.yo().includes(jid); }
   esOtraCuenta(jid){ return !!(this.transporte.otrosYo && this.transporte.otrosYo().includes(jid)); }
