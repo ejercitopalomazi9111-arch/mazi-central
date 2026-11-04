@@ -74,7 +74,11 @@ async function prender(c){
     enviarAudio: (j, o, sg) => { if(esMeta(j)) throw new Error('en Instagram/Messenger va escrito'); return v.transporte.enviarAudio(j, o, sg); }, enviarImagen: (j, b, m, p) => v.transporte.enviarImagen(j, b, m, p), grabando: (j, ms) => v.transporte.grabando && v.transporte.grabando(j, ms),
     /* los números de sus OTRAS cuentas: dos Secres no se contestan entre ellas */
     otrosYo: () => Object.entries(vivas).filter(([k, x]) => k !== c.id && x.transporte).flatMap(([, x]) => x.transporte.yo()),
-    escribiendo: (j, ms) => esMeta(j) ? null : v.transporte.escribiendo(j, ms), leido: (j) => esMeta(j) ? null : v.transporte.leido(j) };
+    escribiendo: (j, ms) => esMeta(j) ? null : v.transporte.escribiendo(j, ms), leido: (j) => esMeta(j) ? null : v.transporte.leido(j),
+    /* Mayoreo: los grupos por nombre y el historial viejo; la campaña: si un número tiene WhatsApp */
+    grupos: () => v.transporte.grupos(), pedirHistorial: (c2, n, a) => v.transporte.pedirHistorial(c2, n, a),
+    masViejo: (c2) => v.transporte ? v.transporte.masViejo(c2) : 0, ancla: (c2) => v.transporte ? v.transporte.ancla(c2) : null,
+    existe: (t) => v.transporte.existe(t) };
   v.secre = new Secre({ cuenta: c.id, transporte: puente, ia, almacen, compartir: true });
   /* con qué número se pide el código: el de SECRE_CUENTAS, o el que se eligió en el panel
      (en México WhatsApp puede tener la cuenta como 52… o como 521…) */
