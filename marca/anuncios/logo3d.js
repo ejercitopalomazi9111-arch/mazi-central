@@ -126,8 +126,16 @@ function preparar(){
   const cam = new THREE.PerspectiveCamera(FOV, AN / AL, .1, 400), L = logo3d(); s.add(L.grupo);
   V = { lienzo, r, s, cam, L, casa: L.cubo.userData.casa.clone(), ancho: L.medio * 2 };
 }
+export const LOGO_ORIGINAL = globalThis.LOGO_ORIGINAL ?? !/[?&]logo=cubo/.test(globalThis.location?.search || '');
+const ORIGINAL = new Image(); ORIGINAL.src = new URL('../logo/original-claro.svg', import.meta.url).href;
+await ORIGINAL.decode().catch(() => {});
 export function logoVivo(x, { t, desde, cx, cy, ancho, dur = 2.9, alfa = 1 }){
   const u = t - desde; if(u < 0) return;
+  /* Carlos, 4 nov: «usa el logo original en todo por ahora»: la paloma con GRUPO MAZI entra creciendo y
+     con brillo morado. Para volver al cubo: ?logo=cubo en la dirección o LOGO_ORIGINAL = false. */
+  if(LOGO_ORIGINAL && ORIGINAL.width){ const a = _sale(_tr(u, 0, .8)), w = ancho * 1.05, h = w * ORIGINAL.height / ORIGINAL.width, s = .82 + .18 * a;
+    x.save(); x.globalAlpha = alfa * a; x.translate(cx, cy + (1 - a) * 40); x.scale(s, s); x.shadowColor = '#AC27FF'; x.shadowBlur = 50 * a;
+    x.drawImage(ORIGINAL, -w / 2, -h / 2, w, h); x.restore(); return; }
   const k = _suave(_tr(u, dur - .4, dur));
   if(k < 1){
     if(!V) preparar();

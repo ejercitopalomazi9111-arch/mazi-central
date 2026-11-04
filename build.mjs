@@ -91,6 +91,8 @@ const VA = [
   /* Cuatro páginas de muestra para vender a barberías (Esencial, dos Completas y una A la medida), con
      reservas que llegan por WhatsApp. Los negocios son ficticios y la página lo dice arriba. */
   'barberias',
+  /* la página para vendedores (Carlos, 4 nov): la cotización, los demos, los videos y los pósters en un link */
+  'vendedores',
   /* Mis pingüinos: el registro de los peluches de pingüino de una amiga de Carlos (foto,
      nombre y cuántos tiene). Todo se guarda en su teléfono; trae respaldo a archivo. */
   'pinguinos',
