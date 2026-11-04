@@ -222,6 +222,15 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .auth-seg{display:flex;gap:6px;background:rgba(12,15,22,.6);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:14px}
 .auth-seg button{flex:1;background:transparent;border:none;color:var(--dim);font-family:inherit;font-size:14px;font-weight:650;padding:10px;border-radius:9px;cursor:pointer;transition:.15s}
 .auth-seg button.on{background:var(--accent);color:#fff}
+/* 4 nov: los dos botones de arriba medían 37 px de alto (el mínimo cómodo para el dedo es 44) */
+.auth-seg button{min-height:44px}
+/* 4 nov: en computadora la entrada se estiraba a 1,070 px. Ahora: la marca a la izquierda y el formulario a la derecha, topado */
+@media (min-width:1024px){
+  #s-entrada .entry{display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,440px);column-gap:72px;align-content:center;padding-top:48px;padding-bottom:48px}
+  #s-entrada .entry > *{grid-column:1}
+  #s-entrada .entry > .auth{grid-column:2;grid-row:1 / span 8;align-self:center;background:rgba(12,15,22,.72);border:1px solid var(--line);border-radius:20px;padding:22px;backdrop-filter:blur(10px)}
+  #s-entrada .slogan{max-width:42ch}
+}
 .auth-q{font-size:13px;font-weight:650;color:#cfd5df;margin:2px 2px 9px;text-align:left}
 .rolepick{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
 .rolechip{display:flex;flex-direction:column;gap:2px;text-align:left;background:rgba(12,15,22,.72);border:1px solid var(--line);border-radius:11px;padding:10px 12px;cursor:pointer;transition:.15s;position:relative;overflow:hidden}
