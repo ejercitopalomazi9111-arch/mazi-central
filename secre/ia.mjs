@@ -307,6 +307,7 @@ Acciones posibles (usa el nombre del chat tal como viene en la lista):
 - {"accion":"quitarPrecio","nombre":"sudadera negra"}
 - {"accion":"responder","n":3,"texto":"el mensaje final, ya escrito"}  (Carlos te contesta sobre una PROPUESTA de la lista de abajo en palabras normales: «sí mándalo», «sí pero más tranquilo», «dile que mañana», «a Ana dile que sí y a Beto que no». Escribe tú el texto final siguiendo lo que pidió (si sólo dice «sí», el texto de la propuesta tal cual), con la VOZ que trae esa propuesta ("voz"), y SE MANDA. Una acción por propuesta. «No le digas nada» = {"accion":"tirar","n":3})
 - {"accion":"tirar","n":3}
+- {"accion":"venta","buscar":"sudadera café","precio":1200,"tallas":["M"],"marca":"True Religion"}  (Carlos te dice precio, tallas o marca de una prenda del banco de imágenes: se guarda en esa foto y sale así cuando se publica o la preguntan. "buscar" = cómo se llama la prenda; pon sólo lo que te dio)
 - {"accion":"mayoreo","fuente":"Mayoreo","destino":"All's fashion","margen":250,"activo":true}  (las fotos que lleguen al grupo "fuente" se suben al banco con su precio de costo y se mandan solas, sin texto, al grupo "destino"; "margen" = cuánto se le suma al costo para el precio de venta)
 - {"accion":"tienda","chat":"All's fashion","si":true}  (en ese grupo contestas a las clientas precios y tallas del catálogo)
 - {"accion":"llamarme","activo":true}  (SÓLO si Carlos te pide con esas palabras que le marques por teléfono cuando algo importante necesite su decisión; no la pongas por tu cuenta)

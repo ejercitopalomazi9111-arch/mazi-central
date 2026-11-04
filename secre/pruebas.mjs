@@ -830,7 +830,7 @@ console.log('\n14 · Mensajes programados, banco de imágenes y fotos (Carlos, 1
   /* a pedido de Carlos */
   const f0 = env4.filter(e => e.jid === YO && e.texto === '[foto]').length;
   r = await dice6('fotos de termos');
-  ok('«fotos de termos» se las manda a él', env4.filter(e => e.jid === YO && e.texto === '[foto]').length === f0 + 1 && /Termo Stanley/.test(env4.filter(e => e.jid === YO && e.texto === '[foto]').slice(-1)[0].pie), r);
+  ok('«fotos de termos» se las manda a él', env4.filter(e => e.jid === YO && e.texto === '[foto]').length === f0 + 1 && /Termo stanley/i.test(env4.filter(e => e.jid === YO && e.texto === '[foto]').slice(-1)[0].pie) && !/1\.2 L/.test(env4.filter(e => e.jid === YO && e.texto === '[foto]').slice(-1)[0].pie), r);
   r = await dice6('mándale a Ana 2 fotos de nike');
   ok('«mándale a Ana 2 fotos de nike» se las manda a Ana', /le mandé 2 foto/.test(r) && aAna().slice(-2).every(e => e.texto === '[foto]'), r);
   r = await dice6('fotos de unicornios');

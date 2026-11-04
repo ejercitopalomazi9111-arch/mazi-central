@@ -79,5 +79,39 @@ export async function miniatura(buf){
 
 /* cómo se le dice el producto a un cliente: precio de venta y tallas, sin el costo */
 export function textoProducto(p){
-  return `${p.desc || 'producto de All\'s'}${p.precio ? ` · $${p.precio.toLocaleString('en-US')}` : ' · precio por confirmar'}${p.tallas && p.tallas.length ? ` · tallas: ${p.tallas.join(', ')}` : ''}`;
+  return `${p.desc || 'producto de All\'s'}${p.marca ? ' · ' + p.marca : ''}${p.precio ? ` · $${p.precio.toLocaleString('en-US')}` : ' · precio por confirmar'}${p.tallas && p.tallas.length ? ` · tallas: ${p.tallas.join(', ')}` : ''}`;
+}
+
+/* ── el pie de una foto que se vende (Carlos, 4 nov: «debería decir el precio, las tallas y la
+   marca: sudadera café M True Religion 1200, sin la descripción de Paulina») ──
+   La descripción del banco es para BUSCAR la foto, no para venderla: nunca sale en el pie. */
+const MARCAS = ['True Religion', 'Nike', 'Adidas', 'Puma', 'Jordan', 'New Balance', 'Converse', 'Vans', 'Reebok', 'Under Armour', 'Fila', 'Skechers', 'Zara', 'Bershka', 'Pull&Bear', 'Shein', 'H&M', 'Guess', 'Michael Kors', 'MK', 'Coach', 'Kate Spade', 'Tommy Hilfiger', 'Tommy', 'Calvin Klein', 'CK', 'Levi\'s', 'Polo Ralph Lauren', 'Ralph Lauren', 'Lacoste', 'Hollister', 'Abercrombie', 'American Eagle', 'Aeropostale', 'Gap', 'Old Navy', 'Nautica', 'Náutica', 'Carolina Herrera', 'Victoria\'s Secret', 'Pink', 'Hugo Boss', 'Armani', 'Versace', 'Gucci', 'Louis Vuitton', 'Prada', 'Dior', 'Chanel', 'Balenciaga', 'Burberry', 'Fendi', 'Supreme', 'Essentials', 'Fear of God', 'Champion', 'The North Face', 'Columbia', 'Stanley', 'Owala', 'Yeti', 'Hydro Flask', 'Cloe', 'Westies', 'Andrea', 'Flexi', 'Steve Madden', 'Nine West', 'Ferrioni', 'Oscar de la Renta'];
+export function leerMarca(texto){
+  const t = ' ' + plano(texto).replace(/[^a-z0-9&' ]+/g, ' ') + ' ';
+  const m = /\bmarca\s*:?\s*([a-z0-9&' ]{2,30}?)(?=\s*(?:$|·|,|\btalla|\bprecio|\$|\d))/.exec(plano(texto));
+  if(m && m[1].trim()) return MARCAS.find(x => plano(x) === m[1].trim()) || m[1].trim().replace(/\b\w/g, c => c.toUpperCase());
+  for(const x of MARCAS) if(t.includes(' ' + plano(x) + ' ')) return x;
+  return '';
+}
+/* el precio de VENTA que trae una nota del banco: «venta $1,200», «precio 1200»; el costo no cuenta */
+export function leerVenta(notas){
+  const t = plano(notas).replace(/costo\s*:?\s*\$?\s*[\d.,?]+/g, ' ');
+  const m = /(?:venta|precio)\s*:?\s*\$?\s*(\d[\d,]*)/.exec(t) || /\$\s*(\d[\d,]*)/.exec(t);
+  const n = m ? Number(m[1].replace(/,/g, '')) : NaN;
+  return Number.isFinite(n) && n >= 20 ? n : null;
+}
+export function datosVenta(f = {}, prod = null){
+  const notas = String(f.notas || ''), pal = [...(f.palabras || []), ...(f.temas || [])].join(' ');
+  const titulo = String(f.titulo || '').trim() || String(f.nombre || '').replace(/\.[a-z0-9]{2,5}$/i, '').replace(/[_-]+/g, ' ').trim();
+  const tallas = (prod && prod.tallas && prod.tallas.length) ? prod.tallas : leerTallas(notas).length ? leerTallas(notas) : leerTallas(pal);
+  return {
+    nombre: String((prod && prod.desc) || titulo).replace(/^(fotografia|foto|imagen)\s+(frontal\s+)?de\s+(una?\s+)?/i, '').trim() || "Producto de All's",
+    marca: (prod && prod.marca) || leerMarca(notas) || leerMarca(`${titulo} ${pal}`),
+    tallas, precio: (prod && prod.precio) || leerVenta(notas),
+  };
+}
+export function pieVenta(f, prod){
+  const d = datosVenta(f, prod), nom = d.nombre.charAt(0).toUpperCase() + d.nombre.slice(1);
+  const linea = [d.marca, d.tallas.length ? (d.tallas.length > 1 ? 'Tallas ' : 'Talla ') + d.tallas.join(', ') : '', d.precio ? '$' + d.precio.toLocaleString('en-US') : 'Pregunta el precio'].filter(Boolean).join(' · ');
+  return `*${nom}*\n${linea}`;
 }

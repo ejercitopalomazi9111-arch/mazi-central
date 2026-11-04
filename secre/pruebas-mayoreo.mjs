@@ -71,7 +71,7 @@ ok('el texto con precio que llega DESPUÉS de unas fotos se les pone a ésas', P
 ok('las tres se subieron al banco, en la carpeta de All\'s, con el costo sólo en las notas', subidas.length === 3 && subidas.every(x => x.campos.carpeta === "All's fashion") && /costo \$350/.test(subidas[0].campos.notas) && !/350/.test(subidas[0].campos.titulo));
 for(let k = 0; k < 3; k++){ pasar(10); await s.tic(); }
 const enAlls = a(ALLS).filter(e => e.texto === '[foto]');
-ok('y se mandaron solas al grupo de All\'s, SIN texto', enAlls.length === 3 && enAlls.every(e => !e.pie), enAlls);
+ok('y se mandaron solas al grupo de All\'s con precio de venta y tallas, sin el costo ni el texto del proveedor', enAlls.length === 3 && /\$600/.test(enAlls[0].pie) && /Tallas S, M, L/.test(enAlls[0].pie) && enAlls.every(e => /\$\d/.test(e.pie) && !/\$(350|280)\b/.test(e.pie)), enAlls);
 ok('en el grupo de Mayoreo no contestó nada', !a(MAYO).length);
 await llega({ chat: MAYO, grupo: true, nombre: 'Proveedor', nombreChat: 'Shopify Mayoreo', texto: '[foto]', imagen: img(f1, 'Conjunto deportivo dama $330') });
 ok('la misma foto otra vez no se duplica: sólo se actualiza el precio', s.config.productos.length === 3 && P[0].costo === 330 && P[0].precio === 580);
@@ -140,6 +140,18 @@ console.log('\n§7 · la firma va una sola vez');
 ok('si la IA ya la escribió, no se repite', uno.firmar('Asistente de Carlos:', 'Asistente de Carlos: le paso tu mensaje') === 'Asistente de Carlos: le paso tu mensaje');
 ok('sin firma en el texto, se pone', uno.firmar('Asistente de Carlos:', 'va') === 'Asistente de Carlos: va');
 ok('sin firma del chat, el texto tal cual', uno.firmar('', 'va') === 'va');
+
+console.log('\n§8 · el pie de venta: precio, tallas y marca, nunca la descripción');
+{ const { pieVenta } = await import('./mayoreo.mjs');
+  const f = { id: 'b1', titulo: 'sudadera café con gorro y cierre', descripcion: 'fotografía frontal de una sudadera café con gorro, cierre frontal…', notas: '', palabras: [] };
+  ok('sin datos: el nombre y «Pregunta el precio», sin la descripción', pieVenta(f) === '*Sudadera café con gorro y cierre*\nPregunta el precio');
+  ok('con notas: marca, talla y precio de venta', pieVenta({ ...f, notas: 'costo $800 · venta $1200 · tallas M · marca True Religion' }) === '*Sudadera café con gorro y cierre*\nTrue Religion · Talla M · $1,200');
+  const cambios = [];
+  uno.banco = { fichas: async () => [f], cambiar: async (id, c) => { cambios.push([id, c]); return { ...f, ...c }; } };
+  const r = await uno.ponerVenta({ buscar: 'sudadera café', precio: 1200, tallas: ['m'], marca: 'True Religion' });
+  ok('«la sudadera café va en 1200, M, True Religion» se guarda en su foto', cambios.length === 1 && cambios[0][0] === 'b1' && /venta \$1200 · tallas M · marca True Religion/.test(cambios[0][1].notas), [r, cambios]);
+  ok('y le dice cómo va a salir', /True Religion · Talla M · \$1,200/.test(r), r);
+}
 
 console.log(fallas.length ? `\n✗ ${fallas.length} fallaron de ${pasan + fallas.length}` : `\n✓ ${pasan}/${pasan}`);
 process.exit(fallas.length ? 1 : 0);

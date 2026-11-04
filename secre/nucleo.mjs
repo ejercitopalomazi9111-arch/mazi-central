@@ -37,7 +37,7 @@ import { llamar, llamadasListas, twilioDe } from './llamada.mjs';
 import { HORARIOS, cualHorario, mensajesDeHorario } from './horarios.mjs';
 import { bancoDeSala, buscarFotos, nombreDe as nombreFoto, pieDe } from './banco.mjs';
 import { revisarRespuesta, leerPrecios, textoPrecio, enQueAnda, cantidades, enPrimeraPersona } from './criterio.mjs';
-import { leerCosto, leerTallas, leerDescripcion, precioVenta, huella, masParecido, miniatura, textoProducto } from './mayoreo.mjs';
+import { leerCosto, leerTallas, leerDescripcion, precioVenta, huella, masParecido, miniatura, textoProducto, pieVenta, leerMarca, datosVenta } from './mayoreo.mjs';
 import { cargarConocimiento } from './conocimiento.mjs';
 /* lo que comparten las dos cuentas de Carlos (4 nov: «que el güey ya sepa todo en ambos lados») */
 const COMPARTIDO = ['datos', 'prohibidos', 'precios', 'productos', 'mayoreo', 'imitar'];
@@ -583,7 +583,7 @@ export class Secre {
     if(!m.imagen){
       const costo = leerCosto(m.texto); if(!costo) return;
       const lote = P.filter(p => p.lote === this.estado.loteMayoreo && !p.costo);
-      for(const p of lote){ p.costo = costo; p.precio = precioVenta(costo, MY.margen); const ts = leerTallas(m.texto); if(ts.length) p.tallas = ts; if(!p.desc) p.desc = leerDescripcion(m.texto); }
+      for(const p of lote){ p.costo = costo; p.precio = precioVenta(costo, MY.margen); const ts = leerTallas(m.texto); if(ts.length) p.tallas = ts; if(!p.desc) p.desc = leerDescripcion(m.texto); if(!p.marca) p.marca = leerMarca(m.texto); }
       if(lote.length){ this.anotar(`Mayoreo: precio $${costo} a ${lote.length} foto(s)`); this.guardar(); }
       return;
     }
@@ -594,24 +594,29 @@ export class Secre {
     const costo = leerCosto(pie);
     let p = h && P.find(x => x.huella && masParecido([x], h, 4));
     if(p){ if(costo){ p.costo = costo; p.precio = precioVenta(costo, MY.margen); } const ts = leerTallas(pie); if(ts.length) p.tallas = ts; this.guardar(); return; }   /* ya la teníamos: sólo se actualiza */
-    p = { id: 'p' + ahora.toString(36) + Math.floor(this.azar() * 1e4), desc: leerDescripcion(pie), costo, precio: precioVenta(costo, MY.margen), tallas: leerTallas(pie), huella: h, fotoId: '', lote: this.estado.loteMayoreo, t: ahora };
+    p = { id: 'p' + ahora.toString(36) + Math.floor(this.azar() * 1e4), desc: leerDescripcion(pie), costo, precio: precioVenta(costo, MY.margen), tallas: leerTallas(pie), marca: leerMarca(pie), huella: h, fotoId: '', lote: this.estado.loteMayoreo, t: ahora };
     P.push(p); this.config.productos = P.slice(-3000);
     if(this.banco && this.banco.subir){
       try{ const { mini, ancho, alto } = await miniatura(buf);
         const f = await this.banco.subir({ buf, mime: m.imagen.mime, mini, ancho, alto, nombre: (p.desc || 'mayoreo') + '.jpg', huella: 'mayoreo:' + h,
-          campos: { titulo: p.desc || '', carpeta: "All's fashion", temas: ['mayoreo'], notas: `costo $${p.costo || '?'} · venta $${p.precio || '?'}${p.tallas.length ? ' · tallas ' + p.tallas.join(', ') : ''}` } });
+          campos: { titulo: p.desc || '', carpeta: "All's fashion", temas: ['mayoreo'], notas: `costo $${p.costo || '?'} · venta $${p.precio || '?'}${p.tallas.length ? ' · tallas ' + p.tallas.join(', ') : ''}${p.marca ? ' · marca ' + p.marca : ''}` } });
         p.fotoId = f && f.id || ''; }
       catch(e){ this.anotar('Mayoreo: no pude subirla al banco: ' + e.message); }
     }
-    (this.estado.colaFotos || (this.estado.colaFotos = [])).push({ id: p.id, buf: buf.toString('base64'), mime: m.imagen.mime });
+    (this.estado.colaFotos || (this.estado.colaFotos = [])).push({ id: p.id, buf: buf.toString('base64'), mime: m.imagen.mime, t: ahora });
     this.guardar();
   }
   /* manda a All's las fotos que van llegando, de a unas cuantas por vuelta (sin texto) */
   async colaFotosTic(){
     const MY = this.config.mayoreo || {}, Q = this.estado.colaFotos || [];
     if(!MY.activo || !MY.destino || !Q.length) return;
-    for(const x of Q.splice(0, 3)){
-      try{ const id = await this.transporte.enviarImagen(MY.destino, Buffer.from(x.buf, 'base64'), x.mime, '');
+    /* espera a que llegue el precio (el proveedor a veces lo manda después de las fotos), hasta 5 min */
+    const P = this.config.productos || [], ahora = this.reloj();
+    const listas = Q.filter(x => { const pr = P.find(p => p.id === x.id); return (pr && pr.precio) || !x.t || ahora - x.t > 5 * MIN; }).slice(0, 3);
+    this.estado.colaFotos = Q.filter(x => !listas.includes(x));
+    for(const x of listas){
+      try{ const prod = (this.config.productos || []).find(p => p.id === x.id);
+        const id = await this.transporte.enviarImagen(MY.destino, Buffer.from(x.buf, 'base64'), x.mime, prod && prod.precio ? pieVenta({}, prod) : '');
         if(id){ this.estado.enviados.push(id); (this.estado.fotoProducto || (this.estado.fotoProducto = {}))[id] = x.id; } }
       catch(e){ this.anotar('Mayoreo: no pude mandar una foto a All\'s: ' + e.message); Q.push(x); break; }
     }
@@ -1019,12 +1024,15 @@ export class Secre {
     return !esGrupo;
   }
   /* manda fotos del banco con su nombre; regresa cuántas salieron */
-  async mandarFotos(jid, fichas, { conDescripcion = true } = {}){
-    let n = 0;
+  async mandarFotos(jid, fichas){
+    let n = 0; const P = this.config.productos || [];
     for(const f of fichas){
       try{
         const { buf, mime } = await this.banco.bajar(f.id);
-        const id = await this.transporte.enviarImagen(jid, buf, mime, pieDe(f, conDescripcion));
+        const prod = P.find(p => p.fotoId && p.fotoId === f.id) || null;
+        /* a la venta: nombre, marca, tallas y precio; nunca la descripción del banco */
+        const id = await this.transporte.enviarImagen(jid, buf, mime, pieVenta(f, prod));
+        if(id && prod) (this.estado.fotoProducto || (this.estado.fotoProducto = {}))[id] = prod.id;
         if(id){ this.estado.enviados.push(id); this.estado.enviados = this.estado.enviados.slice(-500); }
         const h = this.estado.historial[jid] || (this.estado.historial[jid] = []);
         h.push({ de: 'yo', secre: true, texto: `[foto: ${nombreFoto(f)}]`, t: this.reloj() }); this.estado.historial[jid] = h.slice((this.config.chats[jid] || {}).grupo ? -60 : -30);
@@ -1563,6 +1571,21 @@ export class Secre {
     this.bitacora(p.chat, p.nombre, [{ texto: p.dijo || '' }], 'contesto', texto, 'lo aprobaste en palabras normales');
     return `A ${p.nombre}: «${texto.slice(0, 300)}»`;
   }
+  /* «la sudadera café va en 1200, talla M, True Religion»: se guarda en las notas de esa foto del banco */
+  async ponerVenta(a){
+    if(!this.banco || !this.banco.cambiar) return '✗ No tengo el banco de imágenes conectado.';
+    let fs; try{ fs = await this.banco.fichas(); }catch(e){ return '✗ No pude leer el banco: ' + e.message; }
+    const f = buscarFotos(fs, String(a.buscar || ''), { carpeta: a.carpeta || '', n: 1 })[0];
+    if(!f) return `✗ No encontré en el banco «${a.buscar}».`;
+    const prod = (this.config.productos || []).find(p => p.fotoId === f.id) || null;
+    const d = datosVenta(f, prod);
+    const precio = +a.precio > 0 ? Math.round(+a.precio) : d.precio, tallas = Array.isArray(a.tallas) && a.tallas.length ? a.tallas.map(x => String(x).toUpperCase()) : d.tallas, marca = a.marca || d.marca;
+    const costo = (/costo\s*\$?\s*\d[\d,]*/i.exec(f.notas || '') || [''])[0];
+    const notas = [costo, precio ? `venta $${precio}` : '', tallas.length ? 'tallas ' + tallas.join(', ') : '', marca ? 'marca ' + marca : ''].filter(Boolean).join(' · ');
+    try{ await this.banco.cambiar(f.id, { notas }); }catch(e){ return '✗ No pude guardarlo en el banco: ' + e.message; }
+    if(prod){ if(precio) prod.precio = precio; prod.tallas = tallas; if(marca) prod.marca = marca; }
+    return `${nombreFoto(f)}: ${pieVenta({ ...f, notas }, null).replace(/\*/g, '').replace('\n', ' · ')}`;
+  }
   async ordenLibre(texto){
     let r;
     let carpetas = [];
@@ -1579,7 +1602,7 @@ export class Secre {
     try{ r = await this.ia.orden({ historiales, propuestas, conocimiento: this.conocimiento || '', carpetas, quien: this.deTurno(), texto, ahora: this.reloj(), hoy: fechaMx(this.reloj()), hora: horaMx(this.reloj()), chats: Object.entries(this.config.chats).filter(([, c]) => c.nombre).map(([j, c]) => ({ id: j, nombre: c.nombre, modo: c.modo || '', etiquetas: c.etiquetas || [] })), config: this.resumenConfig() }); }
     catch(e){ return this.avisar('No te entendí (y la IA no contestó). Escribe «ayuda» para ver lo que sé hacer.'); }
     const hechos = [];
-    for(const a of (r && r.acciones) || []){ const h = a && a.accion === 'mensaje' ? await this.encargo(a) : a && a.accion === 'responder' ? await this.responderPropuesta(a) : this.aplicar(a); if(h) hechos.push(h); }
+    for(const a of (r && r.acciones) || []){ const h = a && a.accion === 'mensaje' ? await this.encargo(a) : a && a.accion === 'responder' ? await this.responderPropuesta(a) : a && a.accion === 'venta' ? await this.ponerVenta(a) : this.aplicar(a); if(h) hechos.push(h); }
     this.guardar();
     const dice = (r && r.respuesta) || '';
     return this.avisar([dice, ...hechos.map(h => '✓ ' + h)].filter(Boolean).join('\n') || 'No te entendí. Escribe «ayuda».');
