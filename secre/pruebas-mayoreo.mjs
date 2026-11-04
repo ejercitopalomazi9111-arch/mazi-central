@@ -243,5 +243,22 @@ console.log('\n§11 · trabaja la cuenta que SÍ está en el grupo');
   Secre.hermanas.clear();
 }
 
+console.log('\n§12 · el grupo guardado ya no es de ninguna cuenta: se busca otra vez por nombre');
+{
+  Secre.hermanas.clear();
+  const VIEJO = '120363111111@g.us', G1 = '120363222222@g.us', G2 = '120363333333@g.us', pedidos = [];
+  const base = { ...transporte, pedirHistorial: async (chat) => { pedidos.push(chat); return true; }, masViejo: () => Date.UTC(2026, 10, 1) };
+  const tN = { ...base, yo: () => ['5214428833786@s.whatsapp.net'], grupos: async () => [{ id: G2, nombre: "All's Fashion" }] };
+  const tP = { ...base, yo: () => ['5217861111111@s.whatsapp.net'], grupos: async () => [{ id: G1, nombre: 'Shopy go mayoreo 1' }, { id: '120363444444@g.us', nombre: 'Tareas 3.1' }] };
+  const neg = new Secre({ cuenta: 'negocio', transporte: tN, ia, almacen: { leer: (k, x) => x, guardar(){} }, reloj, banco: null, compartir: true, conocimiento: '', prospectos: null });
+  const per = new Secre({ cuenta: 'personal', transporte: tP, ia, almacen: { leer: (k, x) => x, guardar(){} }, reloj, banco: null, compartir: true, conocimiento: '', prospectos: null });
+  neg.config.mayoreo = per.config.mayoreo = { activo: true, fuente: VIEJO, destino: G2, fuenteNombre: 'Shopy go mayoreo 1', margen: 250, tanda: 100, pausa: 30, cadaSeg: 8, duena: 'negocio', historico: true };
+  pasar(15 * 60); await neg.tic(); await per.tic();
+  ok('la personal ve el grupo con su nombre y se queda de proveedor', per.config.mayoreo.fuente === G1 && per.config.mayoreo.duena === 'personal', per.config.mayoreo);
+  ok('y empieza a pedir el historial de ese grupo', pedidos.includes(G1), pedidos);
+  ok('el latido dice qué grupos con «mayoreo» ve cada cuenta', per.latido().mayoreo.grupos.includes('Shopy go mayoreo 1'));
+  Secre.hermanas.clear();
+}
+
 console.log(fallas.length ? `\n✗ ${fallas.length} fallaron de ${pasan + fallas.length}` : `\n✓ ${pasan}/${pasan}`);
 process.exit(fallas.length ? 1 : 0);
