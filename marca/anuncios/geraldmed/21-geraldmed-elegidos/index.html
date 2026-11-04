@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Geraldmed · anuncio</title>
+<!-- Un anuncio de Geraldmed: la lista de tomas y títulos vive en config.js, el dibujo en ../escena.js.
+     node herramientas/video/armar.mjs marca/anuncios/geraldmed/<este>/index.html marca/anuncios/salida/<este>.mp4 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@1,800;1,900&family=Inter+Tight:wght@600;700;800&display=block">
+<link rel="stylesheet" href="../../comun.css">
+<link rel="stylesheet" href="../estilo.css">
+<script type="importmap">{ "imports": { "three": "../../vendor/three.module.min.js" } }</script>
+<script>window.listo = new Promise(r => window._listo = r);</script>
+</head>
+<body>
+<canvas id="foto" class="capa" width="1080" height="1920"></canvas>
+<div id="velo" class="capa"></div>
+<div id="titulo"></div>
+<div id="tapa"></div>
+<canvas id="c2" class="capa" width="1080" height="1920"></canvas>
+<div id="cierre"></div>
+<div id="subs"></div>
+<div id="grano"></div>
+<script type="module">
+import { anuncio } from '../escena.js'; import C from './config.js';
+await anuncio(C);
+</script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+{
+ "titulo": "Geraldmed · Tu evento, cubierto",
+ "voces": {
+  "Narra": "piper:es_MX-claude-high"
+ },
+ "lento": {
+  "Narra": 0.97
+ },
+ "lineas": [
+  {
+   "id": "01",
+   "voz": "Narra",
+   "en": 0.9,
+   "txt": "Tú organiza el evento."
+  },
+  {
+   "id": "02",
+   "voz": "Narra",
+   "pausa": 0.35,
+   "txt": "De la salud de tu gente, *nos encargamos nosotros.*"
+  },
+  {
+   "id": "03",
+   "voz": "Narra",
+   "pausa": 0.45,
+   "txt": "Somos *Geraldmed:* paramédicos para eventos."
+  },
+  {
+   "id": "04",
+   "voz": "Narra",
+   "pausa": 0.35,
+   "txt": "Personal *pie tierra* entre el público,"
+  },
+  {
+   "id": "05",
+   "voz": "Narra",
+   "pausa": 0.2,
+   "txt": "y *ambulancia de urgencias básicas* lista en el lugar."
+  },
+  {
+   "id": "06",
+   "voz": "Narra",
+   "pausa": 0.45,
+   "txt": "Cada elemento, *seleccionado con especial cuidado.*"
+  },
+  {
+   "id": "07",
+   "voz": "Narra",
+   "pausa": 0.5,
+   "txt": "Geraldmed. Atención médica de emergencia.",
+   "sinSub": true
+  }
+ ]
+}

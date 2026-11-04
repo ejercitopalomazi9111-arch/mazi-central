@@ -1,0 +1,42 @@
+{
+ "titulo": "Geraldmed · Elegidos con cuidado",
+ "voces": {
+  "Narra": "piper:es_MX-claude-high"
+ },
+ "lento": {
+  "Narra": 0.97
+ },
+ "lineas": [
+  {
+   "id": "01",
+   "voz": "Narra",
+   "en": 0.9,
+   "txt": "El éxito de tu evento también depende de *quién lo cuida.*"
+  },
+  {
+   "id": "02",
+   "voz": "Narra",
+   "pausa": 0.45,
+   "txt": "En Geraldmed, cada elemento se *selecciona con especial cuidado.*"
+  },
+  {
+   "id": "03",
+   "voz": "Narra",
+   "pausa": 0.4,
+   "txt": "Gente atenta, uniformada y *lista para actuar.*"
+  },
+  {
+   "id": "04",
+   "voz": "Narra",
+   "pausa": 0.45,
+   "txt": "Para que tú *disfrutes,* y tu gente *esté segura.*"
+  },
+  {
+   "id": "05",
+   "voz": "Narra",
+   "pausa": 0.5,
+   "txt": "Geraldmed. Paramédicos para tu evento.",
+   "sinSub": true
+  }
+ ]
+}

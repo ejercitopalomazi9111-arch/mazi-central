@@ -1,0 +1,48 @@
+{
+ "titulo": "Geraldmed · Ambulancia en tu evento",
+ "voces": {
+  "Narra": "piper:es_MX-claude-high"
+ },
+ "lento": {
+  "Narra": 0.97
+ },
+ "lineas": [
+  {
+   "id": "01",
+   "voz": "Narra",
+   "en": 0.9,
+   "txt": "Si algo pasa, *la ambulancia ya está ahí.*"
+  },
+  {
+   "id": "02",
+   "voz": "Narra",
+   "pausa": 0.45,
+   "txt": "Ambulancia de *urgencias básicas* durante todo tu evento,"
+  },
+  {
+   "id": "03",
+   "voz": "Narra",
+   "pausa": 0.2,
+   "txt": "equipada y con *paramédicos a bordo.*"
+  },
+  {
+   "id": "04",
+   "voz": "Narra",
+   "pausa": 0.45,
+   "txt": "Conciertos, carreras, torneos o fiestas: *tú pones el evento.*"
+  },
+  {
+   "id": "05",
+   "voz": "Narra",
+   "pausa": 0.3,
+   "txt": "Nosotros, *la tranquilidad.*"
+  },
+  {
+   "id": "06",
+   "voz": "Narra",
+   "pausa": 0.4,
+   "txt": "Geraldmed.",
+   "sinSub": true
+  }
+ ]
+}
