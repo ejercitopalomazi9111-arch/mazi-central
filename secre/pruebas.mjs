@@ -659,7 +659,8 @@ console.log('\n12 · «¿Qué me llegó?», notas de voz y llamadas (Carlos, 16 
   const o0 = oidos; await s5.alMensaje({ id: 'mio1', chat: ANA, de: YO, texto: '[nota de voz]', mio: true, t: ahora, audio: { b64: b('te llamo'), mime: 'audio/ogg' } });
   ok('las notas de voz que Carlos manda en otros chats no se mandan a oír (no hace falta)', oidos === o0);
   await s5.alMensaje({ id: 'yo1', chat: YO, de: YO, texto: '[nota de voz]', mio: true, t: ahora, audio: { b64: b('pendientes'), mime: 'audio/ogg' } });
-  ok('Carlos le puede dar órdenes por nota de voz en su chat', /Pendientes|No tienes pendientes/.test((env3.filter(e => e.jid === YO).slice(-1)[0] || {}).texto), env3.slice(-1));
+  ok('Carlos le puede dar órdenes por nota de voz en su chat', env3.filter(e => e.jid === YO).slice(-2).some(e => /Pendientes|No tienes pendientes/.test(e.texto || '')), env3.slice(-2));
+  ok('y como le habló en voz, también le contesta en voz', (env3.filter(e => e.jid === YO).slice(-1)[0] || {}).texto === '[audio]');
   /* mandar audios */
   r = await dice('audio Ana: ya voy para allá');
   const au = env3.filter(e => e.jid === ANA && e.texto === '[audio]');

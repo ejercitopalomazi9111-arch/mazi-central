@@ -430,7 +430,8 @@ export class Secre {
       }catch(e){ this.anotar(`no pude oír la nota de voz de ${m.nombre || this.nombreDe(m.chat)}: ${e.message}`); }
     }
     if(this.esMiChat(m.chat)){
-      if(m.mio && !/^🤖/.test(m.texto)) await this.orden(m.texto.trim());
+      /* si Carlos le habló con nota de voz, le contesta también en voz (4 nov: «secre debería poder enviar audios») */
+      if(m.mio && !/^🤖/.test(m.texto)) await this.orden(m.texto.trim(), { voz: !!(m.audio && m.audio.b64) });
       return;
     }
     /* el chat con su OTRA cuenta es el canal de avisos: lo que manda la otra Secre
@@ -740,6 +741,13 @@ export class Secre {
     if(ahora - H.ultimaVez < 20_000) return;
     H.ultimaVez = ahora;
     const t0 = T.masViejo ? T.masViejo(MY.fuente) : 0;
+    /* WhatsApp sólo da lo viejo «a partir de» un mensaje que ya se vio; si el grupo está quieto desde que
+       arrancó Secre, no hay de dónde jalar: se le pide a Carlos que escriba cualquier cosa ahí, una vez */
+    if(!t0 && !H.ancla){
+      H.desde = H.desde || ahora;
+      if(!H.pidioAncla && ahora - H.desde > 10 * MIN){ H.pidioAncla = true; this.guardar(); await this.avisar(`📦 Para bajar las fotos viejas de ${this.nombreDe(MY.fuente)} necesito que llegue un mensaje nuevo a ese grupo. Escribe ahí cualquier cosa (un punto) y lo borras después; en cuanto lo vea, empiezo.`); }
+      return;
+    }
     if(t0 && t0 === H.ultimoT) H.sinAvance++; else H.sinAvance = 0;
     H.ultimoT = t0 || H.ultimoT;
     /* ya no llega nada más viejo (o ya se pidieron 4,000 mensajes): se acabó el historial */
@@ -1324,12 +1332,12 @@ export class Secre {
 
   /* ══ las órdenes de Carlos, en su chat propio ══════════════════════════ */
   charlar(de, texto){ this.estado.charla.push({ de, texto, t: this.reloj() }); this.estado.charla = this.estado.charla.slice(-150); }
-  async orden(texto){
+  async orden(texto, { voz = false } = {}){
     /* «… en audio»: hace lo mismo y además se lo dice en una nota de voz */
     const enAudio = /\s+(?:en|por|con) (?:audio|voz|nota de voz)\s*[.!?]*$/i.exec(texto.trim());
-    if(enAudio && !this.captura){
+    if((enAudio || voz) && !this.captura){
       this.captura = [];
-      try{ await this.orden(texto.trim().slice(0, enAudio.index)); }
+      try{ await this.orden(enAudio ? texto.trim().slice(0, enAudio.index) : texto.trim()); }
       finally{ const dicho = this.captura.join('\n'); this.captura = null; if(dicho) await this.avisarVoz(dicho); }
       return;
     }
@@ -1677,9 +1685,11 @@ export class Secre {
   async encargo(a){
     const j = a.chat ? (this.config.chats[a.chat] ? a.chat : this.buscarChat(a.chat)) : null;
     const texto = String(a.texto || '').trim();
+    /* «mándame un audio…»: la IA a veces se lo manda a «Carlos» como si fuera otro contacto: es para él */
+    const aEl = !j && /^(carlos|yo|a mi|mi|jefe|el jefe|palomazi|eduardo)$/.test(sinAcentos(a.chat || '').replace(/[^a-z ]/g, '').trim());
+    if(aEl || (j && this.esMiChat(j))){ if(!texto) return ''; await this.avisar(texto); if(a.audio) await this.avisarVoz(texto); return ''; }
     if(!j) return `✗ No tengo a «${a.chat}» en tus chats: no le mandé nada.`;
     if(!texto) return '';
-    if(this.esMiChat(j)) return '';
     try{
       if(a.audio) await this.mandarAudio(j, texto);
       else { const f = this.firmaDe(j); await this.mandar(j, f ? f + ' ' + texto : texto); }
@@ -1735,7 +1745,10 @@ export class Secre {
     for(const a of (r && r.acciones) || []){ const h = a && a.accion === 'mensaje' ? await this.encargo(a) : a && a.accion === 'responder' ? await this.responderPropuesta(a) : a && a.accion === 'venta' ? await this.ponerVenta(a) : this.aplicar(a); if(h) hechos.push(h); }
     this.guardar();
     const dice = (r && r.respuesta) || '';
-    return this.avisar([dice, ...hechos.map(h => '✓ ' + h)].filter(Boolean).join('\n') || 'No te entendí. Escribe «ayuda».');
+    const todo = [dice, ...hechos.map(h => '✓ ' + h)].filter(Boolean).join('\n') || 'No te entendí. Escribe «ayuda».';
+    await this.avisar(todo);
+    /* «mándame un audio», «dímelo en voz»: además del escrito, la nota de voz (si no la está capturando ya «… en audio») */
+    if(r && r.audio && !this.captura) await this.avisarVoz(dice || todo);
   }
 
   /* una acción ya interpretada → cambio de configuración. Devuelve qué hizo, o '' si no aplica.
