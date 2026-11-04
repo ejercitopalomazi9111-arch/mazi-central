@@ -161,7 +161,7 @@ console.log('\n§9 · todo el historial de «Shopy go mayoreo 1», de 100 en 100
   const t9 = { ...transporte, enviar: async (j, t) => { env9.push({ jid: j, texto: t }); return 'Z' + env9.length; },
     enviarImagen: async (j, b, m, pie) => { env9.push({ jid: j, texto: '[foto]', pie }); return 'Z' + env9.length; },
     grupos: async () => [{ id: G1, nombre: 'Shopy go mayoreo 1' }, { id: G2, nombre: "All's Fashion | clothes & more" }],
-    pedirHistorial: async (chat, n) => { pedidos.push([chat, n]); if(hayMas-- > 0) viejo -= 86400000; return true; }, masViejo: () => viejo };
+    pedirHistorial: async (chat, n, an, o) => { pedidos.push([chat, n, o || {}]); if(hayMas-- > 0) viejo -= 86400000; return true; }, masViejo: () => viejo };
   const sub9 = [], banco9 = { listo: () => true, async fichas(){ return []; }, async subir(x){ sub9.push(x); return { id: 'B' + sub9.length }; }, async bajar(id){ return { buf: sub9[+id.slice(1) - 1].buf }; } };
   const alm9 = {}, almac = { leer: (k, x) => alm9[k] ? JSON.parse(alm9[k]) : x, guardar: (k, v) => { alm9[k] = JSON.stringify(v); } };
   /* una cuenta que ya existía (versión 3) pasa sola a tener Mayoreo prendido por nombre */
@@ -186,7 +186,8 @@ console.log('\n§9 · todo el historial de «Shopy go mayoreo 1», de 100 en 100
   ok('a la media hora manda la siguiente, y avisa cuando acaba', fotosAlls().length === 3 && env9.some(e => /listo, mandé las 3 fotos/.test(e.texto)), env9.map(e => e.texto));
   ok('cada foto con su precio de venta y tallas', fotosAlls().every(e => /\$4[5-7]0/.test(e.pie) && /Tallas S, M/.test(e.pie)), fotosAlls().map(e => e.pie));
   /* cuando ya no llega nada más viejo, se acaba el historial */
-  for(let k = 0; k < 8; k++){ pasar(25); await s9.tic(); }
+  for(let k = 0; k < 14; k++){ pasar(95); await s9.tic(); }
+  ok('si un pedido no trae nada, prueba el tiempo en segundos y luego otra ancla (la borrada no sirve)', pedidos.some(p => p[2].seg) && pedidos.some(p => p[2].saltar), pedidos.map(p => p[2]));
   ok('cuando ya no hay más historial, para y le avisa a Carlos', s9.config.mayoreo.historico === false && env9.some(e => /ya revisé todo el historial/.test(e.texto)), [pedidos.length, s9.estado.histMayoreo]);
   const otra = new Secre({ cuenta: 'segunda', transporte: t9, ia, almacen: { leer: (k, x) => x, guardar(){} }, reloj, banco: banco9, conocimiento: '' });
   otra.config.mayoreo = { ...s9.config.mayoreo };
