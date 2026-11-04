@@ -1,7 +1,7 @@
 /* INKWELL · TIRAS — la pantalla, la base del teléfono y el que prepara capítulos. */
 import { reconocer, FUENTES, wattpad, limpiarTexto } from './fuentes.js';
 import { pdf, epub, tamanoJpeg } from './archivos.js';
-import { codigoDe, leerCodigo, seriesDeRanking, elegirNuevas } from './compartir.js';
+import { codigoDe, leerCodigo, seriesDeRanking, elegirNuevas, GENEROS, seriesDeGenero } from './compartir.js';
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -427,47 +427,114 @@ async function aJpeg(blob){
   const j = await new Promise((ok) => c.toBlob(ok, 'image/jpeg', 0.9));
   return { jpeg: new Uint8Array(await j.arrayBuffer()), ancho: c.width, alto: c.height };
 }
+/* junta los capítulos (bajando los que falten) y arma el archivo de una serie */
+async function armarArchivo(serie, caps, avisa = () => {}){
+  const tengo = await clavesDe(serie.id), regs = [];
+  for(const [i, c] of caps.entries()){
+    let r = tengo.has(clave(serie, c.n)) ? await capDe(clave(serie, c.n)) : null;
+    if(!r){
+      if(!navigator.onLine) throw new Error(`el cap. ${c.n} no está bajado y no hay internet`);
+      avisa(`Bajando ${serie.titulo} · cap. ${c.n} (${i + 1} de ${caps.length})…`, i / caps.length);
+      r = await bajarCap(serie, c);
+    } else avisa(`Juntando ${serie.titulo} · cap. ${c.n} (${i + 1} de ${caps.length})…`, i / caps.length);
+    regs.push(r);
+  }
+  avisa('Armando el archivo…', 1);
+  let blob, nombre;
+  const base = `${serie.titulo} (${caps[0].n}-${caps[caps.length - 1].n})`.replace(/[\\/:*?"<>|]+/g, ' ');
+  if(serie.fuente === 'webtoon'){
+    const paginas = [];
+    for(const r of regs){
+      const imgs = []; for(const b of r.imgs) imgs.push({ tipo: 'imagen', ...(await aJpeg(b)) });
+      paginas.push({ tipo: 'titulo', texto: `Capítulo ${r.n}`, sub: r.titulo }, ...imgs);
+    }
+    const ancho = paginas.find((p) => p.tipo === 'imagen')?.ancho || 800;
+    blob = pdf(paginas, { titulo: serie.titulo, ancho }); nombre = base + '.pdf';
+  } else {
+    blob = epub({ titulo: serie.titulo, autor: serie.autor, id: serie.id, capitulos: regs.map((r) => ({ titulo: `${r.n}. ${r.titulo}`, html: r.html })) });
+    nombre = base + '.epub';
+  }
+  return new File([blob], nombre, { type: blob.type });
+}
+/* en el iPhone se guarda con la hoja de compartir (Archivos o Libros); en computadora, se descarga */
+async function entregar(f){
+  if(navigator.canShare?.({ files: [f] }) && /iPhone|iPad/.test(navigator.userAgent)){
+    try{ await navigator.share({ files: [f] }); return 'compartido'; } catch(er){ if(er.name === 'AbortError') return 'cancelado'; }
+  }
+  bajar(f); return 'bajado';
+}
 $('#armar').addEventListener('click', async () => {
   const de = +$('#aDesde').value, a = +$('#aHasta').value;
   const caps = actual.caps.filter((c) => c.n >= Math.min(de, a) && c.n <= Math.max(de, a)).slice(0, TOPE);
   if(!caps.length){ $('#aEstado').textContent = 'Ese rango no tiene capítulos.'; return; }
   $('#armar').disabled = true;
   try{
-    const tengo = await clavesDe(actual.id), regs = [];
-    for(const [i, c] of caps.entries()){
-      $('#aBarra').style.width = (100 * i / caps.length) + '%';
-      let r = tengo.has(clave(actual, c.n)) ? await capDe(clave(actual, c.n)) : null;
-      if(!r){
-        if(!navigator.onLine) throw new Error(`el cap. ${c.n} no está bajado y no hay internet`);
-        $('#aEstado').textContent = `Bajando cap. ${c.n} (${i + 1} de ${caps.length})…`;
-        r = await bajarCap(actual, c);
-      } else $('#aEstado').textContent = `Juntando cap. ${c.n} (${i + 1} de ${caps.length})…`;
-      regs.push(r);
-    }
-    $('#aEstado').textContent = 'Armando el archivo…';
-    let blob, nombre;
-    const base = `${actual.titulo} (${caps[0].n}-${caps[caps.length - 1].n})`.replace(/[\\/:*?"<>|]+/g, ' ');
-    if(actual.fuente === 'webtoon'){
-      const paginas = [];
-      for(const r of regs){
-        const imgs = []; for(const b of r.imgs) imgs.push({ tipo: 'imagen', ...(await aJpeg(b)) });
-        paginas.push({ tipo: 'titulo', texto: `Capítulo ${r.n}`, sub: r.titulo }, ...imgs);
-      }
-      const ancho = paginas.find((p) => p.tipo === 'imagen')?.ancho || 800;
-      blob = pdf(paginas, { titulo: actual.titulo, ancho }); nombre = base + '.pdf';
-    } else {
-      blob = epub({ titulo: actual.titulo, autor: actual.autor, id: actual.id, capitulos: regs.map((r) => ({ titulo: `${r.n}. ${r.titulo}`, html: r.html })) });
-      nombre = base + '.epub';
-    }
+    const f = await armarArchivo(actual, caps, (t, x) => { $('#aEstado').textContent = t; $('#aBarra').style.width = (100 * x) + '%'; });
     $('#aBarra').style.width = '100%';
-    const f = new File([blob], nombre, { type: blob.type });
-    if(navigator.canShare?.({ files: [f] }) && /iPhone|iPad/.test(navigator.userAgent)){
-      $('#aEstado').textContent = 'Listo. Elige «Guardar en Archivos» o «Libros».';
-      try{ await navigator.share({ files: [f] }); } catch(er){ if(er.name !== 'AbortError') bajar(f); }
-    } else { bajar(f); $('#aEstado').textContent = `Listo: ${nombre} (${Math.round(blob.size / 1e6) || 1} MB).`; }
+    const como = await entregar(f);
+    $('#aEstado').textContent = como === 'bajado' ? `Listo: ${f.name} (${Math.round(f.size / 1e6) || 1} MB).` : 'Listo.';
     pintarSeries();
   } catch(er){ $('#aEstado').textContent = 'No se pudo: ' + er.message; }
   finally{ $('#armar').disabled = false; }
+});
+
+/* ── TODO en archivos: todas las series, todos los capítulos ──
+   Un cómic de Webtoon pesa mucho (decenas de imágenes por capítulo): cada PDF lleva hasta 100 capítulos;
+   el texto, hasta 300. En el iPhone cada archivo listo se guarda con su botón: la hoja de compartir
+   sólo abre si la pide un toque, así que no se pueden soltar diez seguidos. */
+const PARTE = { webtoon: 100, wattpad: 300 };
+let todoListos = [];
+$('#todoArchivo').addEventListener('click', async () => {
+  const ss = await todasSeries();
+  const total = ss.reduce((n, s) => n + s.caps.length, 0);
+  $('#todoNota').textContent = ss.length ? `${ss.length} serie${ss.length > 1 ? 's' : ''}, ${total} capítulos en total. Lo que no esté bajado se baja; con mucho, tarda. Deja la pantalla prendida.` : 'Todavía no sigues ninguna serie.';
+  $('#todoEmpezar').disabled = !ss.length; $('#tEstado').textContent = ''; $('#tBarra').style.width = '0';
+  $('#dlgTodo').showModal();
+});
+$('#todoEmpezar').addEventListener('click', async () => {
+  $('#todoEmpezar').disabled = true; todoListos = []; $('#tListos').replaceChildren();
+  let candado = null; try{ candado = await navigator.wakeLock?.request('screen'); }catch{}
+  try{
+    const ss = await todasSeries();
+    const trabajos = [];
+    for(const s of ss){ const t = PARTE[s.fuente] || 100; for(let i = 0; i < s.caps.length; i += t) trabajos.push({ s, caps: s.caps.slice(i, i + t) }); }
+    for(const [k, w] of trabajos.entries()){
+      const f = await armarArchivo(w.s, w.caps, (t, x) => { $('#tEstado').textContent = `Archivo ${k + 1} de ${trabajos.length} · ${t}`; $('#tBarra').style.width = (100 * (k + x) / trabajos.length) + '%'; });
+      todoListos.push(f);
+      const fila = document.createElement('div'); fila.className = 'resultado';
+      fila.innerHTML = `<span></span><div><b>${esc(f.name)}</b><span>${Math.round(f.size / 1e6) || 1} MB</span></div><button type="button" class="si" data-i="${todoListos.length - 1}">Guardar</button>`;
+      $('#tListos').append(fila);
+      if(!/iPhone|iPad/.test(navigator.userAgent)) bajar(f);
+    }
+    $('#tBarra').style.width = '100%';
+    $('#tEstado').textContent = `Listo: ${todoListos.length} archivo${todoListos.length > 1 ? 's' : ''}.` + (/iPhone|iPad/.test(navigator.userAgent) ? ' Toca «Guardar» en cada uno (Archivos o Libros).' : '');
+  } catch(er){ $('#tEstado').textContent = 'No se pudo: ' + er.message; }
+  finally{ $('#todoEmpezar').disabled = false; try{ await candado?.release(); }catch{} pintarSeries(); }
+});
+$('#tListos').addEventListener('click', async (e) => { const b = e.target.closest('button[data-i]'); if(!b) return; const r = await entregar(todoListos[+b.dataset.i]); if(r !== 'cancelado'){ b.textContent = 'Guardado'; } });
+$('#cerrarTodo').addEventListener('click', () => $('#dlgTodo').close());
+
+/* ── explorar por categoría ── */
+$('#genero').innerHTML = GENEROS.map(([k, t]) => `<option value="${k}">${t}</option>`).join('');
+let porGenero = [];
+$('#formGenero').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const g = $('#genero').value, caja = $('#porGenero');
+  const lang = ((await todasSeries()).find((x) => x.fuente === 'webtoon') || { ref: { lang: 'es' } }).ref.lang;
+  caja.innerHTML = '<p class="vacio">Buscando…</p>';
+  try{
+    const sigo = new Set((await todasSeries()).map((x) => x.id));
+    porGenero = seriesDeGenero(await (await pedir(`https://www.webtoons.com/${lang}/genres/${g}?sortOrder=LIKEIT`)).text()).slice(0, 60);
+    caja.innerHTML = porGenero.length ? porGenero.map((x, i) => `<div class="resultado"><img alt="" data-p="${i}"><div><b>${esc(x.titulo)}</b><span>${esc(x.autor)}</span></div>${sigo.has('webtoon:' + x.ref.titleNo) ? '<button type="button" disabled>Ya la sigues</button>' : `<button type="button" class="si" data-i="${i}">Seguir</button>`}</div>`).join('')
+      : '<p class="vacio">No encontré cómics en esa categoría.</p>';
+    /* las portadas piden venir «de webtoons.com»: van por el recadero, de a poco */
+    for(const img of caja.querySelectorAll('img[data-p]')){ const x = porGenero[+img.dataset.p]; if(!x.portada) continue; pedir(x.portada).then((r) => r.blob()).then((b) => { img.src = urlDe(b); }).catch(() => {}); }
+  } catch(er){ caja.innerHTML = `<p class="vacio">No se pudo: ${esc(er.message)}</p>`; }
+});
+$('#porGenero').addEventListener('click', async (e) => {
+  const b = e.target.closest('button[data-i]'); if(!b) return;
+  b.disabled = true; b.textContent = 'Agregando…';
+  try{ await agregarRef(porGenero[+b.dataset.i].ref); b.textContent = 'Ya la sigues'; }catch(er){ b.disabled = false; b.textContent = 'Seguir'; estado('No se pudo: ' + er.message); }
 });
 function bajar(f){ const u = URL.createObjectURL(f), a = document.createElement('a'); a.href = u; a.download = f.name; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 10000); }
 $('#cerrarArchivo').addEventListener('click', () => $('#dlgArchivo').close());
