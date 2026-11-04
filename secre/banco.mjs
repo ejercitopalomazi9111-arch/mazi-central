@@ -20,7 +20,7 @@ const VACIAS = new Set('de la el los las un una unos unas y o a en con por para 
 export function nombreDe(f){
   return String(f.titulo || '').trim() || String(f.nombre || 'Foto').replace(/\.[a-z0-9]{2,5}$/i, '').replace(/[_-]+/g, ' ').trim();
 }
-export function pieDe(f, conDescripcion = true){
+export function pieDe(f, conDescripcion = false){
   const d = String(f.descripcion || '').replace(/\s+/g, ' ').trim();
   return `*${nombreDe(f)}*` + (conDescripcion && d ? '\n' + (d.length > 220 ? d.slice(0, 219) + '…' : d) : '');
 }
@@ -64,6 +64,14 @@ export function bancoDeSala({ llave = process.env.SECRE_SALA_LLAVE || process.en
       if(!r.ok || !j.bien) throw new Error(j.error || `El banco contestó ${r.status}`);
       cache = null;
       return j.ficha;
+    },
+    /* precio, tallas y marca de una foto van en sus notas (4 nov) */
+    async cambiar(id, campos){
+      if(!llave) throw new Error('Para cambiar el banco hace falta SECRE_SALA_LLAVE.');
+      const r = await hacer(base, { method: 'POST', headers: { 'X-Llave': llave, 'content-type': 'application/json' }, signal: AbortSignal.timeout(30_000), body: JSON.stringify({ accion: 'cambiar', id, campos }) });
+      const j = await r.json().catch(() => ({}));
+      if(!r.ok || !j.bien) throw new Error(j.error || `El banco contestó ${r.status}`);
+      cache = null; return j.ficha;
     },
     async bajar(id){
       const r = await hacer(`${base}?id=${encodeURIComponent(id)}`, { headers: { 'X-Llave': llave }, signal: AbortSignal.timeout(60_000) });
