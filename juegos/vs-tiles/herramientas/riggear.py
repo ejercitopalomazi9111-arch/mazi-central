@@ -115,6 +115,10 @@ ladoH = {n: (1 if ((a + b) / 2).x > cx else -1) for n, a, b in segs if re.match(
 def dseg(p, a, b):
     ab = b - a; t = max(0, min(1, (p - a).dot(ab) / max(1e-9, ab.length_squared))); return (a + ab * t - p).length
 cuello = mundo(dest, 'Neck').z
+# lo que queda por dentro del hombro es pecho o espalda, no brazo: si se pegara al brazo, al bajarlo la piel
+# del costado se estira en aletas (Temmie de cuerpo completo, 4 nov, con el torso más ancho que los hombros)
+hombroX = {lado: abs(next(a for n, a, b in segs if n == lado + 'Arm').x - cx) for lado in ('Left', 'Right')}
+BRAZO = re.compile(r'(Left|Right)(Arm|ForeArm|Hand)$')
 for o in mallas:
     o.vertex_groups.clear(); g = {n: o.vertex_groups.new(name=n) for n, _, _ in segs}
     es_pelo = bool(PELO.search(o.name + ' ' + ' '.join(m.name for m in o.data.materials if m)))
@@ -124,7 +128,8 @@ for o in mallas:
         if es_pelo:  # lo largo del pelo, a la cabeza y un poco al pecho: se mueve con el cuerpo, no con las piernas
             g['Head'].add([v.index], .7, 'REPLACE'); g['Spine1' if 'Spine1' in g else 'Spine'].add([v.index], .3, 'REPLACE'); continue
         lv = 1 if p.x > cx else -1; cerca_centro = abs(p.x - cx) < H * .012
-        ds = sorted((dseg(p, a, b), n) for n, a, b in segs if cerca_centro or ladoH.get(n, lv) == lv)[:3]
+        adentro = abs(p.x - cx) < hombroX['Left' if p.x > cx else 'Right'] * .92 and p.z < cuello
+        ds = sorted((dseg(p, a, b), n) for n, a, b in segs if (cerca_centro or ladoH.get(n, lv) == lv) and not (adentro and BRAZO.match(n)))[:3]
         w = [1 / max(1e-4, d) ** 4 for d, _ in ds]; t = sum(w)
         for (d, n), wi in zip(ds, w): g[n].add([v.index], wi / t, 'REPLACE')
     mod = o.modifiers.new('Esqueleto', 'ARMATURE'); mod.object = dest; o.parent = dest
