@@ -69,10 +69,13 @@ export function comprometeA(resp, nombre = 'carlos'){
 }
 
 /* ── todo junto: ¿se puede mandar? '' = sí; si no, por qué ── */
-export function revisarRespuesta(resp, { nombre = 'Carlos', prohibidos = [], precios = [], datos = [], chat = '' } = {}){
+export function revisarRespuesta(resp, { nombre = 'Carlos', prohibidos = [], precios = [], datos = [], chat = '', vetados = [] } = {}){
   const r = String(resp || '').trim(); if(!r) return '';
   const p = rompeProhibido(r, prohibidos);
   if(p) return `iba a decir algo que me prohibiste («${p.texto}»)`;
+  /* lo que nos CUESTA un producto nunca se le dice a un cliente */
+  const veto = cantidades(r).find(c => vetados.includes(c));
+  if(veto !== undefined) return `iba a decir lo que nos cuesta ($${veto})`;
   /* un precio que no salió de su lista, de lo que contó, ni del chat, es inventado */
   const buenos = new Set([...precios.map(x => x.precio), ...cantidades(precios.map(x => x.nota).join('\n')), ...cantidades(datos.join('\n')), ...cantidades(chat)]);
   const malo = cantidades(r).find(c => !buenos.has(c));

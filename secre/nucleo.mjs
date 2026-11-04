@@ -420,13 +420,24 @@ export class Secre {
     }
     /* el eco de lo que mandó Secre (si el transporte no lo reconoció por su id) no es Carlos */
     if(m.mio && this.mandando.has(m.chat + '|' + m.texto)) return;
+    if(m.lid && this.config.lids && !this.config.lids[m.lid]) (this.config.lids || (this.config.lids = {}))[m.lid] = m.chat;
+    /* las fotos del grupo de Mayoreo: al banco y a All's, sin contestar nada ahí */
+    const MY = this.config.mayoreo || {};
+    if(MY.activo && m.chat === MY.fuente){ await this.recibirMayoreo(m); return; }
     const c = this.chat(m.chat);
+    if(!m.grupo && !m.mio && m.nombre && c.nombre && m.nombre !== c.nombre && !c.alias) c.alias = String(m.nombre).slice(0, 100);
+    /* ¿de qué producto preguntan? la foto que citaron (de las que mandó Secre) o la foto que mandaron */
+    if(!m.mio && (this.config.productos || []).length){
+      let prod = m.citado && (this.estado.fotoProducto || {})[m.citado];
+      if(!prod && m.imagen && m.imagen.bajar){ try{ const r = masParecido(this.config.productos, await huella(await m.imagen.bajar())); if(r) prod = r.producto.id; }catch(e){ this.anotar('no pude ver la foto que mandaron: ' + e.message); } }
+      if(prod) m = { ...m, producto: prod };
+    }
     /* en un grupo, el chat se llama como el grupo, no como quien escribió */
     const nc = m.grupo ? m.nombreChat : ((this.config.nombres || {})[m.chat] || m.nombre);
     if(nc && !c.nombre && (m.grupo || !m.mio)) c.nombre = nc;
     if(m.grupo) c.grupo = true;
     const h = this.estado.historial[m.chat] || (this.estado.historial[m.chat] = []);
-    h.push({ de: m.mio ? 'yo' : 'el', quien: m.grupo && !m.mio ? m.nombre || '' : '', texto: m.texto.slice(0, 2000), t: ahora });
+    h.push({ de: m.mio ? 'yo' : 'el', quien: m.grupo && !m.mio ? m.nombre || '' : '', texto: m.texto.slice(0, 2000), t: ahora, ...(m.producto ? { producto: m.producto } : {}) });
     this.estado.historial[m.chat] = h.slice(m.grupo ? -60 : -30);
     if(m.mio && m.grupo && m.sticker && m.sticker.b64) this.guardarSticker(m.chat, m.sticker);
     /* el elenco juega aparte: también cuando Carlos está jugando (son otros personajes).
@@ -473,6 +484,7 @@ export class Secre {
     await this.repaso(ahora);
     await this.programadosTic(ahora);
     await this.publicarTic(ahora);
+    await this.colaFotosTic();
     /* las propuestas viejas se tiran: contestar algo de hace 6 horas confunde */
     const antes = this.estado.propuestas.length;
     this.estado.propuestas = this.estado.propuestas.filter(p => ahora - p.t < this.config.caducan * HORA);
@@ -520,10 +532,17 @@ export class Secre {
     }
     let r = null;
     try{
-      r = await this.ia.leer({ fotos: fotos.map((f, i) => ({ n: i + 1, nombre: nombreFoto(f), descripcion: String(f.descripcion || '').slice(0, 160), carpeta: f.carpeta || '' })), dueno: this.config.nombre, nombre, nota: c.nota || '', historial: h, nuevos: paraIA.length ? paraIA : nuevos, estilo: this.estado.estilo.slice(-40), redactar: modo !== 'callado', auto: modo === 'auto', rol: modo === 'auto' && !!c.rol, ...this.rolDe(jid), stickers: (c.stickers || []).map(x => ({ n: x.n, cuando: x.cuando })), grupo, datos: this.datosVigentes().map(d => d.texto), imitar: this.imitaEn(jid), prohibidos: (this.config.prohibidos || []).map(x => x.texto), precios: (this.config.precios || []).map(textoPrecio), ahora: this.enQueAnda(), firma: this.confAuto().firma });
+      r = await this.ia.leer({ fotos: fotos.map((f, i) => ({ n: i + 1, nombre: nombreFoto(f), descripcion: String(f.descripcion || '').slice(0, 160), carpeta: f.carpeta || '' })), dueno: this.config.nombre, nombre, nota: c.nota || '', historial: h, nuevos: paraIA.length ? paraIA : nuevos, estilo: this.estado.estilo.slice(-40), redactar: modo !== 'callado', auto: modo === 'auto', rol: modo === 'auto' && !!c.rol, ...this.rolDe(jid), stickers: (c.stickers || []).map(x => ({ n: x.n, cuando: x.cuando })), grupo, datos: this.datosVigentes().map(d => d.texto), imitar: this.imitaEn(jid), prohibidos: (this.config.prohibidos || []).map(x => x.texto), precios: (this.config.precios || []).map(textoPrecio), ahora: this.enQueAnda(), firma: this.confAuto().firma,
+        conocimiento: this.conocimiento || '', tienda: !!c.tienda,
+        productos: [...new Set(h.slice(-12).map(x => x.producto).filter(Boolean))].map(id => (this.config.productos || []).find(p => p.id === id)).filter(Boolean).map(textoProducto),
+        abiertos: this.estado.pendientes.filter(p => !p.hecho && p.chat === jid).map(p => p.texto) });
     }catch(e){ r = null; if(process.env.SECRE_DEPURA) console.log("IAERR", e.stack); this.anotar(`la IA falló con ${nombre}: ${e.message}`); }
     if(r) r.elegidas = [...new Set((r.fotos || []).map(Number))].map(n => fotos[n - 1]).filter(Boolean).slice(0, 3);
     for(const p of (r && r.pendientes) || []) this.agregarPendiente(jid, nombre, p);
+    /* lo que ya se cumplió según la plática se tacha solo (4 nov: «él no sabe cuándo ya se completaron») */
+    for(const t of (r && r.hechos) || []){ const p = this.estado.pendientes.find(x => !x.hecho && x.chat === jid && sinAcentos(x.texto) === sinAcentos(t)); if(p){ p.hecho = true; p.solo = true; } }
+    /* las tareas de la escuela van a su sección, no a los pendientes */
+    for(const t of (r && r.tareas) || []) this.agregarTarea(jid, nombre, t);
     if(r && r.urgente && !esGrupo) await this.quizaLlamar(nombre, nuevos.slice(-2).map(x => x.texto).join(' / '), r.motivo);
     if(modo === 'auto' && r) return this.contestarSola(jid, nombre, paraIA.length ? paraIA : nuevos, r);
     /* sin IA no hay qué contestar sola: se le deja a Carlos, y a la persona se le
@@ -553,6 +572,61 @@ export class Secre {
     await this.avisar(`#${n} · ${nombre}${r && r.urgente ? ' ⚠️' : ''}: «${cita}»\n` +
       (propuesta ? `Propuesta: «${propuesta}»` + (conFotos.length ? `\n📷 + ${conFotos.length} foto(s): ${conFotos.map(f => nombreFoto(f)).join(', ')}` : '') + `\n→ «${n}» la manda · «${n} tu texto» manda el tuyo · «x${n}» la tira` : 'No supe qué contestarle: te toca.') +
       (r && r.motivo ? `\n(${r.motivo})` : '') + (freno ? `\n(No le contesté sola: ${freno}.)` : ''));
+    this.guardar();
+  }
+
+  /* ── Mayoreo → banco → All's (4 nov) ── */
+  async recibirMayoreo(m){
+    const MY = this.config.mayoreo, P = this.config.productos || (this.config.productos = []);
+    const ahora = this.reloj();
+    /* un texto suelto con precio justo después de unas fotos es el precio de esas fotos */
+    if(!m.imagen){
+      const costo = leerCosto(m.texto); if(!costo) return;
+      const lote = P.filter(p => p.lote === this.estado.loteMayoreo && !p.costo);
+      for(const p of lote){ p.costo = costo; p.precio = precioVenta(costo, MY.margen); const ts = leerTallas(m.texto); if(ts.length) p.tallas = ts; if(!p.desc) p.desc = leerDescripcion(m.texto); }
+      if(lote.length){ this.anotar(`Mayoreo: precio $${costo} a ${lote.length} foto(s)`); this.guardar(); }
+      return;
+    }
+    let buf; try{ buf = await m.imagen.bajar(); }catch(e){ this.anotar('Mayoreo: no pude bajar la foto: ' + e.message); return; }
+    if(!this.estado.loteMayoreoT || ahora - this.estado.loteMayoreoT > 3 * MIN) this.estado.loteMayoreo = 'L' + ahora.toString(36);
+    this.estado.loteMayoreoT = ahora;
+    const pie = m.imagen.pie || '', h = await huella(buf).catch(() => '');
+    const costo = leerCosto(pie);
+    let p = h && P.find(x => x.huella && masParecido([x], h, 4));
+    if(p){ if(costo){ p.costo = costo; p.precio = precioVenta(costo, MY.margen); } const ts = leerTallas(pie); if(ts.length) p.tallas = ts; this.guardar(); return; }   /* ya la teníamos: sólo se actualiza */
+    p = { id: 'p' + ahora.toString(36) + Math.floor(this.azar() * 1e4), desc: leerDescripcion(pie), costo, precio: precioVenta(costo, MY.margen), tallas: leerTallas(pie), huella: h, fotoId: '', lote: this.estado.loteMayoreo, t: ahora };
+    P.push(p); this.config.productos = P.slice(-3000);
+    if(this.banco && this.banco.subir){
+      try{ const { mini, ancho, alto } = await miniatura(buf);
+        const f = await this.banco.subir({ buf, mime: m.imagen.mime, mini, ancho, alto, nombre: (p.desc || 'mayoreo') + '.jpg', huella: 'mayoreo:' + h,
+          campos: { titulo: p.desc || '', carpeta: "All's fashion", temas: ['mayoreo'], notas: `costo $${p.costo || '?'} · venta $${p.precio || '?'}${p.tallas.length ? ' · tallas ' + p.tallas.join(', ') : ''}` } });
+        p.fotoId = f && f.id || ''; }
+      catch(e){ this.anotar('Mayoreo: no pude subirla al banco: ' + e.message); }
+    }
+    (this.estado.colaFotos || (this.estado.colaFotos = [])).push({ id: p.id, buf: buf.toString('base64'), mime: m.imagen.mime });
+    this.guardar();
+  }
+  /* manda a All's las fotos que van llegando, de a unas cuantas por vuelta (sin texto) */
+  async colaFotosTic(){
+    const MY = this.config.mayoreo || {}, Q = this.estado.colaFotos || [];
+    if(!MY.activo || !MY.destino || !Q.length) return;
+    for(const x of Q.splice(0, 3)){
+      try{ const id = await this.transporte.enviarImagen(MY.destino, Buffer.from(x.buf, 'base64'), x.mime, '');
+        if(id){ this.estado.enviados.push(id); (this.estado.fotoProducto || (this.estado.fotoProducto = {}))[id] = x.id; } }
+      catch(e){ this.anotar('Mayoreo: no pude mandar una foto a All\'s: ' + e.message); Q.push(x); break; }
+    }
+    const fp = this.estado.fotoProducto || {}, ks = Object.keys(fp); if(ks.length > 4000) for(const k of ks.slice(0, ks.length - 4000)) delete fp[k];
+    this.guardar();
+  }
+
+  /* ── una llamada de WhatsApp: no se puede contestar con voz; se rechaza y se le escribe ── */
+  async alLlamada({ de, video }){
+    if(!de || this.esMiChat(de) || this.esOtraCuenta(de)) return;
+    const nombre = this.nombreDe(de), f = this.firmaDe(de);
+    const txt = `Hola, ${this.config.nombre} no puede contestar llamadas ahorita. ¿Quién habla y para qué le marcas? Escríbeme aquí y se lo paso.`;
+    await this.mandar(de, f && !this.imitaEn(de) ? f + ' ' + txt : txt);
+    await this.avisar(`📞 Te ${video ? 'videollamó' : 'llamó'} ${nombre} por WhatsApp. Le colgué y le pregunté quién es y para qué; cuando conteste te digo.`);
+    (this.estado.encargos || (this.estado.encargos = [])).push({ chat: de, para: 'por qué te llamó', t: this.reloj() });
     this.guardar();
   }
 
@@ -661,7 +735,9 @@ export class Secre {
   /* dónde anda ahorita (para no prometer nada mientras está en clase) */
   enQueAnda(){ const t = this.reloj(); try{ return enQueAnda({ dia: diaMx(t), hora: horaMx(t), horario: this.config.miHorario }); }catch{ return ""; } }
   criterioDe(jid){
-    return { nombre: this.config.nombre, prohibidos: this.config.prohibidos || [], precios: this.config.precios || [], datos: this.datosVigentes().map(d => d.texto),
+    const prods = (this.config.productos || []).filter(p => p.precio);
+    return { nombre: this.config.nombre, prohibidos: this.config.prohibidos || [], precios: [...(this.config.precios || []), ...prods.map(p => ({ nombre: p.desc, precio: p.precio, nota: '' }))],
+      datos: [...this.datosVigentes().map(d => d.texto), this.conocimiento || ''], vetados: (this.config.productos || []).map(p => p.costo).filter(c => c && !prods.some(q => q.precio === c)),
       chat: (this.estado.historial[jid] || []).filter(x => !x.secre).map(x => x.texto).join('\n') };
   }
   firmaDe(jid){
@@ -750,8 +826,24 @@ export class Secre {
     return d;
   }
 
+  /* 4 nov: «me pone muchos pendientes que no son pendientes reales o que ni tienen que ver conmigo» —
+     el segundo filtro, después del de la IA: fuera lo vago y lo que no hace él */
+  esPendienteDeVerdad(t){
+    const x = sinAcentos(t);
+    if(x.length < 8) return false;
+    if(/^(estar (al pendiente|atento)|revisar (el|los) (chat|mensaje)|contestar(le)? (el|al|a) (mensaje|chat)|responder(le)?( al)? mensaje|leer (el|los) mensaje|ver (que|qué) onda|seguir la (platica|conversacion)|saludar|platicar)/.test(x)) return false;
+    if(/^(que |ella |el |ellos |ellas )/.test(x)) return false;
+    return true;
+  }
+  agregarTarea(jid, nombre, t){
+    const que = String(t.que || '').trim(); if(!que) return;
+    const T = this.estado.tareas || (this.estado.tareas = []);
+    if(T.some(x => !x.hecho && sinAcentos(x.que) === sinAcentos(que))) return;
+    T.push({ n: (T.reduce((m, x) => Math.max(m, x.n), 0) + 1), materia: String(t.materia || '').slice(0, 60), que: que.slice(0, 300), para: String(t.para || '').slice(0, 10), chat: jid, de: nombre, t: this.reloj(), hecho: false });
+    this.estado.tareas = T.slice(-200);
+  }
   agregarPendiente(jid, nombre, texto){
-    const t = String(texto || '').trim(); if(!t) return;
+    const t = String(texto || '').trim(); if(!t || !this.esPendienteDeVerdad(t)) return;
     if(this.estado.pendientes.some(p => !p.hecho && p.chat === jid && sinAcentos(p.texto) === sinAcentos(t))) return;
     this.estado.pendientes.push({ n: this.estado.sigP++, chat: jid, nombre, texto: t.slice(0, 300), t: this.reloj(), hecho: false });
   }
@@ -1443,14 +1535,27 @@ export class Secre {
     if(a.esperar !== false){ (this.estado.encargos || (this.estado.encargos = [])).push({ chat: j, para: String(a.para || texto).slice(0, 200), t: this.reloj() }); this.estado.encargos = this.estado.encargos.slice(-50); }
     return `${a.audio ? '🎤 Le mandé audio' : 'Le escribí'} a ${this.nombreDe(j)}: «${texto.slice(0, 200)}»${a.esperar !== false ? ' — cuando conteste, te lo paso' : ''}`;
   }
+  /* «sí mándalo», «sí pero más tranquilo», «a Ana dile que mañana»: la IA ya escribió el texto final */
+  async responderPropuesta(a){
+    const p = this.estado.propuestas.find(x => x.n === +a.n); const texto = String(a.texto || '').trim();
+    if(!p) return `✗ No tengo la #${a.n} (o ya caducó).`;
+    if(!texto) return '';
+    if(p.tipo === 'saludo'){ /* los saludos se mandan igual que una respuesta */ }
+    const f = this.firmaDe(p.chat), final = f && !this.imitaEn(p.chat) ? f + ' ' + texto : texto;
+    try{ await this.mandar(p.chat, final); }catch(e){ return `✗ No pude mandarle a ${p.nombre}: ${e.message}`; }
+    this.estado.propuestas = this.estado.propuestas.filter(x => x !== p);
+    this.bitacora(p.chat, p.nombre, [{ texto: p.dijo || '' }], 'contesto', texto, 'lo aprobaste en palabras normales');
+    return `A ${p.nombre}: «${texto.slice(0, 300)}»`;
+  }
   async ordenLibre(texto){
     let r;
     let carpetas = [];
     if(this.banco && (this.banco.listo ? this.banco.listo() : true)){ try{ carpetas = [...new Set((await this.banco.fichas()).map(f => f.carpeta).filter(Boolean))].slice(0, 60); }catch{} }
-    try{ r = await this.ia.orden({ carpetas, quien: this.deTurno(), texto, ahora: this.reloj(), hoy: fechaMx(this.reloj()), hora: horaMx(this.reloj()), chats: Object.entries(this.config.chats).filter(([, c]) => c.nombre).map(([j, c]) => ({ id: j, nombre: c.nombre, modo: c.modo || '', etiquetas: c.etiquetas || [] })), config: this.resumenConfig() }); }
+    const propuestas = this.estado.propuestas.slice(-10).map(p => ({ n: p.n, a: p.nombre, dijo: p.dijo, propuesta: p.texto, motivo: p.motivo }));
+    try{ r = await this.ia.orden({ propuestas, conocimiento: this.conocimiento || '', carpetas, quien: this.deTurno(), texto, ahora: this.reloj(), hoy: fechaMx(this.reloj()), hora: horaMx(this.reloj()), chats: Object.entries(this.config.chats).filter(([, c]) => c.nombre).map(([j, c]) => ({ id: j, nombre: c.nombre, modo: c.modo || '', etiquetas: c.etiquetas || [] })), config: this.resumenConfig() }); }
     catch(e){ return this.avisar('No te entendí (y la IA no contestó). Escribe «ayuda» para ver lo que sé hacer.'); }
     const hechos = [];
-    for(const a of (r && r.acciones) || []){ const h = a && a.accion === 'mensaje' ? await this.encargo(a) : this.aplicar(a); if(h) hechos.push(h); }
+    for(const a of (r && r.acciones) || []){ const h = a && a.accion === 'mensaje' ? await this.encargo(a) : a && a.accion === 'responder' ? await this.responderPropuesta(a) : this.aplicar(a); if(h) hechos.push(h); }
     this.guardar();
     const dice = (r && r.respuesta) || '';
     return this.avisar([dice, ...hechos.map(h => '✓ ' + h)].filter(Boolean).join('\n') || 'No te entendí. Escribe «ayuda».');
@@ -1583,6 +1688,17 @@ export class Secre {
         if(a.fijo !== undefined) T.fijo = valido(a.fijo);
         return T.fijo ? `De guardia fija: ${T.fijo}` : T.activo ? `Turnos de ${T.horas} h entre ${T.quienes.join(', ')} · ahorita le toca a ${this.deTurno()}` : 'Sin turnos: sólo Secre';
       }
+      case 'mayoreo': {
+        const M = this.config.mayoreo = Object.assign({ activo: false, fuente: '', destino: '', margen: 250 }, this.config.mayoreo || {});
+        if(a.fuente){ const j = chatDe(a.fuente); if(!j) return `✗ No encontré el grupo «${a.fuente}»`; M.fuente = j; }
+        if(a.destino){ const j = chatDe(a.destino); if(!j) return `✗ No encontré el grupo «${a.destino}»`; M.destino = j; this.chat(j).tienda = true; if(!this.chat(j).modo) this.chat(j).modo = 'auto'; }
+        if(a.margen !== undefined && +a.margen >= 0 && +a.margen <= 5000){ M.margen = Math.round(+a.margen); for(const p of this.config.productos || []) if(p.costo) p.precio = precioVenta(p.costo, M.margen); }
+        if(a.activo !== undefined) M.activo = !!a.activo;
+        return M.activo && M.fuente && M.destino ? `Las fotos de ${this.nombreDe(M.fuente)} se suben al banco y se mandan solas a ${this.nombreDe(M.destino)}, sin texto. Precio de venta = costo + $${M.margen}` : 'Mayoreo: ' + (M.activo ? 'falta decirme de qué grupo a qué grupo' : 'apagado');
+      }
+      case 'tienda': { const j = chatDe(a.chat); if(!j) return ''; const c = this.chat(j); c.tienda = a.si !== false; if(c.tienda && !c.modo) c.modo = 'auto'; return c.tienda ? `En ${this.nombreDe(j)} contesto precios y tallas a las clientas` : `En ${this.nombreDe(j)} ya no contesto como tienda`; }
+      case 'tirar': { const antes = this.estado.propuestas.length; this.estado.propuestas = this.estado.propuestas.filter(p => p.n !== +a.n); return antes === this.estado.propuestas.length ? '' : `Tirada la #${a.n}: no le digo nada`; }
+      case 'llamarme': { const L = this.config.llamar = Object.assign({ activo: false, tel: '', desde: '08:00', hasta: '23:00' }, this.config.llamar || {}); L.activo = a.activo !== false; return L.activo ? 'Te marco cuando algo importante necesite tu decisión' : 'Ya no te marco'; }
       case 'imitar': {
         if(a.chat){ const j = chatDe(a.chat); if(!j) return ''; this.chat(j).imitar = a.si !== false; return a.si !== false ? `Con ${this.nombreDe(j)} me hago pasar por ti (sin firma)` : `Con ${this.nombreDe(j)} hablo como tu asistente`; }
         this.config.imitar = a.si !== false;
