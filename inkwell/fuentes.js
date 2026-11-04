@@ -86,7 +86,8 @@ export const wattpad = {
     return { tipo: 'texto', html };
   },
   async buscar(q, directo){
-    const j = await (await directo(`${WP}/api/v3/stories?query=${encodeURIComponent(q)}&limit=20&fields=stories(id,title,cover,user(name),numParts,description)`)).json();
+    /* la v3 de búsqueda ya pide llave («Not authorized to access API»); la v4 no */
+    const j = await (await directo(`${WP}/v4/search/stories?query=${encodeURIComponent(q)}&limit=20&fields=stories(id,title,cover,user(name),numParts,description)`)).json();
     return (j.stories || []).map((s) => ({ story: s.id, titulo: s.title, autor: s.user && s.user.name, portada: s.cover, partes: s.numParts, descripcion: s.description || '' }));
   },
 };

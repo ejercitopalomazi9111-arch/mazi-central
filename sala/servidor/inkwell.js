@@ -21,10 +21,12 @@
 export const HOSTS = [
   'www.webtoons.com', 'webtoons.com', 'm.webtoons.com',
   'webtoon-phinf.pstatic.net', 'swebtoon-phinf.pstatic.net', 'webtoons-static.pstatic.net',
+  /* 4 nov: la API de Wattpad dejó de mandar CORS (el iPhone ya no la deja leer directo) */
+  'www.wattpad.com', 'img.wattpad.com',
 ];
 const ESCRITORIO = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
 const MOVIL = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148';
-const TIPOS = /^(text\/html|application\/json|image\/)/i;
+const TIPOS = /^(text\/html|text\/plain|application\/json|image\/)/i;
 
 const mal = (status, error) => Response.json({ bien: false, error }, { status });
 
@@ -41,7 +43,7 @@ export async function traer(url, buscar = fetch){
       headers: {
         /* la API de la lista de capítulos es la de la página para teléfono */
         'User-Agent': destino.hostname === 'm.webtoons.com' ? MOVIL : ESCRITORIO,
-        'Referer': 'https://www.webtoons.com/',
+        'Referer': /wattpad\.com$/.test(destino.hostname) ? 'https://www.wattpad.com/' : 'https://www.webtoons.com/',
         'Accept-Language': 'es-MX,es;q=0.9,en;q=0.8',
       },
     });
