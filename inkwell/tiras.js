@@ -1,6 +1,7 @@
 /* INKWELL · TIRAS — la pantalla, la base del teléfono y el que prepara capítulos. */
 import { reconocer, FUENTES, wattpad, limpiarTexto } from './fuentes.js';
 import { pdf, epub, tamanoJpeg } from './archivos.js';
+import { codigoDe, leerCodigo, seriesDeRanking, elegirNuevas } from './compartir.js';
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -65,7 +66,7 @@ const clave = (s, n) => `${s.id}:${n}`;
 /* ── ajustes ── */
 const leer = (k, d) => { try{ const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch{ return d; } };
 const escribir = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); } catch{} };
-const ajustes = { adelante: 5, orden: 'serie', ...leer('tiras.ajustes', {}) };
+const ajustes = { adelante: 5, orden: 'serie', descubrir: '1', ...leer('tiras.ajustes', {}) };
 
 /* lo que falta por leer de una serie, en orden */
 const pendientes = (s) => { const l = new Set(s.leidos || []); return s.caps.filter((c) => c.n >= (s.desde || 0) && !l.has(c.n)); };
@@ -138,8 +139,11 @@ export function preparar({ forzar = false } = {}){
         } catch(e){ fallas++; estado(`${s.titulo} · cap. ${c.n}: ${e.message}`); break; }
       }
     }
+    /* si ya queda poco, se busca un cómic nuevo y se le bajan capítulos en la siguiente vuelta */
+    let nuevasSeries = 0; try{ nuevasSeries = await descubrir(); }catch{}
+    if(nuevasSeries) otraVez = true;
     const listos = await contarListos();
-    estado([listos ? `${listos} capítulo${listos > 1 ? 's' : ''} listo${listos > 1 ? 's' : ''} para leer` : 'Todo leído',
+    estado([nuevasSeries ? `${nuevasSeries} cómic${nuevasSeries > 1 ? 's' : ''} nuevo${nuevasSeries > 1 ? 's' : ''} para ti` : '', listos ? `${listos} capítulo${listos > 1 ? 's' : ''} listo${listos > 1 ? 's' : ''} para leer` : 'Todo leído',
       bajados ? `${bajados} recién bajado${bajados > 1 ? 's' : ''}` : '', nuevos ? `${nuevos} nuevo${nuevos > 1 ? 's' : ''} en tus series` : '',
       fallas ? `${fallas} con error` : ''].filter(Boolean).join(' · '), 'listo');
     await pintarSeries(); espacio();
@@ -166,7 +170,7 @@ async function pintarSeries(){
     const leidos = (s.leidos || []).length + s.caps.filter((c) => c.n < (s.desde || 0)).length;
     filas.push(`<article class="serie" data-id="${esc(s.id)}">
       <img class="portada" alt="" ${s.portadaBlob ? `src="${urlDe(s.portadaBlob)}"` : ''}>
-      <div class="datos"><span class="fuente">${s.fuente === 'webtoon' ? 'Webtoon · cómic' : 'Wattpad · texto'}</span><h3>${esc(s.titulo)}</h3>
+      <div class="datos"><span class="fuente">${s.fuente === 'webtoon' ? 'Webtoon · cómic' : 'Wattpad · texto'}${s.descubierta ? ' · sugerida para ti' : ''}</span><h3>${esc(s.titulo)}</h3>
         <span class="cuenta">${esc(s.autor || '')}</span>
         <span class="cuenta">${Math.min(leidos, s.caps.length)} de ${s.caps.length} leídos · <b>${l}</b> listo${l === 1 ? '' : 's'}</span></div>
       <div class="botones"><button type="button" data-a="leer"${p.length ? '' : ' disabled'}>▶ Leer</button><button type="button" data-a="archivo">⬇ Archivo</button><button type="button" data-a="mas">⋯ Más</button></div>
@@ -178,27 +182,75 @@ async function pintarSeries(){
 }
 
 /* ── agregar ── */
-async function agregarRef(r){
+async function agregarRef(r, { varias = false, descubierta = false } = {}){
   const F = FUENTES[r.fuente];
   estado('Buscando la serie…', 'trabajando');
   const s = await F.serie(r, r.fuente === 'webtoon' ? pedir : directo);
   const ya = await tx('series', 'readonly', (st) => st.get(s.id));
-  if(ya){ estado(`Ya sigues ${ya.titulo}.`, 'listo'); return; }
+  if(ya){ if(!varias) estado(`Ya sigues ${ya.titulo}.`, 'listo'); return null; }
   const series = await todasSeries();
   s.orden = series.length ? series[series.length - 1].orden + 1 : 1;
   s.leidos = []; s.desde = 0; s.revisada = Date.now(); s.agregada = Date.now();
+  if(descubierta) s.descubierta = true;
   try{ if(s.portada) s.portadaBlob = await (await (s.fuente === 'webtoon' ? pedir(s.portada) : directo(s.portada))).blob(); } catch{}
   await guardarSerie(s);
+  if(varias) return s;
   $('#buscar').value = ''; $('#resultados').replaceChildren();
   estado(`Agregada: ${s.titulo} · ${s.caps.length} capítulos.`, 'listo');
   await pintarSeries();
   preparar();
+  return s;
+}
+
+/* ── compartir: un código con la LISTA de series (nada de lo bajado ni lo leído) ── */
+async function importar(refs){
+  let n = 0, ya = 0, mal = 0;
+  for(const [i, r] of refs.entries()){
+    estado(`Agregando ${i + 1} de ${refs.length}…`, 'trabajando');
+    try{ (await agregarRef(r, { varias: true })) ? n++ : ya++; }catch{ mal++; }
+  }
+  $('#buscar').value = '';
+  estado([`Listo: ${n} serie${n === 1 ? '' : 's'} nueva${n === 1 ? '' : 's'}`, ya ? `${ya} ya las tenías` : '', mal ? `${mal} no se encontraron` : ''].filter(Boolean).join(' · ') + '. Bajando capítulos…', 'listo');
+  await pintarSeries(); preparar();
+}
+$('#compartir').addEventListener('click', async () => {
+  const series = await todasSeries();
+  if(!series.length){ estado('Todavía no sigues ninguna serie para compartir.'); return; }
+  const codigo = codigoDe(series), link = location.origin + location.pathname + '#series=' + codigo;
+  $('#codigoCaja').hidden = false; $('#codigo').value = link;
+  const texto = `Mis ${series.length} series de INKWELL. Ábrelo y se bajan todas: ${link}`;
+  try{ if(navigator.share){ await navigator.share({ title: 'Mis series de INKWELL', text: texto }); return; } }catch(e){ if(e && e.name === 'AbortError') return; }
+  try{ await navigator.clipboard.writeText(texto); estado('Link copiado: pégalo en WhatsApp a quien quieras.', 'listo'); }
+  catch{ $('#codigo').select(); estado('Copia el link de abajo y mándalo.', 'listo'); }
+});
+
+/* ── descubrir: cuando ya queda poco por leer, agrega sola un cómic del ranking de Webtoon ── */
+async function descubrir(){
+  const porDia = +ajustes.descubrir || 0; if(!porDia || !navigator.onLine) return 0;
+  if(await contarListos() >= 6) return 0;
+  const hoy = new Date().toISOString().slice(0, 10), reg = leer('tiras.descubiertas', { dia: '', n: 0 });
+  if(reg.dia !== hoy){ reg.dia = hoy; reg.n = 0; }
+  if(reg.n >= porDia) return 0;
+  const series = await todasSeries(), webtoons = series.filter((x) => x.fuente === 'webtoon');
+  const lang = (webtoons[0] && webtoons[0].ref.lang) || 'es';
+  let candidatas = [];
+  for(const r of ['trending', 'popular']){
+    try{ candidatas = candidatas.concat(seriesDeRanking(await (await pedir(`https://www.webtoons.com/${lang}/ranking/${r}`)).text())); }catch{}
+  }
+  const elegidas = elegirNuevas(candidatas, { sigo: series.map((x) => x.id), descartadas: leer('tiras.descartadas', []), generos: webtoons.map((x) => x.ref.genero), cuantas: porDia - reg.n });
+  let n = 0;
+  for(const r of elegidas){
+    try{ estado('Buscándote algo nuevo que leer…', 'trabajando'); if(await agregarRef(r, { varias: true, descubierta: true })){ n++; reg.n++; } }catch{}
+  }
+  escribir('tiras.descubiertas', reg);
+  return n;
 }
 $('#formAgregar').addEventListener('submit', async (e) => {
   e.preventDefault();
   const t = $('#buscar').value.trim(); if(!t) return;
-  const r = reconocer(t);
+  const r = reconocer(t), cod = leerCodigo(t);
   try{
+    if(cod) return await importar(cod);
     if(r) return await agregarRef(r);
     if(/^https?:/i.test(t)){ estado('Ese link no es de una serie de Webtoon ni de Wattpad.'); return; }
     estado(`Buscando «${t}» en Wattpad…`, 'trabajando');
@@ -344,6 +396,8 @@ $('#guardarDesde').addEventListener('click', async () => {
 });
 $('#quitarSerie').addEventListener('click', async () => {
   if(!confirm(`¿Quitar «${actual.titulo}» y todo lo bajado de ella?`)) return;
+  /* una sugerida que quitas no vuelve a aparecer */
+  if(actual.descubierta) escribir('tiras.descartadas', [...new Set([...leer('tiras.descartadas', []), actual.id])].slice(-500));
   const ks = [...await clavesDe(actual.id)];
   await tx('caps', 'readwrite', (st) => { ks.forEach((k) => st.delete(k)); });
   await tx('series', 'readwrite', (st) => st.delete(actual.id));
@@ -422,6 +476,8 @@ $('#cerrarArchivo').addEventListener('click', () => $('#dlgArchivo').close());
 $('#adelante').value = String(ajustes.adelante); $('#orden').value = ajustes.orden;
 $('#adelante').addEventListener('change', (e) => { ajustes.adelante = +e.target.value; escribir('tiras.ajustes', ajustes); preparar(); });
 $('#orden').addEventListener('change', (e) => { ajustes.orden = e.target.value; escribir('tiras.ajustes', ajustes); });
+$('#descubrir').value = String(ajustes.descubrir);
+$('#descubrir').addEventListener('change', (e) => { ajustes.descubrir = e.target.value; escribir('tiras.ajustes', ajustes); preparar(); });
 $('#revisar').addEventListener('click', () => preparar({ forzar: true }));
 
 async function espacio(){
@@ -437,6 +493,10 @@ addEventListener('online', () => preparar());
 setInterval(() => { if(document.visibilityState === 'visible') preparar(); }, 15 * 60e3);
 document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') preparar(); });
 if('serviceWorker' in navigator && !params.has('servidor')) navigator.serviceWorker.register('sw.js').catch(() => {});
-await pintarSeries(); espacio();
-preparar();
+/* para las pruebas; va antes del arranque porque importar un link puede tardar */
 window.__tiras = { preparar, todasSeries, clavesDe, get cola(){ return cola; }, get ocupado(){ return !!preparando || otraVez; } };
+await pintarSeries(); espacio();
+/* abrieron un link compartido (#series=…): se agregan todas de un jalón */
+{ const cod = leerCodigo(location.hash);
+  if(cod && cod.length && confirm(`Te compartieron ${cod.length} serie${cod.length > 1 ? 's' : ''}. ¿Agregarlas y empezar a bajarlas?`)){ history.replaceState(null, '', location.pathname + location.search); await importar(cod); }
+  else preparar(); }
