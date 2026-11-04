@@ -23,11 +23,14 @@ const pedidos = [];
 const lista = `<html><head><meta property="og:title" content="Mi Serie &amp; Co"><meta property="og:image" content="https://swebtoon-phinf.pstatic.net/portada.jpg"><meta property="og:description" content="Una serie de prueba"><meta name="com-linewebtoon:webtoon:author" content="Autora Uno"></head><body></body></html>`;
 const api = JSON.stringify({ result: { episodeList: Array.from({ length: N }, (_, i) => ({ episodeNo: i + 1, episodeTitle: `Episodio ${i + 1}`, viewerLink: `/es/fantasy/mi-serie/ep-${i + 1}/viewer?title_no=777&episode_no=${i + 1}`, exposureDateMillis: 1700000000000 + i })) } });
 const visor = (n) => `<html><body><div id="_imageList">${Array.from({ length: POR }, (_, k) => `<img src="x.png" width="700" class="_images" data-url="https://webtoon-phinf.pstatic.net/ep${n}_${k}.jpg?type=q90" rel="nofollow">`).join('')}</div></body></html>`;
+let rankingOn = false;
+const ranking = `<html><body><a href="https://www.webtoons.com/es/fantasy/mi-serie/list?title_no=777">ya la sigo</a><a href="https://www.webtoons.com/es/fantasy/otra-serie/list?title_no=888">nueva</a></body></html>`;
 function recadero(u){
   const d = new URL(u);
   pedidos.push(d.toString());
+  if (d.hostname === 'www.webtoons.com' && /\/ranking\//.test(d.pathname)) return rankingOn ? ['text/html', ranking] : null;
   if (d.hostname === 'www.webtoons.com' && d.pathname.endsWith('/list')) return ['text/html', lista];
-  if (d.hostname === 'm.webtoons.com' && /\/api\/v1\/webtoon\/777\/episodes/.test(d.pathname)) return ['application/json', api];
+  if (d.hostname === 'm.webtoons.com' && /\/api\/v1\/webtoon\/(777|888)\/episodes/.test(d.pathname)) return ['application/json', api];
   const v = /episode_no=(\d+)/.exec(d.search); if (d.pathname.endsWith('/viewer') && v) return ['text/html', visor(+v[1])];
   const img = /\/(ep\d+_\d+|portada)\.jpg/.exec(d.pathname); if (img) return ['image/jpeg', jpg[img[1]] || jpg.ep1_0];
   return null;
@@ -216,6 +219,52 @@ for (const [ancho, alto, nombre] of [[390, 844, 'teléfono'], [1280, 800, 'compu
   ok(!errores.length, 'ni un error en la consola' + (errores.length ? ' — ' + errores.slice(0, 3).join(' | ') : ''));
   if (process.env.CAPTURA) await pg.screenshot({ path: `${process.env.CAPTURA}/tiras-${ancho}.png`, fullPage: true });
   await ctx.close();
+}
+
+/* ── compartir y descubrir (4 nov) ── */
+console.log('\ncompartir el código y descubrir cómics');
+{
+  const { codigoDe, leerCodigo, seriesDeRanking, elegirNuevas } = await import('./compartir.js');
+  const refs = [{ fuente: 'webtoon', ref: { lang: 'es', genero: 'fantasy', slug: 'mi-serie', titleNo: '777', canvas: false } }, { fuente: 'wattpad', ref: { story: '9001' } }];
+  const cod = codigoDe(refs);
+  ok(/^INK1\.[\w-]+$/.test(cod) && cod.length < 120, 'el código es corto y cabe en un link');
+  const de = leerCodigo('mira: https://x/inkwell/tiras.html#series=' + cod);
+  ok(de && de.length === 2 && de[0].titleNo === '777' && de[1].story === '9001', 'el código se lee igual desde el link');
+  ok(leerCodigo('hola') === null && leerCodigo('INK1.basura!!') === null, 'algo que no es código no se confunde');
+  const rk = seriesDeRanking(ranking);
+  ok(rk.length === 2 && elegirNuevas(rk, { sigo: ['webtoon:777'] })[0].titleNo === '888', 'del ranking se escoge la que no sigues');
+  ok(!elegirNuevas(rk, { sigo: ['webtoon:777'], descartadas: ['webtoon:888'] }).length, 'la que quitaste no vuelve');
+
+  /* ⚠ waitForFunction con una promesa regresa al instante (CLAUDE.md): se espera a mano */
+  const esperar = async (p, fn, ms = 30000) => { const t0 = Date.now(); while(Date.now() - t0 < ms){ if(await p.evaluate(fn)) return true; await p.waitForTimeout(250); } return false; };
+  const ctx = await br.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
+  const pg = await ctx.newPage(); const errores = [];
+  pg.on('pageerror', (e) => errores.push(e.message)); pg.on('dialog', (d) => d.accept());
+  await pg.goto(BASE);
+  await pg.fill('#buscar', 'https://www.webtoons.com/es/fantasy/mi-serie/list?title_no=777'); await pg.press('#buscar', 'Enter');
+  await esperar(pg, async () => (await window.__tiras.todasSeries()).length === 1 && !window.__tiras.ocupado);
+  /* con 5 listos (menos de 6) ya «queda poco»: al revisar, busca */
+  rankingOn = true;
+  await pg.click('#revisar');
+  await esperar(pg, async () => (await window.__tiras.todasSeries()).length === 2 && !window.__tiras.ocupado);
+  const ss = await pg.evaluate(async () => (await window.__tiras.todasSeries()).map((s) => [s.id, !!s.descubierta]));
+  ok(ss.length === 2 && ss[1][0] === 'webtoon:888' && ss[1][1], 'cuando queda poco, agrega sola un cómic del ranking');
+  ok(/sugerida para ti/.test(await pg.textContent('#series')), 'y dice que es sugerida');
+  await pg.evaluate(() => { navigator.share = undefined; });
+  await pg.click('#compartir');
+  await esperar(pg, () => !!document.querySelector('#codigo').value, 5000);
+  const link = await pg.inputValue('#codigo');
+  ok(/#series=INK1\./.test(link), '«Compartir mis series» da el link');
+  /* otro teléfono abre el link */
+  const ctx2 = await br.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
+  const pg2 = await ctx2.newPage(); pg2.on('dialog', (d) => d.accept()); pg2.on('pageerror', (e) => errores.push(e.message));
+  rankingOn = false;
+  await pg2.goto(BASE + '#series=' + link.split('#series=')[1]);
+  await esperar(pg2, async () => (await window.__tiras.todasSeries()).length === 2);
+  ok((await pg2.evaluate(async () => (await window.__tiras.todasSeries()).length)) === 2, 'quien abre el link recibe todas las series de un jalón');
+  ok(!(await pg2.evaluate(() => location.hash)), 'y el link se limpia para no volver a preguntar');
+  ok(!errores.length, 'sin errores en la consola' + (errores.length ? ' — ' + errores.join(' | ') : ''));
+  await ctx.close(); await ctx2.close();
 }
 await br.close(); srv.close(); fs.rmSync(tmp, { recursive: true, force: true });
 console.log(`\n${bien} bien · ${mal} mal`);
