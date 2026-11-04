@@ -509,6 +509,9 @@ dependemos.
    | `font: 700 16px/1 inherit` le pone tamaño y grosor al botón y hereda la letra | `inherit` no vale DENTRO del atajo `font`: el navegador tira la declaración ENTERA, y el botón y el campo se quedan con su letra de fábrica (13 px) | en las barberías los campos de la reserva medían 13 px, y con menos de 16 px el iPhone hace zoom al escribir. Se escribe por partes: `font-weight`, `font-size` y `font-family: inherit` |
    | una regla de colores que se inyecta desde un módulo compartido sólo pone «los de fábrica» | si se agrega al `<head>` DESPUÉS del CSS de la página y tiene la misma especificidad (`.rv{…}` contra `.rv{…}`), GANA ella | en Navaja Norte la hoja de reserva salió con texto oscuro sobre fondo oscuro. Los valores de fábrica van en `:where(.rv)`, que pesa cero |
 
+   | un modelo de Sketchfab que se ve con color en su página entra con color a Blender | si viene en spec-gloss (`KHR_materials_pbrSpecularGlossiness`), el importador de Blender **tira las texturas** callado: sale gris | Temmie de cuerpo completo bailaba gris. Se pasa a metal-rough antes de riggear (`/tmp/claude-0/gt/metal.mjs`, gltf-transform `metalRough()`) |
+   | pegar cada pieza de un modelo al esqueleto con el mejor método que le funcione es lo más fino | si una pieza usa difusión y la de encima cercanía, **se abren entre sí en tiras** al bailar (el suéter de rayas de Temmie). Las piezas encimadas van con el MISMO método (`PESOS=cercania`), lo de dentro del hombro no se pega al brazo, y `POT=2` suaviza el paso entre huesos | tres vueltas de 10 minutos; `revisar-bailes.py` pasó de 54 % a 38 % de cuadros malos |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---

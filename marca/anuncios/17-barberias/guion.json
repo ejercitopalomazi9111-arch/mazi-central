@@ -1,0 +1,18 @@
+{
+ "titulo": "Páginas para barberías",
+ "voces": { "Narra": "piper:es_MX-claude-high" },
+ "lento": { "Narra": 0.96 },
+ "lineas": [
+  { "id": "01", "voz": "Narra", "en": 0.4, "txt": "¿Tu barbería sigue agendando por mensaje *a las once de la noche?*", "sinSub": true },
+  { "id": "02", "voz": "Narra", "pausa": 0.35, "txt": "Te hicimos cuatro páginas para que *el cliente aparte solo.*" },
+  { "id": "03", "voz": "Narra", "pausa": 0.5, "txt": "La *Esencial:* servicios, horario y reserva por WhatsApp. *Desde $2,000.*", "dice": "La Esencial: servicios, horario y reserva por WhatsApp. Desde dos mil pesos." },
+  { "id": "04", "voz": "Narra", "pausa": 0.6, "txt": "La *Completa urbana:* escoges barbero, día y hora, y lo ocupado sale tachado.", "dice": "La Completa urbana: escoges barbero, día y hora, y lo ocupado sale tachado." },
+  { "id": "05", "voz": "Narra", "pausa": 0.6, "txt": "La *Completa clásica:* paquetes con descuento y membresía mensual. *Desde $6,500.*", "dice": "La Completa clásica: paquetes con descuento y membresía mensual. Desde seis mil quinientos." },
+  { "id": "06", "voz": "Narra", "pausa": 0.6, "txt": "Y la *A la medida:* la siguiente hora libre en vivo, tienda y tarjetas de regalo. *Desde $9,000.*", "dice": "Y la A la medida: la siguiente hora libre en vivo, tienda y tarjetas de regalo. Desde nueve mil." },
+  { "id": "07", "voz": "Narra", "pausa": 0.6, "txt": "Para que se llene la agenda: *página y publicidad en un solo paquete.*", "sinSub": true },
+  { "id": "08", "voz": "Narra", "pausa": 0.4, "txt": "*Arranque:* página Esencial y un mes de anuncios, $2,900.", "dice": "Arranque: página Esencial y un mes de anuncios, dos mil novecientos." },
+  { "id": "09", "voz": "Narra", "pausa": 0.35, "txt": "*Agenda llena:* página Completa, fotos de tu local y un mes de anuncios, $7,900.", "dice": "Agenda llena: página Completa, fotos de tu local y un mes de anuncios, siete mil novecientos." },
+  { "id": "10", "voz": "Narra", "pausa": 0.35, "txt": "*Sin competencia:* página A la medida, redes con cuatro videos y anuncios, $13,500.", "dice": "Sin competencia: página A la medida, redes con cuatro videos y anuncios, trece mil quinientos." },
+  { "id": "11", "voz": "Narra", "pausa": 0.4, "txt": "Las tres con *tres meses de mantenimiento.* Escríbenos: Grupo Mazi.", "sinSub": true }
+ ]
+}

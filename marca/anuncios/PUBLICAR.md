@@ -41,6 +41,7 @@ Cada video trae su portada en `portadas/<video>.jpg` (1080 × 1920): un cuadro d
 | 13 | 13 · En movimiento | el «de After Effects»: para presumir que el movimiento es lo nuestro |
 | 14 | 14 · A la medida | formal, de producto: para LinkedIn, para mandar a empresas y para anuncio pagado |
 | 15 | 15 · Un solo equipo | formal: los tres servicios grandes con aparatos de verdad |
+| 16 | 17 · Páginas para barberías | de nicho: para mandarle a barberos y para anuncio pagado en Querétaro |
 
 ## El texto de cada uno
 
@@ -155,3 +156,9 @@ PREVIA=18 node herramientas/video/armar.mjs …                 # un cuadro de c
 
 - La música vive en `/tmp/claude-0/musica/`. Si se borra, se vuelve a bajar de incompetech.com con el mismo nombre.
 - El 07 se arma primero con `node marca/anuncios/07-la-plantilla/musica.mjs`.
+
+**17 · Páginas para barberías** (voz de Piper: Chris no tenía saldo el 4 de noviembre)
+
+> ¿Tu barbería sigue agendando por mensaje a las 11 de la noche? Te hicimos 4 páginas para que el cliente aparte solo: Esencial desde $2,000, Completa desde $6,500 y A la medida desde $9,000. Y si quieres la agenda llena: página + publicidad en un solo paquete, desde $2,900. Pruébalas en mazi-central.palomazi9111.workers.dev/barberias · WhatsApp 442 883 3786
+> #Barbería #Barberos #BarberíaQuerétaro #PáginasWeb #GrupoMazi #Querétaro
+> Música: «Funky Chunk», Kevin MacLeod (incompetech.com), CC BY 4.0. Fotos de las páginas de muestra: Pexels.

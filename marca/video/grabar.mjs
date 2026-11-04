@@ -25,6 +25,11 @@ const TOMAS = {
   'laboratorio-pc': { ap: PC, url: '/laboratorio/', async hacer(pg, e){ await e(1.8); await deslizar(pg, 800, 1700); await e(1); } },
   'reportes-pc': { ap: PC, url: '/reportes/', async hacer(pg, e){ await e(2); await deslizar(pg, 500, 1500); await e(1); } },
   'sitio-pc': { ap: PC, url: '/sitio/', async hacer(pg, e){ await e(5); await deslizar(pg, 900, 1700); await e(1); } },
+  /* las cuatro barberías de muestra, para su comercial (Carlos, 4 nov) */
+  'barb-sencilla': { ap: TEL, url: '/barberias/sencilla/', async hacer(pg, e){ await e(2); await deslizar(pg, 700, 1500); await e(.8); await deslizar(pg, 800, 1500); await e(1); } },
+  'barb-navaja': { ap: TEL, url: '/barberias/navaja/', async hacer(pg, e){ await e(2.2); await deslizar(pg, 750, 1500); await e(.8); await deslizar(pg, 850, 1500); await e(1); } },
+  'barb-casa': { ap: TEL, url: '/barberias/casa-brava/', async hacer(pg, e){ await e(2.2); await deslizar(pg, 750, 1500); await e(.8); await deslizar(pg, 850, 1500); await e(1); } },
+  'barb-obsidiana': { ap: TEL, url: '/barberias/obsidiana/', async hacer(pg, e){ await e(4.5); await deslizar(pg, 700, 1700); await e(.8); await deslizar(pg, 900, 1700); await e(1.2); } },
 };
 
 const pedidas = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(TOMAS);
