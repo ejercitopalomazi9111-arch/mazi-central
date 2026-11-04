@@ -762,7 +762,8 @@ export class Secre {
     const marca = this.rolDe(jid).marca;
     const resp = c.rol && !decide ? this.formatoRol({ ...c, marca }, r) : String(r.respuesta || '').trim();
     /* «dile a Carlos que me llame», «que me busque»: se le avisa DE VERDAD, al momento */
-    if(r.avisar){
+    /* si ya va a llegarle como «necesita tu decisión», no se le avisa dos veces */
+    if(r.avisar && !(r.decide || r.urgente)){
       await this.avisar(`📣 ${nombre} te busca: ${r.avisar}\n(dijo: «${nuevos.slice(-2).map(x => x.texto).join(' / ').slice(0, 200)}»)`);
       if(r.urgente) await this.quizaLlamar(nombre, r.avisar, 'te busca');
     }
@@ -1553,8 +1554,16 @@ export class Secre {
     let r;
     let carpetas = [];
     if(this.banco && (this.banco.listo ? this.banco.listo() : true)){ try{ carpetas = [...new Set((await this.banco.fichas()).map(f => f.carpeta).filter(Boolean))].slice(0, 60); }catch{} }
-    const propuestas = this.estado.propuestas.slice(-10).map(p => ({ n: p.n, a: p.nombre, dijo: p.dijo, propuesta: p.texto, motivo: p.motivo }));
-    try{ r = await this.ia.orden({ propuestas, conocimiento: this.conocimiento || '', carpetas, quien: this.deTurno(), texto, ahora: this.reloj(), hoy: fechaMx(this.reloj()), hora: horaMx(this.reloj()), chats: Object.entries(this.config.chats).filter(([, c]) => c.nombre).map(([j, c]) => ({ id: j, nombre: c.nombre, modo: c.modo || '', etiquetas: c.etiquetas || [] })), config: this.resumenConfig() }); }
+    const propuestas = this.estado.propuestas.slice(-10).map(p => ({ n: p.n, a: p.nombre, dijo: p.dijo, propuesta: p.texto, motivo: p.motivo, voz: this.imitaEn(p.chat) ? 'como Carlos, en primera persona' : 'como su asistente: de Carlos en tercera persona ("Carlos dice que sí va")' }));
+    /* «qué nos ha dicho la tía Rosa»: lo que dijo la gente que nombra va en la orden (4 nov) */
+    const t0 = sinAcentos(texto), mencion = [];
+    for(const [j, c] of Object.entries(this.config.chats)){
+      if(!c.nombre || !(this.estado.historial[j] || []).length) continue;
+      const ws = sinAcentos(c.nombre).replace(/[^a-z0-9ñ ]+/g, ' ').split(/\s+/).filter(w => w.length >= 4 && !/^(grupo|clientas|fashion|taller)$/.test(w));
+      if(t0.includes(sinAcentos(c.nombre)) || ws.some(w => new RegExp('\\b' + w + '\\b').test(t0))) mencion.push(j);
+    }
+    const historiales = mencion.slice(0, 3).map(j => ({ chat: this.nombreDe(j), ultimos: (this.estado.historial[j] || []).slice(-15).map(x => `${x.secre ? 'Tú (asistente)' : x.de === 'yo' ? 'Carlos' : (x.quien || this.nombreDe(j))} (${horaMx(x.t)}): ${x.texto}`) }));
+    try{ r = await this.ia.orden({ historiales, propuestas, conocimiento: this.conocimiento || '', carpetas, quien: this.deTurno(), texto, ahora: this.reloj(), hoy: fechaMx(this.reloj()), hora: horaMx(this.reloj()), chats: Object.entries(this.config.chats).filter(([, c]) => c.nombre).map(([j, c]) => ({ id: j, nombre: c.nombre, modo: c.modo || '', etiquetas: c.etiquetas || [] })), config: this.resumenConfig() }); }
     catch(e){ return this.avisar('No te entendí (y la IA no contestó). Escribe «ayuda» para ver lo que sé hacer.'); }
     const hechos = [];
     for(const a of (r && r.acciones) || []){ const h = a && a.accion === 'mensaje' ? await this.encargo(a) : a && a.accion === 'responder' ? await this.responderPropuesta(a) : this.aplicar(a); if(h) hechos.push(h); }

@@ -63,7 +63,7 @@ export function comprometeA(resp, nombre = 'carlos'){
   const t = plano(resp).replace(/[¿?¡!.,;:]+/g, ' ').replace(/\s+/g, ' ');
   if(PRIMERA.test(t)) return 'lo comprometía a algo';
   const n = plano(nombre);
-  const TERCERA = new RegExp(`\\b(?:${n}|el)\\s+(?:si\\s+)?(?:va|puede|te (?:lo|la)|lo (?:hace|saca|lleva|trae|paga)|la (?:hace|saca|lleva|trae|paga)|(?:la|lo|las|los) (?:dejo|puso|saco|tomo|tiro|rompio|uso)|fue (?:el|quien)|llega|se encarga|te (?:paga|presta|deposita|lleva|trae))\\b`);
+  const TERCERA = new RegExp(`(?<!(?:pregunt\\w*|avis\\w*|dig\\w*|consult\\w*|checo con|veo con|le paso a)\\s+(?:a\\s+)?)\\b(?:${n}|el)\\s+(?!si\\b)(?:va|puede|te (?:lo|la)|lo (?:hace|saca|lleva|trae|paga)|la (?:hace|saca|lleva|trae|paga)|(?:la|lo|las|los) (?:dejo|puso|saco|tomo|tiro|rompio|uso)|fue (?:el|quien)|llega|se encarga|te (?:paga|presta|deposita|lleva|trae))\\b`);
   if(TERCERA.test(t)) return `comprometía a ${nombre} o decía algo de él que no sé`;
   return '';
 }

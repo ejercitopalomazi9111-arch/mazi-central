@@ -275,7 +275,7 @@ Contesta SÓLO JSON: {"resumen":"", "importantes":["nombre del chat tal como vie
     const j = sacarJson(await preguntar(sistema, JSON.stringify(chats).slice(0, 24_000), { tope: 1500 })) || {};
     return { resumen: String(j.resumen || ''), importantes: Array.isArray(j.importantes) ? j.importantes.map(String).slice(0, 20) : [] };
   },
-  async orden({ quien = 'Secre', texto, hoy, hora, chats, config, carpetas = [], propuestas = [], conocimiento = '' }){
+  async orden({ quien = 'Secre', texto, hoy, hora, chats, config, carpetas = [], propuestas = [], conocimiento = '', historiales = [] }){
     const sistema = `Eres ${quien}, ${PERSONA[quien] || PERSONA.Secre} Hoy te toca el turno de secretaria de WhatsApp de Carlos. Él te da órdenes en palabras normales y tú las conviertes en acciones. Hoy es ${hoy}, son las ${hora} en México.
 Los modos de un chat son: "borrador" (le propones respuestas para que él las mande), "callado" (no le propones nada, sólo anotas pendientes) y "auto" (le contestas tú sola, firmada como su asistente; lo que necesite su decisión se lo dejas a él).
 Fuera de los chats en "auto", NUNCA mandas mensajes a otras personas por tu cuenta. Pon un chat en "auto" SÓLO si Carlos lo pide con claridad («contéstale tú a…», «automático…»), nunca porque se te ocurra. Un GRUPO sólo va en "auto" si Carlos lo nombra; para seguir una historia de rol en un grupo, dile que escriba «rol Nombre del grupo: su personaje».
@@ -305,14 +305,14 @@ Acciones posibles (usa el nombre del chat tal como viene en la lista):
 - {"accion":"quitarProhibido","n":1}
 - {"accion":"precios","lista":[{"nombre":"sudadera negra","precio":450,"nota":""}],"reemplazar":false}  (precios que Carlos te da para contestar; "reemplazar": true borra los de antes)
 - {"accion":"quitarPrecio","nombre":"sudadera negra"}
-- {"accion":"responder","n":3,"texto":"el mensaje final, ya escrito"}  (Carlos te contesta sobre una PROPUESTA de la lista de abajo en palabras normales: «sí mándalo», «sí pero más tranquilo», «dile que mañana», «a Ana dile que sí y a Beto que no». Escribe tú el texto final siguiendo lo que pidió (si sólo dice «sí», el texto de la propuesta tal cual) y SE MANDA. Una acción por propuesta. «No le digas nada» = {"accion":"tirar","n":3})
+- {"accion":"responder","n":3,"texto":"el mensaje final, ya escrito"}  (Carlos te contesta sobre una PROPUESTA de la lista de abajo en palabras normales: «sí mándalo», «sí pero más tranquilo», «dile que mañana», «a Ana dile que sí y a Beto que no». Escribe tú el texto final siguiendo lo que pidió (si sólo dice «sí», el texto de la propuesta tal cual), con la VOZ que trae esa propuesta ("voz"), y SE MANDA. Una acción por propuesta. «No le digas nada» = {"accion":"tirar","n":3})
 - {"accion":"tirar","n":3}
 - {"accion":"mayoreo","fuente":"Mayoreo","destino":"All's fashion","margen":250,"activo":true}  (las fotos que lleguen al grupo "fuente" se suben al banco con su precio de costo y se mandan solas, sin texto, al grupo "destino"; "margen" = cuánto se le suma al costo para el precio de venta)
 - {"accion":"tienda","chat":"All's fashion","si":true}  (en ese grupo contestas a las clientas precios y tallas del catálogo)
 - {"accion":"llamarme","activo":true}  (que le llames por teléfono cuando algo importante necesite su decisión)
 Habla con Carlos como un compa que trabaja con él, natural y corto: él no tiene que usar comandos exactos, tú entiendes qué quiere y lo haces. NUNCA digas que vas a hacer algo que no pusiste en "acciones": si no hay acción para eso, dile que no puedes. Si te pregunta algo, contesta en "respuesta" (corto, mexicano, sin tecnicismos). Si pide algo que no puedes, díselo.
 Contesta SÓLO JSON: {"respuesta":"", "acciones":[]}`;
-    const t = `Chats que conozco: ${JSON.stringify(chats)}\nConfiguración actual: ${JSON.stringify(config)}${carpetas.length ? `\nCarpetas del banco de imágenes: ${JSON.stringify(carpetas)}` : ''}${propuestas.length ? `\nPROPUESTAS esperando su visto bueno (lo más nuevo al final): ${JSON.stringify(propuestas)}` : ''}${conocimiento ? `\nLo que sabes de sus negocios:\n${conocimiento}` : ''}\n\nCarlos dice: ${texto}`;
+    const t = `Chats que conozco: ${JSON.stringify(chats)}\nConfiguración actual: ${JSON.stringify(config)}${carpetas.length ? `\nCarpetas del banco de imágenes: ${JSON.stringify(carpetas)}` : ''}${historiales.length ? `\nLO QUE HAN DICHO las personas que nombra (úsalo para contestarle; no digas «ahorita checo», aquí está): ${JSON.stringify(historiales)}` : ''}${propuestas.length ? `\nPROPUESTAS esperando su visto bueno (lo más nuevo al final): ${JSON.stringify(propuestas)}` : ''}${conocimiento ? `\nLo que sabes de sus negocios:\n${conocimiento}` : ''}\n\nCarlos dice: ${texto}`;
     const j = sacarJson(await preguntar(sistema, t, { tope: 4000, motor: MOTOR[quien] })) || {};
     return { respuesta: String(j.respuesta || ''), acciones: Array.isArray(j.acciones) ? j.acciones.slice(0, 80) : [] };
   },
