@@ -159,3 +159,22 @@ menús QR gratuitos; cifras orientativas, consultadas el 29 de octubre):
 Lo que NO se movió porque ya está abajo: las tres webs (precio de Carlos), mantenimiento, las
 herramientas a la medida, los 2 videos ($1,200), el comercial con voz, el logo ($1,800), la
 presentación ($900), la publicidad pagada ($1,500), tiempos y movimientos y la hora extra.
+
+## Paquetes de página + publicidad para barberías · propuesta del 4 de noviembre
+
+Carlos pidió para el comercial de barberías *«ofrece algunos paquetes que incluyan la página y
+publicidad»*. Salen de sumar precios que ya están en la hoja y quitarles un pedazo, para que el
+paquete valga más que comprar suelto. **Son propuesta: los números los confirma Carlos.**
+
+| Paquete | Qué trae | Suelto | Paquete |
+|---|---|---|---|
+| Arranque | Web Esencial ($2,000) + 1 mes de publicidad pagada ($1,500) | $3,500 | **$2,900** |
+| Agenda llena | Web Completa ($6,500, ya trae 2 videos) + sesión de fotos ($1,500) + 1 mes de publicidad ($1,500) | $9,500 | **$7,900** |
+| Sin competencia | Web A la medida ($9,000) + redes con 4 videos ($5,500) + 1 mes de publicidad ($1,500) | $16,000 | **$13,500** |
+
+- Lo que se invierte en anuncios (lo que se le paga a Meta) va aparte, como en la hoja.
+- Las tres webs traen sus 3 meses de mantenimiento.
+- Fotos y grabación sólo dentro de Querétaro (regla del 29 de octubre).
+- Contra el mercado: una página sencilla anda en $6,500 – $25,000 y el manejo de redes con pauta en
+  $8,000 – $25,000 al mes, así que hasta el paquete más grande queda abajo de una sola de las dos.
+- Salen en el anuncio 17 (`marca/anuncios/17-barberias/`).

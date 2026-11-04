@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Grupo Mazi · Páginas para barberías</title>
+<!-- ANUNCIO 17 · ~66 s · 9:16 · voz Piper (es_MX-claude-high): la de la casa es Chris, pero ElevenLabs
+     no tenía saldo el 4 de noviembre. Las cuatro páginas de barbería grabadas tal cual corren
+     (marca/video/grabar.mjs barb-*), cada una en su teléfono con su nivel y su precio, y después los tres
+     paquetes de página + publicidad (Carlos, 4 nov: «ofrece algunos paquetes que incluyan la página y
+     publicidad»). Los precios salen de empresa/servicios/PRECIOS.md.
+     node herramientas/video/armar.mjs marca/anuncios/17-barberias/index.html marca/anuncios/salida/17-barberias.mp4 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter+Tight:wght@600;800;900&display=block">
+<link rel="stylesheet" href="../comun.css">
+<script>window.listo = new Promise(r => window._listo = r);</script>
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>
+#chip{ position:absolute; left:80px; right:150px; top:240px }
+#chip .q{ font:700 34px/1 var(--t); letter-spacing:.14em; color:#C77DFF }
+#chip .d{ margin-top:14px; font:700 78px/.95 var(--t); letter-spacing:-.04em; text-transform:uppercase }
+#precio{ position:absolute; left:80px; top:520px; transform-origin:0 50%; font:800 34px/1 var(--s); padding:16px 24px; border-radius:16px; background:var(--vino); color:#fff; box-shadow:0 18px 40px -16px #000 }
+#precio small{ display:block; font:700 20px/1 var(--t); letter-spacing:.14em; text-transform:uppercase; opacity:.8; margin-bottom:8px }
+/* los paquetes */
+#paquetes{ position:absolute; left:70px; right:130px; top:560px; display:flex; flex-direction:column; gap:26px }
+.paq{ position:relative; padding:30px 34px 30px; border-radius:28px; background:#241036; border:2px solid #ffffff18; box-shadow:0 30px 60px -30px #000; will-change:transform, opacity }
+.paq.si{ background:linear-gradient(160deg, #3A1450, #241036 70%); border-color:#B44BFF }
+.paq .n{ font:700 26px/1 var(--t); letter-spacing:.16em; text-transform:uppercase; color:#C77DFF }
+.paq .q{ margin-top:12px; font:800 38px/1.12 var(--s); letter-spacing:-.01em }
+.paq .p{ position:absolute; right:32px; top:26px; text-align:right; font:900 58px/1 var(--s); letter-spacing:-.03em }
+.paq .p s{ display:block; font:600 24px/1 var(--t); color:var(--gris); margin-bottom:6px; text-decoration-thickness:2px }
+#letra{ position:absolute; left:80px; right:150px; top:1250px; font:500 28px/1.3 var(--t); color:var(--gris); opacity:0 }
+</style>
+</head>
+<body>
+<div id="fondo" class="capa"></div>
+<canvas id="gl" class="capa"></canvas>
+<canvas id="c2" class="capa" width="1080" height="1920"></canvas>
+<div id="banda" class="banda"></div>
+<div id="ui" class="capa">
+  <div id="titulo" class="grande"></div>
+  <div id="chip"><div class="q"></div><div class="d"></div></div>
+  <div id="precio"></div>
+  <div id="paquetes">
+    <div class="paq"><div class="n">Arranque</div><div class="q">Página Esencial<br>+ 1 mes de anuncios</div><div class="p"><s>$3,500</s>$2,900</div></div>
+    <div class="paq"><div class="n">Agenda llena</div><div class="q">Página Completa<br>+ fotos de tu local<br>+ 1 mes de anuncios</div><div class="p"><s>$9,500</s>$7,900</div></div>
+    <div class="paq"><div class="n">Sin competencia</div><div class="q">Página A la medida<br>+ redes con 4 videos<br>+ 1 mes de anuncios</div><div class="p"><s>$16,000</s>$13,500</div></div>
+  </div>
+  <div id="letra">Lo que inviertes en anuncios va aparte. Fotos y grabación, dentro de Querétaro.</div>
+  <div id="cierre"><div class="wa">WhatsApp <b>442 883 3786</b></div><div class="sub">Pruébalas: mazi-central.palomazi9111.workers.dev/barberias</div></div>
+</div>
+<div id="subs"></div>
+<div id="grano"></div>
+<script type="module">
+import { THREE, PAL, W, H, tramo, suave, sale, entra, mezcla, vida, escena3d, telefono, Toma, guion, sonidosVoz, subtitulos, grano } from '../motor.js';
+import { logoVivo } from '../logo3d.js';
+const $ = (s) => document.querySelector(s);
+const G = await guion('.'), L = (id) => G.de(id);
+const FIN = L('11').t1 + 2.4, fx = (n) => `../../../herramientas/video/efectos/${n}.wav`;
+const PAGS = ['03', '04', '05', '06'], PAQS = ['08', '09', '10'];
+window.VIDEO = { w: W, h: H, fps: 30, dur: FIN, musica: { archivo: '/tmp/claude-0/musica/Funky_Chunk.mp3', desde: 0, vol: .3, entrada: .3, fin: 2 },
+  sonidos: [...sonidosVoz(G, 1.1), ...PAGS.map(id => [fx('whoosh'), L(id).t0 - .45, .45]), ...PAQS.map(id => [fx('toque'), L(id).t0 - .05, .5]), [fx('subida'), L('11').t0 + .6, .45]] };
+await document.fonts.load('700 80px "Space Grotesk"'); await document.fonts.load('800 60px "Inter Tight"');
+
+const E = escena3d($('#gl'));
+const tomas = [new Toma('barb-sencilla'), new Toma('barb-navaja'), new Toma('barb-casa'), new Toma('barb-obsidiana')];
+const tels = tomas.map(t => telefono(t.tex)); tels.forEach(o => E.s.add(o));
+const sub = subtitulos($('#subs'), G), gr = grano($('#grano'), .06), c2 = $('#c2').getContext('2d');
+const poner = (el, html) => { if(el.dataset.h !== html){ el.innerHTML = html; el.dataset.h = html; } };
+const INFO = [['ESENCIAL', 'Barbería<br>Don Chuy', 'Desde', '$2,000'], ['COMPLETA · URBANA', 'Navaja<br>Norte', 'Desde', '$6,500'],
+  ['COMPLETA · CLÁSICA', 'Casa Brava<br>Barber Club', 'Desde', '$6,500'], ['A LA MEDIDA', 'Obsidiana<br>Barber Studio', 'Desde', '$9,000']];
+const lado = [1, -1, 1, -1];
+
+window.pintar = async (t) => {
+  const l = Object.fromEntries(G.lineas.map(z => [z.id, z]));
+  const fin = (k) => k < 3 ? l[PAGS[k + 1]].t0 - .45 : l['07'].t0 - .1;
+  const v = PAGS.map((id, k) => vida(t, l[id].t0 - .5, fin(k), .55, .4));
+  const k = v.findIndex(x => x > 0);
+  /* los títulos grandes */
+  let tit = '', a = 0, b = 0;
+  if(t < l['03'].t0 - .45){
+    if(t < l['02'].t0 - .1){ tit = '<span>¿SIGUES</span><span>AGENDANDO</span><span class="v">POR MENSAJE?</span>'; a = .3; b = l['02'].t0 - .1; }
+    else { tit = '<span class="m">CUATRO</span><span class="m">PÁGINAS PARA</span><span class="m v">BARBERÍAS.</span>'; a = l['02'].t0 - .1; b = l['03'].t0 - .45; } }
+  else if(t >= l['07'].t0 - .1 && t < l['08'].t0 - .15){ tit = '<span class="m">PÁGINA</span><span class="m v">+ PUBLICIDAD</span><span class="m">EN UN PAQUETE</span>'; a = l['07'].t0 - .1; b = l['08'].t0 - .15; }
+  else if(t >= l['08'].t0 - .15 && t < l['11'].t0 + .3){ tit = '<span class="m v">PAQUETES</span>'; a = l['08'].t0 - .15; b = l['11'].t0 + .3; }
+  poner($('#titulo'), tit); $('#titulo').style.opacity = tit ? vida(t, a, b, .3, .25) : 0;
+  [...$('#titulo').children].forEach((s, i) => { const u = sale(tramo(t, a + i * .1, a + .4 + i * .1)); s.style.transform = `translateY(${(1 - u) * 60}px)`; s.style.opacity = u; });
+  $('#banda').style.opacity = tit ? 1 : (k >= 0 ? .85 : 0);
+  /* la etiqueta y el precio de cada página */
+  if(k >= 0){ poner($('#chip .q'), INFO[k][0]); poner($('#chip .d'), INFO[k][1]); poner($('#precio'), `<small>${INFO[k][2]}</small>${INFO[k][3]}`); }
+  $('#chip').style.opacity = k >= 0 ? v[k] : 0; $('#chip').style.transform = `translateY(${k >= 0 ? (1 - v[k]) * 30 : 0}px)`;
+  const us = k >= 0 ? sale(tramo(t, l[PAGS[k]].t0 + .5, l[PAGS[k]].t0 + .8)) : 0;
+  $('#precio').style.opacity = k >= 0 ? Math.min(us, v[k]) : 0; $('#precio').style.transform = `rotate(-3deg) scale(${1.5 - .5 * us})`;
+  /* los teléfonos: cada uno entra de su lado girando, se acerca y el siguiente lo empuja */
+  /* entra en un segundo y se va en medio: los tramos de aquí duran 7 s, no 3 como en el 03 */
+  tels.forEach((o, i) => { const a0 = l[PAGS[i]].t0 - .5, u = tramo(t, a0, fin(i) + .4), e = sale(tramo(t, a0, a0 + 1)), s2 = entra(tramo(t, fin(i) - .2, fin(i) + .4)), d = lado[i];
+    o.visible = v[i] > 0; o.scale.setScalar(1);
+    o.position.set(mezcla(2.4 * d, .12 * d, e) - s2 * 3 * d, -.3 + Math.sin(t + i) * .03, mezcla(-4, 1.5, e) + u * .4);
+    o.rotation.set(-.06, mezcla(-1.3 * d, -.2 * d, e) + u * .16 * d, .04 * d); });
+  /* al final, los cuatro juntos detrás del cierre */
+  const vaJ = t >= l['11'].t0 - .1, junta = suave(tramo(t, l['11'].t0 - .1, l['11'].t0 + .7));
+  if(vaJ) tels.forEach((o, i) => { o.visible = t < l['11'].t0 + 1.6; o.position.set([-1.1, -.37, .37, 1.1][i], -.55 + Math.sin(t + i) * .04, [0, -.5, -.5, 0][i]);
+    o.rotation.set(.05, [.4, .15, -.15, -.4][i] + Math.sin(t * .6) * .05, 0); o.scale.setScalar(.66 * junta * (1 - sale(tramo(t, l['11'].t0 + 1, l['11'].t0 + 1.6)))); });
+  await Promise.all(tomas.map((tm, i) => tm.en(Math.max(0, t - l[PAGS[i]].t0 + 1.2))));
+  /* los paquetes: entran uno por uno y se ilumina el que se está diciendo */
+  const P = $('#paquetes'), enP = t >= l['08'].t0 - .3 && t < l['11'].t0 + .3;
+  P.style.opacity = enP ? vida(t, l['08'].t0 - .3, l['11'].t0 + .3, .3, .3) : 0;
+  [...P.children].forEach((c, i) => { const u = sale(tramo(t, l[PAQS[i]].t0 - .3, l[PAQS[i]].t0 + .2)); c.style.opacity = u; c.style.transform = `translateX(${(1 - u) * 120}px) scale(${.94 + .06 * u})`;
+    const ahora = t >= l[PAQS[i]].t0 - .3 && (i === 2 ? t < l['11'].t0 : t < l[PAQS[i + 1]].t0 - .3); c.classList.toggle('si', ahora); });
+  $('#letra').style.opacity = enP ? sale(tramo(t, l['10'].t1 - .2, l['10'].t1 + .4)) * P.style.opacity : 0;
+  E.cam.position.set(Math.sin(t * .4) * .15, Math.sin(t * .3) * .08, 9); E.cam.lookAt(0, 0, 0);
+  E.pintar();
+  c2.clearRect(0, 0, W, H);
+  if(t >= l['11'].t0 + 1) logoVivo(c2, { t, desde: l['11'].t0 + 1, cx: W / 2, cy: 820, ancho: 820 });
+  $('#cierre').style.opacity = sale(tramo(t, l['11'].t0 + 1.6, l['11'].t0 + 2.2));
+  $('#fondo').style.background = `radial-gradient(70% 45% at 50% ${55 + Math.sin(t * .5) * 8}%, ${PAL.vino}70, transparent 70%), radial-gradient(120% 80% at 50% 0%, ${PAL.oscuro2}, ${PAL.oscuro} 70%)`;
+  sub(t); gr(t);
+};
+await pintar(0); window._listo();
+</script>
+</body>
+</html>
