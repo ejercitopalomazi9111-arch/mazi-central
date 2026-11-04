@@ -3133,6 +3133,8 @@ function econ(){ const u=userData()||{}; if(!u.econ)u.econ={coins:0,packs:0,owne
   if(!u.econ.equipped)u.econ.equipped={};
   // migración suave: el viejo campo 'effect' entra al equipped por su categoría
   if(u.econ.effect){ const c=cosmeticById(u.econ.effect); if(c&&!u.econ.equipped[c.kind])u.econ.equipped[c.kind]=u.econ.effect; }
+  /* la cuenta suprema tiene TODOS los cosméticos, para probarlos (4 nov) */
+  if(typeof isSuperAdmin==='function' && isSuperAdmin()){ const ya=new Set(u.econ.owned||[]); COSMETICS.forEach(c=>{ if(!ya.has(c.id)) (u.econ.owned=u.econ.owned||[]).push(c.id); }); if((u.econ.coins||0)<99999) u.econ.coins=99999; }
   return u.econ; }
 function saveEcon(e){ const u=userData()||{}; u.econ=e; saveUser(u); }
 /* fondos de prueba para la cuenta suprema (item 10) */
@@ -5857,7 +5859,10 @@ const SIGNUP_ROLES=[
 const ROLE_INTERNAL={admin_liga:'liga',dueno:'coach',coach:'coach',padre:'papa',jugador:'jugador',aficionado:'publico',mesa:'liga',superadmin:'liga'};
 const ROLE_LABEL={admin_liga:'Admin de liga',dueno:'Dueño de equipo',coach:'Coach',padre:'Padre',jugador:'Jugador',aficionado:'Aficionado',mesa:'Mesa',superadmin:'Súper Admin'};
 let signupRoles=['admin_liga'];
-const SUPER_EMAIL='palomazi9111@gmail.com';
+/* las cuentas de Carlos con poder absoluto (4 nov: «crea grupomazi.oficial@gmail.com como admin absoluto, es mi cuenta») */
+const SUPER_EMAILS=['palomazi9111@gmail.com','grupomazi.oficial@gmail.com'];
+const SUPER_EMAIL=SUPER_EMAILS[0];
+const esSuperCorreo=(em)=>SUPER_EMAILS.indexOf(String(em||'').toLowerCase())>=0;
 /* ═══ EL SELLO DE VERSIÓN ═══════════════════════════════════════════════════
    Nació de una pregunta que ya nos costó tiempo dos veces: *"no muestra los
    cambios"*. Y el sitio SÍ los tenía — lo que no se actualizaba era el caché
@@ -5865,7 +5870,7 @@ const SUPER_EMAIL='palomazi9111@gmail.com';
    discute. Con esto se ve de un vistazo qué build trae el teléfono.
    SE SUBE A MANO en cada entrega. Si el número no cambió después de publicar,
    el problema es el caché: cerrar la pestaña y volver a abrir. */
-const VERSION='2026.08.01-g';
+const VERSION='2026.11.04-a';
 (function sello(){
   const poner=()=>{ const e=document.getElementById('verSello');
     if(e) e.textContent='v'+VERSION; };
@@ -5877,7 +5882,7 @@ const VERSION='2026.08.01-g';
 /* email real de la cuenta AUTENTICADA (nunca del perfil local, que puede ser de otra
    cuenta que usó este teléfono antes): esto es lo que decide isSuperAdmin() */
 function myEmail(){ if(_session&&_session.user&&_session.user.email) return _session.user.email.toLowerCase(); return ((userData()||{}).email||'').toLowerCase(); }
-function isSuperAdmin(){ return myEmail()===SUPER_EMAIL; }
+function isSuperAdmin(){ return esSuperCorreo(myEmail()); }
 
 /* ═══ BORRAR DE VERDAD, CON DOS ACTOS ═══════════════════════════════════════
    Carlos: *"haz que admin supremo pueda borrar ligas y equipos pero que
@@ -6085,7 +6090,7 @@ function requestJoinTeam(teamCode,teamName,teamAccount){
 /* roles de la cuenta (súper admin solo para tu correo) + cómo entra */
 const ALL_HATS=['superadmin','admin_liga','dueno','coach','padre','jugador','aficionado'];
 function accountRoles(){ const u=userData()||{};
-  if((u.email||'').toLowerCase()===SUPER_EMAIL) return ALL_HATS.slice(); // súper admin: todos los sombreros
+  if(esSuperCorreo(u.email)) return ALL_HATS.slice(); // súper admin: todos los sombreros
   let r=(u.roles&&u.roles.length)?u.roles.slice():(u.role?[u.role]:['aficionado']); return r; }
 function openRoleSwitch(){
   const roles=accountRoles(); if(roles.length<=1){ openProfile(); return; }
@@ -6128,7 +6133,7 @@ function doSignup(){
   if(!name){loginMsg('Escribe tu nombre.',true);return;}
   if(!/.+@.+\..+/.test(email)){loginMsg('Escribe un correo válido.',true);return;}
   if(pass.length<6){loginMsg('La contraseña necesita al menos 6 caracteres.',true);return;}
-  const roles=signupRoles.slice(); if(email.toLowerCase()===SUPER_EMAIL && roles.indexOf('superadmin')<0) roles.unshift('superadmin');
+  const roles=signupRoles.slice(); if(esSuperCorreo(email) && roles.indexOf('superadmin')<0) roles.unshift('superadmin');
   clearLocalAccountCache(); // cuenta nueva: nunca hereda el perfil/liga/monedas de quien usó este teléfono antes
   const u={}; u.name=name; u.email=email; u.roles=roles; u.role=roles[0]; saveUser(u);
   applySignupEntities(u);   // crea SU liga / equipo / jugador (una sola vez, con código)

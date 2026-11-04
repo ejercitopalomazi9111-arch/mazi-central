@@ -386,7 +386,7 @@ const getA = (expr) => RA(/\b(var|let|const|return|try|if|for)\b|;/.test(expr) ?
       const pepitoCoins = get('(econ().coins||0)'); // solo sus PROPIOS logros de bienvenida, nunca los 9999 de Carlos
       const gotOwnName = get('userData().name');
       const gotOwnTeam = get('!!userData().team'); // Pepito es jugador, jamas debe traer el equipo/liga de Carlos
-      return { ok: carlosSuper===true && carlosCoins===9999 && inheritedSuper===false && pepitoCoins<500 && gotOwnName==='Pepito Normal' && !gotOwnTeam,
+      return { ok: carlosSuper===true && carlosCoins>=9999 && inheritedSuper===false && pepitoCoins<500 && gotOwnName==='Pepito Normal' && !gotOwnTeam,
         detail: 'carlos: super='+carlosSuper+' coins='+carlosCoins+' | pepito: super='+inheritedSuper+' coins='+pepitoCoins+' name='+gotOwnName+' team='+gotOwnTeam };
     });
 
