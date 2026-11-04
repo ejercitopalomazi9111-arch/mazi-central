@@ -57,6 +57,8 @@ const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
 const fila = (t, sub, url, extra = '') => `<li class="fila"><div><b>${esc(t)}</b><small>${esc(sub)}</small></div>${extra}<div class="acc"><a class="btn" href="${url}" target="_blank" rel="noopener">Abrir</a><button class="btn" data-copia="${url}">Copiar link</button></div></li>`;
 const vids = VIDEOS.filter(([id]) => fs.existsSync(path.join(AQUI, 'videos', id + '.mp4')));
 const imgs = fs.readdirSync(path.join(AQUI, 'img')).filter(f => f.endsWith('.webp')).sort();
+const posters = fs.existsSync(path.join(AQUI, 'img/posters')) ? fs.readdirSync(path.join(AQUI, 'img/posters')).filter(f => f.endsWith('.webp')).sort() : [];
+const nombrePoster = (f) => { const m = f.match(/(\d+)-(frente|vuelta)/); return m ? `Póster ${+m[1]} · ${m[2]}` : f; };
 const nombreImg = (f) => f.startsWith('poster') ? 'Póster ' + f.match(/\d+/)[0] : f.startsWith('flyer') ? 'Flyer ' + f.match(/\d+/)[0] : 'Anuncio general';
 
 const html = `<!doctype html>
@@ -85,6 +87,7 @@ footer{ margin-top:40px; color:var(--gris); font-size:14px }
 <header><img src="../web/img/logo.svg" alt="Grupo Mazi" width="182" height="44"><h1>Para vendedores</h1>
 <p>Todo lo que se le manda a un cliente. «Copiar link» y lo pegas en WhatsApp.</p></header>
 <h2>Cotización</h2><ul>${fila('Cotización 2026 (PDF)', 'Precios de todo, 4 hojas. Se ve bien en iPhone', BASE + '/web/Grupo-Mazi-cotizacion-2026.pdf').replace('class="fila"', 'class="fila principal"')}</ul>
+<h2>Pósters para imprimir</h2><ul>${fila('12 pósters de Grupo Mazi (PDF)', 'Tamaño carta, de dos caras, a 300 ppp: listo para la imprenta', BASE + '/vendedores/Grupo-Mazi-12-posters-doble-cara.pdf')}${posters.map(f => fila(nombrePoster(f), 'Imagen para redes o estados', BASE + '/vendedores/img/posters/' + f, `<img class="mini" src="img/posters/${f}" alt="" loading="lazy">`)).join('')}</ul>
 <h2>Páginas de muestra</h2><ul>${DEMOS.map(([t, u, s]) => fila(t, s, BASE + u)).join('')}</ul>
 <h2>Videos</h2><ul>${vids.length ? vids.map(([id, t, s]) => fila(t, s + ' · ' + (fs.statSync(path.join(AQUI, 'videos', id + '.mp4')).size / 1048576).toFixed(0) + ' MB', BASE + '/vendedores/videos/' + id + '.mp4')).join('') : '<li class="fila"><div><b>Se están preparando</b><small>En un rato aparecen aquí</small></div></li>'}</ul>
 <h2>Pósters y flyers</h2><ul>${imgs.map(f => fila(nombreImg(f), 'Imagen para redes o estados', BASE + '/vendedores/img/' + f, `<img class="mini" src="img/${f}" alt="" loading="lazy">`)).join('')}</ul>
