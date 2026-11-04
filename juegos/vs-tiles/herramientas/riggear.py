@@ -119,6 +119,8 @@ cuello = mundo(dest, 'Neck').z
 # del costado se estira en aletas (Temmie de cuerpo completo, 4 nov, con el torso más ancho que los hombros)
 hombroX = {lado: abs(next(a for n, a, b in segs if n == lado + 'Arm').x - cx) for lado in ('Left', 'Right')}
 BRAZO = re.compile(r'(Left|Right)(Arm|ForeArm|Hand)$')
+# qué tan duro es el paso de un hueso al otro: 4 es seco (se nota el corte), 2 reparte más el estirón
+POT = float(os.environ.get('POT', 4))
 for o in mallas:
     o.vertex_groups.clear(); g = {n: o.vertex_groups.new(name=n) for n, _, _ in segs}
     es_pelo = bool(PELO.search(o.name + ' ' + ' '.join(m.name for m in o.data.materials if m)))
@@ -130,7 +132,7 @@ for o in mallas:
         lv = 1 if p.x > cx else -1; cerca_centro = abs(p.x - cx) < H * .012
         adentro = abs(p.x - cx) < hombroX['Left' if p.x > cx else 'Right'] * .92 and p.z < cuello
         ds = sorted((dseg(p, a, b), n) for n, a, b in segs if (cerca_centro or ladoH.get(n, lv) == lv) and not (adentro and BRAZO.match(n)))[:3]
-        w = [1 / max(1e-4, d) ** 4 for d, _ in ds]; t = sum(w)
+        w = [1 / max(1e-4, d) ** POT for d, _ in ds]; t = sum(w)
         for (d, n), wi in zip(ds, w): g[n].add([v.index], wi / t, 'REPLACE')
     mod = o.modifiers.new('Esqueleto', 'ARMATURE'); mod.object = dest; o.parent = dest
 cercanos = {o.name: {v.index: [(o.vertex_groups[g.group].name, g.weight) for g in v.groups] for v in o.data.vertices} for o in mallas}
