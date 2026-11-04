@@ -40,6 +40,8 @@ if (process.argv.includes('--videos')) {
   for (const [id] of VIDEOS) {
     const src = path.join(RAIZ, 'marca/anuncios/salida', id + '.mp4'), out = path.join(AQUI, 'videos', id + '.mp4');
     if (!fs.existsSync(src)) { console.log('· falta', id); continue; }
+    /* un video armado antes del último cambio al cierre del logo todavía trae el logo viejo: no se sube */
+    if (fs.statSync(src).mtimeMs < fs.statSync(path.join(RAIZ, 'marca/anuncios/logo3d.js')).mtimeMs) { console.log('· viejo', id); continue; }
     if (fs.existsSync(out) && fs.statSync(out).mtimeMs > fs.statSync(src).mtimeMs) continue;
     const dur = Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', src]).toString());
     const kbps = Math.min(2600, Math.floor(19 * 8192 / dur) - 128);     /* que quepa en 19 MB */
