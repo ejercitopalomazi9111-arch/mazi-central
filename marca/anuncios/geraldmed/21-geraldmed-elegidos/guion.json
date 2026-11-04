@@ -17,7 +17,8 @@
    "id": "02",
    "voz": "Narra",
    "pausa": 0.45,
-   "txt": "En Geraldmed, cada elemento se *selecciona con especial cuidado.*"
+   "txt": "En Geraldmed, cada elemento se *selecciona con especial cuidado.*",
+   "dice": "En Yeraldmed, cada elemento se selecciona con especial cuidado."
   },
   {
    "id": "03",
@@ -42,7 +43,8 @@
    "voz": "Narra",
    "pausa": 0.5,
    "txt": "Geraldmed. Paramédicos para tu evento.",
-   "sinSub": true
+   "sinSub": true,
+   "dice": "Yeraldmed. Paramédicos para tu evento."
   }
  ]
 }

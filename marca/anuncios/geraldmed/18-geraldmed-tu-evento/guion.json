@@ -23,7 +23,8 @@
    "id": "03",
    "voz": "Narra",
    "pausa": 0.45,
-   "txt": "Somos *Geraldmed:* paramédicos para eventos."
+   "txt": "Somos *Geraldmed:* paramédicos para eventos.",
+   "dice": "Somos Yeraldmed: paramédicos para eventos."
   },
   {
    "id": "04",
@@ -48,7 +49,8 @@
    "voz": "Narra",
    "pausa": 0.5,
    "txt": "Geraldmed. Atención médica de emergencia.",
-   "sinSub": true
+   "sinSub": true,
+   "dice": "Yeraldmed. Atención médica de emergencia."
   }
  ]
 }

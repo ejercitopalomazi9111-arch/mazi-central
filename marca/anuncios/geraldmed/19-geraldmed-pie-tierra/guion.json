@@ -36,7 +36,8 @@
    "voz": "Narra",
    "pausa": 0.5,
    "txt": "Geraldmed: cubrimos tu evento.",
-   "sinSub": true
+   "sinSub": true,
+   "dice": "Yeraldmed: cubrimos tu evento."
   }
  ]
 }

@@ -42,7 +42,8 @@
    "voz": "Narra",
    "pausa": 0.4,
    "txt": "Geraldmed.",
-   "sinSub": true
+   "sinSub": true,
+   "dice": "Yeraldmed."
   }
  ]
 }
