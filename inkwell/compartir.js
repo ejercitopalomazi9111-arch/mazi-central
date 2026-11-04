@@ -54,3 +54,20 @@ export function elegirNuevas(candidatas, { sigo = [], descartadas = [], generos 
   const gusto = new Set(generos);
   return [...libres.filter((r) => gusto.has(r.genero)), ...libres.filter((r) => !gusto.has(r.genero))].slice(0, cuantas);
 }
+
+/* ── explorar por categoría (los géneros de Webtoon) ── */
+export const GENEROS = [['romance', 'Romance'], ['fantasy', 'Fantasía'], ['action', 'Acción'], ['drama', 'Drama'], ['comedy', 'Comedia'], ['thriller', 'Suspenso'], ['horror', 'Terror'], ['mystery', 'Misterio'], ['supernatural', 'Sobrenatural'], ['sf', 'Ciencia ficción'], ['slice-of-life', 'Vida cotidiana'], ['historical', 'Histórico'], ['super-hero', 'Superhéroes'], ['sports', 'Deportes'], ['heartwarming', 'Conmovedor']];
+const sinEnt = (s) => String(s || '').replace(/&amp;/g, '&').replace(/&#39;|&apos;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+/* las tarjetas de una página de género: link, título, autor y portada, sin repetir */
+export function seriesDeGenero(html){
+  const vistas = new Set(), out = [];
+  for(const m of String(html || '').matchAll(/<a href="(https:\/\/www\.webtoons\.com\/[^"]*\/list\?title_no=\d+)"[^>]*>([\s\S]*?)<\/a>/g)){
+    const ref = reconocer(m[1].replace(/&amp;/g, '&'));
+    if(!ref || ref.fuente !== 'webtoon' || vistas.has(ref.titleNo)) continue;
+    const titulo = sinEnt((/<strong class="title">([^<]*)/.exec(m[2]) || [])[1]);
+    if(!titulo) continue;
+    vistas.add(ref.titleNo);
+    out.push({ ref, titulo, autor: sinEnt((/<div class="author">([^<]*)/.exec(m[2]) || [])[1]), portada: sinEnt((/<img[^>]+src="([^"]+)"/.exec(m[2]) || [])[1]) });
+  }
+  return out;
+}

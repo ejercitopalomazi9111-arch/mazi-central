@@ -29,6 +29,7 @@ function recadero(u){
   const d = new URL(u);
   pedidos.push(d.toString());
   if (d.hostname === 'www.webtoons.com' && /\/ranking\//.test(d.pathname)) return rankingOn ? ['text/html', ranking] : null;
+  if (d.hostname === 'www.webtoons.com' && /\/genres\/fantasy/.test(d.pathname)) return ['text/html', `<ul class="webtoon_list"><li><a href="https://www.webtoons.com/es/fantasy/otra-serie/list?title_no=888" class="link"><div class="image_wrap"><img loading="lazy" src="https://swebtoon-phinf.pstatic.net/portada.jpg" alt=""></div><div class="info_text"><strong class="title">Otra serie &amp; más</strong><div class="author">Autora Dos</div></div></a></li></ul>`];
   if (d.hostname === 'www.webtoons.com' && d.pathname.endsWith('/list')) return ['text/html', lista];
   if (d.hostname === 'm.webtoons.com' && /\/api\/v1\/webtoon\/(777|888)\/episodes/.test(d.pathname)) return ['application/json', api];
   const v = /episode_no=(\d+)/.exec(d.search); if (d.pathname.endsWith('/viewer') && v) return ['text/html', visor(+v[1])];
@@ -265,6 +266,34 @@ console.log('\ncompartir el código y descubrir cómics');
   ok(!(await pg2.evaluate(() => location.hash)), 'y el link se limpia para no volver a preguntar');
   ok(!errores.length, 'sin errores en la consola' + (errores.length ? ' — ' + errores.join(' | ') : ''));
   await ctx.close(); await ctx2.close();
+}
+
+/* ── explorar por categoría y todo en archivos ── */
+console.log('\ncategorías y todo en archivos');
+{
+  const esperar = async (p, fn, ms = 30000) => { const t0 = Date.now(); while(Date.now() - t0 < ms){ if(await p.evaluate(fn)) return true; await p.waitForTimeout(250); } return false; };
+  const ctx = await br.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block', acceptDownloads: true });
+  const pg = await ctx.newPage(); const errores = [];
+  pg.on('pageerror', (e) => errores.push(e.message)); pg.on('dialog', (d) => d.accept());
+  await pg.goto(BASE);
+  ok((await pg.$$eval('#genero option', (o) => o.length)) >= 10, 'hay una lista de categorías');
+  await pg.selectOption('#genero', 'fantasy'); await pg.click('#formGenero button[type=submit]');
+  await pg.waitForSelector('#porGenero .resultado', { timeout: 15000 }).catch(() => {});
+  ok(/Otra serie & más/.test(await pg.textContent('#porGenero')), 'la categoría enseña sus cómics con nombre y autor');
+  await pg.click('#porGenero button[data-i="0"]');
+  await esperar(pg, async () => (await window.__tiras.todasSeries()).length === 1 && !window.__tiras.ocupado);
+  ok((await pg.evaluate(async () => (await window.__tiras.todasSeries())[0].id)) === 'webtoon:888', '«Seguir» desde la categoría la agrega');
+  /* una segunda serie para que «todo» sea de verdad todo */
+  await pg.fill('#buscar', 'https://www.webtoons.com/es/fantasy/mi-serie/list?title_no=777'); await pg.press('#buscar', 'Enter');
+  await esperar(pg, async () => (await window.__tiras.todasSeries()).length === 2 && !window.__tiras.ocupado);
+  const bajadas = []; pg.on('download', (d) => bajadas.push(d.suggestedFilename()));
+  await pg.click('#todoArchivo'); await pg.click('#todoEmpezar');
+  await esperar(pg, () => /Listo: \d+ archivo/.test(document.querySelector('#tEstado').textContent), 60000);
+  await pg.waitForTimeout(800);
+  ok(bajadas.length === 2 && bajadas.every((n) => /\(1-12\)\.pdf$/.test(n)), '«Descargar todo» arma un PDF por serie con TODOS sus capítulos · ' + bajadas.join(', '));
+  ok(!(await desborde(pg)), 'la hoja de «todo» no se sale de lado');
+  ok(!errores.length, 'sin errores en la consola' + (errores.length ? ' — ' + errores.join(' | ') : ''));
+  await ctx.close();
 }
 await br.close(); srv.close(); fs.rmSync(tmp, { recursive: true, force: true });
 console.log(`\n${bien} bien · ${mal} mal`);
