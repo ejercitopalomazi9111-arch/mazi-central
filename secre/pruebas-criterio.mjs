@@ -136,5 +136,11 @@ ok('«modo asistente con Ana» sólo en ese chat', s.imitaEn(ANA) === false && s
 r = await yoDigo('modo asistente');
 ok('«modo asistente» lo regresa en todos', s.config.imitar === false && s.imitaEn(TIA) === false, r);
 
+console.log('\n· primera persona');
+{ const { enPrimeraPersona } = await import('./criterio.mjs');
+  ok('«sí tía, sí voy a ir» es él', enPrimeraPersona('Sí tía, sí voy a ir a comer, ahí nos vemos'));
+  ok('«Carlos dice que sí va» es su asistente', !enPrimeraPersona('Hola tía, Carlos dice que sí va a ir'));
+  ok('«le paso tu mensaje» no es él', !enPrimeraPersona('le paso tu mensaje a Carlos y te confirma')); }
+
 console.log(fallas.length ? `\n✗ ${fallas.length} fallaron de ${pasan + fallas.length}` : `\n✓ ${pasan}/${pasan}`);
 process.exit(fallas.length ? 1 : 0);

@@ -180,6 +180,19 @@ async function hablar(texto, voz){
 
 export const ia = {
   jugarElenco,
+  /* el conmutador (4 nov): quién llama y para qué, o si es spam */
+  async llamada({ dijo }){
+    const sistema = `Contestas el teléfono de Carlos. La persona que llamó dijo esto (transcrito, puede venir con errores). Saca su nombre y para qué llama, y di si es SPAM: venta por teléfono, banco o tarjeta que no pidió, encuestas, «estimado cliente», «usted fue seleccionado», cobranza genérica, «recibimos tu currículum» de una empresa cualquiera, grabaciones. Una persona que dice quién es y algo concreto NO es spam.
+Contesta SÓLO JSON: {"spam":false, "nombre":"", "motivo":"para qué llama, en pocas palabras, como para decir «para lo de …»"}`;
+    const j = sacarJson(await preguntar(sistema, dijo, { tope: 600 })) || {};
+    return { spam: !!j.spam, nombre: String(j.nombre || '').slice(0, 60), motivo: String(j.motivo || '').slice(0, 120) };
+  },
+  async decision({ dijo, nombre, motivo }){
+    const sistema = `Eres la asistente de Carlos. Le llamaste para avisarle que ${nombre || 'alguien'} le está llamando por ${motivo || 'algo'}. Él te contestó lo de abajo (transcrito). ¿Quiere que se lo pases ("pasar": true) o que le digas algo? Si es recado, escribe en "decir" lo que se le dice a quien llamó, natural y amable, con lo que Carlos pidió (si dijo «dile que no estoy», algo como «que ahorita no puede atenderte y que te escribe más tarde»). Nunca inventes datos que él no dijo.
+Contesta SÓLO JSON: {"pasar":false, "decir":""}`;
+    const j = sacarJson(await preguntar(sistema, dijo, { tope: 600 })) || {};
+    return { pasar: !!j.pasar, decir: String(j.decir || '').slice(0, 400) };
+  },
   /* una nota de voz → texto */
   async oir({ b64, mime }){ const t = await transcribir(b64, mime); return /^\[no se entiende\]$/i.test(t) ? '' : t; },
   /* un texto → nota de voz (OGG/Opus) */
@@ -189,11 +202,13 @@ export const ia = {
     const ogg = await aNotaDeVoz(a.b64, a.mime);
     return { ogg, segundos: segundosOgg(ogg) };
   },
-  async leer({ fotos = [], dueno, nombre, nota, historial, nuevos, estilo, redactar, auto = false, rol = false, personaje = '', mundo = '', marca = '', instrucciones = '', comunidad = '', stickers = [], grupo, datos = [], imitar = false, prohibidos = [], precios = [], ahora = '', firma = '' }){
+  async leer({ fotos = [], dueno, nombre, nota, historial, nuevos, estilo, redactar, auto = false, rol = false, personaje = '', mundo = '', marca = '', instrucciones = '', comunidad = '', stickers = [], grupo, datos = [], imitar = false, prohibidos = [], precios = [], ahora = '', firma = '', conocimiento = '', productos = [], tienda = false, abiertos = [] }){
     if(rol) return leerRol({ dueno, nombre, nota, historial, nuevos, personaje, mundo, marca, instrucciones, comunidad, stickers, datos });
     const sistema = `Ayudas a ${dueno}, un estudiante de prepa en Querétaro, con su WhatsApp. Te paso un chat${grupo ? ' de grupo' : ''} con ${nombre}${nota ? ` (${nota})` : ''}.
 Tu trabajo:
-1) "pendientes": cosas que ${dueno} tiene que HACER por lo que le escribieron (entregar algo, confirmar, pagar, ir a algún lado, contestar una pregunta importante). Frases cortas en infinitivo, con fecha u hora si la hay. Lista vacía si no hay.
+1) "pendientes": SÓLO lo que ${dueno} en persona tiene que HACER y que de verdad importa (entregar algo, pagar, ir a un lugar a una hora, confirmar algo que le piden a él, una cita). Frases cortas en infinitivo, con fecha u hora si la hay. NO es pendiente: lo que tiene que hacer otra persona, «estar atento», «contestar el mensaje», «revisar el chat», platicar, ni lo que ya se resolvió en la conversación. Casi siempre la lista va VACÍA; ante la duda, vacía.
+   "hechos": de estos pendientes que ${dueno} ya tenía con este chat, cuáles ya se cumplieron según la conversación (copia el texto tal cual): ${JSON.stringify(abiertos)}.
+   "tareas": si es de la escuela (un grupo del salón, un maestro, compañeros) y dejan tarea, trabajo o examen, cada uno como {"materia":"", "que":"", "para":"AAAA-MM-DD o vacío"}. Si no, [].
 ${redactar && auto ? `2) "respuesta": el mensaje que se le manda YA a ${nombre}, SIN que ${dueno} lo revise. ${imitar
   ? `Escribes COMO ${dueno}, en primera persona, como si fueras él (él lo pidió así en este chat). No firmes ni digas que eres un bot o un asistente.
    - ESCRIBE COMO ÉL: mensajes cortos, como se escribe en WhatsApp, en minúsculas si así escribe él, con su tono y su forma de hablar (mira sus ejemplos abajo).`
@@ -219,20 +234,20 @@ ${redactar && auto ? `2) "respuesta": el mensaje que se le manda YA a ${nombre},
 ${ejemplos(estilo)}` : ''}
 ${redactar && !auto ? `2) "respuesta": una propuesta de lo que ${dueno} contestaría, escrita como él (español mexicano, informal). ${dueno} la va a revisar antes de mandarla.
    - NO inventes datos: si piden una hora, un lugar, dinero o una decisión que no sale del chat, propón algo que gane tiempo ("déjame ver y ahorita te digo") y explica en "motivo" qué tiene que decidir él.
-   - No lo culpes ni lo comprometas a nada (ir, llevar, sacar, pagar): eso lo decide él al revisar.${prohibidos.length ? ` Y nunca digas esto, que él prohibió: ${prohibidos.map(x => '«' + x + '»').join(' · ')}.` : ''}
+   - No lo culpes ni lo comprometas a nada (ir, llevar, sacar, pagar): eso lo decide él al revisar. Tampoco inventes planes, excusas ni personas («le marco al doc», «tengo junta»): si no sabe qué contestar, algo neutro como «déjame ver y te digo».${prohibidos.length ? ` Y nunca digas esto, que él prohibió: ${prohibidos.map(x => '«' + x + '»').join(' · ')}.` : ''}
    - Si ya no hace falta contestar (un "ok", un sticker, una despedida), deja "respuesta" vacía.
 3) "urgente": true sólo si algo no puede esperar (una emergencia, algo para dentro de una hora).
 ${ejemplos(estilo)}
    - Si lo que preguntan se contesta con "Lo que ${dueno} te contó", úsalo con sus datos exactos (día, hora, temas, precios).` : ''}
-${recuerdos(dueno, datos)}${precios.length ? `Los PRECIOS de ${dueno} (los únicos que existen; dilos exactos y no inventes otros ni descuentos):\n${precios.map(x => '- ' + x).join('\n')}\n` : ''}
+${conocimiento ? `LO QUE SABES DE LOS NEGOCIOS DE ${dueno.toUpperCase()} (es verdad, úsalo para contestar y cotizar; no inventes nada fuera de esto):\n${conocimiento}\n` : ''}${tienda ? `Este chat es el GRUPO DE VENTAS de All's fashion: contestas a las clientas sobre los productos (precio de venta, tallas), aunque no le hablen a ${dueno}. Corto y amable. Si sólo platican entre ellas, deja "respuesta" vacía.\n` : ''}${productos.length ? `PRODUCTOS de los que preguntan (de una foto que citaron o mandaron): ${productos.map(x => '«' + x + '»').join(' · ')}. Di ese precio y esas tallas tal cual. NUNCA digas cuánto nos cuesta.\n` : ''}${recuerdos(dueno, datos)}${precios.length ? `Los PRECIOS de ${dueno} (los únicos que existen; dilos exactos y no inventes otros ni descuentos):\n${precios.map(x => '- ' + x).join('\n')}\n` : ''}
 ${fotos.length && redactar ? `FOTOS: tienes estas fotos del banco de ${dueno} que podrían venir al caso:
 ${fotos.map(f => `${f.n}. ${f.nombre}${f.carpeta ? ' [' + f.carpeta + ']' : ''}${f.descripcion ? ' — ' + f.descripcion : ''}`).join('\n')}
 Si te piden ver algo, preguntan por un producto o una foto ayuda a contestar, pon en "fotos" los números de las que van (máximo 3) y en "respuesta" algo corto como lo diría una persona («mira, este es» / «tengo estos»). Si ninguna va con lo que preguntan, "fotos": []. NUNCA mandes fotos que no tengan que ver.
 ` : ''}${auto ? `4) "porque": en pocas palabras, para ${dueno}, por qué contestaste así (o por qué no contestaste).
-` : ''}Contesta SÓLO JSON: {"pendientes":[], "respuesta":"", "motivo":"", "urgente":false${auto ? ', "decide":false, "porque":"", "avisar":"", "audio":false' : ''}${fotos.length && redactar ? ', "fotos":[]' : ''}}`;
+` : ''}Contesta SÓLO JSON: {"pendientes":[], "hechos":[], "tareas":[], "respuesta":"", "motivo":"", "urgente":false${auto ? ', "decide":false, "porque":"", "avisar":"", "audio":false' : ''}${fotos.length && redactar ? ', "fotos":[]' : ''}}`;
     const texto = `Conversación (lo más nuevo al final):\n${conversacion(historial, dueno, 30, nombre)}\n\nLo nuevo que no ha contestado:\n${nuevos.map(x => x.texto).join('\n')}`;
     const j = sacarJson(await preguntar(sistema, texto)) || {};
-    return { pendientes: Array.isArray(j.pendientes) ? j.pendientes.map(String).slice(0, 5) : [], respuesta: redactar ? String(j.respuesta || '') : '', motivo: String(j.motivo || ''), urgente: !!j.urgente, decide: !!j.decide, porque: String(j.porque || '').slice(0, 200), avisar: auto ? String(j.avisar || '').slice(0, 500) : '', audio: auto && !!j.audio, fotos: Array.isArray(j.fotos) ? j.fotos.map(Number).filter(n => n >= 1 && n <= fotos.length).slice(0, 3) : [] };
+    return { hechos: Array.isArray(j.hechos) ? j.hechos.map(String).slice(0, 10) : [], tareas: Array.isArray(j.tareas) ? j.tareas.filter(x => x && x.que).slice(0, 5) : [], pendientes: Array.isArray(j.pendientes) ? j.pendientes.map(String).slice(0, 3) : [], respuesta: redactar ? String(j.respuesta || '') : '', motivo: String(j.motivo || ''), urgente: !!j.urgente, decide: !!j.decide, porque: String(j.porque || '').slice(0, 200), avisar: auto ? String(j.avisar || '').slice(0, 500) : '', audio: auto && !!j.audio, fotos: Array.isArray(j.fotos) ? j.fotos.map(Number).filter(n => n >= 1 && n <= fotos.length).slice(0, 3) : [] };
   },
 
   async saludo({ dueno, nombre, cual, nota, estilo, antes }){
@@ -260,7 +275,7 @@ Contesta SÓLO JSON: {"resumen":"", "importantes":["nombre del chat tal como vie
     const j = sacarJson(await preguntar(sistema, JSON.stringify(chats).slice(0, 24_000), { tope: 1500 })) || {};
     return { resumen: String(j.resumen || ''), importantes: Array.isArray(j.importantes) ? j.importantes.map(String).slice(0, 20) : [] };
   },
-  async orden({ quien = 'Secre', texto, hoy, hora, chats, config, carpetas = [] }){
+  async orden({ quien = 'Secre', texto, hoy, hora, chats, config, carpetas = [], propuestas = [], conocimiento = '', historiales = [] }){
     const sistema = `Eres ${quien}, ${PERSONA[quien] || PERSONA.Secre} Hoy te toca el turno de secretaria de WhatsApp de Carlos. Él te da órdenes en palabras normales y tú las conviertes en acciones. Hoy es ${hoy}, son las ${hora} en México.
 Los modos de un chat son: "borrador" (le propones respuestas para que él las mande), "callado" (no le propones nada, sólo anotas pendientes) y "auto" (le contestas tú sola, firmada como su asistente; lo que necesite su decisión se lo dejas a él).
 Fuera de los chats en "auto", NUNCA mandas mensajes a otras personas por tu cuenta. Pon un chat en "auto" SÓLO si Carlos lo pide con claridad («contéstale tú a…», «automático…»), nunca porque se te ocurra. Un GRUPO sólo va en "auto" si Carlos lo nombra; para seguir una historia de rol en un grupo, dile que escriba «rol Nombre del grupo: su personaje».
@@ -290,9 +305,14 @@ Acciones posibles (usa el nombre del chat tal como viene en la lista):
 - {"accion":"quitarProhibido","n":1}
 - {"accion":"precios","lista":[{"nombre":"sudadera negra","precio":450,"nota":""}],"reemplazar":false}  (precios que Carlos te da para contestar; "reemplazar": true borra los de antes)
 - {"accion":"quitarPrecio","nombre":"sudadera negra"}
-NUNCA digas que vas a hacer algo que no pusiste en "acciones": si no hay acción para eso, dile que no puedes. Si te pregunta algo, contesta en "respuesta" (corto, mexicano, sin tecnicismos). Si pide algo que no puedes, díselo.
+- {"accion":"responder","n":3,"texto":"el mensaje final, ya escrito"}  (Carlos te contesta sobre una PROPUESTA de la lista de abajo en palabras normales: «sí mándalo», «sí pero más tranquilo», «dile que mañana», «a Ana dile que sí y a Beto que no». Escribe tú el texto final siguiendo lo que pidió (si sólo dice «sí», el texto de la propuesta tal cual), con la VOZ que trae esa propuesta ("voz"), y SE MANDA. Una acción por propuesta. «No le digas nada» = {"accion":"tirar","n":3})
+- {"accion":"tirar","n":3}
+- {"accion":"mayoreo","fuente":"Mayoreo","destino":"All's fashion","margen":250,"activo":true}  (las fotos que lleguen al grupo "fuente" se suben al banco con su precio de costo y se mandan solas, sin texto, al grupo "destino"; "margen" = cuánto se le suma al costo para el precio de venta)
+- {"accion":"tienda","chat":"All's fashion","si":true}  (en ese grupo contestas a las clientas precios y tallas del catálogo)
+- {"accion":"llamarme","activo":true}  (SÓLO si Carlos te pide con esas palabras que le marques por teléfono cuando algo importante necesite su decisión; no la pongas por tu cuenta)
+Habla con Carlos como un compa que trabaja con él, natural y corto: él no tiene que usar comandos exactos, tú entiendes qué quiere y lo haces. NUNCA digas que hiciste o vas a hacer algo que no pusiste en "acciones" (no digas «ya le marqué», «le puse la llamada» ni «quedan pendientes» si no es cierto): si no hay acción para eso, dile que no puedes. Tu "respuesta" es corta: lo que hiciste ya se lo enseña el programa debajo. Si te pregunta algo, contesta en "respuesta" (corto, mexicano, sin tecnicismos). Si pide algo que no puedes, díselo.
 Contesta SÓLO JSON: {"respuesta":"", "acciones":[]}`;
-    const t = `Chats que conozco: ${JSON.stringify(chats)}\nConfiguración actual: ${JSON.stringify(config)}${carpetas.length ? `\nCarpetas del banco de imágenes: ${JSON.stringify(carpetas)}` : ''}\n\nCarlos dice: ${texto}`;
+    const t = `Chats que conozco: ${JSON.stringify(chats)}\nConfiguración actual: ${JSON.stringify(config)}${carpetas.length ? `\nCarpetas del banco de imágenes: ${JSON.stringify(carpetas)}` : ''}${historiales.length ? `\nLO QUE HAN DICHO las personas que nombra (úsalo para contestarle; no digas «ahorita checo», aquí está): ${JSON.stringify(historiales)}` : ''}${propuestas.length ? `\nPROPUESTAS esperando su visto bueno (lo más nuevo al final): ${JSON.stringify(propuestas)}` : ''}${conocimiento ? `\nLo que sabes de sus negocios:\n${conocimiento}` : ''}\n\nCarlos dice: ${texto}`;
     const j = sacarJson(await preguntar(sistema, t, { tope: 4000, motor: MOTOR[quien] })) || {};
     return { respuesta: String(j.respuesta || ''), acciones: Array.isArray(j.acciones) ? j.acciones.slice(0, 80) : [] };
   },

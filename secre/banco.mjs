@@ -8,7 +8,7 @@
 
    El banco es el mismo de Presentaciones y Carteles: vive en La Sala
    (/api/sala/GRUPAZ/banco), con su título, descripción, temas, palabras clave
-   y carpeta por foto. Secre sólo LEE: no sube, no cambia, no borra.
+   y carpeta por foto. Secre LEE y, desde el 4 de noviembre, SUBE las fotos del grupo de Mayoreo. No cambia ni borra.
    ═════════════════════════════════════════════════════════════════════════ */
 const SALA = (process.env.SECRE_SALA_URL || 'https://sala.palomazi9111.workers.dev').replace(/\/+$/, '');
 const SALA_NOMBRE = process.env.SECRE_BANCO_SALA || process.env.SECRE_SALA || 'GRUPAZ';
@@ -54,6 +54,16 @@ export function bancoDeSala({ llave = process.env.SECRE_SALA_LLAVE || process.en
       if(!r.ok || !j.bien) throw new Error(j.error || `El banco contestó ${r.status}`);
       cache = j.fichas || []; cuando = Date.now();
       return cache;
+    },
+    /* 4 nov: Secre ya SUBE (las fotos del grupo de Mayoreo). Sigue sin cambiar ni borrar */
+    async subir({ buf, mime = 'image/jpeg', mini, ancho = 0, alto = 0, nombre = 'foto.jpg', huella = '', campos = {} }){
+      if(!llave) throw new Error('Para subir al banco hace falta SECRE_SALA_LLAVE.');
+      const r = await hacer(base, { method: 'POST', headers: { 'X-Llave': llave, 'content-type': 'application/json' }, signal: AbortSignal.timeout(90_000),
+        body: JSON.stringify({ accion: 'subir', mime: mime === 'image/jpg' ? 'image/jpeg' : mime, datos: buf.toString('base64'), mini: mini ? mini.toString('base64') : undefined, nombre, ancho, alto, huella, campos }) });
+      const j = await r.json().catch(() => ({}));
+      if(!r.ok || !j.bien) throw new Error(j.error || `El banco contestó ${r.status}`);
+      cache = null;
+      return j.ficha;
     },
     async bajar(id){
       const r = await hacer(`${base}?id=${encodeURIComponent(id)}`, { headers: { 'X-Llave': llave }, signal: AbortSignal.timeout(60_000) });

@@ -33,10 +33,14 @@
                  16 de octubre: «me gusta que la historia se desarrolle en
                  automático cuando yo no puedo»).
    ═════════════════════════════════════════════════════════════════════════ */
-import { llamar, llamadasListas } from './llamada.mjs';
+import { llamar, llamadasListas, twilioDe } from './llamada.mjs';
 import { HORARIOS, cualHorario, mensajesDeHorario } from './horarios.mjs';
 import { bancoDeSala, buscarFotos, nombreDe as nombreFoto, pieDe } from './banco.mjs';
-import { revisarRespuesta, leerPrecios, textoPrecio, enQueAnda } from './criterio.mjs';
+import { revisarRespuesta, leerPrecios, textoPrecio, enQueAnda, cantidades, enPrimeraPersona } from './criterio.mjs';
+import { leerCosto, leerTallas, leerDescripcion, precioVenta, huella, masParecido, miniatura, textoProducto } from './mayoreo.mjs';
+import { cargarConocimiento } from './conocimiento.mjs';
+/* lo que comparten las dos cuentas de Carlos (4 nov: «que el güey ya sepa todo en ambos lados») */
+const COMPARTIDO = ['datos', 'prohibidos', 'precios', 'productos', 'mayoreo', 'imitar'];
 
 export const MODOS = ['borrador', 'callado', 'auto'];
 const MIN = 60_000, HORA = 60 * MIN;
@@ -106,7 +110,8 @@ export function configBase(){
     esperaSiContesto: 0,
     caducan: 6,                    /* horas que vive una propuesta sin aprobar */
     /* el modo automático: cómo firma y cuántas veces contesta sola por chat */
-    auto: { firma: 'Asistente de Carlos', porHora: 20, alDia: 150, grupoPorHora: 30, grupoAlDia: 300 },
+    /* 4 nov: «quítale el límite de respuestas, la mayoría de gente se harta de hablar con un bot rápido» */
+    auto: { firma: 'Asistente de Carlos', porHora: 1000, alDia: 10000, grupoPorHora: 1000, grupoAlDia: 10000 },
     juntarMax: 25,                 /* aunque sigan escribiendo, a los 25 s contesta (grupos que no paran) */
     /* ── 4 de noviembre: la reestructura (Carlos: «se está comprometiendo a cosas sin preguntar») ──
        imitar: hacerse pasar por él (primera persona, sin firma). De fábrica NO: habla como su
@@ -115,6 +120,9 @@ export function configBase(){
     prohibidos: [],                /* { n, texto: 'no hablar de mi novia', palabras: ['novia'] } — se frena en código */
     precios: [],                   /* { nombre, precio, nota } — los únicos precios que puede decir */
     miHorario: '3.1',              /* su horario de clases: para no prometer nada mientras está en clase */
+    /* las fotos del grupo de Mayoreo → banco → grupo de All's, con precio de costo + margen */
+    mayoreo: { activo: false, fuente: '', destino: '', margen: 250 },
+    productos: [],                 /* { id, desc, costo, precio, tallas, huella, fotoId, t } — el costo NUNCA sale a un cliente */
   };
 }
 
@@ -190,11 +198,13 @@ export function finDe(x, ahora){
 }
 
 export class Secre {
-  constructor({ cuenta = 'principal', transporte, ia, almacen, reloj = () => Date.now(), azar = Math.random, telefono = null, banco = undefined }){
+  static hermanas = new Set();
+  constructor({ cuenta = 'principal', transporte, ia, almacen, reloj = () => Date.now(), azar = Math.random, telefono = null, banco = undefined, conocimiento = undefined, compartir = false }){
     /* telefono: { listas(), llamar({ a, texto }) } — por omisión, Twilio (llamada.mjs) */
-    Object.assign(this, { cuenta, transporte, ia, almacen, reloj, azar, telefono: telefono || { listas: () => llamadasListas(), llamar: (x) => llamar(x) } });
+    Object.assign(this, { cuenta, transporte, ia, almacen, reloj, azar, telefono: telefono || { listas: () => llamadasListas(), llamar: (x) => llamar(x), conversar: async ({ a, url }) => { try{ const sid = await twilioDe().llamar({ a, url }); return { bien: !!sid, id: sid }; }catch(e){ return { bien: false, error: e.message }; } } } });
     /* el banco de imágenes de La Sala; null = sin banco */
     this.banco = banco === undefined ? bancoDeSala() : banco;
+    this.conocimiento = conocimiento === undefined ? cargarConocimiento() : conocimiento;
     const guardada = almacen.leer('config', {});
     this.config = Object.assign(configBase(), guardada);
     /* las cuentas que ya estaban guardadas traen los valores viejos (45 s de espera,
@@ -208,6 +218,17 @@ export class Secre {
       if(typeof a.firma === 'string') a.firma = a.firma.replace(/^🤖\s*/, '');
       c.version = 2;
     }
+    if(Object.keys(guardada).length && (guardada.version || 1) < 3){
+      const a = this.config.auto || (this.config.auto = {});
+      Object.assign(a, { porHora: Math.max(a.porHora || 0, 1000), alDia: Math.max(a.alDia || 0, 10000), grupoPorHora: Math.max(a.grupoPorHora || 0, 1000), grupoAlDia: Math.max(a.grupoAlDia || 0, 10000) });
+      this.config.version = 3;
+    }
+    /* las dos cuentas de Carlos corren en el mismo proceso: lo compartido se junta al arrancar */
+    this.compartir = compartir;
+    if(compartir) for(const h of Secre.hermanas){ for(const k of COMPARTIDO){ const mio = this.config[k], suyo = h.config[k];
+      if(Array.isArray(mio) && Array.isArray(suyo)){ const vistos = new Set(suyo.map(x => JSON.stringify(x))); h.config[k] = [...suyo, ...mio.filter(x => !vistos.has(JSON.stringify(x)))]; }
+      else if(k === 'mayoreo' && mio && mio.activo && !(suyo && suyo.activo)) h.config[k] = mio; } }
+    if(compartir) Secre.hermanas.add(this);
     this.estado = Object.assign({
       historial: {},       /* jid → [{ de: 'el'|'yo', texto, t }] (los últimos 30) */
       estilo: [],          /* lo que Carlos escribe a mano: para que las propuestas suenen a él */
@@ -242,7 +263,11 @@ export class Secre {
     this.mandando = new Map();   /* jid|texto → cuándo: lo que Secre está mandando ahorita, para no confundir su eco con Carlos */
   }
 
-  guardar(){ this.almacen.guardar('config', this.config); this.almacen.guardar('estado', this.estado); }
+  guardar(){
+    /* lo compartido se copia a la otra cuenta en cada guardado (y ella lo guarda en su cajón) */
+    if(this.compartir) for(const h of Secre.hermanas) if(h !== this){ for(const k of COMPARTIDO) h.config[k] = this.config[k]; try{ h.almacen.guardar('config', h.config); }catch{} }
+    this.almacen.guardar('config', this.config); this.almacen.guardar('estado', this.estado);
+  }
   anotar(que){ this.estado.registro.push({ t: this.reloj(), que }); this.estado.registro = this.estado.registro.slice(-300); }
 
   /* ── quién es quién ── */
@@ -287,10 +312,15 @@ export class Secre {
     for(const x of lista.slice(0, 5000)){
       const id = String(x && x.id || ''), nombre = String(x && x.nombre || '').trim().slice(0, 100);
       if(!nombre || !/@(s\.whatsapp\.net|lid|g\.us)$/.test(id) || this.esMiChat(id)) continue;
-      if(x.lid && x.lid !== id) nombres[x.lid] = nombre;   /* por si escribe desde su LID */
+      if(x.lid && x.lid !== id){ nombres[x.lid] = nombre; (this.config.lids || (this.config.lids = {}))[x.lid] = id; }
       const ya = this.config.chats[id];
-      if(ya && ya.nombre) continue;
-      const c = this.chat(id); c.nombre = nombre; if(x.grupo || id.endsWith('@g.us')) c.grupo = true;
+      /* 4 nov: el nombre de SU AGENDA le gana al que la persona se puso en WhatsApp */
+      if(ya && ya.nombre && !(x.guardado && ya.nombre !== nombre && ya.fuente !== 'agenda')) continue;
+      const c = this.chat(id);
+      if(c.nombre && c.nombre !== nombre) c.alias = c.nombre;
+      if(x.alias && x.alias !== nombre) c.alias = String(x.alias).slice(0, 100);
+      c.nombre = nombre; if(x.guardado) c.fuente = 'agenda';
+      if(x.grupo || id.endsWith('@g.us')) c.grupo = true;
       nuevos++;
     }
     if(nuevos) this.guardar();
@@ -299,13 +329,33 @@ export class Secre {
   nombreDe(jid){ const c = this.config.chats[jid]; return (c && c.nombre) || String(jid).split('@')[0]; }
   /* «Ana», «ana p», «la de la escuela»… → el jid que más se parece */
   buscarChat(texto){
-    const q = sinAcentos(texto).replace(/^(a|al|a la|con|de)\s+/, '');
+    const q = sinAcentos(texto).replace(/^(a|al|a la|con|de|del)\s+/, '').replace(/[^a-z0-9ñ ]+/g, ' ').replace(/\s+/g, ' ').trim();
     if(!q) return null;
+    const limpio = (s) => sinAcentos(s).replace(/[^a-z0-9ñ ]+/g, ' ').replace(/\s+/g, ' ').trim();
     const lista = Object.entries(this.config.chats).filter(([, c]) => c.nombre);
-    return (lista.find(([, c]) => sinAcentos(c.nombre) === q)
-        || lista.find(([, c]) => sinAcentos(c.nombre).startsWith(q))
-        || lista.find(([, c]) => sinAcentos(c.nombre).split(/\s+/).some(w => w === q))
-        || lista.find(([j]) => j.startsWith(q.replace(/\D/g, '') || '¬')) || [null])[0];
+    /* 4 nov: Carlos los busca como los tiene en SU agenda; también vale el nombre de WhatsApp,
+       el número, y una falta de dedo (una letra de más o de menos) */
+    const parecida = (a, b) => { if(Math.abs(a.length - b.length) > 1 || a.length < 4) return false; let i = 0, j = 0, d = 0; while(i < a.length && j < b.length){ if(a[i] === b[j]){ i++; j++; continue; } if(++d > 1) return false; if(a.length > b.length) i++; else if(b.length > a.length) j++; else { i++; j++; } } return d + (a.length - i) + (b.length - j) <= 1; };
+    const qw = q.split(' ');
+    let mejor = null, pm = 0;
+    for(const [j, c] of lista){
+      for(const [n, peso] of [[limpio(c.nombre), 1], [limpio(c.alias || ''), .9]]){
+        if(!n) continue;
+        const ws = n.split(' ');
+        let p = 0;
+        if(n === q) p = 100;
+        else if(n.startsWith(q)) p = 80;
+        else if(qw.every(w => ws.some(x => x === w))) p = 70;
+        else if(qw.every(w => ws.some(x => x.startsWith(w)))) p = 60;
+        else if(n.includes(q) && q.length >= 3) p = 45;
+        else if(qw.every(w => ws.some(x => parecida(x, w)))) p = 35;
+        p *= peso; if(c.grupo) p -= 1;
+        if(p > pm){ pm = p; mejor = j; }
+      }
+    }
+    if(mejor) return mejor;
+    const num = q.replace(/\D/g, '');
+    return (num.length >= 6 && (lista.find(([j]) => j.split('@')[0].endsWith(num)) || [])[0]) || null;
   }
   esMiChat(jid){ return this.transporte.yo && this.transporte.yo().includes(jid); }
   esOtraCuenta(jid){ return !!(this.transporte.otrosYo && this.transporte.otrosYo().includes(jid)); }
@@ -370,13 +420,24 @@ export class Secre {
     }
     /* el eco de lo que mandó Secre (si el transporte no lo reconoció por su id) no es Carlos */
     if(m.mio && this.mandando.has(m.chat + '|' + m.texto)) return;
+    if(m.lid && this.config.lids && !this.config.lids[m.lid]) (this.config.lids || (this.config.lids = {}))[m.lid] = m.chat;
+    /* las fotos del grupo de Mayoreo: al banco y a All's, sin contestar nada ahí */
+    const MY = this.config.mayoreo || {};
+    if(MY.activo && m.chat === MY.fuente){ await this.recibirMayoreo(m); return; }
     const c = this.chat(m.chat);
+    if(!m.grupo && !m.mio && m.nombre && c.nombre && m.nombre !== c.nombre && !c.alias) c.alias = String(m.nombre).slice(0, 100);
+    /* ¿de qué producto preguntan? la foto que citaron (de las que mandó Secre) o la foto que mandaron */
+    if(!m.mio && (this.config.productos || []).length){
+      let prod = m.citado && (this.estado.fotoProducto || {})[m.citado];
+      if(!prod && m.imagen && m.imagen.bajar){ try{ const r = masParecido(this.config.productos, await huella(await m.imagen.bajar())); if(r) prod = r.producto.id; }catch(e){ this.anotar('no pude ver la foto que mandaron: ' + e.message); } }
+      if(prod) m = { ...m, producto: prod };
+    }
     /* en un grupo, el chat se llama como el grupo, no como quien escribió */
     const nc = m.grupo ? m.nombreChat : ((this.config.nombres || {})[m.chat] || m.nombre);
     if(nc && !c.nombre && (m.grupo || !m.mio)) c.nombre = nc;
     if(m.grupo) c.grupo = true;
     const h = this.estado.historial[m.chat] || (this.estado.historial[m.chat] = []);
-    h.push({ de: m.mio ? 'yo' : 'el', quien: m.grupo && !m.mio ? m.nombre || '' : '', texto: m.texto.slice(0, 2000), t: ahora });
+    h.push({ de: m.mio ? 'yo' : 'el', quien: m.grupo && !m.mio ? m.nombre || '' : '', texto: m.texto.slice(0, 2000), t: ahora, ...(m.producto ? { producto: m.producto } : {}) });
     this.estado.historial[m.chat] = h.slice(m.grupo ? -60 : -30);
     if(m.mio && m.grupo && m.sticker && m.sticker.b64) this.guardarSticker(m.chat, m.sticker);
     /* el elenco juega aparte: también cuando Carlos está jugando (son otros personajes).
@@ -423,6 +484,7 @@ export class Secre {
     await this.repaso(ahora);
     await this.programadosTic(ahora);
     await this.publicarTic(ahora);
+    await this.colaFotosTic();
     /* las propuestas viejas se tiran: contestar algo de hace 6 horas confunde */
     const antes = this.estado.propuestas.length;
     this.estado.propuestas = this.estado.propuestas.filter(p => ahora - p.t < this.config.caducan * HORA);
@@ -470,10 +532,17 @@ export class Secre {
     }
     let r = null;
     try{
-      r = await this.ia.leer({ fotos: fotos.map((f, i) => ({ n: i + 1, nombre: nombreFoto(f), descripcion: String(f.descripcion || '').slice(0, 160), carpeta: f.carpeta || '' })), dueno: this.config.nombre, nombre, nota: c.nota || '', historial: h, nuevos: paraIA.length ? paraIA : nuevos, estilo: this.estado.estilo.slice(-40), redactar: modo !== 'callado', auto: modo === 'auto', rol: modo === 'auto' && !!c.rol, ...this.rolDe(jid), stickers: (c.stickers || []).map(x => ({ n: x.n, cuando: x.cuando })), grupo, datos: this.datosVigentes().map(d => d.texto), imitar: this.imitaEn(jid), prohibidos: (this.config.prohibidos || []).map(x => x.texto), precios: (this.config.precios || []).map(textoPrecio), ahora: this.enQueAnda(), firma: this.confAuto().firma });
+      r = await this.ia.leer({ fotos: fotos.map((f, i) => ({ n: i + 1, nombre: nombreFoto(f), descripcion: String(f.descripcion || '').slice(0, 160), carpeta: f.carpeta || '' })), dueno: this.config.nombre, nombre, nota: c.nota || '', historial: h, nuevos: paraIA.length ? paraIA : nuevos, estilo: this.estado.estilo.slice(-40), redactar: modo !== 'callado', auto: modo === 'auto', rol: modo === 'auto' && !!c.rol, ...this.rolDe(jid), stickers: (c.stickers || []).map(x => ({ n: x.n, cuando: x.cuando })), grupo, datos: this.datosVigentes().map(d => d.texto), imitar: this.imitaEn(jid), prohibidos: (this.config.prohibidos || []).map(x => x.texto), precios: (this.config.precios || []).map(textoPrecio), ahora: this.enQueAnda(), firma: this.confAuto().firma,
+        conocimiento: this.conocimiento || '', tienda: !!c.tienda,
+        productos: [...new Set(h.slice(-12).map(x => x.producto).filter(Boolean))].map(id => (this.config.productos || []).find(p => p.id === id)).filter(Boolean).map(textoProducto),
+        abiertos: this.estado.pendientes.filter(p => !p.hecho && p.chat === jid).map(p => p.texto) });
     }catch(e){ r = null; if(process.env.SECRE_DEPURA) console.log("IAERR", e.stack); this.anotar(`la IA falló con ${nombre}: ${e.message}`); }
     if(r) r.elegidas = [...new Set((r.fotos || []).map(Number))].map(n => fotos[n - 1]).filter(Boolean).slice(0, 3);
     for(const p of (r && r.pendientes) || []) this.agregarPendiente(jid, nombre, p);
+    /* lo que ya se cumplió según la plática se tacha solo (4 nov: «él no sabe cuándo ya se completaron») */
+    for(const t of (r && r.hechos) || []){ const p = this.estado.pendientes.find(x => !x.hecho && x.chat === jid && sinAcentos(x.texto) === sinAcentos(t)); if(p){ p.hecho = true; p.solo = true; } }
+    /* las tareas de la escuela van a su sección, no a los pendientes */
+    for(const t of (r && r.tareas) || []) this.agregarTarea(jid, nombre, t);
     if(r && r.urgente && !esGrupo) await this.quizaLlamar(nombre, nuevos.slice(-2).map(x => x.texto).join(' / '), r.motivo);
     if(modo === 'auto' && r) return this.contestarSola(jid, nombre, paraIA.length ? paraIA : nuevos, r);
     /* sin IA no hay qué contestar sola: se le deja a Carlos, y a la persona se le
@@ -503,6 +572,61 @@ export class Secre {
     await this.avisar(`#${n} · ${nombre}${r && r.urgente ? ' ⚠️' : ''}: «${cita}»\n` +
       (propuesta ? `Propuesta: «${propuesta}»` + (conFotos.length ? `\n📷 + ${conFotos.length} foto(s): ${conFotos.map(f => nombreFoto(f)).join(', ')}` : '') + `\n→ «${n}» la manda · «${n} tu texto» manda el tuyo · «x${n}» la tira` : 'No supe qué contestarle: te toca.') +
       (r && r.motivo ? `\n(${r.motivo})` : '') + (freno ? `\n(No le contesté sola: ${freno}.)` : ''));
+    this.guardar();
+  }
+
+  /* ── Mayoreo → banco → All's (4 nov) ── */
+  async recibirMayoreo(m){
+    const MY = this.config.mayoreo, P = this.config.productos || (this.config.productos = []);
+    const ahora = this.reloj();
+    /* un texto suelto con precio justo después de unas fotos es el precio de esas fotos */
+    if(!m.imagen){
+      const costo = leerCosto(m.texto); if(!costo) return;
+      const lote = P.filter(p => p.lote === this.estado.loteMayoreo && !p.costo);
+      for(const p of lote){ p.costo = costo; p.precio = precioVenta(costo, MY.margen); const ts = leerTallas(m.texto); if(ts.length) p.tallas = ts; if(!p.desc) p.desc = leerDescripcion(m.texto); }
+      if(lote.length){ this.anotar(`Mayoreo: precio $${costo} a ${lote.length} foto(s)`); this.guardar(); }
+      return;
+    }
+    let buf; try{ buf = await m.imagen.bajar(); }catch(e){ this.anotar('Mayoreo: no pude bajar la foto: ' + e.message); return; }
+    if(!this.estado.loteMayoreoT || ahora - this.estado.loteMayoreoT > 3 * MIN) this.estado.loteMayoreo = 'L' + ahora.toString(36);
+    this.estado.loteMayoreoT = ahora;
+    const pie = m.imagen.pie || '', h = await huella(buf).catch(() => '');
+    const costo = leerCosto(pie);
+    let p = h && P.find(x => x.huella && masParecido([x], h, 4));
+    if(p){ if(costo){ p.costo = costo; p.precio = precioVenta(costo, MY.margen); } const ts = leerTallas(pie); if(ts.length) p.tallas = ts; this.guardar(); return; }   /* ya la teníamos: sólo se actualiza */
+    p = { id: 'p' + ahora.toString(36) + Math.floor(this.azar() * 1e4), desc: leerDescripcion(pie), costo, precio: precioVenta(costo, MY.margen), tallas: leerTallas(pie), huella: h, fotoId: '', lote: this.estado.loteMayoreo, t: ahora };
+    P.push(p); this.config.productos = P.slice(-3000);
+    if(this.banco && this.banco.subir){
+      try{ const { mini, ancho, alto } = await miniatura(buf);
+        const f = await this.banco.subir({ buf, mime: m.imagen.mime, mini, ancho, alto, nombre: (p.desc || 'mayoreo') + '.jpg', huella: 'mayoreo:' + h,
+          campos: { titulo: p.desc || '', carpeta: "All's fashion", temas: ['mayoreo'], notas: `costo $${p.costo || '?'} · venta $${p.precio || '?'}${p.tallas.length ? ' · tallas ' + p.tallas.join(', ') : ''}` } });
+        p.fotoId = f && f.id || ''; }
+      catch(e){ this.anotar('Mayoreo: no pude subirla al banco: ' + e.message); }
+    }
+    (this.estado.colaFotos || (this.estado.colaFotos = [])).push({ id: p.id, buf: buf.toString('base64'), mime: m.imagen.mime });
+    this.guardar();
+  }
+  /* manda a All's las fotos que van llegando, de a unas cuantas por vuelta (sin texto) */
+  async colaFotosTic(){
+    const MY = this.config.mayoreo || {}, Q = this.estado.colaFotos || [];
+    if(!MY.activo || !MY.destino || !Q.length) return;
+    for(const x of Q.splice(0, 3)){
+      try{ const id = await this.transporte.enviarImagen(MY.destino, Buffer.from(x.buf, 'base64'), x.mime, '');
+        if(id){ this.estado.enviados.push(id); (this.estado.fotoProducto || (this.estado.fotoProducto = {}))[id] = x.id; } }
+      catch(e){ this.anotar('Mayoreo: no pude mandar una foto a All\'s: ' + e.message); Q.push(x); break; }
+    }
+    const fp = this.estado.fotoProducto || {}, ks = Object.keys(fp); if(ks.length > 4000) for(const k of ks.slice(0, ks.length - 4000)) delete fp[k];
+    this.guardar();
+  }
+
+  /* ── una llamada de WhatsApp: no se puede contestar con voz; se rechaza y se le escribe ── */
+  async alLlamada({ de, video }){
+    if(!de || this.esMiChat(de) || this.esOtraCuenta(de)) return;
+    const nombre = this.nombreDe(de), f = this.firmaDe(de);
+    const txt = `Hola, ${this.config.nombre} no puede contestar llamadas ahorita. ¿Quién habla y para qué le marcas? Escríbeme aquí y se lo paso.`;
+    await this.mandar(de, f && !this.imitaEn(de) ? f + ' ' + txt : txt);
+    await this.avisar(`📞 Te ${video ? 'videollamó' : 'llamó'} ${nombre} por WhatsApp. Le colgué y le pregunté quién es y para qué; cuando conteste te digo.`);
+    (this.estado.encargos || (this.estado.encargos = [])).push({ chat: de, para: 'por qué te llamó', t: this.reloj() });
     this.guardar();
   }
 
@@ -611,8 +735,21 @@ export class Secre {
   /* dónde anda ahorita (para no prometer nada mientras está en clase) */
   enQueAnda(){ const t = this.reloj(); try{ return enQueAnda({ dia: diaMx(t), hora: horaMx(t), horario: this.config.miHorario }); }catch{ return ""; } }
   criterioDe(jid){
-    return { nombre: this.config.nombre, prohibidos: this.config.prohibidos || [], precios: this.config.precios || [], datos: this.datosVigentes().map(d => d.texto),
+    const prods = (this.config.productos || []).filter(p => p.precio);
+    return { nombre: this.config.nombre, prohibidos: this.config.prohibidos || [], precios: [...(this.config.precios || []), ...prods.map(p => ({ nombre: p.desc, precio: p.precio, nota: '' }))],
+      datos: [...this.datosVigentes().map(d => d.texto), this.conocimiento || ''], vetados: (this.config.productos || []).map(p => p.costo).filter(c => c && !prods.some(q => q.precio === c)),
       chat: (this.estado.historial[jid] || []).filter(x => !x.secre).map(x => x.texto).join('\n') };
+  }
+  /* pone la firma al inicio sin repetirla si la IA ya la escribió («Asistente de Carlos: Asistente de Carlos: …») */
+  firmar(firma, texto){
+    let t = String(texto || '').trim(); if(!firma) return t;
+    const base = sinAcentos(firma.replace(/[:\s]+$/, ''));
+    while(sinAcentos(t).startsWith(base)) t = t.slice(base.length).replace(/^[\s:,.-]+/, '');
+    return firma + ' ' + t;
+  }
+  /* al mandar una propuesta aprobada, el pendiente de CONTESTARLE ya quedó (llevar el proyecto, no) */
+  cerrarPendientesDe(p){
+    for(const x of this.estado.pendientes) if(!x.hecho && x.chat === p.chat && Math.abs((x.t || 0) - (p.t || 0)) < 5 * 60000 && /^(confirmar|contestar|responder|decirle|avisarle|dar respuesta)/.test(sinAcentos(x.texto))){ x.hecho = true; x.solo = true; }
   }
   firmaDe(jid){
     const c = this.config.chats[jid] || {}, A = this.confAuto();
@@ -636,7 +773,8 @@ export class Secre {
     const marca = this.rolDe(jid).marca;
     const resp = c.rol && !decide ? this.formatoRol({ ...c, marca }, r) : String(r.respuesta || '').trim();
     /* «dile a Carlos que me llame», «que me busque»: se le avisa DE VERDAD, al momento */
-    if(r.avisar){
+    /* si ya va a llegarle como «necesita tu decisión», no se le avisa dos veces */
+    if(r.avisar && !(r.decide || r.urgente)){
       await this.avisar(`📣 ${nombre} te busca: ${r.avisar}\n(dijo: «${nuevos.slice(-2).map(x => x.texto).join(' / ').slice(0, 200)}»)`);
       if(r.urgente) await this.quizaLlamar(nombre, r.avisar, 'te busca');
     }
@@ -647,7 +785,7 @@ export class Secre {
       let fueAudio = false;
       if(r.audio && !c.rol){ try{ await this.mandarAudio(jid, resp); fueAudio = true; }catch(e){ this.anotar('no pude grabar el audio: ' + e.message); } }
       /* con marca de personaje, la firma va al final para no romper «🌌⚛️- …» del primer renglón */
-      if(!fueAudio) await this.mandar(jid, !firma ? resp : (c.rol && marca && !decide) ? resp + ' ' + firma : firma + ' ' + resp);
+      if(!fueAudio) await this.mandar(jid, !firma ? resp : (c.rol && marca && !decide) ? resp + ' ' + firma : this.firmar(firma, resp));
       if(r.elegidas && r.elegidas.length) await this.mandarFotos(jid, r.elegidas);
       this.estado.autos[jid] = [...(this.estado.autos[jid] || []).filter(t => ahora - t < 24 * HORA), ahora];
       const hoy = fechaMx(ahora);
@@ -700,8 +838,24 @@ export class Secre {
     return d;
   }
 
+  /* 4 nov: «me pone muchos pendientes que no son pendientes reales o que ni tienen que ver conmigo» —
+     el segundo filtro, después del de la IA: fuera lo vago y lo que no hace él */
+  esPendienteDeVerdad(t){
+    const x = sinAcentos(t);
+    if(x.length < 8) return false;
+    if(/^(estar (al pendiente|atento)|revisar (el|los) (chat|mensaje)|contestar(le)? (el|al|a) (mensaje|chat)|responder(le)?( al)? mensaje|leer (el|los) mensaje|ver (que|qué) onda|seguir la (platica|conversacion)|saludar|platicar)/.test(x)) return false;
+    if(/^(que |ella |el |ellos |ellas )/.test(x)) return false;
+    return true;
+  }
+  agregarTarea(jid, nombre, t){
+    const que = String(t.que || '').trim(); if(!que) return;
+    const T = this.estado.tareas || (this.estado.tareas = []);
+    if(T.some(x => !x.hecho && sinAcentos(x.que) === sinAcentos(que))) return;
+    T.push({ n: (T.reduce((m, x) => Math.max(m, x.n), 0) + 1), materia: String(t.materia || '').slice(0, 60), que: que.slice(0, 300), para: String(t.para || '').slice(0, 10), chat: jid, de: nombre, t: this.reloj(), hecho: false });
+    this.estado.tareas = T.slice(-200);
+  }
   agregarPendiente(jid, nombre, texto){
-    const t = String(texto || '').trim(); if(!t) return;
+    const t = String(texto || '').trim(); if(!t || !this.esPendienteDeVerdad(t)) return;
     if(this.estado.pendientes.some(p => !p.hecho && p.chat === jid && sinAcentos(p.texto) === sinAcentos(t))) return;
     this.estado.pendientes.push({ n: this.estado.sigP++, chat: jid, nombre, texto: t.slice(0, 300), t: this.reloj(), hecho: false });
   }
@@ -849,7 +1003,9 @@ export class Secre {
     if(!this.telefono.listas()){ return; }
     this.estado.llamoT = ahora;
     const texto = `Hola ${this.config.nombre}, soy ${this.deTurno()}, tu asistente. ${nombre} te escribió algo urgente: ${String(dijo).slice(0, 300)}.` + (motivo ? ` ${motivo}.` : '') + ' Revisa tu WhatsApp.';
-    const r = await this.telefono.llamar({ a: this.numeroDeCarlos(), texto });
+    /* con el conmutador puesto, la llamada CONVERSA: le dice qué pasa y él contesta qué decirle a cada uno */
+    const base = (typeof process !== 'undefined' && (process.env.SECRE_URL || process.env.RENDER_EXTERNAL_URL) || '').replace(/\/+$/, '');
+    const r = this.telefono.conversar && base ? await this.telefono.conversar({ a: this.numeroDeCarlos(), url: base + '/voz/pendientes' }) : await this.telefono.llamar({ a: this.numeroDeCarlos(), texto });
     await this.avisar(r.bien ? `📞 Te llamé: ${nombre} escribió algo urgente.` : `📞 Quise llamarte por ${nombre} y no pude: ${r.error}`);
     this.guardar();
   }
@@ -900,7 +1056,7 @@ export class Secre {
       }
       if(!texto){ await this.avisar(`⏰ No pude escribir el mensaje programado de las ${p.hora} para ${this.nombreDe(p.chat)}.`); continue; }
       const firma = p.sinFirma ? '' : this.firmaDe(p.chat);
-      await this.mandar(p.chat, firma ? firma + ' ' + texto : texto);
+      await this.mandar(p.chat, this.firmar(firma, texto));
     }
   }
   async publicarTic(ahora){
@@ -1062,7 +1218,7 @@ export class Secre {
       const final = (m[2] || '').trim() || p.texto;
       if(!final) return this.avisar(`La #${m[1]} no trae texto: escribe «${m[1]} audio lo que quieras decir».`);
       try{ await this.mandarAudio(p.chat, final); }catch(e){ return this.avisar(`No pude grabar el audio: ${e.message}`); }
-      this.estado.propuestas = this.estado.propuestas.filter(x => x.n !== p.n); this.guardar();
+      this.estado.propuestas = this.estado.propuestas.filter(x => x.n !== p.n); this.cerrarPendientesDe(p); this.guardar();
       return this.avisar(`🎤 Listo, a ${p.nombre} en audio: «${final}»`);
     }
     /* ── el elenco del rol ──
@@ -1183,7 +1339,7 @@ export class Secre {
       const siempre = /^siempre\b[:\s]*/i.exec(m[2] || '');
       const final = (siempre ? (m[2].slice(siempre[0].length) || p.texto) : (m[2] || p.texto)).trim();
       if(!final) return this.avisar(`La #${m[1]} no trae texto: escribe «${m[1]} lo que quieras decir».`);
-      this.estado.propuestas = this.estado.propuestas.filter(x => x !== p);
+      this.estado.propuestas = this.estado.propuestas.filter(x => x !== p); this.cerrarPendientesDe(p);
       await this.mandar(p.chat, final);
       let extra = '';
       if(p.fotos && p.fotos.length){
@@ -1393,14 +1549,37 @@ export class Secre {
     if(a.esperar !== false){ (this.estado.encargos || (this.estado.encargos = [])).push({ chat: j, para: String(a.para || texto).slice(0, 200), t: this.reloj() }); this.estado.encargos = this.estado.encargos.slice(-50); }
     return `${a.audio ? '🎤 Le mandé audio' : 'Le escribí'} a ${this.nombreDe(j)}: «${texto.slice(0, 200)}»${a.esperar !== false ? ' — cuando conteste, te lo paso' : ''}`;
   }
+  /* «sí mándalo», «sí pero más tranquilo», «a Ana dile que mañana»: la IA ya escribió el texto final */
+  async responderPropuesta(a){
+    const p = this.estado.propuestas.find(x => x.n === +a.n); const texto = String(a.texto || '').trim();
+    if(!p) return `✗ No tengo la #${a.n} (o ya caducó).`;
+    if(!texto) return '';
+    if(p.tipo === 'saludo'){ /* los saludos se mandan igual que una respuesta */ }
+    /* si lo que aprobó va con sus palabras, en primera persona («sí voy»), son SUYAS: sin firma de
+       asistente, que «Asistente de Carlos: sí voy» no tiene pies ni cabeza */
+    const f = this.firmaDe(p.chat), final = !this.imitaEn(p.chat) && !enPrimeraPersona(texto, this.config.nombre) ? this.firmar(f, texto) : texto;
+    try{ await this.mandar(p.chat, final); }catch(e){ return `✗ No pude mandarle a ${p.nombre}: ${e.message}`; }
+    this.estado.propuestas = this.estado.propuestas.filter(x => x !== p); this.cerrarPendientesDe(p);
+    this.bitacora(p.chat, p.nombre, [{ texto: p.dijo || '' }], 'contesto', texto, 'lo aprobaste en palabras normales');
+    return `A ${p.nombre}: «${texto.slice(0, 300)}»`;
+  }
   async ordenLibre(texto){
     let r;
     let carpetas = [];
     if(this.banco && (this.banco.listo ? this.banco.listo() : true)){ try{ carpetas = [...new Set((await this.banco.fichas()).map(f => f.carpeta).filter(Boolean))].slice(0, 60); }catch{} }
-    try{ r = await this.ia.orden({ carpetas, quien: this.deTurno(), texto, ahora: this.reloj(), hoy: fechaMx(this.reloj()), hora: horaMx(this.reloj()), chats: Object.entries(this.config.chats).filter(([, c]) => c.nombre).map(([j, c]) => ({ id: j, nombre: c.nombre, modo: c.modo || '', etiquetas: c.etiquetas || [] })), config: this.resumenConfig() }); }
+    const propuestas = this.estado.propuestas.slice(-10).map(p => ({ n: p.n, a: p.nombre, dijo: p.dijo, propuesta: p.texto, motivo: p.motivo, voz: this.imitaEn(p.chat) ? 'como Carlos, en primera persona' : 'como su asistente: de Carlos en tercera persona ("Carlos dice que sí va")' }));
+    /* «qué nos ha dicho la tía Rosa»: lo que dijo la gente que nombra va en la orden (4 nov) */
+    const t0 = sinAcentos(texto), mencion = [];
+    for(const [j, c] of Object.entries(this.config.chats)){
+      if(!c.nombre || !(this.estado.historial[j] || []).length) continue;
+      const ws = sinAcentos(c.nombre).replace(/[^a-z0-9ñ ]+/g, ' ').split(/\s+/).filter(w => w.length >= 4 && !/^(grupo|clientas|fashion|taller)$/.test(w));
+      if(t0.includes(sinAcentos(c.nombre)) || ws.some(w => new RegExp('\\b' + w + '\\b').test(t0))) mencion.push(j);
+    }
+    const historiales = mencion.slice(0, 3).map(j => ({ chat: this.nombreDe(j), ultimos: (this.estado.historial[j] || []).slice(-15).map(x => `${x.secre ? 'Tú (asistente)' : x.de === 'yo' ? 'Carlos' : (x.quien || this.nombreDe(j))} (${horaMx(x.t)}): ${x.texto}`) }));
+    try{ r = await this.ia.orden({ historiales, propuestas, conocimiento: this.conocimiento || '', carpetas, quien: this.deTurno(), texto, ahora: this.reloj(), hoy: fechaMx(this.reloj()), hora: horaMx(this.reloj()), chats: Object.entries(this.config.chats).filter(([, c]) => c.nombre).map(([j, c]) => ({ id: j, nombre: c.nombre, modo: c.modo || '', etiquetas: c.etiquetas || [] })), config: this.resumenConfig() }); }
     catch(e){ return this.avisar('No te entendí (y la IA no contestó). Escribe «ayuda» para ver lo que sé hacer.'); }
     const hechos = [];
-    for(const a of (r && r.acciones) || []){ const h = a && a.accion === 'mensaje' ? await this.encargo(a) : this.aplicar(a); if(h) hechos.push(h); }
+    for(const a of (r && r.acciones) || []){ const h = a && a.accion === 'mensaje' ? await this.encargo(a) : a && a.accion === 'responder' ? await this.responderPropuesta(a) : this.aplicar(a); if(h) hechos.push(h); }
     this.guardar();
     const dice = (r && r.respuesta) || '';
     return this.avisar([dice, ...hechos.map(h => '✓ ' + h)].filter(Boolean).join('\n') || 'No te entendí. Escribe «ayuda».');
@@ -1533,6 +1712,17 @@ export class Secre {
         if(a.fijo !== undefined) T.fijo = valido(a.fijo);
         return T.fijo ? `De guardia fija: ${T.fijo}` : T.activo ? `Turnos de ${T.horas} h entre ${T.quienes.join(', ')} · ahorita le toca a ${this.deTurno()}` : 'Sin turnos: sólo Secre';
       }
+      case 'mayoreo': {
+        const M = this.config.mayoreo = Object.assign({ activo: false, fuente: '', destino: '', margen: 250 }, this.config.mayoreo || {});
+        if(a.fuente){ const j = chatDe(a.fuente); if(!j) return `✗ No encontré el grupo «${a.fuente}»`; M.fuente = j; }
+        if(a.destino){ const j = chatDe(a.destino); if(!j) return `✗ No encontré el grupo «${a.destino}»`; M.destino = j; this.chat(j).tienda = true; if(!this.chat(j).modo) this.chat(j).modo = 'auto'; }
+        if(a.margen !== undefined && +a.margen >= 0 && +a.margen <= 5000){ M.margen = Math.round(+a.margen); for(const p of this.config.productos || []) if(p.costo) p.precio = precioVenta(p.costo, M.margen); }
+        if(a.activo !== undefined) M.activo = !!a.activo;
+        return M.activo && M.fuente && M.destino ? `Las fotos de ${this.nombreDe(M.fuente)} se suben al banco y se mandan solas a ${this.nombreDe(M.destino)}, sin texto. Precio de venta = costo + $${M.margen}` : 'Mayoreo: ' + (M.activo ? 'falta decirme de qué grupo a qué grupo' : 'apagado');
+      }
+      case 'tienda': { const j = chatDe(a.chat); if(!j) return ''; const c = this.chat(j); c.tienda = a.si !== false; if(c.tienda && !c.modo) c.modo = 'auto'; return c.tienda ? `En ${this.nombreDe(j)} contesto precios y tallas a las clientas` : `En ${this.nombreDe(j)} ya no contesto como tienda`; }
+      case 'tirar': { const antes = this.estado.propuestas.length; this.estado.propuestas = this.estado.propuestas.filter(p => p.n !== +a.n); return antes === this.estado.propuestas.length ? '' : `Tirada la #${a.n}: no le digo nada`; }
+      case 'llamarme': { const L = this.config.llamar = Object.assign({ activo: false, tel: '', desde: '08:00', hasta: '23:00' }, this.config.llamar || {}); L.activo = a.activo !== false; return L.activo ? 'Te marco cuando algo importante necesite tu decisión' : 'Ya no te marco'; }
       case 'imitar': {
         if(a.chat){ const j = chatDe(a.chat); if(!j) return ''; this.chat(j).imitar = a.si !== false; return a.si !== false ? `Con ${this.nombreDe(j)} me hago pasar por ti (sin firma)` : `Con ${this.nombreDe(j)} hablo como tu asistente`; }
         this.config.imitar = a.si !== false;

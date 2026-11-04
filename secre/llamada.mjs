@@ -59,3 +59,27 @@ export async function llamar({ a, texto }, env = process.env, hacer = fetch){
     return { bien: true, id: j.sid || '' };
   }catch(e){ return { bien: false, error: 'No pude llamar: ' + (e && e.message || e) }; }
 }
+
+/* ── 4 nov: las llamadas que CONVERSAN (el conmutador). Una llamada que pide sus
+   instrucciones a una dirección nuestra (Url) y avisa si no contestan (StatusCallback),
+   y cambiar lo que está pasando en una llamada viva (POST Calls/{Sid} con Twiml). ── */
+const autoriz = (env) => 'Basic ' + Buffer.from(`${env.TWILIO_ACCOUNT_SID}:${env.TWILIO_AUTH_TOKEN}`).toString('base64');
+export function twilioDe(env = process.env, hacer = fetch){
+  const base = () => `https://api.twilio.com/2010-04-01/Accounts/${encodeURIComponent(env.TWILIO_ACCOUNT_SID)}/Calls`;
+  return {
+    listo: () => llamadasListas(env),
+    async llamar({ a, url, estado }){
+      if(!llamadasListas(env)) throw new Error('faltan las llaves de Twilio');
+      const to = aTelefono(a); if(!to) throw new Error('sin número');
+      const b = new URLSearchParams({ To: to, From: env.TWILIO_FROM, Url: url, Method: 'POST', Timeout: '25' });
+      if(estado){ b.set('StatusCallback', estado); b.set('StatusCallbackMethod', 'POST'); for(const e of ['completed', 'busy', 'no-answer', 'failed', 'canceled']) b.append('StatusCallbackEvent', e); }
+      const r = await hacer(base() + '.json', { method: 'POST', headers: { authorization: autoriz(env), 'content-type': 'application/x-www-form-urlencoded' }, body: b.toString(), signal: AbortSignal.timeout(30_000) });
+      const j = await r.json().catch(() => ({})); if(!r.ok) throw new Error(`Twilio ${r.status}: ${String(j.message || '').slice(0, 120)}`);
+      return j.sid || '';
+    },
+    async cambiar(sid, twiml){
+      const r = await hacer(`${base()}/${encodeURIComponent(sid)}.json`, { method: 'POST', headers: { authorization: autoriz(env), 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ Twiml: twiml }).toString(), signal: AbortSignal.timeout(30_000) });
+      if(!r.ok) throw new Error(`Twilio ${r.status}`);
+    },
+  };
+}

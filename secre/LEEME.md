@@ -153,6 +153,31 @@ Para cuando no puedes tomar el teléfono en el día. En un chat en automático:
 Lo mismo se hace con botones en **el panel** (una página para el teléfono, con contraseña):
 *Por mandar*, *Pendientes*, *Chats*, *Saludos* y *Platica*.
 
+## Lo nuevo del 4 de noviembre
+
+- **Tus contactos con el nombre de tu agenda.** «Pregúntale a Beto Taller» encuentra a Beto aunque en WhatsApp se llame distinto; también entiende un apodo o un error de dedo.
+- **Mayoreo → All's.** Dile por WhatsApp «las fotos de Mayoreo pásalas a All's con 250». Cada foto que llegue a ese grupo se sube al banco con su costo, y se manda sola, sin texto, a All's. Cuando una clienta pregunte por una foto (citándola o reenviándola), contesta con el precio de venta (costo + 250) y las tallas. **El costo nunca sale.**
+- **Lo que sabe de tus negocios** vive en `conocimiento/` (Grupo Mazi con precios, All's, Geraldmed y tú). Si preguntan por nuestra página: «está en reforma».
+- **No te compromete ni te echa la culpa.** Si la IA escribe «sí voy», «él la dejó» o un precio que no está en tu lista, no se manda: te llega con número para que decidas.
+- **«No digas X»** se guarda y se revisa en código antes de mandar cualquier cosa.
+- **Le hablas normal:** «sí dile pero más tranquilo», «qué nos ha dicho mi tía hoy», «pregúntale a Beto si va el sábado» (y cuando Beto conteste, te lo pasa).
+- **Las dos cuentas comparten memoria**: lo que le cuentas en una lo sabe en la otra.
+- **Pendientes de verdad:** sólo anota lo que te toca hacer a ti, y lo tacha cuando ve que ya se hizo. Las tareas de la escuela van aparte.
+- **Sin topes de respuestas.**
+- **Llamadas de WhatsApp:** WhatsApp no deja contestar con voz desde un bot. Secre cuelga, le escribe a quien llamó «¿quién eres y para qué?», te avisa y te pasa lo que diga.
+
+### Lo que falta que pongas tú
+
+**Llamadas de teléfono normales (Twilio).** Para que conteste tu línea y te marque:
+1. Cuenta en twilio.com y un número.
+2. En Render, en las variables: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` (el número de Twilio) y `SECRE_URL` (la dirección de Secre en Render).
+3. En el número de Twilio, «A call comes in» → `https://<tu-secre>.onrender.com/voz/entra`.
+4. En tu teléfono, desvío de llamadas **cuando no contestas / ocupado** al número de Twilio (con Telcel: `**61*<número>#`).
+
+Qué hace: contesta, pregunta quién y para qué, dice que va a ver si Eduardo está, los pone en espera y te marca: «te llama X por Y, ¿contestas tú o le digo algo?». Si es spam, lo albura y le dice que mande WhatsApp. Si algo importante necesita tu decisión, te marca a ti.
+
+**Instagram y Facebook (Meta).** Cuenta profesional, una app en developers.facebook.com con `instagram_business_manage_messages`, y en Render: `IG_ID`, `IG_TOKEN`, `META_VERIFY_TOKEN`, `META_APP_SECRET` (y `FB_PAGE_TOKEN` para Facebook). El webhook es `https://<tu-secre>.onrender.com/meta`. Meta sólo deja contestar en las 24 horas después de que te escriben. **LinkedIn no se puede**: sólo deja a sus socios.
+
 ## Prenderla gratis, sin compu (Render)
 
 Desde el iPhone: **Central → Secre** y sigue los pasos. En corto:

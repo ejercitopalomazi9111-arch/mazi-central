@@ -22,6 +22,8 @@ import fs from 'fs'; import path from 'path'; import http from 'http'; import cr
 import { Secre, AYUDA, configBase } from './nucleo.mjs';
 import { faltaParaLlamar } from './llamada.mjs';
 import { esMeta, enviarMeta, leerAviso, verificar, firmaValida, nombreMeta, canalesMeta } from './meta.mjs';
+import { conmutador, firmaValida as firmaTwilioValida } from './conmutador.mjs';
+import { twilioDe } from './llamada.mjs';
 const FALSO = !!process.env.SECRE_FALSO;
 const { ia } = await import(FALSO ? './falso.mjs' : './ia.mjs');
 
@@ -73,7 +75,7 @@ async function prender(c){
     /* los números de sus OTRAS cuentas: dos Secres no se contestan entre ellas */
     otrosYo: () => Object.entries(vivas).filter(([k, x]) => k !== c.id && x.transporte).flatMap(([, x]) => x.transporte.yo()),
     escribiendo: (j, ms) => esMeta(j) ? null : v.transporte.escribiendo(j, ms), leido: (j) => esMeta(j) ? null : v.transporte.leido(j) };
-  v.secre = new Secre({ cuenta: c.id, transporte: puente, ia, almacen });
+  v.secre = new Secre({ cuenta: c.id, transporte: puente, ia, almacen, compartir: true });
   /* con qué número se pide el código: el de SECRE_CUENTAS, o el que se eligió en el panel
      (en México WhatsApp puede tener la cuenta como 52… o como 521…) */
   v.almacen = almacen;
@@ -82,6 +84,7 @@ async function prender(c){
     v.transporte = await conectar({ dir: path.join(dir, 'sesion'), auth, telefono: numero,
       alMensaje: (m) => v.secre.alMensaje(m).catch(e => console.error(`[${c.id}]`, e.message)),
       alContactos: (l) => { try{ v.secre.cargarContactos(l); }catch(e){ console.error(`[${c.id}]`, e.message); } },
+      alLlamada: (e) => v.secre && v.secre.alLlamada(e),
       alEstado: (e) => {
         v.estado = { ...v.estado, ...e };
         if(e.codigo){ console.log(`\n📱 [${c.id}] Código para vincular: ${e.codigo}\n   WhatsApp → Dispositivos vinculados → Vincular con número de teléfono\n`); v.estado.error = ''; }
@@ -151,6 +154,18 @@ http.createServer(async (req, res) => {
     const segura = req.headers['x-forwarded-proto'] === 'https' ? '; Secure' : '';
     res.writeHead(200, { 'content-type': 'application/json', 'set-cookie': `secre=${tok}; HttpOnly; SameSite=Strict; Path=/; Max-Age=2592000${segura}` });
     return res.end('{"bien":true}');
+  }
+  /* el conmutador de llamadas (Twilio): contesta por Carlos, lo pone en espera y le marca */
+  if(url.pathname.startsWith('/voz/') && req.method === 'POST'){
+    const crudo = await new Promise(r => { const p = []; req.on('data', d => p.push(d)); req.on('end', () => r(Buffer.concat(p).toString('utf8'))); });
+    const params = Object.fromEntries(new URLSearchParams(crudo));
+    const BASE = (process.env.SECRE_URL || process.env.RENDER_EXTERNAL_URL || '').replace(/\/+$/, '');
+    if(!firmaTwilioValida(process.env.TWILIO_AUTH_TOKEN, BASE + req.url, params, req.headers['x-twilio-signature'])){ res.writeHead(403); return res.end(); }
+    const v = vivas[process.env.SECRE_CUENTA_TELEFONO] || Object.values(vivas)[0];
+    if(!v || !v.secre){ res.writeHead(200, { 'content-type': 'text/xml' }); return res.end('<Response><Hangup/></Response>'); }
+    const C = v.conmutador || (v.conmutador = conmutador({ ia, twilio: twilioDe(), secre: v.secre, base: BASE, carlos: v.secre.numeroDeCarlos(), desde: process.env.TWILIO_FROM }));
+    const x = await C.atender(url.pathname, params, Object.fromEntries(url.searchParams));
+    res.writeHead(200, { 'content-type': 'text/xml' }); return res.end(x);
   }
   /* Instagram y Messenger: Meta avisa aquí (GET = verificación, POST = mensajes firmados) */
   if(url.pathname === '/meta'){
