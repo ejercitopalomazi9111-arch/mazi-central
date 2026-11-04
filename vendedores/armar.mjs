@@ -24,6 +24,8 @@ const VIDEOS = [
   ['13-en-movimiento', 'En movimiento', 'Para presumir animación'],
   ['16-grupo-mazi', 'Grupo Mazi · de un dibujo a lo real', 'El de 2 minutos'],
 ];
+/* videos de clientes: se suben igual pero NO salen en la página de vendedores (el link se le pasa a Carlos) */
+const CLIENTES = [['18-geraldmed-tu-evento'], ['19-geraldmed-pie-tierra'], ['20-geraldmed-ambulancia'], ['21-geraldmed-elegidos']];
 const DEMOS = [
   ['Barberías · las 4 juntas', '/barberias/', 'Para que el barbero escoja nivel'],
   ['Barbería Esencial · Don Chuy', '/barberias/sencilla/', 'Desde $2,000'],
@@ -37,7 +39,7 @@ const DEMOS = [
 ];
 
 if (process.argv.includes('--videos')) {
-  for (const [id] of VIDEOS) {
+  for (const [id] of [...VIDEOS, ...CLIENTES]) {
     const src = path.join(RAIZ, 'marca/anuncios/salida', id + '.mp4'), out = path.join(AQUI, 'videos', id + '.mp4');
     if (!fs.existsSync(src)) { console.log('· falta', id); continue; }
     /* un video armado antes del último cambio al cierre del logo todavía trae el logo viejo: no se sube */
