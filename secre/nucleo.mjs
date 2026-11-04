@@ -696,7 +696,7 @@ export class Secre {
     const C = this.config.campana || {}, E = this.estado.campana || {}, MY = this.config.mayoreo || {}, H = this.estado.histMayoreo || {};
     return { cuenta: this.cuenta, version: this.config.version,
       campana: { activo: !!C.activo, porDia: C.porDia, hoy: E.hoy || 0, total: Object.values(E.hechos || {}).filter(x => x.jid).length, revisados: Object.keys(E.hechos || {}).length, proxima: E.proxima || 0, motivo: E.motivo || '' },
-      mayoreo: { activo: !!MY.activo, fuente: !!MY.fuente, destino: !!MY.destino, duena: MY.duena || '', historico: !!MY.historico, pedidas: H.pedidas || 0, sinAvance: H.sinAvance || 0, enFuente: this.estado.enFuente ?? null, enDestino: this.estado.enDestino ?? null, ancla: !!(H.ancla && H.ancla.key), manda: MY.manda || '', recibidos: H.recibidos || 0, prendas: (this.config.productos || []).length, enCola: (this.estado.colaFotos || []).length, mandadas: (this.estado.envioMayoreo || {}).total || 0 },
+      mayoreo: { activo: !!MY.activo, fuente: !!MY.fuente, destino: !!MY.destino, duena: MY.duena || '', historico: !!MY.historico, pedidas: H.pedidas || 0, sinAvance: H.sinAvance || 0, enFuente: this.estado.enFuente ?? null, enDestino: this.estado.enDestino ?? null, ancla: !!(H.ancla && H.ancla.key), manda: MY.manda || '', recibidos: H.recibidos || 0, prendas: (this.config.productos || []).length, enCola: (this.estado.colaFotos || []).length, mandadas: (this.estado.envioMayoreo || {}).total || 0, grupos: this.estado.gruposMayoreo || [] },
       fallas: this.ultimaFalla || {}, registro: (this.estado.registro || []).slice(-8).map(x => x.que).filter(q => /campa|mayoreo|fall|no pude/i.test(q)) };
   }
   /* ── la campaña a negocios sin página: pocos al día, en horario, desde la cuenta del negocio ── */
@@ -742,7 +742,7 @@ export class Secre {
     const total = Object.values(E.hechos).filter(x => x.jid).length;
     if(E.hoy === 1) await this.avisar(`📣 Campaña: arranqué la de hoy con ${c.nombre}. Hoy van a ser ${C.porDia || 25}, uno cada ${C.minEntre}-${C.maxEntre} min. Los que contesten los atiendo yo y te aviso.`);
     if(E.hoy >= (C.porDia || 25)) await this.avisar(`📣 Campaña: hoy les escribí a ${E.hoy} negocios (llevamos ${total} de ${lista.length}). Mañana sigo.`);
-    this.guardar(); if(duena !== this) duena.guardar();
+    this.guardar();
   }
   /* encuentra los grupos por su nombre y, la primera vez, baja TODO el historial de fotos del grupo de Mayoreo */
   async mayoreoTic(){
@@ -759,6 +759,20 @@ export class Secre {
           /* ¿esta cuenta está en cada grupo? decide cuál recibe y cuál manda */
           this.estado.enFuente = !!MY.fuente && gs.some(g => g.id === MY.fuente);
           this.estado.enDestino = !!MY.destino && gs.some(g => g.id === MY.destino);
+          /* 4 nov: el grupo guardado era uno donde ya no está NINGUNA de las dos cuentas, y Mayoreo se quedó
+             esperando para siempre. Si ninguna lo ve, se vuelve a buscar por nombre (o el único con «mayoreo») */
+          this.estado.gruposMayoreo = gs.filter(g => /mayoreo|shop/i.test(g.nombre || '')).map(g => g.nombre).slice(0, 8);
+          const h = MY.duena && MY.duena !== this.cuenta ? this.hermana(MY.duena) : null;
+          if(MY.fuente && !this.estado.enFuente && (!h || h.estado.enFuente === false)){
+            const conMayoreo = gs.filter(g => /mayoreo/i.test(g.nombre || ''));
+            const otro = gs.find(g => mismoGrupo(g.nombre, MY.fuenteNombre)) || (conMayoreo.length === 1 ? conMayoreo[0] : null);
+            if(otro && otro.id !== MY.fuente){
+              this.anotar(`Mayoreo: ninguna cuenta está en ${this.nombreDe(MY.fuente)}; ahora el proveedor es ${otro.nombre}`);
+              MY.fuente = otro.id; MY.duena = this.cuenta; MY.historico = true;
+              this.estado.enFuente = true; this.estado.histMayoreo = null;
+              this.chat(otro.id).nombre = otro.nombre; this.chat(otro.id).grupo = true;
+            }
+          }
           this.guardar();
         }catch(e){ this.anotar('no pude ver los grupos: ' + e.message); }
       }
