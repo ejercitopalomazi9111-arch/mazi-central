@@ -41,7 +41,7 @@ export function textoDe(msg){
 /* conecta UNA cuenta. Devuelve el transporte que usa el núcleo.
    alMensaje(m) recibe { id, chat, de, nombre, texto, mio, grupo, t }
    alEstado(e) recibe { conectado, codigo, error } para el panel */
-export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () => {}, alContactos = () => {}, registro = 'warn' }){
+export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () => {}, alContactos = () => {}, alLlamada = () => {}, registro = 'warn' }){
   const logger = pino({ level: registro });
   /* `auth` viene de nube.mjs cuando el disco no sobrevive a un reinicio (servidor gratis) */
   const { state, saveCreds } = auth || await useMultiFileAuthState(dir);
@@ -80,7 +80,10 @@ export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () =
     sock.ev.on('creds.update', saveCreds);
     /* los contactos y grupos de Carlos, para que Secre los conozca aunque no le
        hayan escrito (16 de octubre: «carga todos los contactos a Secre») */
-    const deContacto = (x) => ({ id: x.phoneNumber || x.id, lid: x.lid || (String(x.id).endsWith('@lid') ? x.id : ''), nombre: x.name || x.notify || x.verifiedName || x.username || '' });
+    /* ⚠ 4 nov (Carlos: «yo a mis contactos los tengo guardados de una manera y él los tiene con el
+       nombre base de WhatsApp»): `name` es como ÉL lo guardó en su agenda; `notify` es el que la
+       persona se puso. Se mandan los dos y el núcleo prefiere el de la agenda siempre. */
+    const deContacto = (x) => ({ id: x.phoneNumber || x.id, lid: x.lid || (String(x.id).endsWith('@lid') ? x.id : ''), nombre: x.name || x.notify || x.verifiedName || x.username || '', guardado: !!x.name, alias: x.notify || x.verifiedName || '' });
     const avisarContactos = (lista) => { const l = (lista || []).map(deContacto).filter(x => x.id && x.nombre); if(l.length) try{ alContactos(l); }catch{} };
     sock.ev.on('contacts.upsert', avisarContactos);
     sock.ev.on('contacts.update', avisarContactos);
@@ -112,6 +115,15 @@ export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () =
         setTimeout(() => arrancar().catch(e => alEstado({ conectado: false, error: e.message })), 3000);
       }
     });
+    /* llamadas de WhatsApp: Baileys no puede contestarlas con voz (sólo rechazar). Se rechaza
+       y el núcleo le escribe a quien llamó para saber quién es y qué quiere (4 nov) */
+    sock.ev.on('call', async (llamadas) => {
+      for(const c of llamadas || []){
+        if(c.status !== 'offer') continue;
+        try{ await sock.rejectCall(c.id, c.from); }catch{}
+        try{ await alLlamada({ de: jidNormalizedUser(c.from), video: !!c.isVideo, t: Date.now() }); }catch{}
+      }
+    });
     sock.ev.on('messages.upsert', async ({ messages, type }) => {
       for(const msg of messages || []){
         try{
@@ -123,8 +135,18 @@ export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () =
           if(type !== 'notify' && Date.now() - t > 2 * 60_000) continue;
           const texto = textoDe(msg);
           if(!texto) continue;
-          const chat = jidNormalizedUser(k.remoteJid);
+          /* WhatsApp ya manda muchos chats con un LID (un id que esconde el número). La agenda
+             viene por número, así que se usa el número cuando Baileys lo trae (remoteJidAlt) */
+          const alt = k.remoteJidAlt && /@s\.whatsapp\.net$/.test(k.remoteJidAlt) ? k.remoteJidAlt : '';
+          const chat = jidNormalizedUser(String(k.remoteJid).endsWith('@lid') && alt ? alt : k.remoteJid);
           const grupo = isJidGroup(chat);
+          const cont = normalizeMessageContent(msg.message) || {};
+          /* una foto: no se baja hasta que alguien la necesita (Mayoreo, o preguntan precio de una) */
+          const im = cont.imageMessage;
+          const imagen = im ? { mime: im.mimetype || 'image/jpeg', pie: im.caption || '', bajar: () => downloadMediaMessage(msg, 'buffer', {}) } : null;
+          /* si contestan citando un mensaje (la foto de un producto), cuál era */
+          const ctx = (cont[getContentType(cont)] || {}).contextInfo || {};
+          const citado = ctx.stanzaId || '';
           if(!k.fromMe) ultimas.set(chat, [...(ultimas.get(chat) || []), k].slice(-10));
           let nombre = msg.pushName || '';
           if(grupo){
@@ -145,7 +167,7 @@ export async function conectar({ dir, auth, telefono, alMensaje, alEstado = () =
             const buf = await downloadMediaMessage(msg, 'buffer', {}).catch(() => null);
             if(buf && buf.length <= 8_000_000) audio = { b64: buf.toString('base64'), mime: au.mimetype || 'audio/ogg', segundos: Number(au.seconds || 0) };
           }
-          await alMensaje({ id: k.id, chat, de: grupo ? (k.participantAlt || k.participant || '') : chat, nombre, nombreChat: grupo ? grupos.get(chat) : nombre, texto, mio: !!k.fromMe, grupo, t, sticker, audio });
+          await alMensaje({ id: k.id, chat, de: grupo ? (k.participantAlt || k.participant || '') : chat, nombre, nombreChat: grupo ? grupos.get(chat) : nombre, texto, mio: !!k.fromMe, grupo, t, sticker, audio, imagen, citado, lid: String(k.remoteJid).endsWith('@lid') ? jidNormalizedUser(k.remoteJid) : '' });
         }catch(e){ logger.warn({ err: e.message }, 'secre: mensaje que no pude leer'); }
       }
     });

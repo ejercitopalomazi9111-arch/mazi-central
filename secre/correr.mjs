@@ -82,6 +82,7 @@ async function prender(c){
     v.transporte = await conectar({ dir: path.join(dir, 'sesion'), auth, telefono: numero,
       alMensaje: (m) => v.secre.alMensaje(m).catch(e => console.error(`[${c.id}]`, e.message)),
       alContactos: (l) => { try{ v.secre.cargarContactos(l); }catch(e){ console.error(`[${c.id}]`, e.message); } },
+      alLlamada: (e) => v.secre && v.secre.alLlamada(e),
       alEstado: (e) => {
         v.estado = { ...v.estado, ...e };
         if(e.codigo){ console.log(`\n📱 [${c.id}] Código para vincular: ${e.codigo}\n   WhatsApp → Dispositivos vinculados → Vincular con número de teléfono\n`); v.estado.error = ''; }
