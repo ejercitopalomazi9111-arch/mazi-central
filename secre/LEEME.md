@@ -43,6 +43,31 @@ Propuesta: «sí voy, nomás confirmo la hora y te digo»
 Si **tú** contestas a mano en un chat, Secre se hace a un lado 15 minutos en ese chat y
 aprende de cómo escribiste.
 
+### Lo que cambió el 4 de noviembre (la reestructura)
+
+Carlos: *«se está comprometiendo a cosas sin preguntar… si le digo no digas esto, lo sigue
+diciendo… le dicen pregúntale a tal persona y dice que Simón y no pregunta… mi tía preguntó
+quién dejó la leche afuera y dijo que yo».*
+
+- **Antes de mandar, el código revisa lo que escribió la IA** (`criterio.mjs`). Si trae algo
+  prohibido, un precio que no está en tu lista, te compromete («sí, ahorita la saco», «Carlos te
+  lo lleva») o te echa la culpa («fui yo», «él la dejó»), **no sale**: a la persona le dice
+  «le paso tu mensaje a Carlos y él te confirma» y a ti te llega ⚠️ con lo que iba a decir y un
+  número para mandarlo así si sí estaba bien.
+- **Dos voces:** de fábrica habla **como tu asistente** (de ti en tercera persona, con firma).
+  `modo yo` la hace **pasar por ti** (primera persona, sin firma); `modo yo con Ana` sólo en un chat;
+  `modo asistente` lo regresa.
+- **Sí pregunta:** «pregúntale a Beto si va el sábado» se lo manda al momento y, cuando Beto
+  contesta, te llega 📨 con la respuesta. «mándale un audio a Ana…» manda nota de voz.
+- **Sí te busca:** si alguien le dice «dile que me llame» o «que me busque», te llega 📣 al
+  instante con el recado (y llamada si es urgente y las llamadas están conectadas).
+- **Audio:** si alguien le pide audio, le contesta en nota de voz.
+- **Lo prohibido:** «no digas nada de X en ningún chat» se guarda con sus palabras; la IA lo
+  recibe y además el código lo frena aunque lo escriba. `prohibidos` · `quita prohibido 2`.
+- **Precios:** `precios:` y un renglón por cosa. Sólo dice esos.
+- **Tu horario:** sabe cuándo estás en clase (horario del 3.1) y no promete nada encima.
+- Pruebas: `node secre/pruebas-criterio.mjs` (41), cada una es una queja de Carlos.
+
 ### El automático, con sus frenos
 
 Para cuando no puedes tomar el teléfono en el día. En un chat en automático:

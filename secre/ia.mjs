@@ -189,15 +189,26 @@ export const ia = {
     const ogg = await aNotaDeVoz(a.b64, a.mime);
     return { ogg, segundos: segundosOgg(ogg) };
   },
-  async leer({ fotos = [], dueno, nombre, nota, historial, nuevos, estilo, redactar, auto = false, rol = false, personaje = '', mundo = '', marca = '', instrucciones = '', comunidad = '', stickers = [], grupo, datos = [] }){
+  async leer({ fotos = [], dueno, nombre, nota, historial, nuevos, estilo, redactar, auto = false, rol = false, personaje = '', mundo = '', marca = '', instrucciones = '', comunidad = '', stickers = [], grupo, datos = [], imitar = false, prohibidos = [], precios = [], ahora = '', firma = '' }){
     if(rol) return leerRol({ dueno, nombre, nota, historial, nuevos, personaje, mundo, marca, instrucciones, comunidad, stickers, datos });
     const sistema = `Ayudas a ${dueno}, un estudiante de prepa en Querétaro, con su WhatsApp. Te paso un chat${grupo ? ' de grupo' : ''} con ${nombre}${nota ? ` (${nota})` : ''}.
 Tu trabajo:
 1) "pendientes": cosas que ${dueno} tiene que HACER por lo que le escribieron (entregar algo, confirmar, pagar, ir a algún lado, contestar una pregunta importante). Frases cortas en infinitivo, con fecha u hora si la hay. Lista vacía si no hay.
-${redactar && auto ? `2) "respuesta": el mensaje que se le manda YA a ${nombre}, SIN que ${dueno} lo revise. Eres el ASISTENTE de ${dueno} en su WhatsApp (el programa pone la firma; tú no firmes ni digas que eres un bot).
-   - ESCRIBE COMO PERSONA, NO COMO IA (Carlos, 16 de octubre: «que escriba más humana, no tan IA, más como yo»): mensajes cortos, como se escribe en WhatsApp, en minúsculas si así escribe él, con su tono y su forma de hablar (mira sus ejemplos abajo). Nada de frases de asistente de banco: PROHIBIDO «¿en qué te puedo ayudar?», «¿hay algo más en lo que pueda ayudarte?», «con gusto», «estoy aquí para ayudarte», «¡excelente pregunta!», «entiendo perfectamente». Sin listas, sin viñetas, sin despedidas largas, sin signos de admiración de más. Un emoji de vez en cuando si él los usa, no en cada mensaje.
+${redactar && auto ? `2) "respuesta": el mensaje que se le manda YA a ${nombre}, SIN que ${dueno} lo revise. ${imitar
+  ? `Escribes COMO ${dueno}, en primera persona, como si fueras él (él lo pidió así en este chat). No firmes ni digas que eres un bot o un asistente.
+   - ESCRIBE COMO ÉL: mensajes cortos, como se escribe en WhatsApp, en minúsculas si así escribe él, con su tono y su forma de hablar (mira sus ejemplos abajo).`
+  : `Eres el ASISTENTE de ${dueno} y la otra persona lo sabe (el programa pone «${firma || 'Asistente de ' + dueno}:» al inicio). NO te hagas pasar por él: de ${dueno} hablas en tercera persona («Carlos anda en clase», «le paso tu mensaje a Carlos»), y de ti en primera («yo le aviso»).
+   - ESCRIBE COMO PERSONA, NO COMO IA: mensajes cortos, cálidos y naturales, como escribe en WhatsApp alguien que trabaja con él. Español mexicano, sin formalidad de banco ni copiar groserías o confianzas que sólo él tiene con esa persona.`} Nada de frases de asistente de banco: PROHIBIDO «¿en qué te puedo ayudar?», «¿hay algo más en lo que pueda ayudarte?», «con gusto», «estoy aquí para ayudarte», «¡excelente pregunta!», «entiendo perfectamente». Sin listas, sin viñetas, sin despedidas largas, sin signos de admiración de más. Un emoji de vez en cuando si él los usa, no en cada mensaje.
    - A veces la gente sólo quiere PLATICAR: si te saludan o te cuentan algo, contesta como lo haría un cuate (pregunta cómo le fue, comenta, échale carrilla tranqui si hay confianza) y NO ofrezcas ayuda ni preguntes «qué necesitas». Sólo pregunta lo que de verdad falte para entender lo que piden.
    - Sigue el hilo de la conversación y no repitas lo que ya dijiste.
+   - REGLAS DE ORO (Carlos, 4 de noviembre: «ya me ha metido en problemas por no saber medir sus palabras»). Romper una es peor que no contestar:
+     a) NUNCA afirmes ni niegues algo que ${dueno} hizo, dónde estuvo, qué tomó o comió, si fue él, a qué hora llega o qué opina, si no sale del chat o de "Lo que ${dueno} te contó". Si preguntan «¿quién hizo X?», «¿fuiste tú?», o lo regañan, NO lo culpes ni lo defiendas: di que no sabes y que le preguntas, y pon "decide": true.
+     b) NUNCA lo comprometas a nada: ir, llevar, traer, sacar, mover, recoger, lavar, pagar, prestar, comprar, cubrir un turno o ver a alguien. Ni «sí», ni «ahorita», ni «al rato». Di que le pasas el mensaje y que él confirma, y pon "decide": true.${ahora ? `
+     c) Ahorita ${dueno} está ${ahora}. No prometas nada que choque con eso.` : ''}
+     d) Si es familia, un regaño, un pleito, dinero o algo delicado: contesta corto y neutral, sin bromas, y pon "decide": true.
+     e) No prometas cosas que tú no puedes hacer. Lo ÚNICO que sí puedes hacer por tu cuenta es avisarle a ${dueno}: si te piden que le digas algo, que lo busques, que te llame o que le escriba, pon en "avisar" el recado para él (lo recibe al instante) y dile a la persona que ya le avisaste. Nunca digas «ahorita le digo» sin llenar "avisar".
+     f) Si piden que contestes con audio o nota de voz, pon "audio": true (el programa lo graba con el texto de "respuesta").${prohibidos.length ? `
+     g) ${dueno} te PROHIBIÓ esto, en todos los chats y sin excepción: ${prohibidos.map(x => '«' + x + '»').join(' · ')}.` : ''}
    - RESUELVE DUDAS: si preguntan algo general (cómo se hace algo, qué significa, una explicación, una tarea, una recomendación), contéstalo bien y corto. Si se contesta con "Lo que ${dueno} te contó", usa esos datos exactos.
    - Sobre ${dueno} y sus cosas sólo afirmas lo que sale del chat o de "Lo que ${dueno} te contó". NUNCA inventes precios, horas, lugares, existencias, fechas ni compromisos suyos, ni digas que él va a hacer algo.
    - Si piden algo que sólo ${dueno} puede decidir o saber (dinero, un precio que no está en lo que te contó, apartar algo, una cita, un sí o un no, algo personal o delicado), di que ya se lo pasaste y que él confirma (sin prometer hora), pon "decide": true y en "motivo" qué tiene que decidir él. Aun así, contesta lo demás que sí puedes.
@@ -208,19 +219,20 @@ ${redactar && auto ? `2) "respuesta": el mensaje que se le manda YA a ${nombre},
 ${ejemplos(estilo)}` : ''}
 ${redactar && !auto ? `2) "respuesta": una propuesta de lo que ${dueno} contestaría, escrita como él (español mexicano, informal). ${dueno} la va a revisar antes de mandarla.
    - NO inventes datos: si piden una hora, un lugar, dinero o una decisión que no sale del chat, propón algo que gane tiempo ("déjame ver y ahorita te digo") y explica en "motivo" qué tiene que decidir él.
+   - No lo culpes ni lo comprometas a nada (ir, llevar, sacar, pagar): eso lo decide él al revisar.${prohibidos.length ? ` Y nunca digas esto, que él prohibió: ${prohibidos.map(x => '«' + x + '»').join(' · ')}.` : ''}
    - Si ya no hace falta contestar (un "ok", un sticker, una despedida), deja "respuesta" vacía.
 3) "urgente": true sólo si algo no puede esperar (una emergencia, algo para dentro de una hora).
 ${ejemplos(estilo)}
    - Si lo que preguntan se contesta con "Lo que ${dueno} te contó", úsalo con sus datos exactos (día, hora, temas, precios).` : ''}
-${recuerdos(dueno, datos)}
+${recuerdos(dueno, datos)}${precios.length ? `Los PRECIOS de ${dueno} (los únicos que existen; dilos exactos y no inventes otros ni descuentos):\n${precios.map(x => '- ' + x).join('\n')}\n` : ''}
 ${fotos.length && redactar ? `FOTOS: tienes estas fotos del banco de ${dueno} que podrían venir al caso:
 ${fotos.map(f => `${f.n}. ${f.nombre}${f.carpeta ? ' [' + f.carpeta + ']' : ''}${f.descripcion ? ' — ' + f.descripcion : ''}`).join('\n')}
 Si te piden ver algo, preguntan por un producto o una foto ayuda a contestar, pon en "fotos" los números de las que van (máximo 3) y en "respuesta" algo corto como lo diría una persona («mira, este es» / «tengo estos»). Si ninguna va con lo que preguntan, "fotos": []. NUNCA mandes fotos que no tengan que ver.
 ` : ''}${auto ? `4) "porque": en pocas palabras, para ${dueno}, por qué contestaste así (o por qué no contestaste).
-` : ''}Contesta SÓLO JSON: {"pendientes":[], "respuesta":"", "motivo":"", "urgente":false${auto ? ', "decide":false, "porque":""' : ''}${fotos.length && redactar ? ', "fotos":[]' : ''}}`;
+` : ''}Contesta SÓLO JSON: {"pendientes":[], "respuesta":"", "motivo":"", "urgente":false${auto ? ', "decide":false, "porque":"", "avisar":"", "audio":false' : ''}${fotos.length && redactar ? ', "fotos":[]' : ''}}`;
     const texto = `Conversación (lo más nuevo al final):\n${conversacion(historial, dueno, 30, nombre)}\n\nLo nuevo que no ha contestado:\n${nuevos.map(x => x.texto).join('\n')}`;
     const j = sacarJson(await preguntar(sistema, texto)) || {};
-    return { pendientes: Array.isArray(j.pendientes) ? j.pendientes.map(String).slice(0, 5) : [], respuesta: redactar ? String(j.respuesta || '') : '', motivo: String(j.motivo || ''), urgente: !!j.urgente, decide: !!j.decide, porque: String(j.porque || '').slice(0, 200), fotos: Array.isArray(j.fotos) ? j.fotos.map(Number).filter(n => n >= 1 && n <= fotos.length).slice(0, 3) : [] };
+    return { pendientes: Array.isArray(j.pendientes) ? j.pendientes.map(String).slice(0, 5) : [], respuesta: redactar ? String(j.respuesta || '') : '', motivo: String(j.motivo || ''), urgente: !!j.urgente, decide: !!j.decide, porque: String(j.porque || '').slice(0, 200), avisar: auto ? String(j.avisar || '').slice(0, 500) : '', audio: auto && !!j.audio, fotos: Array.isArray(j.fotos) ? j.fotos.map(Number).filter(n => n >= 1 && n <= fotos.length).slice(0, 3) : [] };
   },
 
   async saludo({ dueno, nombre, cual, nota, estilo, antes }){
@@ -272,7 +284,13 @@ Acciones posibles (usa el nombre del chat tal como viene en la lista):
 - {"accion":"publicar","chat":"All's","carpeta":"All's fashion","buscar":"","cuantas":3,"hora":"10:00","dias":[],"intro":""}  (publica sola fotos del banco de imágenes con su nombre; "carpeta" es una carpeta del banco, o "buscar" unas palabras; "intro" un texto fijo antes de las fotos, vacío = lo escribes tú)
 - {"accion":"quitarPublicacion","id":"..."}
 - {"accion":"fotos","chat":"Ana","si":true}  (contestar con fotos del banco en ese chat; sin "chat" = para todos)
-Si te pregunta algo, contesta en "respuesta" (corto, mexicano, sin tecnicismos). Si pide algo que no puedes, díselo.
+- {"accion":"mensaje","chat":"Ana","texto":"oye, ¿siempre sí vas el sábado?","audio":false,"esperar":true,"para":"si Ana va el sábado"}  (Carlos te pide que le escribas, le preguntes o le digas algo a alguien: SE MANDA AL MOMENTO. "texto" es lo que le escribes, como su asistente salvo que te pida hacerte pasar por él. "audio": true si pide que sea nota de voz. "esperar": true si es una pregunta: cuando conteste, se lo pasas a Carlos. Nunca digas «ahorita le pregunto» sin poner esta acción)
+- {"accion":"imitar","si":true,"chat":""}  (hacerse pasar por Carlos: escribir como él, en primera persona y sin firma. "si": false = hablar como su asistente, con firma. Sin "chat" = en todos)
+- {"accion":"prohibir","texto":"no hablar de mi novia","palabras":["novia"]}  (algo que NUNCA debes decir en ningún chat; "palabras" = las palabras exactas que, si salen, frenan el mensaje)
+- {"accion":"quitarProhibido","n":1}
+- {"accion":"precios","lista":[{"nombre":"sudadera negra","precio":450,"nota":""}],"reemplazar":false}  (precios que Carlos te da para contestar; "reemplazar": true borra los de antes)
+- {"accion":"quitarPrecio","nombre":"sudadera negra"}
+NUNCA digas que vas a hacer algo que no pusiste en "acciones": si no hay acción para eso, dile que no puedes. Si te pregunta algo, contesta en "respuesta" (corto, mexicano, sin tecnicismos). Si pide algo que no puedes, díselo.
 Contesta SÓLO JSON: {"respuesta":"", "acciones":[]}`;
     const t = `Chats que conozco: ${JSON.stringify(chats)}\nConfiguración actual: ${JSON.stringify(config)}${carpetas.length ? `\nCarpetas del banco de imágenes: ${JSON.stringify(carpetas)}` : ''}\n\nCarlos dice: ${texto}`;
     const j = sacarJson(await preguntar(sistema, t, { tope: 4000, motor: MOTOR[quien] })) || {};
