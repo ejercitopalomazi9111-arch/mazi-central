@@ -11,6 +11,7 @@ html, body{ background:var(--marino) }
 #cierre .nom{ font:italic 900 120px/1 var(--e); letter-spacing:.01em; color:#fff }
 #cierre .lema{ margin-top:14px; font:700 30px/1 var(--s); letter-spacing:.2em; text-transform:uppercase; color:var(--menta) }
 #cierre .tel{ margin-top:54px; display:flex; flex-direction:column; align-items:center; gap:18px }
+#cierre .tel b small{ font:700 30px/1 var(--s); letter-spacing:.08em; color:var(--menta); margin-right:6px }
 #cierre .tel b{ display:inline-block; font:800 54px/1 var(--s); letter-spacing:.03em; padding:22px 44px; border-radius:999px; border:3px solid var(--menta); color:#fff; background:#8EDDD022 }
 #cierre .rem{ margin-top:34px; font:600 34px/1.3 var(--s); color:var(--gris) }
 #subs em{ color:var(--menta) }

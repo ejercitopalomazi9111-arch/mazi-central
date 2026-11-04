@@ -7,6 +7,7 @@
 import { W, H, tramo, suave, sale, entra, mezcla, vida, resorte, guion, sonidosVoz, subtitulos, grano } from '../motor.js';
 const $ = (s) => document.querySelector(s);
 const cargar = async (src) => { const i = new Image(); i.src = src; await i.decode(); return i; };
+/* el 442 es el de «Informes» con WhatsApp en su cartel del curso; el 427 viene de la playera */
 export const CEL = { telefonos: ['442 394 2306', '427 108 0226'] };
 
 export async function anuncio({ tomas, titulos, musica, cierre = 'Atención médica de emergencia', remate = 'Cotiza la cobertura de tu evento' }){
@@ -69,6 +70,6 @@ export async function anuncio({ tomas, titulos, musica, cierre = 'Atención méd
     }
     sub(t); gr(t);
   };
-  poner($('#cierre'), `<div class="nom">GERALDMED</div><div class="lema">— ${cierre} —</div><div class="tel">${CEL.telefonos.map(n => `<b>${n}</b>`).join('')}</div><div class="rem">${remate}</div>`);
+  poner($('#cierre'), `<div class="nom">GERALDMED</div><div class="lema">— ${cierre} —</div><div class="tel">${CEL.telefonos.map((n, i) => `<b>${i ? '' : '<small>WhatsApp</small> '}${n}</b>`).join('')}</div><div class="rem">${remate}</div>`);
   await window.pintar(0); window._listo();
 }

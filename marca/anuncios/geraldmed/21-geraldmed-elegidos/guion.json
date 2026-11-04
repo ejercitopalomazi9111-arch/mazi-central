@@ -29,10 +29,16 @@
    "id": "04",
    "voz": "Narra",
    "pausa": 0.45,
-   "txt": "Para que tú *disfrutes,* y tu gente *esté segura.*"
+   "txt": "Y lo que sabemos, *también lo enseñamos:* damos el curso de extracción vehicular y manejo del paciente prensado."
   },
   {
    "id": "05",
+   "voz": "Narra",
+   "pausa": 0.45,
+   "txt": "Para que tú *disfrutes,* y tu gente *esté segura.*"
+  },
+  {
+   "id": "06",
    "voz": "Narra",
    "pausa": 0.5,
    "txt": "Geraldmed. Paramédicos para tu evento.",

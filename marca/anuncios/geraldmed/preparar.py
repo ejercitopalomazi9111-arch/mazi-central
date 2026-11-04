@@ -19,6 +19,9 @@ FOTOS = {
   'espaldas-2':      ('1df613b4', [(280, 325, 400, 370), (190, 350, 430, 530)]),
   'saludo':          ('c6db8437', [(320, 465, 475, 505), (1085, 345, 1140, 395), (170, 560, 420, 730)]),
   'de-frente':       ('1679c115', [(0, 575, 90, 610), (805, 780, 1010, 860), (0, 600, 210, 800)]),
+  # las del curso que dan (mandadas el mismo día, «más imágenes viejitas»): la playera y el cartel, sin marcas ajenas
+  'curso-playera':   ('b74bedf7', []),
+  'curso-cartel':    ('45f57a86', []),
 }
 for nombre, (f, cajas) in FOTOS.items():
     borra(abre(f), cajas).save(os.path.join(AQUI, 'fotos', nombre + '.jpg'), quality=88)
