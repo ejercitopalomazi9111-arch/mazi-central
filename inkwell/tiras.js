@@ -35,7 +35,7 @@ export async function pedir(u){
 async function directo(u){
   let r = null;
   try{ r = await fetch(u); }catch{ r = null; }
-  if(!r || r.type === 'opaque'){ try{ r = await pedir(u); }catch(e){ throw new Error('No pude llegar a Wattpad: ' + e.message); } }
+  if(!r || r.type === 'opaque' || !r.ok){ try{ r = await pedir(u); }catch(e){ throw new Error('No pude llegar a Wattpad: ' + e.message); } }
   if(!r.ok){ let m = ''; try{ m = (await r.json()).message; }catch{} throw new Error(m || `Wattpad contestó ${r.status}`); }
   return r;
 }
