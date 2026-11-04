@@ -236,6 +236,7 @@ ${redactar && !auto ? `2) "respuesta": una propuesta de lo que ${dueno} contesta
    - NO inventes datos: si piden una hora, un lugar, dinero o una decisión que no sale del chat, propón algo que gane tiempo ("déjame ver y ahorita te digo") y explica en "motivo" qué tiene que decidir él.
    - No lo culpes ni lo comprometas a nada (ir, llevar, sacar, pagar): eso lo decide él al revisar. Tampoco inventes planes, excusas ni personas («le marco al doc», «tengo junta»): si no sabe qué contestar, algo neutro como «déjame ver y te digo».${prohibidos.length ? ` Y nunca digas esto, que él prohibió: ${prohibidos.map(x => '«' + x + '»').join(' · ')}.` : ''}
    - Si ya no hace falta contestar (un "ok", un sticker, una despedida), deja "respuesta" vacía.
+   - Si piden un audio o nota de voz, escribe la respuesta normal: ${dueno} la puede mandar en voz. Nunca digas que no se pueden mandar audios.
 3) "urgente": true sólo si algo no puede esperar (una emergencia, algo para dentro de una hora).
 ${ejemplos(estilo)}
    - Si lo que preguntan se contesta con "Lo que ${dueno} te contó", úsalo con sus datos exactos (día, hora, temas, precios).` : ''}
@@ -313,9 +314,10 @@ Acciones posibles (usa el nombre del chat tal como viene en la lista):
 - {"accion":"tienda","chat":"All's fashion","si":true}  (en ese grupo contestas a las clientas precios y tallas del catálogo)
 - {"accion":"llamarme","activo":true}  (SÓLO si Carlos te pide con esas palabras que le marques por teléfono cuando algo importante necesite su decisión; no la pongas por tu cuenta)
 Habla con Carlos como un compa que trabaja con él, natural y corto: él no tiene que usar comandos exactos, tú entiendes qué quiere y lo haces. NUNCA digas que hiciste o vas a hacer algo que no pusiste en "acciones" (no digas «ya le marqué», «le puse la llamada» ni «quedan pendientes» si no es cierto): si no hay acción para eso, dile que no puedes. Tu "respuesta" es corta: lo que hiciste ya se lo enseña el programa debajo. Si te pregunta algo, contesta en "respuesta" (corto, mexicano, sin tecnicismos). Si pide algo que no puedes, díselo.
-Contesta SÓLO JSON: {"respuesta":"", "acciones":[]}`;
+SÍ puedes mandar notas de voz (audios), a él y a otras personas: NUNCA digas que no puedes mandar audios. Si Carlos te pide que a ÉL le contestes, le digas o le mandes algo en audio o en voz («mándame un audio», «dímelo en audio»), pon "audio": true y lo que le dices va en "respuesta". Si pide mandarle un audio a otra persona, usa la acción "mensaje" con "audio": true.
+Contesta SÓLO JSON: {"respuesta":"", "acciones":[], "audio":false}`;
     const t = `Chats que conozco: ${JSON.stringify(chats)}\nConfiguración actual: ${JSON.stringify(config)}${carpetas.length ? `\nCarpetas del banco de imágenes: ${JSON.stringify(carpetas)}` : ''}${historiales.length ? `\nLO QUE HAN DICHO las personas que nombra (úsalo para contestarle; no digas «ahorita checo», aquí está): ${JSON.stringify(historiales)}` : ''}${propuestas.length ? `\nPROPUESTAS esperando su visto bueno (lo más nuevo al final): ${JSON.stringify(propuestas)}` : ''}${conocimiento ? `\nLo que sabes de sus negocios:\n${conocimiento}` : ''}\n\nCarlos dice: ${texto}`;
     const j = sacarJson(await preguntar(sistema, t, { tope: 4000, motor: MOTOR[quien] })) || {};
-    return { respuesta: String(j.respuesta || ''), acciones: Array.isArray(j.acciones) ? j.acciones.slice(0, 80) : [] };
+    return { respuesta: String(j.respuesta || ''), acciones: Array.isArray(j.acciones) ? j.acciones.slice(0, 80) : [], audio: !!j.audio };
   },
 };

@@ -512,6 +512,9 @@ dependemos.
    | un modelo de Sketchfab que se ve con color en su página entra con color a Blender | si viene en spec-gloss (`KHR_materials_pbrSpecularGlossiness`), el importador de Blender **tira las texturas** callado: sale gris | Temmie de cuerpo completo bailaba gris. Se pasa a metal-rough antes de riggear (`/tmp/claude-0/gt/metal.mjs`, gltf-transform `metalRough()`) |
    | pegar cada pieza de un modelo al esqueleto con el mejor método que le funcione es lo más fino | si una pieza usa difusión y la de encima cercanía, **se abren entre sí en tiras** al bailar (el suéter de rayas de Temmie). Las piezas encimadas van con el MISMO método (`PESOS=cercania`), lo de dentro del hombro no se pega al brazo, y `POT=2` suaviza el paso entre huesos | tres vueltas de 10 minutos; `revisar-bailes.py` pasó de 54 % a 38 % de cuadros malos |
 
+   | fusionar a `main` publica Secre en Render (`autoDeployTrigger: commit`) | el servicio `secre` dice `autoDeploy: yes` y **desde el 17 de octubre sólo tiene despliegues manuales**: el aviso de GitHub no llega | la campaña y Mayoreo «no arrancaban» con todo fusionado y probado. Ahora Secre manda un latido a La Sala (`k=latido-<cuenta>`) con el commit que corre, y con la llave de Render (en `/tmp/claude-0/llave-render`, nunca en el repo) se despliega por la API: `POST /v1/services/<id>/deploys` |
+   | una base de Supabase gratis está siempre prendida | **la pausa** tras unos días sin uso: la app abre y no carga nada, sin un error que diga por qué | Carlos no podía entrar a Ligas Mazi ni a la tienda. Se reactiva con `restore_project` y `.github/workflows/despertar-bases.yml` las consulta cada dos días |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---
