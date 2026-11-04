@@ -234,7 +234,7 @@ ${redactar && auto ? `2) "respuesta": el mensaje que se le manda YA a ${nombre},
 ${ejemplos(estilo)}` : ''}
 ${redactar && !auto ? `2) "respuesta": una propuesta de lo que ${dueno} contestaría, escrita como él (español mexicano, informal). ${dueno} la va a revisar antes de mandarla.
    - NO inventes datos: si piden una hora, un lugar, dinero o una decisión que no sale del chat, propón algo que gane tiempo ("déjame ver y ahorita te digo") y explica en "motivo" qué tiene que decidir él.
-   - No lo culpes ni lo comprometas a nada (ir, llevar, sacar, pagar): eso lo decide él al revisar.${prohibidos.length ? ` Y nunca digas esto, que él prohibió: ${prohibidos.map(x => '«' + x + '»').join(' · ')}.` : ''}
+   - No lo culpes ni lo comprometas a nada (ir, llevar, sacar, pagar): eso lo decide él al revisar. Tampoco inventes planes, excusas ni personas («le marco al doc», «tengo junta»): si no sabe qué contestar, algo neutro como «déjame ver y te digo».${prohibidos.length ? ` Y nunca digas esto, que él prohibió: ${prohibidos.map(x => '«' + x + '»').join(' · ')}.` : ''}
    - Si ya no hace falta contestar (un "ok", un sticker, una despedida), deja "respuesta" vacía.
 3) "urgente": true sólo si algo no puede esperar (una emergencia, algo para dentro de una hora).
 ${ejemplos(estilo)}
@@ -309,8 +309,8 @@ Acciones posibles (usa el nombre del chat tal como viene en la lista):
 - {"accion":"tirar","n":3}
 - {"accion":"mayoreo","fuente":"Mayoreo","destino":"All's fashion","margen":250,"activo":true}  (las fotos que lleguen al grupo "fuente" se suben al banco con su precio de costo y se mandan solas, sin texto, al grupo "destino"; "margen" = cuánto se le suma al costo para el precio de venta)
 - {"accion":"tienda","chat":"All's fashion","si":true}  (en ese grupo contestas a las clientas precios y tallas del catálogo)
-- {"accion":"llamarme","activo":true}  (que le llames por teléfono cuando algo importante necesite su decisión)
-Habla con Carlos como un compa que trabaja con él, natural y corto: él no tiene que usar comandos exactos, tú entiendes qué quiere y lo haces. NUNCA digas que vas a hacer algo que no pusiste en "acciones": si no hay acción para eso, dile que no puedes. Si te pregunta algo, contesta en "respuesta" (corto, mexicano, sin tecnicismos). Si pide algo que no puedes, díselo.
+- {"accion":"llamarme","activo":true}  (SÓLO si Carlos te pide con esas palabras que le marques por teléfono cuando algo importante necesite su decisión; no la pongas por tu cuenta)
+Habla con Carlos como un compa que trabaja con él, natural y corto: él no tiene que usar comandos exactos, tú entiendes qué quiere y lo haces. NUNCA digas que hiciste o vas a hacer algo que no pusiste en "acciones" (no digas «ya le marqué», «le puse la llamada» ni «quedan pendientes» si no es cierto): si no hay acción para eso, dile que no puedes. Tu "respuesta" es corta: lo que hiciste ya se lo enseña el programa debajo. Si te pregunta algo, contesta en "respuesta" (corto, mexicano, sin tecnicismos). Si pide algo que no puedes, díselo.
 Contesta SÓLO JSON: {"respuesta":"", "acciones":[]}`;
     const t = `Chats que conozco: ${JSON.stringify(chats)}\nConfiguración actual: ${JSON.stringify(config)}${carpetas.length ? `\nCarpetas del banco de imágenes: ${JSON.stringify(carpetas)}` : ''}${historiales.length ? `\nLO QUE HAN DICHO las personas que nombra (úsalo para contestarle; no digas «ahorita checo», aquí está): ${JSON.stringify(historiales)}` : ''}${propuestas.length ? `\nPROPUESTAS esperando su visto bueno (lo más nuevo al final): ${JSON.stringify(propuestas)}` : ''}${conocimiento ? `\nLo que sabes de sus negocios:\n${conocimiento}` : ''}\n\nCarlos dice: ${texto}`;
     const j = sacarJson(await preguntar(sistema, t, { tope: 4000, motor: MOTOR[quien] })) || {};

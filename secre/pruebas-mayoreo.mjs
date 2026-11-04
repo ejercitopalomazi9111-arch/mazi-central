@@ -136,5 +136,10 @@ ok('lo que le cuentas en una cuenta lo sabe la otra', dos.datosVigentes().some(d
 ok('y queda guardado en el cajón de la otra', /boda/.test(d2.config || ''));
 Secre.hermanas.clear();
 
+console.log('\n§7 · la firma va una sola vez');
+ok('si la IA ya la escribió, no se repite', uno.firmar('Asistente de Carlos:', 'Asistente de Carlos: le paso tu mensaje') === 'Asistente de Carlos: le paso tu mensaje');
+ok('sin firma en el texto, se pone', uno.firmar('Asistente de Carlos:', 'va') === 'Asistente de Carlos: va');
+ok('sin firma del chat, el texto tal cual', uno.firmar('', 'va') === 'va');
+
 console.log(fallas.length ? `\n✗ ${fallas.length} fallaron de ${pasan + fallas.length}` : `\n✓ ${pasan}/${pasan}`);
 process.exit(fallas.length ? 1 : 0);

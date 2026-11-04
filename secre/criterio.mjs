@@ -68,6 +68,13 @@ export function comprometeA(resp, nombre = 'carlos'){
   return '';
 }
 
+/* ¿el texto habla COMO Carlos («sí voy, ahí nos vemos») y no DE Carlos («Carlos dice que sí va»)? */
+export function enPrimeraPersona(resp, nombre = 'carlos'){
+  const t = plano(resp).replace(/[¿?¡!.,;:]+/g, ' ').replace(/\s+/g, ' ');
+  if(new RegExp(`\\b(?:${plano(nombre)}|el) (?:dice|dijo|comenta|te manda|va|puede|esta)\\b`).test(t)) return false;
+  return PRIMERA.test(t) || /\b(?:voy|estoy|puedo|llego|paso por|me late|nos vemos)\b/.test(t);
+}
+
 /* ── todo junto: ¿se puede mandar? '' = sí; si no, por qué ── */
 export function revisarRespuesta(resp, { nombre = 'Carlos', prohibidos = [], precios = [], datos = [], chat = '', vetados = [] } = {}){
   const r = String(resp || '').trim(); if(!r) return '';

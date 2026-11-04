@@ -36,7 +36,7 @@
 import { llamar, llamadasListas, twilioDe } from './llamada.mjs';
 import { HORARIOS, cualHorario, mensajesDeHorario } from './horarios.mjs';
 import { bancoDeSala, buscarFotos, nombreDe as nombreFoto, pieDe } from './banco.mjs';
-import { revisarRespuesta, leerPrecios, textoPrecio, enQueAnda, cantidades } from './criterio.mjs';
+import { revisarRespuesta, leerPrecios, textoPrecio, enQueAnda, cantidades, enPrimeraPersona } from './criterio.mjs';
 import { leerCosto, leerTallas, leerDescripcion, precioVenta, huella, masParecido, miniatura, textoProducto } from './mayoreo.mjs';
 import { cargarConocimiento } from './conocimiento.mjs';
 /* lo que comparten las dos cuentas de Carlos (4 nov: «que el güey ya sepa todo en ambos lados») */
@@ -740,6 +740,17 @@ export class Secre {
       datos: [...this.datosVigentes().map(d => d.texto), this.conocimiento || ''], vetados: (this.config.productos || []).map(p => p.costo).filter(c => c && !prods.some(q => q.precio === c)),
       chat: (this.estado.historial[jid] || []).filter(x => !x.secre).map(x => x.texto).join('\n') };
   }
+  /* pone la firma al inicio sin repetirla si la IA ya la escribió («Asistente de Carlos: Asistente de Carlos: …») */
+  firmar(firma, texto){
+    let t = String(texto || '').trim(); if(!firma) return t;
+    const base = sinAcentos(firma.replace(/[:\s]+$/, ''));
+    while(sinAcentos(t).startsWith(base)) t = t.slice(base.length).replace(/^[\s:,.-]+/, '');
+    return firma + ' ' + t;
+  }
+  /* al mandar una propuesta aprobada, el pendiente de CONTESTARLE ya quedó (llevar el proyecto, no) */
+  cerrarPendientesDe(p){
+    for(const x of this.estado.pendientes) if(!x.hecho && x.chat === p.chat && Math.abs((x.t || 0) - (p.t || 0)) < 5 * 60000 && /^(confirmar|contestar|responder|decirle|avisarle|dar respuesta)/.test(sinAcentos(x.texto))){ x.hecho = true; x.solo = true; }
+  }
   firmaDe(jid){
     const c = this.config.chats[jid] || {}, A = this.confAuto();
     if(typeof c.firma === 'string') return c.firma;
@@ -774,7 +785,7 @@ export class Secre {
       let fueAudio = false;
       if(r.audio && !c.rol){ try{ await this.mandarAudio(jid, resp); fueAudio = true; }catch(e){ this.anotar('no pude grabar el audio: ' + e.message); } }
       /* con marca de personaje, la firma va al final para no romper «🌌⚛️- …» del primer renglón */
-      if(!fueAudio) await this.mandar(jid, !firma ? resp : (c.rol && marca && !decide) ? resp + ' ' + firma : firma + ' ' + resp);
+      if(!fueAudio) await this.mandar(jid, !firma ? resp : (c.rol && marca && !decide) ? resp + ' ' + firma : this.firmar(firma, resp));
       if(r.elegidas && r.elegidas.length) await this.mandarFotos(jid, r.elegidas);
       this.estado.autos[jid] = [...(this.estado.autos[jid] || []).filter(t => ahora - t < 24 * HORA), ahora];
       const hoy = fechaMx(ahora);
@@ -1045,7 +1056,7 @@ export class Secre {
       }
       if(!texto){ await this.avisar(`⏰ No pude escribir el mensaje programado de las ${p.hora} para ${this.nombreDe(p.chat)}.`); continue; }
       const firma = p.sinFirma ? '' : this.firmaDe(p.chat);
-      await this.mandar(p.chat, firma ? firma + ' ' + texto : texto);
+      await this.mandar(p.chat, this.firmar(firma, texto));
     }
   }
   async publicarTic(ahora){
@@ -1207,7 +1218,7 @@ export class Secre {
       const final = (m[2] || '').trim() || p.texto;
       if(!final) return this.avisar(`La #${m[1]} no trae texto: escribe «${m[1]} audio lo que quieras decir».`);
       try{ await this.mandarAudio(p.chat, final); }catch(e){ return this.avisar(`No pude grabar el audio: ${e.message}`); }
-      this.estado.propuestas = this.estado.propuestas.filter(x => x.n !== p.n); this.guardar();
+      this.estado.propuestas = this.estado.propuestas.filter(x => x.n !== p.n); this.cerrarPendientesDe(p); this.guardar();
       return this.avisar(`🎤 Listo, a ${p.nombre} en audio: «${final}»`);
     }
     /* ── el elenco del rol ──
@@ -1328,7 +1339,7 @@ export class Secre {
       const siempre = /^siempre\b[:\s]*/i.exec(m[2] || '');
       const final = (siempre ? (m[2].slice(siempre[0].length) || p.texto) : (m[2] || p.texto)).trim();
       if(!final) return this.avisar(`La #${m[1]} no trae texto: escribe «${m[1]} lo que quieras decir».`);
-      this.estado.propuestas = this.estado.propuestas.filter(x => x !== p);
+      this.estado.propuestas = this.estado.propuestas.filter(x => x !== p); this.cerrarPendientesDe(p);
       await this.mandar(p.chat, final);
       let extra = '';
       if(p.fotos && p.fotos.length){
@@ -1544,9 +1555,11 @@ export class Secre {
     if(!p) return `✗ No tengo la #${a.n} (o ya caducó).`;
     if(!texto) return '';
     if(p.tipo === 'saludo'){ /* los saludos se mandan igual que una respuesta */ }
-    const f = this.firmaDe(p.chat), final = f && !this.imitaEn(p.chat) ? f + ' ' + texto : texto;
+    /* si lo que aprobó va con sus palabras, en primera persona («sí voy»), son SUYAS: sin firma de
+       asistente, que «Asistente de Carlos: sí voy» no tiene pies ni cabeza */
+    const f = this.firmaDe(p.chat), final = !this.imitaEn(p.chat) && !enPrimeraPersona(texto, this.config.nombre) ? this.firmar(f, texto) : texto;
     try{ await this.mandar(p.chat, final); }catch(e){ return `✗ No pude mandarle a ${p.nombre}: ${e.message}`; }
-    this.estado.propuestas = this.estado.propuestas.filter(x => x !== p);
+    this.estado.propuestas = this.estado.propuestas.filter(x => x !== p); this.cerrarPendientesDe(p);
     this.bitacora(p.chat, p.nombre, [{ texto: p.dijo || '' }], 'contesto', texto, 'lo aprobaste en palabras normales');
     return `A ${p.nombre}: «${texto.slice(0, 300)}»`;
   }
