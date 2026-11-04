@@ -180,6 +180,19 @@ async function hablar(texto, voz){
 
 export const ia = {
   jugarElenco,
+  /* el conmutador (4 nov): quién llama y para qué, o si es spam */
+  async llamada({ dijo }){
+    const sistema = `Contestas el teléfono de Carlos. La persona que llamó dijo esto (transcrito, puede venir con errores). Saca su nombre y para qué llama, y di si es SPAM: venta por teléfono, banco o tarjeta que no pidió, encuestas, «estimado cliente», «usted fue seleccionado», cobranza genérica, «recibimos tu currículum» de una empresa cualquiera, grabaciones. Una persona que dice quién es y algo concreto NO es spam.
+Contesta SÓLO JSON: {"spam":false, "nombre":"", "motivo":"para qué llama, en pocas palabras, como para decir «para lo de …»"}`;
+    const j = sacarJson(await preguntar(sistema, dijo, { tope: 600 })) || {};
+    return { spam: !!j.spam, nombre: String(j.nombre || '').slice(0, 60), motivo: String(j.motivo || '').slice(0, 120) };
+  },
+  async decision({ dijo, nombre, motivo }){
+    const sistema = `Eres la asistente de Carlos. Le llamaste para avisarle que ${nombre || 'alguien'} le está llamando por ${motivo || 'algo'}. Él te contestó lo de abajo (transcrito). ¿Quiere que se lo pases ("pasar": true) o que le digas algo? Si es recado, escribe en "decir" lo que se le dice a quien llamó, natural y amable, con lo que Carlos pidió (si dijo «dile que no estoy», algo como «que ahorita no puede atenderte y que te escribe más tarde»). Nunca inventes datos que él no dijo.
+Contesta SÓLO JSON: {"pasar":false, "decir":""}`;
+    const j = sacarJson(await preguntar(sistema, dijo, { tope: 600 })) || {};
+    return { pasar: !!j.pasar, decir: String(j.decir || '').slice(0, 400) };
+  },
   /* una nota de voz → texto */
   async oir({ b64, mime }){ const t = await transcribir(b64, mime); return /^\[no se entiende\]$/i.test(t) ? '' : t; },
   /* un texto → nota de voz (OGG/Opus) */

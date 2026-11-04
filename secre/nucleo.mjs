@@ -33,7 +33,7 @@
                  16 de octubre: «me gusta que la historia se desarrolle en
                  automático cuando yo no puedo»).
    ═════════════════════════════════════════════════════════════════════════ */
-import { llamar, llamadasListas } from './llamada.mjs';
+import { llamar, llamadasListas, twilioDe } from './llamada.mjs';
 import { HORARIOS, cualHorario, mensajesDeHorario } from './horarios.mjs';
 import { bancoDeSala, buscarFotos, nombreDe as nombreFoto, pieDe } from './banco.mjs';
 import { revisarRespuesta, leerPrecios, textoPrecio, enQueAnda, cantidades } from './criterio.mjs';
@@ -201,7 +201,7 @@ export class Secre {
   static hermanas = new Set();
   constructor({ cuenta = 'principal', transporte, ia, almacen, reloj = () => Date.now(), azar = Math.random, telefono = null, banco = undefined, conocimiento = undefined, compartir = false }){
     /* telefono: { listas(), llamar({ a, texto }) } — por omisión, Twilio (llamada.mjs) */
-    Object.assign(this, { cuenta, transporte, ia, almacen, reloj, azar, telefono: telefono || { listas: () => llamadasListas(), llamar: (x) => llamar(x) } });
+    Object.assign(this, { cuenta, transporte, ia, almacen, reloj, azar, telefono: telefono || { listas: () => llamadasListas(), llamar: (x) => llamar(x), conversar: async ({ a, url }) => { try{ const sid = await twilioDe().llamar({ a, url }); return { bien: !!sid, id: sid }; }catch(e){ return { bien: false, error: e.message }; } } } });
     /* el banco de imágenes de La Sala; null = sin banco */
     this.banco = banco === undefined ? bancoDeSala() : banco;
     this.conocimiento = conocimiento === undefined ? cargarConocimiento() : conocimiento;
@@ -991,7 +991,9 @@ export class Secre {
     if(!this.telefono.listas()){ return; }
     this.estado.llamoT = ahora;
     const texto = `Hola ${this.config.nombre}, soy ${this.deTurno()}, tu asistente. ${nombre} te escribió algo urgente: ${String(dijo).slice(0, 300)}.` + (motivo ? ` ${motivo}.` : '') + ' Revisa tu WhatsApp.';
-    const r = await this.telefono.llamar({ a: this.numeroDeCarlos(), texto });
+    /* con el conmutador puesto, la llamada CONVERSA: le dice qué pasa y él contesta qué decirle a cada uno */
+    const base = (typeof process !== 'undefined' && (process.env.SECRE_URL || process.env.RENDER_EXTERNAL_URL) || '').replace(/\/+$/, '');
+    const r = this.telefono.conversar && base ? await this.telefono.conversar({ a: this.numeroDeCarlos(), url: base + '/voz/pendientes' }) : await this.telefono.llamar({ a: this.numeroDeCarlos(), texto });
     await this.avisar(r.bien ? `📞 Te llamé: ${nombre} escribió algo urgente.` : `📞 Quise llamarte por ${nombre} y no pude: ${r.error}`);
     this.guardar();
   }
