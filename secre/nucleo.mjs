@@ -239,6 +239,14 @@ export class Secre {
       this.config.campana = Object.assign({}, CAMPANA_BASE, this.config.campana || {}, { activo: true });
       this.config.version = 4;
     }
+    /* 4 nov, noche: el historial «terminó» con 0 prendas (el ancla era un mensaje borrado y se rindió en
+       80 s). Se vuelve a intentar, con calma y otra ancla */
+    if(Object.keys(guardada).length && (guardada.version || 1) < 5){
+      const M = this.config.mayoreo;
+      if(M && M.activo && M.fuente && !(this.config.productos || []).length) M.historico = true;
+      this.config.version = 5;
+      this.reintentarHistorial = true;
+    }
     /* las dos cuentas de Carlos corren en el mismo proceso: lo compartido se junta al arrancar */
     this.compartir = compartir;
     if(compartir) for(const h of Secre.hermanas){ for(const k of COMPARTIDO){ const mio = this.config[k], suyo = h.config[k];
@@ -672,7 +680,7 @@ export class Secre {
     const C = this.config.campana || {}, E = this.estado.campana || {}, MY = this.config.mayoreo || {}, H = this.estado.histMayoreo || {};
     return { cuenta: this.cuenta, version: this.config.version,
       campana: { activo: !!C.activo, porDia: C.porDia, hoy: E.hoy || 0, total: Object.values(E.hechos || {}).filter(x => x.jid).length, revisados: Object.keys(E.hechos || {}).length, proxima: E.proxima || 0, motivo: E.motivo || '' },
-      mayoreo: { activo: !!MY.activo, fuente: !!MY.fuente, destino: !!MY.destino, duena: MY.duena || '', historico: !!MY.historico, pedidas: H.pedidas || 0, prendas: (this.config.productos || []).length, enCola: (this.estado.colaFotos || []).length, mandadas: (this.estado.envioMayoreo || {}).total || 0 },
+      mayoreo: { activo: !!MY.activo, fuente: !!MY.fuente, destino: !!MY.destino, duena: MY.duena || '', historico: !!MY.historico, pedidas: H.pedidas || 0, sinAvance: H.sinAvance || 0, recibidos: H.recibidos || 0, prendas: (this.config.productos || []).length, enCola: (this.estado.colaFotos || []).length, mandadas: (this.estado.envioMayoreo || {}).total || 0 },
       fallas: this.ultimaFalla || {}, registro: (this.estado.registro || []).slice(-8).map(x => x.que).filter(q => /campa|mayoreo|fall|no pude/i.test(q)) };
   }
   /* ── la campaña a negocios sin página: pocos al día, en horario, desde la cuenta del negocio ── */
@@ -737,8 +745,10 @@ export class Secre {
       }
     }
     if(!MY.historico || !MY.fuente || !T.pedirHistorial || (MY.duena && MY.duena !== this.cuenta)) return;
+    if(this.reintentarHistorial){ this.reintentarHistorial = false; this.estado.histMayoreo = null; }
     const H = this.estado.histMayoreo || (this.estado.histMayoreo = { pedidas: 0, ultimoT: 0, sinAvance: 0, ultimaVez: 0 });
-    if(ahora - H.ultimaVez < 20_000) return;
+    /* el teléfono contesta cuando puede (a veces minutos): entre pedido y pedido se espera minuto y medio */
+    if(ahora - H.ultimaVez < 90_000) return;
     H.ultimaVez = ahora;
     const t0 = T.masViejo ? T.masViejo(MY.fuente) : 0;
     /* WhatsApp sólo da lo viejo «a partir de» un mensaje que ya se vio; si el grupo está quieto desde que
@@ -748,17 +758,24 @@ export class Secre {
       if(!H.pidioAncla && ahora - H.desde > 10 * MIN){ H.pidioAncla = true; this.guardar(); await this.avisar(`📦 Para bajar las fotos viejas de ${this.nombreDe(MY.fuente)} necesito que llegue un mensaje nuevo a ese grupo. Escribe ahí cualquier cosa (un punto) y lo borras después; en cuanto lo vea, empiezo.`); }
       return;
     }
-    if(t0 && t0 === H.ultimoT) H.sinAvance++; else H.sinAvance = 0;
-    H.ultimoT = t0 || H.ultimoT;
-    /* ya no llega nada más viejo (o ya se pidieron 4,000 mensajes): se acabó el historial */
-    if(H.sinAvance >= 4 || H.pedidas >= 80){
+    const rec = T.recibidos ? T.recibidos(MY.fuente) : 0;
+    const avanzo = (t0 && t0 !== H.ultimoT) || rec > (H.recibidos || 0);
+    if(H.pedidas && !avanzo) H.sinAvance++; else if(avanzo) H.sinAvance = 0;
+    H.ultimoT = t0 || H.ultimoT; H.recibidos = rec;
+    /* ya no llega nada más viejo (10 pedidos seguidos sin nada, unos 15 min) o ya van 6,000 mensajes */
+    if(H.sinAvance >= 10 || H.pedidas >= 120){
       MY.historico = false; this.guardar();
-      await this.avisar(`📦 Mayoreo: ya revisé todo el historial de ${this.nombreDe(MY.fuente)}. Tengo ${(this.config.productos || []).length} prendas; las voy mandando a ${MY.destino ? this.nombreDe(MY.destino) : "All's"} de ${MY.tanda || 100} en ${MY.tanda || 100}.`);
+      const np = (this.config.productos || []).length;
+      await this.avisar(np ? `📦 Mayoreo: ya revisé todo el historial de ${this.nombreDe(MY.fuente)}. Tengo ${np} prendas; las voy mandando a ${MY.destino ? this.nombreDe(MY.destino) : "All's"} de ${MY.tanda || 100} en ${MY.tanda || 100}.`
+        : `📦 Mayoreo: le pedí a WhatsApp las fotos viejas de ${this.nombreDe(MY.fuente)} y no me mandó ninguna. Las NUEVAS que lleguen sí las paso a All's. Para las viejas: abre ese grupo en tu teléfono, con internet, y dime «vuelve a jalar las fotos de mayoreo».`);
       return;
     }
     /* el ancla se guarda: tras un reinicio se sigue desde donde iba, sin esperar a que alguien escriba en el grupo */
     if(T.ancla){ const an = T.ancla(MY.fuente); if(an && (!H.ancla || an.t < H.ancla.t)) H.ancla = an; }
-    try{ if(await T.pedirHistorial(MY.fuente, 50, H.ancla || null)) H.pedidas++; }catch(e){ this.anotar('Mayoreo: no pude pedir el historial: ' + e.message); }
+    /* si el pedido anterior no trajo nada: el tiempo en la otra unidad, y luego otra ancla */
+    const opciones = { saltar: H.sinAvance > 0 && H.sinAvance % 2 === 0, seg: H.sinAvance % 2 === 1 };
+    if(opciones.saltar) H.ancla = null;
+    try{ if(await T.pedirHistorial(MY.fuente, 50, H.ancla || null, opciones)) H.pedidas++; }catch(e){ this.anotar('Mayoreo: no pude pedir el historial: ' + e.message); }
     this.guardar();
   }
 
@@ -1881,7 +1898,7 @@ export class Secre {
       case 'mayoreo': {
         const M = this.config.mayoreo = Object.assign({}, MAYOREO_BASE, this.config.mayoreo || {});
         if(a.tanda !== undefined && +a.tanda >= 1) M.tanda = Math.min(500, Math.round(+a.tanda));
-        if(a.historial) M.historico = true;
+        if(a.historial){ M.historico = true; this.estado.histMayoreo = null; }
         if(a.fuente){ const j = chatDe(a.fuente); if(j) M.fuente = j; else { M.fuente = ''; M.fuenteNombre = a.fuente; } }
         if(a.destino){ const j = chatDe(a.destino); if(j){ M.destino = j; this.chat(j).tienda = true; if(!this.chat(j).modo) this.chat(j).modo = 'auto'; } else { M.destino = ''; M.destinoNombre = a.destino; } }
         if(a.margen !== undefined && +a.margen >= 0 && +a.margen <= 5000){ M.margen = Math.round(+a.margen); for(const p of this.config.productos || []) if(p.costo) p.precio = precioVenta(p.costo, M.margen); }

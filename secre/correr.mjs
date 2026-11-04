@@ -76,7 +76,7 @@ async function prender(c){
     otrosYo: () => Object.entries(vivas).filter(([k, x]) => k !== c.id && x.transporte).flatMap(([, x]) => x.transporte.yo()),
     escribiendo: (j, ms) => esMeta(j) ? null : v.transporte.escribiendo(j, ms), leido: (j) => esMeta(j) ? null : v.transporte.leido(j),
     /* Mayoreo: los grupos por nombre y el historial viejo; la campaña: si un número tiene WhatsApp */
-    grupos: () => v.transporte.grupos(), pedirHistorial: (c2, n, a) => v.transporte.pedirHistorial(c2, n, a),
+    grupos: () => v.transporte.grupos(), pedirHistorial: (c2, n, a, o) => v.transporte.pedirHistorial(c2, n, a, o), recibidos: (c2) => v.transporte ? v.transporte.recibidos(c2) : 0,
     masViejo: (c2) => v.transporte ? v.transporte.masViejo(c2) : 0, ancla: (c2) => v.transporte ? v.transporte.ancla(c2) : null,
     existe: (t) => v.transporte.existe(t) };
   v.secre = new Secre({ cuenta: c.id, transporte: puente, ia, almacen, compartir: true });
