@@ -11,7 +11,7 @@
 <meta property="og:title" content="Grupo Mazi · si no existe la herramienta, se construye la herramienta">
 <meta property="og:description" content="Páginas web desde $2,000, apps, marketing, video y fotografía. Entregamos rápido y nos quedamos contigo.">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="img/cubo.svg" type="image/svg+xml">
+<link rel="icon" href="img/paloma.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter+Tight:wght@400;500;600;700;800&display=swap">
@@ -83,6 +83,9 @@ button{ font:inherit; color:inherit; background:none; border:0; cursor:pointer }
 .portada::before{ content:""; position:absolute; inset:0; z-index:-1; background:radial-gradient(60% 45% at 70% 30%, #4A1640, transparent 70%), radial-gradient(70% 50% at 10% 90%, #3A0F2E, transparent 70%), var(--o) }
 .portada::after{ content:""; position:absolute; inset:0; z-index:-1; background-image:linear-gradient(#ffffff08 1px, transparent 1px), linear-gradient(90deg, #ffffff08 1px, transparent 1px); background-size:64px 64px; mask:radial-gradient(70% 60% at 60% 35%, #000, transparent) }
 #cubo3d{ width:100%; height:100%; min-height:300px; touch-action:pan-y }
+.portada__paloma{ display:block; width:100%; height:100%; min-height:260px; object-fit:contain; filter:drop-shadow(0 0 40px #AC27FF88); animation:palomaFlota 6s ease-in-out infinite }
+@keyframes palomaFlota{ 50%{ transform:translateY(-14px) } }
+@media (prefers-reduced-motion: reduce){ .portada__paloma{ animation:none } }
 .portada__toca{ position:absolute; right:20px; top:96px; font:500 12px/1 var(--s); letter-spacing:.2em; text-transform:uppercase; color:var(--g); opacity:0; transition:opacity 1s 3.4s }
 .cargado .portada__toca{ opacity:1 }
 .portada__in{ padding:10px 0 40px }
@@ -139,7 +142,7 @@ button{ font:inherit; color:inherit; background:none; border:0; cursor:pointer }
 .op[aria-pressed="true"] small{ color:var(--m2) }
 .op:active{ transform:scale(.97) }
 .total{ position:relative; overflow:hidden; display:grid; gap:12px; padding:30px; border-radius:28px; background:var(--o); color:var(--c) }
-.total::after{ content:""; position:absolute; right:-80px; bottom:-120px; width:300px; height:300px; background:url(img/cubo.svg) center/contain no-repeat; opacity:.14; transform:rotate(-8deg) }
+.total::after{ content:""; position:absolute; right:-80px; bottom:-120px; width:300px; height:300px; background:url(img/paloma.svg) center/contain no-repeat; opacity:.14; transform:rotate(-8deg) }
 .total .k{ color:var(--m2) }
 .total .cifra{ font:700 clamp(52px, 9vw, 92px)/.9 var(--s); letter-spacing:-.06em; font-variant-numeric:tabular-nums }
 .total .cifra small{ font-size:.3em; letter-spacing:0; color:var(--g); vertical-align:.95em; margin-right:6px }
@@ -236,7 +239,7 @@ button{ font:inherit; color:inherit; background:none; border:0; cursor:pointer }
 
 <header class="barra" id="barra">
   <div class="ancho barra__in">
-    <a class="barra__logo" href="#inicio" aria-label="Grupo Mazi, inicio"><img src="img/logo.svg" alt="Grupo Mazi" width="183" height="72"></a>
+    <a class="barra__logo" href="#inicio" aria-label="Grupo Mazi, inicio"><img src="img/logo.svg" alt="Grupo Mazi" width="165" height="40"></a>
     <nav aria-label="Secciones"><a href="#servicios">Servicios</a><a href="#arma">Arma tu proyecto</a><a href="#trabajo">Trabajo</a><a href="#precios">Precios</a><a href="#unete">Únete</a></nav>
     <a class="btn btn--wa" data-wa="Hola, quiero cotizar con Grupo Mazi" href="https://wa.me/524428833786"><svg aria-hidden="true"><use href="#i-wa"/></svg>Cotiza</a>
     <button class="barra__menu" type="button" id="abrirMenu" aria-label="Abrir el menú" aria-expanded="false" aria-controls="menu"><svg aria-hidden="true"><use href="#i-menu"/></svg></button>
@@ -249,8 +252,8 @@ button{ font:inherit; color:inherit; background:none; border:0; cursor:pointer }
 
 <main id="inicio">
   <section class="portada" aria-labelledby="t-portada">
-    <div class="portada__3d"><canvas id="cubo3d" aria-label="El logo de Grupo Mazi armándose en 3D. Tócalo." role="img"></canvas></div>
-    <p class="portada__toca" aria-hidden="true">Toca el cubo</p>
+    <!-- Carlos, 4 nov: «usa el logo original en todo por ahora»: la paloma en vez del cubo 3D (js/portada.js se queda para volver) -->
+    <div class="portada__3d"><img class="portada__paloma" src="img/paloma.svg" alt="" width="1072" height="631"></div>
     <div class="ancho portada__in revela">
       <h1 class="t-dis" id="t-portada"><span class="l"><span>Todo gran proyecto</span></span><span class="l"><span>comienza con una</span></span><span class="l"><span><em>base sólida.</em></span></span></h1>
       <p class="portada__lede sube"><b>Nosotros la construimos,</b> y también la última pieza que le da vida. Páginas web desde <b>$2,000</b>, apps, marketing y video, con un mismo equipo.</p>
@@ -369,11 +372,11 @@ button{ font:inherit; color:inherit; background:none; border:0; cursor:pointer }
     </div>
   </section>
 </main>
-<footer class="pie"><div class="ancho"><img src="img/logo.svg" alt="Grupo Mazi" width="140" height="55"><span>© 2026 Grupo Mazi · Querétaro</span><span class="der">Luz del 3D: HDRI «Studio Small 09», Poly Haven (CC0)</span></div></footer>
+<footer class="pie"><div class="ancho"><img src="img/logo.svg" alt="Grupo Mazi" width="140" height="34"><span>© 2026 Grupo Mazi · Querétaro</span><span class="der">Luz del 3D: HDRI «Studio Small 09», Poly Haven (CC0)</span></div></footer>
 <a class="wa-flota" id="waFlota" data-wa="Hola, quiero cotizar con Grupo Mazi" href="https://wa.me/524428833786" aria-label="Escríbenos por WhatsApp"><svg aria-hidden="true"><use href="#i-wa"/></svg></a>
 
 <script type="importmap">{ "imports": { "three": "./js/vendor/three.module.min.js" } }</script>
-<script type="module" src="js/portada.js"></script>
+<!-- <script type="module" src="js/portada.js"></script> el cubo 3D, apagado mientras va el logo original -->
 <script type="module" src="js/pagina.js"></script>
 </body>
 </html>
