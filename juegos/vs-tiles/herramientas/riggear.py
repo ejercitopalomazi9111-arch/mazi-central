@@ -150,6 +150,30 @@ if os.environ.get('PESOS', 'calor') == 'calor':
             for n, w in cercanos[o.name][v.index]:
                 (g.get(n) or g.setdefault(n, o.vertex_groups.new(name=n))).add([v.index], w, 'REPLACE')
         print('difusión', o.name, len(o.data.vertices), 'vértices,', vacios, 'por cercanía')
+        o['_vacios'] = vacios / max(1, len(o.data.vertices))
+    # las piezas sueltas que la difusión no alcanzó (las rayas de un suéter, cosidas aparte del cuerpo) toman los
+    # pesos de la pieza grande que SÍ los tiene, por la cara más cercana. Si cada pieza se pegara a los huesos a
+    # su manera, al bailar se abren entre sí en tiras (Temmie de cuerpo completo, 4 nov)
+    donantes = [o for o in mallas if o.get('_vacios', 1) < .2 and len(o.data.vertices) >= 2000]
+    if donantes:
+        dona = max(donantes, key=lambda o: len(o.data.vertices))
+        for o in mallas:
+            es_pelo = bool(PELO.search(o.name + ' ' + ' '.join(m.name for m in o.data.materials if m)))
+            if o is dona or es_pelo or o.get('_vacios', 0) < .5: continue
+            o.vertex_groups.clear()
+            for vg in dona.vertex_groups: o.vertex_groups.new(name=vg.name)
+            dt = o.modifiers.new('Copia', 'DATA_TRANSFER'); dt.object = dona; dt.use_vert_data = True
+            dt.data_types_verts = {'VGROUP_WEIGHTS'}; dt.vert_mapping = 'POLYINTERP_NEAREST'
+            dt.layers_vgroup_select_src = 'ALL'; dt.layers_vgroup_select_dst = 'NAME'
+            bpy.ops.object.select_all(action='DESELECT'); o.select_set(True); bpy.context.view_layer.objects.active = o
+            bpy.ops.object.modifier_move_to_index(modifier='Copia', index=0); bpy.ops.object.modifier_apply(modifier='Copia')
+            # lo que la copia dejó sin peso se quedaría quieto en T mientras el cuerpo baila: va por cercanía
+            g = {vg.name: vg for vg in o.vertex_groups}; sin = 0
+            for v in o.data.vertices:
+                if sum(x.weight for x in v.groups) > .05: continue
+                sin += 1
+                for n, w in cercanos[o.name][v.index]: (g.get(n) or g.setdefault(n, o.vertex_groups.new(name=n))).add([v.index], w, 'REPLACE')
+            print('pesos copiados de', dona.name, 'a', o.name, '·', sin, 'sin peso, por cercanía')
 
 # los grosores (para no meter un brazo en el torso): la distancia típica de la piel a su hueso, en reposo
 def grosor(nombres, a, b):

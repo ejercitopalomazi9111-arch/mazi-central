@@ -48,7 +48,7 @@ export const CANCIONES = [
   { id: 'estudio-revolucionario', titulo: 'Estudio Revolucionario', artista: 'Chopin · Op. 10 n.º 12', voces: ['miku', 'gumi'], escena: 9, piano: true },
   { id: 'rush-omega', titulo: 'RUSH Ω', artista: 'Arreglo imposible del Revolucionario', voces: ['miku-akuma'], escena: 11, piano: true, jefe: true },
   /* la de Temmie: «Buy Something!» de Cleyton Kauffman (CC0), música de tienda. Sólo la ve quien la tiene */
-  { id: 'hoi-tem-shop', titulo: 'hOI! (tEM SHOP)', artista: 'Cleyton Kauffman', voces: ['temmie-tienda', 'temmie'], escena: 4, secreto: true, cine: 'temshop' }
+  { id: 'hoi-tem-shop', titulo: 'hOI! (tEM SHOP)', artista: 'Cleyton Kauffman', voces: ['temmie-tienda', 'temmie-cuerpo', 'temmie'], escena: 4, secreto: true, cine: 'temshop' }
 ];
 const HISTORIA = [
   { cap: 'Prólogo · La primera nota', misiones: [
@@ -117,6 +117,8 @@ const CLAVE = 'vstiles:v1';
 const base = () => ({ nombre: '', color: 0, tiene: ['voz:gumi', 'voz:miku', 'voz:luka', 'nota:neon', 'golpe:flare', 'fondo:0', 'titulo:resonante'], puesto: { voz: 'voz:gumi', nota: 'nota:neon', golpe: 'golpe:flare', fondo: 'fondo:0', titulo: 'titulo:resonante', forma: 'forma:barra', flechas: 'flechas:contorno', simbolos: 'simbolos:color', aros: 'aros:clasico', boton: 'boton:neon' },
   ecos: 1500, sellos: 3, nivel: 1, xp: 0, record: {}, historia: {}, desfase: 0, desfaseVisual: 0, vel: 1, sonidoGolpe: true, mostrarDesvio: true, sinMov: false, pity: 0, visto: false, calibrado: false });
 let Y = base(); try{ const g = JSON.parse(localStorage.getItem(CLAVE) || 'null'); if(g) Y = { ...base(), ...g, puesto: { ...base().puesto, ...(g.puesto || {}) } }; }catch(e){}
+/* el hOI de los botones se fue (4 nov): quien lo tenía prendido, o nunca tocó el ajuste, lo oye al acertar */
+if(Y.hoiNotas === undefined || Y.hoiBotones) Y.hoiNotas = true; delete Y.hoiBotones;
 /* quien ya jugaba antes de que existieran estas categorías recibe las de fábrica */
 for(const id of DE_FABRICA) if(!Y.tiene.includes(id)) Y.tiene.push(id);
 const guardar = () => { try{ localStorage.setItem(CLAVE, JSON.stringify(Y)); }catch(e){} };
@@ -186,10 +188,8 @@ $('#arranque').addEventListener('click', async function entrar(e){
     .map(async ([k, f]) => { sonidos[k] = await reloj.cargar(`sonidos/${f}.wav`).catch(() => null); }));
   if(!Y.visto) intro(); else if(!Y.nombre) perfil(); else if(!(await editorUI.desdeEnlace())) menu();
 });
-document.addEventListener('click', (e) => { const b = e.target.closest('[data-ir]'); if(!b) return; if(!hoi(b)) sonidos.boton && reloj.golpe(sonidos.boton, .25); ir(b.dataset.ir); });
-/* el «hOI!» de Temmie al tocar cualquier botón (Carlos, 30 oct), sólo si se prende en Ajustes */
-function hoi(b){ if(!Y.hoiBotones || !sonidos.hoi || !Y.tiene.includes('boton:temmie') || !b?.closest('button, .b, [data-ir], .obj, .ranura')) return false; reloj.golpe(sonidos.hoi, .45); return true; }
-document.addEventListener('click', (e) => { if(!e.target.closest('[data-ir]')) hoi(e.target); }, true);
+/* el «hOI!» de Temmie suena AL ACERTAR una nota, no al tocar botones (Carlos, 4 nov): vive en juego.js */
+document.addEventListener('click', (e) => { const b = e.target.closest('[data-ir]'); if(!b) return; sonidos.boton && reloj.golpe(sonidos.boton, .25); ir(b.dataset.ir); });
 function ir(a){ ({ menu, historia, libre: () => canciones('libre'), reto: () => canciones('reto'), lab: () => mostrar('lab'), mercado, vestidor, records, ajustes, creditos,
   saltarIntro: () => { cortarIntro = true; }, tutorial: () => { Y.tutorialVisto = true; guardar(); jugar('itty-bitty-8-bit', 'carril', 'tutorial'); }, aCalibrar, saltarCalib: () => { Y.calibrado = true; guardar(); if(Y.tutorialVisto) menu(); else ir('tutorial'); }, seguir: () => { partida.alternarPausa(); }, reintentar: jugarDeNuevo, salirJuego: () => { partida.salir(); if(ultima?.nivel) volverNivel(); else if(ultima?.deHistoria) historia(); else canciones(modoLista); }, libreVolver: () => ultima?.alMenu ? menu() : ultima?.nivel ? volverNivel() : ultima?.deHistoria ? finDeMision() : canciones(modoLista), niveles: () => editorUI.lista() })[a]?.(); }
 /* de un nivel hecho a mano se regresa a donde se vino: al editor si es tuyo, a la lista si te lo pasaron */
@@ -208,12 +208,12 @@ function perfil(){ mostrar('perfil'); $('#nombre').value = Y.nombre;
   const col = $('#colores'); col.innerHTML = ''; ['Magenta', 'Cian', 'Oro'].forEach((n, i) => { const b = document.createElement('button'); b.textContent = n; b.className = Y.color === i ? 'si' : ''; b.style.color = ['#FF2D7A', '#38E1FF', '#FFE08A'][i]; b.onclick = () => { Y.color = i; [...col.children].forEach(x => x.classList.toggle('si', x === b)); }; col.appendChild(b); }); }
 function aCalibrar(){ Y.nombre = ($('#nombre').value || 'Resonante').trim().slice(0, 16); regaloSecreto(); guardar(); mostrar('calibrar'); }
 /* el secreto de la casa: quien se llame Mazi o Palomazi recibe el estilo de la paloma (no se anuncia en ningún lado) */
-function regaloSecreto(){ const TEMMIE = ['voz:temmie', 'voz:temmie-tienda', 'nota:temmie', 'forma:temmie', 'golpe:temmie', 'flechas:temmie', 'simbolos:temmie', 'aros:temmie', 'boton:temmie', 'titulo:temmie', 'cancion:hoi-tem-shop'];
+function regaloSecreto(){ const TEMMIE = ['voz:temmie', 'voz:temmie-tienda', 'voz:temmie-cuerpo', 'nota:temmie', 'forma:temmie', 'golpe:temmie', 'flechas:temmie', 'simbolos:temmie', 'aros:temmie', 'boton:temmie', 'titulo:temmie', 'cancion:hoi-tem-shop'];
   const n = (Y.nombre || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '');
   /* Palomazi y Temmie reciben a Temmie de ídol y de foto DE INMEDIATO, más uno de cada cosa suya (Carlos, 30 oct) */
   if(['palomazi', 'temmie'].includes(n)){ const nuevos = TEMMIE.filter(id => !Y.tiene.includes(id));
     if(nuevos.length){ const primera = nuevos.includes('voz:temmie'); Y.tiene.push(...nuevos); if(primera){ Y.puesto.voz = 'voz:temmie'; Y.puesto.titulo = 'titulo:temmie'; Y.foto = 'temmie'; } guardar();
-      setTimeout(() => aviso(primera ? 'hOI! soy temmie!!! temmie es tu ídol ahora!! mira tu Vestidor (y hay una canción nueva)' : 'hOI!! la temmie del tem shop llegó a tu Vestidor!! (es otra ídol)'), 1200); } }
+      setTimeout(() => aviso(primera ? 'hOI! soy temmie!!! temmie es tu ídol ahora!! mira tu Vestidor (y hay una canción nueva)' : (nuevos.includes('voz:temmie-cuerpo') ? 'hOI!! temmie de cuerpo completo llegó a tu Vestidor!! (otra ídol, y esta sí baila)' : 'hOI!! la temmie del tem shop llegó a tu Vestidor!! (es otra ídol)')), 1200); } }
   if(!['mazi', 'palomazi'].includes(n)) return; const nuevos = ['nota:paloma', 'golpe:paloma', 'titulo:paloma'].filter(id => !Y.tiene.includes(id)); if(!nuevos.length) return;
   Y.tiene.push(...nuevos); guardar(); setTimeout(() => aviso('Algo en el archivo te reconoció. Mira tu Vestidor.'), 2600); }
 
@@ -513,7 +513,7 @@ function ajustes(){ mostrar('ajustes'); const A = $('#ajustesL');
   A.innerHTML = fila('desfase', 'Sincronía del audio', -250, 250, 1, ' ms', 'Si siempre vas tarde, súbelo; si vas antes, bájalo. La calibración lo pone sola.') + fila('desfaseVisual', 'Sincronía visual', -100, 100, 1, ' ms', 'Si las notas se ven llegar antes o después del sonido.')
     + fila('vel', 'Velocidad de las notas', .5, 2.5, .05, '×', 'Sólo cambia qué tan rápido se ven; la canción y los tiempos no cambian.')
     + tog('sonidoGolpe', 'Sonido al acertar', 'Un golpe corto con cada nota.') + tog('mostrarDesvio', 'Mostrar «antes» / «tarde»', 'Los milisegundos de cada toque, debajo del juicio.')
-    + (Y.tiene.includes('boton:temmie') ? tog('hoiBotones', 'hOI! al tocar botones', '* tEMMIE dice hOI!! cada vez que tocas un botón.') + tog('hoiNotas', 'hOI! al acertar notas', '* tEMMIE dice hOI!! en vez del golpe de cada nota. awawa.') : '')
+    + (Y.tiene.includes('golpe:temmie') ? tog('hoiNotas', 'hOI! al acertar notas', '* tEMMIE dice hOI!! en vez del golpe de cada nota. awawa.') : '')
     + (Y.practicaVista ? tog('practica', 'Modo práctica', 'Aunque la vida llegue a cero sigues jugando hasta el final. No se ganan Ecos, ni récords, ni se avanza la Historia.') : '')
     + '<div class="pie" style="background:none"><button class="b" id="recalibrar">Calibrar otra vez</button></div>';
   /* EL MODO PRÁCTICA está escondido (Carlos, 30 oct): se destapa tocando 5 veces el título «Ajustes» */

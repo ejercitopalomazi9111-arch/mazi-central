@@ -30,7 +30,7 @@ espejo; bajarlos de Sketchfab pide una cuenta (un token de su API).
 **El secreto de Palomazi** (sólo aparece si el jugador se llama Palomazi o Temmie): `modelos/temmie.glb`,
 «Temmie 3d model (basic low poly version)» de **Stewie_Box** (Sketchfab, CC BY 4.0). Su cara recortada de
 ese mismo modelo es `sprites/temmie-cara.webp`. La Temmie del TEM SHOP en su caja (`modelos/temmie-tienda.glb`)
-es «undertale temmie» de **xunbile** (Sketchfab, CC BY 4.0), sin el cuarto, el letrero de diálogo ni el contorno. Temmie es personaje de **Undertale**, de **Toby Fox**: este
+es «undertale temmie» de **xunbile** (Sketchfab, CC BY 4.0), sin el cuarto, el letrero de diálogo ni el contorno. La Temmie de cuerpo completo, la del suéter de rayas (`modelos/temmie-cuerpo.glb`), es «Anthro Temmie (version 2)» de **AdamTheSigma** (Sketchfab, CC BY 4.0, sketchfab.com/3d-models/6e022152b5fd40fcb5ea1555791abd93); el esqueleto y los bailes (capturas de CMU) se los pusimos aquí con `herramientas/riggear.py`. Temmie es personaje de **Undertale**, de **Toby Fox**: este
 es un juego de fans, gratis, y el modelo es de un fan.
 
 **El Tem Shop** (el cuarto de la canción de Temmie, `js/cine.js`): el dibujo del cuarto, el letrero «TEM SHOP» y el

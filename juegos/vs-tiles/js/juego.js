@@ -57,7 +57,7 @@ export function crearPartida({ escena, capa, sprites: S, sonidos, ajustes, alTer
   function marcar(n, j, dt, donde){
     est.estado[n.id] = n.fin && j.id !== 'fallo' ? 'sosteniendo' : (j.id === 'fallo' ? 'fallada' : 'hecha');
     est.ultimoGolpe = performance.now();
-    if(j.id !== 'fallo'){ if(ajustes.hoiNotas && sonidos.hoi) reloj.golpe(sonidos.hoi, .5); else if(sonidos.golpe && ajustes.sonidoGolpe) reloj.golpe(sonidos.golpe, .35);
+    if(j.id !== 'fallo'){ if(ajustes.hoiNotas && sonidos.hoi && ajustes.tiene?.includes('golpe:temmie')) reloj.golpe(sonidos.hoi, .5); else if(sonidos.golpe && ajustes.sonidoGolpe) reloj.golpe(sonidos.golpe, .35);
       if(n.modo === 'carril') escena.golpeRiel(n.r, j.id === 'sonoluz' ? '#FFF3B0' : null);
       const [px, py] = donde || [W / 2, H * .6]; efectos.push({ x: px, y: py, t0: performance.now(), j, color: j.color }); }
     else if(sonidos.fallo) reloj.golpe(sonidos.fallo, .25);
