@@ -176,7 +176,7 @@ console.log('\n§9 · todo el historial de «Shopy go mayoreo 1», de 100 en 100
   for(const [i, f] of fs9.entries()) await s9.alMensaje({ id: 'H' + i, chat: G1, grupo: true, nombre: 'Proveedor', nombreChat: 'Shopy go mayoreo 1', texto: '[foto] Blusa ' + i + ' $' + (200 + i * 10) + ' tallas S M', imagen: img(f, 'Blusa ' + i + ' $' + (200 + i * 10) + ' tallas S M'), t: Date.UTC(2026, 9, 1) + i * 3600000, historico: true });
   ok('las fotos viejas se vuelven prendas con precio de venta', s9.config.productos.length === 3 && s9.config.productos[2].precio === 470, s9.config.productos.map(p => p.precio));
   await s9.alMensaje({ id: 'H9', chat: '5214420000000@s.whatsapp.net', nombre: 'Ana', texto: '¿vienes?', t: Date.UTC(2026, 9, 1), historico: true });
-  ok('lo viejo de otros chats no se contesta ni se anota', !env9.some(e => e.jid === '5214420000000@s.whatsapp.net') && !s9.estado.pendientes.length);
+  ok('lo viejo de otros chats no se contesta ni se anota', !env9.some(e => e.jid === '5214420000000@s.whatsapp.net' && !/^🤖/.test(e.texto)) && !s9.estado.pendientes.length, [env9.filter(e => e.jid === '5214420000000@s.whatsapp.net'), s9.estado.pendientes]);
   /* de 2 en 2 para la prueba (Carlos pidió 100) */
   s9.config.mayoreo.tanda = 2; s9.config.mayoreo.pausa = 30;
   for(let k = 0; k < 6; k++){ pasar(10); await s9.tic(); }
@@ -223,6 +223,24 @@ console.log('\n§10 · la campaña a negocios sin página');
   const s11 = new Secre({ cuenta: 'segunda', transporte: { ...t10, yo: () => ['5217861234567@s.whatsapp.net'] }, ia, almacen: { leer: (k, x) => x, guardar(){} }, reloj, banco: null, conocimiento: '', prospectos: async () => lista });
   s11.config.campana = { ...s10.config.campana }; const antes = env10.length; ahora = Date.UTC(2026, 10, 6, 17, 0); await s11.tic();
   ok('la cuenta personal no manda la campaña: sólo la del negocio', env10.length === antes);
+}
+
+console.log('\n§11 · trabaja la cuenta que SÍ está en el grupo');
+{
+  Secre.hermanas.clear();
+  const G1 = '120363777777@g.us', G2 = '120363666666@g.us', mand = [];
+  const tN = { ...transporte, yo: () => ['5214428833786@s.whatsapp.net'], grupos: async () => [{ id: G2, nombre: "All's Fashion" }], enviarImagen: async (j) => { mand.push(['negocio', j]); return 'N' + mand.length; } };
+  const tP = { ...transporte, yo: () => ['5217861111111@s.whatsapp.net'], grupos: async () => [{ id: G1, nombre: 'Shopline Mayoreo Juan Pablo' }], enviarImagen: async (j) => { mand.push(['personal', j]); return 'P' + mand.length; } };
+  const sub = [], bk = { listo: () => true, async fichas(){ return []; }, async subir(x){ sub.push(x); return { id: 'B' + sub.length }; }, async bajar(id){ return { buf: sub[+id.slice(1) - 1].buf }; } };
+  const neg = new Secre({ cuenta: 'negocio', transporte: tN, ia, almacen: { leer: (k, x) => x, guardar(){} }, reloj, banco: bk, compartir: true, conocimiento: '', prospectos: null });
+  const per = new Secre({ cuenta: 'personal', transporte: tP, ia, almacen: { leer: (k, x) => x, guardar(){} }, reloj, banco: bk, compartir: true, conocimiento: '', prospectos: null });
+  neg.config.mayoreo = per.config.mayoreo = { activo: true, fuente: G1, destino: G2, margen: 250, tanda: 100, pausa: 30, cadaSeg: 8, duena: 'negocio', historico: false };
+  await neg.tic(); await per.tic();
+  await per.alMensaje({ id: 'Z1', chat: G1, grupo: true, nombre: 'Proveedor', nombreChat: 'Shopline Mayoreo Juan Pablo', texto: '[foto] Jeans Guess $400 tallas 28 30', imagen: img(foto('flores'), 'Jeans Guess $400 tallas 28 30'), t: ahora });
+  ok('la personal (que sí está en el grupo del proveedor) se queda con Mayoreo aunque antes lo tuviera la del negocio', per.config.mayoreo.duena === 'personal' && (per.config.productos || []).length === 1, per.config.mayoreo);
+  for(let k = 0; k < 3; k++){ pasar(10); await neg.tic(); await per.tic(); }
+  ok('y la del negocio (que sí está en All\'s) es la que manda la foto', mand.length === 1 && mand[0][0] === 'negocio' && mand[0][1] === G2, mand);
+  Secre.hermanas.clear();
 }
 
 console.log(fallas.length ? `\n✗ ${fallas.length} fallaron de ${pasan + fallas.length}` : `\n✓ ${pasan}/${pasan}`);
