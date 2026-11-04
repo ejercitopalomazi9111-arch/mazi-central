@@ -31,8 +31,11 @@ export async function pedir(u){
   }
   throw ultimo || new Error('No hay conexión con La Sala.');
 }
+/* Wattpad: directo si deja (antes su API daba CORS); si no, por el recadero de La Sala, igual que Webtoon */
 async function directo(u){
-  const r = await fetch(u);
+  let r = null;
+  try{ r = await fetch(u); }catch{ r = null; }
+  if(!r || r.type === 'opaque'){ try{ r = await pedir(u); }catch(e){ throw new Error('No pude llegar a Wattpad: ' + e.message); } }
   if(!r.ok){ let m = ''; try{ m = (await r.json()).message; }catch{} throw new Error(m || `Wattpad contestó ${r.status}`); }
   return r;
 }
@@ -253,12 +256,21 @@ $('#formAgregar').addEventListener('submit', async (e) => {
     if(cod) return await importar(cod);
     if(r) return await agregarRef(r);
     if(/^https?:/i.test(t)){ estado('Ese link no es de una serie de Webtoon ni de Wattpad.'); return; }
-    estado(`Buscando «${t}» en Wattpad…`, 'trabajando');
-    const rs = await wattpad.buscar(t, directo);
-    $('#resultados').innerHTML = rs.length ? rs.map((x, i) => `<div class="resultado"><img alt="" src="${esc(x.portada)}"><div><b>${esc(x.titulo)}</b><span>${esc(x.autor || '')} · ${x.partes} parte${x.partes === 1 ? '' : 's'}</span></div><button type="button" class="si" data-i="${i}">Seguir</button></div>`).join('')
-      : '<p class="vacio">No encontré nada con ese nombre en Wattpad.</p>';
-    $('#resultados').onclick = (ev) => { const b = ev.target.closest('button[data-i]'); if(b) agregarRef({ fuente: 'wattpad', story: rs[+b.dataset.i].story }).catch((er) => estado(er.message)); };
-    estado(rs.length ? `${rs.length} resultados en Wattpad.` : '', 'listo');
+    /* por nombre: cómics en Webtoon y textos en Wattpad, a la vez (4 nov: «le pedí que buscara series y nada») */
+    estado(`Buscando «${t}» en Webtoon y Wattpad…`, 'trabajando');
+    const lang = ((await todasSeries()).find((x) => x.fuente === 'webtoon') || { ref: { lang: 'es' } }).ref.lang;
+    const [wt, wp] = await Promise.all([
+      pedir(`https://www.webtoons.com/${lang}/search?keyword=${encodeURIComponent(t)}`).then((r) => r.text()).then((h) => seriesDeGenero(h).slice(0, 20)).catch(() => []),
+      wattpad.buscar(t, directo).catch(() => []),
+    ]);
+    const rs = [...wt.map((x) => ({ ref: x.ref, titulo: x.titulo, sub: 'Webtoon · cómic' + (x.autor ? ' · ' + x.autor : ''), portada: x.portada, porRecadero: true })),
+      ...wp.map((x) => ({ ref: { fuente: 'wattpad', story: String(x.story) }, titulo: x.titulo, sub: `Wattpad · texto · ${x.autor || ''} · ${x.partes} parte${x.partes === 1 ? '' : 's'}`, portada: x.portada }))];
+    $('#resultados').innerHTML = rs.length ? rs.map((x, i) => `<div class="resultado"><img alt="" data-p="${i}"><div><b>${esc(x.titulo)}</b><span>${esc(x.sub)}</span></div><button type="button" class="si" data-i="${i}">Seguir</button></div>`).join('')
+      : '<p class="vacio">No encontré nada con ese nombre en Webtoon ni en Wattpad.</p>';
+    for(const img of $('#resultados').querySelectorAll('img[data-p]')){ const x = rs[+img.dataset.p]; if(!x.portada) continue;
+      if(x.porRecadero) pedir(x.portada).then((r) => r.blob()).then((b) => { img.src = urlDe(b); }).catch(() => {}); else img.src = x.portada; }
+    $('#resultados').onclick = (ev) => { const b = ev.target.closest('button[data-i]'); if(!b) return; b.disabled = true; b.textContent = 'Agregando…'; agregarRef(rs[+b.dataset.i].ref).then(() => { b.textContent = 'Ya la sigues'; }).catch((er) => { b.disabled = false; b.textContent = 'Seguir'; estado(er.message); }); };
+    estado(rs.length ? `${wt.length} en Webtoon · ${wp.length} en Wattpad.` : '', 'listo');
   } catch(er){ estado('No se pudo: ' + er.message); }
 });
 

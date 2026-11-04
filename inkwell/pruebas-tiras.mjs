@@ -29,6 +29,7 @@ function recadero(u){
   const d = new URL(u);
   pedidos.push(d.toString());
   if (d.hostname === 'www.webtoons.com' && /\/ranking\//.test(d.pathname)) return rankingOn ? ['text/html', ranking] : null;
+  if (d.hostname === 'www.webtoons.com' && d.pathname === '/es/search') return ['text/html', /amor/i.test(d.searchParams.get('keyword') || '') ? `<ul><li><a href="https://www.webtoons.com/es/romance/amor-comic/list?title_no=888" class="link"><img src="https://swebtoon-phinf.pstatic.net/portada.jpg"><strong class="title">Amor en cómic</strong><div class="author">Autora Tres</div></a></li></ul>` : '<ul></ul>'];
   if (d.hostname === 'www.webtoons.com' && /\/genres\/fantasy/.test(d.pathname)) return ['text/html', `<ul class="webtoon_list"><li><a href="https://www.webtoons.com/es/fantasy/otra-serie/list?title_no=888" class="link"><div class="image_wrap"><img loading="lazy" src="https://swebtoon-phinf.pstatic.net/portada.jpg" alt=""></div><div class="info_text"><strong class="title">Otra serie &amp; más</strong><div class="author">Autora Dos</div></div></a></li></ul>`];
   if (d.hostname === 'www.webtoons.com' && d.pathname.endsWith('/list')) return ['text/html', lista];
   if (d.hostname === 'm.webtoons.com' && /\/api\/v1\/webtoon\/(777|888)\/episodes/.test(d.pathname)) return ['application/json', api];
@@ -56,7 +57,7 @@ const historia = { id: '9001', title: 'Amor roto', description: 'Una historia', 
 const texto = (id) => `<p data-p-id="a" style="color:red" onclick="alert(1)">Párrafo de la parte ${id}, con <b>negritas</b> e <i>itálicas</i>.</p><script>window.__hackeado = true</script><p data-p-id="b"><img src="https://x/y.png" onerror="window.__hackeado=true">Segundo párrafo<br>con salto.</p>`;
 async function wattpadFalso(ruta){
   const u = new URL(ruta.request().url()), h = { 'access-control-allow-origin': '*' };
-  if (u.pathname === '/api/v3/stories' ) return ruta.fulfill({ headers: h, contentType: 'application/json', body: JSON.stringify({ stories: [{ id: '9001', title: 'Amor roto', user: { name: 'GabriellaFL' }, numParts: 3, cover: 'https://img.wattpad.com/cover/9001.jpg' }, { id: '9002', title: 'Otro amor', user: { name: 'X' }, numParts: 1, cover: '' }] }) });
+  if (u.pathname === '/v4/search/stories') return ruta.fulfill({ headers: h, contentType: 'application/json', body: JSON.stringify({ stories: [{ id: '9001', title: 'Amor roto', user: { name: 'GabriellaFL' }, numParts: 3, cover: 'https://img.wattpad.com/cover/9001.jpg' }, { id: '9002', title: 'Otro amor', user: { name: 'X' }, numParts: 1, cover: '' }] }) });
   if (u.pathname === '/api/v3/stories/9001') return ruta.fulfill({ headers: h, contentType: 'application/json', body: JSON.stringify(historia) });
   if (u.pathname === '/api/v3/story_parts/502') return ruta.fulfill({ headers: h, contentType: 'application/json', body: JSON.stringify({ groupId: '9001' }) });
   if (u.pathname === '/apiv2/') return ruta.fulfill({ headers: { ...h, 'content-type': 'text/plain; charset=UTF-8' }, body: texto(u.searchParams.get('id')) });
@@ -156,8 +157,8 @@ for (const [ancho, alto, nombre] of [[390, 844, 'teléfono'], [1280, 800, 'compu
   // Wattpad por búsqueda
   await pg.fill('#buscar', 'amor'); await pg.click('#agregar');
   await pg.waitForSelector('.resultado');
-  ok(await pg.locator('.resultado').count() === 2 && /GabriellaFL · 3 partes/.test(await pg.textContent('#resultados')), 'buscar por nombre trae resultados de Wattpad');
-  await pg.click('.resultado button[data-i="0"]');
+  ok(await pg.locator('#resultados .resultado').count() === 3 && /GabriellaFL · 3 partes/.test(await pg.textContent('#resultados')) && /Amor en cómic/.test(await pg.textContent('#resultados')), 'buscar por nombre trae cómics de Webtoon y textos de Wattpad, a la vez');
+  await pg.click('#resultados .resultado button[data-i="1"]');
   await pg.waitForFunction(() => document.querySelectorAll('.serie').length === 2);
   await pg.waitForFunction(() => !window.__tiras.ocupado, null, { timeout: 30000 });
   await pg.waitForTimeout(200);

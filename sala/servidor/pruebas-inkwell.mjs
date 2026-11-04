@@ -27,7 +27,7 @@ r = await traer(pide('https://www.webtoons.com/x.zip'), falso('application/zip')
 ok(r.status === 415, 'no pasa cosas que no son página ni imagen');
 r = await traer(pide('https://www.webtoons.com/x'), async () => { throw new Error('se cayó'); });
 ok(r.status === 502 && /se cayó/.test((await r.json()).error), 'si Webtoon no contesta, lo dice');
-ok(HOSTS.every((h) => /webtoons\.com$|pstatic\.net$/.test(h)), 'la lista sólo tiene hosts de Webtoon');
+ok(HOSTS.every((h) => /webtoons\.com$|pstatic\.net$|^(www|img)\.wattpad\.com$/.test(h)), 'la lista sólo tiene hosts de Webtoon y Wattpad');
 
 /* por la puerta de verdad: el worker entero */
 const env = { ORIGENES: 'https://mazi-central.palomazi9111.workers.dev' };
