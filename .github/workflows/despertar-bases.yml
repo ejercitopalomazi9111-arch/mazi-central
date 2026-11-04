@@ -1,0 +1,19 @@
+# Mantener despiertas las bases de Supabase (plan gratis).
+# El 4 de noviembre Carlos no podía entrar a Ligas Mazi ni a la tienda: Supabase
+# PAUSA los proyectos gratis tras unos días sin uso y hay que reactivarlos a mano.
+# Esto les hace una consulta pequeña cada dos días para que no se duerman.
+# Las llaves de aquí son las PUBLICABLES, las mismas que ya van en el navegador
+# (ligas-mazi/index.html y tienda/config.js); la seguridad la dan las políticas.
+name: Despertar bases
+on:
+  schedule:
+    - cron: '17 14 */2 * *'
+  workflow_dispatch:
+jobs:
+  despertar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ligas Mazi
+        run: curl -sS -o /dev/null -w "%{http_code}\n" "https://buqrhhdhzsfqrfopzmxo.supabase.co/rest/v1/products?select=id&limit=1" -H "apikey: sb_publishable_1ACOrVabWxGrSEgmiG_qJQ__xJlHdFo" || true
+      - name: Tienda
+        run: curl -sS -o /dev/null -w "%{http_code}\n" "https://volqtipyprkhylzjpbir.supabase.co/auth/v1/health" -H "apikey: sb_publishable_WH9MHV7wiYCmI8aHyroIVQ_psIMx1Gj" || true
