@@ -520,6 +520,8 @@ dependemos.
 
    | una portada pegada abajo (`justify-content:flex-end`) se queda quieta al cargar | todo lo de ARRIBA sube cuando algo de abajo crece: el boleto de la promo se llenaba con JS **después** de que el QR de cdnjs dejara pintar, y la letra de Google llegaba tarde y cambiaba el alto del título | k6 midió **CLS 0.095** en District Roll v3 (la vieja tenía 0.036). El script principal va antes de cualquier librería de fuera, lo de fuera con `async`, y la letra guardada en el repo con `preload`: CLS 0 |
 
+   | si se ve en local, se ve publicado | `build.mjs` NO publica `juegos/guerra-de-puercos/arte/` salvo `arte/web/`: el servidor local sirve todo el repo | Puercos 2 pedía la portada del sobre y el dorso de `arte/materiales/`: en local todo bien y publicado salían **404** (sobre sin dibujo, dorso vacío). Lo cazó jugar contra la dirección publicada con `ctx.route`; se usan `arte/web/caja.webp` y `reverso.webp` |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---

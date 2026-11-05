@@ -62,7 +62,7 @@ h2.seccion{ font-size:34px; color:var(--hueso); text-shadow:0 3px 0 var(--tinta)
 .btn-chico{ min-height:44px; padding:6px 16px; border-radius:12px; border:3px solid var(--tinta); background:rgba(18,10,16,.8); font-size:17px }
 
 /* ── el inicio ── */
-.logo{ width:min(80vw, 360px); aspect-ratio:1.18; margin:1vh auto 0; background:url("../arte/materiales/carta-reverso.jpg") center 41% / 118% auto no-repeat;
+.logo{ width:min(80vw, 360px); aspect-ratio:1.18; margin:1vh auto 0; background:url("../arte/web/reverso.webp") center 41% / 118% auto no-repeat;
   -webkit-mask:radial-gradient(closest-side, #000 74%, transparent 100%); mask:radial-gradient(closest-side, #000 74%, transparent 100%);
   filter:drop-shadow(0 10px 20px rgba(0,0,0,.5)); animation:late 3.6s ease-in-out infinite }
 @keyframes late{ 50%{ transform:scale(1.03) rotate(-1deg) } }

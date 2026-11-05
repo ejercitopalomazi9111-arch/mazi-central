@@ -68,7 +68,7 @@ export const COSMETICOS = [
   { id:'ms-hog',     clase:'mascota', nombre:'Jabalí',     modelo:'modelos/animal-hog.glb',   img:'img/mascotas/hog.png',   rareza:'A' },
   { id:'ms-cow',     clase:'mascota', nombre:'Vaca colada', modelo:'modelos/animal-cow.glb',  img:'img/mascotas/cow.png',   rareza:'B' },
   { id:'ms-chick',   clase:'mascota', nombre:'Pollito colado', modelo:'modelos/animal-chick.glb', img:'img/mascotas/chick.png', rareza:'C' },
-  { id:'ds-autora',  clase:'dorso',   nombre:'Guerra de Puercos', img:'../arte/materiales/carta-reverso.jpg', rareza:'D' },
+  { id:'ds-autora',  clase:'dorso',   nombre:'Guerra de Puercos', img:'../arte/web/reverso.webp', rareza:'D' },
   { id:'ds-kenney',  clase:'dorso',   nombre:'Baraja clásica',    img:'img/dorsos/kenney.png',             rareza:'B' },
 ];
 export const cosmetico = (id) => COSMETICOS.find(c => c.id === id) || null;
