@@ -4,152 +4,258 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Navaja Norte · Barbería en Querétaro</title>
-<meta name="description" content="Fades, barba con navaja y diseño. Escoge a tu barbero y tu hora desde el teléfono.">
-<meta name="theme-color" content="#0D0D0F">
+<meta name="description" content="Fades, barba con navaja y diseño. Escoge a tu barbero y tu hora desde el teléfono, aprovecha la promo del día y llévate tus productos.">
+<meta name="theme-color" content="#0B0B0D">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2212%22 fill=%22%23FF4D1A%22/%3E%3Ctext x=%2232%22 y=%2247%22 text-anchor=%22middle%22 font-family=%22Impact,sans-serif%22 font-size=%2240%22 fill=%22%230B0B0D%22%3EN%3C/text%3E%3C/svg%3E">
+<link rel="preload" href="../fuentes/anton-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../fuentes/archivo-400-900-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
-  :root{ --fondo:#0D0D0F; --capa:#17171B; --capa2:#202026; --tinta:#F2F0EB; --gris:#A3A3AD; --acento:#FF4D1A; --linea:#ffffff1c; --r:14px;
-    --cond:"Avenir Next Condensed", "Arial Narrow", "Roboto Condensed", sans-serif }
-  *{ box-sizing:border-box } html{ scroll-behavior:smooth; -webkit-text-size-adjust:100% }
-  body{ margin:0; background:var(--fondo); color:var(--tinta); font:16px/1.55 "Avenir Next", system-ui, sans-serif }
-  img{ display:block; max-width:100% } a{ color:inherit }
-  .env{ max-width:1180px; margin:0 auto; padding:0 16px }
-  .demo{ font-size:12px; text-align:center; padding:6px 16px; background:var(--acento); color:#0D0D0F; font-weight:700 }
-  header{ position:sticky; top:0; z-index:20; background:#0D0D0Fe6; -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); border-bottom:1px solid var(--linea) }
-  header .env{ display:flex; align-items:center; gap:16px; min-height:62px }
-  .logo{ font:800 22px/1 var(--cond); letter-spacing:.06em; text-transform:uppercase; text-decoration:none } .logo span{ color:var(--acento) }
-  nav{ display:none; gap:22px; margin-left:auto; font-weight:600; font-size:15px } nav a{ text-decoration:none; opacity:.8 } nav a:hover{ opacity:1 }
-  @media (min-width:860px){ nav{ display:flex } }
-  .btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:48px; padding:0 22px; border:0; border-radius:var(--r); background:var(--acento); color:#0D0D0F; font:800 15px/1 var(--cond); letter-spacing:.08em; text-transform:uppercase; text-decoration:none; cursor:pointer }
-  .btn.linea{ background:transparent; color:var(--tinta); border:1px solid var(--linea) } .btn:focus-visible{ outline:3px solid #fff; outline-offset:2px }
-  header .btn{ margin-left:auto; min-height:42px; padding:0 16px; flex-shrink:0 } .logo{ font-size:clamp(17px, 5.6vw, 22px); white-space:nowrap; min-width:0 } @media (min-width:860px){ header .btn{ margin-left:0 } }
-  .portada{ position:relative; min-height:min(92svh, 760px); display:grid; align-items:end; overflow:hidden }
-  .portada img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:50% 25%; filter:saturate(.85) contrast(1.05) }
-  .portada::after{ content:""; position:absolute; inset:0; background:linear-gradient(180deg, #0D0D0F00 20%, #0D0D0F 96%), linear-gradient(90deg, #0D0D0Fcc, #0D0D0F00 70%) }
-  .portada .env{ position:relative; z-index:1; width:100%; padding-bottom:48px }
-  .ojo{ font:700 13px/1 var(--cond); letter-spacing:.22em; text-transform:uppercase; color:var(--acento); margin:0 0 14px }
-  h1{ font:800 clamp(56px, 16vw, 132px)/.86 var(--cond); text-transform:uppercase; letter-spacing:-.01em; margin:0 0 18px }
-  .portada p{ max-width:34ch; font-size:18px; color:#E2E0DA; margin:0 0 26px }
-  .estado{ display:inline-flex; align-items:center; gap:8px; font-size:14px; color:var(--gris); margin-left:12px } .estado i{ width:8px; height:8px; border-radius:50%; background:#666 } .estado.si i{ background:#3DDC84 }
-  section{ padding:72px 0 } h2{ font:800 clamp(40px, 10vw, 72px)/.9 var(--cond); text-transform:uppercase; margin:0 0 12px } .sub{ color:var(--gris); max-width:52ch; margin:0 0 32px }
-  .servs{ display:grid; gap:12px } @media (min-width:700px){ .servs{ grid-template-columns:repeat(2, minmax(0, 1fr)) } } @media (min-width:1050px){ .servs{ grid-template-columns:repeat(3, minmax(0, 1fr)) } }
-  .serv{ display:grid; grid-template-columns:minmax(0, 1fr) auto; gap:6px 12px; padding:20px; background:var(--capa); border:1px solid var(--linea); border-radius:var(--r) }
-  .serv h3{ margin:0; font:800 24px/1.05 var(--cond); text-transform:uppercase } .serv .p{ font:800 26px/1 var(--cond); color:var(--acento); font-variant-numeric:tabular-nums }
-  .serv p{ grid-column:1 / -1; margin:0; color:var(--gris); font-size:14px } .serv button{ grid-column:1 / -1; justify-self:start; margin-top:8px; min-height:44px }
-  .equipo{ display:grid; gap:14px; grid-template-columns:repeat(auto-fill, minmax(min(100%, 250px), 1fr)) }
-  .barb{ position:relative; border-radius:var(--r); overflow:hidden; background:var(--capa); aspect-ratio:3/4 }
-  .barb img{ width:100%; height:100%; object-fit:cover; filter:grayscale(.35) }
-  .barb .info{ position:absolute; inset:auto 0 0; padding:16px; background:linear-gradient(180deg, #0D0D0F00, #0D0D0Ff2 45%) }
-  .barb h3{ margin:0; font:800 28px/1 var(--cond); text-transform:uppercase } .barb p{ margin:4px 0 12px; color:#CFCDC8; font-size:14px }
-  .galeria{ display:grid; grid-auto-flow:column; grid-auto-columns:min(72%, 340px); gap:12px; overflow-x:auto; scroll-snap-type:x mandatory; padding-bottom:8px; scrollbar-width:none } .galeria::-webkit-scrollbar{ display:none }
-  .galeria button{ scroll-snap-align:start; padding:0; border:0; border-radius:var(--r); overflow:hidden; aspect-ratio:4/5; background:var(--capa); cursor:zoom-in } .galeria img{ width:100%; height:100%; object-fit:cover }
-  .resenas{ display:grid; gap:12px } @media (min-width:860px){ .resenas{ grid-template-columns:repeat(3, 1fr) } }
-  blockquote{ margin:0; padding:22px; background:var(--capa); border-radius:var(--r); border:1px solid var(--linea) } blockquote p{ margin:0 0 12px; font-size:17px } blockquote cite{ font-style:normal; color:var(--gris); font-size:14px } .estrellas{ color:var(--acento); letter-spacing:.1em; margin-bottom:8px }
-  .dos{ display:grid; gap:32px } @media (min-width:860px){ .dos{ grid-template-columns:1fr 1fr; align-items:start } }
-  .horario{ display:grid; grid-template-columns:auto 1fr; gap:10px 28px; font-variant-numeric:tabular-nums } .horario span:nth-child(odd){ text-transform:capitalize; color:var(--gris) } .horario .hoy{ color:var(--tinta) !important; font-weight:700 }
-  .foto-local{ border-radius:var(--r); overflow:hidden; aspect-ratio:4/3 } .foto-local img{ width:100%; height:100%; object-fit:cover }
-  footer{ padding:40px 0 calc(40px + env(safe-area-inset-bottom)); border-top:1px solid var(--linea); color:var(--gris); font-size:13px }
-  /* las hojas que suben desde abajo: la reserva, mis citas y la foto en grande */
-  dialog{ border:0; padding:0; background:transparent; color:var(--tinta); max-width:none; max-height:none; width:100%; height:100%; margin:0 }
-  dialog::backdrop{ background:#000a }
-  dialog[open]{ display:flex; align-items:flex-end; justify-content:center }
-  .hoja{ width:100%; max-width:560px; max-height:92svh; overflow-y:auto; overscroll-behavior:contain; background:var(--capa); border-radius:20px 20px 0 0; padding:18px 18px 0; animation:sube .28s cubic-bezier(.2,.8,.2,1) }
-  @media (min-width:700px){ dialog[open]{ align-items:center } .hoja{ border-radius:20px; padding-bottom:6px } }
-  .hoja .cab{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px } .hoja .cab b{ font:800 22px/1 var(--cond); text-transform:uppercase; letter-spacing:.04em }
-  .cerrar{ width:44px; height:44px; border-radius:50%; border:1px solid var(--linea); background:transparent; color:var(--tinta); font-size:20px; cursor:pointer }
-  @keyframes sube{ from{ transform:translateY(40px); opacity:0 } }
+  @font-face{ font-family:"Anton"; src:url(../fuentes/anton-400-normal.woff2) format("woff2"); font-display:swap }
+  @font-face{ font-family:"Archivo"; src:url(../fuentes/archivo-400-900-normal.woff2) format("woff2"); font-weight:400 900; font-display:swap }
+  @font-face{ font-family:"Mono"; src:url(../fuentes/mono-700-normal.woff2) format("woff2"); font-weight:700; font-display:swap }
+  :root{ --fondo:#0B0B0D; --capa:#151518; --capa2:#1E1E23; --tinta:#F4F2ED; --gris:#A3A3AD; --acento:#FF4D1A; --acento2:#FF7A4D; --linea:#ffffff1a; --r:14px;
+    --cond:"Anton", Impact, "Arial Narrow", sans-serif; --t:"Archivo", system-ui, sans-serif; --mono:"Mono", ui-monospace, monospace }
+  *{ box-sizing:border-box } html{ scroll-behavior:smooth; -webkit-text-size-adjust:100%; scroll-padding-top:72px }
+  body{ margin:0; background:var(--fondo); color:var(--tinta); font:16px/1.55 var(--t); overflow-x:hidden }
+  img, video{ display:block; max-width:100% } a{ color:inherit } button{ font-family:inherit; color:inherit }
+  ::selection{ background:var(--acento); color:#0B0B0D }
+  .env{ max-width:1200px; margin:0 auto; padding:0 18px }
+  .ojo{ font:700 12px/1 var(--mono); letter-spacing:.2em; text-transform:uppercase; color:var(--acento) }
+  .demo{ font-size:11px; text-align:center; padding:5px 16px; background:var(--acento); color:#0B0B0D; font-weight:800 }
+  header{ position:sticky; top:0; z-index:30; background:#0B0B0De6; -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); border-bottom:1px solid var(--linea) }
+  header .env{ display:flex; align-items:center; gap:10px; min-height:62px }
+  .logo{ font:400 26px/1 var(--cond); letter-spacing:.02em; text-transform:uppercase; text-decoration:none; white-space:nowrap } .logo span{ color:var(--acento) }
+  nav{ display:none; gap:24px; margin-left:auto; font-weight:700; font-size:14px; text-transform:uppercase; letter-spacing:.04em } nav a{ text-decoration:none; opacity:.75 } nav a:hover{ opacity:1; color:var(--acento) }
+  @media (min-width:960px){ nav{ display:flex } }
+  .icono{ width:44px; height:44px; display:grid; place-items:center; border-radius:12px; border:1px solid var(--linea); background:var(--capa); cursor:pointer; position:relative; flex-shrink:0; margin-left:auto } @media (min-width:960px){ .icono{ margin-left:0 } }
+  .icono .num{ position:absolute; top:-5px; right:-5px; min-width:20px; height:20px; padding:0 5px; border-radius:10px; background:var(--acento); color:#0B0B0D; font-size:11px; font-weight:900; display:grid; place-items:center } .icono .num[hidden]{ display:none }
+  .btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:50px; padding:0 22px; border:0; border-radius:var(--r); background:var(--acento); color:#0B0B0D; font:800 15px/1 var(--t); text-transform:uppercase; letter-spacing:.04em; text-decoration:none; cursor:pointer; white-space:nowrap; box-shadow:4px 4px 0 #fff; transition:transform .15s, box-shadow .15s }
+  .btn:hover{ transform:translate(-2px, -2px); box-shadow:6px 6px 0 #fff } .btn:active{ transform:translate(2px, 2px); box-shadow:2px 2px 0 #fff }
+  .btn.linea{ background:transparent; color:var(--tinta); border:2px solid var(--tinta); box-shadow:none } .btn.chico{ min-height:42px; padding:0 16px; font-size:13px }
+  header .btn{ min-height:42px; padding:0 14px; box-shadow:3px 3px 0 #fff } .btn:focus-visible, .icono:focus-visible{ outline:3px solid #fff; outline-offset:3px }
+
+  /* portada: video del fade, letras gigantes y una calcomanía girada */
+  .portada{ position:relative; min-height:min(94svh, 820px); display:grid; align-items:end; overflow:hidden; isolation:isolate }
+  .portada video, .portada .poster{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:-2; filter:contrast(1.1) saturate(.9) }
+  .portada::after{ content:""; position:absolute; inset:0; z-index:-1; background:linear-gradient(180deg, #0B0B0D55 0%, #0B0B0D00 30%, #0B0B0Def 85%), radial-gradient(#0000 60%, #0B0B0D 100%); }
+  .puntos{ position:absolute; inset:0; z-index:-1; background:radial-gradient(#ffffff22 1px, transparent 1.5px) 0 0/6px 6px; mix-blend-mode:overlay; opacity:.5 }
+  .portada .env{ width:100%; padding-bottom:44px }
+  h1{ font:400 clamp(86px, 27vw, 230px)/.82 var(--cond); text-transform:uppercase; margin:12px 0 18px; letter-spacing:-.01em }
+  h1 .hueco{ color:transparent; -webkit-text-stroke:2px var(--tinta) } h1 .ac{ color:var(--acento) }
+  h1 span{ display:block; transform:translateY(40px); opacity:0; animation:sube .8s cubic-bezier(.2,.8,.2,1) forwards } h1 span:nth-child(2){ animation-delay:.1s }
+  @keyframes sube{ to{ transform:none; opacity:1 } }
+  .calco{ position:absolute; right:18px; top:24px; width:118px; height:118px; border-radius:50%; background:var(--acento); color:#0B0B0D; display:grid; place-items:center; text-align:center; font:400 20px/1 var(--cond); text-transform:uppercase; transform:rotate(12deg); box-shadow:5px 5px 0 #fff; animation:gira 14s linear infinite }
+  .calco b{ display:block; font-size:34px } @keyframes gira{ to{ transform:rotate(372deg) } }
+  @media (min-width:900px){ .calco{ top:auto; bottom:80px; right:60px; width:170px; height:170px; font-size:26px } .calco b{ font-size:48px } }
+  .portada p.lead{ max-width:34ch; font-size:18px; color:#E2E0DA; margin:0 0 24px }
+  .estado{ display:inline-flex; align-items:center; gap:8px; font-size:14px; color:#D5D3CE; margin:18px 0 0 } .estado i{ width:9px; height:9px; border-radius:50%; background:#666 } .estado.si i{ background:#4ADE80; box-shadow:0 0 0 4px #4ADE8033 }
+
+  .cintas{ overflow:hidden; padding:10px 0 18px; margin-top:-10px }
+  .mq{ background:var(--acento); color:#0B0B0D; padding:14px 0; font:400 clamp(26px, 6vw, 44px)/1 var(--cond); text-transform:uppercase; transform:rotate(-1.5deg) scale(1.03); margin:-6px 0 0; --mq-vel:22s; position:relative; z-index:2 }
+  .mq.dos{ background:var(--tinta); transform:rotate(1.2deg) scale(1.03); margin:-34px 0 0; z-index:1; --mq-vel:30s } .mq i{ font-size:.7em }
+
+  section{ padding:84px 0 } h2{ font:400 clamp(54px, 15vw, 120px)/.86 var(--cond); text-transform:uppercase; margin:10px 0 14px } h2 .hueco{ color:transparent; -webkit-text-stroke:2px var(--tinta) } h2 .ac{ color:var(--acento) }
+  .sub{ color:var(--gris); max-width:50ch; margin:0 0 30px; font-size:17px }
+  [data-rev]{ opacity:0; transform:translateY(30px) rotate(.6deg); transition:opacity .7s, transform .7s cubic-bezier(.2,.8,.2,1) } [data-rev].ya{ opacity:1; transform:none }
+
+  .promo{ margin-top:30px; --pr-fondo:var(--capa); --pr-acento:var(--acento); --pr-sobre:#0B0B0D; --pr-linea:var(--acento) } .promo .pr{ border-width:2px; box-shadow:5px 5px 0 var(--acento) } .pr-reloj{ color:var(--acento); font-family:var(--mono) }
+
+  .servs{ display:grid; gap:14px } @media (min-width:700px){ .servs{ grid-template-columns:repeat(2, minmax(0, 1fr)) } } @media (min-width:1050px){ .servs{ grid-template-columns:repeat(3, minmax(0, 1fr)) } }
+  .serv{ position:relative; display:grid; grid-template-columns:minmax(0, 1fr) auto; gap:6px 14px; padding:22px; background:var(--capa); border:2px solid var(--linea); border-radius:var(--r); transition:border-color .2s, transform .2s }
+  .serv:hover{ border-color:var(--acento); transform:translateY(-3px) }
+  .serv .ico{ color:var(--acento) } .serv h3{ margin:8px 0 0; font:400 34px/1 var(--cond); text-transform:uppercase } .serv .p{ align-self:end; font:400 34px/1 var(--cond); color:var(--acento); font-variant-numeric:tabular-nums }
+  .serv p{ grid-column:1 / -1; margin:0; color:var(--gris); font-size:14px } .serv button{ grid-column:1 / -1; justify-self:start; margin-top:10px }
+  .serv .tag{ position:absolute; top:-12px; right:16px; padding:5px 10px; background:var(--tinta); color:#0B0B0D; font:700 11px var(--mono); text-transform:uppercase; transform:rotate(3deg) }
+
+  /* el expediente de cada barbero */
+  .equipo{ display:grid; gap:18px } @media (min-width:900px){ .equipo{ grid-template-columns:repeat(3, 1fr) } }
+  .exp{ position:relative; background:#EDEBE5; color:#141414; border-radius:6px; padding:14px; box-shadow:6px 6px 0 var(--acento); transform:rotate(var(--g, -1deg)) }
+  .exp:nth-child(2){ --g:1deg } .exp:nth-child(3){ --g:-.5deg }
+  .exp .foto{ position:relative; aspect-ratio:4/5; overflow:hidden; background:#222 } .exp img{ width:100%; height:100%; object-fit:cover; filter:grayscale(1) contrast(1.15) }
+  .exp .regla{ position:absolute; left:0; top:0; bottom:0; width:34px; background:repeating-linear-gradient(180deg, #fff9 0 1px, transparent 1px 22px); border-right:1px solid #fff6 }
+  .exp .ficha{ position:absolute; right:10px; bottom:10px; background:#141414; color:#EDEBE5; font:700 12px var(--mono); padding:6px 10px; letter-spacing:.1em }
+  .exp h3{ margin:12px 0 2px; font:400 44px/1 var(--cond); text-transform:uppercase } .exp .alias{ font:700 13px var(--mono); color:#C2341A }
+  .exp dl{ display:grid; grid-template-columns:auto 1fr; gap:4px 12px; margin:12px 0 14px; font-size:14px } .exp dt{ font:700 11px var(--mono); text-transform:uppercase; padding-top:3px; color:#555 } .exp dd{ margin:0; font-weight:600 }
+  .exp .btn{ width:100%; box-shadow:4px 4px 0 #141414 }
+
+  .galeria{ display:grid; grid-auto-flow:column; grid-auto-columns:min(70%, 320px); gap:12px; overflow-x:auto; scroll-snap-type:x mandatory; padding:4px 18px 12px; margin:0 -18px; scrollbar-width:none } .galeria::-webkit-scrollbar{ display:none }
+  .galeria button{ position:relative; scroll-snap-align:start; padding:0; border:0; border-radius:var(--r); overflow:hidden; aspect-ratio:4/5; background:var(--capa); cursor:zoom-in } .galeria img{ width:100%; height:100%; object-fit:cover; transition:transform .8s } .galeria button:hover img{ transform:scale(1.06) }
+  .galeria span{ position:absolute; left:10px; bottom:10px; background:var(--acento); color:#0B0B0D; font:400 18px var(--cond); text-transform:uppercase; padding:4px 10px }
+
+  #tienda{ background:#111114 }
+  .ti{ --ti-fondo:#151518; --ti-capa:#1A1A1E; --ti-tinta:var(--tinta); --ti-suave:var(--gris); --ti-linea:#ffffff1f; --ti-acento:var(--acento); --ti-sobre:#0B0B0D; --ti-radio:14px; --ti-titulo:var(--cond) }
+  .ti-info b{ font-weight:400 !important; text-transform:uppercase; font-size:21px !important; letter-spacing:.01em } .ti-cuerpo h3, .ti-carro h3{ font-weight:400 !important; text-transform:uppercase; font-size:38px !important }
+
+  .squad{ display:grid; gap:20px; padding:28px; border-radius:var(--r); background:var(--acento); color:#0B0B0D; box-shadow:8px 8px 0 #fff } @media (min-width:860px){ .squad{ grid-template-columns:1fr auto; align-items:center; padding:40px } }
+  .squad h2{ margin:0; font-size:clamp(46px, 11vw, 92px) } .squad p{ margin:8px 0 0; font-weight:600; max-width:44ch } .squad .btn{ background:#0B0B0D; color:var(--tinta); box-shadow:4px 4px 0 #fff }
+
+  .resenas{ display:grid; gap:14px } @media (min-width:860px){ .resenas{ grid-template-columns:repeat(3, 1fr) } }
+  blockquote{ margin:0; padding:24px; background:var(--capa); border-radius:var(--r); border:2px solid var(--linea) } .estrellas{ display:flex; gap:2px; color:var(--acento); margin-bottom:10px }
+  blockquote p{ margin:0 0 12px; font-size:18px; font-weight:600 } blockquote cite{ font-style:normal; color:var(--gris); font-size:14px }
+
+  .visita{ display:grid; gap:30px; --mp-radio:14px; --mp-linea:#ffffff1f; --mp-acento:var(--acento); --mp-suave:var(--gris) } @media (min-width:900px){ .visita{ grid-template-columns:1.2fr 1fr } } .mp-ir a{ background:var(--capa) }
+  .horario{ display:grid; grid-template-columns:auto 1fr; gap:10px 28px; font-variant-numeric:tabular-nums; margin-top:20px } .horario span:nth-child(odd){ text-transform:capitalize; color:var(--gris) } .horario .hoy{ color:var(--acento) !important; font-weight:800 }
+  .qrcaja{ display:flex; gap:20px; align-items:center; margin-top:30px; padding:20px; border:2px dashed var(--linea); border-radius:var(--r) } #qr{ width:120px; height:120px; flex-shrink:0; padding:8px; background:#fff; border-radius:8px } #qr svg{ width:100%; height:100% }
+  .qrcaja b{ font:400 26px/1 var(--cond); text-transform:uppercase } .qrcaja p{ margin:6px 0 0; color:var(--gris); font-size:14px }
+
+  footer{ padding:60px 0 calc(110px + env(safe-area-inset-bottom)); border-top:1px solid var(--linea); color:var(--gris); font-size:13px; overflow:hidden } footer .grande{ white-space:nowrap; font:400 clamp(70px, 22vw, 220px)/.8 var(--cond); text-transform:uppercase; color:var(--capa2); margin-bottom:24px }
+
+  dialog.h{ border:0; padding:0; background:transparent; color:var(--tinta); max-width:none; max-height:none; width:100%; height:100%; margin:0 }
+  dialog.h::backdrop{ background:#000b } dialog.h[open]{ display:flex; align-items:flex-end; justify-content:center }
+  .hoja{ width:100%; max-width:580px; max-height:92svh; overflow-y:auto; overscroll-behavior:contain; background:var(--capa); border-radius:20px 20px 0 0; padding:18px 18px 0; animation:hsube .3s cubic-bezier(.2,.8,.2,1) }
+  @media (min-width:700px){ dialog.h[open]{ align-items:center } .hoja{ border-radius:20px; padding-bottom:6px } }
+  .hoja .cab{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px } .hoja .cab b{ font:400 30px/1 var(--cond); text-transform:uppercase }
+  .cerrar{ width:44px; height:44px; border-radius:12px; border:1px solid var(--linea); background:transparent; display:grid; place-items:center; cursor:pointer }
+  @keyframes hsube{ from{ transform:translateY(40px); opacity:0 } }
   #grande .hoja{ background:transparent; padding:0; max-width:900px } #grande img{ width:100%; max-height:86svh; object-fit:contain; border-radius:14px }
-  .rv{ --rv-fondo:var(--capa); --rv-tinta:var(--tinta); --rv-suave:#ffffff0a; --rv-linea:#ffffff22; --rv-acento:var(--acento); --rv-sobre:#0D0D0F; --rv-radio:12px }
-  .flota{ position:fixed; z-index:15; right:16px; bottom:calc(16px + env(safe-area-inset-bottom)); box-shadow:0 10px 30px #000a }
-  @media (prefers-reduced-motion:reduce){ html{ scroll-behavior:auto } .hoja{ animation:none } }
+  .rv{ --rv-fondo:var(--capa); --rv-tinta:var(--tinta); --rv-suave:#ffffff0a; --rv-linea:#ffffff22; --rv-acento:var(--acento); --rv-sobre:#0B0B0D; --rv-radio:12px } .rv h3{ font-family:var(--cond); font-weight:400; text-transform:uppercase; font-size:32px }
+  .flota{ position:fixed; z-index:25; right:16px; bottom:calc(16px + env(safe-area-inset-bottom)); transition:transform .4s cubic-bezier(.2,.8,.2,1) } .flota.fuera{ transform:translateY(150%) }
+  .toast{ position:fixed; z-index:150; left:50%; top:calc(76px + env(safe-area-inset-top)); transform:translateX(-50%); background:var(--acento); color:#0B0B0D; padding:10px 18px; font-weight:800; font-size:14px; border-radius:10px; opacity:0; transition:opacity .3s; pointer-events:none; box-shadow:4px 4px 0 #fff; max-width:calc(100% - 32px) } .toast.si{ opacity:1 }
+  @media (prefers-reduced-motion:reduce){ html{ scroll-behavior:auto } .hoja{ animation:none } h1 span{ animation:none; opacity:1; transform:none } .calco{ animation:none } .portada video{ display:none } [data-rev]{ opacity:1; transform:none } }
 </style>
 </head>
 <body>
 <div class="demo">Página de muestra de Grupo Mazi · negocio ficticio</div>
 <header><div class="env">
   <a class="logo" href="#">Navaja<span>/</span>Norte</a>
-  <nav><a href="#servicios">Servicios</a><a href="#equipo">Barberos</a><a href="#trabajo">Trabajo</a><a href="#visita">Visítanos</a><a href="#" data-mis>Mis citas</a></nav>
+  <nav><a href="#servicios">Servicios</a><a href="#equipo">Barberos</a><a href="#trabajo">Trabajo</a><a href="#tienda">Tienda</a><a href="#visita">Visítanos</a><a href="#" data-mis>Mis citas</a></nav>
+  <button class="icono" id="abrirCarro" aria-label="Tu pedido de la tienda"><span id="icoCarro"></span><span class="num" id="carroNum" hidden>0</span></button>
   <button class="btn" data-reservar>Reservar</button>
 </div></header>
 
 <main>
-<div class="portada">
-  <img src="../img/1836983.webp" alt="Un barbero con mandil peina a su cliente antes del corte" fetchpriority="high">
+<div class="portada" id="portada">
+  <img class="poster" src="../video/navaja-v.jpg" alt="" aria-hidden="true">
+  <video id="vid" muted playsinline loop autoplay preload="metadata" aria-hidden="true"></video>
+  <div class="puntos"></div>
+  <div class="calco" aria-hidden="true"><span>Sin<b>fila</b>aparta</span></div>
   <div class="env">
-    <p class="ojo">Fades · Barba · Diseño</p>
-    <h1>Sales<br>nuevo.</h1>
-    <p>Escoge barbero, día y hora desde tu teléfono. Llegas, te sientas y en 45 minutos sales con otra cara.</p>
-    <button class="btn" data-reservar>Reservar ahora</button><span class="estado" id="estado"><i></i><span></span></span>
+    <p class="ojo">Fades · Barba · Diseño · Querétaro</p>
+    <h1><span>Sales</span><span><span class="hueco" style="display:inline">nue</span><span class="ac" style="display:inline">vo.</span></span></h1>
+    <p class="lead">Escoge barbero, día y hora desde tu teléfono. Llegas, te sientas y en 45 minutos sales con otra cara.</p>
+    <button class="btn" data-reservar>Reservar ahora</button>
+    <div><span class="estado" id="estado"><i></i><span></span></span></div>
   </div>
 </div>
+<div class="cintas"><div class="mq" id="mq1"></div><div class="mq dos" id="mq2"></div></div>
 
 <section id="servicios"><div class="env">
-  <h2>Servicios</h2><p class="sub">Precios fijos. El tiempo es aproximado, el resultado no.</p>
+  <p class="ojo" data-rev>Precios fijos, sin sorpresas</p><h2 data-rev>Servi<span class="ac">cios</span></h2><p class="sub" data-rev>El tiempo es aproximado, el resultado no. Escoge uno y te lleva directo a escoger barbero.</p>
   <div class="servs" id="servs"></div>
+  <div class="promo" data-rev><div class="pr" id="promo"></div></div>
 </div></section>
 
 <section id="equipo" style="background:#111114"><div class="env">
-  <h2>Los barberos</h2><p class="sub">Cada uno tiene su mano. Si ya tienes al tuyo, resérvale directo.</p>
+  <p class="ojo" data-rev>Los sospechosos de siempre</p><h2 data-rev>Los <span class="hueco">barberos</span></h2><p class="sub" data-rev>Cada uno tiene su mano. Si ya tienes al tuyo, resérvale directo: su próxima hora libre sale en vivo.</p>
   <div class="equipo" id="equipoL"></div>
 </div></section>
 
 <section id="trabajo"><div class="env">
-  <h2>El trabajo</h2><p class="sub">Toca una foto para verla en grande.</p>
+  <p class="ojo" data-rev>Recién salidos de la silla</p><h2 data-rev>El <span class="ac">trabajo</span></h2><p class="sub" data-rev>Desliza. Toca una para verla en grande y enséñasela a tu barbero.</p>
   <div class="galeria" id="galeria"></div>
 </div></section>
 
-<section style="background:#111114"><div class="env">
-  <h2>Lo que dicen</h2><p class="sub">Reseñas de muestra para la demostración.</p>
-  <div class="resenas">
-    <blockquote><div class="estrellas" aria-label="5 de 5">★★★★★</div><p>«Reservé en la noche desde la cama y al otro día ni esperé. El fade quedó perfecto.»</p><cite>— Diego R.</cite></blockquote>
-    <blockquote><div class="estrellas" aria-label="5 de 5">★★★★★</div><p>«La barba con toalla caliente es otra cosa. Ya tengo a mi barbero.»</p><cite>— Luis A.</cite></blockquote>
-    <blockquote><div class="estrellas" aria-label="5 de 5">★★★★★</div><p>«Me gustó que te dicen el precio antes. Nada de sorpresas al pagar.»</p><cite>— Marco T.</cite></blockquote>
-  </div>
+<section id="tienda"><div class="env">
+  <p class="ojo" data-rev>Lo que usamos en la silla</p><h2 data-rev>La <span class="hueco">tienda</span></h2><p class="sub" data-rev>Pomadas, aceites y kits. Lo apartas aquí y lo recoges en tu cita, o te lo llevamos en Querétaro.</p>
+  <div id="tiendaL"></div>
 </div></section>
 
-<section id="visita"><div class="env dos">
-  <div>
-    <h2>Visítanos</h2><p class="sub">Calle Ignacio Pérez 88, Querétaro (dirección de muestra). Hay estacionamiento enfrente.</p>
-    <div class="horario" id="horario"></div>
-    <p style="margin-top:26px;display:flex;gap:10px;flex-wrap:wrap"><a class="btn linea" href="https://maps.google.com/?q=Queretaro+centro" target="_blank" rel="noopener">Cómo llegar</a><button class="btn linea" data-mis>Mis citas</button></p>
-  </div>
-  <div class="foto-local"><img src="../img/3993133-c.webp" alt="El interior de la barbería, con sillas negras y espejos iluminados" loading="lazy"></div>
+<section><div class="env"><div class="squad" data-rev>
+  <div><h2>¿Vienen en bola?</h2><p>De 3 cortes en adelante, 15 % menos a cada quien. Para la boda, el XV, el partido o porque sí. Les apartamos sillas juntas.</p></div>
+  <a class="btn" id="squadBtn" target="_blank" rel="noopener" href="#">Apartar para el squad</a>
+</div></div></section>
+
+<section style="background:#111114"><div class="env">
+  <p class="ojo" data-rev>Reseñas de muestra</p><h2 data-rev>Lo que <span class="ac">dicen</span></h2>
+  <div class="resenas" id="resenas"></div>
+</div></section>
+
+<section id="visita"><div class="env visita">
+  <div data-rev id="mapa"></div>
+  <div data-rev><p class="ojo">Dirección de muestra</p><h2>Cáele</h2><div class="horario" id="horario"></div>
+    <div class="qrcaja"><div id="qr" aria-label="Código QR de esta página"></div><div><b>Escanea y aparta</b><p>Va en el espejo y en el póster del local: escaneas y reservas sin hacer fila.</p></div></div></div>
 </div></section>
 </main>
 
-<footer><div class="env">Navaja Norte · Página de muestra de <b>Grupo Mazi</b> (paquete Completa). Fotos: Pexels (Th2city Santana, Antoni Shkraba y otros).</div></footer>
-<button class="btn flota" data-reservar id="flota">Reservar</button>
+<footer><div class="env"><div class="grande" aria-hidden="true">Navaja/Norte</div>Página de muestra de <b>Grupo Mazi</b> (paquete Completa). Fotos de Pexels y Unsplash; video de Mixkit. Negocio ficticio.</div></footer>
+<button class="btn flota fuera" data-reservar id="flota">Reservar</button>
+<div class="toast" id="toast" role="status"></div>
 
-<dialog id="hojaReserva" aria-label="Reservar"><div class="hoja"><div class="cab"><b>Reserva</b><button class="cerrar" data-cerrar aria-label="Cerrar">✕</button></div><div id="reserva"></div></div></dialog>
-<dialog id="hojaMis" aria-label="Mis citas"><div class="hoja" style="padding-bottom:18px"><div class="cab"><b>Mis citas</b><button class="cerrar" data-cerrar aria-label="Cerrar">✕</button></div><div id="mis"></div></div></dialog>
-<dialog id="grande" aria-label="Foto"><div class="hoja"><img alt=""></div></dialog>
+<dialog class="h" id="hojaReserva" aria-label="Reservar"><div class="hoja"><div class="cab"><b>Reserva</b><button class="cerrar" data-cerrar aria-label="Cerrar"><span class="x"></span></button></div><div id="reserva"></div></div></dialog>
+<dialog class="h" id="hojaMis" aria-label="Mis citas"><div class="hoja" style="padding-bottom:18px"><div class="cab"><b>Mis citas</b><button class="cerrar" data-cerrar aria-label="Cerrar"><span class="x"></span></button></div><div id="mis"></div></div></dialog>
+<dialog class="h" id="grande" aria-label="Foto"><div class="hoja"><img alt=""></div></dialog>
 
 <script type="module">
-import { crearAgenda, hora12, pesos, nombreDia } from '../comun/agenda.js';
+import { crearAgenda, hora12, pesos, nombreDia, fechaCorta } from '../comun/agenda.js';
 import { montarReserva, pintarMisCitas } from '../comun/reservar.js';
+import { montarTienda } from '../comun/tienda.js';
+import { elegir } from '../comun/catalogo.js';
+import { revelar, mapa, qr, marquesina, promoDelDia, estilos, CSS_MAPA, CSS_MQ, CSS_PROMO } from '../comun/extras.js';
+import { ico } from '../comun/iconos.js';
+estilos(CSS_MAPA, CSS_MQ, CSS_PROMO);
 const $ = (s) => document.querySelector(s), $$ = (s) => [...document.querySelectorAll(s)];
+const aviso = (t) => { const e = $('#toast'); e.textContent = t; e.classList.add('si'); clearTimeout(aviso.t); aviso.t = setTimeout(() => e.classList.remove('si'), 2200); };
+$('#icoCarro').innerHTML = ico('shopping-bag', 20); $$('.x').forEach(x => x.innerHTML = ico('x', 20));
+
 const SERVICIOS = [
-  { id: 'fade', nombre: 'Fade', dur: 45, precio: 220, nota: 'Bajo, medio, alto o taper', icono: 'scissors' },
+  { id: 'fade', nombre: 'Fade', dur: 45, precio: 220, nota: 'Bajo, medio, alto o taper', icono: 'scissors', tag: 'El que más sale' },
   { id: 'clasico', nombre: 'Corte clásico', dur: 40, precio: 190, nota: 'Tijera y máquina, con lavado', icono: 'zap' },
   { id: 'barba', nombre: 'Barba con navaja', dur: 30, precio: 160, nota: 'Toalla caliente y perfilado', icono: 'flame' },
-  { id: 'combo', nombre: 'Fade + barba', dur: 75, precio: 340, nota: 'El completo', icono: 'sparkles' },
+  { id: 'combo', nombre: 'Fade + barba', dur: 75, precio: 340, nota: 'El completo, $40 menos que separado', icono: 'sparkles', tag: 'Combo' },
   { id: 'diseno', nombre: 'Diseño / líneas', dur: 20, precio: 90, nota: 'Rayas y figuras a mano', icono: 'pencil' },
   { id: 'cejas', nombre: 'Cejas', dur: 15, precio: 60, nota: 'Con navaja', icono: 'eye' }
 ];
 const BARBEROS = [
-  { id: 'toño', nombre: 'Toño', esp: 'Fades limpios · 9 años', foto: '../img/1836983-c.webp' },
-  { id: 'ivan', nombre: 'Iván', esp: 'Barba y navaja · 6 años', foto: '../img/4625648-c.webp' },
-  { id: 'kike', nombre: 'Kike', esp: 'Diseños y líneas · 4 años', foto: '../img/2061820-c.webp' }
+  { id: 'toño', nombre: 'Toño', alias: '«El Quirúrgico»', esp: 'Fades limpios', anios: 9, cargos: 'Fades sin una sola raya', foto: '../img/1836983-c.webp' },
+  { id: 'ivan', nombre: 'Iván', alias: '«Navajazo»', esp: 'Barba y navaja', anios: 6, cargos: 'Perfilados que duran dos semanas', foto: '../img/4625648-c.webp' },
+  { id: 'kike', nombre: 'Kike', alias: '«El Grafitero»', esp: 'Diseños y líneas', anios: 4, cargos: 'Dibujar en la nuca lo que le pidas', foto: '../img/2061820-c.webp' }
 ];
+const PRODUCTOS = elegir(['arcilla', 'aceite', ['kit-arranque', { precio: 640, antes: 820 }], 'tonico', 'spray', 'balsamo', 'peine', 'brillo', 'rastrillo', 'herramientas']);
 const H = { 1: [660, 1260], 2: [660, 1260], 3: [660, 1260], 4: [660, 1260], 5: [600, 1290], 6: [600, 1260], 0: [660, 960] };
-const ag = crearAgenda({ negocio: 'Navaja Norte', clave: 'navaja', horario: H, barberos: BARBEROS, direccion: 'Calle Ignacio Pérez 88, Querétaro' });
+const DIR = 'Calle Ignacio Pérez 88, Centro, Querétaro';
+const ag = crearAgenda({ negocio: 'Navaja Norte', clave: 'navaja', horario: H, barberos: BARBEROS, direccion: DIR });
 
-$('#servs').innerHTML = SERVICIOS.map(s => `<article class="serv"><h3>${s.nombre}</h3><div class="p">${pesos(s.precio)}</div><p>${s.nota} · ${s.dur} min</p><button class="btn linea" data-serv="${s.id}">Reservar este</button></article>`).join('');
-$('#equipoL').innerHTML = BARBEROS.map(b => `<article class="barb"><img src="${b.foto}" alt="${b.nombre}, barbero" loading="lazy"><div class="info"><h3>${b.nombre}</h3><p>${b.esp}</p><button class="btn" data-barb="${b.id}">Reservar con ${b.nombre}</button></div></article>`).join('');
-const FOTOS = ['4625648', '897265', '2061820', '6007400', '4969866', '2035227'];
-$('#galeria').innerHTML = FOTOS.map(f => `<button data-foto="${f}" aria-label="Ver foto en grande"><img src="../img/${f}-c.webp" alt="" loading="lazy"></button>`).join('');
+/* la portada: video vertical en teléfono, horizontal en pantalla ancha */
+const vid = $('#vid'), ancho = matchMedia('(min-width: 900px)').matches;
+if(ancho) $('.poster').src = '../video/navaja-h.jpg';
+if(!matchMedia('(prefers-reduced-motion: reduce)').matches){ vid.poster = `../video/navaja-${ancho ? 'h' : 'v'}.jpg`; vid.src = `../video/navaja-${ancho ? 'h' : 'v'}.mp4`; vid.play?.().catch(() => {}); }
+marquesina($('#mq1'), ['Fade', 'Barba con navaja', 'Diseño', 'Sin fila', 'Reserva en línea'], '/');
+marquesina($('#mq2'), ['Toño', 'Iván', 'Kike', 'Ignacio Pérez 88', 'Abierto hasta las 9'], '✕');
+const e = ag.abiertoAhora(); $('#estado').classList.toggle('si', e.abierto); $('#estado span').textContent = e.texto;
+
+/* la promo del día, con su reloj hasta que cierra */
+promoDelDia($('#promo'), {
+  1: { titulo: 'Lunes de cejas gratis', detalle: 'Con cualquier corte, las cejas van por la casa', ico: 'eye' },
+  2: { titulo: 'Martes de estudiante', detalle: '20 % en el fade con tu credencial', ico: 'badge-check' },
+  3: { titulo: 'Miércoles de barba', detalle: 'La barba con navaja a $120 si vienes por corte', ico: 'flame' },
+  4: { titulo: 'Jueves de combo', detalle: 'Fade + barba a $299', ico: 'sparkles' },
+  5: { titulo: 'Viernes de diseño', detalle: 'Las líneas van gratis con tu fade', ico: 'pencil' },
+  6: { titulo: 'Sábado de squad', detalle: 'Vengan 3 y uno paga la mitad', ico: 'users' },
+  0: { titulo: 'Domingo de papás', detalle: 'Papá e hijo, $350 los dos cortes', ico: 'heart' },
+}, { cierre: H[new Date().getDay()]?.[1] ?? 1260 });
+
+$('#servs').innerHTML = SERVICIOS.map(s => `<article class="serv" data-rev>${s.tag ? `<span class="tag">${s.tag}</span>` : ''}<div><span class="ico">${ico(s.icono, 26)}</span><h3>${s.nombre}</h3></div><div class="p">${pesos(s.precio)}</div><p>${s.nota} · ${s.dur} min</p><button class="btn linea chico" data-serv="${s.id}">Reservar este</button></article>`).join('');
+
+/* el expediente de cada barbero, con su próxima hora libre */
+function siguienteLibre(b){ for(const d of ag.dias(4)){ const x = ag.libres(d, 45, b).find(l => l.libre); if(x) return { d, x }; } return null; }
+const cuando = (s) => { const hoy = s.d.toDateString() === new Date().toDateString(), f = fechaCorta(s.d); return `${hoy ? 'hoy' : f.dia + ' ' + f.num} ${hora12(s.x.min)}`; };
+$('#equipoL').innerHTML = BARBEROS.map((b, i) => { const s = siguienteLibre(b.id); return `<article class="exp" data-rev><div class="foto"><img src="${b.foto}" alt="${b.nombre}, barbero" loading="lazy"><div class="regla"></div><span class="ficha">NN-0${i + 1}</span></div>
+  <h3>${b.nombre}</h3><div class="alias">alias ${b.alias}</div><dl><dt>Cargos</dt><dd>${b.cargos}</dd><dt>Años</dt><dd>${b.anios} en la silla</dd><dt>Visto libre</dt><dd>${s ? cuando(s) : 'agenda llena'}</dd></dl>
+  <button class="btn" data-barb="${b.id}">Reservar con ${b.nombre}</button></article>`; }).join('');
+
+const FOTOS = [['4625648', 'Fade'], ['897265', 'Textura'], ['2061820', 'Líneas'], ['6007400', 'Barba'], ['4969866', 'Rizos'], ['2035227', 'Clásico'], ['4663135', 'Skin fade']];
+$('#galeria').innerHTML = FOTOS.map(([f, t]) => `<button data-foto="${f}" aria-label="Ver ${t} en grande"><img src="../img/${f}-c.webp" alt="" loading="lazy"><span>${t}</span></button>`).join('');
+
+montarTienda($('#tiendaL'), { ag, clave: 'navaja', productos: PRODUCTOS, carroBtn: $('#abrirCarro'), contador: $('#carroNum'), envio: 49, envioGratis: 700, aviso, negocio: 'Navaja Norte' });
+$('#squadBtn').href = ag.whatsappTexto('Qué onda, Navaja Norte. Somos un grupo y queremos apartar cortes juntos. Somos __ personas, para el día __.');
+
+$('#resenas').innerHTML = [['Reservé en la noche desde la cama y al otro día ni esperé. El fade quedó perfecto.', 'Diego R. · con Toño'], ['La barba con toalla caliente es otra cosa. Ya tengo a mi barbero.', 'Luis A. · con Iván'], ['Kike me hizo el logo de mi equipo en la nuca. Todo el torneo me preguntaron dónde.', 'Marco T. · con Kike']]
+  .map(([t, q]) => `<blockquote data-rev><div class="estrellas" aria-label="5 de 5">${ico('star', 16).repeat(5)}</div><p>«${t}»</p><cite>${q}</cite></blockquote>`).join('');
+
+mapa($('#mapa'), { nombre: 'Navaja Norte', direccion: DIR, oscuro: true, notas: [['circle-parking', 'Estacionamiento público enfrente'], ['tv', 'Partido en la pantalla mientras esperas'], ['wifi', 'Wifi gratis']] });
 const hoy = new Date().getDay();
 $('#horario').innerHTML = [1, 2, 3, 4, 5, 6, 0].map(d => { const h = H[d], c = d === hoy ? 'hoy' : ''; return `<span class="${c}">${nombreDia(new Date(2026, 10, 1 + d))}</span><span class="${c}">${h ? hora12(h[0]) + ' – ' + hora12(h[1]) : 'Cerrado'}</span>`; }).join('');
-const e = ag.abiertoAhora(); $('#estado').classList.toggle('si', e.abierto); $('#estado span').textContent = e.texto;
+qr($('#qr'), { celda: 4 });
 
 const R = montarReserva($('#reserva'), { ag, servicios: SERVICIOS, barberos: BARBEROS });
 const abrir = (d) => { d.showModal(); };
@@ -158,9 +264,9 @@ $('#servs').onclick = (ev) => { const b = ev.target.closest('[data-serv]'); if(!
 $('#equipoL').onclick = (ev) => { const b = ev.target.closest('[data-barb]'); if(!b) return; R.empezar({ barbero: b.dataset.barb }); abrir($('#hojaReserva')); };
 $$('[data-mis]').forEach(b => b.onclick = (ev) => { ev.preventDefault(); pintarMisCitas($('#mis'), ag); abrir($('#hojaMis')); });
 $('#galeria').onclick = (ev) => { const b = ev.target.closest('[data-foto]'); if(!b) return; $('#grande img').src = `../img/${b.dataset.foto}.webp`; abrir($('#grande')); };
-/* se cierra con la ✕, tocando afuera o con Esc */
-$$('dialog').forEach(d => d.addEventListener('click', (ev) => { if(ev.target === d || ev.target.closest('[data-cerrar]') || d.id === 'grande') d.close(); }));
-new IntersectionObserver(([en]) => { $('#flota').style.display = en.isIntersecting ? 'none' : ''; }).observe(document.querySelector('.portada'));
+$$('dialog.h').forEach(d => d.addEventListener('click', (ev) => { if(ev.target === d || ev.target.closest('[data-cerrar]') || d.id === 'grande') d.close(); }));
+new IntersectionObserver(([en]) => { $('#flota').classList.toggle('fuera', en.isIntersecting); }).observe($('#portada'));
+revelar();
 </script>
 </body>
 </html>
