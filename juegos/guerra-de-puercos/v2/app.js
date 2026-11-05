@@ -69,18 +69,29 @@ function pintarBarra(){
   $('#yoAvatar').src = (cosmetico(C.puesto.avatar) || cosmetico('av-pig')).img;
   const n = C.sobres.length;
   $('#globoSobres').hidden = !n; $('#globoSobres').textContent = n;
-  $('#avisoSobres').hidden = !n;
-  if(n){
-    $('#avisoSobresTit').textContent = n === 1 ? 'Tienes un sobre sin abrir' : 'Tienes ' + n + ' sobres sin abrir';
-    caraSobre(C.sobres[0].tipo, 200, 312).then(c => $('#avisoSobresImg').src = c.toDataURL('image/jpeg', .8));
-  }
+  if(n > sobresVistos && pantallaActual !== 'abrir' && pantallaActual !== 'mesa') notificarSobres();
+  sobresVistos = n;
+  if(!n) esconderNoti();
 }
+/* La notificación: baja de arriba, dice cuántos hay y lleva a «Sobres». Se va
+   sola a los 6 s (el globito del menú se queda). Carlos, 5 nov: «en lugar de
+   como lo estamos haciendo con el botón haz que salga una notificación». */
+let sobresVistos = 0, notiReloj = 0;
+function notificarSobres(){
+  const n = C.sobres.length; if(!n) return;
+  const b = $('#notiSobres');
+  $('#notiTit').textContent = n === 1 ? 'Tienes un sobre por abrir' : 'Tienes ' + n + ' sobres por abrir';
+  b.hidden = false; requestAnimationFrame(() => b.classList.add('ve'));
+  SON.moneda?.();
+  clearTimeout(notiReloj); notiReloj = setTimeout(esconderNoti, 6000);
+}
+function esconderNoti(){ const b = $('#notiSobres'); b.classList.remove('ve'); setTimeout(() => { if(!b.classList.contains('ve')) b.hidden = true; }, 350); }
+let pantallaActual = 'inicio';
 escuchar(pintarBarra); pintarBarra();
 $('#bSonido').addEventListener('click', () => { const off = alternar(); $('#bSonido img').src = 'img/iconos/' + (off ? 'audioOff' : 'audioOn') + '.png'; });
 $('#bSonido img').src = 'img/iconos/' + (estaApagado() ? 'audioOff' : 'audioOn') + '.png';
 
 /* ── LAS PANTALLAS ───────────────────────────────────────────────────────── */
-let pantallaActual = 'inicio';
 function ir(p){
   if(p === 'jugar'){ irAJugar(); return; }
   pantallaActual = p;
@@ -92,10 +103,12 @@ function ir(p){
   if(p === 'tienda') pintarTienda();
   if(p === 'sobres') pintarMisSobres();
   if(p === 'coleccion') pintarColeccion();
+  if(p !== 'inicio') esconderNoti();
+  else if(C.sobres.length) setTimeout(notificarSobres, 500);
   SON.toque();
 }
 $('#dock').addEventListener('click', (e) => { const b = e.target.closest('[data-ir]'); if(b) ir(b.dataset.ir); });
-$('#avisoSobres').addEventListener('click', () => abrir(C.sobres[0]));
+$('#notiSobres').addEventListener('click', () => { esconderNoti(); ir('sobres'); });
 
 /* JUGAR: la mesa nueva, contra la máquina. */
 function irAJugar(){
@@ -143,15 +156,22 @@ async function pintarMisSobres(){
     caja.querySelector('[data-ir2]').onclick = () => ir('tienda');
     return;
   }
-  caja.innerHTML = '<div class="lista-sobres"></div>';
-  const l = caja.firstChild;
-  for(const s of C.sobres){
-    const b = document.createElement('button'); b.dataset.id = s.id;
-    b.innerHTML = `<img alt=""><span>${SOBRES[s.tipo].nombre}</span>`;
-    l.appendChild(b);
-    caraSobre(s.tipo, 240, 375).then(c => b.querySelector('img').src = c.toDataURL('image/jpeg', .82));
-  }
-  l.onclick = (e) => { const b = e.target.closest('[data-id]'); if(b) abrir(C.sobres.find(s => s.id === b.dataset.id)); };
+  /* Todos amontonados, uno sobre otro, como en la mesa: el de hasta arriba
+     es el que se abre, y al terminar sigue el que quedó debajo. */
+  const n = C.sobres.length, vis = C.sobres.slice(0, 8);
+  caja.innerHTML = `<div class="monton-sobres" role="button" aria-label="Abrir el sobre de hasta arriba">
+      ${vis.map((s, i) => `<img alt="" data-i="${i}" style="--i:${i}; z-index:${20 - i}">`).join('')}
+      <span class="monton-sobres__n">${n}</span>
+    </div>
+    <p class="monton-sobres__pie"><b>${SOBRES[C.sobres[0].tipo].nombre}</b> · toca el de hasta arriba para abrirlo</p>`;
+  vis.forEach((s, i) => caraSobre(s.tipo, 300, 470).then(c => { const im = caja.querySelector(`[data-i="${i}"]`); if(im) im.src = c.toDataURL('image/jpeg', .85); }));
+  const m = caja.querySelector('.monton-sobres');
+  m.onclick = () => {
+    if(m.classList.contains('sale')) return;
+    m.classList.add('sale'); SON.saca?.();
+    setTimeout(() => abrir(C.sobres[0]), 380);
+  };
+  pista('monton', m, 'Toca el sobre de arriba', { gesto: 'toca', veces: 2 });
 }
 
 /* ── ABRIR UN SOBRE ──────────────────────────────────────────────────────── */
@@ -160,7 +180,7 @@ function abrir(sobre){
   ir('abrir');
   abrirSobre(sobre, { capa: $('#ui'), alTerminar: (salida) => {
     if(salida === 'otro' && C.sobres.length) return abrir(C.sobres[0]);
-    ir(salida === 'coleccion' ? 'coleccion' : 'inicio');
+    ir(salida === 'coleccion' ? 'coleccion' : C.sobres.length ? 'sobres' : 'inicio');
   } });
 }
 
@@ -228,5 +248,5 @@ function lupa(src, pie){
 }
 
 /* Si llegó con un sobre de bienvenida, la primera cosa que se le enseña es ése. */
-if(C.sobres.length) pista('sobre-inicio', $('#avisoSobres'), 'Abre tu primer sobre', { gesto: 'toca', veces: 2 });
+if(C.sobres.length) setTimeout(notificarSobres, 900);
 window.__puercos = { C, CAT, ir, abrir };

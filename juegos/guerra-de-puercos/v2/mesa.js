@@ -394,7 +394,11 @@ async function partida({ capa, alTerminar, carga }){
 
     /* 1 · Las cartas van a la mesa: la tuya boca arriba, la suya boca abajo. */
     const mias = jugA.cartas.map(c => mallas.get(c.id)), suyas = jugB.cartas.map(c => mallaDe(c));
-    const espMia = jugA.especial ? especialesMias().find(c => c.id === especialId) || especialesMias().find(c => c.esp === jugA.especial) : null;
+    /* la que vuela es LA MISMA que gasta el motor: la primera de esa clase en
+       la mano. Antes volaba la que tocaste y el motor gastaba otra; la que
+       quedaba se volvía una carta fantasma encima de la bandeja que, al
+       tocarla, pedía un soporte que ya no tenías y trababa la partida. */
+    const espMia = jugA.especial ? J.a.mano.find(c => c.nivel === 'ESP' && c.esp === jugA.especial) : null;
     const espSuya = jugB.especial ? J.b.mano.find(c => c.nivel === 'ESP' && c.esp === jugB.especial) : null;
     for(const m of mias) m.userData.enMano = false;
     elegidas = []; especial = null; especialId = null;
@@ -524,6 +528,9 @@ async function partida({ capa, alTerminar, carga }){
     /* 7 · Todo lo jugado se va al cementerio, y se actualiza la mesa. */
     for(const m of [...mias, ...suyas, mEspA, mEspB].filter(Boolean)) quitarMalla(m.userData.carta.id);
     J = despues;
+    /* y por si acaso: toda malla cuya carta ya no está en ninguna mano se va */
+    const vivas = new Set([...J.a.mano, ...J.b.mano].map(c => c.id));
+    for(const id of [...mallas.keys()]) if(!vivas.has(id)) quitarMalla(id);
     pintarHud(); pintarPilas();
     await esperar(.35);
     if(J.acabo){ termino = true; await fin(); return; }
