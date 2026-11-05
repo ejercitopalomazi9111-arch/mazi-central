@@ -14,6 +14,16 @@ const { chromium } = require('playwright');
 const RAIZ = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const TIPOS = { '.js': 'text/javascript', '.mjs': 'text/javascript', '.html': 'text/html', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png' };
 let bien = 0, mal = 0;
+/* la ✕ vive en la barra escondida: como una persona, se desliza para regresar y luego se toca */
+const cerrarLector = async (pg) => {
+  /* un scroll que llega tarde puede volver a esconderla: se insiste hasta que se vea, y entonces se toca */
+  for (let k = 0; k < 15; k++) {
+    await pg.evaluate(() => { const s = document.querySelector('#scroll'); s.scrollTop = Math.max(0, s.scrollTop - 200); document.querySelector('#lector').classList.remove('sinbarra'); });
+    await pg.waitForTimeout(350);
+    if (await pg.evaluate(() => !document.querySelector('#lector').classList.contains('sinbarra') && document.querySelector('.lhead').getBoundingClientRect().top >= -1)) break;
+  }
+  await pg.click('#cerrarLector');
+};
 const ok = (c, t) => { if (c) { bien++; console.log('  ✓', t); } else { mal++; console.log('  ✗', t); } };
 
 /* ── el Webtoon de mentiras ── */
@@ -120,11 +130,18 @@ for (const [ancho, alto, nombre] of [[390, 844, 'teléfono'], [1280, 800, 'compu
   await pg.waitForTimeout(300);
   const leidos = await leidosAhora();
   ok(leidos === 3, `al pasar el final de cada capítulo lo marca leído, y sólo ése (${leidos})`);
+  /* pantalla completa: la barra va escondida al avanzar y baja sólo al regresar (Carlos, 5 nov) */
+  const barraVisible = () => pg.evaluate(() => { const r = document.querySelector('.lhead').getBoundingClientRect(); return r.bottom > 2; });
+  ok(!(await barraVisible()), 'leyendo hacia abajo, la barra del título no se ve (pantalla completa)');
+  await pg.evaluate(() => { document.querySelector('#scroll').scrollTop -= 200; }); await pg.waitForTimeout(400);
+  ok(await barraVisible(), 'al deslizar para regresar, baja la barra con el título y el capítulo');
+  await pg.evaluate(() => { document.querySelector('#scroll').scrollTop += 300; }); await pg.waitForTimeout(400);
+  ok(!(await barraVisible()), 'y al seguir leyendo se vuelve a esconder');
   const vistos = await pg.evaluate(() => [...document.querySelectorAll('#scroll .cap')].map((c) => +c.dataset.n));
   ok(vistos.every((n, i) => i === 0 || n === vistos[i - 1] + 1), `los capítulos van en orden, uno tras otro (${vistos.join(', ')})`);
   const pintadas = await pg.evaluate(() => [...document.querySelectorAll('#scroll .cap img')].filter((i) => i.complete && i.naturalWidth === 700).length);
   ok(pintadas >= 3, `las imágenes se ven (${pintadas} pintadas)`);
-  await pg.click('#cerrarLector');
+  await cerrarLector(pg);
   await pg.waitForFunction(() => !window.__tiras.ocupado, null, { timeout: 30000 });
   await pg.waitForTimeout(200);
   ok(new RegExp(`${leidos} de 12 leídos`).test(await card()), 'al cerrar, la tarjeta cuenta lo leído');
@@ -138,7 +155,7 @@ for (const [ancho, alto, nombre] of [[390, 844, 'teléfono'], [1280, 800, 'compu
     if (fin && !(await pg.evaluate(() => window.__tiras.ocupado)) && /Ya leíste todo lo que hay/.test(await pg.textContent('.al-final'))) break;
   }
   ok(await leidosAhora() === 12 && /Ya leíste todo lo que hay/.test(await pg.textContent('.al-final')), `leyendo seguido prepara los que faltan solo, hasta el último (${await leidosAhora()} de 12)`);
-  await pg.click('#cerrarLector');
+  await cerrarLector(pg);
   await pg.waitForFunction(() => !window.__tiras.ocupado, null, { timeout: 30000 });
   ok(/12 de 12 leídos/.test(await card()) && await pg.isDisabled('.serie button[data-a="leer"]'), 'y al terminar la serie, «Leer» se apaga');
 
@@ -169,7 +186,7 @@ for (const [ancho, alto, nombre] of [[390, 844, 'teléfono'], [1280, 800, 'compu
   await pg.waitForFunction(() => document.querySelector('#scroll .texto'));
   const limpio = await pg.evaluate(() => { const t = document.querySelector('#scroll .texto'); return { p: t.querySelectorAll('p').length, b: !!t.querySelector('b'), malo: !!t.querySelector('script,img,[onclick],[style],[onerror]'), hack: !!window.__hackeado }; });
   ok(limpio.p >= 2 && limpio.b && !limpio.malo && !limpio.hack, 'el texto de Wattpad llega con párrafos y negritas, sin scripts, imágenes ni atributos');
-  await pg.click('#cerrarLector');
+  await cerrarLector(pg);
   await pg.click('.serie[data-id="wattpad:9001"] button[data-a="archivo"]');
   await pg.fill('#aDesde', '1'); await pg.fill('#aHasta', '3');
   const [dl2] = await Promise.all([pg.waitForEvent('download', { timeout: 30000 }), pg.click('#armar')]);
@@ -193,7 +210,7 @@ for (const [ancho, alto, nombre] of [[390, 844, 'teléfono'], [1280, 800, 'compu
   await pg.waitForFunction(() => document.querySelectorAll('#scroll .cap').length >= 2);
   const series2 = await pg.evaluate(() => [...document.querySelectorAll('#scroll .cap')].slice(0, 2).map((c) => c.dataset.serie));
   ok(series2[0] !== series2[1] && orden.includes(series2[0]), 'en «Intercalado» va un capítulo de cada serie');
-  await pg.click('#cerrarLector');
+  await cerrarLector(pg);
 
   // sobrevive a cerrar, y sin red se lee lo bajado
   await pg.reload();
@@ -206,7 +223,7 @@ for (const [ancho, alto, nombre] of [[390, 844, 'teléfono'], [1280, 800, 'compu
   await pg.click('#leerTodo');
   await pg.waitForFunction(() => document.querySelectorAll('#scroll .cap').length >= 1);
   ok(await pg.evaluate(() => [...document.querySelectorAll('#scroll .cap img, #scroll .cap .texto')].length) > 0, 'y se puede leer lo bajado sin internet');
-  await pg.click('#cerrarLector');
+  await cerrarLector(pg);
   await ctx.setOffline(false);
 
   // quitar una serie
