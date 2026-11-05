@@ -168,8 +168,11 @@ async function partida({ capa, alTerminar, carga }){
 
   /* ── TU MANO EN ABANICO ── */
   let elegidas = [], especial = null, especialId = null;
-  const jugables = () => J.a.mano.filter(c => c.nivel !== 'ESP');
-  const especialesMias = () => J.a.mano.filter(c => c.nivel === 'ESP');
+  /* sólo cuentan las cartas que YA se repartieron: antes la mano entera
+     aparecía de golpe y luego se veía la animación de repartir (Carlos, 5 nov) */
+  const repartidas = new Set();
+  const jugables = () => J.a.mano.filter(c => c.nivel !== 'ESP' && repartidas.has(c.id));
+  const especialesMias = () => J.a.mano.filter(c => c.nivel === 'ESP' && repartidas.has(c.id));
   function lugarEnMano(k, n){
     const paso = Math.min(CARTA_W * L.sMano * .96, (L.v.ancho - .25 - CARTA_W * L.sMano) / Math.max(1, n - 1));
     const x = (k - (n - 1) / 2) * paso, ang = (k - (n - 1) / 2) * -.06;
@@ -239,7 +242,7 @@ async function partida({ capa, alTerminar, carga }){
 
   /* ── LA MANO DEL RIVAL: dorsos arriba, medio fuera de la pantalla ── */
   function pintarSuMano(){
-    const mano = J.b.mano; const n = mano.length;
+    const mano = J.b.mano.filter(c => repartidas.has(c.id)); const n = mano.length;
     mano.forEach((c, k) => {
       const m = mallaDe(c); m.userData.suya = true;
       const paso = Math.min(.42, 2.6 / Math.max(1, n)), x = (k - (n - 1) / 2) * paso;
@@ -264,6 +267,7 @@ async function partida({ capa, alTerminar, carga }){
      abren espacio. Carlos, 5 nov: «más lentas y suaves». */
   async function robar(lado, cartas){
     for(const c of cartas){
+      repartidas.add(c.id);
       const m = mallaDe(c), de = pilas[lado].mazo.position.clone();
       m.position.set(de.x, de.y, .6); m.rotation.set(0, Math.PI, 0); m.scale.setScalar(L.sPila);
       SON.roba();
@@ -288,7 +292,7 @@ async function partida({ capa, alTerminar, carga }){
     }
   }
   /* las que están en la mano y todavía no tienen lugar en la mesa = recién robadas */
-  const nuevasDe = (lado) => J[lado].mano.filter(c => !mallas.has(c.id));
+  const nuevasDe = (lado) => J[lado].mano.filter(c => !repartidas.has(c.id));
 
   pintarHud();
   pintarPilas();
