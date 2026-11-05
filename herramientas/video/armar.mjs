@@ -5,6 +5,7 @@
      node herramientas/video/armar.mjs <composicion.html> <salida.mp4>
      PREVIA=12 node …     → sólo uno de cada 12 cuadros, en <salida>-previa/, para revisar
      DESDE=8 HASTA=12 …   → con PREVIA, sólo ese tramo
+     SEGUIR=1 …           → retoma un armado cortado sin rehacer los cuadros que ya están
 
    La composición define:
      window.VIDEO = { w, h, fps, dur,
@@ -38,10 +39,14 @@ const V = await pg.evaluate(() => window.VIDEO);
 await pg.setViewportSize({ width: V.w, height: V.h });
 const FPS = V.fps || 60, total = Math.ceil(V.dur * FPS);
 const dir = salida.replace(/\.mp4$/, '') + (PREVIA ? '-previa' : '-cuadros');
-fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
+/* SEGUIR=1 retoma un armado cortado: conserva los cuadros hechos (menos el último, que pudo quedar a medias) */
+const SEGUIR = !PREVIA && process.env.SEGUIR === '1' && fs.existsSync(dir);
+if(SEGUIR){ const ya = fs.readdirSync(dir).filter(f => f.endsWith('.jpg')).sort(); if(ya.length) fs.rmSync(path.join(dir, ya[ya.length - 1])); }
+else { fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true }); }
 const DESDE = Number(process.env.DESDE) || 0, HASTA = Number(process.env.HASTA) || V.dur;
 const t0 = Date.now();
 for(let i = PREVIA ? Math.round(DESDE * FPS) : 0; i < (PREVIA ? Math.min(total, HASTA * FPS) : total); i += PREVIA || 1){
+  if(SEGUIR && fs.existsSync(path.join(dir, String(i).padStart(5, '0') + '.jpg'))) continue;
   await pg.evaluate(t => window.pintar(t), i / FPS);
   await pg.screenshot({ path: path.join(dir, String(i).padStart(5, '0') + '.jpg'), type: 'jpeg', quality: PREVIA ? 80 : 94 });
   if(!PREVIA && i % (FPS * 5) === 0) console.log('  ', (i / FPS).toFixed(0) + ' s de ' + V.dur.toFixed(0), '·', ((Date.now() - t0) / 1000).toFixed(0) + ' s');
