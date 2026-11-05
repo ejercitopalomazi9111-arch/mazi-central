@@ -79,6 +79,11 @@ const PUESTO_DE_FABRICA = { avatar:'av-pig', tapete:'tp-madera', mascota:'ms-pig
 function vacia(){
   return { v: VERSION, rev: 0, monedas: 0, cartas: {}, soporte: { bono: 0, castigo: 0 },
            cosmeticos: {}, puesto: { ...PUESTO_DE_FABRICA }, sobres: [], regalo: false,
+           /* el sobre de bienvenida va APARTE del regalo de cartas: quien venía
+              de la versión 1 ya traía cartas y por eso nunca recibía su sobre
+              (Carlos, 5 nov: «no está saliendo el sobre de regalo») */
+           bienvenida: false,
+           stats: { victorias: 0, derrotas: 0, empates: 0, partidas: 0 },
            victoriaDia: '', codigo: '', creada: Date.now() };
 }
 
@@ -118,6 +123,9 @@ function migrarDeLaUno(c){
     if(!tengo || !Object.keys(tengo).length) return false;
     for(const k of Object.keys(tengo)) c.cartas[k] = Math.max(1, c.cartas[k] || 0);
     if(Number.isFinite(monedas)) c.monedas = Math.max(c.monedas, monedas);
+    /* ya trae cartas: no se le regalan las 8 baratas, pero sí el soporte de
+       arranque (la v1 no lo guardaba) y, aparte, su sobre de bienvenida */
+    c.soporte.bono = Math.max(c.soporte.bono, 2); c.soporte.castigo = Math.max(c.soporte.castigo, 2);
     c.regalo = true;
     return true;
   }catch(e){ return false; }
@@ -140,6 +148,9 @@ function sana(c){
   n.sobres = Array.isArray(c.sobres) ? c.sobres.filter(s => s && typeof s.tipo === 'string') : [];
   n.monedas = Math.max(0, Math.floor(Number(c.monedas) || 0));
   n.rev = Math.max(0, c.rev | 0);
+  const st = c.stats || {}, ent = (x) => Math.max(0, Math.floor(Number(x) || 0));
+  n.stats = { victorias: ent(st.victorias), derrotas: ent(st.derrotas), empates: ent(st.empates), partidas: ent(st.partidas) };
+  n.bienvenida = !!c.bienvenida;
   return n;
 }
 
@@ -164,8 +175,22 @@ export function guardar(avisa = true){
   try{ localStorage.setItem(LLAVE, JSON.stringify(copia)); }catch(e){}
   escribirBase(copia);
   if(avisa) for(const f of alCambiar){ try{ f(C); }catch(e){} }
+  for(const f of alGuardar){ try{ f(copia); }catch(e){} }
 }
+/* lo que se entera de CADA guardado, aunque no se pinte nada: la cuenta en el servidor */
+const alGuardar = [];
+export const cadaGuardado = (fn) => { alGuardar.push(fn); };
 
+/* La copia del servidor gana entera (al entrar a tu cuenta en otro teléfono). */
+export function ponerCopia(dato){
+  const n = sana(dato);
+  n.rev = Math.max(n.rev, C.rev);
+  for(const k of Object.keys(C)) delete C[k];
+  Object.assign(C, n);
+  try{ localStorage.setItem(LLAVE, JSON.stringify(C)); }catch(e){}
+  escribirBase(JSON.parse(JSON.stringify(C)));
+  for(const f of alCambiar){ try{ f(C); }catch(e){} }
+}
 /* Para el código de respaldo: lo que se sube y lo que se recupera. */
 export const exportar = () => JSON.parse(JSON.stringify(C));
 export function importar(dato){

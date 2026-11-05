@@ -246,3 +246,36 @@ h2.seccion{ font-size:34px; color:var(--hueso); text-shadow:0 3px 0 var(--tinta)
 /* los letreros de la mesa (vida, ronda, salir) siempre por encima de la capa de toques */
 .mesa .hud, .mesa .ronda, .mesa__salir, .mesa .formula, .mesa .cuenta{ z-index:2 }
 .abrir__botones small{ display:block; font-family:var(--cuerpo, inherit); font-size:13px; opacity:.85; margin-top:2px }
+/* el perfil (tocar tu foto) */
+button.yo{ font:inherit; color:inherit; cursor:pointer }
+button.yo:active{ transform:scale(.96) }
+.btn .ico{ width:22px; height:22px; vertical-align:-5px }
+.perfil{ max-height:88vh; overflow-y:auto; text-align:left; gap:14px }
+.perfil__cabeza{ display:flex; align-items:center; gap:14px }
+.perfil__cabeza img{ width:64px; height:64px; border-radius:50%; background:var(--rosa-claro); border:3px solid var(--rosa) }
+.perfil__cabeza b{ font-family:var(--titulo); font-size:26px; display:block }
+.perfil__cabeza small{ font-size:13px; opacity:.8 }
+.perfil__numeros{ display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:8px }
+.perfil__numeros div{ background:rgba(255,255,255,.06); border-radius:12px; padding:8px 4px; text-align:center }
+.perfil__numeros b{ display:block; font-family:var(--titulo); font-size:22px }
+.perfil__numeros span{ font-size:11px; opacity:.8 }
+.perfil__pestanas{ display:flex; gap:6px; overflow-x:auto }
+.perfil__pestanas button{ flex:0 0 auto; padding:8px 14px; border-radius:999px; border:2px solid var(--tinta); background:rgba(255,255,255,.08); color:inherit; font:inherit; font-size:15px; min-height:40px }
+.perfil__pestanas button.activo{ background:var(--rosa); color:#1B0E16 }
+.perfil form{ display:grid; gap:10px }
+.perfil label{ display:grid; gap:4px; font-size:14px }
+.perfil input{ font-family:inherit; font-size:18px; padding:12px; border-radius:12px; border:2px solid var(--rosa); background:#1B0E16; color:#FFF0F6; width:100% }
+.perfil .dos{ display:grid; grid-template-columns:1fr 1fr; gap:10px }
+.perfil .nota{ font-size:13px; opacity:.8; margin:0 }
+.perfil .error{ color:#FF8A8A; font-size:14px; margin:0; min-height:18px }
+.lideres{ display:grid; gap:6px; margin:0; padding:0; list-style:none }
+.lideres li{ display:grid; grid-template-columns:34px 1fr auto; align-items:center; gap:8px; padding:8px 12px; border-radius:12px; background:rgba(255,255,255,.05); font-size:16px }
+.lideres li.yo-mismo{ background:rgba(232,74,138,.28); border:2px solid var(--rosa) }
+.lideres li b{ font-family:var(--titulo); font-size:18px; text-align:center }
+.lideres li span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.lideres li em{ font-style:normal; font-family:var(--titulo) }
+.lideres li:nth-child(1) b{ color:#E8B923 } .lideres li:nth-child(2) b{ color:#C9CED6 } .lideres li:nth-child(3) b{ color:#CD7F32 }
+/* la fila de pestañas que se desliza NO ensancha el panel (CLAUDE.md: la
+   columna implícita de un grid crece al contenido más ancho) */
+.perfil{ grid-template-columns:minmax(0, 1fr) }
+.perfil > *{ min-width:0 }

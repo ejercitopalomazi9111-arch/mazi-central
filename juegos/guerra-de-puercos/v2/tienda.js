@@ -60,6 +60,9 @@ export function pagarPartida(comoAcabo, rondas){
   if(comoAcabo === 'gana' && C.victoriaDia !== hoyEs()){ bono = PAGA.primeraDelDia; C.victoriaDia = hoyEs(); }
   const total = base + Math.min(15, Math.max(0, rondas | 0) * PAGA.porRonda) + bono;
   C.monedas += total;
+  /* para la tabla de líderes (Carlos, 5 nov: victorias, derrotas, más dinero, más cartas) */
+  C.stats.partidas++;
+  if(comoAcabo === 'gana') C.stats.victorias++; else if(comoAcabo === 'empata') C.stats.empates++; else C.stats.derrotas++;
   guardar();
   return { total, bono };
 }
@@ -182,13 +185,15 @@ export function cobrarSobre(id){
    ABRIR. Lo primero que hace alguien nuevo es abrir un sobre: así aprende el
    gesto antes de necesitarlo, y entiende para qué sirven las monedas. */
 export function regalarArranque(){
-  if(C.regalo || !CAT.listo) return false;
+  if(!CAT.listo) return false;
+  /* el sobre de bienvenida, a TODOS una vez, también a quien venía de la v1 */
+  if(!C.bienvenida){ C.bienvenida = true; C.sobres.unshift(sortearSobre('bienvenida')); guardar(); }
+  if(C.regalo) return false;
   const baratas = CAT.puercos.slice().sort((x, y) => x.puntos - y.puntos || x.n - y.n).slice(0, 8);
   for(const f of baratas) C.cartas[llaveDe(f)] = Math.max(1, C.cartas[llaveDe(f)] | 0);
   C.soporte.bono = Math.max(C.soporte.bono, 2);
   C.soporte.castigo = Math.max(C.soporte.castigo, 2);
   C.monedas += 40;
-  C.sobres.push(sortearSobre('bienvenida'));
   C.regalo = true;
   guardar();
   return true;
