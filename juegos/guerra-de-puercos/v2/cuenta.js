@@ -16,7 +16,7 @@ import { C, cadaGuardado, ponerCopia } from './coleccion.js';
 
 /* el servidor de salas de siempre (con dos pes: ver juegos/servidor/wrangler.jsonc);
    `?servidor=` sólo para las pruebas */
-const SERVIDOR = (new URLSearchParams(location.search).get('servidor') || 'https://ppuercos.palomazi9111.workers.dev').replace(/\/+$/, '');
+export const SERVIDOR = (new URLSearchParams(location.search).get('servidor') || 'https://ppuercos.palomazi9111.workers.dev').replace(/\/+$/, '');
 const LLAVE = 'puercos2_cuenta';
 
 let yo = (() => { try{ return JSON.parse(localStorage.getItem(LLAVE) || 'null'); }catch(e){ return null; } })();
@@ -82,3 +82,16 @@ addEventListener('online', () => subirYa());
 document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'hidden') subirYa(); });
 
 export async function lideres(){ return pedir('lideres'); }
+
+/* ── AMIGOS Y RETOS (Carlos, 5 nov: «sistema de amigos para poder retarlos
+   más fácil a combates»). Todo va con tu sesión; sin cuenta no hay amigos. */
+const conSesion = (ruta, extra = {}) => {
+  if(!yo) return Promise.reject(new Error('Primero entra a tu cuenta.'));
+  return pedir(ruta, { token: yo.token, ...extra }).catch((e) => { if(e.status === 401){ yo = null; guardarYo(); avisar('caduco'); } throw e; });
+};
+export const amigos = () => conSesion('amigos');
+export const pedirAmigo = (apodo) => conSesion('amigos/pedir', { apodo });
+export const aceptarAmigo = (apodo) => conSesion('amigos/aceptar', { apodo });
+export const quitarAmigo = (apodo) => conSesion('amigos/quitar', { apodo });
+export const retar = (apodo, codigo) => conSesion('reto', { apodo, codigo });
+export const borrarReto = (apodo) => conSesion('reto/borrar', { apodo });

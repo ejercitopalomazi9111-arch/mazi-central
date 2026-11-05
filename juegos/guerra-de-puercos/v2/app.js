@@ -6,13 +6,14 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 import { THREE, E, arrancar, mascota, tapete, cambiarTapete, cadaCuadro, vista, tocado, animar, sale } from './escena.js';
 import { C, cargar, guardar, escuchar, cosmetico, COSMETICOS, CLASES_COSMETICO, RAREZA, ORDEN_RAREZA, llaveDe } from './coleccion.js';
-import { CAT, cargarCatalogo, SOBRES, EN_TIENDA, comprar, regalarArranque, tengoPuercos, totalPuercos, TOPE_SOPORTE } from './tienda.js';
+import { CAT, cargarCatalogo, SOBRES, EN_TIENDA, comprar, regalarArranque, tengoPuercos, totalPuercos, TOPE_SOPORTE, misCartas } from './tienda.js';
 import { caraSobre, caraCosmetico } from './caras.js';
 import { abrirSobre } from './sobre.js';
-import { jugarPartida } from './mesa.js';
+import { jugarPartida, PV_MESA } from './mesa.js';
 import { SON, alternar, estaApagado } from './sonido.js';
 import { aviso, pista, cumplida } from './avisos.js';
-import { cuenta, crear, entrar, salir, lideres, alCambiarCuenta, estadoSubida } from './cuenta.js';
+import { cuenta, crear, entrar, salir, lideres, alCambiarCuenta, estadoSubida, amigos, pedirAmigo, aceptarAmigo, quitarAmigo, retar, borrarReto } from './cuenta.js';
+import { conectar, codigoNuevo, codigoValido } from './linea.js';
 
 const $ = (s, d = document) => d.querySelector(s);
 const $$ = (s, d = document) => [...d.querySelectorAll(s)];
@@ -98,7 +99,7 @@ $('#bSonido img').src = 'img/iconos/' + (estaApagado() ? 'audioOff' : 'audioOn')
 
 /* ── LAS PANTALLAS ───────────────────────────────────────────────────────── */
 function ir(p){
-  if(p === 'jugar'){ irAJugar(); return; }
+  if(p === 'jugar'){ elegirModo(); return; }
   pantallaActual = p;
   for(const m of $$('.pantalla')) m.classList.toggle('activa', m.dataset.p === p);
   for(const b of $$('#dock button')) b.classList.toggle('activo', b.dataset.ir === p);
@@ -117,15 +118,89 @@ $('#notiSobres').addEventListener('click', () => { esconderNoti(); ir('sobres');
   n.addEventListener('touchstart', (e) => { y0 = e.touches[0].clientY; }, { passive: true });
   n.addEventListener('touchmove', (e) => { if(y0 != null && e.touches[0].clientY - y0 < -20){ y0 = null; esconderNoti(); } }, { passive: true }); }
 
-/* JUGAR: la mesa nueva, contra la máquina. */
-function irAJugar(){
+/* JUGAR: contra la máquina, dos en este teléfono, o a distancia (Carlos, 5 nov:
+   «ya pon el modo para multijugador tanto en el mismo teléfono como online»). */
+function elegirModo(){
+  hoja(`<h3>¿Cómo juegas?</h3>
+    <button class="btn grande" data-h="maquina"><img alt="" class="ico" src="img/iconos/singleplayer.png"> Contra la máquina</button>
+    <button class="btn" data-h="dos"><img alt="" class="ico" src="img/iconos/multiplayer.png"> Dos en este teléfono</button>
+    <button class="btn" data-h="linea"><img alt="" class="ico" src="img/iconos/share1.png"> A distancia, con un amigo</button>
+    <button class="btn suave" data-h="nada">Cancelar</button>`,
+    (que) => { if(que === 'maquina' || que === 'dos') irAJugar(que); else if(que === 'linea') abrirDistancia(); });
+}
+function irAJugar(modo = 'maquina', conexion = null){
   ir('mesa');
-  jugarPartida({ capa: $('#ui'), alTerminar: (salida) => {
-    if(salida === 'otra') return irAJugar();
+  jugarPartida({ capa: $('#ui'), modo, conexion, alTerminar: (salida) => {
+    if(salida === 'otra') return irAJugar(modo, conexion);
     ir(salida === 'tienda' ? 'tienda' : 'inicio');
   } });
 }
-$('#bJugar').addEventListener('click', irAJugar);
+$('#bJugar').addEventListener('click', elegirModo);
+
+/* ── A DISTANCIA ─────────────────────────────────────────────────────────────
+   Uno crea la sala y le pasa el código de 4 letras (o el link) al otro; con
+   cuenta, también se reta a un amigo de la lista y le llega el aviso. */
+function cerrarHoja(){ const h = $('#hoja'); h.classList.remove('ve'); h.onclick = null; }
+const mazoParaLinea = () => { try{ return misCartas().slice(0, 120).map(c => c.nivel + c.valor).join('.'); }catch(e){ return ''; } };
+function abrirDistancia(){
+  const yo = cuenta();
+  hoja(`<div class="perfil distancia">
+      <h3>A distancia</h3>
+      <p class="nota">Uno crea la sala y le pasa el código de 4 letras al otro. Cada quien juega con sus cartas.</p>
+      <button class="btn grande" data-crear>Crear sala</button>
+      <div class="unirme"><input data-codigo maxlength="4" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="CÓDIGO" aria-label="Código de la sala"><button class="btn" data-unir>Entrar</button></div>
+      <p class="error" data-error></p>
+      ${yo ? '<h4>Reta a un amigo</h4><div class="amigos" data-amigos><p class="nota">Cargando…</p></div>' : '<p class="nota">Con una cuenta (toca tu foto) puedes agregar amigos y retarlos sin pasar códigos.</p>'}
+      <button class="btn suave" data-h="nada">Cancelar</button></div>`);
+  const caja = $('#hojaCaja'), err = $('[data-error]', caja), inp = $('[data-codigo]', caja);
+  inp.addEventListener('input', () => { inp.value = inp.value.toUpperCase().replace(/[^A-Z]/g, ''); });
+  $('[data-crear]', caja).onclick = async (e) => {
+    e.target.disabled = true;
+    try{ entrarSala(await codigoNuevo()); }
+    catch(x){ err.textContent = x.message; e.target.disabled = false; SON.error(); }
+  };
+  $('[data-unir]', caja).onclick = () => {
+    const c = inp.value.trim().toUpperCase();
+    if(!codigoValido(c)){ err.textContent = 'El código son 4 letras (sin O, I ni L).'; SON.error(); inp.focus(); return; }
+    entrarSala(c);
+  };
+  if(yo) pintarAmigos($('[data-amigos]', caja), { soloRetar: true });
+}
+/* La sala de espera: el código en grande hasta que entra el otro. */
+function entrarSala(codigo, { reto = null } = {}){
+  const cx = conectar(codigo, { pv: PV_MESA, nombre: cuenta()?.apodo || '', avatar: C.puesto.avatar, mazo: mazoParaLinea() });
+  let listo = false;
+  const link = location.origin + location.pathname + '?sala=' + codigo;
+  hoja(`<div class="perfil distancia">
+      <h3>${reto ? 'Retaste a ' + esc(reto) : 'Tu sala'}</h3>
+      <div class="codigo-grande" aria-label="Código de la sala">${codigo}</div>
+      <p class="nota" data-estado>Conectando…</p>
+      <button class="btn" data-compartir><img alt="" class="ico" src="img/iconos/share1.png"> Pasar el código</button>
+      <button class="btn suave" data-h="salir">Salir</button></div>`, () => { if(!listo){ cx.cerrar(); quitar(); if(reto) borrarReto(reto).catch(() => {}); } });
+  const caja = $('#hojaCaja'), est = $('[data-estado]', caja);
+  $('[data-compartir]', caja).onclick = async () => {
+    const texto = `¡Vamos a jugar Guerra de Puercos! Entra a «A distancia» con el código ${codigo}`;
+    try{ if(navigator.share){ await navigator.share({ text: texto, url: link }); return; } }catch(e){ return; }
+    try{ await navigator.clipboard.writeText(texto + ' · ' + link); aviso('Copiado: pégalo en WhatsApp', { icono: 'img/iconos/checkmark.png' }); }
+    catch(e){ aviso('El código es ' + codigo, { icono: 'img/iconos/information.png' }); }
+  };
+  const quitar = cx.oir((m) => {
+    if(m.tipo === 'lleno' || m.tipo === 'cerrada'){ est.textContent = m.porque || 'Se cerró la sala.'; est.classList.add('error'); return; }
+    if(m.tipo === 'conexion' && !m.abierta){ est.textContent = 'Sin internet… reconectando'; return; }
+    if(m.tipo !== 'estado') return;
+    const v = m.vista;
+    if(v.listo && !v.esperando){
+      listo = true; quitar(); cerrarHoja(); SON.rara();
+      if(reto) borrarReto(reto).catch(() => {});
+      irAJugar('linea', cx);
+      return;
+    }
+    est.textContent = reto ? `Esperando a que ${reto} acepte el reto…` : 'Esperando a que entre tu amigo con este código…';
+  });
+  if(reto) retar(reto, codigo).catch((e) => { est.textContent = e.message; est.classList.add('error'); });
+}
+/* el link con ?sala=ABCD entra directo */
+{ const s = new URLSearchParams(location.search).get('sala'); if(s && codigoValido(s.toUpperCase())) setTimeout(() => entrarSala(s.toUpperCase()), 300); }
 
 /* ── LA TIENDA ───────────────────────────────────────────────────────────── */
 async function pintarTienda(){
@@ -284,7 +359,7 @@ function pintarPerfil(){
     <div class="perfil__numeros">
       <div><b>${st.victorias}</b><span>Victorias</span></div><div><b>${st.derrotas}</b><span>Derrotas</span></div>
       <div><b>${C.monedas}</b><span>Monedas</span></div><div><b>${cartas}</b><span>Cartas</span></div></div>
-    <div class="perfil__pestanas">${[['cuenta', 'Cuenta'], ['cosmeticos', 'Cosméticos'], ['lideres', 'Líderes']].map(([k, t]) => `<button data-pp="${k}" class="${pestanaPerfil === k ? 'activo' : ''}">${t}</button>`).join('')}</div>
+    <div class="perfil__pestanas">${[['cuenta', 'Cuenta'], ['amigos', 'Amigos'], ['cosmeticos', 'Cosméticos'], ['lideres', 'Líderes']].map(([k, t]) => `<button data-pp="${k}" class="${pestanaPerfil === k ? 'activo' : ''}">${t}</button>`).join('')}</div>
     <div data-cuerpo></div>
     <button class="btn suave" data-cerrar>Cerrar</button>`;
   caja.querySelector('.perfil__pestanas').onclick = (e) => { const b = e.target.closest('[data-pp]'); if(b){ pestanaPerfil = b.dataset.pp; SON.toque(); pintarPerfil(); } };
@@ -292,6 +367,7 @@ function pintarPerfil(){
   const cuerpo = caja.querySelector('[data-cuerpo]');
   if(pestanaPerfil === 'cosmeticos') return pintarCosmeticos(cuerpo);
   if(pestanaPerfil === 'lideres') return pintarLideres(cuerpo);
+  if(pestanaPerfil === 'amigos') return pintarAmigos(cuerpo);
   if(yo){
     const hace = estadoSubida.ultima ? Math.max(0, Math.round((Date.now() - estadoSubida.ultima) / 1000)) : null;
     cuerpo.innerHTML = `<p class="nota">${estadoSubida.error ? 'No se ha podido guardar en internet: ' + esc(estadoSubida.error) + '. Se reintenta solo.' : hace != null ? 'Guardado en tu cuenta hace ' + (hace < 60 ? hace + ' s' : Math.round(hace / 60) + ' min') + '.' : 'Se guarda en tu cuenta cada que cambia algo.'}</p>
@@ -340,3 +416,64 @@ async function pintarLideres(cuerpo){
 $('#yo').addEventListener('click', () => abrirPerfil());
 $('#bLideres').addEventListener('click', () => abrirPerfil('lideres'));
 alCambiarCuenta((que) => { pintarBarra(); if(que === 'caduco') aviso('Tu sesión se cerró: vuelve a entrar a tu cuenta', { icono: 'img/iconos/information.png' }); });
+
+/* ── AMIGOS ──────────────────────────────────────────────────────────────────
+   Se agregan por apodo; el otro acepta; y ya se les puede retar con un toque.
+   En el perfil sale todo; en «A distancia», sólo la lista para retar. */
+async function pintarAmigos(caja, { soloRetar = false } = {}){
+  if(!cuenta()){ caja.innerHTML = '<p class="nota">Para tener amigos, primero crea tu cuenta en la pestaña «Cuenta». Sólo un apodo y un PIN.</p>'; return; }
+  if(!soloRetar && !caja.querySelector('[data-nuevo]')){
+    caja.innerHTML = `<form class="amigo-nuevo" data-nuevo autocomplete="off"><label>Agrega a alguien por su apodo<span class="fila"><input name="apodo" maxlength="16" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Su apodo"><button class="btn" type="submit">Agregar</button></span></label><p class="error" data-error></p></form><div class="amigos" data-lista><p class="nota">Cargando…</p></div>`;
+    const f = caja.querySelector('[data-nuevo]');
+    f.onsubmit = async (e) => {
+      e.preventDefault();
+      const apodo = f.apodo.value.trim(), err = f.querySelector('[data-error]');
+      if(apodo.length < 3){ err.textContent = 'Escribe su apodo completo.'; return; }
+      try{ const r = await pedirAmigo(apodo); err.textContent = ''; f.apodo.value = ''; aviso(r.aceptada ? '¡Ya son amigos!' : r.ya ? 'Ya eran amigos' : 'Solicitud mandada a ' + apodo, { tipo: 'bien', icono: 'img/iconos/checkmark.png' }); SON.rara(); pintarAmigos(caja); }
+      catch(x){ err.textContent = x.message; SON.error(); }
+    };
+  }
+  const lista = soloRetar ? caja : caja.querySelector('[data-lista]');
+  let d;
+  try{ d = await amigos(); }
+  catch(e){ lista.innerHTML = `<p class="nota">${esc(e.message === 'Failed to fetch' || e.message === 'Load failed' ? 'No se pudo cargar: revisa tu internet.' : e.message)}</p>`; return; }
+  const fila = (a) => `<li><i class="punto${a.enLinea ? ' si' : ''}" title="${a.enLinea ? 'En línea' : 'Desconectado'}"></i><span>${esc(a.apodo)}<small>${a.enLinea ? 'en línea' : 'desconectado'} · ${a.victorias | 0} victorias</small></span><button class="btn" data-retar="${esc(a.apodo)}">Retar</button>${soloRetar ? '' : `<button class="btn suave mini" data-quitar="${esc(a.apodo)}" aria-label="Quitar a ${esc(a.apodo)}">Quitar</button>`}</li>`;
+  let html = '';
+  if(!soloRetar && d.piden.length) html += `<h4>Te quieren agregar</h4><ul>${d.piden.map(x => `<li><span>${esc(x)}</span><button class="btn oro" data-aceptar="${esc(x)}">Aceptar</button><button class="btn suave mini" data-quitar="${esc(x)}">No</button></li>`).join('')}</ul>`;
+  html += d.amigos.length ? `${soloRetar ? '' : '<h4>Tus amigos</h4>'}<ul>${d.amigos.map(fila).join('')}</ul>`
+        : `<p class="nota">${soloRetar ? 'Todavía no tienes amigos. Agrégalos desde tu perfil (toca tu foto) con su apodo.' : 'Todavía no tienes amigos. Pídele su apodo a alguien y agrégalo aquí arriba.'}</p>`;
+  if(!soloRetar && d.mandadas.length) html += `<h4>Esperando a que acepten</h4><ul>${d.mandadas.map(x => `<li><span>${esc(x)}</span><button class="btn suave mini" data-quitar="${esc(x)}">Cancelar</button></li>`).join('')}</ul>`;
+  lista.innerHTML = html;
+  let quitarUna = '';
+  lista.onclick = async (e) => {
+    const b = e.target.closest('button'); if(!b) return;
+    try{
+      if(b.dataset.retar){ SON.toque(); const c = await codigoNuevo(); cerrarPerfil(); entrarSala(c, { reto: b.dataset.retar }); return; }
+      if(b.dataset.aceptar){ await aceptarAmigo(b.dataset.aceptar); aviso('¡Ya son amigos!', { tipo: 'bien', icono: 'img/iconos/checkmark.png' }); SON.rara(); }
+      if(b.dataset.quitar){
+        if(quitarUna !== b.dataset.quitar){ quitarUna = b.dataset.quitar; b.textContent = '¿Seguro?'; return; }
+        await quitarAmigo(b.dataset.quitar);
+      }
+      pintarAmigos(caja, { soloRetar });
+    }catch(x){ aviso(x.message, { tipo: 'mal', icono: 'img/iconos/exclamation.png' }); SON.error(); }
+  };
+}
+
+/* ── LOS RETOS QUE TE LLEGAN ─────────────────────────────────────────────────
+   Con cuenta, cada 15 s se pregunta si alguien te retó (y de paso cuenta como
+   «en línea» para tus amigos). Un reto sale como notificación; tocarla entra. */
+const retosVistos = new Set();
+async function revisarRetos(){
+  if(!cuenta() || document.visibilityState !== 'visible' || ['mesa', 'abrir'].includes(pantallaActual) || $('#hoja').classList.contains('ve')) return;
+  try{
+    const d = await amigos();
+    const r = d.retos.find(x => !retosVistos.has(x.de + x.codigo));
+    if(!r) return;
+    retosVistos.add(r.de + r.codigo);
+    const n = $('#notiReto'); $('#notiRetoTit').textContent = r.de + ' te reta a una partida';
+    n.hidden = false; requestAnimationFrame(() => n.classList.add('ve')); SON.rara();
+    clearTimeout(n._reloj); n._reloj = setTimeout(() => n.classList.remove('ve'), 15000);
+    n.onclick = () => { n.classList.remove('ve'); borrarReto(r.de).catch(() => {}); entrarSala(r.codigo); };
+  }catch(e){}
+}
+setInterval(revisarRetos, 15000); setTimeout(revisarRetos, 2500);
