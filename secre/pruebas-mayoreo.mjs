@@ -286,5 +286,22 @@ console.log('\n§13 · lo que publica la otra cuenta no se contesta, y no se pie
   Secre.hermanas.clear();
 }
 
+console.log('\n§14 · «no respondas este chat» no apaga la campaña (5 nov)');
+{
+  s.config.campana = Object.assign({}, s.config.campana || {}, { activo: true, porDia: 25 });
+  ordenDa = () => ({ respuesta: 'Va, ya no le contesto.', acciones: [{ accion: 'campana', activo: false }, { accion: 'mayoreo', activo: false }] });
+  const r = await yoDigo('no respondas este chat');
+  ok('la campaña sigue prendida', s.config.campana.activo === true, s.config.campana);
+  ok('el mayoreo tampoco se toca', s.config.mayoreo.activo === true, s.config.mayoreo);
+  ok('le dice que no la tocó', /No toqué la campaña ni el mayoreo/.test(r), r);
+  ordenDa = () => ({ respuesta: 'Va.', acciones: [{ accion: 'campana', activo: false }] });
+  await yoDigo('para la campaña por hoy');
+  ok('si nombra la campaña, sí la para', s.config.campana.activo === false, s.config.campana);
+  ordenDa = () => ({ respuesta: 'Va.', acciones: [{ accion: 'campana', activo: true }] });
+  await yoDigo('prende otra vez la campaña');
+  ok('y la vuelve a prender', s.config.campana.activo === true, s.config.campana);
+  ordenDa = null;
+}
+
 console.log(fallas.length ? `\n✗ ${fallas.length} fallaron de ${pasan + fallas.length}` : `\n✓ ${pasan}/${pasan}`);
 process.exit(fallas.length ? 1 : 0);

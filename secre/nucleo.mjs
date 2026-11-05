@@ -247,6 +247,12 @@ export class Secre {
       this.config.version = 5;
       this.reintentarHistorial = true;
     }
+    /* 5 nov, Carlos: «no le dije que la parara, me malentendió». Le pidió no contestar un chat y la IA apagó
+       la campaña; se vuelve a prender una vez (y ia/ordenLibre ya no la tocan si no la nombra) */
+    if(Object.keys(guardada).length && (guardada.version || 1) < 6){
+      this.config.campana = Object.assign({}, CAMPANA_BASE, this.config.campana || {}, { activo: true });
+      this.config.version = 6;
+    }
     /* las dos cuentas de Carlos corren en el mismo proceso: lo compartido se junta al arrancar */
     this.compartir = compartir;
     if(compartir) for(const h of Secre.hermanas){ for(const k of COMPARTIDO){ const mio = this.config[k], suyo = h.config[k];
@@ -1808,10 +1814,16 @@ export class Secre {
     try{ r = await this.ia.orden({ historiales, propuestas, conocimiento: this.conocimiento || '', carpetas, quien: this.deTurno(), texto, ahora: this.reloj(), hoy: fechaMx(this.reloj()), hora: horaMx(this.reloj()), chats: Object.entries(this.config.chats).filter(([, c]) => c.nombre).map(([j, c]) => ({ id: j, nombre: c.nombre, modo: c.modo || '', etiquetas: c.etiquetas || [] })), config: this.resumenConfig() }); }
     catch(e){ return this.avisar('No te entendí (y la IA no contestó). Escribe «ayuda» para ver lo que sé hacer.'); }
     const hechos = [];
+    /* Carlos, 5 nov: le dijo «no respondas este chat» y la IA APAGÓ LA CAMPAÑA. Lo que mueve la campaña o el
+       mayoreo desde una orden libre tiene que nombrarlos; si no, se descarta y se le dice */
+    const nombra = { campana: /campa(n|ñ)a|prospect|negocios/i, mayoreo: /mayoreo|proveedor/i };
+    const descartadas = [];
+    if(r && Array.isArray(r.acciones)) r.acciones = r.acciones.filter(a => { const re = a && nombra[a.accion]; if(re && !re.test(texto)){ descartadas.push(a.accion); return false; } return true; });
     for(const a of (r && r.acciones) || []){ const h = a && a.accion === 'mensaje' ? await this.encargo(a) : a && a.accion === 'responder' ? await this.responderPropuesta(a) : a && a.accion === 'venta' ? await this.ponerVenta(a) : this.aplicar(a); if(h) hechos.push(h); }
     this.guardar();
     const dice = (r && r.respuesta) || '';
-    const todo = [dice, ...hechos.map(h => '✓ ' + h)].filter(Boolean).join('\n') || 'No te entendí. Escribe «ayuda».';
+    const aviso = descartadas.length ? `(No toqué ${descartadas.map(x => x === 'campana' ? 'la campaña' : 'el mayoreo').join(' ni ')}: no la nombraste. Si sí querías, dímelo con su nombre.)` : '';
+    const todo = [dice, ...hechos.map(h => '✓ ' + h), aviso].filter(Boolean).join('\n') || 'No te entendí. Escribe «ayuda».';
     await this.avisar(todo);
     /* «mándame un audio», «dímelo en voz»: además del escrito, la nota de voz (si no la está capturando ya «… en audio») */
     if(r && r.audio && !this.captura) await this.avisarVoz(dice || todo);
