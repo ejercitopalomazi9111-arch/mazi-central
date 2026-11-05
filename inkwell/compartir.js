@@ -11,7 +11,7 @@
      que no sigues ni quitaste, primero las de los géneros que ya lees.
    Todo aquí es puro, para poder probarlo sin navegador.
    ═════════════════════════════════════════════════════════════════════════ */
-import { reconocer } from './fuentes.js';
+import { reconocer, desentidad } from './fuentes.js';
 
 const b64url = (s) => btoa(unescape(encodeURIComponent(s))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 const deB64url = (s) => decodeURIComponent(escape(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4))));
@@ -57,7 +57,7 @@ export function elegirNuevas(candidatas, { sigo = [], descartadas = [], generos 
 
 /* ── explorar por categoría (los géneros de Webtoon) ── */
 export const GENEROS = [['romance', 'Romance'], ['fantasy', 'Fantasía'], ['action', 'Acción'], ['drama', 'Drama'], ['comedy', 'Comedia'], ['thriller', 'Suspenso'], ['horror', 'Terror'], ['mystery', 'Misterio'], ['supernatural', 'Sobrenatural'], ['sf', 'Ciencia ficción'], ['slice-of-life', 'Vida cotidiana'], ['historical', 'Histórico'], ['super-hero', 'Superhéroes'], ['sports', 'Deportes'], ['heartwarming', 'Conmovedor']];
-const sinEnt = (s) => String(s || '').replace(/&amp;/g, '&').replace(/&#39;|&apos;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+const sinEnt = (s) => desentidad(s || '').trim();
 /* las tarjetas de una página de género: link, título, autor y portada, sin repetir */
 export function seriesDeGenero(html){
   const vistas = new Set(), out = [];

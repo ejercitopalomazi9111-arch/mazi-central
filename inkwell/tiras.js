@@ -1,5 +1,5 @@
 /* INKWELL · TIRAS — la pantalla, la base del teléfono y el que prepara capítulos. */
-import { reconocer, FUENTES, wattpad, limpiarTexto } from './fuentes.js';
+import { reconocer, FUENTES, wattpad, limpiarTexto, desentidad } from './fuentes.js';
 import { pdf, epub, tamanoJpeg } from './archivos.js';
 import { codigoDe, leerCodigo, seriesDeRanking, elegirNuevas, GENEROS, seriesDeGenero } from './compartir.js';
 
@@ -60,7 +60,9 @@ const tx = async (tienda, modo, fn) => { const d = await abrir(); return new Pro
   const r = fn(s); if(r) r.onsuccess = () => { res = r.result; };
   t.oncomplete = () => ok(res); t.onerror = () => mal(t.error); t.onabort = () => mal(t.error);
 }); };
-const todasSeries = async () => ((await tx('series', 'readonly', (s) => s.getAll())) || []).sort((a, b) => a.orden - b.orden);
+/* lo guardado antes del 5 nov puede traer «&eacute;» en el título: se limpia al leer */
+const limpia = (s) => { if(!s) return s; s.titulo = desentidad(s.titulo || ''); if(s.autor) s.autor = desentidad(s.autor); for(const c of s.caps || []) c.titulo = desentidad(c.titulo || ''); return s; };
+const todasSeries = async () => ((await tx('series', 'readonly', (s) => s.getAll())) || []).map(limpia).sort((a, b) => a.orden - b.orden);
 const guardarSerie = (s) => tx('series', 'readwrite', (st) => st.put(s));
 const capDe = (clave) => tx('caps', 'readonly', (s) => s.get(clave));
 const clavesDe = async (serie) => new Set((await tx('caps', 'readonly', (s) => s.index('serie').getAllKeys(serie))) || []);
@@ -367,7 +369,7 @@ function cabecera(art){ $('#lTitulo').textContent = art.dataset.titulo; $('#lSub
 async function leido(art){
   if(!art || art.dataset.leido) return;
   art.dataset.leido = '1';
-  const s = await tx('series', 'readonly', (st) => st.get(art.dataset.serie)); if(!s) return;
+  const s = limpia(await tx('series', 'readonly', (st) => st.get(art.dataset.serie))); if(!s) return;
   const n = +art.dataset.n;
   if(!(s.leidos || []).includes(n)){ s.leidos = [...(s.leidos || []), n]; await guardarSerie(s); }
   escribir('tiras.ultimo', art.dataset.clave);
@@ -386,7 +388,7 @@ let actual = null;
 $('#series').addEventListener('click', async (e) => {
   const b = e.target.closest('button[data-a]'); if(!b) return;
   const id = b.closest('.serie').dataset.id;
-  actual = await tx('series', 'readonly', (st) => st.get(id));
+  actual = limpia(await tx('series', 'readonly', (st) => st.get(id)));
   if(b.dataset.a === 'leer'){
     const t = await clavesDe(id), p = pendientes(actual);
     if(p.length && !t.has(clave(actual, p[0].n))){

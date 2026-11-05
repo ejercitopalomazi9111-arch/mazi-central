@@ -515,6 +515,8 @@ dependemos.
    | fusionar a `main` publica Secre en Render (`autoDeployTrigger: commit`) | el servicio `secre` dice `autoDeploy: yes` y **desde el 17 de octubre sólo tiene despliegues manuales**: el aviso de GitHub no llega | la campaña y Mayoreo «no arrancaban» con todo fusionado y probado. Ahora Secre manda un latido a La Sala (`k=latido-<cuenta>`) con el commit que corre, y con la llave de Render (en `/tmp/claude-0/llave-render`, nunca en el repo) se despliega por la API: `POST /v1/services/<id>/deploys` |
    | una base de Supabase gratis está siempre prendida | **la pausa** tras unos días sin uso: la app abre y no carga nada, sin un error que diga por qué | Carlos no podía entrar a Ligas Mazi ni a la tienda. Se reactiva con `restore_project` y `.github/workflows/despertar-bases.yml` las consulta cada dos días |
 
+   | quitar `&amp;`, `&quot;` y los `&#…;` ya deja limpio lo que manda Webtoon | lo manda codificado DOS veces y con acentos con nombre: `Regres&amp;eacute;` → `Regres&eacute;` | Carlos vio «Regres&eacute; como el maknae» en el lector de INKWELL. `desentidad` en `inkwell/fuentes.js` repite hasta que no cambie y arma los acentos con nombre; lo ya guardado se limpia al leer. **Y en las pruebas:** sin `LANG=C.UTF-8`, el Chromium de este contenedor nombra «download» a cualquier descarga con acento |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---

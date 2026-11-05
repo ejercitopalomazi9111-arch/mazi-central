@@ -28,9 +28,20 @@ const meta = (html, prop) => {
         || new RegExp(`<meta[^>]+content="([^"]*)"[^>]+(?:property|name)="${prop}"`, 'i').exec(html);
   return m ? desentidad(m[1]).trim() : '';
 };
-export function desentidad(s){
-  return String(s).replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(+n)).replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
+/* Webtoon a veces manda el título codificado DOS veces («Regres&amp;eacute;»): se repite hasta que ya
+   no cambie, y los acentos con nombre (&eacute;, &ntilde;, &uuml;…) se arman con su marca y NFC. */
+const MARCA = { acute: '\u0301', grave: '\u0300', circ: '\u0302', tilde: '\u0303', uml: '\u0308', ring: '\u030A', cedil: '\u0327' };
+const NOMBRES = { nbsp: ' ', iexcl: '¡', iquest: '¿', laquo: '«', raquo: '»', hellip: '…', mdash: '—', ndash: '–', ldquo: '“', rdquo: '”', lsquo: '‘', rsquo: '’', middot: '·', deg: '°', copy: '©', reg: '®', trade: '™', szlig: 'ß', aelig: 'æ', oslash: 'ø', bull: '•', heart: '♥', hearts: '♥' };
+function unaVez(s){
+  return s.replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(+n)).replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
+    .replace(/&([a-zA-Z])(acute|grave|circ|tilde|uml|ring|cedil);/g, (_, l, m) => (l + MARCA[m]).normalize('NFC'))
+    .replace(/&([a-zA-Z]+);/g, (x, n) => NOMBRES[n] ?? NOMBRES[n.toLowerCase()] ?? x)
     .replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+}
+export function desentidad(s){
+  let a = String(s ?? ''), b;
+  for(let i = 0; i < 3 && (b = unaVez(a)) !== a; i++) a = b;
+  return a;
 }
 
 /* ── WEBTOON ── */
