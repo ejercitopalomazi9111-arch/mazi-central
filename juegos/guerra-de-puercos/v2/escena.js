@@ -111,6 +111,22 @@ export async function texturaLista(url){
   await new Promise((ok) => { const mira = () => (t.image && (t.image.width || t.image.naturalWidth)) ? ok() : setTimeout(mira, 30); mira(); });
   return t;
 }
+/* Bajar y SUBIR a la tarjeta de video de una vez las imágenes de una lista,
+   para que ninguna carta aparezca en blanco a media partida (Carlos, 5 nov:
+   «actualmente tardan muchísimo en aparecer»). `avance(listas, total)`. */
+export async function precargar(urls, avance){
+  const lista = [...new Set(urls.filter(Boolean))];
+  let listas = 0; avance && avance(0, lista.length);
+  /* de 6 en 6: un teléfono con 4G no gana nada pidiendo 60 a la vez */
+  const cola = lista.slice();
+  await Promise.all(Array.from({ length: Math.min(6, cola.length) }, async () => {
+    while(cola.length){
+      const u = cola.shift();
+      try{ const t = await Promise.race([texturaLista(u), new Promise((ok) => setTimeout(ok, 12000))]); if(t && E.r) E.r.initTexture(t); }catch(e){}
+      listas++; avance && avance(listas, lista.length);
+    }
+  }));
+}
 export function texturaDeLienzo(lienzo){
   const t = new THREE.CanvasTexture(lienzo); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
 }
@@ -140,10 +156,23 @@ const GEO = { cara: placaRedonda(CARTA_W, CARTA_H, .07), canto: null };
 }
 const matCanto = new THREE.MeshStandardMaterial({ color: '#F4E9EE', roughness: .7 });
 
+/* La cara de la carta va SIN luz y sin el «tono de cine» del renderizador: con
+   la luz de estudio encima, el rosa de la autora salía lavado (Carlos, 5 nov:
+   «se ven muy claritas»). Se pinta el color del archivo tal cual y se le sube
+   la saturación un 18 %. */
+const SATURA = 1.18;
+function materialCara(map, color){
+  const m = new THREE.MeshBasicMaterial({ map, color, toneMapped: false });
+  m.onBeforeCompile = (sh) => {
+    sh.fragmentShader = sh.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
+      { float gris = dot(diffuseColor.rgb, vec3(.2126, .7152, .0722)); diffuseColor.rgb = clamp(mix(vec3(gris), diffuseColor.rgb, ${SATURA.toFixed(2)}), 0., 1.); }`);
+  };
+  return m;
+}
 export function carta(frente, dorso){
   const g = new THREE.Group();
-  const mf = new THREE.MeshStandardMaterial({ map: frente || null, roughness: .55, metalness: 0, color: frente ? '#ffffff' : '#ddd' });
-  const md = new THREE.MeshStandardMaterial({ map: dorso || null, roughness: .6, color: dorso ? '#ffffff' : '#E84A8A' });
+  const mf = materialCara(frente || null, frente ? '#ffffff' : '#ddd');
+  const md = materialCara(dorso || null, dorso ? '#ffffff' : '#E84A8A');
   const cara = new THREE.Mesh(GEO.cara, mf); cara.position.z = .0105; cara.castShadow = true;
   const atras = new THREE.Mesh(GEO.cara, md); atras.rotation.y = Math.PI; atras.position.z = -.0105;
   const canto = new THREE.Mesh(GEO.canto, matCanto); canto.castShadow = true;

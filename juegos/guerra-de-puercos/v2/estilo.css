@@ -206,3 +206,10 @@ h2.seccion{ font-size:34px; color:var(--hueso); text-shadow:0 3px 0 var(--tinta)
 /* cuántas de soporte te quedan, arriba de su montoncito */
 .cuenta--esp{ transform:translate(-50%, -110%); font-size:15px; background:var(--rosa, #FF6BA6); color:#1B0E16; font-weight:700 }
 .cuenta--esp.on{ background:#FFE14A }
+/* la pantalla de «barajando»: se ve desde el primer instante, nunca una mesa vacía */
+.barajando{ position:absolute; inset:0; z-index:12; display:grid; place-content:center; justify-items:center; gap:12px; background:rgba(18,10,16,.72); text-align:center; padding:24px; transition:opacity .35s }
+.barajando.se-va{ opacity:0; pointer-events:none }
+.barajando img{ width:110px; border-radius:12px; box-shadow:0 14px 30px rgba(0,0,0,.6); animation:baraja 1.1s ease-in-out infinite }
+.barajando b{ font-family:var(--titulo); font-size:26px }
+.barajando span{ font-size:14px; opacity:.85; max-width:300px }
+@keyframes baraja{ 0%,100%{ transform:rotate(-8deg) translateY(0) } 50%{ transform:rotate(8deg) translateY(-10px) } }
