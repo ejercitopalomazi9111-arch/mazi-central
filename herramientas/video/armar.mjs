@@ -70,7 +70,10 @@ if(V.musica){ ent.push('-ss', String(V.musica.desde || 0), '-i', donde(V.musica.
 const D = V.dur, capas = [];
 if(voces.length){
   fil.push(`${voces.join('')}amix=inputs=${voces.length}:normalize=0,acompressor=threshold=0.1:ratio=3:attack=5:release=120:makeup=2,apad=whole_dur=${D}[voz]`);
-  fil.push(`[voz]asplit=3[voz1][vozsc][vozfx]`); capas.push('[voz1]');
+  /* sólo las copias que alguien lee: sin música no hay [vozsc], sin efectos no hay [vozfx], y ffmpeg truena
+     con «Invalid argument» si una salida de asplit queda suelta */
+  const sal = ['[voz1]', ...(V.musica ? ['[vozsc]'] : []), ...(efectos.length ? ['[vozfx]'] : [])];
+  fil.push(sal.length > 1 ? `[voz]asplit=${sal.length}${sal.join('')}` : `[voz]anull[voz1]`); capas.push('[voz1]');
 }
 if(efectos.length){
   fil.push(`${efectos.join('')}amix=inputs=${efectos.length}:normalize=0,apad=whole_dur=${D}[fx0]`);
