@@ -16,7 +16,7 @@
 <div class="vineta"></div>
 <div id="ui">
   <header class="barra">
-    <div class="yo"><img id="yoAvatar" alt="" src="img/avatares/pig.png"><b>Tú</b></div>
+    <button class="yo" id="yo" aria-label="Tu perfil, cuenta y cosméticos"><img id="yoAvatar" alt="" src="img/avatares/pig.png"><b id="yoNombre">Tú</b></button>
     <div class="monedas" id="monedas" aria-label="Tus monedas"><img alt="" src="img/iconos/moneda.png"><span id="nMonedas">0</span></div>
     <button class="icono-btn" id="bSonido" aria-label="Sonido"><img alt="" src="img/iconos/audioOn.png"></button>
   </header>
@@ -28,6 +28,7 @@
       <div class="logo" role="img" aria-label="Guerra de Puercos"></div>
       <p class="lema">Ni héroe ni villano, sólo un puerco haciendo lo suyo.</p>
       <button class="btn grande jugar" id="bJugar">JUGAR</button>
+      <button class="btn suave" id="bLideres"><img alt="" src="img/iconos/trophy.png" class="ico"> Tabla de líderes</button>
     </div>
   </main>
 
@@ -65,6 +66,8 @@
 </div>
 
 <div class="hoja" id="hoja"><div class="hoja__caja" id="hojaCaja"></div></div>
+<!-- el perfil: cuenta, números, cosméticos y la tabla de líderes -->
+<div class="hoja" id="perfil"><div class="hoja__caja perfil" id="perfilCaja"></div></div>
 <div class="lupa" id="lupa"><img id="lupaImg" alt=""><p id="lupaPie"></p></div>
 
 <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>

@@ -18,6 +18,7 @@
    orígenes, sin comodines.
    ═════════════════════════════════════════════════════════════════════════ */
 export { Sala } from './sala.js';
+export { Cuentas } from './cuentas.js';
 
 /* De dónde se acepta que llamen. Sin "*": un comodín aquí le abre la puerta a
    cualquier página del mundo para abrir salas en nombre de alguien. */
@@ -57,7 +58,7 @@ export default {
     }
     if(pedido.method === 'OPTIONS'){
       return conCORS(new Response(null, { status:204,
-        headers:{ 'Access-Control-Allow-Methods':'GET,OPTIONS',
+        headers:{ 'Access-Control-Allow-Methods':'GET,POST,OPTIONS',
                   'Access-Control-Allow-Headers':'content-type' } }), pedido);
     }
 
@@ -81,6 +82,13 @@ export default {
          cuatro letras en una mesa compartida. */
       const id = env.SALA.idFromName(codigo);
       return env.SALA.get(id).fetch(pedido);
+    }
+
+    /* Las cuentas y la tabla de líderes: UN solo objeto para todas, así la
+       tabla es una consulta (ver cuentas.js). */
+    if(url.pathname === '/api/puercos/lideres' || url.pathname.startsWith('/api/puercos/cuenta/')){
+      const r = await env.CUENTAS.get(env.CUENTAS.idFromName('todas')).fetch(pedido);
+      return conCORS(new Response(r.body, r), pedido);
     }
 
     /* Para saber desde fuera si el servidor está vivo, sin abrir una sala. */

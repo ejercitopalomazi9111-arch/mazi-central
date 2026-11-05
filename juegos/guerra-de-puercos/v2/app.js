@@ -12,6 +12,7 @@ import { abrirSobre } from './sobre.js';
 import { jugarPartida } from './mesa.js';
 import { SON, alternar, estaApagado } from './sonido.js';
 import { aviso, pista, cumplida } from './avisos.js';
+import { cuenta, crear, entrar, salir, lideres, alCambiarCuenta, estadoSubida } from './cuenta.js';
 
 const $ = (s, d = document) => d.querySelector(s);
 const $$ = (s, d = document) => [...d.querySelectorAll(s)];
@@ -67,9 +68,10 @@ function pintarBarra(){
   $('#nMonedas').textContent = C.monedas;
   if(C.monedas !== monedasVistas){ $('#monedas').classList.remove('sube'); void $('#monedas').offsetWidth; $('#monedas').classList.add('sube'); monedasVistas = C.monedas; }
   $('#yoAvatar').src = (cosmetico(C.puesto.avatar) || cosmetico('av-pig')).img;
+  $('#yoNombre').textContent = cuenta() ? cuenta().apodo : 'Tú';
   const n = C.sobres.length;
   $('#globoSobres').hidden = !n; $('#globoSobres').textContent = n;
-  if(n > sobresVistos && pantallaActual !== 'abrir' && pantallaActual !== 'mesa') notificarSobres();
+  if(n > sobresVistos && !['abrir', 'mesa', 'tienda', 'sobres'].includes(pantallaActual)) notificarSobres();
   sobresVistos = n;
   if(!n) esconderNoti();
 }
@@ -77,13 +79,16 @@ function pintarBarra(){
    sola a los 6 s (el globito del menú se queda). Carlos, 5 nov: «en lugar de
    como lo estamos haciendo con el botón haz que salga una notificación». */
 let sobresVistos = 0, notiReloj = 0;
+/* Carlos, 5 nov: «nunca se quita». Salía otra vez cada que volvía al inicio.
+   Ahora sale UNA vez por cada sobre que llega (y al abrir la app), se va sola
+   a los 5 s y también al tocarla o al deslizarla hacia arriba. */
 function notificarSobres(){
   const n = C.sobres.length; if(!n) return;
   const b = $('#notiSobres');
   $('#notiTit').textContent = n === 1 ? 'Tienes un sobre por abrir' : 'Tienes ' + n + ' sobres por abrir';
   b.hidden = false; requestAnimationFrame(() => b.classList.add('ve'));
-  SON.moneda?.();
-  clearTimeout(notiReloj); notiReloj = setTimeout(esconderNoti, 6000);
+  try{ SON.moneda?.(); }catch(e){}
+  clearTimeout(notiReloj); notiReloj = setTimeout(esconderNoti, 5000);
 }
 function esconderNoti(){ const b = $('#notiSobres'); b.classList.remove('ve'); setTimeout(() => { if(!b.classList.contains('ve')) b.hidden = true; }, 350); }
 let pantallaActual = 'inicio';
@@ -104,11 +109,13 @@ function ir(p){
   if(p === 'sobres') pintarMisSobres();
   if(p === 'coleccion') pintarColeccion();
   if(p !== 'inicio') esconderNoti();
-  else if(C.sobres.length) setTimeout(notificarSobres, 500);
   SON.toque();
 }
 $('#dock').addEventListener('click', (e) => { const b = e.target.closest('[data-ir]'); if(b) ir(b.dataset.ir); });
 $('#notiSobres').addEventListener('click', () => { esconderNoti(); ir('sobres'); });
+{ let y0 = null; const n = $('#notiSobres');
+  n.addEventListener('touchstart', (e) => { y0 = e.touches[0].clientY; }, { passive: true });
+  n.addEventListener('touchmove', (e) => { if(y0 != null && e.touches[0].clientY - y0 < -20){ y0 = null; esconderNoti(); } }, { passive: true }); }
 
 /* JUGAR: la mesa nueva, contra la máquina. */
 function irAJugar(){
@@ -221,16 +228,22 @@ function pintarColeccion(){
                    + '<p class="nota">Las cartas de soporte salen en los sobres. Caben hasta 5 de cada una en tu mazo.</p>';
     return;
   }
-  /* cosméticos, por clase; tocar uno que tienes te lo pones */
+  pintarCosmeticos(caja);
+}
+/* Los cosméticos, por clase; tocar uno que tienes te lo pones. Se usa en la
+   colección y en el perfil (Carlos, 5 nov: «que el menú de cosméticos salga
+   al tocar tu perfil»). */
+let claseCos = 'avatar';
+function pintarCosmeticos(caja){
   const clases = Object.keys(CLASES_COSMETICO);
-  if(!clases.includes(filtro)) filtro = 'avatar';
-  const lista = COSMETICOS.filter(k => k.clase === filtro);
+  if(!clases.includes(claseCos)) claseCos = 'avatar';
+  const lista = COSMETICOS.filter(k => k.clase === claseCos);
   const tiene = (k) => !!C.cosmeticos[k.id] || C.puesto[k.clase] === k.id || k.rareza === 'D' && ['av-pig', 'tp-madera', 'ms-pig', 'ds-autora'].includes(k.id);
-  caja.innerHTML = `<div class="chips">${clases.map(c => `<button data-f="${c}" class="${filtro === c ? 'activo' : ''}">${CLASES_COSMETICO[c].nombre}</button>`).join('')}</div>
+  caja.innerHTML = `<div class="chips">${clases.map(c => `<button data-f="${c}" class="${claseCos === c ? 'activo' : ''}">${CLASES_COSMETICO[c].nombre}</button>`).join('')}</div>
     <div class="album">${lista.map(k => `<button class="${tiene(k) ? '' : 'falta'}" data-cos="${k.id}"><img alt="" data-cara="${k.id}">${C.puesto[k.clase] === k.id ? '<span class="puesto">Puesto</span>' : ''}</button>`).join('')}</div>
     <p class="nota">Toca uno que tengas para ponértelo.</p>`;
   for(const im of $$('[data-cara]', caja)) caraCosmetico(im.dataset.cara).then(c => im.src = c.toDataURL('image/jpeg', .85));
-  caja.querySelector('.chips').onclick = (e) => { const b = e.target.closest('[data-f]'); if(b){ filtro = b.dataset.f; SON.toque(); pintarColeccion(); } };
+  caja.querySelector('.chips').onclick = (e) => { const b = e.target.closest('[data-f]'); if(b){ claseCos = b.dataset.f; SON.toque(); pintarCosmeticos(caja); } };
   caja.querySelector('.album').onclick = async (e) => {
     const b = e.target.closest('[data-cos]'); if(!b) return;
     const k = cosmetico(b.dataset.cos);
@@ -239,7 +252,7 @@ function pintarColeccion(){
     aviso('Te pusiste: ' + k.nombre, { tipo: 'bien', icono: 'img/iconos/checkmark.png' });
     if(k.clase === 'tapete') cambiarTapete(fondo, k.img);
     if(k.clase === 'mascota') ponerCerdos();
-    pintarColeccion();
+    pintarCosmeticos(caja);
   };
 }
 function lupa(src, pie){
@@ -248,5 +261,82 @@ function lupa(src, pie){
 }
 
 /* Si llegó con un sobre de bienvenida, la primera cosa que se le enseña es ése. */
-if(C.sobres.length) setTimeout(notificarSobres, 900);
+
 window.__puercos = { C, CAT, ir, abrir };
+
+/* ── EL PERFIL · tocar tu foto ────────────────────────────────────────────────
+   Tu cuenta (apodo y PIN), tus números, tus cosméticos y la tabla de líderes. */
+let pestanaPerfil = 'cuenta', tablaLideres = 'victorias';
+const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function abrirPerfil(pest){
+  if(pest) pestanaPerfil = pest;
+  const h = $('#perfil'); pintarPerfil(); h.hidden = false; requestAnimationFrame(() => h.classList.add('ve'));
+  h.onclick = (e) => { if(e.target === h) cerrarPerfil(); };
+  SON.toque();
+}
+function cerrarPerfil(){ $('#perfil').classList.remove('ve'); }
+function pintarPerfil(){
+  const caja = $('#perfilCaja'), yo = cuenta(), st = C.stats;
+  const cartas = Object.values(C.cartas).filter(n => n > 0).length;
+  caja.innerHTML = `
+    <div class="perfil__cabeza"><img alt="" src="${(cosmetico(C.puesto.avatar) || cosmetico('av-pig')).img}">
+      <div><b>${yo ? esc(yo.apodo) : 'Invitado'}</b><small>${yo ? 'Tus cartas se guardan en tu cuenta' : 'Tus cartas sólo están en este teléfono'}</small></div></div>
+    <div class="perfil__numeros">
+      <div><b>${st.victorias}</b><span>Victorias</span></div><div><b>${st.derrotas}</b><span>Derrotas</span></div>
+      <div><b>${C.monedas}</b><span>Monedas</span></div><div><b>${cartas}</b><span>Cartas</span></div></div>
+    <div class="perfil__pestanas">${[['cuenta', 'Cuenta'], ['cosmeticos', 'Cosméticos'], ['lideres', 'Líderes']].map(([k, t]) => `<button data-pp="${k}" class="${pestanaPerfil === k ? 'activo' : ''}">${t}</button>`).join('')}</div>
+    <div data-cuerpo></div>
+    <button class="btn suave" data-cerrar>Cerrar</button>`;
+  caja.querySelector('.perfil__pestanas').onclick = (e) => { const b = e.target.closest('[data-pp]'); if(b){ pestanaPerfil = b.dataset.pp; SON.toque(); pintarPerfil(); } };
+  caja.querySelector('[data-cerrar]').onclick = cerrarPerfil;
+  const cuerpo = caja.querySelector('[data-cuerpo]');
+  if(pestanaPerfil === 'cosmeticos') return pintarCosmeticos(cuerpo);
+  if(pestanaPerfil === 'lideres') return pintarLideres(cuerpo);
+  if(yo){
+    const hace = estadoSubida.ultima ? Math.max(0, Math.round((Date.now() - estadoSubida.ultima) / 1000)) : null;
+    cuerpo.innerHTML = `<p class="nota">${estadoSubida.error ? 'No se ha podido guardar en internet: ' + esc(estadoSubida.error) + '. Se reintenta solo.' : hace != null ? 'Guardado en tu cuenta hace ' + (hace < 60 ? hace + ' s' : Math.round(hace / 60) + ' min') + '.' : 'Se guarda en tu cuenta cada que cambia algo.'}</p>
+      <p class="nota">En otro teléfono, entra con el mismo apodo y PIN y ahí estarán tus cartas.</p>
+      <button class="btn suave" data-salir>Salir de la cuenta</button>`;
+    cuerpo.querySelector('[data-salir]').onclick = () => { salir(); aviso('Saliste de tu cuenta', { icono: 'img/iconos/checkmark.png' }); pintarPerfil(); pintarBarra(); };
+    return;
+  }
+  cuerpo.innerHTML = `<form autocomplete="off">
+      <p class="nota">Con una cuenta tus cartas no se pierden aunque cambies de teléfono, y sales en la tabla de líderes. <b>Sólo un apodo, no tu nombre real.</b></p>
+      <label>Apodo<input name="apodo" maxlength="16" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Ej. PuercoVeloz"></label>
+      <label>PIN (4 a 6 números)<input name="pin" inputmode="numeric" pattern="[0-9]*" maxlength="6" type="password" placeholder="••••"></label>
+      <p class="error" data-error></p>
+      <div class="dos"><button class="btn" data-hacer="crear" type="button">Crear cuenta</button><button class="btn suave" data-hacer="entrar" type="button">Ya tengo una</button></div>
+    </form>`;
+  const f = cuerpo.querySelector('form'), err = cuerpo.querySelector('[data-error]');
+  f.onclick = async (e) => {
+    const b = e.target.closest('[data-hacer]'); if(!b || b.disabled) return;
+    const apodo = f.apodo.value.trim(), pin = f.pin.value.trim();
+    /* lo que se puede revisar aquí, se revisa aquí: no se gasta un viaje al servidor */
+    if(apodo.length < 3) return err.textContent = 'El apodo va de 3 a 16 letras o números.', f.apodo.focus();
+    if(!/^\d{4,6}$/.test(pin)) return err.textContent = 'El PIN son de 4 a 6 números.', f.pin.focus();
+    err.textContent = ''; for(const x of f.querySelectorAll('button')) x.disabled = true;
+    try{
+      if(b.dataset.hacer === 'crear'){ await crear(apodo, pin); aviso('¡Listo! Tu cuenta quedó creada', { tipo: 'bien', icono: 'img/iconos/checkmark.png' }); }
+      else { await entrar(apodo, pin); aviso('¡Bienvenido de vuelta!', { tipo: 'bien', icono: 'img/iconos/checkmark.png' }); }
+      SON.rara(); pintarPerfil(); pintarBarra();
+    }catch(e){
+      err.textContent = e.message === 'Failed to fetch' || e.message === 'Load failed' ? 'No hay internet o el servidor no contesta. Prueba otra vez.' : e.message;
+      for(const x of f.querySelectorAll('button')) x.disabled = false; SON.error();
+    }
+  };
+}
+async function pintarLideres(cuerpo){
+  const TABLAS = [['victorias', 'Victorias'], ['monedas', 'Más dinero'], ['cartas', 'Más cartas'], ['derrotas', 'Derrotas'], ['partidas', 'Partidas']];
+  cuerpo.innerHTML = `<div class="perfil__pestanas">${TABLAS.map(([k, t]) => `<button data-tl="${k}" class="${tablaLideres === k ? 'activo' : ''}">${t}</button>`).join('')}</div><ol class="lideres"><li><span>Cargando…</span></li></ol>`;
+  cuerpo.querySelector('.perfil__pestanas').onclick = (e) => { const b = e.target.closest('[data-tl]'); if(b){ tablaLideres = b.dataset.tl; SON.toque(); pintarLideres(cuerpo); } };
+  const lista = cuerpo.querySelector('.lideres'), yo = cuenta();
+  try{
+    const l = await lideres(), filas = l[tablaLideres] || [];
+    lista.innerHTML = filas.length ? filas.map((f, i) => `<li class="${yo && f.apodo.toLowerCase() === yo.apodo.toLowerCase() ? 'yo-mismo' : ''}"><b>${i + 1}</b><span>${esc(f.apodo)}</span><em>${f.n}</em></li>`).join('')
+      : '<li><span>Todavía nadie. ¡Sé el primero!</span></li>';
+    if(!yo) lista.insertAdjacentHTML('afterend', '<p class="nota">Para salir aquí, crea tu cuenta en la pestaña «Cuenta».</p>');
+  }catch(e){ lista.innerHTML = '<li><span>No se pudo cargar la tabla. Revisa tu internet.</span></li>'; }
+}
+$('#yo').addEventListener('click', () => abrirPerfil());
+$('#bLideres').addEventListener('click', () => abrirPerfil('lideres'));
+alCambiarCuenta((que) => { pintarBarra(); if(que === 'caduco') aviso('Tu sesión se cerró: vuelve a entrar a tu cuenta', { icono: 'img/iconos/information.png' }); });
