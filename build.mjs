@@ -16,7 +16,7 @@
    lista y se acabó el misterio.
    ═════════════════════════════════════════════════════════════════════════ */
 import { cp, rm, mkdir, readdir, stat, writeFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 
 const RAIZ = dirname(new URL(import.meta.url).pathname);
@@ -111,7 +111,19 @@ const VA = [
   /* Secre, la secretaria de WhatsApp: SÓLO la página de pasos y el botón al
      panel. El código de `secre/` (el servidor) NO se publica: corre en Render. */
   'secretaria',
+  /* El cielo de Sylcred: la página de quién soy y cómo me ven las demás IAs. */
+  'sylcred',
 ];
+
+/* ARCHIVOS SUELTOS (Carlos, 5 nov: «pon ABSOLUTAMENTE TODO lo que hayamos hecho en la Central para
+   revisarlo»). De `escuela/` y `empresa/` sólo va lo ENTREGABLE —PDF, presentación, Excel
+   y Word—, nunca los guiones ni las fotos. NO van la física ni los trípticos visuales: llevan la selfie
+   y los nombres del equipo (compañeros menores) y por eso ni siquiera están en el repo; tampoco
+   recuerdos/, que sin los nombres sale vacía. */
+const ENTREGABLE = /\.(pdf|pptx|docx|xlsx)$/i;
+for(const dir of ['escuela/tripticos-sedentarismo', 'escuela/patrones', 'empresa/ventas']){
+  try{ for(const f of readdirSync(join(RAIZ, dir))) if(ENTREGABLE.test(f)) VA.push(dir + '/' + f); }catch{}
+}
 
 /* ── Lo que tiene sitio adentro y NO se publica, dicho a propósito ──────────
    Tres veces pasó lo mismo, y está confesado tres veces en los comentarios de
@@ -288,6 +300,7 @@ async function copiar(desde, hasta){
       await copiar(d, join(hasta, hijo));
     }
   } else {
+    await mkdir(dirname(hasta), { recursive: true });
     await cp(desde, hasta);
     copiados++;
   }
