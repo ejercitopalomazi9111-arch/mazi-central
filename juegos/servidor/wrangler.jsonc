@@ -27,9 +27,11 @@
   // SQLite porque es lo que está incluido en el plan gratis; los de
   // key-value no. Igual que la Cooperativa de Fadori.
   "durable_objects": {
-    "bindings": [{ "name": "SALA", "class_name": "Sala" }]
+    "bindings": [{ "name": "SALA", "class_name": "Sala" }, { "name": "CUENTAS", "class_name": "Cuentas" }]
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Sala"] }],
+  // v2: las cuentas y la tabla de líderes de Puercos 2 (5 nov). Una migración
+  // nueva, nunca editar la v1: Cloudflare ya la aplicó.
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Sala"] }, { "tag": "v2", "new_sqlite_classes": ["Cuentas"] }],
 
   "vars": {
     // De dónde se acepta que llamen. En claro y sin comodín.
