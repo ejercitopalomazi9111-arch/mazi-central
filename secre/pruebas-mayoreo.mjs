@@ -167,7 +167,9 @@ console.log('\n§9 · todo el historial de «Shopy go mayoreo 1», de 100 en 100
   /* una cuenta que ya existía (versión 3) pasa sola a tener Mayoreo prendido por nombre */
   alm9.config = JSON.stringify({ nombre: 'Carlos', version: 3, chats: {} });
   const s9 = new Secre({ cuenta: 'principal', transporte: t9, ia, almacen: almac, reloj, banco: banco9, conocimiento: '' });
-  ok('la cuenta vieja queda con Mayoreo prendido para «Shopy go mayoreo 1»', s9.config.mayoreo.activo && s9.config.mayoreo.fuenteNombre === 'Shopy go mayoreo 1' && s9.config.mayoreo.historico);
+  /* 5 nov, Carlos: «apaga lo de all's»: la cuenta vieja queda apuntada a los grupos pero APAGADA */
+  ok('la cuenta vieja queda con Mayoreo apuntado a «Shopy go mayoreo 1», pero apagado (5 nov)', !s9.config.mayoreo.activo && s9.config.mayoreo.fuenteNombre === 'Shopy go mayoreo 1' && s9.config.mayoreo.historico);
+  s9.config.mayoreo.activo = true;   /* y se puede volver a prender: el resto prueba la máquina prendida */
   await s9.tic();
   ok('encuentra los dos grupos por su nombre, aunque WhatsApp le agregue «| clothes & more»', s9.config.mayoreo.fuente === G1 && s9.config.mayoreo.destino === G2, s9.config.mayoreo);
   ok('y pide el historial del grupo de Mayoreo de 50 en 50', pedidos.length === 1 && pedidos[0][0] === G1 && pedidos[0][1] === 50);

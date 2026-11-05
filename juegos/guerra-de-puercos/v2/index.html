@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Guerra de Puercos</title>
+<meta name="description" content="Guerra de Puercos: junta tus puercos, abre sobres y pelea en la mesa.">
+<meta name="theme-color" content="#120A10">
+<link rel="icon" href="img/avatares/pig.png">
+<link rel="preload" href="fuentes/marker.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fuentes/lilita.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div class="vineta"></div>
+<div id="ui">
+  <header class="barra">
+    <div class="yo"><img id="yoAvatar" alt="" src="img/avatares/pig.png"><b>Tú</b></div>
+    <div class="monedas" id="monedas" aria-label="Tus monedas"><img alt="" src="img/iconos/moneda.png"><span id="nMonedas">0</span></div>
+    <button class="icono-btn" id="bSonido" aria-label="Sonido"><img alt="" src="img/iconos/audioOn.png"></button>
+  </header>
+
+  <main class="pantalla activa" data-p="inicio">
+    <div class="inicio">
+      <div class="logo" role="img" aria-label="Guerra de Puercos"></div>
+      <p class="lema">Ni héroe ni villano, sólo un puerco haciendo lo suyo.</p>
+      <button class="aviso-sobres" id="avisoSobres" hidden>
+        <img id="avisoSobresImg" alt="">
+        <span><b id="avisoSobresTit">Tienes un sobre sin abrir</b><span>Tócalo para abrirlo</span></span>
+      </button>
+      <button class="btn grande jugar" id="bJugar">JUGAR</button>
+    </div>
+  </main>
+
+  <main class="pantalla" data-p="tienda">
+    <h2 class="seccion">La tienda</h2>
+    <div class="estante" id="estante"></div>
+    <p class="nota">Las monedas se ganan jugando: ganar, perder y cada ronda pagan. No se compran con dinero.</p>
+  </main>
+
+  <main class="pantalla" data-p="sobres">
+    <h2 class="seccion">Mis sobres</h2>
+    <div id="misSobres"></div>
+  </main>
+
+  <main class="pantalla" data-p="coleccion">
+    <h2 class="seccion">Mi colección</h2>
+    <div class="pestanas" id="pestanas">
+      <button data-t="puercos" class="activo">Puercos</button>
+      <button data-t="soporte">Soporte</button>
+      <button data-t="cosmeticos">Cosméticos</button>
+    </div>
+    <div id="coleccion"></div>
+  </main>
+
+  <main class="pantalla" data-p="abrir"></main>
+  <main class="pantalla" data-p="mesa"></main>
+
+  <nav class="dock" id="dock">
+    <button data-ir="tienda"><img alt="" src="img/iconos/shoppingCart.png">Tienda</button>
+    <button data-ir="sobres"><img alt="" src="img/iconos/open.png">Sobres<span class="globo" id="globoSobres" hidden>0</span></button>
+    <button data-ir="inicio" class="activo"><img alt="" src="img/iconos/home.png">Inicio</button>
+    <button data-ir="coleccion"><img alt="" src="img/iconos/menuGrid.png">Colección</button>
+    <button data-ir="jugar"><img alt="" src="img/iconos/gamepad.png">Jugar</button>
+  </nav>
+</div>
+
+<div class="hoja" id="hoja"><div class="hoja__caja" id="hojaCaja"></div></div>
+<div class="lupa" id="lupa"><img id="lupaImg" alt=""><p id="lupaPie"></p></div>
+
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
+<script src="../motor.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

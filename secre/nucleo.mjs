@@ -253,6 +253,16 @@ export class Secre {
       this.config.campana = Object.assign({}, CAMPANA_BASE, this.config.campana || {}, { activo: true });
       this.config.version = 6;
     }
+    /* 5 nov, Carlos: «enciende la campaña pero apaga lo de all's». Se apaga el Mayoreo → All's (y se tira
+       la fila de fotos que faltaba mandar) y cualquier publicación diaria al grupo de All's; la campaña,
+       prendida. El banco no se toca: las fotos que ya llegaron se quedan ahí */
+    if(Object.keys(guardada).length && (guardada.version || 1) < 7){
+      if(this.config.mayoreo) this.config.mayoreo.activo = false;
+      this.tirarColaFotos = true;   /* el estado se carga más abajo */
+      for(const pub of this.config.publicar || []) if(mismoGrupo(this.nombreDe(pub.chat) || pub.chat, "All's Fashion") || /all.?s/i.test(pub.carpeta || '')) pub.apagado = true;
+      this.config.campana = Object.assign({}, CAMPANA_BASE, this.config.campana || {}, { activo: true });
+      this.config.version = 7;
+    }
     /* las dos cuentas de Carlos corren en el mismo proceso: lo compartido se junta al arrancar */
     this.compartir = compartir;
     if(compartir) for(const h of Secre.hermanas){ for(const k of COMPARTIDO){ const mio = this.config[k], suyo = h.config[k];
@@ -289,6 +299,7 @@ export class Secre {
       elencoUltimo: {},    /* jid → { Paulina: t } cuándo jugó por última vez */
       sigN: 1, sigP: 1,
     }, almacen.leer('estado', {}));
+    if(this.tirarColaFotos){ this.estado.colaFotos = []; delete this.tirarColaFotos; }
     this.ocupados = new Set();
     this.mandando = new Map();   /* jid|texto → cuándo: lo que Secre está mandando ahorita, para no confundir su eco con Carlos */
   }
@@ -1280,7 +1291,7 @@ export class Secre {
   async publicarTic(ahora){
     const hoy = fechaMx(ahora), ya = this.estado.publicadoHoy || (this.estado.publicadoHoy = {});
     for(const pub of this.config.publicar || []){
-      if(ya[pub.id] === hoy || !this.tocaHoy(pub, ahora) || !pub.chat) continue;
+      if(pub.apagado || ya[pub.id] === hoy || !this.tocaHoy(pub, ahora) || !pub.chat) continue;
       ya[pub.id] = hoy; this.guardar();
       const r = await this.publicarAhora(pub);
       if(r.error) await this.avisar(`📷 No pude publicar en ${this.nombreDe(pub.chat)}: ${r.error}`);
