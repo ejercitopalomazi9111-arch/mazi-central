@@ -62,6 +62,7 @@ const tx = async (tienda, modo, fn) => { const d = await abrir(); return new Pro
 }); };
 /* lo guardado antes del 5 nov puede traer «&eacute;» en el título: se limpia al leer */
 const limpia = (s) => { if(!s) return s; s.titulo = desentidad(s.titulo || ''); if(s.autor) s.autor = desentidad(s.autor); for(const c of s.caps || []) c.titulo = desentidad(c.titulo || ''); return s; };
+let ultimoTop = 0;   /* dónde iba el scroll del lector (ver la barra que se esconde) */
 const todasSeries = async () => ((await tx('series', 'readonly', (s) => s.getAll())) || []).map(limpia).sort((a, b) => a.orden - b.orden);
 const guardarSerie = (s) => tx('series', 'readwrite', (st) => st.put(s));
 const capDe = (clave) => tx('caps', 'readonly', (s) => s.get(clave));
@@ -298,7 +299,7 @@ async function abrirLector(serieId = null){
   enLector = [];
   const sc = $('#scroll'); sc.replaceChildren(); sc.scrollTop = 0;
   final = document.createElement('div'); final.className = 'al-final'; sc.append(final);
-  $('#lector').hidden = false; document.body.style.overflow = 'hidden';
+  $('#lector').hidden = false; $('#lector').classList.add('sinbarra'); ultimoTop = 0; document.body.style.overflow = 'hidden';
   /* El observador sólo CARGA (ve 1200 px por adelantado). Lo leído se decide
      aparte, al moverse (`alMover`): con el mismo observador un capítulo se
      daba por leído en cuanto quedaba a 1200 px de aparecer, y con uno sin
@@ -341,7 +342,7 @@ async function siguiente(){
     const sc = $('#scroll');
     while(enLector.length > 6 && enLector[0].art.offsetTop + enLector[0].art.offsetHeight < sc.scrollTop - 2000){
       const v = enLector.shift(), alto = v.art.offsetHeight;
-      v.art._urls.forEach((u) => URL.revokeObjectURL(u)); v.art.remove(); sc.scrollTop -= alto;
+      v.art._urls.forEach((u) => URL.revokeObjectURL(u)); v.art.remove(); sc.scrollTop -= alto; ultimoTop -= alto;
     }
   } finally { poniendo = false; }
   /* si el capítulo fue corto y el final sigue a la vista, el observador no
@@ -365,6 +366,16 @@ function alMover(){
   });
 }
 $('#scroll').addEventListener('scroll', alMover, { passive: true });
+/* La barra de arriba (título y capítulo) se esconde al avanzar y baja al deslizar para regresar,
+   como en Webtoon; un toque sin mover también la saca o la guarda. Los saltos que hace el propio
+   lector al soltar capítulos viejos se descuentan en `ultimoTop` para que no la saquen solos. */
+$('#scroll').addEventListener('scroll', () => {
+  const sc = $('#scroll'), d = sc.scrollTop - ultimoTop;
+  if(Math.abs(d) < 12) return;
+  ultimoTop = sc.scrollTop;
+  $('#lector').classList.toggle('sinbarra', d > 0);
+}, { passive: true });
+$('#scroll').addEventListener('click', (e) => { if(!e.target.closest('a,button')) $('#lector').classList.toggle('sinbarra'); });
 function cabecera(art){ $('#lTitulo').textContent = art.dataset.titulo; $('#lSub').textContent = art.dataset.cap; }
 async function leido(art){
   if(!art || art.dataset.leido) return;
