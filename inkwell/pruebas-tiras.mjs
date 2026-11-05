@@ -20,7 +20,7 @@ const ok = (c, t) => { if (c) { bien++; console.log('  ✓', t); } else { mal++;
 const N = 12, POR = 3;
 let jpg = {};                       // nombre → Buffer, se llena desde el navegador
 const pedidos = [];
-const lista = `<html><head><meta property="og:title" content="Mi Serie &amp; Co"><meta property="og:image" content="https://swebtoon-phinf.pstatic.net/portada.jpg"><meta property="og:description" content="Una serie de prueba"><meta name="com-linewebtoon:webtoon:author" content="Autora Uno"></head><body></body></html>`;
+const lista = `<html><head><meta property="og:title" content="Mi Seri&amp;eacute; &amp;amp; Co"><meta property="og:image" content="https://swebtoon-phinf.pstatic.net/portada.jpg"><meta property="og:description" content="Una serie de prueba"><meta name="com-linewebtoon:webtoon:author" content="Autora Uno"></head><body></body></html>`;
 const api = JSON.stringify({ result: { episodeList: Array.from({ length: N }, (_, i) => ({ episodeNo: i + 1, episodeTitle: `Episodio ${i + 1}`, viewerLink: `/es/fantasy/mi-serie/ep-${i + 1}/viewer?title_no=777&episode_no=${i + 1}`, exposureDateMillis: 1700000000000 + i })) } });
 const visor = (n) => `<html><body><div id="_imageList">${Array.from({ length: POR }, (_, k) => `<img src="x.png" width="700" class="_images" data-url="https://webtoon-phinf.pstatic.net/ep${n}_${k}.jpg?type=q90" rel="nofollow">`).join('')}</div></body></html>`;
 let rankingOn = false;
@@ -97,7 +97,7 @@ for (const [ancho, alto, nombre] of [[390, 844, 'teléfono'], [1280, 800, 'compu
   await pg.click('#agregar');
   await pg.waitForFunction(() => /5 capítulos listos/.test(document.querySelector('#estadoTxt').textContent) && !window.__tiras.ocupado, null, { timeout: 30000 });
   const card = () => pg.textContent('.serie');
-  ok(/Mi Serie & Co/.test(await card()) && /Autora Uno/.test(await card()), 'agrega la serie con su nombre y su autora');
+  ok(/Mi Serié & Co/.test(await card()) && /Autora Uno/.test(await card()), 'agrega la serie con su nombre (sin «&eacute;» aunque Webtoon lo mande codificado dos veces) y su autora');
   ok(/0 de 12 leídos/.test(await card()) && /5 listos/.test(await card()), 'y deja listos los 5 capítulos que siguen, solos');
   ok(pedidos.every((u) => /webtoons\.com|pstatic\.net/.test(u)) && pedidos.some((u) => /ep5_2/.test(u)) && !pedidos.some((u) => /ep6_/.test(u)), 'pidió por el recadero las imágenes de los caps 1 a 5, y ninguna del 6');
   ok(await pg.evaluate(() => document.querySelector('.serie .portada').naturalWidth) === 300, 'con su portada, guardada en el teléfono');
@@ -107,7 +107,7 @@ for (const [ancho, alto, nombre] of [[390, 844, 'teléfono'], [1280, 800, 'compu
   await pg.click('#leerTodo');
   await pg.waitForFunction(() => document.querySelectorAll('#scroll .cap').length >= 1);
   if (process.env.CAPTURA) { await pg.waitForTimeout(400); await pg.screenshot({ path: `${process.env.CAPTURA}/tiras-lector-${ancho}.png` }); }
-  ok(/Mi Serie & Co/.test(await pg.textContent('#lTitulo')) && /Cap\. 1/.test(await pg.textContent('#lSub')), 'el lector abre en el capítulo 1');
+  ok(/Mi Serié & Co/.test(await pg.textContent('#lTitulo')) && /Cap\. 1/.test(await pg.textContent('#lSub')), 'el lector abre en el capítulo 1');
   const altos = await pg.evaluate(() => [...document.querySelectorAll('#scroll .cap')[0].querySelectorAll('img')].map((i) => i.getAttribute('height')));
   ok(altos.join(',') === '900,1000,1100', `cada imagen reserva su alto antes de pintarse (${altos.join(', ')})`);
   /* se baja como una persona: de a media pantalla, hasta acabar 3 capítulos */
@@ -150,7 +150,7 @@ for (const [ancho, alto, nombre] of [[390, 844, 'teléfono'], [1280, 800, 'compu
   const pdf = fs.readFileSync(await dl.path());
   const cuenta = +(/\/Type \/Pages \/Kids \[[^\]]*\] \/Count (\d+)/.exec(pdf.toString('latin1')) || [])[1];
   ok(pdf.slice(0, 5).toString() === '%PDF-' && cuenta === 3 * (1 + POR), `el PDF de los caps 1 a 3 trae ${cuenta} páginas: título + 3 imágenes por capítulo`);
-  ok(/Mi Serie & Co \(1-3\)\.pdf/.test(dl.suggestedFilename()), `con nombre de la serie y el rango (${dl.suggestedFilename()})`);
+  ok(/Mi Serié & Co \(1-3\)\.pdf/.test(dl.suggestedFilename()), `con nombre de la serie y el rango (${dl.suggestedFilename()})`);
   fs.writeFileSync(path.join(tmp, 'a.pdf'), pdf);
   await pg.click('#cerrarArchivo');
 
