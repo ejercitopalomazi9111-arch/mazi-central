@@ -141,6 +141,31 @@ for (const [ancho, alto, nombre] of [[390, 844, 'teléfono'], [1280, 800, 'compu
   ok(vistos.every((n, i) => i === 0 || n === vistos[i - 1] + 1), `los capítulos van en orden, uno tras otro (${vistos.join(', ')})`);
   const pintadas = await pg.evaluate(() => [...document.querySelectorAll('#scroll .cap img')].filter((i) => i.complete && i.naturalWidth === 700).length);
   ok(pintadas >= 3, `las imágenes se ven (${pintadas} pintadas)`);
+  /* el marcador (Carlos, 5 nov): dónde ibas, y al volver, el logo con «(salvado por el marcador)» */
+  const pos = await pg.evaluate(() => { const cs = document.querySelectorAll('#scroll .cap'), a = cs[Math.min(3, cs.length - 1)], s = document.querySelector('#scroll');
+    s.scrollTop = a.offsetTop + a.offsetHeight * 0.4; return { clave: a.dataset.clave, n: a.dataset.n }; });
+  await pg.waitForTimeout(1000);
+  const m1 = await pg.evaluate(() => JSON.parse(localStorage.getItem('tiras.marcador')));
+  ok(m1 && m1.clave === pos.clave && Math.abs(m1.frac - 0.4) < 0.05, `al leer se guarda el marcador: capítulo y qué tanto llevas (${m1 && m1.clave} · ${m1 && m1.frac})`);
+  await cerrarLector(pg);
+  await pg.waitForFunction(() => !window.__tiras.ocupado, null, { timeout: 30000 });
+  const m2 = await pg.evaluate(() => JSON.parse(localStorage.getItem('tiras.marcador')));
+  ok(!m2.abierto && m2.clave === pos.clave, 'cerrar el lector deja el marcador donde quedaste, pero no lo reabre solo');
+  await pg.click('#leerTodo');
+  await pg.waitForFunction(() => !document.querySelector('#sello').hidden, null, { timeout: 15000 }).catch(() => {});
+  const vuelta = await pg.evaluate((c) => { const a = document.querySelector(`#scroll .cap[data-clave="${c}"]`), s = document.querySelector('#scroll');
+    return { sello: !document.querySelector('#sello').hidden, texto: document.querySelector('#sello').textContent, frac: a ? (s.scrollTop - a.offsetTop) / a.offsetHeight : -1 }; }, pos.clave);
+  ok(vuelta.sello && /INKWELL/.test(vuelta.texto) && /\(salvado por el marcador\)/.test(vuelta.texto), 'al volver a leer sale el logo y «(salvado por el marcador)»');
+  ok(Math.abs(vuelta.frac - m2.frac) < 0.01, `y te deja justo donde ibas (${vuelta.frac.toFixed(3)} contra ${m2.frac} guardado)`);
+  if (process.env.CAPTURA) await pg.screenshot({ path: `${process.env.CAPTURA}/tiras-marcador-${ancho}.png` });
+  await pg.waitForTimeout(2900);
+  ok(await pg.evaluate(() => document.querySelector('#sello').hidden), 'el sello se va solo');
+  /* cerrar la app CON el lector abierto: al abrirla otra vez te regresa sola */
+  await pg.evaluate(() => { const m = JSON.parse(localStorage.getItem('tiras.marcador')); m.abierto = true; localStorage.setItem('tiras.marcador', JSON.stringify(m)); });
+  await pg.reload({ waitUntil: 'domcontentloaded' });
+  await pg.waitForFunction(() => !document.querySelector('#lector').hidden && !document.querySelector('#sello').hidden, null, { timeout: 20000 }).catch(() => {});
+  ok(await pg.evaluate(() => !document.querySelector('#lector').hidden && !document.querySelector('#sello').hidden), 'si cerraste la app leyendo, al abrirla te regresa al marcador');
+  await pg.waitForTimeout(400);
   await cerrarLector(pg);
   await pg.waitForFunction(() => !window.__tiras.ocupado, null, { timeout: 30000 });
   await pg.waitForTimeout(200);

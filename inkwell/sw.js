@@ -10,7 +10,7 @@
        · lo de otro sitio (Wattpad) y lo que va a La Sala (/api/) NO se toca;
        · la app (html, js, manifest) va «primero la red» y, sin red, lo guardado;
        · las pinturas siguen «primero lo guardado»: no cambian nunca. */
-const V = 'inkwell-v7';
+const V = 'inkwell-v8';
 const APP = ['./', './index.html', './tiras.html', './tiras.js', './fuentes.js', './archivos.js', './compartir.js', './manifest.webmanifest', './arte/arte.json'];
 
 self.addEventListener('install', e => {

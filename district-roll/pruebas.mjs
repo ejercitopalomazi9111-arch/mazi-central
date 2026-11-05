@@ -101,6 +101,19 @@ for (const [dia, platos, esperado, que] of casos) {
   v('viernes: 2 rollos traen kushiages de regalo', /kushiages de regalo/.test(await p.textContent('#hojaResumen')) && (await totalFlota(p)) === '$278');
   await p.close(); }
 
+console.log('§5b · el horario (3:30 a 9:00 pm)');
+{ let p = await br.newPage({ viewport: { width: 390, height: 844 } });
+  await p.goto(BASE + '?dia=2&hora=18:00', { waitUntil: 'networkidle' });
+  v('a las 6 pm dice «Abierto»', (await p.textContent('#estadoTxt')) === 'Abierto' && /3:30 pm a 9:00 pm/.test(await p.textContent('#datosHorasTxt')));
+  v('el pie dice el horario', /Todos los días de 3:30 pm a 9:00 pm/.test(await p.textContent('#pieHoras')));
+  v('ningún título dice «sushi de barrio»', !/barrio/i.test(await p.textContent('h1')));
+  await p.goto(BASE + '?dia=2&hora=14:00', { waitUntil: 'networkidle' }); await p.evaluate(() => localStorage.clear()); await p.reload({ waitUntil: 'networkidle' });
+  await mas(p, 'Texano'); await p.click('#flota'); await p.waitForTimeout(200);
+  v('a las 2 pm dice «Cerrado» y el pedido avisa que lo preparan al abrir', (await p.textContent('#estadoTxt')) === 'Cerrado' && /lo preparan al abrir, hoy a las 3:30 pm/.test(await p.textContent('#hojaResumen')));
+  await p.goto(BASE + '?dia=2&hora=22:00', { waitUntil: 'networkidle' }); await p.click('#flota'); await p.waitForTimeout(200);
+  v('a las 10 pm dice que abren mañana', /mañana a las 3:30 pm/.test(await p.textContent('#hojaResumen')));
+  await p.close(); }
+
 console.log('§6 · otros tamaños');
 for (const [w, h] of [[320, 640], [1440, 900]]) {
   const p = await pagina(2, w, h);
