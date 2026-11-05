@@ -245,3 +245,4 @@ h2.seccion{ font-size:34px; color:var(--hueso); text-shadow:0 3px 0 var(--tinta)
 .mesa__fin .paga small{ flex-basis:100%; font-size:13px; opacity:.8 }
 /* los letreros de la mesa (vida, ronda, salir) siempre por encima de la capa de toques */
 .mesa .hud, .mesa .ronda, .mesa__salir, .mesa .formula, .mesa .cuenta{ z-index:2 }
+.abrir__botones small{ display:block; font-family:var(--cuerpo, inherit); font-size:13px; opacity:.85; margin-top:2px }
