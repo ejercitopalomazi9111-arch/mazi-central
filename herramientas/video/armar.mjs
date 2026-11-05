@@ -6,6 +6,7 @@
      PREVIA=12 node …     → sólo uno de cada 12 cuadros, en <salida>-previa/, para revisar
      DESDE=8 HASTA=12 …   → con PREVIA, sólo ese tramo
      SEGUIR=1 …           → retoma un armado cortado sin rehacer los cuadros que ya están
+     QUERY=corte=corto …  → abre la composición con ese ?query (versiones de una misma pieza)
 
    La composición define:
      window.VIDEO = { w, h, fps, dur,
@@ -33,7 +34,8 @@ await red(ctx);
 const pg = await ctx.newPage();
 const errores = []; pg.on('pageerror', e => errores.push(e.message)); pg.on('console', m => { if(m.type() === 'error') errores.push(m.text()); });
 /* se abre por el servidor local para que lea los cuadros de las grabaciones y las fotos del repo */
-await pg.goto(BASE + '/' + path.relative(RAIZ, html).split(path.sep).join('/'), { waitUntil: 'load' });
+/* QUERY=corte=corto → la misma composición en otra versión (el anuncio 22 saca así sus cortes para historias) */
+await pg.goto(BASE + '/' + path.relative(RAIZ, html).split(path.sep).join('/') + (process.env.QUERY ? '?' + process.env.QUERY : ''), { waitUntil: 'load' });
 await pg.evaluate(() => window.listo);
 const V = await pg.evaluate(() => window.VIDEO);
 await pg.setViewportSize({ width: V.w, height: V.h });

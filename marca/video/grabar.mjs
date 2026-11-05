@@ -25,11 +25,19 @@ const TOMAS = {
   'laboratorio-pc': { ap: PC, url: '/laboratorio/', async hacer(pg, e){ await e(1.8); await deslizar(pg, 800, 1700); await e(1); } },
   'reportes-pc': { ap: PC, url: '/reportes/', async hacer(pg, e){ await e(2); await deslizar(pg, 500, 1500); await e(1); } },
   'sitio-pc': { ap: PC, url: '/sitio/', async hacer(pg, e){ await e(5); await deslizar(pg, 900, 1700); await e(1); } },
-  /* las cuatro barberías de muestra, para su comercial (Carlos, 4 nov) */
-  'barb-sencilla': { ap: TEL, url: '/barberias/sencilla/', async hacer(pg, e){ await e(2); await deslizar(pg, 700, 1500); await e(.8); await deslizar(pg, 800, 1500); await e(1); } },
-  'barb-navaja': { ap: TEL, url: '/barberias/navaja/', async hacer(pg, e){ await e(2.2); await deslizar(pg, 750, 1500); await e(.8); await deslizar(pg, 850, 1500); await e(1); } },
-  'barb-casa': { ap: TEL, url: '/barberias/casa-brava/', async hacer(pg, e){ await e(2.2); await deslizar(pg, 750, 1500); await e(.8); await deslizar(pg, 850, 1500); await e(1); } },
-  'barb-obsidiana': { ap: TEL, url: '/barberias/obsidiana/', async hacer(pg, e){ await e(4.5); await deslizar(pg, 700, 1700); await e(.8); await deslizar(pg, 900, 1700); await e(1.2); } },
+  /* las cuatro barberías de muestra, rehechas el 5 de noviembre (Carlos: «mejora las cuatro webs… que en el video se vean mamadoras») */
+  'barb-sencilla': { ap: TEL, url: '/barberias/sencilla/', async hacer(pg, e){ await e(2.4); await deslizar(pg, 760, 1500); await e(.8); await deslizar(pg, 900, 1600); await e(1); } },
+  'barb-navaja': { ap: TEL, url: '/barberias/navaja/', async hacer(pg, e){ await e(2.6); await deslizar(pg, 820, 1500); await e(1); await deslizar(pg, 900, 1600); await e(1); } },
+  'barb-casa': { ap: TEL, url: '/barberias/casa-brava/', async hacer(pg, e){ await e(2.6); await deslizar(pg, 800, 1500); await e(.8); await deslizar(pg, 950, 1600); await e(1); } },
+  'barb-obsidiana': { ap: TEL, url: '/barberias/obsidiana/', async hacer(pg, e){ await e(5.2); await deslizar(pg, 760, 1700); await e(1); await deslizar(pg, 900, 1700); await e(1.2); } },
+  'barb-obs-tienda': { ap: TEL, url: '/barberias/obsidiana/', async hacer(pg, e){ await tocar(pg, '#intro', K); await e(1);
+    await pg.evaluate(() => { document.documentElement.style.scrollBehavior = 'auto'; scrollTo(0, document.querySelector('#tiendaL').getBoundingClientRect().top + scrollY - 140); }); await e(1.4);
+    await tocar(pg, '#tiendaL .ti-card >> nth=0', K); await e(1.4); await tocar(pg, 'dialog.ti-hoja[open] .ti-var button >> nth=1', K); await e(.6); await tocar(pg, 'dialog.ti-hoja[open] [data-n="1"]', K); await e(.5);
+    await tocar(pg, 'dialog.ti-hoja[open] [data-agregar]', K); await e(1.4); await tocar(pg, '#tiendaL .ti-mas >> nth=4', K); await e(1.2); await tocar(pg, '#abrirCarro', K); await e(2.2); } },
+  'barb-obs-reserva': { ap: TEL, url: '/barberias/obsidiana/', async hacer(pg, e){ await tocar(pg, '#intro', K); await e(1.6); await tocar(pg, '.portada [data-reservar]', K); await e(1.2);
+    await tocar(pg, '#reserva .rv-op >> nth=0', K); await e(.5); await tocar(pg, '#reserva [data-a="sigue"]', K); await e(1); await tocar(pg, '#reserva .rv-op >> nth=1', K); await e(1);
+    await tocar(pg, '#reserva .rv-hora:not([disabled]) >> nth=2', K); await e(.6); await tocar(pg, '#reserva [data-a="sigue"]', K); await e(1);
+    await pg.locator('#rvNombre').fill('Carlos'); await pg.locator('#rvTel').fill('4421234567'); await e(.6); await tocar(pg, '#reserva [data-a="sigue"]', K); await e(2.4); } },
 };
 
 const pedidas = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(TOMAS);

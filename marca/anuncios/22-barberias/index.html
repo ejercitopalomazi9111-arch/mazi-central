@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Grupo Mazi · Barberías · el grande</title>
+<!-- ANUNCIO 22 · ~76 s · 9:16 · SIN VOZ: el espacio queda listo para la de Carlos (él narra; guion en GUION.md).
+     Pietaje real de barbería (Mixkit, preparar.py), las cuatro páginas rehechas el 5 de noviembre grabadas tal cual
+     corren (marca/video/grabar.mjs barb-*), los paquetes desglosados y el QR del espejo. Cada corte cae en compás:
+     la canción («Try Me», Arulo, Mixkit) va a 136 BPM desde su golpe del segundo 12.8.
+     node herramientas/video/armar.mjs marca/anuncios/22-barberias/index.html marca/anuncios/salida/22-barberias.mp4 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter+Tight:wght@500;700;800;900&display=block">
+<link rel="stylesheet" href="../comun.css">
+<script>window.listo = new Promise(r => window._listo = r);</script>
+<script src="../../../barberias/comun/vendor/qrcode-1.4.4.min.js"></script>
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>
+  #cl{ z-index:0 } #gl{ z-index:2 } #c2{ z-index:5 } #ui{ z-index:6 }
+  #tinte{ position:absolute; inset:0; z-index:1; pointer-events:none }
+  #fuga{ position:absolute; inset:0; z-index:4; pointer-events:none; mix-blend-mode:screen }
+  #barrido{ position:absolute; z-index:7; left:-40%; top:-20%; width:180%; height:140%; background:linear-gradient(90deg, #7E1735, #AC27FF 55%, #170A26); transform:translateX(-120%) skewX(-18deg); pointer-events:none }
+  .t{ position:absolute; left:80px; right:150px; font:700 120px/.9 var(--t); letter-spacing:-.045em; text-transform:uppercase }
+  .t span{ display:block; overflow:hidden; padding-bottom:.04em } .t span i{ display:block; font-style:normal; will-change:transform } .t .v{ color:#B44BFF } .t .h{ color:transparent; -webkit-text-stroke:3px #F4EEF2 }
+  .ojo{ position:absolute; left:80px; font:700 26px/1 var(--t); letter-spacing:.24em; text-transform:uppercase; color:#C77DFF }
+  /* el chat que no para */
+  #chat{ position:absolute; left:70px; right:130px; top:520px; height:900px; display:flex; flex-direction:column; justify-content:flex-end; gap:18px }
+  .bur{ align-self:flex-start; max-width:80%; padding:22px 28px 18px; border-radius:30px 30px 30px 8px; background:#ffffffee; color:#141414; font:600 40px/1.15 var(--s); box-shadow:0 20px 40px -20px #000; transform-origin:0 100% }
+  .bur small{ display:block; font:500 22px/1 var(--s); color:#777; margin-top:8px; text-align:right }
+  #nolei{ position:absolute; right:150px; top:300px; width:150px; height:150px; border-radius:50%; background:#E0245E; color:#fff; display:grid; place-items:center; font:900 72px/1 var(--s); box-shadow:0 0 0 14px #E0245E33 }
+  /* niveles */
+  .nivel{ position:absolute; left:80px; right:150px; top:250px }
+  .nivel .tier{ font:700 26px var(--t); letter-spacing:.2em; text-transform:uppercase; color:#C77DFF }
+  .nivel .nom{ margin-top:12px; font:700 104px/.92 var(--t); letter-spacing:-.045em; text-transform:uppercase }
+  .nivel .pr{ display:inline-block; margin-top:22px; padding:14px 24px; border-radius:16px; background:#7E1735; font:800 46px/1 var(--s); box-shadow:0 18px 40px -16px #000 } .nivel .pr small{ font:700 22px var(--t); letter-spacing:.16em; text-transform:uppercase; opacity:.8; margin-right:10px }
+  .nivel ul{ list-style:none; padding:0; margin:28px 0 0; display:grid; gap:14px } .nivel li{ display:flex; gap:16px; align-items:center; font:700 34px/1.15 var(--s) } .nivel li svg{ flex-shrink:0; color:#C77DFF; width:40px; height:40px }
+  /* paquetes */
+  .paq{ position:absolute; left:60px; right:120px; top:240px; padding:44px 44px 40px; border-radius:40px; background:linear-gradient(160deg, #2A0F40f2, #170A26f2 65%); border:2px solid #B44BFF66; box-shadow:0 60px 120px -40px #000 }
+  .paq .n{ font:700 26px var(--t); letter-spacing:.2em; text-transform:uppercase; color:#C77DFF }
+  .paq .nom{ margin:10px 0 0; font:700 90px/.92 var(--t); letter-spacing:-.04em; text-transform:uppercase }
+  .paq .pr{ display:flex; align-items:baseline; gap:18px; margin:18px 0 26px; font:900 92px/1 var(--s); letter-spacing:-.03em } .paq .pr s{ font:600 36px var(--s); color:#B9AFC4; text-decoration-thickness:3px }
+  .paq ul{ list-style:none; padding:0; margin:0; display:grid; gap:16px } .paq li{ display:grid; grid-template-columns:52px 1fr; gap:16px; align-items:center; font:700 34px/1.18 var(--s) }
+  .paq li .c{ width:52px; height:52px; border-radius:50%; display:grid; place-items:center; background:#AC27FF; color:#170A26 } .paq li .c svg{ width:30px; height:30px }
+  .paq li small{ display:block; font:500 24px/1.2 var(--s); color:#C9BFD6; margin-top:4px }
+  .pie{ position:absolute; left:80px; right:150px; top:1430px; font:500 26px/1.3 var(--t); color:#B9AFC4 }
+  /* el póster del espejo */
+  #poster{ position:absolute; left:190px; top:300px; width:600px; height:850px; border-radius:10px; background:#F4EEF2; color:#170A26; padding:44px; box-shadow:0 70px 120px -30px #000; display:flex; flex-direction:column; align-items:center; text-align:center; transform-origin:50% 100% }
+  #poster .b{ font:700 26px var(--t); letter-spacing:.24em; text-transform:uppercase; color:#7E1735 } #poster h3{ margin:18px 0 26px; font:700 76px/.92 var(--t); letter-spacing:-.04em; text-transform:uppercase }
+  #poster .qr{ width:360px; height:360px; padding:18px; background:#fff; border-radius:16px; border:6px solid #170A26 } #poster .qr svg{ width:100%; height:100% }
+  #poster p{ margin:24px 0 0; font:600 28px/1.25 var(--s) }
+  #escaner{ position:absolute; left:322px; top:600px; width:336px; height:4px; background:#AC27FF; box-shadow:0 0 30px 8px #AC27FFaa; opacity:0 }
+  #calidad{ position:absolute; left:80px; right:150px; top:1460px; display:flex; flex-wrap:wrap; gap:10px }
+  #calidad span{ padding:10px 16px; border-radius:999px; background:#170A26cc; border:1px solid #ffffff2a; font:700 22px var(--t); letter-spacing:.08em; text-transform:uppercase; color:#E7DCF4 }
+</style>
+</head>
+<body>
+<canvas id="cl" class="capa" width="1080" height="1920"></canvas>
+<div id="tinte"></div>
+<canvas id="gl" class="capa"></canvas>
+<div id="fuga"></div>
+<canvas id="c2" class="capa" width="1080" height="1920"></canvas>
+<div id="ui" class="capa">
+  <div class="ojo" id="ojo" style="top:250px"></div>
+  <div class="t" id="tit" style="top:320px"></div>
+  <div id="nolei">12</div>
+  <div id="chat"></div>
+  <div class="nivel" id="nivel"><div class="tier"></div><div class="nom"></div><div class="pr"></div><ul></ul></div>
+  <div class="paq" id="paq"><div class="n"></div><div class="nom"></div><div class="pr"></div><ul></ul></div>
+  <div class="pie" id="pie"></div>
+  <div id="calidad"><span>Videos verticales 1080p</span><span>Subtítulos y música con licencia</span><span>Fotos editadas a color</span><span>Con tu marca</span></div>
+  <div id="poster"><div class="b">Tu barbería</div><h3>Escanea y aparta tu corte</h3><div class="qr" id="qr"></div><p>Sin fila y sin llamar.<br>Ves las horas libres y escoges barbero.</p></div>
+  <div id="escaner"></div>
+  <div id="cierre"><div class="wa">WhatsApp <b>442 883 3786</b></div><div class="sub">Páginas y publicidad para barberías en Querétaro</div></div>
+</div>
+<div id="barrido"></div>
+<div id="grano"></div>
+<script type="module">
+import { THREE, PAL, W, H, tramo, suave, sale, entra, mezcla, vida, escena3d, telefono, Toma, grano } from '../motor.js';
+import { logoVivo } from '../logo3d.js';
+import { Pietaje, indice } from '../pietaje.js';
+import { ico } from '../../../barberias/comun/iconos.js';
+const $ = (s) => document.querySelector(s);
+const fx = (n) => `../../../herramientas/video/efectos/${n}.wav`;
+const B = 60 / 136 * 4, b = (n) => n * B;   /* un compás de la canción: todo se corta en compás */
+const E = { gancho: [0, b(3)], problema: [b(3), b(7)], solucion: [b(7), b(12)], niveles: [b(12), b(24)], paquetes: [b(24), b(36)], qr: [b(36), b(39)], cierre: [b(39), b(43)] };
+const FIN = E.cierre[1];
+const NIV = [0, 1, 2, 3].map(i => [b(12 + 3 * i), b(15 + 3 * i)]), PAQ = [0, 1, 2].map(i => [b(24 + 4 * i), b(28 + 4 * i)]);
+const cortes = [E.problema[0], E.solucion[0], ...NIV.map(x => x[0]), ...PAQ.map(x => x[0]), E.qr[0], E.cierre[0]];
+const CHAT = [['¿Tienes lugar ahorita?', '6:02 p. m.'], ['¿A qué hora cierras?', '6:02 p. m.'], ['¿Cuánto el fade?', '6:03 p. m.'], ['bro contesta', '6:04 p. m.'], ['Ya fui con el de enfrente', '6:09 p. m.']];
+/* LAS VERSIONES: la misma pieza en cortes para historias (?corte=…). Cada escena empieza en compás, así que
+   pegarlas una tras otra no rompe el ritmo de la canción */
+const VERSIONES = { todo: Object.keys(E), corto: ['gancho', 'solucion', 'cierre'], niveles: ['gancho', 'niveles', 'cierre'], paquetes: ['paquetes', 'qr', 'cierre'] };
+const TRAMOS = (VERSIONES[new URLSearchParams(location.search).get('corte')] || VERSIONES.todo).map(k => E[k]);
+const DUR = TRAMOS.reduce((a, [x, y]) => a + y - x, 0);
+const deSalida = (u) => { let acc = 0; for(const [x, y] of TRAMOS){ if(u < acc + y - x) return x + u - acc; acc += y - x; } return TRAMOS.at(-1)[1] - .001; };
+const aSalida = (s) => { let acc = 0; for(const [x, y] of TRAMOS){ if(s >= x - .45 && s < y) return acc + s - x; acc += y - x; } return null; };
+const SON = [...cortes.map(t => [fx('whoosh'), t - .32, .5]), ...CHAT.map((_, i) => [fx('toque'), E.problema[0] + .3 + i * b(.5), .55]), [fx('golpe'), E.problema[0] + b(3) - .05, .6],
+    ...[0, 1, 2].map(i => [fx('subida'), PAQ[i][0] + .5, .3]), [fx('ding'), E.qr[0] + 1.3, .5], [fx('subida'), E.cierre[0] + .6, .4]];
+window.VIDEO = { w: W, h: H, fps: 30, dur: DUR, musica: { archivo: '/tmp/claude-0/mus/235.mp3', desde: 12.817, vol: .62, entrada: .05, fin: 2.6 },
+  sonidos: SON.map(([a, s, v]) => [a, aSalida(s), v]).filter(x => x[1] !== null && x[1] >= 0) };
+await document.fonts.load('700 80px "Space Grotesk"'); await document.fonts.load('800 60px "Inter Tight"');
+
+/* el pietaje y las grabaciones de las páginas */
+const IDX = await indice('cuadros/');
+const P = Object.fromEntries(Object.entries(IDX).map(([k, n]) => [k, new Pietaje(`cuadros/${k}/`, n)]));
+const E3 = escena3d($('#gl'));
+const tomas = { reserva: new Toma('barb-obs-reserva'), tienda: new Toma('barb-obs-tienda'), sencilla: new Toma('barb-sencilla'), navaja: new Toma('barb-navaja'), casa: new Toma('barb-casa'), obsidiana: new Toma('barb-obsidiana') };
+const tel = Object.fromEntries(Object.entries(tomas).map(([k, t]) => { const o = telefono(t.tex); o.visible = false; E3.s.add(o); return [k, o]; }));
+const cl = $('#cl').getContext('2d'), c2 = $('#c2').getContext('2d'), gr = grano($('#grano'), .07);
+{ const q = qrcode(0, 'M'); q.addData('https://mazi-central.palomazi9111.workers.dev/barberias/'); q.make(); $('#qr').innerHTML = q.createSvgTag({ cellSize: 6, margin: 0, scalable: true }); }
+const poner = (el, html) => { if(el.dataset.h !== html){ el.innerHTML = html; el.dataset.h = html; } };
+const titulo = (t, a, z, renglones) => { poner($('#tit'), renglones.map(r => `<span><i class="${r[1] || ''}">${r[0]}</i></span>`).join(''));
+  [...$('#tit').children].forEach((s, i) => { const u = sale(tramo(t, a + i * .09, a + .55 + i * .09)), o = entra(tramo(t, z - .35, z)); s.firstChild.style.transform = `translateY(${((1 - u) * 105 - o * 105).toFixed(1)}%)`; });
+  $('#tit').style.opacity = 1; };
+const NIVELES = [
+  ['Esencial', 'Barbería<br>Don Chuy', '$2,000', ['Servicios con precio', 'Reserva por WhatsApp', 'Horario, reseñas y mapa'], 'sencilla', 'cara'],
+  ['Completa · urbana', 'Navaja<br>Norte', '$6,500', ['Reserva por pasos', 'Tienda con envío', 'Promo del día con reloj'], 'navaja', 'nuca'],
+  ['Completa · clásica', 'Casa Brava', '$6,500', ['Carta, paquetes y el Club', 'La botica', 'Reserva en la misma página'], 'casa', 'navaja'],
+  ['A la medida', 'Obsidiana', '$9,000', ['Membresías y regalos', 'Test «tu corte ideal»', 'Lo que se te ocurra'], 'obsidiana', 'peine'],
+];
+const PAQUETES = [
+  ['Arranque', '$2,900', '$3,500', [['globe', 'Página Esencial', '3 meses de mantenimiento'], ['megaphone', '1 mes de anuncios', 'Facebook e Instagram, a 5 km de ti'], ['image', '2 anuncios diseñados', 'Uno de imagen y uno en video'], ['qr-code', 'Póster con tu QR', 'Para la entrada o el espejo']]],
+  ['Agenda llena', '$7,900', '$9,500', [['globe', 'Página Completa', 'Reservas, tienda y promociones'], ['camera', 'Sesión de fotos', '2 h en tu local, 20 fotos editadas'], ['clapperboard', '2 videos + 4 publicaciones', 'Para anunciar tu página nueva'], ['megaphone', '1 mes de anuncios', '3 anuncios, con reporte'], ['qr-code', 'Póster y tarjetas con QR', '']]],
+  ['Sin competencia', '$13,500', '$16,000', [['globe', 'Página A la medida', 'Membresías, regalos y todo'], ['clapperboard', '4 videos en tu barbería', 'Grabados y editados para reels'], ['layout-grid', '12 publicaciones + historias', '3 historias por semana, un mes'], ['megaphone', 'Anuncios todo el mes', '4 anuncios y reporte de resultados'], ['qr-code', 'Póster, tarjetas y sticker QR', '']]],
+];
+const IC = { globe: 'map', megaphone: 'send', image: 'camera', 'qr-code': 'qr-code', camera: 'camera', clapperboard: 'play', 'layout-grid': 'calendar' };
+
+const pintarTodo = async (t) => {
+  const en = (k) => t >= E[k][0] && t < E[k][1], vi = (k, ent = .3, sal = .3) => vida(t, E[k][0], E[k][1], ent, sal);
+  /* el pietaje del fondo: cuál toca y cómo se ve */
+  let toma = null, z = 1, filtro = 'none', dx = 0;
+  if(en('gancho')){ toma = 'silla'; z = 1.05 + tramo(t, 0, E.gancho[1]) * .12; filtro = 'brightness(.75)'; }
+  else if(en('problema')){ toma = 'guantes'; z = 1.08 + tramo(t, ...E.problema) * .1; filtro = `brightness(${.62 - .2 * tramo(t, E.problema[0] + b(2.5), E.problema[1])}) blur(${tramo(t, E.problema[0] + b(.2), E.problema[0] + b(.8)) * 6}px)`; }
+  else if(en('solucion')){ toma = 'cliente'; z = 1.15; filtro = 'brightness(.42) blur(10px)'; }
+  else if(en('niveles')){ const k = NIV.findIndex(([a, c]) => t >= a && t < c); toma = NIVELES[k][5]; z = 1.12 + tramo(t, ...NIV[k]) * .1; filtro = 'brightness(.38) blur(6px) saturate(.8)'; }
+  else if(en('paquetes')){ toma = 'tijeras'; z = 1.2 + tramo(t, ...E.paquetes) * .15; filtro = 'brightness(.3) blur(12px)'; dx = -tramo(t, ...E.paquetes) * 80; }
+  else if(en('qr')){ toma = 'silla'; z = 1.3; filtro = 'brightness(.35) blur(8px)'; }
+  else { toma = 'cara'; z = 1.1; filtro = 'brightness(.25) blur(14px)'; }
+  cl.fillStyle = PAL.oscuro; cl.fillRect(0, 0, W, H);
+  const p = P[toma]; if(p){ const ini = { gancho: 0, problema: E.problema[0], solucion: E.solucion[0], qr: E.qr[0], cierre: E.cierre[0] }; const t0 = en('niveles') ? NIV.find(([a, c]) => t >= a && t < c)[0] : en('paquetes') ? E.paquetes[0] : Object.entries(ini).find(([k]) => en(k))?.[1] ?? 0;
+    await p.en(Math.max(0, (t - t0) * .9)); p.pintar(cl, { zoom: z, dx, filtro }); }
+  /* el tinte de la casa: morado arriba, vino abajo */
+  $('#tinte').style.background = `linear-gradient(180deg, #170A26d0 0%, #170A2600 34%, #170A2600 58%, #170A26f0 100%), radial-gradient(80% 50% at 50% 100%, #7E173566, transparent 70%)`;
+  /* la fuga de luz que cruza en cada corte */
+  const cc = cortes.find(c => t > c - .4 && t < c + .5); const fl = cc ? Math.sin(tramo(t, cc - .4, cc + .5) * Math.PI) : 0;
+  $('#fuga').style.background = `radial-gradient(60% 40% at ${20 + fl * 60}% 30%, #AC27FF${Math.round(fl * 90).toString(16).padStart(2, '0')}, transparent 70%)`;
+  /* el barrido de color: tapa el corte y se va */
+  const bc = cortes.find(c => t > c - .28 && t < c + .28); $('#barrido').style.transform = bc ? `translateX(${mezcla(-120, 120, tramo(t, bc - .28, bc + .28))}%) skewX(-18deg)` : 'translateX(-120%) skewX(-18deg)';
+
+  /* los textos de cada escena */
+  $('#tit').style.opacity = 0; $('#ojo').style.opacity = 0;
+  if(en('gancho')){ titulo(t, .15, E.gancho[1], [['¿Tu silla'], ['se queda', 'h'], ['vacía?', 'v']]); poner($('#ojo'), 'Barbero, esto es para ti'); $('#ojo').style.opacity = vi('gancho'); $('#tit').style.top = '360px'; }
+  if(en('problema') && t > E.problema[0] + b(2.6)){ titulo(t, E.problema[0] + b(2.6), E.problema[1], [['Mientras'], ['contestas,'], ['se va.', 'v']]); $('#tit').style.top = '330px'; }
+  if(en('solucion')){ titulo(t, E.solucion[0] + .1, E.solucion[0] + b(2.2), [['Tu página'], ['aparta', 'v'], ['sola.']]); $('#tit').style.top = '300px';
+    if(t > E.solucion[0] + b(2.2)){ titulo(t, E.solucion[0] + b(2.2), E.solucion[1], [['Y te vende'], ['la pomada.', 'v']]); } }
+  if(en('qr')){ titulo(t, E.qr[0] + .05, E.qr[1], [['Y en tu'], ['espejo,', 'v'], ['un QR.']]); $('#tit').style.top = '1180px'; }
+  /* el chat que no para */
+  const cv = en('problema') ? vida(t, E.problema[0], E.problema[0] + b(2.7), .2, .3) : 0;
+  $('#chat').style.opacity = cv; $('#nolei').style.opacity = cv;
+  if(cv > 0){ const n = CHAT.filter((_, i) => t >= E.problema[0] + .3 + i * b(.5)).length;
+    poner($('#chat'), CHAT.slice(0, n).map(([m, h]) => `<div class="bur">${m}<small>${h}</small></div>`).join(''));
+    [...$('#chat').children].forEach((el, i) => { const u = sale(tramo(t, E.problema[0] + .3 + i * b(.5), E.problema[0] + .62 + i * b(.5))); el.style.transform = `scale(${.6 + .4 * u}) translateY(${(1 - u) * 40}px)`; el.style.opacity = u; });
+    $('#nolei').textContent = 8 + n * 3; const late = Math.sin(t * 22) * Math.exp(-((t - E.problema[0]) % b(.5)) * 6); $('#nolei').style.transform = `rotate(${late * 6}deg) scale(${1 + Math.abs(late) * .08})`; }
+  /* los niveles */
+  const k = NIV.findIndex(([a, c]) => t >= a && t < c); const nv = $('#nivel');
+  nv.style.opacity = k >= 0 ? vida(t, ...NIV[k], .25, .25) : 0;
+  if(k >= 0){ const [tier, nom, pr, lis] = NIVELES[k]; poner(nv.querySelector('.tier'), tier); poner(nv.querySelector('.nom'), nom); poner(nv.querySelector('.pr'), `<small>Desde</small>${pr}`);
+    poner(nv.querySelector('ul'), lis.map(l => `<li>${ico('check', 40)}${l}</li>`).join(''));
+    const a = NIV[k][0], u = sale(tramo(t, a, a + .5)); nv.querySelector('.nom').style.transform = `translateX(${(1 - u) * -80}px)`;
+    const up = sale(tramo(t, a + .35, a + .75)); nv.querySelector('.pr').style.transform = `rotate(-3deg) scale(${1.6 - .6 * up})`; nv.querySelector('.pr').style.opacity = up;
+    [...nv.querySelectorAll('li')].forEach((li, i) => { const ui = sale(tramo(t, a + .7 + i * b(.25), a + 1 + i * b(.25))); li.style.opacity = ui; li.style.transform = `translateX(${(1 - ui) * 50}px)`; }); }
+  /* los paquetes, renglón por renglón */
+  const q = PAQ.findIndex(([a, c]) => t >= a && t < c); const pq = $('#paq');
+  pq.style.opacity = q >= 0 ? vida(t, ...PAQ[q], .3, .25) : 0;
+  if(q >= 0){ const [n, pr, antes, lis] = PAQUETES[q], a = PAQ[q][0]; poner(pq.querySelector('.n'), `Paquete ${q + 1} de 3 · página + publicidad`); poner(pq.querySelector('.nom'), n); poner(pq.querySelector('.pr'), `${pr}<s>${antes}</s>`);
+    poner(pq.querySelector('ul'), lis.map(([i, x, s]) => `<li><span class="c">${ico(IC[i] || 'check', 30)}</span><span>${x}${s ? `<small>${s}</small>` : ''}</span></li>`).join(''));
+    const u = sale(tramo(t, a, a + .55)); pq.style.transform = `translateY(${(1 - u) * 120}px) rotate(${(1 - u) * -3}deg)`;
+    [...pq.querySelectorAll('li')].forEach((li, i) => { const ui = sale(tramo(t, a + .6 + i * b(.5), a + .95 + i * b(.5))); li.style.opacity = ui; li.style.transform = `translateX(${(1 - ui) * 60}px)`; }); }
+  $('#pie').style.opacity = en('paquetes') ? vi('paquetes') : 0; poner($('#pie'), 'Lo que inviertes en anuncios va aparte: tú decides cuánto. Fotos y grabación, dentro de Querétaro.');
+  $('#pie').style.top = '1500px';
+  $('#calidad').style.opacity = 0;
+  if(q === 2 && t > PAQ[2][1] - b(1.4)){ $('#calidad').style.opacity = sale(tramo(t, PAQ[2][1] - b(1.4), PAQ[2][1] - b(1.1))) * (1 - entra(tramo(t, PAQ[2][1] - .3, PAQ[2][1]))); $('#calidad').style.top = '1380px'; $('#pie').style.opacity = 0; }
+  /* el póster del espejo con su QR, y el escáner */
+  const pv = en('qr') ? vi('qr', .3, .3) : 0, ps = $('#poster'); ps.style.opacity = pv;
+  if(pv){ const u = sale(tramo(t, E.qr[0], E.qr[0] + .7)); ps.style.transform = `perspective(1400px) rotateX(${(1 - u) * 50}deg) rotateY(${Math.sin(t) * 4}deg) translateY(${(1 - u) * 200}px)`;
+    const s = tramo(t, E.qr[0] + .8, E.qr[0] + 1.6); $('#escaner').style.opacity = s > 0 && s < 1 ? 1 : 0; $('#escaner').style.top = (640 + s * 330) + 'px'; } else $('#escaner').style.opacity = 0;
+
+  /* los teléfonos con las páginas grabadas */
+  for(const o of Object.values(tel)) o.visible = false;
+  const pon = (o, { x = 0, y = -.35, z = 2.2, ry = 0, rx = -.05, rz = 0, s = 1 }) => { o.visible = true; o.position.set(x, y, z); o.rotation.set(rx, ry, rz); o.scale.setScalar(s); };
+  if(en('solucion')){ const a = E.solucion[0], mid = a + b(2.2), u = sale(tramo(t, a, a + .8)), w = tramo(t, mid - .3, mid + .5);
+    pon(tel.reserva, { x: mezcla(.1, -1.6, suave(w)), y: -.62, z: mezcla(-3, 2.4, u), ry: mezcla(-.9, -.15, u) - suave(w) * .6, s: 1 - w * .2 }); tel.reserva.visible = w < 1;
+    if(w > 0) pon(tel.tienda, { x: mezcla(1.6, .1, suave(w)), y: -.62, z: 2.4, ry: mezcla(.6, .12, suave(w)) + Math.sin(t) * .03, s: 1 });
+    await tomas.reserva.en(Math.max(0, (t - a + .2) * 1.15)); if(w > 0) await tomas.tienda.en(Math.max(0, (t - mid + 1.2) * 1.1)); }
+  if(k >= 0){ const [a, c] = NIV[k], key = NIVELES[k][4], u = sale(tramo(t, a, a + .7)), d = k % 2 ? -1 : 1, sal = entra(tramo(t, c - .3, c));
+    pon(tel[key], { x: mezcla(2.2 * d, .55, u) - sal * 2.5 * d, y: -1.05 + Math.sin(t * 1.3) * .02, z: mezcla(-2, 2.2, u), ry: mezcla(-1.1 * d, -.28, u) + tramo(t, a, c) * .12, rz: .03 * d, s: .92 });
+    await tomas[key].en(Math.max(0, (t - a + .3) * 1.05)); }
+  /* al cierre, las cuatro detrás del logo */
+  if(en('cierre')){ const a = E.cierre[0], u = sale(tramo(t, a, a + .9)), fuera = entra(tramo(t, a + 1.6, a + 2.3));
+    ['sencilla', 'navaja', 'casa', 'obsidiana'].forEach((key, i) => { if(fuera >= 1) return; pon(tel[key], { x: [-1.2, -.4, .4, 1.2][i], y: mezcla(-3, -.6, u), z: [0, .4, .4, 0][i], ry: [.45, .15, -.15, -.45][i], s: .62 * (1 - fuera) });
+      tomas[key].en(2 + t - a); }); }
+  E3.cam.position.set(Math.sin(t * .4) * .12, Math.sin(t * .3) * .06, 9); E3.cam.lookAt(0, -.2, 0); E3.pintar();
+  c2.clearRect(0, 0, W, H);
+  if(t >= E.cierre[0] + 1.4) logoVivo(c2, { t, desde: E.cierre[0] + 1.4, cx: W / 2, cy: 800, ancho: 820 });
+  $('#cierre').style.opacity = sale(tramo(t, E.cierre[0] + 2.4, E.cierre[0] + 3));
+  gr(t);
+};
+window.pintar = (u) => pintarTodo(deSalida(u));
+await pintar(0); window._listo();
+</script>
+</body>
+</html>

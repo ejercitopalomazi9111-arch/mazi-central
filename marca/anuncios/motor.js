@@ -118,6 +118,7 @@ const TOMAS = {
   'fadori-tel': ['../../../fadori-campana/salida/rec/app/', 2313],
   'barb-sencilla': ['../../video/rec/barb-sencilla/', 399], 'barb-navaja': ['../../video/rec/barb-navaja/', 397],
   'barb-casa': ['../../video/rec/barb-casa/', 405], 'barb-obsidiana': ['../../video/rec/barb-obsidiana/', 608],
+  'barb-obs-tienda': ['../../video/rec/barb-obs-tienda/', 818], 'barb-obs-reserva': ['../../video/rec/barb-obs-reserva/', 966],
 };
 export class Toma {
   constructor(nombre, { desde = 0, vel = 1 } = {}){
