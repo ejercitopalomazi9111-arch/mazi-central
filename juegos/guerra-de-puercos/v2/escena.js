@@ -155,6 +155,12 @@ const GEO = { cara: placaRedonda(CARTA_W, CARTA_H, .07), canto: null };
   GEO.canto.translate(0, 0, -.01);
 }
 const matCanto = new THREE.MeshStandardMaterial({ color: '#F4E9EE', roughness: .7 });
+/* El canto es un extruido: trae dos TAPAS (grupo 0) a ±.01, casi encima de
+   las caras (±.0105). Al voltear la carta, la tapa blanca y la cara se peleaban
+   por el mismo pixel y salía un parpadeo blanco (Carlos, 5 nov: «zetafighting
+   en blanco»). Las tapas no se pintan —las cubren las caras— y las caras se
+   separan un poco más y se dibujan con prioridad. */
+const matNada = new THREE.MeshBasicMaterial({ visible: false });
 
 /* La cara de la carta va SIN luz y sin el «tono de cine» del renderizador: con
    la luz de estudio encima, el rosa de la autora salía lavado (Carlos, 5 nov:
@@ -173,9 +179,10 @@ export function carta(frente, dorso){
   const g = new THREE.Group();
   const mf = materialCara(frente || null, frente ? '#ffffff' : '#ddd');
   const md = materialCara(dorso || null, dorso ? '#ffffff' : '#E84A8A');
-  const cara = new THREE.Mesh(GEO.cara, mf); cara.position.z = .0105; cara.castShadow = true;
-  const atras = new THREE.Mesh(GEO.cara, md); atras.rotation.y = Math.PI; atras.position.z = -.0105;
-  const canto = new THREE.Mesh(GEO.canto, matCanto); canto.castShadow = true;
+  for(const m of [mf, md]){ m.polygonOffset = true; m.polygonOffsetFactor = -2; m.polygonOffsetUnits = -2; }
+  const cara = new THREE.Mesh(GEO.cara, mf); cara.position.z = .012; cara.castShadow = true;
+  const atras = new THREE.Mesh(GEO.cara, md); atras.rotation.y = Math.PI; atras.position.z = -.012;
+  const canto = new THREE.Mesh(GEO.canto, [matNada, matCanto]); canto.castShadow = true;
   g.add(canto, cara, atras);
   g.userData = { cara, atras, mf, md };
   return g;

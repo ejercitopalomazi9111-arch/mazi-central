@@ -279,3 +279,31 @@ button.yo:active{ transform:scale(.96) }
    columna implícita de un grid crece al contenido más ancho) */
 .perfil{ grid-template-columns:minmax(0, 1fr) }
 .perfil > *{ min-width:0 }
+
+/* ── el modo de dos: la cortina entre turno y turno ── */
+.cortina{ position:absolute; inset:0; z-index:30; display:grid; place-content:center; justify-items:center; gap:14px; padding:24px; text-align:center; background:radial-gradient(circle at 50% 35%, #3a1830, #120A10 70%); opacity:0; transition:opacity .25s }
+.cortina.ve{ opacity:1 }
+.cortina img{ width:96px; height:96px; border-radius:50%; background:rgba(255,255,255,.08); border:3px solid var(--rosa); padding:6px }
+.cortina h2{ font-size:36px; margin:0 }
+.cortina p{ margin:0; font-size:17px; max-width:300px; opacity:.9 }
+/* ── a distancia: lo que pasa con el otro ── */
+.espera-linea{ position:absolute; left:50%; top:calc(52px + var(--arriba)); transform:translateX(-50%); z-index:3; max-width:calc(100vw - 32px); padding:6px 14px; border-radius:999px; background:rgba(18,10,16,.88); border:2px solid #FFE14A; font-size:14px; text-align:center; pointer-events:none; animation:late-espera 1.6s ease-in-out infinite }
+@keyframes late-espera{ 50%{ border-color:var(--rosa) } }
+
+/* ── a distancia y amigos ── */
+.distancia{ display:grid; grid-template-columns:minmax(0, 1fr); gap:12px; text-align:center }
+.distancia > *{ min-width:0 }
+.distancia h3{ margin:0 }
+.distancia h4, .perfil h4{ margin:4px 0 0; font-size:17px; text-align:left }
+.unirme, .amigo-nuevo .fila{ display:grid; grid-template-columns:minmax(0, 1fr) auto; gap:8px }
+.unirme input{ text-align:center; letter-spacing:.3em; font-family:var(--titulo); font-size:24px; text-transform:uppercase }
+.codigo-grande{ font-family:var(--titulo); font-size:64px; letter-spacing:.18em; padding:8px 0 4px; color:#FFE14A; text-shadow:0 4px 0 #6B1F45 }
+.amigos ul, .perfil ul{ list-style:none; margin:0; padding:0; display:grid; gap:6px }
+.amigos li, .perfil ul li{ display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:12px; background:rgba(255,255,255,.05); text-align:left }
+.amigos li > span, .perfil ul li > span{ flex:1 1 0; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:16px }
+.amigos li small, .perfil ul li small{ display:block; font-size:12px; opacity:.75 }
+.amigos li .btn, .perfil ul li .btn{ flex:0 0 auto; min-height:44px; padding:8px 14px; font-size:15px }
+.btn.mini{ padding:8px 10px }
+.punto{ flex:0 0 auto; width:12px; height:12px; border-radius:50%; background:#6b5a64 }
+.punto.si{ background:#4FD18B; box-shadow:0 0 0 3px rgba(79,209,139,.25) }
+#notiReto{ top:calc(140px + var(--arriba)) }

@@ -86,7 +86,7 @@ export default {
 
     /* Las cuentas y la tabla de líderes: UN solo objeto para todas, así la
        tabla es una consulta (ver cuentas.js). */
-    if(url.pathname === '/api/puercos/lideres' || url.pathname.startsWith('/api/puercos/cuenta/')){
+    if(url.pathname === '/api/puercos/lideres' || /^\/api\/puercos\/(cuenta\/|amigos|reto)/.test(url.pathname)){
       const r = await env.CUENTAS.get(env.CUENTAS.idFromName('todas')).fetch(pedido);
       return conCORS(new Response(r.body, r), pedido);
     }
