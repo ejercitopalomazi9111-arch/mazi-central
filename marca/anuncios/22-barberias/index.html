@@ -18,14 +18,14 @@
   #tinte{ position:absolute; inset:0; z-index:1; pointer-events:none }
   #fuga{ position:absolute; inset:0; z-index:4; pointer-events:none; mix-blend-mode:screen }
   #barrido{ position:absolute; z-index:7; left:-40%; top:-20%; width:180%; height:140%; background:linear-gradient(90deg, #7E1735, #AC27FF 55%, #170A26); transform:translateX(-120%) skewX(-18deg); pointer-events:none }
-  .t{ position:absolute; left:80px; right:150px; font:700 120px/.9 var(--t); letter-spacing:-.045em; text-transform:uppercase }
+  .t{ position:absolute; left:70px; right:120px; font:700 158px/.88 var(--t); letter-spacing:-.045em; text-transform:uppercase }
   .t span{ display:block; overflow:hidden; padding-bottom:.04em } .t span i{ display:block; font-style:normal; will-change:transform } .t .v{ color:#B44BFF } .t .h{ color:transparent; -webkit-text-stroke:3px #F4EEF2 }
   .ojo{ position:absolute; left:80px; font:700 26px/1 var(--t); letter-spacing:.24em; text-transform:uppercase; color:#C77DFF }
   /* el chat que no para */
-  #chat{ position:absolute; left:70px; right:130px; top:520px; height:900px; display:flex; flex-direction:column; justify-content:flex-end; gap:18px }
-  .bur{ align-self:flex-start; max-width:80%; padding:22px 28px 18px; border-radius:30px 30px 30px 8px; background:#ffffffee; color:#141414; font:600 40px/1.15 var(--s); box-shadow:0 20px 40px -20px #000; transform-origin:0 100% }
-  .bur small{ display:block; font:500 22px/1 var(--s); color:#777; margin-top:8px; text-align:right }
-  #nolei{ position:absolute; right:150px; top:300px; width:150px; height:150px; border-radius:50%; background:#E0245E; color:#fff; display:grid; place-items:center; font:900 72px/1 var(--s); box-shadow:0 0 0 14px #E0245E33 }
+  #chat{ position:absolute; left:60px; right:110px; top:500px; height:960px; display:flex; flex-direction:column; justify-content:flex-end; gap:18px }
+  .bur{ align-self:flex-start; max-width:86%; padding:26px 34px 20px; border-radius:36px 36px 36px 10px; background:#ffffffee; color:#141414; font:700 52px/1.12 var(--s); box-shadow:0 20px 40px -20px #000; transform-origin:0 100% }
+  .bur small{ display:block; font:500 26px/1 var(--s); color:#777; margin-top:8px; text-align:right }
+  #nolei{ position:absolute; right:140px; top:280px; width:190px; height:190px; border-radius:50%; background:#E0245E; color:#fff; display:grid; place-items:center; font:900 92px/1 var(--s); box-shadow:0 0 0 16px #E0245E33 }
   /* niveles */
   .nivel{ position:absolute; left:80px; right:150px; top:250px }
   .nivel .tier{ font:700 26px var(--t); letter-spacing:.2em; text-transform:uppercase; color:#C77DFF }
@@ -136,7 +136,8 @@ const pintarTodo = async (t) => {
   else { toma = 'cara'; z = 1.1; filtro = 'brightness(.25) blur(14px)'; }
   cl.fillStyle = PAL.oscuro; cl.fillRect(0, 0, W, H);
   const p = P[toma]; if(p){ const ini = { gancho: 0, problema: E.problema[0], solucion: E.solucion[0], qr: E.qr[0], cierre: E.cierre[0] }; const t0 = en('niveles') ? NIV.find(([a, c]) => t >= a && t < c)[0] : en('paquetes') ? E.paquetes[0] : Object.entries(ini).find(([k]) => en(k))?.[1] ?? 0;
-    await p.en(Math.max(0, (t - t0) * .9)); p.pintar(cl, { zoom: z, dx, filtro }); }
+    /* ida y vuelta: si la escena dura más que la toma, regresa en vez de congelarse */
+    const d = p.n / 30 - .05, u = Math.max(0, (t - t0) * .9) % (2 * d); await p.en(u < d ? u : 2 * d - u); p.pintar(cl, { zoom: z, dx, filtro }); }
   /* el tinte de la casa: morado arriba, vino abajo */
   $('#tinte').style.background = `linear-gradient(180deg, #170A26d0 0%, #170A2600 34%, #170A2600 58%, #170A26f0 100%), radial-gradient(80% 50% at 50% 100%, #7E173566, transparent 70%)`;
   /* la fuga de luz que cruza en cada corte */
