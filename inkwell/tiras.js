@@ -307,9 +307,44 @@ async function abrirLector(serieId = null){
   observador?.disconnect();
   observador = new IntersectionObserver((xs) => { for(const x of xs) if(x.isIntersecting) siguiente(); }, { root: sc, rootMargin: '0px 0px 1200px 0px' });
   observador.observe(final);
+  const m = leer(MARCA, null), hayMarca = m && m.clave && cola.some((x) => clave(x.s, x.c.n) === m.clave);
   await siguiente();
   if(!enLector.length){ final.textContent = 'No hay capítulos listos. Conéctate a internet y se preparan solos.'; preparar(); }
+  else if(hayMarca) await irAMarca(m);
 }
+/* ── el marcador: dónde ibas, para volver ahí (Carlos, 5 nov) ──────────
+   Se guarda el capítulo que está arriba en la pantalla y qué tanto de él ya pasó (0 a 1), al
+   moverse, al salir de la app y al cerrar el lector. Si cerraste la app CON el lector abierto,
+   al volver a abrirla te regresa solo; si lo cerraste tú, te regresa al abrir el lector. */
+const MARCA = 'tiras.marcador';
+function guardarMarca(abierto = true){
+  if($('#lector').hidden || !enLector.length) return;
+  const y = $('#scroll').scrollTop, v = enLector.find(({ art }) => art.offsetTop + art.offsetHeight > y + 1);
+  if(!v) return;
+  const a = v.art, frac = Math.max(0, Math.min(1, (y - a.offsetTop) / Math.max(1, a.offsetHeight)));
+  escribir(MARCA, { serie: soloSerie, clave: a.dataset.clave, frac: Math.round(frac * 1e4) / 1e4, abierto, t: Date.now() });
+}
+async function irAMarca(m){
+  for(let i = 0; i < 40 && !enLector.some((v) => v.clave === m.clave); i++){
+    if(poniendo){ await new Promise((r) => setTimeout(r, 30)); continue; }
+    if(!cola.length) break;
+    await siguiente();
+  }
+  const v = enLector.find((x) => x.clave === m.clave); if(!v) return false;
+  /* lo de abajo tiene que existir: si no, el navegador topa el scroll y te deja más arriba */
+  if(cola.length && enLector[enLector.length - 1] === v){ while(poniendo) await new Promise((r) => setTimeout(r, 30)); await siguiente(); }
+  const sc = $('#scroll'), meta = () => v.art.offsetTop + m.frac * v.art.offsetHeight;
+  for(let k = 0; k < 8; k++){
+    await new Promise((r) => requestAnimationFrame(r));
+    if(Math.abs(sc.scrollTop - meta()) > 3) sc.scrollTop = meta();
+  }
+  ultimoTop = sc.scrollTop;
+  cabecera(v.art);
+  const se = $('#sello'); se.hidden = true; void se.offsetWidth; se.hidden = false;
+  clearTimeout(irAMarca.t); irAMarca.t = setTimeout(() => { se.hidden = true; }, 2700);
+  return true;
+}
+let marcaT = 0;
 let poniendo = false;
 async function siguiente(){
   if(poniendo) return; poniendo = true;
@@ -366,6 +401,8 @@ function alMover(){
   });
 }
 $('#scroll').addEventListener('scroll', alMover, { passive: true });
+$('#scroll').addEventListener('scroll', () => { clearTimeout(marcaT); marcaT = setTimeout(() => guardarMarca(true), 700); }, { passive: true });
+addEventListener('pagehide', () => guardarMarca(true));
 /* La barra de arriba (título y capítulo) se esconde al avanzar y baja al deslizar para regresar,
    como en Webtoon; un toque sin mover también la saca o la guarda. Los saltos que hace el propio
    lector al soltar capítulos viejos se descuentan en `ultimoTop` para que no la saquen solos. */
@@ -386,6 +423,7 @@ async function leido(art){
   escribir('tiras.ultimo', art.dataset.clave);
 }
 $('#cerrarLector').addEventListener('click', () => {
+  clearTimeout(marcaT); guardarMarca(false); $('#sello').hidden = true;
   observador?.disconnect();
   for(const v of enLector) v.art._urls.forEach((u) => URL.revokeObjectURL(u));
   enLector = []; $('#scroll').replaceChildren();
@@ -583,11 +621,13 @@ async function espacio(){
 navigator.storage?.persist?.().catch(() => {});
 addEventListener('online', () => preparar());
 setInterval(() => { if(document.visibilityState === 'visible') preparar(); }, 15 * 60e3);
-document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') preparar(); });
+document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') preparar(); else guardarMarca(true); });
 if('serviceWorker' in navigator && !params.has('servidor')) navigator.serviceWorker.register('sw.js').catch(() => {});
 /* para las pruebas; va antes del arranque porque importar un link puede tardar */
 window.__tiras = { preparar, todasSeries, clavesDe, get cola(){ return cola; }, get ocupado(){ return !!preparando || otraVez; } };
 await pintarSeries(); espacio();
+{ const m = leer(MARCA, null);
+  if(m && m.abierto && m.clave && Date.now() - (m.t || 0) < 30 * 864e5 && !location.hash.includes('series=')) abrirLector(m.serie || null); }
 /* abrieron un link compartido (#series=…): se agregan todas de un jalón */
 { const cod = leerCodigo(location.hash);
   if(cod && cod.length && confirm(`Te compartieron ${cod.length} serie${cod.length > 1 ? 's' : ''}. ¿Agregarlas y empezar a bajarlas?`)){ history.replaceState(null, '', location.pathname + location.search); await importar(cod); }

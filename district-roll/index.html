@@ -7,7 +7,7 @@
 <meta name="description" content="District Roll Sushi en Mayorazgo, Querétaro. Rollos empanizados y fríos, gohan y yakimeshi hechos al momento. Arma tu pedido y mándalo por WhatsApp; la promo del día se aplica sola.">
 <meta name="theme-color" content="#0E0E0E">
 <meta property="og:title" content="District Roll Sushi · Pide en línea">
-<meta property="og:description" content="Sushi de barrio, hecho al momento. Una promo cada día.">
+<meta property="og:description" content="Sushi hecho al momento en Mayorazgo. Una promo cada día.">
 <meta property="og:image" content="img/real-empanizados.webp">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230E0E0E'/%3E%3Ccircle cx='32' cy='32' r='15' fill='%23FFC21A'/%3E%3C/svg%3E">
 <link rel="preload" as="font" type="font/woff2" href="fuentes/archivo.woff2" crossorigin>
@@ -80,12 +80,13 @@ svg.i{width:20px; height:20px; flex:none}
 .top__in{display:flex; align-items:center; gap:12px; height:var(--alto-top)}
 .top__logo{display:flex; align-items:center; text-decoration:none; margin-right:auto}
 .top__logo img{height:34px; width:auto}
-.estado{display:none; align-items:center; gap:8px; font:500 12px/1 var(--mono); letter-spacing:.06em; text-transform:uppercase; color:rgba(255,255,255,.72)}
+.estado{display:inline-flex; align-items:center; gap:8px; font:500 12px/1 var(--mono); letter-spacing:.06em; text-transform:uppercase; color:rgba(255,255,255,.72)}
 .estado b{display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--gris2)}
 .estado.abierto b{background:#3DDC84; box-shadow:0 0 0 4px rgba(61,220,132,.18)}
 .top__pedido{min-height:42px; padding:0 16px; font-size:15px; gap:8px}
 .top__pedido .cuenta{display:inline-grid; place-items:center; min-width:22px; height:22px; padding:0 6px; border-radius:999px; background:var(--tinta); color:var(--amarillo); font:600 12px/1 var(--mono)}
-@media (min-width:640px){ .estado{display:inline-flex} }
+.estado__mas{display:none}
+@media (min-width:640px){ .estado__mas{display:inline} }
 
 /* ───────── portada ───────── */
 .hero{position:relative; isolation:isolate; color:var(--blanco); background:var(--negro); overflow:hidden}
@@ -231,6 +232,8 @@ svg.i{width:20px; height:20px; flex:none}
 .cuentas .tot{font-weight:850; font-size:20px; padding-top:6px}
 .cuentas .tot span:last-child{font-family:var(--mono); font-weight:600}
 .aviso{margin:6px 0 0; font-size:13px; color:var(--gris); line-height:1.4}
+.aviso--cerrado{display:flex; gap:8px; align-items:flex-start; margin-top:10px; padding:10px 12px; border-radius:12px; background:#FFF4D1; color:var(--tinta); font-size:14px}
+.aviso--cerrado svg{width:18px; height:18px; flex:none; margin-top:1px}
 .vacio{padding:26px 6px; text-align:center; color:var(--gris)}
 .vacio strong{display:block; color:var(--tinta); font-size:17px; margin-bottom:4px}
 
@@ -352,7 +355,7 @@ dialog[open]{animation:sube .26s cubic-bezier(.2,.8,.2,1)}
 <header class="top">
   <div class="ancho top__in">
     <a class="top__logo" href="#inicio" aria-label="District Roll Sushi, inicio"><img src="img/logo.webp" alt="District Roll Sushi" width="1167" height="528"></a>
-    <span class="estado" id="estado" hidden><b aria-hidden="true"></b><span id="estadoTxt"></span></span>
+    <span class="estado" id="estado" hidden><b aria-hidden="true"></b><span id="estadoTxt"></span><span class="estado__mas" id="estadoMas"></span></span>
     <button class="btn btn--amarillo top__pedido" type="button" data-abrir-pedido id="topPedido"><svg class="i" aria-hidden="true"><use href="#i-bolsa"/></svg><span id="topTxt">Pedir</span><span class="cuenta" id="topCuenta" hidden>0</span></button>
   </div>
 </header>
@@ -361,7 +364,7 @@ dialog[open]{animation:sube .26s cubic-bezier(.2,.8,.2,1)}
   <div class="hero__foto"><img src="img/real-local.webp" alt="" width="900" height="1200" fetchpriority="high"></div>
   <div class="ancho hero__in">
     <span class="kicker"><svg class="i" aria-hidden="true" style="width:16px;height:16px"><use href="#i-pin"/></svg> Mayorazgo · Querétaro</span>
-    <h1>Sushi de barrio, <em>hecho al momento.</em></h1>
+    <h1>Sushi hecho <em>al momento.</em></h1>
     <p class="hero__lede">Rollos empanizados y fríos, gohan y yakimeshi. Arma tu pedido aquí, la promo del día se aplica sola, y lo mandas por WhatsApp.</p>
     <div class="hero__cta">
       <a class="btn btn--amarillo" href="#carta">Armar mi pedido <svg class="i" aria-hidden="true"><use href="#i-flecha"/></svg></a>
@@ -550,7 +553,8 @@ var CARTA = [
  ]}
 ];
 
-LOCAL.horas = LOCAL.horas || null;
+/* Horario que dio Carlos el 5 de noviembre: de 3:30 a 9:00 pm (los mismos todos los días mientras no digan otra cosa) */
+LOCAL.horas = LOCAL.horas || {0:["15:30","21:00"], 1:["15:30","21:00"], 2:["15:30","21:00"], 3:["15:30","21:00"], 4:["15:30","21:00"], 5:["15:30","21:00"], 6:["15:30","21:00"]};
 /* Cambios de un toque en la ficha (no cuestan: van como nota) */
 var RAPIDOS = ["Sin pepino", "Sin aguacate", "Sin picante", "Sin queso", "Salsas aparte"];
 /* Qué se sugiere en el pedido cuando todavía no lo trae */
@@ -575,12 +579,19 @@ var waLink = "https://wa.me/" + LOCAL.whatsapp;
 $("#heroMapa").href = LOCAL.mapa; $("#pieMapa").href = LOCAL.mapa; $("#pieWa").href = waLink;
 $("#pieLugar").textContent = LOCAL.lugar;
 function horaMin(h){ var p = h.split(":"); return Number(p[0]) * 60 + Number(p[1] || 0); }
+/* «15:30» → «3:30 pm», como se dice aquí */
+function hora12(h){ var p = h.split(":"), n = Number(p[0]); return ((n % 12) || 12) + ":" + (p[1] || "00") + (n < 12 ? " am" : " pm"); }
+var cerradoAhora = false, abreA = "";
 if(LOCAL.horas){
-  var hh = LOCAL.horas[hoyN], ahora = new Date(), m = ahora.getHours() * 60 + ahora.getMinutes();
+  var hh = LOCAL.horas[hoyN], ahora = new Date(), qh = /[?&]hora=(\d{1,2}):(\d{2})/.exec(location.search), m = qh ? Number(qh[1]) * 60 + Number(qh[2]) : ahora.getHours() * 60 + ahora.getMinutes();
   var abierto = !!hh && m >= horaMin(hh[0]) && m < horaMin(hh[1]);
   $("#estado").hidden = false; $("#estado").classList.toggle("abierto", abierto);
-  $("#estadoTxt").textContent = abierto ? "Abierto · cierra " + hh[1] : (hh && m < horaMin(hh[0]) ? "Abre hoy a las " + hh[0] : "Cerrado ahora");
-  $("#datosHoras").hidden = false; $("#datosHorasTxt").textContent = hh ? "Hoy de " + hh[0] + " a " + hh[1] : "Hoy cerrado";
+  $("#estadoTxt").textContent = abierto ? "Abierto" : "Cerrado";
+  $("#estadoMas").textContent = abierto ? " · cierra " + hora12(hh[1]) : (hh && m < horaMin(hh[0]) ? " · abre a las " + hora12(hh[0]) : "");
+  $("#datosHoras").hidden = false; $("#datosHorasTxt").textContent = hh ? "Hoy de " + hora12(hh[0]) + " a " + hora12(hh[1]) : "Hoy cerrado";
+  var dias = Object.keys(LOCAL.horas).length, uno = LOCAL.horas[1] || hh;
+  $("#pieHoras").hidden = false; $("#pieHoras").textContent = (dias === 7 ? "Todos los días" : "Horario") + " de " + hora12(uno[0]) + " a " + hora12(uno[1]) + ".";
+  cerradoAhora = !abierto; abreA = hh && m < horaMin(hh[0]) ? "hoy a las " + hora12(hh[0]) : "mañana a las " + hora12((LOCAL.horas[(hoyN + 1) % 7] || uno)[0]);
 }
 
 /* ───────── la carta ───────── */
@@ -755,6 +766,7 @@ function resumen(conBoton){
   cu.appendChild(el("div", {class:"tot"}, [el("span", {text:"Total"}), el("span", {class:"tabular", text:pesos(total())})]));
   caja.appendChild(cu);
   caja.appendChild(el("p", {class:"aviso", text:"Si es a domicilio, el envío te lo confirman por WhatsApp según tu zona."}));
+  if(cerradoAhora) caja.appendChild(el("p", {class:"aviso aviso--cerrado"}, [icono("i-reloj"), "Ahorita está cerrado. Tu pedido les llega y lo preparan al abrir, " + abreA + "."]));
   if(conBoton){ var b = el("button", {class:"btn btn--amarillo btn--ancho", type:"button", style:"margin-top:14px"}, [icono("i-wa"), "Terminar pedido"]);
     b.addEventListener("click", abrirPedido); caja.appendChild(b); }
   return caja;
