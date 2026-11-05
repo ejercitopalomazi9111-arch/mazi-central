@@ -68,6 +68,12 @@ const msg = decodeURIComponent(url.split('text=')[1] || '');
 console.log('----\n' + msg + '\n----');
 v('va al WhatsApp del local (461 344 1696)', url.startsWith('https://wa.me/524613441696'));
 v('el mensaje lleva el cambio, la promo y el total', msg.includes('2 × Philadelphia (Sin aguacate) — $278') && msg.includes('Promo: Martes 2×1 en empanizados (−$139)') && msg.includes('Total: $447') && msg.includes('Pago: Tarjeta') && msg.includes('Dirección: Av. Zaragoza 100'));
+v('dice para cuándo (lo antes posible, de fábrica)', msg.includes('Para: lo antes posible'));
+v('al mandar sale «¡Listo!» con la liga para volver a abrir WhatsApp', await pg.$eval('#hojaListo', d => d.open) && (await pg.getAttribute('#listoWa', 'href')) === url);
+await pg.evaluate(() => { window.__copiado = ''; Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: (t) => { window.__copiado = t; return Promise.resolve(); } } }); });
+await pg.click('#listoCopiar'); await pg.waitForTimeout(200);
+v('«Copiar mi pedido» copia el mismo mensaje', (await pg.evaluate(() => window.__copiado)) === msg);
+await pg.click('#hojaListo [data-cerrar]');
 await pg.reload({ waitUntil: 'networkidle' });
 v('el pedido sigue al recargar', (await totalFlota(pg)) === '$447');
 await pg.evaluate(() => document.querySelectorAll('img[loading=lazy]').forEach(i => i.loading = 'eager')); await pg.waitForTimeout(1000);
@@ -112,6 +118,43 @@ console.log('§5b · el horario (3:30 a 9:00 pm)');
   v('a las 2 pm dice «Cerrado» y el pedido avisa que lo preparan al abrir', (await p.textContent('#estadoTxt')) === 'Cerrado' && /lo preparan al abrir, hoy a las 3:30 pm/.test(await p.textContent('#hojaResumen')));
   await p.goto(BASE + '?dia=2&hora=22:00', { waitUntil: 'networkidle' }); await p.click('#flota'); await p.waitForTimeout(200);
   v('a las 10 pm dice que abren mañana', /mañana a las 3:30 pm/.test(await p.textContent('#hojaResumen')));
+  await p.close(); }
+
+console.log('§5c · para más tarde, la promo que se acaba y lo demás');
+{ const p = await pagina(2); await p.goto(BASE + '?dia=2&hora=18:00', { waitUntil: 'networkidle' });
+  await p.evaluate(() => { localStorage.clear(); window.__abiertas = []; window.open = (u) => { window.__abiertas.push(u); return null; }; });
+  v('el boleto dice cuánto le queda a la promo', (await p.textContent('#boletoReloj')) === 'Te quedan 3 h 0 min de promo hoy', await p.textContent('#boletoReloj'));
+  await mas(p, 'Texano'); await p.click('#flota'); await p.waitForTimeout(200);
+  await p.check('input[name=cuando][value="Más tarde"]', { force: true }); await p.waitForTimeout(100);
+  const ops = await p.$$eval('#fHora option', l => l.map(o => o.value));
+  v('«Para más tarde» ofrece horas cada 15 min, desde media hora después', !(await p.isHidden('#fHora')) && ops[0] === 'Hoy 6:30 pm' && ops[ops.length - 1] === 'Hoy 8:45 pm', ops.join(', '));
+  await p.selectOption('#fHora', 'Hoy 7:30 pm'); await p.fill('#fNombre', 'Ana'); await p.click('#enviar');
+  const m2 = decodeURIComponent((await p.evaluate(() => window.__abiertas[0] || '')).split('text=')[1] || '');
+  v('y la hora va en el mensaje', m2.includes('Para: Hoy 7:30 pm'), m2.split('\n').filter(x => /Para/.test(x)).join());
+  await p.click('#listoOtro'); await p.waitForTimeout(200);
+  v('«Empezar otro pedido» deja el pedido en cero', !(await p.$eval('#flota', f => f.classList.contains('ver'))) && (await p.textContent('#flotaCuenta')) === '0 platillos');
+  await p.goto(BASE + '?dia=2&hora=20:50', { waitUntil: 'networkidle' }); await mas(p, 'Texano'); await p.click('#flota'); await p.check('input[name=cuando][value="Más tarde"]', { force: true });
+  v('si ya no alcanza hoy, ofrece mañana', (await p.$eval('#fHora option', o => o.value)) === 'Mañana 3:30 pm');
+  const man = await p.evaluate(async () => { const l = document.querySelector('link[rel=manifest]'); const r = await fetch(l.href); const j = await r.json(); return j.name + ' · ' + j.icons.length; });
+  v('se puede instalar como app (manifest con sus íconos)', man === 'District Roll Sushi · 2', man);
+  v('hay botón para compartir la carta', await p.isVisible('#compartir'));
+  v('sin errores de consola', p.err.length === 0, p.err.join(' | '));
+  await p.close(); }
+
+console.log('§7 · la Esencial ($2,000)');
+{ const p = await br.newPage({ viewport: { width: 390, height: 844 } }); const err = []; p.on('pageerror', e => err.push(String(e))); p.on('console', m => { if (m.type() === 'error') err.push(m.text()); });
+  await p.goto(BASE + 'esencial/', { waitUntil: 'networkidle' });
+  await p.evaluate(() => { localStorage.clear(); window.__abiertas = []; window.open = (u) => { window.__abiertas.push(u); return null; }; });
+  v('carga sin salirse de lado', !(await p.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)));
+  v('no dice «sushi de barrio» y sí su horario', !/barrio/i.test(await p.textContent('h1')) && /3:30 a 9:00 pm/.test(await p.textContent('body')));
+  await p.evaluate(() => document.querySelectorAll('img[loading=lazy]').forEach(i => i.loading = 'eager')); await p.waitForTimeout(800);
+  v('todas sus fotos cargan', (await p.$$eval('img', l => l.filter(i => i.complete && i.naturalWidth === 0).length)) === 0);
+  v('ya no se ve deslavada al bajar (nada queda transparente)', await p.evaluate(() => { scrollTo(0, 3000); return [...document.querySelectorAll('.plato')].every(e => getComputedStyle(e).opacity === '1'); }));
+  await p.click('[aria-label="Agregar Philadelphia"]'); await p.click('#hplAgregar'); await p.waitForTimeout(300);
+  await p.click('#flota'); await p.waitForTimeout(300); await p.fill('#fNombre', 'Luis'); await p.click('#enviar');
+  const u = await p.evaluate(() => window.__abiertas[0] || '');
+  v('arma el pedido y lo manda a su WhatsApp', u.startsWith('https://wa.me/524613441696') && decodeURIComponent(u).includes('Philadelphia'));
+  v('ni un error de consola', err.length === 0, err.join(' | '));
   await p.close(); }
 
 console.log('§6 · otros tamaños');

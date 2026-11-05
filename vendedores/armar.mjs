@@ -34,7 +34,8 @@ const DEMOS = [
   ['Barbería A la medida · Obsidiana', '/barberias/obsidiana/', 'Desde $9,000'],
   ['Pizzería completa · Smiley’s', '/smileys/', 'Cliente real: la Completa'],
   ['Pizzería básica · Smiley’s', '/smileys/basica/', 'La Esencial'],
-  ['Menú digital con pedido por WhatsApp · District Roll', '/district-roll/', 'Restaurante'],
+  ['Restaurante Completa · District Roll', '/district-roll/', 'Desde $6,500: promo del día que se aplica sola, pedido para más tarde, se instala como app'],
+  ['Restaurante Esencial · District Roll', '/district-roll/esencial/', 'Desde $2,000: carta con pedido por WhatsApp'],
   ['Página de Grupo Mazi', '/web/', 'Quiénes somos y precios'],
 ];
 

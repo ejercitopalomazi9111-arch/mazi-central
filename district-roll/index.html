@@ -822,6 +822,7 @@ function cargar(){
   $$("input[name=entrega]").forEach(function(i){ i.checked = i.value === ped.entrega; });
   $$("input[name=pago]").forEach(function(i){ i.checked = i.value === ped.pago; });
   $("#fNombre").value = ped.nombre; $("#fDir").value = ped.dir; $("#fNota").value = ped.nota; $("#cDir").hidden = ped.entrega !== "A domicilio";
+  $$("input[name=cuando]").forEach(function(i){ i.checked = i.value === ped.cuando; }); llenarHoras(); $("#fHora").hidden = ped.cuando !== "Más tarde";
 }
 function abrirPedido(){ cargar(); pintar(); abrir($("#hojaPedido")); }
 $$("[data-abrir-pedido]").forEach(function(b){ b.addEventListener("click", function(){
@@ -830,6 +831,7 @@ $$("[data-abrir-pedido]").forEach(function(b){ b.addEventListener("click", funct
   abrirPedido(); }); });
 $("#hojaPedido").addEventListener("input", function(){
   ped.entrega = ($("input[name=entrega]:checked")||{}).value || "Paso por él"; ped.pago = ($("input[name=pago]:checked")||{}).value || "Efectivo";
+  ped.cuando = ($("input[name=cuando]:checked")||{}).value || "Lo antes posible"; ped.hora = $("#fHora").value || ""; $("#fHora").hidden = ped.cuando !== "Más tarde";
   ped.nombre = $("#fNombre").value; ped.dir = $("#fDir").value; ped.nota = $("#fNota").value; $("#cDir").hidden = ped.entrega !== "A domicilio";
   ["cNombre","cDir"].forEach(function(id){ if($("#" + id).hasAttribute("data-mal")) revisar($("#" + id)); });
   guardar();
@@ -875,6 +877,44 @@ $("#enviar").addEventListener("click", function(){
     ped.renglones = rs.map(function(r){ var p = porNombre[r.n]; return {clave:r.clave, n:r.n, d:r.d || "", p:p.p, cant:r.cant, cat:p.cat.id}; });
     guardar(); pintar(); $("#repetir").hidden = true; avisar("Listo: tu pedido de la otra vez"); });
 })();
+
+/* ───────── ¿para cuándo?, la promo que se acaba, el «¡listo!» y compartir ───────── */
+function minAhora(){ var q = /[?&]hora=(\d{1,2}):(\d{2})/.exec(location.search), d = new Date(); return q ? Number(q[1]) * 60 + Number(q[2]) : d.getHours() * 60 + d.getMinutes(); }
+function aHora(t){ var h = Math.floor(t / 60), mm = t % 60; return hora12(h + ":" + (mm < 10 ? "0" : "") + mm); }
+/* cada 15 min dentro del horario, desde media hora después de ahorita; si ya no hay hoy, los de mañana */
+function horarios(){
+  var out = [], hh = LOCAL.horas && LOCAL.horas[hoyN], ahora = minAhora(), t;
+  if(hh) for(t = Math.max(horaMin(hh[0]), Math.ceil((ahora + 30) / 15) * 15); t <= horaMin(hh[1]) - 15; t += 15) out.push("Hoy " + aHora(t));
+  if(!out.length){ var mn = LOCAL.horas && LOCAL.horas[(hoyN + 1) % 7]; if(mn) for(t = horaMin(mn[0]); t <= horaMin(mn[1]) - 15; t += 15) out.push("Mañana " + aHora(t)); }
+  return out;
+}
+function llenarHoras(){ var s = $("#fHora"), l = horarios(); s.textContent = "";
+  l.forEach(function(x){ s.appendChild(el("option", {value:x, text:x})); });
+  if(ped.hora && l.indexOf(ped.hora) >= 0) s.value = ped.hora; else ped.hora = l[0] || ""; }
+$("#fHora").addEventListener("change", function(){ ped.hora = this.value; guardar(); });
+
+/* la promo de hoy dice cuánto le queda (urgencia de verdad: se acaba cuando cierran) */
+function relojPromo(){
+  var r = $("#boletoReloj"), hh = LOCAL.horas && LOCAL.horas[hoyN];
+  if(!dHoy || !hh){ r.hidden = true; return; }
+  var ahora = minAhora(), ab = horaMin(hh[0]), ci = horaMin(hh[1]);
+  if(ahora < ab){ r.hidden = false; r.textContent = "Empieza hoy a las " + hora12(hh[0]); }
+  else if(ahora < ci){ var q = ci - ahora, h = Math.floor(q / 60), mi = q % 60; r.hidden = false; r.textContent = "Te quedan " + (h ? h + " h " : "") + mi + " min de promo hoy"; }
+  else r.hidden = true;
+}
+relojPromo(); setInterval(relojPromo, 30000);
+
+function copiar(t, aviso){
+  function aMano(){ var a = el("textarea", {style:"position:fixed;top:0;left:0;opacity:0"}); a.value = t; document.body.appendChild(a); a.select(); try{ document.execCommand("copy"); }catch(e){} a.remove(); avisar(aviso); }
+  if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(function(){ avisar(aviso); }, aMano); else aMano();
+}
+$("#listoCopiar").addEventListener("click", function(){ copiar(mensaje(), "Copiado: pégalo en WhatsApp al 461 344 1696"); });
+$("#listoOtro").addEventListener("click", function(){ ped.renglones = []; guardar(); pintar(); $("#hojaListo").close(); window.scrollTo({top: $("#carta").offsetTop - 60, behavior: quieto ? "auto" : "smooth"}); });
+$("#compartir").addEventListener("click", function(){
+  var u = location.href.split("#")[0].split("?")[0];
+  if(navigator.share) navigator.share({title:"District Roll Sushi", text:"La carta y las promos de District Roll", url:u}).catch(function(){});
+  else copiar(u, "Liga copiada: pásala por WhatsApp");
+});
 
 /* QR de esta misma página (su librería carga después, sin estorbar la primera pintada) */
 window.__qr = function(){ try{ var liga = location.href.split("#")[0].split("?")[0];
