@@ -19,7 +19,7 @@
   #fuga{ position:absolute; inset:0; z-index:4; pointer-events:none; mix-blend-mode:screen }
   #barrido{ position:absolute; z-index:7; left:-40%; top:-20%; width:180%; height:140%; background:linear-gradient(90deg, #7E1735, #AC27FF 55%, #170A26); transform:translateX(-120%) skewX(-18deg); pointer-events:none }
   .t{ position:absolute; left:70px; right:120px; font:700 158px/.88 var(--t); letter-spacing:-.045em; text-transform:uppercase }
-  .t span{ display:block; overflow:hidden; padding-bottom:.04em } .t span i{ display:block; font-style:normal; will-change:transform } .t .v{ color:#B44BFF } .t .h{ color:transparent; -webkit-text-stroke:3px #F4EEF2 }
+  .t span{ display:block; overflow:hidden; padding:.16em 0 .04em; margin-top:-.16em } .t span i{ display:block; font-style:normal; will-change:transform } .t .v{ color:#B44BFF } .t .h{ color:transparent; -webkit-text-stroke:3px #F4EEF2 }
   .ojo{ position:absolute; left:80px; font:700 26px/1 var(--t); letter-spacing:.24em; text-transform:uppercase; color:#C77DFF }
   /* el chat que no para */
   #chat{ position:absolute; left:60px; right:110px; top:500px; height:960px; display:flex; flex-direction:column; justify-content:flex-end; gap:18px }
@@ -196,7 +196,7 @@ const pintarTodo = async (t) => {
     await tomas[key].en(Math.max(0, (t - a + .3) * 1.05)); }
   /* al cierre, las cuatro detrás del logo */
   if(en('cierre')){ const a = E.cierre[0], u = sale(tramo(t, a, a + .9)), fuera = entra(tramo(t, a + 1.6, a + 2.3));
-    ['sencilla', 'navaja', 'casa', 'obsidiana'].forEach((key, i) => { if(fuera >= 1) return; pon(tel[key], { x: [-1.2, -.4, .4, 1.2][i], y: mezcla(-3, -.6, u), z: [0, .4, .4, 0][i], ry: [.45, .15, -.15, -.45][i], s: .62 * (1 - fuera) });
+    ['sencilla', 'navaja', 'casa', 'obsidiana'].forEach((key, i) => { if(fuera >= 1) return; pon(tel[key], { x: [-1.55, -.52, .52, 1.55][i], y: mezcla(-3, -.5, u), z: [0, .5, .5, 0][i], ry: [.45, .15, -.15, -.45][i], s: .84 * (1 - fuera) });
       tomas[key].en(2 + t - a); }); }
   E3.cam.position.set(Math.sin(t * .4) * .12, Math.sin(t * .3) * .06, 9); E3.cam.lookAt(0, -.2, 0); E3.pintar();
   c2.clearRect(0, 0, W, H);
