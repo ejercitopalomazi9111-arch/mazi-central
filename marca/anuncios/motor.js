@@ -117,8 +117,8 @@ const TOMAS = {
   'arco-pc': ['../../video/rec/arco-pc/', 527], 'arco-tel': ['../../video/rec/arco-tel/', 327],
   'fadori-tel': ['../../../fadori-campana/salida/rec/app/', 2313],
   'barb-sencilla': ['../../video/rec/barb-sencilla/', 469], 'barb-navaja': ['../../video/rec/barb-navaja/', 447],
-  'barb-casa': ['../../video/rec/barb-casa/', 477], 'barb-obsidiana': ['../../video/rec/barb-obsidiana/', 663],
-  'barb-obs-tienda': ['../../video/rec/barb-obs-tienda/', 818], 'barb-obs-reserva': ['../../video/rec/barb-obs-reserva/', 966],
+  'barb-casa': ['../../video/rec/barb-casa/', 477], 'barb-obsidiana': ['../../video/rec/barb-obsidiana/', 699],
+  'barb-obs-tienda': ['../../video/rec/barb-obs-tienda/', 841], 'barb-obs-reserva': ['../../video/rec/barb-obs-reserva/', 990],
 };
 export class Toma {
   constructor(nombre, { desde = 0, vel = 1 } = {}){
