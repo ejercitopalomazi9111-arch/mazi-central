@@ -29,7 +29,7 @@ export function mapa(el, { nombre, direccion, q = direccion, oscuro = false, not
     ${notas.length ? `<ul class="mp-notas">${notas.map(([i, t]) => `<li>${ico(i, 18)}<span>${t}</span></li>`).join('')}</ul>` : ''}`;
 }
 export const CSS_MAPA = `
-.mp-mapa{ position:relative; aspect-ratio:4/3; border-radius:var(--mp-radio, 18px); overflow:hidden; background:#0002; border:1px solid var(--mp-linea, #0000001a) }
+.mp-mapa{ position:relative; aspect-ratio:4/3; border-radius:var(--mp-radio, 18px); overflow:hidden; background:linear-gradient(90deg, #8881 1px, transparent 1px) 0 0/34px 34px, linear-gradient(#8881 1px, transparent 1px) 0 0/34px 34px, linear-gradient(32deg, transparent 47%, #8883 47% 53%, transparent 53%), #8881; border:1px solid var(--mp-linea, #0000001a) }
 @media (min-width:900px){ .mp-mapa{ aspect-ratio:16/10 } }
 .mp-mapa iframe{ position:absolute; inset:0; width:100%; height:100%; border:0 }
 .mp-oscuro iframe{ filter:invert(.92) hue-rotate(180deg) saturate(.6) brightness(.9) contrast(.95) }
