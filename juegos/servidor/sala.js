@@ -49,6 +49,11 @@ export class Sala {
          sabría por qué su mazo cambió a media sesión. */
       this.mazos    = await ctx.storage.get('mazos')    || { a:null, b:null };
       this.tocada   = await ctx.storage.get('tocada')   || Date.now();
+      /* Puercos 2 juega con 80 de vida (Carlos, 5 nov); la v1 no manda `pv`
+         y sigue con los 200 del reglamento. Y el apodo y avatar de cada
+         asiento, para que el otro sepa contra quién juega. */
+      this.pvMesa   = await ctx.storage.get('pvMesa')   || null;
+      this.quien    = await ctx.storage.get('quien')    || { a:null, b:null };
     });
   }
 
@@ -56,7 +61,7 @@ export class Sala {
     this.tocada = Date.now();
     await this.ctx.storage.put({ J:this.J, secretos:this.secretos,
                                  pendiente:this.pendiente, mazos:this.mazos,
-                                 tocada:this.tocada });
+                                 tocada:this.tocada, pvMesa:this.pvMesa, quien:this.quien });
   }
 
   async fetch(pedido){
@@ -67,7 +72,7 @@ export class Sala {
        alguien nuevo a una partida de hace tres semanas. */
     if(this.J && Date.now() - this.tocada > OLVIDO){
       this.J = null; this.secretos = { a:null, b:null }; this.pendiente = { a:null, b:null };
-      this.mazos = { a:null, b:null };
+      this.mazos = { a:null, b:null }; this.pvMesa = null; this.quien = { a:null, b:null };
     }
 
     if(pedido.headers.get('Upgrade') !== 'websocket'){
@@ -80,7 +85,8 @@ export class Sala {
     const [cliente, servidor] = Object.values(par);
     servidor.accept();
     this.enchufar(servidor, url.searchParams.get('secreto'),
-                  this.leerMazo(url.searchParams.get('mazo')));
+                  this.leerMazo(url.searchParams.get('mazo')),
+                  { pv: url.searchParams.get('pv'), nombre: url.searchParams.get('nombre'), avatar: url.searchParams.get('avatar') });
     return new Response(null, { status:101, webSocket:cliente });
   }
 
@@ -89,7 +95,7 @@ export class Sala {
     return ['a','b'].filter(x => !ocupados.has(x)).length;
   }
 
-  enchufar(ws, secretoDado, mazoDado){
+  enchufar(ws, secretoDado, mazoDado, extra = {}){
     /* Sentar a alguien. Primero se le devuelve SU asiento si trae el secreto
        de una sesión anterior: en un teléfono, salir de la app y volver es lo
        más normal del mundo, y perder el asiento por eso sería perder la
@@ -121,6 +127,13 @@ export class Sala {
        juego empezado es, literalmente, hacer trampa. Al reconectarse, el que
        vuelve se encuentra el mazo con el que empezó. */
     if(!this.J && mazoDado) this.mazos[asiento] = mazoDado;
+    /* la vida la fija el primero que la pide, antes de repartir (40 a 200) */
+    const pv = parseInt(extra.pv, 10);
+    if(!this.J && !this.pvMesa && pv >= 40 && pv <= 200) this.pvMesa = pv;
+    /* el apodo: corto y sin nada que pinte algo raro en la pantalla del otro */
+    const nombre = String(extra.nombre || '').replace(/[^\p{L}\p{N} _-]/gu, '').trim().slice(0, 16);
+    const avatar = /^av-[a-z]{2,12}$/.test(extra.avatar || '') ? extra.avatar : null;
+    if(nombre || avatar) this.quien[asiento] = { nombre: nombre || null, avatar };
     ws.send(JSON.stringify({ tipo:'sentado', asiento, secreto:this.secretos[asiento] }));
 
     ws.addEventListener('message', (ev) => this.oir(ws, ev).catch(err => {
@@ -139,12 +152,14 @@ export class Sala {
     if(sentados.size === 2 && !this.J){
       /* La semilla la pone el servidor. Si la pusiera un teléfono, ese
          teléfono sabría el mazo entero antes de empezar. */
-      this.J = MOTOR.repartir((crypto.getRandomValues(new Uint32Array(1))[0]) >>> 0,
-                              this.mazos);
+      this.J = this.conVida(MOTOR.repartir((crypto.getRandomValues(new Uint32Array(1))[0]) >>> 0,
+                              this.mazos));
       this.pendiente = { a:null, b:null };
       this.guardar();
     }
   }
+
+  conVida(J){ if(this.pvMesa){ J.a.pv = J.b.pv = this.pvMesa; } return J; }
 
   /* ── EL MAZO QUE DECLARA UN TELÉFONO ─────────────────────────────────────
      ⚠ VIENE EN EL LINK Y NO EN UN MENSAJE, Y ÉSA ES LA PARTE QUE IMPORTA.
@@ -188,7 +203,9 @@ export class Sala {
      Del rival van los PV y CUÁNTAS cartas trae. Sus cartas NO. */
   vista(asiento){
     const sentados = new Set([...this.vivos.values()]);
-    const base = { asiento, esperando: sentados.size < 2, listo: !!this.J,
+    const otroQ = this.quien[asiento === 'a' ? 'b' : 'a'] || {};
+    const base = { asiento, esperando: sentados.size < 2, listo: !!this.J, pvMesa: this.pvMesa || MOTOR.PV_INICIAL,
+                   rivalNombre: otroQ.nombre || null, rivalAvatar: otroQ.avatar || null,
                    yaJugue: !!this.pendiente[asiento],
                    rivalYaJugo: !!this.pendiente[asiento === 'a' ? 'b' : 'a'] };
     if(!this.J) return base;
@@ -236,8 +253,8 @@ export class Sala {
     if(m.tipo === 'otra'){
       /* Revancha. Sólo se vale cuando la partida ya acabó. */
       if(this.J && this.J.acabo){
-        this.J = MOTOR.repartir((crypto.getRandomValues(new Uint32Array(1))[0]) >>> 0,
-                                this.mazos);
+        this.J = this.conVida(MOTOR.repartir((crypto.getRandomValues(new Uint32Array(1))[0]) >>> 0,
+                                this.mazos));
         this.pendiente = { a:null, b:null };
         await this.guardar(); this.avisarATodos();
       }

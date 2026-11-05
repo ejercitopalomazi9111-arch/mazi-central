@@ -65,6 +65,11 @@ export class Cuentas {
       monedas INTEGER DEFAULT 0, cartas INTEGER DEFAULT 0,
       malos INTEGER DEFAULT 0, esperaHasta INTEGER DEFAULT 0, creada INTEGER, tocada INTEGER)`);
     this.sql.exec('CREATE INDEX IF NOT EXISTS por_token ON cuentas(token)');
+    /* AMIGOS (Carlos, 5 nov: «sistema de amigos para poder retarlos más fácil»).
+       Una fila por pareja, ordenada (a < b), con quién la pidió. Un reto es un
+       código de sala que uno le manda a otro; vive 10 minutos. */
+    this.sql.exec(`CREATE TABLE IF NOT EXISTS amigos(a TEXT, b TEXT, pidio TEXT, aceptada INTEGER DEFAULT 0, t INTEGER, PRIMARY KEY(a, b))`);
+    this.sql.exec(`CREATE TABLE IF NOT EXISTS retos(de TEXT, para TEXT, codigo TEXT, t INTEGER, PRIMARY KEY(de, para))`);
   }
   uno(q, ...a){ const r = [...this.sql.exec(q, ...a)]; return r[0] || null; }
 
@@ -116,6 +121,65 @@ export class Cuentas {
         const token = azar(24);
         this.sql.exec('UPDATE cuentas SET token = ?, malos = 0, esperaHasta = 0, tocada = ? WHERE clave = ?', token, ahora, clave);
         return Response.json({ token, apodo: c.apodo, rev: c.rev, datos: c.datos ? JSON.parse(c.datos) : null });
+      }
+
+      /* ── amigos y retos: todo con tu sesión ── */
+      if(ruta.startsWith('amigos') || ruta.startsWith('reto')){
+        const yo = typeof d.token === 'string' && d.token.length === 48 && this.uno('SELECT clave, apodo FROM cuentas WHERE token = ?', d.token);
+        if(!yo) return mal('Tu sesión ya no sirve. Vuelve a entrar.', 401);
+        const ahora = Date.now();
+        this.sql.exec('UPDATE cuentas SET tocada = ? WHERE clave = ?', ahora, yo.clave);   /* «en línea» = te vimos hace poco */
+        const par = (x, y) => x < y ? [x, y] : [y, x];
+        const otra = (apodo) => { const k = normal(apodo); return k && this.uno('SELECT clave, apodo FROM cuentas WHERE clave = ?', k); };
+        if(ruta === 'amigos'){
+          this.sql.exec('DELETE FROM retos WHERE t < ?', ahora - 10 * 60 * 1000);
+          const filas = [...this.sql.exec('SELECT * FROM amigos WHERE a = ? OR b = ?', yo.clave, yo.clave)];
+          const apodoDe = (k) => this.uno('SELECT apodo, tocada, victorias FROM cuentas WHERE clave = ?', k);
+          const amigos = [], piden = [], mandadas = [];
+          for(const f of filas){
+            const ella = f.a === yo.clave ? f.b : f.a, c = apodoDe(ella); if(!c) continue;
+            if(f.aceptada) amigos.push({ apodo: c.apodo, enLinea: ahora - c.tocada < 2 * 60 * 1000, victorias: c.victorias });
+            else if(f.pidio === yo.clave) mandadas.push(c.apodo); else piden.push(c.apodo);
+          }
+          const retos = [...this.sql.exec('SELECT de, codigo, t FROM retos WHERE para = ?', yo.clave)].map(r => ({ de: apodoDe(r.de)?.apodo, codigo: r.codigo, t: r.t })).filter(r => r.de);
+          amigos.sort((x, y) => (y.enLinea - x.enLinea) || x.apodo.localeCompare(y.apodo));
+          return Response.json({ amigos, piden, mandadas, retos });
+        }
+        const ella = otra(d.apodo);
+        if(!ella) return mal('No hay nadie con ese apodo.', 404);
+        if(ella.clave === yo.clave) return mal('Ése eres tú.');
+        const [a, b] = par(yo.clave, ella.clave), fila = this.uno('SELECT * FROM amigos WHERE a = ? AND b = ?', a, b);
+        if(ruta === 'amigos/pedir'){
+          if(fila && fila.aceptada) return Response.json({ bien: true, ya: true });
+          /* si la otra persona ya te lo había pedido, pedirlo de vuelta es aceptar */
+          if(fila && fila.pidio === ella.clave){ this.sql.exec('UPDATE amigos SET aceptada = 1 WHERE a = ? AND b = ?', a, b); return Response.json({ bien: true, aceptada: true }); }
+          const cuantas = this.uno('SELECT COUNT(*) AS n FROM amigos WHERE (a = ? OR b = ?)', yo.clave, yo.clave).n;
+          if(cuantas >= 100) return mal('Ya tienes 100 amigos y solicitudes.');
+          this.sql.exec('INSERT OR IGNORE INTO amigos(a, b, pidio, aceptada, t) VALUES(?,?,?,0,?)', a, b, yo.clave, ahora);
+          return Response.json({ bien: true });
+        }
+        if(ruta === 'amigos/aceptar'){
+          if(!fila || fila.pidio === yo.clave) return mal('No hay solicitud de esa persona.');
+          this.sql.exec('UPDATE amigos SET aceptada = 1 WHERE a = ? AND b = ?', a, b);
+          return Response.json({ bien: true });
+        }
+        if(ruta === 'amigos/quitar'){
+          this.sql.exec('DELETE FROM amigos WHERE a = ? AND b = ?', a, b);
+          this.sql.exec('DELETE FROM retos WHERE (de = ? AND para = ?) OR (de = ? AND para = ?)', yo.clave, ella.clave, ella.clave, yo.clave);
+          return Response.json({ bien: true });
+        }
+        if(ruta === 'reto'){
+          /* sólo se reta a un amigo: así nadie le manda retos a un desconocido */
+          if(!fila || !fila.aceptada) return mal('Sólo puedes retar a tus amigos.');
+          if(!/^[A-Z]{4}$/.test(String(d.codigo || ''))) return mal('Ese código de sala no sirve.');
+          this.sql.exec('INSERT OR REPLACE INTO retos(de, para, codigo, t) VALUES(?,?,?,?)', yo.clave, ella.clave, d.codigo, ahora);
+          return Response.json({ bien: true });
+        }
+        if(ruta === 'reto/borrar'){
+          this.sql.exec('DELETE FROM retos WHERE (de = ? AND para = ?) OR (de = ? AND para = ?)', ella.clave, yo.clave, yo.clave, ella.clave);
+          return Response.json({ bien: true });
+        }
+        return mal('No existe esa ruta.', 404);
       }
 
       if(ruta === 'cuenta/guardar'){
