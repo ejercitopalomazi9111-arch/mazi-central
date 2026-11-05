@@ -31,7 +31,7 @@ const DEMOS = [
   ['Barbería Esencial · Don Chuy', '/barberias/sencilla/', 'Desde $2,000'],
   ['Barbería Completa urbana · Navaja Norte', '/barberias/navaja/', 'Desde $6,500'],
   ['Barbería Completa clásica · Casa Brava', '/barberias/casa-brava/', 'Desde $6,500'],
-  ['Barbería A la medida · Obsidiana', '/barberias/obsidiana/', 'Desde $9,000'],
+  ['Barbería A la medida · Obsidian', '/barberias/obsidian/', 'Desde $9,000'],
   ['Pizzería completa · Smiley’s', '/smileys/', 'Cliente real: la Completa'],
   ['Pizzería básica · Smiley’s', '/smileys/basica/', 'La Esencial'],
   ['Restaurante Completa · District Roll', '/district-roll/', 'Desde $6,500: promo del día que se aplica sola, pedido para más tarde, se instala como app'],

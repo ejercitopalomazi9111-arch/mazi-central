@@ -13,7 +13,8 @@ export function revelar(sel = '[data-rev]'){
   els.forEach(e => io.observe(e));
   /* red de seguridad: lo que ya pasó arriba (un salto con el índice, un ancla) se enciende igual */
   const barrer = () => els.forEach(e => { if(!e.classList.contains('ya') && e.getBoundingClientRect().top < innerHeight) ya(e); });
-  addEventListener('scroll', barrer, { passive: true }); setTimeout(barrer, 2500);
+  /* y por si el teléfono va ocupado y el observador se tarda: una barrida cada segundo los primeros 20 s */
+  addEventListener('scroll', barrer, { passive: true }); setTimeout(barrer, 2500); let n = 0; const iv = setInterval(() => { barrer(); if(++n > 20) clearInterval(iv); }, 1000);
   return { observar: (e) => io.observe(e) };
 }
 
