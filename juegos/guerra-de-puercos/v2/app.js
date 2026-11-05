@@ -9,6 +9,7 @@ import { C, cargar, guardar, escuchar, cosmetico, COSMETICOS, CLASES_COSMETICO, 
 import { CAT, cargarCatalogo, SOBRES, EN_TIENDA, comprar, regalarArranque, tengoPuercos, totalPuercos, TOPE_SOPORTE } from './tienda.js';
 import { caraSobre, caraCosmetico } from './caras.js';
 import { abrirSobre } from './sobre.js';
+import { jugarPartida } from './mesa.js';
 import { SON, alternar, estaApagado } from './sonido.js';
 import { aviso, pista, cumplida } from './avisos.js';
 
@@ -86,7 +87,7 @@ function ir(p){
   for(const m of $$('.pantalla')) m.classList.toggle('activa', m.dataset.p === p);
   for(const b of $$('#dock button')) b.classList.toggle('activo', b.dataset.ir === p);
   corral.visible = p === 'inicio';
-  const abriendo = p === 'abrir';
+  const abriendo = p === 'abrir' || p === 'mesa';
   $('.barra').style.visibility = $('#dock').style.visibility = abriendo ? 'hidden' : '';
   if(p === 'tienda') pintarTienda();
   if(p === 'sobres') pintarMisSobres();
@@ -96,8 +97,14 @@ function ir(p){
 $('#dock').addEventListener('click', (e) => { const b = e.target.closest('[data-ir]'); if(b) ir(b.dataset.ir); });
 $('#avisoSobres').addEventListener('click', () => abrir(C.sobres[0]));
 
-/* JUGAR: la mesa nueva va en la siguiente entrega; mientras, la de siempre. */
-function irAJugar(){ location.href = '../'; }
+/* JUGAR: la mesa nueva, contra la máquina. */
+function irAJugar(){
+  ir('mesa');
+  jugarPartida({ capa: $('#ui'), alTerminar: (salida) => {
+    if(salida === 'otra') return irAJugar();
+    ir(salida === 'tienda' ? 'tienda' : 'inicio');
+  } });
+}
 $('#bJugar').addEventListener('click', irAJugar);
 
 /* ── LA TIENDA ───────────────────────────────────────────────────────────── */

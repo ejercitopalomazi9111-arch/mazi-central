@@ -59,7 +59,7 @@ export function arrancar(canvas){
   sol.shadow.mapSize.set(1024, 1024); const sc = sol.shadow.camera; sc.left = sc.bottom = -8; sc.right = sc.top = 8; sc.near = 1; sc.far = 40;
   sol.shadow.bias = -.0008; s.add(sol, sol.target);
   s.add(new THREE.HemisphereLight('#FFE6F0', '#2A1020', .9));
-  Object.assign(E, { r, s, cam, sol, canvas, ancho: 1, alto: 1, reloj: new THREE.Clock() });
+  Object.assign(E, { r, s, cam, sol, canvas, ancho: 1, alto: 1 });
   const medir = () => {
     const w = canvas.clientWidth || innerWidth, h = canvas.clientHeight || innerHeight;
     if(w === E.ancho && h === E.alto) return;
@@ -68,8 +68,11 @@ export function arrancar(canvas){
     for(const f of alMedir) f();
   };
   new ResizeObserver(medir).observe(canvas); medir();
+  /* el paso entre cuadros se mide a mano: THREE.Clock ya viene marcado como
+     obsoleto en esta versión de three.js */
+  let antes = performance.now();
   r.setAnimationLoop(() => {
-    const ahora = performance.now(), dt = Math.min(.05, E.reloj.getDelta());
+    const ahora = performance.now(), dt = Math.min(.05, (ahora - antes) / 1000); antes = ahora;
     for(const t of [...tareas]) t.paso(ahora);
     for(const f of [...siempre]) f(dt, ahora / 1000);
     r.render(s, cam);

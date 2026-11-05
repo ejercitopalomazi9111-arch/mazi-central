@@ -118,7 +118,7 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
   ponerMonton();
   for(const it of items) it.c.visible = false;     /* hasta que se abra el sobre */
 
-  const quitarAcomodo = alCambiarTamano(() => { acomodar(); ponerSobre(); if(estado !== 'cerrado' && estado !== 'abierto') ponerMonton(); acomodarMesa(); });
+  const quitarAcomodo = alCambiarTamano(() => { acomodar(); if(L.final) L.mx1 = L.v.ancho / 2 - .18; ponerSobre(); if(estado !== 'cerrado' && estado !== 'abierto') ponerMonton(); acomodarMesa(); });
   limpieza.push(quitarAcomodo);
 
   /* El sobre flota y brilla mientras espera. */
@@ -253,7 +253,9 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
   function lugarEnMesa(g, k, total){
     const filas = grupos.length, ancho = Math.max(.6, L.mx1 - L.mx0);
     const maxEnFila = Math.max(...grupos.map(x => items.filter(it => it.g.k === x.k).length));
-    const espacioFila = Math.min(L.vertical ? 1.7 : 2.1, (L.my0 - (-L.v.alto / 2 + .35)) / filas);
+    /* al final la mesa usa todo el ancho y deja abajo el lugar del resumen */
+    const piso = -L.v.alto / 2 + (L.final ? (L.vertical ? 2.55 : 2.1) : .35);
+    const espacioFila = Math.min(L.vertical ? 1.7 : 2.1, (L.my0 - piso) / filas);
     const sAlto = (espacioFila - .48) / CARTA_H, sAncho = ancho / (1 + (maxEnFila - 1) * .55);
     const s = Math.max(.22, Math.min(L.vertical ? .62 : 1.05, sAlto, sAncho));
     const fila = grupos.indexOf(g);
@@ -261,10 +263,13 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
     const x = L.mx0 + CARTA_W * s / 2 + k * CARTA_W * s * .55;
     return { pos: new THREE.Vector3(x, y, .05 + k * .02), s, yRot: L.my0 - .08 - fila * espacioFila };
   }
-  function acomodarMesa(){
+  function acomodarMesa(anim = false){
     for(const g of grupos){
       const lista = enMesa[g.k];
-      lista.forEach((it, k) => { const l = lugarEnMesa(g, k, lista.length); it.c.position.copy(l.pos); it.c.scale.setScalar(l.s); });
+      lista.forEach((it, k) => { const l = lugarEnMesa(g, k, lista.length);
+        if(!anim){ it.c.position.copy(l.pos); it.c.scale.setScalar(l.s); return; }
+        const p0 = it.c.position.clone(), s0 = it.c.scale.x;
+        animar({ dur: .55, retraso: k * .05, cada: (u) => { it.c.position.lerpVectors(p0, l.pos, u); it.c.scale.setScalar(mezcla(s0, l.s, u)); } }); });
       const l = lugarEnMesa(g, 0, 1), p = aPantalla(new THREE.Vector3(L.mx0, l.yRot, 0));
       g.nodo.style.left = p.x + 'px'; g.nodo.style.top = p.y + 'px';
       g.nodo.style.maxWidth = Math.max(90, aPantalla(new THREE.Vector3(L.mx1, 0, 0)).x - p.x) + 'px';
@@ -348,6 +353,8 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
   }
   $('[data-saltar]').hidden = true;
   capaToque.style.pointerEvents = 'none';
+  /* Lo que te tocó se abre a todo el ancho, para verlo de un vistazo. */
+  L.final = true; L.mx1 = L.v.ancho / 2 - .18; acomodarMesa(true);
 
   /* ═══ EL RESUMEN ═══ */
   const nuevas = items.filter(it => it.r.nueva).length;

@@ -176,3 +176,33 @@ h2.seccion{ font-size:34px; color:var(--hueso); text-shadow:0 3px 0 var(--tinta)
 @keyframes arrastra{ 0%{ transform:none; opacity:0 } 15%{ opacity:1 } 85%{ opacity:1 } 100%{ transform:translate(var(--hacia-x, 0), var(--hacia-y, -160px)); opacity:0 } }
 
 @media (prefers-reduced-motion:reduce){ *{ animation-duration:.01s !important; transition-duration:.01s !important } }
+
+/* ── LA MESA ── */
+.mesa{ position:fixed; inset:0; z-index:5 }
+.mesa__toque{ position:absolute; inset:0; touch-action:none }
+.hud{ position:absolute; display:flex; align-items:center; gap:8px; padding:4px 12px 4px 4px; border-radius:999px; background:rgba(18,10,16,.82); border:3px solid var(--tinta); box-shadow:0 4px 0 rgba(0,0,0,.4); pointer-events:none; min-width:170px }
+.hud img{ width:46px; height:46px; border-radius:50%; background:var(--rosa-claro); border:2px solid var(--tinta) }
+.hud__txt{ flex:1; display:grid; gap:3px }
+.hud b{ font-size:15px; line-height:1 }
+.hud .pv{ position:relative; height:20px; border-radius:10px; background:#3A2230; overflow:hidden; border:2px solid var(--tinta); min-width:110px }
+.hud .pv i{ position:absolute; inset:0 auto 0 0; background:linear-gradient(180deg, #5EE09A, #2E9E62); transition:width .6s cubic-bezier(.2,.9,.3,1) }
+.hud .pv span{ position:relative; display:block; text-align:center; font-size:14px; line-height:16px; text-shadow:0 1px 0 var(--tinta) }
+.hud--suyo{ left:10px; top:calc(10px + var(--arriba)) }
+.hud--suyo .pv i{ background:linear-gradient(180deg, #FF8AB4, #C42463) }
+.hud--mio{ left:10px; bottom:calc(10px + var(--abajo)) }
+.hud.pegado{ animation:pegado .5s ease }
+@keyframes pegado{ 15%{ transform:translateX(-8px) scale(1.06); filter:brightness(1.6) } 35%{ transform:translateX(7px) } 55%{ transform:translateX(-4px) } }
+.hud .dano{ position:absolute; right:-10px; top:-18px; font-family:var(--titulo); font-size:34px; color:#FF5A6A; text-shadow:0 3px 0 var(--tinta); animation:dano 1.3s ease forwards; font-weight:400 }
+@keyframes dano{ from{ transform:translateY(10px) scale(.6); opacity:0 } 20%{ transform:none; opacity:1 } to{ transform:translateY(-30px); opacity:0 } }
+.fusiones{ display:flex; gap:3px; margin-left:4px } .fusiones i{ width:12px; height:12px; border-radius:3px; transform:rotate(45deg); border:2px solid #E8B923 } .fusiones i.si{ background:#E8B923 }
+.ronda{ position:absolute; left:50%; top:calc(14px + var(--arriba)); transform:translateX(-50%); padding:4px 14px; border-radius:999px; background:rgba(18,10,16,.82); border:2px solid var(--rosa); font-size:15px; pointer-events:none; margin-left:60px }
+.mesa__salir{ position:absolute; right:10px; top:calc(10px + var(--arriba)); width:44px; height:44px; border-radius:50%; border:3px solid var(--tinta); background:rgba(18,10,16,.82); display:grid; place-items:center }
+.mesa__salir img{ width:22px; height:22px }
+.cuenta{ position:absolute; transform:translate(-50%, 2px); font-size:14px; padding:1px 8px; border-radius:10px; background:rgba(18,10,16,.85); border:2px solid var(--tinta); pointer-events:none }
+.formula{ position:absolute; left:50%; bottom:calc(214px + var(--abajo)); transform:translateX(-50%); max-width:calc(100vw - 24px); padding:5px 14px; border-radius:999px; background:rgba(18,10,16,.88); border:2px solid #E8B923; text-align:center; font-size:15px; line-height:1.2; pointer-events:none; display:flex; flex-wrap:wrap; justify-content:center; align-items:baseline; column-gap:6px; white-space:nowrap }
+.formula em{ font-style:normal; font-family:var(--titulo); font-size:24px; color:#FFE14A }
+.formula span{ flex-basis:100%; font-size:12px; opacity:.8; white-space:normal }
+.formula[hidden], .mesa [hidden]{ display:none !important }
+/* cuántas de soporte te quedan, arriba de su montoncito */
+.cuenta--esp{ transform:translate(-50%, -110%); font-size:15px; background:var(--rosa, #FF6BA6); color:#1B0E16; font-weight:700 }
+.cuenta--esp.on{ background:#FFE14A }
