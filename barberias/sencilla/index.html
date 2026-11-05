@@ -6,17 +6,20 @@
 <title>Barbería Don Chuy · Querétaro</title>
 <meta name="description" content="Cortes clásicos y de moda, barba y afeitado en Querétaro. Reserva tu hora en un minuto.">
 <meta name="theme-color" content="#14213D">
+<link rel="preload" href="../fuentes/archivo-400-900-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%2314213D%22/%3E%3Crect x=%2226%22 y=%228%22 width=%2212%22 height=%2248%22 rx=%226%22 fill=%22%23fff%22/%3E%3Cpath d=%22M26 18l12-8v10l-12 8zM26 38l12-8v10l-12 8z%22 fill=%22%23C8102E%22/%3E%3C/svg%3E">
 <style>
+  @font-face{ font-family:"Archivo"; src:url(../fuentes/archivo-400-900-normal.woff2) format("woff2"); font-weight:400 900; font-display:swap }
   :root{ --tinta:#14213D; --rojo:#C8102E; --papel:#FFFFFF; --gris:#5B6475; --linea:#E3E6EC; --suave:#F4F6F9; --r:12px }
   *{ box-sizing:border-box } html{ scroll-behavior:smooth; -webkit-text-size-adjust:100% }
-  body{ margin:0; font:16px/1.5 "Avenir Next", "Segoe UI", system-ui, sans-serif; color:var(--tinta); background:var(--papel) }
+  body{ margin:0; font:16px/1.5 "Archivo", "Avenir Next", system-ui, sans-serif; overflow-x:hidden; color:var(--tinta); background:var(--papel) }
   a{ color:inherit } img{ display:block; max-width:100% }
   .envoltura{ max-width:1080px; margin:0 auto; padding:0 16px }
   header{ position:sticky; top:0; z-index:10; background:#ffffffee; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); border-bottom:1px solid var(--linea) }
   header .envoltura{ display:flex; align-items:center; gap:12px; min-height:60px }
   .marca{ font-weight:800; letter-spacing:.02em; font-size:18px; text-decoration:none; display:flex; align-items:center; gap:8px }
   .poste{ width:10px; height:28px; border-radius:5px; background:repeating-linear-gradient(-45deg, var(--rojo) 0 5px, #fff 5px 10px, var(--tinta) 10px 15px, #fff 15px 20px); border:1px solid var(--linea) }
-  .estado{ margin-left:auto; font-size:13px; color:var(--gris); display:flex; align-items:center; gap:6px } .estado i{ width:8px; height:8px; border-radius:50%; background:#9AA3B2 } .estado.si i{ background:#1DB954 }
+  .marca{ white-space:nowrap } .estado{ margin-left:auto; font-size:12px; color:var(--gris); display:flex; align-items:center; gap:6px; min-width:0; text-align:right; line-height:1.2 } .estado i{ width:8px; height:8px; border-radius:50%; background:#9AA3B2 } .estado.si i{ background:#1DB954 }
   .boton{ display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:48px; padding:0 22px; border-radius:999px; border:0; font-weight:700; font-size:16px; line-height:1; font-family:inherit; font-family:inherit; text-decoration:none; cursor:pointer; background:var(--rojo); color:#fff }
   .boton.claro{ background:var(--suave); color:var(--tinta) } .boton:focus-visible{ outline:3px solid #2F6BFF; outline-offset:2px }
   .portada{ position:relative; min-height:min(78vh, 640px); display:grid; align-items:end; color:#fff; overflow:hidden }
@@ -43,13 +46,30 @@
   footer{ padding:32px 0 calc(32px + env(safe-area-inset-bottom)); color:var(--gris); font-size:13px; border-top:1px solid var(--linea) }
   .demo{ background:var(--tinta); color:#fff; font-size:12px; text-align:center; padding:6px 16px }
   .flotante{ position:fixed; right:16px; bottom:calc(16px + env(safe-area-inset-bottom)); z-index:20; box-shadow:0 8px 24px #14213D40 }
-  @media (prefers-reduced-motion:reduce){ html{ scroll-behavior:auto } }
+  .poste{ background-size:28px 28px; animation:poste 1.6s linear infinite } @keyframes poste{ to{ background-position:0 28px } }
+  .portada{ min-height:min(88svh, 720px) } .portada img{ transform:scale(1.08); animation:acerca 9s ease-out forwards } @keyframes acerca{ to{ transform:scale(1) } }
+  .portada::after{ background:linear-gradient(180deg, #14213D33 0%, #14213D00 30%, #14213Df2 92%) }
+  .ojo{ display:inline-flex; align-items:center; gap:8px; font-size:13px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; padding:6px 12px; border-radius:999px; background:var(--rojo); margin-bottom:16px }
+  h1{ font-weight:900; font-size:clamp(46px, 13vw, 92px); line-height:.92; letter-spacing:-.04em; text-transform:uppercase }
+  h1 span{ display:block; animation:sube .8s cubic-bezier(.2,.8,.2,1) both } h1 span:nth-child(2){ animation-delay:.12s; color:#FFD6DC } @keyframes sube{ from{ transform:translateY(30px); opacity:0 } }
+  .boton{ box-shadow:0 10px 24px -10px #C8102E } .boton:hover{ transform:translateY(-2px) } .boton{ transition:transform .2s }
+  .datos{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); border-bottom:1px solid var(--linea) } .datos div{ padding:18px 8px; text-align:center; border-right:1px solid var(--linea) } .datos div:last-child{ border:0 }
+  .datos b{ display:block; font-size:clamp(24px, 7vw, 36px); font-weight:900; letter-spacing:-.03em; color:var(--rojo) } .datos span{ font-size:13px; color:var(--gris) }
+  h2{ font-weight:900; font-size:clamp(34px, 9vw, 56px); letter-spacing:-.035em; line-height:1 }
+  .servicio{ transition:background .2s; padding-inline:8px; margin-inline:-8px; border-radius:8px } .servicio:hover{ background:var(--suave) } .servicio b{ font-size:20px; font-weight:800 } .servicio .precio{ font-size:24px; font-weight:900; color:var(--rojo) }
+  .servicio .tag{ display:inline-block; margin-left:8px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:#fff; background:var(--tinta); padding:3px 8px; border-radius:999px; vertical-align:3px }
+  .galeria{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:6px } .galeria img{ width:100%; aspect-ratio:3/4; object-fit:cover; border-radius:10px } .galeria img:nth-child(2){ transform:translateY(18px) }
+  .resenas{ display:grid; gap:12px } @media (min-width:860px){ .resenas{ grid-template-columns:repeat(3, 1fr) } }
+  .resena{ padding:20px; border:1px solid var(--linea); border-radius:var(--r); background:#fff } .resena .est{ display:flex; gap:2px; color:#F5B400; margin-bottom:8px } .resena p{ margin:0 0 10px; font-size:17px } .resena small{ color:var(--gris) }
+  .nota{ display:flex; align-items:center; gap:14px; margin-bottom:22px } .nota b{ font-size:56px; font-weight:900; letter-spacing:-.04em; line-height:1 } .nota span{ color:var(--gris); font-size:14px }
+  .visita{ --mp-radio:14px; --mp-linea:#E3E6EC; --mp-acento:#C8102E; --mp-suave:#5B6475 }
+  @media (prefers-reduced-motion:reduce){ html{ scroll-behavior:auto } .poste, .portada img, h1 span{ animation:none } }
 </style>
 </head>
 <body>
 <div class="demo">Página de muestra hecha por Grupo Mazi · el negocio es ficticio</div>
 <header><div class="envoltura">
-  <a class="marca" href="#"><span class="poste" aria-hidden="true"></span>Don Chuy</a>
+  <a class="marca" href="#" style="font-weight:900;font-size:20px;letter-spacing:-.02em"><span class="poste" aria-hidden="true"></span>DON CHUY</a>
   <span class="estado" id="estado"><i></i><span></span></span>
 </div></header>
 
@@ -57,11 +77,13 @@
 <div class="portada">
   <img src="../img/7697224.webp" alt="Un barbero arregla el corte de un señor en la silla" fetchpriority="high">
   <div class="envoltura">
-    <h1>Cortes de siempre,<br>a la primera.</h1>
-    <p>Más de 20 años en la colonia. Escoge tu hora y llegas directo a la silla.</p>
-    <a class="boton" href="#reserva">Reservar mi hora</a>
+    <span class="ojo"><span class="poste" aria-hidden="true" style="height:16px;width:7px"></span>Barbería de la colonia</span>
+    <h1><span>Cortes de siempre,</span><span>a la primera.</span></h1>
+    <p>Más de 20 años en el Centro. Escoge tu hora y llegas directo a la silla.</p>
+    <a class="boton" href="#reserva">Apartar mi hora</a>
   </div>
 </div>
+<div class="datos"><div><b>20+</b><span>años en el Centro</span></div><div><b>$120</b><span>cortes desde</span></div><div><b>4.8</b><span>en reseñas</span></div></div>
 
 <section id="servicios"><div class="envoltura">
   <h2>Servicios y precios</h2>
@@ -86,14 +108,23 @@
   </form>
 </div></section>
 
-<section id="visitanos"><div class="envoltura dos">
+<section><div class="envoltura">
+  <h2>La silla de Don Chuy</h2><p class="baja">Así se ve un sábado en la mañana.</p>
+  <div class="galeria"><img src="../img/7697224-c.webp" alt="Don Chuy cortando el cabello" loading="lazy"><img src="../img/7518728-c.webp" alt="El interior de la barbería" loading="lazy"><img src="../img/995300-c.webp" alt="Navaja, brocha y jabonera" loading="lazy"></div>
+</div></section>
+
+<section style="background:var(--suave)"><div class="envoltura">
+  <div class="nota"><b>4.8</b><span><span class="est" id="est"></span>Reseñas de muestra<br>para la demostración</span></div>
+  <div class="resenas" id="resenas"></div>
+</div></section>
+
+<section id="visitanos"><div class="envoltura dos visita">
   <div>
     <h2>Visítanos</h2>
-    <p class="baja">Av. de los Arcos 214, Col. Centro, Querétaro (dirección de muestra)</p>
+    <p class="baja">Dirección de muestra. Con tu página va la tuya, con su mapa.</p>
     <div class="horario" id="horario"></div>
-    <p style="margin-top:24px"><a class="boton claro" href="https://maps.google.com/?q=Arcos+Queretaro" target="_blank" rel="noopener">Cómo llegar</a></p>
   </div>
-  <div class="mapa" role="img" aria-label="El interior de la barbería"></div>
+  <div id="mapa"></div>
 </div></section>
 </main>
 
@@ -102,18 +133,21 @@
 
 <script type="module">
 import { crearAgenda, fechaCorta, hora12, pesos, nombreDia } from '../comun/agenda.js';
+import { mapa, estilos, CSS_MAPA } from '../comun/extras.js';
+import { ico } from '../comun/iconos.js';
+estilos(CSS_MAPA);
 const $ = (s) => document.querySelector(s);
 const SERVICIOS = [
   { id: 'corte', nombre: 'Corte clásico', dur: 30, precio: 150, nota: 'Tijera o máquina, con lavado' },
   { id: 'fade', nombre: 'Corte degradado', dur: 45, precio: 180, nota: 'Fade bajo, medio o alto' },
   { id: 'barba', nombre: 'Arreglo de barba', dur: 30, precio: 120, nota: 'Perfilado con navaja y toalla caliente' },
-  { id: 'combo', nombre: 'Corte + barba', dur: 60, precio: 250, nota: 'El favorito de los sábados' },
+  { id: 'combo', nombre: 'Corte + barba', dur: 60, precio: 250, nota: 'El favorito de los sábados', tag: 'El favorito' },
   { id: 'nino', nombre: 'Corte de niño', dur: 30, precio: 120, nota: 'Hasta 12 años' }
 ];
 const H = { 1: [600, 1200], 2: [600, 1200], 3: [600, 1200], 4: [600, 1200], 5: [600, 1230], 6: [540, 1140] };
 const ag = crearAgenda({ negocio: 'Barbería Don Chuy', clave: 'donchuy', horario: H, barberos: [{ id: 'chuy', nombre: 'Don Chuy' }, { id: 'beto', nombre: 'Beto' }], direccion: 'Av. de los Arcos 214, Querétaro' });
 
-$('#listaServicios').innerHTML = SERVICIOS.map(s => `<div class="servicio"><b>${s.nombre}</b><span>${s.nota} · ${s.dur} min</span><div class="precio">${pesos(s.precio)}</div></div>`).join('');
+$('#listaServicios').innerHTML = SERVICIOS.map(s => `<div class="servicio"><b>${s.nombre}${s.tag ? `<span class="tag">${s.tag}</span>` : ''}</b><span>${s.nota} · ${s.dur} min</span><div class="precio">${pesos(s.precio)}</div></div>`).join('');
 $('#servicio').innerHTML = SERVICIOS.map(s => `<option value="${s.id}">${s.nombre} · ${pesos(s.precio)}</option>`).join('');
 const e = ag.abiertoAhora(); $('#estado').classList.toggle('si', e.abierto); $('#estado span').textContent = e.texto;
 const hoy = new Date().getDay();
@@ -133,6 +167,10 @@ $('#forma').onsubmit = (ev) => { ev.preventDefault(); const msg = $('#msg'), s =
   if(faltan.length){ msg.className = 'aviso error'; msg.textContent = `Falta ${faltan.join(', ')}.`; if(!nombre) $('#nombre').focus(); return; }
   const libre = ag.libres(dia, s.dur).find(x => x.min === +m); const c = ag.reservar({ servicios: [s], barbero: libre?.con[0] || 'chuy', dia, inicio: +m, nombre });
   msg.className = 'aviso'; msg.textContent = '¡Listo! Se abrió WhatsApp con tu cita; sólo dale enviar.'; location.href = ag.whatsappDe(c); horas(); };
+$('#est').innerHTML = ico('star', 15).repeat(5); $('#est').style.cssText = 'display:flex;gap:2px;color:#F5B400;margin-bottom:4px';
+$('#resenas').innerHTML = [['Llevo 15 años viniendo. Me sabe el corte de memoria.', 'Roberto S.'], ['Aparté desde el teléfono y llegué directo a la silla. Así sí.', 'Óscar M.'], ['Mi hijo ya no llora: Beto le pone caricaturas y sale feliz.', 'Laura P.']]
+  .map(([t, q]) => `<div class="resena"><div class="est">${ico('star', 14).repeat(5)}</div><p>«${t}»</p><small>${q}</small></div>`).join('');
+mapa($('#mapa'), { nombre: 'Barbería Don Chuy', direccion: 'Av. de los Arcos 214, Centro, Querétaro', notas: [['circle-parking', 'Lugar en la calle casi siempre'], ['clock', 'Sin cita también te atendemos, si hay silla']] });
 /* el botón flotante se esconde cuando ya estás en la reserva */
 new IntersectionObserver(([en]) => { $('#flotante').style.display = en.isIntersecting ? 'none' : ''; }).observe($('#reserva'));
 </script>

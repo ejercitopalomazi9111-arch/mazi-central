@@ -2,6 +2,7 @@
    listo. Cada página lo viste con sus propios colores (variables --rv-*); el comportamiento es el mismo. Un paso
    a la vez porque en el teléfono un formulario largo se abandona; y siempre se ve qué llevas escogido. */
 import { fechaCorta, fechaLarga, hora12, pesos } from './agenda.js';
+import { ico } from './iconos.js';
 
 const CSS = `
 /* los colores de fábrica van con especificidad cero: la página que lo usa pone los suyos en .rv y ganan aunque este estilo se cargue después */
@@ -55,13 +56,13 @@ export function montarReserva(caja, { ag, servicios, barberos, multi = false, fo
     if(PASOS[paso] === 'servicio'){
       cuerpo.innerHTML = `<h3>${multi ? '¿Qué te hacemos?' : '¿Qué servicio quieres?'}</h3><p class="rv-sub">${multi ? 'Puedes escoger varios: se suman tiempo y precio.' : 'Precio y tiempo aproximados.'}</p><div class="rv-lista"></div>`;
       const L = cuerpo.querySelector('.rv-lista');
-      for(const s of servicios){ const b = h(`<button type="button" class="rv-op" aria-pressed="${P.servicios.includes(s)}"><span class="rv-ic" aria-hidden="true">${s.icono || '✂️'}</span><span><b>${s.nombre}</b><small>${s.nota || ''} · ${s.dur} min</small></span><span class="rv-precio">${pesos(s.precio)}</span></button>`);
+      for(const s of servicios){ const b = h(`<button type="button" class="rv-op" aria-pressed="${P.servicios.includes(s)}"><span class="rv-ic" aria-hidden="true">${ico(s.icono || 'scissors')}</span><span><b>${s.nombre}</b><small>${s.nota || ''} · ${s.dur} min</small></span><span class="rv-precio">${pesos(s.precio)}</span></button>`);
         b.onclick = () => { if(multi){ P.servicios = P.servicios.includes(s) ? P.servicios.filter(x => x !== s) : [...P.servicios, s]; } else { P.servicios = [s]; paso = P.barbero !== undefined ? 2 : 1; } P.hora = null; pintar(); }; L.appendChild(b); } }
     if(PASOS[paso] === 'barbero'){
       cuerpo.innerHTML = `<h3>¿Con quién?</h3><p class="rv-sub">Si te da igual, te toca el primero que esté libre.</p><div class="rv-lista"></div>`;
       const L = cuerpo.querySelector('.rv-lista');
-      const ops = [{ id: null, nombre: 'El que esté libre', esp: 'Más horarios disponibles', icono: '⚡' }, ...barberos];
-      for(const o of ops){ const b = h(`<button type="button" class="rv-op" aria-pressed="${P.barbero === o.id}">${o.id && foto(o) ? `<img src="${foto(o)}" alt="">` : `<span class="rv-ic" aria-hidden="true">${o.icono || '💈'}</span>`}<span><b>${o.nombre}</b><small>${o.esp || ''}</small></span><span aria-hidden="true">›</span></button>`);
+      const ops = [{ id: null, nombre: 'El que esté libre', esp: 'Más horarios disponibles', icono: 'zap' }, ...barberos];
+      for(const o of ops){ const b = h(`<button type="button" class="rv-op" aria-pressed="${P.barbero === o.id}">${o.id && foto(o) ? `<img src="${foto(o)}" alt="">` : `<span class="rv-ic" aria-hidden="true">${ico(o.icono || 'user-round')}</span>`}<span><b>${o.nombre}</b><small>${o.esp || ''}</small></span><span aria-hidden="true">›</span></button>`);
         b.onclick = () => { P.barbero = o.id; P.hora = null; paso++; pintar(); }; L.appendChild(b); } }
     if(PASOS[paso] === 'cuando'){
       const dias = ag.dias(14); P.dia ||= dias[0];
@@ -74,7 +75,8 @@ export function montarReserva(caja, { ag, servicios, barberos, multi = false, fo
       if(!l.some(x => x.libre)) Hh.outerHTML = '<p class="rv-vacio">Ese día ya no hay lugar. Prueba otro día o con otro barbero.</p>';
       for(const x of l){ const b = h(`<button type="button" class="rv-hora" ${x.libre ? '' : 'disabled'} aria-pressed="${P.hora === x.min}">${hora12(x.min)}</button>`);
         b.onclick = () => { P.hora = x.min; P.con = x.con; pintar(); }; Hh.appendChild?.(b); }
-      requestAnimationFrame(() => cuerpo.querySelector('.rv-dia[aria-pressed="true"]')?.scrollIntoView?.({ inline: 'nearest', block: 'nearest' })); }
+      /* sólo se mueve la tira de días: scrollIntoView movía también la PÁGINA, y con la reserva en la página (Casa Brava) cada toque la hacía brincar */
+      requestAnimationFrame(() => { const t = cuerpo.querySelector('.rv-dias'), d = t && t.querySelector('.rv-dia[aria-pressed="true"]'); if(d && t.scrollWidth > t.clientWidth) t.scrollLeft = Math.max(0, d.offsetLeft - t.offsetLeft - (t.clientWidth - d.offsetWidth) / 2); }); }
     if(PASOS[paso] === 'datos'){
       cuerpo.innerHTML = `<h3>Tus datos</h3><p class="rv-sub">Sólo para avisarte si algo cambia.</p>
         <label for="rvNombre">Nombre</label><input id="rvNombre" autocomplete="name" value="${P.nombre.replace(/"/g, '&quot;')}">
@@ -99,13 +101,13 @@ export function montarReserva(caja, { ag, servicios, barberos, multi = false, fo
     if(!P.barbero) c.barberoNombre = barberos.find(b => b.id === c.barbero)?.nombre || c.barberoNombre;
     listo(c); alListo(c); }
 
-  function listo(c){ caja.innerHTML = `<div class="rv-listo"><div class="rv-palomita" aria-hidden="true">✓</div><h3>¡Tu lugar está apartado!</h3><p class="rv-sub">Mándanos el mensaje para confirmarlo.</p>
+  function listo(c){ caja.innerHTML = `<div class="rv-listo"><div class="rv-palomita" aria-hidden="true">${ico('check', 32)}</div><h3>¡Tu lugar está apartado!</h3><p class="rv-sub">Mándanos el mensaje para confirmarlo.</p>
     <div class="rv-ticket"><b>${c.servicios.join(' + ')}</b><span>${fechaLarga(ag.diaDe(c))} · ${hora12(c.inicio)}</span><span>Con ${c.barberoNombre} · ${pesos(c.total)}</span></div>
     <div class="rv-acciones"><a class="rv-btn" href="${ag.whatsappDe(c)}" target="_blank" rel="noopener">Confirmar por WhatsApp</a><a class="rv-btn rv-claro" href="${ag.calendarioDe(c)}" download="cita-barberia.ics">Agregar a mi calendario</a><button type="button" class="rv-btn rv-claro" data-a="otra">Hacer otra reserva</button></div></div>`;
     caja.querySelector('[data-a="otra"]').onclick = () => { Object.assign(P, { servicios: [], barbero: undefined, dia: null, hora: null }); paso = 0; pintar(); }; }
 
   /* abrir con algo ya escogido (el botón «reservar» de un servicio o de un barbero) */
-  function empezar({ servicio, barbero } = {}){ Object.assign(P, { servicios: servicio ? [servicio] : [], barbero: barbero === undefined ? undefined : barbero, fijo: barbero !== undefined, dia: null, hora: null });
+  function empezar({ servicio, barbero, nota } = {}){ if(nota !== undefined) P.nota = nota; Object.assign(P, { servicios: servicio ? [servicio] : [], barbero: barbero === undefined ? undefined : barbero, fijo: barbero !== undefined, dia: null, hora: null });
     paso = servicio ? (barbero !== undefined ? 2 : 1) : 0; pintar(); }
   pintar();
   return { empezar };

@@ -1,0 +1,6 @@
+Bodoni Moda: SIL Open Font License 1.1 (Google Fonts)
+Anton: SIL Open Font License 1.1 (Google Fonts)
+DM Serif Display: SIL Open Font License 1.1 (Google Fonts)
+Archivo: SIL Open Font License 1.1 (Google Fonts)
+Inter Tight: SIL Open Font License 1.1 (Google Fonts)
+Space Mono: SIL Open Font License 1.1 (Google Fonts)

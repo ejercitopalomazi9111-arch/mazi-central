@@ -2,7 +2,7 @@
    desde ver el sitio hasta reservar y ver servicios»). Arma los horarios libres de cada barbero, guarda la cita en
    el teléfono de quien reserva, se la manda a la barbería por WhatsApp y le da su archivo de calendario.
 
-   ⚠️ ES UNA DEMOSTRACIÓN: no hay servidor, así que lo «ocupado» se inventa con una semilla por día y barbero
+   OJO: ES UNA DEMOSTRACIÓN: no hay servidor, así que lo «ocupado» se inventa con una semilla por día y barbero
    (siempre el mismo para el mismo día, para que se vea creíble) más lo que el propio teléfono ya reservó. Cuando
    se venda a una barbería de verdad, este archivo es lo que se conecta a su agenda real; las páginas no cambian. */
 
@@ -60,7 +60,7 @@ export function crearAgenda({ negocio, clave, horario, barberos = [], paso = 30,
 
   /* el mensaje que le llega a la barbería */
   function whatsappDe(c, extra = ''){ const d = diaDe(c);
-    const t = `Hola, ${negocio} 👋 Quiero confirmar mi cita:\n\n✂️ ${c.servicios.join(' + ')}\n📅 ${fechaLarga(d)}\n🕐 ${hora12(c.inicio)}\n💈 Con: ${c.barberoNombre}\n💵 Total aprox.: ${pesos(c.total)}\n👤 ${c.nombre}${c.tel ? ' · ' + c.tel : ''}${c.nota ? '\n📝 ' + c.nota : ''}${extra}\n\n(Reservé desde su página · demo de Grupo Mazi)`;
+    const t = `Hola, ${negocio}. Quiero confirmar mi cita:\n\nServicio: ${c.servicios.join(' + ')}\nDía: ${fechaLarga(d)}\nHora: ${hora12(c.inicio)}\nCon: ${c.barberoNombre}\nTotal aprox.: ${pesos(c.total)}\nA nombre de: ${c.nombre}${c.tel ? ' · ' + c.tel : ''}${c.nota ? '\nNota: ' + c.nota : ''}${extra}\n\n(Reservé desde su página · demo de Grupo Mazi)`;
     return `https://wa.me/${whatsapp}?text=${encodeURIComponent(t)}`; }
   const whatsappTexto = (t) => `https://wa.me/${whatsapp}?text=${encodeURIComponent(t + '\n\n(Desde su página · demo de Grupo Mazi)')}`;
 
