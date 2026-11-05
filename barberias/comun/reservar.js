@@ -75,7 +75,8 @@ export function montarReserva(caja, { ag, servicios, barberos, multi = false, fo
       if(!l.some(x => x.libre)) Hh.outerHTML = '<p class="rv-vacio">Ese día ya no hay lugar. Prueba otro día o con otro barbero.</p>';
       for(const x of l){ const b = h(`<button type="button" class="rv-hora" ${x.libre ? '' : 'disabled'} aria-pressed="${P.hora === x.min}">${hora12(x.min)}</button>`);
         b.onclick = () => { P.hora = x.min; P.con = x.con; pintar(); }; Hh.appendChild?.(b); }
-      requestAnimationFrame(() => cuerpo.querySelector('.rv-dia[aria-pressed="true"]')?.scrollIntoView?.({ inline: 'nearest', block: 'nearest' })); }
+      /* sólo se mueve la tira de días: scrollIntoView movía también la PÁGINA, y con la reserva en la página (Casa Brava) cada toque la hacía brincar */
+      requestAnimationFrame(() => { const t = cuerpo.querySelector('.rv-dias'), d = t && t.querySelector('.rv-dia[aria-pressed="true"]'); if(d && t.scrollWidth > t.clientWidth) t.scrollLeft = Math.max(0, d.offsetLeft - t.offsetLeft - (t.clientWidth - d.offsetWidth) / 2); }); }
     if(PASOS[paso] === 'datos'){
       cuerpo.innerHTML = `<h3>Tus datos</h3><p class="rv-sub">Sólo para avisarte si algo cambia.</p>
         <label for="rvNombre">Nombre</label><input id="rvNombre" autocomplete="name" value="${P.nombre.replace(/"/g, '&quot;')}">
