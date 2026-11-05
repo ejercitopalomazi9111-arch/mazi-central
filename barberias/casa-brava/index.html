@@ -3,156 +3,248 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Casa Brava Barber Club · Querétaro</title>
-<meta name="description" content="Barbería a la antigua: navaja, toalla caliente y buena plática. Paquetes, membresía y reservas en línea.">
-<meta name="theme-color" content="#1F1A17">
+<title>Casa Brava Barber Club · Centro de Querétaro</title>
+<meta name="description" content="Barbería clásica en el Centro de Querétaro: navaja, toalla caliente y cortes de siempre. Aparta tu silla, únete al Club y compra en la botica.">
+<meta name="theme-color" content="#F3EADB">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Ccircle cx=%2232%22 cy=%2232%22 r=%2230%22 fill=%22%238A1E2C%22/%3E%3Ctext x=%2232%22 y=%2243%22 text-anchor=%22middle%22 font-family=%22Georgia,serif%22 font-size=%2230%22 fill=%22%23F3EADB%22%3ECB%3C/text%3E%3C/svg%3E">
+<link rel="preload" href="../fuentes/dmserif-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
-  :root{ --papel:#F2EADC; --papel2:#E9DECB; --tinta:#1F1A17; --vino:#8C1C13; --laton:#9C7A45; --gris:#6B6157; --linea:#1F1A1726; --r:4px;
-    --serif:"Didot", "Bodoni 72", "Playfair Display", Georgia, serif; --maq:"American Typewriter", "Courier New", monospace }
-  *{ box-sizing:border-box } html{ scroll-behavior:smooth; -webkit-text-size-adjust:100% }
-  body{ margin:0; background:var(--papel); color:var(--tinta); font:17px/1.6 Georgia, "Times New Roman", serif }
-  img{ display:block; max-width:100% } a{ color:inherit }
-  .env{ max-width:1100px; margin:0 auto; padding:0 18px }
-  .demo{ background:var(--tinta); color:var(--papel); font:12px/1.4 var(--maq); text-align:center; padding:6px 16px }
-  header{ border-bottom:3px double var(--tinta) } header .env{ display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:64px }
-  .logo{ font:700 22px/1 var(--serif); letter-spacing:.04em; text-decoration:none; text-transform:uppercase } .logo small{ display:block; font:11px/1.6 var(--maq); letter-spacing:.3em; color:var(--vino) }
-  .btn{ display:inline-flex; align-items:center; justify-content:center; min-height:48px; padding:0 22px; border:2px solid var(--tinta); border-radius:var(--r); background:var(--tinta); color:var(--papel); font-weight:700; font-size:14px; font-family:var(--maq); letter-spacing:.12em; text-transform:uppercase; text-decoration:none; cursor:pointer }
-  .btn.vino{ background:var(--vino); border-color:var(--vino) } .btn.hueco{ background:transparent; color:var(--tinta) } .btn:focus-visible{ outline:3px solid var(--laton); outline-offset:2px }
-  .portada{ padding:40px 0 56px } .portada .env{ display:grid; gap:28px } @media (min-width:860px){ .portada .env{ grid-template-columns:1.1fr .9fr; align-items:center } }
-  .sello{ font:12px/1 var(--maq); letter-spacing:.32em; text-transform:uppercase; color:var(--vino); margin:0 0 18px; display:flex; align-items:center; gap:12px } .sello::before, .sello::after{ content:""; height:1px; width:32px; background:var(--vino) }
-  h1{ font:400 clamp(44px, 11vw, 88px)/.95 var(--serif); margin:0 0 20px; letter-spacing:-.01em } h1 em{ color:var(--vino) }
-  .portada p{ max-width:38ch; color:#3B332D; margin:0 0 26px }
-  .marco{ padding:10px; background:#fff; box-shadow:0 1px 0 var(--linea), 0 18px 40px #1F1A1726; transform:rotate(1.2deg) } .marco img{ aspect-ratio:4/5; object-fit:cover; width:100%; filter:sepia(.18) contrast(1.05) }
-  .marco figcaption{ font:13px/1.4 var(--maq); text-align:center; padding-top:10px; color:var(--gris) }
-  section{ padding:64px 0; border-top:1px solid var(--linea) } h2{ font:400 clamp(36px, 8vw, 56px)/1 var(--serif); margin:0 0 10px } .sub{ color:var(--gris); max-width:50ch; margin:0 0 30px }
-  .carta{ max-width:720px; background:#FBF7EF; border:1px solid var(--linea); padding:28px 22px; outline:1px solid var(--linea); outline-offset:-8px }
-  .carta h3{ font:14px/1 var(--maq); letter-spacing:.3em; text-transform:uppercase; color:var(--vino); margin:22px 0 10px } .carta h3:first-child{ margin-top:0 }
-  .fila{ display:flex; align-items:baseline; gap:8px; padding:8px 0 } .fila b{ font-weight:400; font-size:19px } .fila .puntos{ flex:1; border-bottom:2px dotted #1F1A1755; transform:translateY(-4px); min-width:20px } .fila .pr{ font-family:var(--maq); font-variant-numeric:tabular-nums }
-  .carta .nota{ display:block; color:var(--gris); font-size:14px; margin:-6px 0 6px }
-  .paquetes{ display:grid; gap:16px } @media (min-width:800px){ .paquetes{ grid-template-columns:repeat(3, 1fr) } }
-  .paq{ background:#FBF7EF; border:1px solid var(--linea); padding:24px; display:flex; flex-direction:column; gap:10px } .paq.mejor{ background:var(--tinta); color:var(--papel); border-color:var(--tinta) }
-  .paq h3{ font:400 28px/1.1 var(--serif); margin:0 } .paq .precio{ font:700 30px/1 var(--maq) } .paq .precio s{ font-size:16px; opacity:.6; font-weight:400 } .paq ul{ margin:0; padding-left:18px } .paq .btn{ margin-top:auto }
-  .paq.mejor .btn{ background:var(--papel); color:var(--tinta); border-color:var(--papel) } .etiqueta{ align-self:flex-start; font:11px/1 var(--maq); letter-spacing:.2em; text-transform:uppercase; padding:6px 8px; background:var(--vino); color:#fff }
-  .club{ background:var(--tinta); color:var(--papel); border-top:0 } .club .sub{ color:#CFC4B2 } .club .dos{ display:grid; gap:28px } @media (min-width:860px){ .club .dos{ grid-template-columns:1fr 1fr; align-items:center } }
-  .club ul{ padding-left:20px; margin:0 0 24px } .club li{ margin:6px 0 } .club img{ aspect-ratio:4/3; object-fit:cover; width:100%; filter:sepia(.15) }
-  .club .btn{ background:var(--laton); border-color:var(--laton); color:var(--tinta) }
-  .reserva-caja{ max-width:600px; background:#FBF7EF; border:1px solid var(--linea); padding:22px 20px 0 }
-  .rv{ --rv-fondo:#FBF7EF; --rv-tinta:var(--tinta); --rv-suave:#1F1A170a; --rv-linea:#1F1A1730; --rv-acento:var(--vino); --rv-sobre:#fff; --rv-radio:4px }
-  .rv h3{ font-family:var(--serif); font-weight:400; font-size:28px }
-  .galeria{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px } @media (min-width:800px){ .galeria{ grid-template-columns:repeat(4, minmax(0, 1fr)) } }
-  .galeria img{ width:100%; aspect-ratio:1; object-fit:cover; filter:sepia(.2) } .galeria img:nth-child(3n+1){ aspect-ratio:3/4 }
-  details{ border-bottom:1px solid var(--linea); max-width:720px } summary{ cursor:pointer; padding:18px 0; font-size:19px; list-style:none; display:flex; justify-content:space-between; gap:12px } summary::-webkit-details-marker{ display:none }
-  summary::after{ content:"+"; font-family:var(--maq); color:var(--vino) } details[open] summary::after{ content:"–" } details p{ margin:0 0 18px; color:#3B332D }
-  .dos{ display:grid; gap:32px } @media (min-width:860px){ .dos{ grid-template-columns:1fr 1fr } }
-  .horario{ display:grid; grid-template-columns:auto 1fr; gap:8px 24px; font-family:var(--maq); font-size:15px } .horario span:nth-child(odd){ text-transform:capitalize } .horario .hoy{ color:var(--vino); font-weight:700 }
-  .estado{ font:14px var(--maq); color:var(--gris) } .estado b{ color:var(--vino) }
-  footer{ padding:36px 0 calc(36px + env(safe-area-inset-bottom)); background:var(--tinta); color:#CFC4B2; font:13px/1.6 var(--maq) }
-  .flota{ position:fixed; right:16px; bottom:calc(16px + env(safe-area-inset-bottom)); z-index:20; box-shadow:0 10px 26px #1F1A1755 }
+  @font-face{ font-family:"DM Serif"; src:url(../fuentes/dmserif-400-normal.woff2) format("woff2"); font-display:swap }
+  @font-face{ font-family:"DM Serif"; src:url(../fuentes/dmserif-400-italic.woff2) format("woff2"); font-style:italic; font-display:swap }
+  @font-face{ font-family:"Maquina"; src:url(../fuentes/mono-400-normal.woff2) format("woff2"); font-weight:400; font-display:swap }
+  @font-face{ font-family:"Maquina"; src:url(../fuentes/mono-700-normal.woff2) format("woff2"); font-weight:700; font-display:swap }
+  @font-face{ font-family:"Inter T"; src:url(../fuentes/inter-400-800-normal.woff2) format("woff2"); font-weight:400 800; font-display:swap }
+  :root{ --papel:#F3EADB; --papel2:#EADFCB; --tinta:#1D1A16; --suave:#6B6255; --vino:#8A1E2C; --vino2:#A8283A; --laton:#B08A4A; --linea:#1D1A1622; --r:6px;
+    --serif:"DM Serif", Georgia, serif; --maq:"Maquina", "Courier New", monospace; --t:"Inter T", system-ui, sans-serif }
+  *{ box-sizing:border-box } html{ scroll-behavior:smooth; -webkit-text-size-adjust:100%; scroll-padding-top:70px }
+  body{ margin:0; color:var(--tinta); font:16px/1.6 var(--t); overflow-x:hidden; background:var(--papel) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='p'><feTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .4  0 0 0 0 .3  0 0 0 0 .2  0 0 0 .09 0'/></filter><rect width='100%' height='100%' filter='url(%23p)'/></svg>") }
+  img, video{ display:block; max-width:100% } a{ color:inherit } button{ font-family:inherit; color:inherit }
+  ::selection{ background:var(--vino); color:var(--papel) }
+  .env{ max-width:1160px; margin:0 auto; padding:0 20px }
+  .maq{ font:700 12px/1.4 var(--maq); letter-spacing:.2em; text-transform:uppercase; color:var(--vino) }
+  .demo{ font:400 11px var(--maq); text-align:center; padding:6px 16px; background:var(--tinta); color:var(--papel) }
+  header{ position:sticky; top:0; z-index:30; background:#F3EADBee; -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); border-bottom:1px solid var(--linea) }
+  header .env{ display:flex; align-items:center; gap:10px; min-height:62px }
+  .logo{ display:flex; flex-direction:column; text-decoration:none; line-height:1 } .logo b{ font:400 23px var(--serif) } .logo small{ font:400 9px var(--maq); letter-spacing:.3em; color:var(--vino); margin-top:3px }
+  nav{ display:none; gap:24px; margin-left:auto; font-size:14px } nav a{ text-decoration:none } nav a:hover{ color:var(--vino); text-decoration:underline; text-underline-offset:4px } @media (min-width:960px){ nav{ display:flex } }
+  .icono{ width:44px; height:44px; display:grid; place-items:center; border-radius:50%; border:1px solid var(--linea); background:transparent; cursor:pointer; position:relative; flex-shrink:0; margin-left:auto } @media (min-width:960px){ .icono{ margin-left:0 } }
+  .icono .num{ position:absolute; top:-3px; right:-3px; min-width:19px; height:19px; padding:0 5px; border-radius:10px; background:var(--vino); color:var(--papel); font-size:11px; font-weight:800; display:grid; place-items:center } .icono .num[hidden]{ display:none }
+  .btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:50px; padding:0 24px; border:1px solid var(--vino); border-radius:var(--r); background:var(--vino); color:var(--papel); font:700 14px/1 var(--maq); letter-spacing:.08em; text-transform:uppercase; text-decoration:none; cursor:pointer; white-space:nowrap; transition:background .2s, transform .2s }
+  .btn:hover{ background:var(--vino2); transform:translateY(-1px) } .btn.hueco{ background:transparent; color:var(--tinta); border-color:var(--tinta) } .btn.chico{ min-height:42px; padding:0 16px; font-size:12px }
+  header .btn{ min-height:42px; padding:0 14px } .btn:focus-visible, .icono:focus-visible{ outline:2px solid var(--vino); outline-offset:3px }
+
+  .portada{ padding:44px 0 70px; position:relative } .portada .env{ display:grid; gap:40px } @media (min-width:900px){ .portada .env{ grid-template-columns:1.05fr .95fr; align-items:center } }
+  h1{ font:400 clamp(52px, 13.5vw, 112px)/.95 var(--serif); margin:14px 0 22px; letter-spacing:-.02em } h1 em{ color:var(--vino) }
+  .portada p.lead{ font-size:18px; max-width:38ch; color:#3A342C; margin:0 0 26px }
+  .estado{ display:inline-flex; align-items:center; gap:8px; font:400 13px var(--maq) } .estado i{ width:9px; height:9px; border-radius:50%; background:#999 } .estado.si i{ background:#2E8B57 }
+  .marco{ position:relative; margin:0 6px; padding:14px 14px 56px; background:#fff; box-shadow:0 30px 60px -30px #3a2a1a99, 0 2px 0 #0001; transform:rotate(2deg) }
+  .marco video, .marco img{ width:100%; aspect-ratio:4/5; object-fit:cover; filter:sepia(.25) contrast(1.05) saturate(.85) }
+  .marco figcaption{ position:absolute; left:0; right:0; bottom:16px; text-align:center; font:400 20px var(--serif); font-style:italic }
+  .sello{ position:absolute; z-index:2; left:-14px; top:-24px; width:120px; height:120px; border-radius:50%; border:2px solid var(--vino); color:var(--vino); display:grid; place-items:center; text-align:center; font:700 11px/1.3 var(--maq); letter-spacing:.14em; text-transform:uppercase; transform:rotate(-14deg); background:#F3EADBdd }
+  .sello b{ display:block; font:400 30px/1 var(--serif); letter-spacing:0 }
+  .cinta{ border-block:1px solid var(--tinta); padding:12px 0; font:400 22px/1 var(--serif); font-style:italic; --mq-vel:40s } .cinta i{ color:var(--vino); font-style:normal }
+
+  section{ padding:84px 0; position:relative } h2{ font:400 clamp(46px, 12vw, 88px)/.98 var(--serif); margin:10px 0 12px; letter-spacing:-.015em } h2 em{ color:var(--vino) }
+  .sub{ color:var(--suave); max-width:50ch; margin:0 0 34px; font-size:17px }
+  [data-rev]{ opacity:0; transform:translateY(24px); transition:opacity .9s, transform .9s cubic-bezier(.2,.8,.2,1) } [data-rev].ya{ opacity:1; transform:none }
+  .oscuro{ background:var(--tinta); color:var(--papel) } .oscuro .sub{ color:#C9BFAE } .oscuro .maq{ color:var(--laton) }
+
+  .carta{ display:grid; gap:10px 64px } @media (min-width:900px){ .carta{ grid-template-columns:1fr 1fr } }
+  .carta h3{ grid-column:1 / -1; margin:30px 0 6px; font:700 13px var(--maq); letter-spacing:.3em; text-transform:uppercase; color:var(--vino); display:flex; align-items:center; gap:14px } .carta h3::after{ content:""; flex:1; height:1px; background:var(--linea) }
+  .fila{ display:grid; grid-template-columns:minmax(0, 1fr) auto; gap:2px 12px; padding:12px 0; border-bottom:1px dashed var(--linea) }
+  .fila .l{ display:flex; align-items:baseline; gap:10px; min-width:0 } .fila b{ font:400 23px/1.2 var(--serif) } .puntos{ flex:1; min-width:12px; border-bottom:2px dotted #1D1A1644 } .fila .pr{ font:700 18px var(--maq); white-space:nowrap }
+  .fila small{ grid-column:1; color:var(--suave); font-size:14px } .fila button{ grid-column:2; grid-row:2; align-self:center; min-height:36px; padding:0 12px; border-radius:var(--r); border:1px solid var(--linea); background:transparent; font:700 11px var(--maq); letter-spacing:.08em; text-transform:uppercase; cursor:pointer } .fila button:hover{ border-color:var(--vino); color:var(--vino) }
+
+  .paquetes{ display:grid; gap:18px } @media (min-width:900px){ .paquetes{ grid-template-columns:repeat(3, 1fr); align-items:start } }
+  .paq{ position:relative; padding:30px 26px; background:#FBF6EC; border:1px solid var(--linea); box-shadow:0 1px 0 #0001, 0 24px 40px -30px #3a2a1a88 }
+  .paq.mejor{ background:var(--tinta); color:var(--papel); transform:translateY(-10px) } .paq .et{ position:absolute; top:-12px; left:24px; background:var(--vino); color:var(--papel); font:700 10px var(--maq); letter-spacing:.14em; padding:5px 10px; text-transform:uppercase }
+  .paq h3{ margin:0; font:400 34px/1 var(--serif) } .paq .precio{ font:400 46px/1 var(--serif); margin:12px 0 4px } .paq .precio s{ font:400 16px var(--maq); opacity:.6; vertical-align:8px; margin-left:6px }
+  .paq ul{ list-style:none; padding:0; margin:16px 0 22px; display:grid; gap:8px; font-size:15px } .paq li{ display:flex; gap:10px } .paq li svg{ color:var(--laton); flex-shrink:0; margin-top:3px }
+  .paq.mejor .btn{ background:var(--papel); color:var(--tinta); border-color:var(--papel) }
+
+  .club{ display:grid; gap:26px } @media (min-width:900px){ .club{ grid-template-columns:1fr 1fr } }
+  .membresia{ position:relative; aspect-ratio:1.6; border-radius:16px; padding:24px; background:linear-gradient(135deg, #2a221a, #120f0c); color:var(--papel); border:1px solid #B08A4A88; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; box-shadow:0 30px 60px -20px #000 }
+  .membresia::after{ content:""; position:absolute; inset:0; background:radial-gradient(40% 60% at var(--brillo-x, 30%) var(--brillo-y, 20%), #ffffff22, transparent 70%) }
+  .membresia .top{ display:flex; justify-content:space-between; font:700 11px var(--maq); letter-spacing:.24em; color:var(--laton) } .membresia b{ font:400 clamp(30px, 8vw, 46px)/1 var(--serif) } .membresia small{ font:400 12px var(--maq); color:#C9BFAE }
+  .niveles{ display:grid; gap:12px; margin-top:22px } .nivel{ display:grid; grid-template-columns:minmax(0, 1fr) auto; gap:4px 14px; padding:18px; border:1px solid #F3EADB33; border-radius:10px } .nivel b{ font:400 24px var(--serif) } .nivel .p{ font:700 18px var(--maq); color:var(--laton) } .nivel p{ grid-column:1 / -1; margin:0; color:#C9BFAE; font-size:14px }
+  .nivel .btn{ grid-column:1 / -1; justify-self:start; margin-top:8px; background:var(--papel); color:var(--tinta); border-color:var(--papel) }
+
+  .reserva-caja{ max-width:640px; padding:22px; background:#FBF6EC; border:1px solid var(--linea); box-shadow:0 30px 50px -40px #3a2a1a } .dos{ display:grid; gap:34px } @media (min-width:980px){ .dos{ grid-template-columns:1.2fr 1fr; align-items:start } }
+  .rv{ --rv-fondo:#FBF6EC; --rv-tinta:var(--tinta); --rv-suave:#1D1A160a; --rv-linea:#1D1A1626; --rv-acento:var(--vino); --rv-sobre:var(--papel); --rv-radio:6px } .rv h3{ font-family:var(--serif); font-weight:400; font-size:30px }
+  .reglas{ counter-reset:r; list-style:none; padding:0; margin:0; display:grid; gap:18px } .reglas li{ counter-increment:r; display:grid; grid-template-columns:52px 1fr; gap:14px; align-items:start }
+  .reglas li::before{ content:counter(r, upper-roman); font:400 30px/1 var(--serif); color:var(--vino) } .reglas b{ display:block; font:400 22px/1.2 var(--serif) } .reglas span{ color:var(--suave); font-size:15px }
+
+  #botica{ background:var(--papel2) }
+  .ti{ --ti-fondo:#FBF6EC; --ti-capa:#FBF6EC; --ti-tinta:var(--tinta); --ti-suave:var(--suave); --ti-linea:#1D1A161f; --ti-acento:var(--vino); --ti-sobre:var(--papel); --ti-radio:8px; --ti-titulo:var(--serif) }
+  .ti-info b, .ti-cuerpo h3, .ti-carro h3{ font-weight:400 !important } .ti-card{ box-shadow:0 20px 30px -26px #3a2a1a } .ti-foto img{ filter:sepia(.12) }
+
+  .polas{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:16px } @media (min-width:860px){ .polas{ grid-template-columns:repeat(4, 1fr) } }
+  .pola{ margin:0; padding:10px 10px 40px; background:#fff; box-shadow:0 16px 30px -18px #3a2a1a99; transform:rotate(var(--g, 0deg)); position:relative; cursor:zoom-in; border:0; text-align:left; font:inherit }
+  .pola img{ width:100%; aspect-ratio:1; object-fit:cover; filter:sepia(.2) } .pola figcaption{ position:absolute; left:12px; bottom:10px; font:400 italic 16px var(--serif) }
+  .cartas{ display:grid; gap:16px } @media (min-width:860px){ .cartas{ grid-template-columns:repeat(3, 1fr) } }
+  .carta-r{ padding:26px; background:#FBF6EC; border:1px solid var(--linea); position:relative } .carta-r::before{ content:""; position:absolute; inset:6px; border:1px solid var(--linea); pointer-events:none }
+  .carta-r p{ margin:0 0 14px; font:400 21px/1.45 var(--serif); font-style:italic } .carta-r cite{ font:400 12px var(--maq); font-style:normal; color:var(--suave) } .estrellas{ display:flex; gap:2px; color:var(--vino); margin-bottom:12px }
+  .visita{ --mp-radio:8px; --mp-linea:#1D1A1626; --mp-acento:var(--vino); --mp-suave:var(--suave) } .mp-ir a{ background:#FBF6EC }
+  .horario{ display:grid; grid-template-columns:auto 1fr; gap:10px 28px; font:400 14px var(--maq); margin-top:20px } .horario span:nth-child(odd){ text-transform:capitalize; color:var(--suave) } .horario .hoy{ color:var(--vino) !important; font-weight:700 }
+  .qrcaja{ display:flex; gap:18px; align-items:center; margin-top:26px; padding:18px; border:1px dashed #1D1A1655 } #qr{ width:116px; height:116px; flex-shrink:0 } #qr svg{ width:100%; height:100% } .qrcaja b{ font:400 24px var(--serif) } .qrcaja p{ margin:4px 0 0; color:var(--suave); font-size:14px }
+  details{ border-bottom:1px solid var(--linea); max-width:780px } summary{ cursor:pointer; list-style:none; padding:18px 0; font:400 22px var(--serif); display:flex; justify-content:space-between; gap:12px; align-items:center } summary::-webkit-details-marker{ display:none } summary svg{ color:var(--vino); transition:transform .3s } details[open] summary svg{ transform:rotate(45deg) } details p{ margin:0 0 18px; color:var(--suave) }
+  footer{ padding:56px 0 calc(100px + env(safe-area-inset-bottom)); background:var(--tinta); color:#C9BFAE; font-size:13px; overflow:hidden } footer .f{ font:400 clamp(54px, 15vw, 150px)/.9 var(--serif); color:var(--papel); margin-bottom:20px; white-space:nowrap } footer .f em{ color:var(--vino2) }
+  .flota{ position:fixed; z-index:25; right:16px; bottom:calc(16px + env(safe-area-inset-bottom)); box-shadow:0 12px 30px -10px #000a; transition:transform .4s } .flota.fuera{ transform:translateY(160%) }
+  dialog.h{ border:0; padding:0; background:transparent; max-width:none; max-height:none; width:100%; height:100%; margin:0 } dialog.h::backdrop{ background:#000b } dialog.h[open]{ display:flex; align-items:center; justify-content:center }
+  #grande img{ max-width:96vw; max-height:86svh; object-fit:contain; border:10px solid #fff }
+  .toast{ position:fixed; z-index:150; left:50%; top:calc(76px + env(safe-area-inset-top)); transform:translateX(-50%); background:var(--tinta); color:var(--papel); padding:10px 18px; font:400 13px var(--maq); opacity:0; transition:opacity .3s; pointer-events:none; max-width:calc(100% - 32px) } .toast.si{ opacity:1 }
+  @media (prefers-reduced-motion:reduce){ html{ scroll-behavior:auto } [data-rev]{ opacity:1; transform:none } .marco video{ display:none } }
 </style>
 </head>
 <body>
 <div class="demo">Página de muestra de Grupo Mazi · negocio ficticio</div>
 <header><div class="env">
-  <a class="logo" href="#">Casa Brava<small>Barber Club · 1998</small></a>
-  <a class="btn vino" href="#reservar">Reservar</a>
+  <a class="logo" href="#"><b>Casa Brava</b><small>BARBER CLUB · 1998</small></a>
+  <nav><a href="#carta">La carta</a><a href="#paquetes">Paquetes</a><a href="#club">El Club</a><a href="#botica">La botica</a><a href="#reservar">Apartar</a><a href="#visita">Dónde</a></nav>
+  <button class="icono" id="abrirCarro" aria-label="Tu pedido de la botica"><span id="icoCarro"></span><span class="num" id="carroNum" hidden>0</span></button>
+  <a class="btn" href="#reservar">Apartar</a>
 </div></header>
 
 <main>
-<div class="portada"><div class="env">
+<div class="portada" id="portada"><div class="env">
   <div>
-    <p class="sello">Navaja · Toalla · Plática</p>
-    <h1>La barbería <em>de antes</em>, con la agenda de hoy.</h1>
-    <p>Afeitado con navaja y toalla caliente, cortes clásicos y un café mientras esperas. Aparta tu silla en un minuto, sin llamar.</p>
-    <p style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><a class="btn" href="#reservar">Apartar mi silla</a><span class="estado" id="estado"></span></p>
+    <p class="maq">Navaja · Toalla caliente · Plática</p>
+    <h1>La barbería <em>de antes,</em> con la agenda de hoy.</h1>
+    <p class="lead">Afeitado con navaja y dos toallas calientes, cortes de siempre y un café mientras esperas. Aparta tu silla en un minuto, sin llamar.</p>
+    <p style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:0"><a class="btn" href="#reservar">Apartar mi silla</a><span class="estado" id="estado"><i></i><span></span></span></p>
   </div>
-  <figure class="marco" style="margin:0"><img src="../img/7518731-c.webp" alt="Un barbero corta el cabello de un cliente frente a una pared de ladrillo" fetchpriority="high"><figcaption>La silla número uno, desde 1998.</figcaption></figure>
+  <figure class="marco" style="margin-top:20px"><span class="sello"><span>Desde<b>1998</b>Centro</span></span>
+    <video id="vid" muted playsinline loop autoplay preload="metadata" poster="../video/casa-v.jpg" aria-label="Un barbero afeita a un cliente con toalla caliente"></video>
+    <figcaption>La silla número uno.</figcaption></figure>
 </div></div>
+<div class="cinta mq" id="cinta"></div>
 
 <section id="carta"><div class="env">
-  <h2>La carta</h2><p class="sub">Precios fijos, sin propina obligatoria.</p>
-  <div class="carta" id="carta"></div>
+  <p class="maq" data-rev>Precios fijos · sin propina obligatoria</p><h2 data-rev>La <em>carta</em></h2>
+  <div class="carta" id="cartaL"></div>
 </div></section>
 
-<section id="paquetes"><div class="env">
-  <h2>Paquetes</h2><p class="sub">Lo que más se pide, junto y más barato.</p>
+<section id="paquetes" style="background:var(--papel2)"><div class="env">
+  <p class="maq" data-rev>Lo que más se pide, junto</p><h2 data-rev>Paquetes</h2><p class="sub" data-rev>Cuestan menos que sumar sus piezas y se apartan de un jalón, con el tiempo completo.</p>
   <div class="paquetes" id="paquetesL"></div>
 </div></section>
 
-<section class="club" id="club"><div class="env dos">
-  <div>
-    <h2>El Club</h2><p class="sub">Para el que no falla cada quince días.</p>
-    <ul><li>2 cortes y 2 arreglos de barba al mes</li><li>Prioridad para apartar los sábados</li><li>10 % en productos</li><li>Un afeitado clásico de regalo en tu cumpleaños</li></ul>
-    <p style="font:700 30px/1 var(--maq);margin:0 0 20px">$590<small style="font-size:15px;font-weight:400"> / mes</small></p>
-    <a class="btn" id="unirme" href="#" target="_blank" rel="noopener">Quiero unirme</a>
-  </div>
-  <img src="../img/7518728-c.webp" alt="El salón de la barbería con sus sillas de piel" loading="lazy">
+<section id="club" class="oscuro"><div class="env club">
+  <div data-rev><p class="maq">Para el que no falla cada quince días</p><h2>El <em style="color:var(--laton)">Club</em></h2><p class="sub">Una cuota al mes, tu silla con prioridad los sábados y la botica con descuento.</p>
+    <div class="niveles" id="niveles"></div></div>
+  <div data-rev><div class="membresia" id="tarjeta"><div class="top"><span>CASA BRAVA</span><span>SOCIO</span></div><div><b>Barber Club</b><br><small>N.º 0198 · desde 1998</small></div><small>Presenta esta tarjeta en tu teléfono</small></div></div>
 </div></section>
 
-<section id="reservar"><div class="env">
-  <h2>Aparta tu silla</h2><p class="sub">Puedes escoger varios servicios; el tiempo y el precio se suman solos.</p>
-  <div class="reserva-caja" id="reserva"></div>
-  <h3 style="font:400 26px var(--serif);margin:36px 0 8px">Mis citas</h3>
-  <div id="mis" style="max-width:600px"></div>
+<section id="reservar"><div class="env dos">
+  <div data-rev><p class="maq">Un minuto, sin llamar</p><h2>Aparta tu <em>silla</em></h2><p class="sub">Puedes escoger varios servicios: el tiempo y el precio se suman solos.</p>
+    <div class="reserva-caja" id="reserva"></div>
+    <h3 style="font:400 28px var(--serif);margin:34px 0 8px">Mis citas</h3><div id="mis" class="rv" style="max-width:640px"></div></div>
+  <div data-rev><p class="maq">Las reglas de la casa</p><ol class="reglas" id="reglas"></ol></div>
 </div></section>
 
-<section><div class="env">
-  <h2>La casa</h2><p class="sub">Así se ve un martes cualquiera.</p>
-  <div class="galeria"><img src="../img/897262-c.webp" alt="Afeitado de barba con navaja" loading="lazy"><img src="../img/995300-c.webp" alt="Navaja, brocha y jabonera" loading="lazy"><img src="../img/7697441-c.webp" alt="Un barbero rasura a un señor" loading="lazy"><img src="../img/9456810-c.webp" alt="Una navaja de mango de madera" loading="lazy"></div>
+<section id="botica"><div class="env">
+  <p class="maq" data-rev>Lo que usamos en la silla</p><h2 data-rev>La <em>botica</em></h2><p class="sub" data-rev>Pomadas, aceites, navajas y el cofre para regalar. Te lo apartamos para tu cita o te lo llevamos en Querétaro.</p>
+  <div id="tiendaL"></div>
 </div></section>
 
 <section><div class="env">
-  <h2>Preguntas</h2>
-  <details><summary>¿Tengo que reservar o puedo llegar?</summary><p>Puedes llegar, pero con reserva no esperas. Los sábados casi siempre está lleno.</p></details>
-  <details><summary>¿Qué pasa si llego tarde?</summary><p>Te esperamos 10 minutos. Si no alcanzamos a hacer todo, te movemos a la siguiente hora libre.</p></details>
-  <details><summary>¿Cómo cancelo?</summary><p>Desde «Mis citas» en esta misma página, o por WhatsApp. Avísanos con 2 horas de anticipación, por favor.</p></details>
-  <details><summary>¿Aceptan tarjeta?</summary><p>Sí: tarjeta, transferencia y efectivo.</p></details>
+  <p class="maq" data-rev>Así se ve un martes cualquiera</p><h2 data-rev>La <em>casa</em></h2>
+  <div class="polas" id="polas"></div>
 </div></section>
 
-<section><div class="env dos">
-  <div><h2>Dónde estamos</h2><p class="sub">Andador 5 de Mayo 37, Centro Histórico, Querétaro (dirección de muestra).</p><a class="btn hueco" href="https://maps.google.com/?q=5+de+Mayo+Queretaro" target="_blank" rel="noopener">Cómo llegar</a></div>
-  <div class="horario" id="horario"></div>
+<section style="background:var(--papel2)"><div class="env">
+  <p class="maq" data-rev>Reseñas de muestra</p><h2 data-rev>Nos <em>escriben</em></h2>
+  <div class="cartas" id="cartas"></div>
+</div></section>
+
+<section id="visita"><div class="env dos visita">
+  <div data-rev id="mapa"></div>
+  <div data-rev><p class="maq">Dirección de muestra</p><h2>Dónde <em>estamos</em></h2><div class="horario" id="horario"></div>
+    <div class="qrcaja"><div id="qr" aria-label="Código QR de esta página"></div><div><b>Escanea y aparta</b><p>Va en el espejo, en la tarjeta y en el póster de la entrada.</p></div></div></div>
+</div></section>
+
+<section style="padding-top:20px"><div class="env">
+  <h2 data-rev>Preguntas</h2><div id="faq"></div>
 </div></section>
 </main>
-<footer><div class="env">Casa Brava Barber Club · Página de muestra de Grupo Mazi (paquete Completa). Fotos: Pexels (Pavel Danilyuk, RDNE Stock project, Erik Mclean y otros).</div></footer>
-<a class="btn vino flota" href="#reservar" id="flota">Reservar</a>
+<footer><div class="env"><div class="f" aria-hidden="true">Casa <em>Brava</em></div>Casa Brava Barber Club · Página de muestra de Grupo Mazi (paquete Completa). Fotos de Pexels y Unsplash; video de Mixkit. Negocio ficticio.</div></footer>
+<a class="btn flota fuera" href="#reservar" id="flota">Apartar</a>
+<div class="toast" id="toast" role="status"></div>
+<dialog class="h" id="grande" aria-label="Foto"><img alt=""></dialog>
 
 <script type="module">
 import { crearAgenda, hora12, pesos, nombreDia } from '../comun/agenda.js';
 import { montarReserva, pintarMisCitas } from '../comun/reservar.js';
-const $ = (s) => document.querySelector(s);
+import { montarTienda } from '../comun/tienda.js';
+import { elegir } from '../comun/catalogo.js';
+import { revelar, mapa, qr, marquesina, inclinar, estilos, CSS_MAPA, CSS_MQ } from '../comun/extras.js';
+import { ico } from '../comun/iconos.js';
+estilos(CSS_MAPA, CSS_MQ);
+const $ = (s) => document.querySelector(s), $$ = (s) => [...document.querySelectorAll(s)];
+const aviso = (t) => { const e = $('#toast'); e.textContent = t; e.classList.add('si'); clearTimeout(aviso.t); aviso.t = setTimeout(() => e.classList.remove('si'), 2200); };
+$('#icoCarro').innerHTML = ico('shopping-bag', 20);
 const SERVICIOS = [
-  { id: 'corte', cat: 'Cabello', nombre: 'Corte clásico', dur: 40, precio: 200, nota: 'Tijera, lavado y peinado', icono: 'scissors' },
+  { id: 'corte', cat: 'Cabello', nombre: 'Corte clásico', dur: 40, precio: 200, nota: 'Tijera, lavado y peinado con raya', icono: 'scissors' },
   { id: 'fade', cat: 'Cabello', nombre: 'Corte degradado', dur: 45, precio: 230, nota: 'Con máquina y navaja en la nuca', icono: 'zap' },
-  { id: 'nino', cat: 'Cabello', nombre: 'Corte de niño', dur: 30, precio: 150, nota: 'Hasta 12 años', icono: 'baby' },
+  { id: 'nino', cat: 'Cabello', nombre: 'Corte de niño', dur: 30, precio: 150, nota: 'Hasta 12 años, con paleta', icono: 'baby' },
   { id: 'afeitado', cat: 'Barba', nombre: 'Afeitado clásico', dur: 40, precio: 220, nota: 'Navaja, dos toallas calientes y loción', icono: 'flame' },
-  { id: 'barba', cat: 'Barba', nombre: 'Arreglo de barba', dur: 30, precio: 170, nota: 'Perfilado y aceite', icono: 'user-round' },
-  { id: 'facial', cat: 'Extras', nombre: 'Facial de barbero', dur: 20, precio: 140, nota: 'Limpieza y mascarilla', icono: 'droplets' },
-  { id: 'cejas', cat: 'Extras', nombre: 'Cejas con navaja', dur: 10, precio: 70, nota: 'Rápido y limpio', icono: 'eye' }
+  { id: 'barba', cat: 'Barba', nombre: 'Arreglo de barba', dur: 30, precio: 170, nota: 'Perfilado a navaja y aceite', icono: 'user-round' },
+  { id: 'bigote', cat: 'Barba', nombre: 'Bigote de manubrio', dur: 15, precio: 90, nota: 'Recorte y cera para darle forma', icono: 'pencil' },
+  { id: 'facial', cat: 'Extras', nombre: 'Facial de barbero', dur: 20, precio: 140, nota: 'Limpieza, vapor y mascarilla', icono: 'droplets' },
+  { id: 'cejas', cat: 'Extras', nombre: 'Cejas con navaja', dur: 10, precio: 70, nota: 'Rápido y limpio', icono: 'eye' },
+  { id: 'lustre', cat: 'Extras', nombre: 'Bolea de zapatos', dur: 15, precio: 60, nota: 'Mientras te cortan, como antes', icono: 'sparkles' }
 ];
 const PAQUETES = [
-  { nombre: 'El de siempre', incluye: ['corte', 'barba'], precio: 330, nota: 'Corte clásico y barba' },
-  { nombre: 'El caballero', incluye: ['corte', 'afeitado', 'facial'], precio: 490, nota: 'La experiencia completa, 1 h 40 min', mejor: true },
+  { nombre: 'El de siempre', incluye: ['corte', 'barba'], precio: 330, nota: 'Corte clásico y barba · 70 min' },
+  { nombre: 'El caballero', incluye: ['corte', 'afeitado', 'facial', 'lustre'], precio: 540, nota: 'La experiencia completa · 1 h 55 min', mejor: true },
   { nombre: 'Papá e hijo', incluye: ['corte', 'nino'], precio: 310, nota: 'Los dos en la misma hora' }
 ];
 const BARBEROS = [{ id: 'memo', nombre: 'Don Memo', esp: 'Navaja clásica · 25 años', foto: '../img/7697441-c.webp' }, { id: 'raul', nombre: 'Raúl', esp: 'Cortes clásicos · 12 años', foto: '../img/7518731-c.webp' }];
+const PRODUCTOS = elegir(['brillo', 'aceite', 'balsamo', 'peine', 'brocha', 'navaja', 'rastrillo', 'cofre', 'arcilla', 'facial']);
 const H = { 2: [600, 1200], 3: [600, 1200], 4: [600, 1200], 5: [600, 1230], 6: [540, 1200], 0: [600, 900] };
-const ag = crearAgenda({ negocio: 'Casa Brava Barber Club', clave: 'casabrava', horario: H, barberos: BARBEROS, direccion: 'Andador 5 de Mayo 37, Querétaro' });
+const DIR = 'Andador 5 de Mayo 37, Centro Histórico, Querétaro';
+const ag = crearAgenda({ negocio: 'Casa Brava Barber Club', clave: 'casabrava', horario: H, barberos: BARBEROS, direccion: DIR });
 
-/* la carta, por secciones y con puntitos como las de antes */
-$('#carta').innerHTML = [...new Set(SERVICIOS.map(s => s.cat))].map(c => `<h3>${c}</h3>` + SERVICIOS.filter(s => s.cat === c).map(s => `<div class="fila"><b>${s.nombre}</b><span class="puntos"></span><span class="pr">${pesos(s.precio)}</span></div><small class="nota">${s.nota} · ${s.dur} min</small>`).join('')).join('');
-/* los paquetes cuestan menos que sumar sus piezas; se reservan como un servicio de la duración de todas */
-$('#paquetesL').innerHTML = PAQUETES.map((p, i) => { const piezas = p.incluye.map(id => SERVICIOS.find(s => s.id === id)), suma = piezas.reduce((a, s) => a + s.precio, 0);
-  return `<article class="paq ${p.mejor ? 'mejor' : ''}">${p.mejor ? '<span class="etiqueta">El más pedido</span>' : ''}<h3>${p.nombre}</h3><div class="precio">${pesos(p.precio)} <s>${pesos(suma)}</s></div><p style="margin:0">${p.nota}</p><ul>${piezas.map(s => `<li>${s.nombre}</li>`).join('')}</ul><button class="btn" data-paq="${i}">Reservar paquete</button></article>`; }).join('');
-const hoy = new Date().getDay();
-$('#horario').innerHTML = [1, 2, 3, 4, 5, 6, 0].map(d => { const h = H[d], c = d === hoy ? 'hoy' : ''; return `<span class="${c}">${nombreDia(new Date(2026, 10, 1 + d))}</span><span class="${c}">${h ? hora12(h[0]) + ' – ' + hora12(h[1]) : 'Cerrado'}</span>`; }).join('');
-const e = ag.abiertoAhora(); $('#estado').innerHTML = e.abierto ? `<b>●</b> ${e.texto}` : e.texto;
-$('#unirme').href = ag.whatsappTexto('Hola, Casa Brava. Me interesa unirme al Club ($590 al mes). ¿Cómo le hago?');
+const vid = $('#vid'); if(!matchMedia('(prefers-reduced-motion: reduce)').matches){ vid.src = '../video/casa-v.mp4'; vid.play?.().catch(() => {}); }
+marquesina($('#cinta'), ['Afeitado con toalla caliente', 'Café de olla', 'Cortes de siempre', 'Bolea mientras esperas', 'Desde 1998'], '✦');
+const e = ag.abiertoAhora(); $('#estado').classList.toggle('si', e.abierto); $('#estado span').textContent = e.texto;
 
 const R = montarReserva($('#reserva'), { ag, servicios: SERVICIOS, barberos: BARBEROS, multi: true, alListo: () => pintarMisCitas($('#mis'), ag) });
 pintarMisCitas($('#mis'), ag);
+const irA = () => $('#reservar').scrollIntoView({ behavior: 'smooth' });
+
+$('#cartaL').innerHTML = [...new Set(SERVICIOS.map(s => s.cat))].map(c => `<h3>${c}</h3>` + SERVICIOS.filter(s => s.cat === c).map(s => `<div class="fila" data-rev><div class="l"><b>${s.nombre}</b><span class="puntos"></span></div><span class="pr">${pesos(s.precio)}</span><small>${s.nota} · ${s.dur} min</small><button data-serv="${s.id}">Apartar</button></div>`).join('')).join('');
+$('#cartaL').onclick = (ev) => { const b = ev.target.closest('[data-serv]'); if(!b) return; R.empezar({ servicio: SERVICIOS.find(s => s.id === b.dataset.serv) }); irA(); };
+
+$('#paquetesL').innerHTML = PAQUETES.map((p, i) => { const piezas = p.incluye.map(id => SERVICIOS.find(s => s.id === id)), suma = piezas.reduce((a, s) => a + s.precio, 0);
+  return `<article class="paq ${p.mejor ? 'mejor' : ''}" data-rev>${p.mejor ? '<span class="et">El más pedido</span>' : ''}<h3>${p.nombre}</h3><div class="precio">${pesos(p.precio)}<s>${pesos(suma)}</s></div><p style="margin:0;opacity:.75">${p.nota}</p><ul>${piezas.map(s => `<li>${ico('check', 16)}${s.nombre}</li>`).join('')}</ul><button class="btn" data-paq="${i}">Apartar este</button></article>`; }).join('');
 $('#paquetesL').onclick = (ev) => { const b = ev.target.closest('[data-paq]'); if(!b) return; const p = PAQUETES[+b.dataset.paq], piezas = p.incluye.map(id => SERVICIOS.find(s => s.id === id));
-  R.empezar({ servicio: { id: 'paq' + b.dataset.paq, nombre: `Paquete «${p.nombre}»`, dur: piezas.reduce((a, s) => a + s.dur, 0), precio: p.precio } }); $('#reservar').scrollIntoView({ behavior: 'smooth' }); };
-new IntersectionObserver(([en]) => { $('#flota').style.display = en.isIntersecting ? 'none' : ''; }, { threshold: .2 }).observe($('#reservar'));
+  R.empezar({ servicio: { id: 'paq' + b.dataset.paq, nombre: `Paquete «${p.nombre}»`, dur: piezas.reduce((a, s) => a + s.dur, 0), precio: p.precio } }); irA(); };
+
+$('#niveles').innerHTML = [['Socio', 590, '2 cortes y 2 arreglos de barba al mes · prioridad los sábados · 10 % en la botica'], ['Socio de honor', 990, 'Todo ilimitado, un afeitado de regalo en tu cumpleaños y 15 % en la botica']]
+  .map(([n, p, d]) => `<div class="nivel"><b>${n}</b><span class="p">${pesos(p)}/mes</span><p>${d}</p><a class="btn chico" target="_blank" rel="noopener" href="${ag.whatsappTexto(`Hola, Casa Brava. Me interesa ser ${n} del Club (${pesos(p)} al mes).`)}">Quiero ser ${n.toLowerCase()}</a></div>`).join('');
+inclinar($('#tarjeta'));
+$('#reglas').innerHTML = [['Aquí no hay prisa', 'Tu hora es tuya. Si llegas antes, hay café de olla y periódico.'], ['Se reserva, no se forma', 'Con cita no esperas. Sin cita, te damos la siguiente hora libre.'], ['Diez minutos de gracia', 'Si se te hace tarde, te esperamos diez minutos.'], ['La navaja, siempre nueva', 'Una hoja por cliente, sin excepción.'], ['El niño se va con paleta', 'Y el papá, con la barba hecha.']]
+  .map(([b, s]) => `<li><div><b>${b}</b><span>${s}</span></div></li>`).join('');
+
+montarTienda($('#tiendaL'), { ag, clave: 'casabrava', productos: PRODUCTOS, carroBtn: $('#abrirCarro'), contador: $('#carroNum'), envio: 49, envioGratis: 800, aviso, negocio: 'Casa Brava' });
+
+$('#polas').innerHTML = [['897262', 'El afeitado'], ['995300', 'La jabonera'], ['7697441', 'Don Memo'], ['7518728', 'El salón'], ['9456810', 'La navaja'], ['3993133', 'Los espejos'], ['6007400', 'La barba'], ['8468019', 'La repisa']]
+  .map(([f, t], i) => `<button class="pola" data-rev data-foto="${f}" style="--g:${[-2, 1.5, -1, 2, 1, -1.5, 2, -1][i]}deg" aria-label="Ver ${t} en grande"><img src="../img/${f}-c.webp" alt="" loading="lazy"><figcaption>${t}</figcaption></button>`).join('');
+$('#polas').onclick = (ev) => { const b = ev.target.closest('[data-foto]'); if(!b) return; $('#grande img').src = `../img/${b.dataset.foto}.webp`; $('#grande').showModal(); };
+$('#grande').onclick = () => $('#grande').close();
+$('#cartas').innerHTML = [['Don Memo me afeitó el día de mi boda y treinta años después afeita a mi hijo.', 'Ernesto V., cliente desde 1998'], ['Aparté desde la página en la noche y al otro día ni esperé. Y el café de olla, como en casa.', 'Javier L.'], ['Llevé a mi papá por su cumpleaños con el paquete El caballero. Salió diez años más joven.', 'Andrea M.']]
+  .map(([t, c]) => `<div class="carta-r" data-rev><div class="estrellas">${ico('star', 15).repeat(5)}</div><p>«${t}»</p><cite>— ${c}</cite></div>`).join('');
+mapa($('#mapa'), { nombre: 'Casa Brava Barber Club', direccion: DIR, notas: [['circle-parking', 'Estacionamiento en Pasteur, a una cuadra'], ['coffee', 'Café de olla mientras esperas'], ['map', 'A dos cuadras del Jardín Zenea']] });
+const hoy = new Date().getDay();
+$('#horario').innerHTML = [1, 2, 3, 4, 5, 6, 0].map(d => { const h = H[d], c = d === hoy ? 'hoy' : ''; return `<span class="${c}">${nombreDia(new Date(2026, 10, 1 + d))}</span><span class="${c}">${h ? hora12(h[0]) + ' – ' + hora12(h[1]) : 'Cerrado'}</span>`; }).join('');
+qr($('#qr'), { celda: 4 });
+$('#faq').innerHTML = [['¿Tengo que reservar o puedo llegar?', 'Puedes llegar, pero con reserva no esperas. Los sábados casi siempre está lleno.'], ['¿Qué pasa si llego tarde?', 'Te esperamos 10 minutos. Si no alcanzamos a hacer todo, te movemos a la siguiente hora libre.'],
+  ['¿Cómo cancelo?', 'Desde «Mis citas» en esta misma página, o por WhatsApp. Avísanos con 2 horas de anticipación, por favor.'], ['¿Aceptan tarjeta?', 'Sí: tarjeta, transferencia y efectivo.']]
+  .map(([q, r]) => `<details data-rev><summary>${q}${ico('plus', 22)}</summary><p>${r}</p></details>`).join('');
+new IntersectionObserver(([en]) => { $('#flota').classList.toggle('fuera', en.isIntersecting); }, { threshold: .1 }).observe($('#reservar'));
+new IntersectionObserver(([en]) => { if(en.isIntersecting) $('#flota').classList.add('fuera'); }).observe($('#portada'));
+revelar();
 </script>
 </body>
 </html>
