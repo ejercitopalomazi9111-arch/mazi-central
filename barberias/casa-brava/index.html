@@ -121,13 +121,13 @@ import { crearAgenda, hora12, pesos, nombreDia } from '../comun/agenda.js';
 import { montarReserva, pintarMisCitas } from '../comun/reservar.js';
 const $ = (s) => document.querySelector(s);
 const SERVICIOS = [
-  { id: 'corte', cat: 'Cabello', nombre: 'Corte clásico', dur: 40, precio: 200, nota: 'Tijera, lavado y peinado', icono: '✂️' },
-  { id: 'fade', cat: 'Cabello', nombre: 'Corte degradado', dur: 45, precio: 230, nota: 'Con máquina y navaja en la nuca', icono: '💈' },
-  { id: 'nino', cat: 'Cabello', nombre: 'Corte de niño', dur: 30, precio: 150, nota: 'Hasta 12 años', icono: '🧒' },
-  { id: 'afeitado', cat: 'Barba', nombre: 'Afeitado clásico', dur: 40, precio: 220, nota: 'Navaja, dos toallas calientes y loción', icono: '🪒' },
-  { id: 'barba', cat: 'Barba', nombre: 'Arreglo de barba', dur: 30, precio: 170, nota: 'Perfilado y aceite', icono: '🧔' },
-  { id: 'facial', cat: 'Extras', nombre: 'Facial de barbero', dur: 20, precio: 140, nota: 'Limpieza y mascarilla', icono: '🧖' },
-  { id: 'cejas', cat: 'Extras', nombre: 'Cejas con navaja', dur: 10, precio: 70, nota: 'Rápido y limpio', icono: '👁️' }
+  { id: 'corte', cat: 'Cabello', nombre: 'Corte clásico', dur: 40, precio: 200, nota: 'Tijera, lavado y peinado', icono: 'scissors' },
+  { id: 'fade', cat: 'Cabello', nombre: 'Corte degradado', dur: 45, precio: 230, nota: 'Con máquina y navaja en la nuca', icono: 'zap' },
+  { id: 'nino', cat: 'Cabello', nombre: 'Corte de niño', dur: 30, precio: 150, nota: 'Hasta 12 años', icono: 'baby' },
+  { id: 'afeitado', cat: 'Barba', nombre: 'Afeitado clásico', dur: 40, precio: 220, nota: 'Navaja, dos toallas calientes y loción', icono: 'flame' },
+  { id: 'barba', cat: 'Barba', nombre: 'Arreglo de barba', dur: 30, precio: 170, nota: 'Perfilado y aceite', icono: 'user-round' },
+  { id: 'facial', cat: 'Extras', nombre: 'Facial de barbero', dur: 20, precio: 140, nota: 'Limpieza y mascarilla', icono: 'droplets' },
+  { id: 'cejas', cat: 'Extras', nombre: 'Cejas con navaja', dur: 10, precio: 70, nota: 'Rápido y limpio', icono: 'eye' }
 ];
 const PAQUETES = [
   { nombre: 'El de siempre', incluye: ['corte', 'barba'], precio: 330, nota: 'Corte clásico y barba' },

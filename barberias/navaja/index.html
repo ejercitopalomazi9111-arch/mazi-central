@@ -128,12 +128,12 @@ import { crearAgenda, hora12, pesos, nombreDia } from '../comun/agenda.js';
 import { montarReserva, pintarMisCitas } from '../comun/reservar.js';
 const $ = (s) => document.querySelector(s), $$ = (s) => [...document.querySelectorAll(s)];
 const SERVICIOS = [
-  { id: 'fade', nombre: 'Fade', dur: 45, precio: 220, nota: 'Bajo, medio, alto o taper', icono: '✂️' },
-  { id: 'clasico', nombre: 'Corte clásico', dur: 40, precio: 190, nota: 'Tijera y máquina, con lavado', icono: '💈' },
-  { id: 'barba', nombre: 'Barba con navaja', dur: 30, precio: 160, nota: 'Toalla caliente y perfilado', icono: '🪒' },
-  { id: 'combo', nombre: 'Fade + barba', dur: 75, precio: 340, nota: 'El completo', icono: '🔥' },
-  { id: 'diseno', nombre: 'Diseño / líneas', dur: 20, precio: 90, nota: 'Rayas y figuras a mano', icono: '✏️' },
-  { id: 'cejas', nombre: 'Cejas', dur: 15, precio: 60, nota: 'Con navaja', icono: '👁️' }
+  { id: 'fade', nombre: 'Fade', dur: 45, precio: 220, nota: 'Bajo, medio, alto o taper', icono: 'scissors' },
+  { id: 'clasico', nombre: 'Corte clásico', dur: 40, precio: 190, nota: 'Tijera y máquina, con lavado', icono: 'zap' },
+  { id: 'barba', nombre: 'Barba con navaja', dur: 30, precio: 160, nota: 'Toalla caliente y perfilado', icono: 'flame' },
+  { id: 'combo', nombre: 'Fade + barba', dur: 75, precio: 340, nota: 'El completo', icono: 'sparkles' },
+  { id: 'diseno', nombre: 'Diseño / líneas', dur: 20, precio: 90, nota: 'Rayas y figuras a mano', icono: 'pencil' },
+  { id: 'cejas', nombre: 'Cejas', dur: 15, precio: 60, nota: 'Con navaja', icono: 'eye' }
 ];
 const BARBEROS = [
   { id: 'toño', nombre: 'Toño', esp: 'Fades limpios · 9 años', foto: '../img/1836983-c.webp' },

@@ -116,7 +116,7 @@
 <header id="cabecera"><div class="env">
   <a class="logo" href="#">OBSIDIANA</a>
   <nav><a href="#servicios">Servicios</a><a href="#equipo">Equipo</a><a href="#lookbook">Lookbook</a><a href="#tienda">Tienda</a><a href="#regalo">Regalar</a><a href="#" data-mis>Mis citas</a></nav>
-  <button class="icono" id="abrirCarro" style="margin-left:auto" aria-label="Carrito de productos">🛍<span class="num" id="carroNum" hidden>0</span></button>
+  <button class="icono" id="abrirCarro" style="margin-left:auto" aria-label="Carrito de productos"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 10a4 4 0 0 1-8 0"/><path d="M3.103 6.034h17.794"/><path d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z"/></svg><span class="num" id="carroNum" hidden>0</span></button>
   <button class="btn" data-reservar>Reservar</button>
 </div><div class="progreso" id="progreso"></div></header>
 
@@ -207,20 +207,21 @@
 <script type="module">
 import { crearAgenda, hora12, pesos, nombreDia, fechaCorta } from '../comun/agenda.js';
 import { montarReserva, pintarMisCitas } from '../comun/reservar.js';
+import { ico } from '../comun/iconos.js';
 const $ = (s) => document.querySelector(s), $$ = (s) => [...document.querySelectorAll(s)];
 const aviso = (t) => { const e = $('#toast'); e.textContent = t; e.classList.add('si'); clearTimeout(aviso.t); aviso.t = setTimeout(() => e.classList.remove('si'), 2200); };
 const guardado = (k, v) => { try{ if(v === undefined) return JSON.parse(localStorage.getItem('obsidiana:' + k)); localStorage.setItem('obsidiana:' + k, JSON.stringify(v)); }catch(e){ return null; } };
 
 const SERVICIOS = [
-  { id: 'firma', cat: 'Cortes', nombre: 'Corte firma', dur: 50, precio: 380, nota: 'Diagnóstico, lavado, corte y peinado', foto: '1836983', icono: '✂️' },
-  { id: 'fade', cat: 'Cortes', nombre: 'Skin fade', dur: 50, precio: 360, nota: 'A navaja, transición perfecta', foto: '4663135', icono: '💈' },
-  { id: 'texturas', cat: 'Cortes', nombre: 'Texturizado', dur: 60, precio: 420, nota: 'Para cabello largo o rizado', foto: '4969866', icono: '〰️' },
-  { id: 'ritual', cat: 'Barba', nombre: 'Ritual de barba', dur: 45, precio: 320, nota: 'Toalla caliente, navaja, bálsamo', foto: '10024234', icono: '🪒' },
-  { id: 'perfil', cat: 'Barba', nombre: 'Perfilado express', dur: 20, precio: 180, nota: 'Contornos limpios', foto: '6007395', icono: '🧔' },
-  { id: 'cabeza', cat: 'Barba', nombre: 'Rasurado de cabeza', dur: 40, precio: 300, nota: 'Navaja y toallas', foto: '12464838', icono: '🌑' },
-  { id: 'facial', cat: 'Tratamientos', nombre: 'Facial negro', dur: 30, precio: 260, nota: 'Carbón activado y vapor', foto: '10665286', icono: '🧖' },
-  { id: 'masaje', cat: 'Tratamientos', nombre: 'Masaje craneal', dur: 15, precio: 150, nota: 'Para cerrar la cita', foto: '7697441', icono: '💆' },
-  { id: 'canas', cat: 'Color', nombre: 'Camuflaje de canas', dur: 30, precio: 340, nota: 'Natural, sin que se note', foto: '3423308', icono: '🎨' }
+  { id: 'firma', cat: 'Cortes', nombre: 'Corte firma', dur: 50, precio: 380, nota: 'Diagnóstico, lavado, corte y peinado', foto: '1836983', icono: 'scissors' },
+  { id: 'fade', cat: 'Cortes', nombre: 'Skin fade', dur: 50, precio: 360, nota: 'A navaja, transición perfecta', foto: '4663135', icono: 'zap' },
+  { id: 'texturas', cat: 'Cortes', nombre: 'Texturizado', dur: 60, precio: 420, nota: 'Para cabello largo o rizado', foto: '4969866', icono: 'spline' },
+  { id: 'ritual', cat: 'Barba', nombre: 'Ritual de barba', dur: 45, precio: 320, nota: 'Toalla caliente, navaja, bálsamo', foto: '10024234', icono: 'flame' },
+  { id: 'perfil', cat: 'Barba', nombre: 'Perfilado express', dur: 20, precio: 180, nota: 'Contornos limpios', foto: '6007395', icono: 'user-round' },
+  { id: 'cabeza', cat: 'Barba', nombre: 'Rasurado de cabeza', dur: 40, precio: 300, nota: 'Navaja y toallas', foto: '12464838', icono: 'circle-user-round' },
+  { id: 'facial', cat: 'Tratamientos', nombre: 'Facial negro', dur: 30, precio: 260, nota: 'Carbón activado y vapor', foto: '10665286', icono: 'droplets' },
+  { id: 'masaje', cat: 'Tratamientos', nombre: 'Masaje craneal', dur: 15, precio: 150, nota: 'Para cerrar la cita', foto: '7697441', icono: 'hand' },
+  { id: 'canas', cat: 'Color', nombre: 'Camuflaje de canas', dur: 30, precio: 340, nota: 'Natural, sin que se note', foto: '3423308', icono: 'palette' }
 ];
 const BARBEROS = [
   { id: 'ale', nombre: 'Ale', esp: 'Fades y texturas · 8 años', foto: '../img/4627333-c.webp' },
@@ -302,7 +303,7 @@ $('#montos').onclick = (e) => { const b = e.target.closest('[data-m]'); if(!b) r
 ['#rPara', '#rDe', '#rMsg'].forEach(s => $(s).addEventListener('input', regalo)); regalo();
 
 /* la tarjeta de sellos: un sello por cita reservada en este teléfono */
-function sellos(){ const n = (guardado('sellos') || 0) % 10; $('#sellos').innerHTML = Array.from({ length: 10 }, (_, i) => `<span class="${i < n ? 'si' : ''}">${i < n ? '✓' : i === 9 ? '🎁' : i + 1}</span>`).join('');
+function sellos(){ const n = (guardado('sellos') || 0) % 10; $('#sellos').innerHTML = Array.from({ length: 10 }, (_, i) => `<span class="${i < n ? 'si' : ''}">${i < n ? '✓' : i === 9 ? ico('gift', 18) : i + 1}</span>`).join('');
   $('#sellosTxt').textContent = n ? `Llevas ${n} de 10. ${10 - n === 1 ? '¡El próximo es gratis!' : `Te faltan ${10 - n} para tu corte gratis.`}` : 'Reserva tu primera cita y empieza a juntar.'; }
 sellos();
 

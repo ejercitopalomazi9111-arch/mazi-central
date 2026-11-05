@@ -1,0 +1,26 @@
+# Fotos de productos · Unsplash (licencia Unsplash: uso comercial libre, sin crédito obligatorio; se da igual)
+
+- brocha-madera.webp · https://unsplash.com/photos/a-close-up-of-a-shaving-brush-on-a-table-dqwMAIGOIQA
+- aceite-barba.webp · https://unsplash.com/photos/a-bottle-of-beard-oil-sits-on-a-wooden-surface-PM3RWacHdxY
+- repisa-negra.webp · https://unsplash.com/photos/four-black-jars-displayed-on-a-white-shelf-65abx3gZo2o
+- kit-rastrillo.webp · https://unsplash.com/photos/double-edge-razor-shaving-cream-and-brush-QY13zZlNyf0
+- balsamo-barba.webp · https://unsplash.com/photos/brown-bottle-of-beard-balm-with-black-pump-dispenser-c5KEHPR5wLg
+- brocha-premium.webp · https://unsplash.com/photos/cream-colored-shaving-brush-with-dark-and-light-bristles-8LbDJ3NBU10
+- trio.webp · https://unsplash.com/photos/hair-styling-products-including-pomade-paste-and-tonic-tJok2YGBvTU
+- herramientas.webp · https://unsplash.com/photos/hair-clippers-and-grooming-tools-MNu0n-3BIKs
+- tonico-repisa.webp · https://unsplash.com/photos/apothecary-salt-tonic-and-pomades-on-a-shelf-WD9UEqUoWt4
+- navajas.webp · https://unsplash.com/photos/a-pair-of-scissors-on-a-table-45qPJ3QtTAg
+- pomada-mano.webp · https://unsplash.com/photos/a-jar-of-food-Qp9_F2Lvr1E
+- pomada-arcilla.webp · https://unsplash.com/photos/a-jar-of-apothecary87-clay-pomade-for-styling-hair-rsEJuk3OZe8
+- pomada-brillo.webp · https://unsplash.com/photos/hand-holding-a-jar-of-grease-pomade-j9XHzuQOoIY
+- pomada-grasa.webp · https://unsplash.com/photos/jar-of-grease-pomade-on-vintage-amplifier-MgPwZiihh8s
+- peine-latas.webp · https://unsplash.com/photos/orange-and-white-hair-comb-WN1P9aSLfa4
+- kit-cofre.webp · https://unsplash.com/photos/black-and-silver-scissors-on-brown-wooden-box-vuON347SuzE
+- aceite-y-cera.webp · https://unsplash.com/photos/beard-oil-and-mustache-wax-on-leather-couch-yu74hX3OvV8
+- cofre-maquina.webp · https://unsplash.com/photos/black-and-silver-hair-brush-beside-brown-suitcase-zqYGhZvfXN4
+- navaja-brocha.webp · https://unsplash.com/photos/black-straight-razor-beside-beige-ceramic-mug-and-shaving-cream-brush-FvKpUZCbZ-s
+- spray-texturizador.webp · https://unsplash.com/photos/black-and-white-labeled-spray-bottle-USOn3NceUqo
+- navaja-clasica.webp · https://unsplash.com/photos/silver-scissors-on-brown-wooden-table-XAkSmK_8kXM
+- peine-madera.webp · https://unsplash.com/photos/wooden-comb-with-decorative-hair-clips-and-scrunchies-9h2cHBQy5WY
+- facial-linea.webp · https://unsplash.com/photos/various-skincare-bottles-and-jars-arranged-on-a-shelf-lGxeKOA6aps
+- tonico-pomada.webp · https://unsplash.com/photos/two-apothecary-hair-products-on-a-dark-surface-OZRO1U1HM-w
