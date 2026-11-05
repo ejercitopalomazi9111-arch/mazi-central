@@ -31,7 +31,7 @@ function cubrir(x, im, X, Y, W, H, foco = .5){
    puerco rosa y el nombre). */
 export async function caraSobre(tipo, W = 640, H = 1000){
   await letrasListas();
-  const s = SOBRES[tipo], caja = await imagen('../arte/materiales/caja-portada.jpg');
+  const s = SOBRES[tipo], caja = await imagen('../arte/web/caja.webp');
   const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
   x.fillStyle = s.color; x.fillRect(0, 0, W, H);
   /* el «metal» del sobre: rayas finas en diagonal, sólo luz y sombra */
