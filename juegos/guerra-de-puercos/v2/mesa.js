@@ -12,7 +12,7 @@
    · nada de recuadros amarillos: lo que pasa se dice con pastillas que se van
      solas y con un dedo que señala, y sólo las primeras veces.
    ═══════════════════════════════════════════════════════════════════════════ */
-import { THREE, E, carta, textura, animar, esperar, sale, entra, suave, resorte, mezcla, cl, vista, aPantalla, aMundo, tocado,
+import { THREE, E, carta, textura, precargar, animar, esperar, sale, entra, suave, resorte, mezcla, cl, vista, aPantalla, aMundo, tocado,
          halo, chispas, cadaCuadro, mascota, CARTA_W, CARTA_H, alCambiarTamano } from './escena.js';
 import { C, cosmetico, guardar } from './coleccion.js';
 import { CAT, fichaDe, misCartas, pagarPartida } from './tienda.js';
@@ -23,6 +23,11 @@ import { aviso, pista, cumplida, quitarPista } from './avisos.js';
 
 const M = globalThis.MOTOR;
 const DUELO = 2.5;              /* los segundos que forcejean, como lo pidió Carlos */
+/* La vida con la que arranca cada quien EN ESTA MESA. El reglamento dice 200 y
+   así se queda en el motor; Carlos, 5 nov: «hay que bajar la vida ya que las
+   rondas duran un chingo». Simulado 400 partidas por valor: con 200 son 31
+   rondas (mediana), con 80 son 12 — unos dos minutos. */
+const PV_MESA = 80;
 
 /* ── TU MAZO, DE TU COLECCIÓN ────────────────────────────────────────────────
    Los puercos que tienes (los mejores 30, `mazoDeColeccion`) y el soporte que
@@ -61,20 +66,41 @@ function pensarMaquina(j){
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
-export async function jugarPartida({ capa, alTerminar }){
+let enCurso = false;
+export async function jugarPartida(op){
+  /* dos toques al botón no arman dos mesas encimadas */
+  if(enCurso) return; enCurso = true;
+  const carga = document.createElement('div'); carga.className = 'barajando';
+  carga.innerHTML = '<img alt="" src="../arte/web/reverso.webp"><b>Barajando…</b><span data-avance></span>';
+  op.capa.appendChild(carga);
+  try{ await partida({ ...op, carga }); }
+  catch(e){
+    /* nunca más una pantalla vacía: si algo truena, se dice qué y se puede salir */
+    console.error(e);
+    carga.innerHTML = `<b>No se pudo armar la mesa</b><span>${String(e && e.message || e).replace(/[<>&]/g, '')}</span><button class="btn" data-volver>Volver al inicio</button>`;
+    carga.querySelector('[data-volver]').onclick = () => { carga.remove(); for(const x of document.querySelectorAll('.mesa')) x.remove(); op.alTerminar && op.alTerminar('inicio'); };
+  }
+  finally{ enCurso = false; }
+}
+async function partida({ capa, alTerminar, carga }){
   quitarPista();
+  const avanza = (n, t) => { const a = carga.querySelector('[data-avance]'); if(a) a.textContent = t ? `${n} de ${t} cartas` : ''; };
   await cargarNumeros();
   let J = armarPartida();
+  J.a.pv = J.b.pv = PV_MESA;
+  /* todas las caras se bajan ANTES de repartir: ninguna aparece en blanco */
+  const todas = [...J.a.mazo, ...J.a.mano, ...J.b.mazo, ...J.b.mano];
+  await precargar([...todas.map(c => fichaDe(c)?.arte), (cosmetico(C.puesto.dorso) || cosmetico('ds-autora')).img], avanza);
   const raiz = new THREE.Group(); E.s.add(raiz);
   const limpieza = [];
   const dom = document.createElement('div'); dom.className = 'mesa'; capa.appendChild(dom);
   const rival = { nombre: 'La Máquina', avatar: 'img/avatares/monkey.png' };
   dom.innerHTML = `
     <div class="mesa__toque" data-toque></div>
-    <div class="hud hud--suyo"><img alt="" src="${rival.avatar}"><div class="hud__txt"><b>${rival.nombre}</b><div class="pv"><i data-barra-b></i><span data-pv-b>200</span></div></div></div>
+    <div class="hud hud--suyo"><img alt="" src="${rival.avatar}"><div class="hud__txt"><b>${rival.nombre}</b><div class="pv"><i data-barra-b></i><span data-pv-b>${PV_MESA}</span></div></div></div>
     <div class="ronda" data-ronda>Ronda 1</div>
     <button class="mesa__salir" data-salir aria-label="Salir"><img alt="" src="img/iconos/cross.png"></button>
-    <div class="hud hud--mio"><img alt="" src="${(cosmetico(C.puesto.avatar) || cosmetico('av-pig')).img}"><div class="hud__txt"><b>Tú</b><div class="pv"><i data-barra-a></i><span data-pv-a>200</span></div></div>
+    <div class="hud hud--mio"><img alt="" src="${(cosmetico(C.puesto.avatar) || cosmetico('av-pig')).img}"><div class="hud__txt"><b>Tú</b><div class="pv"><i data-barra-a></i><span data-pv-a>${PV_MESA}</span></div></div>
       <div class="fusiones" data-fusiones title="Fusiones que te quedan"></div></div>
     <div class="cuenta cuenta--mazo-a" data-n-mazo-a></div><div class="cuenta cuenta--mazo-b" data-n-mazo-b></div>
     <div class="cuenta cuenta--esp" data-esp-bono hidden></div><div class="cuenta cuenta--esp" data-esp-castigo hidden></div>
@@ -149,7 +175,7 @@ export async function jugarPartida({ capa, alTerminar }){
     const x = (k - (n - 1) / 2) * paso, ang = (k - (n - 1) / 2) * -.06;
     return { x, y: L.yMano - Math.abs(k - (n - 1) / 2) * .05, z: .2 + k * .04, rz: ang };
   }
-  function pintarMano(anim = true){
+  function pintarMano(anim = true, dur = .25){
     const mano = jugables();
     mano.forEach((c, k) => {
       const m = mallaDe(c), l = lugarEnMano(k, mano.length), sel = elegidas.some(e => e.id === c.id);
@@ -158,7 +184,7 @@ export async function jugarPartida({ capa, alTerminar }){
       if(m.userData.arrastrando) return;
       if(!anim){ m.position.set(dest.x, dest.y, dest.z); m.rotation.set(0, 0, dest.rz); m.scale.setScalar(dest.s); return; }
       const p0 = m.position.clone(), r0 = m.rotation.z, s0 = m.scale.x, ry0 = m.rotation.y;
-      animar({ dur: .25, cada: (u) => { m.position.set(mezcla(p0.x, dest.x, u), mezcla(p0.y, dest.y, u), mezcla(p0.z, dest.z, u)); m.rotation.set(0, mezcla(ry0, 0, u), mezcla(r0, dest.rz, u)); m.scale.setScalar(mezcla(s0, dest.s, u)); } });
+      animar({ dur, ease: suave, cada: (u) => { m.position.set(mezcla(p0.x, dest.x, u), mezcla(p0.y, dest.y, u), mezcla(p0.z, dest.z, u)); m.rotation.set(0, mezcla(ry0, 0, u), mezcla(r0, dest.rz, u)); m.scale.setScalar(mezcla(s0, dest.s, u)); } });
     });
     /* el soporte que traes, aparte, en una bandeja a la derecha encima de la
        mano: UN montoncito por clase (+5 y −5) con cuántas te quedan. Antes iba
@@ -205,7 +231,7 @@ export async function jugarPartida({ capa, alTerminar }){
   function pintarHud(){
     for(const lado of ['a', 'b']){
       $('[data-pv-' + lado + ']').textContent = J[lado].pv;
-      $('[data-barra-' + lado + ']').style.width = (J[lado].pv / M.PV_INICIAL * 100) + '%';
+      $('[data-barra-' + lado + ']').style.width = (J[lado].pv / PV_MESA * 100) + '%';
     }
     $('[data-ronda]').textContent = 'Ronda ' + J.ronda;
   }
@@ -233,13 +259,32 @@ export async function jugarPartida({ capa, alTerminar }){
   limpieza.push(alCambiarTamano(() => { acomodar(); pintarMano(false); pintarSuMano(); pintarPilas(); ponerCerdo(); }));
 
   /* ═══ REPARTIR: las cartas vuelan del mazo a la mano ═══ */
+  /* Robar: la carta sale del mazo boca abajo, sube en un arco suave, se voltea
+     A MEDIO VUELO y aterriza en su lugar de la mano mientras las demás le
+     abren espacio. Carlos, 5 nov: «más lentas y suaves». */
   async function robar(lado, cartas){
     for(const c of cartas){
-      const m = mallaDe(c), de = pilas[lado].mazo.position;
+      const m = mallaDe(c), de = pilas[lado].mazo.position.clone();
       m.position.set(de.x, de.y, .6); m.rotation.set(0, Math.PI, 0); m.scale.setScalar(L.sPila);
       SON.roba();
-      if(lado === 'a'){ pintarMano(true); await animar({ dur: .32, cada: (u) => { m.rotation.y = mezcla(Math.PI, 0, u); } }); }
-      else { pintarSuMano(); await esperar(.12); }
+      if(lado === 'a'){
+        m.userData.arrastrando = true;                 /* pintarMano no la toca mientras vuela */
+        pintarMano(true, .55);
+        const mano = jugables(), k = mano.findIndex(x => x.id === c.id), l = lugarEnMano(Math.max(0, k), mano.length);
+        const fin = new THREE.Vector3(l.x, l.y, l.z), s0 = L.sPila;
+        if(k < 0){ /* es de soporte: va a su bandeja */ m.userData.arrastrando = false; pintarMano(true); await esperar(.4); continue; }
+        await animar({ dur: .85, ease: suave, cada: (u) => {
+          const arco = Math.sin(u * Math.PI);
+          m.position.set(mezcla(de.x, fin.x, u), mezcla(de.y, fin.y, u) + arco * .9, mezcla(.6, fin.z, u) + arco * 1.6);
+          /* se voltea en la parte alta del arco, no al despegar */
+          m.rotation.set(arco * -.25, mezcla(Math.PI, 0, suave(cl((u - .15) / .6))), mezcla(0, l.rz, u));
+          m.scale.setScalar(mezcla(s0, L.sMano, u) * (1 + arco * .18));
+        } });
+        m.userData.arrastrando = false;
+        SON.aterriza?.();
+        await esperar(.08);
+      }
+      else { pintarSuMano(); await esperar(.22); }
     }
   }
   /* las que están en la mano y todavía no tienen lugar en la mesa = recién robadas */
@@ -247,6 +292,7 @@ export async function jugarPartida({ capa, alTerminar }){
 
   pintarHud();
   pintarPilas();
+  carga.classList.add('se-va'); setTimeout(() => carga.remove(), 400);
   await robar('b', nuevasDe('b'));
   await robar('a', nuevasDe('a'));
   pintarMano(true);
@@ -348,7 +394,11 @@ export async function jugarPartida({ capa, alTerminar }){
 
     /* 1 · Las cartas van a la mesa: la tuya boca arriba, la suya boca abajo. */
     const mias = jugA.cartas.map(c => mallas.get(c.id)), suyas = jugB.cartas.map(c => mallaDe(c));
-    const espMia = jugA.especial ? especialesMias().find(c => c.id === especialId) || especialesMias().find(c => c.esp === jugA.especial) : null;
+    /* la que vuela es LA MISMA que gasta el motor: la primera de esa clase en
+       la mano. Antes volaba la que tocaste y el motor gastaba otra; la que
+       quedaba se volvía una carta fantasma encima de la bandeja que, al
+       tocarla, pedía un soporte que ya no tenías y trababa la partida. */
+    const espMia = jugA.especial ? J.a.mano.find(c => c.nivel === 'ESP' && c.esp === jugA.especial) : null;
     const espSuya = jugB.especial ? J.b.mano.find(c => c.nivel === 'ESP' && c.esp === jugB.especial) : null;
     for(const m of mias) m.userData.enMano = false;
     elegidas = []; especial = null; especialId = null;
@@ -478,6 +528,9 @@ export async function jugarPartida({ capa, alTerminar }){
     /* 7 · Todo lo jugado se va al cementerio, y se actualiza la mesa. */
     for(const m of [...mias, ...suyas, mEspA, mEspB].filter(Boolean)) quitarMalla(m.userData.carta.id);
     J = despues;
+    /* y por si acaso: toda malla cuya carta ya no está en ninguna mano se va */
+    const vivas = new Set([...J.a.mano, ...J.b.mano].map(c => c.id));
+    for(const id of [...mallas.keys()]) if(!vivas.has(id)) quitarMalla(id);
     pintarHud(); pintarPilas();
     await esperar(.35);
     if(J.acabo){ termino = true; await fin(); return; }
@@ -521,7 +574,7 @@ export async function jugarPartida({ capa, alTerminar }){
     for(let i = 0; i < n; i++) for(let j = 0; j < k; j++){
       const g = new THREE.PlaneGeometry(w, hh), uv = g.attributes.uv;
       for(let q = 0; q < uv.count; q++) uv.setXY(q, (i + uv.getX(q)) / n, (j + uv.getY(q)) / k);
-      const p = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ map: tex, transparent: true, side: THREE.DoubleSide }));
+      const p = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide, toneMapped: false }));
       p.scale.setScalar(s);
       p.position.set(base.x + (-CARTA_W / 2 + (i + .5) * w) * s, base.y + (-CARTA_H / 2 + (j + .5) * hh) * s, base.z);
       raiz.add(p);
@@ -566,6 +619,8 @@ export async function jugarPartida({ capa, alTerminar }){
   };
 
   function cerrar(){
+    enCurso = false;            /* «Otra partida» arranca otra desde aquí mismo */
+    delete globalThis.__mesa;
     quitarPista();
     for(const f of limpieza) f();
     cerdo.soltar();

@@ -19,7 +19,7 @@
      mitad de la animación no pierde ninguna carta;
    · «Saltar» voltea todo de un jalón.
    ═══════════════════════════════════════════════════════════════════════════ */
-import { THREE, E, carta, textura, texturaDeLienzo, ponerDorso, animar, esperar, sale, suave, entra, resorte, mezcla, cl,
+import { THREE, E, carta, textura, texturaDeLienzo, precargar, ponerDorso, animar, esperar, sale, suave, entra, resorte, mezcla, cl,
          vista, aPantalla, tocado, halo, chispas, cadaCuadro, CARTA_W, CARTA_H, alCambiarTamano } from './escena.js';
 import { C, RAREZA, ORDEN_RAREZA, CLASES_COSMETICO, cosmetico } from './coleccion.js';
 import { CAT, SOBRES, cobrarSobre } from './tienda.js';
@@ -57,7 +57,8 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
     <button class="btn-chico abrir__saltar" data-saltar hidden>Saltar</button>
     <div class="abrir__rotulos" data-rotulos></div>
     <div class="abrir__ficha" data-ficha hidden></div>
-    <div class="abrir__fin" data-fin hidden></div>`;
+    <div class="abrir__fin" data-fin hidden></div>
+    <div class="abrir__pila" data-pila hidden></div>`;
   const $ = (s) => dom.querySelector(s);
   const limpieza = [];
 
@@ -70,12 +71,32 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
     L.px = vertical ? v.ancho * .5 - L.pw / 2 - v.ancho * .05 : v.ancho * .12;
     L.py = vertical ? v.alto * .02 : 0;
     L.esc = L.pw * .82;                      /* las cartas dentro del sobre */
+    /* la carta que se revela, GRANDE y al centro (antes se volteaba del tamaño
+       del sobre; Carlos: «no hagas tan pequeñas las cartas al salir») */
+    L.grande = vertical ? Math.min(v.ancho * .74 / CARTA_W, v.alto * .5 / CARTA_H) : Math.min(v.alto * .62 / CARTA_H, v.ancho * .3 / CARTA_W);
+    L.gx = vertical ? 0 : v.ancho * .12; L.gy = vertical ? v.alto * .04 : 0;
     /* La mesa de resultados: de la orilla izquierda hasta antes del sobre. */
     L.mx0 = -v.ancho / 2 + .18; L.mx1 = L.px - L.pw / 2 - .18;
     L.my0 = v.alto / 2 - (vertical ? 1.5 : .8);
     L.v = v; L.vertical = vertical;
   }
   acomodar();
+
+  /* las caras de lo que trae se bajan ANTES de enseñar el sobre */
+  await precargar(sobre.salen.map(x => x.tipo === 'puerco' ? CAT.puercos.find(f => f.nombre + '·' + f.puntos === x.llave)?.arte
+    : x.tipo === 'soporte' ? (x.esp === 'bono' ? CAT.bono : CAT.castigo).arte : null));
+
+  /* Los sobres que siguen, amontonados en la esquina: se ven mientras abres
+     éste, y al terminar se abre el de arriba (Carlos, 5 nov). */
+  const pila = $('[data-pila]');
+  const pintarPila = async () => {
+    const otros = C.sobres.filter(x => x.id !== sobre.id);
+    if(!otros.length){ pila.hidden = true; return; }
+    pila.hidden = false;
+    const caras = await Promise.all(otros.slice(0, 5).map(x => caraSobre(x.tipo, 120, 188).then(c => c.toDataURL('image/jpeg', .8))));
+    pila.innerHTML = caras.reverse().map((u, i, a) => `<img alt="" src="${u}" style="--i:${a.length - 1 - i}">`).join('') + `<b>${otros.length}</b>`;
+  };
+  pintarPila();
 
   /* ── EL SOBRE: cuerpo inflado y la tira en pedazos ── */
   const [cara, tira] = await Promise.all([caraSobre(sobre.tipo), tiraSobre(sobre.tipo)]);
@@ -145,7 +166,8 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
     pedazos.forEach((q, i) => {
       const borde = p * SEG - i, u = cl(borde);
       q.u = u;
-      q.piv.rotation.x = -u * 1.1; q.piv.rotation.z = u * .18; q.piv.position.z = .02 + u * .25;
+      /* hacia la cámara (+x), no hacia atrás: Carlos, 5 nov, «en lugar de que quede atrás del sobre» */
+      q.piv.rotation.x = u * 1.15; q.piv.rotation.z = u * .12; q.piv.position.z = .03 + u * .08;
     });
   };
   const capaToque = $('[data-toque]');
@@ -158,10 +180,13 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
       await animar({ dur: .25, cada: (u) => pintarRasgado(mezcla(rasgado, 1, u)) });
       SON.abre();
       chispas(new THREE.Vector3(L.px, L.py + L.ph / 2, .6), { color: '#FFF0F6', cuantas: 50, fuerza: 2.5 });
-      /* la tira entera sale volando */
-      const vuela = pedazos.map((q, i) => ({ q, vx: (Math.random() * .6 + .4) * (i / SEG + .3), vy: 1.4 + Math.random(), r: (Math.random() - .5) * 6 }));
-      animar({ dur: .8, ease: (u) => u, cada: (u) => { for(const w of vuela){ w.q.piv.position.x += w.vx * .03; w.q.piv.position.y += (w.vy - u * 3) * .02; w.q.piv.rotation.z += w.r * .01; w.q.m.material.opacity = 1 - u; } } })
-        .then(() => vuela.forEach(w => w.q.piv.visible = false));
+      /* La tira rota se queda colgando AL FRENTE, enroscada, pegada a la
+         esquina, y se va con el sobre cuando se jala hacia abajo («que se
+         vaya con lo demás»). */
+      animar({ dur: .45, ease: resorte, cada: (u) => { pedazos.forEach((q, i) => {
+        const k = i / (SEG - 1);
+        q.piv.rotation.x = mezcla(1.15, 1.05 + (1 - k) * .9, u); q.piv.rotation.z = mezcla(.12, (1 - k) * -.35, u);
+        q.piv.position.z = mezcla(.11, .06 + (1 - k) * .1, u); } ); } });
       listo();
     };
     capaToque.onpointerdown = (e) => {
@@ -212,7 +237,14 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
       capaToque.onpointerdown = capaToque.onpointermove = capaToque.onpointerup = capaToque.onpointercancel = null;
       cumplida('sacar'); quitarPista(); SON.saca();
       const desde = sobreG.position.y;
-      await animar({ dur: .45, ease: entra, cada: (u) => { sobreG.position.y = mezcla(desde, -L.v.alto * .9, u); sobreG.rotation.z = u * .25; } });
+      /* las cartas saltan fuera del sobre en abanico mientras él se va */
+      const sube = items.map((it, k) => ({ it, p0: it.c.position.clone(), dx: (k - (items.length - 1) / 2) * .18, r: (k - (items.length - 1) / 2) * .12 }));
+      chispas(new THREE.Vector3(L.px, L.py + L.ph * .35, .8), { color: '#FFF0F6', cuantas: 60, fuerza: 3 });
+      await Promise.all([
+        animar({ dur: .5, ease: entra, cada: (u) => { sobreG.position.y = mezcla(desde, -L.v.alto * .95, u); sobreG.rotation.z = u * .25; } }),
+        animar({ dur: .55, ease: resorte, cada: (u) => { for(const w of sube){ w.it.c.position.set(w.p0.x + w.dx * Math.sin(u * Math.PI), w.p0.y + Math.sin(u * Math.PI) * .7, w.p0.z + u * .2); w.it.c.rotation.z = w.r * Math.sin(u * Math.PI); } } }),
+      ]);
+      for(const w of sube) w.it.c.rotation.z = 0;
       sobreG.visible = false;
       listo();
     };
@@ -283,7 +315,7 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
     const etiqueta = x.tipo === 'puerco' ? RAREZA[x.nivel] : x.tipo === 'soporte' ? 'Soporte' : CLASES_COSMETICO[x.clase].una;
     ficha.innerHTML = `<b class="abrir__tipo" style="--c:${it.g.color}">${etiqueta}</b><span>${detalleDe(x)}</span>`
       + (r.nueva ? '<em class="nueva">¡Nueva!</em>' : `<em class="repe">Repetida · +${r.vuelven} monedas</em>`);
-    const p = aPantalla(new THREE.Vector3(L.px, L.py - CARTA_H * L.esc / 2 - .15, .3));
+    const p = aPantalla(new THREE.Vector3(L.gx, L.gy - CARTA_H * L.grande / 2 - .12, 1.2));
     ficha.style.left = p.x + 'px'; ficha.style.top = p.y + 'px';
     ficha.hidden = false; ficha.classList.remove('ve'); void ficha.offsetWidth; ficha.classList.add('ve');
   }
@@ -319,15 +351,27 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
     /* El volteo: se levanta, gira, y cae boca arriba. */
     SON.volteo();
     const c = it.c, malo = it.x.tipo === 'puerco' ? it.x.nivel : 'B';
-    await animar({ dur: saltar ? .2 : .45, ease: suave, cada: (u) => { c.rotation.y = mezcla(Math.PI, 0, u); c.position.z = .6 + Math.sin(u * Math.PI) * 1.2; c.scale.setScalar(L.esc * (1 + Math.sin(u * Math.PI) * .12)); } });
+    {
+      /* sale disparada al centro, crece y da vuelta y media en el aire */
+      const p0 = c.position.clone(), s0 = c.scale.x, sF = saltar ? L.esc : L.grande;
+      const fin = saltar ? p0 : new THREE.Vector3(L.gx, L.gy, 1.2);
+      await animar({ dur: saltar ? .2 : .62, ease: suave, cada: (u) => {
+        const arco = Math.sin(u * Math.PI);
+        c.position.set(mezcla(p0.x, fin.x, u), mezcla(p0.y, fin.y, u) + arco * .25, mezcla(p0.z, fin.z, u) + arco * 1.4);
+        c.rotation.set(arco * .2, mezcla(Math.PI, saltar ? 0 : -Math.PI * 2, u), arco * -.18);
+        c.scale.setScalar(mezcla(s0, sF, u) * (1 + arco * .1));
+      } });
+      c.rotation.set(0, 0, 0);
+      if(!saltar){ sacudir(.06); chispas(new THREE.Vector3(L.gx, L.gy, 1.4), { color: COLOR_RAREZA[it.x.nivel] || '#FFF0F6', cuantas: 40, fuerza: 2.4 }); }
+    }
     const especial = it.x.tipo === 'puerco' ? ({ S: 'legendaria', A: 'epica', B: 'rara' }[malo] || 'normal') : it.x.nivel === 'S' || it.x.nivel === 'A' ? 'epica' : 'rara';
     SON[especial]?.();
     if(!saltar){
       enseñarFicha(it);
       if(especial === 'legendaria' || especial === 'epica'){
-        const h = halo(COLOR_RAREZA[it.x.nivel] || '#FFD54A', L.esc * 2.4); h.position.set(L.px, L.py + .05, .2); raiz.add(h);
+        const h = halo(COLOR_RAREZA[it.x.nivel] || '#FFD54A', L.grande * 2.4); h.position.set(L.gx, L.gy, .9); raiz.add(h);
         animar({ dur: 1.6, ease: (u) => u, cada: (u) => { h.material.opacity = Math.sin(u * Math.PI) * (especial === 'legendaria' ? 1 : .7); h.rotation.z = u * 1.5; } }).then(() => raiz.remove(h));
-        chispas(new THREE.Vector3(L.px, L.py, .7), { color: COLOR_RAREZA[it.x.nivel], cuantas: especial === 'legendaria' ? 140 : 70, fuerza: especial === 'legendaria' ? 4.5 : 3 });
+        chispas(new THREE.Vector3(L.gx, L.gy, 1.4), { color: COLOR_RAREZA[it.x.nivel], cuantas: especial === 'legendaria' ? 140 : 70, fuerza: especial === 'legendaria' ? 4.5 : 3 });
         if(especial === 'legendaria') sacudir(.18);
       }
       if(!it.r.nueva && it.r.vuelven) setTimeout(() => SON.moneda(), 250);
@@ -363,10 +407,11 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
   fin.innerHTML = `<h2>¡Listo!</h2>
     <p>${nuevas ? `<b>${nuevas}</b> ${nuevas === 1 ? 'nueva' : 'nuevas'}` : 'Nada nuevo esta vez'}${devueltas ? ` · repetidas: <b>+${devueltas}</b> monedas` : ''}</p>
     <div class="abrir__botones">
-      ${quedan ? `<button class="btn grande" data-otro>Abrir el siguiente <small>(${quedan})</small></button>` : ''}
+      ${quedan ? `<button class="btn grande" data-otro>Abrir el siguiente <small>(quedan ${quedan})</small></button>` : ''}
       <button class="btn" data-ver>Ver mi colección</button>
       <button class="btn suave" data-volver>Volver</button>
     </div>`;
+  pila.hidden = true;
   fin.hidden = false; requestAnimationFrame(() => fin.classList.add('ve'));
   const salida = await new Promise((ok) => {
     fin.querySelector('[data-otro]')?.addEventListener('click', () => ok('otro'));
