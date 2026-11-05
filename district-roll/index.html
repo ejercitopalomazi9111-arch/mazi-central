@@ -12,6 +12,9 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230E0E0E'/%3E%3Ccircle cx='32' cy='32' r='15' fill='%23FFC21A'/%3E%3C/svg%3E">
 <link rel="preload" as="font" type="font/woff2" href="fuentes/archivo.woff2" crossorigin>
 <link rel="preload" as="image" href="img/real-local.webp">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="img/icono-192.png">
+<meta name="apple-mobile-web-app-title" content="District Roll">
 <!--
   DISTRICT ROLL · v3 (5 de noviembre de 2026). Carlos: «¿tú crees que esa página vale en plan de
   6,500? Está culerísima». Tenía razón. Qué cambió contra la urbana del 24 de octubre:
@@ -226,6 +229,14 @@ svg.i{width:20px; height:20px; flex:none}
 .cantidad{display:inline-flex; align-items:center; gap:2px; border-radius:999px; background:var(--papel); padding:3px; width:max-content}
 .cantidad button{display:grid; place-items:center; width:38px; height:38px; border:0; border-radius:50%; background:var(--blanco); cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,.08)}
 .cantidad output{min-width:30px; text-align:center; font:600 15px/1 var(--mono)}
+.radios--dos{grid-template-columns:repeat(2, minmax(0,1fr))}
+.hora{margin-top:8px; width:100%; min-height:48px; padding:0 14px; border-radius:12px; border:1.5px solid var(--linea2); background:var(--blanco); font:600 16px/1 var(--t)}
+.boleto__reloj{display:block; margin-top:4px; font:600 12px/1.2 var(--mono); letter-spacing:.02em}
+.listo__ok{display:grid; place-items:center; width:64px; height:64px; margin:6px auto 12px; border-radius:50%; background:var(--amarillo)}
+.listo__ok svg{width:32px; height:32px}
+.listo__t{margin:0; text-align:center; font-size:18px; line-height:1.35}
+#listoTxt{text-align:center}
+.listo__btns{display:grid; gap:10px; margin-top:18px}
 .cuentas{display:grid; gap:6px; padding:14px 0 4px}
 .cuentas div{display:flex; justify-content:space-between; gap:12px; font-size:15px}
 .cuentas .menos{color:var(--verde)}
@@ -372,7 +383,7 @@ dialog[open]{animation:sube .26s cubic-bezier(.2,.8,.2,1)}
     </div>
     <a class="boleto" href="#promos" id="boleto">
       <span class="boleto__dia" id="boletoDia">Hoy</span>
-      <span class="boleto__txt"><b id="boletoG"></b><span id="boletoD"></span></span>
+      <span class="boleto__txt"><b id="boletoG"></b><span id="boletoD"></span><small class="boleto__reloj" id="boletoReloj" hidden></small></span>
       <span class="boleto__flecha" aria-hidden="true"><svg class="i"><use href="#i-flecha"/></svg></span>
     </a>
     <div class="repetir" id="repetir" hidden>
@@ -433,6 +444,7 @@ dialog[open]{animation:sube .26s cubic-bezier(.2,.8,.2,1)}
       <div class="pie__btns">
         <a class="btn btn--amarillo" id="pieWa" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-wa"/></svg> 461 344 1696</a>
         <a class="btn btn--claro" id="pieMapa" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-ruta"/></svg> Cómo llegar</a>
+        <button class="btn btn--claro" type="button" id="compartir"><svg class="i" aria-hidden="true"><use href="#i-flecha"/></svg> Compartir la carta</button>
       </div>
       <img class="pie__logo" src="img/logo.webp" alt="" width="1167" height="528" loading="lazy">
       <div class="qr"><div class="qr__caja" id="qrCaja" aria-hidden="true"></div><p style="margin:0">Escanéalo para abrir la carta en otro teléfono.</p></div>
@@ -474,6 +486,13 @@ dialog[open]{animation:sube .26s cubic-bezier(.2,.8,.2,1)}
           <label class="radio"><input type="radio" name="entrega" value="A domicilio"><span>A domicilio<small>Te confirman si llega a tu zona y cuánto cuesta el envío</small></span></label>
         </div>
       </fieldset>
+      <fieldset class="campo"><legend>¿Para cuándo?</legend>
+        <div class="radios radios--dos">
+          <label class="radio"><input type="radio" name="cuando" value="Lo antes posible" checked><span>Lo antes posible</span></label>
+          <label class="radio"><input type="radio" name="cuando" value="Más tarde"><span>Para más tarde</span></label>
+        </div>
+        <label class="oculto" for="fHora">Hora</label><select id="fHora" class="hora" hidden></select>
+      </fieldset>
       <div class="campo" id="cNombre"><label for="fNombre">Tu nombre</label><input id="fNombre" autocomplete="given-name" enterkeyhint="next"><span class="error" hidden></span></div>
       <div class="campo" id="cDir" hidden><label for="fDir">Dirección y referencias</label><textarea id="fDir" autocomplete="street-address" placeholder="Calle, número, colonia y cómo reconocer la casa"></textarea><span class="error" hidden></span></div>
       <fieldset class="campo"><legend>¿Cómo pagas?</legend>
@@ -488,6 +507,20 @@ dialog[open]{animation:sube .26s cubic-bezier(.2,.8,.2,1)}
   </div>
   <div class="hoja__pie" id="pedidoPie">
     <button class="btn btn--amarillo btn--ancho" type="button" id="enviar"><svg class="i" aria-hidden="true"><use href="#i-wa"/></svg> <span>Mandar por WhatsApp · <span id="total" class="tabular">$0</span></span></button>
+  </div>
+</dialog>
+
+<dialog id="hojaListo" aria-labelledby="t-listo">
+  <div class="hoja__cab"><h2 id="t-listo">¡Listo!</h2><button class="cerrar" type="button" data-cerrar aria-label="Cerrar"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button></div>
+  <div class="hoja__cuerpo">
+    <div class="listo__ok" aria-hidden="true"><svg class="i"><use href="#i-ok"/></svg></div>
+    <p class="listo__t">Tu pedido se abrió en WhatsApp. <b>Sólo falta que le des enviar.</b></p>
+    <p class="aviso" id="listoTxt"></p>
+    <div class="listo__btns">
+      <a class="btn btn--amarillo btn--ancho" id="listoWa" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-wa"/></svg> Abrir WhatsApp otra vez</a>
+      <button class="btn btn--linea btn--ancho" type="button" id="listoCopiar">Copiar mi pedido</button>
+      <button class="btn btn--linea btn--ancho" type="button" id="listoOtro">Empezar otro pedido</button>
+    </div>
   </div>
 </dialog>
 
@@ -673,7 +706,7 @@ if("IntersectionObserver" in window){
 
 /* ───────── el pedido ───────── */
 var LLAVE = "districtroll-pedido-v1", LLAVE_ULT = "districtroll-ultimo-v1";
-var ped = { renglones:[], entrega:"Paso por él", pago:"Efectivo", nombre:"", dir:"", nota:"" };
+var ped = { renglones:[], entrega:"Paso por él", cuando:"Lo antes posible", hora:"", pago:"Efectivo", nombre:"", dir:"", nota:"" };
 try{ var g = JSON.parse(localStorage.getItem(LLAVE) || "null"); if(g && Array.isArray(g.renglones)) ped = Object.assign(ped, g); }catch(e){}
 /* lo guardado con precios viejos se re-cotiza con la carta de hoy; lo que ya no existe se va */
 ped.renglones = ped.renglones.filter(function(r){ var p = porNombre[r.n]; if(p){ r.p = p.p; r.cat = p.cat.id; } return !!p; });
@@ -789,6 +822,7 @@ function cargar(){
   $$("input[name=entrega]").forEach(function(i){ i.checked = i.value === ped.entrega; });
   $$("input[name=pago]").forEach(function(i){ i.checked = i.value === ped.pago; });
   $("#fNombre").value = ped.nombre; $("#fDir").value = ped.dir; $("#fNota").value = ped.nota; $("#cDir").hidden = ped.entrega !== "A domicilio";
+  $$("input[name=cuando]").forEach(function(i){ i.checked = i.value === ped.cuando; }); llenarHoras(); $("#fHora").hidden = ped.cuando !== "Más tarde";
 }
 function abrirPedido(){ cargar(); pintar(); abrir($("#hojaPedido")); }
 $$("[data-abrir-pedido]").forEach(function(b){ b.addEventListener("click", function(){
@@ -797,6 +831,7 @@ $$("[data-abrir-pedido]").forEach(function(b){ b.addEventListener("click", funct
   abrirPedido(); }); });
 $("#hojaPedido").addEventListener("input", function(){
   ped.entrega = ($("input[name=entrega]:checked")||{}).value || "Paso por él"; ped.pago = ($("input[name=pago]:checked")||{}).value || "Efectivo";
+  ped.cuando = ($("input[name=cuando]:checked")||{}).value || "Lo antes posible"; ped.hora = $("#fHora").value || ""; $("#fHora").hidden = ped.cuando !== "Más tarde";
   ped.nombre = $("#fNombre").value; ped.dir = $("#fDir").value; ped.nota = $("#fNota").value; $("#cDir").hidden = ped.entrega !== "A domicilio";
   ["cNombre","cDir"].forEach(function(id){ if($("#" + id).hasAttribute("data-mal")) revisar($("#" + id)); });
   guardar();
@@ -812,7 +847,7 @@ function mensaje(){
   ped.renglones.forEach(function(r){ L.push("• " + r.cant + " × " + r.n + (r.d ? " (" + r.d + ")" : "") + " — " + pesos(r.p * r.cant)); });
   var pr = promoDeHoy(ped.renglones);
   if(pr.length){ L.push(""); pr.forEach(function(x){ L.push("Promo: " + x.t + (x.regalo ? "" : " (" + pesos(x.monto) + ")")); }); }
-  L.push("", "Total: " + pesos(total()), "", "Nombre: " + ped.nombre.trim(), "Entrega: " + ped.entrega);
+  L.push("", "Total: " + pesos(total()), "", "Nombre: " + ped.nombre.trim(), "Entrega: " + ped.entrega, "Para: " + (ped.cuando === "Más tarde" && ped.hora ? ped.hora : "lo antes posible"));
   if(ped.entrega === "A domicilio") L.push("Dirección: " + ped.dir.trim());
   L.push("Pago: " + ped.pago);
   if(ped.nota.trim()) L.push("Nota: " + ped.nota.trim());
@@ -822,7 +857,11 @@ $("#enviar").addEventListener("click", function(){
   var bien = ["cNombre","cDir"].map(function(id){ return revisar($("#" + id)); }).every(Boolean);
   if(!bien){ var m = $("[data-mal]", $("#hojaPedido")); m.scrollIntoView({block:"center"}); $("input,textarea", m).focus({preventScroll:true}); return; }
   try{ localStorage.setItem(LLAVE_ULT, JSON.stringify({renglones:ped.renglones, t:Date.now()})); }catch(e){}
-  window.open(waLink + "?text=" + encodeURIComponent(mensaje()), "_blank", "noopener");
+  var liga = waLink + "?text=" + encodeURIComponent(mensaje());
+  window.open(liga, "_blank", "noopener");
+  /* por si el teléfono no abrió WhatsApp: el pedido se puede volver a abrir o copiar */
+  $("#listoWa").href = liga; $("#listoTxt").textContent = cuantos() + (cuantos() === 1 ? " platillo" : " platillos") + " · " + pesos(total()) + " · " + ped.entrega.toLowerCase() + ".";
+  $("#hojaPedido").close(); abrir($("#hojaListo"));
 });
 
 /* lo mismo de la otra vez: sólo si hoy no lleva nada */
@@ -838,6 +877,44 @@ $("#enviar").addEventListener("click", function(){
     ped.renglones = rs.map(function(r){ var p = porNombre[r.n]; return {clave:r.clave, n:r.n, d:r.d || "", p:p.p, cant:r.cant, cat:p.cat.id}; });
     guardar(); pintar(); $("#repetir").hidden = true; avisar("Listo: tu pedido de la otra vez"); });
 })();
+
+/* ───────── ¿para cuándo?, la promo que se acaba, el «¡listo!» y compartir ───────── */
+function minAhora(){ var q = /[?&]hora=(\d{1,2}):(\d{2})/.exec(location.search), d = new Date(); return q ? Number(q[1]) * 60 + Number(q[2]) : d.getHours() * 60 + d.getMinutes(); }
+function aHora(t){ var h = Math.floor(t / 60), mm = t % 60; return hora12(h + ":" + (mm < 10 ? "0" : "") + mm); }
+/* cada 15 min dentro del horario, desde media hora después de ahorita; si ya no hay hoy, los de mañana */
+function horarios(){
+  var out = [], hh = LOCAL.horas && LOCAL.horas[hoyN], ahora = minAhora(), t;
+  if(hh) for(t = Math.max(horaMin(hh[0]), Math.ceil((ahora + 30) / 15) * 15); t <= horaMin(hh[1]) - 15; t += 15) out.push("Hoy " + aHora(t));
+  if(!out.length){ var mn = LOCAL.horas && LOCAL.horas[(hoyN + 1) % 7]; if(mn) for(t = horaMin(mn[0]); t <= horaMin(mn[1]) - 15; t += 15) out.push("Mañana " + aHora(t)); }
+  return out;
+}
+function llenarHoras(){ var s = $("#fHora"), l = horarios(); s.textContent = "";
+  l.forEach(function(x){ s.appendChild(el("option", {value:x, text:x})); });
+  if(ped.hora && l.indexOf(ped.hora) >= 0) s.value = ped.hora; else ped.hora = l[0] || ""; }
+$("#fHora").addEventListener("change", function(){ ped.hora = this.value; guardar(); });
+
+/* la promo de hoy dice cuánto le queda (urgencia de verdad: se acaba cuando cierran) */
+function relojPromo(){
+  var r = $("#boletoReloj"), hh = LOCAL.horas && LOCAL.horas[hoyN];
+  if(!dHoy || !hh){ r.hidden = true; return; }
+  var ahora = minAhora(), ab = horaMin(hh[0]), ci = horaMin(hh[1]);
+  if(ahora < ab){ r.hidden = false; r.textContent = "Empieza hoy a las " + hora12(hh[0]); }
+  else if(ahora < ci){ var q = ci - ahora, h = Math.floor(q / 60), mi = q % 60; r.hidden = false; r.textContent = "Te quedan " + (h ? h + " h " : "") + mi + " min de promo hoy"; }
+  else r.hidden = true;
+}
+relojPromo(); setInterval(relojPromo, 30000);
+
+function copiar(t, aviso){
+  function aMano(){ var a = el("textarea", {style:"position:fixed;top:0;left:0;opacity:0"}); a.value = t; document.body.appendChild(a); a.select(); try{ document.execCommand("copy"); }catch(e){} a.remove(); avisar(aviso); }
+  if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(function(){ avisar(aviso); }, aMano); else aMano();
+}
+$("#listoCopiar").addEventListener("click", function(){ copiar(mensaje(), "Copiado: pégalo en WhatsApp al 461 344 1696"); });
+$("#listoOtro").addEventListener("click", function(){ ped.renglones = []; guardar(); pintar(); $("#hojaListo").close(); window.scrollTo({top: $("#carta").offsetTop - 60, behavior: quieto ? "auto" : "smooth"}); });
+$("#compartir").addEventListener("click", function(){
+  var u = location.href.split("#")[0].split("?")[0];
+  if(navigator.share) navigator.share({title:"District Roll Sushi", text:"La carta y las promos de District Roll", url:u}).catch(function(){});
+  else copiar(u, "Liga copiada: pásala por WhatsApp");
+});
 
 /* QR de esta misma página (su librería carga después, sin estorbar la primera pintada) */
 window.__qr = function(){ try{ var liga = location.href.split("#")[0].split("?")[0];
