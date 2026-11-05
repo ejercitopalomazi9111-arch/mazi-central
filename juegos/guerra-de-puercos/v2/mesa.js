@@ -99,6 +99,12 @@ export async function jugarPartida({ capa, alTerminar }){
     L.xPilaIzq = -L.xPilaDer;
     L.yPilasMias = L.yMio; L.yPilasSuyas = L.ySuyo;
     L.yBandeja = L.yMano + CARTA_H * L.sMano * .62;
+    /* en horizontal sobra mesa a los lados de la mano: el soporte va a su
+       derecha y el cerdito a su izquierda, lejos de los montones */
+    const medioMano = 2 * Math.min(CARTA_W * L.sMano * .96, (v.ancho - .25 - CARTA_W * L.sMano) / 4) + CARTA_W * L.sMano / 2;
+    L.bandeja = vertical ? { x: v.ancho / 2 - CARTA_W * L.sPila * .55 - .08, y: L.yBandeja, paso: -(CARTA_W * L.sPila + .1) }
+                         : { x: medioMano + CARTA_W * L.sPila * .7 + .15, y: L.yMano, paso: CARTA_W * L.sPila + .12 };
+    L.cerdo = vertical ? null : { x: -medioMano - .55, y: L.yMano - .1 };
   }
   acomodar();
 
@@ -163,7 +169,7 @@ export async function jugarPartida({ capa, alTerminar }){
       const chip = $('[data-esp-' + k + ']'), deEsa = especialesMias().filter(c => c.esp === k), i = clases.indexOf(k);
       if(!deEsa.length){ chip.hidden = true; continue; }
       const on = especial === k;
-      const x = L.v.ancho / 2 - CARTA_W * L.sPila * .55 - .08 - i * (CARTA_W * L.sPila + .1), y = L.yBandeja + (on ? .22 : 0);
+      const x = L.bandeja.x + i * L.bandeja.paso, y = L.bandeja.y + (on ? .22 : 0);
       deEsa.forEach((c, n) => {
         const m = mallaDe(c), z = .9 + n * .02;
         animar({ dur: .22, cada: (u) => { m.position.lerp(new THREE.Vector3(x + n * .025, y + n * .02, z), u); m.scale.setScalar(mezcla(m.scale.x, L.sPila * (on ? 1.15 : 1), u)); m.rotation.set(0, mezcla(m.rotation.y, 0, u), mezcla(m.rotation.z, -.06, u)); } });
@@ -220,7 +226,7 @@ export async function jugarPartida({ capa, alTerminar }){
   const cerdo = await mascota((cosmetico(C.puesto.mascota) || cosmetico('ms-pig')).modelo);
   cerdo.obj.scale.setScalar(.3); raiz.add(cerdo.obj); cerdo.hacer('idle');
   /* entre los dos montones de la izquierda, donde no tapa ninguno */
-  const ponerCerdo = () => { const hueco = ((L.yPilasSuyas - CARTA_H * L.sPila / 2) + (L.yPilasMias + CARTA_H * L.sPila / 2)) / 2; cerdo.obj.position.set(-L.v.ancho / 2 + .42, hueco - .2, .3); cerdo.obj.rotation.set(.3, .7, 0); };
+  const ponerCerdo = () => { const hueco = ((L.yPilasSuyas - CARTA_H * L.sPila / 2) + (L.yPilasMias + CARTA_H * L.sPila / 2)) / 2; cerdo.obj.position.set(L.cerdo ? L.cerdo.x : -L.v.ancho / 2 + .42, L.cerdo ? L.cerdo.y : hueco - .2, .3); cerdo.obj.rotation.set(.3, .7, 0); };
   ponerCerdo();
   const reaccion = (que) => { cerdo.hacer(que); setTimeout(() => cerdo.hacer('idle'), 1800); };
 
