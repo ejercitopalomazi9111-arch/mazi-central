@@ -260,5 +260,31 @@ console.log('\n§12 · el grupo guardado ya no es de ninguna cuenta: se busca ot
   Secre.hermanas.clear();
 }
 
+console.log('\n§13 · lo que publica la otra cuenta no se contesta, y no se pierden fotos en fila');
+{
+  Secre.hermanas.clear();
+  const G1 = '120363555555@g.us', G2 = '120363444444@g.us', OTRO = '5217861111111@s.whatsapp.net', envs = [];
+  let lecturas = 0; const iaCuenta = { ...ia, async leer(x){ lecturas++; return ia.leer(x); } };
+  const tN = { ...transporte, yo: () => ['5214428833786@s.whatsapp.net'], otrosYo: () => [OTRO], grupos: async () => [{ id: G1, nombre: 'Shopy go mayoreo 1' }, { id: G2, nombre: "All's Fashion" }], enviar: async (j, t) => { envs.push([j, t]); return 'N' + envs.length; } };
+  const neg = new Secre({ cuenta: 'negocio', transporte: tN, ia: iaCuenta, almacen: { leer: (k, x) => x, guardar(){} }, reloj, banco: null, conocimiento: '', prospectos: null });
+  neg.config.mayoreo = { activo: true, fuente: G1, destino: G2, margen: 250, tanda: 100, pausa: 30, cadaSeg: 8, duena: 'negocio', historico: false };
+  const c2 = neg.chat(G2); c2.modo = 'auto'; c2.tienda = true; c2.grupo = true;
+  for(let k = 0; k < 3; k++){ pasar(30); await neg.alMensaje({ id: 'A' + k, chat: G2, de: '5217861111111:12@s.whatsapp.net', grupo: true, nombre: 'Carlos', nombreChat: "All's Fashion", texto: '[foto] *Short* $375', t: ahora }); }
+  pasar(60); await neg.tic();
+  ok('las fotos que sube la otra cuenta a All\'s no se le contestan (ni con su aparato «:12» en el id)', lecturas === 0 && !envs.some(e => e[0] === G2), [lecturas, envs]);
+  const G3 = '120363333333@g.us';
+  await neg.alMensaje({ id: 'R1', chat: G3, de: OTRO, grupo: true, nombre: 'Carlos', nombreChat: 'Taberna', texto: 'entra el caballero', t: ahora });
+  ok('en otro grupo, lo de la otra cuenta queda en la plática como suyo', (neg.estado.historial[G3] || []).some(h => h.de === 'yo' && /caballero/.test(h.texto)) && lecturas === 0);
+  /* el tope de 3,000 no se lleva lo que sigue esperando turno */
+  neg.config.productos = Array.from({ length: 3000 }, (_, i) => ({ id: 'v' + i, desc: 'x', huella: '', fotoId: 'F' + i, t: i }));
+  neg.estado.colaFotos = [{ id: 'v0', fotoId: 'F0', t: 0, en: 0 }, { id: 'v1', fotoId: 'F1', t: 1, en: 1 }];
+  neg.banco = { listo: () => true, async fichas(){ return []; }, async subir(){ return { id: 'FN' }; }, async bajar(){ return { buf: foto('flores') }; } };
+  await neg.alMensaje({ id: 'M1', chat: G1, grupo: true, nombre: 'Proveedor', nombreChat: 'Shopy go mayoreo 1', texto: '[foto] Blusa $200', imagen: img(foto('flores'), 'Blusa $200'), t: ahora });
+  const ids = new Set(neg.config.productos.map(p => p.id));
+  ok('al pasar de 3,000 se va la más vieja, pero nunca una que sigue en la fila', ids.has('v0') && neg.config.productos.length === 3001, neg.config.productos.length);
+  ok('cada foto en fila guarda dónde está en el banco', neg.estado.colaFotos.every(q => q.fotoId), neg.estado.colaFotos);
+  Secre.hermanas.clear();
+}
+
 console.log(fallas.length ? `\n✗ ${fallas.length} fallaron de ${pasan + fallas.length}` : `\n✓ ${pasan}/${pasan}`);
 process.exit(fallas.length ? 1 : 0);

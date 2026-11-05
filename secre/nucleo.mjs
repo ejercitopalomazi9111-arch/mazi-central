@@ -382,7 +382,8 @@ export class Secre {
     return (num.length >= 6 && (lista.find(([j]) => j.split('@')[0].endsWith(num)) || [])[0]) || null;
   }
   esMiChat(jid){ return this.transporte.yo && this.transporte.yo().includes(jid); }
-  esOtraCuenta(jid){ return !!(this.transporte.otrosYo && this.transporte.otrosYo().includes(jid)); }
+  /* el jid de un participante puede venir con su aparato («521…:12@s.whatsapp.net»): se compara sin él */
+  esOtraCuenta(jid){ if(!jid || !this.transporte.otrosYo) return false; const n = (j) => String(j).replace(/:\d+(?=@)/, ''); const x = n(jid); return this.transporte.otrosYo().some(j => n(j) === x); }
   /* a quién le llegan los avisos: a su otra cuenta (suena) o a su chat propio (no suena) */
   destinoAvisos(){
     const otros = this.transporte.otrosYo ? this.transporte.otrosYo().filter(j => /@s\.whatsapp\.net$/.test(j)) : [];
@@ -455,6 +456,13 @@ export class Secre {
     /* las fotos del grupo de Mayoreo: al banco y a All's, sin contestar nada ahí */
     const MY = this.config.mayoreo || {};
     if(MY.activo && m.chat === MY.fuente){ await this.recibirMayoreo(m); return; }
+    /* lo que publica la OTRA cuenta de Carlos en un grupo es suyo, no de un cliente (5 nov: las fotos
+       que la personal sube a All's le llegaban a la del negocio como mensajes y les quería contestar
+       una por una, hasta que Groq la frenaba con 429). En All's ni se anota; en otro grupo va como «yo» */
+    if(m.grupo && m.de && this.esOtraCuenta(m.de)){
+      if(m.chat !== MY.destino){ const ho = this.estado.historial[m.chat] || (this.estado.historial[m.chat] = []); ho.push({ de: 'yo', quien: '', texto: m.texto.slice(0, 2000), t: ahora }); this.estado.historial[m.chat] = ho.slice(-60); }
+      return;
+    }
     const c = this.chat(m.chat);
     if(!m.grupo && !m.mio && m.nombre && c.nombre && m.nombre !== c.nombre && !c.alias) c.alias = String(m.nombre).slice(0, 100);
     /* ¿de qué producto preguntan? la foto que citaron (de las que mandó Secre) o la foto que mandaron */
@@ -639,7 +647,10 @@ export class Secre {
     let p = h && P.find(x => x.huella && masParecido([x], h, 4));
     if(p){ if(costo){ p.costo = costo; p.precio = precioVenta(costo, MY.margen); } const ts = leerTallas(pie); if(ts.length) p.tallas = ts; this.guardar(); return; }   /* ya la teníamos: sólo se actualiza */
     p = { id: 'p' + ahora.toString(36) + Math.floor(this.azar() * 1e4), desc: leerDescripcion(pie), costo, precio: precioVenta(costo, MY.margen), tallas: leerTallas(pie), marca: leerMarca(pie), huella: h, fotoId: '', lote: this.estado.loteMayoreo, t: ahora };
-    P.push(p); this.config.productos = P.slice(-3000);
+    P.push(p);
+    /* tope de 3,000, pero nunca se tira una prenda que sigue en la fila (5 nov: con 4,552 mensajes del
+       historial se borraban las más viejas antes de mandarlas, y salía «una foto se perdió») */
+    if(P.length > 3000){ const enCola = new Set((this.estado.colaFotos || []).map(q => q.id)); this.config.productos = P.filter((x, i) => i >= P.length - 3000 || enCola.has(x.id)); }
     if(this.banco && this.banco.subir){
       try{ const { mini, ancho, alto } = await miniatura(buf);
         const f = await this.banco.subir({ buf, mime: 'image/jpeg', mini, ancho, alto, nombre: (p.desc || 'mayoreo') + '.jpg', huella: 'mayoreo:' + h,
@@ -649,7 +660,7 @@ export class Secre {
     }
     /* en la cola va sólo el id: la foto ya está en el banco (mil fotos en base64 no caben en lo guardado) */
     const Q = this.estado.colaFotos || (this.estado.colaFotos = []);
-    Q.push(p.fotoId || Q.filter(x => x.buf).length > 20 ? { id: p.id, t: ahora, en: this.reloj() } : { id: p.id, t: ahora, en: this.reloj(), buf: buf.toString('base64'), mime: 'image/jpeg' });
+    Q.push(p.fotoId || Q.filter(x => x.buf).length > 20 ? { id: p.id, fotoId: p.fotoId || '', t: ahora, en: this.reloj() } : { id: p.id, t: ahora, en: this.reloj(), buf: buf.toString('base64'), mime: 'image/jpeg' });
     this.guardar();
   }
   /* manda a All's las fotos que van llegando, de a unas cuantas por vuelta (sin texto) */
@@ -673,7 +684,8 @@ export class Secre {
     const prod = P.find(p => p.id === x.id);
     try{
       let buf = x.buf ? Buffer.from(x.buf, 'base64') : null;
-      if(!buf && prod && prod.fotoId && this.banco) buf = (await this.banco.bajar(prod.fotoId)).buf;
+      const fid = (prod && prod.fotoId) || x.fotoId;
+      if(!buf && fid && this.banco) buf = (await this.banco.bajar(fid)).buf;
       if(!buf){ this.anotar('Mayoreo: una foto se perdió (no está en el banco)'); this.guardar(); return; }
       const id = await this.transporte.enviarImagen(MY.destino, buf, 'image/jpeg', prod && prod.precio ? pieVenta({}, prod) : '');
       if(id){ this.estado.enviados.push(id); this.estado.enviados = this.estado.enviados.slice(-500); (this.estado.fotoProducto || (this.estado.fotoProducto = {}))[id] = x.id; }
