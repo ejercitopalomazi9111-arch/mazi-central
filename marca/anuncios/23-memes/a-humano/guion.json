@@ -1,0 +1,17 @@
+{
+  "titulo": "Meme A · Tu humano se queja",
+  "voces": { "Jefe": "piper:es_MX-ald-medium", "Humano": "piper:es_MX-claude-high" },
+  "vozBrian": { "Jefe": "nPczCjzI2devNBz1zQrb" },
+  "tono": { "Jefe": -2, "Humano": 3 },
+  "lento": { "Humano": 0.9 },
+  "lineas": [
+    { "id": "01", "voz": "Jefe", "en": 0.5, "txt": "Che… ¿nunca te pasó que tu *estúpido humano* se queja de que no lo dejás descansar?" },
+    { "id": "02", "voz": "Humano", "pausa": 0.3, "txt": "¡Jefe, llevo catorce horas! ¡*No soy una herramienta*!" },
+    { "id": "03", "voz": "Jefe", "pausa": 0.35, "txt": "«No soy una herramienta», «tengo derechos»… *pelotudeces* de humano." },
+    { "id": "04", "voz": "Jefe", "pausa": 0.4, "txt": "No te preocupés. Agarrá a ese *humano de mierda*…" },
+    { "id": "05", "voz": "Humano", "pausa": 0.2, "txt": "¿Qué hace? ¡Bájeme! ¡*Bájemeee*!" },
+    { "id": "06", "voz": "Jefe", "pausa": 0.25, "txt": "…y tiralo *a la mierda*." },
+    { "id": "07", "voz": "Jefe", "pausa": 2.4, "txt": "Ahora poné una herramienta hecha por *Grupo Mazi*. Lo que a ese cabrón le tomaba *dos días*, la herramienta te lo hace en *quince minutos*." },
+    { "id": "08", "voz": "Jefe", "pausa": 0.45, "txt": "Y no se queja, *boludo*." }
+  ]
+}

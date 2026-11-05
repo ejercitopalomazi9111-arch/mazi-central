@@ -1,0 +1,15 @@
+{
+  "titulo": "Meme C · La junta",
+  "voces": { "Jefe": "piper:es_MX-ald-medium", "Humano": "piper:es_MX-claude-high" },
+  "vozBrian": { "Jefe": "nPczCjzI2devNBz1zQrb" },
+  "tono": { "Jefe": -2, "Humano": 3 },
+  "lento": { "Humano": 0.9 },
+  "lineas": [
+    { "id": "01", "voz": "Humano", "en": 0.5, "txt": "Jefe, necesito un aumento y *vacaciones*. Ya no aguanto." },
+    { "id": "02", "voz": "Jefe", "pausa": 1.1, "txt": "Che… ¿*vacaciones*?" },
+    { "id": "03", "voz": "Jefe", "pausa": 0.5, "txt": "¿Sabés quién *no pide vacaciones*?" },
+    { "id": "04", "voz": "Jefe", "pausa": 2.6, "txt": "La herramienta de *Grupo Mazi*. Lo que este gil hacía en *dos días*, ella lo hace en *quince minutos*." },
+    { "id": "05", "voz": "Humano", "pausa": 0.5, "txt": "Jefe… ¿y mi aumento?" },
+    { "id": "06", "voz": "Jefe", "pausa": 0.4, "txt": "¿*Vos también*?" }
+  ]
+}

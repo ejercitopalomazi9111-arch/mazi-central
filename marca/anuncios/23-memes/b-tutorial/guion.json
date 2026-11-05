@@ -1,0 +1,17 @@
+{
+  "titulo": "Meme B · Tutorial: cómo despedir a tu humano",
+  "voces": { "Jefe": "piper:es_MX-ald-medium", "Humano": "piper:es_MX-claude-high" },
+  "vozBrian": { "Jefe": "nPczCjzI2devNBz1zQrb" },
+  "tono": { "Jefe": -2, "Humano": 3 },
+  "lento": { "Humano": 0.9 },
+  "lineas": [
+    { "id": "01", "voz": "Jefe", "en": 0.4, "txt": "Buenas. Hoy te enseño a *despedir a tu humano* en tres pasos." },
+    { "id": "02", "voz": "Jefe", "pausa": 1.0, "txt": "Paso uno: *lo agarrás*." },
+    { "id": "03", "voz": "Humano", "pausa": 0.25, "txt": "¡Oiga, no! ¡*Tengo familia*!" },
+    { "id": "04", "voz": "Jefe", "pausa": 0.3, "txt": "No me importa." },
+    { "id": "05", "voz": "Jefe", "pausa": 1.0, "txt": "Paso dos: lo llevás *a la fosa*. Sin miedo, che." },
+    { "id": "06", "voz": "Jefe", "pausa": 1.0, "txt": "Paso tres: *lo soltás*." },
+    { "id": "07", "voz": "Jefe", "pausa": 2.6, "txt": "Y el paso cuatro, el importante: ponés una herramienta de *Grupo Mazi*. Lo que él hacía en *dos días*, ella lo hace en *quince minutos*." },
+    { "id": "08", "voz": "Jefe", "pausa": 0.4, "txt": "Suscribite. Bueno, no. *Escribinos*." }
+  ]
+}

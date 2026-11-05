@@ -20,14 +20,14 @@ async function abrir(ruta, ancho = 390){
   await pg.goto(BASE + '/barberias/' + ruta, { waitUntil: 'load' }); await pg.waitForTimeout(900);
   /* baja como una persona, hasta que la página deje de crecer (las fotos que cargan la alargan) */
   for(let y = 0, n = 0; n < 400; n++){ const alto = await pg.evaluate(() => document.documentElement.scrollHeight - innerHeight); if(y > alto) break; await pg.evaluate(y => scrollTo({ top: y, behavior: 'instant' }), y); await pg.waitForTimeout(40); y += 600; }
-  await pg.evaluate(() => scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' })); await pg.waitForTimeout(400);
+  await pg.evaluate(() => scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' })); await pg.waitForTimeout(1500);
   await pg.evaluate(() => scrollTo({ top: 0, behavior: 'instant' })); await pg.waitForTimeout(300);
   return { ctx, pg, errores };
 }
 const lado = (pg) => pg.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 const escondidos = (pg) => pg.evaluate(() => [...document.querySelectorAll('[data-rev]')].filter(e => !e.classList.contains('ya')).length);
 
-for(const [ruta, nombre] of [['', 'Portada de barberías'], ['sencilla/', 'Esencial'], ['navaja/', 'Navaja Norte'], ['casa-brava/', 'Casa Brava'], ['obsidiana/', 'Obsidiana']]){
+for(const [ruta, nombre] of [['', 'Portada de barberías'], ['sencilla/', 'Esencial'], ['navaja/', 'Navaja Norte'], ['casa-brava/', 'Casa Brava'], ['obsidian/', 'Obsidian']]){
   for(const ancho of [390, 1280]){
     console.log(`\n${nombre} · ${ancho} px`);
     const { ctx, pg, errores } = await abrir(ruta, ancho);
@@ -40,7 +40,7 @@ for(const [ruta, nombre] of [['', 'Portada de barberías'], ['sencilla/', 'Esenc
 }
 
 /* la tienda, en las tres de paga */
-for(const ruta of ['navaja/', 'casa-brava/', 'obsidiana/']){
+for(const ruta of ['navaja/', 'casa-brava/', 'obsidian/']){
   console.log(`\nTienda · ${ruta}`);
   const { ctx, pg, errores } = await abrir(ruta);
   await pg.evaluate(() => localStorage.clear());
@@ -71,7 +71,7 @@ for(const ruta of ['navaja/', 'casa-brava/', 'obsidiana/']){
 }
 
 /* reservar de principio a fin */
-for(const ruta of ['navaja/', 'casa-brava/', 'obsidiana/']){
+for(const ruta of ['navaja/', 'casa-brava/', 'obsidian/']){
   console.log(`\nReserva · ${ruta}`);
   const { ctx, pg, errores } = await abrir(ruta);
   /* el desplazamiento suave es adorno: en la prueba se apaga para que el clic no le gane a la animación */
@@ -98,10 +98,10 @@ for(const ruta of ['navaja/', 'casa-brava/', 'obsidiana/']){
   await ctx.close();
 }
 
-/* lo propio de Obsidiana: el test de corte, el ambiente, la barra y las membresías */
+/* lo propio de Obsidian: el test de corte, el ambiente, la barra y las membresías */
 {
-  console.log('\nObsidiana · extras');
-  const { ctx, pg, errores } = await abrir('obsidiana/');
+  console.log('\nObsidian · extras');
+  const { ctx, pg, errores } = await abrir('obsidian/');
   for(let i = 0; i < 3; i++){ await pg.locator('#quiz [data-o]').nth(i % 2).click(); await pg.waitForTimeout(150); }
   ok('el test da un corte, un barbero y un producto', await pg.locator('#quiz .qz-res h3').count() === 1 && /Con /.test(await pg.textContent('#quiz .qz-mini')));
   await pg.click('#quiz [data-res]'); await pg.waitForTimeout(500);

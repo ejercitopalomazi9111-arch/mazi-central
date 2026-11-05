@@ -116,8 +116,9 @@ const TOMAS = {
   'district-tel': ['../../video/rec/district-tel/', 432], 'district-pc': ['../../video/rec/district-pc/', 353],
   'arco-pc': ['../../video/rec/arco-pc/', 527], 'arco-tel': ['../../video/rec/arco-tel/', 327],
   'fadori-tel': ['../../../fadori-campana/salida/rec/app/', 2313],
-  'barb-sencilla': ['../../video/rec/barb-sencilla/', 399], 'barb-navaja': ['../../video/rec/barb-navaja/', 397],
-  'barb-casa': ['../../video/rec/barb-casa/', 405], 'barb-obsidiana': ['../../video/rec/barb-obsidiana/', 608],
+  'barb-sencilla': ['../../video/rec/barb-sencilla/', 469], 'barb-navaja': ['../../video/rec/barb-navaja/', 447],
+  'barb-casa': ['../../video/rec/barb-casa/', 477], 'barb-obsidiana': ['../../video/rec/barb-obsidiana/', 699],
+  'barb-obs-tienda': ['../../video/rec/barb-obs-tienda/', 841], 'barb-obs-reserva': ['../../video/rec/barb-obs-reserva/', 990],
 };
 export class Toma {
   constructor(nombre, { desde = 0, vel = 1 } = {}){

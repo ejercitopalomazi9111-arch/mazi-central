@@ -6,6 +6,7 @@
      PREVIA=12 node …     → sólo uno de cada 12 cuadros, en <salida>-previa/, para revisar
      DESDE=8 HASTA=12 …   → con PREVIA, sólo ese tramo
      SEGUIR=1 …           → retoma un armado cortado sin rehacer los cuadros que ya están
+     QUERY=corte=corto …  → abre la composición con ese ?query (versiones de una misma pieza)
 
    La composición define:
      window.VIDEO = { w, h, fps, dur,
@@ -33,7 +34,8 @@ await red(ctx);
 const pg = await ctx.newPage();
 const errores = []; pg.on('pageerror', e => errores.push(e.message)); pg.on('console', m => { if(m.type() === 'error') errores.push(m.text()); });
 /* se abre por el servidor local para que lea los cuadros de las grabaciones y las fotos del repo */
-await pg.goto(BASE + '/' + path.relative(RAIZ, html).split(path.sep).join('/'), { waitUntil: 'load' });
+/* QUERY=corte=corto → la misma composición en otra versión (el anuncio 22 saca así sus cortes para historias) */
+await pg.goto(BASE + '/' + path.relative(RAIZ, html).split(path.sep).join('/') + (process.env.QUERY ? '?' + process.env.QUERY : ''), { waitUntil: 'load' });
 await pg.evaluate(() => window.listo);
 const V = await pg.evaluate(() => window.VIDEO);
 await pg.setViewportSize({ width: V.w, height: V.h });
@@ -68,7 +70,10 @@ if(V.musica){ ent.push('-ss', String(V.musica.desde || 0), '-i', donde(V.musica.
 const D = V.dur, capas = [];
 if(voces.length){
   fil.push(`${voces.join('')}amix=inputs=${voces.length}:normalize=0,acompressor=threshold=0.1:ratio=3:attack=5:release=120:makeup=2,apad=whole_dur=${D}[voz]`);
-  fil.push(`[voz]asplit=3[voz1][vozsc][vozfx]`); capas.push('[voz1]');
+  /* sólo las copias que alguien lee: sin música no hay [vozsc], sin efectos no hay [vozfx], y ffmpeg truena
+     con «Invalid argument» si una salida de asplit queda suelta */
+  const sal = ['[voz1]', ...(V.musica ? ['[vozsc]'] : []), ...(efectos.length ? ['[vozfx]'] : [])];
+  fil.push(sal.length > 1 ? `[voz]asplit=${sal.length}${sal.join('')}` : `[voz]anull[voz1]`); capas.push('[voz1]');
 }
 if(efectos.length){
   fil.push(`${efectos.join('')}amix=inputs=${efectos.length}:normalize=0,apad=whole_dur=${D}[fx0]`);

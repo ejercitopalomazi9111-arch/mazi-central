@@ -25,13 +25,15 @@ const VIDEOS = [
   ['16-grupo-mazi', 'Grupo Mazi · de un dibujo a lo real', 'El de 2 minutos'],
 ];
 /* videos de clientes: se suben igual pero NO salen en la página de vendedores (el link se le pasa a Carlos) */
-const CLIENTES = [['18-geraldmed-tu-evento'], ['19-geraldmed-pie-tierra'], ['20-geraldmed-ambulancia'], ['21-geraldmed-elegidos']];
+const CLIENTES = [['18-geraldmed-tu-evento'], ['19-geraldmed-pie-tierra'], ['20-geraldmed-ambulancia'], ['21-geraldmed-elegidos'],
+  /* los de Carlos (5 nov): el mega video de barberías sin voz y sus cortes, y los tres memes con la voz puente */
+  ['22-barberias-todo'], ['22-barberias-corto'], ['22-barberias-niveles'], ['22-barberias-paquetes'], ['23-a-humano'], ['23-b-tutorial'], ['23-c-junta']];
 const DEMOS = [
   ['Barberías · las 4 juntas', '/barberias/', 'Para que el barbero escoja nivel'],
   ['Barbería Esencial · Don Chuy', '/barberias/sencilla/', 'Desde $2,000'],
   ['Barbería Completa urbana · Navaja Norte', '/barberias/navaja/', 'Desde $6,500'],
   ['Barbería Completa clásica · Casa Brava', '/barberias/casa-brava/', 'Desde $6,500'],
-  ['Barbería A la medida · Obsidiana', '/barberias/obsidiana/', 'Desde $9,000'],
+  ['Barbería A la medida · Obsidian', '/barberias/obsidian/', 'Desde $9,000'],
   ['Pizzería completa · Smiley’s', '/smileys/', 'Cliente real: la Completa'],
   ['Pizzería básica · Smiley’s', '/smileys/basica/', 'La Esencial'],
   ['Restaurante Completa · District Roll', '/district-roll/', 'Desde $6,500: promo del día que se aplica sola, pedido para más tarde, se instala como app'],

@@ -1,0 +1,14 @@
+<!doctype html><html><head><meta charset="utf-8"><script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>body{margin:0;background:#888}canvas{display:block}</style></head><body><canvas id="c" width="1200" height="400"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import { persona } from '../gente.js';
+const r = new THREE.WebGLRenderer({ canvas: c, antialias: true }); r.setSize(1200, 400, false);
+const s = new THREE.Scene(); s.background = new THREE.Color('#9ab'); s.add(new THREE.HemisphereLight('#fff', '#444', 2)); const d = new THREE.DirectionalLight('#fff', 2); d.position.set(2, 4, 5); s.add(d);
+const cam = new THREE.PerspectiveCamera(30, 3, .1, 100); cam.position.set(0, .7, 6.5); cam.lookAt(0, .55, 0);
+const pruebas = [['nada', {}], ['izq x+', { 'arm-left': ['x', 1.2] }], ['izq z+', { 'arm-left': ['z', 1.2] }], ['izq y+', { 'arm-left': ['y', 1.2] }], ['der x-', { 'arm-right': ['x', -1.2] }], ['der z-', { 'arm-right': ['z', -1.2] }], ['cabeza x+', { head: ['x', .6] }]];
+for(const [i, [n, rot]] of pruebas.entries()){ const p = await persona('male-a', { alto: 1 }); p.anima([['idle', 0]]);
+  for(const [b, [ax, v]] of Object.entries(rot)) p.hueso(b).rotation[ax] += v;
+  p.obj.position.x = (i - 3) * .75; p.obj.rotation.y = .5; s.add(p.obj); }
+r.render(s, cam); window.listo = true;
+</script></body></html>

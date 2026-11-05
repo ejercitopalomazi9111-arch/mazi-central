@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Meme C · La junta</title>
+<!-- MEME 23-C · la junta: el humano pide vacaciones, el jefe voltea la cabeza 180°, se abre una trampa bajo su silla
+     y cae a la fosa. node herramientas/video/armar.mjs marca/anuncios/23-memes/c-junta/index.html marca/anuncios/salida/23-c-junta.mp4 -->
+<link rel="stylesheet" href="../../comun.css">
+<link rel="stylesheet" href="../memes.css">
+<script>window.listo = new Promise(r => window._listo = r);</script>
+<script type="importmap">{ "imports": { "three": "../../vendor/three.module.min.js" } }</script>
+</head>
+<body>
+<canvas id="gl" class="capa"></canvas>
+<canvas id="c2" class="capa" width="1080" height="1920"></canvas>
+<div id="ui" class="capa">
+  <div id="cartel" class="cartel"></div>
+  <div id="fin" class="fin"><div class="wa">WhatsApp <b>442 883 3786</b></div><div class="sub">Herramientas a la medida · Grupo Mazi</div></div>
+</div>
+<div id="negro" class="negro"></div>
+<div id="subs" class="subs-gmod"></div>
+<div id="grano"></div>
+<script type="module">
+import { guion, sonidosVoz, subtitulos, grano } from '../../motor.js';
+import { logoVivo } from '../../logo3d.js';
+import { THREE, W, H, mundo, actor, mueble, fosa, explosion, camara, voces, tramo, sale, suave, mezcla, cl } from '../gmod.js';
+import { pantallaMazi, sfx } from '../comun.js';
+const $ = (s) => document.querySelector(s);
+const G = await guion('.'), L = (id) => G.de(id), habla = await voces(G);
+const T_GIRA = L('01').t1 + .15, T_VOLTEA = L('02').t0 - .1, T_ABRE = L('03').t1 + .15, T_CAE = T_ABRE + .55, T_CIERRA = T_CAE + 1.1, T_LAPTOP = L('04').t0 - .6,
+  T_APUNTA = L('06').t0 - .15, T_FIN = L('06').t1 + .45, FIN = T_FIN + 4.2;
+window.VIDEO = { w: W, h: H, fps: 30, dur: FIN,
+  sonidos: [...sonidosVoz(G, 1.15), [sfx('golpe2'), T_GIRA + .6, .5], [sfx('boom'), L('02').t0 + .55, .85], [sfx('golpe'), T_ABRE, .9], [sfx('grito3'), T_ABRE + .05, .85],
+    [sfx('explota'), T_CAE, .95], [sfx('fuego'), T_CAE + .2, .45], [sfx('golpe'), T_LAPTOP + .55, .9], [sfx('boom'), T_APUNTA + .2, .9], [sfx('explota2'), T_FIN - .05, .9]] };
+
+/* la junta en el pasto: una mesa redonda, dos sillas, el jefe de espaldas y una trampa bajo la silla del primero */
+const M = await mundo($('#gl'));
+const mesa = await mueble('tableRound', { escala: 2.2 }); mesa.position.set(0, 0, .3); M.s.add(mesa);
+const jefe = await actor('male-c', { arma: 'blaster-b', alto: 1.5 }); jefe.obj.position.set(0, 0, -1.1); M.s.add(jefe.obj);
+const h1 = await actor('male-e', { alto: 1.45 }), h2 = await actor('female-b', { alto: 1.4 }); M.s.add(h1.obj, h2.obj);
+const P1 = new THREE.Vector3(-1.05, 0, 1.55), P2 = new THREE.Vector3(1.05, 0, 1.55);
+const lap = await mueble('laptop', { escala: 2.4, pantalla: pantallaMazi('2 días', '15 min') }); M.s.add(lap);
+const F = await fosa(M, { x: P1.x, z: P1.z + .1, radio: 1.0 }), X = await explosion(M, { tam: 5.5 });
+const trampa = new THREE.Mesh(new THREE.BoxGeometry(2.3, .06, 2.3), new THREE.MeshStandardMaterial({ color: '#6b6f73', roughness: .55, metalness: .6 }));
+trampa.position.set(P1.x, .03, P1.z + .1); trampa.castShadow = trampa.receiveShadow = true; M.s.add(trampa);
+const sub = subtitulos($('#subs'), G), gr = grano($('#grano'), .06), c2 = $('#c2').getContext('2d');
+const mira = (p, q) => Math.atan2(q.x - p.x, q.z - p.z);
+
+window.pintar = async (t) => {
+  const vJ = habla(t, 'Jefe'), v1 = habla(t, 'Humano') * (t < L('05').t0 - .2 ? 1 : 0), v2 = habla(t, 'Humano') * (t >= L('05').t0 - .2 ? 1 : 0);
+  /* el jefe: de espaldas; la cabeza se voltea 180° (como en Garry's Mod), luego el cuerpo; al final apunta a la segunda */
+  const gira = Math.PI * suave(tramo(t, T_GIRA, T_GIRA + .9)) * (1 - (t >= T_VOLTEA ? 1 : 0));
+  const deFrente = t >= T_VOLTEA;
+  jefe.obj.rotation.y = deFrente ? (t >= T_APUNTA ? mezcla(0, mira(jefe.obj.position, P2), sale(tramo(t, T_APUNTA, T_APUNTA + .25))) : Math.sin(t * .8) * .08) : Math.PI;
+  jefe.pose(t, { plan: [[0, 'idle']], habla: vJ, arma: t >= T_APUNTA ? 1 : deFrente ? cl(.2 + vJ * 1.5) : 0, gira });
+  /* el primer humano: pide, se abre la trampa y cae; la segunda escucha y luego pregunta */
+  const cae = t >= T_ABRE, uC = t - T_ABRE;
+  h1.obj.visible = t < T_CAE + .02; h1.obj.position.copy(P1); if(cae) h1.obj.position.y -= 9.8 * uC * uC * .6;
+  h1.obj.rotation.set(cae ? uC * 2 : 0, mira(P1, jefe.obj.position) + (cae ? uC * 5 : 0), 0);
+  h1.pose(t, { plan: [[0, 'idle'], [L('01').t0, 'emote-no'], [L('01').t1, 'idle']], habla: v1, trapo: cae ? 1.4 : 0 });
+  h2.obj.position.copy(P2); h2.obj.rotation.y = mira(P2, jefe.obj.position) + (t > T_CAE && t < L('05').t0 ? -.6 * sale(tramo(t, T_CAE, T_CAE + .3)) : 0);
+  h2.pose(t, { plan: [[0, 'idle'], [L('05').t0, 'emote-yes']], habla: v2, mira: t > T_CAE && t < L('05').t0 ? -.4 : 0 });
+  /* la trampa se va de lado y deja ver el fuego */
+  /* y se vuelve a cerrar sola, como si nada */
+  const ua = sale(tramo(t, T_ABRE - .05, T_ABRE + .25)) - suave(tramo(t, T_CIERRA, T_CIERRA + .35)); trampa.position.x = P1.x - ua * 2.6;
+  F.g.visible = t >= T_ABRE - .05 && t < T_CIERRA + .35;
+  if(F.g.visible) await F.pintar(t, M.cam); await X.pintar(t < T_CIERRA ? t - T_CAE : -1, new THREE.Vector3(P1.x, 0, P1.z), M.cam);
+  /* la laptop cae en la mesa, del lado del que ya no está */
+  const ul = tramo(t, T_LAPTOP, T_LAPTOP + .55); lap.visible = t >= T_LAPTOP;
+  lap.position.set(-.35, mezcla(9, .81, ul * ul), .85); lap.rotation.set(0, mira(new THREE.Vector3(-.35, 0, .85), jefe.obj.position) + Math.PI + (1 - ul) * 3, (1 - ul) * .6);
+  if(t > T_LAPTOP + .55) lap.position.y += Math.max(0, Math.sin((t - T_LAPTOP - .55) * 14) * .08 * Math.exp(-(t - T_LAPTOP - .55) * 6));
+  const sac = (t >= T_CAE ? Math.max(0, 1 - (t - T_CAE) / .9) * .25 : 0) + (t >= T_LAPTOP + .55 ? Math.max(0, 1 - (t - T_LAPTOP - .55) / .4) * .1 : 0) + (t >= T_APUNTA + .2 ? .06 : 0);
+  camara(M, t, [
+    [0, { pos: [-.45, 1.75, -2.6], mira: [-1.0, 1.0, 1.55], fov: 50, tiembla: .02 }],
+    [T_GIRA - .1, { pos: [.2, 1.65, 1.0], mira: [0, 1.15, -1.1], fov: 50, tiembla: .015 }],
+    [L('02').t0 + .5, { pos: [.15, 1.5, .9], mira: [0, 1.15, -1.1], fov: 48, zoom: [L('02').t0 + .55, 1.2] }],
+    [L('03').t0 - .1, { pos: [.2, 2.4, 6.4], mira: [0, .9, .3], fov: 52, tiembla: .03 }],
+    [T_ABRE - .3, { pos: [-1.0, 3.4, 5.6], mira: [-1.0, .3, 1.5], fov: 52, tiembla: .05 }],
+    [T_CIERRA + .4, { pos: [-1.3, 1.9, 3.6], mira: [-.35, .95, .85], fov: 48 }],
+    [L('04').t0 + 4.2, { pos: [.25, 1.55, 2.2], mira: [0, 1.15, -1.1], fov: 50 }],
+    [L('05').t0 - .2, { pos: [2.5, 1.5, -.7], mira: [1.05, 1.0, 1.55], fov: 50, hasta: [2.25, 1.45, -.35] }],
+    [T_APUNTA, { pos: [1.6, 1.3, 0], mira: [.1, 1.0, -1.0], fov: 54, zoom: [T_APUNTA + .2, 1.12], tiembla: .03 }],
+  ], { sacudida: sac });
+  M.pintar();
+  const ct = $('#cartel'), uc = t >= L('04').t0 + 4.2 && t < L('04').t1 + .2;
+  ct.style.opacity = uc ? 1 : 0; if(uc){ ct.innerHTML = '<span>2 días</span><b>15 min</b>'; ct.style.transform = `rotate(-4deg) scale(${1.5 - .5 * sale(tramo(t, L('04').t0 + 4.2, L('04').t0 + 4.4))})`; }
+  $('#negro').style.opacity = t >= T_FIN ? 1 : 0;
+  c2.clearRect(0, 0, W, H); if(t >= T_FIN) logoVivo(c2, { t, desde: T_FIN + .2, cx: W / 2, cy: 820, ancho: 820 });
+  $('#fin').style.opacity = sale(tramo(t, T_FIN + 1.2, T_FIN + 1.8));
+  sub(t); gr(t);
+};
+await pintar(0); window._listo();
+</script>
+</body>
+</html>
