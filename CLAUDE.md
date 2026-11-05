@@ -526,6 +526,8 @@ dependemos.
    | «ya recibió su regalo» es una sola marca | eran DOS cosas en una: las cartas de arranque y el sobre de bienvenida. La migración de la v1 ponía `regalo = true` para no regalar cartas a quien ya traía, y con eso **tampoco** le daba su sobre | Carlos: «no está saliendo el sobre de regalo». El sobre va con su propia marca (`bienvenida`) y se le da una vez a todos, también a los guardados viejos |
    | un aviso que «se va solo a los 6 s» se va | también hay que ver **quién lo vuelve a llamar**: `ir('inicio')` lo pedía otra vez en cada regreso al inicio | Carlos: «nunca se quita». Sale una vez por cada sobre nuevo, y la prueba lo comprueba volviendo al inicio |
 
+   | una fusión a `main` con sus checks de GitHub en verde ya se publicó en Cloudflare | Cloudflare **a veces ni se entera**: el commit de la fusión #257 no traía NINGÚN check «Workers Builds» (los de GitHub Actions eran de Pages) y producción siguió en la versión anterior dos horas | Puercos 2 multijugador «publicado» y sin existir. Se comprueba que el commit de `main` tenga sus cinco «Workers Builds» y se pide un archivo nuevo a la dirección publicada; si no hay checks, otra fusión lo destraba |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---
