@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Meme A · Tu humano se queja</title>
+<!-- MEME 23-A · tipo Garry's Mod · voz del jefe: Brian (la del anuncio 01) cuando haya saldo en ElevenLabs; mientras,
+     Piper (voz puente). node herramientas/video/armar.mjs marca/anuncios/23-memes/a-humano/index.html marca/anuncios/salida/23-a-humano.mp4 -->
+<link rel="stylesheet" href="../../comun.css">
+<link rel="stylesheet" href="../memes.css">
+<script>window.listo = new Promise(r => window._listo = r);</script>
+<script type="importmap">{ "imports": { "three": "../../vendor/three.module.min.js" } }</script>
+</head>
+<body>
+<canvas id="gl" class="capa"></canvas>
+<canvas id="c2" class="capa" width="1080" height="1920"></canvas>
+<div id="ui" class="capa">
+  <div id="cartel" class="cartel"></div>
+  <div id="fin" class="fin"><div class="wa">WhatsApp <b>442 883 3786</b></div><div class="sub">Herramientas a la medida · Grupo Mazi</div></div>
+</div>
+<div id="negro" class="negro"></div>
+<div id="subs" class="subs-gmod"></div>
+<div id="grano"></div>
+<script type="module">
+import { guion, sonidosVoz, subtitulos, grano } from '../../motor.js';
+import { logoVivo } from '../../logo3d.js';
+import { THREE, W, H, mundo, actor, mueble, fosa, explosion, rayo, camara, voces, tramo, sale, suave, mezcla, cl, ruido } from '../gmod.js';
+import { pantallaMazi, sfx } from '../comun.js';
+const $ = (s) => document.querySelector(s);
+const G = await guion('.'), L = (id) => G.de(id), habla = await voces(G);
+const T_SOLTAR = L('06').t1 + .05, T_CAE = T_SOLTAR + .62, T_LAPTOP = L('07').t0 - .6, T_SPIN = L('08').t0, T_FIN = L('08').t1 + .5, FIN = T_FIN + 4.2;
+window.VIDEO = { w: W, h: H, fps: 30, dur: FIN,
+  sonidos: [...sonidosVoz(G, 1.15), [sfx('rayo'), L('04').t1 - .5, .55], [sfx('rayo2'), L('05').t0, .4], [sfx('tirar'), T_SOLTAR - .1, .6], [sfx('grito'), T_SOLTAR, .8],
+    [sfx('explota'), T_CAE, .95], [sfx('fuego'), T_CAE + .2, .45], [sfx('boom'), L('03').t0 + 1.9, .9], [sfx('golpe'), T_LAPTOP + .55, .9], [sfx('boom'), T_FIN - .3, .8]] };
+
+/* el mundo: pasto, cielo, el escritorio del humano y la fosa */
+const M = await mundo($('#gl'));
+const jefe = await actor('male-c', { arma: 'blaster-b', alto: 1.5 }); jefe.obj.position.set(-.2, 0, 1.4); M.s.add(jefe.obj);
+const hum = await actor('male-e', { alto: 1.45 }); M.s.add(hum.obj);
+const esc = await mueble('desk', { escala: 2.2 }); esc.position.set(2.6, 0, -.6); esc.rotation.y = -.5; M.s.add(esc);
+const silla = await mueble('chairDesk', { escala: 2 }); silla.position.set(2.2, 0, .1); silla.rotation.y = -.5 + Math.PI; M.s.add(silla);
+const P = pantallaMazi('Lo que tardaba 2 días', 'Listo en 15 min');
+const lap = await mueble('laptop', { escala: 2.4, pantalla: P }); M.s.add(lap);
+const F = await fosa(M, { x: -3.2, z: -1.4, radio: 1.3 }), X = await explosion(M, { tam: 6 }), R = rayo(M);
+const sub = subtitulos($('#subs'), G), gr = grano($('#grano'), .06), c2 = $('#c2').getContext('2d');
+const POS_ESC = new THREE.Vector3(2.15, 0, .15), ARRIBA = new THREE.Vector3(1.2, 2.3, .4), SOBRE_FOSA = new THREE.Vector3(-3.2, 3.1, -1.4);
+const caja = new THREE.Vector3();
+
+window.pintar = async (t) => {
+  const vJ = habla(t, 'Jefe'), vH = habla(t, 'Humano');
+  /* el jefe: habla con la pistola al frente y la cabeza que rebota; al final la T y la vuelta */
+  const armaJ = t < T_FIN ? cl(.25 + vJ * 1.4) : 0, tirando = t >= L('04').t0 + 1.2 && t < T_SOLTAR + .3;
+  jefe.obj.rotation.y = t > T_SPIN ? (t - T_SPIN) * 9 : tirando ? mezcla(.35, -.55, suave(tramo(t, L('06').t0 - .4, T_SOLTAR))) : .1 + Math.sin(t * .7) * .08;
+  jefe.pose(t, { plan: [[0, 'idle']], habla: vJ, arma: tirando ? 1 : armaJ, tpose: t > T_SPIN ? 1 : 0 });
+  /* el humano: sentado quejándose, luego levantado por el rayo, zangoloteándose, y a la fosa */
+  let ph = POS_ESC.clone(), trapo = 0, plan = [[0, 'sit']];
+  if(t >= L('02').t0 - .2 && t < L('04').t0 + 1.2){ plan = [[0, 'sit'], [L('02').t0 - .2, 'emote-no']]; trapo = vH * .25; }
+  if(t >= L('04').t0 + 1.2){ const u = sale(tramo(t, L('04').t0 + 1.2, L('05').t0 + .4)); ph = POS_ESC.clone().lerp(ARRIBA, u); trapo = .6 + vH * .6; plan = [[0, 'fall']]; }
+  if(t >= L('06').t0 - .4){ const u = suave(tramo(t, L('06').t0 - .4, T_SOLTAR)); ph = ARRIBA.clone().lerp(SOBRE_FOSA, u); }
+  if(t >= T_SOLTAR){ const u = t - T_SOLTAR; ph = SOBRE_FOSA.clone(); ph.y -= 9.8 * u * u * .5 * 1.4; trapo = 1.2; }
+  hum.obj.visible = t < T_CAE + .02; hum.obj.position.copy(ph);
+  hum.obj.rotation.set(t >= L('04').t0 + 1.2 ? Math.sin(t * 1.3) * .6 : 0, -.5 + (t >= L('04').t0 + 1.2 ? (t - L('04').t0) * 1.6 : 0), t >= L('04').t0 + 1.2 ? Math.sin(t * 1.9) * .5 : 0);
+  if(t >= L('04').t0 + 1.2 && t < T_SOLTAR) hum.obj.position.y += Math.sin(t * 6) * .06;
+  hum.pose(t, { plan, habla: vH, trapo });
+  silla.visible = true;
+  /* el rayo, de la boca de la pistola al humano */
+  const cañon = new THREE.Vector3(); jefe.pistola.getWorldPosition(cañon); cañon.y += .05;
+  hum.obj.updateMatrixWorld(); new THREE.Box3().setFromObject(hum.obj).getCenter(caja);
+  R.pintar(cañon, caja, t >= L('04').t1 - .5 && t < T_SOLTAR ? 1 : 0, t);
+  /* la fosa, la explosión y la laptop de Grupo Mazi que cae del cielo */
+  await F.pintar(t, M.cam); await X.pintar(t < T_LAPTOP - .1 ? t - T_CAE : -1, new THREE.Vector3(-3.2, 0, -1.4), M.cam);
+  const ul = tramo(t, T_LAPTOP, T_LAPTOP + .55); lap.visible = t >= T_LAPTOP;
+  lap.position.set(2.6, mezcla(9, .85, ul * ul), -.6); lap.rotation.set(0, -.5 + (1 - ul) * 3, (1 - ul) * .6);
+  if(t > T_LAPTOP + .55) lap.position.y += Math.max(0, Math.sin((t - T_LAPTOP - .55) * 14) * .08 * Math.exp(-(t - T_LAPTOP - .55) * 6));
+  /* la cámara: cortes secos como de video casero */
+  const sac = Math.max(0, 1 - (t - T_CAE) / .9) * .25 * (t >= T_CAE ? 1 : 0) + Math.max(0, 1 - (t - T_LAPTOP - .55) / .4) * .1 * (t >= T_LAPTOP + .55 ? 1 : 0);
+  camara(M, t, [
+    [0, { pos: [.5, 1.35, 5.7], mira: [-.2, 1.0, 1.4], fov: 50, tiembla: .03 }],
+    [L('02').t0 - .25, { pos: [3.5, 1.3, 3.7], mira: [2.1, .85, .1], fov: 50 }],
+    [L('03').t0 - .1, { pos: [.1, 1.3, 5.0], mira: [-.2, 1.1, 1.4], fov: 46, zoom: [L('03').t0 + 1.9, 1.2] }],
+    [L('04').t0 - .1, { pos: [.8, 2.6, 9.6], mira: [0, 1.0, 0], fov: 55, tiembla: .04 }],
+    [L('05').t0 - .05, { pos: [2.8, 1.1, 4.6], mira: [1.3, 2.1, .4], fov: 56, tiembla: .07 }],
+    [L('06').t0 - .4, { pos: [.6, 3.0, 9.2], mira: [-1.8, 1.4, -1], fov: 58, tiembla: .05 }],
+    [T_CAE + .9, { pos: [-.7, 1.35, 5.3], mira: [-.4, 1.0, 1.4], fov: 50 }],
+    [T_LAPTOP - .1, { pos: [4.6, 2.6, 4.6], mira: [2.5, 1.3, -.5], fov: 50 }],
+    [L('07').t0 + 3.2, { pos: [.3, 1.3, 5.5], mira: [-.1, 1.0, 1.4], fov: 50 }],
+    [T_SPIN, { pos: [0, 1.1, 6.4], mira: [-.2, 1.0, 1.4], fov: 52, tiembla: .01 }],
+  ], { sacudida: sac });
+  M.sol.target.position.set(0, 0, 0);
+  M.pintar();
+  /* el cartel gigante de «2 DÍAS → 15 MIN» y el cierre */
+  const ct = $('#cartel'), uc = t >= L('07').t0 + 3.2 && t < L('07').t1 + .2;
+  ct.style.opacity = uc ? 1 : 0; if(uc){ ct.innerHTML = '<span>2 días</span><b>15 min</b>'; ct.style.transform = `rotate(-4deg) scale(${1.5 - .5 * sale(tramo(t, L('07').t0 + 3.2, L('07').t0 + 3.4))})`; }
+  $('#negro').style.opacity = t >= T_FIN ? 1 : 0;
+  c2.clearRect(0, 0, W, H); if(t >= T_FIN) logoVivo(c2, { t, desde: T_FIN + .2, cx: W / 2, cy: 820, ancho: 820 });
+  $('#fin').style.opacity = sale(tramo(t, T_FIN + 1.2, T_FIN + 1.8));
+  sub(t); gr(t);
+};
+await pintar(0); window._listo();
+</script>
+</body>
+</html>

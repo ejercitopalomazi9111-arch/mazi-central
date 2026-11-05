@@ -44,3 +44,12 @@ comerciales **dando crédito al autor**, y el crédito va en la descripción de 
 | `computadora/` | «All In One Computer» | Sean | sketchfab.com/3d-models/c7c297cf6e334cd291f9f562f3aac35e |
 
 Ninguno trae logo de marca visible; las pantallas llevan NUESTRA página (`web/`), capturada tal cual.
+
+## Los memes tipo Garry's Mod (`23-memes/`)
+
+| Qué | De dónde | Licencia |
+|---|---|---|
+| `kenney-blaster/` · pistolas «Blaster Kit» | Kenney · kenney.nl/assets/blaster-kit | CC0 |
+| `hdri/kloofendal_48d_partly_cloudy_puresky_1k.hdr` · el cielo | Poly Haven (Greg Zaal, Jarod Guest) | CC0 |
+| `texturas/pasto/aerial_grass_rock_*` · el pasto | Poly Haven (Rob Tuytel) | CC0 |
+| Fuego, explosión y sonidos (`23-memes/fx`, `sfx`, los baja `preparar.py`) | Mixkit · mixkit.co | Licencia libre de Mixkit |

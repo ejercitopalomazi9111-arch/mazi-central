@@ -1,0 +1,21 @@
+/* LOS MEMES TIPO GARRY'S MOD: subtítulos de video casero (Anton, blanco con contorno negro grueso),
+   el cartel que entra de golpe, el negro del cierre y el WhatsApp. Encima de comun.css. */
+@font-face{ font-family:"Anton"; src:url("../../../barberias/fuentes/anton-400-normal.woff2") format("woff2"); font-display:block }
+#subs.subs-gmod{ position:absolute; left:50%; top:1300px; width:960px; z-index:10; text-align:center; font:400 86px/1.02 "Anton", Impact, sans-serif;
+  letter-spacing:.01em; text-transform:uppercase; color:#fff; -webkit-text-stroke:7px #000; paint-order:stroke fill; text-shadow:0 6px 0 #000; transform-origin:50% 50% }
+#subs.subs-gmod em{ font-style:normal; color:#FFE14A }
+.cartel{ position:absolute; left:80px; right:150px; top:330px; z-index:6; opacity:0; text-align:center; font-family:"Anton", Impact, sans-serif; text-transform:uppercase;
+  -webkit-text-stroke:8px #000; paint-order:stroke fill; transform-origin:50% 50% }
+.cartel span{ display:block; font-size:120px; line-height:1; color:#fff; text-decoration:line-through; text-decoration-thickness:14px; text-decoration-color:#E0202A }
+.cartel b{ display:block; font-weight:400; font-size:210px; line-height:1; color:#FFE14A }
+.cartel.paso{ top:250px }
+.cartel.paso span{ text-decoration:none; font-size:90px; color:#FFE14A }
+.cartel.paso b{ font-size:130px; color:#fff }
+.negro{ position:absolute; inset:0; z-index:2; background:#170A26; opacity:0; pointer-events:none }
+#c2{ z-index:3 }
+.fin{ position:absolute; left:0; right:0; top:1120px; z-index:5; text-align:center; opacity:0 }
+.fin .wa{ display:inline-block; font:600 46px/1 var(--s); padding:24px 40px; border-radius:999px; background:#25D36622; border:2px solid #25D366; color:#fff }
+.fin .wa b{ font-weight:900; letter-spacing:.02em }
+.fin .sub{ margin-top:26px; font:500 34px/1.3 var(--t); color:var(--gris) }
+.marca-gmod{ position:absolute; right:40px; top:60px; z-index:6; font:700 22px/1 "Inter Tight", Arial, sans-serif; color:#fff8; letter-spacing:.06em }
+.cartel s{ text-decoration:line-through; text-decoration-color:#E0202A; text-decoration-thickness:12px }
