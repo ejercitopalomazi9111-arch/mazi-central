@@ -408,3 +408,27 @@ button.yo:active{ transform:scale(.96) }
 .nv figcaption{ font-size:12px; text-align:center; opacity:.8; margin-top:3px }
 .nv-tira{ display:flex; gap:10px; overflow-x:auto; scroll-snap-type:x mandatory; padding-bottom:4px }
 .nv-tira figure{ flex:0 0 42%; scroll-snap-align:start }
+
+/* lo chido de un sobre: letrerote que entra de golpe y un destello del color de la rareza */
+.abrir__chido{ position:absolute; left:50%; top:calc(14% + var(--arriba)); z-index:6; pointer-events:none; font-family:"Lilita", sans-serif; font-size:clamp(38px, 12vw, 64px); color:var(--c); -webkit-text-stroke:3px #1B0E16; text-shadow:0 6px 0 #1B0E16, 0 0 30px var(--c); white-space:nowrap;
+  transform:translate(-50%, 0) scale(.2) rotate(-14deg); opacity:0; transition:transform .45s cubic-bezier(.2,1.6,.3,1), opacity .2s }
+.abrir__chido.ve{ transform:translate(-50%, 0) scale(1) rotate(-4deg); opacity:1 }
+.abrir__chido.sale{ transform:translate(-50%, -40px) scale(1.15) rotate(-4deg); opacity:0; transition:transform .5s ease-in, opacity .5s ease-in }
+.abrir__destello{ position:absolute; inset:0; z-index:5; pointer-events:none; background:radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--c) 70%, white), transparent 70%); animation:destello .65s ease-out forwards }
+@keyframes destello{ 0%{ opacity:0 } 15%{ opacity:.85 } 100%{ opacity:0 } }
+@media (prefers-reduced-motion: reduce){ .abrir__chido{ transition:opacity .2s } .abrir__destello{ animation:none; opacity:0 } }
+
+/* VER UNA CARTA DE CERCA: se gira, se acerca y se voltea */
+.inspector{ position:fixed; inset:0; z-index:60; display:grid; justify-items:center; align-content:center; gap:12px; padding:calc(16px + var(--arriba)) 16px calc(16px + var(--abajo)); background:rgba(8,4,8,.9); opacity:0; transition:opacity .2s }
+.inspector.ve{ opacity:1 }
+.insp-escena{ width:100%; height:min(64vh, 560px); display:grid; place-items:center; perspective:1100px; touch-action:none; cursor:grab }
+.insp-carta{ position:relative; width:min(72vw, 340px); aspect-ratio:5 / 7; max-height:100%; transform-style:preserve-3d; will-change:transform }
+.insp-carta.suave{ transition:transform .4s cubic-bezier(.2,.9,.3,1.1) }
+.insp-cara{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; border-radius:14px; backface-visibility:hidden; -webkit-backface-visibility:hidden; filter:drop-shadow(0 18px 30px rgba(0,0,0,.6)) }
+.insp-atras{ transform:rotateY(180deg) }
+.insp-brillo{ position:absolute; inset:0; border-radius:14px; pointer-events:none; backface-visibility:hidden; -webkit-backface-visibility:hidden; mix-blend-mode:screen;
+  background:linear-gradient(115deg, transparent 32%, rgba(255,255,255,.38) 45%, rgba(255,200,240,.18) 52%, transparent 64%); background-size:260% 260% }
+.de-espaldas .insp-brillo{ opacity:0 }
+.insp-pie{ margin:0; max-width:420px; text-align:center; font-size:16px }
+.insp-botones{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center }
+.insp-ayuda{ opacity:.7; font-size:13px }
