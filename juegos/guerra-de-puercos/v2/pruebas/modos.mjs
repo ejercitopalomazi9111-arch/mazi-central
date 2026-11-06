@@ -106,7 +106,7 @@ async function partidaEnLinea(A, B, rondasMax = 40){
   let r = 0, desfase = '', vioYaEligio = false;
   while(r < rondasMax){
     const listos = await Promise.all([libre(A, 40000), libre(B, 40000)]);
-    if(!listos[0] || !listos[1]){ const ea = await est(A), eb = await est(B); if(ea?.fin && eb?.fin) break; return { trabada: true, r, desfase }; }
+    if(!listos[0] || !listos[1]){ const ea = await est(A), eb = await est(B); if(ea?.fin && eb?.fin) break; const corto = (e) => e && ({ ronda: e.ronda, fin: e.fin, ocupado: e.ocupado, espera: e.espera, mano: e.mano.map(c => c.nivel + (c.x == null ? '?' : '')).join(','), pv: e.pvA + '/' + e.pvB, rival: e.rival }); return { trabada: true, r, desfase, A: corto(ea), B: corto(eb) }; }
     const r0 = (await est(A)).ronda;
     await jugarUna(A);
     await B.waitForTimeout(700);
@@ -140,7 +140,7 @@ if(!SOLO || SOLO === 'linea'){
   const entran = await Promise.all([libre(A, 40000), libre(B, 40000)]);
   ok('los dos entran a la mesa', entran[0] && entran[1]);
   const ea = await est(A), eb = await est(B);
-  ok('cada quien ve 80 de vida y la mano del otro boca abajo', ea.pvA === 80 && eb.pvB === 80 && ea.rival >= 5 && eb.rival >= 5, JSON.stringify({ a: ea.rival, b: eb.rival }));
+  ok('cada quien ve 90 de vida (80 + el Puerco Rey) y la mano del otro boca abajo', ea.pvA === 90 && eb.pvB === 90 && ea.rival >= 5 && eb.rival >= 5, JSON.stringify({ a: ea.rival, b: eb.rival, pv: [ea.pvA, eb.pvB] }));
   ok('y NO ve las cartas del otro (sólo cuántas)', await A.evaluate(() => __mesa.estado().mano.every(c => !String(c.id).startsWith('r:'))));
   await A.screenshot({ path: FOTOS + 'linea-mesa-a.png' }); await B.screenshot({ path: FOTOS + 'linea-mesa-b.png' });
   const res = await partidaEnLinea(A, B, 4);
