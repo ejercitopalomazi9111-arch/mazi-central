@@ -5,6 +5,24 @@ escribir, anota tus pendientes y te prepara los buenos días y las buenas noches
 que digas. **No le manda nada a nadie sin que tú lo apruebes**, salvo en los chats que tú
 pongas en **automático**: ahí contesta sola, firmada como tu asistente.
 
+## ⚠️ Desde el 6 de noviembre: SÓLO NEGOCIO
+
+Carlos: *«que no sea mi asistente, que no conteste mis mensajes, que no mis llamadas… solamente
+negocio, porque me está metiendo en pedillos»*.
+
+Secre **ya no toca nada personal**: no contesta tus chats, no te propone respuestas, no manda
+buenos días ni buenas noches, no hace repasos ni resúmenes, no juega rol, no manda programados y
+**no contesta ni rechaza llamadas** (ni de WhatsApp ni las del conmutador).
+
+**Lo que sí sigue:** la **campaña** a negocios (y contestarle a los que responden), **All's**
+(el grupo y su banco de fotos) y los mensajes de **Instagram y Facebook** del negocio.
+
+| Escribes en tu chat | Pasa |
+|---|---|
+| `negocio Fulano` | ese chat cuenta como de negocio y ahí sí atiende |
+| `modo completo` | regresa todo como antes |
+| `solo negocio` | lo vuelve a limitar a lo del negocio |
+
 ## Cómo se usa (desde el teléfono)
 
 En tu chat **«Mensaje a ti mismo»** te llega esto:
