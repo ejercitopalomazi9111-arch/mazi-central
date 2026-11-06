@@ -27,7 +27,7 @@ await pg.evaluate(() => __puercos.ir('sobres'));
 await pg.waitForSelector('.abrir', { timeout: 8000 });
 await pg.waitForTimeout(1500);
 ok('Mis sobres abre directo la mesa', await pg.$('.abrir') != null);
-ok('el montón dice cuántos quedan abajo (×2)', (await pg.textContent('[data-pila]').catch(() => '')).includes('×2'));
+ok('el montón dice cuántos quedan abajo (×2, pintado en la mesa)', (await pg.evaluate(() => globalThis.__abrirMonton)) === 2);
 ok('hay botón para volver sin abrir', await pg.isVisible('[data-salir]'));
 await foto('1-monton');
 
@@ -66,11 +66,18 @@ await foto('4-mesa');
 const cartas = await pg.evaluate(() => __abrir.cartas());
 ok('las cartas quedan arriba del resumen y dentro de la pantalla', cartas.every(c => c.x > 0 && c.x < caja.w && c.y > 0 && c.y < caja.h * .55), JSON.stringify(cartas));
 await toca(cartas[0].x, cartas[0].y); await pg.waitForTimeout(500);
-const grande = await pg.isVisible('[data-zoom]');
+const grande = await pg.isVisible('.inspector');
+if(grande){ /* se gira arrastrando */
+  const b = await pg.evaluate(() => { const r = document.querySelector('.insp-escena').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+  const t0 = await pg.evaluate(() => document.querySelector('.insp-carta').style.transform);
+  await pg.mouse.move(b.x, b.y); await pg.mouse.down(); for(let i = 1; i <= 8; i++){ await pg.mouse.move(b.x + i * 15, b.y); await pg.waitForTimeout(16); } await pg.mouse.up();
+  await pg.waitForTimeout(200); await foto('5b-girada');
+  ok('arrastrar la gira', (await pg.evaluate(() => document.querySelector('.insp-carta').style.transform)) !== t0);
+  await pg.click('.inspector [data-cerrar]'); await pg.waitForTimeout(300);
+}
 ok('tocar una carta la abre en grande', grande);
 await foto('5-grande');
-if(grande){ await pg.click('[data-zoom]'); await pg.waitForTimeout(400); }
-ok('…y se cierra con un toque', !(await pg.isVisible('[data-zoom]')));
+ok('…y se cierra', !(await pg.isVisible('.inspector')));
 
 /* la envoltura: el bote sólo sale mientras se arrastra */
 ok('el bote está escondido sin arrastrar', !(await pg.isVisible('[data-bote]')));
@@ -96,7 +103,7 @@ ok('la envoltura se fue a la basura', (await pg.evaluate(() => __abrir.envoltura
 /* guardar y abrir el siguiente */
 await pg.click('[data-otro]'); await pg.waitForTimeout(2500);
 ok('«Guardar en mi mazo» sigue con el siguiente sobre (vuelve al montón)', await pg.isVisible('[data-salir]').catch(() => false));
-ok('el montón ahora dice ×1', (await pg.textContent('[data-pila]').catch(() => '')).includes('×1'));
+ok('el montón ahora dice ×1', (await pg.evaluate(() => globalThis.__abrirMonton)) === 1);
 await foto('7-siguiente');
 await pg.click('[data-salir]'); await pg.waitForTimeout(800);
 ok('«Volver» sale de la mesa sin abrir nada', !(await pg.$('.abrir')) && (await pg.evaluate(() => __puercos.C.sobres.length)) === sobres0 - 1);

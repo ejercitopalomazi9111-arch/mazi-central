@@ -9,8 +9,21 @@
    (devlog/*.webp).
    ═══════════════════════════════════════════════════════════════════════════ */
 const F = (n) => 'devlog/' + n + '.webp';
-export const VERSION_ACTUAL = '2.5';
+export const VERSION_ACTUAL = '2.6';
 export const NOVEDADES = [
+  { ver: '2.6', fecha: '6 de noviembre, noche', titulo: 'Sobres a tu modo y cartas de cerca', foto: 'v26-donde',
+    puntos: [
+      'El sobre se abre donde lo sueltes: arrástralo a cualquier lado, o tócalo y se abre en medio.',
+      'Después de la primera carta, la pila se recorre a la izquierda y lo que sale se acomoda a la derecha.',
+      'La carta se queda medio segundo más en grande; si la tocas, se va a la mesa al instante.',
+      'Ver una carta de cerca: gírala con el dedo, acércala con dos dedos y voltéala para ver el dorso. También en tu colección.',
+      'Cuando sale algo chido (legendaria, épica o líder): suspenso antes de voltearse, rayos de luz, destello, confeti y letrero grande.',
+      'Arreglo: al guardar ya no parpadea la mesa, y la envoltura que dejaste tirada se queda para el siguiente sobre.',
+      'Arreglo: los letreros de rareza y el número de sobres ya no se ponen encima de la carta que abres.',
+      'Cosméticos parejos: 12 avatares, 12 tapetes, 12 mascotas y 12 dorsos.',
+    ],
+    antes: [['1-monton', 'Siempre a la izquierda']], despues: [['v26-donde', 'Donde lo sueltes']],
+    extras: [['v26-de-cerca', 'Una carta de cerca'], ['v26-envoltura', 'La envoltura se queda']] },
   { ver: '2.5', fecha: '6 de noviembre', titulo: 'Líderes, tu mazo y los sobres en 3D', foto: 'v2-caratula',
     puntos: [
       'La carátula de la caja al abrir el juego.',

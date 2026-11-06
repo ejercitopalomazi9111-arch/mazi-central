@@ -16,6 +16,7 @@ import { aviso, pista, cumplida } from './avisos.js';
 import { cuenta, crear, entrar, salir, lideres, alCambiarCuenta, estadoSubida, amigos, pedirAmigo, aceptarAmigo, quitarAmigo, retar, borrarReto } from './cuenta.js';
 import { conectar, codigoNuevo, codigoValido } from './linea.js';
 import { listaNovedades, bloqueNovedad } from './novedades.js';
+import { inspeccionar } from './inspector.js';
 
 const $ = (s, d = document) => d.querySelector(s);
 const $$ = (s, d = document) => [...d.querySelectorAll(s)];
@@ -324,9 +325,11 @@ function pintarCosmeticos(caja){
   };
 }
 function lupa(src, pie){
-  const l = $('#lupa'); $('#lupaImg').src = src; $('#lupaPie').textContent = pie; l.classList.add('ve');
-  l.onclick = () => l.classList.remove('ve');
+  /* de cerca (Carlos, 6 nov): girarla, acercarla y voltearla para ver el dorso que traes puesto */
+  SON.toque?.();
+  inspeccionar({ frente: src, dorso: (cosmetico(C.puesto.dorso) || cosmetico('ds-autora')).img, pie });
 }
+
 
 /* Si llegó con un sobre de bienvenida, la primera cosa que se le enseña es ése. */
 

@@ -26,6 +26,7 @@ import { CAT, SOBRES, cobrarSobre, meterAlMazo } from './tienda.js';
 import { caraSobre, tiraSobre, caraCosmetico, COLOR_RAREZA } from './caras.js';
 import { liderDe, cartaVentaja } from './lideres.js';
 import { SON } from './sonido.js';
+import { inspeccionar } from './inspector.js';
 import { aviso, pista, cumplida, quitarPista } from './avisos.js';
 
 const SEG = 14;   /* en cuántos pedazos se rasga la tira */
@@ -45,6 +46,49 @@ function cuerpoGordo(mat){
 }
 /* las envolturas que alguien dejó tiradas en la mesa (se quedan mientras la app esté abierta) */
 export const envolturas = [];
+/* SIN PARPADEO (Carlos, 6 nov: «al guardar… se desaparecen todos los sobres de la mesa»): al pasar al siguiente
+   sobre, la mesa de antes se queda pintada hasta que la nueva ya está armada, y entonces se quita. */
+let anterior = null;
+function quitarAnterior(){
+  if(!anterior) return;
+  const r = anterior; anterior = null;
+  r.traverse(o => { if(o.geometry && o.geometry !== geoAlmohada && !o.geometry.parameters?.shapes) o.geometry.dispose?.(); });
+  r.parent?.remove(r);
+}
+/* LETREROS EN LA MESA, EN 3D: antes eran de la página y quedaban ENCIMA de la carta que se abre (Carlos lo vio dos
+   veces). Pintados en la mesa, la carta que vuela por arriba los tapa como en la vida real. */
+function letrero(texto, color, { alto = .24, fondo = null } = {}){
+  const lz = document.createElement('canvas'), x = lz.getContext('2d'), px = 64;
+  x.font = `${px}px Lilita, sans-serif`;
+  const w = Math.ceil(x.measureText(texto).width) + (fondo ? px * .9 : px * .3);
+  lz.width = w; lz.height = Math.round(px * 1.35);
+  x.font = `${px}px Lilita, sans-serif`; x.textBaseline = 'middle'; x.textAlign = 'center';
+  if(fondo){ x.fillStyle = fondo; const r = lz.height / 2; x.beginPath(); x.roundRect(2, 2, w - 4, lz.height - 4, r); x.fill(); x.lineWidth = 5; x.strokeStyle = '#1B0E16'; x.stroke(); }
+  else { x.lineWidth = 12; x.strokeStyle = 'rgba(15,6,10,.9)'; x.lineJoin = 'round'; x.strokeText(texto, w / 2, lz.height / 2 + 3); }
+  x.fillStyle = color; x.fillText(texto, w / 2, lz.height / 2 + 3);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(alto * w / lz.height, alto), new THREE.MeshBasicMaterial({ map: texturaDeLienzo(lz), transparent: true, depthWrite: false }));
+  m.userData.ancho = alto * w / lz.height;
+  return m;
+}
+/* rayos de luz detrás de lo bueno (legendarias, épicas y líderes) */
+let texRayos = null;
+function rayos(color, tam){
+  if(!texRayos){
+    const lz = document.createElement('canvas'); lz.width = lz.height = 512; const x = lz.getContext('2d');
+    x.translate(256, 256);
+    for(let i = 0; i < 18; i++){ x.rotate(Math.PI * 2 / 18); const g = x.createLinearGradient(0, 0, 0, -256); g.addColorStop(0, 'rgba(255,255,255,.95)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+      x.fillStyle = g; x.beginPath(); x.moveTo(-6, 0); x.lineTo(-30, -256); x.lineTo(30, -256); x.lineTo(6, 0); x.fill(); }
+    texRayos = texturaDeLienzo(lz);
+  }
+  return new THREE.Mesh(new THREE.PlaneGeometry(tam, tam), new THREE.MeshBasicMaterial({ map: texRayos, color, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+}
+/* el letrerote que sale cuando toca algo chido */
+function anunciar(dom, texto, color){
+  const n = document.createElement('div'); n.className = 'abrir__chido'; n.style.setProperty('--c', color); n.textContent = texto;
+  dom.appendChild(n); requestAnimationFrame(() => n.classList.add('ve'));
+  setTimeout(() => n.classList.add('sale'), 1500); setTimeout(() => n.remove(), 2100);
+  const f = document.createElement('div'); f.className = 'abrir__destello'; f.style.setProperty('--c', color); dom.appendChild(f); setTimeout(() => f.remove(), 700);
+}
 
 /* El grupo en la mesa de la izquierda al que va cada cosa, y su orden. */
 function grupoDe(x){
@@ -88,20 +132,26 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
 
   /* ── EL ACOMODO · se recalcula si gira el teléfono ── */
   const L = {};
+  /* ¿dónde lo abre? (Carlos: «que pueda decidir dónde abrirlo en mi pantalla o abrirlo en el centro»). Después de
+     la primera carta, la pila se recorre a la izquierda y lo que sale se acomoda a la derecha. */
+  let abrirEn = null, pilaRecorrida = false;
   function acomodar(){
     const v = vista(0), vertical = E.ancho < E.alto;
     L.pw = Math.min(vertical ? v.ancho * .44 : v.alto * .4, 3.2);
     L.ph = L.pw * 1.5; L.tira = L.pw * .17;
     /* LA MESA (Carlos, 6 nov): a la izquierda el montón y el sobre que abres; lo que sale, a la derecha */
-    L.px = vertical ? -v.ancho * .5 + L.pw / 2 + v.ancho * .05 : -v.ancho * .2;
-    L.py = vertical ? v.alto * .02 : 0;
+    L.pxIzq = vertical ? -v.ancho * .5 + L.pw / 2 + v.ancho * .05 : -v.ancho * .2;
+    L.pyIzq = vertical ? v.alto * .02 : 0;
+    const enX = (x) => cl(x, -v.ancho / 2 + L.pw / 2 + .1, v.ancho / 2 - L.pw / 2 - .1), enY = (y) => cl(y, -v.alto / 2 + L.ph / 2 + .4, v.alto / 2 - L.ph / 2 - .9);
+    L.px = pilaRecorrida ? L.pxIzq : abrirEn ? enX(abrirEn.x) : 0;
+    L.py = pilaRecorrida ? L.pyIzq : abrirEn ? enY(abrirEn.y) : L.pyIzq;
     L.esc = L.pw * .82;                      /* las cartas dentro del sobre */
     /* la carta que se revela, GRANDE y al centro (antes se volteaba del tamaño
        del sobre; Carlos: «no hagas tan pequeñas las cartas al salir») */
     L.grande = vertical ? Math.min(v.ancho * .74 / CARTA_W, v.alto * .5 / CARTA_H) : Math.min(v.alto * .62 / CARTA_H, v.ancho * .3 / CARTA_W);
     L.gx = vertical ? 0 : v.ancho * .12; L.gy = vertical ? v.alto * .04 : 0;
     /* La mesa de resultados: de la orilla izquierda hasta antes del sobre. */
-    L.mx0 = L.px + L.pw / 2 + .2; L.mx1 = v.ancho / 2 - .18;
+    L.mx0 = L.pxIzq + L.pw / 2 + .2; L.mx1 = v.ancho / 2 - .18;
     /* el montón de sobres, abajo a la izquierda, chiquitos y gorditos; y donde cae la envoltura abierta */
     L.ps = L.pw * .5; L.pilaX = -v.ancho / 2 + L.ps * .62 + .15; L.pilaY = -v.alto / 2 + L.ps * .8 + (vertical ? .55 : .35);
     L.envX = L.pilaX + .08; L.envY = L.pilaY + L.ps * (vertical ? 1.75 : 1.6);
@@ -129,9 +179,10 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
     const otros = C.sobres.filter(x => x.id !== sobre.id).slice(0, 9).reverse();
     otros.forEach((x, k) => { const g = cuerpoGordo(matDe(x.tipo)), d = desfase(k); g.scale.setScalar(L.ps); g.position.set(L.pilaX + d.x, L.pilaY + d.y, d.z); g.rotation.z = d.r; montonG.add(g); });
     const n = C.sobres.filter(x => x.id !== sobre.id).length;
-    if(!n){ pila.hidden = true; return; }
-    const q = aPantalla(new THREE.Vector3(L.pilaX + L.ps * .42, L.pilaY + L.ps * ALTO_C / 2 + otros.length * .07, .5));
-    pila.hidden = false; pila.innerHTML = `<b>×${n}</b>`; pila.style.left = q.x + 'px'; pila.style.top = q.y + 'px';
+    pila.hidden = true; globalThis.__abrirMonton = n;
+    if(!n) return;
+    const b = letrero('×' + n, '#1B0E16', { alto: .3, fondo: '#E94F95' });
+    b.position.set(L.pilaX + L.ps * .42, L.pilaY + L.ps * ALTO_C / 2 + otros.length * .07, .33); montonG.add(b);
   }
   function pintarTiradas(){
     tiradasG.clear();
@@ -184,7 +235,7 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
   limpieza.push(quitarAcomodo);
 
   /* El sobre flota y brilla mientras espera. */
-  let t0 = 0, estado = 'llega';
+  let t0 = 0, estado = 'llega', envolturaEnMesa = false;
   limpieza.push(cadaCuadro((dt, t) => {
     t0 = t;
     if(estado === 'cerrado' || estado === 'rasgando'){
@@ -197,13 +248,28 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
   { const k = Math.min(9, C.sobres.filter(x => x.id !== sobre.id).length), d = desfase(k);
     sobreG.scale.setScalar(L.ps); sobreG.position.set(L.pilaX + d.x, L.pilaY + d.y, d.z + .05); sobreG.rotation.z = d.r;
     estado = 'en-pila';
-    pista('agarrar', aPantalla(sobreG.position), 'Toca el sobre de arriba para agarrarlo', { gesto: 'toca', veces: 3 });
+    pista('agarrar', aPantalla(sobreG.position), 'Tócalo o arrástralo a donde quieras', { gesto: 'toca', veces: 3 });
     const toque = $('[data-toque]'), salir = $('[data-salir]'); salir.hidden = false;
+    quitarAnterior();
     const que = await new Promise((ok) => {
-      toque.onpointerdown = (e) => { if(tocado(e.clientX, e.clientY, [sobreG, montonG])){ toque.onpointerdown = null; ok('abrir'); } };
-      salir.onclick = () => { toque.onpointerdown = null; ok('volver'); };
+      let ag = null;
+      toque.onpointerdown = (e) => { if(!tocado(e.clientX, e.clientY, [sobreG, montonG])) return; ag = { x: e.clientX, y: e.clientY, movio: false }; toque.setPointerCapture?.(e.pointerId); quitarPista(); };
+      toque.onpointermove = (e) => {
+        if(!ag) return;
+        if(!ag.movio && Math.hypot(e.clientX - ag.x, e.clientY - ag.y) < 12) return;
+        ag.movio = true; const p = aMundo(e.clientX, e.clientY, .9);
+        sobreG.position.set(p.x, p.y, .9); sobreG.scale.setScalar(mezcla(sobreG.scale.x, L.pw * .8, .2)); sobreG.rotation.z *= .85;
+      };
+      toque.onpointerup = toque.onpointercancel = (e) => {
+        if(!ag) return;
+        const fue = ag; ag = null; toque.onpointerdown = toque.onpointermove = toque.onpointerup = toque.onpointercancel = null;
+        if(fue.movio){ const p = aMundo(e.clientX, e.clientY, .4); abrirEn = { x: p.x, y: p.y }; } else abrirEn = null;
+        ok('abrir');
+      };
+      salir.onclick = () => { toque.onpointerdown = toque.onpointermove = toque.onpointerup = null; ok('volver'); };
     });
     salir.hidden = true;
+    acomodar(); ponerMonton();
     if(que === 'volver'){ SON.toque(); cerrar(); alTerminar && alTerminar('volver'); return; }
     cumplida('agarrar'); quitarPista(); SON.saca?.();
     const p0 = sobreG.position.clone(), r0 = sobreG.rotation.z;
@@ -304,7 +370,7 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
         animar({ dur: .55, ease: resorte, cada: (u) => { for(const w of sube){ w.it.c.position.set(w.p0.x + w.dx * Math.sin(u * Math.PI), w.p0.y + Math.sin(u * Math.PI) * .7, w.p0.z + u * .2); w.it.c.rotation.z = w.r * Math.sin(u * Math.PI); } } }),
       ]);
       for(const w of sube) w.it.c.rotation.z = 0;
-      estado = 'tirado';
+      estado = 'tirado'; envolturaEnMesa = true;
       listo();
     };
     capaToque.onpointerdown = (e) => { y0 = e.clientY; tiempo0 = performance.now(); capaToque.setPointerCapture?.(e.pointerId); };
@@ -337,10 +403,7 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
   const grupos = [...new Map(items.map(it => [it.g.k, it.g])).values()].sort((a, b) => a.orden - b.orden);
   const enMesa = Object.fromEntries(grupos.map(g => [g.k, []]));
   const rotulos = $('[data-rotulos]');
-  for(const g of grupos){
-    const r = document.createElement('div'); r.className = 'abrir__rotulo'; r.dataset.k = g.k; r.style.setProperty('--c', g.color);
-    r.textContent = g.titulo; rotulos.appendChild(r); g.nodo = r;
-  }
+  for(const g of grupos){ g.malla = letrero(g.titulo, g.color, { alto: L.vertical ? .2 : .24 }); g.malla.visible = false; raiz.add(g.malla); }
   function lugarEnMesa(g, k, total){
     const filas = grupos.length, ancho = Math.max(.6, L.mx1 - L.mx0);
     const maxEnFila = Math.max(...grupos.map(x => items.filter(it => it.g.k === x.k).length));
@@ -368,7 +431,7 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
   }
   function acomodarMesa(anim = false){
     if(L.final){
-      rotulos.hidden = true;
+      for(const g of grupos) g.malla.visible = false;
       for(const g of grupos) enMesa[g.k].forEach((it, k) => { const l = lugarFinal(it);
         if(!anim){ it.c.position.copy(l.pos); it.c.scale.setScalar(l.s); return; }
         const p0 = it.c.position.clone(), s0 = it.c.scale.x;
@@ -382,8 +445,8 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
         const p0 = it.c.position.clone(), s0 = it.c.scale.x;
         animar({ dur: .55, retraso: k * .05, cada: (u) => { it.c.position.lerpVectors(p0, l.pos, u); it.c.scale.setScalar(mezcla(s0, l.s, u)); } }); });
       const l = lugarEnMesa(g, 0, 1), p = aPantalla(new THREE.Vector3(L.mx0, l.yRot, 0));
-      g.nodo.style.left = p.x + 'px'; g.nodo.style.top = p.y + 'px';
-      g.nodo.style.maxWidth = Math.max(90, aPantalla(new THREE.Vector3(L.mx1, 0, 0)).x - p.x) + 'px';
+      const cabe = Math.min(1, (L.mx1 - L.mx0) / g.malla.userData.ancho); g.malla.scale.setScalar(cabe);
+      g.malla.position.set(L.mx0 + g.malla.userData.ancho * cabe / 2, l.yRot - .1, .03); void p;
     }
   }
   acomodarMesa();
@@ -399,7 +462,7 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
     ficha.hidden = false; ficha.classList.remove('ve'); void ficha.offsetWidth; ficha.classList.add('ve');
   }
 
-  let primera = true;
+  let primera = true, apurado = false;
   while(monton.length){
     /* Sólo la PRIMERA: la de hasta abajo sube a la parte más alta. Las demás se toman de arriba, sin barajar
        (Carlos, 6 nov: «cada carta que tomo se manda la de hasta atrás hasta el frente y eso molesta»). */
@@ -430,9 +493,18 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
 
     /* El volteo: se levanta, gira, y cae boca arriba. Los letreros de la mesa se apagan mientras la carta está
        en grande (son de la página y quedaban ENCIMA de la carta; Carlos lo vio con «Puercos · Rara»). */
-    if(!saltar) rotulos.classList.add('tapados');
     SON.volteo();
     const c = it.c, malo = it.x.tipo === 'puerco' ? it.x.nivel : 'B';
+    const especial = it.x.tipo === 'lider' ? 'legendaria' : it.x.tipo === 'puerco' ? ({ S: 'legendaria', A: 'epica', B: 'rara' }[malo] || 'normal') : it.x.nivel === 'S' || it.x.nivel === 'A' ? 'epica' : 'rara';
+    const chido = especial === 'legendaria' || especial === 'epica', colorChido = it.x.tipo === 'lider' ? '#E8B923' : (COLOR_RAREZA[it.x.nivel] || '#FFD54A');
+    /* SUSPENSO: lo bueno tiembla y brilla antes de voltearse */
+    if(chido && !saltar){
+      SON.sube?.();
+      await animar({ dur: especial === 'legendaria' ? .9 : .55, ease: (u) => u, cada: (u) => {
+        c.position.x = L.px + Math.sin(u * 70) * .04 * u; c.rotation.z = Math.sin(u * 55) * .05 * u; c.scale.setScalar(L.esc * (1 + u * .08)); } });
+      chispas(new THREE.Vector3(c.position.x, c.position.y, .9), { color: colorChido, cuantas: 30, fuerza: 1.6 });
+      c.rotation.z = 0;
+    }
     {
       /* sale disparada al centro, crece y da vuelta y media en el aire */
       const p0 = c.position.clone(), s0 = c.scale.x, sF = saltar ? L.esc : L.grande;
@@ -446,36 +518,47 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
       c.rotation.set(0, 0, 0);
       if(!saltar){ sacudir(.06); chispas(new THREE.Vector3(L.gx, L.gy, 1.4), { color: COLOR_RAREZA[it.x.nivel] || '#FFF0F6', cuantas: 40, fuerza: 2.4 }); }
     }
-    const especial = it.x.tipo === 'lider' ? 'legendaria' : it.x.tipo === 'puerco' ? ({ S: 'legendaria', A: 'epica', B: 'rara' }[malo] || 'normal') : it.x.nivel === 'S' || it.x.nivel === 'A' ? 'epica' : 'rara';
     SON[especial]?.();
     if(!saltar){
       enseñarFicha(it);
-      if(especial === 'legendaria' || especial === 'epica'){
-        const h = halo(COLOR_RAREZA[it.x.nivel] || '#FFD54A', L.grande * 2.4); h.position.set(L.gx, L.gy, .9); raiz.add(h);
-        animar({ dur: 1.6, ease: (u) => u, cada: (u) => { h.material.opacity = Math.sin(u * Math.PI) * (especial === 'legendaria' ? 1 : .7); h.rotation.z = u * 1.5; } }).then(() => raiz.remove(h));
-        chispas(new THREE.Vector3(L.gx, L.gy, 1.4), { color: COLOR_RAREZA[it.x.nivel], cuantas: especial === 'legendaria' ? 140 : 70, fuerza: especial === 'legendaria' ? 4.5 : 3 });
-        if(especial === 'legendaria') sacudir(.18);
+      if(chido){
+        const leg = especial === 'legendaria', dura = leg ? 2.3 : 1.7;
+        const h = halo(colorChido, L.grande * 2.4); h.position.set(L.gx, L.gy, .9); raiz.add(h);
+        const ry = rayos(colorChido, L.grande * CARTA_H * (leg ? 2.6 : 2)); ry.position.set(L.gx, L.gy, .85); raiz.add(ry);
+        animar({ dur: dura, ease: (u) => u, cada: (u) => { const e = Math.sin(u * Math.PI);
+          h.material.opacity = e * (leg ? 1 : .7); h.rotation.z = u * 1.5;
+          ry.material.opacity = e * (leg ? .9 : .6); ry.rotation.z = -u * (leg ? 2.2 : 1.4); ry.scale.setScalar(.6 + e * .5); } }).then(() => { raiz.remove(h); raiz.remove(ry); });
+        /* la carta da un latido */
+        animar({ dur: .5, ease: resorte, cada: (u) => c.scale.setScalar(L.grande * (1 + Math.sin(u * Math.PI) * .12)) });
+        /* tres tandas de confeti y un empujón de cámara */
+        for(let k = 0; k < (leg ? 3 : 2); k++) setTimeout(() => chispas(new THREE.Vector3(L.gx + (Math.random() - .5), L.gy + (Math.random() - .5), 1.4), { color: k % 2 ? '#FFF0F6' : colorChido, cuantas: leg ? 110 : 60, fuerza: leg ? 4.5 : 3 }), k * 260);
+        const z0 = E.cam.position.z;
+        animar({ dur: .6, ease: (u) => u, cada: (u) => { E.cam.position.z = z0 - Math.sin(u * Math.PI) * (leg ? 1.6 : .9); } }).then(() => { E.cam.position.z = z0; });
+        anunciar(dom, it.x.tipo === 'lider' ? '¡Puerco líder!' : leg ? '¡Legendaria!' : '¡Épica!', colorChido);
+        if(leg) sacudir(.18);
       }
       if(!it.r.nueva && it.r.vuelven) setTimeout(() => SON.moneda(), 250);
       /* Se queda a la vista un momento; un toque lo apura. */
-      await Promise.race([esperar(especial === 'legendaria' ? 1.6 : 1.05), toqueCualquiera(capaToque)]);
+      /* medio segundo más en grande que antes (Carlos, 6 nov); si se toca, se va a la mesa ahí mismo y más rápido */
+      apurado = await Promise.race([esperar(especial === 'legendaria' ? 2.1 : 1.55).then(() => false), toqueCualquiera(capaToque).then(() => true)]);
       ficha.classList.remove('ve');
     }
 
+    /* tras la primera carta, la pila se recorre a la izquierda y la mesa queda a la derecha */
+    if(!pilaRecorrida){ pilaRecorrida = true; acomodar(); ponerMonton(true); }
     /* Y se va a su fila de la mesa. */
     /* el grupo DE LA MESA (el que tiene su rótulo), no la copia que trae cada carta */
     const g = grupos.find(x => x.k === it.g.k), lista = enMesa[g.k];
     lista.push(it);
     const destino = lugarEnMesa(g, lista.length - 1, lista.length);
     const de = c.position.clone(), sDe = c.scale.x;
-    await animar({ dur: saltar ? .22 : .5, ease: sale, cada: (u) => {
+    await animar({ dur: saltar ? .22 : apurado ? .26 : .5, ease: sale, cada: (u) => {
       c.position.set(mezcla(de.x, destino.pos.x, u), mezcla(de.y, destino.pos.y, u) + Math.sin(u * Math.PI) * .35, mezcla(de.z, destino.pos.z, u) + Math.sin(u * Math.PI) * .6);
       c.scale.setScalar(mezcla(sDe, destino.s, u)); c.rotation.z = Math.sin(u * Math.PI) * .2;
     } });
-    c.rotation.z = 0;
+    c.rotation.z = 0; apurado = false;
     SON.aterriza();
-    rotulos.classList.remove('tapados');
-    g.nodo.classList.add('ve');
+    g.malla.visible = true;
     acomodarMesa();
   }
   $('[data-saltar]').hidden = true;
@@ -533,7 +616,7 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
       SON.aterriza?.();
       const g = a.env, s0 = g.scale.clone();
       await animar({ dur: .3, ease: entra, cada: (u) => { g.scale.copy(s0).multiplyScalar(1 - u); g.rotation.z += .08; } });
-      g.parent?.remove(g);
+      g.parent?.remove(g); if(g === sobreG) envolturaEnMesa = false;
       const t = g.userData.envoltura; if(t) envolturas.splice(envolturas.indexOf(t), 1);
     } else if(a.env.userData.envoltura){ a.env.userData.envoltura.x = a.env.position.x; a.env.userData.envoltura.y = a.env.position.y; }
   };
@@ -541,9 +624,8 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
     SON.toque();
     const x = it.x, url = x.tipo === 'lider' ? cartaVentaja(liderDe(x.id)) : x.tipo === 'puerco' ? CAT.puercos.find(f => f.nombre + '·' + f.puntos === x.llave)?.arte
       : x.tipo === 'soporte' ? (x.esp === 'bono' ? CAT.bono : CAT.castigo).arte : (await caraCosmetico(x.id)).toDataURL('image/jpeg', .9);
-    zoom.innerHTML = `<figure><img alt="" src="${url}"><figcaption>${detalleDe(x)}</figcaption></figure><button class="btn" data-cierra>Cerrar</button>`;
-    zoom.hidden = false; requestAnimationFrame(() => zoom.classList.add('ve'));
-    zoom.onclick = () => { zoom.classList.remove('ve'); setTimeout(() => { zoom.hidden = true; zoom.innerHTML = ''; }, 200); };
+    /* de cerca: se gira con el dedo, se acerca con dos y se voltea para ver el dorso */
+    inspeccionar({ frente: url, dorso: x.tipo === 'cosmetico' ? null : dorsoUrl, pie: detalleDe(x) });
   }
 
   /* para las pruebas: dónde quedó cada cosa en la pantalla */
@@ -561,16 +643,19 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
   SON.saca?.();
   await Promise.all(items.map((it, k) => { const p0 = it.c.position.clone(), s0 = it.c.scale.x;
     return animar({ dur: .45, retraso: k * .05, ease: entra, cada: (u) => { it.c.position.set(mezcla(p0.x, L.v.ancho * .3, u), mezcla(p0.y, -L.v.alto * .7, u), p0.z + u); it.c.scale.setScalar(mezcla(s0, s0 * .6, u)); it.c.rotation.z = u * .4; } }); }));
-  cerrar();
+  cerrar(salida);
   alTerminar && alTerminar(salida);
 
-  function cerrar(){
+  function cerrar(salida){
     quitarPista();
     /* la envoltura de este sobre, si no la tiraste, se queda en la mesa para la próxima (a lo más 6) */
-    if(estado === 'tirado' && sobreG.parent){ envolturas.push({ tipo: sobre.tipo, x: sobreG.position.x, y: sobreG.position.y, rz: sobreG.rotation.z }); while(envolturas.length > 6) envolturas.shift(); }
+    if(envolturaEnMesa && sobreG.parent){ envolturas.push({ tipo: sobre.tipo, x: sobreG.position.x, y: sobreG.position.y, rz: sobreG.rotation.z }); while(envolturas.length > 6) envolturas.shift(); }
     for(const f of limpieza) f();
+    dom.remove();
+    quitarAnterior();
+    if(salida === 'otro'){ anterior = raiz; return; }     /* se quita cuando la mesa nueva ya está puesta */
     raiz.traverse(o => { if(o.geometry && o.geometry !== geoAlmohada && !o.geometry.parameters?.shapes) o.geometry.dispose?.(); });
-    E.s.remove(raiz); dom.remove();
+    E.s.remove(raiz);
   }
 }
 
