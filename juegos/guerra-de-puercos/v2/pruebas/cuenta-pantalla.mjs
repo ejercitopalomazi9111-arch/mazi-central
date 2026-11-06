@@ -14,7 +14,7 @@ async function telefono(){
   const ctx = await br.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   const pg = await ctx.newPage(); pg.err = [];
   pg.on('pageerror', e => pg.err.push('PE ' + e.message)); pg.on('console', m => { if(m.type() === 'error') pg.err.push(m.text()); });
-  await pg.goto(PAG + '?servidor=' + encodeURIComponent(SRV), { waitUntil: 'load' }); await pg.waitForTimeout(2200);
+  await pg.goto(PAG + '?servidor=' + encodeURIComponent(SRV), { waitUntil: 'load' }); await pg.waitForTimeout(2200); await pg.evaluate(() => document.querySelector('#caratula')?.click()); await pg.waitForTimeout(500);
   return pg;
 }
 const apodo = 'Puerco' + Math.random().toString(36).slice(2, 7), pin = '2580';

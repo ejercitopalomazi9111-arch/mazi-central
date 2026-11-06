@@ -22,7 +22,7 @@
 import { THREE, E, carta, textura, texturaDeLienzo, precargar, ponerDorso, animar, esperar, sale, suave, entra, resorte, mezcla, cl,
          vista, aPantalla, aMundo, tocado, halo, chispas, cadaCuadro, CARTA_W, CARTA_H, alCambiarTamano } from './escena.js';
 import { C, RAREZA, ORDEN_RAREZA, CLASES_COSMETICO, cosmetico } from './coleccion.js';
-import { CAT, SOBRES, cobrarSobre } from './tienda.js';
+import { CAT, SOBRES, cobrarSobre, meterAlMazo } from './tienda.js';
 import { caraSobre, tiraSobre, caraCosmetico, COLOR_RAREZA } from './caras.js';
 import { liderDe, cartaVentaja } from './lideres.js';
 import { SON } from './sonido.js';
@@ -75,6 +75,7 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
   dom.innerHTML = `
     <div class="abrir__toque" data-toque></div>
     <button class="btn-chico abrir__saltar" data-saltar hidden>Saltar</button>
+    <button class="btn-chico abrir__salir" data-salir hidden>Volver</button>
     <div class="abrir__rotulos" data-rotulos></div>
     <div class="abrir__ficha" data-ficha hidden></div>
     <div class="abrir__fin" data-fin hidden></div>
@@ -83,6 +84,7 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
     <div class="abrir__zoom" data-zoom hidden></div>`;
   const $ = (s) => dom.querySelector(s);
   const limpieza = [];
+  const fin = $('[data-fin]');
 
   /* ── EL ACOMODO · se recalcula si gira el teléfono ── */
   const L = {};
@@ -102,7 +104,7 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
     L.mx0 = L.px + L.pw / 2 + .2; L.mx1 = v.ancho / 2 - .18;
     /* el montón de sobres, abajo a la izquierda, chiquitos y gorditos; y donde cae la envoltura abierta */
     L.ps = L.pw * .5; L.pilaX = -v.ancho / 2 + L.ps * .62 + .15; L.pilaY = -v.alto / 2 + L.ps * .8 + (vertical ? .55 : .35);
-    L.envX = L.pilaX + L.ps * 1.4; L.envY = L.pilaY + .1;
+    L.envX = L.pilaX + .08; L.envY = L.pilaY + L.ps * (vertical ? 1.75 : 1.6);
     L.my0 = v.alto / 2 - (vertical ? 1.5 : .8);
     L.v = v; L.vertical = vertical;
   }
@@ -121,19 +123,19 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
   const matsPorTipo = {};
   const matDe = (t) => matsPorTipo[t] ||= (() => { const m = new THREE.MeshStandardMaterial({ color: '#ffffff', metalness: .45, roughness: .3, envMapIntensity: 1.4 });
     caraSobre(t, 320, 500).then(c => { m.map = texturaDeLienzo(c); m.needsUpdate = true; }); return m; })();
-  const desfase = (k) => ({ x: Math.sin(k * 2.3) * .05 + k * .015, y: k * .06, z: .05 + k * .09, r: Math.sin(k * 1.7) * .08 });
+  const desfase = (k) => ({ x: Math.sin(k * 2.3) * .05 + k * .015, y: k * .07, z: .02 + k * .03, r: Math.sin(k * 1.7) * .08 });
   function pintarMonton3d(){
     montonG.clear();
     const otros = C.sobres.filter(x => x.id !== sobre.id).slice(0, 9).reverse();
     otros.forEach((x, k) => { const g = cuerpoGordo(matDe(x.tipo)), d = desfase(k); g.scale.setScalar(L.ps); g.position.set(L.pilaX + d.x, L.pilaY + d.y, d.z); g.rotation.z = d.r; montonG.add(g); });
     const n = C.sobres.filter(x => x.id !== sobre.id).length;
     if(!n){ pila.hidden = true; return; }
-    const q = aPantalla(new THREE.Vector3(L.pilaX + L.ps * .45, L.pilaY + L.ps * .75 + otros.length * .06, 1));
+    const q = aPantalla(new THREE.Vector3(L.pilaX + L.ps * .42, L.pilaY + L.ps * ALTO_C / 2 + otros.length * .07, .5));
     pila.hidden = false; pila.innerHTML = `<b>×${n}</b>`; pila.style.left = q.x + 'px'; pila.style.top = q.y + 'px';
   }
   function pintarTiradas(){
     tiradasG.clear();
-    for(const t of envolturas){ const g = cuerpoGordo(matDe(t.tipo)); g.scale.set(L.ps * 1.05, L.ps * .92, L.ps); g.position.set(t.x, t.y, .15); g.rotation.set(-.25, 0, t.rz);
+    for(const t of envolturas){ const g = cuerpoGordo(matDe(t.tipo)); g.scale.set(L.ps * 1.05, L.ps * .92, L.ps); g.position.set(t.x, t.y, .1); g.rotation.set(-.25, 0, t.rz);
       const boca = new THREE.Mesh(new THREE.CircleGeometry(.5, 24), new THREE.MeshBasicMaterial({ color: '#0d0609', transparent: true, opacity: .75 })); boca.scale.set(.92, .12, 1); boca.position.set(0, ALTO_C / 2 - .03, .22); g.add(boca);
       g.userData.envoltura = t; tiradasG.add(g); }
   }
@@ -178,7 +180,7 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
   ponerMonton();
   for(const it of items) it.c.visible = false;     /* hasta que se abra el sobre */
 
-  const quitarAcomodo = alCambiarTamano(() => { acomodar(); if(L.final){ L.mx0 = -L.v.ancho / 2 + .18; } if(estado !== 'tirado') ponerSobre(); pintarMonton3d(); if(estado !== 'cerrado' && estado !== 'abierto') ponerMonton(); acomodarMesa(); });
+  const quitarAcomodo = alCambiarTamano(() => { acomodar(); if(fin && !fin.hidden){ L.final = true; L.mx0 = -L.v.ancho / 2 + .25; } if(estado === 'cerrado' || estado === 'rasgando' || estado === 'abierto') ponerSobre(); pintarMonton3d(); pintarTiradas(); if(estado === 'revisando') ponerMonton(); acomodarMesa(); });
   limpieza.push(quitarAcomodo);
 
   /* El sobre flota y brilla mientras espera. */
@@ -196,8 +198,13 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
     sobreG.scale.setScalar(L.ps); sobreG.position.set(L.pilaX + d.x, L.pilaY + d.y, d.z + .05); sobreG.rotation.z = d.r;
     estado = 'en-pila';
     pista('agarrar', aPantalla(sobreG.position), 'Toca el sobre de arriba para agarrarlo', { gesto: 'toca', veces: 3 });
-    const toque = $('[data-toque]');
-    await new Promise((ok) => { toque.onpointerdown = (e) => { if(tocado(e.clientX, e.clientY, [sobreG, montonG])){ toque.onpointerdown = null; ok(); } }; });
+    const toque = $('[data-toque]'), salir = $('[data-salir]'); salir.hidden = false;
+    const que = await new Promise((ok) => {
+      toque.onpointerdown = (e) => { if(tocado(e.clientX, e.clientY, [sobreG, montonG])){ toque.onpointerdown = null; ok('abrir'); } };
+      salir.onclick = () => { toque.onpointerdown = null; ok('volver'); };
+    });
+    salir.hidden = true;
+    if(que === 'volver'){ SON.toque(); cerrar(); alTerminar && alTerminar('volver'); return; }
     cumplida('agarrar'); quitarPista(); SON.saca?.();
     const p0 = sobreG.position.clone(), r0 = sobreG.rotation.z;
     await animar({ dur: .6, ease: suave, cada: (u) => { const arco = Math.sin(u * Math.PI);
@@ -338,7 +345,8 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
     const filas = grupos.length, ancho = Math.max(.6, L.mx1 - L.mx0);
     const maxEnFila = Math.max(...grupos.map(x => items.filter(it => it.g.k === x.k).length));
     /* al final la mesa usa todo el ancho y deja abajo el lugar del resumen */
-    const piso = -L.v.alto / 2 + (L.final ? (L.vertical ? 2.55 : 2.1) : .35);
+    /* al final la mesa usa todo el ancho, arriba del resumen (que va abajo a la derecha) y del montón (abajo a la izquierda) */
+    const piso = -L.v.alto / 2 + (L.final ? (L.vertical ? L.v.alto * .5 : L.v.alto * .3) : .35);
     const espacioFila = Math.min(L.vertical ? 1.7 : 2.1, (L.my0 - piso) / filas);
     const sAlto = (espacioFila - .48) / CARTA_H, sAncho = ancho / (1 + (maxEnFila - 1) * .55);
     const s = Math.max(.22, Math.min(L.vertical ? .62 : 1.05, sAlto, sAncho));
@@ -347,7 +355,26 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
     const x = L.mx0 + CARTA_W * s / 2 + k * CARTA_W * s * .55;
     return { pos: new THREE.Vector3(x, y, .05 + k * .02), s, yRot: L.my0 - .08 - fila * espacioFila };
   }
+  /* AL FINAL, las cartas se extienden GRANDES en una rejilla arriba (para verlas y tocarlas), ordenadas por rareza */
+  function lugarFinal(it){
+    const orden = grupos.flatMap(g => enMesa[g.k]), n = orden.length, k = orden.indexOf(it);
+    const cols = n <= 3 ? n : 3, filas = Math.ceil(n / cols);
+    const techo = L.v.alto / 2 - (L.vertical ? 1.05 : .75), piso = -L.v.alto / 2 + (L.vertical ? L.v.alto * .5 : L.v.alto * .3);
+    const ancho = L.v.ancho - .5, alto = techo - piso;
+    const s = Math.min((ancho / cols - .18) / CARTA_W, (alto / filas - .18) / CARTA_H, L.vertical ? 1.3 : 1.6);
+    const fila = Math.floor(k / cols), enFila = Math.min(cols, n - fila * cols), col = k - fila * cols;
+    const x = (col - (enFila - 1) / 2) * (ancho / cols), y = techo - (fila + .5) * (alto / filas);
+    return { pos: new THREE.Vector3(x, y, .05 + k * .02), s };
+  }
   function acomodarMesa(anim = false){
+    if(L.final){
+      rotulos.hidden = true;
+      for(const g of grupos) enMesa[g.k].forEach((it, k) => { const l = lugarFinal(it);
+        if(!anim){ it.c.position.copy(l.pos); it.c.scale.setScalar(l.s); return; }
+        const p0 = it.c.position.clone(), s0 = it.c.scale.x;
+        animar({ dur: .55, retraso: k * .05, ease: sale, cada: (u) => { it.c.position.lerpVectors(p0, l.pos, u); it.c.scale.setScalar(mezcla(s0, l.s, u)); } }); });
+      return;
+    }
     for(const g of grupos){
       const lista = enMesa[g.k];
       lista.forEach((it, k) => { const l = lugarEnMesa(g, k, lista.length);
@@ -448,36 +475,97 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
     acomodarMesa();
   }
   $('[data-saltar]').hidden = true;
-  capaToque.style.pointerEvents = 'none';
   /* Lo que te tocó se abre a todo el ancho, para verlo de un vistazo. */
-  L.final = true; L.mx1 = L.v.ancho / 2 - .18; acomodarMesa(true);
+  L.final = true; L.mx0 = -L.v.ancho / 2 + .25; acomodarMesa(true);
 
   /* ═══ EL RESUMEN ═══ */
   const nuevas = items.filter(it => it.r.nueva).length;
-  const fin = $('[data-fin]');
   const quedan = C.sobres.length;
   fin.innerHTML = `<h2>¡Listo!</h2>
     <p>${nuevas ? `<b>${nuevas}</b> ${nuevas === 1 ? 'nueva' : 'nuevas'}` : 'Nada nuevo esta vez'}${devueltas ? ` · repetidas: <b>+${devueltas}</b> monedas` : ''}</p>
+    <p class="abrir__ayuda">Toca una carta para verla en grande. La envoltura, arrástrala al bote o déjala en la mesa.</p>
     <div class="abrir__botones">
-      ${quedan ? `<button class="btn grande" data-otro>Abrir el siguiente <small>(quedan ${quedan})</small></button>` : ''}
-      <button class="btn" data-ver>Ver mi colección</button>
-      <button class="btn suave" data-volver>Volver</button>
+      <button class="btn" data-otro>Guardar en mi mazo${quedan ? `<small>y abrir otro · quedan ${quedan}</small>` : ''}</button>
+      <button class="btn suave" data-ver>Ver mi colección</button>
     </div>`;
-  pila.hidden = true;
+  fin.classList.add('lado');
   fin.hidden = false; requestAnimationFrame(() => fin.classList.add('ve'));
+
+  /* ═══ LA MESA YA ABIERTA: tocar una carta la abre en grande; la envoltura se arrastra al bote ═══ */
+  const bote = $('[data-bote]'), zoom = $('[data-zoom]');
+  capaToque.style.pointerEvents = '';
+  const cartas = items.map(it => it.c);
+  const raizDe = (o) => { while(o.parent && o.parent !== raiz && o.parent !== tiradasG) o = o.parent; return o; };
+  let arrastre = null;
+  capaToque.onpointerdown = (e) => {
+    if(!zoom.hidden) return;
+    const hc = tocado(e.clientX, e.clientY, cartas);
+    if(hc){ const c = raizDe(hc.object); arrastre = { carta: items.find(it => it.c === c), x: e.clientX, y: e.clientY }; return; }
+    const objetivos = [...tiradasG.children]; if(sobreG.parent) objetivos.push(sobreG);
+    const hw = tocado(e.clientX, e.clientY, objetivos);
+    if(!hw) return;
+    const g = raizDe(hw.object);
+    arrastre = { env: g, x: e.clientX, y: e.clientY, p0: g.position.clone(), movio: false };
+    capaToque.setPointerCapture?.(e.pointerId);
+  };
+  capaToque.onpointermove = (e) => {
+    if(!arrastre?.env) return;
+    if(!arrastre.movio && Math.hypot(e.clientX - arrastre.x, e.clientY - arrastre.y) < 8) return;
+    if(!arrastre.movio){ arrastre.movio = true; bote.hidden = false; fin.classList.add('tenue'); requestAnimationFrame(() => bote.classList.add('ve')); }
+    const p = aMundo(e.clientX, e.clientY, arrastre.env.position.z);
+    arrastre.env.position.x = p.x; arrastre.env.position.y = p.y;
+    const r = bote.getBoundingClientRect(), encima = e.clientX > r.left - 20 && e.clientX < r.right + 20 && e.clientY > r.top - 20 && e.clientY < r.bottom + 20;
+    bote.classList.toggle('encima', encima);
+  };
+  capaToque.onpointerup = capaToque.onpointercancel = async (e) => {
+    const a = arrastre; arrastre = null;
+    if(!a) return;
+    if(a.carta){ if(Math.hypot(e.clientX - a.x, e.clientY - a.y) < 12) verEnGrande(a.carta); return; }
+    if(!a.movio) return;
+    const encima = bote.classList.contains('encima');
+    bote.classList.remove('ve', 'encima'); fin.classList.remove('tenue'); setTimeout(() => { bote.hidden = true; }, 200);
+    if(encima){
+      /* a la basura: se encoge y se va */
+      SON.aterriza?.();
+      const g = a.env, s0 = g.scale.clone();
+      await animar({ dur: .3, ease: entra, cada: (u) => { g.scale.copy(s0).multiplyScalar(1 - u); g.rotation.z += .08; } });
+      g.parent?.remove(g);
+      const t = g.userData.envoltura; if(t) envolturas.splice(envolturas.indexOf(t), 1);
+    } else if(a.env.userData.envoltura){ a.env.userData.envoltura.x = a.env.position.x; a.env.userData.envoltura.y = a.env.position.y; }
+  };
+  async function verEnGrande(it){
+    SON.toque();
+    const x = it.x, url = x.tipo === 'lider' ? cartaVentaja(liderDe(x.id)) : x.tipo === 'puerco' ? CAT.puercos.find(f => f.nombre + '·' + f.puntos === x.llave)?.arte
+      : x.tipo === 'soporte' ? (x.esp === 'bono' ? CAT.bono : CAT.castigo).arte : (await caraCosmetico(x.id)).toDataURL('image/jpeg', .9);
+    zoom.innerHTML = `<figure><img alt="" src="${url}"><figcaption>${detalleDe(x)}</figcaption></figure><button class="btn" data-cierra>Cerrar</button>`;
+    zoom.hidden = false; requestAnimationFrame(() => zoom.classList.add('ve'));
+    zoom.onclick = () => { zoom.classList.remove('ve'); setTimeout(() => { zoom.hidden = true; zoom.innerHTML = ''; }, 200); };
+  }
+
+  /* para las pruebas: dónde quedó cada cosa en la pantalla */
+  globalThis.__abrir = { cartas: () => items.map(it => aPantalla(it.c.position)), envoltura: () => sobreG.parent ? aPantalla(sobreG.position) : null };
   const salida = await new Promise((ok) => {
-    fin.querySelector('[data-otro]')?.addEventListener('click', () => ok('otro'));
+    fin.querySelector('[data-otro]').addEventListener('click', () => ok(quedan ? 'otro' : 'volver'));
     fin.querySelector('[data-ver]').addEventListener('click', () => ok('coleccion'));
-    fin.querySelector('[data-volver]').addEventListener('click', () => ok('volver'));
   });
   SON.toque();
+  capaToque.onpointerdown = capaToque.onpointermove = capaToque.onpointerup = capaToque.onpointercancel = null;
+  fin.classList.remove('ve');
+  /* las cartitas se juntan y se van a tu mazo (abajo) */
+  const llaves = items.filter(it => it.x.tipo === 'puerco').map(it => it.x.llave);
+  if(llaves.length) meterAlMazo(llaves);
+  SON.saca?.();
+  await Promise.all(items.map((it, k) => { const p0 = it.c.position.clone(), s0 = it.c.scale.x;
+    return animar({ dur: .45, retraso: k * .05, ease: entra, cada: (u) => { it.c.position.set(mezcla(p0.x, L.v.ancho * .3, u), mezcla(p0.y, -L.v.alto * .7, u), p0.z + u); it.c.scale.setScalar(mezcla(s0, s0 * .6, u)); it.c.rotation.z = u * .4; } }); }));
   cerrar();
   alTerminar && alTerminar(salida);
 
   function cerrar(){
     quitarPista();
+    /* la envoltura de este sobre, si no la tiraste, se queda en la mesa para la próxima (a lo más 6) */
+    if(estado === 'tirado' && sobreG.parent){ envolturas.push({ tipo: sobre.tipo, x: sobreG.position.x, y: sobreG.position.y, rz: sobreG.rotation.z }); while(envolturas.length > 6) envolturas.shift(); }
     for(const f of limpieza) f();
-    raiz.traverse(o => { if(o.geometry && !o.geometry.parameters?.shapes) o.geometry.dispose?.(); });
+    raiz.traverse(o => { if(o.geometry && o.geometry !== geoAlmohada && !o.geometry.parameters?.shapes) o.geometry.dispose?.(); });
     E.s.remove(raiz); dom.remove();
   }
 }

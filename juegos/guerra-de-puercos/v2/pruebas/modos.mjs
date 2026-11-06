@@ -20,7 +20,7 @@ async function telefono(){
   const ctx = await br.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   const pg = await ctx.newPage(); pg.err = [];
   pg.on('pageerror', e => pg.err.push('PE ' + e.message)); pg.on('console', m => { if(m.type() === 'error' && !/401|404/.test(m.text())) pg.err.push(m.text()); });
-  await pg.goto(PAG + '?servidor=' + encodeURIComponent(SRV), { waitUntil: 'load' }); await pg.waitForTimeout(2200);
+  await pg.goto(PAG + '?servidor=' + encodeURIComponent(SRV), { waitUntil: 'load' }); await pg.waitForTimeout(2200); await pg.evaluate(() => document.querySelector('#caratula')?.click()); await pg.waitForTimeout(500);
   /* el aviso del sobre de bienvenida, fuera */
   await pg.evaluate(() => { const n = document.querySelector('#notiSobres'); n.classList.remove('ve'); n.hidden = true; });
   return pg;
@@ -36,7 +36,10 @@ async function jugarUna(pg){
   await pg.mouse.click(c.x, c.y); await pg.waitForTimeout(200);
   return c;
 }
-async function elegirModo(pg, m){ await pg.click('#bJugar'); await pg.waitForTimeout(450); await pg.click(`#hojaCaja [data-h="${m}"]`); }
+async function elegirModo(pg, m){ await pg.click('#bJugar'); await pg.waitForTimeout(450);
+  /* sin líder, JUGAR primero pide escoger uno (el primero es gratis) */
+  if(await pg.$('#hojaCaja [data-l]')){ await pg.click('#hojaCaja [data-l="rey"]'); await pg.click('#hojaCaja [data-ok]'); await pg.waitForTimeout(700); }
+  await pg.click(`#hojaCaja [data-h="${m}"]`); }
 
 /* ═══ 1 · contra la máquina ═══ */
 if(!SOLO || SOLO === 'maquina'){
@@ -59,7 +62,7 @@ if(!SOLO || SOLO === 'dos'){
   await elegirModo(pg, 'dos');
   await pg.waitForFunction(() => globalThis.__mesa?.estado().cortina, null, { timeout: 30000 });
   await pg.waitForTimeout(500);
-  ok('sale la cortina «Turno de Jugador 1»', /Turno de Jugador 1/.test(await pg.textContent('[data-cortina]')));
+  const cort1 = await pg.textContent('[data-cortina]'); ok('sale la cortina «Turno de Jugador 1»', /Turno de Jugador.1/.test(cort1), cort1);
   ok('detrás de la cortina todavía no hay mano repartida', (await est(pg)).mano.every(c => c.x == null));
   await pg.screenshot({ path: FOTOS + 'dos-cortina.png' });
   let rondas = 0, trabada = false, vioTapada = false, vioJ2 = false;
@@ -76,7 +79,7 @@ if(!SOLO || SOLO === 'dos'){
       if(quien === 'Jugador 2' && !vioJ2){
         vioJ2 = true;
         const e = await est(pg);
-        ok('en el turno de Jugador 2 la mano de abajo es la suya', e.persp === 'b' && (await pg.textContent('[data-nom-a]')) === 'Jugador 2');
+        const nomA = await pg.textContent('[data-nom-a]'); ok('en el turno de Jugador 2 la mano de abajo es la suya', e.persp === 'b' && /Jugador.2/.test(nomA), e.persp + ' / ' + nomA);
         await pg.screenshot({ path: FOTOS + 'dos-j2.png' });
       }
       await jugarUna(pg);

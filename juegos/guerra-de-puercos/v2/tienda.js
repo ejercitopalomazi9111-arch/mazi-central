@@ -254,6 +254,14 @@ export function mazoAuto(){
   todas.sort((x, y) => y.puntos - x.puntos);
   return limpiarMazo(todas.map(llaveDe));
 }
+/* lo que acabas de sacar de un sobre entra a TU mazo armado si cabe y se vale (si no armaste uno, el automático
+   ya lo toma solo). Devuelve cuántas entraron. */
+export function meterAlMazo(llaves){
+  if(!C.mazoPropio) return llaves.length;
+  const antes = limpiarMazo(C.mazo).length;
+  C.mazo = limpiarMazo([...(C.mazo || []), ...llaves]); guardar(false);
+  return C.mazo.length - antes;
+}
 export const mazoActual = () => { const m = C.mazoPropio ? limpiarMazo(C.mazo) : []; return m.length ? m : mazoAuto(); };
 /* en el idioma del motor: { valor, nivel } por carta */
 export const mazoParaMotor = () => mazoActual().map(k => { const f = fichaPorLlave(k); return { valor: f.puntos, nivel: f.nivel }; });

@@ -9,7 +9,7 @@ const PAG = process.argv[2] || 'http://127.0.0.1:8765/juegos/guerra-de-puercos/v
 let bien = 0, mal = 0; const ok = (q, c, d = '') => { if(c){ bien++; console.log('  ✓ ' + q); } else { mal++; console.log('  ✗ ' + q + (d ? '  → ' + d : '')); } };
 const br = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 async function tel(){ const ctx = await br.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const pg = await ctx.newPage(); pg.err = [];
-  pg.on('pageerror', e => pg.err.push(e.message)); await pg.goto(PAG + '?servidor=' + encodeURIComponent(SRV), { waitUntil: 'load' }); await pg.waitForTimeout(2500); return pg; }
+  pg.on('pageerror', e => pg.err.push(e.message)); await pg.goto(PAG + '?servidor=' + encodeURIComponent(SRV), { waitUntil: 'load' }); await pg.waitForTimeout(2500); await pg.evaluate(() => document.querySelector('#caratula')?.click()); await pg.waitForTimeout(500); return pg; }
 const C = (pg) => pg.evaluate(() => ({ m: __puercos.C.monedas, s: __puercos.C.sobres.map(x => x.id).sort(), v: __puercos.C.stats.victorias, cartas: Object.values(__puercos.C.cartas).reduce((a, b) => a + b, 0) }));
 const sync = (pg) => pg.evaluate(() => new Promise(ok => { document.dispatchEvent(new Event('visibilitychange')); setTimeout(ok, 1800); }));
 const apodo = 'Sinc' + Math.random().toString(36).slice(2, 7);
@@ -33,7 +33,7 @@ ok('las monedas de los dos teléfonos se suman (menos el sobre de A)', a.m === b
 ok('el sobre que compró A está en los dos', a.s.length === b.s.length && a.s.join() === b.s.join() && a.s.length === 1, JSON.stringify({ a: a.s, b: b.s }));
 ok('el de bienvenida que abrió B ya no está, y sus cartas sí', !a.s.includes(ini.s[0]) && a.cartas === b.cartas && a.cartas > 0, JSON.stringify({ a: a.cartas, b: b.cartas }));
 console.log('A recarga la página');
-await A.reload({ waitUntil: 'load' }); await A.waitForTimeout(2500); await sync(A);
+await A.reload({ waitUntil: 'load' }); await A.waitForTimeout(2500); await A.evaluate(() => document.querySelector('#caratula')?.click()); await A.waitForTimeout(500); await sync(A);
 ok('tras recargar sigue todo', JSON.stringify(await C(A)) === JSON.stringify(b), JSON.stringify(await C(A)));
 ok('sin errores', !A.err.length && !B.err.length, [...A.err, ...B.err].join(' | '));
 console.log(`\n${bien} pasan · ${mal} fallan`); await br.close(); process.exit(mal ? 1 : 0);

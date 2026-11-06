@@ -242,22 +242,8 @@ async function pintarMisSobres(){
     caja.querySelector('[data-ir2]').onclick = () => ir('tienda');
     return;
   }
-  /* Todos amontonados, uno sobre otro, como en la mesa: el de hasta arriba
-     es el que se abre, y al terminar sigue el que quedó debajo. */
-  const n = C.sobres.length, vis = C.sobres.slice(0, 8);
-  caja.innerHTML = `<div class="monton-sobres" role="button" aria-label="Abrir el sobre de hasta arriba">
-      ${vis.map((s, i) => `<img alt="" data-i="${i}" style="--i:${i}; z-index:${20 - i}">`).join('')}
-      <span class="monton-sobres__n">${n}</span>
-    </div>
-    <p class="monton-sobres__pie"><b>${SOBRES[C.sobres[0].tipo].nombre}</b> · toca el de hasta arriba para abrirlo</p>`;
-  vis.forEach((s, i) => caraSobre(s.tipo, 300, 470).then(c => { const im = caja.querySelector(`[data-i="${i}"]`); if(im) im.src = c.toDataURL('image/jpeg', .85); }));
-  const m = caja.querySelector('.monton-sobres');
-  m.onclick = () => {
-    if(m.classList.contains('sale')) return;
-    m.classList.add('sale'); SON.saca?.();
-    setTimeout(() => abrir(C.sobres[0]), 380);
-  };
-  pista('monton', m, 'Toca el sobre de arriba', { gesto: 'toca', veces: 2 });
+  /* Carlos, 6 nov: los sobres se ven EN LA MESA, en 3D, amontonados; esta pantalla ya sólo lleva ahí */
+  return abrir(C.sobres[0]);
 }
 
 /* ── ABRIR UN SOBRE ──────────────────────────────────────────────────────── */
@@ -266,7 +252,7 @@ function abrir(sobre){
   ir('abrir');
   abrirSobre(sobre, { capa: $('#ui'), alTerminar: (salida) => {
     if(salida === 'otro' && C.sobres.length) return abrir(C.sobres[0]);
-    ir(salida === 'coleccion' ? 'coleccion' : C.sobres.length ? 'sobres' : 'inicio');
+    ir(salida === 'coleccion' ? 'coleccion' : 'inicio');
   } });
 }
 
