@@ -263,6 +263,19 @@ export class Secre {
       this.config.campana = Object.assign({}, CAMPANA_BASE, this.config.campana || {}, { activo: true });
       this.config.version = 7;
     }
+    /* 6 nov, Carlos: «desactiva completamente a Secre… que nada más se quede para cosas como All's Fashion,
+       campañas de búsqueda para lo de la chamba. Que no sea mi asistente, que no conteste mis mensajes, que no
+       mis llamadas… solamente negocio, porque me está metiendo en pedillos». SÓLO NEGOCIO: se queda la campaña
+       a negocios (y contestarle a los prospectos), All's (el grupo y su banco de fotos) e Instagram/Facebook del
+       negocio. Todo lo personal se apaga: no contesta chats, no propone, no saluda, no repasa, no juega rol, no
+       manda programados y no toca las llamadas. Se regresa con «modo completo» desde su chat. */
+    /* sólo la Secre que ya estaba corriendo (guardada en la versión 7) se pasa a sólo negocio; una nueva o las
+       pruebas arrancan como siempre */
+    if(guardada.version === 7){
+      this.config.soloNegocio = true;
+      if(this.config.llamar) this.config.llamar.activo = false;
+    }
+    if((this.config.version || 1) < 8) this.config.version = 8;
     /* las dos cuentas de Carlos corren en el mismo proceso: lo compartido se junta al arrancar */
     this.compartir = compartir;
     if(compartir) for(const h of Secre.hermanas){ for(const k of COMPARTIDO){ const mio = this.config[k], suyo = h.config[k];
@@ -481,6 +494,7 @@ export class Secre {
       return;
     }
     const c = this.chat(m.chat);
+    if(this.config.soloNegocio && !this.esNegocio(m.chat, c)) return;      /* sólo negocio: lo personal ni se lee */
     if(!m.grupo && !m.mio && m.nombre && c.nombre && m.nombre !== c.nombre && !c.alias) c.alias = String(m.nombre).slice(0, 100);
     /* ¿de qué producto preguntan? la foto que citaron (de las que mandó Secre) o la foto que mandaron */
     if(!m.mio && (this.config.productos || []).length){
@@ -522,6 +536,13 @@ export class Secre {
   /* ══ el reloj: cada pocos segundos ════════════════════════════════════ */
   async tic(){
     const ahora = this.reloj();
+    if(this.config.soloNegocio){
+      for(const jid of Object.keys(this.estado.cola)) if(!this.esNegocio(jid)) delete this.estado.cola[jid];
+      this.estado.colaElenco = {};
+      const antes = this.estado.propuestas.length;
+      this.estado.propuestas = this.estado.propuestas.filter(p => this.esNegocio(p.chat));
+      if(antes !== this.estado.propuestas.length) this.guardar();
+    }
     for(const [jid, q] of Object.entries(this.estado.cola)){
       if(q.en > ahora || this.ocupados.has(jid)) continue;
       this.ocupados.add(jid);
@@ -536,7 +557,9 @@ export class Secre {
       finally { this.ocupados.delete(jid); }
     }
     /* cada pieza aparte: si una truena, las demás siguen (antes un error en los saludos frenaba todo lo de abajo) */
+    const personal = new Set(['saludos', 'resumen', 'repaso', 'programados']);
     for(const [n, f] of [['saludos', () => this.saludos(ahora)], ['resumen', () => this.resumen(ahora)], ['repaso', () => this.repaso(ahora)], ['programados', () => this.programadosTic(ahora)], ['publicar', () => this.publicarTic(ahora)], ['mayoreo', () => this.mayoreoTic()], ['campaña', () => this.campanaTic(ahora)], ['fotos', () => this.colaFotosTic()]]){
+      if(this.config.soloNegocio && personal.has(n)) continue;
       try{ await f(); }catch(e){ const k = 'falla:' + n; if(this.ultimaFalla?.[k] !== e.message){ (this.ultimaFalla || (this.ultimaFalla = {}))[k] = e.message; this.anotar(`${n} falló: ${e.message}`); } }
     }
     /* las propuestas viejas se tiran: contestar algo de hace 6 horas confunde */
@@ -846,7 +869,14 @@ export class Secre {
   }
 
   /* ── una llamada de WhatsApp: no se puede contestar con voz; se rechaza y se le escribe ── */
+  /* ¿este chat es de negocio? prospectos de la campaña, el grupo de All's (o una tienda), Instagram/Facebook,
+     o uno que Carlos marcó con «negocio Fulano» */
+  esNegocio(jid, c = this.config.chats[jid] || {}){
+    const MY = this.config.mayoreo || {}, et = c.etiquetas || [];
+    return et.includes('prospecto') || et.includes('negocio') || !!c.tienda || jid === MY.destino || jid === MY.fuente || /^(ig|fb):/.test(jid);
+  }
   async alLlamada({ de, video }){
+    if(this.config.soloNegocio) return;                  /* sólo negocio: las llamadas son de Carlos, ni se rechazan */
     if(!de || this.esMiChat(de) || this.esOtraCuenta(de)) return;
     const nombre = this.nombreDe(de), f = this.firmaDe(de);
     const txt = `Hola, ${this.config.nombre} no puede contestar llamadas ahorita. ¿Quién habla y para qué le marcas? Escríbeme aquí y se lo paso.`;
@@ -1221,6 +1251,7 @@ export class Secre {
     return String(this.destinoAvisos() || '').split('@')[0];
   }
   async quizaLlamar(nombre, dijo, motivo){
+    if(this.config.soloNegocio) return;
     const L = Object.assign({ activo: false, desde: '08:00', hasta: '23:00' }, this.config.llamar || {});
     if(!L.activo) return;
     const ahora = this.reloj();
@@ -1606,6 +1637,11 @@ export class Secre {
       return this.avisar(`Listo: a ${this.nombreDe(j)} te vuelvo a proponer los saludos antes de mandarlos.`);
     }
     /* el modo automático: «automático Ana» · «automático todos» · «manual Ana» · «apaga automático» */
+    /* sólo negocio (6 nov): «modo completo» lo regresa todo; «solo negocio» lo vuelve a dejar en lo del negocio;
+       «negocio Fulano» marca un chat como de negocio para que sí lo atienda */
+    if(/^\/?(?:modo\s+)?(?:solo|sólo)\s+negocio$/.test(s)){ this.config.soloNegocio = true; this.guardar(); return this.avisar('🤖 Listo: sólo negocio. Ya no contesto tus chats personales, ni propongo, ni saludo, ni contesto llamadas. Sigo con la campaña, All\'s e Instagram/Facebook del negocio. «modo completo» lo regresa todo.'); }
+    if(/^\/?modo\s+completo$/.test(s)){ this.config.soloNegocio = false; this.guardar(); return this.avisar('🤖 Listo: regresé a hacer todo (chats, propuestas, saludos y llamadas como antes). «solo negocio» lo vuelve a limitar.'); }
+    if((m = /^\/?negocio\s+(.+)$/.exec(s))){ const j = this.buscarChat(m[1]); if(!j) return this.avisar('🤖 No encontré ese chat.'); const c = this.chat(j); c.etiquetas = [...new Set([...(c.etiquetas || []), 'negocio'])]; this.guardar(); return this.avisar(`🤖 ${this.nombreDe(j)} ya cuenta como negocio: ahí sí atiendo.`); }
     if(/^\/?(?:apaga(?:r)?\s+(?:el\s+)?(?:modo\s+)?automatico|automatico\s+(?:no|off|apagado)|sin automatico|ya no contestes sola?)$/.test(s)){
       if(this.config.porDefecto === 'auto') this.config.porDefecto = 'borrador';
       for(const c of Object.values(this.config.chats)) if(c.modo === 'auto'){ c.modo = 'borrador'; c.rol = false; }

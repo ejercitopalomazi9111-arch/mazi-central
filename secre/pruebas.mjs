@@ -528,7 +528,26 @@ console.log('\n10 · Asistente de verdad: contesta siempre y al instante (Carlos
   /* las cuentas guardadas con lo de antes se pasan solas a lo nuevo */
   const viejo = { config: JSON.stringify({ porDefecto: 'borrador', juntar: 45, juntarMax: 120, esperaSiContesto: 15, auto: { firma: '🤖 Asistente de Carlos', porHora: 4, alDia: 20 } }) };
   const s3 = new Secre({ cuenta: 'vieja', transporte: t2, ia, almacen: { leer: (k, d) => viejo[k] ? JSON.parse(viejo[k]) : d, guardar(){} }, reloj });
-  ok('una cuenta con la configuración vieja se pasa sola a la nueva (una vez, sin topes, con la campaña prendida y desde el 5 nov con lo de All’s apagado)', s3.config.version === 7 && s3.config.campana.activo === true && s3.config.mayoreo.fuenteNombre === 'Shopy go mayoreo 1' && s3.config.mayoreo.activo === false && s3.config.porDefecto === 'auto' && s3.config.juntar === 6 && s3.config.esperaSiContesto === 0 && s3.config.auto.porHora === 1000 && s3.config.auto.firma === 'Asistente de Carlos', s3.config);
+  ok('una cuenta con la configuración vieja se pasa sola a la nueva (una vez, sin topes, con la campaña prendida y desde el 5 nov con lo de All’s apagado)', s3.config.version === 8 && !s3.config.soloNegocio && s3.config.campana.activo === true && s3.config.mayoreo.fuenteNombre === 'Shopy go mayoreo 1' && s3.config.mayoreo.activo === false && s3.config.porDefecto === 'auto' && s3.config.juntar === 6 && s3.config.esperaSiContesto === 0 && s3.config.auto.porHora === 1000 && s3.config.auto.firma === 'Asistente de Carlos', s3.config);
+  /* 6 nov · SÓLO NEGOCIO: Carlos, «que no sea mi asistente, que no conteste mis mensajes, que no mis llamadas…
+     solamente negocio». La Secre que ya corría (guardada en la versión 7) se pasa sola a sólo negocio */
+  {
+    const vivo = { config: JSON.stringify({ version: 7, porDefecto: 'auto', juntar: 6, esperaSiContesto: 0, auto: { firma: 'Asistente de Carlos', porHora: 1000, alDia: 10000 } }) };
+    const s4 = new Secre({ cuenta: 'viva', transporte: t2, ia, almacen: { leer: (k, d) => vivo[k] ? JSON.parse(vivo[k]) : d, guardar(){} }, reloj });
+    eco = (m) => s4.alMensaje(m);
+    ok('sólo negocio: la Secre que ya corría se pasa sola', s4.config.soloNegocio === true && s4.config.version === 8);
+    const PERSONAL = '5215550002222@s.whatsapp.net', PROS = '5215550003333@s.whatsapp.net', aJ = (j) => env2.filter(e => e.jid === j);
+    await s4.alMensaje({ id: 'sn1', chat: PERSONAL, de: PERSONAL, nombre: 'Tía Lupe', texto: 'mijo, ¿quién dejó la leche afuera?', mio: false, t: ahora }); pasar(7); await s4.tic();
+    ok('sólo negocio: a un chat personal no le contesta, ni le propone, ni lo anota', !aJ(PERSONAL).length && !s4.estado.propuestas.some(p => p.chat === PERSONAL) && !s4.estado.historial[PERSONAL], { env: aJ(PERSONAL), props: s4.estado.propuestas });
+    const pc = s4.chat(PROS); pc.etiquetas = ['prospecto']; pc.modo = 'auto'; pc.nombre = 'Barbería El Güero';
+    await s4.alMensaje({ id: 'sn2', chat: PROS, de: PROS, nombre: 'Barbería El Güero', texto: 'hola, ¿cuánto cuesta la página?', mio: false, t: ahora }); pasar(7); await s4.tic();
+    ok('sólo negocio: a un negocio de la campaña sí le contesta', aJ(PROS).length === 1, aJ(PROS));
+    const antes = env2.length; await s4.alLlamada({ de: PERSONAL, video: false });
+    ok('sólo negocio: una llamada de WhatsApp no la toca (ni la rechaza ni escribe)', env2.length === antes);
+    await s4.orden('modo completo'); const completo = s4.config.soloNegocio === false;
+    await s4.orden('solo negocio');
+    ok('sólo negocio: «modo completo» lo regresa y «solo negocio» lo vuelve a limitar', completo && s4.config.soloNegocio === true);
+  }
   const ya = { config: JSON.stringify({ version: 3, porDefecto: 'borrador', juntar: 30 }) };
   const s4 = new Secre({ cuenta: 'ya', transporte: t2, ia, almacen: { leer: (k, d) => ya[k] ? JSON.parse(ya[k]) : d, guardar(){} }, reloj });
   ok('y lo que Carlos cambie después ya no se lo pisa', s4.config.porDefecto === 'borrador' && s4.config.juntar === 30);

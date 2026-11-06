@@ -77,6 +77,8 @@ export function conmutador({ ia, twilio, secre, base, carlos, desde = '', azar =
       viejas();
       const sid = p.CallSid || '';
       if(ruta === '/voz/entra'){
+        /* sólo negocio (6 nov, Carlos: «que no conteste mis llamadas»): no se contesta nada */
+        if(secre && secre.config && secre.config.soloNegocio) return xml('<Reject reason="busy"/>');
         /* la llamada a Carlos que se regresa por el desvío no se vuelve a contestar */
         if(desde && p.From === desde) return xml('<Hangup/>');
         llamadas.set(sid, { de: p.From || '', t: reloj(), intentos: 0 });
