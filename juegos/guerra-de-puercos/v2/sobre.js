@@ -192,6 +192,69 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
   }
   pintarMonton3d(); pintarTiradas();
 
+  /* LA BASURA SE AGARRA Y SE AVIENTA (Carlos, 6 nov: «si hay basura, que se pueda tomar y aventar por ahí»), en el
+     montón y al final: se arrastra con el dedo; si se suelta con vuelo, sale disparada, rebota en las orillas y se
+     frena sola; si se suelta en el bote, se va. Sirve igual para la envoltura del sobre que acabas de abrir. */
+  const bote = $('[data-bote]');
+  let agarrada = null;
+  const raizEnv = (o) => { while(o.parent && o.parent !== raiz && o.parent !== tiradasG) o = o.parent; return o; };
+  const env = {
+    empieza(e){
+      const objetivos = [...tiradasG.children]; if(envolturaEnMesa && sobreG.parent) objetivos.push(sobreG);
+      const hw = objetivos.length && tocado(e.clientX, e.clientY, objetivos);
+      if(!hw) return false;
+      const g = raizEnv(hw.object); g.userData.vuela = null;
+      agarrada = { g, x: e.clientX, y: e.clientY, movio: false, rastro: [{ x: e.clientX, y: e.clientY, t: performance.now() }] };
+      $('[data-toque]').setPointerCapture?.(e.pointerId); quitarPista();
+      return true;
+    },
+    mueve(e){
+      if(!agarrada) return false;
+      const a = agarrada;
+      a.rastro.push({ x: e.clientX, y: e.clientY, t: performance.now() }); if(a.rastro.length > 6) a.rastro.shift();
+      if(!a.movio && Math.hypot(e.clientX - a.x, e.clientY - a.y) < 8) return true;
+      if(!a.movio){ a.movio = true; bote.hidden = false; fin.classList.add('tenue'); requestAnimationFrame(() => bote.classList.add('ve')); SON.saca?.(); }
+      const p = aMundo(e.clientX, e.clientY, a.g.position.z); a.g.position.x = p.x; a.g.position.y = p.y; a.g.position.z = .5;
+      const r = bote.getBoundingClientRect();
+      bote.classList.toggle('encima', e.clientX > r.left - 20 && e.clientX < r.right + 20 && e.clientY > r.top - 20 && e.clientY < r.bottom + 20);
+      return true;
+    },
+    suelta(){
+      if(!agarrada) return false;
+      const a = agarrada; agarrada = null;
+      { const t = a.g.userData.envoltura; if(t){ t.x = a.g.position.x; t.y = a.g.position.y; } }
+      const encima = bote.classList.contains('encima');
+      bote.classList.remove('ve', 'encima'); fin.classList.remove('tenue'); setTimeout(() => { if(!agarrada) bote.hidden = true; }, 200);
+      if(!a.movio) return true;
+      if(encima){
+        SON.aterriza?.();
+        const g = a.g, s0 = g.scale.clone();
+        animar({ dur: .3, ease: entra, cada: (u) => { g.scale.copy(s0).multiplyScalar(1 - u); g.rotation.z += .08; } }).then(() => {
+          g.parent?.remove(g); if(g === sobreG) envolturaEnMesa = false;
+          const t = g.userData.envoltura; if(t) envolturas.splice(envolturas.indexOf(t), 1); });
+        return true;
+      }
+      /* el vuelo: la velocidad de los últimos ~80 ms del dedo */
+      const r = a.rastro, u0 = r[0], u1 = r[r.length - 1], dt = Math.max(16, u1.t - u0.t) / 1000;
+      const k = L.v.ancho / E.ancho;
+      a.g.userData.vuela = { vx: (u1.x - u0.x) / dt * k, vy: -(u1.y - u0.y) / dt * k, giro: (Math.random() - .5) * 8 };
+      return true;
+    },
+  };
+  /* la física de lo aventado: avanza, rebota en las orillas, gira y se frena */
+  limpieza.push(cadaCuadro((dt) => {
+    for(const g of [...tiradasG.children, ...raiz.children]){   /* raiz trae al sobre abierto (sobreG) cuando ya existe */
+      const v = g.userData.vuela; if(!v) continue;
+      const lim = { x: L.v.ancho / 2 - L.ps * .45, y: L.v.alto / 2 - L.ps * .6 };
+      g.position.x += v.vx * dt; g.position.y += v.vy * dt; g.rotation.z += v.giro * dt;
+      if(Math.abs(g.position.x) > lim.x){ g.position.x = Math.sign(g.position.x) * lim.x; v.vx *= -.6; SON.toque?.(); }
+      if(Math.abs(g.position.y) > lim.y){ g.position.y = Math.sign(g.position.y) * lim.y; v.vy *= -.6; SON.toque?.(); }
+      const f = Math.pow(.05, dt); v.vx *= f; v.vy *= f; v.giro *= f;
+      const t = g.userData.envoltura; if(t){ t.x = g.position.x; t.y = g.position.y; t.rz = g.rotation.z; }
+      if(Math.hypot(v.vx, v.vy) < .08){ g.userData.vuela = null; g.position.z = g.parent === tiradasG ? .1 : .15; }
+    }
+  }));
+
   /* ── EL SOBRE: cuerpo inflado y la tira en pedazos ── */
   const [cara, tira] = await Promise.all([caraSobre(sobre.tipo), tiraSobre(sobre.tipo)]);
   const texCara = texturaDeLienzo(cara), texTira = texturaDeLienzo(tira);
@@ -253,14 +316,19 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
     quitarAnterior();
     const que = await new Promise((ok) => {
       let ag = null;
-      toque.onpointerdown = (e) => { if(!tocado(e.clientX, e.clientY, [sobreG, montonG])) return; ag = { x: e.clientX, y: e.clientY, movio: false }; toque.setPointerCapture?.(e.pointerId); quitarPista(); };
+      toque.onpointerdown = (e) => {
+        const hp = tocado(e.clientX, e.clientY, [sobreG, montonG]), hb = tiradasG.children.length && tocado(e.clientX, e.clientY, tiradasG.children);
+        if(hb && (!hp || hb.distance < hp.distance)){ env.empieza(e); return; }
+        if(!hp) return; ag = { x: e.clientX, y: e.clientY, movio: false }; toque.setPointerCapture?.(e.pointerId); quitarPista(); };
       toque.onpointermove = (e) => {
+        if(env.mueve(e)) return;
         if(!ag) return;
         if(!ag.movio && Math.hypot(e.clientX - ag.x, e.clientY - ag.y) < 12) return;
         ag.movio = true; const p = aMundo(e.clientX, e.clientY, .9);
         sobreG.position.set(p.x, p.y, .9); sobreG.scale.setScalar(mezcla(sobreG.scale.x, L.pw * .8, .2)); sobreG.rotation.z *= .85;
       };
       toque.onpointerup = toque.onpointercancel = (e) => {
+        if(env.suelta(e)) return;
         if(!ag) return;
         const fue = ag; ag = null; toque.onpointerdown = toque.onpointermove = toque.onpointerup = toque.onpointercancel = null;
         if(fue.movio){ const p = aMundo(e.clientX, e.clientY, .4); abrirEn = { x: p.x, y: p.y }; } else abrirEn = null;
@@ -579,7 +647,7 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
   fin.hidden = false; requestAnimationFrame(() => fin.classList.add('ve'));
 
   /* ═══ LA MESA YA ABIERTA: tocar una carta la abre en grande; la envoltura se arrastra al bote ═══ */
-  const bote = $('[data-bote]'), zoom = $('[data-zoom]');
+  const zoom = $('[data-zoom]');
   capaToque.style.pointerEvents = '';
   const cartas = items.map(it => it.c);
   const raizDe = (o) => { while(o.parent && o.parent !== raiz && o.parent !== tiradasG) o = o.parent; return o; };
@@ -588,37 +656,13 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
     if(!zoom.hidden) return;
     const hc = tocado(e.clientX, e.clientY, cartas);
     if(hc){ const c = raizDe(hc.object); arrastre = { carta: items.find(it => it.c === c), x: e.clientX, y: e.clientY }; return; }
-    const objetivos = [...tiradasG.children]; if(sobreG.parent) objetivos.push(sobreG);
-    const hw = tocado(e.clientX, e.clientY, objetivos);
-    if(!hw) return;
-    const g = raizDe(hw.object);
-    arrastre = { env: g, x: e.clientX, y: e.clientY, p0: g.position.clone(), movio: false };
-    capaToque.setPointerCapture?.(e.pointerId);
+    env.empieza(e);
   };
-  capaToque.onpointermove = (e) => {
-    if(!arrastre?.env) return;
-    if(!arrastre.movio && Math.hypot(e.clientX - arrastre.x, e.clientY - arrastre.y) < 8) return;
-    if(!arrastre.movio){ arrastre.movio = true; bote.hidden = false; fin.classList.add('tenue'); requestAnimationFrame(() => bote.classList.add('ve')); }
-    const p = aMundo(e.clientX, e.clientY, arrastre.env.position.z);
-    arrastre.env.position.x = p.x; arrastre.env.position.y = p.y;
-    const r = bote.getBoundingClientRect(), encima = e.clientX > r.left - 20 && e.clientX < r.right + 20 && e.clientY > r.top - 20 && e.clientY < r.bottom + 20;
-    bote.classList.toggle('encima', encima);
-  };
-  capaToque.onpointerup = capaToque.onpointercancel = async (e) => {
+  capaToque.onpointermove = (e) => { env.mueve(e); };
+  capaToque.onpointerup = capaToque.onpointercancel = (e) => {
+    if(env.suelta(e)) return;
     const a = arrastre; arrastre = null;
-    if(!a) return;
-    if(a.carta){ if(Math.hypot(e.clientX - a.x, e.clientY - a.y) < 12) verEnGrande(a.carta); return; }
-    if(!a.movio) return;
-    const encima = bote.classList.contains('encima');
-    bote.classList.remove('ve', 'encima'); fin.classList.remove('tenue'); setTimeout(() => { bote.hidden = true; }, 200);
-    if(encima){
-      /* a la basura: se encoge y se va */
-      SON.aterriza?.();
-      const g = a.env, s0 = g.scale.clone();
-      await animar({ dur: .3, ease: entra, cada: (u) => { g.scale.copy(s0).multiplyScalar(1 - u); g.rotation.z += .08; } });
-      g.parent?.remove(g); if(g === sobreG) envolturaEnMesa = false;
-      const t = g.userData.envoltura; if(t) envolturas.splice(envolturas.indexOf(t), 1);
-    } else if(a.env.userData.envoltura){ a.env.userData.envoltura.x = a.env.position.x; a.env.userData.envoltura.y = a.env.position.y; }
+    if(a?.carta && Math.hypot(e.clientX - a.x, e.clientY - a.y) < 12) verEnGrande(a.carta);
   };
   async function verEnGrande(it){
     SON.toque();
