@@ -97,6 +97,9 @@ h2.seccion{ font-size:34px; color:var(--hueso); text-shadow:0 3px 0 var(--tinta)
 .hoja.ve{ opacity:1; pointer-events:auto }
 .hoja__caja{ background:var(--tinta); border-top:3px solid var(--rosa); border-radius:24px 24px 0 0; padding:20px 18px calc(18px + var(--abajo)); transform:translateY(100%); transition:transform .28s cubic-bezier(.2,.9,.3,1.2); text-align:center; display:grid; gap:12px; max-width:560px; width:100%; margin:0 auto }
 .hoja.ve .hoja__caja{ transform:none }
+/* la rayita de arriba: de ahí se agarra para cerrar deslizando hacia abajo */
+.hoja__caja{ position:relative; padding-top:30px; overscroll-behavior:contain }
+.hoja__caja::before{ content:''; position:absolute; left:50%; top:10px; width:44px; height:5px; margin-left:-22px; border-radius:3px; background:rgba(255,240,246,.35) }
 .hoja__caja img.sobre{ width:120px; margin:-70px auto 0; border-radius:10px; box-shadow:0 12px 24px rgba(0,0,0,.6); transform:rotate(-4deg) }
 .hoja__caja h3{ font-size:28px }
 
@@ -377,3 +380,31 @@ button.yo:active{ transform:scale(.96) }
 .carta-mazo.dentro > button:first-child{ opacity:1; box-shadow:0 0 0 3px #E8B923 } .carta-mazo img{ width:100%; display:block }
 .carta-mazo .cuantas{ position:absolute; left:4px; bottom:4px; padding:2px 7px; border-radius:999px; background:rgba(18,10,16,.85); font-size:13px }
 .carta-mazo .menos{ position:absolute; right:4px; top:4px; width:34px; height:34px; border-radius:50%; border:2px solid #fff; background:#C42463; color:#fff; font-size:20px; line-height:1; padding:0 }
+
+/* el enlace chiquito al dev log, abajo de la tabla de líderes */
+.lo-nuevo{ display:block; margin:10px auto 0; padding:6px 14px; border:0; border-radius:999px; background:rgba(27,14,22,.75); font:inherit; font-size:13px; color:#FFF0F6; text-decoration:underline; text-underline-offset:3px; cursor:pointer }
+/* LO NUEVO: bloques de cada versión, con el estilo de las hojas del juego */
+.hoja__caja:has(.nv){ max-height:86vh; overflow-y:auto; text-align:left }
+.nv{ display:grid; gap:12px }
+.nv h3{ text-align:center }
+.nv .nota{ text-align:center; margin:0; font-size:14px; opacity:.85 }
+.nv-lista{ display:grid; gap:10px }
+.nv-fila{ display:grid; grid-template-columns:64px minmax(0, 1fr); gap:12px; align-items:center; text-align:left; padding:8px; border-radius:16px; border:3px solid var(--rosa); background:rgba(255,240,246,.06); color:inherit; font:inherit; cursor:pointer }
+.nv-fila:active{ transform:scale(.98) }
+.nv-fila img{ width:64px; height:86px; object-fit:cover; object-position:center; border-radius:10px }
+.nv-fila span{ display:grid; gap:2px; min-width:0 }
+.nv-fila strong{ font-size:17px; line-height:1.2 }
+.nv-fila small{ font-size:13px; opacity:.75 }
+.nv-ver{ justify-self:start; font-size:13px; padding:2px 10px; border-radius:999px; background:var(--rosa); color:#1B0E16 }
+.nv-cabeza{ display:flex; align-items:center; gap:10px }
+.nv-cabeza small{ opacity:.75; font-size:13px }
+.nv-puntos{ margin:0; padding-left:20px; display:grid; gap:4px; font-size:15px; line-height:1.35 }
+.nv-par{ display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:10px }
+.nv-par > div{ display:grid; gap:8px; align-content:start }
+.nv-etq{ margin:0; font-size:12px; letter-spacing:.06em; text-transform:uppercase; opacity:.75 }
+.nv-etq.ya{ color:var(--rosa); opacity:1 }
+.nv figure{ margin:0 }
+.nv figure img{ display:block; width:100%; height:auto; aspect-ratio:360/779; object-fit:cover; border-radius:12px; border:2px solid rgba(255,240,246,.15) }
+.nv figcaption{ font-size:12px; text-align:center; opacity:.8; margin-top:3px }
+.nv-tira{ display:flex; gap:10px; overflow-x:auto; scroll-snap-type:x mandatory; padding-bottom:4px }
+.nv-tira figure{ flex:0 0 42%; scroll-snap-align:start }

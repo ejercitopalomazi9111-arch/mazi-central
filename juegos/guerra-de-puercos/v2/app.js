@@ -15,6 +15,7 @@ import { SON, alternar, estaApagado } from './sonido.js';
 import { aviso, pista, cumplida } from './avisos.js';
 import { cuenta, crear, entrar, salir, lideres, alCambiarCuenta, estadoSubida, amigos, pedirAmigo, aceptarAmigo, quitarAmigo, retar, borrarReto } from './cuenta.js';
 import { conectar, codigoNuevo, codigoValido } from './linea.js';
+import { listaNovedades, bloqueNovedad } from './novedades.js';
 
 const $ = (s, d = document) => d.querySelector(s);
 const $$ = (s, d = document) => [...d.querySelectorAll(s)];
@@ -409,6 +410,56 @@ async function pintarLideres(cuerpo){
 }
 $('#yo').addEventListener('click', () => abrirPerfil());
 $('#bLideres').addEventListener('click', () => abrirPerfil('lideres'));
+/* LO NUEVO: una hoja del juego (la mesa se sigue viendo atrás), con la lista de versiones y el bloque de cada una */
+$('#bNovedades').addEventListener('click', () => { SON.toque(); hoja(listaNovedades()); });
+$('#hojaCaja').addEventListener('click', (e) => {
+  const caja = $('#hojaCaja'), v = e.target.closest('[data-nv]'), l = e.target.closest('[data-nv-lista]');
+  if(v){ SON.toque(); caja.innerHTML = bloqueNovedad(+v.dataset.nv); caja.scrollTop = 0; }
+  else if(l){ SON.toque(); caja.innerHTML = listaNovedades(); caja.scrollTop = 0; }
+});
+/* DESLIZAR HACIA ABAJO PARA CERRAR (Carlos, 6 nov: «en cosméticos, si tomo desde hasta arriba, que pueda cerrarlo
+   deslizando hacia abajo»). Vale para todas las hojas: se agarra de la parte de arriba (la rayita) o de cualquier
+   lado si la hoja no está bajada; se suelta pasando 90 px o con un jalón rápido y se cierra como al tocar afuera. */
+function deslizarParaCerrar(h){
+  const caja = h.querySelector('.hoja__caja');
+  let y0 = null, t0 = 0, dy = 0, desdeArriba = false, jalando = false;
+  const empieza = (x, y, objetivo) => {
+    const r = caja.getBoundingClientRect();
+    desdeArriba = y - r.top < 44;
+    if(!desdeArriba && (caja.scrollTop > 0 || objetivo.closest('input, .lideres-rejilla, .chips, .album, .nv-tira'))) return;
+    y0 = y; t0 = performance.now(); dy = 0; jalando = false;
+  };
+  /* devuelve true si este movimiento es nuestro (para no dejar que la página haga scroll) */
+  const mueve = (y) => {
+    if(y0 === null) return false;
+    dy = y - y0;
+    if(!jalando && dy < -4 && !desdeArriba){ y0 = null; return false; }   /* sube: es scroll de la hoja, no cierre */
+    if(!jalando && dy > 8) jalando = true;
+    if(jalando){ caja.style.transition = 'none'; caja.style.transform = `translateY(${Math.max(0, dy)}px)`; }
+    return jalando;
+  };
+  const suelta = () => {
+    if(y0 === null) return;
+    const rapido = dy / Math.max(1, performance.now() - t0) > .7;
+    const fue = jalando; y0 = null; jalando = false; caja.style.transition = '';
+    if(fue && (dy > 90 || (rapido && dy > 30))){
+      caja.style.transform = 'translateY(100%)';
+      h.dispatchEvent(new MouseEvent('click', { bubbles: true }));   /* cierra igual que tocar afuera */
+      setTimeout(() => { caja.style.transform = ''; }, 320);
+    } else caja.style.transform = '';
+    dy = 0;
+  };
+  caja.addEventListener('touchstart', (e) => { const t = e.touches[0]; if(e.touches.length === 1) empieza(t.clientX, t.clientY, e.target); }, { passive: true });
+  caja.addEventListener('touchmove', (e) => { if(mueve(e.touches[0].clientY) && e.cancelable) e.preventDefault(); }, { passive: false });
+  caja.addEventListener('touchend', suelta); caja.addEventListener('touchcancel', suelta);
+  /* con mouse (computadora) */
+  caja.addEventListener('pointerdown', (e) => { if(e.pointerType === 'mouse') empieza(e.clientX, e.clientY, e.target); });
+  addEventListener('pointermove', (e) => { if(e.pointerType === 'mouse') mueve(e.clientY); });
+  addEventListener('pointerup', (e) => { if(e.pointerType === 'mouse') suelta(); });
+  /* un jalón que cerró no debe además «tocar» el botón donde se soltó */
+  caja.addEventListener('click', (e) => { if(caja.style.transform) e.stopPropagation(); }, true);
+}
+for(const h of document.querySelectorAll('.hoja')) deslizarParaCerrar(h);
 alCambiarCuenta((que) => { pintarBarra(); if(que === 'caduco') aviso('Tu sesión se cerró: vuelve a entrar a tu cuenta', { icono: 'img/iconos/information.png' }); });
 
 /* ── AMIGOS ──────────────────────────────────────────────────────────────────
