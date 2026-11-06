@@ -64,10 +64,12 @@ export const COSMETICOS = [
   { id:'tp-terciopelo', clase:'tapete', nombre:'Terciopelo',     img:'texturas/velour_velvet.webp',     rareza:'B' },
   { id:'tp-piel',    clase:'tapete',  nombre:'Piel roja',        img:'texturas/leather_red_02.webp',    rareza:'A' },
   { id:'tp-marmol',  clase:'tapete',  nombre:'Mármol',           img:'texturas/marble_01.webp',         rareza:'S' },
+  { id:'tp-pinguinos', clase:'tapete', nombre:'Puros pingüinos', img:'texturas/pinguinos.webp',        rareza:'A' },
   { id:'ms-pig',     clase:'mascota', nombre:'Puerco',     modelo:'modelos/animal-pig.glb',   img:'img/mascotas/pig.png',   rareza:'D' },
   { id:'ms-hog',     clase:'mascota', nombre:'Jabalí',     modelo:'modelos/animal-hog.glb',   img:'img/mascotas/hog.png',   rareza:'A' },
   { id:'ms-cow',     clase:'mascota', nombre:'Vaca colada', modelo:'modelos/animal-cow.glb',  img:'img/mascotas/cow.png',   rareza:'B' },
   { id:'ms-chick',   clase:'mascota', nombre:'Pollito colado', modelo:'modelos/animal-chick.glb', img:'img/mascotas/chick.png', rareza:'C' },
+  { id:'ms-penguin', clase:'mascota', nombre:'Pingüino',   modelo:'modelos/animal-penguin.glb', img:'img/mascotas/penguin.png', rareza:'B' },
   { id:'ds-autora',  clase:'dorso',   nombre:'Guerra de Puercos', img:'../arte/web/reverso.webp', rareza:'D' },
   { id:'ds-kenney',  clase:'dorso',   nombre:'Baraja clásica',    img:'img/dorsos/kenney.png',             rareza:'B' },
 ];

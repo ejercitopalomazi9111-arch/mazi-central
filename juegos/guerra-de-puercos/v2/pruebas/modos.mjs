@@ -113,7 +113,7 @@ async function partidaEnLinea(A, B, rondasMax = 40){
     if(!vioYaEligio) vioYaEligio = /ya eligió/.test((await est(B)).espera || '');
     await jugarUna(B);
     const fueron = await Promise.all([A, B].map(pg => pg.waitForFunction((r0) => { const e = __mesa?.estado(); return !e || e.fin || (!e.ocupado && e.ronda > r0); }, r0, { timeout: 40000 }).then(() => true, () => false)));
-    if(!fueron[0] || !fueron[1]) return { trabada: true, r, desfase };
+    if(!fueron[0] || !fueron[1]){ const corto = (e) => e && ({ ronda: e.ronda, fin: e.fin, ocupado: e.ocupado, espera: e.espera, elegidas: e.elegidas, mano: e.mano.map(c => c.nivel + (c.x == null ? '?' : '')).join(','), pv: e.pvA + '/' + e.pvB, rival: e.rival }); return { trabada: true, r, r0, fueron, desfase, A: corto(await est(A)), B: corto(await est(B)) }; }
     const ea = await est(A), eb = await est(B);
     if(ea.pvA !== eb.pvB || ea.pvB !== eb.pvA || ea.ronda !== eb.ronda) desfase ||= `ronda ${ea.ronda}: A ve ${ea.pvA}/${ea.pvB}, B ve ${eb.pvA}/${eb.pvB}`;
     r++;
@@ -177,12 +177,16 @@ async function cuentaNueva(pg, apodo){
   await pg.click('#yo'); await pg.waitForTimeout(400);
   await pg.fill('#perfilCaja [name="apodo"]', apodo); await pg.fill('#perfilCaja [name="pin"]', '4321');
   await pg.click('[data-hacer="crear"]'); await pg.waitForTimeout(1500);
+  /* al crear la cuenta se escoge el líder; luego se vuelve al perfil */
+  if(await pg.$('#hojaCaja [data-l]')){ await pg.click('#hojaCaja [data-l="general"]'); await pg.click('#hojaCaja [data-ok]'); await pg.waitForTimeout(700); }
+  if(!(await pg.isVisible('[data-pp="amigos"]'))){ await pg.click('#yo'); await pg.waitForTimeout(500); }
 }
 if(!SOLO || SOLO === 'amigos'){
   console.log('4 · amigos y retos');
   const A = await telefono(), B = await telefono();
   const sufijo = Math.random().toString(36).slice(2, 6), apA = 'Ana' + sufijo, apB = 'Beto' + sufijo;
   await cuentaNueva(A, apA); await cuentaNueva(B, apB);
+  for(const pg of [A, B]) if(!(await pg.isVisible('[data-pp="amigos"]')) || !(await pg.evaluate(() => document.querySelector('#perfil')?.classList.contains('ve') ?? true))){ await pg.click('#yo'); await pg.waitForTimeout(800); }
   await A.click('[data-pp="amigos"]'); await A.waitForTimeout(800);
   await A.fill('#perfilCaja [data-nuevo] [name="apodo"]', 'NadieAsi' + sufijo); await A.click('#perfilCaja [data-nuevo] button');
   await A.waitForTimeout(900);

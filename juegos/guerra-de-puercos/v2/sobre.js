@@ -401,9 +401,10 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
 
   let primera = true;
   while(monton.length){
-    /* La de hasta ABAJO sube a la parte más alta. */
-    const it = monton.pop();
-    if(monton.length){
+    /* Sólo la PRIMERA: la de hasta abajo sube a la parte más alta. Las demás se toman de arriba, sin barajar
+       (Carlos, 6 nov: «cada carta que tomo se manda la de hasta atrás hasta el frente y eso molesta»). */
+    const it = primera ? monton.pop() : monton.shift();
+    if(primera && monton.length){
       /* sale por un lado del montón y entra por arriba */
       SON.sube();
       const c = it.c, x0 = c.position.x, y0 = c.position.y, z0 = c.position.z;
@@ -427,7 +428,9 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
       });
     }
 
-    /* El volteo: se levanta, gira, y cae boca arriba. */
+    /* El volteo: se levanta, gira, y cae boca arriba. Los letreros de la mesa se apagan mientras la carta está
+       en grande (son de la página y quedaban ENCIMA de la carta; Carlos lo vio con «Puercos · Rara»). */
+    if(!saltar) rotulos.classList.add('tapados');
     SON.volteo();
     const c = it.c, malo = it.x.tipo === 'puerco' ? it.x.nivel : 'B';
     {
@@ -471,6 +474,7 @@ export async function abrirSobre(sobre, { capa, alTerminar }){
     } });
     c.rotation.z = 0;
     SON.aterriza();
+    rotulos.classList.remove('tapados');
     g.nodo.classList.add('ve');
     acomodarMesa();
   }

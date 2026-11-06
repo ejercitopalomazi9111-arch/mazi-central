@@ -81,12 +81,30 @@ function pensarMaquina(j){
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
 let enCurso = false;
+/* MIENTRAS SE ARMA LA MESA (Carlos, 6 nov: «en lugar de barajando y la cantidad de cartas… mensajes chistosos
+   relacionados y de referencias a las cartas y a las franquicias a las que aluden»). */
+const CHISTES = [
+  'Puerco Vader está buscando a su hijo en el mazo…', 'Despertando a Puerco Godzilla (con cuidado)…', 'Puerco Potter perdió su varita entre las cartas…',
+  'Puerco Pacman se está comiendo los puntitos de la mesa…', 'Puerco Goku se tarda: está cargando el Kamehameha…', 'Puerco Heisenberg: «yo soy el que baraja»…',
+  'Puerco Kirby se tragó tres cartas. Esperando que las escupa…', 'Puerco Sonic ya terminó de barajar. Los demás no…', 'Ejecutando la Orden 66 contra las cartas repetidas…',
+  'Puerco Lightyear: al infinito… y al mazo…', 'Puerco Neo esquivando las cartas en cámara lenta…', 'Puerco Terminator: «volveré»… con tu mano…',
+  'Buscando la salida de los Backrooms (nivel 0: la mesa)…', 'Puerco Scooby encontró una galleta entre las cartas…', 'Puerco Woody: «hay una víbora en mi bota»…',
+  'Puerco Steve está minando la mesa bloque por bloque…', 'Llamando a los Caza Fantasmas: algo se mueve en el mazo…', 'Puerco Ben 10 no se decide qué alien ser…',
+  'Puerco Chavo: «fue sin querer queriendo» que se cayeran las cartas…', 'Puerco Doc Brown calibrando el condensador de flujo…', 'Puerco Charizard se niega a obedecer. Otra vez…',
+  'Puerco Bob Esponja preparando una Cangreburger de cartas…', 'Puerco Dexter: «¡Dee Dee, sal de mi laboratorio!»…', 'Puerco Coraje tiene miedo de barajar…',
+  'Puerco Mr Beast regalando 1,000 cartas al que se suscriba…', 'Puerco Megalodón dando vueltas bajo la mesa…', 'Tralalelo Tralala… (no preguntes)…',
+  'Puerco Venom: «nosotros barajamos»…', 'Puerco He-Man: ¡por el poder de Grayskull… el mazo!…', 'Puerco Rick convirtió la baraja en pepinillo…',
+  'Puerco Picapiedra: ¡Yabba dabba doo! (las cartas son de piedra, tardan)…', 'Puerco RoboCop revisando que nadie haga trampa…', 'Puerco IT te espera en la alcantarilla con un globo…',
+  'Puerco Rambo ya tiene su mano. La tuya tarda…', 'Skibidi barajando…', 'Puerco Fontanero buscando a la princesa en otro castillo…',
+];
+const chiste = () => CHISTES[Math.floor(Math.random() * CHISTES.length)];
 export async function jugarPartida(op){
   /* dos toques al botón no arman dos mesas encimadas */
   if(enCurso) return; enCurso = true;
   const carga = document.createElement('div'); carga.className = 'barajando';
-  carga.innerHTML = '<img alt="" src="../arte/web/reverso.webp"><b>Barajando…</b><span data-avance></span>';
+  carga.innerHTML = `<img alt="" src="../arte/web/reverso.webp"><b>Armando la mesa</b><span data-avance>${chiste()}</span>`;
   op.capa.appendChild(carga);
+  const relojChiste = setInterval(() => { const a = carga.querySelector('[data-avance]'); if(a && carga.isConnected) a.textContent = chiste(); else clearInterval(relojChiste); }, 1700);
   try{ await partida({ ...op, carga }); }
   catch(e){
     if(e && e.salir){ carga.remove(); for(const x of document.querySelectorAll('.mesa')) x.remove(); op.alTerminar && op.alTerminar('inicio'); return; }
@@ -95,7 +113,7 @@ export async function jugarPartida(op){
     carga.innerHTML = `<b>No se pudo armar la mesa</b><span>${String(e && e.message || e).replace(/[<>&]/g, '')}</span><button class="btn" data-volver>Volver al inicio</button>`;
     carga.querySelector('[data-volver]').onclick = () => { carga.remove(); for(const x of document.querySelectorAll('.mesa')) x.remove(); op.alTerminar && op.alTerminar('inicio'); };
   }
-  finally{ enCurso = false; }
+  finally{ enCurso = false; clearInterval(relojChiste); }
 }
 /* ── LOS TRES MODOS ──────────────────────────────────────────────────────────
    'maquina' · contra la máquina, como siempre.
@@ -105,7 +123,7 @@ export async function jugarPartida(op){
                llega tu vista y, del rival, sólo cuántas cartas trae. */
 async function partida({ capa, alTerminar, carga, modo = 'maquina', conexion = null }){
   quitarPista();
-  const avanza = (n, t) => { const a = carga.querySelector('[data-avance]'); if(a) a.textContent = t ? `${n} de ${t} cartas` : ''; };
+  const avanza = () => {};   /* ya no se cuentan cartas: salen chistes (CHISTES, arriba) */
   await cargarNumeros();
   const cx = modo === 'linea' ? conexion : null;
   /* del rival en línea no se sabe qué cartas trae: se pintan «fantasmas» con
@@ -128,7 +146,7 @@ async function partida({ capa, alTerminar, carga, modo = 'maquina', conexion = n
     if(cx.vista && cx.vista.acabo) cx.enviar({ tipo: 'otra' });
     try{ J = deVista(await cx.esperar((v) => v.listo && !v.esperando && !v.acabo)); }
     catch(e){ e.salir = cancelado; throw e; }
-    b.remove(); carga.querySelector('b').textContent = 'Barajando…';
+    b.remove(); carga.querySelector('b').textContent = 'Armando la mesa';
   } else { J = armarPartida(); J.a.pv = J.b.pv = PV_MESA; }
   const PV0 = cx ? (cx.vista.pvMesa || PV_MESA) : PV_MESA;
   /* ═══ TU PUERCO LÍDER (Carlos, 6 nov) ═══ Lo que no pide escoger se aplica aquí, antes de repartir; en línea lo
@@ -232,10 +250,15 @@ async function partida({ capa, alTerminar, carga, modo = 'maquina', conexion = n
   /* ── TU MANO EN ABANICO ── */
   let elegidas = [], especial = null, especialId = null;
   let tapada = false;            /* modo de dos: la mano de abajo boca abajo mientras no es su turno */
+  /* MODO DE DOS (Carlos, 6 nov): lo que elige cada quien se pone BOCA ABAJO en la mesa, frente a él; el otro lo
+     ve ahí y pone lo suyo. Con las dos jugadas puestas la cámara se gira de lado, las dos se voltean a la vez y
+     empieza el forcejeo. `enLaMesa` guarda, por jugador (el lado de `caras`), las cartas que ya puso. */
+  const enLaMesa = { a: [], b: [] };
+  const puestas = () => new Set([...enLaMesa.a, ...enLaMesa.b].map(c => c.id));
   /* sólo cuentan las cartas que YA se repartieron: antes la mano entera
      aparecía de golpe y luego se veía la animación de repartir (Carlos, 5 nov) */
   const repartidas = new Set();
-  const jugables = () => J.a.mano.filter(c => c.nivel !== 'ESP' && repartidas.has(c.id));
+  const jugables = () => { const p = puestas(); return J.a.mano.filter(c => c.nivel !== 'ESP' && repartidas.has(c.id) && !p.has(c.id)); };
   const especialesMias = () => J.a.mano.filter(c => c.nivel === 'ESP' && repartidas.has(c.id));
   function lugarEnMano(k, n){
     const paso = Math.min(CARTA_W * L.sMano * .96, (L.v.ancho - .25 - CARTA_W * L.sMano) / Math.max(1, n - 1));
@@ -307,7 +330,7 @@ async function partida({ capa, alTerminar, carga, modo = 'maquina', conexion = n
 
   /* ── LA MANO DEL RIVAL: dorsos arriba, medio fuera de la pantalla ── */
   function pintarSuMano(){
-    const mano = J.b.mano.filter(c => repartidas.has(c.id)); const n = mano.length;
+    const p = puestas(), mano = J.b.mano.filter(c => repartidas.has(c.id) && !p.has(c.id)); const n = mano.length;
     mano.forEach((c, k) => {
       const m = mallaDe(c); m.userData.suya = true;
       const paso = Math.min(.42, 2.6 / Math.max(1, n)), x = (k - (n - 1) / 2) * paso;
@@ -330,6 +353,9 @@ async function partida({ capa, alTerminar, carga, modo = 'maquina', conexion = n
   /* Robar: la carta sale del mazo boca abajo, sube en un arco suave, se voltea
      A MEDIO VUELO y aterriza en su lugar de la mano mientras las demás le
      abren espacio. Carlos, 5 nov: «más lentas y suaves». */
+  /* EL REPARTO (Carlos, 6 nov: «no tarde más de 2.5 segundos tener la mano completa… individualízalo por carta»):
+     cada carta tarda 2.5 s / 5 = medio segundo, con una variación chiquita para que no se vea de máquina. */
+  const T_CARTA = 2.5 / 5, tCarta = () => T_CARTA * (.92 + Math.random() * .12);
   async function robar(lado, cartas){
     for(const c of cartas){
       repartidas.add(c.id);
@@ -338,11 +364,11 @@ async function partida({ capa, alTerminar, carga, modo = 'maquina', conexion = n
       SON.roba();
       if(lado === 'a'){
         m.userData.arrastrando = true;                 /* pintarMano no la toca mientras vuela */
-        pintarMano(true, .55);
+        pintarMano(true, T_CARTA);
         const mano = jugables(), k = mano.findIndex(x => x.id === c.id), l = lugarEnMano(Math.max(0, k), mano.length);
         const fin = new THREE.Vector3(l.x, l.y, l.z), s0 = L.sPila;
-        if(k < 0){ /* es de soporte: va a su bandeja */ m.userData.arrastrando = false; pintarMano(true); await esperar(.4); continue; }
-        await animar({ dur: .85, ease: suave, cada: (u) => {
+        if(k < 0){ /* es de soporte: va a su bandeja */ m.userData.arrastrando = false; pintarMano(true); await esperar(tCarta() * .6); continue; }
+        await animar({ dur: tCarta(), ease: suave, cada: (u) => {
           const arco = Math.sin(u * Math.PI);
           m.position.set(mezcla(de.x, fin.x, u), mezcla(de.y, fin.y, u) + arco * .9, mezcla(.6, fin.z, u) + arco * 1.6);
           /* se voltea en la parte alta del arco, no al despegar */
@@ -351,9 +377,8 @@ async function partida({ capa, alTerminar, carga, modo = 'maquina', conexion = n
         } });
         m.userData.arrastrando = false;
         SON.aterriza?.();
-        await esperar(.08);
       }
-      else { pintarSuMano(); await esperar(.22); }
+      else { pintarSuMano(); await esperar(tCarta() * .4); }
     }
   }
   /* las que están en la mano y todavía no tienen lugar en la mesa = recién robadas */
@@ -456,6 +481,12 @@ async function partida({ capa, alTerminar, carga, modo = 'maquina', conexion = n
     J = { ...J, a: J.b, b: J.a }; persp = persp === 'a' ? 'b' : 'a';
     elegidas = []; especial = null; especialId = null;
     pintarNombres(); pintarHud(); pintarPilas();
+    acomodarPuestas();
+  }
+  /* las boca abajo de cada quien: frente al que tiene el teléfono (abajo) y las del otro enfrente (arriba) */
+  function acomodarPuestas(){
+    return Promise.all(['a', 'b'].flatMap(lado => { const lista = enLaMesa[lado], y = lado === persp ? L.yMio : L.ySuyo;
+      return lista.map((c, i) => volar(mallaDe(c), { x: L.xMesa + (i - (lista.length - 1) / 2) * .28, y, z: .4 + i * .05, s: L.sMesa, ry: Math.PI, rz: (i - (lista.length - 1) / 2) * .1 }, i * .05)); }));
   }
   async function turnoDe(lado){
     ocupado = true;
@@ -470,6 +501,9 @@ async function partida({ capa, alTerminar, carga, modo = 'maquina', conexion = n
     const jug = await new Promise((ok) => { esperaJugada = ok; });
     ocupado = true; quitarPista(); $('[data-formula]').hidden = true;
     elegidas = []; especial = null; especialId = null;
+    /* lo que eligió se va a la mesa, boca abajo, frente a él */
+    enLaMesa[lado] = jug.cartas.slice(); for(const c of jug.cartas){ const m = mallas.get(c.id); if(m) m.userData.enMano = false; }
+    SON.saca(); await acomodarPuestas();
     tapada = true; pintarMano(true, .35);
     await esperar(.4);
     if(lado === 'b'){ voltear(); pintarMano(true); pintarSuMano(); await esperar(.35); }
@@ -601,7 +635,7 @@ async function partida({ capa, alTerminar, carga, modo = 'maquina', conexion = n
     for(const m of mias) m.userData.enMano = false;
     elegidas = []; especial = null; especialId = null;
     SON.saca();
-    const vueloMio = Promise.all(mias.map((m, i) => volar(m, { x: L.xMesa + (i - (mias.length - 1) / 2) * .28, y: L.yMio, z: .4 + i * .05, s: L.sMesa, ry: 0, rz: (i - (mias.length - 1) / 2) * .1 })));
+    const vueloMio = Promise.all(mias.map((m, i) => volar(m, { x: L.xMesa + (i - (mias.length - 1) / 2) * .28, y: L.yMio, z: .4 + i * .05, s: L.sMesa, ry: modo === 'dos' ? Math.PI : 0, rz: (i - (mias.length - 1) / 2) * .1 })));
     /* la del rival: la máquina y el de dos contestan al instante; en línea
        se espera a que el otro elija */
     let r;
@@ -648,10 +682,13 @@ async function partida({ capa, alTerminar, carga, modo = 'maquina', conexion = n
       pegar(espMia, destino(espMia, mias[0], suyas[0]), espMia?.esp === 'castigo' ? 'b' : 'a'),
       pegar(espSuya, destino(espSuya, suyas[0], mias[0]), espSuya?.esp === 'castigo' ? 'a' : 'b')]);
 
-    /* 2 · Se voltea la suya. */
+    /* 2 · Se voltea la suya. En el de dos: la cámara se gira DE LADO (cada quien en su mitad de la pantalla) y
+       se voltean las dos a la vez. */
     await esperar(.25);
+    if(modo === 'dos') await girarCamara(true);
     SON.volteo();
-    await Promise.all(suyas.map(m => animar({ dur: .45, ease: suave, cada: (u) => { m.rotation.y = mezcla(Math.PI, 0, u); m.position.z = .4 + Math.sin(u * Math.PI) * .8; } })));
+    await Promise.all((modo === 'dos' ? [...mias, ...suyas] : suyas).map(m => animar({ dur: .45, ease: suave, cada: (u) => { m.rotation.y = mezcla(Math.PI, 0, u); m.position.z = .4 + Math.sin(u * Math.PI) * .8; } })));
+    enLaMesa.a = []; enLaMesa.b = [];
 
     /* 3 · Las fusiones se funden: la menor entra en la mayor con un destello. */
     const fundir = async (mallasLado, puntos, lado) => {
@@ -676,7 +713,8 @@ async function partida({ capa, alTerminar, carga, modo = 'maquina', conexion = n
     const colorA = h.perdio === 'b' ? '#FFE14A' : '#FFF0F6', colorB = h.perdio === 'a' ? '#FFE14A' : '#FFF0F6';
     const nA = numero3d(h.a.puntos, { alto: .48, color: '#FFF0F6' }), nB = numero3d(h.b.puntos, { alto: .48, color: '#FFF0F6' });
     raiz.add(nA, nB);
-    const ponNum = (n, c, lado) => { n.position.set(c.position.x, c.position.y + (lado === 'a' ? -1 : 1) * (CARTA_H * L.sMesa / 2 + .32), 1.3); };
+    /* con la cámara de lado, el número se queda derecho en la pantalla (y junto a su carta, hacia afuera) */
+    const ponNum = (n, c, lado) => { n.position.set(c.position.x, c.position.y + (lado === 'a' ? -1 : 1) * (CARTA_H * L.sMesa / 2 + .32), 1.3); n.rotation.z = E.cam.rotation.z; };
     ponNum(nA, cA, 'a'); ponNum(nB, cB, 'b');
     SON.toque();
     await Promise.all([nA, nB].map(n => { const k = n.scale.x; n.scale.setScalar(.001); return animar({ dur: .35, ease: resorte, cada: (u) => n.scale.setScalar(Math.max(.001, k * u)) }); }));
@@ -721,6 +759,8 @@ async function partida({ capa, alTerminar, carga, modo = 'maquina', conexion = n
       });
     });
 
+    /* la cámara regresa antes del golpe a la vida (el golpe apunta a la barra de arriba o de abajo) */
+    if(modo === 'dos'){ await girarCamara(false); ponNum(nA, cA, 'a'); ponNum(nB, cB, 'b'); }
     /* 6 · El desenlace. */
     if(!gana){
       SON.choque(); aviso('¡Empate! Nadie recibe daño', { icono: 'img/iconos/information.png' });
@@ -926,6 +966,16 @@ async function partida({ capa, alTerminar, carga, modo = 'maquina', conexion = n
     E.s.remove(raiz); dom.remove();
   }
 
+  /* de lado: la cámara rueda 90°, se aleja un poco para que quepan los dos y se mece mientras forcejean */
+  let camGirada = false;
+  async function girarCamara(deLado){
+    if(camGirada === deLado) return; camGirada = deLado;
+    const c = E.cam, z0 = c.position.z, r0 = c.rotation.z, zF = deLado ? 22 * 1.12 : 22, rF = deLado ? -Math.PI / 2 : 0;
+    const centro = (L.yMio + L.ySuyo) / 2, y0 = c.position.y, yF = deLado ? centro : 0;
+    await animar({ dur: .7, ease: suave, cada: (u) => { c.rotation.z = mezcla(r0, rF, u); c.position.z = mezcla(z0, zF, u) + Math.sin(u * Math.PI) * 1.5; c.position.y = mezcla(y0, yF, u); } });
+    c.rotation.z = rF; c.position.z = zF; c.position.y = yF;
+  }
+  limpieza.push(() => { E.cam.rotation.z = 0; E.cam.position.y = 0; E.cam.position.z = 22; });
   async function volar(m, d, retraso = 0){
     const p0 = m.position.clone(), s0 = m.scale.x, ry0 = m.rotation.y, rz0 = m.rotation.z;
     await animar({ dur: .42, retraso, ease: suave, cada: (u) => {
