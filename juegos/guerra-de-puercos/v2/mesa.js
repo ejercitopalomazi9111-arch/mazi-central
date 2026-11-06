@@ -798,11 +798,13 @@ async function partida({ capa, alTerminar, carga, modo = 'maquina', conexion = n
     mostrarEspera();
     const f = $('[data-fin]');
     if(modo === 'dos'){
-      /* en el de dos no se pagan monedas: si no, cualquiera se gana sola en un ratito */
+      /* en el de dos SÍ se pagan monedas al dueño del teléfono (Jugador 1), como si jugara contra la máquina
+         (Carlos, 5 nov: «no está entregando fichas al terminar las partidas»); no cuenta para la tabla de líderes */
+      const paga = pagarPartida(J.acabo === 'a' ? 'gana' : empate ? 'empata' : 'pierde', J.ronda - 1, { cuenta: false });
       SON.gana(); cerdo.hacer('dance');
       f.innerHTML = `<h2>${empate ? 'Empate' : '¡Ganó ' + caras[J.acabo].nombre + '!'}</h2>
         <p>${J.porCartas ? 'Se acabaron las cartas. ' : ''}${caras.a.nombre}: ${J.a.pv} · ${caras.b.nombre}: ${J.b.pv}</p>
-        <p class="nota">Jugando los dos en un teléfono no se ganan monedas.</p>
+        <p class="paga"><img alt="" src="img/iconos/moneda.png"> +${paga.total} monedas${paga.bono ? ` <small>(incluye ${paga.bono} por tu primera victoria del día)</small>` : ''}</p>
         <div class="abrir__botones"><button class="btn grande" data-otra>Otra partida</button><button class="btn suave" data-inicio>Al inicio</button></div>`;
     } else {
       const paga = pagarPartida(gane ? 'gana' : empate ? 'empata' : 'pierde', J.ronda - 1);

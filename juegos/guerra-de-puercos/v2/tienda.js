@@ -54,15 +54,16 @@ export const DEVUELVE = { D: 3, C: 5, B: 8, A: 12, S: 20 };
 export const TOPE_SOPORTE = 5;
 
 const hoyEs = () => { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); };
-export function pagarPartida(comoAcabo, rondas){
+export function pagarPartida(comoAcabo, rondas, { cuenta = true } = {}){
   const base = PAGA[comoAcabo === 'gana' ? 'gana' : comoAcabo === 'empata' ? 'empata' : 'pierde'];
   let bono = 0;
   if(comoAcabo === 'gana' && C.victoriaDia !== hoyEs()){ bono = PAGA.primeraDelDia; C.victoriaDia = hoyEs(); }
   const total = base + Math.min(15, Math.max(0, rondas | 0) * PAGA.porRonda) + bono;
   C.monedas += total;
   /* para la tabla de líderes (Carlos, 5 nov: victorias, derrotas, más dinero, más cartas) */
-  C.stats.partidas++;
-  if(comoAcabo === 'gana') C.stats.victorias++; else if(comoAcabo === 'empata') C.stats.empates++; else C.stats.derrotas++;
+  /* jugando dos en un teléfono sí se pagan monedas, pero no cuenta para la tabla de líderes */
+  if(cuenta){ C.stats.partidas++;
+    if(comoAcabo === 'gana') C.stats.victorias++; else if(comoAcabo === 'empata') C.stats.empates++; else C.stats.derrotas++; }
   guardar();
   return { total, bono };
 }

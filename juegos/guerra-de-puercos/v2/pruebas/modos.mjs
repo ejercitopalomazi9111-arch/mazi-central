@@ -92,7 +92,8 @@ if(!SOLO || SOLO === 'dos'){
   const fin = await pg.evaluate(() => document.querySelector('[data-fin]')?.textContent.replace(/\s+/g, ' ').trim());
   await pg.screenshot({ path: FOTOS + 'dos-fin.png' });
   ok('termina diciendo quién ganó', /Ganó Jugador.[12]|Empate/.test(fin || ''), fin);
-  ok('y no paga monedas', (await pg.evaluate(() => __puercos.C.monedas)) === monedas0);
+  ok('y le paga monedas al dueño del teléfono', (await pg.evaluate(() => __puercos.C.monedas)) > monedas0);
+  ok('pero no cuenta para la tabla de líderes', (await pg.evaluate(() => __puercos.C.stats.partidas)) === 0);
   ok('sin errores en consola', !pg.err.length, pg.err.join(' | '));
   await pg.context().close();
 }

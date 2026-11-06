@@ -65,6 +65,11 @@ export class Cuentas {
       monedas INTEGER DEFAULT 0, cartas INTEGER DEFAULT 0,
       malos INTEGER DEFAULT 0, esperaHasta INTEGER DEFAULT 0, creada INTEGER, tocada INTEGER)`);
     this.sql.exec('CREATE INDEX IF NOT EXISTS por_token ON cuentas(token)');
+    /* VARIAS SESIONES POR CUENTA (5 nov): antes una entrada nueva cerraba la sesión vieja, y con la misma cuenta
+       en dos teléfonos el primero se quedaba fuera sin saberlo: lo que ganaba ya no llegaba a la cuenta (Carlos:
+       «no está entregando fichas»). Ahora cada teléfono trae su token; se guardan los 5 más recientes. */
+    this.sql.exec(`CREATE TABLE IF NOT EXISTS sesiones(token TEXT PRIMARY KEY, clave TEXT, t INTEGER)`);
+    this.sql.exec('CREATE INDEX IF NOT EXISTS sesiones_por_clave ON sesiones(clave)');
     /* AMIGOS (Carlos, 5 nov: «sistema de amigos para poder retarlos más fácil»).
        Una fila por pareja, ordenada (a < b), con quién la pidió. Un reto es un
        código de sala que uno le manda a otro; vive 10 minutos. */
@@ -72,6 +77,17 @@ export class Cuentas {
     this.sql.exec(`CREATE TABLE IF NOT EXISTS retos(de TEXT, para TEXT, codigo TEXT, t INTEGER, PRIMARY KEY(de, para))`);
   }
   uno(q, ...a){ const r = [...this.sql.exec(q, ...a)]; return r[0] || null; }
+  /* la cuenta dueña de un token: el de la tabla de sesiones, o el de antes (columna token) */
+  deToken(token){
+    if(typeof token !== 'string' || token.length !== 48) return null;
+    const s = this.uno('SELECT clave FROM sesiones WHERE token = ?', token);
+    return s ? this.uno('SELECT * FROM cuentas WHERE clave = ?', s.clave) : this.uno('SELECT * FROM cuentas WHERE token = ?', token);
+  }
+  abrirSesion(clave, token){
+    this.sql.exec('INSERT OR REPLACE INTO sesiones(token, clave, t) VALUES(?,?,?)', token, clave, Date.now());
+    const viejas = [...this.sql.exec('SELECT token FROM sesiones WHERE clave = ? ORDER BY t DESC LIMIT -1 OFFSET 5', clave)];
+    for(const v of viejas) this.sql.exec('DELETE FROM sesiones WHERE token = ?', v.token);
+  }
 
   async fetch(pedido){
     const url = new URL(pedido.url), ruta = url.pathname.replace(/^\/api\/puercos\//, '');
@@ -103,6 +119,7 @@ export class Cuentas {
         this.sql.exec(`INSERT INTO cuentas(clave, apodo, sal, huella, token, datos, rev, victorias, derrotas, partidas, monedas, cartas, creada, tocada)
           VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, clave, apodo, sal, await huella(d.pin, sal), token,
           datos ? JSON.stringify(datos) : null, datos ? (datos.rev | 0) : 0, n.victorias, n.derrotas, n.partidas, n.monedas, n.cartas, ahora, ahora);
+        this.abrirSesion(clave, token);
         return Response.json({ token, apodo, rev: datos ? (datos.rev | 0) : 0 });
       }
 
@@ -117,15 +134,17 @@ export class Cuentas {
           this.sql.exec('UPDATE cuentas SET malos = ?, esperaHasta = ? WHERE clave = ?', malos >= 5 ? 0 : malos, malos >= 5 ? ahora + ESPERA_PIN : 0, clave);
           return mal('Ese apodo o ese PIN no coinciden.', 401);
         }
-        /* una entrada nueva cierra la sesión vieja: el token anterior ya no sirve */
+        /* una entrada nueva abre OTRA sesión: los demás teléfonos de la cuenta siguen dentro (hasta 5) */
         const token = azar(24);
         this.sql.exec('UPDATE cuentas SET token = ?, malos = 0, esperaHasta = 0, tocada = ? WHERE clave = ?', token, ahora, clave);
+        if(c.token && !this.uno('SELECT 1 AS x FROM sesiones WHERE token = ?', c.token)) this.abrirSesion(clave, c.token);   /* el teléfono de antes de este cambio no se queda fuera */
+        this.abrirSesion(clave, token);
         return Response.json({ token, apodo: c.apodo, rev: c.rev, datos: c.datos ? JSON.parse(c.datos) : null });
       }
 
       /* ── amigos y retos: todo con tu sesión ── */
       if(ruta.startsWith('amigos') || ruta.startsWith('reto')){
-        const yo = typeof d.token === 'string' && d.token.length === 48 && this.uno('SELECT clave, apodo FROM cuentas WHERE token = ?', d.token);
+        const yo = this.deToken(d.token);
         if(!yo) return mal('Tu sesión ya no sirve. Vuelve a entrar.', 401);
         const ahora = Date.now();
         this.sql.exec('UPDATE cuentas SET tocada = ? WHERE clave = ?', ahora, yo.clave);   /* «en línea» = te vimos hace poco */
@@ -183,20 +202,24 @@ export class Cuentas {
       }
 
       if(ruta === 'cuenta/guardar'){
-        const c = typeof d.token === 'string' && d.token.length === 48 && this.uno('SELECT * FROM cuentas WHERE token = ?', d.token);
+        const c = this.deToken(d.token);
         if(!c) return mal('Tu sesión ya no sirve. Vuelve a entrar.', 401);
         const datos = d.datos;
         if(!datos || typeof datos !== 'object') return mal('Faltan tus cartas.');
         const rev = datos.rev | 0;
-        /* gana la copia más nueva; si la del servidor es más nueva, se le
-           regresa al teléfono para que se la ponga */
-        if(rev < c.rev) return Response.json({ viejo: true, rev: c.rev, datos: c.datos ? JSON.parse(c.datos) : null });
+        /* ⚠ EL NÚMERO DE CADA TELÉFONO NO SIRVE PARA COMPARAR: dos teléfonos con la misma cuenta llegaban los dos a
+           «rev 5» y el segundo pisaba lo que el primero acababa de ganar. Ahora el teléfono dice DE QUÉ copia del
+           servidor partió (`desde`); si mientras tanto alguien más guardó, se le regresa la del servidor para que
+           las junte (cuenta.js · fusionar) y vuelva a subir. Los teléfonos viejos, sin `desde`, como antes. */
+        const desde = Number.isInteger(d.desde) ? d.desde : null;
+        if(desde !== null ? desde !== (c.rev | 0) : rev < c.rev) return Response.json({ viejo: true, rev: c.rev | 0, datos: c.datos ? JSON.parse(c.datos) : null });
+        const nuevo = desde !== null ? (c.rev | 0) + 1 : rev; datos.rev = nuevo;
         const n = numerosDe(datos), antes = numerosDe(c.datos ? JSON.parse(c.datos) : null);
         /* lo absurdo se frena: nadie gana 200 partidas entre dos guardados */
         if(n.victorias - antes.victorias > 50 || n.derrotas - antes.derrotas > 50) return mal('Eso no cuadra.', 422);
         this.sql.exec(`UPDATE cuentas SET datos = ?, rev = ?, victorias = ?, derrotas = ?, partidas = ?, monedas = ?, cartas = ?, tocada = ? WHERE clave = ?`,
-          JSON.stringify(datos), rev, n.victorias, n.derrotas, n.partidas, n.monedas, n.cartas, Date.now(), c.clave);
-        return Response.json({ bien: true, rev });
+          JSON.stringify(datos), nuevo, n.victorias, n.derrotas, n.partidas, n.monedas, n.cartas, Date.now(), c.clave);
+        return Response.json({ bien: true, rev: nuevo });
       }
       return mal('No existe esa ruta.', 404);
     }catch(e){
