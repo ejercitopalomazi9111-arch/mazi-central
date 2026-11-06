@@ -541,6 +541,8 @@ async function partida({ capa, alTerminar, carga, modo = 'maquina', conexion = n
   function oirServidor(m){
     if(termino && m.tipo === 'estado'){ revanchaLista(m.vista); return; }
     if(m.tipo === 'error'){
+      /* «Ya jugaste»: la jugada SÍ llegó (se mandó dos veces al reconectar). No es error: se sigue esperando al otro */
+      if(esperandoServidor && /Ya jugaste/.test(m.porque || '')){ mostrarEspera(); return; }
       if(esperandoServidor){ const e = esperandoServidor; esperandoServidor = null; jugadaEnviada = null; e.no(new Error(m.porque)); }
       else aviso(m.porque, { tipo: 'mal', icono: 'img/iconos/exclamation.png' });
       return;
@@ -585,6 +587,18 @@ async function partida({ capa, alTerminar, carga, modo = 'maquina', conexion = n
   }
   if(cx){
     limpieza.push(cx.oir(oirServidor));
+    /* EL VIGILANTE (6 nov, «soluciona lo del internet»): cada 4 s revisa la vista más fresca (linea.js pide una
+       cada pocos segundos). Si el servidor ya va en otra ronda y aquí no, se pone al día; si se está esperando y el
+       servidor no tiene la jugada, se vuelve a mandar. Así ningún aviso perdido deja la mesa trabada. */
+    const vigia = setInterval(() => {
+      if(termino || !cx.abierta || !cx.vista) return;
+      const v = cx.vista;
+      if(esperandoServidor){
+        if(v.ronda > J.ronda){ const e = esperandoServidor; esperandoServidor = null; e.no(Object.assign(new Error('salto'), { vista: v })); }
+        else if(!v.yaJugue && jugadaEnviada) cx.enviar(jugadaEnviada);
+      } else if(!enRonda && v.ronda > J.ronda) resincronizar(v);
+    }, 4000);
+    limpieza.push(() => clearInterval(vigia));
     if(cx.vista.ronda > J.ronda) resincronizar(cx.vista);      /* algo pasó mientras se repartía */
     else if(cx.vista.yaJugue){ ocupado = true; quitarPista(); }
     mostrarEspera();
@@ -815,6 +829,8 @@ async function partida({ capa, alTerminar, carga, modo = 'maquina', conexion = n
     mostrarEspera();
     pistaTurno();
     if(rondaPendiente){ const p = rondaPendiente; rondaPendiente = null; ronda(p.jugA, async () => p); }
+    /* si mientras animaba el servidor ya va en otra ronda (se resolvió sin que llegara el aviso), se pone al día */
+    else if(cx && cx.vista && cx.vista.ronda > J.ronda) resincronizar(cx.vista);
   }
 
   /* ═══ LAS VENTAJAS QUE SE ESCOGEN ═══ una hoja con las cartas; devuelve la que se tocó (o null) */
