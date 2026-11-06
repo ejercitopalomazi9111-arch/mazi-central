@@ -64,10 +64,12 @@ export const COSMETICOS = [
   { id:'tp-terciopelo', clase:'tapete', nombre:'Terciopelo',     img:'texturas/velour_velvet.webp',     rareza:'B' },
   { id:'tp-piel',    clase:'tapete',  nombre:'Piel roja',        img:'texturas/leather_red_02.webp',    rareza:'A' },
   { id:'tp-marmol',  clase:'tapete',  nombre:'Mármol',           img:'texturas/marble_01.webp',         rareza:'S' },
+  { id:'tp-pinguinos', clase:'tapete', nombre:'Puros pingüinos', img:'texturas/pinguinos.webp',        rareza:'A' },
   { id:'ms-pig',     clase:'mascota', nombre:'Puerco',     modelo:'modelos/animal-pig.glb',   img:'img/mascotas/pig.png',   rareza:'D' },
   { id:'ms-hog',     clase:'mascota', nombre:'Jabalí',     modelo:'modelos/animal-hog.glb',   img:'img/mascotas/hog.png',   rareza:'A' },
   { id:'ms-cow',     clase:'mascota', nombre:'Vaca colada', modelo:'modelos/animal-cow.glb',  img:'img/mascotas/cow.png',   rareza:'B' },
   { id:'ms-chick',   clase:'mascota', nombre:'Pollito colado', modelo:'modelos/animal-chick.glb', img:'img/mascotas/chick.png', rareza:'C' },
+  { id:'ms-penguin', clase:'mascota', nombre:'Pingüino',   modelo:'modelos/animal-penguin.glb', img:'img/mascotas/penguin.png', rareza:'B' },
   { id:'ds-autora',  clase:'dorso',   nombre:'Guerra de Puercos', img:'../arte/web/reverso.webp', rareza:'D' },
   { id:'ds-kenney',  clase:'dorso',   nombre:'Baraja clásica',    img:'img/dorsos/kenney.png',             rareza:'B' },
 ];
@@ -84,6 +86,9 @@ function vacia(){
               (Carlos, 5 nov: «no está saliendo el sobre de regalo») */
            bienvenida: false,
            stats: { victorias: 0, derrotas: 0, empates: 0, partidas: 0 },
+           /* los puercos líderes que tienes y el que traes puesto (Carlos, 6 nov), y TU mazo armado a mano:
+              una lista de llaves `nombre·puntos` (se repite la llave si metes dos copias). Vacío = se arma solo */
+           lideres: {}, lider: '', mazo: [], regalo30: false,
            victoriaDia: '', codigo: '', creada: Date.now() };
 }
 
@@ -151,6 +156,11 @@ function sana(c){
   const st = c.stats || {}, ent = (x) => Math.max(0, Math.floor(Number(x) || 0));
   n.stats = { victorias: ent(st.victorias), derrotas: ent(st.derrotas), empates: ent(st.empates), partidas: ent(st.partidas) };
   n.bienvenida = !!c.bienvenida;
+  n.lideres = (c.lideres && typeof c.lideres === 'object') ? c.lideres : {};
+  n.lider = typeof c.lider === 'string' && n.lideres[c.lider] ? c.lider : '';
+  n.mazo = Array.isArray(c.mazo) ? c.mazo.filter(x => typeof x === 'string').slice(0, 64) : [];
+  n.mazoPropio = !!c.mazoPropio;      /* false = se arma solo con lo mejor que tienes */
+  n.regalo30 = !!c.regalo30;
   return n;
 }
 

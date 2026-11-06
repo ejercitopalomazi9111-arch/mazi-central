@@ -29,7 +29,7 @@ ok('entrar da una sesión nueva', t2 && t2 !== t1);
 
 console.log('guardar');
 r = await post('cuenta/guardar', { token: t1, datos: datos(4, 3, 1, 60, 11) });
-ok('la sesión vieja ya no sirve', r.s === 401);
+ok('la sesión del otro teléfono sigue sirviendo (la misma cuenta en dos teléfonos)', r.s === 200 && r.j.bien, JSON.stringify(r).slice(0, 160));
 r = await post('cuenta/guardar', { token: t2, datos: datos(5, 3, 1, 60, 12) });
 ok('guarda con la sesión buena', r.s === 200 && r.j.bien);
 r = await post('cuenta/guardar', { token: t2, datos: datos(2, 0, 0, 0, 1) });

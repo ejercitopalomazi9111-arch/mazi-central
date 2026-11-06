@@ -34,6 +34,17 @@ import * as MOTOR from './motor-servidor.js';
    abandonada se queda guardada para siempre. */
 const OLVIDO = 30 * 60 * 1000;
 
+/* Las ventajas de líder que no piden escoger: las mismas que mesa.js · aplicarPasiva (6 nov) */
+const LIDERES_PASIVOS = new Set(['rey', 'general', 'espartano', 'emperador', 'presidente']);
+function pasiva(j, id){
+  if(!j || !id) return;
+  if(id === 'rey') j.pv += 10;
+  if(id === 'espartano'){ j.pv += 5; const k = j.mano.findIndex(c => c.nivel !== 'ESP'); if(k >= 0) j.mazo.unshift(j.mano.splice(k, 1)[0]); }
+  if(id === 'general'){ const k = j.mazo.map(c => c.nivel !== 'ESP').lastIndexOf(true); if(k >= 0) j.mano.push(j.mazo.splice(k, 1)[0]); }
+  if(id === 'emperador'){ const k = j.mazo.findIndex(c => c.nivel === 'ESP' && c.esp === 'bono'); j.mano.push(k >= 0 ? j.mazo.splice(k, 1)[0] : { id: 'lider-bono', valor: 0, nivel: 'ESP', esp: 'bono' }); }
+  if(id === 'presidente') j.combosUsados = (j.combosUsados | 0) - 1;
+}
+
 export class Sala {
   constructor(ctx, env){
     this.ctx = ctx;
@@ -54,6 +65,8 @@ export class Sala {
          asiento, para que el otro sepa contra quién juega. */
       this.pvMesa   = await ctx.storage.get('pvMesa')   || null;
       this.quien    = await ctx.storage.get('quien')    || { a:null, b:null };
+      /* el puerco líder de cada asiento (6 nov): sus ventajas que no piden escoger se aplican al repartir */
+      this.lideres  = await ctx.storage.get('lideres')  || { a:null, b:null };
     });
   }
 
@@ -61,7 +74,7 @@ export class Sala {
     this.tocada = Date.now();
     await this.ctx.storage.put({ J:this.J, secretos:this.secretos,
                                  pendiente:this.pendiente, mazos:this.mazos,
-                                 tocada:this.tocada, pvMesa:this.pvMesa, quien:this.quien });
+                                 tocada:this.tocada, pvMesa:this.pvMesa, quien:this.quien, lideres:this.lideres });
   }
 
   async fetch(pedido){
@@ -72,7 +85,7 @@ export class Sala {
        alguien nuevo a una partida de hace tres semanas. */
     if(this.J && Date.now() - this.tocada > OLVIDO){
       this.J = null; this.secretos = { a:null, b:null }; this.pendiente = { a:null, b:null };
-      this.mazos = { a:null, b:null }; this.pvMesa = null; this.quien = { a:null, b:null };
+      this.mazos = { a:null, b:null }; this.pvMesa = null; this.quien = { a:null, b:null }; this.lideres = { a:null, b:null };
     }
 
     if(pedido.headers.get('Upgrade') !== 'websocket'){
@@ -86,7 +99,7 @@ export class Sala {
     servidor.accept();
     this.enchufar(servidor, url.searchParams.get('secreto'),
                   this.leerMazo(url.searchParams.get('mazo')),
-                  { pv: url.searchParams.get('pv'), nombre: url.searchParams.get('nombre'), avatar: url.searchParams.get('avatar') });
+                  { pv: url.searchParams.get('pv'), nombre: url.searchParams.get('nombre'), avatar: url.searchParams.get('avatar'), lider: url.searchParams.get('lider') });
     return new Response(null, { status:101, webSocket:cliente });
   }
 
@@ -134,6 +147,7 @@ export class Sala {
     const nombre = String(extra.nombre || '').replace(/[^\p{L}\p{N} _-]/gu, '').trim().slice(0, 16);
     const avatar = /^av-[a-z]{2,12}$/.test(extra.avatar || '') ? extra.avatar : null;
     if(nombre || avatar) this.quien[asiento] = { nombre: nombre || null, avatar };
+    if(!this.J && LIDERES_PASIVOS.has(extra.lider || '') || (!this.J && /^(estratega|guerrillero|cientifico|criminal|almirante)$/.test(extra.lider || ''))) this.lideres[asiento] = extra.lider;
     ws.send(JSON.stringify({ tipo:'sentado', asiento, secreto:this.secretos[asiento] }));
 
     ws.addEventListener('message', (ev) => this.oir(ws, ev).catch(err => {
@@ -159,7 +173,10 @@ export class Sala {
     }
   }
 
-  conVida(J){ if(this.pvMesa){ J.a.pv = J.b.pv = this.pvMesa; } return J; }
+  conVida(J){ if(this.pvMesa){ J.a.pv = J.b.pv = this.pvMesa; }
+    /* las ventajas de líder que no piden escoger (las que piden escoger, por ahora sólo contra la máquina) */
+    for(const s of ['a', 'b']) pasiva(J[s], this.lideres && this.lideres[s]);
+    return J; }
 
   /* ── EL MAZO QUE DECLARA UN TELÉFONO ─────────────────────────────────────
      ⚠ VIENE EN EL LINK Y NO EN UN MENSAJE, Y ÉSA ES LA PARTE QUE IMPORTA.
@@ -191,11 +208,16 @@ export class Sala {
      dirección, y una colección entera en JSON no cabe cómoda ahí. */
   leerMazo(texto){
     if(!texto) return null;
+    /* «M:…» = un mazo ARMADO a mano en Puercos 2 (hasta 64, 6 nov): se usa tal cual, limpio, con su soporte;
+       sin eso, mazoDeColeccion lo recortaría a las 30 mejores */
+    const armado = String(texto).startsWith('M:'); if(armado) texto = String(texto).slice(2);
     const cartas = String(texto).slice(0, 1200).split('.').map(t => {
       const m = /^([A-Z]+)(\d+)$/.exec(t.trim());
       return m ? { nivel: m[1], valor: parseInt(m[2], 10) } : null;
     }).filter(Boolean);
     const limpio = MOTOR.limpiarCartas(cartas);
+    if(armado && limpio.length) return [...limpio.slice(0, 64).map((c, i) => ({ id: 'k' + i, valor: c.valor, nivel: c.nivel })),
+      ...['bono', 'castigo'].flatMap(esp => Array.from({ length: 5 }, (_, i) => ({ id: 'e' + esp[0] + i, valor: 0, nivel: 'ESP', esp })))];
     return limpio.length ? limpio : null;
   }
 

@@ -13,6 +13,8 @@
 </head>
 <body>
 <canvas id="gl"></canvas>
+<!-- la carátula de la caja, al abrir (Carlos, 6 nov) -->
+<div class="caratula" id="caratula" role="button" aria-label="Entrar al juego"><img alt="Guerra de Puercos" src="img/caratula.webp"><span class="btn grande">Toca para jugar</span></div>
 <div class="vineta"></div>
 <div id="ui">
   <header class="barra">
@@ -31,6 +33,7 @@
       <p class="lema">Ni héroe ni villano, sólo un puerco haciendo lo suyo.</p>
       <button class="btn grande jugar" id="bJugar">JUGAR</button>
       <button class="btn suave" id="bLideres"><img alt="" src="img/iconos/trophy.png" class="ico"> Tabla de líderes</button>
+      <button class="lo-nuevo" id="bNovedades" type="button">Lo nuevo · versión 2.5</button>
     </div>
   </main>
 
@@ -49,6 +52,8 @@
     <h2 class="seccion">Mi colección</h2>
     <div class="pestanas" id="pestanas">
       <button data-t="puercos" class="activo">Puercos</button>
+      <button data-t="mazo">Mi mazo</button>
+      <button data-t="lideres">Líderes</button>
       <button data-t="soporte">Soporte</button>
       <button data-t="cosmeticos">Cosméticos</button>
     </div>

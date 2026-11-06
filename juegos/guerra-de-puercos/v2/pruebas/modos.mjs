@@ -20,7 +20,7 @@ async function telefono(){
   const ctx = await br.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   const pg = await ctx.newPage(); pg.err = [];
   pg.on('pageerror', e => pg.err.push('PE ' + e.message)); pg.on('console', m => { if(m.type() === 'error' && !/401|404/.test(m.text())) pg.err.push(m.text()); });
-  await pg.goto(PAG + '?servidor=' + encodeURIComponent(SRV), { waitUntil: 'load' }); await pg.waitForTimeout(2200);
+  await pg.goto(PAG + '?servidor=' + encodeURIComponent(SRV), { waitUntil: 'load' }); await pg.waitForTimeout(2200); await pg.evaluate(() => document.querySelector('#caratula')?.click()); await pg.waitForTimeout(500);
   /* el aviso del sobre de bienvenida, fuera */
   await pg.evaluate(() => { const n = document.querySelector('#notiSobres'); n.classList.remove('ve'); n.hidden = true; });
   return pg;
@@ -36,7 +36,10 @@ async function jugarUna(pg){
   await pg.mouse.click(c.x, c.y); await pg.waitForTimeout(200);
   return c;
 }
-async function elegirModo(pg, m){ await pg.click('#bJugar'); await pg.waitForTimeout(450); await pg.click(`#hojaCaja [data-h="${m}"]`); }
+async function elegirModo(pg, m){ await pg.click('#bJugar'); await pg.waitForTimeout(450);
+  /* sin líder, JUGAR primero pide escoger uno (el primero es gratis) */
+  if(await pg.$('#hojaCaja [data-l]')){ await pg.click('#hojaCaja [data-l="rey"]'); await pg.click('#hojaCaja [data-ok]'); await pg.waitForTimeout(700); }
+  await pg.click(`#hojaCaja [data-h="${m}"]`); }
 
 /* ═══ 1 · contra la máquina ═══ */
 if(!SOLO || SOLO === 'maquina'){
@@ -59,7 +62,7 @@ if(!SOLO || SOLO === 'dos'){
   await elegirModo(pg, 'dos');
   await pg.waitForFunction(() => globalThis.__mesa?.estado().cortina, null, { timeout: 30000 });
   await pg.waitForTimeout(500);
-  ok('sale la cortina «Turno de Jugador 1»', /Turno de Jugador 1/.test(await pg.textContent('[data-cortina]')));
+  const cort1 = await pg.textContent('[data-cortina]'); ok('sale la cortina «Turno de Jugador 1»', /Turno de Jugador.1/.test(cort1), cort1);
   ok('detrás de la cortina todavía no hay mano repartida', (await est(pg)).mano.every(c => c.x == null));
   await pg.screenshot({ path: FOTOS + 'dos-cortina.png' });
   let rondas = 0, trabada = false, vioTapada = false, vioJ2 = false;
@@ -76,7 +79,7 @@ if(!SOLO || SOLO === 'dos'){
       if(quien === 'Jugador 2' && !vioJ2){
         vioJ2 = true;
         const e = await est(pg);
-        ok('en el turno de Jugador 2 la mano de abajo es la suya', e.persp === 'b' && (await pg.textContent('[data-nom-a]')) === 'Jugador 2');
+        const nomA = await pg.textContent('[data-nom-a]'); ok('en el turno de Jugador 2 la mano de abajo es la suya', e.persp === 'b' && /Jugador.2/.test(nomA), e.persp + ' / ' + nomA);
         await pg.screenshot({ path: FOTOS + 'dos-j2.png' });
       }
       await jugarUna(pg);
@@ -92,7 +95,8 @@ if(!SOLO || SOLO === 'dos'){
   const fin = await pg.evaluate(() => document.querySelector('[data-fin]')?.textContent.replace(/\s+/g, ' ').trim());
   await pg.screenshot({ path: FOTOS + 'dos-fin.png' });
   ok('termina diciendo quién ganó', /Ganó Jugador.[12]|Empate/.test(fin || ''), fin);
-  ok('y no paga monedas', (await pg.evaluate(() => __puercos.C.monedas)) === monedas0);
+  ok('y le paga monedas al dueño del teléfono', (await pg.evaluate(() => __puercos.C.monedas)) > monedas0);
+  ok('pero no cuenta para la tabla de líderes', (await pg.evaluate(() => __puercos.C.stats.partidas)) === 0);
   ok('sin errores en consola', !pg.err.length, pg.err.join(' | '));
   await pg.context().close();
 }
@@ -102,14 +106,14 @@ async function partidaEnLinea(A, B, rondasMax = 40){
   let r = 0, desfase = '', vioYaEligio = false;
   while(r < rondasMax){
     const listos = await Promise.all([libre(A, 40000), libre(B, 40000)]);
-    if(!listos[0] || !listos[1]){ const ea = await est(A), eb = await est(B); if(ea?.fin && eb?.fin) break; return { trabada: true, r, desfase }; }
+    if(!listos[0] || !listos[1]){ const ea = await est(A), eb = await est(B); if(ea?.fin && eb?.fin) break; const corto = (e) => e && ({ ronda: e.ronda, fin: e.fin, ocupado: e.ocupado, espera: e.espera, mano: e.mano.map(c => c.nivel + (c.x == null ? '?' : '')).join(','), pv: e.pvA + '/' + e.pvB, rival: e.rival }); return { trabada: true, r, desfase, A: corto(ea), B: corto(eb) }; }
     const r0 = (await est(A)).ronda;
     await jugarUna(A);
     await B.waitForTimeout(700);
     if(!vioYaEligio) vioYaEligio = /ya eligió/.test((await est(B)).espera || '');
     await jugarUna(B);
     const fueron = await Promise.all([A, B].map(pg => pg.waitForFunction((r0) => { const e = __mesa?.estado(); return !e || e.fin || (!e.ocupado && e.ronda > r0); }, r0, { timeout: 40000 }).then(() => true, () => false)));
-    if(!fueron[0] || !fueron[1]) return { trabada: true, r, desfase };
+    if(!fueron[0] || !fueron[1]){ const corto = (e) => e && ({ ronda: e.ronda, fin: e.fin, ocupado: e.ocupado, espera: e.espera, elegidas: e.elegidas, mano: e.mano.map(c => c.nivel + (c.x == null ? '?' : '')).join(','), pv: e.pvA + '/' + e.pvB, rival: e.rival }); return { trabada: true, r, r0, fueron, desfase, A: corto(await est(A)), B: corto(await est(B)) }; }
     const ea = await est(A), eb = await est(B);
     if(ea.pvA !== eb.pvB || ea.pvB !== eb.pvA || ea.ronda !== eb.ronda) desfase ||= `ronda ${ea.ronda}: A ve ${ea.pvA}/${ea.pvB}, B ve ${eb.pvA}/${eb.pvB}`;
     r++;
@@ -136,7 +140,7 @@ if(!SOLO || SOLO === 'linea'){
   const entran = await Promise.all([libre(A, 40000), libre(B, 40000)]);
   ok('los dos entran a la mesa', entran[0] && entran[1]);
   const ea = await est(A), eb = await est(B);
-  ok('cada quien ve 80 de vida y la mano del otro boca abajo', ea.pvA === 80 && eb.pvB === 80 && ea.rival >= 5 && eb.rival >= 5, JSON.stringify({ a: ea.rival, b: eb.rival }));
+  ok('cada quien ve 90 de vida (80 + el Puerco Rey) y la mano del otro boca abajo', ea.pvA === 90 && eb.pvB === 90 && ea.rival >= 5 && eb.rival >= 5, JSON.stringify({ a: ea.rival, b: eb.rival, pv: [ea.pvA, eb.pvB] }));
   ok('y NO ve las cartas del otro (sólo cuántas)', await A.evaluate(() => __mesa.estado().mano.every(c => !String(c.id).startsWith('r:'))));
   await A.screenshot({ path: FOTOS + 'linea-mesa-a.png' }); await B.screenshot({ path: FOTOS + 'linea-mesa-b.png' });
   const res = await partidaEnLinea(A, B, 4);
@@ -173,12 +177,16 @@ async function cuentaNueva(pg, apodo){
   await pg.click('#yo'); await pg.waitForTimeout(400);
   await pg.fill('#perfilCaja [name="apodo"]', apodo); await pg.fill('#perfilCaja [name="pin"]', '4321');
   await pg.click('[data-hacer="crear"]'); await pg.waitForTimeout(1500);
+  /* al crear la cuenta se escoge el líder; luego se vuelve al perfil */
+  if(await pg.$('#hojaCaja [data-l]')){ await pg.click('#hojaCaja [data-l="general"]'); await pg.click('#hojaCaja [data-ok]'); await pg.waitForTimeout(700); }
+  if(!(await pg.isVisible('[data-pp="amigos"]'))){ await pg.click('#yo'); await pg.waitForTimeout(500); }
 }
 if(!SOLO || SOLO === 'amigos'){
   console.log('4 · amigos y retos');
   const A = await telefono(), B = await telefono();
   const sufijo = Math.random().toString(36).slice(2, 6), apA = 'Ana' + sufijo, apB = 'Beto' + sufijo;
   await cuentaNueva(A, apA); await cuentaNueva(B, apB);
+  for(const pg of [A, B]) if(!(await pg.isVisible('[data-pp="amigos"]')) || !(await pg.evaluate(() => document.querySelector('#perfil')?.classList.contains('ve') ?? true))){ await pg.click('#yo'); await pg.waitForTimeout(800); }
   await A.click('[data-pp="amigos"]'); await A.waitForTimeout(800);
   await A.fill('#perfilCaja [data-nuevo] [name="apodo"]', 'NadieAsi' + sufijo); await A.click('#perfilCaja [data-nuevo] button');
   await A.waitForTimeout(900);

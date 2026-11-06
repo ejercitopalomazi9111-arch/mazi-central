@@ -42,6 +42,7 @@ export function conectar(codigo, datos = {}){
     if(datos.nombre) q.set('nombre', datos.nombre);
     if(datos.avatar) q.set('avatar', datos.avatar);
     if(datos.mazo) q.set('mazo', datos.mazo);
+    if(datos.lider) q.set('lider', datos.lider);
     ws = new WebSocket(SERVIDOR.replace(/^http/, 'ws') + '/api/puercos/sala/' + codigo + '?' + q);
     ws.onopen = () => { intentos = 0; cx.abierta = true; avisar({ tipo: 'conexion', abierta: true }); };
     ws.onmessage = (ev) => {

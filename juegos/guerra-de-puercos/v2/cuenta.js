@@ -35,10 +35,40 @@ async function pedir(ruta, cuerpo){
 }
 const copia = () => JSON.parse(JSON.stringify(C));
 
+/* ── JUNTAR DOS COPIAS, SIN PERDER NADA ──────────────────────────────────────
+   ⚠ Carlos, 5 nov: «no está entregando fichas… no pueden comprar más sobres… no se estaquean». Era esto: con
+   la misma cuenta en dos teléfonos (o al cambiar de teléfono), cuando el servidor tenía una copia más nueva se
+   la ponía ENTERA al teléfono, y lo que ese teléfono acababa de ganar o comprar desaparecía. Ahora se suma:
+   «la base» es la última copia en la que este teléfono y el servidor estaban de acuerdo, y lo que cambió aquí
+   desde la base (monedas, cartas, sobres comprados o abiertos, partidas) se le pone encima a la del servidor. */
+const LLAVE_BASE = 'puercos2_base';
+const leerBase = () => { try{ const b = JSON.parse(localStorage.getItem(LLAVE_BASE) || 'null'); return b && yo && b.apodo === yo.apodo ? b.datos : null; }catch(e){ return null; } };
+const ponerBase = (datos) => { try{ if(yo && datos) localStorage.setItem(LLAVE_BASE, JSON.stringify({ apodo: yo.apodo, datos })); else localStorage.removeItem(LLAVE_BASE); }catch(e){} };
+export function fusionar(srv, loc, base){
+  const out = JSON.parse(JSON.stringify(srv || {})), b = base || null;
+  /* sin base (copias de antes de este arreglo) no se sabe qué cambió: se queda lo más alto de cada cosa */
+  const num = (s, l, k) => b ? Math.max(0, (s | 0) + (l | 0) - (k | 0)) : Math.max(s | 0, l | 0);
+  out.monedas = num(srv.monedas, loc.monedas, b?.monedas);
+  for(const campo of ['cartas', 'cosmeticos', 'soporte', 'stats', 'lideres']){ const S = srv[campo] || {}, L = loc[campo] || {}, K = b?.[campo] || {}; const o = { ...S };
+    for(const k of new Set([...Object.keys(S), ...Object.keys(L)])) o[k] = num(S[k], L[k], K[k]);
+    out[campo] = o; }
+  /* los sobres: los del servidor, menos los que se abrieron aquí, más los que se compraron aquí */
+  const ids = (x) => new Set((x || []).map(s => s.id)), enBase = ids(b?.sobres), enLoc = ids(loc.sobres), enSrv = ids(srv.sobres);
+  out.sobres = [...(srv.sobres || []).filter(s => !(enBase.has(s.id) && !enLoc.has(s.id))), ...(loc.sobres || []).filter(s => !enSrv.has(s.id) && (!b || !enBase.has(s.id)))];
+  out.puesto = { ...(srv.puesto || {}), ...(loc.puesto || {}) };
+  for(const k of ['bienvenida', 'regalo', 'regalo30']) out[k] = !!(srv[k] || loc[k]);
+  /* lo que se ESCOGE (el mazo, el líder puesto) es de este teléfono: lo último que se tocó aquí */
+  if(Array.isArray(loc.mazo)){ out.mazo = loc.mazo; out.mazoPropio = !!loc.mazoPropio; }
+  if(loc.lider) out.lider = loc.lider;
+  for(const k of Object.keys(loc)) if(!(k in out)) out[k] = loc[k];
+  out.rev = Math.max(srv.rev | 0, loc.rev | 0) + 1;
+  return out;
+}
+
 /* Crear: lo que ya tienes en este teléfono se vuelve tu cuenta. */
 export async function crear(apodo, pin){
-  const j = await pedir('cuenta/crear', { apodo, pin, datos: copia() });
-  yo = { apodo: j.apodo, token: j.token }; guardarYo(); avisar('entro');
+  const datos = copia(), j = await pedir('cuenta/crear', { apodo, pin, datos });
+  yo = { apodo: j.apodo, token: j.token }; guardarYo(); ponerBase({ ...datos, rev: j.rev | 0 }); avisar('entro');
   return j;
 }
 /* Entrar: si la cuenta trae más progreso que este teléfono, se usa la de la
@@ -51,8 +81,12 @@ export async function entrar(apodo, pin){
   let ultima = ''; try{ ultima = localStorage.getItem('puercos2_ultima_cuenta') || ''; }catch(e){}
   const mia = ultima && ultima.toLowerCase() === String(j.apodo).toLowerCase();
   yo = { apodo: j.apodo, token: j.token }; guardarYo();
-  if(j.datos && !(mia && (C.rev | 0) > (j.rev | 0))) ponerCopia(j.datos);
-  else subirYa();
+  /* si las cartas de este teléfono ya eran de esta cuenta, se juntan con las del servidor (no se pisa nada);
+     si eran de otra persona, gana la cuenta */
+  const srv = j.datos ? { ...j.datos, rev: j.rev | 0 } : null;
+  if(srv && mia){ const f = fusionar(srv, copia(), leerBase()); ponerBase(srv); ponerCopia(f); subirYa(); }
+  else if(srv){ ponerBase(srv); ponerCopia(srv); }
+  else { ponerBase(null); subirYa(); }
   avisar('entro');
   return j;
 }
@@ -65,8 +99,12 @@ async function subirYa(){
   if(subiendo){ otraVez = true; return; }
   subiendo = true;
   try{
-    const j = await pedir('cuenta/guardar', { token: yo.token, datos: copia() });
-    if(j.viejo && j.datos) ponerCopia(j.datos);      /* otro teléfono iba más adelante */
+    const base = leerBase(), mando = copia(), j = await pedir('cuenta/guardar', { token: yo.token, datos: mando, ...(base && Number.isInteger(base.rev) ? { desde: base.rev } : {}) });
+    if(j.viejo && j.datos){
+      /* otro teléfono guardó mientras tanto: se juntan las dos (con lo que haya cambiado aquí hasta AHORA) y se sube la junta */
+      const srv = { ...j.datos, rev: j.rev | 0 }, f = fusionar(srv, copia(), base);
+      ponerBase(srv); ponerCopia(f); otraVez = true;
+    } else if(j.bien){ ponerBase({ ...mando, rev: j.rev | 0 }); }
     estadoSubida.ultima = Date.now(); estadoSubida.error = '';
   }catch(e){
     estadoSubida.error = e.message;
@@ -79,7 +117,9 @@ async function subirYa(){
 cadaGuardado(() => { if(!yo) return; clearTimeout(reloj); reloj = setTimeout(subirYa, 2000); });
 /* al volver el internet o al regresar a la app, lo pendiente sube */
 addEventListener('online', () => subirYa());
-document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'hidden') subirYa(); });
+/* al salir se sube; al volver (y cada 30 s con la app abierta) se pregunta si otro teléfono avanzó */
+document.addEventListener('visibilitychange', () => subirYa());
+setInterval(() => { if(yo && document.visibilityState === 'visible') subirYa(); }, 30000);
 
 export async function lideres(){ return pedir('lideres'); }
 
