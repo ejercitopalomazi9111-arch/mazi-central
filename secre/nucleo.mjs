@@ -269,13 +269,15 @@ export class Secre {
        a negocios (y contestarle a los prospectos), All's (el grupo y su banco de fotos) e Instagram/Facebook del
        negocio. Todo lo personal se apaga: no contesta chats, no propone, no saluda, no repasa, no juega rol, no
        manda programados y no toca las llamadas. Se regresa con «modo completo» desde su chat. */
-    /* sólo la Secre que ya estaba corriendo (guardada en la versión 7) se pasa a sólo negocio; una nueva o las
+    /* sólo la Secre que ya estaba corriendo (guardada en la versión 6 o 7) se pasa a sólo negocio; una nueva o las
        pruebas arrancan como siempre */
-    if(guardada.version === 7){
+    if(Object.keys(guardada).length && (guardada.version || 1) >= 6 && (guardada.version || 1) < 8){
       this.config.soloNegocio = true;
       if(this.config.llamar) this.config.llamar.activo = false;
     }
-    if((this.config.version || 1) < 8) this.config.version = 8;
+    /* la que ya pasó por la 8 (el primer despliegue de esto) también: así ninguna de las dos cuentas se queda fuera */
+    if(Object.keys(guardada).length && guardada.version === 8) this.config.soloNegocio = true;
+    if((this.config.version || 1) < 9) this.config.version = 9;
     /* las dos cuentas de Carlos corren en el mismo proceso: lo compartido se junta al arrancar */
     this.compartir = compartir;
     if(compartir) for(const h of Secre.hermanas){ for(const k of COMPARTIDO){ const mio = this.config[k], suyo = h.config[k];
@@ -746,7 +748,7 @@ export class Secre {
   /* lo que se reporta a La Sala cada tanto, para ver desde fuera si todo jala (sin datos de nadie) */
   latido(){
     const C = this.config.campana || {}, E = this.estado.campana || {}, MY = this.config.mayoreo || {}, H = this.estado.histMayoreo || {};
-    return { cuenta: this.cuenta, version: this.config.version,
+    return { cuenta: this.cuenta, version: this.config.version, soloNegocio: !!this.config.soloNegocio,
       campana: { activo: !!C.activo, porDia: C.porDia, hoy: E.hoy || 0, total: Object.values(E.hechos || {}).filter(x => x.jid).length, revisados: Object.keys(E.hechos || {}).length, proxima: E.proxima || 0, motivo: E.motivo || '' },
       mayoreo: { activo: !!MY.activo, fuente: !!MY.fuente, destino: !!MY.destino, duena: MY.duena || '', historico: !!MY.historico, pedidas: H.pedidas || 0, sinAvance: H.sinAvance || 0, enFuente: this.estado.enFuente ?? null, enDestino: this.estado.enDestino ?? null, ancla: !!(H.ancla && H.ancla.key), manda: MY.manda || '', recibidos: H.recibidos || 0, prendas: (this.config.productos || []).length, enCola: (this.estado.colaFotos || []).length, mandadas: (this.estado.envioMayoreo || {}).total || 0, grupos: this.estado.gruposMayoreo || [] },
       fallas: this.ultimaFalla || {}, registro: (this.estado.registro || []).slice(-8).map(x => x.que).filter(q => /campa|mayoreo|fall|no pude/i.test(q)) };
