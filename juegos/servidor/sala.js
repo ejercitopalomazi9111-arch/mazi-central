@@ -283,7 +283,9 @@ export class Sala {
       return;
     }
 
-    /* el latido del teléfono (linea.js): se le contesta con su vista fresca, así un aviso perdido no traba la mesa */
+    /* el latido del teléfono (linea.js): se le contesta con su vista fresca, así un aviso perdido no traba la mesa.
+       Lo usa Puercos 2 cada 5 s; la versión 1 no lo manda y no le afecta. Se prueba con
+       juegos/guerra-de-puercos/v2/pruebas/linea-cortes.mjs (si ésta contesta, la mesa se pone al día sola). */
     if(m.tipo === 'ping'){ ws.send(JSON.stringify({ tipo:'estado', vista: this.vista(asiento) })); return; }
     if(m.tipo !== 'jugada') return;
     if(!this.J || this.J.acabo) throw new Error('No hay partida en curso.');
