@@ -31,7 +31,7 @@ function cubrir(x, im, X, Y, W, H, foco = .5){
    puerco rosa y el nombre). */
 export async function caraSobre(tipo, W = 640, H = 1000){
   await letrasListas();
-  const s = SOBRES[tipo], caja = await imagen('../arte/web/caja.webp');
+  const s = SOBRES[tipo], caja = await imagen(tipo === 'lideres' ? 'img/caratula.webp' : '../arte/web/caja.webp');
   const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
   x.fillStyle = s.color; x.fillRect(0, 0, W, H);
   /* el «metal» del sobre: rayas finas en diagonal, sólo luz y sombra */
@@ -44,7 +44,7 @@ export async function caraSobre(tipo, W = 640, H = 1000){
   x.textAlign = 'center'; x.fillStyle = '#1B0E16';
   x.font = '78px Marcador'; x.fillText(s.nombre.toUpperCase().replace('SOBRE ', ''), W / 2, H * .86);
   x.font = '34px Lilita'; x.fillStyle = 'rgba(27,14,22,.85)';
-  x.fillText(s.puercos + ' puercos + 1 sorpresa', W / 2, H * .93);
+  x.fillText(s.lideres ? '1 puerco líder' : s.puercos + ' puercos + 1 sorpresa', W / 2, H * .93);
   /* el crimpado de abajo: dientes */
   x.fillStyle = 'rgba(0,0,0,.22)';
   for(let i = 0; i < W; i += 20) x.fillRect(i, H - 22, 10, 22);

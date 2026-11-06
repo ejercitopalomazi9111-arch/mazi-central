@@ -6,7 +6,8 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 import { THREE, E, arrancar, mascota, tapete, cambiarTapete, cadaCuadro, vista, tocado, animar, sale } from './escena.js';
 import { C, cargar, guardar, escuchar, cosmetico, COSMETICOS, CLASES_COSMETICO, RAREZA, ORDEN_RAREZA, llaveDe } from './coleccion.js';
-import { CAT, cargarCatalogo, SOBRES, EN_TIENDA, comprar, regalarArranque, tengoPuercos, totalPuercos, TOPE_SOPORTE, misCartas } from './tienda.js';
+import { CAT, cargarCatalogo, SOBRES, EN_TIENDA, comprar, regalarArranque, tengoPuercos, totalPuercos, TOPE_SOPORTE, misCartas, TAM_MAZO, MAX_COPIAS, TOPES, limpiarMazo, mazoAuto, mazoActual } from './tienda.js';
+import { LIDERES, liderDe, retrato, cartaVentaja } from './lideres.js';
 import { caraSobre, caraCosmetico } from './caras.js';
 import { abrirSobre } from './sobre.js';
 import { jugarPartida, PV_MESA } from './mesa.js';
@@ -121,6 +122,8 @@ $('#notiSobres').addEventListener('click', () => { esconderNoti(); ir('sobres');
 /* JUGAR: contra la máquina, dos en este teléfono, o a distancia (Carlos, 5 nov:
    «ya pon el modo para multijugador tanto en el mismo teléfono como online»). */
 function elegirModo(){
+  /* sin líder no se juega: el primero es gratis (Carlos, 6 nov: «haz que sea importante») */
+  if(!C.lider){ elegirLider({ gratis: true }).then(ok => { if(ok) elegirModo(); }); return; }
   hoja(`<h3>¿Cómo juegas?</h3>
     <button class="btn grande" data-h="maquina"><img alt="" class="ico" src="img/iconos/singleplayer.png"> Contra la máquina</button>
     <button class="btn" data-h="dos"><img alt="" class="ico" src="img/iconos/multiplayer.png"> Dos en este teléfono</button>
@@ -141,7 +144,8 @@ $('#bJugar').addEventListener('click', elegirModo);
    Uno crea la sala y le pasa el código de 4 letras (o el link) al otro; con
    cuenta, también se reta a un amigo de la lista y le llega el aviso. */
 function cerrarHoja(){ const h = $('#hoja'); h.classList.remove('ve'); h.onclick = null; }
-const mazoParaLinea = () => { try{ return misCartas().slice(0, 120).map(c => c.nivel + c.valor).join('.'); }catch(e){ return ''; } };
+/* tu mazo armado (hasta 64) viaja completo, con «M:» para que el servidor no lo recorte a 30 */
+const mazoParaLinea = () => { try{ return 'M:' + mazoActual().map(k => { const f = CAT.puercos.find(x => llaveDe(x) === k); return f.nivel + f.puntos; }).join('.'); }catch(e){ return ''; } };
 function abrirDistancia(){
   const yo = cuenta();
   hoja(`<div class="perfil distancia">
@@ -168,7 +172,7 @@ function abrirDistancia(){
 }
 /* La sala de espera: el código en grande hasta que entra el otro. */
 function entrarSala(codigo, { reto = null } = {}){
-  const cx = conectar(codigo, { pv: PV_MESA, nombre: cuenta()?.apodo || '', avatar: C.puesto.avatar, mazo: mazoParaLinea() });
+  const cx = conectar(codigo, { pv: PV_MESA, nombre: cuenta()?.apodo || '', avatar: C.puesto.avatar, mazo: mazoParaLinea(), lider: C.lider || '' });
   let listo = false;
   const link = location.origin + location.pathname + '?sala=' + codigo;
   hoja(`<div class="perfil distancia">
@@ -207,7 +211,7 @@ async function pintarTienda(){
   const e = $('#estante'); e.innerHTML = '';
   for(const tipo of EN_TIENDA){
     const s = SOBRES[tipo], d = document.createElement('div'); d.className = 'producto';
-    d.innerHTML = `<div class="foto"></div><b>${s.nombre}</b><span>${s.puercos} puercos ${s.niveles ? '(' + s.niveles.join(', ') + ')' : 'de cualquier rareza'} y 1 sorpresa</span>
+    d.innerHTML = `<div class="foto"></div><b>${s.nombre}</b><span>${s.lideres ? 'Un puerco líder que no tengas. El más caro: ventaja al iniciar cada partida' : `${s.puercos} puercos ${s.niveles ? '(' + s.niveles.join(', ') + ')' : 'de cualquier rareza'} y 1 sorpresa`}</span>
       <button class="btn${s.precio > C.monedas ? '' : ' oro'}" data-comprar="${tipo}"><img alt="" src="img/iconos/moneda.png">${s.precio}</button>`;
     e.appendChild(d);
     caraSobre(tipo, 320, 500).then(c => d.querySelector('.foto').style.backgroundImage = `url(${c.toDataURL('image/jpeg', .82)})`);
@@ -294,6 +298,8 @@ function pintarColeccion(){
     };
     return;
   }
+  if(pestana === 'mazo') return pintarMazo(caja);
+  if(pestana === 'lideres') return pintarLideresColeccion(caja);
   if(pestana === 'soporte'){
     const fila = (f, k, que) => `<div class="soporte-fila"><img alt="" src="${f.arte}"><div><b>${f.nombre}</b><p>${que}</p>
       <div class="puntos-soporte">${Array.from({ length: TOPE_SOPORTE }, (_, i) => `<i class="${i < k ? 'si' : ''}"></i>`).join('')}</div>
@@ -378,8 +384,8 @@ function pintarPerfil(){
   }
   cuerpo.innerHTML = `<form autocomplete="off">
       <p class="nota">Con una cuenta tus cartas no se pierden aunque cambies de teléfono, y sales en la tabla de líderes. <b>Sólo un apodo, no tu nombre real.</b></p>
-      <label>Apodo<input name="apodo" maxlength="16" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Ej. PuercoVeloz"></label>
-      <label>PIN (4 a 6 números)<input name="pin" inputmode="numeric" pattern="[0-9]*" maxlength="6" type="password" placeholder="••••"></label>
+      <label>Apodo<input name="apodo" maxlength="32" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Ej. PuercoVeloz"></label>
+      <label>PIN o contraseña (4 a 20)<input name="pin" maxlength="20" type="password" autocomplete="current-password" placeholder="••••"></label>
       <p class="error" data-error></p>
       <div class="dos"><button class="btn" data-hacer="crear" type="button">Crear cuenta</button><button class="btn suave" data-hacer="entrar" type="button">Ya tengo una</button></div>
     </form>`;
@@ -388,11 +394,13 @@ function pintarPerfil(){
     const b = e.target.closest('[data-hacer]'); if(!b || b.disabled) return;
     const apodo = f.apodo.value.trim(), pin = f.pin.value.trim();
     /* lo que se puede revisar aquí, se revisa aquí: no se gasta un viaje al servidor */
-    if(apodo.length < 3) return err.textContent = 'El apodo va de 3 a 16 letras o números.', f.apodo.focus();
-    if(!/^\d{4,6}$/.test(pin)) return err.textContent = 'El PIN son de 4 a 6 números.', f.pin.focus();
+    if(apodo.length < 3 && !apodo.includes('@')) return err.textContent = 'El apodo va de 3 a 16 letras o números.', f.apodo.focus();
+    if(!/^\S{4,20}$/.test(pin)) return err.textContent = 'El PIN o contraseña va de 4 a 20, sin espacios.', f.pin.focus();
     err.textContent = ''; for(const x of f.querySelectorAll('button')) x.disabled = true;
     try{
-      if(b.dataset.hacer === 'crear'){ await crear(apodo, pin); aviso('¡Listo! Tu cuenta quedó creada', { tipo: 'bien', icono: 'img/iconos/checkmark.png' }); }
+      if(b.dataset.hacer === 'crear'){ await crear(apodo, pin); aviso('¡Listo! Tu cuenta quedó creada', { tipo: 'bien', icono: 'img/iconos/checkmark.png' });
+        /* al crear tu cuenta escoges tu puerco líder (Carlos, 6 nov) */
+        if(!C.lider){ cerrarPerfil(); setTimeout(() => elegirLider({ gratis: true }), 350); } }
       else { await entrar(apodo, pin); aviso('¡Bienvenido de vuelta!', { tipo: 'bien', icono: 'img/iconos/checkmark.png' }); }
       SON.rara(); pintarPerfil(); pintarBarra();
     }catch(e){
@@ -477,3 +485,68 @@ async function revisarRetos(){
   }catch(e){}
 }
 setInterval(revisarRetos, 15000); setTimeout(revisarRetos, 2500);
+
+/* ── LA CARÁTULA ─────────────────────────────────────────────────────────────
+   La caja del juego de la autora, al abrir; el primer toque además despierta el sonido del iPhone. */
+{ const c = $('#caratula'); c.onclick = () => { c.classList.add('se-va'); SON.toque?.(); setTimeout(() => c.remove(), 450); }; }
+
+/* ── ESCOGER TU PUERCO LÍDER ─────────────────────────────────────────────────
+   El primero es gratis y se escoge al crear tu cuenta (o antes de tu primera partida); los demás salen en el
+   Sobre de Líderes. Con varios, se cambia aquí mismo. Devuelve true si quedó uno puesto. */
+function elegirLider({ gratis = false } = {}){
+  const primero = !Object.keys(C.lideres).length;
+  return new Promise((listo) => {
+    hoja(`<div class="perfil distancia"><h3>${primero ? 'Elige tu puerco líder' : 'Tu puerco líder'}</h3>
+      <p class="nota">${primero ? 'Cada líder te da una ventaja al iniciar cada partida. El primero es gratis; los demás salen en el Sobre de Líderes de la tienda.' : 'Toca uno de los tuyos para llevarlo. Los que tienen candado salen en el Sobre de Líderes.'}</p>
+      <div class="lideres-rejilla">${LIDERES.map(l => { const tiene = !!C.lideres[l.id], puede = tiene || (gratis && primero);
+        return `<button data-l="${l.id}" class="${C.lider === l.id ? 'puesto' : ''} ${puede ? '' : 'bloq'}" style="--c:${l.color}"><img alt="" src="${retrato(l)}"><b>${l.nombre.replace('Puerco ', '')}</b>${puede ? '' : '<i class="candado"></i>'}</button>`; }).join('')}</div>
+      <p class="lider-detalle" data-detalle>Toca un líder para ver su ventaja.</p>
+      <div class="dos"><button class="btn" data-ok disabled>Llevar a este</button><button class="btn suave" data-h="nada">Cerrar</button></div></div>`, () => listo(!!C.lider));
+    const caja = $('#hojaCaja'); let elegido = C.lider || '';
+    const ver = (id) => { const l = liderDe(id); elegido = id; caja.querySelectorAll('[data-l]').forEach(b => b.classList.toggle('activo', b.dataset.l === id));
+      const tiene = !!C.lideres[id], puede = tiene || (gratis && primero);
+      caja.querySelector('[data-detalle]').innerHTML = `<img alt="" src="${cartaVentaja(l)}"><span><b>${l.nombre}</b>${l.ventaja}${puede ? '' : '<br><em>Sale en el Sobre de Líderes de la tienda.</em>'}</span>`;
+      const b = caja.querySelector('[data-ok]'); b.disabled = !puede; b.textContent = primero ? 'Éste es mi líder' : C.lider === id ? 'Ya lo llevas' : 'Llevar a este'; };
+    caja.querySelector('.lideres-rejilla').onclick = (e) => { const b = e.target.closest('[data-l]'); if(b){ SON.toque(); ver(b.dataset.l); } };
+    caja.querySelector('[data-ok]').onclick = () => {
+      if(!elegido || !(C.lideres[elegido] || (gratis && primero))) return;
+      C.lideres[elegido] = 1; C.lider = elegido; guardar(); SON.rara?.();
+      aviso(liderDe(elegido).nombre + ' te acompaña a cada partida', { tipo: 'bien', icono: 'img/iconos/trophy.png' });
+      cerrarHoja(); listo(true);
+    };
+    if(elegido) ver(elegido);
+  });
+}
+function pintarLideresColeccion(caja){
+  caja.innerHTML = `<p class="nota">Tu líder da una ventaja al iniciar cada partida. Tienes ${Object.keys(C.lideres).length} de ${LIDERES.length}.</p>
+    <div class="lideres-rejilla grande">${LIDERES.map(l => `<button data-l="${l.id}" class="${C.lider === l.id ? 'puesto' : ''} ${C.lideres[l.id] ? '' : 'bloq'}" style="--c:${l.color}"><img alt="" src="${retrato(l)}"><b>${l.nombre.replace('Puerco ', '')}</b>${C.lideres[l.id] ? (C.lider === l.id ? '<small>Lo llevas</small>' : '') : '<i class="candado"></i>'}</button>`).join('')}</div>
+    <button class="btn" data-cambiar>${C.lider ? 'Cambiar de líder' : 'Elegir mi líder'}</button>`;
+  caja.querySelector('[data-cambiar]').onclick = () => elegirLider({ gratis: true }).then(() => pintarColeccion());
+  caja.querySelector('.lideres-rejilla').onclick = (e) => { const b = e.target.closest('[data-l]'); if(b) lupa(cartaVentaja(liderDe(b.dataset.l)), liderDe(b.dataset.l).nombre + ' · ' + liderDe(b.dataset.l).ventaja); };
+}
+
+/* ── MI MAZO ─────────────────────────────────────────────────────────────────
+   Carlos, 6 nov: «tú a mano puedes armar tu deck… de 64… que ellos armen el mazo en base a las cartas que sí
+   tienen». Arriba lo que llevas y los topes; abajo tus cartas: tocar suma una copia, el «−» la quita. */
+function pintarMazo(caja){
+  const auto = !C.mazoPropio, usa = auto ? mazoAuto() : limpiarMazo(C.mazo);
+  const enMazo = {}; for(const k of usa) enMazo[k] = (enMazo[k] | 0) + 1;
+  const porNivel = {}; for(const k of usa){ const f = CAT.puercos.find(x => llaveDe(x) === k); porNivel[f.nivel] = (porNivel[f.nivel] | 0) + 1; }
+  const mias = CAT.puercos.filter(f => C.cartas[llaveDe(f)]).sort((a, b) => ORDEN_RAREZA.indexOf(a.nivel) - ORDEN_RAREZA.indexOf(b.nivel) || b.puntos - a.puntos);
+  caja.innerHTML = `<div class="mazo-cabeza"><b>${usa.length} / ${TAM_MAZO}</b><span>${auto ? 'Se arma solo con lo mejor que tienes. Toca cartas para armar el tuyo.' : 'Tu mazo, armado a mano.'}</span>
+      <div class="topes">${ORDEN_RAREZA.map(r => `<i style="--c:var(--${r})">${RAREZA[r]} ${porNivel[r] | 0}${TOPES[r] !== undefined ? '/' + TOPES[r] : ''}</i>`).join('')}</div>
+      <div class="dos"><button class="btn suave" data-auto>Armar solo (lo mejor)</button><button class="btn suave" data-vaciar>Empezar de cero</button></div></div>
+    <p class="nota">Máximo ${MAX_COPIAS} copias de la misma y nunca más de las que tienes. Para que nadie llene el mazo de legendarias, hay tope de S, A y B. Con menos cartas también se juega… pero se pierde más.</p>
+    <div class="album mazo-album">${mias.map(f => { const k = llaveDe(f), n = enMazo[k] | 0, t = C.cartas[k] | 0;
+      return `<div class="carta-mazo ${n ? 'dentro' : ''}"><button data-mas="${k}"><img loading="lazy" alt="" src="${f.arte}"></button><span class="cuantas">${n}/${Math.min(t, MAX_COPIAS)}</span>${n ? `<button class="menos" data-menos="${k}" aria-label="Quitar una">−</button>` : ''}</div>`; }).join('')}</div>`;
+  const poner = (lista) => { C.mazo = lista; C.mazoPropio = true; guardar(); pintarMazo(caja); };
+  caja.querySelector('[data-auto]').onclick = () => { SON.toque(); C.mazoPropio = false; C.mazo = []; guardar(); pintarMazo(caja); aviso('Listo: se arma solo con lo mejor que tienes', { icono: 'img/iconos/checkmark.png' }); };
+  caja.querySelector('[data-vaciar]').onclick = () => { SON.toque(); poner([]); };
+  caja.querySelector('.mazo-album').onclick = (e) => {
+    const mas = e.target.closest('[data-mas]'), menos = e.target.closest('[data-menos]');
+    if(menos){ const k = menos.dataset.menos, i = usa.lastIndexOf(k); const l = usa.slice(); l.splice(i, 1); SON.toque(); poner(l); return; }
+    if(mas){ const k = mas.dataset.mas, nueva = limpiarMazo([...usa, k]);
+      if(nueva.length === usa.length){ SON.error(); aviso(usa.length >= TAM_MAZO ? 'Tu mazo ya tiene ' + TAM_MAZO + ' cartas' : 'Ya no cabe: es el tope de esa rareza o de copias', { tipo: 'mal', icono: 'img/iconos/exclamation.png' }); return; }
+      SON.toque(); poner(nueva); }
+  };
+}

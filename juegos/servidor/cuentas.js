@@ -33,7 +33,11 @@ const normal = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').t
 /* letras (con acentos), números, espacio, guion y guion bajo: lo que cabe en
    una tabla sin romperla y sin meter nada raro en la pantalla de otros */
 const apodoBueno = (s) => typeof s === 'string' && /^[\p{L}\p{N} _-]{3,16}$/u.test(s.trim());
-const pinBueno = (s) => typeof s === 'string' && /^\d{4,6}$/.test(s);
+/* un PIN de números o una contraseña (6 nov: la cuenta de Grupo Mazi entra con contraseña); sin espacios */
+const pinBueno = (s) => typeof s === 'string' && /^\S{4,20}$/.test(s);
+/* la cuenta de la casa: se puede entrar escribiendo el correo en vez del apodo, y no sale en la tabla de
+   líderes (trae todo desbloqueado: no compite) */
+const CASA = 'grupomazi', ALIAS = { 'grupomazi.oficial@gmail.com': CASA };
 
 async function huella(pin, sal){
   const llave = await crypto.subtle.importKey('raw', new TextEncoder().encode(pin), 'PBKDF2', false, ['deriveBits']);
@@ -96,7 +100,7 @@ export class Cuentas {
       if(ruta === 'lideres' && pedido.method === 'GET'){
         const fuera = {};
         for(const [k, col] of Object.entries(TABLAS)){
-          fuera[k] = [...this.sql.exec(`SELECT apodo, ${col} AS n FROM cuentas WHERE ${col} > 0 ORDER BY ${col} DESC, tocada ASC LIMIT 20`)]
+          fuera[k] = [...this.sql.exec(`SELECT apodo, ${col} AS n FROM cuentas WHERE ${col} > 0 AND clave <> '${CASA}' ORDER BY ${col} DESC, tocada ASC LIMIT 20`)]
             .map(r => ({ apodo: r.apodo, n: r.n }));
         }
         fuera.jugadores = this.uno('SELECT COUNT(*) AS n FROM cuentas').n;
@@ -110,7 +114,7 @@ export class Cuentas {
       if(ruta === 'cuenta/crear'){
         const apodo = String(d.apodo || '').trim().replace(/\s+/g, ' ');
         if(!apodoBueno(apodo)) return mal('El apodo va de 3 a 16 letras o números.');
-        if(!pinBueno(d.pin)) return mal('El PIN son de 4 a 6 números.');
+        if(!pinBueno(d.pin)) return mal('El PIN o contraseña va de 4 a 20 caracteres, sin espacios.');
         const clave = normal(apodo);
         if(this.uno('SELECT clave FROM cuentas WHERE clave = ?', clave)) return mal('Ese apodo ya lo tiene alguien. Prueba otro.', 409);
         const sal = azar(), token = azar(24), ahora = Date.now();
@@ -124,7 +128,7 @@ export class Cuentas {
       }
 
       if(ruta === 'cuenta/entrar'){
-        const clave = normal(d.apodo);
+        const clave = ALIAS[normal(d.apodo)] || normal(d.apodo);
         const c = clave && this.uno('SELECT * FROM cuentas WHERE clave = ?', clave);
         if(!c || !pinBueno(d.pin)) return mal('Ese apodo o ese PIN no coinciden.', 401);
         const ahora = Date.now();

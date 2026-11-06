@@ -49,14 +49,17 @@ export function fusionar(srv, loc, base){
   /* sin base (copias de antes de este arreglo) no se sabe qué cambió: se queda lo más alto de cada cosa */
   const num = (s, l, k) => b ? Math.max(0, (s | 0) + (l | 0) - (k | 0)) : Math.max(s | 0, l | 0);
   out.monedas = num(srv.monedas, loc.monedas, b?.monedas);
-  for(const campo of ['cartas', 'cosmeticos', 'soporte', 'stats']){ const S = srv[campo] || {}, L = loc[campo] || {}, K = b?.[campo] || {}; const o = { ...S };
+  for(const campo of ['cartas', 'cosmeticos', 'soporte', 'stats', 'lideres']){ const S = srv[campo] || {}, L = loc[campo] || {}, K = b?.[campo] || {}; const o = { ...S };
     for(const k of new Set([...Object.keys(S), ...Object.keys(L)])) o[k] = num(S[k], L[k], K[k]);
     out[campo] = o; }
   /* los sobres: los del servidor, menos los que se abrieron aquí, más los que se compraron aquí */
   const ids = (x) => new Set((x || []).map(s => s.id)), enBase = ids(b?.sobres), enLoc = ids(loc.sobres), enSrv = ids(srv.sobres);
   out.sobres = [...(srv.sobres || []).filter(s => !(enBase.has(s.id) && !enLoc.has(s.id))), ...(loc.sobres || []).filter(s => !enSrv.has(s.id) && (!b || !enBase.has(s.id)))];
   out.puesto = { ...(srv.puesto || {}), ...(loc.puesto || {}) };
-  for(const k of ['bienvenida', 'regalo']) out[k] = !!(srv[k] || loc[k]);
+  for(const k of ['bienvenida', 'regalo', 'regalo30']) out[k] = !!(srv[k] || loc[k]);
+  /* lo que se ESCOGE (el mazo, el líder puesto) es de este teléfono: lo último que se tocó aquí */
+  if(Array.isArray(loc.mazo)){ out.mazo = loc.mazo; out.mazoPropio = !!loc.mazoPropio; }
+  if(loc.lider) out.lider = loc.lider;
   for(const k of Object.keys(loc)) if(!(k in out)) out[k] = loc[k];
   out.rev = Math.max(srv.rev | 0, loc.rev | 0) + 1;
   return out;

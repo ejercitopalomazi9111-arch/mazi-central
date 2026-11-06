@@ -15,7 +15,8 @@
 import { THREE, E, carta, textura, precargar, animar, esperar, sale, entra, suave, resorte, mezcla, cl, vista, aPantalla, aMundo, tocado,
          halo, chispas, cadaCuadro, mascota, CARTA_W, CARTA_H, alCambiarTamano } from './escena.js';
 import { C, cosmetico, guardar } from './coleccion.js';
-import { CAT, fichaDe, misCartas, pagarPartida } from './tienda.js';
+import { CAT, fichaDe, misCartas, pagarPartida, mazoParaMotor } from './tienda.js';
+import { liderDe, retrato, cartaVentaja } from './lideres.js';
 import { cargarNumeros, numero3d, soltar as soltarNumero } from './numeros3d.js';
 import { COLOR_RAREZA } from './caras.js';
 import { SON } from './sonido.js';
@@ -40,8 +41,10 @@ function recortarSoporte(mazo, bono, castigo){
 }
 export function armarPartida(semilla = (Math.random() * 2 ** 31) | 0){
   const dado = M.azar(semilla ^ 0x5bd1e995);
-  const mias = misCartas();
-  let mio = mias.length ? M.mazoDeColeccion(mias) : M.armarMazo();
+  /* TU MAZO de hasta 64 (el que armaste en Colección, o el mejor que se vale con lo que tienes) más tu soporte */
+  const mias = mazoParaMotor();
+  let mio = mias.length ? [...mias.map((c, i) => ({ id: 'k' + i, valor: c.valor, nivel: c.nivel })),
+    ...['bono', 'castigo'].flatMap(esp => Array.from({ length: 5 }, (_, i) => ({ id: 'e' + esp[0] + i, valor: 0, nivel: 'ESP', esp })))] : M.armarMazo();
   mio = recortarSoporte(mio, C.soporte.bono, C.soporte.castigo);
   let suyo = recortarSoporte(M.mazoParejo(mio, dado), C.soporte.bono, C.soporte.castigo);
   /* `repartir` reconoce un mazo ya armado porque trae especiales; si alguien
@@ -49,6 +52,17 @@ export function armarPartida(semilla = (Math.random() * 2 ** 31) | 0){
   if(!mio.some(c => c.nivel === 'ESP')) mio.push({ id: 'e-min', valor: 0, nivel: 'ESP', esp: 'bono' });
   if(!suyo.some(c => c.nivel === 'ESP')) suyo.push({ id: 'x-min', valor: 0, nivel: 'ESP', esp: 'bono' });
   return M.repartir(semilla, { a: mio, b: suyo });
+}
+
+/* Las ventajas de líder que no piden escoger; devuelve true si queda una para el primer robo (Estratega) */
+export function aplicarPasiva(j, l){
+  if(!l) return false;
+  if(l.id === 'rey') j.pv += 10;
+  if(l.id === 'espartano'){ j.pv += 5; const k = j.mano.findIndex(c => c.nivel !== 'ESP'); if(k >= 0) j.mazo.unshift(j.mano.splice(k, 1)[0]); }
+  if(l.id === 'general'){ const k = j.mazo.map(c => c.nivel !== 'ESP').lastIndexOf(true); if(k >= 0) j.mano.push(j.mazo.splice(k, 1)[0]); }
+  if(l.id === 'emperador'){ const k = j.mazo.findIndex(c => c.nivel === 'ESP' && c.esp === 'bono'); j.mano.push(k >= 0 ? j.mazo.splice(k, 1)[0] : { id: 'lider-bono', valor: 0, nivel: 'ESP', esp: 'bono' }); }
+  if(l.id === 'presidente') j.combosUsados = (j.combosUsados | 0) - 1;
+  return l.id === 'estratega';
 }
 
 /* La máquina, la misma de la versión 1: no ve tu mano, guarda las altas,
@@ -117,6 +131,12 @@ async function partida({ capa, alTerminar, carga, modo = 'maquina', conexion = n
     b.remove(); carga.querySelector('b').textContent = 'Barajando…';
   } else { J = armarPartida(); J.a.pv = J.b.pv = PV_MESA; }
   const PV0 = cx ? (cx.vista.pvMesa || PV_MESA) : PV_MESA;
+  /* ═══ TU PUERCO LÍDER (Carlos, 6 nov) ═══ Lo que no pide escoger se aplica aquí, antes de repartir; en línea lo
+     aplica el servidor (sala.js) y ya viene en la vista */
+  const lider = liderDe(C.lider);
+  let pendienteEstratega = false;
+  if(lider && !cx) pendienteEstratega = aplicarPasiva(J.a, lider);
+  const PVmax = { a: Math.max(PV0, J.a.pv), b: Math.max(PV0, J.b.pv) };
   /* todas las caras se bajan ANTES de repartir: ninguna aparece en blanco (en
      línea no se sabe qué trae el otro, así que se bajan todas las del juego) */
   const todas = cx ? [...J.a.mano, ...CAT.puercos.map(f => ({ arte: f.arte })), { arte: CAT.bono?.arte }, { arte: CAT.castigo?.arte }]
@@ -255,7 +275,7 @@ async function partida({ capa, alTerminar, carga, modo = 'maquina', conexion = n
     }
     pintarFormula();
     const f = $('[data-fusiones]'), quedan = M.COMBOS_POR_JUGADOR - J.a.combosUsados;
-    f.innerHTML = Array.from({ length: M.COMBOS_POR_JUGADOR }, (_, i) => `<i class="${i < quedan ? 'si' : ''}"></i>`).join('');
+    f.innerHTML = Array.from({ length: Math.max(M.COMBOS_POR_JUGADOR, quedan) }, (_, i) => `<i class="${i < quedan ? 'si' : ''}"></i>`).join('');
   }
 
   /* Lo que vale lo que elegiste, dicho en grande y en cristiano. */
@@ -279,7 +299,7 @@ async function partida({ capa, alTerminar, carga, modo = 'maquina', conexion = n
   function pintarHud(){
     for(const lado of ['a', 'b']){
       $('[data-pv-' + lado + ']').textContent = J[lado].pv;
-      $('[data-barra-' + lado + ']').style.width = Math.max(0, J[lado].pv / PV0 * 100) + '%';
+      $('[data-barra-' + lado + ']').style.width = Math.max(0, Math.min(100, J[lado].pv / (PVmax[persp === 'a' ? lado : (lado === 'a' ? 'b' : 'a')] || PV0) * 100)) + '%';
     }
     $('[data-ronda]').textContent = 'Ronda ' + J.ronda;
   }
@@ -342,9 +362,21 @@ async function partida({ capa, alTerminar, carga, modo = 'maquina', conexion = n
   pintarHud();
   pintarPilas();
   carga.classList.add('se-va'); setTimeout(() => carga.remove(), 400);
+  /* el líder se presenta en grande y se queda chiquito junto a tu vida: es lo que te hace distinto */
+  if(lider){
+    const mini = document.createElement('img'); mini.className = 'lider-mini'; mini.alt = lider.nombre; mini.src = retrato(lider); mini.title = lider.nombre + ': ' + lider.ventaja;
+    dom.querySelector('.hud--mio').appendChild(mini);
+    const intro = document.createElement('div'); intro.className = 'lider-intro';
+    intro.innerHTML = `<img alt="" src="${cartaVentaja(lider)}"><b>${lider.nombre}</b><span>${lider.ventaja}</span>`;
+    dom.appendChild(intro); requestAnimationFrame(() => intro.classList.add('ve')); SON.rara?.();
+    await Promise.race([esperar(2.2), new Promise(ok => intro.addEventListener('pointerdown', ok, { once: true }))]);
+    intro.classList.remove('ve'); setTimeout(() => intro.remove(), 400);
+  }
   await robar('b', nuevasDe('b'));
   /* en el de dos, cada quien roba la suya ya detrás de la cortina */
   if(modo !== 'dos'){ await robar('a', nuevasDe('a')); pintarMano(true); }
+  /* las ventajas que piden escoger: contra la máquina (en el de dos y en línea, sólo las de arriba) */
+  if(lider && modo === 'maquina') await ventajaQueSeEscoge(lider);
 
   /* ═══ EL TURNO ═══ */
   let ocupado = modo === 'dos', termino = false, enRonda = false;
@@ -731,6 +763,7 @@ async function partida({ capa, alTerminar, carga, modo = 'maquina', conexion = n
     if(J.acabo){ termino = true; enRonda = false; await fin(); return; }
     /* 8 · Al empezar tu turno, si te faltan cartas, se roban. (En el de dos,
        la de abajo roba ya detrás de su cortina.) */
+    if(pendienteEstratega && modo === 'maquina' && nuevasDe('a').length){ pendienteEstratega = false; await estratega(nuevasDe('a')[0]); }
     const robaA = modo === 'dos' ? [] : nuevasDe('a'), robaB = nuevasDe('b');
     if(robaA.length) aviso('Robas ' + robaA.length + (robaA.length === 1 ? ' carta' : ' cartas'), { icono: 'img/iconos/plus.png', dura: 1.4 });
     await robar('b', robaB); await robar('a', robaA);
@@ -742,6 +775,52 @@ async function partida({ capa, alTerminar, carga, modo = 'maquina', conexion = n
     mostrarEspera();
     pistaTurno();
     if(rondaPendiente){ const p = rondaPendiente; rondaPendiente = null; ronda(p.jugA, async () => p); }
+  }
+
+  /* ═══ LAS VENTAJAS QUE SE ESCOGEN ═══ una hoja con las cartas; devuelve la que se tocó (o null) */
+  function escoger(titulo, texto, cartas, { opcional = true, boton = 'No usar' } = {}){
+    const h = document.createElement('div'); h.className = 'escoge';
+    h.innerHTML = `<div class="escoge__caja"><img class="escoge__lider" alt="" src="${retrato(lider)}"><h3>${titulo}</h3><p>${texto}</p>
+      <div class="escoge__cartas">${cartas.map((c, i) => `<button data-i="${i}" aria-label="${c.valor} puntos"><img alt="" src="${fichaDe(c)?.arte || ''}"></button>`).join('')}</div>
+      ${opcional ? `<button class="btn suave" data-no>${boton}</button>` : ''}</div>`;
+    dom.appendChild(h); requestAnimationFrame(() => h.classList.add('ve'));
+    return new Promise((ok) => {
+      h.onclick = (e) => { const b = e.target.closest('[data-i],[data-no]'); if(!b) return; SON.toque();
+        h.classList.remove('ve'); setTimeout(() => h.remove(), 300); ok(b.dataset.i !== undefined ? cartas[+b.dataset.i] : null); };
+    });
+  }
+  function preguntar(titulo, texto, si, no){
+    const h = document.createElement('div'); h.className = 'escoge';
+    h.innerHTML = `<div class="escoge__caja"><img class="escoge__lider" alt="" src="${retrato(lider)}"><h3>${titulo}</h3><p>${texto}</p>
+      <div class="dos"><button class="btn" data-si>${si}</button><button class="btn suave" data-no>${no}</button></div></div>`;
+    dom.appendChild(h); requestAnimationFrame(() => h.classList.add('ve'));
+    return new Promise((ok) => { h.onclick = (e) => { const b = e.target.closest('[data-si],[data-no]'); if(!b) return; SON.toque(); h.classList.remove('ve'); setTimeout(() => h.remove(), 300); ok(b.hasAttribute('data-si')); }; });
+  }
+  const barajar = (a) => { for(let i = a.length - 1; i > 0; i--){ const k = Math.floor(Math.random() * (i + 1)); [a[i], a[k]] = [a[k], a[i]]; } return a; };
+  /* sacar una carta de la mano (de vuelta al mazo, abajo) y su malla de la mesa */
+  function devolver(lado, c, { arriba = false } = {}){ const j = J[lado]; j.mano = j.mano.filter(x => x.id !== c.id); if(arriba) j.mazo.push(c); else j.mazo.unshift(c); quitarMalla(c.id); repartidas.delete(c.id); }
+  async function ventajaQueSeEscoge(l){
+    const juega = () => J.a.mano.filter(c => c.nivel !== 'ESP');
+    if(l.id === 'guerrillero'){ const c = await escoger(l.nombre, 'Puedes cambiar 1 carta de tu mano por otra del mazo. Toca la que quieras cambiar.', juega());
+      if(c && J.a.mazo.length){ devolver('a', c); J.a.mano.push(J.a.mazo.pop()); await robar('a', nuevasDe('a')); pintarMano(true); } }
+    if(l.id === 'almirante'){ if(await preguntar(l.nombre, '¿Cambias TODA tu mano por una nueva del mismo tamaño?', 'Sí, cámbiala', 'Me quedo así')){
+      const n = J.a.mano.length; for(const c of J.a.mano.slice()) devolver('a', c); barajar(J.a.mazo);
+      for(let i = 0; i < n && J.a.mazo.length; i++) J.a.mano.push(J.a.mazo.pop()); await robar('a', nuevasDe('a')); pintarMano(true); } }
+    if(l.id === 'cientifico'){ const c = await escoger(l.nombre, 'Escoge 1 carta de tu mano para devolverla al mazo.', juega(), { boton: 'No usar' });
+      if(c && J.a.mazo.length){ const top = J.a.mazo.slice(-5).reverse();
+        const n = await escoger(l.nombre, 'Éstas son las 5 de arriba del mazo. Escoge la que entra a tu mano.', top, { opcional: false });
+        J.a.mazo = J.a.mazo.filter(x => x.id !== n.id); devolver('a', c); barajar(J.a.mazo); J.a.mano.push(n); await robar('a', nuevasDe('a')); pintarMano(true); } }
+    if(l.id === 'criminal'){ const suyas = J.b.mano.filter(c => c.nivel !== 'ESP');
+      const c = await escoger(l.nombre, 'Ésta es la mano del rival. Escoge 1 carta: regresa a su mazo y él roba otra.', suyas, { boton: 'No usar' });
+      if(c && J.b.mazo.length){ devolver('b', c); J.b.mano.push(J.b.mazo.pop()); await robar('b', nuevasDe('b')); pintarSuMano(); } }
+  }
+  /* Estratega: la primera vez que robas, ves esa y las dos que siguen, y te quedas con la que quieras */
+  async function estratega(c){
+    const otras = J.a.mazo.slice(-2).reverse(), op = [c, ...otras];
+    if(op.length < 2) return;
+    const n = await escoger(lider.nombre, 'Vas a robar. Éstas son las 3 de arriba del mazo: escoge cuál entra a tu mano.', op, { opcional: false });
+    if(n.id === c.id) return;
+    J.a.mazo = J.a.mazo.filter(x => x.id !== n.id); J.a.mano = J.a.mano.map(x => x.id === c.id ? n : x); J.a.mazo.push(c);
   }
 
   /* ── el número que cuenta del puntaje al daño ── */

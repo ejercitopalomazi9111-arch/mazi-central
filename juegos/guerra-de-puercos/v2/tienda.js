@@ -7,6 +7,7 @@
    se ve abriendo trescientos sobres y contando.
    ═══════════════════════════════════════════════════════════════════════════ */
 import { C, guardar, llaveDe, COSMETICOS, cosmetico, ORDEN_RAREZA } from './coleccion.js';
+import { LIDERES } from './lideres.js';
 
 /* ── EL CATÁLOGO DE LA AUTORA ──────────────────────────────────────────────
    Las cien cartas de `cartas.json`, con su arte en `arte/web/`. Los dos
@@ -73,12 +74,16 @@ export function pagarPartida(comoAcabo, rondas, { cuenta = true } = {}){
    caro no da MÁS cartas: da cartas de mejor nivel (lo decidió la versión 1 y
    sigue siendo lo correcto: con medio álbum, lo que quieres es calidad). */
 export const SOBRES = {
-  bienvenida: { nombre:'Sobre de bienvenida', precio: 0,   puercos: 3, niveles: null,              extra: 1, extraMin: 'D', color:'#E84A8A', regalo:true },
-  chico:      { nombre:'Sobre del puerco',    precio: 30,  puercos: 3, niveles: null,              extra: 1, extraMin: 'D', color:'#E84A8A' },
-  bueno:      { nombre:'Sobre bueno',         precio: 75,  puercos: 3, niveles: ['S','A','B','C'], extra: 1, extraMin: 'C', color:'#2C6FA8' },
-  fino:       { nombre:'Sobre fino',          precio: 150, puercos: 2, niveles: ['S','A'],         extra: 1, extraMin: 'B', color:'#C9A227' },
+  /* 5 cartas por sobre (Carlos, 6 nov): 4 puercos y 1 sorpresa */
+  bienvenida: { nombre:'Sobre de bienvenida', precio: 0,   puercos: 4, niveles: null,              extra: 1, extraMin: 'D', color:'#E84A8A', regalo:true },
+  chico:      { nombre:'Sobre del puerco',    precio: 30,  puercos: 4, niveles: null,              extra: 1, extraMin: 'D', color:'#E84A8A' },
+  bueno:      { nombre:'Sobre bueno',         precio: 75,  puercos: 4, niveles: ['S','A','B','C'], extra: 1, extraMin: 'C', color:'#2C6FA8' },
+  fino:       { nombre:'Sobre fino',          precio: 150, puercos: 4, niveles: ['S','A','B'],     extra: 1, extraMin: 'B', color:'#C9A227', minimoA: 2 },
+  /* EL SOBRE DE LÍDERES (Carlos, 6 nov: «un sobre carísimo que solo contiene puercos líderes»): uno por
+     sobre, uno que todavía no tengas; si ya los tienes todos, te regresa la mitad en monedas */
+  lideres:    { nombre:'Sobre de Líderes',    precio: 1500, puercos: 0, niveles: null,             extra: 0, lideres: 1, color:'#E8B923' },
 };
-export const EN_TIENDA = ['chico', 'bueno', 'fino'];
+export const EN_TIENDA = ['chico', 'bueno', 'fino', 'lideres'];
 
 /* Qué tan seguido sale cada rareza en un sobre sin filtro. La baraja trae más
    C y A que S, pero el sobre no reparte por cuántas hay: reparte por qué tan
@@ -104,18 +109,26 @@ export function sortearSobre(tipo, dado = Math.random){
      sin esto, al final del álbum casi todo sale repetido y da flojera). */
   const bolsa = s.niveles ? CAT.puercos.filter(f => s.niveles.includes(f.nivel)) : CAT.puercos;
   const faltan = bolsa.filter(f => !C.cartas[llaveDe(f)]);
+  /* MÁS PAREJO (Carlos, 6 nov: «que no se repitan tanto las cartas»): dentro de cada rareza, una carta que ya
+     tienes muchas veces (o que ya salió en este mismo sobre) pesa mucho menos que una que tienes poco */
+  const enEste = {};
+  const escoger = (de) => { const w = de.map(f => { const k = llaveDe(f), n = (C.cartas[k] | 0) + (enEste[k] | 0) * 3; return 1 / Math.pow(1 + n, 2); });
+    let r = dado() * w.reduce((a, b) => a + b, 0); for(let i = 0; i < de.length; i++){ r -= w[i]; if(r <= 0) return de[i]; } return de[de.length - 1]; };
   for(let i = 0; i < s.puercos; i++){
     let f;
     if(i === 0 && faltan.length){
       const niv = sortearRareza([...new Set(faltan.map(x => x.nivel))].filter(n => !s.niveles || s.niveles.includes(n)), dado);
-      const de = faltan.filter(x => x.nivel === niv);
-      f = de[Math.floor(dado() * de.length)];
+      f = escoger(faltan.filter(x => x.nivel === niv));
     } else {
-      const niv = sortearRareza(s.niveles, dado);
-      const de = CAT.porNivel[niv] || bolsa;
-      f = de[Math.floor(dado() * de.length)];
+      const niv = s.minimoA && i < s.minimoA + 1 ? sortearRareza(['S', 'A'], dado) : sortearRareza(s.niveles, dado);
+      f = escoger((CAT.porNivel[niv] || bolsa).filter(x => !s.niveles || s.niveles.includes(x.nivel)));
     }
+    enEste[llaveDe(f)] = (enEste[llaveDe(f)] | 0) + 1;
     salen.push({ tipo: 'puerco', llave: llaveDe(f), nivel: f.nivel });
+  }
+  for(let i = 0; i < (s.lideres | 0); i++){
+    const sin = LIDERES.filter(l => !C.lideres?.[l.id]), de = sin.length ? sin : LIDERES, l = de[Math.floor(dado() * de.length)];
+    salen.push({ tipo: 'lider', id: l.id, nivel: 'S' });
   }
   for(let i = 0; i < s.extra; i++){
     if(dado() < .5){
@@ -133,7 +146,7 @@ export function sortearSobre(tipo, dado = Math.random){
   /* El orden de revelado: lo mejor al final, como en todo sobre que se
      respeta. La carta que se abre primero es la de hasta abajo, así que se
      guarda al revés. */
-  const peso = (x) => x.tipo === 'puerco' ? 10 - ORDEN_RAREZA.indexOf(x.nivel) : x.tipo === 'cosmetico' ? 5 - ORDEN_RAREZA.indexOf(x.nivel) * .5 : 3;
+  const peso = (x) => x.tipo === 'lider' ? 20 : x.tipo === 'puerco' ? 10 - ORDEN_RAREZA.indexOf(x.nivel) : x.tipo === 'cosmetico' ? 5 - ORDEN_RAREZA.indexOf(x.nivel) * .5 : 3;
   salen.sort((x, y) => peso(x) - peso(y));
   return { tipo, id: 's' + Date.now().toString(36) + Math.floor(dado() * 1e6).toString(36), salen };
 }
@@ -155,6 +168,13 @@ export function cobrarSobre(id){
   const k = C.sobres.findIndex(s => s.id === id); if(k < 0) return null;
   const sobre = C.sobres[k];
   const res = sobre.salen.map(x => {
+    if(x.tipo === 'lider'){
+      const nueva = !C.lideres[x.id]; C.lideres[x.id] = 1;
+      if(!C.lider) C.lider = x.id;
+      const vuelven = nueva ? 0 : Math.round(SOBRES.lideres.precio / 2);
+      C.monedas += vuelven;
+      return { ...x, nueva, vuelven };
+    }
     if(x.tipo === 'puerco'){
       const nueva = !C.cartas[x.llave];
       C.cartas[x.llave] = (C.cartas[x.llave] | 0) + 1;
@@ -189,9 +209,19 @@ export function regalarArranque(){
   if(!CAT.listo) return false;
   /* el sobre de bienvenida, a TODOS una vez, también a quien venía de la v1 */
   if(!C.bienvenida){ C.bienvenida = true; C.sobres.unshift(sortearSobre('bienvenida')); guardar(); }
+  /* 30 CARTAS PARA EMPEZAR (Carlos, 6 nov: «regálales 25 o 30 cartas para que puedan iniciar el juego y poco
+     más»): las 20 D distintas y 10 C de las más bajas. A quien ya jugaba con menos de 30, se le completa */
+  if(!C.regalo30){
+    const total = Object.values(C.cartas).reduce((a, b) => a + (b | 0), 0);
+    if(total < 30){
+      const orden = [...(CAT.porNivel.D || []), ...(CAT.porNivel.C || []).slice().sort((x, y) => x.puntos - y.puntos)];
+      let falta = 30 - total;
+      for(const f of orden){ if(falta <= 0) break; if(!C.cartas[llaveDe(f)]){ C.cartas[llaveDe(f)] = 1; falta--; } }
+      for(const f of orden){ if(falta <= 0) break; C.cartas[llaveDe(f)]++; falta--; }
+    }
+    C.regalo30 = true; guardar();
+  }
   if(C.regalo) return false;
-  const baratas = CAT.puercos.slice().sort((x, y) => x.puntos - y.puntos || x.n - y.n).slice(0, 8);
-  for(const f of baratas) C.cartas[llaveDe(f)] = Math.max(1, C.cartas[llaveDe(f)] | 0);
   C.soporte.bono = Math.max(C.soporte.bono, 2);
   C.soporte.castigo = Math.max(C.soporte.castigo, 2);
   C.monedas += 40;
@@ -199,6 +229,34 @@ export function regalarArranque(){
   guardar();
   return true;
 }
+
+/* ── TU MAZO, ARMADO A MANO ─────────────────────────────────────────────────
+   Carlos, 6 nov: «tú a mano puedes armar tu deck de cartas, que sea de 64… para que no lo llenen de únicamente
+   cartas legendarias». Los topes salen de la baraja de la autora (100 cartas: 5 S, 27 A, 21 B, 27 C y 20 D) a
+   la escala de 64, y sólo para lo fuerte: de C y D se pone lo que quieras. Nunca más copias de las que tienes,
+   ni más de 3 de la misma. El soporte va aparte (hasta 5 y 5, regla 8). */
+export const TAM_MAZO = 64, MAX_COPIAS = 3, TOPES = { S: 3, A: 17, B: 14 };
+const fichaPorLlave = (k) => CAT.puercos.find(f => llaveDe(f) === k);
+/* el mazo de una lista de llaves, recortado a lo que se vale */
+export function limpiarMazo(lista){
+  const usadas = {}, porNivel = {}, fuera = [];
+  for(const k of lista || []){ const f = fichaPorLlave(k); if(!f) continue;
+    if((usadas[k] | 0) >= Math.min(MAX_COPIAS, C.cartas[k] | 0)) continue;
+    if(TOPES[f.nivel] !== undefined && (porNivel[f.nivel] | 0) >= TOPES[f.nivel]) continue;
+    if(fuera.length >= TAM_MAZO) break;
+    usadas[k] = (usadas[k] | 0) + 1; porNivel[f.nivel] = (porNivel[f.nivel] | 0) + 1; fuera.push(k); }
+  return fuera;
+}
+/* el mejor mazo que se vale con lo que tienes (si no armaste uno): de mayor a menor */
+export function mazoAuto(){
+  const todas = [];
+  for(const f of CAT.puercos){ const k = llaveDe(f), n = Math.min(MAX_COPIAS, C.cartas[k] | 0); for(let i = 0; i < n; i++) todas.push(f); }
+  todas.sort((x, y) => y.puntos - x.puntos);
+  return limpiarMazo(todas.map(llaveDe));
+}
+export const mazoActual = () => { const m = C.mazoPropio ? limpiarMazo(C.mazo) : []; return m.length ? m : mazoAuto(); };
+/* en el idioma del motor: { valor, nivel } por carta */
+export const mazoParaMotor = () => mazoActual().map(k => { const f = fichaPorLlave(k); return { valor: f.puntos, nivel: f.nivel }; });
 
 /* ── LO QUE TIENES, EN EL IDIOMA DEL MOTOR ─────────────────────────────────
    Tu colección → `{ valor, nivel }` para `MOTOR.mazoDeColeccion`. */

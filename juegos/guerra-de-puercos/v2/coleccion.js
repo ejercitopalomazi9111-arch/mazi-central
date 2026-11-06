@@ -84,6 +84,9 @@ function vacia(){
               (Carlos, 5 nov: «no está saliendo el sobre de regalo») */
            bienvenida: false,
            stats: { victorias: 0, derrotas: 0, empates: 0, partidas: 0 },
+           /* los puercos líderes que tienes y el que traes puesto (Carlos, 6 nov), y TU mazo armado a mano:
+              una lista de llaves `nombre·puntos` (se repite la llave si metes dos copias). Vacío = se arma solo */
+           lideres: {}, lider: '', mazo: [], regalo30: false,
            victoriaDia: '', codigo: '', creada: Date.now() };
 }
 
@@ -151,6 +154,11 @@ function sana(c){
   const st = c.stats || {}, ent = (x) => Math.max(0, Math.floor(Number(x) || 0));
   n.stats = { victorias: ent(st.victorias), derrotas: ent(st.derrotas), empates: ent(st.empates), partidas: ent(st.partidas) };
   n.bienvenida = !!c.bienvenida;
+  n.lideres = (c.lideres && typeof c.lideres === 'object') ? c.lideres : {};
+  n.lider = typeof c.lider === 'string' && n.lideres[c.lider] ? c.lider : '';
+  n.mazo = Array.isArray(c.mazo) ? c.mazo.filter(x => typeof x === 'string').slice(0, 64) : [];
+  n.mazoPropio = !!c.mazoPropio;      /* false = se arma solo con lo mejor que tienes */
+  n.regalo30 = !!c.regalo30;
   return n;
 }
 
