@@ -283,9 +283,16 @@ export class Sala {
       return;
     }
 
+    /* el latido del teléfono (linea.js): se le contesta con su vista fresca, así un aviso perdido no traba la mesa */
+    if(m.tipo === 'ping'){ ws.send(JSON.stringify({ tipo:'estado', vista: this.vista(asiento) })); return; }
     if(m.tipo !== 'jugada') return;
     if(!this.J || this.J.acabo) throw new Error('No hay partida en curso.');
-    if(this.pendiente[asiento]) throw new Error('Ya jugaste esta ronda.');
+    if(this.pendiente[asiento]){
+      /* la MISMA jugada otra vez = se reenvió al reconectar: ya la tengo, no es error */
+      const p = this.pendiente[asiento], ids = (m.cartas || []).join(',');
+      if(p.cartas.map(c => c.id).join(',') === ids && (p.especial || null) === (m.especial || null)){ ws.send(JSON.stringify({ tipo:'estado', vista: this.vista(asiento) })); return; }
+      throw new Error('Ya jugaste esta ronda.');
+    }
 
     /* AQUÍ ESTÁ LO QUE IMPIDE LA TRAMPA. El teléfono manda IDS de cartas, no
        cartas: los valores se buscan en la mano que tiene el servidor. Si

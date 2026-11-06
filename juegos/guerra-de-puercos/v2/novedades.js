@@ -21,6 +21,7 @@ export const NOVEDADES = [
       'Arreglo: al guardar ya no parpadea la mesa, y la envoltura que dejaste tirada se queda para el siguiente sobre.',
       'Arreglo: los letreros de rareza y el número de sobres ya no se ponen encima de la carta que abres.',
       'Cosméticos parejos: 12 avatares, 12 tapetes, 12 mascotas y 12 dorsos.',
+      'A distancia ya no se traba cuando se va el internet: si se corta justo al jugar, si juegas sin internet o si el teléfono cambia de red, la partida se pone al día sola.',
     ],
     antes: [['1-monton', 'Siempre a la izquierda']], despues: [['v26-donde', 'Donde lo sueltes']],
     extras: [['v26-de-cerca', 'Una carta de cerca'], ['v26-envoltura', 'La envoltura se queda']] },
