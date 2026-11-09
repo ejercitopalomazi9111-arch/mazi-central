@@ -219,6 +219,15 @@ que nos distingue.
 - **Higgsfield (Seedance 2.5)** está conectado en `herramientas/higgsfield/`; la llave vive en
   `.env.local` (ignorado) y debe ponerse también en las variables del entorno para no perderla.
 
+**Tareas escolares que nos encargan · dicho por Carlos el 9 de noviembre:** son chambas pagadas,
+básicas y variadas. **En la portada de CUALQUIER PDF va el logo de la UTEQ** (Universidad Tecnológica
+de Querétaro: el águila azul con «Universidad Líder»; OJO, la UTEQ verde de «Quevedo» es otra escuela,
+de Ecuador). De dónde se baja, porque la red de aquí sólo alcanza GitHub:
+`raw.githubusercontent.com/Jonathancraxker/ecoparking_web/main/src/assets/images/Logo_uteq.png`
+(225 px; no hay uno más grande a la mano). **Al terminar cada tarea se apunta en el documento de
+recapitulación** (Claude Docs «Tareas de Lorena · recapitulación»), por materia y número de actividad.
+El nombre de la alumna y sus datos NO van en este repo: es público.
+
 **Subdivisiones · dicho por Carlos el 16 de octubre:** **All's fashion · clothes & more** es
 **de Grupo Mazi y de Carlos**, no un cliente de fuera: *«all's fashion es una subdivisión que forma
 parte de grupo Mazi y es mía»*. Vende ropa, calzado, bolsas, perfumes, termos y tandas; sus fotos
