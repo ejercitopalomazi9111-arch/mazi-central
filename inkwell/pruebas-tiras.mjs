@@ -12,7 +12,7 @@ import http from 'http'; import fs from 'fs'; import path from 'path'; import os
 const require = createRequire('/opt/node22/lib/node_modules/');
 const { chromium } = require('playwright');
 const RAIZ = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
-const TIPOS = { '.js': 'text/javascript', '.mjs': 'text/javascript', '.html': 'text/html', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png' };
+const TIPOS = { '.css': 'text/css', '.woff2': 'font/woff2', '.js': 'text/javascript', '.mjs': 'text/javascript', '.html': 'text/html', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png' };
 let bien = 0, mal = 0;
 /* la ✕ vive en la barra escondida: como una persona, se desliza para regresar y luego se toca */
 const cerrarLector = async (pg) => {
@@ -335,6 +335,34 @@ console.log('\ncategorías y todo en archivos');
   await pg.waitForTimeout(800);
   ok(bajadas.length === 2 && bajadas.every((n) => /\(1-12\)\.pdf$/.test(n)), '«Descargar todo» arma un PDF por serie con TODOS sus capítulos · ' + bajadas.join(', '));
   ok(!(await desborde(pg)), 'la hoja de «todo» no se sale de lado');
+  ok(!errores.length, 'sin errores en la consola' + (errores.length ? ' — ' + errores.join(' | ') : ''));
+  await ctx.close();
+}
+console.log('\nque quepa más: las páginas se aprietan');
+{
+  const ctx = await br.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
+  const pg = await ctx.newPage(); const errores = []; pg.on('pageerror', (e) => errores.push(e.message));
+  await pg.goto(BASE);
+  const r = await pg.evaluate(async () => {
+    /* una página «de Webtoon»: 800 px, con ruido para que pese como una de verdad */
+    const c = document.createElement('canvas'); c.width = 800; c.height = 1280; const x = c.getContext('2d');
+    const im = x.createImageData(800, 1280); for (let i = 0; i < im.data.length; i += 4){ const v = (i / 4) % 800 / 4 + Math.random() * 40; im.data[i] = v; im.data[i + 1] = 255 - v; im.data[i + 2] = 120; im.data[i + 3] = 255; }
+    x.putImageData(im, 0, 0);
+    const b = await new Promise((ok) => c.toBlob(ok, 'image/jpeg', 0.95));
+    const { compactar } = await import('./tiras.js');
+    const n = await compactar(b, 'si'), m = await compactar(b, 'maximo'), igual = await compactar(b, 'no');
+    const w = async (bl) => { const bm = await createImageBitmap(bl); return bm.width; };
+    return { antes: b.size, si: n.size, max: m.size, wsi: await w(n), wmax: await w(m), igual: igual === b, tipo: n.type };
+  });
+  ok(r.si < r.antes * 0.6, `«Normal» deja la página en menos de 60 % · ${Math.round(r.antes / 1024)} KB → ${Math.round(r.si / 1024)} KB (${r.tipo})`);
+  ok(r.max < r.si && r.wmax === 720, `«Máximo» aprieta más y topa a 720 px · ${Math.round(r.max / 1024)} KB`);
+  ok(r.wsi === 800, 'una página de 800 px no se encoge en «Normal» (el tope es 900)');
+  ok(r.igual, '«Sin ahorro» la deja como viene');
+  await pg.selectOption('#compacto', 'maximo');
+  ok((await pg.evaluate(() => JSON.parse(localStorage.getItem('tiras.ajustes')).compacto)) === 'maximo', 'el ajuste de ahorro se guarda');
+  await pg.click('#apretar');
+  await pg.waitForFunction(() => /Ya estaba todo apretado|Listo: \d+ capítulos/.test(document.querySelector('#estadoTxt').textContent), null, { timeout: 15000 });
+  ok(true, '«Apretar lo que ya está bajado» termina y lo dice');
   ok(!errores.length, 'sin errores en la consola' + (errores.length ? ' — ' + errores.join(' | ') : ''));
   await ctx.close();
 }

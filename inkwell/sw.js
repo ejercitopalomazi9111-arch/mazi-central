@@ -1,5 +1,5 @@
 /* INKWELL — service worker.
-   Guarda la app y las 112 pinturas para leer sin datos.
+   Guarda la app para abrir sin datos. (v9: se fueron las pinturas con las 5 series viejas.)
 
    v4 · lo que cambió y por qué:
    · Antes TODO iba «primero lo guardado»: la app nunca se actualizaba (el
@@ -10,17 +10,13 @@
        · lo de otro sitio (Wattpad) y lo que va a La Sala (/api/) NO se toca;
        · la app (html, js, manifest) va «primero la red» y, sin red, lo guardado;
        · las pinturas siguen «primero lo guardado»: no cambian nunca. */
-const V = 'inkwell-v8';
-const APP = ['./', './index.html', './tiras.html', './tiras.js', './fuentes.js', './archivos.js', './compartir.js', './manifest.webmanifest', './arte/arte.json'];
+const V = 'inkwell-v9';
+const APP = ['./', './index.html', './tiras.html', './tiras.js', './fuentes.js', './archivos.js', './compartir.js', './manifest.webmanifest', './marca.css', './iconos.js', './letra/gloock.woff2', './letra/archivo.woff2', './letra/crimson.woff2'];
 
 self.addEventListener('install', e => {
   e.waitUntil((async () => {
     const c = await caches.open(V);
-    await c.addAll(APP).catch(()=>{});
-    try {
-      const art = await (await fetch('./arte/arte.json')).json();
-      await Promise.all(art.map(a => c.add('./arte/img/' + a.f).catch(()=>{})));
-    } catch(e) {}
+    await Promise.all(APP.map(u => c.add(u).catch(()=>{})));
     self.skipWaiting();
   })());
 });
@@ -38,10 +34,10 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
-  const esArte = url.pathname.includes('/arte/img/');
+  const esLetra = url.pathname.includes('/letra/');
   e.respondWith((async () => {
     const c = await caches.open(V);
-    if (esArte) {
+    if (esLetra) {
       const hit = await c.match(req);
       if (hit) return hit;
     }

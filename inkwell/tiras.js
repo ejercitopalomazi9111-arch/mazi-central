@@ -1,6 +1,7 @@
 /* INKWELL · TIRAS — la pantalla, la base del teléfono y el que prepara capítulos. */
 import { reconocer, FUENTES, wattpad, limpiarTexto, desentidad } from './fuentes.js';
 import { pdf, epub, tamanoJpeg } from './archivos.js';
+import { icono } from './iconos.js';
 import { codigoDe, leerCodigo, seriesDeRanking, elegirNuevas, GENEROS, seriesDeGenero } from './compartir.js';
 
 const $ = (s) => document.querySelector(s);
@@ -72,7 +73,7 @@ const clave = (s, n) => `${s.id}:${n}`;
 /* ── ajustes ── */
 const leer = (k, d) => { try{ const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch{ return d; } };
 const escribir = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); } catch{} };
-const ajustes = { adelante: 5, orden: 'serie', descubrir: '1', ...leer('tiras.ajustes', {}) };
+const ajustes = { adelante: 5, orden: 'serie', descubrir: '1', compacto: 'si', ...leer('tiras.ajustes', {}) };
 
 /* lo que falta por leer de una serie, en orden */
 const pendientes = (s) => { const l = new Set(s.leidos || []); return s.caps.filter((c) => c.n >= (s.desde || 0) && !l.has(c.n)); };
@@ -92,13 +93,46 @@ async function bajarCap(s, c, avance){
     /* el tamaño de cada imagen se guarda al bajarla: el lector reserva su
        alto antes de pintarla y así no se adelanta capítulos de más */
     const obrero = async () => { while(sig < r.urls.length){
-      const i = sig++, b = await (await pedir(r.urls[i])).blob();
+      const i = sig++, b = await compactar(await (await pedir(r.urls[i])).blob());
       reg.imgs[i] = b; reg.dims[i] = await medida(b); hechas++; avance?.(hechas, r.urls.length);
     } };
-    await Promise.all([obrero(), obrero(), obrero(), obrero()]);
+    await Promise.all([obrero(), obrero(), obrero(), obrero(), obrero(), obrero()]);
   } else reg.html = limpiarTexto(r.html);
   await tx('caps', 'readwrite', (st) => st.put(reg));
   return reg;
+}
+
+/* ── que quepa más (Carlos, 9 nov: «guardar las imágenes para tener más cosas a la vez») ──
+   Cada página se vuelve a guardar en JPEG más ligero con un ancho tope: la página de Webtoon llega a
+   ~800 px y calidad alta, y en un teléfono no se nota la diferencia. Sale
+   entre la mitad y un tercio del peso. Si no queda más chica, se guarda la
+   original. «Guardarlas como texto» (base64) pesaría un 33 % MÁS: lo que
+   ahorra es recomprimir, no cambiar de formato. JPEG y no WebP a propósito:
+   el PDF lleva JPEG tal cual, así que armar el archivo sólo copia bytes en vez
+   de redibujar cada página (era lo que hacía tardar «años» en computadora). */
+const NIVELES = { si: { q: 0.7, tope: 900 }, maximo: { q: 0.5, tope: 720 } };
+export async function compactar(b, nivel = ajustes.compacto){
+  const n = NIVELES[nivel]; if(!n || typeof createImageBitmap !== 'function') return b;
+  try{
+    const bm = await createImageBitmap(b);
+    let w = bm.width, h = bm.height; if(w > n.tope){ h = Math.round(h * n.tope / w); w = n.tope; }
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, w, h); x.drawImage(bm, 0, 0, w, h); bm.close?.();
+    const enc = (t) => new Promise((ok) => c.toBlob(ok, t, n.q));
+    const r = await enc('image/jpeg');
+    c.width = c.height = 0;   // suelta la memoria del lienzo ya, sin esperar al recolector
+    return r && r.size < b.size * 0.95 ? r : b;
+  } catch{ return b; }
+}
+/* lo que ya estaba bajado también se aprieta, capítulo por capítulo */
+async function compactarTodo(avisa = () => {}){
+  const regs = (await tx('caps', 'readonly', (st) => st.getAll())).filter((r) => r.tipo === 'imagenes' && r.imgs?.length && !r.compacto);
+  let antes = 0, despues = 0, k = 0;
+  for(const r of regs){
+    for(let i = 0; i < r.imgs.length; i++){ const b = r.imgs[i]; if(!b) continue; antes += b.size; const n = await compactar(b); r.imgs[i] = n; despues += n.size; if(n !== b) r.dims[i] = await medida(n); }
+    r.compacto = ajustes.compacto; await tx('caps', 'readwrite', (st) => st.put(r)); avisa(++k, regs.length);
+  }
+  return { caps: regs.length, antes, despues };
 }
 
 async function medida(b){
@@ -137,13 +171,17 @@ export function preparar({ forzar = false } = {}){
       }
       const tengo = await clavesDe(s.id);
       const faltan = pendientes(s).slice(0, ajustes.adelante).filter((c) => !tengo.has(clave(s, c.n)));
-      for(const c of faltan){
+      /* dos capítulos a la vez (cada uno con 6 imágenes a la vez): con 1000 por
+         delante, de uno en uno no acababa nunca. Al primer error se para la serie. */
+      let k = 0, roto = false, pintado = 0;
+      const obrero = async () => { while(!roto && k < faltan.length){
+        const c = faltan[k++];
         try{
-          estado(`Preparando ${s.titulo} · cap. ${c.n}…`, 'trabajando');
-          await bajarCap(s, c, (h, t) => estado(`Preparando ${s.titulo} · cap. ${c.n} (${h} de ${t})`, 'trabajando'));
-          bajados++; pintarSeries();
-        } catch(e){ fallas++; estado(`${s.titulo} · cap. ${c.n}: ${e.message}`); break; }
-      }
+          await bajarCap(s, c, (h, t) => estado(`Preparando ${s.titulo} · cap. ${c.n} (${h} de ${t}) · ${bajados} listos`, 'trabajando'));
+          bajados++; if(Date.now() - pintado > 3000){ pintado = Date.now(); pintarSeries(); }
+        } catch(e){ fallas++; roto = true; estado(`${s.titulo} · cap. ${c.n}: ${e.message}`); }
+      } };
+      await Promise.all([obrero(), obrero()]);
     }
     /* si ya queda poco, se busca un cómic nuevo y se le bajan capítulos en la siguiente vuelta */
     let nuevasSeries = 0; try{ nuevasSeries = await descubrir(); }catch{}
@@ -178,14 +216,22 @@ async function pintarSeries(){
       <img class="portada" alt="" ${s.portadaBlob ? `src="${urlDe(s.portadaBlob)}"` : ''}>
       <div class="datos"><span class="fuente">${s.fuente === 'webtoon' ? 'Webtoon · cómic' : 'Wattpad · texto'}${s.descubierta ? ' · sugerida para ti' : ''}</span><h3>${esc(s.titulo)}</h3>
         <span class="cuenta">${esc(s.autor || '')}</span>
-        <span class="cuenta">${Math.min(leidos, s.caps.length)} de ${s.caps.length} leídos · <b>${l}</b> listo${l === 1 ? '' : 's'}</span></div>
-      <div class="botones"><button type="button" data-a="leer"${p.length ? '' : ' disabled'}>▶ Leer</button><button type="button" data-a="archivo">⬇ Archivo</button><button type="button" data-a="mas">⋯ Más</button></div>
+        <span class="cuenta">${Math.min(leidos, s.caps.length)} de ${s.caps.length} leídos · <b>${l}</b> listo${l === 1 ? '' : 's'}</span>
+        <div class="barrita" aria-hidden="true"><i style="width:${s.caps.length ? Math.round(100 * Math.min(leidos, s.caps.length) / s.caps.length) : 0}%"></i></div></div>
+      <div class="botones"><button type="button" data-a="leer"${p.length ? '' : ' disabled'}>${icono('play')}Leer</button><button type="button" data-a="archivo">${icono('download')}Archivo</button><button type="button" data-a="mas">${icono('settings')}Más</button></div>
     </article>`);
   }
   caja.innerHTML = filas.join('');
   $('#leerTodo').disabled = !listos;
-  $('#leerTodo').textContent = listos ? `▶ Leer seguido · ${listos} capítulo${listos > 1 ? 's' : ''}` : '▶ Leer seguido';
+  $('#leerTodo').innerHTML = icono('book-open') + (listos ? `Leer seguido · ${listos} capítulo${listos > 1 ? 's' : ''}` : 'Leer seguido');
 }
+
+/* ── la barra de secciones de INKWELL: Tiras vive dentro de Biblioteca ── */
+$('#nav').innerHTML = [['inicio', 'Inicio', 'house'], ['explorar', 'Explorar', 'compass'], ['biblioteca', 'Biblioteca', 'library'],
+  ['crear', 'Crear', 'pen-tool'], ['comunidad', 'Comunidad', 'users'], ['perfil', 'Perfil', 'user']]
+  .map(([id, n, ic]) => `<a href="./#${id}"${id === 'biblioteca' ? ' aria-current="page"' : ''}>${icono(ic)}<span>${n}</span></a>`).join('');
+$('#cerrarLector').innerHTML = icono('x');
+$('#leerTodo').innerHTML = icono('book-open') + 'Leer seguido';
 
 /* ── agregar ── */
 async function agregarRef(r, { varias = false, descubierta = false } = {}){
@@ -299,7 +345,7 @@ async function abrirLector(serieId = null){
   enLector = [];
   const sc = $('#scroll'); sc.replaceChildren(); sc.scrollTop = 0;
   final = document.createElement('div'); final.className = 'al-final'; sc.append(final);
-  $('#lector').hidden = false; $('#lector').classList.add('sinbarra'); ultimoTop = 0; document.body.style.overflow = 'hidden';
+  $('#lector').hidden = false; document.body.classList.add('lee'); $('#lector').classList.add('sinbarra'); ultimoTop = 0; document.body.style.overflow = 'hidden';
   /* El observador sólo CARGA (ve 1200 px por adelantado). Lo leído se decide
      aparte, al moverse (`alMover`): con el mismo observador un capítulo se
      daba por leído en cuanto quedaba a 1200 px de aparecer, y con uno sin
@@ -427,7 +473,7 @@ $('#cerrarLector').addEventListener('click', () => {
   observador?.disconnect();
   for(const v of enLector) v.art._urls.forEach((u) => URL.revokeObjectURL(u));
   enLector = []; $('#scroll').replaceChildren();
-  $('#lector').hidden = true; document.body.style.overflow = '';
+  $('#lector').hidden = true; document.body.classList.remove('lee'); document.body.style.overflow = '';
   pintarSeries(); preparar();
 });
 $('#leerTodo').addEventListener('click', () => abrirLector());
@@ -465,12 +511,14 @@ $('#quitarSerie').addEventListener('click', async () => {
   await tx('caps', 'readwrite', (st) => { ks.forEach((k) => st.delete(k)); });
   await tx('series', 'readwrite', (st) => st.delete(actual.id));
   $('#dlgSerie').close(); await pintarSeries(); espacio();
+/* vienen de Explorar en el inicio (tiras.html?buscar=…): se busca de una vez */
+if(params.get('buscar')){ $('#buscar').value = params.get('buscar'); $('#formAgregar').requestSubmit(); }
   const n = await contarListos(); estado(n ? `${n} capítulo${n > 1 ? 's' : ''} listo${n > 1 ? 's' : ''} para leer` : 'Nada pendiente por leer.', 'listo');
 });
 $('#cerrarSerie').addEventListener('click', () => $('#dlgSerie').close());
 
 /* ── una serie en un archivo ── */
-const TOPE = 300;   // capítulos por archivo: más que eso no cabe en la memoria de un iPhone
+const TOPE = 300;   // capítulos por archivo (en cómic, el iPhone parte en 25: ver PARTE)
 function abrirArchivo(){
   const ns = actual.caps.map((c) => c.n), p = pendientes(actual);
   $('#tArchivo').textContent = `${actual.titulo} en un archivo`;
@@ -492,31 +540,37 @@ async function aJpeg(blob){
 }
 /* junta los capítulos (bajando los que falten) y arma el archivo de una serie */
 async function armarArchivo(serie, caps, avisa = () => {}){
-  const tengo = await clavesDe(serie.id), regs = [];
+  /* 1) lo que falte se baja primero, tres capítulos a la vez */
+  const tengo = await clavesDe(serie.id);
+  const faltan = caps.filter((c) => !tengo.has(clave(serie, c.n)));
+  if(faltan.length && !navigator.onLine) throw new Error(`el cap. ${faltan[0].n} no está bajado y no hay internet`);
+  let k = 0, hechos = 0;
+  const obrero = async () => { while(k < faltan.length){ const c = faltan[k++]; await bajarCap(serie, c); hechos++;
+    avisa(`Bajando ${serie.titulo} · ${hechos} de ${faltan.length} capítulos que faltaban…`, 0.7 * hechos / faltan.length); } };
+  await Promise.all([obrero(), obrero(), obrero()]);
+  /* 2) se junta de uno en uno y se suelta cada capítulo en cuanto se usa: con
+     todos en la mano a la vez, el iPhone cerraba la pestaña antes de los 40 */
+  const base = `${serie.titulo} (${caps[0].n}-${caps[caps.length - 1].n})`.replace(/[\\/:*?"<>|]+/g, ' ');
+  const paginas = [], capitulos = [];
   for(const [i, c] of caps.entries()){
-    let r = tengo.has(clave(serie, c.n)) ? await capDe(clave(serie, c.n)) : null;
-    if(!r){
-      if(!navigator.onLine) throw new Error(`el cap. ${c.n} no está bajado y no hay internet`);
-      avisa(`Bajando ${serie.titulo} · cap. ${c.n} (${i + 1} de ${caps.length})…`, i / caps.length);
-      r = await bajarCap(serie, c);
-    } else avisa(`Juntando ${serie.titulo} · cap. ${c.n} (${i + 1} de ${caps.length})…`, i / caps.length);
-    regs.push(r);
+    const r = await capDe(clave(serie, c.n));
+    if(!r) throw new Error(`no encontré el cap. ${c.n}`);
+    avisa(`Juntando ${serie.titulo} · cap. ${c.n} (${i + 1} de ${caps.length})…`, 0.7 + 0.3 * (i + 1) / caps.length);
+    if(serie.fuente === 'webtoon'){
+      paginas.push({ tipo: 'titulo', texto: `Capítulo ${r.n}`, sub: r.titulo });
+      for(const b of r.imgs) paginas.push({ tipo: 'imagen', ...(await aJpeg(b)) });
+    } else capitulos.push({ titulo: `${r.n}. ${r.titulo}`, html: r.html });
   }
   avisa('Armando el archivo…', 1);
   let blob, nombre;
-  const base = `${serie.titulo} (${caps[0].n}-${caps[caps.length - 1].n})`.replace(/[\\/:*?"<>|]+/g, ' ');
   if(serie.fuente === 'webtoon'){
-    const paginas = [];
-    for(const r of regs){
-      const imgs = []; for(const b of r.imgs) imgs.push({ tipo: 'imagen', ...(await aJpeg(b)) });
-      paginas.push({ tipo: 'titulo', texto: `Capítulo ${r.n}`, sub: r.titulo }, ...imgs);
-    }
     const ancho = paginas.find((p) => p.tipo === 'imagen')?.ancho || 800;
     blob = pdf(paginas, { titulo: serie.titulo, ancho }); nombre = base + '.pdf';
   } else {
-    blob = epub({ titulo: serie.titulo, autor: serie.autor, id: serie.id, capitulos: regs.map((r) => ({ titulo: `${r.n}. ${r.titulo}`, html: r.html })) });
+    blob = epub({ titulo: serie.titulo, autor: serie.autor, id: serie.id, capitulos });
     nombre = base + '.epub';
   }
+  paginas.length = 0;
   return new File([blob], nombre, { type: blob.type });
 }
 /* en el iPhone se guarda con la hoja de compartir (Archivos o Libros); en computadora, se descarga */
@@ -545,7 +599,9 @@ $('#armar').addEventListener('click', async () => {
    Un cómic de Webtoon pesa mucho (decenas de imágenes por capítulo): cada PDF lleva hasta 100 capítulos;
    el texto, hasta 300. En el iPhone cada archivo listo se guarda con su botón: la hoja de compartir
    sólo abre si la pide un toque, así que no se pueden soltar diez seguidos. */
-const PARTE = { webtoon: 100, wattpad: 300 };
+/* en el iPhone, partes más chicas: un PDF de 100 capítulos de cómic pasa de 1 GB y Safari cierra la pestaña */
+const IPHONE = /iPhone|iPad/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const PARTE = IPHONE ? { webtoon: 25, wattpad: 200 } : { webtoon: 100, wattpad: 300 };
 let todoListos = [];
 $('#todoArchivo').addEventListener('click', async () => {
   const ss = await todasSeries();
@@ -609,6 +665,17 @@ $('#orden').addEventListener('change', (e) => { ajustes.orden = e.target.value; 
 $('#descubrir').value = String(ajustes.descubrir);
 $('#descubrir').addEventListener('change', (e) => { ajustes.descubrir = e.target.value; escribir('tiras.ajustes', ajustes); preparar(); });
 $('#revisar').addEventListener('click', () => preparar({ forzar: true }));
+$('#compacto').value = ajustes.compacto;
+$('#compacto').addEventListener('change', (e) => { ajustes.compacto = e.target.value; escribir('tiras.ajustes', ajustes); });
+const mb = (n) => n >= 1e9 ? (n / 1e9).toFixed(1) + ' GB' : Math.max(1, Math.round(n / 1e6)) + ' MB';
+$('#apretar').addEventListener('click', async (e) => {
+  const b = e.currentTarget; b.disabled = true;
+  try{
+    const r = await compactarTodo((k, t) => estado(`Apretando lo bajado: capítulo ${k} de ${t}…`, 'trabajando'));
+    estado(r.caps ? `Listo: ${r.caps} capítulos pasaron de ${mb(r.antes)} a ${mb(r.despues)}.` : 'Ya estaba todo apretado.', 'listo'); espacio();
+  } catch(er){ estado('No se pudo apretar: ' + er.message); }
+  b.disabled = false;
+});
 
 async function espacio(){
   try{
@@ -626,6 +693,8 @@ if('serviceWorker' in navigator && !params.has('servidor')) navigator.serviceWor
 /* para las pruebas; va antes del arranque porque importar un link puede tardar */
 window.__tiras = { preparar, todasSeries, clavesDe, get cola(){ return cola; }, get ocupado(){ return !!preparando || otraVez; } };
 await pintarSeries(); espacio();
+/* vienen de Explorar en el inicio (tiras.html?buscar=…): se busca de una vez */
+if(params.get('buscar')){ $('#buscar').value = params.get('buscar'); $('#formAgregar').requestSubmit(); }
 { const m = leer(MARCA, null);
   if(m && m.abierto && m.clave && Date.now() - (m.t || 0) < 30 * 864e5 && !location.hash.includes('series=')) abrirLector(m.serie || null); }
 /* abrieron un link compartido (#series=…): se agregan todas de un jalón */
