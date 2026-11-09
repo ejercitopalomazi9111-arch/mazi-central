@@ -2456,18 +2456,37 @@ function cajaDeCodigo(texto, lenguaje, archivo){
 /* Los bloques entre comillas triples dentro del texto de un mensaje. Se parte
    el texto en trozos y sólo los de código cambian de forma; lo demás sigue
    siendo texto escapado, como siempre. */
+/* ══ FORMATO CON SÍMBOLOS ══════════════════════════════════════════════════
+   Carlos, 9 de noviembre: «activa lo de alterar el texto de aquí la sala
+   mediante símbolos». Como en WhatsApp: *negrita* o **negrita**, _cursiva_,
+   ~tachado~ y `código`. Corre SOBRE EL TEXTO YA ESCAPADO (igual que los
+   enlaces), así que no puede meter HTML ajeno; y el símbolo tiene que ir pegado
+   a la palabra y con espacio o borde por fuera, para no comerse los guiones
+   bajos de una dirección como foto_nueva_2.png. */
+function conFormato(html){
+  const borde = '(^|[\\s(¡¿"\'])';
+  const fin = '(?=$|[\\s.,;:!?)"\'])';
+  const marca = (sim, etiqueta) => new RegExp(borde + sim + '(?=\\S)([^\\n]*?\\S)' + sim + fin, 'g');
+  return html
+    .replace(/`([^`\n]+)`/g, '<code>$1</code>')
+    .replace(marca('\\*\\*', 'b'), '$1<b>$2</b>')
+    .replace(marca('\\*', 'b'), '$1<b>$2</b>')
+    .replace(marca('_', 'i'), '$1<i>$2</i>')
+    .replace(marca('~', 's'), '$1<s>$2</s>');
+}
+
 function conCodigo(texto){
   const crudo = String(texto == null ? '' : texto);
-  if(!crudo.includes('\u0060\u0060\u0060')) return conEnlaces(esc(crudo));
+  if(!crudo.includes('\u0060\u0060\u0060')) return conEnlaces(conFormato(esc(crudo)));
   const partes = [];
   const cerca = /\u0060\u0060\u0060([A-Za-z0-9_.+-]{0,24})[ \t]*\n([\s\S]*?)\u0060\u0060\u0060/g;
   let ultimo = 0, m;
   while((m = cerca.exec(crudo)) !== null){
-    if(m.index > ultimo) partes.push(conEnlaces(esc(crudo.slice(ultimo, m.index))));
+    if(m.index > ultimo) partes.push(conEnlaces(conFormato(esc(crudo.slice(ultimo, m.index)))));
     partes.push(cajaDeCodigo(m[2].replace(/\n$/, ''), m[1] || null, null));
     ultimo = cerca.lastIndex;
   }
-  if(ultimo < crudo.length) partes.push(conEnlaces(esc(crudo.slice(ultimo))));
+  if(ultimo < crudo.length) partes.push(conEnlaces(conFormato(esc(crudo.slice(ultimo)))));
   return partes.join('');
 }
 
@@ -4757,8 +4776,16 @@ $('bMas').addEventListener('click', () => {
   if(!abierto) $('nota').focus();
 });
 $('bEnviar').addEventListener('click', enviar);
+/* Enter envía y Shift+Enter baja de renglón: lo pidió Carlos el 9 de noviembre
+   («que al presionar enter se envíe mientras que shift enter haga bajar una
+   línea»). Cmd/Ctrl+Enter sigue enviando. Si la lista de comandos está abierta,
+   su Enter ya eligió un comando (defaultPrevented) y aquí no se manda nada; y
+   mientras se compone un acento o una palabra del teclado (isComposing), Enter
+   es del teclado, no del chat. */
 $('texto').addEventListener('keydown', (e) => {
-  if(e.key === 'Enter' && (e.metaKey || e.ctrlKey)){ e.preventDefault(); enviar(); }
+  if(e.key !== 'Enter' || e.defaultPrevented || e.isComposing) return;
+  if(e.shiftKey) return;
+  e.preventDefault(); enviar();
 });
 $('bEntrar').addEventListener('click', async () => {
   const codigo = $('codigoIn').value.trim().toUpperCase();
