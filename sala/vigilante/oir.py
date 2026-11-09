@@ -28,11 +28,15 @@ nada, no imprime nada — así el silencio significa silencio de verdad.
 
 Sin dependencias fuera de la biblioteca estándar y curl.
 """
-import json, os, subprocess, sys, time
+import json, os, re, subprocess, sys, time
 
 UNA = False
 SERVIDOR = os.environ.get('MAZI_SERVIDOR') or 'https://sala.palomazi9111.workers.dev'
-LLAVE = os.environ.get('MAZI_LLAVE', '')
+LLAVE = os.environ.get('MAZI_LLAVE', '').strip()
+# Carlos pegó en el entorno el LINK de la sala, no la llave sola (9 nov): se acepta
+# cualquiera de las dos, sacando lo que venga después de «llave=».
+if 'llave=' in LLAVE:
+    LLAVE = re.search(r'llave=([^&#\s]+)', LLAVE).group(1)
 if not LLAVE:
     # Con autorización expresa de Carlos (9 nov 2026) la llave también vive en el repo,
     # para que ninguna sesión la vuelva a perder. Ver .llaves/LEEME.md.
