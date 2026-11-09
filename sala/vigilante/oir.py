@@ -33,6 +33,13 @@ import json, os, subprocess, sys, time
 UNA = False
 SERVIDOR = os.environ.get('MAZI_SERVIDOR') or 'https://sala.palomazi9111.workers.dev'
 LLAVE = os.environ.get('MAZI_LLAVE', '')
+if not LLAVE:
+    # Con autorización expresa de Carlos (9 nov 2026) la llave también vive en el repo,
+    # para que ninguna sesión la vuelva a perder. Ver .llaves/LEEME.md.
+    try:
+        LLAVE = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '.llaves', 'grupaz.txt')).read().strip()
+    except OSError:
+        LLAVE = ''
 
 
 def _curl(args, segundos):

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { readFileSync as __leerLlave } from 'node:fs';
 /* ══════════════════════════════════════════════════════════════════════════
    RECORDAR · dejar un recordatorio en La Sala
    ──────────────────────────────────────────────────────────────────────────
@@ -13,7 +14,11 @@
    ═════════════════════════════════════════════════════════════════════════ */
 import { cuandoDe } from '../sala/servidor/sala.js';
 
-const LLAVE = process.env.MAZI_LLAVE || process.env.SECRE_SALA_LLAVE;
+/* Con autorización expresa de Carlos (9 nov 2026) la llave también vive en .llaves/grupaz.txt. */
+const LLAVE = process.env.MAZI_LLAVE || process.env.SECRE_SALA_LLAVE || (() => {
+  try { return (await_leer()); } catch { return ''; }
+})();
+function await_leer(){ return __leerLlave(new URL('../.llaves/grupaz.txt', import.meta.url), 'utf8').trim(); }
 if(!LLAVE){ console.error('Falta MAZI_LLAVE (la llave de La Sala) en el entorno.'); process.exit(1); }
 const BASE = `${(process.env.SALA_URL || 'https://sala.palomazi9111.workers.dev').replace(/\/+$/, '')}/api/sala/GRUPAZ`;
 const YO = process.env.SALA_YO || 'claude-de-carlos';

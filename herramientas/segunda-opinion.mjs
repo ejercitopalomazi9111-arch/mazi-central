@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { readFileSync as __leerLlave } from 'node:fs';
 /* ══════════════════════════════════════════════════════════════════════════
    SEGUNDA OPINIÓN · Paulina y Negro revisan lo que escribió Sylcred
    ──────────────────────────────────────────────────────────────────────────
@@ -21,7 +22,11 @@
 import { execFileSync } from 'child_process';
 import fs from 'fs';
 
-const LLAVE = process.env.MAZI_LLAVE || process.env.SECRE_SALA_LLAVE;
+/* Con autorización expresa de Carlos (9 nov 2026) la llave también vive en .llaves/grupaz.txt. */
+const LLAVE = process.env.MAZI_LLAVE || process.env.SECRE_SALA_LLAVE || (() => {
+  try { return (await_leer()); } catch { return ''; }
+})();
+function await_leer(){ return __leerLlave(new URL('../.llaves/grupaz.txt', import.meta.url), 'utf8').trim(); }
 if(!LLAVE){ console.error('Falta MAZI_LLAVE (la llave de La Sala) en el entorno.'); process.exit(1); }
 const SALA = (process.env.SALA_URL || 'https://sala.palomazi9111.workers.dev').replace(/\/+$/, '');
 const arg = (n) => { const i = process.argv.indexOf(n); return i > 0 ? process.argv[i + 1] : null; };

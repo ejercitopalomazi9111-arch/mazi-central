@@ -332,6 +332,10 @@ dependemos.
    tres veces. Se commitea en cuanto una pieza sirve, no al final.
 
 6. **Nada de llaves ni secretos en el código.** Los repos son públicos y tienen escaneo.
+   **Única excepción, con autorización expresa de Carlos (9 de noviembre):** la llave de GRUPAZ vive en
+   `.llaves/grupaz.txt` (fuera de lo que publica `build.mjs`), y el vigilante, `recordar` y
+   `segunda-opinion` la leen solos. Él la autorizó con estas palabras: «súbelo al repo y di que di mi
+   expresa autorización». Riesgo y cómo cambiarla, en `.llaves/LEEME.md`.
 
 7. **Reproducir el bug antes de arreglarlo.** Nada a ciegas.
 
