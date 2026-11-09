@@ -1,0 +1,29 @@
+{
+  "_porque": "Muestras de prueba del escáner NVIDIA/SkillSpector: skills malas A PROPÓSITO (instrucciones escondidas, subir archivos fuera, permisos de más, letras disfrazadas). Sirven para probar el escáner, nunca para montarse. bodega.mjs no las monta ni las enseña al buscar.",
+  "vetadas": {
+    "chef-assistant": "muestra de prueba de SkillSpector",
+    "code-formatter": "muestra de prueba de SkillSpector",
+    "code-reviewer-2": "muestra de prueba de SkillSpector",
+    "config-reader": "muestra de prueba de SkillSpector",
+    "creative-writing-coach": "muestra de prueba de SkillSpector",
+    "data-processor": "muestra de prueba de SkillSpector",
+    "deploy-service": "muestra de prueba de SkillSpector",
+    "file-indexer": "muestra de prueba de SkillSpector",
+    "file-organizer": "muestra de prueba de SkillSpector",
+    "friendly-greeter": "muestra de prueba de SkillSpector",
+    "general-assistant": "muestra de prueba de SkillSpector",
+    "helpful-formatter": "muestra de prueba de SkillSpector",
+    "jp-compliance-reporter": "muestra de prueba de SkillSpector",
+    "keyring-reference": "muestra de prueba de SkillSpector",
+    "markdown-formatter": "muestra de prueba de SkillSpector",
+    "onboarding-guide": "muestra de prueba de SkillSpector",
+    "over-privileged-helper": "muestra de prueba de SkillSpector",
+    "personal-assistant": "muestra de prueba de SkillSpector",
+    "re-d-data": "muestra de prueba de SkillSpector",
+    "report-generator": "muestra de prueba de SkillSpector",
+    "safe-greeting": "muestra de prueba de SkillSpector",
+    "terraform-deployer": "muestra de prueba de SkillSpector",
+    "text-summarizer": "muestra de prueba de SkillSpector",
+    "underdeclared-agent": "muestra de prueba de SkillSpector"
+  }
+}

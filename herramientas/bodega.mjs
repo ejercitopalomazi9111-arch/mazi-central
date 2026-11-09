@@ -245,6 +245,14 @@ async function traer(repos){
 }
 
 /* ── el índice ─────────────────────────────────────────────────────────── */
+/* Skills que NUNCA se montan (hoy: las muestras malas a propósito que trae
+   el escáner de NVIDIA). Vive en su propio archivo para que `indexar` no lo
+   borre al reconstruir el índice. */
+async function cargarVetadas(){
+  try{ return JSON.parse(await readFile(join(BODEGA, 'VETADAS.json'), 'utf8')).vetadas || {}; }
+  catch(e){ return {}; }
+}
+
 async function cargarIndice(){
   if(!existsSync(INDICE)) return [];
   try{ return JSON.parse(await readFile(INDICE, 'utf8')).skills || []; }
@@ -269,22 +277,71 @@ async function guardarIndice(skills){
    Se puntúa por dónde aparece la palabra: el nombre pesa más que el resumen,
    porque quien busca «video» quiere la skill DE video, no las cuarenta que la
    mencionan de pasada. */
-function puntuar(s, palabras){
+/* Casi todas las skills están en inglés y Carlos busca en español: «pruebas
+   de carga» sacaba primero una de robar contraseñas de Windows, porque «de»
+   aparece en todo. Las palabras vacías se tiran, y cada palabra en español
+   trae sus equivalentes en inglés (cuenta la que mejor pegue, no la suma). */
+const VACIAS = new Set(('de del la el los las un una unos unas y o a en con por para que se su sus lo al ' +
+  'como mas muy sin sobre mi mis tu es son hay quiero hacer necesito algo cosa cosas the of and to for in on with an').split(' '));
+const SINONIMOS = {
+  prueba:['test','testing','qa'], pruebas:['test','testing','qa'], carga:['load','performance','stress'],
+  rendimiento:['performance','optimiz','speed'], lento:['performance','slow'], velocidad:['performance','speed'],
+  seguridad:['security','secur','vulnerab'], ataque:['attack','pentest','exploit'], hackeo:['pentest','exploit'],
+  vulnerabilidad:['vulnerab','cve'], contrasena:['password','credential'], llave:['key','secret','credential'],
+  pagina:['web','page','website','landing'], sitio:['website','web','site'], tienda:['ecommerce','shop','store'],
+  pagos:['payment','stripe','billing'], cobro:['payment','billing'], factura:['invoice','billing'],
+  celular:['mobile','phone','android','ios'], telefono:['mobile','phone'], app:['app','mobile'],
+  juego:['game','gamedev'], juegos:['game','gamedev'], video:['video','ffmpeg'], audio:['audio','sound'],
+  voz:['voice','speech','tts'], musica:['music','audio'], imagen:['image'], imagenes:['image'], foto:['photo','image'],
+  fotos:['photo','image'], diseno:['design','ui','ux'], interfaz:['ui','interface','ux'], animacion:['animation','motion'],
+  datos:['data','dataset'], base:['database','db'], tabla:['table','spreadsheet'], excel:['excel','xlsx','spreadsheet'],
+  documento:['document','docx'], presentacion:['presentation','pptx','slide'], reporte:['report'], informe:['report'],
+  correo:['email','mail'], redes:['social','instagram','tiktok'], anuncio:['ad','ads','advertis'], anuncios:['ad','ads','advertis'],
+  ventas:['sales','crm'], cliente:['customer','client'], clientes:['customer','client'], precio:['pricing','price'],
+  mercadotecnia:['marketing'], marketing:['marketing'], posicionamiento:['seo'], buscadores:['seo','search'],
+  servidor:['server','backend','api'], despliegue:['deploy','deployment'], publicar:['deploy','publish'],
+  nube:['cloud','aws','gcp'], contenedor:['docker','container'], codigo:['code'], revisar:['review','audit'],
+  revision:['review','audit'], error:['bug','debug','error'], errores:['bug','debug','error'], arreglar:['fix','debug'],
+  agente:['agent'], agentes:['agent','multi-agent'], investigacion:['research'], articulo:['paper','article'],
+  escribir:['writing','write','copy'], texto:['text','copy','writing'], traducir:['translat'], legal:['legal','compliance'],
+  contrato:['contract','legal'], finanzas:['finance','accounting'], contabilidad:['accounting','finance'],
+  accesibilidad:['accessib','a11y','wcag'], automatizar:['automat','workflow'], navegador:['browser','playwright'],
+  raspar:['scrap','crawl'], descargar:['download'], tiempo:['time'], calendario:['calendar','schedule'],
+};
+
+const quitarAcentos = (t) => String(t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+function puntuarUna(s, nom, res, w){
   let p = 0;
-  const nom = s.nombre.toLowerCase();
-  const res = s.resumen.toLowerCase();
-  for(const w of palabras){
-    if(nom === w) p += 40;
-    else if(nom.includes(w)) p += 12;
-    if(s.etiquetas.includes(w)) p += 8;
-    if(res.includes(w)) p += 3;
-  }
+  if(nom === w) p += 40;
+  else if(nom.includes(w)) p += 12;
+  if(s.etiquetas.includes(w)) p += 8;
+  if(res.includes(w)) p += 3;
   return p;
 }
 
+function puntuar(s, grupos){
+  let p = 0;
+  const nom = s.nombre.toLowerCase();
+  const res = s.resumen.toLowerCase();
+  let pegan = 0;
+  for(const g of grupos){
+    const m = Math.max(...g.map(w => puntuarUna(s, nom, res, w)));
+    if(m > 0){ p += m; pegan++; }
+  }
+  /* La que cubre TODAS las palabras gana a la que pega fuerte en una sola:
+     «juego en el celular» sacaba antes cuatro de malware de Android. */
+  return p * pegan;
+}
+
+export function palabrasDe(consulta){
+  return quitarAcentos(consulta).split(/[^a-z0-9ñ-]+/)
+    .filter(w => w.length >= 2 && !VACIAS.has(w))
+    .map(w => [w, ...(SINONIMOS[w] || [])]);
+}
+
 export function buscar(skills, consulta, cuantas = 15){
-  const palabras = String(consulta).toLowerCase().normalize('NFD')
-    .replace(/[̀-ͯ]/g, '').split(/\s+/).filter(w => w.length >= 2);
+  const palabras = palabrasDe(consulta);
   if(!palabras.length) return [];
   return skills.map(s => ({ s, p: puntuar(s, palabras) }))
     .filter(x => x.p > 0)
@@ -293,12 +350,26 @@ export function buscar(skills, consulta, cuantas = 15){
 }
 
 /* ── montar y desmontar ──────────────────────────────────────────────────── */
+const MARCA = '.de-la-bodega';
+
+/* Pone `name: <carpeta>` en el encabezado; si no traía `name`, lo agrega. */
+export function nombrar(texto, nombre){
+  const m = texto.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if(!m) return `---\nname: ${nombre}\n---\n` + texto;
+  const cabeza = /^name:.*$/m.test(m[1])
+    ? m[1].replace(/^name:.*$/m, `name: ${nombre}`)
+    : `name: ${nombre}\n` + m[1];
+  return texto.replace(m[1], () => cabeza);
+}
+
 async function montar(nombres){
   const idx = await cargarIndice();
+  const vetadas = await cargarVetadas();
   const hechas = [];
   for(const n of nombres){
     const s = idx.find(x => x.nombre === n);
     if(!s){ console.log(`  ✗ «${n}» no está en la bodega`); continue; }
+    if(vetadas[n]){ console.log(`  ✗ «${n}» está vetada (${vetadas[n]}). No se monta.`); continue; }
     const de = join(GUARDA, n), a = join(PUESTAS, n);
     if(!existsSync(de)){ console.log(`  ✗ «${n}» está en el índice pero no en el disco`); continue; }
     /* La otra mitad del mismo peligro: montar encima de una skill de la casa
@@ -308,6 +379,17 @@ async function montar(nombres){
       continue;
     }
     await cp(de, a, { recursive:true });
+    /* 779 carpetas de la bodega se llaman `algo-2`, `algo-3`… porque son
+       variantes de la misma skill en repos distintos, pero su encabezado
+       sigue diciendo `name: algo`. Claude Code las llama por ese `name`: con
+       dos variantes puestas, las dos contestaban al mismo nombre, y una
+       `frontend-design` de la bodega habría tapado a la de la casa. Al
+       montar se le pone el nombre de su carpeta, y una marca con la huella
+       original para que `desmontar` la siga reconociendo. */
+    const ruta = join(a, 'SKILL.md');
+    const original = await readFile(ruta, 'utf8');
+    await writeFile(ruta, nombrar(original, n));
+    await writeFile(join(a, MARCA), s.huella + '\n');
     hechas.push(n);
     console.log(`  ✓ puesta: ${n}`);
   }
@@ -324,6 +406,8 @@ async function montar(nombres){
    de la bodega, vino de ahí; si no, es de la casa aunque coincida el nombre. */
 async function esDeBodega(nombre, huellas){
   try{
+    const marca = (await readFile(join(PUESTAS, nombre, MARCA), 'utf8').catch(() => '')).trim();
+    if(marca && huellas.has(marca)) return true;
     const t = await readFile(join(PUESTAS, nombre, 'SKILL.md'), 'utf8');
     return huellas.has(huella(t));
   }catch(e){ return false; }
@@ -434,7 +518,8 @@ try{
     console.log(`\n  ✓ índice reconstruido · ${skills.length} skills\n`);
   }
   else if(orden === 'buscar'){
-    const idx = await cargarIndice();
+    const vetadas = await cargarVetadas();
+    const idx = (await cargarIndice()).filter(s => !vetadas[s.nombre]);
     const r = buscar(idx, resto.join(' '));
     if(!r.length){ console.log(`\n  Nada para «${resto.join(' ')}». La bodega tiene ${idx.length}.\n`); }
     else{

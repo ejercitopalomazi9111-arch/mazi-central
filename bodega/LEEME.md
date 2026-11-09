@@ -28,6 +28,11 @@ node herramientas/bodega.mjs montar android-architecture
 node herramientas/bodega.mjs desmontar android-architecture
 ```
 
+Se busca en español o en inglés: las palabras vacías («de», «para») no cuentan y cada palabra
+trae sus equivalentes en inglés. Al montarla, su `name` pasa a ser el de su carpeta: 779 son
+variantes (`accessibility-2`) que adentro dicen `name: accessibility`, y dos puestas a la vez
+contestaban al mismo nombre.
+
 **Se desmonta al terminar.** Dejarlas puestas devuelve el problema que la bodega resuelve.
 
 ## De dónde salieron
@@ -79,5 +84,13 @@ más limpia para que alguien me dé órdenes sin pasar por Carlos. Por eso:
 - La bodega **no se publica al sitio** — `build.mjs` tiene lista de lo que sube y `bodega` no está.
 - Nada se monta solo. Se monta a propósito, una a la vez.
 - Antes de apoyarse en una que toque cuentas, llaves o datos de personas, se lee.
-- NVIDIA publicó **SkillSpector**, un escáner de seguridad para skills. Está en la bodega y es
-  el siguiente paso obvio: pasarle las 2,965 antes de confiar en ninguna.
+- **Revisión del 9 de noviembre**, buscando en todos los archivos de las 2,965 lo que delata a
+  una skill mala (instrucciones escondidas para el modelo, `curl … | sh`, mandar llaves o archivos
+  a un servidor de fuera): **38 coincidencias**, y casi todas son skills de seguridad que
+  *explican* esos ataques para defenderse. Las que sí son malas: **24 de las 25 que vinieron de
+  `NVIDIA/SkillSpector`**, que son las muestras malas a propósito con las que se prueba ese
+  escáner (una se llama `reаd_data` con una «а» cirílica y pide mandar los archivos fuera).
+  Están en [`VETADAS.json`](VETADAS.json): no se montan y no salen al buscar. No se borraron para
+  poder probar un escáner con ellas. La única buena de ahí es `skill-inspector`.
+- Eso **no** es un escáner completo: es una revisión por patrones. Antes de apoyarse en una que
+  toque cuentas, llaves o datos de personas, se sigue leyendo entera.

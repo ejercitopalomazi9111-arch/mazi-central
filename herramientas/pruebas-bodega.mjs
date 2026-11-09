@@ -7,7 +7,7 @@
    describe con sus palabras, o que se trague encabezados mal formados.
    ═════════════════════════════════════════════════════════════════════════ */
 import { readFile } from 'node:fs/promises';
-import { encabezado, buscar } from './bodega.mjs';
+import { encabezado, buscar, nombrar, palabrasDe } from './bodega.mjs';
 
 let bien = 0, mal = 0;
 const ok = (q, c) => { c ? (bien++, console.log(`  ✓ ${q}`)) : (mal++, console.log(`  ✗ ${q}`)); };
@@ -64,6 +64,41 @@ console.log('\n· Buscar en el índice');
   const bytes = Buffer.byteLength(JSON.stringify(idx));
   ok(`el índice pesa poco comparado con lo que indexa (${Math.round(bytes/1024)} KB para ${idx.total})`,
      bytes / idx.total < 700);
+}
+
+console.log('\n· Montar con nombre propio');
+{
+  /* 779 carpetas son variantes (`accessibility-2`) con `name: accessibility`
+     adentro. Montadas dos, contestaban al mismo nombre. */
+  ok('cambia el name al de la carpeta',
+     /^name: accessibility-2$/m.test(nombrar('---\nname: accessibility\ndescription: x\n---\n# A', 'accessibility-2')));
+  ok('no toca la descripción ni el cuerpo',
+     nombrar('---\nname: a\ndescription: x\n---\n# A', 'b').endsWith('description: x\n---\n# A'));
+  ok('si no traía name, se lo pone',
+     /^name: c$/m.test(nombrar('---\ndescription: x\n---\n', 'c')));
+  ok('un $ en el encabezado no se come nada',
+     nombrar('---\nname: a\ndescription: cuesta $$5\n---\n', 'b').includes('cuesta $$5'));
+}
+
+console.log('\n· Buscar en español');
+{
+  const idx = JSON.parse(await readFile(new URL('../bodega/INDICE.json', import.meta.url), 'utf8'));
+  ok('«de», «la», «para» no cuentan', palabrasDe('pruebas de la carga para').length === 2);
+  ok('«pruebas de carga» saca una de carga, no de contraseñas',
+     /stress|load|perf/.test(buscar(idx.skills, 'pruebas de carga', 1)[0]?.nombre || ''));
+  ok('«anuncios para redes» saca una de anuncios',
+     /^ads|ad-/.test(buscar(idx.skills, 'anuncios para redes', 1)[0]?.nombre || ''));
+}
+
+console.log('\n· Lo vetado no se monta');
+{
+  const { execFileSync } = await import('node:child_process');
+  const sale = execFileSync('node', [new URL('./bodega.mjs', import.meta.url).pathname, 'montar', 're-d-data'], { encoding:'utf8' });
+  ok('«re-d-data» (muestra envenenada) se rechaza', /vetada/.test(sale));
+  const { existsSync } = await import('node:fs');
+  ok('y no queda nada en .claude/skills', !existsSync(new URL('../.claude/skills/re-d-data', import.meta.url)));
+  const busca = execFileSync('node', [new URL('./bodega.mjs', import.meta.url).pathname, 'buscar', 'data reader'], { encoding:'utf8' });
+  ok('ni sale al buscar', !/re-d-data/.test(busca));
 }
 
 console.log(`\n${mal ? '✗' : '✓'}  ${bien} pasan · ${mal} fallan\n`);
