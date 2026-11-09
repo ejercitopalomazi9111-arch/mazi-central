@@ -55,6 +55,12 @@
 }
 *{box-sizing:border-box}
 html,body{height:100%}
+/* Carlos, 9 de noviembre: «desactiva el scroll lateral en la sala, sólo si es
+   dentro de un mensaje que lo requiera». La página y el hilo NO se mueven de
+   lado —ni con el rebote del iPhone—; lo único que conserva su scroll lateral
+   es lo que de verdad lo necesita dentro de un mensaje (un bloque de código o
+   una tabla ancha), y ése se queda con su propio scroll. */
+html,body{overflow-x:hidden; overscroll-behavior-x:none; max-width:100%}
 body{
   margin:0; background:var(--vacio); color:var(--hueso);
   font-family:var(--display); font-size:15px; line-height:1.55;
@@ -389,7 +395,11 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
      hablar es limpio y una decisión salta a la vista.
    · Separador de día, porque una junta que dura dos días sin separador se
      lee como una sola. */
-.hilo{flex:1; overflow-y:auto; padding:14px 12px 22px; -webkit-overflow-scrolling:touch}
+.hilo{flex:1; overflow-y:auto; overflow-x:hidden; overscroll-behavior-x:none;
+  padding:14px 12px 22px; -webkit-overflow-scrolling:touch}
+.hilo .burbuja{min-width:0; max-width:100%}
+.hilo .burbuja img, .hilo .burbuja video{max-width:100%; height:auto}
+.hilo .burbuja pre, .hilo .burbuja table{max-width:100%; overflow-x:auto; overscroll-behavior-x:contain}
 
 .dia{
   display:flex; align-items:center; gap:10px; margin:16px 2px 14px;
