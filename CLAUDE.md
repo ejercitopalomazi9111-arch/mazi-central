@@ -1042,7 +1042,7 @@ sin framework**, que es el argumento de que sabemos hacerlo a mano.
 | **VitalLink / Life-Connect** | Emergencias | quizá |
 | **Hoja de Romero** | Sandbox de cocina | ❌ sin terminar |
 | **KERNEL://LOCK** | Escape room | ❌ sin terminar |
-| **INKWELL** | Lector infinito | ❌ por ahora |
+| **INKWELL** | Plataforma de lectura del equipo: casa estilo app de manga + Tiras (Webtoon y Wattpad sin internet). Plan en `inkwell/AUDITORIA.md` | ❌ uso interno |
 
 ---
 
