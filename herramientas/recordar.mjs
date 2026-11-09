@@ -15,7 +15,7 @@ import { readFileSync as __leerLlave } from 'node:fs';
 import { cuandoDe } from '../sala/servidor/sala.js';
 
 /* Con autorización expresa de Carlos (9 nov 2026) la llave también vive en .llaves/grupaz.txt. */
-const LLAVE = process.env.MAZI_LLAVE || process.env.SECRE_SALA_LLAVE || (() => {
+const LLAVE = (s => s && s.includes('llave=') ? s.match(/llave=([^&#\s]+)/)[1] : s)((process.env.MAZI_LLAVE || '').trim()) || process.env.SECRE_SALA_LLAVE || (() => {
   try { return (await_leer()); } catch { return ''; }
 })();
 function await_leer(){ return __leerLlave(new URL('../.llaves/grupaz.txt', import.meta.url), 'utf8').trim(); }
