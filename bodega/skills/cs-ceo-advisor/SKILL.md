@@ -1,0 +1,1 @@
+/tmp/claude-0/ext/claude-skills/agents/c-level/cs-ceo-advisor.md

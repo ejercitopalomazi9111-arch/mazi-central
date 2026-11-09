@@ -115,8 +115,14 @@ ok(noAgente === 400, 'una URL de fuera se rechaza también por la vía directa')
 console.log('\n■ quitarla');
 await carlos.pg.click('#bQuitarFoto');
 await carlos.pg.waitForTimeout(800);
-const sinFoto = await carlos.pg.evaluate(() => !document.querySelector('#yoPanel .avatar img'));
-ok(sinFoto, 'quitar la foto devuelve el sello');
+/* Desde el 9 de noviembre «Carlos» tiene logo propio (sala/avatares/): quitar la
+   foto ya no deja la figurita, deja su logo. Lo que se comprueba es que la foto
+   de datos se fue y que lo que queda es el logo o el sello, nunca la foto vieja. */
+const sinFoto = await carlos.pg.evaluate(() => {
+  const i = document.querySelector('#yoPanel .avatar img');
+  return !i || /avatares\/[a-z]+-128\.png$/.test(i.getAttribute('src'));
+});
+ok(sinFoto, 'quitar la foto devuelve el logo o el sello, no la foto');
 const sinFotoAlla = await luis.pg.evaluate(() => {
   const c = Object.values(gente).find(x => x.nombre === 'Carlos');
   return !(c && retratos[c.cuenta]);

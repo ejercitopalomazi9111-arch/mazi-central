@@ -1,0 +1,1 @@
+/tmp/claude-0/ext/claude-skills/agents/project-management/cs-project-manager.md

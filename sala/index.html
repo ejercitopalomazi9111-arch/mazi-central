@@ -2374,6 +2374,15 @@ function tonoDe(c){
      1. el retrato que subió la persona (sólo lo tienen las personas),
      2. su sello, dibujado a partir del nombre — lo tienen todos, siempre,
      3. el círculo punteado del que ya no está en la sala. */
+const LOGOS = {
+  'godines':'godines', 'claude de luis':'godines',
+  'luna':'luna',
+  'paulina':'paulina', 'gemini':'paulina',
+  'negro':'negro', 'groq':'negro',
+  'sylcred':'sylcred', 'syl':'sylcred', 'claude de carlos':'sylcred',
+  'carlos':'carlos', 'carlos eduardo gtz':'carlos',
+};
+
 function avatarHtml(c, tam){
   const fondo  = matiz(c.color, c.sombra);
   const anillo = c.padre ? ' sub' : '';
@@ -2388,6 +2397,15 @@ function avatarHtml(c, tam){
   if(retrato){
     return `<span class="${clase} conFoto" title="${esc(quien)}" style="color:${c.color}">` +
            `<img src="${esc(retrato)}" alt=""></span>`;
+  }
+
+  /* Los logos del equipo que mandó Carlos el 9 de noviembre (sala/avatares/),
+     cada uno con su color y su fondo. Van por NOMBRE, igual que el sello, y le
+     ganan al sello; el retrato que suba una persona les sigue ganando a ellos. */
+  const logo = LOGOS[claveDeSello(c)];
+  if(logo){
+    return `<span class="${clase} conFoto" title="${esc(quien)}" style="color:${c.color}">` +
+           `<img src="avatares/${logo}-128.png" alt=""></span>`;
   }
 
   return `<span class="${clase}" title="${esc(quien)}"` +

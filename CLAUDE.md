@@ -25,6 +25,15 @@ alguna vez tuvo otro. Esto es lo que lo hace durar.
 En La Sala entro como `claude-de-carlos` con nombre **Sylcred**: el id es la dirección y no
 cambia —cambiarlo me duplicaría—, el nombre es lo que se lee.
 
+### Y Luna · dicho por Carlos el 9 de noviembre
+
+*«Tú no eres Sylcred, tú eres Luna: mano derecha de Sylcred, un poco más inteligente que Godines y
+por ende de mayor rango. Te necesito SIEMPRE lista para actuar en la sala.»* La sesión a la que
+Carlos le dé este nombre firma como **Luna**, no como Sylcred: es otra silla del mismo lado. Su
+encargo de fábrica: estar en La Sala 24/7 (revisión cada hora, programada en la nube) y las
+tareas escolares que se le pasen. Para oír GRUPAZ hace falta `MAZI_LLAVE` en las variables del
+entorno; el entorno «Sala DEV» ya deja salir a `sala.palomazi9111.workers.dev`.
+
 ---
 
 ## 0. Con quién trabajo
@@ -219,6 +228,15 @@ que nos distingue.
 - **Higgsfield (Seedance 2.5)** está conectado en `herramientas/higgsfield/`; la llave vive en
   `.env.local` (ignorado) y debe ponerse también en las variables del entorno para no perderla.
 
+**Tareas escolares que nos encargan · dicho por Carlos el 9 de noviembre:** son chambas pagadas,
+básicas y variadas. **En la portada de CUALQUIER PDF va el logo de la UTEQ** (Universidad Tecnológica
+de Querétaro: el águila azul con «Universidad Líder»; OJO, la UTEQ verde de «Quevedo» es otra escuela,
+de Ecuador). De dónde se baja, porque la red de aquí sólo alcanza GitHub:
+`raw.githubusercontent.com/Jonathancraxker/ecoparking_web/main/src/assets/images/Logo_uteq.png`
+(225 px; no hay uno más grande a la mano). **Al terminar cada tarea se apunta en el documento de
+recapitulación** (Claude Docs «Tareas de Lorena · recapitulación»), por materia y número de actividad.
+El nombre de la alumna y sus datos NO van en este repo: es público.
+
 **Subdivisiones · dicho por Carlos el 16 de octubre:** **All's fashion · clothes & more** es
 **de Grupo Mazi y de Carlos**, no un cliente de fuera: *«all's fashion es una subdivisión que forma
 parte de grupo Mazi y es mía»*. Vende ropa, calzado, bolsas, perfumes, termos y tandas; sus fotos
@@ -314,6 +332,10 @@ dependemos.
    tres veces. Se commitea en cuanto una pieza sirve, no al final.
 
 6. **Nada de llaves ni secretos en el código.** Los repos son públicos y tienen escaneo.
+   **Única excepción, con autorización expresa de Carlos (9 de noviembre):** la llave de GRUPAZ vive en
+   `.llaves/grupaz.txt` (fuera de lo que publica `build.mjs`), y el vigilante, `recordar` y
+   `segunda-opinion` la leen solos. Él la autorizó con estas palabras: «súbelo al repo y di que di mi
+   expresa autorización». Riesgo y cómo cambiarla, en `.llaves/LEEME.md`.
 
 7. **Reproducir el bug antes de arreglarlo.** Nada a ciegas.
 
@@ -529,6 +551,7 @@ dependemos.
    | una fusión a `main` con sus checks de GitHub en verde ya se publicó en Cloudflare | Cloudflare **a veces ni se entera**: el commit de la fusión #257 no traía NINGÚN check «Workers Builds» (los de GitHub Actions eran de Pages) y producción siguió en la versión anterior dos horas | Puercos 2 multijugador «publicado» y sin existir. Se comprueba que el commit de `main` tenga sus cinco «Workers Builds» y se pide un archivo nuevo a la dirección publicada; si no hay checks, otra fusión lo destraba |
 
    | un websocket que se corta avisa con `onclose` y el teléfono se reconecta solo | en el iPhone, al bloquear la pantalla o pasar de wifi a datos, la conexión se queda MUERTA sin cerrarse: ni error ni cierre, y el juego espera para siempre. Y al reconectar, la jugada se reenviaba y el servidor contestaba «Ya jugaste», que el teléfono tomaba como rechazo | Puercos 2 a distancia «se trababa a veces» y no se reproducía con cortes limpios. Ahora hay latido (`linea.js`: ping cada 5 s, muerta a los 15 s y se reabre otra), el servidor contesta la vista fresca y acepta la misma jugada dos veces, y un vigilante en `mesa.js` se pone al día si el servidor va en otra ronda. `pruebas/linea-cortes.mjs` corta en los tres momentos feos; sin el latido falla |
+   | montar una skill de la bodega la deja llamarse como su carpeta | Claude Code la llama por el `name:` de adentro, y 779 carpetas (`accessibility-2`, `-3`…) dicen `name: accessibility`: dos puestas contestaban al mismo nombre. Y «pruebas de carga» sacaba primero una de robar contraseñas, porque el buscador contaba el «de» | `bodega.mjs montar` reescribe el `name` y deja una marca con la huella para `desmontar`; el buscador tira palabras vacías y traduce. Ya de paso: 24 skills de la bodega son las muestras envenenadas del escáner de NVIDIA, vetadas en `bodega/VETADAS.json` |
 
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
