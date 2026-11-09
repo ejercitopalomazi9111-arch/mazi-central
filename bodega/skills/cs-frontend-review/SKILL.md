@@ -1,0 +1,1 @@
+/tmp/claude-0/ext/claude-skills/commands/cs-frontend-review.md

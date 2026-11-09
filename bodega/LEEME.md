@@ -1,6 +1,6 @@
 # La bodega
 
-**2,945 skills guardadas y dormidas.** Ninguna cuesta nada hasta que se pone a trabajar.
+**2,965 skills guardadas y dormidas.** Ninguna cuesta nada hasta que se pone a trabajar.
 
 ## Por qué están dormidas
 
@@ -12,7 +12,7 @@ escoge peor porque tiene dos mil descripciones parecidas enfrente.
 Por eso:
 
 ```
-bodega/skills/<nombre>/   ← 2,945. Claude NO las lee. Están dormidas
+bodega/skills/<nombre>/   ← 2,965. Claude NO las lee. Están dormidas
 bodega/INDICE.json        ← 1.3 MB. Una línea por skill. Esto sí se consulta
 .claude/skills/           ← sólo las que están PUESTAS ahorita
 ```
@@ -54,25 +54,30 @@ Se deduplicó por **huella del contenido**, no por nombre: la misma skill anda c
 repos y guardarla veinte veces haría que el índice mienta. De 4,300 archivos encontrados
 quedaron 2,945 distintas.
 
+**9 de noviembre:** el índice decía 2,945 pero en disco había 2,500 — faltaban 445 de
+`alirezarezvani/claude-skills` (el índice prometía algo que `montar` no podía dar). Se
+repusieron 433 con su versión actual (12 ya no existen allá y salieron del índice), entraron
+23 nuevas de ese repo y 9 de los repos de la casa (`palomazi` y `evaluaciones-rembrandt`). **2,965.**
+
 ## Licencias
 
 | | |
 |---|---|
-| MIT | 1,974 |
-| Apache-2.0 | 850 |
+| MIT | 1,985 |
+| Apache-2.0 | 892 |
 | otra | 15 |
-| **sin licencia** | **64** |
+| **sin licencia** | **73** |
 
-Las 64 sin licencia están marcadas para poder sacarlas de un jalón. Este repo es público:
+Las 73 sin licencia (9 son nuestras, de los repos de la casa) están marcadas para poder sacarlas de un jalón. Este repo es público:
 apoyarse en trabajo de otro sin saber bajo qué términos es el mismo flanco de Torre Infinita.
 
 ## Lo que hay que tener presente
 
-**Una skill es un texto que yo obedezco.** Meter 2,945 de desconocidos es, en principio, la vía
+**Una skill es un texto que yo obedezco.** Meter 2,965 de desconocidos es, en principio, la vía
 más limpia para que alguien me dé órdenes sin pasar por Carlos. Por eso:
 
 - La bodega **no se publica al sitio** — `build.mjs` tiene lista de lo que sube y `bodega` no está.
 - Nada se monta solo. Se monta a propósito, una a la vez.
 - Antes de apoyarse en una que toque cuentas, llaves o datos de personas, se lee.
 - NVIDIA publicó **SkillSpector**, un escáner de seguridad para skills. Está en la bodega y es
-  el siguiente paso obvio: pasarle las 2,945 antes de confiar en ninguna.
+  el siguiente paso obvio: pasarle las 2,965 antes de confiar en ninguna.

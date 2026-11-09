@@ -1,0 +1,1 @@
+/tmp/claude-0/ext/claude-skills/agents/product/cs-ux-researcher.md
