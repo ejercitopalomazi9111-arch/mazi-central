@@ -4,11 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#0f0d13">
+<meta name="theme-color" content="#0C0B11">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="INKWELL">
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="preload" href="letra/archivo.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="letra/gloock.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="letra/crimson.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="marca.css">
+<script>try{const t=JSON.parse(localStorage.getItem('inkwell.tema'));if(t)document.documentElement.dataset.tema=t}catch{}</script>
 <title>INKWELL · Tiras</title>
 <!-- ══════════════════════════════════════════════════════════════════════════
      INKWELL · TIRAS — tus series de Webtoon y Wattpad, bajadas y seguidas
@@ -28,50 +33,53 @@
      Fuentes en fuentes.js · archivos en archivos.js · aquí, la pantalla.
      ═════════════════════════════════════════════════════════════════════════ -->
 <style>
-:root{
-  --bg:#0f0d13; --bg2:#17141d; --card:#1d1a25; --ink:#ece7f2; --dim:#a79fb8; --line:rgba(255,255,255,.1); --accent:#c94f7a; --ok:#3DDC97;
-  --serif:Georgia,'Times New Roman',serif; --sans:-apple-system,'Segoe UI',system-ui,Roboto,sans-serif;
-  color-scheme: dark;
-}
+/* colores, letras y la barra de secciones salen de marca.css */
 *{box-sizing:border-box}
 html,body{margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 var(--sans); -webkit-text-size-adjust:100%}
-main{max-width:720px; margin:0 auto; padding:calc(12px + env(safe-area-inset-top)) 16px calc(48px + env(safe-area-inset-bottom))}
-.arriba{display:flex; justify-content:space-between; gap:8px}
+body.lee{padding:0}
+body.lee .nav{display:none}
+main{max-width:720px; margin:0 auto; padding:calc(12px + env(safe-area-inset-top)) 16px 48px}
+.arriba{display:flex; justify-content:space-between; align-items:center; gap:8px; min-height:52px}
 .arriba a{display:inline-flex; align-items:center; min-height:44px; color:var(--dim); text-decoration:none}
-h1{font-family:var(--serif); font-size:34px; line-height:1.05; margin:8px 0 6px; letter-spacing:-.02em}
-h1 span{color:var(--accent)}
+h1{font:800 34px/1.08 var(--sans); margin:14px 0 6px; letter-spacing:-.02em}
+h1 span{color:var(--ink)}
 .sub{color:var(--dim); margin:0 0 20px; font-size:15px}
-button,.boton{font:inherit; color:var(--ink); background:var(--card); border:1px solid var(--line); border-radius:12px; min-height:44px; padding:0 14px;
+button,.boton{font:inherit; font-weight:600; color:var(--ink); background:var(--card); border:1px solid var(--line); border-radius:99px; min-height:44px; padding:0 14px;
   cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px; text-decoration:none; white-space:nowrap; touch-action:manipulation}
-button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #fff; outline-offset:2px}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid var(--accent-ink); outline-offset:2px}
 button[disabled]{opacity:.45; cursor:default}
-.si{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:700}
-.grande{width:100%; min-height:56px; font-size:18px; border-radius:16px}
+.si{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:700; box-shadow:0 10px 26px -12px color-mix(in srgb,var(--accent) 85%,transparent)}
+.ico{width:20px; height:20px}
+.grande{width:100%; min-height:56px; font-size:17px; border-radius:99px}
 .estado{display:flex; align-items:center; gap:10px; margin:12px 0 0; color:var(--dim); font-size:14px; min-height:24px}
 .estado .punto{width:10px; height:10px; border-radius:50%; background:var(--dim); flex:none}
 .estado.trabajando .punto{background:var(--accent); animation:late 1s infinite alternate}
 .estado.listo .punto{background:var(--ok)}
 @keyframes late{to{opacity:.3}}
 @media (prefers-reduced-motion:reduce){ .estado.trabajando .punto{animation:none} }
-h2{font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:var(--dim); margin:28px 0 10px}
+h2{font:700 19px/1.2 var(--sans); letter-spacing:-.01em; color:var(--ink); margin:30px 0 12px}
 .agregar{display:flex; gap:8px}
-input[type=text],input[type=number],select{font:inherit; color:var(--ink); background:var(--bg2); border:1px solid var(--line); border-radius:12px; min-height:44px; padding:0 12px; width:100%; min-width:0}
+input[type=text],input[type=number],select{font:inherit; color:var(--ink); background:var(--card2); border:1px solid var(--line); border-radius:99px; min-height:48px; padding:0 18px; width:100%; min-width:0}
 .ayuda{color:var(--dim); font-size:13px; margin:6px 0 0}
 .resultados{display:flex; flex-direction:column; gap:8px; margin-top:12px}
-.resultado{display:grid; grid-template-columns:56px minmax(0,1fr) auto; gap:10px; align-items:center; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:8px}
-.resultado img{width:56px; height:76px; object-fit:cover; border-radius:6px; background:#000}
+.resultado{display:grid; grid-template-columns:56px minmax(0,1fr) auto; gap:12px; align-items:center; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:8px 10px 8px 8px}
+.resultado img{width:56px; height:76px; object-fit:cover; border-radius:10px; background:var(--card2)}
 .resultado b{display:block; font-size:15px; line-height:1.2}
 .resultado span{color:var(--dim); font-size:13px}
 .series{display:flex; flex-direction:column; gap:12px}
-.serie{display:grid; grid-template-columns:84px minmax(0,1fr); gap:12px; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px}
-.serie .portada{width:84px; height:112px; border-radius:10px; object-fit:cover; background:#000; display:block}
+.serie{position:relative; display:grid; grid-template-columns:96px minmax(0,1fr); gap:14px; background:var(--card); border:1px solid var(--line); border-radius:20px; padding:12px; overflow:hidden; isolation:isolate}
+.serie .portada{width:96px; height:132px; border-radius:14px; object-fit:cover; background:var(--card2); display:block; box-shadow:var(--sombra)}
 .serie .datos{min-width:0; display:flex; flex-direction:column; gap:4px}
-.serie .fuente{font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--accent)}
-.serie h3{font-family:var(--serif); font-size:18px; line-height:1.15; margin:0}
+.serie .fuente{align-self:flex-start; font-size:11px; font-weight:700; padding:3px 10px; border-radius:99px; background:var(--accent); color:#fff}
+.serie h3{font:700 18px/1.2 var(--sans); letter-spacing:-.01em; margin:2px 0 0} .serie h3{font-size:18px; line-height:1.15; margin:0}
 .serie .cuenta{color:var(--dim); font-size:13px}
-.serie .botones{grid-column:1/-1; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:4px}
-.serie .botones button{padding:0 8px; font-size:14px}
-.vacio{color:var(--dim); background:var(--card); border-radius:12px; padding:16px; font-size:15px}
+.serie .botones{grid-column:1/-1; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:2px}
+.serie .botones button{flex-direction:column; gap:4px; min-height:64px; padding:6px 4px; font-size:12px; font-weight:600; color:var(--dim); background:transparent; border:0; border-radius:14px}
+.serie .botones button .ico{width:40px; height:40px; padding:10px; border-radius:50%; background:color-mix(in srgb,var(--accent) 16%,transparent); color:var(--accent-ink)}
+.serie .botones button[data-a="leer"]:not([disabled]) .ico{background:var(--accent); color:#fff}
+.serie .barrita{height:5px; border-radius:99px; background:var(--card2); overflow:hidden; margin-top:6px}
+.serie .barrita i{display:block; height:100%; background:var(--accent); border-radius:99px}
+.vacio{color:var(--dim); background:var(--card); border:1px dashed var(--line); border-radius:16px; padding:18px; font-size:15px}
 .ajustes{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px}
 .ajustes label{display:flex; flex-direction:column; gap:4px; font-size:13px; color:var(--dim)}
 .nota{color:var(--dim); font-size:13px; margin:16px 0 0; line-height:1.5}
@@ -79,18 +87,18 @@ input[type=text],input[type=number],select{font:inherit; color:var(--ink); backg
 /* el lector */
 #lector{position:fixed; inset:0; z-index:20; background:var(--bg); display:flex; flex-direction:column}
 #lector[hidden]{display:none}
-.lhead{display:flex; align-items:center; gap:8px; padding:calc(6px + env(safe-area-inset-top)) 8px 6px; background:rgba(15,13,19,.94); border-bottom:1px solid var(--line);
+.lhead{display:flex; align-items:center; gap:8px; padding:calc(6px + env(safe-area-inset-top)) 8px 6px; background:color-mix(in srgb,var(--bg) 94%,transparent); border-bottom:1px solid var(--line);
   position:absolute; top:0; left:0; right:0; z-index:2; transition:transform .22s ease-out}
 /* pantalla completa (Carlos, 5 nov): la barra vive escondida y baja sólo al deslizar para regresar */
 #lector.sinbarra .lhead{transform:translateY(-100%); transition-timing-function:ease-in; pointer-events:none}
 @media (prefers-reduced-motion:reduce){ .lhead{transition:none} }
 /* el sello del marcador (Carlos, 5 nov): al volver a donde ibas sale el logo y «(salvado por el marcador)» */
 .sello{position:absolute; left:50%; top:50%; z-index:3; display:flex; flex-direction:column; align-items:center; gap:8px; padding:22px 28px 18px; border-radius:22px;
-  background:rgba(15,13,19,.86); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); box-shadow:0 20px 50px -20px rgba(0,0,0,.8), inset 0 0 0 1px var(--line);
+  background:color-mix(in srgb,var(--bg) 86%,transparent); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); box-shadow:0 20px 50px -20px rgba(0,0,0,.8), inset 0 0 0 1px var(--line);
   transform:translate(-50%,-50%); pointer-events:none; text-align:center; animation:sello 2.6s ease both}
 .sello img{width:64px; height:64px; border-radius:16px; object-fit:cover}
-.sello b{font-family:var(--serif); font-size:28px; line-height:1; letter-spacing:-.02em; color:var(--ink)}
-.sello b span{color:var(--accent)}
+.sello b{font-family:var(--display); font-weight:400; font-size:28px; line-height:1; letter-spacing:-.02em; color:var(--ink)}
+.sello b span{background:var(--grad); -webkit-background-clip:text; background-clip:text; color:transparent}
 .sello small{font-size:14px; color:var(--dim)}
 @keyframes sello{0%{opacity:0; transform:translate(-50%,-46%) scale(.96)} 12%{opacity:1; transform:translate(-50%,-50%) scale(1)} 78%{opacity:1} 100%{opacity:0}}
 @media (prefers-reduced-motion:reduce){ .sello{animation:sello-q 2.6s linear both} @keyframes sello-q{0%,85%{opacity:1} 100%{opacity:0}} }
@@ -100,8 +108,8 @@ input[type=text],input[type=number],select{font:inherit; color:var(--ink); backg
 #scroll{flex:1; overflow-y:auto; position:relative; padding-top:env(safe-area-inset-top); -webkit-overflow-scrolling:touch; overscroll-behavior:contain}
 .cap{max-width:800px; margin:0 auto}
 .cap-cab{padding:28px 20px 16px; text-align:center}
-.cap-cab small{display:block; color:var(--accent); font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase}
-.cap-cab b{display:block; font-family:var(--serif); font-size:22px; line-height:1.2; margin-top:6px}
+.cap-cab small{display:block; color:var(--accent-ink); font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase}
+.cap-cab b{display:block; font-family:var(--display); font-weight:400; font-size:22px; line-height:1.2; margin-top:6px}
 .cap img{display:block; width:100%; height:auto}
 .cap .texto{font-family:var(--serif); font-size:18px; line-height:1.75; padding:0 22px}
 .cap .texto p{margin:0 0 1em}
@@ -115,17 +123,17 @@ dialog::backdrop{background:rgba(0,0,0,.7)}
 .hoja .dos{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px}
 .hoja label{display:flex; flex-direction:column; gap:4px; font-size:13px; color:var(--dim)}
 .hoja .barra{height:8px; border-radius:6px; background:var(--bg2); overflow:hidden}
-.hoja .barra i{display:block; height:100%; width:0; background:var(--accent)}
+.hoja .barra i{display:block; height:100%; width:0; background:var(--accent); border-radius:6px}
 [hidden]{display:none !important}
 </style>
 </head>
-<body>
+<body class="con-nav">
 <main>
-  <div class="arriba"><a href="../">‹ Central</a><a href="./">Historias de INKWELL ›</a></div>
-  <h1>INK<span>WELL</span> · Tiras</h1>
+  <div class="arriba"><a class="marca" href="./" aria-label="INKWELL, inicio"><span class="iso" aria-hidden="true">I</span><span class="pal">INKWELL</span></a></div>
+  <h1><span>Tiras</span></h1>
   <p class="sub">Tus series de Webtoon y Wattpad, bajadas para leer sin internet, todas seguidas en un solo scroll.</p>
 
-  <button type="button" class="si grande" id="leerTodo">▶ Leer seguido</button>
+  <button type="button" class="si grande" id="leerTodo">Leer seguido</button>
   <p class="estado" id="estado" role="status" aria-live="polite"><span class="punto" aria-hidden="true"></span><span id="estadoTxt"></span></p>
 
   <h2>Agregar serie</h2>
@@ -149,13 +157,16 @@ dialog::backdrop{background:rgba(0,0,0,.7)}
   <h2>Ajustes</h2>
   <div class="ajustes">
     <label>Capítulos listos por serie
-      <select id="adelante"><option>3</option><option>5</option><option>10</option><option>20</option><option>50</option></select></label>
+      <select id="adelante"><option>3</option><option>5</option><option>10</option><option>20</option><option>50</option><option>100</option><option>300</option><option value="100000">Todos (para leer sin internet)</option></select></label>
     <label>«Leer seguido» va
       <select id="orden"><option value="serie">Una serie tras otra</option><option value="intercalado">Intercalado</option></select></label>
     <label style="grid-column:1/-1">Buscarme cómics nuevos cuando ya queda poco por leer
       <select id="descubrir"><option value="0">No</option><option value="1">Sí, 1 al día</option><option value="3">Sí, 3 al día</option></select></label>
+    <label style="grid-column:1/-1">Ahorro de espacio en las imágenes
+      <select id="compacto"><option value="no">Sin ahorro (como vienen)</option><option value="si">Normal (la mitad del peso, no se nota)</option><option value="maximo">Máximo (cabe más del doble)</option></select></label>
   </div>
   <p style="margin-top:8px"><button type="button" id="revisar">Buscar capítulos nuevos ahora</button></p>
+  <p style="margin-top:8px"><button type="button" id="apretar">Apretar lo que ya está bajado</button></p>
   <p style="margin-top:8px"><button type="button" id="todoArchivo">Descargar todo en archivos</button></p>
   <p style="margin-top:8px"><button type="button" id="compartir">Compartir mis series</button></p>
   <div id="codigoCaja" hidden><input type="text" id="codigo" readonly aria-label="Link para compartir tus series" style="width:100%"><p class="nota">Quien lo abra en su teléfono recibe tu lista y se le bajan todas. Sólo va la lista de series: lo que tú leíste o bajaste no se comparte. También pueden pegarlo arriba, donde va el link de una serie.</p></div>
@@ -165,7 +176,7 @@ dialog::backdrop{background:rgba(0,0,0,.7)}
 
 <div id="lector" hidden>
   <div class="lhead">
-    <button type="button" id="cerrarLector" aria-label="Cerrar el lector">✕</button>
+    <button type="button" id="cerrarLector" aria-label="Cerrar el lector"></button>
     <div class="t"><b id="lTitulo"></b><span id="lSub"></span></div>
   </div>
   <div id="scroll"></div>
@@ -213,6 +224,7 @@ dialog::backdrop{background:rgba(0,0,0,.7)}
   </form>
 </dialog>
 
+<nav class="nav" id="nav" aria-label="Secciones de INKWELL"></nav>
 <script type="module" src="tiras.js"></script>
 </body>
 </html>

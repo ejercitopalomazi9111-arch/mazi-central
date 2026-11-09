@@ -1,13 +1,13 @@
 {
-  "name": "INKWELL — Lector Infinito",
+  "name": "INKWELL",
   "short_name": "INKWELL",
-  "description": "Lector de historias infinitas con memoria de trama. Funciona sin datos.",
+  "description": "Leer y crear historias en Grupo Mazi. Funciona sin datos.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0f0d13",
-  "theme_color": "#0f0d13",
+  "background_color": "#0C0B11",
+  "theme_color": "#0C0B11",
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
