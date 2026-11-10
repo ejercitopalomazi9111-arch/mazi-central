@@ -83,7 +83,7 @@ for (const [ancho, alto, nombre] of [[390, 844, 'teléfono'], [1280, 800, 'compu
   await ctx.route('https://www.wattpad.com/**', wattpadFalso);
   await ctx.route('https://img.wattpad.com/**', (r) => r.fulfill({ contentType: 'image/jpeg', body: jpg.portada }));
   const pg = await ctx.newPage(); const errores = [];
-  pg.on('pageerror', (e) => errores.push(e.message)); pg.on('console', (m) => m.type() === 'error' && !/404/.test(m.text()) && errores.push(m.text()));
+  pg.on('pageerror', (e) => errores.push(e.message)); pg.on('console', (m) => m.type() === 'error' && !/404/.test(m.text()) && errores.push(m.text())); pg.on('requestfailed', (q) => /DISCONNECTED/.test(q.failure()?.errorText || '') && errores.push('[falló ' + q.url().slice(0, 90) + ']'));
   pg.on('dialog', (d) => d.accept());
   await pg.goto(BASE);
   if (!jpg.ep1_0) {
