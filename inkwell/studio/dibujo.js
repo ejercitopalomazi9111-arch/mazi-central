@@ -11,12 +11,12 @@ const CSS = `
 .dj{position:fixed; inset:0; z-index:100; display:flex; flex-direction:column; background:#1a1720; color:#eee; font:15px/1.3 var(--sans, system-ui)}
 .dj button{font:inherit; font-weight:600; color:#eee; background:#2a2633; border:1px solid #3a3545; border-radius:12px; min-height:44px; min-width:44px; padding:0 10px; cursor:pointer;
   display:inline-flex; align-items:center; justify-content:center; gap:6px; touch-action:manipulation; white-space:nowrap}
-.dj button[aria-pressed="true"]{background:#8B5CF6; border-color:#8B5CF6; color:#fff}
+.dj button[aria-pressed="true"]{background:#AC27FF; border-color:#AC27FF; color:#fff}
 .dj button[disabled]{opacity:.35}
 .dj .ico{width:20px; height:20px}
 .dj-barra{display:flex; align-items:center; gap:6px; padding:calc(6px + env(safe-area-inset-top)) 8px 6px; background:#211d28; border-bottom:1px solid #3a3545}
 .dj-barra b{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-.dj-barra .listo{background:#8B5CF6; border-color:#8B5CF6; color:#fff}
+.dj-barra .listo{background:#AC27FF; border-color:#AC27FF; color:#fff}
 .dj-mesa{flex:1; min-height:0; position:relative; overflow:hidden; touch-action:none;
   background:repeating-conic-gradient(#2c2836 0 25%, #24202d 0 50%) 0 0/24px 24px}
 .dj-hoja{position:absolute; left:0; top:0; transform-origin:0 0; box-shadow:0 0 0 1px #000, 0 10px 40px rgba(0,0,0,.6);
@@ -27,14 +27,14 @@ const CSS = `
 .dj-herr button{flex:none; flex-direction:column; gap:2px; min-width:60px; min-height:54px; font-size:11px}
 .dj-ajustes{display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; padding:6px 10px calc(8px + env(safe-area-inset-bottom)); background:#211d28}
 .dj-ajustes label{display:flex; align-items:center; gap:6px; font-size:12px; color:#bbb}
-.dj-ajustes input[type=range]{width:110px; accent-color:#8B5CF6}
+.dj-ajustes input[type=range]{width:110px; accent-color:#AC27FF}
 .dj-ajustes input[type=color]{width:44px; height:44px; border:1px solid #3a3545; border-radius:12px; padding:2px; background:#2a2633}
 .dj-muestras{display:flex; gap:4px; flex-wrap:wrap}
 .dj-muestras button{min-width:28px; min-height:28px; width:28px; height:28px; padding:0; border-radius:50%; border:2px solid #3a3545}
 .dj-capas{position:absolute; right:8px; top:8px; width:min(260px, calc(100% - 16px)); max-height:calc(100% - 16px); overflow:auto; background:#211d28ee; border:1px solid #3a3545; border-radius:14px; padding:8px; display:flex; flex-direction:column; gap:6px}
 .dj-capas[hidden]{display:none}
 .dj-capa{display:grid; grid-template-columns:40px minmax(0,1fr) 44px; align-items:center; gap:6px; padding:4px; border-radius:10px; border:1px solid #3a3545; cursor:pointer}
-.dj-capa[aria-current="true"]{border-color:#8B5CF6; background:#2c2540}
+.dj-capa[aria-current="true"]{border-color:#AC27FF; background:#2a1838}
 .dj-capa canvas{width:40px; height:40px; background:#fff; border-radius:6px}
 .dj-capa span{font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 `;
@@ -175,7 +175,7 @@ export function abrirDibujo({ ancho = 1024, alto = 1024, base = null, titulo = '
       const caja = $('.dj-capas'); if(caja.hidden) return;
       caja.innerHTML = `<div style="display:flex; gap:6px"><button type="button" data-k="nueva">${icono('plus')}Capa</button><button type="button" data-k="borrar" ${capas.length < 2 ? 'disabled' : ''}>Borrar</button></div>`
         + [...capas.keys()].reverse().map((i) => `<div class="dj-capa" data-i="${i}" aria-current="${i === activa}"><canvas width="40" height="40"></canvas><span>${capas[i].nombre}</span><button type="button" data-k="ver" aria-label="${capas[i].visible ? 'Ocultar' : 'Mostrar'}">${capas[i].visible ? 'Ver' : 'Oculta'}</button></div>`).join('')
-        + `<label style="font-size:12px; color:#bbb">Opacidad de la capa<input type="range" min="0" max="100" value="${Math.round(capas[activa].opac * 100)}" data-k="opac" style="width:100%; accent-color:#8B5CF6"></label>
+        + `<label style="font-size:12px; color:#bbb">Opacidad de la capa<input type="range" min="0" max="100" value="${Math.round(capas[activa].opac * 100)}" data-k="opac" style="width:100%; accent-color:#AC27FF"></label>
            <div style="display:flex; gap:6px"><button type="button" data-k="subir">Subir</button><button type="button" data-k="bajar">Bajar</button></div>`;
       caja.querySelectorAll('.dj-capa').forEach((f) => { const m = f.querySelector('canvas').getContext('2d'); m.drawImage(capas[+f.dataset.i].c, 0, 0, 40, 40); });
     }

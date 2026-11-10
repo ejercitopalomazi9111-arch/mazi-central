@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#0C0B11">
+<meta name="theme-color" content="#0B0610">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="INKWELL">
@@ -53,6 +53,42 @@ button{font:inherit}
 #dlgSeguir::backdrop,#dlgObra::backdrop{background:rgba(0,0,0,.6)}
 @media (min-width:640px){ #dlgSeguir,#dlgObra{margin:auto; border-radius:24px} }
 /* ── biblioteca ── */
+/* ── el estante de lomos ── */
+.estante{display:flex; flex-direction:column; gap:30px; padding:6px 0 10px}
+.repisa{position:relative; display:flex; align-items:flex-end; gap:4px; min-height:var(--alto); padding:0 8px; perspective:900px}
+.repisa::after{content:""; position:absolute; left:-4px; right:-4px; bottom:-12px; height:12px; border-radius:3px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--ink) 16%,var(--bg2)),var(--bg2)); box-shadow:0 14px 18px -10px rgba(0,0,0,.6)}
+.lomo{position:relative; flex:none; width:var(--w); height:var(--h); padding:0; border:0; border-radius:3px 3px 1px 1px; overflow:hidden; cursor:pointer;
+  background:var(--c); color:#F1EADF; transform-origin:bottom left; transform:rotate(var(--gira,0deg));
+  box-shadow:inset -5px 0 9px rgba(0,0,0,.4),inset 3px 0 0 rgba(255,255,255,.1),0 6px 10px -6px rgba(0,0,0,.6);
+  transition:transform .3s cubic-bezier(.3,1.4,.5,1)}
+.lomo img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:saturate(1.1) brightness(.62)}
+.lomo b{position:absolute; inset:12px 0 26px; writing-mode:vertical-rl; transform:rotate(180deg); font:400 13.5px/1 var(--display); color:#F1EADF;
+  text-shadow:0 1px 6px rgba(0,0,0,.85); display:flex; align-items:center; justify-content:center; overflow:hidden; white-space:nowrap; text-overflow:ellipsis}
+.lomo::before{content:""; position:absolute; left:0; right:0; top:10px; height:2px; background:rgba(241,234,223,.35); z-index:1}
+.lomo::after{content:""; position:absolute; left:0; right:0; bottom:10px; height:2px; background:rgba(241,234,223,.35); z-index:1}
+.lomo .liston{position:absolute; top:-1px; left:50%; width:9px; height:32px; margin-left:-4.5px; background:var(--accent); clip-path:polygon(0 0,100% 0,100% 100%,50% 76%,0 100%); z-index:2}
+.poster.lomo .fav{top:auto; bottom:14px; right:auto; left:50%; margin-left:-11px; width:22px; height:22px; background:none}
+.lomo .fav .ico{width:14px; height:14px}
+.poster.lomo .mini-est{position:absolute; bottom:38px; left:0; right:0; flex-direction:column; align-items:center; gap:0; z-index:1}
+.lomo:has(.fav) b{bottom:40px}
+.poster.lomo .mini-est .ico{width:9px; height:9px}
+.lomo:hover,.lomo:focus-visible{transform:translateY(-10px) rotate(var(--gira,0deg))}
+.lomo:active{transform:translateY(-16px) rotate(var(--gira,0deg)) scale(1.03)}
+.lomo:focus-visible{outline:2px solid var(--accent-ink); outline-offset:3px}
+/* el libro que sale del estante */
+.libro3d{position:fixed; inset:0; z-index:300; pointer-events:none; perspective:1100px}
+.libro3d .cubo{position:absolute; top:0; left:0; width:var(--W); height:var(--H); transform-style:preserve-3d; transform-origin:50% 50%}
+.libro3d .cara{position:absolute; top:0; overflow:hidden; backface-visibility:hidden}
+.libro3d .frente{left:0; width:var(--W); height:var(--H); border-radius:3px 10px 10px 3px; background:var(--c); transform:translateZ(calc(var(--D) / 2)); box-shadow:0 40px 80px -20px rgba(0,0,0,.9)}
+.libro3d .frente img{width:100%; height:100%; object-fit:cover}
+.libro3d .frente b{position:absolute; inset:20px; font:400 22px/1.1 var(--display); color:#F1EADF}
+.libro3d .lado{left:calc(var(--D) / -2); width:var(--D); height:var(--H); background:var(--c); transform:rotateY(-90deg) translateZ(calc(var(--W) / 2)); transform-origin:50% 50%}
+.libro3d .lado img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(.62)}
+.libro3d .lado b{position:absolute; inset:12px 0; writing-mode:vertical-rl; transform:rotate(180deg); font:400 14px var(--display); color:#F1EADF; display:flex; align-items:center; justify-content:center; white-space:nowrap; overflow:hidden}
+.libro3d .hojas{left:calc((var(--W) - var(--D)) / 2); width:var(--D); height:var(--H); background:repeating-linear-gradient(90deg,#efe7da 0 2px,#d9cfbf 2px 3px); transform:rotateY(90deg) translateZ(calc(var(--W) / 2 - 2px))}
+@media (prefers-reduced-motion:reduce){ .lomo{transition:none} }
+
 .b-resumen{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-bottom:14px}
 @media (min-width:760px){ .b-resumen{grid-template-columns:repeat(4,minmax(0,1fr))} }
 .b-meta{grid-column:1/-1; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px; display:flex; flex-direction:column; gap:10px}
@@ -79,15 +115,18 @@ button{font:inherit}
 .chip .n{opacity:.7; margin-left:4px; font-variant-numeric:tabular-nums}
 #bObras{margin-top:12px}
 .poster.b{cursor:pointer; font:inherit; text-align:left}
-.poster .fav{position:absolute; top:6px; right:6px; width:28px; height:28px; border-radius:99px; display:grid; place-items:center; background:rgba(8,6,14,.55); color:#ff5d8f}
+.poster .fav{position:absolute; top:6px; right:6px; z-index:1; width:28px; height:28px; border-radius:99px; display:grid; place-items:center; background:rgba(8,6,14,.55); color:#ff5d8f}
 .poster .fav .ico{width:18px; height:18px; fill:currentColor}
-.poster .mini-est{display:flex; justify-content:center; gap:1px; color:#ffc94d; margin-top:3px}
+.poster .mini-est{display:flex; gap:1px; color:var(--accent-ink)}
 .poster .mini-est .ico{width:11px; height:11px; fill:currentColor}
 .b-acciones{display:flex; flex-wrap:wrap; gap:8px; margin:18px 0 6px}
 .b-acciones .boton{flex:1 1 220px}
 .o-cab{display:flex; gap:12px; align-items:center}
 .o-cab img{width:64px; height:86px; border-radius:10px; object-fit:cover; background:var(--card2); flex:none}
 .o-cab img:not([src]){visibility:hidden}
+.o-cab > div{flex:1; min-width:0}
+#oTinta .plumilla{width:40px; height:54px; flex:none}
+.o-cab img{transform:perspective(500px) rotateY(-14deg); box-shadow:6px 10px 20px -8px rgba(0,0,0,.6)}
 .o-cab h2{margin:0 0 4px; font-size:19px}
 .o-cab span{color:var(--dim); font-size:13px}
 .o-fila{display:flex; align-items:center; gap:12px; margin-top:6px}
@@ -134,33 +173,49 @@ main{max-width:1180px; margin:0 auto; padding:0 0 40px}
 .titulo-vista{padding:calc(70px + env(safe-area-inset-top)) 16px 4px}
 h1{font:800 clamp(28px,7vw,40px)/1.08 var(--sans); letter-spacing:-.02em; margin:0 0 6px}
 .lema{color:var(--dim); margin:0 0 18px; font-size:15px; max-width:56ch}
-h2{font:700 19px/1.2 var(--sans); letter-spacing:-.01em; margin:28px 0 12px; display:flex; align-items:center; justify-content:space-between; gap:10px}
+h2{font:400 23px/1.15 var(--display); letter-spacing:-.01em; margin:28px 0 12px; display:flex; align-items:center; justify-content:space-between; gap:10px}
 h2 a{font:600 14px var(--sans); color:var(--accent-ink); text-decoration:none; display:inline-flex; align-items:center; gap:2px; min-height:44px}
 h2 a .ico{width:18px; height:18px}
 
-/* ── el banner grande (carrusel de lo que sigues) ── */
+/* ── el banner: «Esta noche sigues con…» (Tinta viva). Cada diapo es una escena: el charco de color de
+   la portada, la portada inclinada con sus hojas detrás y la plumilla que se llena de tinta con tu avance ── */
 .hero{position:relative}
 .hero-pistas{display:grid; grid-auto-flow:column; grid-auto-columns:100%; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; overscroll-behavior-x:contain}
 .hero-pistas::-webkit-scrollbar{display:none}
-.diapo{position:relative; scroll-snap-align:start; min-height:clamp(380px,62vh,520px); display:flex; flex-direction:column; justify-content:flex-end;
-  padding:0 16px 22px; text-decoration:none; color:#fff; overflow:hidden; isolation:isolate}
-.diapo img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center 20%; z-index:-2}
-.diapo::after{content:""; position:absolute; inset:0; z-index:-1;
-  background:linear-gradient(180deg,rgba(0,0,0,.45) 0%,transparent 28%,transparent 45%,color-mix(in srgb,var(--bg) 70%,transparent) 78%,var(--bg) 100%)}
-.diapo.vacia{background:radial-gradient(120% 90% at 80% 0%,color-mix(in srgb,var(--accent) 55%,transparent),transparent 60%),
-  radial-gradient(100% 80% at 0% 30%,color-mix(in srgb,var(--accent2) 40%,transparent),transparent 65%),var(--bg2)}
-.diapo .sup{font:700 12px var(--sans); letter-spacing:.12em; text-transform:uppercase; color:#E9DDFF; text-shadow:0 1px 8px rgba(0,0,0,.6)}
-.diapo b{display:block; font:800 clamp(30px,8vw,48px)/1.04 var(--sans); letter-spacing:-.02em; margin:6px 0 10px; text-shadow:0 2px 18px rgba(0,0,0,.55); max-width:18ch}
-.pildoras{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px}
-.pildora{font:700 12px var(--sans); padding:4px 12px; border-radius:99px; background:var(--accent); color:#fff}
-.pildora.clara{background:rgba(12,10,20,.45); color:#fff; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px)}
+.diapo{position:relative; scroll-snap-align:start; min-height:clamp(560px,78vh,640px); display:grid; grid-template-columns:minmax(0,52%) minmax(0,1fr); grid-template-rows:auto 1fr auto;
+  gap:0 18px; padding:calc(96px + env(safe-area-inset-top)) 18px 26px; text-decoration:none; color:var(--ink); overflow:hidden; isolation:isolate}
+.diapo .charco{position:absolute; inset:-60px -60px auto; height:78%; z-index:-2; filter:blur(52px) saturate(1.5); opacity:.7}
+.diapo .charco img{width:100%; height:100%; object-fit:cover}
+.diapo::after{content:""; position:absolute; inset:0; z-index:-1; background:radial-gradient(130% 75% at 50% 15%,transparent 0,var(--bg) 80%)}
+.diapo .noche{grid-column:1/-1; margin-bottom:22px}
+.diapo .noche small{font:600 11px var(--sans); letter-spacing:.22em; text-transform:uppercase; color:var(--accent-ink)}
+.diapo .noche h2{font:400 clamp(38px,11vw,54px)/.98 var(--display); letter-spacing:-.02em; margin:10px 0 0; display:block}
+.diapo .noche h2 em{font:italic 300 1em var(--serif); color:var(--lila)}
+.tomo{position:relative; aspect-ratio:3/4.2; transform:rotate(-3deg); align-self:start}
+.tomo i{position:absolute; inset:0; border-radius:6px 16px 16px 6px; background:var(--ink); opacity:.12; transform:translate(9px,7px) rotate(3deg)}
+.tomo i+i{opacity:.06; transform:translate(16px,13px) rotate(5deg)}
+.tomo img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; border-radius:6px 16px 16px 6px; box-shadow:0 30px 60px -22px rgba(0,0,0,.9)}
+.tomo .sin{position:absolute; inset:0; border-radius:6px 16px 16px 6px; background:var(--card2); display:grid; place-items:center; color:var(--dim)}
+.tomo::after{content:""; position:absolute; left:0; top:0; bottom:0; width:12px; border-radius:6px 0 0 6px; background:linear-gradient(90deg,rgba(0,0,0,.4),transparent)}
+.dato{display:flex; flex-direction:column; gap:12px; align-self:start; padding-top:8px; min-width:0}
+.dato b{font:400 clamp(20px,5.6vw,26px)/1.06 var(--display); overflow-wrap:anywhere}
+.dato .voz{font-size:15px; line-height:1.3}
+.dato .cap{font:600 11px var(--sans); letter-spacing:.14em; text-transform:uppercase; color:var(--dim)}
+.plumilla{width:52px; height:70px}
+.continuar{grid-column:1/-1; margin-top:26px; min-height:62px; border-radius:99px; display:flex; align-items:center; gap:12px; padding:0 7px 0 24px;
+  background:var(--ink); color:var(--bg); font:700 16px var(--sans)}
+.continuar .cap2{margin-left:auto; font:italic 400 15px var(--serif); opacity:.7}
+.continuar .gota{width:48px; height:48px; border-radius:50%; background:var(--bg); color:var(--ink); display:grid; place-items:center}
+.diapo.vacia{grid-template-columns:1fr; align-content:end}
+.diapo.vacia .charco{background:radial-gradient(60% 60% at 70% 30%,var(--accent),transparent 70%),radial-gradient(50% 50% at 20% 60%,var(--accent2),transparent 70%)}
+.diapo.vacia p{font:italic 300 18px/1.4 var(--serif); color:var(--lila); margin:0 0 20px; max-width:30ch}
 .boton{display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:48px; padding:0 22px; border-radius:99px; border:0;
   background:var(--accent); color:#fff; font:700 15px var(--sans); text-decoration:none; cursor:pointer; align-self:flex-start;
   box-shadow:0 10px 30px -10px color-mix(in srgb,var(--accent) 80%,transparent)}
 .boton .ico{width:18px; height:18px}
 .boton.suave{background:var(--card2); color:var(--ink); box-shadow:none}
-.puntos{position:absolute; left:0; right:0; bottom:8px; display:flex; justify-content:center; gap:6px; pointer-events:none}
-.puntos i{width:6px; height:6px; border-radius:99px; background:rgba(255,255,255,.35); transition:width .2s}
+.puntos{position:absolute; left:0; right:0; bottom:4px; display:flex; justify-content:center; gap:6px; pointer-events:none}
+.puntos i{width:6px; height:6px; border-radius:99px; background:color-mix(in srgb,var(--ink) 30%,transparent); transition:width .2s}
 .puntos i.ya{width:20px; background:var(--accent-ink)}
 @media (prefers-reduced-motion:reduce){ .puntos i{transition:none} }
 
@@ -179,31 +234,30 @@ h2 a .ico{width:18px; height:18px}
 
 /* ── continuar leyendo: tarjetas anchas con barra de avance ── */
 .carril{display:grid; grid-auto-flow:column; grid-auto-columns:minmax(250px,300px); gap:12px; overflow-x:auto; scroll-snap-type:x mandatory;
-  overscroll-behavior-x:contain; scrollbar-width:none; padding:0 16px; margin:0 -16px; position:relative}
+  overscroll-behavior-x:contain; scrollbar-width:none; padding:0 16px; margin:0 -16px; scroll-padding-inline:16px; position:relative}
 .carril::-webkit-scrollbar{display:none}
 .carril-p{grid-auto-columns:128px}
 .carril-p .poster{scroll-snap-align:start}
 .sub-h{font:500 13px var(--sans); color:var(--dim); margin-left:4px}
-.seguir{position:relative; scroll-snap-align:start; aspect-ratio:16/10; border-radius:18px; overflow:hidden; isolation:isolate;
-  display:flex; flex-direction:column; justify-content:flex-end; padding:14px; text-decoration:none; color:#fff; background:var(--card2); border:1px solid var(--line)}
-.seguir img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:-2}
-.seguir::after{content:""; position:absolute; inset:0; z-index:-1; background:linear-gradient(180deg,transparent 30%,rgba(8,6,14,.88) 100%)}
-.seguir b{font:700 17px/1.2 var(--sans); display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden}
-.seguir span{font-size:13px; color:rgba(255,255,255,.75)}
-.avance{height:5px; border-radius:99px; background:rgba(255,255,255,.22); overflow:hidden; margin-top:8px}
+.seguir{position:relative; scroll-snap-align:start; display:flex; flex-direction:column; gap:4px; text-decoration:none; color:var(--ink); min-width:0}
+.carril:has(.seguir){grid-auto-columns:118px}
+.seguir img{width:100%; aspect-ratio:3/4.2; object-fit:cover; border-radius:4px 12px 12px 4px; box-shadow:var(--sombra); margin-bottom:4px}
+.seguir::after{display:none}
+.seguir b{font:400 15px/1.15 var(--display); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+.seguir span{font:600 11px var(--sans); color:var(--dim)}
+.avance{height:3px; border-radius:2px; background:color-mix(in srgb,var(--ink) 14%,transparent); overflow:hidden; margin-top:4px}
 .avance i{display:block; height:100%; background:var(--accent); border-radius:99px}
 
 /* ── rejilla de portadas con el título encima ── */
 .rejilla{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px}
 @media (min-width:640px){ .rejilla{grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:14px} }
-.poster{position:relative; aspect-ratio:3/4.2; border-radius:14px; overflow:hidden; isolation:isolate; display:flex; flex-direction:column; justify-content:flex-end;
-  padding:10px; text-decoration:none; color:#fff; background:var(--card2); border:1px solid var(--line); min-width:0}
-.poster img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:-2}
-.poster::after{content:""; position:absolute; inset:0; z-index:-1; background:linear-gradient(180deg,transparent 45%,rgba(8,6,14,.9) 100%)}
-.poster .sin{position:absolute; inset:0; display:grid; place-items:center; color:var(--dim); z-index:-2}
-.poster b{font:700 14px/1.2 var(--sans); text-align:center; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
-.poster .etq{position:absolute; top:8px; left:8px; display:inline-flex; align-items:center; gap:4px; font:700 10px var(--sans); padding:3px 8px; border-radius:99px; background:var(--accent); color:#fff}
-.poster .nuevo{display:block; text-align:center; font:600 11px var(--sans); color:rgba(255,255,255,.75); margin-top:2px}
+.poster{position:relative; display:flex; flex-direction:column; gap:3px; text-decoration:none; color:var(--ink); min-width:0; background:none; border:0; padding:0}
+.poster > img,.poster > .sin{width:100%; aspect-ratio:3/4.2; object-fit:cover; border-radius:4px 12px 12px 4px; background:var(--card2); box-shadow:var(--sombra),inset 0 0 0 1px var(--line); margin-bottom:6px; display:grid; place-items:center; color:var(--dim)}
+.poster > img{display:block}
+.poster:active > img{transform:scale(.97)}
+.poster b{font:400 15px/1.15 var(--display); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+.poster .etq{position:absolute; top:7px; left:7px; font:700 9px var(--sans); letter-spacing:.14em; text-transform:uppercase; padding:3px 7px; border-radius:99px; background:rgba(11,6,16,.72); color:#F1EADF; -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px)}
+.poster .nuevo{display:block; font:600 11px var(--sans); color:var(--dim)}
 
 /* ── apartados y géneros en mosaico ── */
 .mosaico{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px}
@@ -232,7 +286,7 @@ h2 a .ico{width:18px; height:18px}
     <h1 class="oculto">INKWELL</h1>
     <div class="hero" id="hero"></div>
     <div class="pad">
-      <button type="button" class="boton seguir-btn" id="seguirLeyendo"><span class="ic-libro"></span>Seguir leyendo</button>
+      <button type="button" class="boton suave seguir-btn" id="seguirLeyendo"><span class="ic-libro"></span>Elegir qué seguir leyendo</button>
       <form class="buscador" action="tiras.html" method="get" role="search">
         <span class="i-buscar"></span>
         <input type="search" name="buscar" placeholder="Busca un cómic, manga o novela" aria-label="Buscar un cómic, manga o novela" autocomplete="off">
@@ -321,7 +375,7 @@ h2 a .ico{width:18px; height:18px}
 <dialog id="dlgObra" aria-labelledby="oTitulo">
   <div class="hoja-s">
     <div class="agarra" aria-hidden="true"></div>
-    <div class="o-cab"><img id="oPortada" alt=""><div><h2 id="oTitulo"></h2><span id="oSub"></span></div></div>
+    <div class="o-cab"><img id="oPortada" alt=""><div><h2 id="oTitulo"></h2><span id="oSub"></span></div><span id="oTinta"></span></div>
     <a class="boton" id="oAbrir"></a>
     <p class="opc-h">Lista</p>
     <div class="chips envuelve" id="oListas" role="radiogroup" aria-label="Lista"></div>
@@ -350,24 +404,21 @@ h2 a .ico{width:18px; height:18px}
 <script type="module">
 import { icono } from './iconos.js';
 
-const SECCIONES = [
-  ['inicio', 'Inicio', 'house'], ['explorar', 'Explorar', 'compass'], ['biblioteca', 'Biblioteca', 'library'],
-  ['crear', 'Crear', 'pen-tool'], ['comunidad', 'Comunidad', 'users'], ['perfil', 'Perfil', 'user'],
-];
+const { SECCIONES, pintarMuelle } = await import('./muelle.js');
+const { plumilla } = await import('./tinta.js');
 const $ = (s) => document.querySelector(s);
 const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 
 /* ── la navegación ── */
-$('#nav').innerHTML = SECCIONES.map(([id, n, ic]) => `<a href="#${id}" data-ir="${id}">${icono(ic)}<span>${n}</span></a>`).join('');
+pintarMuelle($('#nav'));
 $('#irTiras').innerHTML = icono('layers');
 document.querySelectorAll('.b-buscar').forEach((e) => { e.innerHTML = icono('search'); });
 document.querySelectorAll('.i-buscar').forEach((e) => { e.outerHTML = icono('search'); });
 document.querySelectorAll('.i-chev').forEach((e) => { e.outerHTML = icono('chevron-right', 'chev'); });
 function ir(){
   const v = (location.hash.slice(1) || 'inicio');
-  const ok = SECCIONES.some(([id]) => id === v) ? v : 'inicio';
+  const ok = [...document.querySelectorAll('[data-vista]')].some((x) => x.dataset.vista === v) ? v : 'inicio';
   document.querySelectorAll('[data-vista]').forEach((s) => { s.hidden = s.dataset.vista !== ok; });
-  document.querySelectorAll('#nav a').forEach((a) => a.toggleAttribute('aria-current', a.dataset.ir === ok) || a.dataset.ir === ok && a.setAttribute('aria-current', 'page'));
   document.querySelectorAll('#nav a').forEach((a) => { if(a.dataset.ir === ok) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   scrollTo(0, 0);
 }
@@ -438,12 +489,12 @@ const portada = (s) => s.portadaBlob ? URL.createObjectURL(s.portadaBlob) : '';
 const total = (s) => (s.caps || []).length;
 const leidos = (s) => Math.min((s.leidos || []).length + (s.caps || []).filter((c) => c.n < (s.desde || 0)).length, total(s));
 const tipo = (s) => s.fuente === 'webtoon' ? 'Webtoon' : 'Wattpad';
-const poster = (s) => { const p = portada(s), falta = total(s) - leidos(s);
+const poster = (s) => { const p = portada(s);
   return `<a class="poster" href="tiras.html?ficha=${encodeURIComponent(s.id)}">${p ? `<img src="${p}" alt="" loading="lazy">` : `<span class="sin">${icono('image')}</span>`}
-    <span class="etq">${tipo(s)}</span><b>${esc(s.titulo)}</b>${falta > 0 ? `<span class="nuevo">${falta} por leer</span>` : '<span class="nuevo">Al día</span>'}</a>`; };
+    <span class="etq">${tipo(s)}</span><b>${esc(s.titulo)}</b></a>`; };
 const seguir = (s) => { const p = portada(s), t = total(s), l = leidos(s);
   return `<a class="seguir" href="tiras.html?leer=${encodeURIComponent(s.id)}">${p ? `<img src="${p}" alt="" loading="lazy">` : ''}<b>${esc(s.titulo)}</b>
-    <span>Capítulo ${Math.min(l + 1, t)} de ${t}</span><div class="avance"><i style="width:${t ? Math.round(l / t * 100) : 0}%"></i></div></a>`; };
+    <span>Sigue en el capítulo ${Math.min(l + 1, t)}</span></a>`; };
 
 let todas = [], filtro = 'todo';
 const FILTROS = [['todo', 'Todo'], ['webtoon', 'Cómic'], ['wattpad', 'Novela']];
@@ -456,17 +507,25 @@ function pintarHero(){
   const ultimo = leer('tiras.ultimo', '') || '';
   const orden = [...todas].sort((a, b) => (ultimo.startsWith(b.id + ':') ? 1 : 0) - (ultimo.startsWith(a.id + ':') ? 1 : 0));
   const ds = orden.filter((s) => s.portadaBlob).slice(0, 5);
+  const ahora = new Date(), h = ahora.getHours();
+  const momento = h < 6 ? 'Esta madrugada' : h < 12 ? 'Esta mañana' : h < 19 ? 'Esta tarde' : 'Esta noche';
+  const fecha = ahora.toLocaleDateString('es-MX', { weekday: 'long' }) + ', ' + ahora.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' });
   if(!todas.length){
-    $('#hero').innerHTML = `<div class="hero-pistas"><div class="diapo vacia"><span class="sup">Bienvenido a INKWELL</span><b>Tus historias. Tu universo.</b>
-      <div class="pildoras"><span class="pildora clara">Cómic</span><span class="pildora clara">Manga</span><span class="pildora clara">Novela</span></div>
+    $('#hero').innerHTML = `<div class="hero-pistas"><div class="diapo vacia"><div class="charco" aria-hidden="true"></div>
+      <div class="noche"><small>${esc(fecha)}</small><h2>${momento}<br>empieza <em>una historia…</em></h2></div>
+      <p>Cómics, manhwas y novelas que se quedan en tu teléfono, aunque no haya internet.</p>
       <a class="boton" href="tiras.html">${icono('plus')}Agregar tu primera serie</a></div></div>`; return;
   }
   const lista = ds.length ? ds : [orden[0]];
-  $('#hero').innerHTML = `<div class="hero-pistas" id="pistas">${lista.map((s, i) => { const p = portada(s), t = total(s), l = leidos(s);
-    return `<a class="diapo${p ? '' : ' vacia'}" href="tiras.html?leer=${encodeURIComponent(s.id)}" aria-label="${esc(s.titulo)}: seguir leyendo">${p ? `<img src="${p}" alt=""${i ? ' loading="lazy"' : ''}>` : ''}
-      <span class="sup">${i === 0 ? 'Continuar leyendo' : 'En tu biblioteca'}</span><b>${esc(s.titulo)}</b>
-      <div class="pildoras"><span class="pildora">${tipo(s)}</span><span class="pildora clara">${l} de ${t} capítulos</span></div>
-      <span class="boton">${icono('book-open')}${l ? 'Seguir leyendo' : 'Empezar a leer'}</span></a>`; }).join('')}</div>
+  $('#hero').innerHTML = `<div class="hero-pistas" id="pistas">${lista.map((s, i) => { const p = portada(s), t = total(s), l = leidos(s), pct = t ? l / t : 0;
+    const cap = Math.min(l + 1, t);
+    return `<a class="diapo" href="tiras.html?leer=${encodeURIComponent(s.id)}" aria-label="${esc(s.titulo)}: seguir leyendo en el capítulo ${cap}">
+      ${p ? `<div class="charco" aria-hidden="true"><img src="${p}" alt=""></div>` : '<div class="charco" aria-hidden="true"></div>'}
+      <div class="noche"><small>${i === 0 ? esc(fecha) : 'También a medias'}</small><h2>${i === 0 ? `${momento}<br>sigues <em>con…</em>` : `Y no olvides<br><em>esta…</em>`}</h2></div>
+      <div class="tomo"><i></i><i></i>${p ? `<img src="${p}" alt=""${i ? ' loading="lazy"' : ''}>` : `<span class="sin">${icono('image')}</span>`}</div>
+      <div class="dato"><b>${esc(s.titulo)}</b><span class="voz">${l ? (l >= t ? 'La terminaste. ¿La vuelves a leer?' : 'Te quedaste justo cuando se ponía buena.') : 'Todavía no la empiezas.'}</span>
+        <span class="cap">${tipo(s)} · cap. ${cap}</span></div>
+      <span class="continuar">${l ? 'Seguir leyendo' : 'Empezar a leer'}<span class="cap2">cap. ${cap}</span><span class="gota">${icono('chevron-right')}</span></span></a>`; }).join('')}</div>
     ${lista.length > 1 ? `<div class="puntos" aria-hidden="true">${lista.map((_, i) => `<i${i ? '' : ' class="ya"'}></i>`).join('')}</div>` : ''}`;
   const pistas = $('#pistas');
   pistas?.addEventListener('scroll', () => { const k = Math.round(pistas.scrollLeft / pistas.clientWidth);
@@ -561,6 +620,63 @@ function posterB(o){
     <span class="etq">${TIPO_B[o.tipo]}</span>${m.fav ? `<span class="fav">${icono('heart')}</span>` : ''}
     <b>${esc(o.titulo)}</b>${m.nota ? `<span class="mini-est" aria-label="${m.nota} de 5">${icono('star').repeat(m.nota)}</span>` : ''}<span class="nuevo">${B.NOMBRE_LISTA[l]}${o.total ? ` · ${o.leidos}/${o.total}` : ''}</span></button>`;
 }
+/* ── el estante: cada obra es un lomo. Grosor según sus capítulos, alto propio y estable (sale de su id).
+   Se acomodan por repisas al ancho de la pantalla; si una repisa NO se llena, el último libro se recarga
+   en su vecino (como en un librero de verdad) y en una repisa llena todos van derechos. ── */
+const hashDe = (t) => { let h = 2166136261; for(const c of String(t)) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return h >>> 0; };
+const TINTAS = ['#3a1452', '#7E1735', '#24123a', '#5b2a7a', '#41203a', '#1f2b4a'];
+function medidaLomo(o){ const h = hashDe(o.id); return { w: Math.round(30 + Math.min(22, Math.sqrt(o.total || 9) * 2.6)), h: 150 + (h % 47), c: TINTAS[h % TINTAS.length] }; }
+function lomoB(o, m, med, inclina = null){
+  const p = urlB(o), d = B.deObra(o.id), l = B.listaDe(o);
+  const estilo = `--w:${med.w}px;--h:${med.h}px;--c:${med.c}` + (inclina ? `;--gira:${inclina.grados.toFixed(2)}deg;margin-left:${inclina.hueco}px` : '');
+  return `<button type="button" class="poster b lomo${inclina ? ' recargado' : ''}${l === 'leyendo' ? ' a-medias' : ''}" data-id="${esc(o.id)}" style="${estilo}" aria-label="${esc(o.titulo)}, ${B.NOMBRE_LISTA[l]}: sácalo del estante">
+    ${p ? `<img src="${p}" alt="" loading="lazy">` : ''}<b>${esc(o.titulo)}</b>${d.fav ? `<span class="fav">${icono('heart')}</span>` : ''}
+    ${d.nota ? `<span class="mini-est" aria-label="${d.nota} de 5">${icono('star').repeat(d.nota)}</span>` : ''}${l === 'leyendo' ? '<i class="liston" aria-hidden="true"></i>' : ''}</button>`;
+}
+function estante(ver){
+  const caja = $('#bObras'), ancho = Math.max(240, (caja.clientWidth || Math.min(innerWidth, 1100) - (innerWidth >= 900 ? 160 : 32)) - 16);
+  const GAP = 4, HUECO = 20, filas = [[]]; let usado = 0;
+  for(const o of ver){
+    const med = medidaLomo(o);
+    if(usado && usado + GAP + med.w > ancho){ filas.push([]); usado = 0; }
+    filas[filas.length - 1].push({ o, med }); usado += (usado ? GAP : 0) + med.w;
+  }
+  return filas.map((fila, k) => {
+    const lleno = fila.reduce((a, x) => a + x.med.w + GAP, 0);
+    const recarga = fila.length >= 2 && ancho - lleno > HUECO + 24;   // cabe recargarlo: hay hueco
+    const alto = Math.max(...fila.map((x) => x.med.h));
+    return `<div class="repisa" style="--alto:${alto}px">${fila.map((x, i) => {
+      if(!(recarga && i === fila.length - 1)) return lomoB(x.o, null, x.med);
+      /* se apoya en la esquina de arriba del vecino: si el vecino es más bajo, se inclina más */
+      const vecino = fila[i - 1].med.h, h = x.med.h;
+      const grados = (vecino >= h ? Math.asin(HUECO / h) : Math.atan(HUECO / vecino)) * 180 / Math.PI;
+      return lomoB(x.o, null, x.med, { grados: -grados, hueco: HUECO });
+    }).join('')}</div>`;
+  }).join('');
+}
+/* sacarlo del estante: el libro sale hacia ti en 3D, gira y enseña su portada; luego abre su hoja */
+function sacarLibro(boton, despues){
+  const o = obras.find((x) => x.id === boton.dataset.id), p = o && urlB(o);
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches || !boton.animate){ despues(); return; }
+  const r = boton.getBoundingClientRect(), med = { w: r.width, h: r.height };
+  const W = Math.min(220, innerWidth * .52), H = W * 1.4, prof = med.w;
+  const capa = document.createElement('div'); capa.className = 'libro3d'; capa.setAttribute('aria-hidden', 'true');
+  capa.innerHTML = `<div class="cubo" style="--W:${W}px;--H:${H}px;--D:${prof}px;--c:${getComputedStyle(boton).getPropertyValue('--c')}">
+    <div class="cara frente">${p ? `<img src="${p}" alt="">` : `<b>${esc(o?.titulo || '')}</b>`}</div>
+    <div class="cara lado">${p ? `<img src="${p}" alt="">` : ''}<b>${esc(o?.titulo || '')}</b></div><div class="cara hojas"></div></div>`;
+  document.body.append(capa);
+  const cubo = capa.firstElementChild;
+  /* empieza exactamente donde está el lomo, de canto (el lomo de frente) */
+  const x0 = r.left + r.width / 2 - W / 2, y0 = r.top + r.height / 2 - H / 2, esc0 = r.height / H;
+  const x1 = innerWidth / 2 - W / 2, y1 = Math.max(70, innerHeight * .2) - 0;
+  boton.style.visibility = 'hidden';
+  const a = cubo.animate([
+    { transform: `translate3d(${x0}px,${y0}px,0) scale(${esc0}) rotateY(90deg)` },
+    { transform: `translate3d(${x0}px,${y0 - 30}px,80px) scale(${esc0 * 1.05}) rotateY(70deg)`, offset: .25 },
+    { transform: `translate3d(${x1}px,${y1}px,200px) scale(1) rotateY(-16deg) rotateX(4deg)` },
+  ], { duration: 650, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' });
+  a.finished.then(() => { despues(); setTimeout(() => { capa.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, fill: 'forwards' }).finished.then(() => capa.remove()); boton.style.visibility = ''; }, 120); });
+}
 function pintarResumen(){
   const e = B.estadisticas(obras), pct = e.meta ? Math.min(100, Math.round(100 * e.esteMes / e.meta)) : 0;
   const nivel = (n) => n === 0 ? 0 : n < 3 ? 1 : n < 8 ? 2 : 3;
@@ -585,7 +701,7 @@ function pintarBiblio(){
   const etqs = B.etiquetasUsadas(obras, d); if(bEtq && !etqs.includes(bEtq)) bEtq = '';
   $('#bEtiquetas').innerHTML = etqs.map((t) => `<button type="button" class="chip" data-t="${esc(t)}" aria-pressed="${t === bEtq}">#${esc(t)}</button>`).join('');
   const ver = B.filtrar(obras, { vista: bVista, etiqueta: bEtq, tipo: $('#bTipo').value, orden: $('#bOrden').value, texto: $('#bTexto').value.trim() }, d);
-  $('#bObras').innerHTML = ver.length ? `<div class="rejilla">${ver.map(posterB).join('')}</div>`
+  $('#bObras').innerHTML = ver.length ? `<div class="estante">${estante(ver)}</div>`
     : `<div class="vacio"><b>${obras.length ? 'Nada por aquí' : 'Tu biblioteca está vacía'}</b>${obras.length ? 'Cambia de lista o de filtro, o toca una obra para moverla aquí.' : 'Sigue una serie en Tiras o sube un libro y aquí lo organizas.'}</div>`;
   const sug = B.sugeridas(obras, d).slice(0, 6);
   $('#bSugeridas').innerHTML = sug.length && bVista === 'todas' ? `<h2>Por tus gustos</h2><p class="lema">Pendientes con las etiquetas de tus favoritas y mejor calificadas.</p><div class="rejilla">${sug.map(posterB).join('')}</div>` : '';
@@ -611,12 +727,15 @@ $('#bArchivo').addEventListener('change', async (e) => {
 });
 /* la hoja de una obra: lista, favorita, estrellas, etiquetas y colecciones */
 $('#bObras').addEventListener('click', abrirObra); $('#bSugeridas').addEventListener('click', abrirObra);
-function abrirObra(e){ const b = e.target.closest('[data-id]'); if(!b) return; obraAbierta = obras.find((o) => o.id === b.dataset.id); if(!obraAbierta) return; pintarObra(); $('#dlgObra').showModal(); }
+function abrirObra(e){ const b = e.target.closest('[data-id]'); if(!b) return; obraAbierta = obras.find((o) => o.id === b.dataset.id); if(!obraAbierta) return;
+  const abrir = () => { pintarObra(); if(!$('#dlgObra').open) $('#dlgObra').showModal(); };
+  if(b.classList.contains('lomo')) sacarLibro(b, abrir); else abrir(); }
 function pintarObra(){
   const o = obraAbierta, m = B.deObra(o.id), l = B.listaDe(o), d = B.datos(), p = urlB(o);
   if(p) $('#oPortada').src = p; else $('#oPortada').removeAttribute('src');
   $('#oTitulo').textContent = o.titulo;
-  $('#oSub').textContent = [TIPO_B[o.tipo], o.autor, o.total ? `${o.leidos} de ${o.total} capítulos` : ''].filter(Boolean).join(' · ');
+  $('#oSub').textContent = [TIPO_B[o.tipo], o.autor, o.total ? (o.leidos >= o.total ? 'La terminaste' : o.leidos ? `Vas en el capítulo ${o.leidos + 1}` : 'Sin empezar') : ''].filter(Boolean).join(' · ');
+  $('#oTinta').innerHTML = o.total ? plumilla(o.leidos / o.total) : '';
   $('#oAbrir').href = o.href; $('#oAbrir').innerHTML = icono('book-open') + (o.leidos && o.leidos < o.total ? 'Seguir leyendo' : 'Abrir');
   $('#oListas').innerHTML = B.LISTAS.map(([k, t]) => `<button type="button" class="chip" role="radio" data-l="${k}" aria-checked="${k === l}" aria-pressed="${k === l}">${t}</button>`).join('');
   $('#oFav').setAttribute('aria-pressed', String(!!m.fav)); $('#oFav').innerHTML = icono('heart') + (m.fav ? 'Favorita' : 'Marcar favorita');
@@ -633,6 +752,8 @@ $('#oEtiquetas').addEventListener('click', (e) => { const b = e.target.closest('
 $('#oCols').addEventListener('change', (e) => { const c = e.target.closest('[data-c]'); if(!c) return; B.enColeccion(c.dataset.c, obraAbierta.id, c.checked); pintarBiblio(); });
 $('#cerrarObra').addEventListener('click', () => $('#dlgObra').close());
 $('#dlgObra').addEventListener('click', (e) => { if(e.target === $('#dlgObra')) $('#dlgObra').close(); });
+let reacomodo; addEventListener('resize', () => { clearTimeout(reacomodo); reacomodo = setTimeout(() => { if(!$('#v-biblioteca').hidden) pintarBiblio(); }, 200); });
+addEventListener('hashchange', () => { if(location.hash === '#biblioteca') pintarBiblio(); });
 window.__biblio = { B, get obras(){ return obras; }, pintarBiblio };
 
 (async () => {

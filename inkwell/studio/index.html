@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#0C0B11">
+<meta name="theme-color" content="#0B0610">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="../manifest.webmanifest">
@@ -91,12 +91,11 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 
 <script type="module">
 import { icono } from '../iconos.js';
+import { pintarMuelle } from '../muelle.js';
 import { todas, guardar, borrar, nueva, FORMATOS } from './obras.js';
 const $ = (s) => document.querySelector(s);
 const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
-$('#nav').innerHTML = [['inicio', 'Inicio', 'house'], ['explorar', 'Explorar', 'compass'], ['biblioteca', 'Biblioteca', 'library'],
-  ['crear', 'Crear', 'pen-tool'], ['comunidad', 'Comunidad', 'users'], ['perfil', 'Perfil', 'user']]
-  .map(([id, n, ic]) => `<a href="${id === 'crear' ? './' : '../#' + id}"${id === 'crear' ? ' aria-current="page"' : ''}>${icono(ic)}<span>${n}</span></a>`).join('');
+pintarMuelle($('#nav'), { raiz: '../', actual: 'crear' });
 document.querySelectorAll('.ic[data-ic]').forEach((e) => { e.outerHTML = icono(e.dataset.ic); });
 $('#nFormato').innerHTML = Object.entries(FORMATOS).map(([k, f]) => `<option value="${k}">${f.nombre}</option>`).join('');
 

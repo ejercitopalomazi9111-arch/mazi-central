@@ -2,6 +2,8 @@
 import { reconocer, FUENTES, wattpad, limpiarTexto, desentidad } from './fuentes.js';
 import { pdf, epub, tamanoJpeg } from './archivos.js';
 import { icono } from './iconos.js';
+import { pintarMuelle } from './muelle.js';
+import { plumilla } from './tinta.js';
 import { apuntar } from './biblioteca.js';
 import { codigoDe, leerCodigo, seriesDeRanking, elegirNuevas, GENEROS, seriesDeGenero } from './compartir.js';
 
@@ -217,9 +219,7 @@ async function pintarSeries(){
 }
 
 /* ── la barra de secciones de INKWELL: Tiras vive dentro de Biblioteca ── */
-$('#nav').innerHTML = [['inicio', 'Inicio', 'house'], ['explorar', 'Explorar', 'compass'], ['biblioteca', 'Biblioteca', 'library'],
-  ['crear', 'Crear', 'pen-tool'], ['comunidad', 'Comunidad', 'users'], ['perfil', 'Perfil', 'user']]
-  .map(([id, n, ic]) => `<a href="./#${id}"${id === 'biblioteca' ? ' aria-current="page"' : ''}>${icono(ic)}<span>${n}</span></a>`).join('');
+pintarMuelle($('#nav'), { raiz: './', actual: 'biblioteca' });
 $('#cerrarLector').innerHTML = icono('x'); $('#brillo').innerHTML = icono('sun');
 /* brillo de la pantalla y tamaño de letra de las historias de texto (se recuerdan) */
 const BRILLOS = [1, .85, .7, .55];
@@ -516,7 +516,9 @@ async function abrirFicha(id){
   if(u){ $('#fPortada').src = u; $('#fFondo').src = u; } else { $('#fPortada').removeAttribute('src'); $('#fFondo').removeAttribute('src'); }
   $('#fFuente').textContent = s.fuente === 'webtoon' ? 'Webtoon · cómic' : 'Wattpad · texto';
   $('#fTitulo').textContent = s.titulo; $('#fAutor').textContent = s.autor || '';
-  $('#fAvance').textContent = `${nLeidos} de ${s.caps.length} leídos`; $('#fBarra').style.width = pct + '%';
+  /* el avance, como la plumilla que se llena de tinta (nada de barrita: Carlos, 10 nov) */
+  $('#fTinta').innerHTML = nLeidos ? plumilla(pct / 100) : '';
+  $('#fAvance').textContent = !nLeidos ? 'Todavía no la empiezas' : pendientes(s)[0] ? `Vas en el capítulo ${pendientes(s)[0].n}` : 'La terminaste';
   const sig = pendientes(s)[0];
   $('#fLeer').innerHTML = icono('play') + (sig ? (nLeidos ? `Seguir · cap. ${sig.n}` : 'Empezar a leer') : 'Ya la leíste toda');
   $('#fLeer').disabled = !sig;

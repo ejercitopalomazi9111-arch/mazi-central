@@ -19,6 +19,7 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
   pg.on('pageerror', (e) => errores.push(e.message)); pg.on('console', (m) => m.type() === 'error' && errores.push(m.text()));
   pg.on('dialog', (d) => d.accept());
   await pg.goto(BASE + 'studio/');
+  await pg.waitForFunction(() => /Todavía no tienes obras/.test(document.querySelector('#obras').textContent), null, { timeout: 10000 }).catch(() => {});
   ok(/Todavía no tienes obras/.test(await pg.textContent('#obras')), 'Studio vacío dice cómo empezar');
   ok(!(await desborde(pg)), 'Studio no se sale de lado');
 

@@ -16,6 +16,7 @@ const br = await chromium.launch();
 for (const [w, h] of [[390, 844], [1280, 800]]) {
   console.log(`\n${w}×${h}`);
   const ctx = await br.newContext({ viewport: { width: w, height: h }, serviceWorkers: 'block', acceptDownloads: true });
+  await ctx.route(/sala\.palomazi9111\.workers\.dev|\/api\/sala\//, (r) => r.fulfill({ status: 404, contentType: 'application/json', body: '{}' }));
   const pg = await ctx.newPage(); const errores = [];
   pg.on('pageerror', (e) => errores.push(e.message)); pg.on('console', (m) => m.type() === 'error' && !/404/.test(m.text()) && errores.push(m.text()));
   await pg.goto(BASE + 'index.html');
@@ -39,13 +40,26 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
   ok((await pg.$$('#bObras .poster')).length === 4, 'en «Todas» salen las series y el libro');
   ok(await pg.$$eval('.b-cal i', (x) => x.length >= 78 && x.length <= 84), 'el calendario enseña las últimas 12 semanas');
   ok(/racha de 3 días/.test(await pg.textContent('#bResumen')), 'cuenta la racha de días seguidos leyendo');
+  /* el estante: lomos por repisa; sólo se recarga el último de una repisa que no se llena */
+  const est = await pg.evaluate(() => [...document.querySelectorAll('#bObras .repisa')].map((r) => { const ls = [...r.querySelectorAll('.lomo')], ult = ls[ls.length - 1];
+    const libre = r.getBoundingClientRect().width - ls.reduce((a, l) => a + l.getBoundingClientRect().width + 4, 0);
+    return { n: ls.length, recargados: ls.filter((l) => l.classList.contains('recargado')).length, ultimo: !!ult?.classList.contains('recargado'), libre }; }));
+  ok(est.every((r) => r.recargados <= 1 && (r.recargados === 0 || r.ultimo)), 'en cada repisa sólo se puede recargar el último libro · ' + JSON.stringify(est.map((r) => [r.n, r.recargados])));
+  ok(est.filter((r) => r.recargados).every((r) => r.n >= 2), 'y sólo si tiene un vecino en el cual recargarse');
+  const gira = await pg.evaluate(() => { const l = document.querySelector('.lomo.recargado'); return l ? parseFloat(getComputedStyle(l).getPropertyValue('--gira')) : null; });
+  ok(gira === null || (gira < -3 && gira > -14), 'el recargado se inclina poquito hacia su vecino (' + gira + '°)');
   /* meta del mes */
   await pg.fill('#bMeta', '10'); await pg.press('#bMeta', 'Enter'); await pg.locator('#bMeta').blur();
   await pg.waitForSelector('.b-barra');
   ok(/meta 10/.test(await pg.textContent('#bResumen')) && JSON.parse(await pg.evaluate(() => localStorage.getItem('inkwell.biblio'))).meta === 10, 'la meta del mes se pone y se guarda');
   /* la hoja de una obra */
-  await pg.click('#bObras .poster[data-id="wattpad:3"]'); await pg.waitForSelector('#dlgObra[open]');
+  await pg.click('#bObras .poster[data-id="wattpad:3"]');
+  ok(await pg.evaluate(() => !!document.querySelector('.libro3d .cubo .frente')), 'al tocar un lomo, el libro sale hacia ti en 3D');
+  await pg.waitForSelector('#dlgObra[open]');
+  await pg.waitForTimeout(500);
+  ok(await pg.evaluate(() => !document.querySelector('.libro3d')), 'y luego el libro de la animación se quita solo');
   ok(/Cobre/.test(await pg.textContent('#oTitulo')) && (await pg.getAttribute('#oAbrir', 'href')) === 'tiras.html?ficha=wattpad%3A3', 'tocarla abre su hoja, con «Abrir» que lleva a su ficha');
+  ok(await pg.evaluate(() => !!document.querySelector('#oTinta .plumilla') && !/de \d+ capítulos/.test(document.querySelector('#oSub').textContent)), 'el avance va como la plumilla con tinta, no como «x de N capítulos»');
   await pg.click('#oListas [data-l="pausa"]');
   await pg.click('#oFav');
   await pg.click('#oNota [data-n="4"]');
