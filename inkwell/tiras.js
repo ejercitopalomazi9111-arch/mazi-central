@@ -14,25 +14,8 @@ const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<
    abrió desde otro lado y no hay puerta, directo a La Sala. ?servidor= lo fija
    (pruebas). Wattpad, directo: su API da CORS. */
 const params = new URLSearchParams(location.search);
-const DIRECTO = 'https://sala.palomazi9111.workers.dev';
-const FIJO = (params.get('servidor') || '').replace(/\/+$/, '');
-let bases = FIJO ? [FIJO] : [...new Set([/^https?:$/.test(location.protocol) ? location.origin : '', DIRECTO].filter(Boolean))];
-export async function pedir(u){
-  const ruta = '/api/sala/inkwell/traer?url=' + encodeURIComponent(u);
-  let ultimo;
-  for(const b of bases){
-    try{
-      const r = await fetch(b + ruta);
-      /* la puerta de la Central marca lo que contestó La Sala; sin marca y con
-         404 es que aquí no hay puerta (github.io, localhost): se brinca */
-      if(!FIJO && b === location.origin && b !== DIRECTO && !r.headers.get('X-Puerta')){ ultimo = new Error('sin puerta'); continue; }
-      if(!r.ok){ let m = ''; try{ m = (await r.json()).error; }catch{} throw new Error(m || `Webtoon contestó ${r.status}`); }
-      if(bases[0] !== b) bases = [b, ...bases.filter((x) => x !== b)];   // la que sirvió, primero
-      return r;
-    } catch(e){ ultimo = e; }
-  }
-  throw ultimo || new Error('No hay conexión con La Sala.');
-}
+import { pedir, recomendar } from './red.js';
+export { pedir };
 /* Wattpad: directo si deja (antes su API daba CORS); si no, por el recadero de La Sala, igual que Webtoon */
 async function directo(u){
   let r = null;
@@ -703,12 +686,26 @@ $('#formGenero').addEventListener('submit', async (e) => {
   try{
     const sigo = new Set((await todasSeries()).map((x) => x.id));
     porGenero = seriesDeGenero(await (await pedir(`https://www.webtoons.com/${lang}/genres/${g}?sortOrder=LIKEIT`)).text()).slice(0, 60);
-    caja.innerHTML = porGenero.length ? porGenero.map((x, i) => `<div class="resultado" data-v="${i}"><img alt="" data-p="${i}"><div><b>${esc(x.titulo)}</b><span>${esc(x.autor)}</span></div>${sigo.has('webtoon:' + x.ref.titleNo) ? '<button type="button" disabled>Ya la sigues</button>' : `<button type="button" class="si" data-i="${i}">Seguir</button>`}</div>`).join('')
-      : '<p class="vacio">No encontré cómics en esa categoría.</p>';
-    /* las portadas piden venir «de webtoons.com»: van por el recadero, de a poco */
-    for(const img of caja.querySelectorAll('img[data-p]')){ const x = porGenero[+img.dataset.p]; if(!x.portada) continue; pedir(x.portada).then((r) => r.blob()).then((b) => { img.src = urlDe(b); }).catch(() => {}); }
+    pintarPorGenero(sigo);
   } catch(er){ caja.innerHTML = `<p class="vacio">No se pudo: ${esc(er.message)}</p>`; }
 });
+function pintarPorGenero(sigo, aviso = ''){
+  const caja = $('#porGenero');
+    caja.innerHTML = aviso + (porGenero.length ? porGenero.map((x, i) => `<div class="resultado" data-v="${i}"><img alt="" data-p="${i}"><div><b>${esc(x.titulo)}</b><span>${esc(x.autor)}</span></div>${sigo.has('webtoon:' + x.ref.titleNo) ? '<button type="button" disabled>Ya la sigues</button>' : `<button type="button" class="si" data-i="${i}">Seguir</button>`}</div>`).join('')
+      : '<p class="vacio">No encontré cómics en esa categoría.</p>');
+    /* las portadas piden venir «de webtoons.com»: van por el recadero, de a poco */
+    for(const img of caja.querySelectorAll('img[data-p]')){ const x = porGenero[+img.dataset.p]; if(!x.portada) continue; pedir(x.portada).then((r) => r.blob()).then((b) => { img.src = urlDe(b); }).catch(() => {}); }
+}
+/* de base, sin buscar: recomendaciones de tus géneros que todavía no sigues */
+async function recomendacionesBase(){
+  if(!navigator.onLine || $('#porGenero').children.length) return;
+  const ss = await todasSeries(), wt = ss.filter((x) => x.fuente === 'webtoon');
+  const cuenta = new Map(); for(const x of wt) cuenta.set(x.ref.genero, (cuenta.get(x.ref.genero) || 0) + 1);
+  try{
+    porGenero = await recomendar({ sigo: ss.map((x) => x.id), descartadas: leer('tiras.descartadas', []), generos: [...cuenta].sort((a, b) => b[1] - a[1]).map(([k]) => k).filter((k) => !/canvas|challenge/.test(k)), lang: wt[0]?.ref.lang || 'es', cuantas: 24 });
+  }catch{ porGenero = []; }
+  if(porGenero.length && !$('#porGenero').children.length) pintarPorGenero(new Set(ss.map((x) => x.id)), '<p class="lema-rec">Para ti: lo más querido de tus géneros que aún no sigues. Toca una para ver su ficha.</p>');
+}
 $('#porGenero').addEventListener('click', async (e) => {
   const b = e.target.closest('button[data-i]');
   if(!b){ const t = e.target.closest('.resultado[data-v]'); if(t) abrirVista(porGenero[+t.dataset.v].ref, porGenero[+t.dataset.v]); return; }
@@ -857,7 +854,7 @@ document.addEventListener('visibilitychange', () => { if(document.visibilityStat
 if('serviceWorker' in navigator && !params.has('servidor')) navigator.serviceWorker.register('sw.js').catch(() => {});
 /* para las pruebas; va antes del arranque porque importar un link puede tardar */
 window.__tiras = { abrirFicha, abrirVista, preparar, todasSeries, clavesDe, get cola(){ return cola; }, get ocupado(){ return !!preparando || otraVez; } };
-await pintarSeries(); espacio();
+await pintarSeries(); espacio(); recomendacionesBase();
 /* desde el inicio: ?leer=todo | ?leer=<serie> | ?ficha=<serie> */
 const pideLeer = params.get('leer'), pideFicha = params.get('ficha');
 if(pideLeer || pideFicha) history.replaceState(null, '', location.pathname + (params.get('servidor') ? '?servidor=' + encodeURIComponent(params.get('servidor')) : ''));
