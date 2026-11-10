@@ -357,6 +357,14 @@ function pintarHero(){
   const pistas = $('#pistas');
   pistas?.addEventListener('scroll', () => { const k = Math.round(pistas.scrollLeft / pistas.clientWidth);
     document.querySelectorAll('.puntos i').forEach((x, j) => x.classList.toggle('ya', j === k)); }, { passive: true });
+  /* cada 10 segundos pasa sola a la siguiente serie; si la mueves tú, el reloj vuelve a empezar */
+  clearInterval(pintarHero.reloj);
+  if(pistas && lista.length > 1){
+    const quieto = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const pasar = () => { if(document.hidden) return; const k = (Math.round(pistas.scrollLeft / pistas.clientWidth) + 1) % lista.length; pistas.scrollTo({ left: k * pistas.clientWidth, behavior: quieto ? 'auto' : 'smooth' }); };
+    pintarHero.reloj = setInterval(pasar, 10000);
+    pistas.addEventListener('pointerdown', () => { clearInterval(pintarHero.reloj); pintarHero.reloj = setInterval(pasar, 10000); }, { passive: true });
+  }
 }
 function pintarListas(){
   const ss = todas.filter((s) => filtro === 'todo' || s.fuente === filtro);

@@ -51,6 +51,24 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
   ok(await pg.inputValue('#miNombre') === 'Carlos' && /robot/.test(await pg.getAttribute('#avatarImg', 'src')), 'tu nombre y tu foto se quedan');
   ok(!(await pg.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), 'el perfil no se sale de lado');
   if (process.env.CAPTURA) await pg.screenshot({ path: `${process.env.CAPTURA}/perfil-${w}.png`, fullPage: true });
+  /* el banner pasa solo a la siguiente serie cada 10 s (con el reloj adelantado) */
+  await pg.goto(BASE + 'index.html');
+  await pg.evaluate(async () => {
+    const c = document.createElement('canvas'); c.width = 30; c.height = 40; c.getContext('2d').fillRect(0, 0, 30, 40);
+    const b = await new Promise((ok) => c.toBlob(ok, 'image/png'));
+    const d = await new Promise((ok) => { const q = indexedDB.open('inkwell-tiras', 1); q.onsuccess = () => ok(q.result); });
+    const t = d.transaction('series', 'readwrite'), st = t.objectStore('series');
+    for (const id of ['webtoon:1', 'webtoon:2']) { const r = await new Promise((ok) => { const g = st.get(id); g.onsuccess = () => ok(g.result); }); r.portadaBlob = b; st.put(r); }
+    await new Promise((ok) => { t.oncomplete = ok; });
+  });
+  const pg2 = await ctx.newPage(); await pg2.clock.install(); await pg2.goto(BASE + 'index.html');
+  await pg2.waitForFunction(() => document.querySelectorAll('#pistas .diapo').length === 2);
+  await pg2.evaluate(() => { document.querySelector('#pistas').style.scrollBehavior = 'auto'; });
+  const x0 = await pg2.evaluate(() => document.querySelector('#pistas').scrollLeft);
+  await pg2.clock.runFor(10500); await pg2.waitForTimeout(400);
+  const x1 = await pg2.evaluate(() => document.querySelector('#pistas').scrollLeft);
+  ok(x0 === 0 && x1 > 100, `el banner cambia solo de serie a los 10 segundos (${x0} → ${Math.round(x1)})`);
+  await pg2.close();
   ok(!errores.length, 'sin errores en la consola' + (errores.length ? ' — ' + errores.join(' | ') : ''));
   await ctx.close();
 }

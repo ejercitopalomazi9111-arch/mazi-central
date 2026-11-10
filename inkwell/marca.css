@@ -36,6 +36,9 @@
   --sombra:0 14px 34px -22px rgba(40,20,90,.35); color-scheme:light;
 }
 
+/* en el teléfono la página nunca se mueve de lado: sólo los carruseles que lo necesitan (Carlos, 10 nov) */
+html,body{max-width:100%; overflow-x:hidden; overscroll-behavior-x:none}
+
 .ico{width:22px; height:22px; flex:none}
 
 /* la marca: el monograma y la palabra, compuestos con Gloock */
