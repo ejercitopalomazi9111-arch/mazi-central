@@ -288,7 +288,29 @@ const oscuroAhora = () => document.documentElement.dataset.tema ? document.docum
 function pintarTema(){ $('#tema').innerHTML = icono(oscuroAhora() ? 'sun' : 'moon'); }
 const guardado = leer('inkwell.tema', null); if(guardado) document.documentElement.dataset.tema = guardado;
 pintarTema();
-$('#tema').addEventListener('click', () => { const t = oscuroAhora() ? 'claro' : 'oscuro'; document.documentElement.dataset.tema = t; escribir('inkwell.tema', t); pintarTema(); });
+/* el cambio se abre como un círculo desde el botón: lo nuevo entra nítido desde un desenfoque
+   con color subido, y lo de antes se hunde y se apaga detrás (View Transitions; sin ellas, o con
+   «reducir movimiento», cambia de golpe) */
+function cambiarTema(e){
+  const t = oscuroAhora() ? 'claro' : 'oscuro', raiz = document.documentElement;
+  const aplicar = () => { raiz.dataset.tema = t; escribir('inkwell.tema', t); pintarTema(); };
+  if(!document.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches){ aplicar(); return; }
+  const b = $('#tema').getBoundingClientRect();
+  const x = e && e.clientX ? e.clientX : b.left + b.width / 2, y = e && e.clientY ? e.clientY : b.top + b.height / 2;
+  const r = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+  raiz.classList.add('vt-tema'); raiz.dataset.haciaTema = t;
+  const vt = document.startViewTransition(aplicar);
+  vt.ready.then(() => {
+    const curva = 'cubic-bezier(.65,0,.2,1)';
+    raiz.animate({ clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${r * .55}px at ${x}px ${y}px)`, `circle(${r}px at ${x}px ${y}px)`],
+      filter: ['blur(14px) saturate(1.9) brightness(1.15)', 'blur(3px) saturate(1.35)', 'blur(0) saturate(1) brightness(1)'] },
+      { duration: 1000, easing: curva, pseudoElement: '::view-transition-new(root)' });
+    raiz.animate({ transform: ['scale(1)', 'scale(.93)'], filter: ['brightness(1) blur(0)', 'brightness(.55) blur(2px)'], borderRadius: ['0px', '28px'] },
+      { duration: 1000, easing: curva, pseudoElement: '::view-transition-old(root)' });
+  }).catch(() => {});
+  vt.finished.finally(() => { raiz.classList.remove('vt-tema'); delete raiz.dataset.haciaTema; });
+}
+$('#tema').addEventListener('click', cambiarTema);
 
 /* ── accesos y tipos ── */
 $('#accesos').innerHTML = [

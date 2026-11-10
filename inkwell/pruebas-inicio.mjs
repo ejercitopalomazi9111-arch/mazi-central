@@ -69,6 +69,18 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
   const x1 = await pg2.evaluate(() => document.querySelector('#pistas').scrollLeft);
   ok(x0 === 0 && x1 > 100, `el banner cambia solo de serie a los 10 segundos (${x0} → ${Math.round(x1)})`);
   await pg2.close();
+  /* claro ↔ oscuro: con su animación de círculo, y se guarda */
+  await pg.evaluate(() => { window.__vt = 0; const o = document.startViewTransition.bind(document); document.startViewTransition = (f) => { window.__vt++; return o(f); }; });
+  const antes = await pg.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  await pg.click('#tema');
+  await pg.waitForTimeout(300);
+  const aMitad = await pg.evaluate(() => document.documentElement.classList.contains('vt-tema'));
+  await pg.waitForTimeout(1200);
+  const despues = await pg.evaluate(() => ({ fondo: getComputedStyle(document.body).backgroundColor, vt: window.__vt, clase: document.documentElement.classList.contains('vt-tema'), guardado: localStorage.getItem('inkwell.tema') }));
+  ok(despues.vt === 1 && aMitad && !despues.clase, 'el cambio de tema va con su animación y al terminar no deja nada puesto');
+  ok(despues.fondo !== antes && /claro|oscuro/.test(despues.guardado), `cambia el tema y lo guarda · ${antes} → ${despues.fondo}`);
+  await pg.click('#tema'); await pg.waitForTimeout(1300);
+  ok((await pg.evaluate(() => getComputedStyle(document.body).backgroundColor)) === antes, 'y regresa al tocar otra vez');
   ok(!errores.length, 'sin errores en la consola' + (errores.length ? ' — ' + errores.join(' | ') : ''));
   await ctx.close();
 }
