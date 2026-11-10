@@ -58,6 +58,20 @@ h2{font:700 19px/1.2 var(--sans); margin:28px 0 12px}
 #lector[hidden]{display:none}
 #lector[data-tema="sepia"]{--papel:#F4ECD8; --tinta:#4B3A2A; --suave:#8A7559}
 #lector[data-tema="oscuro"]{--papel:#121016; --tinta:#E8E2F0; --suave:#9A92AA}
+.lcab{position:absolute; top:0; left:0; right:0; z-index:3; background:var(--papel); box-shadow:0 8px 24px -16px rgba(0,0,0,.4); transition:transform .22s ease-out}
+#lector.sinbarra .lcab{transform:translateY(-100%); pointer-events:none; box-shadow:none}
+@media (prefers-reduced-motion:reduce){ .lcab{transition:none} }
+#texto{padding-top:calc(24px + env(safe-area-inset-top)) !important}
+#texto .leyendo{background:color-mix(in srgb,var(--accent) 18%,transparent); border-radius:6px; box-shadow:0 0 0 6px color-mix(in srgb,var(--accent) 18%,transparent)}
+#lector.con-voz #texto p, #lector.con-voz #texto li, #lector.con-voz #texto h1, #lector.con-voz #texto h2, #lector.con-voz #texto h3{cursor:pointer}
+.voz{position:absolute; left:50%; bottom:calc(16px + env(safe-area-inset-bottom)); transform:translateX(-50%); z-index:4; display:flex; align-items:center; gap:6px;
+  width:min(440px, calc(100% - 24px)); padding:6px; border-radius:99px; background:var(--accent); color:#fff; box-shadow:0 14px 34px -14px rgba(0,0,0,.6)}
+.voz[hidden]{display:none}
+.voz button{background:rgba(255,255,255,.18); border:0; color:#fff; width:44px; padding:0; flex:none}
+.voz #vozVel{width:auto; padding:0 12px; font-size:14px}
+.voz-t{flex:1; min-width:0; line-height:1.15}
+.voz-t b{display:block; font-size:14px}
+.voz-t span{display:block; font-size:12px; opacity:.85; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .lbarra{display:flex; align-items:center; gap:8px; padding:calc(6px + env(safe-area-inset-top)) 8px 6px; border-bottom:1px solid color-mix(in srgb,var(--tinta) 12%,transparent)}
 .lbarra button{background:transparent; border:0; color:var(--tinta); width:44px; padding:0}
 .lbarra .t{flex:1; min-width:0; font-size:14px; line-height:1.2}
@@ -73,7 +87,7 @@ h2{font:700 19px/1.2 var(--sans); margin:28px 0 12px}
 #texto h1,#texto h2,#texto h3{font-family:var(--serif); line-height:1.25; text-align:center; margin:.6em 0 1em}
 #texto p{margin:0 0 1em}
 #texto blockquote{margin:1em 0; padding-left:1em; border-left:3px solid var(--suave)}
-.pasos{display:flex; gap:10px; justify-content:space-between; max-width:680px; margin:0 auto; padding:0 22px 40px}
+.pasos{display:flex; gap:10px; justify-content:space-between; max-width:680px; margin:0 auto; padding:0 22px 110px}
 .pasos button{flex:1; background:color-mix(in srgb,var(--tinta) 6%,transparent); color:var(--tinta); border-color:color-mix(in srgb,var(--tinta) 14%,transparent)}
 </style>
 </head>
@@ -89,9 +103,11 @@ h2{font:700 19px/1.2 var(--sans); margin:28px 0 12px}
 </main>
 
 <div id="lector" hidden>
+  <div class="lcab">
   <div class="lbarra">
     <button type="button" id="cerrar" aria-label="Cerrar el libro"></button>
     <div class="t"><b id="lTitulo"></b><span id="lCap"></span></div>
+    <button type="button" id="escuchar" aria-label="Escuchar el libro en voz alta"></button>
     <button type="button" id="botonOpciones" aria-label="Letra, tema y capítulos" aria-expanded="false"></button>
   </div>
   <div class="opciones" id="opciones" hidden>
@@ -102,9 +118,16 @@ h2{font:700 19px/1.2 var(--sans); margin:28px 0 12px}
     <button type="button" id="mas" aria-label="Letra más grande">A+</button>
     <select id="capitulos" aria-label="Ir al capítulo"></select>
   </div>
+  </div>
   <div id="hoja">
     <article id="texto"></article>
     <div class="pasos"><button type="button" id="anterior">Anterior</button><button type="button" id="siguiente">Siguiente</button></div>
+  </div>
+  <div class="voz" id="voz" hidden>
+    <button type="button" id="vozPausa" aria-label="Pausar la voz"></button>
+    <div class="voz-t"><b>Escuchando</b><span id="vozDonde"></span></div>
+    <button type="button" id="vozVel" aria-label="Velocidad de la voz">1×</button>
+    <button type="button" id="vozParar" aria-label="Dejar de escuchar"></button>
   </div>
 </div>
 
@@ -122,7 +145,8 @@ $('#nav').innerHTML = [['inicio', 'Inicio', 'house'], ['explorar', 'Explorar', '
   ['crear', 'Crear', 'pen-tool'], ['comunidad', 'Comunidad', 'users'], ['perfil', 'Perfil', 'user']]
   .map(([id, n, ic]) => `<a href="./#${id}"${id === 'biblioteca' ? ' aria-current="page"' : ''}>${icono(ic)}<span>${n}</span></a>`).join('');
 document.querySelectorAll('.ic[data-ic]').forEach((e) => { e.outerHTML = icono(e.dataset.ic); });
-$('#cerrar').innerHTML = icono('x'); $('#botonOpciones').innerHTML = icono('settings');
+$('#cerrar').innerHTML = icono('x'); $('#botonOpciones').innerHTML = icono('settings'); $('#escuchar').innerHTML = icono('headphones');
+$('#vozPausa').innerHTML = icono('pause'); $('#vozParar').innerHTML = icono('x');
 
 /* ── el librero ── */
 const urls = [];
@@ -177,7 +201,7 @@ async function abrirLibro(id){
   libro.abierto = Date.now(); guardar(libro);
   $('#lTitulo').textContent = libro.titulo;
   $('#capitulos').innerHTML = libro.capitulos.map((c, i) => `<option value="${i}">${esc(c.titulo)}</option>`).join('');
-  $('#lector').hidden = false; document.body.style.overflow = 'hidden';
+  $('#lector').hidden = false; $('#lector').classList.add('sinbarra'); $('#opciones').hidden = true; document.body.style.overflow = 'hidden';
   pintarTema(); irA(libro.avance?.cap || 0, libro.avance?.y || 0);
 }
 function irA(n, y = 0){
@@ -195,15 +219,84 @@ function guardarAvance(){
   libro.avance = { cap, y: Math.min(1, Math.max(0, y)) }; guardar(libro);
 }
 $('#hoja').addEventListener('scroll', () => { clearTimeout(guardaT); guardaT = setTimeout(guardarAvance, 400); }, { passive: true });
-$('#anterior').addEventListener('click', () => irA(cap - 1));
-$('#siguiente').addEventListener('click', () => irA(cap + 1));
-$('#capitulos').addEventListener('change', (e) => irA(+e.target.value));
+$('#anterior').addEventListener('click', () => { pararVoz(); irA(cap - 1); });
+$('#siguiente').addEventListener('click', () => { pararVoz(); irA(cap + 1); });
+$('#capitulos').addEventListener('change', (e) => { pararVoz(); irA(+e.target.value); });
 $('#botonOpciones').addEventListener('click', (e) => { const o = $('#opciones'); o.hidden = !o.hidden; e.currentTarget.setAttribute('aria-expanded', String(!o.hidden)); });
 document.querySelectorAll('button[data-tema]').forEach((b) => b.addEventListener('click', () => { tema = b.dataset.tema; escribir('libros.tema', tema); pintarTema(); }));
 $('#menos').addEventListener('click', () => { tam = Math.max(14, tam - 2); escribir('libros.tam', tam); pintarTema(); });
 $('#mas').addEventListener('click', () => { tam = Math.min(32, tam + 2); escribir('libros.tam', tam); pintarTema(); });
-$('#cerrar').addEventListener('click', () => { clearTimeout(guardaT); guardarAvance(); $('#lector').hidden = true; document.body.style.overflow = ''; libro = null; pintar(); });
+$('#cerrar').addEventListener('click', () => { pararVoz(); clearTimeout(guardaT); guardarAvance(); $('#lector').hidden = true; document.body.style.overflow = ''; libro = null; pintar(); });
 document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'hidden') guardarAvance(); });
+
+
+/* ── la barra: sale con un toque y se va con otro (Carlos, 10 nov) ── */
+$('#hoja').addEventListener('click', (e) => {
+  if(e.target.closest('button, select, a')) return;
+  /* con la voz prendida, tocar un párrafo la manda a leer desde ahí */
+  const b = vozActiva && e.target.closest('#texto p, #texto li, #texto h1, #texto h2, #texto h3, #texto h4, #texto blockquote');
+  if(b){ const i = bloques().indexOf(b); if(i >= 0){ hablar(i); return; } }
+  $('#lector').classList.toggle('sinbarra');
+  if($('#lector').classList.contains('sinbarra')) $('#opciones').hidden = true;
+});
+
+/* ── texto a voz: lee párrafo por párrafo, marca el que va, sigue al siguiente
+   capítulo y guarda dónde se quedó. Se escoge desde dónde: tocando un párrafo,
+   o, si no, empieza donde se quedó la última vez (o en lo que tengas en pantalla). ── */
+const VELS = [1, 1.25, 1.5, 0.8];
+let vozActiva = false, vozPausada = false, vozI = 0, vozVel = leer('libros.vel', 1), vozTurno = 0;
+const sintes = window.speechSynthesis;
+const bloques = () => [...$('#texto').querySelectorAll('p, li, h1, h2, h3, h4, blockquote')].filter((x) => x.textContent.trim() && !x.querySelector('p, li'));
+function vozEsp(){
+  const vs = sintes?.getVoices?.() || [];
+  return vs.find((v) => /es[-_]MX/i.test(v.lang)) || vs.find((v) => /^es/i.test(v.lang)) || null;
+}
+function primeroEnPantalla(){
+  const h = $('#hoja').getBoundingClientRect();
+  const bs = bloques(); const i = bs.findIndex((b) => b.getBoundingClientRect().bottom > h.top + 60);
+  return Math.max(0, i);
+}
+function pintarVoz(){
+  $('#voz').hidden = !vozActiva; $('#lector').classList.toggle('con-voz', vozActiva);
+  $('#vozPausa').innerHTML = icono(vozPausada ? 'play' : 'pause'); $('#vozPausa').setAttribute('aria-label', vozPausada ? 'Seguir escuchando' : 'Pausar la voz');
+  $('#vozVel').textContent = String(vozVel).replace('.', ',') + '×';
+  const n = bloques().length; $('#vozDonde').textContent = `${libro?.capitulos[cap].titulo || ''} · párrafo ${Math.min(vozI + 1, n)} de ${n}`;
+}
+function hablar(i){
+  if(!sintes || !libro) { $('#estado').textContent = 'Este navegador no puede leer en voz alta.'; return; }
+  const bs = bloques();
+  if(i >= bs.length){                                  // se acabó el capítulo: sigue con el próximo
+    if(cap < libro.capitulos.length - 1){ irA(cap + 1); setTimeout(() => hablar(0), 60); }
+    else pararVoz();
+    return;
+  }
+  const turno = ++vozTurno;
+  sintes.cancel(); vozActiva = true; vozPausada = false; vozI = i;
+  bs.forEach((b) => b.classList.remove('leyendo')); const b = bs[i]; b.classList.add('leyendo');
+  b.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  libro.voz = { cap, p: i }; guardar(libro);
+  const u = new SpeechSynthesisUtterance(b.textContent.trim());
+  u.lang = 'es-MX'; const v = vozEsp(); if(v) u.voice = v; u.rate = vozVel;
+  u.onend = () => { if(turno === vozTurno && vozActiva && !vozPausada) hablar(vozI + 1); };
+  sintes.speak(u); pintarVoz();
+}
+function pararVoz(){
+  vozTurno++; vozActiva = false; vozPausada = false; try{ sintes?.cancel(); }catch{}
+  $('#texto').querySelectorAll('.leyendo').forEach((b) => b.classList.remove('leyendo')); pintarVoz();
+}
+$('#escuchar').addEventListener('click', () => {
+  if(vozActiva){ pararVoz(); return; }
+  const v = libro.voz;
+  hablar(v && v.cap === cap ? v.p : primeroEnPantalla());
+  $('#lector').classList.add('sinbarra'); $('#opciones').hidden = true;
+});
+$('#vozPausa').addEventListener('click', () => {
+  if(vozPausada){ vozPausada = false; hablar(vozI); }       // se retoma desde el párrafo: más confiable que resume() en iPhone
+  else { vozPausada = true; vozTurno++; sintes.cancel(); pintarVoz(); }
+});
+$('#vozParar').addEventListener('click', pararVoz);
+$('#vozVel').addEventListener('click', () => { vozVel = VELS[(VELS.indexOf(vozVel) + 1) % VELS.length]; escribir('libros.vel', vozVel); if(vozActiva && !vozPausada) hablar(vozI); else pintarVoz(); });
+sintes?.addEventListener?.('voiceschanged', () => {});
 
 navigator.storage?.persist?.().catch(() => {});
 if('serviceWorker' in navigator && !location.search.includes('pruebas')) navigator.serviceWorker.register('sw.js').catch(() => {});
