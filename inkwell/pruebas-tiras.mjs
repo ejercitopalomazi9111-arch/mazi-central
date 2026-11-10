@@ -20,7 +20,7 @@ const cerrarLector = async (pg) => {
     const r = await pg.evaluate(() => { const b = document.querySelector('#scroll').getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; });
     await pg.mouse.click(r.x, r.y);
   }
-  await pg.waitForFunction(() => document.querySelector('.lhead').getBoundingClientRect().top >= -1);
+  await pg.waitForFunction(() => document.querySelector('#lector .lhead').getBoundingClientRect().top >= -1);
   await pg.waitForTimeout(300);
   await pg.click('#cerrarLector');
 };
@@ -31,7 +31,11 @@ const N = 12, POR = 3;
 let jpg = {};                       // nombre → Buffer, se llena desde el navegador
 const pedidos = [];
 const lista = `<html><head><meta property="og:title" content="Mi Seri&amp;eacute; &amp;amp; Co"><meta property="og:image" content="https://swebtoon-phinf.pstatic.net/portada.jpg"><meta property="og:description" content="Una serie de prueba"><meta name="com-linewebtoon:webtoon:author" content="Autora Uno"></head><body></body></html>`;
-const api = JSON.stringify({ result: { episodeList: Array.from({ length: N }, (_, i) => ({ episodeNo: i + 1, episodeTitle: `Episodio ${i + 1}`, viewerLink: `/es/fantasy/mi-serie/ep-${i + 1}/viewer?title_no=777&episode_no=${i + 1}`, exposureDateMillis: 1700000000000 + i })) } });
+const listaFicha = `<html><head><meta property="og:image" content="https://swebtoon-phinf.pstatic.net/portada.jpg"></head><body><div class="detail_bg" style="background:url('https://webtoon-phinf.pstatic.net/portada.jpg') repeat-x"></div><h2 class="genre g_fantasy">Fantasy</h2><h1 class="subj">Otra serie &amp; más</h1><div class="author_area">Autora Dos <button>i</button></div>
+<ul class="grade_area"><li><span class="ico_view">vistas</span><em class="cnt">571.5M</em></li><li><span class="ico_subscribe">suscritos</span><em class="cnt">4.6M</em></li></ul>
+<p class="day_info"><span class="txt_ico_completed"></span>COMPLETED</p><p class="summary">Una emperatriz perfecta y un divorcio que nadie esperaba.</p>
+<ul><li class="_episodeItem" data-episode-no="12"><a><span class="like_area _likeitArea"><em class="ico_like">like</em>269,608</span></a></li></ul></body></html>`;
+const api = JSON.stringify({ result: { episodeList: Array.from({ length: N }, (_, i) => ({ episodeNo: i + 1, thumbnail: `/ep${i + 1}_0.jpg`, episodeTitle: `Episodio ${i + 1}`, viewerLink: `/es/fantasy/mi-serie/ep-${i + 1}/viewer?title_no=777&episode_no=${i + 1}`, exposureDateMillis: 1700000000000 + i })) } });
 const visor = (n) => `<html><body><div id="_imageList">${Array.from({ length: POR }, (_, k) => `<img src="x.png" width="700" class="_images" data-url="https://webtoon-phinf.pstatic.net/ep${n}_${k}.jpg?type=q90" rel="nofollow">`).join('')}</div></body></html>`;
 let rankingOn = false;
 const ranking = `<html><body><a href="https://www.webtoons.com/es/fantasy/mi-serie/list?title_no=777">ya la sigo</a><a href="https://www.webtoons.com/es/fantasy/otra-serie/list?title_no=888">nueva</a></body></html>`;
@@ -41,7 +45,7 @@ function recadero(u){
   if (d.hostname === 'www.webtoons.com' && /\/ranking\//.test(d.pathname)) return rankingOn ? ['text/html', ranking] : null;
   if (d.hostname === 'www.webtoons.com' && d.pathname === '/es/search') return ['text/html', /amor/i.test(d.searchParams.get('keyword') || '') ? `<ul><li><a href="https://www.webtoons.com/es/romance/amor-comic/list?title_no=888" class="link"><img src="https://swebtoon-phinf.pstatic.net/portada.jpg"><strong class="title">Amor en cómic</strong><div class="author">Autora Tres</div></a></li></ul>` : '<ul></ul>'];
   if (d.hostname === 'www.webtoons.com' && /\/genres\/fantasy/.test(d.pathname)) return ['text/html', `<ul class="webtoon_list"><li><a href="https://www.webtoons.com/es/fantasy/otra-serie/list?title_no=888" class="link"><div class="image_wrap"><img loading="lazy" src="https://swebtoon-phinf.pstatic.net/portada.jpg" alt=""></div><div class="info_text"><strong class="title">Otra serie &amp; más</strong><div class="author">Autora Dos</div></div></a></li></ul>`];
-  if (d.hostname === 'www.webtoons.com' && d.pathname.endsWith('/list')) return ['text/html', lista];
+  if (d.hostname === 'www.webtoons.com' && d.pathname.endsWith('/list')) return ['text/html', d.searchParams.get('title_no') === '888' ? listaFicha : lista];
   if (d.hostname === 'm.webtoons.com' && /\/api\/v1\/webtoon\/(777|888)\/episodes/.test(d.pathname)) return ['application/json', api];
   const v = /episode_no=(\d+)/.exec(d.search); if (d.pathname.endsWith('/viewer') && v) return ['text/html', visor(+v[1])];
   const img = /\/(ep\d+_\d+|portada)\.jpg/.exec(d.pathname); if (img) return ['image/jpeg', jpg[img[1]] || jpg.ep1_0];
@@ -131,7 +135,7 @@ for (const [ancho, alto, nombre] of [[390, 844, 'teléfono'], [1280, 800, 'compu
   const leidos = await leidosAhora();
   ok(leidos === 3, `al pasar el final de cada capítulo lo marca leído, y sólo ése (${leidos})`);
   /* pantalla completa: la barra va escondida y sólo sale con un toque (Carlos, 10 nov) */
-  const barraVisible = () => pg.evaluate(() => { const r = document.querySelector('.lhead').getBoundingClientRect(); return r.bottom > 2; });
+  const barraVisible = () => pg.evaluate(() => { const r = document.querySelector('#lector .lhead').getBoundingClientRect(); return r.bottom > 2; });
   ok(!(await barraVisible()), 'leyendo hacia abajo, la barra del título no se ve (pantalla completa)');
   await pg.evaluate(() => { document.querySelector('#scroll').scrollTop -= 200; }); await pg.waitForTimeout(400);
   ok(!(await barraVisible()), 'al deslizar para regresar, la barra se queda escondida (sólo sale con un toque, Carlos 10 nov)');
@@ -345,6 +349,24 @@ console.log('\ncompartir el código y descubrir cómics');
   await ctx.close(); await ctx2.close();
 }
 
+/* ── ?ver=: la ficha de Explorar por link, y seguir desde la probadita ── */
+console.log('\nficha de Explorar por link');
+{
+  const ctx = await br.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
+  const pg = await ctx.newPage(); const errores = []; pg.on('pageerror', (e) => errores.push(e.message));
+  await pg.goto(BASE + '&ver=' + encodeURIComponent('https://www.webtoons.com/es/fantasy/mi-serie/list?title_no=777'));
+  await pg.waitForSelector('#vCaps .v-ep', { timeout: 15000 }).catch(() => {});
+  ok(!(await pg.evaluate(() => document.querySelector('#vista').hidden)), '?ver= abre la ficha de esa serie');
+  await pg.click('#vProbar');
+  await pg.waitForSelector('#pScroll [data-seguir]', { timeout: 15000 }).catch(() => {});
+  await pg.click('#pScroll [data-seguir]');
+  await pg.waitForFunction(() => !document.querySelector('#ficha').hidden, null, { timeout: 15000 }).catch(() => {});
+  ok(await pg.evaluate(async () => (await window.__tiras.todasSeries()).some((s) => s.id === 'webtoon:777') && !document.querySelector('#ficha').hidden && document.querySelector('#vista').hidden && document.querySelector('#previo').hidden),
+    '«Seguir la serie» desde la probadita la agrega y abre su ficha');
+  ok(!errores.length, 'sin errores en la consola' + (errores.length ? ' — ' + errores.join(' | ') : ''));
+  await ctx.close();
+}
+
 /* ── explorar por categoría y todo en archivos ── */
 console.log('\ncategorías y todo en archivos');
 {
@@ -357,9 +379,37 @@ console.log('\ncategorías y todo en archivos');
   await pg.selectOption('#genero', 'fantasy'); await pg.click('#formGenero button[type=submit]');
   await pg.waitForSelector('#porGenero .resultado', { timeout: 15000 }).catch(() => {});
   ok(/Otra serie & más/.test(await pg.textContent('#porGenero')), 'la categoría enseña sus cómics con nombre y autor');
+  /* tocar la portada (no el botón) abre la ficha de Explorar, como la página de la serie en Webtoon */
+  await pg.click('#porGenero .resultado[data-v="0"] b');
+  await pg.waitForSelector('#vCaps .v-ep', { timeout: 15000 }).catch(() => {});
+  const v = await pg.evaluate(() => ({ abierta: !document.querySelector('#vista').hidden, titulo: document.querySelector('#vTitulo').textContent, genero: document.querySelector('#vGenero').textContent,
+    estado: document.querySelector('#vEstado').textContent, cifras: document.querySelector('#vCifras').textContent, sin: document.querySelector('#vSinopsis').textContent,
+    eps: document.querySelectorAll('#vCaps .v-ep').length, prueba: document.querySelectorAll('#vCaps .gratis').length, ult: document.querySelector('#vCaps .v-ep:last-child').textContent }));
+  ok(v.abierta && v.titulo === 'Otra serie & más', 'tocar el cómic abre su ficha sin seguirlo');
+  ok(v.genero === 'Fantasía' && v.estado === 'Finalizada', `la ficha dice género y estado en español · ${v.genero} · ${v.estado}`);
+  ok(/571\.5 M/.test(v.cifras) && /4\.6 M/.test(v.cifras) && /suscriptores/.test(v.cifras), 'enseña vistas y suscriptores · ' + v.cifras);
+  ok(/emperatriz/.test(v.sin), 'enseña la sinopsis');
+  ok(v.eps === 12 && v.prueba === 3 && /269,608 likes/.test(v.ult) && /#12/.test(v.ult), `los 12 episodios en orden, con likes y número; 3 de probadita · ${v.ult.replace(/\s+/g, ' ').trim()}`);
+  await pg.waitForFunction(() => [...document.querySelectorAll('#vCaps img')].slice(0, 3).every((i) => i.naturalWidth > 0), null, { timeout: 15000 }).catch(() => {});
+  ok(await pg.evaluate(() => [...document.querySelectorAll('#vCaps img')].slice(0, 3).every((i) => i.naturalWidth > 0)), 'las miniaturas de los episodios cargan');
+  await pg.click('#vCaps .v-ep[data-i="6"]');
+  ok(/síguela|toca «Seguir»/i.test(await pg.textContent('#vNota')), 'un capítulo fuera de la probadita pide seguirla');
+  await pg.click('#vProbar');
+  await pg.waitForFunction(() => [...document.querySelectorAll('#pScroll img')].length === 3 && [...document.querySelectorAll('#pScroll img')].every((i) => i.naturalWidth > 0), null, { timeout: 15000 }).catch(() => {});
+  ok(await pg.evaluate(() => !document.querySelector('#previo').hidden && [...document.querySelectorAll('#pScroll img')].every((i) => i.naturalWidth > 0)), '«Probar el 1» lee el capítulo 1 sin seguirla');
+  ok(!(await desborde(pg)), 'la ficha y la probadita no se salen de lado');
+  await pg.click('#pScroll [data-sig="1"]');
+  await pg.waitForFunction(() => /cap\. 2/.test(document.querySelector('#pSub').textContent), null, { timeout: 15000 }).catch(() => {});
+  ok(/cap\. 2/.test(await pg.textContent('#pSub')), 'al terminar, «Siguiente» pasa al capítulo 2');
+  ok((await pg.evaluate(async () => (await window.__tiras.todasSeries()).length)) === 0, 'probar no la agrega a tus series');
+  await pg.click('#pCerrar'); await pg.click('#vCerrar');
   await pg.click('#porGenero button[data-i="0"]');
   await esperar(pg, async () => (await window.__tiras.todasSeries()).length === 1 && !window.__tiras.ocupado);
   ok((await pg.evaluate(async () => (await window.__tiras.todasSeries())[0].id)) === 'webtoon:888', '«Seguir» desde la categoría la agrega');
+  await pg.click('#porGenero .resultado[data-v="0"] b');
+  await pg.waitForTimeout(400);
+  ok(await pg.evaluate(() => !document.querySelector('#ficha').hidden && document.querySelector('#vista').hidden), 'si ya la sigues, tocarla abre TU ficha con tu avance');
+  await pg.click('#fCerrar');
   /* una segunda serie para que «todo» sea de verdad todo */
   await pg.fill('#buscar', 'https://www.webtoons.com/es/fantasy/mi-serie/list?title_no=777'); await pg.press('#buscar', 'Enter');
   await esperar(pg, async () => (await window.__tiras.todasSeries()).length === 2 && !window.__tiras.ocupado);
