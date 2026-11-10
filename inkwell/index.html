@@ -53,6 +53,42 @@ button{font:inherit}
 #dlgSeguir::backdrop,#dlgObra::backdrop{background:rgba(0,0,0,.6)}
 @media (min-width:640px){ #dlgSeguir,#dlgObra{margin:auto; border-radius:24px} }
 /* ── biblioteca ── */
+/* ── el estante de lomos ── */
+.estante{display:flex; flex-direction:column; gap:30px; padding:6px 0 10px}
+.repisa{position:relative; display:flex; align-items:flex-end; gap:4px; min-height:var(--alto); padding:0 8px; perspective:900px}
+.repisa::after{content:""; position:absolute; left:-4px; right:-4px; bottom:-12px; height:12px; border-radius:3px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--ink) 16%,var(--bg2)),var(--bg2)); box-shadow:0 14px 18px -10px rgba(0,0,0,.6)}
+.lomo{position:relative; flex:none; width:var(--w); height:var(--h); padding:0; border:0; border-radius:3px 3px 1px 1px; overflow:hidden; cursor:pointer;
+  background:var(--c); color:#F1EADF; transform-origin:bottom left; transform:rotate(var(--gira,0deg));
+  box-shadow:inset -5px 0 9px rgba(0,0,0,.4),inset 3px 0 0 rgba(255,255,255,.1),0 6px 10px -6px rgba(0,0,0,.6);
+  transition:transform .3s cubic-bezier(.3,1.4,.5,1)}
+.lomo img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:saturate(1.1) brightness(.62)}
+.lomo b{position:absolute; inset:12px 0 26px; writing-mode:vertical-rl; transform:rotate(180deg); font:400 13.5px/1 var(--display); color:#F1EADF;
+  text-shadow:0 1px 6px rgba(0,0,0,.85); display:flex; align-items:center; justify-content:center; overflow:hidden; white-space:nowrap; text-overflow:ellipsis}
+.lomo::before{content:""; position:absolute; left:0; right:0; top:10px; height:2px; background:rgba(241,234,223,.35); z-index:1}
+.lomo::after{content:""; position:absolute; left:0; right:0; bottom:10px; height:2px; background:rgba(241,234,223,.35); z-index:1}
+.lomo .liston{position:absolute; top:-1px; left:50%; width:9px; height:32px; margin-left:-4.5px; background:var(--accent); clip-path:polygon(0 0,100% 0,100% 100%,50% 76%,0 100%); z-index:2}
+.poster.lomo .fav{top:auto; bottom:14px; right:auto; left:50%; margin-left:-11px; width:22px; height:22px; background:none}
+.lomo .fav .ico{width:14px; height:14px}
+.poster.lomo .mini-est{position:absolute; bottom:38px; left:0; right:0; flex-direction:column; align-items:center; gap:0; z-index:1}
+.lomo:has(.fav) b{bottom:40px}
+.poster.lomo .mini-est .ico{width:9px; height:9px}
+.lomo:hover,.lomo:focus-visible{transform:translateY(-10px) rotate(var(--gira,0deg))}
+.lomo:active{transform:translateY(-16px) rotate(var(--gira,0deg)) scale(1.03)}
+.lomo:focus-visible{outline:2px solid var(--accent-ink); outline-offset:3px}
+/* el libro que sale del estante */
+.libro3d{position:fixed; inset:0; z-index:300; pointer-events:none; perspective:1100px}
+.libro3d .cubo{position:absolute; top:0; left:0; width:var(--W); height:var(--H); transform-style:preserve-3d; transform-origin:50% 50%}
+.libro3d .cara{position:absolute; top:0; overflow:hidden; backface-visibility:hidden}
+.libro3d .frente{left:0; width:var(--W); height:var(--H); border-radius:3px 10px 10px 3px; background:var(--c); transform:translateZ(calc(var(--D) / 2)); box-shadow:0 40px 80px -20px rgba(0,0,0,.9)}
+.libro3d .frente img{width:100%; height:100%; object-fit:cover}
+.libro3d .frente b{position:absolute; inset:20px; font:400 22px/1.1 var(--display); color:#F1EADF}
+.libro3d .lado{left:calc(var(--D) / -2); width:var(--D); height:var(--H); background:var(--c); transform:rotateY(-90deg) translateZ(calc(var(--W) / 2)); transform-origin:50% 50%}
+.libro3d .lado img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(.62)}
+.libro3d .lado b{position:absolute; inset:12px 0; writing-mode:vertical-rl; transform:rotate(180deg); font:400 14px var(--display); color:#F1EADF; display:flex; align-items:center; justify-content:center; white-space:nowrap; overflow:hidden}
+.libro3d .hojas{left:calc((var(--W) - var(--D)) / 2); width:var(--D); height:var(--H); background:repeating-linear-gradient(90deg,#efe7da 0 2px,#d9cfbf 2px 3px); transform:rotateY(90deg) translateZ(calc(var(--W) / 2 - 2px))}
+@media (prefers-reduced-motion:reduce){ .lomo{transition:none} }
+
 .b-resumen{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-bottom:14px}
 @media (min-width:760px){ .b-resumen{grid-template-columns:repeat(4,minmax(0,1fr))} }
 .b-meta{grid-column:1/-1; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px; display:flex; flex-direction:column; gap:10px}
@@ -88,6 +124,9 @@ button{font:inherit}
 .o-cab{display:flex; gap:12px; align-items:center}
 .o-cab img{width:64px; height:86px; border-radius:10px; object-fit:cover; background:var(--card2); flex:none}
 .o-cab img:not([src]){visibility:hidden}
+.o-cab > div{flex:1; min-width:0}
+#oTinta .plumilla{width:40px; height:54px; flex:none}
+.o-cab img{transform:perspective(500px) rotateY(-14deg); box-shadow:6px 10px 20px -8px rgba(0,0,0,.6)}
 .o-cab h2{margin:0 0 4px; font-size:19px}
 .o-cab span{color:var(--dim); font-size:13px}
 .o-fila{display:flex; align-items:center; gap:12px; margin-top:6px}
@@ -336,7 +375,7 @@ h2 a .ico{width:18px; height:18px}
 <dialog id="dlgObra" aria-labelledby="oTitulo">
   <div class="hoja-s">
     <div class="agarra" aria-hidden="true"></div>
-    <div class="o-cab"><img id="oPortada" alt=""><div><h2 id="oTitulo"></h2><span id="oSub"></span></div></div>
+    <div class="o-cab"><img id="oPortada" alt=""><div><h2 id="oTitulo"></h2><span id="oSub"></span></div><span id="oTinta"></span></div>
     <a class="boton" id="oAbrir"></a>
     <p class="opc-h">Lista</p>
     <div class="chips envuelve" id="oListas" role="radiogroup" aria-label="Lista"></div>
@@ -366,6 +405,7 @@ h2 a .ico{width:18px; height:18px}
 import { icono } from './iconos.js';
 
 const { SECCIONES, pintarMuelle } = await import('./muelle.js');
+const { plumilla } = await import('./tinta.js');
 const $ = (s) => document.querySelector(s);
 const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 
@@ -463,15 +503,6 @@ function pintarFiltro(){
 }
 $('#filtro').addEventListener('click', (e) => { const b = e.target.closest('[data-f]'); if(!b) return; filtro = b.dataset.f; pintarFiltro(); pintarListas(); });
 
-/* la plumilla: la punta de la pluma que se llena de tinta según lo leído */
-let nPlum = 0;
-function plumilla(pct){
-  const id = 'pl' + (nPlum++), y = 74 - Math.max(0, Math.min(1, pct)) * 72;
-  return `<svg class="plumilla" viewBox="0 0 56 76" role="img" aria-label="Llevas ${Math.round(pct * 100)} por ciento"><defs><clipPath id="${id}"><path d="M28 2 L52 30 Q46 52 28 74 Q10 52 4 30 Z"/></clipPath></defs>
-    <path d="M28 2 L52 30 Q46 52 28 74 Q10 52 4 30 Z" fill="color-mix(in srgb,var(--ink) 8%,transparent)" stroke="color-mix(in srgb,var(--ink) 45%,transparent)" stroke-width="1.5"/>
-    <rect clip-path="url(#${id})" x="0" y="${y.toFixed(1)}" width="56" height="76" fill="var(--accent)"/>
-    <circle cx="28" cy="34" r="4.5" fill="var(--bg)"/><path d="M28 39 L28 72" stroke="var(--bg)" stroke-width="1.6"/></svg>`;
-}
 function pintarHero(){
   const ultimo = leer('tiras.ultimo', '') || '';
   const orden = [...todas].sort((a, b) => (ultimo.startsWith(b.id + ':') ? 1 : 0) - (ultimo.startsWith(a.id + ':') ? 1 : 0));
@@ -589,6 +620,63 @@ function posterB(o){
     <span class="etq">${TIPO_B[o.tipo]}</span>${m.fav ? `<span class="fav">${icono('heart')}</span>` : ''}
     <b>${esc(o.titulo)}</b>${m.nota ? `<span class="mini-est" aria-label="${m.nota} de 5">${icono('star').repeat(m.nota)}</span>` : ''}<span class="nuevo">${B.NOMBRE_LISTA[l]}${o.total ? ` · ${o.leidos}/${o.total}` : ''}</span></button>`;
 }
+/* ── el estante: cada obra es un lomo. Grosor según sus capítulos, alto propio y estable (sale de su id).
+   Se acomodan por repisas al ancho de la pantalla; si una repisa NO se llena, el último libro se recarga
+   en su vecino (como en un librero de verdad) y en una repisa llena todos van derechos. ── */
+const hashDe = (t) => { let h = 2166136261; for(const c of String(t)) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return h >>> 0; };
+const TINTAS = ['#3a1452', '#7E1735', '#24123a', '#5b2a7a', '#41203a', '#1f2b4a'];
+function medidaLomo(o){ const h = hashDe(o.id); return { w: Math.round(30 + Math.min(22, Math.sqrt(o.total || 9) * 2.6)), h: 150 + (h % 47), c: TINTAS[h % TINTAS.length] }; }
+function lomoB(o, m, med, inclina = null){
+  const p = urlB(o), d = B.deObra(o.id), l = B.listaDe(o);
+  const estilo = `--w:${med.w}px;--h:${med.h}px;--c:${med.c}` + (inclina ? `;--gira:${inclina.grados.toFixed(2)}deg;margin-left:${inclina.hueco}px` : '');
+  return `<button type="button" class="poster b lomo${inclina ? ' recargado' : ''}${l === 'leyendo' ? ' a-medias' : ''}" data-id="${esc(o.id)}" style="${estilo}" aria-label="${esc(o.titulo)}, ${B.NOMBRE_LISTA[l]}: sácalo del estante">
+    ${p ? `<img src="${p}" alt="" loading="lazy">` : ''}<b>${esc(o.titulo)}</b>${d.fav ? `<span class="fav">${icono('heart')}</span>` : ''}
+    ${d.nota ? `<span class="mini-est" aria-label="${d.nota} de 5">${icono('star').repeat(d.nota)}</span>` : ''}${l === 'leyendo' ? '<i class="liston" aria-hidden="true"></i>' : ''}</button>`;
+}
+function estante(ver){
+  const caja = $('#bObras'), ancho = Math.max(240, (caja.clientWidth || Math.min(innerWidth, 1100) - (innerWidth >= 900 ? 160 : 32)) - 16);
+  const GAP = 4, HUECO = 20, filas = [[]]; let usado = 0;
+  for(const o of ver){
+    const med = medidaLomo(o);
+    if(usado && usado + GAP + med.w > ancho){ filas.push([]); usado = 0; }
+    filas[filas.length - 1].push({ o, med }); usado += (usado ? GAP : 0) + med.w;
+  }
+  return filas.map((fila, k) => {
+    const lleno = fila.reduce((a, x) => a + x.med.w + GAP, 0);
+    const recarga = fila.length >= 2 && ancho - lleno > HUECO + 24;   // cabe recargarlo: hay hueco
+    const alto = Math.max(...fila.map((x) => x.med.h));
+    return `<div class="repisa" style="--alto:${alto}px">${fila.map((x, i) => {
+      if(!(recarga && i === fila.length - 1)) return lomoB(x.o, null, x.med);
+      /* se apoya en la esquina de arriba del vecino: si el vecino es más bajo, se inclina más */
+      const vecino = fila[i - 1].med.h, h = x.med.h;
+      const grados = (vecino >= h ? Math.asin(HUECO / h) : Math.atan(HUECO / vecino)) * 180 / Math.PI;
+      return lomoB(x.o, null, x.med, { grados: -grados, hueco: HUECO });
+    }).join('')}</div>`;
+  }).join('');
+}
+/* sacarlo del estante: el libro sale hacia ti en 3D, gira y enseña su portada; luego abre su hoja */
+function sacarLibro(boton, despues){
+  const o = obras.find((x) => x.id === boton.dataset.id), p = o && urlB(o);
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches || !boton.animate){ despues(); return; }
+  const r = boton.getBoundingClientRect(), med = { w: r.width, h: r.height };
+  const W = Math.min(220, innerWidth * .52), H = W * 1.4, prof = med.w;
+  const capa = document.createElement('div'); capa.className = 'libro3d'; capa.setAttribute('aria-hidden', 'true');
+  capa.innerHTML = `<div class="cubo" style="--W:${W}px;--H:${H}px;--D:${prof}px;--c:${getComputedStyle(boton).getPropertyValue('--c')}">
+    <div class="cara frente">${p ? `<img src="${p}" alt="">` : `<b>${esc(o?.titulo || '')}</b>`}</div>
+    <div class="cara lado">${p ? `<img src="${p}" alt="">` : ''}<b>${esc(o?.titulo || '')}</b></div><div class="cara hojas"></div></div>`;
+  document.body.append(capa);
+  const cubo = capa.firstElementChild;
+  /* empieza exactamente donde está el lomo, de canto (el lomo de frente) */
+  const x0 = r.left + r.width / 2 - W / 2, y0 = r.top + r.height / 2 - H / 2, esc0 = r.height / H;
+  const x1 = innerWidth / 2 - W / 2, y1 = Math.max(70, innerHeight * .2) - 0;
+  boton.style.visibility = 'hidden';
+  const a = cubo.animate([
+    { transform: `translate3d(${x0}px,${y0}px,0) scale(${esc0}) rotateY(90deg)` },
+    { transform: `translate3d(${x0}px,${y0 - 30}px,80px) scale(${esc0 * 1.05}) rotateY(70deg)`, offset: .25 },
+    { transform: `translate3d(${x1}px,${y1}px,200px) scale(1) rotateY(-16deg) rotateX(4deg)` },
+  ], { duration: 650, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' });
+  a.finished.then(() => { despues(); setTimeout(() => { capa.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, fill: 'forwards' }).finished.then(() => capa.remove()); boton.style.visibility = ''; }, 120); });
+}
 function pintarResumen(){
   const e = B.estadisticas(obras), pct = e.meta ? Math.min(100, Math.round(100 * e.esteMes / e.meta)) : 0;
   const nivel = (n) => n === 0 ? 0 : n < 3 ? 1 : n < 8 ? 2 : 3;
@@ -613,7 +701,7 @@ function pintarBiblio(){
   const etqs = B.etiquetasUsadas(obras, d); if(bEtq && !etqs.includes(bEtq)) bEtq = '';
   $('#bEtiquetas').innerHTML = etqs.map((t) => `<button type="button" class="chip" data-t="${esc(t)}" aria-pressed="${t === bEtq}">#${esc(t)}</button>`).join('');
   const ver = B.filtrar(obras, { vista: bVista, etiqueta: bEtq, tipo: $('#bTipo').value, orden: $('#bOrden').value, texto: $('#bTexto').value.trim() }, d);
-  $('#bObras').innerHTML = ver.length ? `<div class="rejilla">${ver.map(posterB).join('')}</div>`
+  $('#bObras').innerHTML = ver.length ? `<div class="estante">${estante(ver)}</div>`
     : `<div class="vacio"><b>${obras.length ? 'Nada por aquí' : 'Tu biblioteca está vacía'}</b>${obras.length ? 'Cambia de lista o de filtro, o toca una obra para moverla aquí.' : 'Sigue una serie en Tiras o sube un libro y aquí lo organizas.'}</div>`;
   const sug = B.sugeridas(obras, d).slice(0, 6);
   $('#bSugeridas').innerHTML = sug.length && bVista === 'todas' ? `<h2>Por tus gustos</h2><p class="lema">Pendientes con las etiquetas de tus favoritas y mejor calificadas.</p><div class="rejilla">${sug.map(posterB).join('')}</div>` : '';
@@ -639,12 +727,15 @@ $('#bArchivo').addEventListener('change', async (e) => {
 });
 /* la hoja de una obra: lista, favorita, estrellas, etiquetas y colecciones */
 $('#bObras').addEventListener('click', abrirObra); $('#bSugeridas').addEventListener('click', abrirObra);
-function abrirObra(e){ const b = e.target.closest('[data-id]'); if(!b) return; obraAbierta = obras.find((o) => o.id === b.dataset.id); if(!obraAbierta) return; pintarObra(); $('#dlgObra').showModal(); }
+function abrirObra(e){ const b = e.target.closest('[data-id]'); if(!b) return; obraAbierta = obras.find((o) => o.id === b.dataset.id); if(!obraAbierta) return;
+  const abrir = () => { pintarObra(); if(!$('#dlgObra').open) $('#dlgObra').showModal(); };
+  if(b.classList.contains('lomo')) sacarLibro(b, abrir); else abrir(); }
 function pintarObra(){
   const o = obraAbierta, m = B.deObra(o.id), l = B.listaDe(o), d = B.datos(), p = urlB(o);
   if(p) $('#oPortada').src = p; else $('#oPortada').removeAttribute('src');
   $('#oTitulo').textContent = o.titulo;
-  $('#oSub').textContent = [TIPO_B[o.tipo], o.autor, o.total ? `${o.leidos} de ${o.total} capítulos` : ''].filter(Boolean).join(' · ');
+  $('#oSub').textContent = [TIPO_B[o.tipo], o.autor, o.total ? (o.leidos >= o.total ? 'La terminaste' : o.leidos ? `Vas en el capítulo ${o.leidos + 1}` : 'Sin empezar') : ''].filter(Boolean).join(' · ');
+  $('#oTinta').innerHTML = o.total ? plumilla(o.leidos / o.total) : '';
   $('#oAbrir').href = o.href; $('#oAbrir').innerHTML = icono('book-open') + (o.leidos && o.leidos < o.total ? 'Seguir leyendo' : 'Abrir');
   $('#oListas').innerHTML = B.LISTAS.map(([k, t]) => `<button type="button" class="chip" role="radio" data-l="${k}" aria-checked="${k === l}" aria-pressed="${k === l}">${t}</button>`).join('');
   $('#oFav').setAttribute('aria-pressed', String(!!m.fav)); $('#oFav').innerHTML = icono('heart') + (m.fav ? 'Favorita' : 'Marcar favorita');
@@ -661,6 +752,8 @@ $('#oEtiquetas').addEventListener('click', (e) => { const b = e.target.closest('
 $('#oCols').addEventListener('change', (e) => { const c = e.target.closest('[data-c]'); if(!c) return; B.enColeccion(c.dataset.c, obraAbierta.id, c.checked); pintarBiblio(); });
 $('#cerrarObra').addEventListener('click', () => $('#dlgObra').close());
 $('#dlgObra').addEventListener('click', (e) => { if(e.target === $('#dlgObra')) $('#dlgObra').close(); });
+let reacomodo; addEventListener('resize', () => { clearTimeout(reacomodo); reacomodo = setTimeout(() => { if(!$('#v-biblioteca').hidden) pintarBiblio(); }, 200); });
+addEventListener('hashchange', () => { if(location.hash === '#biblioteca') pintarBiblio(); });
 window.__biblio = { B, get obras(){ return obras; }, pintarBiblio };
 
 (async () => {
