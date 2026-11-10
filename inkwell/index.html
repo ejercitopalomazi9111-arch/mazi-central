@@ -181,6 +181,9 @@ h2 a .ico{width:18px; height:18px}
 .carril{display:grid; grid-auto-flow:column; grid-auto-columns:minmax(250px,300px); gap:12px; overflow-x:auto; scroll-snap-type:x mandatory;
   overscroll-behavior-x:contain; scrollbar-width:none; padding:0 16px; margin:0 -16px; position:relative}
 .carril::-webkit-scrollbar{display:none}
+.carril-p{grid-auto-columns:128px}
+.carril-p .poster{scroll-snap-align:start}
+.sub-h{font:500 13px var(--sans); color:var(--dim); margin-left:4px}
 .seguir{position:relative; scroll-snap-align:start; aspect-ratio:16/10; border-radius:18px; overflow:hidden; isolation:isolate;
   display:flex; flex-direction:column; justify-content:flex-end; padding:14px; text-decoration:none; color:#fff; background:var(--card2); border:1px solid var(--line)}
 .seguir img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:-2}
@@ -240,6 +243,8 @@ h2 a .ico{width:18px; height:18px}
       <div class="carril" id="continuar"></div></div>
       <h2>Tus series <a href="#biblioteca">Biblioteca <span class="i-chev"></span></a></h2>
       <div id="filaSeries"></div>
+      <div id="bloqueParaTi" hidden><h2>Para ti <small class="sub-h">series que aún no empiezas</small> <a href="#explorar">Más <span class="i-chev"></span></a></h2>
+      <div class="carril carril-p" id="paraTi"></div></div>
       <h2>Apartados</h2>
       <div class="mosaico" id="accesos"></div>
     </div>
@@ -254,6 +259,8 @@ h2 a .ico{width:18px; height:18px}
         <button type="submit" aria-label="Buscar" class="b-buscar"></button>
       </form>
       <p class="lema">Busca en Webtoon (cómics) y en Wattpad (texto) a la vez. Las obras del equipo aparecerán aquí cuando esté listo INKWELL Studio.</p>
+      <div id="bloqueExplorarTi" hidden><h2>Recomendadas para ti</h2><p class="lema">Lo más querido de tus géneros en Webtoon que todavía no sigues. Toca una para ver su ficha y probar sus primeros capítulos.</p>
+      <div class="rejilla" id="explorarTi"></div></div>
       <h2>Géneros populares</h2>
       <div class="mosaico" id="tipos"></div>
     </div>
@@ -632,7 +639,33 @@ window.__biblio = { B, get obras(){ return obras; }, pintarBiblio };
   todas = await series();
   pintarFiltro(); pintarHero(); pintarListas(); pintarStats();
   await juntarObras(); pintarBiblio();
+  pintarParaTi();
 })();
+
+/* ── «Para ti»: series de Webtoon que no sigues, sin tener que buscar (inicio y Explorar) ── */
+async function pintarParaTi(){
+  if(!navigator.onLine) return;
+  const R = await import('./red.js');
+  let descartadas = []; try{ descartadas = JSON.parse(localStorage.getItem('tiras.descartadas')) || []; }catch{}
+  const wt = todas.filter((s) => s.fuente === 'webtoon' && s.ref);
+  const cuenta = new Map(); for(const s of wt) cuenta.set(s.ref.genero, (cuenta.get(s.ref.genero) || 0) + 1);
+  const generos = [...cuenta].sort((a, b) => b[1] - a[1]).map(([g]) => g).filter((g) => !/canvas|challenge/.test(g));
+  let lista = [];
+  try{ lista = await R.recomendar({ sigo: todas.map((s) => s.id), descartadas, generos, lang: wt[0]?.ref.lang || 'es', cuantas: 18 }); }catch{}
+  if(!lista.length) return;
+  const tarjeta = (x, i) => `<a class="poster" href="tiras.html?ver=${encodeURIComponent(R.enlaceDe(x.ref))}" data-p="${i}"><span class="sin">${icono('image')}</span>
+    <span class="etq">Webtoon</span><b>${esc(x.titulo)}</b><span class="nuevo">${esc(x.autor || 'Sin empezar')}</span></a>`;
+  $('#paraTi').innerHTML = lista.slice(0, 10).map(tarjeta).join(''); $('#bloqueParaTi').hidden = false;
+  $('#explorarTi').innerHTML = lista.map(tarjeta).join(''); $('#bloqueExplorarTi').hidden = false;
+  /* las portadas piden venir «de webtoons.com»: van por el recadero, de a poco y una vez cada una */
+  const urls = new Map();
+  const ponerPortada = async (i) => { const x = lista[i]; if(!x.portada) return;
+    if(!urls.has(i)) urls.set(i, R.pedir(x.portada).then((r) => r.blob()).then((b) => URL.createObjectURL(b)).catch(() => ''));
+    const u = await urls.get(i); if(!u) return;
+    document.querySelectorAll(`#paraTi [data-p="${i}"], #explorarTi [data-p="${i}"]`).forEach((a) => { if(!a.querySelector('img')){ const im = document.createElement('img'); im.alt = ''; im.src = u; a.prepend(im); a.querySelector('.sin')?.remove(); } }); };
+  const io = new IntersectionObserver((es) => { for(const e of es) if(e.isIntersecting){ io.unobserve(e.target); ponerPortada(+e.target.dataset.p); } }, { rootMargin: '300px' });
+  document.querySelectorAll('#paraTi [data-p], #explorarTi [data-p]').forEach((a) => io.observe(a));
+}
 
 (async () => {
   try{ const e = await navigator.storage.estimate();

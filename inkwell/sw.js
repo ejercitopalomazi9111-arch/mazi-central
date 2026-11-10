@@ -10,8 +10,8 @@
        · lo de otro sitio (Wattpad) y lo que va a La Sala (/api/) NO se toca;
        · la app (html, js, manifest) va «primero la red» y, sin red, lo guardado;
        · las pinturas siguen «primero lo guardado»: no cambian nunca. */
-const V = 'inkwell-v15';
-const APP = ['./', './index.html', './tiras.html', './tiras.js', './libros.html', './libros.js', './biblioteca.js', './studio/', './studio/index.html', './studio/libro.html', './studio/comic.html', './studio/obras.js', './studio/lienzo.js', './letra/bangers.ttf', './fuentes.js', './archivos.js', './compartir.js', './manifest.webmanifest', './marca.css', './iconos.js', './marca/pluma.png', './marca/inkwell.svg', './letra/gloock.woff2', './letra/archivo.woff2', './letra/crimson.woff2'];
+const V = 'inkwell-v16';
+const APP = ['./', './index.html', './tiras.html', './tiras.js', './red.js', './libros.html', './libros.js', './biblioteca.js', './studio/', './studio/index.html', './studio/libro.html', './studio/comic.html', './studio/obras.js', './studio/lienzo.js', './letra/bangers.ttf', './fuentes.js', './archivos.js', './compartir.js', './manifest.webmanifest', './marca.css', './iconos.js', './marca/pluma.png', './marca/inkwell.svg', './letra/gloock.woff2', './letra/archivo.woff2', './letra/crimson.woff2'];
 
 self.addEventListener('install', e => {
   e.waitUntil((async () => {

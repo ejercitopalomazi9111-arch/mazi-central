@@ -233,7 +233,7 @@ for (const [ancho, alto, nombre] of [[390, 844, 'teléfono'], [1280, 800, 'compu
 
   // Wattpad por búsqueda
   await pg.fill('#buscar', 'amor'); await pg.click('#agregar');
-  await pg.waitForSelector('.resultado');
+  await pg.waitForSelector('#resultados .resultado');
   ok(await pg.locator('#resultados .resultado').count() === 3 && /GabriellaFL · 3 partes/.test(await pg.textContent('#resultados')) && /Amor en cómic/.test(await pg.textContent('#resultados')), 'buscar por nombre trae cómics de Webtoon y textos de Wattpad, a la vez');
   await pg.click('#resultados .resultado button[data-i="1"]');
   await pg.waitForFunction(() => document.querySelectorAll('.serie').length === 2);

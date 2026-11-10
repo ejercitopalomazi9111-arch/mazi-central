@@ -13,7 +13,9 @@ let bien = 0, mal = 0; const ok = (c, t) => { if (c) { bien++; console.log('  �
 const br = await chromium.launch();
 for (const [w, h] of [[390, 844], [1280, 800]]) {
   console.log(`\n${w}×${h}`);
-  const ctx = await br.newContext({ viewport: { width: w, height: h }, serviceWorkers: 'block' }); const pg = await ctx.newPage(); const errores = [];
+  const ctx = await br.newContext({ viewport: { width: w, height: h }, serviceWorkers: 'block' }); /* sin La Sala de verdad en las pruebas: «Para ti» se queda escondido */
+  await ctx.route(/sala\.palomazi9111\.workers\.dev|\/api\/sala\//, (r) => r.fulfill({ status: 404, contentType: 'application/json', body: '{}' }));
+  const pg = await ctx.newPage(); const errores = [];
   pg.on('pageerror', (e) => errores.push(e.message)); pg.on('console', (m) => m.type() === 'error' && !/404/.test(m.text()) && errores.push(m.text()));
   await pg.goto(BASE + 'index.html');
   await pg.click('#seguirLeyendo'); await pg.waitForSelector('#dlgSeguir[open]');
@@ -81,6 +83,41 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
   ok(despues.fondo !== antes && /claro|oscuro/.test(despues.guardado), `cambia el tema y lo guarda · ${antes} → ${despues.fondo}`);
   await pg.click('#tema'); await pg.waitForTimeout(1300);
   ok((await pg.evaluate(() => getComputedStyle(document.body).backgroundColor)) === antes, 'y regresa al tocar otra vez');
+  ok(!errores.length, 'sin errores en la consola' + (errores.length ? ' — ' + errores.join(' | ') : ''));
+  await ctx.close();
+}
+/* «Para ti»: sin buscar nada, el inicio y Explorar enseñan series que todavía no sigues */
+console.log('\npara ti');
+{
+  const ctx = await br.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
+  const png = fs.readFileSync(path.join(RAIZ, 'icon-192.png'));
+  const tarjeta = (n, t) => `<li><a href="https://www.webtoons.com/es/romance/serie-${n}/list?title_no=${n}" class="link"><img src="https://swebtoon-phinf.pstatic.net/p${n}.jpg"><strong class="title">${t}</strong><div class="author">Autora ${n}</div></a></li>`;
+  await ctx.route(/sala\.palomazi9111\.workers\.dev|\/api\/sala\//, (r) => {
+    const u = new URL(r.request().url()).searchParams.get('url') || '';
+    if (/\/genres\//.test(u)) return r.fulfill({ contentType: 'text/html', body: `<ul>${tarjeta(101, 'La que sigues')}${tarjeta(102, 'Nueva uno')}${tarjeta(103, 'Nueva dos')}</ul>` });
+    if (/pstatic/.test(u)) return r.fulfill({ contentType: 'image/png', body: png });
+    return r.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+  });
+  const pg = await ctx.newPage(); const errores = []; pg.on('pageerror', (e) => errores.push(e.message));
+  await pg.goto(BASE + 'index.html');
+  await pg.evaluate(async () => {
+    localStorage.removeItem('inkwell.recomendadas');
+    const d = await new Promise((ok) => { const q = indexedDB.open('inkwell-tiras', 1); q.onupgradeneeded = () => { q.result.createObjectStore('series', { keyPath: 'id' }); q.result.createObjectStore('caps', { keyPath: 'clave' }).createIndex('serie', 'serie'); }; q.onsuccess = () => ok(q.result); });
+    const t = d.transaction('series', 'readwrite');
+    t.objectStore('series').put({ id: 'webtoon:101', fuente: 'webtoon', titulo: 'La que sigues', orden: 0, caps: [{ n: 1 }], leidos: [], ref: { fuente: 'webtoon', lang: 'es', genero: 'romance', slug: 'serie-101', titleNo: '101' } });
+    await new Promise((ok) => { t.oncomplete = ok; });
+  });
+  await pg.reload();
+  await pg.waitForFunction(() => !document.querySelector('#bloqueParaTi').hidden, null, { timeout: 15000 }).catch(() => {});
+  const ti = await pg.$$eval('#paraTi .poster', (a) => a.map((x) => ({ t: x.querySelector('b').textContent, h: x.getAttribute('href') })));
+  ok(ti.length === 2 && ti.every((x) => /^Nueva/.test(x.t)), 'el inicio enseña series que no sigues, sin buscar · ' + ti.map((x) => x.t).join(', '));
+  ok(ti[0] && ti[0].h.startsWith('tiras.html?ver=') && decodeURIComponent(ti[0].h).includes('title_no=102'), 'tocar una abre su ficha de Explorar');
+  await pg.waitForFunction(() => document.querySelector('#paraTi .poster img'), null, { timeout: 10000 }).catch(() => {});
+  ok(!!(await pg.$('#paraTi .poster img')), 'con su portada');
+  await pg.goto(BASE + 'index.html#explorar'); await pg.reload();
+  await pg.waitForFunction(() => document.querySelectorAll('#explorarTi .poster').length === 2, null, { timeout: 15000 }).catch(() => {});
+  ok((await pg.$$('#explorarTi .poster')).length === 2 && await pg.isVisible('#explorarTi'), 'Explorar también trae recomendaciones de base');
+  ok(!(await pg.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), 'no se sale de lado');
   ok(!errores.length, 'sin errores en la consola' + (errores.length ? ' — ' + errores.join(' | ') : ''));
   await ctx.close();
 }
