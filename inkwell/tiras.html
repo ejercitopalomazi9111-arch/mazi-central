@@ -41,7 +41,7 @@ body.lee .nav{display:none}
 main{max-width:720px; margin:0 auto; padding:calc(12px + env(safe-area-inset-top)) 16px 48px}
 .arriba{display:flex; justify-content:space-between; align-items:center; gap:8px; min-height:52px}
 .arriba a{display:inline-flex; align-items:center; min-height:44px; color:var(--dim); text-decoration:none}
-h1{font:800 34px/1.08 var(--sans); margin:14px 0 6px; letter-spacing:-.02em}
+h1{font:400 38px/1.02 var(--display); margin:14px 0 6px; letter-spacing:-.02em}
 h1 span{color:var(--ink)}
 .sub{color:var(--dim); margin:0 0 20px; font-size:15px}
 button,.boton{font:inherit; font-weight:600; color:var(--ink); background:var(--card); border:1px solid var(--line); border-radius:99px; min-height:44px; padding:0 14px;
@@ -57,7 +57,7 @@ button[disabled]{opacity:.45; cursor:default}
 .estado.listo .punto{background:var(--ok)}
 @keyframes late{to{opacity:.3}}
 @media (prefers-reduced-motion:reduce){ .estado.trabajando .punto{animation:none} }
-h2{font:700 19px/1.2 var(--sans); letter-spacing:-.01em; color:var(--ink); margin:30px 0 12px}
+h2{font:400 23px/1.15 var(--display); letter-spacing:-.01em; color:var(--ink); margin:30px 0 12px}
 .agregar{display:flex; gap:8px}
 input[type=text],input[type=number],select{font:inherit; color:var(--ink); background:var(--card2); border:1px solid var(--line); border-radius:99px; min-height:48px; padding:0 18px; width:100%; min-width:0}
 .ayuda{color:var(--dim); font-size:13px; margin:6px 0 0}
@@ -72,7 +72,7 @@ input[type=text],input[type=number],select{font:inherit; color:var(--ink); backg
 .serie .portada{width:96px; height:132px; border-radius:14px; object-fit:cover; background:var(--card2); display:block; box-shadow:var(--sombra)}
 .serie .datos{min-width:0; display:flex; flex-direction:column; gap:4px}
 .serie .fuente{align-self:flex-start; font-size:11px; font-weight:700; padding:3px 10px; border-radius:99px; background:var(--accent); color:#fff}
-.serie h3{font:700 18px/1.2 var(--sans); letter-spacing:-.01em; margin:2px 0 0} .serie h3{font-size:18px; line-height:1.15; margin:0}
+.serie h3{font:400 18px/1.15 var(--display); letter-spacing:-.01em; margin:2px 0 0} .serie h3{font-size:18px; line-height:1.15; margin:0}
 .serie .cuenta{color:var(--dim); font-size:13px}
 .serie .botones{grid-column:1/-1; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:2px}
 .serie .botones button{flex-direction:column; gap:4px; min-height:64px; padding:6px 4px; font-size:12px; font-weight:600; color:var(--dim); background:transparent; border:0; border-radius:14px}
@@ -185,6 +185,48 @@ dialog::backdrop{background:rgba(0,0,0,.7)}
 .v-ep .n{flex:none; color:var(--dim); font-size:13px; font-weight:700; font-variant-numeric:tabular-nums}
 .v-ep.cerrado{opacity:.6}
 .v-ep .gratis{font-size:11px; font-weight:800; padding:3px 9px; border-radius:99px; background:var(--accent); color:#fff}
+/* ── «Tinta viva»: la ficha como portada de revista y los capítulos como el índice de un libro ── */
+.f-cab{min-height:min(500px,70vh); background:var(--bg); padding-bottom:18px}
+#fFondo,#vFondo{inset:0; width:100%; height:100%; filter:none; opacity:1; object-position:center 22%}
+.f-cab::after{background:linear-gradient(180deg,rgba(11,6,16,.35) 0,transparent 26%,transparent 42%,color-mix(in srgb,var(--bg) 80%,transparent) 76%,var(--bg) 100%)}
+#fCerrar,#vCerrar{border-radius:50%; height:44px; background:rgba(11,6,16,.5); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px)}
+.f-datos{grid-template-columns:minmax(0,1fr)}
+#fPortada,#vPortada{display:none}
+.f-datos h2{font:400 clamp(36px,10vw,52px)/.98 var(--display); letter-spacing:-.02em; margin:10px 0 6px}
+.f-datos .fuente{background:none; padding:0; color:var(--accent-ink); font-size:11px; letter-spacing:.2em; text-transform:uppercase}
+.f-autor{font:italic 300 17px var(--serif); color:var(--lila)}
+.f-tinta .f-autor{font:600 12px var(--sans); color:var(--dim); letter-spacing:.06em; font-style:normal}
+.v-estado{border:0; padding:0; color:var(--dim); letter-spacing:.16em; margin-top:6px}
+.v-cifras{gap:0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:0; margin:6px auto 0; max-width:688px; width:calc(100% - 32px)}
+.v-cifras div{background:none; border:0; border-radius:0; text-align:center; padding:12px 6px}
+.v-cifras div+div{border-left:1px solid var(--line)}
+.v-cifras b{font:400 22px var(--display)}
+.v-cifras span{font:600 10px var(--sans); letter-spacing:.14em; text-transform:uppercase}
+.v-sinopsis{font:italic 300 18px/1.45 var(--serif); color:var(--ink); opacity:.88}
+.v-sinopsis::first-letter{font:400 3em/.8 var(--display); float:left; margin:6px 10px 0 0; color:var(--accent-ink); font-style:normal}
+.f-acciones .si{border-radius:99px}
+.f-h{font:600 11px var(--sans); letter-spacing:.2em; text-transform:uppercase; color:var(--dim); justify-content:space-between}
+.f-h span{font:inherit; letter-spacing:.1em}
+.f-caps{gap:0}
+.f-cap,.f-cap.v-ep{background:none; border:0; border-radius:0; min-height:50px; padding:4px 0; gap:10px; align-items:center; font:400 17px var(--serif); color:var(--ink); box-shadow:none}
+.f-cap::after{content:""; order:2; flex:1 1 12px; min-width:12px; border-bottom:1.5px dotted color-mix(in srgb,var(--ink) 28%,transparent); transform:translateY(5px)}
+.f-cap .num{order:0; background:none; min-width:30px; height:auto; font:400 16px var(--display); color:var(--accent-ink); place-items:start}
+.f-cap .tt{order:1; flex:0 1 auto}
+.f-cap .etq{order:3; background:none; border:0; padding:0; font:600 11px var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--dim)}
+.f-cap .etq.listo{background:none; color:var(--ok)}
+.f-cap .etq.leido{border:0}
+.f-cap:has(.etq.leido){color:var(--dim)}
+.f-cap:has(.etq.leido) .num{color:var(--dim)}
+.f-cap.sigue{box-shadow:none}
+.f-cap.sigue .tt{color:var(--accent-ink)}
+.f-cap.sigue .etq{color:var(--bg); background:var(--ink); padding:4px 9px; border-radius:99px}
+.v-ep img{order:0; width:44px; height:42px; border-radius:6px}
+.v-ep .tx{order:1; flex:0 1 auto}
+.v-ep .tx b{font:400 17px var(--serif)}
+.v-ep .gratis{order:3; background:var(--ink); color:var(--bg); font:700 10px var(--sans); letter-spacing:.08em; text-transform:uppercase}
+.v-ep .n{order:-1; font:400 16px var(--display); color:var(--accent-ink); min-width:30px}
+.v-ep.cerrado{opacity:.55}
+.v-ep.cerrado .n{color:var(--dim)}
 #previo{position:fixed; inset:0; z-index:48; background:var(--bg); display:flex; flex-direction:column}
 #pScroll{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch}
 #pScroll img{display:block; width:100%; max-width:800px; margin:0 auto}
@@ -203,8 +245,8 @@ main{padding-top:0}
 .banner img:not([src]){display:none}
 .banner::after{content:""; position:absolute; inset:0; z-index:-1; background:linear-gradient(180deg,rgba(0,0,0,.45) 0%,transparent 30%,color-mix(in srgb,var(--bg) 75%,transparent) 75%,var(--bg) 100%)}
 .banner-txt{padding:0 16px 8px; width:100%; color:#fff}
-.banner .sup{font:700 12px var(--sans); letter-spacing:.12em; text-transform:uppercase; color:#E9DDFF}
-.banner h1{font:800 clamp(28px,7.5vw,40px)/1.06 var(--sans); letter-spacing:-.02em; margin:6px 0 14px; text-shadow:0 2px 16px rgba(0,0,0,.5); max-width:16ch; color:#fff}
+.banner .sup{font:600 11px var(--sans); letter-spacing:.22em; text-transform:uppercase; color:#C77DFF}
+.banner h1{font:400 clamp(34px,9.5vw,48px)/1 var(--display); letter-spacing:-.02em; margin:6px 0 14px; text-shadow:0 2px 16px rgba(0,0,0,.5); max-width:16ch; color:#fff}
 .banner .estado{color:var(--dim)}
 .buscador{background:var(--card2); border:1px solid var(--line); border-radius:99px; padding:4px 4px 4px 8px}
 .buscador input{background:transparent !important; border:0 !important}
