@@ -15,6 +15,7 @@ export { Sala } from './sala.js';
 import { traer as traerInkwell } from './inkwell.js';
 import { esColeccion } from './pinguinos.js';
 export { Coleccion } from './pinguinos.js';
+export { Comunidad } from './comunidad.js';
 
 /* Sin comodín. Un "*" aquí le abre la puerta a cualquier página del mundo
    para leer y escribir en la mesa de los cuatro. */
@@ -76,7 +77,7 @@ export default {
     if(pedido.method === 'OPTIONS'){
       return conCORS(new Response(null, { status:204, headers:{
         'Access-Control-Allow-Methods':'GET,POST,OPTIONS',
-        'Access-Control-Allow-Headers':'content-type,x-llave',
+        'Access-Control-Allow-Headers':'content-type,x-llave,x-token',
         'Access-Control-Max-Age':'86400',
       } }), pedido);
     }
@@ -95,6 +96,26 @@ export default {
     if(url.pathname === '/api/sala/inkwell/traer'){
       if(pedido.method !== 'GET') return conCORS(Response.json({ bien:false, error:'Sólo GET.' }, { status:405 }), pedido);
       return conCORS(await traerInkwell(url), pedido);
+    }
+
+    /* INKWELL · LA COMUNIDAD (comunidad.js): una sola, con su SQLite. Va antes
+       del molde /api/sala/X/Y por la misma razón que el recadero. */
+    const com = url.pathname.match(/^\/api\/sala\/comunidad\/([a-z]+)$/);
+    if(com){
+      if(!env.COMUNIDAD) return conCORS(Response.json({ bien:false, error:'La comunidad todavía no está encendida.' }, { status:503 }), pedido);
+      const h = new Headers(pedido.headers); h.delete('x-llave-ok');
+      /* nombrar admins: la llave se comprueba con la sala GRUPAZ misma */
+      if(com[1] === 'admin' && h.get('x-llave') && env.SALA){
+        try{
+          const r = await env.SALA.get(env.SALA.idFromName('GRUPAZ')).fetch(new Request('https://sala/api/sala/GRUPAZ/hilo?desde=e99999999', { headers: { 'X-Llave': h.get('x-llave') } }));
+          if(r.ok) h.set('x-llave-ok', '1');
+        }catch{}
+      }
+      try{
+        return conCORS(await env.COMUNIDAD.get(env.COMUNIDAD.idFromName('inkwell')).fetch(new Request(pedido, { headers: h })), pedido);
+      }catch(e){
+        return conCORS(Response.json({ bien:false, error:'La comunidad tuvo un error: ' + String((e && e.message) || e).slice(0, 160) }, { status:503 }), pedido);
+      }
     }
 
     /* MIS PINGÜINOS: el respaldo de la colección (pinguinos.js). Sin llave: el
