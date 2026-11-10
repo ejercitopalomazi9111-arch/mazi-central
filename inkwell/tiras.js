@@ -741,10 +741,14 @@ if('serviceWorker' in navigator && !params.has('servidor')) navigator.serviceWor
 /* para las pruebas; va antes del arranque porque importar un link puede tardar */
 window.__tiras = { abrirFicha, preparar, todasSeries, clavesDe, get cola(){ return cola; }, get ocupado(){ return !!preparando || otraVez; } };
 await pintarSeries(); espacio();
+/* desde el inicio: ?leer=todo | ?leer=<serie> | ?ficha=<serie> */
+const pideLeer = params.get('leer'), pideFicha = params.get('ficha');
+if(pideLeer || pideFicha) history.replaceState(null, '', location.pathname + (params.get('servidor') ? '?servidor=' + encodeURIComponent(params.get('servidor')) : ''));
+if(pideLeer === 'todo') abrirLector(); else if(pideLeer) accion('leer', pideLeer); else if(pideFicha) abrirFicha(pideFicha);
 /* vienen de Explorar en el inicio (tiras.html?buscar=…): se busca de una vez */
 if(params.get('buscar')){ $('#buscar').value = params.get('buscar'); $('#formAgregar').requestSubmit(); }
 { const m = leer(MARCA, null);
-  if(m && m.abierto && m.clave && Date.now() - (m.t || 0) < 30 * 864e5 && !location.hash.includes('series=')) abrirLector(m.serie || null); }
+  if(m && m.abierto && m.clave && Date.now() - (m.t || 0) < 30 * 864e5 && !location.hash.includes('series=') && !pideLeer && !pideFicha) abrirLector(m.serie || null); }
 /* abrieron un link compartido (#series=…): se agregan todas de un jalón */
 { const cod = leerCodigo(location.hash);
   if(cod && cod.length && confirm(`Te compartieron ${cod.length} serie${cod.length > 1 ? 's' : ''}. ¿Agregarlas y empezar a bajarlas?`)){ history.replaceState(null, '', location.pathname + location.search); await importar(cod); }

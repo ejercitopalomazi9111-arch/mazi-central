@@ -206,6 +206,13 @@ for (const [ancho, alto, nombre] of [[390, 844, 'teléfono'], [1280, 800, 'compu
   await pg.waitForFunction(() => document.querySelector('#scroll .cap'));
   ok(await pg.evaluate(() => document.querySelector('#scroll .cap').dataset.n) === '4', 'tocar el episodio 4 abre el lector justo en el 4 (aunque ya estuviera leído)');
   await cerrarLector(pg);
+  /* desde el inicio: tiras.html?ficha=<serie> abre la ficha y ?leer=<serie> el lector */
+  { const id = await pg.evaluate(() => document.querySelector('.serie').dataset.id);
+    await pg.goto(BASE + '&ficha=' + encodeURIComponent(id)); await pg.waitForSelector('#ficha:not([hidden])', { timeout: 10000 }).catch(() => {});
+    ok(await pg.evaluate(() => !document.querySelector('#ficha').hidden), 'el inicio puede abrir directo la ficha de una serie');
+    await pg.goto(BASE + '&leer=' + encodeURIComponent(id)); await pg.waitForSelector('#lector:not([hidden])', { timeout: 10000 }).catch(() => {});
+    ok(await pg.evaluate(() => !document.querySelector('#lector').hidden), 'y directo el lector de esa serie («Seguir leyendo»)');
+    await cerrarLector(pg); }
   await pg.click('.serie button[data-a="archivo"]');
   await pg.fill('#aDesde', '1'); await pg.fill('#aHasta', '3');
   ok(await desborde(pg) <= 0, 'la hoja del archivo no se sale de la pantalla');

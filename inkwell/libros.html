@@ -302,6 +302,7 @@ navigator.storage?.persist?.().catch(() => {});
 if('serviceWorker' in navigator && !location.search.includes('pruebas')) navigator.serviceWorker.register('sw.js').catch(() => {});
 window.__libros = { todos };
 pintar();
+{ const q = new URLSearchParams(location.search).get('abrir'); if(q){ history.replaceState(null, '', location.pathname + (location.search.includes('pruebas') ? '?pruebas' : '')); abrirLibro(q); } }
 </script>
 </body>
 </html>
