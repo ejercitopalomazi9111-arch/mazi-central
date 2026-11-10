@@ -42,6 +42,15 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
   await pg.click('#opcionesSeguir a[href^="libros.html"]');
   await pg.waitForSelector('#lector:not([hidden])', { timeout: 8000 }).catch(() => {});
   ok(await pg.evaluate(() => location.pathname.endsWith('libros.html') && !document.querySelector('#lector').hidden && /2 de 2/.test(document.querySelector('#lCap').textContent)), 'tocar el libro lo abre en el capítulo donde ibas');
+  /* perfil */
+  await pg.goto(BASE + 'index.html#perfil'); await pg.waitForFunction(() => document.querySelectorAll('#stats .stat').length === 4);
+  const st = await pg.$$eval('#stats .stat b', (bs) => bs.map((b) => +b.textContent));
+  ok(st[0] === 2 && st[1] === 8 && st[2] === 1 && st[3] === 0, `el perfil cuenta tus series, capítulos leídos, libros y obras (${st.join(', ')})`);
+  await pg.fill('#miNombre', 'Carlos'); await pg.click('#avatares [data-q="robot"]');
+  await pg.reload(); await pg.waitForFunction(() => document.querySelectorAll('#stats .stat').length === 4);
+  ok(await pg.inputValue('#miNombre') === 'Carlos' && /robot/.test(await pg.getAttribute('#avatarImg', 'src')), 'tu nombre y tu foto se quedan');
+  ok(!(await pg.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), 'el perfil no se sale de lado');
+  if (process.env.CAPTURA) await pg.screenshot({ path: `${process.env.CAPTURA}/perfil-${w}.png`, fullPage: true });
   ok(!errores.length, 'sin errores en la consola' + (errores.length ? ' — ' + errores.join(' | ') : ''));
   await ctx.close();
 }

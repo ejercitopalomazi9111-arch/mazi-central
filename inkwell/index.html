@@ -27,6 +27,26 @@ html,body{margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 var(--
 a{color:inherit}
 button{font:inherit}
 :focus-visible{outline:2px solid var(--accent-ink); outline-offset:2px}
+
+/* perfil */
+.perfil{display:flex; align-items:center; gap:16px; margin:4px 0 18px}
+.avatar{width:92px; height:92px; flex:none; border-radius:50%; overflow:hidden; padding:0; border:3px solid var(--accent); background:var(--card2); cursor:pointer}
+.avatar img{width:100%; height:100%; object-fit:cover; object-position:center 15%}
+.perfil-datos{flex:1; min-width:0}
+.perfil-datos input{width:100%; border:0; border-bottom:2px solid var(--line); background:transparent; color:var(--ink); font:800 24px var(--sans); padding:4px 0; min-height:44px}
+.perfil-datos .lema{margin:6px 0 0}
+.stats{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px}
+@media (min-width:640px){ .stats{grid-template-columns:repeat(4,minmax(0,1fr))} }
+.stat{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px}
+.stat b{display:block; font:800 28px/1 var(--sans)}
+.stat span{color:var(--dim); font-size:13px}
+.avatares{display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:8px}
+.avatares button{aspect-ratio:1; padding:0; border-radius:50%; overflow:hidden; border:2px solid var(--line); background:var(--card2); cursor:pointer}
+.avatares button[aria-pressed="true"]{border-color:var(--accent); box-shadow:0 0 0 2px var(--accent)}
+.avatares img{width:100%; height:100%; object-fit:cover; object-position:center 12%}
+.subir-foto{display:block; margin-top:10px}
+.subir-foto .boton{width:100%}
+
 /* «Seguir leyendo»: elegir qué serie, todo seguido o un libro */
 .seguir-btn{width:100%; min-height:54px; font-size:16px; margin:2px 0 14px}
 #dlgSeguir{border:0; padding:0; margin:auto auto 0; width:min(560px,100%); max-width:100%; max-height:85dvh; border-radius:24px 24px 0 0; background:var(--bg2); color:var(--ink)}
@@ -208,9 +228,19 @@ h2 a .ico{width:18px; height:18px}
 
   <section id="v-perfil" data-vista="perfil" hidden>
     <div class="titulo-vista"><h1>Perfil</h1></div>
-    <div class="pad"><div class="vacio"><b>En construcción</b>Tu perfil, tus obras publicadas y tus preferencias llegan con las cuentas del equipo.</div>
-    <h2>En este teléfono</h2>
-    <p class="lema" id="espacio">Calculando cuánto ocupa lo que tienes bajado…</p></div>
+    <div class="pad">
+      <div class="perfil">
+        <button type="button" class="avatar" id="avatar" aria-label="Cambiar tu foto"><img id="avatarImg" alt=""></button>
+        <div class="perfil-datos"><input type="text" id="miNombre" maxlength="60" placeholder="Tu nombre" aria-label="Tu nombre"><span class="lema" id="miLema">Lector de INKWELL</span></div>
+      </div>
+      <div class="stats" id="stats"></div>
+      <h2>Elige tu foto</h2>
+      <div class="avatares" id="avatares"></div>
+      <label class="subir-foto"><input type="file" id="miFoto" accept="image/*" hidden><span class="boton suave">Usar una foto mía</span></label>
+      <h2>En este teléfono</h2>
+      <p class="lema" id="espacio">Calculando cuánto ocupa lo que tienes bajado…</p>
+      <p class="lema">Todo lo tuyo (lo que lees, tus libros y tus obras de Studio) vive sólo en este teléfono.</p>
+    </div>
   </section>
 </main>
 
@@ -358,9 +388,39 @@ $('#seguirLeyendo').addEventListener('click', async () => {
 $('#cerrarSeguir').addEventListener('click', () => $('#dlgSeguir').close());
 $('#dlgSeguir').addEventListener('click', (e) => { if(e.target === $('#dlgSeguir')) $('#dlgSeguir').close(); });
 
+/* ── perfil: nombre, foto y lo que llevas leído y creado (todo en el teléfono) ── */
+const PERSONAJES_AV = ['female-person', 'male-person', 'female-adventurer', 'male-adventurer', 'robot', 'zombie'];
+const srcAv = (q) => `studio/arte/personajes/${q}/idle.png`;
+function pintarAvatar(){
+  const a = leer('inkwell.avatar', { tipo: 'personaje', q: 'female-person' });
+  $('#avatarImg').src = a.tipo === 'foto' && a.datos ? a.datos : srcAv(a.q || 'female-person');
+  $('#avatares').innerHTML = PERSONAJES_AV.map((q) => `<button type="button" data-q="${q}" aria-label="Usar este personaje" aria-pressed="${a.tipo !== 'foto' && a.q === q}"><img src="${srcAv(q)}" alt=""></button>`).join('');
+}
+$('#miNombre').value = leer('inkwell.nombre', '');
+$('#miNombre').addEventListener('input', (e) => escribir('inkwell.nombre', e.target.value.trim()));
+$('#avatares').addEventListener('click', (e) => { const b = e.target.closest('[data-q]'); if(!b) return; escribir('inkwell.avatar', { tipo: 'personaje', q: b.dataset.q }); pintarAvatar(); });
+$('#avatar').addEventListener('click', () => $('#miFoto').click());
+$('#miFoto').addEventListener('change', async (e) => {
+  const f = e.target.files[0]; if(!f) return;
+  const bm = await createImageBitmap(f), lado = Math.min(bm.width, bm.height), c = document.createElement('canvas'); c.width = c.height = 240;
+  c.getContext('2d').drawImage(bm, (bm.width - lado) / 2, (bm.height - lado) / 2, lado, lado, 0, 0, 240, 240);
+  escribir('inkwell.avatar', { tipo: 'foto', datos: c.toDataURL('image/jpeg', .85) }); pintarAvatar();
+});
+async function pintarStats(){
+  let libros = [], obras = [];
+  try{ libros = await (await import('./libros.js')).todos(); }catch{}
+  try{ obras = await (await import('./studio/obras.js')).todas(); }catch{}
+  const caps = todas.reduce((n, s) => n + leidos(s), 0);
+  const st = [[todas.length, 'series que sigues'], [caps, 'capítulos leídos'], [libros.length, 'libros en tu librero'], [obras.length, 'obras en Studio']];
+  $('#stats').innerHTML = st.map(([n, t]) => `<div class="stat"><b>${n}</b><span>${t}</span></div>`).join('');
+  $('#miLema').textContent = obras.length ? `Autor${obras.length > 1 ? '' : ''} de ${obras.length} obra${obras.length > 1 ? 's' : ''} en INKWELL` : 'Lector de INKWELL';
+}
+pintarAvatar();
+addEventListener('hashchange', () => { if(location.hash === '#perfil') pintarStats(); });
+
 (async () => {
   todas = await series();
-  pintarFiltro(); pintarHero(); pintarListas();
+  pintarFiltro(); pintarHero(); pintarListas(); pintarStats();
 })();
 
 (async () => {
