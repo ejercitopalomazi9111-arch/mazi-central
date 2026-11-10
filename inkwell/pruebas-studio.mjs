@@ -90,9 +90,27 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
   if (await pg.isVisible('#props')) await pg.click('#props [data-a="cerrar"]');
   await pg.click('#nuevaPag'); await pg.waitForFunction(() => window.__comic.obra.paginas.length === 2);
   ok(await pg.evaluate(() => window.__comic.pag().capas.length === 0), 'página nueva en blanco');
+  /* viñetas: una plantilla de 4, un fondo metido en la viñeta 1 y un efecto */
+  await pg.click('[data-h="pagina"]'); await pg.click('#props [data-plantilla="4"]');
+  await pg.waitForFunction(() => window.__comic.pag().capas.filter((c) => c.tipo === 'marco').length === 4);
+  ok(true, 'la plantilla «Cuatro» pone 4 viñetas');
+  await pg.click('#props [data-a="cerrar"]');
+  await pg.click('[data-h="fondo"]'); await pg.click('#elegir button[data-fondo*="castles"]');
+  await pg.waitForFunction(() => window.__comic.pag().capas.length === 5);
+  await pg.click('#props button[data-clip]:not([data-clip=""])');
+  await pg.waitForTimeout(400);
+  const recorte = await pg.evaluate(() => { const c = document.querySelector('#lienzo'), p = window.__comic.pag(), k = c.width / p.ancho, ctx = c.getContext('2d');
+    const m = p.capas.filter((x) => x.tipo === 'marco'); const px = (q) => [...ctx.getImageData(Math.round((q.x + q.w / 2) * k), Math.round((q.y + q.h / 2) * k), 1, 1).data];
+    return { dentro: px(m[0]), fuera: px(m[3]) }; });
+  ok(recorte.fuera.slice(0, 3).every((v) => v > 245) && !recorte.dentro.slice(0, 3).every((v) => v > 245), 'el fondo metido en la viñeta 1 no se sale a las demás');
+  await pg.click('#props [data-a="cerrar"]');
+  await pg.click('[data-h="efecto"]'); await pg.click('#props [data-modo="noche"]');
+  ok(await pg.evaluate(() => window.__comic.capa().tipo === 'efecto' && window.__comic.capa().modo === 'noche'), 'efecto de página: «Noche»');
+  await pg.click('#props [data-a="cerrar"]');
+  if (process.env.CAPTURA) { await pg.waitForTimeout(300); await pg.screenshot({ path: `${process.env.CAPTURA}/studio-vinetas-${w}.png` }); }
   await pg.evaluate(() => window.__comic.guardarYa());
   await pg.reload(); await pg.waitForFunction(() => window.__comic);
-  ok(await pg.evaluate(() => window.__comic.obra.paginas.length === 2 && window.__comic.obra.paginas[0].capas.length === 5), 'todo se guarda al cerrar y abrir');
+  ok(await pg.evaluate(() => window.__comic.obra.paginas.length === 2 && window.__comic.obra.paginas[0].capas.length === 5 && window.__comic.obra.paginas[1].capas.length === 6), 'todo se guarda al cerrar y abrir');
   await pg.click('#botonMenu');
   const [dpng] = await Promise.all([pg.waitForEvent('download', { timeout: 15000 }).catch(() => null), pg.click('#png')]);
   ok(dpng && /Mi manhwa · página 1\.png$/.test(dpng.suggestedFilename()), 'se descarga la página en PNG');

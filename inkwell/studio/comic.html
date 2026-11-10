@@ -107,6 +107,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
   <button type="button" data-h="ono"><span class="ic" data-ic="sparkles"></span>Onomatopeya</button>
   <button type="button" data-h="texto"><span class="ic" data-ic="pen-tool"></span>Texto</button>
   <button type="button" data-h="marco"><span class="ic" data-ic="layers"></span>Viñeta</button>
+  <button type="button" data-h="efecto"><span class="ic" data-ic="sun"></span>Efecto</button>
   <button type="button" data-h="imagen"><span class="ic" data-ic="plus"></span>Tu imagen</button>
   <button type="button" data-h="capas"><span class="ic" data-ic="library"></span>Capas</button>
   <button type="button" data-h="pagina"><span class="ic" data-ic="settings"></span>Página</button>
@@ -132,7 +133,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 import { icono } from '../iconos.js';
 import { una, guardar, nuevoId, paginaNueva, FORMATOS, alLibrero } from './obras.js';
 import { dibujar, capaEn, PERSONAJES, POSES, srcPersonaje, FONDOS_KENNEY, srcFondoKenney, PIEZAS, archivoLpc, ORDEN_LPC, DIRS, LPC_POSES, COLORES,
-  PERSONAJE_LPC, GLOBOS, COLAS, LETRAS, img, RAIZ_ARTE } from './lienzo.js';
+  PERSONAJE_LPC, GLOBOS, COLAS, LETRAS, img, RAIZ_ARTE, EFECTOS, PLANTILLAS, vinetas } from './lienzo.js';
 import { pdf } from '../archivos.js';
 const $ = (s) => document.querySelector(s);
 const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
@@ -230,6 +231,7 @@ const HERR = {
   ono(){ const t = enMedio(420, 160); agregar({ tipo: 'ono', ...t, w: 420, h: 160, rot: -8, texto: '¡BOOM!', letra: 'Bangers', color: '#FFD400', borde: '#111111', grosor: 10 }); },
   texto(){ const t = enMedio(560, 110); agregar({ tipo: 'texto', ...t, w: 560, h: 110, texto: 'Mientras tanto…', letra: 'Archivo', tam: 34, color: '#111111', borde: '#ffffff', grosor: 0, alinear: 'center', fondo: '' }); },
   marco(){ const p = pag(); agregar({ tipo: 'marco', x: 30, y: 30, w: p.ancho - 60, h: Math.round(p.alto / 3) - 40, grosor: 8, color: '#111111', relleno: '' }); },
+  efecto(){ const p = pag(); agregar({ tipo: 'efecto', x: 0, y: 0, w: p.ancho, h: p.alto, modo: 'bordes', color: '#000000', intensidad: 60 }); },
   imagen(){ $('#subir').click(); },
   capas(){ sel = null; pintarSel(); listaCapas(); },
   pagina(){ sel = null; pintarSel(); propsPagina(); },
@@ -293,7 +295,7 @@ $('#vestListo').addEventListener('click', () => {
 });
 
 /* ── ajustes de la capa elegida ── */
-const NOMBRES = { imagen: 'Imagen', personaje: 'Personaje', lpc: 'Personaje del vestidor', globo: 'Globo de diálogo', ono: 'Onomatopeya', texto: 'Texto', marco: 'Viñeta' };
+const NOMBRES = { imagen: 'Imagen', personaje: 'Personaje', lpc: 'Personaje del vestidor', globo: 'Globo de diálogo', ono: 'Onomatopeya', texto: 'Texto', marco: 'Viñeta', efecto: 'Efecto' };
 const desl = (n, campo, min, max, val, paso = 1) => `<label class="desl">${n}<input type="range" data-campo="${campo}" min="${min}" max="${max}" step="${paso}" value="${val}"><span>${val}</span></label>`;
 let propsDe = null;
 function abrirProps(){
@@ -325,6 +327,10 @@ function abrirProps(){
   if(c.tipo === 'ono') h += `<div class="fila"><label class="desl" style="grid-template-columns:96px 44px">Relleno<input type="color" data-campo="color" value="${c.color || '#FFD400'}"></label>
       <label class="desl" style="grid-template-columns:96px 44px">Contorno<input type="color" data-campo="borde" value="${c.borde || '#111111'}"></label></div>${desl('Grosor', 'grosor', 0, 30, c.grosor || 0)}`;
   if(c.tipo === 'marco') h += `${desl('Grosor', 'grosor', 1, 30, c.grosor || 8)}<div class="fila"><label class="desl" style="grid-template-columns:96px 44px">Color<input type="color" data-campo="color" value="${c.color || '#111111'}"></label></div>`;
+  if(c.tipo === 'efecto') h += `<p class="etq">Efecto</p><div class="fila">${EFECTOS.map(([m, n]) => `<button type="button" data-modo="${m}" aria-pressed="${c.modo === m}">${n}</button>`).join('')}</div>
+      ${desl('Intensidad', 'intensidad', 0, 100, c.intensidad ?? 60)}<div class="fila"><label class="desl" style="grid-template-columns:96px 44px">Color<input type="color" data-campo="color" value="${c.color || '#000000'}"></label></div>`;
+  const marcos = pag().capas.filter((x) => x.tipo === 'marco');
+  if(c.tipo !== 'marco' && marcos.length) h += `<p class="etq">Meter en viñeta (lo que se salga no se ve)</p><div class="fila"><button type="button" data-clip="" aria-pressed="${!c.clip}">Ninguna</button>${marcos.map((m, i) => `<button type="button" data-clip="${m.id}" aria-pressed="${c.clip === m.id}">Viñeta ${i + 1}</button>`).join('')}</div>`;
   h += `<p class="etq">Acomodo</p><div class="fila"><button type="button" data-a="adelante">Al frente</button><button type="button" data-a="atras">Atrás</button>
       <button type="button" data-a="voltear">Voltear</button><button type="button" data-a="duplicar">Duplicar</button><button type="button" data-a="borrar">Borrar</button></div>
       ${desl('Giro', 'rot', -180, 180, Math.round(c.rot || 0))}${desl('Opacidad', 'opac', 0, 100, Math.round((c.opac ?? 1) * 100))}`;
@@ -351,6 +357,9 @@ $('#props').addEventListener('click', (e) => {
   else if(b.dataset.letra){ c.letra = b.dataset.letra; }
   else if(b.dataset.estilo){ c.estilo = b.dataset.estilo; }
   else if(b.dataset.cola){ c.cola = b.dataset.cola; }
+  else if(b.dataset.modo){ c.modo = b.dataset.modo; }
+  else if(b.dataset.clip != null){ c.clip = b.dataset.clip || null; }
+  else if(b.dataset.plantilla){ const vs = vinetas(p, b.dataset.plantilla); p.capas = p.capas.filter((x) => x.tipo !== 'marco'); vs.forEach((v) => { v.id = nuevoId('k'); v.rot = 0; v.opac = 1; v.filtro = {}; p.capas.push(v); }); }
   else if(b.dataset.a === 'sinFondo'){ c.fondo = ''; }
   else if(b.dataset.a === 'vestir'){ vest = JSON.parse(JSON.stringify(c.partes)); vestEditando = c.id; vestDir = String(c.dir); vestPose = `${c.anim}:${c.cuadro}`; abrirVestidor(); return; }
   else if(b.dataset.a === 'adelante'){ const i = p.capas.indexOf(c); p.capas.splice(i, 1); p.capas.push(c); }
@@ -364,7 +373,7 @@ $('#props').addEventListener('click', (e) => {
   else if(b.dataset.a === 'pagIzq' && pi > 0){ const x = obra.paginas.splice(pi, 1)[0]; pi--; obra.paginas.splice(pi, 0, x); }
   else if(b.dataset.a === 'pagDer' && pi < obra.paginas.length - 1){ const x = obra.paginas.splice(pi, 1)[0]; pi++; obra.paginas.splice(pi, 0, x); }
   else return;
-  anotar(); pintar().then(() => { if(b.dataset.a?.includes('Pag') || b.dataset.formato){ $('#paginas').innerHTML = ''; pintarPaginas(); miniaturas(); propsPagina(); } else if(sel) abrirProps(); else $('#props').hidden = true; });
+  anotar(); pintar().then(() => { if(b.dataset.plantilla){ propsPagina(); miniaturas(); } else if(b.dataset.a?.includes('Pag') || b.dataset.formato){ $('#paginas').innerHTML = ''; pintarPaginas(); miniaturas(); propsPagina(); } else if(sel) abrirProps(); else $('#props').hidden = true; });
   guardarLuego();
 });
 function propsPagina(){
@@ -372,6 +381,7 @@ function propsPagina(){
   $('#props').innerHTML = `<div class="cerrar-props"><b>Página ${pi + 1} de ${obra.paginas.length}</b><button type="button" data-a="cerrar">Listo</button></div>
     <p class="etq">Formato</p><div class="fila">${Object.entries(FORMATOS).map(([k, f]) => `<button type="button" data-formato="${k}" aria-pressed="${p.formato === k}">${f.nombre}</button>`).join('')}</div>
     <div class="fila"><label class="desl" style="grid-template-columns:96px 44px">Color de fondo<input type="color" data-campo="fondoPagina" value="${p.fondo || '#ffffff'}"></label></div>
+    <p class="etq">Viñetas (cambia las que haya)</p><div class="fila">${PLANTILLAS.map(([k, n]) => `<button type="button" data-plantilla="${k}">${n}</button>`).join('')}</div>
     <p class="etq">Páginas</p><div class="fila"><button type="button" data-a="pagIzq">Mover antes</button><button type="button" data-a="pagDer">Mover después</button>
     <button type="button" data-a="dupPag">Duplicar página</button><button type="button" data-a="borrarPag">Borrar página</button></div>`;
   $('#props').hidden = false;
