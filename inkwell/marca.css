@@ -41,11 +41,13 @@ html,body{max-width:100%; overflow-x:hidden; overscroll-behavior-x:none}
 
 .ico{width:22px; height:22px; flex:none}
 
-/* la marca: el monograma y la palabra, compuestos con Gloock */
+/* la marca: la pluma y la palabra «Inkwell» que dio Carlos (marca/), limpias y la palabra en vector */
 .marca{display:inline-flex; align-items:center; gap:10px; text-decoration:none; color:var(--ink)}
-.marca .iso{width:34px; height:34px; border-radius:10px; background:var(--grad); color:#fff;
-  display:grid; place-items:center; font-family:var(--display); font-size:19px; line-height:1; letter-spacing:-.04em}
-.marca .pal{font-family:var(--display); font-size:22px; letter-spacing:.02em}
+.marca .iso{width:38px; height:38px; border-radius:11px; background:#F6F2FB; display:grid; place-items:center; overflow:hidden; flex:none;
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--ink) 10%,transparent)}
+.marca .iso img{width:88%; height:88%; object-fit:contain; display:block}
+.marca .pal{display:block; width:98px; height:33px; font-size:0; color:transparent; background:var(--ink);
+  -webkit-mask:url(marca/inkwell.svg) left center/contain no-repeat; mask:url(marca/inkwell.svg) left center/contain no-repeat}
 
 /* navegación: abajo en el teléfono, a un lado en escritorio (§16) */
 .nav{position:fixed; z-index:40; left:0; right:0; bottom:0; display:flex; justify-content:space-around;
