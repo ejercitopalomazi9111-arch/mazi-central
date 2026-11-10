@@ -408,14 +408,20 @@ $('#marco').addEventListener('pointerdown', (e) => {
   if(e.target.closest('.tir')) return;
   const q = punto(e), c = capaEn(pag(), q.x, q.y);
   if(!c){ if(sel){ sel = null; pintarSel(); } return; }
-  if(sel !== c.id){ sel = c.id; pintarSel(); abrirProps(); }
-  gesto = { modo: 'mover', id: c.id, x0: q.x, y0: q.y, cx: c.x, cy: c.y }; try{ $('#marco').setPointerCapture(e.pointerId); }catch{}
+  /* elegir NO abre el panel: sólo un toque sin mover lo abre (Carlos, 10 nov: «al arrastrar estorba») */
+  if(sel !== c.id){ sel = c.id; pintarSel(); }
+  gesto = { modo: 'mover', id: c.id, x0: q.x, y0: q.y, cx: c.x, cy: c.y, sx: e.clientX, sy: e.clientY, movio: false }; try{ $('#marco').setPointerCapture(e.pointerId); }catch{}
 });
 $('#tirTam').addEventListener('pointerdown', (e) => { e.stopPropagation(); const c = capa(); gesto = { modo: 'tam', q0: punto(e), w0: c.w, h0: c.h }; try{ e.target.setPointerCapture(e.pointerId); }catch{} });
 $('#tirGir').addEventListener('pointerdown', (e) => { e.stopPropagation(); gesto = { modo: 'gir' }; try{ e.target.setPointerCapture(e.pointerId); }catch{} });
 addEventListener('pointermove', (e) => {
   if(!gesto) return; const c = capa(); if(!c) return; const q = punto(e);
-  if(gesto.modo === 'mover'){ c.x = Math.round(gesto.cx + q.x - gesto.x0); c.y = Math.round(gesto.cy + q.y - gesto.y0); }
+  if(gesto.modo === 'mover'){
+    if(!gesto.movio && Math.hypot(e.clientX - gesto.sx, e.clientY - gesto.sy) < 6) return;   // todavía es un toque
+    if(!gesto.movio){ gesto.movio = true; $('#props').hidden = true; }
+    c.x = Math.round(gesto.cx + q.x - gesto.x0); c.y = Math.round(gesto.cy + q.y - gesto.y0);
+  } else if(!gesto.movio){ gesto.movio = true; $('#props').hidden = true; }
+  if(gesto.modo === 'mover'){}
   else if(gesto.modo === 'tam'){
     const a = -(c.rot || 0) * Math.PI / 180, dx = q.x - gesto.q0.x, dy = q.y - gesto.q0.y;
     const lx = dx * Math.cos(a) - dy * Math.sin(a), ly = dx * Math.sin(a) + dy * Math.cos(a);
@@ -425,7 +431,7 @@ addEventListener('pointermove', (e) => {
   } else if(gesto.modo === 'gir'){ const cx = c.x + c.w / 2, cy = c.y + c.h / 2; let g = Math.atan2(q.y - cy, q.x - cx) * 180 / Math.PI + 90; if(g > 180) g -= 360; c.rot = Math.round(Math.abs(g) < 4 ? 0 : g); }
   pintar();
 });
-addEventListener('pointerup', () => { if(gesto){ gesto = null; anotar(); guardarLuego(); if(capa()) abrirProps(); } });
+addEventListener('pointerup', () => { if(!gesto) return; const g = gesto; gesto = null; if(g.movio){ anotar(); guardarLuego(); } else if(g.modo === 'mover' && capa()) abrirProps(); });
 
 /* ── exportar y librero ── */
 async function lienzoGrande(p){ const c = document.createElement('canvas'); await dibujar(c, obra, p, { escala: 1 }); return c; }

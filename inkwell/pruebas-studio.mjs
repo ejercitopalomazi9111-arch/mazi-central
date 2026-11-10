@@ -78,6 +78,11 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
   await pg.mouse.move(caja.x, caja.y); await pg.mouse.down(); await pg.mouse.move(caja.x + 40, caja.y + 30, { steps: 5 }); await pg.mouse.up();
   const despues = await pg.evaluate(() => { const c = window.__comic.pag().capas.at(-1); return { x: c.x, y: c.y }; });
   ok(despues.x > antes.x + 20 && despues.y > antes.y + 15, 'se mueve arrastrando con el dedo');
+  ok(await pg.evaluate(() => document.querySelector('#props').hidden), 'arrastrar no abre el panel de la capa (estorbaba en el teléfono)');
+  { const p2 = await pg.evaluate(() => { const c = window.__comic.pag().capas.at(-1), r = document.querySelector('#marco').getBoundingClientRect(), k = r.width / window.__comic.pag().ancho; return { x: r.left + (c.x + c.w / 2) * k, y: r.top + (c.y + c.h / 2) * k }; });
+    await pg.mouse.click(p2.x, p2.y); }
+  ok(await pg.evaluate(() => !document.querySelector('#props').hidden), 'un toque sin mover sí lo abre');
+  await pg.click('#props [data-a="cerrar"]');
   await pg.click('#deshacer');
   const des = await pg.evaluate(() => { const c = window.__comic.pag().capas.at(-1); return { x: c.x, y: c.y }; });
   ok(des.x === antes.x && des.y === antes.y, '«Deshacer» lo regresa');
