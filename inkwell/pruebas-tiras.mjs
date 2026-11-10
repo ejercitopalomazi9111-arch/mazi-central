@@ -83,7 +83,7 @@ for (const [ancho, alto, nombre] of [[390, 844, 'teléfono'], [1280, 800, 'compu
   await ctx.route('https://www.wattpad.com/**', wattpadFalso);
   await ctx.route('https://img.wattpad.com/**', (r) => r.fulfill({ contentType: 'image/jpeg', body: jpg.portada }));
   const pg = await ctx.newPage(); const errores = [];
-  pg.on('pageerror', (e) => errores.push(e.message)); pg.on('console', (m) => m.type() === 'error' && !/404/.test(m.text()) && errores.push(m.text()));
+  pg.on('pageerror', (e) => errores.push(e.message)); pg.on('console', (m) => m.type() === 'error' && !/404/.test(m.text()) && errores.push(m.text())); pg.on('requestfailed', (q) => /DISCONNECTED/.test(q.failure()?.errorText || '') && errores.push('[falló ' + q.url().slice(0, 90) + ']'));
   pg.on('dialog', (d) => d.accept());
   await pg.goto(BASE);
   if (!jpg.ep1_0) {
@@ -138,6 +138,9 @@ for (const [ancho, alto, nombre] of [[390, 844, 'teléfono'], [1280, 800, 'compu
   { const c = await pg.evaluate(() => { const b = document.querySelector('#scroll').getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; });
     await pg.mouse.click(c.x, c.y); await pg.waitForTimeout(400); }
   ok(await barraVisible(), 'un toque en la pantalla baja la barra con el título y el capítulo');
+  await pg.click('#brillo'); await pg.click('#letraMas');
+  ok(await pg.evaluate(() => getComputedStyle(document.querySelector('#scroll')).filter.includes('0.85') && JSON.parse(localStorage.getItem('tiras.letra')) === 20), 'el brillo baja y la letra de las historias crece (y se recuerdan)');
+  await pg.click('#brillo'); await pg.click('#brillo'); await pg.click('#brillo'); await pg.click('#letraMenos');
   await pg.evaluate(() => { document.querySelector('#scroll').scrollTop += 300; }); await pg.waitForTimeout(400);
   ok(await barraVisible(), 'y se queda mientras lees, hasta que la toques otra vez');
   { const c = await pg.evaluate(() => { const b = document.querySelector('#scroll').getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; });
@@ -271,6 +274,8 @@ for (const [ancho, alto, nombre] of [[390, 844, 'teléfono'], [1280, 800, 'compu
   await pg.waitForFunction(() => document.querySelectorAll('.serie').length === 2);
   ok(/(9|10) de 12 leídos/.test(await card()) && await pg.inputValue('#orden') === 'intercalado', 'las series, lo leído y los ajustes sobreviven a cerrar');
   await pg.evaluate(() => window.__tiras.preparar());          // que termine la que arrancó al abrir
+  /* se corta la red cuando Tiras ya no está bajando nada: una consulta cortada a medias la anota el navegador como error */
+  await pg.waitForFunction(() => !window.__tiras.ocupado, null, { timeout: 30000 });
   await ctx.setOffline(true);
   await pg.evaluate(() => window.__tiras.preparar());
   ok(/Sin internet/.test(await pg.textContent('#estadoTxt')), 'sin red lo dice y no intenta bajar');
