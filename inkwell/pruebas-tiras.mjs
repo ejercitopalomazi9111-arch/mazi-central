@@ -138,6 +138,9 @@ for (const [ancho, alto, nombre] of [[390, 844, 'teléfono'], [1280, 800, 'compu
   { const c = await pg.evaluate(() => { const b = document.querySelector('#scroll').getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; });
     await pg.mouse.click(c.x, c.y); await pg.waitForTimeout(400); }
   ok(await barraVisible(), 'un toque en la pantalla baja la barra con el título y el capítulo');
+  await pg.click('#brillo'); await pg.click('#letraMas');
+  ok(await pg.evaluate(() => getComputedStyle(document.querySelector('#scroll')).filter.includes('0.85') && JSON.parse(localStorage.getItem('tiras.letra')) === 20), 'el brillo baja y la letra de las historias crece (y se recuerdan)');
+  await pg.click('#brillo'); await pg.click('#brillo'); await pg.click('#brillo'); await pg.click('#letraMenos');
   await pg.evaluate(() => { document.querySelector('#scroll').scrollTop += 300; }); await pg.waitForTimeout(400);
   ok(await barraVisible(), 'y se queda mientras lees, hasta que la toques otra vez');
   { const c = await pg.evaluate(() => { const b = document.querySelector('#scroll').getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; });

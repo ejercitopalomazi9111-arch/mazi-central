@@ -87,6 +87,8 @@ input[type=text],input[type=number],select{font:inherit; color:var(--ink); backg
 /* el lector */
 #lector{position:fixed; inset:0; z-index:20; background:var(--bg); display:flex; flex-direction:column}
 #lector[hidden]{display:none}
+#scroll{filter:brightness(var(--brillo,1))}
+.lhead #letraMenos,.lhead #letraMas{font-size:14px; padding:0 8px}
 .lhead{display:flex; align-items:center; gap:8px; padding:calc(6px + env(safe-area-inset-top)) 8px 6px; background:color-mix(in srgb,var(--bg) 94%,transparent); border-bottom:1px solid var(--line);
   position:absolute; top:0; left:0; right:0; z-index:2; transition:transform .22s ease-out}
 /* pantalla completa (Carlos, 5 nov): la barra vive escondida y baja sólo al deslizar para regresar */
@@ -111,7 +113,7 @@ input[type=text],input[type=number],select{font:inherit; color:var(--ink); backg
 .cap-cab small{display:block; color:var(--accent-ink); font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase}
 .cap-cab b{display:block; font-family:var(--display); font-weight:400; font-size:22px; line-height:1.2; margin-top:6px}
 .cap img{display:block; width:100%; height:auto}
-.cap .texto{font-family:var(--serif); font-size:18px; line-height:1.75; padding:0 22px}
+.cap .texto{font-family:var(--serif); font-size:var(--letra,18px); line-height:1.75; padding:0 22px}
 .cap .texto p{margin:0 0 1em}
 .fin-cap{height:1px}
 .al-final{padding:40px 20px 80px; min-height:60vh; text-align:center; color:var(--dim)}   /* espacio para subir el final del último capítulo hasta media pantalla: así también se marca leído */
@@ -272,6 +274,9 @@ main{padding-top:0}
   <div class="lhead">
     <button type="button" id="cerrarLector" aria-label="Cerrar el lector"></button>
     <div class="t"><b id="lTitulo"></b><span id="lSub"></span></div>
+    <button type="button" id="brillo" aria-label="Brillo de la pantalla"></button>
+    <button type="button" id="letraMenos" aria-label="Letra más chica">A−</button>
+    <button type="button" id="letraMas" aria-label="Letra más grande">A+</button>
   </div>
   <div id="scroll"></div>
   <div class="sello" id="sello" role="status" hidden><img src="icon-192.png" alt=""><b>INK<span>WELL</span></b><small>(salvado por el marcador)</small></div>

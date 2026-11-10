@@ -236,7 +236,16 @@ async function pintarSeries(){
 $('#nav').innerHTML = [['inicio', 'Inicio', 'house'], ['explorar', 'Explorar', 'compass'], ['biblioteca', 'Biblioteca', 'library'],
   ['crear', 'Crear', 'pen-tool'], ['comunidad', 'Comunidad', 'users'], ['perfil', 'Perfil', 'user']]
   .map(([id, n, ic]) => `<a href="./#${id}"${id === 'biblioteca' ? ' aria-current="page"' : ''}>${icono(ic)}<span>${n}</span></a>`).join('');
-$('#cerrarLector').innerHTML = icono('x');
+$('#cerrarLector').innerHTML = icono('x'); $('#brillo').innerHTML = icono('sun');
+/* brillo de la pantalla y tamaño de letra de las historias de texto (se recuerdan) */
+const BRILLOS = [1, .85, .7, .55];
+let brillo = leer('tiras.brillo', 1), letra = leer('tiras.letra', 18);
+const ponerLector = () => { $('#scroll').style.setProperty('--brillo', brillo); $('#scroll').style.setProperty('--letra', letra + 'px');
+  $('#brillo').setAttribute('aria-label', `Brillo: ${Math.round(brillo * 100)} %`); };
+$('#brillo').addEventListener('click', () => { brillo = BRILLOS[(BRILLOS.indexOf(brillo) + 1) % BRILLOS.length]; escribir('tiras.brillo', brillo); ponerLector(); });
+$('#letraMenos').addEventListener('click', () => { letra = Math.max(14, letra - 2); escribir('tiras.letra', letra); ponerLector(); });
+$('#letraMas').addEventListener('click', () => { letra = Math.min(30, letra + 2); escribir('tiras.letra', letra); ponerLector(); });
+ponerLector();
 document.querySelectorAll('.ic[data-ic]').forEach((e) => { e.outerHTML = icono(e.dataset.ic); });
 $('#fCerrar').innerHTML = icono('x'); $('#fArchivo').innerHTML = icono('download'); $('#fMas').innerHTML = icono('settings');
 $('#leerTodo').innerHTML = icono('book-open') + 'Leer seguido';
