@@ -171,6 +171,8 @@ h2 a .ico{width:18px; height:18px}
   <section id="v-biblioteca" data-vista="biblioteca" hidden>
     <div class="titulo-vista"><h1>Biblioteca</h1><p class="lema">Lo que sigues y lo que tienes guardado en este teléfono.</p></div>
     <div class="pad">
+      <h2>Tus libros <a href="libros.html">Abrir librero <span class="i-chev"></span></a></h2>
+      <p class="lema">Sube tus EPUB, PDF o TXT y léelos con tu avance guardado.</p>
       <h2>Series que sigues <a href="tiras.html">Administrar <span class="i-chev"></span></a></h2>
       <div id="rejillaSeries"></div>
     </div>
@@ -234,6 +236,7 @@ $('#tema').addEventListener('click', () => { const t = oscuroAhora() ? 'claro' :
 /* ── accesos y tipos ── */
 $('#accesos').innerHTML = [
   ['tiras.html', 'layers', 'Tiras', 'Webtoon y Wattpad sin internet', ''],
+  ['libros.html', 'book-open', 'Libros', 'Tus EPUB, PDF y TXT', ''],
   ['#explorar', 'compass', 'Explorar', 'Busca por nombre o género', ''],
   ['#crear', 'pen-tool', 'Studio', 'Crea y publica tus obras', 'Pronto'],
   ['#comunidad', 'users', 'Comunidad', 'Comenta y sigue a quien publica', 'Pronto'],
