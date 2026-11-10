@@ -389,7 +389,7 @@ console.log('\ncategorías y todo en archivos');
   ok(v.genero === 'Fantasía' && v.estado === 'Finalizada', `la ficha dice género y estado en español · ${v.genero} · ${v.estado}`);
   ok(/571\.5 M/.test(v.cifras) && /4\.6 M/.test(v.cifras) && /suscriptores/.test(v.cifras), 'enseña vistas y suscriptores · ' + v.cifras);
   ok(/emperatriz/.test(v.sin), 'enseña la sinopsis');
-  ok(v.eps === 12 && v.prueba === 3 && /269,608 likes/.test(v.ult) && /#12/.test(v.ult), `los 12 episodios en orden, con likes y número; 3 de probadita · ${v.ult.replace(/\s+/g, ' ').trim()}`);
+  ok(v.eps === 12 && v.prueba === 3 && /269,608 likes/.test(v.ult) && /12$/.test(v.ult.trim()), `los 12 episodios en orden, con likes y número; 3 de probadita · ${v.ult.replace(/\s+/g, ' ').trim()}`);
   await pg.waitForFunction(() => [...document.querySelectorAll('#vCaps img')].slice(0, 3).every((i) => i.naturalWidth > 0), null, { timeout: 15000 }).catch(() => {});
   ok(await pg.evaluate(() => [...document.querySelectorAll('#vCaps img')].slice(0, 3).every((i) => i.naturalWidth > 0)), 'las miniaturas de los episodios cargan');
   await pg.click('#vCaps .v-ep[data-i="6"]');

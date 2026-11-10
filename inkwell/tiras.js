@@ -761,7 +761,7 @@ function pintarVista(f, base){
   $('#vProbar').disabled = !f.caps.length; $('#vProbar').innerHTML = icono('play') + 'Probar el 1';
   $('#vCaps').innerHTML = f.caps.map((c, i) => `<button type="button" class="f-cap v-ep${i < PRUEBA ? '' : ' cerrado'}" data-i="${i}">
       ${wt ? `<img alt="" data-m="${i}">` : ''}<span class="tx"><b>${esc(c.titulo)}</b><small>${[fechaMx(c.fecha), c.likes ? c.likes + ' likes' : ''].filter(Boolean).join(' · ')}</small></span>
-      ${i < PRUEBA ? '<span class="gratis">Probar</span>' : ''}<span class="n">#${c.n}</span></button>`).join('');
+      ${i < PRUEBA ? '<span class="gratis">Probar</span>' : ''}<span class="n">${c.n}</span></button>`).join('');
   /* miniaturas: sólo las que se asoman (una serie larga trae cientos) */
   if(wt){
     const io = new IntersectionObserver((es) => { for(const e of es){ if(!e.isIntersecting) continue; io.unobserve(e.target); imgPor(e.target, f.caps[+e.target.dataset.m].miniatura, true); } }, { root: $('#vista'), rootMargin: '400px' });
