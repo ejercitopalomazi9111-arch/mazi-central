@@ -2,6 +2,7 @@
 import { reconocer, FUENTES, wattpad, limpiarTexto, desentidad } from './fuentes.js';
 import { pdf, epub, tamanoJpeg } from './archivos.js';
 import { icono } from './iconos.js';
+import { apuntar } from './biblioteca.js';
 import { codigoDe, leerCodigo, seriesDeRanking, elegirNuevas, GENEROS, seriesDeGenero } from './compartir.js';
 
 const $ = (s) => document.querySelector(s);
@@ -480,7 +481,7 @@ async function leido(art){
   art.dataset.leido = '1';
   const s = limpia(await tx('series', 'readonly', (st) => st.get(art.dataset.serie))); if(!s) return;
   const n = +art.dataset.n;
-  if(!(s.leidos || []).includes(n)){ s.leidos = [...(s.leidos || []), n]; await guardarSerie(s); }
+  if(!(s.leidos || []).includes(n)){ s.leidos = [...(s.leidos || []), n]; await guardarSerie(s); apuntar(s.id, n); }
   escribir('tiras.ultimo', art.dataset.clave);
 }
 $('#cerrarLector').addEventListener('click', () => {

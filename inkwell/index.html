@@ -49,9 +49,62 @@ button{font:inherit}
 
 /* «Seguir leyendo»: elegir qué serie, todo seguido o un libro */
 .seguir-btn{width:100%; min-height:54px; font-size:16px; margin:2px 0 14px}
-#dlgSeguir{border:0; padding:0; margin:auto auto 0; width:min(560px,100%); max-width:100%; max-height:85dvh; border-radius:24px 24px 0 0; background:var(--bg2); color:var(--ink)}
-#dlgSeguir::backdrop{background:rgba(0,0,0,.6)}
-@media (min-width:640px){ #dlgSeguir{margin:auto; border-radius:24px} }
+#dlgSeguir,#dlgObra{border:0; padding:0; margin:auto auto 0; width:min(560px,100%); max-width:100%; max-height:85dvh; border-radius:24px 24px 0 0; background:var(--bg2); color:var(--ink)}
+#dlgSeguir::backdrop,#dlgObra::backdrop{background:rgba(0,0,0,.6)}
+@media (min-width:640px){ #dlgSeguir,#dlgObra{margin:auto; border-radius:24px} }
+/* ── biblioteca ── */
+.b-resumen{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-bottom:14px}
+@media (min-width:760px){ .b-resumen{grid-template-columns:repeat(4,minmax(0,1fr))} }
+.b-meta{grid-column:1/-1; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px; display:flex; flex-direction:column; gap:10px}
+.b-meta .linea{display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap}
+.b-meta b{font:800 22px/1 var(--sans); font-variant-numeric:tabular-nums}
+.b-meta label{display:flex; align-items:center; gap:8px; color:var(--dim); font-size:13px}
+.b-meta input{width:84px; min-height:40px; border-radius:12px; border:1px solid var(--line); background:var(--card2); color:var(--ink); font-size:16px; padding:0 10px; font-family:inherit}
+.b-barra{height:8px; border-radius:99px; background:var(--card2); overflow:hidden}
+.b-barra i{display:block; height:100%; border-radius:99px; background:var(--accent); transition:width .5s}
+.b-cal{display:grid; grid-auto-flow:column; grid-template-rows:repeat(7,1fr); gap:3px; justify-content:start}
+.b-cal i{width:12px; height:12px; border-radius:3px; background:var(--card2)}
+.b-cal i[data-n="1"]{background:color-mix(in srgb,var(--accent) 35%,var(--card2))}
+.b-cal i[data-n="2"]{background:color-mix(in srgb,var(--accent) 65%,var(--card2))}
+.b-cal i[data-n="3"]{background:var(--accent)}
+.b-cal-pie{color:var(--dim); font-size:12px}
+.bib-buscar{display:flex; align-items:center; gap:10px; min-height:48px; padding:0 14px; border-radius:99px; background:var(--card); border:1px solid var(--line); margin-bottom:12px}
+.bib-buscar input{flex:1; min-width:0; border:0; background:transparent; color:var(--ink); font-size:16px; font-family:inherit; outline:none}
+.b-fila{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:12px 0}
+.b-fila label{display:flex; flex-direction:column; gap:4px; color:var(--dim); font-size:12px; font-weight:600; min-width:0}
+.b-fila select{min-height:44px; border-radius:12px; border:1px solid var(--line); background:var(--card); color:var(--ink); font-size:16px; padding:0 10px; font-family:inherit; min-width:0; width:100%}
+.chips.chicas .chip{min-height:34px; padding:0 12px; font-size:13px}
+.chips.chicas:empty{display:none}
+.chips.envuelve{flex-wrap:wrap; overflow:visible}
+.chip .n{opacity:.7; margin-left:4px; font-variant-numeric:tabular-nums}
+#bObras{margin-top:12px}
+.poster.b{cursor:pointer; font:inherit; text-align:left}
+.poster .fav{position:absolute; top:6px; right:6px; width:28px; height:28px; border-radius:99px; display:grid; place-items:center; background:rgba(8,6,14,.55); color:#ff5d8f}
+.poster .fav .ico{width:18px; height:18px; fill:currentColor}
+.poster .mini-est{display:flex; justify-content:center; gap:1px; color:#ffc94d; margin-top:3px}
+.poster .mini-est .ico{width:11px; height:11px; fill:currentColor}
+.b-acciones{display:flex; flex-wrap:wrap; gap:8px; margin:18px 0 6px}
+.b-acciones .boton{flex:1 1 220px}
+.o-cab{display:flex; gap:12px; align-items:center}
+.o-cab img{width:64px; height:86px; border-radius:10px; object-fit:cover; background:var(--card2); flex:none}
+.o-cab img:not([src]){visibility:hidden}
+.o-cab h2{margin:0 0 4px; font-size:19px}
+.o-cab span{color:var(--dim); font-size:13px}
+.o-fila{display:flex; align-items:center; gap:12px; margin-top:6px}
+.o-fav{min-height:44px; padding:0 14px; border-radius:99px; border:1px solid var(--line); background:var(--card); color:var(--ink); font:600 14px var(--sans); display:inline-flex; align-items:center; gap:6px}
+.o-fav[aria-pressed="true"]{color:#ff5d8f; border-color:#ff5d8f}
+.o-fav[aria-pressed="true"] .ico{fill:currentColor}
+.estrellas{display:flex; gap:2px}
+.estrellas button{width:40px; height:44px; padding:0; border:0; background:transparent; color:var(--dim); display:grid; place-items:center}
+.estrellas button.si{color:#ffb800}
+.estrellas button.si .ico{fill:currentColor}
+.estrellas .ico{width:26px; height:26px}
+.o-etq{display:flex; gap:8px}
+.o-etq input{flex:1; min-width:0; min-height:44px; border-radius:12px; border:1px solid var(--line); background:var(--card); color:var(--ink); font-size:16px; padding:0 12px; font-family:inherit}
+.o-cols{display:flex; flex-direction:column; gap:6px}
+.o-cols label{display:flex; align-items:center; gap:10px; min-height:44px; padding:0 12px; border-radius:12px; background:var(--card); border:1px solid var(--line)}
+.o-cols input{width:20px; height:20px; accent-color:var(--accent)}
+.o-cols:empty::before{content:"Todavía no tienes colecciones. Crea una con «Nueva colección»."; color:var(--dim); font-size:13px}
 .hoja-s{padding:10px 16px calc(18px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:8px; max-height:85dvh; overflow-y:auto}
 .agarra{width:44px; height:5px; border-radius:99px; background:var(--line); margin:2px auto 6px}
 .hoja-s h2{margin:4px 0 6px}
@@ -207,12 +260,26 @@ h2 a .ico{width:18px; height:18px}
   </section>
 
   <section id="v-biblioteca" data-vista="biblioteca" hidden>
-    <div class="titulo-vista"><h1>Biblioteca</h1><p class="lema">Lo que sigues y lo que tienes guardado en este teléfono.</p></div>
+    <div class="titulo-vista"><h1>Biblioteca</h1><p class="lema">Tus listas, tus calificaciones y lo que llevas leído. Se queda en este teléfono.</p></div>
     <div class="pad">
+      <div class="b-resumen" id="bResumen"></div>
+      <label class="bib-buscar"><span class="i-buscar"></span><input type="search" id="bTexto" placeholder="Busca por título, autor o etiqueta" aria-label="Buscar en tu biblioteca" autocomplete="off"></label>
+      <div class="chips" id="bVistas" role="group" aria-label="Listas"></div>
+      <div class="b-fila">
+        <label>Tipo<select id="bTipo"><option value="todo">Todo</option><option value="comic">Cómic</option><option value="novela">Novela</option><option value="libro">Libros</option></select></label>
+        <label>Ordenar<select id="bOrden"><option value="reciente">Lo último que leíste</option><option value="titulo">Título</option><option value="autor">Autor</option><option value="nota">Tu calificación</option><option value="avance">Avance</option><option value="pendientes">Más capítulos pendientes</option></select></label>
+      </div>
+      <div class="chips chicas" id="bEtiquetas" role="group" aria-label="Etiquetas"></div>
+      <div id="bObras"></div>
+      <div id="bSugeridas"></div>
+      <div class="b-acciones">
+        <button type="button" class="boton suave" id="bNuevaCol"></button>
+        <button type="button" class="boton suave" id="bExportar"></button>
+        <button type="button" class="boton suave" id="bImportar"></button>
+        <input type="file" id="bArchivo" accept=".json,application/json" hidden>
+      </div>
       <h2>Tus libros <a href="libros.html">Abrir librero <span class="i-chev"></span></a></h2>
-      <p class="lema">Sube tus EPUB, PDF o TXT y léelos con tu avance guardado.</p>
-      <h2>Series que sigues <a href="tiras.html">Administrar <span class="i-chev"></span></a></h2>
-      <div id="rejillaSeries"></div>
+      <p class="lema">Sube tus EPUB, PDF o TXT y léelos con tu avance guardado. También salen arriba, en tus listas.</p>
     </div>
   </section>
 
@@ -243,6 +310,24 @@ h2 a .ico{width:18px; height:18px}
     </div>
   </section>
 </main>
+
+<dialog id="dlgObra" aria-labelledby="oTitulo">
+  <div class="hoja-s">
+    <div class="agarra" aria-hidden="true"></div>
+    <div class="o-cab"><img id="oPortada" alt=""><div><h2 id="oTitulo"></h2><span id="oSub"></span></div></div>
+    <a class="boton" id="oAbrir"></a>
+    <p class="opc-h">Lista</p>
+    <div class="chips envuelve" id="oListas" role="radiogroup" aria-label="Lista"></div>
+    <div class="o-fila"><button type="button" class="o-fav" id="oFav" aria-pressed="false"></button>
+      <div class="estrellas" id="oNota" role="radiogroup" aria-label="Tu calificación"></div></div>
+    <p class="opc-h">Etiquetas</p>
+    <form class="o-etq" id="oEtqForm"><input id="oEtq" placeholder="Escribe una y dale Enter" aria-label="Agregar etiqueta" autocomplete="off" enterkeyhint="done"><button type="submit" class="boton suave">Agregar</button></form>
+    <div class="chips envuelve" id="oEtiquetas"></div>
+    <p class="opc-h">Colecciones</p>
+    <div class="o-cols" id="oCols"></div>
+    <button type="button" class="boton suave" id="cerrarObra">Listo</button>
+  </div>
+</dialog>
 
 <dialog id="dlgSeguir" aria-labelledby="tSeguir">
   <div class="hoja-s">
@@ -395,7 +480,6 @@ function pintarListas(){
   $('#bloqueSeguir').hidden = !empezadas.length;
   $('#continuar').innerHTML = empezadas.map(seguir).join('');
   $('#filaSeries').innerHTML = ss.length ? `<div class="rejilla">${ss.map(poster).join('')}</div>` : vacio;
-  $('#rejillaSeries').innerHTML = todas.length ? `<div class="rejilla">${todas.map(poster).join('')}</div>` : vacio;
 }
 
 
@@ -448,9 +532,106 @@ async function pintarStats(){
 pintarAvatar();
 addEventListener('hashchange', () => { if(location.hash === '#perfil') pintarStats(); });
 
+/* ── biblioteca: listas, favoritas, calificación, etiquetas, colecciones, meta del mes ── */
+const B = await import('./biblioteca.js');
+let obras = [], bVista = 'todas', bEtq = '', obraAbierta = null;
+async function juntarObras(){
+  const h = B.historial(), ultimo = new Map(); for(const [t, id] of h) ultimo.set(id, Math.max(ultimo.get(id) || 0, t));
+  const ss = todas.map((s) => ({ id: s.id, titulo: s.titulo, autor: s.autor || '', tipo: s.fuente === 'webtoon' ? 'comic' : 'novela', total: total(s), leidos: leidos(s),
+    portada: s.portadaBlob || null, href: `tiras.html?ficha=${encodeURIComponent(s.id)}`, enlace: s.enlace || '', reciente: ultimo.get(s.id) || s.agregada || 0 }));
+  let ls = [];
+  try{ ls = (await (await import('./libros.js')).todos()).map((l) => { const t = l.tipo === 'pdf' ? 0 : (l.capitulos || []).length, cap = l.avance?.cap || 0;
+    return { id: 'libro:' + l.id, titulo: l.titulo, autor: l.autor || '', tipo: 'libro', total: t, leidos: t ? (cap + ((l.avance?.y || 0) > .97 ? 1 : 0)) : 0,
+      portada: l.portada || null, href: `libros.html?abrir=${encodeURIComponent(l.id)}`, reciente: ultimo.get('libro:' + l.id) || l.agregado || 0 }; }); }catch{}
+  obras = [...ss, ...ls];
+}
+const urlsB = new Map();
+const urlB = (o) => { if(!o.portada) return ''; if(!urlsB.has(o.id)) urlsB.set(o.id, URL.createObjectURL(o.portada)); return urlsB.get(o.id); };
+const TIPO_B = { comic: 'Cómic', novela: 'Novela', libro: 'Libro' };
+function posterB(o){
+  const m = B.deObra(o.id), p = urlB(o), l = B.listaDe(o);
+  return `<button type="button" class="poster b" data-id="${esc(o.id)}" aria-label="${esc(o.titulo)}: organizar">${p ? `<img src="${p}" alt="" loading="lazy">` : `<span class="sin">${icono('image')}</span>`}
+    <span class="etq">${TIPO_B[o.tipo]}</span>${m.fav ? `<span class="fav">${icono('heart')}</span>` : ''}
+    <b>${esc(o.titulo)}</b>${m.nota ? `<span class="mini-est" aria-label="${m.nota} de 5">${icono('star').repeat(m.nota)}</span>` : ''}<span class="nuevo">${B.NOMBRE_LISTA[l]}${o.total ? ` · ${o.leidos}/${o.total}` : ''}</span></button>`;
+}
+function pintarResumen(){
+  const e = B.estadisticas(obras), pct = e.meta ? Math.min(100, Math.round(100 * e.esteMes / e.meta)) : 0;
+  const nivel = (n) => n === 0 ? 0 : n < 3 ? 1 : n < 8 ? 2 : 3;
+  const mes = new Date().toLocaleDateString('es-MX', { month: 'long' });
+  $('#bResumen').innerHTML = `<div class="b-meta"><div class="linea"><div><b>${e.esteMes}</b> <span class="b-cal-pie">capítulos leídos en ${mes}${e.meta ? ` · meta ${e.meta}` : ''}</span></div>
+      <label>Meta del mes <input type="number" id="bMeta" min="0" max="10000" inputmode="numeric" value="${e.meta || ''}" placeholder="0"></label></div>
+      ${e.meta ? `<div class="b-barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="Avance de la meta"><i style="width:${pct}%"></i></div>` : ''}
+      <div class="b-cal" aria-label="Lo que leíste en las últimas 12 semanas">${e.dias.map((d) => `<i data-n="${nivel(d.n)}" title="${new Date(d.dia).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}: ${d.n}"></i>`).join('')}</div>
+      <span class="b-cal-pie">Las últimas 12 semanas · ${e.racha ? `racha de ${e.racha} día${e.racha > 1 ? 's' : ''} seguido${e.racha > 1 ? 's' : ''}` : 'lee algo hoy para empezar una racha'}</span></div>
+    <div class="stat"><b>${e.capitulos}</b><span>capítulos leídos en total</span></div>
+    <div class="stat"><b>${e.cuenta.terminada}</b><span>obras terminadas</span></div>
+    <div class="stat"><b>${e.favoritas}</b><span>favoritas</span></div>
+    <div class="stat"><b>${e.promedio || '—'}</b><span>tu calificación promedio</span></div>`;
+  $('#bMeta').addEventListener('change', (ev) => { B.ponerMeta(ev.target.value); pintarResumen(); });
+}
+function pintarBiblio(){
+  const d = B.datos(), e = B.estadisticas(obras, Date.now(), d);
+  const vistas = [['todas', 'Todas', obras.length], ['favoritas', 'Favoritas', e.favoritas], ...B.LISTAS.map(([k, t]) => [k, t, e.cuenta[k]]),
+    ...d.colecciones.map((c) => ['col:' + c.id, c.nombre, c.ids.filter((id) => obras.some((o) => o.id === id)).length])];
+  if(!vistas.some(([k]) => k === bVista)) bVista = 'todas';
+  $('#bVistas').innerHTML = vistas.map(([k, t, n]) => `<button type="button" class="chip" data-v="${esc(k)}" aria-pressed="${k === bVista}">${esc(t)}<span class="n">${n}</span></button>`).join('');
+  const etqs = B.etiquetasUsadas(obras, d); if(bEtq && !etqs.includes(bEtq)) bEtq = '';
+  $('#bEtiquetas').innerHTML = etqs.map((t) => `<button type="button" class="chip" data-t="${esc(t)}" aria-pressed="${t === bEtq}">#${esc(t)}</button>`).join('');
+  const ver = B.filtrar(obras, { vista: bVista, etiqueta: bEtq, tipo: $('#bTipo').value, orden: $('#bOrden').value, texto: $('#bTexto').value.trim() }, d);
+  $('#bObras').innerHTML = ver.length ? `<div class="rejilla">${ver.map(posterB).join('')}</div>`
+    : `<div class="vacio"><b>${obras.length ? 'Nada por aquí' : 'Tu biblioteca está vacía'}</b>${obras.length ? 'Cambia de lista o de filtro, o toca una obra para moverla aquí.' : 'Sigue una serie en Tiras o sube un libro y aquí lo organizas.'}</div>`;
+  const sug = B.sugeridas(obras, d).slice(0, 6);
+  $('#bSugeridas').innerHTML = sug.length && bVista === 'todas' ? `<h2>Por tus gustos</h2><p class="lema">Pendientes con las etiquetas de tus favoritas y mejor calificadas.</p><div class="rejilla">${sug.map(posterB).join('')}</div>` : '';
+  pintarResumen();
+}
+$('#bNuevaCol').innerHTML = icono('folder-plus') + 'Nueva colección';
+$('#bExportar').innerHTML = icono('download') + 'Exportar mis listas';
+$('#bImportar').innerHTML = icono('upload') + 'Importar listas';
+$('#bVistas').addEventListener('click', (e) => { const b = e.target.closest('[data-v]'); if(!b) return; bVista = b.dataset.v; pintarBiblio(); });
+$('#bEtiquetas').addEventListener('click', (e) => { const b = e.target.closest('[data-t]'); if(!b) return; bEtq = bEtq === b.dataset.t ? '' : b.dataset.t; pintarBiblio(); });
+for(const k of ['#bTipo', '#bOrden']) $(k).addEventListener('change', pintarBiblio);
+$('#bTexto').addEventListener('input', pintarBiblio);
+$('#bNuevaCol').addEventListener('click', () => { const n = prompt('¿Cómo se llama la colección? (por ejemplo «Para el viaje» o «Universo Marvel»)'); if(n && B.nuevaColeccion(n)) pintarBiblio(); });
+$('#bExportar').addEventListener('click', () => {
+  const f = new File([JSON.stringify(B.exportar(obras), null, 1)], `inkwell-mis-listas-${new Date().toISOString().slice(0, 10)}.json`, { type: 'application/json' });
+  const u = URL.createObjectURL(f), a = document.createElement('a'); a.href = u; a.download = f.name; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 10000);
+});
+$('#bImportar').addEventListener('click', () => $('#bArchivo').click());
+$('#bArchivo').addEventListener('change', async (e) => {
+  const f = e.target.files[0]; e.target.value = ''; if(!f) return;
+  try{ const n = B.importar(JSON.parse(await f.text())); pintarBiblio(); alert(`Listo: se juntaron ${n} obra${n === 1 ? '' : 's'} con tus listas.`); }
+  catch(er){ alert('No se pudo importar: ' + (er instanceof SyntaxError ? 'el archivo no se puede leer.' : er.message)); }
+});
+/* la hoja de una obra: lista, favorita, estrellas, etiquetas y colecciones */
+$('#bObras').addEventListener('click', abrirObra); $('#bSugeridas').addEventListener('click', abrirObra);
+function abrirObra(e){ const b = e.target.closest('[data-id]'); if(!b) return; obraAbierta = obras.find((o) => o.id === b.dataset.id); if(!obraAbierta) return; pintarObra(); $('#dlgObra').showModal(); }
+function pintarObra(){
+  const o = obraAbierta, m = B.deObra(o.id), l = B.listaDe(o), d = B.datos(), p = urlB(o);
+  if(p) $('#oPortada').src = p; else $('#oPortada').removeAttribute('src');
+  $('#oTitulo').textContent = o.titulo;
+  $('#oSub').textContent = [TIPO_B[o.tipo], o.autor, o.total ? `${o.leidos} de ${o.total} capítulos` : ''].filter(Boolean).join(' · ');
+  $('#oAbrir').href = o.href; $('#oAbrir').innerHTML = icono('book-open') + (o.leidos && o.leidos < o.total ? 'Seguir leyendo' : 'Abrir');
+  $('#oListas').innerHTML = B.LISTAS.map(([k, t]) => `<button type="button" class="chip" role="radio" data-l="${k}" aria-checked="${k === l}" aria-pressed="${k === l}">${t}</button>`).join('');
+  $('#oFav').setAttribute('aria-pressed', String(!!m.fav)); $('#oFav').innerHTML = icono('heart') + (m.fav ? 'Favorita' : 'Marcar favorita');
+  $('#oNota').innerHTML = [1, 2, 3, 4, 5].map((n) => `<button type="button" role="radio" data-n="${n}" class="${n <= m.nota ? 'si' : ''}" aria-checked="${n === m.nota}" aria-label="${n} de 5">${icono('star')}</button>`).join('');
+  $('#oEtiquetas').innerHTML = m.etiquetas.map((t) => `<button type="button" class="chip" data-quita="${esc(t)}" aria-label="Quitar la etiqueta ${esc(t)}">#${esc(t)} ${icono('x')}</button>`).join('');
+  $('#oCols').innerHTML = d.colecciones.map((c) => `<label><input type="checkbox" data-c="${esc(c.id)}"${c.ids.includes(o.id) ? ' checked' : ''}>${esc(c.nombre)}</label>`).join('');
+}
+const tocaObra = (cambio) => { B.cambiarObra(obraAbierta.id, cambio); pintarObra(); pintarBiblio(); };
+$('#oListas').addEventListener('click', (e) => { const b = e.target.closest('[data-l]'); if(b) tocaObra({ lista: b.dataset.l }); });
+$('#oFav').addEventListener('click', () => tocaObra({ fav: !B.deObra(obraAbierta.id).fav }));
+$('#oNota').addEventListener('click', (e) => { const b = e.target.closest('[data-n]'); if(!b) return; const n = +b.dataset.n; tocaObra({ nota: B.deObra(obraAbierta.id).nota === n ? 0 : n }); });
+$('#oEtqForm').addEventListener('submit', (e) => { e.preventDefault(); const v = $('#oEtq').value.split(',').map((x) => x.trim()).filter(Boolean); if(!v.length) return; $('#oEtq').value = ''; tocaObra({ etiquetas: [...B.deObra(obraAbierta.id).etiquetas, ...v] }); });
+$('#oEtiquetas').addEventListener('click', (e) => { const b = e.target.closest('[data-quita]'); if(b) tocaObra({ etiquetas: B.deObra(obraAbierta.id).etiquetas.filter((t) => t !== b.dataset.quita) }); });
+$('#oCols').addEventListener('change', (e) => { const c = e.target.closest('[data-c]'); if(!c) return; B.enColeccion(c.dataset.c, obraAbierta.id, c.checked); pintarBiblio(); });
+$('#cerrarObra').addEventListener('click', () => $('#dlgObra').close());
+$('#dlgObra').addEventListener('click', (e) => { if(e.target === $('#dlgObra')) $('#dlgObra').close(); });
+window.__biblio = { B, get obras(){ return obras; }, pintarBiblio };
+
 (async () => {
   todas = await series();
   pintarFiltro(); pintarHero(); pintarListas(); pintarStats();
+  await juntarObras(); pintarBiblio();
 })();
 
 (async () => {
