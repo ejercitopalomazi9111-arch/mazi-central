@@ -197,8 +197,8 @@ h2 a .ico{width:18px; height:18px}
   </section>
 
   <section id="v-crear" data-vista="crear" hidden>
-    <div class="titulo-vista"><h1>INKWELL Studio</h1><p class="lema">Crear obras, temporadas y capítulos, subir y ordenar páginas, y publicarlas para el equipo.</p></div>
-    <div class="pad"><div class="vacio"><b>En construcción</b>Studio llega en la siguiente tanda junto con las cuentas del equipo, para que lo que publiques se guarde en el servidor y no sólo en tu teléfono.</div></div>
+    <div class="titulo-vista"><h1>INKWELL Studio</h1><p class="lema">Escribe libros y haz cómics, manhwas y webtoons con personajes, fondos, globos de diálogo y onomatopeyas. Todo se queda en tu teléfono.</p></div>
+    <div class="pad"><a class="boton" href="studio/">Abrir Studio</a></div>
   </section>
 
   <section id="v-comunidad" data-vista="comunidad" hidden>
@@ -265,7 +265,7 @@ $('#accesos').innerHTML = [
   ['tiras.html', 'layers', 'Tiras', 'Webtoon y Wattpad sin internet', ''],
   ['libros.html', 'book-open', 'Libros', 'Tus EPUB, PDF y TXT', ''],
   ['#explorar', 'compass', 'Explorar', 'Busca por nombre o género', ''],
-  ['#crear', 'pen-tool', 'Studio', 'Crea y publica tus obras', 'Pronto'],
+  ['studio/', 'pen-tool', 'Studio', 'Escribe libros y haz cómics', ''],
   ['#comunidad', 'users', 'Comunidad', 'Comenta y sigue a quien publica', 'Pronto'],
 ].map(([h, ic, t, d, p]) => `<a class="tesela" href="${h}"><span class="cuadro">${icono(ic)}</span><div>${t}<small>${d}</small>${p ? `<span class="pronto">${p}</span>` : ''}</div></a>`).join('');
 $('#tipos').innerHTML = [['Acción', 'sparkles'], ['Fantasía', 'sparkles'], ['Romance', 'bookmark'], ['Comedia', 'sun'], ['Drama', 'moon'],

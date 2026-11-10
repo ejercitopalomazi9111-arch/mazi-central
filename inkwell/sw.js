@@ -10,8 +10,8 @@
        · lo de otro sitio (Wattpad) y lo que va a La Sala (/api/) NO se toca;
        · la app (html, js, manifest) va «primero la red» y, sin red, lo guardado;
        · las pinturas siguen «primero lo guardado»: no cambian nunca. */
-const V = 'inkwell-v10';
-const APP = ['./', './index.html', './tiras.html', './tiras.js', './libros.html', './libros.js', './fuentes.js', './archivos.js', './compartir.js', './manifest.webmanifest', './marca.css', './iconos.js', './letra/gloock.woff2', './letra/archivo.woff2', './letra/crimson.woff2'];
+const V = 'inkwell-v11';
+const APP = ['./', './index.html', './tiras.html', './tiras.js', './libros.html', './libros.js', './studio/', './studio/index.html', './studio/libro.html', './studio/comic.html', './studio/obras.js', './studio/lienzo.js', './letra/bangers.ttf', './fuentes.js', './archivos.js', './compartir.js', './manifest.webmanifest', './marca.css', './iconos.js', './letra/gloock.woff2', './letra/archivo.woff2', './letra/crimson.woff2'];
 
 self.addEventListener('install', e => {
   e.waitUntil((async () => {
