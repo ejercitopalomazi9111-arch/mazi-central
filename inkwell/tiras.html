@@ -125,53 +125,95 @@ dialog::backdrop{background:rgba(0,0,0,.7)}
 .hoja .barra{height:8px; border-radius:6px; background:var(--bg2); overflow:hidden}
 .hoja .barra i{display:block; height:100%; width:0; background:var(--accent); border-radius:6px}
 [hidden]{display:none !important}
+/* ── apariencia de la casa (como el inicio de INKWELL) ── */
+main{padding-top:0}
+.arriba{position:absolute; top:0; left:0; right:0; z-index:5; padding:calc(10px + env(safe-area-inset-top)) 16px 10px; max-width:720px; margin:0 auto}
+.arriba .marca{color:#fff}
+.banner{position:relative; margin:0 -16px 18px; min-height:clamp(340px,52vh,440px); display:flex; align-items:flex-end; overflow:hidden; isolation:isolate;
+  background:radial-gradient(120% 90% at 80% 0%,color-mix(in srgb,var(--accent) 55%,transparent),transparent 60%),radial-gradient(100% 80% at 0% 30%,color-mix(in srgb,var(--accent2) 40%,transparent),transparent 65%),var(--bg2)}
+.banner img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center 20%; z-index:-2}
+.banner img:not([src]){display:none}
+.banner::after{content:""; position:absolute; inset:0; z-index:-1; background:linear-gradient(180deg,rgba(0,0,0,.45) 0%,transparent 30%,color-mix(in srgb,var(--bg) 75%,transparent) 75%,var(--bg) 100%)}
+.banner-txt{padding:0 16px 8px; width:100%; color:#fff}
+.banner .sup{font:700 12px var(--sans); letter-spacing:.12em; text-transform:uppercase; color:#E9DDFF}
+.banner h1{font:800 clamp(28px,7.5vw,40px)/1.06 var(--sans); letter-spacing:-.02em; margin:6px 0 14px; text-shadow:0 2px 16px rgba(0,0,0,.5); max-width:16ch; color:#fff}
+.banner .estado{color:var(--dim)}
+.buscador{background:var(--card2); border:1px solid var(--line); border-radius:99px; padding:4px 4px 4px 8px}
+.buscador input{background:transparent !important; border:0 !important}
+.series{display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px}
+@media (min-width:640px){ .series{grid-template-columns:repeat(3,minmax(0,1fr))} }
+.serie{display:flex !important; flex-direction:column; gap:8px !important; padding:0 !important; border-radius:18px !important; overflow:hidden}
+.serie .portada{width:100% !important; height:auto !important; aspect-ratio:3/4; border-radius:0 !important; box-shadow:none !important}
+.serie .datos{padding:0 12px}
+.serie h3{font-size:16px !important}
+.serie .cuenta:first-of-type{display:none}
+.serie .botones{padding:0 6px 8px}
+.acciones{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin:26px 0 8px}
+.acciones button{flex-direction:column; gap:6px; min-height:76px; border-radius:18px; font-size:13px; white-space:normal; text-align:center; padding:8px 4px}
+.acciones .ico{width:22px; height:22px; color:var(--accent-ink)}
+.ajustes-caja{margin-top:12px; background:var(--card); border:1px solid var(--line); border-radius:18px; padding:4px 14px}
+.ajustes-caja summary{display:flex; align-items:center; gap:8px; min-height:48px; cursor:pointer; font-weight:700; list-style:none}
+.ajustes-caja summary::-webkit-details-marker{display:none}
+.ajustes-caja summary .ico{width:20px; height:20px; color:var(--accent-ink)}
+.ajustes-caja[open]{padding-bottom:14px}
+
 </style>
 </head>
 <body class="con-nav">
 <main>
-  <div class="arriba"><a class="marca" href="./" aria-label="INKWELL, inicio"><span class="iso" aria-hidden="true">I</span><span class="pal">INKWELL</span></a></div>
-  <h1><span>Tiras</span></h1>
-  <p class="sub">Tus series de Webtoon y Wattpad, bajadas para leer sin internet, todas seguidas en un solo scroll.</p>
+  <header class="arriba"><a class="marca" href="./" aria-label="INKWELL, inicio"><span class="iso" aria-hidden="true">I</span><span class="pal">INKWELL</span></a></header>
 
-  <button type="button" class="si grande" id="leerTodo">Leer seguido</button>
-  <p class="estado" id="estado" role="status" aria-live="polite"><span class="punto" aria-hidden="true"></span><span id="estadoTxt"></span></p>
+  <!-- el banner: lo que sigue por leer, con la portada de la serie -->
+  <section class="banner" aria-labelledby="tBanner">
+    <img id="bannerImg" alt="">
+    <div class="banner-txt">
+      <span class="sup">Tiras</span>
+      <h1 id="tBanner">Tus cómics e historias, sin internet</h1>
+      <button type="button" class="si grande" id="leerTodo">Leer seguido</button>
+      <p class="estado" id="estado" role="status" aria-live="polite"><span class="punto" aria-hidden="true"></span><span id="estadoTxt"></span></p>
+    </div>
+  </section>
 
-  <h2>Agregar serie</h2>
-  <form class="agregar" id="formAgregar">
-    <input type="text" id="buscar" placeholder="Busca por nombre, o pega un link o un código" aria-label="Nombre de una serie, o link de Webtoon o Wattpad, o código de series" autocomplete="off">
-    <button type="submit" class="si" id="agregar">Agregar</button>
+  <form class="agregar buscador" id="formAgregar" role="search">
+    <input type="text" id="buscar" placeholder="Busca un cómic o una historia" aria-label="Nombre de una serie, o link de Webtoon o Wattpad, o código de series" autocomplete="off">
+    <button type="submit" class="si" id="agregar" aria-label="Buscar">Buscar</button>
   </form>
-  <p class="ayuda">Escribe el nombre y busca en Webtoon (cómics) y en Wattpad (texto) a la vez. También sirve pegar el link de una serie.</p>
+  <p class="ayuda">Escribe el nombre o pega el link de la serie.</p>
   <div class="resultados" id="resultados"></div>
-
-  <h2>Explorar por categoría</h2>
-  <form class="agregar" id="formGenero">
-    <select id="genero" aria-label="Categoría de cómics de Webtoon"></select>
-    <button type="submit" class="si">Ver</button>
-  </form>
-  <div class="resultados" id="porGenero"></div>
 
   <h2>Tus series</h2>
   <div class="series" id="series"></div>
 
-  <h2>Ajustes</h2>
-  <div class="ajustes">
-    <label>Capítulos listos por serie
-      <select id="adelante"><option>3</option><option>5</option><option>10</option><option>20</option><option>50</option><option>100</option><option>300</option><option value="100000">Todos (para leer sin internet)</option></select></label>
-    <label>«Leer seguido» va
-      <select id="orden"><option value="serie">Una serie tras otra</option><option value="intercalado">Intercalado</option></select></label>
-    <label style="grid-column:1/-1">Buscarme cómics nuevos cuando ya queda poco por leer
-      <select id="descubrir"><option value="0">No</option><option value="1">Sí, 1 al día</option><option value="3">Sí, 3 al día</option></select></label>
-    <label style="grid-column:1/-1">Ahorro de espacio en las imágenes
-      <select id="compacto"><option value="no">Sin ahorro (como vienen)</option><option value="si">Normal (la mitad del peso, no se nota)</option><option value="maximo">Máximo (cabe más del doble)</option></select></label>
+  <h2>Descubre por género</h2>
+  <form class="agregar" id="formGenero">
+    <select id="genero" aria-label="Género"></select>
+    <button type="submit" class="si">Ver</button>
+  </form>
+  <div class="resultados" id="porGenero"></div>
+
+  <div class="acciones">
+    <button type="button" id="revisar"><span class="ic" data-ic="refresh-cw"></span>Buscar nuevos</button>
+    <button type="button" id="todoArchivo"><span class="ic" data-ic="download"></span>Descargar todo</button>
+    <button type="button" id="compartir"><span class="ic" data-ic="share-2"></span>Compartir</button>
   </div>
-  <p style="margin-top:8px"><button type="button" id="revisar">Buscar capítulos nuevos ahora</button></p>
-  <p style="margin-top:8px"><button type="button" id="apretar">Apretar lo que ya está bajado</button></p>
-  <p style="margin-top:8px"><button type="button" id="todoArchivo">Descargar todo en archivos</button></p>
-  <p style="margin-top:8px"><button type="button" id="compartir">Compartir mis series</button></p>
-  <div id="codigoCaja" hidden><input type="text" id="codigo" readonly aria-label="Link para compartir tus series" style="width:100%"><p class="nota">Quien lo abra en su teléfono recibe tu lista y se le bajan todas. Sólo va la lista de series: lo que tú leíste o bajaste no se comparte. También pueden pegarlo arriba, donde va el link de una serie.</p></div>
-  <p class="nota">Busca y prepara cuando la abres con internet, y sigue mientras la tengas abierta: el iPhone no deja que una página trabaje cerrada. <b>Agrégala a tu inicio</b> (Compartir → Agregar a inicio) para que el iPhone no borre lo bajado. Es para leer tú: lo bajado vive sólo en este teléfono.</p>
-  <p class="nota" id="espacio"></p>
+  <div id="codigoCaja" hidden><input type="text" id="codigo" readonly aria-label="Link para compartir tus series" style="width:100%"><p class="nota">Quien lo abra recibe tu lista de series. Lo que tú ya leíste no se comparte.</p></div>
+
+  <details class="ajustes-caja" id="ajustesCaja">
+    <summary><span class="ic" data-ic="settings"></span>Ajustes</summary>
+    <div class="ajustes">
+      <label>Capítulos listos por serie
+        <select id="adelante"><option>3</option><option>5</option><option>10</option><option>20</option><option>50</option><option>100</option><option>300</option><option value="100000">Todos (para leer sin internet)</option></select></label>
+      <label>Orden al leer seguido
+        <select id="orden"><option value="serie">Una serie tras otra</option><option value="intercalado">Intercalado</option></select></label>
+      <label style="grid-column:1/-1">Sugerirme cómics nuevos
+        <select id="descubrir"><option value="0">No</option><option value="1">Sí, 1 al día</option><option value="3">Sí, 3 al día</option></select></label>
+      <label style="grid-column:1/-1">Ahorrar espacio en el teléfono
+        <select id="compacto"><option value="no">No</option><option value="si">Sí (recomendado)</option><option value="maximo">Al máximo</option></select></label>
+    </div>
+    <p style="margin-top:10px"><button type="button" id="apretar">Ahorrar espacio en lo que ya bajé</button></p>
+    <p class="nota">Tip: agrega INKWELL a tu pantalla de inicio (Compartir → Agregar a inicio) para que el iPhone no borre lo que bajaste.</p>
+    <p class="nota" id="espacio"></p>
+  </details>
 </main>
 
 <div id="lector" hidden>

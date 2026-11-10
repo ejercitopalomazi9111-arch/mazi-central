@@ -227,6 +227,7 @@ for (const [ancho, alto, nombre] of [[390, 844, 'teléfono'], [1280, 800, 'compu
 
   // intercalado: se vuelve a dejar pendiente la serie de Webtoon
   await pg.evaluate(async () => { const s = (await window.__tiras.todasSeries())[0]; s.leidos = [1, 2, 3, 4, 5, 6, 7, 8, 9]; const d = await new Promise((ok) => { const q = indexedDB.open('inkwell-tiras'); q.onsuccess = () => ok(q.result); }); await new Promise((ok) => { const t = d.transaction('series', 'readwrite'); t.objectStore('series').put(s); t.oncomplete = ok; }); d.close(); });
+  await pg.evaluate(() => { document.querySelector('#ajustesCaja').open = true; });
   await pg.selectOption('#orden', 'intercalado');
   const orden = await pg.evaluate(async () => { const s = await window.__tiras.todasSeries(); return s.map((x) => x.id); });
   await pg.click('#leerTodo');
@@ -358,6 +359,7 @@ console.log('\nque quepa más: las páginas se aprietan');
   ok(r.max < r.si && r.wmax === 720, `«Máximo» aprieta más y topa a 720 px · ${Math.round(r.max / 1024)} KB`);
   ok(r.wsi === 800, 'una página de 800 px no se encoge en «Normal» (el tope es 900)');
   ok(r.igual, '«Sin ahorro» la deja como viene');
+  await pg.evaluate(() => { document.querySelector('#ajustesCaja').open = true; });
   await pg.selectOption('#compacto', 'maximo');
   ok((await pg.evaluate(() => JSON.parse(localStorage.getItem('tiras.ajustes')).compacto)) === 'maximo', 'el ajuste de ahorro se guarda');
   await pg.click('#apretar');
