@@ -197,6 +197,19 @@ function lpc(ctx, obra, capa, w, h, imgs){
     ctx.drawImage(im, fx * 64, dir * 64, 64, 64, -w / 2, -h / 2, w, h);
   }
 }
+/* efectos de luz y color (no son dibujos: son filtros sobre lo que hay abajo) */
+export const EFECTOS = [['bordes', 'Oscurecer bordes'], ['luz', 'Luz'], ['tinte', 'Tinte de color'], ['degradado', 'Degradado'], ['noche', 'Noche'], ['recuerdo', 'Recuerdo']];
+function efecto(ctx, c, w, h){
+  const k = (c.intensidad ?? 60) / 100, col = c.color || '#000000';
+  const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; };
+  if(c.modo === 'bordes'){ const g = ctx.createRadialGradient(0, 0, Math.min(w, h) * .25, 0, 0, Math.hypot(w, h) / 2); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, rgba(col, k)); ctx.fillStyle = g; }
+  else if(c.modo === 'luz'){ const g = ctx.createRadialGradient(0, 0, 0, 0, 0, Math.max(w, h) / 2); g.addColorStop(0, rgba(c.color || '#ffffff', k)); g.addColorStop(1, 'rgba(255,255,255,0)'); ctx.globalCompositeOperation = 'screen'; ctx.fillStyle = g; }
+  else if(c.modo === 'degradado'){ const g = ctx.createLinearGradient(0, -h / 2, 0, h / 2); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, rgba(col, k)); ctx.fillStyle = g; }
+  else if(c.modo === 'noche'){ ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = rgba('#1E2A6B', .35 + k * .5); }
+  else if(c.modo === 'recuerdo'){ ctx.globalCompositeOperation = 'soft-light'; ctx.fillStyle = rgba('#E8C27A', .3 + k * .6); }
+  else { ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = rgba(c.color || '#7C3AED', k); }
+  ctx.fillRect(-w / 2, -h / 2, w, h);
+}
 export async function dibujar(canvas, obra, pagina, { escala = 1, sinOcultas = false } = {}){
   await precargar(obra, pagina);
   const imgs = new Map();
@@ -209,6 +222,10 @@ export async function dibujar(canvas, obra, pagina, { escala = 1, sinOcultas = f
   for(const c of pagina.capas){
     if(c.oculta && !sinOcultas) continue;
     ctx.save();
+    /* «meter en viñeta»: lo que se salga del cuadro no se ve */
+    const m = c.clip && pagina.capas.find((x) => x.id === c.clip && x.tipo === 'marco');
+    if(m){ const base = ctx.getTransform(); ctx.translate(m.x + m.w / 2, m.y + m.h / 2); ctx.rotate((m.rot || 0) * Math.PI / 180);
+      ctx.beginPath(); ctx.rect(-m.w / 2, -m.h / 2, m.w, m.h); ctx.clip(); ctx.setTransform(base); }
     ctx.translate(c.x + c.w / 2, c.y + c.h / 2); ctx.rotate((c.rot || 0) * Math.PI / 180); if(c.flip) ctx.scale(-1, 1);
     ctx.globalAlpha = c.opac ?? 1; ctx.filter = filtroCss(c.filtro);
     if(c.tipo === 'imagen' || c.tipo === 'personaje'){ const im = imgs.get(fuentesDe(obra, c)[0]); if(im) ctx.drawImage(im, -c.w / 2, -c.h / 2, c.w, c.h); }
@@ -220,12 +237,31 @@ export async function dibujar(canvas, obra, pagina, { escala = 1, sinOcultas = f
       textoEnCaja(ctx, c, c.w * .94, c.h, { centro: (c.alinear || 'center') === 'center' });
     } else if(c.tipo === 'marco'){
       if(c.relleno){ ctx.fillStyle = c.relleno; ctx.fillRect(-c.w / 2, -c.h / 2, c.w, c.h); }
-      ctx.lineWidth = c.grosor || 8; ctx.strokeStyle = c.color || '#111'; ctx.strokeRect(-c.w / 2, -c.h / 2, c.w, c.h);
-    }
+    } else if(c.tipo === 'efecto') efecto(ctx, c, c.w, c.h);
     ctx.restore();
+  }
+  /* los bordes de las vinetas van siempre hasta arriba, como en un cómic impreso */
+  for(const c of pagina.capas){
+    if(c.tipo !== 'marco' || (c.oculta && !sinOcultas)) continue;
+    ctx.save(); ctx.translate(c.x + c.w / 2, c.y + c.h / 2); ctx.rotate((c.rot || 0) * Math.PI / 180); ctx.globalAlpha = c.opac ?? 1;
+    ctx.lineWidth = c.grosor || 8; ctx.strokeStyle = c.color || '#111'; ctx.strokeRect(-c.w / 2, -c.h / 2, c.w, c.h); ctx.restore();
   }
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   return canvas;
+}
+/* acomodos de vinetas listos (en fracciones de la página; m = margen y canal en px) */
+export const PLANTILLAS = [
+  ['1', 'Una', [[0, 0, 1, 1]]],
+  ['2h', 'Dos', [[0, 0, 1, .5], [0, .5, 1, .5]]],
+  ['3h', 'Tres franjas', [[0, 0, 1, 1 / 3], [0, 1 / 3, 1, 1 / 3], [0, 2 / 3, 1, 1 / 3]]],
+  ['21', 'Dos y una', [[0, 0, .5, .5], [.5, 0, .5, .5], [0, .5, 1, .5]]],
+  ['12', 'Una y dos', [[0, 0, 1, .5], [0, .5, .5, .5], [.5, .5, .5, .5]]],
+  ['4', 'Cuatro', [[0, 0, .5, .5], [.5, 0, .5, .5], [0, .5, .5, .5], [.5, .5, .5, .5]]],
+];
+export function vinetas(pagina, clave, m = 24){
+  const pl = PLANTILLAS.find((p) => p[0] === clave); if(!pl) return [];
+  const W = pagina.ancho - m * 2, H = pagina.alto - m * 2;
+  return pl[2].map(([x, y, w, h]) => ({ tipo: 'marco', x: Math.round(m + x * W + m / 2), y: Math.round(m + y * H + m / 2), w: Math.round(w * W - m), h: Math.round(h * H - m), grosor: 7, color: '#111111', relleno: '' }));
 }
 /* ¿qué capa está bajo este punto? (de la de hasta arriba a la de hasta abajo) */
 export function capaEn(pagina, x, y){
