@@ -191,6 +191,21 @@ for (const [ancho, alto, nombre] of [[390, 844, 'teléfono'], [1280, 800, 'compu
   ok(/12 de 12 leídos/.test(await card()) && await pg.isDisabled('.serie button[data-a="leer"]'), 'y al terminar la serie, «Leer» se apaga');
 
   // un archivo
+  /* la ficha: tocar la portada la abre con todos los episodios en orden, y uno abre el lector ahí */
+  await pg.click('.serie .portada');
+  await pg.waitForSelector('#ficha:not([hidden])');
+  const ficha = await pg.evaluate(() => ({ titulo: document.querySelector('#fTitulo').textContent, n: document.querySelectorAll('#fCaps .f-cap').length,
+    orden: [...document.querySelectorAll('#fCaps .f-cap')].map((b) => +b.dataset.n), leidos: document.querySelectorAll('#fCaps .etq.leido').length, img: document.querySelector('#fPortada').naturalWidth }));
+  ok(/Mi Serié & Co/.test(ficha.titulo) && ficha.img === 300, 'la ficha abre en grande con su portada y su nombre');
+  ok(ficha.n === 12 && ficha.orden.every((x, k) => x === k + 1), 'y abajo los 12 episodios en orden');
+  ok(ficha.leidos === 12, `marca cuáles ya leíste (${ficha.leidos})`);
+  ok(!(await desborde(pg)), 'la ficha no se sale de lado');
+  if (process.env.CAPTURA) await pg.screenshot({ path: `${process.env.CAPTURA}/tiras-ficha-${ancho}.png` });
+  await pg.click('#fCaps .f-cap[data-n="4"]');
+  await pg.waitForSelector('#lector:not([hidden])');
+  await pg.waitForFunction(() => document.querySelector('#scroll .cap'));
+  ok(await pg.evaluate(() => document.querySelector('#scroll .cap').dataset.n) === '4', 'tocar el episodio 4 abre el lector justo en el 4 (aunque ya estuviera leído)');
+  await cerrarLector(pg);
   await pg.click('.serie button[data-a="archivo"]');
   await pg.fill('#aDesde', '1'); await pg.fill('#aHasta', '3');
   ok(await desborde(pg) <= 0, 'la hoja del archivo no se sale de la pantalla');

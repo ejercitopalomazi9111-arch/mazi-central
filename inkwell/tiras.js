@@ -238,6 +238,7 @@ $('#nav').innerHTML = [['inicio', 'Inicio', 'house'], ['explorar', 'Explorar', '
   .map(([id, n, ic]) => `<a href="./#${id}"${id === 'biblioteca' ? ' aria-current="page"' : ''}>${icono(ic)}<span>${n}</span></a>`).join('');
 $('#cerrarLector').innerHTML = icono('x');
 document.querySelectorAll('.ic[data-ic]').forEach((e) => { e.outerHTML = icono(e.dataset.ic); });
+$('#fCerrar').innerHTML = icono('x'); $('#fArchivo').innerHTML = icono('download'); $('#fMas').innerHTML = icono('settings');
 $('#leerTodo').innerHTML = icono('book-open') + 'Leer seguido';
 
 /* ── agregar ── */
@@ -338,6 +339,8 @@ $('#formAgregar').addEventListener('submit', async (e) => {
 let cola = [], enLector = [], observador, final, soloSerie = null;
 async function armarCola(){
   const series = (await todasSeries()).filter((s) => !soloSerie || s.id === soloSerie);
+  /* desde la ficha: a partir del episodio elegido, leído o no, lo que esté bajado */
+  if(desdeN != null && series[0]){ const s = series[0], t = await clavesDe(s.id); return s.caps.filter((c) => c.n >= desdeN && t.has(clave(s, c.n))).map((c) => ({ s, c })); }
   const porSerie = [];
   for(const s of series){ const t = await clavesDe(s.id); porSerie.push(pendientes(s).filter((c) => t.has(clave(s, c.n))).map((c) => ({ s, c }))); }
   if(ajustes.orden === 'intercalado'){
@@ -346,8 +349,9 @@ async function armarCola(){
   }
   return porSerie.flat();
 }
-async function abrirLector(serieId = null){
-  soloSerie = serieId;
+let desdeN = null;
+async function abrirLector(serieId = null, desde = null){
+  soloSerie = serieId; desdeN = desde;
   cola = await armarCola();
   enLector = [];
   const sc = $('#scroll'); sc.replaceChildren(); sc.scrollTop = 0;
@@ -363,7 +367,7 @@ async function abrirLector(serieId = null){
   const m = leer(MARCA, null), hayMarca = m && m.clave && cola.some((x) => clave(x.s, x.c.n) === m.clave);
   await siguiente();
   if(!enLector.length){ final.textContent = 'No hay capítulos listos. Conéctate a internet y se preparan solos.'; preparar(); }
-  else if(hayMarca) await irAMarca(m);
+  else if(hayMarca && desdeN == null) await irAMarca(m);
 }
 /* ── el marcador: dónde ibas, para volver ahí (Carlos, 5 nov) ──────────
    Se guarda el capítulo que está arriba en la pantalla y qué tanto de él ya pasó (0 a 1), al
@@ -482,27 +486,72 @@ $('#leerTodo').addEventListener('click', () => abrirLector());
 /* ── botones de cada serie ── */
 let actual = null;
 $('#series').addEventListener('click', async (e) => {
-  const b = e.target.closest('button[data-a]'); if(!b) return;
-  const id = b.closest('.serie').dataset.id;
+  const art = e.target.closest('.serie'); if(!art) return;
+  const b = e.target.closest('button[data-a]');
+  if(b) return accion(b.dataset.a, art.dataset.id);
+  abrirFicha(art.dataset.id);                 // tocar la portada o el nombre abre la ficha
+});
+async function accion(a, id){
   actual = limpia(await tx('series', 'readonly', (st) => st.get(id)));
-  if(b.dataset.a === 'leer'){
+  if(a === 'leer'){
     const t = await clavesDe(id), p = pendientes(actual);
     if(p.length && !t.has(clave(actual, p[0].n))){
       try{ estado(`Bajando ${actual.titulo} · cap. ${p[0].n}…`, 'trabajando'); await bajarCap(actual, p[0]); estado('', 'listo'); }
       catch(er){ estado('No se pudo bajar: ' + er.message); return; }
     }
     abrirLector(id);
-  } else if(b.dataset.a === 'archivo') abrirArchivo();
+  } else if(a === 'archivo') abrirArchivo();
   else {
     $('#tSerie').textContent = actual.titulo;
     $('#serieDesc').textContent = `${actual.caps.length} capítulos · ${actual.enlace}`;
     $('#sDesde').value = actual.desde || actual.caps[0]?.n || 1;
     $('#dlgSerie').showModal();
   }
+}
+
+/* ── la ficha de la serie: portada en grande, sus datos y TODOS los episodios en orden
+   para saltar rápido (Carlos, 10 nov). Tocar un episodio abre el lector ahí. ── */
+let fichaId = null;
+async function abrirFicha(id){
+  const s = limpia(await tx('series', 'readonly', (st) => st.get(id))); if(!s) return;
+  fichaId = id;
+  const t = await clavesDe(id), leidosSet = new Set(s.leidos || []);
+  const esLeido = (c) => leidosSet.has(c.n) || c.n < (s.desde || 0);
+  const nLeidos = s.caps.filter(esLeido).length, pct = s.caps.length ? Math.round(100 * nLeidos / s.caps.length) : 0;
+  const u = s.portadaBlob ? urlDe(s.portadaBlob) : '';
+  if(u){ $('#fPortada').src = u; $('#fFondo').src = u; } else { $('#fPortada').removeAttribute('src'); $('#fFondo').removeAttribute('src'); }
+  $('#fFuente').textContent = s.fuente === 'webtoon' ? 'Webtoon · cómic' : 'Wattpad · texto';
+  $('#fTitulo').textContent = s.titulo; $('#fAutor').textContent = s.autor || '';
+  $('#fAvance').textContent = `${nLeidos} de ${s.caps.length} leídos`; $('#fBarra').style.width = pct + '%';
+  const sig = pendientes(s)[0];
+  $('#fLeer').innerHTML = icono('play') + (sig ? (nLeidos ? `Seguir · cap. ${sig.n}` : 'Empezar a leer') : 'Ya la leíste toda');
+  $('#fLeer').disabled = !sig;
+  $('#fNum').textContent = `${s.caps.length} episodio${s.caps.length === 1 ? '' : 's'}`;
+  $('#fCaps').innerHTML = s.caps.map((c) => {
+    const est = esLeido(c) ? ['leido', 'Leído'] : t.has(clave(s, c.n)) ? ['listo', 'Listo'] : ['nube', 'Por bajar'];
+    return `<button type="button" class="f-cap${sig && c.n === sig.n ? ' sigue' : ''}" data-n="${c.n}"><span class="num">${c.n}</span><span class="tt">${esc(c.titulo)}</span><span class="etq ${est[0]}">${est[1]}</span></button>`;
+  }).join('');
+  $('#ficha').hidden = false; $('#ficha').scrollTop = 0; document.body.style.overflow = 'hidden';
+  const elSig = $('#fCaps .sigue'); if(elSig && s.caps.length > 12) requestAnimationFrame(() => { $('#ficha').scrollTop = Math.max(0, elSig.offsetTop - 260); });
+}
+function cerrarFicha(){ $('#ficha').hidden = true; document.body.style.overflow = ''; fichaId = null; }
+$('#fCerrar').addEventListener('click', cerrarFicha);
+$('#fLeer').addEventListener('click', () => { const id = fichaId; cerrarFicha(); accion('leer', id); });
+$('#fArchivo').addEventListener('click', () => accion('archivo', fichaId));
+$('#fMas').addEventListener('click', () => accion('mas', fichaId));
+$('#fCaps').addEventListener('click', async (e) => {
+  const b = e.target.closest('.f-cap'); if(!b) return;
+  const s = limpia(await tx('series', 'readonly', (st) => st.get(fichaId))), n = +b.dataset.n, c = s.caps.find((x) => x.n === n);
+  if(!(await clavesDe(s.id)).has(clave(s, n))){
+    if(!navigator.onLine){ estado('Ese episodio no está bajado y no hay internet.'); return; }
+    b.querySelector('.etq').textContent = 'Bajando…';
+    try{ await bajarCap(s, c); }catch(er){ b.querySelector('.etq').textContent = 'No se pudo'; estado('No se pudo bajar: ' + er.message); return; }
+  }
+  cerrarFicha(); abrirLector(s.id, n);
 });
 $('#guardarDesde').addEventListener('click', async () => {
   actual.desde = Math.max(0, +$('#sDesde').value || 0);
-  await guardarSerie(actual); $('#dlgSerie').close(); await pintarSeries(); preparar();
+  await guardarSerie(actual); $('#dlgSerie').close(); await pintarSeries(); if(fichaId) abrirFicha(fichaId); preparar();
 });
 $('#quitarSerie').addEventListener('click', async () => {
   if(!confirm(`¿Quitar «${actual.titulo}» y todo lo bajado de ella?`)) return;
@@ -511,9 +560,7 @@ $('#quitarSerie').addEventListener('click', async () => {
   const ks = [...await clavesDe(actual.id)];
   await tx('caps', 'readwrite', (st) => { ks.forEach((k) => st.delete(k)); });
   await tx('series', 'readwrite', (st) => st.delete(actual.id));
-  $('#dlgSerie').close(); await pintarSeries(); espacio();
-/* vienen de Explorar en el inicio (tiras.html?buscar=…): se busca de una vez */
-if(params.get('buscar')){ $('#buscar').value = params.get('buscar'); $('#formAgregar').requestSubmit(); }
+  $('#dlgSerie').close(); if(fichaId) cerrarFicha(); await pintarSeries(); espacio();
   const n = await contarListos(); estado(n ? `${n} capítulo${n > 1 ? 's' : ''} listo${n > 1 ? 's' : ''} para leer` : 'Nada pendiente por leer.', 'listo');
 });
 $('#cerrarSerie').addEventListener('click', () => $('#dlgSerie').close());
@@ -692,7 +739,7 @@ setInterval(() => { if(document.visibilityState === 'visible') preparar(); }, 15
 document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') preparar(); else guardarMarca(true); });
 if('serviceWorker' in navigator && !params.has('servidor')) navigator.serviceWorker.register('sw.js').catch(() => {});
 /* para las pruebas; va antes del arranque porque importar un link puede tardar */
-window.__tiras = { preparar, todasSeries, clavesDe, get cola(){ return cola; }, get ocupado(){ return !!preparando || otraVez; } };
+window.__tiras = { abrirFicha, preparar, todasSeries, clavesDe, get cola(){ return cola; }, get ocupado(){ return !!preparando || otraVez; } };
 await pintarSeries(); espacio();
 /* vienen de Explorar en el inicio (tiras.html?buscar=…): se busca de una vez */
 if(params.get('buscar')){ $('#buscar').value = params.get('buscar'); $('#formAgregar').requestSubmit(); }
