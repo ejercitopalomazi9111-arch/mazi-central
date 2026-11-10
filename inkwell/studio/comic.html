@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0C0B11">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="../icon-192.png">
+<link rel="preload" href="../letra/bangers.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="stylesheet" href="../marca.css">
+<script>try{const t=JSON.parse(localStorage.getItem('inkwell.tema'));if(t)document.documentElement.dataset.tema=t}catch{}</script>
+<title>Studio · Cómic</title>
+<!-- INKWELL STUDIO · editor de cómics, manhwas y webtoons.
+     Páginas con capas: fondos, personajes con 45 poses, personajes propios del vestidor (ropa por
+     capas), globos de diálogo, textos, onomatopeyas, imágenes propias, marcos de viñeta y efectos.
+     Cómo se dibuja cada capa: lienzo.js (lo mismo en pantalla y al exportar). -->
+<style>
+@font-face{font-family:'Bangers'; src:url('../letra/bangers.ttf') format('truetype'); font-display:swap}
+*{box-sizing:border-box}
+html,body{margin:0; height:100%; background:var(--bg); color:var(--ink); font:16px/1.4 var(--sans); -webkit-text-size-adjust:100%; overflow:hidden}
+body{display:flex; flex-direction:column; height:100dvh}
+button,input,select,textarea{font:inherit}
+button{font-weight:600; color:var(--ink); background:var(--card); border:1px solid var(--line); border-radius:12px; min-height:44px; min-width:44px; padding:0 12px; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center; gap:6px; touch-action:manipulation; white-space:nowrap}
+button[disabled]{opacity:.35}
+button[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:#fff}
+.si{background:var(--accent); border-color:var(--accent); color:#fff}
+:focus-visible{outline:2px solid var(--accent-ink); outline-offset:2px}
+.ico{width:20px; height:20px}
+.barra{display:flex; align-items:center; gap:6px; padding:calc(6px + env(safe-area-inset-top)) 8px 6px; border-bottom:1px solid var(--line); background:var(--bg2)}
+.barra a{display:grid; place-items:center; width:44px; height:44px; color:var(--ink)}
+.barra input{flex:1; min-width:0; border:0; background:transparent; color:var(--ink); font:700 16px var(--sans); min-height:44px}
+.barra button{background:transparent; border:0; padding:0}
+#escena{flex:1; min-height:0; overflow:auto; position:relative; display:flex; justify-content:center; align-items:flex-start; padding:12px; background:
+  repeating-conic-gradient(color-mix(in srgb,var(--ink) 5%,transparent) 0 25%, transparent 0 50%) 0 0/24px 24px}
+#marco{position:relative; flex:none; box-shadow:0 10px 30px -10px rgba(0,0,0,.5); touch-action:none}
+#lienzo{display:block; width:100%; height:100%; background:#fff}
+#sel{position:absolute; border:2px solid var(--accent); pointer-events:none; transform-origin:center}
+#sel[hidden]{display:none}
+#sel .tir{position:absolute; width:28px; height:28px; border-radius:50%; background:var(--accent); border:3px solid #fff; pointer-events:auto; touch-action:none; box-shadow:0 2px 8px rgba(0,0,0,.4)}
+#sel .tam{right:-15px; bottom:-15px; cursor:nwse-resize}
+#sel .gir{left:50%; top:-48px; margin-left:-14px; cursor:grab}
+#sel .gir::after{content:""; position:absolute; left:50%; top:26px; width:2px; height:20px; background:var(--accent); transform:translateX(-50%)}
+.paginas{display:flex; gap:8px; overflow-x:auto; padding:6px 10px; border-top:1px solid var(--line); background:var(--bg2); scrollbar-width:none; align-items:center; position:relative}
+.paginas::-webkit-scrollbar{display:none}
+.pag{flex:none; position:relative; padding:0; border-radius:8px; overflow:hidden; width:44px; height:62px; background:#fff}
+.pag canvas{width:100%; height:100%; display:block; object-fit:cover}
+.pag[aria-current="true"]{outline:3px solid var(--accent); outline-offset:1px}
+.pag span{position:absolute; bottom:2px; right:4px; font-size:10px; color:#111; font-weight:800; text-shadow:0 0 3px #fff}
+.herr{display:flex; gap:6px; overflow-x:auto; padding:8px 10px calc(8px + env(safe-area-inset-bottom)); background:var(--bg2); border-top:1px solid var(--line); scrollbar-width:none; position:relative}
+.herr::-webkit-scrollbar{display:none}
+.herr button{flex:none; flex-direction:column; gap:2px; min-width:64px; min-height:56px; font-size:11px; padding:4px 8px}
+.herr .ico{width:22px; height:22px; color:var(--accent-ink)}
+#props{position:absolute; left:0; right:0; bottom:0; z-index:20; max-height:52dvh; overflow-y:auto; background:var(--bg2); border-top:1px solid var(--line); border-radius:20px 20px 0 0;
+  padding:10px 12px calc(12px + env(safe-area-inset-bottom)); box-shadow:0 -12px 30px -12px rgba(0,0,0,.5)}
+#props[hidden]{display:none}
+@media (min-width:900px){
+  #props{top:calc(57px + env(safe-area-inset-top)); left:auto; right:0; bottom:0; width:380px; max-height:none; border-radius:0; border-top:0; border-left:1px solid var(--line); box-shadow:-12px 0 30px -18px rgba(0,0,0,.5)}
+  body:has(#props:not([hidden])) #escena{padding-right:392px}
+}
+@media (max-width:899px){ #props{max-height:46dvh} }
+.fila{display:flex; flex-wrap:wrap; gap:6px; margin:6px 0}
+.etq{font-size:12px; font-weight:700; color:var(--dim); text-transform:uppercase; letter-spacing:.08em; margin:10px 2px 2px}
+.desl{display:grid; grid-template-columns:96px minmax(0,1fr) 42px; align-items:center; gap:8px; font-size:13px; color:var(--dim); min-height:40px}
+.desl input{width:100%; accent-color:var(--accent)}
+textarea, .props select, .props input[type=text]{width:100%; border-radius:12px; border:1px solid var(--line); background:var(--card); color:var(--ink); padding:10px 12px; font-size:16px; min-height:44px}
+input[type=color]{width:44px; height:44px; border:1px solid var(--line); border-radius:12px; padding:2px; background:var(--card)}
+.cerrar-props{position:sticky; top:0; display:flex; justify-content:space-between; align-items:center; gap:8px; background:var(--bg2); z-index:1; padding-bottom:4px}
+.cerrar-props b{font-size:15px}
+dialog{border:0; padding:0; border-radius:22px; width:min(720px, calc(100vw - 16px)); max-height:88dvh; background:var(--bg2); color:var(--ink)}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+.dlg{padding:14px; display:flex; flex-direction:column; gap:10px; max-height:88dvh; overflow-y:auto}
+.dlg h2{margin:0; font:700 19px var(--sans)}
+.cuadros{display:grid; grid-template-columns:repeat(auto-fill,minmax(92px,1fr)); gap:8px}
+.cuadros button{flex-direction:column; gap:4px; padding:6px; min-height:110px; font-size:11px; font-weight:600; white-space:normal; text-align:center}
+.cuadros img{width:100%; height:80px; object-fit:contain}
+.cuadros.fondos img{object-fit:cover; border-radius:8px}
+.vest{display:grid; grid-template-columns:150px minmax(0,1fr); gap:12px; align-items:start}
+@media (max-width:520px){ .vest{grid-template-columns:1fr} }
+#vistaVest{width:150px; height:150px; image-rendering:pixelated; background:repeating-conic-gradient(#ddd 0 25%,#fff 0 50%) 0 0/16px 16px; border-radius:12px; justify-self:center}
+.vest select{width:100%; min-height:44px; border-radius:12px; border:1px solid var(--line); background:var(--card); color:var(--ink); padding:0 10px}
+.vest label{display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--dim); margin-bottom:6px}
+.vest .dos{display:grid; grid-template-columns:1fr 1fr; gap:6px}
+.capas-l{display:flex; flex-direction:column; gap:6px}
+.capas-l .c{display:flex; align-items:center; gap:6px; padding:4px 6px; border-radius:12px; background:var(--card); border:1px solid var(--line)}
+.capas-l .c[aria-current="true"]{border-color:var(--accent)}
+.capas-l .c b{flex:1; min-width:0; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; padding:8px 4px}
+.aviso{color:var(--dim); font-size:13px; margin:0}
+</style>
+</head>
+<body>
+<header class="barra">
+  <a href="./" aria-label="Regresar a Studio" id="volver"></a>
+  <input type="text" id="titulo" aria-label="Título del cómic" maxlength="120">
+  <button type="button" id="deshacer" aria-label="Deshacer"></button>
+  <button type="button" id="rehacer" aria-label="Rehacer"></button>
+  <button type="button" id="botonMenu" aria-label="Exportar y publicar"></button>
+</header>
+<div id="escena"><div id="marco"><canvas id="lienzo"></canvas><div id="sel" hidden><span class="tir gir" id="tirGir" aria-hidden="true"></span><span class="tir tam" id="tirTam" aria-hidden="true"></span></div></div></div>
+<nav class="paginas" id="paginas" aria-label="Páginas"></nav>
+<div class="herr" role="toolbar" aria-label="Agregar">
+  <button type="button" data-h="fondo"><span class="ic" data-ic="image"></span>Fondo</button>
+  <button type="button" data-h="personaje"><span class="ic" data-ic="user"></span>Personaje</button>
+  <button type="button" data-h="vestidor"><span class="ic" data-ic="users"></span>Vestidor</button>
+  <button type="button" data-h="globo"><span class="ic" data-ic="scroll-text"></span>Globo</button>
+  <button type="button" data-h="ono"><span class="ic" data-ic="sparkles"></span>Onomatopeya</button>
+  <button type="button" data-h="texto"><span class="ic" data-ic="pen-tool"></span>Texto</button>
+  <button type="button" data-h="marco"><span class="ic" data-ic="layers"></span>Viñeta</button>
+  <button type="button" data-h="imagen"><span class="ic" data-ic="plus"></span>Tu imagen</button>
+  <button type="button" data-h="capas"><span class="ic" data-ic="library"></span>Capas</button>
+  <button type="button" data-h="pagina"><span class="ic" data-ic="settings"></span>Página</button>
+</div>
+<input type="file" id="subir" accept="image/*" hidden>
+<section id="props" hidden aria-label="Ajustes de la capa"></section>
+
+<dialog id="dlgElegir" aria-labelledby="tElegir"><div class="dlg"><div class="cerrar-props"><h2 id="tElegir"></h2><button type="button" data-cerrar>Cerrar</button></div><div id="elegir"></div></div></dialog>
+<dialog id="dlgVest" aria-labelledby="tVest"><div class="dlg">
+  <div class="cerrar-props"><h2 id="tVest">Vestidor</h2><button type="button" data-cerrar>Cerrar</button></div>
+  <div class="vest"><canvas id="vistaVest" width="64" height="64"></canvas><div id="piezas"></div></div>
+  <button type="button" class="si" id="vestListo">Poner en la página</button>
+</div></dialog>
+<dialog id="dlgMenu" aria-labelledby="tMenu"><div class="dlg">
+  <div class="cerrar-props"><h2 id="tMenu">Tu cómic</h2><button type="button" data-cerrar>Cerrar</button></div>
+  <button type="button" class="si" id="alLibrero">Pasar a mi librero para leerlo</button>
+  <button type="button" id="pdf">Descargar todo en PDF</button>
+  <button type="button" id="png">Descargar esta página (PNG)</button>
+  <p class="aviso" id="avisoMenu" role="status"></p>
+</div></dialog>
+
+<script type="module">
+import { icono } from '../iconos.js';
+import { una, guardar, nuevoId, paginaNueva, FORMATOS, alLibrero } from './obras.js';
+import { dibujar, capaEn, PERSONAJES, POSES, srcPersonaje, FONDOS_KENNEY, srcFondoKenney, PIEZAS, archivoLpc, ORDEN_LPC, DIRS, LPC_POSES, COLORES,
+  PERSONAJE_LPC, GLOBOS, COLAS, LETRAS, img, RAIZ_ARTE } from './lienzo.js';
+import { pdf } from '../archivos.js';
+const $ = (s) => document.querySelector(s);
+const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+document.querySelectorAll('.ic[data-ic]').forEach((e) => { e.outerHTML = icono(e.dataset.ic); });
+$('#volver').innerHTML = icono('chevron-right'); $('#volver').firstElementChild.style.transform = 'rotate(180deg)';
+$('#deshacer').innerHTML = icono('refresh-cw'); $('#deshacer').firstElementChild.style.transform = 'scaleX(-1)';
+$('#rehacer').innerHTML = icono('refresh-cw'); $('#botonMenu').innerHTML = icono('download');
+document.querySelectorAll('[data-cerrar]').forEach((b) => b.addEventListener('click', () => b.closest('dialog').close()));
+
+const obra = await una(new URLSearchParams(location.search).get('obra'));
+if(!obra || obra.tipo !== 'comic'){ location.replace('./'); throw new Error('sin obra'); }
+obra.archivos ||= {};
+let pi = 0, sel = null, guardaT = 0;
+const pag = () => obra.paginas[pi];
+const capa = () => pag().capas.find((c) => c.id === sel) || null;
+
+/* ── historial (deshacer / rehacer) por página ── */
+const pasado = [], futuro = [];
+const foto = () => JSON.stringify({ pi, capas: pag().capas, fondo: pag().fondo });
+let ultima = foto();
+function anotar(){ const f = foto(); if(f === ultima) return; pasado.push(ultima); if(pasado.length > 80) pasado.shift(); futuro.length = 0; ultima = f; botonesHist(); }
+function volverA(f){ const d = JSON.parse(f); pi = Math.min(d.pi, obra.paginas.length - 1); pag().capas = d.capas; pag().fondo = d.fondo; ultima = f; if(!capa()) sel = null; pintar(); guardarLuego(); botonesHist(); }
+$('#deshacer').addEventListener('click', () => { if(!pasado.length) return; futuro.push(foto()); volverA(pasado.pop()); });
+$('#rehacer').addEventListener('click', () => { if(!futuro.length) return; pasado.push(foto()); volverA(futuro.pop()); });
+function botonesHist(){ $('#deshacer').disabled = !pasado.length; $('#rehacer').disabled = !futuro.length; }
+
+/* ── guardar ── */
+async function portada(){
+  const c = document.createElement('canvas'); await dibujar(c, obra, obra.paginas[0], { escala: 420 / obra.paginas[0].ancho });
+  obra.portada = await new Promise((ok) => c.toBlob(ok, 'image/jpeg', .85));
+}
+function guardarLuego(){ clearTimeout(guardaT); guardaT = setTimeout(guardarYa, 600); }
+async function guardarYa(){ clearTimeout(guardaT); obra.titulo = $('#titulo').value.trim() || 'Mi cómic'; await portada(); await guardar(obra); }
+document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'hidden') guardarYa(); });
+
+/* ── pintar la página, la selección y las miniaturas ── */
+let pintando = null, otra = false;
+async function pintar(){
+  if(pintando){ otra = true; return pintando; }
+  pintando = (async () => {
+    const p = pag(), esc_ = $('#escena').getBoundingClientRect();
+    const maxW = Math.max(200, esc_.width - 24), maxH = Math.max(200, esc_.height - 24);
+    /* las verticales se recorren con scroll, pero sin pasar de 640 px de ancho (en computadora salían gigantes) */
+    const k = Math.min(maxW / p.ancho, 640 / p.ancho, (p.alto > p.ancho * 1.3 ? Infinity : maxH / p.alto));
+    $('#marco').style.width = Math.round(p.ancho * k) + 'px'; $('#marco').style.height = Math.round(p.alto * k) + 'px';
+    await dibujar($('#lienzo'), obra, p, { escala: Math.min(2, (devicePixelRatio || 1) * k) });
+    pintarSel(); pintarPaginas();
+  })();
+  await pintando; pintando = null;
+  if(otra){ otra = false; return pintar(); }
+}
+const kPantalla = () => $('#marco').getBoundingClientRect().width / pag().ancho;
+function pintarSel(){
+  const c = capa(), s = $('#sel');
+  if(!c){ s.hidden = true; $('#props').hidden = true; return; }
+  const k = kPantalla();
+  s.hidden = false; s.style.left = c.x * k + 'px'; s.style.top = c.y * k + 'px'; s.style.width = c.w * k + 'px'; s.style.height = c.h * k + 'px';
+  s.style.transform = `rotate(${c.rot || 0}deg)`;
+}
+async function pintarPaginas(){
+  const caja = $('#paginas');
+  if(caja.children.length !== obra.paginas.length + 1){
+    caja.innerHTML = obra.paginas.map((p, i) => `<button type="button" class="pag" data-i="${i}" aria-label="Página ${i + 1}"><canvas></canvas><span>${i + 1}</span></button>`).join('')
+      + `<button type="button" id="nuevaPag" aria-label="Nueva página">${icono('plus')}</button>`;
+  }
+  caja.querySelectorAll('.pag').forEach((b, i) => b.setAttribute('aria-current', String(i === pi)));
+  const b = caja.querySelector(`.pag[data-i="${pi}"] canvas`); if(b) dibujar(b, obra, pag(), { escala: 88 / pag().ancho });
+}
+async function miniaturas(){ for(const [i, b] of [...$('#paginas').querySelectorAll('.pag canvas')].entries()) await dibujar(b, obra, obra.paginas[i], { escala: 88 / obra.paginas[i].ancho }); }
+$('#paginas').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if(!b) return;
+  if(b.id === 'nuevaPag'){ anotar(); obra.paginas.push(paginaNueva(pag().formato)); pi = obra.paginas.length - 1; sel = null; ultima = foto(); pintar().then(miniaturas); guardarLuego(); return; }
+  pi = +b.dataset.i; sel = null; ultima = foto(); pintar();
+});
+
+/* ── agregar capas ── */
+function agregar(c){
+  const p = pag();
+  c.id = nuevoId('k'); c.rot ||= 0; c.opac ??= 1; c.filtro ||= {};
+  if(c.x == null){ c.x = (p.ancho - c.w) / 2; c.y = (p.alto - c.h) / 2; }
+  p.capas.push(c); sel = c.id; anotar(); pintar().then(abrirProps); guardarLuego();
+}
+const enMedio = (w, h) => { const p = pag(), sc = $('#escena'), k = kPantalla(); const vy = (sc.scrollTop + sc.clientHeight / 2 - 12) / k; return { x: (p.ancho - w) / 2, y: Math.max(0, Math.min(p.alto - h, vy - h / 2)) }; };
+function elegir(titulo, html, clase = ''){ $('#tElegir').textContent = titulo; $('#elegir').innerHTML = `<div class="cuadros ${clase}">${html}</div>`; $('#dlgElegir').showModal(); }
+let pinturas = [];
+fetch(RAIZ_ARTE + 'fondos/pinturas.json').then((r) => r.json()).then((j) => { pinturas = j; }).catch(() => {});
+const HERR = {
+  fondo(){
+    elegir('Elige un fondo', [...FONDOS_KENNEY.map(([k, n]) => `<button type="button" data-fondo="${srcFondoKenney(k)}"><img src="${srcFondoKenney(k)}" alt="" loading="lazy">${n}</button>`),
+      ...pinturas.map((p) => `<button type="button" data-fondo="${RAIZ_ARTE}fondos/${p.archivo}" title="${esc(p.titulo)} · ${esc(p.autor)}"><img src="${RAIZ_ARTE}fondos/${p.archivo}" alt="" loading="lazy">${esc(p.tema)}</button>`)].join(''), 'fondos');
+  },
+  personaje(){ elegir('Elige un personaje', PERSONAJES.map(([q, n]) => `<button type="button" data-quien="${q}"><img src="${srcPersonaje(q, 'idle')}" alt="">${n}</button>`).join('')); },
+  vestidor(){ vest = PERSONAJE_LPC(); vestEditando = null; abrirVestidor(); },
+  globo(){ const t = enMedio(380, 200); agregar({ tipo: 'globo', ...t, w: 380, h: 200, estilo: 'normal', texto: '¡Hola! Escribe aquí.', letra: 'Archivo', tam: 30, cola: 'abajo' }); },
+  ono(){ const t = enMedio(420, 160); agregar({ tipo: 'ono', ...t, w: 420, h: 160, rot: -8, texto: '¡BOOM!', letra: 'Bangers', color: '#FFD400', borde: '#111111', grosor: 10 }); },
+  texto(){ const t = enMedio(560, 110); agregar({ tipo: 'texto', ...t, w: 560, h: 110, texto: 'Mientras tanto…', letra: 'Archivo', tam: 34, color: '#111111', borde: '#ffffff', grosor: 0, alinear: 'center', fondo: '' }); },
+  marco(){ const p = pag(); agregar({ tipo: 'marco', x: 30, y: 30, w: p.ancho - 60, h: Math.round(p.alto / 3) - 40, grosor: 8, color: '#111111', relleno: '' }); },
+  imagen(){ $('#subir').click(); },
+  capas(){ sel = null; pintarSel(); listaCapas(); },
+  pagina(){ sel = null; pintarSel(); propsPagina(); },
+};
+document.querySelector('.herr').addEventListener('click', (e) => { const b = e.target.closest('[data-h]'); if(b) HERR[b.dataset.h](); });
+$('#elegir').addEventListener('click', async (e) => {
+  const b = e.target.closest('button'); if(!b) return;
+  if(b.dataset.fondo){
+    const im = await img(b.dataset.fondo), p = pag(); if(!im) return;
+    const k = Math.max(p.ancho / im.width, p.alto / im.height), w = Math.round(im.width * k), h = Math.round(im.height * k);
+    const c = { tipo: 'imagen', src: b.dataset.fondo, x: Math.round((p.ancho - w) / 2), y: Math.round((p.alto - h) / 2), w, h, fondo: true };
+    $('#dlgElegir').close(); c.id = nuevoId('k'); c.rot = 0; c.opac = 1; c.filtro = {};
+    const desde = p.capas.findLastIndex((x) => x.fondo); p.capas.splice(desde + 1, 0, c); sel = c.id; anotar(); pintar().then(abrirProps); guardarLuego();
+  } else if(b.dataset.quien){
+    $('#dlgElegir').close(); const h = Math.round(pag().alto * .45), w = Math.round(h * .75), t = enMedio(w, h);
+    agregar({ tipo: 'personaje', ...t, w, h, quien: b.dataset.quien, pose: 'idle' });
+  } else if(b.dataset.pose){ const c = capa(); c.pose = b.dataset.pose; anotar(); pintar(); guardarLuego(); b.closest('.cuadros').querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); }
+});
+$('#subir').addEventListener('change', async (e) => {
+  const f = e.target.files[0]; e.target.value = ''; if(!f) return;
+  const bm = await createImageBitmap(f), k = Math.min(1, 1600 / Math.max(bm.width, bm.height)), cv = document.createElement('canvas');
+  cv.width = Math.round(bm.width * k); cv.height = Math.round(bm.height * k); cv.getContext('2d').drawImage(bm, 0, 0, cv.width, cv.height);
+  const blob = await new Promise((ok) => cv.toBlob(ok, f.type === 'image/png' ? 'image/png' : 'image/jpeg', .9));
+  const id = nuevoId('a'); obra.archivos[id] = blob;
+  const p = pag(), s = Math.min(1, (p.ancho * .7) / cv.width), w = Math.round(cv.width * s), h = Math.round(cv.height * s), t = enMedio(w, h);
+  agregar({ tipo: 'imagen', archivo: id, ...t, w, h });
+});
+
+/* ── vestidor: personaje propio por capas (pelo, ropa, calzado…) ── */
+let vest = null, vestEditando = null, vestDir = '2', vestPose = 'idle:0';
+function opcionesPieza(k){
+  const P = PIEZAS[k], v = vest[k];
+  const ops = (P.ninguno ? ['<option value="">Ninguno</option>'] : []).concat(P.ops.map(([b, n]) => `<option value="${b}"${v && v.base === b ? ' selected' : ''}>${n}</option>`)).join('');
+  const op = v && P.ops.find((o) => o[0] === v.base), colores = op && op[2];
+  return `<label>${P.nombre}<select data-pieza="${k}">${ops}</select></label>${colores ? `<label>Color<select data-color="${k}">${colores.map((c) => `<option value="${c}"${(v.color ?? colores[0]) === c ? ' selected' : ''}>${COLORES[c] || c}</option>`).join('')}</select></label>` : ''}`;
+}
+function abrirVestidor(){
+  $('#piezas').innerHTML = Object.keys(PIEZAS).map(opcionesPieza).join('')
+    + `<div class="dos"><label>Vista<select id="vDir">${DIRS.map(([d, n]) => `<option value="${d}"${d === vestDir ? ' selected' : ''}>${n}</option>`).join('')}</select></label>
+       <label>Pose<select id="vPose">${LPC_POSES.map(([p, n]) => `<option value="${p}"${p === vestPose ? ' selected' : ''}>${n}</option>`).join('')}</select></label></div>`;
+  $('#vestListo').textContent = vestEditando ? 'Listo' : 'Poner en la página';
+  if(!$('#dlgVest').open) $('#dlgVest').showModal(); vistaVest();
+}
+async function vistaVest(){
+  const [anim, cuadro] = vestPose.split(':');
+  const c = { tipo: 'lpc', partes: vest, anim, cuadro: +cuadro, dir: vestDir, x: 0, y: 0, w: 64, h: 64, rot: 0, opac: 1, filtro: {} };
+  await dibujar($('#vistaVest'), obra, { ancho: 64, alto: 64, fondo: 'rgba(0,0,0,0)', capas: [c] });
+}
+$('#piezas').addEventListener('change', (e) => {
+  const t = e.target;
+  if(t.dataset.pieza){ const k = t.dataset.pieza; vest[k] = t.value ? { base: t.value } : null; abrirVestidor(); return; }
+  if(t.dataset.color){ vest[t.dataset.color].color = t.value; }
+  if(t.id === 'vDir') vestDir = t.value; if(t.id === 'vPose') vestPose = t.value;
+  vistaVest();
+});
+$('#vestListo').addEventListener('click', () => {
+  const [anim, cuadro] = vestPose.split(':');
+  if(vestEditando){ const c = pag().capas.find((x) => x.id === vestEditando); if(c){ Object.assign(c, { partes: JSON.parse(JSON.stringify(vest)), anim, cuadro: +cuadro, dir: vestDir }); anotar(); pintar(); guardarLuego(); } $('#dlgVest').close(); abrirProps(); return; }
+  $('#dlgVest').close(); const h = Math.round(pag().alto * .4), t = enMedio(h, h);
+  agregar({ tipo: 'lpc', ...t, w: h, h, partes: JSON.parse(JSON.stringify(vest)), anim, cuadro: +cuadro, dir: vestDir });
+});
+
+/* ── ajustes de la capa elegida ── */
+const NOMBRES = { imagen: 'Imagen', personaje: 'Personaje', lpc: 'Personaje del vestidor', globo: 'Globo de diálogo', ono: 'Onomatopeya', texto: 'Texto', marco: 'Viñeta' };
+const desl = (n, campo, min, max, val, paso = 1) => `<label class="desl">${n}<input type="range" data-campo="${campo}" min="${min}" max="${max}" step="${paso}" value="${val}"><span>${val}</span></label>`;
+let propsDe = null;
+function abrirProps(){
+  const c = capa(); if(!c){ $('#props').hidden = true; return; }
+  const st = propsDe === c.id ? $('#props').scrollTop : 0; propsDe = c.id;
+  const f = c.filtro || {};
+  let h = `<div class="cerrar-props"><b>${c.fondo ? 'Fondo' : NOMBRES[c.tipo]}</b><button type="button" data-a="cerrar">Listo</button></div>`;
+  if(c.tipo === 'personaje'){
+    h += `<p class="etq">Pose</p><div class="cuadros" id="poses">${POSES.map(([p, n]) => `<button type="button" data-pose="${p}" aria-pressed="${c.pose === p}"><img src="${srcPersonaje(c.quien, p)}" alt="" loading="lazy">${n}</button>`).join('')}</div>`;
+  }
+  if(c.tipo === 'lpc'){
+    h += `<div class="fila"><button type="button" data-a="vestir">Cambiar ropa y pose</button></div>
+      <p class="etq">Vista</p><div class="fila">${DIRS.map(([d, n]) => `<button type="button" data-dir="${d}" aria-pressed="${String(c.dir) === d}">${n}</button>`).join('')}</div>
+      <p class="etq">Pose</p><div class="fila">${LPC_POSES.map(([p, n]) => `<button type="button" data-lpose="${p}" aria-pressed="${`${c.anim}:${c.cuadro}` === p}">${n}</button>`).join('')}</div>`;
+  }
+  if(c.tipo === 'globo' || c.tipo === 'texto' || c.tipo === 'ono'){
+    h += `<p class="etq">Texto</p><textarea data-campo="texto" rows="2">${esc(c.texto)}</textarea>
+      <p class="etq">Letra</p><div class="fila">${LETRAS.map(([l, n]) => `<button type="button" data-letra="${l}" aria-pressed="${c.letra === l}" style="font-family:'${l}'">${n}</button>`).join('')}</div>`;
+  }
+  if(c.tipo === 'globo'){
+    h += `<p class="etq">Tipo de globo</p><div class="fila">${GLOBOS.map(([g, n]) => `<button type="button" data-estilo="${g}" aria-pressed="${c.estilo === g}">${n}</button>`).join('')}</div>
+      <p class="etq">Cola (hacia quién habla)</p><div class="fila">${COLAS.map(([g, n]) => `<button type="button" data-cola="${g}" aria-pressed="${(c.cola || 'abajo') === g}">${n}</button>`).join('')}</div>
+      ${desl('Tamaño de letra', 'tam', 14, 90, c.tam || 30)}`;
+  }
+  if(c.tipo === 'texto') h += `${desl('Tamaño de letra', 'tam', 14, 120, c.tam || 34)}
+      <div class="fila"><label class="desl" style="grid-template-columns:96px 44px">Color<input type="color" data-campo="color" value="${c.color || '#111111'}"></label>
+      <label class="desl" style="grid-template-columns:96px 44px">Fondo<input type="color" data-campo="fondo" value="${c.fondo || '#ffffff'}"></label><button type="button" data-a="sinFondo">Sin fondo</button></div>
+      ${desl('Contorno', 'grosor', 0, 16, c.grosor || 0)}`;
+  if(c.tipo === 'ono') h += `<div class="fila"><label class="desl" style="grid-template-columns:96px 44px">Relleno<input type="color" data-campo="color" value="${c.color || '#FFD400'}"></label>
+      <label class="desl" style="grid-template-columns:96px 44px">Contorno<input type="color" data-campo="borde" value="${c.borde || '#111111'}"></label></div>${desl('Grosor', 'grosor', 0, 30, c.grosor || 0)}`;
+  if(c.tipo === 'marco') h += `${desl('Grosor', 'grosor', 1, 30, c.grosor || 8)}<div class="fila"><label class="desl" style="grid-template-columns:96px 44px">Color<input type="color" data-campo="color" value="${c.color || '#111111'}"></label></div>`;
+  h += `<p class="etq">Acomodo</p><div class="fila"><button type="button" data-a="adelante">Al frente</button><button type="button" data-a="atras">Atrás</button>
+      <button type="button" data-a="voltear">Voltear</button><button type="button" data-a="duplicar">Duplicar</button><button type="button" data-a="borrar">Borrar</button></div>
+      ${desl('Giro', 'rot', -180, 180, Math.round(c.rot || 0))}${desl('Opacidad', 'opac', 0, 100, Math.round((c.opac ?? 1) * 100))}`;
+  if(['imagen', 'personaje', 'lpc'].includes(c.tipo)) h += `<p class="etq">Efectos</p>${desl('Brillo', 'f.brillo', 20, 200, f.brillo ?? 100)}${desl('Contraste', 'f.contraste', 20, 200, f.contraste ?? 100)}
+      ${desl('Color', 'f.sat', 0, 250, f.sat ?? 100)}${desl('Desenfoque', 'f.desenfoque', 0, 20, f.desenfoque || 0)}${desl('Sepia', 'f.sepia', 0, 100, f.sepia || 0)}${desl('Blanco y negro', 'f.gris', 0, 100, f.gris || 0)}`;
+  $('#props').innerHTML = h; $('#props').hidden = false; $('#props').scrollTop = st;
+}
+$('#props').addEventListener('input', (e) => {
+  const t = e.target, c = capa(); if(!t.dataset.campo) return;
+  const k = t.dataset.campo; let v = t.type === 'range' ? +t.value : t.value;
+  if(t.type === 'range') t.nextElementSibling.textContent = t.value;
+  if(c){
+    if(k.startsWith('f.')){ c.filtro ||= {}; c.filtro[k.slice(2)] = v; }
+    else if(k === 'opac') c.opac = v / 100; else c[k] = v;
+  } else if(k === 'fondoPagina') pag().fondo = v;
+  pintar(); guardarLuego(); clearTimeout(anotar.t); anotar.t = setTimeout(anotar, 400);
+});
+$('#props').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if(!b) return; const c = capa(), p = pag();
+  if(b.dataset.a === 'cerrar'){ sel = null; pintarSel(); return; }
+  if(b.dataset.pose){ c.pose = b.dataset.pose; }
+  else if(b.dataset.dir){ c.dir = b.dataset.dir; }
+  else if(b.dataset.lpose){ const [a, q] = b.dataset.lpose.split(':'); c.anim = a; c.cuadro = +q; }
+  else if(b.dataset.letra){ c.letra = b.dataset.letra; }
+  else if(b.dataset.estilo){ c.estilo = b.dataset.estilo; }
+  else if(b.dataset.cola){ c.cola = b.dataset.cola; }
+  else if(b.dataset.a === 'sinFondo'){ c.fondo = ''; }
+  else if(b.dataset.a === 'vestir'){ vest = JSON.parse(JSON.stringify(c.partes)); vestEditando = c.id; vestDir = String(c.dir); vestPose = `${c.anim}:${c.cuadro}`; abrirVestidor(); return; }
+  else if(b.dataset.a === 'adelante'){ const i = p.capas.indexOf(c); p.capas.splice(i, 1); p.capas.push(c); }
+  else if(b.dataset.a === 'atras'){ const i = p.capas.indexOf(c); p.capas.splice(i, 1); p.capas.unshift(c); }
+  else if(b.dataset.a === 'voltear'){ c.flip = !c.flip; }
+  else if(b.dataset.a === 'duplicar'){ const d = JSON.parse(JSON.stringify(c)); d.id = nuevoId('k'); d.x += 30; d.y += 30; p.capas.push(d); sel = d.id; }
+  else if(b.dataset.a === 'borrar'){ p.capas.splice(p.capas.indexOf(c), 1); sel = null; }
+  else if(b.dataset.formato){ const f = FORMATOS[b.dataset.formato]; p.formato = b.dataset.formato; p.ancho = f.ancho; p.alto = f.alto; }
+  else if(b.dataset.a === 'dupPag'){ const d = JSON.parse(JSON.stringify(p)); d.id = nuevoId('p'); d.capas.forEach((x) => { x.id = nuevoId('k'); }); obra.paginas.splice(pi + 1, 0, d); pi++; }
+  else if(b.dataset.a === 'borrarPag'){ if(obra.paginas.length < 2 || !confirm(`¿Borrar la página ${pi + 1}?`)) return; obra.paginas.splice(pi, 1); pi = Math.max(0, pi - 1); }
+  else if(b.dataset.a === 'pagIzq' && pi > 0){ const x = obra.paginas.splice(pi, 1)[0]; pi--; obra.paginas.splice(pi, 0, x); }
+  else if(b.dataset.a === 'pagDer' && pi < obra.paginas.length - 1){ const x = obra.paginas.splice(pi, 1)[0]; pi++; obra.paginas.splice(pi, 0, x); }
+  else return;
+  anotar(); pintar().then(() => { if(b.dataset.a?.includes('Pag') || b.dataset.formato){ $('#paginas').innerHTML = ''; pintarPaginas(); miniaturas(); propsPagina(); } else if(sel) abrirProps(); else $('#props').hidden = true; });
+  guardarLuego();
+});
+function propsPagina(){
+  const p = pag();
+  $('#props').innerHTML = `<div class="cerrar-props"><b>Página ${pi + 1} de ${obra.paginas.length}</b><button type="button" data-a="cerrar">Listo</button></div>
+    <p class="etq">Formato</p><div class="fila">${Object.entries(FORMATOS).map(([k, f]) => `<button type="button" data-formato="${k}" aria-pressed="${p.formato === k}">${f.nombre}</button>`).join('')}</div>
+    <div class="fila"><label class="desl" style="grid-template-columns:96px 44px">Color de fondo<input type="color" data-campo="fondoPagina" value="${p.fondo || '#ffffff'}"></label></div>
+    <p class="etq">Páginas</p><div class="fila"><button type="button" data-a="pagIzq">Mover antes</button><button type="button" data-a="pagDer">Mover después</button>
+    <button type="button" data-a="dupPag">Duplicar página</button><button type="button" data-a="borrarPag">Borrar página</button></div>`;
+  $('#props').hidden = false;
+}
+function listaCapas(){
+  const p = pag();
+  $('#props').innerHTML = `<div class="cerrar-props"><b>Capas (la de arriba se ve al frente)</b><button type="button" data-a="cerrar">Listo</button></div>
+    <div class="capas-l">${[...p.capas].reverse().map((c) => `<div class="c" data-id="${c.id}" aria-current="${c.id === sel}"><b data-elegir>${c.fondo ? 'Fondo' : NOMBRES[c.tipo]}${c.texto ? ' · ' + esc(String(c.texto).slice(0, 24)) : ''}</b>
+      <button type="button" data-ver aria-label="${c.oculta ? 'Mostrar' : 'Ocultar'}">${c.oculta ? 'Mostrar' : 'Ocultar'}</button><button type="button" data-fijar aria-label="Bloquear">${c.bloqueada ? 'Soltar' : 'Fijar'}</button></div>`).join('') || '<p class="aviso">La página está vacía.</p>'}</div>`;
+  $('#props').hidden = false;
+}
+$('#props').addEventListener('click', (e) => {
+  const fila = e.target.closest('.capas-l .c'); if(!fila) return;
+  const c = pag().capas.find((x) => x.id === fila.dataset.id);
+  if(e.target.closest('[data-ver]')){ c.oculta = !c.oculta; anotar(); pintar(); guardarLuego(); listaCapas(); }
+  else if(e.target.closest('[data-fijar]')){ c.bloqueada = !c.bloqueada; anotar(); guardarLuego(); listaCapas(); }
+  else if(e.target.closest('[data-elegir]')){ sel = c.id; pintarSel(); abrirProps(); }
+}, true);
+
+/* ── mover, estirar y girar con el dedo ── */
+let gesto = null;
+const punto = (e) => { const r = $('#marco').getBoundingClientRect(), k = r.width / pag().ancho; return { x: (e.clientX - r.left) / k, y: (e.clientY - r.top) / k }; };
+$('#marco').addEventListener('pointerdown', (e) => {
+  if(e.target.closest('.tir')) return;
+  const q = punto(e), c = capaEn(pag(), q.x, q.y);
+  if(!c){ if(sel){ sel = null; pintarSel(); } return; }
+  if(sel !== c.id){ sel = c.id; pintarSel(); abrirProps(); }
+  gesto = { modo: 'mover', id: c.id, x0: q.x, y0: q.y, cx: c.x, cy: c.y }; try{ $('#marco').setPointerCapture(e.pointerId); }catch{}
+});
+$('#tirTam').addEventListener('pointerdown', (e) => { e.stopPropagation(); const c = capa(); gesto = { modo: 'tam', q0: punto(e), w0: c.w, h0: c.h }; try{ e.target.setPointerCapture(e.pointerId); }catch{} });
+$('#tirGir').addEventListener('pointerdown', (e) => { e.stopPropagation(); gesto = { modo: 'gir' }; try{ e.target.setPointerCapture(e.pointerId); }catch{} });
+addEventListener('pointermove', (e) => {
+  if(!gesto) return; const c = capa(); if(!c) return; const q = punto(e);
+  if(gesto.modo === 'mover'){ c.x = Math.round(gesto.cx + q.x - gesto.x0); c.y = Math.round(gesto.cy + q.y - gesto.y0); }
+  else if(gesto.modo === 'tam'){
+    const a = -(c.rot || 0) * Math.PI / 180, dx = q.x - gesto.q0.x, dy = q.y - gesto.q0.y;
+    const lx = dx * Math.cos(a) - dy * Math.sin(a), ly = dx * Math.sin(a) + dy * Math.cos(a);
+    const libre = ['globo', 'texto', 'marco', 'ono'].includes(c.tipo);
+    if(libre){ c.w = Math.max(40, Math.round(gesto.w0 + lx)); c.h = Math.max(30, Math.round(gesto.h0 + ly)); }
+    else { const s = Math.max(.05, (gesto.w0 + lx) / gesto.w0); c.w = Math.round(gesto.w0 * s); c.h = Math.round(gesto.h0 * s); }
+  } else if(gesto.modo === 'gir'){ const cx = c.x + c.w / 2, cy = c.y + c.h / 2; let g = Math.atan2(q.y - cy, q.x - cx) * 180 / Math.PI + 90; if(g > 180) g -= 360; c.rot = Math.round(Math.abs(g) < 4 ? 0 : g); }
+  pintar();
+});
+addEventListener('pointerup', () => { if(gesto){ gesto = null; anotar(); guardarLuego(); if(capa()) abrirProps(); } });
+
+/* ── exportar y librero ── */
+async function lienzoGrande(p){ const c = document.createElement('canvas'); await dibujar(c, obra, p, { escala: 1 }); return c; }
+async function compartirOBajar(f){
+  if(/iPhone|iPad/.test(navigator.userAgent) && navigator.canShare?.({ files: [f] })){ try{ await navigator.share({ files: [f] }); return; }catch{} }
+  const u = URL.createObjectURL(f), a = document.createElement('a'); a.href = u; a.download = f.name; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 10000);
+}
+const nombreArchivo = () => (obra.titulo || 'Mi cómic').replace(/[\\/:*?"<>|]+/g, ' ');
+async function armarPdf(){
+  const paginas = [];
+  for(const [i, p] of obra.paginas.entries()){
+    $('#avisoMenu').textContent = `Armando página ${i + 1} de ${obra.paginas.length}…`;
+    const c = await lienzoGrande(p), b = await new Promise((ok) => c.toBlob(ok, 'image/jpeg', .9));
+    paginas.push({ tipo: 'imagen', jpeg: new Uint8Array(await b.arrayBuffer()), ancho: c.width, alto: c.height });
+  }
+  return pdf(paginas, { titulo: obra.titulo, ancho: obra.paginas[0].ancho });
+}
+$('#botonMenu').addEventListener('click', () => { $('#avisoMenu').textContent = ''; $('#dlgMenu').showModal(); });
+$('#png').addEventListener('click', async () => { const c = await lienzoGrande(pag()); const b = await new Promise((ok) => c.toBlob(ok, 'image/png')); await compartirOBajar(new File([b], `${nombreArchivo()} · página ${pi + 1}.png`, { type: 'image/png' })); $('#avisoMenu').textContent = 'Listo.'; });
+$('#pdf').addEventListener('click', async () => { const b = await armarPdf(); await compartirOBajar(new File([b], nombreArchivo() + '.pdf', { type: 'application/pdf' })); $('#avisoMenu').textContent = 'Listo.'; });
+$('#alLibrero').addEventListener('click', async () => {
+  await guardarYa(); const b = await armarPdf();
+  await alLibrero({ id: 'studio-' + obra.id, tipo: 'pdf', titulo: obra.titulo, autor: obra.autor || 'Yo', portada: obra.portada, pdf: b, agregado: Date.now(), avance: { cap: 0, y: 0 } });
+  $('#avisoMenu').textContent = 'Listo: ya está en tu librero (Inicio › Libros). Si lo vuelves a pasar, se actualiza.';
+});
+$('#titulo').addEventListener('input', guardarLuego);
+
+$('#titulo').value = obra.titulo; botonesHist();
+addEventListener('resize', () => pintar());
+await pintar(); miniaturas();
+window.__comic = { obra, pag, capa: () => capa(), elegirCapa: (id) => { sel = id; pintarSel(); abrirProps(); }, guardarYa, pintar };
+</script>
+</body>
+</html>

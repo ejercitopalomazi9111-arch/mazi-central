@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0C0B11">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="../icon-192.png">
+<link rel="preload" href="../letra/crimson.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../marca.css">
+<script>try{const t=JSON.parse(localStorage.getItem('inkwell.tema'));if(t)document.documentElement.dataset.tema=t}catch{}</script>
+<title>Studio · Libro</title>
+<!-- INKWELL STUDIO · editor de libros: capítulos con formato, guardado solo, portada,
+     exportar a EPUB y pasar la obra al librero para leerla en «Libros». -->
+<style>
+*{box-sizing:border-box}
+html,body{margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 var(--sans); -webkit-text-size-adjust:100%; overflow-x:hidden}
+button,input,select,textarea{font:inherit}
+button{font-weight:600; color:var(--ink); background:var(--card); border:1px solid var(--line); border-radius:99px; min-height:44px; padding:0 14px; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center; gap:6px; touch-action:manipulation; white-space:nowrap}
+button[disabled]{opacity:.4}
+.si{background:var(--accent); border-color:var(--accent); color:#fff}
+:focus-visible{outline:2px solid var(--accent-ink); outline-offset:2px}
+.ico{width:20px; height:20px}
+.barra{position:sticky; top:0; z-index:10; display:flex; align-items:center; gap:8px; padding:calc(8px + env(safe-area-inset-top)) 10px 8px; background:color-mix(in srgb,var(--bg) 92%,transparent); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); border-bottom:1px solid var(--line)}
+.barra a{display:grid; place-items:center; width:44px; height:44px; border-radius:99px; color:var(--ink)}
+.barra input{flex:1; min-width:0; border:0; background:transparent; color:var(--ink); font:700 17px var(--sans); min-height:44px}
+.barra .guardado{color:var(--dim); font-size:12px; white-space:nowrap}
+.caps{display:flex; gap:8px; overflow-x:auto; padding:10px 10px; scrollbar-width:none; position:relative}
+.caps::-webkit-scrollbar{display:none}
+.caps button{flex:none; max-width:200px; overflow:hidden; text-overflow:ellipsis}
+.caps button[aria-current="true"]{background:var(--accent); border-color:var(--accent); color:#fff}
+.herr{position:sticky; top:calc(61px + env(safe-area-inset-top)); z-index:9; display:flex; gap:6px; overflow-x:auto; padding:8px 10px; background:var(--bg2); border-bottom:1px solid var(--line); scrollbar-width:none}
+.herr::-webkit-scrollbar{display:none}
+.herr button{flex:none; min-width:44px; border-radius:12px; padding:0 12px}
+.hoja{max-width:720px; margin:0 auto; padding:18px 18px 120px}
+#capTitulo{width:100%; border:0; background:transparent; color:var(--ink); font:700 26px/1.2 var(--serif); text-align:center; padding:8px 0 4px}
+#editor{min-height:55vh; outline:none; font-family:var(--serif); font-size:20px; line-height:1.7; padding:8px 2px; overflow-wrap:break-word}
+#editor:empty::before{content:attr(data-vacio); color:var(--dim)}
+#editor h2{font-family:var(--serif); text-align:center}
+#editor blockquote{margin:1em 0; padding-left:1em; border-left:3px solid var(--accent)}
+.pie{position:fixed; left:0; right:0; bottom:0; z-index:10; display:flex; align-items:center; gap:8px; padding:8px 12px calc(8px + env(safe-area-inset-bottom)); background:var(--bg2); border-top:1px solid var(--line); font-size:13px; color:var(--dim)}
+.pie span{flex:1}
+dialog{border:0; border-radius:22px; padding:0; width:min(480px, calc(100vw - 24px)); background:var(--bg2); color:var(--ink); max-height:90dvh}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+.dlg{padding:20px; display:flex; flex-direction:column; gap:12px; overflow-y:auto; max-height:90dvh}
+.dlg h2{margin:0; font:700 20px var(--sans)}
+.dlg label{display:flex; flex-direction:column; gap:6px; font-size:14px; color:var(--dim)}
+.dlg input, .dlg textarea{border-radius:14px; border:1px solid var(--line); background:var(--card); color:var(--ink); padding:10px 14px; font-size:16px; min-height:48px}
+.dlg .tapa{display:flex; gap:12px; align-items:center}
+.dlg .tapa img{width:72px; height:96px; object-fit:cover; border-radius:10px; background:var(--card2)}
+.aviso{color:var(--dim); font-size:13px; margin:0}
+</style>
+</head>
+<body>
+<header class="barra">
+  <a href="./" aria-label="Regresar a Studio" id="volver"></a>
+  <input type="text" id="titulo" aria-label="Título de la obra" maxlength="120">
+  <span class="guardado" id="guardado" role="status" aria-live="polite"></span>
+  <button type="button" id="botonMenu" aria-label="Datos, exportar y publicar"></button>
+</header>
+<nav class="caps" id="caps" aria-label="Capítulos"></nav>
+<div class="herr" role="toolbar" aria-label="Formato del texto">
+  <button type="button" data-cmd="bold" aria-label="Negritas"><b>N</b></button>
+  <button type="button" data-cmd="italic" aria-label="Cursiva"><i>C</i></button>
+  <button type="button" data-cmd="underline" aria-label="Subrayado"><u>S</u></button>
+  <button type="button" data-bloque="h2">Título</button>
+  <button type="button" data-bloque="p">Párrafo</button>
+  <button type="button" data-bloque="blockquote">Cita</button>
+  <button type="button" data-cmd="insertUnorderedList">Lista</button>
+  <button type="button" data-cmd="insertHorizontalRule">Separador</button>
+  <button type="button" data-cmd="undo" aria-label="Deshacer">Deshacer</button>
+  <button type="button" data-cmd="redo" aria-label="Rehacer">Rehacer</button>
+</div>
+<main class="hoja">
+  <input type="text" id="capTitulo" aria-label="Título del capítulo" maxlength="120">
+  <div id="editor" contenteditable="true" spellcheck="true" lang="es" data-vacio="Escribe aquí tu historia…" aria-label="Texto del capítulo"></div>
+</main>
+<footer class="pie"><span id="cuenta"></span><button type="button" id="moverIzq" aria-label="Mover capítulo antes">‹</button><button type="button" id="moverDer" aria-label="Mover capítulo después">›</button><button type="button" id="borrarCap">Borrar capítulo</button></footer>
+
+<dialog id="dlgMenu" aria-labelledby="tMenu">
+  <form class="dlg" method="dialog">
+    <h2 id="tMenu">Tu libro</h2>
+    <div class="tapa"><img id="vistaPortada" alt=""><label style="flex:1">Portada<input type="file" id="portada" accept="image/*"></label></div>
+    <label>Autor o autora<input type="text" id="autor" maxlength="120"></label>
+    <label>Sinopsis<textarea id="sinopsis" rows="3" maxlength="1200"></textarea></label>
+    <button type="button" class="si" id="alLibrero">Pasar a mi librero para leerlo</button>
+    <button type="button" id="exportar">Descargar en EPUB</button>
+    <p class="aviso" id="avisoMenu" role="status"></p>
+    <button type="button" id="cerrarMenu">Listo</button>
+  </form>
+</dialog>
+
+<script type="module">
+import { icono } from '../iconos.js';
+import { una, guardar, nuevoId, alLibrero } from './obras.js';
+import { limpiar } from '../libros.js';
+import { epub } from '../archivos.js';
+const $ = (s) => document.querySelector(s);
+$('#volver').innerHTML = icono('chevron-right'); $('#volver').firstElementChild.style.transform = 'rotate(180deg)';
+$('#botonMenu').innerHTML = icono('settings');
+
+const id = new URLSearchParams(location.search).get('obra');
+const obra = await una(id);
+if(!obra || obra.tipo !== 'libro'){ location.replace('./'); throw new Error('sin obra'); }
+let cap = 0, guardaT = 0, cargado = false;
+const sano = (html) => limpiar(new DOMParser().parseFromString(`<body>${html}</body>`, 'text/html').body);
+
+function pintarCaps(){
+  $('#caps').innerHTML = obra.capitulos.map((c, i) => `<button type="button" data-i="${i}" aria-current="${i === cap}">${i + 1}. ${c.titulo.replace(/[<&]/g, '')}</button>`).join('')
+    + `<button type="button" id="nuevoCap" aria-label="Nuevo capítulo">${icono('plus')}</button>`;
+  $('#moverIzq').disabled = cap === 0; $('#moverDer').disabled = cap === obra.capitulos.length - 1; $('#borrarCap').disabled = obra.capitulos.length === 1;
+}
+function abrirCap(i){
+  if(cargado) guardarAhora();
+  cap = i; const c = obra.capitulos[cap];
+  $('#capTitulo').value = c.titulo; $('#editor').innerHTML = sano(c.html);
+  pintarCaps(); contar(); scrollTo(0, 0); cargado = true;
+}
+function contar(){
+  const p = ($('#editor').innerText.match(/\S+/g) || []).length;
+  const total = obra.capitulos.reduce((n, c, i) => n + (i === cap ? p : (c.html.replace(/<[^>]+>/g, ' ').match(/\S+/g) || []).length), 0);
+  $('#cuenta').textContent = `${p} palabra${p === 1 ? '' : 's'} en este capítulo · ${total} en el libro`;
+}
+function guardarAhora(){
+  clearTimeout(guardaT);
+  if(!cargado || !obra.capitulos[cap]) return Promise.resolve();
+  obra.capitulos[cap].titulo = $('#capTitulo').value.trim() || `Capítulo ${cap + 1}`;
+  obra.capitulos[cap].html = sano($('#editor').innerHTML);
+  obra.titulo = $('#titulo').value.trim() || 'Mi libro';
+  return guardar(obra).then(() => { $('#guardado').textContent = 'Guardado'; });
+}
+const alCambiar = () => { $('#guardado').textContent = 'Guardando…'; clearTimeout(guardaT); guardaT = setTimeout(guardarAhora, 700); contar(); };
+$('#editor').addEventListener('input', alCambiar);
+$('#capTitulo').addEventListener('input', () => { alCambiar(); clearTimeout(pintarCaps.t); pintarCaps.t = setTimeout(() => { obra.capitulos[cap].titulo = $('#capTitulo').value.trim() || `Capítulo ${cap + 1}`; pintarCaps(); }, 300); });
+$('#titulo').addEventListener('input', alCambiar);
+/* pegar: sólo texto con sus párrafos, sin estilos ni scripts ajenos */
+$('#editor').addEventListener('paste', (e) => {
+  e.preventDefault();
+  const t = (e.clipboardData || window.clipboardData).getData('text/plain');
+  const html = t.split(/\n\s*\n/).map((p) => `<p>${p.replace(/[&<>]/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[c])).replace(/\n/g, '<br>')}</p>`).join('');
+  document.execCommand('insertHTML', false, html);
+});
+document.querySelectorAll('.herr button').forEach((b) => b.addEventListener('mousedown', (e) => e.preventDefault()));
+document.querySelector('.herr').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if(!b) return;
+  $('#editor').focus();
+  if(b.dataset.cmd) document.execCommand(b.dataset.cmd);
+  if(b.dataset.bloque) document.execCommand('formatBlock', false, b.dataset.bloque);
+  alCambiar();
+});
+$('#caps').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if(!b) return;
+  if(b.id === 'nuevoCap'){ guardarAhora(); obra.capitulos.push({ id: nuevoId('c'), titulo: `Capítulo ${obra.capitulos.length + 1}`, html: '' }); abrirCap(obra.capitulos.length - 1); guardarAhora(); $('#editor').focus(); return; }
+  abrirCap(+b.dataset.i);
+});
+function mover(d){ guardarAhora(); const c = obra.capitulos.splice(cap, 1)[0]; cap += d; obra.capitulos.splice(cap, 0, c); pintarCaps(); guardarAhora(); }
+$('#moverIzq').addEventListener('click', () => mover(-1));
+$('#moverDer').addEventListener('click', () => mover(1));
+$('#borrarCap').addEventListener('click', () => {
+  if(obra.capitulos.length < 2 || !confirm(`¿Borrar «${obra.capitulos[cap].titulo}»?`)) return;
+  obra.capitulos.splice(cap, 1); cap = Math.max(0, cap - 1); const c = obra.capitulos[cap];
+  $('#capTitulo').value = c.titulo; $('#editor').innerHTML = sano(c.html); pintarCaps(); guardar(obra); contar();
+});
+
+/* ── datos, portada, exportar y librero ── */
+let portadaUrl = '';
+function pintarPortada(){ if(portadaUrl) URL.revokeObjectURL(portadaUrl); portadaUrl = obra.portada ? URL.createObjectURL(obra.portada) : ''; if(portadaUrl) $('#vistaPortada').src = portadaUrl; else $('#vistaPortada').removeAttribute('src'); }
+$('#botonMenu').addEventListener('click', () => { guardarAhora(); $('#autor').value = obra.autor || ''; $('#sinopsis').value = obra.sinopsis || ''; $('#avisoMenu').textContent = ''; pintarPortada(); $('#dlgMenu').showModal(); });
+$('#autor').addEventListener('input', (e) => { obra.autor = e.target.value; guardar(obra); });
+$('#sinopsis').addEventListener('input', (e) => { obra.sinopsis = e.target.value; guardar(obra); });
+$('#portada').addEventListener('change', async (e) => {
+  const f = e.target.files[0]; if(!f) return;
+  const bm = await createImageBitmap(f), k = Math.min(1, 900 / bm.width), c = document.createElement('canvas');
+  c.width = Math.round(bm.width * k); c.height = Math.round(bm.height * k); c.getContext('2d').drawImage(bm, 0, 0, c.width, c.height);
+  obra.portada = await new Promise((ok) => c.toBlob(ok, 'image/jpeg', .85)); await guardar(obra); pintarPortada();
+});
+const capsLimpios = () => obra.capitulos.map((c) => ({ titulo: c.titulo, html: sano(c.html) || '<p></p>' }));
+$('#alLibrero').addEventListener('click', async () => {
+  await guardarAhora();
+  await alLibrero({ id: 'studio-' + obra.id, tipo: 'studio', titulo: obra.titulo, autor: obra.autor || 'Yo', portada: obra.portada, capitulos: capsLimpios(), agregado: Date.now(), avance: { cap: 0, y: 0 } });
+  $('#avisoMenu').textContent = 'Listo: ya está en tu librero (Inicio › Libros). Si lo vuelves a pasar, se actualiza.';
+});
+$('#exportar').addEventListener('click', async () => {
+  await guardarAhora();
+  const b = epub({ titulo: obra.titulo, autor: obra.autor || '', id: obra.id, capitulos: capsLimpios() });
+  const f = new File([b], obra.titulo.replace(/[\\/:*?"<>|]+/g, ' ') + '.epub', { type: 'application/epub+zip' });
+  if(/iPhone|iPad/.test(navigator.userAgent) && navigator.canShare?.({ files: [f] })){ try{ await navigator.share({ files: [f] }); return; }catch{} }
+  const u = URL.createObjectURL(f), a = document.createElement('a'); a.href = u; a.download = f.name; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 10000);
+  $('#avisoMenu').textContent = `Listo: ${f.name}`;
+});
+$('#cerrarMenu').addEventListener('click', () => $('#dlgMenu').close());
+document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'hidden') guardarAhora(); });
+addEventListener('pagehide', () => guardarAhora());
+
+$('#titulo').value = obra.titulo;
+abrirCap(0); $('#guardado').textContent = 'Guardado';
+window.__studio = { obra, guardarAhora };
+</script>
+</body>
+</html>

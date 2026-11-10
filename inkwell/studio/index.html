@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0C0B11">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="../icon-192.png">
+<link rel="preload" href="../letra/archivo.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../marca.css">
+<script>try{const t=JSON.parse(localStorage.getItem('inkwell.tema'));if(t)document.documentElement.dataset.tema=t}catch{}</script>
+<title>INKWELL Studio</title>
+<!-- INKWELL STUDIO — escribir libros y hacer cómics, manhwas y webtoons ahí mismo.
+     Todo se guarda en el teléfono de quien lo hace (studio/obras.js): es privado.
+     Editores: libro.html (capítulos con formato) y comic.html (páginas con capas). -->
+<style>
+*{box-sizing:border-box}
+html,body{margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 var(--sans); -webkit-text-size-adjust:100%; overflow-x:hidden}
+button,input,select,textarea{font:inherit}
+button{font-weight:600; color:var(--ink); background:var(--card); border:1px solid var(--line); border-radius:99px; min-height:44px; padding:0 16px; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center; gap:8px; touch-action:manipulation}
+:focus-visible{outline:2px solid var(--accent-ink); outline-offset:2px}
+.ico{width:20px; height:20px}
+main{max-width:1000px; margin:0 auto; padding:calc(14px + env(safe-area-inset-top)) 16px 40px}
+.arriba{display:flex; align-items:center; justify-content:space-between; min-height:52px}
+.banner{position:relative; margin:10px 0 20px; padding:24px 20px; border-radius:24px; overflow:hidden; color:#fff;
+  background:radial-gradient(120% 120% at 90% 0%,color-mix(in srgb,var(--accent) 80%,transparent),transparent 60%),radial-gradient(90% 90% at 0% 100%,color-mix(in srgb,var(--accent2) 70%,transparent),transparent 70%),#1B1530}
+.banner small{font:700 12px var(--sans); letter-spacing:.12em; text-transform:uppercase; color:#E9DDFF}
+.banner h1{font:800 clamp(28px,7vw,40px)/1.06 var(--sans); letter-spacing:-.02em; margin:6px 0 8px}
+.banner p{margin:0 0 16px; color:rgba(255,255,255,.85); max-width:46ch}
+.crear{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.crear button{min-height:84px; border-radius:20px; flex-direction:column; gap:6px; background:rgba(255,255,255,.14); color:#fff; border:1px solid rgba(255,255,255,.25); font-size:15px}
+.crear button .ico{width:26px; height:26px}
+h2{font:700 19px/1.2 var(--sans); margin:24px 0 12px}
+.rejilla{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px}
+@media (min-width:640px){ .rejilla{grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:14px} }
+.obra{position:relative; display:flex; flex-direction:column; background:var(--card); border:1px solid var(--line); border-radius:18px; overflow:hidden; text-decoration:none; color:var(--ink)}
+.obra .tapa{position:relative; aspect-ratio:3/4; display:flex; align-items:flex-end; padding:12px; isolation:isolate; color:#fff; background:linear-gradient(160deg,var(--accent),var(--accent2))}
+.obra .tapa img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:-1; background:#fff}
+.obra .tapa b{font:700 17px/1.2 var(--serif); text-shadow:0 1px 8px rgba(0,0,0,.4)}
+.obra .tapa img + b{display:none}
+.obra .tipo{position:absolute; top:8px; left:8px; font:700 10px var(--sans); padding:3px 9px; border-radius:99px; background:rgba(12,10,20,.6); color:#fff; z-index:1}
+.obra .pie{padding:10px 12px 12px}
+.obra .pie b{display:block; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.obra .pie span{color:var(--dim); font-size:13px}
+.obra .borrar{position:absolute; top:6px; right:6px; z-index:2; width:44px; padding:0; background:rgba(12,10,20,.55); color:#fff; border:0}
+.vacio{grid-column:1/-1; color:var(--dim); background:var(--card); border:1px dashed var(--line); border-radius:16px; padding:20px}
+.vacio b{display:block; color:var(--ink); font-size:17px; margin-bottom:4px}
+.privado{display:flex; gap:10px; align-items:flex-start; margin-top:20px; color:var(--dim); font-size:13px}
+.privado .ico{flex:none; color:var(--accent-ink)}
+dialog{border:0; border-radius:22px; padding:0; width:min(460px, calc(100vw - 24px)); background:var(--bg2); color:var(--ink)}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+.hoja{padding:20px; display:flex; flex-direction:column; gap:12px}
+.hoja h2{margin:0}
+.hoja label{display:flex; flex-direction:column; gap:6px; font-size:14px; color:var(--dim)}
+.hoja input, .hoja select{min-height:48px; border-radius:14px; border:1px solid var(--line); background:var(--card); color:var(--ink); padding:0 14px; font-size:16px}
+.hoja .si{background:var(--accent); border-color:var(--accent); color:#fff}
+</style>
+</head>
+<body class="con-nav">
+<main>
+  <header class="arriba"><a class="marca" href="../" aria-label="INKWELL, inicio"><span class="iso" aria-hidden="true">I</span><span class="pal">INKWELL</span></a></header>
+  <section class="banner">
+    <small>INKWELL Studio</small>
+    <h1>Crea tu historia</h1>
+    <p>Escribe libros o arma cómics, manhwas y webtoons con personajes, fondos, globos de diálogo y onomatopeyas.</p>
+    <div class="crear">
+      <button type="button" id="nuevoLibro"><span class="ic" data-ic="scroll-text"></span>Escribir un libro</button>
+      <button type="button" id="nuevoComic"><span class="ic" data-ic="layers"></span>Hacer un cómic</button>
+    </div>
+  </section>
+  <h2>Tus obras</h2>
+  <div class="rejilla" id="obras"></div>
+  <p class="privado"><span class="ic" data-ic="bookmark"></span>Tus obras se guardan sólo en este teléfono. Nadie más las ve hasta que tú las exportes o las pases a tu librero.</p>
+</main>
+
+<dialog id="dlgNueva" aria-labelledby="tNueva">
+  <form class="hoja" method="dialog" id="formNueva">
+    <h2 id="tNueva">Nueva obra</h2>
+    <label>Título<input type="text" id="nTitulo" maxlength="120" autocomplete="off"></label>
+    <label id="nFormatoCaja">Formato<select id="nFormato"></select></label>
+    <button type="submit" class="si" id="nCrear">Crear</button>
+    <button type="button" id="nCancelar">Cancelar</button>
+  </form>
+</dialog>
+
+<nav class="nav" id="nav" aria-label="Secciones de INKWELL"></nav>
+
+<script type="module">
+import { icono } from '../iconos.js';
+import { todas, guardar, borrar, nueva, FORMATOS } from './obras.js';
+const $ = (s) => document.querySelector(s);
+const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+$('#nav').innerHTML = [['inicio', 'Inicio', 'house'], ['explorar', 'Explorar', 'compass'], ['biblioteca', 'Biblioteca', 'library'],
+  ['crear', 'Crear', 'pen-tool'], ['comunidad', 'Comunidad', 'users'], ['perfil', 'Perfil', 'user']]
+  .map(([id, n, ic]) => `<a href="${id === 'crear' ? './' : '../#' + id}"${id === 'crear' ? ' aria-current="page"' : ''}>${icono(ic)}<span>${n}</span></a>`).join('');
+document.querySelectorAll('.ic[data-ic]').forEach((e) => { e.outerHTML = icono(e.dataset.ic); });
+$('#nFormato').innerHTML = Object.entries(FORMATOS).map(([k, f]) => `<option value="${k}">${f.nombre}</option>`).join('');
+
+const urls = [];
+async function pintar(){
+  urls.splice(0).forEach((u) => URL.revokeObjectURL(u));
+  const os = await todas();
+  $('#obras').innerHTML = os.length ? os.map((o) => {
+    const u = o.portada ? URL.createObjectURL(o.portada) : ''; if(u) urls.push(u);
+    const det = o.tipo === 'libro' ? `${o.capitulos.length} capítulo${o.capitulos.length === 1 ? '' : 's'}` : `${o.paginas.length} página${o.paginas.length === 1 ? '' : 's'}`;
+    return `<a class="obra" data-id="${o.id}" href="${o.tipo === 'libro' ? 'libro.html' : 'comic.html'}?obra=${o.id}">
+      <span class="tapa">${u ? `<img src="${u}" alt="">` : ''}<b>${esc(o.titulo)}</b><span class="tipo">${o.tipo === 'libro' ? 'LIBRO' : 'CÓMIC'}</span></span>
+      <button type="button" class="borrar" aria-label="Borrar ${esc(o.titulo)}">${icono('x')}</button>
+      <span class="pie"><b>${esc(o.titulo)}</b><span>${det}</span></span></a>`;
+  }).join('') : '<p class="vacio"><b>Todavía no tienes obras</b>Toca «Escribir un libro» o «Hacer un cómic» para empezar.</p>';
+}
+$('#obras').addEventListener('click', async (e) => {
+  const b = e.target.closest('.borrar'); if(!b) return;
+  e.preventDefault();
+  const a = b.closest('.obra'), t = a.querySelector('.pie b').textContent;
+  if(confirm(`¿Borrar «${t}» para siempre? No se puede deshacer.`)){ await borrar(a.dataset.id); pintar(); }
+});
+let tipoNuevo = 'libro';
+function pedir(tipo){
+  tipoNuevo = tipo; $('#tNueva').textContent = tipo === 'libro' ? 'Nuevo libro' : 'Nuevo cómic';
+  $('#nTitulo').value = ''; $('#nTitulo').placeholder = tipo === 'libro' ? 'Mi libro' : 'Mi cómic';
+  $('#nFormatoCaja').hidden = tipo === 'libro'; $('#dlgNueva').showModal(); $('#nTitulo').focus();
+}
+$('#nuevoLibro').addEventListener('click', () => pedir('libro'));
+$('#nuevoComic').addEventListener('click', () => pedir('comic'));
+$('#nCancelar').addEventListener('click', () => $('#dlgNueva').close());
+$('#formNueva').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const o = nueva(tipoNuevo, $('#nTitulo').value.trim(), $('#nFormato').value);
+  await guardar(o);
+  location.href = (tipoNuevo === 'libro' ? 'libro.html' : 'comic.html') + '?obra=' + o.id;
+});
+navigator.storage?.persist?.().catch(() => {});
+pintar();
+</script>
+</body>
+</html>
