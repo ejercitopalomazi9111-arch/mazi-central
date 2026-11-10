@@ -14,14 +14,14 @@ const { chromium } = require('playwright');
 const RAIZ = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const TIPOS = { '.css': 'text/css', '.woff2': 'font/woff2', '.js': 'text/javascript', '.mjs': 'text/javascript', '.html': 'text/html', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png' };
 let bien = 0, mal = 0;
-/* la ✕ vive en la barra escondida: como una persona, se desliza para regresar y luego se toca */
+/* la ✕ vive en la barra escondida: como una persona, se toca la pantalla para que aparezca y luego se toca la ✕ */
 const cerrarLector = async (pg) => {
-  /* un scroll que llega tarde puede volver a esconderla: se insiste hasta que se vea, y entonces se toca */
-  for (let k = 0; k < 15; k++) {
-    await pg.evaluate(() => { const s = document.querySelector('#scroll'); s.scrollTop = Math.max(0, s.scrollTop - 200); document.querySelector('#lector').classList.remove('sinbarra'); });
-    await pg.waitForTimeout(350);
-    if (await pg.evaluate(() => !document.querySelector('#lector').classList.contains('sinbarra') && document.querySelector('.lhead').getBoundingClientRect().top >= -1)) break;
+  if (await pg.evaluate(() => document.querySelector('#lector').classList.contains('sinbarra'))) {
+    const r = await pg.evaluate(() => { const b = document.querySelector('#scroll').getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; });
+    await pg.mouse.click(r.x, r.y);
   }
+  await pg.waitForFunction(() => document.querySelector('.lhead').getBoundingClientRect().top >= -1);
+  await pg.waitForTimeout(300);
   await pg.click('#cerrarLector');
 };
 const ok = (c, t) => { if (c) { bien++; console.log('  ✓', t); } else { mal++; console.log('  ✗', t); } };
@@ -130,13 +130,19 @@ for (const [ancho, alto, nombre] of [[390, 844, 'teléfono'], [1280, 800, 'compu
   await pg.waitForTimeout(300);
   const leidos = await leidosAhora();
   ok(leidos === 3, `al pasar el final de cada capítulo lo marca leído, y sólo ése (${leidos})`);
-  /* pantalla completa: la barra va escondida al avanzar y baja sólo al regresar (Carlos, 5 nov) */
+  /* pantalla completa: la barra va escondida y sólo sale con un toque (Carlos, 10 nov) */
   const barraVisible = () => pg.evaluate(() => { const r = document.querySelector('.lhead').getBoundingClientRect(); return r.bottom > 2; });
   ok(!(await barraVisible()), 'leyendo hacia abajo, la barra del título no se ve (pantalla completa)');
   await pg.evaluate(() => { document.querySelector('#scroll').scrollTop -= 200; }); await pg.waitForTimeout(400);
-  ok(await barraVisible(), 'al deslizar para regresar, baja la barra con el título y el capítulo');
+  ok(!(await barraVisible()), 'al deslizar para regresar, la barra se queda escondida (sólo sale con un toque, Carlos 10 nov)');
+  { const c = await pg.evaluate(() => { const b = document.querySelector('#scroll').getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; });
+    await pg.mouse.click(c.x, c.y); await pg.waitForTimeout(400); }
+  ok(await barraVisible(), 'un toque en la pantalla baja la barra con el título y el capítulo');
   await pg.evaluate(() => { document.querySelector('#scroll').scrollTop += 300; }); await pg.waitForTimeout(400);
-  ok(!(await barraVisible()), 'y al seguir leyendo se vuelve a esconder');
+  ok(await barraVisible(), 'y se queda mientras lees, hasta que la toques otra vez');
+  { const c = await pg.evaluate(() => { const b = document.querySelector('#scroll').getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; });
+    await pg.mouse.click(c.x, c.y); await pg.waitForTimeout(400); }
+  ok(!(await barraVisible()), 'otro toque la vuelve a esconder');
   const vistos = await pg.evaluate(() => [...document.querySelectorAll('#scroll .cap')].map((c) => +c.dataset.n));
   ok(vistos.every((n, i) => i === 0 || n === vistos[i - 1] + 1), `los capítulos van en orden, uno tras otro (${vistos.join(', ')})`);
   const pintadas = await pg.evaluate(() => [...document.querySelectorAll('#scroll .cap img')].filter((i) => i.complete && i.naturalWidth === 700).length);

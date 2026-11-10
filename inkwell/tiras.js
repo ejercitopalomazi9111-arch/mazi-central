@@ -456,15 +456,9 @@ function alMover(){
 $('#scroll').addEventListener('scroll', alMover, { passive: true });
 $('#scroll').addEventListener('scroll', () => { clearTimeout(marcaT); marcaT = setTimeout(() => guardarMarca(true), 700); }, { passive: true });
 addEventListener('pagehide', () => guardarMarca(true));
-/* La barra de arriba (título y capítulo) se esconde al avanzar y baja al deslizar para regresar,
-   como en Webtoon; un toque sin mover también la saca o la guarda. Los saltos que hace el propio
-   lector al soltar capítulos viejos se descuentan en `ultimoTop` para que no la saquen solos. */
-$('#scroll').addEventListener('scroll', () => {
-  const sc = $('#scroll'), d = sc.scrollTop - ultimoTop;
-  if(Math.abs(d) < 12) return;
-  ultimoTop = sc.scrollTop;
-  $('#lector').classList.toggle('sinbarra', d > 0);
-}, { passive: true });
+/* La barra de arriba (título, capítulo y la ✕) vive escondida: aparece si tocas la pantalla y
+   se va si vuelves a tocar (Carlos, 10 nov: «que solo aparezca si pico la pantalla»). Deslizar ya
+   no la saca: estorbaba al leer. */
 $('#scroll').addEventListener('click', (e) => { if(!e.target.closest('a,button')) $('#lector').classList.toggle('sinbarra'); });
 function cabecera(art){ $('#lTitulo').textContent = art.dataset.titulo; $('#lSub').textContent = art.dataset.cap; }
 async function leido(art){
