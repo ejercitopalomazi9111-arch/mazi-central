@@ -205,7 +205,7 @@ const urls = new Set();
 const urlDe = (blob) => { const u = URL.createObjectURL(blob); urls.add(u); return u; };
 async function pintarSeries(){
   const series = await todasSeries(), caja = $('#series');
-  if(!series.length){ caja.innerHTML = '<p class="vacio">Todavía no sigues ninguna. Pega arriba el link de una serie de Webtoon o de Wattpad.</p>'; $('#leerTodo').disabled = true; return; }
+  if(!series.length){ caja.innerHTML = '<p class="vacio" style="grid-column:1/-1">Todavía no sigues ninguna. Busca arriba un cómic o una historia.</p>'; $('#leerTodo').disabled = true; $('#bannerImg').removeAttribute('src'); return; }
   const filas = [];
   let listos = 0;
   for(const s of series){
@@ -222,6 +222,12 @@ async function pintarSeries(){
     </article>`);
   }
   caja.innerHTML = filas.join('');
+  /* el banner lleva la portada de la primera serie que tiene algo listo */
+  const conListos = [];
+  for(const s of series){ const t = await clavesDe(s.id); if(s.portadaBlob && pendientes(s).some((c) => t.has(clave(s, c.n)))) conListos.push(s); }
+  const ban = conListos[0] || series.find((s) => s.portadaBlob);
+  if(ban) $('#bannerImg').src = urlDe(ban.portadaBlob); else $('#bannerImg').removeAttribute('src');
+  $('#tBanner').textContent = conListos[0] ? conListos[0].titulo : 'Tus cómics e historias, sin internet';
   $('#leerTodo').disabled = !listos;
   $('#leerTodo').innerHTML = icono('book-open') + (listos ? `Leer seguido · ${listos} capítulo${listos > 1 ? 's' : ''}` : 'Leer seguido');
 }
@@ -231,6 +237,7 @@ $('#nav').innerHTML = [['inicio', 'Inicio', 'house'], ['explorar', 'Explorar', '
   ['crear', 'Crear', 'pen-tool'], ['comunidad', 'Comunidad', 'users'], ['perfil', 'Perfil', 'user']]
   .map(([id, n, ic]) => `<a href="./#${id}"${id === 'biblioteca' ? ' aria-current="page"' : ''}>${icono(ic)}<span>${n}</span></a>`).join('');
 $('#cerrarLector').innerHTML = icono('x');
+document.querySelectorAll('.ic[data-ic]').forEach((e) => { e.outerHTML = icono(e.dataset.ic); });
 $('#leerTodo').innerHTML = icono('book-open') + 'Leer seguido';
 
 /* ── agregar ── */

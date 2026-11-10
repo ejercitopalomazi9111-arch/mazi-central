@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0C0B11">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="INKWELL">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="preload" href="letra/archivo.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="letra/crimson.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="marca.css">
+<script>try{const t=JSON.parse(localStorage.getItem('inkwell.tema'));if(t)document.documentElement.dataset.tema=t}catch{}</script>
+<title>INKWELL · Libros</title>
+<!-- INKWELL · LIBROS — cada quien sube sus EPUB, PDF o TXT y los lee aquí.
+     Se quedan en el teléfono; nada se publica. La lógica, en libros.js. -->
+<style>
+*{box-sizing:border-box}
+html,body{margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 var(--sans); -webkit-text-size-adjust:100%; overflow-x:hidden}
+button{font:inherit; font-weight:600; color:var(--ink); background:var(--card); border:1px solid var(--line); border-radius:99px; min-height:44px; padding:0 16px;
+  cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px; touch-action:manipulation}
+button[disabled]{opacity:.45}
+:focus-visible{outline:2px solid var(--accent-ink); outline-offset:2px}
+.ico{width:20px; height:20px}
+main{max-width:1000px; margin:0 auto; padding:calc(14px + env(safe-area-inset-top)) 16px 40px}
+.arriba{display:flex; align-items:center; justify-content:space-between; min-height:52px}
+h1{font:800 clamp(28px,7vw,38px)/1.08 var(--sans); letter-spacing:-.02em; margin:16px 0 4px}
+.lema{color:var(--dim); margin:0 0 16px; font-size:15px}
+.subir{display:flex; align-items:center; justify-content:center; gap:10px; width:100%; min-height:56px; border-radius:99px; background:var(--accent); color:#fff;
+  font:700 17px var(--sans); cursor:pointer; box-shadow:0 10px 26px -12px color-mix(in srgb,var(--accent) 85%,transparent)}
+.subir input{position:absolute; width:1px; height:1px; opacity:0; pointer-events:none}
+.estado{color:var(--dim); font-size:14px; min-height:22px; margin:10px 2px 0}
+h2{font:700 19px/1.2 var(--sans); margin:28px 0 12px}
+.rejilla{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px}
+@media (min-width:640px){ .rejilla{grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:14px} }
+.libro{position:relative; display:flex; flex-direction:column; background:var(--card); border:1px solid var(--line); border-radius:18px; overflow:hidden}
+.libro .abrir{all:unset; cursor:pointer; display:block}
+.libro .tapa{position:relative; aspect-ratio:3/4; display:flex; align-items:flex-end; padding:12px; overflow:hidden; isolation:isolate; color:#fff;
+  background:linear-gradient(160deg,var(--accent) 0%,var(--accent2) 100%)}
+.libro .tapa img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:-1}
+.libro .tapa b{font:700 17px/1.2 var(--serif); text-shadow:0 1px 8px rgba(0,0,0,.4)}
+.libro .tapa img + b{display:none}
+.libro .tipo{position:absolute; top:8px; left:8px; font:700 10px var(--sans); padding:3px 9px; border-radius:99px; background:rgba(12,10,20,.6); color:#fff; z-index:1}
+.libro .pie{padding:10px 12px 12px}
+.libro .pie b{display:block; font-size:15px; line-height:1.25; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.libro .pie span{display:block; color:var(--dim); font-size:13px}
+.avance{height:5px; border-radius:99px; background:var(--card2); overflow:hidden; margin-top:8px}
+.avance i{display:block; height:100%; background:var(--accent); border-radius:99px}
+.libro .quitar{position:absolute; top:6px; right:6px; z-index:2; width:44px; min-height:44px; padding:0; background:rgba(12,10,20,.55); color:#fff; border:0}
+.vacio{grid-column:1/-1; color:var(--dim); background:var(--card); border:1px dashed var(--line); border-radius:16px; padding:20px}
+.vacio b{display:block; color:var(--ink); font-size:17px; margin-bottom:4px}
+
+/* el lector */
+#lector{position:fixed; inset:0; z-index:60; display:flex; flex-direction:column; --papel:#FBF8F3; --tinta:#1F1B16; --suave:#7A6F63; background:var(--papel); color:var(--tinta)}
+#lector[hidden]{display:none}
+#lector[data-tema="sepia"]{--papel:#F4ECD8; --tinta:#4B3A2A; --suave:#8A7559}
+#lector[data-tema="oscuro"]{--papel:#121016; --tinta:#E8E2F0; --suave:#9A92AA}
+.lbarra{display:flex; align-items:center; gap:8px; padding:calc(6px + env(safe-area-inset-top)) 8px 6px; border-bottom:1px solid color-mix(in srgb,var(--tinta) 12%,transparent)}
+.lbarra button{background:transparent; border:0; color:var(--tinta); width:44px; padding:0}
+.lbarra .t{flex:1; min-width:0; font-size:14px; line-height:1.2}
+.lbarra .t b{display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.lbarra .t span{color:var(--suave); font-size:12px}
+.opciones{display:flex; flex-wrap:wrap; gap:8px; padding:10px 12px; border-bottom:1px solid color-mix(in srgb,var(--tinta) 12%,transparent)}
+.opciones[hidden]{display:none}
+.opciones button{background:color-mix(in srgb,var(--tinta) 6%,transparent); border-color:color-mix(in srgb,var(--tinta) 14%,transparent); color:var(--tinta); min-width:44px; padding:0 14px}
+.opciones button[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:#fff}
+.opciones select{font:inherit; min-height:44px; border-radius:99px; padding:0 14px; background:color-mix(in srgb,var(--tinta) 6%,transparent); color:var(--tinta); border:1px solid color-mix(in srgb,var(--tinta) 14%,transparent); max-width:100%; flex:1 1 220px; min-width:0}
+#hoja{flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch}
+#texto{max-width:680px; margin:0 auto; padding:24px 22px 40px; font-family:var(--serif); font-size:var(--tam,20px); line-height:1.7; overflow-wrap:break-word}
+#texto h1,#texto h2,#texto h3{font-family:var(--serif); line-height:1.25; text-align:center; margin:.6em 0 1em}
+#texto p{margin:0 0 1em}
+#texto blockquote{margin:1em 0; padding-left:1em; border-left:3px solid var(--suave)}
+.pasos{display:flex; gap:10px; justify-content:space-between; max-width:680px; margin:0 auto; padding:0 22px 40px}
+.pasos button{flex:1; background:color-mix(in srgb,var(--tinta) 6%,transparent); color:var(--tinta); border-color:color-mix(in srgb,var(--tinta) 14%,transparent)}
+</style>
+</head>
+<body class="con-nav">
+<main>
+  <header class="arriba"><a class="marca" href="./" aria-label="INKWELL, inicio"><span class="iso" aria-hidden="true">I</span><span class="pal">INKWELL</span></a></header>
+  <h1>Libros</h1>
+  <p class="lema">Sube tus libros desde el teléfono (EPUB, PDF o TXT) y léelos aquí, con tu avance guardado.</p>
+  <label class="subir"><span class="ic" data-ic="plus"></span>Agregar libro<input type="file" id="archivo" accept=".epub,.pdf,.txt,application/epub+zip,application/pdf,text/plain" multiple></label>
+  <p class="estado" id="estado" role="status" aria-live="polite"></p>
+  <h2>Tu librero</h2>
+  <div class="rejilla" id="librero"></div>
+</main>
+
+<div id="lector" hidden>
+  <div class="lbarra">
+    <button type="button" id="cerrar" aria-label="Cerrar el libro"></button>
+    <div class="t"><b id="lTitulo"></b><span id="lCap"></span></div>
+    <button type="button" id="botonOpciones" aria-label="Letra, tema y capítulos" aria-expanded="false"></button>
+  </div>
+  <div class="opciones" id="opciones" hidden>
+    <button type="button" data-tema="claro">Claro</button>
+    <button type="button" data-tema="sepia">Sepia</button>
+    <button type="button" data-tema="oscuro">Oscuro</button>
+    <button type="button" id="menos" aria-label="Letra más chica">A−</button>
+    <button type="button" id="mas" aria-label="Letra más grande">A+</button>
+    <select id="capitulos" aria-label="Ir al capítulo"></select>
+  </div>
+  <div id="hoja">
+    <article id="texto"></article>
+    <div class="pasos"><button type="button" id="anterior">Anterior</button><button type="button" id="siguiente">Siguiente</button></div>
+  </div>
+</div>
+
+<nav class="nav" id="nav" aria-label="Secciones de INKWELL"></nav>
+
+<script type="module">
+import { icono } from './iconos.js';
+import { importar, todos, uno, guardar, quitar } from './libros.js';
+const $ = (s) => document.querySelector(s);
+const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+const leer = (k, d) => { try{ const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); }catch{ return d; } };
+const escribir = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} };
+
+$('#nav').innerHTML = [['inicio', 'Inicio', 'house'], ['explorar', 'Explorar', 'compass'], ['biblioteca', 'Biblioteca', 'library'],
+  ['crear', 'Crear', 'pen-tool'], ['comunidad', 'Comunidad', 'users'], ['perfil', 'Perfil', 'user']]
+  .map(([id, n, ic]) => `<a href="./#${id}"${id === 'biblioteca' ? ' aria-current="page"' : ''}>${icono(ic)}<span>${n}</span></a>`).join('');
+document.querySelectorAll('.ic[data-ic]').forEach((e) => { e.outerHTML = icono(e.dataset.ic); });
+$('#cerrar').innerHTML = icono('x'); $('#botonOpciones').innerHTML = icono('settings');
+
+/* ── el librero ── */
+const urls = [];
+const pct = (l) => l.tipo === 'pdf' ? null : Math.round(100 * ((l.avance?.cap || 0) + (l.avance?.y || 0)) / l.capitulos.length);
+async function pintar(){
+  urls.splice(0).forEach((u) => URL.revokeObjectURL(u));
+  const ls = await todos();
+  $('#librero').innerHTML = ls.length ? ls.map((l) => {
+    const u = l.portada ? URL.createObjectURL(l.portada) : ''; if(u) urls.push(u);
+    const p = pct(l);
+    return `<article class="libro" data-id="${l.id}">
+      ${(() => { const tapa = `<span class="tapa">${u ? `<img src="${u}" alt="">` : ''}<b>${esc(l.titulo)}</b><span class="tipo">${l.tipo.toUpperCase()}</span></span>`;
+        /* el PDF es una liga directa: el navegador sólo abre otra pestaña si el toque la abre en ese mismo instante */
+        if(l.tipo === 'pdf'){ const pu = URL.createObjectURL(l.pdf); urls.push(pu); return `<a class="abrir" href="${pu}" target="_blank" rel="noopener" aria-label="Abrir ${esc(l.titulo)}">${tapa}</a>`; }
+        return `<button type="button" class="abrir" aria-label="Leer ${esc(l.titulo)}">${tapa}</button>`; })()}
+      <button type="button" class="quitar" aria-label="Quitar ${esc(l.titulo)}">${icono('x')}</button>
+      <div class="pie"><b>${esc(l.titulo)}</b><span>${esc(l.autor || (l.tipo === 'pdf' ? 'Documento PDF' : `${l.capitulos.length} capítulo${l.capitulos.length === 1 ? '' : 's'}`))}</span>
+        ${p == null ? '' : `<div class="avance" aria-label="Llevas ${p} %"><i style="width:${p}%"></i></div>`}</div>
+    </article>`; }).join('')
+    : '<p class="vacio"><b>Tu librero está vacío</b>Toca «Agregar libro» y elige un EPUB, PDF o TXT de tu teléfono.</p>';
+}
+$('#archivo').addEventListener('change', async (e) => {
+  const fs = [...e.target.files]; e.target.value = '';
+  let bien = 0; const mal = [];
+  for(const [i, f] of fs.entries()){
+    $('#estado').textContent = `Agregando ${f.name}${fs.length > 1 ? ` (${i + 1} de ${fs.length})` : ''}…`;
+    try{ await guardar(await importar(f)); bien++; }catch(er){ mal.push(er.message); }
+  }
+  $('#estado').textContent = [bien ? `Listo: ${bien} libro${bien > 1 ? 's' : ''} agregado${bien > 1 ? 's' : ''}.` : '', ...mal].filter(Boolean).join(' ');
+  pintar();
+});
+$('#librero').addEventListener('click', async (e) => {
+  const art = e.target.closest('.libro'); if(!art) return;
+  if(e.target.closest('.quitar')){
+    const l = await uno(art.dataset.id);
+    if(confirm(`¿Quitar «${l.titulo}» de tu librero?`)){ await quitar(l.id); $('#estado').textContent = `Quitaste «${l.titulo}».`; pintar(); }
+    return;
+  }
+  const ab = e.target.closest('.abrir'); if(!ab) return;
+  if(ab.tagName === 'A'){ uno(art.dataset.id).then((l) => { l.abierto = Date.now(); guardar(l); }); return; }
+  abrirLibro(art.dataset.id);
+});
+
+/* ── el lector ── */
+let libro = null, cap = 0, tam = leer('libros.tam', 20), tema = leer('libros.tema', 'claro'), guardaT = 0;
+function pintarTema(){
+  $('#lector').dataset.tema = tema; $('#texto').style.setProperty('--tam', tam + 'px');
+  document.querySelectorAll('[data-tema]').forEach((b) => { if(b.tagName === 'BUTTON') b.setAttribute('aria-pressed', String(b.dataset.tema === tema)); });
+}
+async function abrirLibro(id){
+  libro = await uno(id); if(!libro) return;
+  libro.abierto = Date.now(); guardar(libro);
+  $('#lTitulo').textContent = libro.titulo;
+  $('#capitulos').innerHTML = libro.capitulos.map((c, i) => `<option value="${i}">${esc(c.titulo)}</option>`).join('');
+  $('#lector').hidden = false; document.body.style.overflow = 'hidden';
+  pintarTema(); irA(libro.avance?.cap || 0, libro.avance?.y || 0);
+}
+function irA(n, y = 0){
+  cap = Math.max(0, Math.min(libro.capitulos.length - 1, n));
+  $('#texto').innerHTML = libro.capitulos[cap].html;      // ya viene limpio desde libros.js
+  $('#lCap').textContent = `${libro.capitulos[cap].titulo} · ${cap + 1} de ${libro.capitulos.length}`;
+  $('#capitulos').value = String(cap);
+  $('#anterior').disabled = cap === 0; $('#siguiente').disabled = cap === libro.capitulos.length - 1;
+  const h = $('#hoja'); requestAnimationFrame(() => { h.scrollTop = y * Math.max(0, h.scrollHeight - h.clientHeight); });
+  guardarAvance();
+}
+function guardarAvance(){
+  if(!libro || libro.tipo === 'pdf') return;
+  const h = $('#hoja'), y = h.scrollHeight > h.clientHeight ? h.scrollTop / (h.scrollHeight - h.clientHeight) : 0;
+  libro.avance = { cap, y: Math.min(1, Math.max(0, y)) }; guardar(libro);
+}
+$('#hoja').addEventListener('scroll', () => { clearTimeout(guardaT); guardaT = setTimeout(guardarAvance, 400); }, { passive: true });
+$('#anterior').addEventListener('click', () => irA(cap - 1));
+$('#siguiente').addEventListener('click', () => irA(cap + 1));
+$('#capitulos').addEventListener('change', (e) => irA(+e.target.value));
+$('#botonOpciones').addEventListener('click', (e) => { const o = $('#opciones'); o.hidden = !o.hidden; e.currentTarget.setAttribute('aria-expanded', String(!o.hidden)); });
+document.querySelectorAll('button[data-tema]').forEach((b) => b.addEventListener('click', () => { tema = b.dataset.tema; escribir('libros.tema', tema); pintarTema(); }));
+$('#menos').addEventListener('click', () => { tam = Math.max(14, tam - 2); escribir('libros.tam', tam); pintarTema(); });
+$('#mas').addEventListener('click', () => { tam = Math.min(32, tam + 2); escribir('libros.tam', tam); pintarTema(); });
+$('#cerrar').addEventListener('click', () => { clearTimeout(guardaT); guardarAvance(); $('#lector').hidden = true; document.body.style.overflow = ''; libro = null; pintar(); });
+document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'hidden') guardarAvance(); });
+
+navigator.storage?.persist?.().catch(() => {});
+if('serviceWorker' in navigator && !location.search.includes('pruebas')) navigator.serviceWorker.register('sw.js').catch(() => {});
+window.__libros = { todos };
+pintar();
+</script>
+</body>
+</html>
