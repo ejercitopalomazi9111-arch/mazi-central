@@ -113,9 +113,29 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
   ok(await pg.evaluate(() => window.__comic.capa().tipo === 'efecto' && window.__comic.capa().modo === 'noche'), 'efecto de página: «Noche»');
   await pg.click('#props [data-a="cerrar"]');
   if (process.env.CAPTURA) { await pg.waitForTimeout(300); await pg.screenshot({ path: `${process.env.CAPTURA}/studio-vinetas-${w}.png` }); }
+  /* mesa de dibujo: un trazo, una capa nueva, cubeta, deshacer y «Listo» lo mete a la página donde se pintó */
+  const antesDib = await n();
+  await pg.click('[data-h="dibujar"]'); await pg.waitForSelector('.dj'); await pg.waitForTimeout(200);
+  const m = await pg.evaluate(() => { const r = document.querySelector('.dj-hoja').getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height }; });
+  const trazo = async (x0, y0, x1, y1) => { await pg.mouse.move(m.x + m.w * x0, m.y + m.h * y0); await pg.mouse.down(); await pg.mouse.move(m.x + m.w * x1, m.y + m.h * y1, { steps: 12 }); await pg.mouse.up(); };
+  await trazo(.2, .2, .5, .4);
+  ok(await pg.evaluate(() => { const v = document.querySelector('.dj-hoja canvas'), d = v.getContext('2d').getImageData(0, 0, v.width, v.height).data; let k = 0; for (let i = 3; i < d.length; i += 4) if (d[i]) k++; return k > 200; }), 'el pincel pinta');
+  await pg.click('.dj [data-a="deshacer"]');
+  ok(await pg.evaluate(() => { const v = document.querySelector('.dj-hoja canvas'), d = v.getContext('2d').getImageData(0, 0, v.width, v.height).data; for (let i = 3; i < d.length; i += 4) if (d[i]) return false; return true; }), '«Deshacer» lo borra');
+  await pg.click('.dj [data-a="capas"]'); await pg.click('.dj-capas [data-k="nueva"]');
+  ok(await pg.evaluate(() => document.querySelector('.dj').__dj.capas().length === 2), 'se agregan capas');
+  await pg.click('.dj [data-a="capas"]');
+  await pg.click('.dj [data-m="#e11d48"]'); await trazo(.3, .6, .6, .7);
+  await pg.click('.dj [data-h="cubeta"]'); await pg.mouse.click(m.x + m.w * .9, m.y + m.h * .1);
+  ok(await pg.evaluate(() => { const v = document.querySelector('.dj-hoja canvas'), d = v.getContext('2d').getImageData(Math.round(v.width * .9), Math.round(v.height * .1), 1, 1).data; return d[0] > 200 && d[1] < 80 && d[3] > 200; }), 'la cubeta rellena con el color elegido');
+  if (process.env.CAPTURA) await pg.screenshot({ path: `${process.env.CAPTURA}/studio-dibujo-${w}.png` });
+  await pg.click('.dj [data-a="deshacer"]');
+  await pg.click('.dj [data-a="listo"]'); await pg.waitForFunction((a) => window.__comic.pag().capas.length === a + 1, antesDib);
+  ok(await pg.evaluate(() => { const c = window.__comic.capa(); return c.tipo === 'imagen' && c.dibujo && c.w < 700 && c.x > 50; }), '«Listo» mete el dibujo a la página, recortado y en su lugar');
+  await pg.click('#props [data-a="cerrar"]');
   await pg.evaluate(() => window.__comic.guardarYa());
   await pg.reload(); await pg.waitForFunction(() => window.__comic);
-  ok(await pg.evaluate(() => window.__comic.obra.paginas.length === 2 && window.__comic.obra.paginas[0].capas.length === 5 && window.__comic.obra.paginas[1].capas.length === 6), 'todo se guarda al cerrar y abrir');
+  ok(await pg.evaluate(() => window.__comic.obra.paginas.length === 2 && window.__comic.obra.paginas[0].capas.length === 5 && window.__comic.obra.paginas[1].capas.length === 7), 'todo se guarda al cerrar y abrir');
   await pg.click('#botonMenu');
   const [dpng] = await Promise.all([pg.waitForEvent('download', { timeout: 15000 }).catch(() => null), pg.click('#png')]);
   ok(dpng && /Mi manhwa · página 1\.png$/.test(dpng.suggestedFilename()), 'se descarga la página en PNG');
