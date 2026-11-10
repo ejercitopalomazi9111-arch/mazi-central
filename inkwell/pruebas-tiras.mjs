@@ -274,6 +274,8 @@ for (const [ancho, alto, nombre] of [[390, 844, 'teléfono'], [1280, 800, 'compu
   await pg.waitForFunction(() => document.querySelectorAll('.serie').length === 2);
   ok(/(9|10) de 12 leídos/.test(await card()) && await pg.inputValue('#orden') === 'intercalado', 'las series, lo leído y los ajustes sobreviven a cerrar');
   await pg.evaluate(() => window.__tiras.preparar());          // que termine la que arrancó al abrir
+  /* se corta la red cuando Tiras ya no está bajando nada: una consulta cortada a medias la anota el navegador como error */
+  await pg.waitForFunction(() => !window.__tiras.ocupado, null, { timeout: 30000 });
   await ctx.setOffline(true);
   await pg.evaluate(() => window.__tiras.preparar());
   ok(/Sin internet/.test(await pg.textContent('#estadoTxt')), 'sin red lo dice y no intenta bajar');
