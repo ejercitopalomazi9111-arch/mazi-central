@@ -449,12 +449,12 @@ const portada = (s) => s.portadaBlob ? URL.createObjectURL(s.portadaBlob) : '';
 const total = (s) => (s.caps || []).length;
 const leidos = (s) => Math.min((s.leidos || []).length + (s.caps || []).filter((c) => c.n < (s.desde || 0)).length, total(s));
 const tipo = (s) => s.fuente === 'webtoon' ? 'Webtoon' : 'Wattpad';
-const poster = (s) => { const p = portada(s), falta = total(s) - leidos(s);
+const poster = (s) => { const p = portada(s);
   return `<a class="poster" href="tiras.html?ficha=${encodeURIComponent(s.id)}">${p ? `<img src="${p}" alt="" loading="lazy">` : `<span class="sin">${icono('image')}</span>`}
-    <span class="etq">${tipo(s)}</span><b>${esc(s.titulo)}</b>${falta > 0 ? `<span class="nuevo">${falta} por leer</span>` : '<span class="nuevo">Al día</span>'}</a>`; };
+    <span class="etq">${tipo(s)}</span><b>${esc(s.titulo)}</b></a>`; };
 const seguir = (s) => { const p = portada(s), t = total(s), l = leidos(s);
   return `<a class="seguir" href="tiras.html?leer=${encodeURIComponent(s.id)}">${p ? `<img src="${p}" alt="" loading="lazy">` : ''}<b>${esc(s.titulo)}</b>
-    <span>Capítulo ${Math.min(l + 1, t)} de ${t}</span><div class="avance"><i style="width:${t ? Math.round(l / t * 100) : 0}%"></i></div></a>`; };
+    <span>Sigue en el capítulo ${Math.min(l + 1, t)}</span></a>`; };
 
 let todas = [], filtro = 'todo';
 const FILTROS = [['todo', 'Todo'], ['webtoon', 'Cómic'], ['wattpad', 'Novela']];
@@ -492,8 +492,8 @@ function pintarHero(){
       ${p ? `<div class="charco" aria-hidden="true"><img src="${p}" alt=""></div>` : '<div class="charco" aria-hidden="true"></div>'}
       <div class="noche"><small>${i === 0 ? esc(fecha) : 'También a medias'}</small><h2>${i === 0 ? `${momento}<br>sigues <em>con…</em>` : `Y no olvides<br><em>esta…</em>`}</h2></div>
       <div class="tomo"><i></i><i></i>${p ? `<img src="${p}" alt=""${i ? ' loading="lazy"' : ''}>` : `<span class="sin">${icono('image')}</span>`}</div>
-      <div class="dato"><b>${esc(s.titulo)}</b><span class="voz">${l ? (l >= t ? 'La terminaste. ¿La vuelves a leer?' : 'Te quedaste a la mitad de la historia.') : 'Todavía no la empiezas.'}</span>
-        ${plumilla(pct)}<span class="cap">Cap. ${cap} de ${t} · ${tipo(s)}</span></div>
+      <div class="dato"><b>${esc(s.titulo)}</b><span class="voz">${l ? (l >= t ? 'La terminaste. ¿La vuelves a leer?' : 'Te quedaste justo cuando se ponía buena.') : 'Todavía no la empiezas.'}</span>
+        <span class="cap">${tipo(s)} · cap. ${cap}</span></div>
       <span class="continuar">${l ? 'Seguir leyendo' : 'Empezar a leer'}<span class="cap2">cap. ${cap}</span><span class="gota">${icono('chevron-right')}</span></span></a>`; }).join('')}</div>
     ${lista.length > 1 ? `<div class="puntos" aria-hidden="true">${lista.map((_, i) => `<i${i ? '' : ' class="ya"'}></i>`).join('')}</div>` : ''}`;
   const pistas = $('#pistas');

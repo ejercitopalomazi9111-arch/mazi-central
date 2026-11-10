@@ -115,6 +115,7 @@ console.log('\npara ti');
   await pg.locator('#paraTi').scrollIntoViewIfNeeded();
   await pg.waitForFunction(() => document.querySelector('#paraTi .poster img'), null, { timeout: 10000 }).catch(() => {});
   ok(!!(await pg.$('#paraTi .poster img')), 'con su portada');
+  ok(await pg.evaluate(() => !document.querySelector('#v-inicio .avance, #v-inicio .plumilla, #v-inicio [role=progressbar]') && !/por leer| de \d+ cap/i.test(document.querySelector('#v-inicio').textContent)), 'el inicio no enseña cuánto le falta a una serie (sólo en los submenús)');
   await pg.goto(BASE + 'index.html#explorar'); await pg.reload();
   await pg.waitForFunction(() => document.querySelectorAll('#explorarTi .poster').length === 2, null, { timeout: 15000 }).catch(() => {});
   ok((await pg.$$('#explorarTi .poster')).length === 2 && await pg.isVisible('#explorarTi'), 'Explorar también trae recomendaciones de base');
