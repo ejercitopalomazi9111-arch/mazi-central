@@ -16,6 +16,7 @@ const br = await chromium.launch();
 for (const [w, h] of [[390, 844], [1280, 800]]) {
   console.log(`\n${w}×${h}`);
   const ctx = await br.newContext({ viewport: { width: w, height: h }, serviceWorkers: 'block', acceptDownloads: true });
+  await ctx.route(/sala\.palomazi9111\.workers\.dev|\/api\/sala\//, (r) => r.fulfill({ status: 404, contentType: 'application/json', body: '{}' }));
   const pg = await ctx.newPage(); const errores = [];
   pg.on('pageerror', (e) => errores.push(e.message)); pg.on('console', (m) => m.type() === 'error' && !/404/.test(m.text()) && errores.push(m.text()));
   await pg.goto(BASE + 'index.html');

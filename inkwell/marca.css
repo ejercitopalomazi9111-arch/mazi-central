@@ -11,30 +11,44 @@
 @font-face{font-family:'Crimson Pro'; src:url('letra/crimson.woff2') format('woff2'); font-display:swap}
 
 :root{
-  --bg:#0C0B11; --bg2:#13121A; --card:#1A1922; --card2:#24222E;
-  --ink:#F1EEF7; --dim:#A6A1B5; --line:rgba(255,255,255,.09);
-  --accent:#8B5CF6; --accent2:#6366F1; --accent-ink:#C4B5FD; --ok:#3DDC97;
-  --grad:linear-gradient(135deg,#8B5CF6 0%,#6366F1 100%);
+  /* «Tinta viva» (aprobada por Carlos el 10 nov): tinta, papel y el morado de Grupo Mazi.
+     Oscuro = el tintero; claro = la hoja de papel. */
+  --bg:#0B0610; --bg2:#140C1C; --card:#1A1124; --card2:#261A33;
+  --ink:#F1EADF; --dim:#A99CB6; --line:rgba(241,234,223,.1);
+  --accent:#AC27FF; --accent2:#7E1735; --accent-ink:#C77DFF; --ok:#3DDC97;
+  --lila:#A898B5; --papel:#F1EADF; --tinta:#0B0610;
+  --grad:linear-gradient(135deg,#AC27FF 0%,#7E1735 100%);
   --display:'Gloock',Georgia,serif;
   --sans:'Archivo',-apple-system,'Segoe UI',system-ui,Roboto,sans-serif;
   --serif:'Crimson Pro',Georgia,'Times New Roman',serif;
-  --radio:16px; --sombra:0 18px 40px -22px rgba(0,0,0,.75);
+  --radio:16px; --sombra:0 22px 44px -22px rgba(0,0,0,.85);
+  --grano-op:.06;
   color-scheme:dark;
 }
 @media (prefers-color-scheme:light){
   :root:not([data-tema="oscuro"]){
-    --bg:#F7F5FB; --bg2:#EFEBF7; --card:#FFFFFF; --card2:#F1ECFB;
-    --ink:#1B1530; --dim:#655B7D; --line:rgba(27,21,48,.1);
-    --accent:#7C3AED; --accent2:#4F46E5; --accent-ink:#5B21B6;
-    --sombra:0 14px 34px -22px rgba(40,20,90,.35); color-scheme:light;
+    --bg:#F3EDE3; --bg2:#EAE2D5; --card:#FBF8F2; --card2:#EDE4D6;
+    --ink:#170A26; --dim:#66586F; --line:rgba(23,10,38,.12);
+    --accent:#8A1FD1; --accent2:#7E1735; --accent-ink:#6A12A8; --lila:#6E5C82;
+    --sombra:0 18px 36px -22px rgba(40,15,30,.4); --grano-op:.09; color-scheme:light;
   }
 }
 :root[data-tema="claro"]{
-  --bg:#F7F5FB; --bg2:#EFEBF7; --card:#FFFFFF; --card2:#F1ECFB;
-  --ink:#1B1530; --dim:#655B7D; --line:rgba(27,21,48,.1);
-  --accent:#7C3AED; --accent2:#4F46E5; --accent-ink:#5B21B6;
-  --sombra:0 14px 34px -22px rgba(40,20,90,.35); color-scheme:light;
+  --bg:#F3EDE3; --bg2:#EAE2D5; --card:#FBF8F2; --card2:#EDE4D6;
+  --ink:#170A26; --dim:#66586F; --line:rgba(23,10,38,.12);
+  --accent:#8A1FD1; --accent2:#7E1735; --accent-ink:#6A12A8; --lila:#6E5C82;
+  --sombra:0 18px 36px -22px rgba(40,15,30,.4); --grano-op:.09; color-scheme:light;
 }
+
+/* el grano del papel: fino, encima de todo y sin estorbar los toques */
+body::after{content:""; position:fixed; inset:0; z-index:200; pointer-events:none; opacity:var(--grano-op); mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='180' height='180' filter='url(%23g)'/></svg>")}
+/* los títulos, con letra de revista */
+:where(h1,h2){font-family:var(--display); font-weight:400; letter-spacing:-.01em}
+/* la voz: frases en itálica de libro */
+.voz{font-family:var(--serif); font-style:italic; font-weight:300; color:var(--lila)}
+/* el remate del logo (la espiral con su gota) como subrayado: .remate-bajo */
+:root{--remate:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='700 214 150 80'%3E%3Cpath d='M%20762.5%20221%20Q%20812.94%20217.56%20835%20242.5%20Q%20843.51%20250.49%20843%20267.5%20Q%20840.48%20280.98%20830.5%20287%20L%20823.5%20290%20L%20815.5%20291%20L%20804.5%20288%20L%20795%20279.5%20L%20791%20270.5%20L%20789%20257.5%20Q%20785.02%20248.48%20777.5%20243%20L%20765.5%20236%20L%20757.5%20233%20L%20741.5%20230%20L%20737%20227.5%20L%20744.5%20224%20L%20754.5%20222%20L%20761.5%20222%20L%20762.5%20221%20Z%20'/%3E%3Cpath d='M%20721.5%20252%20Q%20737.03%20250.97%20744%20258.5%20Q%20746.83%20261.17%20746%20267.5%20L%20741.5%20274%20L%20732.5%20275%20L%20723.5%20268%20Q%20718.22%20263.78%20708.5%20264%20L%20704%20260.5%20L%20706.5%20257%20L%20712.5%20254%20L%20721.5%20252%20Z%20'/%3E%3C/svg%3E")}
 
 /* en el teléfono la página nunca se mueve de lado: sólo los carruseles que lo necesitan (Carlos, 10 nov) */
 html,body{max-width:100%; overflow-x:hidden; overscroll-behavior-x:none}
@@ -43,31 +57,43 @@ html,body{max-width:100%; overflow-x:hidden; overscroll-behavior-x:none}
 
 /* la marca: la pluma y la palabra «Inkwell» que dio Carlos (marca/), limpias y la palabra en vector */
 .marca{display:inline-flex; align-items:center; gap:10px; text-decoration:none; color:var(--ink)}
-.marca .iso{width:38px; height:38px; border-radius:11px; background:#F6F2FB; display:grid; place-items:center; overflow:hidden; flex:none;
+.marca .iso{width:38px; height:38px; border-radius:11px; background:var(--papel); display:grid; place-items:center; overflow:hidden; flex:none;
   box-shadow:0 0 0 1px color-mix(in srgb,var(--ink) 10%,transparent)}
 .marca .iso img{width:88%; height:88%; object-fit:contain; display:block}
 .marca .pal{display:block; width:98px; height:33px; font-size:0; color:transparent; background:var(--ink);
   -webkit-mask:url(marca/inkwell.svg) left center/contain no-repeat; mask:url(marca/inkwell.svg) left center/contain no-repeat}
 
-/* navegación: abajo en el teléfono, a un lado en escritorio (§16) */
-.nav{position:fixed; z-index:40; left:0; right:0; bottom:0; display:flex; justify-content:space-around;
-  padding:6px 4px calc(6px + env(safe-area-inset-bottom)); background:color-mix(in srgb,var(--bg) 90%,transparent);
-  -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); border-top:1px solid var(--line)}
-.nav a{flex:1; min-width:0; min-height:48px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
-  color:var(--dim); text-decoration:none; font:600 11px/1.1 var(--sans); border-radius:12px}
-.nav a{position:relative}
-.nav a[aria-current="page"]{color:var(--accent-ink)}
-.nav a[aria-current="page"] .ico{color:var(--accent)}
-.nav a[aria-current="page"]::after{content:""; position:absolute; bottom:2px; width:5px; height:5px; border-radius:50%; background:var(--accent)}
-@media (min-width:900px){ .nav a[aria-current="page"]{background:color-mix(in srgb,var(--accent) 14%,transparent)} .nav a[aria-current="page"]::after{display:none} }
+/* el muelle: flota abajo en el teléfono, con la pluma al centro para escribir; a un lado en escritorio */
+.nav{position:fixed; z-index:40; left:12px; right:12px; bottom:calc(10px + env(safe-area-inset-bottom)); height:66px; display:flex; align-items:center; justify-content:space-around;
+  padding:0 6px; border-radius:33px; background:color-mix(in srgb,var(--bg2) 82%,transparent);
+  -webkit-backdrop-filter:blur(18px) saturate(1.4); backdrop-filter:blur(18px) saturate(1.4); border:1px solid var(--line); box-shadow:0 18px 40px -18px rgba(0,0,0,.7)}
+.nav a{flex:1; min-width:0; min-height:56px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+  color:var(--dim); text-decoration:none; font:600 10.5px/1.1 var(--sans); letter-spacing:.02em; border-radius:16px; position:relative}
+.nav a[aria-current="page"]{color:var(--ink)}
+.nav a[aria-current="page"]::after{content:""; position:absolute; bottom:1px; width:22px; height:9px; background:var(--accent-ink);
+  -webkit-mask:var(--remate) center/contain no-repeat; mask:var(--remate) center/contain no-repeat}
+.nav a.pluma{flex:none; width:74px}
+.nav a.pluma .disco{width:60px; height:60px; margin-top:-30px; border-radius:50%; background:var(--papel); display:grid; place-items:center;
+  box-shadow:0 0 0 5px var(--bg),0 12px 28px -6px color-mix(in srgb,var(--accent) 70%,transparent); transition:transform .25s cubic-bezier(.3,1.6,.5,1)}
+.nav a.pluma .disco img{width:76%; height:76%; object-fit:contain}
+.nav a.pluma:active .disco{transform:scale(.92) rotate(-8deg)}
+.nav a.pluma[aria-current="page"]::after{display:none}
+.nav a.pluma[aria-current="page"] .disco{box-shadow:0 0 0 5px var(--bg),0 0 0 7px var(--accent-ink),0 12px 28px -6px var(--accent)}
 @media (min-width:900px){
-  .nav{top:0; right:auto; bottom:0; width:96px; flex-direction:column; justify-content:flex-start; gap:6px;
-    padding:20px 8px; border-top:0; border-right:1px solid var(--line)}
-  .nav a{flex:none; min-height:64px}
-  body.con-nav{padding-left:96px}
+  .nav{top:16px; bottom:16px; left:16px; right:auto; width:84px; height:auto; flex-direction:column; justify-content:flex-start; gap:8px; padding:18px 0; border-radius:28px}
+  .nav a{flex:none; width:72px; min-height:62px}
+  .nav a.pluma{order:-1; margin-bottom:10px}
+  .nav a.pluma .disco{margin-top:0}
+  body.con-nav{padding-left:112px}
 }
-body.con-nav{padding-bottom:calc(70px + env(safe-area-inset-bottom))}
+body.con-nav{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
 @media (min-width:900px){ body.con-nav{padding-bottom:0} }
+
+/* la marca encima de la tinta: la pluma en un disco de papel */
+.marca .iso{border-radius:50%; background:var(--papel)}
+
+/* las portadas con la orilla corrida como tinta en papel (el filtro #corrida lo pone tinta.js) */
+.corrida{filter:url(#corrida)}
 
 /* el cambio de claro a oscuro (index.html · cambiarTema) */
 .vt-tema::view-transition-old(root),.vt-tema::view-transition-new(root){animation:none; mix-blend-mode:normal}

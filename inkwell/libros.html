@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#0C0B11">
+<meta name="theme-color" content="#0B0610">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="INKWELL">
@@ -135,6 +135,7 @@ h2{font:700 19px/1.2 var(--sans); margin:28px 0 12px}
 
 <script type="module">
 import { icono } from './iconos.js';
+import { pintarMuelle } from './muelle.js';
 import { importar, todos, uno, guardar, quitar } from './libros.js';
 import { apuntar } from './biblioteca.js';
 const $ = (s) => document.querySelector(s);
@@ -142,9 +143,7 @@ const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<
 const leer = (k, d) => { try{ const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); }catch{ return d; } };
 const escribir = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} };
 
-$('#nav').innerHTML = [['inicio', 'Inicio', 'house'], ['explorar', 'Explorar', 'compass'], ['biblioteca', 'Biblioteca', 'library'],
-  ['crear', 'Crear', 'pen-tool'], ['comunidad', 'Comunidad', 'users'], ['perfil', 'Perfil', 'user']]
-  .map(([id, n, ic]) => `<a href="./#${id}"${id === 'biblioteca' ? ' aria-current="page"' : ''}>${icono(ic)}<span>${n}</span></a>`).join('');
+pintarMuelle($('#nav'), { raiz: './', actual: 'biblioteca' });
 document.querySelectorAll('.ic[data-ic]').forEach((e) => { e.outerHTML = icono(e.dataset.ic); });
 $('#cerrar').innerHTML = icono('x'); $('#botonOpciones').innerHTML = icono('settings'); $('#escuchar').innerHTML = icono('headphones');
 $('#vozPausa').innerHTML = icono('pause'); $('#vozParar').innerHTML = icono('x');

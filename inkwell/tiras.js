@@ -2,6 +2,7 @@
 import { reconocer, FUENTES, wattpad, limpiarTexto, desentidad } from './fuentes.js';
 import { pdf, epub, tamanoJpeg } from './archivos.js';
 import { icono } from './iconos.js';
+import { pintarMuelle } from './muelle.js';
 import { apuntar } from './biblioteca.js';
 import { codigoDe, leerCodigo, seriesDeRanking, elegirNuevas, GENEROS, seriesDeGenero } from './compartir.js';
 
@@ -217,9 +218,7 @@ async function pintarSeries(){
 }
 
 /* ── la barra de secciones de INKWELL: Tiras vive dentro de Biblioteca ── */
-$('#nav').innerHTML = [['inicio', 'Inicio', 'house'], ['explorar', 'Explorar', 'compass'], ['biblioteca', 'Biblioteca', 'library'],
-  ['crear', 'Crear', 'pen-tool'], ['comunidad', 'Comunidad', 'users'], ['perfil', 'Perfil', 'user']]
-  .map(([id, n, ic]) => `<a href="./#${id}"${id === 'biblioteca' ? ' aria-current="page"' : ''}>${icono(ic)}<span>${n}</span></a>`).join('');
+pintarMuelle($('#nav'), { raiz: './', actual: 'biblioteca' });
 $('#cerrarLector').innerHTML = icono('x'); $('#brillo').innerHTML = icono('sun');
 /* brillo de la pantalla y tamaño de letra de las historias de texto (se recuerdan) */
 const BRILLOS = [1, .85, .7, .55];

@@ -112,6 +112,7 @@ console.log('\npara ti');
   const ti = await pg.$$eval('#paraTi .poster', (a) => a.map((x) => ({ t: x.querySelector('b').textContent, h: x.getAttribute('href') })));
   ok(ti.length === 2 && ti.every((x) => /^Nueva/.test(x.t)), 'el inicio enseña series que no sigues, sin buscar · ' + ti.map((x) => x.t).join(', '));
   ok(ti[0] && ti[0].h.startsWith('tiras.html?ver=') && decodeURIComponent(ti[0].h).includes('title_no=102'), 'tocar una abre su ficha de Explorar');
+  await pg.locator('#paraTi').scrollIntoViewIfNeeded();
   await pg.waitForFunction(() => document.querySelector('#paraTi .poster img'), null, { timeout: 10000 }).catch(() => {});
   ok(!!(await pg.$('#paraTi .poster img')), 'con su portada');
   await pg.goto(BASE + 'index.html#explorar'); await pg.reload();

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#0C0B11">
+<meta name="theme-color" content="#0B0610">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="INKWELL">
@@ -79,9 +79,9 @@ button{font:inherit}
 .chip .n{opacity:.7; margin-left:4px; font-variant-numeric:tabular-nums}
 #bObras{margin-top:12px}
 .poster.b{cursor:pointer; font:inherit; text-align:left}
-.poster .fav{position:absolute; top:6px; right:6px; width:28px; height:28px; border-radius:99px; display:grid; place-items:center; background:rgba(8,6,14,.55); color:#ff5d8f}
+.poster .fav{position:absolute; top:6px; right:6px; z-index:1; width:28px; height:28px; border-radius:99px; display:grid; place-items:center; background:rgba(8,6,14,.55); color:#ff5d8f}
 .poster .fav .ico{width:18px; height:18px; fill:currentColor}
-.poster .mini-est{display:flex; justify-content:center; gap:1px; color:#ffc94d; margin-top:3px}
+.poster .mini-est{display:flex; gap:1px; color:var(--accent-ink)}
 .poster .mini-est .ico{width:11px; height:11px; fill:currentColor}
 .b-acciones{display:flex; flex-wrap:wrap; gap:8px; margin:18px 0 6px}
 .b-acciones .boton{flex:1 1 220px}
@@ -134,33 +134,49 @@ main{max-width:1180px; margin:0 auto; padding:0 0 40px}
 .titulo-vista{padding:calc(70px + env(safe-area-inset-top)) 16px 4px}
 h1{font:800 clamp(28px,7vw,40px)/1.08 var(--sans); letter-spacing:-.02em; margin:0 0 6px}
 .lema{color:var(--dim); margin:0 0 18px; font-size:15px; max-width:56ch}
-h2{font:700 19px/1.2 var(--sans); letter-spacing:-.01em; margin:28px 0 12px; display:flex; align-items:center; justify-content:space-between; gap:10px}
+h2{font:400 23px/1.15 var(--display); letter-spacing:-.01em; margin:28px 0 12px; display:flex; align-items:center; justify-content:space-between; gap:10px}
 h2 a{font:600 14px var(--sans); color:var(--accent-ink); text-decoration:none; display:inline-flex; align-items:center; gap:2px; min-height:44px}
 h2 a .ico{width:18px; height:18px}
 
-/* ── el banner grande (carrusel de lo que sigues) ── */
+/* ── el banner: «Esta noche sigues con…» (Tinta viva). Cada diapo es una escena: el charco de color de
+   la portada, la portada inclinada con sus hojas detrás y la plumilla que se llena de tinta con tu avance ── */
 .hero{position:relative}
 .hero-pistas{display:grid; grid-auto-flow:column; grid-auto-columns:100%; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; overscroll-behavior-x:contain}
 .hero-pistas::-webkit-scrollbar{display:none}
-.diapo{position:relative; scroll-snap-align:start; min-height:clamp(380px,62vh,520px); display:flex; flex-direction:column; justify-content:flex-end;
-  padding:0 16px 22px; text-decoration:none; color:#fff; overflow:hidden; isolation:isolate}
-.diapo img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center 20%; z-index:-2}
-.diapo::after{content:""; position:absolute; inset:0; z-index:-1;
-  background:linear-gradient(180deg,rgba(0,0,0,.45) 0%,transparent 28%,transparent 45%,color-mix(in srgb,var(--bg) 70%,transparent) 78%,var(--bg) 100%)}
-.diapo.vacia{background:radial-gradient(120% 90% at 80% 0%,color-mix(in srgb,var(--accent) 55%,transparent),transparent 60%),
-  radial-gradient(100% 80% at 0% 30%,color-mix(in srgb,var(--accent2) 40%,transparent),transparent 65%),var(--bg2)}
-.diapo .sup{font:700 12px var(--sans); letter-spacing:.12em; text-transform:uppercase; color:#E9DDFF; text-shadow:0 1px 8px rgba(0,0,0,.6)}
-.diapo b{display:block; font:800 clamp(30px,8vw,48px)/1.04 var(--sans); letter-spacing:-.02em; margin:6px 0 10px; text-shadow:0 2px 18px rgba(0,0,0,.55); max-width:18ch}
-.pildoras{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px}
-.pildora{font:700 12px var(--sans); padding:4px 12px; border-radius:99px; background:var(--accent); color:#fff}
-.pildora.clara{background:rgba(12,10,20,.45); color:#fff; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px)}
+.diapo{position:relative; scroll-snap-align:start; min-height:clamp(560px,78vh,640px); display:grid; grid-template-columns:minmax(0,52%) minmax(0,1fr); grid-template-rows:auto 1fr auto;
+  gap:0 18px; padding:calc(96px + env(safe-area-inset-top)) 18px 26px; text-decoration:none; color:var(--ink); overflow:hidden; isolation:isolate}
+.diapo .charco{position:absolute; inset:-60px -60px auto; height:78%; z-index:-2; filter:blur(52px) saturate(1.5); opacity:.7}
+.diapo .charco img{width:100%; height:100%; object-fit:cover}
+.diapo::after{content:""; position:absolute; inset:0; z-index:-1; background:radial-gradient(130% 75% at 50% 15%,transparent 0,var(--bg) 80%)}
+.diapo .noche{grid-column:1/-1; margin-bottom:22px}
+.diapo .noche small{font:600 11px var(--sans); letter-spacing:.22em; text-transform:uppercase; color:var(--accent-ink)}
+.diapo .noche h2{font:400 clamp(38px,11vw,54px)/.98 var(--display); letter-spacing:-.02em; margin:10px 0 0; display:block}
+.diapo .noche h2 em{font:italic 300 1em var(--serif); color:var(--lila)}
+.tomo{position:relative; aspect-ratio:3/4.2; transform:rotate(-3deg); align-self:start}
+.tomo i{position:absolute; inset:0; border-radius:6px 16px 16px 6px; background:var(--ink); opacity:.12; transform:translate(9px,7px) rotate(3deg)}
+.tomo i+i{opacity:.06; transform:translate(16px,13px) rotate(5deg)}
+.tomo img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; border-radius:6px 16px 16px 6px; box-shadow:0 30px 60px -22px rgba(0,0,0,.9)}
+.tomo .sin{position:absolute; inset:0; border-radius:6px 16px 16px 6px; background:var(--card2); display:grid; place-items:center; color:var(--dim)}
+.tomo::after{content:""; position:absolute; left:0; top:0; bottom:0; width:12px; border-radius:6px 0 0 6px; background:linear-gradient(90deg,rgba(0,0,0,.4),transparent)}
+.dato{display:flex; flex-direction:column; gap:12px; align-self:start; padding-top:8px; min-width:0}
+.dato b{font:400 clamp(20px,5.6vw,26px)/1.06 var(--display); overflow-wrap:anywhere}
+.dato .voz{font-size:15px; line-height:1.3}
+.dato .cap{font:600 11px var(--sans); letter-spacing:.14em; text-transform:uppercase; color:var(--dim)}
+.plumilla{width:52px; height:70px}
+.continuar{grid-column:1/-1; margin-top:26px; min-height:62px; border-radius:99px; display:flex; align-items:center; gap:12px; padding:0 7px 0 24px;
+  background:var(--ink); color:var(--bg); font:700 16px var(--sans)}
+.continuar .cap2{margin-left:auto; font:italic 400 15px var(--serif); opacity:.7}
+.continuar .gota{width:48px; height:48px; border-radius:50%; background:var(--bg); color:var(--ink); display:grid; place-items:center}
+.diapo.vacia{grid-template-columns:1fr; align-content:end}
+.diapo.vacia .charco{background:radial-gradient(60% 60% at 70% 30%,var(--accent),transparent 70%),radial-gradient(50% 50% at 20% 60%,var(--accent2),transparent 70%)}
+.diapo.vacia p{font:italic 300 18px/1.4 var(--serif); color:var(--lila); margin:0 0 20px; max-width:30ch}
 .boton{display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:48px; padding:0 22px; border-radius:99px; border:0;
   background:var(--accent); color:#fff; font:700 15px var(--sans); text-decoration:none; cursor:pointer; align-self:flex-start;
   box-shadow:0 10px 30px -10px color-mix(in srgb,var(--accent) 80%,transparent)}
 .boton .ico{width:18px; height:18px}
 .boton.suave{background:var(--card2); color:var(--ink); box-shadow:none}
-.puntos{position:absolute; left:0; right:0; bottom:8px; display:flex; justify-content:center; gap:6px; pointer-events:none}
-.puntos i{width:6px; height:6px; border-radius:99px; background:rgba(255,255,255,.35); transition:width .2s}
+.puntos{position:absolute; left:0; right:0; bottom:4px; display:flex; justify-content:center; gap:6px; pointer-events:none}
+.puntos i{width:6px; height:6px; border-radius:99px; background:color-mix(in srgb,var(--ink) 30%,transparent); transition:width .2s}
 .puntos i.ya{width:20px; background:var(--accent-ink)}
 @media (prefers-reduced-motion:reduce){ .puntos i{transition:none} }
 
@@ -179,31 +195,30 @@ h2 a .ico{width:18px; height:18px}
 
 /* ── continuar leyendo: tarjetas anchas con barra de avance ── */
 .carril{display:grid; grid-auto-flow:column; grid-auto-columns:minmax(250px,300px); gap:12px; overflow-x:auto; scroll-snap-type:x mandatory;
-  overscroll-behavior-x:contain; scrollbar-width:none; padding:0 16px; margin:0 -16px; position:relative}
+  overscroll-behavior-x:contain; scrollbar-width:none; padding:0 16px; margin:0 -16px; scroll-padding-inline:16px; position:relative}
 .carril::-webkit-scrollbar{display:none}
 .carril-p{grid-auto-columns:128px}
 .carril-p .poster{scroll-snap-align:start}
 .sub-h{font:500 13px var(--sans); color:var(--dim); margin-left:4px}
-.seguir{position:relative; scroll-snap-align:start; aspect-ratio:16/10; border-radius:18px; overflow:hidden; isolation:isolate;
-  display:flex; flex-direction:column; justify-content:flex-end; padding:14px; text-decoration:none; color:#fff; background:var(--card2); border:1px solid var(--line)}
-.seguir img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:-2}
-.seguir::after{content:""; position:absolute; inset:0; z-index:-1; background:linear-gradient(180deg,transparent 30%,rgba(8,6,14,.88) 100%)}
-.seguir b{font:700 17px/1.2 var(--sans); display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden}
-.seguir span{font-size:13px; color:rgba(255,255,255,.75)}
-.avance{height:5px; border-radius:99px; background:rgba(255,255,255,.22); overflow:hidden; margin-top:8px}
+.seguir{position:relative; scroll-snap-align:start; display:flex; flex-direction:column; gap:4px; text-decoration:none; color:var(--ink); min-width:0}
+.carril:has(.seguir){grid-auto-columns:118px}
+.seguir img{width:100%; aspect-ratio:3/4.2; object-fit:cover; border-radius:4px 12px 12px 4px; box-shadow:var(--sombra); margin-bottom:4px}
+.seguir::after{display:none}
+.seguir b{font:400 15px/1.15 var(--display); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+.seguir span{font:600 11px var(--sans); color:var(--dim)}
+.avance{height:3px; border-radius:2px; background:color-mix(in srgb,var(--ink) 14%,transparent); overflow:hidden; margin-top:4px}
 .avance i{display:block; height:100%; background:var(--accent); border-radius:99px}
 
 /* ── rejilla de portadas con el título encima ── */
 .rejilla{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px}
 @media (min-width:640px){ .rejilla{grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:14px} }
-.poster{position:relative; aspect-ratio:3/4.2; border-radius:14px; overflow:hidden; isolation:isolate; display:flex; flex-direction:column; justify-content:flex-end;
-  padding:10px; text-decoration:none; color:#fff; background:var(--card2); border:1px solid var(--line); min-width:0}
-.poster img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:-2}
-.poster::after{content:""; position:absolute; inset:0; z-index:-1; background:linear-gradient(180deg,transparent 45%,rgba(8,6,14,.9) 100%)}
-.poster .sin{position:absolute; inset:0; display:grid; place-items:center; color:var(--dim); z-index:-2}
-.poster b{font:700 14px/1.2 var(--sans); text-align:center; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
-.poster .etq{position:absolute; top:8px; left:8px; display:inline-flex; align-items:center; gap:4px; font:700 10px var(--sans); padding:3px 8px; border-radius:99px; background:var(--accent); color:#fff}
-.poster .nuevo{display:block; text-align:center; font:600 11px var(--sans); color:rgba(255,255,255,.75); margin-top:2px}
+.poster{position:relative; display:flex; flex-direction:column; gap:3px; text-decoration:none; color:var(--ink); min-width:0; background:none; border:0; padding:0}
+.poster > img,.poster > .sin{width:100%; aspect-ratio:3/4.2; object-fit:cover; border-radius:4px 12px 12px 4px; background:var(--card2); box-shadow:var(--sombra),inset 0 0 0 1px var(--line); margin-bottom:6px; display:grid; place-items:center; color:var(--dim)}
+.poster > img{display:block}
+.poster:active > img{transform:scale(.97)}
+.poster b{font:400 15px/1.15 var(--display); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+.poster .etq{position:absolute; top:7px; left:7px; font:700 9px var(--sans); letter-spacing:.14em; text-transform:uppercase; padding:3px 7px; border-radius:99px; background:rgba(11,6,16,.72); color:#F1EADF; -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px)}
+.poster .nuevo{display:block; font:600 11px var(--sans); color:var(--dim)}
 
 /* ── apartados y géneros en mosaico ── */
 .mosaico{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px}
@@ -232,7 +247,7 @@ h2 a .ico{width:18px; height:18px}
     <h1 class="oculto">INKWELL</h1>
     <div class="hero" id="hero"></div>
     <div class="pad">
-      <button type="button" class="boton seguir-btn" id="seguirLeyendo"><span class="ic-libro"></span>Seguir leyendo</button>
+      <button type="button" class="boton suave seguir-btn" id="seguirLeyendo"><span class="ic-libro"></span>Elegir qué seguir leyendo</button>
       <form class="buscador" action="tiras.html" method="get" role="search">
         <span class="i-buscar"></span>
         <input type="search" name="buscar" placeholder="Busca un cómic, manga o novela" aria-label="Buscar un cómic, manga o novela" autocomplete="off">
@@ -350,24 +365,20 @@ h2 a .ico{width:18px; height:18px}
 <script type="module">
 import { icono } from './iconos.js';
 
-const SECCIONES = [
-  ['inicio', 'Inicio', 'house'], ['explorar', 'Explorar', 'compass'], ['biblioteca', 'Biblioteca', 'library'],
-  ['crear', 'Crear', 'pen-tool'], ['comunidad', 'Comunidad', 'users'], ['perfil', 'Perfil', 'user'],
-];
+const { SECCIONES, pintarMuelle } = await import('./muelle.js');
 const $ = (s) => document.querySelector(s);
 const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 
 /* ── la navegación ── */
-$('#nav').innerHTML = SECCIONES.map(([id, n, ic]) => `<a href="#${id}" data-ir="${id}">${icono(ic)}<span>${n}</span></a>`).join('');
+pintarMuelle($('#nav'));
 $('#irTiras').innerHTML = icono('layers');
 document.querySelectorAll('.b-buscar').forEach((e) => { e.innerHTML = icono('search'); });
 document.querySelectorAll('.i-buscar').forEach((e) => { e.outerHTML = icono('search'); });
 document.querySelectorAll('.i-chev').forEach((e) => { e.outerHTML = icono('chevron-right', 'chev'); });
 function ir(){
   const v = (location.hash.slice(1) || 'inicio');
-  const ok = SECCIONES.some(([id]) => id === v) ? v : 'inicio';
+  const ok = [...document.querySelectorAll('[data-vista]')].some((x) => x.dataset.vista === v) ? v : 'inicio';
   document.querySelectorAll('[data-vista]').forEach((s) => { s.hidden = s.dataset.vista !== ok; });
-  document.querySelectorAll('#nav a').forEach((a) => a.toggleAttribute('aria-current', a.dataset.ir === ok) || a.dataset.ir === ok && a.setAttribute('aria-current', 'page'));
   document.querySelectorAll('#nav a').forEach((a) => { if(a.dataset.ir === ok) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   scrollTo(0, 0);
 }
@@ -452,21 +463,38 @@ function pintarFiltro(){
 }
 $('#filtro').addEventListener('click', (e) => { const b = e.target.closest('[data-f]'); if(!b) return; filtro = b.dataset.f; pintarFiltro(); pintarListas(); });
 
+/* la plumilla: la punta de la pluma que se llena de tinta según lo leído */
+let nPlum = 0;
+function plumilla(pct){
+  const id = 'pl' + (nPlum++), y = 74 - Math.max(0, Math.min(1, pct)) * 72;
+  return `<svg class="plumilla" viewBox="0 0 56 76" role="img" aria-label="Llevas ${Math.round(pct * 100)} por ciento"><defs><clipPath id="${id}"><path d="M28 2 L52 30 Q46 52 28 74 Q10 52 4 30 Z"/></clipPath></defs>
+    <path d="M28 2 L52 30 Q46 52 28 74 Q10 52 4 30 Z" fill="color-mix(in srgb,var(--ink) 8%,transparent)" stroke="color-mix(in srgb,var(--ink) 45%,transparent)" stroke-width="1.5"/>
+    <rect clip-path="url(#${id})" x="0" y="${y.toFixed(1)}" width="56" height="76" fill="var(--accent)"/>
+    <circle cx="28" cy="34" r="4.5" fill="var(--bg)"/><path d="M28 39 L28 72" stroke="var(--bg)" stroke-width="1.6"/></svg>`;
+}
 function pintarHero(){
   const ultimo = leer('tiras.ultimo', '') || '';
   const orden = [...todas].sort((a, b) => (ultimo.startsWith(b.id + ':') ? 1 : 0) - (ultimo.startsWith(a.id + ':') ? 1 : 0));
   const ds = orden.filter((s) => s.portadaBlob).slice(0, 5);
+  const ahora = new Date(), h = ahora.getHours();
+  const momento = h < 6 ? 'Esta madrugada' : h < 12 ? 'Esta mañana' : h < 19 ? 'Esta tarde' : 'Esta noche';
+  const fecha = ahora.toLocaleDateString('es-MX', { weekday: 'long' }) + ', ' + ahora.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' });
   if(!todas.length){
-    $('#hero').innerHTML = `<div class="hero-pistas"><div class="diapo vacia"><span class="sup">Bienvenido a INKWELL</span><b>Tus historias. Tu universo.</b>
-      <div class="pildoras"><span class="pildora clara">Cómic</span><span class="pildora clara">Manga</span><span class="pildora clara">Novela</span></div>
+    $('#hero').innerHTML = `<div class="hero-pistas"><div class="diapo vacia"><div class="charco" aria-hidden="true"></div>
+      <div class="noche"><small>${esc(fecha)}</small><h2>${momento}<br>empieza <em>una historia…</em></h2></div>
+      <p>Cómics, manhwas y novelas que se quedan en tu teléfono, aunque no haya internet.</p>
       <a class="boton" href="tiras.html">${icono('plus')}Agregar tu primera serie</a></div></div>`; return;
   }
   const lista = ds.length ? ds : [orden[0]];
-  $('#hero').innerHTML = `<div class="hero-pistas" id="pistas">${lista.map((s, i) => { const p = portada(s), t = total(s), l = leidos(s);
-    return `<a class="diapo${p ? '' : ' vacia'}" href="tiras.html?leer=${encodeURIComponent(s.id)}" aria-label="${esc(s.titulo)}: seguir leyendo">${p ? `<img src="${p}" alt=""${i ? ' loading="lazy"' : ''}>` : ''}
-      <span class="sup">${i === 0 ? 'Continuar leyendo' : 'En tu biblioteca'}</span><b>${esc(s.titulo)}</b>
-      <div class="pildoras"><span class="pildora">${tipo(s)}</span><span class="pildora clara">${l} de ${t} capítulos</span></div>
-      <span class="boton">${icono('book-open')}${l ? 'Seguir leyendo' : 'Empezar a leer'}</span></a>`; }).join('')}</div>
+  $('#hero').innerHTML = `<div class="hero-pistas" id="pistas">${lista.map((s, i) => { const p = portada(s), t = total(s), l = leidos(s), pct = t ? l / t : 0;
+    const cap = Math.min(l + 1, t);
+    return `<a class="diapo" href="tiras.html?leer=${encodeURIComponent(s.id)}" aria-label="${esc(s.titulo)}: seguir leyendo en el capítulo ${cap}">
+      ${p ? `<div class="charco" aria-hidden="true"><img src="${p}" alt=""></div>` : '<div class="charco" aria-hidden="true"></div>'}
+      <div class="noche"><small>${i === 0 ? esc(fecha) : 'También a medias'}</small><h2>${i === 0 ? `${momento}<br>sigues <em>con…</em>` : `Y no olvides<br><em>esta…</em>`}</h2></div>
+      <div class="tomo"><i></i><i></i>${p ? `<img src="${p}" alt=""${i ? ' loading="lazy"' : ''}>` : `<span class="sin">${icono('image')}</span>`}</div>
+      <div class="dato"><b>${esc(s.titulo)}</b><span class="voz">${l ? (l >= t ? 'La terminaste. ¿La vuelves a leer?' : 'Te quedaste a la mitad de la historia.') : 'Todavía no la empiezas.'}</span>
+        ${plumilla(pct)}<span class="cap">Cap. ${cap} de ${t} · ${tipo(s)}</span></div>
+      <span class="continuar">${l ? 'Seguir leyendo' : 'Empezar a leer'}<span class="cap2">cap. ${cap}</span><span class="gota">${icono('chevron-right')}</span></span></a>`; }).join('')}</div>
     ${lista.length > 1 ? `<div class="puntos" aria-hidden="true">${lista.map((_, i) => `<i${i ? '' : ' class="ya"'}></i>`).join('')}</div>` : ''}`;
   const pistas = $('#pistas');
   pistas?.addEventListener('scroll', () => { const k = Math.round(pistas.scrollLeft / pistas.clientWidth);
