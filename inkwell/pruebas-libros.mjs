@@ -16,12 +16,28 @@ const srv = http.createServer((q, r) => {
 const BASE = `http://localhost:${srv.address().port}/libros.html?pruebas`;
 let bien = 0, mal = 0;
 const ok = (c, t) => { if (c) { bien++; console.log('  ✓', t); } else { mal++; console.log('  ✗', t); } };
+/* la barra vive escondida: como una persona, se toca la pantalla para que salga */
+const barra = async (pg) => {
+  if (await pg.evaluate(() => document.querySelector('#lector').classList.contains('sinbarra'))) {
+    await pg.evaluate(() => document.querySelector('#hoja').click());
+    await pg.waitForTimeout(300);
+  }
+};
+/* una voz de mentiras: el Chromium sin pantalla no trae voces, y así se oye qué dice */
+const VOZ = () => {
+  const dichos = []; let t = null;
+  window.SpeechSynthesisUtterance = class { constructor(x){ this.text = x; } };
+  Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: {
+    dichos, getVoices: () => [{ lang: 'es-MX', name: 'Paulina' }], addEventListener(){},
+    cancel(){ clearTimeout(t); }, speak(u){ dichos.push(u.text); t = setTimeout(() => u.onend && u.onend(), 40); } } });
+};
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'libros-'));
 const br = await chromium.launch();
 
 for (const [ancho, alto] of [[390, 844], [1280, 800]]) {
   console.log(`\n${ancho}×${alto}`);
   const ctx = await br.newContext({ viewport: { width: ancho, height: alto }, serviceWorkers: 'block' });
+  await ctx.addInitScript(VOZ);
   const pg = await ctx.newPage(); const errores = [];
   pg.on('pageerror', (e) => errores.push(e.message)); pg.on('console', (m) => m.type() === 'error' && errores.push(m.text()));
   pg.on('dialog', (d) => d.accept());
@@ -54,13 +70,13 @@ for (const [ancho, alto] of [[390, 844], [1280, 800]]) {
   await pg.click('#siguiente');
   ok(/capítulo 2/.test(await pg.textContent('#texto')), '«Siguiente» pasa al capítulo 2');
   ok(await pg.evaluate(() => !document.querySelector('#texto script') && !document.querySelector('#texto [onclick]') && !window.__malo), 'el <script> y los atributos del EPUB no llegan al lector');
-  await pg.click('#botonOpciones'); await pg.click('button[data-tema="sepia"]'); await pg.click('#mas');
+  await barra(pg); await pg.click('#botonOpciones'); await pg.click('button[data-tema="sepia"]'); await pg.click('#mas');
   ok(await pg.evaluate(() => document.querySelector('#lector').dataset.tema === 'sepia' && getComputedStyle(document.querySelector('#texto')).fontSize === '22px'), 'tema sepia y letra más grande');
   await pg.evaluate(() => { const h = document.querySelector('#hoja'); h.scrollTop = (h.scrollHeight - h.clientHeight) / 2; h.dispatchEvent(new Event('scroll')); });
   await pg.waitForTimeout(700);
   ok(!(await pg.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), 'el lector no se sale de lado');
   if (process.env.CAPTURA) await pg.screenshot({ path: `${process.env.CAPTURA}/libros-lector-${ancho}.png` });
-  await pg.click('#cerrar');
+  await barra(pg); await pg.click('#cerrar');
   /* vuelve a donde ibas, aunque se cierre la página */
   await pg.reload();
   await pg.waitForFunction(() => document.querySelectorAll('.libro').length === 3);
@@ -70,14 +86,37 @@ for (const [ancho, alto] of [[390, 844], [1280, 800]]) {
   const donde = await pg.evaluate(() => { const h = document.querySelector('#hoja'); return { cap: document.querySelector('#lCap').textContent, y: h.scrollTop / (h.scrollHeight - h.clientHeight) }; });
   ok(/2 de 3/.test(donde.cap) && Math.abs(donde.y - 0.5) < 0.08, `regresa al capítulo y al lugar donde ibas (${donde.cap}, ${Math.round(donde.y * 100)} %)`);
   ok(await pg.evaluate(() => document.querySelector('#lector').dataset.tema) === 'sepia', 'y recuerda el tema');
-  await pg.click('#botonOpciones'); await pg.selectOption('#capitulos', '2');
+  await barra(pg); await pg.click('#botonOpciones'); await pg.selectOption('#capitulos', '2');
   ok(/capítulo 3/.test(await pg.textContent('#texto')) && await pg.isDisabled('#siguiente'), 'el índice salta al último capítulo y «Siguiente» se apaga');
-  await pg.click('#cerrar');
+  await barra(pg); await pg.click('#cerrar');
   /* el PDF abre en el visor del teléfono */
   const [pop] = await Promise.all([pg.waitForEvent('popup', { timeout: 5000 }).catch(() => null), pg.click('.libro:has-text("manual") .abrir')]);
   if (pop) await pop.waitForLoadState().catch(() => {});
   ok(!!pop, 'el PDF se abre en otra pestaña, en el visor del teléfono (el Chromium sin pantalla no trae visor de PDF: basta con que abra)' + (pop ? ' · ' + pop.url().slice(0, 30) : ' · no abrió'));
   if (pop) await pop.close();
+  /* texto a voz */
+  await pg.click('.libro:has-text("Mi novela de prueba") .abrir'); await pg.waitForSelector('#lector:not([hidden])');
+  ok(await pg.evaluate(() => document.querySelector('#lector').classList.contains('sinbarra')), 'el libro abre a pantalla completa: la barra sale sólo con un toque');
+  await pg.evaluate(() => document.querySelector('#hoja').click()); await pg.waitForTimeout(250);
+  ok(!(await pg.evaluate(() => document.querySelector('#lector').classList.contains('sinbarra'))), 'un toque saca la barra');
+  await pg.click('#escuchar'); await pg.waitForTimeout(400);
+  const v1 = await pg.evaluate(() => ({ visible: !document.querySelector('#voz').hidden, dichos: speechSynthesis.dichos.slice(), marcado: !!document.querySelector('#texto .leyendo') }));
+  ok(v1.visible && v1.dichos.length >= 3 && v1.marcado, `«Escuchar» lee párrafo tras párrafo y marca el que va (${v1.dichos.length} leídos)`);
+  const elegido = await pg.evaluate(() => { const ps = [...document.querySelectorAll('#texto p')]; const p = ps[ps.length - 5]; p.click(); return p.textContent.trim(); });
+  await pg.waitForTimeout(60);
+  ok(await pg.evaluate((t) => speechSynthesis.dichos.includes(t), elegido), 'tocar un párrafo la manda a leer desde ahí');
+  await pg.click('#vozVel');
+  ok(/1,25×/.test(await pg.textContent('#vozVel')), 'la velocidad se cambia (1,25×)');
+  await pg.click('#vozPausa');
+  ok(await pg.getAttribute('#vozPausa', 'aria-label') === 'Seguir escuchando', 'se puede pausar');
+  const guardado = await pg.evaluate(async () => { const l = (await window.__libros.todos()).find((x) => x.titulo === 'Mi novela de prueba'); return l.voz; });
+  await pg.click('#vozParar');
+  await pg.reload(); await pg.waitForFunction(() => document.querySelectorAll('.libro').length === 3);
+  await pg.click('.libro:has-text("Mi novela de prueba") .abrir'); await pg.waitForSelector('#lector:not([hidden])'); await pg.waitForTimeout(300);
+  await barra(pg); await pg.click('#escuchar'); await pg.waitForTimeout(20);
+  const reanuda = await pg.evaluate((g) => { const bs = [...document.querySelectorAll('#texto p, #texto li, #texto h1, #texto h2, #texto h3, #texto h4, #texto blockquote')].filter((x) => x.textContent.trim()); return speechSynthesis.dichos[0] === bs[g.p]?.textContent.trim(); }, guardado);
+  ok(guardado && reanuda, `al volver, la voz sigue donde se quedó (capítulo ${guardado && guardado.cap + 1}, párrafo ${guardado && guardado.p + 1})`);
+  await pg.click('#vozParar'); await barra(pg); await pg.click('#cerrar');
   /* quitar */
   await pg.click('.libro:has-text("cuento corto") .quitar');
   await pg.waitForFunction(() => document.querySelectorAll('.libro').length === 2);

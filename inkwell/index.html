@@ -27,6 +27,23 @@ html,body{margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 var(--
 a{color:inherit}
 button{font:inherit}
 :focus-visible{outline:2px solid var(--accent-ink); outline-offset:2px}
+/* «Seguir leyendo»: elegir qué serie, todo seguido o un libro */
+.seguir-btn{width:100%; min-height:54px; font-size:16px; margin:2px 0 14px}
+#dlgSeguir{border:0; padding:0; margin:auto auto 0; width:min(560px,100%); max-width:100%; max-height:85dvh; border-radius:24px 24px 0 0; background:var(--bg2); color:var(--ink)}
+#dlgSeguir::backdrop{background:rgba(0,0,0,.6)}
+@media (min-width:640px){ #dlgSeguir{margin:auto; border-radius:24px} }
+.hoja-s{padding:10px 16px calc(18px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:8px; max-height:85dvh; overflow-y:auto}
+.agarra{width:44px; height:5px; border-radius:99px; background:var(--line); margin:2px auto 6px}
+.hoja-s h2{margin:4px 0 6px}
+.opc{display:flex; align-items:center; gap:12px; min-height:64px; padding:8px 10px; border-radius:16px; background:var(--card); border:1px solid var(--line); text-decoration:none; color:var(--ink)}
+.opc img, .opc .mini{width:44px; height:58px; border-radius:8px; object-fit:cover; flex:none; background:var(--card2); display:grid; place-items:center; color:var(--accent-ink)}
+.opc.todo .mini{background:var(--accent); color:#fff}
+.opc div{flex:1; min-width:0}
+.opc b{display:block; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.opc span{display:block; color:var(--dim); font-size:13px}
+.opc .chev{width:18px; height:18px; color:var(--dim); flex:none}
+.opc-h{font:700 12px var(--sans); letter-spacing:.1em; text-transform:uppercase; color:var(--dim); margin:10px 2px 0}
+
 section[hidden]{display:none}
 .oculto{position:absolute; top:0; left:0; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
 
@@ -139,6 +156,7 @@ h2 a .ico{width:18px; height:18px}
     <h1 class="oculto">INKWELL</h1>
     <div class="hero" id="hero"></div>
     <div class="pad">
+      <button type="button" class="boton seguir-btn" id="seguirLeyendo"><span class="ic-libro"></span>Seguir leyendo</button>
       <form class="buscador" action="tiras.html" method="get" role="search">
         <span class="i-buscar"></span>
         <input type="search" name="buscar" placeholder="Busca un cómic, manga o novela" aria-label="Buscar un cómic, manga o novela" autocomplete="off">
@@ -195,6 +213,15 @@ h2 a .ico{width:18px; height:18px}
     <p class="lema" id="espacio">Calculando cuánto ocupa lo que tienes bajado…</p></div>
   </section>
 </main>
+
+<dialog id="dlgSeguir" aria-labelledby="tSeguir">
+  <div class="hoja-s">
+    <div class="agarra" aria-hidden="true"></div>
+    <h2 id="tSeguir">¿Qué quieres seguir leyendo?</h2>
+    <div id="opcionesSeguir"></div>
+    <button type="button" class="boton suave" id="cerrarSeguir">Cerrar</button>
+  </div>
+</dialog>
 
 <nav class="nav" id="nav" aria-label="Secciones de INKWELL"></nav>
 
@@ -268,10 +295,10 @@ const total = (s) => (s.caps || []).length;
 const leidos = (s) => Math.min((s.leidos || []).length + (s.caps || []).filter((c) => c.n < (s.desde || 0)).length, total(s));
 const tipo = (s) => s.fuente === 'webtoon' ? 'Webtoon' : 'Wattpad';
 const poster = (s) => { const p = portada(s), falta = total(s) - leidos(s);
-  return `<a class="poster" href="tiras.html">${p ? `<img src="${p}" alt="" loading="lazy">` : `<span class="sin">${icono('image')}</span>`}
+  return `<a class="poster" href="tiras.html?ficha=${encodeURIComponent(s.id)}">${p ? `<img src="${p}" alt="" loading="lazy">` : `<span class="sin">${icono('image')}</span>`}
     <span class="etq">${tipo(s)}</span><b>${esc(s.titulo)}</b>${falta > 0 ? `<span class="nuevo">${falta} por leer</span>` : '<span class="nuevo">Al día</span>'}</a>`; };
 const seguir = (s) => { const p = portada(s), t = total(s), l = leidos(s);
-  return `<a class="seguir" href="tiras.html">${p ? `<img src="${p}" alt="" loading="lazy">` : ''}<b>${esc(s.titulo)}</b>
+  return `<a class="seguir" href="tiras.html?leer=${encodeURIComponent(s.id)}">${p ? `<img src="${p}" alt="" loading="lazy">` : ''}<b>${esc(s.titulo)}</b>
     <span>Capítulo ${Math.min(l + 1, t)} de ${t}</span><div class="avance"><i style="width:${t ? Math.round(l / t * 100) : 0}%"></i></div></a>`; };
 
 let todas = [], filtro = 'todo';
@@ -292,7 +319,7 @@ function pintarHero(){
   }
   const lista = ds.length ? ds : [orden[0]];
   $('#hero').innerHTML = `<div class="hero-pistas" id="pistas">${lista.map((s, i) => { const p = portada(s), t = total(s), l = leidos(s);
-    return `<a class="diapo${p ? '' : ' vacia'}" href="tiras.html" aria-label="${esc(s.titulo)}: seguir leyendo">${p ? `<img src="${p}" alt=""${i ? ' loading="lazy"' : ''}>` : ''}
+    return `<a class="diapo${p ? '' : ' vacia'}" href="tiras.html?leer=${encodeURIComponent(s.id)}" aria-label="${esc(s.titulo)}: seguir leyendo">${p ? `<img src="${p}" alt=""${i ? ' loading="lazy"' : ''}>` : ''}
       <span class="sup">${i === 0 ? 'Continuar leyendo' : 'En tu biblioteca'}</span><b>${esc(s.titulo)}</b>
       <div class="pildoras"><span class="pildora">${tipo(s)}</span><span class="pildora clara">${l} de ${t} capítulos</span></div>
       <span class="boton">${icono('book-open')}${l ? 'Seguir leyendo' : 'Empezar a leer'}</span></a>`; }).join('')}</div>
@@ -310,6 +337,26 @@ function pintarListas(){
   $('#filaSeries').innerHTML = ss.length ? `<div class="rejilla">${ss.map(poster).join('')}</div>` : vacio;
   $('#rejillaSeries').innerHTML = todas.length ? `<div class="rejilla">${todas.map(poster).join('')}</div>` : vacio;
 }
+
+
+/* ── «Seguir leyendo»: elige qué serie, todo seguido, o un libro que vas leyendo ── */
+document.querySelectorAll('.ic-libro').forEach((e) => { e.outerHTML = icono('book-open'); });
+$('#seguirLeyendo').addEventListener('click', async () => {
+  let libros = [];
+  try{ const m = await import('./libros.js'); libros = (await m.todos()).filter((l) => l.tipo !== 'pdf' && ((l.avance?.cap || 0) + (l.avance?.y || 0)) > 0); }catch{}
+  const conPend = todas.filter((s) => leidos(s) < total(s));
+  const chev = icono('chevron-right', 'chev');
+  const filas = [];
+  if(conPend.length) filas.push(`<a class="opc todo" href="tiras.html?leer=todo"><span class="mini">${icono('layers')}</span><div><b>Todo seguido</b><span>Todas tus series en un solo scroll</span></div>${chev}</a>`);
+  if(conPend.length) filas.push('<p class="opc-h">Series</p>', ...conPend.map((s) => { const p = portada(s), l = leidos(s);
+    return `<a class="opc" href="tiras.html?leer=${encodeURIComponent(s.id)}">${p ? `<img src="${p}" alt="">` : `<span class="mini">${icono('image')}</span>`}<div><b>${esc(s.titulo)}</b><span>${l ? `Vas en el cap. ${l + 1} de ${total(s)}` : `Empieza · ${total(s)} capítulos`}</span></div>${chev}</a>`; }));
+  if(libros.length) filas.push('<p class="opc-h">Libros</p>', ...libros.map((l) => { const u = l.portada ? URL.createObjectURL(l.portada) : '';
+    return `<a class="opc" href="libros.html?abrir=${encodeURIComponent(l.id)}">${u ? `<img src="${u}" alt="">` : `<span class="mini">${icono('book-open')}</span>`}<div><b>${esc(l.titulo)}</b><span>Capítulo ${(l.avance?.cap || 0) + 1} de ${l.capitulos.length}</span></div>${chev}</a>`; }));
+  $('#opcionesSeguir').innerHTML = filas.length ? filas.join('') : '<div class="vacio"><b>Nada a medias</b>Agrega una serie en Tiras o un libro en Libros y aquí te lo dejamos a la mano.</div>';
+  $('#dlgSeguir').showModal();
+});
+$('#cerrarSeguir').addEventListener('click', () => $('#dlgSeguir').close());
+$('#dlgSeguir').addEventListener('click', (e) => { if(e.target === $('#dlgSeguir')) $('#dlgSeguir').close(); });
 
 (async () => {
   todas = await series();
