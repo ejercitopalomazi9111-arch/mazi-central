@@ -4,6 +4,7 @@ import { pdf, epub, tamanoJpeg } from './archivos.js';
 import { icono } from './iconos.js';
 import { pintarMuelle } from './muelle.js';
 import { plumilla } from './tinta.js';
+import { abrirComentarios } from './comunidad.js';
 import { apuntar } from './biblioteca.js';
 import { codigoDe, leerCodigo, seriesDeRanking, elegirNuevas, GENEROS, seriesDeGenero } from './compartir.js';
 
@@ -231,7 +232,7 @@ $('#letraMenos').addEventListener('click', () => { letra = Math.max(14, letra - 
 $('#letraMas').addEventListener('click', () => { letra = Math.min(30, letra + 2); escribir('tiras.letra', letra); ponerLector(); });
 ponerLector();
 document.querySelectorAll('.ic[data-ic]').forEach((e) => { e.outerHTML = icono(e.dataset.ic); });
-$('#fCerrar').innerHTML = icono('x'); $('#fArchivo').innerHTML = icono('download'); $('#fMas').innerHTML = icono('settings');
+$('#fCerrar').innerHTML = icono('x'); $('#fArchivo').innerHTML = icono('download'); $('#fMas').innerHTML = icono('settings'); $('#fCom').innerHTML = icono('message-circle');
 $('#leerTodo').innerHTML = icono('book-open') + 'Leer seguido';
 
 /* ── agregar ── */
@@ -419,6 +420,8 @@ async function siguiente(){
     });
     else { const d = document.createElement('div'); d.className = 'texto'; d.innerHTML = reg.html; art.append(d); }
     const fin = document.createElement('div'); fin.className = 'fin-cap'; art.append(fin);
+    const com = document.createElement('button'); com.type = 'button'; com.className = 'com-cap'; com.innerHTML = icono('message-circle') + `Comentar el capítulo ${reg.n}`;
+    com.addEventListener('click', () => abrirComentarios({ obra: x.s.id, cap: String(reg.n), titulo: x.s.titulo })); art.append(com);
     art._urls = mis;
     final.before(art);
     enLector.push({ clave: reg.clave, art });
@@ -535,6 +538,8 @@ $('#fCerrar').addEventListener('click', cerrarFicha);
 $('#fLeer').addEventListener('click', () => { const id = fichaId; cerrarFicha(); accion('leer', id); });
 $('#fArchivo').addEventListener('click', () => accion('archivo', fichaId));
 $('#fMas').addEventListener('click', () => accion('mas', fichaId));
+/* la Comunidad: los comentarios de la serie y los de cada capítulo */
+$('#fCom').addEventListener('click', () => abrirComentarios({ obra: fichaId, titulo: $('#fTitulo').textContent }));
 $('#fCaps').addEventListener('click', async (e) => {
   const b = e.target.closest('.f-cap'); if(!b) return;
   const s = limpia(await tx('series', 'readonly', (st) => st.get(fichaId))), n = +b.dataset.n, c = s.caps.find((x) => x.n === n);
@@ -769,7 +774,8 @@ function pintarVista(f, base){
   }
 }
 function cerrarVista(){ if(vistaDe && vistaDe.io) vistaDe.io.disconnect(); vistaDe = null; $('#vista').hidden = true; document.body.style.overflow = ''; }
-$('#vCerrar').innerHTML = icono('x'); $('#pCerrar').innerHTML = icono('x');
+$('#vCerrar').innerHTML = icono('x'); $('#pCerrar').innerHTML = icono('x'); $('#vCom').innerHTML = icono('message-circle');
+$('#vCom').addEventListener('click', () => { if(vistaDe && vistaDe.f) abrirComentarios({ obra: vistaDe.f.id, titulo: vistaDe.f.titulo }); });
 $('#vCerrar').addEventListener('click', cerrarVista);
 $('#vSinopsis').addEventListener('click', (e) => e.currentTarget.classList.remove('corta'));
 async function seguirVista(){

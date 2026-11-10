@@ -52,6 +52,26 @@ button{font:inherit}
 #dlgSeguir,#dlgObra{border:0; padding:0; margin:auto auto 0; width:min(560px,100%); max-width:100%; max-height:85dvh; border-radius:24px 24px 0 0; background:var(--bg2); color:var(--ink)}
 #dlgSeguir::backdrop,#dlgObra::backdrop{background:rgba(0,0,0,.6)}
 @media (min-width:640px){ #dlgSeguir,#dlgObra{margin:auto; border-radius:24px} }
+/* ── comunidad ── */
+.com-yo{display:flex; align-items:center; gap:12px; padding:14px; border-radius:20px; background:var(--card); border:1px solid var(--line); margin-bottom:14px}
+.com-yo div{flex:1; min-width:0}
+.com-yo b{display:block; font:400 20px var(--display)}
+.com-yo > div span{color:var(--dim); font-size:13px}
+.com-yo button{min-height:40px; padding:0 14px; border-radius:99px; border:1px solid var(--line); background:none; color:var(--ink); font:600 13px var(--sans); display:inline-flex; align-items:center; gap:6px; cursor:pointer}
+.com-yo .campana{position:relative; width:42px; padding:0; justify-content:center}
+.com-yo .campana i{position:absolute; top:-4px; right:-4px; min-width:18px; height:18px; padding:0 5px; border-radius:99px; background:var(--accent); color:#fff; font:700 11px/18px var(--sans); font-style:normal}
+#comCuerpo{margin-top:14px; display:flex; flex-direction:column; gap:10px}
+.com-tema{display:flex; flex-direction:column; gap:4px; text-align:left; width:100%; padding:14px 16px; border-radius:18px; background:var(--card); border:1px solid var(--line); color:var(--ink); cursor:pointer; font:inherit}
+.com-tema small{font:600 10.5px var(--sans); letter-spacing:.16em; text-transform:uppercase; color:var(--accent-ink)}
+.com-tema b{font:400 19px/1.2 var(--display)}
+.com-tema span{color:var(--dim); font-size:13px}
+.com-tema .cita{font:italic 300 16px/1.4 var(--serif); color:var(--ink); opacity:.85; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden}
+.com-tema.nuevo{border-color:color-mix(in srgb,var(--accent) 50%,transparent)}
+.com-form{display:flex; flex-direction:column; gap:10px; padding:16px; border-radius:20px; background:var(--card); border:1px solid var(--line)}
+.com-form input,.com-form textarea,.com-form select{min-height:46px; border-radius:14px; border:1px solid var(--line); background:var(--bg2); color:var(--ink); font:400 16px var(--sans); padding:10px 14px; width:100%}
+.com-form textarea{min-height:110px; resize:vertical}
+.com-form label{display:flex; flex-direction:column; gap:5px; font:600 12px var(--sans); color:var(--dim)}
+.com-form .fila{display:flex; gap:8px; align-items:center}
 /* ── biblioteca ── */
 /* ── el estante de lomos ── */
 .estante{display:flex; flex-direction:column; gap:30px; padding:6px 0 10px}
@@ -171,6 +191,7 @@ body.con-nav .tope{left:0}
 main{max-width:1180px; margin:0 auto; padding:0 0 40px}
 .pad{padding:0 16px}
 .titulo-vista{padding:calc(70px + env(safe-area-inset-top)) 16px 4px}
+.titulo-vista h1{font:400 clamp(38px,10vw,52px)/1 var(--display); letter-spacing:-.02em; margin:0 0 6px}
 h1{font:800 clamp(28px,7vw,40px)/1.08 var(--sans); letter-spacing:-.02em; margin:0 0 6px}
 .lema{color:var(--dim); margin:0 0 18px; font-size:15px; max-width:56ch}
 h2{font:400 23px/1.15 var(--display); letter-spacing:-.01em; margin:28px 0 12px; display:flex; align-items:center; justify-content:space-between; gap:10px}
@@ -278,6 +299,7 @@ h2 a .ico{width:18px; height:18px}
   <a class="marca" href="#inicio" aria-label="INKWELL, inicio"><span class="iso" aria-hidden="true"><img src="marca/pluma.png" alt=""></span><span class="pal">Inkwell</span></a>
   <span class="esp"></span>
   <a class="boton-ico" href="tiras.html" aria-label="Tiras: bajar y leer series" id="irTiras"></a>
+  <a class="boton-ico" href="#perfil" id="irPerfil" aria-label="Tu perfil de lector"></a>
   <button class="boton-ico" type="button" id="tema" aria-label="Cambiar entre modo claro y oscuro"></button>
 </header>
 
@@ -350,8 +372,15 @@ h2 a .ico{width:18px; height:18px}
   </section>
 
   <section id="v-comunidad" data-vista="comunidad" hidden>
-    <div class="titulo-vista"><h1>Comunidad</h1><p class="lema">Comentarios, reacciones, seguir a quien publica y avisos de capítulos nuevos.</p></div>
-    <div class="pad"><div class="vacio"><b>En construcción</b>Se enciende con las cuentas del equipo: sin cuentas no hay a quién seguir ni dónde guardar un comentario.</div></div>
+    <div class="titulo-vista"><h1>Comunidad</h1><p class="lema voz">Lo que dicen los que leen lo mismo que tú.</p></div>
+    <div class="pad">
+      <div id="comCuenta"></div>
+      <div id="comDentro" hidden>
+        <div class="com-yo" id="comYo"></div>
+        <div class="chips" id="comPestanas" role="tablist" aria-label="Apartados de la Comunidad"></div>
+        <div id="comCuerpo"></div>
+      </div>
+    </div>
   </section>
 
   <section id="v-perfil" data-vista="perfil" hidden>
@@ -411,7 +440,7 @@ const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<
 
 /* ── la navegación ── */
 pintarMuelle($('#nav'));
-$('#irTiras').innerHTML = icono('layers');
+$('#irTiras').innerHTML = icono('layers'); $('#irPerfil').innerHTML = icono('user');
 document.querySelectorAll('.b-buscar').forEach((e) => { e.innerHTML = icono('search'); });
 document.querySelectorAll('.i-buscar').forEach((e) => { e.outerHTML = icono('search'); });
 document.querySelectorAll('.i-chev').forEach((e) => { e.outerHTML = icono('chevron-right', 'chev'); });
@@ -754,6 +783,98 @@ $('#cerrarObra').addEventListener('click', () => $('#dlgObra').close());
 $('#dlgObra').addEventListener('click', (e) => { if(e.target === $('#dlgObra')) $('#dlgObra').close(); });
 let reacomodo; addEventListener('resize', () => { clearTimeout(reacomodo); reacomodo = setTimeout(() => { if(!$('#v-biblioteca').hidden) pintarBiblio(); }, 200); });
 addEventListener('hashchange', () => { if(location.hash === '#biblioteca') pintarBiblio(); });
+/* ── la Comunidad: cuenta, foros, lo reciente, avisos y tu perfil público ── */
+const C = await import('./comunidad.js');
+let comPestana = 'foros', comCategoria = '';
+const PESTANAS_COM = [['foros', 'Foros'], ['reciente', 'Lo reciente'], ['avisos', 'Avisos'], ['perfil', 'Mi perfil']];
+const CATS = { general: 'General', recomendaciones: 'Recomendaciones', teorias: 'Teorías', escritura: 'Escritura', dibujo: 'Dibujo', ayuda: 'Ayuda' };
+const tituloObra = (obra) => { const s = todas.find((x) => x.id === obra); return s ? s.titulo : obra.startsWith('tema:') ? 'Un tema del foro' : obra.startsWith('libro:') ? 'Un libro' : 'Una serie'; };
+async function pintarComunidad(){
+  const c = C.cuenta.leer();
+  $('#comDentro').hidden = !c; $('#comCuenta').hidden = !!c;
+  if(!c){ C.formularioCuenta($('#comCuenta'), () => pintarComunidad()); return; }
+  let yo = null; try{ yo = (await C.api('yo')).yo; }catch{}
+  if(!C.cuenta.leer()){ return pintarComunidad(); }
+  const av = C.avatar(c.usuario, c.nombre, yo && yo.foto, 48);
+  $('#comYo').replaceChildren(av);
+  $('#comYo').insertAdjacentHTML('beforeend', `<div><b>${esc((yo && yo.nombre) || c.nombre)}</b><span>@${esc(c.usuario)}${yo && yo.admin ? ' · Admin' : ''}</span></div>
+    <button type="button" class="campana" id="comCampana" aria-label="Avisos">${icono('bell')}${yo && yo.avisos ? `<i>${yo.avisos > 99 ? '99+' : yo.avisos}</i>` : ''}</button>`);
+  $('#comCampana').onclick = () => { comPestana = 'avisos'; pintarComPestana(); };
+  pintarComPestana();
+}
+function pintarComPestana(){
+  $('#comPestanas').innerHTML = PESTANAS_COM.map(([k, t]) => `<button type="button" class="chip" role="tab" data-p="${k}" aria-pressed="${k === comPestana}" aria-selected="${k === comPestana}">${t}</button>`).join('');
+  ({ foros: comForos, reciente: comReciente, avisos: comAvisos, perfil: comPerfil })[comPestana]();
+}
+$('#comPestanas').addEventListener('click', (e) => { const b = e.target.closest('[data-p]'); if(!b) return; comPestana = b.dataset.p; pintarComPestana(); });
+const cuerpo = (html) => { $('#comCuerpo').innerHTML = html; return $('#comCuerpo'); };
+async function comForos(){
+  const caja = cuerpo('<p class="lema">Cargando temas…</p>');
+  let r; try{ r = await C.api('temas', null, { params: comCategoria ? '?categoria=' + comCategoria : '' }); }catch(e){ caja.innerHTML = `<div class="vacio"><b>No se pudo cargar</b>${esc(e.message)}</div>`; return; }
+  caja.innerHTML = `<div class="chips chicas">${[['', 'Todos'], ...Object.entries(CATS)].map(([k, t]) => `<button type="button" class="chip" data-cat="${k}" aria-pressed="${k === comCategoria}">${t}</button>`).join('')}</div>
+    <button type="button" class="boton" id="comNuevo">${icono('pencil')}Abrir un tema</button>
+    <div id="comFormTema"></div>
+    ${r.temas.length ? r.temas.map((t) => `<button type="button" class="com-tema" data-tema="${t.id}" data-titulo="${esc(t.titulo)}"><small>${CATS[t.categoria] || 'General'}${t.fijo ? ' · Fijado' : ''}</small><b>${esc(t.titulo)}</b><span>${esc(t.nombre)} · ${t.respuestas} respuesta${t.respuestas === 1 ? '' : 's'} · ${C.hace(t.actividad)}</span></button>`).join('')
+      : '<div class="vacio"><b>Todavía no hay temas aquí</b>Abre el primero: una teoría, una recomendación o una duda.</div>'}`;
+  caja.onclick = (e) => {
+    const cat = e.target.closest('[data-cat]'); if(cat){ comCategoria = cat.dataset.cat; return comForos(); }
+    const t = e.target.closest('[data-tema]'); if(t) return C.abrirComentarios({ obra: 'tema:' + t.dataset.tema, titulo: t.dataset.titulo, sub: 'Foro' });
+    if(e.target.closest('#comNuevo')){
+      $('#comFormTema').innerHTML = `<form class="com-form" id="formTema"><label>Título<input name="titulo" maxlength="120" required placeholder="¿De qué quieres hablar?"></label>
+        <label>Categoría<select name="categoria">${Object.entries(CATS).map(([k, t]) => `<option value="${k}"${k === (comCategoria || 'general') ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
+        <label>Tu mensaje<textarea name="texto" maxlength="2000" required></textarea></label><p class="cm-error" id="errTema" role="alert"></p>
+        <div class="fila"><button type="submit" class="boton">Publicar el tema</button><button type="button" class="boton suave" id="cancTema">Cancelar</button></div></form>`;
+      $('#cancTema').onclick = () => { $('#comFormTema').innerHTML = ''; };
+      $('#formTema').onsubmit = async (ev) => { ev.preventDefault(); const d = Object.fromEntries(new FormData(ev.target));
+        try{ const r2 = await C.api('tema', d); await comForos(); C.abrirComentarios({ obra: 'tema:' + r2.id, titulo: d.titulo, sub: 'Foro' }); }catch(er){ $('#errTema').textContent = er.message; } };
+    }
+  };
+}
+async function comReciente(){
+  const caja = cuerpo('<p class="lema">Cargando…</p>');
+  let r; try{ r = await C.api('reciente'); }catch(e){ caja.innerHTML = `<div class="vacio"><b>No se pudo cargar</b>${esc(e.message)}</div>`; return; }
+  caja.innerHTML = r.comentarios.length ? r.comentarios.map((c) => `<button type="button" class="com-tema" data-obra="${esc(c.obra)}" data-cap="${esc(c.cap)}"><small>${esc(tituloObra(c.obra))}${c.cap ? ' · cap. ' + esc(c.cap) : ''}</small>
+      <span class="cita">${c.spoiler ? 'Comentario con spoilers' : esc(c.texto)}</span><span>${esc(c.nombre || c.usuario)} · ${C.hace(c.creado)}</span></button>`).join('')
+    : '<div class="vacio"><b>Aún no hay comentarios</b>Abre la ficha de una serie y deja el primero.</div>';
+  caja.onclick = (e) => { const b = e.target.closest('[data-obra]'); if(b) C.abrirComentarios({ obra: b.dataset.obra, cap: b.dataset.cap, titulo: tituloObra(b.dataset.obra) }); };
+}
+const QUE_AVISO = { respuesta: 'te respondió', mencion: 'te mencionó', reaccion: 'reaccionó a tu comentario', seguidor: 'empezó a seguirte', tema: 'respondió en tu tema' };
+async function comAvisos(){
+  const caja = cuerpo('<p class="lema">Cargando…</p>');
+  let r; try{ r = await C.api('avisos'); }catch(e){ caja.innerHTML = `<div class="vacio"><b>No se pudo cargar</b>${esc(e.message)}</div>`; return; }
+  caja.innerHTML = r.avisos.length ? r.avisos.map((a) => `<button type="button" class="com-tema${a.leido ? '' : ' nuevo'}" data-obra="${esc(a.obra)}" data-de="${esc(a.de)}"><small>${a.leido ? '' : 'Nuevo · '}${C.hace(a.creado)}</small>
+      <b>${esc(a.nombre)} ${QUE_AVISO[a.tipo] || ''}</b>${a.texto && a.tipo !== 'reaccion' ? `<span class="cita">${esc(a.texto)}</span>` : ''}</button>`).join('')
+    : '<div class="vacio"><b>Sin avisos</b>Cuando alguien te responda, te mencione o te siga, aparece aquí.</div>';
+  caja.onclick = (e) => { const b = e.target.closest('.com-tema'); if(!b) return; if(b.dataset.obra) C.abrirComentarios({ obra: b.dataset.obra, titulo: tituloObra(b.dataset.obra) }); else C.abrirPerfil(b.dataset.de); };
+  try{ await C.api('avisos', {}); const i = $('#comCampana i'); if(i) i.remove(); }catch{}
+}
+async function comPerfil(){
+  const caja = cuerpo('<p class="lema">Cargando…</p>');
+  let yo; try{ yo = (await C.api('yo')).yo; }catch(e){ caja.innerHTML = `<div class="vacio"><b>No se pudo cargar</b>${esc(e.message)}</div>`; return; }
+  caja.innerHTML = `<form class="com-form" id="formPerfil"><label>Nombre<input name="nombre" maxlength="40" value="${esc(yo.nombre)}"></label>
+    <label>Sobre ti<textarea name="bio" maxlength="300" placeholder="Qué lees, qué escribes, qué dibujas…">${esc(yo.bio || '')}</textarea></label>
+    <label class="fila"><input type="checkbox" name="publico" style="width:20px;min-height:20px"${yo.publico ? ' checked' : ''}> Enseñar mi estante en mi perfil</label>
+    <div class="fila"><button type="button" class="boton suave" id="perfilFoto">${icono('image')}Cambiar foto</button><input type="file" id="perfilArchivo" accept="image/*" hidden></div>
+    <p class="cm-error" id="errPerfil" role="alert"></p>
+    <div class="fila"><button type="submit" class="boton">Guardar</button><button type="button" class="boton suave" id="verMio">Ver cómo me ven</button></div></form>
+    <button type="button" class="boton suave" id="comSalir">${icono('log-out')}Salir de mi cuenta</button>`;
+  let foto;
+  $('#perfilFoto').onclick = () => $('#perfilArchivo').click();
+  $('#perfilArchivo').onchange = async (e) => { const f = e.target.files[0]; if(!f) return; const bm = await createImageBitmap(f), l = Math.min(bm.width, bm.height), cv = document.createElement('canvas'); cv.width = cv.height = 256;
+    cv.getContext('2d').drawImage(bm, (bm.width - l) / 2, (bm.height - l) / 2, l, l, 0, 0, 256, 256); foto = cv.toDataURL('image/jpeg', .82); $('#perfilFoto').innerHTML = icono('image') + 'Foto lista para guardar'; };
+  $('#verMio').onclick = () => C.abrirPerfil(yo.usuario);
+  $('#comSalir').onclick = async () => { try{ await C.api('salir', {}); }catch{} C.cuenta.borrar(); pintarComunidad(); };
+  $('#formPerfil').onsubmit = async (e) => {
+    e.preventDefault(); const d = Object.fromEntries(new FormData(e.target));
+    /* tu estante público sale de tu Biblioteca: título, lista y estrellas */
+    const estante = obras.filter((o) => o.tipo !== 'libro').slice(0, 60).map((o) => ({ id: o.id, titulo: o.titulo, lista: B.listaDe(o), nota: B.deObra(o.id).nota }));
+    try{ await C.api('perfil', { nombre: d.nombre, bio: d.bio, publico: !!d.publico, estante, ...(foto ? { foto } : {}) }); C.cuenta.guardar({ ...C.cuenta.leer(), nombre: d.nombre }); $('#errPerfil').textContent = 'Guardado.'; pintarComunidad(); }
+    catch(er){ $('#errPerfil').textContent = er.message; }
+  };
+}
+addEventListener('hashchange', () => { if(location.hash === '#comunidad') pintarComunidad(); });
+if(location.hash === '#comunidad') pintarComunidad();
+window.__comunidad = { C, pintarComunidad };
 window.__biblio = { B, get obras(){ return obras; }, pintarBiblio };
 
 (async () => {

@@ -1,7 +1,7 @@
 /* INKWELL · el muelle: la barra de secciones flotante con la pluma al centro para escribir.
    Una sola definición para todas las páginas (antes había cuatro copias). */
 import { icono } from './iconos.js';
-export const SECCIONES = [['inicio', 'Inicio', 'house'], ['explorar', 'Explorar', 'compass'], ['crear', 'Escribir', 'pen-tool'], ['biblioteca', 'Estante', 'library'], ['perfil', 'Tú', 'user']];
+export const SECCIONES = [['inicio', 'Inicio', 'house'], ['explorar', 'Explorar', 'compass'], ['crear', 'Escribir', 'pen-tool'], ['biblioteca', 'Estante', 'library'], ['comunidad', 'Comunidad', 'users']];
 /* raiz: dónde está index.html desde esta página ('' en el inicio, './' en Tiras, '../' en Studio).
    actual: la sección encendida. En el inicio los enlaces son sólo #seccion. */
 export function pintarMuelle(nav, { raiz = '', actual = null } = {}){

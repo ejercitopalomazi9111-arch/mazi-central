@@ -117,6 +117,8 @@ input[type=text],input[type=number],select{font:inherit; color:var(--ink); backg
 .cap .texto{font-family:var(--serif); font-size:var(--letra,18px); line-height:1.75; padding:0 22px}
 .cap .texto p{margin:0 0 1em}
 .fin-cap{height:1px}
+.com-cap{display:flex; align-items:center; justify-content:center; gap:8px; margin:22px auto 30px; min-height:46px; padding:0 20px; border-radius:99px; border:1px solid var(--line); background:var(--card); color:var(--ink); font:600 14px var(--sans); cursor:pointer}
+#vCom{width:52px; min-height:52px; padding:0}
 .al-final{padding:40px 20px 80px; min-height:60vh; text-align:center; color:var(--dim)}   /* espacio para subir el final del último capítulo hasta media pantalla: así también se marca leído */
 dialog{background:var(--card); color:var(--ink); border:1px solid var(--line); border-radius:18px; padding:0; width:min(520px, calc(100vw - 24px)); max-height:calc(100dvh - 24px)}
 dialog::backdrop{background:rgba(0,0,0,.7)}
@@ -340,6 +342,7 @@ main{padding-top:0}
     <button type="button" class="si" id="fLeer"></button>
     <button type="button" id="fArchivo" aria-label="Descargar en archivo"></button>
     <button type="button" id="fMas" aria-label="Más opciones"></button>
+    <button type="button" id="fCom" aria-label="Comentarios de la serie"></button>
   </div>
   <h3 class="f-h">Episodios <span id="fNum"></span></h3>
   <div class="f-caps" id="fCaps"></div>
@@ -359,6 +362,7 @@ main{padding-top:0}
   <div class="f-acciones">
     <button type="button" class="si" id="vSeguir"></button>
     <button type="button" id="vProbar" class="v-probar"></button>
+    <button type="button" id="vCom" aria-label="Comentarios de la serie"></button>
   </div>
   <h3 class="f-h">Episodios <span id="vNum"></span></h3>
   <p class="v-nota" id="vNota"></p>
