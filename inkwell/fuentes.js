@@ -63,6 +63,35 @@ export const webtoon = {
         .sort((a, b) => a.n - b.n),
     };
   },
+  /* la ficha para Explorar, como la página de la serie en Webtoon: género, vistas,
+     suscriptores, estado, sinopsis y episodios con miniatura (sin seguirla) */
+  async ficha(r, pedir){
+    const lista = `https://www.webtoons.com/${r.lang}/${r.genero}/${r.slug}/list?title_no=${r.titleNo}`;
+    const html = await (await pedir(lista)).text();
+    const uno = (re) => desentidad(((re.exec(html) || [])[1] || '').replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim();
+    const cifra = (ico) => uno(new RegExp(`class="${ico}"[\\s\\S]{0,200}?class="cnt">([^<]+)`));
+    const likes = {};
+    for(const m of html.matchAll(/data-episode-no="(\d+)"[\s\S]*?class="like_area[^"]*">[\s\S]*?<\/em>([\d.,]+)/g)) likes[m[1]] = m[2];
+    const dia = uno(/class="day_info">([\s\S]*?)<\/p>/);
+    const api = `https://m.webtoons.com/api/v1/${r.canvas ? 'canvas' : 'webtoon'}/${r.titleNo}/episodes?pageSize=99999`;
+    let eps = [];
+    try{ eps = ((await (await pedir(api)).json()).result || {}).episodeList || []; }catch{ eps = []; }
+    return {
+      id: webtoon.id(r), ref: r, enlace: lista,
+      titulo: uno(/<h1 class="subj">([\s\S]*?)<\/h1>/) || meta(html, 'og:title') || r.slug.replace(/-/g, ' '),
+      autor: uno(/<div class="author_area">([\s\S]*?)(?:<button|<\/div>)/).replace(/\s*,\s*/g, ', ').replace(/,\s*$/, '') || meta(html, 'com-linewebtoon:webtoon:author'),
+      genero: uno(/<h2 class="genre[^"]*">([^<]+)/),
+      vistas: cifra('ico_view'), suscriptores: cifra('ico_subscribe'), calificacion: cifra('ico_grade5'),
+      terminada: /txt_ico_completed/.test(html),
+      estado: /txt_ico_completed/.test(html) ? 'Finalizada' : (dia ? 'En emisión · ' + dia : 'En emisión'),
+      sinopsis: uno(/<p class="summary">([\s\S]*?)<\/p>/) || meta(html, 'og:description'),
+      portada: meta(html, 'og:image'),
+      fondo: (/detail_bg"[^>]*url\('([^']+)'/.exec(html) || [])[1] || '',
+      caps: eps.map((e) => ({ n: e.episodeNo, titulo: desentidad(e.episodeTitle || `Episodio ${e.episodeNo}`), url: 'https://www.webtoons.com' + e.viewerLink,
+        fecha: e.exposureDateMillis || null, miniatura: e.thumbnail ? 'https://webtoon-phinf.pstatic.net' + e.thumbnail + '?type=f160_151' : '', likes: likes[e.episodeNo] || '' }))
+        .sort((a, b) => a.n - b.n),
+    };
+  },
   /* las direcciones de las imágenes de un capítulo, en orden */
   async capitulo(cap, pedir){
     const html = await (await pedir(cap.url)).text();

@@ -331,11 +331,12 @@ $('#formAgregar').addEventListener('submit', async (e) => {
     ]);
     const rs = [...wt.map((x) => ({ ref: x.ref, titulo: x.titulo, sub: 'Webtoon · cómic' + (x.autor ? ' · ' + x.autor : ''), portada: x.portada, porRecadero: true })),
       ...wp.map((x) => ({ ref: { fuente: 'wattpad', story: String(x.story) }, titulo: x.titulo, sub: `Wattpad · texto · ${x.autor || ''} · ${x.partes} parte${x.partes === 1 ? '' : 's'}`, portada: x.portada }))];
-    $('#resultados').innerHTML = rs.length ? rs.map((x, i) => `<div class="resultado"><img alt="" data-p="${i}"><div><b>${esc(x.titulo)}</b><span>${esc(x.sub)}</span></div><button type="button" class="si" data-i="${i}">Seguir</button></div>`).join('')
+    $('#resultados').innerHTML = rs.length ? rs.map((x, i) => `<div class="resultado" data-v="${i}"><img alt="" data-p="${i}"><div><b>${esc(x.titulo)}</b><span>${esc(x.sub)}</span></div><button type="button" class="si" data-i="${i}">Seguir</button></div>`).join('')
       : '<p class="vacio">No encontré nada con ese nombre en Webtoon ni en Wattpad.</p>';
     for(const img of $('#resultados').querySelectorAll('img[data-p]')){ const x = rs[+img.dataset.p]; if(!x.portada) continue;
       if(x.porRecadero) pedir(x.portada).then((r) => r.blob()).then((b) => { img.src = urlDe(b); }).catch(() => {}); else img.src = x.portada; }
-    $('#resultados').onclick = (ev) => { const b = ev.target.closest('button[data-i]'); if(!b) return; b.disabled = true; b.textContent = 'Agregando…'; agregarRef(rs[+b.dataset.i].ref).then(() => { b.textContent = 'Ya la sigues'; }).catch((er) => { b.disabled = false; b.textContent = 'Seguir'; estado(er.message); }); };
+    $('#resultados').onclick = (ev) => { const b = ev.target.closest('button[data-i]');
+      if(!b){ const t = ev.target.closest('.resultado[data-v]'); if(t){ const x = rs[+t.dataset.v]; abrirVista(x.ref, { ...x, autor: x.sub.split(' · ')[2] || '' }); } return; } b.disabled = true; b.textContent = 'Agregando…'; agregarRef(rs[+b.dataset.i].ref).then(() => { b.textContent = 'Ya la sigues'; }).catch((er) => { b.disabled = false; b.textContent = 'Seguir'; estado(er.message); }); };
     estado(rs.length ? `${wt.length} en Webtoon · ${wp.length} en Wattpad.` : '', 'listo');
   } catch(er){ estado('No se pudo: ' + er.message); }
 });
@@ -701,17 +702,123 @@ $('#formGenero').addEventListener('submit', async (e) => {
   try{
     const sigo = new Set((await todasSeries()).map((x) => x.id));
     porGenero = seriesDeGenero(await (await pedir(`https://www.webtoons.com/${lang}/genres/${g}?sortOrder=LIKEIT`)).text()).slice(0, 60);
-    caja.innerHTML = porGenero.length ? porGenero.map((x, i) => `<div class="resultado"><img alt="" data-p="${i}"><div><b>${esc(x.titulo)}</b><span>${esc(x.autor)}</span></div>${sigo.has('webtoon:' + x.ref.titleNo) ? '<button type="button" disabled>Ya la sigues</button>' : `<button type="button" class="si" data-i="${i}">Seguir</button>`}</div>`).join('')
+    caja.innerHTML = porGenero.length ? porGenero.map((x, i) => `<div class="resultado" data-v="${i}"><img alt="" data-p="${i}"><div><b>${esc(x.titulo)}</b><span>${esc(x.autor)}</span></div>${sigo.has('webtoon:' + x.ref.titleNo) ? '<button type="button" disabled>Ya la sigues</button>' : `<button type="button" class="si" data-i="${i}">Seguir</button>`}</div>`).join('')
       : '<p class="vacio">No encontré cómics en esa categoría.</p>';
     /* las portadas piden venir «de webtoons.com»: van por el recadero, de a poco */
     for(const img of caja.querySelectorAll('img[data-p]')){ const x = porGenero[+img.dataset.p]; if(!x.portada) continue; pedir(x.portada).then((r) => r.blob()).then((b) => { img.src = urlDe(b); }).catch(() => {}); }
   } catch(er){ caja.innerHTML = `<p class="vacio">No se pudo: ${esc(er.message)}</p>`; }
 });
 $('#porGenero').addEventListener('click', async (e) => {
-  const b = e.target.closest('button[data-i]'); if(!b) return;
+  const b = e.target.closest('button[data-i]');
+  if(!b){ const t = e.target.closest('.resultado[data-v]'); if(t) abrirVista(porGenero[+t.dataset.v].ref, porGenero[+t.dataset.v]); return; }
   b.disabled = true; b.textContent = 'Agregando…';
   try{ await agregarRef(porGenero[+b.dataset.i].ref); b.textContent = 'Ya la sigues'; }catch(er){ b.disabled = false; b.textContent = 'Seguir'; estado('No se pudo: ' + er.message); }
 });
+/* ── la ficha de Explorar: la serie ANTES de seguirla ─────────────────────
+   Al tocar un cómic de la búsqueda o de un género se abre como su página en
+   Webtoon: portada, género, vistas, suscriptores, estado, sinopsis y los
+   episodios con miniatura, fecha y likes. Los primeros PRUEBA se leen de
+   probadita sin seguirla (no se guardan); para el resto, se sigue y se bajan. */
+const PRUEBA = 3;
+let vistaDe = null, previoUrls = [];
+const cifraMx = (t) => String(t || '').replace(/(\d)\s*K$/i, '$1 mil').replace(/(\d)\s*M$/i, '$1 M').replace(/(\d)\s*B$/i, '$1 mil M');
+const fechaMx = (f) => f ? new Date(f).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+const GENEROS_ES = { fantasy: 'Fantasía', romance: 'Romance', drama: 'Drama', action: 'Acción', comedy: 'Comedia', thriller: 'Suspenso', horror: 'Terror', 'slice of life': 'Vida cotidiana', 'sci-fi': 'Ciencia ficción', supernatural: 'Sobrenatural', mystery: 'Misterio', sports: 'Deportes', superhero: 'Superhéroes', 'historical': 'Histórico', 'heartwarming': 'Conmovedor', 'informative': 'Informativo', 'graphic novel': 'Novela gráfica', 'school': 'Escolar', 'local': 'Local', 'bl / gl': 'BL / GL' };
+function imgPor(img, u, wt){ if(!u) return; if(!wt){ img.src = u; return; } pedir(u).then((r) => r.blob()).then((b) => { img.src = urlDe(b); }).catch(() => {}); }
+async function abrirVista(ref, base = {}){
+  const id = ref.fuente === 'webtoon' ? FUENTES.webtoon.id(ref) : ref.story ? wattpad.id(ref.story) : null;
+  if(id && await tx('series', 'readonly', (st) => st.get(id))){ abrirFicha(id); return; }
+  const wt = ref.fuente === 'webtoon';
+  vistaDe = { ref, f: null, wt };
+  for(const k of ['vPortada', 'vFondo']) $('#' + k).removeAttribute('src');
+  imgPor($('#vPortada'), base.portada, wt && base.porRecadero !== false); imgPor($('#vFondo'), base.portada, wt && base.porRecadero !== false);
+  $('#vGenero').textContent = wt ? 'Webtoon · cómic' : 'Wattpad · texto';
+  $('#vTitulo').textContent = base.titulo || ''; $('#vAutor').textContent = base.autor || ''; $('#vEstado').textContent = '';
+  $('#vCifras').replaceChildren(); $('#vSinopsis').textContent = ''; $('#vNota').textContent = ''; $('#vNum').textContent = '';
+  $('#vSeguir').disabled = false; $('#vSeguir').innerHTML = icono('plus') + 'Seguir';
+  $('#vProbar').disabled = true; $('#vProbar').textContent = 'Probar el 1';
+  $('#vCaps').innerHTML = '<p class="vacio">Cargando los episodios…</p>';
+  $('#vista').hidden = false; $('#vista').scrollTop = 0; document.body.style.overflow = 'hidden';
+  try{
+    const f = wt ? await FUENTES.webtoon.ficha(ref, pedir) : await wattpad.serie(ref, directo);
+    if(!vistaDe || vistaDe.ref !== ref) return;
+    vistaDe.f = f; pintarVista(f, base);
+  } catch(er){ if(vistaDe && vistaDe.ref === ref) $('#vCaps').innerHTML = `<p class="vacio">No se pudo abrir: ${esc(er.message)}</p>`; }
+}
+function pintarVista(f, base){
+  const { wt } = vistaDe;
+  $('#vTitulo').textContent = f.titulo; $('#vAutor').textContent = f.autor || '';
+  if(f.genero) $('#vGenero').textContent = GENEROS_ES[f.genero.toLowerCase()] || f.genero;
+  $('#vEstado').textContent = f.estado || '';
+  if(f.fondo) imgPor($('#vFondo'), f.fondo, wt);
+  if(!base.portada && f.portada){ imgPor($('#vPortada'), f.portada, wt); if(!f.fondo) imgPor($('#vFondo'), f.portada, wt); }
+  const cifras = [[cifraMx(f.vistas), 'vistas'], [cifraMx(f.suscriptores), 'suscriptores'], [String(f.caps.length), f.caps.length === 1 ? 'episodio' : 'episodios']].filter(([v]) => v && v !== '0');
+  $('#vCifras').innerHTML = cifras.map(([v, t]) => `<div><b>${esc(v)}</b><span>${t}</span></div>`).join('');
+  const sin = f.sinopsis || f.descripcion || '';
+  $('#vSinopsis').textContent = sin; $('#vSinopsis').classList.toggle('corta', sin.length > 260);
+  $('#vNum').textContent = `${f.caps.length}`;
+  $('#vNota').textContent = f.caps.length > PRUEBA ? `Los primeros ${PRUEBA} se leen de probadita. Para el resto, síguela y se bajan a tu teléfono.` : '';
+  $('#vProbar').disabled = !f.caps.length; $('#vProbar').innerHTML = icono('play') + 'Probar el 1';
+  $('#vCaps').innerHTML = f.caps.map((c, i) => `<button type="button" class="f-cap v-ep${i < PRUEBA ? '' : ' cerrado'}" data-i="${i}">
+      ${wt ? `<img alt="" data-m="${i}">` : ''}<span class="tx"><b>${esc(c.titulo)}</b><small>${[fechaMx(c.fecha), c.likes ? c.likes + ' likes' : ''].filter(Boolean).join(' · ')}</small></span>
+      ${i < PRUEBA ? '<span class="gratis">Probar</span>' : ''}<span class="n">#${c.n}</span></button>`).join('');
+  /* miniaturas: sólo las que se asoman (una serie larga trae cientos) */
+  if(wt){
+    const io = new IntersectionObserver((es) => { for(const e of es){ if(!e.isIntersecting) continue; io.unobserve(e.target); imgPor(e.target, f.caps[+e.target.dataset.m].miniatura, true); } }, { root: $('#vista'), rootMargin: '400px' });
+    vistaDe.io = io; $('#vCaps').querySelectorAll('img[data-m]').forEach((im) => io.observe(im));
+  }
+}
+function cerrarVista(){ if(vistaDe && vistaDe.io) vistaDe.io.disconnect(); vistaDe = null; $('#vista').hidden = true; document.body.style.overflow = ''; }
+$('#vCerrar').innerHTML = icono('x'); $('#pCerrar').innerHTML = icono('x');
+$('#vCerrar').addEventListener('click', cerrarVista);
+$('#vSinopsis').addEventListener('click', (e) => e.currentTarget.classList.remove('corta'));
+async function seguirVista(){
+  if(!vistaDe) return;
+  const { ref } = vistaDe, b = $('#vSeguir');
+  b.disabled = true; b.textContent = 'Agregando…';
+  try{
+    const s = await agregarRef(ref);
+    const id = s ? s.id : (ref.fuente === 'webtoon' ? FUENTES.webtoon.id(ref) : wattpad.id(ref.story));
+    cerrarPrevio(); cerrarVista(); abrirFicha(id);
+  } catch(er){ b.disabled = false; b.innerHTML = icono('plus') + 'Seguir'; estado('No se pudo: ' + er.message); }
+}
+$('#vSeguir').addEventListener('click', seguirVista);
+$('#vProbar').addEventListener('click', () => abrirPrevio(0));
+$('#vCaps').addEventListener('click', (e) => {
+  const b = e.target.closest('.v-ep'); if(!b || !vistaDe || !vistaDe.f) return;
+  const i = +b.dataset.i;
+  if(i < PRUEBA) return abrirPrevio(i);
+  $('#vNota').textContent = `El capítulo ${vistaDe.f.caps[i].n} ya es para quien la sigue: toca «Seguir» y se baja a tu teléfono.`;
+  $('#vSeguir').focus(); $('#vista').scrollTo({ top: 0, behavior: 'smooth' });
+});
+async function abrirPrevio(i){
+  if(!vistaDe || !vistaDe.f) return;
+  const { f, wt } = vistaDe, c = f.caps[i], caja = $('#pScroll');
+  cerrarPrevio(true);
+  $('#pTitulo').textContent = f.titulo; $('#pSub').textContent = `Probadita · cap. ${c.n} · ${c.titulo}`;
+  caja.innerHTML = '<p class="vacio">Cargando el capítulo…</p>'; caja.scrollTop = 0; $('#previo').hidden = false;
+  const fin = `<div class="fin"><p>${i + 1 < Math.min(PRUEBA, f.caps.length) ? '¿Le sigues?' : f.caps.length > PRUEBA ? `Hasta aquí la probadita. Quedan ${f.caps.length - (i + 1)} capítulos.` : 'Es todo lo que hay por ahora.'}</p>
+    ${i + 1 < Math.min(PRUEBA, f.caps.length) ? `<button type="button" class="si" data-sig="${i + 1}">Siguiente · cap. ${f.caps[i + 1].n}</button>` : ''}
+    <button type="button" ${i + 1 < Math.min(PRUEBA, f.caps.length) ? '' : 'class="si"'} data-seguir>Seguir la serie</button></div>`;
+  try{
+    const r = await FUENTES[f.ref.fuente].capitulo(c, wt ? pedir : directo);
+    if($('#previo').hidden) return;
+    if(r.tipo === 'imagenes'){
+      caja.innerHTML = r.urls.map(() => '<img alt="">').join('') + fin;
+      const imgs = [...caja.querySelectorAll('img')]; let k = 0;
+      const otra = async () => { while(k < imgs.length && !$('#previo').hidden){ const j = k++;
+        try{ const u = URL.createObjectURL(await (await pedir(r.urls[j])).blob()); previoUrls.push(u); imgs[j].src = u; }catch{} } };
+      otra(); otra(); otra();
+    } else caja.innerHTML = `<div class="texto">${limpiarTexto(r.html)}</div>` + fin;
+  } catch(er){ caja.innerHTML = `<p class="vacio">No se pudo abrir el capítulo: ${esc(er.message)}</p>` + fin; }
+}
+function cerrarPrevio(sigue = false){ if(!sigue) $('#previo').hidden = true; previoUrls.forEach((u) => URL.revokeObjectURL(u)); previoUrls = []; $('#pScroll').replaceChildren(); }
+$('#pCerrar').addEventListener('click', () => cerrarPrevio());
+$('#pScroll').addEventListener('click', (e) => {
+  const sig = e.target.closest('[data-sig]'); if(sig) return abrirPrevio(+sig.dataset.sig);
+  if(e.target.closest('[data-seguir]')) seguirVista();
+});
+
 function bajar(f){ const u = URL.createObjectURL(f), a = document.createElement('a'); a.href = u; a.download = f.name; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 10000); }
 $('#cerrarArchivo').addEventListener('click', () => $('#dlgArchivo').close());
 
@@ -748,16 +855,17 @@ setInterval(() => { if(document.visibilityState === 'visible') preparar(); }, 15
 document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') preparar(); else guardarMarca(true); });
 if('serviceWorker' in navigator && !params.has('servidor')) navigator.serviceWorker.register('sw.js').catch(() => {});
 /* para las pruebas; va antes del arranque porque importar un link puede tardar */
-window.__tiras = { abrirFicha, preparar, todasSeries, clavesDe, get cola(){ return cola; }, get ocupado(){ return !!preparando || otraVez; } };
+window.__tiras = { abrirFicha, abrirVista, preparar, todasSeries, clavesDe, get cola(){ return cola; }, get ocupado(){ return !!preparando || otraVez; } };
 await pintarSeries(); espacio();
 /* desde el inicio: ?leer=todo | ?leer=<serie> | ?ficha=<serie> */
 const pideLeer = params.get('leer'), pideFicha = params.get('ficha');
 if(pideLeer || pideFicha) history.replaceState(null, '', location.pathname + (params.get('servidor') ? '?servidor=' + encodeURIComponent(params.get('servidor')) : ''));
 if(pideLeer === 'todo') abrirLector(); else if(pideLeer) accion('leer', pideLeer); else if(pideFicha) abrirFicha(pideFicha);
+{ const v = params.get('ver'), r = v && reconocer(v); if(r && r.fuente === 'webtoon') abrirVista(r); }
 /* vienen de Explorar en el inicio (tiras.html?buscar=…): se busca de una vez */
 if(params.get('buscar')){ $('#buscar').value = params.get('buscar'); $('#formAgregar').requestSubmit(); }
 { const m = leer(MARCA, null);
-  if(m && m.abierto && m.clave && Date.now() - (m.t || 0) < 30 * 864e5 && !location.hash.includes('series=') && !pideLeer && !pideFicha) abrirLector(m.serie || null); }
+  if(m && m.abierto && m.clave && Date.now() - (m.t || 0) < 30 * 864e5 && !location.hash.includes('series=') && !pideLeer && !pideFicha && !params.get('ver')) abrirLector(m.serie || null); }
 /* abrieron un link compartido (#series=…): se agregan todas de un jalón */
 { const cod = leerCodigo(location.hash);
   if(cod && cod.length && confirm(`Te compartieron ${cod.length} serie${cod.length > 1 ? 's' : ''}. ¿Agregarlas y empezar a bajarlas?`)){ history.replaceState(null, '', location.pathname + location.search); await importar(cod); }
