@@ -103,6 +103,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
   <button type="button" data-h="fondo"><span class="ic" data-ic="image"></span>Fondo</button>
   <button type="button" data-h="personaje"><span class="ic" data-ic="user"></span>Personaje</button>
   <button type="button" data-h="vestidor"><span class="ic" data-ic="users"></span>Vestidor</button>
+  <button type="button" data-h="dibujar"><span class="ic" data-ic="pen-tool"></span>Dibujar</button>
   <button type="button" data-h="globo"><span class="ic" data-ic="scroll-text"></span>Globo</button>
   <button type="button" data-h="ono"><span class="ic" data-ic="sparkles"></span>Onomatopeya</button>
   <button type="button" data-h="texto"><span class="ic" data-ic="pen-tool"></span>Texto</button>
@@ -135,6 +136,7 @@ import { una, guardar, nuevoId, paginaNueva, FORMATOS, alLibrero } from './obras
 import { dibujar, capaEn, PERSONAJES, POSES, srcPersonaje, FONDOS_KENNEY, srcFondoKenney, PIEZAS, archivoLpc, ORDEN_LPC, DIRS, LPC_POSES, COLORES,
   PERSONAJE_LPC, GLOBOS, COLAS, LETRAS, img, RAIZ_ARTE, EFECTOS, PLANTILLAS, vinetas } from './lienzo.js';
 import { pdf } from '../archivos.js';
+import { abrirDibujo } from './dibujo.js';
 const $ = (s) => document.querySelector(s);
 const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 document.querySelectorAll('.ic[data-ic]').forEach((e) => { e.outerHTML = icono(e.dataset.ic); });
@@ -231,6 +233,13 @@ const HERR = {
   ono(){ const t = enMedio(420, 160); agregar({ tipo: 'ono', ...t, w: 420, h: 160, rot: -8, texto: '¡BOOM!', letra: 'Bangers', color: '#FFD400', borde: '#111111', grosor: 10 }); },
   texto(){ const t = enMedio(560, 110); agregar({ tipo: 'texto', ...t, w: 560, h: 110, texto: 'Mientras tanto…', letra: 'Archivo', tam: 34, color: '#111111', borde: '#ffffff', grosor: 0, alinear: 'center', fondo: '' }); },
   marco(){ const p = pag(); agregar({ tipo: 'marco', x: 30, y: 30, w: p.ancho - 60, h: Math.round(p.alto / 3) - 40, grosor: 8, color: '#111111', relleno: '' }); },
+  async dibujar(){
+    /* se dibuja sobre la página entera: lo dibujado entra justo donde se pintó */
+    const p = pag(), fondo = document.createElement('canvas'); await dibujar(fondo, obra, p, { escala: 1 });
+    const r = await abrirDibujo({ ancho: p.ancho, alto: p.alto, base: null, titulo: 'Dibuja en la página', guia: fondo });
+    if(!r) return; const id = nuevoId('a'); obra.archivos[id] = r.blob;
+    agregar({ tipo: 'imagen', archivo: id, x: r.x, y: r.y, w: r.w, h: r.h, dibujo: true });
+  },
   efecto(){ const p = pag(); agregar({ tipo: 'efecto', x: 0, y: 0, w: p.ancho, h: p.alto, modo: 'bordes', color: '#000000', intensidad: 60 }); },
   imagen(){ $('#subir').click(); },
   capas(){ sel = null; pintarSel(); listaCapas(); },
@@ -331,6 +340,7 @@ function abrirProps(){
       ${desl('Intensidad', 'intensidad', 0, 100, c.intensidad ?? 60)}<div class="fila"><label class="desl" style="grid-template-columns:96px 44px">Color<input type="color" data-campo="color" value="${c.color || '#000000'}"></label></div>`;
   const marcos = pag().capas.filter((x) => x.tipo === 'marco');
   if(c.tipo !== 'marco' && marcos.length) h += `<p class="etq">Meter en viñeta (lo que se salga no se ve)</p><div class="fila"><button type="button" data-clip="" aria-pressed="${!c.clip}">Ninguna</button>${marcos.map((m, i) => `<button type="button" data-clip="${m.id}" aria-pressed="${c.clip === m.id}">Viñeta ${i + 1}</button>`).join('')}</div>`;
+  if(c.tipo === 'imagen' && !c.fondo) h += `<div class="fila"><button type="button" data-a="dibujarEncima">Dibujar encima</button></div>`;
   h += `<p class="etq">Acomodo</p><div class="fila"><button type="button" data-a="adelante">Al frente</button><button type="button" data-a="atras">Atrás</button>
       <button type="button" data-a="voltear">Voltear</button><button type="button" data-a="duplicar">Duplicar</button><button type="button" data-a="borrar">Borrar</button></div>
       ${desl('Giro', 'rot', -180, 180, Math.round(c.rot || 0))}${desl('Opacidad', 'opac', 0, 100, Math.round((c.opac ?? 1) * 100))}`;
@@ -348,7 +358,7 @@ $('#props').addEventListener('input', (e) => {
   } else if(k === 'fondoPagina') pag().fondo = v;
   pintar(); guardarLuego(); clearTimeout(anotar.t); anotar.t = setTimeout(anotar, 400);
 });
-$('#props').addEventListener('click', (e) => {
+$('#props').addEventListener('click', async (e) => {
   const b = e.target.closest('button'); if(!b) return; const c = capa(), p = pag();
   if(b.dataset.a === 'cerrar'){ sel = null; pintarSel(); return; }
   if(b.dataset.pose){ c.pose = b.dataset.pose; }
@@ -361,6 +371,11 @@ $('#props').addEventListener('click', (e) => {
   else if(b.dataset.clip != null){ c.clip = b.dataset.clip || null; }
   else if(b.dataset.plantilla){ const vs = vinetas(p, b.dataset.plantilla); p.capas = p.capas.filter((x) => x.tipo !== 'marco'); vs.forEach((v) => { v.id = nuevoId('k'); v.rot = 0; v.opac = 1; v.filtro = {}; p.capas.push(v); }); }
   else if(b.dataset.a === 'sinFondo'){ c.fondo = ''; }
+  else if(b.dataset.a === 'dibujarEncima'){
+    const im = await img(c.archivo ? URL.createObjectURL(obra.archivos[c.archivo]) : c.src); if(!im) return;
+    const r = await abrirDibujo({ ancho: Math.round(c.w), alto: Math.round(c.h), base: im, titulo: 'Dibuja encima' }); if(!r) return;
+    const id = nuevoId('a'); obra.archivos[id] = r.blob; c.archivo = id; delete c.src; c.x += r.x; c.y += r.y; c.w = r.w; c.h = r.h;
+  }
   else if(b.dataset.a === 'vestir'){ vest = JSON.parse(JSON.stringify(c.partes)); vestEditando = c.id; vestDir = String(c.dir); vestPose = `${c.anim}:${c.cuadro}`; abrirVestidor(); return; }
   else if(b.dataset.a === 'adelante'){ const i = p.capas.indexOf(c); p.capas.splice(i, 1); p.capas.push(c); }
   else if(b.dataset.a === 'atras'){ const i = p.capas.indexOf(c); p.capas.splice(i, 1); p.capas.unshift(c); }
@@ -408,14 +423,20 @@ $('#marco').addEventListener('pointerdown', (e) => {
   if(e.target.closest('.tir')) return;
   const q = punto(e), c = capaEn(pag(), q.x, q.y);
   if(!c){ if(sel){ sel = null; pintarSel(); } return; }
-  if(sel !== c.id){ sel = c.id; pintarSel(); abrirProps(); }
-  gesto = { modo: 'mover', id: c.id, x0: q.x, y0: q.y, cx: c.x, cy: c.y }; try{ $('#marco').setPointerCapture(e.pointerId); }catch{}
+  /* elegir NO abre el panel: sólo un toque sin mover lo abre (Carlos, 10 nov: «al arrastrar estorba») */
+  if(sel !== c.id){ sel = c.id; pintarSel(); }
+  gesto = { modo: 'mover', id: c.id, x0: q.x, y0: q.y, cx: c.x, cy: c.y, sx: e.clientX, sy: e.clientY, movio: false }; try{ $('#marco').setPointerCapture(e.pointerId); }catch{}
 });
 $('#tirTam').addEventListener('pointerdown', (e) => { e.stopPropagation(); const c = capa(); gesto = { modo: 'tam', q0: punto(e), w0: c.w, h0: c.h }; try{ e.target.setPointerCapture(e.pointerId); }catch{} });
 $('#tirGir').addEventListener('pointerdown', (e) => { e.stopPropagation(); gesto = { modo: 'gir' }; try{ e.target.setPointerCapture(e.pointerId); }catch{} });
 addEventListener('pointermove', (e) => {
   if(!gesto) return; const c = capa(); if(!c) return; const q = punto(e);
-  if(gesto.modo === 'mover'){ c.x = Math.round(gesto.cx + q.x - gesto.x0); c.y = Math.round(gesto.cy + q.y - gesto.y0); }
+  if(gesto.modo === 'mover'){
+    if(!gesto.movio && Math.hypot(e.clientX - gesto.sx, e.clientY - gesto.sy) < 6) return;   // todavía es un toque
+    if(!gesto.movio){ gesto.movio = true; $('#props').hidden = true; }
+    c.x = Math.round(gesto.cx + q.x - gesto.x0); c.y = Math.round(gesto.cy + q.y - gesto.y0);
+  } else if(!gesto.movio){ gesto.movio = true; $('#props').hidden = true; }
+  if(gesto.modo === 'mover'){}
   else if(gesto.modo === 'tam'){
     const a = -(c.rot || 0) * Math.PI / 180, dx = q.x - gesto.q0.x, dy = q.y - gesto.q0.y;
     const lx = dx * Math.cos(a) - dy * Math.sin(a), ly = dx * Math.sin(a) + dy * Math.cos(a);
@@ -425,7 +446,7 @@ addEventListener('pointermove', (e) => {
   } else if(gesto.modo === 'gir'){ const cx = c.x + c.w / 2, cy = c.y + c.h / 2; let g = Math.atan2(q.y - cy, q.x - cx) * 180 / Math.PI + 90; if(g > 180) g -= 360; c.rot = Math.round(Math.abs(g) < 4 ? 0 : g); }
   pintar();
 });
-addEventListener('pointerup', () => { if(gesto){ gesto = null; anotar(); guardarLuego(); if(capa()) abrirProps(); } });
+addEventListener('pointerup', () => { if(!gesto) return; const g = gesto; gesto = null; if(g.movio){ anotar(); guardarLuego(); } else if(g.modo === 'mover' && capa()) abrirProps(); });
 
 /* ── exportar y librero ── */
 async function lienzoGrande(p){ const c = document.createElement('canvas'); await dibujar(c, obra, p, { escala: 1 }); return c; }
