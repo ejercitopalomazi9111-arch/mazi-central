@@ -32,12 +32,15 @@
     "bindings": [
       { "name": "SALA", "class_name": "Sala" },
       // El respaldo de «Mis pingüinos»: un objeto por colección (pinguinos.js).
-      { "name": "PINGUINOS", "class_name": "Coleccion" }
+      { "name": "PINGUINOS", "class_name": "Coleccion" },
+      // INKWELL · la Comunidad: cuentas, comentarios, foros y perfiles (comunidad.js).
+      { "name": "COMUNIDAD", "class_name": "Comunidad" }
     ]
   },
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["Sala"] },
-    { "tag": "v2", "new_sqlite_classes": ["Coleccion"] }
+    { "tag": "v2", "new_sqlite_classes": ["Coleccion"] },
+    { "tag": "v3", "new_sqlite_classes": ["Comunidad"] }
   ],
 
   "vars": {
