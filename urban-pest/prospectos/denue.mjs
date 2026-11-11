@@ -10,6 +10,7 @@
      DENUE_TOKEN=… node urban-pest/prospectos/denue.mjs
    (o la llave en /tmp/claude-0/llave-inegi). La llave NUNCA va en el repo.
    Sale industria.csv (para Excel) e industria.json, por prioridad.
+   Luego: python3.13 urban-pest/prospectos/excel.py → el Excel para el cliente (con km desde su bodega).
    ═══════════════════════════════════════════════════════════════════════════ */
 import { readFileSync, writeFileSync } from 'node:fs';
 
