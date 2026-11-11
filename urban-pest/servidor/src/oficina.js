@@ -46,7 +46,7 @@ export class Oficina {
 
     const conv = (await this.A.get(k)) || { canal: m.canal, chat: m.chat, nombre: m.nombre, mensajes: [], datos: {}, estado: 'abierta' };
     if(m.nombre && !conv.nombre) conv.nombre = m.nombre;
-    conv.mensajes.push({ de: 'cliente', texto: m.texto ?? `(mandó ${m.tipo || 'algo que no es texto'})`, cuando: m.cuando || this.reloj() });
+    conv.mensajes.push({ de: 'cliente', texto: m.texto ?? `(mandó ${m.tipo || 'algo que no es texto'})`, cuando: m.cuando || this.reloj(), ...(m.quien ? { quien: m.quien } : {}) });
     conv.ultimo = this.reloj();
     const guarda = () => this.A.put(k, conv);
 
@@ -118,10 +118,10 @@ export class Oficina {
   }
 
   /** El dueño contesta desde su chat central: sale por el mismo canal y el bot se calla un rato. */
-  async contestaDueno(canal, chat, texto){
+  async contestaDueno(canal, chat, texto, quien){
     const k = `conv:${canal}:${chat}`, conv = await this.A.get(k);
     if(!conv) return { bien: false, error: 'No existe esa conversación.' };
-    await this.decir(conv, texto, { via: 'dueno' });
+    await this.decir(conv, texto, { via: 'dueno', ...(quien ? { quien } : {}) });
     conv.duenoHasta = this.reloj() + DUENO_CALLA_MS;
     await this.A.put(k, conv); return { bien: true };
   }

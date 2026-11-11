@@ -27,6 +27,7 @@ const TARIFAS_EJEMPLO = { ejemplo: true, minimo: 500, mano_obra_m2: 2, costo_km:
   tipos: { casa: { factor: 1 }, negocio: { factor: 1.2 }, industria: { factor: 1.4, visita: true } },
   zonas: { centro: 6, juriquilla: 18, 'el marques': 15, corregidora: 10, 'el refugio': 14, zibata: 20, 'san juan del rio': 55 } };
 
+const huella = async (t) => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(t))))].map(b => b.toString(16).padStart(2, '0')).join('');
 const json = (d, s = 200, h = {}) => new Response(JSON.stringify(d), { status: s, headers: { 'content-type': 'application/json; charset=utf-8', ...h } });
 
 export default {
@@ -53,10 +54,20 @@ export default {
       return new Response('ok');
     }
 
-    /* Todo lo demás es del panel (el centro de operaciones) y pide su llave */
-    if(!env.LLAVE_PANEL || req.headers.get('x-llave') !== env.LLAVE_PANEL) return json({ bien: false, error: 'Falta la llave del panel.' }, 401, cors);
+    /* Todo lo demás es del panel (el centro de operaciones). Entra quien trae la llave del panel
+       (Grupo Mazi) o un ACCESO: un código por persona que sólo abre esto y se quita cuando se quiera
+       (los testers, 11 nov). */
+    const admin = !!env.LLAVE_PANEL && req.headers.get('x-llave') === env.LLAVE_PANEL;
+    let quien = admin ? 'Grupo Mazi' : null;
+    const acceso = req.headers.get('x-acceso');
+    if(!admin && acceso){
+      const a = await (await despacho.fetch(new Request('https://do/interno/acceso', { method: 'POST', body: JSON.stringify({ codigo: acceso }) }))).json();
+      quien = a.nombre || null;
+    }
+    if(!quien) return json({ bien: false, error: 'Necesitas tu link de acceso. Pídeselo a Grupo Mazi.' }, 401, cors);
+    if(ruta.startsWith('/api/accesos') && !admin) return json({ bien: false, error: 'Sólo Grupo Mazi da accesos.' }, 403, cors);
     const cuerpo = req.method === 'POST' ? await req.json().catch(() => ({})) : {};
-    const r = await (await despacho.fetch(new Request('https://do/interno/panel', { method: 'POST', body: JSON.stringify({ metodo: req.method, ruta, q: Object.fromEntries(url.searchParams), b: cuerpo }) }))).json();
+    const r = await (await despacho.fetch(new Request('https://do/interno/panel', { method: 'POST', body: JSON.stringify({ metodo: req.method, ruta, q: Object.fromEntries(url.searchParams), b: cuerpo, quien }) }))).json();
     return json(r, r.estado || 200, cors);
   },
 };
@@ -80,7 +91,8 @@ export class Despacho {
   async fetch(req){
     const u = new URL(req.url), j = await req.json().catch(() => null);
     if(u.pathname === '/interno/recibir'){ await this.recibir(j || []); return new Response('ok'); }
-    if(u.pathname === '/interno/panel') return Response.json(await this.panel(j.metodo, j.ruta, j.q || {}, j.b || {}));
+    if(u.pathname === '/interno/panel') return Response.json(await this.panel(j.metodo, j.ruta, j.q || {}, j.b || {}, j.quien));
+    if(u.pathname === '/interno/acceso'){ const a = j?.codigo ? await this.almacen.get('acceso:' + await huella(j.codigo)) : null; return Response.json({ nombre: a?.nombre || null }); }
     return new Response('no', { status: 404 });
   }
 
@@ -90,13 +102,25 @@ export class Despacho {
     for(const m of mensajes){ try { await this.of.atender(m); } catch(e){ await this.almacen.put('error:' + Date.now(), String(e?.stack || e)); } }
   }
 
-  async panel(metodo, ruta, q, b){
+  async panel(metodo, ruta, q, b, quien = 'Grupo Mazi'){
     const A = this.almacen;
     const lista = async (p) => (await A.list(p)).map(([id, v]) => ({ id, ...v }));
     switch(`${metodo} ${ruta}`){
       case 'GET /api/conversaciones': return { bien: true, conversaciones: (await lista('conv:')).map(({ mensajes, ...c }) => ({ ...c, n: mensajes.length, ultimo_texto: mensajes.at(-1)?.texto, ultima_via: mensajes.at(-1)?.via })).sort((a, b) => b.ultimo - a.ultimo) };
       case 'GET /api/conversacion': return { bien: true, conversacion: await A.get(`conv:${q.canal}:${q.chat}`) };
-      case 'POST /api/responder': return this.of.contestaDueno(b.canal, b.chat, b.texto);
+      case 'GET /api/yo': return { bien: true, quien };
+      case 'POST /api/responder': return this.of.contestaDueno(b.canal, b.chat, String(b.texto || '').slice(0, 2000), quien);
+      case 'GET /api/accesos': return { bien: true, accesos: (await lista('acceso:')).map(({ nombre, creado }) => ({ nombre, creado })) };
+      case 'POST /api/accesos': {
+        /* el código sólo se ve aquí, una vez; se guarda su huella */
+        const nombre = String(b.nombre || '').trim().slice(0, 40); if(!nombre) return { bien: false, error: 'Falta el nombre.', estado: 400 };
+        const codigo = [...crypto.getRandomValues(new Uint8Array(12))].map(x => 'abcdefghjkmnpqrstuvwxyz23456789'[x % 31]).join('');
+        await A.put('acceso:' + await huella(codigo), { nombre, creado: Date.now() }); return { bien: true, nombre, codigo };
+      }
+      case 'POST /api/accesos/quitar': {
+        let n = 0; for(const [k, v] of await A.list('acceso:')) if(v.nombre === b.nombre){ await A.del(k); n++; }
+        return { bien: true, quitados: n };
+      }
       case 'GET /api/manual': return { bien: true, manual: await lista('manual:') };
       case 'POST /api/manual/aprobar': {
         /* lo que contestó la IA se vuelve reflejo */
@@ -120,7 +144,7 @@ export class Despacho {
         /* Carlos escribe como si fuera cliente; si no hay tarifas reales, se prueba con las de ejemplo */
         const texto = String(b.texto || '').slice(0, 1000).trim(); if(!texto) return { bien: false, error: 'Escribe algo.', estado: 400 };
         const chat = String(b.chat || 'prueba').replace(/[^a-z0-9-]/gi, '').slice(0, 40) || 'prueba';
-        const r = await this.of.atender({ canal: 'prueba', chat, nombre: 'Prueba (tú)', id: 'p' + Date.now() + Math.random().toString(36).slice(2, 6), texto, cuando: Date.now() }, { tarifas: TARIFAS_EJEMPLO });
+        const r = await this.of.atender({ canal: 'prueba', chat, nombre: String(b.nombre || 'Prueba').slice(0, 60), quien, id: 'p' + Date.now() + Math.random().toString(36).slice(2, 6), texto, cuando: Date.now() }, { tarifas: TARIFAS_EJEMPLO });
         return { bien: true, ...r };
       }
       case 'POST /api/probar/borrar': { await A.del(`conv:prueba:${String(b.chat || 'prueba').replace(/[^a-z0-9-]/gi, '')}`); return { bien: true }; }
