@@ -1,0 +1,10 @@
+// Servidor del bot de Urban Pest. Todavía NO está creado en Cloudflare:
+// se crea cuando Carlos lo diga (desplegar lo autoriza una persona).
+{
+  "name": "urban-pest",
+  "main": "src/index.js",
+  "compatibility_date": "2026-11-01",
+  "keep_vars": true,
+  "durable_objects": { "bindings": [{ "name": "DESPACHO", "class_name": "Despacho" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Despacho"] }]
+}

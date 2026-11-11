@@ -1,0 +1,90 @@
+/* Pruebas del servidor de Urban Pest, sin Cloudflare ni internet:
+ *   node urban-pest/servidor/pruebas.mjs
+ * La IA y Meta van de mentiras; el almacén es un Map. */
+import { readFileSync } from 'node:fs';
+import { reflejo, llenar } from './src/reflejo.js';
+import { cotizar } from './src/cotizador.js';
+import { firmaValida, leerAviso } from './src/meta.js';
+import { Oficina } from './src/oficina.js';
+
+let bien = 0, mal = 0;
+const ok = (q, c, d = '') => { if(c){ bien++; console.log('  ✓ ' + q); } else { mal++; console.log('  ✗ ' + q + (d ? '  → ' + d : '')); } };
+const casos = JSON.parse(readFileSync(new URL('../bot/casos.json', import.meta.url)));
+
+console.log('reflejo');
+ok('«oye cuánto cobran por fumigar?» → precio', reflejo('oye cuánto cobran por fumigar?', casos)?.caso.id === 'precio');
+ok('«¿Dan factura?» → factura', reflejo('¿Dan factura?', casos)?.caso.id === 'factura');
+ok('«fumigan bodegas industriales?» → empresa', reflejo('fumigan bodegas industriales?', casos)?.caso.id === 'empresa');
+ok('lo que no conoce lo deja pasar al cerebro', reflejo('mi perro se comió una cucaracha, ¿le pasa algo?', casos) === null);
+ok('un saludo solo no dispara nada', reflejo('hola buenas tardes', casos) === null);
+ok('llenar quita lo que falta', llenar('Son {m2} m² en {zona}', { m2: 80 }) === 'Son 80 m² en');
+
+console.log('cotizador');
+const T = { minimo: 500, mano_obra_m2: 2, costo_km: 4, radio_km: 40, margen: .3, umbral_visita_m2: 400,
+  plagas: { cucaracha: { litros_m2: .05, precio_litro: 60 } }, tipos: { casa: { factor: 1 }, industria: { factor: 1.4, visita: true } }, zonas: { centro: 6 } };
+const c1 = cotizar({ plaga: 'cucaracha', m2: 80, km: 6, tipo: 'casa' }, T);
+ok('una casa de 80 m² a 6 km: (240 + 160) + 48 de traslado, +30 % → $590', c1.bien && c1.desde === 590, JSON.stringify(c1));
+ok('una casa chiquita no baja del mínimo', cotizar({ plaga: 'cucaracha', m2: 10, km: 1 }, T).desde === 500);
+const c2 = cotizar({ plaga: 'cucaracha', m2: 1000, km: 20, tipo: 'industria' }, T);
+ok('una industria pide visita', c2.bien && c2.visita && c2.desde > 500, JSON.stringify(c2));
+ok('sin tarifas no inventa', !cotizar({ plaga: 'cucaracha', m2: 80, km: 6 }, null).bien);
+ok('dice qué falta', cotizar({ plaga: 'pulga', m2: 0 }, T).falta?.length === 3);
+ok('fuera del radio lo marca', cotizar({ plaga: 'cucaracha', m2: 80, km: 70 }, T).fueraDeRadio);
+
+console.log('meta');
+const secreto = 'secreto-de-prueba', cuerpo = '{"hola":1}';
+const k = await crypto.subtle.importKey('raw', new TextEncoder().encode(secreto), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+const firma = 'sha256=' + [...new Uint8Array(await crypto.subtle.sign('HMAC', k, new TextEncoder().encode(cuerpo)))].map(b => b.toString(16).padStart(2, '0')).join('');
+ok('firma buena pasa', await firmaValida(cuerpo, firma, secreto));
+ok('firma mala no pasa', !(await firmaValida(cuerpo + ' ', firma, secreto)));
+ok('sin secreto no pasa nada', !(await firmaValida(cuerpo, firma, '')));
+const wa = leerAviso({ object: 'whatsapp_business_account', entry: [{ changes: [{ value: { contacts: [{ wa_id: '524420000000', profile: { name: 'Ana' } }], messages: [{ from: '524420000000', id: 'w1', timestamp: '1700000000', type: 'text', text: { body: 'hola' } }] } }] }] });
+ok('WhatsApp: lee texto y nombre', wa[0]?.texto === 'hola' && wa[0].nombre === 'Ana' && wa[0].canal === 'whatsapp');
+const ig = leerAviso({ object: 'instagram', entry: [{ messaging: [{ sender: { id: 'ig1' }, message: { mid: 'm1', text: 'precio?' } }, { sender: { id: 'yo' }, message: { mid: 'm2', text: 'eco', is_echo: true } }] }] });
+ok('Instagram: lee el mensaje y tira el eco', ig.length === 1 && ig[0].canal === 'instagram' && ig[0].texto === 'precio?');
+
+console.log('oficina');
+const hacer = (opc = {}) => {
+  const M = new Map([['casos', casos], ['tarifas', T], ['personales', ['524421111111']]]);
+  const salidas = [], llamadas = [];
+  let reloj = 1_700_000_000_000;
+  const of = new Oficina({
+    almacen: { get: async k => M.get(k), put: async (k, v) => M.set(k, structuredClone(v)), list: async p => [...M].filter(([k]) => k.startsWith(p)) },
+    env: { DUENO_WA: '524429999999' }, reloj: () => reloj,
+    enviar: async (env, canal, chat, texto) => { salidas.push({ canal, chat, texto }); return { bien: true }; },
+    pensar: async (a) => { llamadas.push(a); return opc.pensar ? opc.pensar(a, llamadas.length) : { bien: true, respuesta: 'r', necesita_dueno: false, motivo: '', razon: 'x', datos: {} }; },
+  });
+  return { of, M, salidas, llamadas, avanza: (ms) => { reloj += ms; } };
+};
+let n = 0; const msj = (texto, chat = '524420000000', extra = {}) => ({ canal: 'whatsapp', chat, id: 'id' + (++n), texto, cuando: 0, ...extra });
+
+{ const t = hacer(); const r = await t.of.atender(msj('cuánto cuesta fumigar?'));
+  ok('pregunta conocida: contesta el reflejo sin gastar IA', r.hecho === 'reflejo' && !t.llamadas.length && t.salidas[0]?.texto.includes('plaga')); }
+{ const t = hacer(); const r = await t.of.atender(msj('cuánto cuesta fumigar?', '524421111111'));
+  ok('chat personal del dueño: ni lo toca', r.hecho === 'personal' && !t.salidas.length); }
+{ const t = hacer(); const m = msj('cuánto cuesta fumigar?'); await t.of.atender(m); const r = await t.of.atender(m);
+  ok('Meta repite el aviso: no contesta dos veces', r.hecho === 'repetido' && t.salidas.length === 1); }
+{ const t = hacer({ pensar: (a, i) => i === 1
+    ? { bien: true, respuesta: 'Va, ¿en qué colonia?', necesita_dueno: false, motivo: '', razon: 'faltaba zona', datos: { plaga: 'cucaracha', m2: 80, zona: 'Centro', tipo: 'casa' } }
+    : { bien: true, respuesta: `Te sale desde $${a.cotizacion.desde}`, necesita_dueno: false, motivo: '', razon: 'con precio', datos: {} } });
+  const r = await t.of.atender(msj('tengo cucarachas en mi casa del centro, son como 80 metros'));
+  ok('con los datos completos cotiza y la IA da el «desde»', r.hecho === 'cerebro' && t.llamadas.length === 2 && /desde \$590/.test(t.salidas[0]?.texto), JSON.stringify(t.salidas));
+  ok('lo que contestó la IA queda en el manual', [...t.M.keys()].some(k => k.startsWith('manual:'))); }
+{ const t = hacer({ pensar: () => ({ bien: true, respuesta: 'Te paso con el encargado', necesita_dueno: true, motivo: 'queja', razon: 'enojado', datos: {} }) });
+  await t.of.atender(msj('llevan tres veces y siguen las cucarachas, qué onda'));
+  ok('si hace falta el dueño, le llega aviso por WhatsApp', t.salidas.some(s => s.chat === '524429999999' && s.texto.includes('queja')) && [...t.M.keys()].some(k => k.startsWith('aviso:'))); }
+{ const t = hacer({ pensar: () => ({ bien: false, error: 'La IA contestó 529' }) });
+  const r = await t.of.atender(msj('pregunta rarísima'));
+  ok('si la IA falla, el cliente no se queda colgado y el dueño se entera', r.hecho === 'respaldo' && t.salidas.length === 2); }
+{ const t = hacer(); await t.of.atender(msj('cuánto cuesta fumigar?'));
+  await t.of.contestaDueno('whatsapp', '524420000000', 'Yo te atiendo, soy el dueño');
+  const r = await t.of.atender(msj('ok gracias, ¿y dan factura?'));
+  ok('cuando el dueño contesta, el bot se calla en ese chat', r.hecho === 'dueno-contesta' && t.salidas.length === 2);
+  t.avanza(31 * 60e3); const r2 = await t.of.atender(msj('¿dan factura?'));
+  ok('…y a la media hora vuelve', r2.hecho === 'reflejo'); }
+{ const t = hacer(); let r;
+  for(let i = 0; i < 22; i++) r = await t.of.atender(msj('pregunta ' + i + ' de algo raro'));
+  ok('tope de 20 respuestas por hora en un chat', r.hecho === 'tope' && t.salidas.filter(s => s.chat === '524420000000').length === 20); }
+
+console.log(`\n${bien} pasan · ${mal} fallan`);
+process.exit(mal ? 1 : 0);

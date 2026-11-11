@@ -34,7 +34,13 @@ portafolio.
 
 ### A · El bot (lo más importante)
 
-Va en dos capas, y las APIs de paga corren por cuenta del cliente.
+Va en dos capas.
+
+**Las IAs de paga NO se le dan al cliente** (decisión de Carlos, 11 nov): van dentro del paquete,
+a nombre nuestro y en nuestro servidor. Él las usa desde el **chat central** del centro de
+operaciones. Es como una sala donde habla con sus clientes, con sus IAs y con un bot automático
+que trae sus pendientes. Nunca recibe llaves. Así no depende de nadie más para cambios, y se
+queda con nosotros.
 
 - **El reflejo:** respuestas ya hechas para lo que preguntan siempre. Es rápido y sale casi
   gratis. Se arma por **casos** (unos 150 a 300, cada uno con muchas formas de preguntarlo), no
@@ -138,6 +144,6 @@ persona.
 2. La dirección de su página actual y quién tiene el dominio.
 3. Acceso a su Meta Business (página de Facebook, Instagram y el número de WhatsApp).
 4. Capturas o exportación de las preguntas que le llegan seguido.
-5. Qué IA de paga se usa y con qué presupuesto al mes. La cuenta va a nombre del cliente.
+5. Qué modelo de IA pagamos nosotros (va dentro del paquete). El de fábrica es el mejor; hay uno 40 veces más barato.
 6. Precios de los paquetes y fecha de entrega.
 7. Teléfono al que el bot le llama cuando lo necesite.
