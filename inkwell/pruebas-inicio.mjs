@@ -123,5 +123,31 @@ console.log('\npara ti');
   ok(!errores.length, 'sin errores en la consola' + (errores.length ? ' — ' + errores.join(' | ') : ''));
   await ctx.close();
 }
+/* que no brinque: la pantalla fantasmita está desde el HTML, se va al pintar, y todo queda guardado para abrir al instante */
+console.log('\nsin brincos');
+{
+  const html = fs.readFileSync(path.join(RAIZ, 'index.html'), 'utf8');
+  ok(/id="hero"><div class="esq-hero"/.test(html) && /id="filaSeries"><div class="esq-rejilla"/.test(html), 'el inicio trae su pantalla fantasmita en el HTML (sale antes de cualquier código)');
+  const css = fs.readFileSync(path.join(RAIZ, 'marca.css'), 'utf8');
+  ok(/@view-transition\{navigation:auto\}/.test(css) && /pag-entra/.test(css) && /animation:esq-sale \.2s \.18s/.test(css), 'entre páginas hay animación, y lo fantasma sólo se ve si tarda (180 ms)');
+  const ctx = await br.newContext({ viewport: { width: 390, height: 844 } });
+  await ctx.route(/sala\.palomazi9111/, (r) => r.fulfill({ status: 404, body: '{}' }));
+  const pg = await ctx.newPage(); const errores = []; pg.on('pageerror', (e) => errores.push(e.message));
+  await pg.goto(BASE + 'index.html');
+  await pg.waitForFunction(() => !document.querySelector('#hero .esq, #filaSeries .esq'), null, { timeout: 8000 }).catch(() => {});
+  ok(await pg.evaluate(() => !document.querySelector('#hero .esq, #filaSeries .esq')), 'en cuanto hay qué enseñar, lo fantasma se va');
+  await pg.evaluate(() => navigator.serviceWorker.ready);
+  await pg.reload(); await pg.waitForFunction(() => navigator.serviceWorker.controller, null, { timeout: 8000 }).catch(() => {});
+  await pg.waitForTimeout(800);
+  await ctx.setOffline(true);
+  const abre = async (ruta) => { try { await pg.goto(BASE + ruta, { timeout: 8000 }); return await pg.title(); } catch { return ''; } };
+  const tiras = await abre('tiras.html?ficha=x'), libros = await abre('libros.html'), studio = await abre('studio/comic.html?obra=x');
+  ok(/Tiras/i.test(tiras) && /Libros/i.test(libros) && /Studio|cómic/i.test(studio), `sin internet, las páginas a dos toques abren de lo guardado · ${tiras} | ${libros} | ${studio}`);
+  await ctx.setOffline(false);
+  const swc = fs.readFileSync(path.join(RAIZ, 'sw.js'), 'utf8');
+  ok(/if \(hit\) \{ e\.waitUntil\(red/.test(swc), 'el service worker contesta con lo guardado al instante y actualiza por detrás');
+  ok(!errores.length, 'sin errores en la consola' + (errores.length ? ' — ' + errores.join(' | ') : ''));
+  await ctx.close();
+}
 await br.close(); srv.close();
 console.log(`\n${bien} bien · ${mal} mal`); process.exit(mal ? 1 : 0);

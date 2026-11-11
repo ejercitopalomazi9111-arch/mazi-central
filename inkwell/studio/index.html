@@ -77,6 +77,8 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 .vacio b{font:400 21px var(--display); font-style:normal}
 
 </style>
+<!-- en Chrome y Edge, las páginas a las que puedes ir se piden antes de que toques (en el iPhone lo hace el service worker) -->
+<script type="speculationrules">{"prefetch":[{"source":"document","where":{"href_matches":"/inkwell/*"},"eagerness":"moderate"}]}</script>
 </head>
 <body class="con-nav">
 <main>
@@ -91,7 +93,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
     </div>
   </section>
   <h2>Tus obras</h2>
-  <div class="rejilla" id="obras"></div>
+  <div class="rejilla" id="obras"><div class="esq-rejilla" aria-hidden="true" style="grid-column:1/-1;grid-template-columns:repeat(2,minmax(0,1fr))"><div><div class="esq libro"></div><div class="esq linea"></div></div><div><div class="esq libro"></div><div class="esq linea"></div></div></div></div>
   <p class="privado"><span class="ic" data-ic="bookmark"></span>Tus obras se guardan sólo en este teléfono. Nadie más las ve hasta que tú las exportes o las pases a tu librero.</p>
 </main>
 

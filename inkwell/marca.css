@@ -102,3 +102,30 @@ body.con-nav{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
 .vt-tema::view-transition-group(root){background:#07050c}
 .vt-tema #tema svg{animation:tema-gira 1s cubic-bezier(.65,0,.2,1)}
 @keyframes tema-gira{from{transform:rotate(-120deg) scale(.4); opacity:0} to{transform:none; opacity:1}}
+
+/* ── cambiar de página sin brincos (Carlos, 11 nov) ──
+   Entre páginas, un fundido corto; el muelle y la marca se quedan quietos en su lugar. */
+@view-transition{navigation:auto}
+/* la página que se va se hunde y se apaga; la nueva sube desde abajo con un desenfoque que se aclara */
+html:not(.vt-tema)::view-transition-old(root){animation:pag-sale .28s cubic-bezier(.4,0,.2,1) both}
+html:not(.vt-tema)::view-transition-new(root){animation:pag-entra .42s cubic-bezier(.2,.8,.2,1) both}
+@keyframes pag-sale{to{opacity:0; transform:scale(.97); filter:blur(3px)}}
+@keyframes pag-entra{from{opacity:0; transform:translateY(22px); filter:blur(6px)}}
+html:not(.vt-tema) .nav{view-transition-name:muelle}
+html:not(.vt-tema) .marca{view-transition-name:marca}
+@media (prefers-reduced-motion:reduce){ @view-transition{navigation:none} html::view-transition-old(root),html::view-transition-new(root){animation:none !important} }
+
+/* ── la pantalla fantasmita (como Instagram): dónde irá cada cosa, mientras carga.
+   Sale sólo si tarda: los primeros 180 ms no se ve nada, así que si carga rápido no parpadea. ── */
+.esq{position:relative; overflow:hidden; background:color-mix(in srgb,var(--ink) 7%,var(--card)); border-radius:12px; opacity:0; animation:esq-sale .2s .18s forwards}
+.esq::after{content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--ink) 8%,transparent),transparent); animation:esq-brillo 1.3s .18s infinite}
+.esq.libro{aspect-ratio:3/4.2; border-radius:4px 12px 12px 4px}
+.esq.linea{height:14px; border-radius:7px; margin-top:8px}
+.esq.linea.corta{width:60%}
+.esq.renglon{height:76px; border-radius:18px}
+.esq-rejilla{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px}
+@media (min-width:640px){ .esq-rejilla{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))} }
+.esq-lista{display:flex; flex-direction:column; gap:10px}
+@keyframes esq-sale{to{opacity:1}}
+@keyframes esq-brillo{to{transform:translateX(100%)}}
+@media (prefers-reduced-motion:reduce){ .esq::after{animation:none} }

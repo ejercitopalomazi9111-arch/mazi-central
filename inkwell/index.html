@@ -52,6 +52,8 @@ button{font:inherit}
 #dlgSeguir,#dlgObra{border:0; padding:0; margin:auto auto 0; width:min(560px,100%); max-width:100%; max-height:85dvh; border-radius:24px 24px 0 0; background:var(--bg2); color:var(--ink)}
 #dlgSeguir::backdrop,#dlgObra::backdrop{background:rgba(0,0,0,.6)}
 @media (min-width:640px){ #dlgSeguir,#dlgObra{margin:auto; border-radius:24px} }
+/* ── la pantalla fantasmita del banner ── */
+.esq-hero{padding:calc(96px + env(safe-area-inset-top)) 18px 26px; min-height:clamp(560px,78vh,640px)}
 /* ── comunidad ── */
 .com-yo{display:flex; align-items:center; gap:12px; padding:14px; border-radius:20px; background:var(--card); border:1px solid var(--line); margin-bottom:14px}
 .com-yo div{flex:1; min-width:0}
@@ -293,6 +295,8 @@ h2 a .ico{width:18px; height:18px}
 .vacio{background:var(--card); border:1px dashed var(--line); border-radius:var(--radio); padding:20px; color:var(--dim)}
 .vacio b{color:var(--ink); display:block; font-size:17px; margin-bottom:4px}
 </style>
+<!-- en Chrome y Edge, las páginas a las que puedes ir se piden antes de que toques (en el iPhone lo hace el service worker) -->
+<script type="speculationrules">{"prefetch":[{"source":"document","where":{"href_matches":"/inkwell/*"},"eagerness":"moderate"}]}</script>
 </head>
 <body class="con-nav">
 <header class="tope">
@@ -306,7 +310,7 @@ h2 a .ico{width:18px; height:18px}
 <main>
   <section id="v-inicio" data-vista="inicio">
     <h1 class="oculto">INKWELL</h1>
-    <div class="hero" id="hero"></div>
+    <div class="hero" id="hero"><div class="esq-hero" aria-hidden="true"><div class="esq linea corta" style="width:40%"></div><div class="esq" style="height:96px;margin-top:14px;width:80%"></div><div style="display:grid;grid-template-columns:52% 1fr;gap:18px;margin-top:22px"><div class="esq libro"></div><div><div class="esq linea"></div><div class="esq linea corta"></div><div class="esq linea corta"></div></div></div><div class="esq" style="height:62px;border-radius:99px;margin-top:26px"></div></div></div>
     <div class="pad">
       <button type="button" class="boton suave seguir-btn" id="seguirLeyendo"><span class="ic-libro"></span>Elegir qué seguir leyendo</button>
       <form class="buscador" action="tiras.html" method="get" role="search">
@@ -318,7 +322,7 @@ h2 a .ico{width:18px; height:18px}
       <div id="bloqueSeguir"><h2>Continuar leyendo <a href="tiras.html">Ver todo <span class="i-chev"></span></a></h2>
       <div class="carril" id="continuar"></div></div>
       <h2>Tus series <a href="#biblioteca">Biblioteca <span class="i-chev"></span></a></h2>
-      <div id="filaSeries"></div>
+      <div id="filaSeries"><div class="esq-rejilla" aria-hidden="true"><div><div class="esq libro"></div><div class="esq linea"></div><div class="esq linea corta"></div></div><div><div class="esq libro"></div><div class="esq linea"></div><div class="esq linea corta"></div></div><div><div class="esq libro"></div><div class="esq linea"></div><div class="esq linea corta"></div></div></div></div>
       <div id="bloqueParaTi" hidden><h2>Para ti <small class="sub-h">series que aún no empiezas</small> <a href="#explorar">Más <span class="i-chev"></span></a></h2>
       <div class="carril carril-p" id="paraTi"></div></div>
       <h2>Apartados</h2>
@@ -353,7 +357,7 @@ h2 a .ico{width:18px; height:18px}
         <label>Ordenar<select id="bOrden"><option value="reciente">Lo último que leíste</option><option value="titulo">Título</option><option value="autor">Autor</option><option value="nota">Tu calificación</option><option value="avance">Avance</option><option value="pendientes">Más capítulos pendientes</option></select></label>
       </div>
       <div class="chips chicas" id="bEtiquetas" role="group" aria-label="Etiquetas"></div>
-      <div id="bObras"></div>
+      <div id="bObras"><div class="esq-rejilla" aria-hidden="true"><div><div class="esq libro"></div><div class="esq linea"></div><div class="esq linea corta"></div></div><div><div class="esq libro"></div><div class="esq linea"></div><div class="esq linea corta"></div></div><div><div class="esq libro"></div><div class="esq linea"></div><div class="esq linea corta"></div></div><div><div class="esq libro"></div><div class="esq linea"></div><div class="esq linea corta"></div></div><div><div class="esq libro"></div><div class="esq linea"></div><div class="esq linea corta"></div></div><div><div class="esq libro"></div><div class="esq linea"></div><div class="esq linea corta"></div></div></div></div>
       <div id="bSugeridas"></div>
       <div class="b-acciones">
         <button type="button" class="boton suave" id="bNuevaCol"></button>
@@ -444,7 +448,13 @@ $('#irTiras').innerHTML = icono('layers'); $('#irPerfil').innerHTML = icono('use
 document.querySelectorAll('.b-buscar').forEach((e) => { e.innerHTML = icono('search'); });
 document.querySelectorAll('.i-buscar').forEach((e) => { e.outerHTML = icono('search'); });
 document.querySelectorAll('.i-chev').forEach((e) => { e.outerHTML = icono('chevron-right', 'chev'); });
+/* cambiar de sección con la misma animación que entre páginas (marca.css): la que se va se hunde, la nueva sube */
+let primeraVez = true;
 function ir(){
+  if(primeraVez || !document.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches){ primeraVez = false; return irYa(); }
+  document.startViewTransition(irYa);
+}
+function irYa(){
   const v = (location.hash.slice(1) || 'inicio');
   const ok = [...document.querySelectorAll('[data-vista]')].some((x) => x.dataset.vista === v) ? v : 'inicio';
   document.querySelectorAll('[data-vista]').forEach((s) => { s.hidden = s.dataset.vista !== ok; });
@@ -809,7 +819,7 @@ function pintarComPestana(){
 $('#comPestanas').addEventListener('click', (e) => { const b = e.target.closest('[data-p]'); if(!b) return; comPestana = b.dataset.p; pintarComPestana(); });
 const cuerpo = (html) => { $('#comCuerpo').innerHTML = html; return $('#comCuerpo'); };
 async function comForos(){
-  const caja = cuerpo('<p class="lema">Cargando temas…</p>');
+  const caja = cuerpo('<div class="esq-lista" aria-hidden="true"><div class="esq renglon"></div><div class="esq renglon"></div><div class="esq renglon"></div><div class="esq renglon"></div></div>');
   let r; try{ r = await C.api('temas', null, { params: comCategoria ? '?categoria=' + comCategoria : '' }); }catch(e){ caja.innerHTML = `<div class="vacio"><b>No se pudo cargar</b>${esc(e.message)}</div>`; return; }
   caja.innerHTML = `<div class="chips chicas">${[['', 'Todos'], ...Object.entries(CATS)].map(([k, t]) => `<button type="button" class="chip" data-cat="${k}" aria-pressed="${k === comCategoria}">${t}</button>`).join('')}</div>
     <button type="button" class="boton" id="comNuevo">${icono('pencil')}Abrir un tema</button>
@@ -833,7 +843,7 @@ async function comForos(){
   };
 }
 async function comReciente(){
-  const caja = cuerpo('<p class="lema">Cargando…</p>');
+  const caja = cuerpo('<div class="esq-lista" aria-hidden="true"><div class="esq renglon"></div><div class="esq renglon"></div><div class="esq renglon"></div><div class="esq renglon"></div></div>');
   let r; try{ r = await C.api('reciente'); }catch(e){ caja.innerHTML = `<div class="vacio"><b>No se pudo cargar</b>${esc(e.message)}</div>`; return; }
   caja.innerHTML = r.comentarios.length ? r.comentarios.map((c) => `<button type="button" class="com-tema" data-obra="${esc(c.obra)}" data-cap="${esc(c.cap)}"><small>${esc(tituloObra(c.obra))}${c.cap ? ' · cap. ' + esc(c.cap) : ''}</small>
       <span class="cita">${c.spoiler ? 'Comentario con spoilers' : esc(c.texto)}</span><span>${esc(c.nombre || c.usuario)} · ${C.hace(c.creado)}</span></button>`).join('')
@@ -842,7 +852,7 @@ async function comReciente(){
 }
 const QUE_AVISO = { respuesta: 'te respondió', mencion: 'te mencionó', reaccion: 'reaccionó a tu comentario', seguidor: 'empezó a seguirte', tema: 'respondió en tu tema' };
 async function comAvisos(){
-  const caja = cuerpo('<p class="lema">Cargando…</p>');
+  const caja = cuerpo('<div class="esq-lista" aria-hidden="true"><div class="esq renglon"></div><div class="esq renglon"></div><div class="esq renglon"></div><div class="esq renglon"></div></div>');
   let r; try{ r = await C.api('avisos'); }catch(e){ caja.innerHTML = `<div class="vacio"><b>No se pudo cargar</b>${esc(e.message)}</div>`; return; }
   caja.innerHTML = r.avisos.length ? r.avisos.map((a) => `<button type="button" class="com-tema${a.leido ? '' : ' nuevo'}" data-obra="${esc(a.obra)}" data-de="${esc(a.de)}"><small>${a.leido ? '' : 'Nuevo · '}${C.hace(a.creado)}</small>
       <b>${esc(a.nombre)} ${QUE_AVISO[a.tipo] || ''}</b>${a.texto && a.tipo !== 'reaccion' ? `<span class="cita">${esc(a.texto)}</span>` : ''}</button>`).join('')
@@ -851,7 +861,7 @@ async function comAvisos(){
   try{ await C.api('avisos', {}); const i = $('#comCampana i'); if(i) i.remove(); }catch{}
 }
 async function comPerfil(){
-  const caja = cuerpo('<p class="lema">Cargando…</p>');
+  const caja = cuerpo('<div class="esq-lista" aria-hidden="true"><div class="esq renglon"></div><div class="esq renglon"></div><div class="esq renglon"></div><div class="esq renglon"></div></div>');
   let yo; try{ yo = (await C.api('yo')).yo; }catch(e){ caja.innerHTML = `<div class="vacio"><b>No se pudo cargar</b>${esc(e.message)}</div>`; return; }
   caja.innerHTML = `<form class="com-form" id="formPerfil"><label>Nombre<input name="nombre" maxlength="40" value="${esc(yo.nombre)}"></label>
     <label>Sobre ti<textarea name="bio" maxlength="300" placeholder="Qué lees, qué escribes, qué dibujas…">${esc(yo.bio || '')}</textarea></label>

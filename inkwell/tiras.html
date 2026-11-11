@@ -299,6 +299,8 @@ main{padding-top:0}
 .ayuda{color:var(--dim); font:italic 300 15px var(--serif)}
 
 </style>
+<!-- en Chrome y Edge, las páginas a las que puedes ir se piden antes de que toques (en el iPhone lo hace el service worker) -->
+<script type="speculationrules">{"prefetch":[{"source":"document","where":{"href_matches":"/inkwell/*"},"eagerness":"moderate"}]}</script>
 </head>
 <body class="con-nav">
 <main>
@@ -323,7 +325,7 @@ main{padding-top:0}
   <div class="resultados" id="resultados"></div>
 
   <h2>Tus series</h2>
-  <div class="series" id="series"></div>
+  <div class="series" id="series"><div class="esq-rejilla" aria-hidden="true" style="grid-column:1/-1;grid-template-columns:repeat(2,minmax(0,1fr))"><div><div class="esq libro"></div><div class="esq linea"></div><div class="esq linea corta"></div></div><div><div class="esq libro"></div><div class="esq linea"></div><div class="esq linea corta"></div></div><div><div class="esq libro"></div><div class="esq linea"></div><div class="esq linea corta"></div></div><div><div class="esq libro"></div><div class="esq linea"></div><div class="esq linea corta"></div></div></div></div>
 
   <h2>Descubre por género</h2>
   <form class="agregar" id="formGenero">
