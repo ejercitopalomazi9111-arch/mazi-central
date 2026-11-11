@@ -39,15 +39,33 @@ function abrir(){
       d.createObjectStore('series', { keyPath: 'id' });
       d.createObjectStore('caps', { keyPath: 'clave' }).createIndex('serie', 'serie');
     };
-    q.onsuccess = () => { db = q.result; ok(db); };
+    q.onsuccess = () => { db = q.result;
+      /* iOS cierra la conexión cuando le falta memoria o la app se va al fondo: se olvida y la siguiente se reabre */
+      db.onclose = () => { db = null; }; db.onversionchange = () => { try{ db.close(); }catch{} db = null; };
+      ok(db); };
     q.onerror = () => mal(q.error);
   });
 }
-const tx = async (tienda, modo, fn) => { const d = await abrir(); return new Promise((ok, mal) => {
-  const t = d.transaction(tienda, modo), s = t.objectStore(tienda); let res;
+/* «The database connection is closing» / «An internal error was encountered in the Indexed Database server»:
+   Carlos los vio en «Todo en archivos» con 735 capítulos. Son de la conexión, no de los datos: se reabre y se
+   vuelve a intentar (hasta 4 veces, esperando un poco más cada vez). */
+const DE_CONEXION = /closing|closed|internal error|UnknownError|InvalidStateError|connection/i;
+const tx1 = async (tienda, modo, fn) => { const d = await abrir(); return new Promise((ok, mal) => {
+  let t; try{ t = d.transaction(tienda, modo); }catch(e){ mal(e); return; }
+  const s = t.objectStore(tienda); let res;
   const r = fn(s); if(r) r.onsuccess = () => { res = r.result; };
-  t.oncomplete = () => ok(res); t.onerror = () => mal(t.error); t.onabort = () => mal(t.error);
+  t.oncomplete = () => ok(res); t.onerror = () => mal(t.error); t.onabort = () => mal(t.error || new Error('La transacción se canceló'));
 }); };
+const tx = async (tienda, modo, fn) => {
+  for(let i = 0; ; i++){
+    try{ return await tx1(tienda, modo, fn); }
+    catch(e){
+      if(i >= 3 || !DE_CONEXION.test(`${e && e.name} ${e && e.message}`)) throw e;
+      try{ db && db.close(); }catch{} db = null;
+      await new Promise((ok) => setTimeout(ok, 150 * (i + 1)));
+    }
+  }
+};
 /* lo guardado antes del 5 nov puede traer «&eacute;» en el título: se limpia al leer */
 const limpia = (s) => { if(!s) return s; s.titulo = desentidad(s.titulo || ''); if(s.autor) s.autor = desentidad(s.autor); for(const c of s.caps || []) c.titulo = desentidad(c.titulo || ''); return s; };
 let ultimoTop = 0;   /* dónde iba el scroll del lector (ver la barra que se esconde) */
@@ -666,8 +684,15 @@ $('#todoEmpezar').addEventListener('click', async () => {
     const ss = await todasSeries();
     const trabajos = [];
     for(const s of ss){ const t = PARTE[s.fuente] || 100; for(let i = 0; i < s.caps.length; i += t) trabajos.push({ s, caps: s.caps.slice(i, i + t) }); }
+    const fallaron = [];
     for(const [k, w] of trabajos.entries()){
-      const f = await armarArchivo(w.s, w.caps, (t, x) => { $('#tEstado').textContent = `Archivo ${k + 1} de ${trabajos.length} · ${t}`; $('#tBarra').style.width = (100 * (k + x) / trabajos.length) + '%'; });
+      /* si un archivo truena (al iPhone se le acaba la memoria con cientos de capítulos), se reintenta una vez y si no, se sigue con los demás */
+      let f = null;
+      for(let intento = 0; intento < 2 && !f; intento++){
+        try{ f = await armarArchivo(w.s, w.caps, (t, x) => { $('#tEstado').textContent = `Archivo ${k + 1} de ${trabajos.length} · ${t}`; $('#tBarra').style.width = (100 * (k + x) / trabajos.length) + '%'; }); }
+        catch(er){ if(intento) fallaron.push(`${w.s.titulo} (${w.caps[0].n}-${w.caps[w.caps.length - 1].n})`); else await new Promise((ok) => setTimeout(ok, 800)); }
+      }
+      if(!f) continue;
       todoListos.push(f);
       const fila = document.createElement('div'); fila.className = 'resultado';
       fila.innerHTML = `<span></span><div><b>${esc(f.name)}</b><span>${Math.round(f.size / 1e6) || 1} MB</span></div><button type="button" class="si" data-i="${todoListos.length - 1}">Guardar</button>`;
@@ -675,7 +700,8 @@ $('#todoEmpezar').addEventListener('click', async () => {
       if(!/iPhone|iPad/.test(navigator.userAgent)) bajar(f);
     }
     $('#tBarra').style.width = '100%';
-    $('#tEstado').textContent = `Listo: ${todoListos.length} archivo${todoListos.length > 1 ? 's' : ''}.` + (/iPhone|iPad/.test(navigator.userAgent) ? ' Toca «Guardar» en cada uno (Archivos o Libros).' : '');
+    $('#tEstado').textContent = `Listo: ${todoListos.length} archivo${todoListos.length === 1 ? '' : 's'}.` + (/iPhone|iPad/.test(navigator.userAgent) ? ' Toca «Guardar» en cada uno (Archivos o Libros).' : '')
+      + (fallaron.length ? ` No salieron ${fallaron.length}: ${fallaron.slice(0, 3).join(', ')}${fallaron.length > 3 ? '…' : ''}. Vuelve a intentarlo con esas; si sigue, en Ajustes pon el ahorro en «Máximo».` : '');
   } catch(er){ $('#tEstado').textContent = 'No se pudo: ' + er.message; }
   finally{ $('#todoEmpezar').disabled = false; try{ await candado?.release(); }catch{} pintarSeries(); }
 });
@@ -861,7 +887,7 @@ setInterval(() => { if(document.visibilityState === 'visible') preparar(); }, 15
 document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') preparar(); else guardarMarca(true); });
 if('serviceWorker' in navigator && !params.has('servidor')) navigator.serviceWorker.register('sw.js').catch(() => {});
 /* para las pruebas; va antes del arranque porque importar un link puede tardar */
-window.__tiras = { abrirFicha, abrirVista, preparar, todasSeries, clavesDe, get cola(){ return cola; }, get ocupado(){ return !!preparando || otraVez; } };
+window.__tiras = { cerrarBase: () => db && db.close(), abrirFicha, abrirVista, preparar, todasSeries, clavesDe, get cola(){ return cola; }, get ocupado(){ return !!preparando || otraVez; } };
 await pintarSeries(); espacio(); recomendacionesBase();
 /* desde el inicio: ?leer=todo | ?leer=<serie> | ?ficha=<serie> */
 const pideLeer = params.get('leer'), pideFicha = params.get('ficha');
