@@ -72,7 +72,7 @@ export class Despacho extends DurableObject {
     const A = this.almacen;
     const lista = async (p) => (await A.list(p)).map(([id, v]) => ({ id, ...v }));
     switch(`${metodo} ${ruta}`){
-      case 'GET /api/conversaciones': return { bien: true, conversaciones: (await lista('conv:')).map(({ mensajes, ...c }) => ({ ...c, n: mensajes.length, ultimo_texto: mensajes.at(-1)?.texto })).sort((a, b) => b.ultimo - a.ultimo) };
+      case 'GET /api/conversaciones': return { bien: true, conversaciones: (await lista('conv:')).map(({ mensajes, ...c }) => ({ ...c, n: mensajes.length, ultimo_texto: mensajes.at(-1)?.texto, ultima_via: mensajes.at(-1)?.via })).sort((a, b) => b.ultimo - a.ultimo) };
       case 'GET /api/conversacion': return { bien: true, conversacion: await A.get(`conv:${q.canal}:${q.chat}`) };
       case 'POST /api/responder': return this.of.contestaDueno(b.canal, b.chat, b.texto);
       case 'GET /api/manual': return { bien: true, manual: await lista('manual:') };
@@ -83,6 +83,7 @@ export class Despacho extends DurableObject {
         casos.push({ id: b.caso || b.id.replace('manual:', 'aprendido-'), frases: [e.pregunta, ...(b.frases || [])], respuesta: b.respuesta || e.respuesta });
         await A.put('casos', casos); await A.put(b.id, { ...e, estado: 'aprobado' }); return { bien: true, casos: casos.length };
       }
+      case 'POST /api/manual/descartar': { const e = await A.get(b.id); if(e) await A.put(b.id, { ...e, estado: 'descartado' }); return { bien: !!e }; }
       case 'GET /api/avisos': return { bien: true, avisos: (await lista('aviso:')).sort((a, b) => b.cuando - a.cuando) };
       case 'POST /api/aviso/visto': { const a = await A.get(b.id); if(a) await A.put(b.id, { ...a, estado: 'visto' }); return { bien: !!a }; }
       case 'GET /api/casos': return { bien: true, casos: (await A.get('casos')) || [] };

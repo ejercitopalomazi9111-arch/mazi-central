@@ -45,6 +45,7 @@ Si `noSalio` viene puesto, Meta no lo entregó.
 | `POST /api/responder` | `{ canal, chat, texto }` | El dueño contesta desde el chat central. Sale por el mismo canal y el bot se calla 30 minutos en ese chat |
 | `POST /api/aviso/visto` | `{ id }` | Marca un aviso como visto |
 | `POST /api/manual/aprobar` | `{ id, caso?, respuesta?, frases? }` | Lo que contestó la IA se vuelve respuesta ya hecha |
+| `POST /api/manual/descartar` | `{ id }` | Lo que contestó la IA no se aprende |
 | `POST /api/casos` | `{ casos: [...] }` | Reemplaza todas las respuestas ya hechas |
 | `POST /api/tarifas` | `{ tarifas }` | Los costos del Excel. La forma está en `src/cotizador.js` |
 | `POST /api/negocio` | `{ negocio: { nombre, descripcion } }` | Lo que la IA sabe del negocio |

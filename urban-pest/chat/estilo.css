@@ -1,0 +1,192 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   URBAN PEST · CHAT CENTRAL — el sistema
+   Limpio, sin insectos, un solo acento. Teléfono primero; en pantalla ancha,
+   lista y conversación lado a lado. Escala de espacio de 4, seis tamaños de
+   letra, un radio grande y uno chico, dos elevaciones.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --fondo:#F5F7F6; --sup:#FFFFFF; --sup2:#EEF2F0; --tinta:#13201B; --tenue:#5A6A63; --linea:#DFE5E2;
+  --acento:#0F7A57; --acento-tinta:#FFFFFF; --acento-suave:#E2F2EA; --acento-texto:#0B5E43;
+  --ia:#5B4BC4; --ia-suave:#ECE9FA; --aviso:#9A5B08; --aviso-suave:#FBF0DC;
+  --wa:#1E8E57; --ig:#B03A6E; --fb:#2F5EC4;
+  --r:18px; --r2:10px;
+  --elev1:0 1px 2px rgba(19,32,27,.06), 0 1px 1px rgba(19,32,27,.04);
+  --elev2:0 12px 32px rgba(19,32,27,.14), 0 2px 6px rgba(19,32,27,.06);
+  --letra:system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-tema="claro"]){
+  --fondo:#0E1412; --sup:#161F1B; --sup2:#1D2823; --tinta:#E6EDE9; --tenue:#98A8A0; --linea:#28342F;
+  --acento:#3DBE8B; --acento-tinta:#06140E; --acento-suave:#163327; --acento-texto:#7FDDB4;
+  --ia:#A99BFF; --ia-suave:#252046; --aviso:#F0B65A; --aviso-suave:#33270F;
+  --wa:#4CC387; --ig:#E07AA6; --fb:#7EA2F0;
+  --elev1:0 1px 0 rgba(255,255,255,.03); --elev2:0 16px 40px rgba(0,0,0,.5);
+  color-scheme: dark;
+}}
+:root[data-tema="oscuro"]{
+  --fondo:#0E1412; --sup:#161F1B; --sup2:#1D2823; --tinta:#E6EDE9; --tenue:#98A8A0; --linea:#28342F;
+  --acento:#3DBE8B; --acento-tinta:#06140E; --acento-suave:#163327; --acento-texto:#7FDDB4;
+  --ia:#A99BFF; --ia-suave:#252046; --aviso:#F0B65A; --aviso-suave:#33270F;
+  --wa:#4CC387; --ig:#E07AA6; --fb:#7EA2F0;
+  --elev1:0 1px 0 rgba(255,255,255,.03); --elev2:0 16px 40px rgba(0,0,0,.5);
+  color-scheme: dark;
+}
+
+*{ box-sizing:border-box; margin:0; }
+html,body{ height:100%; }
+body{ background:var(--fondo); color:var(--tinta); font:16px/1.45 var(--letra); -webkit-font-smoothing:antialiased; -webkit-tap-highlight-color:transparent; }
+button,input,textarea{ font-family:inherit; font-size:inherit; color:inherit; }
+button{ cursor:pointer; background:none; border:0; }
+:focus-visible{ outline:2px solid var(--acento); outline-offset:2px; border-radius:8px; }
+.ic{ width:20px; height:20px; flex:none; }
+[hidden]{ display:none !important; }
+
+/* ── armazón ─────────────────────────────────────────────────────────────── */
+.app{ height:100dvh; display:grid; grid-template-columns:minmax(0,1fr); overflow:hidden; }
+.lista{ display:flex; flex-direction:column; min-height:0; background:var(--fondo); }
+.conv{ display:none; flex-direction:column; min-height:0; background:var(--fondo); }
+.app.en-chat .lista{ display:none; }
+.app.en-chat .conv{ display:flex; }
+@media (min-width: 900px){
+  .app{ grid-template-columns:380px minmax(0,1fr); }
+  .app .lista, .app.en-chat .lista{ display:flex; border-right:1px solid var(--linea); }
+  .app .conv{ display:flex; }
+  .volver{ display:none !important; }
+}
+
+.barra{ display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:calc(12px + env(safe-area-inset-top)) 16px 12px; }
+.marca{ display:flex; align-items:center; gap:12px; }
+.marca b{ display:block; font-size:20px; letter-spacing:-.01em; }
+.marca small{ color:var(--tenue); font-size:13px; }
+.marca small.es-muestra{ color:var(--aviso); font-weight:600; }
+.punto{ width:10px; height:10px; border-radius:50%; background:var(--acento); box-shadow:0 0 0 4px var(--acento-suave); }
+.redondo{ width:44px; height:44px; display:grid; place-items:center; border-radius:50%; color:var(--tenue); }
+.redondo:hover{ background:var(--sup2); color:var(--tinta); }
+
+.vista{ flex:1; overflow-y:auto; padding:0 12px 16px; overscroll-behavior:contain; }
+.titulo-vista{ font-size:28px; letter-spacing:-.02em; padding:4px 4px 12px; }
+.buscar{ display:flex; align-items:center; gap:8px; background:var(--sup); border:1px solid var(--linea); border-radius:12px; padding:0 12px; margin:0 0 12px; }
+.buscar input{ flex:1; border:0; background:none; height:44px; font-size:16px; outline:none; min-width:0; }
+.buscar .ic{ color:var(--tenue); width:18px; height:18px; }
+
+/* ── pestañas de abajo ───────────────────────────────────────────────────── */
+.pestanas{ display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid var(--linea); background:var(--sup);
+  padding:4px 4px calc(4px + env(safe-area-inset-bottom)); }
+.pestanas button{ position:relative; display:flex; flex-direction:column; align-items:center; gap:2px; min-height:52px; justify-content:center;
+  font-size:12px; color:var(--tenue); border-radius:12px; }
+.pestanas button[aria-current="page"]{ color:var(--acento-texto); }
+.pestanas button[aria-current="page"] .ic{ color:var(--acento); }
+.globo{ position:absolute; top:6px; left:calc(50% + 6px); min-width:18px; height:18px; padding:0 5px; border-radius:9px;
+  background:var(--aviso); color:var(--sup); font:700 11px/18px var(--letra); font-style:normal; font-variant-numeric:tabular-nums; }
+
+/* ── lista de chats ──────────────────────────────────────────────────────── */
+.fila{ width:100%; display:grid; grid-template-columns:44px minmax(0,1fr) auto; gap:12px; align-items:center; text-align:left;
+  padding:12px; border-radius:14px; }
+.fila:hover{ background:var(--sup2); }
+.fila[aria-current="true"]{ background:var(--sup); box-shadow:var(--elev1); }
+.avatar{ position:relative; width:44px; height:44px; border-radius:50%; display:grid; place-items:center; background:var(--sup2);
+  font-weight:700; font-size:16px; color:var(--tenue); }
+.canal{ position:absolute; right:-3px; bottom:-3px; height:18px; padding:0 5px; border-radius:9px; border:2px solid var(--fondo);
+  font:800 9px/14px var(--letra); color:#fff; letter-spacing:.02em; }
+.canal.whatsapp{ background:var(--wa); } .canal.instagram{ background:var(--ig); } .canal.facebook{ background:var(--fb); }
+.fila .quien{ font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.fila .ultimo{ color:var(--tenue); font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.fila .hora{ font-size:12px; color:var(--tenue); font-variant-numeric:tabular-nums; align-self:start; padding-top:2px; text-align:right; }
+.marca-chica{ display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:600; padding:2px 8px; border-radius:999px; margin-top:4px; }
+.marca-chica .ic{ width:12px; height:12px; }
+.m-reflejo{ background:var(--acento-suave); color:var(--acento-texto); }
+.m-ia{ background:var(--ia-suave); color:var(--ia); }
+.m-dueno{ background:var(--sup2); color:var(--tinta); }
+.m-aviso{ background:var(--aviso-suave); color:var(--aviso); }
+
+/* ── conversación ────────────────────────────────────────────────────────── */
+.cab{ display:flex; align-items:center; gap:8px; padding:calc(8px + env(safe-area-inset-top)) 8px 8px; background:var(--sup);
+  border-bottom:1px solid var(--linea); }
+.cab .avatar{ width:40px; height:40px; }
+.cab .info{ flex:1; min-width:0; }
+.cab .info b{ display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cab .info small{ color:var(--tenue); font-size:13px; }
+.pensar{ display:inline-flex; align-items:center; gap:6px; height:36px; padding:0 12px; border-radius:999px; font-size:13px; font-weight:600;
+  color:var(--tenue); border:1px solid var(--linea); white-space:nowrap; }
+.pensar[aria-pressed="true"]{ color:var(--ia); background:var(--ia-suave); border-color:transparent; }
+.pensar .ic{ width:16px; height:16px; }
+
+.ficha{ display:flex; gap:8px; overflow-x:auto; padding:12px 16px; scrollbar-width:none; }
+.ficha::-webkit-scrollbar{ display:none; }
+.dato{ flex:none; display:inline-flex; align-items:center; gap:6px; height:32px; padding:0 12px; border-radius:999px; background:var(--sup);
+  border:1px solid var(--linea); font-size:13px; }
+.dato .ic{ width:14px; height:14px; color:var(--tenue); }
+.dato.falta{ color:var(--tenue); border-style:dashed; }
+
+.burbujas{ flex:1; overflow-y:auto; padding:8px 16px 16px; display:flex; flex-direction:column; gap:4px; overscroll-behavior:contain; }
+.dia{ align-self:center; font-size:12px; color:var(--tenue); padding:8px 0; }
+.b{ max-width:min(78%, 560px); padding:10px 14px; border-radius:var(--r); line-height:1.4; overflow-wrap:anywhere; }
+.b.cliente{ align-self:flex-start; background:var(--sup); box-shadow:var(--elev1); border-bottom-left-radius:6px; }
+.b.negocio{ align-self:flex-end; background:var(--acento-suave); color:var(--tinta); border-bottom-right-radius:6px; }
+.b.negocio.ia{ background:var(--ia-suave); }
+.b.negocio.dueno{ background:var(--acento); color:var(--acento-tinta); }
+.pie{ font-size:11px; margin-top:4px; display:flex; gap:6px; align-items:center; justify-content:flex-end; color:var(--tenue); }
+.b.dueno .pie{ color:inherit; opacity:.8; }
+.b + .b.cliente, .b.negocio + .b.negocio{ margin-top:2px; }
+.b.cliente + .b.negocio, .b.negocio + .b.cliente{ margin-top:10px; }
+.razon{ align-self:flex-end; max-width:min(78%, 560px); display:flex; gap:8px; font-size:13px; color:var(--ia); background:transparent;
+  border:1px dashed color-mix(in srgb, var(--ia) 45%, transparent); border-radius:12px; padding:8px 12px; margin-top:4px; }
+.razon .ic{ width:16px; height:16px; margin-top:1px; }
+.no-salio{ color:var(--aviso); }
+
+.cotiza{ align-self:flex-end; width:min(78%, 360px); background:var(--sup); border:1px solid var(--linea); border-radius:var(--r);
+  padding:14px; margin-top:8px; box-shadow:var(--elev1); }
+.cotiza .tit{ display:flex; align-items:center; gap:8px; font-size:13px; color:var(--tenue); }
+.cotiza .tit .ic{ width:16px; height:16px; }
+.cotiza .monto{ font-size:28px; font-weight:700; letter-spacing:-.02em; font-variant-numeric:tabular-nums; margin:4px 0 8px; }
+.cotiza .monto small{ font-size:14px; font-weight:500; color:var(--tenue); margin-right:4px; }
+.cotiza dl{ display:grid; grid-template-columns:1fr auto; gap:4px 12px; font-size:13px; color:var(--tenue); }
+.cotiza dd{ text-align:right; font-variant-numeric:tabular-nums; color:var(--tinta); }
+.cotiza .etq{ margin-top:10px; }
+
+.callado{ display:flex; align-items:center; gap:8px; margin:0 16px 8px; padding:10px 12px; border-radius:12px; font-size:13px;
+  background:var(--sup2); color:var(--tenue); }
+.callado .ic{ width:16px; height:16px; }
+.callado button{ margin-left:auto; color:var(--acento-texto); font-weight:600; min-height:32px; }
+
+.escribir{ display:flex; gap:8px; align-items:flex-end; padding:8px 12px calc(8px + env(safe-area-inset-bottom)); background:var(--sup); border-top:1px solid var(--linea); }
+.escribir textarea{ flex:1; resize:none; min-height:44px; max-height:140px; padding:11px 14px; border-radius:22px; border:1px solid var(--linea);
+  background:var(--fondo); font-size:16px; line-height:1.35; outline:none; }
+.escribir textarea:focus{ border-color:var(--acento); }
+.mandar{ width:44px; height:44px; border-radius:50%; display:grid; place-items:center; background:var(--acento); color:var(--acento-tinta); flex:none; }
+.mandar:disabled{ background:var(--sup2); color:var(--tenue); cursor:default; }
+.mandar .ic{ width:18px; height:18px; }
+
+/* ── tarjetas (avisos y aprender) ────────────────────────────────────────── */
+.tarjeta{ background:var(--sup); border-radius:var(--r); padding:16px; box-shadow:var(--elev1); margin-bottom:12px; }
+.tarjeta.visto{ opacity:.62; }
+.tarjeta .arriba{ display:flex; justify-content:space-between; gap:8px; font-size:13px; color:var(--tenue); margin-bottom:8px; }
+.tarjeta h3{ font-size:16px; line-height:1.35; margin-bottom:4px; }
+.tarjeta p{ color:var(--tenue); font-size:14px; }
+.tarjeta .preg{ font-weight:600; }
+.tarjeta .resp{ margin-top:8px; padding:10px 12px; background:var(--ia-suave); border-radius:12px; color:var(--tinta); font-size:14px; }
+.acciones{ display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+.btn{ display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:44px; padding:0 16px; border-radius:12px;
+  font-weight:600; font-size:15px; background:var(--acento); color:var(--acento-tinta); }
+.btn.suave{ background:var(--sup2); color:var(--tinta); }
+.btn .ic{ width:18px; height:18px; }
+
+.vacio-grande{ margin:auto; text-align:center; max-width:320px; padding:24px; color:var(--tenue); display:grid; justify-items:center; gap:8px; }
+.vacio-grande .ic{ width:40px; height:40px; color:var(--linea); }
+.vacio-grande b{ color:var(--tinta); font-size:20px; }
+.explica{ color:var(--tenue); font-size:14px; padding:0 4px 16px; }
+
+/* ── mi IA ───────────────────────────────────────────────────────────────── */
+.ia-chat{ display:flex; flex-direction:column; gap:8px; }
+.ia-chat .b.yo{ align-self:flex-end; background:var(--acento); color:var(--acento-tinta); border-bottom-right-radius:6px; }
+.ia-chat .b.ia{ align-self:flex-start; background:var(--ia-suave); border-bottom-left-radius:6px; }
+.ia-forma textarea{ border:0; background:none; }
+.sugerencias{ display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
+.sugerencias button{ min-height:36px; padding:0 12px; border-radius:999px; border:1px solid var(--linea); background:var(--sup); font-size:14px; }
+
+
+/* entra el chat desde la derecha en el teléfono */
+@media (max-width: 899px){ .app.en-chat .conv{ animation:entra .22s ease-out; } }
+@keyframes entra{ from{ transform:translateX(24px); opacity:0; } to{ transform:none; opacity:1; } }
+@media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }

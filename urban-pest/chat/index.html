@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#F5F7F6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1412" media="(prefers-color-scheme: dark)">
+<title>Chat central · Urban Pest</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Ccircle cx=%228%22 cy=%228%22 r=%226%22 fill=%22%230F7A57%22/%3E%3C/svg%3E">
+<link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+<div class="app" id="app">
+  <aside class="lista" id="lista" aria-label="Conversaciones">
+    <header class="barra">
+      <div class="marca"><span class="punto" aria-hidden="true"></span><div><b>Urban Pest</b><small id="estadoBot">Bot atendiendo</small></div></div>
+      <button class="redondo" id="bTema" type="button" aria-label="Cambiar tema"></button>
+    </header>
+    <div class="vista" id="vistaLista"></div>
+    <nav class="pestanas" id="pestanas" aria-label="Secciones">
+      <button type="button" data-p="chats" aria-current="page"><span data-ic="message-circle"></span>Chats</button>
+      <button type="button" data-p="avisos"><span data-ic="bell"></span>Avisos<i class="globo" id="nAvisos" hidden></i></button>
+      <button type="button" data-p="aprender"><span data-ic="book-open"></span>Aprender<i class="globo" id="nManual" hidden></i></button>
+      <button type="button" data-p="ia"><span data-ic="sparkles"></span>Mi IA</button>
+    </nav>
+  </aside>
+  <main class="conv" id="conv" aria-live="polite">
+    <div class="vacio-grande" id="convVacia">
+      <span data-ic="inbox"></span>
+      <b>Escoge un chat</b>
+      <p>Aquí ves lo que contestó el bot, lo que contestó la IA y por qué, y puedes contestar tú.</p>
+    </div>
+  </main>
+</div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
