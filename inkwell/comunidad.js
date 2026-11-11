@@ -200,7 +200,7 @@ export async function abrirComentarios({ obra, cap = '', titulo = '', sub = '' }
   d.dataset.obra = obra; d.dataset.cap = cap;
   let responderA = null;
   const cargar = async () => {
-    lista.replaceChildren(el('p', { class: 'cm-vacio' }, 'Cargando…'));
+    lista.replaceChildren(el('div', { class: 'esq-lista', 'aria-hidden': 'true', style: 'padding-top:14px', html: '<div class="esq renglon"></div>'.repeat(4) }));
     let r; try{ r = await api('hilo', null, { params: `?obra=${encodeURIComponent(obra)}&cap=${encodeURIComponent(cap)}` }); }
     catch(e){ lista.replaceChildren(el('div', { class: 'cm-vacio' }, el('b', {}, 'No se pudo cargar'), e.message)); return; }
     const raiz = r.comentarios.filter((c) => !c.padre), hijos = (id) => r.comentarios.filter((c) => c.padre === id);
@@ -277,7 +277,7 @@ export async function abrirPerfil(u){
   const d = hoja(), lista = d.querySelector('#cmLista'), red = d.querySelector('#cmRedactar');
   if(!d.open) d.showModal();
   d.querySelector('#cmSub').textContent = 'Perfil'; d.querySelector('#cmTitulo').textContent = '@' + u;
-  red.replaceChildren(); lista.replaceChildren(el('p', { class: 'cm-vacio' }, 'Cargando…'));
+  red.replaceChildren(); lista.replaceChildren(el('div', { class: 'esq-lista', 'aria-hidden': 'true', style: 'padding-top:14px', html: '<div class="esq renglon"></div>'.repeat(4) }));
   let p; try{ p = (await api('perfil', null, { params: '?u=' + encodeURIComponent(u) })).perfil; }catch(e){ lista.replaceChildren(el('div', { class: 'cm-vacio' }, el('b', {}, 'No se pudo'), e.message)); return; }
   const yo = cuenta.leer();
   const seguir = el('button', { type: 'button', class: 'cm-si' }, p.loSigo ? 'Dejar de seguir' : 'Seguir');
