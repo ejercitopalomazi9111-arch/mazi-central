@@ -1765,6 +1765,12 @@ export class Sala {
 
   async fetch(pedido){
     await this.listo;
+    /* Urban Pest (11 nov): el bot usa las MISMAS llaves de IA gratis que las sillas.
+       Sólo se contesta a una petición armada dentro del propio servidor: ninguna
+       petición de fuera llega con el host «interno». */
+    if(new URL(pedido.url).hostname === 'interno' && new URL(pedido.url).pathname === '/llaves-ia-crudas'){
+      return Response.json(Object.fromEntries(NOMBRES_LLAVE_IA.map(n => [n, (this.env && this.env[n]) || null])));
+    }
     /* Antes de contestar nada: que las sillas con llave estén en el censo.
        Va aquí y no en el arranque porque el censo lo leen media docena de
        endpoints y ninguno debería tener que acordarse. */

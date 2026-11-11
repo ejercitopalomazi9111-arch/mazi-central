@@ -123,7 +123,11 @@ export default {
       }
       const nueva = new Request(new URL(ruta + url.search, url.origin), { method: pedido.method, headers: h, body: ['GET', 'HEAD'].includes(pedido.method) ? undefined : await pedido.arrayBuffer() });
       try{
-        return conCORS(await urbanPest.fetch(nueva, { ...env, DESPACHO: env.URBAN, LLAVE_PANEL: 'sala-ok', ORIGENES: '' }, ctx), pedido);
+        /* las llaves de IA viven en la sala GRUPAZ (se pegan desde la app), no en el panel */
+        let llavesIA = {};
+        try { llavesIA = await (await env.SALA.get(env.SALA.idFromName('GRUPAZ')).fetch(new Request('https://interno/llaves-ia-crudas'))).json(); } catch {}
+        const llenas = Object.fromEntries(Object.entries(llavesIA).filter(([, v]) => v));
+        return conCORS(await urbanPest.fetch(nueva, { ...env, ...llenas, DESPACHO: env.URBAN, LLAVE_PANEL: 'sala-ok', ORIGENES: '' }, ctx), pedido);
       }catch(e){
         return conCORS(Response.json({ bien:false, error:'Urban Pest tuvo un error: ' + String((e && e.message) || e).slice(0, 160) }, { status:503 }), pedido);
       }
