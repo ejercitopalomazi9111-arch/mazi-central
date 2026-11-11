@@ -1,5 +1,7 @@
 /* INKWELL · Biblioteca: tus listas, tu calificación, tus etiquetas, tus colecciones y lo que llevas leído.
-   Todo vive en este teléfono (localStorage): no hay cuentas todavía. Se exporta e importa en un archivo.
+   Vive en este teléfono (localStorage) y, si entraste a tu cuenta de la Comunidad, se respalda en ella:
+   así no se pierde si Safari borra lo guardado y se ve igual en otro teléfono (Carlos, 11 nov). También
+   se exporta e importa en un archivo.
 
    · inkwell.biblio    { obras: { <id>: { lista, fav, nota, etiquetas, cambio } }, meta, colecciones: [{ id, nombre, ids }] }
    · inkwell.historial [[cuándo, id, capítulo], …]  (lo apunta Tiras al marcar un capítulo leído y Libros al pasar de capítulo)
@@ -18,9 +20,10 @@ const escribir = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); re
 
 export function datos(){
   const d = leer('inkwell.biblio', null) || {};
-  return { obras: d.obras || {}, meta: Number.isFinite(d.meta) ? d.meta : 0, colecciones: Array.isArray(d.colecciones) ? d.colecciones : [] };
+  return { obras: d.obras || {}, meta: Number.isFinite(d.meta) ? d.meta : 0, metaCambio: d.metaCambio || 0,
+    colecciones: Array.isArray(d.colecciones) ? d.colecciones : [], quitadas: d.quitadas && typeof d.quitadas === 'object' ? d.quitadas : {} };
 }
-export function guardarDatos(d){ return escribir('inkwell.biblio', d); }
+export function guardarDatos(d){ const ok = escribir('inkwell.biblio', d); pronto(); return ok; }
 export function deObra(id, d = datos()){ return { lista: null, fav: false, nota: 0, etiquetas: [], ...(d.obras[id] || {}) }; }
 export function cambiarObra(id, cambio){
   const d = datos(), o = { ...deObra(id, d), ...cambio, cambio: Date.now() };
@@ -40,22 +43,22 @@ export function listaDe(obra, d = datos()){
 /* ── colecciones: carpetas tuyas («Para el viaje», «Universo Marvel»…) ── */
 export function nuevaColeccion(nombre){
   const d = datos(), n = String(nombre || '').trim().slice(0, 40); if(!n) return null;
-  const c = { id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), nombre: n, ids: [] };
+  const c = { id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), nombre: n, ids: [], cambio: Date.now() };
   d.colecciones.push(c); guardarDatos(d); return c;
 }
 export function enColeccion(cid, id, dentro){
   const d = datos(), c = d.colecciones.find((x) => x.id === cid); if(!c) return;
-  c.ids = dentro ? [...new Set([...c.ids, id])] : c.ids.filter((x) => x !== id); guardarDatos(d);
+  c.ids = dentro ? [...new Set([...c.ids, id])] : c.ids.filter((x) => x !== id); c.cambio = Date.now(); guardarDatos(d);
 }
-export function borrarColeccion(cid){ const d = datos(); d.colecciones = d.colecciones.filter((x) => x.id !== cid); guardarDatos(d); }
-export function ponerMeta(n){ const d = datos(); d.meta = Math.max(0, Math.min(10000, Math.round(+n || 0))); guardarDatos(d); return d.meta; }
+export function borrarColeccion(cid){ const d = datos(); d.colecciones = d.colecciones.filter((x) => x.id !== cid); d.quitadas[cid] = Date.now(); guardarDatos(d); }
+export function ponerMeta(n){ const d = datos(); d.meta = Math.max(0, Math.min(10000, Math.round(+n || 0))); d.metaCambio = Date.now(); guardarDatos(d); return d.meta; }
 
 /* ── historial de lectura ── */
 export function historial(){ const h = leer('inkwell.historial', []); return Array.isArray(h) ? h : []; }
 export function apuntar(id, n, cuando = Date.now()){
   const h = historial();
   if(h.some(([, i, c]) => i === id && c === n)) return;   // un capítulo cuenta una vez
-  h.push([cuando, id, n]); escribir('inkwell.historial', h.slice(-TOPE_HISTORIAL));
+  h.push([cuando, id, n]); escribir('inkwell.historial', h.slice(-TOPE_HISTORIAL)); pronto();
 }
 const diaDe = (t) => { const f = new Date(t); return `${f.getFullYear()}-${f.getMonth() + 1}-${f.getDate()}`; };
 
@@ -155,3 +158,65 @@ export function sugeridas(obras, d = datos()){
     .map((o) => ({ o, p: deObra(o.id, d).etiquetas.reduce((s, t) => s + (peso.get(t) || 0), 0) }))
     .filter((x) => x.p > 0).sort((a, b) => b.p - a.p).map((x) => x.o);
 }
+
+/* ── el respaldo en la cuenta ──────────────────────────────────────────────────────────────────────
+   mezclar() junta lo de este teléfono con lo de la nube sin perder nada de ninguno de los dos:
+   · cada obra se queda con su versión más reciente («cambio»);
+   · las colecciones se juntan por id; una borrada en cualquier lado se queda borrada (quitadas),
+     salvo que la hayan vuelto a tocar después de borrarla;
+   · la meta, la más reciente; el historial, la suma sin repetir capítulos. */
+const TOPE_NUBE = 8000;   /* capítulos del historial que viajan a la cuenta (~300 KB) */
+export function mezclar(a, b){
+  const A = normal(a), B = normal(b);
+  const obras = { ...A.biblio.obras };
+  for(const [id, o] of Object.entries(B.biblio.obras)) if(!obras[id] || (o.cambio || 0) > (obras[id].cambio || 0)) obras[id] = o;
+  const quitadas = { ...A.biblio.quitadas };
+  for(const [k, t] of Object.entries(B.biblio.quitadas)) quitadas[k] = Math.max(quitadas[k] || 0, t);
+  const cols = new Map();
+  for(const c of [...A.biblio.colecciones, ...B.biblio.colecciones]){
+    const ya = cols.get(c.id);
+    if(!ya || (c.cambio || 0) > (ya.cambio || 0)) cols.set(c.id, c);
+  }
+  const colecciones = [...cols.values()].filter((c) => !(quitadas[c.id] >= (c.cambio || 0)));
+  const [meta, metaCambio] = (B.biblio.metaCambio || 0) > (A.biblio.metaCambio || 0) ? [B.biblio.meta, B.biblio.metaCambio] : [A.biblio.meta, A.biblio.metaCambio];
+  const visto = new Set(), historial = [];
+  for(const x of [...A.historial, ...B.historial]){ if(!Array.isArray(x)) continue; const k = x[1] + '|' + x[2]; if(visto.has(k)) continue; visto.add(k); historial.push(x); }
+  historial.sort((p, q) => p[0] - q[0]);
+  return { biblio: { obras, meta, metaCambio, colecciones, quitadas }, historial: historial.slice(-TOPE_HISTORIAL) };
+}
+function normal(x){
+  const b = (x && x.biblio) || {};
+  return { biblio: { obras: b.obras && typeof b.obras === 'object' ? b.obras : {}, meta: Number.isFinite(b.meta) ? b.meta : 0, metaCambio: b.metaCambio || 0,
+    colecciones: Array.isArray(b.colecciones) ? b.colecciones.filter((c) => c && c.id) : [], quitadas: b.quitadas && typeof b.quitadas === 'object' ? b.quitadas : {} },
+    historial: Array.isArray(x && x.historial) ? x.historial : [] };
+}
+const local = () => ({ biblio: datos(), historial: historial() });
+const igual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const conCuenta = () => { try{ const c = JSON.parse(localStorage.getItem('inkwell.cuenta')); return !!(c && c.token); }catch{ return false; } };
+
+let reloj = null, enCurso = null, callado = false;
+/* después de cada cambio, a los 2.5 s se sube (si hay cuenta) */
+function pronto(){
+  if(callado || !conCuenta() || typeof setTimeout !== 'function') return;
+  clearTimeout(reloj); reloj = setTimeout(() => { sincronizar().catch(() => {}); }, 2500);
+}
+/* baja lo de la cuenta, lo junta con lo de aquí, guarda la mezcla en los dos lados.
+   Regresa { cambioAqui, subio } para que la pantalla sepa si tiene que repintar. */
+export async function sincronizar(){
+  if(!conCuenta()) return { cambioAqui: false, subio: false, sinCuenta: true };
+  if(enCurso) return enCurso;
+  enCurso = (async () => {
+    const { api } = await import('./comunidad.js');
+    const nube = (await api('respaldo')).datos;
+    const antes = local(), junto = mezclar(antes, nube);
+    const cambioAqui = !igual(junto.biblio, antes.biblio) || junto.historial.length !== antes.historial.length;
+    if(cambioAqui){ callado = true; try{ escribir('inkwell.biblio', junto.biblio); escribir('inkwell.historial', junto.historial); } finally { callado = false; } }
+    const sube = { biblio: junto.biblio, historial: junto.historial.slice(-TOPE_NUBE) };
+    let subio = false;
+    if(!nube || !igual(normal(nube), normal(sube))){ await api('respaldo', { datos: sube }); subio = true; }
+    try{ localStorage.setItem('inkwell.respaldo', String(Date.now())); }catch{}
+    return { cambioAqui, subio };
+  })();
+  try{ return await enCurso; } finally { enCurso = null; }
+}
+export function ultimoRespaldo(){ try{ return +localStorage.getItem('inkwell.respaldo') || 0; }catch{ return 0; } }

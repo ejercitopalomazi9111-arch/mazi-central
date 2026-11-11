@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Urban Pest Control · Control de plagas en Querétaro</title>
+<meta name="description" content="Control de plagas para hogares, comercios e industria en Querétaro. Autorización de la Secretaría de Salud, registro REPSE, productos de baja toxicidad y garantía. Más de 10 años.">
+<meta name="theme-color" content="#FFFFFF">
+<link rel="icon" href="img/sello.png">
+<link rel="apple-touch-icon" href="img/sello.png">
+<link rel="preload" href="fuentes/archivo-400-900-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fuentes/inter-400-800-normal.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+/* Urban Pest Control · propuesta de Grupo Mazi (11 nov 2026).
+   Carlos: «simple, limpio, estético; algunas imágenes mínimas; que su operación se vea limpia y en acción».
+   Referencia de tono: arcos.com — mucho aire, letra grande, una sola idea por bloque.
+   Colores: los de su marca (urbanpest.mx): azul marino #143361, azul #165D9B y el amarillo-naranja del sello. */
+@font-face{font-family:"Archivo";src:url(fuentes/archivo-400-900-normal.woff2) format("woff2");font-weight:400 900;font-display:swap}
+@font-face{font-family:"Inter";src:url(fuentes/inter-400-800-normal.woff2) format("woff2");font-weight:400 800;font-display:swap}
+:root{
+  --blanco:#FFFFFF; --hueso:#F4F6F8; --tinta:#0E1B2E; --suave:#5B6676; --linea:#E3E7EC;
+  --marina:#143361; --azul:#165D9B; --sol:#F29923; --sol-claro:#F7E93F;
+  --display:"Archivo", system-ui, sans-serif; --texto:"Inter", system-ui, -apple-system, sans-serif;
+  --ancho:1200px; --gut:22px; --suave-mov:cubic-bezier(.16,1,.3,1);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; scroll-behavior:smooth; scroll-padding-top:72px}
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} *{animation:none!important; transition:none!important} }
+body{margin:0; background:var(--blanco); color:var(--tinta); font:400 17px/1.6 var(--texto); -webkit-font-smoothing:antialiased; padding-bottom:calc(74px + env(safe-area-inset-bottom))}
+@media (min-width: 900px){ body{padding-bottom:0} }
+img{max-width:100%; display:block}
+a{color:inherit}
+::selection{background:var(--marina); color:#fff}
+:focus-visible{outline:3px solid var(--azul); outline-offset:3px; border-radius:6px}
+svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex:none}
+.env{max-width:var(--ancho); margin:0 auto; padding:0 var(--gut)}
+@media (min-width: 900px){ :root{--gut:40px} }
+
+/* ── barra ── */
+.cabeza{position:sticky; top:0; z-index:20; background:rgba(255,255,255,.9); -webkit-backdrop-filter:blur(16px) saturate(1.5); backdrop-filter:blur(16px) saturate(1.5); border-bottom:1px solid transparent; transition:border-color .25s}
+.cabeza.bajo{border-bottom-color:var(--linea)}
+.cabeza .env{display:flex; align-items:center; gap:28px; height:68px}
+.logo{display:block; height:34px} .logo img{height:100%; width:auto}
+.menu{display:none; gap:30px; margin-left:auto; font-size:15px; font-weight:500}
+.menu a{text-decoration:none; color:var(--suave); transition:color .2s} .menu a:hover{color:var(--tinta)}
+.cabeza .btn{margin-left:auto}
+@media (min-width: 900px){ .menu{display:flex} .cabeza .btn{margin-left:0} }
+
+/* ── botones ── */
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:10px; min-height:48px; padding:0 24px; border-radius:999px; border:0; font:600 15px/1 var(--texto); text-decoration:none; cursor:pointer; transition:background .2s, color .2s, transform .15s; -webkit-tap-highlight-color:transparent; white-space:nowrap}
+.btn:active{transform:scale(.97)}
+.btn-1{background:var(--marina); color:#fff} .btn-1:hover{background:#0D2448}
+.btn-2{background:transparent; color:var(--marina); box-shadow:inset 0 0 0 1.5px var(--linea)} .btn-2:hover{box-shadow:inset 0 0 0 1.5px var(--marina)}
+.btn-claro{background:#fff; color:var(--marina)}
+.btn-borde-claro{background:transparent; color:#fff; box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.35)}
+.cabeza .btn{min-height:42px; padding:0 18px}
+
+/* ── tipografía ── */
+.ceja{display:block; font:600 12.5px/1 var(--texto); letter-spacing:.14em; text-transform:uppercase; color:var(--azul); margin-bottom:18px}
+h1{font:700 clamp(46px, 12.5vw, 104px)/.95 var(--display); letter-spacing:-.045em; margin:0; text-wrap:balance}
+h1 em{font-style:normal; color:var(--azul)}
+h2{font:700 clamp(34px, 8vw, 60px)/1 var(--display); letter-spacing:-.035em; margin:0 0 18px; text-wrap:balance}
+h3{font:650 20px/1.25 var(--display); letter-spacing:-.01em; margin:0}
+.lead{font-size:clamp(18px, 4.6vw, 21px); line-height:1.5; color:var(--suave); max-width:36ch; margin:22px 0 0}
+section{padding:84px 0}
+@media (min-width: 900px){ section{padding:140px 0} }
+
+/* ── portada ── */
+.portada{padding:56px 0 0}
+@media (min-width: 900px){ .portada{padding:96px 0 0} }
+.portada .acciones{display:flex; flex-wrap:wrap; gap:10px; margin-top:34px}
+.portada .acciones .btn{flex:1 1 160px}
+@media (min-width: 600px){ .portada .acciones .btn{flex:0 0 auto} }
+.foto-portada{margin:56px 0 0; border-radius:26px; overflow:hidden; aspect-ratio:4/5; background:var(--hueso)}
+@media (min-width: 700px){ .foto-portada{aspect-ratio:21/9; margin-top:80px} }
+.foto-portada img{width:100%; height:100%; object-fit:cover; object-position:50% 60%; transform:scale(1.06); transition:transform 1.6s var(--suave-mov)}
+.foto-portada.lista img{transform:none}
+
+/* ── respaldo: sólo texto, sin tarjetas ── */
+.respaldo{display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); border-top:1px solid var(--linea); margin-top:56px}
+@media (min-width: 900px){ .respaldo{grid-template-columns:repeat(4, minmax(0, 1fr)); margin-top:80px} }
+.respaldo div{padding:26px 16px 26px 0; border-bottom:1px solid var(--linea)}
+@media (min-width: 900px){ .respaldo div{border-bottom:0; padding:34px 24px 0 0} }
+.respaldo b{display:block; font:700 clamp(22px, 5.5vw, 30px)/1 var(--display); letter-spacing:-.02em; color:var(--marina); margin-bottom:8px}
+.respaldo span{font-size:14.5px; color:var(--suave); line-height:1.45; display:block; max-width:24ch}
+
+/* ── servicios: una lista, como un índice ── */
+.dos-col{display:grid; gap:40px; grid-template-columns:minmax(0, 1fr)}
+@media (min-width: 900px){ .dos-col{grid-template-columns:5fr 7fr; gap:80px; align-items:start} .dos-col > :first-child{position:sticky; top:120px} }
+.indice{list-style:none; margin:0; padding:0; border-top:1px solid var(--linea)}
+.indice li{border-bottom:1px solid var(--linea)}
+.indice a{display:grid; grid-template-columns:minmax(0, 1fr) auto; gap:4px 18px; align-items:center; padding:26px 0; text-decoration:none; transition:padding .3s var(--suave-mov)}
+.indice a:hover{padding-left:10px}
+.indice h3{font-size:clamp(22px, 5.4vw, 30px); letter-spacing:-.02em}
+.indice p{grid-column:1; margin:0; color:var(--suave); font-size:15.5px}
+.indice .flecha{grid-row:1 / span 2; grid-column:2; width:44px; height:44px; border-radius:50%; display:grid; place-items:center; box-shadow:inset 0 0 0 1.5px var(--linea); color:var(--marina); transition:background .25s, color .25s, box-shadow .25s}
+.indice a:hover .flecha{background:var(--marina); color:#fff; box-shadow:none}
+
+/* ── industria: la franja oscura ── */
+.industria{background:var(--marina); color:#fff; overflow:hidden}
+.industria .ceja{color:var(--sol-claro)}
+.industria .lead{color:#BFCBDD}
+.industria-foto{margin:56px 0; border-radius:22px; overflow:hidden; aspect-ratio:16/10}
+@media (min-width: 900px){ .industria-foto{aspect-ratio:21/8; margin:72px 0} }
+.industria-foto img{width:100%; height:100%; object-fit:cover}
+.carpeta{display:grid; gap:0; grid-template-columns:minmax(0, 1fr); border-top:1px solid rgba(255,255,255,.18)}
+@media (min-width: 900px){ .carpeta{grid-template-columns:repeat(3, minmax(0, 1fr))} }
+.carpeta div{padding:28px 0; border-bottom:1px solid rgba(255,255,255,.18)}
+@media (min-width: 900px){ .carpeta div{padding:36px 36px 36px 0; border-bottom:0} .carpeta div + div{padding-left:36px; border-left:1px solid rgba(255,255,255,.18)} }
+.carpeta svg{width:26px; height:26px; color:var(--sol); margin-bottom:18px}
+.carpeta h3{color:#fff; margin-bottom:8px}
+.carpeta p{margin:0; color:#BFCBDD; font-size:15.5px}
+.industria .acciones{display:flex; flex-wrap:wrap; gap:10px; margin-top:48px}
+
+/* ── proceso ── */
+.pasos{list-style:none; margin:48px 0 0; padding:0; display:grid; grid-template-columns:minmax(0, 1fr); counter-reset:p}
+@media (min-width: 900px){ .pasos{grid-template-columns:repeat(4, minmax(0, 1fr)); gap:40px} }
+.pasos li{counter-increment:p; padding:24px 0; border-top:1px solid var(--linea)}
+.pasos li::before{content:counter(p, decimal-leading-zero); display:block; font:600 13px/1 var(--texto); color:var(--azul); letter-spacing:.1em; margin-bottom:20px}
+.pasos p{margin:8px 0 0; color:var(--suave); font-size:15.5px}
+
+/* ── reseñas ── */
+.resenas{background:var(--hueso)}
+.carril{display:grid; grid-auto-flow:column; grid-auto-columns:minmax(84%, 1fr); gap:14px; overflow-x:auto; scroll-snap-type:x mandatory; padding:4px var(--gut) 20px; margin:44px calc(var(--gut) * -1) 0; scrollbar-width:none; -webkit-overflow-scrolling:touch}
+.carril::-webkit-scrollbar{display:none}
+@media (min-width: 900px){ .carril{grid-auto-flow:row; grid-template-columns:repeat(3, minmax(0, 1fr)); overflow:visible; padding:0; margin:56px 0 0; gap:20px} }
+blockquote{margin:0; scroll-snap-align:start; background:#fff; border-radius:20px; padding:30px 26px; display:flex; flex-direction:column; gap:24px}
+blockquote p{margin:0; font:500 18px/1.5 var(--texto); letter-spacing:-.005em}
+blockquote p::before{content:"«"} blockquote p::after{content:"»"}
+blockquote footer{margin-top:auto; font-size:14px; color:var(--suave)}
+blockquote footer b{display:block; color:var(--tinta); font-weight:650}
+.pista{font-size:13px; color:var(--suave); margin:6px 0 0}
+@media (min-width: 900px){ .pista{display:none} }
+
+/* ── preguntas ── */
+details{border-bottom:1px solid var(--linea)}
+details:first-of-type{border-top:1px solid var(--linea)}
+summary{list-style:none; cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:18px; padding:24px 0; min-height:44px; font:600 19px/1.35 var(--display); letter-spacing:-.01em}
+summary::-webkit-details-marker{display:none}
+summary .mas{width:32px; height:32px; border-radius:50%; flex:none; position:relative; box-shadow:inset 0 0 0 1.5px var(--linea)}
+summary .mas::before, summary .mas::after{content:""; position:absolute; left:50%; top:50%; width:12px; height:1.5px; background:var(--marina); transform:translate(-50%, -50%); transition:transform .3s var(--suave-mov)}
+summary .mas::after{transform:translate(-50%, -50%) rotate(90deg)}
+details[open] summary .mas::after{transform:translate(-50%, -50%) rotate(0)}
+details p{margin:0 0 26px; color:var(--suave); max-width:60ch}
+
+/* ── contacto ── */
+.contacto .grande{display:block; white-space:nowrap; font:700 clamp(40px, 11vw, 64px)/1 var(--display); letter-spacing:-.04em; color:var(--marina); text-decoration:none; margin:6px 0 0}
+.contacto .grande:hover{color:var(--azul)}
+.contacto .datos{display:flex; flex-wrap:wrap; gap:10px; margin-top:30px}
+.forma{background:var(--hueso); border-radius:24px; padding:26px 22px}
+@media (min-width: 600px){ .forma{padding:36px} }
+.forma h3{font-size:22px; margin-bottom:6px}
+.forma .nota{color:var(--suave); font-size:14.5px; margin:0 0 22px}
+.campo{margin-bottom:14px}
+.campo label{display:block; font-weight:600; font-size:14px; margin-bottom:8px}
+input, select, textarea{width:100%; min-height:52px; padding:13px 16px; border-radius:14px; border:1.5px solid transparent; background:#fff; color:var(--tinta); font-family:inherit; font-size:16px; appearance:none; -webkit-appearance:none; transition:border-color .2s}
+textarea{min-height:96px; resize:vertical}
+select{background-image:linear-gradient(45deg, transparent 50%, var(--suave) 50%), linear-gradient(135deg, var(--suave) 50%, transparent 50%); background-position:calc(100% - 22px) 23px, calc(100% - 16px) 23px; background-size:6px 6px; background-repeat:no-repeat; padding-right:44px}
+input:focus, select:focus, textarea:focus{outline:none; border-color:var(--azul)}
+.forma .btn{width:100%; margin-top:8px; min-height:54px}
+.error{color:#B42318; font-size:14px; font-weight:600; margin:10px 0 0}
+
+/* ── pie ── */
+.pie{border-top:1px solid var(--linea); padding:44px 0 32px; font-size:14px; color:var(--suave)}
+.pie .env{display:grid; gap:22px}
+@media (min-width: 900px){ .pie .env{grid-template-columns:1fr auto; align-items:end} }
+.pie img{height:30px; width:auto; margin-bottom:14px}
+.pie nav{display:flex; flex-wrap:wrap; gap:8px 22px}
+.pie a{color:var(--suave); text-decoration:none} .pie a:hover{color:var(--tinta)}
+.creditos{font-size:12px; color:#8A94A3; grid-column:1 / -1}
+
+/* ── barra de abajo en el teléfono ── */
+.barra{position:fixed; left:0; right:0; bottom:0; z-index:30; display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:10px 12px calc(10px + env(safe-area-inset-bottom)); background:rgba(255,255,255,.92); -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px); border-top:1px solid var(--linea)}
+.barra .btn{min-height:50px; padding:0 12px}
+@media (min-width: 900px){ .barra{display:none} }
+
+/* ── aparecer al bajar: sin JS, todo se ve ── */
+.js .ap{opacity:0; transform:translateY(26px); transition:opacity .9s var(--suave-mov), transform .9s var(--suave-mov)}
+.js .ap.visto{opacity:1; transform:none}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol><symbol id="i-calendar-check" viewBox="0 0 24 24"><path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="m9 15 2 2 4-4"/></symbol><symbol id="i-file-text" viewBox="0 0 24 24"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></symbol><symbol id="i-mail" viewBox="0 0 24 24"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/></symbol><symbol id="i-map-pin" viewBox="0 0 24 24"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></symbol><symbol id="i-message-circle" viewBox="0 0 24 24"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/></symbol><symbol id="i-phone" viewBox="0 0 24 24"><path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"/></symbol><symbol id="i-shield-check" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol></svg>
+
+<header class="cabeza" id="cabeza">
+  <div class="env">
+    <a class="logo" href="#inicio" aria-label="Urban Pest Control, inicio"><img src="img/logo.webp" alt="Urban Pest Control" width="1120" height="240"></a>
+    <nav class="menu" aria-label="Secciones">
+      <a href="#servicios">Servicios</a>
+      <a href="#industria">Industria</a>
+      <a href="#clientes">Clientes</a>
+      <a href="#contacto">Contacto</a>
+    </nav>
+    <a class="btn btn-1" href="#contacto">Cotizar</a>
+  </div>
+</header>
+
+<main id="inicio">
+  <section class="portada">
+    <div class="env">
+      <span class="ceja ap">Control de plagas · Querétaro</span>
+      <h1 class="ap">Tu operación,<br><em>limpia.</em></h1>
+      <p class="lead ap">Hogares, comercios e industria. Más de 10 años cuidando que lo único que se note sea tu trabajo.</p>
+      <div class="acciones ap">
+        <a class="btn btn-1" href="https://wa.me/5214421394023?text=Hola%2C%20vengo%20de%20su%20p%C3%A1gina.%20Me%20gustar%C3%ADa%20una%20cotizaci%C3%B3n." target="_blank" rel="noopener"><svg class="i"><use href="#i-message-circle"/></svg> Cotizar por WhatsApp</a>
+        <a class="btn btn-2" href="tel:+524421394023"><svg class="i"><use href="#i-phone"/></svg> 442 139 4023</a>
+      </div>
+      <figure class="foto-portada ap" id="fotoPortada">
+        <picture>
+          <source media="(max-width: 800px)" srcset="img/planta-800.webp">
+          <img src="img/planta.webp" alt="Planta industrial limpia, con el piso brillante" width="1600" height="1067" fetchpriority="high">
+        </picture>
+      </figure>
+      <div class="respaldo ap">
+        <div><b>SSA</b><span>Autorización vigente de la Secretaría de Salud</span></div>
+        <div><b>REPSE</b><span>Registro en regla para trabajar con empresas</span></div>
+        <div><b>Baja toxicidad</b><span>Productos seguros para tu familia, tu equipo y tus clientes</span></div>
+        <div><b>Garantía</b><span>Si la plaga vuelve, regresamos sin costo</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="servicios">
+    <div class="env dos-col">
+      <div class="ap">
+        <span class="ceja">Servicios</span>
+        <h2>Un plan para cada lugar.</h2>
+        <p class="lead" style="margin-top:0">Primero vemos qué hay y dónde. Después elegimos el método: aspersión, gel, cebos, monitoreo o nebulización, según tu caso.</p>
+      </div>
+      <ul class="indice ap">
+        <li><a href="#contacto" data-tipo="Hogar"><h3>Hogares</h3><p>Casas y residencias, con indicaciones para niños y mascotas.</p><span class="flecha"><svg class="i"><use href="#i-arrow-right"/></svg></span></a></li>
+        <li><a href="#contacto" data-tipo="Comercio"><h3>Comercios y plazas</h3><p>En el horario que no detenga tu negocio.</p><span class="flecha"><svg class="i"><use href="#i-arrow-right"/></svg></span></a></li>
+        <li><a href="#industria"><h3>Industria de alimentos</h3><p>Programa por contrato, listo para auditoría.</p><span class="flecha"><svg class="i"><use href="#i-arrow-right"/></svg></span></a></li>
+        <li><a href="#contacto" data-tipo="Sector salud"><h3>Sector salud</h3><p>Clínicas y hospitales, con protocolos que respetan la atención.</p><span class="flecha"><svg class="i"><use href="#i-arrow-right"/></svg></span></a></li>
+        <li><a href="#contacto" data-tipo="Escuela"><h3>Escuelas y universidades</h3><p>En vacaciones, fines de semana o fuera de clases.</p><span class="flecha"><svg class="i"><use href="#i-arrow-right"/></svg></span></a></li>
+        <li><a href="#contacto" data-tipo="Industria / bodega"><h3>Industria y bodegas</h3><p>Monitoreo permanente con puntos de control.</p><span class="flecha"><svg class="i"><use href="#i-arrow-right"/></svg></span></a></li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="industria" class="industria">
+    <div class="env">
+      <span class="ceja ap">Industria</span>
+      <h2 class="ap">Cuando llegue el auditor, ya está todo.</h2>
+      <p class="lead ap">Cada servicio queda documentado en tu carpeta de cumplimiento en línea. Tu jefe de calidad la consulta cuando quiera, sin pedirnos nada.</p>
+      <figure class="industria-foto ap"><img src="img/alimentos-800.webp" srcset="img/alimentos-800.webp 800w, img/alimentos.webp 1600w" sizes="(max-width: 900px) 100vw, 1120px" alt="Línea de producción de alimentos" width="1600" height="1065" loading="lazy"></figure>
+      <div class="carpeta ap">
+        <div><svg class="i"><use href="#i-file-text"/></svg><h3>Reporte de cada visita</h3><p>Fecha, técnico, productos aplicados con su registro, y la firma de quien recibió.</p></div>
+        <div><svg class="i"><use href="#i-map-pin"/></svg><h3>Trampas y hallazgos</h3><p>El estado de cada punto de monitoreo y lo que se encontró, visita tras visita.</p></div>
+        <div><svg class="i"><use href="#i-shield-check"/></svg><h3>Papeles en regla</h3><p>Autorización sanitaria y REPSE vigentes, a la mano para cualquier auditoría.</p></div>
+      </div>
+      <div class="acciones ap">
+        <a class="btn btn-claro" href="https://wa.me/5214421394023?text=Hola%2C%20me%20interesa%20un%20programa%20de%20control%20de%20plagas%20para%20mi%20empresa." target="_blank" rel="noopener"><svg class="i"><use href="#i-calendar-check"/></svg> Agendar visita de diagnóstico</a>
+        <a class="btn btn-borde-claro" href="mailto:direccion@urbanpest.mx?subject=Programa%20de%20control%20de%20plagas"><svg class="i"><use href="#i-mail"/></svg> direccion@urbanpest.mx</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="proceso">
+    <div class="env">
+      <span class="ceja ap">Cómo trabajamos</span>
+      <h2 class="ap">Cuatro pasos. Ninguno se salta.</h2>
+      <ol class="pasos ap">
+        <li><h3>Diagnóstico</h3><p>Vemos el tipo de plaga, qué tanto hay y los puntos de riesgo.</p></li>
+        <li><h3>Plan por escrito</h3><p>El método y el precio, antes de empezar.</p></li>
+        <li><h3>Aplicación</h3><p>Técnicos capacitados, con seguridad y dejando todo limpio.</p></li>
+        <li><h3>Seguimiento</h3><p>Revisamos el resultado. Si la plaga vuelve, regresamos.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="clientes" class="resenas">
+    <div class="env">
+      <span class="ceja ap">Clientes</span>
+      <h2 class="ap">Lo que dicen quienes ya nos llaman.</h2>
+      <div class="carril ap" tabindex="0" aria-label="Reseñas de clientes">
+        <blockquote><p>Llevaba muchos años fumigando sin poder deshacerme de las cucarachas. Con la primera aplicación no han vuelto a salir. La atención y el seguimiento son muy buenos.</p><footer><b>Calor Control</b>Cliente</footer></blockquote>
+        <blockquote><p>Llevamos más de cuatro años con sus servicios y siempre demuestran un alto grado de satisfacción y puntualidad. No dudamos en recomendarlos.</p><footer><b>Sonia Tapia</b>Cliente desde hace más de 4 años</footer></blockquote>
+        <blockquote><p>Los técnicos fueron muy profesionales, explicaron cada paso y dejaron todo limpio al terminar. Ya pasaron varias semanas y no hemos vuelto a ver ninguna plaga.</p><footer><b>Luis Castellanos</b>Cliente</footer></blockquote>
+      </div>
+      <p class="pista">Desliza para ver más</p>
+    </div>
+  </section>
+
+  <section id="preguntas">
+    <div class="env dos-col">
+      <div class="ap"><span class="ceja">Preguntas</span><h2>Lo que más nos preguntan.</h2></div>
+      <div class="ap">
+        <details><summary>¿Los productos son seguros para niños y mascotas? <span class="mas" aria-hidden="true"></span></summary><p>Sí. Trabajamos con productos de baja toxicidad, aplicados con protocolos que protegen a niños y mascotas. Te decimos cuánto tiempo salir y cuándo regresar.</p></details>
+        <details><summary>¿Dan garantía? <span class="mas" aria-hidden="true"></span></summary><p>Sí. Si la plaga persiste, regresamos a darle seguimiento sin costo adicional.</p></details>
+        <details><summary>¿Qué incluye el diagnóstico? <span class="mas" aria-hidden="true"></span></summary><p>Revisamos los puntos de riesgo, identificamos el tipo de plaga y qué tanto hay, y te entregamos un plan de acción por escrito.</p></details>
+        <details><summary>¿Hasta dónde llegan? <span class="mas" aria-hidden="true"></span></summary><p>A la zona metropolitana de Querétaro y municipios cercanos. Escríbenos para confirmar tu ubicación.</p></details>
+        <details><summary>¿Trabajan con empresas por contrato? <span class="mas" aria-hidden="true"></span></summary><p>Sí. Contamos con registro REPSE y armamos un programa de visitas con su carpeta de cumplimiento para auditorías.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <section id="contacto" class="contacto" style="padding-top:0">
+    <div class="env dos-col">
+      <div class="ap">
+        <span class="ceja">Contacto</span>
+        <h2>Hablemos hoy.</h2>
+        <a class="grande" href="tel:+524421394023">442 139 4023</a>
+        <div class="datos">
+          <a class="btn btn-1" href="https://wa.me/5214421394023?text=Hola%2C%20vengo%20de%20su%20p%C3%A1gina.%20Me%20gustar%C3%ADa%20una%20cotizaci%C3%B3n." target="_blank" rel="noopener"><svg class="i"><use href="#i-message-circle"/></svg> WhatsApp</a>
+          <a class="btn btn-2" href="mailto:direccion@urbanpest.mx"><svg class="i"><use href="#i-mail"/></svg> direccion@urbanpest.mx</a>
+        </div>
+      </div>
+      <form class="forma ap" id="forma" novalidate>
+        <h3>Pide tu cotización</h3>
+        <p class="nota">Se abre WhatsApp con tu mensaje listo; sólo lo envías.</p>
+        <div class="campo"><label for="nombre">Nombre o empresa</label><input id="nombre" autocomplete="name"></div>
+        <div class="campo"><label for="tipo">Tipo de lugar</label>
+          <select id="tipo"><option>Hogar</option><option>Comercio</option><option>Industria de alimentos</option><option>Industria / bodega</option><option>Sector salud</option><option>Escuela</option><option>Otro</option></select></div>
+        <div class="campo"><label for="zona">Colonia o municipio</label><input id="zona" autocomplete="address-level2"></div>
+        <div class="campo"><label for="msj">¿Qué está pasando?</label><textarea id="msj" placeholder="La plaga, desde cuándo, qué tan grande es el lugar…"></textarea></div>
+        <p class="error" id="error" role="alert" hidden></p>
+        <button class="btn btn-1" type="submit"><svg class="i"><use href="#i-message-circle"/></svg> Enviar por WhatsApp</button>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer class="pie">
+  <div class="env">
+    <div><img src="img/logo.webp" alt="Urban Pest Control" width="1120" height="240" loading="lazy"><div>Control de plagas en Querétaro · 442 139 4023</div></div>
+    <nav aria-label="Pie"><a href="#servicios">Servicios</a><a href="#industria">Industria</a><a href="#contacto">Contacto</a><a href="aviso-privacidad.html">Aviso de privacidad</a></nav>
+    <p class="creditos">© 2026 Urban Pest Control. Fotos: Craftsman Concrete Floors y Adrien Olichon en Pexels. Íconos: Lucide. Página por Grupo Mazi.</p>
+  </div>
+</footer>
+
+<nav class="barra" aria-label="Contacto rápido">
+  <a class="btn btn-2" href="tel:+524421394023"><svg class="i"><use href="#i-phone"/></svg> Llamar</a>
+  <a class="btn btn-1" href="https://wa.me/5214421394023?text=Hola%2C%20vengo%20de%20su%20p%C3%A1gina.%20Me%20gustar%C3%ADa%20una%20cotizaci%C3%B3n." target="_blank" rel="noopener"><svg class="i"><use href="#i-message-circle"/></svg> WhatsApp</a>
+</nav>
+
+<script>
+const WA = '5214421394023';
+document.documentElement.classList.add('js');
+const $ = (s) => document.querySelector(s);
+const cab = $('#cabeza');
+addEventListener('scroll', () => cab.classList.toggle('bajo', scrollY > 8), { passive: true });
+/* tocar un servicio deja elegido su tipo en la forma */
+for(const a of document.querySelectorAll('[data-tipo]')) a.addEventListener('click', () => { $('#tipo').value = a.dataset.tipo; });
+$('#forma').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const err = $('#error'), msj = $('#msj').value.trim();
+  if(!msj){ err.textContent = 'Cuéntanos qué está pasando, aunque sea en una línea.'; err.hidden = false; $('#msj').focus(); return; }
+  err.hidden = true;
+  const nombre = $('#nombre').value.trim(), zona = $('#zona').value.trim();
+  const texto = [`Hola${nombre ? ', soy ' + nombre : ''}. Quiero una cotización.`, `· Lugar: ${$('#tipo').value}`, zona ? `· Zona: ${zona}` : '', `· ${msj}`].filter(Boolean).join('\n');
+  window.open(`https://wa.me/${WA}?text=${encodeURIComponent(texto)}`, '_blank', 'noopener');
+});
+/* aparecer al bajar (si el navegador no puede, todo se queda visible) */
+const visto = (el) => el.classList.add('visto');
+if('IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches){
+  const io = new IntersectionObserver((es) => { for(const x of es) if(x.isIntersecting){ visto(x.target); io.unobserve(x.target); } }, { rootMargin: '0px 0px -6% 0px' });
+  document.querySelectorAll('.ap').forEach((el) => io.observe(el));
+  requestAnimationFrame(() => setTimeout(() => $('#fotoPortada').classList.add('lista'), 100));
+} else { document.querySelectorAll('.ap').forEach(visto); $('#fotoPortada').classList.add('lista'); }
+</script>
+</body>
+</html>

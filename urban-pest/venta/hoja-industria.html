@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Urban Pest Control · Control de plagas para industria</title>
+<style>
+/* Hoja de presentación para jefes de calidad, inocuidad y mantenimiento (BRIEF, idea 4).
+   Se imprime a PDF con armar.mjs. Sin transparencias: el PDF sale con cero /SMask (regla de CLAUDE.md). */
+@font-face{font-family:"Archivo";src:url(../web/fuentes/archivo-400-900-normal.woff2) format("woff2");font-weight:400 900}
+@font-face{font-family:"Inter";src:url(../web/fuentes/inter-400-800-normal.woff2) format("woff2");font-weight:400 800}
+@page{size:Letter; margin:0}
+*{box-sizing:border-box}
+html,body{margin:0; background:#fff}
+body{font:400 10.5pt/1.5 "Inter", sans-serif; color:#0E1B2E; -webkit-print-color-adjust:exact; print-color-adjust:exact}
+.hoja{width:8.5in; height:11in; position:relative; overflow:hidden; display:flex; flex-direction:column}
+.arriba{padding:.55in .6in 0}
+.logo{height:.42in; width:auto; display:block}
+.ceja{font:600 8pt/1 "Inter"; letter-spacing:.16em; text-transform:uppercase; color:#165D9B; margin:.42in 0 .14in}
+h1{font:700 36pt/.98 "Archivo"; letter-spacing:-.04em; margin:0; color:#0E1B2E}
+h1 span{color:#165D9B}
+.lead{font-size:12pt; color:#4D5868; max-width:5.4in; margin:.18in 0 0}
+.foto{margin:.34in .6in 0; height:2.05in; border-radius:14px; overflow:hidden}
+.foto img{width:100%; height:100%; object-fit:cover; display:block}
+.cuerpo{padding:.34in .6in 0; display:grid; grid-template-columns:1fr 1fr 1fr; gap:.28in}
+.cuerpo h3{font:650 11pt/1.25 "Archivo"; margin:0 0 6px; color:#143361}
+.cuerpo p{margin:0; color:#4D5868; font-size:9.5pt}
+.num{display:block; font:600 7.5pt/1 "Inter"; color:#F29923; letter-spacing:.12em; margin-bottom:8px}
+.norma{margin:.32in .6in 0; padding:.16in .2in; border-left:3px solid #F29923; background:#F4F6F8; font-size:9pt; color:#3B4656}
+.norma b{color:#0E1B2E}
+.respaldo{margin:.3in .6in 0; display:grid; grid-template-columns:repeat(4, 1fr); border-top:1px solid #E3E7EC}
+.respaldo div{padding:.14in .1in 0 0}
+.respaldo b{display:block; font:700 13pt/1 "Archivo"; color:#143361; margin-bottom:4px}
+.respaldo span{font-size:8.3pt; color:#5B6676; line-height:1.35; display:block}
+.pie{margin-top:auto; background:#143361; color:#fff; padding:.32in .6in; display:flex; justify-content:space-between; align-items:center; gap:.3in}
+.pie h2{font:700 17pt/1.05 "Archivo"; letter-spacing:-.02em; margin:0}
+.pie p{margin:5px 0 0; color:#BFCBDD; font-size:9pt}
+.pie .tel{font:700 20pt/1 "Archivo"; letter-spacing:-.02em; text-align:right}
+.pie .tel small{display:block; font:500 9pt/1.4 "Inter"; color:#BFCBDD; letter-spacing:0; margin-top:6px}
+</style>
+</head>
+<body>
+<div class="hoja">
+  <div class="arriba">
+    <img class="logo" src="logo-blanco.jpg" alt="Urban Pest Control">
+    <div class="ceja">Control de plagas para industria · Querétaro</div>
+    <h1>Cuando llegue el auditor,<br><span>ya está todo.</span></h1>
+    <p class="lead">Programa de control de plagas para plantas de alimentos, bodegas y sector salud, con cada servicio documentado en una carpeta de cumplimiento en línea.</p>
+  </div>
+  <div class="foto"><img src="alimentos.jpg" alt=""></div>
+  <div class="cuerpo">
+    <div><span class="num">01</span><h3>Reporte de cada visita</h3><p>Fecha, técnico, productos aplicados con su registro, hallazgos y la firma de quien recibió.</p></div>
+    <div><span class="num">02</span><h3>Mapa de trampas</h3><p>El estado de cada punto de monitoreo, visita tras visita, para ver tendencias antes de que haya problema.</p></div>
+    <div><span class="num">03</span><h3>Consulta cuando quieras</h3><p>Tu jefe de calidad abre la carpeta desde su teléfono o computadora, sin pedirnos nada.</p></div>
+  </div>
+  <div class="norma"><b>NOM-251-SSA1-2009, numeral 5.10.</b> Pide un plan de control de plagas (5.10.7), plaguicidas con registro (5.10.9) y, si el servicio es contratado, un certificado o constancia de cada servicio con el número de licencia sanitaria (5.10.11). Te lo dejamos en orden, en un solo lugar.</div>
+  <div class="respaldo">
+    <div><b>SSA</b><span>Autorización vigente de la Secretaría de Salud</span></div>
+    <div><b>REPSE</b><span>Registro en regla para trabajar con empresas</span></div>
+    <div><b>+10 años</b><span>Atendiendo hogares, comercios e industria</span></div>
+    <div><b>Garantía</b><span>Si la plaga vuelve, regresamos sin costo</span></div>
+  </div>
+  <div class="pie">
+    <div><h2>Agenda un diagnóstico de tu planta.</h2><p>Revisamos puntos de riesgo y te entregamos un plan por escrito.</p></div>
+    <div class="tel">442 139 4023<small>direccion@urbanpest.mx · urbanpest.mx</small></div>
+  </div>
+</div>
+</body>
+</html>
