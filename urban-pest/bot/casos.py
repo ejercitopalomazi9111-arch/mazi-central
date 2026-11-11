@@ -296,7 +296,7 @@ FALTA = {
   'formas_pago': 'Efectivo, transferencia, tarjeta; si hay anticipo',
   'factura': 'Si factura, a quién, y si los precios llevan IVA',
   'lista_plagas': 'Qué plagas atiende y cuáles NO',
-  'tratamiento_cucarachas': 'Cómo trata cada plaga (una o dos líneas, sin tecnicismos)',
+  'tratamiento_cucarachas': '',
   'tratamiento_chinches': '',
   'tratamiento_termitas': '',
   'tratamiento_ratas': '',
@@ -322,6 +322,8 @@ FALTA = {
   'pagina_web': 'Dirección de la página (la nueva, cuando esté)',
 }
 UMBRAL = 10
+NOMBRES = {'aranas': 'las arañas', 'moscas_mosquitos': 'las moscas y los mosquitos', 'ratas': 'ratas y ratones', 'pulgas': 'pulgas y garrapatas'}
+NOMBRES = {'aranas': 'las arañas', 'moscas_mosquitos': 'las moscas y los mosquitos', 'ratas': 'ratas y ratones', 'pulgas': 'pulgas y garrapatas'}
 
 def plano(s):
     return re.sub(r'[^a-z0-9 ]', '', unicodedata.normalize('NFD', s.lower()).encode('ascii', 'ignore').decode()).strip()
@@ -363,7 +365,7 @@ if __name__ == '__main__':
             'dueno': 'true = además de contestar, se le avisa al dueño.',
         },
         'casos': C,
-        'falta': {k: v or f'Cómo trata {k[11:].replace("_", " y ")} (una o dos líneas, sin tecnicismos)' for k, v in FALTA.items() if k in usadas},
+        'falta': {k: v or f'Cómo trata {NOMBRES.get(k[12:], k[12:])} (una o dos líneas, sin tecnicismos)' for k, v in FALTA.items() if k in usadas},
         'cuenta': {'casos': len(C), 'formas': sum(len(c['formas']) for c in C), 'al_dueno': sum(c['dueno'] for c in C)},
     }
     p = Path(__file__).with_name('casos-borrador.json')
