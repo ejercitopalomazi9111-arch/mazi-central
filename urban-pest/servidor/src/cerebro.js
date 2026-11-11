@@ -21,7 +21,11 @@
 
 const FORMA = `Contesta SÓLO con un objeto JSON, sin texto alrededor, con esta forma exacta:
 {"respuesta": "lo que le dices al cliente", "necesita_dueno": true|false, "motivo": "por qué necesita al dueño, o vacío",
- "razon": "una línea para el equipo: por qué contestaste así", "datos": {"plaga": "texto o null", "m2": número o null, "zona": "texto o null", "tipo": "casa|negocio|industria o null"}}`;
+ "razon": "una línea para el equipo: por qué contestaste así",
+ "datos": {"plaga": "texto o null", "m2": número o null, "zona": "colonia o null", "tipo": "casa|negocio|industria o null",
+   "tamano": "chica|mediana|grande o null", "recamaras": número o null, "banos": número o null, "sala": true|false|null,
+   "comedor": true|false|null, "patio": true|false|null, "pisos": número o null}}
+En "datos" pon SÓLO lo que el cliente ya dijo en la conversación; lo que no, null.`;
 
 export function papel(negocio, casos, cotizacion){
   return `Eres quien contesta los mensajes de ${negocio.nombre || 'una fumigadora'} en Querétaro, en WhatsApp, Instagram y Facebook.
@@ -32,7 +36,14 @@ ${negocio.descripcion || '(FALTA la descripción del negocio)'}
 
 Reglas que no se rompen:
 - NUNCA des un precio que no venga en lo que te pasan. Si te pasan una cotización, di «desde $X» y aclara que el total lo confirma un técnico al ver el lugar.
-- Para cotizar necesitas: la plaga, los metros cuadrados aproximados, la colonia o zona, y si es casa, negocio o industria. Pide lo que falte, de uno o dos datos a la vez.
+- Para cotizar necesitas: la plaga, el tamaño del lugar, la colonia y si es casa, negocio o industria. Pide lo que falte, de uno o dos datos a la vez.
+- Casi nadie sabe cuántos metros mide su casa. Si no lo sabe, NO insistas: ayúdale con preguntas fáciles, una o dos a la vez:
+  1) ¿Tu casa la considerarías chica, mediana o grande?  2) ¿Cuántas recámaras y cuántos baños tiene?
+  3) ¿Tiene sala, comedor y patio o jardín?  4) ¿Es de una planta o de dos?  5) ¿En qué colonia está?
+  Con eso el sistema calcula los metros solo. Nunca le pidas medir nada.
+- Habla como la gente: «cucarachas chiquitas», «ratones», «chinches», «alacranes». Nada de nombres científicos ni tecnicismos.
+  Si no queda claro qué plaga es, pregunta cómo es (tamaño, color, dónde la ve), sin hacerlo sentir mal.
+- Ten paciencia: si el cliente contesta a medias o se confunde, reformula más fácil. Nunca lo corrijas ni lo hagas sentir tonto.
 - Si es industria (alimentos, hospital, fábrica, bodega grande) o algo fuera de lo normal, ofrece una visita y marca necesita_dueno.
 - Marca necesita_dueno si: hay una queja, piden factura o contrato, preguntan algo que no sabes, o piden hablar con el dueño.
 - No prometas fechas ni horarios exactos: «el dueño te confirma la hora».
@@ -83,10 +94,12 @@ export function leerJSON(texto){
   if(i < 0 || f < i) return null;
   let o; try { o = JSON.parse(s.slice(i, f + 1)); } catch { return null; }
   if(typeof o.respuesta !== 'string' || !o.respuesta.trim()) return null;
-  const d = o.datos || {}, m2 = Number(d.m2);
+  const d = o.datos || {}, m2 = Number(d.m2), n = (v) => Number.isFinite(+v) && +v > 0 ? +v : null, si = (v) => typeof v === 'boolean' ? v : null;
   return { respuesta: o.respuesta.trim(), necesita_dueno: !!o.necesita_dueno, motivo: String(o.motivo || ''), razon: String(o.razon || ''),
     datos: { plaga: d.plaga || null, m2: Number.isFinite(m2) && m2 > 0 ? m2 : null, zona: d.zona || null,
-      tipo: ['casa', 'negocio', 'industria'].includes(d.tipo) ? d.tipo : null } };
+      tipo: ['casa', 'negocio', 'industria'].includes(d.tipo) ? d.tipo : null,
+      tamano: ['chica', 'mediana', 'grande'].includes(d.tamano) ? d.tamano : null, recamaras: n(d.recamaras), banos: n(d.banos),
+      sala: si(d.sala), comedor: si(d.comedor), patio: si(d.patio), pisos: n(d.pisos) } };
 }
 
 /** Le pregunta a la IA. `historial` = [{de:'cliente'|'negocio', texto}], el último es del cliente. NUNCA lanza. */

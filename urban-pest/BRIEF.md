@@ -62,6 +62,23 @@ queda con nosotros.
 - **Regla de negocio:** a una casa de $500 no conviene ir a medir; a una industria sí. El bot
   distingue los dos casos.
 
+### B-bis · Cuando no sabe cuánto mide su casa (Carlos, 11 nov)
+
+Casi nadie lo sabe. El bot no insiste: hace un mini quiz fácil, una o dos preguntas a la vez:
+
+- ¿Tu casa es chica, mediana o grande?
+- ¿Cuántas recámaras y baños tiene?
+- ¿Tiene patio? ¿Es de una o de dos plantas?
+- ¿En qué colonia está?
+
+`servidor/src/medidor.js` lo vuelve metros. Cada cuarto mide según el tamaño de la casa (una
+recámara de casa grande, unos 18 m²), se suman los pasillos y se ajusta por colonia (Juriquilla
+o El Campanario son más grandes). Siempre sale como **estimado** y el técnico confirma.
+
+**Los números son nuestro primer estimado** y se calibran con los servicios reales del dueño
+(`POST /api/medidas`). Habla como la gente («cucarachas chiquitas», «comején»), sin
+tecnicismos y con paciencia.
+
 ### C · El centro de operaciones
 
 Es su app de control, la que le da confianza de que «aquí veo todo lo que está pasando»:
@@ -103,6 +120,35 @@ que se queda.»** Mientras tanto:
   centro.
 - **Ojo:** en el plan gratis de Gemini, Google puede usar lo que se le manda para mejorar sus
   productos. Por eso Gemini va de respaldo y no primero.
+
+## LO MÁS IMPORTANTE: que le caiga al menos una venta con industria (Carlos, 11 nov)
+
+Cualquier empresa que aparezca es ganancia. Las ideas, de la que más pega a la que menos, todas
+gratis:
+
+1. **La lista de a quién tocarle.** El DENUE del INEGI es el directorio público de empresas, con
+   giro, dirección, teléfono y tamaño. Filtramos las de Querétaro que más necesitan control de
+   plagas certificado: fábricas de alimentos y bebidas, comida para mascotas, farmacéuticas,
+   hospitales y clínicas, bodegas de alimentos. Se ordenan por tamaño y cercanía a su bodega.
+   **FALTA:** un correo para sacar la llave gratis de la API del INEGI.
+2. **El gancho no es «fumigamos», es «te dejamos lista la auditoría».** Una planta de alimentos
+   tiene que demostrar su control de plagas con registros. La NOM-251 lo pide, y las
+   certificaciones (ISO 22000, FSSC, AIB) piden reportes de servicio y mapa de trampas; esto se
+   verifica antes de ponerlo en la página. Le armamos una **carpeta de cumplimiento** digital por
+   cliente: cada servicio deja su reporte en PDF (fecha, productos, trampas, hallazgos y firma) y
+   el jefe de calidad de la empresa la consulta cuando quiere. Las fumigadoras chicas entregan
+   papel; ésta es la diferencia que le abre la puerta. Sale del centro de operaciones.
+3. **Una página que hable con la industria:** una sección propia, la carpeta de cumplimiento, sus
+   reseñas de casi 5 estrellas al frente y un «diagnóstico de su planta» para pedir visita. Si el
+   diagnóstico es gratis o no, lo decide el dueño: es su tiempo.
+4. **Tocar puertas con algo en la mano:** correo y LinkedIn a jefes de calidad, inocuidad y
+   mantenimiento. Mensajes cortos que escribimos nosotros, más una hoja de presentación en PDF.
+   **Nada de mandar WhatsApp en masa:** quema el número.
+5. **Socios que ya entran a las plantas:** consultores de inocuidad y certificación, empresas de
+   limpieza y mantenimiento industrial, y administradores de parques industriales. Se les ofrece
+   comisión por cada cliente que recomienden.
+6. **Su ficha de Google:** que salga en «fumigación industrial Querétaro», con fotos de trabajos y
+   sus reseñas.
 
 ## Cómo se vende
 

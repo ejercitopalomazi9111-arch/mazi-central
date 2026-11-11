@@ -102,5 +102,26 @@ console.log('cerebro (gratis primero)');
   ok('sin llaves no truena: dice cuál falta', !sin.bien && /GROQ_API_KEY/.test(sin.error));
   globalThis.fetch = original; }
 
+console.log('medidor (no sabe cuánto mide su casa)');
+{ const { estimarM2 } = await import('./src/medidor.js');
+  const { aPlaga } = await import('./src/cotizador.js');
+  const g = estimarM2({ tamano: 'grande', recamaras: 3, banos: 2, sala: true, comedor: true, patio: true, zona: 'Juriquilla' });
+  const g2 = estimarM2({ tamano: 'grande', recamaras: 3, banos: 2, sala: true, comedor: true, patio: true, zona: 'Centro' });
+  const c = estimarM2({ tamano: 'chica', recamaras: 2, banos: 1 });
+  ok('casa grande de 3 recámaras: un estimado con su rango', g.bien && g.m2 > 150 && g.rango[0] < g.m2 && g.m2 < g.rango[1], JSON.stringify(g));
+  ok('la misma casa en Juriquilla sale más grande que en el Centro', g.m2 > g2.m2, `${g.m2} vs ${g2.m2}`);
+  ok('una casa chica de 2 recámaras sale chica', c.bien && c.m2 < 60, JSON.stringify(c));
+  ok('sólo con «es mediana» ya hay estimado', estimarM2({ tamano: 'Mediana' }).m2 === 110);
+  ok('«pequeña» cuenta como chica', estimarM2({ tamano: 'pequeña' }).tamano === 'chica');
+  ok('sin nada, dice qué falta en vez de inventar', !estimarM2({}).bien);
+  ok('dice qué preguntar para afinar', estimarM2({ tamano: 'grande' }).afinar.includes('recámaras'));
+  ok('«cucarachitas güeritas», «ratones» y «comején» se entienden', aPlaga('cucarachitas güeritas') === 'cucaracha' && aPlaga('Ratones') === 'roedor' && aPlaga('comején') === 'termita'); }
+{ const t = hacer({ pensar: (a, i) => i === 1
+    ? { bien: true, respuesta: '¿Y en qué colonia?', necesita_dueno: false, motivo: '', razon: 'no sabe metros: quiz', datos: { plaga: 'cucarachas chiquitas', m2: null, zona: 'Centro', tipo: 'casa', tamano: 'mediana', recamaras: 2, banos: 1 } }
+    : { bien: true, respuesta: `Te sale desde $${a.cotizacion.desde}`, necesita_dueno: false, motivo: '', razon: 'estimado', datos: {} } });
+  await t.of.atender(msj('no sé cuántos metros, es mediana, 2 recámaras y un baño, en el centro, tengo cucarachas chiquitas'));
+  const conv = t.M.get('conv:whatsapp:524420000000');
+  ok('sin metros, cotiza con el estimado y lo marca como estimado', conv.cotizacion?.m2Estimado && conv.cotizacion.m2 > 0 && t.llamadas.length === 2, JSON.stringify(conv.cotizacion)); }
+
 console.log(`\n${bien} pasan · ${mal} fallan`);
 process.exit(mal ? 1 : 0);

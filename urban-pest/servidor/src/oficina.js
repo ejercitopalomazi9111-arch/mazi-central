@@ -14,6 +14,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 import { reflejo, llenar } from './reflejo.js';
 import { cotizar } from './cotizador.js';
+import { estimarM2, MEDIDAS } from './medidor.js';
 
 const TOPE_HORA = 20;
 const DUENO_CALLA_MS = 30 * 60 * 1000;
@@ -29,6 +30,7 @@ export class Oficina {
       negocio: (await this.A.get('negocio')) || { nombre: 'Urban Pest', descripcion: '' },
       casos: (await this.A.get('casos')) || [],
       tarifas: (await this.A.get('tarifas')) || null,
+      medidas: (await this.A.get('medidas')) || null,
       personales: new Set((await this.A.get('personales')) || []),
     };
   }
@@ -65,11 +67,11 @@ export class Oficina {
     }
 
     /* 6 · CEREBRO */
-    let cot = cfg.tarifas ? this.cotiza(conv, cfg.tarifas) : null;
+    let cot = cfg.tarifas ? this.cotiza(conv, cfg.tarifas, cfg.medidas) : null;
     let p = await this.pensar({ env: this.env, negocio: cfg.negocio, casos: cfg.casos, historial: conv.mensajes, cotizacion: cot });
     if(p.bien){
       conv.datos = mezclar(conv.datos, p.datos);
-      const nueva = cfg.tarifas && !cot ? this.cotiza(conv, cfg.tarifas) : null;
+      const nueva = cfg.tarifas && !cot ? this.cotiza(conv, cfg.tarifas, cfg.medidas) : null;
       /* con lo que acaba de decir ya se puede cotizar: se le pregunta otra vez, ya con el precio */
       if(nueva){ cot = nueva; const p2 = await this.pensar({ env: this.env, negocio: cfg.negocio, casos: cfg.casos, historial: conv.mensajes, cotizacion: cot }); if(p2.bien) p = { ...p2, datos: p.datos }; }
     }
@@ -85,10 +87,16 @@ export class Oficina {
     await guarda(); return { hecho: 'cerebro', dueno: !!p.necesita_dueno };
   }
 
-  cotiza(conv, tarifas){
+  cotiza(conv, tarifas, medidas){
     const d = conv.datos || {};
     if(d.km == null && d.zona) d.km = (tarifas.zonas || {})[normal(d.zona)] ?? null;
-    const c = cotizar({ plaga: d.plaga && normal(d.plaga), m2: d.m2, km: d.km, tipo: d.tipo || 'casa' }, tarifas);
+    let m2 = d.m2, m2Estimado = false;
+    /* no sabe los metros: se estiman con lo que contó (sólo casas; negocio e industria se visitan) */
+    if(!(m2 > 0) && (d.tipo || 'casa') === 'casa'){
+      const e = estimarM2(d, medidas || MEDIDAS);
+      if(e.bien){ m2 = e.m2; m2Estimado = true; conv.estimacion = e; }
+    }
+    const c = cotizar({ plaga: d.plaga && normal(d.plaga), m2, m2Estimado, km: d.km, tipo: d.tipo || 'casa' }, tarifas);
     return c.bien ? c : null;
   }
 

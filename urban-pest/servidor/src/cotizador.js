@@ -17,10 +17,34 @@
      plagas: { cucaracha: { litros_m2, precio_litro }, … },
      tipos: { casa: { factor }, negocio: { factor }, industria: { factor, visita: true } } } */
 
+/* Cómo le dice la gente a cada plaga → la clave de las tarifas. Se amplía en
+   las tarifas (`alias`) sin tocar código: lo que se oiga en la calle, se agrega. */
+export const ALIAS = {
+  cucaracha: ['cucaracha', 'cucarachita', 'cuca', 'guerita', 'alemana', 'americana'],
+  chinche: ['chinche', 'chinche de cama'],
+  alacran: ['alacran', 'escorpion'],
+  roedor: ['rata', 'raton', 'roedor', 'tuza'],
+  hormiga: ['hormiga'],
+  termita: ['termita', 'comejen', 'polilla de la madera'],
+  pulga: ['pulga', 'garrapata'],
+  arana: ['arana', 'viuda negra'],
+  mosco: ['mosco', 'mosquito', 'zancudo'],
+  mosca: ['mosca'],
+};
+const sinAcento = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+/** «cucarachitas güeritas» → 'cucaracha'. null si no se reconoce. */
+export function aPlaga(texto, extra = {}){
+  const t = sinAcento(texto).replace(/(es|s)\b/g, '');
+  for(const [clave, dichos] of Object.entries({ ...ALIAS, ...extra })){
+    if(t === clave || dichos.some(d => t.includes(sinAcento(d)))) return clave;
+  }
+  return null;
+}
+
 export function cotizar(p, t){
   const falta = [];
   if(!t || !t.plagas) return { bien: false, falta: ['tarifas (el Excel del cliente)'] };
-  const plaga = t.plagas[p.plaga];
+  const plaga = t.plagas[p.plaga] || t.plagas[aPlaga(p.plaga, t.alias)];
   if(!plaga) falta.push('plaga');
   if(!(p.m2 > 0)) falta.push('metros cuadrados');
   if(!(p.km >= 0)) falta.push('zona o distancia');
@@ -38,7 +62,9 @@ export function cotizar(p, t){
     desglose: { producto: redondear(producto), mano_de_obra: redondear(mano), traslado: redondear(traslado) },
     visita: !!tipo.visita || (t.umbral_visita_m2 != null && p.m2 >= t.umbral_visita_m2),
     fueraDeRadio,
-    nota: 'Precio desde. El total lo confirma un técnico al ver el lugar.',
+    ...(p.m2Estimado ? { m2: p.m2, m2Estimado: true } : {}),
+    nota: p.m2Estimado ? 'Precio desde, con los metros estimados por lo que nos contaste. El total lo confirma un técnico al ver el lugar.'
+                       : 'Precio desde. El total lo confirma un técnico al ver el lugar.',
   };
 }
 

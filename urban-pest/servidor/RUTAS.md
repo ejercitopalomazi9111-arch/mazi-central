@@ -50,6 +50,8 @@ Si `noSalio` viene puesto, Meta no lo entregó.
 | `POST /api/tarifas` | `{ tarifas }` | Los costos del Excel. La forma está en `src/cotizador.js` |
 | `POST /api/negocio` | `{ negocio: { nombre, descripcion } }` | Lo que la IA sabe del negocio |
 | `POST /api/personales` | `{ numeros: [...] }` | Los chats personales del dueño. El bot no los toca |
+| `POST /api/estimar` | `{ tamano, recamaras, banos, sala, comedor, patio, zona }` | Los metros estimados de una casa cuando el cliente no sabe. Regresa `m2`, `rango` y `afinar` (qué falta preguntar) |
+| `GET /api/medidas` · `POST /api/medidas` | `{ medidas }` | La tabla del estimado: m² por cuarto según el tamaño, y el ajuste por colonia. Se calibra con los servicios reales |
 | `POST /api/cotizar` | `{ plaga, m2, km, tipo }` | Una cotización a mano. Regresa `desde`, `desglose`, `visita` y `fueraDeRadio` |
 
 ## Lo que todavía NO está, y quién lo hace

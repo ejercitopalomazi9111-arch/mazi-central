@@ -16,6 +16,7 @@ import { Oficina } from './oficina.js';
 import { firmaValida, leerAviso, enviar } from './meta.js';
 import { pensar } from './cerebro.js';
 import { cotizar } from './cotizador.js';
+import { estimarM2, MEDIDAS } from './medidor.js';
 
 const json = (d, s = 200, h = {}) => new Response(JSON.stringify(d), { status: s, headers: { 'content-type': 'application/json; charset=utf-8', ...h } });
 
@@ -88,6 +89,9 @@ export class Despacho extends DurableObject {
       case 'POST /api/aviso/visto': { const a = await A.get(b.id); if(a) await A.put(b.id, { ...a, estado: 'visto' }); return { bien: !!a }; }
       case 'GET /api/casos': return { bien: true, casos: (await A.get('casos')) || [] };
       case 'POST /api/casos': await A.put('casos', b.casos || []); return { bien: true };
+      case 'GET /api/medidas': return { bien: true, medidas: (await A.get('medidas')) || MEDIDAS };
+      case 'POST /api/medidas': await A.put('medidas', b.medidas); return { bien: true };
+      case 'POST /api/estimar': return estimarM2(b, (await A.get('medidas')) || MEDIDAS);
       case 'POST /api/tarifas': await A.put('tarifas', b.tarifas); return { bien: true };
       case 'POST /api/negocio': await A.put('negocio', b.negocio); return { bien: true };
       case 'POST /api/personales': await A.put('personales', b.numeros || []); return { bien: true };
