@@ -145,9 +145,14 @@ button{font:inherit}
 .libro3d .frente{left:0; width:var(--W); height:var(--H); border-radius:3px 10px 10px 3px; background:var(--c); transform:translateZ(calc(var(--D) / 2)); box-shadow:0 40px 80px -20px rgba(0,0,0,.9)}
 .libro3d .frente img{width:100%; height:100%; object-fit:cover}
 .libro3d .frente b{position:absolute; inset:20px; font:400 22px/1.1 var(--display); color:#F1EADF}
-.libro3d .lado{left:calc(var(--D) / -2); width:var(--D); height:var(--H); background:var(--c); transform:rotateY(-90deg) translateZ(calc(var(--W) / 2)); transform-origin:50% 50%}
+/* el lomo va pegado a la orilla izquierda: su centro ya está en x = 0, así que sólo se gira (antes se empujaba W/2 y quedaba separado) */
+.libro3d .lado{left:calc(var(--D) / -2); width:var(--D); height:var(--H); background:var(--c); transform:rotateY(-90deg); transform-origin:50% 50%; box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}
 .libro3d .lado img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(.62)}
 .libro3d .lado b{position:absolute; inset:12px 0; writing-mode:vertical-rl; transform:rotate(180deg); font:400 14px var(--display); color:#F1EADF; display:flex; align-items:center; justify-content:center; white-space:nowrap; overflow:hidden}
+.libro3d .trasera{left:0; width:var(--W); height:var(--H); border-radius:10px 3px 3px 10px; background:var(--c); filter:brightness(.55); transform:translateZ(calc(var(--D) / -2)) rotateY(180deg)}
+.libro3d .arriba,.libro3d .abajo{left:0; width:calc(var(--W) - 3px); height:var(--D); background:repeating-linear-gradient(180deg,#efe7da 0 2px,#d9cfbf 2px 3px)}
+.libro3d .arriba{top:calc(var(--D) / -2); transform:rotateX(90deg)}
+.libro3d .abajo{top:calc(var(--H) - var(--D) / 2); transform:rotateX(-90deg)}
 .libro3d .hojas{left:calc((var(--W) - var(--D)) / 2); width:var(--D); height:var(--H); background:repeating-linear-gradient(90deg,#efe7da 0 2px,#d9cfbf 2px 3px); transform:rotateY(90deg) translateZ(calc(var(--W) / 2 - 2px))}
 @media (prefers-reduced-motion:reduce){ .lomo{transition:none} }
 
@@ -764,7 +769,8 @@ function sacarLibro(boton, despues){
   const capa = document.createElement('div'); capa.className = 'libro3d'; capa.setAttribute('aria-hidden', 'true');
   capa.innerHTML = `<div class="cubo" style="--W:${W}px;--H:${H}px;--D:${prof}px;--c:${getComputedStyle(boton).getPropertyValue('--c')}">
     <div class="cara frente">${p ? `<img src="${p}" alt="">` : `<b>${esc(o?.titulo || '')}</b>`}</div>
-    <div class="cara lado">${p ? `<img src="${p}" alt="">` : ''}<b>${esc(o?.titulo || '')}</b></div><div class="cara hojas"></div></div>`;
+    <div class="cara lado">${p ? `<img src="${p}" alt="">` : ''}<b>${esc(o?.titulo || '')}</b></div><div class="cara hojas"></div>
+    <div class="cara trasera"></div><div class="cara arriba"></div><div class="cara abajo"></div></div>`;
   document.body.append(capa);
   const cubo = capa.firstElementChild;
   /* empieza exactamente donde está el lomo, de canto (el lomo de frente) */
