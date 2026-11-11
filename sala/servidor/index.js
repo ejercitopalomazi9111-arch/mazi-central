@@ -81,7 +81,7 @@ export default {
     if(pedido.method === 'OPTIONS'){
       return conCORS(new Response(null, { status:204, headers:{
         'Access-Control-Allow-Methods':'GET,POST,OPTIONS',
-        'Access-Control-Allow-Headers':'content-type,x-llave,x-token',
+        'Access-Control-Allow-Headers':'content-type,x-llave,x-token,x-acceso',
         'Access-Control-Max-Age':'86400',
       } }), pedido);
     }
@@ -117,8 +117,9 @@ export default {
           const r = await env.SALA.get(env.SALA.idFromName('GRUPAZ')).fetch(new Request('https://sala/api/sala/GRUPAZ/hilo?desde=e99999999', { headers: { 'X-Llave': pedido.headers.get('x-llave') || '' } }));
           ok = r.ok;
         }catch{}
-        if(!ok && ruta !== '/api/salud') return conCORS(Response.json({ bien:false, error:'Falta la llave de la sala.' }, { status:401 }), pedido);
-        h.set('x-llave', 'sala-ok');
+        /* con la llave de la sala entra como Grupo Mazi; si no, el bot revisa si trae un
+           código de acceso de tester (x-acceso), que sólo abre Urban Pest */
+        if(ok) h.set('x-llave', 'sala-ok');
       }
       const nueva = new Request(new URL(ruta + url.search, url.origin), { method: pedido.method, headers: h, body: ['GET', 'HEAD'].includes(pedido.method) ? undefined : await pedido.arrayBuffer() });
       try{

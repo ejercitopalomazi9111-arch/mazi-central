@@ -199,3 +199,10 @@ button{ cursor:pointer; background:none; border:0; }
 .b.escribiendo span:nth-child(2){ animation-delay:.15s; } .b.escribiendo span:nth-child(3){ animation-delay:.3s; }
 @keyframes punto{ 0%,80%,100%{ opacity:.3; transform:none; } 40%{ opacity:1; transform:translateY(-3px); } }
 .cotiza .tit b{ color:var(--aviso); font-weight:600; }
+
+/* escribo como cliente o dueño (sólo en conversaciones de prueba) */
+.como{ display:flex; align-items:center; gap:6px; margin:0 16px 8px; font-size:13px; color:var(--tenue); flex-wrap:wrap; }
+.como [role="radio"]{ min-height:36px; padding:0 14px; border-radius:999px; border:1px solid var(--linea); background:var(--sup); font-weight:600; font-size:14px; }
+.como [aria-checked="true"]{ background:var(--acento); color:var(--acento-tinta); border-color:transparent; }
+.como .borrar{ margin-left:auto; min-height:36px; color:var(--aviso); font-weight:600; font-size:13px; }
+.sin-acceso{ position:fixed; inset:0; z-index:9; background:var(--fondo); display:grid; place-items:center; padding:24px; }

@@ -26,13 +26,16 @@ if(q.get('servidor')) guarda.poner('up_servidor', q.get('servidor'));
 const DE_MUESTRA = q.has('muestra');
 /* la misma llave de La Sala que ya guardó la Central en este teléfono */
 const llave = () => guarda.leer('up_llave') || guarda.leer('salaLlave') || '';
+/* o el link de acceso de un tester (?acceso=…): se guarda y se quita de la dirección */
+if(q.get('acceso')){ guarda.poner('up_acceso', q.get('acceso')); q.delete('acceso'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '')); }
+const acceso = () => guarda.leer('up_acceso') || '';
 
 const api = {
   async pedir(metodo, ruta, cuerpo){
     if(DE_MUESTRA) return muestra(metodo, ruta, cuerpo);
-    const r = await fetch(SERVIDOR + ruta, { method: metodo, headers: { 'content-type': 'application/json', 'x-llave': llave() }, body: cuerpo ? JSON.stringify(cuerpo) : undefined });
+    const r = await fetch(SERVIDOR + ruta, { method: metodo, headers: { 'content-type': 'application/json', 'x-llave': llave(), 'x-acceso': acceso() }, body: cuerpo ? JSON.stringify(cuerpo) : undefined });
     const j = await r.json().catch(() => ({ bien: false, error: 'El servidor no contestó bien.' }));
-    if(r.status === 401){ pedirLlave(); }
+    if(r.status === 401) sinAcceso(j.error);
     return j;
   },
 };
@@ -54,6 +57,10 @@ function muestra(metodo, ruta, b){
   if(ruta === '/api/ia'){ M.ia.push({ de: 'yo', texto: b.texto }, { de: 'ia', texto: 'Esto es una muestra: cuando se conecte el servidor, aquí te contesta tu IA con los datos de tu negocio.' }); return { bien: true }; }
   return { bien: false, error: 'Ruta de muestra desconocida.' };
 }
+function sinAcceso(msg){
+  if(document.querySelector('.sin-acceso')) return;
+  document.body.insertAdjacentHTML('beforeend', `<div class="sin-acceso"><div class="vacio-grande">${icono('circle-alert')}<b>Te falta tu acceso</b><p>${esc(msg || 'Abre el link que te mandó Grupo Mazi.')}</p></div></div>`);
+}
 function pedirLlave(){
   const k = prompt('Escribe la llave del panel (te la da Grupo Mazi):');
   if(k){ guarda.poner('up_llave', k.trim()); location.reload(); }
@@ -73,12 +80,14 @@ function hace(t){
 const iniciales = (n) => esc(String(n || '?').replace(/\(.*?\)/g, '').trim().split(/\s+/).map(p => p[0] || '').join('').slice(0, 2).toUpperCase() || '?');
 const CANAL = { whatsapp: ['WA', 'WhatsApp'], instagram: ['IG', 'Instagram'], facebook: ['FB', 'Facebook'], prueba: ['TÚ', 'Prueba: escribes tú como cliente'] };
 /* el chat de prueba de este teléfono */
-const chatPrueba = () => { let c = guarda.leer('up_prueba'); if(!c){ c = 'prueba-' + Math.random().toString(36).slice(2, 8); guarda.poner('up_prueba', c); } return c; };
+/* cada «nueva conversación de prueba» es un chat aparte; los testers ven las de todos */
+const nuevaPrueba = () => 'prueba-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+let YO = 'Grupo Mazi';
 const avatar = (c) => `<span class="avatar">${iniciales(c.nombre || c.chat)}<i class="canal ${c.canal}" aria-label="${CANAL[c.canal]?.[1] || ''}">${CANAL[c.canal]?.[0] || '?'}</i></span>`;
 const VIA = {
   reflejo: ['m-reflejo', 'zap', 'Respuesta hecha'],
   cerebro: ['m-ia', 'sparkles', 'IA'],
-  dueno: ['m-dueno', 'user-round', 'Tú'],
+  dueno: ['m-dueno', 'user-round', 'Dueño'],
   respaldo: ['m-aviso', 'circle-alert', 'Respaldo'],
 };
 const marcaVia = (v) => VIA[v] ? `<span class="marca-chica ${VIA[v][0]}">${icono(VIA[v][1])}${VIA[v][2]}</span>` : '';
@@ -92,7 +101,7 @@ function pintarLista(){
     const f = E.filtro.toLowerCase();
     const lista = E.conv.filter(c => !f || (c.nombre || '').toLowerCase().includes(f) || (c.ultimo_texto || '').toLowerCase().includes(f));
     v.innerHTML = `<h1 class="titulo-vista">Chats</h1>
-      <button class="btn probar" type="button" data-abrir="prueba|${chatPrueba()}">${icono('message-circle')}Probar el bot como cliente</button>
+      <button class="btn probar" type="button" data-abrir="prueba|${nuevaPrueba()}">${icono('message-circle')}Nueva conversación de prueba</button>
       <label class="buscar">${icono('search')}<input id="buscar" type="search" placeholder="Buscar cliente o mensaje" value="${esc(E.filtro)}" aria-label="Buscar"></label>
       ${lista.length ? lista.map(c => `<button class="fila" type="button" data-abrir="${esc(c.canal)}|${esc(c.chat)}" aria-current="${E.abierta === c.canal + '|' + c.chat}">
           ${avatar(c)}
@@ -171,24 +180,31 @@ async function abrir(clave){
         return ms.map((m, k) => burbuja(m) + (k === (i < 0 ? ms.length - 1 : i) ? tarjetaCot : '')).join(''); })()}
     </div>
     ${callado ? `<div class="callado">${icono('clock')}Estás contestando tú: el bot se queda callado en este chat hasta las ${new Date(c.duenoHasta).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' })}</div>` : ''}
-    ${prueba ? `<div class="callado">${icono('message-circle')}Escribe como si fueras un cliente. Así le contesta el bot a la gente.<button type="button" id="bOtraVez">Empezar de nuevo</button></div>` : ''}
-    <form class="escribir" id="forma"><textarea id="texto" rows="1" placeholder="${prueba ? 'Escribe como cliente' : 'Contesta tú'}" aria-label="${prueba ? 'Mensaje como cliente' : 'Tu respuesta'}"></textarea>
+    ${prueba ? `<div class="como" role="radiogroup" aria-label="Escribo como">
+      <span>Escribo como</span>
+      <button type="button" role="radio" data-como="cliente" aria-checked="${E.como !== 'dueno'}">Cliente</button>
+      <button type="button" role="radio" data-como="dueno" aria-checked="${E.como === 'dueno'}">Dueño</button>
+      <button type="button" class="borrar" id="bOtraVez">Borrar chat</button></div>` : ''}
+    <form class="escribir" id="forma"><textarea id="texto" rows="1" placeholder="${prueba && E.como !== 'dueno' ? 'Escribe como cliente' : 'Contesta como dueño'}" aria-label="Tu mensaje"></textarea>
       <button class="mandar" type="submit" id="bMandar" aria-label="Mandar" disabled>${icono('send')}</button></form>`;
   const bb = $('#burbujas'); bb.scrollTop = bb.scrollHeight;
-  if($('#bOtraVez')) $('#bOtraVez').onclick = async () => { await api.pedir('POST', '/api/probar/borrar', { chat }); abrir(clave); };
+  if($('#bOtraVez')) $('#bOtraVez').onclick = async () => { if($('#bOtraVez').dataset.seguro !== '1'){ $('#bOtraVez').dataset.seguro = '1'; $('#bOtraVez').textContent = '¿Seguro? Toca otra vez'; return; }
+    await api.pedir('POST', '/api/probar/borrar', { chat }); await cargar(); $('#app').classList.remove('en-chat'); E.abierta = null; pintarLista(); };
+  document.querySelectorAll('[data-como]').forEach(b => b.onclick = () => { E.como = b.dataset.como; guarda.poner('up_como', E.como); abrir(clave); });
   $('#bVolver').onclick = () => { $('#app').classList.remove('en-chat'); E.abierta = null; pintarLista(); };
   $('#bPensar').onclick = () => { E.pensar = !E.pensar; guarda.poner('up_pensar', E.pensar ? '1' : '0'); abrir(clave); };
   const t = $('#texto'), bm = $('#bMandar');
   t.oninput = () => { bm.disabled = !t.value.trim(); t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 140) + 'px'; };
   $('#forma').onsubmit = async (e) => {
     e.preventDefault(); const texto = t.value.trim(); if(!texto) return; bm.disabled = true;
-    if(prueba){
+    const comoCliente = prueba && E.como !== 'dueno';
+    if(comoCliente){
       /* lo del cliente sale de una vez y el bot «escribe» mientras piensa */
       t.value = ''; t.style.height = 'auto';
       $('#burbujas').insertAdjacentHTML('beforeend', `<div class="b cliente">${esc(texto)}<div class="pie">ahora</div></div><div class="b negocio escribiendo" id="escribiendo"><span></span><span></span><span></span></div>`);
       $('#burbujas').scrollTop = $('#burbujas').scrollHeight;
     }
-    const r = await api.pedir('POST', prueba ? '/api/probar' : '/api/responder', prueba ? { chat, texto } : { canal, chat, texto });
+    const r = await api.pedir('POST', comoCliente ? '/api/probar' : '/api/responder', comoCliente ? { chat, texto, nombre: c.nombre !== 'Prueba (tú)' && c.mensajes.length ? c.nombre : `Prueba de ${YO} · ${new Date().toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' })}` } : { canal, chat, texto });
     if(!r.bien){ alert(r.error || 'No se pudo mandar.'); bm.disabled = false; return; }
     await cargar(); abrir(clave);
   };
@@ -197,7 +213,8 @@ async function abrir(clave){
 
 function burbuja(m){
   const tipo = m.de === 'cliente' ? 'cliente' : 'negocio ' + (m.via === 'cerebro' ? 'ia' : m.via === 'dueno' ? 'dueno' : '');
-  const pie = m.de === 'cliente' ? hace(m.cuando) : `${VIA[m.via] ? VIA[m.via][2] + ' · ' : ''}${hace(m.cuando)}`;
+  const autor = m.quien ? ` (${esc(m.quien)})` : '';
+  const pie = m.de === 'cliente' ? `${m.quien ? 'Cliente' + autor + ' · ' : ''}${hace(m.cuando)}` : `${VIA[m.via] ? VIA[m.via][2] + (m.via === 'dueno' ? autor : '') + ' · ' : ''}${hace(m.cuando)}`;
   let extra = '';
   if(E.pensar && m.via === 'cerebro' && m.razon) extra = `<p class="razon">${icono('brain')}<span>${esc(m.razon)}${m.modelo ? ` <small>· ${esc(m.modelo)}</small>` : ''}</span></p>`;
   if(E.pensar && m.via === 'reflejo') extra = `<p class="razon" style="color:var(--acento-texto);border-color:color-mix(in srgb,var(--acento) 45%,transparent)">${icono('zap')}<span>Respuesta hecha «${esc(m.caso)}» · seguridad ${Math.round((m.confianza || 0) * 100)} %</span></p>`;
@@ -230,8 +247,19 @@ document.addEventListener('click', async (e) => {
 });
 $('#bTema').onclick = () => tema(true);
 tema(false); pintarIconos();
-$('#estadoBot').textContent = DE_MUESTRA ? 'Datos de muestra · sin conectar' : 'Bot atendiendo';
+E.como = guarda.leer('up_como') || 'cliente';
+if(!DE_MUESTRA){ const yo = await api.pedir('GET', '/api/yo'); if(yo.bien) YO = yo.quien; }
+$('#estadoBot').textContent = DE_MUESTRA ? 'Datos de muestra · sin conectar' : `Bot atendiendo · entraste como ${YO}`;
 $('#estadoBot').classList.toggle('es-muestra', DE_MUESTRA);
 await cargar(); pintarLista();
 if(q.get('abrir')) abrir(q.get('abrir'));
+/* los testers ven lo que escribe el otro sin recargar: se pregunta cada 6 s, y la
+   conversación abierta sólo se repinta si llegó algo y nadie está escribiendo */
+setInterval(async () => {
+  if(DE_MUESTRA || document.hidden) return;
+  const antes = JSON.stringify(E.conv.map(c => c.ultimo)); await cargar();
+  if(JSON.stringify(E.conv.map(c => c.ultimo)) === antes) return;
+  if(!E.abierta || !$('#app').classList.contains('en-chat')) pintarLista();
+  if(E.abierta && !($('#texto')?.value) && !$('#escribiendo')) abrir(E.abierta);
+}, 6000);
 globalThis.__chat = { E, abrir };
