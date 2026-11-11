@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Urban Pest · Fumigación a fondo en Querétaro</title>
+<meta name="description" content="Fumigación para casas, negocios e industria en Querétaro. Movemos todo, sacamos tus utensilios al sol y fumigamos el interior completo. Cotiza por WhatsApp.">
+<meta name="theme-color" content="#0B2A24">
+<link rel="preload" href="fuentes/archivo-400-900-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="img/portada-800.webp" as="image" media="(max-width: 800px)">
+<link rel="preload" href="img/portada.webp" as="image" media="(min-width: 801px)">
+<style>
+/* Borrador de Grupo Mazi para Urban Pest (11 nov 2026).
+   Los colores de la marca todavía no los tenemos (FALTA): todo sale de estas variables, así que se cambian aquí y ya. */
+@font-face{font-family:"Archivo";src:url(fuentes/archivo-400-900-normal.woff2) format("woff2");font-weight:400 900;font-display:swap}
+@font-face{font-family:"Inter";src:url(fuentes/inter-400-800-normal.woff2) format("woff2");font-weight:400 800;font-display:swap}
+:root{
+  --fondo:#F5F6F2; --papel:#FFFFFF; --tinta:#0F1E1A; --suave:#4A5A55; --linea:#DCE2DD;
+  --marca:#0B2A24;          /* verde muy oscuro: confianza */
+  --marca-2:#13493D;
+  --accion:#15A36B;         /* el botón que se aprieta */
+  --accion-osc:#0E7D51;
+  --claro:#E6F4EC;
+  --radio:18px; --sombra:0 1px 2px rgba(11,42,36,.06), 0 8px 28px -12px rgba(11,42,36,.18);
+  --ancho:1180px; --gut:20px;
+  --display:"Archivo", system-ui, sans-serif; --texto:"Inter", system-ui, -apple-system, sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; scroll-behavior:smooth; scroll-padding-top:76px}
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} *{animation:none!important; transition:none!important} }
+body{margin:0; background:var(--fondo); color:var(--tinta); font:400 17px/1.55 var(--texto); -webkit-font-smoothing:antialiased; padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+@media (min-width: 900px){ body{padding-bottom:0} }
+img{max-width:100%; display:block}
+a{color:inherit}
+svg.i{width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; flex:none}
+.envoltura{max-width:var(--ancho); margin:0 auto; padding:0 var(--gut)}
+.oculto{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; top:0; left:0}
+::selection{background:var(--accion); color:#fff}
+:focus-visible{outline:3px solid var(--accion); outline-offset:3px; border-radius:8px}
+
+/* ── aviso de borrador: sólo cuando faltan datos ── */
+.borrador{background:#FFF4D6; color:#5A4300; font-size:14px; line-height:1.4; padding:9px var(--gut); text-align:center}
+.borrador b{font-weight:700}
+
+/* ── barra de arriba ── */
+.cabeza{position:sticky; top:0; z-index:20; background:rgba(245,246,242,.86); -webkit-backdrop-filter:saturate(1.4) blur(14px); backdrop-filter:saturate(1.4) blur(14px); border-bottom:1px solid transparent; transition:border-color .2s}
+.cabeza.bajo{border-bottom-color:var(--linea)}
+.cabeza .envoltura{display:flex; align-items:center; gap:16px; height:64px}
+.logo{display:flex; align-items:center; gap:10px; text-decoration:none; font:800 20px/1 var(--display); letter-spacing:-.02em}
+.logo .sello{width:34px; height:34px; border-radius:10px; background:var(--marca); color:#fff; display:grid; place-items:center; font:900 15px/1 var(--display); letter-spacing:-.04em}
+.menu{display:none; gap:26px; margin-left:auto; font-weight:600; font-size:15px}
+.menu a{text-decoration:none; color:var(--suave)} .menu a:hover{color:var(--tinta)}
+.cabeza .btn{margin-left:auto; padding:0 16px; min-height:44px; font-size:15px}
+@media (min-width: 900px){ .menu{display:flex} .cabeza .btn{margin-left:8px} }
+
+/* ── botones ── */
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:10px; min-height:52px; padding:0 22px; border-radius:999px; border:0; font:700 16px/1 var(--texto); text-decoration:none; cursor:pointer; transition:transform .15s, background .15s, box-shadow .15s; -webkit-tap-highlight-color:transparent}
+.btn:active{transform:scale(.97)}
+.btn-accion{background:var(--accion); color:#fff; box-shadow:0 8px 20px -10px rgba(21,163,107,.8)}
+.btn-accion:hover{background:var(--accion-osc)}
+.btn-borde{background:transparent; color:inherit; box-shadow:inset 0 0 0 1.5px currentColor}
+.btn-blanco{background:#fff; color:var(--marca)}
+
+/* ── portada ── */
+.portada{position:relative; color:#fff; background:var(--marca); overflow:hidden}
+.portada picture, .portada picture img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:60% 40%}
+.portada::after{content:""; position:absolute; inset:0; background:linear-gradient(180deg, rgba(11,42,36,.35) 0%, rgba(11,42,36,.55) 45%, rgba(11,42,36,.94) 100%)}
+@media (min-width: 900px){ .portada::after{background:linear-gradient(90deg, rgba(11,42,36,.95) 0%, rgba(11,42,36,.78) 42%, rgba(11,42,36,.1) 75%)} }
+.portada .envoltura{position:relative; z-index:1; min-height:min(88svh, 760px); display:flex; flex-direction:column; justify-content:flex-end; padding-top:120px; padding-bottom:44px}
+@media (min-width: 900px){ .portada .envoltura{justify-content:center; padding-bottom:80px} }
+.ceja{display:inline-flex; align-items:center; gap:8px; font:600 13px/1 var(--texto); letter-spacing:.08em; text-transform:uppercase; color:#BFEAD3}
+.ceja svg{width:16px; height:16px}
+h1{font:800 clamp(40px, 10.5vw, 80px)/.98 var(--display); letter-spacing:-.035em; margin:16px 0 18px; max-width:11ch; text-wrap:balance}
+.portada p.lead{font-size:clamp(17px, 4.4vw, 20px); line-height:1.5; max-width:34ch; color:#E4EFEA; margin:0 0 28px}
+.acciones{display:flex; flex-wrap:wrap; gap:12px}
+.acciones .btn{flex:1 1 auto}
+@media (min-width: 600px){ .acciones .btn{flex:0 0 auto} }
+.sellos{display:flex; flex-wrap:wrap; gap:8px 18px; margin-top:28px; font-size:14px; color:#CFE3DA}
+.sellos span{display:inline-flex; align-items:center; gap:7px}
+.sellos svg{width:17px; height:17px; color:#7FE0B0}
+
+/* ── secciones ── */
+section{padding:72px 0}
+@media (min-width: 900px){ section{padding:110px 0} }
+.titulo{max-width:680px; margin-bottom:36px}
+.titulo .ceja{color:var(--accion-osc)}
+h2{font:800 clamp(32px, 7.4vw, 52px)/1.02 var(--display); letter-spacing:-.03em; margin:12px 0 14px; text-wrap:balance}
+.titulo p{color:var(--suave); font-size:18px; margin:0; max-width:56ch}
+h3{font:750 22px/1.15 var(--display); letter-spacing:-.015em; margin:0 0 8px}
+
+/* ── cómo trabajamos: los tres pasos ── */
+.pasos{display:grid; gap:18px; grid-template-columns:minmax(0, 1fr)}
+@media (min-width: 900px){ .pasos{grid-template-columns:repeat(3, minmax(0, 1fr)); gap:22px} }
+.paso{background:var(--papel); border-radius:var(--radio); overflow:hidden; box-shadow:var(--sombra)}
+.paso figure{margin:0; aspect-ratio:4/3; overflow:hidden; background:var(--claro)}
+.paso figure img{width:100%; height:100%; object-fit:cover}
+.paso .cuerpo{padding:22px 22px 26px}
+.paso .num{font:800 14px/1 var(--display); color:var(--accion-osc); letter-spacing:.06em}
+.paso p{margin:0; color:var(--suave)}
+.contraste{margin-top:22px; display:grid; gap:26px; grid-template-columns:minmax(0, 1fr); background:var(--marca); color:#fff; border-radius:var(--radio); padding:26px 24px}
+@media (min-width: 700px){ .contraste{grid-template-columns:repeat(2, minmax(0, 1fr)); padding:34px 36px; gap:30px} }
+.contraste h4{margin:0 0 10px; font:700 14px/1 var(--texto); letter-spacing:.08em; text-transform:uppercase; color:#9FD9BC}
+.contraste .no h4{color:#B9C6C1}
+.contraste ul{margin:0; padding:0; list-style:none; display:grid; gap:9px}
+.contraste li{display:flex; gap:10px; align-items:flex-start}
+.contraste li svg{width:20px; height:20px; margin-top:2px; color:#7FE0B0}
+.contraste .no li{color:#B9C6C1} .contraste .no li svg{color:#7E8F89}
+
+/* ── para quién ── */
+.lugares{display:grid; gap:18px; grid-template-columns:minmax(0, 1fr)}
+@media (min-width: 900px){ .lugares{grid-template-columns:1fr 1fr 1.25fr} }
+.lugar{position:relative; border-radius:var(--radio); overflow:hidden; color:#fff; min-height:380px; display:flex; flex-direction:column; justify-content:flex-end; isolation:isolate; text-decoration:none}
+.lugar img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:-2; transition:transform .6s cubic-bezier(.16,1,.3,1)}
+.lugar::before{content:""; position:absolute; inset:0; z-index:-1; background:linear-gradient(180deg, rgba(11,42,36,.05) 0%, rgba(11,42,36,.55) 40%, rgba(11,42,36,.95) 78%)}
+.lugar:hover img{transform:scale(1.04)}
+.lugar .cuerpo{padding:24px}
+.lugar .icono{width:46px; height:46px; border-radius:14px; background:rgba(255,255,255,.16); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); display:grid; place-items:center; margin-bottom:14px}
+.lugar p{margin:0 0 14px; color:#DCEBE4; max-width:36ch}
+.lugar .ir{display:inline-flex; align-items:center; gap:8px; font-weight:700}
+.lugar .ir svg{width:18px; height:18px; transition:transform .2s}
+.lugar:hover .ir svg{transform:translateX(4px)}
+.lugar.industria{background:var(--marca)}
+
+/* ── industria ── */
+.industria-s{background:var(--marca); color:#fff}
+.industria-s .titulo p{color:#C9DAD3}
+.industria-s .titulo .ceja{color:#7FE0B0}
+.sectores{display:grid; gap:14px; grid-template-columns:minmax(0, 1fr)}
+@media (min-width: 700px){ .sectores{grid-template-columns:repeat(3, minmax(0, 1fr))} }
+.sector{border-radius:var(--radio); overflow:hidden; background:var(--marca-2)}
+.sector figure{margin:0; aspect-ratio:16/10; overflow:hidden}
+.sector figure img{width:100%; height:100%; object-fit:cover}
+.sector .cuerpo{padding:18px 20px 22px}
+.sector p{margin:0; color:#C9DAD3; font-size:16px}
+.plan{margin-top:30px; display:grid; gap:12px; grid-template-columns:minmax(0, 1fr); counter-reset:p}
+@media (min-width: 900px){ .plan{grid-template-columns:repeat(4, minmax(0, 1fr))} }
+.plan li{list-style:none; border-top:1px solid rgba(255,255,255,.18); padding-top:16px; counter-increment:p}
+.plan li::before{content:counter(p, decimal-leading-zero); display:block; font:800 14px/1 var(--display); color:#7FE0B0; margin-bottom:10px}
+.plan b{display:block; font:700 18px/1.25 var(--display); margin-bottom:6px}
+.plan span{color:#C9DAD3; font-size:15px}
+.plan{padding:0; margin-left:0}
+.industria-s .acciones{margin-top:34px}
+
+/* ── cotizar ── */
+.cotizar-caja{display:grid; gap:28px; grid-template-columns:minmax(0, 1fr)}
+@media (min-width: 900px){ .cotizar-caja{grid-template-columns:.9fr 1.1fr; gap:60px; align-items:start} }
+.forma{background:var(--papel); border-radius:22px; box-shadow:var(--sombra); padding:22px}
+@media (min-width: 600px){ .forma{padding:32px} }
+fieldset{border:0; padding:0; margin:0 0 22px; min-width:0}
+legend, label.etq{display:block; font-weight:700; font-size:15px; margin-bottom:10px}
+.chips{display:flex; flex-wrap:wrap; gap:8px}
+.chip{position:relative}
+.chip input{position:absolute; opacity:0; inset:0; margin:0; cursor:pointer}
+.chip span{display:inline-flex; align-items:center; gap:8px; min-height:46px; padding:0 16px; border-radius:999px; background:var(--fondo); box-shadow:inset 0 0 0 1.5px var(--linea); font-weight:600; font-size:15px; transition:background .15s, box-shadow .15s, color .15s}
+.chip span svg{width:18px; height:18px}
+.chip input:checked + span{background:var(--claro); box-shadow:inset 0 0 0 2px var(--accion); color:var(--accion-osc)}
+.chip input:focus-visible + span{outline:3px solid var(--accion); outline-offset:2px}
+input[type=text], input[type=number], input[type=tel], select, textarea{width:100%; min-height:52px; padding:12px 16px; border-radius:14px; border:1.5px solid var(--linea); background:var(--fondo); color:var(--tinta); font-family:inherit; font-size:16px; appearance:none; -webkit-appearance:none}
+textarea{min-height:90px; resize:vertical}
+select{background-image:linear-gradient(45deg, transparent 50%, var(--suave) 50%), linear-gradient(135deg, var(--suave) 50%, transparent 50%); background-position:calc(100% - 22px) 23px, calc(100% - 16px) 23px; background-size:6px 6px; background-repeat:no-repeat; padding-right:44px}
+input:focus, select:focus, textarea:focus{outline:none; border-color:var(--accion); background:#fff}
+.dos{display:grid; gap:14px; grid-template-columns:minmax(0, 1fr)}
+@media (min-width: 600px){ .dos{grid-template-columns:repeat(2, minmax(0, 1fr))} }
+.ayuda{font-size:14px; color:var(--suave); margin:8px 0 0}
+.forma .btn{width:100%; margin-top:6px}
+.error{color:#A3261B; font-size:14px; font-weight:600; margin:8px 0 0}
+.listo{display:none; margin-top:16px; padding:16px; border-radius:14px; background:var(--claro); font-size:15px}
+.listo.si{display:block}
+.listo pre{white-space:pre-wrap; font:500 14px/1.5 var(--texto); margin:10px 0}
+.nota-precio{display:flex; gap:12px; align-items:flex-start; padding:18px; border-radius:16px; background:var(--papel); box-shadow:var(--sombra); margin-top:20px}
+.nota-precio svg{color:var(--accion-osc); margin-top:2px}
+.nota-precio p{margin:0; color:var(--suave); font-size:15px}
+
+/* ── seguro con niños ── */
+.seguro{display:grid; gap:28px; grid-template-columns:minmax(0, 1fr); align-items:center}
+@media (min-width: 900px){ .seguro{grid-template-columns:1fr 1fr; gap:60px} }
+.seguro figure{margin:0; border-radius:22px; overflow:hidden; aspect-ratio:5/4}
+.seguro figure img{width:100%; height:100%; object-fit:cover}
+.lista{margin:22px 0 0; padding:0; list-style:none; display:grid; gap:14px}
+.lista li{display:flex; gap:14px; align-items:flex-start}
+.lista .icono{width:44px; height:44px; border-radius:12px; background:var(--claro); color:var(--accion-osc); display:grid; place-items:center; flex:none}
+.lista b{display:block; font-size:17px}
+.lista span{color:var(--suave); font-size:15px}
+
+/* ── preguntas ── */
+.preguntas{max-width:820px}
+details{border-bottom:1px solid var(--linea)}
+summary{list-style:none; cursor:pointer; display:flex; gap:16px; align-items:center; justify-content:space-between; padding:20px 0; font:700 18px/1.3 var(--display); letter-spacing:-.01em; min-height:44px}
+summary::-webkit-details-marker{display:none}
+summary svg{transition:transform .25s; color:var(--suave)}
+details[open] summary svg{transform:rotate(180deg)}
+details p{margin:0 0 20px; color:var(--suave); max-width:62ch}
+
+/* ── contacto ── */
+.cierre{background:var(--marca); color:#fff; border-radius:28px; padding:40px 24px; display:grid; gap:26px; grid-template-columns:minmax(0, 1fr)}
+@media (min-width: 900px){ .cierre{grid-template-columns:1.2fr 1fr; padding:64px; align-items:center} }
+.cierre h2{margin-top:0}
+.cierre p{color:#C9DAD3; margin:0}
+.datos{display:grid; gap:12px}
+.dato{display:flex; gap:14px; align-items:center; padding:14px 16px; border-radius:16px; background:var(--marca-2); text-decoration:none; min-height:60px}
+.dato svg{color:#7FE0B0}
+.dato small{display:block; color:#9FB8AE; font-size:13px}
+.dato b{font-weight:700}
+
+/* ── pie ── */
+footer{padding:46px 0 30px; color:var(--suave); font-size:14px}
+footer .envoltura{display:grid; gap:18px}
+footer .fila{display:flex; flex-wrap:wrap; gap:10px 22px}
+footer a{color:var(--suave)}
+.creditos{font-size:12.5px; line-height:1.6; color:#6E7C77}
+
+/* ── barra de acciones en el teléfono ── */
+.barra{position:fixed; left:0; right:0; bottom:0; z-index:30; display:grid; grid-template-columns:1fr 1fr 1.25fr; gap:8px; padding:10px 12px calc(10px + env(safe-area-inset-bottom)); background:rgba(255,255,255,.94); -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); border-top:1px solid var(--linea)}
+.barra a{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; min-height:52px; border-radius:14px; text-decoration:none; font-size:12.5px; font-weight:700; color:var(--marca)}
+.barra a.principal{flex-direction:row; gap:8px; background:var(--accion); color:#fff; font-size:15px}
+@media (min-width: 900px){ .barra{display:none} }
+
+/* ── aparecer al bajar (sin JS se ve todo) ── */
+.js .aparece{opacity:0; transform:translateY(22px); transition:opacity .7s cubic-bezier(.16,1,.3,1), transform .7s cubic-bezier(.16,1,.3,1)}
+.js .aparece.visto{opacity:1; transform:none}
+</style>
+</head>
+<body>
+<!--ICONOS-->
+
+<div class="borrador" id="borrador" hidden></div>
+
+<header class="cabeza" id="cabeza">
+  <div class="envoltura">
+    <a class="logo" href="#inicio" aria-label="Urban Pest, inicio"><span class="sello" aria-hidden="true">UP</span><span>Urban Pest</span></a>
+    <nav class="menu" aria-label="Secciones">
+      <a href="#como">Cómo trabajamos</a>
+      <a href="#lugares">Servicios</a>
+      <a href="#industria">Industria</a>
+      <a href="#preguntas">Preguntas</a>
+    </nav>
+    <a class="btn btn-accion" href="#cotizar" data-wa="Hola, quiero cotizar una fumigación."><svg class="i"><use href="#i-message-circle"/></svg><span>Cotizar</span></a>
+  </div>
+</header>
+
+<main id="inicio">
+  <section class="portada" style="padding:0">
+    <picture>
+      <source media="(max-width: 800px)" srcset="img/portada-800.webp">
+      <img src="img/portada.webp" alt="Técnico con traje de protección aplicando tratamiento dentro de una habitación" width="1600" height="1068" fetchpriority="high">
+    </picture>
+    <div class="envoltura">
+      <span class="ceja"><svg class="i"><use href="#i-map-pin"/></svg> Querétaro · casas, negocios e industria</span>
+      <h1>Fumigamos a fondo. Se nota.</h1>
+      <p class="lead">Movemos todo, sacamos tus utensilios al sol y fumigamos el interior completo, no sólo las orillas. Por eso la plaga no regresa a la semana.</p>
+      <div class="acciones">
+        <a class="btn btn-accion" href="#cotizar"><svg class="i"><use href="#i-calculator"/></svg> Cotiza en un minuto</a>
+        <a class="btn btn-borde" href="#" data-tel><svg class="i"><use href="#i-phone"/></svg> Llamar</a>
+      </div>
+      <div class="sellos">
+        <span><svg class="i"><use href="#i-check"/></svg> Precio por escrito</span>
+        <span><svg class="i"><use href="#i-check"/></svg> Indicaciones para niños y mascotas</span>
+        <span><svg class="i"><use href="#i-check"/></svg> Visitas de seguimiento</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="como">
+    <div class="envoltura">
+      <div class="titulo aparece">
+        <span class="ceja">Cómo trabajamos</span>
+        <h2>Lo que otros se saltan, nosotros lo hacemos.</h2>
+        <p>Una fumigación rápida rocía las orillas y se va. La plaga se esconde detrás de los muebles y dentro de los cajones, y a los días vuelve a salir.</p>
+      </div>
+      <div class="pasos">
+        <article class="paso aparece">
+          <figure><img src="img/casa-800.webp" alt="Sala con el técnico trabajando entre los muebles" width="800" height="534" loading="lazy"></figure>
+          <div class="cuerpo"><span class="num">01</span><h3>Movemos todo</h3><p>Recorremos muebles y electrodomésticos para llegar a donde la plaga de verdad se esconde.</p></div>
+        </article>
+        <article class="paso aparece">
+          <figure><img src="img/al-sol-800.webp" alt="Utensilios de cocina sobre una barra iluminada por el sol" width="800" height="542" loading="lazy"></figure>
+          <div class="cuerpo"><span class="num">02</span><h3>Tus utensilios, al sol</h3><p>Sacamos trastes y utensilios antes de aplicar, para que no les caiga producto y queden limpios.</p></div>
+        </article>
+        <article class="paso aparece">
+          <figure><img src="img/limpio-800.webp" alt="Cocina limpia y ordenada" width="800" height="534" loading="lazy"></figure>
+          <div class="cuerpo"><span class="num">03</span><h3>Interior completo</h3><p>Fumigamos cada rincón por dentro y te dejamos indicaciones claras de cuándo regresar y qué hacer después.</p></div>
+        </article>
+      </div>
+      <div class="contraste aparece">
+        <div><h4>Con nosotros</h4><ul>
+          <li><svg class="i"><use href="#i-check"/></svg> Detrás y debajo de los muebles</li>
+          <li><svg class="i"><use href="#i-check"/></svg> Utensilios protegidos</li>
+          <li><svg class="i"><use href="#i-check"/></svg> Precio confirmado antes de empezar</li>
+        </ul></div>
+        <div class="no"><h4>Una fumigación rápida</h4><ul>
+          <li><svg class="i"><use href="#i-x"/></svg> Sólo las orillas que se ven</li>
+          <li><svg class="i"><use href="#i-x"/></svg> Te toca lavar todo después</li>
+          <li><svg class="i"><use href="#i-x"/></svg> La plaga regresa a los días</li>
+        </ul></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="lugares" style="padding-top:0">
+    <div class="envoltura">
+      <div class="titulo aparece">
+        <span class="ceja">Servicios</span>
+        <h2>De tu casa a una planta de alimentos.</h2>
+      </div>
+      <div class="lugares">
+        <a class="lugar aparece" href="#cotizar" data-tipo="casa">
+          <img src="img/cocina-800.webp" alt="Cocina de una casa, limpia y con luz natural" width="800" height="534" loading="lazy">
+          <div class="cuerpo"><span class="icono"><svg class="i"><use href="#i-house"/></svg></span><h3>Casa</h3><p>Cucarachas, chinches, hormigas, alacranes y más. Con indicaciones para niños y mascotas.</p><span class="ir">Cotizar casa <svg class="i"><use href="#i-arrow-right"/></svg></span></div>
+        </a>
+        <a class="lugar aparece" href="#cotizar" data-tipo="negocio">
+          <img src="img/negocio-800.webp" alt="Oficina amplia y limpia" width="800" height="534" loading="lazy">
+          <div class="cuerpo"><span class="icono"><svg class="i"><use href="#i-store"/></svg></span><h3>Negocio</h3><p>Oficinas, tiendas, consultorios, escuelas y bodegas, en el horario que no te detenga la operación.</p><span class="ir">Cotizar negocio <svg class="i"><use href="#i-arrow-right"/></svg></span></div>
+        </a>
+        <a class="lugar industria aparece" href="#industria">
+          <img src="img/alimentos-800.webp" alt="Planta de producción de alimentos" width="800" height="532" loading="lazy">
+          <div class="cuerpo"><span class="icono"><svg class="i"><use href="#i-factory"/></svg></span><h3>Industria</h3><p>Alimentos, hospitales y alimento para mascotas. Programa con visitas fijas y reportes.</p><span class="ir">Ver industria <svg class="i"><use href="#i-arrow-right"/></svg></span></div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section id="industria" class="industria-s">
+    <div class="envoltura">
+      <div class="titulo aparece">
+        <span class="ceja">Industria</span>
+        <h2>Control de plagas para lugares donde no se vale fallar.</h2>
+        <p>En industria no damos aproximados: vamos a medir, armamos un programa a la medida y te entregamos todo por escrito.</p>
+      </div>
+      <div class="sectores">
+        <article class="sector aparece"><figure><img src="img/alimentos-800.webp" alt="Línea de producción de alimentos" width="800" height="532" loading="lazy"></figure><div class="cuerpo"><h3>Alimentos</h3><p>Plantas, cocinas industriales y bodegas de producto.</p></div></article>
+        <article class="sector aparece"><figure><img src="img/hospital-800.webp" alt="Pasillo de hospital limpio" width="800" height="450" loading="lazy"></figure><div class="cuerpo"><h3>Hospitales</h3><p>Clínicas, hospitales y consultorios, con horarios que respetan la atención.</p></div></article>
+        <article class="sector aparece"><figure><img src="img/planta-800.webp" alt="Interior de una planta industrial con piso brillante" width="800" height="534" loading="lazy"></figure><div class="cuerpo"><h3>Alimento para mascotas</h3><p>Plantas y almacenes de producto a granel y empacado.</p></div></article>
+      </div>
+      <ol class="plan aparece">
+        <li><b>Visita para medir</b><span>Recorremos el lugar y vemos el tipo de plaga, los metros y los puntos de riesgo.</span></li>
+        <li><b>Propuesta por escrito</b><span>Precio exacto y programa de visitas, en PDF.</span></li>
+        <li><b>Servicio programado</b><span>Visitas fijas en el horario que no frene tu operación.</span></li>
+        <li><b>Seguimiento</b><span>Revisiones y reportes de cada visita.</span></li>
+      </ol>
+      <div class="acciones aparece">
+        <a class="btn btn-blanco" href="#" data-wa="Hola, me interesa un programa de control de plagas para mi empresa."><svg class="i"><use href="#i-calendar-check"/></svg> Agendar visita para medir</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="cotizar">
+    <div class="envoltura cotizar-caja">
+      <div class="titulo aparece" style="margin-bottom:0">
+        <span class="ceja">Cotiza</span>
+        <h2>Cuéntanos qué pasa y te contestamos con un precio.</h2>
+        <p>Llenas esto, se abre WhatsApp con tu mensaje ya escrito y sólo le das enviar.</p>
+        <div class="nota-precio"><svg class="i"><use href="#i-ruler"/></svg><p>El precio depende de la plaga, los metros y la distancia. Te damos un «desde» al momento y el técnico lo confirma al ver el lugar, antes de empezar. No es lo mismo un departamento que una casa con cuatro patios.</p></div>
+      </div>
+      <form class="forma aparece" id="forma" novalidate>
+        <fieldset>
+          <legend>¿Dónde es?</legend>
+          <div class="chips">
+            <label class="chip"><input type="radio" name="tipo" value="casa" checked><span><svg class="i"><use href="#i-house"/></svg>Casa</span></label>
+            <label class="chip"><input type="radio" name="tipo" value="negocio"><span><svg class="i"><use href="#i-store"/></svg>Negocio</span></label>
+            <label class="chip"><input type="radio" name="tipo" value="industria"><span><svg class="i"><use href="#i-factory"/></svg>Industria</span></label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>¿Qué plaga?</legend>
+          <div class="chips" id="plagas"></div>
+        </fieldset>
+        <div class="dos">
+          <div>
+            <label class="etq" for="tam" id="tamEtq">¿Cuántas recámaras?</label>
+            <input id="tam" name="tam" type="text" inputmode="numeric" autocomplete="off" placeholder="Ej. 3">
+          </div>
+          <div>
+            <label class="etq" for="zona">Colonia o municipio</label>
+            <input id="zona" name="zona" type="text" autocomplete="address-level3" placeholder="Ej. Juriquilla">
+          </div>
+        </div>
+        <div style="margin-top:14px">
+          <label class="etq" for="nombre">Tu nombre</label>
+          <input id="nombre" name="nombre" type="text" autocomplete="name" placeholder="Para saber cómo dirigirnos a ti">
+        </div>
+        <div style="margin-top:14px">
+          <label class="etq" for="notas">Algo más <span style="font-weight:500;color:var(--suave)">(opcional)</span></label>
+          <textarea id="notas" name="notas" placeholder="Ej. tengo dos perros, es urgente, es un segundo piso…"></textarea>
+        </div>
+        <p class="error" id="error" role="alert" hidden></p>
+        <button class="btn btn-accion" type="submit" style="margin-top:18px"><svg class="i"><use href="#i-message-circle"/></svg> Mandar por WhatsApp</button>
+        <p class="ayuda">Lo que escribas se va sólo a WhatsApp; esta página no lo guarda.</p>
+        <div class="listo" id="listo" role="status"></div>
+      </form>
+    </div>
+  </section>
+
+  <section style="padding-top:0">
+    <div class="envoltura seguro">
+      <figure class="aparece"><img src="img/familia-800.webp" alt="Familia cocinando junta en casa" width="800" height="534" loading="lazy"></figure>
+      <div class="aparece">
+        <span class="ceja" style="color:var(--accion-osc)">Tu familia primero</span>
+        <h2>Pensado para casas con niños y mascotas.</h2>
+        <ul class="lista">
+          <li><span class="icono"><svg class="i"><use href="#i-baby"/></svg></span><div><b>Indicaciones claras</b><span>Cuánto tiempo salir y cuándo pueden regresar los niños.</span></div></li>
+          <li><span class="icono"><svg class="i"><use href="#i-paw-print"/></svg></span><div><b>Tus mascotas, a salvo</b><span>Qué tapar y qué mover: peceras, jaulas, platos de comida.</span></div></li>
+          <li><span class="icono"><svg class="i"><use href="#i-sun"/></svg></span><div><b>Utensilios protegidos</b><span>Los sacamos antes de aplicar, para que no tengas que lavarlo todo.</span></div></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="preguntas" style="padding-top:0">
+    <div class="envoltura">
+      <div class="titulo aparece"><span class="ceja">Preguntas</span><h2>Lo que más nos preguntan.</h2></div>
+      <div class="preguntas aparece">
+        <details><summary>¿Cuánto cuesta? <svg class="i"><use href="#i-chevron-down"/></svg></summary><p>Depende de la plaga, los metros y la distancia. En casa te damos un «desde» al momento y el técnico lo confirma al llegar, antes de empezar. En negocio e industria vamos a medir y te lo damos por escrito.</p></details>
+        <details><summary>¿Hay que salir de la casa? <svg class="i"><use href="#i-chevron-down"/></svg></summary><p data-falta="horas_fuera">Sí, por unas horas, con niños y mascotas. El técnico te dice la hora exacta según el producto. Al regresar, abre puertas y ventanas unos minutos.</p></details>
+        <details><summary>¿Qué tengo que preparar? <svg class="i"><use href="#i-chevron-down"/></svg></summary><p>Casi nada: nosotros movemos los muebles y sacamos los utensilios. Sólo guarda la comida en recipientes cerrados o en el refri.</p></details>
+        <details><summary>¿Es normal ver más plaga los días siguientes? <svg class="i"><use href="#i-chevron-down"/></svg></summary><p>Sí, los primeros días sale plaga muerta o desorientada de donde se escondía. Si después de unos días sigues viendo plaga viva, escríbenos.</p></details>
+        <details><summary>¿Atienden empresas por contrato? <svg class="i"><use href="#i-chevron-down"/></svg></summary><p>Sí. Para negocio e industria armamos un programa con visitas periódicas y reportes de cada visita.</p></details>
+        <details><summary>¿Hasta dónde llegan? <svg class="i"><use href="#i-chevron-down"/></svg></summary><p>Estamos en Querétaro. Si estás más lejos también vamos, y el traslado se suma al precio.</p></details>
+        <!-- FALTA: garantía, factura y formas de pago. Se agregan en cuanto el cliente los confirme (ver urban-pest/bot/casos-borrador.json · falta). -->
+      </div>
+    </div>
+  </section>
+
+  <section style="padding-top:0">
+    <div class="envoltura">
+      <div class="cierre aparece">
+        <div>
+          <h2>¿Tienes una plaga hoy?</h2>
+          <p>Escríbenos y te contestamos con un precio. Si es urgente, márcanos.</p>
+          <div class="acciones" style="margin-top:24px"><a class="btn btn-accion" href="#cotizar"><svg class="i"><use href="#i-calculator"/></svg> Cotizar ahora</a></div>
+        </div>
+        <div class="datos">
+          <a class="dato" href="#" data-wa="Hola, quiero información de una fumigación."><svg class="i"><use href="#i-message-circle"/></svg><span><small>WhatsApp</small><b data-ver="whatsapp">FALTA</b></span></a>
+          <a class="dato" href="#" data-tel><svg class="i"><use href="#i-phone"/></svg><span><small>Teléfono</small><b data-ver="telefono">FALTA</b></span></a>
+          <div class="dato"><svg class="i"><use href="#i-clock"/></svg><span><small>Horario</small><b data-ver="horario">FALTA</b></span></div>
+          <div class="dato"><svg class="i"><use href="#i-map-pin"/></svg><span><small>Zona</small><b>Querétaro y alrededores</b></span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="envoltura">
+    <div class="fila"><b style="color:var(--tinta)">Urban Pest</b><span>Fumigación en Querétaro</span></div>
+    <div class="fila"><a href="aviso-privacidad.html">Aviso de privacidad</a><a href="#cotizar">Cotizar</a><a href="#preguntas">Preguntas</a></div>
+    <p class="creditos">Fotos de Pexels: Michelangelo Buonarroti (técnico y sala), Elena Golovchenko (utensilios al sol), Curtis Adams (cocina con isla), Alesha (cocina blanca), Elina Fairytale (familia), Max Vakhtbovych (oficina), Adrien Olichon (planta de alimentos), Burçak Çubukçu (hospital) y Craftsman Concrete Floors (planta industrial). Íconos: Lucide (ISC). Letras: Archivo e Inter (OFL). Página hecha por Grupo Mazi.</p>
+  </div>
+</footer>
+
+<nav class="barra" aria-label="Contacto rápido">
+  <a href="#" data-tel><svg class="i"><use href="#i-phone"/></svg>Llamar</a>
+  <a href="#" data-wa="Hola, quiero información de una fumigación."><svg class="i"><use href="#i-message-circle"/></svg>WhatsApp</a>
+  <a class="principal" href="#cotizar"><svg class="i"><use href="#i-calculator"/></svg>Cotizar</a>
+</nav>
+
+<script>
+/* ── los datos del negocio: lo que está vacío sale como FALTA y en el aviso de arriba ── */
+const NEGOCIO = {
+  whatsapp: '',     // FALTA: número de WhatsApp de negocio, a 10 dígitos (ej. 4421234567)
+  telefono: '',     // FALTA: número para llamar
+  horario: '',      // FALTA: ej. «Lunes a sábado, 8 a 19 h»
+};
+const FALTAN = { whatsapp: 'el número de WhatsApp', telefono: 'el teléfono', horario: 'el horario' };
+document.documentElement.classList.add('js');
+const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const soloDigitos = (s) => String(s || '').replace(/\D/g, '');
+const wa = (texto) => NEGOCIO.whatsapp ? `https://wa.me/52${soloDigitos(NEGOCIO.whatsapp).slice(-10)}?text=${encodeURIComponent(texto)}` : null;
+const bonito = (n) => { const d = soloDigitos(n).slice(-10); return d.length === 10 ? `${d.slice(0, 3)} ${d.slice(3, 6)} ${d.slice(6)}` : n; };
+
+/* lo que falta, a la vista mientras sea borrador */
+const faltan = Object.keys(FALTAN).filter((k) => !NEGOCIO[k]);
+if(faltan.length){ const b = $('#borrador'); b.innerHTML = `<b>Borrador.</b> Falta ${faltan.map((k) => FALTAN[k]).join(', ')}; los botones de contacto se encienden cuando estén.`; b.hidden = false; }
+for(const el of $$('[data-ver]')){ const v = NEGOCIO[el.dataset.ver]; if(v) el.textContent = el.dataset.ver === 'horario' ? v : bonito(v); }
+for(const a of $$('[data-tel]')){ if(NEGOCIO.telefono) a.href = 'tel:+52' + soloDigitos(NEGOCIO.telefono).slice(-10); else a.addEventListener('click', (e) => { e.preventDefault(); location.hash = 'cotizar'; }); }
+for(const a of $$('[data-wa]')){ const u = wa(a.dataset.wa); if(u){ a.href = u; a.target = '_blank'; a.rel = 'noopener'; } else if(a.getAttribute('href') === '#') a.href = '#cotizar'; }
+
+/* la barra de arriba se marca al bajar */
+const cab = $('#cabeza');
+addEventListener('scroll', () => cab.classList.toggle('bajo', scrollY > 8), { passive: true });
+
+/* ── cotizar ── */
+const PLAGAS = ['Cucarachas', 'Chinches', 'Hormigas', 'Alacranes', 'Arañas', 'Termitas', 'Ratas o ratones', 'Pulgas o garrapatas', 'Moscas o mosquitos', 'No sé cuál'];
+$('#plagas').innerHTML = PLAGAS.map((p, i) => `<label class="chip"><input type="checkbox" name="plaga" value="${p}"${i === 0 ? '' : ''}><span>${p}</span></label>`).join('');
+const forma = $('#forma'), tam = $('#tam'), tamEtq = $('#tamEtq');
+const ponerTipo = (t) => {
+  const r = forma.querySelector(`input[name=tipo][value="${t}"]`); if(r) r.checked = true;
+  tamEtq.textContent = t === 'casa' ? '¿Cuántas recámaras?' : '¿Cuántos metros cuadrados, más o menos?';
+  tam.placeholder = t === 'casa' ? 'Ej. 3' : 'Ej. 250';
+};
+forma.addEventListener('change', (e) => { if(e.target.name === 'tipo') ponerTipo(e.target.value); });
+for(const a of $$('[data-tipo]')) a.addEventListener('click', () => ponerTipo(a.dataset.tipo));
+forma.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const tipo = forma.tipo.value, plagas = $$('input[name=plaga]:checked', forma).map((x) => x.value);
+  const err = $('#error'), faltaAlgo = [];
+  if(!plagas.length) faltaAlgo.push('qué plaga es');
+  if(!$('#zona').value.trim()) faltaAlgo.push('la colonia o municipio');
+  if(faltaAlgo.length){ err.textContent = 'Sólo falta ' + faltaAlgo.join(' y ') + '.'; err.hidden = false; return; }
+  err.hidden = true;
+  const nombre = $('#nombre').value.trim(), notas = $('#notas').value.trim(), t = tam.value.trim();
+  const texto = [
+    `Hola${nombre ? ', soy ' + nombre : ''}. Quiero cotizar una fumigación.`,
+    `· Lugar: ${tipo}`,
+    `· Plaga: ${plagas.join(', ')}`,
+    t ? `· Tamaño: ${t} ${tipo === 'casa' ? 'recámaras' : 'm²'}` : '',
+    `· Zona: ${$('#zona').value.trim()}`,
+    notas ? `· Notas: ${notas}` : '',
+  ].filter(Boolean).join('\n');
+  const u = wa(texto), listo = $('#listo');
+  if(u){ location.href = u; listo.textContent = 'Se abrió WhatsApp con tu mensaje. Si no se abrió, toca el botón otra vez.'; }
+  else { listo.innerHTML = '<b>Así se va a mandar tu mensaje</b> (el número de WhatsApp todavía no está puesto):'; const pre = document.createElement('pre'); pre.textContent = texto; listo.append(pre); }
+  listo.classList.add('si');
+});
+
+/* ── aparecer al bajar: si el navegador no puede, se queda todo visible ── */
+if('IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches){
+  const io = new IntersectionObserver((es) => { for(const x of es) if(x.isIntersecting){ x.target.classList.add('visto'); io.unobserve(x.target); } }, { rootMargin: '0px 0px -8% 0px' });
+  $$('.aparece').forEach((el) => io.observe(el));
+} else $$('.aparece').forEach((el) => el.classList.add('visto'));
+</script>
+</body>
+</html>
