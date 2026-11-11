@@ -76,6 +76,17 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 .cuadros button{flex-direction:column; gap:4px; padding:6px; min-height:110px; font-size:11px; font-weight:600; white-space:normal; text-align:center}
 .cuadros img{width:100%; height:80px; object-fit:contain}
 .cuadros.fondos img{object-fit:cover; border-radius:8px}
+.cuadros button small{display:block; color:var(--dim); font-weight:500}
+.cuadros .nuevo-mio{border-style:dashed; color:var(--accent-ink); justify-content:center}
+.cuadros .nuevo-mio .ico{width:26px; height:26px}
+.mio-nombre{display:flex; flex-direction:column; gap:5px; font:600 12px var(--sans); color:var(--dim); margin:4px 0 8px}
+.mio-nombre input{min-height:46px; border-radius:12px; border:1px solid var(--line); background:var(--card); color:var(--ink); font:400 16px var(--sans); padding:0 12px}
+.mio-ayuda{font:400 12px var(--sans); color:var(--dim); text-transform:none; letter-spacing:0}
+.mio-pose{position:relative; display:flex; flex-direction:column; gap:4px; padding:6px; border:1px solid var(--line); border-radius:12px; background:var(--card)}
+.mio-pose img{width:100%; height:90px; object-fit:contain; background:repeating-conic-gradient(color-mix(in srgb,var(--ink) 8%,transparent) 0 25%,transparent 0 50%) 0 0/14px 14px; border-radius:8px}
+.mio-pose input{min-height:34px; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--ink); font:500 13px var(--sans); padding:0 6px; width:100%}
+.mio-pose button{position:absolute; top:2px; right:2px; width:44px; height:44px; min-height:44px; padding:0; border-radius:50%; background:rgba(11,6,16,.6); color:#fff; border:0}
+.mio-borrar{margin-top:10px; background:none; border:0; color:#ff7a9a; font-weight:600}
 .vest{display:grid; grid-template-columns:150px minmax(0,1fr); gap:12px; align-items:start}
 @media (max-width:520px){ .vest{grid-template-columns:1fr} }
 #vistaVest{width:150px; height:150px; image-rendering:pixelated; background:repeating-conic-gradient(#ddd 0 25%,#fff 0 50%) 0 0/16px 16px; border-radius:12px; justify-self:center}
@@ -117,6 +128,15 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 <section id="props" hidden aria-label="Ajustes de la capa"></section>
 
 <dialog id="dlgElegir" aria-labelledby="tElegir"><div class="dlg"><div class="cerrar-props"><h2 id="tElegir"></h2><button type="button" data-cerrar>Cerrar</button></div><div id="elegir"></div></div></dialog>
+<dialog id="dlgMio" aria-labelledby="tMio"><div class="dlg">
+  <div class="cerrar-props"><h2 id="tMio">Tu personaje</h2><button type="button" data-cerrar>Cerrar</button></div>
+  <label class="mio-nombre">Nombre<input id="mioNombre" maxlength="40" placeholder="Cómo se llama"></label>
+  <p class="etq">Poses <span class="mio-ayuda">Sube imágenes con fondo transparente (PNG) o dibújalas aquí. Puedes subir varias a la vez.</span></p>
+  <div class="cuadros" id="mioPoses"></div>
+  <div class="fila"><button type="button" id="mioSubir">Subir poses</button><button type="button" id="mioDibujar">Dibujar una pose</button><input type="file" id="mioArchivo" accept="image/*" multiple hidden></div>
+  <div class="fila"><button type="button" class="si" id="mioPoner">Guardar y poner en la página</button><button type="button" id="mioGuardar">Sólo guardar</button></div>
+  <button type="button" id="mioBorrar" class="mio-borrar">Borrar este personaje</button>
+</div></dialog>
 <dialog id="dlgVest" aria-labelledby="tVest"><div class="dlg">
   <div class="cerrar-props"><h2 id="tVest">Vestidor</h2><button type="button" data-cerrar>Cerrar</button></div>
   <div class="vest"><canvas id="vistaVest" width="64" height="64"></canvas><div id="piezas"></div></div>
@@ -133,10 +153,11 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 <script type="module">
 import { icono } from '../iconos.js';
 import { una, guardar, nuevoId, paginaNueva, FORMATOS, alLibrero } from './obras.js';
-import { dibujar, capaEn, PERSONAJES, POSES, srcPersonaje, FONDOS_KENNEY, srcFondoKenney, PIEZAS, archivoLpc, ORDEN_LPC, DIRS, LPC_POSES, COLORES,
+import { dibujar, capaEn, urlArchivo, PERSONAJES, POSES, srcPersonaje, FONDOS_KENNEY, srcFondoKenney, PIEZAS, archivoLpc, ORDEN_LPC, DIRS, LPC_POSES, COLORES,
   PERSONAJE_LPC, GLOBOS, COLAS, LETRAS, img, RAIZ_ARTE, EFECTOS, PLANTILLAS, vinetas } from './lienzo.js';
 import { pdf } from '../archivos.js';
 import { abrirDibujo } from './dibujo.js';
+import * as MIOS from './personajes.js';
 const $ = (s) => document.querySelector(s);
 const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 document.querySelectorAll('.ic[data-ic]').forEach((e) => { e.outerHTML = icono(e.dataset.ic); });
@@ -227,7 +248,16 @@ const HERR = {
     elegir('Elige un fondo', [...FONDOS_KENNEY.map(([k, n]) => `<button type="button" data-fondo="${srcFondoKenney(k)}"><img src="${srcFondoKenney(k)}" alt="" loading="lazy">${n}</button>`),
       ...pinturas.map((p) => `<button type="button" data-fondo="${RAIZ_ARTE}fondos/${p.archivo}" title="${esc(p.titulo)} · ${esc(p.autor)}"><img src="${RAIZ_ARTE}fondos/${p.archivo}" alt="" loading="lazy">${esc(p.tema)}</button>`)].join(''), 'fondos');
   },
-  personaje(){ elegir('Elige un personaje', PERSONAJES.map(([q, n]) => `<button type="button" data-quien="${q}"><img src="${srcPersonaje(q, 'idle')}" alt="">${n}</button>`).join('')); },
+  async personaje(){
+    /* «Mis personajes» primero (los tuyos), luego los de la casa */
+    const mios = await MIOS.todos().catch(() => []);
+    const u = (b) => { const k = URL.createObjectURL(b); setTimeout(() => URL.revokeObjectURL(k), 60000); return k; };
+    elegir('Elige un personaje', `<p class="etq" style="grid-column:1/-1">Mis personajes</p>
+      ${mios.map((m) => `<button type="button" data-mio="${m.id}">${m.poses[0] ? `<img src="${u(m.poses[0].blob)}" alt="">` : ''}${esc(m.nombre)}<small>${m.poses.length} pose${m.poses.length === 1 ? '' : 's'}</small></button>`).join('')}
+      <button type="button" data-a="nuevoMio" class="nuevo-mio">${icono('plus')}Nuevo personaje</button>
+      <p class="etq" style="grid-column:1/-1">De la casa</p>
+      ${PERSONAJES.map(([q, n]) => `<button type="button" data-quien="${q}"><img src="${srcPersonaje(q, 'idle')}" alt="">${n}</button>`).join('')}`);
+  },
   vestidor(){ vest = PERSONAJE_LPC(); vestEditando = null; abrirVestidor(); },
   globo(){ const t = enMedio(380, 200); agregar({ tipo: 'globo', ...t, w: 380, h: 200, estilo: 'normal', texto: '¡Hola! Escribe aquí.', letra: 'Archivo', tam: 30, cola: 'abajo' }); },
   ono(){ const t = enMedio(420, 160); agregar({ tipo: 'ono', ...t, w: 420, h: 160, rot: -8, texto: '¡BOOM!', letra: 'Bangers', color: '#FFD400', borde: '#111111', grosor: 10 }); },
@@ -257,6 +287,12 @@ $('#elegir').addEventListener('click', async (e) => {
   } else if(b.dataset.quien){
     $('#dlgElegir').close(); const h = Math.round(pag().alto * .45), w = Math.round(h * .75), t = enMedio(w, h);
     agregar({ tipo: 'personaje', ...t, w, h, quien: b.dataset.quien, pose: 'idle' });
+  } else if(b.dataset.mio){
+    const m = await MIOS.uno(b.dataset.mio); if(!m) return;
+    if(!m.poses.length){ $('#dlgElegir').close(); return abrirMio(m); }
+    $('#dlgElegir').close(); ponerMio(m);
+  } else if(b.dataset.a === 'nuevoMio'){
+    $('#dlgElegir').close(); abrirMio(MIOS.nuevo(''));
   } else if(b.dataset.pose){ const c = capa(); c.pose = b.dataset.pose; anotar(); pintar(); guardarLuego(); b.closest('.cuadros').querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); }
 });
 $('#subir').addEventListener('change', async (e) => {
@@ -304,16 +340,64 @@ $('#vestListo').addEventListener('click', () => {
 });
 
 /* ── ajustes de la capa elegida ── */
-const NOMBRES = { imagen: 'Imagen', personaje: 'Personaje', lpc: 'Personaje del vestidor', globo: 'Globo de diálogo', ono: 'Onomatopeya', texto: 'Texto', marco: 'Viñeta', efecto: 'Efecto' };
+const NOMBRES = { imagen: 'Imagen', mio: 'Tu personaje', personaje: 'Personaje', lpc: 'Personaje del vestidor', globo: 'Globo de diálogo', ono: 'Onomatopeya', texto: 'Texto', marco: 'Viñeta', efecto: 'Efecto' };
 const desl = (n, campo, min, max, val, paso = 1) => `<label class="desl">${n}<input type="range" data-campo="${campo}" min="${min}" max="${max}" step="${paso}" value="${val}"><span>${val}</span></label>`;
 let propsDe = null;
+/* ── Mis personajes: crear, poses (subidas o dibujadas) y ponerlo en la página ── */
+let mio = null;
+function pintarMio(){
+  $('#mioNombre').value = mio.nombre === 'Mi personaje' && !mio.poses.length ? '' : mio.nombre;
+  $('#mioPoses').innerHTML = mio.poses.length ? mio.poses.map((q, i) => { const u = URL.createObjectURL(q.blob); setTimeout(() => URL.revokeObjectURL(u), 60000);
+    return `<div class="mio-pose"><img src="${u}" alt=""><input data-pnombre="${i}" value="${esc(q.nombre)}" aria-label="Nombre de la pose" maxlength="30"><button type="button" data-pquita="${i}" aria-label="Quitar esta pose">${icono('x')}</button></div>`; }).join('')
+    : '<p class="mio-ayuda" style="grid-column:1/-1">Todavía no tiene poses. Sube o dibuja la primera.</p>';
+  $('#mioBorrar').hidden = !mio.creadoYa;
+}
+async function abrirMio(m){ mio = m; mio.creadoYa = !!(await MIOS.uno(m.id)); pintarMio(); $('#dlgMio').showModal(); }
+$('#mioPoses').addEventListener('input', (e) => { const i = e.target.dataset.pnombre; if(i != null) mio.poses[+i].nombre = e.target.value.slice(0, 30); });
+$('#mioPoses').addEventListener('click', (e) => { const b = e.target.closest('[data-pquita]'); if(!b) return; mio.poses.splice(+b.dataset.pquita, 1); pintarMio(); });
+$('#mioNombre').addEventListener('input', (e) => { mio.nombre = e.target.value.slice(0, 40) || 'Mi personaje'; });
+$('#mioSubir').addEventListener('click', () => $('#mioArchivo').click());
+$('#mioArchivo').addEventListener('change', async (e) => {
+  const fs = [...e.target.files]; e.target.value = '';
+  for(const f of fs){ const blob = await MIOS.aPose(f); mio.poses.push({ nombre: f.name.replace(/\.[^.]+$/, '').slice(0, 30) || `Pose ${mio.poses.length + 1}`, blob }); }
+  pintarMio();
+});
+$('#mioDibujar').addEventListener('click', async () => {
+  const r = await abrirDibujo({ ancho: 600, alto: 900, base: null, titulo: `Dibuja una pose de ${mio.nombre}` });
+  if(!r) return; mio.poses.push({ nombre: `Pose ${mio.poses.length + 1}`, blob: r.blob }); pintarMio();
+});
+async function guardarMio(){ if(!mio.nombre.trim()) mio.nombre = 'Mi personaje'; delete mio.creadoYa; await MIOS.guardar(mio); }
+$('#mioGuardar').addEventListener('click', async () => { await guardarMio(); $('#dlgMio').close(); });
+$('#mioPoner').addEventListener('click', async () => {
+  if(!mio.poses.length){ $('#mioPoses').querySelector('.mio-ayuda')?.animate([{ opacity: .3 }, { opacity: 1 }], 400); return; }
+  await guardarMio(); $('#dlgMio').close();
+  /* si ya hay uno de este personaje seleccionado, se le actualizan las poses; si no, se pone nuevo */
+  const c = capa(); if(c && c.mio === mio.id){ c.poses = mio.poses.map((q) => { const id = nuevoId('a'); obra.archivos[id] = q.blob; return { nombre: q.nombre, archivo: id }; }); c.archivo = c.poses[0].archivo; anotar(); pintar().then(abrirProps); guardarLuego(); }
+  else ponerMio(mio);
+});
+$('#mioBorrar').addEventListener('click', async (e) => {
+  if(e.currentTarget.dataset.seguro !== '1'){ e.currentTarget.dataset.seguro = '1'; e.currentTarget.textContent = 'Toca otra vez para borrarlo (las páginas donde ya está no cambian)'; return; }
+  await MIOS.borrar(mio.id); $('#dlgMio').close();
+});
+async function ponerMio(m){
+  const poses = m.poses.map((q) => { const id = nuevoId('a'); obra.archivos[id] = q.blob; return { nombre: q.nombre, archivo: id }; });
+  const im = await img(urlArchivo(obra, poses[0].archivo)); if(!im) return;
+  const h = Math.round(pag().alto * .45), w = Math.round(h * im.width / im.height), t = enMedio(w, h);
+  agregar({ tipo: 'imagen', archivo: poses[0].archivo, ...t, w, h, mio: m.id, nombre: m.nombre, poses });
+}
+window.__mios = { MIOS, abrirMio, ponerMio };
+
 function abrirProps(){
   const c = capa(); if(!c){ $('#props').hidden = true; return; }
   const st = propsDe === c.id ? $('#props').scrollTop : 0; propsDe = c.id;
   const f = c.filtro || {};
-  let h = `<div class="cerrar-props"><b>${c.fondo ? 'Fondo' : NOMBRES[c.tipo]}</b><button type="button" data-a="cerrar">Listo</button></div>`;
+  let h = `<div class="cerrar-props"><b>${c.fondo ? 'Fondo' : c.mio ? esc(c.nombre || 'Tu personaje') : NOMBRES[c.tipo]}</b><button type="button" data-a="cerrar">Listo</button></div>`;
   if(c.tipo === 'personaje'){
     h += `<p class="etq">Pose</p><div class="cuadros" id="poses">${POSES.map(([p, n]) => `<button type="button" data-pose="${p}" aria-pressed="${c.pose === p}"><img src="${srcPersonaje(c.quien, p)}" alt="" loading="lazy">${n}</button>`).join('')}</div>`;
+  }
+  if(c.mio && c.poses){
+    h += `<p class="etq">Pose</p><div class="cuadros" id="poses">${c.poses.map((q, i) => `<button type="button" data-mpose="${i}" aria-pressed="${c.archivo === q.archivo}"><img src="${urlArchivo(obra, q.archivo)}" alt="" loading="lazy">${esc(q.nombre)}</button>`).join('')}</div>
+      <div class="fila"><button type="button" data-a="editarMio">Editar sus poses</button></div>`;
   }
   if(c.tipo === 'lpc'){
     h += `<div class="fila"><button type="button" data-a="vestir">Cambiar ropa y pose</button></div>
@@ -362,6 +446,14 @@ $('#props').addEventListener('click', async (e) => {
   const b = e.target.closest('button'); if(!b) return; const c = capa(), p = pag();
   if(b.dataset.a === 'cerrar'){ sel = null; pintarSel(); return; }
   if(b.dataset.pose){ c.pose = b.dataset.pose; }
+  else if(b.dataset.mpose != null){
+    /* cambiar de pose sin que el personaje brinque: mismos pies (abajo al centro), mismo alto */
+    const q = c.poses[+b.dataset.mpose], im = await img(urlArchivo(obra, q.archivo)); if(!im) return;
+    /* la capa se vuelve a buscar DESPUÉS de esperar la imagen: mientras tanto, guardar o deshacer pudo cambiar el objeto */
+    const k = capa() || c, pie = k.x + k.w / 2, base = k.y + k.h, w = Math.round(k.h * im.width / im.height);
+    k.archivo = q.archivo; k.w = w; k.x = Math.round(pie - w / 2); k.y = Math.round(base - k.h);
+  }
+  else if(b.dataset.a === 'editarMio'){ const m = await MIOS.uno(c.mio); if(m) abrirMio(m); return; }
   else if(b.dataset.dir){ c.dir = b.dataset.dir; }
   else if(b.dataset.lpose){ const [a, q] = b.dataset.lpose.split(':'); c.anim = a; c.cuadro = +q; }
   else if(b.dataset.letra){ c.letra = b.dataset.letra; }
@@ -404,7 +496,7 @@ function propsPagina(){
 function listaCapas(){
   const p = pag();
   $('#props').innerHTML = `<div class="cerrar-props"><b>Capas (la de arriba se ve al frente)</b><button type="button" data-a="cerrar">Listo</button></div>
-    <div class="capas-l">${[...p.capas].reverse().map((c) => `<div class="c" data-id="${c.id}" aria-current="${c.id === sel}"><b data-elegir>${c.fondo ? 'Fondo' : NOMBRES[c.tipo]}${c.texto ? ' · ' + esc(String(c.texto).slice(0, 24)) : ''}</b>
+    <div class="capas-l">${[...p.capas].reverse().map((c) => `<div class="c" data-id="${c.id}" aria-current="${c.id === sel}"><b data-elegir>${c.fondo ? 'Fondo' : c.mio ? esc(c.nombre || 'Tu personaje') : NOMBRES[c.tipo]}${c.texto ? ' · ' + esc(String(c.texto).slice(0, 24)) : ''}</b>
       <button type="button" data-ver aria-label="${c.oculta ? 'Mostrar' : 'Ocultar'}">${c.oculta ? 'Mostrar' : 'Ocultar'}</button><button type="button" data-fijar aria-label="Bloquear">${c.bloqueada ? 'Soltar' : 'Fijar'}</button></div>`).join('') || '<p class="aviso">La página está vacía.</p>'}</div>`;
   $('#props').hidden = false;
 }
