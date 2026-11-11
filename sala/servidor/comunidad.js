@@ -16,7 +16,7 @@
    Todas las rutas: /api/sala/comunidad/<accion>  (GET o POST con JSON).
    El token va en el encabezado «x-token».                                    */
 
-export const TOPE = { usuario: 20, nombre: 40, bio: 300, texto: 2000, titulo: 120, foto: 160_000, cuerpo: 220_000, estante: 60 };
+export const TOPE = { usuario: 20, nombre: 40, bio: 300, texto: 2000, titulo: 120, foto: 160_000, cuerpo: 220_000, estante: 60, respaldo: 700_000 };
 export const REACCIONES = ['gusta', 'encanta', 'risa', 'wow', 'triste'];
 export const CATEGORIAS = ['general', 'recomendaciones', 'teorias', 'escritura', 'dibujo', 'ayuda'];
 const DIA = 864e5;
@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS avisos(id INTEGER PRIMARY KEY AUTOINCREMENT, para TEX
 CREATE INDEX IF NOT EXISTS a_para ON avisos(para, creado);
 CREATE TABLE IF NOT EXISTS reportes(id INTEGER PRIMARY KEY AUTOINCREMENT, comentario INTEGER, usuario TEXT, motivo TEXT, creado INTEGER, resuelto INTEGER DEFAULT 0);
 CREATE TABLE IF NOT EXISTS ritmo(usuario TEXT, cuando INTEGER);
+CREATE TABLE IF NOT EXISTS respaldos(usuario TEXT PRIMARY KEY, datos TEXT, cambio INTEGER);
 `;
 
 /* El corazón, aparte de Cloudflare: `q(sql, ...valores)` regresa los renglones. Así las pruebas lo corren en Node
@@ -60,7 +61,7 @@ export async function manejar(q, pedido, { ahora = Date.now(), llaveOk = false }
   let d = {};
   if(pedido.method === 'POST'){
     const crudo = await pedido.text();
-    if(crudo.length > TOPE.cuerpo) return mal(413, 'Es demasiado grande.');
+    if(crudo.length > (accion === 'respaldo' ? TOPE.respaldo : TOPE.cuerpo)) return mal(413, 'Es demasiado grande.');
     try{ d = crudo ? JSON.parse(crudo) : {}; }catch{ return mal(400, 'No se entendió lo que mandaste.'); }
     if(!d || typeof d !== 'object') d = {};
   }
@@ -155,6 +156,21 @@ export async function manejar(q, pedido, { ahora = Date.now(), llaveOk = false }
       if(!uno('SELECT 1 x FROM cuentas WHERE usuario = ?', u)) return mal(404, 'No existe ese usuario.');
       q('UPDATE cuentas SET admin = ? WHERE usuario = ?', d.quitar ? 0 : 1, u);
       return json({ bien: true });
+    }
+
+    /* ── el respaldo del Estante (listas, notas, etiquetas, colecciones, historial): Carlos, 11 nov.
+       Safari borra lo guardado tras días sin abrir y en otro teléfono no hay nada; con la cuenta se recupera.
+       El servidor sólo guarda y devuelve: la mezcla la hace el teléfono (biblioteca.js · mezclar). ── */
+    case 'respaldo': {
+      const r = pide(); if(r) return r;
+      if(pedido.method === 'POST'){
+        const x = d.datos;
+        if(!x || typeof x !== 'object' || Array.isArray(x)) return mal(400, 'Faltan los datos del estante.');
+        q('INSERT INTO respaldos(usuario, datos, cambio) VALUES(?, ?, ?) ON CONFLICT(usuario) DO UPDATE SET datos = excluded.datos, cambio = excluded.cambio', yo.usuario, JSON.stringify(x), ahora);
+        return json({ bien: true, cambio: ahora });
+      }
+      const f = uno('SELECT datos, cambio FROM respaldos WHERE usuario = ?', yo.usuario);
+      return json({ bien: true, datos: f ? JSON.parse(f.datos) : null, cambio: f ? f.cambio : 0 });
     }
 
     /* ── perfiles ── */
