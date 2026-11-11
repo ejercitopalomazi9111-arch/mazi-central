@@ -248,9 +248,11 @@ function guardarAvance(){
   if(y > .97 && cap === libro.capitulos.length - 1) apuntar('libro:' + libro.id, cap + 1);
 }
 $('#hoja').addEventListener('scroll', () => { clearTimeout(guardaT); guardaT = setTimeout(guardarAvance, 400); }, { passive: true });
-$('#anterior').addEventListener('click', () => { pararVoz(); irA(cap - 1); });
-$('#siguiente').addEventListener('click', () => { pararVoz(); irA(cap + 1); });
-$('#capitulos').addEventListener('change', (e) => { pararVoz(); irA(+e.target.value); });
+/* cambiar de capítulo con la voz prendida: sigue leyendo en el nuevo, desde el principio (Carlos, 11 nov: «el tts no funciona al cambiar de página») */
+const cambiarCap = (n) => { const seguia = vozActiva && !vozPausada; if(seguia){ vozTurno++; try{ sintes.cancel(); }catch{} } irA(n); if(seguia) hablar(0); else if(vozActiva) pintarVoz(); };
+$('#anterior').addEventListener('click', () => cambiarCap(cap - 1));
+$('#siguiente').addEventListener('click', () => cambiarCap(cap + 1));
+$('#capitulos').addEventListener('change', (e) => cambiarCap(+e.target.value));
 $('#botonOpciones').addEventListener('click', (e) => { const o = $('#opciones'); o.hidden = !o.hidden; e.currentTarget.setAttribute('aria-expanded', String(!o.hidden)); });
 document.querySelectorAll('button[data-tema]').forEach((b) => b.addEventListener('click', () => { tema = b.dataset.tema; escribir('libros.tema', tema); pintarTema(); }));
 $('#menos').addEventListener('click', () => { tam = Math.max(14, tam - 2); escribir('libros.tam', tam); pintarTema(); });
@@ -295,7 +297,8 @@ function hablar(i){
   if(!sintes || !libro) { $('#estado').textContent = 'Este navegador no puede leer en voz alta.'; return; }
   const bs = bloques();
   if(i >= bs.length){                                  // se acabó el capítulo: sigue con el próximo
-    if(cap < libro.capitulos.length - 1){ irA(cap + 1); setTimeout(() => hablar(0), 60); }
+    /* sin setTimeout: en el iPhone, un speak() que no sale de la cadena de la voz anterior puede quedarse callado */
+    if(cap < libro.capitulos.length - 1){ irA(cap + 1); hablar(0); }
     else pararVoz();
     return;
   }
@@ -307,6 +310,8 @@ function hablar(i){
   const u = new SpeechSynthesisUtterance(b.textContent.trim());
   u.lang = 'es-MX'; const v = vozEsp(); if(v) u.voice = v; u.rate = vozVel;
   u.onend = () => { if(turno === vozTurno && vozActiva && !vozPausada) hablar(vozI + 1); };
+  /* Safari tira la frase de la memoria si nadie la guarda, y entonces nunca avisa que terminó: la lectura se quedaba parada */
+  hablar.actual = u;
   sintes.speak(u); pintarVoz();
 }
 function pararVoz(){

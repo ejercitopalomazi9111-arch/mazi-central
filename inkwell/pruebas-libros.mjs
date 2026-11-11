@@ -29,7 +29,7 @@ const VOZ = () => {
   window.SpeechSynthesisUtterance = class { constructor(x){ this.text = x; } };
   Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: {
     dichos, getVoices: () => [{ lang: 'es-MX', name: 'Paulina' }], addEventListener(){},
-    cancel(){ clearTimeout(t); }, speak(u){ dichos.push(u.text); t = setTimeout(() => u.onend && u.onend(), 40); } } });
+    cancel(){ clearTimeout(t); }, speak(u){ dichos.push(u.text); if(!window.__vozLenta) t = setTimeout(() => u.onend && u.onend(), 40); } } });
 };
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'libros-'));
 const br = await chromium.launch();
@@ -125,6 +125,17 @@ for (const [ancho, alto] of [[390, 844], [1280, 800]]) {
   await barra(pg); await pg.click('#escuchar'); await pg.waitForTimeout(20);
   const reanuda = await pg.evaluate((g) => { const bs = [...document.querySelectorAll('#texto p, #texto li, #texto h1, #texto h2, #texto h3, #texto h4, #texto blockquote')].filter((x) => x.textContent.trim()); return speechSynthesis.dichos[0] === bs[g.p]?.textContent.trim(); }, guardado);
   ok(guardado && reanuda, `al volver, la voz sigue donde se quedó (capítulo ${guardado && guardado.cap + 1}, párrafo ${guardado && guardado.p + 1})`);
+  /* cambiar de capítulo con la voz prendida: sigue leyendo en el nuevo (Carlos, 11 nov) */
+  await pg.click('#vozParar'); await barra(pg);
+  await pg.evaluate(() => { window.__vozLenta = true; });
+  await pg.click('#escuchar'); await barra(pg);
+  const capAntes = await pg.textContent('#lCap');
+  await pg.evaluate(() => { speechSynthesis.dichos.length = 0; });
+  await pg.click(capAntes.includes('3 de 3') ? '#anterior' : '#siguiente'); await pg.waitForTimeout(150);
+  const sigue = await pg.evaluate(() => { const b = [...document.querySelectorAll('#texto p, #texto li, #texto h1, #texto h2, #texto h3, #texto h4, #texto blockquote')].filter((x) => x.textContent.trim())[0];
+    return { d0: speechSynthesis.dichos.slice(0, 2), b0: b?.textContent.trim().slice(0, 40), dice: speechSynthesis.dichos[0] === b?.textContent.trim(), voz: !document.querySelector('#voz').hidden, cap: document.querySelector('#lCap').textContent }; });
+  ok(sigue.dice && sigue.voz && sigue.cap !== capAntes, 'al cambiar de capítulo con la voz prendida, sigue leyendo el nuevo desde el principio · ' + JSON.stringify(sigue));
+  await pg.evaluate(() => { window.__vozLenta = false; });
   await pg.click('#vozParar'); await barra(pg); await pg.click('#cerrar');
   /* quitar */
   await pg.click('.libro:has-text("cuento corto") .quitar');
