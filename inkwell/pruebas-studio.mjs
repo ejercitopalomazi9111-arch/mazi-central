@@ -114,6 +114,32 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
   ok(await pg.evaluate(() => window.__comic.capa().tipo === 'efecto' && window.__comic.capa().modo === 'noche'), 'efecto de página: «Noche»');
   await pg.click('#props [data-a="cerrar"]');
   if (process.env.CAPTURA) { await pg.waitForTimeout(300); await pg.screenshot({ path: `${process.env.CAPTURA}/studio-vinetas-${w}.png` }); }
+  /* Mis personajes: uno nuevo con dos poses subidas, en la página, y cambia de pose sin brincar */
+  if (w === 390) {
+    const png = async (ancho, alto, color) => Buffer.from(await pg.evaluate(async ([a, b, c]) => { const v = document.createElement('canvas'); v.width = a + 40; v.height = b + 40; const x = v.getContext('2d'); x.fillStyle = c; x.fillRect(20, 20, a, b);
+      const bl = await new Promise((ok) => v.toBlob(ok, 'image/png')); return [...new Uint8Array(await bl.arrayBuffer())]; }, [ancho, alto, color]));
+    const antesMio = await n();
+    await pg.click('[data-h="personaje"]'); await pg.click('#elegir [data-a="nuevoMio"]'); await pg.waitForSelector('#dlgMio[open]');
+    await pg.fill('#mioNombre', 'Akane');
+    await pg.setInputFiles('#mioArchivo', [{ name: 'parada.png', mimeType: 'image/png', buffer: await png(200, 400, '#c0392b') }, { name: 'sentada.png', mimeType: 'image/png', buffer: await png(300, 300, '#2980b9') }]);
+    await pg.waitForFunction(() => document.querySelectorAll('#mioPoses .mio-pose').length === 2);
+    ok(await pg.evaluate(() => [...document.querySelectorAll('#mioPoses input')].map((i) => i.value).join() === 'parada,sentada'), 'subir varias poses a la vez, con su nombre');
+    ok(await pg.evaluate(async () => { const b = (await window.__mios.MIOS.todos()).length; return b === 0; }), '(todavía no se guarda hasta que lo pidas)');
+    await pg.click('#mioPoner'); await pg.waitForFunction((a) => window.__comic.pag().capas.length === a + 1, antesMio);
+    const c0 = await pg.evaluate(() => { const c = window.__comic.capa(); return { mio: !!c.mio, poses: c.poses?.length, x: c.x, y: c.y, w: c.w, h: c.h, archivo: c.archivo }; });
+    ok(c0.mio && c0.poses === 2 && Math.abs(c0.w / c0.h - 200 / 400) < .02, 'Akane entra a la página con sus 2 poses (recortadas a lo dibujado)');
+    await pg.waitForSelector('#props #poses [data-mpose="1"]');
+    ok(/Akane/.test(await pg.textContent('#props .cerrar-props b')), 'el panel lleva su nombre');
+    await pg.click('#props [data-mpose="1"]');
+    await pg.waitForFunction((a) => window.__comic.capa().archivo !== a, c0.archivo, { timeout: 5000 }).catch(() => {});
+    const c1 = await pg.evaluate(() => { const c = window.__comic.capa(); return { x: c.x, y: c.y, w: c.w, h: c.h, archivo: c.archivo }; });
+    ok(c1.archivo !== c0.archivo && c1.h === c0.h && Math.abs((c1.x + c1.w / 2) - (c0.x + c0.w / 2)) <= 1 && Math.abs((c1.y + c1.h) - (c0.y + c0.h)) <= 1 && c1.w > c0.w, 'cambia de pose con los pies en el mismo lugar y su propia proporción');
+    ok(await pg.evaluate(async () => { const t = await window.__mios.MIOS.todos(); return t.length === 1 && t[0].nombre === 'Akane' && t[0].poses.length === 2; }), 'queda guardada en «Mis personajes» para cualquier obra');
+    await pg.click('#props [data-a="cerrar"]');
+    await pg.click('[data-h="personaje"]'); await pg.waitForSelector('#elegir [data-mio]');
+    ok(await pg.evaluate(() => /Akane/.test(document.querySelector('#elegir').textContent) && /2 poses/.test(document.querySelector('#elegir').textContent)), 'y sale arriba al elegir personaje');
+    await pg.click('#dlgElegir [data-cerrar]');
+  }
   /* mesa de dibujo: un trazo, una capa nueva, cubeta, deshacer y «Listo» lo mete a la página donde se pintó */
   const antesDib = await n();
   await pg.click('[data-h="dibujar"]'); await pg.waitForSelector('.dj'); await pg.waitForTimeout(200);
@@ -136,7 +162,7 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
   await pg.click('#props [data-a="cerrar"]');
   await pg.evaluate(() => window.__comic.guardarYa());
   await pg.reload(); await pg.waitForFunction(() => window.__comic);
-  ok(await pg.evaluate(() => window.__comic.obra.paginas.length === 2 && window.__comic.obra.paginas[0].capas.length === 5 && window.__comic.obra.paginas[1].capas.length === 7), 'todo se guarda al cerrar y abrir');
+  ok(await pg.evaluate(() => window.__comic.obra.paginas.length === 2 && window.__comic.obra.paginas[0].capas.length === 5 && window.__comic.obra.paginas[1].capas.length === (innerWidth < 500 ? 8 : 7)), 'todo se guarda al cerrar y abrir');
   await pg.click('#botonMenu');
   const [dpng] = await Promise.all([pg.waitForEvent('download', { timeout: 15000 }).catch(() => null), pg.click('#png')]);
   ok(dpng && /Mi manhwa · página 1\.png$/.test(dpng.suggestedFilename()), 'se descarga la página en PNG');
