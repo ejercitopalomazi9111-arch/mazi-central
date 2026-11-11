@@ -10,184 +10,310 @@
 <link rel="apple-touch-icon" href="img/sello.png">
 <link rel="preload" href="fuentes/archivo-400-900-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fuentes/inter-400-800-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="marca/globo.webp" as="image"><link rel="preload" href="marca/sol.webp" as="image"><link rel="preload" href="marca/personita.webp" as="image"><link rel="preload" href="marca/chorro.webp" as="image">
+<link rel="preload" href="marca/urban.webp" as="image"><link rel="preload" href="marca/pest.webp" as="image"><link rel="preload" href="marca/control.webp" as="image">
 <style>
 /* Urban Pest Control · propuesta de Grupo Mazi (11 nov 2026).
-   Carlos: «simple, limpio, estético; algunas imágenes mínimas; que su operación se vea limpia y en acción».
-   Referencia de tono: arcos.com — mucho aire, letra grande, una sola idea por bloque.
-   Colores: los de su marca (urbanpest.mx): azul marino #143361, azul #165D9B y el amarillo-naranja del sello. */
+   Carlos: limpio pero con diseño; que sea una experiencia; que todo reaccione al dedo, al mouse, al teclado y al
+   scroll; todo precargado y que aparezca al bajar (rápido si se baja rápido); una apertura que arme su logo con
+   precisión total. Colores de su marca (urbanpest.mx): #143361, #165D9B y el sol #F29923 / #F7E93F. */
 @font-face{font-family:"Archivo";src:url(fuentes/archivo-400-900-normal.woff2) format("woff2");font-weight:400 900;font-display:swap}
 @font-face{font-family:"Inter";src:url(fuentes/inter-400-800-normal.woff2) format("woff2");font-weight:400 800;font-display:swap}
 :root{
-  --blanco:#FFFFFF; --hueso:#F4F6F8; --tinta:#0E1B2E; --suave:#5B6676; --linea:#E3E7EC;
-  --marina:#143361; --azul:#165D9B; --sol:#F29923; --sol-claro:#F7E93F;
+  --blanco:#FFFFFF; --hueso:#F3F5F8; --tinta:#0C1A2E; --suave:#5A6576; --linea:#E2E7ED;
+  --marina:#143361; --marina-2:#0D2448; --azul:#165D9B; --cielo:#E8F0F9; --sol:#F29923; --sol-claro:#F7E93F;
   --display:"Archivo", system-ui, sans-serif; --texto:"Inter", system-ui, -apple-system, sans-serif;
-  --ancho:1200px; --gut:22px; --suave-mov:cubic-bezier(.16,1,.3,1);
+  --ancho:1200px; --gut:20px; --curva:cubic-bezier(.16,1,.3,1); --dur:.85s;
+  --sombra:0 1px 2px rgba(12,26,46,.05), 0 14px 40px -18px rgba(12,26,46,.22);
 }
+@media (min-width: 900px){ :root{--gut:40px} }
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%; scroll-behavior:smooth; scroll-padding-top:72px}
-@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} *{animation:none!important; transition:none!important} }
-body{margin:0; background:var(--blanco); color:var(--tinta); font:400 17px/1.6 var(--texto); -webkit-font-smoothing:antialiased; padding-bottom:calc(74px + env(safe-area-inset-bottom))}
+html{-webkit-text-size-adjust:100%; scroll-padding-top:76px}
+@media (prefers-reduced-motion: no-preference){ html{scroll-behavior:smooth} }
+@media (prefers-reduced-motion: reduce){ *, *::before, *::after{animation:none!important; transition:none!important} }
+body{margin:0; background:var(--blanco); color:var(--tinta); font:400 17px/1.6 var(--texto); -webkit-font-smoothing:antialiased; padding-bottom:calc(76px + env(safe-area-inset-bottom)); overflow-x:hidden}
 @media (min-width: 900px){ body{padding-bottom:0} }
 img{max-width:100%; display:block}
 a{color:inherit}
+button{font:inherit; color:inherit}
 ::selection{background:var(--marina); color:#fff}
-:focus-visible{outline:3px solid var(--azul); outline-offset:3px; border-radius:6px}
+:focus-visible{outline:3px solid var(--azul); outline-offset:3px; border-radius:8px}
 svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex:none}
 .env{max-width:var(--ancho); margin:0 auto; padding:0 var(--gut)}
-@media (min-width: 900px){ :root{--gut:40px} }
+.oculto{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; top:0; left:0}
 
-/* ── barra ── */
-.cabeza{position:sticky; top:0; z-index:20; background:rgba(255,255,255,.9); -webkit-backdrop-filter:blur(16px) saturate(1.5); backdrop-filter:blur(16px) saturate(1.5); border-bottom:1px solid transparent; transition:border-color .25s}
+/* ══ LA APERTURA: el logo se arma con sus propias piezas ══ */
+.apertura{position:fixed; inset:0; z-index:100; background:#fff; display:grid; place-items:center; cursor:pointer; -webkit-tap-highlight-color:transparent}
+.apertura .logo-armado{position:relative; width:min(72vw, 360px); aspect-ratio:512 / 396}
+.apertura .logo-armado img{position:absolute; inset:0; width:100%; height:100%; will-change:transform, opacity, clip-path}
+.apertura .brillo{position:absolute; inset:0; -webkit-mask:url(img/logo-entero.webp) center / 100% 100% no-repeat; mask:url(img/logo-entero.webp) center / 100% 100% no-repeat; background:linear-gradient(105deg, transparent 35%, rgba(255,255,255,.85) 50%, transparent 65%) -150% 0 / 250% 100% no-repeat}
+.apertura .salta{position:absolute; bottom:calc(28px + env(safe-area-inset-bottom)); font:500 13px/1 var(--texto); color:var(--suave); letter-spacing:.04em; opacity:0; animation:asoma .6s 1.2s forwards}
+@keyframes asoma{ to{opacity:1} }
+
+/* ══ barra ══ */
+.cabeza{position:sticky; top:0; z-index:40; background:rgba(255,255,255,.86); -webkit-backdrop-filter:blur(18px) saturate(1.6); backdrop-filter:blur(18px) saturate(1.6); border-bottom:1px solid transparent; transition:border-color .3s, box-shadow .3s}
 .cabeza.bajo{border-bottom-color:var(--linea)}
-.cabeza .env{display:flex; align-items:center; gap:28px; height:68px}
-.logo{display:block; height:34px} .logo img{height:100%; width:auto}
-.menu{display:none; gap:30px; margin-left:auto; font-size:15px; font-weight:500}
-.menu a{text-decoration:none; color:var(--suave); transition:color .2s} .menu a:hover{color:var(--tinta)}
+.cabeza .env{display:flex; align-items:center; gap:24px; height:68px}
+.logo{display:block; height:32px; flex:none} .logo img{height:100%; width:auto}
+.menu{display:none; gap:4px; margin-left:auto; font-size:15px; font-weight:500}
+.menu a{text-decoration:none; color:var(--suave); padding:8px 14px; border-radius:999px; transition:color .2s, background .2s}
+.menu a:hover, .menu a.aqui{color:var(--marina); background:var(--cielo)}
 .cabeza .btn{margin-left:auto}
-@media (min-width: 900px){ .menu{display:flex} .cabeza .btn{margin-left:0} }
+@media (min-width: 960px){ .menu{display:flex} .cabeza .btn{margin-left:0} }
 
-/* ── botones ── */
-.btn{display:inline-flex; align-items:center; justify-content:center; gap:10px; min-height:48px; padding:0 24px; border-radius:999px; border:0; font:600 15px/1 var(--texto); text-decoration:none; cursor:pointer; transition:background .2s, color .2s, transform .15s; -webkit-tap-highlight-color:transparent; white-space:nowrap}
-.btn:active{transform:scale(.97)}
-.btn-1{background:var(--marina); color:#fff} .btn-1:hover{background:#0D2448}
-.btn-2{background:transparent; color:var(--marina); box-shadow:inset 0 0 0 1.5px var(--linea)} .btn-2:hover{box-shadow:inset 0 0 0 1.5px var(--marina)}
+/* ══ botones ══ */
+.btn{position:relative; display:inline-flex; align-items:center; justify-content:center; gap:10px; min-height:50px; padding:0 24px; border-radius:999px; border:0; font:600 15px/1 var(--texto); text-decoration:none; cursor:pointer; overflow:hidden; isolation:isolate; transition:transform .2s var(--curva), box-shadow .3s, background .25s, color .25s; -webkit-tap-highlight-color:transparent; white-space:nowrap}
+.btn:active{transform:scale(.96)}
+.btn-1{background:var(--marina); color:#fff; box-shadow:0 10px 24px -12px rgba(20,51,97,.7)}
+.btn-1::before{content:""; position:absolute; inset:0; z-index:-1; background:radial-gradient(120px circle at var(--bx, 50%) var(--by, 50%), rgba(255,255,255,.22), transparent 70%); opacity:0; transition:opacity .3s}
+.btn-1:hover::before{opacity:1}
+.btn-2{background:#fff; color:var(--marina); box-shadow:inset 0 0 0 1.5px var(--linea)} .btn-2:hover{box-shadow:inset 0 0 0 1.5px var(--marina)}
+.btn-sol{background:var(--sol); color:#2A1600} .btn-sol:hover{background:#E68A10}
 .btn-claro{background:#fff; color:var(--marina)}
-.btn-borde-claro{background:transparent; color:#fff; box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.35)}
+.btn-fantasma{background:rgba(255,255,255,.08); color:#fff; box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.28)} .btn-fantasma:hover{background:rgba(255,255,255,.14)}
 .cabeza .btn{min-height:42px; padding:0 18px}
 
-/* ── tipografía ── */
-.ceja{display:block; font:600 12.5px/1 var(--texto); letter-spacing:.14em; text-transform:uppercase; color:var(--azul); margin-bottom:18px}
-h1{font:700 clamp(46px, 12.5vw, 104px)/.95 var(--display); letter-spacing:-.045em; margin:0; text-wrap:balance}
-h1 em{font-style:normal; color:var(--azul)}
-h2{font:700 clamp(34px, 8vw, 60px)/1 var(--display); letter-spacing:-.035em; margin:0 0 18px; text-wrap:balance}
+/* ══ tipografía ══ */
+.ceja{display:inline-flex; align-items:center; gap:10px; font:600 12.5px/1 var(--texto); letter-spacing:.14em; text-transform:uppercase; color:var(--azul); margin-bottom:18px}
+.ceja::before{content:""; width:22px; height:2px; border-radius:2px; background:currentColor}
+h1{font:700 clamp(44px, 11.5vw, 96px)/.96 var(--display); letter-spacing:-.045em; margin:0; text-wrap:balance}
+h1 em, h2 em{font-style:normal; color:var(--azul)}
+h2{font:700 clamp(34px, 7.6vw, 58px)/1 var(--display); letter-spacing:-.035em; margin:0 0 18px; text-wrap:balance}
 h3{font:650 20px/1.25 var(--display); letter-spacing:-.01em; margin:0}
-.lead{font-size:clamp(18px, 4.6vw, 21px); line-height:1.5; color:var(--suave); max-width:36ch; margin:22px 0 0}
-section{padding:84px 0}
-@media (min-width: 900px){ section{padding:140px 0} }
+.lead{font-size:clamp(17.5px, 4.5vw, 20px); line-height:1.55; color:var(--suave); max-width:40ch; margin:20px 0 0}
+section{padding:88px 0}
+@media (min-width: 900px){ section{padding:136px 0} }
 
-/* ── portada ── */
-.portada{padding:56px 0 0}
-@media (min-width: 900px){ .portada{padding:96px 0 0} }
-.portada .acciones{display:flex; flex-wrap:wrap; gap:10px; margin-top:34px}
-.portada .acciones .btn{flex:1 1 160px}
+/* ══ portada ══ */
+.portada{padding:36px 0 0; position:relative}
+@media (min-width: 900px){ .portada{padding:72px 0 0} }
+.portada .rejilla{display:grid; gap:44px; grid-template-columns:minmax(0, 1fr); align-items:center}
+@media (min-width: 980px){ .portada .rejilla{grid-template-columns:1.05fr .95fr; gap:56px} }
+.selector{display:inline-grid; grid-template-columns:1fr 1fr; padding:4px; border-radius:999px; background:var(--hueso); position:relative; margin-bottom:28px}
+.selector button{position:relative; z-index:1; border:0; background:none; padding:0 18px; min-height:42px; border-radius:999px; font-weight:600; font-size:14.5px; color:var(--suave); cursor:pointer; transition:color .3s}
+.selector button[aria-pressed="true"]{color:var(--marina)}
+.selector .pastilla{position:absolute; top:4px; bottom:4px; left:4px; width:calc(50% - 4px); border-radius:999px; background:#fff; box-shadow:0 2px 8px rgba(12,26,46,.1); transition:transform .5s var(--curva)}
+.selector[data-modo="empresa"] .pastilla{transform:translateX(100%)}
+.modo{transition:opacity .35s, transform .45s var(--curva)}
+.modo.cambiando{opacity:0; transform:translateY(8px)}
+.portada .acciones{display:flex; flex-wrap:wrap; gap:10px; margin-top:32px}
+.portada .acciones .btn{flex:1 1 100%}
+@media (min-width: 440px){ .portada .acciones .btn{flex:1 1 170px} }
 @media (min-width: 600px){ .portada .acciones .btn{flex:0 0 auto} }
-.foto-portada{margin:56px 0 0; border-radius:26px; overflow:hidden; aspect-ratio:4/5; background:var(--hueso)}
-@media (min-width: 700px){ .foto-portada{aspect-ratio:21/9; margin-top:80px} }
-.foto-portada img{width:100%; height:100%; object-fit:cover; object-position:50% 60%; transform:scale(1.06); transition:transform 1.6s var(--suave-mov)}
-.foto-portada.lista img{transform:none}
+.confianza{display:flex; align-items:center; gap:12px; margin-top:28px; font-size:14px; color:var(--suave)}
+.estrellas{display:flex; gap:2px; color:var(--sol)} .estrellas svg{width:16px; height:16px; fill:currentColor; stroke:none}
 
-/* ── respaldo: sólo texto, sin tarjetas ── */
-.respaldo{display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); border-top:1px solid var(--linea); margin-top:56px}
-@media (min-width: 900px){ .respaldo{grid-template-columns:repeat(4, minmax(0, 1fr)); margin-top:80px} }
-.respaldo div{padding:26px 16px 26px 0; border-bottom:1px solid var(--linea)}
-@media (min-width: 900px){ .respaldo div{border-bottom:0; padding:34px 24px 0 0} }
-.respaldo b{display:block; font:700 clamp(22px, 5.5vw, 30px)/1 var(--display); letter-spacing:-.02em; color:var(--marina); margin-bottom:8px}
-.respaldo span{font-size:14.5px; color:var(--suave); line-height:1.45; display:block; max-width:24ch}
+/* el panel de la carpeta: un pedazo del producto, que se inclina con el dedo o el mouse */
+.escena{perspective:1200px}
+.panel{position:relative; border-radius:24px; background:#fff; box-shadow:0 1px 0 rgba(255,255,255,.8) inset, 0 30px 80px -30px rgba(20,51,97,.45), 0 0 0 1px rgba(20,51,97,.06); padding:20px; transform:rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transform-style:preserve-3d; transition:transform .6s var(--curva); overflow:hidden}
+.panel::after{content:""; position:absolute; inset:0; pointer-events:none; background:radial-gradient(420px circle at var(--gx, 70%) var(--gy, 0%), rgba(22,93,155,.10), transparent 60%)}
+.panel .tope{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:16px}
+.panel .tope b{font:650 15px/1.2 var(--display)}
+.panel .tope small{display:block; font-size:12.5px; color:var(--suave); font-weight:400; margin-top:3px}
+.sello-ok{display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:#E7F6EE; color:#13794A; font:600 12px/1 var(--texto); white-space:nowrap}
+.sello-ok svg{width:14px; height:14px}
+.filas{display:grid; gap:8px}
+.fila{display:grid; grid-template-columns:auto minmax(0, 1fr) auto; gap:12px; align-items:center; padding:12px; border-radius:14px; background:var(--hueso); transition:transform .4s var(--curva), background .3s}
+.fila:hover{transform:translateX(4px); background:var(--cielo)}
+.fila .ic{width:36px; height:36px; border-radius:10px; display:grid; place-items:center; background:#fff; color:var(--azul)}
+.fila b{display:block; font-size:14px; font-weight:600}
+.fila span{display:block; font-size:12.5px; color:var(--suave); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.fila em{font-style:normal; font:600 12px/1 var(--texto); color:var(--azul)}
+.mini-mapa{margin-top:14px; padding:14px; border-radius:16px; background:linear-gradient(180deg, #F7F9FC, #EEF3F9); display:grid; grid-template-columns:repeat(8, 1fr); gap:8px}
+.mini-mapa i{aspect-ratio:1; border-radius:50%; background:#CFE0F2; box-shadow:inset 0 0 0 3px #fff}
+.mini-mapa i.v{background:#2FA86A} .mini-mapa i.a{background:var(--sol)}
+.panel .nota{margin:12px 2px 0; font-size:12px; color:#8A94A3}
 
-/* ── servicios: una lista, como un índice ── */
+/* ══ franja que corre (más rápido si bajas rápido) ══ */
+.franja{border-block:1px solid var(--linea); overflow:hidden; margin-top:72px; padding:20px 0; background:#fff}
+@media (min-width: 900px){ .franja{margin-top:110px} }
+.franja .riel{display:flex; width:max-content; gap:48px; will-change:transform}
+.franja span{display:inline-flex; align-items:center; gap:48px; font:600 clamp(20px, 4.5vw, 30px)/1 var(--display); letter-spacing:-.02em; color:var(--marina); white-space:nowrap}
+.franja span::after{content:""; width:10px; height:10px; border-radius:50%; background:var(--sol)}
+
+/* ══ respaldo: tarjetas con luz que sigue al dedo ══ */
+.respaldo{display:grid; gap:12px; grid-template-columns:repeat(2, minmax(0, 1fr))}
+@media (min-width: 900px){ .respaldo{grid-template-columns:repeat(4, minmax(0, 1fr)); gap:16px} }
+.luz{position:relative; isolation:isolate; overflow:hidden}
+.luz::before{content:""; position:absolute; inset:0; z-index:-1; background:radial-gradient(260px circle at var(--mx, -100px) var(--my, -100px), rgba(22,93,155,.12), transparent 70%); transition:opacity .3s}
+.dato{border-radius:20px; background:var(--hueso); padding:22px 18px 24px; transition:transform .45s var(--curva), background .3s}
+.dato:hover{transform:translateY(-4px)}
+.dato svg{width:26px; height:26px; color:var(--azul); margin-bottom:26px}
+.dato b{display:block; font:700 clamp(22px, 5vw, 30px)/1 var(--display); letter-spacing:-.025em; color:var(--marina); margin-bottom:8px}
+.dato span{display:block; font-size:14px; line-height:1.45; color:var(--suave)}
+
+/* ══ plagas: lista que se abre ══ */
 .dos-col{display:grid; gap:40px; grid-template-columns:minmax(0, 1fr)}
-@media (min-width: 900px){ .dos-col{grid-template-columns:5fr 7fr; gap:80px; align-items:start} .dos-col > :first-child{position:sticky; top:120px} }
-.indice{list-style:none; margin:0; padding:0; border-top:1px solid var(--linea)}
-.indice li{border-bottom:1px solid var(--linea)}
-.indice a{display:grid; grid-template-columns:minmax(0, 1fr) auto; gap:4px 18px; align-items:center; padding:26px 0; text-decoration:none; transition:padding .3s var(--suave-mov)}
-.indice a:hover{padding-left:10px}
-.indice h3{font-size:clamp(22px, 5.4vw, 30px); letter-spacing:-.02em}
-.indice p{grid-column:1; margin:0; color:var(--suave); font-size:15.5px}
-.indice .flecha{grid-row:1 / span 2; grid-column:2; width:44px; height:44px; border-radius:50%; display:grid; place-items:center; box-shadow:inset 0 0 0 1.5px var(--linea); color:var(--marina); transition:background .25s, color .25s, box-shadow .25s}
-.indice a:hover .flecha{background:var(--marina); color:#fff; box-shadow:none}
+@media (min-width: 900px){ .dos-col{grid-template-columns:5fr 7fr; gap:80px; align-items:start} .dos-col > .fijo{position:sticky; top:120px} }
+.plagas{list-style:none; margin:0; padding:0; border-top:1px solid var(--linea)}
+.plagas li{border-bottom:1px solid var(--linea)}
+.plagas button{width:100%; display:grid; grid-template-columns:auto minmax(0, 1fr) auto; gap:18px; align-items:center; padding:22px 0; background:none; border:0; text-align:left; cursor:pointer; min-height:44px}
+.plagas .n{font:600 13px/1 var(--texto); color:var(--azul); letter-spacing:.08em; width:26px}
+.plagas h3{font-size:clamp(20px, 5vw, 26px); letter-spacing:-.02em; transition:transform .45s var(--curva), color .3s}
+.plagas button:hover h3{transform:translateX(6px); color:var(--marina)}
+.plagas .mas{width:36px; height:36px; border-radius:50%; position:relative; box-shadow:inset 0 0 0 1.5px var(--linea); transition:background .3s, box-shadow .3s}
+.plagas .mas::before, .plagas .mas::after{content:""; position:absolute; left:50%; top:50%; width:12px; height:1.5px; background:var(--marina); transform:translate(-50%, -50%); transition:transform .4s var(--curva), background .3s}
+.plagas .mas::after{transform:translate(-50%, -50%) rotate(90deg)}
+.plagas [aria-expanded="true"] .mas{background:var(--marina); box-shadow:none}
+.plagas [aria-expanded="true"] .mas::before, .plagas [aria-expanded="true"] .mas::after{background:#fff}
+.plagas [aria-expanded="true"] .mas::after{transform:translate(-50%, -50%) rotate(0)}
+.plagas .cuerpo{display:grid; grid-template-rows:0fr; transition:grid-template-rows .5s var(--curva)}
+.plagas .cuerpo > div{overflow:hidden}
+.plagas [aria-expanded="true"] + .cuerpo{grid-template-rows:1fr}
+.plagas .cuerpo p{margin:0 0 22px 44px; color:var(--suave); max-width:52ch}
 
-/* ── industria: la franja oscura ── */
-.industria{background:var(--marina); color:#fff; overflow:hidden}
+/* ══ foto grande que se acerca con el scroll ══ */
+.ventana{margin:0 var(--gut); border-radius:28px; overflow:hidden; aspect-ratio:4/5; position:relative; background:var(--hueso)}
+@media (min-width: 700px){ .ventana{aspect-ratio:21/9; max-width:calc(var(--ancho) - 2 * var(--gut)); margin:0 auto} }
+.ventana img{width:100%; height:100%; object-fit:cover; transform:scale(var(--zoom, 1.12)); will-change:transform}
+.ventana figcaption{position:absolute; left:20px; right:20px; bottom:20px; display:flex; justify-content:space-between; align-items:flex-end; gap:16px; color:#fff}
+.ventana figcaption::before{content:""; position:absolute; inset:-200px -20px -20px; z-index:-1; background:linear-gradient(180deg, transparent, rgba(8,20,40,.7))}
+.ventana figcaption b{font:700 clamp(24px, 5.8vw, 44px)/1.02 var(--display); letter-spacing:-.03em; max-width:16ch; position:relative}
+.ventana figcaption{z-index:1; isolation:isolate}
+@media (min-width: 700px){ .ventana figcaption{left:40px; right:40px; bottom:36px} }
+
+/* ══ industria: la carpeta que se puede tocar ══ */
+.industria{background:var(--marina); color:#fff; overflow:hidden; position:relative}
+.industria::before{content:""; position:absolute; width:900px; height:900px; right:-300px; top:-380px; border-radius:50%; background:radial-gradient(circle, rgba(22,93,155,.55), transparent 65%); pointer-events:none}
 .industria .ceja{color:var(--sol-claro)}
 .industria .lead{color:#BFCBDD}
-.industria-foto{margin:56px 0; border-radius:22px; overflow:hidden; aspect-ratio:16/10}
-@media (min-width: 900px){ .industria-foto{aspect-ratio:21/8; margin:72px 0} }
-.industria-foto img{width:100%; height:100%; object-fit:cover}
-.carpeta{display:grid; gap:0; grid-template-columns:minmax(0, 1fr); border-top:1px solid rgba(255,255,255,.18)}
-@media (min-width: 900px){ .carpeta{grid-template-columns:repeat(3, minmax(0, 1fr))} }
-.carpeta div{padding:28px 0; border-bottom:1px solid rgba(255,255,255,.18)}
-@media (min-width: 900px){ .carpeta div{padding:36px 36px 36px 0; border-bottom:0} .carpeta div + div{padding-left:36px; border-left:1px solid rgba(255,255,255,.18)} }
-.carpeta svg{width:26px; height:26px; color:var(--sol); margin-bottom:18px}
-.carpeta h3{color:#fff; margin-bottom:8px}
-.carpeta p{margin:0; color:#BFCBDD; font-size:15.5px}
-.industria .acciones{display:flex; flex-wrap:wrap; gap:10px; margin-top:48px}
+.industria .dos-col{position:relative}
+.carpeta{background:#0B1E3D; border-radius:24px; padding:16px; box-shadow:0 0 0 1px rgba(255,255,255,.08), 0 40px 80px -40px rgba(0,0,0,.6)}
+.pestanas{display:grid; grid-template-columns:repeat(3, 1fr); gap:4px; padding:4px; border-radius:14px; background:rgba(255,255,255,.06); position:relative}
+.pestanas button{position:relative; z-index:1; border:0; background:none; color:#9FB2CC; min-height:42px; border-radius:10px; font-weight:600; font-size:14px; cursor:pointer; transition:color .3s}
+.pestanas button[aria-selected="true"]{color:#fff}
+.pestanas .pastilla{position:absolute; top:4px; bottom:4px; left:4px; width:calc((100% - 16px) / 3); border-radius:10px; background:rgba(255,255,255,.12); transition:transform .5s var(--curva)}
+.hoja-tab{padding:18px 4px 4px}
+.hoja-tab[hidden]{display:none}
+.lista-rep{display:grid; gap:8px}
+.rep{display:grid; grid-template-columns:minmax(0, 1fr) auto; gap:4px 12px; padding:14px; border-radius:14px; background:rgba(255,255,255,.05); transition:background .3s}
+.rep:hover{background:rgba(255,255,255,.09)}
+.rep b{font-size:14.5px; font-weight:600}
+.rep span{grid-column:1; font-size:13px; color:#9FB2CC}
+.rep em{grid-row:1 / span 2; grid-column:2; align-self:center; font-style:normal; font:600 12px/1 var(--texto); padding:7px 10px; border-radius:999px; background:rgba(47,168,106,.18); color:#7FE0AC}
+.mapa{display:grid; grid-template-columns:repeat(6, 1fr); gap:10px; padding:14px; border-radius:16px; background:repeating-linear-gradient(0deg, transparent 0 27px, rgba(255,255,255,.04) 27px 28px), repeating-linear-gradient(90deg, transparent 0 27px, rgba(255,255,255,.04) 27px 28px), rgba(255,255,255,.03)}
+.mapa button{aspect-ratio:1; border:0; border-radius:50%; cursor:pointer; background:#2FA86A; box-shadow:0 0 0 4px rgba(47,168,106,.18); transition:transform .3s var(--curva), box-shadow .3s; min-width:24px}
+.mapa button.a{background:var(--sol); box-shadow:0 0 0 4px rgba(242,153,35,.2)}
+.mapa button:hover, .mapa button[aria-pressed="true"]{transform:scale(1.25)}
+.mapa button[aria-pressed="true"]{box-shadow:0 0 0 6px rgba(255,255,255,.25)}
+.trampa{margin-top:12px; padding:14px; border-radius:14px; background:rgba(255,255,255,.05); font-size:14px; color:#C8D4E6; min-height:72px}
+.trampa b{color:#fff}
+.docs{display:grid; gap:8px}
+.doc{display:flex; align-items:center; gap:12px; padding:14px; border-radius:14px; background:rgba(255,255,255,.05)}
+.doc svg{color:var(--sol)}
+.doc b{display:block; font-size:14.5px; font-weight:600}
+.doc span{display:block; font-size:13px; color:#9FB2CC}
+.carpeta .nota{margin:14px 4px 2px; font-size:12px; color:#7F92AE}
+.norma{margin-top:28px; padding:18px 20px; border-radius:16px; background:rgba(255,255,255,.06); border-left:3px solid var(--sol); color:#C8D4E6; font-size:15px}
+.norma b{color:#fff}
+.industria .acciones{display:flex; flex-wrap:wrap; gap:10px; margin-top:30px}
 
-/* ── proceso ── */
-.pasos{list-style:none; margin:48px 0 0; padding:0; display:grid; grid-template-columns:minmax(0, 1fr); counter-reset:p}
-@media (min-width: 900px){ .pasos{grid-template-columns:repeat(4, minmax(0, 1fr)); gap:40px} }
-.pasos li{counter-increment:p; padding:24px 0; border-top:1px solid var(--linea)}
-.pasos li::before{content:counter(p, decimal-leading-zero); display:block; font:600 13px/1 var(--texto); color:var(--azul); letter-spacing:.1em; margin-bottom:20px}
-.pasos p{margin:8px 0 0; color:var(--suave); font-size:15.5px}
+/* ══ proceso: la línea se llena con el scroll ══ */
+.pasos{list-style:none; margin:48px 0 0; padding:0; position:relative; display:grid; gap:0; grid-template-columns:minmax(0, 1fr)}
+.pasos::before, .pasos::after{content:""; position:absolute; left:19px; top:20px; bottom:20px; width:2px; background:var(--linea)}
+.pasos::after{background:var(--azul); transform-origin:top; transform:scaleY(var(--llenado, 0))}
+.pasos li{position:relative; display:grid; grid-template-columns:40px minmax(0, 1fr); gap:20px; padding:0 0 40px}
+.pasos li:last-child{padding-bottom:0}
+.pasos .bola{position:relative; z-index:1; width:40px; height:40px; border-radius:50%; background:#fff; box-shadow:inset 0 0 0 2px var(--linea); display:grid; place-items:center; font:600 13px/1 var(--texto); color:var(--suave); transition:background .4s, color .4s, box-shadow .4s}
+.pasos li.hecho .bola{background:var(--azul); color:#fff; box-shadow:none}
+.pasos p{margin:8px 0 0; color:var(--suave); font-size:15.5px; max-width:44ch}
+@media (min-width: 900px){
+  .pasos{grid-template-columns:repeat(4, minmax(0, 1fr)); gap:32px}
+  .pasos::before, .pasos::after{left:20px; right:20px; top:19px; bottom:auto; width:auto; height:2px}
+  .pasos::after{transform-origin:left; transform:scaleX(var(--llenado, 0))}
+  .pasos li{grid-template-columns:minmax(0, 1fr); padding:0}
+}
 
-/* ── reseñas ── */
+/* ══ reseñas: un solo carrusel, se arrastra ══ */
 .resenas{background:var(--hueso)}
-.carril{display:grid; grid-auto-flow:column; grid-auto-columns:minmax(84%, 1fr); gap:14px; overflow-x:auto; scroll-snap-type:x mandatory; padding:4px var(--gut) 20px; margin:44px calc(var(--gut) * -1) 0; scrollbar-width:none; -webkit-overflow-scrolling:touch}
+.resenas .tope{display:flex; justify-content:space-between; align-items:flex-end; gap:20px; flex-wrap:wrap}
+.flechas{display:flex; gap:8px}
+.flechas button{width:48px; height:48px; border-radius:50%; border:0; background:#fff; color:var(--marina); cursor:pointer; display:grid; place-items:center; box-shadow:var(--sombra); transition:transform .3s var(--curva), opacity .3s}
+.flechas button:hover{transform:scale(1.06)} .flechas button:disabled{opacity:.35; cursor:default; transform:none}
+.carril{display:grid; grid-auto-flow:column; grid-auto-columns:minmax(86%, 1fr); gap:14px; overflow-x:auto; scroll-snap-type:x mandatory; padding:8px var(--gut) 24px; margin:36px calc(var(--gut) * -1) 0; scrollbar-width:none; overscroll-behavior-x:contain; cursor:grab}
+.carril.agarrado{cursor:grabbing; scroll-snap-type:none}
 .carril::-webkit-scrollbar{display:none}
-@media (min-width: 900px){ .carril{grid-auto-flow:row; grid-template-columns:repeat(3, minmax(0, 1fr)); overflow:visible; padding:0; margin:56px 0 0; gap:20px} }
-blockquote{margin:0; scroll-snap-align:start; background:#fff; border-radius:20px; padding:30px 26px; display:flex; flex-direction:column; gap:24px}
+@media (min-width: 700px){ .carril{grid-auto-columns:calc((100% - 2 * var(--gut) - 28px) / 2.3)} }
+@media (min-width: 1100px){ .carril{grid-auto-columns:calc((100% - 2 * var(--gut) - 28px) / 3)} }
+blockquote{margin:0; scroll-snap-align:start; background:#fff; border-radius:22px; padding:28px 26px; display:flex; flex-direction:column; gap:22px; box-shadow:var(--sombra); user-select:none}
 blockquote p{margin:0; font:500 18px/1.5 var(--texto); letter-spacing:-.005em}
-blockquote p::before{content:"«"} blockquote p::after{content:"»"}
-blockquote footer{margin-top:auto; font-size:14px; color:var(--suave)}
+blockquote footer{margin-top:auto; display:flex; align-items:center; gap:12px; font-size:14px; color:var(--suave)}
+blockquote footer .ini{width:40px; height:40px; border-radius:50%; background:var(--cielo); color:var(--marina); display:grid; place-items:center; font:700 15px/1 var(--display)}
 blockquote footer b{display:block; color:var(--tinta); font-weight:650}
-.pista{font-size:13px; color:var(--suave); margin:6px 0 0}
-@media (min-width: 900px){ .pista{display:none} }
+.puntos{display:flex; gap:6px; justify-content:center; margin-top:4px}
+.puntos i{width:7px; height:7px; border-radius:99px; background:#C9D2DD; transition:width .4s var(--curva), background .3s}
+.puntos i.si{width:22px; background:var(--marina)}
 
-/* ── preguntas ── */
+/* ══ preguntas ══ */
 details{border-bottom:1px solid var(--linea)}
 details:first-of-type{border-top:1px solid var(--linea)}
-summary{list-style:none; cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:18px; padding:24px 0; min-height:44px; font:600 19px/1.35 var(--display); letter-spacing:-.01em}
+summary{list-style:none; cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:18px; padding:22px 0; min-height:44px; font:600 19px/1.35 var(--display); letter-spacing:-.01em; transition:color .3s}
+summary:hover{color:var(--marina)}
 summary::-webkit-details-marker{display:none}
-summary .mas{width:32px; height:32px; border-radius:50%; flex:none; position:relative; box-shadow:inset 0 0 0 1.5px var(--linea)}
-summary .mas::before, summary .mas::after{content:""; position:absolute; left:50%; top:50%; width:12px; height:1.5px; background:var(--marina); transform:translate(-50%, -50%); transition:transform .3s var(--suave-mov)}
+summary .mas{width:34px; height:34px; border-radius:50%; flex:none; position:relative; box-shadow:inset 0 0 0 1.5px var(--linea)}
+summary .mas::before, summary .mas::after{content:""; position:absolute; left:50%; top:50%; width:12px; height:1.5px; background:var(--marina); transform:translate(-50%, -50%); transition:transform .4s var(--curva)}
 summary .mas::after{transform:translate(-50%, -50%) rotate(90deg)}
 details[open] summary .mas::after{transform:translate(-50%, -50%) rotate(0)}
-details p{margin:0 0 26px; color:var(--suave); max-width:60ch}
+details p{margin:0 0 24px; color:var(--suave); max-width:60ch}
 
-/* ── contacto ── */
-.contacto .grande{display:block; white-space:nowrap; font:700 clamp(40px, 11vw, 64px)/1 var(--display); letter-spacing:-.04em; color:var(--marina); text-decoration:none; margin:6px 0 0}
-.contacto .grande:hover{color:var(--azul)}
-.contacto .datos{display:flex; flex-wrap:wrap; gap:10px; margin-top:30px}
-.forma{background:var(--hueso); border-radius:24px; padding:26px 22px}
+/* ══ contacto ══ */
+.contacto .grande{display:inline-block; white-space:nowrap; font:700 clamp(38px, 10.5vw, 64px)/1 var(--display); letter-spacing:-.04em; color:var(--marina); text-decoration:none; margin:4px 0 0; background:linear-gradient(var(--sol), var(--sol)) 0 100% / 0 3px no-repeat; transition:background-size .5s var(--curva)}
+.contacto .grande:hover{background-size:100% 3px}
+.contacto .datos{display:flex; flex-wrap:wrap; gap:10px; margin-top:28px}
+.cobertura{margin-top:28px; display:flex; gap:12px; align-items:flex-start; color:var(--suave); font-size:15px; max-width:40ch}
+.cobertura svg{color:var(--azul); margin-top:2px}
+.forma{border-radius:24px; background:var(--hueso); padding:24px 20px}
 @media (min-width: 600px){ .forma{padding:36px} }
 .forma h3{font-size:22px; margin-bottom:6px}
 .forma .nota{color:var(--suave); font-size:14.5px; margin:0 0 22px}
 .campo{margin-bottom:14px}
 .campo label{display:block; font-weight:600; font-size:14px; margin-bottom:8px}
-input, select, textarea{width:100%; min-height:52px; padding:13px 16px; border-radius:14px; border:1.5px solid transparent; background:#fff; color:var(--tinta); font-family:inherit; font-size:16px; appearance:none; -webkit-appearance:none; transition:border-color .2s}
-textarea{min-height:96px; resize:vertical}
-select{background-image:linear-gradient(45deg, transparent 50%, var(--suave) 50%), linear-gradient(135deg, var(--suave) 50%, transparent 50%); background-position:calc(100% - 22px) 23px, calc(100% - 16px) 23px; background-size:6px 6px; background-repeat:no-repeat; padding-right:44px}
-input:focus, select:focus, textarea:focus{outline:none; border-color:var(--azul)}
-.forma .btn{width:100%; margin-top:8px; min-height:54px}
+.chips{display:flex; flex-wrap:wrap; gap:8px}
+.chip{position:relative}
+.chip input{position:absolute; inset:0; opacity:0; margin:0; cursor:pointer}
+.chip span{display:inline-flex; align-items:center; min-height:44px; padding:0 16px; border-radius:999px; background:#fff; box-shadow:inset 0 0 0 1.5px var(--linea); font-size:14.5px; font-weight:600; color:var(--suave); transition:background .25s, color .25s, box-shadow .25s}
+.chip input:checked + span{background:var(--marina); color:#fff; box-shadow:none}
+.chip input:focus-visible + span{outline:3px solid var(--azul); outline-offset:2px}
+input[type=text], textarea{width:100%; min-height:52px; padding:13px 16px; border-radius:14px; border:1.5px solid transparent; background:#fff; color:var(--tinta); font-family:inherit; font-size:16px; appearance:none; -webkit-appearance:none; transition:border-color .2s, box-shadow .2s}
+textarea{min-height:100px; resize:vertical}
+input:focus, textarea:focus{outline:none; border-color:var(--azul); box-shadow:0 0 0 4px rgba(22,93,155,.12)}
+.forma .btn{width:100%; margin-top:8px; min-height:56px}
 .error{color:#B42318; font-size:14px; font-weight:600; margin:10px 0 0}
 
-/* ── pie ── */
-.pie{border-top:1px solid var(--linea); padding:44px 0 32px; font-size:14px; color:var(--suave)}
-.pie .env{display:grid; gap:22px}
-@media (min-width: 900px){ .pie .env{grid-template-columns:1fr auto; align-items:end} }
-.pie img{height:30px; width:auto; margin-bottom:14px}
-.pie nav{display:flex; flex-wrap:wrap; gap:8px 22px}
-.pie a{color:var(--suave); text-decoration:none} .pie a:hover{color:var(--tinta)}
-.creditos{font-size:12px; color:#8A94A3; grid-column:1 / -1}
+/* ══ pie ══ */
+.pie{background:var(--marina-2); color:#BFCBDD; padding:56px 0 36px; font-size:14px}
+.pie .env{display:grid; gap:28px}
+@media (min-width: 900px){ .pie .env{grid-template-columns:1.2fr 1fr 1fr; align-items:start} }
+.pie .marca-pie{display:inline-block; background:#fff; border-radius:14px; padding:10px 14px; margin-bottom:16px} .pie .marca-pie img{height:30px; width:auto}
+.pie h4{margin:0 0 12px; color:#fff; font:600 14px/1 var(--texto)}
+.pie nav{display:grid; gap:10px}
+.pie a{color:#BFCBDD; text-decoration:none} .pie a:hover{color:#fff}
+.creditos{grid-column:1 / -1; border-top:1px solid rgba(255,255,255,.1); padding-top:22px; font-size:12px; color:#7F92AE}
 
-/* ── barra de abajo en el teléfono ── */
-.barra{position:fixed; left:0; right:0; bottom:0; z-index:30; display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:10px 12px calc(10px + env(safe-area-inset-bottom)); background:rgba(255,255,255,.92); -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px); border-top:1px solid var(--linea)}
+/* ══ barra de abajo en el teléfono ══ */
+.barra{position:fixed; left:0; right:0; bottom:0; z-index:30; display:grid; grid-template-columns:1fr 1.3fr; gap:8px; padding:10px 12px calc(10px + env(safe-area-inset-bottom)); background:rgba(255,255,255,.9); -webkit-backdrop-filter:blur(18px); backdrop-filter:blur(18px); border-top:1px solid var(--linea); transform:translateY(0); transition:transform .45s var(--curva)}
+.barra.fuera{transform:translateY(110%)}
 .barra .btn{min-height:50px; padding:0 12px}
 @media (min-width: 900px){ .barra{display:none} }
 
-/* ── aparecer al bajar: sin JS, todo se ve ── */
-.js .ap{opacity:0; transform:translateY(26px); transition:opacity .9s var(--suave-mov), transform .9s var(--suave-mov)}
+/* ══ aparecer al bajar ══
+   Todo está en la página desde el principio (imágenes incluidas); sólo se esconde hasta que llega a la vista.
+   Si bajas despacio, entra suave; si bajas rápido, entra de inmediato (--dur la pone el JS). Sin JS, todo se ve. */
+.js .ap{opacity:0; transform:translate3d(0, 28px, 0); transition:opacity var(--dur) var(--curva), transform var(--dur) var(--curva); transition-delay:calc(var(--i, 0) * 70ms * var(--escalon, 1))}
 .js .ap.visto{opacity:1; transform:none}
 </style>
 </head>
 <body>
 <!--ICONOS-->
+<a class="oculto" href="#contenido">Saltar al contenido</a>
 
 <header class="cabeza" id="cabeza">
   <div class="env">
     <a class="logo" href="#inicio" aria-label="Urban Pest Control, inicio"><img src="img/logo.webp" alt="Urban Pest Control" width="1120" height="240"></a>
     <nav class="menu" aria-label="Secciones">
-      <a href="#servicios">Servicios</a>
+      <a href="#plagas">Plagas</a>
       <a href="#industria">Industria</a>
+      <a href="#proceso">Cómo trabajamos</a>
       <a href="#clientes">Clientes</a>
       <a href="#contacto">Contacto</a>
     </nav>
@@ -196,62 +322,113 @@ input:focus, select:focus, textarea:focus{outline:none; border-color:var(--azul)
 </header>
 
 <main id="inicio">
-  <section class="portada">
-    <div class="env">
-      <span class="ceja ap">Control de plagas · Querétaro</span>
-      <h1 class="ap">Tu operación,<br><em>limpia.</em></h1>
-      <p class="lead ap">Hogares, comercios e industria. Más de 10 años cuidando que lo único que se note sea tu trabajo.</p>
-      <div class="acciones ap">
-        <a class="btn btn-1" href="https://wa.me/5214421394023?text=Hola%2C%20vengo%20de%20su%20p%C3%A1gina.%20Me%20gustar%C3%ADa%20una%20cotizaci%C3%B3n." target="_blank" rel="noopener"><svg class="i"><use href="#i-message-circle"/></svg> Cotizar por WhatsApp</a>
-        <a class="btn btn-2" href="tel:+524421394023"><svg class="i"><use href="#i-phone"/></svg> 442 139 4023</a>
+  <section class="portada" id="contenido">
+    <div class="env rejilla">
+      <div>
+        <div class="selector ap" id="selector" role="group" aria-label="¿Para dónde lo necesitas?" data-modo="hogar">
+          <span class="pastilla" aria-hidden="true"></span>
+          <button type="button" aria-pressed="true" data-modo="hogar">Para tu hogar</button>
+          <button type="button" aria-pressed="false" data-modo="empresa">Para tu empresa</button>
+        </div>
+        <div class="modo" id="modo">
+          <span class="ceja ap" style="--i:1" data-t="ceja">Control de plagas · Querétaro</span>
+          <h1 class="ap" style="--i:2" data-t="titulo">Tu casa,<br><em>tranquila.</em></h1>
+          <p class="lead ap" style="--i:3" data-t="lead">Productos de baja toxicidad, indicaciones claras para niños y mascotas, y garantía: si la plaga vuelve, regresamos sin costo.</p>
+        </div>
+        <div class="acciones ap" style="--i:4">
+          <a class="btn btn-1" id="ctaWa" href="https://wa.me/5214421394023?text=Hola%2C%20vengo%20de%20su%20p%C3%A1gina.%20Me%20gustar%C3%ADa%20una%20cotizaci%C3%B3n." target="_blank" rel="noopener"><svg class="i"><use href="#i-message-circle"/></svg> Cotizar por WhatsApp</a>
+          <a class="btn btn-2" href="tel:+524421394023"><svg class="i"><use href="#i-phone"/></svg> 442 139 4023</a>
+        </div>
+        <div class="confianza ap" style="--i:5"><span class="estrellas" aria-hidden="true"><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg></span><span>Más de 10 años en Querétaro</span></div>
       </div>
-      <figure class="foto-portada ap" id="fotoPortada">
-        <picture>
-          <source media="(max-width: 800px)" srcset="img/planta-800.webp">
-          <img src="img/planta.webp" alt="Planta industrial limpia, con el piso brillante" width="1600" height="1067" fetchpriority="high">
-        </picture>
-      </figure>
-      <div class="respaldo ap">
-        <div><b>SSA</b><span>Autorización vigente de la Secretaría de Salud</span></div>
-        <div><b>REPSE</b><span>Registro en regla para trabajar con empresas</span></div>
-        <div><b>Baja toxicidad</b><span>Productos seguros para tu familia, tu equipo y tus clientes</span></div>
-        <div><b>Garantía</b><span>Si la plaga vuelve, regresamos sin costo</span></div>
+      <div class="escena ap" style="--i:3">
+        <div class="panel" id="panel" aria-label="Ejemplo de la carpeta de cumplimiento">
+          <div class="tope"><div><b>Carpeta de cumplimiento</b><small>Ejemplo · Planta de alimentos</small></div><span class="sello-ok"><svg class="i"><use href="#i-shield-check"/></svg>Al día</span></div>
+          <div class="filas">
+            <div class="fila"><span class="ic"><svg class="i"><use href="#i-file-text"/></svg></span><div><b>Reporte de servicio</b><span>Productos, hallazgos y firma</span></div><em>PDF</em></div>
+            <div class="fila"><span class="ic"><svg class="i"><use href="#i-map-pin"/></svg></span><div><b>Mapa de trampas</b><span>Estado de cada punto de monitoreo</span></div><em>Ver</em></div>
+            <div class="fila"><span class="ic"><svg class="i"><use href="#i-badge-check"/></svg></span><div><b>Licencia sanitaria y REPSE</b><span>Vigentes, listos para auditoría</span></div><em>PDF</em></div>
+          </div>
+          <div class="mini-mapa" aria-hidden="true"><i class="v"></i><i class="v"></i><i class="v"></i><i class="a"></i><i class="v"></i><i class="v"></i><i class="v"></i><i class="v"></i><i class="v"></i><i class="v"></i><i class="v"></i><i class="v"></i><i class="v"></i><i class="v"></i><i class="a"></i><i class="v"></i></div>
+          <p class="nota">Así ve tu equipo cada servicio, desde el teléfono o la computadora.</p>
+        </div>
+      </div>
+    </div>
+    <div class="franja" aria-hidden="true"><div class="riel" id="riel"><span>Hogares</span><span>Comercios y plazas</span><span>Industria de alimentos</span><span>Sector salud</span><span>Escuelas y universidades</span><span>Industria y bodegas</span></div></div>
+  </section>
+
+  <section id="respaldo" style="padding-bottom:0">
+    <div class="env">
+      <div class="respaldo">
+        <div class="dato luz ap" style="--i:0"><svg class="i"><use href="#i-badge-check"/></svg><b>SSA</b><span>Autorización vigente de la Secretaría de Salud</span></div>
+        <div class="dato luz ap" style="--i:1"><svg class="i"><use href="#i-building"/></svg><b>REPSE</b><span>Registro en regla para trabajar con empresas</span></div>
+        <div class="dato luz ap" style="--i:2"><svg class="i"><use href="#i-leaf"/></svg><b>Baja toxicidad</b><span>Seguros para tu familia, tu equipo y tus clientes</span></div>
+        <div class="dato luz ap" style="--i:3"><svg class="i"><use href="#i-shield-check"/></svg><b>Garantía</b><span>Si la plaga vuelve, regresamos sin costo</span></div>
       </div>
     </div>
   </section>
 
-  <section id="servicios">
+  <section id="plagas">
     <div class="env dos-col">
-      <div class="ap">
-        <span class="ceja">Servicios</span>
-        <h2>Un plan para cada lugar.</h2>
-        <p class="lead" style="margin-top:0">Primero vemos qué hay y dónde. Después elegimos el método: aspersión, gel, cebos, monitoreo o nebulización, según tu caso.</p>
+      <div class="fijo ap">
+        <span class="ceja">Plagas que controlamos</span>
+        <h2>Un método para <em>cada caso.</em></h2>
+        <p class="lead" style="margin-top:0">Primero identificamos qué hay y dónde. Después elegimos cómo, para usar sólo lo necesario.</p>
       </div>
-      <ul class="indice ap">
-        <li><a href="#contacto" data-tipo="Hogar"><h3>Hogares</h3><p>Casas y residencias, con indicaciones para niños y mascotas.</p><span class="flecha"><svg class="i"><use href="#i-arrow-right"/></svg></span></a></li>
-        <li><a href="#contacto" data-tipo="Comercio"><h3>Comercios y plazas</h3><p>En el horario que no detenga tu negocio.</p><span class="flecha"><svg class="i"><use href="#i-arrow-right"/></svg></span></a></li>
-        <li><a href="#industria"><h3>Industria de alimentos</h3><p>Programa por contrato, listo para auditoría.</p><span class="flecha"><svg class="i"><use href="#i-arrow-right"/></svg></span></a></li>
-        <li><a href="#contacto" data-tipo="Sector salud"><h3>Sector salud</h3><p>Clínicas y hospitales, con protocolos que respetan la atención.</p><span class="flecha"><svg class="i"><use href="#i-arrow-right"/></svg></span></a></li>
-        <li><a href="#contacto" data-tipo="Escuela"><h3>Escuelas y universidades</h3><p>En vacaciones, fines de semana o fuera de clases.</p><span class="flecha"><svg class="i"><use href="#i-arrow-right"/></svg></span></a></li>
-        <li><a href="#contacto" data-tipo="Industria / bodega"><h3>Industria y bodegas</h3><p>Monitoreo permanente con puntos de control.</p><span class="flecha"><svg class="i"><use href="#i-arrow-right"/></svg></span></a></li>
+      <ul class="plagas ap" id="listaPlagas">
+        <li><button type="button" aria-expanded="false"><span class="n">01</span><h3>Cucarachas y hormigas</h3><span class="mas" aria-hidden="true"></span></button><div class="cuerpo"><div><p>Aspersión, gel y cebos específicos para cada especie.</p></div></div></li>
+        <li><button type="button" aria-expanded="false"><span class="n">02</span><h3>Ratas y ratones</h3><span class="mas" aria-hidden="true"></span></button><div class="cuerpo"><div><p>Control por dentro y por fuera, con puntos de monitoreo permanentes.</p></div></div></li>
+        <li><button type="button" aria-expanded="false"><span class="n">03</span><h3>Mosquitos y moscas</h3><span class="mas" aria-hidden="true"></span></button><div class="cuerpo"><div><p>Nebulización y trampas de luz UV en los puntos críticos.</p></div></div></li>
+        <li><button type="button" aria-expanded="false"><span class="n">04</span><h3>Arañas y alacranes</h3><span class="mas" aria-hidden="true"></span></button><div class="cuerpo"><div><p>Protocolos especiales para las zonas de más riesgo.</p></div></div></li>
+        <li><button type="button" aria-expanded="false"><span class="n">05</span><h3>Fauna silvestre</h3><span class="mas" aria-hidden="true"></span></button><div class="cuerpo"><div><p>Reubicación segura, sin dañar al animal ni a tu propiedad.</p></div></div></li>
+        <li><button type="button" aria-expanded="false"><span class="n">06</span><h3>Palomas</h3><span class="mas" aria-hidden="true"></span></button><div class="cuerpo"><div><p>Control biológico con aves rapaces, sin químicos ni daño a la estructura.</p></div></div></li>
       </ul>
     </div>
   </section>
 
-  <section id="industria" class="industria">
-    <div class="env">
-      <span class="ceja ap">Industria</span>
-      <h2 class="ap">Cuando llegue el auditor, ya está todo.</h2>
-      <p class="lead ap">Cada servicio queda documentado en tu carpeta de cumplimiento en línea. Tu jefe de calidad la consulta cuando quiera, sin pedirnos nada.</p>
-      <figure class="industria-foto ap"><img src="img/alimentos-800.webp" srcset="img/alimentos-800.webp 800w, img/alimentos.webp 1600w" sizes="(max-width: 900px) 100vw, 1120px" alt="Línea de producción de alimentos" width="1600" height="1065" loading="lazy"></figure>
-      <div class="carpeta ap">
-        <div><svg class="i"><use href="#i-file-text"/></svg><h3>Reporte de cada visita</h3><p>Fecha, técnico, productos aplicados con su registro, y la firma de quien recibió.</p></div>
-        <div><svg class="i"><use href="#i-map-pin"/></svg><h3>Trampas y hallazgos</h3><p>El estado de cada punto de monitoreo y lo que se encontró, visita tras visita.</p></div>
-        <div><svg class="i"><use href="#i-shield-check"/></svg><h3>Papeles en regla</h3><p>Autorización sanitaria y REPSE vigentes, a la mano para cualquier auditoría.</p></div>
+  <figure class="ventana ap" id="ventana">
+    <picture><source media="(max-width: 800px)" srcset="img/planta-800.webp"><img src="img/planta.webp" alt="Planta industrial impecable, con el piso brillante" width="1600" height="1067"></picture>
+    <figcaption><b>Lo único que se nota es tu operación.</b></figcaption>
+  </figure>
+
+  <section id="industria" class="industria" style="margin-top:88px">
+    <div class="env dos-col">
+      <div class="fijo">
+        <span class="ceja ap">Industria</span>
+        <h2 class="ap" style="--i:1">Cuando llegue el auditor, <em style="color:var(--sol-claro)">ya está todo.</em></h2>
+        <p class="lead ap" style="--i:2">Cada servicio queda en tu carpeta de cumplimiento en línea. Tu jefe de calidad la abre cuando quiera, sin pedirnos nada.</p>
+        <div class="norma ap" style="--i:3"><b>NOM-251-SSA1-2009, numeral 5.10.</b> Pide un plan de control de plagas, plaguicidas con registro y una constancia de cada servicio con el número de licencia sanitaria. Te lo dejamos en orden, en un solo lugar.</div>
+        <div class="acciones ap" style="--i:4">
+          <a class="btn btn-sol" href="https://wa.me/5214421394023?text=Hola%2C%20me%20interesa%20un%20diagn%C3%B3stico%20de%20mi%20planta." target="_blank" rel="noopener"><svg class="i"><use href="#i-calendar-check"/></svg> Agendar diagnóstico</a>
+          <a class="btn btn-fantasma" href="mailto:direccion@urbanpest.mx?subject=Programa%20de%20control%20de%20plagas"><svg class="i"><use href="#i-mail"/></svg> Escribir</a>
+        </div>
       </div>
-      <div class="acciones ap">
-        <a class="btn btn-claro" href="https://wa.me/5214421394023?text=Hola%2C%20me%20interesa%20un%20programa%20de%20control%20de%20plagas%20para%20mi%20empresa." target="_blank" rel="noopener"><svg class="i"><use href="#i-calendar-check"/></svg> Agendar visita de diagnóstico</a>
-        <a class="btn btn-borde-claro" href="mailto:direccion@urbanpest.mx?subject=Programa%20de%20control%20de%20plagas"><svg class="i"><use href="#i-mail"/></svg> direccion@urbanpest.mx</a>
+      <div class="carpeta ap" style="--i:2">
+        <div class="pestanas" role="tablist" aria-label="La carpeta de cumplimiento">
+          <span class="pastilla" aria-hidden="true"></span>
+          <button type="button" role="tab" aria-selected="true" aria-controls="tReportes" id="pReportes">Reportes</button>
+          <button type="button" role="tab" aria-selected="false" aria-controls="tTrampas" id="pTrampas" tabindex="-1">Trampas</button>
+          <button type="button" role="tab" aria-selected="false" aria-controls="tDocs" id="pDocs" tabindex="-1">Documentos</button>
+        </div>
+        <div class="hoja-tab" role="tabpanel" id="tReportes" aria-labelledby="pReportes">
+          <div class="lista-rep">
+            <div class="rep"><b>Servicio mensual · Nave A</b><span>Aspersión y revisión de 18 estaciones</span><em>Firmado</em></div>
+            <div class="rep"><b>Servicio mensual · Almacén</b><span>Cebos y monitoreo, sin hallazgos</span><em>Firmado</em></div>
+            <div class="rep"><b>Revisión de seguimiento</b><span>Una estación con actividad, atendida</span><em>Firmado</em></div>
+          </div>
+        </div>
+        <div class="hoja-tab" role="tabpanel" id="tTrampas" aria-labelledby="pTrampas" hidden>
+          <div class="mapa" id="mapa"></div>
+          <div class="trampa" id="trampa" aria-live="polite">Toca una estación para ver su estado.</div>
+        </div>
+        <div class="hoja-tab" role="tabpanel" id="tDocs" aria-labelledby="pDocs" hidden>
+          <div class="docs">
+            <div class="doc"><svg class="i"><use href="#i-badge-check"/></svg><div><b>Licencia sanitaria</b><span>Secretaría de Salud · vigente</span></div></div>
+            <div class="doc"><svg class="i"><use href="#i-building"/></svg><div><b>Registro REPSE</b><span>En regla para servicios a empresas</span></div></div>
+            <div class="doc"><svg class="i"><use href="#i-file-text"/></svg><div><b>Fichas de productos</b><span>Con su registro, por cada aplicación</span></div></div>
+          </div>
+        </div>
+        <p class="nota">Ejemplo con datos de muestra. La tuya trae tus servicios reales.</p>
       </div>
     </div>
   </section>
@@ -259,38 +436,41 @@ input:focus, select:focus, textarea:focus{outline:none; border-color:var(--azul)
   <section id="proceso">
     <div class="env">
       <span class="ceja ap">Cómo trabajamos</span>
-      <h2 class="ap">Cuatro pasos. Ninguno se salta.</h2>
-      <ol class="pasos ap">
-        <li><h3>Diagnóstico</h3><p>Vemos el tipo de plaga, qué tanto hay y los puntos de riesgo.</p></li>
-        <li><h3>Plan por escrito</h3><p>El método y el precio, antes de empezar.</p></li>
-        <li><h3>Aplicación</h3><p>Técnicos capacitados, con seguridad y dejando todo limpio.</p></li>
-        <li><h3>Seguimiento</h3><p>Revisamos el resultado. Si la plaga vuelve, regresamos.</p></li>
+      <h2 class="ap" style="--i:1">Cuatro pasos. <em>Ninguno se salta.</em></h2>
+      <ol class="pasos" id="pasos">
+        <li class="ap" style="--i:0"><span class="bola">01</span><div><h3>Diagnóstico</h3><p>Vemos el tipo de plaga, qué tanto hay y los puntos de riesgo.</p></div></li>
+        <li class="ap" style="--i:1"><span class="bola">02</span><div><h3>Plan por escrito</h3><p>El método y el precio, antes de empezar.</p></div></li>
+        <li class="ap" style="--i:2"><span class="bola">03</span><div><h3>Aplicación</h3><p>Técnicos capacitados, con seguridad, dejando todo limpio.</p></div></li>
+        <li class="ap" style="--i:3"><span class="bola">04</span><div><h3>Seguimiento</h3><p>Revisamos el resultado. Si la plaga vuelve, regresamos.</p></div></li>
       </ol>
     </div>
   </section>
 
   <section id="clientes" class="resenas">
     <div class="env">
-      <span class="ceja ap">Clientes</span>
-      <h2 class="ap">Lo que dicen quienes ya nos llaman.</h2>
-      <div class="carril ap" tabindex="0" aria-label="Reseñas de clientes">
-        <blockquote><p>Llevaba muchos años fumigando sin poder deshacerme de las cucarachas. Con la primera aplicación no han vuelto a salir. La atención y el seguimiento son muy buenos.</p><footer><b>Calor Control</b>Cliente</footer></blockquote>
-        <blockquote><p>Llevamos más de cuatro años con sus servicios y siempre demuestran un alto grado de satisfacción y puntualidad. No dudamos en recomendarlos.</p><footer><b>Sonia Tapia</b>Cliente desde hace más de 4 años</footer></blockquote>
-        <blockquote><p>Los técnicos fueron muy profesionales, explicaron cada paso y dejaron todo limpio al terminar. Ya pasaron varias semanas y no hemos vuelto a ver ninguna plaga.</p><footer><b>Luis Castellanos</b>Cliente</footer></blockquote>
+      <div class="tope">
+        <div><span class="ceja ap">Clientes</span><h2 class="ap" style="--i:1;margin:0">Lo que dicen quienes <em>ya nos llaman.</em></h2></div>
+        <div class="flechas ap" style="--i:2"><button type="button" id="atras" aria-label="Reseña anterior"><svg class="i"><use href="#i-arrow-left"/></svg></button><button type="button" id="adelante" aria-label="Siguiente reseña"><svg class="i"><use href="#i-arrow-right"/></svg></button></div>
       </div>
-      <p class="pista">Desliza para ver más</p>
+      <div class="carril ap" style="--i:2" id="carril" tabindex="0" aria-label="Reseñas de clientes">
+        <blockquote><p>«Llevaba muchos años fumigando sin poder deshacerme de las cucarachas. Con la primera aplicación no han vuelto a salir. La atención y el seguimiento son muy buenos.»</p><footer><span class="ini">CC</span><span><b>Calor Control</b>Cliente</span></footer></blockquote>
+        <blockquote><p>«Llevamos más de cuatro años con sus servicios y siempre demuestran un alto grado de satisfacción y puntualidad. No dudamos en recomendarlos.»</p><footer><span class="ini">ST</span><span><b>Sonia Tapia</b>Cliente desde hace más de 4 años</span></footer></blockquote>
+        <blockquote><p>«Tenía un nido de hormigas que se comía mi árbol. Probé aerosoles, polvos y nada; con una sola aplicación se terminó la plaga. Vale lo que se paga.»</p><footer><span class="ini">AS</span><span><b>Adriana Sanvicente</b>Contrató tres veces</span></footer></blockquote>
+        <blockquote><p>«Los técnicos fueron muy profesionales, explicaron cada paso y dejaron todo limpio. Ya pasaron varias semanas y no hemos vuelto a ver ninguna plaga.»</p><footer><span class="ini">LC</span><span><b>Luis Castellanos</b>Cliente</span></footer></blockquote>
+      </div>
+      <div class="puntos" id="puntos" aria-hidden="true"></div>
     </div>
   </section>
 
   <section id="preguntas">
     <div class="env dos-col">
-      <div class="ap"><span class="ceja">Preguntas</span><h2>Lo que más nos preguntan.</h2></div>
-      <div class="ap">
+      <div class="fijo ap"><span class="ceja">Preguntas</span><h2>Lo que más <em>nos preguntan.</em></h2></div>
+      <div class="ap" style="--i:1">
         <details><summary>¿Los productos son seguros para niños y mascotas? <span class="mas" aria-hidden="true"></span></summary><p>Sí. Trabajamos con productos de baja toxicidad, aplicados con protocolos que protegen a niños y mascotas. Te decimos cuánto tiempo salir y cuándo regresar.</p></details>
         <details><summary>¿Dan garantía? <span class="mas" aria-hidden="true"></span></summary><p>Sí. Si la plaga persiste, regresamos a darle seguimiento sin costo adicional.</p></details>
         <details><summary>¿Qué incluye el diagnóstico? <span class="mas" aria-hidden="true"></span></summary><p>Revisamos los puntos de riesgo, identificamos el tipo de plaga y qué tanto hay, y te entregamos un plan de acción por escrito.</p></details>
         <details><summary>¿Hasta dónde llegan? <span class="mas" aria-hidden="true"></span></summary><p>A la zona metropolitana de Querétaro y municipios cercanos. Escríbenos para confirmar tu ubicación.</p></details>
-        <details><summary>¿Trabajan con empresas por contrato? <span class="mas" aria-hidden="true"></span></summary><p>Sí. Contamos con registro REPSE y armamos un programa de visitas con su carpeta de cumplimiento para auditorías.</p></details>
+        <details><summary>¿Trabajan con empresas por contrato? <span class="mas" aria-hidden="true"></span></summary><p>Sí. Tenemos registro REPSE y armamos un programa de visitas con su carpeta de cumplimiento para auditorías.</p></details>
       </div>
     </div>
   </section>
@@ -299,20 +479,28 @@ input:focus, select:focus, textarea:focus{outline:none; border-color:var(--azul)
     <div class="env dos-col">
       <div class="ap">
         <span class="ceja">Contacto</span>
-        <h2>Hablemos hoy.</h2>
+        <h2>Hablemos <em>hoy.</em></h2>
         <a class="grande" href="tel:+524421394023">442 139 4023</a>
         <div class="datos">
           <a class="btn btn-1" href="https://wa.me/5214421394023?text=Hola%2C%20vengo%20de%20su%20p%C3%A1gina.%20Me%20gustar%C3%ADa%20una%20cotizaci%C3%B3n." target="_blank" rel="noopener"><svg class="i"><use href="#i-message-circle"/></svg> WhatsApp</a>
           <a class="btn btn-2" href="mailto:direccion@urbanpest.mx"><svg class="i"><use href="#i-mail"/></svg> direccion@urbanpest.mx</a>
         </div>
+        <p class="cobertura"><svg class="i"><use href="#i-map-pin"/></svg>Zona metropolitana de Querétaro y municipios cercanos.</p>
       </div>
-      <form class="forma ap" id="forma" novalidate>
+      <form class="forma ap" style="--i:1" id="forma" novalidate>
         <h3>Pide tu cotización</h3>
         <p class="nota">Se abre WhatsApp con tu mensaje listo; sólo lo envías.</p>
-        <div class="campo"><label for="nombre">Nombre o empresa</label><input id="nombre" autocomplete="name"></div>
-        <div class="campo"><label for="tipo">Tipo de lugar</label>
-          <select id="tipo"><option>Hogar</option><option>Comercio</option><option>Industria de alimentos</option><option>Industria / bodega</option><option>Sector salud</option><option>Escuela</option><option>Otro</option></select></div>
-        <div class="campo"><label for="zona">Colonia o municipio</label><input id="zona" autocomplete="address-level2"></div>
+        <fieldset class="campo" style="border:0;padding:0;margin:0 0 16px"><legend style="font-weight:600;font-size:14px;margin-bottom:8px;padding:0">Tipo de lugar</legend>
+          <div class="chips" id="tipos">
+            <label class="chip"><input type="radio" name="tipo" value="Hogar" checked><span>Hogar</span></label>
+            <label class="chip"><input type="radio" name="tipo" value="Comercio"><span>Comercio</span></label>
+            <label class="chip"><input type="radio" name="tipo" value="Industria de alimentos"><span>Industria</span></label>
+            <label class="chip"><input type="radio" name="tipo" value="Sector salud"><span>Salud</span></label>
+            <label class="chip"><input type="radio" name="tipo" value="Escuela"><span>Escuela</span></label>
+          </div>
+        </fieldset>
+        <div class="campo"><label for="nombre">Nombre o empresa</label><input type="text" id="nombre" autocomplete="name"></div>
+        <div class="campo"><label for="zona">Colonia o municipio</label><input type="text" id="zona" autocomplete="address-level2"></div>
         <div class="campo"><label for="msj">¿Qué está pasando?</label><textarea id="msj" placeholder="La plaga, desde cuándo, qué tan grande es el lugar…"></textarea></div>
         <p class="error" id="error" role="alert" hidden></p>
         <button class="btn btn-1" type="submit"><svg class="i"><use href="#i-message-circle"/></svg> Enviar por WhatsApp</button>
@@ -323,41 +511,199 @@ input:focus, select:focus, textarea:focus{outline:none; border-color:var(--azul)
 
 <footer class="pie">
   <div class="env">
-    <div><img src="img/logo.webp" alt="Urban Pest Control" width="1120" height="240" loading="lazy"><div>Control de plagas en Querétaro · 442 139 4023</div></div>
-    <nav aria-label="Pie"><a href="#servicios">Servicios</a><a href="#industria">Industria</a><a href="#contacto">Contacto</a><a href="aviso-privacidad.html">Aviso de privacidad</a></nav>
-    <p class="creditos">© 2026 Urban Pest Control. Fotos: Craftsman Concrete Floors y Adrien Olichon en Pexels. Íconos: Lucide. Página por Grupo Mazi.</p>
+    <div><span class="marca-pie"><img src="img/logo.webp" alt="Urban Pest Control" width="1120" height="240"></span><div>Control de plagas para hogares, comercios e industria en Querétaro.</div></div>
+    <div><h4>Contacto</h4><nav aria-label="Contacto"><a href="tel:+524421394023">442 139 4023</a><a href="mailto:direccion@urbanpest.mx">direccion@urbanpest.mx</a><a href="https://wa.me/5214421394023" target="_blank" rel="noopener">WhatsApp</a></nav></div>
+    <div><h4>La página</h4><nav aria-label="Pie"><a href="#plagas">Plagas</a><a href="#industria">Industria</a><a href="#contacto">Cotizar</a><a href="aviso-privacidad.html">Aviso de privacidad</a></nav></div>
+    <p class="creditos">© 2026 Urban Pest Control. Fotos: Craftsman Concrete Floors en Pexels. Íconos: Lucide. Página por Grupo Mazi.</p>
   </div>
 </footer>
 
-<nav class="barra" aria-label="Contacto rápido">
+<nav class="barra" id="barra" aria-label="Contacto rápido">
   <a class="btn btn-2" href="tel:+524421394023"><svg class="i"><use href="#i-phone"/></svg> Llamar</a>
   <a class="btn btn-1" href="https://wa.me/5214421394023?text=Hola%2C%20vengo%20de%20su%20p%C3%A1gina.%20Me%20gustar%C3%ADa%20una%20cotizaci%C3%B3n." target="_blank" rel="noopener"><svg class="i"><use href="#i-message-circle"/></svg> WhatsApp</a>
 </nav>
 
 <script>
 const WA = '5214421394023';
+const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const quieto = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const finoPuntero = matchMedia('(hover: hover) and (pointer: fine)').matches;
 document.documentElement.classList.add('js');
-const $ = (s) => document.querySelector(s);
-const cab = $('#cabeza');
-addEventListener('scroll', () => cab.classList.toggle('bajo', scrollY > 8), { passive: true });
-/* tocar un servicio deja elegido su tipo en la forma */
-for(const a of document.querySelectorAll('[data-tipo]')) a.addEventListener('click', () => { $('#tipo').value = a.dataset.tipo; });
+
+/* ══ la apertura: el logo se arma con sus piezas reales ══
+   Las 7 capas (marca/cortar.py) juntas son EXACTAMENTE el logo: cada pixel vive en una sola. Una vez por visita;
+   un toque o una tecla la saltan; con «reducir movimiento» no sale. */
+function apertura(){
+  let vista = false; try{ vista = sessionStorage.getItem('up.apertura') === '1'; sessionStorage.setItem('up.apertura', '1'); }catch{}
+  if(quieto || vista || /[?&]sin-apertura/.test(location.search)) return Promise.resolve();
+  const capas = ['globo', 'sol', 'personita', 'chorro', 'urban', 'pest', 'control'];
+  const el = document.createElement('div');
+  el.className = 'apertura'; el.setAttribute('role', 'img'); el.setAttribute('aria-label', 'Urban Pest Control');
+  el.innerHTML = `<div class="logo-armado">${capas.map((c) => `<img alt="" src="marca/${c}.webp" data-c="${c}" style="opacity:0">`).join('')}<div class="brillo"></div></div><span class="salta">Toca para entrar</span>`;
+  document.body.append(el); document.documentElement.style.overflow = 'hidden';
+  const C = Object.fromEntries($$('img', el).map((i) => [i.dataset.c, i]));
+  /* el centro del globo dentro del logo (512 × 396): ahí gira el sol */
+  const centro = '46% 31%';
+  const anims = [];
+  const a = (img, kf, o) => { const x = img.animate(kf, { fill: 'both', easing: 'cubic-bezier(.16,1,.3,1)', ...o }); anims.push(x); return x; };
+  a(C.globo, [{ opacity: 0, transform: 'scale(.2) rotate(-25deg)', transformOrigin: centro }, { opacity: 1, offset: .4 }, { opacity: 1, transform: 'scale(1) rotate(0)', transformOrigin: centro }], { duration: 900, easing: 'cubic-bezier(.34,1.4,.64,1)' });
+  a(C.sol, [{ opacity: 0, transform: 'rotate(-150deg) scale(.7)', transformOrigin: centro }, { opacity: 1, offset: .3 }, { opacity: 1, transform: 'none', transformOrigin: centro }], { duration: 1100, delay: 250 });
+  a(C.personita, [{ opacity: 0, transform: 'translateY(14%) scale(.92)', filter: 'blur(6px)' }, { opacity: 1, transform: 'none', filter: 'blur(0)' }], { duration: 800, delay: 650 });
+  a(C.chorro, [{ opacity: 1, clipPath: 'inset(100% 0 0 0)' }, { opacity: 1, clipPath: 'inset(0 0 0 0)' }], { duration: 600, delay: 1150, easing: 'cubic-bezier(.65,0,.35,1)' });
+  a(C.urban, [{ opacity: 0, transform: 'translateX(-8%)', filter: 'blur(4px)' }, { opacity: 1, transform: 'none', filter: 'blur(0)' }], { duration: 700, delay: 1350 });
+  a(C.pest, [{ opacity: 0, transform: 'translateX(8%)', filter: 'blur(4px)' }, { opacity: 1, transform: 'none', filter: 'blur(0)' }], { duration: 700, delay: 1450 });
+  a(C.control, [{ opacity: 1, clipPath: 'inset(0 50% 0 50%)' }, { opacity: 1, clipPath: 'inset(0 0 0 0)' }], { duration: 700, delay: 1650 });
+  const brillo = $('.brillo', el);
+  anims.push(brillo.animate([{ backgroundPosition: '-150% 0' }, { backgroundPosition: '250% 0' }], { duration: 900, delay: 2100, easing: 'ease-in-out', fill: 'both' }));
+  return new Promise((listo) => {
+    let ya = false;
+    const salir = () => {
+      if(ya) return; ya = true; clearTimeout(t);
+      anims.forEach((x) => { try{ x.finish(); }catch{} });
+      const logo = $('.logo-armado', el);
+      logo.animate([{ transform: 'none' }, { transform: 'scale(.86)', opacity: 0 }], { duration: 500, easing: 'cubic-bezier(.5,0,.75,0)', fill: 'forwards' });
+      el.animate([{ clipPath: 'inset(0 0 0 0)' }, { clipPath: 'inset(0 0 100% 0)' }], { duration: 750, delay: 220, easing: 'cubic-bezier(.76,0,.24,1)', fill: 'forwards' })
+        .finished.then(() => { el.remove(); document.documentElement.style.overflow = ''; });
+      setTimeout(listo, 380);
+    };
+    const t = setTimeout(salir, 3150);
+    el.addEventListener('click', salir); addEventListener('keydown', salir, { once: true });
+  });
+}
+
+/* ══ aparecer al bajar ══ */
+let velocidad = 0, ultimoY = scrollY, ultimoT = performance.now();
+addEventListener('scroll', () => {
+  const t = performance.now(), dy = Math.abs(scrollY - ultimoY), dt = Math.max(1, t - ultimoT);
+  velocidad = velocidad * .6 + (dy / dt) * .4; ultimoY = scrollY; ultimoT = t;
+  /* rápido = casi sin animación; despacio = suave */
+  const dur = velocidad > 3 ? .12 : velocidad > 1.5 ? .4 : .85;
+  document.documentElement.style.setProperty('--dur', dur + 's');
+  document.documentElement.style.setProperty('--escalon', velocidad > 1.5 ? 0 : 1);
+}, { passive: true });
+function revelar(){
+  const io = new IntersectionObserver((es) => { for(const x of es) if(x.isIntersecting){ x.target.classList.add('visto'); io.unobserve(x.target); } }, { rootMargin: '0px 0px -6% 0px' });
+  $$('.ap').forEach((el) => io.observe(el));
+  /* red de seguridad: al dejar de moverse, todo lo que ya pasó o está en pantalla se enseña, sin excepción */
+  let quieta;
+  const barrer = () => { const h = innerHeight; for(const el of $$('.ap:not(.visto)')) if(el.getBoundingClientRect().top < h){ el.classList.add('visto'); io.unobserve(el); } };
+  addEventListener('scroll', () => { clearTimeout(quieta); quieta = setTimeout(barrer, 120); }, { passive: true });
+  addEventListener('resize', barrer); addEventListener('hashchange', () => setTimeout(barrer, 60));
+  barrer();
+}
+
+/* ══ la barra: borde al bajar, y la de abajo se esconde al bajar y vuelve al subir ══ */
+const cab = $('#cabeza'), barra = $('#barra');
+let antes = scrollY;
+addEventListener('scroll', () => {
+  cab.classList.toggle('bajo', scrollY > 8);
+  const y = scrollY; if(Math.abs(y - antes) > 6){ barra.classList.toggle('fuera', y > antes && y > 300); antes = y; }
+}, { passive: true });
+/* la sección en la que vas, encendida en el menú */
+const enlaces = $$('.menu a');
+const vigia = new IntersectionObserver((es) => { for(const x of es) if(x.isIntersecting) enlaces.forEach((a) => a.classList.toggle('aqui', a.getAttribute('href') === '#' + x.target.id)); }, { rootMargin: '-45% 0px -50% 0px' });
+['plagas', 'industria', 'proceso', 'clientes', 'contacto'].forEach((id) => vigia.observe(document.getElementById(id)));
+
+/* ══ hogar / empresa ══ */
+const TEXTOS = {
+  hogar: { ceja: 'Control de plagas · Querétaro', titulo: 'Tu casa,<br><em>tranquila.</em>', lead: 'Productos de baja toxicidad, indicaciones claras para niños y mascotas, y garantía: si la plaga vuelve, regresamos sin costo.', wa: 'Hola, vengo de su página. Me gustaría una cotización para mi casa.' },
+  empresa: { ceja: 'Comercios e industria · Querétaro', titulo: 'Tu operación,<br><em>limpia.</em>', lead: 'Programa por contrato con registro REPSE y cada servicio documentado en tu carpeta de cumplimiento, lista para auditoría.', wa: 'Hola, vengo de su página. Me interesa un programa de control de plagas para mi empresa.' },
+};
+const sel = $('#selector'), modo = $('#modo');
+sel.addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-modo]'); if(!b || b.getAttribute('aria-pressed') === 'true') return;
+  const m = b.dataset.modo; sel.dataset.modo = m;
+  $$('button', sel).forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+  modo.classList.add('cambiando');
+  setTimeout(() => {
+    for(const [k, v] of Object.entries(TEXTOS[m])) if(k !== 'wa') { const el = $(`[data-t="${k}"]`, modo); if(el) el.innerHTML = v; }
+    $('#ctaWa').href = `https://wa.me/${WA}?text=${encodeURIComponent(TEXTOS[m].wa)}`;
+    const radio = $(`#tipos input[value="${m === 'empresa' ? 'Comercio' : 'Hogar'}"]`); if(radio) radio.checked = true;
+    modo.classList.remove('cambiando');
+  }, quieto ? 0 : 260);
+});
+
+/* ══ el panel se inclina con el mouse, el dedo o, sin ninguno, con el scroll ══ */
+const panel = $('#panel');
+function inclinar(x, y){ const r = panel.getBoundingClientRect(); const px = (x - r.left) / r.width - .5, py = (y - r.top) / r.height - .5;
+  panel.style.setProperty('--ry', (px * 10).toFixed(2) + 'deg'); panel.style.setProperty('--rx', (-py * 8).toFixed(2) + 'deg');
+  panel.style.setProperty('--gx', ((px + .5) * 100).toFixed(1) + '%'); panel.style.setProperty('--gy', ((py + .5) * 100).toFixed(1) + '%'); }
+if(!quieto){
+  panel.addEventListener('pointermove', (e) => inclinar(e.clientX, e.clientY));
+  panel.addEventListener('pointerleave', () => { panel.style.setProperty('--rx', '0deg'); panel.style.setProperty('--ry', '0deg'); });
+  if(!finoPuntero) addEventListener('scroll', () => { const r = panel.getBoundingClientRect(); const p = Math.max(-1, Math.min(1, (r.top + r.height / 2 - innerHeight / 2) / innerHeight)); panel.style.setProperty('--rx', (p * 8).toFixed(2) + 'deg'); }, { passive: true });
+}
+/* la luz que sigue al dedo o al mouse en las tarjetas y en los botones */
+document.addEventListener('pointermove', (e) => {
+  const t = e.target.closest('.luz'); if(t){ const r = t.getBoundingClientRect(); t.style.setProperty('--mx', (e.clientX - r.left) + 'px'); t.style.setProperty('--my', (e.clientY - r.top) + 'px'); }
+  const b = e.target.closest('.btn-1'); if(b){ const r = b.getBoundingClientRect(); b.style.setProperty('--bx', (e.clientX - r.left) + 'px'); b.style.setProperty('--by', (e.clientY - r.top) + 'px'); }
+}, { passive: true });
+
+/* ══ la franja corre sola, y más rápido cuando bajas ══ */
+const riel = $('#riel'); riel.innerHTML += riel.innerHTML;
+let pos = 0, ultimo = performance.now();
+function correr(t){ const dt = Math.min(64, t - ultimo); ultimo = t; pos -= dt * (.035 + Math.min(velocidad, 6) * .12); const w = riel.scrollWidth / 2; if(-pos >= w) pos += w; riel.style.transform = `translate3d(${pos}px,0,0)`; velocidad *= .96; requestAnimationFrame(correr); }
+if(!quieto) requestAnimationFrame(correr);
+
+/* ══ plagas: se abren de a una ══ */
+$('#listaPlagas').addEventListener('click', (e) => {
+  const b = e.target.closest('button[aria-expanded]'); if(!b) return;
+  const abrir = b.getAttribute('aria-expanded') !== 'true';
+  $$('#listaPlagas button[aria-expanded]').forEach((x) => x.setAttribute('aria-expanded', 'false'));
+  b.setAttribute('aria-expanded', String(abrir));
+});
+
+/* ══ la foto que se acerca con el scroll y la línea del proceso que se llena ══ */
+const ventana = $('#ventana img'), pasos = $('#pasos'), lis = $$('#pasos li');
+function alScroll(){
+  const h = innerHeight;
+  if(ventana){ const r = ventana.parentElement.getBoundingClientRect(); const p = Math.max(0, Math.min(1, 1 - (r.top + r.height) / (h + r.height))); ventana.style.setProperty('--zoom', (1.14 - p * .14).toFixed(4)); }
+  const r = pasos.getBoundingClientRect(); const ll = Math.max(0, Math.min(1, (h * .7 - r.top) / r.height));
+  pasos.style.setProperty('--llenado', ll.toFixed(3));
+  lis.forEach((li, i) => li.classList.toggle('hecho', ll >= (i + .2) / lis.length));
+}
+if(!quieto){ addEventListener('scroll', () => requestAnimationFrame(alScroll), { passive: true }); alScroll(); } else { pasos.style.setProperty('--llenado', 1); lis.forEach((li) => li.classList.add('hecho')); }
+
+/* ══ la carpeta: pestañas (también con flechas del teclado) y el mapa de trampas ══ */
+const tabs = $$('.pestanas [role=tab]'), pastilla = $('.pestanas .pastilla');
+function elegir(i){ tabs.forEach((t, k) => { t.setAttribute('aria-selected', String(k === i)); t.tabIndex = k === i ? 0 : -1; document.getElementById(t.getAttribute('aria-controls')).hidden = k !== i; });
+  pastilla.style.transform = `translateX(calc(${i * 100}% + ${i * 4}px))`; }
+tabs.forEach((t, i) => { t.addEventListener('click', () => elegir(i)); t.addEventListener('keydown', (e) => { const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if(d){ const j = (i + d + tabs.length) % tabs.length; elegir(j); tabs[j].focus(); e.preventDefault(); } }); });
+const ESTACIONES = Array.from({ length: 18 }, (_, i) => ({ n: i + 1, zona: i < 6 ? 'Nave A' : i < 12 ? 'Almacén' : 'Patio', alerta: i === 4 || i === 13 }));
+$('#mapa').innerHTML = ESTACIONES.map((s) => `<button type="button" class="${s.alerta ? 'a' : ''}" aria-pressed="false" aria-label="Estación ${s.n}, ${s.zona}${s.alerta ? ', con actividad' : ', sin actividad'}"></button>`).join('');
+$('#mapa').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if(!b) return; const i = [...b.parentElement.children].indexOf(b), s = ESTACIONES[i];
+  $$('#mapa button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+  $('#trampa').innerHTML = `<b>Estación ${s.n} · ${s.zona}</b><br>${s.alerta ? 'Con actividad en la última revisión. Se reforzó el punto y se revisa en 7 días.' : 'Sin actividad en la última revisión.'}`;
+});
+
+/* ══ reseñas: arrastrar con el mouse, deslizar con el dedo, flechas y teclado ══ */
+const carril = $('#carril'), tarjetas = $$('blockquote', carril), puntos = $('#puntos');
+puntos.innerHTML = tarjetas.map(() => '<i></i>').join('');
+const paso = () => tarjetas[1].offsetLeft - tarjetas[0].offsetLeft;
+function marcar(){ const i = Math.round(carril.scrollLeft / paso()); $$('i', puntos).forEach((p, k) => p.classList.toggle('si', k === i)); $('#atras').disabled = carril.scrollLeft < 4; $('#adelante').disabled = carril.scrollLeft > carril.scrollWidth - carril.clientWidth - 4; }
+carril.addEventListener('scroll', () => requestAnimationFrame(marcar), { passive: true }); marcar();
+$('#atras').addEventListener('click', () => carril.scrollBy({ left: -paso(), behavior: quieto ? 'auto' : 'smooth' }));
+$('#adelante').addEventListener('click', () => carril.scrollBy({ left: paso(), behavior: quieto ? 'auto' : 'smooth' }));
+carril.addEventListener('keydown', (e) => { if(e.key === 'ArrowRight' || e.key === 'ArrowLeft'){ carril.scrollBy({ left: (e.key === 'ArrowRight' ? 1 : -1) * paso(), behavior: 'smooth' }); e.preventDefault(); } });
+if(finoPuntero){ let x0 = 0, s0 = 0, arrastra = false;
+  carril.addEventListener('pointerdown', (e) => { if(e.pointerType !== 'mouse') return; arrastra = true; x0 = e.clientX; s0 = carril.scrollLeft; carril.classList.add('agarrado'); });
+  addEventListener('pointermove', (e) => { if(arrastra) carril.scrollLeft = s0 - (e.clientX - x0); });
+  addEventListener('pointerup', () => { if(!arrastra) return; arrastra = false; carril.classList.remove('agarrado'); const i = Math.round(carril.scrollLeft / paso()); carril.scrollTo({ left: i * paso(), behavior: 'smooth' }); }); }
+
+/* ══ cotizar por WhatsApp ══ */
 $('#forma').addEventListener('submit', (e) => {
   e.preventDefault();
   const err = $('#error'), msj = $('#msj').value.trim();
   if(!msj){ err.textContent = 'Cuéntanos qué está pasando, aunque sea en una línea.'; err.hidden = false; $('#msj').focus(); return; }
   err.hidden = true;
-  const nombre = $('#nombre').value.trim(), zona = $('#zona').value.trim();
-  const texto = [`Hola${nombre ? ', soy ' + nombre : ''}. Quiero una cotización.`, `· Lugar: ${$('#tipo').value}`, zona ? `· Zona: ${zona}` : '', `· ${msj}`].filter(Boolean).join('\n');
+  const nombre = $('#nombre').value.trim(), zona = $('#zona').value.trim(), tipo = ($('#forma input[name=tipo]:checked') || {}).value || 'Hogar';
+  const texto = [`Hola${nombre ? ', soy ' + nombre : ''}. Quiero una cotización.`, `· Lugar: ${tipo}`, zona ? `· Zona: ${zona}` : '', `· ${msj}`].filter(Boolean).join('\n');
   window.open(`https://wa.me/${WA}?text=${encodeURIComponent(texto)}`, '_blank', 'noopener');
 });
-/* aparecer al bajar (si el navegador no puede, todo se queda visible) */
-const visto = (el) => el.classList.add('visto');
-if('IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches){
-  const io = new IntersectionObserver((es) => { for(const x of es) if(x.isIntersecting){ visto(x.target); io.unobserve(x.target); } }, { rootMargin: '0px 0px -6% 0px' });
-  document.querySelectorAll('.ap').forEach((el) => io.observe(el));
-  requestAnimationFrame(() => setTimeout(() => $('#fotoPortada').classList.add('lista'), 100));
-} else { document.querySelectorAll('.ap').forEach(visto); $('#fotoPortada').classList.add('lista'); }
+
+/* arranque: primero la apertura; la portada se arma cuando se va */
+apertura().then(revelar);
 </script>
 </body>
 </html>
