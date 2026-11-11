@@ -48,7 +48,13 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 .dlg h2{margin:0; font:700 20px var(--sans)}
 .dlg label{display:flex; flex-direction:column; gap:6px; font-size:14px; color:var(--dim)}
 .dlg input, .dlg textarea{border-radius:14px; border:1px solid var(--line); background:var(--card); color:var(--ink); padding:10px 14px; font-size:16px; min-height:48px}
-.dlg .tapa{display:flex; gap:12px; align-items:center}
+.dlg{overflow-x:hidden}
+.dlg .tapa{display:flex; gap:14px; align-items:center; min-width:0}
+.dlg .tapa-txt{flex:1; min-width:0; display:flex; flex-direction:column; gap:6px}
+.dlg .tapa-txt span{color:var(--dim); font-size:13px}
+.dlg .tapa-txt button{align-self:flex-start; min-height:44px; padding:0 16px; border-radius:99px; border:1px solid var(--line); background:var(--card); color:var(--ink); font:600 14px var(--sans)}
+.dlg .tapa img:not([src]){visibility:hidden}
+.dlg .tapa img{box-shadow:var(--sombra); border-radius:3px 10px 10px 3px !important}
 .dlg .tapa img{width:72px; height:96px; object-fit:cover; border-radius:10px; background:var(--card2)}
 .aviso{color:var(--dim); font-size:13px; margin:0}
 </style>
@@ -82,7 +88,8 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 <dialog id="dlgMenu" aria-labelledby="tMenu">
   <form class="dlg" method="dialog">
     <h2 id="tMenu">Tu libro</h2>
-    <div class="tapa"><img id="vistaPortada" alt=""><label style="flex:1">Portada<input type="file" id="portada" accept="image/*"></label></div>
+    <div class="tapa"><img id="vistaPortada" alt=""><div class="tapa-txt"><b>Portada</b><span>Una foto o tu propio diseño. Se recorta a forma de libro.</span>
+      <button type="button" id="elegirPortada">Elegir imagen</button><input type="file" id="portada" accept="image/*" hidden></div></div>
     <label>Autor o autora<input type="text" id="autor" maxlength="120"></label>
     <label>Sinopsis<textarea id="sinopsis" rows="3" maxlength="1200"></textarea></label>
     <button type="button" class="si" id="alLibrero">Pasar a mi librero para leerlo</button>
@@ -170,11 +177,11 @@ function pintarPortada(){ if(portadaUrl) URL.revokeObjectURL(portadaUrl); portad
 $('#botonMenu').addEventListener('click', () => { guardarAhora(); $('#autor').value = obra.autor || ''; $('#sinopsis').value = obra.sinopsis || ''; $('#avisoMenu').textContent = ''; pintarPortada(); $('#dlgMenu').showModal(); });
 $('#autor').addEventListener('input', (e) => { obra.autor = e.target.value; guardar(obra); });
 $('#sinopsis').addEventListener('input', (e) => { obra.sinopsis = e.target.value; guardar(obra); });
+$('#elegirPortada').addEventListener('click', () => $('#portada').click());
 $('#portada').addEventListener('change', async (e) => {
-  const f = e.target.files[0]; if(!f) return;
-  const bm = await createImageBitmap(f), k = Math.min(1, 900 / bm.width), c = document.createElement('canvas');
-  c.width = Math.round(bm.width * k); c.height = Math.round(bm.height * k); c.getContext('2d').drawImage(bm, 0, 0, c.width, c.height);
-  obra.portada = await new Promise((ok) => c.toBlob(ok, 'image/jpeg', .85)); await guardar(obra); pintarPortada();
+  const f = e.target.files[0]; e.target.value = ''; if(!f) return;
+  const { aPortada } = await import('../libros.js');
+  obra.portada = await aPortada(f); await guardar(obra); pintarPortada();
 });
 const capsLimpios = () => obra.capitulos.map((c) => ({ titulo: c.titulo, html: sano(c.html) || '<p></p>' }));
 $('#alLibrero').addEventListener('click', async () => {

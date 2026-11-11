@@ -406,6 +406,8 @@ console.log('\ncategorías y todo en archivos');
   await pg.click('#porGenero button[data-i="0"]');
   await esperar(pg, async () => (await window.__tiras.todasSeries()).length === 1 && !window.__tiras.ocupado);
   ok((await pg.evaluate(async () => (await window.__tiras.todasSeries())[0].id)) === 'webtoon:888', '«Seguir» desde la categoría la agrega');
+  /* lo que vio Carlos con 735 capítulos: iOS cierra la conexión a la base a media tarea */
+  ok(await pg.evaluate(async () => { window.__tiras.cerrarBase(); try{ return (await window.__tiras.todasSeries()).length === 1; }catch(e){ return 'falló: ' + e.message; } }) === true, 'si el teléfono cierra la base a media tarea, se reabre sola y sigue («The database connection is closing»)');
   await pg.click('#porGenero .resultado[data-v="0"] b');
   await pg.waitForTimeout(400);
   ok(await pg.evaluate(() => !document.querySelector('#ficha').hidden && document.querySelector('#vista').hidden), 'si ya la sigues, tocarla abre TU ficha con tu avance');

@@ -45,6 +45,7 @@ export const fotoDe = (u) => `${baseBuena}/api/sala/comunidad/foto?u=${encodeURI
 /* ── piezas de interfaz (con DOM, sin HTML de nadie) ── */
 const el = (tag, props = {}, ...hijos) => { const e = document.createElement(tag); for(const [k, v] of Object.entries(props)){ if(k === 'class') e.className = v; else if(k === 'html') e.innerHTML = v; else if(k.startsWith('on')) e.addEventListener(k.slice(2), v); else if(v !== false && v != null) e.setAttribute(k, v === true ? '' : v); } for(const h of hijos.flat()) if(h != null && h !== false) e.append(h.nodeType ? h : document.createTextNode(String(h))); return e; };
 export function avatar(usuario, nombre, conFoto, tam = 36){
+  estilos();   /* sin esto, en la tarjeta de «Comunidad» la foto salía a tamaño completo (Carlos, 11 nov) */
   const a = el('span', { class: 'cm-av', style: `--t:${tam}px`, 'aria-hidden': 'true' }, (nombre || usuario || '?').trim().charAt(0).toUpperCase());
   if(conFoto){ const i = el('img', { alt: '', loading: 'lazy', src: fotoDe(usuario) }); i.onerror = () => i.remove(); a.append(i); }
   return a;
