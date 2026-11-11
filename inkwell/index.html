@@ -1024,6 +1024,9 @@ async function pintarParaTi(){
   catch{ $('#espacio').textContent = 'Este navegador no dice cuánto ocupa lo bajado.'; }
 })();
 
+/* cuando se publica una versión nueva, el service worker nuevo toma el control: se recarga UNA vez para enseñarla
+   (si no, con «lo guardado primero» la primera visita después de publicar seguía viendo la anterior) */
+if('serviceWorker' in navigator && navigator.serviceWorker.controller){ let recargado = false; navigator.serviceWorker.addEventListener('controllerchange', () => { if(recargado) return; recargado = true; location.reload(); }); }
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
 </body>

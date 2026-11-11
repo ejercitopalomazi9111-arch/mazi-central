@@ -885,6 +885,9 @@ navigator.storage?.persist?.().catch(() => {});
 addEventListener('online', () => preparar());
 setInterval(() => { if(document.visibilityState === 'visible') preparar(); }, 15 * 60e3);
 document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') preparar(); else guardarMarca(true); });
+/* cuando se publica una versión nueva, el service worker nuevo toma el control: se recarga UNA vez para enseñarla
+   (si no, con «lo guardado primero» la primera visita después de publicar seguía viendo la anterior) */
+if('serviceWorker' in navigator && navigator.serviceWorker.controller){ let recargado = false; navigator.serviceWorker.addEventListener('controllerchange', () => { if(recargado) return; recargado = true; location.reload(); }); }
 if('serviceWorker' in navigator && !params.has('servidor')) navigator.serviceWorker.register('sw.js').catch(() => {});
 /* para las pruebas; va antes del arranque porque importar un link puede tardar */
 window.__tiras = { cerrarBase: () => db && db.close(), abrirFicha, abrirVista, preparar, todasSeries, clavesDe, get cola(){ return cola; }, get ocupado(){ return !!preparando || otraVez; } };
