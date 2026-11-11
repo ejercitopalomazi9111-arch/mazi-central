@@ -74,6 +74,9 @@ export async function leerEpub(buf){
   let portada = null;
   let idPortada = [...items].find(([, x]) => /cover-image/.test(x.props))?.[0];
   if(!idPortada) idPortada = [...opf.getElementsByTagNameNS('*', 'meta')].find((m) => m.getAttribute('name') === 'cover')?.getAttribute('content');
+  /* muchos EPUB no la marcan: se busca una imagen que se llame «cover/portada», y si no, la primera imagen del libro */
+  if(!idPortada) idPortada = [...items].find(([k, x]) => /^image\//.test(x.tipo) && /cover|portada|cubierta/i.test(k + ' ' + x.href))?.[0];
+  if(!idPortada) idPortada = [...items].find(([, x]) => /^image\/(jpeg|png|webp)/.test(x.tipo))?.[0];
   const ip = idPortada && items.get(idPortada);
   if(ip && /^image\//.test(ip.tipo) && zip.get(resolver(base, ip.href))){
     try{ portada = new Blob([await zip.get(resolver(base, ip.href))()], { type: ip.tipo }); }catch{ portada = null; }
@@ -145,4 +148,13 @@ export async function importar(file){
   if(ext === 'txt' || file.type === 'text/plain') return { ...base, tipo: 'txt', ...leerTxt(buf, nombre) };
   if(ext === 'pdf' || file.type === 'application/pdf') return { ...base, tipo: 'pdf', titulo: nombre, autor: '', portada: null, pdf: new Blob([buf], { type: 'application/pdf' }) };
   throw new Error(`«${file.name}» no es EPUB, PDF ni TXT.`);
+}
+
+/* ── portada propia: cualquier foto, recortada a 2:3 y a 900 px, en JPEG ── */
+export async function aPortada(archivo){
+  const bm = await createImageBitmap(archivo), r = 2 / 3;
+  let w = bm.width, h = bm.height; if(w / h > r) w = Math.round(h * r); else h = Math.round(w / r);
+  const c = document.createElement('canvas'), k = Math.min(1, 900 / h); c.width = Math.round(w * k); c.height = Math.round(h * k);
+  c.getContext('2d').drawImage(bm, (bm.width - w) / 2, (bm.height - h) / 2, w, h, 0, 0, c.width, c.height);
+  return new Promise((ok) => c.toBlob(ok, 'image/jpeg', .86));
 }

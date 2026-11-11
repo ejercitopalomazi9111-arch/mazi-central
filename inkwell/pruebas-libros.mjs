@@ -62,6 +62,15 @@ for (const [ancho, alto] of [[390, 844], [1280, 800]]) {
   ok(/Mi novela de prueba/.test(textoLibrero) && /Autora Equis/.test(textoLibrero), 'el EPUB trae su título y su autora');
   ok(/cuento corto/.test(textoLibrero) && /2 capítulos/.test(textoLibrero), 'el TXT se parte en sus capítulos');
   ok(/manual/.test(textoLibrero) && /PDF/.test(textoLibrero), 'el PDF queda en el librero');
+  ok(/no traen portada: toca el ícono de imagen/.test(await pg.textContent('#estado')), 'avisa cuáles no traen portada y cómo ponérsela');
+  /* portada propia: una foto ancha se recorta a libro (2:3) */
+  const foto = Buffer.from(await pg.evaluate(async () => { const c = document.createElement('canvas'); c.width = 900; c.height = 500; const x = c.getContext('2d'); x.fillStyle = '#7E1735'; x.fillRect(0, 0, 900, 500);
+    const b = await new Promise((ok) => c.toBlob(ok, 'image/png')); return [...new Uint8Array(await b.arrayBuffer())]; }));
+  await pg.click('.libro:has-text("cuento corto") .cambiar-portada');
+  await pg.setInputFiles('#archivoPortada', { name: 'mi-portada.png', mimeType: 'image/png', buffer: foto });
+  await pg.waitForFunction(() => /ya tiene tu portada/.test(document.querySelector('#estado').textContent), null, { timeout: 8000 }).catch(() => {});
+  const tapa = await pg.evaluate(async () => { const i = [...document.querySelectorAll('.libro')].find((l) => /cuento corto/.test(l.textContent))?.querySelector('.tapa img'); if(!i) return null; await i.decode().catch(() => {}); return { w: i.naturalWidth, h: i.naturalHeight }; });
+  ok(tapa && Math.abs(tapa.w / tapa.h - 2 / 3) < .02, 'ponerle portada propia a un libro: se ve en el librero, recortada a forma de libro · ' + JSON.stringify(tapa));
   /* leer */
   await pg.click('.libro:has-text("Mi novela de prueba") .abrir');
   await pg.waitForSelector('#lector:not([hidden])');
