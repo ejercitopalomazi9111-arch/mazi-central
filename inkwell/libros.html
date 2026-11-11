@@ -89,6 +89,18 @@ h2{font:400 23px/1.15 var(--display); margin:28px 0 12px}
 #texto blockquote{margin:1em 0; padding-left:1em; border-left:3px solid var(--suave)}
 .pasos{display:flex; gap:10px; justify-content:space-between; max-width:680px; margin:0 auto; padding:0 22px 110px}
 .pasos button{flex:1; background:color-mix(in srgb,var(--tinta) 6%,transparent); color:var(--tinta); border-color:color-mix(in srgb,var(--tinta) 14%,transparent)}
+/* ── más amable: tinta y papel, los libros como libros ── */
+.subir{background:var(--ink); color:var(--bg); box-shadow:none; font:600 16px var(--sans); min-height:52px}
+.lema{font:italic 300 17px/1.4 var(--serif); color:var(--lila)}
+.rejilla{gap:22px 14px}
+.libro{background:none; border:0; overflow:visible; border-radius:0}
+.libro .tapa{border-radius:4px 12px 12px 4px; overflow:hidden; box-shadow:var(--sombra); background:linear-gradient(160deg,#3a1452,#170A26)}
+.libro .tapa b{font:400 18px/1.15 var(--display)}
+.libro .tipo{font:700 9px var(--sans); letter-spacing:.14em; text-transform:uppercase; background:rgba(11,6,16,.7)}
+.libro .pie{padding:8px 2px 0}
+.libro .pie b{font:400 16px/1.2 var(--display); white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical}
+.libro .pie span{font-size:12px; color:var(--dim)}
+
 </style>
 </head>
 <body class="con-nav">

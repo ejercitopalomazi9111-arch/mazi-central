@@ -58,6 +58,24 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 .hoja label{display:flex; flex-direction:column; gap:6px; font-size:14px; color:var(--dim)}
 .hoja input, .hoja select{min-height:48px; border-radius:14px; border:1px solid var(--line); background:var(--card); color:var(--ink); padding:0 14px; font-size:16px}
 .hoja .si{background:var(--accent); border-color:var(--accent); color:#fff}
+/* ── más amable: el escritorio del escritor, en papel y tinta ── */
+.banner{color:var(--ink); background:var(--card); border:1px solid var(--line); padding:26px 20px 20px}
+.banner::after{content:""; position:absolute; right:-30px; top:-30px; width:180px; height:180px; background:url(../marca/pluma.png) center/contain no-repeat; opacity:.08; transform:rotate(-12deg); pointer-events:none}
+.banner small{color:var(--accent-ink)}
+.banner p{color:var(--dim); font:italic 300 17px/1.45 var(--serif)}
+.crear button{background:var(--bg); color:var(--ink); border:1px solid var(--line); font:600 15px var(--sans)}
+.crear button .ico{color:var(--accent-ink)}
+.rejilla{gap:22px 14px}
+.obra{background:none; border:0; overflow:visible}
+.obra .tapa{border-radius:4px 12px 12px 4px; overflow:hidden; box-shadow:var(--sombra); background:linear-gradient(160deg,#3a1452,#170A26)}
+.obra .tapa b{font:400 18px/1.15 var(--display)}
+.obra .tipo{font:700 9px var(--sans); letter-spacing:.14em; text-transform:uppercase; background:rgba(11,6,16,.7)}
+.obra .pie{padding:8px 2px 0}
+.obra .pie b{font:400 16px/1.2 var(--display)}
+.obra .borrar{border-radius:50%; height:44px; width:44px; min-height:44px}
+.vacio{background:none; font:italic 300 16px/1.45 var(--serif)}
+.vacio b{font:400 21px var(--display); font-style:normal}
+
 </style>
 </head>
 <body class="con-nav">

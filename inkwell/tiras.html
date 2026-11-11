@@ -269,6 +269,35 @@ main{padding-top:0}
 .ajustes-caja summary .ico{width:20px; height:20px; color:var(--accent-ink)}
 .ajustes-caja[open]{padding-bottom:14px}
 
+/* ── más amable (Carlos, 10 nov: «muy básicos y agresivos»): tinta y papel en lugar de morado a gritos,
+   las series como libros con el título debajo y los botones callados hasta que se necesitan ── */
+.si{background:var(--ink); border-color:var(--ink); color:var(--bg); box-shadow:none}
+.si:disabled{opacity:.35}
+.banner .si{background:var(--papel); border-color:var(--papel); color:var(--tinta)}
+.buscador{background:var(--card); border-color:var(--line)}
+.buscador .si{min-height:44px; padding:0 18px; font-weight:600}
+.series{gap:22px 14px !important}
+.serie{background:none !important; border:0 !important; box-shadow:none !important; overflow:visible !important; border-radius:0 !important}
+.serie::before,.serie::after{display:none !important}
+.serie .portada{border-radius:4px 12px 12px 4px !important; box-shadow:var(--sombra),inset 0 0 0 1px var(--line) !important; cursor:pointer; background:var(--card2)}
+.serie .datos{padding:0 2px}
+.serie .fuente{font:600 10px var(--sans) !important; letter-spacing:.14em; text-transform:uppercase; color:var(--accent-ink) !important; background:none !important; padding:0 !important}
+.serie h3{font:400 17px/1.15 var(--display) !important; cursor:pointer}
+.serie .cuenta{font-size:12px; color:var(--dim)}
+.serie .barrita{display:none}
+.serie .botones{display:flex; gap:6px; padding:0 !important; align-items:center}
+.serie .botones button{min-height:44px; border-radius:99px; background:none; border:1px solid var(--line); color:var(--dim); font-size:0; width:44px; padding:0; justify-content:center}
+.serie .botones button .ico{width:16px; height:16px; padding:0; background:none !important; color:inherit !important; border-radius:0}
+.serie .botones button{flex-direction:row}
+.serie .botones button[data-a="leer"]{font:600 13px var(--sans); width:auto; padding:0 14px 0 10px; gap:6px; background:var(--ink); border-color:var(--ink); color:var(--bg)}
+.serie .botones button[data-a="leer"]:disabled{background:none; color:var(--dim); border-color:var(--line)}
+.acciones button{background:none; border:1px solid var(--line); color:var(--ink); font-weight:600}
+.acciones .ico{color:var(--dim)}
+.ajustes-caja{background:none}
+.resultado{background:var(--card)}
+.resultado .si{min-height:44px; padding:0 14px; font-size:13px}
+.ayuda{color:var(--dim); font:italic 300 15px var(--serif)}
+
 </style>
 </head>
 <body class="con-nav">
