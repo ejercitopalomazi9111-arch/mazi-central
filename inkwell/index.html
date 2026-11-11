@@ -814,11 +814,13 @@ async function comForos(){
   caja.innerHTML = `<div class="chips chicas">${[['', 'Todos'], ...Object.entries(CATS)].map(([k, t]) => `<button type="button" class="chip" data-cat="${k}" aria-pressed="${k === comCategoria}">${t}</button>`).join('')}</div>
     <button type="button" class="boton" id="comNuevo">${icono('pencil')}Abrir un tema</button>
     <div id="comFormTema"></div>
-    ${r.temas.length ? r.temas.map((t) => `<button type="button" class="com-tema" data-tema="${t.id}" data-titulo="${esc(t.titulo)}"><small>${CATS[t.categoria] || 'General'}${t.fijo ? ' · Fijado' : ''}</small><b>${esc(t.titulo)}</b><span>${esc(t.nombre)} · ${t.respuestas} respuesta${t.respuestas === 1 ? '' : 's'} · ${C.hace(t.actividad)}</span></button>`).join('')
+    ${r.temas.length ? r.temas.map((t) => `<button type="button" class="com-tema" data-tid="${t.id}" data-titulo="${esc(t.titulo)}"><small>${CATS[t.categoria] || 'General'}${t.fijo ? ' · Fijado' : ''}</small><b>${esc(t.titulo)}</b><span>${esc(t.nombre)} · ${t.respuestas} respuesta${t.respuestas === 1 ? '' : 's'} · ${C.hace(t.actividad)}</span></button>`).join('')
       : '<div class="vacio"><b>Todavía no hay temas aquí</b>Abre el primero: una teoría, una recomendación o una duda.</div>'}`;
   caja.onclick = (e) => {
     const cat = e.target.closest('[data-cat]'); if(cat){ comCategoria = cat.dataset.cat; return comForos(); }
-    const t = e.target.closest('[data-tema]'); if(t) return C.abrirComentarios({ obra: 'tema:' + t.dataset.tema, titulo: t.dataset.titulo, sub: 'Foro' });
+    /* ojo: no se busca «[data-tema]»: <html data-tema="oscuro"> también lo tiene, y cualquier toque abría
+       un «tema oscuro» que no existe (Carlos, 11 nov: «sólo puedo crear chats en un foro que no existe») */
+    const t = e.target.closest('.com-tema[data-tid]'); if(t) return C.abrirComentarios({ obra: 'tema:' + t.dataset.tid, titulo: t.dataset.titulo, sub: 'Foro' });
     if(e.target.closest('#comNuevo')){
       $('#comFormTema').innerHTML = `<form class="com-form" id="formTema"><label>Título<input name="titulo" maxlength="120" required placeholder="¿De qué quieres hablar?"></label>
         <label>Categoría<select name="categoria">${Object.entries(CATS).map(([k, t]) => `<option value="${k}"${k === (comCategoria || 'general') ? ' selected' : ''}>${t}</option>`).join('')}</select></label>

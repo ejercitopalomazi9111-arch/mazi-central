@@ -127,6 +127,7 @@ ok((await pide('avisos', { token: ana.token })).avisos.some((a) => a.tipo === 't
 r = await pide('hilo', { params: '?obra=tema:' + t1.id });
 ok(r.comentarios.length === 2 && r.comentarios[0].texto === 'Yo creo que el hermano', 'el tema guarda su primer mensaje y las respuestas');
 
+ok((await pide('comentar', { token: luis.token, datos: { obra: 'tema:oscuro', texto: 'hola' } })).status === 404, 'no se puede comentar en un tema que no existe');
 console.log('\nmoderar');
 await pide('reportar', { token: ana.token, datos: { id: c1.id, motivo: 'spoiler sin marcar' } });
 await pide('reportar', { token: ana.token, datos: { id: c1.id, motivo: 'otra vez' } });
