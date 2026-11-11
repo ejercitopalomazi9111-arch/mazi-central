@@ -92,7 +92,9 @@ h3{font:650 18px/1.35 var(--letra); margin:0}
 .cabecera.centro .lead{margin-inline:auto}
 
 /* ══ portada ══ */
-.portada{padding:56px 0 var(--aire)}
+.portada{padding:56px 0 var(--aire); border-bottom:6px solid var(--sol-claro)}
+/* la palabra clave del título, resaltada como en su página (con marcador amarillo, que sobre blanco sí se lee) */
+h1 .resalta{background:linear-gradient(transparent 64%, rgba(247,233,63,.85) 64%, rgba(247,233,63,.85) 92%, transparent 92%); -webkit-box-decoration-break:clone; box-decoration-break:clone; padding:0 .06em}
 @media (min-width: 900px){ .portada{padding:96px 0 var(--aire)} }
 .portada .rejilla{display:grid; gap:56px; grid-template-columns:minmax(0, 1fr); align-items:center}
 @media (min-width: 1000px){ .portada .rejilla{grid-template-columns:1.1fr .9fr; gap:72px} }
@@ -262,6 +264,16 @@ input:focus, textarea:focus{outline:none; border-color:var(--azul); background:#
 .pie nav{display:grid; gap:10px}
 .pie a{color:#BFCBDD; text-decoration:none; transition:color .2s} .pie a:hover{color:#fff}
 .creditos{grid-column:1 / -1; border-top:1px solid rgba(255,255,255,.12); padding-top:24px; font-size:12px; color:#7F92AE}
+
+/* ══ en compu: WhatsApp flotante y «volver arriba», como en su página; aparecen al bajar ══ */
+.flotantes{position:fixed; right:28px; bottom:28px; z-index:30; display:none; flex-direction:column; align-items:center; gap:12px}
+@media (min-width: 900px){ .flotantes{display:flex} }
+.flotantes a, .flotantes button{width:58px; height:58px; border-radius:50%; border:0; display:grid; place-items:center; cursor:pointer; text-decoration:none; transition:transform .5s var(--curva), opacity .4s, box-shadow .3s; opacity:0; transform:translateY(16px) scale(.9); pointer-events:none}
+.flotantes .arriba{width:46px; height:46px; background:#fff; color:var(--marina); box-shadow:var(--sombra)}
+.flotantes .wa{background:#1FAF5A; color:#fff; box-shadow:0 14px 30px -12px rgba(31,175,90,.7)}
+.flotantes .wa svg{width:26px; height:26px}
+.flotantes .si{opacity:1; transform:none; pointer-events:auto}
+.flotantes a.si:hover, .flotantes button.si:hover{transform:translateY(-3px)}
 
 /* ══ barra de abajo en el teléfono ══ */
 .barra{position:fixed; left:0; right:0; bottom:0; z-index:30; display:grid; grid-template-columns:1fr 1.3fr; gap:8px; padding:10px 12px calc(10px + env(safe-area-inset-bottom)); background:rgba(255,255,255,.92); -webkit-backdrop-filter:blur(18px); backdrop-filter:blur(18px); border-top:1px solid var(--linea); transition:transform .45s var(--curva)}
@@ -486,6 +498,10 @@ input:focus, textarea:focus{outline:none; border-color:var(--azul); background:#
   </div>
 </footer>
 
+<div class="flotantes">
+  <button type="button" class="arriba" id="arriba" aria-label="Volver arriba"><svg class="i"><use href="#i-arrow-up"/></svg></button>
+  <a class="wa" id="waFlota" href="https://wa.me/5214421394023?text=Hola%2C%20vengo%20de%20su%20p%C3%A1gina.%20Me%20gustar%C3%ADa%20una%20cotizaci%C3%B3n." target="_blank" rel="noopener" aria-label="Escribir por WhatsApp"><svg class="i"><use href="#i-message-circle"/></svg></a>
+</div>
 <nav class="barra" id="barra" aria-label="Contacto rápido">
   <a class="btn btn-2" href="tel:+524421394023"><svg class="i"><use href="#i-phone"/></svg> Llamar</a>
   <a class="btn btn-wa" href="https://wa.me/5214421394023?text=Hola%2C%20vengo%20de%20su%20p%C3%A1gina.%20Me%20gustar%C3%ADa%20una%20cotizaci%C3%B3n." target="_blank" rel="noopener"><svg class="i"><use href="#i-message-circle"/></svg> WhatsApp</a>
@@ -598,7 +614,10 @@ addEventListener('scroll', () => {
   cab.classList.toggle('bajo', scrollY > 8);
   const y = scrollY; if(Math.abs(y - antes) > 6){ barra.classList.toggle('fuera', y > antes && y > 300); antes = y; }
 }, { passive: true });
-const enlaces = $$('.menu a');
+const enlaces = [...document.querySelectorAll('.menu a')];
+const arriba = $('#arriba'), waFlota = $('#waFlota');
+addEventListener('scroll', () => { if(scrollY < 300) enlaces.forEach((x) => x.classList.remove('aqui')); waFlota.classList.toggle('si', scrollY > 500); arriba.classList.toggle('si', scrollY > 1200); }, { passive: true });
+arriba.addEventListener('click', () => scrollTo({ top: 0, behavior: quieto ? 'auto' : 'smooth' }));
 const vigia = new IntersectionObserver((es) => { for(const x of es) if(x.isIntersecting) enlaces.forEach((a) => a.classList.toggle('aqui', a.getAttribute('href') === '#' + x.target.id)); }, { rootMargin: '-45% 0px -50% 0px' });
 ['servicios', 'industria', 'clientes', 'contacto'].forEach((id) => vigia.observe(document.getElementById(id)));
 
