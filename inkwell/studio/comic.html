@@ -86,6 +86,8 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 .mio-pose img{width:100%; height:90px; object-fit:contain; background:repeating-conic-gradient(color-mix(in srgb,var(--ink) 8%,transparent) 0 25%,transparent 0 50%) 0 0/14px 14px; border-radius:8px}
 .mio-pose input{min-height:34px; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--ink); font:500 13px var(--sans); padding:0 6px; width:100%}
 .mio-pose button{position:absolute; top:2px; right:2px; width:44px; height:44px; min-height:44px; padding:0; border-radius:50%; background:rgba(11,6,16,.6); color:#fff; border:0}
+.vid-marco{display:grid; place-items:center; background:#0B0610; border-radius:16px; padding:10px; margin-bottom:10px}
+#vidLienzo{width:min(100%,270px); aspect-ratio:9/16; height:auto; border-radius:10px; display:block}
 .mio-borrar{margin-top:10px; background:none; border:0; color:#ff7a9a; font-weight:600}
 .vest{display:grid; grid-template-columns:150px minmax(0,1fr); gap:12px; align-items:start}
 @media (max-width:520px){ .vest{grid-template-columns:1fr} }
@@ -137,6 +139,15 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
   <div class="fila"><button type="button" class="si" id="mioPoner">Guardar y poner en la página</button><button type="button" id="mioGuardar">Sólo guardar</button></div>
   <button type="button" id="mioBorrar" class="mio-borrar">Borrar este personaje</button>
 </div></dialog>
+<dialog id="dlgVideo" aria-labelledby="tVideo"><div class="dlg">
+  <div class="cerrar-props"><h2 id="tVideo">Video animado</h2><button type="button" data-cerrar>Cerrar</button></div>
+  <p class="aviso" style="margin:0 0 8px">La cámara va de viñeta en viñeta y los globos aparecen a su tiempo. Para que siga tu orden, arma la página con viñetas.</p>
+  <div class="vid-marco"><canvas id="vidLienzo" width="360" height="640" aria-label="Vista previa del video"></canvas></div>
+  <div class="fila"><button type="button" data-vel="lento">Lento</button><button type="button" data-vel="normal" aria-pressed="true">Normal</button><button type="button" data-vel="rapido">Rápido</button></div>
+  <div class="fila"><button type="button" id="vidMusica">Ponerle música</button><input type="file" id="vidArchivo" accept="audio/*" hidden><span class="aviso" id="vidMusicaNombre"></span></div>
+  <div class="fila"><button type="button" id="vidPlay">Ver</button><button type="button" class="si" id="vidGrabar">Grabar el video</button></div>
+  <p class="aviso" id="vidAviso" role="status"></p>
+</div></dialog>
 <dialog id="dlgVest" aria-labelledby="tVest"><div class="dlg">
   <div class="cerrar-props"><h2 id="tVest">Vestidor</h2><button type="button" data-cerrar>Cerrar</button></div>
   <div class="vest"><canvas id="vistaVest" width="64" height="64"></canvas><div id="piezas"></div></div>
@@ -147,6 +158,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
   <button type="button" class="si" id="alLibrero">Pasar a mi librero para leerlo</button>
   <button type="button" id="pdf">Descargar todo en PDF</button>
   <button type="button" id="png">Descargar esta página (PNG)</button>
+  <button type="button" id="abrirVideo">Video animado para TikTok y Reels</button>
   <p class="aviso" id="avisoMenu" role="status"></p>
 </div></dialog>
 
@@ -158,6 +170,7 @@ import { dibujar, capaEn, urlArchivo, PERSONAJES, POSES, srcPersonaje, FONDOS_KE
 import { pdf } from '../archivos.js';
 import { abrirDibujo } from './dibujo.js';
 import * as MIOS from './personajes.js';
+import * as VIDEO from './video.js';
 const $ = (s) => document.querySelector(s);
 const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 document.querySelectorAll('.ic[data-ic]').forEach((e) => { e.outerHTML = icono(e.dataset.ic); });
@@ -557,6 +570,31 @@ async function armarPdf(){
   return pdf(paginas, { titulo: obra.titulo, ancho: obra.paginas[0].ancho });
 }
 $('#botonMenu').addEventListener('click', () => { $('#avisoMenu').textContent = ''; $('#dlgMenu').showModal(); });
+/* ── el cómic animado (video.js) ── */
+let vGuion = null, vVel = 'normal', vMusica = null, vReloj = 0, vPluma = null;
+const vCtx = () => $('#vidLienzo').getContext('2d');
+async function vPreparar(){ $('#vidAviso').textContent = 'Preparando…'; vGuion = await VIDEO.armarGuion(obra, { velocidad: vVel }); if(!vPluma) vPluma = await img('../marca/pluma.png');
+  $('#vidAviso').textContent = `${vGuion.tomas.length} toma${vGuion.tomas.length === 1 ? '' : 's'} · ${Math.round(VIDEO.duracion(vGuion))} segundos`; VIDEO.pintarCuadro(vCtx(), vGuion, 2.4, { W: 360, H: 640, pluma: vPluma }); }
+$('#abrirVideo').addEventListener('click', async () => { $('#dlgMenu').close(); $('#dlgVideo').showModal(); await guardarYa(); await vPreparar(); });
+$('#dlgVideo').addEventListener('click', async (e) => { const b = e.target.closest('[data-vel]'); if(!b) return; vVel = b.dataset.vel; b.parentElement.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); cancelAnimationFrame(vReloj); await vPreparar(); });
+$('#vidMusica').addEventListener('click', () => $('#vidArchivo').click());
+$('#vidArchivo').addEventListener('change', (e) => { vMusica = e.target.files[0] || null; $('#vidMusicaNombre').textContent = vMusica ? vMusica.name : ''; });
+$('#vidPlay').addEventListener('click', () => {
+  if(!vGuion) return; cancelAnimationFrame(vReloj); const t0 = performance.now(), total = VIDEO.duracion(vGuion);
+  const paso = () => { const t = (performance.now() - t0) / 1000; VIDEO.pintarCuadro(vCtx(), vGuion, Math.min(t, total - .01), { W: 360, H: 640, pluma: vPluma }); if(t < total && $('#dlgVideo').open) vReloj = requestAnimationFrame(paso); };
+  vReloj = requestAnimationFrame(paso);
+});
+$('#vidGrabar').addEventListener('click', async () => {
+  if(!vGuion) return; cancelAnimationFrame(vReloj); const b = $('#vidGrabar'); b.disabled = true;
+  try{
+    $('#vidAviso').textContent = 'Grabando… no cierres esta ventana (tarda lo que dura el video).';
+    const f = await VIDEO.grabar(vGuion, { musica: vMusica, pluma: vPluma, avance: (x) => { $('#vidAviso').textContent = `Grabando… ${Math.round(x * 100)} %`; } });
+    if(f){ await compartirOBajar(f); $('#vidAviso').textContent = `Listo: ${f.name} (${(f.size / 1048576).toFixed(1)} MB).`; window.__ultimoVideo = f; }
+  }catch(er){ $('#vidAviso').textContent = 'No se pudo grabar: ' + er.message; }
+  b.disabled = false;
+});
+$('#dlgVideo').addEventListener('close', () => cancelAnimationFrame(vReloj));
+
 $('#png').addEventListener('click', async () => { const c = await lienzoGrande(pag()); const b = await new Promise((ok) => c.toBlob(ok, 'image/png')); await compartirOBajar(new File([b], `${nombreArchivo()} · página ${pi + 1}.png`, { type: 'image/png' })); $('#avisoMenu').textContent = 'Listo.'; });
 $('#pdf').addEventListener('click', async () => { const b = await armarPdf(); await compartirOBajar(new File([b], nombreArchivo() + '.pdf', { type: 'application/pdf' })); $('#avisoMenu').textContent = 'Listo.'; });
 $('#alLibrero').addEventListener('click', async () => {
