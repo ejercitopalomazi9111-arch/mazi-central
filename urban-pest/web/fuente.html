@@ -43,9 +43,9 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
 .oculto{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; top:0; left:0}
 
 /* ══ LA APERTURA: el logo se arma con sus propias piezas ══ */
-.apertura{position:fixed; inset:0; z-index:100; background:#fff; display:grid; place-items:center; cursor:pointer; -webkit-tap-highlight-color:transparent}
+.apertura{position:fixed; inset:0; z-index:100; background:#fff; pointer-events:auto; display:grid; place-items:center; cursor:pointer; -webkit-tap-highlight-color:transparent}
 .apertura .logo-armado{position:relative; width:min(72vw, 360px); aspect-ratio:512 / 396}
-.apertura .logo-armado img{position:absolute; inset:0; width:100%; height:100%; will-change:transform, opacity, clip-path}
+.apertura .logo-armado img{position:absolute; inset:0; width:100%; height:100%; }
 .apertura .brillo{position:absolute; inset:0; -webkit-mask:url(img/logo-entero.webp) center / 100% 100% no-repeat; mask:url(img/logo-entero.webp) center / 100% 100% no-repeat; background:linear-gradient(105deg, transparent 35%, rgba(255,255,255,.85) 50%, transparent 65%) -150% 0 / 250% 100% no-repeat}
 .apertura .salta{position:absolute; bottom:calc(28px + env(safe-area-inset-bottom)); font:500 13px/1 var(--texto); color:var(--suave); letter-spacing:.04em; opacity:0; animation:asoma .6s 1.2s forwards}
 @keyframes asoma{ to{opacity:1} }
@@ -54,7 +54,12 @@ svg.i{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8;
 .cabeza{position:sticky; top:0; z-index:40; background:rgba(255,255,255,.86); -webkit-backdrop-filter:blur(18px) saturate(1.6); backdrop-filter:blur(18px) saturate(1.6); border-bottom:1px solid transparent; transition:border-color .3s, box-shadow .3s}
 .cabeza.bajo{border-bottom-color:var(--linea)}
 .cabeza .env{display:flex; align-items:center; gap:24px; height:68px}
-.logo{display:block; height:32px; flex:none} .logo img{height:100%; width:auto}
+/* el logo de la barra se arma con las MISMAS 7 piezas de la apertura (posiciones de marca/cortar.py): así la apertura
+   lo deja exactamente aquí, sin brinco (Carlos, 11 nov) */
+.logo{display:block; height:32px; flex:none}
+.logo-capas{position:relative; display:block; height:100%; aspect-ratio:4.67660}
+.logo-capas img{position:absolute; max-width:none}
+.esperando .logo-capas{visibility:hidden}
 .menu{display:none; gap:4px; margin-left:auto; font-size:15px; font-weight:500}
 .menu a{text-decoration:none; color:var(--suave); padding:8px 14px; border-radius:999px; transition:color .2s, background .2s}
 .menu a:hover, .menu a.aqui{color:var(--marina); background:var(--cielo)}
@@ -309,7 +314,7 @@ input:focus, textarea:focus{outline:none; border-color:var(--azul); box-shadow:0
 
 <header class="cabeza" id="cabeza">
   <div class="env">
-    <a class="logo" href="#inicio" aria-label="Urban Pest Control, inicio"><img src="img/logo.webp" alt="Urban Pest Control" width="1120" height="240"></a>
+    <a class="logo" href="#inicio" aria-label="Urban Pest Control, inicio"><span class="logo-capas" id="logoCapas" aria-hidden="true"><img alt="" src="marca/globo.webp" data-c="globo" style="left:-8.1383%;top:0.0000%;width:40.8512%;height:147.7612%"><img alt="" src="marca/sol.webp" data-c="sol" style="left:-8.1383%;top:0.0000%;width:40.8512%;height:147.7612%"><img alt="" src="marca/personita.webp" data-c="personita" style="left:-8.1383%;top:0.0000%;width:40.8512%;height:147.7612%"><img alt="" src="marca/chorro.webp" data-c="chorro" style="left:-8.1383%;top:0.0000%;width:40.8512%;height:147.7612%"><img alt="" src="marca/urban.webp" data-c="urban" style="left:25.0693%;top:-196.8399%;width:76.8828%;height:278.0899%"><img alt="" src="marca/pest.webp" data-c="pest" style="left:25.0693%;top:-196.8399%;width:76.8828%;height:278.0899%"><img alt="" src="marca/control.webp" data-c="control" style="left:25.0693%;top:-196.8399%;width:76.8828%;height:278.0899%"></span></a>
     <nav class="menu" aria-label="Secciones">
       <a href="#plagas">Plagas</a>
       <a href="#industria">Industria</a>
@@ -530,6 +535,20 @@ const quieto = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const finoPuntero = matchMedia('(hover: hover) and (pointer: fine)').matches;
 document.documentElement.classList.add('js');
 
+/* el logo de la barra: cada pieza se pone en pixeles exactos de la pantalla (no en fracciones), para que la pieza
+   que llega volando y la que se queda quieta se dibujen idénticas */
+function alinearLogo(){
+  const caja = document.getElementById('logoCapas'), r = caja.getBoundingClientRect(), d = devicePixelRatio || 1;
+  const al = (v) => Math.round(v * d) / d;
+  for(const img of caja.querySelectorAll('img')){
+    if(!img.dataset.p) img.dataset.p = [img.style.left, img.style.top, img.style.width, img.style.height].map(parseFloat).join(',');
+    const [x, y, w, h] = img.dataset.p.split(',').map(Number);
+    const L = al(r.left + x / 100 * r.width) - r.left, T = al(r.top + y / 100 * r.height) - r.top;
+    img.style.left = L + 'px'; img.style.top = T + 'px'; img.style.width = al(w / 100 * r.width) + 'px'; img.style.height = al(h / 100 * r.height) + 'px';
+  }
+}
+alinearLogo(); addEventListener('resize', alinearLogo);
+
 /* ══ la apertura: el logo se arma con sus piezas reales ══
    Las 7 capas (marca/cortar.py) juntas son EXACTAMENTE el logo: cada pixel vive en una sola. Una vez por visita;
    un toque o una tecla la saltan; con «reducir movimiento» no sale. */
@@ -540,7 +559,7 @@ function apertura(){
   const el = document.createElement('div');
   el.className = 'apertura'; el.setAttribute('role', 'img'); el.setAttribute('aria-label', 'Urban Pest Control');
   el.innerHTML = `<div class="logo-armado">${capas.map((c) => `<img alt="" src="marca/${c}.webp" data-c="${c}" style="opacity:0">`).join('')}<div class="brillo"></div></div><span class="salta">Toca para entrar</span>`;
-  document.body.append(el); document.documentElement.style.overflow = 'hidden';
+  document.body.append(el); document.documentElement.style.overflow = 'hidden'; document.documentElement.classList.add('esperando');
   const C = Object.fromEntries($$('img', el).map((i) => [i.dataset.c, i]));
   /* el centro del globo dentro del logo (512 × 396): ahí gira el sol */
   const centro = '46% 31%';
@@ -557,16 +576,31 @@ function apertura(){
   anims.push(brillo.animate([{ backgroundPosition: '-150% 0' }, { backgroundPosition: '250% 0' }], { duration: 900, delay: 2100, easing: 'ease-in-out', fill: 'both' }));
   return new Promise((listo) => {
     let ya = false;
+    /* la segunda animación: cada pieza vuela de la apertura a su lugar en el logo de la barra (la misma imagen, al
+       mismo tamaño y en la misma posición al llegar). Ahí se cambia una por la otra: nada brinca. */
     const salir = () => {
       if(ya) return; ya = true; clearTimeout(t);
-      anims.forEach((x) => { try{ x.finish(); }catch{} });
-      const logo = $('.logo-armado', el);
-      logo.animate([{ transform: 'none' }, { transform: 'scale(.86)', opacity: 0 }], { duration: 500, easing: 'cubic-bezier(.5,0,.75,0)', fill: 'forwards' });
-      el.animate([{ clipPath: 'inset(0 0 0 0)' }, { clipPath: 'inset(0 0 100% 0)' }], { duration: 750, delay: 220, easing: 'cubic-bezier(.76,0,.24,1)', fill: 'forwards' })
-        .finished.then(() => { el.remove(); document.documentElement.style.overflow = ''; });
-      setTimeout(listo, 380);
+      anims.forEach((x) => { try{ x.finish(); x.cancel(); }catch{} });
+      $$('img', el).forEach((i) => { i.style.opacity = '1'; i.style.willChange = 'auto'; i.style.clipPath = 'none'; i.style.filter = 'none'; });
+      $('.brillo', el).remove(); $('.salta', el).remove();
+      scrollTo(0, 0);
+      const dur = 950, curva = 'cubic-bezier(.65,0,.2,1)';
+      /* se anima el lugar y el tamaño de verdad (no una escala): así cada cuadro, y sobre todo el último, se dibuja
+         igual que la pieza quieta de la barra, con la misma nitidez */
+      const vuelos = $$('img', el).map((i, k) => {
+        const d = $(`#logoCapas img[data-c="${i.dataset.c}"]`).getBoundingClientRect(), r = i.getBoundingClientRect();
+        Object.assign(i.style, { position: 'fixed', inset: 'auto', left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px', willChange: 'auto' });
+        return i.animate([{ left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px' }, { left: d.left + 'px', top: d.top + 'px', width: d.width + 'px', height: d.height + 'px' }], { duration: dur, delay: k < 4 ? 0 : 60, easing: curva, fill: 'forwards' });
+      });
+      el.animate([{ backgroundColor: 'rgba(255,255,255,1)' }, { backgroundColor: 'rgba(255,255,255,0)' }], { duration: dur * .8, delay: dur * .2, easing: 'ease-out', fill: 'forwards' });
+      setTimeout(listo, dur * .35);
+      Promise.all(vuelos.map((v) => v.finished)).then(() => {
+        /* en el mismo cuadro: aparece el logo de la barra y se va la apertura */
+        document.documentElement.classList.remove('esperando');
+        el.remove(); document.documentElement.style.overflow = '';
+      });
     };
-    const t = setTimeout(salir, 3150);
+    const t = setTimeout(salir, 2900);
     el.addEventListener('click', salir); addEventListener('keydown', salir, { once: true });
   });
 }

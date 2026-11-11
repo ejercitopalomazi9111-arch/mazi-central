@@ -558,6 +558,8 @@ dependemos.
    | `e.target.closest('[data-tema]')` encuentra el botón del tema que toqué | sube hasta `<html data-tema="oscuro">`, que también lo tiene: con el modo oscuro, CUALQUIER toque cuenta como «tocaste el tema oscuro» | en la Comunidad de INKWELL, «Abrir un tema» abría el hilo de un foro llamado «oscuro» que no existía, y ahí se guardaban comentarios. Carlos: «sólo puedo crear chats en un foro que no existe». Un `closest` va con la clase del componente (`.com-tema[data-tid]`), nunca con un atributo suelto que la raíz pueda tener |
    | si una función `async` toma un objeto antes de un `await`, al volver sigue siendo el que está en la página | mientras espera, guardar o deshacer puede **cambiar el objeto** por otro: el cambio se le hace a uno viejo que ya no se pinta | en Studio, cambiar la pose de «Mis personajes» no hacía nada y sin un solo error; se vuelve a buscar la capa DESPUÉS del `await` |
 
+   | si la pieza que vuela termina con el mismo rectángulo que la quieta (FLIP con `transform: scale`), el cambio no se nota | se nota: la que vuela con `scale` se dibuja como textura reescalada (más borrosa) y la quieta como imagen a su tamaño; el último cuadro y la barra difieren aunque `getBoundingClientRect` dé 0 | la apertura de Urban Pest «se enfocaba» al llegar a la barra en el teléfono (4,000 pixeles distintos). Se anima `left/top/width/height` de verdad y se mide con dos capturas, justo antes y justo después del cambio (`max 2` de 255) |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---
