@@ -188,6 +188,10 @@ button{font:inherit}
 .poster .mini-est .ico{width:11px; height:11px; fill:currentColor}
 .b-acciones{display:flex; flex-wrap:wrap; gap:8px; margin:18px 0 6px}
 .b-acciones .boton{flex:1 1 220px}
+.b-respaldo{display:flex; align-items:center; gap:8px; margin:4px 0 0; font-size:14px; color:var(--muted)}
+.b-respaldo:empty{display:none}
+.b-respaldo svg{width:16px; height:16px; flex:none}
+.b-respaldo a{color:var(--accent-ink)}
 .o-cab{display:flex; gap:12px; align-items:center}
 .o-cab img{width:64px; height:86px; border-radius:10px; object-fit:cover; background:var(--card2); flex:none}
 .o-cab img:not([src]){visibility:hidden}
@@ -410,6 +414,7 @@ h2 a .ico{width:18px; height:18px}
         <button type="button" class="boton suave" id="bImportar"></button>
         <input type="file" id="bArchivo" accept=".json,application/json" hidden>
       </div>
+      <p class="b-respaldo" id="bRespaldo" role="status"></p>
       <h2>Tus libros <a href="libros.html">Abrir librero <span class="i-chev"></span></a></h2>
       <p class="lema">Sube tus EPUB, PDF o TXT y léelos con tu avance guardado. También salen arriba, en tus listas.</p>
     </div>
@@ -991,13 +996,29 @@ async function comPerfil(){
 addEventListener('hashchange', () => { if(location.hash === '#comunidad') pintarComunidad(); });
 if(location.hash === '#comunidad') pintarComunidad();
 window.__comunidad = { C, pintarComunidad };
-window.__biblio = { B, get obras(){ return obras; }, pintarBiblio };
+/* ── el Estante se respalda en tu cuenta: al abrir, al entrar a la cuenta y (solo) después de cada cambio ── */
+function pintarRespaldo(estado){
+  const el = $('#bRespaldo'); if(!el) return;
+  if(!C.cuenta.leer()){ el.innerHTML = `${icono('cloud-off')}<span>Tu estante sólo vive en este teléfono. <a href="#comunidad">Entra a tu cuenta</a> para respaldarlo.</span>`; return; }
+  const t = B.ultimoRespaldo();
+  el.innerHTML = estado === 'error' ? `${icono('cloud-off')}<span>No se pudo respaldar ahorita; se intenta de nuevo al rato.</span>`
+    : `${icono('cloud')}<span>${t ? 'Respaldado en tu cuenta · ' + C.hace(t) : 'Respaldando en tu cuenta…'}</span>`;
+}
+async function respaldar(){
+  if(!C.cuenta.leer()){ pintarRespaldo(); return; }
+  try{ const r = await B.sincronizar(); if(r.cambioAqui){ await juntarObras(); pintarBiblio(); pintarHero(); } pintarRespaldo(); }
+  catch{ pintarRespaldo('error'); }
+}
+C.alCambiarCuenta(() => respaldar());
+addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') respaldar(); });
+window.__biblio = { B, get obras(){ return obras; }, pintarBiblio, respaldar };
 
 (async () => {
   todas = await series();
   pintarFiltro(); pintarHero(); pintarListas(); pintarStats();
   await juntarObras(); pintarBiblio();
   pintarParaTi();
+  respaldar();
 })();
 
 /* ── «Para ti»: series de Webtoon que no sigues, sin tener que buscar (inicio y Explorar) ── */
