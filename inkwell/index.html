@@ -49,9 +49,9 @@ button{font:inherit}
 
 /* «Seguir leyendo»: elegir qué serie, todo seguido o un libro */
 .seguir-btn{width:100%; min-height:54px; font-size:16px; margin:2px 0 14px}
-#dlgSeguir,#dlgObra{border:0; padding:0; margin:auto auto 0; width:min(560px,100%); max-width:100%; max-height:85dvh; border-radius:24px 24px 0 0; background:var(--bg2); color:var(--ink)}
-#dlgSeguir::backdrop,#dlgObra::backdrop{background:rgba(0,0,0,.6)}
-@media (min-width:640px){ #dlgSeguir,#dlgObra{margin:auto; border-radius:24px} }
+#dlgSeguir{border:0; padding:0; margin:auto auto 0; width:min(560px,100%); max-width:100%; max-height:85dvh; border-radius:24px 24px 0 0; background:var(--bg2); color:var(--ink)}
+#dlgSeguir::backdrop{background:rgba(0,0,0,.6)}
+@media (min-width:640px){ #dlgSeguir{margin:auto; border-radius:24px} }
 /* ── la pantalla fantasmita del banner ── */
 .esq-hero{padding:calc(96px + env(safe-area-inset-top)) 18px 26px; min-height:clamp(560px,78vh,640px)}
 /* ── comunidad ── */
@@ -75,6 +75,44 @@ button{font:inherit}
 .com-form textarea{min-height:110px; resize:vertical}
 .com-form label{display:flex; flex-direction:column; gap:5px; font:600 12px var(--sans); color:var(--dim)}
 .com-form .fila{display:flex; gap:8px; align-items:center}
+/* ── el libro abierto (la hoja de cada obra) ── */
+.lb{position:fixed; inset:0; z-index:310; perspective:1400px}
+.lb[hidden]{display:none}
+.lb-fondo{position:absolute; inset:0; background:rgba(5,3,8,.66); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); animation:lb-fondo .3s ease-out}
+@keyframes lb-fondo{from{opacity:0}}
+.lb-pista{position:absolute; left:0; right:0; bottom:calc(30px + env(safe-area-inset-bottom)); text-align:center; color:#F1EADF; font:italic 300 17px var(--serif); margin:0; transition:opacity .3s}
+.lb.abierto .lb-pista{opacity:0}
+.lb-tomo{position:absolute; width:var(--W); height:var(--H); left:calc(50% - var(--W) / 2); top:calc(50% - var(--H) / 2 - 10px); transform-style:preserve-3d;
+  transform:var(--cerrado); transition:transform .8s cubic-bezier(.16,1,.3,1); cursor:pointer}
+.lb.abierto .lb-tomo{transform:translateX(calc(var(--W) * .07)); cursor:default}
+.lb-hoja{position:absolute; inset:0; transform-origin:left center; transform-style:preserve-3d; transition:transform .75s cubic-bezier(.16,1,.3,1)}
+.lb-hoja.vuelta{transform:rotateY(-178deg)}
+.lb-cara{position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden; border-radius:3px 12px 12px 3px; overflow:hidden}
+.lb-cara.atras{transform:rotateY(180deg); border-radius:12px 3px 3px 12px}
+.lb-tapa{background:linear-gradient(160deg,#3a1452,#170A26); box-shadow:0 40px 80px -24px rgba(0,0,0,.9),inset 4px 0 10px rgba(0,0,0,.35); display:flex; align-items:flex-end; padding:18px}
+.lb-tapa img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover}
+.lb-tapa img[src] + b{display:none}
+.lb-tapa b{position:relative; font:400 26px/1.1 var(--display); color:#F1EADF}
+.lb-tapa::after{content:""; position:absolute; left:0; top:0; bottom:0; width:14px; background:linear-gradient(90deg,rgba(0,0,0,.45),transparent)}
+.lb-pag{background:#F6F0E4; color:#1d1220; padding:22px 20px 56px; display:flex; flex-direction:column; gap:10px; overflow-y:auto; box-shadow:inset 10px 0 18px -10px rgba(60,30,10,.35),0 30px 60px -24px rgba(0,0,0,.8);
+  --ink:#1d1220; --dim:#6b5c66; --card:#fffaf0; --card2:#ece3d3; --line:rgba(29,18,32,.14); --bg:#F6F0E4; --bg2:#efe6d7; --accent-ink:#6A12A8; --lila:#6E5C82}
+.lb-cara.atras.lb-pag{box-shadow:inset -10px 0 18px -10px rgba(60,30,10,.35)}
+.lb-guarda{background:#efe6d7; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:#6b5c66; font:italic 300 18px var(--serif)}
+.lb-guarda img{width:44%; opacity:.25}
+.lb-pag h2{margin:0; font:400 26px/1.08 var(--display)}
+.lb-sub{color:var(--dim); font-size:13px}
+.lb-h{margin:8px 0 0; font:600 10.5px var(--sans); letter-spacing:.18em; text-transform:uppercase; color:var(--accent-ink)}
+.lb-avance{display:flex; align-items:center; gap:12px; margin:6px 0}
+.lb-avance .plumilla{width:40px; height:54px}
+.lb-avance .boton{flex:1; justify-content:center; background:#1d1220; color:#F6F0E4; box-shadow:none}
+.lb-pag .o-fav{background:var(--card)}
+.lb-pag .estrellas{justify-content:flex-start}
+.lb-pag .chip{background:var(--card); color:var(--ink); border-color:var(--line)}
+.lb-pag .chip[aria-pressed="true"]{background:#1d1220; color:#F6F0E4; border-color:#1d1220}
+.lb-pag .o-etq input,.lb-pag .o-cols label{background:var(--card)}
+.lb-pie{position:absolute; left:0; right:0; bottom:0; height:50px; display:flex; align-items:center; justify-content:center; gap:18px; font:italic 300 15px var(--serif); color:var(--dim)}
+.lb-flecha{width:44px; height:44px; border-radius:50%; border:1px solid var(--line); background:none; color:var(--ink); font:400 24px/1 var(--display); cursor:pointer}
+@media (prefers-reduced-motion:reduce){ .lb-tomo,.lb-hoja{transition:none} }
 /* ── biblioteca ── */
 /* ── el estante de lomos ── */
 .estante{display:flex; flex-direction:column; gap:30px; padding:6px 0 10px}
@@ -406,23 +444,36 @@ h2 a .ico{width:18px; height:18px}
   </section>
 </main>
 
-<dialog id="dlgObra" aria-labelledby="oTitulo">
-  <div class="hoja-s">
-    <div class="agarra" aria-hidden="true"></div>
-    <div class="o-cab"><img id="oPortada" alt=""><div><h2 id="oTitulo"></h2><span id="oSub"></span></div><span id="oTinta"></span></div>
-    <a class="boton" id="oAbrir"></a>
-    <p class="opc-h">Lista</p>
-    <div class="chips envuelve" id="oListas" role="radiogroup" aria-label="Lista"></div>
-    <div class="o-fila"><button type="button" class="o-fav" id="oFav" aria-pressed="false"></button>
-      <div class="estrellas" id="oNota" role="radiogroup" aria-label="Tu calificación"></div></div>
-    <p class="opc-h">Etiquetas</p>
-    <form class="o-etq" id="oEtqForm"><input id="oEtq" placeholder="Escribe una y dale Enter" aria-label="Agregar etiqueta" autocomplete="off" enterkeyhint="done"><button type="submit" class="boton suave">Agregar</button></form>
-    <div class="chips envuelve" id="oEtiquetas"></div>
-    <p class="opc-h">Colecciones</p>
-    <div class="o-cols" id="oCols"></div>
-    <button type="button" class="boton suave" id="cerrarObra">Listo</button>
+<!-- la hoja de una obra ES el libro: sale del estante, se abre con un toque y sus controles viven en sus páginas (Carlos, 11 nov) -->
+<div id="dlgObra" class="lb" hidden role="dialog" aria-modal="true" aria-labelledby="oTitulo">
+  <div class="lb-fondo" data-cerrar-libro></div>
+  <p class="lb-pista" id="lbPista" aria-live="polite">Toca el libro para abrirlo</p>
+  <div class="lb-tomo" id="lbTomo">
+    <section class="lb-hoja" data-n="0"><div class="lb-cara frente lb-tapa"><img id="oPortada" alt=""><b id="lbTapaTitulo"></b></div>
+      <div class="lb-cara atras lb-guarda"><img src="marca/pluma.png" alt=""><span>Ex libris</span></div></section>
+    <section class="lb-hoja" data-n="1"><div class="lb-cara frente lb-pag">
+      <h2 id="oTitulo"></h2><span id="oSub" class="lb-sub"></span>
+      <div class="lb-avance"><span id="oTinta"></span><a class="boton" id="oAbrir"></a></div>
+      <p class="lb-h">Lo que te pareció</p>
+      <div class="o-fila"><button type="button" class="o-fav" id="oFav" aria-pressed="false"></button></div>
+      <div class="estrellas" id="oNota" role="radiogroup" aria-label="Tu calificación"></div>
+      <footer class="lb-pie"><button type="button" class="lb-flecha" data-pag="ant" aria-label="Página anterior">‹</button><span>1</span><button type="button" class="lb-flecha" data-pag="sig" aria-label="Página siguiente">›</button></footer></div><div class="lb-cara atras lb-pag"></div></section>
+    <section class="lb-hoja" data-n="2"><div class="lb-cara frente lb-pag">
+      <p class="lb-h">¿En qué lista va?</p>
+      <div class="chips envuelve" id="oListas" role="radiogroup" aria-label="Lista"></div>
+      <footer class="lb-pie"><button type="button" class="lb-flecha" data-pag="ant" aria-label="Página anterior">‹</button><span>2</span><button type="button" class="lb-flecha" data-pag="sig" aria-label="Página siguiente">›</button></footer></div><div class="lb-cara atras lb-pag"></div></section>
+    <section class="lb-hoja" data-n="3"><div class="lb-cara frente lb-pag">
+      <p class="lb-h">Etiquetas</p>
+      <form class="o-etq" id="oEtqForm"><input id="oEtq" placeholder="Escribe una y dale Enter" aria-label="Agregar etiqueta" autocomplete="off" enterkeyhint="done"><button type="submit" class="boton suave">Agregar</button></form>
+      <div class="chips envuelve" id="oEtiquetas"></div>
+      <footer class="lb-pie"><button type="button" class="lb-flecha" data-pag="ant" aria-label="Página anterior">‹</button><span>3</span><button type="button" class="lb-flecha" data-pag="sig" aria-label="Página siguiente">›</button></footer></div><div class="lb-cara atras lb-pag"></div></section>
+    <section class="lb-hoja" data-n="4"><div class="lb-cara frente lb-pag">
+      <p class="lb-h">Colecciones</p>
+      <div class="o-cols" id="oCols"></div>
+      <button type="button" class="boton suave" id="cerrarObra">Cerrar el libro</button>
+      <footer class="lb-pie"><button type="button" class="lb-flecha" data-pag="ant" aria-label="Página anterior">‹</button><span>4</span></footer></div><div class="lb-cara atras lb-pag"></div></section>
   </div>
-</dialog>
+</div>
 
 <dialog id="dlgSeguir" aria-labelledby="tSeguir">
   <div class="hoja-s">
@@ -724,7 +775,7 @@ function sacarLibro(boton, despues){
     { transform: `translate3d(${x0}px,${y0 - 30}px,80px) scale(${esc0 * 1.05}) rotateY(70deg)`, offset: .25 },
     { transform: `translate3d(${x1}px,${y1}px,200px) scale(1) rotateY(-16deg) rotateX(4deg)` },
   ], { duration: 650, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' });
-  a.finished.then(() => { despues(); setTimeout(() => { capa.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, fill: 'forwards' }).finished.then(() => capa.remove()); boton.style.visibility = ''; }, 120); });
+  a.finished.then(() => { despues({ x: x1 + W / 2, y: y1 + H / 2, W }); requestAnimationFrame(() => { capa.remove(); boton.style.visibility = ''; }); });
 }
 function pintarResumen(){
   const e = B.estadisticas(obras), pct = e.meta ? Math.min(100, Math.round(100 * e.esteMes / e.meta)) : 0;
@@ -777,7 +828,7 @@ $('#bArchivo').addEventListener('change', async (e) => {
 /* la hoja de una obra: lista, favorita, estrellas, etiquetas y colecciones */
 $('#bObras').addEventListener('click', abrirObra); $('#bSugeridas').addEventListener('click', abrirObra);
 function abrirObra(e){ const b = e.target.closest('[data-id]'); if(!b) return; obraAbierta = obras.find((o) => o.id === b.dataset.id); if(!obraAbierta) return;
-  const abrir = () => { pintarObra(); if(!$('#dlgObra').open) $('#dlgObra').showModal(); };
+  const abrir = (desde) => { pintarObra(); mostrarLibro(desde); };
   if(b.classList.contains('lomo')) sacarLibro(b, abrir); else abrir(); }
 function pintarObra(){
   const o = obraAbierta, m = B.deObra(o.id), l = B.listaDe(o), d = B.datos(), p = urlB(o);
@@ -799,8 +850,44 @@ $('#oNota').addEventListener('click', (e) => { const b = e.target.closest('[data
 $('#oEtqForm').addEventListener('submit', (e) => { e.preventDefault(); const v = $('#oEtq').value.split(',').map((x) => x.trim()).filter(Boolean); if(!v.length) return; $('#oEtq').value = ''; tocaObra({ etiquetas: [...B.deObra(obraAbierta.id).etiquetas, ...v] }); });
 $('#oEtiquetas').addEventListener('click', (e) => { const b = e.target.closest('[data-quita]'); if(b) tocaObra({ etiquetas: B.deObra(obraAbierta.id).etiquetas.filter((t) => t !== b.dataset.quita) }); });
 $('#oCols').addEventListener('change', (e) => { const c = e.target.closest('[data-c]'); if(!c) return; B.enColeccion(c.dataset.c, obraAbierta.id, c.checked); pintarBiblio(); });
-$('#cerrarObra').addEventListener('click', () => $('#dlgObra').close());
-$('#dlgObra').addEventListener('click', (e) => { if(e.target === $('#dlgObra')) $('#dlgObra').close(); });
+/* ── el libro: cerrado donde lo dejó la animación del estante; un toque lo abre; sus páginas se pasan ── */
+const LB = $('#dlgObra'), TOMO = $('#lbTomo'), HOJAS = [...TOMO.querySelectorAll('.lb-hoja')];
+let lbK = 0;
+function pasar(k){
+  lbK = Math.max(0, Math.min(HOJAS.length - 1, k));
+  HOJAS.forEach((h, i) => { h.classList.toggle('vuelta', i < lbK); h.style.zIndex = i < lbK ? i + 1 : HOJAS.length * 2 - i; h.inert = i !== lbK && !(i === 0 && lbK === 0); });
+  LB.classList.toggle('abierto', lbK > 0);
+  $('#lbPista').textContent = lbK ? '' : 'Toca el libro para abrirlo';
+}
+function mostrarLibro(desde){
+  const W = Math.round(Math.min(330, innerWidth - 72)), H = Math.round(Math.min(W * 1.5, innerHeight - 150));
+  TOMO.style.setProperty('--W', W + 'px'); TOMO.style.setProperty('--H', H + 'px');
+  /* cerrado: chiquito e inclinado, justo donde quedó el libro que salió del estante */
+  const cx = desde ? desde.x - innerWidth / 2 : 0, cy = desde ? desde.y - (innerHeight / 2 - 10) : 0, k = desde ? desde.W / W : .62;
+  TOMO.style.setProperty('--cerrado', `translate(${cx - W * .07}px, ${cy}px) translateX(calc(var(--W) * .07)) scale(${k}) rotateY(-16deg) rotateX(4deg)`);
+  $('#lbTapaTitulo').textContent = obraAbierta.titulo;
+  TOMO.style.transition = 'none'; HOJAS.forEach((h) => { h.style.transition = 'none'; }); pasar(0);
+  LB.hidden = false; void TOMO.offsetWidth; TOMO.style.transition = ''; HOJAS.forEach((h) => { h.style.transition = ''; });
+  if(!desde) TOMO.animate([{ opacity: 0, transform: 'scale(.5) rotateY(-40deg)' }, { opacity: 1 }], { duration: 420, easing: 'cubic-bezier(.16,1,.3,1)', composite: 'add' });
+  document.body.style.overflow = 'hidden';
+}
+function cerrarLibro(){
+  if(LB.hidden) return;
+  pasar(0);
+  setTimeout(() => { TOMO.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateY(40px) scale(.85)' }], { duration: 260, easing: 'ease-in', composite: 'add' }).finished.then(() => { LB.hidden = true; document.body.style.overflow = ''; pintarBiblio(); }); }, lbK > 0 ? 450 : 0);
+}
+TOMO.addEventListener('click', (e) => {
+  if(lbK === 0){ pasar(1); return; }
+  const f = e.target.closest('[data-pag]'); if(f) pasar(lbK + (f.dataset.pag === 'sig' ? 1 : -1));
+});
+/* deslizar de lado para pasar la página (sin estorbarle a escribir o a elegir) */
+let lbX = null;
+TOMO.addEventListener('pointerdown', (e) => { lbX = e.target.closest('input, textarea') ? null : e.clientX; });
+TOMO.addEventListener('pointerup', (e) => { if(lbX == null || lbK === 0) return; const dx = e.clientX - lbX; lbX = null; if(Math.abs(dx) > 45) pasar(lbK + (dx < 0 ? 1 : -1)); });
+LB.addEventListener('click', (e) => { if(e.target.closest('[data-cerrar-libro]')) cerrarLibro(); });
+$('#cerrarObra').addEventListener('click', (e) => { e.stopPropagation(); cerrarLibro(); });
+addEventListener('keydown', (e) => { if(LB.hidden) return; if(e.key === 'Escape') cerrarLibro(); else if(e.key === 'ArrowRight') pasar(lbK + 1); else if(e.key === 'ArrowLeft') pasar(lbK - 1); });
+window.__libro = { pasar, cerrarLibro, get k(){ return lbK; } };
 let reacomodo; addEventListener('resize', () => { clearTimeout(reacomodo); reacomodo = setTimeout(() => { if(!$('#v-biblioteca').hidden) pintarBiblio(); }, 200); });
 addEventListener('hashchange', () => { if(location.hash === '#biblioteca') pintarBiblio(); });
 /* ── la Comunidad: cuenta, foros, lo reciente, avisos y tu perfil público ── */

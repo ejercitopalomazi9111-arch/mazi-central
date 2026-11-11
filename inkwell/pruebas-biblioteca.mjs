@@ -55,28 +55,41 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
   /* la hoja de una obra */
   await pg.click('#bObras .poster[data-id="wattpad:3"]');
   ok(await pg.evaluate(() => !!document.querySelector('.libro3d .cubo .frente')), 'al tocar un lomo, el libro sale hacia ti en 3D');
-  await pg.waitForSelector('#dlgObra[open]');
+  await pg.waitForSelector('#dlgObra:not([hidden])');
   await pg.waitForTimeout(500);
   ok(await pg.evaluate(() => !document.querySelector('.libro3d')), 'y luego el libro de la animación se quita solo');
+  ok(await pg.evaluate(() => window.__libro.k === 0 && /Toca el libro/.test(document.querySelector('#lbPista').textContent)), 'el libro llega cerrado y dice que lo toques');
+  await pg.click('#lbTomo'); await pg.waitForTimeout(850);
+  ok(await pg.evaluate(() => window.__libro.k === 1 && document.querySelector('#dlgObra').classList.contains('abierto') && document.querySelector('.lb-hoja[data-n="0"]').classList.contains('vuelta')), 'un toque lo abre: la tapa se voltea y queda la primera página');
   ok(/Cobre/.test(await pg.textContent('#oTitulo')) && (await pg.getAttribute('#oAbrir', 'href')) === 'tiras.html?ficha=wattpad%3A3', 'tocarla abre su hoja, con «Abrir» que lleva a su ficha');
   ok(await pg.evaluate(() => !!document.querySelector('#oTinta .plumilla') && !/de \d+ capítulos/.test(document.querySelector('#oSub').textContent)), 'el avance va como la plumilla con tinta, no como «x de N capítulos»');
-  await pg.click('#oListas [data-l="pausa"]');
   await pg.click('#oFav');
   await pg.click('#oNota [data-n="4"]');
+  /* los controles viven en las páginas: se pasan con la flecha o deslizando */
+  await pg.click('.lb-hoja[data-n="1"] [data-pag="sig"]'); await pg.waitForTimeout(800);
+  ok(await pg.evaluate(() => window.__libro.k === 2), 'la flecha de la página pasa a la siguiente');
+  await pg.click('#oListas [data-l="pausa"]');
+  const caja = await pg.locator('.lb-hoja[data-n="2"] .frente').boundingBox();
+  await pg.mouse.move(caja.x + caja.width * .8, caja.y + caja.height * .5); await pg.mouse.down(); await pg.mouse.move(caja.x + caja.width * .2, caja.y + caja.height * .5, { steps: 6 }); await pg.mouse.up(); await pg.waitForTimeout(800);
+  ok(await pg.evaluate(() => window.__libro.k === 3), 'deslizar a la izquierda también pasa la página');
   await pg.fill('#oEtq', 'Romance, #Drama'); await pg.press('#oEtq', 'Enter');
   const hoja = await pg.evaluate(() => ({ pausa: document.querySelector('#oListas [data-l="pausa"]').getAttribute('aria-checked'), fav: document.querySelector('#oFav').getAttribute('aria-pressed'),
     estrellas: document.querySelectorAll('#oNota .si').length, etq: [...document.querySelectorAll('#oEtiquetas .chip')].map((c) => c.textContent.trim()) }));
   ok(hoja.pausa === 'true' && hoja.fav === 'true' && hoja.estrellas === 4, 'la mueves a «En pausa», la marcas favorita y le das 4 estrellas');
   ok(hoja.etq.join(',') === '#romance,#drama', 'las etiquetas se agregan separadas por coma, sin # y en minúsculas · ' + hoja.etq.join(' '));
-  ok(!(await pg.evaluate(() => Math.max(document.documentElement.scrollWidth - innerWidth, ...[...document.querySelectorAll('dialog[open] .hoja-s')].map((d) => d.scrollWidth - d.clientWidth)) > 0)), 'la hoja no se sale de lado');
+  ok(!(await pg.evaluate(() => Math.max(document.documentElement.scrollWidth - innerWidth, ...[...document.querySelectorAll('.lb-pag')].map((d) => d.scrollWidth - d.clientWidth)) > 0)), 'las páginas del libro no se salen de lado');
   await pg.click('#oEtiquetas [data-quita="drama"]');
   ok((await pg.$$('#oEtiquetas .chip')).length === 1, 'y se quitan con un toque');
   /* colección nueva */
   pg.once('dialog', (d) => d.accept('Para el viaje'));
-  await pg.click('#cerrarObra'); await pg.click('#bNuevaCol');
+  await pg.evaluate(() => window.__libro.pasar(4)); await pg.waitForTimeout(800);
+  await pg.click('#cerrarObra'); await pg.waitForFunction(() => document.querySelector('#dlgObra').hidden, null, { timeout: 4000 }).catch(() => {});
+  ok(await pg.evaluate(() => document.querySelector('#dlgObra').hidden), '«Cerrar el libro» lo cierra y lo regresa');
+  await pg.click('#bNuevaCol');
   await pg.waitForSelector('#bVistas [data-v^="col:"]');
-  await pg.click('#bObras .poster[data-id="webtoon:1"]'); await pg.waitForSelector('#dlgObra[open]');
-  await pg.check('#oCols input'); await pg.click('#cerrarObra');
+  await pg.click('#bObras .poster[data-id="webtoon:1"]'); await pg.waitForSelector('#dlgObra:not([hidden])'); await pg.waitForTimeout(700);
+  await pg.click('#lbTomo'); await pg.waitForTimeout(300); await pg.evaluate(() => window.__libro.pasar(4)); await pg.waitForTimeout(800);
+  await pg.check('#oCols input'); await pg.click('#cerrarObra'); await pg.waitForFunction(() => document.querySelector('#dlgObra').hidden, null, { timeout: 4000 }).catch(() => {});
   await pg.click('#bVistas [data-v^="col:"]');
   ok((await pg.$$eval('#bObras .poster', (p) => p.map((x) => x.dataset.id))).join() === 'webtoon:1', 'una colección tuya guarda las obras que le pongas');
   /* filtros */
