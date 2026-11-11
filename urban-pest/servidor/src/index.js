@@ -27,6 +27,8 @@ const TARIFAS_EJEMPLO = { ejemplo: true, minimo: 500, mano_obra_m2: 2, costo_km:
   tipos: { casa: { factor: 1 }, negocio: { factor: 1.2 }, industria: { factor: 1.4, visita: true } },
   zonas: { centro: 6, juriquilla: 18, 'el marques': 15, corregidora: 10, 'el refugio': 14, zibata: 20, 'san juan del rio': 55 } };
 
+/* las llaves de IA que el worker trae puestas, para el objeto (su env propio no las tiene si vienen de La Sala) */
+const llavesIA = (env) => Object.fromEntries(['GROQ_API_KEY', 'GEMINI_API_KEY', 'ANTHROPIC_API_KEY'].filter(k => env[k]).map(k => [k, env[k]]));
 const huella = async (t) => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(t))))].map(b => b.toString(16).padStart(2, '0')).join('');
 const json = (d, s = 200, h = {}) => new Response(JSON.stringify(d), { status: s, headers: { 'content-type': 'application/json; charset=utf-8', ...h } });
 
@@ -50,7 +52,7 @@ export default {
       const cuerpo = await req.text();
       if(!(await firmaValida(cuerpo, req.headers.get('x-hub-signature-256'), env.META_APP_SECRET))) return new Response('firma', { status: 401 });
       const mensajes = leerAviso(JSON.parse(cuerpo));
-      if(mensajes.length) ctx.waitUntil(despacho.fetch(new Request('https://do/interno/recibir', { method: 'POST', body: JSON.stringify(mensajes) })));
+      if(mensajes.length) ctx.waitUntil(despacho.fetch(new Request('https://do/interno/recibir', { method: 'POST', body: JSON.stringify({ mensajes, llaves: llavesIA(env) }) })));
       return new Response('ok');
     }
 
@@ -67,7 +69,7 @@ export default {
     if(!quien) return json({ bien: false, error: 'Necesitas tu link de acceso. Pídeselo a Grupo Mazi.' }, 401, cors);
     if(ruta.startsWith('/api/accesos') && !admin) return json({ bien: false, error: 'Sólo Grupo Mazi da accesos.' }, 403, cors);
     const cuerpo = req.method === 'POST' ? await req.json().catch(() => ({})) : {};
-    const r = await (await despacho.fetch(new Request('https://do/interno/panel', { method: 'POST', body: JSON.stringify({ metodo: req.method, ruta, q: Object.fromEntries(url.searchParams), b: cuerpo, quien }) }))).json();
+    const r = await (await despacho.fetch(new Request('https://do/interno/panel', { method: 'POST', body: JSON.stringify({ metodo: req.method, ruta, q: Object.fromEntries(url.searchParams), b: cuerpo, quien, llaves: llavesIA(env) }) }))).json();
     return json(r, r.estado || 200, cors);
   },
 };
@@ -83,6 +85,7 @@ export class Despacho {
     };
     /* el canal «prueba» no sale a Meta: es Carlos escribiendo como cliente desde el chat central */
     const enviarOPrueba = (e, canal, chat, texto) => canal === 'prueba' ? { bien: true } : enviar(e, canal, chat, texto);
+    this.envBase = env;
     this.of = new Oficina({ almacen: this.almacen, env, enviar: enviarOPrueba, pensar });
     /* las respuestas ya hechas de fábrica, si todavía no hay otras guardadas */
     ctx.blockConcurrencyWhile(async () => { if(!(await s.get('casos'))) await s.put('casos', CASOS_FABRICA); });
@@ -90,7 +93,8 @@ export class Despacho {
 
   async fetch(req){
     const u = new URL(req.url), j = await req.json().catch(() => null);
-    if(u.pathname === '/interno/recibir'){ await this.recibir(j || []); return new Response('ok'); }
+    if(j && j.llaves) this.of.env = { ...this.envBase, ...j.llaves };
+    if(u.pathname === '/interno/recibir'){ await this.recibir(Array.isArray(j) ? j : (j?.mensajes || [])); return new Response('ok'); }
     if(u.pathname === '/interno/panel') return Response.json(await this.panel(j.metodo, j.ruta, j.q || {}, j.b || {}, j.quien));
     if(u.pathname === '/interno/acceso'){ const a = j?.codigo ? await this.almacen.get('acceso:' + await huella(j.codigo)) : null; return Response.json({ nombre: a?.nombre || null }); }
     return new Response('no', { status: 404 });
