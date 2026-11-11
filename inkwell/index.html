@@ -449,17 +449,26 @@ $('#irTiras').innerHTML = icono('layers'); $('#irPerfil').innerHTML = icono('use
 document.querySelectorAll('.b-buscar').forEach((e) => { e.innerHTML = icono('search'); });
 document.querySelectorAll('.i-buscar').forEach((e) => { e.outerHTML = icono('search'); });
 document.querySelectorAll('.i-chev').forEach((e) => { e.outerHTML = icono('chevron-right', 'chev'); });
-/* cambiar de sección con la misma animación que entre páginas (marca.css): la que se va se hunde, la nueva sube */
-let primeraVez = true;
-function ir(){
-  if(primeraVez || !document.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches){ primeraVez = false; return irYa(); }
-  document.startViewTransition(irYa);
+/* cambiar de sección: la luz y la gota del muelle viajan al ícono nuevo, la sección de ahora se desarma por
+   partes y la nueva se construye (muelle.js; Carlos, 11 nov). La primera vez, sin animación. */
+const { moverMarca, desarmar, construir } = await import('./muelle.js');
+let primeraVez = true, yendo = 0;
+const vistaDe = () => { const v = location.hash.slice(1) || 'inicio'; return [...document.querySelectorAll('[data-vista]')].some((x) => x.dataset.vista === v) ? v : 'inicio'; };
+async function ir(){
+  const ok = vistaDe(), turno = ++yendo;
+  moverMarca($('#nav'), ok);
+  if(primeraVez){ primeraVez = false; return irYa(ok); }
+  const vieja = document.querySelector('[data-vista]:not([hidden])');
+  if(vieja && vieja.dataset.vista !== ok){
+    /* no se espera a que se vaya todo: la nueva empieza a armarse mientras la vieja termina, sin un instante en blanco */
+    const sale = desarmar(vieja); await Promise.race([sale, new Promise((r) => setTimeout(r, 150))]); if(turno !== yendo) return;
+    irYa(ok); sale.then((as) => as && as.forEach((x) => x.cancel()));
+  }
+  else irYa(ok);
+  construir(document.querySelector(`[data-vista="${ok}"]`));
 }
-function irYa(){
-  const v = (location.hash.slice(1) || 'inicio');
-  const ok = [...document.querySelectorAll('[data-vista]')].some((x) => x.dataset.vista === v) ? v : 'inicio';
+function irYa(ok){
   document.querySelectorAll('[data-vista]').forEach((s) => { s.hidden = s.dataset.vista !== ok; });
-  document.querySelectorAll('#nav a').forEach((a) => { if(a.dataset.ir === ok) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   scrollTo(0, 0);
 }
 addEventListener('hashchange', ir); ir();
