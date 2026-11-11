@@ -558,6 +558,8 @@ dependemos.
    | `e.target.closest('[data-tema]')` encuentra el botón del tema que toqué | sube hasta `<html data-tema="oscuro">`, que también lo tiene: con el modo oscuro, CUALQUIER toque cuenta como «tocaste el tema oscuro» | en la Comunidad de INKWELL, «Abrir un tema» abría el hilo de un foro llamado «oscuro» que no existía, y ahí se guardaban comentarios. Carlos: «sólo puedo crear chats en un foro que no existe». Un `closest` va con la clase del componente (`.com-tema[data-tid]`), nunca con un atributo suelto que la raíz pueda tener |
    | si una función `async` toma un objeto antes de un `await`, al volver sigue siendo el que está en la página | mientras espera, guardar o deshacer puede **cambiar el objeto** por otro: el cambio se le hace a uno viejo que ya no se pinta | en Studio, cambiar la pose de «Mis personajes» no hacía nada y sin un solo error; se vuelve a buscar la capa DESPUÉS del `await` |
 
+   | un Durable Object nuevo se escribe como dice la documentación de hoy (`extends DurableObject` de `cloudflare:workers`, llamadas por RPC) | las pruebas de La Sala cargan el servidor en **Node**, que no conoce `cloudflare:`: al montar ahí el bot de Urban Pest, las 451 se cayeron antes de empezar | lo que se monte dentro de `sala/servidor` va como los demás objetos de ahí: clase normal con `fetch`, sin `cloudflare:workers` (`urban-pest/servidor/src/index.js`) |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---
