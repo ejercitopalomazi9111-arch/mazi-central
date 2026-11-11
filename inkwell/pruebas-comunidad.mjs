@@ -50,7 +50,11 @@ await pg.click('#comCuenta .cm-si');
 await pg.waitForSelector('#comDentro:not([hidden]) .com-yo b');
 ok(/Carlos/.test(await pg.textContent('#comYo')) && /@palomazi/.test(await pg.textContent('#comYo')), 'ya adentro, sale tu nombre y tu usuario');
 await pg.waitForSelector('#comNuevo');
+/* con el tema oscuro puesto, <html data-tema="oscuro"> — así lo cazó Carlos */
+await pg.evaluate(() => { document.documentElement.dataset.tema = 'oscuro'; });
+await pg.click('#comCuerpo .lema, #comCuerpo .chips').catch(() => {});
 await pg.click('#comNuevo');
+ok(await pg.evaluate(() => !!document.querySelector('#formTema') && !document.querySelector('.cm-dlg[open]')), '«Abrir un tema» abre el formulario (y no un foro fantasma), aun en modo oscuro');
 await pg.fill('#formTema input[name=titulo]', '¿Quién es el villano de verdad?');
 await pg.selectOption('#formTema select', 'teorias');
 await pg.fill('#formTema textarea', 'Yo digo que el hermano, @luis_g qué opinas');

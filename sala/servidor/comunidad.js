@@ -218,6 +218,7 @@ export async function manejar(q, pedido, { ahora = Date.now(), llaveOk = false }
       const obra = limpio(d.obra, 80), cap = limpio(d.cap, 20), texto = limpio(d.texto, TOPE.texto);
       if(!RE_OBRA.test(obra)) return mal(400, 'Falta de qué obra.');
       if(!texto) return mal(400, 'Escribe algo.');
+      if(obra.startsWith('tema:') && !uno('SELECT 1 x FROM temas WHERE id = ? AND oculto = 0', /^\d+$/.test(obra.slice(5)) ? +obra.slice(5) : -1)) return mal(404, 'Ese tema del foro no existe.');
       let padre = 0, del = null;
       if(d.padre){ del = uno('SELECT * FROM comentarios WHERE id = ? AND obra = ? AND cap = ?', +d.padre, obra, cap); if(!del) return mal(404, 'Ese comentario ya no está.'); padre = del.padre || del.id; }
       q('INSERT INTO comentarios(obra, cap, padre, usuario, texto, creado, spoiler) VALUES(?, ?, ?, ?, ?, ?, ?)', obra, cap, padre, yo.usuario, texto, ahora, d.spoiler ? 1 : 0);
@@ -311,7 +312,7 @@ export async function manejar(q, pedido, { ahora = Date.now(), llaveOk = false }
     /* lo último que se dijo en toda la comunidad (para la portada) */
     case 'reciente': {
       return json({ bien: true, comentarios: q(`SELECT c.id, c.obra, c.cap, c.usuario, k.nombre, c.texto, c.creado, c.spoiler FROM comentarios c LEFT JOIN cuentas k ON k.usuario = c.usuario
-        WHERE c.oculto = 0 ORDER BY c.id DESC LIMIT 30`) });
+        WHERE c.oculto = 0 AND (c.obra NOT LIKE 'tema:%' OR EXISTS(SELECT 1 FROM temas t WHERE 'tema:' || t.id = c.obra AND t.oculto = 0)) ORDER BY c.id DESC LIMIT 30`) });
     }
   }
   return mal(404, 'No existe esa ruta.');
