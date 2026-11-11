@@ -66,7 +66,7 @@ svg.i{width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:1.9;
 .portada picture, .portada picture img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:60% 40%}
 .portada::after{content:""; position:absolute; inset:0; background:linear-gradient(180deg, rgba(11,42,36,.35) 0%, rgba(11,42,36,.55) 45%, rgba(11,42,36,.94) 100%)}
 @media (min-width: 900px){ .portada::after{background:linear-gradient(90deg, rgba(11,42,36,.95) 0%, rgba(11,42,36,.78) 42%, rgba(11,42,36,.1) 75%)} }
-.portada .envoltura{position:relative; z-index:1; min-height:min(88svh, 760px); display:flex; flex-direction:column; justify-content:flex-end; padding-top:120px; padding-bottom:44px}
+.portada .envoltura{position:relative; z-index:1; min-height:min(88vh, 760px); min-height:min(88svh, 760px); display:flex; flex-direction:column; justify-content:flex-end; padding-top:120px; padding-bottom:44px}
 @media (min-width: 900px){ .portada .envoltura{justify-content:center; padding-bottom:80px} }
 .ceja{display:inline-flex; align-items:center; gap:8px; font:600 13px/1 var(--texto); letter-spacing:.08em; text-transform:uppercase; color:#BFEAD3}
 .ceja svg{width:16px; height:16px}
@@ -234,7 +234,7 @@ footer a{color:var(--suave)}
       <a href="#industria">Industria</a>
       <a href="#preguntas">Preguntas</a>
     </nav>
-    <a class="btn btn-accion" href="#cotizar" data-wa="Hola, quiero cotizar una fumigación."><svg class="i"><use href="#i-message-circle"/></svg><span>Cotizar</span></a>
+    <a class="btn btn-accion" href="#cotizar"><svg class="i"><use href="#i-message-circle"/></svg><span>Cotizar</span></a>
   </div>
 </header>
 
