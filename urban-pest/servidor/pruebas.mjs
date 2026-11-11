@@ -106,6 +106,10 @@ console.log('cerebro (gratis primero)');
   ok('de fábrica NO toca la IA de paga', !pedidos.some(u => u.includes('anthropic')));
   const sin = await pensar({ env: {}, negocio: {}, casos: [], historial: [{ de: 'cliente', texto: 'hola' }] });
   ok('sin llaves no truena: dice cuál falta', !sin.bien && /GROQ_API_KEY/.test(sin.error));
+  globalThis.fetch = async (url) => String(url).includes('groq') ? new Promise(() => {})
+    : new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: '{"respuesta":"Ya","necesita_dueno":false,"motivo":"","razon":"x","datos":{}}' }] } }] }), { status: 200 });
+  const t0 = Date.now(), lenta = await pensar({ env: { GROQ_API_KEY: 'g', GEMINI_API_KEY: 'm', TOPE_IA_MS: 150 }, negocio: {}, casos: [], historial: [{ de: 'cliente', texto: 'hola' }] });
+  ok('si Negro se queda pensando, a los segundos contesta Paulina', lenta.bien && lenta.respuesta === 'Ya' && Date.now() - t0 < 2000, JSON.stringify(lenta));
   globalThis.fetch = original; }
 
 console.log('medidor (no sabe cuánto mide su casa)');

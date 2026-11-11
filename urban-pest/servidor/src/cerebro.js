@@ -107,6 +107,8 @@ export function leerJSON(texto){
       sala: si(d.sala), comedor: si(d.comedor), patio: si(d.patio), pisos: n(d.pisos) } };
 }
 
+const conTope = (promesa, ms) => Promise.race([promesa, new Promise((_, no) => setTimeout(() => no(new Error(`no contestó en ${ms / 1000} s`)), ms))]);
+
 /** Le pregunta a la IA. `historial` = [{de:'cliente'|'negocio', texto}], el último es del cliente. NUNCA lanza. */
 export async function pensar({ env, negocio, casos, historial, cotizacion }){
   const msgs = historial.slice(-12).map(m => ({ role: m.de === 'cliente' ? 'user' : 'assistant', content: m.texto }));
@@ -119,7 +121,8 @@ export async function pensar({ env, negocio, casos, historial, cotizacion }){
     if(!k){ errores.push(`${id}: falta ${M.llave}`); continue; }
     for(const modelo of M.modelos(env)){
       try {
-        const r = await M.pide(modelo, k, sistema, msgs);
+        /* si un motor se queda pensando, se suelta y pasa al siguiente: el cliente no espera de más (Paulina, 11 nov) */
+        const r = await conTope(M.pide(modelo, k, sistema, msgs), Number(env.TOPE_IA_MS) || 15000);
         if(!r.ok){ errores.push(`${modelo}: ${r.status}`); continue; }
         const o = leerJSON(M.saca(await r.json()));
         if(o) return { bien: true, ...o, modelo };
