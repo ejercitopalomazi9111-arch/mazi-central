@@ -91,6 +91,19 @@ la IA**. Es sobre todo para nosotros, pero él también la puede ver.
 - Carlos trae a sus artistas y a un editor de video. Sylcred hace referencias y guiones; el
   editor hace los videos.
 
+## La regla del dinero · Carlos, 11 nov
+
+**«Aún no desembolses un peso: todo va como se pueda resolver gratis hasta que el cliente nos diga
+que se queda.»** Mientras tanto:
+
+- **La IA:** las gratis que ya usa La Sala. Groq va primero y Gemini de respaldo. La de paga queda
+  apagada (`MOTORES_IA`).
+- **El servidor, el centro de operaciones y la página:** en Cloudflare, con el plan gratis.
+- **Las llamadas al dueño** esperan. Mientras, se le avisa por WhatsApp y con una notificación en el
+  centro.
+- **Ojo:** en el plan gratis de Gemini, Google puede usar lo que se le manda para mejorar sus
+  productos. Por eso Gemini va de respaldo y no primero.
+
 ## Cómo se vende
 
 - **Paquetes cruzados:** «¿quieres el bot? llévate el centro»; «¿el bot sin el centro? entonces
@@ -144,6 +157,6 @@ persona.
 2. La dirección de su página actual y quién tiene el dominio.
 3. Acceso a su Meta Business (página de Facebook, Instagram y el número de WhatsApp).
 4. Capturas o exportación de las preguntas que le llegan seguido.
-5. Qué modelo de IA pagamos nosotros (va dentro del paquete). El de fábrica es el mejor; hay uno 40 veces más barato.
+5. Cuando el cliente se quede: qué modelo de IA de paga se prende. Mientras tanto, va gratis.
 6. Precios de los paquetes y fecha de entrega.
 7. Teléfono al que el bot le llama cuando lo necesite.

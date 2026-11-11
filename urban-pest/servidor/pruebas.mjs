@@ -86,5 +86,21 @@ let n = 0; const msj = (texto, chat = '524420000000', extra = {}) => ({ canal: '
   for(let i = 0; i < 22; i++) r = await t.of.atender(msj('pregunta ' + i + ' de algo raro'));
   ok('tope de 20 respuestas por hora en un chat', r.hecho === 'tope' && t.salidas.filter(s => s.chat === '524420000000').length === 20); }
 
+console.log('cerebro (gratis primero)');
+{ const { leerJSON, pensar } = await import('./src/cerebro.js');
+  const j = leerJSON('```json\n{"respuesta":"Va","necesita_dueno":0,"motivo":"","razon":"r","datos":{"m2":"80","tipo":"bodega"}}\n```');
+  ok('lee el JSON aunque venga entre ``` y lo deja con su forma', j?.respuesta === 'Va' && j.necesita_dueno === false && j.datos.m2 === 80 && j.datos.tipo === null);
+  ok('sin respuesta no cuenta como JSON bueno', leerJSON('{"respuesta":""}') === null && leerJSON('nada') === null);
+  const original = globalThis.fetch, pedidos = [];
+  globalThis.fetch = async (url) => { pedidos.push(String(url));
+    if(String(url).includes('groq')) return new Response('saturado', { status: 503 });
+    return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: '{"respuesta":"Hola","necesita_dueno":false,"motivo":"","razon":"x","datos":{}}' }] } }] }), { status: 200 }); };
+  const p = await pensar({ env: { GROQ_API_KEY: 'g', GEMINI_API_KEY: 'm', ANTHROPIC_API_KEY: 'a' }, negocio: {}, casos: [], historial: [{ de: 'cliente', texto: 'hola' }] });
+  ok('si Negro (Groq) está saturado, contesta Paulina (Gemini)', p.bien && p.respuesta === 'Hola' && /gemini/.test(p.modelo), JSON.stringify(p));
+  ok('de fábrica NO toca la IA de paga', !pedidos.some(u => u.includes('anthropic')));
+  const sin = await pensar({ env: {}, negocio: {}, casos: [], historial: [{ de: 'cliente', texto: 'hola' }] });
+  ok('sin llaves no truena: dice cuál falta', !sin.bien && /GROQ_API_KEY/.test(sin.error));
+  globalThis.fetch = original; }
+
 console.log(`\n${bien} pasan · ${mal} fallan`);
 process.exit(mal ? 1 : 0);

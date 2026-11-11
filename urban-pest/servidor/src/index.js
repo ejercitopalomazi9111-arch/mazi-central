@@ -5,10 +5,11 @@
    que hace Godines. Si se cambia una ruta, se cambia allá primero.
 
    Secretos (wrangler secret put, NUNCA en el repo):
-     ANTHROPIC_API_KEY · META_APP_SECRET · META_VERIFY_TOKEN · WA_TOKEN ·
-     META_PAGE_TOKEN · LLAVE_PANEL
+     GROQ_API_KEY · GEMINI_API_KEY (las gratis) · META_APP_SECRET · META_VERIFY_TOKEN ·
+     WA_TOKEN · META_PAGE_TOKEN · LLAVE_PANEL
+     (ANTHROPIC_API_KEY sólo cuando el cliente se quede: es de paga)
    Variables: WA_PHONE_ID · IG_ID · FB_PAGE_ID · GRAPH_VERSION · DUENO_WA ·
-     MODELO_IA · ESFUERZO_IA · ORIGENES
+     MOTORES_IA · ORIGENES
    ═══════════════════════════════════════════════════════════════════════════ */
 import { DurableObject } from 'cloudflare:workers';
 import { Oficina } from './oficina.js';

@@ -1,43 +1,29 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    URBAN PEST · EL CEREBRO
    ───────────────────────────────────────────────────────────────────────────
-   Sólo entra cuando el reflejo no supo. Es una IA de paga que va en NUESTRO
-   servidor y a NUESTRO nombre (decisión de Carlos, 11 nov: «la IA no se la
-   vamos a dar a él»). El cliente la usa desde su chat central, nunca con llaves.
+   Sólo entra cuando el reflejo no supo. La IA vive en NUESTRO servidor y a
+   NUESTRO nombre (Carlos, 11 nov: «la IA no se la vamos a dar a él»): el
+   cliente la usa desde su chat central, nunca con llaves.
 
-   Va con fetch directo, sin librería, como los demás servidores de la casa: el
+   Y mientras el cliente no diga que se queda, GRATIS (Carlos, 11 nov: «aún no
+   desembolses un peso»). Por eso hay tres motores y el de fábrica es gratis:
+     · groq    — el de Negro (plan gratis). De fábrica.
+     · gemini  — el de Paulina (plan gratis). De respaldo.
+     · claude  — de paga. Apagado hasta que el cliente se quede.
+   Se escoge con MOTORES_IA="groq,gemini" (en orden: si uno falla, el siguiente).
+   Van con fetch directo, sin librería, como los demás servidores de la casa: el
    proveedor entra por este adaptador y si mañana cambia, se cambia aquí.
 
-   Contesta en JSON con forma fija (structured outputs): la respuesta para el
-   cliente, si hace falta el dueño y por qué, lo que entendió (plaga, m², zona,
-   tipo) y una línea de por qué contestó así, que va al panel escondido.
+   Todos contestan el mismo JSON: la respuesta para el cliente, si hace falta el
+   dueño y por qué, lo que entendió (plaga, m², zona, tipo) y una línea de por
+   qué contestó así, que va al panel escondido.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Verificado el 11 nov con la guía de la API. El modelo se cambia con la
-   variable MODELO_IA, sin tocar código: Carlos decide cuál paga. */
-export const MODELO_FABRICA = 'claude-opus-5-5';
-const VERSION_API = '2026-10-21';
+const FORMA = `Contesta SÓLO con un objeto JSON, sin texto alrededor, con esta forma exacta:
+{"respuesta": "lo que le dices al cliente", "necesita_dueno": true|false, "motivo": "por qué necesita al dueño, o vacío",
+ "razon": "una línea para el equipo: por qué contestaste así", "datos": {"plaga": "texto o null", "m2": número o null, "zona": "texto o null", "tipo": "casa|negocio|industria o null"}}`;
 
-const ESQUEMA = {
-  type: 'object', additionalProperties: false,
-  required: ['respuesta', 'necesita_dueno', 'motivo', 'razon', 'datos'],
-  properties: {
-    respuesta: { type: 'string' },
-    necesita_dueno: { type: 'boolean' },
-    motivo: { type: 'string' },
-    razon: { type: 'string' },
-    datos: {
-      type: 'object', additionalProperties: false,
-      required: ['plaga', 'm2', 'zona', 'tipo'],
-      properties: {
-        plaga: { type: ['string', 'null'] }, m2: { type: ['number', 'null'] },
-        zona: { type: ['string', 'null'] }, tipo: { type: ['string', 'null'], enum: ['casa', 'negocio', 'industria', null] },
-      },
-    },
-  },
-};
-
-export function papel(negocio, casos){
+export function papel(negocio, casos, cotizacion){
   return `Eres quien contesta los mensajes de ${negocio.nombre || 'una fumigadora'} en Querétaro, en WhatsApp, Instagram y Facebook.
 Escribe como una persona del negocio: español mexicano, amable, corto (2 a 4 renglones), sin emojis y sin «¿en qué más te puedo ayudar?».
 
@@ -50,43 +36,78 @@ Reglas que no se rompen:
 - Si es industria (alimentos, hospital, fábrica, bodega grande) o algo fuera de lo normal, ofrece una visita y marca necesita_dueno.
 - Marca necesita_dueno si: hay una queja, piden factura o contrato, preguntan algo que no sabes, o piden hablar con el dueño.
 - No prometas fechas ni horarios exactos: «el dueño te confirma la hora».
-- «razon» es una línea para el equipo: por qué contestaste así. No la ve el cliente.
 
 Respuestas ya aprobadas por el dueño, úsalas como guía de tono y de datos:
-${(casos || []).slice(0, 60).map(c => `- ${(c.frases || [])[0] || c.id}: ${c.respuesta}`).join('\n')}`;
+${(casos || []).slice(0, 60).map(c => `- ${(c.frases || [])[0] || c.id}: ${c.respuesta}`).join('\n')}
+${cotizacion ? `\nCotización calculada por el sistema para este cliente: ${JSON.stringify(cotizacion)}\n` : ''}
+${FORMA}`;
 }
 
-/** Le pregunta a la IA. `historial` = [{de:'cliente'|'negocio', texto}], el último es del cliente. */
+/* Los modelos son los que La Sala ya usa y verificó (30 sep); se cambian por variable. */
+const MOTORES = {
+  groq: {
+    llave: 'GROQ_API_KEY', modelos: (env) => [env.MODELO_GROQ || 'openai/gpt-oss-120b', 'qwen/qwen3.8-27b'],
+    pide: (modelo, k, sistema, msgs) => fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST', headers: { authorization: 'Bearer ' + k, 'content-type': 'application/json' },
+      body: JSON.stringify({ model: modelo, max_tokens: 1500, temperature: 0.3, response_format: { type: 'json_object' },
+        ...(/gpt-oss/.test(modelo) ? { reasoning_effort: 'low' } : {}),
+        messages: [{ role: 'system', content: sistema }, ...msgs.map(m => ({ role: m.role, content: m.content }))] }) }),
+    saca: (j) => j?.choices?.[0]?.message?.content ?? '',
+  },
+  gemini: {
+    llave: 'GEMINI_API_KEY', modelos: (env) => [env.MODELO_GEMINI || 'gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-flash-lite-latest'],
+    /* la llave va en la URL porque así lo documenta Google; es servidor contra servidor */
+    pide: (modelo, k, sistema, msgs) => fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${encodeURIComponent(k)}`, {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      /* Gemini PIENSA dentro del tope: con poco, se queda sin respuesta (ya le pasó a Paulina) */
+      body: JSON.stringify({ systemInstruction: { parts: [{ text: sistema }] },
+        contents: msgs.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] })),
+        generationConfig: { maxOutputTokens: 2500, temperature: 0.3, responseMimeType: 'application/json' } }) }),
+    saca: (j) => (j?.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join(''),
+  },
+  claude: {
+    /* DE PAGA: no se usa hasta que el cliente se quede (y Carlos lo prenda en MOTORES_IA) */
+    llave: 'ANTHROPIC_API_KEY', modelos: (env) => [env.MODELO_CLAUDE || 'claude-opus-5-5'],
+    pide: (modelo, k, sistema, msgs) => fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': k, 'anthropic-version': '2026-10-21',
+        'anthropic-beta': 'server-side-fallback-2026-07-01' },
+      body: JSON.stringify({ model: modelo, max_tokens: 4000, system: [{ type: 'text', text: sistema, cache_control: { type: 'ephemeral' } }],
+        messages: msgs, output_config: { effort: 'low' }, fallbacks: 'default' }) }),
+    saca: (j) => j?.stop_reason === 'refusal' ? '' : (j?.content || []).filter(b => b.type === 'text').map(b => b.text).join(''),
+  },
+};
+
+/** Saca el JSON aunque venga entre ```json … ``` o con texto alrededor, y lo deja con su forma. */
+export function leerJSON(texto){
+  const s = String(texto || ''), i = s.indexOf('{'), f = s.lastIndexOf('}');
+  if(i < 0 || f < i) return null;
+  let o; try { o = JSON.parse(s.slice(i, f + 1)); } catch { return null; }
+  if(typeof o.respuesta !== 'string' || !o.respuesta.trim()) return null;
+  const d = o.datos || {}, m2 = Number(d.m2);
+  return { respuesta: o.respuesta.trim(), necesita_dueno: !!o.necesita_dueno, motivo: String(o.motivo || ''), razon: String(o.razon || ''),
+    datos: { plaga: d.plaga || null, m2: Number.isFinite(m2) && m2 > 0 ? m2 : null, zona: d.zona || null,
+      tipo: ['casa', 'negocio', 'industria'].includes(d.tipo) ? d.tipo : null } };
+}
+
+/** Le pregunta a la IA. `historial` = [{de:'cliente'|'negocio', texto}], el último es del cliente. NUNCA lanza. */
 export async function pensar({ env, negocio, casos, historial, cotizacion }){
-  const llave = env.ANTHROPIC_API_KEY;
-  if(!llave) return { bien: false, error: 'Falta la llave ANTHROPIC_API_KEY en el servidor.' };
-  const mensajes = historial.slice(-12).map(m => ({ role: m.de === 'cliente' ? 'user' : 'assistant', content: m.texto }));
-  /* la API pide que el primero sea del cliente */
-  while(mensajes.length && mensajes[0].role !== 'user') mensajes.shift();
-  if(cotizacion) mensajes.push({ role: 'system', content: 'Cotización calculada por el sistema: ' + JSON.stringify(cotizacion) });
-  const r = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json', 'x-api-key': llave, 'anthropic-version': VERSION_API,
-      /* si el modelo se niega por un filtro, la API lo reintenta con otro en la misma llamada */
-      'anthropic-beta': 'server-side-fallback-2026-07-01',
-    },
-    body: JSON.stringify({
-      model: env.MODELO_IA || MODELO_FABRICA,
-      max_tokens: 4000,
-      system: [{ type: 'text', text: papel(negocio, casos), cache_control: { type: 'ephemeral' } }],
-      messages: mensajes,
-      output_config: { effort: env.ESFUERZO_IA || 'low', format: { type: 'json_schema', schema: ESQUEMA } },
-      fallbacks: 'default',
-    }),
-  });
-  if(!r.ok) return { bien: false, error: `La IA contestó ${r.status}`, detalle: (await r.text()).slice(0, 300) };
-  const j = await r.json();
-  if(j.stop_reason === 'refusal') return { bien: false, error: 'La IA se negó a contestar', negada: true };
-  const texto = (j.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
-  try {
-    return { bien: true, ...JSON.parse(texto), modelo: j.model, uso: j.usage };
-  } catch {
-    return { bien: false, error: 'La IA no regresó JSON válido', detalle: texto.slice(0, 300) };
+  const msgs = historial.slice(-12).map(m => ({ role: m.de === 'cliente' ? 'user' : 'assistant', content: m.texto }));
+  while(msgs.length && msgs[0].role !== 'user') msgs.shift();
+  const sistema = papel(negocio, casos, cotizacion);
+  const errores = [];
+  for(const id of (env.MOTORES_IA || 'groq,gemini').split(',').map(s => s.trim()).filter(Boolean)){
+    const M = MOTORES[id], k = M && env[M.llave];
+    if(!M){ errores.push(`${id}: no existe`); continue; }
+    if(!k){ errores.push(`${id}: falta ${M.llave}`); continue; }
+    for(const modelo of M.modelos(env)){
+      try {
+        const r = await M.pide(modelo, k, sistema, msgs);
+        if(!r.ok){ errores.push(`${modelo}: ${r.status}`); continue; }
+        const o = leerJSON(M.saca(await r.json()));
+        if(o) return { bien: true, ...o, modelo };
+        errores.push(`${modelo}: no regresó JSON válido`);
+      } catch(e){ errores.push(`${modelo}: ${e.message || e}`); }
+    }
   }
+  return { bien: false, error: errores.join(' · ') || 'Sin motores de IA' };
 }
