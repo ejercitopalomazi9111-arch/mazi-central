@@ -10,7 +10,7 @@
        · lo de otro sitio (Wattpad) y lo que va a La Sala (/api/) NO se toca;
        · la app (html, js, manifest) va «primero la red» y, sin red, lo guardado;
        · las pinturas siguen «primero lo guardado»: no cambian nunca. */
-const V = 'inkwell-v28';
+const V = 'inkwell-v29';
 const APP = ['./', './index.html', './tiras.html', './tiras.js', './red.js', './tinta.js', './muelle.js', './comunidad.js', './libros.html', './libros.js', './biblioteca.js', './studio/', './studio/index.html', './studio/libro.html', './studio/comic.html', './studio/obras.js', './studio/personajes.js', './studio/video.js', './studio/lienzo.js', './letra/bangers.ttf', './fuentes.js', './archivos.js', './compartir.js', './manifest.webmanifest', './marca.css', './iconos.js', './marca/pluma.png', './marca/inkwell.svg', './letra/gloock.woff2', './letra/archivo.woff2', './letra/crimson.woff2', './icon-192.png',
   ...['female-person', 'male-person', 'female-adventurer', 'male-adventurer', 'robot', 'zombie'].map((q) => `./studio/arte/personajes/${q}/idle.png`)];
 
