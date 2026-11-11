@@ -11,12 +11,21 @@
    Variables: WA_PHONE_ID · IG_ID · FB_PAGE_ID · GRAPH_VERSION · DUENO_WA ·
      MOTORES_IA · ORIGENES
    ═══════════════════════════════════════════════════════════════════════════ */
-import { DurableObject } from 'cloudflare:workers';
 import { Oficina } from './oficina.js';
 import { firmaValida, leerAviso, enviar } from './meta.js';
 import { pensar } from './cerebro.js';
 import { cotizar } from './cotizador.js';
 import { estimarM2, MEDIDAS } from './medidor.js';
+import CASOS_FABRICA from '../../bot/casos.json' with { type: 'json' };
+
+/* Para PROBAR mientras llega el Excel: precios DE EJEMPLO, sólo en el canal «prueba» y
+   marcados como tales. Nunca se usan con un cliente de verdad. */
+const TARIFAS_EJEMPLO = { ejemplo: true, minimo: 500, mano_obra_m2: 2, costo_km: 4, radio_km: 40, margen: .3, umbral_visita_m2: 400, fuera_m2_minimo: 200,
+  plagas: { cucaracha: { litros_m2: .05, precio_litro: 60 }, roedor: { litros_m2: .04, precio_litro: 70 }, hormiga: { litros_m2: .04, precio_litro: 55 },
+    chinche: { litros_m2: .06, precio_litro: 80 }, alacran: { litros_m2: .05, precio_litro: 65 }, pulga: { litros_m2: .05, precio_litro: 60 },
+    termita: { litros_m2: .08, precio_litro: 90 }, arana: { litros_m2: .04, precio_litro: 55 }, mosco: { litros_m2: .03, precio_litro: 50 }, mosca: { litros_m2: .03, precio_litro: 50 } },
+  tipos: { casa: { factor: 1 }, negocio: { factor: 1.2 }, industria: { factor: 1.4, visita: true } },
+  zonas: { centro: 6, juriquilla: 18, 'el marques': 15, corregidora: 10, 'el refugio': 14, zibata: 20, 'san juan del rio': 55 } };
 
 const json = (d, s = 200, h = {}) => new Response(JSON.stringify(d), { status: s, headers: { 'content-type': 'application/json; charset=utf-8', ...h } });
 
@@ -40,27 +49,39 @@ export default {
       const cuerpo = await req.text();
       if(!(await firmaValida(cuerpo, req.headers.get('x-hub-signature-256'), env.META_APP_SECRET))) return new Response('firma', { status: 401 });
       const mensajes = leerAviso(JSON.parse(cuerpo));
-      if(mensajes.length) ctx.waitUntil(despacho.recibir(mensajes));
+      if(mensajes.length) ctx.waitUntil(despacho.fetch(new Request('https://do/interno/recibir', { method: 'POST', body: JSON.stringify(mensajes) })));
       return new Response('ok');
     }
 
     /* Todo lo demás es del panel (el centro de operaciones) y pide su llave */
     if(!env.LLAVE_PANEL || req.headers.get('x-llave') !== env.LLAVE_PANEL) return json({ bien: false, error: 'Falta la llave del panel.' }, 401, cors);
     const cuerpo = req.method === 'POST' ? await req.json().catch(() => ({})) : {};
-    const r = await despacho.panel(req.method, ruta, Object.fromEntries(url.searchParams), cuerpo);
+    const r = await (await despacho.fetch(new Request('https://do/interno/panel', { method: 'POST', body: JSON.stringify({ metodo: req.method, ruta, q: Object.fromEntries(url.searchParams), b: cuerpo }) }))).json();
     return json(r, r.estado || 200, cors);
   },
 };
 
-export class Despacho extends DurableObject {
+/* Durable Object a la antigua (fetch y no RPC): así también corre en las pruebas de
+   La Sala, que cargan el servidor en Node, donde «cloudflare:workers» no existe. */
+export class Despacho {
   constructor(ctx, env){
-    super(ctx, env);
     const s = ctx.storage;
     this.almacen = {
       get: (k) => s.get(k), put: (k, v) => s.put(k, v), del: (k) => s.delete(k),
       list: async (prefijo) => [...(await s.list({ prefix: prefijo })).entries()],
     };
-    this.of = new Oficina({ almacen: this.almacen, env, enviar, pensar });
+    /* el canal «prueba» no sale a Meta: es Carlos escribiendo como cliente desde el chat central */
+    const enviarOPrueba = (e, canal, chat, texto) => canal === 'prueba' ? { bien: true } : enviar(e, canal, chat, texto);
+    this.of = new Oficina({ almacen: this.almacen, env, enviar: enviarOPrueba, pensar });
+    /* las respuestas ya hechas de fábrica, si todavía no hay otras guardadas */
+    ctx.blockConcurrencyWhile(async () => { if(!(await s.get('casos'))) await s.put('casos', CASOS_FABRICA); });
+  }
+
+  async fetch(req){
+    const u = new URL(req.url), j = await req.json().catch(() => null);
+    if(u.pathname === '/interno/recibir'){ await this.recibir(j || []); return new Response('ok'); }
+    if(u.pathname === '/interno/panel') return Response.json(await this.panel(j.metodo, j.ruta, j.q || {}, j.b || {}));
+    return new Response('no', { status: 404 });
   }
 
   /* Cada mensaje se atiende con await DENTRO de este encargo: un waitUntil anidado en un
@@ -95,6 +116,14 @@ export class Despacho extends DurableObject {
       case 'POST /api/tarifas': await A.put('tarifas', b.tarifas); return { bien: true };
       case 'POST /api/negocio': await A.put('negocio', b.negocio); return { bien: true };
       case 'POST /api/personales': await A.put('personales', b.numeros || []); return { bien: true };
+      case 'POST /api/probar': {
+        /* Carlos escribe como si fuera cliente; si no hay tarifas reales, se prueba con las de ejemplo */
+        const texto = String(b.texto || '').slice(0, 1000).trim(); if(!texto) return { bien: false, error: 'Escribe algo.', estado: 400 };
+        const chat = String(b.chat || 'prueba').replace(/[^a-z0-9-]/gi, '').slice(0, 40) || 'prueba';
+        const r = await this.of.atender({ canal: 'prueba', chat, nombre: 'Prueba (tú)', id: 'p' + Date.now() + Math.random().toString(36).slice(2, 6), texto, cuando: Date.now() }, { tarifas: TARIFAS_EJEMPLO });
+        return { bien: true, ...r };
+      }
+      case 'POST /api/probar/borrar': { await A.del(`conv:prueba:${String(b.chat || 'prueba').replace(/[^a-z0-9-]/gi, '')}`); return { bien: true }; }
       case 'POST /api/cotizar': return { bien: true, ...cotizar(b, await A.get('tarifas')) };
       default: return { bien: false, error: 'No existe esa ruta.', estado: 404 };
     }

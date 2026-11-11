@@ -63,7 +63,7 @@ export function cotizar(p, t){
   const grande = p.m2 >= (t.fuera_m2_minimo ?? 200);
   const atiende = !fueraDeRadio ? 'si' : p.tipo === 'industria' ? 'si' : grande ? 'caso-por-caso' : 'no';
   return {
-    bien: true, desde, moneda: 'MXN',
+    bien: true, desde, moneda: 'MXN', ...(t.ejemplo ? { ejemplo: true } : {}),
     desglose: { producto: redondear(producto), mano_de_obra: redondear(mano), traslado: redondear(traslado) },
     visita: !!tipo.visita || (t.umbral_visita_m2 != null && p.m2 >= t.umbral_visita_m2),
     fueraDeRadio, atiende,

@@ -20,10 +20,12 @@ const guarda = { leer: (k) => { try { return localStorage.getItem(k); } catch { 
 
 /* ── de dónde salen los datos ───────────────────────────────────────────── */
 const q = new URLSearchParams(location.search);
-const SERVIDOR = q.get('servidor') || guarda.leer('up_servidor');
+/* de fábrica, el servidor de La Sala, donde vive el bot mientras el cliente no se quede */
+const SERVIDOR = q.get('servidor') || guarda.leer('up_servidor') || 'https://sala.palomazi9111.workers.dev/api/urban';
 if(q.get('servidor')) guarda.poner('up_servidor', q.get('servidor'));
-const DE_MUESTRA = q.has('muestra') || !SERVIDOR;
-const llave = () => guarda.leer('up_llave') || '';
+const DE_MUESTRA = q.has('muestra');
+/* la misma llave de La Sala que ya guardó la Central en este teléfono */
+const llave = () => guarda.leer('up_llave') || guarda.leer('salaLlave') || '';
 
 const api = {
   async pedir(metodo, ruta, cuerpo){
@@ -46,6 +48,9 @@ function muestra(metodo, ruta, b){
   if(ruta === '/api/manual') return { bien: true, manual: M.manual };
   if(ruta === '/api/manual/aprobar'){ const e = M.manual.find(x => x.id === b.id); if(e) e.estado = 'aprobado'; return { bien: true }; }
   if(ruta === '/api/manual/descartar'){ const e = M.manual.find(x => x.id === b.id); if(e) e.estado = 'descartado'; return { bien: true }; }
+  if(ruta === '/api/probar'){ let x = c('prueba', b.chat); if(!x){ x = { canal: 'prueba', chat: b.chat, nombre: 'Prueba (tú)', datos: {}, mensajes: [] }; M.conversaciones.push(x); }
+    x.mensajes.push({ de: 'cliente', texto: b.texto, cuando: Date.now() }, { de: 'negocio', via: 'respaldo', texto: 'Esto es la muestra: conectado al servidor, aquí te contesta el bot de verdad.', cuando: Date.now() }); x.ultimo = Date.now(); return { bien: true }; }
+  if(ruta === '/api/probar/borrar'){ M.conversaciones = M.conversaciones.filter(x => !(x.canal === 'prueba' && x.chat === b.chat)); return { bien: true }; }
   if(ruta === '/api/ia'){ M.ia.push({ de: 'yo', texto: b.texto }, { de: 'ia', texto: 'Esto es una muestra: cuando se conecte el servidor, aquí te contesta tu IA con los datos de tu negocio.' }); return { bien: true }; }
   return { bien: false, error: 'Ruta de muestra desconocida.' };
 }
@@ -66,7 +71,9 @@ function hace(t){
   return new Date(t).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
 }
 const iniciales = (n) => esc(String(n || '?').replace(/\(.*?\)/g, '').trim().split(/\s+/).map(p => p[0] || '').join('').slice(0, 2).toUpperCase() || '?');
-const CANAL = { whatsapp: ['WA', 'WhatsApp'], instagram: ['IG', 'Instagram'], facebook: ['FB', 'Facebook'] };
+const CANAL = { whatsapp: ['WA', 'WhatsApp'], instagram: ['IG', 'Instagram'], facebook: ['FB', 'Facebook'], prueba: ['TÚ', 'Prueba: escribes tú como cliente'] };
+/* el chat de prueba de este teléfono */
+const chatPrueba = () => { let c = guarda.leer('up_prueba'); if(!c){ c = 'prueba-' + Math.random().toString(36).slice(2, 8); guarda.poner('up_prueba', c); } return c; };
 const avatar = (c) => `<span class="avatar">${iniciales(c.nombre || c.chat)}<i class="canal ${c.canal}" aria-label="${CANAL[c.canal]?.[1] || ''}">${CANAL[c.canal]?.[0] || '?'}</i></span>`;
 const VIA = {
   reflejo: ['m-reflejo', 'zap', 'Respuesta hecha'],
@@ -85,6 +92,7 @@ function pintarLista(){
     const f = E.filtro.toLowerCase();
     const lista = E.conv.filter(c => !f || (c.nombre || '').toLowerCase().includes(f) || (c.ultimo_texto || '').toLowerCase().includes(f));
     v.innerHTML = `<h1 class="titulo-vista">Chats</h1>
+      <button class="btn probar" type="button" data-abrir="prueba|${chatPrueba()}">${icono('message-circle')}Probar el bot como cliente</button>
       <label class="buscar">${icono('search')}<input id="buscar" type="search" placeholder="Buscar cliente o mensaje" value="${esc(E.filtro)}" aria-label="Buscar"></label>
       ${lista.length ? lista.map(c => `<button class="fila" type="button" data-abrir="${esc(c.canal)}|${esc(c.chat)}" aria-current="${E.abierta === c.canal + '|' + c.chat}">
           ${avatar(c)}
@@ -136,12 +144,13 @@ function pintarIA(v){
 async function abrir(clave){
   E.abierta = clave; const [canal, chat] = clave.split('|');
   const r = await api.pedir('GET', `/api/conversacion?canal=${encodeURIComponent(canal)}&chat=${encodeURIComponent(chat)}`);
-  const c = r.conversacion; if(!c) return;
+  const prueba = canal === 'prueba';
+  const c = r.conversacion || (prueba ? { canal, chat, nombre: 'Prueba (tú)', datos: {}, mensajes: [] } : null); if(!c) return;
   $('#app').classList.add('en-chat');
   const d = c.datos || {}, cot = c.cotizacion;
   const dato = (ic, v, falta) => `<span class="dato ${v == null ? 'falta' : ''}">${icono(ic)}${v == null ? falta : esc(v)}</span>`;
   const callado = c.duenoHasta > Date.now();
-  const tarjetaCot = cot ? `<div class="cotiza"><div class="tit">${icono('calculator')}Cotización del sistema</div>
+  const tarjetaCot = cot ? `<div class="cotiza"><div class="tit">${icono('calculator')}Cotización del sistema${cot.ejemplo ? ' · <b>precios de ejemplo</b>' : ''}</div>
         <div class="monto"><small>aprox.</small>${pesos(cot.desde)}</div>
         <dl><dt>Producto</dt><dd>${pesos(cot.desglose?.producto || 0)}</dd><dt>Mano de obra</dt><dd>${pesos(cot.desglose?.mano_de_obra || 0)}</dd><dt>Traslado</dt><dd>${pesos(cot.desglose?.traslado || 0)}</dd></dl>
         ${cot.visita ? `<span class="marca-chica m-aviso etq">${icono('truck')}Pide visita antes del precio final</span>` : ''}
@@ -162,16 +171,24 @@ async function abrir(clave){
         return ms.map((m, k) => burbuja(m) + (k === (i < 0 ? ms.length - 1 : i) ? tarjetaCot : '')).join(''); })()}
     </div>
     ${callado ? `<div class="callado">${icono('clock')}Estás contestando tú: el bot se queda callado en este chat hasta las ${new Date(c.duenoHasta).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' })}</div>` : ''}
-    <form class="escribir" id="forma"><textarea id="texto" rows="1" placeholder="Contesta tú" aria-label="Tu respuesta"></textarea>
+    ${prueba ? `<div class="callado">${icono('message-circle')}Escribe como si fueras un cliente. Así le contesta el bot a la gente.<button type="button" id="bOtraVez">Empezar de nuevo</button></div>` : ''}
+    <form class="escribir" id="forma"><textarea id="texto" rows="1" placeholder="${prueba ? 'Escribe como cliente' : 'Contesta tú'}" aria-label="${prueba ? 'Mensaje como cliente' : 'Tu respuesta'}"></textarea>
       <button class="mandar" type="submit" id="bMandar" aria-label="Mandar" disabled>${icono('send')}</button></form>`;
   const bb = $('#burbujas'); bb.scrollTop = bb.scrollHeight;
+  if($('#bOtraVez')) $('#bOtraVez').onclick = async () => { await api.pedir('POST', '/api/probar/borrar', { chat }); abrir(clave); };
   $('#bVolver').onclick = () => { $('#app').classList.remove('en-chat'); E.abierta = null; pintarLista(); };
   $('#bPensar').onclick = () => { E.pensar = !E.pensar; guarda.poner('up_pensar', E.pensar ? '1' : '0'); abrir(clave); };
   const t = $('#texto'), bm = $('#bMandar');
   t.oninput = () => { bm.disabled = !t.value.trim(); t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 140) + 'px'; };
   $('#forma').onsubmit = async (e) => {
     e.preventDefault(); const texto = t.value.trim(); if(!texto) return; bm.disabled = true;
-    const r = await api.pedir('POST', '/api/responder', { canal, chat, texto });
+    if(prueba){
+      /* lo del cliente sale de una vez y el bot «escribe» mientras piensa */
+      t.value = ''; t.style.height = 'auto';
+      $('#burbujas').insertAdjacentHTML('beforeend', `<div class="b cliente">${esc(texto)}<div class="pie">ahora</div></div><div class="b negocio escribiendo" id="escribiendo"><span></span><span></span><span></span></div>`);
+      $('#burbujas').scrollTop = $('#burbujas').scrollHeight;
+    }
+    const r = await api.pedir('POST', prueba ? '/api/probar' : '/api/responder', prueba ? { chat, texto } : { canal, chat, texto });
     if(!r.bien){ alert(r.error || 'No se pudo mandar.'); bm.disabled = false; return; }
     await cargar(); abrir(clave);
   };

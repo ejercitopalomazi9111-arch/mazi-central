@@ -35,9 +35,11 @@ export class Oficina {
     };
   }
 
-  async atender(m){
+  /** `op.tarifas` sólo para el canal de prueba: tarifas de ejemplo sin tocar las guardadas. */
+  async atender(m, op = {}){
     const k = `conv:${m.canal}:${m.chat}`;
     const cfg = await this.config();
+    if(op.tarifas && !cfg.tarifas) cfg.tarifas = op.tarifas;
     if(cfg.personales.has(m.chat)) return { hecho: 'personal' };
     if(await this.A.get('visto:' + m.id)) return { hecho: 'repetido' };
     await this.A.put('visto:' + m.id, 1);

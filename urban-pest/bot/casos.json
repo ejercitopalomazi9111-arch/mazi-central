@@ -1,28 +1,67 @@
 [
   {
     "id": "precio",
-    "frases": ["cuanto cuesta fumigar", "cuanto cobran", "precio de fumigacion", "cuanto sale", "me das precio", "cotizacion"],
-    "palabras": ["precio", "costo", "cotizacion", "cotizar"],
-    "respuesta": "Con gusto te cotizo. ¿Qué plaga tienes, más o menos cuántos metros cuadrados es y en qué colonia estás?"
+    "frases": [
+      "cuanto cuesta fumigar",
+      "cuanto cobran",
+      "precio de fumigacion",
+      "cuanto sale",
+      "me das precio",
+      "cotizacion"
+    ],
+    "palabras": [
+      "precio",
+      "costo",
+      "cotizacion",
+      "cotizar"
+    ],
+    "respuesta": "Con gusto te cotizo. ¿Qué plaga tienes, tu casa la considerarías chica, mediana o grande, y en qué colonia estás?"
   },
   {
     "id": "factura",
-    "frases": ["dan factura", "me pueden facturar", "necesito factura"],
-    "palabras": ["factura", "facturar"],
+    "frases": [
+      "dan factura",
+      "me pueden facturar",
+      "necesito factura"
+    ],
+    "palabras": [
+      "factura",
+      "facturar"
+    ],
     "respuesta": "Sí te ayudamos con eso. En un momento te contacta el encargado para tus datos de facturación.",
     "dueno": true
   },
   {
     "id": "hablar-dueno",
-    "frases": ["quiero hablar con el dueno", "me puede llamar alguien", "pasame con el encargado", "quiero hablar con una persona"],
-    "palabras": ["encargado", "dueno"],
+    "frases": [
+      "quiero hablar con el dueno",
+      "me puede llamar alguien",
+      "pasame con el encargado",
+      "quiero hablar con una persona"
+    ],
+    "palabras": [
+      "encargado",
+      "dueno"
+    ],
     "respuesta": "Claro, ya le aviso al encargado para que te contacte.",
     "dueno": true
   },
   {
     "id": "empresa",
-    "frases": ["fumigan empresas", "fumigacion industrial", "trabajan con negocios", "fumigan restaurantes", "fumigan bodegas"],
-    "palabras": ["industrial", "empresa", "bodega", "fabrica", "hospital"],
+    "frases": [
+      "fumigan empresas",
+      "fumigacion industrial",
+      "trabajan con negocios",
+      "fumigan restaurantes",
+      "fumigan bodegas"
+    ],
+    "palabras": [
+      "industrial",
+      "empresa",
+      "bodega",
+      "fabrica",
+      "hospital"
+    ],
     "respuesta": "Sí, atendemos negocios e industria. Para eso vamos a ver el lugar antes de darte el precio final. ¿Qué giro es y en qué zona está?",
     "dueno": true
   }

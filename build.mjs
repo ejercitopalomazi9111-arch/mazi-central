@@ -30,6 +30,9 @@ const VA = [
   'sala', 'campana', 'cerebro', 'entorno', 'bodega', 'demo', 'laboratorio',
   'jabonera', 'cv',
   'web',                                        // la página nueva de Grupo Mazi (29 de octubre)
+  /* Urban Pest: SÓLO el chat central (Carlos, 11 nov: «publica todo para ir probando»).
+     El bot vive en el servidor de La Sala (/api/urban); su código no se publica. */
+  'urban-pest/chat',
   'juegos',
   'ligas-mazi', 'pacto-roto', 'romero', 'inkwell', 'vitallink', 'life-connect',
   'manzanilla', 'herramientas',
@@ -143,7 +146,7 @@ for(const dir of ['escuela/tripticos-sedentarismo', 'escuela/patrones', 'empresa
    está aquí con su razón. Si no está en ninguna, el armado se para y la
    nombra. */
 const NO_SE_PUBLICA = {
-  'urban-pest': 'proyecto de un cliente que todavía no dice que se queda (11 nov): el chat central, el bot y su servidor se prueban en local hasta que Carlos diga',
+  'urban-pest': 'la carpeta entera no: trae el servidor, el plan del negocio y la lista de empresas. Sólo se publica urban-pest/chat (está en VA), autorizado por Carlos el 11 nov para probar',
   'fadori-campana': 'fuentes de los pósters y el comercial de Fadori (13 MB de fotos en grande); lo que sale es el PDF y el MP4, no esto',
   'rodrigo-claro':
     'material de paso hacia BigTigerMX/rodrigo-cabrera. Sus rutas apuntan a '
