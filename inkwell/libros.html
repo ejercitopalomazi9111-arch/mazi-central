@@ -49,6 +49,7 @@ h2{font:400 23px/1.15 var(--display); margin:28px 0 12px}
 .libro .pie span{display:block; color:var(--dim); font-size:13px}
 .avance{height:5px; border-radius:99px; background:var(--card2); overflow:hidden; margin-top:8px}
 .avance i{display:block; height:100%; background:var(--accent); border-radius:99px}
+.libro .cambiar-portada{position:absolute; top:56px; right:6px; z-index:2; width:44px; min-height:44px; padding:0; background:rgba(12,10,20,.55); color:#fff; border:0; border-radius:50%}
 .libro .quitar{position:absolute; top:6px; right:6px; z-index:2; width:44px; min-height:44px; padding:0; background:rgba(12,10,20,.55); color:#fff; border:0}
 .vacio{grid-column:1/-1; color:var(--dim); background:var(--card); border:1px dashed var(--line); border-radius:16px; padding:20px}
 .vacio b{display:block; color:var(--ink); font-size:17px; margin-bottom:4px}
@@ -113,6 +114,7 @@ h2{font:400 23px/1.15 var(--display); margin:28px 0 12px}
   <label class="subir"><span class="ic" data-ic="plus"></span>Agregar libro<input type="file" id="archivo" accept=".epub,.pdf,.txt,application/epub+zip,application/pdf,text/plain" multiple></label>
   <p class="estado" id="estado" role="status" aria-live="polite"></p>
   <h2>Tu librero</h2>
+  <input type="file" id="archivoPortada" accept="image/*" hidden>
   <div class="rejilla" id="librero"><div class="esq-rejilla" aria-hidden="true" style="grid-column:1/-1;grid-template-columns:repeat(2,minmax(0,1fr))"><div><div class="esq libro"></div><div class="esq linea"></div></div><div><div class="esq libro"></div><div class="esq linea"></div></div></div></div>
 </main>
 
@@ -150,7 +152,7 @@ h2{font:400 23px/1.15 var(--display); margin:28px 0 12px}
 <script type="module">
 import { icono } from './iconos.js';
 import { pintarMuelle } from './muelle.js';
-import { importar, todos, uno, guardar, quitar } from './libros.js';
+import { importar, todos, uno, guardar, quitar, aPortada } from './libros.js';
 import { apuntar } from './biblioteca.js';
 const $ = (s) => document.querySelector(s);
 const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
@@ -177,6 +179,7 @@ async function pintar(){
         if(l.tipo === 'pdf'){ const pu = URL.createObjectURL(l.pdf); urls.push(pu); return `<a class="abrir" href="${pu}" target="_blank" rel="noopener" aria-label="Abrir ${esc(l.titulo)}">${tapa}</a>`; }
         return `<button type="button" class="abrir" aria-label="Leer ${esc(l.titulo)}">${tapa}</button>`; })()}
       <button type="button" class="quitar" aria-label="Quitar ${esc(l.titulo)}">${icono('x')}</button>
+      <button type="button" class="cambiar-portada" aria-label="Ponerle portada a ${esc(l.titulo)}">${icono('image')}</button>
       <div class="pie"><b>${esc(l.titulo)}</b><span>${esc(l.autor || (l.tipo === 'pdf' ? 'Documento PDF' : `${l.capitulos.length} capítulo${l.capitulos.length === 1 ? '' : 's'}`))}</span>
         ${p == null ? '' : `<div class="avance" aria-label="Llevas ${p} %"><i style="width:${p}%"></i></div>`}</div>
     </article>`; }).join('')
@@ -184,16 +187,25 @@ async function pintar(){
 }
 $('#archivo').addEventListener('change', async (e) => {
   const fs = [...e.target.files]; e.target.value = '';
-  let bien = 0; const mal = [];
+  let bien = 0; const mal = [], sinTapa = [];
   for(const [i, f] of fs.entries()){
     $('#estado').textContent = `Agregando ${f.name}${fs.length > 1 ? ` (${i + 1} de ${fs.length})` : ''}…`;
-    try{ await guardar(await importar(f)); bien++; }catch(er){ mal.push(er.message); }
+    try{ const l = await importar(f); await guardar(l); bien++; if(!l.portada) sinTapa.push(l.titulo); }catch(er){ mal.push(er.message); }
   }
-  $('#estado').textContent = [bien ? `Listo: ${bien} libro${bien > 1 ? 's' : ''} agregado${bien > 1 ? 's' : ''}.` : '', ...mal].filter(Boolean).join(' ');
+  $('#estado').textContent = [bien ? `Listo: ${bien} libro${bien > 1 ? 's' : ''} agregado${bien > 1 ? 's' : ''}.` : '',
+    sinTapa.length ? `${sinTapa.length === 1 ? `«${sinTapa[0]}» no trae` : `${sinTapa.length} no traen`} portada: toca el ícono de imagen para ponerle una.` : '', ...mal].filter(Boolean).join(' ');
   pintar();
+});
+/* portada propia: muchos libros no traen la suya, o Inkwell no la encuentra */
+let portadaDe = null;
+$('#archivoPortada').addEventListener('change', async (e) => {
+  const f = e.target.files[0]; e.target.value = ''; if(!f || !portadaDe) return;
+  try{ const l = await uno(portadaDe); l.portada = await aPortada(f); await guardar(l); $('#estado').textContent = `Listo: «${l.titulo}» ya tiene tu portada.`; pintar(); }
+  catch(er){ $('#estado').textContent = 'No se pudo usar esa imagen: ' + er.message; }
 });
 $('#librero').addEventListener('click', async (e) => {
   const art = e.target.closest('.libro'); if(!art) return;
+  if(e.target.closest('.cambiar-portada')){ portadaDe = art.dataset.id; $('#archivoPortada').click(); return; }
   if(e.target.closest('.quitar')){
     const l = await uno(art.dataset.id);
     if(confirm(`¿Quitar «${l.titulo}» de tu librero?`)){ await quitar(l.id); $('#estado').textContent = `Quitaste «${l.titulo}».`; pintar(); }

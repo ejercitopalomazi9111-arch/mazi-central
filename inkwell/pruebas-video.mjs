@@ -67,6 +67,15 @@ ok(px.toma0inicio.colores > 3, 'la toma enseña la viñeta (no un cuadro vacío)
 ok(px.cierre.claros > 200, 'el cierre dice «Hecho en Inkwell»');
 if (process.env.CAPTURA) await pg.screenshot({ path: process.env.CAPTURA + '/video.png' });
 ok(!(await pg.evaluate(() => Math.max(document.documentElement.scrollWidth - innerWidth, ...[...document.querySelectorAll('dialog[open] .dlg')].map((d) => d.scrollWidth - d.clientWidth)) > 1)), 'la ventana del video no se sale de lado');
+/* portada propia del cómic (desde el menú) */
+await pg.evaluate(() => document.querySelector('#dlgVideo').close());
+await pg.evaluate(() => document.querySelector('#dlgMenu').showModal());
+const fotoC = Buffer.from(await pg.evaluate(async () => { const c = document.createElement('canvas'); c.width = 400; c.height = 600; c.getContext('2d').fillStyle = '#AC27FF'; c.getContext('2d').fillRect(0, 0, 400, 600);
+  const b = await new Promise((ok) => c.toBlob(ok, 'image/png')); return [...new Uint8Array(await b.arrayBuffer())]; }));
+await pg.setInputFiles('#archivoPortadaC', { name: 'portada.png', mimeType: 'image/png', buffer: fotoC });
+await pg.waitForFunction(() => /ya tiene su portada/.test(document.querySelector('#avisoMenu').textContent), null, { timeout: 8000 }).catch(() => {});
+ok(await pg.evaluate(async () => { const o = window.__comic.obra; if(!o.portadaPropia || o.portada !== o.portadaPropia) return false; const b = await createImageBitmap(o.portada); return b.height / b.width > 1.4; }), 'el cómic acepta portada propia y la usa en lugar de la página 1');
+await pg.evaluate(() => { document.querySelector('#dlgMenu').close(); document.querySelector('#dlgVideo').showModal(); });
 /* grabar de verdad (rápido, para que la prueba no tarde) */
 await pg.click('#dlgVideo [data-vel="rapido"]');
 await pg.waitForFunction(() => /toma/.test(document.querySelector('#vidAviso').textContent));

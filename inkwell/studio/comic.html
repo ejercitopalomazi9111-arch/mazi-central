@@ -158,6 +158,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
   <button type="button" class="si" id="alLibrero">Pasar a mi librero para leerlo</button>
   <button type="button" id="pdf">Descargar todo en PDF</button>
   <button type="button" id="png">Descargar esta página (PNG)</button>
+  <button type="button" id="ponerPortada">Ponerle portada propia</button><input type="file" id="archivoPortadaC" accept="image/*" hidden>
   <button type="button" id="abrirVideo">Video animado para TikTok y Reels</button>
   <p class="aviso" id="avisoMenu" role="status"></p>
 </div></dialog>
@@ -198,6 +199,7 @@ function botonesHist(){ $('#deshacer').disabled = !pasado.length; $('#rehacer').
 
 /* ── guardar ── */
 async function portada(){
+  if(obra.portadaPropia){ obra.portada = obra.portadaPropia; return; }
   const c = document.createElement('canvas'); await dibujar(c, obra, obra.paginas[0], { escala: 420 / obra.paginas[0].ancho });
   obra.portada = await new Promise((ok) => c.toBlob(ok, 'image/jpeg', .85));
 }
@@ -575,6 +577,12 @@ let vGuion = null, vVel = 'normal', vMusica = null, vReloj = 0, vPluma = null;
 const vCtx = () => $('#vidLienzo').getContext('2d');
 async function vPreparar(){ $('#vidAviso').textContent = 'Preparando…'; vGuion = await VIDEO.armarGuion(obra, { velocidad: vVel }); if(!vPluma) vPluma = await img('../marca/pluma.png');
   $('#vidAviso').textContent = `${vGuion.tomas.length} toma${vGuion.tomas.length === 1 ? '' : 's'} · ${Math.round(VIDEO.duracion(vGuion))} segundos`; VIDEO.pintarCuadro(vCtx(), vGuion, 2.4, { W: 360, H: 640, pluma: vPluma }); }
+$('#ponerPortada').addEventListener('click', () => $('#archivoPortadaC').click());
+$('#archivoPortadaC').addEventListener('change', async (e) => {
+  const f = e.target.files[0]; e.target.value = ''; if(!f) return;
+  const { aPortada } = await import('../libros.js');
+  obra.portadaPropia = await aPortada(f); await guardarYa(); $('#avisoMenu').textContent = 'Listo: tu cómic ya tiene su portada.';
+});
 $('#abrirVideo').addEventListener('click', async () => { $('#dlgMenu').close(); $('#dlgVideo').showModal(); await guardarYa(); await vPreparar(); });
 $('#dlgVideo').addEventListener('click', async (e) => { const b = e.target.closest('[data-vel]'); if(!b) return; vVel = b.dataset.vel; b.parentElement.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); cancelAnimationFrame(vReloj); await vPreparar(); });
 $('#vidMusica').addEventListener('click', () => $('#vidArchivo').click());
