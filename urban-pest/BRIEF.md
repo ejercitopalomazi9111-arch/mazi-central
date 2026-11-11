@@ -56,11 +56,18 @@ queda con nosotros.
 ### B · El cotizador
 
 - Toma los costos y los ejemplos de su **Excel** (**FALTA** el Excel).
-- El bot da un **«desde $X»** y manda la cotización en **PDF**. Siempre aclara que el precio final
+- El bot da un **precio aproximado** (nunca «desde»: suena a que va a subir) y manda la cotización en **PDF**. Si los datos del cliente están bien, ése es el costo; siempre aclara que
   lo confirma un técnico al ver el lugar: no es lo mismo «20 m²» que una casa del Marqués con
   cuatro patios y tres perros.
 - **Regla de negocio:** a una casa de $500 no conviene ir a medir; a una industria sí. El bot
   distingue los dos casos.
+- **Fuera de la zona de servicio** (Carlos, 11 nov):
+  - **Industria:** sí, con visita para confirmar la cotización.
+  - **Casa:** no se cubre, salvo que sea un proyecto grande. Ése lo ve el dueño caso por caso y
+    le llega un aviso.
+  - **Siempre** sale más caro por el traslado, y se le explica al cliente con tacto.
+  - El tamaño mínimo para que una casa de fuera sea «grande» es `fuera_m2_minimo` en las tarifas;
+    si no se pone, son 200 m², y se calibra con el dueño.
 
 ### B-bis · Cuando no sabe cuánto mide su casa (Carlos, 11 nov)
 

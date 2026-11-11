@@ -31,6 +31,12 @@ ok('sin tarifas no inventa', !cotizar({ plaga: 'cucaracha', m2: 80, km: 6 }, nul
 ok('dice qué falta', cotizar({ plaga: 'pulga', m2: 0 }, T).falta?.length === 3);
 ok('fuera del radio lo marca', cotizar({ plaga: 'cucaracha', m2: 80, km: 70 }, T).fueraDeRadio);
 
+ok('dentro de la zona se atiende todo', cotizar({ plaga: 'cucaracha', m2: 80, km: 10 }, T).atiende === 'si');
+ok('fuera de zona: industria sí (con visita)', cotizar({ plaga: 'cucaracha', m2: 500, km: 70, tipo: 'industria' }, T).atiende === 'si');
+ok('fuera de zona: casa chica no se cubre', cotizar({ plaga: 'cucaracha', m2: 90, km: 70, tipo: 'casa' }, T).atiende === 'no');
+ok('fuera de zona: casa grande, caso por caso', cotizar({ plaga: 'cucaracha', m2: 260, km: 70, tipo: 'casa' }, T).atiende === 'caso-por-caso');
+ok('fuera de zona sale más caro por el traslado', cotizar({ plaga: 'cucaracha', m2: 260, km: 70 }, T).desde > cotizar({ plaga: 'cucaracha', m2: 260, km: 10 }, T).desde);
+ok('la nota nunca dice «desde»', !/desde/i.test(cotizar({ plaga: 'cucaracha', m2: 80, km: 6 }, T).nota));
 console.log('meta');
 const secreto = 'secreto-de-prueba', cuerpo = '{"hola":1}';
 const k = await crypto.subtle.importKey('raw', new TextEncoder().encode(secreto), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
@@ -66,9 +72,9 @@ let n = 0; const msj = (texto, chat = '524420000000', extra = {}) => ({ canal: '
   ok('Meta repite el aviso: no contesta dos veces', r.hecho === 'repetido' && t.salidas.length === 1); }
 { const t = hacer({ pensar: (a, i) => i === 1
     ? { bien: true, respuesta: 'Va, ¿en qué colonia?', necesita_dueno: false, motivo: '', razon: 'faltaba zona', datos: { plaga: 'cucaracha', m2: 80, zona: 'Centro', tipo: 'casa' } }
-    : { bien: true, respuesta: `Te sale desde $${a.cotizacion.desde}`, necesita_dueno: false, motivo: '', razon: 'con precio', datos: {} } });
+    : { bien: true, respuesta: `Te saldría aproximadamente en $${a.cotizacion.desde}`, necesita_dueno: false, motivo: '', razon: 'con precio', datos: {} } });
   const r = await t.of.atender(msj('tengo cucarachas en mi casa del centro, son como 80 metros'));
-  ok('con los datos completos cotiza y la IA da el «desde»', r.hecho === 'cerebro' && t.llamadas.length === 2 && /desde \$590/.test(t.salidas[0]?.texto), JSON.stringify(t.salidas));
+  ok('con los datos completos cotiza y la IA da el aproximado', r.hecho === 'cerebro' && t.llamadas.length === 2 && /aproximadamente en \$590/.test(t.salidas[0]?.texto), JSON.stringify(t.salidas));
   ok('lo que contestó la IA queda en el manual', [...t.M.keys()].some(k => k.startsWith('manual:'))); }
 { const t = hacer({ pensar: () => ({ bien: true, respuesta: 'Te paso con el encargado', necesita_dueno: true, motivo: 'queja', razon: 'enojado', datos: {} }) });
   await t.of.atender(msj('llevan tres veces y siguen las cucarachas, qué onda'));
@@ -118,7 +124,7 @@ console.log('medidor (no sabe cuánto mide su casa)');
   ok('«cucarachitas güeritas», «ratones» y «comején» se entienden', aPlaga('cucarachitas güeritas') === 'cucaracha' && aPlaga('Ratones') === 'roedor' && aPlaga('comején') === 'termita'); }
 { const t = hacer({ pensar: (a, i) => i === 1
     ? { bien: true, respuesta: '¿Y en qué colonia?', necesita_dueno: false, motivo: '', razon: 'no sabe metros: quiz', datos: { plaga: 'cucarachas chiquitas', m2: null, zona: 'Centro', tipo: 'casa', tamano: 'mediana', recamaras: 2, banos: 1 } }
-    : { bien: true, respuesta: `Te sale desde $${a.cotizacion.desde}`, necesita_dueno: false, motivo: '', razon: 'estimado', datos: {} } });
+    : { bien: true, respuesta: `Te saldría aproximadamente en $${a.cotizacion.desde}`, necesita_dueno: false, motivo: '', razon: 'estimado', datos: {} } });
   await t.of.atender(msj('no sé cuántos metros, es mediana, 2 recámaras y un baño, en el centro, tengo cucarachas chiquitas'));
   const conv = t.M.get('conv:whatsapp:524420000000');
   ok('sin metros, cotiza con el estimado y lo marca como estimado', conv.cotizacion?.m2Estimado && conv.cotizacion.m2 > 0 && t.llamadas.length === 2, JSON.stringify(conv.cotizacion)); }

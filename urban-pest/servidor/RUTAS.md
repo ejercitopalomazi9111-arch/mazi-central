@@ -52,7 +52,7 @@ Si `noSalio` viene puesto, Meta no lo entregó.
 | `POST /api/personales` | `{ numeros: [...] }` | Los chats personales del dueño. El bot no los toca |
 | `POST /api/estimar` | `{ tamano, recamaras, banos, sala, comedor, patio, zona }` | Los metros estimados de una casa cuando el cliente no sabe. Regresa `m2`, `rango` y `afinar` (qué falta preguntar) |
 | `GET /api/medidas` · `POST /api/medidas` | `{ medidas }` | La tabla del estimado: m² por cuarto según el tamaño, y el ajuste por colonia. Se calibra con los servicios reales |
-| `POST /api/cotizar` | `{ plaga, m2, km, tipo }` | Una cotización a mano. Regresa `desde`, `desglose`, `visita` y `fueraDeRadio` |
+| `POST /api/cotizar` | `{ plaga, m2, km, tipo }` | Una cotización a mano. Regresa `desde` (el aproximado), `desglose`, `visita`, `fueraDeRadio` y `atiende` (`si`, `caso-por-caso` o `no`) |
 
 ## Lo que todavía NO está, y quién lo hace
 

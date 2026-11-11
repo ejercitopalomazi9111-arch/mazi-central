@@ -142,10 +142,10 @@ async function abrir(clave){
   const dato = (ic, v, falta) => `<span class="dato ${v == null ? 'falta' : ''}">${icono(ic)}${v == null ? falta : esc(v)}</span>`;
   const callado = c.duenoHasta > Date.now();
   const tarjetaCot = cot ? `<div class="cotiza"><div class="tit">${icono('calculator')}Cotización del sistema</div>
-        <div class="monto"><small>desde</small>${pesos(cot.desde)}</div>
+        <div class="monto"><small>aprox.</small>${pesos(cot.desde)}</div>
         <dl><dt>Producto</dt><dd>${pesos(cot.desglose?.producto || 0)}</dd><dt>Mano de obra</dt><dd>${pesos(cot.desglose?.mano_de_obra || 0)}</dd><dt>Traslado</dt><dd>${pesos(cot.desglose?.traslado || 0)}</dd></dl>
         ${cot.visita ? `<span class="marca-chica m-aviso etq">${icono('truck')}Pide visita antes del precio final</span>` : ''}
-        ${cot.fueraDeRadio ? `<span class="marca-chica m-aviso etq">${icono('map-pin')}Fuera de la zona de servicio</span>` : ''}</div>` : '';
+        ${cot.fueraDeRadio ? `<span class="marca-chica m-aviso etq">${icono('map-pin')}${cot.atiende === 'no' ? 'Fuera de zona: casa, no se cubre' : cot.atiende === 'caso-por-caso' ? 'Fuera de zona: tú decides' : 'Fuera de zona: con visita'}</span>` : ''}</div>` : '';
   $('#conv').innerHTML = `
     <header class="cab">
       <button class="redondo volver" type="button" id="bVolver" aria-label="Volver a los chats">${icono('chevron-left')}</button>
