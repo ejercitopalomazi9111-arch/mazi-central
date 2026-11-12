@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Urban Pest · campaña de 2 meses</title>
+<!-- El plan de la campaña (datos en plan.js), para leer en el teléfono o sacar en PDF (armar.mjs). -->
+<style>
+  @font-face{ font-family:M; src:url(../web/fuentes/montserrat.woff2) format("woff2"); font-weight:100 900; font-display:block }
+  @font-face{ font-family:I; src:url(../web/fuentes/inter-400-800-normal.woff2) format("woff2"); font-weight:400 800; font-display:block }
+  :root{ --marina:#143361; --azul:#165D9B; --sol:#F29923; --sol-claro:#F7E93F; --gris:#EEF2F6; --tinta:#14213A; --suave:#5C6879; --linea:#D9E1EA }
+  *{ box-sizing:border-box; margin:0 }
+  body{ font:400 15px/1.55 I, sans-serif; color:var(--tinta); background:#fff; max-width:820px; margin:0 auto; padding:24px 16px 60px }
+  h1{ font:800 34px/1.05 M; letter-spacing:-.03em; color:var(--marina) }
+  h2{ font:800 22px/1.15 M; letter-spacing:-.02em; color:var(--marina); margin:34px 0 10px }
+  h3{ font:700 17px/1.25 M; color:var(--tinta); margin:0 0 4px }
+  .sub{ color:var(--suave); margin-top:8px; font-size:16px }
+  .portada{ display:flex; gap:20px; align-items:center; margin-bottom:14px } .portada img{ height:54px }
+  p{ margin:6px 0 }
+  table{ width:100%; border-collapse:collapse; margin:8px 0; font-size:14px }
+  td, th{ text-align:left; padding:7px 9px; border-bottom:1px solid var(--linea); vertical-align:top }
+  th{ font:700 12px/1.2 M; letter-spacing:.08em; text-transform:uppercase; color:var(--suave) }
+  ul{ padding-left:20px; margin:6px 0 } li{ margin:3px 0 }
+  .semana{ break-before:page; margin-top:20px }
+  .semana > .cab{ break-after:avoid }
+  .semana > .cab{ background:var(--marina); color:#fff; border-radius:14px; padding:14px 18px; margin-bottom:12px }
+  .semana > .cab b{ font:800 20px/1.1 M } .semana > .cab span{ display:block; color:#A9C3E6; font-size:14px; margin-top:2px }
+  .pieza{ border:1px solid var(--linea); border-radius:14px; padding:14px 16px; margin:10px 0; break-inside:avoid }
+  .tag{ display:inline-block; font:700 11px/1 M; letter-spacing:.08em; text-transform:uppercase; padding:5px 8px; border-radius:6px; margin-right:6px; background:var(--gris); color:var(--marina) }
+  .tag.reel{ background:#FFF3DF; color:#9A5300 } .tag.carrusel{ background:#E3ECF7 } .tag.industria{ background:#E2F2EA; color:#0B5E43 }
+  .lbl{ font:700 12px/1.3 M; letter-spacing:.06em; text-transform:uppercase; color:var(--suave); margin-top:10px }
+  .copy{ background:var(--gris); border-radius:10px; padding:10px 12px; margin-top:4px }
+  .ojo{ background:#FFF8E1; border-radius:10px; padding:8px 12px; margin-top:10px; font-size:14px } .ojo b{ color:#8A5A00 }
+  .mini{ display:flex; gap:6px; flex-wrap:wrap; margin-top:8px } .mini img{ width:92px; border-radius:8px; border:1px solid var(--linea) }
+  @media print{ body{ max-width:none; padding:0 } a{ color:inherit; text-decoration:none } }
+</style>
+</head>
+<body>
+<div id="doc"></div>
+<script type="module">
+import { SEMANAS, CARRUSELES, RITMO, HISTORIAS, FALTA, MEDIR, ETIQUETAS, ETIQUETAS_IND } from './plan.js';
+window.listo = (async () => {
+  const lista = (xs) => `<ul>${xs.map((x) => `<li>${x}</li>`).join('')}</ul>`;
+  const piezas = SEMANAS.reduce((s, w) => s + w.piezas.length, 0);
+  const reels = SEMANAS.flatMap((w) => w.piezas).filter((p) => p.tipo === 'Reel').length;
+  const html = [];
+  html.push(`<div class="portada"><img src="../venta/logo-blanco.jpg" alt="Urban Pest Control"></div>
+    <h1>Campaña de 2 meses</h1>
+    <p class="sub">Del 23 de noviembre al 17 de enero · ${piezas} publicaciones (${reels} reels, ${CARRUSELES.length} carruseles y ${SEMANAS.length} para industria) más historias diarias. Hecha por Grupo Mazi.</p>
+    <h2>La idea</h2>
+    <p>Dos públicos, un mensaje: <b>Urban Pest trabaja minucioso y lo deja todo en orden</b>. A las casas les enseñamos cómo se trabaja de verdad (se mueve todo, se llega a donde se esconden, y si vuelve, regresan). A la industria, que cuando llegue el auditor ya está todo en su carpeta. Cada pieza termina igual: <b>escríbenos por WhatsApp</b>, donde el bot da un precio de partida a cualquier hora.</p>
+    <p>Todo lo que se afirma sale de su página o de lo que contó el dueño. Lo que hay que confirmar con él está marcado en amarillo en cada pieza. <b>Sin gasto:</b> todo es orgánico; pautar (pagar anuncios) lo decide el cliente.</p>
+    <h2>El ritmo de cada semana</h2>
+    <table><tr><th>Día</th><th>Qué</th><th>Dónde</th></tr>${RITMO.map((r) => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}</table>
+    <h2>Historias</h2>
+    <table>${HISTORIAS.map((h) => `<tr><td style="width:120px"><b>${h[0]}</b></td><td>${h[1]}</td></tr>`).join('')}</table>
+    <h2>Para grabar rápido</h2>
+    <p>El editor sale con el técnico <b>dos días</b> y junta las tomas de varios reels de un jalón: un día en casas («Así se fumiga de verdad», «Antes de la cena», «¿Y mis mascotas?», «Si vuelve, regresamos», «Ruidos en el techo», «Empieza el año», «Dejaron todo limpio» y «Las hormigas del árbol») y uno en bodega o planta («Revisión de estaciones», «Un día con el técnico» y, si hay ave, «Palomas sin químicos»). Vertical 9:16, a 1080 × 1920, luz de día, sin caras ni domicilios de clientes sin permiso. Los reels de pantalla (la carpeta y el chat) los graba Grupo Mazi.</p>
+    <h2>Etiquetas</h2><p>Casas: ${ETIQUETAS}<br>Industria: ${ETIQUETAS_IND}</p>
+    <h2>Cómo sabemos si funciona</h2>${lista(MEDIR)}
+    <h2>Lo que falta del dueño para arrancar</h2>${lista(FALTA)}`);
+  for(const w of SEMANAS){
+    html.push(`<section class="semana"><div class="cab"><b>Semana ${w.n} · ${w.tema}</b><span>Desde el lunes ${w.desde}</span></div>`);
+    for(const p of w.piezas){
+      const clase = p.tipo === 'Reel' ? 'reel' : p.tipo === 'Carrusel' ? 'carrusel' : 'industria';
+      let h = `<div class="pieza"><span class="tag ${clase}">${p.dia} · ${p.tipo}${p.dura ? ' · ' + p.dura : ''}</span><h3 style="display:inline">${p.titulo}</h3>`;
+      if(p.gancho) h += `<div class="lbl">Gancho (primeros 2 s)</div><p>${p.gancho}</p>`;
+      if(p.tomas) h += `<div class="lbl">Tomas para el editor</div>${lista(p.tomas)}`;
+      if(p.pantalla) h += `<div class="lbl">Texto en pantalla</div>${lista(p.pantalla.map((x) => `«${x.replace(/^«|»$/g, '')}»`))}`;
+      if(p.cierre) h += `<div class="lbl">Cierre</div><p>${p.cierre}</p>`;
+      if(p.carrusel){ const C = CARRUSELES.find((c) => c.n === p.carrusel);
+        h += `<div class="lbl">Láminas (listas en campana/carruseles/)</div><div class="mini">${C.laminas.map((_, i) => `<img src="carruseles/${String(C.n).padStart(2, '0')}-${i + 1}.jpg" alt="">`).join('')}</div>`; }
+      if(p.adjunto) h += `<div class="lbl">Adjunto</div><p>${p.adjunto}</p>`;
+      h += `<div class="lbl">Texto para publicar</div><div class="copy">${p.copy}</div>`;
+      if(p.confirmar) h += `<div class="ojo"><b>Confirmar con el dueño:</b>${lista(p.confirmar)}</div>`;
+      html.push(h + '</div>');
+    }
+    html.push('</section>');
+  }
+  document.getElementById('doc').innerHTML = html.join('');
+  await document.fonts.ready; await Promise.all([...document.images].map((im) => im.decode().catch(() => {})));
+  return true;
+})();
+</script>
+</body>
+</html>
