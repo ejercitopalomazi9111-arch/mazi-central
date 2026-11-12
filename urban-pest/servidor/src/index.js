@@ -157,12 +157,12 @@ export class Despacho {
       case 'GET /api/avisos': return { bien: true, avisos: (await lista('aviso:')).sort((a, b) => b.cuando - a.cuando) };
       case 'POST /api/aviso/visto': { const a = await A.get(b.id); if(a) await A.put(b.id, { ...a, estado: 'visto' }); return { bien: !!a }; }
       case 'GET /api/casos': return { bien: true, casos: (await A.get('casos')) || [] };
-      case 'POST /api/casos': await A.put('casos', b.casos || []); return { bien: true };
+      case 'POST /api/casos': if(!Array.isArray(b.casos)) return { bien: false, error: 'Los casos van en una lista.', estado: 400 }; await A.put('casos', b.casos); return { bien: true };
       case 'GET /api/medidas': return { bien: true, medidas: (await A.get('medidas')) || MEDIDAS };
       case 'POST /api/medidas': await A.put('medidas', b.medidas); return { bien: true };
       case 'POST /api/estimar': return estimarM2(b, (await A.get('medidas')) || MEDIDAS);
       case 'POST /api/tarifas': await A.put('tarifas', b.tarifas); return { bien: true };
-      case 'POST /api/negocio': await A.put('negocio', b.negocio); return { bien: true };
+      case 'POST /api/negocio': if(!b.negocio || typeof b.negocio !== 'object') return { bien: false, error: 'Falta el negocio.', estado: 400 }; await A.put('negocio', { ...((await A.get('negocio')) || {}), ...b.negocio }); return { bien: true };
       case 'POST /api/personales': await A.put('personales', b.numeros || []); return { bien: true };
       case 'POST /api/probar': {
         /* Carlos escribe como si fuera cliente; si no hay tarifas reales, se prueba con las de ejemplo */

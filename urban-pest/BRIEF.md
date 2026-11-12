@@ -122,6 +122,23 @@ la IA**. Es sobre todo para nosotros, pero él también la puede ver.
 - Carlos trae a sus artistas y a un editor de video. Sylcred hace referencias y guiones; el
   editor hace los videos.
 
+## Lo que dice su página actual (urbanpest.mx, capturas de Carlos, 12 nov)
+
+- **Las reseñas reales** (Calor Control, Sonia Tapia, Adriana Sanvicente y Luis Castellanos) ya van con SU texto en
+  la página nueva. Antes iban resumidas con otras palabras, y eso es ponerles palabras en la boca. Sólo se corrigieron
+  acentos, y lo recortado se marca con «[…]».
+- **Sus preguntas frecuentes ya son respuestas del bot**: garantía, mascotas, cobertura e inspección
+  (`bot/casos.json`, con `fuente`). La descripción del negocio que usa la IA sale de ahí y de la hoja de industria.
+- **⚠ Se contradice en la cobertura.** El pie y el contacto dicen «Atención en todo México»; las preguntas
+  frecuentes dicen «zona metropolitana de Querétaro y municipios cercanos». El bot usa lo segundo, que cuadra con la
+  regla de fuera de zona. **FALTA que el cliente diga cuál es la buena.**
+- **Su formulario pide correo Y teléfono obligatorios.** El nuestro abre WhatsApp con el mensaje listo y no pide
+  nada más.
+- **El WhatsApp de su página** abre con «Hola, vengo de su página web. Me gustaría solicitar una cotización y recibir
+  más información sobre sus servicios.» Si el bot está conectado, esa frase cae en el caso `precio`.
+- En el teléfono, el botón flotante de WhatsApp y el de «volver arriba» tapan el botón de enviar del formulario y
+  los «+» de las preguntas. Es argumento de venta para la página nueva.
+
 ## La regla del dinero · Carlos, 11 nov
 
 **«Aún no desembolses un peso: todo va como se pueda resolver gratis hasta que el cliente nos diga
