@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Carlos Iván Gallardo Blancas — CV</title>
+<meta name="robots" content="noindex">
+<meta name="description" content="Currículum de Carlos Iván Gallardo Blancas.">
+
+<style>
+/* CURRÍCULUM · Carlos Iván Gallardo Blancas
+   Pedido por Carlos el 12 de noviembre en La Sala: «créenme un curriculum con estos datos, súbanlo a la central
+   como el mío, para poner la foto e imprimir como pdf, háganlo mamador». Mismo armazón que cv/empleo.html (una hoja,
+   banda lateral, apilado para que el PDF no se parta) con su propio color: azul marino y cobre.
+   Nada inventado: lo que no dio (fechas de cada trabajo, puestos) no se escribe; la duración va donde iría el año.
+   La foto se guarda sólo en el teléfono: el repositorio es público. */
+:root{
+  --papel:#ffffff; --tinta:#15161b; --medio:#4b515a; --tenue:#7b828d;
+  --linea:#e2e5ea; --lado:#F4F6FA; --barra:#DDE4EF;
+  --acento:#C2662D; --hondo:#1D3557;
+}
+:root:not([data-theme="light"]){
+  @media (prefers-color-scheme: dark){
+    --papel:#121318; --tinta:#eef0f4; --medio:#b6bcc6; --tenue:#8b929d;
+    --linea:#292c33; --lado:#161B20; --barra:#25343C;
+    --acento:#E59A63; --hondo:#9DB8E0;
+  }
+}
+:root[data-theme="dark"]{
+  --papel:#121318; --tinta:#eef0f4; --medio:#b6bcc6; --tenue:#8b929d;
+  --linea:#292c33; --lado:#161B20; --barra:#25343C;
+  --acento:#E59A63; --hondo:#9DB8E0;
+}
+*{box-sizing:border-box}
+/* ⚠ `hidden` NO ESCONDE NADA por sí solo: es la regla de menor especificidad
+   que hay y pierde contra el `display:block` de `.foto`. Sin esta línea, el
+   `<img>` vacío se imprime como un círculo de color sin cara dentro. */
+[hidden]{display:none !important}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--papel); color:var(--tinta);
+  font:15px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+.hoja{max-width:860px;margin:0 auto}
+
+.mando{
+  position:sticky;top:0;z-index:9;padding:10px 18px;
+  padding-top:max(10px,env(safe-area-inset-top));
+  background:var(--papel);border-bottom:1px solid var(--linea);
+  display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+}
+.mando .sep{flex:1 1 auto}
+button{
+  font:600 15px/1 inherit;color:#fff;background:var(--hondo);border:0;
+  border-radius:9px;min-height:44px;padding:0 18px;cursor:pointer;
+}
+button.liso{background:transparent;color:var(--hondo);border:1px solid var(--linea)}
+button:active{transform:translateY(1px)}
+.aOtro{
+  display:inline-flex;align-items:center;font:600 15px/1 inherit;color:var(--hondo);
+  border:1px solid var(--linea);border-radius:9px;min-height:44px;padding:0 18px;
+  text-decoration:none;
+}
+.aviso{
+  font:13px/1.5 inherit;color:var(--medio);background:var(--lado);
+  border:1px solid var(--linea);border-radius:10px;padding:10px 12px;margin:14px 18px 0;
+}
+.aviso b{color:var(--tinta)}
+
+.testera{padding:30px 22px 20px}
+.nomChico{
+  font-size:clamp(21px,5.6vw,29px); font-weight:300; letter-spacing:.015em;
+  color:var(--medio); line-height:1.05; margin:0;
+}
+.nomGrande{
+  font-size:clamp(28px,7.6vw,41px); font-weight:800; letter-spacing:-.028em;
+  line-height:1.02; margin:0 0 10px;
+}
+.cargo{
+  font-size:clamp(12px,3.2vw,13.5px); font-weight:700; color:var(--hondo);
+  letter-spacing:.14em; text-transform:uppercase; margin:0;
+}
+.filete{height:3px;background:var(--acento);border-radius:2px;margin:14px 0 0;max-width:110px}
+
+.cuerpo{display:grid;grid-template-columns:1fr}
+@media (min-width:720px){ .cuerpo{grid-template-columns:minmax(0,255px) minmax(0,1fr)} }
+.lado{background:var(--lado);padding:24px 22px 28px}
+.centro{padding:24px 22px 40px}
+
+h2{
+  display:flex; align-items:center; gap:8px;
+  font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--hondo); font-weight:800; margin:26px 0 12px;
+}
+.lado h2:first-child, .centro h2:first-child{margin-top:0}
+h2 svg{width:15px;height:15px;flex:0 0 auto;stroke:var(--hondo);fill:none;
+  stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+h2::after{content:"";flex:1 1 auto;height:1px;background:var(--linea)}
+
+.foto{
+  width:132px;height:132px;border-radius:50%;margin:0 auto 20px;display:block;
+  background:var(--barra);border:3px solid var(--papel);
+  box-shadow:0 0 0 1px var(--linea); object-fit:cover; cursor:pointer;
+}
+.foto-vacia{
+  display:flex;align-items:center;justify-content:center;
+  color:var(--hondo);font:600 12px/1.35 inherit;text-align:center;padding:0 14px;
+}
+
+.cto{margin:0;padding:0;list-style:none}
+.cto li{display:flex;gap:9px;align-items:flex-start;margin:0 0 9px;font-size:13.5px;
+  color:var(--medio);word-break:break-word}
+.cto svg{width:14px;height:14px;flex:0 0 auto;margin-top:2px;
+  stroke:var(--hondo);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.cto a{color:inherit;text-decoration:none}
+
+/* ⚠ APILADO Y NO EN DOS COLUMNAS, igual que en el otro currículum y por el
+   mismo motivo medido: lado a lado se ve bien en pantalla y en el PDF queda
+   «Atención a clientes — 3 AÑOS — y caja», con la etiqueta partida y el dato
+   flotando en medio. La columna mide 62 mm y ahí no caben dos cosas. */
+.med{padding:0 0 7px;margin:0 0 7px;border-bottom:1px solid var(--linea)}
+.med:last-of-type{border-bottom:0}
+.med .que{display:block;font-weight:700;font-size:13.5px;line-height:1.3}
+.med .cuanto{
+  display:block;margin-top:1px;
+  font-size:10.5px;color:var(--hondo);font-weight:800;letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+.dato{margin:0 0 13px}
+.dato .que{font-weight:700;font-size:13.5px;line-height:1.3}
+.dato .donde{color:var(--tenue);font-size:12.5px;line-height:1.4;margin-top:2px}
+.sello{
+  display:inline-block;margin-top:3px;font-size:10.5px;font-weight:800;
+  letter-spacing:.09em;text-transform:uppercase;color:var(--hondo);
+  border:1px solid var(--acento);border-radius:20px;padding:1px 8px;
+}
+
+/* ── el recuadro de disponibilidad ──────────────────────────────────────
+   Va PRIMERO y antes que nada, incluida la descripción de quién es. Para un
+   negocio chico, «qué días puedes» y «desde cuándo» son la pregunta uno y la
+   dos, y si no están arriba el papel se queda en el montón. */
+.dispo{
+  display:grid;grid-template-columns:1fr;gap:10px;margin:0 0 4px;
+  border:1px solid var(--linea);border-left:4px solid var(--acento);
+  border-radius:0 10px 10px 0;background:var(--lado);padding:13px 15px;
+}
+@media (min-width:560px){ .dispo{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px} }
+.dispo div b{display:block;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--hondo);font-weight:800;margin-bottom:2px}
+.dispo div span{display:block;font-size:13.5px;line-height:1.35;color:var(--tinta);font-weight:600}
+
+.perfil{font-size:15.5px;line-height:1.62;color:var(--medio);margin:0}
+.perfil b{color:var(--tinta);font-weight:700}
+
+.puesto{display:grid;grid-template-columns:62px minmax(0,1fr);gap:0 14px;margin:0 0 18px}
+.puesto .anos{
+  font-size:11.5px;font-weight:700;color:var(--tenue);
+  font-variant-numeric:tabular-nums;letter-spacing:.02em;padding-top:3px;line-height:1.35;
+}
+.puesto .car{border-left:2px solid var(--linea);padding:0 0 2px 14px}
+.puesto .casa{font-weight:700;font-size:15.5px;letter-spacing:-.01em;line-height:1.25}
+.puesto .rol{color:var(--hondo);font-size:12.5px;font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;margin:2px 0 5px}
+ul.tareas{margin:0;padding-left:0;list-style:none}
+ul.tareas li{position:relative;padding-left:13px;margin:0 0 3px;font-size:13.5px;
+  color:var(--medio);line-height:1.45}
+ul.tareas li::before{content:"";position:absolute;left:0;top:.62em;
+  width:4px;height:4px;border-radius:50%;background:var(--acento)}
+ul.tareas b{color:var(--tinta)}
+
+.refs{font-size:13.5px;line-height:1.5;color:var(--medio);margin:0}
+
+@media print{
+  @page{size:A4;margin:0}
+  body{background:#fff;color:#000;font-size:9.2pt;line-height:1.34}
+  .mando,.aviso,.nada-impreso{display:none !important}
+  .hoja{max-width:none}
+  .testera{padding:10mm 12mm 5mm}
+  .nomChico{font-size:16pt;color:#4b515a}
+  .nomGrande{font-size:23.5pt;margin:0 0 5pt}
+  .cargo{font-size:9pt;color:#1D3557}
+  .filete{background:#C2662D;height:2.5pt;margin:8pt 0 0}
+  /* ⚠ LA BANDA LATERAL VA FIJA, no de fondo de la reja. Como fondo se corta
+     donde acaba el texto de la columna y deja un escalón a media hoja. Y NO
+     se hace estirando la columna con un relleno de 200 mm y margen negativo,
+     que es el truco de toda la vida: con eso Chromium contesta «Printing
+     failed» y no genera NADA. */
+  body::before{
+    content:""; position:fixed; left:0; top:0; width:62mm; height:100%;
+    background:#F4F6FA; z-index:-1;
+  }
+  .testera{background:#fff; position:relative; z-index:1}
+  .cuerpo{display:grid; grid-template-columns:62mm 1fr; background:none}
+  .lado{background:transparent;padding:5mm 7mm 8mm}
+  .centro{padding:5mm 11mm 8mm 8mm}
+  h2{font-size:7.4pt;margin:9pt 0 4.5pt;color:#1D3557}
+  h2 svg{width:9pt;height:9pt;stroke:#1D3557}
+  h2::after{background:#d8dce2}
+  .foto{width:27mm;height:27mm;margin:0 auto 5mm;box-shadow:none;border-color:#fff}
+  .foto-vacia{display:none}
+  .cto li{font-size:8.4pt;margin:0 0 4pt}
+  .cto svg{width:8.5pt;height:8.5pt;stroke:#1D3557}
+  .med{padding:0 0 3.2pt;margin:0 0 3.2pt;border-bottom:1px solid #d8dce2}
+  .med .que{font-size:8.5pt;line-height:1.25}
+  .med .cuanto{font-size:7pt;color:#1D3557}
+  .dato{margin:0 0 6pt}
+  .dato .que{font-size:8.8pt}
+  .dato .donde{font-size:8pt}
+  .sello{font-size:6.8pt;border-color:#C2662D;color:#1D3557}
+  .dispo{grid-template-columns:repeat(3,minmax(0,1fr));gap:7pt;padding:6pt 8pt;
+    background:#F4F6FA;border-color:#d8dce2;border-left:2.5pt solid #C2662D;margin:0 0 3pt}
+  .dispo div b{font-size:6.8pt;color:#1D3557}
+  .dispo div span{font-size:8.4pt}
+  .perfil{font-size:9.1pt;line-height:1.45}
+  .puesto{margin:0 0 7pt;grid-template-columns:42pt minmax(0,1fr);gap:0 8pt}
+  .puesto .anos{font-size:7.8pt}
+  .puesto .car{border-color:#d8dce2;padding-left:9pt}
+  .puesto .casa{font-size:9.6pt}
+  .puesto .rol{font-size:7.8pt;color:#1D3557;margin:1pt 0 3pt}
+  ul.tareas li{font-size:8.2pt;margin:0 0 1pt;padding-left:8pt;line-height:1.36}
+  ul.tareas li::before{background:#C2662D;width:3pt;height:3pt}
+  .refs{font-size:8.2pt}
+  a{color:#000;text-decoration:none}
+  h2,.puesto .casa,.dato .que{break-after:avoid}
+  .puesto,.dato,.med,.dispo{break-inside:avoid}
+}
+
+.fuertes{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 0}
+.fuertes span{font-size:12px;font-weight:700;color:var(--hondo);background:var(--lado);border:1px solid var(--linea);border-radius:20px;padding:4px 10px}
+@media print{ .fuertes{gap:4pt;margin:7pt 0 0} .fuertes span{font-size:7.6pt;padding:1.5pt 6pt;background:#F4F6FA;border-color:#d8dce2;color:#1D3557} }
+</style>
+</head>
+<body>
+
+<div class="mando nada-impreso">
+  <button id="bImprimir">Imprimir o guardar en PDF</button>
+  <button class="liso" id="bFoto">Poner foto</button>
+</div>
+<p class="aviso nada-impreso">
+  Currículum de <b>Carlos Iván</b>. La foto <b>se guarda sólo en este teléfono</b> (el repositorio es público). Para el PDF: «Imprimir o guardar en PDF» y elige «Guardar como PDF».
+</p>
+<input type="file" id="archFoto" accept="image/*" hidden>
+
+<div class="hoja">
+
+<header class="testera">
+  <p class="nomChico">Carlos Iván</p>
+  <p class="nomGrande">Gallardo Blancas</p>
+  <p class="cargo">Ventas · atención al cliente · logística de eventos</p>
+  <div class="filete"></div>
+</header>
+
+<div class="cuerpo">
+
+<aside class="lado">
+  <img class="foto" id="laFoto" alt="" hidden>
+  <div class="foto foto-vacia nada-impreso" id="huecoFoto">Toca para poner tu foto</div>
+
+  <h2><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="m4 7 8 6 8-6"/></svg>Contacto</h2>
+  <ul class="cto">
+    <li><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a1 1 0 0 1-1 1A16 16 0 0 1 4 5a1 1 0 0 1 1-1z"/></svg>
+      <a href="tel:+527862089373">+52 786 208 9373</a></li>
+    <li><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="m4 7 8 6 8-6"/></svg>
+      <a href="mailto:blancasivan083@gmail.com">blancasivan083@gmail.com</a></li>
+    <li><svg viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+      Santiago de Querétaro, Qro.</li>
+    <li><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>
+      <span>10 de enero de 2006 · <span id="edad">20</span> años</span></li>
+  </ul>
+
+  <h2><svg viewBox="0 0 24 24"><path d="m12 3 2.6 5.6 6 .8-4.4 4.2 1.1 6.1L12 16.8 6.7 19.7l1.1-6.1L3.4 9.4l6-.8z"/></svg>Habilidades</h2>
+  <div class="med"><span class="que">Atención al cliente</span><span class="cuanto">Restaurante, tienda y eventos</span></div>
+  <div class="med"><span class="que">Ventas</span><span class="cuanto">Mostrador y piso de venta</span></div>
+  <div class="med"><span class="que">Resolución de problemas</span><span class="cuanto">En piso y con clientes</span></div>
+  <div class="med"><span class="que">Logística de eventos</span><span class="cuanto">Camerinos, hoteles y viajes</span></div>
+  <div class="med"><span class="que">Paquetería Office</span><span class="cuanto">Word, Excel y PowerPoint</span></div>
+  <div class="med"><span class="que">Dispositivos electrónicos</span><span class="cuanto">Buen manejo</span></div>
+  <div class="med"><span class="que">Redes sociales</span><span class="cuanto">Presencia en redes</span></div>
+
+  <h2><svg viewBox="0 0 24 24"><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18z"/><circle cx="12" cy="12" r="9"/></svg>Idiomas</h2>
+  <div class="med"><span class="que">Español</span><span class="cuanto">Lengua materna</span></div>
+
+  <h2><svg viewBox="0 0 24 24"><path d="m12 4 9 4.5-9 4.5-9-4.5z"/><path d="M6.5 11v4.5c0 1.4 2.5 2.5 5.5 2.5s5.5-1.1 5.5-2.5V11"/></svg>Formación</h2>
+  <div class="dato">
+    <div class="que">Bachillerato</div>
+    <div class="donde">Preparatoria privada · Químicos de Michoacán, Taximaroa</div>
+  </div>
+  <div class="dato">
+    <div class="que">Curso de fotografía</div>
+  </div>
+  <div class="dato">
+    <div class="que">Curso de parrillada</div>
+    <div class="donde">Parrillología</div>
+  </div>
+</aside>
+
+<main class="centro">
+
+<h2><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>Perfil</h2>
+<p class="perfil">
+  Tengo 20 años y he trabajado en <b>restaurantes, tiendas, bodegas y conciertos</b>. Lo que
+  mejor se me da es <b>tratar con el cliente y vender</b>. Aprendo rápido, me adapto a lo que
+  haga falta y resuelvo los problemas sobre la marcha. Vivo en Santiago de Querétaro.
+</p>
+
+<div class="fuertes">
+  <span>Aprendo rápido</span><span>Buena adaptabilidad</span><span>Gusto por las ventas</span><span>Resuelvo problemas</span><span>Buen trato con el cliente</span>
+</div>
+
+<h2><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8.5 7V5.5A1.5 1.5 0 0 1 10 4h4a1.5 1.5 0 0 1 1.5 1.5V7"/></svg>Experiencia</h2>
+
+<div class="puesto">
+  <div class="anos">7 meses<br>2026</div>
+  <div class="car">
+    <div class="casa">District Roll</div>
+    <div class="rol">Restaurante de sushi</div>
+  </div>
+</div>
+
+<div class="puesto">
+  <div class="anos">3 años</div>
+  <div class="car">
+    <div class="casa">Taqueros La Manzana</div>
+    <div class="rol">Mesero</div>
+  </div>
+</div>
+
+<div class="puesto">
+  <div class="anos">Eventos</div>
+  <div class="car">
+    <div class="casa">Conciertos de artistas</div>
+    <div class="rol">Auxiliar de promotor</div>
+    <ul class="tareas">
+      <li><b>Manejo de camerino</b> durante los eventos.</li>
+      <li>Reservaciones de hotel y <b>organización de viajes y hospedaje</b>.</li>
+      <li>Operación de la cabina de fotos.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="puesto">
+  <div class="anos">2 años</div>
+  <div class="car">
+    <div class="casa">Zapatería Gonsz</div>
+    <div class="rol">Zapatería</div>
+  </div>
+</div>
+
+<div class="puesto">
+  <div class="anos">8 meses</div>
+  <div class="car">
+    <div class="casa">Shopy Go</div>
+    <div class="rol">Bodega de ropa</div>
+  </div>
+</div>
+
+<div class="puesto">
+  <div class="anos">6 meses</div>
+  <div class="car">
+    <div class="casa">Ara Supplys</div>
+    <div class="rol">Bodega</div>
+  </div>
+</div>
+
+<div class="puesto">
+  <div class="anos">6 meses</div>
+  <div class="car">
+    <div class="casa">Dulce Michoacán</div>
+    <div class="rol">Dulcería</div>
+  </div>
+</div>
+
+<div class="puesto">
+  <div class="anos">1 año</div>
+  <div class="car">
+    <div class="casa">Taller de madera</div>
+    <div class="rol">Armado de cartón</div>
+  </div>
+</div>
+
+<div class="puesto">
+  <div class="anos">2 años</div>
+  <div class="car">
+    <div class="casa">Jardinería</div>
+    <div class="rol">Trabajos de jardín</div>
+  </div>
+</div>
+
+<h2><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>Referencias</h2>
+<p class="refs">Con gusto doy los datos de los lugares donde he trabajado.</p>
+
+</main>
+</div><!-- /cuerpo -->
+</div><!-- /hoja -->
+
+<script>
+/* La foto vive en ESTE teléfono y nada más (el repositorio es público). Caja propia: no se mezcla con la de Carlos. */
+(function(){
+  var VER = 'cv-ivan-v1';
+  var img = document.getElementById('laFoto'), hueco = document.getElementById('huecoFoto'), arch = document.getElementById('archFoto');
+  /* la edad se calcula sola: el papel no envejece mal */
+  var h = new Date(), e = h.getFullYear() - 2006 - ((h.getMonth() < 0 || (h.getMonth() === 0 && h.getDate() < 10)) ? 1 : 0);
+  document.getElementById('edad').textContent = e;
+  document.querySelector('.perfil').innerHTML = document.querySelector('.perfil').innerHTML.replace('Tengo 20 años', 'Tengo ' + e + ' años');
+  function leer(){ try{ return JSON.parse(localStorage.getItem(VER) || '{}'); }catch(x){ return {}; } }
+  function guardar(extra){ var d = leer(); if(extra) Object.assign(d, extra); try{ localStorage.setItem(VER, JSON.stringify(d)); }catch(x){ alert('La foto pesa demasiado para guardarse en el teléfono. Prueba con una más chica.'); } }
+  function ponFoto(url){ if(!url) return; img.src = url; img.hidden = false; hueco.style.display = 'none'; }
+  ponFoto(leer().foto);
+  function pedir(){ arch.click(); }
+  hueco.addEventListener('click', pedir); img.addEventListener('click', pedir); document.getElementById('bFoto').addEventListener('click', pedir);
+  arch.addEventListener('change', function(){
+    var f = arch.files && arch.files[0]; if(!f) return;
+    var fr = new FileReader();
+    fr.onload = function(){
+      var im = new Image();
+      im.onload = function(){
+        /* se recorta al centro en cuadrado (la foto va en círculo) y se encoge a 360 px */
+        var L = 360, lado = Math.min(im.width, im.height), c = document.createElement('canvas'); c.width = c.height = L;
+        c.getContext('2d').drawImage(im, (im.width - lado) / 2, (im.height - lado) / 2, lado, lado, 0, 0, L, L);
+        var chica = c.toDataURL('image/jpeg', 0.85); ponFoto(chica); guardar({ foto: chica });
+      };
+      im.onerror = function(){ alert('No pude leer esa imagen.'); };
+      im.src = fr.result;
+    };
+    fr.readAsDataURL(f);
+  });
+  document.getElementById('bImprimir').addEventListener('click', function(){ print(); });
+})();
+</script>
+</body>
+</html>
