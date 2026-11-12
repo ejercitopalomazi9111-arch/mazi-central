@@ -195,7 +195,9 @@ export async function preguntar(id, env, sistema, mensajes, op = {}) {
   const modelos = [M.modelo, ...(M.respaldo || [])];
   let ultimo = null;
   for (let i = 0; i < modelos.length; i++) {
-    const res = await preguntarA(M, modelos[i], k, sistema, mensajes, tope, imagenes, op, corta, reloj);
+    let res = await preguntarA(M, modelos[i], k, sistema, mensajes, tope, imagenes, op, corta, reloj);
+    if (!res.bien && op.pensarPoco && id === 'gemini' && /\b400\b/.test(res.error || '') && !corta.signal.aborted)
+      res = await preguntarA(M, modelos[i], k, sistema, mensajes, tope, imagenes, { ...op, _sinPensar: true }, corta, reloj);
     /* Se pasa al siguiente sólo si el tropiezo es del modelo (saturado,
        caído, retirado). Una llave mala o una respuesta vacía no mejoran con
        otro modelo. */
@@ -215,6 +217,9 @@ async function preguntarA(M, modelo, k, sistema, mensajes, tope, imagenes, op, c
     if (ultimo) ultimo.parts.unshift(...imagenes.map(x => ({ inlineData: { mimeType: x.mime, data: x.data } })));
   }
   if (op.json && id === 'gemini') cuerpo.generationConfig.responseMimeType = 'application/json';
+  /* Explica (12 nov): una clase entera en JSON tardaba más de 90 s con Gemini pensando. Con `pensarPoco` se le pide
+     pensar poco; si su modelo no conoce la opción (400), se vuelve a pedir SIN ella: nunca queda peor que antes. */
+  if (op.pensarPoco && id === 'gemini' && !op._sinPensar) cuerpo.generationConfig.thinkingConfig = { thinkingLevel: 'low' };
 
   try {
     const r = await fetch(M.url(modelo, k), {
