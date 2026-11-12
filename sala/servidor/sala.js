@@ -381,6 +381,7 @@ import { generarVapid, empujarATodos } from './push.mjs';
 import { atenderBanco } from './banco.js';
 import { atenderElementos } from './elementos.js';
 import { atenderPizarron } from './pizarron.js';
+import { atenderEstudio } from './estudio.js';
 import { atenderSecre } from './secre.js';
 import { MOTORES, preguntar, motoresVivos, motoresApagados, motorDe,
          PAPEL_SILLA, PAPEL_RESUMEN, PAPEL_LIGUE, generarImagen, generarVoz } from './modelos.js';
@@ -2304,6 +2305,8 @@ export class Sala {
     if(ruta === 'elementos') return atenderElementos(this.ctx.storage, pedido, url, cuenta);
     /* ── /pizarron · los pendientes por proyecto (pizarron.js) ── */
     if(ruta === 'pizarron') return atenderPizarron(this.ctx.storage, pedido, url, cuenta);
+    /* ── /estudio · planes de examen, XP, racha y ranking (estudio.js) ── */
+    if(ruta === 'estudio') return atenderEstudio(this.ctx.storage, pedido, url, cuenta);
     /* ── /secre · el cajón cifrado de Secre (secre.js). Sólo la cuenta dueña ── */
     if(ruta === 'secre'){
       if(cuenta !== (this.dueno || 'carlos')) return Response.json({ error: 'Esto es sólo de la cuenta dueña de la sala.' }, { status: 403 });
