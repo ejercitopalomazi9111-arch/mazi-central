@@ -26,10 +26,12 @@ function leccionDe(tema){
     preguntas: [
       { tipo: 'opcion', pregunta: '¿Cuál es la función general del sistema circulatorio?', opciones: ['Transportar sustancias por el cuerpo', 'Producir pensamientos y recuerdos', 'Descomponer los alimentos en el estómago', 'Controlar los movimientos de los huesos'], correcta: 0, porque: 'Lleva oxígeno y nutrientes a cada célula y se lleva los desechos.', pista: 'Piensa en una red de carreteras.' },
       { tipo: 'hueco', frase: 'El órgano que bombea la sangre es el ___.', respuesta: 'corazón', distractores: ['riñón', 'estómago', 'pulmón'], porque: 'El corazón es un músculo que funciona como bomba.', pista: 'Late todo el tiempo.' },
-      { tipo: 'opcion', pregunta: '¿Qué conductos guían el recorrido de la sangre?', opciones: ['Los nervios', 'Los vasos sanguíneos', 'Los tendones', 'Los bronquios'], correcta: 1, porque: 'Arterias, venas y capilares son vasos sanguíneos.', pista: 'Son como tubos.' },
-      { tipo: 'hueco', frase: 'La ___ circula por los vasos sanguíneos.', respuesta: 'sangre', distractores: ['bilis', 'saliva', 'orina'], porque: 'La sangre es lo que se transporta.', pista: 'Es roja.' },
-      { tipo: 'opcion', pregunta: '¿Qué transporta la sangre a las células?', opciones: ['Sólo agua', 'Oxígeno y nutrientes', 'Sólo hormonas', 'Aire'], correcta: 1, porque: 'Las células necesitan oxígeno y nutrientes para vivir.', pista: 'Lo que respiras y lo que comes.' },
-      { tipo: 'opcion', pregunta: '¿Cuántos componentes principales tiene?', opciones: ['Dos', 'Tres', 'Cinco', 'Uno'], correcta: 1, porque: 'Corazón, sangre y vasos.', pista: 'Cuenta los puntos de la lección.' },
+      { tipo: 'escribir', pregunta: '¿Qué órgano bombea la sangre?', respuesta: 'corazón', aceptadas: ['el corazón'], porque: 'Es un músculo que funciona como bomba.', pista: 'Late.' },
+      { tipo: 'unir', pregunta: 'Conecta cada parte con lo que hace', pares: [['Corazón', 'Bombea'], ['Arterias', 'Salen del corazón'], ['Venas', 'Regresan al corazón'], ['Capilares', 'Intercambian con las células']], porque: 'Cada parte tiene su trabajo.' },
+      { tipo: 'imagen', pregunta: '¿Cuál es el corazón?', opciones: [{ texto: 'Corazón', buscar: 'Corazón humano', icono: 'heart' }, { texto: 'Cerebro', buscar: '', icono: 'brain' }, { texto: 'Pulmón', buscar: '', icono: 'wind' }, { texto: 'Hueso', buscar: '', icono: 'bone' }], correcta: 0, porque: 'El corazón es el que bombea.' },
+      { tipo: 'error', pregunta: 'En este recorrido hay UN paso mal. ¿Cuál?', pasos: ['El corazón bombea', 'La sangre sale por las arterias', 'La sangre regresa por los nervios', 'Vuelve al corazón'], error: 2, correccion: 'Regresa por las venas', porque: 'Los nervios llevan señales, no sangre.' },
+      { tipo: 'ordenar', pregunta: 'Arma el diagrama del recorrido', pasos: ['El corazón bombea', 'Sale por las arterias', 'Llega a los capilares', 'Regresa por las venas'], porque: 'Es un circuito.' },
+      { tipo: 'clasificar', pregunta: 'Clasifica cada vaso', grupos: [{ nombre: 'Llevan sangre al cuerpo', items: ['Aorta', 'Arterias'] }, { nombre: 'Regresan sangre', items: ['Venas', 'Vena cava'] }], porque: 'Unas salen y otras regresan.' },
     ] } : {
     /* la forma vieja (párrafo y puntos): las lecciones guardadas así también se tienen que ver ligeras */
     leccion: { titulo: tema, parrafo: `Esto es **${tema}** explicado en corto para el examen. Va una segunda frase.`, puntos: ['Idea uno', 'Idea dos', 'Idea tres'], dato: 'Un truco para recordarlo.' },
@@ -78,15 +80,18 @@ export async function correr({ ok, almacen, atenderEstudio }){
       if(iaLenta) await new Promise((r) => setTimeout(r, iaLenta));
       res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(contestarIA(JSON.parse(cuerpo)))); return;
     }
-    const f = path.join(raiz, decodeURIComponent(u.pathname));
+    let f = path.join(raiz, decodeURIComponent(u.pathname));
+    if(fs.existsSync(f) && fs.statSync(f).isDirectory()) f = path.join(f, "index.html");   /* como Cloudflare: la carpeta sirve su index */
     if(!f.startsWith(raiz) || !fs.existsSync(f) || fs.statSync(f).isDirectory()){ res.writeHead(404); res.end(); return; }
     res.writeHead(200, { 'content-type': TIPOS[path.extname(f)] || 'application/octet-stream' }); fs.createReadStream(f).pipe(res);
   }).listen(0);
   const P = servidor.address().port, base = `http://localhost:${P}`;
-  const url = `${base}/sala/estudio.html?servidor=${encodeURIComponent(base)}&sala=G`;
+  const url = `${base}/carymo/index.html?servidor=${encodeURIComponent(base)}&sala=G`;
   const nav = await chromium.launch();
   const ctx = await nav.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: process.env.FOTOS ? 2 : 1, hasTouch: true, isMobile: true, serviceWorkers: 'block' });
   await ctx.addInitScript(() => { try{ localStorage.setItem('salaLlave', 'prueba'); }catch{} });
+  /* Wikipedia de mentiras (aquí no hay internet): la foto del corazón es una del repo */
+  await ctx.route(/wikipedia\.org/, (r) => r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ title: 'Corazón humano', thumbnail: { source: `${base}/urban-pest/web/img/planta.webp` } }) }));
   const pagina = await ctx.newPage();
   const errores = [];
   pagina.on('pageerror', (e) => errores.push(e.message));
@@ -104,6 +109,20 @@ export async function correr({ ok, almacen, atenderEstudio }){
     await pagina.click('[data-vista]'); await pagina.waitForSelector('.camino'); await espera(250);
     return src;
   }
+  /* contesta la pregunta que esté en pantalla, del tipo que sea; con bien=false se equivoca a propósito */
+  async function contestar(d, bien = true){
+    const tipo = await pagina.getAttribute('#qCuerpo', 'data-tipo');
+    const de = (t) => d.preguntas.filter((x) => x.tipo === t);
+    if(tipo === 'opcion'){ const preg = (await pagina.textContent('.habla .dice')).trim(); const q = de('opcion').find((x) => x.pregunta === preg); await pagina.click(`.opc:text-is("${q.opciones[bien ? q.correcta : (q.correcta + 1) % q.opciones.length]}")`); }
+    else if(tipo === 'hueco'){ const frase = (await pagina.textContent('.hueco-frase')).trim(); const q = de('hueco').find((x) => frase.startsWith(x.frase.split('___')[0].trim())); await pagina.click(`.ficha:text-is("${bien ? q.respuesta : q.distractores[0]}")`); }
+    else if(tipo === 'escribir'){ const q = de('escribir')[0]; await pagina.fill('#escribe', bien ? q.respuesta.replace(/ó/g, 'o').replace(/z/, 's') : 'riñón izquierdo'); }
+    else if(tipo === 'unir'){ const q = de('unir')[0]; if(!bien){ await pagina.click('[data-u="i0"]'); await pagina.click('[data-u="d1"]'); } for(let k = 0; k < q.pares.length; k++){ await pagina.click(`[data-u="i${k}"]`); await pagina.click(`[data-u="d${k}"]`); } }
+    else if(tipo === 'imagen'){ const q = de('imagen')[0]; await pagina.click(`[data-img="${bien ? q.correcta : (q.correcta + 1) % q.opciones.length}"]`); }
+    else if(tipo === 'error'){ const q = de('error')[0]; await pagina.click(`[data-err="${bien ? q.error : (q.error + 1) % q.pasos.length}"]`); }
+    else if(tipo === 'ordenar'){ const q = de('ordenar')[0]; const orden = bien ? q.pasos : [q.pasos[1], q.pasos[0], ...q.pasos.slice(2)]; for(const p of orden) await pagina.click(`.fichas.sueltas .ficha:text-is("${p}")`); }
+    else if(tipo === 'clasificar'){ const q = de('clasificar')[0]; for(const [gi, g] of q.grupos.entries()) for(const it of g.items){ await pagina.click(`.ficha:text-is("${it}")`); await pagina.click(`[data-grupo="${bien ? gi : (gi + 1) % q.grupos.length}"]`); } }
+    return tipo;
+  }
   /* un nivel entero, todo bien (pasa las ideas y contesta) */
   async function nivelBien(tema){
     await pagina.click('.siguiente [data-nodo]');
@@ -111,9 +130,8 @@ export async function correr({ ok, almacen, atenderEstudio }){
     for(let k = 0; k < 8 && await pagina.isVisible('[data-sig]'); k++) await pagina.click('[data-sig]');
     await pagina.click('[data-empezar]');
     const d = leccionDe(tema);
-    for(let k = 0; k < 12 && !(await pagina.isVisible('.resultado')); k++){
-      if(await pagina.isVisible('#hueco')) await pagina.click(`.ficha:text-is("${d.preguntas.find((x) => x.tipo === 'hueco').respuesta}")`);
-      else { const preg = (await pagina.textContent('.habla .dice')).trim(); const q = d.preguntas.find((x) => x.pregunta === preg); await pagina.click(`.opc:text-is("${q.opciones[q.correcta]}")`); }
+    for(let k = 0; k < 14 && !(await pagina.isVisible('.resultado')); k++){
+      await contestar(d, true);
       await pagina.click('[data-verificar]'); await pagina.click('[data-continuar]'); await espera(120);
     }
   }
@@ -192,42 +210,37 @@ export async function correr({ ok, almacen, atenderEstudio }){
     ok(await pagina.isVisible('.historia.es-dato') && await pagina.isVisible('[data-empezar]'), 'la última pantalla es el truco para recordarlo, con «Empezar cuestionario»');
     await foto('06b-dato');
 
-    /* el cuestionario: la primera la fallo a propósito */
+    /* el cuestionario: un ejercicio de cada tipo; el primero lo fallo a propósito */
     await pagina.click('[data-empezar]');
     const datos = leccionDe('Sistema circulatorio');
-    let vistas = 0, falle = false, vioCombo = false, vioPista = false;
-    for(let vuelta = 0; vuelta < 12; vuelta++){
+    let vistas = 0, falle = false, vioPista = false, maxComboVisto = 0;
+    const tiposVistos = new Set(), fotosTipo = new Set();
+    for(let vuelta = 0; vuelta < 14; vuelta++){
       if(await pagina.isVisible('.resultado')) break;
       vistas++;
-      const esHueco = await pagina.isVisible('#hueco');
-      if(!vioPista && !esHueco && vuelta >= 2){ await pagina.click('[data-pista]'); vioPista = await pagina.isVisible('.pista'); }
-      if(esHueco){
-        const frase = (await pagina.textContent('.hueco-frase')).trim();
-        const q = datos.preguntas.find((x) => x.tipo === 'hueco' && frase.startsWith(x.frase.split('___')[0].trim()));
-        const cual = falle ? q.respuesta : q.distractores[0];
-        await pagina.click(`.ficha:text-is("${cual}")`);
-        await espera(350);
-        ok((await pagina.textContent('#hueco')).includes(cual), 'la ficha vuela al hueco');
-      } else {
-        const preg = (await pagina.textContent('.habla .dice')).trim();
-        const q = datos.preguntas.find((x) => x.pregunta === preg);
-        await pagina.click(`.opc:text-is("${!falle ? q.opciones[(q.correcta + 1) % 4] : q.opciones[q.correcta]}")`);
-      }
+      const tipo = await pagina.getAttribute('#qCuerpo', 'data-tipo');
+      if(!vioPista && tipo === 'opcion' && await pagina.isEnabled('[data-pista]')){ await pagina.click('[data-pista]'); vioPista = await pagina.isVisible('.pista'); }
+      await contestar(datos, falle);
+      tiposVistos.add(tipo);
+      if(!fotosTipo.has(tipo) && process.env.FOTOS){ fotosTipo.add(tipo); await foto('ej-' + tipo); }
+      ok(await pagina.isEnabled('[data-verificar]'), `«${tipo}»: Verificar se prende al contestar`);
       await pagina.click('[data-verificar]');
       await pagina.waitForSelector('.hoja-res');
       if(!falle){
         falle = true;
         ok(await pagina.isVisible('.hoja-res.mal') && await pagina.isVisible('text=Te la vuelvo a preguntar al final'), 'una mala: hoja roja con la respuesta y «te la vuelvo a preguntar»');
-        await pagina.click('[data-porque]'); ok(await pagina.isVisible('#porque'), '«¿Por qué?» explica');
-        await foto('07-mal');
-      }
-      if(await pagina.isVisible('.combo') && !vioCombo){ vioCombo = true; await foto('08-combo'); }
+      } else ok(await pagina.isVisible('.hoja-res.bien'), `«${tipo}» contestado bien cuenta como bien`);
+      if(tipo === 'escribir' && falle) ok(/Casi perfecto/.test(await pagina.textContent('.hoja-res')), 'escribir con errores de dedo («corason») cuenta como bien y te dice cómo se escribe');
+      await espera(140);
+      const combo = await pagina.$$eval('.combo-vfx .combo-txt b', (x) => x.map((b) => +b.textContent.replace('x', '')));
+      if(combo.length){ maxComboVisto = Math.max(maxComboVisto, ...combo); if(combo[0] === 2 && process.env.FOTOS) await foto('08-combo'); }
       await pagina.click('[data-continuar]');
       await espera(150);
     }
+    ok(['opcion', 'hueco', 'escribir', 'unir', 'imagen', 'error', 'ordenar', 'clasificar'].every((t) => tiposVistos.has(t)), `salen los 8 tipos de ejercicio (${[...tiposVistos].join(', ')})`);
     ok(vioPista, 'la pista sale al pedirla');
-    ok(vioCombo, 'al encadenar buenas sale el COMBO');
-    ok(vistas === 7, `la que fallé regresó al final (${vistas} preguntas para 6)`);
+    ok(maxComboVisto >= 6, `el combo sale en CADA acierto seguido, con sus efectos (llegó a x${maxComboVisto})`);
+    ok(vistas === 9, `la que fallé regresó al final (${vistas} ejercicios para 8)`);
     await pagina.waitForSelector('.resultado');
     ok(await pagina.isVisible('text=XP') && /\d+ %/.test(await pagina.textContent('.medallas')), 'el resultado trae XP, aciertos y tiempo');
     await pagina.click('[data-estrella="5"]');
@@ -320,7 +333,7 @@ export async function correr({ ok, almacen, atenderEstudio }){
     ok(await desborde() <= 0, 'el perfil no se sale de lado');
 
     /* los sonidos existen y se pueden pedir */
-    const sonidos = await pagina.evaluate(async () => { const r = await Promise.all(['toque', 'bien', 'mal', 'logro', 'moneda', 'combo', 'hielo', 'voltear', 'whoosh', 'pop', 'subir', 'golpe'].map((n) => fetch(`sonidos/${n}.mp3`).then((x) => x.ok && x.headers.get('content-length') !== '0'))); return r.every(Boolean); });
+    const sonidos = await pagina.evaluate(async () => { const r = await Promise.all(['toque', 'bien', 'mal', 'logro', 'moneda', 'combo', 'hielo', 'voltear', 'whoosh', 'pop', 'subir', 'golpe'].map((n) => fetch(`../sala/sonidos/${n}.mp3`).then((x) => x.ok && x.headers.get('content-length') !== '0'))); return r.every(Boolean); });
     ok(sonidos, 'los 12 sonidos de la app están publicados');
 
     /* otro teléfono: el plan y el avance llegan de La Sala */
@@ -342,7 +355,7 @@ export async function correr({ ok, almacen, atenderEstudio }){
       }catch{}
     });
     const p3 = await ctx3.newPage(); p3.on('pageerror', (e) => errores.push('tel3: ' + e.message));
-    await p3.goto(`${base}/sala/estudio.html?servidor=http://localhost:1&sala=G`);
+    await p3.goto(`${base}/sala/estudio.html?servidor=http://localhost:1&sala=G`);   /* la dirección vieja lleva a la nueva */
     await p3.waitForSelector('.camino');
     const t3 = await p3.$$eval('.nodo', (ns) => ns.map((n) => n.getAttribute('aria-label').split(':')[0] + (n.classList.contains('hecho') ? '*' : '')));
     ok(t3.length === 6 && t3[0] === 'Panorama de la unidad*' && t3[1] === 'Cátedra en el pizarrón*' && /^Nivel.*\*$/.test(t3[2]) && t3[3] === 'Cátedra en el pizarrón', `un plan viejo gana sus cátedras, y lo que ya pasaste sigue pasado (${t3.join(' · ')})`);

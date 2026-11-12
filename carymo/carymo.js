@@ -13,10 +13,11 @@
       para que Carlos y Luis compitan. Sin red se apunta y se manda después.
    Sin librerías. Un solo archivo de lógica; los íconos son de Lucide.
    ═════════════════════════════════════════════════════════════════════════ */
-import { ico } from './iconos-estudio.js';
-import { DIBUJOS } from './iconos-clase.js';
-import { sacarJSON } from './json-ia.js';
-import { sonar, encender as encenderSonidos } from './sonidos/sonidos.js';
+import { ico } from './iconos.js';
+import { DIBUJOS } from '../sala/iconos-clase.js';
+import { sacarJSON } from '../sala/json-ia.js';
+import { buscarImagen } from '../sala/lienzo.js';
+import { sonar, encender as encenderSonidos } from '../sala/sonidos/sonidos.js';
 import { llave, ponerLlave, llamar, SERVIDOR, SALA } from '../presentaciones/ia.js';
 
 const $ = (s, d = document) => d.querySelector(s);
@@ -42,6 +43,9 @@ const ICONO_NODO = { quiz: 'notebook-pen', tarjetas: 'layers', pizarra: 'present
 const NOMBRE_NODO = { quiz: 'Nivel: lección y cuestionario', tarjetas: 'Tarjetas', pizarra: 'Cátedra en el pizarrón', panorama: 'Panorama de la unidad', simulacro: 'Simulacro', examen: 'Examen final' };
 /* el tipo que se ve (un panorama es una clase en el pizarrón de toda la unidad) */
 const tipoVisto = (n) => n.tipo === 'pizarra' && n.alcance === 'unidad' ? 'panorama' : n.tipo;
+
+/* Explica (el pizarrón) vive en La Sala y es el mismo para las dos: CARYMO lo abre desde allá */
+const EXPLICA = new URL('../sala/explica.html', import.meta.url).href;
 
 /* ══ ESTADO ═══════════════════════════════════════════════════════════════ */
 let planes = guarda.leer('est.planes', {});                 /* id → plan completo */
@@ -101,12 +105,23 @@ Vas a escribir UNA lección corta y su cuestionario. Contesta SÓLO con JSON vá
 { "leccion": { "titulo": "título corto (máximo 6 palabras)", "ideas": [ { "titulo": "2 a 4 palabras", "texto": "UNA sola idea en máximo 22 palabras, con **una** palabra clave en negritas", "icono": "un dibujo de la lista" } ], "dato": "un truco o ejemplo para recordarlo, máximo 18 palabras" },
   "preguntas": [
     { "tipo": "opcion", "pregunta": "…", "opciones": ["…", "…", "…", "…"], "correcta": 0, "porque": "por qué es la correcta, 1 o 2 frases", "pista": "una pista que NO da la respuesta" },
-    { "tipo": "hueco", "frase": "una oración con ___ donde va la palabra que falta", "respuesta": "la palabra (1 a 3 palabras)", "distractores": ["…", "…", "…"], "porque": "…", "pista": "…" }
+    { "tipo": "hueco", "frase": "una oración con ___ donde va la palabra que falta", "respuesta": "la palabra (1 a 3 palabras)", "distractores": ["…", "…", "…"], "porque": "…", "pista": "…" },
+    { "tipo": "escribir", "pregunta": "pregunta que se contesta con 1 a 3 palabras", "respuesta": "la respuesta", "aceptadas": ["otras formas válidas de decirlo"], "porque": "…", "pista": "…" },
+    { "tipo": "unir", "pregunta": "Conecta cada … con su …", "pares": [["concepto", "lo que le corresponde"], ["…", "…"], ["…", "…"], ["…", "…"]], "porque": "…" },
+    { "tipo": "imagen", "pregunta": "¿Cuál de estas imágenes es …?", "opciones": [{ "texto": "nombre corto", "buscar": "título EXACTO de un artículo de Wikipedia en español que tenga foto", "icono": "un dibujo de la lista" }], "correcta": 0, "porque": "…" },
+    { "tipo": "error", "pregunta": "En este diagrama hay UN paso mal. ¿Cuál?", "pasos": ["paso 1", "paso 2", "paso 3", "paso 4"], "error": 2, "correccion": "cómo debería decir ese paso", "porque": "…" },
+    { "tipo": "ordenar", "pregunta": "Arma el diagrama de flujo de …", "pasos": ["primero", "luego", "después", "al final"], "porque": "…" },
+    { "tipo": "clasificar", "pregunta": "Clasifica cada … en su grupo", "grupos": [{ "nombre": "grupo A", "items": ["…", "…"] }, { "nombre": "grupo B", "items": ["…", "…"] }], "porque": "…" }
   ] }
 Reglas:
 - La lección se lee en el teléfono UNA IDEA POR PANTALLA: de 3 a 4 "ideas", cortas de verdad. Nada de párrafos largos.
 - "icono": escoge el dibujo que mejor ilustre cada idea, SÓLO de esta lista: ${DIBUJOS_LISTA}
-- 6 preguntas: 4 de "opcion" y 2 de "hueco", revueltas. Que se contesten con lo que dice la lección.
+- De 8 a 9 preguntas MUY VARIADAS: 2 de "opcion" y una de cada uno de los demás tipos (hueco, escribir, unir, imagen, error, ordenar, clasificar). Si el tema de plano no tiene un proceso para "error" u "ordenar", cámbialo por otro tipo, pero usa al menos 6 tipos distintos. Que todo se conteste con lo que dice la lección.
+- "imagen": 4 opciones de cosas que se puedan VER (órganos, animales, lugares, objetos, personajes históricos…); cada una con su "buscar" de Wikipedia y su "icono" de la lista por si no hay foto.
+- "error": de 4 a 6 pasos de un proceso real con UNO cambiado para que esté mal; "error" es su número (empieza en 0).
+- "ordenar": de 4 a 6 pasos de un proceso en su orden correcto (la app los revuelve).
+- "clasificar": 2 o 3 grupos con 2 a 3 elementos cada uno.
+- "unir": 4 pares; "escribir": respuestas cortas que se puedan escribir en el teléfono.
 - En "opcion": 4 opciones del mismo largo más o menos, UNA sola correcta; "correcta" es su número (0 a 3). Las incorrectas tienen que sonar posibles.
 - En "hueco": la frase lleva EXACTAMENTE un ___ y los distractores son del mismo tipo de palabra que la respuesta.
 - Nada de emojis. Nada de inventar datos: si no estás seguro de algo, no lo preguntes.`;
@@ -144,11 +159,22 @@ export function normalizarLeccion(j){
       if(distractores.length < 2) return null;
       return { tipo: 'hueco', frase: frase.replace(/_{2,}/, '___'), respuesta, distractores, porque: corta(p.porque, 400), pista: corta(p.pista, 240) };
     }
+    const base = { porque: corta(p.porque, 400), pista: corta(p.pista, 240) };
+    const lista = (x, n, m) => (Array.isArray(x) ? x : []).map((y) => corta(typeof y === 'string' || typeof y === 'number' ? y : '', n)).filter(Boolean).slice(0, m);
+    if(tipo === 'escribir'){ const respuesta = corta(p.respuesta, 60); if(!p.pregunta || !respuesta || respuesta.split(/\s+/).length > 5) return null; return { tipo, pregunta: corta(p.pregunta, 300), respuesta, aceptadas: lista(p.aceptadas, 60, 5), ...base }; }
+    if(tipo === 'unir'){ const pares = (Array.isArray(p.pares) ? p.pares : []).map((x) => Array.isArray(x) ? [corta(x[0], 80), corta(x[1], 120)] : x && typeof x === 'object' ? [corta(x.a || x.concepto || x[0], 80), corta(x.b || x.definicion || x[1], 120)] : null).filter((x) => x && x[0] && x[1]).slice(0, 5);
+      if(pares.length < 3 || new Set(pares.map((x) => quitarAcentos(x[0]))).size !== pares.length || new Set(pares.map((x) => quitarAcentos(x[1]))).size !== pares.length) return null; return { tipo, pregunta: corta(p.pregunta, 200), pares, ...base }; }
+    if(tipo === 'imagen'){ const ops = (Array.isArray(p.opciones) ? p.opciones : []).map((o) => typeof o === 'string' ? { texto: corta(o, 50), buscar: corta(o, 80), icono: '' } : { texto: corta(o && (o.texto || o.nombre), 50), buscar: corta(o && o.buscar, 100), icono: dibujoValido(o && o.icono) }).filter((o) => o.texto).slice(0, 4);
+      const c0 = Number(p.correcta); if(ops.length < 3 || !Number.isInteger(c0) || c0 < 0 || c0 >= ops.length || !p.pregunta) return null; return { tipo, pregunta: corta(p.pregunta, 200), opciones: ops, correcta: c0, ...base }; }
+    if(tipo === 'error'){ const pasos = lista(p.pasos, 120, 7), e0 = Number(p.error); if(pasos.length < 3 || !Number.isInteger(e0) || e0 < 0 || e0 >= pasos.length) return null; return { tipo, pregunta: corta(p.pregunta, 200), pasos, error: e0, correccion: corta(p.correccion, 160) || 'otro paso', ...base }; }
+    if(tipo === 'ordenar'){ const pasos = lista(p.pasos, 100, 7); if(pasos.length < 3 || new Set(pasos.map(quitarAcentos)).size !== pasos.length) return null; return { tipo, pregunta: corta(p.pregunta, 200), pasos, ...base }; }
+    if(tipo === 'clasificar'){ const grupos = (Array.isArray(p.grupos) ? p.grupos : []).map((g) => ({ nombre: corta(g && g.nombre, 40), items: lista(g && g.items, 50, 4) })).filter((g) => g.nombre && g.items.length).slice(0, 3);
+      if(grupos.length < 2 || grupos.reduce((a, g) => a + g.items.length, 0) < 4) return null; return { tipo, pregunta: corta(p.pregunta, 200), grupos, ...base }; }
     const opciones = (Array.isArray(p.opciones) ? p.opciones : []).map((x) => corta(x, 200)).filter(Boolean);
     const c = Number(p.correcta);
     if(opciones.length < 3 || opciones.length > 5 || !Number.isInteger(c) || c < 0 || c >= opciones.length || new Set(opciones.map(quitarAcentos)).size !== opciones.length) return null;
     return { tipo: 'opcion', pregunta: corta(p.pregunta, 300), opciones, correcta: c, porque: corta(p.porque, 400), pista: corta(p.pista, 240) };
-  }).filter((p) => p && (p.pregunta || p.frase)).slice(0, 8);
+  }).filter((p) => p && (p.pregunta || p.frase || p.pares || p.grupos || p.pasos)).slice(0, 10);
   if(!leccion.ideas.length) throw new Error('La lección llegó vacía.');
   if(preguntas.length < 3) throw new Error('El cuestionario llegó incompleto. Prueba otra vez.');
   return { leccion, preguntas };
@@ -331,7 +357,8 @@ function pintarCabeza(){
   $('#avanceExamen').textContent = d == null ? 'Sin fecha de examen' : d < 0 ? 'El examen ya pasó' : d === 0 ? 'El examen es HOY' : d === 1 ? 'El examen es mañana' : `El examen es en ${d} días`;
 }
 function pintar(){
-  for(const v of ['plan', 'horario', 'buscar', 'ranking', 'perfil']) $('#v' + v[0].toUpperCase() + v.slice(1)).hidden = v !== vista;
+  for(const v of ['plan', 'horario', 'pizarron', 'buscar', 'ranking', 'perfil']) $('#v' + v[0].toUpperCase() + v.slice(1)).hidden = v !== vista;
+  if(vista === 'pizarron' && !$('#vPizarron iframe')){ const f = document.createElement('iframe'); f.title = 'El pizarrón'; f.allow = 'autoplay; clipboard-write'; f.src = EXPLICA + location.search; $('#vPizarron').append(f); }
   $$('#nav button').forEach((b) => { if(b.dataset.ir === vista) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
   pintarCabeza();
   if(vista === 'plan') pintarPlan();
@@ -541,7 +568,7 @@ function contenidoDe(p, temaId){
   const t = temaDe(p, temaId);
   const u = p.unidades.find((x) => x.temas.some((y) => y.id === temaId));
   const pr = (async () => {
-    const j = await ia({ sistema: sistemaLeccion(), tope: 5000, revisar: normalizarLeccion,
+    const j = await ia({ sistema: sistemaLeccion(), tope: 7000, revisar: normalizarLeccion,
       texto: `Materia: ${p.materia}\nUnidad: ${u ? u.titulo : ''}\nTema: ${t.titulo}\n${t.resumen ? 'De qué trata: ' + t.resumen + '\n' : ''}${p.notas ? 'Lo que traen los apuntes del alumno: ' + p.notas + '\n' : ''}${p.extra ? 'Lo que dijo el alumno: ' + p.extra : ''}` });
     const actual = planes[p.id] || p; actual.contenido = actual.contenido || {}; actual.contenido[temaId] = j; guardarPlan(actual);
     return j;
@@ -631,56 +658,217 @@ async function abrirLeccion(p, n){
 }
 
 
-/* ══ 9 · EL CUESTIONARIO ══════════════════════════════════════════════════ */
+/* ══ 9 · EL CUESTIONARIO ══════════════════════════════════════════════════
+   Carlos, 12 nov: «no sólo quiz: conectar ideas, escribir la respuesta con alta tolerancia de errores de
+   dedo, elegir la imagen correcta, un diagrama donde digas dónde está el error, crear tú diagramas de
+   flujo y otros elementos para responder; y el combo en CADA respuesta correcta seguida, con sonido,
+   animación y efectos». Cada tipo es una pieza con la misma forma:
+     pintar(q) → HTML · tocar(e, q) → true si cambió algo · listo(q) · revisar(q) → { bien, correcta, nota }
+     marcar(q, r) → pinta en la pantalla qué estaba bien y qué no. */
+const distancia = (a, b) => {
+  const m = a.length, n = b.length; if(!m) return n; if(!n) return m;
+  let prev = Array.from({ length: n + 1 }, (_, j) => j);
+  for(let i = 1; i <= m; i++){ const cur = [i]; for(let j = 1; j <= n; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); prev = cur; }
+  return prev[n];
+};
+const limpiaResp = (t) => quitarAcentos(t).replace(/[^a-z0-9ñ ]+/g, ' ').replace(/\b(el|la|los|las|un|una|unos|unas|de|del)\b/g, ' ').replace(/\s+/g, ' ').trim();
+/* «alta tolerancia de errores de dedo»: sin acentos, sin artículos y con hasta 1 error por cada 4 letras */
+export function respuestaParecida(dada, buenas){
+  const d = limpiaResp(dada); if(!d) return { bien: false };
+  for(const b0 of buenas){
+    const b = limpiaResp(b0); if(!b) continue;
+    if(d === b) return { bien: true, exacta: true, de: b0 };
+    const tol = Math.max(1, Math.floor(b.length / 4));
+    if(distancia(d, b) <= tol) return { bien: true, exacta: false, de: b0 };
+    /* «el corazón bombea» contra «corazón»: la palabra clave adentro también cuenta si es corta la respuesta */
+    if(b.split(' ').length === 1 && d.split(' ').some((w) => distancia(w, b) <= Math.max(1, Math.floor(b.length / 4)))) return { bien: true, exacta: false, de: b0 };
+  }
+  return { bien: false };
+}
+
+const EJ = {
+  opcion: {
+    pintar: (q) => `<div class="habla"><div class="cara">${ico('sparkles')}</div><div class="dice">${esc(q.pregunta)}</div></div>
+      <div class="opciones" role="radiogroup" aria-label="Opciones">${q.opciones.map((o, k) => `<button class="opc" role="radio" data-op="${k}" aria-pressed="false" aria-checked="false">${esc(o)}</button>`).join('')}</div>`,
+    tocar(e, q, c){ const op = e.target.closest('[data-op]'); if(!op || op.disabled) return false; q._r = +op.dataset.op; $$('.opc', c).forEach((b) => { const s = b === op; b.setAttribute('aria-pressed', s); b.setAttribute('aria-checked', s); }); tono(SON.toque); return true; },
+    listo: (q) => q._r != null,
+    revisar: (q) => ({ bien: q._r === q.correcta, correcta: q.opciones[q.correcta] }),
+    marcar(q, r, c){ $$('.opc', c).forEach((b) => { b.disabled = true; const k = +b.dataset.op; if(k === q.correcta) b.classList.add('bien'); else if(k === q._r) b.classList.add('mal'); }); },
+  },
+  hueco: {
+    pintar(q){ const [antes, despues] = q.frase.split('___'); q._fichas ||= barajar([q.respuesta, ...q.distractores]);
+      return `<p class="instruccion">Completa la frase</p><p class="hueco-frase">${esc(antes)}<span class="hueco" id="hueco" aria-label="Espacio para la respuesta"></span>${esc(despues)}</p>
+        <div class="fichas">${q._fichas.map((f, k) => `<div class="ficha-lugar" data-lugar="${k}"><button class="ficha" data-ficha="${k}">${esc(f)}</button></div>`).join('')}</div>`; },
+    tocar(e, q, c){ const f = e.target.closest('[data-ficha]'); if(!f || f.disabled) return false;
+      const hueco = $('#hueco', c), k = +f.dataset.ficha, desde = f.getBoundingClientRect();
+      if(f.parentElement === hueco){ $(`[data-lugar="${k}"]`, c).append(f); hueco.classList.remove('lleno'); q._r = null; }
+      else { const otra = hueco.querySelector('.ficha'); if(otra) $(`[data-lugar="${otra.dataset.ficha}"]`, c).append(otra); hueco.append(f); hueco.classList.add('lleno'); q._r = k; }
+      volar(f, desde); tono(SON.pop); return true; },
+    listo: (q) => q._r != null,
+    revisar: (q) => ({ bien: quitarAcentos(q._fichas[q._r]) === quitarAcentos(q.respuesta), correcta: q.respuesta }),
+    marcar(q, r, c){ $('#hueco', c).classList.add(r.bien ? 'bien' : 'mal'); $$('.ficha', c).forEach((b) => { b.disabled = true; }); },
+  },
+  escribir: {
+    pintar: (q) => `<div class="habla"><div class="cara">${ico('pencil')}</div><div class="dice">${esc(q.pregunta)}</div></div>
+      <label class="escribe"><span>Escribe tu respuesta</span><input id="escribe" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="Aquí, como te salga"></label>
+      <p class="nota-escribe">No importan los acentos ni los errores de dedo.</p>`,
+    entrada(e, q){ if(e.target.id !== 'escribe') return false; q._r = e.target.value; return true; },
+    listo: (q) => !!(q._r && q._r.trim()),
+    revisar(q){ const r = respuestaParecida(q._r, [q.respuesta, ...(q.aceptadas || [])]); return { bien: r.bien, correcta: q.respuesta, nota: r.bien && !r.exacta ? `Casi perfecto: se escribe «${q.respuesta}».` : '' }; },
+    marcar(q, r, c){ const i = $('#escribe', c); i.disabled = true; i.classList.add(r.bien ? 'bien' : 'mal'); },
+  },
+  unir: {
+    pintar(q){ q._izq ||= barajar(q.pares.map((p, k) => ({ t: p[0], k }))); q._der ||= barajar(q.pares.map((p, k) => ({ t: p[1], k }))); q._hechos ||= []; q._err = q._err || 0;
+      return `<p class="instruccion">${esc(q.pregunta || 'Conecta cada idea con la que le corresponde')}</p>
+        <div class="unir"><div class="col">${q._izq.map((x) => `<button class="pieza-u" data-u="i${x.k}">${esc(x.t)}</button>`).join('')}</div><div class="col">${q._der.map((x) => `<button class="pieza-u" data-u="d${x.k}">${esc(x.t)}</button>`).join('')}</div></div>`; },
+    tocar(e, q, c){
+      const b = e.target.closest('[data-u]'); if(!b || b.disabled) return false;
+      const lado = b.dataset.u[0], k = +b.dataset.u.slice(1);
+      if(lado === 'i' || q._sel == null){ if(lado === 'd'){ q._sel = null; } $$('.pieza-u', c).forEach((x) => x.classList.remove('sel')); if(lado === 'i'){ q._sel = k; b.classList.add('sel'); tono(SON.toque); } return true; }
+      if(q._sel === k){
+        const color = ['#AC27FF', '#C2406B', '#3F7BE0', '#1FA37A', '#E08A2E', '#8E5CF5'][q._hechos.length % 6];
+        for(const s of [`i${k}`, `d${k}`]){ const x = $(`[data-u="${s}"]`, c); x.disabled = true; x.classList.remove('sel'); x.classList.add('hecho'); x.style.setProperty('--par', color); x.animate([{ transform: 'scale(1.08)' }, { transform: 'none' }], { duration: 260 }); }
+        q._hechos.push(k); tono(SON.pop);
+      } else {
+        q._err++; tono(SON.golpe); vibrar(30);
+        for(const x of [b, $(`[data-u="i${q._sel}"]`, c)]) x.animate([{ transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'none' }], { duration: 240 });
+      }
+      q._sel = null; $$('.pieza-u', c).forEach((x) => x.classList.remove('sel'));
+      return true;
+    },
+    listo: (q) => (q._hechos || []).length === q.pares.length,
+    revisar: (q) => ({ bien: !q._err, correcta: q.pares.map((p) => `${p[0]} → ${p[1]}`).join(' · '), nota: q._err ? `Las conectaste todas, pero con ${q._err} ${q._err === 1 ? 'intento fallido' : 'intentos fallidos'}.` : '' }),
+    marcar(){},
+  },
+  imagen: {
+    pintar(q){ q._ops ||= barajar(q.opciones.map((o, k) => ({ ...o, k })));
+      return `<div class="habla"><div class="cara">${ico('image-plus')}</div><div class="dice">${esc(q.pregunta)}</div></div>
+        <div class="imagenes">${q._ops.map((o) => `<button class="img-op" data-img="${o.k}" aria-label="Opción ${esc(o.texto)}"><span class="foto-op" data-buscar="${esc(o.buscar || '')}" data-icono="${esc(o.icono || '')}"></span><span class="pie-op">${esc(o.texto)}</span></button>`).join('')}</div>`; },
+    montar(q, c){
+      /* la foto de Wikipedia si la hay; si no, el dibujo; mientras, el dibujo */
+      for(const s of $$('.foto-op', c)){
+        const icono = s.dataset.icono; s.innerHTML = dibujoMini(icono);
+        if(s.dataset.buscar) buscarImagen(s.dataset.buscar).then((r) => { if(!r || !s.isConnected) return; const im = new Image(); let i = 0; im.alt = ''; im.onload = () => { s.innerHTML = ''; s.append(im); }; im.onerror = () => { i++; if(r.fuentes && r.fuentes[i]) im.src = r.fuentes[i]; }; im.src = (r.fuentes && r.fuentes[0]) || r.src; });
+      }
+    },
+    tocar(e, q, c){ const b = e.target.closest('[data-img]'); if(!b || b.disabled) return false; q._r = +b.dataset.img; $$('.img-op', c).forEach((x) => x.classList.toggle('sel', x === b)); tono(SON.toque); return true; },
+    listo: (q) => q._r != null,
+    revisar: (q) => ({ bien: q._r === q.correcta, correcta: q.opciones[q.correcta].texto }),
+    marcar(q, r, c){ $$('.img-op', c).forEach((b) => { b.disabled = true; b.classList.add('revelada'); const k = +b.dataset.img; if(k === q.correcta) b.classList.add('bien'); else if(k === q._r) b.classList.add('mal'); }); },
+  },
+  error: {
+    pintar: (q) => `<p class="instruccion">${esc(q.pregunta || 'Toca el paso que está mal')}</p>
+      <div class="flujo">${q.pasos.map((p, k) => `${k ? `<span class="flecha-f">${ico('arrow-down')}</span>` : ''}<button class="caja-f" data-err="${k}">${esc(p)}</button>`).join('')}</div>`,
+    tocar(e, q, c){ const b = e.target.closest('[data-err]'); if(!b || b.disabled) return false; q._r = +b.dataset.err; $$('.caja-f', c).forEach((x) => x.classList.toggle('sel', x === b)); tono(SON.toque); return true; },
+    listo: (q) => q._r != null,
+    revisar: (q) => ({ bien: q._r === q.error, correcta: `«${q.pasos[q.error]}» → ${q.correccion}` }),
+    marcar(q, r, c){ $$('.caja-f', c).forEach((b) => { b.disabled = true; const k = +b.dataset.err; if(k === q.error){ b.classList.add('mal-real'); b.insertAdjacentHTML('beforeend', `<small class="corrige">Debía decir: ${esc(q.correccion)}</small>`); } else if(k === q._r) b.classList.add('mal'); }); },
+  },
+  ordenar: {
+    pintar(q){ q._fichas ||= barajar(q.pasos.map((t, k) => ({ t, k }))); q._puestos ||= [];
+      return `<p class="instruccion">${esc(q.pregunta || 'Arma el diagrama en orden')}</p>
+        <div class="flujo armar">${q.pasos.map((_, k) => `${k ? `<span class="flecha-f">${ico('arrow-down')}</span>` : ''}<div class="hueco-f" data-hueco="${k}"><span class="n-f">${k + 1}</span></div>`).join('')}</div>
+        <div class="fichas sueltas">${q._fichas.map((f, j) => `<div class="ficha-lugar" data-lugar-o="${j}"><button class="ficha" data-ord="${j}">${esc(f.t)}</button></div>`).join('')}</div>`; },
+    tocar(e, q, c){
+      const f = e.target.closest('[data-ord]'); if(!f || f.disabled) return false;
+      const j = +f.dataset.ord, desde = f.getBoundingClientRect(), ya = q._puestos.indexOf(j);
+      if(ya >= 0){ q._puestos[ya] = undefined; $(`[data-lugar-o="${j}"]`, c).append(f); }
+      else { const libre = q.pasos.findIndex((_, k) => q._puestos[k] == null); if(libre < 0) return false; q._puestos[libre] = j; $(`[data-hueco="${libre}"]`, c).append(f); }
+      volar(f, desde); tono(SON.pop); return true;
+    },
+    listo: (q) => q.pasos.every((_, k) => q._puestos[k] != null),
+    revisar: (q) => ({ bien: q.pasos.every((_, k) => q._fichas[q._puestos[k]].k === k), correcta: q.pasos.map((p, k) => `${k + 1}. ${p}`).join('  ') }),
+    marcar(q, r, c){ q.pasos.forEach((_, k) => { const h = $(`[data-hueco="${k}"]`, c); h.classList.add(q._fichas[q._puestos[k]].k === k ? 'bien' : 'mal'); }); $$('[data-ord]', c).forEach((b) => { b.disabled = true; }); },
+  },
+  clasificar: {
+    pintar(q){ q._items ||= barajar(q.grupos.flatMap((g, gi) => g.items.map((t) => ({ t, gi })))); q._en ||= {};
+      return `<p class="instruccion">${esc(q.pregunta || 'Toca una ficha y luego el grupo donde va')}</p>
+        <div class="grupos">${q.grupos.map((g, gi) => `<button class="grupo" data-grupo="${gi}"><b>${esc(g.nombre)}</b><span class="dentro-g" data-dentro="${gi}"></span></button>`).join('')}</div>
+        <div class="fichas sueltas">${q._items.map((x, j) => `<div class="ficha-lugar" data-lugar-c="${j}"><button class="ficha" data-cla="${j}">${esc(x.t)}</button></div>`).join('')}</div>`; },
+    tocar(e, q, c){
+      const f = e.target.closest('[data-cla]');
+      if(f && !f.disabled){ const j = +f.dataset.cla;
+        if(q._en[j] != null){ const desde = f.getBoundingClientRect(); delete q._en[j]; $(`[data-lugar-c="${j}"]`, c).append(f); volar(f, desde); q._sel = null; tono(SON.pop); }
+        else { q._sel = j; $$('[data-cla]', c).forEach((x) => x.classList.toggle('sel', x === f)); tono(SON.toque); }
+        return true; }
+      const g = e.target.closest('[data-grupo]');
+      if(g && q._sel != null){ const fi = $(`[data-cla="${q._sel}"]`, c), desde = fi.getBoundingClientRect(); q._en[q._sel] = +g.dataset.grupo; fi.classList.remove('sel'); $(`[data-dentro="${g.dataset.grupo}"]`, c).append(fi); volar(fi, desde); q._sel = null; tono(SON.pop); return true; }
+      return false;
+    },
+    listo: (q) => q._items.every((_, j) => q._en[j] != null),
+    revisar: (q) => ({ bien: q._items.every((x, j) => q._en[j] === x.gi), correcta: q.grupos.map((g) => `${g.nombre}: ${g.items.join(', ')}`).join(' · ') }),
+    marcar(q, r, c){ q._items.forEach((x, j) => { const b = $(`[data-cla="${j}"]`, c); b.disabled = true; b.classList.add(q._en[j] === x.gi ? 'bien' : 'mal'); }); },
+  },
+};
+const INSTRUCCION = { opcion: 'Elige la correcta', hueco: 'Completa', escribir: 'Escribe', unir: 'Conecta', imagen: 'Elige la imagen', error: 'Encuentra el error', ordenar: 'Arma el diagrama', clasificar: 'Clasifica' };
+function volar(el, desde){ const hasta = el.getBoundingClientRect(); el.animate([{ transform: `translate(${desde.left - hasta.left}px, ${desde.top - hasta.top}px)` }, { transform: 'none' }], { duration: 320, easing: 'cubic-bezier(.2,.9,.3,1.15)' }); }
+function dibujoMini(nombre){ const d = DIBUJOS[nombre] || DIBUJOS.sparkles || ''; return `<svg class="dib-op" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`; }
+
+/* EL COMBO: en cada acierto seguido (x2, x3…), más grande, más brillante y más agudo mientras más largo */
+function comboVFX(n){
+  if(n < 2) return;
+  const nivel = n >= 8 ? 3 : n >= 5 ? 2 : 1;
+  const color = ['#C77DFF', '#FF6F9A', '#FFC84A'][nivel - 1];
+  const capaC = document.createElement('div'); capaC.className = 'combo-vfx n' + nivel; capaC.setAttribute('aria-hidden', 'true');
+  const titulo = n >= 10 ? '¡IMPARABLE!' : n >= 8 ? '¡EN LLAMAS!' : n >= 5 ? '¡RACHA!' : '';
+  capaC.innerHTML = `<div class="onda" style="border-color:${color}"></div><div class="combo-txt" style="--c:${color}"><small>${titulo}</small>COMBO <b>x${n}</b></div>`;
+  document.body.append(capaC);
+  /* chispas que salen del centro: más mientras más largo el combo */
+  if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
+    const cuantas = 10 + nivel * 8;
+    for(let i = 0; i < cuantas; i++){
+      const s = document.createElement('i'); s.className = 'chispa'; s.style.background = i % 3 ? color : '#fff';
+      capaC.append(s);
+      const a = Math.random() * Math.PI * 2, d = 70 + Math.random() * (90 + nivel * 50);
+      s.animate([{ transform: 'translate(-50%, -50%) scale(1)', opacity: 1 }, { transform: `translate(calc(-50% + ${Math.cos(a) * d}px), calc(-50% + ${Math.sin(a) * d}px)) scale(.2)`, opacity: 0 }], { duration: 650 + Math.random() * 400, easing: 'cubic-bezier(.1,.8,.3,1)', fill: 'forwards' });
+    }
+    if(nivel >= 2) document.querySelector('#capa')?.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(-4px,2px)' }, { transform: 'translate(4px,-2px)' }, { transform: 'none' }], { duration: 240 });
+  }
+  tono(SON.combo, { tono: Math.min(1.7, 1 + (n - 2) * .07) });
+  if(n === 5 || n === 8 || n === 10) setTimeout(() => tono(SON.subir), 180);
+  setTimeout(() => capaC.remove(), 1300);
+}
+
 function cuestionario(p, n, preguntas, { simulacro = false } = {}){
   const c = capa();
-  const fila = barajar(preguntas).map((q) => ({ ...q, intento: 0 }));
+  const fila = barajar(preguntas).filter((q) => EJ[q.tipo]).map((q) => ({ ...q, intento: 0 }));
   const total = fila.length;
   let i = 0, combo = 0, maxCombo = 0, buenasPrimera = 0, contestadas = 0;
   const t0 = Date.now();
+  const limpiarEstado = (q) => { for(const k of Object.keys(q)) if(k.startsWith('_') && k !== '_pista') delete q[k]; return q; };
   function pintarPregunta(){
-    const q = fila[i];
+    const q = fila[i], ej = EJ[q.tipo];
     const avance = contestadas / total * 100;
     const conCombo = combo >= 2 ? `<span class="combo ${combo >= 5 ? 'oro' : ''}">COMBO x${combo}</span>` : '';
-    let cuerpo;
-    if(q.tipo === 'opcion'){
-      cuerpo = `<div class="habla"><div class="cara">${ico('sparkles')}</div><div class="dice">${esc(q.pregunta)}</div></div>
-        <div class="opciones" role="radiogroup" aria-label="Opciones">${q.opciones.map((o, k) => `<button class="opc" role="radio" data-op="${k}" aria-pressed="false" aria-checked="false">${esc(o)}</button>`).join('')}</div>`;
-    } else {
-      const [antes, despues] = q.frase.split('___');
-      q._fichas ||= barajar([q.respuesta, ...q.distractores]);
-      cuerpo = `<p class="hueco-frase">${esc(antes)}<span class="hueco" id="hueco" aria-label="Espacio para la respuesta"></span>${esc(despues)}</p>
-        <div class="fichas">${q._fichas.map((f, k) => `<div class="ficha-lugar" data-lugar="${k}"><button class="ficha" data-ficha="${k}">${esc(f)}</button></div>`).join('')}</div>`;
-    }
     c.innerHTML = `<div class="arriba"><button class="bt redondo fantasma" data-cerrar aria-label="Salir del cuestionario">${ico('x')}</button><div class="progreso" style="position:relative;overflow:visible">${conCombo}<div class="progreso"><i style="width:${avance}%;${combo >= 5 ? 'background:var(--oro)' : ''}"></i></div></div></div>
-      <div class="cuerpo entra" id="qCuerpo">${simulacro ? `<p style="color:var(--suave);font-size:13px;margin-bottom:4px">${ico('timer')} Simulacro · pregunta ${contestadas + 1} de ${total}</p>` : ''}${cuerpo}<div id="pistaCaja"></div></div>
+      <div class="cuerpo entra" id="qCuerpo" data-tipo="${q.tipo}"><p class="tipo-ej">${simulacro ? `Simulacro · ${contestadas + 1} de ${total} · ` : ''}${INSTRUCCION[q.tipo]}</p>${ej.pintar(q)}<div id="pistaCaja"></div></div>
       <div class="abajo"><div class="botones-quiz"><button class="bt" data-pista ${q.pista ? '' : 'disabled'}>${ico('lightbulb')}Pista</button><button class="bt blanco" data-verificar disabled>Verificar</button></div></div>`;
+    ej.montar && ej.montar(q, c);
+    if(q.tipo === 'escribir') setTimeout(() => $('#escribe', c)?.focus({ preventScroll: true }), 350);
   }
-  let elegida = null;
-  function puedeVerificar(){ $('[data-verificar]', c).disabled = elegida == null; }
+  function puedeVerificar(){ const q = fila[i]; const b = $('[data-verificar]', c); if(b) b.disabled = !EJ[q.tipo].listo(q); }
   function verificar(){
-    const q = fila[i];
-    const bien = q.tipo === 'opcion' ? elegida === q.correcta : quitarAcentos(q._fichas[elegida]) === quitarAcentos(q.respuesta);
-    if(q.tipo === 'opcion'){
-      $$('.opc', c).forEach((b) => { b.disabled = true; const k = +b.dataset.op; if(k === q.correcta) b.classList.add('bien'); else if(k === elegida) b.classList.add('mal'); });
-    } else { $('#hueco', c).classList.add(bien ? 'bien' : 'mal'); $$('.ficha', c).forEach((b) => { b.disabled = true; }); }
+    const q = fila[i], ej = EJ[q.tipo];
+    if(!ej.listo(q) || q._verificada) return;
+    q._verificada = true;
+    const r = ej.revisar(q), bien = r.bien;
+    ej.marcar(q, r, c);
     contestadas += q.intento === 0 ? 1 : 0;
     if(bien){
       if(q.intento === 0 && !q._pista){ buenasPrimera++; }
       combo = q._pista ? combo : combo + 1; maxCombo = Math.max(maxCombo, combo);
       tono(SON.bien); vibrar(15);
-      if(combo >= 2) setTimeout(() => tono(SON.combo, { tono: Math.min(1.5, 1 + (combo - 2) * .08) }), 260);
-      if(combo >= 3 && (combo === 3 || combo === 5 || combo % 5 === 0)){ const g = document.createElement('div'); g.className = 'combo-grande'; g.textContent = `COMBO x${combo}`; document.body.append(g); setTimeout(() => g.remove(), 1200); }
+      if(combo >= 2) setTimeout(() => comboVFX(combo), 120);
     } else {
       combo = 0; tono(SON.mal); vibrar([40, 60, 40]); $('#qCuerpo', c).classList.add('sacude');
       /* la que fallaste regresa al final (una vez), como en la escuela: hasta que salga */
-      if(q.intento === 0) fila.push({ ...q, intento: 1, _pista: false, _fichas: null });
+      if(q.intento === 0) fila.push(limpiarEstado({ ...q, intento: 1, _pista: false }));
     }
     const frases = bien ? ['¡Correcto!', '¡Genial!', '¡Increíble!', '¡Eso!'] : ['Casi', 'No era esa', 'Uy, por poquito'];
-    const correcta = q.tipo === 'opcion' ? q.opciones[q.correcta] : q.respuesta;
     const h = document.createElement('div'); h.className = 'hoja-res ' + (bien ? 'bien' : 'mal'); h.setAttribute('role', 'alert');
     h.innerHTML = `<div class="dentro"><h3>${ico(bien ? 'circle-check' : 'circle-x')}${frases[Math.floor(Math.random() * frases.length)]}</h3>
-      ${bien ? '' : `<p>La respuesta: <b>${esc(correcta)}</b>${q.intento === 0 ? '. Te la vuelvo a preguntar al final.' : ''}</p>`}
+      ${r.nota ? `<p>${esc(r.nota)}</p>` : ''}
+      ${bien ? '' : `<p>La respuesta: <b>${esc(r.correcta)}</b>${q.intento === 0 ? '. Te la vuelvo a preguntar al final.' : ''}</p>`}
       <p id="porque" hidden>${esc(q.porque || '')}</p>
       <div class="bts"><button class="bt" data-porque ${q.porque ? '' : 'disabled'}>¿Por qué?</button><button class="bt ${bien ? 'fuerte' : 'blanco'}" data-continuar>Continuar</button></div></div>`;
     document.body.append(h);
@@ -689,44 +877,29 @@ function cuestionario(p, n, preguntas, { simulacro = false } = {}){
       if(e.target.closest('[data-porque]')){ $('#porque', h).hidden = false; e.target.closest('[data-porque]').disabled = true; }
       if(e.target.closest('[data-continuar]')){ h.remove(); siguiente(); }
     });
-    $('.progreso i', c) && ($$('.progreso i', c).pop().style.width = (contestadas / total * 100) + '%');
+    const barra = $$('.progreso i', c).pop(); if(barra) barra.style.width = (contestadas / total * 100) + '%';
   }
   function siguiente(){
-    i++; elegida = null;
+    i++;
     if(i >= fila.length) return terminar();
     pintarPregunta();
   }
   function terminar(){
-    document.querySelectorAll('.combo-grande').forEach((x) => x.remove());
+    document.querySelectorAll('.combo-vfx').forEach((x) => x.remove());
     const seg = Math.round((Date.now() - t0) / 1000);
     const pct = Math.round(buenasPrimera / total * 100);
     const xp = simulacro ? 10 + buenasPrimera * 3 + (pct === 100 ? 10 : 0) : 5 + buenasPrimera * 2 + (pct === 100 ? 5 : 0) + Math.min(5, Math.floor(maxCombo / 2));
-    resultado(p, n, { xp, pct, seg, titulo: pct === 100 ? '¡La rompiste!' : pct >= 70 ? '¡Bien hecho!' : 'Ya casi', frase: pct === 100 ? 'Todo correcto. Estás volando.' : pct >= 70 ? 'Vas muy bien; lo que fallaste ya lo repasaste.' : 'Lo que fallaste ya lo repasaste. Si quieres, hazlo otra vez.' });
+    resultado(p, n, { xp, pct, seg, maxCombo, titulo: pct === 100 ? '¡La rompiste!' : pct >= 70 ? '¡Bien hecho!' : 'Ya casi', frase: pct === 100 ? 'Todo correcto. Estás volando.' : pct >= 70 ? 'Vas muy bien; lo que fallaste ya lo repasaste.' : 'Lo que fallaste ya lo repasaste. Si quieres, hazlo otra vez.' });
   }
   c.addEventListener('click', (e) => {
     if(e.target.closest('[data-cerrar]')){ $('.hoja-res')?.remove(); cerrarCapa(); pintar(); return; }
-    const q = fila[i];
-    const op = e.target.closest('[data-op]');
-    if(op && !op.disabled){ elegida = +op.dataset.op; $$('.opc', c).forEach((b) => { const s = b === op; b.setAttribute('aria-pressed', s); b.setAttribute('aria-checked', s); }); tono(SON.toque); puedeVerificar(); return; }
-    const f = e.target.closest('[data-ficha]');
-    if(f && !f.disabled){ moverFicha(f); return; }
+    const q = fila[i]; if(!q) return;
     if(e.target.closest('[data-pista]')){ q._pista = true; $('#pistaCaja', c).innerHTML = `<div class="pista entra">${ico('lightbulb')} ${esc(q.pista)}</div>`; e.target.closest('[data-pista]').disabled = true; return; }
-    if(e.target.closest('[data-verificar]') && elegida != null) verificar();
+    if(e.target.closest('[data-verificar]')){ verificar(); return; }
+    if(!q._verificada && EJ[q.tipo].tocar && EJ[q.tipo].tocar(e, q, c)) puedeVerificar();
   });
-  /* completar el hueco: la ficha VUELA de su lugar al hueco (y de regreso si la tocas otra vez) */
-  function moverFicha(f){
-    const hueco = $('#hueco', c), k = +f.dataset.ficha;
-    const desde = f.getBoundingClientRect();
-    if(f.parentElement === hueco){
-      $(`[data-lugar="${k}"]`, c).append(f); hueco.classList.remove('lleno'); elegida = null;
-    } else {
-      const otra = hueco.querySelector('.ficha'); if(otra) $(`[data-lugar="${otra.dataset.ficha}"]`, c).append(otra);
-      hueco.append(f); hueco.classList.add('lleno'); elegida = k;
-    }
-    const hasta = f.getBoundingClientRect();
-    f.animate([{ transform: `translate(${desde.left - hasta.left}px, ${desde.top - hasta.top}px)` }, { transform: 'none' }], { duration: 320, easing: 'cubic-bezier(.2,.9,.3,1.15)' });
-    tono(SON.pop); puedeVerificar();
-  }
+  c.addEventListener('input', (e) => { const q = fila[i]; if(q && !q._verificada && EJ[q.tipo].entrada && EJ[q.tipo].entrada(e, q)) puedeVerificar(); });
+  c.addEventListener('keydown', (e) => { if(e.key === 'Enter' && e.target.id === 'escribe'){ e.preventDefault(); verificar(); } });
   pintarPregunta();
 }
 
@@ -787,15 +960,25 @@ async function asegurarContenido(c, p, temas, titulo){
   catch(e){ prep.error(e.message || String(e), () => abrirNodo(n0Id)); return false; }
 }
 let n0Id = null;
+/* cada tipo de pregunta se vuelve una o varias tarjetas (frente / atrás) */
+function tarjetasDe(q){
+  if(q.tipo === 'opcion') return [{ frente: q.pregunta, atras: q.opciones[q.correcta], porque: q.porque }];
+  if(q.tipo === 'hueco') return [{ frente: q.frase.replace('___', '_____'), atras: q.respuesta, porque: q.porque }];
+  if(q.tipo === 'escribir') return [{ frente: q.pregunta, atras: q.respuesta, porque: q.porque }];
+  if(q.tipo === 'unir') return q.pares.map((x) => ({ frente: x[0], atras: x[1], porque: '' }));
+  if(q.tipo === 'imagen') return [{ frente: q.pregunta, atras: q.opciones[q.correcta].texto, porque: q.porque }];
+  if(q.tipo === 'error') return [{ frente: `¿Qué está mal en «${q.pasos[q.error]}»?`, atras: q.correccion, porque: q.porque }];
+  if(q.tipo === 'ordenar') return [{ frente: q.pregunta || 'El orden del proceso', atras: q.pasos.map((x, k) => `${k + 1}. ${x}`).join(' · '), porque: '' }];
+  if(q.tipo === 'clasificar') return q.grupos.flatMap((g) => g.items.map((it) => ({ frente: `¿En qué grupo va «${it}»?`, atras: g.nombre, porque: '' })));
+  return [];
+}
 async function abrirTarjetas(p, n){
   n0Id = n.id;
   const c = capa();
   const { temas } = await preguntasHasta(p, n, { soloUnidad: true });
   if(!(await asegurarContenido(c, p, temas, n.titulo))) return;
   const pp = planes[p.id];
-  let mazo = temas.flatMap((t) => (pp.contenido[t].preguntas || []).map((q) => q.tipo === 'opcion'
-    ? { frente: q.pregunta, atras: q.opciones[q.correcta], porque: q.porque }
-    : { frente: q.frase.replace('___', '_____'), atras: q.respuesta, porque: q.porque }));
+  let mazo = temas.flatMap((t) => (pp.contenido[t].preguntas || []).flatMap(tarjetasDe));
   mazo = barajar(mazo).slice(0, 12);
   if(!mazo.length){ completarNodo(pp, n, { xp: 5 }); return; }
   const total = mazo.length; let sabidas = 0;
@@ -843,7 +1026,7 @@ function abrirPizarra(p, n){
       vistos.length ? `Ya estudió: ${vistos.join(', ')}.` : '', costo.length ? `Le costó trabajo: ${costo.join(', ')}: refuérzalo con ejemplos.` : ''].filter(Boolean).join(' '));
   }
   c.innerHTML = `<div class="arriba"><button class="bt redondo fantasma" data-cerrar aria-label="Cerrar la clase">${ico('x')}</button><div style="flex:1;min-width:0"><small style="display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--claro-txt)">${unidad ? 'Panorama de la unidad' : n.id ? 'Cátedra' : 'Explícame'}</small><b style="font:800 16px/1.2 Titulo">${esc(n.titulo)}</b></div>${n.id ? `<button class="bt fuerte" data-vista>${ico('check')}Ya la vi</button>` : ''}</div>
-    <iframe title="Clase en el pizarrón" src="explica.html?${q}" allow="autoplay; clipboard-write"></iframe>`;
+    <iframe title="Clase en el pizarrón" src="${EXPLICA}?${q}" allow="autoplay; clipboard-write"></iframe>`;
   const alTerminar = (e) => { if(e.origin === location.origin && e.data && e.data.explica === 'fin' && n.id){ const b = $('[data-vista]', c); if(b){ b.classList.add('blanco'); b.textContent = 'Terminar'; brindis('Clase completa', '', 'presentation'); } } };
   addEventListener('message', alTerminar);
   c.addEventListener('click', (e) => {

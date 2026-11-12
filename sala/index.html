@@ -4411,7 +4411,7 @@ function mostrarVista(cual){
   const bv = $('bVista'); if(bv) bv.textContent = cual === 'chat' ? 'Vista' : 'Chat';
   if(cual === 'hebras') pintarTaller();
   if(cual === 'taller3d') prender3D();
-  if(cual === 'estudio') prenderMarco('marcoEstudio', 'estudio.html', 'CARYMO');
+  if(cual === 'estudio') prenderMarco('marcoEstudio', '../carymo/', 'CARYMO');
   if(cual === 'explica') prenderMarco('marcoExplica', 'explica.html', 'Explica');
   if(cual === 'pizarron') prenderMarco('marcoPizarron', 'pizarron.html', 'El pizarrón');
 }
