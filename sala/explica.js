@@ -376,6 +376,8 @@ async function reproducir(i){
   else { sonando = false; botonPlay(); pintarFinal(); }
 }
 function pintarFinal(){
+  /* si la abrió un nodo del camino de Estudio (estudio.html), se le avisa que la clase ya se vio completa */
+  if(window.top !== window) try{ parent.postMessage({ explica: 'fin', titulo: clase.titulo }, location.origin); }catch{}
   piz.querySelector('.final')?.remove();
   const f = document.createElement('div'); f.className = 'final';
   if(clase.referencias.length){
@@ -478,6 +480,8 @@ $('#bNueva').addEventListener('click', () => { sonando = false; turno++; callar(
 document.addEventListener('visibilitychange', () => { if(document.hidden && sonando){ sonando = false; turno++; callar(); botonPlay(); } });
 /* ?tema=… arranca directo (desde la mesa o un link) */
 const q0 = new URLSearchParams(location.search).get('tema'); if(q0) $('#tema').value = q0;
+/* …y Estudio también dice el nivel y el largo («corta»: un nodo del camino no es una clase de una hora) */
+{ const q = new URLSearchParams(location.search); for(const k of ['nivel', 'largo', 'motor']){ const v = q.get(k); if(v && [...$('#' + k).options].some((o) => o.value === v)) $('#' + k).value = v; } }
 botonPlay(); pintarHistorial(); ver('inicio');
 /* para las pruebas: cargar una clase ya hecha sin pedirla */
 window.__explica = { empezar: (c) => empezar(normalizar(c)), normalizar, estado: () => ({ actual, sonando, pasos: clase && clase.pasos.length, dibujados: piz.querySelectorAll('.el').length }) };
