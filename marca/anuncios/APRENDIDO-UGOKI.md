@@ -106,3 +106,21 @@ mismo en 15.
 - **Sin cortes por defecto.** Si una escena no se puede transformar en la siguiente, ahí sí se corta.
   Pero el ritmo de comida (una toma por segundo) es la excepción, no la regla.
 - **Volumen: −16 LUFS** para Instagram y TikTok. El motor ya normaliza en `armar.mjs`: se ajusta ahí.
+
+## Para animar el logo (de la skill `logo-animation`, en la bodega)
+
+Llegó el 12 de noviembre con los cursos que pasó Carlos, y cuadra con lo de arriba:
+
+- **UNA técnica por logo**: que se dibuje con un trazo, que se arme por piezas o que se transforme. No las tres.
+- **El remate dura de 0.8 a 2.5 s.**
+- **El orden**: primero la base, luego los acentos y **al final el nombre**, para que el ojo termine en él.
+- **Si hay sonido, el cuadro en que el logo queda quieto cae EXACTO en el golpe del audio.** Primero se escoge el
+  audio y se busca el pico; después se acomoda la animación.
+- **Nunca se deforma la marca.** Escalar y desvanecer sí; inclinar o aplastar casi nunca.
+  - El «squash» que le pusimos a veces a la paloma va contra esto.
+  - La regla de Carlos —«se tiene que NOTAR la M cubo volviéndose el cubo completo»— es una transformación, y
+    entonces es la ÚNICA técnica de esa animación.
+- **Siempre un cuadro final quieto** para «reducir movimiento» y para la portada.
+
+Para un anuncio se montan de la bodega `animation-principles`, `logo-animation`, `beat-sync-editing`,
+`shot-composition` y `motion-art-direction` (iart-ai, MIT), y se desmontan al terminar.
