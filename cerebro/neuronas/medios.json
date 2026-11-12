@@ -87,6 +87,25 @@
         "hace ruido la app"
       ],
       "salioDe": "La sala: el sonido va detrás del mismo permiso que las notificaciones y se puede apagar."
+    },
+    {
+      "id": "anuncio-de-15-que-se-transforma",
+      "titulo": "Un anuncio de redes de 15 s que no corta: se transforma",
+      "gravedad": "media",
+      "sintoma": "Nuestros anuncios duran 30 a 70 s, cortan cada tanto y en redes la gente se va antes del logo.",
+      "causa": "Contamos el servicio con escenas sueltas en vez de enseñar el producto funcionando.",
+      "porque": "Medido en los 23 anuncios de Ugoki (12 nov): duran de 14.5 a 17.5 s, 10 de 23 tienen CERO cortes duros y van a −16 LUFS.",
+      "arreglo": "La fórmula: el símbolo nace, se vuelve parte del producto, la historia pasa DENTRO de la interfaz, un clímax que se multiplica, todo regresa al símbolo, y la firma va palabra por palabra con la última en el color de acento; el último cuadro es igual al primero.",
+      "comoCazarlo": "Hoja de cuadros cada 0.3 s (ffmpeg fps=10/3,tile=8x8) y contar los cortes con scdet; si hay más cortes que transformaciones, se está contando y no enseñando.",
+      "consejo": "Detalle y aplicación a Urban Pest y barberías en marca/anuncios/APRENDIDO-UGOKI.md. Los videos de Ugoki no van al repo: son marcas ajenas.",
+      "senales": [
+        "el anuncio es muy largo",
+        "se va la gente antes del logo",
+        "que se vea más profesional el video",
+        "anuncio para instagram",
+        "como los de ugoki"
+      ],
+      "salioDe": "Los 23 anuncios del panel de joinugoki.com, vistos cuadro por cuadro el 12 de noviembre de 2026."
     }
   ]
 }
