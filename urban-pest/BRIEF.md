@@ -34,7 +34,13 @@ portafolio.
 
 ### A · El bot (lo más importante)
 
-Va en dos capas, y las APIs de paga corren por cuenta del cliente.
+Va en dos capas.
+
+**Las IAs de paga NO se le dan al cliente** (decisión de Carlos, 11 nov): van dentro del paquete,
+a nombre nuestro y en nuestro servidor. Él las usa desde el **chat central** del centro de
+operaciones. Es como una sala donde habla con sus clientes, con sus IAs y con un bot automático
+que trae sus pendientes. Nunca recibe llaves. Así no depende de nadie más para cambios, y se
+queda con nosotros.
 
 - **El reflejo:** respuestas ya hechas para lo que preguntan siempre. Es rápido y sale casi
   gratis. Se arma por **casos** (unos 150 a 300, cada uno con muchas formas de preguntarlo), no
@@ -50,11 +56,35 @@ Va en dos capas, y las APIs de paga corren por cuenta del cliente.
 ### B · El cotizador
 
 - Toma los costos y los ejemplos de su **Excel** (**FALTA** el Excel).
-- El bot da un **«desde $X»** y manda la cotización en **PDF**. Siempre aclara que el precio final
+- El bot da un **precio aproximado** (nunca «desde»: suena a que va a subir) y manda la cotización en **PDF**. Si los datos del cliente están bien, ése es el costo; siempre aclara que
   lo confirma un técnico al ver el lugar: no es lo mismo «20 m²» que una casa del Marqués con
   cuatro patios y tres perros.
 - **Regla de negocio:** a una casa de $500 no conviene ir a medir; a una industria sí. El bot
   distingue los dos casos.
+- **Fuera de la zona de servicio** (Carlos, 11 nov):
+  - **Industria:** sí, con visita para confirmar la cotización.
+  - **Casa:** no se cubre, salvo que sea un proyecto grande. Ése lo ve el dueño caso por caso y
+    le llega un aviso.
+  - **Siempre** sale más caro por el traslado, y se le explica al cliente con tacto.
+  - El tamaño mínimo para que una casa de fuera sea «grande» es `fuera_m2_minimo` en las tarifas;
+    si no se pone, son 200 m², y se calibra con el dueño.
+
+### B-bis · Cuando no sabe cuánto mide su casa (Carlos, 11 nov)
+
+Casi nadie lo sabe. El bot no insiste: hace un mini quiz fácil, una o dos preguntas a la vez:
+
+- ¿Tu casa es chica, mediana o grande?
+- ¿Cuántas recámaras y baños tiene?
+- ¿Tiene patio? ¿Es de una o de dos plantas?
+- ¿En qué colonia está?
+
+`servidor/src/medidor.js` lo vuelve metros. Cada cuarto mide según el tamaño de la casa (una
+recámara de casa grande, unos 18 m²), se suman los pasillos y se ajusta por colonia (Juriquilla
+o El Campanario son más grandes). Siempre sale como **estimado** y el técnico confirma.
+
+**Los números son nuestro primer estimado** y se calibran con los servicios reales del dueño
+(`POST /api/medidas`). Habla como la gente («cucarachas chiquitas», «comején»), sin
+tecnicismos y con paciencia.
 
 ### C · El centro de operaciones
 
@@ -84,6 +114,48 @@ la IA**. Es sobre todo para nosotros, pero él también la puede ver.
 - Una campaña para sus redes durante **2 meses**, incluida en el paquete.
 - Carlos trae a sus artistas y a un editor de video. Sylcred hace referencias y guiones; el
   editor hace los videos.
+
+## La regla del dinero · Carlos, 11 nov
+
+**«Aún no desembolses un peso: todo va como se pueda resolver gratis hasta que el cliente nos diga
+que se queda.»** Mientras tanto:
+
+- **La IA:** las gratis que ya usa La Sala. Groq va primero y Gemini de respaldo. La de paga queda
+  apagada (`MOTORES_IA`).
+- **El servidor, el centro de operaciones y la página:** en Cloudflare, con el plan gratis.
+- **Las llamadas al dueño** esperan. Mientras, se le avisa por WhatsApp y con una notificación en el
+  centro.
+- **Ojo:** en el plan gratis de Gemini, Google puede usar lo que se le manda para mejorar sus
+  productos. Por eso Gemini va de respaldo y no primero.
+
+## LO MÁS IMPORTANTE: que le caiga al menos una venta con industria (Carlos, 11 nov)
+
+Cualquier empresa que aparezca es ganancia. Las ideas, de la que más pega a la que menos, todas
+gratis:
+
+1. **La lista de a quién tocarle.** El DENUE del INEGI es el directorio público de empresas, con
+   giro, dirección, teléfono y tamaño. Filtramos las de Querétaro que más necesitan control de
+   plagas certificado: fábricas de alimentos y bebidas, comida para mascotas, farmacéuticas,
+   hospitales y clínicas, bodegas de alimentos. Se ordenan por tamaño y cercanía a su bodega.
+   **FALTA:** un correo para sacar la llave gratis de la API del INEGI.
+2. **El gancho no es «fumigamos», es «te dejamos lista la auditoría».** Una planta de alimentos
+   tiene que demostrar su control de plagas con registros. La NOM-251 lo pide, y las
+   certificaciones (ISO 22000, FSSC, AIB) piden reportes de servicio y mapa de trampas; esto se
+   verifica antes de ponerlo en la página. Le armamos una **carpeta de cumplimiento** digital por
+   cliente: cada servicio deja su reporte en PDF (fecha, productos, trampas, hallazgos y firma) y
+   el jefe de calidad de la empresa la consulta cuando quiere. Las fumigadoras chicas entregan
+   papel; ésta es la diferencia que le abre la puerta. Sale del centro de operaciones.
+3. **Una página que hable con la industria:** una sección propia, la carpeta de cumplimiento, sus
+   reseñas de casi 5 estrellas al frente y un «diagnóstico de su planta» para pedir visita. Si el
+   diagnóstico es gratis o no, lo decide el dueño: es su tiempo.
+4. **Tocar puertas con algo en la mano:** correo y LinkedIn a jefes de calidad, inocuidad y
+   mantenimiento. Mensajes cortos que escribimos nosotros, más una hoja de presentación en PDF.
+   **Nada de mandar WhatsApp en masa:** quema el número.
+5. **Socios que ya entran a las plantas:** consultores de inocuidad y certificación, empresas de
+   limpieza y mantenimiento industrial, y administradores de parques industriales. Se les ofrece
+   comisión por cada cliente que recomienden.
+6. **Su ficha de Google:** que salga en «fumigación industrial Querétaro», con fotos de trabajos y
+   sus reseñas.
 
 ## Cómo se vende
 
@@ -138,6 +210,6 @@ persona.
 2. La dirección de su página actual y quién tiene el dominio.
 3. Acceso a su Meta Business (página de Facebook, Instagram y el número de WhatsApp).
 4. Capturas o exportación de las preguntas que le llegan seguido.
-5. Qué IA de paga se usa y con qué presupuesto al mes. La cuenta va a nombre del cliente.
+5. Cuando el cliente se quede: qué modelo de IA de paga se prende. Mientras tanto, va gratis.
 6. Precios de los paquetes y fecha de entrega.
 7. Teléfono al que el bot le llama cuando lo necesite.

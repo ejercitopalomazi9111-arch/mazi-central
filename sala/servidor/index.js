@@ -16,6 +16,10 @@ import { traer as traerInkwell } from './inkwell.js';
 import { esColeccion } from './pinguinos.js';
 export { Coleccion } from './pinguinos.js';
 export { Comunidad } from './comunidad.js';
+/* URBAN PEST (11 nov): el bot de la fumigadora vive aquí mientras el cliente no
+   diga que se queda. Gratis: usa las mismas llaves de Groq y Gemini que las sillas. */
+export { Despacho as UrbanPest } from '../../urban-pest/servidor/src/index.js';
+import urbanPest from '../../urban-pest/servidor/src/index.js';
 
 /* Sin comodín. Un "*" aquí le abre la puerta a cualquier página del mundo
    para leer y escribir en la mesa de los cuatro. */
@@ -64,7 +68,7 @@ const esCodigo = (c) => typeof c === 'string' && c.length === LARGO
                      && [...c].every(x => LETRAS.includes(x));
 
 export default {
-  async fetch(pedido, env){
+  async fetch(pedido, env, ctx){
     const url = new URL(pedido.url);
 
     /* El rechazo lleva permiso de CORS para que la página LO PUEDA LEER: sin
@@ -77,7 +81,7 @@ export default {
     if(pedido.method === 'OPTIONS'){
       return conCORS(new Response(null, { status:204, headers:{
         'Access-Control-Allow-Methods':'GET,POST,OPTIONS',
-        'Access-Control-Allow-Headers':'content-type,x-llave,x-token',
+        'Access-Control-Allow-Headers':'content-type,x-llave,x-token,x-acceso',
         'Access-Control-Max-Age':'86400',
       } }), pedido);
     }
@@ -100,6 +104,35 @@ export default {
 
     /* INKWELL · LA COMUNIDAD (comunidad.js): una sola, con su SQLite. Va antes
        del molde /api/sala/X/Y por la misma razón que el recadero. */
+    /* URBAN PEST: /api/urban/* → el servidor del bot (urban-pest/servidor/RUTAS.md).
+       El webhook de Meta se comprueba con su firma; todo lo demás, con la llave de
+       GRUPAZ, igual que los admins de la comunidad. */
+    if(url.pathname.startsWith('/api/urban/')){
+      if(!env.URBAN) return conCORS(Response.json({ bien:false, error:'Urban Pest todavía no está encendido.' }, { status:503 }), pedido);
+      const ruta = url.pathname.slice('/api/urban'.length);
+      const h = new Headers(pedido.headers); h.delete('x-llave');
+      if(!ruta.startsWith('/webhook/')){
+        let ok = false;
+        try{
+          const r = await env.SALA.get(env.SALA.idFromName('GRUPAZ')).fetch(new Request('https://sala/api/sala/GRUPAZ/hilo?desde=e99999999', { headers: { 'X-Llave': pedido.headers.get('x-llave') || '' } }));
+          ok = r.ok;
+        }catch{}
+        /* con la llave de la sala entra como Grupo Mazi; si no, el bot revisa si trae un
+           código de acceso de tester (x-acceso), que sólo abre Urban Pest */
+        if(ok) h.set('x-llave', 'sala-ok');
+      }
+      const nueva = new Request(new URL(ruta + url.search, url.origin), { method: pedido.method, headers: h, body: ['GET', 'HEAD'].includes(pedido.method) ? undefined : await pedido.arrayBuffer() });
+      try{
+        /* las llaves de IA viven en la sala GRUPAZ (se pegan desde la app), no en el panel */
+        let llavesIA = {};
+        try { llavesIA = await (await env.SALA.get(env.SALA.idFromName('GRUPAZ')).fetch(new Request('https://interno/llaves-ia-crudas'))).json(); } catch {}
+        const llenas = Object.fromEntries(Object.entries(llavesIA).filter(([, v]) => v));
+        return conCORS(await urbanPest.fetch(nueva, { ...env, ...llenas, DESPACHO: env.URBAN, LLAVE_PANEL: 'sala-ok', ORIGENES: '' }, ctx), pedido);
+      }catch(e){
+        return conCORS(Response.json({ bien:false, error:'Urban Pest tuvo un error: ' + String((e && e.message) || e).slice(0, 160) }, { status:503 }), pedido);
+      }
+    }
+
     const com = url.pathname.match(/^\/api\/sala\/comunidad\/([a-z]+)$/);
     if(com){
       if(!env.COMUNIDAD) return conCORS(Response.json({ bien:false, error:'La comunidad todavía no está encendida.' }, { status:503 }), pedido);
