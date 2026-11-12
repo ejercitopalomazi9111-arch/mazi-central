@@ -34,9 +34,11 @@ export const ALIAS = {
 const sinAcento = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 /** «cucarachitas güeritas» → 'cucaracha'. null si no se reconoce. */
 export function aPlaga(texto, extra = {}){
-  const t = sinAcento(texto).replace(/(es|s)\b/g, '');
+  /* el plural se quita de las dos formas: «chinches» → «chinche» (sin s), «ratones» → «raton» (sin es).
+     Antes sólo se quitaba «es» y «chinches» quedaba «chinch»: el bot no cotizaba chinches (12 nov) */
+  const base = sinAcento(texto), formas = [base, base.replace(/s\b/g, ''), base.replace(/es\b/g, '')];
   for(const [clave, dichos] of Object.entries({ ...ALIAS, ...extra })){
-    if(t === clave || dichos.some(d => t.includes(sinAcento(d)))) return clave;
+    if(formas.some(t => t === clave || dichos.some(d => t.includes(sinAcento(d))))) return clave;
   }
   return null;
 }

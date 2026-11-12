@@ -13,7 +13,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 import { Oficina } from './oficina.js';
 import { firmaValida, leerAviso, enviar } from './meta.js';
-import { pensar } from './cerebro.js';
+import { pensar, probarMotores } from './cerebro.js';
 import { cotizar } from './cotizador.js';
 import { estimarM2, MEDIDAS } from './medidor.js';
 import CASOS_FABRICA from '../../bot/casos.json' with { type: 'json' };
@@ -113,6 +113,8 @@ export class Despacho {
       case 'GET /api/conversaciones': return { bien: true, conversaciones: (await lista('conv:')).map(({ mensajes, ...c }) => ({ ...c, n: mensajes.length, ultimo_texto: mensajes.at(-1)?.texto, ultima_via: mensajes.at(-1)?.via })).sort((a, b) => b.ultimo - a.ultimo) };
       case 'GET /api/conversacion': return { bien: true, conversacion: await A.get(`conv:${q.canal}:${q.chat}`) };
       case 'GET /api/yo': return { bien: true, quien };
+      /* qué motores de IA le llegan al bot y si contestan (sin enseñar ninguna llave) */
+      case 'GET /api/motores': return { bien: true, motores: await probarMotores(this.of.env) };
       case 'POST /api/responder': return this.of.contestaDueno(b.canal, b.chat, String(b.texto || '').slice(0, 2000), quien);
       case 'GET /api/accesos': return { bien: true, accesos: (await lista('acceso:')).map(({ nombre, creado }) => ({ nombre, creado })) };
       case 'POST /api/accesos': {
