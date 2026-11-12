@@ -136,8 +136,8 @@ const limpio = (t) => String(t ?? '').replace(/\*\*|__|\(\(|\)\)/g, '');
 
 /* ══ 3 · LAS TAREAS ═══════════════════════════════════════════════════════
    { fase, dur, paso(k), punto(k) → [x, y] en coordenadas del elemento, fin() }  */
-const VEL_TRAZO = 1.7;          /* px por ms */
-const VEL_LETRA = .055;         /* letras por ms (55 por segundo por cursor) */
+const VEL_TRAZO = .9;           /* px por ms: una línea de 300 px tarda un tercio de segundo, se ve trazar */
+const VEL_LETRA = .032;         /* letras por ms (32 por segundo por cursor: se alcanza a leer mientras escribe) */
 export function tTrazo(path, fase = 0, { vel = VEL_TRAZO, dx = 0, dy = 0, escala = 1 } = {}){
   let L = 0, listo = false;
   const medir = () => { if(!L){ L = path.getTotalLength() || 1; if(!listo){ path.style.strokeDasharray = `${L} ${L}`; path.style.strokeDashoffset = L; } } return L; };
@@ -385,9 +385,13 @@ export const ELEMENTOS = {
     /* la foto entra «barriéndose» de izquierda a derecha detrás del cursor */
     img.style.clipPath = 'inset(0 100% 0 0)';
     t.push({ fase: 1, dur: 900, paso(k){ img.style.clipPath = `inset(0 ${f1((1 - k) * 100)}% 0 0)`; }, punto(k){ return [m.x + m.w * k, m.y + m.h * (.5 + Math.sin(k * 9) * .3)]; }, fin(){ img.style.clipPath = 'none'; } });
+    const sinFoto = () => { const mc = el.querySelector('.marco-img'); mc.classList.add('sin'); mc.innerHTML = `<span>No encontré una foto de «${esc(z.buscar)}» que cargue. Toca para buscarla:</span> <a href="https://es.wikipedia.org/w/index.php?search=${encodeURIComponent(z.buscar)}" target="_blank" rel="noopener">Wikipedia</a>`; };
     buscarImagen(z.buscar).then((r) => {
-      if(!r){ el.querySelector('.marco-img').classList.add('sin'); el.querySelector('.marco-img').textContent = 'No encontré una foto de esto en Wikipedia.'; return; }
-      img.src = r.src; el.querySelector('.credito').innerHTML = `Foto: <a href="${esc(r.pagina)}" target="_blank" rel="noopener">Wikipedia · ${esc(r.titulo)}</a>`;
+      if(!r){ sinFoto(); return; }
+      /* si una dirección falla, se prueba la siguiente; si fallan todas, se dice (nunca un recuadro vacío) */
+      let i = 0;
+      img.onerror = () => { i++; if(r.fuentes && r.fuentes[i]) img.src = r.fuentes[i]; else sinFoto(); };
+      img.src = (r.fuentes && r.fuentes[0]) || r.src; el.querySelector('.credito').innerHTML = `Foto: <a href="${esc(r.pagina)}" target="_blank" rel="noopener">Wikipedia · ${esc(r.titulo)}</a>`;
     });
     return [...t, ...tareasTexto(el, svg, ctx)];
   } },
@@ -728,9 +732,15 @@ export function buscarImagen(titulo){
     try{
       const r = await fetch(`https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(String(titulo).replace(/ /g, '_'))}?redirect=true`, { headers: { accept: 'application/json' } });
       if(!r.ok) return null;
-      const j = await r.json(); const img = j.thumbnail || j.originalimage;
-      if(!img || !img.source) return null;
-      return { src: img.source.replace(/\/(\d+)px-/, '/640px-'), titulo: j.title || titulo, pagina: (j.content_urls && j.content_urls.mobile && j.content_urls.mobile.page) || `https://es.wikipedia.org/wiki/${encodeURIComponent(titulo)}` };
+      const j = await r.json(), mini = j.thumbnail, orig = j.originalimage;
+      if(!(mini && mini.source) && !(orig && orig.source)) return null;
+      /* varias direcciones, de la mejor a la más segura: la de 640 px SÓLO si el original es más grande
+         (si no, Wikimedia no la genera y la foto sale rota), luego la miniatura tal cual, luego el original */
+      const fuentes = [];
+      if(mini && mini.source && orig && orig.width >= 700 && /\/\d+px-/.test(mini.source)) fuentes.push(mini.source.replace(/\/(\d+)px-/, '/640px-'));
+      if(mini && mini.source) fuentes.push(mini.source);
+      if(orig && orig.source && !/\.svg$/i.test(orig.source) && (orig.width || 0) <= 2400) fuentes.push(orig.source);
+      return { src: fuentes[0], fuentes, titulo: j.title || titulo, pagina: (j.content_urls && j.content_urls.mobile && j.content_urls.mobile.page) || `https://es.wikipedia.org/wiki/${encodeURIComponent(titulo)}` };
     }catch{ return null; }
   })();
   fotosVistas.set(titulo, p); return p;
@@ -772,7 +782,7 @@ export function crearLienzo(vista, { modo = 'monton', maestro = 'Negro', alMover
     mundo.append(el);
     semilla = 7919 * (n + 1) + 104729;
     const tinta = TINTAS[n % TINTAS.length], tinta2 = TINTAS[(n + 2) % TINTAS.length];
-    const ctx = { n, tinta, tinta2, pedazo: MODOS_CURSORES[modo] > 1 ? 34 : 0 };
+    const ctx = { n, tinta, tinta2, pedazo: MODOS_CURSORES[modo] > 1 ? 70 : 0 };
     let tareas = [];
     try{ tareas = def.armar(el, w, z, ctx) || []; }
     catch(e){ console.warn('No pude armar', z.tipo, e); const b = base(el, `<p class="p" data-b>${marcar(z.texto || z.titulo || z.centro || '')}</p>`); tareas = tareasTexto(el, b.svg, ctx); }
@@ -896,7 +906,9 @@ export function crearLienzo(vista, { modo = 'monton', maestro = 'Negro', alMover
     /* ¿cuánto tardaría a velocidad normal? Si se pasa de lo que dura la voz, todo va más rápido (nunca más lento) */
     let estimado = 0;
     for(const f of fases){ const ts = p.tareas.filter((t) => t.fase === f), k = Math.min(maxK, ts.length); const suma = ts.reduce((a, t) => a + t.dur + 160, 0); estimado += Math.max(...ts.map((t) => t.dur), suma / k); }
-    const prisa = lim(estimado / Math.max(1200, durObjetivo), 1, 6);
+    /* el dibujo ocupa buena parte de lo que dura la voz: si iba a acabar muy pronto se va más despacio
+       (hasta 1.8 veces), y si no le alcanza el tiempo, más rápido (nunca más de 4 veces) */
+    const prisa = lim(estimado / Math.max(1500, durObjetivo * .7), .55, 4);
     principal().trabajando = false;
     for(const f of fases){
       if(g !== gen) break;
@@ -922,7 +934,7 @@ export function crearLienzo(vista, { modo = 'monton', maestro = 'Negro', alMover
       t.ini && t.ini();
       const abs = (q) => { const [x, y] = t.punto(q); return t.abs ? [x, y] : [p.x + x, p.y + y]; };
       const [x0, y0] = abs(0);
-      const dist = Math.hypot(x0 - c.x, y0 - c.y), dur = lim(dist / 2.6, 70, 300) / Math.sqrt(prisa);
+      const dist = Math.hypot(x0 - c.x, y0 - c.y), dur = lim(dist / 1.5, 140, 520) / Math.sqrt(prisa);
       const ox = c.x, oy = c.y;
       c.trabajando = true;
       await anima(dur, (k) => { const e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2; c.x = ox + (x0 - ox) * e; c.y = oy + (y0 - oy) * e; }, g);
