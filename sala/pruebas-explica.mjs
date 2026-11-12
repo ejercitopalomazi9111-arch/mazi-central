@@ -46,6 +46,8 @@ export const CLASE = { titulo: 'El sistema circulatorio', visual: true, motor: '
   { voz: 'Líneas.', pizarra: { tipo: 'lineas', titulo: 'Pulso al correr', ejeY: 'lpm', puntos: [{ x: '0 min', y: 70 }, { x: '5', y: 120 }, { x: '10', y: 150 }, { x: '15', y: 155 }] } },
   { voz: 'Pastel.', pizarra: { tipo: 'pastel', titulo: 'La sangre', datos: [{ etiqueta: 'Plasma', valor: 55 }, { etiqueta: 'Glóbulos rojos', valor: 44 }, { etiqueta: 'Otros', valor: 1 }] } },
   { voz: 'Resumen.', pizarra: { tipo: 'resumen', puntos: ['El corazón bombea', 'La sangre transporta', 'Los vasos guían'] } },
+  { voz: '', pregunta: '¿Y por qué las venas se ven azules?', pizarra: { tipo: 'titulo', texto: '¿Y por qué las venas se ven azules?', sub: 'Tu pregunta' } },
+  { voz: 'Por cómo la piel deja pasar la luz: la sangre siempre es roja.', pizarra: { tipo: 'texto', texto: 'La sangre es **roja**; el azul es un efecto de la luz en la piel.' } },
 ], referencias: [{ titulo: 'Sistema circulatorio', tipo: 'Wikipedia' }], repaso: [{ pregunta: '¿Qué bombea la sangre?', respuesta: 'El corazón.' }] };
 
 const TIPOS_HTTP = { '.html': 'text/html', '.js': 'text/javascript', '.woff2': 'font/woff2', '.json': 'application/json', '.webp': 'image/webp', '.png': 'image/png' };
@@ -62,7 +64,8 @@ async function abrir(ancho = 390, alto = 844, cursores = 'monton'){
   const ctx = await nav.newContext({ viewport: { width: ancho, height: alto }, deviceScaleFactor: process.env.FOTOS ? 2 : 1, hasTouch: true, serviceWorkers: 'block' });
   await ctx.addInitScript((c) => { try{ localStorage.setItem('explica.voz', '"no"'); localStorage.setItem('explica.cursores', JSON.stringify(c)); localStorage.setItem('salaLlave', 'x'); }catch{} }, cursores);
   /* Wikipedia de mentiras: la foto es una del repo */
-  await ctx.route(/wikipedia\.org/, (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ title: 'Corazón humano', thumbnail: { source: `${base}/urban-pest/web/img/planta.webp` }, content_urls: { mobile: { page: 'https://es.wikipedia.org/wiki/Coraz%C3%B3n' } } }) }));
+  /* Wikipedia de mentiras: dice que el original mide 2000 px, pero la versión de 640 no existe (404): tiene que caer a la miniatura */
+  await ctx.route(/wikipedia\.org/, (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ title: 'Corazón humano', thumbnail: { source: `${base}/no-existe/320px-foto.webp` }, originalimage: { source: `${base}/urban-pest/web/img/planta.webp`, width: 2000 }, content_urls: { mobile: { page: 'https://es.wikipedia.org/wiki/Coraz%C3%B3n' } } }) }));
   const p = await ctx.newPage();
   p.on('pageerror', (e) => errores.push(e.message));
   p.on('console', (m) => { if(m.type() === 'error' && !/favicon|404/.test(m.text())) errores.push(m.text()); if(m.type() === 'warning' && /No pude armar/.test(m.text())) errores.push(m.text()); });
@@ -136,6 +139,22 @@ try{
     const tamaños = await p.evaluate(() => [...document.querySelectorAll('#tablero .el')].map((e) => ({ t: e.classList[1], w: e.offsetWidth, h: e.offsetHeight })));
     ok(tamaños.every((x) => x.h > 20 && x.w > 200), 'ningún elemento salió vacío ni aplastado' + (tamaños.filter((x) => x.h <= 20 || x.w <= 200).map((x) => ` ${x.t}:${x.w}x${x.h}`).join('')));
     ok(await p.isVisible('#bApuntes'), 'al terminar se puede abrir los apuntes');
+    /* la foto cargó aunque su primera dirección no existía */
+    const foto0 = await p.evaluate(() => { const i = document.querySelector('#tablero .el.imagen img'); return i ? { ok: i.complete && i.naturalWidth > 0, src: i.src } : null; });
+    ok(foto0 && foto0.ok && /planta/.test(foto0.src), 'si la foto grande de Wikipedia no existe, carga la siguiente (no un recuadro vacío)');
+    /* el cursor de quien explica no se queda plantado: al terminar se va por la orilla */
+    await p.waitForTimeout(2200);
+    const fuera = await p.evaluate(() => { const c = document.querySelector('#tablero .cur'); if(!c) return true; const r = c.getBoundingClientRect(), v = document.querySelector('#tablero').getBoundingClientRect(); return r.left < v.left - 5 || r.right > v.right + 5 || r.top < v.top - 5 || r.bottom > v.bottom + 5; });
+    ok(fuera, 'el cursor de Negro se retira cuando ya no hay nada que dibujar');
+    /* todo lo que se dijo, en lista, con la pregunta */
+    await p.click('#bDicho');
+    await p.waitForSelector('#hojaDicho .lista-dicho');
+    const dicho = await p.evaluate(() => ({ n: document.querySelectorAll('#hojaDicho .lista-dicho li:not(.preg-dicho)').length, preg: [...document.querySelectorAll('#hojaDicho .preg-dicho')].map((x) => x.textContent), ancho: document.documentElement.scrollWidth }));
+    ok(dicho.n === CLASE.pasos.filter((x) => x.voz).length, `«Lo dicho» trae TODO lo que se dijo, en lista (${dicho.n})`);
+    ok(dicho.preg.length === 1 && /venas se ven azules/.test(dicho.preg[0]), '…y las preguntas que hiciste');
+    ok(dicho.ancho <= 390, '«Lo dicho» no se sale de lado');
+    await foto(p, '03b-dicho');
+    await p.click('#bVolverDicho');
     await foto(p, '03-todo');
     /* el dedo mueve el pizarrón y aparece «Seguir la clase» */
     await p.evaluate(() => { document.querySelector('#bPlay').click(); });

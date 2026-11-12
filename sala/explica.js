@@ -40,11 +40,18 @@ $('#bNueva').innerHTML = ico('rotate-ccw'); $('#bFoto').insertAdjacentHTML('afte
 $('#bExplica').innerHTML = `${ico('sparkles')} Explícame`; $('#lapizEspera').innerHTML = ico('mouse-pointer-2');
 $('#bSeguir').innerHTML = `${ico('locate-fixed')}Seguir la clase`; $('#bTodo').innerHTML = `${ico('maximize')}Ver todo`; $('#bApuntes').innerHTML = `${ico('notebook-text')}Apuntes`;
 $('#bImprimir').innerHTML = `${ico('printer')}Imprimir o guardar PDF`; $('#bVolverClase').innerHTML = `${ico('arrow-left')}Al pizarrón`;
+$('#bDicho').innerHTML = `${ico('list-ordered')}Lo dicho`; $('#bVolverDicho').innerHTML = `${ico('arrow-left')}Al pizarrón`; $('#bApuntesDicho').innerHTML = `${ico('notebook-text')}Apuntes`;
 $('#bAtras').innerHTML = ico('skip-back'); $('#bSig').innerHTML = ico('skip-forward'); $('#bPreg').innerHTML = ico('circle-question-mark');
 $('#fPreg button').innerHTML = ico('send');
 
 /* ══ 1 · PEDIR LA CLASE ═════════════════════════════════════════════════════ */
-const LARGO = { corta: '6 a 9', normal: '10 a 14', fondo: '16 a 22' };
+const LARGO = { corta: '6 a 9', normal: '12 a 16', fondo: '13 a 15' };
+/* cuánto se dice en cada paso: «a fondo» explica el mecanismo, no sólo el qué */
+const VOZ = {
+  corta: 'de 2 a 3 frases (entre 30 y 60 palabras)',
+  normal: 'de 3 a 5 frases (entre 50 y 90 palabras)',
+  fondo: 'de 5 a 7 frases (entre 90 y 150 palabras): el qué, el CÓMO funciona por dentro (el mecanismo, paso a paso), el porqué, un ejemplo concreto con datos o un caso real, y cómo se conecta con lo anterior o un error común',
+};
 const NIVEL = { prepa: 'de preparatoria', uni: 'de universidad', facil: 'muy sencillo, como para alguien que nunca lo ha visto' };
 const FORMA = `{
  "titulo": "título corto de la clase",
@@ -102,7 +109,7 @@ ${FORMA}
 ${CATALOGO}
 Reglas:
 - ${LARGO[largo]} pasos, nivel ${NIVEL[nivel]}. El PRIMER paso es un "titulo".
-- "voz": de 2 a 3 frases (entre 30 y 60 palabras) que EXPLIQUEN de verdad: el porqué, un ejemplo o un truco para recordarlo. Nunca sólo anuncies lo que viene. Como lo dirías hablando: sin markdown, sin emojis y sin leer la pizarra palabra por palabra; la complementas.
+- "voz": ${VOZ[largo]} que EXPLIQUEN de verdad: el porqué, un ejemplo o un truco para recordarlo.${largo === 'fondo' ? ' A FONDO quiere decir PROFUNDO, no largo de relleno: términos técnicos bien explicados, mecanismos, excepciones, matices, datos concretos y casos. Los elementos del pizarrón también más completos (listas de 5 a 7, tablas de 4 a 6 filas, diagramas con más nodos).' : ''} Nunca sólo anuncies lo que viene. Como lo dirías hablando: sin markdown, sin emojis y sin leer la pizarra palabra por palabra; la complementas.
 - "pizarra": lo que se dibuja en ese paso. USA MUCHOS TIPOS DISTINTOS: al menos 6 tipos diferentes en la clase, y no repitas el mismo tipo dos pasos seguidos. Elige el que MEJOR enseñe cada idea: si se comparan cosas, "comparar" o "tabla"; si se juntan temas, "venn"; si es un proceso, "pasos" o "ciclo"; si son partes de algo, "partes"; si hay jerarquía, "arbol" o "piramide"; si hay fechas, "linea"; si hay causas, "causas" o "diagrama".
 - "visual": true si el tema se entiende mejor con dibujos y diagramas; entonces usa más diagramas, dibujos y fotos, y menos texto suelto.
 - Usa "icono" seguido (en titulo, texto, definicion, icono y partes): sólo nombres de la lista de DIBUJOS. Usa 1 o 2 "imagen" si el tema tiene algo que se pueda ver en una foto.
@@ -182,7 +189,8 @@ export function normalizar(j){
   const pasos = (Array.isArray(j.pasos) ? j.pasos : []).map((p) => {
     const voz = corta(p && p.voz, 600);
     const z = normalizarPizarra(p && p.pizarra);
-    return voz || z ? { voz, pizarra: z } : null;
+    const pregunta = corta(p && p.pregunta, 300);
+    return voz || z ? { voz, pizarra: z, ...(pregunta ? { pregunta } : {}) } : null;
   }).filter(Boolean).slice(0, 48);
   if(!pasos.length) throw new Error('La clase llegó vacía. Prueba otra vez.');
   return {
@@ -261,11 +269,12 @@ function callar(){ try{ speechSynthesis.cancel(); }catch{} if(audioActual){ audi
 let clase = null, actual = -1, sonando = false, turno = 0;
 const ver = (cual) => {
   $('#vInicio').hidden = cual !== 'inicio'; $('#vPrepara').hidden = cual !== 'prepara'; $('#vClase').hidden = cual !== 'clase'; $('#vApuntes').hidden = cual !== 'apuntes';
-  $('#mando').hidden = cual !== 'clase'; $('#bNueva').hidden = cual !== 'clase' && cual !== 'apuntes';
+  $('#vDicho').hidden = cual !== 'dicho';
+  $('#mando').hidden = cual !== 'clase'; $('#bNueva').hidden = cual !== 'clase' && cual !== 'apuntes' && cual !== 'dicho';
   document.body.classList.toggle('en-clase', cual === 'clase');
   if(cual === 'clase') requestAnimationFrame(margenes);
 };
-const segundos = (t) => Math.min(16, Math.max(2.2, String(t || '').split(/\s+/).length * .38 / velocidad));
+const segundos = (t) => Math.min(70, Math.max(2.2, String(t || '').split(/\s+/).length * .38 / velocidad));
 function pintarSub(t, hasta){ const p = String(t || '').split(/(\s+)/); let n = 0; $('#subVoz').innerHTML = p.map((w) => { const i = n; n += w.length; return /^\s+$/.test(w) ? w : `<span class="${i + w.length <= hasta ? 'ya' : i <= hasta ? 'ahora' : ''}">${esc(w)}</span>`; }).join(''); }
 function botonPlay(){ $('#bPlay').innerHTML = ico(sonando ? 'pause' : 'play'); $('#bVoz').innerHTML = ico(modoVoz === 'no' ? 'volume-x' : 'volume-2') ; $('#bVoz').title = { tel: 'Voz del teléfono', natural: 'Voz natural de Gemini', no: 'Sin voz' }[modoVoz]; $('#bVel').textContent = velocidad + '×'; }
 
@@ -306,6 +315,12 @@ async function reproducir(i){
   pintarSub(paso.voz, Infinity);
   await new Promise((r) => setTimeout(r, 320));
   if(yo !== turno || !sonando) return;
+  if(i >= clase.pasos.length - 1 && clase.pendiente){
+    /* la clase a fondo se escribe en dos partes: si la segunda no ha llegado, se espera aquí */
+    pintarSub('Un momento: estoy armando la segunda parte de la clase…', Infinity);
+    await clase.pendiente;
+    if(yo !== turno || !sonando) return;
+  }
   if(i < clase.pasos.length - 1) reproducir(i + 1);
   else { sonando = false; botonPlay(); terminada = true; pintarFinal(); }
 }
@@ -314,6 +329,24 @@ function pintarFinal(){
   if(window.top !== window) try{ parent.postMessage({ explica: 'fin', titulo: clase.titulo }, location.origin); }catch{}
   $('#bSeguir').hidden = true; $('#bTodo').hidden = false;
   pintarSub('Listo. Mueve el pizarrón con el dedo, toca dos veces algo para acercarte, o abre tus apuntes.', Infinity);
+}
+
+/* ══ 4-ter · TODO LO QUE SE DIJO (Carlos: «un apartado donde pueda leer todo lo dicho en lista, también las preguntas») ══ */
+function abrirDicho(){
+  if(!clase) return;
+  sonando = false; turno++; callar(); lienzo.detener(); botonPlay();
+  ver('dicho'); scrollTo({ top: 0 });
+  let n = 0;
+  const filas = clase.pasos.map((p) => {
+    if(p.pregunta) return `<li class="preg-dicho"><small>Tu pregunta</small>${esc(p.pregunta)}</li>`;
+    if(!p.voz) return '';
+    n++;
+    const z = p.pizarra, sec = z && z.tipo === 'titulo' ? `<b class="sec-dicho">${esc(limpioTxt(z.texto))}</b>` : '';
+    return `${sec}<li><span class="num-dicho">${n}</span><p>${esc(p.voz)}</p></li>`;
+  }).join('');
+  $('#hojaDicho').innerHTML = `<header class="portada-ap"><small>Todo lo que se dijo · ${esc(FECHA(clase.fecha))}</small><h1>${esc(clase.titulo)}</h1><p>${n} cosas explicadas${clase.pasos.some((p) => p.pregunta) ? ` · ${clase.pasos.filter((p) => p.pregunta).length} preguntas tuyas` : ''}${clase.pendiente ? ' · la segunda parte todavía se está escribiendo' : ''}</p></header>
+    <ol class="lista-dicho">${filas}</ol>
+    ${clase.repaso.length ? `<section class="fin-ap"><h2>Preguntas de repaso</h2><div class="repaso-ap">${clase.repaso.map((r, i) => `<details><summary><span>${i + 1}</span>${esc(r.pregunta)}</summary><p>${esc(r.respuesta)}</p></details>`).join('')}</div></section>` : ''}`;
 }
 
 /* ══ 4-bis · LOS APUNTES: la clase entera en una hoja bonita para repasar o imprimir ══ */
@@ -369,13 +402,31 @@ async function pedirClase(){
   const giro = setInterval(() => { k++; const s = Math.round((Date.now() - t0) / 1000);
     $('#preparaTxt').innerHTML = `${ESPERA[k % ESPERA.length]}${largaEspera ? ` <small>(${s} s de unos 120)</small>` : ''}<b>${esc(tema || 'tus apuntes')}</b>`; }, 3000);
   try{
-    const c = await pedirJSON({ motor, json: true, tope: 8000, sistema: sistema(motor, $('#nivel').value, $('#largo').value),
+    const largo = $('#largo').value;
+    const c = await pedirJSON({ motor, json: true, tope: 8000, sistema: sistema(motor, $('#nivel').value, largo) + (largo === 'fondo' ? '\n\nESTA ES LA PARTE 1 DE 2 de una clase a fondo: escribe los primeros pasos (los fundamentos y el mecanismo). La parte 2 (aplicaciones, casos, excepciones, errores comunes y cierre) se pide aparte; aquí deja "referencias" y "repaso" vacíos.' : ''),
       mensajes: [{ de: 'tu', texto: tema ? `Explícame: ${tema}` : 'Explícame lo que dicen estas fotos de mis apuntes.' }], imagenes: fotos }, normalizar);
     c.motor = motor; c.tema = tema; c.id = Date.now().toString(36); c.fecha = Date.now();
     guardarHistorial(c); empezar(c);
+    if(largo === 'fondo') segundaParte(c, motor, tema);
   }catch(e){
     ver('inicio'); aviso(e.message || String(e)); if(e.llave) $('#cajaLlave').hidden = false;
   }finally{ clearInterval(giro); }
+}
+/* la segunda mitad de una clase a fondo: se pide en cuanto arranca la primera y se pega al final */
+function segundaParte(c, motor, tema){
+  const resumen = c.pasos.map((x, i) => `${i + 1}. ${x.voz}`).join('\n');
+  c.pendiente = pedirJSON({ motor, json: true, tope: 8000,
+    sistema: sistema(motor, $('#nivel').value, 'fondo') + `\n\nESTA ES LA PARTE 2 DE 2. YA DISTE la parte 1 de «${c.titulo}»:\n${resumen}\n\nAhora escribe de 12 a 15 pasos NUEVOS que profundicen sin repetir: aplicaciones, casos reales, excepciones, comparaciones, errores comunes, cómo se conecta con otros temas y un cierre con un "resumen". El primero puede ser un "titulo" de sección. Incluye "referencias" y "repaso" (de 4 a 6 preguntas).`,
+    mensajes: [{ de: 'tu', texto: `Sigue con la parte 2 de: ${tema || c.titulo}` }] }, normalizar)
+    .then((n2) => {
+      if(clase !== c) return;
+      c.pasos.push(...n2.pasos);
+      c.referencias.push(...n2.referencias.filter((r) => !c.referencias.some((x) => x.titulo === r.titulo)));
+      if(n2.repaso.length) c.repaso = [...c.repaso, ...n2.repaso].slice(0, 8);
+      guardarHistorial(c);
+    })
+    .catch((e) => { if(clase === c) aviso('La segunda parte no llegó: ' + (e.message || e) + ' Con la pregunta (?) puedes pedir que siga.'); })
+    .finally(() => { c.pendiente = null; });
 }
 async function empezar(c){
   clase = c; audiosNat.clear();
@@ -394,7 +445,7 @@ async function preguntar(q){
     const nueva = await pedirJSON({ motor: clase.motor, json: true, tope: 6000,
       sistema: sistema(clase.motor, $('#nivel').value, 'corta') + `\n\nYA DISTE esta clase («${clase.titulo}»):\n${resumen}\n\nAhora contesta la PREGUNTA de Carlos como una continuación de la clase: de 3 a 7 pasos nuevos con la misma forma JSON (el primero NO tiene que ser título). Puedes agregar referencias y repaso nuevos.`,
       mensajes: [{ de: 'tu', texto: q }] }, normalizar), desde = clase.pasos.length;
-    clase.pasos.push({ voz: '', pizarra: { tipo: 'titulo', texto: q.length > 70 ? q.slice(0, 68) + '…' : q, sub: 'Tu pregunta' } }, ...nueva.pasos);
+    clase.pasos.push({ voz: '', pregunta: q, pizarra: { tipo: 'titulo', texto: q.length > 70 ? q.slice(0, 68) + '…' : q, sub: 'Tu pregunta' } }, ...nueva.pasos);
     clase.referencias.push(...nueva.referencias.filter((r) => !clase.referencias.some((x) => x.titulo === r.titulo)));
     if(nueva.repaso.length) clase.repaso = nueva.repaso;
     guardarHistorial(clase); sonando = true; botonPlay(); reproducir(desde);
@@ -445,6 +496,9 @@ $('#bNueva').addEventListener('click', () => { sonando = false; turno++; callar(
 $('#bSeguir').addEventListener('click', () => { lienzo.seguir(); $('#bSeguir').hidden = true; });
 $('#bTodo').addEventListener('click', () => lienzo.verTodo());
 $('#bApuntes').addEventListener('click', abrirApuntes);
+$('#bDicho').addEventListener('click', abrirDicho);
+$('#bVolverDicho').addEventListener('click', () => { ver('clase'); lienzo.verTodo(); });
+$('#bApuntesDicho').addEventListener('click', abrirApuntes);
 $('#bVolverClase').addEventListener('click', () => { ver('clase'); lienzo.verTodo(); });
 $('#bImprimir').addEventListener('click', () => print());
 $('#cursores').value = modoCursores;
@@ -458,5 +512,5 @@ const q0 = new URLSearchParams(location.search).get('tema'); if(q0) $('#tema').v
 { const q = new URLSearchParams(location.search); for(const k of ['nivel', 'largo', 'motor']){ const v = q.get(k); if(v && [...$('#' + k).options].some((o) => o.value === v)) $('#' + k).value = v; } }
 botonPlay(); pintarHistorial(); ver('inicio');
 /* para las pruebas: cargar una clase ya hecha sin pedirla */
-window.__explica = { empezar: (c) => empezar({ ...normalizar(c), motor: c.motor || 'groq', fecha: Date.now() }), normalizar, normalizarPizarra, abrirApuntes, lienzo,
+window.__explica = { abrirDicho, empezar: (c) => empezar({ ...normalizar(c), motor: c.motor || 'groq', fecha: Date.now() }), normalizar, normalizarPizarra, abrirApuntes, lienzo,
   estado: () => ({ actual, sonando, pasos: clase && clase.pasos.length, dibujados: lienzo.piezas.length, cursores: lienzo.cursores, libre: lienzo.libre }) };

@@ -27,7 +27,7 @@ const VA = [
   'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png',
   '_headers', 'kernel-lock.html',
   'fadori', 'sitio', 'marca', 'explorador', 'reportes', 'evaluaciones', 'avisos',
-  'sala', 'campana', 'cerebro', 'entorno', 'bodega', 'demo', 'laboratorio',
+  'sala', 'carymo', 'campana', 'cerebro', 'entorno', 'bodega', 'demo', 'laboratorio',
   'jabonera', 'cv',
   'web',                                        // la página nueva de Grupo Mazi (29 de octubre)
   /* Urban Pest: SÓLO el chat central (Carlos, 11 nov: «publica todo para ir probando»).
