@@ -1,6 +1,8 @@
-/* La pantalla de Estudio en un Chromium de verdad a 390×844, contra el servidor
-   de verdad (atenderEstudio en memoria) y una IA de mentiras que contesta en la
-   forma que se le pide. Lo corre pruebas-estudio.mjs. FOTOS=carpeta guarda capturas. */
+/* La pantalla de CARYMO (antes «Estudio») en un Chromium de verdad a 390×844, contra el servidor
+   de verdad (atenderEstudio en memoria) y una IA de mentiras que contesta en la forma que se le
+   pide… y a veces MAL, como la de verdad: con comas de más (lo que le tronó a Carlos el 12 nov)
+   o con texto que no es JSON (y entonces la app la vuelve a pedir).
+   Lo corre pruebas-estudio.mjs. FOTOS=carpeta guarda capturas. */
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -15,7 +17,12 @@ function leccionDe(tema){
   if(LECCIONES[tema]) return LECCIONES[tema];
   const bio = /circulatorio/i.test(tema);
   const l = bio ? {
-    leccion: { titulo: 'El sistema circulatorio y sus componentes', parrafo: 'El **sistema circulatorio** tiene la función principal de **transportar** nutrientes, oxígeno y otras sustancias vitales a través del cuerpo. Sus tres componentes trabajan juntos sin parar.', puntos: ['El **corazón**, que bombea la sangre.', 'La **sangre**, que circula constantemente.', 'Los **vasos sanguíneos**, conductos que guían su recorrido.'], dato: 'Tu corazón late unas 100 mil veces al día: más que cualquier motor que hayas visto.' },
+    /* la forma nueva: ideas cortas, una por pantalla, con su dibujo */
+    leccion: { titulo: 'El sistema circulatorio', ideas: [
+      { titulo: 'Para qué sirve', texto: 'Lleva **oxígeno** y nutrientes a cada célula, y se lleva los desechos.', icono: 'heart-pulse' },
+      { titulo: 'La bomba', texto: 'El **corazón** empuja la sangre sin parar, unas 70 veces por minuto.', icono: 'heart' },
+      { titulo: 'El camino', texto: 'Los **vasos sanguíneos** son los tubos por donde viaja la sangre.', icono: 'route-que-no-existe' },
+    ], dato: 'Piensa en una red de carreteras: el corazón es la bomba, la sangre los coches.' },
     preguntas: [
       { tipo: 'opcion', pregunta: '¿Cuál es la función general del sistema circulatorio?', opciones: ['Transportar sustancias por el cuerpo', 'Producir pensamientos y recuerdos', 'Descomponer los alimentos en el estómago', 'Controlar los movimientos de los huesos'], correcta: 0, porque: 'Lleva oxígeno y nutrientes a cada célula y se lleva los desechos.', pista: 'Piensa en una red de carreteras.' },
       { tipo: 'hueco', frase: 'El órgano que bombea la sangre es el ___.', respuesta: 'corazón', distractores: ['riñón', 'estómago', 'pulmón'], porque: 'El corazón es un músculo que funciona como bomba.', pista: 'Late todo el tiempo.' },
@@ -24,7 +31,8 @@ function leccionDe(tema){
       { tipo: 'opcion', pregunta: '¿Qué transporta la sangre a las células?', opciones: ['Sólo agua', 'Oxígeno y nutrientes', 'Sólo hormonas', 'Aire'], correcta: 1, porque: 'Las células necesitan oxígeno y nutrientes para vivir.', pista: 'Lo que respiras y lo que comes.' },
       { tipo: 'opcion', pregunta: '¿Cuántos componentes principales tiene?', opciones: ['Dos', 'Tres', 'Cinco', 'Uno'], correcta: 1, porque: 'Corazón, sangre y vasos.', pista: 'Cuenta los puntos de la lección.' },
     ] } : {
-    leccion: { titulo: tema, parrafo: `Esto es **${tema}** explicado en corto para el examen.`, puntos: ['Idea uno', 'Idea dos', 'Idea tres'], dato: 'Un truco para recordarlo.' },
+    /* la forma vieja (párrafo y puntos): las lecciones guardadas así también se tienen que ver ligeras */
+    leccion: { titulo: tema, parrafo: `Esto es **${tema}** explicado en corto para el examen. Va una segunda frase.`, puntos: ['Idea uno', 'Idea dos', 'Idea tres'], dato: 'Un truco para recordarlo.' },
     preguntas: [1, 2, 3, 4].map((k) => ({ tipo: 'opcion', pregunta: `Pregunta ${k} de ${tema}`, opciones: [`Buena ${k}`, `Mala A${k}`, `Mala B${k}`, `Mala C${k}`], correcta: 0, porque: 'Porque sí.', pista: 'La primera.' }))
       .concat([{ tipo: 'hueco', frase: `En ${tema} lo que falta es ___.`, respuesta: 'esto', distractores: ['aquello', 'nada', 'otro'], porque: 'Así es.', pista: 'Esto.' }]),
   };
@@ -36,19 +44,26 @@ const PLAN = { titulo: 'Examen de Biología', notas: 'Temas del bloque 2.', unid
   { titulo: 'Dominio', frase: 'Lo que más cuesta.', temas: [{ titulo: 'Sistema inmunológico', resumen: '' }] },
 ] };
 let pedidosIA = [];
+const vecesTema = {};
 function contestarIA(c){
   pedidosIA.push(c);
   const texto = (c.mensajes || [])[0]?.texto || '';
   if(/PLANES DE ESTUDIO/.test(c.sistema)) return { bien: true, texto: '```json\n' + JSON.stringify(PLAN) + '\n```' };
-  const tema = (/Tema: (.+)/.exec(texto) || [])[1] || 'Tema';
-  return { bien: true, texto: JSON.stringify(leccionDe(tema.trim())) };
+  const tema = ((/Tema: (.+)/.exec(texto) || [])[1] || 'Tema').trim();
+  vecesTema[tema] = (vecesTema[tema] || 0) + 1;
+  const bueno = JSON.stringify(leccionDe(tema), null, 1);
+  /* respiratorio: JSON con comas de más y un comentario (lo que le tronó a Carlos) */
+  if(/respiratorio/i.test(tema)) return { bien: true, texto: bueno.replace(/"\n(\s*)\]/g, '",\n$1]').replace(/\}\n(\s*)\]/g, '},\n$1]').replace('{', '{ // lección\n') };
+  /* nervioso: la primera vez contesta algo que no es JSON; la segunda, bien */
+  if(/nervioso/i.test(tema) && vecesTema[tema] === 1) return { bien: true, texto: 'Claro que sí, con gusto te ayudo con eso.' };
+  return { bien: true, texto: bueno };
 }
 
 export async function correr({ ok, almacen, atenderEstudio }){
   console.log('La pantalla');
   const { chromium } = await import(PW);
   const s = almacen();
-  const TIPOS = { '.html': 'text/html', '.js': 'text/javascript', '.woff2': 'font/woff2', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png' };
+  const TIPOS = { '.html': 'text/html', '.js': 'text/javascript', '.woff2': 'font/woff2', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.mp3': 'audio/mpeg' };
   let iaLenta = 0;
   const servidor = http.createServer(async (q, res) => {
     const u = new URL(q.url, 'http://x');
@@ -79,10 +94,35 @@ export async function correr({ ok, almacen, atenderEstudio }){
   const foto = async (n) => { if(process.env.FOTOS){ fs.mkdirSync(process.env.FOTOS, { recursive: true }); await pagina.screenshot({ path: path.join(process.env.FOTOS, n + '.png') }); } };
   const desborde = () => pagina.evaluate(() => Math.max(document.documentElement.scrollWidth, ...[...document.querySelectorAll('.capa, .hoja')].map((x) => x.scrollWidth)) - innerWidth);
   const espera = (ms) => pagina.waitForTimeout(ms);
+  const siguienteEs = async () => (await pagina.textContent('.siguiente small')).trim();
+  const hechos = () => pagina.$$eval('.nodo.hecho', (x) => x.length);
+  /* una cátedra: abre el pizarrón y se marca vista */
+  async function catedra(){
+    await pagina.click('.siguiente [data-nodo]');
+    await pagina.waitForSelector('.capa.pizarra iframe');
+    const src = decodeURIComponent((await pagina.getAttribute('.capa.pizarra iframe', 'src')).replace(/\+/g, ' '));
+    await pagina.click('[data-vista]'); await pagina.waitForSelector('.camino'); await espera(250);
+    return src;
+  }
+  /* un nivel entero, todo bien (pasa las ideas y contesta) */
+  async function nivelBien(tema){
+    await pagina.click('.siguiente [data-nodo]');
+    await pagina.waitForSelector('.historia', { timeout: 10000 });
+    for(let k = 0; k < 8 && await pagina.isVisible('[data-sig]'); k++) await pagina.click('[data-sig]');
+    await pagina.click('[data-empezar]');
+    const d = leccionDe(tema);
+    for(let k = 0; k < 12 && !(await pagina.isVisible('.resultado')); k++){
+      if(await pagina.isVisible('#hueco')) await pagina.click(`.ficha:text-is("${d.preguntas.find((x) => x.tipo === 'hueco').respuesta}")`);
+      else { const preg = (await pagina.textContent('.habla .dice')).trim(); const q = d.preguntas.find((x) => x.pregunta === preg); await pagina.click(`.opc:text-is("${q.opciones[q.correcta]}")`); }
+      await pagina.click('[data-verificar]'); await pagina.click('[data-continuar]'); await espera(120);
+    }
+  }
 
   try{
     await pagina.goto(url); await espera(400);
-    ok(await pagina.isVisible('text=¿Tienes un examen pronto?'), 'sin planes: «¿Tienes un examen pronto?»');
+    ok(await pagina.isVisible('.marca-carymo') && /CARYMO/.test(await pagina.textContent('.marca-carymo')) && /Learn\. Explore\. Grow\./.test(await pagina.textContent('.marca-carymo')), 'la portada dice CARYMO · Learn. Explore. Grow.');
+    ok(await pagina.isVisible('text=Todo lo que puedes aprender, en un solo lugar.'), 'y su lema');
+    ok((await pagina.title()).startsWith('CARYMO'), 'la pestaña del navegador se llama CARYMO');
     ok(await desborde() <= 0, 'la portada no se sale de lado');
     await foto('01-portada');
 
@@ -98,37 +138,59 @@ export async function correr({ ok, almacen, atenderEstudio }){
     await pagina.click('[data-sig]');
     for(const t of ['Sistema circulatorio', 'Sistema respiratorio']){ await pagina.fill('#temaTxt', t); await pagina.press('#temaTxt', 'Enter'); }
     ok((await pagina.$$('#chipsTemas .chip')).length === 2, 'los temas se agregan como fichas');
-    await foto('03-temas');
     iaLenta = 900;
     await pagina.click('[data-sig]');
     await espera(300);
     ok(await pagina.isVisible('text=Déjame preparar tu plan'), '«Déjame preparar tu plan» mientras la IA piensa');
-    await foto('04-preparando');
     await pagina.waitForSelector('.camino', { timeout: 8000 }); iaLenta = 0;
     const pedidoPlan = pedidosIA.find((c) => /PLANES DE ESTUDIO/.test(c.sistema));
     ok(pedidoPlan && pedidoPlan.motor === 'groq' && /Sistema circulatorio/.test(pedidoPlan.mensajes[0].texto) && pedidoPlan.mensajes[0].de === 'tu', 'el plan lo pide a Negro, con los temas, y como persona (de: tu)');
-    const nodos = await pagina.$$('.nodo');
-    ok(nodos.length === 12, `el camino tiene un nodo por tema, pizarrón, tarjetas, simulacro y examen (${nodos.length})`);
-    ok((await pagina.$$('.nodo.actual')).length === 1 && (await pagina.$$('.nodo.cerrado')).length === 11, 'sólo el primero está abierto');
+
+    /* el camino: panorama de la unidad → por tema, cátedra y luego el nivel → tarjetas; al final simulacro y examen */
+    const tipos = await pagina.$$eval('.nodo', (ns) => ns.map((n) => n.getAttribute('aria-label').split(':')[0]));
+    ok(tipos.length === 18, `el camino tiene panorama, cátedra y nivel por tema, tarjetas, simulacro y examen (${tipos.length})`);
+    ok(tipos[0] === 'Panorama de la unidad' && tipos[1] === 'Cátedra en el pizarrón' && /^Nivel/.test(tipos[2]) && tipos[3] === 'Cátedra en el pizarrón' && /^Nivel/.test(tipos[4]) && tipos[5] === 'Tarjetas', 'cada unidad abre con su panorama y cada nivel lleva antes su cátedra');
+    ok((await pagina.$$('.nodo.actual')).length === 1 && (await pagina.$$('.nodo.cerrado')).length === 17, 'sólo el primero está abierto');
     ok(/0 %/.test(await pagina.textContent('#avancePct')) && /Grado 6/.test(await pagina.textContent('#avanceGrado')) && /en 7 días/.test(await pagina.textContent('#avanceExamen')), 'arriba: 0 %, grado 6 y cuántos días faltan');
     ok(await desborde() <= 0, 'el camino no se sale de lado');
     await espera(800);
     await foto('05-camino');
     for(let k = 0; k < 30 && !pedidosIA.some((c) => /UNA lección/.test(c.sistema)); k++) await espera(100);
-    ok(pedidosIA.some((c) => /UNA lección/.test(c.sistema) && /Sistema circulatorio/.test(c.mensajes[0].texto)), 'la primera lección se prepara sola en cuanto sale el camino' + ` (${pedidosIA.map((c) => (c.sistema || '').slice(0, 40)).join(' | ')})`);
+    ok(pedidosIA.some((c) => /UNA lección/.test(c.sistema) && /Sistema circulatorio/.test(c.mensajes[0].texto)), 'el primer nivel se prepara solo mientras ves las cátedras');
 
-    /* nodo cerrado */
     await pagina.evaluate(() => document.querySelectorAll('.nodo.cerrado')[2].click());
     ok(await pagina.isVisible('text=Primero termina el que está brillando'), 'un nodo cerrado avisa en vez de abrirse');
 
-    /* lección 1 */
+    /* 1 · panorama de la unidad */
+    ok(await siguienteEs() === 'Panorama de la unidad', 'lo primero es el panorama de la unidad');
+    let src = await catedra();
+    ok(/Panorama general de «Bases del cuerpo»/.test(src) && /Sistema circulatorio, Sistema respiratorio/.test(src) && /largo=normal/.test(src), 'el panorama le pide a Explica la idea general de TODA la unidad');
+    /* 2 · cátedra del tema 1 */
+    ok(await siguienteEs() === 'Cátedra en el pizarrón', 'después, la cátedra del primer tema');
+    src = await catedra();
+    ok(/tema=Sistema circulatorio/.test(src) && /largo=corta/.test(src), 'la cátedra es del tema y corta');
+    ok(await hechos() === 2, 'panorama y cátedra cuentan como hechos');
+
+    /* 3 · el nivel: la lección tipo historias, una idea por pantalla */
+    ok(/^Nivel/.test(await siguienteEs()), 'y hasta entonces, el nivel');
     await pagina.click('.siguiente [data-nodo]');
-    await pagina.waitForSelector('.leccion h1');
-    ok(/sistema circulatorio/i.test(await pagina.textContent('.leccion h1')) && (await pagina.$$('.leccion b')).length >= 3, 'la lección sale con su título y sus negritas');
-    await espera(2600);
-    ok((await pagina.$$('.leccion li.luz')).length === 3, 'las ideas clave se iluminan una por una');
-    ok(await desborde() <= 0, 'la lección no se sale de lado');
+    await pagina.waitForSelector('.historia');
+    const segs = await pagina.$$eval('.segmentos i', (x) => x.length);
+    ok(segs === 4, `la lección va en pantallas: 3 ideas y el truco para recordarlo (${segs})`);
+    ok(await pagina.isVisible('.historia .tema-hist') && /sistema circulatorio/i.test(await pagina.textContent('.tema-hist')), 'arriba de la primera idea dice de qué es la lección');
+    ok(await pagina.isVisible('.dib-idea') && (await pagina.$$eval('.dib-idea > *', (x) => x.length)) > 0, 'cada idea trae su dibujo, que se traza solo');
+    const palabras = (await pagina.textContent('.txt-hist')).trim().split(/\s+/).length;
+    ok(palabras <= 25, `cada pantalla es UNA idea corta (${palabras} palabras)`);
+    await espera(600); ok(await desborde() <= 0, 'la lección no se sale de lado (ya quieta: al entrar se desliza 24 px, recortado)');
+    await espera(900);
     await foto('06-leccion');
+    await pagina.click('[data-sig]'); await pagina.click('[data-sig]');
+    ok(await pagina.isVisible('.dib-idea'), 'un dibujo que no existe se cambia por uno que sí');
+    await pagina.click('[data-atras]');
+    ok((await pagina.$$eval('.segmentos i.ya', (x) => x.length)) === 1, 'tocar la izquierda regresa a la idea anterior');
+    await pagina.click('[data-sig]'); await pagina.click('[data-sig]');
+    ok(await pagina.isVisible('.historia.es-dato') && await pagina.isVisible('[data-empezar]'), 'la última pantalla es el truco para recordarlo, con «Empezar cuestionario»');
+    await foto('06b-dato');
 
     /* el cuestionario: la primera la fallo a propósito */
     await pagina.click('[data-empezar]');
@@ -149,8 +211,7 @@ export async function correr({ ok, almacen, atenderEstudio }){
       } else {
         const preg = (await pagina.textContent('.habla .dice')).trim();
         const q = datos.preguntas.find((x) => x.pregunta === preg);
-        const opc = !falle ? q.opciones[(q.correcta + 1) % 4] : q.opciones[q.correcta];
-        await pagina.click(`.opc:text-is("${opc}")`);
+        await pagina.click(`.opc:text-is("${!falle ? q.opciones[(q.correcta + 1) % 4] : q.opciones[q.correcta]}")`);
       }
       await pagina.click('[data-verificar]');
       await pagina.waitForSelector('.hoja-res');
@@ -174,26 +235,19 @@ export async function correr({ ok, almacen, atenderEstudio }){
     await foto('09-resultado');
     await pagina.click('[data-continuar]');
     await pagina.waitForSelector('.camino'); await espera(1200);
-    ok((await pagina.$$('.nodo.hecho')).length === 1, 'el nodo hecho se vuelve moneda');
-    ok(!/^0 %/.test(await pagina.textContent('#avancePct')), 'el avance de arriba sube');
+    ok(await hechos() === 3, 'el nivel hecho se vuelve moneda');
     const est = s.m.get('est:perfil:carlos');
     ok(est && est.xp > 0 && est.racha === 1, `el XP y la racha llegaron a La Sala (${est && est.xp} XP)`);
     ok(await pagina.isVisible('#pRacha') && /1/.test(await pagina.textContent('#pRacha')), 'la racha de 1 se ve arriba');
 
-    /* lección 2, todo bien */
-    await pagina.click('.siguiente [data-nodo]');
-    await pagina.waitForSelector('[data-empezar]', { timeout: 8000 });
-    await pagina.click('[data-empezar]');
-    const d2 = leccionDe('Sistema respiratorio');
-    for(let k = 0; k < 10 && !(await pagina.isVisible('.resultado')); k++){
-      if(await pagina.isVisible('#hueco')) await pagina.click(`.ficha:text-is("${d2.preguntas.find((x) => x.tipo === 'hueco').respuesta}")`);
-      else { const preg = (await pagina.textContent('.habla .dice')).trim(); const q = d2.preguntas.find((x) => x.pregunta === preg); await pagina.click(`.opc:text-is("${q.opciones[q.correcta]}")`); }
-      await pagina.click('[data-verificar]'); await pagina.click('[data-continuar]'); await espera(120);
-    }
-    ok(await pagina.isVisible('text=¡La rompiste!') && /100 %/.test(await pagina.textContent('.medallas')), 'todo bien: «¡La rompiste!» con 100 %');
+    /* 4 · tema 2: su cátedra y su nivel… con el JSON mal escrito (comas de más y un comentario) */
+    await catedra();
+    await nivelBien('Sistema respiratorio');
+    ok(await pagina.isVisible('text=¡La rompiste!') && /100 %/.test(await pagina.textContent('.medallas')), 'aunque la IA mandó el JSON con comas de más, el nivel salió y quedó «¡La rompiste!» con 100 %');
+    ok(vecesTema['Sistema respiratorio'] === 1, 'y se reparó sin volver a pedirlo');
     await pagina.click('[data-continuar]'); await pagina.waitForSelector('.camino');
 
-    /* tarjetas de la unidad 1 (salen de las preguntas: no gastan IA) */
+    /* 5 · tarjetas de la unidad 1 (salen de las preguntas: no gastan IA) */
     const antesIA = pedidosIA.length;
     await pagina.click('.siguiente [data-nodo]');
     await pagina.waitForSelector('#tarjeta');
@@ -206,31 +260,26 @@ export async function correr({ ok, almacen, atenderEstudio }){
     ok(await pagina.isVisible('text=¡Tarjetas dominadas!'), 'al sabérselas todas: «¡Tarjetas dominadas!»');
     await pagina.click('[data-continuar]'); await pagina.waitForSelector('.camino');
 
-    /* la lección de la unidad 2, de corrido */
-    await pagina.click('.siguiente [data-nodo]');
-    await pagina.waitForSelector('[data-empezar]', { timeout: 8000 }); await pagina.click('[data-empezar]');
-    const d3 = leccionDe('Sistema nervioso');
-    for(let k = 0; k < 10 && !(await pagina.isVisible('.resultado')); k++){
-      if(await pagina.isVisible('#hueco')) await pagina.click(`.ficha:text-is("${d3.preguntas.find((x) => x.tipo === 'hueco').respuesta}")`);
-      else { const preg = (await pagina.textContent('.habla .dice')).trim(); const q = d3.preguntas.find((x) => x.pregunta === preg); await pagina.click(`.opc:text-is("${q.opciones[q.correcta]}")`); }
-      await pagina.click('[data-verificar]'); await pagina.click('[data-continuar]'); await espera(120);
-    }
+    /* 6 · unidad 2: panorama, cátedra (personalizada) y el nivel… con una IA que la primera vez contesta cualquier cosa */
+    ok(await siguienteEs() === 'Panorama de la unidad', 'la unidad 2 también abre con su panorama');
+    src = await catedra();
+    ok(/«Fundamentos»/.test(src), 'el panorama es de la unidad 2');
+    src = await catedra();
+    const marcoUrl = src;
+    ok(/tema=Sistema nervioso/.test(marcoUrl) && /contexto=/.test(marcoUrl) && /Ya estudió: .*Sistema circulatorio/.test(marcoUrl), 'la cátedra va personalizada: sabe qué examen prepara y qué ya estudió');
+    await nivelBien('Sistema nervioso');
+    ok(vecesTema['Sistema nervioso'] === 2 && await pagina.isVisible('.resultado'), 'cuando la IA contesta algo que no es JSON, la app se lo vuelve a pedir sola y sigue');
     await pagina.click('[data-continuar]'); await pagina.waitForSelector('.camino');
+    ok(/Grado [78]/.test(await pagina.textContent('#avanceGrado')), 'el grado ya subió');
+    await foto('11-camino-avanzado');
 
-    /* clase en el pizarrón (Explica) */
+    /* la cátedra se ve en Explica con el tema y el largo puestos */
     await pagina.click('.siguiente [data-nodo]');
     await pagina.waitForSelector('.capa.pizarra iframe');
-    const src = await pagina.getAttribute('.capa.pizarra iframe', 'src');
-    ok(/explica\.html\?/.test(src) && /tema=Sistema\+nervioso/.test(src) && /largo=corta/.test(src), 'el nodo del pizarrón abre Explica con el tema y clase corta');
     const marco = pagina.frames().find((f) => /explica\.html/.test(f.url()));
     await marco.waitForSelector('#tema');
-    ok((await marco.inputValue('#tema')).startsWith('Sistema nervioso') && await marco.inputValue('#largo') === 'corta', 'Explica llega con el tema y el largo puestos');
-    await pagina.click('[data-vista]'); await pagina.waitForSelector('.camino'); await espera(400);
-    ok((await pagina.$$('.nodo.hecho')).length === 5, 'la clase vista cuenta como hecha');
-
-    /* grado sube */
-    ok(/Grado [78]/.test(await pagina.textContent('#avanceGrado')), 'con 5 de 12 el grado ya subió');
-    await foto('11-camino-avanzado');
+    ok((await marco.inputValue('#tema')).startsWith('Sistema endocrino') && await marco.inputValue('#largo') === 'corta', 'Explica llega con el tema y el largo puestos');
+    await pagina.click('[data-cerrar]'); await pagina.waitForSelector('.camino');
 
     /* menú del plan */
     await pagina.click('#bMenuPlan');
@@ -246,12 +295,13 @@ export async function correr({ ok, almacen, atenderEstudio }){
     ok((await pagina.$$('.clase-h')).length === 9, 'el horario pegado de Excel sale por día (sin el receso)');
     ok((await pagina.textContent('#vHorario')).includes('Próximos exámenes'), 'el horario enseña el examen que viene');
     ok(await desborde() <= 0, 'el horario no se sale de lado');
-    await foto('12-horario');
     await espera(300);
     ok((s.m.get('est:perfil:carlos').horario || {}).clases?.length === 9, 'el horario se guarda en La Sala');
 
     /* ranking */
-    await s.put('est:sem:' + (await import('./servidor/estudio.js')).semanaDe((await import('./servidor/estudio.js')).diaMexico(Date.now())), { ...(await s.get('est:sem:' + (await import('./servidor/estudio.js')).semanaDe((await import('./servidor/estudio.js')).diaMexico(Date.now())))), luis: { xp: 9999, nombre: 'Luis' } });
+    const { semanaDe, diaMexico } = await import('./servidor/estudio.js');
+    const k = 'est:sem:' + semanaDe(diaMexico(Date.now()));
+    await s.put(k, { ...(await s.get(k)), luis: { xp: 9999, nombre: 'Luis' } });
     await pagina.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
     await espera(500);
     await pagina.click('[data-ir="ranking"]'); await espera(300);
@@ -262,28 +312,47 @@ export async function correr({ ok, almacen, atenderEstudio }){
 
     /* perfil */
     await pagina.click('[data-ir="perfil"]');
+    ok(/CARYMO/.test(await pagina.textContent('#vPerfil .version')), 'el perfil dice la versión de CARYMO');
     await pagina.fill('#pNombre', 'Palomazi'); await pagina.press('#pNombre', 'Tab'); await espera(400);
     ok(s.m.get('est:perfil:carlos').nombre === 'Palomazi', 'el nombre del perfil se guarda en La Sala');
     await pagina.click('[data-aj="sonido"]');
     ok(await pagina.getAttribute('[data-aj="sonido"]', 'aria-checked') === 'false', 'el sonido se apaga');
     ok(await desborde() <= 0, 'el perfil no se sale de lado');
-    await foto('14-perfil');
+
+    /* los sonidos existen y se pueden pedir */
+    const sonidos = await pagina.evaluate(async () => { const r = await Promise.all(['toque', 'bien', 'mal', 'logro', 'moneda', 'combo', 'hielo', 'voltear', 'whoosh', 'pop', 'subir', 'golpe'].map((n) => fetch(`sonidos/${n}.mp3`).then((x) => x.ok && x.headers.get('content-length') !== '0'))); return r.every(Boolean); });
+    ok(sonidos, 'los 12 sonidos de la app están publicados');
 
     /* otro teléfono: el plan y el avance llegan de La Sala */
     const ctx2 = await nav.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
     await ctx2.addInitScript(() => { try{ localStorage.setItem('salaLlave', 'prueba'); }catch{} });
     const p2 = await ctx2.newPage(); p2.on('pageerror', (e) => errores.push('tel2: ' + e.message));
     await p2.goto(url); await p2.waitForSelector('.camino', { timeout: 8000 });
-    ok((await p2.$$('.nodo.hecho')).length === 5 && (await p2.textContent('#planNombre')) === 'Biología bloque 2', 'en otro teléfono sale el mismo plan con el mismo avance');
+    ok((await p2.$$('.nodo.hecho')).length === await hechos() && (await p2.textContent('#planNombre')) === 'Biología bloque 2', 'en otro teléfono sale el mismo plan con el mismo avance');
     await ctx2.close();
+
+    /* un plan VIEJO (sin cátedras) se acomoda solo y no pierde lo que ya pasaste */
+    const ctx3 = await nav.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
+    await ctx3.addInitScript(() => {
+      try{
+        localStorage.setItem('salaLlave', 'otra');
+        const p = { id: 'pviejo', titulo: 'Historia', materia: 'Historia', fecha: '2030-01-01', contenido: {}, progreso: { q1: { hecho: true, mejor: 90 } },
+          unidades: [{ id: 'u1', titulo: 'Independencia', temas: [{ id: 't1', titulo: 'Causas' }, { id: 't2', titulo: 'Consumación' }], nodos: [{ id: 'q1', tipo: 'quiz', tema: 't1', titulo: 'Causas' }, { id: 'q2', tipo: 'quiz', tema: 't2', titulo: 'Consumación' }, { id: 'tj', tipo: 'tarjetas', titulo: 'Tarjetas' }] }] };
+        localStorage.setItem('est.planes', JSON.stringify({ pviejo: p })); localStorage.setItem('est.actual', '"pviejo"');
+      }catch{}
+    });
+    const p3 = await ctx3.newPage(); p3.on('pageerror', (e) => errores.push('tel3: ' + e.message));
+    await p3.goto(`${base}/sala/estudio.html?servidor=http://localhost:1&sala=G`);
+    await p3.waitForSelector('.camino');
+    const t3 = await p3.$$eval('.nodo', (ns) => ns.map((n) => n.getAttribute('aria-label').split(':')[0] + (n.classList.contains('hecho') ? '*' : '')));
+    ok(t3.length === 6 && t3[0] === 'Panorama de la unidad*' && t3[1] === 'Cátedra en el pizarrón*' && /^Nivel.*\*$/.test(t3[2]) && t3[3] === 'Cátedra en el pizarrón', `un plan viejo gana sus cátedras, y lo que ya pasaste sigue pasado (${t3.join(' · ')})`);
+    ok(await p3.textContent('.siguiente small') === 'Cátedra en el pizarrón', 'y sigue justo donde se había quedado: la cátedra del tema 2');
+    await ctx3.close();
 
     /* 320 de ancho */
     await pagina.setViewportSize({ width: 320, height: 640 });
     await pagina.click('[data-ir="plan"]'); await espera(300);
     ok(await desborde() <= 0, 'a 320 px el camino no se sale de lado');
-    await pagina.click('.siguiente [data-nodo]'); await pagina.waitForSelector('[data-empezar]', { timeout: 8000 }); await pagina.click('[data-empezar]');
-    ok(await desborde() <= 0, 'a 320 px el cuestionario no se sale de lado');
-    await pagina.click('[data-cerrar]');
 
     ok(!errores.length, 'sin errores en la consola' + (errores.length ? ': ' + errores.slice(0, 3).join(' | ') : ''));
   }catch(e){ ok(false, 'la prueba tronó: ' + e.message.split('\n')[0]); if(process.env.FOTOS) await foto('99-error'); }

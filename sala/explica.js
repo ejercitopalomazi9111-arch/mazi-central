@@ -16,6 +16,8 @@
    ═════════════════════════════════════════════════════════════════════════ */
 import { ico, DIBUJOS } from './iconos-clase.js';
 import { crearLienzo, armarFijo, buscarDibujo, TIPOS } from './lienzo.js';
+import { sacarJSON } from './json-ia.js';
+import { sonar, encender as encenderSonidos } from './sonidos/sonidos.js';
 import { llave, ponerLlave, llamar, SERVIDOR, SALA } from '../presentaciones/ia.js';
 /* a La Sala directo (no por presentaciones/ia.js#texto) para mandar `espera` y `pensarPoco`: una clase entera tarda */
 async function iaTexto(cuerpo){
@@ -111,11 +113,15 @@ Reglas:
 - "repaso": de 3 a 5 preguntas con su respuesta corta.
 - Si te mandan fotos de apuntes, explica lo que dicen las fotos y corrige con cuidado si algo está mal.${CONTEXTO ? `\nLO QUE SABES DE ESTE ALUMNO (personaliza la clase con esto): ${CONTEXTO.slice(0, 1200)}` : ''}`;
 }
-function sacarJSON(t){
-  const s = String(t || '').replace(/^```(?:json)?/m, '').replace(/```\s*$/m, '');
-  const a = s.indexOf('{'), b = s.lastIndexOf('}');
-  if(a < 0 || b <= a) throw new Error('La IA no contestó con una clase. Prueba otra vez.');
-  return JSON.parse(s.slice(a, b + 1));
+/* la clase se pide; si llega mal escrita se repara (json-ia.js) y, si ni así, se pide una vez más */
+async function pedirJSON(cuerpo, revisar){
+  let error = null;
+  for(let intento = 0; intento < 2; intento++){
+    const extra = intento ? '\n\nOJO: tu respuesta anterior no era JSON válido o venía incompleta. Contesta SÓLO el JSON, completo, con comillas dobles y sin comas de más.' : '';
+    const t = await iaTexto({ ...cuerpo, sistema: cuerpo.sistema + extra });
+    try{ return revisar(sacarJSON(t)); }catch(e){ error = e; }
+  }
+  throw new Error((error && error.message ? error.message + ' ' : '') + 'Prueba otra vez.');
 }
 const SINONIMOS = { title: 'titulo', text: 'texto', parrafo: 'texto', list: 'lista', timeline: 'linea', 'linea de tiempo': 'linea', lineatiempo: 'linea', cronologia: 'linea',
   diagram: 'diagrama', esquema: 'diagrama', flujo: 'diagrama', 'mapa conceptual': 'diagrama', table: 'tabla', compare: 'comparar', comparacion: 'comparar', definition: 'definicion', quote: 'cita',
@@ -191,7 +197,11 @@ export function normalizar(j){
    Muchos cursores dibujan cada elemento, forma por forma y letra por letra. */
 let modoCursores = guarda.leer('explica.cursores', 'monton');
 const tablero = $('#tablero');
-const lienzo = crearLienzo(tablero, { modo: modoCursores, maestro: 'Negro' });
+let conSonidos = guarda.leer('explica.sonidos', true); encenderSonidos(conSonidos);
+/* los cursores «dan clic» apenas audible y cada elemento terminado hace un pop suave: la voz va al frente */
+const lienzo = crearLienzo(tablero, { modo: modoCursores, maestro: 'Negro',
+  alClic: () => sonar('toque', { vol: .07, cada: 90, tono: .9 + Math.random() * .25 }),
+  alTerminar: () => sonar('pop', { vol: .22, cada: 200 }) });
 function margenes(){ const m = $('#mando'); lienzo.margenes(6, m.hidden ? 0 : m.offsetHeight + 6); }
 new ResizeObserver(margenes).observe($('#mando'));
 tablero.addEventListener('camara-libre', () => { $('#bSeguir').hidden = false; });
@@ -359,9 +369,9 @@ async function pedirClase(){
   const giro = setInterval(() => { k++; const s = Math.round((Date.now() - t0) / 1000);
     $('#preparaTxt').innerHTML = `${ESPERA[k % ESPERA.length]}${largaEspera ? ` <small>(${s} s de unos 120)</small>` : ''}<b>${esc(tema || 'tus apuntes')}</b>`; }, 3000);
   try{
-    const t = await iaTexto({ motor, json: true, tope: 8000, sistema: sistema(motor, $('#nivel').value, $('#largo').value),
-      mensajes: [{ de: 'tu', texto: tema ? `Explícame: ${tema}` : 'Explícame lo que dicen estas fotos de mis apuntes.' }], imagenes: fotos });
-    const c = normalizar(sacarJSON(t)); c.motor = motor; c.tema = tema; c.id = Date.now().toString(36); c.fecha = Date.now();
+    const c = await pedirJSON({ motor, json: true, tope: 8000, sistema: sistema(motor, $('#nivel').value, $('#largo').value),
+      mensajes: [{ de: 'tu', texto: tema ? `Explícame: ${tema}` : 'Explícame lo que dicen estas fotos de mis apuntes.' }], imagenes: fotos }, normalizar);
+    c.motor = motor; c.tema = tema; c.id = Date.now().toString(36); c.fecha = Date.now();
     guardarHistorial(c); empezar(c);
   }catch(e){
     ver('inicio'); aviso(e.message || String(e)); if(e.llave) $('#cajaLlave').hidden = false;
@@ -381,10 +391,9 @@ async function preguntar(q){
   sonando = false; callar(); botonPlay(); pintarSub(`${NOMBRE[clase.motor]} está pensando tu pregunta…`, Infinity);
   try{
     const resumen = clase.pasos.map((p, i) => `${i + 1}. ${p.voz}`).join('\n');
-    const t = await iaTexto({ motor: clase.motor, json: true, tope: 6000,
+    const nueva = await pedirJSON({ motor: clase.motor, json: true, tope: 6000,
       sistema: sistema(clase.motor, $('#nivel').value, 'corta') + `\n\nYA DISTE esta clase («${clase.titulo}»):\n${resumen}\n\nAhora contesta la PREGUNTA de Carlos como una continuación de la clase: de 3 a 7 pasos nuevos con la misma forma JSON (el primero NO tiene que ser título). Puedes agregar referencias y repaso nuevos.`,
-      mensajes: [{ de: 'tu', texto: q }] });
-    const nueva = normalizar(sacarJSON(t)), desde = clase.pasos.length;
+      mensajes: [{ de: 'tu', texto: q }] }, normalizar), desde = clase.pasos.length;
     clase.pasos.push({ voz: '', pizarra: { tipo: 'titulo', texto: q.length > 70 ? q.slice(0, 68) + '…' : q, sub: 'Tu pregunta' } }, ...nueva.pasos);
     clase.referencias.push(...nueva.referencias.filter((r) => !clase.referencias.some((x) => x.titulo === r.titulo)));
     if(nueva.repaso.length) clase.repaso = nueva.repaso;
@@ -439,6 +448,8 @@ $('#bApuntes').addEventListener('click', abrirApuntes);
 $('#bVolverClase').addEventListener('click', () => { ver('clase'); lienzo.verTodo(); });
 $('#bImprimir').addEventListener('click', () => print());
 $('#cursores').value = modoCursores;
+$('#sonidos').value = conSonidos ? 'si' : 'no';
+$('#sonidos').addEventListener('change', () => { conSonidos = $('#sonidos').value === 'si'; guarda.poner('explica.sonidos', conSonidos); encenderSonidos(conSonidos); });
 $('#cursores').addEventListener('change', () => { modoCursores = $('#cursores').value; guarda.poner('explica.cursores', modoCursores); lienzo.modo(modoCursores); });
 document.addEventListener('visibilitychange', () => { if(document.hidden && sonando){ sonando = false; turno++; callar(); botonPlay(); } });
 /* ?tema=… arranca directo (desde la mesa o un link) */

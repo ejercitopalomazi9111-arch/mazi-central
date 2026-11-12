@@ -1,0 +1,74 @@
+{
+ "toque": {
+  "dur_ms": 45,
+  "pico_dbfs": -9,
+  "bytes": 1090,
+  "receta": "toque"
+ },
+ "pop": {
+  "dur_ms": 110,
+  "pico_dbfs": -6,
+  "bytes": 1874,
+  "receta": "pop"
+ },
+ "whoosh": {
+  "dur_ms": 420,
+  "pico_dbfs": -8,
+  "bytes": 5008,
+  "receta": "whoosh"
+ },
+ "golpe": {
+  "dur_ms": 320,
+  "pico_dbfs": -5,
+  "bytes": 3963,
+  "receta": "golpe"
+ },
+ "bien": {
+  "dur_ms": 675,
+  "pico_dbfs": -4,
+  "bytes": 7359,
+  "receta": "bien"
+ },
+ "mal": {
+  "dur_ms": 530,
+  "pico_dbfs": -6,
+  "bytes": 6053,
+  "receta": "mal"
+ },
+ "logro": {
+  "dur_ms": 1340,
+  "pico_dbfs": -3,
+  "bytes": 14151,
+  "receta": "logro"
+ },
+ "moneda": {
+  "dur_ms": 620,
+  "pico_dbfs": -5,
+  "bytes": 6837,
+  "receta": "moneda"
+ },
+ "combo": {
+  "dur_ms": 450,
+  "pico_dbfs": -6,
+  "bytes": 5270,
+  "receta": "combo"
+ },
+ "hielo": {
+  "dur_ms": 1680,
+  "pico_dbfs": -5,
+  "bytes": 17547,
+  "receta": "hielo"
+ },
+ "voltear": {
+  "dur_ms": 160,
+  "pico_dbfs": -10,
+  "bytes": 2396,
+  "receta": "voltear"
+ },
+ "subir": {
+  "dur_ms": 830,
+  "pico_dbfs": -3,
+  "bytes": 8927,
+  "receta": "subir"
+ }
+}
