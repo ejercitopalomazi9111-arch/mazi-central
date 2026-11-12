@@ -51,22 +51,29 @@
   .vista{ position:absolute; left:0; right:0; top:132px; bottom:0 }
 
   /* chat */
-  .bur{ position:absolute; max-width:640px; padding:24px 30px 18px; font:500 37px/1.3 I; border-radius:32px; box-shadow:0 10px 24px -14px #14213A66 }
+  .bur{ position:absolute; max-width:700px; padding:22px 30px 16px; font:500 34px/1.3 I; border-radius:32px; box-shadow:0 10px 24px -14px #14213A66 }
   .bur small{ display:block; text-align:right; font:500 22px/1 I; color:#7A8798; margin-top:8px }
   .bur small svg.i{ font-size:26px; color:#1E88E5; vertical-align:-6px; margin-left:6px }
-  #bCli{ right:36px; top:40px; background:#DCE8F6; border-bottom-right-radius:10px }
-  #bBot{ left:36px; top:300px; background:#fff; border-bottom-left-radius:10px }
+  #bCli{ right:36px; top:34px; background:#DCE8F6; border-bottom-right-radius:10px }
+  #bBot{ left:36px; top:268px; background:#fff; border-bottom-left-radius:10px }
   #bBot b{ font-weight:800; color:var(--marina); background:#F7E93F66; padding:0 6px; border-radius:8px }
-  #escr{ left:36px; top:300px; padding:26px 30px; display:flex; gap:12px; background:#fff }
+  #escr{ left:36px; top:268px; padding:26px 30px; display:flex; gap:12px; background:#fff }
   #escr i{ width:16px; height:16px; border-radius:50%; background:#9AA6B6 }
 
-  /* el Excel */
-  #tabla{ position:absolute; left:34px; right:34px; top:30px }
-  .fila{ display:grid; grid-template-columns:1.25fr .7fr 1.1fr 1fr; gap:10px; align-items:center; height:52px; padding:0 18px; border-radius:12px; font:600 29px/1 I; color:var(--tinta) }
-  .fila:nth-child(even){ background:#fff }
-  .fila.cab{ font:700 22px/1 M; letter-spacing:.12em; text-transform:uppercase; color:var(--suave); background:none!important; height:46px }
-  .fila span:last-child{ text-align:right; font-variant-numeric:tabular-nums; font-weight:800 }
-  .nota{ position:absolute; left:34px; right:34px; bottom:26px; font:500 23px/1.3 I; color:var(--suave) }
+  /* el Excel: una hoja de verdad, con letras de columna, números de renglón y la selección que recorre las columnas */
+  #hoja{ position:absolute; left:24px; right:24px; top:16px; background:#fff; border-radius:18px; overflow:hidden; box-shadow:0 0 0 2px #D5DCE5 }
+  .xl{ display:grid; grid-template-columns:44px 146px 158px 116px 96px 96px 72px 1fr; height:44px; font:600 24px/1 I; color:var(--tinta) }
+  .xl span{ display:flex; align-items:center; padding:0 10px; border-right:1.5px solid #E3E8EE; border-bottom:1.5px solid #E3E8EE; white-space:nowrap; overflow:hidden; font-variant-numeric:tabular-nums }
+  .xl span:first-child{ justify-content:center; padding:0; background:#F3F5F8; color:#8A95A5; font:600 18px/1 I }
+  .xl span:nth-child(5), .xl span:nth-child(6), .xl span:nth-child(7){ justify-content:center }
+  .xl span:last-child{ justify-content:flex-end; font-weight:800; border-right:0 }
+  .xl.letras{ height:30px } .xl.letras span{ justify-content:center; padding:0; background:#F3F5F8; color:#8A95A5; font:600 17px/1 I }
+  .xl.cab span{ font:700 19px/1 I; color:var(--suave); background:#FAFBFC }
+  #sel{ position:absolute; border:3px solid #1876BA; background:#1876BA14; border-radius:4px; pointer-events:none; opacity:0 }
+  #lee{ position:absolute; left:24px; right:24px; top:458px }
+  #lee div{ display:flex; align-items:center; gap:16px; height:44px; font:500 25px/1 I; color:var(--tinta); opacity:0 }
+  #lee b{ font-weight:800; color:var(--marina) }
+  #lee .ic{ width:36px; height:36px; border-radius:10px; background:var(--marina); color:var(--amarillo); display:grid; place-items:center; font-size:21px; flex:none }
 
   /* la gráfica */
   #graf{ position:absolute; left:0; top:0; width:900px; height:648px }
@@ -142,7 +149,7 @@
   <div id="cab">
     <div id="avatar"></div>
     <div class="cabtx" id="cabChat"><b>Urban Pest Control</b><small>en línea</small></div>
-    <div class="cabtx" id="cabExcel"><b><svg class="i"><use href="#i-sheet"/></svg>Tus trabajos</b><small>tu Excel de siempre</small></div>
+    <div class="cabtx" id="cabExcel"><b><svg class="i"><use href="#i-sheet"/></svg>Tus trabajos</b><small>tu Excel de siempre · datos de ejemplo</small></div>
     <div class="cabtx" id="cabNum"><b><svg class="i"><use href="#i-wallet"/></svg>Tus números</b><small>lo ves tú, no el cliente</small></div>
     <div class="cabtx" id="cabDueno"><b>Brenda</b><small>le escribes tú</small></div>
     <div class="cabtx" id="cabCalc"><b><svg class="i"><use href="#i-calculator"/></svg>El cotizador</b><small>con tus números</small></div>
@@ -152,16 +159,16 @@
     <div class="bur" id="escr"><i></i><i></i><i></i></div>
     <div class="bur" id="bBot"><span id="tBot"></span><small>3:12 a.m.<svg class="i"><use href="#i-check-check"/></svg></small></div>
   </div>
-  <div class="vista" id="vExcel"><div id="tabla"></div><div class="nota">Datos de ejemplo. Con tu Excel salen tus precios.</div></div>
+  <div class="vista" id="vExcel"><div id="hoja"></div><div id="sel"></div><div id="lee"></div></div>
   <div class="vista" id="vGraf"><svg id="graf" viewBox="0 0 900 648"></svg></div>
   <div class="vista" id="vCalc"><div id="monto"><small>Precio de partida</small><span id="nMonto">$0</span></div><div id="chips"></div></div>
   <div class="vista" id="vNum">
-    <div class="num" id="n1" style="top:24px"><div class="t">Brenda<span>casa · Juriquilla</span></div><p>Cucarachas · ≈155 m² · bot, 3:12 a.m.</p>
+    <div class="num" id="n1" style="top:24px"><div class="t">Brenda<span>casa · Juriquilla</span></div><p>Cucarachas · 2 plantas, 3 recámaras · 155 m² · 18 km · bot, 3:12 a.m.</p>
       <div class="chips"><b>$1,200</b><b>costo $917</b><b class="g">ganas $283</b></div>
       <dl id="desg"><dt>Material · gel y aspersión, 7.75 L</dt><dd>$465</dd><dt>Técnico · 3 h</dt><dd>$330</dd><dt>Gasolina · 36 km</dt><dd>$86</dd>
         <dt>Llantas, balatas y motor</dt><dd>$36</dd><dt>Tu ganancia</dt><dd class="g">$283</dd></dl>
       <div class="bot"><span id="bEsc">Escribirle</span><span class="p">Agendar</span></div></div>
-    <div class="num" id="n2" style="top:24px"><div class="t">Taquería El Güero<span>negocio · Centro</span></div><p>Cucarachas · 120 m² · bot, 9:40 a.m.</p>
+    <div class="num" id="n2" style="top:24px"><div class="t">Taquería El Güero<span>negocio · Centro</span></div><p>Cucarachas · 1 planta, cocina y bodega · 120 m² · 6 km · bot, 9:40 a.m.</p>
       <div class="chips"><b>$960</b><b>costo $737</b><b class="g">ganas $223</b></div></div>
   </div>
   <div class="vista" id="vDueno"><div class="bur" id="bDueno"><span id="tDueno"></span><small>tú · 8:15 a.m.<svg class="i"><use href="#i-check-check"/></svg></small></div></div>
@@ -208,29 +215,67 @@ const SIM = { cx: 249, cy: 134, w: 294 };
 /* ── los datos de ejemplo: el MISMO cálculo del cotizador, con las tarifas de prueba ── */
 const T = { mano: 2, km: 4, margen: .3, min: 500, plagas: { Cucarachas: 3, Hormigas: 2.2, Chinches: 4.8, Alacranes: 3.25, Ratones: 2.8 } };
 const precio = (m2, plaga, km) => Math.max(T.min, Math.ceil((m2 * (T.plagas[plaga] + T.mano) + km * 2 * T.km) * (1 + T.margen) / 10) * 10);
-const FILAS = [['Cucarachas', 90, 'Centro', 6], ['Chinches', 120, 'Corregidora', 10], ['Cucarachas', 155, 'Juriquilla', 18], ['Hormigas', 210, 'El Marqués', 15],
-  ['Alacranes', 140, 'El Refugio', 14], ['Cucarachas', 260, 'Zibatá', 20], ['Ratones', 180, 'Centro', 6], ['Cucarachas', 70, 'Corregidora', 10], ['Chinches', 300, 'Juriquilla', 18]]
-  .map(([p, m2, z, km], i) => ({ p, m2, z, km, $: precio(m2, p, km) + [0, 40, -20, 30, -40, 20, 0, -10, 60][i] }));
-$('#tabla').innerHTML = '<div class="fila cab"><span>Plaga</span><span>m²</span><span>Zona</span><span>Cobraste</span></div>'
-  + FILAS.map(f => `<div class="fila"><span>${f.p}</span><span>${f.m2}</span><span>${f.z}</span><span>${pesos(f.$)}</span></div>`).join('');
-const filasEl = [...document.querySelectorAll('#tabla .fila:not(.cab)')];
+/* Carlos (12 nov): que el Excel enseñe TODO lo que se toma en cuenta, no sólo zona, plaga y precio: el lugar,
+   los cuartos, las plantas y los metros. El renglón de Juriquilla es una casa como la del ejemplo (y se cobró $1,180). */
+const KM = { Centro: 6, Pueblito: 10, Juriquilla: 18, Marqués: 15, Refugio: 14, Zibatá: 20, Candiles: 11 };
+const FILAS = [['Centro', 'Cucarachas', 'Negocio', 2, 1, 90], ['Pueblito', 'Chinches', 'Casa', 3, 1, 120], ['Juriquilla', 'Cucarachas', 'Casa', 3, 2, 155],
+  ['Marqués', 'Hormigas', 'Casa', 4, 2, 210], ['Refugio', 'Alacranes', 'Casa', 3, 1, 140], ['Zibatá', 'Cucarachas', 'Casa', 5, 2, 260],
+  ['Centro', 'Ratones', 'Bodega', 1, 1, 180], ['Candiles', 'Cucarachas', 'Depa', 2, 1, 70]]
+  .map(([z, p, lugar, cuartos, plantas, m2], i) => ({ z, p, lugar, cuartos, plantas, m2, km: KM[z], $: precio(m2, p, KM[z]) + [0, 40, -20, 30, -40, 20, 0, -10][i] }));
+$('#hoja').innerHTML = '<div class="xl letras"><span></span>' + 'ABCDEFG'.split('').map(l => `<span>${l}</span>`).join('') + '</div>'
+  + '<div class="xl cab"><span>1</span><span>Zona</span><span>Plaga</span><span>Lugar</span><span>Cuartos</span><span>Plantas</span><span>m²</span><span>Cobraste</span></div>'
+  + FILAS.map((f, i) => `<div class="xl fila"><span>${i + 2}</span><span>${f.z}</span><span>${f.p}</span><span>${f.lugar}</span><span>${f.cuartos}</span><span>${f.plantas}</span><span>${f.m2}</span><span>${pesos(f.$)}</span></div>`).join('');
+const filasEl = [...document.querySelectorAll('#hoja .fila')];
+/* lo que dice cada columna: sale una por una mientras la selección la recorre (y se quedan las cuatro) */
+const LEE = [['map-pin', 'Zona:', 'kilómetros, gasolina y desgaste', [1, 1]], ['flask-conical', 'Plaga:', 'qué producto y cuántos litros', [2, 2]],
+  ['ruler', 'Lugar, cuartos, plantas y m²:', 'horas de trabajo', [3, 6]], ['wallet', 'Cobraste:', 'de aquí sale tu precio', [7, 7]]];
+$('#lee').innerHTML = LEE.map(([i, b, tx]) => `<div><span class="ic">${ico(i)}</span><span><b>${b}</b> ${tx}</span></div>`).join('');
+const leeEl = [...document.querySelectorAll('#lee div')];
+/* dónde cae cada columna de la hoja (x, ancho) para la selección */
+const COLS = (() => { const w = [44, 146, 158, 116, 96, 96, 72, 852 - 728]; let x = 24; return w.map(a => { const c = [x, a]; x += a; return c; }); })();
 
-/* la gráfica: metros (x) contra lo que cobró (y) */
-const G = { x0: 110, x1: 840, y0: 560, y1: 70, m2: [40, 320], $: [0, 3600] };
+/* LA GRÁFICA (rehecha el 12 nov: «se ve muy fea»): un panel blanco con su cuadrícula y sus cifras, la franja de lo
+   que normalmente cobras, la línea del centro y, al final, la casa del ejemplo marcada con su rango de precio. */
+const G = { x0: 150, x1: 830, y0: 520, y1: 130, m2: [50, 300], $: [0, 2500] };
 const gx = (m2) => mez(G.x0, G.x1, (m2 - G.m2[0]) / (G.m2[1] - G.m2[0])), gy = (p) => mez(G.y0, G.y1, (p - G.$[0]) / (G.$[1] - G.$[0]));
-const lin = (m2) => (m2 * 3.4 * 1.3) + 260;                      // la recta que mejor pasa por los puntos de ejemplo
+/* la recta de mínimos cuadrados de los renglones de ejemplo, y una franja que abarca a casi todos */
+const AJ = (() => { const n = FILAS.length, mx = FILAS.reduce((s, f) => s + f.m2, 0) / n, my = FILAS.reduce((s, f) => s + f.$, 0) / n;
+  const b = FILAS.reduce((s, f) => s + (f.m2 - mx) * (f.$ - my), 0) / FILAS.reduce((s, f) => s + (f.m2 - mx) ** 2, 0); return { b, a: my - b * mx }; })();
+const lin = (m2) => AJ.a + AJ.b * m2, FRANJA = 220;
+const CASA = 155, R0 = Math.round((lin(CASA) - FRANJA) / 50) * 50, R1 = Math.round((lin(CASA) + FRANJA) / 50) * 50;
+const xa = 70, xb = 290;
 $('#graf').innerHTML = `
-  <g stroke="#CBD5E1" stroke-width="3"><line x1="${G.x0}" y1="${G.y0}" x2="${G.x1 + 20}" y2="${G.y0}"/><line x1="${G.x0}" y1="${G.y0}" x2="${G.x0}" y2="${G.y1 - 20}"/></g>
-  <text x="${G.x1}" y="${G.y0 + 50}" text-anchor="end" font-family="M" font-weight="700" font-size="26" fill="#5C6879" letter-spacing="3">METROS</text>
-  <text x="${G.x0 - 20}" y="${G.y1 - 30}" font-family="M" font-weight="700" font-size="26" fill="#5C6879" letter-spacing="3">LO QUE COBRASTE</text>
-  <line id="recta" x1="${gx(50)}" y1="${gy(lin(50))}" x2="${gx(310)}" y2="${gy(lin(310))}" stroke="#F29923" stroke-width="10" stroke-linecap="round"/>
-  ${FILAS.map((f, i) => `<circle id="pt${i}" r="15" fill="#143361" stroke="#fff" stroke-width="5"/>`).join('')}`;
-const LARGO = Math.hypot(gx(310) - gx(50), gy(lin(310)) - gy(lin(50)));
-$('#recta').style.strokeDasharray = LARGO;
+  <defs><clipPath id="corte"><rect id="corteR" x="${G.x0 - 20}" y="0" width="0" height="648"/></clipPath>
+    <linearGradient id="lin" x1="0" x2="1"><stop offset="0" stop-color="#F7C548"/><stop offset="1" stop-color="#F29923"/></linearGradient></defs>
+  <rect x="24" y="16" width="852" height="616" rx="26" fill="#fff"/>
+  <text x="58" y="76" font-family="M" font-weight="800" font-size="30" fill="#14213A">Lo que cobraste, según los metros</text>
+  <g font-family="I" font-weight="600" font-size="22" fill="#5C6879" style="font-variant-numeric:tabular-nums">
+    ${[0, 500, 1000, 1500, 2000, 2500].map(p => `<line x1="${G.x0}" x2="${G.x1}" y1="${gy(p)}" y2="${gy(p)}" stroke="${p ? '#E8EDF2' : '#CBD5E1'}" stroke-width="${p ? 2 : 3}"/>
+      <text x="${G.x0 - 16}" y="${gy(p) + 8}" text-anchor="end">${pesos(p)}</text>`).join('')}
+    ${[100, 150, 200, 250, 300].map(m => `<text x="${gx(m)}" y="${G.y0 + 40}" text-anchor="middle">${m}</text>`).join('')}
+    <text x="${G.x1}" y="${G.y0 + 80}" text-anchor="end" font-family="M" font-weight="700" font-size="20" letter-spacing="2">METROS CUADRADOS</text>
+  </g>
+  <g clip-path="url(#corte)">
+    <polygon points="${gx(xa)},${gy(lin(xa) + FRANJA)} ${gx(xb)},${gy(lin(xb) + FRANJA)} ${gx(xb)},${gy(lin(xb) - FRANJA)} ${gx(xa)},${gy(lin(xa) - FRANJA)}" fill="#F29923" fill-opacity=".13"/>
+    <line x1="${gx(xa)}" y1="${gy(lin(xa))}" x2="${gx(xb)}" y2="${gy(lin(xb))}" stroke="url(#lin)" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <g id="lnorm" opacity="0"><rect x="${gx(xb) - 196}" y="${gy(lin(xb) + FRANJA) - 50}" width="196" height="38" rx="19" fill="#FFF3DF"/>
+    <text x="${gx(xb) - 98}" y="${gy(lin(xb) + FRANJA) - 24}" text-anchor="middle" font-family="M" font-weight="700" font-size="20" fill="#B86A06">lo que sueles cobrar</text></g>
+  ${FILAS.map((f, i) => `<circle id="pt${i}" r="13" fill="#143361" stroke="#fff" stroke-width="4"/>`).join('')}
+  <g id="marca" opacity="0">
+    <line id="mV" x1="${gx(CASA)}" x2="${gx(CASA)}" y1="${G.y0}" y2="${G.y0}" stroke="#165D9B" stroke-width="3" stroke-dasharray="8 8"/>
+    <rect id="mR" x="${gx(CASA) - 9}" y="${gy(R1)}" width="18" height="0" rx="9" fill="#165D9B" fill-opacity=".22" stroke="#165D9B" stroke-width="3"/>
+    <circle id="mP" cx="${gx(CASA)}" cy="${gy(lin(CASA))}" r="0" fill="#F7E93F" stroke="#143361" stroke-width="5"/>
+    <g id="mT" opacity="0"><rect x="${gx(CASA) + 26}" y="${G.y0 - 116}" width="404" height="100" rx="20" fill="#143361"/>
+      <text x="${gx(CASA) + 50}" y="${G.y0 - 78}" font-family="I" font-weight="600" font-size="23" fill="#A9C3E6">Una casa de 155 m², hoy:</text>
+      <text x="${gx(CASA) + 50}" y="${G.y0 - 36}" font-family="M" font-weight="800" font-size="31" fill="#fff">entre ${pesos(R0)} y ${pesos(R1)}</text></g>
+  </g>`;
+/* el punto de partida de cada punto: la celda «Cobraste» de su renglón en la hoja */
+const celda = (i) => [COLS[7][0] + COLS[7][1] / 2, 16 + 30 + 44 + 44 * i + 22];
 
 /* el cálculo, con el ejemplo de Juriquilla (3 recámaras, 2 baños y patio ≈ 155 m², 18 km) — sale $1,200 */
 const PASOS = [
-  { ic: 'ruler', tx: '<b>Metros:</b> 3 recámaras, 2 baños y patio ≈ 155 m²', v: 0, et: '' , top: 184 },
+  { ic: 'ruler', tx: '<b>Tu casa:</b> 2 plantas, 3 recámaras · 155 m²', v: 0, et: '' , top: 184 },
   { ic: 'flask-conical', tx: '<b>Material:</b> gel y aspersión, 7.75 L', v: 465, et: '+$465', top: 266 },
   { ic: 'clock', tx: '<b>Técnico:</b> 3 horas de trabajo', v: 795, et: '+$330', top: 348 },
   { ic: 'truck', tx: '<b>Camioneta:</b> 36 km ida y vuelta', v: 917, et: '+$122', top: 430, sub: ['gasolina $86', 'llantas $13', 'balatas $7', 'motor $16'] },
@@ -259,8 +304,8 @@ const TITS = [
   { a: 29.9, b: 32.1, l: ['Los casos', 'raros, *a ti.*'] },
   { a: 32.3, b: 34.5, l: ['Los demás,', 'se cotizan', '*solos.*'] },
   /* escena nueva (tiempo nuevo, ver «viejo») */
-  { a: 29.2, b: 31.9, nuevo: true, l: ['Y cada cotización', 'te llega a *ti.*'] },
-  { a: 32.1, b: 34.4, nuevo: true, l: ['Cuánto cobras,', 'cuánto cuesta,', 'cuánto *ganas.*'] },
+  { a: 29.2, b: 30.95, nuevo: true, l: ['Y cada cotización', 'te llega a *ti.*'] },
+  { a: 31.05, b: 34.4, nuevo: true, l: ['Cuánto cobras,', 'cuánto cuesta,', 'cuánto *ganas.*'] },
   { a: 34.6, b: 36.9, nuevo: true, l: ['¿Algo cambió?', 'Le escribes *tú.*'] }];
 const tit = $('#tit');
 tit.innerHTML = TITS.map((h, k) => `<div class="h" data-k="${k}" style="position:absolute;left:0;top:0">${h.l.map(r => `<span class="ren">${
@@ -283,13 +328,24 @@ const escribe = (el, txt, t, a, b) => { const n = Math.round(txt.length * tramo(
 const ponLogo = (cx, cy, ancho, o = 1) => { const k = ancho / SIM.w; $('#logo').style.transform = `translate(${cx - SIM.cx * k}px, ${cy - SIM.cy * k}px) scale(${k})`; $('#logo').style.opacity = o; $('#logo').style.visibility = o > .001 ? 'visible' : 'hidden'; };
 
 const BOT = 'Te saldría aproximadamente en <b>$1,200</b>. Si los datos que nos diste están bien, ése es el costo; el técnico te lo confirma al ver tu casa.';
-const CLI = 'Hola, ¿cuánto me cobras por fumigar? Tengo cucarachas en la casa.';
+const CLI = 'Hola, ¿cuánto por fumigar? Tengo cucarachas. Es casa de 2 plantas y 3 recámaras en Juriquilla.';
 const DUENO = 'Hola Brenda, soy de Urban Pest. Mañana a las 10 va el técnico; si encuentra algo distinto, te avisa antes de empezar.';
 
 /* LA LÍNEA DE TIEMPO: el video viejo (38.6 s) con tres cosas nuevas metidas. «viejo(T)» dice en qué segundo del viejo
    va cada segundo del nuevo, y «nuevo(v)» al revés (para los sonidos). */
 const viejo = (T) => T < 3 ? 2 : T < 14.6 ? T - 1 : T < 23.6 ? 13.6 + (T - 14.6) * 6.4 / 9 : T < 29 ? T - 3.6 : T < 37 ? 25.29 : T - 11.6;
 const nuevo = (v) => v < 13.6 ? v + 1 : v < 20 ? 14.6 + (v - 13.6) * 9 / 6.4 : v < 25.4 ? v + 3.6 : v + 11.6;
+
+/* LAS PAUSAS DE LECTURA (Carlos, 12 nov: «el texto sale muy rápido y se quita muy rápido, no se alcanza a leer»).
+   Encima de todo hay un tercer reloj, el de la pantalla (F): en cada pausa el video se queda quieto con todo el texto
+   puesto, el tiempo justo para leerlo. Cada pausa va donde ya no se está moviendo nada. [T donde se pausa, segundos] */
+const PAUSAS = [[7.32, 1.0], [9.75, 3.4], [13.85, 2.6], [21.85, 1.3], [27.0, 1.2], [30.75, 1.0], [31.95, 2.2], [35.5, 1.8],
+  [39.5, 1.2], [42.0, 0.8], [43.4, 1.0], [45.6, 0.6], [49.4, 0.8]];
+let acum = 0; const PF = PAUSAS.map(([p, e]) => { const f = p + acum; acum += e; return f; }); const EXTRA = acum;
+const deF = (F) => { let T = F; for(const [p, e] of PAUSAS){ if(T <= p) break; T = T - e < p ? p : T - e; } return T; };
+const aF = (T) => T + PAUSAS.filter(([p]) => p < T).reduce((s, [, e]) => s + e, 0);
+const enPausa = (k, F) => cl(F - PF[k], 0, PAUSAS[k][1]);   // segundos que lleva la pausa k (se queda en su final después)
+let AHORA = 0;                                               // el reloj de la pantalla, para lo que vive DENTRO de una pausa
 
 /* LAS CINTAS (v3, Carlos 12 nov): cada cinta es del color EXACTO de una pieza del logo y entra girando desde fuera
    de la pantalla, todas inclinadas igual y hacia el mismo lado (nada de anillos cruzados en X). Se va cerrando sobre
@@ -370,25 +426,40 @@ const pintarViejo = (t, T) => {
   /* 2 · EL CHAT: el cliente pregunta, el dueño se queda «escribiendo…» */
   ver($('#vChat'), t < 20 ? 1 - tramo(t, 6.7, 7.0) : tramo(t, 20.0, 20.3) * (1 - tramo(t, 25.3, 25.6)), null);
   ver($('#bCli'), sale(tramo(t, 2.9, 3.2)), `translateY(${(1 - sale(tramo(t, 2.9, 3.2))) * 20}px)`);
-  escribe($('#tCli'), CLI, t, 3.0, 4.5);
-  const esc = t < 20 ? vida(t, 4.7, 6.7, .2, .2) : vida(t, 20.3, 20.9, .1, .1);
-  ver($('#escr'), esc, null); [...$('#escr').children].forEach((d, i) => d.style.transform = `translateY(${Math.sin(t * 9 - i * .9) * 6}px)`);
+  escribe($('#tCli'), CLI, t, 3.0, 5.0);
+  const esc = t < 20 ? vida(t, 5.15, 6.7, .2, .2) : vida(t, 20.3, 20.9, .1, .1);
+  ver($('#escr'), esc, null); [...$('#escr').children].forEach((d, i) => d.style.transform = `translateY(${Math.sin(AHORA * 9 - i * .9) * 6}px)`);
   ver($('#bBot'), t > 20.85 ? sale(tramo(t, 20.85, 21.15)) : 0, `scale(${mez(.9, 1, sale(tramo(t, 20.85, 21.15)))})`);
   $('#bBot').style.transformOrigin = '0 100%';
-  escribe($('#tBot'), BOT, t, 20.9, 22.6);
-  if(t >= 20.9 && t < 22.6 && /<b>[^<]*$/.test($('#tBot')._s || '')) $('#tBot').innerHTML = $('#tBot')._s + '</b>';
+  escribe($('#tBot'), BOT, t, 20.9, 23.3);
+  if(t >= 20.9 && t < 23.3 && /<b>[^<]*$/.test($('#tBot')._s || '')) $('#tBot').innerHTML = $('#tBot')._s + '</b>';
 
   /* 3 · EL EXCEL: los renglones caen uno por uno */
   ver($('#vExcel'), Math.min(enExcel, 1 - tramo(t, 10.6, 10.9)), null);
   filasEl.forEach((f, i) => { const u = sale(tramo(t, 7.2 + i * .17, 7.5 + i * .17)); f.style.opacity = u; f.style.transform = `translateX(${(1 - u) * 60}px)`; });
-  /* 4 · LOS RENGLONES SE VUELVEN PUNTOS, Y LOS PUNTOS UNA RECTA */
+  /* (en la pausa 1) la selección recorre las columnas y cada una dice qué toma en cuenta */
+  { const s = enPausa(1, AHORA), cuando = LEE.map((_, k) => .2 + k * .75); let k = -1; cuando.forEach((c, i) => { if(s >= c) k = i; });
+    const caja = (i) => { const [c0, c1] = LEE[i][3], x = COLS[c0][0]; return { x, w: COLS[c1][0] + COLS[c1][1] - x }; };
+    if(k < 0) ver($('#sel'), 0, null);
+    else { const u = suave(cl((s - cuando[k]) / .32)), A = caja(Math.max(0, k - 1)), B = caja(k), sel = $('#sel').style;
+      sel.left = mez(A.x, B.x, u) + 'px'; sel.width = mez(A.w, B.w, u) + 'px'; sel.top = (16 + 30) + 'px'; sel.height = (44 * 9) + 'px';
+      ver($('#sel'), k ? 1 : u, null); }
+    leeEl.forEach((d, i) => { const q = sale(cl((s - cuando[i]) / .32)); d.style.opacity = q; d.style.transform = `translateX(${(1 - q) * 24}px)`; }); }
+  /* 4 · LOS RENGLONES SE VUELVEN PUNTOS, Y LOS PUNTOS ARMAN LA FRANJA DE LO QUE SUELES COBRAR */
   ver($('#vGraf'), tramo(t, 10.6, 10.9) * (1 - tramo(t, 13.6, 13.95)), null);
   FILAS.forEach((f, i) => {
-    const u = suave(tramo(t, 10.7 + i * .09, 11.4 + i * .09)), y0 = 30 + 46 + 52 * i + 26;
-    const c = $('#pt' + i); c.setAttribute('cx', mez(830, gx(f.m2), u)); c.setAttribute('cy', mez(y0, gy(f.$), u));
-    c.setAttribute('r', 15 * (1 - .4 * tramo(t, 12.9, 13.4)));
+    const u = suave(tramo(t, 10.7 + i * .09, 11.4 + i * .09)), [x0, y0] = celda(i);
+    const c = $('#pt' + i); c.setAttribute('cx', mez(x0, gx(f.m2), u)); c.setAttribute('cy', mez(y0, gy(f.$), u));
   });
-  $('#recta').style.strokeDashoffset = LARGO * (1 - suave(tramo(t, 11.9, 12.8)));
+  $('#corteR').setAttribute('width', (G.x1 - G.x0 + 60) * suave(tramo(t, 11.9, 12.8)));
+  $('#lnorm').setAttribute('opacity', sale(tramo(t, 12.75, 13.05)));
+  /* (en la pausa 2) la casa del ejemplo: sube la guía, se marca el rango y sale cuánto costaría */
+  { const s = enPausa(2, AHORA);
+    $('#marca').setAttribute('opacity', s > 0 ? 1 : 0);
+    $('#mV').setAttribute('y2', mez(G.y0, gy(R0), sale(cl(s / .45))));
+    const h = (gy(R0) - gy(R1)) * sale(cl((s - .35) / .45)); $('#mR').setAttribute('height', h); $('#mR').setAttribute('y', gy(R0) - h);
+    $('#mP').setAttribute('r', 13 * resorte(cl((s - .6) / .6)));
+    const q = sale(cl((s - .85) / .4)); $('#mT').setAttribute('opacity', q); $('#mT').setAttribute('transform', `translate(0 ${(1 - q) * 16})`); }
   /* 5 · EL CÁLCULO: cada dato mueve el número */
   ver($('#vCalc'), enCalc, null);
   /* (tiempo NUEVO: el cálculo se alargó para que se vea todo lo que cuenta) */
@@ -451,8 +522,8 @@ const pintarViejo = (t, T) => {
   } else { $('#tacha').style.opacity = 0; $('#tacha2').style.opacity = 0; }
 };
 
-window.pintar = (T) => {
-  const t = viejo(T);
+window.pintar = (F) => {
+  AHORA = F; const T = deF(F), t = viejo(T);
   pintarViejo(t, T);
 
   /* 0 · LA ENTRADA (0–3 s): rectas que llegan corriendo, se vuelven anillos que envuelven el logo, y el logo se arma
@@ -481,9 +552,9 @@ window.pintar = (T) => {
   const enNum = tramo(T, 29.05, 29.4) * (1 - tramo(T, 33.0, 33.3)), enDueno = tramo(T, 33.1, 33.45) * (1 - tramo(T, 36.95, 37.3));
   if(T >= 29 && T < 37.3){ ver($('#vChat'), 1 - tramo(T, 29.0, 29.3), null); ver($('#cabChat'), 1 - tramo(T, 29.0, 29.3), null); }
   ver($('#vNum'), enNum, null); ver($('#cabNum'), enNum, null); ver($('#vDueno'), enDueno, null); ver($('#cabDueno'), enDueno, null);
-  const n1 = sale(tramo(T, 29.3, 29.75)), n2 = sale(tramo(T, 31.3, 31.75));
+  const n1 = sale(tramo(T, 29.3, 29.75)), n2 = sale(tramo(T, 31.05, 31.5));
   ver($('#n1'), n1, `translateY(${(1 - n1) * 50 + n2 * 0}px)`);
-  [...$('#desg').children].forEach((d, i) => { const q = tramo(T, 29.9 + Math.floor(i / 2) * .3, 30.15 + Math.floor(i / 2) * .3); d.style.opacity = q; });
+  [...$('#desg').children].forEach((d, i) => { const q = tramo(T, 29.75 + Math.floor(i / 2) * .18, 30.0 + Math.floor(i / 2) * .18); d.style.opacity = q; });
   const y2 = $('#n1').offsetTop + $('#n1').offsetHeight - 24 + 14; ver($('#n2'), n2 * (1 - tramo(T, 32.5, 32.8)), `translateY(${mez(y2 + 110, y2, n2)}px)`);
   const dedo = vida(T, 32.2, 33.15, .25, .2), pulsa = Math.sin(Math.PI * tramo(T, 32.65, 32.95));
   if(T > 32 && T < 33.3){ const r = $('#bEsc').getBoundingClientRect(); $('#dedo').style.left = (r.left + r.width / 2) + 'px'; $('#dedo').style.top = (r.top + r.height / 2 + (1 - sale(tramo(T, 32.2, 32.6))) * 120) + 'px'; }
@@ -492,8 +563,8 @@ window.pintar = (T) => {
   escribe($('#tDueno'), DUENO, T, 33.5, 35.4);
 };
 
-window.VIDEO = { w: 1080, h: 1920, fps: 30, dur: 50.2,
-  musica: { archivo: '/tmp/claude-0/mus/173.mp3', desde: 38, vol: .55, entrada: .4, fin: 2.4 },
+window.VIDEO = { w: 1080, h: 1920, fps: 30, dur: +(50.2 + EXTRA).toFixed(2),
+  musica: { archivo: '/tmp/claude-0/mus/173.mp3', desde: 30, vol: .55, entrada: .4, fin: 2.4 },
   sonidos: [
     ['../../../herramientas/video/efectos/whoosh.wav', .05, .3], ['../../../herramientas/video/efectos/whoosh.wav', .55, .22],
     ...CINTAS.map(c => ['../../../herramientas/video/efectos/toque.wav', c.llega, .16]),
@@ -501,11 +572,13 @@ window.VIDEO = { w: 1080, h: 1920, fps: 30, dur: 50.2,
     ...[[2.05, 'whoosh', .35], ...Array.from({ length: 9 }, (_, i) => [3.0 + i * .17, 'toque', .18]), [5.55, 'subida', .35], [6.75, 'whoosh', .35],
       ...FILAS.map((_, i) => [7.2 + i * .17, 'toque', .25]), [10.65, 'whoosh', .3], [20.9, 'ding', .35], [25.35, 'whoosh', .3], [26.3, 'toque', .35], [27.4, 'toque', .35],
       [29.9, 'toque', .35], [30.08, 'toque', .35], [30.26, 'toque', .35], [31.4, 'timbre', .4], [32.85, 'whoosh', .3], [33.55, 'whoosh', .3], [34.5, 'subida', .35], [35.55, 'golpe', .5]]
-      .map(([v, f, vol]) => [`../../../herramientas/video/efectos/${f}.wav`, nuevo(v), vol]),
-    ...[15.0, 16.0, 17.1, 18.2, 18.7, 19.05, 19.4, 19.75, 20.6].map((x, i) => ['../../../herramientas/video/efectos/toque.wav', x, i > 3 && i < 8 ? .2 : .4]),
-    ['../../../herramientas/video/efectos/ding.wav', 21.4, .5],
-    ['../../../herramientas/video/efectos/whoosh.wav', 29.0, .3], ['../../../herramientas/video/efectos/timbre.wav', 29.35, .35], ['../../../herramientas/video/efectos/toque.wav', 31.3, .35],
-    ['../../../herramientas/video/efectos/toque.wav', 32.75, .45], ['../../../herramientas/video/efectos/whoosh.wav', 33.05, .3],
+      .map(([v, f, vol]) => [`../../../herramientas/video/efectos/${f}.wav`, aF(nuevo(v)), vol]),
+    ...[15.0, 16.0, 17.1, 18.2, 18.7, 19.05, 19.4, 19.75, 20.6].map((x, i) => ['../../../herramientas/video/efectos/toque.wav', aF(x), i > 3 && i < 8 ? .2 : .4]),
+    ['../../../herramientas/video/efectos/ding.wav', aF(21.4), .5],
+    ['../../../herramientas/video/efectos/whoosh.wav', aF(29.0), .3], ['../../../herramientas/video/efectos/timbre.wav', aF(29.35), .35], ['../../../herramientas/video/efectos/toque.wav', aF(31.05), .35],
+    ['../../../herramientas/video/efectos/toque.wav', aF(32.75), .45], ['../../../herramientas/video/efectos/whoosh.wav', aF(33.05), .3],
+    ...LEE.map((_, k) => ['../../../herramientas/video/efectos/toque.wav', PF[1] + .2 + k * .75, .3]),
+    ['../../../herramientas/video/efectos/toque.wav', PF[2] + .6, .4],
     ] };
 window.pintar(0);
 })();
