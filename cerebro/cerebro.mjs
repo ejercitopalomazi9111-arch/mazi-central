@@ -89,6 +89,7 @@ export async function agregar(neurona, area){
   return { bien: true, en: destino.archivo, total: crudo.neuronas.length };
 }
 
+import { acomodar } from './acomodo.js';
 import { CAMPOS, claseDe, OBLIGATORIOS, aplanar, buscar, vecinas, revisar, grafo,
          normal, sobreArchivo, indiceDeArchivos, cobertura } from './buscador.mjs';
 
@@ -130,6 +131,9 @@ export async function armar(){
     comunidades: g.comunidades,
     grados: g.grados,
   };
+  /* dónde va cada neurona en la vista de red: se calcula aquí y no en el
+     teléfono (acomodo.js cuenta por qué) */
+  todo.pos = acomodar(todo.areas.flatMap((a) => a.neuronas.map((n) => n.id)), g.enlaces);
   await writeFile(join(AQUI, 'todo.json'), JSON.stringify(todo) + '\n');
   return todo;
 }
