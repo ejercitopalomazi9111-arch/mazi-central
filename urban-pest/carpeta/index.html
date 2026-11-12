@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Carpeta de cumplimiento · Urban Pest Control</title>
+<link rel="icon" href="../web/img/sello.png">
+<link rel="preload" href="../web/fuentes/montserrat.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+/* La carpeta de cumplimiento que se le promete a cada planta (urban-pest/venta/). Tres modos en un archivo:
+     ?c=CODIGO              la carpeta de UNA planta, la que abre su jefe de calidad (sólo lectura)
+     ?c=CODIGO&folio=N      la constancia de un servicio, para imprimir o guardar en PDF
+     ?registrar             el dueño: plantas, estaciones, documentos y registrar un servicio con firma
+   Colores de su marca, su letra, fondos sólidos, nada de adornos (tics-de-ia). */
+@font-face{font-family:"Montserrat";src:url(../web/fuentes/montserrat.woff2) format("woff2");font-weight:100 900;font-display:swap}
+:root{ --tinta:#14213A; --suave:#5C6879; --linea:#E1E7EE; --gris:#F2F5F8; --marina:#143361; --azul:#165D9B; --sol:#F29923;
+  --ok:#13794A; --ok-f:#E7F6EE; --alerta:#9A5B00; --alerta-f:#FFF2DC; --mal:#B42318; --mal-f:#FDECEA; --letra:"Montserrat", system-ui, -apple-system, sans-serif }
+*{ box-sizing:border-box } html{ -webkit-text-size-adjust:100% }
+body{ margin:0; background:#fff; color:var(--tinta); font:400 16px/1.6 var(--letra); -webkit-font-smoothing:antialiased }
+.env{ max-width:960px; margin:0 auto; padding:0 16px 72px }
+a{ color:var(--azul) } button, input, textarea, select{ font-family:inherit; font-size:16px; color:inherit }
+:focus-visible{ outline:3px solid var(--azul); outline-offset:2px; border-radius:6px }
+.cab{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:18px 0; border-bottom:1px solid var(--linea) }
+.cab img{ height:34px; width:auto; display:block }
+.cab small{ color:var(--suave); font-size:13px; text-align:right }
+h1{ font-size:clamp(26px, 6vw, 36px); line-height:1.15; margin:28px 0 6px; letter-spacing:-.01em }
+h2{ font-size:20px; margin:40px 0 14px }
+h3{ font-size:16px; margin:0 }
+.sub{ color:var(--suave); margin:0 }
+.aviso{ margin:18px 0 0; padding:12px 14px; border-radius:8px; background:var(--alerta-f); color:var(--alerta); font-size:14px; font-weight:600 }
+.docs{ display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:0; border-top:1px solid var(--linea); border-left:1px solid var(--linea) }
+.docs div{ padding:14px; border-right:1px solid var(--linea); border-bottom:1px solid var(--linea) }
+.docs small{ display:block; color:var(--suave); font-size:13px } .docs b{ font-size:15px } .docs .falta{ color:var(--mal); font-weight:600 }
+.leyenda{ display:flex; flex-wrap:wrap; gap:6px 16px; font-size:13px; color:var(--suave); margin:0 0 12px }
+.leyenda span{ display:inline-flex; align-items:center; gap:6px } .leyenda i{ width:12px; height:12px; border-radius:3px; display:inline-block }
+.zona{ margin:0 0 14px } .zona h3{ font-size:14px; color:var(--suave); font-weight:600; margin:0 0 8px }
+.est{ display:grid; grid-template-columns:repeat(auto-fill, minmax(52px, 1fr)); gap:6px }
+.est > *{ min-height:52px; border-radius:8px; border:1px solid var(--linea); display:grid; place-items:center; font-weight:700; font-size:15px; background:#fff; padding:0 }
+.e-sin{ background:var(--ok-f)!important; border-color:#BFE6CF!important; color:var(--ok) }
+.e-con, .e-cap{ background:var(--alerta-f)!important; border-color:#F2CF8F!important; color:var(--alerta) }
+.e-cap{ background:var(--mal-f)!important; border-color:#F3B9B3!important; color:var(--mal) }
+.e-dan, .e-fal{ background:#EEF0F3!important; color:var(--suave); text-decoration:line-through }
+.barras{ display:grid; gap:8px }
+.barra{ display:grid; grid-template-columns:72px minmax(0,1fr) 92px; gap:10px; align-items:center; font-size:14px }
+.barra .p{ height:14px; border-radius:4px; background:var(--gris); overflow:hidden } .barra .p i{ display:block; height:100%; background:var(--sol) }
+.barra b{ text-align:right; font-weight:600; color:var(--suave) }
+.serv{ list-style:none; margin:0; padding:0; border-top:1px solid var(--linea) }
+.serv li{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 12px; align-items:center; padding:16px 0; border-bottom:1px solid var(--linea) }
+.serv small{ color:var(--suave); font-size:14px; grid-column:1 }
+.btn{ display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:0 16px; border-radius:8px; border:0; background:var(--marina); color:#fff; font-weight:600; font-size:15px; text-decoration:none; cursor:pointer }
+.btn.b2{ background:#fff; color:var(--marina); box-shadow:inset 0 0 0 1.5px var(--linea) }
+.btn:disabled{ opacity:.5 }
+.pie{ margin-top:48px; color:var(--suave); font-size:13px }
+/* ── la constancia ── */
+.const h1{ font-size:24px; margin-top:24px } .const table{ width:100%; border-collapse:collapse; font-size:14px; margin:8px 0 0 }
+.const th, .const td{ text-align:left; padding:8px 6px; border-bottom:1px solid var(--linea); vertical-align:top } .const th{ color:var(--suave); font-weight:600 }
+.const .firma{ margin-top:28px; display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:24px }
+.const .firma div{ border-top:1px solid var(--tinta); padding-top:6px; font-size:14px } .const .firma img{ height:70px; display:block; margin:0 0 -4px }
+.const p{ white-space:pre-line }
+@media print{ .no-imp{ display:none!important } body{ font-size:12px } .env{ padding:0 } h2{ margin-top:18px } @page{ size:letter; margin:14mm } }
+/* ── registrar ── */
+.f{ display:grid; gap:14px; max-width:620px }
+.f label{ display:grid; gap:6px; font-weight:600; font-size:14px }
+.f input, .f textarea, .f select{ width:100%; min-height:48px; padding:12px; border-radius:8px; border:1.5px solid var(--linea); background:#fff }
+.f textarea{ min-height:96px; resize:vertical }
+.fila3{ display:grid; grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,.8fr); gap:8px }
+.firma-lienzo{ width:100%; height:180px; border:1.5px dashed var(--suave); border-radius:8px; touch-action:none; background:#fff; display:block }
+.lista{ list-style:none; margin:0; padding:0; border-top:1px solid var(--linea) }
+.lista li{ padding:14px 0; border-bottom:1px solid var(--linea); display:grid; gap:8px }
+.acc{ display:flex; flex-wrap:wrap; gap:8px }
+.msj{ font-weight:600 } .msj.mal{ color:var(--mal) } .msj.bien{ color:var(--ok) }
+.oculto{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); top:0; left:0 }
+</style>
+</head>
+<body>
+<div class="env" id="app"><p class="sub" style="padding:40px 0">Cargando…</p></div>
+<script>
+const q = new URLSearchParams(location.search);
+const guarda = { leer: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, poner: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
+const SERVIDOR = q.get('servidor') || guarda.leer('up_servidor') || 'https://sala.palomazi9111.workers.dev/api/urban';
+if(q.get('acceso')){ guarda.poner('up_acceso', q.get('acceso')); q.delete('acceso'); history.replaceState(null, '', '?' + q.toString()); }
+const app = document.getElementById('app');
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const fecha = (s) => { const [a, m, d] = s.split('-').map(Number); return `${d} de ${MESES[m - 1]} de ${a}`; };
+const mes = (s) => { const [a, m] = s.split('-').map(Number); return `${MESES[m - 1].slice(0, 3)} ${a}`; };
+const CLASE = { 'sin actividad': 'e-sin', 'con actividad': 'e-con', 'captura': 'e-cap', 'dañada': 'e-dan', 'faltante': 'e-fal' };
+const ESTADOS = Object.keys(CLASE);
+const cab = `<header class="cab"><img src="../web/img/logo.webp" alt="Urban Pest Control" width="160" height="34"><small>Carpeta de cumplimiento<br>NOM-251-SSA1-2009 · 5.10</small></header>`;
+
+async function api(metodo, ruta, cuerpo){
+  const r = await fetch(SERVIDOR + ruta, { method: metodo, headers: { 'content-type': 'application/json', 'x-llave': guarda.leer('up_llave') || guarda.leer('salaLlave') || '', 'x-acceso': guarda.leer('up_acceso') || '' }, body: cuerpo ? JSON.stringify(cuerpo) : undefined });
+  const j = await r.json().catch(() => ({ bien: false, error: 'El servidor no contestó bien (' + r.status + ').' }));
+  if(!r.ok && j.bien !== false) j.bien = false;
+  return j;
+}
+
+function docs(d){
+  const c = (k, t) => `<div><small>${t}</small>${d[k] ? `<b>${esc(d[k])}</b>` : '<span class="falta">Por capturar</span>'}</div>`;
+  return `<div class="docs">${c('licencia_sanitaria', 'Licencia sanitaria')}${c('repse', 'Registro REPSE')}${c('razon_social', 'Razón social')}${c('responsable_tecnico', 'Responsable técnico')}</div>`;
+}
+function mapa(estaciones, conUltimo = true){
+  const zonas = new Map(); for(const e of estaciones){ if(!zonas.has(e.zona || 'Sin zona')) zonas.set(e.zona || 'Sin zona', []); zonas.get(e.zona || 'Sin zona').push(e); }
+  const leyenda = `<p class="leyenda">${[['e-sin', 'Sin actividad'], ['e-con', 'Con actividad'], ['e-cap', 'Captura'], ['e-dan', 'Dañada o faltante']].map(([c, t]) => `<span><i class="${c}"></i>${t}</span>`).join('')}</p>`;
+  return leyenda + [...zonas].map(([z, es]) => `<div class="zona"><h3>${esc(z)}</h3><div class="est">${es.map(e => {
+    const u = conUltimo ? e.ultimo : e; const est = u?.estado;
+    return `<span class="${CLASE[est] || ''}" title="Estación ${e.n} · ${esc(e.tipo || '')}${est ? ' · ' + est : ''}">${e.n}<span class="oculto"> ${est || 'sin revisar'}</span></span>`; }).join('')}</div></div>`).join('');
+}
+
+/* ══ LA CARPETA (jefe de calidad) ══ */
+async function carpeta(codigo){
+  const c = await api('GET', '/api/carpeta?c=' + encodeURIComponent(codigo));
+  if(!c.bien){ app.innerHTML = cab + `<h1>No encontramos esta carpeta</h1><p class="sub">${esc(c.error || '')}</p>`; return; }
+  document.title = `${c.planta.nombre} · Carpeta de cumplimiento`;
+  const folio = q.get('folio');
+  if(folio){ const s = c.servicios.find(x => String(x.folio) === folio); return constancia(c, s); }
+  const t = c.tendencia, maxi = Math.max(1, ...t.map(x => x.revisadas));
+  app.innerHTML = cab + `
+    <h1>${esc(c.planta.nombre)}</h1><p class="sub">${esc([c.planta.giro, c.planta.direccion].filter(Boolean).join(' · '))}</p>
+    ${c.planta.ejemplo ? '<p class="aviso">Ejemplo con datos de muestra: así se ve la carpeta de una planta. La de su empresa trae sus servicios reales.</p>' : ''}
+    <h2>Documentos de Urban Pest</h2>${docs(c.documentos)}
+    <h2>Mapa de trampas · última revisión</h2>${c.estaciones.length ? mapa(c.estaciones) : '<p class="sub">Todavía no hay estaciones registradas.</p>'}
+    <h2>Actividad por mes</h2>${t.length ? `<div class="barras">${t.map(x => `<div class="barra"><span>${mes(x.mes)}</span><span class="p"><i style="width:${(x.actividad / maxi * 100).toFixed(1)}%"></i></span><b>${x.actividad} de ${x.revisadas}</b></div>`).join('')}</div><p class="sub" style="margin-top:8px;font-size:14px">Estaciones con actividad o captura, de las revisadas en el mes.</p>` : '<p class="sub">Sin servicios todavía.</p>'}
+    <h2>Servicios</h2>${c.servicios.length ? `<ul class="serv">${c.servicios.map(s => `<li><b>${fecha(s.fecha)} · Folio ${s.folio}</b><a class="btn b2" href="?c=${encodeURIComponent(codigo)}&folio=${s.folio}">Ver constancia</a><small>${esc(s.tipo)} · ${s.estaciones.filter(e => e.estado === 'con actividad' || e.estado === 'captura').length} con actividad de ${s.estaciones.length} revisadas</small></li>`).join('')}</ul>` : '<p class="sub">Todavía no hay servicios.</p>'}
+    <p class="pie">Urban Pest Control · 442 139 4023 · direccion@urbanpest.mx</p>`;
+}
+
+/* ══ LA CONSTANCIA de un servicio (para imprimir) ══ */
+function constancia(c, s){
+  if(!s){ app.innerHTML = cab + '<h1>No encontramos ese servicio</h1>'; return; }
+  const d = c.documentos, activas = s.estaciones.filter(e => e.estado !== 'sin actividad');
+  app.innerHTML = `<div class="const">${cab}
+    <p class="no-imp acc" style="margin-top:16px"><button class="btn" onclick="print()">Imprimir o guardar en PDF</button><a class="btn b2" href="?c=${encodeURIComponent(q.get('c'))}">Volver a la carpeta</a></p>
+    ${s.ejemplo ? '<p class="aviso">Ejemplo con datos de muestra.</p>' : ''}
+    <h1>Constancia de servicio · Folio ${s.folio}</h1>
+    <p class="sub">${esc(c.planta.nombre)}${c.planta.direccion ? ' · ' + esc(c.planta.direccion) : ''}</p>
+    <table><tr><th>Fecha</th><td>${fecha(s.fecha)}</td><th>Técnico</th><td>${esc(s.tecnico)}</td></tr>
+      <tr><th>Servicio</th><td>${esc(s.tipo)}</td><th>Licencia sanitaria</th><td>${d.licencia_sanitaria ? esc(d.licencia_sanitaria) : '<b style="color:var(--mal)">Por capturar</b>'}</td></tr>
+      <tr><th>Empresa</th><td>${esc(d.razon_social || 'Urban Pest Control')}</td><th>REPSE</th><td>${esc(d.repse || 'Por capturar')}</td></tr></table>
+    <h2>Productos aplicados</h2>${s.productos.length ? `<table><tr><th>Producto</th><th>Registro</th><th>Cantidad</th></tr>${s.productos.map(p => `<tr><td>${esc(p.nombre)}</td><td>${esc(p.registro)}</td><td>${esc(p.cantidad)}</td></tr>`).join('')}</table>` : '<p class="sub">No se aplicaron productos en esta visita.</p>'}
+    <h2>Estaciones revisadas: ${s.estaciones.length}</h2>
+    ${activas.length ? `<table><tr><th>Estación</th><th>Estado</th><th>Nota</th></tr>${activas.map(e => `<tr><td>${e.n}</td><td>${esc(e.estado)}</td><td>${esc(e.nota)}</td></tr>`).join('')}</table><p class="sub" style="font-size:14px">Las demás, sin actividad.</p>` : '<p>Todas sin actividad.</p>'}
+    ${s.hallazgos ? `<h2>Hallazgos</h2><p>${esc(s.hallazgos)}</p>` : ''}
+    ${s.recomendaciones ? `<h2>Recomendaciones</h2><p>${esc(s.recomendaciones)}</p>` : ''}
+    <div class="firma"><div>${s.firma ? `<img src="${s.firma}" alt="Firma de quien recibió">` : ''}Recibió: <b>${esc(s.recibio.nombre)}</b>${s.recibio.puesto ? ', ' + esc(s.recibio.puesto) : ''}</div><div>Realizó: <b>${esc(s.tecnico)}</b>${d.responsable_tecnico ? '<br>Responsable técnico: ' + esc(d.responsable_tecnico) : ''}</div></div>
+    <p class="pie">Constancia conforme a la NOM-251-SSA1-2009, numeral 5.10.11. Urban Pest Control · 442 139 4023</p></div>`;
+}
+
+/* ══ REGISTRAR (el dueño) ══ */
+async function registrar(){
+  const r = await api('GET', '/api/plantas');
+  if(!r.bien){ app.innerHTML = cab + `<h1>Te falta tu acceso</h1><p class="sub">${esc(r.error || '')}</p><p><button class="btn" id="llave">Escribir la llave</button></p>`;
+    document.getElementById('llave').onclick = () => { const k = prompt('Llave del panel (te la da Grupo Mazi):'); if(k){ guarda.poner('up_llave', k.trim()); location.reload(); } }; return; }
+  const d = (await api('GET', '/api/documentos')).documentos || {};
+  const base = location.href.split('?')[0];
+  app.innerHTML = cab + `<h1>Carpetas de las plantas</h1><p class="sub">Aquí registras cada servicio. La planta lo ve en su link al momento.</p>
+    <h2>Plantas</h2>${r.plantas.length ? `<ul class="lista">${r.plantas.map(p => `<li><b>${esc(p.nombre)}${p.ejemplo ? ' · ejemplo' : ''}</b><span class="sub">${p.estaciones.length} estaciones · ${p.servicios} servicios</span>
+      <div class="acc"><button class="btn" data-servicio="${p.id}">Registrar servicio</button><button class="btn b2" data-estaciones="${p.id}">Estaciones</button><button class="btn b2" data-copia="${base}?c=${p.codigo}">Copiar link de la planta</button><a class="btn b2" href="?c=${p.codigo}">Ver carpeta</a></div></li>`).join('')}</ul>` : '<p class="sub">Todavía no hay plantas.</p>'}
+    <div class="acc" style="margin-top:14px"><button class="btn" id="nueva">Nueva planta</button>${r.plantas.some(p => p.ejemplo) ? '' : '<button class="btn b2" id="ejemplo">Crear la de ejemplo (para enseñar)</button>'}</div>
+    <h2>Documentos de Urban Pest</h2><p class="sub" style="margin-bottom:12px">Salen en cada constancia. La NOM pide el número de licencia sanitaria.</p>
+    <form class="f" id="docs">${[['licencia_sanitaria', 'Número de licencia sanitaria'], ['repse', 'Registro REPSE'], ['razon_social', 'Razón social'], ['responsable_tecnico', 'Responsable técnico']].map(([k, t]) => `<label>${t}<input name="${k}" value="${esc(d[k] || '')}"></label>`).join('')}<button class="btn">Guardar documentos</button><span class="msj" id="mdocs" role="status"></span></form>
+    <div id="panel"></div>`;
+  app.querySelectorAll('[data-copia]').forEach(b => b.onclick = async () => { try{ await navigator.clipboard.writeText(b.dataset.copia); b.textContent = 'Link copiado'; }catch{ prompt('Copia el link:', b.dataset.copia); } });
+  app.querySelectorAll('[data-servicio]').forEach(b => b.onclick = () => formaServicio(r.plantas.find(p => p.id === b.dataset.servicio)));
+  app.querySelectorAll('[data-estaciones]').forEach(b => b.onclick = () => formaEstaciones(r.plantas.find(p => p.id === b.dataset.estaciones)));
+  const ej = document.getElementById('ejemplo'); if(ej) ej.onclick = async () => { ej.disabled = true; await api('POST', '/api/plantas/ejemplo'); registrar(); };
+  document.getElementById('nueva').onclick = () => { const panel = document.getElementById('panel');
+    panel.innerHTML = `<h2>Nueva planta</h2><form class="f" id="fp"><label>Nombre<input name="nombre" required></label><label>Giro<input name="giro" placeholder="Alimentos, bodega, hospital…"></label><label>Dirección<input name="direccion"></label><label>Contacto (no sale en el link)<input name="contacto"></label><button class="btn">Crear planta</button><span class="msj" id="mp" role="status"></span></form>`;
+    panel.scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('fp').onsubmit = async (e) => { e.preventDefault(); const j = await api('POST', '/api/plantas', Object.fromEntries(new FormData(e.target))); if(j.bien) registrar(); else msj('mp', j.error, true); }; };
+  document.getElementById('docs').onsubmit = async (e) => { e.preventDefault(); const j = await api('POST', '/api/documentos', Object.fromEntries(new FormData(e.target))); msj('mdocs', j.bien ? 'Guardado' : j.error, !j.bien); };
+}
+const msj = (id, t, mal) => { const el = document.getElementById(id); el.textContent = t || ''; el.className = 'msj ' + (mal ? 'mal' : 'bien'); };
+
+function formaEstaciones(p){
+  const panel = document.getElementById('panel');
+  const actual = (() => { const z = new Map(); for(const e of p.estaciones){ const k = e.zona + '|' + e.tipo; z.set(k, (z.get(k) || 0) + 1); } return [...z].map(([k, n]) => { const [zona, tipo] = k.split('|'); return `${zona}, ${n}, ${tipo}`; }).join('\n'); })();
+  panel.innerHTML = `<h2>Estaciones de ${esc(p.nombre)}</h2><form class="f" id="fe"><label>Una zona por renglón: zona, cuántas, tipo
+    <textarea name="t" rows="7" placeholder="Recepción, 4, trampa mecánica&#10;Producción, 6, trampa de luz&#10;Perímetro, 8, cebadera">${esc(actual)}</textarea></label>
+    <p class="sub" style="font-size:14px">Tipos: cebadera, trampa de pegamento, trampa de luz, trampa mecánica, monitoreo. Se numeran solas en ese orden.</p>
+    <button class="btn">Guardar estaciones</button><span class="msj" id="me" role="status"></span></form>`;
+  panel.scrollIntoView({ behavior: 'smooth' });
+  document.getElementById('fe').onsubmit = async (e) => { e.preventDefault(); let n = 0; const estaciones = [];
+    for(const l of new FormData(e.target).get('t').split('\n')){ const [zona, k, tipo] = l.split(',').map(x => (x || '').trim()); const c = Math.min(Number(k) || 0, 200); for(let i = 0; i < c; i++) estaciones.push({ n: ++n, zona, tipo: (tipo || 'monitoreo').toLowerCase() }); }
+    const j = await api('POST', '/api/plantas/estaciones', { planta: p.id, estaciones }); if(j.bien) registrar(); else msj('me', j.error, true); };
+}
+
+function formaServicio(p){
+  const panel = document.getElementById('panel'), hoy = new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
+  const estados = new Map(p.estaciones.map(e => [e.n, 'sin actividad']));
+  const prod = () => `<div class="fila3"><input placeholder="Producto" aria-label="Producto"><input placeholder="Registro" aria-label="Registro del producto"><input placeholder="Cantidad" aria-label="Cantidad"></div>`;
+  panel.innerHTML = `<h2>Servicio en ${esc(p.nombre)}</h2><form class="f" id="fs">
+    <label>Fecha<input type="date" name="fecha" value="${hoy}" required></label>
+    <label>Técnico<input name="tecnico" required autocomplete="name"></label>
+    <label>Servicio<input name="tipo" value="Servicio mensual de control de plagas"></label>
+    <div><b style="font-size:14px">Productos aplicados (con su registro)</b><div id="prods" style="display:grid;gap:8px;margin-top:6px">${prod()}</div><button type="button" class="btn b2" id="masprod" style="margin-top:8px">Agregar producto</button></div>
+    ${p.estaciones.length ? `<div><b style="font-size:14px">Estaciones: toca para cambiar el estado</b><div id="mapa" style="margin-top:8px"></div></div>` : '<p class="aviso">Esta planta no tiene estaciones. Captúralas primero si quieres el mapa.</p>'}
+    <label>Hallazgos<textarea name="hallazgos"></textarea></label>
+    <label>Recomendaciones<textarea name="recomendaciones"></textarea></label>
+    <label>Recibió (nombre)<input name="rnombre" required></label><label>Puesto<input name="rpuesto" placeholder="Calidad, mantenimiento…"></label>
+    <div><b style="font-size:14px">Firma de quien recibió</b><canvas class="firma-lienzo" id="lienzo" aria-label="Firma con el dedo"></canvas><button type="button" class="btn b2" id="borrar" style="margin-top:8px">Borrar firma</button></div>
+    <button class="btn" id="guardar">Guardar servicio</button><span class="msj" id="ms" role="status"></span></form>`;
+  panel.scrollIntoView({ behavior: 'smooth' });
+  document.getElementById('masprod').onclick = () => document.getElementById('prods').insertAdjacentHTML('beforeend', prod());
+  const pinta = () => { const m = document.getElementById('mapa'); if(!m) return;
+    m.innerHTML = mapa(p.estaciones.map(e => ({ ...e, estado: estados.get(e.n) })), false).replace(/<span class="([^"]*)" title="Estación (\d+)/g, '<button type="button" data-n="$2" class="$1" title="Estación $2').replace(/(\d+)<span class="oculto">([^<]*)<\/span><\/span>/g, '$1<span class="oculto">$2</span></button>');
+    m.querySelectorAll('[data-n]').forEach(b => b.onclick = () => { const n = Number(b.dataset.n); estados.set(n, ESTADOS[(ESTADOS.indexOf(estados.get(n)) + 1) % ESTADOS.length]); pinta(); }); };
+  pinta();
+  /* firma con el dedo */
+  const cv = document.getElementById('lienzo'), dpr = devicePixelRatio || 1, r = cv.getBoundingClientRect();
+  cv.width = r.width * dpr; cv.height = r.height * dpr; const x = cv.getContext('2d'); x.scale(dpr, dpr); x.lineWidth = 2.4; x.lineCap = 'round'; x.strokeStyle = '#14213A';
+  let traza = false, hay = false; const pos = (e) => { const b = cv.getBoundingClientRect(); return [e.clientX - b.left, e.clientY - b.top]; };
+  cv.onpointerdown = (e) => { traza = true; hay = true; cv.setPointerCapture?.(e.pointerId); x.beginPath(); x.moveTo(...pos(e)); };
+  cv.onpointermove = (e) => { if(!traza) return; x.lineTo(...pos(e)); x.stroke(); };
+  cv.onpointerup = cv.onpointercancel = () => { traza = false; };
+  document.getElementById('borrar').onclick = () => { x.clearRect(0, 0, cv.width, cv.height); hay = false; };
+  document.getElementById('fs').onsubmit = async (e) => { e.preventDefault(); const f = new FormData(e.target), g = document.getElementById('guardar');
+    const productos = [...document.querySelectorAll('#prods .fila3')].map(d => { const [a, b, c] = d.querySelectorAll('input'); return { nombre: a.value, registro: b.value, cantidad: c.value }; }).filter(x => x.nombre.trim());
+    /* la firma se achica antes de mandarla: un PNG del tamaño de la pantalla pesaría de más */
+    let firma = null; if(hay){ const c2 = document.createElement('canvas'); c2.width = 480; c2.height = 180; c2.getContext('2d').drawImage(cv, 0, 0, 480, 180); firma = c2.toDataURL('image/png'); }
+    g.disabled = true; msj('ms', 'Guardando…');
+    const j = await api('POST', '/api/servicios', { planta: p.id, fecha: f.get('fecha'), tecnico: f.get('tecnico'), tipo: f.get('tipo'), productos,
+      estaciones: [...estados].map(([n, estado]) => ({ n, estado })), hallazgos: f.get('hallazgos'), recomendaciones: f.get('recomendaciones'),
+      recibio: { nombre: f.get('rnombre'), puesto: f.get('rpuesto') }, firma });
+    g.disabled = false;
+    if(j.bien){ msj('ms', `Guardado: folio ${j.folio}. Ya sale en la carpeta de la planta.`); setTimeout(registrar, 1800); } else msj('ms', j.error, true); };
+}
+
+if(q.has('registrar')) registrar();
+else if(q.get('c')) carpeta(q.get('c'));
+else app.innerHTML = cab + '<h1>Carpeta de cumplimiento</h1><p class="sub">Abre el link que te mandó Urban Pest Control para ver la carpeta de tu planta.</p>';
+</script>
+</body>
+</html>

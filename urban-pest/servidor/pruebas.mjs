@@ -155,5 +155,38 @@ console.log('medidor (no sabe cuánto mide su casa)');
   ok('si la IA no apunta los metros, se sacan del mensaje y sale el precio', ult.via === 'cerebro' && /\$\d{1,3}(,\d{3})+/.test(ult.texto), ult.texto); }
 
 ok('«chinches» en plural se entiende (antes quedaba «chinch»)', aPlaga('chinches') === 'chinche' && aPlaga('Chinches de cama') === 'chinche' && aPlaga('ratones') === 'roedor' && aPlaga('arañas') === 'arana');
+/* ── la carpeta de cumplimiento (12 nov): lo que se le promete a cada planta ── */
+{ const { crearPlanta, ponerEstaciones, registrarServicio, carpetaPublica, plantaEjemplo, ponerDocumentos, quitarServicio } = await import('./src/carpeta.js');
+  const M = new Map(), A = { get: async (k) => M.get(k), del: async (k) => { M.delete(k); }, put: async (k, v) => { M.set(k, structuredClone(v)); }, list: async (p) => [...M.entries()].filter(([k]) => k.startsWith(p)) };
+  const { planta } = await crearPlanta(A, { nombre: 'Planta Uno', giro: 'Alimentos' });
+  const { planta: otra } = await crearPlanta(A, { nombre: 'Planta Dos' });
+  ok('cada planta trae su link de consulta que no se adivina', planta.codigo.length >= 14 && planta.codigo !== otra.codigo);
+  await ponerEstaciones(A, { planta: planta.id, estaciones: [{ n: 1, zona: 'Andén', tipo: 'cebadera' }, { n: 2, zona: 'Andén' }, { n: 2, zona: 'repetida' }] });
+  const base = { planta: planta.id, fecha: '2026-11-05', tecnico: 'Juan', recibio: { nombre: 'Ana', puesto: 'Calidad' } };
+  const sinReg = await registrarServicio(A, { ...base, productos: [{ nombre: 'Cebo', registro: '' }] });
+  ok('un producto sin registro NO entra a la constancia (NOM-251 5.10.9)', !sinReg.bien && /registro/.test(sinReg.error), sinReg.error);
+  ok('sin quién recibió no se guarda', !(await registrarServicio(A, { ...base, recibio: {} , productos: [] })).bien);
+  ok('la fecha mal escrita se rechaza', !(await registrarServicio(A, { ...base, fecha: '5/11/26', productos: [] })).bien);
+  const r1 = await registrarServicio(A, { ...base, productos: [{ nombre: 'Cebo', registro: 'RSCO-1' }], estaciones: [{ n: 1, estado: 'captura' }, { n: 99, estado: 'captura' }], firma: 'javascript:alert(1)' });
+  await registrarServicio(A, { ...base, fecha: '2026-12-03', productos: [], estaciones: [{ n: 1, estado: 'sin actividad' }, { n: 2, estado: 'sin actividad' }] });
+  const c = await carpetaPublica(A, planta.codigo);
+  ok('folios seguidos', r1.folio === 1 && c.servicios.length === 2 && c.servicios[0].folio === 2);
+  ok('una estación que no es de la planta no se cuela', c.servicios.find(s => s.folio === 1).estaciones.length === 1);
+  ok('una «firma» que no es imagen PNG no se guarda', c.servicios.find(s => s.folio === 1).firma === null);
+  ok('las estaciones repetidas cuentan una vez', c.estaciones.length === 2);
+  ok('el mapa enseña el ÚLTIMO estado de cada trampa', c.estaciones[0].ultimo.estado === 'sin actividad' && c.estaciones[0].ultimo.fecha === '2026-12-03');
+  ok('la tendencia por mes cuenta la actividad', c.tendencia.length === 2 && c.tendencia[0].actividad === 1 && c.tendencia[1].actividad === 0, JSON.stringify(c.tendencia));
+  ok('el link de una planta no abre la otra', (await carpetaPublica(A, otra.codigo)).servicios.length === 0);
+  ok('un link inventado no abre nada', !(await carpetaPublica(A, 'noexisteestelink')).bien && !(await carpetaPublica(A, '../planta:x')).bien);
+  ok('el link público no enseña el contacto de la planta', !('contacto' in c.planta) && !('codigo' in c.planta));
+  ok('sin licencia capturada, la carpeta NO la inventa', !c.documentos.licencia_sanitaria);
+  await ponerDocumentos(A, { licencia_sanitaria: '12-AM-22-000', repse: 'AR-0000' });
+  ok('la licencia capturada sale en la carpeta', (await carpetaPublica(A, planta.codigo)).documentos.licencia_sanitaria === '12-AM-22-000');
+  await quitarServicio(A, { planta: planta.id, folio: 1, motivo: 'capturado por error' }, 'Prueba');
+  ok('quitar un servicio lo saca de la carpeta pero deja registro de quién lo quitó', (await carpetaPublica(A, planta.codigo)).servicios.length === 1 && [...M.keys()].some(k => k.startsWith('quitado:')));
+  const e1 = await plantaEjemplo(A), e2 = await plantaEjemplo(A);
+  const ce = await carpetaPublica(A, e1.planta.codigo);
+  ok('la planta de ejemplo sale marcada y no se duplica', ce.planta.ejemplo && e2.ya && ce.servicios.length === 3 && ce.servicios.every(s => s.ejemplo)); }
+
 console.log(`\n${bien} pasan · ${mal} fallan`);
 process.exit(mal ? 1 : 0);

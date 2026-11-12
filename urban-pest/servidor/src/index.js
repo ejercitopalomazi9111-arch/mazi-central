@@ -16,6 +16,7 @@ import { firmaValida, leerAviso, enviar } from './meta.js';
 import { pensar, probarMotores } from './cerebro.js';
 import { cotizar } from './cotizador.js';
 import { estimarM2, MEDIDAS } from './medidor.js';
+import { crearPlanta, listarPlantas, ponerEstaciones, ponerDocumentos, registrarServicio, carpetaPublica, plantaEjemplo, quitarServicio } from './carpeta.js';
 import CASOS_FABRICA from '../../bot/casos.json' with { type: 'json' };
 
 /* Para PROBAR mientras llega el Excel: precios DE EJEMPLO, sólo en el canal «prueba» y
@@ -54,6 +55,13 @@ export default {
       const mensajes = leerAviso(JSON.parse(cuerpo));
       if(mensajes.length) ctx.waitUntil(despacho.fetch(new Request('https://do/interno/recibir', { method: 'POST', body: JSON.stringify({ mensajes, llaves: llavesIA(env) }) })));
       return new Response('ok');
+    }
+
+    /* La carpeta de cumplimiento de UNA planta: la abre su jefe de calidad con su link, sin llave.
+       Sólo lectura (urban-pest/servidor/src/carpeta.js). */
+    if(ruta === '/api/carpeta' && req.method === 'GET'){
+      const r = await (await despacho.fetch(new Request('https://do/interno/carpeta', { method: 'POST', body: JSON.stringify({ codigo: url.searchParams.get('c') }) }))).json();
+      return json(r, r.estado || 200, { ...cors, 'cache-control': 'no-store' });
     }
 
     /* Todo lo demás es del panel (el centro de operaciones). Entra quien trae la llave del panel
@@ -96,6 +104,7 @@ export class Despacho {
     if(j && j.llaves) this.of.env = { ...this.envBase, ...j.llaves };
     if(u.pathname === '/interno/recibir'){ await this.recibir(Array.isArray(j) ? j : (j?.mensajes || [])); return new Response('ok'); }
     if(u.pathname === '/interno/panel') return Response.json(await this.panel(j.metodo, j.ruta, j.q || {}, j.b || {}, j.quien));
+    if(u.pathname === '/interno/carpeta') return Response.json(await carpetaPublica(this.almacen, j?.codigo));
     if(u.pathname === '/interno/acceso'){ const a = j?.codigo ? await this.almacen.get('acceso:' + await huella(j.codigo)) : null; return Response.json({ nombre: a?.nombre || null }); }
     return new Response('no', { status: 404 });
   }
@@ -113,6 +122,15 @@ export class Despacho {
       case 'GET /api/conversaciones': return { bien: true, conversaciones: (await lista('conv:')).map(({ mensajes, ...c }) => ({ ...c, n: mensajes.length, ultimo_texto: mensajes.at(-1)?.texto, ultima_via: mensajes.at(-1)?.via })).sort((a, b) => b.ultimo - a.ultimo) };
       case 'GET /api/conversacion': return { bien: true, conversacion: await A.get(`conv:${q.canal}:${q.chat}`) };
       case 'GET /api/yo': return { bien: true, quien };
+      /* ── la carpeta de cumplimiento (industria) ── */
+      case 'GET /api/plantas': return listarPlantas(A);
+      case 'POST /api/plantas': return crearPlanta(A, b);
+      case 'POST /api/plantas/estaciones': return ponerEstaciones(A, b);
+      case 'POST /api/plantas/ejemplo': return plantaEjemplo(A);
+      case 'POST /api/servicios': return registrarServicio(A, b, quien);
+      case 'POST /api/servicios/quitar': return quitarServicio(A, b, quien);
+      case 'GET /api/documentos': return { bien: true, documentos: (await A.get('documentos')) || {} };
+      case 'POST /api/documentos': return ponerDocumentos(A, b);
       /* qué motores de IA le llegan al bot y si contestan (sin enseñar ninguna llave) */
       case 'GET /api/motores': return { bien: true, motores: await probarMotores(this.of.env) };
       case 'POST /api/responder': return this.of.contestaDueno(b.canal, b.chat, String(b.texto || '').slice(0, 2000), quien);
