@@ -500,40 +500,23 @@ function armarRed(){
     .map(e => ({ a: porId.get(e.de), b: porId.get(e.a), tipo: e.tipo, carga: 0 }))
     .filter(e => e.a && e.b);
 
-  return { c, g, nodos, porId, enlaces, vista:{ x:0, y:0, k:1 }, listo:false };
+  const lado = new Map(nodos.map(o => [o, []]));
+  for(const e of enlaces){ lado.get(e.a).push(e); lado.get(e.b).push(e); }
+  return { c, g, nodos, porId, enlaces, lado, vista:{ x:0, y:0, k:1 }, listo:false };
 }
 
-function acomodarRed(vueltas = 260){
-  const { nodos, enlaces } = RED;
-  for(let v = 0; v < vueltas; v++){
-    const frio = 1 - v / vueltas;
-    for(let i = 0; i < nodos.length; i++){
-      for(let j = i + 1; j < nodos.length; j++){
-        const a = nodos[i], b = nodos[j];
-        let dx = b.x - a.x, dy = b.y - a.y;
-        let d2 = dx*dx + dy*dy || 0.01;
-        const f = 2600 / d2;
-        const d = Math.sqrt(d2);
-        a.vx -= (dx/d)*f; a.vy -= (dy/d)*f;
-        b.vx += (dx/d)*f; b.vy += (dy/d)*f;
-      }
-    }
-    for(const e of enlaces){
-      const dx = e.b.x - e.a.x, dy = e.b.y - e.a.y;
-      const d = Math.hypot(dx, dy) || 0.01;
-      /* Los enlaces escritos a mano jalan más que los descubiertos: son los
-         que alguien afirmó, no los que se parecen. */
-      const largo = e.tipo === 'dicha' ? 78 : 128;
-      const f = (d - largo) * (e.tipo === 'dicha' ? 0.035 : 0.014);
-      e.a.vx += (dx/d)*f; e.a.vy += (dy/d)*f;
-      e.b.vx -= (dx/d)*f; e.b.vy -= (dy/d)*f;
-    }
-    for(const o of nodos){
-      o.vx -= o.x * 0.0022; o.vy -= o.y * 0.0022;   /* al centro */
-      o.x += o.vx * frio; o.y += o.vy * frio;
-      o.vx *= 0.82; o.vy *= 0.82;
-    }
+/* Las posiciones vienen hechas en `todo.json` (`pos`, ver acomodo.js): antes
+   se calculaban aquí, 68 millones de cuentas en el teléfono cada vez que se
+   abría la red, y la página se congelaba 2.7 s. Si falta alguna (neurona nueva
+   sin rearmar), se calcula como antes, pero sólo entonces. */
+async function acomodarRed(){
+  const { nodos } = RED;
+  let pos = POS;
+  if(!pos || nodos.some(o => !pos[o.n.id])){
+    const { acomodar } = await import('./acomodo.js');
+    pos = acomodar(nodos.map(o => o.n.id), ENLACES);
   }
+  for(const o of nodos){ const q = pos[o.n.id]; o.x = q[0]; o.y = q[1]; }
   RED.listo = true;
   colocarNucleos();
   encuadrarRed();
@@ -633,7 +616,7 @@ function encender(ids, saltos = 2, deQuien = null){
     if(++nivel > saltos) return;
     const nuevos = [];
     for(const o of actual){
-      for(const e of RED.enlaces){
+      for(const e of RED.lado.get(o)){
         const otro = e.a === o ? e.b : e.b === o ? e.a : null;
         if(!otro || otro.carga > 0) continue;
         e.carga = 1; e.color = color;
@@ -742,67 +725,134 @@ function placa(g, cx, cy, texto, k){
   g.fill();
 }
 
+/* ── LA CAPA QUIETA · lo que no se mueve se pinta una vez ───────────────────
+   Carlos, 12 nov: «la red neuronal causa un chingo de lag». Medido con la CPU
+   4× más lenta: con una neurona encendida iba a 20 cuadros por segundo.
+
+   Cada cuadro repintaba TODO: 1,660 enlaces uno por uno (un trazo cada uno,
+   cambiando el punteado), 724 degradados nuevos para los halos y resplandor
+   (`shadowBlur`, lo más caro de un canvas) en cada enlace encendido. Y casi
+   nada de eso cambia: en reposo, la red está quieta.
+
+   Ahora:
+   · Lo que está en reposo (enlaces, halos y puntos) se pinta en un lienzo
+     aparte y sólo se rehace cuando cambia la vista (arrastrar o acercar).
+     Cada cuadro lo copia de un jalón y encima pinta sólo lo encendido.
+   · Los enlaces van en DOS trazos (los dichos y los descubiertos), no 1,660.
+   · El halo de cada neurona es una imagen hecha una vez por color.
+   · El resplandor encendido es un trazo ancho y transparente, sin `shadowBlur`.
+   · Lo que cae fuera de la pantalla no se pinta. */
+let CAPA = null;
+const HALOS = new Map();
+function haloDe(color){
+  let h = HALOS.get(color);
+  if(h) return h;
+  h = document.createElement('canvas'); h.width = h.height = 64;
+  const x = h.getContext('2d'), gr = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, conAlfa(color, 0.55)); gr.addColorStop(0.35, conAlfa(color, 0.16)); gr.addColorStop(1, conAlfa(color, 0));
+  x.fillStyle = gr; x.fillRect(0, 0, 64, 64);
+  HALOS.set(color, h);
+  return h;
+}
+const radioDe = (o) => 1.5 + Math.min(o.grado, 10) * 0.42;
+/* La capa cubre la pantalla y MEDIA pantalla más por cada lado. Mientras el
+   dedo arrastra o pellizca, no se rehace: se mueve y se escala la que ya está
+   (un solo `drawImage`), y se rehace nítida al soltar — o antes, si el dedo
+   ya se acercó a la orilla de lo pintado. */
+function capaQuieta(){
+  const { c, nodos, enlaces, vista } = RED;
+  const W = c.width / PIX, H = c.height / PIX, mx = W / 2, my = H / 2;
+  if(CAPA && CAPA.W === W && CAPA.H === H){
+    const s = vista.k / CAPA.k;
+    const igual = CAPA.x === vista.x && CAPA.y === vista.y && CAPA.k === vista.k;
+    /* ¿lo que se ve sigue dentro de lo pintado, y sin estirarse tanto que se note borroso? */
+    if(igual || (RED.moviendo && s > .7 && s < 1.45 && bordeOk(s, W, H, mx, my))) return CAPA;
+  }
+  if(!CAPA) CAPA = { cv: document.createElement('canvas') };
+  const cv = CAPA.cv, P = PIX, k = vista.k;
+  /* asignar el tamaño BORRA el lienzo aunque sea el mismo: sólo si cambió */
+  const cw = Math.round((W + 2 * mx) * P), ch = Math.round((H + 2 * my) * P);
+  if(cv.width !== cw || cv.height !== ch){ cv.width = cw; cv.height = ch; }
+  const g = cv.getContext('2d');
+  g.setTransform(1,0,0,1,0,0); g.clearRect(0, 0, cv.width, cv.height);
+  g.setTransform(k*P, 0, 0, k*P, (vista.x + mx)*P, (vista.y + my)*P);
+  /* lo que se ve, en coordenadas de la red, con orilla para los halos */
+  const m = 60, x0 = (-mx - vista.x) / k - m, y0 = (-my - vista.y) / k - m, x1 = (W + mx - vista.x) / k + m, y1 = (H + my - vista.y) / k + m;
+  const fuera = (o) => o.x < x0 || o.x > x1 || o.y < y0 || o.y > y1;
+
+  for(const dicha of [true, false]){
+    g.beginPath();
+    for(const e of enlaces){
+      if((e.tipo === 'dicha') !== dicha || (fuera(e.a) && fuera(e.b))) continue;
+      g.moveTo(e.a.x, e.a.y); g.lineTo(e.b.x, e.b.y);
+    }
+    g.strokeStyle = dicha ? 'rgba(120,86,163,.30)' : 'rgba(96,70,132,.16)';
+    g.lineWidth = (dicha ? 0.3 : 0.22) / k;
+    g.setLineDash(dicha ? [] : [2.5/k, 5/k]);
+    g.stroke();
+  }
+  g.setLineDash([]);
+
+  const puntos = new Map();
+  for(const o of nodos){
+    if(fuera(o)) continue;
+    const r = radioDe(o), tono = TONOS[(o.n.comunidad || 0) % TONOS.length], R = r * 3.4;
+    g.drawImage(haloDe(tono), o.x - R, o.y - R, R * 2, R * 2);
+    let ruta = puntos.get(tono); if(!ruta){ ruta = new Path2D(); puntos.set(tono, ruta); }
+    ruta.moveTo(o.x + r, o.y); ruta.arc(o.x, o.y, r, 0, Math.PI * 2);
+  }
+  for(const [tono, ruta] of puntos){ g.fillStyle = conAlfa(tono, 0.9); g.fill(ruta); }
+  Object.assign(CAPA, { W, H, mx, my, x: vista.x, y: vista.y, k: vista.k });
+  return CAPA;
+}
+/* ¿La capa, ya movida y escalada, todavía tapa toda la pantalla? Si alguna
+   orilla se asoma, se rehace aunque el dedo siga moviéndose. */
+function bordeOk(s, W, H, mx, my){
+  const { vista } = RED, q = CAPA;
+  const izq = vista.x + s * (-mx - q.x), arr = vista.y + s * (-my - q.y);
+  const der = izq + s * (W + 2 * mx), aba = arr + s * (H + 2 * my);
+  return izq <= 0 && arr <= 0 && der >= W && aba >= H;
+}
+
 function pintarRed(){
   if(!RED || !RED.listo) return;
   const { c, g, nodos, enlaces, vista } = RED;
   const P = PIX;
   g.setTransform(1,0,0,1,0,0);
   g.clearRect(0, 0, c.width, c.height);
+  const q = capaQuieta(), s = vista.k / q.k;
+  /* la capa, movida y escalada a la vista de ahora (ver capaQuieta) */
+  g.setTransform(s, 0, 0, s, (vista.x - s * (q.x + q.mx)) * P, (vista.y - s * (q.y + q.my)) * P);
+  g.drawImage(q.cv, 0, 0);
   g.setTransform(vista.k*P, 0, 0, vista.k*P, vista.x*P, vista.y*P);
 
+  /* ── la sinapsis ENSANCHA al pasar la señal ───────────────────────────────
+     En reposo el hilo es finísimo y al encenderse se abre hasta seis veces su
+     grosor: no es que cambie de color, es que se ABRE, como una vena que se
+     llena. La curva es `carga²`: se abre de golpe y se cierra despacio. El
+     color lo pone la IA que lo disparó. El resplandor es un trazo ancho y
+     transparente debajo (antes `shadowBlur`, que costaba más que todo lo demás). */
   for(const e of enlaces){
-    g.beginPath();
-    g.moveTo(e.a.x, e.a.y); g.lineTo(e.b.x, e.b.y);
-    if(e.carga > 0){
-      /* ── la sinapsis ENSANCHA al pasar la señal ─────────────────────────
-         En reposo el hilo es finísimo —casi una telaraña— y al encenderse se
-         abre hasta seis veces su grosor. Ése es el gesto: no es que cambie de
-         color, es que se ABRE, como una vena que se llena. El color lo pone
-         la IA que lo disparó, no la comunidad, para que dos pensando cosas
-         distintas al mismo tiempo se distingan de un vistazo.
-
-         La curva es `carga²` y no `carga`: con la lineal el ensanchamiento se
-         reparte parejo y no se siente el golpe. Elevada al cuadrado, la
-         sinapsis se abre de golpe y se cierra despacio, que es como se ve una
-         señal pasando y no un foco con reóstato. */
-      const fuerza = e.carga * e.carga;
-      g.strokeStyle = conAlfa(e.color || '#C77BFF', 0.20 + e.carga * 0.80);
-      g.lineWidth = (0.22 + fuerza * 1.5) / vista.k;
-      g.setLineDash([]);
-      /* El resplandor sólo cuando pasa la señal: encendido siempre costaría
-         caro y además borraría la diferencia entre viva y en reposo. */
-      g.shadowColor = conAlfa(e.color || '#C77BFF', 0.8);
-      g.shadowBlur = 6 * fuerza;
-    } else {
-      /* Finísimas de verdad. El hilo en reposo casi no se ve, y ése es el
-         punto: en Spore la galaxia son puntos, y las líneas aparecen cuando
-         algo pasa por ellas. */
-      g.strokeStyle = e.tipo === 'dicha' ? 'rgba(120,86,163,.30)' : 'rgba(96,70,132,.16)';
-      g.lineWidth = (e.tipo === 'dicha' ? 0.3 : 0.22) / vista.k;
-      g.setLineDash(e.tipo === 'dicha' ? [] : [2.5/vista.k, 5/vista.k]);
-    }
+    if(!(e.carga > 0)) continue;
+    const fuerza = e.carga * e.carga, color = e.color || '#C77BFF';
+    g.beginPath(); g.moveTo(e.a.x, e.a.y); g.lineTo(e.b.x, e.b.y);
+    g.strokeStyle = conAlfa(color, 0.16 * fuerza);
+    g.lineWidth = (1 + fuerza * 2.6) / vista.k;
     g.stroke();
-    g.shadowBlur = 0;
+    g.strokeStyle = conAlfa(color, 0.20 + e.carga * 0.80);
+    g.lineWidth = (0.22 + fuerza * 1.5) / vista.k;
+    g.stroke();
   }
-  g.setLineDash([]);
 
   for(const o of nodos){
-    const r = 1.5 + Math.min(o.grado, 10) * 0.42;
+    if(!(o.carga > 0) && o.n.id !== abierta) continue;
+    const r = radioDe(o);
     const tono = TONOS[(o.n.comunidad || 0) % TONOS.length];
-    /* En reposo manda la COMUNIDAD —de qué habla la neurona—; encendida manda
-       QUIÉN la despertó. Las dos preguntas importan, pero no a la vez. */
+    /* En reposo manda la COMUNIDAD; encendida manda QUIÉN la despertó. */
     const vivo = o.carga > 0 ? (o.color || tono) : tono;
     const f = o.carga * o.carga;
 
-    /* ── una neurona es una ESTRELLA, no un botón ────────────────────────
-       Tres capas, y las tres hacen falta:
-         1. el halo, que es lo que la hace ver lejos y no pegada al vidrio
-         2. el punto, chiquito y muy brillante — el núcleo de la estrella
-         3. las puntas, sólo cuando está encendida
-
-       El punto es CHICO a propósito. Antes medía 4 a 12 píxeles y se veían
-       canicas; una estrella no se lee por su tamaño sino porque el centro
-       quema y el borde se difumina. */
+    /* una neurona encendida es una ESTRELLA: halo, punto que quema y puntas */
     const halo = g.createRadialGradient(o.x, o.y, 0, o.x, o.y, r * (3.4 + f * 7));
     halo.addColorStop(0,   conAlfa(vivo, 0.55 + f * 0.45));
     halo.addColorStop(0.35, conAlfa(vivo, 0.16 + f * 0.34));
@@ -810,8 +860,6 @@ function pintarRed(){
     g.fillStyle = halo;
     g.beginPath(); g.arc(o.x, o.y, r * (3.4 + f * 7), 0, Math.PI * 2); g.fill();
 
-    /* Las puntas de destello. Es lo que separa «un punto que brilla» de «una
-       estrella», y sólo aparecen al encenderse: en reposo serían ruido. */
     if(f > 0.05){
       const largo = r * (4 + f * 12);
       g.strokeStyle = conAlfa(vivo, f * 0.85);
@@ -824,8 +872,6 @@ function pintarRed(){
 
     g.beginPath();
     g.arc(o.x, o.y, r * (1 + f * 0.5), 0, Math.PI * 2);
-    /* El centro tira a blanco al encenderse: una estrella brillante se ve
-       blanca en el núcleo aunque su halo sea de color. */
     g.fillStyle = o.carga > 0.5 ? conAlfa('#FFFFFF', 0.6 + f * 0.4) : conAlfa(vivo, 0.9);
     g.fill();
     if(o.n.id === abierta){
@@ -984,7 +1030,7 @@ async function cambiarModo(cual){
          y acomodar sin ellos deja la red centrada en el lugar equivocado y
          luego brincando. */
       if(!NUCLEOS.length) NUCLEOS = await traerIAs();
-      RED = armarRed(); acomodarRed();
+      RED = armarRed(); await acomodarRed();
       latir();                       /* que respiren desde el primer momento */
     }
     else encuadrarRed();
@@ -1000,7 +1046,11 @@ document.getElementById('mLista').addEventListener('click', () => cambiarModo('l
 (function mandosRed(){
   const c = document.getElementById('lienzo');
   let arrastra = false, ax = 0, ay = 0, movio = false;
+  /* Mientras haya un dedo encima, la capa quieta se mueve en vez de rehacerse;
+     al soltar se rehace nítida (ver capaQuieta). */
+  const quieto = () => { if(RED){ RED.moviendo = false; pintarRed(); } };
   c.addEventListener('pointerdown', (e) => {
+    if(RED) RED.moviendo = true;
     arrastra = true; movio = false; ax = e.clientX; ay = e.clientY;
     c.classList.add('arrastrando');
     /* Si la captura falla, el arrastre sigue. Antes la excepción abortaba el
@@ -1065,7 +1115,7 @@ document.getElementById('mLista').addEventListener('click', () => cambiarModo('l
     acercar(RED.vista.k * (p.d / pellizco), p.x - r.left, p.y - r.top);
     pellizco = p.d;
   });
-  const suelta = (e) => { dedos.delete(e.pointerId); if(dedos.size < 2) pellizco = 0; };
+  const suelta = (e) => { dedos.delete(e.pointerId); if(dedos.size < 2) pellizco = 0; if(!dedos.size) quieto(); };
   c.addEventListener('pointerup', suelta);
   c.addEventListener('pointercancel', suelta);
 
@@ -1088,7 +1138,8 @@ document.getElementById('mLista').addEventListener('click', () => cambiarModo('l
     const k = Math.max(.25, Math.min(3, RED.vista.k * f));
     RED.vista.x = mx - (mx - RED.vista.x) * (k / RED.vista.k);
     RED.vista.y = my - (my - RED.vista.y) * (k / RED.vista.k);
-    RED.vista.k = k; pintarRed();
+    RED.vista.k = k; RED.moviendo = true; pintarRed();
+    clearTimeout(c._rueda); c._rueda = setTimeout(quieto, 160);
   }, { passive:false });
   addEventListener('resize', () => { if(RED && !document.getElementById('red').hidden){
     encuadrarRed(); pintarRed(); } });
@@ -1115,12 +1166,12 @@ document.getElementById('mLista').addEventListener('click', () => cambiarModo('l
   b.href = destino;
 })();
 
-let ENLACES = [], GRADOS = {}, COMUNIDADES = [];
+let ENLACES = [], GRADOS = {}, COMUNIDADES = [], POS = null;
 
 fetch('todo.json').then(r => r.json()).then(d => {
   AREAS = d.areas;
   TODAS = AREAS.flatMap(a => a.neuronas.map(n => ({ ...n, area: a.area })));
-  ENLACES = d.enlaces || []; GRADOS = d.grados || {}; COMUNIDADES = d.comunidades || [];
+  ENLACES = d.enlaces || []; GRADOS = d.grados || {}; COMUNIDADES = d.comunidades || []; POS = d.pos || null;
   $('cuantas').textContent = `${d.total} neuronas · ${ENLACES.length} enlaces`;
   /* La leyenda nombra cada comunidad por su neurona más conectada. Un número
      no le dice nada a nadie. */

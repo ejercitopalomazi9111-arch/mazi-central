@@ -566,6 +566,9 @@ dependemos.
 
    | un trabajador de fondo «lo guardado primero» que guarda las páginas con `cache.add` las sirve igual que la red | Cloudflare le quita el `.html` (307): `cache.add('./tiras.html')` guarda una respuesta **redirigida**, y el navegador RECHAZA una respuesta redirigida para una navegación: «No se puede acceder a este sitio» (ERR_FAILED) | INKWELL no dejaba leer nada desde que las páginas salieron de lo guardado (v22, 11 nov). Las páginas se guardan con su dirección limpia y nada sale de lo guardado marcado como redirigido (`sano` en `inkwell/sw.js`); `inkwell/pruebas-sw.mjs` imita a Cloudflare y comprueba que un teléfono con el trabajador viejo se cura |
 
+   | una repulsión `2600 / (d² || 0.01)` ya está protegida contra dividir entre cero | sólo contra el cero EXACTO: dos neuronas casi encimadas se empujaron con fuerza casi infinita y una salió a 137,000 unidades | la red del Cerebro se veía VACÍA (el encuadre la incluía y todo lo demás medía menos de un pixel) y además se acomodaba en el teléfono cada vez: 2.7 s congelada. Distancia con piso, paso con tope y posiciones calculadas al armar (`cerebro/acomodo.js`) |
+   | en `/ia-texto` de La Sala, `de:'yo'` es quien escribe desde la página | es el MODELO; la persona es `de:'tu'` | Explica daba 400 «ending with a model turn». Y una clase entera de Gemini pasa de 90 s: se pide con `espera` (hasta 150 s) y `pensarPoco` |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---
