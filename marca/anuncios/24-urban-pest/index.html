@@ -384,12 +384,73 @@ function cintas(T, cx, cy, ancho){
   }
   for(const g of [atras, frente]) g.globalAlpha = 1;
 }
-/* cuánto se ha llenado una pieza: sube con cada cinta suya que llega; y el brillo, apenas, al llegar */
+/* EL LLENADO COMO LÍQUIDO (Carlos, 12 nov: «que se agregue poco a poco, como si se estuviese llenando un contenedor
+   de agua»). Cada cinta que llega VIERTE su parte durante ~0.7 s, así que el nivel sube parejo y con oleadas, no de
+   golpe. La superficie ondula (dos senos que corren), cada llegada le da un golpe de ola que se va calmando, y una
+   tira de la misma pieza, más clara, marca la superficie como el brillo del agua. Lleno y quieto → sin recorte. */
 function llenado(pieza, T){
   const suyas = CINTAS.filter(c => c.pieza === pieza);
-  let lleno = 0, brillo = 0;
-  suyas.forEach((c) => { lleno += sale(tramo(T, c.llega - .12, c.llega + .25)) / suyas.length; brillo = Math.max(brillo, Math.exp(-Math.pow((T - c.llega) / .18, 2))); });
-  return { lleno, brillo };
+  let lleno = 0, brillo = 0, ola = 0;
+  suyas.forEach((c) => {
+    lleno += suave(tramo(T, c.llega - .08, c.llega + .62)) / suyas.length;
+    brillo = Math.max(brillo, Math.exp(-Math.pow((T - c.llega) / .18, 2)));
+    if(T > c.llega - .05) ola = Math.max(ola, Math.exp(-(T - c.llega) * 3.2));
+  });
+  return { lleno, brillo, ola };
+}
+/* la caja de cada pieza (en la capa de 512 × 396), medida de sus pixeles: el agua sube de su fondo a su tope */
+const CAJA = {};
+for(const n of ['sol', 'globo', 'personita', 'chorro']){
+  const cv = document.createElement('canvas'); cv.width = 512; cv.height = 396; const g = cv.getContext('2d'); g.drawImage(img[n], 0, 0, 512, 396);
+  const d = g.getImageData(0, 0, 512, 396).data; let x0 = 512, x1 = 0, y0 = 396, y1 = 0;
+  for(let y = 0; y < 396; y++) for(let x = 0; x < 512; x++) if(d[(y * 512 + x) * 4 + 3] > 12){ if(x < x0) x0 = x; if(x > x1) x1 = x; if(y < y0) y0 = y; if(y > y1) y1 = y; }
+  CAJA[n] = { x0, x1, y0, y1 };
+}
+/* la tira clara de la superficie: una copia de cada pieza encima de ella */
+const BRILLA = {};
+for(const n of ['sol', 'globo', 'personita', 'chorro']){
+  const b = img[n].cloneNode(); b.style.filter = n === 'personita' || n === 'chorro' ? 'brightness(.92) sepia(.6) hue-rotate(165deg) saturate(2.4)' : 'brightness(1.32) saturate(1.15)';
+  b.style.visibility = 'hidden'; img[n].after(b); BRILLA[n] = b;
+}
+/* la superficie del agua en x (capa), con el nivel en y; el oleaje se calma al llenarse */
+const superficie = (n, x, nivel, T, amp) => nivel - amp * (Math.sin(x * .045 + T * 7.5 + n.length) + .55 * Math.sin(x * .093 - T * 11.3 + n.length * 2));
+function agua(n, T, { lleno, ola }){
+  const c = CAJA[n], b = BRILLA[n], el = img[n];
+  if(lleno >= 1 && ola < .04){ el.style.clipPath = 'none'; b.style.visibility = 'hidden'; return null; }
+  const alto = c.y1 - c.y0 + 16, nivel = c.y1 + 8 - alto * lleno;
+  const amp = (2.2 + ola * 7) * (1 - Math.pow(lleno, 6) * .85) * Math.min(1, lleno * 6);
+  const xs = []; for(let x = c.x0 - 14; x <= c.x1 + 14; x += 6) xs.push(x);
+  const arriba = xs.map(x => [x, superficie(n, x, nivel, T, amp)]);
+  const abajo = c.y1 + 20;
+  el.style.clipPath = `polygon(${arriba.map(([x, y]) => `${x.toFixed(1)}px ${y.toFixed(1)}px`).join(',')},${(c.x1 + 14)}px ${abajo}px,${(c.x0 - 14)}px ${abajo}px)`;
+  /* la tira de brillo: de la superficie a 5 px abajo, sólo mientras hay agua subiendo */
+  const grueso = 3 + ola * 4, vis = lleno > .02 && lleno < 1 ? 1 : ola * .9;
+  b.style.visibility = vis > .02 ? 'visible' : 'hidden'; b.style.opacity = vis;
+  b.style.transform = el.style.transform; b.style.transformOrigin = el.style.transformOrigin;
+  b.style.clipPath = `polygon(${arriba.map(([x, y]) => `${x.toFixed(1)}px ${y.toFixed(1)}px`).join(',')},${arriba.slice().reverse().map(([x, y]) => `${x.toFixed(1)}px ${(y + grueso).toFixed(1)}px`).join(',')})`;
+  return { nivel, amp };
+}
+/* LAS GOTAS: cuando una cinta cae en su pieza, salpica 5 gotas de su color que brincan y vuelven a caer a la
+   superficie. Se pintan en el lienzo de enfrente, en pantalla (la capa se escala k = ancho del símbolo / 294). */
+const azar = (i) => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+function gotas(n, T, sup, cx, cy, ancho){
+  if(!sup) return;
+  const k = ancho / SIM.w, c = CAJA[n], g = frente;
+  CINTAS.forEach((ci, i) => {
+    if(ci.pieza !== n) return;
+    const t = T - ci.llega; if(t < 0 || t > .6 || llenado(n, T).lleno < .1) return;
+    for(let j = 0; j < 5; j++){
+      const r = (q) => azar(i * 31 + j * 7 + q);
+      const x0 = mez(c.x0 + (c.x1 - c.x0) * .25, c.x1 - (c.x1 - c.x0) * .25, r(1));
+      const vx = (r(2) - .5) * 60, vy = 115 + r(3) * 85, gr = 900;        /* px de la capa por segundo */
+      const x = x0 + vx * t, y0 = superficie(n, x0, sup.nivel, ci.llega, sup.amp), y = y0 - (vy * t - .5 * gr * t * t);
+      if(t > .1 && y > superficie(n, x, sup.nivel, T, sup.amp)) continue;      /* ya cayó al agua */
+      const rad = (3.6 + r(4) * 3) * (1 - t / 1.1) * k;
+      g.globalAlpha = Math.min(1, (1 - t / .6) * 1.6); g.fillStyle = ci.c;
+      g.beginPath(); g.arc(cx + (x - SIM.cx) * k, cy + (y - SIM.cy) * k, Math.max(.5, rad), 0, Math.PI * 2); g.fill();
+    }
+  });
+  g.globalAlpha = 1;
 }
 
 const pintarViejo = (t, T) => {
@@ -528,21 +589,22 @@ window.pintar = (F) => {
 
   /* 0 · LA ENTRADA (0–3 s): rectas que llegan corriendo, se vuelven anillos que envuelven el logo, y el logo se arma
      por partes: primero el sol de abajo, luego el globo de arriba, la persona y el chorro. Remata con un destello. */
-  if(T < 3.2){
+  if(T < 3.0){
     ponLogo(540, 880, 560, 1);
     cintas(T, 540, 880, 560);
     const BRILLO = { sol: '242,155,35', globo: '19,83,136', personita: '255,255,255', chorro: '255,255,255' };
     for(const n of ['sol', 'globo', 'personita', 'chorro']){
-      const { lleno, brillo } = llenado(n, T), [x, y] = PIEZA[n];
-      img[n].style.opacity = lleno > 0 ? 1 : 0;
-      img[n].style.transform = `scale(${mez(.97, 1, lleno)})`; img[n].style.transformOrigin = `${x}px ${y}px`;
-      img[n].style.clipPath = lleno >= 1 ? 'none' : `circle(${lleno * 75}% at ${x}px ${y}px)`;
+      const ll = llenado(n, T), [x, y] = PIEZA[n];
+      img[n].style.opacity = ll.lleno > 0 ? 1 : 0;
+      /* al recibir cada chorro la pieza respira apenas (1 %), como un vaso que se mueve al llenarse */
+      img[n].style.transform = `scale(${(1 + ll.ola * .012).toFixed(4)})`; img[n].style.transformOrigin = `${x}px ${y}px`;
+      gotas(n, T, agua(n, T, ll), 540, 880, 560);
       /* el brillo casi nulo: un halo de su mismo color y una pizca de luz, sólo cuando le llega una cinta */
-      img[n].style.filter = brillo > .02 ? `drop-shadow(0 0 ${(brillo * 9).toFixed(1)}px rgba(${BRILLO[n]},${(brillo * .35).toFixed(2)})) brightness(${(1 + brillo * .05).toFixed(3)})` : 'none';
+      img[n].style.filter = ll.brillo > .02 ? `drop-shadow(0 0 ${(ll.brillo * 9).toFixed(1)}px rgba(${BRILLO[n]},${(ll.brillo * .35).toFixed(2)})) brightness(${(1 + ll.brillo * .05).toFixed(3)})` : 'none';
     }
     $('#destello').style.opacity = 0;
   } else {
-    for(const n of ['sol', 'globo', 'personita', 'chorro']){ img[n].style.clipPath = 'none'; img[n].style.filter = 'none'; img[n].style.transformOrigin = ''; }
+    for(const n of ['sol', 'globo', 'personita', 'chorro']){ img[n].style.clipPath = 'none'; img[n].style.filter = 'none'; img[n].style.transformOrigin = ''; BRILLA[n].style.visibility = 'hidden'; }
     for(const g of [atras, frente]) g.clearRect(0, 0, 1080, 1920);
     $('#destello').style.opacity = 0;
   }
