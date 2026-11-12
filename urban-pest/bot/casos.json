@@ -1,68 +1,132 @@
 [
-  {
-    "id": "precio",
-    "frases": [
-      "cuanto cuesta fumigar",
-      "cuanto cobran",
-      "precio de fumigacion",
-      "cuanto sale",
-      "me das precio",
-      "cotizacion"
-    ],
-    "palabras": [
-      "precio",
-      "costo",
-      "cotizacion",
-      "cotizar"
-    ],
-    "respuesta": "Con gusto te cotizo. ¿Qué plaga tienes, tu casa la considerarías chica, mediana o grande, y en qué colonia estás?"
-  },
-  {
-    "id": "factura",
-    "frases": [
-      "dan factura",
-      "me pueden facturar",
-      "necesito factura"
-    ],
-    "palabras": [
-      "factura",
-      "facturar"
-    ],
-    "respuesta": "Sí te ayudamos con eso. En un momento te contacta el encargado para tus datos de facturación.",
-    "dueno": true
-  },
-  {
-    "id": "hablar-dueno",
-    "frases": [
-      "quiero hablar con el dueno",
-      "me puede llamar alguien",
-      "pasame con el encargado",
-      "quiero hablar con una persona"
-    ],
-    "palabras": [
-      "encargado",
-      "dueno"
-    ],
-    "respuesta": "Claro, ya le aviso al encargado para que te contacte.",
-    "dueno": true
-  },
-  {
-    "id": "empresa",
-    "frases": [
-      "fumigan empresas",
-      "fumigacion industrial",
-      "trabajan con negocios",
-      "fumigan restaurantes",
-      "fumigan bodegas"
-    ],
-    "palabras": [
-      "industrial",
-      "empresa",
-      "bodega",
-      "fabrica",
-      "hospital"
-    ],
-    "respuesta": "Sí, atendemos negocios e industria. Para eso vamos a ver el lugar antes de darte el precio final. ¿Qué giro es y en qué zona está?",
-    "dueno": true
-  }
+ {
+  "id": "precio",
+  "frases": [
+   "cuanto cuesta fumigar",
+   "cuanto cobran",
+   "precio de fumigacion",
+   "cuanto sale",
+   "me das precio",
+   "cotizacion"
+  ],
+  "palabras": [
+   "precio",
+   "costo",
+   "cotizacion",
+   "cotizar"
+  ],
+  "respuesta": "Con gusto te cotizo. ¿Qué plaga tienes, tu casa la considerarías chica, mediana o grande, y en qué colonia estás?"
+ },
+ {
+  "id": "factura",
+  "frases": [
+   "dan factura",
+   "me pueden facturar",
+   "necesito factura"
+  ],
+  "palabras": [
+   "factura",
+   "facturar"
+  ],
+  "respuesta": "Sí te ayudamos con eso. En un momento te contacta el encargado para tus datos de facturación.",
+  "dueno": true
+ },
+ {
+  "id": "hablar-dueno",
+  "frases": [
+   "quiero hablar con el dueno",
+   "me puede llamar alguien",
+   "pasame con el encargado",
+   "quiero hablar con una persona"
+  ],
+  "palabras": [
+   "encargado",
+   "dueno"
+  ],
+  "respuesta": "Claro, ya le aviso al encargado para que te contacte.",
+  "dueno": true
+ },
+ {
+  "id": "empresa",
+  "frases": [
+   "fumigan empresas",
+   "fumigacion industrial",
+   "trabajan con negocios",
+   "fumigan restaurantes",
+   "fumigan bodegas"
+  ],
+  "palabras": [
+   "industrial",
+   "bodega",
+   "fabrica",
+   "hospital",
+   "planta"
+  ],
+  "respuesta": "Sí, atendemos negocios e industria. Para eso vamos a ver el lugar antes de darte el precio final. ¿Qué giro es y en qué zona está?",
+  "dueno": true
+ },
+ {
+  "id": "mascotas",
+  "frases": [
+   "los productos son seguros para mascotas",
+   "es peligroso para mi perro",
+   "le hace dano a mis gatos",
+   "es seguro para los ninos",
+   "es toxico"
+  ],
+  "palabras": [
+   "mascotas",
+   "toxico",
+   "toxicos"
+  ],
+  "respuesta": "Sí. Trabajamos con productos de baja toxicidad, aplicados con protocolos que protegen a mascotas y niños en casa.",
+  "fuente": "urbanpest.mx, preguntas frecuentes"
+ },
+ {
+  "id": "garantia",
+  "frases": [
+   "dan garantia",
+   "y si vuelven a salir",
+   "que pasa si no se van",
+   "tienen garantia",
+   "si regresa la plaga"
+  ],
+  "palabras": [
+   "garantia",
+   "vuelven",
+   "regresa"
+  ],
+  "respuesta": "Sí. Si la plaga persiste, regresamos a darle seguimiento sin costo adicional.",
+  "fuente": "urbanpest.mx, preguntas frecuentes"
+ },
+ {
+  "id": "cobertura",
+  "frases": [
+   "atienden fuera de queretaro",
+   "van a san juan del rio",
+   "llegan hasta celaya",
+   "que zonas cubren",
+   "van a mi municipio"
+  ],
+  "palabras": [
+   "cobertura",
+   "municipios"
+  ],
+  "respuesta": "Atendemos la zona metropolitana de Querétaro y municipios cercanos. ¿En dónde estás? Así te confirmo si llegamos.",
+  "fuente": "urbanpest.mx, preguntas frecuentes"
+ },
+ {
+  "id": "inspeccion",
+  "frases": [
+   "que incluye la inspeccion",
+   "que hacen en la visita",
+   "como es el diagnostico",
+   "que revisan"
+  ],
+  "palabras": [
+   "inspeccion"
+  ],
+  "respuesta": "Evaluamos los puntos de riesgo, identificamos el tipo de plaga y su nivel de infestación, y te entregamos un plan de acción por escrito.",
+  "fuente": "urbanpest.mx, preguntas frecuentes"
+ }
 ]
