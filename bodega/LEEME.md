@@ -1,6 +1,6 @@
 # La bodega
 
-**2,965 skills guardadas y dormidas.** Ninguna cuesta nada hasta que se pone a trabajar.
+**3,003 skills guardadas y dormidas.** Ninguna cuesta nada hasta que se pone a trabajar.
 
 ## Por qué están dormidas
 
@@ -63,6 +63,8 @@ quedaron 2,945 distintas.
 `alirezarezvani/claude-skills` (el índice prometía algo que `montar` no podía dar). Se
 repusieron 433 con su versión actual (12 ya no existen allá y salieron del índice), entraron
 23 nuevas de ese repo y 9 de los repos de la casa (`palomazi` y `evaluaciones-rembrandt`). **2,965.**
+
+**12 de noviembre:** +38 de los cursos que pasó Carlos (motion design, edición de reels, dirección de arte, UI/UX Pro Max, Manim). Qué entró, qué no y por qué, en [`CURSOS-12-NOV.md`](CURSOS-12-NOV.md). **3,003.**
 
 ## Licencias
 
