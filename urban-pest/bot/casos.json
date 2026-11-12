@@ -173,5 +173,277 @@
   ],
   "respuesta": "Evaluamos los puntos de riesgo, identificamos el tipo de plaga y su nivel de infestación, y te entregamos un plan de acción por escrito.",
   "fuente": "urbanpest.mx, preguntas frecuentes"
+ },
+ {
+  "id": "licencia",
+  "frases": [
+   "tienen licencia sanitaria",
+   "tienen permiso de salud",
+   "estan certificados",
+   "tienen licencia de cofepris",
+   "tienen repse",
+   "tienen registro repse",
+   "son una empresa registrada"
+  ],
+  "palabras": [
+   "repse",
+   "cofepris"
+  ],
+  "respuesta": "Sí. Tenemos autorización vigente de la Secretaría de Salud y registro REPSE para dar servicio a empresas. En negocio e industria cada servicio queda con su constancia y el número de licencia sanitaria en una carpeta en línea.",
+  "fuente": "urbanpest.mx: portada, industria y preguntas frecuentes"
+ },
+ {
+  "id": "experiencia",
+  "frases": [
+   "cuantos anos tienen",
+   "cuanto tiempo llevan",
+   "desde cuando trabajan",
+   "tienen experiencia",
+   "son nuevos"
+  ],
+  "respuesta": "Llevamos más de 10 años cuidando Querétaro. Empezamos de puerta en puerta y crecimos por recomendación. Puedes ver nuestras reseñas en urbanpest.mx.",
+  "fuente": "urbanpest.mx: portada; «de puerta en puerta» lo contó Carlos (BRIEF)"
+ },
+ {
+  "id": "productos",
+  "frases": [
+   "que productos usan",
+   "que quimicos usan",
+   "que le echan",
+   "los productos tienen registro",
+   "que veneno usan",
+   "es toxico lo que usan"
+  ],
+  "respuesta": "Usamos productos de baja toxicidad y con registro, sólo lo necesario según la plaga. Al terminar te decimos qué se aplicó y las indicaciones a seguir.",
+  "fuente": "urbanpest.mx: proceso (productos con registro) y preguntas frecuentes (baja toxicidad)"
+ },
+ {
+  "id": "salir-casa",
+  "frases": [
+   "cuanto tiempo hay que salir",
+   "tenemos que salir de la casa",
+   "cuantas horas me salgo",
+   "puedo quedarme en la casa mientras fumigan",
+   "cuando puedo regresar a mi casa",
+   "cuanto tiempo fuera"
+  ],
+  "respuesta": "Depende del producto que se use en tu caso: el técnico te dice la hora exacta antes de empezar. Al regresar, abre puertas y ventanas unos minutos para ventilar.",
+  "fuente": "borrador de Luna (casos-borrador.json); sin horas inventadas (FALTA del dueño)"
+ },
+ {
+  "id": "preparar",
+  "frases": [
+   "que tengo que hacer antes",
+   "como preparo la casa",
+   "tengo que mover los muebles",
+   "que hago antes de que lleguen",
+   "tengo que sacar las cosas"
+  ],
+  "respuesta": "No tienes que cargar nada: nosotros movemos los muebles y sacamos los utensilios. Sólo guarda la comida en recipientes cerrados o en el refri y ten a la mano a tus mascotas.",
+  "fuente": "borrador de Luna (casos-borrador.json); «movemos todo y sacamos los utensilios» lo contó Carlos (BRIEF)"
+ },
+ {
+  "id": "despues",
+  "frases": [
+   "es normal que sigan saliendo",
+   "despues de fumigar salen mas",
+   "siguen saliendo cucarachas despues de fumigar",
+   "veo cucarachas muertas",
+   "salen mas despues de la fumigacion"
+  ],
+  "respuesta": "Es normal ver plaga muerta o desorientada los primeros días: está saliendo de donde se escondía. Si después sigues viendo plaga viva, escríbenos: si persiste, regresamos sin costo adicional.",
+  "fuente": "borrador de Luna (casos-borrador.json) + garantía de urbanpest.mx"
+ },
+ {
+  "id": "reagendar",
+  "frases": [
+   "quiero cambiar mi cita",
+   "puedo mover la cita",
+   "cambiar la fecha",
+   "reagendar",
+   "no voy a poder ese dia",
+   "cancelar la cita"
+  ],
+  "respuesta": "Sin problema. ¿Qué día y hora te quedan mejor? Le aviso al encargado para moverla.",
+  "dueno": true,
+  "fuente": "borrador de Luna (casos-borrador.json)"
+ },
+ {
+  "id": "confirmar-cita",
+  "frases": [
+   "a que hora llegan",
+   "sigue en pie la cita",
+   "confirman mi cita",
+   "ya vienen",
+   "a que hora viene el tecnico"
+  ],
+  "respuesta": "Déjame confirmarlo con el técnico y te digo en un momento.",
+  "dueno": true,
+  "fuente": "borrador de Luna (casos-borrador.json)"
+ },
+ {
+  "id": "empleo",
+  "frases": [
+   "buscan personal",
+   "tienen vacantes",
+   "estan contratando",
+   "busco trabajo",
+   "quiero trabajar con ustedes",
+   "mando mi curriculum"
+  ],
+  "palabras": [
+   "vacante",
+   "vacantes",
+   "curriculum"
+  ],
+  "respuesta": "Gracias por el interés. Le paso tu mensaje al encargado; si hay lugar, te escribe él.",
+  "dueno": true,
+  "fuente": "borrador de Luna (casos-borrador.json)"
+ },
+ {
+  "id": "proveedor",
+  "frases": [
+   "soy proveedor",
+   "vendo productos para fumigar",
+   "les ofrezco mis servicios",
+   "somos distribuidores",
+   "quiero ofrecerles"
+  ],
+  "respuesta": "Gracias. Le dejo tu mensaje al encargado; si le interesa, te contacta.",
+  "dueno": true,
+  "fuente": "borrador de Luna (casos-borrador.json)"
+ },
+ {
+  "id": "queja",
+  "frases": [
+   "quiero poner una queja",
+   "no quede conforme",
+   "el servicio estuvo mal",
+   "tengo una queja",
+   "quiero reclamar",
+   "no funciono la fumigacion"
+  ],
+  "palabras": [
+   "queja",
+   "reclamo",
+   "reclamar"
+  ],
+  "respuesta": "Lo siento mucho. Ya le pasé tu mensaje al encargado para que te contacte él directamente. ¿Me dices qué pasó y la fecha del servicio?",
+  "dueno": true,
+  "fuente": "borrador de Luna (casos-borrador.json)"
+ },
+ {
+  "id": "no-se-que-plaga",
+  "frases": [
+   "no se que plaga es",
+   "no se que bicho es",
+   "que es este bicho",
+   "me ayudas a saber que es",
+   "no se que animal es"
+  ],
+  "respuesta": "Mándame una foto, de cerca y con buena luz, y dime dónde lo encontraste. Se la paso al técnico para identificarlo y decirte qué tratamiento lleva.",
+  "dueno": true,
+  "fuente": "borrador de Luna (casos-borrador.json)"
+ },
+ {
+  "id": "saludo",
+  "frases": [
+   "hola, quisiera informes"
+  ],
+  "respuesta": "¡Hola! Gracias por escribir a Urban Pest Control. ¿Qué plaga tienes y en dónde es: casa, negocio o industria? Con eso te digo cómo trabajamos y te paso un precio.",
+  "reflejo": false,
+  "fuente": "borrador de Luna (casos-borrador.json)"
+ },
+ {
+  "id": "que-hacen",
+  "frases": [
+   "que servicios tienen"
+  ],
+  "respuesta": "Hacemos control de plagas para casas, negocios e industria: cucarachas y hormigas, ratas y ratones, mosquitos y moscas, arañas y alacranes, palomas (con aves rapaces) y fauna silvestre (reubicación segura). Trabajamos a detalle: movemos todo y llegamos a donde se esconden. ¿Para qué lugar lo necesitas?",
+  "reflejo": false,
+  "fuente": "urbanpest.mx: plagas que controlamos; detalle del servicio, BRIEF"
+ },
+ {
+  "id": "diferencia",
+  "frases": [
+   "por que son mas caros"
+  ],
+  "respuesta": "Porque no medio fumigamos: movemos muebles, sacamos los utensilios y tratamos el interior completo, y si la plaga persiste regresamos sin costo adicional. Si quieres, te explico qué incluye para tu caso.",
+  "reflejo": false,
+  "fuente": "borrador de Luna (casos-borrador.json) + garantía de urbanpest.mx"
+ },
+ {
+  "id": "precio-exacto",
+  "frases": [
+   "por que no me dan un precio exacto"
+  ],
+  "respuesta": "Te doy un precio de partida porque cada lugar es distinto. En casa, el técnico te confirma el precio al llegar y antes de empezar; en negocio o industria vamos a ver el lugar primero y te queda por escrito.",
+  "reflejo": false,
+  "fuente": "borrador de Luna (casos-borrador.json)"
+ },
+ {
+  "id": "plaga-cucarachas",
+  "frases": [
+   "como eliminan las cucarachas"
+  ],
+  "respuesta": "Para cucarachas y hormigas usamos gel, cebos y aspersión según la especie.",
+  "reflejo": false,
+  "fuente": "urbanpest.mx: plagas"
+ },
+ {
+  "id": "plaga-ratas",
+  "frases": [
+   "como quitan las ratas"
+  ],
+  "respuesta": "Para ratas y ratones ponemos estaciones de monitoreo por dentro y por fuera.",
+  "reflejo": false,
+  "fuente": "urbanpest.mx: plagas"
+ },
+ {
+  "id": "plaga-moscas",
+  "frases": [
+   "como quitan los mosquitos"
+  ],
+  "respuesta": "Para mosquitos y moscas usamos nebulización y trampas de luz en los puntos críticos.",
+  "reflejo": false,
+  "fuente": "urbanpest.mx: plagas"
+ },
+ {
+  "id": "plaga-alacranes",
+  "frases": [
+   "como quitan los alacranes"
+  ],
+  "respuesta": "Para arañas y alacranes atendemos las zonas donde más se esconden.",
+  "reflejo": false,
+  "fuente": "urbanpest.mx: plagas"
+ },
+ {
+  "id": "plaga-otras",
+  "frases": [
+   "fumigan chinches o termitas"
+  ],
+  "respuesta": "Chinches, termitas, pulgas, abejas y avispas no aparecen en la lista de su página: no afirmes que se atienden ni cómo. Di que lo confirma el encargado y avísale.",
+  "dueno": true,
+  "reflejo": false,
+  "fuente": "regla para la IA: no está en urbanpest.mx"
+ },
+ {
+  "id": "lo-que-no-sabemos",
+  "frases": [
+   "aceptan tarjeta"
+  ],
+  "respuesta": "Formas de pago, horario de atención, cuánto dura un servicio, cada cuánto conviene fumigar y si la visita para medir cuesta: todavía no los confirma el dueño. No los inventes: di que el encargado lo confirma y avísale.",
+  "dueno": true,
+  "reflejo": false,
+  "fuente": "regla para la IA: FALTA del dueño (BRIEF)"
+ },
+ {
+  "id": "gracias",
+  "frases": [
+   "muchas gracias"
+  ],
+  "respuesta": "¡Con gusto! Aquí estamos cuando lo necesites.",
+  "reflejo": false,
+  "fuente": "borrador de Luna (casos-borrador.json)"
  }
 ]

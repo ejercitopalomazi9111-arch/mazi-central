@@ -53,6 +53,15 @@ queda con nosotros.
 - **No toca los chats personales del número.** Esto ya lo resolvimos en Secre (`secre/`, la parte
   de «sólo negocio»).
 
+**El borrador de casos de Luna ya está en el bot (12 nov, Sylcred).** De sus 47, se pasaron a `bot/casos.json` los que
+se pueden contestar con datos VERDADEROS (su página o lo que contó Carlos): 12 contestan solos (licencia y REPSE, años,
+productos, cuánto salir de la casa, qué preparar, «siguen saliendo», cambiar o confirmar cita, empleo, proveedor, queja,
+«no sé qué plaga es») y 11 son sólo conocimiento para la IA (`"reflejo": false`: saludo, servicios, cómo trata cada plaga,
+por qué no hay precio exacto…), porque como reflejo se comerían una cotización («hola, tengo cucarachas en 100 m²…»).
+Lo que su página NO dice (formas de pago, horario, duración, chinches, termitas, abejas) no se afirma: la IA dice que lo
+confirma el encargado y le avisa. El servidor SUMA los casos nuevos de fábrica a los guardados sin pisar lo que el dueño
+editó ni revivir lo que borró (`juntarCasos`).
+
 ### B · El cotizador
 
 - Toma los costos y los ejemplos de su **Excel** (**FALTA** el Excel).
