@@ -87,6 +87,31 @@
         "en ese aparato no funciona"
       ],
       "salioDe": "La regla de este grupo: lo que necesita script no aparece en vez de aparecer muerto."
+    },
+    {
+      "id": "red-neurona-disparada",
+      "clase": "error",
+      "titulo": "La red del Cerebro se veía vacía y trababa el teléfono al abrirla",
+      "gravedad": "alta",
+      "sintoma": "Al picar RED la página se congela unos segundos y luego sale la galaxia casi sin neuronas: puntitos invisibles y un núcleo solo. Con una neurona encendida va a tirones.",
+      "causa": "Dos cosas. El acomodo (fuerzas entre 724 neuronas, 260 vueltas) corría en el teléfono cada vez: 68 millones de cuentas. Y la repulsión 2600/d² con d cerca de cero mandó una neurona a 137,000 unidades; el encuadre la incluía y todo lo demás quedó de menos de un pixel.",
+      "porque": "«|| 0.01» sólo evita dividir entre cero exacto, no un empujón casi infinito. Y cada cuadro repintaba 1,660 enlaces uno por uno, 724 degradados nuevos y shadowBlur, aunque casi nada cambiaba.",
+      "arreglo": "Las posiciones se calculan al armar todo.json (cerebro/acomodo.js, campo pos) con distancia mínima y paso con tope. Lo quieto va en una capa aparte que sólo se rehace al cambiar la vista; al arrastrar se mueve esa capa y se rehace al soltar.",
+      "cazar": "Medir con la CPU 4× más lenta a 390 px (abrir la red, cuadros encendida, costo de un arrastre) y revisar los extremos de pos: si un percentil 100 es cien veces el 95, hay una neurona disparada.",
+      "senales": [
+        "red neuronal",
+        "lag",
+        "se traba",
+        "cerebro",
+        "canvas",
+        "force layout",
+        "repulsión",
+        "se ve vacía",
+        "shadowBlur",
+        "capa quieta",
+        "acomodo"
+      ],
+      "vecinas": []
     }
   ]
 }
