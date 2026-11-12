@@ -47,6 +47,51 @@
   "dueno": true
  },
  {
+  "id": "palomas",
+  "frases": [
+   "tengo palomas",
+   "palomas en el techo",
+   "quitan palomas",
+   "control de palomas",
+   "pichones en la azotea",
+   "palomas en la bodega"
+  ],
+  "palabras": [
+   "palomas",
+   "paloma",
+   "pichones",
+   "pichon"
+  ],
+  "respuesta": "Sí. Las palomas las controlamos con aves rapaces, sin químicos y sin dañar la construcción. Ése lo cotiza el encargado en persona: ¿en qué zona está y qué tipo de lugar es?",
+  "dueno": true,
+  "fuente": "urbanpest.mx, plagas que controlamos"
+ },
+ {
+  "id": "fauna",
+  "frases": [
+   "tengo un tlacuache",
+   "hay un animal en el techo",
+   "murcielagos en la casa",
+   "fauna silvestre",
+   "se metio un animal"
+  ],
+  "palabras": [
+   "tlacuache",
+   "tlacuaches",
+   "zarigueya",
+   "murcielago",
+   "murcielagos",
+   "mapache",
+   "ardilla",
+   "ardillas",
+   "fauna",
+   "silvestre"
+  ],
+  "respuesta": "Sí. Hacemos reubicación de fauna silvestre, segura y sin dañar al animal ni tu propiedad. Ése lo revisa el encargado en persona: ¿qué animal es y en qué zona estás?",
+  "dueno": true,
+  "fuente": "urbanpest.mx, plagas que controlamos"
+ },
+ {
   "id": "empresa",
   "frases": [
    "fumigan empresas",

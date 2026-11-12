@@ -139,6 +139,22 @@ la IA**. Es sobre todo para nosotros, pero él también la puede ver.
 - En el teléfono, el botón flotante de WhatsApp y el de «volver arriba» tapan el botón de enviar del formulario y
   los «+» de las preguntas. Es argumento de venta para la página nueva.
 
+**Segunda tanda (16 capturas más, mismo día):** portada, «Por qué elegirnos», plagas, proceso y sectores.
+
+- **El bot ya sabe cómo trata cada plaga, con SU texto**: cucarachas y hormigas (aspersión, gel y cebos por especie),
+  ratas (monitoreo interior y exterior), moscas y mosquitos (nebulización y trampas UV), arañas y alacranes, fauna
+  silvestre (reubicación sin dañar al animal) y palomas (aves rapaces, sin químicos). También su proceso de 4 pasos
+  y sus sectores (hogares, comercios, industria y bodegas, alimentos, salud, escuelas y universidades).
+- **Palomas y fauna son casos del reflejo** que pasan al encargado (`dueno: true`): no hay tarifa para eso. Van
+  ANTES del caso `empresa`, porque «palomas en mi bodega» caía en «atendemos industria» por la palabra «bodega».
+- Nada de esto cambia la página nueva: ya traía las seis plagas, el proceso y los sectores.
+- **Argumentos de venta que salen de sus capturas:**
+  - a «Ratas y ratones» le pusieron el icono de un escarabajo, y a «Fauna silvestre» una nutria;
+  - en la portada, «BT-00» no le dice nada a un cliente (quiere decir baja toxicidad);
+  - las secciones aparecen con animación y, mientras bajas, quedan huecos blancos grandes y tarjetas a medio
+    pintar;
+  - el botón de «volver arriba» tapa el texto de varias tarjetas («Protocolos especializad…»).
+
 ## La regla del dinero · Carlos, 11 nov
 
 **«Aún no desembolses un peso: todo va como se pueda resolver gratis hasta que el cliente nos diga
