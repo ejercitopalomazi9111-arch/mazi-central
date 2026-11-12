@@ -144,7 +144,7 @@ export async function tablero(A, hoy = new Date().toISOString().slice(0, 10)){
   const convs = (await A.list('conv:')).map(([, v]) => v).filter(c => c.canal !== 'prueba');
   const deHoy = convs.flatMap(c => c.mensajes.filter(m => m.cuando >= inicio));
   const avisos = (await A.list('aviso:')).map(([id, v]) => ({ id, ...v })).filter(a => a.estado === 'nuevo');
-  const cots = (await A.list('cotdoc:')).map(([, v]) => v).filter(c => c.fecha === hoy);
+  const cots = (await A.list('cotdoc:')).map(([, v]) => v).filter(c => c.fecha === hoy && !c.ejemplo);
   return { bien: true, hoy,
     servicios_hoy: citas.filter(c => c.fecha === hoy && c.estado === 'pendiente'),
     atrasados: citas.filter(c => c.fecha < hoy && c.estado === 'pendiente'),

@@ -316,6 +316,25 @@
       ],
       "salioDe": "Carlos, 30 de septiembre: las credenciales de Advanced Critical Care en la imprenta.",
       "vecinas": []
+    },
+    {
+      "id": "despliegue-a-mano-pisado",
+      "clase": "error",
+      "titulo": "Un despliegue a mano lo pisó el automático de la fusión anterior",
+      "gravedad": "media",
+      "sintoma": "La página recién publicada a mano contesta 200 y minutos después da 404, sin que nadie haya tocado nada.",
+      "causa": "El «Workers Builds» de una fusión anterior a main terminó DESPUÉS del despliegue a mano y publicó su versión, que todavía no traía la carpeta nueva.",
+      "porque": "Cloudflare publica lo último que TERMINA, no lo más nuevo. Los automáticos tardan minutos y a veces ni corren, así que no se puede saber de antemano cuál llega al final.",
+      "arreglo": "Después de publicar a mano: npx wrangler deployments list --name mazi-central, y pedir la página otra vez a los minutos. Si la pisaron, se republica.",
+      "cazar": "curl -s -o /dev/null -w \"%{http_code}\" a la página nueva, dos veces con minutos de diferencia.",
+      "senales": [
+        "404 después de 200",
+        "despliegue pisado",
+        "workers builds tarde",
+        "deployments list",
+        "publicar a mano"
+      ],
+      "vecinas": []
     }
   ]
 }
