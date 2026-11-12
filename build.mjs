@@ -33,6 +33,8 @@ const VA = [
   /* Urban Pest: SÓLO el chat central (Carlos, 11 nov: «publica todo para ir probando»).
      El bot vive en el servidor de La Sala (/api/urban); su código no se publica. */
   'urban-pest/chat',
+  /* y la página nueva que le proponemos (Luna, 12 nov): Carlos la revisa aquí mientras el cliente aprueba */
+  'urban-pest/web',
   'juegos',
   'ligas-mazi', 'pacto-roto', 'romero', 'inkwell', 'vitallink', 'life-connect',
   'manzanilla', 'herramientas',
