@@ -1541,6 +1541,11 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
        que gane nada. La vista NO se borró —sigue viva y se llega desde el
        menú—: lo que sobraba era el segundo camino. -->
   <button class="pest" data-vista="taller3d">Taller 3D</button>
+  <!-- Carlos, 12 nov: «un pizarrón para apuntar pendientes» y «un apartado de explicaciones». Cada uno es su propia
+       página (pizarron.html, explica.html) y nace la primera vez que se toca, igual que el Taller 3D: la mesa no paga
+       nada por tenerlos. -->
+  <button class="pest" data-vista="explica">Explica</button>
+  <button class="pest" data-vista="pizarron">Pizarrón</button>
   <i class="pest-guia" id="pestGuia" aria-hidden="true"></i>
 </div>
 
@@ -1548,6 +1553,8 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
 <div class="letreros" id="letreros" aria-live="polite" aria-atomic="false"></div>
 <div class="hilo" id="hilo"></div>
 <div class="marco3d" id="marco3d" hidden></div>
+<div class="marco3d" id="marcoExplica" hidden></div>
+<div class="marco3d" id="marcoPizarron" hidden></div>
 
 <!-- ── LA VISTA DE CÓMO TRABAJAN ─────────────────────────────────────────
      El chat contesta «qué se dijo». Esto contesta «cómo se llegó ahí», que
@@ -4388,6 +4395,8 @@ function mostrarVista(cual){
   $('hilo').hidden    = cual !== 'chat';
   $('taller').hidden  = cual !== 'hebras';
   $('marco3d').hidden = cual !== 'taller3d';
+  $('marcoExplica').hidden = cual !== 'explica';
+  $('marcoPizarron').hidden = cual !== 'pizarron';
   for(const b of document.querySelectorAll('.pest'))
     b.classList.toggle('activa', b.dataset.vista === cual);
   moverGuiaPestanas();
@@ -4398,6 +4407,8 @@ function mostrarVista(cual){
   const bv = $('bVista'); if(bv) bv.textContent = cual === 'chat' ? 'Vista' : 'Chat';
   if(cual === 'hebras') pintarTaller();
   if(cual === 'taller3d') prender3D();
+  if(cual === 'explica') prenderMarco('marcoExplica', 'explica.html', 'Explica');
+  if(cual === 'pizarron') prenderMarco('marcoPizarron', 'pizarron.html', 'El pizarrón');
 }
 
 /* ── el taller, sólo cuando de verdad se va a ver ────────────────────────
@@ -4406,6 +4417,13 @@ function mostrarVista(cual){
    sin verlo nunca. Así que el <iframe> nace la primera vez que se toca la
    pestaña, y de ahí se queda vivo — recrearlo en cada cambio volvería a
    arrancar la escena y perdería la cámara donde uno la dejó. */
+/* Explica y el Pizarrón: un <iframe> que nace al primer toque y se queda vivo (no se pierde la clase a medias) */
+const marcosPuestos = new Set();
+function prenderMarco(id, pagina, titulo){
+  if(marcosPuestos.has(id)) return; marcosPuestos.add(id);
+  const m = document.createElement('iframe'); m.title = titulo; m.allow = 'autoplay; fullscreen; clipboard-write';
+  m.src = pagina + location.search; $(id).append(m);
+}
 let marcoPuesto = false;
 function prender3D(){
   if(marcoPuesto) return;

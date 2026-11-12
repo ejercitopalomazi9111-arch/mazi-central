@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#100A18">
+<title>Explica · La Sala</title>
+<!-- EXPLICA (Carlos, 12 nov): «que la IA me explique lo que le pida mientras me lo va mostrando, con voz, líneas de
+     tiempo, un lápiz que se mueve en tiempo real, referencias y listados», al estilo de Knowunity. Paulina (Gemini) o
+     Negro (Groq) arman la clase por pasos; esta página la DIBUJA en el pizarrón al ritmo de la voz. Lógica en explica.js. -->
+<style>
+  @font-face{ font-family:Mano; src:url(letra/caveat-700.woff2) format("woff2"); font-weight:700; font-display:swap }
+  @font-face{ font-family:Texto; src:url(letra/nunito-600.woff2) format("woff2"); font-weight:600; font-display:swap }
+  @font-face{ font-family:Texto; src:url(letra/nunito-700.woff2) format("woff2"); font-weight:700; font-display:swap }
+  :root{ --vacio:#100A18; --sup:#1E1428; --hueso:#E9E4E4; --violeta:#AC27FF; --violeta2:#C77DFF; --suave:#A99BB8;
+    --papel:#FBFAF6; --linea:#E7E3DA; --tinta:#1D1B26; --azul:#2156D9; --rojo:#D9433A; --verde:#178A5C; --naranja:#D97706; --morado:#7C3AED; --marca:#FFE45C }
+  *{ box-sizing:border-box; margin:0 }
+  html{ -webkit-text-size-adjust:100% }
+  body{ overflow-x:clip; background:var(--vacio); color:var(--hueso); font:600 16px/1.5 Texto, -apple-system, system-ui, sans-serif; min-height:100dvh }
+  button, input, textarea, select{ font-family:inherit; font-size:16px; color:inherit }
+  .i{ width:1.15em; height:1.15em; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none }
+  [hidden]{ display:none!important }
+
+  /* barra de arriba */
+  .barra{ position:sticky; top:0; z-index:20; display:flex; align-items:center; gap:10px; padding:calc(10px + env(safe-area-inset-top)) 16px 10px; background:#100A18ee; backdrop-filter:blur(10px); border-bottom:1px solid #ffffff10 }
+  .barra h1{ font:700 20px/1 Texto; letter-spacing:-.01em; flex:1 } .barra h1 b{ color:var(--violeta2) }
+  .bt{ display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:44px; padding:0 14px; border-radius:12px; border:0; background:var(--sup); color:var(--hueso); cursor:pointer }
+  .bt:active{ transform:scale(.97) } .bt:focus-visible{ outline:2px solid var(--violeta2); outline-offset:2px }
+  .bt.redondo{ width:44px; padding:0 }
+  .bt.fuerte{ background:var(--violeta); color:#fff; font-weight:700 }
+
+  /* inicio */
+  .inicio{ max-width:720px; margin:0 auto; padding:24px 16px 120px }
+  .inicio h2{ font:700 44px/1 Mano; color:#fff; margin:8px 0 6px }
+  .inicio p.sub{ color:var(--suave); margin-bottom:18px }
+  .caja{ background:var(--sup); border-radius:20px; padding:14px; border:1px solid #ffffff12 }
+  .caja textarea{ width:100%; min-height:110px; resize:vertical; background:transparent; border:0; outline:0; color:#fff; line-height:1.45 }
+  .caja textarea::placeholder{ color:#8A7C9A }
+  .fila{ display:flex; gap:8px; flex-wrap:wrap; align-items:center }
+  .opciones{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px; margin-top:12px }
+  .opciones label{ display:block; font-size:12px; color:var(--suave); margin-bottom:4px }
+  .opciones select{ width:100%; min-height:44px; border-radius:12px; border:1px solid #ffffff18; background:#150E1E; padding:0 10px }
+  .fotos{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px } .fotos img{ width:64px; height:64px; object-fit:cover; border-radius:10px }
+  .acciones{ display:flex; gap:10px; margin-top:12px } .acciones .fuerte{ flex:1 }
+  .ideas{ display:flex; gap:8px; flex-wrap:wrap; margin:14px 0 26px }
+  .ideas button{ border:1px solid #ffffff1c; background:transparent; border-radius:999px; padding:10px 14px; min-height:44px; color:var(--hueso); cursor:pointer; font-size:14px }
+  .hist h3{ font:700 13px/1 Texto; letter-spacing:.12em; text-transform:uppercase; color:var(--suave); margin:8px 0 10px }
+  .hist ul{ list-style:none; padding:0; display:grid; gap:8px }
+  .hist li{ display:flex; gap:8px }
+  .hist .abrir{ flex:1; text-align:left; justify-content:flex-start; min-width:0 } .hist .abrir span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  .hist small{ color:var(--suave); font-size:12px; margin-left:auto; flex:none }
+  .aviso{ margin-top:12px; padding:12px 14px; border-radius:12px; background:#3A1420; color:#FFD3DA; font-size:14px }
+  .llave{ margin-top:12px } .llave input{ width:100%; min-height:44px; border-radius:12px; border:1px solid #ffffff22; background:#150E1E; padding:0 12px }
+
+  /* preparando */
+  .preparando{ max-width:720px; margin:0 auto; padding:80px 16px; text-align:center }
+  .preparando .lapiz{ font-size:56px; color:var(--violeta2); animation:garabato 1.1s ease-in-out infinite }
+  @keyframes garabato{ 0%,100%{ transform:translate(-14px, 4px) rotate(-8deg) } 50%{ transform:translate(14px, -4px) rotate(6deg) } }
+  .preparando p{ margin-top:18px; color:var(--suave) } .preparando b{ color:#fff; font:700 30px/1.1 Mano; display:block; margin-top:6px }
+
+  /* EL PIZARRÓN */
+  .clase{ padding-bottom:calc(190px + env(safe-area-inset-bottom)) }
+  .pizarra{ position:relative; max-width:760px; margin:16px auto 0; padding:28px 22px 40px; background:var(--papel); color:var(--tinta); border-radius:22px; min-height:60vh;
+    background-image:radial-gradient(#00000012 1px, transparent 1.2px); background-size:22px 22px; box-shadow:0 30px 60px -40px #000 }
+  @media (max-width:800px){ .pizarra{ margin:10px 10px 0; padding:22px 16px 34px } }
+  .el{ margin:0 0 26px; position:relative }
+  .el .t{ font:700 30px/1.05 Mano; margin-bottom:8px }
+  .titulo h2{ font:700 46px/1 Mano; letter-spacing:-.01em } .titulo .sub{ font:600 16px/1.4 Texto; color:#6B6677; margin-top:6px }
+  .texto p{ font:600 18px/1.55 Texto }
+  .pal{ opacity:0; transition:opacity .18s } .pal.ve{ opacity:1 }
+  mark{ background:linear-gradient(transparent 55%, var(--marca) 55%) no-repeat; background-size:0% 100%; color:inherit; transition:background-size .5s ease; padding:0 2px }
+  mark.ve{ background-size:100% 100% }
+  .lista ol, .lista ul{ padding-left:0; list-style:none; display:grid; gap:10px }
+  .lista li{ display:flex; gap:12px; align-items:flex-start; font:600 17px/1.45 Texto; opacity:0; transform:translateX(-8px); transition:opacity .25s, transform .25s }
+  .lista li.ve{ opacity:1; transform:none }
+  .lista .num{ flex:none; width:30px; height:30px; border-radius:50%; display:grid; place-items:center; font:700 22px/1 Mano; color:#fff; margin-top:-1px }
+  .linea .eje{ position:relative; padding-left:30px }
+  .linea .eje::before{ content:""; position:absolute; left:10px; top:6px; bottom:6px; width:3px; border-radius:2px; background:currentColor; transform-origin:top; transform:scaleY(var(--crece, 0)) }
+  .linea .ev{ position:relative; margin-bottom:16px; opacity:0; transform:translateY(6px); transition:opacity .3s, transform .3s } .linea .ev.ve{ opacity:1; transform:none }
+  .linea .ev::before{ content:""; position:absolute; left:-26px; top:6px; width:13px; height:13px; border-radius:50%; background:var(--papel); border:3px solid currentColor }
+  .linea .fecha{ font:700 24px/1 Mano } .linea .ev p{ font:600 16px/1.45 Texto; color:var(--tinta) }
+  .definicion .tarj, .formula .tarj, .cita .tarj{ border:2.5px solid currentColor; border-radius:16px; padding:14px 16px; background:#fff }
+  .definicion .term{ font:700 34px/1 Mano } .definicion p{ font:600 17px/1.5 Texto; color:var(--tinta); margin-top:6px }
+  .formula .ex{ font:700 26px/1.3 ui-monospace, Menlo, monospace; color:var(--tinta); overflow-wrap:anywhere }
+  .formula p{ font:600 15px/1.45 Texto; color:#5A5566; margin-top:8px }
+  .cita .tarj{ border-width:0 0 0 5px; border-radius:4px; background:transparent } .cita p{ font:700 28px/1.2 Mano; color:var(--tinta) } .cita small{ display:block; margin-top:6px; color:#6B6677 }
+  .tabla .marco{ overflow-x:auto; border-radius:12px; border:2px solid currentColor }
+  .tabla table{ border-collapse:collapse; width:100%; font:600 15px/1.35 Texto; color:var(--tinta); min-width:max-content }
+  .tabla th, .tabla td{ padding:9px 11px; border-bottom:1px solid var(--linea); text-align:left; vertical-align:top }
+  .tabla th{ font:700 20px/1 Mano; color:currentColor; background:#fff }
+  .tabla tr{ opacity:0; transition:opacity .25s } .tabla tr.ve{ opacity:1 }
+  .comparar .dos{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px }
+  .comparar .lado{ border-radius:14px; padding:12px; background:#fff; border:2px solid currentColor }
+  .comparar h4{ font:700 26px/1 Mano; margin-bottom:6px } .comparar ul{ padding-left:18px; display:grid; gap:6px; font:600 15px/1.4 Texto; color:var(--tinta) }
+  .comparar li{ opacity:0; transition:opacity .25s } .comparar li.ve{ opacity:1 }
+  .diagrama svg.dib{ width:100%; max-width:640px; height:auto; display:block; overflow:visible; margin:0 auto }
+  .diagrama .nodo rect{ fill:#fff; stroke:currentColor; stroke-width:2.5 } .diagrama .nodo text{ font:700 15px Texto; fill:var(--tinta) }
+  .diagrama .nodo{ opacity:0; transition:opacity .3s } .diagrama .nodo.ve{ opacity:1 }
+  .diagrama path.fl{ fill:none; stroke:currentColor; stroke-width:2.5 } .diagrama .flt{ font:700 17px Mano; fill:currentColor; paint-order:stroke; stroke:var(--papel); stroke-width:5px; stroke-linejoin:round }
+  .refs ol{ padding-left:20px; display:grid; gap:8px; font:600 15px/1.45 Texto } .refs a{ color:var(--azul) }
+  .refs .ojo{ font-size:13px; color:#6B6677; margin-top:8px }
+  .repaso details{ border:2px solid currentColor; border-radius:12px; padding:10px 12px; margin-bottom:8px; background:#fff; color:var(--tinta) }
+  .repaso summary{ font:700 16px/1.4 Texto; cursor:pointer } .repaso details p{ margin-top:6px; font:600 15px/1.45 Texto; color:#4A4656 }
+  .marcar{ outline:3px dashed var(--rojo); outline-offset:6px; border-radius:10px; transition:outline-color .4s }
+  /* el lápiz */
+  .lapiz-cursor{ position:absolute; left:0; top:0; z-index:5; width:34px; height:34px; color:#1D1B26; pointer-events:none; opacity:0; transition:opacity .25s;
+    filter:drop-shadow(0 3px 4px #0003); will-change:transform }
+  .lapiz-cursor .i{ width:34px; height:34px; stroke-width:1.8; fill:#FFD27A }
+  .lapiz-cursor.ve{ opacity:1 }
+
+  /* abajo: subtítulo y controles */
+  .mando{ position:fixed; left:0; right:0; bottom:0; z-index:30; padding:10px 12px calc(10px + env(safe-area-inset-bottom)); background:linear-gradient(transparent, #100A18 22%) }
+  .mando .dentro{ max-width:760px; margin:0 auto; background:#1E1428f2; backdrop-filter:blur(12px); border:1px solid #ffffff14; border-radius:20px; padding:10px 12px }
+  .sub-voz{ font:600 15px/1.45 Texto; color:#D8D0E2; min-height:44px; max-height:66px; overflow:hidden; margin-bottom:8px }
+  .sub-voz .ya{ color:#fff } .sub-voz .ahora{ color:var(--marca) }
+  .barra-pasos{ height:4px; border-radius:2px; background:#ffffff18; margin-bottom:10px; overflow:hidden } .barra-pasos i{ display:block; height:100%; background:var(--violeta2); width:0; transition:width .3s }
+  .botones{ display:flex; gap:8px; align-items:center } .botones .crece{ flex:1 }
+  .preg{ display:flex; gap:8px; margin-top:10px } .preg input{ flex:1; min-width:0; min-height:44px; border-radius:12px; border:1px solid #ffffff22; background:#150E1E; padding:0 12px }
+  @media (prefers-reduced-motion:reduce){ .pal, .lista li, .linea .ev, mark{ transition:none } }
+</style>
+</head>
+<body>
+<header class="barra">
+  <a class="bt redondo" id="volver" href="./" aria-label="Volver a La Sala"></a>
+  <h1>Explica <b id="quien"></b></h1>
+  <button class="bt redondo" id="bNueva" aria-label="Nueva explicación" hidden></button>
+</header>
+
+<main id="vInicio" class="inicio">
+  <h2>¿Qué te explico?</h2>
+  <p class="sub">Escribe el tema o sube una foto de tus apuntes. Te lo explico en voz alta mientras lo dibujo en el pizarrón.</p>
+  <div class="caja">
+    <textarea id="tema" placeholder="Ej. «Explícame la Revolución Mexicana», «cómo se saca la derivada de un producto», «qué es la NOM-251»…"></textarea>
+    <div class="fotos" id="fotos"></div>
+    <div class="opciones">
+      <div><label for="motor">Quién explica</label><select id="motor"><option value="groq">Negro · rápido</option><option value="gemini">Paulina · lee fotos, ~2 min</option></select></div>
+      <div><label for="nivel">Nivel</label><select id="nivel"><option value="prepa">Prepa</option><option value="uni">Universidad</option><option value="facil">Muy fácil</option></select></div>
+      <div><label for="largo">Largo</label><select id="largo"><option value="corta">Corta</option><option value="normal" selected>Normal</option><option value="fondo">A fondo</option></select></div>
+    </div>
+    <div class="acciones">
+      <label class="bt" id="bFoto" aria-label="Agregar foto de tus apuntes"><input type="file" id="archivo" accept="image/*" multiple hidden></label>
+      <button class="bt fuerte" id="bExplica"></button>
+    </div>
+  </div>
+  <div class="aviso" id="aviso" hidden></div>
+  <div class="llave" id="cajaLlave" hidden><label for="llaveTxt" style="font-size:14px;color:var(--suave)">Pega aquí el link de La Sala (o la llave) una vez y ya:</label><input id="llaveTxt" autocomplete="off"></div>
+  <div class="ideas" id="ideas"></div>
+  <section class="hist" id="hist" hidden><h3>Lo que ya te expliqué</h3><ul id="histLista"></ul></section>
+</main>
+
+<section id="vPrepara" class="preparando" hidden>
+  <div class="lapiz" id="lapizEspera"></div>
+  <p id="preparaTxt">Armando tu clase…</p>
+</section>
+
+<section id="vClase" class="clase" hidden>
+  <div class="pizarra" id="pizarra"><div class="lapiz-cursor" id="lapiz"></div></div>
+</section>
+
+<div class="mando" id="mando" hidden>
+  <div class="dentro">
+    <div class="barra-pasos"><i id="avance"></i></div>
+    <div class="sub-voz" id="subVoz" aria-live="polite"></div>
+    <div class="botones">
+      <button class="bt redondo" id="bAtras" aria-label="Paso anterior"></button>
+      <button class="bt redondo fuerte" id="bPlay" aria-label="Reproducir o pausar"></button>
+      <button class="bt redondo" id="bSig" aria-label="Paso siguiente"></button>
+      <span class="crece"></span>
+      <button class="bt" id="bVel" aria-label="Velocidad">1×</button>
+      <button class="bt redondo" id="bVoz" aria-label="Voz encendida o apagada"></button>
+      <button class="bt redondo" id="bPreg" aria-label="Preguntar algo sobre esto"></button>
+    </div>
+    <form class="preg" id="fPreg" hidden><input id="pregTxt" placeholder="Pregúntale algo sobre esto…" autocomplete="off"><button class="bt fuerte redondo" aria-label="Preguntar"></button></form>
+  </div>
+</div>
+<script type="module" src="explica.js"></script>
+</body>
+</html>

@@ -2365,7 +2365,7 @@ export class Sala {
          (ogg, mp3, m4a, wav) van igual, como inlineData, para que Paulina las escriba */
       const imagenes = (Array.isArray(c.imagenes) ? c.imagenes : []).filter((x) => x && /^(image\/(jpeg|png|webp|gif)|audio\/(ogg|mpeg|mp3|mp4|aac|wav|webm|amr|x-m4a|flac))$/.test(x.mime) && typeof x.data === 'string' && x.data.length < 7_000_000).slice(0, 4);
       const r = await preguntar(motor, this.env, String(c.sistema || 'Eres un asistente útil. Contesta en español de México.').slice(0, 20_000), mensajes,
-        { tope: Math.min(Math.max(Number(c.tope) || 1500, 100), 8000), esperaMs: 90_000, imagenes, json: !!c.json });
+        { tope: Math.min(Math.max(Number(c.tope) || 1500, 100), 8000), esperaMs: Math.min(Math.max(Number(c.espera) || 90_000, 10_000), 150_000), imagenes, json: !!c.json, pensarPoco: !!c.pensarPoco });
       return Response.json(r, { status: r.bien ? 200 : 502 });
     }
 
