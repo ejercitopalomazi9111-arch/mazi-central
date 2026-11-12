@@ -298,6 +298,32 @@ input:focus, textarea:focus{outline:none; border-color:var(--azul); background:#
 .marca-agua{position:relative; isolation:isolate; overflow:hidden}
 .marca-agua::before{content:""; position:absolute; z-index:-1; width:min(560px, 90vw); aspect-ratio:1; right:-12%; bottom:-14%; background:url(img/sello.png) center / contain no-repeat; opacity:.05; filter:grayscale(1); transform:rotate(-12deg)}
 
+
+/* ══ en el teléfono: filas que se deslizan de lado en vez de tarjetas apiladas (Carlos, 12 nov: «sobrecargada») ══ */
+@media (max-width: 619px){
+  :root{--aire:84px}
+  .deslizable{display:grid; grid-auto-flow:column; grid-auto-columns:80%; grid-template-columns:none; gap:14px; overflow-x:auto; scroll-snap-type:x mandatory; margin:0 calc(var(--gut) * -1); padding:6px var(--gut) 26px; scrollbar-width:none; overscroll-behavior-x:contain}
+  .deslizable::-webkit-scrollbar{display:none}
+  .deslizable .tarjeta{scroll-snap-align:start; padding:26px 22px 28px}
+  .deslizable .tarjeta:hover{transform:none}
+  .tarjeta .num{font-size:32px; margin-bottom:16px}
+  .cabecera{margin-bottom:36px}
+  .respaldo{margin-top:36px}
+  .portada{padding-top:40px}
+}
+.pista-desliza{display:none; align-items:center; gap:8px; font-size:13px; color:var(--suave); margin:-8px 0 0}
+.pista-desliza svg{width:16px; height:16px}
+.oscuro .pista-desliza{color:#BFCBDD}
+@media (max-width: 619px){ .pista-desliza{display:flex} }
+
+
+@media (max-width: 619px){
+  .portada .fondo img{opacity:.38}
+  .contacto-rejilla .lado{display:none}
+  .pie .env > div:nth-child(2){display:none}
+  .pie{padding:52px 0 30px}
+}
+
 /* ══ aparecer al bajar: todo está en la página desde el principio; si bajas rápido, entra de inmediato ══ */
 .js .ap{opacity:0; transform:translate3d(0, 24px, 0); transition:opacity var(--dur) var(--curva), transform var(--dur) var(--curva); transition-delay:calc(var(--i, 0) * 80ms * var(--escalon, 1))}
 .js .ap.visto{opacity:1; transform:none}
@@ -311,7 +337,7 @@ input:focus, textarea:focus{outline:none; border-color:var(--azul); background:#
   <div class="env">
     <a class="logo" href="#inicio" aria-label="Urban Pest Control, inicio"><span class="logo-capas" id="logoCapas" aria-hidden="true"><img alt="" src="marca/globo.webp" data-c="globo" style="left:-8.1383%;top:0.0000%;width:40.8512%;height:147.7612%"><img alt="" src="marca/sol.webp" data-c="sol" style="left:-8.1383%;top:0.0000%;width:40.8512%;height:147.7612%"><img alt="" src="marca/personita.webp" data-c="personita" style="left:-8.1383%;top:0.0000%;width:40.8512%;height:147.7612%"><img alt="" src="marca/chorro.webp" data-c="chorro" style="left:-8.1383%;top:0.0000%;width:40.8512%;height:147.7612%"><img alt="" src="marca/urban.webp" data-c="urban" style="left:25.0693%;top:-196.8399%;width:76.8828%;height:278.0899%"><img alt="" src="marca/pest.webp" data-c="pest" style="left:25.0693%;top:-196.8399%;width:76.8828%;height:278.0899%"><img alt="" src="marca/control.webp" data-c="control" style="left:25.0693%;top:-196.8399%;width:76.8828%;height:278.0899%"></span></a>
     <nav class="menu" aria-label="Secciones">
-      <a href="#servicios">Servicios</a>
+      <a href="#servicios">Plagas</a>
       <a href="#industria">Industria</a>
       <a href="#clientes">Clientes</a>
       <a href="#contacto">Contacto</a>
@@ -351,22 +377,10 @@ input:focus, textarea:focus{outline:none; border-color:var(--azul); background:#
     </div>
   </section>
 
-  <section class="gris" id="por-que">
+    <section id="servicios">
     <div class="env">
-      <div class="cabecera ap"><span class="pildora">Por qué elegirnos</span><h2>Más que fumigación: <span class="resalta">respaldo profesional.</span></h2></div>
-      <div class="tarjetas de-4">
-        <article class="tarjeta ap" style="--i:0"><span class="icono"><svg class="i"><use href="#i-badge-check"/></svg></span><h3>Certificaciones oficiales</h3><p>Autorización sanitaria y registro REPSE vigentes, listos para cualquier auditoría.</p></article>
-        <article class="tarjeta ap" style="--i:1"><span class="icono"><svg class="i"><use href="#i-leaf"/></svg></span><h3>Productos seguros</h3><p>Baja toxicidad, seguros para tu familia, tu equipo y tus clientes.</p></article>
-        <article class="tarjeta ap" style="--i:2"><span class="icono"><svg class="i"><use href="#i-shield-check"/></svg></span><h3>Garantía real</h3><p>Si la plaga vuelve, damos seguimiento sin costo hasta resolverlo.</p></article>
-        <article class="tarjeta ap" style="--i:3"><span class="icono"><svg class="i"><use href="#i-calendar-check"/></svg></span><h3>Más de 10 años</h3><p>Atendiendo hogares, comercios e industria en Querétaro.</p></article>
-      </div>
-    </div>
-  </section>
-
-  <section id="servicios">
-    <div class="env">
-      <div class="cabecera ap"><span class="pildora">Plagas que controlamos</span><h2>Un método para <span class="resalta">cada plaga.</span></h2><p class="lead">Primero identificamos qué hay y dónde. Después elegimos el método, para usar sólo lo necesario.</p></div>
-      <div class="tarjetas de-3">
+      <div class="cabecera ap"><span class="pildora">Plagas que controlamos</span><h2>Un método para <span class="resalta">cada plaga.</span></h2><p class="lead">Primero identificamos qué hay y dónde. Después elegimos el método, para usar sólo lo necesario. En hogares, comercios, bodegas, escuelas, sector salud e industria de alimentos.</p></div>
+      <div class="tarjetas de-3 deslizable">
         <article class="tarjeta ap" style="--i:0"><span class="num">01</span><h3>Cucarachas y hormigas</h3><p>Aspersión, gel y cebos específicos para cada especie.</p></article>
         <article class="tarjeta ap" style="--i:1"><span class="num">02</span><h3>Ratas y ratones</h3><p>Control interior y exterior con puntos de monitoreo permanentes.</p></article>
         <article class="tarjeta ap" style="--i:2"><span class="num">03</span><h3>Mosquitos y moscas</h3><p>Nebulización y trampas de luz UV en los puntos críticos.</p></article>
@@ -374,6 +388,7 @@ input:focus, textarea:focus{outline:none; border-color:var(--azul); background:#
         <article class="tarjeta ap" style="--i:1"><span class="num">05</span><h3>Fauna silvestre</h3><p>Reubicación segura, sin dañar al animal ni a tu propiedad.</p></article>
         <article class="tarjeta ap" style="--i:2"><span class="num">06</span><h3>Palomas</h3><p>Control biológico con aves rapaces, sin químicos ni daño a la estructura.</p></article>
       </div>
+      <p class="pista-desliza" aria-hidden="true"><svg class="i"><use href="#i-arrow-right"/></svg>Desliza para ver más</p>
     </div>
   </section>
 
@@ -381,31 +396,17 @@ input:focus, textarea:focus{outline:none; border-color:var(--azul); background:#
     <div class="env">
       <div class="cabecera ap"><span class="pildora">Nuestro proceso</span><h2>Así resolvemos tu <span class="resalta">problema de plagas.</span></h2></div>
       <div class="linea-pasos" aria-hidden="true"><i id="llenado"></i></div>
-      <div class="tarjetas de-4 pasos">
+      <div class="tarjetas de-4 pasos deslizable">
         <article class="tarjeta ap" style="--i:0"><span class="num">01</span><h3>Diagnóstico</h3><p>Evaluamos el tipo y el nivel de la plaga en tu propiedad.</p></article>
         <article class="tarjeta ap" style="--i:1"><span class="num">02</span><h3>Plan de acción</h3><p>Elegimos el método adecuado para tu caso y te lo damos por escrito.</p></article>
         <article class="tarjeta ap" style="--i:2"><span class="num">03</span><h3>Aplicación profesional</h3><p>Técnicos capacitados aplican el tratamiento con seguridad.</p></article>
         <article class="tarjeta ap" style="--i:3"><span class="num">04</span><h3>Seguimiento y garantía</h3><p>Revisamos el resultado y damos soporte continuo.</p></article>
       </div>
+      <p class="pista-desliza" aria-hidden="true"><svg class="i"><use href="#i-arrow-right"/></svg>Desliza para ver más</p>
     </div>
   </section>
 
-  <section class="amarillo" id="sectores">
-    <div class="env">
-      <div class="cabecera ap"><span class="pildora">Sectores que atendemos</span><h2>Expertos en control de plagas para…</h2></div>
-      <div class="sectores">
-        <article class="sector ap" style="--i:0"><svg class="i"><use href="#i-house"/></svg><h3>Hogares y residencias</h3><p>Con indicaciones para niños y mascotas.</p></article>
-        <article class="sector ap" style="--i:1"><svg class="i"><use href="#i-store"/></svg><h3>Comercios y plazas</h3><p>En el horario que no detenga tu negocio.</p></article>
-        <article class="sector ap" style="--i:2"><svg class="i"><use href="#i-warehouse"/></svg><h3>Industria y bodegas</h3><p>Monitoreo permanente con puntos de control.</p></article>
-        <article class="sector ap" style="--i:0"><svg class="i"><use href="#i-hospital"/></svg><h3>Sector salud</h3><p>Protocolos que respetan la atención.</p></article>
-        <article class="sector ap" style="--i:1"><svg class="i"><use href="#i-school"/></svg><h3>Escuelas y universidades</h3><p>Fuera de clases o en vacaciones.</p></article>
-        <article class="sector ap" style="--i:2"><svg class="i"><use href="#i-factory"/></svg><h3>Industria de alimentos</h3><p>Programa por contrato, listo para auditoría.</p></article>
-      </div>
-      <div class="acciones ap"><a class="btn btn-1" href="#industria">Industria de alimentos <svg class="i"><use href="#i-arrow-right"/></svg></a></div>
-    </div>
-  </section>
-
-  <section class="oscuro industria" id="industria">
+    <section class="oscuro industria" id="industria">
     <div class="env dos">
       <div>
         <span class="pildora ap">Industria de alimentos</span>
@@ -510,7 +511,7 @@ input:focus, textarea:focus{outline:none; border-color:var(--azul); background:#
 <footer class="pie">
   <div class="env">
     <div><span class="marca-pie"><img src="img/logo.webp" alt="Urban Pest Control" width="1120" height="240"></span><div>Control profesional de plagas en Querétaro.</div></div>
-    <div><h4>Enlaces rápidos</h4><nav aria-label="Pie"><a href="#servicios">Servicios</a><a href="#industria">Industria de alimentos</a><a href="#clientes">Clientes</a><a href="#contacto">Contacto</a><a href="aviso-privacidad.html">Aviso de privacidad</a></nav></div>
+    <div><h4>Enlaces rápidos</h4><nav aria-label="Pie"><a href="#servicios">Plagas</a><a href="#industria">Industria de alimentos</a><a href="#clientes">Clientes</a><a href="#contacto">Contacto</a><a href="aviso-privacidad.html">Aviso de privacidad</a></nav></div>
     <div><h4>Contacto</h4><nav aria-label="Contacto"><a href="tel:+524421394023">442 139 4023</a><a href="mailto:direccion@urbanpest.mx">direccion@urbanpest.mx</a><a href="https://wa.me/5214421394023" target="_blank" rel="noopener">WhatsApp</a></nav></div>
     <p class="creditos">© 2026 Urban Pest Control. Todos los derechos reservados. Íconos: Lucide. Página por Grupo Mazi.</p>
   </div>

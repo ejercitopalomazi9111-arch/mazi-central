@@ -298,20 +298,46 @@ input:focus, textarea:focus{outline:none; border-color:var(--azul); background:#
 .marca-agua{position:relative; isolation:isolate; overflow:hidden}
 .marca-agua::before{content:""; position:absolute; z-index:-1; width:min(560px, 90vw); aspect-ratio:1; right:-12%; bottom:-14%; background:url(img/sello.png) center / contain no-repeat; opacity:.05; filter:grayscale(1); transform:rotate(-12deg)}
 
+
+/* ══ en el teléfono: filas que se deslizan de lado en vez de tarjetas apiladas (Carlos, 12 nov: «sobrecargada») ══ */
+@media (max-width: 619px){
+  :root{--aire:84px}
+  .deslizable{display:grid; grid-auto-flow:column; grid-auto-columns:80%; grid-template-columns:none; gap:14px; overflow-x:auto; scroll-snap-type:x mandatory; margin:0 calc(var(--gut) * -1); padding:6px var(--gut) 26px; scrollbar-width:none; overscroll-behavior-x:contain}
+  .deslizable::-webkit-scrollbar{display:none}
+  .deslizable .tarjeta{scroll-snap-align:start; padding:26px 22px 28px}
+  .deslizable .tarjeta:hover{transform:none}
+  .tarjeta .num{font-size:32px; margin-bottom:16px}
+  .cabecera{margin-bottom:36px}
+  .respaldo{margin-top:36px}
+  .portada{padding-top:40px}
+}
+.pista-desliza{display:none; align-items:center; gap:8px; font-size:13px; color:var(--suave); margin:-8px 0 0}
+.pista-desliza svg{width:16px; height:16px}
+.oscuro .pista-desliza{color:#BFCBDD}
+@media (max-width: 619px){ .pista-desliza{display:flex} }
+
+
+@media (max-width: 619px){
+  .portada .fondo img{opacity:.38}
+  .contacto-rejilla .lado{display:none}
+  .pie .env > div:nth-child(2){display:none}
+  .pie{padding:52px 0 30px}
+}
+
 /* ══ aparecer al bajar: todo está en la página desde el principio; si bajas rápido, entra de inmediato ══ */
 .js .ap{opacity:0; transform:translate3d(0, 24px, 0); transition:opacity var(--dur) var(--curva), transform var(--dur) var(--curva); transition-delay:calc(var(--i, 0) * 80ms * var(--escalon, 1))}
 .js .ap.visto{opacity:1; transform:none}
 </style>
 </head>
 <body>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol><symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol><symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></symbol><symbol id="i-badge-check" viewBox="0 0 24 24"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m16 9-5.5 5.5L8 12"/></symbol><symbol id="i-building" viewBox="0 0 24 24"><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M12 6h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M16 6h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/><path d="M8 6h.01"/><path d="M9 22v-3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/><rect x="4" y="2" width="16" height="20" rx="2"/></symbol><symbol id="i-calendar-check" viewBox="0 0 24 24"><path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="m9 15 2 2 4-4"/></symbol><symbol id="i-factory" viewBox="0 0 24 24"><path d="M12 16h.01"/><path d="M16 16h.01"/><path d="M3 19a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5a.5.5 0 0 0-.769-.422l-4.462 2.844A.5.5 0 0 1 15 10.5v-2a.5.5 0 0 0-.769-.422L9.77 10.922A.5.5 0 0 1 9 10.5V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2z"/><path d="M8 16h.01"/></symbol><symbol id="i-file-text" viewBox="0 0 24 24"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></symbol><symbol id="i-hospital" viewBox="0 0 24 24"><path d="M12 7v4"/><path d="M14 21v-3a2 2 0 0 0-4 0v3"/><path d="M14 9h-4"/><path d="M18 11h2a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h2"/><path d="M18 21V5a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16"/></symbol><symbol id="i-house" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol><symbol id="i-leaf" viewBox="0 0 24 24"><path d="M11 20a10 10 0 0010-10 25.9 25.9 0 00-1.04-7.281 1 1 0 00-1.755-.325C15.833 5.5 13 5.5 9.8 6.1A7 7 0 0011 20"/><path d="M2 21a5 5 0 012.911-4.544C7.613 15.212 8.351 15.24 11 13"/></symbol><symbol id="i-mail" viewBox="0 0 24 24"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/></symbol><symbol id="i-map-pin" viewBox="0 0 24 24"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></symbol><symbol id="i-message-circle" viewBox="0 0 24 24"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/></symbol><symbol id="i-phone" viewBox="0 0 24 24"><path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"/></symbol><symbol id="i-school" viewBox="0 0 24 24"><path d="M14 21v-3a2 2 0 0 0-4 0v3"/><path d="M18 4.933V21"/><path d="m4 6 7.106-3.79a2 2 0 0 1 1.788 0L20 6"/><path d="m6 11-3.52 2.147a1 1 0 0 0-.48.854V19a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a1 1 0 0 0-.48-.853L18 11"/><path d="M6 4.933V21"/><circle cx="12" cy="9" r="2"/></symbol><symbol id="i-shield-check" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol><symbol id="i-star" viewBox="0 0 24 24"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></symbol><symbol id="i-store" viewBox="0 0 24 24"><path d="M15 21v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5"/><path d="M17.774 10.31a1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.451 0 1.12 1.12 0 0 0-1.548 0 2.5 2.5 0 0 1-3.452 0 1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.77-3.248l2.889-4.184A2 2 0 0 1 7 2h10a2 2 0 0 1 1.653.873l2.895 4.192a2.5 2.5 0 0 1-3.774 3.244"/><path d="M4 10.95V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8.05"/></symbol><symbol id="i-warehouse" viewBox="0 0 24 24"><path d="M18 21V10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1v11"/><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 1.132-1.803l7.95-3.974a2 2 0 0 1 1.837 0l7.948 3.974A2 2 0 0 1 22 8z"/><path d="M6 13h12"/><path d="M6 17h12"/></symbol></svg>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol><symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol><symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></symbol><symbol id="i-badge-check" viewBox="0 0 24 24"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m16 9-5.5 5.5L8 12"/></symbol><symbol id="i-building" viewBox="0 0 24 24"><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M12 6h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M16 6h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/><path d="M8 6h.01"/><path d="M9 22v-3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/><rect x="4" y="2" width="16" height="20" rx="2"/></symbol><symbol id="i-calendar-check" viewBox="0 0 24 24"><path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="m9 15 2 2 4-4"/></symbol><symbol id="i-file-text" viewBox="0 0 24 24"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></symbol><symbol id="i-leaf" viewBox="0 0 24 24"><path d="M11 20a10 10 0 0010-10 25.9 25.9 0 00-1.04-7.281 1 1 0 00-1.755-.325C15.833 5.5 13 5.5 9.8 6.1A7 7 0 0011 20"/><path d="M2 21a5 5 0 012.911-4.544C7.613 15.212 8.351 15.24 11 13"/></symbol><symbol id="i-mail" viewBox="0 0 24 24"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/></symbol><symbol id="i-map-pin" viewBox="0 0 24 24"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></symbol><symbol id="i-message-circle" viewBox="0 0 24 24"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/></symbol><symbol id="i-phone" viewBox="0 0 24 24"><path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"/></symbol><symbol id="i-shield-check" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol><symbol id="i-star" viewBox="0 0 24 24"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></symbol></svg>
 <a class="oculto" href="#contenido">Saltar al contenido</a>
 
 <header class="cabeza" id="cabeza">
   <div class="env">
     <a class="logo" href="#inicio" aria-label="Urban Pest Control, inicio"><span class="logo-capas" id="logoCapas" aria-hidden="true"><img alt="" src="marca/globo.webp" data-c="globo" style="left:-8.1383%;top:0.0000%;width:40.8512%;height:147.7612%"><img alt="" src="marca/sol.webp" data-c="sol" style="left:-8.1383%;top:0.0000%;width:40.8512%;height:147.7612%"><img alt="" src="marca/personita.webp" data-c="personita" style="left:-8.1383%;top:0.0000%;width:40.8512%;height:147.7612%"><img alt="" src="marca/chorro.webp" data-c="chorro" style="left:-8.1383%;top:0.0000%;width:40.8512%;height:147.7612%"><img alt="" src="marca/urban.webp" data-c="urban" style="left:25.0693%;top:-196.8399%;width:76.8828%;height:278.0899%"><img alt="" src="marca/pest.webp" data-c="pest" style="left:25.0693%;top:-196.8399%;width:76.8828%;height:278.0899%"><img alt="" src="marca/control.webp" data-c="control" style="left:25.0693%;top:-196.8399%;width:76.8828%;height:278.0899%"></span></a>
     <nav class="menu" aria-label="Secciones">
-      <a href="#servicios">Servicios</a>
+      <a href="#servicios">Plagas</a>
       <a href="#industria">Industria</a>
       <a href="#clientes">Clientes</a>
       <a href="#contacto">Contacto</a>
@@ -351,22 +377,10 @@ input:focus, textarea:focus{outline:none; border-color:var(--azul); background:#
     </div>
   </section>
 
-  <section class="gris" id="por-que">
+    <section id="servicios">
     <div class="env">
-      <div class="cabecera ap"><span class="pildora">Por qué elegirnos</span><h2>Más que fumigación: <span class="resalta">respaldo profesional.</span></h2></div>
-      <div class="tarjetas de-4">
-        <article class="tarjeta ap" style="--i:0"><span class="icono"><svg class="i"><use href="#i-badge-check"/></svg></span><h3>Certificaciones oficiales</h3><p>Autorización sanitaria y registro REPSE vigentes, listos para cualquier auditoría.</p></article>
-        <article class="tarjeta ap" style="--i:1"><span class="icono"><svg class="i"><use href="#i-leaf"/></svg></span><h3>Productos seguros</h3><p>Baja toxicidad, seguros para tu familia, tu equipo y tus clientes.</p></article>
-        <article class="tarjeta ap" style="--i:2"><span class="icono"><svg class="i"><use href="#i-shield-check"/></svg></span><h3>Garantía real</h3><p>Si la plaga vuelve, damos seguimiento sin costo hasta resolverlo.</p></article>
-        <article class="tarjeta ap" style="--i:3"><span class="icono"><svg class="i"><use href="#i-calendar-check"/></svg></span><h3>Más de 10 años</h3><p>Atendiendo hogares, comercios e industria en Querétaro.</p></article>
-      </div>
-    </div>
-  </section>
-
-  <section id="servicios">
-    <div class="env">
-      <div class="cabecera ap"><span class="pildora">Plagas que controlamos</span><h2>Un método para <span class="resalta">cada plaga.</span></h2><p class="lead">Primero identificamos qué hay y dónde. Después elegimos el método, para usar sólo lo necesario.</p></div>
-      <div class="tarjetas de-3">
+      <div class="cabecera ap"><span class="pildora">Plagas que controlamos</span><h2>Un método para <span class="resalta">cada plaga.</span></h2><p class="lead">Primero identificamos qué hay y dónde. Después elegimos el método, para usar sólo lo necesario. En hogares, comercios, bodegas, escuelas, sector salud e industria de alimentos.</p></div>
+      <div class="tarjetas de-3 deslizable">
         <article class="tarjeta ap" style="--i:0"><span class="num">01</span><h3>Cucarachas y hormigas</h3><p>Aspersión, gel y cebos específicos para cada especie.</p></article>
         <article class="tarjeta ap" style="--i:1"><span class="num">02</span><h3>Ratas y ratones</h3><p>Control interior y exterior con puntos de monitoreo permanentes.</p></article>
         <article class="tarjeta ap" style="--i:2"><span class="num">03</span><h3>Mosquitos y moscas</h3><p>Nebulización y trampas de luz UV en los puntos críticos.</p></article>
@@ -374,6 +388,7 @@ input:focus, textarea:focus{outline:none; border-color:var(--azul); background:#
         <article class="tarjeta ap" style="--i:1"><span class="num">05</span><h3>Fauna silvestre</h3><p>Reubicación segura, sin dañar al animal ni a tu propiedad.</p></article>
         <article class="tarjeta ap" style="--i:2"><span class="num">06</span><h3>Palomas</h3><p>Control biológico con aves rapaces, sin químicos ni daño a la estructura.</p></article>
       </div>
+      <p class="pista-desliza" aria-hidden="true"><svg class="i"><use href="#i-arrow-right"/></svg>Desliza para ver más</p>
     </div>
   </section>
 
@@ -381,31 +396,17 @@ input:focus, textarea:focus{outline:none; border-color:var(--azul); background:#
     <div class="env">
       <div class="cabecera ap"><span class="pildora">Nuestro proceso</span><h2>Así resolvemos tu <span class="resalta">problema de plagas.</span></h2></div>
       <div class="linea-pasos" aria-hidden="true"><i id="llenado"></i></div>
-      <div class="tarjetas de-4 pasos">
+      <div class="tarjetas de-4 pasos deslizable">
         <article class="tarjeta ap" style="--i:0"><span class="num">01</span><h3>Diagnóstico</h3><p>Evaluamos el tipo y el nivel de la plaga en tu propiedad.</p></article>
         <article class="tarjeta ap" style="--i:1"><span class="num">02</span><h3>Plan de acción</h3><p>Elegimos el método adecuado para tu caso y te lo damos por escrito.</p></article>
         <article class="tarjeta ap" style="--i:2"><span class="num">03</span><h3>Aplicación profesional</h3><p>Técnicos capacitados aplican el tratamiento con seguridad.</p></article>
         <article class="tarjeta ap" style="--i:3"><span class="num">04</span><h3>Seguimiento y garantía</h3><p>Revisamos el resultado y damos soporte continuo.</p></article>
       </div>
+      <p class="pista-desliza" aria-hidden="true"><svg class="i"><use href="#i-arrow-right"/></svg>Desliza para ver más</p>
     </div>
   </section>
 
-  <section class="amarillo" id="sectores">
-    <div class="env">
-      <div class="cabecera ap"><span class="pildora">Sectores que atendemos</span><h2>Expertos en control de plagas para…</h2></div>
-      <div class="sectores">
-        <article class="sector ap" style="--i:0"><svg class="i"><use href="#i-house"/></svg><h3>Hogares y residencias</h3><p>Con indicaciones para niños y mascotas.</p></article>
-        <article class="sector ap" style="--i:1"><svg class="i"><use href="#i-store"/></svg><h3>Comercios y plazas</h3><p>En el horario que no detenga tu negocio.</p></article>
-        <article class="sector ap" style="--i:2"><svg class="i"><use href="#i-warehouse"/></svg><h3>Industria y bodegas</h3><p>Monitoreo permanente con puntos de control.</p></article>
-        <article class="sector ap" style="--i:0"><svg class="i"><use href="#i-hospital"/></svg><h3>Sector salud</h3><p>Protocolos que respetan la atención.</p></article>
-        <article class="sector ap" style="--i:1"><svg class="i"><use href="#i-school"/></svg><h3>Escuelas y universidades</h3><p>Fuera de clases o en vacaciones.</p></article>
-        <article class="sector ap" style="--i:2"><svg class="i"><use href="#i-factory"/></svg><h3>Industria de alimentos</h3><p>Programa por contrato, listo para auditoría.</p></article>
-      </div>
-      <div class="acciones ap"><a class="btn btn-1" href="#industria">Industria de alimentos <svg class="i"><use href="#i-arrow-right"/></svg></a></div>
-    </div>
-  </section>
-
-  <section class="oscuro industria" id="industria">
+    <section class="oscuro industria" id="industria">
     <div class="env dos">
       <div>
         <span class="pildora ap">Industria de alimentos</span>
@@ -510,7 +511,7 @@ input:focus, textarea:focus{outline:none; border-color:var(--azul); background:#
 <footer class="pie">
   <div class="env">
     <div><span class="marca-pie"><img src="img/logo.webp" alt="Urban Pest Control" width="1120" height="240"></span><div>Control profesional de plagas en Querétaro.</div></div>
-    <div><h4>Enlaces rápidos</h4><nav aria-label="Pie"><a href="#servicios">Servicios</a><a href="#industria">Industria de alimentos</a><a href="#clientes">Clientes</a><a href="#contacto">Contacto</a><a href="aviso-privacidad.html">Aviso de privacidad</a></nav></div>
+    <div><h4>Enlaces rápidos</h4><nav aria-label="Pie"><a href="#servicios">Plagas</a><a href="#industria">Industria de alimentos</a><a href="#clientes">Clientes</a><a href="#contacto">Contacto</a><a href="aviso-privacidad.html">Aviso de privacidad</a></nav></div>
     <div><h4>Contacto</h4><nav aria-label="Contacto"><a href="tel:+524421394023">442 139 4023</a><a href="mailto:direccion@urbanpest.mx">direccion@urbanpest.mx</a><a href="https://wa.me/5214421394023" target="_blank" rel="noopener">WhatsApp</a></nav></div>
     <p class="creditos">© 2026 Urban Pest Control. Todos los derechos reservados. Íconos: Lucide. Página por Grupo Mazi.</p>
   </div>
