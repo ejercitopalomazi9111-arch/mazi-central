@@ -19,6 +19,7 @@ import { guardarCita, estadoCita, seguimientoHecho, listarCitas, guardarInsumo, 
 import { cotizar } from './cotizador.js';
 import { estimarM2, MEDIDAS } from './medidor.js';
 import { crearPlanta, listarPlantas, ponerEstaciones, ponerDocumentos, registrarServicio, carpetaPublica, plantaEjemplo, quitarServicio } from './carpeta.js';
+import { juntarCasos } from './reflejo.js';
 import CASOS_FABRICA from '../../bot/casos.json' with { type: 'json' };
 
 /* Para PROBAR mientras llega el Excel: precios DE EJEMPLO, sólo en el canal «prueba» y
@@ -105,8 +106,12 @@ export class Despacho {
     const enviarOPrueba = (e, canal, chat, texto) => canal === 'prueba' ? { bien: true } : enviar(e, canal, chat, texto);
     this.envBase = env;
     this.of = new Oficina({ almacen: this.almacen, env, enviar: enviarOPrueba, pensar });
-    /* las respuestas ya hechas de fábrica, si todavía no hay otras guardadas */
-    ctx.blockConcurrencyWhile(async () => { if(!(await s.get('casos'))) await s.put('casos', CASOS_FABRICA); });
+    /* las respuestas ya hechas de fábrica: la primera vez todas; después, sólo las nuevas (sin pisar lo del dueño) */
+    ctx.blockConcurrencyWhile(async () => {
+      const r = juntarCasos(await s.get('casos'), await s.get('casosFabrica'), CASOS_FABRICA);
+      if(r.nuevos !== 0) await s.put('casos', r.casos);
+      await s.put('casosFabrica', r.ofrecidos);
+    });
   }
 
   async fetch(req){

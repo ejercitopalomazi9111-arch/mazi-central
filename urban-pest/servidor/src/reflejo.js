@@ -28,6 +28,8 @@ export function reflejo(texto, casos, umbral = 0.55){
   if(!f.size) return null;
   let mejor = null;
   for(const c of casos){
+    /* «reflejo: false» = sólo es conocimiento para la IA (un saludo o una plaga chocarían con la cotización) */
+    if(c.reflejo === false) continue;
     let p = 0;
     for(const fr of c.frases || []){
       const nf = normalizar(fr);
@@ -41,6 +43,16 @@ export function reflejo(texto, casos, umbral = 0.55){
     if(!mejor || p > mejor.confianza) mejor = { caso: c, confianza: +p.toFixed(2) };
   }
   return mejor && mejor.confianza >= umbral ? mejor : null;
+}
+
+/** Los casos de fábrica que llegan después (una versión nueva del bot) se SUMAN a los guardados, sin pisar los que el
+    dueño editó y sin revivir los que borró: `ofrecidos` son los ids de fábrica que ya se le dieron alguna vez (si no
+    hay registro, cuentan los que tiene guardados). Regresa la lista nueva y los ids a recordar. */
+export function juntarCasos(guardados, ofrecidos, fabrica){
+  if(!Array.isArray(guardados)) return { casos: fabrica, ofrecidos: fabrica.map(c => c.id) };
+  const ya = new Set(ofrecidos || guardados.map(c => c.id)), tengo = new Set(guardados.map(c => c.id));
+  const nuevos = fabrica.filter(c => !ya.has(c.id) && !tengo.has(c.id));
+  return { casos: nuevos.length ? [...guardados, ...nuevos] : guardados, ofrecidos: [...new Set([...ya, ...fabrica.map(c => c.id)])], nuevos: nuevos.length };
 }
 
 /** Llena {variables} con lo que se sabe; lo que falta se queda fuera de la frase. */

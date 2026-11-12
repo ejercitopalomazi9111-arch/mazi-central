@@ -2,7 +2,7 @@
  *   node urban-pest/servidor/pruebas.mjs
  * La IA y Meta van de mentiras; el almacén es un Map. */
 import { readFileSync } from 'node:fs';
-import { reflejo, llenar } from './src/reflejo.js';
+import { reflejo, llenar, juntarCasos } from './src/reflejo.js';
 import { cotizar, aPlaga } from './src/cotizador.js';
 import { firmaValida, leerAviso } from './src/meta.js';
 import { Oficina, ponerPrecio } from './src/oficina.js';
@@ -20,6 +20,20 @@ ok('las preguntas de su página contestan con SU texto (garantía, mascotas, cob
 ok('palomas en una bodega es de palomas, no de empresa; un tlacuache es fauna', reflejo('tengo palomas en el techo de mi bodega', casos)?.caso.id === 'palomas' && reflejo('se metió un tlacuache', casos)?.caso.id === 'fauna' && reflejo('fumigan bodegas?', casos)?.caso.id === 'empresa');
 ok('lo que no conoce lo deja pasar al cerebro', reflejo('mi perro se comió una cucaracha, ¿le pasa algo?', casos) === null);
 ok('un saludo solo no dispara nada', reflejo('hola buenas tardes', casos) === null);
+/* los casos que pasaron del borrador de Luna (12 nov) */
+ok('los nuevos contestan solos: licencia, años, salir de la casa, queja, vacantes, cambiar la cita',
+  ['¿tienen licencia sanitaria?', 'cuantos años tienen', '¿cuanto tiempo hay que salir de la casa?', 'quiero poner una queja', 'tienen vacantes?', 'quiero cambiar mi cita'].map(x => reflejo(x, casos)?.caso.id).join() === 'licencia,experiencia,salir-casa,queja,empleo,reagendar');
+const SOLO_IA = new Set(casos.filter(c => c.reflejo === false).map(c => c.id));
+ok('los de sólo-IA nunca contestan por reflejo (un saludo con datos no le gana a la cotización)',
+  ['hola, tengo cucarachas en una casa de 100 m2 en juriquilla, cuanto cuesta?', 'hola quisiera informes', 'como eliminan las cucarachas', 'muchas gracias', 'aceptan tarjeta?', 'fumigan chinches o termitas?']
+    .every(x => !SOLO_IA.has(reflejo(x, casos)?.caso.id)) && SOLO_IA.size >= 10);
+ok('ningún caso nuevo afirma algo con {huecos} sin llenar', casos.every(c => !/\{\w+\}/.test(c.respuesta)));
+{ const F = [{ id: 'a' }, { id: 'b' }, { id: 'c' }];
+  const r0 = juntarCasos(undefined, undefined, F);
+  const r1 = juntarCasos([{ id: 'a', respuesta: 'la del dueño' }], ['a', 'b'], F);
+  const r2 = juntarCasos([{ id: 'a' }, { id: 'b' }], undefined, F);
+  ok('juntar: la primera vez van todos; después se suman sólo los nuevos, sin revivir lo borrado ni pisar lo editado',
+    r0.casos.length === 3 && r1.casos.map(c => c.id).join() === 'a,c' && r1.casos[0].respuesta === 'la del dueño' && r2.casos.map(c => c.id).join() === 'a,b,c' && juntarCasos(r1.casos, r1.ofrecidos, F).nuevos === 0); }
 ok('llenar quita lo que falta', llenar('Son {m2} m² en {zona}', { m2: 80 }) === 'Son 80 m² en');
 
 console.log('cotizador');
