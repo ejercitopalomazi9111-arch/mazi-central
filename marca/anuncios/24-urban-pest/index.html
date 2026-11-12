@@ -291,40 +291,49 @@ const DUENO = 'Hola Brenda, soy de Urban Pest. Mañana a las 10 va el técnico; 
 const viejo = (T) => T < 3 ? 2 : T < 14.6 ? T - 1 : T < 23.6 ? 13.6 + (T - 14.6) * 6.4 / 9 : T < 29 ? T - 3.6 : T < 37 ? 25.29 : T - 11.6;
 const nuevo = (v) => v < 13.6 ? v + 1 : v < 20 ? 14.6 + (v - 13.6) * 9 / 6.4 : v < 25.4 ? v + 3.6 : v + 11.6;
 
-/* LAS FRANJAS: anillos de colores que giran alrededor del logo, inclinados; la mitad de abajo de cada uno se dibuja
-   ENCIMA del logo y la de arriba DEBAJO, así se ve que lo envuelven. Sin mover la cámara: se mueven ellos. */
+/* LAS CINTAS (v3, Carlos 12 nov): cada cinta es del color EXACTO de una pieza del logo y entra girando desde fuera
+   de la pantalla, todas inclinadas igual y hacia el mismo lado (nada de anillos cruzados en X). Se va cerrando sobre
+   SU pieza y se mete en ella: las amarillas en el sol de abajo, las azules en el globo de arriba y las blancas en la
+   persona y el chorro. La pieza se llena desde su centro conforme le llegan sus cintas, con un brillo casi nulo.
+   La mitad de abajo de cada vuelta va ENCIMA del logo y la de arriba DEBAJO, para que se vea que lo envuelven. */
 const atras = $('#atras').getContext('2d'), frente = $('#frente').getContext('2d');
-const COLORES = ['#F29923', '#F7E93F', '#165D9B', '#F29923', '#E9EEF5', '#F7E93F', '#2B7BC4', '#F29923', '#F7E93F', '#165D9B', '#FFB347'];
-const ANILLOS = COLORES.map((c, i) => ({ c, rx: 300 + (i % 6) * 34, inc: (-28 + (i * 37) % 56) * Math.PI / 180, ancho: 12 + (i * 7) % 22,
-  largo: 1.1 + ((i * 13) % 10) / 9, fase: i * 2.1, vel: (i % 2 ? -1 : 1) * (3.2 + (i % 4) * .7), aplana: .26 + (i % 3) * .05 }));
-function franjas(T, { cx, cy, esc, alfa, abre = 1 }){
+/* centro de cada pieza en la capa de 512 × 396 (medido de urban-pest/web/marca/*.webp) */
+const PIEZA = { sol: [288, 204], globo: [239, 83], personita: [193, 158], chorro: [344, 95] };
+const CINTAS = [
+  ['sol', '#F29B23', 1.05], ['sol', '#FDEF40', 1.18], ['sol', '#F8D435', 1.3], ['sol', '#F29B23', 1.42], ['sol', '#FDEF40', 1.55],
+  ['globo', '#1876BA', 1.5], ['globo', '#155D97', 1.63], ['globo', '#1772B2', 1.76], ['globo', '#135388', 1.9],
+  ['personita', '#FFFFFF', 2.05], ['personita', '#E5E5E6', 2.18], ['chorro', '#FFFFFF', 2.32]]
+  .map(([pieza, c, llega], i) => ({ pieza, c, llega, sale: .05 + i * .06, r0: 640 + (i % 4) * 60, fase: i * 1.7, vel: 2.4 + (i % 3) * .35, ancho: 30 - (i % 3) * 5, largo: 2.2 + (i % 2) * .5 }));
+const INCLINA = -12 * Math.PI / 180, APLANA = .3;
+/* a dónde cae una pieza en la pantalla con el logo puesto en (cx, cy) con el símbolo de `ancho` px */
+const enPantalla = (pieza, cx, cy, ancho) => { const k = ancho / SIM.w, [x, y] = PIEZA[pieza]; return [cx + (x - SIM.cx) * k, cy + (y - SIM.cy) * k]; };
+function cintas(T, cx, cy, ancho){
   for(const g of [atras, frente]){ g.clearRect(0, 0, 1080, 1920); g.lineCap = 'round'; }
-  if(alfa <= 0) return;
-  ANILLOS.forEach((r, i) => {
-    const rx = r.rx * esc, ry = rx * r.aplana, ini = r.fase + r.vel * T, L = r.largo * abre, n = 40;
-    for(let k = 0; k < n; k++){
-      const a0 = ini + L * k / n, a1 = ini + L * (k + 1) / n, cos = Math.cos(r.inc), sin = Math.sin(r.inc);
-      const P = (a) => { const x = rx * Math.cos(a), y = ry * Math.sin(a); return [cx + x * cos - y * sin, cy + x * sin + y * cos]; };
-      const g = Math.sin((a0 + a1) / 2) > 0 ? frente : atras;           /* abajo del anillo = hacia el que mira */
-      const [x0, y0] = P(a0), [x1, y1] = P(a1);
-      g.globalAlpha = alfa * Math.min(1, k / 4, (n - k) / 4); g.strokeStyle = r.c; g.lineWidth = r.ancho * esc;
-      g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
+  const cos = Math.cos(INCLINA), sin = Math.sin(INCLINA);
+  for(const c of CINTAS){
+    const u = tramo(T, c.sale, c.llega); if(u <= 0 || u >= 1) continue;
+    const e = entra(u), [px, py] = enPantalla(c.pieza, cx, cy, ancho);
+    const rx = c.r0 * (1 - e), ry = rx * APLANA, ini = c.fase + c.vel * T * 2, L = c.largo * (1 - e * .7), n = 48;
+    const alfa = Math.min(1, u * 6);
+    /* un solo trazo por tramo continuo (delante o detrás): con trazos sueltos y transparencia, cada unión se
+       pintaba dos veces y la cinta salía punteada */
+    const P = (a) => { const x = rx * Math.cos(a), y = ry * Math.sin(a); return [px + x * cos - y * sin, py + x * sin + y * cos]; };
+    let g = null;
+    for(let k = 0; k <= n; k++){
+      const a = ini + L * k / n, cual = Math.sin(a) > 0 ? frente : atras, [x, y] = P(a);
+      if(cual !== g){ if(g){ g.lineTo(x, y); g.stroke(); } g = cual; g.globalAlpha = alfa; g.strokeStyle = c.c; g.lineWidth = c.ancho * (.35 + .65 * (1 - e)); g.beginPath(); g.moveTo(x, y); }
+      else g.lineTo(x, y);
     }
-  });
+    g.stroke();
+  }
   for(const g of [atras, frente]) g.globalAlpha = 1;
 }
-/* las rectas que llegan corriendo desde las orillas antes de volverse anillos */
-const RECTAS = Array.from({ length: 16 }, (_, i) => ({ c: COLORES[i % COLORES.length], lado: i % 2 ? 1 : -1, y: 520 + (i * 53) % 720, ancho: 14 + (i * 11) % 30, largo: 260 + (i * 97) % 380, d: (i % 5) * .07 }));
-function rectas(T){
-  const g = atras; g.lineCap = 'round';
-  for(const r of RECTAS){
-    const u = sale(tramo(T, r.d, r.d + .75)), o = 1 - tramo(T, .55 + r.d * .5, .95 + r.d * .5);
-    if(o <= 0) continue;
-    const xCab = mez(r.lado < 0 ? -200 : 1280, 540, u), yCab = mez(r.y, 880, u * .85);
-    g.globalAlpha = o; g.strokeStyle = r.c; g.lineWidth = r.ancho;
-    g.beginPath(); g.moveTo(xCab - r.lado * -r.largo * (1 - u * .6), yCab - (880 - r.y) * .25 * (1 - u)); g.lineTo(xCab, yCab); g.stroke();
-  }
-  g.globalAlpha = 1;
+/* cuánto se ha llenado una pieza: sube con cada cinta suya que llega; y el brillo, apenas, al llegar */
+function llenado(pieza, T){
+  const suyas = CINTAS.filter(c => c.pieza === pieza);
+  let lleno = 0, brillo = 0;
+  suyas.forEach((c) => { lleno += sale(tramo(T, c.llega - .12, c.llega + .25)) / suyas.length; brillo = Math.max(brillo, Math.exp(-Math.pow((T - c.llega) / .18, 2))); });
+  return { lleno, brillo };
 }
 
 const pintarViejo = (t, T) => {
@@ -449,20 +458,22 @@ window.pintar = (T) => {
   /* 0 · LA ENTRADA (0–3 s): rectas que llegan corriendo, se vuelven anillos que envuelven el logo, y el logo se arma
      por partes: primero el sol de abajo, luego el globo de arriba, la persona y el chorro. Remata con un destello. */
   if(T < 3.2){
-    const k = SIM.w; ponLogo(540, 880, 560, 1);
-    franjas(T, { cx: 540, cy: 880, esc: mez(1.5, 1, sale(tramo(T, .5, 1.1))) * mez(1, .05, entra(tramo(T, 2.45, 2.85))), alfa: tramo(T, .45, .75) * (1 - tramo(T, 2.7, 2.9)), abre: sale(tramo(T, .5, 1.3)) });
-    rectas(T);
-    const sol = sale(tramo(T, .9, 1.6)), globo = sale(tramo(T, 1.35, 2.05));
-    img.sol.style.opacity = sol > 0 ? 1 : 0; img.sol.style.transform = 'none'; img.sol.style.clipPath = `inset(0 ${100 - 100 * sol}% 0 0)`;
-    img.globo.style.transform = `scale(${mez(.92, 1, globo)})`; img.globo.style.clipPath = `inset(${100 - 100 * globo}% 0 0 0)`;
-    const per = sale(tramo(T, 1.9, 2.4)); img.personita.style.opacity = per; img.personita.style.transform = `translateY(${(1 - per) * -70}px)`;
-    img.chorro.style.clipPath = `inset(0 ${100 - 100 * sale(tramo(T, 2.2, 2.65))}% 0 0)`;
-    $('#destello').style.opacity = Math.sin(Math.PI * tramo(T, 2.6, 3.1)) * .9; $('#destello').style.transform = `scale(${mez(.3, 1.2, tramo(T, 2.6, 3.1))})`;
+    ponLogo(540, 880, 560, 1);
+    cintas(T, 540, 880, 560);
+    const BRILLO = { sol: '242,155,35', globo: '19,83,136', personita: '255,255,255', chorro: '255,255,255' };
+    for(const n of ['sol', 'globo', 'personita', 'chorro']){
+      const { lleno, brillo } = llenado(n, T), [x, y] = PIEZA[n];
+      img[n].style.opacity = lleno > 0 ? 1 : 0;
+      img[n].style.transform = `scale(${mez(.97, 1, lleno)})`; img[n].style.transformOrigin = `${x}px ${y}px`;
+      img[n].style.clipPath = lleno >= 1 ? 'none' : `circle(${lleno * 75}% at ${x}px ${y}px)`;
+      /* el brillo casi nulo: un halo de su mismo color y una pizca de luz, sólo cuando le llega una cinta */
+      img[n].style.filter = brillo > .02 ? `drop-shadow(0 0 ${(brillo * 9).toFixed(1)}px rgba(${BRILLO[n]},${(brillo * .35).toFixed(2)})) brightness(${(1 + brillo * .05).toFixed(3)})` : 'none';
+    }
+    $('#destello').style.opacity = 0;
   } else {
-    img.sol.style.clipPath = img.globo.style.clipPath = 'none'; $('#destello').style.opacity = 0;
-    /* el remate: los anillos regresan un instante cuando el logo se vuelve a armar al final */
-    const r0 = 46.3;
-    franjas(T, { cx: 540, cy: mez(880, 760, suave(tramo(T, 47.2, 47.9))), esc: mez(.1, 1.15, sale(tramo(T, r0, r0 + .7))), alfa: tramo(T, r0, r0 + .2) * (1 - tramo(T, r0 + 1.0, r0 + 1.6)), abre: 1 });
+    for(const n of ['sol', 'globo', 'personita', 'chorro']){ img[n].style.clipPath = 'none'; img[n].style.filter = 'none'; img[n].style.transformOrigin = ''; }
+    for(const g of [atras, frente]) g.clearRect(0, 0, 1080, 1920);
+    $('#destello').style.opacity = 0;
   }
 
   /* 7-bis · LO QUE VE EL DUEÑO (29–37 s, tiempo nuevo): la cotización le llega con su costo y su ganancia, un segundo
@@ -484,10 +495,9 @@ window.pintar = (T) => {
 window.VIDEO = { w: 1080, h: 1920, fps: 30, dur: 50.2,
   musica: { archivo: '/tmp/claude-0/mus/173.mp3', desde: 38, vol: .55, entrada: .4, fin: 2.4 },
   sonidos: [
-    ...Array.from({ length: 8 }, (_, i) => ['../../../herramientas/video/efectos/whoosh.wav', .05 + i * .09, .16]),
-    ['../../../herramientas/video/efectos/subida.wav', .6, .3],
-    ['../../../herramientas/video/efectos/toque.wav', .95, .35], ['../../../herramientas/video/efectos/toque.wav', 1.4, .35], ['../../../herramientas/video/efectos/toque.wav', 1.95, .35], ['../../../herramientas/video/efectos/toque.wav', 2.25, .35],
-    ['../../../herramientas/video/efectos/golpe.wav', 2.72, .55],
+    ['../../../herramientas/video/efectos/whoosh.wav', .05, .3], ['../../../herramientas/video/efectos/whoosh.wav', .55, .22],
+    ...CINTAS.map(c => ['../../../herramientas/video/efectos/toque.wav', c.llega, .16]),
+    ['../../../herramientas/video/efectos/golpe.wav', 2.45, .5],
     ...[[2.05, 'whoosh', .35], ...Array.from({ length: 9 }, (_, i) => [3.0 + i * .17, 'toque', .18]), [5.55, 'subida', .35], [6.75, 'whoosh', .35],
       ...FILAS.map((_, i) => [7.2 + i * .17, 'toque', .25]), [10.65, 'whoosh', .3], [20.9, 'ding', .35], [25.35, 'whoosh', .3], [26.3, 'toque', .35], [27.4, 'toque', .35],
       [29.9, 'toque', .35], [30.08, 'toque', .35], [30.26, 'toque', .35], [31.4, 'timbre', .4], [32.85, 'whoosh', .3], [33.55, 'whoosh', .3], [34.5, 'subida', .35], [35.55, 'golpe', .5]]
@@ -496,7 +506,7 @@ window.VIDEO = { w: 1080, h: 1920, fps: 30, dur: 50.2,
     ['../../../herramientas/video/efectos/ding.wav', 21.4, .5],
     ['../../../herramientas/video/efectos/whoosh.wav', 29.0, .3], ['../../../herramientas/video/efectos/timbre.wav', 29.35, .35], ['../../../herramientas/video/efectos/toque.wav', 31.3, .35],
     ['../../../herramientas/video/efectos/toque.wav', 32.75, .45], ['../../../herramientas/video/efectos/whoosh.wav', 33.05, .3],
-    ['../../../herramientas/video/efectos/subida.wav', 46.2, .3]] };
+    ] };
 window.pintar(0);
 })();
 </script>
