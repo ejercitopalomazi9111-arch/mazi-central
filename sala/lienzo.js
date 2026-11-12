@@ -742,7 +742,7 @@ const NOMBRES = ['Negro', 'Paulina', 'Sylcred', 'Luna', 'Godines'];
 const COLORES_CURSOR = ['#7E1735', '#AC27FF', '#1F5BD1', '#13805A', '#C2560A', '#5E2387', '#D9433A', '#0E8A9A'];
 export const MODOS_CURSORES = { uno: 1, varios: 4, monton: 16 };
 
-export function crearLienzo(vista, { modo = 'monton', maestro = 'Negro', alMoverCamara } = {}){
+export function crearLienzo(vista, { modo = 'monton', maestro = 'Negro', alMoverCamara, alClic, alTerminar } = {}){
   vista.classList.add('lienzo');
   vista.innerHTML = `<div class="mundo"><svg class="conectores" aria-hidden="true"></svg></div><div class="cursores" aria-hidden="true"></div>`;
   const mundo = vista.firstElementChild, conectores = mundo.firstElementChild, capaCur = vista.lastElementChild;
@@ -838,6 +838,7 @@ export function crearLienzo(vista, { modo = 'monton', maestro = 'Negro', alMover
     return aMundo(s[0], s[1]);
   }
   function clic(c){
+    alClic && alClic();
     const r = document.createElement('i'); r.className = 'clic'; r.style.borderColor = c.color;
     r.style.transform = `translate3d(${f1(cam.x + c.x * cam.s)}px, ${f1(cam.y + c.y * cam.s)}px, 0)`;
     capaCur.append(r); setTimeout(() => r.remove(), 340);
@@ -912,6 +913,7 @@ export function crearLienzo(vista, { modo = 'monton', maestro = 'Negro', alMover
     if(g !== gen) dibujarYa(p);
     /* los ayudantes se van por la orilla; el maestro se queda */
     despedir(g);
+    if(g === gen && alTerminar) alTerminar(p);
     return g === gen;
   }
   async function trabajador(c, cola, p, prisa, g){

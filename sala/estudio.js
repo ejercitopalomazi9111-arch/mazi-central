@@ -14,6 +14,9 @@
    Sin librerías. Un solo archivo de lógica; los íconos son de Lucide.
    ═════════════════════════════════════════════════════════════════════════ */
 import { ico } from './iconos-estudio.js';
+import { DIBUJOS } from './iconos-clase.js';
+import { sacarJSON } from './json-ia.js';
+import { sonar, encender as encenderSonidos } from './sonidos/sonidos.js';
 import { llave, ponerLlave, llamar, SERVIDOR, SALA } from '../presentaciones/ia.js';
 
 const $ = (s, d = document) => d.querySelector(s);
@@ -31,20 +34,24 @@ const hoyLocal = () => { const d = new Date(); return `${d.getFullYear()}-${Stri
 const diasHasta = (f) => f ? Math.round((Date.parse(f + 'T12:00:00') - Date.parse(hoyLocal() + 'T12:00:00')) / 864e5) : null;
 const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-export const VERSION_ESTUDIO = 'estudio-1 · 12 nov';
+export const VERSION_ESTUDIO = 'CARYMO 1.1 · 12 nov';
 
 /* los colores de las unidades: vino protagonista, morados de la casa, y el claro para la última */
 const COLOR_UNIDAD = ['#7E1735', '#5E2387', '#8E1F5C', '#7A2FBF', '#AC27FF'];
-const ICONO_NODO = { quiz: 'notebook-pen', tarjetas: 'layers', pizarra: 'presentation', simulacro: 'timer', examen: 'trophy' };
-const NOMBRE_NODO = { quiz: 'Lección y cuestionario', tarjetas: 'Tarjetas', pizarra: 'Clase en el pizarrón', simulacro: 'Simulacro', examen: 'Examen final' };
+const ICONO_NODO = { quiz: 'notebook-pen', tarjetas: 'layers', pizarra: 'presentation', panorama: 'graduation-cap', simulacro: 'timer', examen: 'trophy' };
+const NOMBRE_NODO = { quiz: 'Nivel: lección y cuestionario', tarjetas: 'Tarjetas', pizarra: 'Cátedra en el pizarrón', panorama: 'Panorama de la unidad', simulacro: 'Simulacro', examen: 'Examen final' };
+/* el tipo que se ve (un panorama es una clase en el pizarrón de toda la unidad) */
+const tipoVisto = (n) => n.tipo === 'pizarra' && n.alcance === 'unidad' ? 'panorama' : n.tipo;
 
 /* ══ ESTADO ═══════════════════════════════════════════════════════════════ */
 let planes = guarda.leer('est.planes', {});                 /* id → plan completo */
+let migrarAlArrancar = true;
 let actualId = guarda.leer('est.actual', null);
 let perfil = guarda.leer('est.perfil', { nombre: 'Tú', xp: 0, racha: 0, mejorRacha: 0, congeladas: 0, ultimoDia: '', horario: null, cuenta: '' });
 let ranking = guarda.leer('est.ranking', { semana: '', filas: [] });
 let cola = guarda.leer('est.cola', []);                     /* XP por mandar */
 let ajustes = guarda.leer('est.ajustes', { sonido: true, vibrar: true });
+encenderSonidos(ajustes.sonido !== false);
 let vista = 'plan';
 const plan = () => planes[actualId] || null;
 const guardarLocal = () => { guarda.poner('est.planes', planes); guarda.poner('est.actual', actualId); };
@@ -54,24 +61,25 @@ async function sala(cuerpo, q = ''){
   const r = await llamar(`${SERVIDOR}/api/sala/${SALA}/estudio${q}`, { metodo: cuerpo ? 'POST' : 'GET', cuerpo, espera: 30000 });
   const j = await r.json().catch(() => ({}));
   if(r.status === 401 || (r.status === 403 && !/no acepta pedidos/.test(j.error || ''))){ const e = new Error('Falta la llave de La Sala en este teléfono.'); e.llave = true; throw e; }
-  if(r.status === 404 && !j.error) throw new Error('La Sala todavía no tiene Estudio: hay que publicar el servidor.');
+  if(r.status === 404 && !j.error) throw new Error('La Sala todavía no tiene CARYMO: hay que publicar el servidor.');
   if(!r.ok || j.bien === false){ const e = new Error(j.error || `La Sala contestó ${r.status}.`); e.datos = j; throw e; }
   return j;
 }
 /* la IA: Negro (Groq) de fábrica porque es rápido; Paulina (Gemini) cuando hay fotos */
-async function ia({ sistema, texto, imagenes = [], motor = imagenes.length ? 'gemini' : 'groq', tope = 6000 }){
+async function ia({ sistema, texto, imagenes = [], motor = imagenes.length ? 'gemini' : 'groq', tope = 6000, revisar = (x) => x }){
   if(!llave()){ const e = new Error('Falta la llave de La Sala en este teléfono.'); e.llave = true; throw e; }
-  const r = await llamar(`${SERVIDOR}/api/sala/${SALA}/ia-texto`, { metodo: 'POST', cuerpo: { motor, json: true, tope, sistema, mensajes: [{ de: 'tu', texto }], imagenes, espera: 150000, pensarPoco: true }, espera: 165000 });
-  const j = await r.json().catch(() => ({}));
-  if(r.status === 401 || (r.status === 403 && !/no acepta pedidos/.test(j.error || ''))){ const e = new Error('Falta la llave de La Sala en este teléfono (o ya no sirve).'); e.llave = true; throw e; }
-  if(!r.ok || j.bien === false) throw new Error(j.error || `La IA no contestó (${r.status}).`);
-  return sacarJSON(j.texto);
-}
-export function sacarJSON(t){
-  const s = String(t || '').replace(/^```(?:json)?/m, '').replace(/```\s*$/m, '');
-  const a = s.indexOf('{'), b = s.lastIndexOf('}');
-  if(a < 0 || b <= a) throw new Error('La IA no contestó con lo que se le pidió. Prueba otra vez.');
-  return JSON.parse(s.slice(a, b + 1));
+  let ultimoError = null;
+  for(let intento = 0; intento < 2; intento++){
+    const extra = intento ? '\n\nOJO: tu respuesta anterior no era JSON válido o venía incompleta. Contesta SÓLO el JSON, completo, con comillas dobles y sin comas de más.' : '';
+    const r = await llamar(`${SERVIDOR}/api/sala/${SALA}/ia-texto`, { metodo: 'POST', cuerpo: { motor, json: true, tope, sistema: sistema + extra, mensajes: [{ de: 'tu', texto }], imagenes, espera: 150000, pensarPoco: true }, espera: 165000 });
+    const j = await r.json().catch(() => ({}));
+    if(r.status === 401 || (r.status === 403 && !/no acepta pedidos/.test(j.error || ''))){ const e = new Error('Falta la llave de La Sala en este teléfono (o ya no sirve).'); e.llave = true; throw e; }
+    if(!r.ok || j.bien === false) throw new Error(j.error || `La IA no contestó (${r.status}).`);
+    /* se repara lo que se pueda (json-ia.js); si aun así no sirve, otra vuelta */
+    try{ return revisar(sacarJSON(j.texto)); }
+    catch(e){ ultimoError = e; }
+  }
+  throw new Error((ultimoError && ultimoError.message ? ultimoError.message + ' ' : '') + 'Toca «Intentar otra vez».');
 }
 
 /* ══ 1 · LO QUE SE LE PIDE A LA IA ════════════════════════════════════════ */
@@ -90,18 +98,22 @@ Reglas:
 function sistemaLeccion(){
   return `Eres un tutor de preparatoria en Querétaro, México. Escribes en español de México, claro y sin relleno.
 Vas a escribir UNA lección corta y su cuestionario. Contesta SÓLO con JSON válido, sin texto antes ni después:
-{ "leccion": { "titulo": "título de la lección", "parrafo": "explicación de 50 a 90 palabras con **lo importante** en negritas (máximo 4)", "puntos": ["3 a 5 ideas clave, cortas, con **negritas** si ayudan"], "dato": "un ejemplo de la vida diaria o un truco para recordarlo (1 o 2 frases)" },
+{ "leccion": { "titulo": "título corto (máximo 6 palabras)", "ideas": [ { "titulo": "2 a 4 palabras", "texto": "UNA sola idea en máximo 22 palabras, con **una** palabra clave en negritas", "icono": "un dibujo de la lista" } ], "dato": "un truco o ejemplo para recordarlo, máximo 18 palabras" },
   "preguntas": [
     { "tipo": "opcion", "pregunta": "…", "opciones": ["…", "…", "…", "…"], "correcta": 0, "porque": "por qué es la correcta, 1 o 2 frases", "pista": "una pista que NO da la respuesta" },
     { "tipo": "hueco", "frase": "una oración con ___ donde va la palabra que falta", "respuesta": "la palabra (1 a 3 palabras)", "distractores": ["…", "…", "…"], "porque": "…", "pista": "…" }
   ] }
 Reglas:
+- La lección se lee en el teléfono UNA IDEA POR PANTALLA: de 3 a 4 "ideas", cortas de verdad. Nada de párrafos largos.
+- "icono": escoge el dibujo que mejor ilustre cada idea, SÓLO de esta lista: ${DIBUJOS_LISTA}
 - 6 preguntas: 4 de "opcion" y 2 de "hueco", revueltas. Que se contesten con lo que dice la lección.
 - En "opcion": 4 opciones del mismo largo más o menos, UNA sola correcta; "correcta" es su número (0 a 3). Las incorrectas tienen que sonar posibles.
 - En "hueco": la frase lleva EXACTAMENTE un ___ y los distractores son del mismo tipo de palabra que la respuesta.
 - Nada de emojis. Nada de inventar datos: si no estás seguro de algo, no lo preguntes.`;
 }
 
+const DIBUJOS_LISTA = Object.keys(DIBUJOS).join(', ');
+const dibujoValido = (n) => { const k = String(n || '').toLowerCase().trim().replace(/\s+/g, '-'); return DIBUJOS[k] ? k : ''; };
 /* lo que contesta la IA se revisa antes de usarlo: una pregunta rota no entra al cuestionario */
 export function normalizarPlan(j){
   const unidades = (Array.isArray(j.unidades) ? j.unidades : []).map((u) => ({
@@ -114,7 +126,14 @@ export function normalizarPlan(j){
 }
 export function normalizarLeccion(j){
   const l = j.leccion || {};
-  const leccion = { titulo: corta(l.titulo, 120), parrafo: corta(l.parrafo, 1200), puntos: (Array.isArray(l.puntos) ? l.puntos : []).map((x) => corta(x, 240)).filter(Boolean).slice(0, 6), dato: corta(l.dato, 400) };
+  let ideas = (Array.isArray(l.ideas) ? l.ideas : []).map((x) => typeof x === 'string' ? { titulo: '', texto: corta(x, 260), icono: '' } : { titulo: corta(x && x.titulo, 60), texto: corta(x && x.texto, 260), icono: dibujoValido(x && x.icono) }).filter((x) => x.texto).slice(0, 5);
+  /* las lecciones viejas (párrafo + puntos) se vuelven ideas: así las que ya tenías también se ven ligeras */
+  if(!ideas.length){
+    const puntos = (Array.isArray(l.puntos) ? l.puntos : []).map((x) => corta(x, 260)).filter(Boolean);
+    const primera = String(l.parrafo || '').split(/(?<=[.!?])\s+/).slice(0, 2).join(' ');
+    ideas = [...(primera ? [{ titulo: '', texto: corta(primera, 260), icono: '' }] : []), ...puntos.map((x) => ({ titulo: '', texto: x, icono: '' }))].slice(0, 5);
+  }
+  const leccion = { titulo: corta(l.titulo, 120), ideas, dato: corta(l.dato, 300) };
   const preguntas = (Array.isArray(j.preguntas) ? j.preguntas : []).map((p) => {
     if(!p) return null;
     const tipo = String(p.tipo || '').toLowerCase();
@@ -130,7 +149,7 @@ export function normalizarLeccion(j){
     if(opciones.length < 3 || opciones.length > 5 || !Number.isInteger(c) || c < 0 || c >= opciones.length || new Set(opciones.map(quitarAcentos)).size !== opciones.length) return null;
     return { tipo: 'opcion', pregunta: corta(p.pregunta, 300), opciones, correcta: c, porque: corta(p.porque, 400), pista: corta(p.pista, 240) };
   }).filter((p) => p && (p.pregunta || p.frase)).slice(0, 8);
-  if(!leccion.parrafo && !leccion.puntos.length) throw new Error('La lección llegó vacía. Prueba otra vez.');
+  if(!leccion.ideas.length) throw new Error('La lección llegó vacía.');
   if(preguntas.length < 3) throw new Error('El cuestionario llegó incompleto. Prueba otra vez.');
   return { leccion, preguntas };
 }
@@ -139,10 +158,12 @@ export function normalizarLeccion(j){
 export function armarCamino(datos){
   const unidades = datos.unidades.map((u, i) => {
     const temas = u.temas.map((t) => ({ id: 't' + nuevoId(), ...t }));
-    const nodos = [];
-    temas.forEach((t, k) => {
+    /* Carlos, 12 nov: «primero una cátedra antes de cada nivel usando el pizarrón, después el nivel; y al
+       inicio del conjunto de temas una explicación más general, y después tema por tema» */
+    const nodos = [{ id: 'n' + nuevoId(), tipo: 'pizarra', alcance: 'unidad', titulo: u.titulo }];
+    temas.forEach((t) => {
+      nodos.push({ id: 'n' + nuevoId(), tipo: 'pizarra', tema: t.id, titulo: t.titulo });
       nodos.push({ id: 'n' + nuevoId(), tipo: 'quiz', tema: t.id, titulo: t.titulo });
-      if(k === 0 && i > 0) nodos.push({ id: 'n' + nuevoId(), tipo: 'pizarra', tema: t.id, titulo: t.titulo });
     });
     nodos.push({ id: 'n' + nuevoId(), tipo: 'tarjetas', titulo: 'Tarjetas: ' + u.titulo });
     if(i === datos.unidades.length - 1){
@@ -154,6 +175,29 @@ export function armarCamino(datos){
   return unidades;
 }
 const todosLosNodos = (p) => p.unidades.flatMap((u) => u.nodos.map((n) => ({ ...n, unidad: u })));
+/* los planes que se armaron antes del 12 nov (sin cátedras) se acomodan a la forma nueva sin perder nada:
+   lo que ya pasaste no se vuelve a pedir (la cátedra de un nivel ya hecho cuenta como vista) */
+export function migrarCamino(p){
+  if(!p || !Array.isArray(p.unidades) || p.forma === 2) return false;
+  p.progreso = p.progreso || {};
+  for(const u of p.unidades){
+    const viejos = u.nodos, nuevos = [];
+    const general = viejos.find((n) => n.tipo === 'pizarra' && n.alcance === 'unidad') || { id: 'n' + nuevoId(), tipo: 'pizarra', alcance: 'unidad', titulo: u.titulo };
+    nuevos.push(general);
+    for(const t of u.temas){
+      const quiz = viejos.find((n) => n.tipo === 'quiz' && n.tema === t.id);
+      const cat = viejos.find((n) => n.tipo === 'pizarra' && n.tema === t.id && n.alcance !== 'unidad') || { id: 'n' + nuevoId(), tipo: 'pizarra', tema: t.id, titulo: t.titulo };
+      nuevos.push(cat); if(quiz) nuevos.push(quiz);
+      if(quiz && hecho(p, quiz) && !hecho(p, cat)) p.progreso[cat.id] = { hecho: true, mejor: 100, veces: 1, migrado: true };
+    }
+    const primero = nuevos.find((n) => n !== general && n.tipo === 'quiz');
+    if(primero && hecho(p, primero) && !hecho(p, general)) p.progreso[general.id] = { hecho: true, mejor: 100, veces: 1, migrado: true };
+    for(const n of viejos) if(!nuevos.includes(n) && n.tipo !== 'pizarra') nuevos.push(n);
+    u.nodos = nuevos;
+  }
+  p.forma = 2;
+  return true;
+}
 const hecho = (p, n) => !!(p.progreso && p.progreso[n.id] && p.progreso[n.id].hecho);
 export function avanceDe(p){
   const ns = todosLosNodos(p), h = ns.filter((n) => hecho(p, n)).length;
@@ -162,18 +206,11 @@ export function avanceDe(p){
 }
 const temaDe = (p, id) => { for(const u of p.unidades) for(const t of u.temas) if(t.id === id) return t; return null; };
 
-/* ══ 2 · SONIDO Y VIBRACIÓN (notas cortas hechas con el audio del teléfono) ══ */
-let audio = null;
-function tono(notas){
-  if(!ajustes.sonido) return;
-  try{
-    audio ||= new (window.AudioContext || window.webkitAudioContext)();
-    if(audio.state === 'suspended') audio.resume();
-    let t = audio.currentTime;
-    for(const [f, d] of notas){ const o = audio.createOscillator(), g = audio.createGain(); o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.18, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + d); o.connect(g).connect(audio.destination); o.start(t); o.stop(t + d + .02); t += d * .8; }
-  }catch{}
-}
-const SON = { bien: [[660, .09], [990, .16]], mal: [[220, .18], [180, .2]], fin: [[523, .1], [659, .1], [784, .1], [1047, .28]], toque: [[880, .04]] };
+/* ══ 2 · SONIDO Y VIBRACIÓN ══════════════════════════════════════════════
+   Los sonidos son los de sonidos/ (hacer.py los arma; son nuestros). Cada uno con su función:
+   toque al tocar, pop al aparecer, whoosh al abrir, bien/mal al verificar, moneda, combo, logro… */
+const SON = { toque: ['toque', .55], pop: ['pop', .45], whoosh: ['whoosh', .32], bien: ['bien', .75], mal: ['mal', .6], fin: ['logro', .75], moneda: ['moneda', .65], combo: ['combo', .6], hielo: ['hielo', .75], voltear: ['voltear', .55], subir: ['subir', .7], golpe: ['golpe', .4] };
+function tono(cual, extra = {}){ if(!ajustes.sonido || !cual) return; sonar(cual[0], { vol: cual[1], ...extra }); }
 const vibrar = (ms) => { if(ajustes.vibrar) try{ navigator.vibrate?.(ms); }catch{} };
 
 /* ══ 3 · AVISOS, HOJAS Y CAPAS ════════════════════════════════════════════ */
@@ -194,7 +231,7 @@ function hoja(titulo, html, alAbrir){
 function cerrarHoja(){ $('#velo')?.remove(); $('#hoja')?.remove(); }
 /* una capa encima de todo (alta, lección, cuestionario…). Se recrea entera cada vez: sin oyentes viejos colgados */
 function capa(clase = ''){
-  cerrarCapa();
+  cerrarCapa(); tono(SON.whoosh);
   const c = document.createElement('section'); c.className = 'capa ' + clase; c.id = 'capa';
   $('#capas').append(c); document.body.style.overflow = 'hidden';
   return c;
@@ -267,7 +304,7 @@ async function sincronizar(){
       if(x.borrado){ if(planes[x.id]){ delete planes[x.id]; if(actualId === x.id) actualId = null; } continue; }
       if(!planes[x.id] || (planes[x.id].t || 0) < x.t){
         const j = await sala(null, '?plan=' + encodeURIComponent(x.id)).catch(() => null);
-        if(j && j.plan){ const local = planes[x.id]; planes[x.id] = { ...j.plan, progreso: { ...(j.plan.progreso || {}), ...soloHechos(local) } }; }
+        if(j && j.plan){ const local = planes[x.id]; planes[x.id] = { ...j.plan, progreso: { ...(j.plan.progreso || {}), ...soloHechos(local) } }; if(migrarCamino(planes[x.id])) porGuardar.add(x.id); }
       }
     }
     /* lo que sólo existe aquí (hecho sin red) se sube */
@@ -316,8 +353,9 @@ const ONDA = [0, .62, .85, .62, 0, -.62, -.85, -.62];
 function pintarPlan(){
   const c = $('#planCuerpo'), p = plan();
   if(!p){
-    c.innerHTML = `<div class="vacio entra"><div class="sello">${ico('graduation-cap')}</div><h1>¿Tienes un examen pronto?<em>Aquí estamos para ayudarte</em></h1>
-      <p>Dinos la materia, la fecha y qué temas vienen (o súbele foto a tus apuntes). Te armamos un camino de lecciones, cuestionarios y tarjetas hasta el día del examen.</p>
+    c.innerHTML = `<div class="vacio entra"><div class="marca-carymo"><b>CARYMO</b><span>Learn. Explore. Grow.</span></div><p class="lema">Todo lo que puedes aprender, en un solo lugar.</p>
+      <h1>¿Tienes un examen pronto?<em>Aquí estamos para ayudarte</em></h1>
+      <p>Dinos la materia, la fecha y qué temas vienen, o súbele foto a tus apuntes. Te armamos el camino hasta el día del examen.</p>
       <button class="bt fuerte ancho" id="bCrear">${ico('plus')} Crear mi plan</button></div>`;
     $('#bCrear').addEventListener('click', alta);
     return;
@@ -337,7 +375,8 @@ function pintarPlan(){
       puntos.push([x, y]);
       const h = hecho(p, n), actual = sig && sig.id === n.id, cerrado = !h && !actual;
       const cl = ['nodo', h ? 'hecho' : '', actual ? 'actual' : '', cerrado ? 'cerrado' : '', n.tipo === 'examen' ? 'grande' : ''].join(' ');
-      return `<button class="${cl}" data-nodo="${n.id}" style="left:${x}%;top:${y}px;--color:${u.color}" aria-label="${esc(NOMBRE_NODO[n.tipo])}: ${esc(n.titulo)}${h ? ' (hecho)' : cerrado ? ' (bloqueado)' : ''}">${ico(h ? 'check' : ICONO_NODO[n.tipo])}<span class="etq">${esc(n.titulo)}</span></button>`;
+      const tv = tipoVisto(n), etq = tv === 'panorama' ? 'Panorama' : tv === 'pizarra' ? 'Cátedra' : n.titulo;
+      return `<button class="${cl}${tv === 'pizarra' || tv === 'panorama' ? ' catedra' : ''}" data-nodo="${n.id}" style="left:${x}%;top:${y}px;--color:${u.color}" aria-label="${esc(NOMBRE_NODO[tv])}: ${esc(n.titulo)}${h ? ' (hecho)' : cerrado ? ' (bloqueado)' : ''}">${ico(h ? 'check' : ICONO_NODO[tv])}<span class="etq">${esc(etq)}</span></button>`;
     }).join('');
     k += u.nodos.length;
     const d = puntos.map(([x, y], i) => `${i ? 'L' : 'M'}${x * 4} ${y}`).join(' ');
@@ -346,7 +385,7 @@ function pintarPlan(){
   html += '</div>';
   if(sig){
     const n = sig;
-    html += `<div class="siguiente"><small>${esc(NOMBRE_NODO[n.tipo])}</small><h3>${esc(n.titulo)}</h3><button class="bt blanco ancho" data-nodo="${n.id}">${a.hechos ? 'Seguir' : 'Comenzar tu plan'}</button></div>`;
+    html += `<div class="siguiente"><small>${esc(NOMBRE_NODO[tipoVisto(n)])}</small><h3>${esc(n.titulo)}</h3><button class="bt blanco ancho" data-nodo="${n.id}">${a.hechos ? 'Seguir' : 'Comenzar tu plan'}</button></div>`;
   } else {
     html += `<div class="siguiente"><small>Plan completo</small><h3>Llegaste a grado 10. Ya estás listo.</h3><button class="bt blanco ancho" id="bRepasoFinal">Hacer otro simulacro</button></div>`;
   }
@@ -464,7 +503,7 @@ async function prepararPlan(datos, anadirA = null){
       + (datos.extra ? `Lo que dijo el alumno: ${datos.extra}\n` : '')
       + (datos.fotos.length ? 'Te mando fotos de mis apuntes: arma el plan con lo que dicen.' : '')
       + (anadirA ? `\nYA TENGO estas unidades (no las repitas, arma SÓLO unidades nuevas con lo nuevo): ${anadirA.unidades.map((u) => u.titulo).join(', ')}` : '');
-    const j = normalizarPlan(await ia({ sistema: sistemaPlan(), texto, imagenes: datos.fotos.map(({ mime, data }) => ({ mime, data })), tope: 4000 }));
+    const j = await ia({ sistema: sistemaPlan(), texto, imagenes: datos.fotos.map(({ mime, data }) => ({ mime, data })), tope: 4000, revisar: normalizarPlan });
     clearInterval(giro); bolas.forEach((b) => b.classList.add('ve')); lis.forEach((l) => l.classList.add('ya'));
     let p;
     if(anadirA){
@@ -477,7 +516,7 @@ async function prepararPlan(datos, anadirA = null){
       p.notas = [p.notas, j.notas].filter(Boolean).join('\n').slice(0, 1500);
     } else {
       p = { id: 'p' + nuevoId(), titulo: j.titulo || `Examen de ${datos.materia.nombre}`, materia: datos.materia.nombre, color: datos.materia.color, fecha: datos.fecha, notas: j.notas, extra: datos.extra,
-        creado: Date.now(), unidades: armarCamino(j), contenido: {}, progreso: {} };
+        creado: Date.now(), unidades: armarCamino(j), contenido: {}, progreso: {}, forma: 2 };
     }
     actualId = p.id; guardarPlan(p);
     await espera(650);
@@ -502,8 +541,8 @@ function contenidoDe(p, temaId){
   const t = temaDe(p, temaId);
   const u = p.unidades.find((x) => x.temas.some((y) => y.id === temaId));
   const pr = (async () => {
-    const j = normalizarLeccion(await ia({ sistema: sistemaLeccion(), tope: 5000,
-      texto: `Materia: ${p.materia}\nUnidad: ${u ? u.titulo : ''}\nTema: ${t.titulo}\n${t.resumen ? 'De qué trata: ' + t.resumen + '\n' : ''}${p.notas ? 'Lo que traen los apuntes del alumno: ' + p.notas + '\n' : ''}${p.extra ? 'Lo que dijo el alumno: ' + p.extra : ''}` }));
+    const j = await ia({ sistema: sistemaLeccion(), tope: 5000, revisar: normalizarLeccion,
+      texto: `Materia: ${p.materia}\nUnidad: ${u ? u.titulo : ''}\nTema: ${t.titulo}\n${t.resumen ? 'De qué trata: ' + t.resumen + '\n' : ''}${p.notas ? 'Lo que traen los apuntes del alumno: ' + p.notas + '\n' : ''}${p.extra ? 'Lo que dijo el alumno: ' + p.extra : ''}` });
     const actual = planes[p.id] || p; actual.contenido = actual.contenido || {}; actual.contenido[temaId] = j; guardarPlan(actual);
     return j;
   })();
@@ -520,7 +559,7 @@ async function abrirNodo(id, repaso = false){
   const ns = todosLosNodos(p), n = ns.find((x) => x.id === id); if(!n) return;
   const a = avanceDe(p);
   if(!hecho(p, n) && a.siguiente && a.siguiente.id !== n.id && !repaso){
-    vibrar(30); brindis('Primero termina el que está brillando', 'vino', 'target'); return;
+    vibrar(30); tono(SON.golpe); brindis('Primero termina el que está brillando', 'vino', 'target'); return;
   }
   if(n.tipo === 'quiz') return abrirLeccion(p, n);
   if(n.tipo === 'pizarra') return abrirPizarra(p, n);
@@ -550,23 +589,47 @@ async function abrirLeccion(p, n){
     catch(e){ prep.error(e.message || String(e), () => abrirLeccion(plan(), n)); if(e.llave) pintarFaltaLlave(); return; }
     if($('#capa') !== c) return;     /* la cerró mientras esperaba */
   }
+  /* LA LECCIÓN, TIPO HISTORIAS (Carlos, 12 nov: «esto está horrible y excesivamente sobrecargado»):
+     una idea por pantalla, máximo dos o tres renglones, con su dibujo que se traza solo.
+     Se avanza tocando la derecha (o «Siguiente») y se regresa tocando la izquierda. */
   const l = cont.leccion;
-  c.innerHTML = `<div class="arriba"><button class="bt redondo fantasma" data-cerrar aria-label="Cerrar">${ico('x')}</button><div class="progreso"><i style="width:4%"></i></div></div>
-    <article class="cuerpo leccion entra"><h1>${esc(l.titulo || n.titulo)}</h1>${l.parrafo ? `<p>${negritas(l.parrafo)}</p>` : ''}
-    ${l.puntos.length ? `<ul>${l.puntos.map((x) => `<li>${negritas(x)}</li>`).join('')}</ul>` : ''}
-    ${l.dato ? `<div class="dato"><small>${ico('lightbulb')}Para recordarlo</small>${negritas(l.dato)}</div>` : ''}
-    <div class="acciones-mini"><button data-gusta="1" aria-label="Me sirvió" aria-pressed="false">${ico('thumbs-up')}</button><button data-gusta="0" aria-label="No me sirvió" aria-pressed="false">${ico('thumbs-down')}</button><button data-copiar aria-label="Copiar la lección">${ico('copy')}</button><button data-pizarron aria-label="Que me lo expliquen en el pizarrón">${ico('presentation')}</button></div></article>
-    <div class="abajo"><button class="bt blanco ancho" data-empezar>Empezar cuestionario</button></div>`;
-  /* las ideas clave se van iluminando una por una */
-  $$('.leccion li', c).forEach((li, i) => setTimeout(() => li.classList.add('luz'), 500 + i * 650));
+  const ideas = (l.ideas && l.ideas.length ? l.ideas : [{ titulo: '', texto: l.titulo || n.titulo, icono: '' }]);
+  const tarjetas = [...ideas.map((x) => ({ ...x, tipo: 'idea' })), ...(l.dato ? [{ tipo: 'dato', titulo: 'Para recordarlo', texto: l.dato, icono: 'lightbulb' }] : [])];
+  let k = 0;
+  const dibujoDe = (nombre, i) => {
+    const d = DIBUJOS[nombre] || DIBUJOS[['sparkles', 'book-open', 'brain', 'lightbulb', 'target'][i % 5]] || '';
+    /* cada trazo del dibujo con pathLength=1: el CSS lo dibuja de 0 a 1, uno tras otro */
+    let n2 = 0;
+    return `<svg class="dib-idea" viewBox="0 0 24 24" aria-hidden="true">${d.replace(/<(path|circle|rect|line|polyline|polygon|ellipse)\b/g, (m) => `${m} pathLength="1" style="--i:${n2++}"`)}</svg>`;
+  };
+  function pintarTarjeta(dir = 1){
+    const t = tarjetas[k], ultima = k === tarjetas.length - 1;
+    c.innerHTML = `<div class="arriba"><button class="bt redondo fantasma" data-cerrar aria-label="Cerrar">${ico('x')}</button>
+        <div class="segmentos" aria-label="Idea ${k + 1} de ${tarjetas.length}">${tarjetas.map((_, i) => `<i class="${i < k ? 'ya' : i === k ? 'ahora' : ''}"></i>`).join('')}</div></div>
+      <article class="cuerpo historia ${dir > 0 ? 'entra' : 'entra-izq'} ${t.tipo === 'dato' ? 'es-dato' : ''}" aria-live="polite">
+        ${k === 0 ? `<p class="tema-hist">${esc(l.titulo || n.titulo)}</p>` : ''}
+        <div class="aro-dib">${dibujoDe(t.icono, k)}</div>
+        ${t.titulo ? `<h2>${esc(t.titulo)}</h2>` : ''}
+        <p class="txt-hist">${negritas(t.texto)}</p>
+        ${ultima ? `<div class="acciones-mini"><button data-gusta="1" aria-label="Me sirvió" aria-pressed="false">${ico('thumbs-up')}</button><button data-gusta="0" aria-label="No me sirvió" aria-pressed="false">${ico('thumbs-down')}</button><button data-copiar aria-label="Copiar la lección">${ico('copy')}</button><button data-pizarron aria-label="Que me lo expliquen en el pizarrón">${ico('presentation')}</button></div>` : ''}
+      </article>
+      <button class="zona-atras" data-atras aria-label="Idea anterior" ${k ? '' : 'hidden'}></button>
+      <div class="abajo">${ultima ? '<button class="bt blanco ancho" data-empezar>Empezar cuestionario</button>' : '<button class="bt blanco ancho" data-sig>Siguiente</button>'}</div>`;
+  }
   c.addEventListener('click', async (e) => {
     if(e.target.closest('[data-cerrar]')){ cerrarCapa(); pintar(); return; }
+    if(e.target.closest('[data-atras]')){ if(k){ k--; tono(SON.voltear); pintarTarjeta(-1); } return; }
+    if(e.target.closest('[data-sig]') || (e.target.closest('.historia') && !e.target.closest('button') && k < tarjetas.length - 1)){ k++; tono(SON.voltear); pintarTarjeta(1); return; }
     const g = e.target.closest('[data-gusta]'); if(g){ $$('[data-gusta]', c).forEach((x) => x.setAttribute('aria-pressed', x === g)); const pp = plan(); pp.progreso[n.id] = { ...(pp.progreso[n.id] || {}), gusto: +g.dataset.gusta }; guardarPlan(pp); brindis('Gracias, eso nos ayuda a explicar mejor', '', 'sparkles'); return; }
-    if(e.target.closest('[data-copiar]')){ try{ await navigator.clipboard.writeText([l.titulo, l.parrafo.replace(/\*\*/g, ''), ...l.puntos.map((x) => '• ' + x.replace(/\*\*/g, '')), l.dato].filter(Boolean).join('\n\n')); brindis('Copiada', '', 'copy'); }catch{ brindis('No se pudo copiar', 'vino', 'x'); } return; }
+    if(e.target.closest('[data-copiar]')){ try{ await navigator.clipboard.writeText([l.titulo, ...tarjetas.map((x) => (x.titulo ? x.titulo + ': ' : '') + x.texto.replace(/\*\*/g, ''))].filter(Boolean).join('\n\n')); brindis('Copiada', '', 'copy'); }catch{ brindis('No se pudo copiar', 'vino', 'x'); } return; }
     if(e.target.closest('[data-pizarron]')){ abrirPizarra(plan(), { id: null, titulo: n.titulo, tema: n.tema }); return; }
     if(e.target.closest('[data-empezar]')) cuestionario(plan(), n, cont.preguntas, { leccion: true });
   });
+  /* con teclado también: flechas para pasar */
+  c.addEventListener('keydown', (e) => { if(e.key === 'ArrowRight' && k < tarjetas.length - 1){ k++; pintarTarjeta(1); } if(e.key === 'ArrowLeft' && k){ k--; pintarTarjeta(-1); } });
+  pintarTarjeta(1);
 }
+
 
 /* ══ 9 · EL CUESTIONARIO ══════════════════════════════════════════════════ */
 function cuestionario(p, n, preguntas, { simulacro = false } = {}){
@@ -606,6 +669,7 @@ function cuestionario(p, n, preguntas, { simulacro = false } = {}){
       if(q.intento === 0 && !q._pista){ buenasPrimera++; }
       combo = q._pista ? combo : combo + 1; maxCombo = Math.max(maxCombo, combo);
       tono(SON.bien); vibrar(15);
+      if(combo >= 2) setTimeout(() => tono(SON.combo, { tono: Math.min(1.5, 1 + (combo - 2) * .08) }), 260);
       if(combo >= 3 && (combo === 3 || combo === 5 || combo % 5 === 0)){ const g = document.createElement('div'); g.className = 'combo-grande'; g.textContent = `COMBO x${combo}`; document.body.append(g); setTimeout(() => g.remove(), 1200); }
     } else {
       combo = 0; tono(SON.mal); vibrar([40, 60, 40]); $('#qCuerpo', c).classList.add('sacude');
@@ -661,7 +725,7 @@ function cuestionario(p, n, preguntas, { simulacro = false } = {}){
     }
     const hasta = f.getBoundingClientRect();
     f.animate([{ transform: `translate(${desde.left - hasta.left}px, ${desde.top - hasta.top}px)` }, { transform: 'none' }], { duration: 320, easing: 'cubic-bezier(.2,.9,.3,1.15)' });
-    tono(SON.toque); puedeVerificar();
+    tono(SON.pop); puedeVerificar();
   }
   pintarPregunta();
 }
@@ -693,13 +757,15 @@ async function completarNodo(p0, n, { xp = 0, mejor = 100, nota = 0 } = {}){
   if(n.id){ const v = p.progreso[n.id] || {}; p.progreso[n.id] = { ...v, hecho: true, mejor: Math.max(v.mejor || 0, mejor), veces: (v.veces || 0) + 1, ...(nota ? { nota } : {}), cuando: Date.now() }; }
   guardarPlan(p);
   cerrarCapa(); vista = 'plan'; pintar();
+  /* el camino baja solo hasta el que sigue (antes se quedaba donde estaba y el siguiente quedaba fuera de la pantalla) */
+  requestAnimationFrame(() => { const act = document.querySelector('#planCuerpo .nodo.actual'); if(act){ const r = act.getBoundingClientRect(); if(r.top < 140 || r.bottom > innerHeight - 230) scrollTo({ top: scrollY + r.top - innerHeight * .38, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); } });
   const despues = avanceDe(p);
-  const moneda = n.id && $(`.nodo[data-nodo="${n.id}"]`); if(moneda && !ya){ moneda.classList.add('recien'); }
+  const moneda = n.id && $(`.nodo[data-nodo="${n.id}"]`); if(moneda && !ya){ moneda.classList.add('recien'); setTimeout(() => tono(SON.moneda), 380); }
   const subir = sumarXP(ya ? Math.round(xp / 3) : xp, n.tipo);
   if(Math.floor(despues.grado) > Math.floor(antes.grado)){
-    await espera(500); brindis(`¡Subiste a grado ${Math.floor(despues.grado)}!`, 'oro', 'arrow-up');
+    await espera(500); tono(SON.subir); brindis(`¡Subiste a grado ${Math.floor(despues.grado)}!`, 'oro', 'arrow-up');
   }
-  const etiqueta = { quiz: '¡Cuestionario completado!', tarjetas: '¡Tarjetas dominadas!', pizarra: '¡Clase vista!', simulacro: '¡Simulacro listo!', examen: '¡Repaso logrado!' }[n.tipo];
+  const etiqueta = { quiz: '¡Nivel completado!', tarjetas: '¡Tarjetas dominadas!', pizarra: '¡Cátedra vista!', panorama: '¡Panorama visto!', simulacro: '¡Simulacro listo!', examen: '¡Repaso logrado!' }[tipoVisto(n)];
   if(!ya && etiqueta) setTimeout(() => brindis(etiqueta, '', 'circle-check'), 350);
   if(despues.grado >= 10 && antes.grado < 10) setTimeout(() => fiestaGrado(), 900);
   precargar(p);
@@ -741,7 +807,7 @@ async function abrirTarjetas(p, n){
   }
   c.addEventListener('click', (e) => {
     if(e.target.closest('[data-cerrar]')){ cerrarCapa(); pintar(); return; }
-    if(e.target.closest('#tarjeta')){ $('#tarjeta', c).classList.toggle('volteada'); $$('[data-otra], [data-se]', c).forEach((b) => { b.disabled = false; }); tono(SON.toque); return; }
+    if(e.target.closest('#tarjeta')){ $('#tarjeta', c).classList.toggle('volteada'); $$('[data-otra], [data-se]', c).forEach((b) => { b.disabled = false; }); tono(SON.voltear); return; }
     if(e.target.closest('[data-otra]')){ mazo.push(mazo.shift()); pintarTarjeta(); return; }
     if(e.target.closest('[data-se]')){ mazo.shift(); sabidas++; tono(SON.bien); if(!mazo.length) resultado(planes[p.id], n, { xp: 8 + total, pct: 100, seg: 0, titulo: '¡Tarjetas dominadas!', frase: `Te sabes las ${total}. Eso ya no se te olvida.` }); else pintarTarjeta(); }
   });
@@ -764,7 +830,10 @@ async function abrirSimulacro(p, n, _repaso){
 /* la clase en el pizarrón: Explica, la misma de la mesa, dentro de una capa */
 function abrirPizarra(p, n){
   const c = capa('pizarra');
-  const q = new URLSearchParams(location.search); q.set('tema', `${n.titulo} (${p.materia})`); q.set('largo', 'corta'); q.set('nivel', 'prepa');
+  const q = new URLSearchParams(location.search); q.set('nivel', 'prepa');
+  const unidad = n.alcance === 'unidad' && p.unidades ? p.unidades.find((u) => u.nodos.some((x) => x.id === n.id)) : null;
+  if(unidad){ q.set('tema', `Panorama general de «${unidad.titulo}» (${p.materia}): de qué trata y cómo se conectan ${unidad.temas.map((t) => t.titulo).join(', ')}. Explica la idea general; cada tema se verá a fondo después.`); q.set('largo', 'normal'); }
+  else { q.set('tema', `${n.titulo} (${p.materia})`); q.set('largo', 'corta'); }
   /* para que la clase sea SUYA: qué examen prepara, cuándo, qué ya vio y qué le costó (Explica lo mete en lo que le pide a la IA) */
   if(p.unidades){
     const t = n.tema && temaDe(p, n.tema), ns = todosLosNodos(p);
@@ -773,13 +842,13 @@ function abrirPizarra(p, n){
     q.set('contexto', [`Prepara su ${p.titulo} (${cuandoTexto(p.fecha).toLowerCase()}).`, t && t.resumen ? `Este tema trata de: ${t.resumen}` : '', p.notas ? `Sus apuntes dicen: ${p.notas.slice(0, 400)}` : '',
       vistos.length ? `Ya estudió: ${vistos.join(', ')}.` : '', costo.length ? `Le costó trabajo: ${costo.join(', ')}: refuérzalo con ejemplos.` : ''].filter(Boolean).join(' '));
   }
-  c.innerHTML = `<div class="arriba"><button class="bt redondo fantasma" data-cerrar aria-label="Cerrar la clase">${ico('x')}</button><div style="flex:1;font:800 16px/1.2 Titulo">${esc(n.titulo)}</div>${n.id ? `<button class="bt fuerte" data-vista>${ico('check')}Ya la vi</button>` : ''}</div>
+  c.innerHTML = `<div class="arriba"><button class="bt redondo fantasma" data-cerrar aria-label="Cerrar la clase">${ico('x')}</button><div style="flex:1;min-width:0"><small style="display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--claro-txt)">${unidad ? 'Panorama de la unidad' : n.id ? 'Cátedra' : 'Explícame'}</small><b style="font:800 16px/1.2 Titulo">${esc(n.titulo)}</b></div>${n.id ? `<button class="bt fuerte" data-vista>${ico('check')}Ya la vi</button>` : ''}</div>
     <iframe title="Clase en el pizarrón" src="explica.html?${q}" allow="autoplay; clipboard-write"></iframe>`;
   const alTerminar = (e) => { if(e.origin === location.origin && e.data && e.data.explica === 'fin' && n.id){ const b = $('[data-vista]', c); if(b){ b.classList.add('blanco'); b.textContent = 'Terminar'; brindis('Clase completa', '', 'presentation'); } } };
   addEventListener('message', alTerminar);
   c.addEventListener('click', (e) => {
     if(e.target.closest('[data-cerrar]')){ removeEventListener('message', alTerminar); cerrarCapa(); pintar(); return; }
-    if(e.target.closest('[data-vista]')){ removeEventListener('message', alTerminar); completarNodo(planes[p.id], n, { xp: 12 }); }
+    if(e.target.closest('[data-vista]')){ removeEventListener('message', alTerminar); completarNodo(planes[p.id], n, { xp: unidad ? 15 : 12 }); }
   });
 }
 
@@ -809,7 +878,7 @@ function fiestaHielo(titulo, texto){
   return new Promise((listo) => {
     const f = document.createElement('div'); f.className = 'fiesta'; f.setAttribute('role', 'dialog'); f.setAttribute('aria-label', titulo);
     f.innerHTML = `<div class="circulo"></div><div class="grande" style="background:#ffffff22">${ico('snowflake')}</div><h1>${esc(titulo)}</h1><p>${esc(texto)}</p><button class="bt blanco">Continuar</button>`;
-    document.body.append(f); tono([[1200, .08], [1500, .08], [1800, .2]]);
+    document.body.append(f); tono(SON.hielo);
     setTimeout(() => f.classList.add('hielo'), 650);
     $('button', f).addEventListener('click', () => { f.remove(); listo(); }); $('button', f).focus();
   });
@@ -995,7 +1064,7 @@ function pintarPerfil(){
     <p class="version">${esc(VERSION_ESTUDIO)} · ${cola.length ? `${cola.length} logros por mandar a La Sala` : 'todo guardado en La Sala'}</p>`;
 }
 $('#vPerfil').addEventListener('click', (e) => {
-  const a = e.target.closest('[data-aj]'); if(a){ ajustes[a.dataset.aj] = !ajustes[a.dataset.aj]; guarda.poner('est.ajustes', ajustes); a.setAttribute('aria-checked', ajustes[a.dataset.aj]); tono(SON.toque); return; }
+  const a = e.target.closest('[data-aj]'); if(a){ ajustes[a.dataset.aj] = !ajustes[a.dataset.aj]; guarda.poner('est.ajustes', ajustes); a.setAttribute('aria-checked', ajustes[a.dataset.aj]); encenderSonidos(ajustes.sonido !== false); tono(SON.toque); return; }
   const p = e.target.closest('[data-abrir-plan]'); if(p){ actualId = p.dataset.abrirPlan; guardarLocal(); vista = 'plan'; pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 }); return; }
   if(e.target.closest('[data-nuevo-plan]')) alta();
 });
@@ -1007,6 +1076,7 @@ $('#vPerfil').addEventListener('change', (e) => {
 });
 
 /* ══ 17 · ARRANQUE ════════════════════════════════════════════════════════ */
+if(migrarAlArrancar){ for(const p of Object.values(planes)) if(migrarCamino(p)) porGuardar.add(p.id); guardarLocal(); }
 $$('[data-ico]').forEach((s) => { s.outerHTML = ico(s.dataset.ico); });
 $('#nav').addEventListener('click', (e) => { const b = e.target.closest('[data-ir]'); if(!b) return; vista = b.dataset.ir; tono(SON.toque); pintar(); scrollTo({ top: 0 }); if(vista === 'ranking') mandarCola()?.then?.(() => {}); });
 addEventListener('online', () => { mandarCola(); subirPlanes(); });

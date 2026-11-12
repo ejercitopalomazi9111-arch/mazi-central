@@ -46,3 +46,20 @@ milisegundo pasa cada cosa. La lista de cues es esa misma línea de tiempo.
 - La hoja de cues (JSON o CSV): tiempo, archivo, volumen y de dónde salió.
 - Los créditos y licencias de cada sonido.
 - Un reporte corto: LUFS y pico medidos, y qué momentos necesitan que una persona los escuche.
+
+## Y en las apps (Carlos, 12 nov: «úsalos para editar Y EN APPS»)
+
+Las apps usan **`sala/sonidos/`**: doce sonidos con su función (toque, pop, whoosh, golpe, bien, mal,
+logro, moneda, combo, hielo, voltear, subir), cada uno de 1 a 17 KB.
+
+- **De dónde salen:** se generan con `python3 sala/sonidos/hacer.py` (la receta de cada uno está en el
+  código y en `recetas.json`). Freesound y Kenney dan 403 a las descargas desde aquí y Commons da 429,
+  así que se aplicó la regla del flujo: si las grabaciones no encajan, se genera el efecto y se apunta.
+  Son nuestros: no hay licencia de nadie que cuidar.
+- **Cómo se usan:** `import { sonar } from '…/sala/sonidos/sonidos.js'` y `sonar('bien', { vol: .7 })`.
+  El primer toque de la página despierta el audio (el iPhone no deja sonar antes) y trae los doce.
+- **Dónde ya están:** CARYMO (toque, correcto, incorrecto, moneda, combo, logro, subir de grado,
+  racha congelada, voltear tarjeta, abrir pantallas) y Explica (un clic apenas audible por cursor y un
+  pop al terminar cada elemento, bajito para que la voz vaya al frente).
+- Mismo criterio que en video: cada sonido con su función, los clics discretos, nada tapa la voz, y
+  cada app trae su interruptor para apagarlos.
