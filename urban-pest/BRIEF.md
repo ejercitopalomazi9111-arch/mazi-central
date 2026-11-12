@@ -62,6 +62,9 @@ queda con nosotros.
 - **Ya hecho (12 nov): la cotización por escrito.** Al dar el precio, el bot manda el link a una hoja con su logo,
   lista para «Guardar como PDF» (`urban-pest/cotizacion/`). El dueño también puede hacer una a mano con renglones
   (`?nueva`). El video que lo explica: `marca/anuncios/24-urban-pest/` (38 s, sin voz).
+- **Todo se cuenta (Carlos, 12 nov):** el material de cada plaga, las horas del técnico y la camioneta por km (gasolina,
+  llantas, balatas y motor). Cada cotización le llega al dueño en el centro (pestaña Números) con su costo, su ganancia
+  y por qué; desde ahí le escribe al cliente o la agenda. El cliente sólo ve el precio.
 - **Regla de negocio:** a una casa de $500 no conviene ir a medir; a una industria sí. El bot
   distingue los dos casos.
 - **Fuera de la zona de servicio** (Carlos, 11 nov):

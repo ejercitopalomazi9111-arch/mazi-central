@@ -111,6 +111,7 @@ mano y la carpeta de plantas). Entra con la llave de Grupo Mazi o con un código
 | Ruta | Qué hace |
 |---|---|
 | `GET /api/tablero` | Lo de hoy: servicios del día y atrasados, seguimientos que tocan, por cobrar, insumos bajos, vehículo que ya toca y lo que hizo el bot hoy |
+| `GET /api/numeros` | El mes: cotizado, lo que costaría hacerlo, la ganancia y lo cobrado; y cada cotización con su desglose (material, técnico, gasolina, llantas, balatas, motor) y a qué chat contestar. El cliente nunca ve esto: la hoja pública quita `interno` |
 | `GET /api/citas` · `POST /api/citas {id?, cliente, fecha, hora?, telefono?, direccion?, zona?, plaga?, tecnico?, precio?, nota?}` | Agendar o corregir un servicio |
 | `POST /api/citas/estado {id, estado}` | pendiente → hecho → cerrado (cobrado), o cancelado. Al pasar a «hecho» se agenda solo el seguimiento a 15 días |
 | `POST /api/citas/seguimiento {id, sigue_plaga, nota?}` | Si la plaga sigue, crea un servicio de garantía a $0 (lo que promete su página) |
@@ -118,3 +119,14 @@ mano y la carpeta de plantas). Entra con la llave de Grupo Mazi o con un código
 | `POST /api/insumos/mover {id, delta, motivo?, cita?}` | Entrada (+) o salida (−). Se lleva con movimientos y no deja quedar en negativo |
 | `GET /api/vehiculos` · `POST /api/vehiculos {id?, nombre, placas?, km?}` | Los vehículos, con sus próximas revisiones |
 | `POST /api/vehiculos/revision {vehiculo, tipo, fecha, km?, costo?, proxima_fecha?, proxima_km?, nota?}` | Aceite, llantas, verificación… Sale «ya toca» a 7 días o a 500 km |
+
+## Lo que cuenta el cotizador · 12 nov
+
+Carlos: «todo se cuenta». Las tarifas aceptan (y el Excel del cliente debe traer):
+
+- `plagas.<plaga>`: `material` (qué producto lleva), `litros_m2` y `precio_litro`;
+- `tecnico`: `costo_hora`, `m2_hora`, `minimo_horas`, `personas` (si no se pone, 2 arriba de 600 m²);
+- `vehiculo`: `gasolina_km`, `llantas_km`, `balatas_km`, `motor_km` (por km; se cuenta ida y vuelta).
+
+Precio = (material + técnico) × factor del lugar + camioneta, más el margen. El desglose trae costo y ganancia.
+Las tarifas viejas (`mano_obra_m2`, `costo_km`) siguen sirviendo.

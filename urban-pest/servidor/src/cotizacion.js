@@ -41,6 +41,9 @@ export async function cotizacionDelBot(A, conv, cot, ahora = Date.now()){
     m2: cot.m2 || d.m2 || null, m2Estimado: !!cot.m2Estimado,
     precio: cot.desde, moneda: 'MXN', visita: !!cot.visita,
     nota: cot.nota, ...(cot.ejemplo ? { ejemplo: true } : {}),
+    /* SÓLO para el dueño (centro → Números): de dónde sale el precio, cuánto cuesta y cuánto queda, y a qué chat
+       contestarle. cotizacionPublica lo quita: el cliente nunca lo ve. */
+    interno: { desglose: cot.desglose || null, km: d.km ?? null, plaga: d.plaga || null, canal: conv.canal, chat: conv.chat },
   };
   await A.put('cotdoc:' + codigo, doc);
   return doc;
@@ -68,7 +71,7 @@ export async function cotizacionPublica(A, codigo){
   const doc = /^[a-z0-9]{10,16}$/.test(String(codigo || '')) ? await A.get('cotdoc:' + codigo) : null;
   if(!doc) return { bien: false, error: 'Esa cotización no existe. Pídela otra vez por WhatsApp.', estado: 404 };
   const n = (await A.get('negocio')) || {}, docs = (await A.get('documentos')) || {};
-  const { hizo, ...publica } = doc;
+  const { hizo, interno, ...publica } = doc;
   return { bien: true, cotizacion: publica,
     negocio: { nombre: n.nombre || 'Urban Pest Control', telefono: n.telefono || null, correo: n.correo || null, garantia: n.garantia || null,
       licencia_sanitaria: docs.licencia_sanitaria || null, repse: docs.repse || null } };

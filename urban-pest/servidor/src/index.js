@@ -15,7 +15,7 @@ import { Oficina } from './oficina.js';
 import { firmaValida, leerAviso, enviar } from './meta.js';
 import { pensar, probarMotores } from './cerebro.js';
 import { cotizacionPublica, cotizacionAMano, listarCotizaciones } from './cotizacion.js';
-import { guardarCita, estadoCita, seguimientoHecho, listarCitas, guardarInsumo, moverInsumo, listarInsumos, guardarVehiculo, revisionVehiculo, listarVehiculos, tablero } from './centro.js';
+import { guardarCita, estadoCita, seguimientoHecho, listarCitas, guardarInsumo, moverInsumo, listarInsumos, guardarVehiculo, revisionVehiculo, listarVehiculos, tablero, numeros } from './centro.js';
 import { cotizar } from './cotizador.js';
 import { estimarM2, MEDIDAS } from './medidor.js';
 import { crearPlanta, listarPlantas, ponerEstaciones, ponerDocumentos, registrarServicio, carpetaPublica, plantaEjemplo, quitarServicio } from './carpeta.js';
@@ -23,10 +23,12 @@ import CASOS_FABRICA from '../../bot/casos.json' with { type: 'json' };
 
 /* Para PROBAR mientras llega el Excel: precios DE EJEMPLO, sólo en el canal «prueba» y
    marcados como tales. Nunca se usan con un cliente de verdad. */
-const TARIFAS_EJEMPLO = { ejemplo: true, minimo: 500, mano_obra_m2: 2, costo_km: 4, radio_km: 40, margen: .3, umbral_visita_m2: 400, fuera_m2_minimo: 200,
-  plagas: { cucaracha: { litros_m2: .05, precio_litro: 60 }, roedor: { litros_m2: .04, precio_litro: 70 }, hormiga: { litros_m2: .04, precio_litro: 55 },
-    chinche: { litros_m2: .06, precio_litro: 80 }, alacran: { litros_m2: .05, precio_litro: 65 }, pulga: { litros_m2: .05, precio_litro: 60 },
-    termita: { litros_m2: .08, precio_litro: 90 }, arana: { litros_m2: .04, precio_litro: 55 }, mosco: { litros_m2: .03, precio_litro: 50 }, mosca: { litros_m2: .03, precio_litro: 50 } },
+const TARIFAS_EJEMPLO = { ejemplo: true, minimo: 500, radio_km: 40, margen: .3, umbral_visita_m2: 400, fuera_m2_minimo: 200,
+  tecnico: { costo_hora: 110, m2_hora: 60, minimo_horas: 1 },
+  vehiculo: { gasolina_km: 2.4, llantas_km: .35, balatas_km: .2, motor_km: .45 },
+  plagas: { cucaracha: { material: 'Gel cucarachicida y aspersión', litros_m2: .05, precio_litro: 60 }, roedor: { material: 'Cebo en bloque y estaciones', litros_m2: .04, precio_litro: 70 }, hormiga: { material: 'Cebo granulado y aspersión', litros_m2: .04, precio_litro: 55 },
+    chinche: { material: 'Aspersión residual', litros_m2: .06, precio_litro: 80 }, alacran: { material: 'Aspersión residual y polvo', litros_m2: .05, precio_litro: 65 }, pulga: { material: 'Aspersión y regulador de crecimiento', litros_m2: .05, precio_litro: 60 },
+    termita: { material: 'Inyección a suelo y madera', litros_m2: .08, precio_litro: 90 }, arana: { material: 'Aspersión residual', litros_m2: .04, precio_litro: 55 }, mosco: { material: 'Nebulización', litros_m2: .03, precio_litro: 50 }, mosca: { material: 'Nebulización y trampa de luz', litros_m2: .03, precio_litro: 50 } },
   tipos: { casa: { factor: 1 }, negocio: { factor: 1.2 }, industria: { factor: 1.4, visita: true } },
   zonas: { centro: 6, juriquilla: 18, 'el marques': 15, corregidora: 10, 'el refugio': 14, zibata: 20, 'san juan del rio': 55 } };
 
@@ -143,6 +145,7 @@ export class Despacho {
       /* qué motores de IA le llegan al bot y si contestan (sin enseñar ninguna llave) */
       /* ── el centro de operaciones (BRIEF §C) ── */
       case 'GET /api/tablero': return tablero(A);
+      case 'GET /api/numeros': return numeros(A);
       case 'GET /api/citas': return listarCitas(A);
       case 'POST /api/citas': return guardarCita(A, b, quien);
       case 'POST /api/citas/estado': return estadoCita(A, b, quien);
