@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#100A18">
+<title>Pizarrón · La Sala</title>
+<!-- EL PIZARRÓN (Carlos, 12 nov): pendientes por proyecto, con notas, recuadros (fases y apartados), texto, fotos,
+     líneas de tiempo, listas con avance y flechas. «Que cargue inmediatamente y no cause lag»: se pinta primero lo que
+     guardó este teléfono, mover y hacer zoom es UNA transformación, y al arrastrar sólo se toca lo que se mueve.
+     Se guarda en La Sala (servidor/pizarron.js): se ve igual en todos los teléfonos. Lógica en pizarron.js. -->
+<style>
+  @font-face{ font-family:Mano; src:url(letra/caveat-700.woff2) format("woff2"); font-weight:700; font-display:swap }
+  @font-face{ font-family:Texto; src:url(letra/nunito-600.woff2) format("woff2"); font-weight:600; font-display:swap }
+  @font-face{ font-family:Texto; src:url(letra/nunito-700.woff2) format("woff2"); font-weight:700; font-display:swap }
+  :root{ --vacio:#100A18; --sup:#1E1428; --hueso:#E9E4E4; --violeta:#AC27FF; --violeta2:#C77DFF; --suave:#A99BB8; --tinta:#1D1B26 }
+  *{ box-sizing:border-box; margin:0 }
+  html, body{ height:100%; overflow:hidden; overscroll-behavior:none }
+  body{ background:var(--vacio); color:var(--hueso); font:600 15px/1.4 Texto, -apple-system, system-ui, sans-serif }
+  button, input, textarea, select{ font-family:inherit; font-size:16px; color:inherit }
+  .i{ width:1.15em; height:1.15em; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none }
+  [hidden]{ display:none!important }
+  .bt{ display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:44px; min-width:44px; padding:0 12px; border-radius:12px; border:0; background:var(--sup); color:var(--hueso); cursor:pointer; white-space:nowrap }
+  .bt:active{ transform:scale(.96) } .bt:focus-visible{ outline:2px solid var(--violeta2); outline-offset:2px }
+  .bt.fuerte{ background:var(--violeta); color:#fff } .bt.peligro{ background:#5A1626; color:#FFD3DA }
+
+  /* arriba: tableros */
+  .arriba{ position:fixed; left:0; right:0; top:0; z-index:20; display:flex; gap:8px; align-items:center; padding:calc(8px + env(safe-area-inset-top)) 10px 8px; background:#100A18e8; border-bottom:1px solid #ffffff12 }
+  .tabs{ flex:1; min-width:0; display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; position:relative } .tabs::-webkit-scrollbar{ display:none }
+  .tab{ flex:none; min-height:40px; padding:0 14px; border-radius:999px; border:1px solid #ffffff1c; background:transparent; color:var(--hueso); cursor:pointer }
+  .tab.activo{ background:var(--hueso); color:var(--vacio); border-color:transparent }
+  .estado{ width:10px; height:10px; border-radius:50%; background:#3BD18A; flex:none } .estado.guardando{ background:#F2C14E } .estado.error{ background:#F05A5A }
+
+  /* el lienzo */
+  .vista{ position:fixed; inset:0; touch-action:none; cursor:grab; background-color:#F6F4EE;
+    background-image:radial-gradient(#00000022 1.2px, transparent 1.4px); background-size:24px 24px }
+  .vista.arrastrando{ cursor:grabbing }
+  .mundo{ position:absolute; left:0; top:0; transform-origin:0 0; will-change:transform }
+  .flechas{ position:absolute; left:0; top:0; width:1px; height:1px; overflow:visible; pointer-events:none }
+  .flechas path{ fill:none; stroke:#3C3650; stroke-width:3; stroke-linecap:round }
+  .el{ position:absolute; left:0; top:0; color:var(--tinta); border-radius:14px; user-select:none; -webkit-user-select:none; contain:layout paint }
+  .el.sel{ outline:3px solid var(--violeta); outline-offset:3px }
+  .el .manija{ position:absolute; right:-12px; bottom:-12px; width:28px; height:28px; border-radius:50%; background:var(--violeta); border:3px solid #fff; display:none; touch-action:none }
+  .el.sel .manija{ display:block }
+  /* nota */
+  .nota{ padding:12px 14px 10px; box-shadow:0 8px 18px -12px #0006; display:flex; flex-direction:column; gap:6px; overflow:hidden }
+  .nota .tx{ font:600 16px/1.35 Texto; white-space:pre-wrap; overflow-wrap:anywhere; flex:1; overflow:hidden }
+  .nota .pie{ display:flex; gap:6px; align-items:center; flex-wrap:wrap; font-size:12px }
+  .pill{ border-radius:999px; padding:3px 9px; font:700 12px/1.3 Texto; border:0; cursor:pointer; color:#fff }
+  .pill.pendiente{ background:#6B6677 } .pill.curso{ background:#2156D9 } .pill.hecho{ background:#178A5C } .pill.bloqueado{ background:#D9433A }
+  .nota.hecho .tx{ text-decoration:line-through; opacity:.6 }
+  .nota .quien, .nota .cuando{ color:#5A5566 }
+  /* recuadro: una fase o un apartado, detrás de lo demás */
+  .recuadro{ border:3px dashed currentColor; background:color-mix(in srgb, currentColor 7%, transparent) }
+  .recuadro .tt{ position:absolute; left:16px; top:8px; right:96px; font:700 30px/1.1 Mano; color:inherit; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+  .recuadro .av{ position:absolute; right:14px; top:16px; font:700 13px/1 Texto; color:inherit }
+  /* texto */
+  .texto{ font:700 34px/1.05 Mano; white-space:pre-wrap; padding:4px 6px }
+  /* foto */
+  .foto{ background:#fff; padding:8px 8px 6px; box-shadow:0 10px 22px -14px #0007 }
+  .foto img{ display:block; width:100%; height:calc(100% - 26px); object-fit:cover; border-radius:8px; background:#eee; pointer-events:none }
+  .foto .pie{ font:700 18px/1.2 Mano; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+  /* línea de tiempo */
+  .linea{ padding:14px 16px; background:#fff; box-shadow:0 8px 18px -12px #0006 }
+  .linea .tt, .lista .tt{ font:700 28px/1 Mano; margin-bottom:10px }
+  .linea .eje{ position:relative; display:flex; justify-content:space-between; gap:8px; padding-top:14px }
+  .linea .eje::before{ content:""; position:absolute; left:8px; right:8px; top:21px; height:4px; border-radius:2px; background:#E2DED6 }
+  .linea .eje::after{ content:""; position:absolute; left:8px; top:21px; height:4px; border-radius:2px; background:currentColor; width:var(--hecho, 0%) }
+  .linea .hito{ position:relative; z-index:1; flex:1; min-width:0; text-align:center; cursor:pointer }
+  .linea .hito i{ display:block; width:18px; height:18px; border-radius:50%; margin:0 auto 6px; background:#fff; border:3px solid #B9B3A8 }
+  .linea .hito.hecho i{ background:currentColor; border-color:currentColor }
+  .linea .hito b{ display:block; font:700 13px/1.25 Texto; color:var(--tinta); overflow-wrap:anywhere } .linea .hito small{ display:block; color:#6B6677; font-size:12px }
+  /* lista */
+  .lista{ padding:14px 16px; background:#fff; box-shadow:0 8px 18px -12px #0006; overflow:hidden }
+  .lista .bar{ height:8px; border-radius:4px; background:#E2DED6; margin-bottom:10px; overflow:hidden } .lista .bar i{ display:block; height:100%; background:currentColor }
+  .lista ul{ list-style:none; padding:0; display:grid; gap:6px }
+  .lista li{ display:flex; gap:10px; align-items:flex-start; font:600 15px/1.35 Texto; color:var(--tinta); cursor:pointer }
+  .lista li .ca{ flex:none; width:22px; height:22px; border-radius:6px; border:2.5px solid currentColor; display:grid; place-items:center; color:inherit; margin-top:-1px }
+  .lista li.hecho span{ text-decoration:line-through; opacity:.55 } .lista li.hecho .ca{ background:currentColor } .lista li.hecho .ca svg{ color:#fff }
+
+  /* abajo: herramientas y lo que se hace con lo elegido */
+  .abajo{ position:fixed; left:0; right:0; bottom:0; z-index:20; padding:8px 10px calc(8px + env(safe-area-inset-bottom)); background:#100A18ee; border-top:1px solid #ffffff12 }
+  .herr{ display:flex; gap:6px; overflow-x:auto; scrollbar-width:none } .herr::-webkit-scrollbar{ display:none }
+  .herr .bt{ flex:none; flex-direction:column; gap:2px; min-width:62px; min-height:52px; font-size:12px; padding:4px 8px }
+  .herr .bt .i{ width:22px; height:22px }
+  .acciones{ display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; margin-bottom:8px } .acciones::-webkit-scrollbar{ display:none }
+  .acciones .bt{ flex:none; font-size:14px }
+  .colores{ display:flex; gap:6px; align-items:center; flex:none; padding:0 4px }
+  .colores button{ width:30px; height:30px; border-radius:50%; border:2px solid #ffffff55; cursor:pointer }
+  .aviso{ position:fixed; left:50%; top:calc(64px + env(safe-area-inset-top)); transform:translateX(-50%); z-index:40; max-width:min(92vw, 520px); padding:10px 14px; border-radius:12px; background:#2A1C36; color:#fff; font-size:14px; box-shadow:0 10px 30px #0008 }
+
+  /* la hoja para editar */
+  dialog.hoja{ position:fixed; inset:auto 0 0 0; margin:0 auto; width:min(100%, 640px); max-height:88dvh; border:0; border-radius:22px 22px 0 0; padding:18px 16px calc(16px + env(safe-area-inset-bottom)); background:var(--sup); color:var(--hueso); overflow:auto }
+  dialog.hoja::backdrop{ background:#0008 }
+  .hoja h3{ font:700 30px/1 Mano; margin-bottom:12px; color:#fff }
+  .hoja label{ display:block; font-size:13px; color:var(--suave); margin:12px 0 4px }
+  .hoja input, .hoja textarea, .hoja select{ width:100%; min-height:44px; border-radius:12px; border:1px solid #ffffff22; background:#150E1E; padding:10px 12px }
+  .hoja textarea{ min-height:96px; resize:vertical }
+  .hoja .renglon{ display:grid; grid-template-columns:auto minmax(0,1fr) minmax(0,.7fr) auto; gap:6px; align-items:center; margin-top:6px }
+  .hoja .renglon input[type=checkbox]{ width:24px; height:24px; min-height:0 }
+  .hoja .dos{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px }
+  .hoja .botones{ display:flex; gap:8px; margin-top:16px } .hoja .botones .fuerte{ flex:1 }
+  .llave{ position:fixed; inset:0; z-index:50; display:grid; place-items:center; padding:20px; background:#100A18f2 }
+  .llave div{ width:min(100%, 420px) } .llave input{ width:100%; min-height:48px; border-radius:12px; border:1px solid #ffffff22; background:#150E1E; padding:0 12px; margin:12px 0 }
+</style>
+</head>
+<body>
+<header class="arriba">
+  <a class="bt" id="volver" href="./" aria-label="Volver a La Sala"></a>
+  <nav class="tabs" id="tabs" aria-label="Tableros"></nav>
+  <button class="bt" id="bTablero" aria-label="Nuevo tablero"></button>
+  <span class="estado" id="estado" title="Guardado"></span>
+</header>
+
+<div class="vista" id="vista" aria-label="El pizarrón: arrastra para moverte, pellizca para acercar">
+  <div class="mundo" id="mundo"><svg class="flechas" id="flechas"></svg></div>
+</div>
+
+<footer class="abajo">
+  <div class="acciones" id="acciones" hidden></div>
+  <div class="herr" id="herr"></div>
+</footer>
+<input type="file" id="archivo" accept="image/*" hidden>
+<dialog class="hoja" id="hoja"></dialog>
+<div class="aviso" id="aviso" hidden role="status"></div>
+<div class="llave" id="cajaLlave" hidden><div><h3 style="font:700 32px/1 Mano">Falta la llave de La Sala</h3><p style="color:var(--suave);margin-top:8px">Pega aquí el link de la sala (o la llave) una vez y ya queda en este teléfono.</p><input id="llaveTxt" autocomplete="off"><button class="bt fuerte" id="bLlave" style="width:100%">Listo</button></div></div>
+<script type="module" src="pizarron.js"></script>
+</body>
+</html>
