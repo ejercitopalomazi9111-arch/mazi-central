@@ -16,6 +16,9 @@ import { reflejo, llenar } from './reflejo.js';
 import { cotizar } from './cotizador.js';
 import { estimarM2, MEDIDAS } from './medidor.js';
 import { pesos } from './cerebro.js';
+import { cotizacionDelBot } from './cotizacion.js';
+
+const URL_COTIZACION = 'https://mazi-central.palomazi9111.workers.dev/urban-pest/cotizacion/?c=';
 
 const TOPE_HORA = 20;
 const DUENO_CALLA_MS = 30 * 60 * 1000;
@@ -92,6 +95,13 @@ export class Oficina {
     }
     await this.decir(conv, texto, { via: 'cerebro', razon: p.razon, modelo: p.modelo, cotizacion: cot || undefined });
     if(cot) conv.cotizacion = cot;
+    /* La cotización por escrito (BRIEF §B): cuando el bot DIO un precio que el sistema calculó, manda el link
+       a la hoja lista para guardar como PDF. Una por precio: si vuelve a preguntar lo mismo no se repite. */
+    if(cot && cot.atiende === 'si' && texto.includes(pesos(cot.desde)) && conv.cotDoc?.precio !== cot.desde){
+      const doc = await cotizacionDelBot(this.A, conv, cot, this.reloj());
+      conv.cotDoc = { codigo: doc.codigo, precio: cot.desde };
+      await this.decir(conv, `Te dejo tu cotización por escrito, por si la quieres guardar: ${this.env.URL_COTIZACION || URL_COTIZACION}${doc.codigo}`, { via: 'cotizacion', cotizacion: doc.codigo });
+    }
     await this.A.put(`manual:${m.id}`, { pregunta: m.texto, respuesta: p.respuesta, razon: p.razon, canal: m.canal, chat: m.chat, cuando: this.reloj(), estado: 'por revisar' });
     if(p.necesita_dueno) await this.aviso(conv, p.motivo || 'La IA pide que lo veas tú.');
     else if(cot?.atiende === 'caso-por-caso') await this.aviso(conv, 'Casa grande fuera de la zona: decide si se atiende y cuánto cobrar de traslado.');

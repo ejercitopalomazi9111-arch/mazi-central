@@ -14,6 +14,7 @@
 import { Oficina } from './oficina.js';
 import { firmaValida, leerAviso, enviar } from './meta.js';
 import { pensar, probarMotores } from './cerebro.js';
+import { cotizacionPublica, cotizacionAMano, listarCotizaciones } from './cotizacion.js';
 import { cotizar } from './cotizador.js';
 import { estimarM2, MEDIDAS } from './medidor.js';
 import { crearPlanta, listarPlantas, ponerEstaciones, ponerDocumentos, registrarServicio, carpetaPublica, plantaEjemplo, quitarServicio } from './carpeta.js';
@@ -64,6 +65,12 @@ export default {
       return json(r, r.estado || 200, { ...cors, 'cache-control': 'no-store' });
     }
 
+    /* La cotización por escrito que manda el bot: la abre el cliente con su link, sin llave. Sólo lectura. */
+    if(ruta === '/api/cotizacion' && req.method === 'GET'){
+      const r = await (await despacho.fetch(new Request('https://do/interno/cotizacion', { method: 'POST', body: JSON.stringify({ codigo: url.searchParams.get('c') }) }))).json();
+      return json(r, r.estado || 200, { ...cors, 'cache-control': 'no-store' });
+    }
+
     /* Todo lo demás es del panel (el centro de operaciones). Entra quien trae la llave del panel
        (Grupo Mazi) o un ACCESO: un código por persona que sólo abre esto y se quita cuando se quiera
        (los testers, 11 nov). */
@@ -104,6 +111,7 @@ export class Despacho {
     if(j && j.llaves) this.of.env = { ...this.envBase, ...j.llaves };
     if(u.pathname === '/interno/recibir'){ await this.recibir(Array.isArray(j) ? j : (j?.mensajes || [])); return new Response('ok'); }
     if(u.pathname === '/interno/panel') return Response.json(await this.panel(j.metodo, j.ruta, j.q || {}, j.b || {}, j.quien));
+    if(u.pathname === '/interno/cotizacion') return Response.json(await cotizacionPublica(this.almacen, j?.codigo));
     if(u.pathname === '/interno/carpeta') return Response.json(await carpetaPublica(this.almacen, j?.codigo));
     if(u.pathname === '/interno/acceso'){ const a = j?.codigo ? await this.almacen.get('acceso:' + await huella(j.codigo)) : null; return Response.json({ nombre: a?.nombre || null }); }
     return new Response('no', { status: 404 });
@@ -132,6 +140,8 @@ export class Despacho {
       case 'GET /api/documentos': return { bien: true, documentos: (await A.get('documentos')) || {} };
       case 'POST /api/documentos': return ponerDocumentos(A, b);
       /* qué motores de IA le llegan al bot y si contestan (sin enseñar ninguna llave) */
+      case 'GET /api/cotizaciones': return listarCotizaciones(A);
+      case 'POST /api/cotizaciones': return cotizacionAMano(A, b, quien);
       case 'GET /api/motores': return { bien: true, motores: await probarMotores(this.of.env) };
       case 'POST /api/responder': return this.of.contestaDueno(b.canal, b.chat, String(b.texto || '').slice(0, 2000), quien);
       case 'GET /api/accesos': return { bien: true, accesos: (await lista('acceso:')).map(({ nombre, creado }) => ({ nombre, creado })) };

@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Urban Pest · el precio ya no es a ojo</title>
+<!-- ANUNCIO 24 · 38 s · 9:16 · SIN VOZ (la de Chris no tiene saldo; el texto en pantalla carga el mensaje, como en
+     los anuncios de Ugoki: marca/anuncios/APRENDIDO-UGOKI.md).
+     Para el dueño de Urban Pest Control: «cotizar por WhatsApp es a ojo de buen cubero». La respuesta: su Excel ya
+     sabe cuánto cobra; metros, plaga y distancia dan un precio de partida; el técnico ajusta en la visita; los casos
+     raros le llegan a él.
+     UNA toma que se transforma, sin cortes duros: el símbolo nace → se vuelve el avatar del chat → el chat se vuelve
+     su Excel → los renglones se vuelven puntos → la recta se vuelve el precio → el precio vuelve al chat →
+     los chats se multiplican → todo regresa al símbolo y sale el nombre.
+     Los precios son DE EJEMPLO y salen del cotizador real (urban-pest/servidor/src/cotizador.js) con las tarifas de
+     prueba; el letrero lo dice. Música: «Better Times are Coming», Mixkit (licencia Mixkit, uso comercial libre):
+       curl -e https://mixkit.co/ -o /tmp/claude-0/mus/173.mp3 https://assets.mixkit.co/music/173/173.mp3
+     node herramientas/video/armar.mjs marca/anuncios/24-urban-pest/index.html marca/anuncios/salida/24-urban-pest.mp4 -->
+<style>
+  @font-face{ font-family:M; src:url(../../../urban-pest/web/fuentes/montserrat.woff2) format("woff2"); font-weight:100 900; font-display:block }
+  @font-face{ font-family:I; src:url(../../../urban-pest/web/fuentes/inter-400-800-normal.woff2) format("woff2"); font-weight:400 800; font-display:block }
+  :root{ --marina:#143361; --marina2:#0E2549; --hondo:#081833; --azul:#165D9B; --sol:#F29923; --amarillo:#F7E93F; --gris:#EEF2F6; --tinta:#14213A; --suave:#5C6879 }
+  *{ box-sizing:border-box; margin:0 }
+  html, body{ width:1080px; height:1920px; overflow:hidden; background:var(--marina2); color:#fff; font-family:I, sans-serif }
+  #fondo{ position:absolute; inset:0; background:radial-gradient(120% 80% at 50% 42%, #18407A 0%, #0E2549 55%, #071430 100%) }
+  #grano{ position:absolute; inset:0; opacity:.06; mix-blend-mode:overlay; pointer-events:none }
+  .abs{ position:absolute }
+  svg.i{ width:1em; height:1em; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none }
+
+  /* el titular: Montserrat apretada, una palabra amarilla al final */
+  #tit{ position:absolute; left:90px; width:900px; top:250px; font:800 96px/1.0 M; letter-spacing:-.035em }
+  #tit .ren{ display:block; overflow:hidden; padding:.08em 0 .06em; margin-top:-.08em; white-space:nowrap }
+  #tit .pal{ display:inline-block; will-change:transform }
+  #tit .y{ color:var(--amarillo) }
+  #ojo{ position:absolute; left:92px; top:200px; font:700 26px/1 M; letter-spacing:.22em; text-transform:uppercase; color:#9DB7DC }
+  #tacha{ position:absolute; height:12px; background:var(--amarillo); border-radius:6px; transform-origin:0 50% }
+
+  /* el símbolo y el nombre (capas del logo real, urban-pest/web/marca) */
+  #logo{ position:absolute; left:0; top:0; width:512px; height:396px; transform-origin:0 0 }
+  #logo img{ position:absolute; inset:0; width:512px; height:396px; transform-origin:249px 134px }
+
+  /* la tarjeta que se transforma: chat → Excel → gráfica → cálculo → chat */
+  #card{ position:absolute; left:90px; top:700px; width:900px; height:780px; border-radius:44px; background:var(--gris); color:var(--tinta);
+    overflow:hidden; box-shadow:0 60px 120px -40px #000c, 0 0 0 1px #ffffff10; transform-origin:50% 0 }
+  #cab{ position:absolute; left:0; right:0; top:0; height:132px; background:var(--marina); display:flex; align-items:center; gap:22px; padding:0 34px }
+  #avatar{ width:84px; height:84px; border-radius:50%; background:#fff; flex:none; position:relative; overflow:hidden }
+  #avatar img{ position:absolute; width:150px; left:-31px; top:3px }
+  .cabtx{ position:absolute; left:140px; top:30px; color:#fff }
+  .cabtx b{ display:block; font:700 36px/1.1 M; letter-spacing:-.01em } .cabtx small{ font:500 24px/1.4 I; color:#A9C3E6 }
+  .cabtx svg.i{ font-size:34px; vertical-align:-6px; margin-right:10px; color:var(--amarillo) }
+  .vista{ position:absolute; left:0; right:0; top:132px; bottom:0 }
+
+  /* chat */
+  .bur{ position:absolute; max-width:640px; padding:24px 30px 18px; font:500 37px/1.3 I; border-radius:32px; box-shadow:0 10px 24px -14px #14213A66 }
+  .bur small{ display:block; text-align:right; font:500 22px/1 I; color:#7A8798; margin-top:8px }
+  .bur small svg.i{ font-size:26px; color:#1E88E5; vertical-align:-6px; margin-left:6px }
+  #bCli{ right:36px; top:40px; background:#DCE8F6; border-bottom-right-radius:10px }
+  #bBot{ left:36px; top:300px; background:#fff; border-bottom-left-radius:10px }
+  #bBot b{ font-weight:800; color:var(--marina); background:#F7E93F66; padding:0 6px; border-radius:8px }
+  #escr{ left:36px; top:300px; padding:26px 30px; display:flex; gap:12px; background:#fff }
+  #escr i{ width:16px; height:16px; border-radius:50%; background:#9AA6B6 }
+
+  /* el Excel */
+  #tabla{ position:absolute; left:34px; right:34px; top:30px }
+  .fila{ display:grid; grid-template-columns:1.25fr .7fr 1.1fr 1fr; gap:10px; align-items:center; height:52px; padding:0 18px; border-radius:12px; font:600 29px/1 I; color:var(--tinta) }
+  .fila:nth-child(even){ background:#fff }
+  .fila.cab{ font:700 22px/1 M; letter-spacing:.12em; text-transform:uppercase; color:var(--suave); background:none!important; height:46px }
+  .fila span:last-child{ text-align:right; font-variant-numeric:tabular-nums; font-weight:800 }
+  .nota{ position:absolute; left:34px; right:34px; bottom:26px; font:500 23px/1.3 I; color:var(--suave) }
+
+  /* la gráfica */
+  #graf{ position:absolute; left:0; top:0; width:900px; height:648px }
+
+  /* el cálculo */
+  #monto{ position:absolute; left:0; right:0; top:46px; text-align:center; font:800 150px/1 M; letter-spacing:-.04em; color:var(--marina); font-variant-numeric:tabular-nums }
+  #monto small{ display:block; font:700 24px/1 M; letter-spacing:.2em; text-transform:uppercase; color:var(--suave); margin-bottom:14px }
+  .chip{ position:absolute; left:40px; right:40px; height:88px; border-radius:24px; background:#fff; display:flex; align-items:center; gap:22px; padding:0 28px;
+    font:600 30px/1.15 I; box-shadow:0 12px 26px -16px #14213A55 }
+  .chip .ic{ width:56px; height:56px; border-radius:16px; background:var(--marina); color:var(--amarillo); display:grid; place-items:center; font-size:32px; flex:none }
+  .chip b{ font-weight:800 } .chip em{ margin-left:auto; font:800 32px/1 M; font-style:normal; color:var(--azul); font-variant-numeric:tabular-nums }
+
+  /* la visita */
+  #tiquet{ position:absolute; left:40px; right:40px; top:40px; bottom:40px; border-radius:30px; background:#fff; padding:40px 44px }
+  #tiquet .k{ font:700 24px/1 M; letter-spacing:.2em; text-transform:uppercase; color:var(--suave) }
+  #tiquet .p{ font:800 140px/1 M; letter-spacing:-.04em; color:var(--marina); margin:14px 0 26px }
+  #tiquet hr{ border:0; border-top:4px dashed #CBD5E1; margin:0 0 30px }
+  #tiquet .r{ display:flex; gap:24px; align-items:flex-start; font:600 34px/1.25 I }
+  #tiquet .r .ic{ width:70px; height:70px; border-radius:20px; display:grid; place-items:center; font-size:40px; flex:none; background:#FFF3DF; color:var(--sol) }
+  #tiquet .r small{ display:block; font:500 27px/1.3 I; color:var(--suave); margin-top:8px }
+
+  /* casos raros */
+  .raro{ position:absolute; left:0; top:0; height:140px; padding:0 44px 0 28px; border-radius:36px; background:#fff; color:var(--tinta); display:flex; align-items:center; gap:24px;
+    font:800 54px/1 M; box-shadow:0 26px 50px -24px #000a }
+  .raro .ic{ width:88px; height:88px; border-radius:24px; background:var(--sol); color:#fff; display:grid; place-items:center; font-size:50px }
+  #aviso{ position:absolute; left:90px; width:900px; top:760px; height:170px; border-radius:36px; background:#ffffffee; color:var(--tinta); display:flex; align-items:center; gap:26px; padding:0 34px;
+    box-shadow:0 40px 80px -30px #000c }
+  #aviso .ic{ width:96px; height:96px; border-radius:26px; background:var(--marina); color:var(--amarillo); display:grid; place-items:center; font-size:52px; flex:none }
+  #aviso b{ display:block; font:800 36px/1.15 M } #aviso small{ font:500 28px/1.3 I; color:var(--suave) }
+
+  /* la rejilla del clímax */
+  #rejilla{ position:absolute; left:90px; top:700px; width:900px; height:780px }
+  .mini{ position:absolute; border-radius:22px; background:var(--gris); overflow:hidden; box-shadow:0 20px 40px -20px #000b }
+  .mini .h{ height:22%; background:var(--marina) } .mini .c{ position:absolute; right:8%; top:30%; width:58%; height:16%; border-radius:12px; background:#DCE8F6 }
+  .mini .b{ position:absolute; left:8%; top:54%; width:72%; height:30%; border-radius:12px; background:#fff; display:grid; place-items:center; color:var(--marina); font:800 1px/1 M; font-variant-numeric:tabular-nums }
+  #reloj{ position:absolute; right:90px; top:640px; font:700 34px/1 M; color:#A9C3E6; display:flex; gap:12px; align-items:center }
+
+  /* la firma */
+  #frase{ position:absolute; left:0; right:0; top:1300px; text-align:center; font:800 84px/1.05 M; letter-spacing:-.03em }
+  #frase span{ display:inline-block } #frase .y{ color:var(--amarillo) }
+  #mazi{ position:absolute; left:0; right:0; top:1460px; text-align:center; font:600 28px/1 M; letter-spacing:.18em; text-transform:uppercase; color:#8FA9D0 }
+</style>
+</head>
+<body>
+<div id="fondo"></div>
+<canvas id="grano" width="540" height="960"></canvas>
+<div id="ojo"></div>
+<div id="tit"></div>
+<div id="tacha"></div><div id="tacha2" style="position:absolute;height:12px;background:#F7E93F;border-radius:6px;transform-origin:0 50%"></div>
+
+<div id="card">
+  <div id="cab">
+    <div id="avatar"></div>
+    <div class="cabtx" id="cabChat"><b>Urban Pest Control</b><small>en línea</small></div>
+    <div class="cabtx" id="cabExcel"><b><svg class="i"><use href="#i-sheet"/></svg>Tus trabajos</b><small>tu Excel de siempre</small></div>
+    <div class="cabtx" id="cabCalc"><b><svg class="i"><use href="#i-calculator"/></svg>El cotizador</b><small>con tus números</small></div>
+  </div>
+  <div class="vista" id="vChat">
+    <div class="bur" id="bCli"><span id="tCli"></span><small>3:12 a.m.</small></div>
+    <div class="bur" id="escr"><i></i><i></i><i></i></div>
+    <div class="bur" id="bBot"><span id="tBot"></span><small>3:12 a.m.<svg class="i"><use href="#i-check-check"/></svg></small></div>
+  </div>
+  <div class="vista" id="vExcel"><div id="tabla"></div><div class="nota">Datos de ejemplo. Con tu Excel salen tus precios.</div></div>
+  <div class="vista" id="vGraf"><svg id="graf" viewBox="0 0 900 648"></svg></div>
+  <div class="vista" id="vCalc"><div id="monto"><small>Precio de partida</small><span id="nMonto">$0</span></div><div id="chips"></div></div>
+  <div class="vista" id="vVisita"><div id="tiquet">
+    <div class="k">Precio de partida</div><div class="p">$1,200</div><hr>
+    <div class="r" id="r1"><div class="ic"><svg class="i"><use href="#i-search"/></svg></div><div>En la visita hubo más plaga en la cocina<small>Pasa. No todas las casas son iguales.</small></div></div>
+    <div class="r" id="r2" style="margin-top:30px"><div class="ic" style="background:#E3ECF7;color:var(--marina)"><svg class="i"><use href="#i-wrench"/></svg></div><div>El técnico ajusta ahí mismo<small>y el cliente ya sabía de dónde partía.</small></div></div>
+  </div></div>
+</div>
+
+<div id="raros"></div>
+<div id="aviso"><div class="ic"><svg class="i"><use href="#i-bell-ring"/></svg></div><div><b>Caso para ti</b><small>Palomas en una bodega de Parque Industrial</small></div></div>
+<div id="rejilla"></div>
+<div id="reloj"><svg class="i"><use href="#i-moon"/></svg><span>3:12 a.m.</span></div>
+
+<div id="logo"></div>
+<div id="frase"><span>Tu&nbsp;precio,</span> <span>sin</span> <span class="y">adivinar.</span></div>
+<div id="mazi">Lo construimos en Grupo Mazi</div>
+
+<script type="module">
+window.listo = (async () => {
+const $ = (s) => document.querySelector(s);
+const cl = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const tramo = (t, a, b) => cl((t - a) / (b - a));
+const sale = (u) => 1 - Math.pow(1 - u, 3), entra = (u) => u * u * u, suave = (u) => u * u * (3 - 2 * u);
+const resorte = (u) => u >= 1 ? 1 : 1 - Math.cos(u * Math.PI * 2.4) * Math.exp(-u * 6);
+const mez = (a, b, u) => a + (b - a) * u;
+const vida = (t, a, b, e = .35, s = .3) => Math.min(sale(tramo(t, a, a + e)), 1 - entra(tramo(t, b - s, b)));
+const pesos = (n) => '$' + Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+/* ── íconos: Lucide (ISC), los mismos de su página ── */
+const L = (await (await fetch('../../../presentaciones/vendor/lucide-1.48.0.json')).json()).iconos;
+const usar = ['sheet', 'calculator', 'check-check', 'search', 'wrench', 'bell-ring', 'moon', 'bug', 'ruler', 'route', 'percent', 'bird', 'factory', 'map-pin'];
+document.body.insertAdjacentHTML('afterbegin', '<svg width="0" height="0" style="position:absolute">' + usar.map(n => `<symbol id="i-${n}" viewBox="0 0 24 24">${L[n]}</symbol>`).join('') + '</svg>');
+const ico = (n) => `<svg class="i"><use href="#i-${n}"/></svg>`;
+
+/* ── el logo real, por capas ── */
+const CAPAS = ['globo', 'sol', 'personita', 'chorro', 'urban', 'pest', 'control'], img = {};
+for(const n of CAPAS){ const i = new Image(); if(n === 'urban' || n === 'control') i.style.filter = 'brightness(0) invert(1)'; i.src = `../../../urban-pest/web/marca/${n}.webp`; await i.decode(); img[n] = i; $('#logo').append(i); }
+$('#avatar').innerHTML = ['sol', 'globo', 'personita', 'chorro'].map(n => `<img src="../../../urban-pest/web/marca/${n}.webp">`).join('');
+/* el símbolo (sin letras) vive en x 102–396, y 0–268 de la capa de 512 × 396 */
+const SIM = { cx: 249, cy: 134, w: 294 };
+
+/* ── los datos de ejemplo: el MISMO cálculo del cotizador, con las tarifas de prueba ── */
+const T = { mano: 2, km: 4, margen: .3, min: 500, plagas: { Cucarachas: 3, Hormigas: 2.2, Chinches: 4.8, Alacranes: 3.25, Ratones: 2.8 } };
+const precio = (m2, plaga, km) => Math.max(T.min, Math.ceil((m2 * (T.plagas[plaga] + T.mano) + km * 2 * T.km) * (1 + T.margen) / 10) * 10);
+const FILAS = [['Cucarachas', 90, 'Centro', 6], ['Chinches', 120, 'Corregidora', 10], ['Cucarachas', 155, 'Juriquilla', 18], ['Hormigas', 210, 'El Marqués', 15],
+  ['Alacranes', 140, 'El Refugio', 14], ['Cucarachas', 260, 'Zibatá', 20], ['Ratones', 180, 'Centro', 6], ['Cucarachas', 70, 'Corregidora', 10], ['Chinches', 300, 'Juriquilla', 18]]
+  .map(([p, m2, z, km], i) => ({ p, m2, z, km, $: precio(m2, p, km) + [0, 40, -20, 30, -40, 20, 0, -10, 60][i] }));
+$('#tabla').innerHTML = '<div class="fila cab"><span>Plaga</span><span>m²</span><span>Zona</span><span>Cobraste</span></div>'
+  + FILAS.map(f => `<div class="fila"><span>${f.p}</span><span>${f.m2}</span><span>${f.z}</span><span>${pesos(f.$)}</span></div>`).join('');
+const filasEl = [...document.querySelectorAll('#tabla .fila:not(.cab)')];
+
+/* la gráfica: metros (x) contra lo que cobró (y) */
+const G = { x0: 110, x1: 840, y0: 560, y1: 70, m2: [40, 320], $: [0, 3600] };
+const gx = (m2) => mez(G.x0, G.x1, (m2 - G.m2[0]) / (G.m2[1] - G.m2[0])), gy = (p) => mez(G.y0, G.y1, (p - G.$[0]) / (G.$[1] - G.$[0]));
+const lin = (m2) => (m2 * 3.4 * 1.3) + 260;                      // la recta que mejor pasa por los puntos de ejemplo
+$('#graf').innerHTML = `
+  <g stroke="#CBD5E1" stroke-width="3"><line x1="${G.x0}" y1="${G.y0}" x2="${G.x1 + 20}" y2="${G.y0}"/><line x1="${G.x0}" y1="${G.y0}" x2="${G.x0}" y2="${G.y1 - 20}"/></g>
+  <text x="${G.x1}" y="${G.y0 + 50}" text-anchor="end" font-family="M" font-weight="700" font-size="26" fill="#5C6879" letter-spacing="3">METROS</text>
+  <text x="${G.x0 - 20}" y="${G.y1 - 30}" font-family="M" font-weight="700" font-size="26" fill="#5C6879" letter-spacing="3">LO QUE COBRASTE</text>
+  <line id="recta" x1="${gx(50)}" y1="${gy(lin(50))}" x2="${gx(310)}" y2="${gy(lin(310))}" stroke="#F29923" stroke-width="10" stroke-linecap="round"/>
+  ${FILAS.map((f, i) => `<circle id="pt${i}" r="15" fill="#143361" stroke="#fff" stroke-width="5"/>`).join('')}`;
+const LARGO = Math.hypot(gx(310) - gx(50), gy(lin(310)) - gy(lin(50)));
+$('#recta').style.strokeDasharray = LARGO;
+
+/* el cálculo, con el ejemplo de Juriquilla (3 recámaras, 2 baños y patio ≈ 155 m², 18 km) — sale $1,200 */
+const PASOS = [
+  { ic: 'bug', tx: '<b>Plaga:</b> cucarachas', v: 465, et: '$465' },
+  { ic: 'ruler', tx: '<b>Metros:</b> 3 recámaras, 2 baños y patio ≈ 155 m²', v: 775, et: '+$310' },
+  { ic: 'route', tx: '<b>Distancia:</b> Juriquilla, 18 km', v: 919, et: '+$144' },
+  { ic: 'percent', tx: '<b>Tu ganancia</b>', v: 1200, et: '+30 %' }];
+$('#chips').innerHTML = PASOS.map((p, i) => `<div class="chip" style="top:${250 + i * 102}px"><div class="ic">${ico(p.ic)}</div><span>${p.tx}</span><em>${p.et}</em></div>`).join('');
+const chipsEl = [...document.querySelectorAll('.chip')];
+
+/* casos raros */
+const RAROS = [['bird', 'Palomas', 110, 1000], ['factory', 'Industria', 420, 1170], ['map-pin', 'Fuera de zona', 150, 1340]];
+$('#raros').innerHTML = RAROS.map(([i, n]) => `<div class="raro"><div class="ic">${ico(i)}</div>${n}</div>`).join('');
+const rarosEl = [...document.querySelectorAll('.raro')];
+
+/* rejilla: 16 chats contestando solos */
+const MINIS = Array.from({ length: 16 }, (_, i) => FILAS[i % FILAS.length].$ + (i > 8 ? 110 : 0));
+$('#rejilla').innerHTML = MINIS.map(p => `<div class="mini"><div class="h"></div><div class="c"></div><div class="b">${pesos(p)}</div></div>`).join('');
+const minisEl = [...document.querySelectorAll('.mini')];
+
+/* ── los titulares ── */
+const TITS = [
+  { a: 3.3, b: 6.7, ojo: 'Lo que siempre se dice', l: ['Cotizar sin ver', 'la casa es a ojo', 'de buen cubero.'] },
+  { a: 7.0, b: 10.5, l: ['Tu Excel ya', 'sabe cuánto', '*cobras.*'] },
+  { a: 10.7, b: 13.5, l: ['Cada trabajo', 'que hiciste', 'es un *dato.*'] },
+  { a: 13.8, b: 19.9, l: ['Metros, plaga', 'y distancia:', 'sale el *precio.*'] },
+  { a: 20.2, b: 25.3, l: ['Un precio de', 'partida, en', '*segundos.*'] },
+  { a: 25.6, b: 29.6, l: ['¿Había más', 'plaga? El técnico', '*ajusta.*'] },
+  { a: 29.9, b: 32.1, l: ['Los casos', 'raros, *a ti.*'] },
+  { a: 32.3, b: 34.5, l: ['Los demás,', 'se cotizan', '*solos.*'] }];
+const tit = $('#tit');
+tit.innerHTML = TITS.map((h, k) => `<div class="h" data-k="${k}" style="position:absolute;left:0;top:0">${h.l.map(r => `<span class="ren">${
+  r.split(/(\*[^*]+\*)/).filter(Boolean).flatMap(s => s.startsWith('*') ? [`<span class="pal y">${s.slice(1, -1)}</span>`] : s.split(' ').filter(Boolean).map(w => `<span class="pal">${w}</span>`)).join(' ')
+}</span>`).join('')}</div>`).join('');
+await document.fonts.ready;
+/* que cada titular quepa en 900 px */
+for(const h of tit.querySelectorAll('.h')){ const ancho = Math.max(...[...h.querySelectorAll('.ren')].map(r => r.scrollWidth)); if(ancho > 900) h.style.fontSize = (96 * 900 / ancho) + 'px'; }
+const hs = [...tit.querySelectorAll('.h')];
+/* la tacha del primer titular cubre «a ojo de buen cubero» */
+const r2 = hs[0].querySelectorAll('.ren');
+
+/* grano fijo (no parpadea: el video ya trae movimiento) */
+{ const g = $('#grano').getContext('2d'), d = g.createImageData(540, 960); for(let i = 0; i < d.data.length; i += 4){ const v = Math.random() * 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255; } g.putImageData(d, 0, 0); }
+
+const ver = (el, o, tr = '') => { el.style.opacity = o; el.style.visibility = o > .001 ? 'visible' : 'hidden'; if(tr !== null) el.style.transform = tr; };
+const escribe = (el, txt, t, a, b) => { const n = Math.round(txt.length * tramo(t, a, b)); const s = txt.slice(0, n); if(el._s !== s){ el.innerHTML = s; el._s = s; } };
+
+/* posición del logo: centro del símbolo en (cx, cy), con el símbolo de `ancho` px */
+const ponLogo = (cx, cy, ancho, o = 1) => { const k = ancho / SIM.w; $('#logo').style.transform = `translate(${cx - SIM.cx * k}px, ${cy - SIM.cy * k}px) scale(${k})`; $('#logo').style.opacity = o; $('#logo').style.visibility = o > .001 ? 'visible' : 'hidden'; };
+
+const BOT = 'Te saldría aproximadamente en <b>$1,200</b>. Si los datos que nos diste están bien, ése es el costo; el técnico te lo confirma al ver tu casa.';
+const CLI = 'Hola, ¿cuánto me cobras por fumigar? Tengo cucarachas en la casa.';
+
+window.pintar = (t) => {
+  /* 1 · EL SÍMBOLO NACE (0–2.0) y SE VUELVE EL AVATAR DEL CHAT (2.0–2.8) */
+  const a = suave(tramo(t, 2.0, 2.8)), z = suave(tramo(t, 34.6, 35.5));
+  if(t < 34.6){
+    ponLogo(mez(540, 90 + 34 + 42, a), mez(880, 700 + 66, a), mez(560, 86, a), t < 2.8 ? 1 : 0);
+  } else {
+    /* 10 · LA REJILLA REGRESA AL SÍMBOLO (34.6–35.5) y SALE EL NOMBRE */
+    const sube = suave(tramo(t, 35.6, 36.3));
+    ponLogo(540, mez(1090, mez(880, 760, sube), z), mez(120, mez(560, 520, sube), z), sale(tramo(t, 34.6, 35.0)));
+  }
+  img.globo.style.transform = `scale(${resorte(tramo(t, 0.05, 0.85))})`;
+  img.personita.style.transform = `translateY(${(1 - sale(tramo(t, .45, 1.05))) * -70}px)`; img.personita.style.opacity = tramo(t, .45, .7);
+  img.chorro.style.clipPath = `inset(0 ${100 - 100 * sale(tramo(t, .85, 1.35))}% 0 0)`;
+  img.sol.style.transform = `rotate(${(1 - sale(tramo(t, 1.0, 1.6))) * -40}deg)`; img.sol.style.opacity = tramo(t, 1.0, 1.25);
+  /* el nombre sale de detrás del símbolo, de lado (sólo al final) */
+  const nom = sale(tramo(t, 35.9, 36.6));
+  img.urban.style.transform = `translateX(${(1 - nom) * 140}px)`; img.urban.style.opacity = nom;
+  img.pest.style.transform = `translateX(${(1 - nom) * -140}px)`; img.pest.style.opacity = nom;
+  img.control.style.opacity = tramo(t, 36.4, 36.8);
+
+  /* la tarjeta: nace desde el avatar (2.3–2.9) y se va a la rejilla (31.9–32.6) */
+  const nace = sale(tramo(t, 2.3, 2.95)), seVa = suave(tramo(t, 29.4, 29.9)), vuelve = 0;
+  ver($('#card'), Math.min(tramo(t, 2.3, 2.5), 1 - seVa), `translateY(${seVa * 60}px) scale(${mez(.12, 1, nace) * (1 - seVa * .08)})`);
+  $('#card').style.transformOrigin = t < 3 ? '8.4% 8.5%' : '50% 0';
+  $('#avatar').style.opacity = t >= 2.8 ? 1 : 0;
+
+  /* cabeceras y vistas de la tarjeta: cada cambio se funde en .35 s */
+  const enChat = Math.max(1 - tramo(t, 6.7, 7.05), tramo(t, 20.0, 20.35));
+  const enExcel = Math.min(tramo(t, 6.8, 7.15), 1 - tramo(t, 13.6, 13.95));
+  const enCalc = tramo(t, 13.7, 14.05) * (1 - tramo(t, 20.0, 20.35));
+  ver($('#cabChat'), enChat * (1 - tramo(t, 25.3, 25.6)), null); ver($('#cabExcel'), enExcel, null); ver($('#cabCalc'), Math.max(enCalc, tramo(t, 25.4, 25.7)), null);
+  /* 2 · EL CHAT: el cliente pregunta, el dueño se queda «escribiendo…» */
+  ver($('#vChat'), t < 20 ? 1 - tramo(t, 6.7, 7.0) : tramo(t, 20.0, 20.3) * (1 - tramo(t, 25.3, 25.6)), null);
+  ver($('#bCli'), sale(tramo(t, 2.9, 3.2)), `translateY(${(1 - sale(tramo(t, 2.9, 3.2))) * 20}px)`);
+  escribe($('#tCli'), CLI, t, 3.0, 4.5);
+  const esc = t < 20 ? vida(t, 4.7, 6.7, .2, .2) : vida(t, 20.3, 20.9, .1, .1);
+  ver($('#escr'), esc, null); [...$('#escr').children].forEach((d, i) => d.style.transform = `translateY(${Math.sin(t * 9 - i * .9) * 6}px)`);
+  ver($('#bBot'), t > 20.85 ? sale(tramo(t, 20.85, 21.15)) : 0, `scale(${mez(.9, 1, sale(tramo(t, 20.85, 21.15)))})`);
+  $('#bBot').style.transformOrigin = '0 100%';
+  escribe($('#tBot'), BOT, t, 20.9, 22.6);
+  if(t >= 20.9 && t < 22.6 && /<b>[^<]*$/.test($('#tBot')._s || '')) $('#tBot').innerHTML = $('#tBot')._s + '</b>';
+
+  /* 3 · EL EXCEL: los renglones caen uno por uno */
+  ver($('#vExcel'), Math.min(enExcel, 1 - tramo(t, 10.6, 10.9)), null);
+  filasEl.forEach((f, i) => { const u = sale(tramo(t, 7.2 + i * .17, 7.5 + i * .17)); f.style.opacity = u; f.style.transform = `translateX(${(1 - u) * 60}px)`; });
+  /* 4 · LOS RENGLONES SE VUELVEN PUNTOS, Y LOS PUNTOS UNA RECTA */
+  ver($('#vGraf'), tramo(t, 10.6, 10.9) * (1 - tramo(t, 13.6, 13.95)), null);
+  FILAS.forEach((f, i) => {
+    const u = suave(tramo(t, 10.7 + i * .09, 11.4 + i * .09)), y0 = 30 + 46 + 52 * i + 26;
+    const c = $('#pt' + i); c.setAttribute('cx', mez(830, gx(f.m2), u)); c.setAttribute('cy', mez(y0, gy(f.$), u));
+    c.setAttribute('r', 15 * (1 - .4 * tramo(t, 12.9, 13.4)));
+  });
+  $('#recta').style.strokeDashoffset = LARGO * (1 - suave(tramo(t, 11.9, 12.8)));
+  /* 5 · EL CÁLCULO: cada dato mueve el número */
+  ver($('#vCalc'), enCalc, null);
+  const llegadas = [14.4, 15.5, 16.6, 17.7];
+  let v = 0; PASOS.forEach((p, i) => { const u = sale(tramo(t, llegadas[i] + .25, llegadas[i] + .75)); if(t >= llegadas[i] + .25) v = mez(i ? PASOS[i - 1].v : 0, p.v, u);
+    const e = sale(tramo(t, llegadas[i], llegadas[i] + .35)); chipsEl[i].style.opacity = e; chipsEl[i].style.transform = `translateY(${(1 - e) * 40}px)`; });
+  const sv = pesos(t > 18.4 ? 1200 : v); if($('#nMonto')._s !== sv){ $('#nMonto').textContent = sv; $('#nMonto')._s = sv; }
+  $('#nMonto').style.color = t > 18.4 ? '#165D9B' : '';
+  $('#monto').style.transform = `scale(${1 + .08 * Math.sin(Math.PI * tramo(t, 18.4, 18.8))})`;
+  /* 7 · LA VISITA */
+  ver($('#vVisita'), tramo(t, 25.4, 25.75), null);
+  ['#r1', '#r2'].forEach((s, i) => { const u = sale(tramo(t, 26.3 + i * 1.1, 26.7 + i * 1.1)); ver($(s), u, `translateY(${(1 - u) * 30}px)`); });
+  /* 8 · LOS CASOS RAROS van al dueño */
+  rarosEl.forEach((r, i) => {
+    const [, , x, y] = RAROS[i], e = sale(tramo(t, 29.9 + i * .18, 30.3 + i * .18)), va = suave(tramo(t, 31.0 + i * .12, 31.5 + i * .12));
+    ver(r, Math.min(e, 1 - tramo(t, 31.35 + i * .12, 31.5 + i * .12)), `translate(${mez(x, 400, va)}px, ${mez(y, 845, va)}px) scale(${mez(.7, 1, e) * mez(1, .3, va)})`);
+  });
+  const av = vida(t, 31.3, 32.3, .35, .25); ver($('#aviso'), av, `translateY(${(1 - sale(tramo(t, 31.3, 31.65))) * -40}px) scale(${1 + .04 * Math.sin(Math.PI * tramo(t, 31.55, 31.85))})`);
+  /* 9 · EL CLÍMAX: 1 → 4 → 16 chats contestando solos, de madrugada */
+  const paso = t < 32.9 ? 1 : t < 33.6 ? 2 : 4, u = sale(tramo(t, paso === 1 ? 32.3 : paso === 2 ? 32.9 : 33.6, (paso === 1 ? 32.3 : paso === 2 ? 32.9 : 33.6) + .35));
+  const prev = paso === 4 ? 2 : 1;
+  const colapsa = suave(tramo(t, 34.5, 35.2));
+  minisEl.forEach((m, i) => {
+    const celda = (n) => { const r = Math.floor(i / 4), c = i % 4; const rr = Math.min(r, n - 1), cc = Math.min(c, n - 1); const g = 18, w = (900 - g * (n - 1)) / n, h = (780 - g * (n - 1)) / n; return { x: cc * (w + g), y: rr * (h + g), w, h, real: r < n && c < n }; };
+    const A = celda(prev), B = celda(paso), k = paso === prev ? 1 : u;
+    const x = mez(A.x, B.x, k), y = mez(A.y, B.y, k), w = mez(A.w, B.w, k), h = mez(A.h, B.h, k);
+    const vis = (B.real ? 1 : 0) * (A.real || k > .3 ? 1 : 0);
+    const cx = mez(x + w / 2, 450, colapsa), cy = mez(y + h / 2, 390, colapsa), ww = mez(w, 30, colapsa), hh = mez(h, 30, colapsa);
+    m.style.left = (cx - ww / 2) + 'px'; m.style.top = (cy - hh / 2) + 'px'; m.style.width = ww + 'px'; m.style.height = hh + 'px';
+    m.querySelector('.b').style.fontSize = (h * .13) + 'px';
+    m.style.borderRadius = mez(w * .05, 15, colapsa) + 'px';
+    const o = vis * tramo(t, 32.2, 32.4) * (1 - tramo(t, 34.55, 34.85));
+    m.style.opacity = o; m.style.visibility = o > .001 ? 'visible' : 'hidden';
+  });
+  ver($('#reloj'), vida(t, 33.0, 34.6, .3, .3), null);
+  /* 10 · LA FIRMA: frase palabra por palabra, la última en amarillo */
+  [...$('#frase').children].forEach((s, i) => { const e = sale(tramo(t, 36.5 + i * .28, 36.85 + i * .28)); ver(s, e, `translateY(${(1 - e) * 40}px)`); });
+  ver($('#mazi'), tramo(t, 37.3, 37.7), null);
+
+  /* los titulares: palabra por palabra al entrar, todo junto hacia arriba al salir */
+  ver($('#ojo'), vida(t, 3.1, 6.7, .3, .3), null); $('#ojo').textContent = 'Lo que siempre se dice';
+  hs.forEach((h, k) => {
+    const H = TITS[k]; if(t < H.a - .1 || t > H.b + .1){ h.style.visibility = 'hidden'; return; }
+    h.style.visibility = 'visible';
+    [...h.querySelectorAll('.pal')].forEach((p, i) => {
+      const e = sale(tramo(t, H.a + i * .07, H.a + i * .07 + .45)), s = entra(tramo(t, H.b - .32, H.b));
+      p.style.transform = `translateY(${(1 - e) * 110 - s * 110}%)`;
+    });
+  });
+  /* la tacha amarilla sobre «a ojo de buen cubero» */
+  const tu = sale(tramo(t, 5.6, 6.1)), sal = 1 - tramo(t, 6.5, 6.7);
+  if(t > 5.5 && t < 6.75){
+    const r = r2[1].getBoundingClientRect(), pal = r2[1].querySelectorAll('.pal'), x0 = pal[pal.length - 2].getBoundingClientRect().left, r3 = r2[2].getBoundingClientRect();
+    $('#tacha').style.left = x0 + 'px'; $('#tacha').style.top = (r.top + r.height * .55) + 'px'; $('#tacha').style.width = (r.right - x0) + 'px';
+    $('#tacha').style.transform = `scaleX(${tu})`; $('#tacha').style.opacity = sal;
+    const t2 = $('#tacha2'); t2.style.left = r3.left + 'px'; t2.style.top = (r3.top + r3.height * .55) + 'px'; t2.style.width = r3.width + 'px';
+    t2.style.transform = `scaleX(${sale(tramo(t, 5.85, 6.3))})`; t2.style.opacity = sal;
+  } else { $('#tacha').style.opacity = 0; $('#tacha2').style.opacity = 0; }
+};
+
+window.VIDEO = { w: 1080, h: 1920, fps: 30, dur: 38.6,
+  musica: { archivo: '/tmp/claude-0/mus/173.mp3', desde: 38, vol: .55, entrada: .4, fin: 2.4 },
+  sonidos: [
+    ['../../../herramientas/video/efectos/golpe.wav', 1.55, .5],
+    ['../../../herramientas/video/efectos/whoosh.wav', 2.05, .35],
+    ...Array.from({ length: 9 }, (_, i) => ['../../../herramientas/video/efectos/toque.wav', 3.0 + i * .17, .18]),
+    ['../../../herramientas/video/efectos/subida.wav', 5.55, .35],
+    ['../../../herramientas/video/efectos/whoosh.wav', 6.75, .35],
+    ...FILAS.map((_, i) => ['../../../herramientas/video/efectos/toque.wav', 7.2 + i * .17, .25]),
+    ['../../../herramientas/video/efectos/whoosh.wav', 10.65, .3],
+    ...[14.4, 15.5, 16.6, 17.7].map(x => ['../../../herramientas/video/efectos/toque.wav', x, .4]),
+    ['../../../herramientas/video/efectos/ding.wav', 18.4, .5],
+    ['../../../herramientas/video/efectos/ding.wav', 20.9, .35],
+    ['../../../herramientas/video/efectos/whoosh.wav', 25.35, .3],
+    ['../../../herramientas/video/efectos/toque.wav', 26.3, .35], ['../../../herramientas/video/efectos/toque.wav', 27.4, .35],
+    ...[29.9, 30.08, 30.26].map(x => ['../../../herramientas/video/efectos/toque.wav', x, .35]),
+    ['../../../herramientas/video/efectos/timbre.wav', 31.4, .4],
+    ['../../../herramientas/video/efectos/whoosh.wav', 32.85, .3], ['../../../herramientas/video/efectos/whoosh.wav', 33.55, .3],
+    ['../../../herramientas/video/efectos/subida.wav', 34.5, .35],
+    ['../../../herramientas/video/efectos/golpe.wav', 35.55, .5]] };
+window.pintar(0);
+})();
+</script>
+</body>
+</html>

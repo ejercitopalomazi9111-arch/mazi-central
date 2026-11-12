@@ -153,8 +153,27 @@ console.log('medidor (no sabe cuánto mide su casa)');
   ok('«2500 m2» como texto se lee como 2500', o.datos.m2 === 2500, JSON.stringify(o.datos)); }
 { const t = hacer({ pensar: (a, i) => ({ bien: true, respuesta: a.cotizacion ? 'Te saldría aproximadamente en {precio}.' : '¿Dónde está?', necesita_dueno: false, motivo: '', razon: 'r', datos: { plaga: 'cucarachas', m2: null, zona: 'Juriquilla', tipo: 'casa' } }) });
   await t.of.atender(msj('Tengo cucarachas en mi casa en Juriquilla, mide 2500 m2. Cuánto?'));
-  const ult = t.M.get('conv:whatsapp:524420000000').mensajes.at(-1);
+  const ult = t.M.get('conv:whatsapp:524420000000').mensajes.filter(m => m.via !== 'cotizacion').at(-1);
   ok('si la IA no apunta los metros, se sacan del mensaje y sale el precio', ult.via === 'cerebro' && /\$\d{1,3}(,\d{3})+/.test(ult.texto), ult.texto); }
+
+/* ── la cotización por escrito (12 nov) ── */
+{ const t = hacer({ pensar: (a) => ({ bien: true, respuesta: a.cotizacion ? 'Te saldría aproximadamente en {precio}.' : '¿Dónde está?', necesita_dueno: false, motivo: '', razon: 'r', datos: { plaga: 'cucarachas', m2: 120, zona: 'Juriquilla', tipo: 'casa' } }) });
+  await t.of.atender(msj('Tengo cucarachas en mi casa de Juriquilla, 120 m2', '5244200001', { nombre: 'Ana' }));
+  const ms = t.M.get('conv:whatsapp:5244200001').mensajes.filter(m => m.de === 'negocio');
+  const link = ms.at(-1).texto.match(/\?c=([a-z0-9]+)/)?.[1];
+  ok('al dar un precio, el bot manda el link de la cotización por escrito', ms.length === 2 && !!link && ms.at(-1).via === 'cotizacion', ms.map(m => m.texto).join(' | '));
+  await t.of.atender(msj('¿y eso incluye todo?', '5244200001'));
+  ok('si repite el mismo precio, no vuelve a mandar el link', t.M.get('conv:whatsapp:5244200001').mensajes.filter(m => m.via === 'cotizacion').length === 1);
+  const { cotizacionPublica } = await import('./src/cotizacion.js');
+  const A = { get: async k => t.M.get(k), put: async (k, v) => t.M.set(k, v), list: async p => [...t.M].filter(([k]) => k.startsWith(p)) };
+  const pub = await cotizacionPublica(A, link), c = pub.cotizacion;
+  ok('la hoja trae el MISMO precio que dijo el bot y no trae teléfono ni chat', pub.bien && ms[0].texto.includes('$' + c.precio.toLocaleString('en-US')) && !JSON.stringify(pub).includes('5244200001') && c.cliente === 'Ana', JSON.stringify(c));
+  ok('un link inventado da 404', (await cotizacionPublica(A, 'zzzzzzzzzzzz')).estado === 404 && (await cotizacionPublica(A, '../../x')).estado === 404); }
+{ const { cotizacionAMano } = await import('./src/cotizacion.js');
+  const M = new Map(), A = { get: async k => M.get(k), put: async (k, v) => M.set(k, v), list: async p => [...M].filter(([k]) => k.startsWith(p)) };
+  const r = await cotizacionAMano(A, { cliente: 'Planta X', renglones: [{ concepto: 'Servicio mensual', cantidad: 12, precio: 3500 }, { concepto: 'Estaciones de cebo', cantidad: 20, precio: 180 }, { concepto: '', precio: 5 }] }, 'Dueño');
+  ok('la cotización a mano suma sus renglones y tira los vacíos', r.bien && r.cotizacion.precio === 45600 && r.cotizacion.renglones.length === 2, JSON.stringify(r));
+  ok('a mano sin cliente o sin renglones no se guarda', (await cotizacionAMano(A, { renglones: [{ concepto: 'x', precio: 1 }] })).estado === 400 && (await cotizacionAMano(A, { cliente: 'x', renglones: [] })).estado === 400); }
 
 ok('«chinches» en plural se entiende (antes quedaba «chinch»)', aPlaga('chinches') === 'chinche' && aPlaga('Chinches de cama') === 'chinche' && aPlaga('ratones') === 'roedor' && aPlaga('arañas') === 'arana');
 /* ── la carpeta de cumplimiento (12 nov): lo que se le promete a cada planta ── */

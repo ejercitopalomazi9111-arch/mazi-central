@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Cotización · Urban Pest Control</title>
+<link rel="icon" href="../web/img/sello.png">
+<link rel="preload" href="../web/fuentes/montserrat.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+/* La cotización por escrito (BRIEF §B). Dos modos en un archivo:
+     ?c=CODIGO   la que abre el cliente con el link que le mandó el bot (o el dueño). Sólo lectura, lista
+                 para «Guardar como PDF».
+     ?nueva      el dueño arma una a mano, con sus renglones y precios (pide su acceso).
+   Colores y letra de su marca; hoja carta al imprimir. */
+@font-face{font-family:"Montserrat";src:url(../web/fuentes/montserrat.woff2) format("woff2");font-weight:100 900;font-display:swap}
+:root{ --tinta:#14213A; --suave:#5C6879; --linea:#E1E7EE; --gris:#F2F5F8; --marina:#143361; --azul:#165D9B; --sol:#F29923;
+  --ok:#13794A; --alerta:#9A5B00; --alerta-f:#FFF2DC; --mal:#B42318; --letra:"Montserrat", system-ui, -apple-system, sans-serif }
+*{ box-sizing:border-box } html{ -webkit-text-size-adjust:100% }
+body{ margin:0; background:var(--gris); color:var(--tinta); font:400 16px/1.6 var(--letra); -webkit-font-smoothing:antialiased }
+.env{ max-width:760px; margin:0 auto; padding:16px 16px 72px }
+.hoja{ background:#fff; border-radius:16px; padding:28px 22px; box-shadow:0 1px 2px rgba(20,33,58,.04), 0 18px 44px -24px rgba(20,33,58,.28) }
+@media (min-width:640px){ .hoja{ padding:44px 48px } }
+a{ color:var(--azul) } button, input, textarea, select{ font-family:inherit; font-size:16px; color:inherit }
+:focus-visible{ outline:3px solid var(--azul); outline-offset:2px; border-radius:6px }
+.cab{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding-bottom:18px; border-bottom:1px solid var(--linea) }
+.cab img{ height:40px; width:auto; display:block }
+.cab .folio{ text-align:right; font-size:13px; color:var(--suave); line-height:1.4 } .cab .folio b{ display:block; color:var(--tinta); font-size:15px }
+h1{ font-size:clamp(24px, 6vw, 32px); line-height:1.15; margin:24px 0 4px; letter-spacing:-.01em }
+.sub{ color:var(--suave); margin:0 }
+.datos{ display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:0; margin:22px 0 0; border-top:1px solid var(--linea); border-left:1px solid var(--linea) }
+.datos div{ padding:12px 14px; border-right:1px solid var(--linea); border-bottom:1px solid var(--linea) }
+.datos small{ display:block; color:var(--suave); font-size:13px } .datos b{ font-size:15px }
+table{ width:100%; border-collapse:collapse; margin:22px 0 0; font-size:15px }
+th, td{ text-align:left; padding:10px 6px; border-bottom:1px solid var(--linea); vertical-align:top } th{ color:var(--suave); font-weight:600; font-size:13px }
+td.n, th.n{ text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap }
+.total{ display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin:22px 0 0; padding:18px 20px; border-radius:12px; background:var(--marina); color:#fff }
+.total span{ font-weight:600 } .total b{ font-size:clamp(30px, 8vw, 40px); letter-spacing:-.02em; font-variant-numeric:tabular-nums }
+.total small{ display:block; font-weight:500; font-size:13px; color:#B9CBE6 }
+.notas{ margin:22px 0 0; padding:0; list-style:none; display:grid; gap:10px; font-size:15px }
+.notas li{ padding-left:18px; position:relative } .notas li::before{ content:""; position:absolute; left:0; top:.6em; width:7px; height:7px; border-radius:50%; background:var(--sol) }
+.ejemplo{ margin:18px 0 0; padding:12px 14px; border-radius:8px; background:var(--alerta-f); color:var(--alerta); font-size:14px; font-weight:600 }
+.pie{ margin-top:26px; padding-top:16px; border-top:1px solid var(--linea); color:var(--suave); font-size:13px; display:grid; gap:4px }
+.acc{ display:flex; flex-wrap:wrap; gap:8px; margin:18px 0 0 }
+.btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:48px; padding:0 18px; border-radius:10px; border:0; background:var(--marina); color:#fff; font-weight:600; font-size:15px; text-decoration:none; cursor:pointer }
+.btn.b2{ background:#fff; color:var(--marina); box-shadow:inset 0 0 0 1.5px var(--linea) }
+.btn.wa{ background:#1F8F4E }
+.btn:disabled{ opacity:.5 }
+.msj{ font-weight:600 } .msj.mal{ color:var(--mal) } .msj.bien{ color:var(--ok) }
+/* ── el formulario a mano ── */
+.f{ display:grid; gap:14px }
+.f label{ display:grid; gap:6px; font-weight:600; font-size:14px }
+.f input, .f textarea, .f select{ width:100%; min-height:48px; padding:12px; border-radius:8px; border:1.5px solid var(--linea); background:#fff }
+.f textarea{ min-height:88px; resize:vertical }
+.ren{ display:grid; grid-template-columns:minmax(0,1fr) 72px 110px 44px; gap:8px; align-items:end }
+.ren button{ min-height:48px; border:0; border-radius:8px; background:var(--gris); cursor:pointer; font-size:20px; color:var(--suave) }
+.dos{ display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px }
+@media print{
+  body{ background:#fff; font-size:12px } .env{ padding:0; max-width:none } .hoja{ box-shadow:none; padding:0; border-radius:0 }
+  .no-imp{ display:none!important } .total{ -webkit-print-color-adjust:exact; print-color-adjust:exact }
+  @page{ size:letter; margin:16mm }
+}
+</style>
+</head>
+<body>
+<main class="env" id="app"><p class="sub" style="padding:40px 0">Cargando…</p></main>
+<script>
+const q = new URLSearchParams(location.search);
+const guarda = { leer: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, poner: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
+const SERVIDOR = q.get('servidor') || guarda.leer('up_servidor') || 'https://sala.palomazi9111.workers.dev/api/urban';
+if(q.get('acceso')){ guarda.poner('up_acceso', q.get('acceso')); q.delete('acceso'); history.replaceState(null, '', '?' + q.toString()); }
+const app = document.getElementById('app');
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const fecha = (s) => { const [a, m, d] = String(s).split('-').map(Number); return `${d} de ${MESES[m - 1]} de ${a}`; };
+const corta = (s) => { const [a, m, d] = String(s).split('-').map(Number); return `${d} ${MESES[m - 1].slice(0, 3)} ${a}`; };
+const pesos = (n) => '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: Number.isInteger(+n) ? 0 : 2, maximumFractionDigits: 2 });
+
+async function api(metodo, ruta, cuerpo){
+  try {
+    const r = await fetch(SERVIDOR + ruta, { method: metodo, headers: { 'content-type': 'application/json', 'x-llave': guarda.leer('up_llave') || guarda.leer('salaLlave') || '', 'x-acceso': guarda.leer('up_acceso') || '' }, body: cuerpo ? JSON.stringify(cuerpo) : undefined });
+    const j = await r.json().catch(() => ({ bien: false, error: 'El servidor no contestó bien (' + r.status + ').' }));
+    if(!r.ok && j.bien !== false) j.bien = false;
+    return j;
+  } catch { return { bien: false, error: 'No hay conexión. Revisa tu internet y vuelve a abrir el link.' }; }
+}
+
+function hoja(c, n){
+  const renglones = c.renglones?.length ? c.renglones : [{ concepto: c.concepto + (c.lugar ? ` · ${c.lugar}` : ''), cantidad: 1, precio: c.precio }];
+  const aprox = c.origen === 'bot';
+  const notas = [
+    aprox ? 'Es un precio aproximado con los datos que nos diste. Si son correctos, ése es el costo; el técnico lo confirma al ver el lugar y, si encuentra algo distinto, te lo dice antes de empezar.' : null,
+    c.m2Estimado ? 'Los metros son un estimado por lo que nos contaste de tu casa.' : null,
+    c.visita ? 'Por el tamaño del lugar, la cotización se confirma con una visita.' : null,
+    'Garantía: si la plaga persiste, regresamos a darle seguimiento sin costo adicional.',
+    'Productos de baja toxicidad, aplicados con protocolos que protegen a niños y mascotas.',
+    c.nota && !aprox ? c.nota : null,
+  ].filter(Boolean);
+  const contacto = [n.telefono && `WhatsApp ${esc(n.telefono)}`, n.correo && esc(n.correo)].filter(Boolean).join(' · ');
+  const wa = n.telefono ? `https://wa.me/52${String(n.telefono).replace(/\D/g, '').slice(-10)}?text=${encodeURIComponent(`Hola, quiero agendar con la cotización ${c.folio}.`)}` : null;
+  return `<article class="hoja">
+    <header class="cab"><img src="../web/img/logo.webp" alt="${esc(n.nombre)}" width="190" height="40"><div class="folio"><b>Cotización ${String(c.folio).padStart(4, '0')}</b>${corta(c.fecha)}<br>Válida al ${corta(c.vence)}</div></header>
+    <h1>${esc(c.concepto)}</h1>
+    <p class="sub">${c.cliente ? 'Para ' + esc(c.cliente) : 'Control profesional de plagas en Querétaro'}</p>
+    ${c.ejemplo ? '<p class="ejemplo">Esta es una cotización de PRUEBA, con precios de ejemplo. Todavía no son los de Urban Pest.</p>' : ''}
+    <div class="datos">
+      ${c.lugar ? `<div><small>Lugar</small><b>${esc(c.lugar)}</b></div>` : ''}
+      ${c.zona ? `<div><small>Zona</small><b>${esc(c.zona)}</b></div>` : ''}
+      ${c.m2 ? `<div><small>Superficie</small><b>${c.m2Estimado ? '≈ ' : ''}${esc(c.m2)} m²</b></div>` : ''}
+    </div>
+    <table><thead><tr><th>Concepto</th><th class="n">Cant.</th><th class="n">Precio</th><th class="n">Importe</th></tr></thead>
+      <tbody>${renglones.map(r => `<tr><td>${esc(r.concepto)}</td><td class="n">${esc(r.cantidad)}</td><td class="n">${pesos(r.precio)}</td><td class="n">${pesos(r.cantidad * r.precio)}</td></tr>`).join('')}</tbody></table>
+    <div class="total"><span>${aprox ? 'Precio aproximado' : 'Total'}<small>${c.iva === 'incluido' ? 'IVA incluido' : c.iva === 'mas' ? 'más IVA' : 'MXN'}</small></span><b>${pesos(c.precio)}</b></div>
+    <ul class="notas">${notas.map(t => `<li>${esc(t)}</li>`).join('')}</ul>
+    <footer class="pie"><b style="color:var(--tinta)">${esc(n.nombre)}</b>${contacto ? `<span>${contacto}</span>` : ''}
+      ${n.licencia_sanitaria ? `<span>Licencia sanitaria ${esc(n.licencia_sanitaria)}${n.repse ? ' · REPSE ' + esc(n.repse) : ''}</span>` : ''}</footer>
+  </article>
+  <div class="acc no-imp">
+    <button class="btn" type="button" onclick="print()">Guardar como PDF</button>
+    ${wa ? `<a class="btn wa" href="${wa}">Agendar por WhatsApp</a>` : ''}
+  </div>
+  <p class="sub no-imp" style="font-size:13px;margin-top:10px">En el iPhone: «Guardar como PDF» → Compartir → Guardar en Archivos.</p>`;
+}
+
+async function verUna(codigo){
+  const j = await api('GET', '/api/cotizacion?c=' + encodeURIComponent(codigo));
+  if(!j.bien){ app.innerHTML = `<div class="hoja"><h1>No encontramos esa cotización</h1><p class="sub">${esc(j.error)}</p></div>`; return; }
+  document.title = `Cotización ${String(j.cotizacion.folio).padStart(4, '0')} · ${j.negocio.nombre}`;
+  app.innerHTML = hoja(j.cotizacion, j.negocio);
+}
+
+function nueva(){
+  const fila = () => `<div class="ren"><label>Concepto<input name="concepto" required placeholder="Servicio mensual de control de plagas"></label><label>Cant.<input name="cantidad" inputmode="numeric" value="1"></label><label>Precio<input name="precio" inputmode="decimal" placeholder="0"></label><button type="button" aria-label="Quitar renglón" data-quitar>×</button></div>`;
+  app.innerHTML = `<div class="hoja"><h1>Cotización a mano</h1><p class="sub">Para una planta, una casa especial o lo que el bot no cotiza solo. Sale con tu logo y un link para mandar.</p>
+    <form class="f" id="f" style="margin-top:22px">
+      <div class="dos"><label>Para quién<input name="cliente" required autocomplete="off" placeholder="Nombre o empresa"></label><label>Lugar<input name="lugar" placeholder="Planta, bodega, casa…"></label></div>
+      <div class="dos"><label>Zona<input name="zona" placeholder="Colonia o parque industrial"></label><label>Válida por<select name="vigencia"><option value="15">15 días</option><option value="30">30 días</option><option value="7">7 días</option></select></label></div>
+      <label>Título<input name="titulo" placeholder="Programa de control de plagas"></label>
+      <div id="rens">${fila()}</div>
+      <button class="btn b2" type="button" id="mas">Agregar renglón</button>
+      <div class="dos"><label>IVA<select name="iva"><option value="">No mostrar</option><option value="mas">Más IVA</option><option value="incluido">IVA incluido</option></select></label></div>
+      <label>Nota (opcional)<textarea name="nota" placeholder="Frecuencia, condiciones, lo que incluye…"></textarea></label>
+      <button class="btn" type="submit">Crear cotización</button><p class="msj" id="msj" role="status"></p>
+    </form></div>`;
+  const f = document.getElementById('f'), rens = document.getElementById('rens');
+  document.getElementById('mas').onclick = () => rens.insertAdjacentHTML('beforeend', fila());
+  rens.addEventListener('click', (e) => { const b = e.target.closest('[data-quitar]'); if(b && rens.children.length > 1) b.closest('.ren').remove(); });
+  f.onsubmit = async (e) => {
+    e.preventDefault(); const d = Object.fromEntries(new FormData(f)), msj = document.getElementById('msj');
+    const renglones = [...rens.children].map(r => ({ concepto: r.querySelector('[name=concepto]').value, cantidad: Number(r.querySelector('[name=cantidad]').value) || 1, precio: Number(String(r.querySelector('[name=precio]').value).replace(/[$,\s]/g, '')) }));
+    const boton = f.querySelector('[type=submit]'); boton.disabled = true; msj.className = 'msj'; msj.textContent = 'Creando…';
+    const j = await api('POST', '/api/cotizaciones', { ...d, concepto: d.titulo, renglones });
+    boton.disabled = false;
+    if(!j.bien){ msj.className = 'msj mal'; msj.textContent = j.error; return; }
+    const link = location.origin + location.pathname + '?c=' + j.cotizacion.codigo;
+    msj.className = 'msj bien'; msj.innerHTML = `Lista: <a href="${esc(link)}">${esc(link)}</a>`;
+    if(navigator.share) navigator.share({ title: 'Cotización', url: link }).catch(() => {});
+  };
+}
+
+if(q.get('c')) verUna(q.get('c'));
+else if(q.has('nueva')) nueva();
+else app.innerHTML = '<div class="hoja"><h1>Cotización</h1><p class="sub">Abre el link que te mandamos por WhatsApp para ver tu cotización.</p></div>';
+</script>
+</body>
+</html>

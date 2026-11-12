@@ -37,6 +37,7 @@ const VA = [
   'urban-pest/web',
   /* la carpeta de cumplimiento que se le promete a cada planta (12 nov): ?c=<link de la planta> */
   'urban-pest/carpeta',
+  'urban-pest/cotizacion',
   'juegos',
   'ligas-mazi', 'pacto-roto', 'romero', 'inkwell', 'vitallink', 'life-connect',
   'manzanilla', 'herramientas',
