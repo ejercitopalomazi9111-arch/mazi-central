@@ -17,7 +17,8 @@
   .lam svg.i{ width:1em; height:1em; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round }
   /* arriba: logo chico y número de lámina */
   .top{ position:absolute; left:84px; right:84px; top:72px; display:flex; justify-content:space-between; align-items:center }
-  .top img{ height:76px }
+  .top img{ height:72px }
+  .top .capas{ position:relative; width:190px; height:147px; margin-top:-24px } .top .capas img{ position:absolute; inset:0; width:190px; height:147px }
   .top .pag{ font:700 26px/1 M; letter-spacing:.12em; color:var(--suave) }
   .oscura .top .pag{ color:#9DB7DC }
   /* tapa */
@@ -26,10 +27,10 @@
   .tapa .barra{ position:absolute; left:84px; top:340px; width:120px; height:14px; border-radius:7px; background:var(--sol-claro) }
   .tapa .desliza{ position:absolute; right:84px; bottom:110px; font:700 28px/1 M; letter-spacing:.14em; text-transform:uppercase; color:var(--sol-claro); display:flex; gap:14px; align-items:center }
   /* interior */
-  .tarj{ position:absolute; left:84px; right:84px; top:230px; bottom:200px; background:#fff; border-radius:48px; padding:96px 84px; box-shadow:0 40px 80px -50px #14213A66 }
+  .tarj{ position:absolute; left:84px; right:84px; top:230px; bottom:200px; background:#fff; border-radius:48px; padding:96px 84px; box-shadow:0 40px 80px -50px #14213A66; display:flex; flex-direction:column; justify-content:center }
   .ic{ width:176px; height:176px; border-radius:48px; background:#FFF3DF; color:var(--sol); display:grid; place-items:center; font-size:104px }
-  .numero{ font:300 210px/0.8 M; color:var(--sol); letter-spacing:-.04em }
-  .tarj .t{ margin-top:84px; font:800 84px/1.05 M; letter-spacing:-.03em; color:var(--marina) }
+  .numero{ font:800 170px/0.85 M; color:var(--sol); letter-spacing:-.04em }
+  .tarj .t{ text-wrap:balance; margin-top:84px; font:800 84px/1.05 M; letter-spacing:-.03em; color:var(--marina) }
   .tarj .s{ margin-top:40px; font:500 46px/1.35 I; color:var(--suave) }
   .pie{ position:absolute; left:84px; right:84px; bottom:96px; display:flex; justify-content:space-between; font:700 28px/1 M; color:var(--suave); letter-spacing:.02em }
   .pie b{ color:var(--marina) }
@@ -39,6 +40,7 @@
   .cita .quien{ position:absolute; left:84px; bottom:200px; font:700 40px/1.2 M; color:var(--tinta) }
   .cita .quien span{ display:block; font:500 30px/1.4 I; color:var(--suave) }
   /* cierre */
+  .cierre .t, .tapa .t{ text-wrap:balance }
   .cierre .t{ position:absolute; left:84px; right:84px; top:380px; font:800 104px/1.02 M; letter-spacing:-.035em }
   .cierre .s{ position:absolute; left:84px; right:84px; top:640px; font:500 46px/1.35 I; color:#C9D8EE }
   .cierre .wa{ position:absolute; left:84px; right:84px; bottom:250px; height:150px; border-radius:40px; background:var(--sol-claro); color:var(--marina); display:flex; align-items:center; gap:30px; padding:0 48px; font:800 66px/1 M; letter-spacing:-.01em }
@@ -55,13 +57,14 @@ window.listo = (async () => {
   const ico = (n) => `<svg class="i" viewBox="0 0 24 24">${L[n] || ''}</svg>`;
   const n = +(new URLSearchParams(location.search).get('n') || 1), C = CARRUSELES.find((c) => c.n === n);
   const total = C.laminas.length;
-  const logo = (blanco) => `<img src="../web/img/${blanco ? 'logo-entero' : 'logo-entero'}.webp" alt="" ${blanco ? 'style="filter:brightness(0) invert(1)"' : ''}>`;
+  /* sobre oscuro: el logo por capas (el de su página), con las letras azul y gris en blanco; sobre claro, el horizontal */
+  const logo = (oscuro) => oscuro ? `<div class="capas">${['globo', 'sol', 'personita', 'chorro', 'urban', 'pest', 'control'].map((n) => `<img src="../web/marca/${n}.webp" alt=""${n === 'urban' || n === 'control' ? ' style="filter:brightness(0) invert(1)"' : ''}>`).join('')}</div>` : '<img src="../web/img/logo.webp" alt="Urban Pest Control">';
   document.getElementById('laminas').innerHTML = C.laminas.map((l, i) => {
     const pag = `<span class="pag">${i + 1}/${total}</span>`;
     if(l.tapa) return `<section class="lam oscura tapa"><div class="top">${logo(true)}${pag}</div><div class="barra"></div><div class="t">${l.t}</div><div class="s">${l.s}</div><div class="desliza">Desliza ${ico('arrow-right')}</div></section>`;
     if(l.cierre) return `<section class="lam oscura cierre"><div class="top">${logo(true)}${pag}</div><div class="t">${l.t}</div><div class="s">${l.s}</div><div class="wa">${ico('message-circle')}${CONTACTO.tel}</div><div class="web">${CONTACTO.web}</div></section>`;
     if(l.cita) return `<section class="lam cita"><div class="top">${logo(false)}${pag}</div><div class="q">${l.cita}</div><div class="quien">${l.quien}<span>Cliente de Urban Pest Control</span></div><div class="pie"><span>Control de plagas · Querétaro</span><b>${CONTACTO.tel}</b></div></section>`;
-    return `<section class="lam"><div class="top">${logo(false)}${pag}</div><div class="tarj">${l.num ? `<div class="numero">${l.num}</div>` : `<div class="ic">${ico(l.ico)}</div>`}<div class="t">${l.t}</div><div class="s">${l.s}</div></div><div class="pie"><span>Control de plagas · Querétaro</span><b>${CONTACTO.tel}</b></div></section>`;
+    return `<section class="lam"><div class="top">${logo(false)}${pag}</div><div class="tarj">${l.num ? `<div class="numero">0${l.num}</div>` : `<div class="ic">${ico(l.ico)}</div>`}<div class="t">${l.t}</div><div class="s">${l.s}</div></div><div class="pie"><span>Control de plagas · Querétaro</span><b>${CONTACTO.tel}</b></div></section>`;
   }).join('');
   await document.fonts.ready;
   await Promise.all([...document.images].map((im) => im.decode().catch(() => {})));
