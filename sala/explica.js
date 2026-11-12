@@ -4,14 +4,18 @@
    1. Paulina (Gemini) o Negro (Groq) escriben la clase como JSON: pasos con lo
       que se DICE («voz») y lo que se DIBUJA («pizarra»), más referencias y repaso.
       Pasa por La Sala (/ia-texto): las llaves viven allá, nunca aquí.
-   2. Cada paso se dibuja unidad por unidad (palabra, renglón, evento, caja,
-      flecha) al ritmo de la voz, con un lápiz que va a donde se está escribiendo.
+   2. Cada paso se DIBUJA en un pizarrón infinito (lienzo.js): muchos cursores,
+      como en esos videos donde cientos de ratones arman una página, trazan cada
+      forma línea por línea y escriben cada texto letra por letra. Hay más de 30
+      tipos de elemento (tablas, gráficas, Venn, mapas mentales, ciclos, fotos…).
+      Carlos, 12 nov: «el lápiz tarda AÑOS», «que lo dibuje TODO forma por forma».
    3. La voz es la del teléfono (inmediata y gratis) o la natural de Gemini
       (/ia-voz, se pide un paso adelante). Si la natural falla, sigue la del teléfono.
    Ligero a propósito: un solo bucle de animación y sólo mientras algo se dibuja,
    nada de librerías, y los pasos ya dichos se quedan quietos (cero trabajo).
    ═════════════════════════════════════════════════════════════════════════ */
-import { ico } from './iconos-pizarra.js';
+import { ico, DIBUJOS } from './iconos-clase.js';
+import { crearLienzo, armarFijo, buscarDibujo, TIPOS } from './lienzo.js';
 import { llave, ponerLlave, llamar, SERVIDOR, SALA } from '../presentaciones/ia.js';
 /* a La Sala directo (no por presentaciones/ia.js#texto) para mandar `espera` y `pensarPoco`: una clase entera tarda */
 async function iaTexto(cuerpo){
@@ -26,51 +30,86 @@ const $ = (s) => document.querySelector(s);
 const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const guarda = { leer(k, d){ try{ return JSON.parse(localStorage.getItem(k)) ?? d; }catch{ return d; } }, poner(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} } };
 const NOMBRE = { gemini: 'Paulina', groq: 'Negro' };
-const TINTAS = ['var(--azul)', 'var(--rojo)', 'var(--verde)', 'var(--morado)', 'var(--naranja)'];
 
 /* ── íconos de los botones ── */
 $('#volver').innerHTML = ico('arrow-left'); $('#volver').href = './' + location.search;
 if(window.top !== window) $('#volver').hidden = true;   /* dentro de la pestaña de la mesa no hace falta volver */
 $('#bNueva').innerHTML = ico('rotate-ccw'); $('#bFoto').insertAdjacentHTML('afterbegin', ico('image-plus'));
-$('#bExplica').innerHTML = `${ico('sparkles')} Explícame`; $('#lapizEspera').innerHTML = ico('pencil');
-$('#lapiz').innerHTML = ico('pencil');
+$('#bExplica').innerHTML = `${ico('sparkles')} Explícame`; $('#lapizEspera').innerHTML = ico('mouse-pointer-2');
+$('#bSeguir').innerHTML = `${ico('locate-fixed')}Seguir la clase`; $('#bTodo').innerHTML = `${ico('maximize')}Ver todo`; $('#bApuntes').innerHTML = `${ico('notebook-text')}Apuntes`;
+$('#bImprimir').innerHTML = `${ico('printer')}Imprimir o guardar PDF`; $('#bVolverClase').innerHTML = `${ico('arrow-left')}Al pizarrón`;
 $('#bAtras').innerHTML = ico('skip-back'); $('#bSig').innerHTML = ico('skip-forward'); $('#bPreg').innerHTML = ico('circle-question-mark');
 $('#fPreg button').innerHTML = ico('send');
 
 /* ══ 1 · PEDIR LA CLASE ═════════════════════════════════════════════════════ */
-const LARGO = { corta: '6 a 8', normal: '9 a 12', fondo: '14 a 18' };
+const LARGO = { corta: '6 a 9', normal: '10 a 14', fondo: '16 a 22' };
 const NIVEL = { prepa: 'de preparatoria', uni: 'de universidad', facil: 'muy sencillo, como para alguien que nunca lo ha visto' };
 const FORMA = `{
  "titulo": "título corto de la clase",
+ "visual": true,
  "pasos": [
-  { "voz": "lo que dices en voz alta en este paso", "pizarra": { "tipo": "titulo", "texto": "…", "sub": "…" } },
-  { "voz": "…", "pizarra": { "tipo": "texto", "texto": "una idea con **lo importante** resaltado" } },
-  { "voz": "…", "pizarra": { "tipo": "lista", "titulo": "…", "numerada": true, "items": ["…", "…"] } },
-  { "voz": "…", "pizarra": { "tipo": "definicion", "termino": "…", "texto": "…" } },
-  { "voz": "…", "pizarra": { "tipo": "linea", "titulo": "…", "eventos": [{ "fecha": "1810", "texto": "…" }] } },
-  { "voz": "…", "pizarra": { "tipo": "diagrama", "titulo": "…", "nodos": [{ "id": "a", "texto": "…" }], "flechas": [{ "de": "a", "a": "b", "texto": "causa" }] } },
-  { "voz": "…", "pizarra": { "tipo": "tabla", "titulo": "…", "columnas": ["…"], "filas": [["…"]] } },
-  { "voz": "…", "pizarra": { "tipo": "comparar", "titulo": "…", "a": { "nombre": "…", "puntos": ["…"] }, "b": { "nombre": "…", "puntos": ["…"] } } },
-  { "voz": "…", "pizarra": { "tipo": "formula", "expresion": "V = I · R", "texto": "qué significa cada letra" } },
-  { "voz": "…", "pizarra": { "tipo": "cita", "texto": "…", "autor": "…" } },
+  { "voz": "lo que dices en voz alta en este paso", "pizarra": { "tipo": "titulo", "texto": "…", "sub": "…", "icono": "atom" } },
+  { "voz": "…", "pizarra": { "tipo": "…", "…": "los campos de ese tipo", "conecta": false } },
   { "voz": "sólo hablas en este paso", "pizarra": null }
  ],
  "referencias": [{ "titulo": "…", "autor": "…", "anio": "…", "tipo": "libro | artículo | sitio | Wikipedia" }],
  "repaso": [{ "pregunta": "…", "respuesta": "…" }]
 }`;
+const CATALOGO = `TIPOS DE "pizarra" (cada uno con sus campos):
+- titulo { texto, sub, icono } · abre una sección nueva a todo lo ancho del pizarrón
+- texto { texto, icono } · una idea en 1 a 3 frases
+- lista { titulo, items: [], estilo: "puntos" | "numeros" | "checks" | "flechas" }
+- definicion { termino, texto, icono }
+- formula { expresion, texto, variables: [{ simbolo, significado }] }
+- ejemplo { titulo, pasos: [], resultado } · un ejercicio resuelto paso a paso
+- cita { texto, autor } · sólo citas reales y conocidas
+- nota { titulo, texto } · un recordatorio tipo post-it
+- ojo { titulo, texto } · un error común o una advertencia
+- dato { numero, texto } · una cifra que impacte (sólo si es real)
+- pregunta { pregunta, respuesta } · para que el alumno piense antes de ver la respuesta
+- resumen { titulo, puntos: [] }
+- codigo { lenguaje, codigo } · sólo en temas de programación
+- imagen { buscar, pie } · una FOTO real: "buscar" es el título EXACTO de un artículo de Wikipedia en español (ej. "Corazón humano", "Pirámide de Kukulcán")
+- icono { icono, texto } · un dibujo grande
+- partes { icono, titulo, partes: [] } · un dibujo con sus partes señaladas
+- comparar { titulo, a: { nombre, puntos: [] }, b: { nombre, puntos: [] } }
+- pasos { titulo, pasos: [{ titulo, texto }] } · un proceso en orden
+- linea { titulo, eventos: [{ fecha, texto }] } · línea del tiempo
+- tabla { titulo, columnas: [], filas: [[]] }
+- diagrama { titulo, nodos: [{ id, texto }], flechas: [{ de, a, texto }] } · flujo o mapa conceptual (máx 8 nodos de 1 a 4 palabras)
+- venn { titulo, conjuntos: [{ nombre, puntos: [] }], centro, comun: [] } · 2 o 3 círculos para UNIR temas: "centro" es lo que nace de juntarlos
+- mapa { centro, ramas: [{ texto, hijos: [] }] } · mapa mental de 3 a 6 ramas
+- ciclo { titulo, etapas: [], centro } · algo que se repite, de 3 a 6 etapas
+- piramide { titulo, niveles: [] } · de la punta a la base
+- embudo { titulo, niveles: [] } · de lo general a lo particular
+- arbol { titulo, raiz, hijos: [{ texto, hijos: [] }] } · clasificación o jerarquía
+- causas { titulo, efecto, causas: [] }
+- matriz { titulo, ejeX, ejeY, cuadrantes: ["arriba izquierda", "arriba derecha", "abajo izquierda", "abajo derecha"] }
+- escala { titulo, izquierda, derecha, marcas: [{ texto, pos }] } · pos de 0 a 100
+- barras { titulo, unidad, datos: [{ etiqueta, valor }] } · SÓLO con datos reales que conozcas bien
+- lineas { titulo, ejeY, puntos: [{ x, y }] } · una tendencia, SÓLO con datos reales
+- pastel { titulo, datos: [{ etiqueta, valor }] } · partes de un todo, SÓLO con datos reales
+DIBUJOS que existen para "icono" (escribe el nombre tal cual): ${Object.keys(DIBUJOS).join(', ')}`;
+/* lo que Estudio (u otro) dice del alumno, para que la clase sea SUYA */
+const CONTEXTO = new URLSearchParams(location.search).get('contexto') || '';
 function sistema(motor, nivel, largo){
-  return `Eres ${NOMBRE[motor]}, la maestra particular de Carlos (Querétaro, México). Explicas en español de México, claro, cercano y sin relleno, con ejemplos de la vida diaria.
-Vas a dar una CLASE que se DIBUJA en un pizarrón mientras hablas. Contesta SÓLO con JSON válido, sin texto antes ni después, con esta forma:
+  return `Eres ${NOMBRE[motor]}, la maestra particular de Carlos (Querétaro, México). Explicas en español de México, claro, cercano y sin relleno, con ejemplos de la vida diaria de un estudiante de prepa en México.
+Vas a dar una CLASE que se DIBUJA en un pizarrón infinito mientras hablas: varios cursores dibujan cada elemento, forma por forma y letra por letra.
+Contesta SÓLO con JSON válido, sin texto antes ni después, con esta forma:
 ${FORMA}
+${CATALOGO}
 Reglas:
-- ${LARGO[largo]} pasos, nivel ${NIVEL[nivel]}.
-- "voz": de 2 a 3 frases (entre 30 y 60 palabras) que EXPLIQUEN de verdad: el porqué, un ejemplo o un dato que ayude a recordarlo. Nunca sólo anuncies lo que viene («ahora veremos…» no basta). Como lo dirías hablando: sin markdown, sin emojis y sin leer la pizarra palabra por palabra; la complementas.
-- "pizarra": lo que se dibuja en ese paso, o null si sólo hablas. Tipos: titulo, texto, lista, definicion, linea, diagrama, tabla, comparar, formula, cita. El PRIMER paso es un "titulo".
-- Usa al menos una lista y una definición. Si el tema tiene fechas, usa una "linea" de tiempo; si tiene causas, procesos o partes, usa un "diagrama" (máximo 8 nodos, textos de 1 a 4 palabras).
-- En los textos puedes resaltar con **así** (máximo 3 por elemento). Listas de 3 a 6 puntos, cortos.
+- ${LARGO[largo]} pasos, nivel ${NIVEL[nivel]}. El PRIMER paso es un "titulo".
+- "voz": de 2 a 3 frases (entre 30 y 60 palabras) que EXPLIQUEN de verdad: el porqué, un ejemplo o un truco para recordarlo. Nunca sólo anuncies lo que viene. Como lo dirías hablando: sin markdown, sin emojis y sin leer la pizarra palabra por palabra; la complementas.
+- "pizarra": lo que se dibuja en ese paso. USA MUCHOS TIPOS DISTINTOS: al menos 6 tipos diferentes en la clase, y no repitas el mismo tipo dos pasos seguidos. Elige el que MEJOR enseñe cada idea: si se comparan cosas, "comparar" o "tabla"; si se juntan temas, "venn"; si es un proceso, "pasos" o "ciclo"; si son partes de algo, "partes"; si hay jerarquía, "arbol" o "piramide"; si hay fechas, "linea"; si hay causas, "causas" o "diagrama".
+- "visual": true si el tema se entiende mejor con dibujos y diagramas; entonces usa más diagramas, dibujos y fotos, y menos texto suelto.
+- Usa "icono" seguido (en titulo, texto, definicion, icono y partes): sólo nombres de la lista de DIBUJOS. Usa 1 o 2 "imagen" si el tema tiene algo que se pueda ver en una foto.
+- "conecta": true cuando un elemento sigue directamente del anterior (se dibuja una flecha entre los dos).
+- En los textos: **así** pinta con marcatextos lo más importante (máximo 3 por elemento), __así__ subraya y ((así)) encierra en un círculo una palabra clave (máximo 1 por elemento). Textos cortos: el pizarrón no es un libro.
+- NUNCA inventes datos, cifras ni citas: si no estás segura, usa otro tipo de elemento.
 - "referencias": de 3 a 6 fuentes REALES y conocidas (libros de texto, instituciones, artículos de Wikipedia por su título exacto). Si no estás segura de que existe, NO la pongas. Nunca inventes direcciones web.
 - "repaso": de 3 a 5 preguntas con su respuesta corta.
-- Si te mandan fotos de apuntes, explica lo que dicen las fotos y corrige con cuidado si algo está mal.`;
+- Si te mandan fotos de apuntes, explica lo que dicen las fotos y corrige con cuidado si algo está mal.${CONTEXTO ? `\nLO QUE SABES DE ESTE ALUMNO (personaliza la clase con esto): ${CONTEXTO.slice(0, 1200)}` : ''}`;
 }
 function sacarJSON(t){
   const s = String(t || '').replace(/^```(?:json)?/m, '').replace(/```\s*$/m, '');
@@ -78,205 +117,84 @@ function sacarJSON(t){
   if(a < 0 || b <= a) throw new Error('La IA no contestó con una clase. Prueba otra vez.');
   return JSON.parse(s.slice(a, b + 1));
 }
-const SINONIMOS = { title: 'titulo', text: 'texto', parrafo: 'texto', list: 'lista', timeline: 'linea', 'linea de tiempo': 'linea', lineatiempo: 'linea', diagram: 'diagrama', esquema: 'diagrama', table: 'tabla', compare: 'comparar', comparacion: 'comparar', definition: 'definicion', formula: 'formula', quote: 'cita' };
-const TIPOS = new Set(['titulo', 'texto', 'lista', 'definicion', 'linea', 'diagrama', 'tabla', 'comparar', 'formula', 'cita']);
+const SINONIMOS = { title: 'titulo', text: 'texto', parrafo: 'texto', list: 'lista', timeline: 'linea', 'linea de tiempo': 'linea', lineatiempo: 'linea', cronologia: 'linea',
+  diagram: 'diagrama', esquema: 'diagrama', flujo: 'diagrama', 'mapa conceptual': 'diagrama', table: 'tabla', compare: 'comparar', comparacion: 'comparar', definition: 'definicion', quote: 'cita',
+  'mapa mental': 'mapa', mindmap: 'mapa', grafica: 'barras', 'grafica de barras': 'barras', bar: 'barras', 'grafica de lineas': 'lineas', line: 'lineas', pie: 'pastel', 'grafica de pastel': 'pastel', dona: 'pastel',
+  circulos: 'venn', union: 'venn', interseccion: 'venn', proceso: 'pasos', etapas: 'pasos', jerarquia: 'arbol', clasificacion: 'arbol', advertencia: 'ojo', error: 'ojo', cuidado: 'ojo',
+  'post-it': 'nota', recordatorio: 'nota', estadistica: 'dato', cifra: 'dato', foto: 'imagen', image: 'imagen', dibujo: 'icono', icon: 'icono', cuadrantes: 'matriz', espectro: 'escala', fishbone: 'causas', code: 'codigo', ejercicio: 'ejemplo' };
 const corta = (t, n) => String(t ?? '').trim().slice(0, n);
-function normalizar(j){
+const lista = (x, n, m) => (Array.isArray(x) ? x : []).map((y) => corta(typeof y === 'string' || typeof y === 'number' ? y : y && (y.texto || y.item || y.nombre), n)).filter(Boolean).slice(0, m);
+const num = (v) => { const n = Number(String(v ?? '').replace(/[^\d.-]/g, '')); return Number.isFinite(n) ? n : null; };
+/* lo que manda la IA se revisa campo por campo: un elemento roto se vuelve texto, nunca truena la clase */
+export function normalizarPizarra(p){
+  if(!p || typeof p !== 'object') return null;
+  const z = { ...p };
+  let tipo = String(z.tipo || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+  tipo = SINONIMOS[tipo] || tipo;
+  z.tipo = TIPOS.includes(tipo) ? tipo : 'texto';
+  for(const k of ['texto', 'titulo', 'sub', 'termino', 'expresion', 'autor', 'pie', 'numero', 'resultado', 'pregunta', 'respuesta', 'centro', 'efecto', 'raiz', 'ejeX', 'ejeY', 'izquierda', 'derecha', 'unidad', 'lenguaje', 'buscar'])
+    if(z[k] != null) z[k] = corta(z[k], k === 'texto' || k === 'respuesta' ? 600 : 160);
+  if(z.icono) z.icono = buscarDibujo(z.icono) || '';
+  z.conecta = !!z.conecta;
+  const vacio = () => null;
+  switch(z.tipo){
+    case 'texto': if(!z.texto) z.texto = z.titulo || ''; if(!z.texto) return vacio(); break;
+    case 'titulo': if(!z.texto) z.texto = z.titulo || 'Tema'; break;
+    case 'lista': z.items = lista(z.items || z.puntos, 220, 8); if(!z.items.length) return vacio(); if(!['puntos', 'numeros', 'checks', 'flechas'].includes(z.estilo)) z.estilo = z.numerada ? 'numeros' : 'puntos'; break;
+    case 'definicion': if(!z.texto) return vacio(); break;
+    case 'formula': if(!z.expresion) return vacio(); z.variables = (Array.isArray(z.variables) ? z.variables : []).map((v) => ({ simbolo: corta(v && v.simbolo, 16), significado: corta(v && v.significado, 120) })).filter((v) => v.simbolo && v.significado).slice(0, 6); break;
+    case 'ejemplo': z.pasos = lista(z.pasos, 220, 7); if(!z.pasos.length) return vacio(); break;
+    case 'cita': case 'nota': case 'ojo': if(!z.texto) return vacio(); break;
+    case 'dato': if(!z.numero) return vacio(); break;
+    case 'pregunta': if(!z.pregunta || !z.respuesta) return vacio(); break;
+    case 'resumen': z.puntos = lista(z.puntos || z.items, 200, 6); if(!z.puntos.length) return vacio(); break;
+    case 'codigo': z.codigo = String(z.codigo || '').slice(0, 1500); if(!z.codigo) return vacio(); break;
+    case 'imagen': if(!z.buscar) return vacio(); break;
+    case 'icono': if(!z.icono) return z.texto ? { tipo: 'texto', texto: z.texto, conecta: z.conecta } : vacio(); break;
+    case 'partes': z.partes = lista(z.partes, 60, 8); if(!z.icono || z.partes.length < 2) return z.partes.length ? { tipo: 'lista', titulo: z.titulo, items: z.partes, estilo: 'flechas' } : vacio(); break;
+    case 'comparar': for(const k of ['a', 'b']) z[k] = { nombre: corta(z[k] && z[k].nombre, 40) || (k === 'a' ? 'A' : 'B'), puntos: lista(z[k] && z[k].puntos, 140, 6) }; if(!z.a.puntos.length && !z.b.puntos.length) return vacio(); break;
+    case 'pasos': z.pasos = (Array.isArray(z.pasos) ? z.pasos : []).map((x) => typeof x === 'string' ? { titulo: corta(x, 120), texto: '' } : { titulo: corta(x && x.titulo, 120), texto: corta(x && x.texto, 220) }).filter((x) => x.titulo).slice(0, 7); if(z.pasos.length < 2) return vacio(); break;
+    case 'linea': z.eventos = (Array.isArray(z.eventos) ? z.eventos : []).map((e) => ({ fecha: corta(e && e.fecha, 30), texto: corta(e && e.texto, 220) })).filter((e) => e.fecha || e.texto).slice(0, 10); if(!z.eventos.length) return vacio(); break;
+    case 'tabla': z.columnas = lista(z.columnas, 40, 5); z.filas = (Array.isArray(z.filas) ? z.filas : []).filter(Array.isArray).map((f) => f.slice(0, 5).map((c) => corta(c, 120))).slice(0, 10); if(!z.filas.length) return vacio(); break;
+    case 'diagrama': z.nodos = (Array.isArray(z.nodos) ? z.nodos : []).map((n, i) => ({ id: String(n && n.id != null ? n.id : i), texto: corta(n && (n.texto || n.nombre), 60) })).filter((n) => n.texto).slice(0, 10);
+      { const ids = new Set(z.nodos.map((n) => n.id)); z.flechas = (Array.isArray(z.flechas) ? z.flechas : []).map((f) => ({ de: String(f && f.de), a: String(f && f.a), texto: corta(f && f.texto, 24) })).filter((f) => ids.has(f.de) && ids.has(f.a) && f.de !== f.a).slice(0, 14); }
+      if(z.nodos.length < 2) return vacio(); break;
+    case 'venn': z.conjuntos = (Array.isArray(z.conjuntos) ? z.conjuntos : []).map((c) => ({ nombre: corta(c && c.nombre, 30), puntos: lista(c && c.puntos, 60, 3) })).filter((c) => c.nombre).slice(0, 3); z.comun = lista(z.comun, 60, 3); if(z.conjuntos.length < 2) return vacio(); break;
+    case 'mapa': z.centro = z.centro || z.titulo; z.ramas = (Array.isArray(z.ramas) ? z.ramas : []).map((r) => typeof r === 'string' ? { texto: corta(r, 60), hijos: [] } : { texto: corta(r && r.texto, 60), hijos: lista(r && r.hijos, 50, 4) }).filter((r) => r.texto).slice(0, 6); if(!z.centro || z.ramas.length < 2) return vacio(); break;
+    case 'ciclo': z.etapas = lista(z.etapas, 60, 7); if(z.etapas.length < 3) return vacio(); break;
+    case 'piramide': case 'embudo': z.niveles = lista(z.niveles, 70, 7); if(z.niveles.length < 2) return vacio(); break;
+    case 'arbol': z.raiz = z.raiz || z.titulo; z.hijos = (Array.isArray(z.hijos) ? z.hijos : []).map((h) => typeof h === 'string' ? { texto: corta(h, 60), hijos: [] } : { texto: corta(h && h.texto, 60), hijos: lista(h && h.hijos, 50, 5) }).filter((h) => h.texto).slice(0, 5); if(!z.raiz || !z.hijos.length) return vacio(); break;
+    case 'causas': z.causas = lista(z.causas, 70, 8); if(!z.efecto || !z.causas.length) return vacio(); break;
+    case 'matriz': z.cuadrantes = lista(z.cuadrantes, 90, 4); if(z.cuadrantes.length < 4) return vacio(); break;
+    case 'escala': z.marcas = (Array.isArray(z.marcas) ? z.marcas : []).map((m) => ({ texto: corta(m && m.texto, 50), pos: Math.max(0, Math.min(100, num(m && m.pos) ?? 50)) })).filter((m) => m.texto).slice(0, 6); if(!z.izquierda || !z.derecha) return vacio(); break;
+    case 'barras': case 'pastel': z.datos = (Array.isArray(z.datos) ? z.datos : []).map((d) => ({ etiqueta: corta(d && d.etiqueta, 30), valor: num(d && d.valor) })).filter((d) => d.etiqueta && d.valor != null && d.valor >= 0).slice(0, z.tipo === 'pastel' ? 8 : 10); if(z.datos.length < 2) return vacio(); break;
+    case 'lineas': z.puntos = (Array.isArray(z.puntos) ? z.puntos : []).map((d) => ({ x: corta(d && d.x, 14), y: num(d && d.y) })).filter((d) => d.x && d.y != null).slice(0, 14); if(z.puntos.length < 2) return vacio(); break;
+  }
+  return z;
+}
+export function normalizar(j){
   const pasos = (Array.isArray(j.pasos) ? j.pasos : []).map((p) => {
     const voz = corta(p && p.voz, 600);
-    let z = p && p.pizarra && typeof p.pizarra === 'object' ? { ...p.pizarra } : null;
-    if(z){
-      let tipo = String(z.tipo || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
-      tipo = SINONIMOS[tipo] || tipo;
-      z.tipo = TIPOS.has(tipo) ? tipo : 'texto';
-      if(z.tipo === 'texto' && !z.texto) z.texto = z.titulo || '';
-      if(z.tipo === 'lista') z.items = (Array.isArray(z.items) ? z.items : []).map((x) => corta(typeof x === 'string' ? x : x && (x.texto || x.item), 220)).filter(Boolean).slice(0, 8);
-      if(z.tipo === 'linea') z.eventos = (Array.isArray(z.eventos) ? z.eventos : []).map((e) => ({ fecha: corta(e && e.fecha, 30), texto: corta(e && e.texto, 220) })).filter((e) => e.fecha || e.texto).slice(0, 10);
-      if(z.tipo === 'diagrama'){ z.nodos = (Array.isArray(z.nodos) ? z.nodos : []).map((n, i) => ({ id: String(n && n.id != null ? n.id : i), texto: corta(n && (n.texto || n.nombre), 60) })).filter((n) => n.texto).slice(0, 10);
-        const ids = new Set(z.nodos.map((n) => n.id)); z.flechas = (Array.isArray(z.flechas) ? z.flechas : []).map((f) => ({ de: String(f && f.de), a: String(f && f.a), texto: corta(f && f.texto, 24) })).filter((f) => ids.has(f.de) && ids.has(f.a) && f.de !== f.a).slice(0, 14); }
-      if(z.tipo === 'tabla'){ z.columnas = (Array.isArray(z.columnas) ? z.columnas : []).map((c) => corta(c, 40)).slice(0, 5); z.filas = (Array.isArray(z.filas) ? z.filas : []).filter(Array.isArray).map((f) => f.slice(0, 5).map((c) => corta(c, 120))).slice(0, 10); }
-      if(z.tipo === 'comparar') for(const k of ['a', 'b']) z[k] = { nombre: corta(z[k] && z[k].nombre, 40), puntos: (Array.isArray(z[k] && z[k].puntos) ? z[k].puntos : []).map((x) => corta(x, 140)).slice(0, 6) };
-      const vacio = (z.tipo === 'lista' && !z.items.length) || (z.tipo === 'linea' && !z.eventos.length) || (z.tipo === 'diagrama' && z.nodos.length < 2) || (z.tipo === 'tabla' && !z.filas.length);
-      if(vacio) z = null;
-    }
+    const z = normalizarPizarra(p && p.pizarra);
     return voz || z ? { voz, pizarra: z } : null;
-  }).filter(Boolean).slice(0, 30);
+  }).filter(Boolean).slice(0, 48);
   if(!pasos.length) throw new Error('La clase llegó vacía. Prueba otra vez.');
   return {
-    titulo: corta(j.titulo, 120) || 'Tu clase',
+    titulo: corta(j.titulo, 120) || 'Tu clase', visual: !!j.visual,
     pasos,
     referencias: (Array.isArray(j.referencias) ? j.referencias : []).map((r) => typeof r === 'string' ? { titulo: corta(r, 200) } : { titulo: corta(r && r.titulo, 200), autor: corta(r && r.autor, 120), anio: corta(r && (r.anio || r.año), 12), tipo: corta(r && r.tipo, 30) }).filter((r) => r.titulo).slice(0, 8),
     repaso: (Array.isArray(j.repaso) ? j.repaso : []).map((r) => ({ pregunta: corta(r && r.pregunta, 300), respuesta: corta(r && r.respuesta, 500) })).filter((r) => r.pregunta).slice(0, 6),
   };
 }
 
-/* ══ 2 · DIBUJAR ════════════════════════════════════════════════════════════
-   Cada elemento sabe dibujarse en «unidades»: una lista de nodos que se van
-   prendiendo (clase .ve) en orden. El lápiz va a la última unidad prendida. */
-const piz = $('#pizarra'), lapiz = $('#lapiz');
-/* «**así**» → palabras sueltas, y las resaltadas dentro de un <mark> que se pinta al llegar */
-function palabras(t){
-  const frag = document.createElement('span'), unidades = [];
-  String(t || '').split(/(\*\*[^*]+\*\*)/).forEach((trozo) => {
-    if(!trozo) return;
-    const resalta = /^\*\*.*\*\*$/.test(trozo), dentro = resalta ? trozo.slice(2, -2) : trozo;
-    const caja = resalta ? document.createElement('mark') : frag;
-    dentro.split(/(\s+)/).forEach((w) => {
-      if(!w) return;
-      if(/^\s+$/.test(w)){ caja.append(w); return; }
-      const s = document.createElement('span'); s.className = 'pal'; s.textContent = w; caja.append(s); unidades.push(s);
-      if(resalta) s.dataset.marca = '1';
-    });
-    if(resalta) frag.append(caja);
-  });
-  return { nodo: frag, unidades };
-}
-function titulito(t, tinta){ if(!t) return { nodo: null, unidades: [] }; const d = document.createElement('div'); d.className = 't'; d.style.color = tinta; const p = palabras(t); d.append(p.nodo); return { nodo: d, unidades: p.unidades }; }
-
-function crearElemento(z, n){
-  const tinta = TINTAS[n % TINTAS.length];
-  const el = document.createElement('div'); el.className = 'el ' + z.tipo; el.style.color = tinta;
-  let u = [];
-  const conTitulo = (t) => { const x = titulito(t, tinta); if(x.nodo) el.append(x.nodo); u.push(...x.unidades); };
-  if(z.tipo === 'titulo'){
-    const h = document.createElement('h2'); const p = palabras(z.texto); h.append(p.nodo); el.append(h); u.push(...p.unidades);
-    if(z.sub){ const s = document.createElement('div'); s.className = 'sub'; const q = palabras(z.sub); s.append(q.nodo); el.append(s); u.push(...q.unidades); }
-  } else if(z.tipo === 'texto'){
-    const p = document.createElement('p'); const w = palabras(z.texto); p.append(w.nodo); el.append(p); u.push(...w.unidades);
-  } else if(z.tipo === 'lista'){
-    conTitulo(z.titulo);
-    const l = document.createElement(z.numerada ? 'ol' : 'ul');
-    z.items.forEach((it, i) => { const li = document.createElement('li'); li.innerHTML = `<span class="num" style="background:${tinta}">${z.numerada ? i + 1 : '•'}</span>`;
-      const s = document.createElement('span'); s.textContent = it.replace(/\*\*/g, ''); li.append(s); l.append(li); u.push(li); });
-    el.append(l);
-  } else if(z.tipo === 'definicion' || z.tipo === 'formula' || z.tipo === 'cita'){
-    const t = document.createElement('div'); t.className = 'tarj';
-    if(z.tipo === 'definicion'){ const a = document.createElement('div'); a.className = 'term'; const p = palabras(z.termino || ''); a.append(p.nodo); t.append(a); u.push(...p.unidades); }
-    if(z.tipo === 'formula'){ const a = document.createElement('div'); a.className = 'ex'; const p = palabras(z.expresion || ''); a.append(p.nodo); t.append(a); u.push(...p.unidades); }
-    const b = document.createElement('p'); const q = palabras(z.texto || ''); b.append(q.nodo); t.append(b); u.push(...q.unidades);
-    if(z.tipo === 'cita' && z.autor){ const s = document.createElement('small'); s.textContent = '— ' + z.autor; t.append(s); }
-    el.append(t);
-  } else if(z.tipo === 'linea'){
-    conTitulo(z.titulo);
-    const eje = document.createElement('div'); eje.className = 'eje';
-    z.eventos.forEach((e) => { const d = document.createElement('div'); d.className = 'ev'; d.innerHTML = `<div class="fecha">${esc(e.fecha)}</div><p>${esc(e.texto)}</p>`; eje.append(d); u.push(d); });
-    el.append(eje); el._eje = eje; el._eventos = z.eventos.length;
-  } else if(z.tipo === 'tabla'){
-    conTitulo(z.titulo);
-    const m = document.createElement('div'); m.className = 'marco';
-    const tb = document.createElement('table');
-    if(z.columnas.length){ const tr = document.createElement('tr'); tr.innerHTML = z.columnas.map((c) => `<th>${esc(c)}</th>`).join(''); tb.append(tr); u.push(tr); }
-    z.filas.forEach((f) => { const tr = document.createElement('tr'); tr.innerHTML = f.map((c) => `<td>${esc(c)}</td>`).join(''); tb.append(tr); u.push(tr); });
-    m.append(tb); el.append(m);
-  } else if(z.tipo === 'comparar'){
-    conTitulo(z.titulo);
-    const d = document.createElement('div'); d.className = 'dos';
-    const lados = ['a', 'b'].map((k, i) => { const l = document.createElement('div'); l.className = 'lado'; l.style.color = TINTAS[(n + i) % TINTAS.length];
-      l.innerHTML = `<h4>${esc(z[k].nombre)}</h4>`; const ul = document.createElement('ul'); l.append(ul); d.append(l);
-      return z[k].puntos.map((p) => { const li = document.createElement('li'); li.textContent = p; ul.append(li); return li; }); });
-    for(let i = 0; i < Math.max(lados[0].length, lados[1].length); i++){ if(lados[0][i]) u.push(lados[0][i]); if(lados[1][i]) u.push(lados[1][i]); }
-    el.append(d);
-  } else if(z.tipo === 'diagrama'){
-    conTitulo(z.titulo);
-    u.push(...dibujarDiagrama(el, z));
-  }
-  return { el, unidades: u };
-}
-
-/* diagrama: por niveles (los que no reciben flecha arriba), cajas con texto partido, flechas curvas */
-function dibujarDiagrama(el, z){
-  /* el dibujo mide lo que mide el pizarrón: en el teléfono la letra sale a su tamaño real, no encogida */
-  const W = Math.round(Math.min(640, Math.max(300, (piz.clientWidth || 640) - 36))), SALTO = 70, NS = 'http://www.w3.org/2000/svg';
-  const entra = new Map(z.nodos.map((n) => [n.id, 0])); z.flechas.forEach((f) => entra.set(f.a, entra.get(f.a) + 1));
-  const nivel = new Map(); const raices = z.nodos.filter((n) => !entra.get(n.id)); (raices.length ? raices : [z.nodos[0]]).forEach((n) => nivel.set(n.id, 0));
-  for(let vuelta = 0; vuelta < z.nodos.length; vuelta++) for(const f of z.flechas) if(nivel.has(f.de)){ const l = nivel.get(f.de) + 1; if(!nivel.has(f.a) || (nivel.get(f.a) < l && l < z.nodos.length)) nivel.set(f.a, l); }
-  z.nodos.forEach((n) => { if(!nivel.has(n.id)) nivel.set(n.id, 0); });
-  const filas = []; z.nodos.forEach((n) => { const l = nivel.get(n.id); (filas[l] = filas[l] || []).push(n); });
-  const filasLlenas = filas.filter(Boolean); const pos = new Map();
-  /* cada caja parte su texto a lo ancho que le toca y crece en alto lo que haga falta */
-  const partir = (t, cw) => { const porRenglon = Math.max(6, Math.floor((cw - 12) / 8.2)), ren = []; let act = '';
-    t.split(/\s+/).forEach((w) => { if((act + ' ' + w).trim().length > porRenglon && act){ ren.push(act); act = w; } else act = (act + ' ' + w).trim(); }); if(act) ren.push(act); return ren.slice(0, 4); };
-  let y = 10;
-  filasLlenas.forEach((fila) => { const g = 12, cw = Math.min(200, (W - g * (fila.length + 1)) / fila.length);
-    const rens = fila.map((n) => partir(n.texto, cw)), h = Math.max(48, 18 + Math.max(...rens.map((r) => r.length)) * 18);
-    fila.forEach((n, i) => pos.set(n.id, { x: g + i * (cw + g) + (W - (fila.length * cw + (fila.length + 1) * g)) / 2, y, w: cw, h, ren: rens[i] }));
-    y += h + SALTO; });
-  const H = y - SALTO + 10;
-  const svg = document.createElementNS(NS, 'svg'); svg.setAttribute('class', 'dib'); svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  const u = [], hechos = new Set(), flechasDe = (id) => z.flechas.filter((f) => f.a === id);
-  const ponNodo = (n) => {
-    const p = pos.get(n.id), g = document.createElementNS(NS, 'g'); g.setAttribute('class', 'nodo');
-    const r = document.createElementNS(NS, 'rect'); Object.entries({ x: p.x, y: p.y, width: p.w, height: p.h, rx: 14 }).forEach(([k, v]) => r.setAttribute(k, v)); g.append(r);
-    const t = document.createElementNS(NS, 'text'); t.setAttribute('text-anchor', 'middle');
-    p.ren.forEach((s, i, a) => { const ts = document.createElementNS(NS, 'tspan'); ts.setAttribute('x', p.x + p.w / 2); ts.setAttribute('y', p.y + p.h / 2 + 5 + (i - (a.length - 1) / 2) * 18); ts.textContent = s; t.append(ts); });
-    g.append(t); svg.append(g); u.push(g); hechos.add(n.id);
-  };
-  const ponFlecha = (f) => {
-    const a = pos.get(f.de), b = pos.get(f.a); const x1 = a.x + a.w / 2, x2 = b.x + b.w / 2;
-    let d, fin, ang;
-    if(b.y > a.y){ const y1 = a.y + a.h, y2 = b.y - 4; d = `M${x1},${y1} C${x1},${y1 + SALTO / 2} ${x2},${y2 - SALTO / 2} ${x2},${y2}`; fin = [x2, y2]; ang = Math.PI / 2; }
-    else { const y1 = a.y + a.h / 2, y2 = b.y + b.h / 2, lado = Math.min(W - 6, Math.max(a.x + a.w, b.x + b.w) + 26); d = `M${a.x + a.w},${y1} C${lado},${y1} ${lado},${y2} ${b.x + b.w + 4},${y2}`; fin = [b.x + b.w + 4, y2]; ang = Math.PI; }
-    const k = 11, p1 = [fin[0] - k * Math.cos(ang - .45), fin[1] - k * Math.sin(ang - .45)], p2 = [fin[0] - k * Math.cos(ang + .45), fin[1] - k * Math.sin(ang + .45)];
-    d += ` M${p1[0]},${p1[1]} L${fin[0]},${fin[1]} L${p2[0]},${p2[1]}`;
-    const path = document.createElementNS(NS, 'path'); path.setAttribute('class', 'fl'); path.setAttribute('d', d); svg.insertBefore(path, svg.firstChild);
-    path._fin = fin; path._flecha = true; u.push(path);
-    if(f.texto){ const t = document.createElementNS(NS, 'text'); t.setAttribute('class', 'flt'); t.setAttribute('x', x1 + (x2 - x1) * .72 + 6); t.setAttribute('y', b.y > a.y ? b.y - SALTO * .32 : (a.y + b.y) / 2 + a.h / 2); t.textContent = f.texto; t.style.opacity = 0; svg.append(t); path._etiqueta = t; }
-  };
-  /* nodo por nodo en orden de nivel; antes de cada nodo, las flechas que le llegan desde uno ya dibujado */
-  const puestas = new Set();
-  [...z.nodos].sort((a, b) => nivel.get(a.id) - nivel.get(b.id)).forEach((n) => {
-    flechasDe(n.id).filter((f) => hechos.has(f.de)).forEach((f) => { ponFlecha(f); puestas.add(f); }); ponNodo(n); });
-  /* las que regresan (ciclos, o hacia un nodo que salió antes) van al final */
-  z.flechas.filter((f) => !puestas.has(f)).forEach(ponFlecha);
-  el.append(svg);
-  return u;
-}
-
-/* las flechas se dibujan con su trazo: el largo se mide ya en la página, se desplaza entero y al prenderse llega a 0 */
-const largo = (x) => { if(!x._L){ x._L = x.getTotalLength() || 1; x.style.strokeDasharray = x._L; } return x._L; };
-function prender(unidad){
-  if(unidad._flecha){ largo(unidad); unidad.style.transition = unidad._apagada ? 'stroke-dashoffset .6s ease' : 'none'; unidad.style.strokeDashoffset = 0; unidad._apagada = false; if(unidad._etiqueta){ unidad._etiqueta.style.transition = 'opacity .4s .3s'; unidad._etiqueta.style.opacity = 1; } return; }
-  unidad.classList.add('ve');
-  if(unidad.dataset && unidad.dataset.marca) unidad.closest('mark')?.classList.add('ve');
-}
-function apagarTodo(u){ u.forEach((x) => { if(x._flecha){ x.style.transition = 'none'; x.style.strokeDashoffset = largo(x); x._apagada = true; if(x._etiqueta){ x._etiqueta.style.transition = 'none'; x._etiqueta.style.opacity = 0; } } else { x.classList.remove('ve'); x.closest && x.closest('mark')?.classList.remove('ve'); } }); }
-function dondeEsta(unidad){
-  const pr = piz.getBoundingClientRect();
-  if(unidad._flecha && unidad._fin){ const s = unidad.ownerSVGElement, m = s.getScreenCTM(); if(m){ const pt = s.createSVGPoint(); pt.x = unidad._fin[0]; pt.y = unidad._fin[1]; const q = pt.matrixTransform(m); return [q.x - pr.left, q.y - pr.top]; } }
-  const r = unidad.getBoundingClientRect(); return [r.right - pr.left, r.top - pr.top + r.height * .75];
-}
-
-/* ── un solo bucle de animación, y sólo mientras hay algo que dibujar ── */
-const anim = { activo: null, lx: 40, ly: 40, tx: 40, ty: 40, corriendo: false };
-function bucle(t){
-  const a = anim.activo;
-  if(a){
-    const p = Math.min(1, (t - a.inicio) / a.dur), cuantas = Math.ceil(p * a.unidades.length);
-    while(a.prendidas < cuantas){ const x = a.unidades[a.prendidas++]; prender(x); [anim.tx, anim.ty] = dondeEsta(x);
-      if(a.el._eje) a.el._eje.style.setProperty('--crece', a.prendidas / a.unidades.length); }
-    if(p >= 1){ anim.activo = null; a.listo(); }
-  }
-  anim.lx += (anim.tx - anim.lx) * .22; anim.ly += (anim.ty - anim.ly) * .22;
-  lapiz.style.transform = `translate3d(${(anim.lx - 3).toFixed(1)}px, ${(anim.ly - 31).toFixed(1)}px, 0)`;
-  const quieto = !anim.activo && Math.abs(anim.tx - anim.lx) < .5 && Math.abs(anim.ty - anim.ly) < .5;
-  if(quieto){ anim.corriendo = false; lapiz.classList.toggle('ve', false); return; }
-  requestAnimationFrame(bucle);
-}
-function dibujar(obj, dur){
-  return new Promise((listo) => {
-    apagarTodo(obj.unidades);
-    if(obj.el._eje) obj.el._eje.style.setProperty('--crece', 0);
-    if(!obj.unidades.length){ listo(); return; }
-    anim.activo = { ...obj, dur: Math.max(500, dur), inicio: performance.now(), prendidas: 0, listo };
-    lapiz.classList.add('ve');
-    if(!anim.corriendo){ anim.corriendo = true; requestAnimationFrame(bucle); }
-  });
-}
-function dibujarYa(obj){ obj.unidades.forEach(prender); if(obj.el._eje) obj.el._eje.style.setProperty('--crece', 1); }
-function seguir(el){
-  const r = el.getBoundingClientRect(), alto = innerHeight - 200;
-  if(r.top < 70 || r.bottom > alto) scrollTo({ top: scrollY + r.top - Math.min(110, alto * .2), behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-}
+/* ══ 2 · EL PIZARRÓN INFINITO (lienzo.js) ═══════════════════════════════════
+   Muchos cursores dibujan cada elemento, forma por forma y letra por letra. */
+let modoCursores = guarda.leer('explica.cursores', 'monton');
+const tablero = $('#tablero');
+const lienzo = crearLienzo(tablero, { modo: modoCursores, maestro: 'Negro' });
+function margenes(){ const m = $('#mando'); lienzo.margenes(6, m.hidden ? 0 : m.offsetHeight + 6); }
+new ResizeObserver(margenes).observe($('#mando'));
+tablero.addEventListener('camara-libre', () => { $('#bSeguir').hidden = false; });
 
 /* ══ 3 · LA VOZ ═════════════════════════════════════════════════════════════ */
 const MODOS_VOZ = ['tel', 'natural', 'no'];
@@ -331,32 +249,37 @@ function callar(){ try{ speechSynthesis.cancel(); }catch{} if(audioActual){ audi
 
 /* ══ 4 · LA CLASE EN PANTALLA ═══════════════════════════════════════════════ */
 let clase = null, actual = -1, sonando = false, turno = 0;
-const hechos = [];                     /* por paso: { el, unidades } o null */
-const ver = (cual) => { $('#vInicio').hidden = cual !== 'inicio'; $('#vPrepara').hidden = cual !== 'prepara'; $('#vClase').hidden = cual !== 'clase'; $('#mando').hidden = cual !== 'clase'; $('#bNueva').hidden = cual !== 'clase'; };
+const ver = (cual) => {
+  $('#vInicio').hidden = cual !== 'inicio'; $('#vPrepara').hidden = cual !== 'prepara'; $('#vClase').hidden = cual !== 'clase'; $('#vApuntes').hidden = cual !== 'apuntes';
+  $('#mando').hidden = cual !== 'clase'; $('#bNueva').hidden = cual !== 'clase' && cual !== 'apuntes';
+  document.body.classList.toggle('en-clase', cual === 'clase');
+  if(cual === 'clase') requestAnimationFrame(margenes);
+};
 const segundos = (t) => Math.min(16, Math.max(2.2, String(t || '').split(/\s+/).length * .38 / velocidad));
 function pintarSub(t, hasta){ const p = String(t || '').split(/(\s+)/); let n = 0; $('#subVoz').innerHTML = p.map((w) => { const i = n; n += w.length; return /^\s+$/.test(w) ? w : `<span class="${i + w.length <= hasta ? 'ya' : i <= hasta ? 'ahora' : ''}">${esc(w)}</span>`; }).join(''); }
 function botonPlay(){ $('#bPlay').innerHTML = ico(sonando ? 'pause' : 'play'); $('#bVoz').innerHTML = ico(modoVoz === 'no' ? 'volume-x' : 'volume-2') ; $('#bVoz').title = { tel: 'Voz del teléfono', natural: 'Voz natural de Gemini', no: 'Sin voz' }[modoVoz]; $('#bVel').textContent = velocidad + '×'; }
 
+/* lo de antes, dibujado completo y quieto; lo de este paso en adelante, fuera */
 function asegurarHasta(i){
-  /* lo de antes, dibujado completo y quieto; lo de después, fuera */
-  for(let k = 0; k < clase.pasos.length; k++){
+  lienzo.detener();
+  lienzo.quitarDesde(i);
+  for(let k = 0; k < i; k++){
     const z = clase.pasos[k].pizarra;
-    if(k < i){ if(z && !hechos[k]){ hechos[k] = crearElemento(z, k); piz.append(hechos[k].el); dibujarYa(hechos[k]); } else if(hechos[k]) dibujarYa(hechos[k]); }
-    if(k > i && hechos[k]){ hechos[k].el.remove(); hechos[k] = null; }
+    if(z && !lienzo.piezas.some((p) => p.n === k)) lienzo.dibujarYa(lienzo.poner(z, k));
   }
-  piz.querySelector('.final')?.remove();
 }
 async function reproducir(i){
   if(!clase) return;
-  const yo = ++turno; callar(); anim.activo = null;
+  const yo = ++turno; callar();
   i = Math.max(0, Math.min(clase.pasos.length - 1, i)); actual = i;
   asegurarHasta(i);
+  $('#bTodo').hidden = true;
   const paso = clase.pasos[i];
   $('#avance').style.width = ((i + 1) / clase.pasos.length * 100) + '%';
   pintarSub(paso.voz, -1);
-  let obj = null;
-  if(paso.pizarra){ if(hechos[i]) hechos[i].el.remove(); obj = hechos[i] = crearElemento(paso.pizarra, i); piz.append(obj.el); seguir(obj.el); }
-  if(!sonando){ if(obj) dibujarYa(obj); pintarSub(paso.voz, Infinity); return; }
+  let p = null;
+  if(paso.pizarra){ p = lienzo.poner(paso.pizarra, i); lienzo.enfocar(p); }
+  if(!sonando){ if(p) lienzo.dibujarYa(p); pintarSub(paso.voz, Infinity); return; }
   const dur = segundos(paso.voz) * 1000;
   if(modoVoz === 'natural'){ pedirNatural(i + 1); pedirNatural(i + 2); }
   const inicio = performance.now();
@@ -366,30 +289,57 @@ async function reproducir(i){
     if(modoVoz === 'natural'){ try{ await decirNatural(i); return; }catch(e){ aviso('La voz natural falló; sigo con la del teléfono. (' + e.message + ')'); modoVoz = 'tel'; botonPlay(); } }
     await Promise.race([decirTel(paso.voz, clase.motor), new Promise((r) => setTimeout(r, dur * 1.8 + 2500))]);
   })();
-  const dibujo = obj ? dibujar(obj, dur * .82) : Promise.resolve();
+  /* el dibujo acaba antes que la voz: lo que se dice ya está en el pizarrón */
+  const dibujo = p ? lienzo.dibujar(p, dur * .78) : Promise.resolve();
   await Promise.all([voz, dibujo]); clearInterval(subTimer);
   if(yo !== turno) return;
   pintarSub(paso.voz, Infinity);
-  await new Promise((r) => setTimeout(r, 380));
+  await new Promise((r) => setTimeout(r, 320));
   if(yo !== turno || !sonando) return;
   if(i < clase.pasos.length - 1) reproducir(i + 1);
-  else { sonando = false; botonPlay(); pintarFinal(); }
+  else { sonando = false; botonPlay(); terminada = true; pintarFinal(); }
 }
 function pintarFinal(){
   /* si la abrió un nodo del camino de Estudio (estudio.html), se le avisa que la clase ya se vio completa */
   if(window.top !== window) try{ parent.postMessage({ explica: 'fin', titulo: clase.titulo }, location.origin); }catch{}
-  piz.querySelector('.final')?.remove();
-  const f = document.createElement('div'); f.className = 'final';
-  if(clase.referencias.length){
-    f.insertAdjacentHTML('beforeend', `<div class="el refs" style="color:var(--azul)"><div class="t">Referencias</div><ol>${clase.referencias.map((r) => {
-      const q = encodeURIComponent([r.titulo, r.autor].filter(Boolean).join(' '));
-      const wiki = /wikipedia/i.test(r.tipo || '') ? `https://es.wikipedia.org/w/index.php?search=${encodeURIComponent(r.titulo)}` : `https://www.google.com/search?q=${q}`;
-      return `<li>${esc(r.titulo)}${r.autor ? ' · ' + esc(r.autor) : ''}${r.anio ? ' (' + esc(r.anio) + ')' : ''} · <a href="${wiki}" target="_blank" rel="noopener">buscar</a></li>`; }).join('')}</ol>
-      <p class="ojo">Las referencias las propone la IA: el botón «buscar» te deja comprobar que existen antes de citarlas.</p></div>`);
-  }
-  if(clase.repaso.length) f.insertAdjacentHTML('beforeend', `<div class="el repaso" style="color:var(--verde)"><div class="t">Repaso</div>${clase.repaso.map((r) => `<details><summary>${esc(r.pregunta)}</summary><p>${esc(r.respuesta)}</p></details>`).join('')}</div>`);
-  piz.append(f); seguir(f);
-  pintarSub('Listo. Toca el signo de pregunta para preguntarme algo sobre esto, o repite cualquier paso.', Infinity);
+  $('#bSeguir').hidden = true; $('#bTodo').hidden = false;
+  pintarSub('Listo. Mueve el pizarrón con el dedo, toca dos veces algo para acercarte, o abre tus apuntes.', Infinity);
+}
+
+/* ══ 4-bis · LOS APUNTES: la clase entera en una hoja bonita para repasar o imprimir ══ */
+const FECHA = (ms) => new Date(ms || Date.now()).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+const ETIQUETA = { texto: 'Idea', lista: 'Lista', definicion: 'Definición', formula: 'Fórmula', ejemplo: 'Ejemplo', cita: 'Cita', nota: 'Recuerda', ojo: 'Cuidado', dato: 'Dato', pregunta: 'Piénsalo',
+  resumen: 'Resumen', codigo: 'Código', imagen: 'Foto', icono: 'Dibujo', partes: 'Partes', comparar: 'Compara', pasos: 'Proceso', linea: 'Línea del tiempo', tabla: 'Tabla', diagrama: 'Diagrama',
+  venn: 'Unión de temas', mapa: 'Mapa mental', ciclo: 'Ciclo', piramide: 'Pirámide', embudo: 'Embudo', arbol: 'Clasificación', causas: 'Causas', matriz: 'Cuadrantes', escala: 'Escala', barras: 'Gráfica', lineas: 'Gráfica', pastel: 'Gráfica' };
+function claveDe(z){ return z ? ETIQUETA[z.tipo] || 'Idea' : 'Idea'; }
+const limpioTxt = (t) => String(t ?? '').replace(/\*\*|__|\(\(|\)\)/g, '');
+function abrirApuntes(){
+  if(!clase) return;
+  sonando = false; turno++; callar(); lienzo.detener(); botonPlay();
+  ver('apuntes'); scrollTo({ top: 0 });
+  const h = $('#hojaApuntes');
+  const tipos = new Set(clase.pasos.map((p) => p.pizarra && p.pizarra.tipo).filter(Boolean));
+  h.innerHTML = `<header class="portada-ap"><small>Apuntes · ${esc(FECHA(clase.fecha))}</small><h1>${esc(clase.titulo)}</h1>
+      <p>Explicado por ${esc(NOMBRE[clase.motor] || 'la IA')} · ${clase.pasos.length} pasos · ${tipos.size} tipos de elemento</p></header>
+    <ol class="indice-ap">${clase.pasos.map((p, i) => p.pizarra && p.pizarra.tipo === 'titulo' ? `<li><a href="#ap-${i}">${esc(limpioTxt(p.pizarra.texto))}</a></li>` : '').join('')}</ol>
+    <div id="apCuerpo"></div>`;
+  const cuerpo = $('#apCuerpo');
+  let sec = 0;
+  clase.pasos.forEach((p, i) => {
+    const z = p.pizarra, esTitulo = z && z.tipo === 'titulo';
+    if(esTitulo) sec++;
+    const s = document.createElement('section'); s.className = 'bloque-ap' + (esTitulo ? ' es-titulo' : ''); s.id = 'ap-' + i;
+    s.innerHTML = `${esTitulo ? '' : `<aside class="margen-ap"><b>${esc(claveDe(z) || 'Idea')}</b></aside>`}<div class="lugar-ap"></div>${p.voz && !esTitulo ? `<p class="dijo-ap">${esc(p.voz)}</p>` : ''}`;
+    cuerpo.append(s);
+    if(z){ const lugar = s.querySelector('.lugar-ap'); armarFijo(lugar, z, i, Math.max(260, Math.min(640, lugar.clientWidth))); }
+    if(esTitulo && p.voz) s.insertAdjacentHTML('beforeend', `<p class="dijo-ap intro">${esc(p.voz)}</p>`);
+  });
+  if(clase.repaso.length) cuerpo.insertAdjacentHTML('beforeend', `<section class="fin-ap"><h2>Repaso</h2><div class="repaso-ap">${clase.repaso.map((r, i) => `<details><summary><span>${i + 1}</span>${esc(r.pregunta)}</summary><p>${esc(r.respuesta)}</p></details>`).join('')}</div></section>`);
+  if(clase.referencias.length) cuerpo.insertAdjacentHTML('beforeend', `<section class="fin-ap"><h2>Referencias</h2><ol class="refs-ap">${clase.referencias.map((r) => {
+    const q = encodeURIComponent([r.titulo, r.autor].filter(Boolean).join(' '));
+    const url = /wikipedia/i.test(r.tipo || '') ? `https://es.wikipedia.org/w/index.php?search=${encodeURIComponent(r.titulo)}` : `https://www.google.com/search?q=${q}`;
+    return `<li><b>${esc(r.titulo)}</b>${r.autor ? ' · ' + esc(r.autor) : ''}${r.anio ? ' (' + esc(r.anio) + ')' : ''} <a href="${url}" target="_blank" rel="noopener">comprobar</a></li>`; }).join('')}</ol>
+    <p class="ojo-ap">Las referencias las propone la IA: «comprobar» te deja ver que existen antes de citarlas.</p></section>`);
 }
 
 /* ══ 5 · PEDIDOS: clase nueva y preguntas sobre la misma ════════════════════ */
@@ -417,10 +367,14 @@ async function pedirClase(){
     ver('inicio'); aviso(e.message || String(e)); if(e.llave) $('#cajaLlave').hidden = false;
   }finally{ clearInterval(giro); }
 }
-function empezar(c){
-  clase = c; hechos.length = 0; audiosNat.clear(); piz.querySelectorAll('.el, .final').forEach((x) => x.remove());
+async function empezar(c){
+  clase = c; audiosNat.clear();
   $('#quien').textContent = '· ' + NOMBRE[c.motor || 'gemini']; document.title = c.titulo + ' · Explica';
-  ver('clase'); scrollTo({ top: 0 }); sonando = true; botonPlay(); reproducir(0);
+  ver('clase'); scrollTo({ top: 0 });
+  /* las letras tienen que estar cargadas antes de medir: el texto SVG se acomoda con ellas */
+  try{ await Promise.race([Promise.all(['700 20px Mano', '600 16px Texto', '700 16px Texto'].map((f) => document.fonts.load(f))), new Promise((r) => setTimeout(r, 1500))]); }catch{}
+  lienzo.limpiar(); lienzo.maestro(NOMBRE[c.motor || 'groq']); margenes();
+  sonando = true; botonPlay(); reproducir(0);
 }
 async function preguntar(q){
   if(!clase || !q) return;
@@ -469,14 +423,23 @@ $('#archivo').addEventListener('change', async () => {
 $('#ideas').innerHTML = ['La Revolución Mexicana en línea de tiempo', 'Cómo funciona la fotosíntesis', 'Derivada de un producto con ejemplo', 'Qué es una red neuronal', 'Causas de la Segunda Guerra Mundial']
   .map((t) => `<button type="button">${esc(t)}</button>`).join('');
 $('#ideas').addEventListener('click', (e) => { const b = e.target.closest('button'); if(b){ $('#tema').value = b.textContent; $('#tema').focus(); } });
-$('#bPlay').addEventListener('click', () => { if(sonando){ sonando = false; turno++; callar(); anim.activo = null; if(hechos[actual]) dibujarYa(hechos[actual]); botonPlay(); } else { sonando = true; botonPlay(); reproducir(actual >= clase.pasos.length - 1 && piz.querySelector('.final') ? 0 : Math.max(0, actual)); } });
-$('#bSig').addEventListener('click', () => { if(actual < clase.pasos.length - 1) reproducir(actual + 1); else { sonando = false; turno++; callar(); botonPlay(); asegurarHasta(actual); if(hechos[actual]) dibujarYa(hechos[actual]); pintarFinal(); } });
+/* pausa: lo que se estaba dibujando queda completo (los cursores lo terminan de golpe); play: sigue desde ahí */
+let terminada = false;
+$('#bPlay').addEventListener('click', () => { if(sonando){ sonando = false; turno++; callar(); lienzo.detener(); botonPlay(); } else { sonando = true; botonPlay(); reproducir(terminada && actual >= clase.pasos.length - 1 ? 0 : Math.max(0, actual)); terminada = false; } });
+$('#bSig').addEventListener('click', () => { if(actual < clase.pasos.length - 1) reproducir(actual + 1); else { sonando = false; turno++; callar(); lienzo.detener(); botonPlay(); terminada = true; pintarFinal(); } });
 $('#bAtras').addEventListener('click', () => reproducir(actual - 1));
 $('#bVel').addEventListener('click', () => { velocidad = { 1: 1.25, 1.25: 1.5, 1.5: .85, .85: 1 }[velocidad] || 1; guarda.poner('explica.vel', velocidad); botonPlay(); });
 $('#bVoz').addEventListener('click', () => { modoVoz = MODOS_VOZ[(MODOS_VOZ.indexOf(modoVoz) + 1) % MODOS_VOZ.length]; guarda.poner('explica.voz', modoVoz); botonPlay(); pintarSub({ tel: 'Voz del teléfono.', natural: 'Voz natural de Gemini (tarda un poquito más en arrancar cada paso).', no: 'Sin voz: sólo el pizarrón.' }[modoVoz], Infinity); });
 $('#bPreg').addEventListener('click', () => { $('#fPreg').hidden = !$('#fPreg').hidden; if(!$('#fPreg').hidden) $('#pregTxt').focus(); });
 $('#fPreg').addEventListener('submit', (e) => { e.preventDefault(); const q = $('#pregTxt').value.trim(); if(!q) return; $('#pregTxt').value = ''; $('#fPreg').hidden = true; try{ const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); }catch{} preguntar(q); });
-$('#bNueva').addEventListener('click', () => { sonando = false; turno++; callar(); clase = null; ver('inicio'); document.title = 'Explica · La Sala'; $('#tema').value = ''; fotos = []; $('#fotos').innerHTML = ''; });
+$('#bNueva').addEventListener('click', () => { sonando = false; turno++; callar(); lienzo.detener(); clase = null; ver('inicio'); document.title = 'Explica · La Sala'; $('#tema').value = ''; fotos = []; $('#fotos').innerHTML = ''; });
+$('#bSeguir').addEventListener('click', () => { lienzo.seguir(); $('#bSeguir').hidden = true; });
+$('#bTodo').addEventListener('click', () => lienzo.verTodo());
+$('#bApuntes').addEventListener('click', abrirApuntes);
+$('#bVolverClase').addEventListener('click', () => { ver('clase'); lienzo.verTodo(); });
+$('#bImprimir').addEventListener('click', () => print());
+$('#cursores').value = modoCursores;
+$('#cursores').addEventListener('change', () => { modoCursores = $('#cursores').value; guarda.poner('explica.cursores', modoCursores); lienzo.modo(modoCursores); });
 document.addEventListener('visibilitychange', () => { if(document.hidden && sonando){ sonando = false; turno++; callar(); botonPlay(); } });
 /* ?tema=… arranca directo (desde la mesa o un link) */
 const q0 = new URLSearchParams(location.search).get('tema'); if(q0) $('#tema').value = q0;
@@ -484,4 +447,5 @@ const q0 = new URLSearchParams(location.search).get('tema'); if(q0) $('#tema').v
 { const q = new URLSearchParams(location.search); for(const k of ['nivel', 'largo', 'motor']){ const v = q.get(k); if(v && [...$('#' + k).options].some((o) => o.value === v)) $('#' + k).value = v; } }
 botonPlay(); pintarHistorial(); ver('inicio');
 /* para las pruebas: cargar una clase ya hecha sin pedirla */
-window.__explica = { empezar: (c) => empezar(normalizar(c)), normalizar, estado: () => ({ actual, sonando, pasos: clase && clase.pasos.length, dibujados: piz.querySelectorAll('.el').length }) };
+window.__explica = { empezar: (c) => empezar({ ...normalizar(c), motor: c.motor || 'groq', fecha: Date.now() }), normalizar, normalizarPizarra, abrirApuntes, lienzo,
+  estado: () => ({ actual, sonando, pasos: clase && clase.pasos.length, dibujados: lienzo.piezas.length, cursores: lienzo.cursores, libre: lienzo.libre }) };

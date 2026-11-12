@@ -765,6 +765,14 @@ async function abrirSimulacro(p, n, _repaso){
 function abrirPizarra(p, n){
   const c = capa('pizarra');
   const q = new URLSearchParams(location.search); q.set('tema', `${n.titulo} (${p.materia})`); q.set('largo', 'corta'); q.set('nivel', 'prepa');
+  /* para que la clase sea SUYA: qué examen prepara, cuándo, qué ya vio y qué le costó (Explica lo mete en lo que le pide a la IA) */
+  if(p.unidades){
+    const t = n.tema && temaDe(p, n.tema), ns = todosLosNodos(p);
+    const vistos = ns.filter((x) => x.tipo === 'quiz' && hecho(p, x)).map((x) => x.titulo).slice(-8);
+    const costo = ns.filter((x) => x.tipo === 'quiz' && p.progreso[x.id] && p.progreso[x.id].mejor < 70).map((x) => x.titulo).slice(0, 5);
+    q.set('contexto', [`Prepara su ${p.titulo} (${cuandoTexto(p.fecha).toLowerCase()}).`, t && t.resumen ? `Este tema trata de: ${t.resumen}` : '', p.notas ? `Sus apuntes dicen: ${p.notas.slice(0, 400)}` : '',
+      vistos.length ? `Ya estudió: ${vistos.join(', ')}.` : '', costo.length ? `Le costó trabajo: ${costo.join(', ')}: refuérzalo con ejemplos.` : ''].filter(Boolean).join(' '));
+  }
   c.innerHTML = `<div class="arriba"><button class="bt redondo fantasma" data-cerrar aria-label="Cerrar la clase">${ico('x')}</button><div style="flex:1;font:800 16px/1.2 Titulo">${esc(n.titulo)}</div>${n.id ? `<button class="bt fuerte" data-vista>${ico('check')}Ya la vi</button>` : ''}</div>
     <iframe title="Clase en el pizarrón" src="explica.html?${q}" allow="autoplay; clipboard-write"></iframe>`;
   const alTerminar = (e) => { if(e.origin === location.origin && e.data && e.data.explica === 'fin' && n.id){ const b = $('[data-vista]', c); if(b){ b.classList.add('blanco'); b.textContent = 'Terminar'; brindis('Clase completa', '', 'presentation'); } } };

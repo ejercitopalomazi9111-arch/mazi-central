@@ -568,6 +568,8 @@ dependemos.
 
    | una repulsión `2600 / (d² || 0.01)` ya está protegida contra dividir entre cero | sólo contra el cero EXACTO: dos neuronas casi encimadas se empujaron con fuerza casi infinita y una salió a 137,000 unidades | la red del Cerebro se veía VACÍA (el encuadre la incluía y todo lo demás medía menos de un pixel) y además se acomodaba en el teléfono cada vez: 2.7 s congelada. Distancia con piso, paso con tope y posiciones calculadas al armar (`cerebro/acomodo.js`) |
    | en `/ia-texto` de La Sala, `de:'yo'` es quien escribe desde la página | es el MODELO; la persona es `de:'tu'` | Explica daba 400 «ending with a model turn». Y una clase entera de Gemini pasa de 90 s: se pide con `espera` (hasta 150 s) y `pensarPoco` |
+   | `getClientRects()` de un bloque da sus renglones | de un `<h2>` (bloque) da UNA caja del ancho entero; los renglones salen con un `Range` sobre su contenido | el subrayado del título de Explica cruzaba todo el pizarrón. `renglonesDe` en `sala/lienzo.js` |
+   | cortar a la mitad una animación por fases deja la pieza a medias, pero ya se terminará sola | las fases que no empezaron NUNCA corren: el bucle de fases se sale al cambiar de turno | «Siguiente» rápido dejaba 992 letras sin escribir y 90 rayas a medias. Si se corta, la pieza se termina de golpe (`dibujar` en `sala/lienzo.js`); `sala/pruebas-explica.mjs` lo cuenta |
 
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
