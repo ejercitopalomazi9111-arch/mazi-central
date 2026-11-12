@@ -17,6 +17,7 @@ ok('«oye cuánto cobran por fumigar?» → precio', reflejo('oye cuánto cobran
 ok('«¿Dan factura?» → factura', reflejo('¿Dan factura?', casos)?.caso.id === 'factura');
 ok('«fumigan bodegas industriales?» → empresa', reflejo('fumigan bodegas industriales?', casos)?.caso.id === 'empresa');
 ok('las preguntas de su página contestan con SU texto (garantía, mascotas, cobertura, inspección)', ['¿dan garantía?', '¿son seguros para mascotas?', '¿atienden en San Juan del Río?', '¿qué incluye la inspección?'].map(x => reflejo(x, casos)?.caso.id).join() === 'garantia,mascotas,cobertura,inspeccion');
+ok('palomas en una bodega es de palomas, no de empresa; un tlacuache es fauna', reflejo('tengo palomas en el techo de mi bodega', casos)?.caso.id === 'palomas' && reflejo('se metió un tlacuache', casos)?.caso.id === 'fauna' && reflejo('fumigan bodegas?', casos)?.caso.id === 'empresa');
 ok('lo que no conoce lo deja pasar al cerebro', reflejo('mi perro se comió una cucaracha, ¿le pasa algo?', casos) === null);
 ok('un saludo solo no dispara nada', reflejo('hola buenas tardes', casos) === null);
 ok('llenar quita lo que falta', llenar('Son {m2} m² en {zona}', { m2: 80 }) === 'Son 80 m² en');
