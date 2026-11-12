@@ -281,6 +281,23 @@ input:focus, textarea:focus{outline:none; border-color:var(--azul); background:#
 .barra .btn{min-height:50px; padding:0 12px}
 @media (min-width: 900px){ .barra{display:none} }
 
+
+/* ══ los fondos de su página original (Carlos, 12 nov: «ponle la imagen que tienen de fondo, que se vea bonito en
+   espacios abiertos, sin atascar») ══ */
+.portada{position:relative; isolation:isolate; overflow:hidden}
+.portada .fondo{position:absolute; inset:0; z-index:-1; pointer-events:none}
+.portada .fondo img{position:absolute; right:0; top:0; height:100%; width:100%; object-fit:cover; object-position:80% 50%; opacity:.95}
+/* en el teléfono la foto se queda abajo y se desvanece hacia arriba; en compu a la derecha y hacia la izquierda */
+.portada .fondo::after{content:""; position:absolute; inset:0; background:linear-gradient(180deg, #fff 0%, #fff 40%, rgba(255,255,255,.78) 60%, rgba(255,255,255,.3) 100%)}
+@media (min-width: 1000px){
+  .portada .fondo img{width:68%; object-position:60% 50%}
+  .portada .fondo::after{background:linear-gradient(90deg, #fff 0%, #fff 34%, rgba(255,255,255,.82) 52%, rgba(255,255,255,.35) 78%, rgba(255,255,255,.2) 100%)}
+}
+.amarillo{position:relative; isolation:isolate; overflow:hidden}
+.amarillo::before{content:""; position:absolute; inset:0; z-index:-1; background:url(img/edificios.webp) center / cover no-repeat; mix-blend-mode:multiply; opacity:.16}
+.marca-agua{position:relative; isolation:isolate; overflow:hidden}
+.marca-agua::before{content:""; position:absolute; z-index:-1; width:min(560px, 90vw); aspect-ratio:1; right:-12%; bottom:-14%; background:url(img/sello.png) center / contain no-repeat; opacity:.05; filter:grayscale(1); transform:rotate(-12deg)}
+
 /* ══ aparecer al bajar: todo está en la página desde el principio; si bajas rápido, entra de inmediato ══ */
 .js .ap{opacity:0; transform:translate3d(0, 24px, 0); transition:opacity var(--dur) var(--curva), transform var(--dur) var(--curva); transition-delay:calc(var(--i, 0) * 80ms * var(--escalon, 1))}
 .js .ap.visto{opacity:1; transform:none}
@@ -305,6 +322,7 @@ input:focus, textarea:focus{outline:none; border-color:var(--azul); background:#
 
 <main id="inicio">
   <section class="portada" id="contenido">
+    <div class="fondo" aria-hidden="true"><picture><source media="(max-width: 999px)" srcset="img/portada-original-800.webp"><img src="img/portada-original.webp" alt="" width="1600" height="667" fetchpriority="high"></picture></div>
     <div class="env rejilla">
       <div>
         <span class="pildora ap">Control de plagas en Querétaro</span>
@@ -435,7 +453,7 @@ input:focus, textarea:focus{outline:none; border-color:var(--azul); background:#
     </div>
   </section>
 
-  <section id="preguntas">
+  <section id="preguntas" class="marca-agua">
     <div class="env">
       <div class="cabecera centro ap"><span class="pildora">Preguntas frecuentes</span><h2>Resolvemos tus dudas.</h2></div>
       <div class="preguntas ap" style="--i:1">
