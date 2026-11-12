@@ -840,7 +840,7 @@ export function crearLienzo(vista, { modo = 'monton', maestro = 'Negro', alMover
   function clic(c){
     const r = document.createElement('i'); r.className = 'clic'; r.style.borderColor = c.color;
     r.style.transform = `translate3d(${f1(cam.x + c.x * cam.s)}px, ${f1(cam.y + c.y * cam.s)}px, 0)`;
-    capaCur.append(r); setTimeout(() => r.remove(), 420);
+    capaCur.append(r); setTimeout(() => r.remove(), 340);
   }
 
   /* ── un solo bucle ── */
