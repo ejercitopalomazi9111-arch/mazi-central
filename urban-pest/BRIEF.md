@@ -59,6 +59,9 @@ queda con nosotros.
 - El bot da un **precio aproximado** (nunca «desde»: suena a que va a subir) y manda la cotización en **PDF**. Si los datos del cliente están bien, ése es el costo; siempre aclara que
   lo confirma un técnico al ver el lugar: no es lo mismo «20 m²» que una casa del Marqués con
   cuatro patios y tres perros.
+- **Ya hecho (12 nov): la cotización por escrito.** Al dar el precio, el bot manda el link a una hoja con su logo,
+  lista para «Guardar como PDF» (`urban-pest/cotizacion/`). El dueño también puede hacer una a mano con renglones
+  (`?nueva`). El video que lo explica: `marca/anuncios/24-urban-pest/` (38 s, sin voz).
 - **Regla de negocio:** a una casa de $500 no conviene ir a medir; a una industria sí. El bot
   distingue los dos casos.
 - **Fuera de la zona de servicio** (Carlos, 11 nov):

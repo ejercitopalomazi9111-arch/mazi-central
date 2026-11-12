@@ -87,3 +87,18 @@ Del panel (llave o acceso):
 | `GET/POST /api/documentos {licencia_sanitaria, repse, razon_social, responsable_tecnico}` | Salen en cada constancia (5.10.11) |
 
 La página es `urban-pest/carpeta/index.html` (`?c=` la carpeta, `&folio=` la constancia para imprimir, `?registrar` el dueño).
+
+## La cotización por escrito · 12 nov
+
+Cuando el bot da un precio que calculó el sistema (y la zona se atiende), manda un segundo mensaje con el link
+a la hoja: `urban-pest/cotizacion/?c=<codigo>`. Es una por precio: si el cliente vuelve a preguntar lo mismo, no
+se repite. El link no trae el teléfono ni el chat del cliente. La dirección se cambia con `URL_COTIZACION` en el
+entorno del worker (cuando tenga su dominio).
+
+| Ruta | Qué hace |
+|---|---|
+| `GET /api/cotizacion?c=<codigo>` | **Sin llave.** La cotización y los datos del negocio (nombre, teléfono, correo y, si ya están, licencia sanitaria y REPSE) |
+| `GET /api/cotizaciones` | Las últimas 200, del bot y a mano |
+| `POST /api/cotizaciones {cliente, renglones:[{concepto, cantidad, precio}], titulo?, lugar?, zona?, vigencia?, iva?, nota?}` | La que hace el dueño a mano. Suma sus renglones |
+
+La página: `?c=` la hoja (con «Guardar como PDF» y «Agendar por WhatsApp»), `?nueva` el formulario a mano.
