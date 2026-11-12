@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#F5F7F6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1412" media="(prefers-color-scheme: dark)">
+<title>Centro · Urban Pest</title>
+<link rel="icon" href="../web/img/sello.png">
+<link rel="stylesheet" href="../chat/estilo.css">
+<style>
+/* EL CENTRO DE OPERACIONES (BRIEF §C): hoy, servicios, inventario y vehículo. Mismo sistema que el chat central
+   (../chat/estilo.css), teléfono primero. Rutas en urban-pest/servidor/RUTAS.md. */
+body{ min-height:100%; }
+.env{ max-width:880px; margin:0 auto; padding:0 16px calc(96px + env(safe-area-inset-bottom)) }
+.top{ position:sticky; top:0; z-index:5; background:var(--fondo); padding:14px 0 10px; display:flex; align-items:center; justify-content:space-between; gap:12px }
+.top b{ font-size:20px } .top small{ display:block; color:var(--tenue); font-size:13px }
+.atajos{ display:flex; gap:8px; overflow-x:auto; padding:2px 0 14px; scrollbar-width:none }
+.atajos a{ flex:none; display:inline-flex; align-items:center; gap:8px; min-height:44px; padding:0 14px; border-radius:999px; background:var(--sup); box-shadow:var(--elev1); color:var(--tinta); text-decoration:none; font-weight:600; font-size:14px }
+.ic{ width:20px; height:20px; flex:none }
+h2{ font-size:17px; margin:26px 0 10px; display:flex; align-items:center; gap:8px } h2 .n{ color:var(--tenue); font-weight:500 }
+.cifras{ display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px }
+.cifra{ background:var(--sup); border-radius:var(--r); padding:14px 16px; box-shadow:var(--elev1) }
+.cifra b{ display:block; font-size:28px; line-height:1.1; font-variant-numeric:tabular-nums } .cifra small{ color:var(--tenue); font-size:13px }
+.cifra.alerta b{ color:var(--aviso) }
+.lista-c{ list-style:none; padding:0; margin:0; display:grid; gap:10px }
+.item{ background:var(--sup); border-radius:var(--r); padding:14px 16px; box-shadow:var(--elev1); display:grid; gap:8px }
+.item .t{ display:flex; justify-content:space-between; gap:12px; align-items:baseline } .item .t b{ font-size:16px } .item .t span{ color:var(--tenue); font-size:14px; white-space:nowrap; font-variant-numeric:tabular-nums }
+.item p{ color:var(--tenue); font-size:14px; margin:0 }
+.chip{ display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:999px; font-size:12.5px; font-weight:700; background:var(--sup2); color:var(--tenue) }
+.chip.aviso{ background:var(--aviso-suave); color:var(--aviso) } .chip.ok{ background:var(--acento-suave); color:var(--acento-texto) }
+.acc{ display:flex; flex-wrap:wrap; gap:8px }
+.btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:44px; padding:0 16px; border-radius:var(--r2); background:var(--acento); color:var(--acento-tinta); font-weight:700; font-size:15px; text-decoration:none }
+.btn.b2{ background:var(--sup2); color:var(--tinta) } .btn:disabled{ opacity:.5 }
+.vacio{ color:var(--tenue); font-size:14px; padding:6px 2px }
+details.nuevo{ background:var(--sup); border-radius:var(--r); box-shadow:var(--elev1); margin:6px 0 4px }
+details.nuevo > summary{ list-style:none; min-height:52px; display:flex; align-items:center; gap:10px; padding:0 16px; font-weight:700; cursor:pointer; color:var(--acento-texto) }
+details.nuevo > summary::-webkit-details-marker{ display:none }
+.f{ display:grid; gap:12px; padding:0 16px 16px }
+.f label{ display:grid; gap:6px; font-weight:600; font-size:14px }
+.f input, .f select, .f textarea{ width:100%; min-height:48px; padding:12px; border-radius:var(--r2); border:1.5px solid var(--linea); background:var(--fondo); color:var(--tinta); font-size:16px }
+.f textarea{ min-height:80px; resize:vertical }
+.dos{ display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:12px }
+.msj{ font-weight:600; font-size:14px; min-height:1.2em } .msj.mal{ color:#C0392B } .msj.bien{ color:var(--acento-texto) }
+.filtro{ display:flex; gap:8px; overflow-x:auto; margin:4px 0 12px; scrollbar-width:none }
+.filtro button{ flex:none; min-height:40px; padding:0 14px; border-radius:999px; background:var(--sup2); font-weight:600; font-size:14px; color:var(--tenue) }
+.filtro button[aria-pressed="true"]{ background:var(--acento); color:var(--acento-tinta) }
+.mov{ display:grid; grid-template-columns:minmax(0,1fr) 92px; gap:8px; align-items:end }
+.barra-inf{ position:fixed; left:0; right:0; bottom:0; z-index:6; background:var(--sup); box-shadow:0 -1px 0 var(--linea); padding:6px 8px calc(6px + env(safe-area-inset-bottom)); display:grid; grid-template-columns:repeat(4, 1fr) }
+.barra-inf button{ display:grid; justify-items:center; gap:2px; min-height:52px; font-size:12px; font-weight:600; color:var(--tenue); position:relative }
+.barra-inf button[aria-current="page"]{ color:var(--acento-texto) }
+.barra-inf i{ position:absolute; top:4px; right:calc(50% - 22px); min-width:18px; height:18px; padding:0 5px; border-radius:9px; background:var(--aviso); color:#fff; font:700 11px/18px var(--letra); font-style:normal }
+.entrar{ max-width:440px; margin:12vh auto 0; background:var(--sup); border-radius:var(--r); padding:24px; box-shadow:var(--elev2) }
+.entrar p{ color:var(--tenue); margin:8px 0 16px }
+</style>
+</head>
+<body>
+<div class="env" id="app"><p class="vacio" style="padding:40px 0">Cargando…</p></div>
+<nav class="barra-inf" id="barra" hidden aria-label="Secciones">
+  <button type="button" data-p="hoy" aria-current="page"><span data-ic="sun"></span>Hoy<i id="nHoy" hidden></i></button>
+  <button type="button" data-p="servicios"><span data-ic="calendar-days"></span>Servicios</button>
+  <button type="button" data-p="inventario"><span data-ic="package"></span>Inventario<i id="nInv" hidden></i></button>
+  <button type="button" data-p="vehiculo"><span data-ic="truck"></span>Vehículo<i id="nVeh" hidden></i></button>
+</nav>
+<script type="module">
+const q = new URLSearchParams(location.search);
+const guarda = { leer: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, poner: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
+const SERVIDOR = q.get('servidor') || guarda.leer('up_servidor') || 'https://sala.palomazi9111.workers.dev/api/urban';
+if(q.get('acceso')){ guarda.poner('up_acceso', q.get('acceso')); q.delete('acceso'); history.replaceState(null, '', '?' + q.toString()); }
+const app = document.getElementById('app'), barra = document.getElementById('barra');
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const pesos = (n) => n == null ? '' : '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 });
+const DIAS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'], MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+const dia = (s) => { if(!s) return ''; const d = new Date(s + 'T12:00:00'); return `${DIAS[d.getDay()]} ${d.getDate()} ${MESES[d.getMonth()]}`; };
+const hoyISO = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
+
+/* íconos: Lucide (ISC), los mismos del resto de sus páginas */
+let L = {};
+try { L = (await (await fetch('../../presentaciones/vendor/lucide-1.48.0.json')).json()).iconos; } catch {}
+const ic = (n) => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${L[n] || ''}</svg>`;
+const pintaIconos = (raiz = document) => raiz.querySelectorAll('[data-ic]').forEach(e => { if(!e.firstChild) e.innerHTML = ic(e.dataset.ic); });
+
+async function api(metodo, ruta, cuerpo){
+  try {
+    const r = await fetch(SERVIDOR + ruta, { method: metodo, headers: { 'content-type': 'application/json', 'x-llave': guarda.leer('up_llave') || guarda.leer('salaLlave') || '', 'x-acceso': guarda.leer('up_acceso') || '' }, body: cuerpo ? JSON.stringify(cuerpo) : undefined });
+    const j = await r.json().catch(() => ({ bien: false, error: 'El servidor no contestó bien (' + r.status + ').' }));
+    if(!r.ok && j.bien !== false) j.bien = false; j.status = r.status; return j;
+  } catch { return { bien: false, error: 'Sin conexión. Revisa tu internet.' }; }
+}
+
+const atajos = `<nav class="atajos" aria-label="Atajos">
+  <a href="../chat/"><span data-ic="message-circle"></span>Chat central</a>
+  <a href="../cotizacion/?nueva"><span data-ic="file-text"></span>Cotización a mano</a>
+  <a href="../carpeta/?registrar"><span data-ic="clipboard-check"></span>Carpeta de plantas</a></nav>`;
+const cab = (t, s) => `<header class="top"><div><b>${t}</b><small>${s}</small></div></header>`;
+const formEnvio = (f, alListo) => f.addEventListener('submit', async (e) => {
+  e.preventDefault(); const msj = f.querySelector('.msj'), boton = f.querySelector('[type=submit]');
+  boton.disabled = true; msj.className = 'msj'; msj.textContent = 'Guardando…';
+  const j = await alListo(Object.fromEntries(new FormData(f)));
+  boton.disabled = false;
+  if(!j.bien){ msj.className = 'msj mal'; msj.textContent = j.error; return; }
+  msj.className = 'msj bien'; msj.textContent = 'Listo.'; setTimeout(() => ir(actual), 500);
+});
+
+let actual = q.get('p') || 'hoy';
+async function ir(p){
+  actual = p; barra.querySelectorAll('button').forEach(b => b.dataset.p === p ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
+  /* el contenedor se recrea en cada pantalla: así no se juntan oyentes viejos (CLAUDE.md, «innerHTML deja la pantalla limpia») */
+  const viejo = raiz(), nuevo = viejo.cloneNode(false); viejo.replaceWith(nuevo); window.__app = nuevo;
+  await PANTALLAS[p](nuevo); pintaIconos(nuevo); pintaIconos(barra);
+  /* los globitos de la barra van al día en cualquier pantalla, no sólo en «Hoy» */
+  if(p !== 'hoy') api('GET', '/api/tablero').then(t => { if(t.bien){ marca('nHoy', t.servicios_hoy.length + t.atrasados.length + t.seguimientos.length); marca('nInv', t.insumos_bajos.length); marca('nVeh', t.vehiculo.length); } });
+}
+const raiz = () => window.__app || app;
+
+const citaItem = (c, acciones = true) => `<li class="item" data-id="${c.id}">
+  <div class="t"><b>${esc(c.cliente)}</b><span>${dia(c.fecha)}${c.hora ? ' · ' + esc(c.hora) : ''}</span></div>
+  <p>${[c.plaga && esc(c.plaga), c.zona && esc(c.zona), c.direccion && esc(c.direccion), c.tecnico && 'Técnico: ' + esc(c.tecnico)].filter(Boolean).join(' · ') || 'Sin detalles'}</p>
+  <div class="acc">${c.precio != null ? `<span class="chip">${c.precio === 0 ? 'Garantía · sin costo' : pesos(c.precio)}</span>` : ''}<span class="chip ${c.estado === 'pendiente' ? 'aviso' : c.estado === 'cerrado' ? 'ok' : ''}">${c.estado === 'hecho' ? 'Hecho · por cobrar' : c.estado}</span>
+    ${c.telefono ? `<a class="chip" href="https://wa.me/52${esc(String(c.telefono).replace(/\D/g, '').slice(-10))}">WhatsApp</a>` : ''}</div>
+  ${acciones ? `<div class="acc">${c.estado === 'pendiente' ? `<button class="btn" data-est="hecho">Ya se hizo</button><button class="btn b2" data-est="cancelado">Cancelar</button>` : ''}${c.estado === 'hecho' ? `<button class="btn" data-est="cerrado">Ya se cobró</button>` : ''}</div>` : ''}</li>`;
+const conAcciones = (el) => el.addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-est],[data-seg]'); if(!b) return;
+  const id = b.closest('[data-id]').dataset.id; b.disabled = true;
+  const j = b.dataset.est ? await api('POST', '/api/citas/estado', { id, estado: b.dataset.est }) : await api('POST', '/api/citas/seguimiento', { id, sigue_plaga: b.dataset.seg === 'sigue' });
+  if(!j.bien){ b.disabled = false; alert(j.error); return; } ir(actual);
+});
+
+const PANTALLAS = {
+  async hoy(el){
+    const t = await api('GET', '/api/tablero'); if(!t.bien) return falla(el, t);
+    const pend = t.servicios_hoy.length + t.atrasados.length + t.seguimientos.length;
+    marca('nHoy', pend); marca('nInv', t.insumos_bajos.length); marca('nVeh', t.vehiculo.length);
+    el.innerHTML = cab('Hoy', dia(t.hoy) + ' · Urban Pest') + atajos + `
+      <div class="cifras">
+        <div class="cifra"><b>${t.servicios_hoy.length}</b><small>servicios hoy</small></div>
+        <div class="cifra ${t.seguimientos.length ? 'alerta' : ''}"><b>${t.seguimientos.length}</b><small>seguimientos</small></div>
+        <div class="cifra"><b>${t.bot.chats}</b><small>chats hoy</small></div>
+        <div class="cifra"><b>${t.bot.reflejo + t.bot.ia}</b><small>contestó el bot</small></div>
+        <div class="cifra"><b>${t.bot.cotizaciones}</b><small>cotizaciones</small></div>
+        <div class="cifra ${t.avisos ? 'alerta' : ''}"><b>${t.avisos}</b><small>avisos para ti</small></div>
+      </div>
+      <h2>Servicios de hoy <span class="n">${t.servicios_hoy.length}</span></h2>
+      ${t.servicios_hoy.length ? `<ul class="lista-c" id="lHoy">${t.servicios_hoy.map(c => citaItem(c)).join('')}</ul>` : '<p class="vacio">No hay servicios para hoy. Se agendan en «Servicios».</p>'}
+      ${t.atrasados.length ? `<h2>Se quedaron pendientes <span class="n">${t.atrasados.length}</span></h2><ul class="lista-c" id="lAtr">${t.atrasados.map(c => citaItem(c)).join('')}</ul>` : ''}
+      <h2>Visitas de seguimiento <span class="n">${t.seguimientos.length}</span></h2>
+      ${t.seguimientos.length ? `<ul class="lista-c" id="lSeg">${t.seguimientos.map(c => `<li class="item" data-id="${c.id}"><div class="t"><b>${esc(c.cliente)}</b><span>tocaba el ${dia(c.seguimiento.fecha)}</span></div>
+        <p>Pregúntale si ya no ha visto ${esc(c.plaga || 'la plaga')}. Si sigue, la garantía de tu página: regresas sin costo.</p>
+        <div class="acc"><button class="btn" data-seg="bien">Ya no hay plaga</button><button class="btn b2" data-seg="sigue">Sigue: agendar garantía</button>${c.telefono ? `<a class="btn b2" href="https://wa.me/52${esc(String(c.telefono).replace(/\D/g, '').slice(-10))}">WhatsApp</a>` : ''}</div></li>`).join('')}</ul>` : '<p class="vacio">Ninguna toca hoy. Se agendan solas 15 días después de cada servicio.</p>'}
+      ${t.insumos_bajos.length ? `<h2>Se está acabando <span class="n">${t.insumos_bajos.length}</span></h2><ul class="lista-c">${t.insumos_bajos.map(i => `<li class="item"><div class="t"><b>${esc(i.nombre)}</b><span>quedan ${i.cantidad} ${esc(i.unidad)}</span></div><p>Tu mínimo es ${i.minimo} ${esc(i.unidad)}.</p></li>`).join('')}</ul>` : ''}
+      ${t.vehiculo.length ? `<h2>Vehículo <span class="n">${t.vehiculo.length}</span></h2><ul class="lista-c">${t.vehiculo.map(v => `<li class="item"><div class="t"><b>${esc(v.vehiculo)} · ${esc(v.tipo)}</b><span>${v.dias != null ? (v.dias < 0 ? `venció hace ${-v.dias} d` : `en ${v.dias} d`) : `faltan ${v.faltanKm} km`}</span></div></li>`).join('')}</ul>` : ''}
+      ${t.por_cobrar.length ? `<h2>Por cobrar <span class="n">${t.por_cobrar.length}</span></h2><ul class="lista-c" id="lCob">${t.por_cobrar.map(c => citaItem(c)).join('')}</ul>` : ''}`;
+    conAcciones(el);
+  },
+  async servicios(el){
+    const j = await api('GET', '/api/citas'); if(!j.bien) return falla(el, j);
+    const filtro = guarda.leer('up_filtro') || 'pendiente';
+    const lista = j.citas.filter(c => c.estado === filtro);
+    if(filtro !== 'pendiente') lista.reverse();
+    el.innerHTML = cab('Servicios', ((n) => `${n} pendiente${n === 1 ? '' : 's'}`)(j.citas.filter(c => c.estado === 'pendiente').length)) + `
+      <details class="nuevo"><summary><span data-ic="plus"></span>Agendar un servicio</summary>
+        <form class="f" id="fCita">
+          <div class="dos"><label>Cliente<input name="cliente" required autocomplete="off"></label><label>Teléfono<input name="telefono" inputmode="tel" autocomplete="off"></label></div>
+          <label>Dirección<input name="direccion" autocomplete="off"></label>
+          <div class="dos"><label>Zona<input name="zona" placeholder="Juriquilla, Centro…"></label><label>Plaga<input name="plaga" placeholder="cucarachas, ratones…"></label></div>
+          <div class="dos"><label>Fecha<input name="fecha" type="date" required value="${hoyISO()}"></label><label>Hora<input name="hora" type="time"></label></div>
+          <div class="dos"><label>Técnico<input name="tecnico"></label><label>Precio<input name="precio" inputmode="decimal" placeholder="$"></label></div>
+          <label>Nota<textarea name="nota"></textarea></label>
+          <button class="btn" type="submit">Agendar</button><p class="msj" role="status"></p>
+        </form></details>
+      <div class="filtro" role="group" aria-label="Qué servicios ver">${[['pendiente', 'Pendientes'], ['hecho', 'Por cobrar'], ['cerrado', 'Cerrados'], ['cancelado', 'Cancelados']].map(([v, t]) => `<button type="button" data-f="${v}" aria-pressed="${v === filtro}">${t}</button>`).join('')}</div>
+      ${lista.length ? `<ul class="lista-c">${lista.map(c => citaItem(c)).join('')}</ul>` : '<p class="vacio">Nada aquí.</p>'}`;
+    formEnvio(el.querySelector('#fCita'), (d) => api('POST', '/api/citas', d));
+    el.querySelector('.filtro').addEventListener('click', (e) => { const b = e.target.closest('[data-f]'); if(b){ guarda.poner('up_filtro', b.dataset.f); ir('servicios'); } });
+    conAcciones(el);
+  },
+  async inventario(el){
+    const j = await api('GET', '/api/insumos'); if(!j.bien) return falla(el, j);
+    el.innerHTML = cab('Inventario', `${j.insumos.length} insumo${j.insumos.length === 1 ? '' : 's'} · ${j.insumos.filter(i => i.bajo).length} por acabarse`) + `
+      <details class="nuevo"><summary><span data-ic="plus"></span>Agregar un insumo</summary>
+        <form class="f" id="fIns"><label>Nombre<input name="nombre" required placeholder="Gel cucarachicida"></label>
+          <div class="dos"><label>Registro (COFEPRIS)<input name="registro" placeholder="RSCO-…"></label><label>Unidad<select name="unidad"><option>pzas</option><option>g</option><option>kg</option><option>ml</option><option>L</option><option>bloques</option><option>cajas</option></select></label></div>
+          <label>Avísame cuando queden<input name="minimo" inputmode="decimal" placeholder="10"></label>
+          <button class="btn" type="submit">Agregar</button><p class="msj" role="status"></p></form></details>
+      ${j.insumos.length ? `<ul class="lista-c">${j.insumos.map(i => `<li class="item" data-id="${i.id}">
+        <div class="t"><b>${esc(i.nombre)}</b><span>${i.cantidad} ${esc(i.unidad)}</span></div>
+        <div class="acc">${i.bajo ? '<span class="chip aviso">Se está acabando</span>' : ''}${i.registro ? `<span class="chip">${esc(i.registro)}</span>` : '<span class="chip aviso">Falta su registro</span>'}${i.minimo != null ? `<span class="chip">mínimo ${i.minimo}</span>` : ''}</div>
+        <form class="f mov" style="padding:0"><label>Motivo<input name="motivo" placeholder="Compra, servicio de Ana…"></label><label>Cantidad<input name="delta" inputmode="decimal" placeholder="+10 o −2" required></label>
+          <div class="acc" style="grid-column:1/-1"><button class="btn b2" type="submit" name="sentido" value="1">Entró</button><button class="btn b2" type="submit" name="sentido" value="-1">Salió</button></div><p class="msj" role="status" style="grid-column:1/-1"></p></form>
+        ${i.movimientos.length ? `<p>Último: ${i.movimientos.at(-1).delta > 0 ? '+' : ''}${i.movimientos.at(-1).delta} · ${esc(i.movimientos.at(-1).motivo)}</p>` : ''}</li>`).join('')}</ul>` : '<p class="vacio">Todavía no hay insumos. Agrega los productos que usas, con su registro: la carpeta de las plantas los pide.</p>'}`;
+    formEnvio(el.querySelector('#fIns'), (d) => api('POST', '/api/insumos', d));
+    el.querySelectorAll('form.mov').forEach(f => f.addEventListener('submit', async (e) => {
+      e.preventDefault(); const msj = f.querySelector('.msj'), d = Object.fromEntries(new FormData(f));
+      const n = Math.abs(Number(String(d.delta).replace(/[^\d.]/g, ''))); if(!n){ msj.className = 'msj mal'; msj.textContent = 'Pon una cantidad.'; return; }
+      const j2 = await api('POST', '/api/insumos/mover', { id: f.closest('[data-id]').dataset.id, delta: n * Number(e.submitter?.value || 1), motivo: d.motivo });
+      if(!j2.bien){ msj.className = 'msj mal'; msj.textContent = j2.error; return; } ir('inventario');
+    }));
+  },
+  async vehiculo(el){
+    const j = await api('GET', '/api/vehiculos'); if(!j.bien) return falla(el, j);
+    const TIPOS = ['aceite', 'llantas', 'frenos', 'afinación', 'verificación', 'seguro', 'tenencia', 'otro'];
+    el.innerHTML = cab('Vehículo', 'Revisiones y lo que viene') + `
+      <details class="nuevo"><summary><span data-ic="plus"></span>Agregar un vehículo</summary>
+        <form class="f" id="fVeh"><div class="dos"><label>Nombre<input name="nombre" required placeholder="Camioneta blanca"></label><label>Placas<input name="placas"></label></div>
+          <label>Kilometraje de hoy<input name="km" inputmode="numeric"></label><button class="btn" type="submit">Agregar</button><p class="msj" role="status"></p></form></details>
+      ${j.vehiculos.map(v => `<h2>${esc(v.nombre)} <span class="n">${v.placas ? esc(v.placas) + ' · ' : ''}${v.km != null ? Number(v.km).toLocaleString('en-US') + ' km' : ''}</span></h2>
+        ${v.proximas.length ? `<ul class="lista-c">${v.proximas.map(p => `<li class="item"><div class="t"><b>${esc(p.tipo)}</b><span>${p.fecha ? dia(p.fecha) : ''}${p.km ? ' · a los ' + Number(p.km).toLocaleString('en-US') + ' km' : ''}</span></div>${p.urge ? '<div class="acc"><span class="chip aviso">Ya toca</span></div>' : ''}</li>`).join('')}</ul>` : '<p class="vacio">Sin próximas revisiones apuntadas.</p>'}
+        <details class="nuevo"><summary><span data-ic="wrench"></span>Apuntar una revisión</summary>
+          <form class="f" data-v="${v.id}"><div class="dos"><label>Qué se hizo<select name="tipo">${TIPOS.map(t => `<option>${t}</option>`).join('')}</select></label><label>Fecha<input name="fecha" type="date" required value="${hoyISO()}"></label></div>
+            <div class="dos"><label>Kilometraje<input name="km" inputmode="numeric"></label><label>Costo<input name="costo" inputmode="decimal"></label></div>
+            <div class="dos"><label>Próxima: fecha<input name="proxima_fecha" type="date"></label><label>Próxima: km<input name="proxima_km" inputmode="numeric"></label></div>
+            <label>Nota<input name="nota"></label><button class="btn" type="submit">Guardar</button><p class="msj" role="status"></p></form></details>`).join('') || '<p class="vacio">Agrega la camioneta para llevar aceite, llantas, verificación y seguro.</p>'}`;
+    formEnvio(el.querySelector('#fVeh'), (d) => api('POST', '/api/vehiculos', d));
+    el.querySelectorAll('form[data-v]').forEach(f => formEnvio(f, (d) => api('POST', '/api/vehiculos/revision', { ...d, vehiculo: f.dataset.v })));
+  },
+};
+function marca(id, n){ const e = document.getElementById(id); e.hidden = !n; e.textContent = n; }
+function falla(el, j){
+  if(j.status === 401){
+    el.innerHTML = `<div class="entrar"><b>Entra a tu centro</b><p>Abre el link de acceso que te mandó Grupo Mazi, o pega aquí tu código.</p>
+      <form class="f" style="padding:0" id="fEnt"><label>Código<input name="c" autocomplete="off" required></label><button class="btn" type="submit">Entrar</button></form></div>`;
+    barra.hidden = true;
+    el.querySelector('#fEnt').onsubmit = (e) => { e.preventDefault(); guarda.poner('up_acceso', new FormData(e.target).get('c').trim()); location.reload(); };
+    return;
+  }
+  el.innerHTML = `<p class="vacio" style="padding:40px 0">${esc(j.error)} <button class="btn b2" type="button" onclick="location.reload()">Reintentar</button></p>`;
+}
+barra.addEventListener('click', (e) => { const b = e.target.closest('[data-p]'); if(b) ir(b.dataset.p); });
+barra.hidden = false;
+ir(actual);
+</script>
+</body>
+</html>

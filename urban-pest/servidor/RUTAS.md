@@ -102,3 +102,19 @@ entorno del worker (cuando tenga su dominio).
 | `POST /api/cotizaciones {cliente, renglones:[{concepto, cantidad, precio}], titulo?, lugar?, zona?, vigencia?, iva?, nota?}` | La que hace el dueño a mano. Suma sus renglones |
 
 La página: `?c=` la hoja (con «Guardar como PDF» y «Agendar por WhatsApp»), `?nueva` el formulario a mano.
+
+## El centro de operaciones · 12 nov
+
+Página: `urban-pest/centro/` (Hoy · Servicios · Inventario · Vehículo, con atajos al chat central, la cotización a
+mano y la carpeta de plantas). Entra con la llave de Grupo Mazi o con un código de acceso.
+
+| Ruta | Qué hace |
+|---|---|
+| `GET /api/tablero` | Lo de hoy: servicios del día y atrasados, seguimientos que tocan, por cobrar, insumos bajos, vehículo que ya toca y lo que hizo el bot hoy |
+| `GET /api/citas` · `POST /api/citas {id?, cliente, fecha, hora?, telefono?, direccion?, zona?, plaga?, tecnico?, precio?, nota?}` | Agendar o corregir un servicio |
+| `POST /api/citas/estado {id, estado}` | pendiente → hecho → cerrado (cobrado), o cancelado. Al pasar a «hecho» se agenda solo el seguimiento a 15 días |
+| `POST /api/citas/seguimiento {id, sigue_plaga, nota?}` | Si la plaga sigue, crea un servicio de garantía a $0 (lo que promete su página) |
+| `GET /api/insumos` · `POST /api/insumos {id?, nombre, registro?, unidad?, minimo?}` | El inventario |
+| `POST /api/insumos/mover {id, delta, motivo?, cita?}` | Entrada (+) o salida (−). Se lleva con movimientos y no deja quedar en negativo |
+| `GET /api/vehiculos` · `POST /api/vehiculos {id?, nombre, placas?, km?}` | Los vehículos, con sus próximas revisiones |
+| `POST /api/vehiculos/revision {vehiculo, tipo, fecha, km?, costo?, proxima_fecha?, proxima_km?, nota?}` | Aceite, llantas, verificación… Sale «ya toca» a 7 días o a 500 km |

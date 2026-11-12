@@ -175,6 +175,33 @@ console.log('medidor (no sabe cuánto mide su casa)');
   ok('la cotización a mano suma sus renglones y tira los vacíos', r.bien && r.cotizacion.precio === 45600 && r.cotizacion.renglones.length === 2, JSON.stringify(r));
   ok('a mano sin cliente o sin renglones no se guarda', (await cotizacionAMano(A, { renglones: [{ concepto: 'x', precio: 1 }] })).estado === 400 && (await cotizacionAMano(A, { cliente: 'x', renglones: [] })).estado === 400); }
 
+/* ── el centro de operaciones (12 nov) ── */
+{ const C = await import('./src/centro.js');
+  const M = new Map(), A = { get: async k => M.get(k), put: async (k, v) => M.set(k, structuredClone(v)), list: async p => [...M].filter(([k]) => k.startsWith(p)) };
+  const { cita } = await C.guardarCita(A, { cliente: 'Ana', fecha: '2026-11-12', hora: '10:00', plaga: 'cucarachas', precio: '$1,200' }, 'Dueño');
+  ok('un servicio se agenda con su precio limpio', cita?.estado === 'pendiente' && cita.precio === 1200);
+  ok('sin cliente o con fecha mala no se agenda', (await C.guardarCita(A, { fecha: '2026-11-12' })).estado === 400 && (await C.guardarCita(A, { cliente: 'x', fecha: '12/11/26' })).estado === 400);
+  const h = await C.estadoCita(A, { id: cita.id, estado: 'hecho' }, 'Técnico', '2026-11-12');
+  ok('al marcarlo hecho se agenda solo el seguimiento a 15 días', h.cita.seguimiento?.fecha === '2026-11-27' && !h.cita.seguimiento.hecho, JSON.stringify(h.cita.seguimiento));
+  let tab = await C.tablero(A, '2026-11-27');
+  ok('el tablero enseña el seguimiento el día que toca', tab.seguimientos.length === 1 && tab.por_cobrar.length === 1);
+  const g = await C.seguimientoHecho(A, { id: cita.id, sigue_plaga: true }, 'Dueño');
+  ok('si la plaga sigue, sale un servicio de garantía a $0', g.garantia?.precio === 0 && g.garantia.estado === 'pendiente' && g.cita.seguimiento.hecho);
+  const { insumo } = await C.guardarInsumo(A, { nombre: 'Gel cucarachicida', unidad: 'g', minimo: 100 });
+  await C.moverInsumo(A, { id: insumo.id, delta: 300, motivo: 'Compra' }, 'Dueño');
+  await C.moverInsumo(A, { id: insumo.id, delta: -30, cita: cita.id }, 'Técnico');
+  const r1 = await C.moverInsumo(A, { id: insumo.id, delta: -40 }, 'Técnico'), r2 = await C.moverInsumo(A, { id: insumo.id, delta: -1000 }, 'Técnico');
+  ok('el inventario se lleva con movimientos y no queda en negativo', r1.insumo.cantidad === 230 && r1.insumo.movimientos.length === 3 && r2.estado === 400);
+  await C.moverInsumo(A, { id: insumo.id, delta: -150 });
+  tab = await C.tablero(A, '2026-11-28');
+  ok('con 80 g y mínimo de 100, el gel sale como insumo bajo', tab.insumos_bajos.length === 1 && tab.insumos_bajos[0].cantidad === 80);
+  const { vehiculo } = await C.guardarVehiculo(A, { nombre: 'Camioneta', km: 41000 });
+  await C.revisionVehiculo(A, { vehiculo: vehiculo.id, tipo: 'aceite', fecha: '2026-08-01', km: 41000, proxima_km: 46000 });
+  await C.revisionVehiculo(A, { vehiculo: vehiculo.id, tipo: 'verificación', fecha: '2026-06-01', proxima_fecha: '2026-12-01' });
+  ok('la verificación a 3 días sale urgente; el aceite a 5,000 km no', (await C.tablero(A, '2026-11-28')).vehiculo.map(x => x.tipo).join() === 'verificación');
+  await C.guardarVehiculo(A, { id: vehiculo.id, km: 45700 });
+  ok('al acercarse a los km del aceite, también sale', (await C.tablero(A, '2026-11-28')).vehiculo.map(x => x.tipo).sort().join() === 'aceite,verificación'); }
+
 ok('«chinches» en plural se entiende (antes quedaba «chinch»)', aPlaga('chinches') === 'chinche' && aPlaga('Chinches de cama') === 'chinche' && aPlaga('ratones') === 'roedor' && aPlaga('arañas') === 'arana');
 /* ── la carpeta de cumplimiento (12 nov): lo que se le promete a cada planta ── */
 { const { crearPlanta, ponerEstaciones, registrarServicio, carpetaPublica, plantaEjemplo, ponerDocumentos, quitarServicio } = await import('./src/carpeta.js');

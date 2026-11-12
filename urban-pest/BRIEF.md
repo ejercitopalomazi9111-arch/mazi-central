@@ -94,8 +94,12 @@ tecnicismos y con paciencia.
 **Ya hecho (12 nov, Sylcred, porque Godines no tiene sesión): la carpeta de cumplimiento.** `urban-pest/carpeta/`:
 plantas, mapa de trampas, servicios con firma y constancia imprimible con la licencia sanitaria, y un link por
 planta para su jefe de calidad. Rutas en `servidor/RUTAS.md`. **FALTA del cliente:** su número de licencia sanitaria,
-su REPSE, su razón social, su responsable técnico y los productos que usa con su registro. Lo demás del
-centro (inventario, vehículo, visitas) sigue pendiente.
+su REPSE, su razón social, su responsable técnico y los productos que usa con su registro.
+
+**Ya hecho también (12 nov, Sylcred): el resto del centro**, en `urban-pest/centro/`: el tablero de hoy (servicios,
+seguimientos, por cobrar, insumos bajos, vehículo y lo que hizo el bot), servicios con su estado, visitas de seguimiento
+que se agendan solas a 15 días (si la plaga sigue, sale un servicio de garantía a $0), inventario por movimientos con
+mínimo y aviso, y revisiones del vehículo. Rutas en `servidor/RUTAS.md`.
 
 
 Es su app de control, la que le da confianza de que «aquí veo todo lo que está pasando»:

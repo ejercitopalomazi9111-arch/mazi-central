@@ -15,6 +15,7 @@ import { Oficina } from './oficina.js';
 import { firmaValida, leerAviso, enviar } from './meta.js';
 import { pensar, probarMotores } from './cerebro.js';
 import { cotizacionPublica, cotizacionAMano, listarCotizaciones } from './cotizacion.js';
+import { guardarCita, estadoCita, seguimientoHecho, listarCitas, guardarInsumo, moverInsumo, listarInsumos, guardarVehiculo, revisionVehiculo, listarVehiculos, tablero } from './centro.js';
 import { cotizar } from './cotizador.js';
 import { estimarM2, MEDIDAS } from './medidor.js';
 import { crearPlanta, listarPlantas, ponerEstaciones, ponerDocumentos, registrarServicio, carpetaPublica, plantaEjemplo, quitarServicio } from './carpeta.js';
@@ -39,7 +40,7 @@ export default {
     const url = new URL(req.url), ruta = url.pathname;
     const origen = req.headers.get('origin');
     const cors = origen && (env.ORIGENES || '').split(',').includes(origen)
-      ? { 'access-control-allow-origin': origen, 'access-control-allow-headers': 'content-type, x-llave', 'access-control-allow-methods': 'GET, POST', vary: 'origin' } : {};
+      ? { 'access-control-allow-origin': origen, 'access-control-allow-headers': 'content-type, x-llave, x-acceso', 'access-control-allow-methods': 'GET, POST', vary: 'origin' } : {};
     if(req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
     if(ruta === '/api/salud') return json({ bien: true }, 200, cors);
     const despacho = env.DESPACHO.get(env.DESPACHO.idFromName('urban-pest'));
@@ -140,6 +141,18 @@ export class Despacho {
       case 'GET /api/documentos': return { bien: true, documentos: (await A.get('documentos')) || {} };
       case 'POST /api/documentos': return ponerDocumentos(A, b);
       /* qué motores de IA le llegan al bot y si contestan (sin enseñar ninguna llave) */
+      /* ── el centro de operaciones (BRIEF §C) ── */
+      case 'GET /api/tablero': return tablero(A);
+      case 'GET /api/citas': return listarCitas(A);
+      case 'POST /api/citas': return guardarCita(A, b, quien);
+      case 'POST /api/citas/estado': return estadoCita(A, b, quien);
+      case 'POST /api/citas/seguimiento': return seguimientoHecho(A, b, quien);
+      case 'GET /api/insumos': return listarInsumos(A);
+      case 'POST /api/insumos': return guardarInsumo(A, b);
+      case 'POST /api/insumos/mover': return moverInsumo(A, b, quien);
+      case 'GET /api/vehiculos': return listarVehiculos(A);
+      case 'POST /api/vehiculos': return guardarVehiculo(A, b);
+      case 'POST /api/vehiculos/revision': return revisionVehiculo(A, b, quien);
       case 'GET /api/cotizaciones': return listarCotizaciones(A);
       case 'POST /api/cotizaciones': return cotizacionAMano(A, b, quien);
       case 'GET /api/motores': return { bien: true, motores: await probarMotores(this.of.env) };
