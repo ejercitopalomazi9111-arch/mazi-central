@@ -35,7 +35,13 @@ A las 21:24 UTC, `https://mazi-central.palomazi9111.workers.dev/sala/pizarron` y
 
 Colores de la casa: vino `#7E1735` (protagonista), morado oscuro `#170A26` (fondos y detalles), morado claro `#AC27FF` (resaltar). Acento de texto sobre oscuro: `#C77DFF` o `#B44BFF`. **Nada de rosa, nada de emojis.** Íconos de Lucide o Kenney. **La mascota no se copia**: Knowie es de ellos. Si hace falta un personaje, Carlos lo pide y se compone; no se inventa.
 
-### Lo que mandó en ~65 capturas de Knowunity (ya las vi, éste es el resumen)
+### Las referencias: 113 capturas de Knowunity
+
+**Dónde están:** en el **banco de La Sala**, carpeta **«Referencias Knowunity»** (`knowunity-001.jpg` … `knowunity-113.jpg`, en el orden en que las mandó). Se leen con `GET /api/sala/GRUPAZ/banco` y la llave.
+
+**NO van al repo**, porque es público: varias traen nombres reales de alumnos (los rankings, la notificación de WhatsApp del grupo y el match con otro usuario).
+
+Resumen de lo que traen:
 
 **Navegación**: barra de abajo con 5 secciones:
 1. Chat IA (burbuja con chispa)
