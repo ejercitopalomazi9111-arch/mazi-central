@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <title>Urban Pest · el precio ya no es a ojo</title>
-<!-- ANUNCIO 24 · 38 s · 9:16 · SIN VOZ (la de Chris no tiene saldo; el texto en pantalla carga el mensaje, como en
+<!-- ANUNCIO 24 · 50 s (v2, 12 nov: entrada con franjas que envuelven el logo, «todo se cuenta» hasta las balatas,
+     lo que ve el dueño con un segundo ejemplo y él escribiéndole al cliente; sin movimientos de cámara) · antes 38 s · 9:16 · SIN VOZ (la de Chris no tiene saldo; el texto en pantalla carga el mensaje, como en
      los anuncios de Ugoki: marca/anuncios/APRENDIDO-UGOKI.md).
      Para el dueño de Urban Pest Control: «cotizar por WhatsApp es a ojo de buen cubero». La respuesta: su Excel ya
      sabe cuánto cobra; metros, plaga y distancia dan un precio de partida; el técnico ajusta en la visita; los casos
@@ -103,6 +104,27 @@
   .mini .b{ position:absolute; left:8%; top:54%; width:72%; height:30%; border-radius:12px; background:#fff; display:grid; place-items:center; color:var(--marina); font:800 1px/1 M; font-variant-numeric:tabular-nums }
   #reloj{ position:absolute; right:90px; top:640px; font:700 34px/1 M; color:#A9C3E6; display:flex; gap:12px; align-items:center }
 
+  /* las franjas que envuelven el logo: lo de atrás va detrás del logo, lo de adelante encima */
+  #atras, #frente{ position:absolute; inset:0; width:1080px; height:1920px; pointer-events:none }
+  #destello{ position:absolute; left:540px; top:880px; width:900px; height:900px; margin:-450px 0 0 -450px; border-radius:50%; pointer-events:none;
+    background:radial-gradient(circle, #F7E93Faa 0%, #F2992355 30%, transparent 62%); opacity:0 }
+  /* el cálculo con todo lo que cuenta */
+  #monto{ top:16px!important; font-size:118px!important }
+  .chip{ height:76px!important; font-size:27px!important }
+  .chip .sub{ position:absolute; left:106px; right:28px; bottom:12px; display:flex; gap:8px; flex-wrap:wrap }
+  .chip .sub i{ font:600 21px/1 I; font-style:normal; padding:5px 9px; border-radius:8px; background:#EEF2F6; color:var(--suave) }
+  .chip.alta{ height:112px!important; align-items:flex-start; padding-top:12px }
+  /* lo que ve el dueño */
+  .num{ position:absolute; left:30px; right:30px; border-radius:26px; background:#fff; padding:22px 26px; box-shadow:0 12px 26px -16px #14213A55 }
+  .num .t{ display:flex; justify-content:space-between; align-items:baseline; font:800 32px/1.1 M } .num .t span{ font:500 22px/1 I; color:var(--suave) }
+  .num p{ font:500 23px/1.3 I; color:var(--suave); margin:4px 0 10px }
+  .num .chips{ display:flex; gap:8px; flex-wrap:wrap } .num .chips b{ font:800 24px/1 M; padding:9px 14px; border-radius:999px; background:#EEF2F6; color:var(--tinta) }
+  .num .chips b.g{ background:#E2F2EA; color:#0B5E43 }
+  .num dl{ display:grid; grid-template-columns:1fr auto; gap:6px 14px; margin:14px 0 0; padding:12px 16px; border-radius:16px; background:#F4F7FA; font:500 24px/1.2 I }
+  .num dt{ color:var(--suave) } .num dd{ margin:0; text-align:right; font-weight:700; font-variant-numeric:tabular-nums } .num dd.g{ color:#0B5E43 }
+  .num .bot{ display:flex; gap:10px; margin-top:14px } .num .bot span{ font:700 23px/1 M; padding:15px 20px; border-radius:14px; background:#EEF2F6; color:var(--marina) } .num .bot span.p{ background:var(--marina); color:#fff }
+  #dedo{ position:absolute; width:74px; height:74px; margin:-37px 0 0 -37px; border-radius:50%; background:#ffffff55; border:4px solid #fff; box-shadow:0 10px 30px #0008; pointer-events:none; opacity:0 }
+  #bDueno{ right:36px; top:40px; background:#D4F2DF; border-bottom-right-radius:10px }
   /* la firma */
   #frase{ position:absolute; left:0; right:0; top:1300px; text-align:center; font:800 84px/1.05 M; letter-spacing:-.03em }
   #frase span{ display:inline-block } #frase .y{ color:var(--amarillo) }
@@ -121,6 +143,8 @@
     <div id="avatar"></div>
     <div class="cabtx" id="cabChat"><b>Urban Pest Control</b><small>en línea</small></div>
     <div class="cabtx" id="cabExcel"><b><svg class="i"><use href="#i-sheet"/></svg>Tus trabajos</b><small>tu Excel de siempre</small></div>
+    <div class="cabtx" id="cabNum"><b><svg class="i"><use href="#i-wallet"/></svg>Tus números</b><small>lo ves tú, no el cliente</small></div>
+    <div class="cabtx" id="cabDueno"><b>Brenda</b><small>le escribes tú</small></div>
     <div class="cabtx" id="cabCalc"><b><svg class="i"><use href="#i-calculator"/></svg>El cotizador</b><small>con tus números</small></div>
   </div>
   <div class="vista" id="vChat">
@@ -131,6 +155,16 @@
   <div class="vista" id="vExcel"><div id="tabla"></div><div class="nota">Datos de ejemplo. Con tu Excel salen tus precios.</div></div>
   <div class="vista" id="vGraf"><svg id="graf" viewBox="0 0 900 648"></svg></div>
   <div class="vista" id="vCalc"><div id="monto"><small>Precio de partida</small><span id="nMonto">$0</span></div><div id="chips"></div></div>
+  <div class="vista" id="vNum">
+    <div class="num" id="n1" style="top:24px"><div class="t">Brenda<span>casa · Juriquilla</span></div><p>Cucarachas · ≈155 m² · bot, 3:12 a.m.</p>
+      <div class="chips"><b>$1,200</b><b>costo $917</b><b class="g">ganas $283</b></div>
+      <dl id="desg"><dt>Material · gel y aspersión, 7.75 L</dt><dd>$465</dd><dt>Técnico · 3 h</dt><dd>$330</dd><dt>Gasolina · 36 km</dt><dd>$86</dd>
+        <dt>Llantas, balatas y motor</dt><dd>$36</dd><dt>Tu ganancia</dt><dd class="g">$283</dd></dl>
+      <div class="bot"><span id="bEsc">Escribirle</span><span class="p">Agendar</span></div></div>
+    <div class="num" id="n2" style="top:24px"><div class="t">Taquería El Güero<span>negocio · Centro</span></div><p>Cucarachas · 120 m² · bot, 9:40 a.m.</p>
+      <div class="chips"><b>$960</b><b>costo $737</b><b class="g">ganas $223</b></div></div>
+  </div>
+  <div class="vista" id="vDueno"><div class="bur" id="bDueno"><span id="tDueno"></span><small>tú · 8:15 a.m.<svg class="i"><use href="#i-check-check"/></svg></small></div></div>
   <div class="vista" id="vVisita"><div id="tiquet">
     <div class="k">Precio de partida</div><div class="p">$1,200</div><hr>
     <div class="r" id="r1"><div class="ic"><svg class="i"><use href="#i-search"/></svg></div><div>En la visita hubo más plaga en la cocina<small>Pasa. No todas las casas son iguales.</small></div></div>
@@ -143,7 +177,7 @@
 <div id="rejilla"></div>
 <div id="reloj"><svg class="i"><use href="#i-moon"/></svg><span>3:12 a.m.</span></div>
 
-<div id="logo"></div>
+<canvas id="atras" width="1080" height="1920"></canvas><div id="destello"></div><div id="logo"></div><canvas id="frente" width="1080" height="1920"></canvas><div id="dedo"></div>
 <div id="frase"><span>Tu&nbsp;precio,</span> <span>sin</span> <span class="y">adivinar.</span></div>
 <div id="mazi">Lo construimos en Grupo Mazi</div>
 
@@ -160,7 +194,7 @@ const pesos = (n) => '$' + Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d)
 
 /* ── íconos: Lucide (ISC), los mismos de su página ── */
 const L = (await (await fetch('../../../presentaciones/vendor/lucide-1.48.0.json')).json()).iconos;
-const usar = ['sheet', 'calculator', 'check-check', 'search', 'wrench', 'bell-ring', 'moon', 'bug', 'ruler', 'route', 'percent', 'bird', 'factory', 'map-pin'];
+const usar = ['wallet', 'flask-conical', 'clock', 'truck', 'sheet', 'calculator', 'check-check', 'search', 'wrench', 'bell-ring', 'moon', 'bug', 'ruler', 'route', 'percent', 'bird', 'factory', 'map-pin'];
 document.body.insertAdjacentHTML('afterbegin', '<svg width="0" height="0" style="position:absolute">' + usar.map(n => `<symbol id="i-${n}" viewBox="0 0 24 24">${L[n]}</symbol>`).join('') + '</svg>');
 const ico = (n) => `<svg class="i"><use href="#i-${n}"/></svg>`;
 
@@ -196,11 +230,12 @@ $('#recta').style.strokeDasharray = LARGO;
 
 /* el cálculo, con el ejemplo de Juriquilla (3 recámaras, 2 baños y patio ≈ 155 m², 18 km) — sale $1,200 */
 const PASOS = [
-  { ic: 'bug', tx: '<b>Plaga:</b> cucarachas', v: 465, et: '$465' },
-  { ic: 'ruler', tx: '<b>Metros:</b> 3 recámaras, 2 baños y patio ≈ 155 m²', v: 775, et: '+$310' },
-  { ic: 'route', tx: '<b>Distancia:</b> Juriquilla, 18 km', v: 919, et: '+$144' },
-  { ic: 'percent', tx: '<b>Tu ganancia</b>', v: 1200, et: '+30 %' }];
-$('#chips').innerHTML = PASOS.map((p, i) => `<div class="chip" style="top:${250 + i * 102}px"><div class="ic">${ico(p.ic)}</div><span>${p.tx}</span><em>${p.et}</em></div>`).join('');
+  { ic: 'ruler', tx: '<b>Metros:</b> 3 recámaras, 2 baños y patio ≈ 155 m²', v: 0, et: '' , top: 184 },
+  { ic: 'flask-conical', tx: '<b>Material:</b> gel y aspersión, 7.75 L', v: 465, et: '+$465', top: 266 },
+  { ic: 'clock', tx: '<b>Técnico:</b> 3 horas de trabajo', v: 795, et: '+$330', top: 348 },
+  { ic: 'truck', tx: '<b>Camioneta:</b> 36 km ida y vuelta', v: 917, et: '+$122', top: 430, sub: ['gasolina $86', 'llantas $13', 'balatas $7', 'motor $16'] },
+  { ic: 'percent', tx: '<b>Tu ganancia</b> (30 %)', v: 1200, et: '+$283', top: 548 }];
+$('#chips').innerHTML = PASOS.map((p) => `<div class="chip${p.sub ? ' alta' : ''}" style="top:${p.top}px"><div class="ic">${ico(p.ic)}</div><span>${p.tx}</span><em>${p.et}</em>${p.sub ? `<div class="sub">${p.sub.map(x => `<i>${x}</i>`).join('')}</div>` : ''}</div>`).join('');
 const chipsEl = [...document.querySelectorAll('.chip')];
 
 /* casos raros */
@@ -218,11 +253,15 @@ const TITS = [
   { a: 3.3, b: 6.7, ojo: 'Lo que siempre se dice', l: ['Cotizar sin ver', 'la casa es a ojo', 'de buen cubero.'] },
   { a: 7.0, b: 10.5, l: ['Tu Excel ya', 'sabe cuánto', '*cobras.*'] },
   { a: 10.7, b: 13.5, l: ['Cada trabajo', 'que hiciste', 'es un *dato.*'] },
-  { a: 13.8, b: 19.9, l: ['Metros, plaga', 'y distancia:', 'sale el *precio.*'] },
+  { a: 13.8, b: 19.9, l: ['Todo se cuenta.', 'Hasta las', '*balatas.*'] },
   { a: 20.2, b: 25.3, l: ['Un precio de', 'partida, en', '*segundos.*'] },
   { a: 25.6, b: 29.6, l: ['¿Había más', 'plaga? El técnico', '*ajusta.*'] },
   { a: 29.9, b: 32.1, l: ['Los casos', 'raros, *a ti.*'] },
-  { a: 32.3, b: 34.5, l: ['Los demás,', 'se cotizan', '*solos.*'] }];
+  { a: 32.3, b: 34.5, l: ['Los demás,', 'se cotizan', '*solos.*'] },
+  /* escena nueva (tiempo nuevo, ver «viejo») */
+  { a: 29.2, b: 31.9, nuevo: true, l: ['Y cada cotización', 'te llega a *ti.*'] },
+  { a: 32.1, b: 34.4, nuevo: true, l: ['Cuánto cobras,', 'cuánto cuesta,', 'cuánto *ganas.*'] },
+  { a: 34.6, b: 36.9, nuevo: true, l: ['¿Algo cambió?', 'Le escribes *tú.*'] }];
 const tit = $('#tit');
 tit.innerHTML = TITS.map((h, k) => `<div class="h" data-k="${k}" style="position:absolute;left:0;top:0">${h.l.map(r => `<span class="ren">${
   r.split(/(\*[^*]+\*)/).filter(Boolean).flatMap(s => s.startsWith('*') ? [`<span class="pal y">${s.slice(1, -1)}</span>`] : s.split(' ').filter(Boolean).map(w => `<span class="pal">${w}</span>`)).join(' ')
@@ -245,8 +284,50 @@ const ponLogo = (cx, cy, ancho, o = 1) => { const k = ancho / SIM.w; $('#logo').
 
 const BOT = 'Te saldría aproximadamente en <b>$1,200</b>. Si los datos que nos diste están bien, ése es el costo; el técnico te lo confirma al ver tu casa.';
 const CLI = 'Hola, ¿cuánto me cobras por fumigar? Tengo cucarachas en la casa.';
+const DUENO = 'Hola Brenda, soy de Urban Pest. Mañana a las 10 va el técnico; si encuentra algo distinto, te avisa antes de empezar.';
 
-window.pintar = (t) => {
+/* LA LÍNEA DE TIEMPO: el video viejo (38.6 s) con tres cosas nuevas metidas. «viejo(T)» dice en qué segundo del viejo
+   va cada segundo del nuevo, y «nuevo(v)» al revés (para los sonidos). */
+const viejo = (T) => T < 3 ? 2 : T < 14.6 ? T - 1 : T < 23.6 ? 13.6 + (T - 14.6) * 6.4 / 9 : T < 29 ? T - 3.6 : T < 37 ? 25.29 : T - 11.6;
+const nuevo = (v) => v < 13.6 ? v + 1 : v < 20 ? 14.6 + (v - 13.6) * 9 / 6.4 : v < 25.4 ? v + 3.6 : v + 11.6;
+
+/* LAS FRANJAS: anillos de colores que giran alrededor del logo, inclinados; la mitad de abajo de cada uno se dibuja
+   ENCIMA del logo y la de arriba DEBAJO, así se ve que lo envuelven. Sin mover la cámara: se mueven ellos. */
+const atras = $('#atras').getContext('2d'), frente = $('#frente').getContext('2d');
+const COLORES = ['#F29923', '#F7E93F', '#165D9B', '#F29923', '#E9EEF5', '#F7E93F', '#2B7BC4', '#F29923', '#F7E93F', '#165D9B', '#FFB347'];
+const ANILLOS = COLORES.map((c, i) => ({ c, rx: 300 + (i % 6) * 34, inc: (-28 + (i * 37) % 56) * Math.PI / 180, ancho: 12 + (i * 7) % 22,
+  largo: 1.1 + ((i * 13) % 10) / 9, fase: i * 2.1, vel: (i % 2 ? -1 : 1) * (3.2 + (i % 4) * .7), aplana: .26 + (i % 3) * .05 }));
+function franjas(T, { cx, cy, esc, alfa, abre = 1 }){
+  for(const g of [atras, frente]){ g.clearRect(0, 0, 1080, 1920); g.lineCap = 'round'; }
+  if(alfa <= 0) return;
+  ANILLOS.forEach((r, i) => {
+    const rx = r.rx * esc, ry = rx * r.aplana, ini = r.fase + r.vel * T, L = r.largo * abre, n = 40;
+    for(let k = 0; k < n; k++){
+      const a0 = ini + L * k / n, a1 = ini + L * (k + 1) / n, cos = Math.cos(r.inc), sin = Math.sin(r.inc);
+      const P = (a) => { const x = rx * Math.cos(a), y = ry * Math.sin(a); return [cx + x * cos - y * sin, cy + x * sin + y * cos]; };
+      const g = Math.sin((a0 + a1) / 2) > 0 ? frente : atras;           /* abajo del anillo = hacia el que mira */
+      const [x0, y0] = P(a0), [x1, y1] = P(a1);
+      g.globalAlpha = alfa * Math.min(1, k / 4, (n - k) / 4); g.strokeStyle = r.c; g.lineWidth = r.ancho * esc;
+      g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
+    }
+  });
+  for(const g of [atras, frente]) g.globalAlpha = 1;
+}
+/* las rectas que llegan corriendo desde las orillas antes de volverse anillos */
+const RECTAS = Array.from({ length: 16 }, (_, i) => ({ c: COLORES[i % COLORES.length], lado: i % 2 ? 1 : -1, y: 520 + (i * 53) % 720, ancho: 14 + (i * 11) % 30, largo: 260 + (i * 97) % 380, d: (i % 5) * .07 }));
+function rectas(T){
+  const g = atras; g.lineCap = 'round';
+  for(const r of RECTAS){
+    const u = sale(tramo(T, r.d, r.d + .75)), o = 1 - tramo(T, .55 + r.d * .5, .95 + r.d * .5);
+    if(o <= 0) continue;
+    const xCab = mez(r.lado < 0 ? -200 : 1280, 540, u), yCab = mez(r.y, 880, u * .85);
+    g.globalAlpha = o; g.strokeStyle = r.c; g.lineWidth = r.ancho;
+    g.beginPath(); g.moveTo(xCab - r.lado * -r.largo * (1 - u * .6), yCab - (880 - r.y) * .25 * (1 - u)); g.lineTo(xCab, yCab); g.stroke();
+  }
+  g.globalAlpha = 1;
+}
+
+const pintarViejo = (t, T) => {
   /* 1 · EL SÍMBOLO NACE (0–2.0) y SE VUELVE EL AVATAR DEL CHAT (2.0–2.8) */
   const a = suave(tramo(t, 2.0, 2.8)), z = suave(tramo(t, 34.6, 35.5));
   if(t < 34.6){
@@ -301,12 +382,15 @@ window.pintar = (t) => {
   $('#recta').style.strokeDashoffset = LARGO * (1 - suave(tramo(t, 11.9, 12.8)));
   /* 5 · EL CÁLCULO: cada dato mueve el número */
   ver($('#vCalc'), enCalc, null);
-  const llegadas = [14.4, 15.5, 16.6, 17.7];
-  let v = 0; PASOS.forEach((p, i) => { const u = sale(tramo(t, llegadas[i] + .25, llegadas[i] + .75)); if(t >= llegadas[i] + .25) v = mez(i ? PASOS[i - 1].v : 0, p.v, u);
-    const e = sale(tramo(t, llegadas[i], llegadas[i] + .35)); chipsEl[i].style.opacity = e; chipsEl[i].style.transform = `translateY(${(1 - e) * 40}px)`; });
-  const sv = pesos(t > 18.4 ? 1200 : v); if($('#nMonto')._s !== sv){ $('#nMonto').textContent = sv; $('#nMonto')._s = sv; }
-  $('#nMonto').style.color = t > 18.4 ? '#165D9B' : '';
-  $('#monto').style.transform = `scale(${1 + .08 * Math.sin(Math.PI * tramo(t, 18.4, 18.8))})`;
+  /* (tiempo NUEVO: el cálculo se alargó para que se vea todo lo que cuenta) */
+  const llegadas = [15.0, 16.0, 17.1, 18.2, 20.6];
+  let v = 0; PASOS.forEach((p, i) => { const u = sale(tramo(T, llegadas[i] + .25, llegadas[i] + .75)); if(T >= llegadas[i] + .25 && p.v) v = mez(i ? PASOS[i - 1].v : 0, p.v, u);
+    const e = sale(tramo(T, llegadas[i], llegadas[i] + .35)); chipsEl[i].style.opacity = e; chipsEl[i].style.transform = `translateY(${(1 - e) * 40}px)`;
+    chipsEl[i].querySelectorAll('.sub i').forEach((s, k) => { const q = sale(tramo(T, 18.7 + k * .35, 19.0 + k * .35)); s.style.opacity = q; s.style.transform = `translateY(${(1 - q) * 12}px)`; }); });
+  const fin = T > 21.4, sv = pesos(fin ? 1200 : v); if($('#nMonto')._s !== sv){ $('#nMonto').textContent = sv; $('#nMonto')._s = sv; }
+  $('#monto small').textContent = T < 20.6 ? 'Lo que cuesta hacerlo' : 'Precio al cliente';
+  $('#nMonto').style.color = fin ? '#165D9B' : '';
+  $('#monto').style.transform = `scale(${1 + .08 * Math.sin(Math.PI * tramo(T, 21.4, 21.8))})`;
   /* 7 · LA VISITA */
   ver($('#vVisita'), tramo(t, 25.4, 25.75), null);
   ['#r1', '#r2'].forEach((s, i) => { const u = sale(tramo(t, 26.3 + i * 1.1, 26.7 + i * 1.1)); ver($(s), u, `translateY(${(1 - u) * 30}px)`); });
@@ -340,10 +424,10 @@ window.pintar = (t) => {
   /* los titulares: palabra por palabra al entrar, todo junto hacia arriba al salir */
   ver($('#ojo'), vida(t, 3.1, 6.7, .3, .3), null); $('#ojo').textContent = 'Lo que siempre se dice';
   hs.forEach((h, k) => {
-    const H = TITS[k]; if(t < H.a - .1 || t > H.b + .1){ h.style.visibility = 'hidden'; return; }
+    const H = TITS[k], tt = H.nuevo ? T : t; if(tt < H.a - .1 || tt > H.b + .1 || (!H.nuevo && T >= 29.1 && T < 37)){ h.style.visibility = 'hidden'; return; }
     h.style.visibility = 'visible';
     [...h.querySelectorAll('.pal')].forEach((p, i) => {
-      const e = sale(tramo(t, H.a + i * .07, H.a + i * .07 + .45)), s = entra(tramo(t, H.b - .32, H.b));
+      const e = sale(tramo(tt, H.a + i * .07, H.a + i * .07 + .45)), s = entra(tramo(tt, H.b - .32, H.b));
       p.style.transform = `translateY(${(1 - e) * 110 - s * 110}%)`;
     });
   });
@@ -358,26 +442,61 @@ window.pintar = (t) => {
   } else { $('#tacha').style.opacity = 0; $('#tacha2').style.opacity = 0; }
 };
 
-window.VIDEO = { w: 1080, h: 1920, fps: 30, dur: 38.6,
+window.pintar = (T) => {
+  const t = viejo(T);
+  pintarViejo(t, T);
+
+  /* 0 · LA ENTRADA (0–3 s): rectas que llegan corriendo, se vuelven anillos que envuelven el logo, y el logo se arma
+     por partes: primero el sol de abajo, luego el globo de arriba, la persona y el chorro. Remata con un destello. */
+  if(T < 3.2){
+    const k = SIM.w; ponLogo(540, 880, 560, 1);
+    franjas(T, { cx: 540, cy: 880, esc: mez(1.5, 1, sale(tramo(T, .5, 1.1))) * mez(1, .05, entra(tramo(T, 2.45, 2.85))), alfa: tramo(T, .45, .75) * (1 - tramo(T, 2.7, 2.9)), abre: sale(tramo(T, .5, 1.3)) });
+    rectas(T);
+    const sol = sale(tramo(T, .9, 1.6)), globo = sale(tramo(T, 1.35, 2.05));
+    img.sol.style.opacity = sol > 0 ? 1 : 0; img.sol.style.transform = 'none'; img.sol.style.clipPath = `inset(0 ${100 - 100 * sol}% 0 0)`;
+    img.globo.style.transform = `scale(${mez(.92, 1, globo)})`; img.globo.style.clipPath = `inset(${100 - 100 * globo}% 0 0 0)`;
+    const per = sale(tramo(T, 1.9, 2.4)); img.personita.style.opacity = per; img.personita.style.transform = `translateY(${(1 - per) * -70}px)`;
+    img.chorro.style.clipPath = `inset(0 ${100 - 100 * sale(tramo(T, 2.2, 2.65))}% 0 0)`;
+    $('#destello').style.opacity = Math.sin(Math.PI * tramo(T, 2.6, 3.1)) * .9; $('#destello').style.transform = `scale(${mez(.3, 1.2, tramo(T, 2.6, 3.1))})`;
+  } else {
+    img.sol.style.clipPath = img.globo.style.clipPath = 'none'; $('#destello').style.opacity = 0;
+    /* el remate: los anillos regresan un instante cuando el logo se vuelve a armar al final */
+    const r0 = 46.3;
+    franjas(T, { cx: 540, cy: mez(880, 760, suave(tramo(T, 47.2, 47.9))), esc: mez(.1, 1.15, sale(tramo(T, r0, r0 + .7))), alfa: tramo(T, r0, r0 + .2) * (1 - tramo(T, r0 + 1.0, r0 + 1.6)), abre: 1 });
+  }
+
+  /* 7-bis · LO QUE VE EL DUEÑO (29–37 s, tiempo nuevo): la cotización le llega con su costo y su ganancia, un segundo
+     ejemplo, y él le escribe al cliente. */
+  const enNum = tramo(T, 29.05, 29.4) * (1 - tramo(T, 33.0, 33.3)), enDueno = tramo(T, 33.1, 33.45) * (1 - tramo(T, 36.95, 37.3));
+  if(T >= 29 && T < 37.3){ ver($('#vChat'), 1 - tramo(T, 29.0, 29.3), null); ver($('#cabChat'), 1 - tramo(T, 29.0, 29.3), null); }
+  ver($('#vNum'), enNum, null); ver($('#cabNum'), enNum, null); ver($('#vDueno'), enDueno, null); ver($('#cabDueno'), enDueno, null);
+  const n1 = sale(tramo(T, 29.3, 29.75)), n2 = sale(tramo(T, 31.3, 31.75));
+  ver($('#n1'), n1, `translateY(${(1 - n1) * 50 + n2 * 0}px)`);
+  [...$('#desg').children].forEach((d, i) => { const q = tramo(T, 29.9 + Math.floor(i / 2) * .3, 30.15 + Math.floor(i / 2) * .3); d.style.opacity = q; });
+  const y2 = $('#n1').offsetTop + $('#n1').offsetHeight - 24 + 14; ver($('#n2'), n2 * (1 - tramo(T, 32.5, 32.8)), `translateY(${mez(y2 + 110, y2, n2)}px)`);
+  const dedo = vida(T, 32.2, 33.15, .25, .2), pulsa = Math.sin(Math.PI * tramo(T, 32.65, 32.95));
+  if(T > 32 && T < 33.3){ const r = $('#bEsc').getBoundingClientRect(); $('#dedo').style.left = (r.left + r.width / 2) + 'px'; $('#dedo').style.top = (r.top + r.height / 2 + (1 - sale(tramo(T, 32.2, 32.6))) * 120) + 'px'; }
+  ver($('#dedo'), dedo, `scale(${1 - .25 * pulsa})`); $('#bEsc').style.background = pulsa > .3 ? '#C9D7EA' : '';
+  ver($('#bDueno'), sale(tramo(T, 33.4, 33.7)), null);
+  escribe($('#tDueno'), DUENO, T, 33.5, 35.4);
+};
+
+window.VIDEO = { w: 1080, h: 1920, fps: 30, dur: 50.2,
   musica: { archivo: '/tmp/claude-0/mus/173.mp3', desde: 38, vol: .55, entrada: .4, fin: 2.4 },
   sonidos: [
-    ['../../../herramientas/video/efectos/golpe.wav', 1.55, .5],
-    ['../../../herramientas/video/efectos/whoosh.wav', 2.05, .35],
-    ...Array.from({ length: 9 }, (_, i) => ['../../../herramientas/video/efectos/toque.wav', 3.0 + i * .17, .18]),
-    ['../../../herramientas/video/efectos/subida.wav', 5.55, .35],
-    ['../../../herramientas/video/efectos/whoosh.wav', 6.75, .35],
-    ...FILAS.map((_, i) => ['../../../herramientas/video/efectos/toque.wav', 7.2 + i * .17, .25]),
-    ['../../../herramientas/video/efectos/whoosh.wav', 10.65, .3],
-    ...[14.4, 15.5, 16.6, 17.7].map(x => ['../../../herramientas/video/efectos/toque.wav', x, .4]),
-    ['../../../herramientas/video/efectos/ding.wav', 18.4, .5],
-    ['../../../herramientas/video/efectos/ding.wav', 20.9, .35],
-    ['../../../herramientas/video/efectos/whoosh.wav', 25.35, .3],
-    ['../../../herramientas/video/efectos/toque.wav', 26.3, .35], ['../../../herramientas/video/efectos/toque.wav', 27.4, .35],
-    ...[29.9, 30.08, 30.26].map(x => ['../../../herramientas/video/efectos/toque.wav', x, .35]),
-    ['../../../herramientas/video/efectos/timbre.wav', 31.4, .4],
-    ['../../../herramientas/video/efectos/whoosh.wav', 32.85, .3], ['../../../herramientas/video/efectos/whoosh.wav', 33.55, .3],
-    ['../../../herramientas/video/efectos/subida.wav', 34.5, .35],
-    ['../../../herramientas/video/efectos/golpe.wav', 35.55, .5]] };
+    ...Array.from({ length: 8 }, (_, i) => ['../../../herramientas/video/efectos/whoosh.wav', .05 + i * .09, .16]),
+    ['../../../herramientas/video/efectos/subida.wav', .6, .3],
+    ['../../../herramientas/video/efectos/toque.wav', .95, .35], ['../../../herramientas/video/efectos/toque.wav', 1.4, .35], ['../../../herramientas/video/efectos/toque.wav', 1.95, .35], ['../../../herramientas/video/efectos/toque.wav', 2.25, .35],
+    ['../../../herramientas/video/efectos/golpe.wav', 2.72, .55],
+    ...[[2.05, 'whoosh', .35], ...Array.from({ length: 9 }, (_, i) => [3.0 + i * .17, 'toque', .18]), [5.55, 'subida', .35], [6.75, 'whoosh', .35],
+      ...FILAS.map((_, i) => [7.2 + i * .17, 'toque', .25]), [10.65, 'whoosh', .3], [20.9, 'ding', .35], [25.35, 'whoosh', .3], [26.3, 'toque', .35], [27.4, 'toque', .35],
+      [29.9, 'toque', .35], [30.08, 'toque', .35], [30.26, 'toque', .35], [31.4, 'timbre', .4], [32.85, 'whoosh', .3], [33.55, 'whoosh', .3], [34.5, 'subida', .35], [35.55, 'golpe', .5]]
+      .map(([v, f, vol]) => [`../../../herramientas/video/efectos/${f}.wav`, nuevo(v), vol]),
+    ...[15.0, 16.0, 17.1, 18.2, 18.7, 19.05, 19.4, 19.75, 20.6].map((x, i) => ['../../../herramientas/video/efectos/toque.wav', x, i > 3 && i < 8 ? .2 : .4]),
+    ['../../../herramientas/video/efectos/ding.wav', 21.4, .5],
+    ['../../../herramientas/video/efectos/whoosh.wav', 29.0, .3], ['../../../herramientas/video/efectos/timbre.wav', 29.35, .35], ['../../../herramientas/video/efectos/toque.wav', 31.3, .35],
+    ['../../../herramientas/video/efectos/toque.wav', 32.75, .45], ['../../../herramientas/video/efectos/whoosh.wav', 33.05, .3],
+    ['../../../herramientas/video/efectos/subida.wav', 46.2, .3]] };
 window.pintar(0);
 })();
 </script>

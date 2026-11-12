@@ -47,7 +47,12 @@ details.nuevo > summary::-webkit-details-marker{ display:none }
 .filtro button{ flex:none; min-height:40px; padding:0 14px; border-radius:999px; background:var(--sup2); font-weight:600; font-size:14px; color:var(--tenue) }
 .filtro button[aria-pressed="true"]{ background:var(--acento); color:var(--acento-tinta) }
 .mov{ display:grid; grid-template-columns:minmax(0,1fr) 92px; gap:8px; align-items:end }
-.barra-inf{ position:fixed; left:0; right:0; bottom:0; z-index:6; background:var(--sup); box-shadow:0 -1px 0 var(--linea); padding:6px 8px calc(6px + env(safe-area-inset-bottom)); display:grid; grid-template-columns:repeat(4, 1fr) }
+.barra-inf{ position:fixed; left:0; right:0; bottom:0; z-index:6; background:var(--sup); box-shadow:0 -1px 0 var(--linea); padding:6px 4px calc(6px + env(safe-area-inset-bottom)); display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)) }
+.desg{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 12px; font-size:14px; margin:0; padding:10px 12px; border-radius:var(--r2); background:var(--sup2) }
+.desg dt{ color:var(--tenue) } .desg dd{ margin:0; text-align:right; font-variant-numeric:tabular-nums; font-weight:600 }
+.desg .sep{ grid-column:1/-1; height:1px; background:var(--linea); margin:4px 0 }
+.gana{ color:var(--acento-texto) }
+.item details > summary{ cursor:pointer; color:var(--acento-texto); font-weight:700; font-size:14px; min-height:36px; display:flex; align-items:center }
 .barra-inf button{ display:grid; justify-items:center; gap:2px; min-height:52px; font-size:12px; font-weight:600; color:var(--tenue); position:relative }
 .barra-inf button[aria-current="page"]{ color:var(--acento-texto) }
 .barra-inf i{ position:absolute; top:4px; right:calc(50% - 22px); min-width:18px; height:18px; padding:0 5px; border-radius:9px; background:var(--aviso); color:#fff; font:700 11px/18px var(--letra); font-style:normal }
@@ -62,6 +67,7 @@ details.nuevo > summary::-webkit-details-marker{ display:none }
   <button type="button" data-p="servicios"><span data-ic="calendar-days"></span>Servicios</button>
   <button type="button" data-p="inventario"><span data-ic="package"></span>Inventario<i id="nInv" hidden></i></button>
   <button type="button" data-p="vehiculo"><span data-ic="truck"></span>Vehículo<i id="nVeh" hidden></i></button>
+  <button type="button" data-p="numeros"><span data-ic="wallet"></span>Números</button>
 </nav>
 <script type="module">
 const q = new URLSearchParams(location.search);
@@ -70,7 +76,7 @@ const SERVIDOR = q.get('servidor') || guarda.leer('up_servidor') || 'https://sal
 if(q.get('acceso')){ guarda.poner('up_acceso', q.get('acceso')); q.delete('acceso'); history.replaceState(null, '', '?' + q.toString()); }
 const app = document.getElementById('app'), barra = document.getElementById('barra');
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const pesos = (n) => n == null ? '' : '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 });
+const pesos = (n) => n == null ? '' : '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: Number.isInteger(+n) ? 0 : 2, maximumFractionDigits: 2 });
 const DIAS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'], MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const dia = (s) => { if(!s) return ''; const d = new Date(s + 'T12:00:00'); return `${DIAS[d.getDay()]} ${d.getDate()} ${MESES[d.getMonth()]}`; };
 const hoyISO = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
@@ -171,6 +177,11 @@ const PANTALLAS = {
         </form></details>
       <div class="filtro" role="group" aria-label="Qué servicios ver">${[['pendiente', 'Pendientes'], ['hecho', 'Por cobrar'], ['cerrado', 'Cerrados'], ['cancelado', 'Cancelados']].map(([v, t]) => `<button type="button" data-f="${v}" aria-pressed="${v === filtro}">${t}</button>`).join('')}</div>
       ${lista.length ? `<ul class="lista-c">${lista.map(c => citaItem(c)).join('')}</ul>` : '<p class="vacio">Nada aquí.</p>'}`;
+    const desde = q.get('agendar'); if(desde){ q.delete('agendar');
+      const n = await api('GET', '/api/numeros'), c = n.cotizaciones?.find(x => x.codigo === desde);
+      if(c){ const f = el.querySelector('#fCita'); el.querySelector('details.nuevo').open = true;
+        f.cliente.value = c.cliente || ''; f.zona.value = c.zona || ''; f.plaga.value = c.interno?.plaga || c.concepto.replace(/^Control de /, ''); f.precio.value = c.precio;
+        f.insertAdjacentHTML('beforeend', `<input type="hidden" name="cotizacion" value="${esc(c.codigo)}">`); } }
     formEnvio(el.querySelector('#fCita'), (d) => api('POST', '/api/citas', d));
     el.querySelector('.filtro').addEventListener('click', (e) => { const b = e.target.closest('[data-f]'); if(b){ guarda.poner('up_filtro', b.dataset.f); ir('servicios'); } });
     conAcciones(el);
@@ -196,6 +207,32 @@ const PANTALLAS = {
       const j2 = await api('POST', '/api/insumos/mover', { id: f.closest('[data-id]').dataset.id, delta: n * Number(e.submitter?.value || 1), motivo: d.motivo });
       if(!j2.bien){ msj.className = 'msj mal'; msj.textContent = j2.error; return; } ir('inventario');
     }));
+  },
+  async numeros(el){
+    const j = await api('GET', '/api/numeros'); if(!j.bien) return falla(el, j);
+    const r = j.resumen, [a, m] = j.mes.split('-').map(Number);
+    const MES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'][m - 1];
+    const fila = (t, v, c = '') => `<dt>${t}</dt><dd class="${c}">${v}</dd>`;
+    el.innerHTML = cab('Números', `${MES} ${a} · lo que cotizó el bot, lo que cuesta y lo que queda`) + `
+      <div class="cifras">
+        <div class="cifra"><b>${pesos(r.cotizado)}</b><small>cotizado (${r.cotizaciones})</small></div>
+        <div class="cifra"><b>${pesos(r.costo)}</b><small>costaría hacerlo</small></div>
+        <div class="cifra"><b class="gana">${pesos(r.ganancia)}</b><small>quedaría de ganancia</small></div>
+        <div class="cifra"><b>${pesos(r.cobrado)}</b><small>cobrado (${r.servicios_cobrados} servicios)</small></div>
+      </div>
+      <h2>Cotizaciones <span class="n">${j.cotizaciones.length}</span></h2>
+      ${j.cotizaciones.length ? `<ul class="lista-c">${j.cotizaciones.map(c => { const i = c.interno || {}, d = i.desglose;
+        return `<li class="item"><div class="t"><b>${esc(c.cliente || 'Sin nombre')}</b><span>${dia(c.fecha)}</span></div>
+        <p>${esc(c.concepto)}${c.lugar ? ' · ' + esc(c.lugar) : ''}${c.zona ? ' · ' + esc(c.zona) : ''}${c.m2 ? ` · ${c.m2Estimado ? '≈' : ''}${c.m2} m²` : ''}</p>
+        <div class="acc"><span class="chip ok">${pesos(c.precio)}</span>${d ? `<span class="chip">costo ${pesos(d.costo)}</span><span class="chip ok">gana ${pesos(d.ganancia)}</span>` : ''}${c.ejemplo ? '<span class="chip aviso">precios de ejemplo</span>' : ''}${c.origen === 'mano' ? '<span class="chip">hecha a mano</span>' : ''}</div>
+        ${d ? `<details><summary>Por qué cuesta eso</summary><dl class="desg">
+          ${fila('Material' + (d.material?.nombre ? ' · ' + esc(d.material.nombre) : '') + (d.material?.litros ? ` · ${d.material.litros} L` : ''), pesos(d.material?.costo ?? d.producto))}
+          ${d.tecnico ? fila(`Técnico · ${d.tecnico.horas} h${d.tecnico.personas > 1 ? ' × ' + d.tecnico.personas : ''} a ${pesos(d.tecnico.costo_hora)}`, pesos(d.mano_de_obra)) : fila('Mano de obra', pesos(d.mano_de_obra))}
+          ${d.factor && d.factor !== 1 ? fila(`${esc(c.lugar || 'Tipo de lugar')} (×${d.factor})`, '') : ''}
+          ${d.vehiculo ? fila(`Camioneta · ${d.vehiculo.km} km ida y vuelta`, pesos(d.traslado)) + fila('&nbsp;&nbsp;Gasolina', pesos(d.vehiculo.gasolina)) + fila('&nbsp;&nbsp;Llantas', pesos(d.vehiculo.llantas)) + fila('&nbsp;&nbsp;Balatas', pesos(d.vehiculo.balatas)) + fila('&nbsp;&nbsp;Motor y aceite', pesos(d.vehiculo.motor)) : fila('Traslado', pesos(d.traslado))}
+          <span class="sep"></span>${fila('Costo', pesos(d.costo))}${fila('Precio al cliente', pesos(c.precio))}${fila('Ganancia', pesos(d.ganancia), 'gana')}</dl></details>` : ''}
+        <div class="acc"><a class="btn b2" href="../cotizacion/?c=${esc(c.codigo)}">Ver hoja</a>${i.chat ? `<a class="btn b2" href="../chat/?abrir=${encodeURIComponent(i.canal + '|' + i.chat)}">Escribirle</a>` : ''}<button class="btn" type="button" data-agendar="${esc(c.codigo)}">Agendar</button></div></li>`; }).join('')}</ul>` : '<p class="vacio">Cuando el bot cotice, aquí sale cada cotización con su costo y su ganancia.</p>'}`;
+    el.addEventListener('click', (e) => { const b = e.target.closest('[data-agendar]'); if(b){ q.set('agendar', b.dataset.agendar); ir('servicios'); } });
   },
   async vehiculo(el){
     const j = await api('GET', '/api/vehiculos'); if(!j.bien) return falla(el, j);

@@ -39,6 +39,13 @@ ok('fuera de zona: industria sí (con visita)', cotizar({ plaga: 'cucaracha', m2
 ok('fuera de zona: casa chica no se cubre', cotizar({ plaga: 'cucaracha', m2: 90, km: 70, tipo: 'casa' }, T).atiende === 'no');
 ok('fuera de zona: casa grande, caso por caso', cotizar({ plaga: 'cucaracha', m2: 260, km: 70, tipo: 'casa' }, T).atiende === 'caso-por-caso');
 ok('fuera de zona sale más caro por el traslado', cotizar({ plaga: 'cucaracha', m2: 260, km: 70 }, T).desde > cotizar({ plaga: 'cucaracha', m2: 260, km: 10 }, T).desde);
+{ const TD = { minimo: 500, radio_km: 40, margen: .3, tecnico: { costo_hora: 110, m2_hora: 60, minimo_horas: 1 }, vehiculo: { gasolina_km: 2.4, llantas_km: .35, balatas_km: .2, motor_km: .45 },
+    plagas: { cucaracha: { material: 'Gel', litros_m2: .05, precio_litro: 60 } }, tipos: { casa: { factor: 1 } } };
+  const c = cotizar({ plaga: 'cucaracha', m2: 155, km: 18, tipo: 'casa' }, TD), d = c.desglose;
+  ok('todo se cuenta: material, 3 h de técnico y gasolina, llantas, balatas y motor de 36 km', d.material.costo === 465 && d.tecnico.horas === 3 && d.vehiculo.km === 36 && d.vehiculo.gasolina === 86.4 && d.vehiculo.balatas === 7.2, JSON.stringify(d));
+  ok('precio = costo + 30 %, redondeado; la ganancia es lo que queda', c.desde === 1200 && d.costo === 917 && d.ganancia === 283);
+  ok('más lejos, más gasolina y más desgaste: sube el precio', cotizar({ plaga: 'cucaracha', m2: 155, km: 35, tipo: 'casa' }, TD).desde > c.desde);
+  ok('una planta grande va con dos técnicos', cotizar({ plaga: 'cucaracha', m2: 1200, km: 10 }, TD).desglose.tecnico.personas === 2); }
 ok('la nota nunca dice «desde»', !/desde/i.test(cotizar({ plaga: 'cucaracha', m2: 80, km: 6 }, T).nota));
 console.log('meta');
 const secreto = 'secreto-de-prueba', cuerpo = '{"hola":1}';
@@ -168,6 +175,7 @@ console.log('medidor (no sabe cuánto mide su casa)');
   const A = { get: async k => t.M.get(k), put: async (k, v) => t.M.set(k, v), list: async p => [...t.M].filter(([k]) => k.startsWith(p)) };
   const pub = await cotizacionPublica(A, link), c = pub.cotizacion;
   ok('la hoja trae el MISMO precio que dijo el bot y no trae teléfono ni chat', pub.bien && ms[0].texto.includes('$' + c.precio.toLocaleString('en-US')) && !JSON.stringify(pub).includes('5244200001') && c.cliente === 'Ana', JSON.stringify(c));
+  ok('el costo, la ganancia y el chat se guardan para el dueño, pero la hoja del cliente no los trae', !!t.M.get('cotdoc:' + link).interno?.chat && !('interno' in c) && !/ganancia|costo_hora/.test(JSON.stringify(pub)));
   ok('un link inventado da 404', (await cotizacionPublica(A, 'zzzzzzzzzzzz')).estado === 404 && (await cotizacionPublica(A, '../../x')).estado === 404); }
 { const { cotizacionAMano } = await import('./src/cotizacion.js');
   const M = new Map(), A = { get: async k => M.get(k), put: async (k, v) => M.set(k, v), list: async p => [...M].filter(([k]) => k.startsWith(p)) };

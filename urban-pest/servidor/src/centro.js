@@ -157,3 +157,19 @@ export async function tablero(A, hoy = new Date().toISOString().slice(0, 10)){
       tu: deHoy.filter(m => m.via === 'dueno').length, cotizaciones: cots.length },
     avisos: avisos.length };
 }
+
+/* ── los números (Carlos, 12 nov): qué se cotizó, cuánto cuesta hacerlo, cuánto queda y por qué ── */
+export async function numeros(A, hoy = new Date().toISOString().slice(0, 10)){
+  const mes = hoy.slice(0, 7);
+  const cots = (await A.list('cotdoc:')).map(([, v]) => v).sort((a, b) => b.folio - a.folio);
+  const citas = (await A.list('cita:')).map(([, v]) => v);
+  const deVerdad = cots.filter(c => !c.ejemplo && c.fecha.startsWith(mes));
+  const suma = (xs, f) => Math.round(xs.reduce((s, x) => s + (f(x) || 0), 0));
+  const cobradas = citas.filter(c => c.estado === 'cerrado' && (c.fecha || '').startsWith(mes));
+  const costoDe = (c) => c.cotizacion ? cots.find(x => x.codigo === c.cotizacion)?.interno?.desglose?.costo : null;
+  return { bien: true, mes,
+    resumen: { cotizaciones: deVerdad.length, cotizado: suma(deVerdad, c => c.precio), costo: suma(deVerdad, c => c.interno?.desglose?.costo),
+      ganancia: suma(deVerdad, c => c.interno?.desglose?.ganancia), cobrado: suma(cobradas, c => c.precio), servicios_cobrados: cobradas.length,
+      ganancia_cobrada: suma(cobradas.filter(c => costoDe(c) != null), c => c.precio - costoDe(c)) },
+    cotizaciones: cots.slice(0, 100) };
+}
