@@ -159,7 +159,15 @@
   .repaso-ap summary span{ font:700 22px/1 Mano; color:#AC27FF; flex:none } .repaso-ap details p{ margin-top:8px; font:600 15px/1.5 Texto; color:#4A4656 }
   .refs-ap{ padding-left:20px; display:grid; gap:8px; font:600 15px/1.45 Texto } .refs-ap a{ color:#1F5BD1; font-weight:700 }
   .ojo-ap{ font-size:13px; color:#6B6677; margin-top:10px }
-  @media (max-width:560px){ .hoja-ap{ --margen:12px } .bloque-ap{ grid-template-columns:0 minmax(0, 1fr); gap:0 8px; padding-right:12px } .bloque-ap .margen-ap{ grid-column:2; grid-row:auto; text-align:left; padding:0 0 6px } .bloque-ap .lugar-ap, .bloque-ap .dijo-ap{ grid-column:2 } .portada-ap{ padding-left:22px } .indice-ap, .fin-ap{ margin-left:20px } }
+  /* todo lo que se dijo, en lista */
+  .lista-dicho{ list-style:none; margin:18px 18px 0 calc(var(--margen) + 14px); padding:0; display:grid; gap:14px }
+  .lista-dicho li{ display:grid; grid-template-columns:30px minmax(0, 1fr); gap:10px; align-items:start }
+  .lista-dicho .num-dicho{ width:28px; height:28px; border-radius:50%; display:grid; place-items:center; background:#F6DCE4; color:#7E1735; font:700 17px/1 Mano }
+  .lista-dicho p{ font:600 15.5px/1.6 Texto; color:#2B2735 }
+  .lista-dicho .sec-dicho{ display:block; font:700 26px/1.1 Mano; color:#5E2387; margin:14px 0 2px }
+  .lista-dicho .preg-dicho{ display:block; margin:6px 0 2px; padding:12px 14px; border-radius:14px 14px 14px 4px; background:#1E1428; color:#fff; font:700 15px/1.45 Texto }
+  .lista-dicho .preg-dicho small{ display:block; font:700 11px/1 Texto; letter-spacing:.1em; text-transform:uppercase; color:#C77DFF; margin-bottom:5px }
+  @media (max-width:560px){ .hoja-ap{ --margen:12px } .lista-dicho{ margin-left:16px; margin-right:14px } .bloque-ap{ grid-template-columns:0 minmax(0, 1fr); gap:0 8px; padding-right:12px } .bloque-ap .margen-ap{ grid-column:2; grid-row:auto; text-align:left; padding:0 0 6px } .bloque-ap .lugar-ap, .bloque-ap .dijo-ap{ grid-column:2 } .portada-ap{ padding-left:22px } .indice-ap, .fin-ap{ margin-left:20px } }
   @media print{
     body{ background:#fff } .barra, .barra-ap, #vInicio, #vClase, #mando{ display:none!important } .apuntes{ padding:0; max-width:none }
     .hoja-ap{ box-shadow:none; border-radius:0 } .bloque-ap, .el, .repaso-ap details{ break-inside:avoid } .repaso-ap details{ open:true }
@@ -214,7 +222,12 @@
 
 <section id="vClase" class="clase" hidden>
   <div id="tablero" aria-label="Pizarrón: muévelo con el dedo y pellizca para acercarte"></div>
-  <div class="flotan"><button class="bt" id="bSeguir" hidden></button><button class="bt" id="bTodo" hidden></button><button class="bt" id="bApuntes"></button></div>
+  <div class="flotan"><button class="bt" id="bSeguir" hidden></button><button class="bt" id="bTodo" hidden></button><button class="bt" id="bDicho"></button><button class="bt" id="bApuntes"></button></div>
+</section>
+
+<section id="vDicho" class="apuntes" hidden>
+  <div class="barra-ap"><button class="bt" id="bVolverDicho"></button><button class="bt" id="bApuntesDicho"></button></div>
+  <article class="hoja-ap" id="hojaDicho"></article>
 </section>
 
 <section id="vApuntes" class="apuntes" hidden>

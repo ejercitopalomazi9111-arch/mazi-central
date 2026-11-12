@@ -899,8 +899,19 @@ export function crearLienzo(vista, { modo = 'monton', maestro = 'Negro', alMover
   }
 
   /* ── dibujar una pieza con todos sus cursores ── */
+  let turnoDibujo = 0;
+  function retirarMaestro(miTurno){
+    setTimeout(() => {
+      const c = cursores[0];
+      if(!c || miTurno !== turnoDibujo || c.trabajando || c.fuera) return;
+      const [x, y] = desdeOrilla(), ox = c.x, oy = c.y, g = gen;
+      c.fuera = true;
+      anima(650, (k) => { const e = k * k * (3 - 2 * k); c.x = ox + (x - ox) * e; c.y = oy + (y - oy) * e; }, g);
+    }, 900);
+  }
   async function dibujar(p, durObjetivo = 6000){
     const g = gen; foco = p; arrancar();
+    const miTurno = ++turnoDibujo; if(cursores[0]) cursores[0].fuera = false;
     const fases = [...new Set(p.tareas.map((t) => t.fase))].sort((a, b) => a - b);
     const maxK = MODOS_CURSORES[modo] || 1;
     /* ¿cuánto tardaría a velocidad normal? Si se pasa de lo que dura la voz, todo va más rápido (nunca más lento) */
@@ -924,7 +935,7 @@ export function crearLienzo(vista, { modo = 'monton', maestro = 'Negro', alMover
     /* si lo cortaron a la mitad (pausa, «siguiente»), la pieza se termina de golpe: nunca se queda a medias */
     if(g !== gen) dibujarYa(p);
     /* los ayudantes se van por la orilla; el maestro se queda */
-    despedir(g);
+    despedir(g); retirarMaestro(miTurno);
     if(g === gen && alTerminar) alTerminar(p);
     return g === gen;
   }
