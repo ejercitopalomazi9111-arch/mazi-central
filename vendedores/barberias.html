@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es-MX"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex"><title>Grupo Mazi · Videos de barberías</title>
+<link rel="icon" href="../web/img/paloma.svg" type="image/svg+xml">
+<style>
+/* Carlos, 5 nov: los videos de la campaña de barberías, para bajarlos de un toque al teléfono.
+   «Guardar» abre la hoja de compartir del iPhone (ahí está «Guardar video», que lo manda a Fotos);
+   si el teléfono no la tiene, se baja como archivo. */
+:root{ --fondo:#170A26; --capa:#241036; --linea:#ffffff1a; --tinta:#F4EEF2; --gris:#B9AFC4; --vino:#7E1735; --acento:#C77DFF }
+*{ box-sizing:border-box } body{ margin:0; background:var(--fondo); color:var(--tinta); font:16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif }
+.env{ max-width:760px; margin:0 auto; padding:0 16px 64px }
+header{ padding:28px 0 8px } header img{ height:44px; display:block } h1{ font-size:30px; line-height:1.1; margin:18px 0 6px }
+header p{ color:var(--gris); margin:0 }
+ul{ list-style:none; margin:24px 0 0; padding:0; display:grid; gap:14px }
+li{ background:var(--capa); border:1px solid var(--linea); border-radius:16px; overflow:hidden }
+video{ display:block; width:100%; aspect-ratio:9 / 16; max-height:70vh; background:#000; object-fit:contain }
+.pie{ display:flex; gap:12px; align-items:center; padding:14px 16px; flex-wrap:wrap }
+.pie > div{ flex:1; min-width:160px } .pie b{ display:block } .pie small{ color:var(--gris); font-size:14px }
+.btn{ font:inherit; font-size:15px; font-weight:700; min-height:48px; padding:0 18px; display:inline-flex; align-items:center; justify-content:center; border-radius:12px; border:1px solid var(--vino); background:var(--vino); color:var(--tinta); text-decoration:none; cursor:pointer }
+.btn:focus-visible{ outline:3px solid var(--acento); outline-offset:2px }
+.btn[aria-busy="true"]{ opacity:.7 }
+@media (max-width:520px){ .pie .btn{ width:100% } }
+footer{ margin-top:32px; color:var(--gris); font-size:14px }
+a{ color:var(--acento) }
+</style></head><body><div class="env">
+<header><img src="../web/img/logo.svg" alt="Grupo Mazi" width="182" height="44"><h1>Videos de barberías</h1>
+<p>Toca «Guardar en el teléfono» y en el iPhone elige «Guardar video»: se va a tus Fotos.</p></header>
+<ul id="lista"></ul>
+<footer><a href="./">← Todo lo de vendedores</a></footer>
+</div>
+<script>
+const VIDEOS = [
+  ['22-barberias-corto', 'El corto', 'Para estados y reels'],
+  ['22-barberias-niveles', 'Los niveles', 'Esencial, Completa y A la medida'],
+  ['22-barberias-paquetes', 'Los paquetes', 'Página más publicidad'],
+  ['22-barberias-todo', 'El completo', 'Todo junto, sin voz'],
+  ['17-barberias', 'Las 4 páginas', 'El primero, con los paquetes'],
+];
+const lista = document.getElementById('lista');
+lista.innerHTML = VIDEOS.map(([f, t, d]) => `<li><video src="videos/${f}.mp4#t=0.5" preload="metadata" controls playsinline></video>
+  <div class="pie"><div><b>${t}</b><small>${d}</small></div><a class="btn" href="videos/${f}.mp4" download="${f}.mp4" data-f="${f}">Guardar en el teléfono</a></div></li>`).join('');
+/* En el iPhone, la hoja de compartir con el archivo es lo que deja «Guardar video» en Fotos. Si no se puede
+   (computadora, navegador viejo o el archivo no carga), sigue el enlace normal de descarga. */
+lista.addEventListener('click', async (e) => {
+  const a = e.target.closest('a[data-f]'); if (!a || !navigator.canShare) return;
+  e.preventDefault(); a.setAttribute('aria-busy', 'true'); const antes = a.textContent; a.textContent = 'Preparando…';
+  try {
+    const blob = await (await fetch(a.getAttribute('href'))).blob();
+    const archivo = new File([blob], a.dataset.f + '.mp4', { type: 'video/mp4' });
+    if (navigator.canShare({ files: [archivo] })) await navigator.share({ files: [archivo] });
+    else location.href = a.getAttribute('href');
+  } catch (err) { if (err && err.name !== 'AbortError') location.href = a.getAttribute('href'); }
+  finally { a.textContent = antes; a.removeAttribute('aria-busy'); }
+});
+</script>
+</body></html>
