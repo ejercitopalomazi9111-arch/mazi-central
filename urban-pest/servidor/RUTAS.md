@@ -66,3 +66,24 @@ Si `noSalio` viene puesto, Meta no lo entregó.
 - **Avisos al dueño fuera de las 24 horas.** Después de 24 horas sin que él le escriba al número
   del bot, WhatsApp sólo deja mandar **plantillas aprobadas**. Hay que dar de alta una plantilla
   «aviso» al conectar.
+
+## La carpeta de cumplimiento (industria) · 12 nov
+
+Pública, sin llave (la abre el jefe de calidad con el link de SU planta; sólo lectura):
+
+| Ruta | Qué |
+|---|---|
+| `GET /api/carpeta?c=<codigo>` | La planta (sin su contacto), los documentos de Urban Pest, las estaciones con su último estado, los servicios y la actividad por mes |
+
+Del panel (llave o acceso):
+
+| Ruta | Qué |
+|---|---|
+| `GET /api/plantas` · `POST /api/plantas {nombre, giro, direccion, contacto}` | Lista y alta. El alta regresa el `codigo` del link |
+| `POST /api/plantas/estaciones {planta, estaciones:[{n, zona, tipo}]}` | El mapa de trampas |
+| `POST /api/plantas/ejemplo` | La planta de muestra para enseñar (no se duplica) |
+| `POST /api/servicios {planta, fecha, tecnico, tipo, productos:[{nombre, registro, cantidad}], estaciones:[{n, estado}], hallazgos, recomendaciones, recibio:{nombre, puesto}, firma}` | Un servicio. Exige el registro de cada producto (NOM-251 5.10.9) y quién recibió |
+| `POST /api/servicios/quitar {planta, folio, motivo}` | Lo saca de la carpeta y lo deja en `quitado:` con quién y cuándo |
+| `GET/POST /api/documentos {licencia_sanitaria, repse, razon_social, responsable_tecnico}` | Salen en cada constancia (5.10.11) |
+
+La página es `urban-pest/carpeta/index.html` (`?c=` la carpeta, `&folio=` la constancia para imprimir, `?registrar` el dueño).

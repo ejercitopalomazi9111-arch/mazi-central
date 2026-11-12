@@ -35,6 +35,8 @@ const VA = [
   'urban-pest/chat',
   /* y la página nueva que le proponemos (Luna, 12 nov): Carlos la revisa aquí mientras el cliente aprueba */
   'urban-pest/web',
+  /* la carpeta de cumplimiento que se le promete a cada planta (12 nov): ?c=<link de la planta> */
+  'urban-pest/carpeta',
   'juegos',
   'ligas-mazi', 'pacto-roto', 'romero', 'inkwell', 'vitallink', 'life-connect',
   'manzanilla', 'herramientas',

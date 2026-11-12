@@ -88,6 +88,13 @@ tecnicismos y con paciencia.
 
 ### C · El centro de operaciones
 
+**Ya hecho (12 nov, Sylcred, porque Godines no tiene sesión): la carpeta de cumplimiento.** `urban-pest/carpeta/`:
+plantas, mapa de trampas, servicios con firma y constancia imprimible con la licencia sanitaria, y un link por
+planta para su jefe de calidad. Rutas en `servidor/RUTAS.md`. **FALTA del cliente:** su número de licencia sanitaria,
+su REPSE, su razón social, su responsable técnico y los productos que usa con su registro. Lo demás del
+centro (inventario, vehículo, visitas) sigue pendiente.
+
+
 Es su app de control, la que le da confianza de que «aquí veo todo lo que está pasando»:
 
 - inventario de insumos;

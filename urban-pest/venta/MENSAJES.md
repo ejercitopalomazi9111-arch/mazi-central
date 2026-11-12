@@ -7,6 +7,14 @@ en masa:** quema el número. Con el correo va adjunta `hoja-industria.pdf`.
 Lo que se dice de la norma está verificado contra el texto de la NOM-251-SSA1-2009 (DOF, 1 de marzo
 de 2010), numeral 5.10.
 
+## Para enseñar cómo se ve la carpeta
+
+Ya existe (12 nov). Una planta de ejemplo, con datos de muestra y marcada como tal:
+https://mazi-central.palomazi9111.workers.dev/urban-pest/carpeta/?c=c32esqdhbu289c
+
+Se puede pegar al final del correo («así se ve la carpeta de una planta») o enseñarla en el diagnóstico. Cuando
+una planta se queda, el dueño la da de alta en `…/urban-pest/carpeta/?registrar` y le pasa SU link.
+
 ## 1 · Correo de primer contacto
 
 **Asunto:** Su carpeta de control de plagas, lista para la próxima auditoría
