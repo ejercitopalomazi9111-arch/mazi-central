@@ -335,6 +335,30 @@
         "publicar a mano"
       ],
       "vecinas": []
+    },
+    {
+      "id": "sw-respuesta-redirigida",
+      "clase": "error",
+      "titulo": "El trabajador de fondo servía páginas redirigidas y el navegador no las abría",
+      "gravedad": "alta",
+      "sintoma": "Al tocar «Leer» en INKWELL sale «No se puede acceder a este sitio, es posible que se haya trasladado o no funcione temporalmente» (ERR_FAILED); el sitio contesta bien con curl.",
+      "causa": "Cloudflare le quita el .html a las páginas con un 307. cache.add('./tiras.html') sigue la redirección y guarda una respuesta marcada redirected; con «lo guardado primero», esa respuesta se le daba a una navegación.",
+      "porque": "El navegador rechaza una respuesta redirigida para una navegación (su modo de redirección es manual). Con «primero la red» no pasaba, por eso salió hasta que las páginas empezaron a salir de lo guardado.",
+      "arreglo": "Guardar cada página con su dirección limpia (sin .html ni index.html) y reconstruir con new Response(blob) todo lo que venga redirigido antes de devolverlo (sano en inkwell/sw.js). Subir la versión del caché para tirar lo viejo.",
+      "cazar": "node inkwell/pruebas-sw.mjs: un servidor que redirige como Cloudflare, con el trabajador nuevo, el viejo y sin internet.",
+      "senales": [
+        "no se puede acceder a este sitio",
+        "ERR_FAILED",
+        "service worker",
+        "sw.js",
+        "redirected",
+        "cache.add",
+        "307",
+        ".html",
+        "inkwell",
+        "no deja leer"
+      ],
+      "vecinas": []
     }
   ]
 }
