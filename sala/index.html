@@ -1544,6 +1544,8 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
   <!-- Carlos, 12 nov: «un pizarrón para apuntar pendientes» y «un apartado de explicaciones». Cada uno es su propia
        página (pizarron.html, explica.html) y nace la primera vez que se toca, igual que el Taller 3D: la mesa no paga
        nada por tenerlos. -->
+  <!-- y Estudio (12 nov): «una app tipo Duolingo tipo Knowunity conectada a la sala» (estudio.html) -->
+  <button class="pest" data-vista="estudio">Estudio</button>
   <button class="pest" data-vista="explica">Explica</button>
   <button class="pest" data-vista="pizarron">Pizarrón</button>
   <i class="pest-guia" id="pestGuia" aria-hidden="true"></i>
@@ -1553,6 +1555,7 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
 <div class="letreros" id="letreros" aria-live="polite" aria-atomic="false"></div>
 <div class="hilo" id="hilo"></div>
 <div class="marco3d" id="marco3d" hidden></div>
+<div class="marco3d" id="marcoEstudio" hidden></div>
 <div class="marco3d" id="marcoExplica" hidden></div>
 <div class="marco3d" id="marcoPizarron" hidden></div>
 
@@ -4395,6 +4398,7 @@ function mostrarVista(cual){
   $('hilo').hidden    = cual !== 'chat';
   $('taller').hidden  = cual !== 'hebras';
   $('marco3d').hidden = cual !== 'taller3d';
+  $('marcoEstudio').hidden = cual !== 'estudio';
   $('marcoExplica').hidden = cual !== 'explica';
   $('marcoPizarron').hidden = cual !== 'pizarron';
   for(const b of document.querySelectorAll('.pest'))
@@ -4407,6 +4411,7 @@ function mostrarVista(cual){
   const bv = $('bVista'); if(bv) bv.textContent = cual === 'chat' ? 'Vista' : 'Chat';
   if(cual === 'hebras') pintarTaller();
   if(cual === 'taller3d') prender3D();
+  if(cual === 'estudio') prenderMarco('marcoEstudio', 'estudio.html', 'Estudio');
   if(cual === 'explica') prenderMarco('marcoExplica', 'explica.html', 'Explica');
   if(cual === 'pizarron') prenderMarco('marcoPizarron', 'pizarron.html', 'El pizarrón');
 }
