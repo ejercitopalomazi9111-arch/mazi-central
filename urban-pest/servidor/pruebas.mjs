@@ -3,9 +3,10 @@
  * La IA y Meta van de mentiras; el almacén es un Map. */
 import { readFileSync } from 'node:fs';
 import { reflejo, llenar } from './src/reflejo.js';
-import { cotizar } from './src/cotizador.js';
+import { cotizar, aPlaga } from './src/cotizador.js';
 import { firmaValida, leerAviso } from './src/meta.js';
-import { Oficina } from './src/oficina.js';
+import { Oficina, ponerPrecio } from './src/oficina.js';
+import { leerJSON } from './src/cerebro.js';
 
 let bien = 0, mal = 0;
 const ok = (q, c, d = '') => { if(c){ bien++; console.log('  ✓ ' + q); } else { mal++; console.log('  ✗ ' + q + (d ? '  → ' + d : '')); } };
@@ -133,5 +134,26 @@ console.log('medidor (no sabe cuánto mide su casa)');
   const conv = t.M.get('conv:whatsapp:524420000000');
   ok('sin metros, cotiza con el estimado y lo marca como estimado', conv.cotizacion?.m2Estimado && conv.cotizacion.m2 > 0 && t.llamadas.length === 2, JSON.stringify(conv.cotizacion)); }
 
+/* ── el precio lo pone el código (Brenda, 12 nov: el bot le escribió «aproximadamente en $X») ── */
+{ const cot = { desde: 22100 };
+  ok('{precio} se vuelve la cantidad con comas', ponerPrecio('Te saldría aproximadamente en {precio}.', cot) === 'Te saldría aproximadamente en $22,100.');
+  ok('«$X» copiado del ejemplo NO sale', ponerPrecio('Te saldría aproximadamente en $X. Si los datos…', cot) === null);
+  ok('un precio inventado NO sale', ponerPrecio('Te sale en $1,500', cot) === null);
+  ok('el precio correcto escrito a mano sí sale', ponerPrecio('Te sale en $22,100', cot) === 'Te sale en $22,100');
+  ok('{precio} sin cotización NO sale', ponerPrecio('Te saldría en {precio}', null) === null);
+  ok('sin precio ni cotización pasa igual', ponerPrecio('¿En qué colonia estás?', null) === '¿En qué colonia estás?'); }
+{ const t = hacer({ pensar: () => ({ bien: true, respuesta: 'Te saldría aproximadamente en $X. Si los datos que nos diste están bien, ése es el costo.', necesita_dueno: false, motivo: '', razon: 'r', datos: { plaga: 'chinches', m2: 2500, zona: 'Juriquilla', tipo: 'casa' } }) });
+  await t.of.atender(msj('tengo chinches, son 2500 m2 en juriquilla, casa'));
+  const conv = t.M.get('conv:whatsapp:524420000000'), ult = conv.mensajes.at(-1);
+  ok('si la IA escribe «$X», al cliente le llega el respaldo y al dueño un aviso', ult.via === 'respaldo' && !/\$X/.test(ult.texto) && [...t.M.keys()].some(k => k.startsWith('aviso:')), ult.texto); }
+
+{ const o = leerJSON('{"respuesta":"va","datos":{"m2":"2500 m2"}}');
+  ok('«2500 m2» como texto se lee como 2500', o.datos.m2 === 2500, JSON.stringify(o.datos)); }
+{ const t = hacer({ pensar: (a, i) => ({ bien: true, respuesta: a.cotizacion ? 'Te saldría aproximadamente en {precio}.' : '¿Dónde está?', necesita_dueno: false, motivo: '', razon: 'r', datos: { plaga: 'cucarachas', m2: null, zona: 'Juriquilla', tipo: 'casa' } }) });
+  await t.of.atender(msj('Tengo cucarachas en mi casa en Juriquilla, mide 2500 m2. Cuánto?'));
+  const ult = t.M.get('conv:whatsapp:524420000000').mensajes.at(-1);
+  ok('si la IA no apunta los metros, se sacan del mensaje y sale el precio', ult.via === 'cerebro' && /\$\d{1,3}(,\d{3})+/.test(ult.texto), ult.texto); }
+
+ok('«chinches» en plural se entiende (antes quedaba «chinch»)', aPlaga('chinches') === 'chinche' && aPlaga('Chinches de cama') === 'chinche' && aPlaga('ratones') === 'roedor' && aPlaga('arañas') === 'arana');
 console.log(`\n${bien} pasan · ${mal} fallan`);
 process.exit(mal ? 1 : 0);

@@ -15,6 +15,7 @@
 import { reflejo, llenar } from './reflejo.js';
 import { cotizar } from './cotizador.js';
 import { estimarM2, MEDIDAS } from './medidor.js';
+import { pesos } from './cerebro.js';
 
 const TOPE_HORA = 20;
 const DUENO_CALLA_MS = 30 * 60 * 1000;
@@ -82,7 +83,14 @@ export class Oficina {
       await this.aviso(conv, 'La IA no pudo contestar: ' + p.error);
       await guarda(); return { hecho: 'respaldo' };
     }
-    await this.decir(conv, p.respuesta, { via: 'cerebro', razon: p.razon, modelo: p.modelo, cotizacion: cot || undefined });
+    /* el precio lo pone el código, nunca la IA (12 nov: escribió «$X» al cliente) */
+    const texto = ponerPrecio(p.respuesta, cot);
+    if(!texto){
+      await this.decir(conv, 'Gracias por escribir. En un momento te contesta el encargado.', { via: 'respaldo', error: 'La IA escribió un precio que el sistema no calculó: ' + p.respuesta.slice(0, 160) });
+      await this.aviso(conv, 'La IA quiso dar un precio que no salió de las tarifas; revisa tú la conversación.');
+      await guarda(); return { hecho: 'respaldo' };
+    }
+    await this.decir(conv, texto, { via: 'cerebro', razon: p.razon, modelo: p.modelo, cotizacion: cot || undefined });
     if(cot) conv.cotizacion = cot;
     await this.A.put(`manual:${m.id}`, { pregunta: m.texto, respuesta: p.respuesta, razon: p.razon, canal: m.canal, chat: m.chat, cuando: this.reloj(), estado: 'por revisar' });
     if(p.necesita_dueno) await this.aviso(conv, p.motivo || 'La IA pide que lo veas tú.');
@@ -94,6 +102,11 @@ export class Oficina {
     const d = conv.datos || {};
     if(d.km == null && d.zona) d.km = (tarifas.zonas || {})[normal(d.zona)] ?? null;
     let m2 = d.m2, m2Estimado = false;
+    /* si la IA no apuntó los metros pero el cliente sí los escribió («mide 2500 m2»), se toman de su mensaje */
+    if(!(m2 > 0)) for(const msj of [...(conv.mensajes || [])].reverse().filter(x => x.de === 'cliente')){
+      const r = String(msj.texto || '').match(/(\d[\d,\.]*)\s*(m2|m²|mts2?|metros(?:\s+cuadrados)?)/i);
+      if(r){ const x = Number(r[1].replace(/,/g, '')); if(x > 0){ m2 = d.m2 = x; break; } }
+    }
     /* no sabe los metros: se estiman con lo que contó (sólo casas; negocio e industria se visitan) */
     if(!(m2 > 0) && (d.tipo || 'casa') === 'casa'){
       const e = estimarM2(d, medidas || MEDIDAS);
@@ -125,6 +138,20 @@ export class Oficina {
     conv.duenoHasta = this.reloj() + DUENO_CALLA_MS;
     await this.A.put(k, conv); return { bien: true };
   }
+}
+
+/** Cambia {precio} por la cantidad calculada. Regresa null si la respuesta trae un precio que no es el del sistema
+    (un «$X» copiado del ejemplo, una cantidad inventada, o {precio} sin cotización). */
+export function ponerPrecio(texto, cot){
+  const precio = cot ? pesos(cot.desde) : null;
+  let t = String(texto).replace(/\{\s*precio\s*\}/gi, () => precio ?? '\u0000');
+  if(t.includes('\u0000')) return null;
+  if(/\$\s*[xX]\b|\$\s*\{/.test(t)) return null;
+  for(const m of t.matchAll(/\$\s*([\d][\d,\.]*)/g)){
+    const n = Number(m[1].replace(/,/g, '').replace(/\.(?=\d{3}\b)/g, ''));
+    if(!cot || Math.abs(n - Math.round(cot.desde)) > 1) return null;
+  }
+  return t;
 }
 
 const normal = (s) => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();

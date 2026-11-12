@@ -36,7 +36,8 @@ ${negocio.descripcion || '(FALTA la descripción del negocio)'}
 
 Reglas que no se rompen:
 - NUNCA des un precio que no venga en lo que te pasan.
-- Si te pasan una cotización, dilo corto y sin asustar, así: «Te saldría aproximadamente en $X. Si los datos que nos diste están bien, ése es el costo; el técnico te lo confirma al ver tu casa.» NUNCA digas «desde» ni «a partir de»: suena a que va a subir.
+- Si te pasan una cotización, dilo corto y sin asustar, así: «Te saldría aproximadamente en {precio}. Si los datos que nos diste están bien, ése es el costo; el técnico te lo confirma al ver tu casa.» Escribe {precio} TAL CUAL, con las llaves: el sistema pone la cantidad. NUNCA escribas una cantidad con número tú. NUNCA digas «desde» ni «a partir de»: suena a que va a subir.
+- Si NO te pasan cotización, no hables de precio ni escribas {precio}: pide el dato que falte.
 - Si la cotización dice fueraDeRadio, explícalo con tacto: queda fuera de la zona donde trabajamos normalmente y por el traslado sale más caro.
   · atiende "si" (industria): ofrece una visita para confirmar la cotización.
   · atiende "caso-por-caso" (casa grande): di que el encargado revisa su caso y le avisa; marca necesita_dueno.
@@ -55,9 +56,16 @@ Reglas que no se rompen:
 
 Respuestas ya aprobadas por el dueño, úsalas como guía de tono y de datos:
 ${(casos || []).slice(0, 60).map(c => `- ${(c.frases || [])[0] || c.id}: ${c.respuesta}`).join('\n')}
-${cotizacion ? `\nCotización calculada por el sistema para este cliente: ${JSON.stringify(cotizacion)}\n` : ''}
+${cotizacion ? `\nCotización calculada por el sistema para este cliente: ${JSON.stringify(paraLaIA(cotizacion))}\n` : ''}
 ${FORMA}`;
 }
+
+/** «$22,100» (a mano: el formato de Intl cambia según el motor, ya nos mordió) */
+export const pesos = (n) => '$' + Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+/* A la IA no le llega «desde» (la regla le prohíbe decirlo y con eso copió el «$X» del ejemplo, 12 nov): le llega el
+   precio ya escrito y lo que necesita para explicarlo. */
+const paraLaIA = (c) => ({ precio_aproximado: pesos(c.desde), visita_del_tecnico: !!c.visita, fuera_de_zona: !!c.fueraDeRadio,
+  atiende: c.atiende, m2: c.m2 ?? null, m2_estimado: !!c.m2Estimado, nota: c.nota });
 
 /* Los modelos son los que La Sala ya usa y verificó (30 sep); se cambian por variable. */
 const MOTORES = {
@@ -71,7 +79,7 @@ const MOTORES = {
     saca: (j) => j?.choices?.[0]?.message?.content ?? '',
   },
   gemini: {
-    llave: 'GEMINI_API_KEY', modelos: (env) => [env.MODELO_GEMINI || 'gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-flash-lite-latest'],
+    llave: 'GEMINI_API_KEY', modelos: (env) => [env.MODELO_GEMINI || 'gemini-3.6-flash', 'gemini-flash-lite-latest', 'gemini-3.8-flash'] /* 3.8 saturado el 12 nov: va al final */,
     /* la llave va en la URL porque así lo documenta Google; es servidor contra servidor */
     pide: (modelo, k, sistema, msgs) => fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${encodeURIComponent(k)}`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
@@ -99,7 +107,9 @@ export function leerJSON(texto){
   if(i < 0 || f < i) return null;
   let o; try { o = JSON.parse(s.slice(i, f + 1)); } catch { return null; }
   if(typeof o.respuesta !== 'string' || !o.respuesta.trim()) return null;
-  const d = o.datos || {}, m2 = Number(d.m2), n = (v) => Number.isFinite(+v) && +v > 0 ? +v : null, si = (v) => typeof v === 'boolean' ? v : null;
+  /* los números a veces llegan con texto («2500 m2», «2,500»): se limpian (12 nov, por eso no cotizó) */
+  const num = (v) => { const x = typeof v === 'number' ? v : parseFloat((String(v ?? '').replace(/,/g, '').match(/\d+(\.\d+)?/) || [])[0]); return Number.isFinite(x) && x > 0 ? x : null; };
+  const d = o.datos || {}, m2 = num(d.m2) ?? NaN, n = num, si = (v) => typeof v === 'boolean' ? v : null;
   return { respuesta: o.respuesta.trim(), necesita_dueno: !!o.necesita_dueno, motivo: String(o.motivo || ''), razon: String(o.razon || ''),
     datos: { plaga: d.plaga || null, m2: Number.isFinite(m2) && m2 > 0 ? m2 : null, zona: d.zona || null,
       tipo: ['casa', 'negocio', 'industria'].includes(d.tipo) ? d.tipo : null,
@@ -131,4 +141,26 @@ export async function pensar({ env, negocio, casos, historial, cotizacion }){
     }
   }
   return { bien: false, error: errores.join(' · ') || 'Sin motores de IA' };
+}
+
+/** ¿Qué motores tiene puestos el bot y contestan? Nunca regresa una llave. El de paga sólo dice si está. */
+export async function probarMotores(env){
+  const encendidos = (env.MOTORES_IA || 'groq,gemini').split(',').map(s => s.trim());
+  const out = {};
+  for(const [id, M] of Object.entries(MOTORES)){
+    const k = env[M.llave];
+    if(!k){ out[id] = { puesta: false, encendido: encendidos.includes(id) }; continue; }
+    if(id === 'claude' && !encendidos.includes(id)){ out[id] = { puesta: true, encendido: false, nota: 'de paga: apagado hasta que el cliente se quede' }; continue; }
+    /* se prueban TODOS sus modelos: a Gemini 3.8 Google lo satura a ratos y los de respaldo sí contestan (sala, 30 sep) */
+    const modelos = {};
+    for(const m of M.modelos(env)){
+      const t0 = Date.now();
+      try {
+        const r = await conTope(M.pide(m, k, 'Contesta sólo este JSON: {"respuesta":"ok"}', [{ role: 'user', content: 'hola' }]), 12000);
+        modelos[m] = r.ok ? `contesta en ${((Date.now() - t0) / 1000).toFixed(1)} s` : `error ${r.status}`;
+      } catch(e){ modelos[m] = String(e.message || e).slice(0, 60); }
+    }
+    out[id] = { puesta: true, encendido: encendidos.includes(id), contesta: Object.values(modelos).some(v => v.startsWith('contesta')), modelos };
+  }
+  return out;
 }
