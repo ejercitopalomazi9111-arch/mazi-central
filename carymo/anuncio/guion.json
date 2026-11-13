@@ -1,0 +1,15 @@
+{
+  "titulo": "CARYMO · estudiar ya no da flojera",
+  "voces": { "Voz": "piper:es_MX-claude-high" },
+  "voz_de_la_casa": "Cuando haya saldo en ElevenLabs, se cambia a Chris (iP95p4xoKVk53GoZ742B) aquí y se vuelve a armar.",
+  "lineas": [
+    { "id": "01", "voz": "Voz", "txt": "¿Examen mañana… *y no has abierto ni el cuaderno?*" },
+    { "id": "02", "voz": "Voz", "txt": "Tranqui. Dile a CARYMO de qué es tu examen…", "dice": "Tranqui. Dile a Carimo de qué es tu examen." },
+    { "id": "03", "voz": "Voz", "txt": "…y te arma tu plan, *tema por tema.*", "dice": "Y te arma tu plan, tema por tema." },
+    { "id": "04", "voz": "Voz", "txt": "Te lo explica en un pizarrón *que se dibuja solo.*" },
+    { "id": "05", "voz": "Voz", "txt": "Luego practicas como juego: *combos, rachas y premios.*" },
+    { "id": "06", "voz": "Voz", "txt": "¿Con tus amigos? Entre todos *le bajan la vida al jefe del examen.*" },
+    { "id": "07", "voz": "Voz", "txt": "Y funciona *hasta sin internet.*" },
+    { "id": "08", "voz": "Voz", "txt": "CARYMO. *Estudiar ya no da flojera.*", "dice": "Carimo. Estudiar ya no da flojera." }
+  ]
+}

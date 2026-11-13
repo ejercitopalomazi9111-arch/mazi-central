@@ -250,6 +250,7 @@ export async function correr({ ok, almacen, atenderEstudio }){
     await pagina.click('[data-empezar]');
     const datos = leccionDe('Sistema circulatorio');
     let vistas = 0, falle = false, vioPista = false, maxComboVisto = 0;
+    const reaccionesPj = [];
     const tiposVistos = new Set(), fotosTipo = new Set();
     for(let vuelta = 0; vuelta < 14; vuelta++){
       if(await pagina.isVisible('.resultado')) break;
@@ -262,6 +263,7 @@ export async function correr({ ok, almacen, atenderEstudio }){
       ok(await pagina.isEnabled('[data-verificar]'), `«${tipo}»: Verificar se prende al contestar`);
       await pagina.click('[data-verificar]');
       await pagina.waitForSelector('.hoja-res');
+      reaccionesPj.push(await pagina.$eval('.pv-quiz .pv', (e) => e.dataset.reaccion || '').catch(() => 'sin personaje'));
       const estaLaFalle = !falle;
       if(!falle){
         falle = true;
@@ -279,12 +281,14 @@ export async function correr({ ok, almacen, atenderEstudio }){
     ok(vioPista, 'la pista sale al pedirla');
     ok(maxComboVisto >= 6, `el combo sale en CADA acierto seguido, con sus efectos (llegó a x${maxComboVisto})`);
     ok(vistas === 9, `la que fallé regresó al final (${vistas} ejercicios para 8)`);
+    ok(reaccionesPj[0] === 'mal' && reaccionesPj.slice(1).every((x) => x === 'bien' || x === 'combo') && reaccionesPj.includes('combo'), `tu personaje, arriba, reacciona a cada respuesta: se apura con la mala, sonríe con las buenas y se enamora en el combo (${reaccionesPj.join(', ')})`);
     await pagina.waitForSelector('.resultado');
     ok(await pagina.isVisible('text=XP') && /\d+ %/.test(await pagina.textContent('.medallas')), 'el resultado trae XP, aciertos y tiempo');
     await pagina.click('[data-estrella="5"]');
     ok((await pagina.$$('.estrellas .on')).length === 5, 'se califica con estrellas');
     await foto('09-resultado');
     ok(await pagina.$eval('#mascFin .masc svg', () => true).catch(() => false), 'al terminar, la mascota reacciona al resultado');
+    ok(await pagina.$eval('#pjFin .pv svg', () => true).catch(() => false), 'y tu personaje también, junto a ella');
     await pagina.click('[data-continuar]');
     await pagina.waitForSelector('.camino'); await espera(1200);
     ok(await hechos() === 3, 'el nivel hecho se vuelve moneda');

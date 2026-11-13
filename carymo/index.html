@@ -728,6 +728,43 @@
   .masc-camino{ position:absolute; width:84px; height:97px; margin:-70px 0 0 -42px; z-index:2 }
   .masc-vacio{ display:grid; place-items:center; height:150px; margin-top:-10px }
   .masc-prep{ display:grid; place-items:center; height:116px; margin-bottom:6px }
+  /* tu personaje, vivo (personaje-vivo.js): respira, parpadea y reacciona; la cara la cambia el JS */
+  .pv{ position:relative; display:inline-block; width:var(--pv); height:var(--pv); flex:none; vertical-align:middle }
+  .pv-ventana{ position:absolute; inset:0; display:block; border-radius:50%; overflow:hidden; background:var(--pv-fondo, var(--sup)) }
+  .pv-cuerpo{ position:absolute; inset:0; display:block; transform-origin:50% 100% }
+  .pv-dib{ display:block; width:100%; height:100%; transform-origin:50% 100%; animation:pvRespira 3.6s ease-in-out infinite }
+  .pv-dib svg{ display:block; width:100%; height:100% }
+  .pv-fx{ position:absolute; inset:0; pointer-events:none }
+  @keyframes pvRespira{ 0%, 100%{ transform:scale(1, 1) } 50%{ transform:scale(1.012, 1.022) } }
+  .pv-salta{ animation:pvSalta .62s cubic-bezier(.3, .7, .4, 1) }
+  @keyframes pvSalta{ 0%{ transform:none } 18%{ transform:scale(1.06, .9) } 45%{ transform:translateY(-7%) scale(.96, 1.05) } 72%{ transform:translateY(0) scale(1.05, .94) } 100%{ transform:none } }
+  .pv-brinca{ animation:pvBrinca 1.05s cubic-bezier(.3, .7, .4, 1) }
+  @keyframes pvBrinca{ 0%{ transform:none } 12%{ transform:scale(1.07, .9) } 30%{ transform:translateY(-9%) rotate(-7deg) } 48%{ transform:scale(1.05, .93) } 66%{ transform:translateY(-6%) rotate(7deg) } 84%{ transform:scale(1.03, .96) } 100%{ transform:none } }
+  .pv-sacude{ animation:pvSacude .55s ease-in-out }
+  @keyframes pvSacude{ 0%, 100%{ transform:none } 15%{ transform:translateX(-7%) rotate(-4deg) } 35%{ transform:translateX(6%) rotate(3deg) } 55%{ transform:translateX(-4%) rotate(-2deg) } 75%{ transform:translateX(2%) } }
+  .pv-tambalea{ animation:pvTambalea 1.6s ease-in-out }
+  @keyframes pvTambalea{ 0%, 100%{ transform:none } 15%{ transform:rotate(-11deg) } 35%{ transform:rotate(9deg) translateX(3%) } 55%{ transform:rotate(-7deg) } 75%{ transform:rotate(4deg) } }
+  .pv-ladea{ animation:pvLadea 1.5s ease-in-out }
+  @keyframes pvLadea{ 0%, 100%{ transform:none } 25%, 70%{ transform:rotate(-8deg) translateX(-2%) } }
+  .pv-celebra{ animation:pvCelebra 1.5s cubic-bezier(.3, .7, .4, 1) }
+  @keyframes pvCelebra{ 0%{ transform:none } 10%{ transform:scale(1.1, .86) } 32%{ transform:translateY(-11%) scale(1.1) rotate(-6deg) } 50%{ transform:scale(1.08, .92) } 66%{ transform:translateY(-5%) scale(1.04) rotate(5deg) } 82%{ transform:scale(1.03, .96) } 100%{ transform:none } }
+  .pv-cae{ animation:pvCae 2.4s ease-in-out }
+  @keyframes pvCae{ 0%, 100%{ transform:none } 18%, 78%{ transform:translateY(7%) scale(1.03, .9) rotate(-5deg) } }
+  .pv-chispa{ position:absolute; left:50%; top:50%; width:7px; height:7px; margin:-3.5px 0 0 -3.5px; border-radius:50%; background:var(--oro); box-shadow:0 0 0 2px #E8B54A40; animation:pvChispa .95s cubic-bezier(.2, .8, .3, 1) both }
+  .pv-chispa:nth-child(3n){ background:var(--claro-txt) } .pv-chispa:nth-child(3n+1){ background:#fff; width:5px; height:5px }
+  @keyframes pvChispa{ 0%{ transform:scale(.2); opacity:0 } 15%{ opacity:1 } 100%{ transform:translate(var(--x), var(--y)) scale(1); opacity:0 } }
+  .pv-duerme .pv-dib{ animation-duration:5.5s }
+  .pv-z{ position:absolute; right:4%; top:6%; font:900 calc(var(--pv) * .2)/1 Titulo; font-style:normal; color:var(--claro-txt); opacity:0; animation:pvZ 3s ease-out infinite }
+  .pv-z:nth-child(2){ animation-delay:1s } .pv-z:nth-child(3){ animation-delay:2s }
+  @keyframes pvZ{ 0%{ transform:translate(0, 0) scale(.6); opacity:0 } 20%{ opacity:1 } 100%{ transform:translate(30%, -120%) scale(1.15); opacity:0 } }
+  .pv-quiz{ flex:none; width:46px; height:46px; margin:-4px -4px -4px 0 }
+  .fin-duo{ display:flex; align-items:flex-end; justify-content:center; gap:6px; margin:4px 0 8px }
+  .fin-duo .masc-fin{ margin:0 }
+  .pj-fin{ display:block; width:108px; height:108px; margin-bottom:12px }
+  .pv-asoma{ position:fixed; left:10px; bottom:calc(78px + env(safe-area-inset-bottom)); z-index:94; pointer-events:none; translate:0 150%; transition:translate .45s cubic-bezier(.3, 1.4, .5, 1) }
+  .pv-asoma.dentro{ translate:0 0 }
+  .pv-asoma .pv{ filter:drop-shadow(0 6px 14px #0008) }
+  @media (prefers-reduced-motion: reduce){ .pv-dib, .pv-z{ animation:none } .pv-z{ opacity:.8 } .pv-asoma{ transition:none } }
   .masc-fin{ display:grid; place-items:center; height:132px; margin:4px 0 8px }
   .hoja-res .dentro{ position:relative }
   .hoja-res .masc-res{ position:absolute; right:14px; top:-78px; width:76px; height:88px }

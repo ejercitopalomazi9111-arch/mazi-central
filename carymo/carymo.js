@@ -31,6 +31,8 @@ import { entrada } from './entrada.js';
 import { iniciarAvisos } from './avisos.js';
 import { iniciarVestidor } from './vestidor.js';
 import { iniciarYo, SUBVISTAS } from './yo.js';
+import { configurarPersonaje, personajeVivo, reaccion } from './personaje-vivo.js';
+import { personajeDeArranque, normalizarPersonaje } from './ropa.js';
 import { leerClase, guardarClase, hayClase } from '../sala/clases-guardadas.js';
 
 const $ = (s, d = document) => d.querySelector(s);
@@ -328,13 +330,14 @@ async function mandarCola(){
       const antes = posicion();
       ponerPerfil(r.perfil); ponerRanking(r.ranking);
       companero?.premios(r);
-      if((r.premios || []).some((x) => x.motivo === 'nivel')) tono(SON.nivel);
-      if(r.eventos.includes('racha-perdida')) tono(SON.perdio);
+      if((r.premios || []).some((x) => x.motivo === 'nivel')){ tono(SON.nivel); reaccion('sube', { cameo: true }); }
+      if(r.eventos.includes('racha-perdida')){ tono(SON.perdio); reaccion('baja', { cameo: true }); }
       if(r.eventos.includes('congelada-ganada')) await fiestaHielo('Ganaste una racha congelada', 'Las rachas congeladas mantienen tu racha viva si un día no estudias.');
       if(r.eventos.includes('congelada-usada')) brindis('Usaste una racha congelada: tu racha sigue', '', 'snowflake');
-      if(r.eventos.includes('racha') && r.perfil.racha > 1){ const n = r.perfil.racha; tono(SON.racha); dice(`¡Llevamos ${n} días seguidos! No le aflojes.`, 'festeja', { si: () => brindis(`Racha de ${n} días`, 'vino', 'flame') }); }
+      if(r.eventos.includes('racha') && r.perfil.racha > 1){ const n = r.perfil.racha; tono(SON.racha); reaccion('racha', { cameo: true }); dice(`¡Llevamos ${n} días seguidos! No le aflojes.`, 'festeja', { si: () => brindis(`Racha de ${n} días`, 'vino', 'flame') }); }
       const despues = posicion();
-      if(antes && despues && despues < antes) brindis(`Subiste al lugar ${despues} del ranking`, 'oro', 'trophy');
+      if(antes && despues && despues < antes){ brindis(`Subiste al lugar ${despues} del ranking`, 'oro', 'trophy'); reaccion('sube', { cameo: true }); }
+      else if(antes && despues && despues > antes) reaccion('baja');
       return r;
     }catch(e){ if(e.llave) pintarFaltaLlave(); return null; }
     finally{ mandando = null; }
@@ -973,8 +976,10 @@ function cuestionario(p, n, preguntas, { simulacro = false } = {}){
   const c = capa();
   const fila = barajar(preguntas.map(sinImagen)).filter((q) => q && EJ[q.tipo]).map((q) => ({ ...q, intento: 0 }));
   const total = fila.length;
-  let i = 0, combo = 0, maxCombo = 0, buenasPrimera = 0, contestadas = 0;
+  let i = 0, combo = 0, maxCombo = 0, buenasPrimera = 0, contestadas = 0, fallosSeguidos = 0, piensaT = 0;
   const t0 = Date.now();
+  /* tu personaje te acompaña arriba a la derecha y reacciona a cada respuesta (personaje-vivo.js) */
+  const pjCaja = document.createElement('span'); pjCaja.className = 'pv-quiz'; const pj = personajeVivo(pjCaja, { tam: 46 });
   const limpiarEstado = (q) => { for(const k of Object.keys(q)) if(k.startsWith('_') && k !== '_pista') delete q[k]; return q; };
   function pintarPregunta(){
     const q = fila[i], ej = EJ[q.tipo];
@@ -984,6 +989,9 @@ function cuestionario(p, n, preguntas, { simulacro = false } = {}){
       <div class="cuerpo entra" id="qCuerpo" data-tipo="${q.tipo}"><p class="tipo-ej">${simulacro ? `Simulacro · ${contestadas + 1} de ${total} · ` : ''}${INSTRUCCION[q.tipo]}</p>${ej.pintar(q)}<div id="pistaCaja"></div></div>
       <div class="abajo"><div class="botones-quiz"><button class="bt" data-pista ${q.pista ? '' : 'disabled'}>${ico('lightbulb')}Pista</button><button class="bt blanco" data-verificar disabled>Verificar</button></div></div>`;
     ej.montar && ej.montar(q, c);
+    if(pj) $('.arriba', c).append(pjCaja);
+    /* si llevas rato en la misma pregunta, se pone a pensar contigo */
+    clearTimeout(piensaT); piensaT = setTimeout(() => { if(fila[i] === q && !q._verificada) pj?.reaccionar('piensa'); }, 14000);
     if(q.tipo === 'escribir') setTimeout(() => $('#escribe', c)?.focus({ preventScroll: true }), 350);
   }
   function puedeVerificar(){ const q = fila[i]; const b = $('[data-verificar]', c); if(b) b.disabled = !EJ[q.tipo].listo(q); }
@@ -997,9 +1005,11 @@ function cuestionario(p, n, preguntas, { simulacro = false } = {}){
     if(bien){
       if(q.intento === 0 && !q._pista){ buenasPrimera++; }
       combo = q._pista ? combo : combo + 1; maxCombo = Math.max(maxCombo, combo);
-      tono(SON.bien); vibrar(15);
+      tono(SON.bien); vibrar(15); fallosSeguidos = 0;
       if(combo >= 2) setTimeout(() => comboVFX(combo), 120);
+      reaccion(combo >= 3 ? 'combo' : 'bien');
     } else {
+      fallosSeguidos++; reaccion(fallosSeguidos >= 3 ? 'mareado' : 'mal');
       combo = 0; tono(SON.mal); vibrar([40, 60, 40]); $('#qCuerpo', c).classList.add('sacude');
       /* la que fallaste regresa al final (una vez), como en la escuela: hasta que salga */
       if(q.intento === 0) fila.push(limpiarEstado({ ...q, intento: 1, _pista: false }));
@@ -1027,15 +1037,16 @@ function cuestionario(p, n, preguntas, { simulacro = false } = {}){
   }
   function terminar(){
     document.querySelectorAll('.combo-vfx').forEach((x) => x.remove());
+    clearTimeout(piensaT); pj?.destruir();
     const seg = Math.round((Date.now() - t0) / 1000);
     const pct = Math.round(buenasPrimera / total * 100);
     const xp = simulacro ? 10 + buenasPrimera * 3 + (pct === 100 ? 10 : 0) : 5 + buenasPrimera * 2 + (pct === 100 ? 5 : 0) + Math.min(5, Math.floor(maxCombo / 2));
     resultado(p, n, { xp, pct, seg, maxCombo, titulo: pct === 100 ? '¡La rompiste!' : pct >= 70 ? '¡Bien hecho!' : 'Ya casi', frase: pct === 100 ? 'Todo correcto. Estás volando.' : pct >= 70 ? 'Vas muy bien; lo que fallaste ya lo repasaste.' : 'Lo que fallaste ya lo repasaste. Si quieres, hazlo otra vez.' });
   }
   c.addEventListener('click', (e) => {
-    if(e.target.closest('[data-cerrar]')){ $('.hoja-res')?.remove(); cerrarCapa(); pintar(); return; }
+    if(e.target.closest('[data-cerrar]')){ clearTimeout(piensaT); pj?.destruir(); $('.hoja-res')?.remove(); cerrarCapa(); pintar(); return; }
     const q = fila[i]; if(!q) return;
-    if(e.target.closest('[data-pista]')){ q._pista = true; $('#pistaCaja', c).innerHTML = `<div class="pista entra">${ico('lightbulb')} ${esc(q.pista)}</div>`; e.target.closest('[data-pista]').disabled = true; return; }
+    if(e.target.closest('[data-pista]')){ q._pista = true; pj?.reaccionar('piensa'); $('#pistaCaja', c).innerHTML = `<div class="pista entra">${ico('lightbulb')} ${esc(q.pista)}</div>`; e.target.closest('[data-pista]').disabled = true; return; }
     if(e.target.closest('[data-verificar]')){ verificar(); return; }
     if(!q._verificada && EJ[q.tipo].tocar && EJ[q.tipo].tocar(e, q, c)) puedeVerificar();
   });
@@ -1053,10 +1064,11 @@ function resultado(p, n, r){
     <div class="medallas"><div class="medalla" style="--c:#7A2FBF;--c2:var(--claro-txt)"><small>XP</small><b>${ico('zap')}+${r.xp}</b></div>
     <div class="medalla" style="--c:var(--vino);animation-delay:.12s"><small>${r.pct === 100 ? 'Perfecto' : 'Aciertos'}</small><b>${r.pct} %</b></div>
     <div class="medalla" style="--c:#4A3560;animation-delay:.24s"><small>Tiempo</small><b>${ico('clock')}${mm}</b></div></div>
-    <div class="masc-fin" id="mascFin"></div>
+    <div class="fin-duo"><span class="pj-fin" id="pjFin"></span><div class="masc-fin" id="mascFin"></div></div>
     <h2 class="titulo" style="font-size:20px">¿Qué te pareció?</h2><div class="estrellas" id="estrellas">${[1, 2, 3, 4, 5].map((k) => `<button data-estrella="${k}" aria-label="${k} de 5">${ico('star')}</button>`).join('')}</div></div></div>
     <div class="abajo"><button class="bt blanco ancho" data-continuar>Continuar</button></div>`;
   if(r.pct === 100) confeti();
+  { const v = personajeVivo($('#pjFin', c), { tam: 108 }); if(v) setTimeout(() => v.reaccionar(r.pct === 100 ? 'perfecto' : r.pct >= 70 ? 'bien' : 'regular'), 380); }
   { const m = mascotaEn($('#mascFin', c), { tam: 110 }); if(m) setTimeout(() => m.play(r.pct === 100 ? 'festeja' : r.pct >= 70 ? 'bien' : 'calma', { decir: r.pct === 100 ? '¡Perfecto!' : r.pct >= 70 ? '¡Bien hecho!' : 'Lo repasamos y sale', dura: r.pct === 100 ? 3400 : 2200 }), 450); }
   let nota = 0;
   c.addEventListener('click', (e) => {
@@ -1081,7 +1093,7 @@ async function completarNodo(p0, n, { xp = 0, mejor = 100, nota = 0 } = {}){
   if(Math.floor(despues.grado) > Math.floor(antes.grado)) encolarPremio('grado');
   const subir = sumarXP(ya ? Math.round(xp / 3) : xp, ya ? '' : ({ quiz: 'leccion', simulacro: 'leccion', examen: 'plan' }[n.tipo] || ''));
   if(Math.floor(despues.grado) > Math.floor(antes.grado)){
-    await espera(500); tono(SON.subir); const g = Math.floor(despues.grado);
+    await espera(500); tono(SON.subir); const g = Math.floor(despues.grado); reaccion('sube', { cameo: true });
     dice(`¡Subimos a grado ${g}! Vamos que vamos.`, 'festeja', { si: () => brindis(`¡Subiste a grado ${g}!`, 'oro', 'arrow-up') });
   }
   const etiqueta = { quiz: '¡Nivel completado!', tarjetas: '¡Tarjetas dominadas!', pizarra: '¡Cátedra vista!', panorama: '¡Panorama visto!', simulacro: '¡Simulacro listo!', examen: '¡Repaso logrado!' }[tipoVisto(n)];
@@ -1090,6 +1102,8 @@ async function completarNodo(p0, n, { xp = 0, mejor = 100, nota = 0 } = {}){
     panorama: ['Ya viste el panorama: ahora tema por tema.'], simulacro: ['¡Simulacro listo! Ya casi.'], examen: ['¡Repaso logrado! Vas listo.'] }[tipoVisto(n)];
   if(!ya && etiqueta) setTimeout(() => dice(suyo[Math.floor(Math.random() * suyo.length)], 'bien', { si: () => brindis(etiqueta, '', 'circle-check') }), 650);
   if(despues.grado >= 10 && antes.grado < 10) setTimeout(() => fiestaGrado(), 900);
+  /* si el grado BAJA (el plan creció y lo hecho pesa menos), tu personaje también lo resiente */
+  if(Math.floor(despues.grado) < Math.floor(antes.grado)) setTimeout(() => reaccion('baja', { cameo: true }), 700);
   precargar(p);
   await subir;
 }
@@ -1695,7 +1709,9 @@ companero = iniciarCompanero({ sala, capa, cerrarCapa, hoja, cerrarHoja, esc, ic
 companero.pintarPastilla();
 yo = iniciarYo({ esc, ico, $, tono, SON, crearMascota, perfil: () => perfil, ajustes: () => ajustes, planes: () => planes,
   cuantosApuntes: () => apuntes?.cuantos?.() || 0, pintarCubos: (el) => { if(el) el.innerHTML = $('#pCubos')?.innerHTML || ''; },
-  svgPersonaje: (p) => vestidor.svgPersonaje(p), abrirVestidor: () => vestidor.abrir(), abrirCompanero: () => companero.abrir() });
+  svgPersonaje: (p) => vestidor.svgPersonaje(p), personajeVivo, abrirVestidor: () => vestidor.abrir(), abrirCompanero: () => companero.abrir() });
+/* tu personaje vivo: el mismo del vestidor, con lo que te pusiste (personaje-vivo.js) */
+configurarPersonaje({ personaje: () => normalizarPersonaje(perfil.personaje || personajeDeArranque(perfil.cuenta || perfil.nombre || ''), perfil.ropa || [], perfil.cuenta || ''), svg: (p) => vestidor.svgPersonaje(p) });
 vestidor = iniciarVestidor({ sala, capa, cerrarCapa, hoja, cerrarHoja, esc, ico, tono, SON, vibrar, brindis, $, ponerPerfil, conAcceso, perfil: () => perfil });
 /* tocar un aviso abre lo que dice: el cuarto del compañero o el plan del examen */
 avisos = iniciarAvisos({ sala, esc, ico, brindis, tono, SON,
