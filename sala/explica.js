@@ -290,7 +290,34 @@ const segundos = (t) => Math.min(70, Math.max(2.2, String(t || '').split(/\s+/).
 let conSubs = guarda.leer('explica.subs', false), quitaAviso = 0;
 function sub(t, hasta){ if(conSubs) pintarSub(t, hasta); }
 function avisoSub(t){ pintarSub(t, Infinity); if(!conSubs){ clearTimeout(quitaAviso); quitaAviso = setTimeout(() => { if(!conSubs) $('#subVoz').hidden = true; }, 4500); } }
-function pintarSub(t, hasta){ $('#subVoz').hidden = false; const p = String(t || '').split(/(\s+)/); let n = 0; $('#subVoz').innerHTML = p.map((w) => { const i = n; n += w.length; return /^\s+$/.test(w) ? w : `<span class="${i + w.length <= hasta ? 'ya' : i <= hasta ? 'ahora' : ''}">${esc(w)}</span>`; }).join(''); }
+/* ── LOS SUBTÍTULOS, COMO SUBTÍTULOS ──
+   Carlos, 13 nov: «los subtítulos están rotos en PC». Se ponía el párrafo ENTERO en una caja de dos
+   renglones que nunca se recorría: la palabra que se estaba diciendo se quedaba escondida abajo y el
+   segundo renglón salía cortado. Ahora se parte en frases cortas (máx. ~90 letras, cortando en punto o
+   coma) y sólo se enseña la que va, con la palabra de ahorita marcada. */
+function frasesSub(t){
+  const txt = String(t || '').replace(/\s+/g, ' ').trim(), out = []; let i = 0;
+  while(i < txt.length){
+    let fin = Math.min(txt.length, i + 90);
+    if(fin < txt.length){
+      const tramo = txt.slice(i, fin);
+      const corte = Math.max(tramo.lastIndexOf('. '), tramo.lastIndexOf('? '), tramo.lastIndexOf('! '), tramo.lastIndexOf(': '), tramo.lastIndexOf('; '));
+      const coma = tramo.lastIndexOf(', '), esp = tramo.lastIndexOf(' ');
+      fin = i + (corte > 35 ? corte + 1 : coma > 45 ? coma + 1 : esp > 20 ? esp : tramo.length);
+    }
+    out.push({ ini: i, fin, texto: txt.slice(i, fin).trim() }); i = fin; while(txt[i] === ' ') i++;
+  }
+  return { txt, out };
+}
+function pintarSub(t, hasta){
+  const el = $('#subVoz'); el.hidden = false;
+  const { txt, out } = frasesSub(t); if(!out.length){ el.textContent = ''; return; }
+  const h = hasta === Infinity ? txt.length : Math.max(0, Math.round(hasta * txt.length / Math.max(1, String(t || '').length)));
+  const f = out.find((x) => h < x.fin) || out[out.length - 1];
+  if(el.dataset.f !== String(f.ini)){ el.dataset.f = String(f.ini); el.classList.remove('entra'); void el.offsetWidth; el.classList.add('entra'); }
+  let n = f.ini;
+  el.innerHTML = f.texto.split(/(\s+)/).map((w) => { const i = n; n += w.length; return /^\s+$/.test(w) ? w : `<span class="${i + w.length <= h ? 'ya' : i <= h ? 'ahora' : ''}">${esc(w)}</span>`; }).join('');
+}
 function botonPlay(){ $('#bPlay').innerHTML = ico(sonando ? 'pause' : 'play'); $('#bVoz').innerHTML = ico(callada ? 'volume-x' : 'volume-2'); $('#bVoz').title = callada ? 'Sin voz' : 'Voz: ' + nombreDe(vozElegida); $('#bVel').textContent = velocidad + '×';
   $('#bSub').textContent = 'CC'; $('#bSub').setAttribute('aria-pressed', String(conSubs)); $('#bSub').style.opacity = conSubs ? 1 : .55; $('#bSub').style.textDecoration = conSubs ? 'none' : 'line-through'; $('#subVoz').hidden = !conSubs; }
 
