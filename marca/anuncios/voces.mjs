@@ -23,6 +23,8 @@ for(const l of g.lineas){
   const tono = l.tono ?? g.tono?.[l.voz] ?? 0;                     // semitonos, sólo Piper (para que un personaje suene distinto)
   const firma = crypto.createHash('sha1').update(voz + texto + JSON.stringify(ajustes) + (tono ? 'tono' + tono : '') + ((l.lento ?? g.lento?.[l.voz]) ? 'lento' + (l.lento ?? g.lento?.[l.voz]) : '')).digest('hex');
   const mp3 = path.join(vd, l.id + '.mp3');
+  /* REUSAR=1: un audio que ya existe pero no quedó apuntado (se cortó la corrida) se respeta, no se vuelve a pedir */
+  if(process.env.REUSAR === '1' && !hechas[l.id] && fs.existsSync(mp3)) hechas[l.id] = firma;
   if((hechas[l.id] !== firma || !fs.existsSync(mp3)) && voz.startsWith('piper:')){
     const wav = mp3.replace(/\.mp3$/, '.wav'), modelo = path.join(PIPER, voz.slice(6) + '.onnx');
     execFileSync('python3.13', ['-m', 'piper', '-m', modelo, '-f', wav, '--length-scale', String(l.lento ?? g.lento?.[l.voz] ?? 1), '--sentence-silence', '0.25'], { input: texto });
@@ -46,7 +48,7 @@ for(const l of g.lineas){
     const wav = mp3.replace(/\.mp3$/, '.wav'); fs.writeFileSync(wav, Buffer.from(j.data, 'base64'));
     const lento = l.lento ?? g.lento?.[l.voz];
     execFileSync('ffmpeg', ['-v', 'error', '-y', '-i', wav, '-af', (lento ? `atempo=${(1 / lento).toFixed(3)},` : '') + 'silenceremove=start_periods=1:start_threshold=-45dB,areverse,silenceremove=start_periods=1:start_threshold=-45dB,areverse,highpass=f=70,acompressor=threshold=0.12:ratio=2.5:attack=8:release=120,aresample=44100', '-ac', '2', '-b:a', '160k', mp3]);
-    fs.rmSync(wav); hechas[l.id] = firma; console.log('✓', l.id, l.voz, '(google)');
+    fs.rmSync(wav); hechas[l.id] = firma; fs.writeFileSync(path.join(vd, 'hechas.json'), JSON.stringify(hechas, null, 1)); console.log('✓', l.id, l.voz, '(google)');
   }
   else if(hechas[l.id] !== firma || !fs.existsSync(mp3)){
     if(!LLAVE){ console.error('falta ELEVENLABS_API_KEY para', l.id); process.exit(1); }
