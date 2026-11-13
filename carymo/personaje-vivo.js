@@ -90,6 +90,7 @@ export function personajeVivo(caja, { tam = 64, personaje = null, cameo = false 
   caja.replaceChildren(el);
   const dib = el.querySelector('.pv-dib'), cuerpo = el.querySelector('.pv-cuerpo'), fx = el.querySelector('.pv-fx');
   let cara = 'base', enReaccion = null, timer = null, finReaccion = null, desconectado = 0, vivo = true;
+  let ultimaMira = Date.now();
   const yo = { el, dormido: false, reaccionar, despertar, destruir, get cara(){ return cara; } };
 
   async function poner(c){
@@ -118,7 +119,9 @@ export function personajeVivo(caja, { tam = 64, personaje = null, cameo = false 
     if(!yo.dormido && Date.now() - ultimoToque > cfg.sueno){ dormir(); timer = setTimeout(vida, 4000); return; }
     if(yo.dormido){ timer = setTimeout(vida, 3000); return; }
     const t = Math.random();
-    if(t < .16){
+    /* mira de lado al azar, pero nunca pasa más de 14 s sin hacerlo: así se nota vivo */
+    if(t < .16 || Date.now() - ultimaMira > 14000){
+      ultimaMira = Date.now();
       poner('mira'); timer = setTimeout(() => { if(!enReaccion && !yo.dormido) poner('base'); timer = setTimeout(vida, azar(1800, 4200)); }, azar(650, 1100));
     } else {
       const doble = t > .86;

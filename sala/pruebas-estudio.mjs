@@ -46,7 +46,7 @@ console.log('El servidor');
 
   const s = almacen();
   let r = await llamar(s, 'carlos', 'GET', '');
-  ok(r.bien && r.perfil.xp === 0 && r.perfil.nombre === 'Carlos' && r.ranking.filas.length === 0 && r.hoy === '2026-11-12', 'perfil nuevo vacío y ranking vacío');
+  ok(r.bien && r.perfil.xp === 0 && r.perfil.nombre === 'Carlos' && r.ranking.filas.length === 1 && r.ranking.filas[0].cuenta === 'carlos' && r.ranking.filas[0].xp === 0 && r.hoy === '2026-11-12', 'perfil nuevo vacío; en el ranking ya te ves tú, con 0');
   r = await llamar(s, 'carlos', 'POST', '', { accion: 'xp', id: 'e1', xp: 15, dia: '2026-11-12' });
   ok(r.sumado === 15 && r.perfil.xp === 15 && r.perfil.racha === 1 && r.eventos.includes('racha'), 'suma XP y prende la racha');
   r = await llamar(s, 'carlos', 'POST', '', { accion: 'xp', id: 'e1', xp: 15, dia: '2026-11-12' });
@@ -60,11 +60,55 @@ console.log('El servidor');
   r = await llamar(s, 'carlos', 'POST', '', { accion: 'xp', id: 'e6', xp: 10, dia: '2026-11-13' }, '2026-11-13');
   ok(r.perfil.racha === 2, 'al día siguiente la racha sube a 2');
   r = await llamar(s, 'carlos', 'POST', '', { accion: 'xp', id: 'e7', xp: 10, dia: '2026-11-16' }, '2026-11-16');
-  ok(r.ranking.semana === '2026-S47' && r.ranking.filas.length === 1 && r.ranking.filas[0].xp === 10, 'el lunes empieza un ranking nuevo');
+  ok(r.ranking.semana === '2026-S47' && r.ranking.filas[0].cuenta === 'carlos' && r.ranking.filas[0].xp === 10 && r.liga?.resultado === 'sube' && r.ranking.liga === 1 && !r.ranking.filas.some((f) => f.cuenta === 'luis'), 'el lunes empieza un ranking nuevo, y como Carlos le ganó a Luis (55 contra 50) ya compite en Plata');
   r = await llamar(s, 'carlos', 'POST', '', { accion: 'perfil', nombre: 'Palomazi', horario: { lunes: [] } }, '2026-11-16');
   ok(r.perfil.nombre === 'Palomazi' && r.perfil.horario.lunes, 'cambia el nombre y guarda el horario');
   r = await llamar(s, 'carlos', 'GET', '', null, '2026-11-16');
   ok(r.ranking.filas[0].nombre === 'Palomazi' && !('ids' in r.perfil), 'el ranking usa el nombre nuevo y el perfil no expone los ids');
+
+  /* ── las ligas ── */
+  {
+    const L = almacen();
+    const dia = '2026-11-12', lunes = '2026-11-16';
+    /* doce cuentas en Bronce, cada una con distinto XP (la 1 la que más) */
+    for(let k = 1; k <= 12; k++) await llamar(L, 'u' + k, 'POST', '', { accion: 'xp', id: 'x' + k, xp: 200 - k * 10 }, dia);
+    await llamar(L, 'quieto', 'GET', '', null, dia);
+    let q = await llamar(L, 'u6', 'GET', '', null, dia);
+    ok(q.ranking.liga === 0 && q.ranking.filas.length === 13 && q.ranking.activos === 12, `tu liga completa en la tabla: los 12 que estudiaron y el que no (${q.ranking.filas.length})`);
+    ok(q.ranking.filas.at(-1).cuenta === 'quieto' && q.ranking.filas.at(-1).xp === 0, 'el que no ha estudiado sale abajo, con 0');
+    ok(q.ranking.reglas.suben === 3 && q.ranking.reglas.bajan === 0, 'en Bronce de 12 suben 3 y nadie baja (no hay liga abajo)');
+    ok(q.ranking.cierra > 0 && q.ranking.cierra <= 7 * 864e5, 'dice cuánto falta para que cierre la semana');
+    const a1 = await llamar(L, 'u1', 'GET', '', null, lunes);
+    ok(a1.liga && a1.liga.resultado === 'sube' && a1.liga.a === 'Plata' && a1.perfil.liga === 1 && a1.perfil.ligaMax === 1, 'el lunes, el primero se entera de que SUBIÓ a Plata');
+    ok(a1.perfil.vitrina.bronce.podios === 1 && a1.perfil.vitrina.plata, 'y a su vitrina entra el podio de Bronce y el trofeo de Plata');
+    const a1b = await llamar(L, 'u1', 'GET', '', null, lunes);
+    ok(!a1b.liga, 'el aviso de la liga se da una sola vez');
+    const a4 = await llamar(L, 'u4', 'GET', '', null, lunes);
+    ok(a4.liga && a4.liga.resultado === 'queda' && a4.perfil.liga === 0, 'el cuarto se queda en Bronce');
+    const aq = await llamar(L, 'quieto', 'GET', '', null, lunes);
+    ok(!aq.liga && aq.perfil.liga === 0, 'el que no estudió en toda la semana no sube ni baja');
+    /* semana 2: los tres de Plata con nueve más que ya estaban en Plata; los últimos bajan */
+    await llamar(L, 'u2', 'GET', '', null, lunes); await llamar(L, 'u3', 'GET', '', null, lunes);
+    for(let k = 1; k <= 3; k++) await llamar(L, 'u' + k, 'POST', '', { accion: 'xp', id: 'y' + k, xp: 5 * k }, lunes);
+    for(let k = 1; k <= 9; k++){ const c = 'p' + k, pf = { cuenta: c, nombre: 'P' + k, xp: 0, racha: 0, mejorRacha: 0, ultimoDia: '', congeladas: 0, ids: [], liga: 1, ligaMax: 1 }; L.m.set('est:perfil:' + c, pf); await llamar(L, c, 'POST', '', { accion: 'xp', id: 'z' + k, xp: 100 + k }, lunes); }
+    q = await llamar(L, 'u1', 'GET', '', null, lunes);
+    ok(q.ranking.liga === 1 && q.ranking.filas.filter((f) => f.xp > 0).length === 12 && q.ranking.filas.every((f) => !/^u([4-9]|1[0-2])$/.test(f.cuenta)), 'en Plata compites sólo contra los de Plata');
+    ok(q.ranking.reglas.suben === 3 && q.ranking.reglas.bajan === 2, 'en Plata de 12 suben 3 y bajan 2');
+    const b1 = await llamar(L, 'u1', 'GET', '', null, '2026-11-23');
+    ok(b1.liga && b1.liga.resultado === 'baja' && b1.perfil.liga === 0 && b1.perfil.ligaMax === 1, 'el que quedó en los últimos BAJA a Bronce, pero su mejor liga se recuerda');
+    const p9 = await llamar(L, 'p9', 'GET', '', null, '2026-11-23');
+    ok(p9.liga.resultado === 'sube' && p9.perfil.liga === 2, 'el primero de Plata sube a Oro');
+    /* amigos: aparte de la liga, todos tus amigos con su XP de la semana */
+    L.m.set('est:amigos:u1', { amigos: ['p9', 'u12'], pide: [] });
+    q = await llamar(L, 'u1', 'GET', '', null, '2026-11-23');
+    ok(q.ranking.amigos.length === 3 && q.ranking.amigos.some((f) => f.cuenta === 'p9' && f.liga === 2), 'la pestaña de amigos trae a tus amigos (de cualquier liga) y a ti');
+    /* más de 30 en una liga: grupos de 30, siempre los mismos */
+    const G = almacen();
+    for(let k = 1; k <= 70; k++) await llamar(G, 'g' + k, 'POST', '', { accion: 'xp', id: 'g' + k, xp: k }, dia);
+    const vistos = new Map();
+    for(let k = 1; k <= 70; k++){ const r2 = await llamar(G, 'g' + k, 'GET', '', null, dia); const llave = r2.ranking.filas.filter((f) => f.xp > 0).map((f) => f.cuenta).sort().join(); vistos.set(llave, (vistos.get(llave) || 0) + 1); }
+    ok([...vistos.keys()].every((x) => x.split(',').length <= 30) && [...vistos.values()].reduce((a, b) => a + b, 0) === 70 && vistos.size === 3, `70 en Bronce se parten en 3 grupos de máximo 30 y cada quien ve el suyo (${[...vistos.keys()].map((x) => x.split(',').length).join(', ')})`);
+  }
 
   r = await llamar(s, 'carlos', 'POST', '', { accion: 'plan', plan: { id: 'p1', titulo: 'Examen de Biología', materia: 'Biología', fecha: '2026-11-20', camino: [1, 2], progreso: { n1: { hecho: true, mejor: 100 } } } });
   ok(r.bien && r.progreso.n1.hecho, 'guarda un plan');

@@ -36,7 +36,8 @@
   }
   *{ box-sizing:border-box; margin:0 }
   html{ -webkit-text-size-adjust:100%; overflow-x:clip; background:var(--fondo) }
-  body{ overflow-x:clip; background:var(--fondo); color:var(--hueso); font:600 16px/1.45 Texto, -apple-system, system-ui, sans-serif; min-height:100dvh;
+  /* una palabra de 50 letras sin espacios (Carlos, 14 nov: «que se llenen de cosas… y arréglalo antes de que pase») se parte en vez de salirse */
+  body{ overflow-wrap:anywhere; overflow-x:clip; background:var(--fondo); color:var(--hueso); font:600 16px/1.45 Texto, -apple-system, system-ui, sans-serif; min-height:100dvh;
     -webkit-tap-highlight-color:transparent }
   button, input, textarea, select{ font-family:inherit; font-size:16px; color:inherit }
   button{ cursor:pointer }
@@ -232,6 +233,7 @@
   .nodo .i{ width:32px; height:32px; stroke-width:2.2 }
   .nodo:active{ transform:translateY(4px); box-shadow:0 3px 0 #00000059, inset 0 -6px 0 #0003 }
   .nodo.cerrado{ background:#2E1A44; color:#5E4B75; box-shadow:0 7px 0 #0000004d, inset 0 -6px 0 #0002 }
+  .nodo.saltado{ background:#2E1A44; color:var(--claro-txt); box-shadow:0 7px 0 #0000004d, inset 0 0 0 3px #AC27FF66; border:2px dashed #AC27FF99 }
   .nodo.hecho{ background:radial-gradient(circle at 35% 30%, #FFE29A, var(--oro) 55%, #C98F22); color:#6B4508; box-shadow:0 7px 0 var(--oro-osc), inset 0 -5px 0 #0002 }
   .nodo.hecho::after{ content:""; position:absolute; inset:9px; border-radius:50%; border:3px solid #FFF1C866 }
   .nodo.actual{ animation:respira 2.4s ease-in-out infinite }
@@ -289,7 +291,7 @@
   .opcion-lista[aria-pressed="true"]{ border-color:var(--claro); background:#2A1245 }
   .seccion-t{ font-size:12px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--suave); margin:22px 0 10px }
   .chips{ display:flex; flex-wrap:wrap; gap:8px }
-  .chip{ border:1.5px solid var(--borde); background:var(--fondo-2); border-radius:999px; padding:9px 14px; min-height:40px; font-size:14px; font-weight:700 }
+  .chip{ max-width:100%; text-align:left; border:1.5px solid var(--borde); background:var(--fondo-2); border-radius:999px; padding:9px 14px; min-height:40px; font-size:14px; font-weight:700 }
   .chip[aria-pressed="true"]{ border-color:var(--claro); background:#2A1245; color:#fff }
   .chip.agregar{ border-style:dashed; color:var(--claro-txt) }
   .campo{ width:100%; min-height:50px; border-radius:14px; border:2px solid var(--borde); background:var(--fondo-2); padding:0 14px; color:#fff }
@@ -569,8 +571,45 @@
   /* ranking */
   .titulo-vista{ font:900 28px/1.1 Titulo; margin:calc(18px + env(safe-area-inset-top)) 0 4px }
   .sub-vista{ color:var(--suave); margin-bottom:18px }
+  /* la liga (ligas.js): cabecera chica para que la tabla se vea luego luego */
+  .liga-cab{ display:flex; align-items:center; gap:14px; padding:4px 2px 0 }
+  .liga-trofeo{ flex:none; filter:drop-shadow(0 6px 14px #0007) }
+  .liga-txt small{ font:800 12px/1 Titulo; letter-spacing:.14em; text-transform:uppercase; color:var(--suave) }
+  .liga-txt h1{ font:900 28px/1.05 Titulo; margin:2px 0 4px }
+  .liga-txt p{ display:flex; align-items:flex-start; gap:6px; color:var(--suave); font-size:14px; line-height:1.3; margin:0 }
+  .liga-txt p .i{ margin-top:1px; flex:none }
+  .liga-txt{ min-width:0 }
+  .liga-txt p .i{ width:15px; height:15px }
+  .liga-fila{ display:flex; gap:6px; overflow-x:auto; padding:10px 2px 4px; scrollbar-width:none }
+  .liga-fila::-webkit-scrollbar{ display:none }
+  .liga-fila span{ flex:none; display:grid; place-items:center; width:40px; height:44px; border-radius:12px }
+  .liga-fila span.aqui{ background:#AC27FF26; box-shadow:inset 0 0 0 2px var(--claro) }
+  .rank-frase{ margin:8px 0 10px; padding:10px 14px; border-radius:14px; background:var(--fondo-2); font-weight:700; line-height:1.35; overflow-wrap:anywhere }
+  .rank-tabs{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:6px; padding:4px; border-radius:16px; background:var(--fondo-2); margin-bottom:10px }
+  .rank-tabs button{ min-height:42px; border:0; border-radius:12px; background:transparent; color:var(--suave); font-weight:800; font-family:inherit; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+  .rank-tabs button[aria-selected="true"]{ background:var(--claro); color:#fff }
+  .zona-rank{ display:flex; align-items:center; justify-content:center; gap:6px; padding:4px 0; font:800 12px/1.2 Titulo; letter-spacing:.06em; text-transform:uppercase; text-align:center }
+  .zona-rank .i{ width:16px; height:16px; flex:none }
+  .zona-rank.sube{ color:#4FD48A } .zona-rank.baja{ color:#FF6B7F } .zona-rank.quieta{ color:var(--suave) }
+  .fila-rank.sube .n{ color:#4FD48A } .fila-rank.baja .n{ color:#FF6B7F }
+  .fila-rank.quieto{ opacity:.6 }
+  .fila-rank .nom small{ color:var(--suave); font-weight:600 }
+  .fila-rank:has(.mini-liga){ grid-template-columns:minmax(30px, max-content) 40px minmax(0, 1fr) auto auto }
+  .mini-liga{ display:grid; place-items:center }
+  .fiesta-liga .liga-gira{ animation:ligaEntra .9s cubic-bezier(.2, 1.4, .4, 1) both; filter:drop-shadow(0 12px 30px #0009) }
+  .fiesta-liga.baja .liga-gira{ animation-name:ligaCae }
+  .fiesta-liga .liga-pj{ width:96px; height:96px; margin:-30px 0 6px }
+  @keyframes ligaEntra{ 0%{ transform:scale(.2) rotate(-25deg); opacity:0 } 60%{ transform:scale(1.12) rotate(6deg); opacity:1 } 100%{ transform:none } }
+  @keyframes ligaCae{ 0%{ transform:translateY(-60px); opacity:0 } 70%{ transform:translateY(8px) } 100%{ transform:none; opacity:1 } }
+  .pastilla.liga{ border:0; font:inherit; color:inherit; cursor:pointer; gap:4px }
+  .pastilla.liga .trofeo{ flex:none }
+  .vitrina{ display:grid; grid-template-columns:repeat(auto-fill, minmax(92px, 1fr)); gap:10px }
+  .vitrina .vt{ display:flex; flex-direction:column; align-items:center; gap:4px; padding:12px 6px; border-radius:18px; background:var(--fondo-2); text-align:center; min-width:0 }
+  .vitrina .vt b{ font:800 14px/1.1 Titulo; overflow-wrap:anywhere }
+  .vitrina .vt small{ color:var(--suave); font-size:12px; line-height:1.25 }
+  .vitrina .vt.no{ opacity:.55 }
   .ranking{ display:grid; gap:8px }
-  .fila-rank{ display:grid; grid-template-columns:30px 40px minmax(0, 1fr) auto; align-items:center; gap:10px; padding:10px 12px; border-radius:16px; background:var(--fondo-2); border:2px solid transparent }
+  .fila-rank{ display:grid; grid-template-columns:minmax(30px, max-content) 40px minmax(0, 1fr) auto; align-items:center; gap:10px; padding:10px 12px; border-radius:16px; background:var(--fondo-2); border:2px solid transparent }
   .fila-rank.yo{ border-color:var(--claro); background:#24103A }
   .fila-rank .n{ font:900 18px/1 Titulo; color:var(--suave); text-align:center }
   .fila-rank .av{ width:40px; height:40px; border-radius:50%; display:grid; place-items:center; font:900 17px/1 Titulo; color:#fff }
@@ -639,6 +678,7 @@
   .buscador input{ flex:1; min-width:0; border:0; background:none; outline:0; color:#fff; min-height:46px }
   .resultados{ display:grid; gap:8px }
   .resultados button{ display:flex; align-items:center; gap:12px; width:100%; text-align:left; padding:12px 14px; min-height:56px; border:0; border-radius:14px; background:var(--fondo-2); font-weight:700 }
+  .resultados button > span{ flex:1; min-width:0 }
   .resultados button small{ display:block; color:var(--suave); font-size:13px; font-weight:600 }
   .resultados button .i:last-child{ margin-left:auto; color:var(--tenue) }
 
@@ -648,7 +688,7 @@
   .perfil-cab h2{ font:900 24px/1.1 Titulo } .perfil-cab small{ color:var(--suave) }
   .stats{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; margin-bottom:22px }
   .stat{ padding:14px; border-radius:16px; background:var(--fondo-2); display:flex; gap:12px; align-items:center }
-  .stat .i{ width:26px; height:26px } .stat b{ display:block; font:900 20px/1 Titulo } .stat small{ color:var(--suave); font-size:13px }
+  .stat .i{ width:26px; height:26px } .stat b{ display:block; font:900 20px/1 Titulo; white-space:nowrap } .stat small{ color:var(--suave); font-size:13px }
   .ajuste{ display:flex; align-items:center; gap:12px; min-height:56px; padding:0 14px; border-radius:14px; background:var(--fondo-2); margin-bottom:8px; font-weight:700 }
   .ajuste .i{ color:var(--claro-txt) } .ajuste span{ flex:1 }
   .interruptor{ position:relative; width:52px; height:32px; border-radius:999px; border:0; background:#ffffff22; transition:background .2s; flex:none }
@@ -698,6 +738,7 @@
   @keyframes late-am{ 50%{ box-shadow:0 0 0 4px #3DDC8433 } }
   .amigo .quien{ flex:1; min-width:0; display:grid } .amigo .quien b{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap } .amigo .quien small{ color:var(--suave); font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
   .amigo .acc{ display:flex; gap:6px; flex:none }
+  @media (max-width: 360px){ .amigo{ gap:8px; padding:10px } .bt.mini[data-am="invitar"] span{ display:none } .bt.mini{ padding:0 8px } }
   .bt.mini{ min-height:40px; min-width:40px; padding:0 10px; border-radius:12px; font-size:13px; gap:6px }
   .bt.mini span{ display:none } .bt.mini[data-am="invitar"] span, .bt.mini[data-am="amistad"] span{ display:inline }
   .bt.mini .i{ width:18px; height:18px }
@@ -769,7 +810,7 @@
   .hoja-res .dentro{ position:relative }
   .hoja-res .masc-res{ position:absolute; right:14px; top:-78px; width:76px; height:88px }
   .elige-masc{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:10px; margin-bottom:6px }   /* 8 animales + ninguno = 3 filas de 3 */
-  .elige-masc button{ display:grid; justify-items:center; gap:6px; padding:12px 6px; border-radius:18px; border:2px solid #ffffff1a; background:#ffffff0d; color:inherit; font:700 14px/1.2 inherit; font-family:inherit; min-height:44px; transition:transform .25s cubic-bezier(.3,1.6,.4,1), border-color .2s }
+  .elige-masc button{ display:grid; justify-items:center; gap:6px; padding:12px 6px; border-radius:18px; border:2px solid #ffffff1a; background:#ffffff0d; color:inherit; font-weight:700; font-size:14px; line-height:1.2; font-family:inherit; min-height:44px; min-width:0; overflow:hidden; transition:transform .25s cubic-bezier(.3,1.6,.4,1), border-color .2s }
   .elige-masc button[aria-checked="true"]{ border-color:var(--claro, #AC27FF); background:#AC27FF22 }
   .elige-masc button:active{ transform:scale(.94) }
   .elige-masc .masc-mini{ display:grid; place-items:center; height:70px; pointer-events:none }

@@ -585,6 +585,9 @@ dependemos.
 
    | un trabajador de fondo de `/carymo/` guarda todo lo que la app pide, también el pizarrón que abre en un marco | el marco es OTRA página (`/sala/explica.html`) fuera de su alcance: ni se intercepta ni se guarda, y sin red sale en blanco aunque sus archivos sí estén guardados | CARYMO sin internet (13 nov): el pizarrón se abre como `/carymo/pizarron.html`, que `carymo/sw.js` arma con la página de Explica y un `<base href="/sala/">`; así lo que pide pasa por el trabajador. `carymo/pruebas-sinred.mjs` apaga el servidor de a de veras |
 
+   | si `document.scrollWidth` no pasa del ancho de la pantalla, nada se sale de lado | con `overflow-x: clip` en el `body` la página NUNCA se ensancha: lo que se sale se corta callado, y una palabra de 50 letras deja el texto mocho | la prueba de CARYMO retacada (`carymo/pruebas-desborde.mjs`: 1,500 apuntes, 30 planes, 200 amigos, nombres sin espacios) dio «390/390» y había 16 pantallas con texto cortado. Se mide cada elemento contra su caja y contra la pantalla, y el `body` lleva `overflow-wrap: anywhere` |
+   | cambiar la forma de un dato (`puntos` → `ideas` en la lección) basta con cambiar a quien lo escribe | quien lo LEE sigue esperando la forma vieja: el buscador de CARYMO hacía `leccion.puntos.join` y tronaba con cualquier lección nueva | «Buscar un tema» no encontraba nada desde que las lecciones son por ideas; lo cazó la prueba retacada. Al cambiar una forma, `grep` de cada campo viejo |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---

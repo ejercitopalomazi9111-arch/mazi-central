@@ -32,6 +32,7 @@ import { iniciarAvisos } from './avisos.js';
 import { iniciarVestidor } from './vestidor.js';
 import { iniciarYo, SUBVISTAS } from './yo.js';
 import { configurarPersonaje, personajeVivo, reaccion } from './personaje-vivo.js';
+import { LIGAS, ligaDe, trofeoSVG } from './ligas.js';
 import { personajeDeArranque, normalizarPersonaje } from './ropa.js';
 import { leerClase, guardarClase, hayClase } from '../sala/clases-guardadas.js';
 
@@ -262,10 +263,15 @@ export function migrarCamino(p){
   return true;
 }
 const hecho = (p, n) => !!(p.progreso && p.progreso[n.id] && p.progreso[n.id].hecho);
+/* Carlos, 14 nov: «pon que puedas saltar de tema, porque a veces ya le entiendes y te quieres pasar al que necesitas».
+   Lo que brincas queda «saltado»: ya no te bloquea el camino, pero NO cuenta como hecho (no te sube el grado) y lo
+   puedes hacer cuando quieras. */
+const saltado = (p, n) => !!(p.progreso && p.progreso[n.id] && p.progreso[n.id].saltado && !p.progreso[n.id].hecho);
+const pasado = (p, n) => hecho(p, n) || saltado(p, n);
 export function avanceDe(p){
   const ns = todosLosNodos(p), h = ns.filter((n) => hecho(p, n)).length;
   const frac = ns.length ? h / ns.length : 0;
-  return { hechos: h, total: ns.length, pct: Math.round(frac * 100), grado: Math.min(10, 6 + 4 * frac), siguiente: ns.find((n) => !hecho(p, n)) || null };
+  return { hechos: h, total: ns.length, pct: Math.round(frac * 100), grado: Math.min(10, 6 + 4 * frac), siguiente: ns.find((n) => !pasado(p, n)) || null, saltados: ns.filter((n) => saltado(p, n)).length };
 }
 const temaDe = (p, id) => { for(const u of p.unidades) for(const t of u.temas) if(t.id === id) return t; return null; };
 
@@ -329,6 +335,7 @@ async function mandarCola(){
       const ids = new Set(lote.map((x) => x.id)); cola = cola.filter((x) => !ids.has(x.id)); guarda.poner('est.cola', cola);
       const antes = posicion();
       ponerPerfil(r.perfil); ponerRanking(r.ranking);
+      if(r.liga) await fiestaLiga(r.liga);
       companero?.premios(r);
       if((r.premios || []).some((x) => x.motivo === 'nivel')){ tono(SON.nivel); reaccion('sube', { cameo: true }); }
       if(r.eventos.includes('racha-perdida')){ tono(SON.perdio); reaccion('baja', { cameo: true }); }
@@ -348,7 +355,7 @@ function posicion(){ const i = ranking.filas.findIndex((f) => f.yo); return i < 
 function ponerPerfil(p){ if(!p) return; perfil = { ...perfil, ...p }; delete perfil._localRacha; guarda.poner('est.perfil', perfil); pintarCabeza(); companero?.pintarPastilla(); }
 /* un premio sin XP (subir de grado): el servidor decide cuántos cubitos vale */
 function encolarPremio(motivo){ cola.push({ id: 'x' + nuevoId(), xp: 0, dia: hoyLocal(), motivo }); guarda.poner('est.cola', cola); }
-function ponerRanking(r){ if(!r) return; ranking = { semana: r.semana, filas: r.filas.map((f) => ({ ...f, yo: f.cuenta === perfil.cuenta })) }; guarda.poner('est.ranking', ranking); if(vista === 'ranking') pintarRanking(); }
+function ponerRanking(r){ if(!r) return; const yoEs = (f) => ({ ...f, yo: f.cuenta === perfil.cuenta }); ranking = { ...r, liga: r.liga | 0, filas: r.filas.map(yoEs), amigos: (r.amigos || []).map(yoEs), recibido: Date.now() }; guarda.poner('est.ranking', ranking); if(vista === 'ranking') pintarRanking(); }
 
 /* ══ 5 · SINCRONÍA DE PLANES ══════════════════════════════════════════════ */
 const porGuardar = new Set(); let reloj = null;
@@ -370,7 +377,7 @@ async function sincronizar(){
   if(!conAcceso()){ pintarFaltaLlave(); return; }
   try{
     const r = await sala(null);
-    perfil.cuenta = r.perfil.cuenta; ponerPerfil(r.perfil); ponerRanking(r.ranking);
+    perfil.cuenta = r.perfil.cuenta; ponerPerfil(r.perfil); ponerRanking(r.ranking); if(r.liga) setTimeout(() => fiestaLiga(r.liga), 900);
     for(const x of r.planes){
       if(x.borrado){ if(planes[x.id]){ delete planes[x.id]; if(actualId === x.id) actualId = null; } continue; }
       if(!planes[x.id] || (planes[x.id].t || 0) < x.t){
@@ -384,7 +391,7 @@ async function sincronizar(){
     guardarLocal(); subirPlanes(); mandarCola(); pintar();
   }catch(e){ if(e.llave) pintarFaltaLlave(); }
 }
-const soloHechos = (p) => { const o = {}; for(const [k, v] of Object.entries((p && p.progreso) || {})) if(v.hecho) o[k] = v; return o; };
+const soloHechos = (p) => { const o = {}; for(const [k, v] of Object.entries((p && p.progreso) || {})) if(v.hecho || v.saltado) o[k] = v; return o; };
 
 /* ══ 6 · PINTAR ═══════════════════════════════════════════════════════════ */
 function pintarCabeza(){
@@ -463,11 +470,11 @@ function pintarPlan(){
     const nodosHtml = u.nodos.map((n, i) => {
       const x = 50 + ONDA[(k + i) % ONDA.length] * 30, y = 70 + i * paso;
       puntos.push([x, y]);
-      const h = hecho(p, n), actual = sig && sig.id === n.id, cerrado = !h && !actual;
-      const cl = ['nodo', h ? 'hecho' : '', actual ? 'actual' : '', cerrado ? 'cerrado' : '', n.tipo === 'examen' ? 'grande' : ''].join(' ');
+      const h = hecho(p, n), sal = saltado(p, n), actual = sig && sig.id === n.id, cerrado = !h && !sal && !actual;
+      const cl = ['nodo', h ? 'hecho' : '', sal ? 'saltado' : '', actual ? 'actual' : '', cerrado ? 'cerrado' : '', n.tipo === 'examen' ? 'grande' : ''].join(' ');
       const tv = tipoVisto(n), etq = tv === 'panorama' ? 'Panorama' : tv === 'pizarra' ? 'Cátedra' : n.titulo;
       if(actual) mascotaPos = { x: x >= 50 ? x - 34 : x + 34, y, u: p.unidades.indexOf(u) };
-      return `<button class="${cl}${tv === 'pizarra' || tv === 'panorama' ? ' catedra' : ''}" data-nodo="${n.id}" style="left:${x}%;top:${y}px;--color:${u.color}" aria-label="${esc(NOMBRE_NODO[tv])}: ${esc(n.titulo)}${h ? ' (hecho)' : cerrado ? ' (bloqueado)' : ''}">${ico(h ? 'check' : ICONO_NODO[tv])}<span class="etq">${esc(etq)}</span></button>`;
+      return `<button class="${cl}${tv === 'pizarra' || tv === 'panorama' ? ' catedra' : ''}" data-nodo="${n.id}" style="left:${x}%;top:${y}px;--color:${u.color}" aria-label="${esc(NOMBRE_NODO[tv])}: ${esc(n.titulo)}${h ? ' (hecho)' : sal ? ' (saltado: tócalo para hacerlo)' : cerrado ? ' (bloqueado: tócalo para saltar hasta aquí)' : ''}">${ico(h ? 'check' : sal ? 'fast-forward' : ICONO_NODO[tv])}<span class="etq">${esc(etq)}</span></button>`;
     }).join('');
     k += u.nodos.length;
     const d = puntos.map(([x, y], i) => `${i ? 'L' : 'M'}${x * 4} ${y}`).join(' ');
@@ -728,13 +735,28 @@ function prepararUna(q){
   });
 }
 
+/* tocar uno bloqueado: «¿saltar hasta aquí?» */
+function preguntarSalto(p, n, ns){
+  const i = ns.indexOf(n), antes = ns.slice(0, i).filter((x) => !pasado(p, x));
+  tono(SON.pop);
+  hoja('¿Saltar hasta aquí?', `<p class="sub-vista" style="margin:0 0 6px">Si ya entiendes lo de antes, pásate directo a <b>${esc(n.titulo)}</b>.</p>
+    <p class="sub-vista" style="margin:0 0 14px">${antes.length === 1 ? 'Te saltas 1 tema' : `Te saltas ${antes.length} temas`}: quedan marcados y los puedes hacer cuando quieras. No cuentan para tu grado hasta que los hagas.</p>
+    <div style="display:grid;gap:8px"><button class="bt fuerte ancho" data-saltar>${ico('fast-forward')}Saltar a este tema</button><button class="bt ancho" data-quedarme>Mejor sigo en orden</button></div>`, (h) => {
+    h.querySelector('[data-quedarme]').addEventListener('click', cerrarHoja);
+    h.querySelector('[data-saltar]').addEventListener('click', () => {
+      const ahora = Date.now();
+      for(const x of antes) p.progreso[x.id] = { ...(p.progreso[x.id] || {}), saltado: true, cuando: ahora };
+      guardarPlan(p); cerrarHoja(); tono(SON.whoosh); pintar();
+      brindis(antes.length === 1 ? 'Saltaste 1 tema' : `Saltaste ${antes.length} temas`, '', 'fast-forward');
+      setTimeout(() => abrirNodo(n.id), 350);
+    });
+  });
+}
 async function abrirNodo(id, repaso = false){
   const p = plan(); if(!p) return;
   const ns = todosLosNodos(p), n = ns.find((x) => x.id === id); if(!n) return;
   const a = avanceDe(p);
-  if(!hecho(p, n) && a.siguiente && a.siguiente.id !== n.id && !repaso){
-    vibrar(30); tono(SON.golpe); brindis('Primero termina el que está brillando', 'vino', 'target'); return;
-  }
+  if(!pasado(p, n) && a.siguiente && a.siguiente.id !== n.id && !repaso) return preguntarSalto(p, n, ns);
   if(n.tipo === 'quiz') return abrirLeccion(p, n);
   if(n.tipo === 'pizarra') return abrirPizarra(p, n);
   if(n.tipo === 'tarjetas') return abrirTarjetas(p, n);
@@ -1545,7 +1567,7 @@ function pegarHorario(){
 /* ══ 14 · BUSCAR ══════════════════════════════════════════════════════════ */
 function pintarBuscar(){
   const v = $('#vBuscar');
-  const temas = Object.values(planes).flatMap((p) => p.unidades.flatMap((u) => u.temas.map((t) => ({ p, t }))));
+  const temas = Object.values(planes).flatMap((p) => (p.unidades || []).flatMap((u) => (u.temas || []).map((t) => ({ p, t }))));
   v.innerHTML = `<h1 class="titulo-vista">Buscar</h1><p class="sub-vista">En tus lecciones, o pídele a la IA que te lo explique en el pizarrón.</p>
     <label class="buscador">${ico('search')}<input id="busca" type="search" placeholder="Busca un tema…" autocomplete="off" aria-label="Buscar un tema"></label>
     <div id="resultados" class="resultados"></div>
@@ -1554,7 +1576,8 @@ function pintarBuscar(){
     const q = quitarAcentos($('#busca').value);
     const r = $('#resultados');
     if(!q){ r.innerHTML = ''; return; }
-    const hits = temas.filter(({ p, t }) => { const c = (p.contenido || {})[t.id]; return quitarAcentos([t.titulo, t.resumen, c && c.leccion.parrafo, c && c.leccion.puntos.join(' ')].join(' ')).includes(q); }).slice(0, 12);
+    /* la lección nueva trae «ideas» y la vieja «puntos»: se busca en las dos (con sólo «puntos», el buscador tronaba) */
+    const hits = temas.filter(({ p, t }) => { const l = ((p.contenido || {})[t.id] || {}).leccion || {}; return quitarAcentos([t.titulo, t.resumen, l.titulo, l.parrafo, l.dato, ...(l.puntos || []), ...(l.ideas || []).map((i) => `${i.titulo || ''} ${i.texto || ''}`)].filter(Boolean).join(' ')).includes(q); }).slice(0, 12);
     r.innerHTML = hits.map(({ p, t }) => `<button data-leer="${esc(p.id)}|${esc(t.id)}">${ico('book-open')}<span>${esc(t.titulo)}<small>${esc(p.titulo)}${(p.contenido || {})[t.id] ? '' : ' · todavía sin lección'}</small></span>${ico('chevron-right')}</button>`).join('')
       + `<button data-explica="${esc($('#busca').value.trim())}">${ico('presentation')}<span>Explícame «${esc($('#busca').value.trim())}»<small>Clase con voz en el pizarrón</small></span>${ico('chevron-right')}</button>`;
   };
@@ -1575,21 +1598,82 @@ async function leerTema(p, tid){
 
 /* ══ 15 · RANKING ═════════════════════════════════════════════════════════ */
 let ordenAnterior = [];
+let rankTab = guarda.leer('est.rankTab', 'liga');
+/* 9999999 → «10 M», 254300 → «254 k», 9999 → «9,999»: armado a mano (Intl compact escribe distinto en cada navegador) */
+function xpCorto(n){
+  n = Math.max(0, Math.round(+n || 0));
+  if(n >= 1e6){ const x = n / 1e6; return (x >= 100 ? Math.round(x) : Math.round(x * 10) / 10) + ' M'; }
+  if(n >= 1e5) return Math.round(n / 1e3) + ' k';
+  return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+/* «falta 2 d 5 h»: cuánto le queda a la semana, con lo que se recibió del servidor */
+function faltaCierre(){
+  const ms = Math.max(0, (ranking.cierra || 0) - (Date.now() - (ranking.recibido || Date.now())));
+  const d = Math.floor(ms / 864e5), h = Math.floor(ms % 864e5 / 36e5), m = Math.floor(ms % 36e5 / 6e4);
+  return d ? `${d} d ${h} h` : h ? `${h} h ${m} min` : `${m} min`;
+}
+/* Carlos, 14 nov: «no se ve la tabla y eso no invita a la competitividad». Arriba, chiquito, tu liga y su trofeo;
+   luego la TABLA de tu liga entera (con los que aún no estudian, en gris) y sus zonas de subir y bajar, o la de tus
+   amigos. La frase de arriba te dice a quién alcanzar y por cuántos XP. */
 function pintarRanking(){
-  const v = $('#vRanking'), f = ranking.filas, yo = posicion();
-  const arriba = yo > 1 ? yo - 1 : 0;
-  v.innerHTML = `<div style="text-align:center;margin-top:calc(26px + env(safe-area-inset-top))"><div class="sello" style="width:96px;height:96px;margin-bottom:14px">${ico('trophy')}</div>
-    <h1 class="titulo" style="font-size:26px">${!f.length ? 'El ranking de la semana' : yo === 1 ? '¡Vas en primer lugar!' : yo ? `¡Sólo ${arriba} ${arriba === 1 ? 'lugar' : 'lugares'} para llegar a la cima!` : 'El ranking de la semana'}</h1>
-    <p class="sub-vista" style="margin-top:6px">${f.length ? 'Se reinicia cada lunes. Gana XP terminando lecciones.' : 'Termina tu primera lección para aparecer aquí.'}</p></div>
-    <div class="ranking podio" id="rankLista">${f.map((x, i) => `<div class="fila-rank ${x.yo ? 'yo' : ''}" data-cuenta="${esc(x.cuenta)}"><span class="n">${i + 1}</span><span class="av" style="background:${colorMateria(x.cuenta)}">${esc((x.nombre || '?').charAt(0).toUpperCase())}</span><span class="nom">${esc(x.nombre)}${x.yo ? ' (tú)' : ''}</span><span class="xp">${ico('zap')}${x.xp} XP</span></div>`).join('')}</div>
-    <p class="version" style="margin-top:18px">${f.length ? `Semana ${esc((ranking.semana || '').split('-S')[1] || '')}` : ''}</p>`;
+  const v = $('#vRanking'); if(!v) return;
+  const liga = ranking.liga | 0, L = ligaDe(liga), sig = LIGAS[liga + 1], deAmigos = rankTab === 'amigos';
+  const f = deAmigos ? (ranking.amigos || []) : (ranking.filas || []);
+  const rg = ranking.reglas || { suben: 0, bajan: 0 }, act = ranking.activos ?? f.filter((x) => x.xp > 0).length;
+  const yoI = f.findIndex((x) => x.yo), yoF = f[yoI];
+  let frase = 'Termina una lección para entrar a la tabla.';
+  if(yoF && yoF.xp > 0){
+    if(yoI === 0) frase = f.length > 1 ? `¡Vas en primer lugar! Le llevas ${xpCorto(yoF.xp - (f[1]?.xp || 0))} XP al segundo.` : '¡Vas en primer lugar!';
+    else { const arriba = f[yoI - 1]; frase = `Te faltan ${xpCorto(arriba.xp - yoF.xp + 1)} XP para pasar a ${arriba.nombre}.`; }
+  } else if(yoF && f.some((x) => x.xp > 0)) frase = `${f.find((x) => x.xp > 0).nombre} ya va arriba: termina una lección para alcanzarlo.`;
+  const fila = (x, i) => {
+    const zona = deAmigos ? '' : i < rg.suben && x.xp > 0 ? 'sube' : rg.bajan && i >= act - rg.bajan && i < act ? 'baja' : '';
+    return `<div class="fila-rank ${x.yo ? 'yo' : ''} ${zona} ${x.xp > 0 ? '' : 'quieto'}" data-cuenta="${esc(x.cuenta)}"><span class="n">${i + 1}</span><span class="av" style="background:${colorMateria(x.cuenta)}">${esc((x.nombre || '?').charAt(0).toUpperCase())}</span><span class="nom">${esc(x.nombre)}${x.yo ? ' <small>(tú)</small>' : ''}</span>${deAmigos ? `<span class="mini-liga" title="Liga ${esc(ligaDe(x.liga).nombre)}">${trofeoSVG(x.liga | 0, { tam: 20 })}</span>` : ''}<span class="xp" title="${x.xp} XP">${ico('zap')}${xpCorto(x.xp)} XP</span></div>`;
+  };
+  let lista = '';
+  f.forEach((x, i) => {
+    if(!deAmigos && x.xp <= 0 && (i === 0 || f[i - 1].xp > 0) && i > 0) lista += `<div class="zona-rank quieta">Aún no estudian esta semana</div>`;
+    if(!deAmigos && rg.bajan && i === act - rg.bajan && i > 0) lista += `<div class="zona-rank baja">${ico('chevrons-down')}Zona para bajar${liga > 0 ? ' a ' + esc(LIGAS[liga - 1].nombre) : ''}</div>`;
+    lista += fila(x, i);
+    if(!deAmigos && rg.suben && i === rg.suben - 1 && x.xp > 0 && sig) lista += `<div class="zona-rank sube">${ico('chevrons-up')}Zona para subir a ${esc(sig.nombre)}</div>`;
+  });
+  if(deAmigos && f.length <= 1) lista += `<p class="vacio-am">Agrega amigos abajo y aquí compites con ellos aunque estén en otra liga.</p>`;
+  v.innerHTML = `<div class="liga-cab" style="margin-top:calc(16px + env(safe-area-inset-top))">
+      <div class="liga-trofeo">${trofeoSVG(liga, { tam: 62 })}</div>
+      <div class="liga-txt"><small>Liga</small><h1>${esc(L.nombre)}</h1><p>${ico('clock')}<span>Cierra en ${faltaCierre()}${sig && rg.suben ? ` · suben ${rg.suben}` : ''}${rg.bajan ? ` · bajan ${rg.bajan}` : ''}</span></p></div>
+    </div>
+    <div class="liga-fila" aria-label="Las diez ligas">${LIGAS.map((x, i) => `<span class="${i === liga ? 'aqui' : ''}" title="${esc(x.nombre)}">${trofeoSVG(i, { tam: 26, apagado: i > Math.max(liga, perfil.ligaMax | 0) })}</span>`).join('')}</div>
+    <p class="rank-frase">${esc(frase)}</p>
+    <div class="rank-tabs" role="tablist"><button role="tab" data-rtab="liga" aria-selected="${!deAmigos}">Mi liga</button><button role="tab" data-rtab="amigos" aria-selected="${deAmigos}">Amigos${(ranking.amigos || []).length > 1 ? ` · ${(ranking.amigos || []).length - 1}` : ''}</button></div>
+    <div class="ranking podio" id="rankLista">${lista}</div>
+    <p class="version" style="margin-top:14px">${ranking.semana ? `Semana ${esc((ranking.semana || '').split('-S')[1] || '')} · los primeros suben y los últimos bajan cada lunes` : ''}</p>`;
   /* si cambió el orden, cada fila se desliza de donde estaba a donde va */
   const ahora = f.map((x) => x.cuenta);
   if(ordenAnterior.length && ordenAnterior.join() !== ahora.join()){
     $$('.fila-rank', v).forEach((el) => { const antes = ordenAnterior.indexOf(el.dataset.cuenta), hoy = ahora.indexOf(el.dataset.cuenta); if(antes >= 0 && antes !== hoy) el.animate([{ transform: `translateY(${(antes - hoy) * 66}px)` }, { transform: 'none' }], { duration: 700, easing: 'cubic-bezier(.2,.9,.3,1)' }); });
   }
   ordenAnterior = ahora;
+  /* tu fila a la vista: si vas en el 20, la tabla baja sola hasta ti */
   amigos?.pintarSeccion();
+}
+document.addEventListener('click', (e) => {
+  const t = e.target.closest('[data-rtab]'); if(!t) return;
+  rankTab = t.dataset.rtab; guarda.poner('est.rankTab', rankTab); tono(SON.toque); ordenAnterior = []; pintarRanking();
+});
+/* el lunes: subiste, bajaste o te quedas, con tu trofeo y tu personaje reaccionando */
+function fiestaLiga(a){
+  return new Promise((listo) => {
+    const sube = a.resultado === 'sube', baja = a.resultado === 'baja';
+    const f = document.createElement('div'); f.className = 'fiesta fiesta-liga ' + a.resultado; f.setAttribute('role', 'dialog');
+    const titulo = sube ? `¡Subiste a la liga ${a.a}!` : baja ? `Bajaste a la liga ${a.a}` : `Te quedas en la liga ${a.a}`;
+    f.setAttribute('aria-label', titulo);
+    f.innerHTML = `<div class="liga-gira">${trofeoSVG(a.nueva, { tam: 150 })}</div><div class="liga-pj" id="ligaPj"></div><h1>${esc(titulo)}</h1>
+      <p>${sube ? `Quedaste en el lugar ${a.lugar} de ${a.n} y tu trofeo de ${esc(a.a)} ya está en tu vitrina.` : baja ? `Quedaste en el lugar ${a.lugar} de ${a.n}. Esta semana la recuperas.` : `Quedaste en el lugar ${a.lugar} de ${a.n}. Un empujón más y subes.`}</p><button class="bt blanco">Continuar</button>`;
+    document.body.append(f);
+    tono(sube ? SON.subir : baja ? SON.perdio : SON.fin); if(sube) confeti();
+    { const v = personajeVivo($('#ligaPj', f), { tam: 96 }); if(v) setTimeout(() => v.reaccionar(sube ? 'sube' : baja ? 'baja' : 'regular'), 500); }
+    $('button', f).addEventListener('click', () => { f.remove(); listo(); }); $('button', f).focus();
+  });
 }
 
 /* ══ 16 · PERFIL Y AJUSTES ════════════════════════════════════════════════ */
@@ -1613,10 +1697,10 @@ function pintarPerfil(){
   const v = $('#vPerfil'), ps = Object.values(planes);
   v.innerHTML = `<div class="perfil-cab"><span class="av">${esc((perfil.nombre || 'T').charAt(0).toUpperCase())}</span><div><h2>${esc(perfil.nombre || 'Tú')}</h2><small>${perfil.cuenta ? '@' + esc(perfil.cuenta) + ' · ' : ''}Instituto Rembrandt de Querétaro</small></div></div>
     <div class="stats">
-      <div class="stat"><span style="color:#FFB27A">${ico('flame')}</span><span><b>${perfil.racha || 0}</b><small>días de racha</small></span></div>
-      <div class="stat"><span style="color:var(--claro-txt)">${ico('zap')}</span><span><b>${perfil.xp || 0}</b><small>XP en total</small></span></div>
-      <div class="stat"><span style="color:#8EC5FF">${ico('snowflake')}</span><span><b>${perfil.congeladas || 0}</b><small>rachas congeladas</small></span></div>
-      <div class="stat"><span style="color:var(--oro)">${ico('medal')}</span><span><b>${perfil.mejorRacha || 0}</b><small>mejor racha</small></span></div></div>
+      <div class="stat"><span style="color:#FFB27A">${ico('flame')}</span><span><b>${xpCorto(perfil.racha)}</b><small>días de racha</small></span></div>
+      <div class="stat"><span style="color:var(--claro-txt)">${ico('zap')}</span><span><b>${xpCorto(perfil.xp)}</b><small>XP en total</small></span></div>
+      <div class="stat"><span style="color:#8EC5FF">${ico('snowflake')}</span><span><b>${xpCorto(perfil.congeladas)}</b><small>rachas congeladas</small></span></div>
+      <div class="stat"><span style="color:var(--oro)">${ico('medal')}</span><span><b>${xpCorto(perfil.mejorRacha)}</b><small>mejor racha</small></span></div></div>
     <div class="seccion-t">Tus planes</div><div class="resultados">${ps.map((p) => `<button data-abrir-plan="${esc(p.id)}">${ico('notebook-pen')}<span>${esc(p.titulo)}<small>${esc(cuandoTexto(p.fecha))} · ${avanceDe(p).pct} % · grado ${Math.floor(avanceDe(p).grado)}</small></span>${ico('chevron-right')}</button>`).join('') || '<p style="color:var(--tenue)">Todavía no tienes planes.</p>'}
       <button data-nuevo-plan>${ico('plus')}<span>Crear un plan</span></button><button data-anadir-plan>${ico('share-2')}<span>Añadir curso con link o código</span></button></div>
     <div class="seccion-t">Tu cuenta</div>
@@ -1709,7 +1793,7 @@ companero = iniciarCompanero({ sala, capa, cerrarCapa, hoja, cerrarHoja, esc, ic
 companero.pintarPastilla();
 yo = iniciarYo({ esc, ico, $, tono, SON, crearMascota, perfil: () => perfil, ajustes: () => ajustes, planes: () => planes,
   cuantosApuntes: () => apuntes?.cuantos?.() || 0, pintarCubos: (el) => { if(el) el.innerHTML = $('#pCubos')?.innerHTML || ''; },
-  svgPersonaje: (p) => vestidor.svgPersonaje(p), personajeVivo, abrirVestidor: () => vestidor.abrir(), abrirCompanero: () => companero.abrir() });
+  svgPersonaje: (p) => vestidor.svgPersonaje(p), personajeVivo, hoja, abrirVestidor: () => vestidor.abrir(), abrirCompanero: () => companero.abrir() });
 /* tu personaje vivo: el mismo del vestidor, con lo que te pusiste (personaje-vivo.js) */
 configurarPersonaje({ personaje: () => normalizarPersonaje(perfil.personaje || personajeDeArranque(perfil.cuenta || perfil.nombre || ''), perfil.ropa || [], perfil.cuenta || ''), svg: (p) => vestidor.svgPersonaje(p) });
 vestidor = iniciarVestidor({ sala, capa, cerrarCapa, hoja, cerrarHoja, esc, ico, tono, SON, vibrar, brindis, $, ponerPerfil, conAcceso, perfil: () => perfil });

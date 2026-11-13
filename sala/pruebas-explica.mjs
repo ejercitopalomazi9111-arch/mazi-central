@@ -62,12 +62,17 @@ const servidor = http.createServer((q, res) => {
 const base = `http://localhost:${servidor.address().port}`;
 const nav = await chromium.launch();
 const errores = [];
+let wikipediaPedida = false;
 async function abrir(ancho = 390, alto = 844, cursores = 'monton'){
   const ctx = await nav.newContext({ viewport: { width: ancho, height: alto }, deviceScaleFactor: process.env.FOTOS ? 2 : 1, hasTouch: true, serviceWorkers: 'block' });
   await ctx.addInitScript((c) => { try{ localStorage.setItem('explica.voz', '"no"'); localStorage.setItem('explica.cursores', JSON.stringify(c)); localStorage.setItem('salaLlave', 'x'); }catch{} }, cursores);
-  /* Wikipedia de mentiras: la foto es una del repo */
-  /* Wikipedia de mentiras: dice que el original mide 2000 px, pero la versión de 640 no existe (404): tiene que caer a la miniatura */
-  await ctx.route(/wikipedia\.org/, (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ title: 'Corazón humano', thumbnail: { source: `${base}/no-existe/320px-foto.webp` }, originalimage: { source: `${base}/urban-pest/web/img/planta.webp`, width: 2000 }, content_urls: { mobile: { page: 'https://es.wikipedia.org/wiki/Coraz%C3%B3n' } } }) }));
+  /* el banco de fotos verificadas, de mentiras: «Corazón humano» sí tiene foto (una del repo); lo demás no (sale el dibujo) */
+  await ctx.route(/banco-escuela/, async (r) => {
+    const u = new URL(r.request().url());
+    if(u.searchParams.get('buscar')) return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ bien: true, fotos: /coraz/i.test(u.searchParams.get('buscar')) ? [{ id: 'f1', titulo: 'Corazón humano' }] : [] }) });
+    return r.fulfill({ status: 200, contentType: 'image/webp', body: fs.readFileSync(path.join(raiz, 'urban-pest/web/img/planta.webp')) });
+  });
+  await ctx.route(/wikipedia\.org/, (r) => { wikipediaPedida = true; r.abort(); });
   const p = await ctx.newPage();
   p.on('pageerror', (e) => errores.push(e.message));
   p.on('console', (m) => { if(m.type() === 'error' && !/favicon|404/.test(m.text())) errores.push(m.text()); if(m.type() === 'warning' && /No pude armar/.test(m.text())) errores.push(m.text()); });
@@ -195,7 +200,8 @@ try{
     await abrirMas(p); ok(await p.isVisible('#bApuntes'), 'al terminar se pueden abrir los apuntes (en «más»)');
     /* la foto cargó aunque su primera dirección no existía */
     const foto0 = await p.evaluate(() => { const i = document.querySelector('#tablero .el.imagen img'); return i ? { ok: i.complete && i.naturalWidth > 0, src: i.src } : null; });
-    ok(foto0 && foto0.ok && /planta/.test(foto0.src), 'si la foto grande de Wikipedia no existe, carga la siguiente (no un recuadro vacío)');
+    ok(foto0 && foto0.ok && /^blob:/.test(foto0.src), 'la foto sale del banco de fotos verificadas');
+    ok(!wikipediaPedida, 'y ya no se le pide nada a Wikipedia');
     /* el cursor de quien explica no se queda plantado: al terminar se va por la orilla */
     await p.waitForTimeout(2200);
     const fuera = await p.evaluate(() => { const c = document.querySelector('#tablero .cur'); if(!c) return true; const r = c.getBoundingClientRect(), v = document.querySelector('#tablero').getBoundingClientRect(); return r.left < v.left - 5 || r.right > v.right + 5 || r.top < v.top - 5 || r.bottom > v.bottom + 5; });

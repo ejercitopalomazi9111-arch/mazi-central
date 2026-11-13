@@ -386,13 +386,17 @@ export const ELEMENTOS = {
     /* la foto entra «barriéndose» de izquierda a derecha detrás del cursor */
     img.style.clipPath = 'inset(0 100% 0 0)';
     t.push({ fase: 1, dur: 900, paso(k){ img.style.clipPath = `inset(0 ${f1((1 - k) * 100)}% 0 0)`; }, punto(k){ return [m.x + m.w * k, m.y + m.h * (.5 + Math.sin(k * 9) * .3)]; }, fin(){ img.style.clipPath = 'none'; } });
-    const sinFoto = () => { const mc = el.querySelector('.marco-img'); mc.classList.add('sin'); mc.innerHTML = `<span>No encontré una foto de «${esc(z.buscar)}» que cargue. Toca para buscarla:</span> <a href="https://es.wikipedia.org/w/index.php?search=${encodeURIComponent(z.buscar)}" target="_blank" rel="noopener">Wikipedia</a>`; };
+    /* sin foto verificada no se inventa: se dibuja (Carlos, 14 nov: «sólo imágenes del banco ya verificadas») */
+    const sinFoto = () => {
+      const mc = el.querySelector('.marco-img'); mc.classList.add('sin', 'dibujo');
+      const d = buscarDibujo(z.icono) || buscarDibujo(z.buscar) || buscarDibujo(String(z.buscar || '').split(/\s+/)[0]) || 'image';
+      if(DIBUJOS[d]) mc.innerHTML = `<svg viewBox="0 0 24 24" class="dib-foto" aria-hidden="true">${DIBUJOS[d]}</svg>`; else mc.style.display = 'none';
+      img.remove?.();
+    };
     buscarImagen(z.buscar).then((r) => {
       if(!r){ sinFoto(); return; }
-      /* si una dirección falla, se prueba la siguiente; si fallan todas, se dice (nunca un recuadro vacío) */
-      let i = 0;
-      img.onerror = () => { i++; if(r.fuentes && r.fuentes[i]) img.src = r.fuentes[i]; else sinFoto(); };
-      img.src = (r.fuentes && r.fuentes[0]) || r.src; el.querySelector('.credito').innerHTML = `Foto: <a href="${esc(r.pagina)}" target="_blank" rel="noopener">Wikipedia · ${esc(r.titulo)}</a>`;
+      img.onerror = sinFoto;
+      img.src = r.src; el.querySelector('.credito').textContent = r.credito || '';
     });
     return [...t, ...tareasTexto(el, svg, ctx)];
   } },
@@ -773,25 +777,15 @@ export function pertinente(buscado, j){
   if(m && !sinAcento(buscado).includes(m[1])) return false;
   return true;
 }
+/* De dónde salen las fotos: sólo del banco de La Sala, de las VERIFICADAS (carpeta «Escuela» y marcadas «lista»;
+   el servidor decide cuáles: sala/servidor/banco.js · fotoVerificada). Ya no de Wikipedia: ahí salió una foto de
+   otra cosa para «las trompas de Falopio» (14 nov). Quien usa el lienzo dice cómo pedirlas con ponerFuenteDeFotos. */
+let fuenteFotos = null;
+export function ponerFuenteDeFotos(f){ fuenteFotos = f; fotosVistas.clear(); }
 export function buscarImagen(titulo){
-  if(!titulo) return Promise.resolve(null);
+  if(!titulo || !fuenteFotos) return Promise.resolve(null);
   if(fotosVistas.has(titulo)) return fotosVistas.get(titulo);
-  const p = (async () => {
-    try{
-      const r = await fetch(`https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(String(titulo).replace(/ /g, '_'))}?redirect=true`, { headers: { accept: 'application/json' } });
-      if(!r.ok) return null;
-      const j = await r.json(), mini = j.thumbnail, orig = j.originalimage;
-      if(!(mini && mini.source) && !(orig && orig.source)) return null;
-      if(!pertinente(titulo, j)) return null;   /* en duda, mejor el dibujo que una foto equivocada */
-      /* varias direcciones, de la mejor a la más segura: la de 640 px SÓLO si el original es más grande
-         (si no, Wikimedia no la genera y la foto sale rota), luego la miniatura tal cual, luego el original */
-      const fuentes = [];
-      if(mini && mini.source && orig && orig.width >= 700 && /\/\d+px-/.test(mini.source)) fuentes.push(mini.source.replace(/\/(\d+)px-/, '/640px-'));
-      if(mini && mini.source) fuentes.push(mini.source);
-      if(orig && orig.source && !/\.svg$/i.test(orig.source) && (orig.width || 0) <= 2400) fuentes.push(orig.source);
-      return { src: fuentes[0], fuentes, titulo: j.title || titulo, pagina: (j.content_urls && j.content_urls.mobile && j.content_urls.mobile.page) || `https://es.wikipedia.org/wiki/${encodeURIComponent(titulo)}` };
-    }catch{ return null; }
-  })();
+  const p = Promise.resolve().then(() => fuenteFotos(titulo)).catch(() => null);
   fotosVistas.set(titulo, p); return p;
 }
 
