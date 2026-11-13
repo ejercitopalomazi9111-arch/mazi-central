@@ -147,6 +147,6 @@ suscripción de paga dará cubitos diarios por seguir la racha.
 
 ## 12 · Animación de entrada
 
-- [ ] Al abrir CARYMO, una entrada que se vea mamadora y den ganas de quedarse: el logo armándose, la
+- ✅ (`carymo/entrada.js`) Al abrir CARYMO, una entrada que se vea mamadora y den ganas de quedarse: el logo armándose, la
       mascota que llega. Una vez por sesión, que se pueda saltar con un toque y quieta con «reducir
       movimiento».

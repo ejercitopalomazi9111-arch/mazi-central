@@ -24,6 +24,7 @@ import { crearVoz, todas as todasLasVoces, VOZ_DE_FABRICA, despertar } from '../
 import { crearMascota, PERSONAJES, NOMBRE_PERSONAJE } from './mascota.js';
 import { iniciarAmigos } from './amigos.js';
 import { iniciarCompanero } from './companero.js';
+import { entrada } from './entrada.js';
 
 const $ = (s, d = document) => d.querySelector(s);
 const $$ = (s, d = document) => [...d.querySelectorAll(s)];
@@ -1492,6 +1493,8 @@ if(llave()){ amigos.arrancar(); setTimeout(() => { if(vista === 'plan' && !$('#c
 companero = iniciarCompanero({ sala, capa, cerrarCapa, hoja, cerrarHoja, esc, ico, tono, SON, vibrar, crearMascota, $, brindis, ponerPerfil,
   perfil: () => perfil, ajustes: () => ajustes, alCerrar: () => pintar() });
 companero.pintarPastilla();
+/* la entrada animada (una vez por visita; el telón ya está en el HTML) */
+entrada({ personaje: ajustes.mascota });
 $('#pCubos').addEventListener('click', () => companero.abrir());
 /* para las pruebas */
 window.__estudio = { companero: () => companero, amigos: () => amigos, estado: () => ({ planes, actualId, perfil, ranking, cola, vista }), avanceDe, normalizarLeccion, normalizarPlan, leerHorarioPegado, normalizarHorarioFoto };
