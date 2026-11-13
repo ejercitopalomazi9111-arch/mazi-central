@@ -63,7 +63,7 @@
   /* ══ armazón ══ */
   .app{ min-height:100dvh; padding-bottom:calc(76px + env(safe-area-inset-bottom)) }
   .vista{ max-width:560px; margin:0 auto; padding:0 16px }
-  .nav{ position:fixed; left:0; right:0; bottom:0; z-index:40; display:grid; grid-template-columns:repeat(7, minmax(0, 1fr)); padding:6px 4px calc(6px + env(safe-area-inset-bottom));
+  .nav{ position:fixed; left:0; right:0; bottom:0; z-index:40; display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); padding:6px 12px calc(6px + env(safe-area-inset-bottom));
     background:#170A26f2; backdrop-filter:blur(12px); border-top:1px solid var(--borde) }
   .nav button{ display:flex; flex-direction:column; align-items:center; gap:2px; min-height:52px; border:0; background:none; color:var(--tenue); font-size:11px; font-weight:700; border-radius:12px }
   .nav button .i{ width:24px; height:24px }
@@ -370,6 +370,30 @@
   .estrellas button{ border:0; background:none; width:48px; height:48px; color:var(--tenue); display:grid; place-items:center }
   .estrellas button .i{ width:36px; height:36px }
   .estrellas button.on{ color:var(--oro) } .estrellas button.on .i{ fill:var(--oro) }
+
+  /* ══ la pestaña Tú (yo.js) ══ */
+  .oculto{ position:absolute; top:0; left:0; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap }
+  .nav button{ font-size:12px }
+  .sub-barra{ position:sticky; top:0; z-index:30; display:flex; align-items:center; gap:10px; max-width:560px; margin:0 auto; padding:calc(8px + env(safe-area-inset-top)) 16px 6px; background:var(--fondo) }
+  .sub-volver{ display:inline-flex; align-items:center; gap:2px; min-height:44px; padding:0 14px 0 6px; border:0; border-radius:99px; background:var(--sup); color:var(--hueso); font:800 15px/1 Titulo } .sub-volver .i{ width:20px; height:20px }
+  .sub-barra + .vista, #subBarra:not([hidden]) ~ .vista{ padding-top:0 }
+  #vYo{ max-width:560px; margin:0 auto; padding:calc(18px + env(safe-area-inset-top)) 16px 110px }
+  .yo-cab{ display:flex; align-items:center; gap:14px; margin-bottom:14px }
+  .yo-pj{ position:relative; flex:none; width:92px; height:92px; padding:0; border:0; border-radius:50%; background:var(--sup); box-shadow:0 0 0 4px var(--fondo), 0 0 0 6px var(--claro) }
+  .yo-pj-dib, .yo-pj-dib svg{ display:block; width:100%; height:100%; border-radius:50% }
+  .yo-pj-lapiz{ position:absolute; right:-2px; bottom:-2px; width:30px; height:30px; display:grid; place-items:center; border-radius:50%; background:var(--vino); color:#fff; box-shadow:0 0 0 3px var(--fondo) } .yo-pj-lapiz .i{ width:15px; height:15px }
+  .yo-quien h2{ margin:0 0 8px; font:900 24px/1.1 Titulo }
+  .yo-chips{ display:flex; flex-wrap:wrap; gap:6px }
+  .yo-masc{ display:flex; align-items:center; gap:12px; width:100%; padding:8px 14px 8px 8px; margin-bottom:14px; border:0; border-radius:22px; background:linear-gradient(135deg, #3A1858, #2A1040); color:inherit; text-align:left; box-shadow:0 4px 0 #1c0b2c }
+  .yo-masc.baja{ background:linear-gradient(135deg, #5a1630, #3a0f22); box-shadow:0 4px 0 #2a0816 }
+  .yo-masc-dib{ flex:none; width:96px; height:96px; display:grid; place-items:center; color:var(--claro-txt) } .yo-masc-dib > .i{ width:40px; height:40px }
+  .yo-masc-txt{ flex:1; display:grid; gap:2px } .yo-masc-txt b{ font:800 17px/1.2 Titulo } .yo-masc-txt small{ color:var(--suave); font-size:14px }
+  .yo-masc.baja .yo-masc-txt small{ color:#FFB3C1 }
+  .yo-rejilla{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px }
+  .yo-bt{ display:grid; align-content:start; gap:10px; min-height:118px; padding:14px; border:0; border-radius:20px; background:var(--fondo-2); border:1px solid var(--borde); color:inherit; text-align:left; font:inherit }
+  .yo-bt b{ display:block; font:800 16px/1.2 Titulo } .yo-bt small{ display:block; margin-top:3px; color:var(--tenue); font-size:13px; line-height:1.3 }
+  .yo-ico{ width:40px; height:40px; display:grid; place-items:center; border-radius:13px; background:#AC27FF22; color:var(--claro-txt) } .yo-ico .i{ width:22px; height:22px }
+  .yo-bt:active, .yo-masc:active, .yo-pj:active{ transform:scale(.97) }
 
   /* ══ tu personaje (vestidor.js): Avataaars de Pablo Stanley, libre para uso comercial ══ */
   .av.con-pj{ padding:0; overflow:hidden; background:var(--sup) !important; font-size:0 }
@@ -712,6 +736,10 @@ try{ if(!/[?&]entrada=1/.test(location.search) && (sessionStorage.getItem('carym
     <div class="vista" id="planCuerpo"></div>
   </section>
 
+  <!-- ══ TÚ (yo.js): tu personaje, tu mascota y los botones a todo lo demás ══ -->
+  <section id="vYo" class="vista" hidden></section>
+  <!-- la barrita para regresar a «Tú» desde horario, apuntes, pizarrón, buscar y ajustes -->
+  <div class="sub-barra" id="subBarra" hidden><button class="sub-volver" data-ir="yo" aria-label="Regresar a Tú"><span data-ico="chevron-left"></span>Tú</button><span id="subTitulo" class="oculto"></span></div>
   <!-- ══ HORARIO ══ -->
   <section id="vHorario" class="vista" hidden></section>
   <!-- ══ BUSCAR ══ -->
@@ -725,14 +753,11 @@ try{ if(!/[?&]entrada=1/.test(location.search) && (sessionStorage.getItem('carym
   <section id="vPerfil" class="vista" hidden></section>
 </div>
 
+<!-- Tres y no siete (Carlos, 13 nov: «en lugar de tener 50 pestañitas en la parte de abajo, divídelo en 3») -->
 <nav class="nav" id="nav" aria-label="Secciones">
-  <button data-ir="plan" aria-current="page"><span data-ico="target"></span>Plan</button>
-  <button data-ir="horario"><span data-ico="calendar-days"></span>Horario</button>
-  <button data-ir="pizarron"><span data-ico="presentation"></span>Pizarrón</button>
-  <button data-ir="apuntes"><span data-ico="notebook-pen"></span>Apuntes</button>
-  <button data-ir="buscar"><span data-ico="search"></span>Buscar</button>
-  <button data-ir="ranking"><span data-ico="trophy"></span>Ranking</button>
-  <button data-ir="perfil"><span data-ico="user"></span>Perfil</button>
+  <button data-ir="plan" aria-current="page"><span data-ico="target"></span>Estudiar</button>
+  <button data-ir="ranking"><span data-ico="users"></span>Comunidad</button>
+  <button data-ir="yo"><span data-ico="user"></span>Tú</button>
 </nav>
 
 <div id="capas"></div>

@@ -42,7 +42,7 @@ await pg.waitForTimeout(800);
 const foto = async (nombre) => { if(process.env.FOTOS) await pg.screenshot({ path: `${process.env.FOTOS}/${nombre}.png` }); };
 
 console.log('El vestidor');
-await pg.click('[data-ir="perfil"]'); await pg.waitForTimeout(500);
+await pg.click('#nav [data-ir="yo"]').then(() => pg.click('#vYo [data-ir="perfil"]')); await pg.waitForTimeout(500);
 ok(await pg.locator('.perfil-cab .av svg').count() === 0, 'sin personaje, en tu perfil sigue la letra de siempre');
 await pg.click('[data-abrir-vestidor]');
 await pg.waitForSelector('#pjGrande svg', { timeout: 8000 });
@@ -87,7 +87,7 @@ ok(await pg.locator('.fila-rank[data-cuenta="carlos"] .av svg').count() === 1, '
 await foto('vest-5-ranking');
 
 console.log('Salir sin guardar');
-await pg.click('[data-ir="perfil"]'); await pg.waitForTimeout(300);
+await pg.click('#nav [data-ir="yo"]').then(() => pg.click('#vYo [data-ir="perfil"]')); await pg.waitForTimeout(300);
 await pg.click('[data-abrir-vestidor]'); await pg.waitForSelector('#pjGrande svg');
 await pg.click('[data-tab="fondo"]'); await pg.click('[data-parte="fondo"][data-valor="d69a2d"]');
 await pg.click('[data-v="cerrar"]'); await pg.waitForSelector('#pjSalir');

@@ -31,6 +31,7 @@ import { pedirSala, conAcceso } from '../sala/acceso.js';
 import { entrada } from './entrada.js';
 import { iniciarAvisos } from './avisos.js';
 import { iniciarVestidor } from './vestidor.js';
+import { iniciarYo, SUBVISTAS } from './yo.js';
 
 const $ = (s, d = document) => d.querySelector(s);
 const $$ = (s, d = document) => [...d.querySelectorAll(s)];
@@ -89,6 +90,7 @@ let amigos = null;   /* amigos.js; se arranca al final, cuando ya existe todo */
 let companero = null;   /* companero.js: el cuarto, el cuidado y la tienda de palomium */
 let avisos = null;   /* avisos.js: los recordatorios con notificación */
 let vestidor = null;   /* vestidor.js: tu personaje de perfil, su ropa y sus accesorios */
+let yo = null;   /* yo.js: la pestaña «Tú» */
 let cuentaUI = null, apuntes = null, sesionEst = null;   /* sesion.js: varios cursos y el pomodoro */   /* apuntes.js: la pestaña de Apuntes con el lápiz */   /* cuenta.js: crear cuenta y entrar, sin la llave de La Sala */
 const plan = () => planes[actualId] || null;
 const guardarLocal = () => { guarda.poner('est.planes', planes); guarda.poner('est.actual', actualId); };
@@ -397,9 +399,12 @@ function pintarCabeza(){
   $('#avanceExamen').textContent = d == null ? 'Sin fecha de examen' : d < 0 ? 'El examen ya pasó' : d === 0 ? 'El examen es HOY' : d === 1 ? 'El examen es mañana' : `El examen es en ${d} días`;
 }
 function pintar(){
-  for(const v of ['plan', 'horario', 'pizarron', 'apuntes', 'buscar', 'ranking', 'perfil']) $('#v' + v[0].toUpperCase() + v.slice(1)).hidden = v !== vista;
+  for(const v of ['plan', 'yo', 'horario', 'pizarron', 'apuntes', 'buscar', 'ranking', 'perfil']) $('#v' + v[0].toUpperCase() + v.slice(1)).hidden = v !== vista;
+  /* abajo sólo hay tres: lo de «Tú» enciende «Tú», con su barrita para regresar */
+  const pestana = SUBVISTAS[vista] ? 'yo' : vista;
+  $('#subBarra').hidden = !SUBVISTAS[vista]; if(SUBVISTAS[vista]) $('#subTitulo').textContent = SUBVISTAS[vista];
   if(vista === 'pizarron' && !$('#vPizarron iframe')){ const f = document.createElement('iframe'); f.title = 'El pizarrón'; f.allow = 'autoplay; clipboard-write'; f.src = EXPLICA + (location.search ? location.search + '&' : '?') + 'nombre=' + encodeURIComponent(perfil.nombre || ''); $('#vPizarron').append(f); }
-  $$('#nav button').forEach((b) => { if(b.dataset.ir === vista) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+  $$('#nav button').forEach((b) => { if(b.dataset.ir === pestana) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
   pintarCabeza();
   if(vista === 'plan') pintarPlan();
   if(vista === 'horario') pintarHorario();
@@ -407,6 +412,7 @@ function pintar(){
   if(vista === 'buscar') pintarBuscar();
   if(vista === 'ranking') pintarRanking();
   if(vista === 'perfil') pintarPerfil();
+  if(vista === 'yo') yo?.pintar();
   sesionEst?.alPintar();
 }
 /* sin cuenta: crear una o entrar (cuenta.js). La llave de La Sala sigue sirviendo para Carlos y Luis, pero ya
@@ -1562,8 +1568,9 @@ $('#vPerfil').addEventListener('change', (e) => {
 if(migrarAlArrancar){ for(const p of Object.values(planes)) if(migrarCamino(p)) porGuardar.add(p.id); guardarLocal(); }
 $$('[data-ico]').forEach((s) => { s.outerHTML = ico(s.dataset.ico); });
 /* cambiar de pestaña se desliza hacia el lado de la pestaña nueva (View Transitions donde existan) */
-const ORDEN_VISTAS = ['plan', 'horario', 'pizarron', 'buscar', 'ranking', 'perfil'];
-$('#nav').addEventListener('click', (e) => {
+const ORDEN_VISTAS = ['plan', 'ranking', 'yo', 'horario', 'apuntes', 'pizarron', 'buscar', 'perfil'];
+/* cualquier botón con data-ir: los tres de abajo, los de «Tú» y el de regresar */
+document.addEventListener('click', (e) => {
   const b = e.target.closest('[data-ir]'); if(!b || b.dataset.ir === vista) return;
   const dir = ORDEN_VISTAS.indexOf(b.dataset.ir) > ORDEN_VISTAS.indexOf(vista) ? 1 : -1;
   vista = b.dataset.ir; tono(SON.toque); vibrar(8);
@@ -1591,6 +1598,9 @@ sesionEst = iniciarSesionEstudio({ $, esc, ico, hoja, cerrarHoja, brindis, tono,
 companero = iniciarCompanero({ sala, capa, cerrarCapa, hoja, cerrarHoja, esc, ico, tono, SON, vibrar, crearMascota, $, brindis, ponerPerfil,
   perfil: () => perfil, ajustes: () => ajustes, alCerrar: () => pintar() });
 companero.pintarPastilla();
+yo = iniciarYo({ esc, ico, $, tono, SON, crearMascota, perfil: () => perfil, ajustes: () => ajustes, planes: () => planes,
+  cuantosApuntes: () => apuntes?.cuantos?.() || 0, pintarCubos: (el) => { if(el) el.innerHTML = $('#pCubos')?.innerHTML || ''; },
+  svgPersonaje: (p) => vestidor.svgPersonaje(p), abrirVestidor: () => vestidor.abrir(), abrirCompanero: () => companero.abrir() });
 vestidor = iniciarVestidor({ sala, capa, cerrarCapa, hoja, cerrarHoja, esc, ico, tono, SON, vibrar, brindis, $, ponerPerfil, conAcceso, perfil: () => perfil });
 /* tocar un aviso abre lo que dice: el cuarto del compañero o el plan del examen */
 avisos = iniciarAvisos({ sala, esc, ico, brindis, tono, SON,
@@ -1602,4 +1612,4 @@ entrada({ personaje: ajustes.mascota });
 $('#pCubos').addEventListener('click', () => companero.abrir());
 { const cod = codigoDe(location.search); if(cod){ history.replaceState(null, '', location.pathname); setTimeout(() => anadirCurso(cod), 3400); } }
 /* para las pruebas */
-window.__estudio = { vestidor: () => vestidor, avisos: () => avisos, companero: () => companero, amigos: () => amigos, estado: () => ({ planes, actualId, perfil, ranking, cola, vista }), avanceDe, normalizarLeccion, normalizarPlan, leerHorarioPegado, normalizarHorarioFoto };
+window.__estudio = { ir: (v) => { vista = v; pintar(); }, yo: () => yo, vestidor: () => vestidor, avisos: () => avisos, companero: () => companero, amigos: () => amigos, estado: () => ({ planes, actualId, perfil, ranking, cola, vista }), avanceDe, normalizarLeccion, normalizarPlan, leerHorarioPegado, normalizarHorarioFoto };

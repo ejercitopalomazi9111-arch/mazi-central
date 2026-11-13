@@ -96,7 +96,7 @@ export function iniciarCompanero(h){
     $('#barras', c).innerHTML = barra('hambre', 'Llenito', 'heart') + barra('limpieza', 'Limpio', 'sparkles') + barra('animo', 'Contento', 'party-popper');
     if(masc && primera){
       const accion = { feliz: 'saluda', normal: 'calma', hambre: 'triste', sucio: 'triste', triste: 'triste', 'muy-mal': 'triste' }[q];
-      setTimeout(() => masc.play(accion, { decir: azar(FRASES[q]), decirMs: 3200 }), 450);
+      setTimeout(() => masc?.play(accion, { decir: azar(FRASES[q]), decirMs: 3200 }), 450);
     }
     pintarTienda();
     pintarPastilla();

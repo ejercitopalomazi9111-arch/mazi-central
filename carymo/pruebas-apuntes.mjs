@@ -25,7 +25,7 @@ await pg.addInitScript(() => {
 });
 await pg.goto(`http://127.0.0.1:${PUERTO}/carymo/?servidor=http://localhost:1&sala=G`, { waitUntil: 'load' });
 await pg.waitForFunction(() => window.__estudio);
-await pg.click('#nav [data-ir="apuntes"]');
+await pg.click('#nav [data-ir="yo"]').then(() => pg.click('#vYo [data-ir="apuntes"]'));
 await pg.waitForSelector('.ap-card');
 
 console.log('Los apuntes que salen solos');

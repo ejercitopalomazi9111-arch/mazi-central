@@ -341,7 +341,7 @@ export async function correr({ ok, almacen, atenderEstudio }){
     ok((await pagina.textContent('#planNombre')) === 'Biología bloque 2', 'editar cambia el nombre del plan');
 
     /* horario pegado de Excel */
-    await pagina.click('[data-ir="horario"]');
+    await pagina.click('#nav [data-ir="yo"]').then(() => pagina.click('#vYo [data-ir="horario"]'));
     await pagina.click('#bPegarHorario');
     await pagina.fill('#pTxt', 'Hora\tLunes\tMartes\tMiércoles\tJueves\tViernes\n7:00-7:50\tFísica\tInglés\tFísica\tQuímica y Biología III\tTEC III\n7:50-8:40\tProgramación y BD\tReceso\tInglés\tFísica\tGeometría Analítica');
     await pagina.click('#pListo'); await espera(300);
@@ -418,7 +418,7 @@ export async function correr({ ok, almacen, atenderEstudio }){
     }
 
     /* perfil */
-    await pagina.click('[data-ir="perfil"]');
+    await pagina.click('#nav [data-ir="yo"]').then(() => pagina.click('#vYo [data-ir="perfil"]'));
     ok(/CARYMO/.test(await pagina.textContent('#vPerfil .version')), 'el perfil dice la versión de CARYMO');
     await pagina.fill('#pNombre', 'Palomazi'); await pagina.press('#pNombre', 'Tab'); await espera(400);
     ok(s.m.get('est:perfil:carlos').nombre === 'Palomazi', 'el nombre del perfil se guarda en La Sala');

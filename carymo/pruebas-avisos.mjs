@@ -56,7 +56,7 @@ async function pagina({ ua, permiso = 'granted', sinPush = false, buscar = '' } 
   await pg.waitForTimeout(500);
   return { pg, ctx, err };
 }
-const alPerfil = async (pg) => { await pg.click('[data-ir="perfil"]'); await pg.waitForSelector('#pAvisos'); await pg.waitForTimeout(400); };
+const alPerfil = async (pg) => { await pg.click('#nav [data-ir="yo"]').then(() => pg.click('#vYo [data-ir="perfil"]')); await pg.waitForSelector('#pAvisos'); await pg.waitForTimeout(400); };
 const foto = async (pg, nombre) => { if(process.env.FOTOS) await pg.locator('#pAvisos').screenshot({ path: `${process.env.FOTOS}/${nombre}.png` }); };
 
 console.log('Prender los avisos');
