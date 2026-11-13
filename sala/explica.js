@@ -102,8 +102,45 @@ const CATALOGO = `TIPOS DE "pizarra" (cada uno con sus campos):
 DIBUJOS que existen para "icono" (escribe el nombre tal cual): ${Object.keys(DIBUJOS).join(', ')}`;
 /* lo que Estudio (u otro) dice del alumno, para que la clase sea SUYA */
 const CONTEXTO = new URLSearchParams(location.search).get('contexto') || '';
+/* ── EL NOMBRE DE QUIEN ESTUDIA ──
+   Carlos, 13 nov: «a todos les dice Carlos en el pizarrón… no todos son Carlos, sólo yo». La instrucción
+   decía «la maestra particular de Carlos», y además las clases se guardan en la biblioteca para que
+   las reuse el siguiente: una clase hecha para Carlos le llegaba a otro con «Carlos» adentro.
+   Ahora la IA escribe {nombre} donde le hablaría por su nombre; se guarda así en la biblioteca y se
+   cambia por el nombre de quien la está viendo al pintarla y al decirla. El nombre sale del link
+   (?nombre=, lo manda CARYMO), del perfil de CARYMO o de cómo entró a La Sala, en ese orden. */
+export function nombreAlumno(){
+  const limpio = (x) => String(x || '').replace(/[{}<>]/g, '').trim().split(/\s+/)[0].slice(0, 24);
+  const vale = (x) => limpio(x) && !/^t[uú]$/i.test(limpio(x));
+  const q = new URLSearchParams(location.search).get('nombre'); if(vale(q)) return limpio(q);
+  try{ const p = JSON.parse(localStorage.getItem('est.perfil') || 'null'); if(p && limpio(p.nombre) && !/^t[uú]$/i.test(limpio(p.nombre))) return limpio(p.nombre); }catch{}
+  try{ const s = JSON.parse(localStorage.getItem('sala') || 'null'); if(s && limpio(s.nombre)) return limpio(s.nombre); }catch{}
+  return '';
+}
+/* cambia {nombre} en todos los textos de una clase; sin nombre, quita el vocativo con todo y su coma */
+export function conNombre(x, nombre = nombreAlumno()){
+  const poner = (t) => nombre ? t.replace(/\{nombre\}/g, nombre)
+    : t.replace(/,\s*\{nombre\}\s*,/g, ',').replace(/(^|[.!?¿¡]\s*)\{nombre\}\s*,\s*(\S)/g, (m, a, c) => a + c.toUpperCase())
+        .replace(/,\s*\{nombre\}(?=\s*[.!?])/g, '').replace(/\s*\{nombre\}\s*/g, ' ').replace(/\s+([.,!?])/g, '$1').trim();
+  if(typeof x === 'string') return poner(x);
+  if(Array.isArray(x)) return x.map((y) => conNombre(y, nombre));
+  if(x && typeof x === 'object'){ const o = {}; for(const [k, v] of Object.entries(x)) o[k] = conNombre(v, nombre); return o; }
+  return x;
+}
+/* lo guardado antes de esto trae «Carlos» escrito: se vuelve {nombre} al sacarlo de la biblioteca
+   (no se tocan «Carlos V», «Carlos Marx», etc.: sólo el Carlos suelto) */
+export const sinCarlos = (x) => typeof x === 'string' ? x.replace(/\bCarlos\b(?!\s+(?:[IVX]+\b|[A-ZÁÉÍÓÚ][a-záéíóú]))/g, '{nombre}')
+  : Array.isArray(x) ? x.map(sinCarlos) : x && typeof x === 'object' ? Object.fromEntries(Object.entries(x).map(([k, v]) => [k, sinCarlos(v)])) : x;
+/* y al revés, para guardarla en la biblioteca: el nombre de quien la vio vuelve a ser {nombre} */
+export function aPlantilla(x, nombre = nombreAlumno()){
+  if(!nombre) return x;
+  const re = new RegExp('(^|[^\\p{L}])' + nombre.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![\\p{L}])', 'gu');
+  const f = (t) => t.replace(re, '$1{nombre}');
+  return typeof x === 'string' ? f(x) : Array.isArray(x) ? x.map((y) => aPlantilla(y, nombre)) : x && typeof x === 'object' ? Object.fromEntries(Object.entries(x).map(([k, v]) => [k, aPlantilla(v, nombre)])) : x;
+}
+const normalizarConNombre = (x) => conNombre(normalizar(x));
 function sistema(motor, nivel, largo){
-  return `Eres ${NOMBRE[motor]}, la maestra particular de Carlos (Querétaro, México). Explicas en español de México, claro, cercano y sin relleno, con ejemplos de la vida diaria de un estudiante de prepa en México.
+  return `Eres ${NOMBRE[motor]}, maestra particular de un estudiante de prepa (Querétaro, México). Cuando le hables por su nombre (pocas veces, como lo haría una maestra), escribe exactamente {nombre}: la app lo cambia por el nombre de quien te está viendo. Nunca inventes ni escribas otro nombre para el alumno. Explicas en español de México, claro, cercano y sin relleno, con ejemplos de la vida diaria de un estudiante de prepa en México.
 Vas a dar una CLASE que se DIBUJA en un pizarrón infinito mientras hablas: varios cursores dibujan cada elemento, forma por forma y letra por letra.
 Contesta SÓLO con JSON válido, sin texto antes ni después, con esta forma:
 ${FORMA}
@@ -387,15 +424,15 @@ async function pedirClase(){
     if(tema && !fotos.length){
       const ya = await biblioteca({ accion: 'memoria', tipo: 'clase', materia: '', titulo: tema, nivel: nivelB });
       if(ya && ya.hallado && ya.hallado.datos){
-        try{ const c = normalizar(ya.hallado.datos); c.motor = ya.hallado.datos.motor || motor; c.tema = tema; c.id = Date.now().toString(36); c.fecha = Date.now(); c.deBiblioteca = true;
+        try{ const c = normalizarConNombre(sinCarlos(ya.hallado.datos)); c.motor = ya.hallado.datos.motor || motor; c.tema = tema; c.id = Date.now().toString(36); c.fecha = Date.now(); c.deBiblioteca = true;
           guardarHistorial(c); empezar(c); return; }catch{}
       }
     }
     const c = await pedirJSON({ motor, json: true, tope: 8000, sistema: sistema(motor, $('#nivel').value, largo) + (largo === 'fondo' ? '\n\nESTA ES LA PARTE 1 DE 2 de una clase a fondo: escribe los primeros pasos (los fundamentos y el mecanismo). La parte 2 (aplicaciones, casos, excepciones, errores comunes y cierre) se pide aparte; aquí deja "referencias" y "repaso" vacíos.' : ''),
-      mensajes: [{ de: 'tu', texto: tema ? `Explícame: ${tema}` : 'Explícame lo que dicen estas fotos de mis apuntes.' }], imagenes: fotos }, normalizar);
+      mensajes: [{ de: 'tu', texto: tema ? `Explícame: ${tema}` : 'Explícame lo que dicen estas fotos de mis apuntes.' }], imagenes: fotos }, normalizarConNombre);
     c.motor = motor; c.tema = tema; c.id = Date.now().toString(36); c.fecha = Date.now();
     guardarHistorial(c); empezar(c);
-    const guardarla = () => { if(tema && !fotos.length) biblioteca({ accion: 'recordar', tipo: 'clase', materia: '', titulo: tema, nivel: nivelB, datos: { titulo: c.titulo, visual: c.visual, pasos: c.pasos, referencias: c.referencias, repaso: c.repaso, motor } }); };
+    const guardarla = () => { if(tema && !fotos.length) biblioteca({ accion: 'recordar', tipo: 'clase', materia: '', titulo: tema, nivel: nivelB, datos: aPlantilla({ titulo: c.titulo, visual: c.visual, pasos: c.pasos, referencias: c.referencias, repaso: c.repaso, motor }) }); };
     if(largo === 'fondo') segundaParte(c, motor, tema).then(guardarla); else guardarla();
   }catch(e){
     ver('inicio'); aviso(e.message || String(e)); if(e.llave) $('#cajaLlave').hidden = false;
@@ -412,7 +449,7 @@ function segundaParte(c, motor, tema){
   const resumen = c.pasos.map((x, i) => `${i + 1}. ${x.voz}`).join('\n');
   return c.pendiente = pedirJSON({ motor, json: true, tope: 8000,
     sistema: sistema(motor, $('#nivel').value, 'fondo') + `\n\nESTA ES LA PARTE 2 DE 2. YA DISTE la parte 1 de «${c.titulo}»:\n${resumen}\n\nAhora escribe de 12 a 15 pasos NUEVOS que profundicen sin repetir: aplicaciones, casos reales, excepciones, comparaciones, errores comunes, cómo se conecta con otros temas y un cierre con un "resumen". El primero puede ser un "titulo" de sección. Incluye "referencias" y "repaso" (de 4 a 6 preguntas).`,
-    mensajes: [{ de: 'tu', texto: `Sigue con la parte 2 de: ${tema || c.titulo}` }] }, normalizar)
+    mensajes: [{ de: 'tu', texto: `Sigue con la parte 2 de: ${tema || c.titulo}` }] }, normalizarConNombre)
     .then((n2) => {
       if(clase !== c) return;
       c.pasos.push(...n2.pasos);
@@ -438,8 +475,8 @@ async function preguntar(q){
   try{
     const resumen = clase.pasos.map((p, i) => `${i + 1}. ${p.voz}`).join('\n');
     const nueva = await pedirJSON({ motor: clase.motor, json: true, tope: 6000,
-      sistema: sistema(clase.motor, $('#nivel').value, 'corta') + `\n\nYA DISTE esta clase («${clase.titulo}»):\n${resumen}\n\nAhora contesta la PREGUNTA de Carlos como una continuación de la clase: de 3 a 7 pasos nuevos con la misma forma JSON (el primero NO tiene que ser título). Puedes agregar referencias y repaso nuevos.`,
-      mensajes: [{ de: 'tu', texto: q }] }, normalizar), desde = clase.pasos.length;
+      sistema: sistema(clase.motor, $('#nivel').value, 'corta') + `\n\nYA DISTE esta clase («${clase.titulo}»):\n${resumen}\n\nAhora contesta la PREGUNTA del alumno como una continuación de la clase: de 3 a 7 pasos nuevos con la misma forma JSON (el primero NO tiene que ser título). Puedes agregar referencias y repaso nuevos.`,
+      mensajes: [{ de: 'tu', texto: q }] }, normalizarConNombre), desde = clase.pasos.length;
     clase.pasos.push({ voz: '', pregunta: q, pizarra: { tipo: 'titulo', texto: q.length > 70 ? q.slice(0, 68) + '…' : q, sub: 'Tu pregunta' } }, ...nueva.pasos);
     clase.referencias.push(...nueva.referencias.filter((r) => !clase.referencias.some((x) => x.titulo === r.titulo)));
     if(nueva.repaso.length) clase.repaso = nueva.repaso;

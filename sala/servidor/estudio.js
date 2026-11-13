@@ -24,6 +24,7 @@
 
    Sin `cloudflare:workers`: las pruebas cargan esto en Node.
    ═════════════════════════════════════════════════════════════════════════ */
+import { conEconomia, premiar, premiarUnaVez, cobrarNivel, estudioAnima, comprar, cuidar, PREMIOS, TIENDA, nivelDe, animoDe } from './palomium.js';
 export const MAX_PLAN = 1_500_000;
 const kPerfil = (c) => `est:perfil:${c}`;
 const kSem = (s) => `est:sem:${s}`;
@@ -50,7 +51,7 @@ export function semanaDe(dia){
 function perfilNuevo(cuenta){
   return { cuenta, nombre: cuenta.charAt(0).toUpperCase() + cuenta.slice(1), xp: 0, racha: 0, mejorRacha: 0, ultimoDia: '', congeladas: 0, horario: null, ids: [], t: 0 };
 }
-const publico = (p) => { const { ids, ...resto } = p; return resto; };
+const publico = (p) => { const { ids, premiados, ...resto } = p; return { ...resto, nivel: nivelDe(p.xp || 0), siente: p.cuidado ? animoDe(p.cuidado) : 'feliz' }; };
 
 /* la racha: qué pasa al estudiar el día `dia` */
 export function avanzarRacha(p, dia){
@@ -256,7 +257,7 @@ async function atenderSesion(storage, c, cuenta, perfil, ahora){
 export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.now()){
   cuenta = limpio(cuenta || 'invitado', 40).toLowerCase() || 'invitado';
   const hoy = diaMexico(ahora);
-  const perfil = (await storage.get(kPerfil(cuenta))) || perfilNuevo(cuenta);
+  const perfil = conEconomia((await storage.get(kPerfil(cuenta))) || perfilNuevo(cuenta), ahora);
   const indice = (await storage.get(kPlanes(cuenta))) || {};
 
   if(pedido.method === 'GET'){
@@ -266,6 +267,7 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
       if(!plan || indice[id]?.borrado) return Response.json({ error: 'Ese plan ya no existe.' }, { status: 404 });
       return Response.json({ bien: true, plan });
     }
+    if(url.searchParams.get('tienda')) return Response.json({ bien: true, tienda: TIENDA, premios: PREMIOS, perfil: publico(perfil) });
     return Response.json({ bien: true, hoy, perfil: publico(perfil), planes: Object.values(indice), ranking: await ranking(storage, semanaDe(hoy), { [cuenta]: perfil.nombre }), hora: ahora });
   }
   if(pedido.method !== 'POST') return Response.json({ error: 'Usa GET o POST.' }, { status: 405 });
@@ -321,7 +323,8 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
   if(c.accion === 'xp'){
     const eventos = (Array.isArray(c.eventos) ? c.eventos : [c]).slice(0, 50);
     const vistos = new Set(perfil.ids || []);
-    let suma = 0; const dijo = [];
+    let suma = 0; const dijo = [], premios = [];
+    const dar = (motivo, n) => { if(n) premios.push({ motivo, cubos: n, que: PREMIOS[motivo].que }); };
     for(const e of eventos){
       if(!e || !idValido(e.id) || vistos.has(e.id)) continue;
       const xp = Math.round(Number(e.xp));
@@ -330,17 +333,40 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
       if(Math.abs(aMs(dia) - aMs(hoy)) > 2 * DIA_MS) dia = hoy;
       vistos.add(e.id); perfil.ids = [...(perfil.ids || []), e.id].slice(-400);
       perfil.xp += xp; suma += xp;
-      for(const ev of avanzarRacha(perfil, dia)) dijo.push(ev);
+      for(const ev of avanzarRacha(perfil, dia)){
+        dijo.push(ev);
+        /* la racha de hoy paga 1; cada 7 días seguidos, 3 más */
+        if(ev === 'racha'){ dar('racha', premiar(perfil, 'racha', dia)); if(perfil.racha % 7 === 0) dar('semana', premiar(perfil, 'semana', dia)); }
+      }
+      /* lo que terminaste: la página dice QUÉ fue; cuánto vale y el tope del día lo pone el servidor */
+      if(['leccion', 'grado', 'plan'].includes(e.motivo)) dar(e.motivo, premiar(perfil, e.motivo, dia));
+      estudioAnima(perfil, xp);
       const sem = semanaDe(dia), tabla = (await storage.get(kSem(sem))) || {};
       tabla[cuenta] = { xp: (tabla[cuenta]?.xp || 0) + xp, nombre: perfil.nombre };
       await storage.put(kSem(sem), tabla);
     }
     if(c.nombre) perfil.nombre = limpio(c.nombre, 30) || perfil.nombre;
+    dar('nivel', cobrarNivel(perfil, hoy));
+    /* si estás en una sesión con alguien, lo que estudias cuenta para su marcador (y paga una vez por sesión) */
+    if(suma > 0){ const x = await sesionDe(storage, cuenta, ahora); if(x && x.estado === 'activa'){ x.xp[cuenta] = (x.xp[cuenta] || 0) + suma; await storage.put(kSes(x.id), x); dar('juntos', premiarUnaVez(perfil, 'juntos', 'juntos:' + x.id, hoy)); } }
     perfil.t = ahora;
     await storage.put(kPerfil(cuenta), perfil);
-    /* si estás en una sesión con alguien, lo que estudias cuenta para su marcador */
-    if(suma > 0){ const x = await sesionDe(storage, cuenta, ahora); if(x && x.estado === 'activa'){ x.xp[cuenta] = (x.xp[cuenta] || 0) + suma; await storage.put(kSes(x.id), x); } }
-    return Response.json({ bien: true, sumado: suma, eventos: [...new Set(dijo)], perfil: publico(perfil), ranking: await ranking(storage, semanaDe(hoy), { [cuenta]: perfil.nombre }) });
+    return Response.json({ bien: true, sumado: suma, premios, eventos: [...new Set(dijo)], perfil: publico(perfil), ranking: await ranking(storage, semanaDe(hoy), { [cuenta]: perfil.nombre }) });
+  }
+
+  /* ── la tienda y el cuarto de la mascota (palomium.js) ── */
+  if(c.accion === 'comprar' || c.accion === 'cuidar'){
+    const r = c.accion === 'comprar' ? comprar(perfil, String(c.item || ''), c.cuantos) : cuidar(perfil, String(c.que || ''), String(c.item || ''));
+    if(r.error) return Response.json({ ...r, perfil: publico(perfil) }, { status: 400 });
+    perfil.t = ahora; await storage.put(kPerfil(cuenta), perfil);
+    return Response.json({ ...r, perfil: publico(perfil) });
+  }
+  /* la mascota que elegiste y su voz (0, 1 o 2), para que al volver siga igual */
+  if(c.accion === 'mascota'){
+    if(typeof c.personaje === 'string' && /^[a-z]{1,20}$/.test(c.personaje)) perfil.mascota = c.personaje;
+    if(c.voz != null && typeof c.personaje === 'string' && /^[a-z]{1,20}$/.test(c.personaje)) perfil.voces[c.personaje] = Math.max(0, Math.min(2, Math.round(Number(c.voz)) || 0));
+    perfil.t = ahora; await storage.put(kPerfil(cuenta), perfil);
+    return Response.json({ bien: true, perfil: publico(perfil) });
   }
 
   /* ── nombre y horario ── */

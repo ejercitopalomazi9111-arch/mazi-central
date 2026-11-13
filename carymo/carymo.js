@@ -23,6 +23,7 @@ import { CURSOS, MATERIAL, HECHOS, planDeCurso } from './academia.js';
 import { crearVoz, todas as todasLasVoces, VOZ_DE_FABRICA, despertar } from '../sala/voces.js';
 import { crearMascota, PERSONAJES, NOMBRE_PERSONAJE } from './mascota.js';
 import { iniciarAmigos } from './amigos.js';
+import { iniciarCompanero } from './companero.js';
 
 const $ = (s, d = document) => d.querySelector(s);
 const $$ = (s, d = document) => [...d.querySelectorAll(s)];
@@ -65,6 +66,7 @@ const mascotaEn = (caja, op = {}) => (ajustes.mascota === 'no' || !caja) ? null 
 encenderSonidos(ajustes.sonido !== false);
 let vista = 'plan';
 let amigos = null;   /* amigos.js; se arranca al final, cuando ya existe todo */
+let companero = null;   /* companero.js: el cuarto, el cuidado y la tienda de palomium */
 const plan = () => planes[actualId] || null;
 const guardarLocal = () => { guarda.poner('est.planes', planes); guarda.poner('est.actual', actualId); };
 
@@ -298,6 +300,7 @@ async function mandarCola(){
       const ids = new Set(lote.map((x) => x.id)); cola = cola.filter((x) => !ids.has(x.id)); guarda.poner('est.cola', cola);
       const antes = posicion();
       ponerPerfil(r.perfil); ponerRanking(r.ranking);
+      companero?.premios(r);
       if(r.eventos.includes('congelada-ganada')) await fiestaHielo('Ganaste una racha congelada', 'Las rachas congeladas mantienen tu racha viva si un día no estudias.');
       if(r.eventos.includes('congelada-usada')) brindis('Usaste una racha congelada: tu racha sigue', '', 'snowflake');
       if(r.eventos.includes('racha') && r.perfil.racha > 1) brindis(`Racha de ${r.perfil.racha} días`, 'vino', 'flame');
@@ -310,7 +313,9 @@ async function mandarCola(){
   return mandando;
 }
 function posicion(){ const i = ranking.filas.findIndex((f) => f.yo); return i < 0 ? 0 : i + 1; }
-function ponerPerfil(p){ if(!p) return; perfil = { ...perfil, ...p }; delete perfil._localRacha; guarda.poner('est.perfil', perfil); pintarCabeza(); }
+function ponerPerfil(p){ if(!p) return; perfil = { ...perfil, ...p }; delete perfil._localRacha; guarda.poner('est.perfil', perfil); pintarCabeza(); companero?.pintarPastilla(); }
+/* un premio sin XP (subir de grado): el servidor decide cuántos cubitos vale */
+function encolarPremio(motivo){ cola.push({ id: 'x' + nuevoId(), xp: 0, dia: hoyLocal(), motivo }); guarda.poner('est.cola', cola); }
 function ponerRanking(r){ if(!r) return; ranking = { semana: r.semana, filas: r.filas.map((f) => ({ ...f, yo: f.cuenta === perfil.cuenta })) }; guarda.poner('est.ranking', ranking); if(vista === 'ranking') pintarRanking(); }
 
 /* ══ 5 · SINCRONÍA DE PLANES ══════════════════════════════════════════════ */
@@ -366,7 +371,7 @@ function pintarCabeza(){
 }
 function pintar(){
   for(const v of ['plan', 'horario', 'pizarron', 'buscar', 'ranking', 'perfil']) $('#v' + v[0].toUpperCase() + v.slice(1)).hidden = v !== vista;
-  if(vista === 'pizarron' && !$('#vPizarron iframe')){ const f = document.createElement('iframe'); f.title = 'El pizarrón'; f.allow = 'autoplay; clipboard-write'; f.src = EXPLICA + location.search; $('#vPizarron').append(f); }
+  if(vista === 'pizarron' && !$('#vPizarron iframe')){ const f = document.createElement('iframe'); f.title = 'El pizarrón'; f.allow = 'autoplay; clipboard-write'; f.src = EXPLICA + (location.search ? location.search + '&' : '?') + 'nombre=' + encodeURIComponent(perfil.nombre || ''); $('#vPizarron').append(f); }
   $$('#nav button').forEach((b) => { if(b.dataset.ir === vista) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
   pintarCabeza();
   if(vista === 'plan') pintarPlan();
@@ -988,7 +993,9 @@ async function completarNodo(p0, n, { xp = 0, mejor = 100, nota = 0 } = {}){
   requestAnimationFrame(() => { const act = document.querySelector('#planCuerpo .nodo.actual'); if(act){ const r = act.getBoundingClientRect(); if(r.top < 140 || r.bottom > innerHeight - 230) scrollTo({ top: scrollY + r.top - innerHeight * .38, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); } });
   const despues = avanceDe(p);
   const moneda = n.id && $(`.nodo[data-nodo="${n.id}"]`); if(moneda && !ya){ moneda.classList.add('recien'); setTimeout(() => tono(SON.moneda), 380); }
-  const subir = sumarXP(ya ? Math.round(xp / 3) : xp, n.tipo);
+  /* lo que terminaste, para los cubitos de palomium: el servidor pone cuánto vale y el tope del día */
+  if(Math.floor(despues.grado) > Math.floor(antes.grado)) encolarPremio('grado');
+  const subir = sumarXP(ya ? Math.round(xp / 3) : xp, ya ? '' : ({ quiz: 'leccion', simulacro: 'leccion', examen: 'plan' }[n.tipo] || ''));
   if(Math.floor(despues.grado) > Math.floor(antes.grado)){
     await espera(500); tono(SON.subir); brindis(`¡Subiste a grado ${Math.floor(despues.grado)}!`, 'oro', 'arrow-up');
   }
@@ -1086,7 +1093,7 @@ function abrirPizarra(p, n){
       vistos.length ? `Ya estudió: ${vistos.join(', ')}.` : '', costo.length ? `Le costó trabajo: ${costo.join(', ')}: refuérzalo con ejemplos.` : ''].filter(Boolean).join(' '));
   }
   c.innerHTML = `<div class="arriba"><button class="bt redondo fantasma" data-cerrar aria-label="Cerrar la clase">${ico('x')}</button><div style="flex:1;min-width:0"><small style="display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--claro-txt)">${unidad ? 'Panorama de la unidad' : n.id ? 'Cátedra' : 'Explícame'}</small><b style="font:800 16px/1.2 Titulo">${esc(n.titulo)}</b></div>${n.id ? `<button class="bt fuerte" data-vista>${ico('check')}Ya la vi</button>` : ''}</div>
-    <iframe title="Clase en el pizarrón" src="${EXPLICA}?${q}" allow="autoplay; clipboard-write"></iframe>`;
+    <iframe title="Clase en el pizarrón" src="${EXPLICA}?${q}&nombre=${encodeURIComponent(perfil.nombre || '')}" allow="autoplay; clipboard-write"></iframe>`;
   const alTerminar = (e) => { if(e.origin === location.origin && e.data && e.data.explica === 'fin' && n.id){ const b = $('[data-vista]', c); if(b){ b.classList.add('blanco'); b.textContent = 'Terminar'; brindis('Clase completa', '', 'presentation'); } } };
   addEventListener('message', alTerminar);
   c.addEventListener('click', (e) => {
@@ -1430,6 +1437,7 @@ function pintarPerfil(){
     <div class="seccion-t">Tú</div>
     <label class="ajuste">${ico('pencil')}<span>Tu nombre en el ranking</span><input id="pNombre" class="campo" style="max-width:150px;min-height:40px" value="${esc(perfil.nombre || '')}" aria-label="Tu nombre en el ranking"></label>
     <div class="seccion-t">Tu compañero</div>
+    <button class="bt fuerte ancho" data-abrir-companero style="margin-bottom:12px">${ico('house')}Su cuarto y la tienda</button>
     <div class="elige-masc" role="radiogroup" aria-label="Tu compañero">${[...PERSONAJES.map((k) => [k, NOMBRE_PERSONAJE[k]]), ['no', 'Ninguno']].map(([k, t]) => `<button role="radio" aria-checked="${ajustes.mascota === k}" data-masc="${k}">${k === 'no' ? ico('x') : `<span class="masc-mini" data-mini="${k}"></span>`}<span>${t}</span></button>`).join('')}</div>
     <div class="seccion-t">La voz que te explica</div>
     <div class="ajuste voz-aj">${ico('mic')}<span>Voz del pizarrón<small style="display:block;color:var(--tenue);font-weight:500">Las «de estudio» suenan como persona</small></span>
@@ -1447,7 +1455,8 @@ $('#vPerfil').addEventListener('click', (e) => {
   const p = e.target.closest('[data-abrir-plan]'); if(p){ actualId = p.dataset.abrirPlan; guardarLocal(); vista = 'plan'; pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 }); return; }
   if(e.target.closest('[data-nuevo-plan]')) alta();
   if(e.target.closest('[data-probar-voz]')) probarVoz();
-  const mb = e.target.closest('[data-masc]'); if(mb){ ajustes.mascota = mb.dataset.masc; guarda.poner('est.ajustes', ajustes); tono(SON.pop); pintarPerfil(); pintarPlan.saludo = false; }
+  const mb = e.target.closest('[data-masc]'); if(mb){ ajustes.mascota = mb.dataset.masc; guarda.poner('est.ajustes', ajustes); tono(SON.pop); pintarPerfil(); pintarPlan.saludo = false; if(llave()) sala({ accion: 'mascota', personaje: mb.dataset.masc }).catch(() => {}); }
+  if(e.target.closest('[data-abrir-companero]')){ companero.abrir(); return; }
 });
 $('#vPerfil').addEventListener('change', (e) => {
   if(e.target.id === 'pVoz'){ const v = e.target.value; guarda.poner('explica.voz', v); if(v !== 'no') guarda.poner('explica.vozAntes', v); tono(SON.toque); probarVoz(); return; }
@@ -1480,5 +1489,9 @@ amigos = iniciarAmigos({ sala, brindis, hoja, cerrarHoja, esc, ico, tono, SON, v
 pintar();
 sincronizar();
 if(llave()){ amigos.arrancar(); setTimeout(() => { if(vista === 'plan' && !$('#capa')) amigos.preguntarExamen(); }, 2500); }
+companero = iniciarCompanero({ sala, capa, cerrarCapa, hoja, cerrarHoja, esc, ico, tono, SON, vibrar, crearMascota, $, brindis, ponerPerfil,
+  perfil: () => perfil, ajustes: () => ajustes, alCerrar: () => pintar() });
+companero.pintarPastilla();
+$('#pCubos').addEventListener('click', () => companero.abrir());
 /* para las pruebas */
-window.__estudio = { amigos: () => amigos, estado: () => ({ planes, actualId, perfil, ranking, cola, vista }), avanceDe, normalizarLeccion, normalizarPlan, leerHorarioPegado, normalizarHorarioFoto };
+window.__estudio = { companero: () => companero, amigos: () => amigos, estado: () => ({ planes, actualId, perfil, ranking, cola, vista }), avanceDe, normalizarLeccion, normalizarPlan, leerHorarioPegado, normalizarHorarioFoto };

@@ -74,6 +74,38 @@
   .pastilla .i{ width:16px; height:16px }
   .pastilla.racha{ color:#FFB27A } .pastilla.racha.apagada{ color:var(--tenue) }
   .pastilla.xp{ color:var(--claro-txt) }
+  /* ══ palomium y el cuarto del compañero (companero.js, cosas.js) ══ */
+  .pastilla.cubos{ border:0; color:#E7CCFF; font:800 14px/1 Titulo; cursor:pointer; gap:5px }
+  .pastilla.cubos.aviso{ box-shadow:inset 0 0 0 2px #FF8A9E }
+  .pastilla.cubos.gana{ animation:ganaCubo .7s cubic-bezier(.3,1.6,.4,1) }
+  @keyframes ganaCubo{ 40%{ transform:scale(1.25) } }
+  .cubo-ico{ display:inline-grid; width:18px; height:18px; flex:none } .cubo-ico svg{ width:100%; height:100% }
+  .cubos-brindis{ flex-wrap:wrap; justify-content:center; text-align:center; row-gap:4px }
+  .cubos-brindis small{ flex-basis:100%; font:700 12px/1.2 Texto; opacity:.85 }
+  .cuarto{ position:relative; aspect-ratio:1 / .92; border-radius:24px; overflow:hidden; margin:4px 0 14px; box-shadow:0 0 0 1px #ffffff14, 0 18px 40px -22px #000 }
+  .cuarto .pared{ position:absolute; inset:0 0 34% 0; background:linear-gradient(#3A1858, #2A1040); }
+  .cuarto .pared::after{ content:""; position:absolute; inset:auto 0 0 0; height:12px; background:#4E0E22 }
+  .cuarto .ventana{ position:absolute; left:42%; top:9%; width:20%; aspect-ratio:1; border-radius:12px; background:linear-gradient(#5E8CDB, #A9C8F5); box-shadow:inset 0 0 0 5px #6E3B2A, 0 0 0 2px #4A2418 }
+  .cuarto .ventana::after{ content:""; position:absolute; left:50%; top:5px; bottom:5px; width:4px; margin-left:-2px; background:#6E3B2A }
+  .cuarto .piso{ position:absolute; inset:66% 0 0 0; background:repeating-linear-gradient(90deg, #6E3B2A 0 22%, #7C4632 22% 44%); }
+  .cuarto .muebles .mueble{ position:absolute; translate:-50% -50%; display:block; filter:drop-shadow(0 4px 4px #0006) } .mueble svg{ width:100%; height:auto; display:block }
+  .masc-cuarto{ position:absolute; left:50%; bottom:6%; translate:-50% 0; z-index:2 }
+  .barras-cuidado{ display:grid; gap:8px; margin-bottom:12px }
+  .barra-c{ display:grid; grid-template-columns:118px minmax(0, 1fr) 30px; align-items:center; gap:10px; font:700 14px/1 Texto }
+  .barra-c span{ display:flex; align-items:center; gap:6px } .barra-c .i{ width:16px; height:16px; color:var(--claro-txt) }
+  .barra-c > i{ display:block; height:10px; border-radius:5px; background:#ffffff1a; overflow:hidden } .barra-c > i > i{ display:block; height:100%; border-radius:5px; background:linear-gradient(90deg, #AC27FF, #C77DFF); transition:width .6s cubic-bezier(.2,.9,.3,1) }
+  .barra-c.baja > i > i{ background:linear-gradient(90deg, #C42A42, #FF6B7E) } .barra-c b{ text-align:right; color:var(--suave); font:800 13px/1 Titulo }
+  .acciones-cuidado{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px; margin-bottom:6px }
+  .acciones-cuidado .bt{ flex-direction:column; gap:4px; min-height:64px; font-size:13px; padding:8px 4px; text-align:center }
+  .grupo-t{ font:800 14px/1.2 Titulo; color:var(--suave); margin:14px 0 8px }
+  .tienda-g{ display:grid; grid-template-columns:repeat(auto-fill, minmax(104px, 1fr)); gap:8px }
+  .cosa{ display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 8px; border-radius:16px; background:var(--fondo-2); border:1px solid var(--borde); text-align:center; color:inherit; font:inherit }
+  .cosa-dib{ width:56px; height:56px } .cosa-dib svg{ width:100%; height:100% }
+  .cosa b{ font:800 13px/1.15 Titulo } .cosa small{ font-size:11.5px; color:var(--tenue); min-height:2.4em; line-height:1.2 }
+  .cosa .bt{ gap:4px; min-height:40px; width:100%; margin-top:auto } .cosa .bt[disabled]{ opacity:.45 } .cosa .bt.mini .cubo-ico{ display:inline-grid }
+  .cosa small:empty{ display:none }
+  .cosa.elegir{ cursor:pointer; min-height:44px }
+  .como-ganar{ margin:20px 0 28px; padding:14px 16px; border-radius:16px; background:#ffffff0a; color:var(--suave); font-size:14px } .como-ganar b{ color:var(--hueso); display:block; margin-bottom:4px }
   .avance{ max-width:560px; margin:8px auto 0 }
   .avance .barra{ position:relative; height:26px; border-radius:999px; background:var(--sup); overflow:hidden }
   .avance .barra i{ position:absolute; inset:0 auto 0 0; width:0; border-radius:999px; background:linear-gradient(90deg, var(--vino), var(--vino-2)); transition:width .8s cubic-bezier(.2,.8,.2,1) }
@@ -534,6 +566,7 @@
       <div class="fila">
         <button class="bt redondo fantasma" id="bMenuPlan" aria-label="Opciones del plan"></button>
         <button class="plan-nombre" id="bPlanes" aria-label="Cambiar de plan"><span id="planNombre"></span></button>
+        <button class="pastilla cubos" id="pCubos" aria-label="Cubitos de palomium"></button>
         <span class="pastilla racha" id="pRacha" aria-label="Racha"></span>
       </div>
       <div class="avance" id="avance">
