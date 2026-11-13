@@ -111,6 +111,16 @@ export async function correr({ ok, almacen, atenderEstudio }){
     await pagina.click('.siguiente [data-nodo]');
     await pagina.waitForSelector('.capa.pizarra iframe');
     const src = decodeURIComponent((await pagina.getAttribute('.capa.pizarra iframe', 'src')).replace(/\+/g, ' '));
+    /* la cabecera de «Ya la vi» se dobla sola para dejarle la pantalla al pizarrón, y se vuelve a abrir (Carlos, 13 nov) */
+    if(!catedra.revisada){
+      catedra.revisada = true;
+      await espera(4400);
+      ok(await pagina.evaluate(() => document.querySelector('.capa.pizarra').classList.contains('plegada')) && await pagina.isVisible('.piz-abrir') && await pagina.isHidden('[data-vista]'),
+        'a los 4 s la cabecera de la clase se dobla en una flechita y el pizarrón usa la pantalla');
+      if(process.env.FOTOS) await pagina.screenshot({ path: process.env.FOTOS + '/clase-plegada.png' });
+      await pagina.click('.piz-abrir'); await espera(200);
+      ok(await pagina.isVisible('[data-vista]'), 'la flechita la vuelve a abrir con «Ya la vi»');
+    }
     await pagina.click('[data-vista]'); await pagina.waitForSelector('.camino'); await espera(250);
     return src;
   }

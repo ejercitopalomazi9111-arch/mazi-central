@@ -1140,11 +1140,16 @@ function abrirPizarra(p, n){
     q.set('contexto', [`Prepara su ${p.titulo} (${cuandoTexto(p.fecha).toLowerCase()}).`, t && t.resumen ? `Este tema trata de: ${t.resumen}` : '', p.notas ? `Sus apuntes dicen: ${p.notas.slice(0, 400)}` : '',
       vistos.length ? `Ya estudió: ${vistos.join(', ')}.` : '', costo.length ? `Le costó trabajo: ${costo.join(', ')}: refuérzalo con ejemplos.` : ''].filter(Boolean).join(' '));
   }
-  c.innerHTML = `<div class="arriba"><button class="bt redondo fantasma" data-cerrar aria-label="Cerrar la clase">${ico('x')}</button><div style="flex:1;min-width:0"><small style="display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--claro-txt)">${unidad ? 'Panorama de la unidad' : n.id ? 'Cátedra' : 'Explícame'}</small><b style="font:800 16px/1.2 Titulo">${esc(n.titulo)}</b></div>${n.id ? `<button class="bt fuerte" data-vista>${ico('check')}Ya la vi</button>` : ''}</div>
-    <iframe title="Clase en el pizarrón" src="${EXPLICA}?${q}&nombre=${encodeURIComponent(perfil.nombre || '')}" allow="autoplay; clipboard-write"></iframe>`;
-  const alTerminar = (e) => { if(e.origin === location.origin && e.data && e.data.explica === 'fin' && n.id){ const b = $('[data-vista]', c); if(b){ b.classList.add('blanco'); b.textContent = 'Terminar'; brindis('Clase completa', '', 'presentation'); } } };
+  c.innerHTML = `<button class="piz-abrir" data-plegar aria-label="Ver título y opciones de la clase" aria-expanded="false">${ico('chevron-down')}</button><div class="arriba"><button class="bt redondo fantasma" data-cerrar aria-label="Cerrar la clase">${ico('x')}</button><div style="flex:1;min-width:0"><small style="display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--claro-txt)">${unidad ? 'Panorama de la unidad' : n.id ? 'Cátedra' : 'Explícame'}</small><b style="font:800 16px/1.2 Titulo">${esc(n.titulo)}</b></div>${n.id ? `<button class="bt fuerte" data-vista>${ico('check')}Ya la vi</button>` : ''}<button class="bt redondo fantasma" data-plegar aria-label="Esconder esta barra" aria-expanded="true">${ico('chevron-up')}</button></div>
+    <iframe title="Clase en el pizarrón" src="${EXPLICA}?${q}&en=capa&nombre=${encodeURIComponent(perfil.nombre || '')}" allow="autoplay; clipboard-write"></iframe>`;
+  /* LA CABECERA SE DOBLA (Carlos, 13 nov: «el de "sí, ya la vi"… que se pueda guardar como un menú desplegable… me quita espacio
+     preciado en teléfono»). Se dobla sola a los 4 s; la flechita de arriba la vuelve a abrir; al terminar la clase se abre sola. */
+  const plegar = (si) => { c.classList.toggle('plegada', si); $$('[data-plegar]', c).forEach((b) => b.setAttribute('aria-expanded', String(!si))); };
+  let tocoCabeza = false; setTimeout(() => { if(!tocoCabeza && c.isConnected) plegar(true); }, 4000);
+  const alTerminar = (e) => { if(e.origin === location.origin && e.data && e.data.explica === 'fin' && n.id){ plegar(false); const b = $('[data-vista]', c); if(b){ b.classList.add('blanco'); b.textContent = 'Terminar'; brindis('Clase completa', '', 'presentation'); } } };
   addEventListener('message', alTerminar);
   c.addEventListener('click', (e) => {
+    if(e.target.closest('[data-plegar]')){ tocoCabeza = true; plegar(!c.classList.contains('plegada')); tono(SON.toque); return; }
     if(e.target.closest('[data-cerrar]')){ removeEventListener('message', alTerminar); cerrarCapa(); pintar(); return; }
     if(e.target.closest('[data-vista]')){ removeEventListener('message', alTerminar); completarNodo(planes[p.id], n, { xp: unidad ? 15 : 12 }); }
   });

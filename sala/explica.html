@@ -190,6 +190,16 @@
   .sub-voz .ya{ color:#fff } .sub-voz .ahora{ color:var(--marca) }
   .barra-pasos{ height:4px; border-radius:2px; background:#ffffff18; margin-bottom:10px; overflow:hidden } .barra-pasos i{ display:block; height:100%; background:var(--violeta2); width:0; transition:width .3s }
   .botones{ display:flex; gap:8px; align-items:center } .botones .crece{ flex:1 }
+  .mas{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; padding-top:10px; border-top:1px solid #ffffff12 } .mas[hidden]{ display:none }
+  .mas .bt:not(.redondo){ min-height:44px; padding:0 12px; font-size:14px }
+  /* los tres que importan, al centro; «más» a la orilla */
+  .botones{ position:relative; justify-content:center } .botones .crece{ display:none } #bMas{ position:absolute; right:0; top:50% ; translate:0 -50% }
+  #bPlay{ width:56px; height:56px }
+  #bMas .i{ fill:currentColor; stroke:currentColor; stroke-width:2 } #bMas.activo{ background:#AC27FF33 }
+  /* dentro de un marco y con la clase corriendo: sin barra de arriba */
+  .embebido.en-clase .barra{ display:none }
+  .embebido #volver{ display:none }
+  .con-flecha .barra{ padding-left:64px }
   .preg{ display:flex; gap:8px; margin-top:10px } .preg input{ flex:1; min-width:0; min-height:44px; border-radius:12px; border:1px solid #ffffff22; background:#150E1E; padding:0 12px }
   @media (prefers-reduced-motion:reduce){ .pal, .lista li, .linea .ev, mark{ transition:none } }
 </style>
@@ -233,7 +243,7 @@
 
 <section id="vClase" class="clase" hidden>
   <div id="tablero" aria-label="Pizarrón: muévelo con el dedo y pellizca para acercarte"></div>
-  <div class="flotan"><button class="bt" id="bSeguir" hidden></button><button class="bt" id="bTodo" hidden></button><button class="bt" id="bDicho"></button><button class="bt" id="bApuntes"></button></div>
+  <div class="flotan"><button class="bt" id="bSeguir" hidden></button><button class="bt" id="bTodo" hidden></button></div>
 </section>
 
 <section id="vDicho" class="apuntes" hidden>
@@ -255,15 +265,41 @@
       <button class="bt redondo fuerte" id="bPlay" aria-label="Reproducir o pausar"></button>
       <button class="bt redondo" id="bSig" aria-label="Paso siguiente"></button>
       <span class="crece"></span>
+      <button class="bt redondo" id="bMas" aria-label="Más opciones" aria-expanded="false" aria-controls="mas"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+    </div>
+    <!-- Lo que no se cambia seguido, guardado (Carlos, 13 nov: «el mute y el tiempo pueden aparecer solamente cuando el usuario lo quiera»).
+         A la vista sólo atrás, play/pausa y siguiente. -->
+    <div class="mas" id="mas" hidden>
       <button class="bt redondo" id="bSub" aria-label="Subtítulos"></button>
       <button class="bt" id="bVel" aria-label="Velocidad">1×</button>
       <button class="bt redondo" id="bVoz" aria-label="Voz encendida o apagada"></button>
       <button class="bt redondo" id="bPreg" aria-label="Preguntar algo sobre esto"></button>
+      <button class="bt" id="bDicho"></button>
+      <button class="bt" id="bApuntes"></button>
     </div>
     <form class="preg" id="fPreg" hidden><input id="pregTxt" placeholder="Pregúntale algo sobre esto…" autocomplete="off"><button class="bt fuerte redondo" aria-label="Preguntar"></button></form>
   </div>
 </div>
 <script>
+  /* «más»: se abre y se cierra; se cierra solo al tocar el pizarrón */
+  (function(){
+    const b = document.getElementById('bMas'), m = document.getElementById('mas');
+    const poner = (si) => { m.hidden = !si; b.setAttribute('aria-expanded', String(si)); b.classList.toggle('activo', si); };
+    b.addEventListener('click', () => poner(m.hidden));
+    document.getElementById('tablero').addEventListener('pointerdown', () => poner(false));
+    m.addEventListener('click', (e) => { if(e.target.closest('#bDicho, #bApuntes')) poner(false); });
+  })();
+  /* DENTRO DE CARYMO (o de cualquier app que lo meta en un marco): mientras corre la clase, la barra de arriba
+     se va (la app ya trae su cabecera) y el pizarrón usa toda la pantalla. «Volver a La Sala» no tiene caso ahí. */
+  (function(){
+    if(window.top === window) return;
+    document.documentElement.classList.add('embebido');
+    /* CARYMO pone su flechita de cabecera arriba a la izquierda: aquí se le deja su hueco */
+    if(new URLSearchParams(location.search).get('en') === 'capa') document.documentElement.classList.add('con-flecha');
+    const c = document.getElementById('vClase');
+    const ver = () => document.documentElement.classList.toggle('en-clase', !c.hidden);
+    new MutationObserver(ver).observe(c, { attributes: true, attributeFilter: ['hidden'] }); ver();
+  })();
   /* la altura de la barra de arriba, para que el pizarrón empiece justo debajo */
   (function(){ const b = document.querySelector('.barra'); const poner = () => document.documentElement.style.setProperty('--barra-alto', b.offsetHeight + 'px'); poner(); new ResizeObserver(poner).observe(b); })();
 </script>
