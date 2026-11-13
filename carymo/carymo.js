@@ -63,7 +63,35 @@ let cola = guarda.leer('est.cola', []);                     /* XP por mandar */
 let ajustes = guarda.leer('est.ajustes', { sonido: true, vibrar: true });
 if(!ajustes.mascota) ajustes.mascota = 'tigre';
 /* la mascota (tigre o paloma, de las hojas de Carlos): acompaña, reacciona y festeja */
-const mascotaEn = (caja, op = {}) => (ajustes.mascota === 'no' || !caja) ? null : crearMascota(caja, { personaje: ajustes.mascota, ...op });
+/* las mascotas que hay en pantalla: la más reciente y visible es la que dice los avisos */
+const enPantalla = new Set();
+const mascotaEn = (caja, op = {}) => { if(ajustes.mascota === 'no' || !caja) return null; const m = crearMascota(caja, { personaje: ajustes.mascota, alDecir: decirConVoz, ...op }); enPantalla.add(m); return m; };
+/* ── LA VOZ DE CADA MASCOTA ──
+   Carlos, 13 nov: «que cada mascota tenga 3 variantes de voz; la que elijas se guarde para que cuando vuelvas
+   a entrar se mantenga». Son voces de estudio de La Sala (voces.js); si se acaba lo gratis, la del teléfono. */
+const VOCES_MASCOTA = {
+  tigre: ['nube:javier', 'nube:sirio', 'google:Puck'], paloma: ['nube:estrella', 'nube:selena', 'google:Aoede'],
+  pinguino: ['nube:aquila', 'nube:alvaro', 'google:Charon'], conejo: ['nube:celeste', 'nube:estrella', 'google:Kore'],
+  foca: ['nube:selena', 'nube:carina', 'google:Aoede'], ballena: ['nube:sirio', 'nube:aquila', 'google:Charon'],
+  gatito: ['nube:carina', 'nube:celeste', 'google:Kore'], perrito: ['nube:javier', 'nube:alvaro', 'google:Puck'],
+};
+const vozDeMascota = (q = ajustes.mascota) => { const vs = VOCES_MASCOTA[q] || VOCES_MASCOTA.tigre; const i = (perfil.voces && Number.isFinite(perfil.voces[q])) ? perfil.voces[q] : ((ajustes.vozMascota || {})[q] ?? 0); return vs[Math.max(0, Math.min(2, i))]; };
+const nombreVoz = (id) => { const v = todasLasVoces().find((x) => x.id === id); return v ? `${v.nombre} · ${v.desc.split(' · ')[0]}` : ''; };
+let vozMascota = null;
+function decirConVoz(texto, q){
+  if(ajustes.mascotaHabla === false || !texto || !llave()) return;
+  vozMascota ||= crearVoz({ pedir: async (c) => (await llamar(`${SERVIDOR}/api/sala/${SALA}/ia-voz`, { metodo: 'POST', cuerpo: c, espera: 30000 })).json().catch(() => ({})) });
+  Promise.resolve(vozMascota.decir(texto, vozDeMascota(q || ajustes.mascota))).catch(() => {});
+}
+/* que el aviso lo diga la mascota que está a la vista (con su modo); si no hay ninguna, el letrerito de siempre */
+function dice(frase, accion = 'bien', { si = null } = {}){
+  for(const m of [...enPantalla].reverse()){
+    if(!m.el.isConnected){ enPantalla.delete(m); continue; }
+    const r = m.el.getBoundingClientRect();
+    if(r.bottom > 0 && r.top < innerHeight && r.width){ m.play(accion, { decir: frase, decirMs: 3000 }); return true; }
+  }
+  if(si) si(); return false;
+}
 encenderSonidos(ajustes.sonido !== false);
 let vista = 'plan';
 let amigos = null;   /* amigos.js; se arranca al final, cuando ya existe todo */
@@ -304,7 +332,7 @@ async function mandarCola(){
       companero?.premios(r);
       if(r.eventos.includes('congelada-ganada')) await fiestaHielo('Ganaste una racha congelada', 'Las rachas congeladas mantienen tu racha viva si un día no estudias.');
       if(r.eventos.includes('congelada-usada')) brindis('Usaste una racha congelada: tu racha sigue', '', 'snowflake');
-      if(r.eventos.includes('racha') && r.perfil.racha > 1) brindis(`Racha de ${r.perfil.racha} días`, 'vino', 'flame');
+      if(r.eventos.includes('racha') && r.perfil.racha > 1){ const n = r.perfil.racha; dice(`¡Llevamos ${n} días seguidos! No le aflojes.`, 'festeja', { si: () => brindis(`Racha de ${n} días`, 'vino', 'flame') }); }
       const despues = posicion();
       if(antes && despues && despues < antes) brindis(`Subiste al lugar ${despues} del ranking`, 'oro', 'trophy');
       return r;
@@ -998,10 +1026,14 @@ async function completarNodo(p0, n, { xp = 0, mejor = 100, nota = 0 } = {}){
   if(Math.floor(despues.grado) > Math.floor(antes.grado)) encolarPremio('grado');
   const subir = sumarXP(ya ? Math.round(xp / 3) : xp, ya ? '' : ({ quiz: 'leccion', simulacro: 'leccion', examen: 'plan' }[n.tipo] || ''));
   if(Math.floor(despues.grado) > Math.floor(antes.grado)){
-    await espera(500); tono(SON.subir); brindis(`¡Subiste a grado ${Math.floor(despues.grado)}!`, 'oro', 'arrow-up');
+    await espera(500); tono(SON.subir); const g = Math.floor(despues.grado);
+    dice(`¡Subimos a grado ${g}! Vamos que vamos.`, 'festeja', { si: () => brindis(`¡Subiste a grado ${g}!`, 'oro', 'arrow-up') });
   }
   const etiqueta = { quiz: '¡Nivel completado!', tarjetas: '¡Tarjetas dominadas!', pizarra: '¡Cátedra vista!', panorama: '¡Panorama visto!', simulacro: '¡Simulacro listo!', examen: '¡Repaso logrado!' }[tipoVisto(n)];
-  if(!ya && etiqueta) setTimeout(() => brindis(etiqueta, '', 'circle-check'), 350);
+  /* lo mismo, dicho por la mascota y con su modo (Carlos: «en lugar de tan formal, que sea ella misma explicándote») */
+  const suyo = { quiz: ['¡Ese nivel ya es nuestro!', '¡Bien! Uno menos.', '¡Así se hace!'], tarjetas: ['¡Te las sabes todas!', '¡Tarjetas dominadas, crack!'], pizarra: ['Ya con eso entiendes el tema.', '¡Buena clase! Ahora a practicar.'],
+    panorama: ['Ya viste el panorama: ahora tema por tema.'], simulacro: ['¡Simulacro listo! Ya casi.'], examen: ['¡Repaso logrado! Vas listo.'] }[tipoVisto(n)];
+  if(!ya && etiqueta) setTimeout(() => dice(suyo[Math.floor(Math.random() * suyo.length)], 'bien', { si: () => brindis(etiqueta, '', 'circle-check') }), 650);
   if(despues.grado >= 10 && antes.grado < 10) setTimeout(() => fiestaGrado(), 900);
   precargar(p);
   await subir;
@@ -1440,6 +1472,9 @@ function pintarPerfil(){
     <div class="seccion-t">Tu compañero</div>
     <button class="bt fuerte ancho" data-abrir-companero style="margin-bottom:12px">${ico('house')}Su cuarto y la tienda</button>
     <div class="elige-masc" role="radiogroup" aria-label="Tu compañero">${[...PERSONAJES.map((k) => [k, NOMBRE_PERSONAJE[k]]), ['no', 'Ninguno']].map(([k, t]) => `<button role="radio" aria-checked="${ajustes.mascota === k}" data-masc="${k}">${k === 'no' ? ico('x') : `<span class="masc-mini" data-mini="${k}"></span>`}<span>${t}</span></button>`).join('')}</div>
+    ${ajustes.mascota !== 'no' ? `<div class="seccion-t">La voz de tu ${esc((NOMBRE_PERSONAJE[ajustes.mascota] || '').toLowerCase())}</div>
+    <div class="voces-masc" role="radiogroup" aria-label="Voz de tu mascota">${[0, 1, 2].map((i) => `<button role="radio" aria-checked="${(VOCES_MASCOTA[ajustes.mascota] || [])[i] === vozDeMascota()}" data-voz-masc="${i}">${ico('volume-2')}<span>Voz ${i + 1}<small>${esc(nombreVoz((VOCES_MASCOTA[ajustes.mascota] || [])[i]))}</small></span></button>`).join('')}</div>
+    <label class="ajuste">${ico('message-circle')}<span>Que tu mascota hable en voz alta</span><input type="checkbox" id="pHabla" ${ajustes.mascotaHabla === false ? '' : 'checked'}></label>` : ''}
     <div class="seccion-t">La voz que te explica</div>
     <div class="ajuste voz-aj">${ico('mic')}<span>Voz del pizarrón<small style="display:block;color:var(--tenue);font-weight:500">Las «de estudio» suenan como persona</small></span>
       <select id="pVoz" class="campo" style="max-width:170px;min-height:40px" aria-label="Voz del pizarrón">${opcionesVoz()}</select>
@@ -1458,8 +1493,22 @@ $('#vPerfil').addEventListener('click', (e) => {
   if(e.target.closest('[data-probar-voz]')) probarVoz();
   const mb = e.target.closest('[data-masc]'); if(mb){ ajustes.mascota = mb.dataset.masc; guarda.poner('est.ajustes', ajustes); tono(SON.pop); pintarPerfil(); pintarPlan.saludo = false; if(llave()) sala({ accion: 'mascota', personaje: mb.dataset.masc }).catch(() => {}); }
   if(e.target.closest('[data-abrir-companero]')){ companero.abrir(); return; }
+  const vm = e.target.closest('[data-voz-masc]');
+  if(vm){
+    const i = +vm.dataset.vozMasc, q = ajustes.mascota; despertar();
+    ajustes.vozMascota = { ...(ajustes.vozMascota || {}), [q]: i }; guarda.poner('est.ajustes', ajustes);
+    perfil.voces = { ...(perfil.voces || {}), [q]: i }; guarda.poner('est.perfil', perfil);
+    if(llave()) sala({ accion: 'mascota', personaje: q, voz: i }).then((r) => ponerPerfil(r.perfil)).catch(() => {});
+    document.querySelectorAll('[data-voz-masc]').forEach((b) => b.setAttribute('aria-checked', String(b === vm)));
+    const nom = (perfil.nombre && perfil.nombre !== 'Tú') ? perfil.nombre.split(' ')[0] : '';
+    const frase = `¡Hola${nom ? ', ' + nom : ''}! ¿Así te gusta mi voz?`;
+    const m = [...enPantalla].reverse().find((x) => x.el.isConnected);
+    if(m) m.play('saluda', { decir: frase }); else decirConVoz(frase, q);
+    return;
+  }
 });
 $('#vPerfil').addEventListener('change', (e) => {
+  if(e.target.id === 'pHabla'){ ajustes.mascotaHabla = e.target.checked; guarda.poner('est.ajustes', ajustes); tono(SON.toque); return; }
   if(e.target.id === 'pVoz'){ const v = e.target.value; guarda.poner('explica.voz', v); if(v !== 'no') guarda.poner('explica.vozAntes', v); tono(SON.toque); probarVoz(); return; }
   if(e.target.id !== 'pNombre') return;
   const n = e.target.value.trim().slice(0, 30); if(!n) return;

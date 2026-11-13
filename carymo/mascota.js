@@ -385,6 +385,7 @@ export function crearMascota(caja, op = {}){
     clearTimeout(globoT);
     if(!texto){ globo.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 150, fill: 'forwards' }); return; }
     globo.textContent = texto;
+    op.alDecir && op.alDecir(texto, quien);   /* carymo.js lo dice en voz alta con la voz que elegiste para esta mascota */
     globo.animate([{ opacity: 0, transform: 'translateY(6px) scale(.8)' }, { opacity: 1, transform: 'translateY(0) scale(1.04)', offset: .7 }, { opacity: 1, transform: 'none' }],
       { duration: 260, easing: 'cubic-bezier(.3,1.5,.4,1)', fill: 'forwards' });
     globoT = setTimeout(() => decir(''), ms);

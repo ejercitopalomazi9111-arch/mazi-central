@@ -569,6 +569,11 @@
   .elige-masc button:active{ transform:scale(.94) }
   .elige-masc .masc-mini{ display:grid; place-items:center; height:70px; pointer-events:none }
   .elige-masc .i{ width:30px; height:30px; margin:17px 0 }
+  /* las 3 voces de la mascota */
+  .voces-masc{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px; margin-bottom:10px }
+  .voces-masc button{ display:grid; justify-items:center; gap:4px; padding:10px 6px; min-height:64px; border-radius:16px; border:2px solid #ffffff1a; background:#ffffff0d; color:inherit; font:800 14px/1.2 Titulo; text-align:center }
+  .voces-masc button[aria-checked="true"]{ border-color:var(--claro, #AC27FF); background:#AC27FF22 }
+  .voces-masc .i{ width:20px; height:20px; color:var(--claro-txt) } .voces-masc small{ display:block; font:700 11.5px/1.25 Texto; color:var(--tenue); margin-top:2px }
   @media (prefers-reduced-motion:reduce){ *, *::before, *::after{ animation-duration:.01ms!important; animation-iteration-count:1!important; transition-duration:.01ms!important } }
 </style>
 </head>

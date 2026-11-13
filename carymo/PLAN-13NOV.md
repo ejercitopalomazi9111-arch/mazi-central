@@ -42,9 +42,11 @@ como Duolingo, en `carymo/mascota.js`.
 - ✅ Ballena.
 - ✅ Gatito.
 - ✅ Perrito.
-- [ ] **3 voces por mascota**. La elegida se guarda en el perfil, así que al volver a entrar sigue la misma.
-- [ ] **La mascota dice las cosas** (si está prendida): avisos, resultados y ánimo, con su modo, no formal.
+- ✅ **3 voces por mascota**. La elegida se guarda en el perfil, así que al volver a entrar sigue la misma.
+- ✅ **La mascota dice las cosas** (si está prendida): avisos, resultados y ánimo, con su modo, no formal.
       Si está apagada, el texto normal.
+      Hecho: `VOCES_MASCOTA` y `dice()` en `carymo/carymo.js`. Lo que dice en su globo lo dice en voz alta (se puede apagar en Perfil).
+      Hoy dice el nivel completado, el grado, la racha y lo de su cuarto. Falta pasarle más avisos (los de la lección y los errores).
 
 **Hecho (Luna):** los 7 viven en `carymo/zoo.js` (la paloma de ahí reemplaza a la vieja) y se eligen en el perfil.
 
