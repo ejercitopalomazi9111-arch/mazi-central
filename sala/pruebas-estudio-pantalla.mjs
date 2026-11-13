@@ -350,6 +350,53 @@ export async function correr({ ok, almacen, atenderEstudio }){
     ok(await pagina.isVisible('text=para llegar a la cima'), 'dice cuántos lugares faltan');
     await foto('13-ranking');
 
+    /* amigos: Luis tiene la app abierta, lo agrego, me invita a estudiar juntos, y al final «¿cómo te fue?» */
+    {
+      const como = (cuenta, cuerpo) => atenderEstudio(s, new Request('http://x/estudio', { method: 'POST', body: JSON.stringify(cuerpo) }), new URL('http://x/estudio'), cuenta, Date.now()).then((x) => x.json());
+      await como('luis', { accion: 'perfil', nombre: 'Luis' }); await como('luis', { accion: 'latido', estado: 'estudiando', materia: 'Física' });
+      await pagina.evaluate(() => window.__estudio.amigos().latido()); await espera(400);
+      ok(await pagina.isVisible('#secAmigos') && /Luis/.test(await pagina.textContent('#secAmigos')) && /estudiando Física/.test(await pagina.textContent('#secAmigos')), 'en Ranking salen los que tienen la app abierta, y qué están estudiando');
+      ok(await pagina.isVisible('[data-am="invitar"][data-cuenta="luis"]'), '…con «Estudiar juntos» a la mano');
+      await pagina.click('[data-am="amistad"][data-cuenta="luis"]'); await espera(400);
+      ok(((await s.get('est:amigos:luis')) || {}).pide?.includes('carlos'), 'tocar «Agregar» le manda la solicitud');
+      await como('luis', { accion: 'amistad', a: 'carlos' }); await como('luis', { accion: 'latido' });
+      await pagina.evaluate(() => window.__estudio.amigos().latido()); await espera(500);
+      ok(/ya es tu amigo/.test(await pagina.textContent('#brindis')), 'cuando acepta, llega el aviso');
+      ok(await pagina.isVisible('[data-am="felicita"][data-cuenta="luis"]'), 'y sale en «Tus amigos» con Felicitar y Saludar');
+      await foto('14-amigos');
+      await como('luis', { accion: 'latido' });
+      const inv = await como('luis', { accion: 'invitar', a: 'carlos', minutos: 15 });
+      ok(inv.bien, 'Luis me invita a estudiar 15 minutos');
+      await pagina.evaluate(() => window.__estudio.amigos().latido());
+      await pagina.waitForSelector('#invSi', { timeout: 5000 });
+      ok(/Luis te invita a estudiar juntos/.test(await pagina.textContent('#hoja')), 'me llega la invitación, con la mascota');
+      await foto('15-invitacion');
+      await pagina.click('#invSi'); await espera(600);
+      ok(await pagina.isVisible('#barraSesion') && /1[45]:\d\d/.test(await pagina.textContent('#barraSesion')), 'al aceptar sale la barra con el cronómetro corriendo');
+      await como('luis', { accion: 'xp', eventos: [{ id: 'lx1', xp: 12, dia: diaMexico(Date.now()) }] });
+      await pagina.evaluate(() => window.__estudio.amigos().latido()); await espera(1200);
+      ok(/Luis 12/.test(await pagina.textContent('#barraSesion')), 'el marcador muestra lo que va juntando el otro');
+      await foto('16-sesion');
+      await pagina.click('[data-salir-ses]'); await pagina.click('[data-salir-ses]'); await espera(500);
+      ok(/Ganó Luis/.test(await pagina.textContent('#hoja')) && await pagina.isVisible('#sesFelicita'), 'al salir sale quién ganó y el botón de felicitarlo');
+      await pagina.click('#sesFelicita'); await espera(400);
+      ok(((await s.get('est:buzon:luis')) || []).some((m) => m.tipo === 'felicita' && m.de === 'carlos'), 'la felicitación le llega');
+      ok(await desborde() <= 0, 'amigos y la barra no se salen de lado');
+      /* «¿cómo te fue?» después de la fecha del examen */
+      await pagina.evaluate(() => { const st = window.__estudio.estado(); const p = st.planes[st.actualId]; p.fecha = '2026-01-10'; });
+      await pagina.click('[data-ir="plan"]'); await espera(300);
+      await pagina.evaluate(() => window.__estudio.amigos().preguntarExamen()); await espera(300);
+      ok(/¿Cómo te fue en/.test(await pagina.textContent('#hoja')), 'pasada la fecha del examen, pregunta cómo te fue');
+      await pagina.click('[data-como="bien"]'); await pagina.fill('#exCalif', '8.7'); await foto('17-como-te-fue');
+      await pagina.click('#exListo'); await espera(500);
+      const ex = (await s.get('est:examenes:carlos')) || [];
+      ok(ex.length === 1 && ex[0].como === 'bien' && ex[0].calif === 8.7, 'se guarda en tu historial con la calificación');
+      ok(((await s.get('est:buzon:luis')) || []).some((m) => m.tipo === 'examen'), 'y a tus amigos les llega para felicitarte');
+      await pagina.evaluate(() => window.__estudio.amigos().preguntarExamen()); await espera(200);
+      ok(!(await pagina.isVisible('#hoja')), 'ya contestado, no lo vuelve a preguntar');
+      await pagina.click('[data-ir="ranking"]'); await espera(200);
+    }
+
     /* perfil */
     await pagina.click('[data-ir="perfil"]');
     ok(/CARYMO/.test(await pagina.textContent('#vPerfil .version')), 'el perfil dice la versión de CARYMO');

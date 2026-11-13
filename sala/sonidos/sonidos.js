@@ -89,10 +89,34 @@ export function sonar(nombre, { vol = .7, tono = 1, cada = 40, fijo = false } = 
   const dura = b.duration / s.playbackRate.value;
   g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(v, t0 + .004);
   g.gain.setValueAtTime(v, t0 + Math.max(.005, dura - .03)); g.gain.linearRampToValueAtTime(0, t0 + dura);
-  if(p){ p.pan.value = fijo ? 0 : (Math.random() * 2 - 1) * .18; s.connect(g).connect(p).connect(maestro); }
-  else s.connect(g).connect(maestro);
+  /* el TIMBRE también cambia (Carlos, 13 nov: «si vas a repetir un sonido cambia el timbre, tono, etc.
+     para que sea diferente cada vez»): cada vez un color distinto al de la vez anterior de ese sonido */
+  let entrada = g;
+  if(!fijo){
+    const ya = colorAnterior.get(nombre), opciones = COLORES.filter((_, i) => i !== ya);
+    const k = COLORES.indexOf(opciones[Math.floor(Math.random() * opciones.length)]); colorAnterior.set(nombre, k);
+    entrada = COLORES[k](c, g, s, t0, dura, v);
+  }
+  if(p){ p.pan.value = fijo ? 0 : (Math.random() * 2 - 1) * .18; entrada.connect(p).connect(maestro); }
+  else entrada.connect(maestro);
+  s.connect(g);
   s.start(t0);
 }
+/* los colores: un filtro distinto, o una segunda voz (coro u octava) muy por debajo */
+const colorAnterior = new Map();
+const filtro = (c, tipo, f, q, gan) => { const b = c.createBiquadFilter(); b.type = tipo; b.frequency.value = f; b.Q.value = q; if(gan != null) b.gain.value = gan; return b; };
+const segunda = (c, s, t0, dura, v, cents, nivel) => {
+  const s2 = c.createBufferSource(), g2 = c.createGain(); s2.buffer = s.buffer; s2.playbackRate.value = s.playbackRate.value * Math.pow(2, cents / 1200);
+  g2.gain.setValueAtTime(0, t0); g2.gain.linearRampToValueAtTime(v * nivel, t0 + .006); g2.gain.linearRampToValueAtTime(0, t0 + Math.max(.02, dura * .9));
+  s2.connect(g2); s2.start(t0); return g2;
+};
+const COLORES = [
+  /* claro: brillo arriba */  (c, g) => g.connect(filtro(c, 'highshelf', 3800 + Math.random() * 1500, .7, 3 + Math.random() * 2)),
+  /* cálido: menos agudos */ (c, g) => g.connect(filtro(c, 'lowpass', 3800 + Math.random() * 2500, .5)),
+  /* nariz: un pico en medios */ (c, g) => g.connect(filtro(c, 'peaking', 900 + Math.random() * 1800, 1.4, 4 + Math.random() * 2)),
+  /* coro: una segunda voz desafinada tantito */ (c, g, s, t0, dura, v) => { const m = c.createGain(); g.connect(m); segunda(c, s, t0, dura, v, 7 + Math.random() * 6, .45).connect(m); return m; },
+  /* octava: un brillito una octava arriba */ (c, g, s, t0, dura, v) => { const m = c.createGain(); g.connect(m); segunda(c, s, t0, dura, v, 1200, .16).connect(m); return m; },
+];
 /* el primer toque despierta el audio y trae todos los sonidos */
 function despertar(){ contexto(); precargar(); }
 for(const ev of ['pointerup', 'touchend', 'click', 'keydown']) addEventListener(ev, despertar, { once: true, passive: true });
