@@ -122,7 +122,7 @@ suscripción de paga dará cubitos diarios por seguir la racha.
 | Racha diaria (cada día) | 1 |
 | Racha de 7 días | 3 extra |
 | Estudiar juntos con un amigo | 2 |
-| Racha con un amigo (cada 7 días) | 3 |
+| Racha con un amigo (cada 7 días) | 3 ✅ (Sylcred: la lleva la pareja, `avanzarRachaJuntos` en palomium.js; se ve en amigos con su flamita) |
 | Subir de grado en un plan | 3 |
 | Terminar un plan completo | 10 |
 | Subir de nivel de cuenta | 5 |
@@ -178,16 +178,32 @@ suscripción de paga dará cubitos diarios por seguir la racha.
 
 ## 6 · Tu personaje de perfil
 
-- [ ] Un personaje propio (aparte de la mascota) que es tu foto de perfil y te distingue en el ranking y
+- ✅ Un personaje propio (aparte de la mascota) que es tu foto de perfil y te distingue en el ranking y
       en amigos.
-- [ ] Ropa y accesorios que se compran con cubitos.
-- [ ] Más animales y cosméticos.
+- ✅ Ropa y accesorios que se compran con cubitos.
+- ✅ Cosméticos: 25 a la venta (5 prendas, 8 estampados, 5 gorros, 7 lentes). Más animales de mascota: los 8 de Luna.
+
+**Hecho (Sylcred, 13 nov):**
+- El dibujo es Avataaars (Pablo Stanley, libre para uso comercial), armado con DiceBear (MIT): `carymo/vendor/avatar.js`, con sus licencias al lado. No es arte nuestro, a propósito: la regla 1.
+- El catálogo y los precios están en `carymo/ropa.js`, y lo leen los dos lados. Cara, pelo y piel son gratis; el hiyab y el turbante también, porque no se venden.
+- El vestidor es `carymo/vestidor.js`. El servidor, que cobra y no deja ponerse lo que no compraste, es `sala/servidor/vestidor.js`.
+- En el ranking y en amigos el personaje se pone vigilando la pantalla, sin tocar el código del ranking.
+- Pruebas: `node sala/servidor/pruebas-vestidor.mjs` (13) y `node carymo/pruebas-vestidor.mjs` (18).
 
 ## 7 · Avisos y sonidos
 
-- [ ] Recordatorios con notificación (estudiar, racha en peligro, examen cerca, la mascota tiene hambre).
-      La Sala ya tiene avisos push (`sala/servidor/push.mjs`): se reusan.
-- [ ] Más efectos de sonido. Los nuestros se hacen en `sala/sonidos/hacer.py`.
+- ✅ Recordatorios con notificación: estudiar a tu hora, racha en peligro (9 p. m.), examen cerca (8 a. m.)
+      y tu compañero con hambre (1 p. m.). Cada uno a lo más una vez al día, y sólo si sirve.
+- ✅ Más efectos de sonido: 10 nuevos (comer, burbujas, rebote, compra, racha, nivel, mensaje,
+      invitación, descanso del pomodoro y racha perdida).
+
+**Hecho (Sylcred, 13 nov):**
+- El servidor es `sala/servidor/avisos-estudio.js`. Lo revisa cada 15 min la tarea programada del worker (`scheduled` en `index.js`, `triggers` en `wrangler.jsonc`), no la alarma del objeto.
+- En el teléfono: `carymo/avisos.js` (sección Avisos en Perfil) y `carymo/sw.js` (sólo avisos, no guarda nada).
+- En iPhone, los avisos sólo funcionan con CARYMO en la pantalla de inicio, y la app lo explica.
+- De paso: La Sala tiraba las llaves de cifrado al apuntar un teléfono, y por eso sus avisos llegaban sin texto. Ya las guarda.
+- Pruebas: `node sala/servidor/pruebas-avisos-estudio.mjs` (34) y `node carymo/pruebas-avisos.mjs` (19).
+- **Falta:** probarlo en un iPhone de verdad.
 
 ## 8 · Pizarrón con 200 a 300 elementos visuales nuevos
 
