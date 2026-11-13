@@ -171,6 +171,9 @@ export function motoresApagados(env) {
  * NUNCA lanza. Un modelo caído no puede tumbar la sala: quien llama recibe
  * `{bien:false, error}` y decide. Ésa es la mitad del punto del adaptador.
  */
+/* modelo → hasta cuándo se le considera caído (vive en la memoria del objeto). */
+export const ENFERMOS = new Map();
+
 export async function preguntar(id, env, sistema, mensajes, op = {}) {
   const M = MOTORES[id];
   if (!M) return { bien: false, motor: id, error: `No conozco el motor "${id}".` };
@@ -192,20 +195,44 @@ export async function preguntar(id, env, sistema, mensajes, op = {}) {
   if (imagenes.length && id !== 'gemini') {
     return { bien: false, motor: id, error: `${M.nombre} no ve imágenes. Para describirlas usa a Paulina (Gemini).` };
   }
-  const modelos = [M.modelo, ...(M.respaldo || [])];
+  /* Los modelos que se colgaron o se saturaron hace poco van al final: no se
+     les vuelve a esperar 20 s en cada pregunta (13 nov, Paulina: 3.8, 3.6 y
+     3.5 colgados y sólo flash-lite contestando). */
+  const todos = [M.modelo, ...(M.respaldo || [])];
+  const ahora = Date.now();
+  const modelos = [...todos.filter((m) => !(ENFERMOS.get(id + '|' + m) > ahora)), ...todos.filter((m) => ENFERMOS.get(id + '|' + m) > ahora)];
+  /* ── CADA MODELO CON SU PROPIO RELOJ (13 nov) ──────────────────────────────
+     Paulina se quedó colgada 90 s con una pregunta de tres palabras: el primer
+     modelo se comía TODO el tiempo y los de respaldo nunca llegaban a probarse.
+     Ahora cada intento tiene su tope (más largo cuanto más larga la respuesta
+     pedida) y, si no contesta, se pasa al siguiente. El último se queda con lo
+     que reste. */
+  const finTotal = Date.now() + (op.esperaMs || ESPERA_MODELO_MS);
+  const porModelo = op.porModeloMs || Math.max(20_000, 15_000 + tope * 12);
   let ultimo = null;
   for (let i = 0; i < modelos.length; i++) {
-    let res = await preguntarA(M, modelos[i], k, sistema, mensajes, tope, imagenes, op, corta, reloj);
-    if (!res.bien && op.pensarPoco && id === 'gemini' && /\b400\b/.test(res.error || '') && !corta.signal.aborted)
-      res = await preguntarA(M, modelos[i], k, sistema, mensajes, tope, imagenes, { ...op, _sinPensar: true }, corta, reloj);
+    const queda = finTotal - Date.now();
+    if (queda < 1500) break;
+    const mio = new AbortController();
+    const unir = () => mio.abort();
+    corta.signal.addEventListener('abort', unir);
+    const relojMio = setTimeout(() => mio.abort(), i === modelos.length - 1 ? queda : Math.min(queda, porModelo));
+    let res = await preguntarA(M, modelos[i], k, sistema, mensajes, tope, imagenes, op, mio, relojMio);
+    if (!res.bien && op.pensarPoco && id === 'gemini' && /\b400\b/.test(res.error || '') && !mio.signal.aborted)
+      res = await preguntarA(M, modelos[i], k, sistema, mensajes, tope, imagenes, { ...op, _sinPensar: true }, mio, relojMio);
+    clearTimeout(relojMio); corta.signal.removeEventListener('abort', unir);
+    if (res.tardo) res.otro = true;
+    if (res.otro && !corta.signal.aborted) ENFERMOS.set(id + '|' + modelos[i], Date.now() + 10 * 60_000);
+    if (res.bien) ENFERMOS.delete(id + '|' + modelos[i]);
     /* Se pasa al siguiente sólo si el tropiezo es del modelo (saturado,
-       caído, retirado). Una llave mala o una respuesta vacía no mejoran con
-       otro modelo. */
-    if (res.bien || !res.otro || corta.signal.aborted) { clearTimeout(reloj); delete res.otro; return res; }
+       caído, retirado, colgado). Una llave mala o una respuesta vacía no
+       mejoran con otro modelo. */
+    if (res.bien || !res.otro || corta.signal.aborted) { clearTimeout(reloj); delete res.otro; delete res.tardo; return res; }
     ultimo = res;
   }
   clearTimeout(reloj);
-  delete ultimo.otro;
+  if (!ultimo) return { bien: false, motor: id, error: `${M.nombre} no contestó a tiempo.` };
+  delete ultimo.otro; delete ultimo.tardo;
   return ultimo;
 }
 
@@ -264,11 +291,11 @@ async function preguntarA(M, modelo, k, sistema, mensajes, tope, imagenes, op, c
         `${M.nombre} contestó bien pero sin texto. Puede ser un filtro de contenido, ` +
         `o que cambiara la forma de su respuesta.` };
     }
-    return { bien: true, motor: id, texto };
+    return { bien: true, motor: id, modelo, texto };
 
   } catch (e) {
     if (e && e.name === 'AbortError') {
-      return { bien: false, motor: id, error:
+      return { bien: false, motor: id, tardo: true, error:
         `${M.nombre} no contestó en ${Math.round((op.esperaMs || ESPERA_MODELO_MS) / 1000)} s.` };
     }
     return { bien: false, motor: id, otro: true, error: `${M.nombre} falló: ${e && e.message || e}` };
@@ -542,15 +569,61 @@ export function buscarAudio(j){
   return hallado;
 }
 
-/** pedido: { texto, voz?, estilo? } → { bien, mime, data (base64), modelo } */
+/* ── LAS VOCES DE LA NUBE (Cloudflare Workers AI, sin llave: el enlace AI del Worker) ──
+   Carlos, 13 nov: «la voz en teléfono es feísima, mete varias voces para que en perfil
+   puedan elegir una». Aura-2 de Deepgram trae 10 voces en español (comprobado contra la
+   API de la cuenta el 13 nov). Cuesta 2,727 neuronas por cada mil letras: el plan gratis
+   (10,000 al día) alcanza para ~3,600 letras diarias. Cuando se acaba, MeloTTS (18
+   neuronas por MINUTO de audio: casi ilimitada) y, si tampoco, el teléfono lee. */
+export const VOCES_NUBE = ['estrella', 'javier', 'sirio', 'selena', 'aquila', 'celeste', 'carina', 'diana', 'alvaro', 'nestor'];
+const b64 = (buf) => { const u = new Uint8Array(buf); let s = ''; for(let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode(...u.subarray(i, i + 0x8000)); return btoa(s); };
+async function aBytes(x){
+  if(!x) return null;
+  if(x instanceof ArrayBuffer) return x;
+  if(ArrayBuffer.isView(x)) return x.buffer.slice(x.byteOffset, x.byteOffset + x.byteLength);
+  if(typeof x.getReader === 'function' || x instanceof Response) return await new Response(x).arrayBuffer();
+  if(typeof x === 'object' && typeof x.audio === 'string') return { yaB64: x.audio };
+  return null;
+}
+export async function generarVozNube(env, texto, voz){
+  const ai = env && env.AI;
+  if(!ai) return { bien: false, error: 'La voz de la nube está apagada: falta el enlace AI.' };
+  const intentos = voz === 'melo' ? [['melo']] : [['aura', VOCES_NUBE.includes(voz) ? voz : 'estrella'], ['melo']];
+  const errores = [];
+  for(const [cual, quien] of intentos){
+    try{
+      const r = cual === 'aura'
+        ? await ai.run('@cf/deepgram/aura-2-es', { text: texto, speaker: quien, encoding: 'mp3' })
+        : await ai.run('@cf/myshell-ai/melotts', { prompt: texto, lang: 'es' });
+      const by = await aBytes(r);
+      const data = by && (by.yaB64 || (by.byteLength > 200 ? b64(by) : ''));
+      if(data){
+        const wav = data.startsWith('UklGR');
+        return { bien: true, mime: wav ? 'audio/wav' : 'audio/mpeg', data, modelo: cual === 'aura' ? 'aura-2-es' : 'melotts', voz: cual === 'aura' ? quien : 'melo', ...(cual === 'melo' && voz !== 'melo' ? { respaldo: true } : {}) };
+      }
+      errores.push(`${cual}: sin audio`);
+    }catch(e){ errores.push(`${cual}: ${String(e && e.message || e).slice(0, 120)}`); }
+  }
+  return { bien: false, error: 'La voz de la nube no contestó (' + errores.join(' · ') + ').' };
+}
+
+/* Lo que se le manda a la voz es SÓLO el texto a decir. Hasta el 13 nov se le anteponía
+   «Dilo en español de México…:» como instrucción de estilo, y Gemini a veces la LEÍA en voz
+   alta (Carlos: «asegúrate que JAMÁS la voz lea el prompt»). `estilo` se ignora a propósito. */
+/** pedido: { texto, voz? } → { bien, mime, data (base64), modelo } */
 export async function generarVoz(env, pedido = {}, hacer = fetch){
+  const vozPedida = String(pedido.voz || '');
+  if(/^nube:/.test(vozPedida)){
+    const texto = String(pedido.texto || '').trim().slice(0, 1500);
+    if(!texto) return { bien: false, error: 'Falta qué decir.' };
+    return generarVozNube(env, texto, vozPedida.slice(5));
+  }
   const k = env && env.GEMINI_API_KEY;
   if(!k) return { bien: false, error: 'La voz está apagada: falta el secreto GEMINI_API_KEY en el proyecto sala de Cloudflare.' };
   const texto = String(pedido.texto || '').trim().slice(0, 1500);
   if(!texto) return { bien: false, error: 'Falta qué decir.' };
-  const voz = VOCES.includes(pedido.voz) ? pedido.voz : 'Kore';
-  const estilo = String(pedido.estilo || 'Dilo en español de México, natural y amable, como una asistente platicando por WhatsApp').slice(0, 300);
-  const dicho = `${estilo}: ${texto}`;
+  const voz = VOCES.includes(vozPedida.replace(/^google:/, '')) ? vozPedida.replace(/^google:/, '') : 'Kore';
+  const dicho = texto;
   const corta = new AbortController();
   const reloj = setTimeout(() => corta.abort(), 90_000);
   const cab = { 'x-goog-api-key': k, 'Content-Type': 'application/json' };

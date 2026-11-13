@@ -50,6 +50,10 @@ const vecesTema = {};
 function contestarIA(c){
   pedidosIA.push(c);
   const texto = (c.mensajes || [])[0]?.texto || '';
+  if(/FOTO de un horario/.test(c.sistema)) return { bien: true, texto: JSON.stringify({ clases: [
+    { dia: 0, inicio: '07:00', fin: '08:00', materia: 'Admon. y Estruc. de redes' }, { dia: 0, inicio: '10:00', fin: '10:30', materia: 'RECESO' },
+    { dia: 1, inicio: '7:00', fin: '8:00', materia: 'Metodología de la Inv. I STEAM' }, { dia: 4, inicio: '13:00', fin: '13:50', materia: 'Programación & BD' },
+    { dia: 9, inicio: '07:00', fin: '08:00', materia: 'Día que no existe' }, { dia: 2, inicio: '09:00', fin: '08:00', materia: 'Al revés' } ] }) };
   if(/PLANES DE ESTUDIO/.test(c.sistema)) return { bien: true, texto: '```json\n' + JSON.stringify(PLAN) + '\n```' };
   const tema = ((/Tema: (.+)/.exec(texto) || [])[1] || 'Tema').trim();
   vecesTema[tema] = (vecesTema[tema] || 0) + 1;
@@ -66,7 +70,7 @@ export async function correr({ ok, almacen, atenderEstudio }){
   const { chromium } = await import(PW);
   const s = almacen();
   const TIPOS = { '.html': 'text/html', '.js': 'text/javascript', '.woff2': 'font/woff2', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.mp3': 'audio/mpeg' };
-  let iaLenta = 0;
+  let iaLenta = 0, iaVeces = 0;
   const servidor = http.createServer(async (q, res) => {
     const u = new URL(q.url, 'http://x');
     res.setHeader('Access-Control-Allow-Origin', '*'); res.setHeader('Access-Control-Allow-Headers', '*');
@@ -77,6 +81,7 @@ export async function correr({ ok, almacen, atenderEstudio }){
       res.writeHead(r.status, { 'content-type': 'application/json' }); res.end(Buffer.from(await r.arrayBuffer())); return;
     }
     if(u.pathname.endsWith('/ia-texto')){
+      iaVeces++;
       if(iaLenta) await new Promise((r) => setTimeout(r, iaLenta));
       res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(contestarIA(JSON.parse(cuerpo)))); return;
     }
@@ -173,6 +178,27 @@ export async function correr({ ok, almacen, atenderEstudio }){
     ok(await desborde() <= 0, 'el camino no se sale de lado');
     await espera(800);
     await foto('05-camino');
+    ok(await pagina.$eval('.masc-camino .masc svg [data-p="cabeza"]', () => true).catch(() => false), 'la mascota (el tigre) está junto al nivel que toca');
+    {
+      const m = await pagina.evaluate(async () => {
+        const { crearMascota } = await import('/carymo/mascota.js');
+        const caja = document.createElement('div'); caja.style.cssText = 'position:fixed;left:0;top:200px'; document.body.append(caja);
+        const out = {};
+        for(const q of ['tigre', 'paloma']){
+          const x = crearMascota(caja, { personaje: q, tam: 120 });
+          await new Promise((r) => setTimeout(r, 400)); const quieto = x.parametros;
+          x.play('bien'); await new Promise((r) => setTimeout(r, 480)); const bien = x.parametros;
+          x.play('triste'); await new Promise((r) => setTimeout(r, 900)); const triste = x.parametros;
+          out[q] = { imgs: x.el.querySelectorAll('img').length, piezas: x.el.querySelectorAll('[data-p]').length, respira: quieto.sy !== 1, bienSalta: bien.y < -10, bienFeliz: bien.feliz > .8, tristeLlora: triste.lagrimas > .5 && triste.cejas > .5 && triste.curva < 0 };
+          x.destruir();
+        }
+        caja.remove(); return out;
+      });
+      ok(m.tigre.imgs === 0 && m.paloma.imgs === 0 && m.tigre.piezas > 20 && m.paloma.piezas > 20, `las mascotas están dibujadas por piezas, sin una sola imagen recortada (${m.tigre.piezas} y ${m.paloma.piezas} piezas)`);
+      ok(m.tigre.respira && m.paloma.respira, 'quietas, respiran');
+      ok(m.tigre.bienSalta && m.tigre.bienFeliz && m.paloma.bienSalta && m.paloma.bienFeliz, 'al acertar brincan con los ojos felices');
+      ok(m.tigre.tristeLlora && m.paloma.tristeLlora, 'tristes: cejas caídas, boca hacia abajo y lágrimas');
+    }
     for(let k = 0; k < 30 && !pedidosIA.some((c) => /UNA lección/.test(c.sistema)); k++) await espera(100);
     ok(pedidosIA.some((c) => /UNA lección/.test(c.sistema) && /Sistema circulatorio/.test(c.mensajes[0].texto)), 'el primer nivel se prepara solo mientras ves las cátedras');
 
@@ -226,11 +252,12 @@ export async function correr({ ok, almacen, atenderEstudio }){
       ok(await pagina.isEnabled('[data-verificar]'), `«${tipo}»: Verificar se prende al contestar`);
       await pagina.click('[data-verificar]');
       await pagina.waitForSelector('.hoja-res');
+      const estaLaFalle = !falle;
       if(!falle){
         falle = true;
         ok(await pagina.isVisible('.hoja-res.mal') && await pagina.isVisible('text=Te la vuelvo a preguntar al final'), 'una mala: hoja roja con la respuesta y «te la vuelvo a preguntar»');
       } else ok(await pagina.isVisible('.hoja-res.bien'), `«${tipo}» contestado bien cuenta como bien`);
-      if(tipo === 'escribir' && falle) ok(/Casi perfecto/.test(await pagina.textContent('.hoja-res')), 'escribir con errores de dedo («corason») cuenta como bien y te dice cómo se escribe');
+      if(tipo === 'escribir' && !estaLaFalle) ok(/Casi perfecto/.test(await pagina.textContent('.hoja-res')), 'escribir con errores de dedo («corason») cuenta como bien y te dice cómo se escribe');
       await espera(140);
       const combo = await pagina.$$eval('.combo-vfx .combo-txt b', (x) => x.map((b) => +b.textContent.replace('x', '')));
       if(combo.length){ maxComboVisto = Math.max(maxComboVisto, ...combo); if(combo[0] === 2 && process.env.FOTOS) await foto('08-combo'); }
@@ -246,12 +273,25 @@ export async function correr({ ok, almacen, atenderEstudio }){
     await pagina.click('[data-estrella="5"]');
     ok((await pagina.$$('.estrellas .on')).length === 5, 'se califica con estrellas');
     await foto('09-resultado');
+    ok(await pagina.$eval('#mascFin .masc svg', () => true).catch(() => false), 'al terminar, la mascota reacciona al resultado');
     await pagina.click('[data-continuar]');
     await pagina.waitForSelector('.camino'); await espera(1200);
     ok(await hechos() === 3, 'el nivel hecho se vuelve moneda');
     const est = s.m.get('est:perfil:carlos');
     ok(est && est.xp > 0 && est.racha === 1, `el XP y la racha llegaron a La Sala (${est && est.xp} XP)`);
     ok(await pagina.isVisible('#pRacha') && /1/.test(await pagina.textContent('#pRacha')), 'la racha de 1 se ve arriba');
+    /* la biblioteca: la lección que armó la IA quedó guardada para el siguiente que la pida */
+    const enBiblio = [...s.m.keys()].filter((k) => k.startsWith('est:mem:leccion:'));
+    ok(enBiblio.length >= 1 && enBiblio.some((k) => /circulatorio/.test(k)), `la lección quedó en la biblioteca de la sala (${enBiblio.length})`);
+    {
+      const iaAntes = iaVeces;
+      const otra = await pagina.evaluate(async () => { const r = await fetch(new URL('../carymo/index.html', location.href)); return r.ok; });
+      const res = await pagina.evaluate(async (b) => {
+        const r = await fetch(`${b}/api/sala/G/estudio`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ accion: 'memoria', tipo: 'leccion', materia: 'Química y Biología', titulo: 'sistema circulatorio', nivel: 'prepa' }) });
+        return r.json();
+      }, base);
+      ok(otra && res.hallado && res.hallado.datos && res.hallado.datos.preguntas && res.hallado.datos.preguntas.length >= 8, 'otro alumno que pida «sistema circulatorio» la recibe entera de la biblioteca, sin gastar IA (' + JSON.stringify(res).slice(0, 80) + ')');
+    }
 
     /* 4 · tema 2: su cátedra y su nivel… con el JSON mal escrito (comas de más y un comentario) */
     await catedra();
@@ -310,6 +350,13 @@ export async function correr({ ok, almacen, atenderEstudio }){
     ok(await desborde() <= 0, 'el horario no se sale de lado');
     await espera(300);
     ok((s.m.get('est:perfil:carlos').horario || {}).clases?.length === 9, 'el horario se guarda en La Sala');
+    /* horario desde una FOTO: la IA lo lee, se enseña antes de guardar, y lo que no tiene sentido se tira */
+    await pagina.setInputFiles('#fFotoHorario', path.join(raiz, 'carymo/marca/icono-192.png'));
+    await pagina.waitForSelector('#fhUsar', { timeout: 15000 });
+    ok(/Encontré 3 clases/.test(await pagina.textContent('#hoja h3')), 'la foto del horario se lee y enseña lo que encontró (sin receso, sin día imposible ni horas al revés)');
+    await foto('12-horario-foto');
+    await pagina.click('#fhUsar'); await espera(400);
+    ok((await pagina.$$('.clase-h')).length === 3 && /Metodología/.test(await pagina.textContent('#vHorario')), 'al confirmar, el horario de la foto queda puesto');
 
     /* ranking */
     const { semanaDe, diaMexico } = await import('./servidor/estudio.js');
@@ -322,6 +369,53 @@ export async function correr({ ok, almacen, atenderEstudio }){
     ok(filas.length === 2 && /Luis/.test(filas[0]) && /\(tú\)/.test(filas[1]), 'el ranking junta las cuentas de La Sala y marca la tuya');
     ok(await pagina.isVisible('text=para llegar a la cima'), 'dice cuántos lugares faltan');
     await foto('13-ranking');
+
+    /* amigos: Luis tiene la app abierta, lo agrego, me invita a estudiar juntos, y al final «¿cómo te fue?» */
+    {
+      const como = (cuenta, cuerpo) => atenderEstudio(s, new Request('http://x/estudio', { method: 'POST', body: JSON.stringify(cuerpo) }), new URL('http://x/estudio'), cuenta, Date.now()).then((x) => x.json());
+      await como('luis', { accion: 'perfil', nombre: 'Luis' }); await como('luis', { accion: 'latido', estado: 'estudiando', materia: 'Física' });
+      await pagina.evaluate(() => window.__estudio.amigos().latido()); await espera(400);
+      ok(await pagina.isVisible('#secAmigos') && /Luis/.test(await pagina.textContent('#secAmigos')) && /estudiando Física/.test(await pagina.textContent('#secAmigos')), 'en Ranking salen los que tienen la app abierta, y qué están estudiando');
+      ok(await pagina.isVisible('[data-am="invitar"][data-cuenta="luis"]'), '…con «Estudiar juntos» a la mano');
+      await pagina.click('[data-am="amistad"][data-cuenta="luis"]'); await espera(400);
+      ok(((await s.get('est:amigos:luis')) || {}).pide?.includes('carlos'), 'tocar «Agregar» le manda la solicitud');
+      await como('luis', { accion: 'amistad', a: 'carlos' }); await como('luis', { accion: 'latido' });
+      await pagina.evaluate(() => window.__estudio.amigos().latido()); await espera(500);
+      ok(/ya es tu amigo/.test(await pagina.textContent('#brindis')), 'cuando acepta, llega el aviso');
+      ok(await pagina.isVisible('[data-am="felicita"][data-cuenta="luis"]'), 'y sale en «Tus amigos» con Felicitar y Saludar');
+      await foto('14-amigos');
+      await como('luis', { accion: 'latido' });
+      const inv = await como('luis', { accion: 'invitar', a: 'carlos', minutos: 15 });
+      ok(inv.bien, 'Luis me invita a estudiar 15 minutos');
+      await pagina.evaluate(() => window.__estudio.amigos().latido());
+      await pagina.waitForSelector('#invSi', { timeout: 5000 });
+      ok(/Luis te invita a estudiar juntos/.test(await pagina.textContent('#hoja')), 'me llega la invitación, con la mascota');
+      await foto('15-invitacion');
+      await pagina.click('#invSi'); await espera(600);
+      ok(await pagina.isVisible('#barraSesion') && /1[45]:\d\d/.test(await pagina.textContent('#barraSesion')), 'al aceptar sale la barra con el cronómetro corriendo');
+      await como('luis', { accion: 'xp', eventos: [{ id: 'lx1', xp: 12, dia: diaMexico(Date.now()) }] });
+      await pagina.evaluate(() => window.__estudio.amigos().latido()); await espera(1200);
+      ok(/Luis 12/.test(await pagina.textContent('#barraSesion')), 'el marcador muestra lo que va juntando el otro');
+      await foto('16-sesion');
+      await pagina.click('[data-salir-ses]'); await pagina.click('[data-salir-ses]'); await espera(500);
+      ok(/Ganó Luis/.test(await pagina.textContent('#hoja')) && await pagina.isVisible('#sesFelicita'), 'al salir sale quién ganó y el botón de felicitarlo');
+      await pagina.click('#sesFelicita'); await espera(400);
+      ok(((await s.get('est:buzon:luis')) || []).some((m) => m.tipo === 'felicita' && m.de === 'carlos'), 'la felicitación le llega');
+      ok(await desborde() <= 0, 'amigos y la barra no se salen de lado');
+      /* «¿cómo te fue?» después de la fecha del examen */
+      await pagina.evaluate(() => { const st = window.__estudio.estado(); const p = st.planes[st.actualId]; p.fecha = '2026-01-10'; });
+      await pagina.click('[data-ir="plan"]'); await espera(300);
+      await pagina.evaluate(() => window.__estudio.amigos().preguntarExamen()); await espera(300);
+      ok(/¿Cómo te fue en/.test(await pagina.textContent('#hoja')), 'pasada la fecha del examen, pregunta cómo te fue');
+      await pagina.click('[data-como="bien"]'); await pagina.fill('#exCalif', '8.7'); await foto('17-como-te-fue');
+      await pagina.click('#exListo'); await espera(500);
+      const ex = (await s.get('est:examenes:carlos')) || [];
+      ok(ex.length === 1 && ex[0].como === 'bien' && ex[0].calif === 8.7, 'se guarda en tu historial con la calificación');
+      ok(((await s.get('est:buzon:luis')) || []).some((m) => m.tipo === 'examen'), 'y a tus amigos les llega para felicitarte');
+      await pagina.evaluate(() => window.__estudio.amigos().preguntarExamen()); await espera(200);
+      ok(!(await pagina.isVisible('#hoja')), 'ya contestado, no lo vuelve a preguntar');
+      await pagina.click('[data-ir="ranking"]'); await espera(200);
+    }
 
     /* perfil */
     await pagina.click('[data-ir="perfil"]');
@@ -361,6 +455,48 @@ export async function correr({ ok, almacen, atenderEstudio }){
     ok(t3.length === 6 && t3[0] === 'Panorama de la unidad*' && t3[1] === 'Cátedra en el pizarrón*' && /^Nivel.*\*$/.test(t3[2]) && t3[3] === 'Cátedra en el pizarrón', `un plan viejo gana sus cátedras, y lo que ya pasaste sigue pasado (${t3.join(' · ')})`);
     ok(await p3.textContent('.siguiente small') === 'Cátedra en el pizarrón', 'y sigue justo donde se había quedado: la cátedra del tema 2');
     await ctx3.close();
+
+    /* ── la Academia Grupo Mazi (13 nov): cursos ya escritos, sin gastar IA ── */
+    const { CURSOS } = await import('../carymo/academia.js');
+    await pagina.click('[data-ir="plan"]'); await espera(200);
+    await pagina.click('#bPlanes'); await pagina.click('[data-plan="academia"]');
+    await pagina.waitForSelector('.acad-curso');
+    ok((await pagina.$$('.acad-curso')).length === CURSOS.length, `la Academia enseña sus ${CURSOS.length} cursos`);
+    ok(await pagina.$$eval('.acad-doc', (a) => a.length === 2 && a.every((x) => /empresa\/ventas\/.+\.pdf$/.test(x.getAttribute('href'))) && !a.some((x) => /Chuleta/.test(x.getAttribute('href')))), 'trae la Guía y la presentación para descargar, y NO la chuleta');
+    ok(await desborde() <= 0, 'la Academia no se sale de lado');
+    await espera(700); await foto('40-academia');
+    /* cada lección y cada pregunta pasan el mismo revisor que lo que escribe la IA: ninguna se tira */
+    const tirados = await pagina.evaluate(async () => {
+      const m = await import('/carymo/carymo.js'), a = await import('/carymo/academia.js'), malos = [];
+      for(const k of a.CURSOS) for(const u of k.unidades) for(const t of u.temas){
+        const r = m.normalizarLeccion({ leccion: t.leccion, preguntas: t.preguntas });
+        if(r.preguntas.length !== t.preguntas.length) malos.push(`${t.titulo}: ${t.preguntas.length - r.preguntas.length} pregunta(s)`);
+        if(r.leccion.ideas.some((x) => !x.icono)) malos.push(`${t.titulo}: un dibujo que no existe`);
+      }
+      return malos;
+    });
+    ok(!tirados.length, 'todas las lecciones y preguntas de la Academia pasan el revisor' + (tirados.length ? ': ' + tirados.join(' · ') : ''));
+    const totalPregs = CURSOS.reduce((x, k) => x + k.unidades.reduce((y, u) => y + u.temas.reduce((z, t) => z + t.preguntas.length, 0), 0), 0);
+    ok(totalPregs >= 50, `la Academia trae ${totalPregs} preguntas`);
+    const iaAntes = iaVeces;
+    await pagina.click('[data-curso="acad-quienes"]'); await pagina.waitForSelector('.camino');
+    ok((await pagina.textContent('#planNombre')).trim() === 'Conoce Grupo Mazi', 'el curso abre como un plan más, con su camino');
+    const srcA = await catedra();
+    ok(/curso interno de Grupo Mazi/.test(srcA) && srcA.includes('442 883 3786') && /nivel=uni/.test(srcA), 'su cátedra en el pizarrón lleva la hoja oficial de Grupo Mazi');
+    await catedra();
+    const d0 = CURSOS[0].unidades[0].temas[0];
+    await pagina.click('.siguiente [data-nodo]');
+    await pagina.waitForSelector('.historia', { timeout: 5000 });
+    ok(iaVeces === iaAntes, 'la lección del curso abre al instante, sin pedirle nada a la IA');
+    for(let k = 0; k < 8 && await pagina.isVisible('[data-sig]'); k++) await pagina.click('[data-sig]');
+    await pagina.click('[data-empezar]');
+    for(let k = 0; k < 14 && !(await pagina.isVisible('.resultado')); k++){ await contestar(d0, true); await pagina.click('[data-verificar]'); await pagina.click('[data-continuar]'); await espera(120); }
+    ok(await pagina.isVisible('.resultado'), 'se juega el nivel completo de «Qué es Grupo Mazi»');
+    await foto('41-academia-nivel');
+    await pagina.click('[data-continuar]'); await pagina.waitForSelector('.camino');
+    await pagina.click('#bPlanes');
+    ok(await pagina.$$eval('[data-plan]', (b) => b.some((x) => x.textContent.includes('Conoce Grupo Mazi') && x.textContent.includes('Curso de Grupo Mazi'))), 'el curso queda en «Tus planes», sin fecha de examen rara');
+    await pagina.keyboard.press('Escape');
 
     /* 320 de ancho */
     await pagina.setViewportSize({ width: 320, height: 640 });

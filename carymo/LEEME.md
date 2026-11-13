@@ -32,14 +32,34 @@ La Sala también abre esta app.
 5. Grado de 6 a 10, XP, racha con racha congelada, **ranking de la semana** entre cuentas, horario
    pegado de Excel y perfil con sonidos y vibración.
 
+6. **Academia Grupo Mazi** (botón en «Tus planes» y en la pantalla vacía). Tres cursos para
+   vendedores —*Conoce Grupo Mazi*, *Lo que vendemos y cuánto cuesta* y *Cómo vender con Grupo
+   Mazi*— con lecciones y 55 preguntas ya escritas (no gastan IA), cátedras en el pizarrón que sólo
+   usan la hoja oficial (`HECHOS`), y la Guía del vendedor y la presentación para descargar. La
+   Chuleta de Carlos NO va: es para él. **El porcentaje de comisión no está escrito**: el curso
+   dice que lo confirma Carlos.
+7. **Si una IA se cae, contesta otra** (de otra compañía): Negro ↔ Paulina, luego la nube de
+   Cloudflare (sin llave) y, si Carlos pega sus llaves en `/llaves-ia`, OpenRouter, Cerebras y
+   Mistral. Ver `sala/servidor/respaldos.js`.
+8. **Sonidos con variación**: cada vez suenan un poco distinto, los aciertos seguidos suben de
+   nota y todo pasa por una sala suave (`sala/sonidos/sonidos.js`).
+
+9. **La mascota** (`mascota.js`): el tigre blanco o la paloma morada, dibujados en SVG por piezas (inspirados en las hojas de Carlos) y animados como Duolingo: respiran, parpadean, te siguen con los ojos, la boca cambia de forma, cejas, lágrimas, brazos/alas, cola. Galería para revisarlas: `pruebas-masc/galeria.html`. Acompaña la portada, se para junto al nivel que toca, reacciona a cada respuesta y al resultado. Se elige en el perfil.
+10. **Amigos** (`amigos.js`, dentro de Ranking): quién tiene la app abierta, solicitudes, saludos y felicitaciones, **estudiar juntos** con cronómetro y marcador, y **«¿cómo te fue?»** pasada la fecha del examen (va al historial y les avisa a los amigos).
+11. **La biblioteca**: lo que la IA ya armó (lecciones, clases, planes) se reusa para el siguiente que pida lo mismo, sin gastar IA.
+12. **Horario desde foto**: la IA lo lee y lo enseña antes de guardarlo.
+13. **Voces** del pizarrón elegibles en el perfil (`sala/voces.js`).
+
 ## Cómo está armado
 
 | Archivo | Qué es |
 |---|---|
 | `carymo/index.html` | La página y TODO su diseño (CSS): colores vino, morado oscuro y morado claro |
 | `carymo/carymo.js` | Toda la lógica: plan, camino, lección, los 8 ejercicios (`EJ`), combo (`comboVFX`), tarjetas, ranking, horario, perfil |
+| `carymo/academia.js` | La Academia: hoja oficial (`HECHOS`), material (`MATERIAL`) y los 3 cursos (`CURSOS`). Cambia un precio aquí y cambia en los cursos y en las cátedras |
+| `carymo/mascota.js` | La mascota (SVG por piezas + motor): `crearMascota(caja, { personaje }).play('bien' \| 'festeja' \| 'mal' …)` |
+| `carymo/amigos.js` | Amigos, estudiar juntos y «¿cómo te fue?» |
 | `carymo/iconos.js` | Los íconos de los botones (Lucide) |
-| `carymo/marca/` + `manifest.webmanifest` | El ícono (la CM) y el dibujo del logo que mandó Carlos (sala, e1176, 13 nov). Con eso se instala en el iPhone: Compartir → Agregar a pantalla de inicio |
 | `sala/servidor/estudio.js` | **Servidor** (dentro de La Sala): planes, XP, racha y ranking. Ruta `/api/sala/GRUPAZ/estudio` |
 | `sala/explica.html` + `explica.js` | El pizarrón (Explica): lo usan CARYMO y La Sala |
 | `sala/lienzo.js` | El motor del pizarrón: muchos cursores, 33 tipos de elemento, cámara infinita |
@@ -86,5 +106,5 @@ node sala/servidor/pruebas.mjs
   2. Su forma en `CATALOGO` de `sala/explica.js`.
   3. Su revisión en `normalizarPizarra`.
 - **Pendiente que se ve venir:**
-  - el logo de Carlos dice «CARIMO» con I: en la portada va sólo el dibujo hasta que diga cuál nombre vale;
+  - que la app se instale en la pantalla de inicio (falta el ícono, que lo decide Carlos);
   - que el pizarrón arranque solo sin tocar «Explícame» (el iPhone pide un toque para hablar).

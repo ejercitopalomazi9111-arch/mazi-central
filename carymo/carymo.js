@@ -19,6 +19,10 @@ import { sacarJSON } from '../sala/json-ia.js';
 import { buscarImagen } from '../sala/lienzo.js';
 import { sonar, encender as encenderSonidos } from '../sala/sonidos/sonidos.js';
 import { llave, ponerLlave, llamar, SERVIDOR, SALA } from '../presentaciones/ia.js';
+import { CURSOS, MATERIAL, HECHOS, planDeCurso } from './academia.js';
+import { crearVoz, todas as todasLasVoces, VOZ_DE_FABRICA, despertar } from '../sala/voces.js';
+import { crearMascota } from './mascota.js';
+import { iniciarAmigos } from './amigos.js';
 
 const $ = (s, d = document) => d.querySelector(s);
 const $$ = (s, d = document) => [...d.querySelectorAll(s)];
@@ -55,8 +59,12 @@ let perfil = guarda.leer('est.perfil', { nombre: 'Tú', xp: 0, racha: 0, mejorRa
 let ranking = guarda.leer('est.ranking', { semana: '', filas: [] });
 let cola = guarda.leer('est.cola', []);                     /* XP por mandar */
 let ajustes = guarda.leer('est.ajustes', { sonido: true, vibrar: true });
+if(!ajustes.mascota) ajustes.mascota = 'tigre';
+/* la mascota (tigre o paloma, de las hojas de Carlos): acompaña, reacciona y festeja */
+const mascotaEn = (caja, op = {}) => (ajustes.mascota === 'no' || !caja) ? null : crearMascota(caja, { personaje: ajustes.mascota, ...op });
 encenderSonidos(ajustes.sonido !== false);
 let vista = 'plan';
+let amigos = null;   /* amigos.js; se arranca al final, cuando ya existe todo */
 const plan = () => planes[actualId] || null;
 const guardarLocal = () => { guarda.poner('est.planes', planes); guarda.poner('est.actual', actualId); };
 
@@ -380,14 +388,18 @@ const ONDA = [0, .62, .85, .62, 0, -.62, -.85, -.62];
 function pintarPlan(){
   const c = $('#planCuerpo'), p = plan();
   if(!p){
-    c.innerHTML = `<div class="vacio entra"><div class="marca-carymo"><img src="marca/emblema.webp" width="546" height="426" alt=""><b>CARYMO</b><span>Learn. Explore. Grow.</span></div><p class="lema">Todo lo que puedes aprender, en un solo lugar.</p>
+    c.innerHTML = `<div class="vacio entra"><div class="masc-vacio" id="mascVacio"></div><div class="marca-carymo"><b>CARYMO</b><span>Learn. Explore. Grow.</span></div><p class="lema">Todo lo que puedes aprender, en un solo lugar.</p>
       <h1>¿Tienes un examen pronto?<em>Aquí estamos para ayudarte</em></h1>
       <p>Dinos la materia, la fecha y qué temas vienen, o súbele foto a tus apuntes. Te armamos el camino hasta el día del examen.</p>
-      <button class="bt fuerte ancho" id="bCrear">${ico('plus')} Crear mi plan</button></div>`;
+      <button class="bt fuerte ancho" id="bCrear">${ico('plus')} Crear mi plan</button>
+      <button class="bt ancho academia-bt" id="bAcademia" style="margin-top:12px">${ico('graduation-cap')} Academia Grupo Mazi</button></div>`;
     $('#bCrear').addEventListener('click', alta);
+    $('#bAcademia').addEventListener('click', abrirAcademia);
+    { const m = mascotaEn($('#mascVacio'), { tam: 120 }); if(m) setTimeout(() => m.play('saluda', { decir: '¡Hola! ¿Qué estudiamos hoy?' }), 500); }
     return;
   }
   const a = avanceDe(p), sig = a.siguiente;
+  let mascotaPos = null;
   let html = '<div class="camino">';
   let k = 0;
   for(const u of p.unidades){
@@ -403,6 +415,7 @@ function pintarPlan(){
       const h = hecho(p, n), actual = sig && sig.id === n.id, cerrado = !h && !actual;
       const cl = ['nodo', h ? 'hecho' : '', actual ? 'actual' : '', cerrado ? 'cerrado' : '', n.tipo === 'examen' ? 'grande' : ''].join(' ');
       const tv = tipoVisto(n), etq = tv === 'panorama' ? 'Panorama' : tv === 'pizarra' ? 'Cátedra' : n.titulo;
+      if(actual) mascotaPos = { x: x >= 50 ? x - 34 : x + 34, y, u: p.unidades.indexOf(u) };
       return `<button class="${cl}${tv === 'pizarra' || tv === 'panorama' ? ' catedra' : ''}" data-nodo="${n.id}" style="left:${x}%;top:${y}px;--color:${u.color}" aria-label="${esc(NOMBRE_NODO[tv])}: ${esc(n.titulo)}${h ? ' (hecho)' : cerrado ? ' (bloqueado)' : ''}">${ico(h ? 'check' : ICONO_NODO[tv])}<span class="etq">${esc(etq)}</span></button>`;
     }).join('');
     k += u.nodos.length;
@@ -417,6 +430,13 @@ function pintarPlan(){
     html += `<div class="siguiente"><small>Plan completo</small><h3>Llegaste a grado 10. Ya estás listo.</h3><button class="bt blanco ancho" id="bRepasoFinal">Hacer otro simulacro</button></div>`;
   }
   c.innerHTML = html;
+  /* la mascota se para junto al nivel que toca, del otro lado del camino */
+  if(mascotaPos){
+    const nodos = $$('.nodos', c)[mascotaPos.u];
+    if(nodos){ const d = document.createElement('div'); d.className = 'masc-camino'; d.style.left = mascotaPos.x + '%'; d.style.top = (mascotaPos.y + (mascotaPos.y < 120 ? 56 : 0)) + 'px'; nodos.append(d);
+      const m = mascotaEn(d, { tam: 84 });
+      if(m && !pintarPlan.saludo){ pintarPlan.saludo = true; setTimeout(() => m.play('saluda', { decir: a.hechos ? '¡A seguirle!' : '¡Empecemos!' }), 600); } }
+  }
   $('#bRepasoFinal')?.addEventListener('click', () => { const n = todosLosNodos(p).find((x) => x.tipo === 'simulacro'); if(n) abrirNodo(n.id, true); });
   /* el nodo actual a la vista */
   requestAnimationFrame(() => { const act = c.querySelector('.nodo.actual'); if(act && !pintarPlan.yaCentrado){ pintarPlan.yaCentrado = true; const r = act.getBoundingClientRect(); if(r.top > innerHeight * .7) scrollTo({ top: scrollY + r.top - innerHeight * .4 }); } });
@@ -507,7 +527,7 @@ function listaMaterias(){
   return m.filter((x) => !x.oficial && x.id !== 'general' && x.id !== 'efisica');
 }
 const masDias = (n) => { const d = new Date(Date.now() + n * 864e5); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
-const cuandoTexto = (f) => { const d = diasHasta(f); return d === 0 ? 'Hoy' : d === 1 ? 'Mañana' : d < 0 ? 'Ya pasó' : `En ${d} días`; };
+const cuandoTexto = (f) => { if(!f) return 'Curso de Grupo Mazi'; const d = diasHasta(f); return d === 0 ? 'Hoy' : d === 1 ? 'Mañana' : d < 0 ? 'Ya pasó' : `En ${d} días`; };
 async function achicar(f){
   const img = await createImageBitmap(f).catch(() => null); if(!img) return null;
   const k = Math.min(1, 1600 / Math.max(img.width, img.height)), cv = document.createElement('canvas'); cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
@@ -520,8 +540,9 @@ async function prepararPlan(datos, anadirA = null){
   const c = capa();
   const pasos = ['Leyendo tus temas', 'Ordenándolos de lo fácil a lo difícil', 'Armando tu camino'];
   c.innerHTML = `<div class="cuerpo"><div class="preparando entra"><div class="mini-camino" id="mini">${[[77, 0], [130, 30], [100, 70], [40, 100], [77, 130]].map(([x, y]) => `<i style="left:${x - 23}px;top:${y - 20}px"></i>`).join('')}</div>
-    <h2>Déjame preparar tu plan</h2><p style="color:var(--suave)" id="prepTxt">Organizándolo en el orden correcto</p>
+    <div class="masc-prep" id="mascPrep"></div><h2>Déjame preparar tu plan</h2><p style="color:var(--suave)" id="prepTxt">Organizándolo en el orden correcto</p>
     <ul class="pasos-prep">${pasos.map((t) => `<li><span class="ca">${ico('check')}</span>${t}</li>`).join('')}</ul><div class="aviso" id="prepAviso" hidden></div></div></div>`;
+  { const m = mascotaEn($('#mascPrep', c), { tam: 96 }); if(m) m.play('estudia'); }
   const bolas = $$('#mini i', c), lis = $$('.pasos-prep li', c);
   let k = 0; const giro = setInterval(() => { bolas.forEach((b, i) => b.classList.toggle('ve', i <= k % (bolas.length + 1))); k++; if(k === 3) lis[0].classList.add('ya'); if(k === 8) lis[1].classList.add('ya'); }, 450);
   try{
@@ -530,7 +551,14 @@ async function prepararPlan(datos, anadirA = null){
       + (datos.extra ? `Lo que dijo el alumno: ${datos.extra}\n` : '')
       + (datos.fotos.length ? 'Te mando fotos de mis apuntes: arma el plan con lo que dicen.' : '')
       + (anadirA ? `\nYA TENGO estas unidades (no las repitas, arma SÓLO unidades nuevas con lo nuevo): ${anadirA.unidades.map((u) => u.titulo).join(', ')}` : '');
-    const j = await ia({ sistema: sistemaPlan(), texto, imagenes: datos.fotos.map(({ mime, data }) => ({ mime, data })), tope: 4000, revisar: normalizarPlan });
+    /* sin fotos ni comentarios, el mismo temario de la misma materia ya se armó antes: se reusa */
+    const generico = !datos.fotos.length && !datos.extra && !anadirA && datos.temas.length;
+    const claveTemas = datos.temas.map((x) => x.trim()).filter(Boolean).sort().join(' · ');
+    let j = generico ? await deLaBiblioteca('plan', datos.materia.nombre, claveTemas, 'prepa', normalizarPlan) : null;
+    if(!j){
+      j = await ia({ sistema: sistemaPlan(), texto, imagenes: datos.fotos.map(({ mime, data }) => ({ mime, data })), tope: 4000, revisar: normalizarPlan });
+      if(generico) aLaBiblioteca('plan', datos.materia.nombre, claveTemas, 'prepa', j);
+    }
     clearInterval(giro); bolas.forEach((b) => b.classList.add('ve')); lis.forEach((l) => l.classList.add('ya'));
     let p;
     if(anadirA){
@@ -542,7 +570,7 @@ async function prepararPlan(datos, anadirA = null){
       p.unidades.push(...nuevas); p.unidades[p.unidades.length - 1].nodos.push(...finales);
       p.notas = [p.notas, j.notas].filter(Boolean).join('\n').slice(0, 1500);
     } else {
-      p = { id: 'p' + nuevoId(), titulo: j.titulo || `Examen de ${datos.materia.nombre}`, materia: datos.materia.nombre, color: datos.materia.color, fecha: datos.fecha, notas: j.notas, extra: datos.extra,
+      p = { id: 'p' + nuevoId(), titulo: j.titulo || `Examen de ${datos.materia.nombre}`, materia: datos.materia.nombre, color: datos.materia.color, fecha: datos.fecha, notas: j.notas, extra: datos.extra, conFotos: datos.fotos.length > 0,
         creado: Date.now(), unidades: armarCamino(j), contenido: {}, progreso: {}, forma: 2 };
     }
     actualId = p.id; guardarPlan(p);
@@ -560,6 +588,21 @@ async function prepararPlan(datos, anadirA = null){
   }
 }
 
+/* ══ LA BIBLIOTECA (servidor: est:mem) ══════════════════════════════════════
+   Antes de pedirle algo a la IA se busca si alguien ya lo pidió; lo que la IA arma
+   se guarda para el siguiente. Lo que trae fotos o notas del alumno NO se guarda. */
+async function deLaBiblioteca(tipo, materia, titulo, nivel, revisar){
+  try{
+    const r = await Promise.race([sala({ accion: 'memoria', tipo, materia, titulo, nivel }), new Promise((_, no) => setTimeout(() => no(new Error('lento')), 6000))]);
+    if(r && r.hallado && r.hallado.datos){ const d = revisar(r.hallado.datos); d._biblioteca = true; return d; }
+  }catch{}
+  return null;
+}
+function aLaBiblioteca(tipo, materia, titulo, nivel, datos){
+  const limpio = JSON.parse(JSON.stringify(datos)); delete limpio._biblioteca;
+  sala({ accion: 'recordar', tipo, materia, titulo, nivel, datos: limpio }).catch(() => {});
+}
+
 /* ══ 8 · LECCIONES (se piden cuando hacen falta, y la siguiente se prepara sola) ══ */
 const pidiendo = new Map();
 function contenidoDe(p, temaId){
@@ -568,8 +611,13 @@ function contenidoDe(p, temaId){
   const t = temaDe(p, temaId);
   const u = p.unidades.find((x) => x.temas.some((y) => y.id === temaId));
   const pr = (async () => {
-    const j = await ia({ sistema: sistemaLeccion(), tope: 7000, revisar: normalizarLeccion,
-      texto: `Materia: ${p.materia}\nUnidad: ${u ? u.titulo : ''}\nTema: ${t.titulo}\n${t.resumen ? 'De qué trata: ' + t.resumen + '\n' : ''}${p.notas ? 'Lo que traen los apuntes del alumno: ' + p.notas + '\n' : ''}${p.extra ? 'Lo que dijo el alumno: ' + p.extra : ''}` });
+    const nivel = p.academia ? 'academia' : 'prepa';
+    let j = await deLaBiblioteca('leccion', p.materia, t.titulo, nivel, normalizarLeccion);
+    if(!j){
+      j = await ia({ sistema: sistemaLeccion(), tope: 7000, revisar: normalizarLeccion,
+        texto: `Materia: ${p.materia}\nUnidad: ${u ? u.titulo : ''}\nTema: ${t.titulo}\n${t.resumen ? 'De qué trata: ' + t.resumen + '\n' : ''}${p.notas ? 'Lo que traen los apuntes del alumno: ' + p.notas + '\n' : ''}${p.extra ? 'Lo que dijo el alumno: ' + p.extra : ''}` });
+      if(!p.conFotos && !p.extra) aLaBiblioteca('leccion', p.materia, t.titulo, nivel, j);
+    }
     const actual = planes[p.id] || p; actual.contenido = actual.contenido || {}; actual.contenido[temaId] = j; guardarPlan(actual);
     return j;
   })();
@@ -786,7 +834,10 @@ const EJ = {
         <div class="grupos">${q.grupos.map((g, gi) => `<button class="grupo" data-grupo="${gi}"><b>${esc(g.nombre)}</b><span class="dentro-g" data-dentro="${gi}"></span></button>`).join('')}</div>
         <div class="fichas sueltas">${q._items.map((x, j) => `<div class="ficha-lugar" data-lugar-c="${j}"><button class="ficha" data-cla="${j}">${esc(x.t)}</button></div>`).join('')}</div>`; },
     tocar(e, q, c){
-      const f = e.target.closest('[data-cla]');
+      let f = e.target.closest('[data-cla]');
+      /* con una ficha elegida, tocar un grupo ENCIMA de otra ficha que ya está ahí es querer meterla a ese grupo
+         (antes sacaba la de abajo: en el teléfono, el dedo casi siempre cae sobre una ficha ya puesta) */
+      if(f && q._sel != null && q._sel !== +f.dataset.cla && q._en[+f.dataset.cla] != null) f = null;
       if(f && !f.disabled){ const j = +f.dataset.cla;
         if(q._en[j] != null){ const desde = f.getBoundingClientRect(); delete q._en[j]; $(`[data-lugar-c="${j}"]`, c).append(f); volar(f, desde); q._sel = null; tono(SON.pop); }
         else { q._sel = j; $$('[data-cla]', c).forEach((x) => x.classList.toggle('sel', x === f)); tono(SON.toque); }
@@ -872,6 +923,7 @@ function cuestionario(p, n, preguntas, { simulacro = false } = {}){
       <p id="porque" hidden>${esc(q.porque || '')}</p>
       <div class="bts"><button class="bt" data-porque ${q.porque ? '' : 'disabled'}>¿Por qué?</button><button class="bt ${bien ? 'fuerte' : 'blanco'}" data-continuar>Continuar</button></div></div>`;
     document.body.append(h);
+    { const d = document.createElement('div'); d.className = 'masc-res'; $('.dentro', h).prepend(d); const m = mascotaEn(d, { tam: 76 }); if(m) m.play(bien ? (combo >= 3 ? 'festeja' : 'bien') : (q.intento ? 'triste' : 'mal'), { dura: 0 }); }
     $('[data-continuar]', h).focus({ preventScroll: true });
     h.addEventListener('click', (e) => {
       if(e.target.closest('[data-porque]')){ $('#porque', h).hidden = false; e.target.closest('[data-porque]').disabled = true; }
@@ -912,9 +964,11 @@ function resultado(p, n, r){
     <div class="medallas"><div class="medalla" style="--c:#7A2FBF;--c2:var(--claro-txt)"><small>XP</small><b>${ico('zap')}+${r.xp}</b></div>
     <div class="medalla" style="--c:var(--vino);animation-delay:.12s"><small>${r.pct === 100 ? 'Perfecto' : 'Aciertos'}</small><b>${r.pct} %</b></div>
     <div class="medalla" style="--c:#4A3560;animation-delay:.24s"><small>Tiempo</small><b>${ico('clock')}${mm}</b></div></div>
+    <div class="masc-fin" id="mascFin"></div>
     <h2 class="titulo" style="font-size:20px">¿Qué te pareció?</h2><div class="estrellas" id="estrellas">${[1, 2, 3, 4, 5].map((k) => `<button data-estrella="${k}" aria-label="${k} de 5">${ico('star')}</button>`).join('')}</div></div></div>
     <div class="abajo"><button class="bt blanco ancho" data-continuar>Continuar</button></div>`;
   if(r.pct === 100) confeti();
+  { const m = mascotaEn($('#mascFin', c), { tam: 110 }); if(m) setTimeout(() => m.play(r.pct === 100 ? 'festeja' : r.pct >= 70 ? 'bien' : 'calma', { decir: r.pct === 100 ? '¡Perfecto!' : r.pct >= 70 ? '¡Bien hecho!' : 'Lo repasamos y sale', dura: r.pct === 100 ? 3400 : 2200 }), 450); }
   let nota = 0;
   c.addEventListener('click', (e) => {
     const s = e.target.closest('[data-estrella]'); if(s){ nota = +s.dataset.estrella; $$('#estrellas button', c).forEach((b) => b.classList.toggle('on', +b.dataset.estrella <= nota)); tono(SON.toque); return; }
@@ -1018,7 +1072,13 @@ function abrirPizarra(p, n){
   if(unidad){ q.set('tema', `Panorama general de «${unidad.titulo}» (${p.materia}): de qué trata y cómo se conectan ${unidad.temas.map((t) => t.titulo).join(', ')}. Explica la idea general; cada tema se verá a fondo después.`); q.set('largo', 'normal'); }
   else { q.set('tema', `${n.titulo} (${p.materia})`); q.set('largo', 'corta'); }
   /* para que la clase sea SUYA: qué examen prepara, cuándo, qué ya vio y qué le costó (Explica lo mete en lo que le pide a la IA) */
-  if(p.unidades){
+  if(p.academia){
+    /* Academia: la IA explica SÓLO con la hoja oficial de Grupo Mazi (academia.js), para que no invente precios ni clientes */
+    q.set('nivel', 'uni');
+    if(!unidad) q.set('tema', `${n.titulo} (curso de Grupo Mazi para vendedores)`);
+    q.set('contexto', `Es un curso interno de Grupo Mazi para sus vendedores. Usa SÓLO estos datos oficiales; si algo no está aquí, no lo inventes: ${HECHOS}`);
+  }
+  else if(p.unidades){
     const t = n.tema && temaDe(p, n.tema), ns = todosLosNodos(p);
     const vistos = ns.filter((x) => x.tipo === 'quiz' && hecho(p, x)).map((x) => x.titulo).slice(-8);
     const costo = ns.filter((x) => x.tipo === 'quiz' && p.progreso[x.id] && p.progreso[x.id].mejor < 70).map((x) => x.titulo).slice(0, 5);
@@ -1032,6 +1092,37 @@ function abrirPizarra(p, n){
   c.addEventListener('click', (e) => {
     if(e.target.closest('[data-cerrar]')){ removeEventListener('message', alTerminar); cerrarCapa(); pintar(); return; }
     if(e.target.closest('[data-vista]')){ removeEventListener('message', alTerminar); completarNodo(planes[p.id], n, { xp: unidad ? 15 : 12 }); }
+  });
+}
+
+/* ══ 10-bis · ACADEMIA GRUPO MAZI (academia.js) ══════════════════════════════
+   Carlos, 13 nov: «que en caso de que tengamos vendedores les podamos decir: si quieres estudiar
+   cómo trabajar con Grupo Mazi, ahí mismo lo puedes hacer». Tres cursos ya escritos (sin gastar IA)
+   que se juegan con el mismo camino, lecciones, ejercicios, combo, tarjetas y examen. */
+function abrirAcademia(){
+  const c = capa('academia');
+  const pinta = () => {
+    c.innerHTML = `<div class="arriba"><button class="bt redondo fantasma" data-cerrar aria-label="Cerrar">${ico('x')}</button><div style="flex:1"></div></div>
+      <div class="cuerpo entra"><div class="acad-cab"><div class="marca-carymo"><b>ACADEMIA</b><span>Grupo Mazi</span></div>
+        <h1>Aprende a trabajar con Grupo Mazi</h1><p>De dónde venimos, qué vendemos y cómo se cierra una venta. Cada curso trae lecciones, ejercicios, cátedras en el pizarrón y un examen.</p></div>
+        <div class="acad-cursos">${CURSOS.map((k, i) => { const p = planes['p-' + k.id], a = p ? avanceDe(p) : null, nTemas = k.unidades.reduce((x, u) => x + u.temas.length, 0);
+          return `<button class="acad-curso entra" style="--c:${k.color};animation-delay:${i * 70}ms" data-curso="${k.id}">
+            <span class="acad-ico">${ico(k.icono)}</span><span class="acad-txt"><small>Curso ${i + 1} · ${k.unidades.length} unidades · ${nTemas} lecciones</small><b>${esc(k.titulo)}</b><em>${esc(k.frase)}</em>
+            <span class="acad-barra"><i style="width:${a ? Math.max(4, a.pct) : 0}%"></i></span></span>
+            <span class="acad-ir">${a ? (a.pct >= 100 ? ico('circle-check') : a.pct + ' %') : 'Empezar'}</span></button>`; }).join('')}</div>
+        <div class="seccion-t">Material para llevar</div>
+        <div class="acad-material">${MATERIAL.map((m) => `<a class="acad-doc" href="${esc(m.href)}" target="_blank" rel="noopener">${ico(m.icono)}<span><b>${esc(m.titulo)}</b><small>${esc(m.detalle)}</small></span>${ico('chevron-right')}</a>`).join('')}</div>
+        <p class="acad-pie">¿Dudas? WhatsApp de la empresa: 442 883 3786</p></div>`;
+  };
+  pinta();
+  c.addEventListener('click', (e) => {
+    if(e.target.closest('[data-cerrar]')){ cerrarCapa(); pintar(); return; }
+    const b = e.target.closest('[data-curso]'); if(!b) return;
+    const k = CURSOS.find((x) => x.id === b.dataset.curso); if(!k) return;
+    tono(SON.toque);
+    const id = 'p-' + k.id;
+    if(!planes[id]){ const p = planDeCurso(k, armarCamino); p.color = k.color; guardarPlan(p); brindis(`Empezaste «${k.titulo}»`, 'vino', 'graduation-cap'); }
+    actualId = id; guardarLocal(); cerrarCapa(); vista = 'plan'; pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 });
   });
 }
 
@@ -1092,8 +1183,9 @@ $('#bMenuPlan').addEventListener('click', () => {
 $('#bPlanes').addEventListener('click', () => {
   const lista = Object.values(planes).sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
   const h = hoja('Tus planes', `<div class="menu">${lista.map((p) => `<button data-plan="${esc(p.id)}">${ico('notebook-pen')}<span>${esc(p.titulo)}<br><small style="color:var(--suave);font-weight:600">${esc(cuandoTexto(p.fecha))} · ${avanceDe(p).pct} %</small></span>${p.id === actualId ? `<span class="sel">${ico('circle-check')}</span>` : ''}</button>`).join('')}</div>
-    <button class="bt blanco ancho" style="margin-top:12px" data-plan="nuevo">${ico('plus')}Crear un nuevo plan</button>`);
-  h.addEventListener('click', (e) => { const b = e.target.closest('[data-plan]'); if(!b) return; cerrarHoja(); if(b.dataset.plan === 'nuevo') alta(); else { actualId = b.dataset.plan; guardarLocal(); pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 }); } });
+    <button class="bt blanco ancho" style="margin-top:12px" data-plan="nuevo">${ico('plus')}Crear un nuevo plan</button>
+    <button class="bt ancho" style="margin-top:10px" data-plan="academia">${ico('graduation-cap')}Academia Grupo Mazi</button>`);
+  h.addEventListener('click', (e) => { const b = e.target.closest('[data-plan]'); if(!b) return; cerrarHoja(); if(b.dataset.plan === 'nuevo') alta(); else if(b.dataset.plan === 'academia') abrirAcademia(); else { actualId = b.dataset.plan; guardarLocal(); pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 }); } });
 });
 function editarPlan(p){
   const h = hoja('Editar plan', `<label class="seccion-t" for="eNom">Nombre</label><input class="campo" id="eNom" value="${esc(p.titulo)}"><label class="seccion-t" for="eFecha" style="display:block">Fecha del examen</label><input type="date" class="campo" id="eFecha" value="${esc(p.fecha)}"><button class="bt fuerte ancho" style="margin-top:16px" id="eGuardar">Guardar</button>`);
@@ -1134,9 +1226,10 @@ function pintarHorario(){
     <div class="seccion-t">La semana</div>
     <div class="horario">${DIAS_ESC.map((n, i) => { const cl = hz.clases.filter((x) => x.dia === i).sort((a, b) => aMin(a.inicio) - aMin(b.inicio));
       return `<div class="dia-h"><h4 class="${i === hoyI ? 'hoy' : ''}">${n}${i === hoyI ? ' · hoy' : ''}</h4>${cl.map((x) => `<div class="clase-h ${x === enCurso ? 'ahora' : ''}" style="--c:${colorMateria(x.materia)}"><span class="hr">${esc(x.inicio)}<br>${esc(x.fin)}</span><b>${esc(x.materia)}</b><button data-quitar-clase="${hz.clases.indexOf(x)}" aria-label="Quitar ${esc(x.materia)} del ${n.toLowerCase()}">${ico('x')}</button></div>`).join('') || '<p style="color:var(--tenue);font-size:14px">Sin clases</p>'}</div>`; }).join('')}</div>
-    <div style="display:grid;gap:10px;margin:22px 0 30px"><button class="bt fuerte ancho" id="bAgregarClase">${ico('plus')}Agregar una clase</button><button class="bt ancho" id="bPegarHorario">${ico('clipboard-paste')}Pegar desde Excel</button></div>`;
+    <div style="display:grid;gap:10px;margin:22px 0 30px"><button class="bt fuerte ancho" id="bAgregarClase">${ico('plus')}Agregar una clase</button><label class="bt ancho" id="bFotoHorario">${ico('camera')}Subir foto de mi horario<input type="file" accept="image/*" hidden id="fFotoHorario"></label><button class="bt ancho" id="bPegarHorario">${ico('clipboard-paste')}Pegar desde Excel</button></div>`;
   $('#bAgregarClase').addEventListener('click', agregarClase);
   $('#bPegarHorario').addEventListener('click', pegarHorario);
+  $('#fFotoHorario').addEventListener('change', (e) => { const f = e.target.files[0]; e.target.value = ''; if(f) fotoHorario(f); });
 }
 $('#vHorario').addEventListener('click', (e) => { const b = e.target.closest('[data-quitar-clase]'); if(!b) return; const hz = horario(); hz.clases.splice(+b.dataset.quitarClase, 1); guardarHorario(hz); });
 function guardarHorario(hz){ perfil.horario = hz; guarda.poner('est.perfil', perfil); pintarHorario(); sala({ accion: 'perfil', horario: hz }).catch(() => {}); }
@@ -1169,6 +1262,50 @@ export function leerHorarioPegado(texto){
   }
   return clases;
 }
+/* la foto del horario (Carlos, 13 nov: «que nada más subas tu foto de tu horario y ya la propia
+   aplicación tome qué días, a qué horas»). La lee la IA que ve fotos; se enseña lo que entendió
+   ANTES de guardarlo. Los nombres de maestros no se piden ni se guardan. */
+const SISTEMA_HORARIO = `Lees la FOTO de un horario escolar y lo pasas a datos. Contesta SÓLO con JSON válido:
+{"clases":[{"dia":0,"inicio":"07:00","fin":"08:00","materia":"Inglés III"}]}
+- "dia": 0 lunes, 1 martes, 2 miércoles, 3 jueves, 4 viernes, 5 sábado.
+- "inicio" y "fin" en 24 horas «HH:MM», tal como dice la fila de la hora.
+- "materia": el nombre de la materia tal cual se lee (sin el nombre del maestro).
+- Una entrada por cada celda con materia. NO pongas receso, descanso ni celdas vacías.
+- Si una materia ocupa dos filas seguidas, son dos entradas.`;
+export function normalizarHorarioFoto(j){
+  const clases = (Array.isArray(j && j.clases) ? j.clases : []).map((x) => {
+    const dia = Number(x && x.dia); const ini = /^(\d{1,2}):(\d{2})/.exec(String(x && x.inicio || '')), fin = /^(\d{1,2}):(\d{2})/.exec(String(x && x.fin || ''));
+    const materia = String(x && x.materia || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+    if(!Number.isInteger(dia) || dia < 0 || dia > 5 || !ini || !fin || !materia || /^(receso|descanso|recreo)$/i.test(materia)) return null;
+    const hhmm = (m) => `${m[1].padStart(2, '0')}:${m[2]}`;
+    if(aMin(hhmm(fin)) <= aMin(hhmm(ini))) return null;
+    return { dia, inicio: hhmm(ini), fin: hhmm(fin), materia };
+  }).filter(Boolean);
+  if(!clases.length) throw new Error('No encontré clases en la foto. Prueba con una foto más derechita y con buena luz.');
+  return clases;
+}
+async function fotoHorario(archivo){
+  const img = await createImageBitmap(archivo).catch(() => null); if(!img){ brindis('No pude abrir esa foto', 'vino', 'x'); return; }
+  const k = Math.min(1, 1800 / Math.max(img.width, img.height)), cv = document.createElement('canvas'); cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
+  cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height); const url = cv.toDataURL('image/jpeg', .9);
+  const h = hoja('Leyendo tu horario', `<div id="fhCaja"><div style="display:grid;justify-items:center;gap:12px;padding:10px 0"><div class="masc-prep" id="mascHor"></div><p style="color:var(--suave);text-align:center">Estoy leyendo los días, las horas y las materias…</p></div></div>`);
+  { const m = mascotaEn($('#mascHor', h), { tam: 90 }); if(m) m.play('piensa'); }
+  try{
+    const clases = await ia({ sistema: SISTEMA_HORARIO, texto: 'Este es mi horario. Pásalo a datos.', imagenes: [{ mime: 'image/jpeg', data: url.split(',')[1] }], motor: 'gemini', tope: 6000, revisar: normalizarHorarioFoto });
+    const porDia = DIAS_ESC.map((n, i) => [n, clases.filter((x) => x.dia === i).sort((a, b) => aMin(a.inicio) - aMin(b.inicio))]).filter(([, cl]) => cl.length);
+    if($('h3', h)) $('h3', h).textContent = `Encontré ${clases.length} clases`;
+    const caja = $('#fhCaja', h);
+    caja.innerHTML = `<p style="color:var(--suave);margin-bottom:10px">Revisa que esté bien. Si una materia salió mal escrita, la corriges después tocándola.</p>
+      <div class="horario" style="max-height:50vh;overflow:auto">${porDia.map(([n, cl]) => `<div class="dia-h"><h4>${n}</h4>${cl.map((x) => `<div class="clase-h" style="--c:${colorMateria(x.materia)}"><span class="hr">${esc(x.inicio)}<br>${esc(x.fin)}</span><b>${esc(x.materia)}</b></div>`).join('')}</div>`).join('')}</div>
+      <div style="display:grid;gap:10px;margin-top:14px"><button class="bt fuerte ancho" id="fhUsar">${ico('check')}Usar este horario</button><button class="bt ancho" id="fhNo">Cancelar</button></div>`;
+    $('#fhUsar', h).addEventListener('click', () => { cerrarHoja(); guardarHorario({ clases }); tono(SON.logro || SON.fin); brindis(`Listo: ${clases.length} clases`, '', 'calendar-days'); });
+    $('#fhNo', h).addEventListener('click', cerrarHoja);
+  }catch(e){
+    const caja = $('#fhCaja', h); caja.innerHTML = `<div class="aviso">${esc(e.message || String(e))}</div><button class="bt ancho" style="margin-top:12px" id="fhNo">Cerrar</button>`;
+    $('#fhNo', h).addEventListener('click', cerrarHoja);
+  }
+}
+
 function pegarHorario(){
   const h = hoja('Pegar desde Excel', `<p style="color:var(--suave);margin-bottom:10px">Copia tu horario en Excel o Sheets (con los días arriba y la hora a la izquierda, tipo «7:00-7:50») y pégalo aquí.</p>
     <textarea class="campo" id="pTxt" style="min-height:160px" placeholder="Hora&#9;Lunes&#9;Martes…"></textarea><button class="bt fuerte ancho" style="margin-top:12px" id="pListo">Usar este horario</button>`);
@@ -1226,9 +1363,26 @@ function pintarRanking(){
     $$('.fila-rank', v).forEach((el) => { const antes = ordenAnterior.indexOf(el.dataset.cuenta), hoy = ahora.indexOf(el.dataset.cuenta); if(antes >= 0 && antes !== hoy) el.animate([{ transform: `translateY(${(antes - hoy) * 66}px)` }, { transform: 'none' }], { duration: 700, easing: 'cubic-bezier(.2,.9,.3,1)' }); });
   }
   ordenAnterior = ahora;
+  amigos?.pintarSeccion();
 }
 
 /* ══ 16 · PERFIL Y AJUSTES ════════════════════════════════════════════════ */
+/* La voz se guarda donde la lee el pizarrón (explica.voz): las dos páginas son del mismo sitio */
+const vozGuardada = () => { const v = guarda.leer('explica.voz', VOZ_DE_FABRICA); return { tel: 'tel:', natural: 'google:Kore' }[v] || v; };
+function opcionesVoz(){
+  const grupos = {}; for(const v of todasLasVoces()) (grupos[v.grupo] ||= []).push(v);
+  const ya = vozGuardada();
+  return Object.entries(grupos).map(([g, vs]) => `<optgroup label="${esc(g)}">${vs.map((v) => `<option value="${esc(v.id)}"${v.id === ya ? ' selected' : ''}>${esc(v.nombre)} · ${esc(v.desc)}</option>`).join('')}</optgroup>`).join('') + `<option value="no"${ya === 'no' ? ' selected' : ''}>Sin voz</option>`;
+}
+let vozPrueba = null;
+function probarVoz(){
+  despertar();
+  vozPrueba ||= crearVoz({ pedir: async (c) => (await llamar(`${SERVIDOR}/api/sala/${SALA}/ia-voz`, { metodo: 'POST', cuerpo: c, espera: 60000 })).json().catch(() => ({})),
+    alFallar: () => brindis('Esa voz no contestó; te puse la del teléfono', 'vino', 'mic') });
+  const v = vozGuardada(); if(v === 'no'){ brindis('Elegiste «Sin voz»', '', 'mic'); return; }
+  const nom = (perfil.nombre && perfil.nombre !== 'Tú') ? perfil.nombre.split(' ')[0] : '';
+  vozPrueba.decir(`¡Hola${nom ? ', ' + nom : ''}! Así te voy a explicar en el pizarrón. ¿Le entramos?`, v);
+}
 function pintarPerfil(){
   const v = $('#vPerfil'), ps = Object.values(planes);
   v.innerHTML = `<div class="perfil-cab"><span class="av">${esc((perfil.nombre || 'T').charAt(0).toUpperCase())}</span><div><h2>${esc(perfil.nombre || 'Tú')}</h2><small>${perfil.cuenta ? '@' + esc(perfil.cuenta) + ' · ' : ''}Instituto Rembrandt de Querétaro</small></div></div>
@@ -1241,17 +1395,28 @@ function pintarPerfil(){
       <button data-nuevo-plan>${ico('plus')}<span>Crear un plan</span></button></div>
     <div class="seccion-t">Tú</div>
     <label class="ajuste">${ico('pencil')}<span>Tu nombre en el ranking</span><input id="pNombre" class="campo" style="max-width:150px;min-height:40px" value="${esc(perfil.nombre || '')}" aria-label="Tu nombre en el ranking"></label>
+    <div class="seccion-t">Tu compañero</div>
+    <div class="elige-masc" role="radiogroup" aria-label="Tu compañero">${[['tigre', 'Tigre'], ['paloma', 'Paloma'], ['no', 'Ninguno']].map(([k, t]) => `<button role="radio" aria-checked="${ajustes.mascota === k}" data-masc="${k}">${k === 'no' ? ico('x') : `<span class="masc-mini" data-mini="${k}"></span>`}<span>${t}</span></button>`).join('')}</div>
+    <div class="seccion-t">La voz que te explica</div>
+    <div class="ajuste voz-aj">${ico('mic')}<span>Voz del pizarrón<small style="display:block;color:var(--tenue);font-weight:500">Las «de estudio» suenan como persona</small></span>
+      <select id="pVoz" class="campo" style="max-width:170px;min-height:40px" aria-label="Voz del pizarrón">${opcionesVoz()}</select>
+      <button class="bt redondo" data-probar-voz aria-label="Oír la voz">${ico('play')}</button></div>
     <div class="seccion-t">App</div>
     <div class="ajuste">${ico('volume-2')}<span>Efectos de sonido</span><button class="interruptor" role="switch" data-aj="sonido" aria-checked="${!!ajustes.sonido}" aria-label="Efectos de sonido"></button></div>
     <div class="ajuste">${ico('vibrate')}<span>Vibración</span><button class="interruptor" role="switch" data-aj="vibrar" aria-checked="${!!ajustes.vibrar}" aria-label="Vibración"></button></div>
     <p class="version">${esc(VERSION_ESTUDIO)} · ${cola.length ? `${cola.length} logros por mandar a La Sala` : 'todo guardado en La Sala'}</p>`;
+  /* el selector de compañero con las mascotas vivas (sin imágenes recortadas) */
+  $$('[data-mini]', v).forEach((d) => crearMascota(d, { personaje: d.dataset.mini, tam: 62 }));
 }
 $('#vPerfil').addEventListener('click', (e) => {
   const a = e.target.closest('[data-aj]'); if(a){ ajustes[a.dataset.aj] = !ajustes[a.dataset.aj]; guarda.poner('est.ajustes', ajustes); a.setAttribute('aria-checked', ajustes[a.dataset.aj]); encenderSonidos(ajustes.sonido !== false); tono(SON.toque); return; }
   const p = e.target.closest('[data-abrir-plan]'); if(p){ actualId = p.dataset.abrirPlan; guardarLocal(); vista = 'plan'; pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 }); return; }
   if(e.target.closest('[data-nuevo-plan]')) alta();
+  if(e.target.closest('[data-probar-voz]')) probarVoz();
+  const mb = e.target.closest('[data-masc]'); if(mb){ ajustes.mascota = mb.dataset.masc; guarda.poner('est.ajustes', ajustes); tono(SON.pop); pintarPerfil(); pintarPlan.saludo = false; }
 });
 $('#vPerfil').addEventListener('change', (e) => {
+  if(e.target.id === 'pVoz'){ const v = e.target.value; guarda.poner('explica.voz', v); if(v !== 'no') guarda.poner('explica.vozAntes', v); tono(SON.toque); probarVoz(); return; }
   if(e.target.id !== 'pNombre') return;
   const n = e.target.value.trim().slice(0, 30); if(!n) return;
   perfil.nombre = n; guarda.poner('est.perfil', perfil);
@@ -1261,10 +1426,25 @@ $('#vPerfil').addEventListener('change', (e) => {
 /* ══ 17 · ARRANQUE ════════════════════════════════════════════════════════ */
 if(migrarAlArrancar){ for(const p of Object.values(planes)) if(migrarCamino(p)) porGuardar.add(p.id); guardarLocal(); }
 $$('[data-ico]').forEach((s) => { s.outerHTML = ico(s.dataset.ico); });
-$('#nav').addEventListener('click', (e) => { const b = e.target.closest('[data-ir]'); if(!b) return; vista = b.dataset.ir; tono(SON.toque); pintar(); scrollTo({ top: 0 }); if(vista === 'ranking') mandarCola()?.then?.(() => {}); });
+/* cambiar de pestaña se desliza hacia el lado de la pestaña nueva (View Transitions donde existan) */
+const ORDEN_VISTAS = ['plan', 'horario', 'pizarron', 'buscar', 'ranking', 'perfil'];
+$('#nav').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-ir]'); if(!b || b.dataset.ir === vista) return;
+  const dir = ORDEN_VISTAS.indexOf(b.dataset.ir) > ORDEN_VISTAS.indexOf(vista) ? 1 : -1;
+  vista = b.dataset.ir; tono(SON.toque); vibrar(8);
+  b.animate([{ transform: 'scale(1)' }, { transform: 'scale(.86)' }, { transform: 'scale(1.08)' }, { transform: 'scale(1)' }], { duration: 380, easing: 'cubic-bezier(.3,1.5,.4,1)' });
+  const cambia = () => { pintar(); scrollTo({ top: 0 }); };
+  if(document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches){ document.documentElement.style.setProperty('--dir', dir); document.startViewTransition(cambia); }
+  else cambia();
+  if(vista === 'ranking') mandarCola()?.then?.(() => {});
+});
 addEventListener('online', () => { mandarCola(); subirPlanes(); });
 document.addEventListener('visibilitychange', () => { if(!document.hidden) sincronizar(); });
+/* amigos, estudiar juntos y «¿cómo te fue?» (amigos.js) */
+amigos = iniciarAmigos({ sala, brindis, hoja, cerrarHoja, esc, ico, tono, SON, vibrar, mascotaEn, $, guardarPlan, colorDe: colorMateria,
+  perfil: () => perfil, planes: () => planes, actual: () => actualId, vista: () => vista, cuenta: () => perfil.cuenta, estudiando: () => !!$('#capa') });
 pintar();
 sincronizar();
+if(llave()){ amigos.arrancar(); setTimeout(() => { if(vista === 'plan' && !$('#capa')) amigos.preguntarExamen(); }, 2500); }
 /* para las pruebas */
-window.__estudio = { estado: () => ({ planes, actualId, perfil, ranking, cola, vista }), avanceDe, normalizarLeccion, normalizarPlan, leerHorarioPegado };
+window.__estudio = { amigos: () => amigos, estado: () => ({ planes, actualId, perfil, ranking, cola, vista }), avanceDe, normalizarLeccion, normalizarPlan, leerHorarioPegado, normalizarHorarioFoto };

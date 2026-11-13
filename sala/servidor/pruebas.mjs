@@ -1131,7 +1131,9 @@ console.log('\n· Las sillas');
     ok('Paulina recibe la foto junto con la pregunta', c5 === 200 && enviado?.contents?.at(-1)?.parts?.[0]?.inlineData?.mimeType === 'image/jpeg', JSON.stringify(enviado).slice(0, 200));
     ok('y se le pide JSON cuando se quiere JSON', enviado?.generationConfig?.responseMimeType === 'application/json');
     const [c6, r6] = await leer(await pedir(s, 'POST', 'ia-texto', { motor: 'negro', texto: 'describe', imagenes: [foto] }, 'MAESTRA'));
-    ok('Negro no ve imágenes y lo dice (no las ignora callado)', c6 === 502 && /no ve imágenes/.test(r6.error), JSON.stringify(r6));
+    ok('una foto pedida a Negro la contesta Paulina, de respaldo (13 nov)', c6 === 200 && r6.respaldo && r6.motor === 'gemini', JSON.stringify(r6));
+    const [c6b, r6b] = await leer(await pedir(s, 'POST', 'ia-texto', { motor: 'negro', texto: 'describe', imagenes: [foto], sinRespaldo: true }, 'MAESTRA'));
+    ok('y sin respaldo, Negro dice que no ve imágenes (no las ignora callado)', c6b === 502 && /no ve imágenes/.test(r6b.error), JSON.stringify(r6b));
     /* las notas de voz de Secre: Paulina las oye para escribirlas */
     const nota = { mime: 'audio/ogg', data: 'T2dnUw' + 'A'.repeat(200) };
     const [c7] = await leer(await pedir(s, 'POST', 'ia-texto', { motor: 'gemini', texto: 'escribe lo que dice', imagenes: [nota] }, 'MAESTRA'));
@@ -1141,6 +1143,17 @@ console.log('\n· Las sillas');
     globalThis.fetch = async (url) => new Response(JSON.stringify(String(url).includes('interactions') ? { steps: [{ type: 'audio', mime_type: 'audio/wav', data: 'R'.repeat(400) }] } : {}));
     const [c9, r9] = await leer(await pedir(s, 'POST', 'ia-voz', { texto: 'Hola, soy la asistente de Carlos' }, 'MAESTRA'));
     ok('/ia-voz devuelve la nota de voz', c9 === 200 && r9.bien && r9.data.length === 400, JSON.stringify(r9).slice(0, 120));
+    globalThis.fetch = async (url, op) => { cuerpos.push(JSON.parse(op.body)); return new Response(JSON.stringify({ steps: [{ type: 'audio', mime_type: 'audio/wav', data: 'R'.repeat(400) }] })); };
+    await leer(await pedir(s, 'POST', 'ia-voz', { texto: 'La fotosíntesis hace la comida de la planta.', estilo: 'Explícalo como una maestra clara' }, 'MAESTRA'));
+    ok('a la voz de Google le llega SÓLO lo que hay que decir, nunca una instrucción que pueda leer en voz alta (13 nov)', JSON.stringify(cuerpos.at(-1)).includes('La fotosíntesis') && !JSON.stringify(cuerpos.at(-1)).includes('maestra') && !/Dilo en/.test(JSON.stringify(cuerpos.at(-1))), JSON.stringify(cuerpos.at(-1)).slice(0, 200));
+    {
+      const llamadas = [];
+      const conNube = nueva({ LLAVES: 'carlos:MAESTRA', AI: { run: async (m, e) => { llamadas.push([m, e]); if(m.includes('aura') && e.speaker === 'celeste') throw new Error('4006: daily free allocation exceeded'); return m.includes('aura') ? new Uint8Array(600).fill(73) : { audio: 'UklGR' + 'A'.repeat(500) }; } } });
+      const [cn, rn] = await leer(await pedir(conNube, 'POST', 'ia-voz', { texto: 'Hola', voz: 'nube:javier' }, 'MAESTRA'));
+      ok('una voz de la nube (Javier) contesta MP3 sin llave de nadie', cn === 200 && rn.bien && rn.mime === 'audio/mpeg' && rn.voz === 'javier' && llamadas.at(-1)[1].text === 'Hola', JSON.stringify(rn).slice(0, 160));
+      const [cm, rm] = await leer(await pedir(conNube, 'POST', 'ia-voz', { texto: 'Hola', voz: 'nube:celeste' }, 'MAESTRA'));
+      ok('si se acaba lo gratis de Deepgram, contesta MeloTTS de respaldo', cm === 200 && rm.bien && rm.voz === 'melo' && rm.respaldo && rm.mime === 'audio/wav', JSON.stringify(rm).slice(0, 160));
+    }
     const [c10] = await leer(await pedir(s, 'POST', 'ia-voz', { texto: 'x' }, 'ajena'));
     ok('y sin la llave de la sala, nada', c10 === 401);
     globalThis.fetch = antes;
