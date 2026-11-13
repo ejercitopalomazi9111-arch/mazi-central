@@ -147,6 +147,21 @@ console.log('El servidor');
   r = await pide('ana', 0, { accion: 'salirSesion' }, T0 + 26 * 60_000);
   r = await pide('ana', 0, { accion: 'latido' }, T0 + 26 * 60_000 + 1);
   ok(!r.sesion, 'y ya se puede empezar otra');
+  /* Carlos, 13 nov: «nunca acabó el tiempo pero desapareció el timer» — uno sale antes y el otro debe ver el final */
+  await pide('ana', 0, { accion: 'latido' }, T0 + 30 * 60_000); await pide('beto', 0, { accion: 'latido' }, T0 + 30 * 60_000);
+  r = await pide('ana', 0, { accion: 'invitar', a: 'beto', minutos: 10 }, T0 + 30 * 60_000);
+  ok(r.bien, 'después de una sesión se puede invitar otra vez');
+  await pide('beto', 0, { accion: 'responder', si: true }, T0 + 30 * 60_000 + 1000);
+  r = await pide('beto', 0, { accion: 'salirSesion' }, T0 + 34 * 60_000);
+  ok(r.sesion.estado === 'terminada' && r.sesion.salio === 'beto', 'Beto sale a los 4 minutos (como Brenda)');
+  r = await pide('ana', 0, { accion: 'latido', desde: T0 + 33 * 60_000 }, T0 + 34 * 60_000 + 1);
+  ok(r.sesion && r.sesion.estado === 'terminada' && r.sesion.salio === 'beto', 'a Ana NO se le esfuma: le llega la sesión terminada para ver el final («salió antes»)');
+  r = await pide('beto', 0, { accion: 'latido' }, T0 + 34 * 60_000 + 2);
+  ok(!r.sesion, 'Beto ya está libre');
+  await pide('ana', 0, { accion: 'salirSesion' }, T0 + 34 * 60_000 + 3);
+  r = await pide('ana', 0, { accion: 'invitar', a: 'beto', minutos: 15 }, T0 + 34 * 60_000 + 4);
+  ok(r.bien && r.sesion.estado === 'invitada', 'y al cerrar el final, Ana puede volver a invitarlo');
+  await pide('ana', 0, { accion: 'salirSesion' }, T0 + 34 * 60_000 + 5);
   /* cómo te fue en el examen */
   r = await pide('beto', 0, { accion: 'examen', plan: 'p9', titulo: 'Examen de Química', materia: 'Química', fecha: '2026-11-12', como: 'bien', calif: 8.6 }, T0 + 26.5 * 60_000);
   ok(r.bien && r.historial.length === 1 && r.historial[0].calif === 8.6, 'cómo te fue en el examen se guarda en tu historial');

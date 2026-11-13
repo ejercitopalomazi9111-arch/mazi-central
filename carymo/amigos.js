@@ -28,6 +28,8 @@ export function iniciarAmigos(h){
     try{
       const p = planes()[h.actual()] || null;
       const r = await sala({ accion: 'latido', estado: estudiando() ? 'estudiando' : 'libre', materia: p ? p.materia : '', desde });
+      /* la hora del servidor, para que el cronómetro no dependa del reloj del teléfono */
+      if(r.hora) desfase = r.hora - Date.now();
       estado = r; if(r.hora) desde = Math.max(desde, ...(r.buzon || []).map((m) => m.t), desde);
       for(const m of r.buzon || []) avisar(m);
       pintarSesion();
@@ -58,7 +60,8 @@ export function iniciarAmigos(h){
   }
 
   /* la barra de la sesión: cronómetro y marcador de los dos */
-  let tic = 0;
+  let tic = 0, desfase = 0;
+  const ahoraServidor = () => Date.now() + desfase;
   function pintarSesion(){
     let b = document.getElementById('barraSesion');
     const x = estado.sesion;
@@ -66,10 +69,10 @@ export function iniciarAmigos(h){
     if(x.estado === 'terminada'){ b?.remove(); clearInterval(tic); finSesion(x); return; }
     const yo = h.cuenta(), el = x.de === yo ? x.a : x.de;
     if(!b){ b = document.createElement('div'); b.id = 'barraSesion'; b.className = 'barra-sesion entra'; document.body.append(b);
-      b.addEventListener('click', async (e) => { if(!e.target.closest('[data-salir-ses]')) return; if(!b.dataset.seguro){ b.dataset.seguro = '1'; e.target.closest('[data-salir-ses]').textContent = '¿Seguro?'; setTimeout(() => { delete b.dataset.seguro; pintarSesion(); }, 2500); return; }
+      b.addEventListener('click', async (e) => { if(!e.target.closest('[data-salir-ses]')) return; if(!b.dataset.seguro){ b.dataset.seguro = '1'; e.target.closest('[data-salir-ses]').textContent = '¿Salir?'; setTimeout(() => { delete b.dataset.seguro; pintarSesion(); }, 2500); return; }
         try{ const r = await sala({ accion: 'salirSesion', sesion: x.id }); estado.sesion = r.sesion; finSesion(r.sesion); b.remove(); }catch{} }); }
     const pinta = () => {
-      const s = x.estado === 'invitada' ? null : Math.max(0, Math.round((x.fin - Date.now()) / 1000));
+      const s = x.estado === 'invitada' ? null : Math.max(0, Math.round((x.fin - ahoraServidor()) / 1000));
       const t = s == null ? 'Esperando a que acepte…' : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
       const mio = x.xp?.[yo] || 0, suyo = x.xp?.[el] || 0;
       b.innerHTML = `<span class="crono">${ico('timer')}<b>${t}</b></span><span class="marcador"><span class="${mio >= suyo ? 'gana' : ''}">Tú ${mio}</span><i>vs</i><span class="${suyo > mio ? 'gana' : ''}">${esc(x.nombres?.[el] || el)} ${suyo}</span></span><button class="bt redondo fantasma" data-salir-ses aria-label="Salir de la sesión">${ico('x')}</button>`;
@@ -80,10 +83,10 @@ export function iniciarAmigos(h){
   function finSesion(x){
     if(!x || finVisto === x.id) return; finVisto = x.id;
     const yo = h.cuenta(), el = x.de === yo ? x.a : x.de, mio = x.xp?.[yo] || 0, suyo = x.xp?.[el] || 0, nom = x.nombres?.[el] || el;
-    const gane = mio > suyo, empate = mio === suyo;
+    const gane = mio > suyo, empate = mio === suyo, salioOtro = x.salio && x.salio !== yo;
     tono(gane ? SON.fin : SON.subir);
     const hh = hoja('', `<div style="display:grid;justify-items:center;gap:8px;text-align:center"><div class="masc-fin" id="mascSes"></div>
-      <h3 style="margin:0">${empate ? '¡Empate!' : gane ? '¡Le ganaste!' : `Ganó ${esc(nom)}`}</h3><p style="color:var(--suave)">Tú juntaste <b>${mio} XP</b> y ${esc(nom)} <b>${suyo} XP</b> en ${x.minutos} minutos.</p>
+      <h3 style="margin:0">${salioOtro ? `${esc(nom)} terminó la sesión antes` : empate ? '¡Empate!' : gane ? '¡Le ganaste!' : `Ganó ${esc(nom)}`}</h3><p style="color:var(--suave)">Tú juntaste <b>${mio} XP</b> y ${esc(nom)} <b>${suyo} XP</b> en ${Math.max(1, Math.round(((x.fin || ahoraServidor()) - (x.inicio || x.creada)) / 60000))} de ${x.minutos} minutos.${salioOtro ? ' Si quieres, invítalo otra vez desde Ranking.' : ''}</p>
       <div style="display:grid;gap:10px;width:100%"><button class="bt fuerte ancho" id="sesFelicita">${ico('party-popper')}Felicitar a ${esc(nom)}</button><button class="bt ancho" id="sesCerrar">Listo</button></div></div>`);
     { const k = mascotaEn($('#mascSes', hh), { tam: 110 }); if(k) k.play(gane || empate ? 'festeja' : 'bien', { dura: 3400 }); }
     $('#sesFelicita', hh).addEventListener('click', async () => { cerrarHoja(); try{ await sala({ accion: 'mandar', a: el, tipo: 'felicita', texto: '¡Buena sesión!' }); brindis(`Le mandaste una felicitación a ${nom}`, '', 'party-popper'); }catch{} });
@@ -109,7 +112,7 @@ export function iniciarAmigos(h){
         : '<p class="vacio-am">Nadie conectado en este momento.</p>'}
       ${pide.length ? `<div class="seccion-t">Te quieren agregar</div>${pide.map((x) => fila(x, btn('amistad', x.cuenta, 'check', 'Aceptar'))).join('')}` : ''}
       <div class="seccion-t">Amigos ${amigos.length ? `<small>· ${amigos.length}</small>` : ''}</div>
-      ${amigos.length ? amigos.map((x) => fila(x, btn('felicita', x.cuenta, 'party-popper', 'Felicitar') + btn('saludo', x.cuenta, 'hand', 'Saludar'))).join('') : '<p class="vacio-am">No hay nadie por aquí.</p>'}
+      ${amigos.length ? amigos.map((x) => fila(x, (x.enLinea && !ses ? btn('invitar', x.cuenta, 'timer', 'Estudiar juntos') : '') + btn('felicita', x.cuenta, 'party-popper', 'Felicitar') + btn('saludo', x.cuenta, 'hand', 'Saludar'))).join('') : '<p class="vacio-am">No hay nadie por aquí.</p>'}
       <form class="agregar-am" id="fAgregar"><input class="campo" id="amUsuario" placeholder="Usuario de tu amigo" autocomplete="off" autocapitalize="none" aria-label="Usuario de tu amigo"><button class="bt fuerte">${ico('user-plus')}Agregar</button></form>
       <div class="seccion-t" style="margin-top:22px">Ranking de la semana</div>`;
   }

@@ -181,7 +181,11 @@
   /* abajo: subtítulo y controles */
   .mando{ position:fixed; left:0; right:0; bottom:0; z-index:30; padding:10px 12px calc(10px + env(safe-area-inset-bottom)); background:linear-gradient(transparent, #100A18 22%) }
   .mando .dentro{ max-width:760px; margin:0 auto; background:#1E1428f2; backdrop-filter:blur(12px); border:1px solid #ffffff14; border-radius:20px; padding:10px 12px }
-  .sub-voz{ font:600 13px/1.4 Texto; color:#D8D0E2; max-height:38px; overflow:hidden; margin-bottom:8px; -webkit-mask-image:linear-gradient(#000 70%, transparent) }
+  /* una frase a la vez (pintarSub en explica.js): nunca se corta ni se esconde la palabra de ahorita */
+  .sub-voz{ font:600 15px/1.4 Texto; color:#CFC5DC; text-align:center; text-wrap:balance; margin:2px auto 8px; max-width:62ch; min-height:1.4em }
+  .sub-voz.entra{ animation:subEntra .25s ease-out }
+  @keyframes subEntra{ from{ opacity:.2; transform:translateY(4px) } to{ opacity:1; transform:none } }
+  @media (min-width:700px){ .sub-voz{ font-size:17px } }
   .sub-voz[hidden]{ display:none }
   .sub-voz .ya{ color:#fff } .sub-voz .ahora{ color:var(--marca) }
   .barra-pasos{ height:4px; border-radius:2px; background:#ffffff18; margin-bottom:10px; overflow:hidden } .barra-pasos i{ display:block; height:100%; background:var(--violeta2); width:0; transition:width .3s }
