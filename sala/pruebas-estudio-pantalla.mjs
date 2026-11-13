@@ -50,6 +50,10 @@ const vecesTema = {};
 function contestarIA(c){
   pedidosIA.push(c);
   const texto = (c.mensajes || [])[0]?.texto || '';
+  if(/FOTO de un horario/.test(c.sistema)) return { bien: true, texto: JSON.stringify({ clases: [
+    { dia: 0, inicio: '07:00', fin: '08:00', materia: 'Admon. y Estruc. de redes' }, { dia: 0, inicio: '10:00', fin: '10:30', materia: 'RECESO' },
+    { dia: 1, inicio: '7:00', fin: '8:00', materia: 'Metodología de la Inv. I STEAM' }, { dia: 4, inicio: '13:00', fin: '13:50', materia: 'Programación & BD' },
+    { dia: 9, inicio: '07:00', fin: '08:00', materia: 'Día que no existe' }, { dia: 2, inicio: '09:00', fin: '08:00', materia: 'Al revés' } ] }) };
   if(/PLANES DE ESTUDIO/.test(c.sistema)) return { bien: true, texto: '```json\n' + JSON.stringify(PLAN) + '\n```' };
   const tema = ((/Tema: (.+)/.exec(texto) || [])[1] || 'Tema').trim();
   vecesTema[tema] = (vecesTema[tema] || 0) + 1;
@@ -174,6 +178,7 @@ export async function correr({ ok, almacen, atenderEstudio }){
     ok(await desborde() <= 0, 'el camino no se sale de lado');
     await espera(800);
     await foto('05-camino');
+    ok(await pagina.$eval('.masc-camino .masc-cuerpo img', (i) => i.complete && i.naturalWidth > 0 && /tigre-/.test(i.src)).catch(() => false), 'la mascota (el tigre) está junto al nivel que toca');
     for(let k = 0; k < 30 && !pedidosIA.some((c) => /UNA lección/.test(c.sistema)); k++) await espera(100);
     ok(pedidosIA.some((c) => /UNA lección/.test(c.sistema) && /Sistema circulatorio/.test(c.mensajes[0].texto)), 'el primer nivel se prepara solo mientras ves las cátedras');
 
@@ -248,6 +253,7 @@ export async function correr({ ok, almacen, atenderEstudio }){
     await pagina.click('[data-estrella="5"]');
     ok((await pagina.$$('.estrellas .on')).length === 5, 'se califica con estrellas');
     await foto('09-resultado');
+    ok(await pagina.$eval('#mascFin .masc-cuerpo img', (i) => i.complete && i.naturalWidth > 0).catch(() => false), 'al terminar, la mascota reacciona al resultado');
     await pagina.click('[data-continuar]');
     await pagina.waitForSelector('.camino'); await espera(1200);
     ok(await hechos() === 3, 'el nivel hecho se vuelve moneda');
@@ -324,6 +330,13 @@ export async function correr({ ok, almacen, atenderEstudio }){
     ok(await desborde() <= 0, 'el horario no se sale de lado');
     await espera(300);
     ok((s.m.get('est:perfil:carlos').horario || {}).clases?.length === 9, 'el horario se guarda en La Sala');
+    /* horario desde una FOTO: la IA lo lee, se enseña antes de guardar, y lo que no tiene sentido se tira */
+    await pagina.setInputFiles('#fFotoHorario', path.join(raiz, 'carymo/marca/icono-192.png'));
+    await pagina.waitForSelector('#fhUsar', { timeout: 15000 });
+    ok(/Encontré 3 clases/.test(await pagina.textContent('#hoja h3')), 'la foto del horario se lee y enseña lo que encontró (sin receso, sin día imposible ni horas al revés)');
+    await foto('12-horario-foto');
+    await pagina.click('#fhUsar'); await espera(400);
+    ok((await pagina.$$('.clase-h')).length === 3 && /Metodología/.test(await pagina.textContent('#vHorario')), 'al confirmar, el horario de la foto queda puesto');
 
     /* ranking */
     const { semanaDe, diaMexico } = await import('./servidor/estudio.js');

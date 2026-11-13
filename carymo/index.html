@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#170A26">
 <title>CARYMO · Learn. Explore. Grow.</title>
+<link rel="icon" type="image/png" href="marca/favicon-64.png">
+<link rel="apple-touch-icon" href="marca/icono-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-title" content="CARYMO">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="description" content="CARYMO: todo lo que puedes aprender, en un solo lugar.">
 <!-- CARYMO · antes «Estudio» (Carlos, 12 nov: «ahora la App se llamará CARYMO · Learn. Explore. Grow. · Todo lo que puedes
      aprender, en un solo lugar»). Lo que sigue es cómo nació (Carlos, 12 nov): «una app tipo Duolingo tipo Knowunity conectada a la sala», «con nuestro estilo pero
@@ -451,6 +457,19 @@
   .acad-doc{ display:flex; align-items:center; gap:12px; padding:14px; border-radius:16px; background:var(--sup); color:var(--hueso); text-decoration:none; font-size:22px }
   .acad-doc span{ flex:1; display:grid; gap:2px; font-size:15px } .acad-doc small{ color:var(--suave); font-size:13px }
   .acad-pie{ text-align:center; color:var(--suave); font-size:13px; margin:22px 0 10px }
+  /* la mascota (mascota.js): junto al nivel que toca, en cada respuesta y al terminar */
+  .masc-camino{ position:absolute; width:84px; height:97px; margin:-70px 0 0 -42px; z-index:2 }
+  .masc-vacio{ display:grid; place-items:center; height:150px; margin-top:-10px }
+  .masc-prep{ display:grid; place-items:center; height:116px; margin-bottom:6px }
+  .masc-fin{ display:grid; place-items:center; height:132px; margin:4px 0 8px }
+  .hoja-res .dentro{ position:relative }
+  .hoja-res .masc-res{ position:absolute; right:14px; top:-78px; width:76px; height:88px }
+  .elige-masc{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:10px; margin-bottom:6px }
+  .elige-masc button{ display:grid; justify-items:center; gap:6px; padding:12px 6px; border-radius:18px; border:2px solid #ffffff1a; background:#ffffff0d; color:inherit; font:700 14px/1.2 inherit; font-family:inherit; min-height:44px; transition:transform .25s cubic-bezier(.3,1.6,.4,1), border-color .2s }
+  .elige-masc button[aria-checked="true"]{ border-color:var(--claro, #AC27FF); background:#AC27FF22 }
+  .elige-masc button:active{ transform:scale(.94) }
+  .elige-masc img{ height:64px; width:auto }
+  .elige-masc .i{ width:30px; height:30px; margin:17px 0 }
   @media (prefers-reduced-motion:reduce){ *, *::before, *::after{ animation-duration:.01ms!important; animation-iteration-count:1!important; transition-duration:.01ms!important } }
 </style>
 </head>

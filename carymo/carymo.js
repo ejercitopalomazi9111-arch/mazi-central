@@ -21,6 +21,7 @@ import { sonar, encender as encenderSonidos } from '../sala/sonidos/sonidos.js';
 import { llave, ponerLlave, llamar, SERVIDOR, SALA } from '../presentaciones/ia.js';
 import { CURSOS, MATERIAL, HECHOS, planDeCurso } from './academia.js';
 import { crearVoz, todas as todasLasVoces, VOZ_DE_FABRICA, despertar } from '../sala/voces.js';
+import { crearMascota } from './mascota.js';
 
 const $ = (s, d = document) => d.querySelector(s);
 const $$ = (s, d = document) => [...d.querySelectorAll(s)];
@@ -57,6 +58,9 @@ let perfil = guarda.leer('est.perfil', { nombre: 'Tú', xp: 0, racha: 0, mejorRa
 let ranking = guarda.leer('est.ranking', { semana: '', filas: [] });
 let cola = guarda.leer('est.cola', []);                     /* XP por mandar */
 let ajustes = guarda.leer('est.ajustes', { sonido: true, vibrar: true });
+if(!ajustes.mascota) ajustes.mascota = 'tigre';
+/* la mascota (tigre o paloma, de las hojas de Carlos): acompaña, reacciona y festeja */
+const mascotaEn = (caja, op = {}) => (ajustes.mascota === 'no' || !caja) ? null : crearMascota(caja, { personaje: ajustes.mascota, ...op });
 encenderSonidos(ajustes.sonido !== false);
 let vista = 'plan';
 const plan = () => planes[actualId] || null;
@@ -382,16 +386,18 @@ const ONDA = [0, .62, .85, .62, 0, -.62, -.85, -.62];
 function pintarPlan(){
   const c = $('#planCuerpo'), p = plan();
   if(!p){
-    c.innerHTML = `<div class="vacio entra"><div class="marca-carymo"><b>CARYMO</b><span>Learn. Explore. Grow.</span></div><p class="lema">Todo lo que puedes aprender, en un solo lugar.</p>
+    c.innerHTML = `<div class="vacio entra"><div class="masc-vacio" id="mascVacio"></div><div class="marca-carymo"><b>CARYMO</b><span>Learn. Explore. Grow.</span></div><p class="lema">Todo lo que puedes aprender, en un solo lugar.</p>
       <h1>¿Tienes un examen pronto?<em>Aquí estamos para ayudarte</em></h1>
       <p>Dinos la materia, la fecha y qué temas vienen, o súbele foto a tus apuntes. Te armamos el camino hasta el día del examen.</p>
       <button class="bt fuerte ancho" id="bCrear">${ico('plus')} Crear mi plan</button>
       <button class="bt ancho academia-bt" id="bAcademia" style="margin-top:12px">${ico('graduation-cap')} Academia Grupo Mazi</button></div>`;
     $('#bCrear').addEventListener('click', alta);
     $('#bAcademia').addEventListener('click', abrirAcademia);
+    { const m = mascotaEn($('#mascVacio'), { tam: 120 }); if(m) setTimeout(() => m.play('saluda', { decir: '¡Hola! ¿Qué estudiamos hoy?' }), 500); }
     return;
   }
   const a = avanceDe(p), sig = a.siguiente;
+  let mascotaPos = null;
   let html = '<div class="camino">';
   let k = 0;
   for(const u of p.unidades){
@@ -407,6 +413,7 @@ function pintarPlan(){
       const h = hecho(p, n), actual = sig && sig.id === n.id, cerrado = !h && !actual;
       const cl = ['nodo', h ? 'hecho' : '', actual ? 'actual' : '', cerrado ? 'cerrado' : '', n.tipo === 'examen' ? 'grande' : ''].join(' ');
       const tv = tipoVisto(n), etq = tv === 'panorama' ? 'Panorama' : tv === 'pizarra' ? 'Cátedra' : n.titulo;
+      if(actual) mascotaPos = { x: x >= 50 ? x - 34 : x + 34, y, u: p.unidades.indexOf(u) };
       return `<button class="${cl}${tv === 'pizarra' || tv === 'panorama' ? ' catedra' : ''}" data-nodo="${n.id}" style="left:${x}%;top:${y}px;--color:${u.color}" aria-label="${esc(NOMBRE_NODO[tv])}: ${esc(n.titulo)}${h ? ' (hecho)' : cerrado ? ' (bloqueado)' : ''}">${ico(h ? 'check' : ICONO_NODO[tv])}<span class="etq">${esc(etq)}</span></button>`;
     }).join('');
     k += u.nodos.length;
@@ -421,6 +428,13 @@ function pintarPlan(){
     html += `<div class="siguiente"><small>Plan completo</small><h3>Llegaste a grado 10. Ya estás listo.</h3><button class="bt blanco ancho" id="bRepasoFinal">Hacer otro simulacro</button></div>`;
   }
   c.innerHTML = html;
+  /* la mascota se para junto al nivel que toca, del otro lado del camino */
+  if(mascotaPos){
+    const nodos = $$('.nodos', c)[mascotaPos.u];
+    if(nodos){ const d = document.createElement('div'); d.className = 'masc-camino'; d.style.left = mascotaPos.x + '%'; d.style.top = (mascotaPos.y + (mascotaPos.y < 120 ? 56 : 0)) + 'px'; nodos.append(d);
+      const m = mascotaEn(d, { tam: 84 });
+      if(m && !pintarPlan.saludo){ pintarPlan.saludo = true; setTimeout(() => m.play('saluda', { decir: a.hechos ? '¡A seguirle!' : '¡Empecemos!' }), 600); } }
+  }
   $('#bRepasoFinal')?.addEventListener('click', () => { const n = todosLosNodos(p).find((x) => x.tipo === 'simulacro'); if(n) abrirNodo(n.id, true); });
   /* el nodo actual a la vista */
   requestAnimationFrame(() => { const act = c.querySelector('.nodo.actual'); if(act && !pintarPlan.yaCentrado){ pintarPlan.yaCentrado = true; const r = act.getBoundingClientRect(); if(r.top > innerHeight * .7) scrollTo({ top: scrollY + r.top - innerHeight * .4 }); } });
@@ -524,8 +538,9 @@ async function prepararPlan(datos, anadirA = null){
   const c = capa();
   const pasos = ['Leyendo tus temas', 'Ordenándolos de lo fácil a lo difícil', 'Armando tu camino'];
   c.innerHTML = `<div class="cuerpo"><div class="preparando entra"><div class="mini-camino" id="mini">${[[77, 0], [130, 30], [100, 70], [40, 100], [77, 130]].map(([x, y]) => `<i style="left:${x - 23}px;top:${y - 20}px"></i>`).join('')}</div>
-    <h2>Déjame preparar tu plan</h2><p style="color:var(--suave)" id="prepTxt">Organizándolo en el orden correcto</p>
+    <div class="masc-prep" id="mascPrep"></div><h2>Déjame preparar tu plan</h2><p style="color:var(--suave)" id="prepTxt">Organizándolo en el orden correcto</p>
     <ul class="pasos-prep">${pasos.map((t) => `<li><span class="ca">${ico('check')}</span>${t}</li>`).join('')}</ul><div class="aviso" id="prepAviso" hidden></div></div></div>`;
+  { const m = mascotaEn($('#mascPrep', c), { tam: 96 }); if(m) m.play('estudia'); }
   const bolas = $$('#mini i', c), lis = $$('.pasos-prep li', c);
   let k = 0; const giro = setInterval(() => { bolas.forEach((b, i) => b.classList.toggle('ve', i <= k % (bolas.length + 1))); k++; if(k === 3) lis[0].classList.add('ya'); if(k === 8) lis[1].classList.add('ya'); }, 450);
   try{
@@ -906,6 +921,7 @@ function cuestionario(p, n, preguntas, { simulacro = false } = {}){
       <p id="porque" hidden>${esc(q.porque || '')}</p>
       <div class="bts"><button class="bt" data-porque ${q.porque ? '' : 'disabled'}>¿Por qué?</button><button class="bt ${bien ? 'fuerte' : 'blanco'}" data-continuar>Continuar</button></div></div>`;
     document.body.append(h);
+    { const d = document.createElement('div'); d.className = 'masc-res'; $('.dentro', h).prepend(d); const m = mascotaEn(d, { tam: 76 }); if(m) m.play(bien ? (combo >= 3 ? 'festeja' : 'bien') : (q.intento ? 'triste' : 'mal'), { dura: 0 }); }
     $('[data-continuar]', h).focus({ preventScroll: true });
     h.addEventListener('click', (e) => {
       if(e.target.closest('[data-porque]')){ $('#porque', h).hidden = false; e.target.closest('[data-porque]').disabled = true; }
@@ -946,9 +962,11 @@ function resultado(p, n, r){
     <div class="medallas"><div class="medalla" style="--c:#7A2FBF;--c2:var(--claro-txt)"><small>XP</small><b>${ico('zap')}+${r.xp}</b></div>
     <div class="medalla" style="--c:var(--vino);animation-delay:.12s"><small>${r.pct === 100 ? 'Perfecto' : 'Aciertos'}</small><b>${r.pct} %</b></div>
     <div class="medalla" style="--c:#4A3560;animation-delay:.24s"><small>Tiempo</small><b>${ico('clock')}${mm}</b></div></div>
+    <div class="masc-fin" id="mascFin"></div>
     <h2 class="titulo" style="font-size:20px">¿Qué te pareció?</h2><div class="estrellas" id="estrellas">${[1, 2, 3, 4, 5].map((k) => `<button data-estrella="${k}" aria-label="${k} de 5">${ico('star')}</button>`).join('')}</div></div></div>
     <div class="abajo"><button class="bt blanco ancho" data-continuar>Continuar</button></div>`;
   if(r.pct === 100) confeti();
+  { const m = mascotaEn($('#mascFin', c), { tam: 110 }); if(m) setTimeout(() => m.play(r.pct === 100 ? 'festeja' : r.pct >= 70 ? 'bien' : 'calma', { decir: r.pct === 100 ? '¡Perfecto!' : r.pct >= 70 ? '¡Bien hecho!' : 'Lo repasamos y sale', dura: r.pct === 100 ? 3400 : 2200 }), 450); }
   let nota = 0;
   c.addEventListener('click', (e) => {
     const s = e.target.closest('[data-estrella]'); if(s){ nota = +s.dataset.estrella; $$('#estrellas button', c).forEach((b) => b.classList.toggle('on', +b.dataset.estrella <= nota)); tono(SON.toque); return; }
@@ -1206,9 +1224,10 @@ function pintarHorario(){
     <div class="seccion-t">La semana</div>
     <div class="horario">${DIAS_ESC.map((n, i) => { const cl = hz.clases.filter((x) => x.dia === i).sort((a, b) => aMin(a.inicio) - aMin(b.inicio));
       return `<div class="dia-h"><h4 class="${i === hoyI ? 'hoy' : ''}">${n}${i === hoyI ? ' · hoy' : ''}</h4>${cl.map((x) => `<div class="clase-h ${x === enCurso ? 'ahora' : ''}" style="--c:${colorMateria(x.materia)}"><span class="hr">${esc(x.inicio)}<br>${esc(x.fin)}</span><b>${esc(x.materia)}</b><button data-quitar-clase="${hz.clases.indexOf(x)}" aria-label="Quitar ${esc(x.materia)} del ${n.toLowerCase()}">${ico('x')}</button></div>`).join('') || '<p style="color:var(--tenue);font-size:14px">Sin clases</p>'}</div>`; }).join('')}</div>
-    <div style="display:grid;gap:10px;margin:22px 0 30px"><button class="bt fuerte ancho" id="bAgregarClase">${ico('plus')}Agregar una clase</button><button class="bt ancho" id="bPegarHorario">${ico('clipboard-paste')}Pegar desde Excel</button></div>`;
+    <div style="display:grid;gap:10px;margin:22px 0 30px"><button class="bt fuerte ancho" id="bAgregarClase">${ico('plus')}Agregar una clase</button><label class="bt ancho" id="bFotoHorario">${ico('camera')}Subir foto de mi horario<input type="file" accept="image/*" hidden id="fFotoHorario"></label><button class="bt ancho" id="bPegarHorario">${ico('clipboard-paste')}Pegar desde Excel</button></div>`;
   $('#bAgregarClase').addEventListener('click', agregarClase);
   $('#bPegarHorario').addEventListener('click', pegarHorario);
+  $('#fFotoHorario').addEventListener('change', (e) => { const f = e.target.files[0]; e.target.value = ''; if(f) fotoHorario(f); });
 }
 $('#vHorario').addEventListener('click', (e) => { const b = e.target.closest('[data-quitar-clase]'); if(!b) return; const hz = horario(); hz.clases.splice(+b.dataset.quitarClase, 1); guardarHorario(hz); });
 function guardarHorario(hz){ perfil.horario = hz; guarda.poner('est.perfil', perfil); pintarHorario(); sala({ accion: 'perfil', horario: hz }).catch(() => {}); }
@@ -1241,6 +1260,50 @@ export function leerHorarioPegado(texto){
   }
   return clases;
 }
+/* la foto del horario (Carlos, 13 nov: «que nada más subas tu foto de tu horario y ya la propia
+   aplicación tome qué días, a qué horas»). La lee la IA que ve fotos; se enseña lo que entendió
+   ANTES de guardarlo. Los nombres de maestros no se piden ni se guardan. */
+const SISTEMA_HORARIO = `Lees la FOTO de un horario escolar y lo pasas a datos. Contesta SÓLO con JSON válido:
+{"clases":[{"dia":0,"inicio":"07:00","fin":"08:00","materia":"Inglés III"}]}
+- "dia": 0 lunes, 1 martes, 2 miércoles, 3 jueves, 4 viernes, 5 sábado.
+- "inicio" y "fin" en 24 horas «HH:MM», tal como dice la fila de la hora.
+- "materia": el nombre de la materia tal cual se lee (sin el nombre del maestro).
+- Una entrada por cada celda con materia. NO pongas receso, descanso ni celdas vacías.
+- Si una materia ocupa dos filas seguidas, son dos entradas.`;
+export function normalizarHorarioFoto(j){
+  const clases = (Array.isArray(j && j.clases) ? j.clases : []).map((x) => {
+    const dia = Number(x && x.dia); const ini = /^(\d{1,2}):(\d{2})/.exec(String(x && x.inicio || '')), fin = /^(\d{1,2}):(\d{2})/.exec(String(x && x.fin || ''));
+    const materia = String(x && x.materia || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+    if(!Number.isInteger(dia) || dia < 0 || dia > 5 || !ini || !fin || !materia || /^(receso|descanso|recreo)$/i.test(materia)) return null;
+    const hhmm = (m) => `${m[1].padStart(2, '0')}:${m[2]}`;
+    if(aMin(hhmm(fin)) <= aMin(hhmm(ini))) return null;
+    return { dia, inicio: hhmm(ini), fin: hhmm(fin), materia };
+  }).filter(Boolean);
+  if(!clases.length) throw new Error('No encontré clases en la foto. Prueba con una foto más derechita y con buena luz.');
+  return clases;
+}
+async function fotoHorario(archivo){
+  const img = await createImageBitmap(archivo).catch(() => null); if(!img){ brindis('No pude abrir esa foto', 'vino', 'x'); return; }
+  const k = Math.min(1, 1800 / Math.max(img.width, img.height)), cv = document.createElement('canvas'); cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
+  cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height); const url = cv.toDataURL('image/jpeg', .9);
+  const h = hoja('Leyendo tu horario', `<div id="fhCaja"><div style="display:grid;justify-items:center;gap:12px;padding:10px 0"><div class="masc-prep" id="mascHor"></div><p style="color:var(--suave);text-align:center">Estoy leyendo los días, las horas y las materias…</p></div></div>`);
+  { const m = mascotaEn($('#mascHor', h), { tam: 90 }); if(m) m.play('piensa'); }
+  try{
+    const clases = await ia({ sistema: SISTEMA_HORARIO, texto: 'Este es mi horario. Pásalo a datos.', imagenes: [{ mime: 'image/jpeg', data: url.split(',')[1] }], motor: 'gemini', tope: 6000, revisar: normalizarHorarioFoto });
+    const porDia = DIAS_ESC.map((n, i) => [n, clases.filter((x) => x.dia === i).sort((a, b) => aMin(a.inicio) - aMin(b.inicio))]).filter(([, cl]) => cl.length);
+    if($('h3', h)) $('h3', h).textContent = `Encontré ${clases.length} clases`;
+    const caja = $('#fhCaja', h);
+    caja.innerHTML = `<p style="color:var(--suave);margin-bottom:10px">Revisa que esté bien. Si una materia salió mal escrita, la corriges después tocándola.</p>
+      <div class="horario" style="max-height:50vh;overflow:auto">${porDia.map(([n, cl]) => `<div class="dia-h"><h4>${n}</h4>${cl.map((x) => `<div class="clase-h" style="--c:${colorMateria(x.materia)}"><span class="hr">${esc(x.inicio)}<br>${esc(x.fin)}</span><b>${esc(x.materia)}</b></div>`).join('')}</div>`).join('')}</div>
+      <div style="display:grid;gap:10px;margin-top:14px"><button class="bt fuerte ancho" id="fhUsar">${ico('check')}Usar este horario</button><button class="bt ancho" id="fhNo">Cancelar</button></div>`;
+    $('#fhUsar', h).addEventListener('click', () => { cerrarHoja(); guardarHorario({ clases }); tono(SON.logro || SON.fin); brindis(`Listo: ${clases.length} clases`, '', 'calendar-days'); });
+    $('#fhNo', h).addEventListener('click', cerrarHoja);
+  }catch(e){
+    const caja = $('#fhCaja', h); caja.innerHTML = `<div class="aviso">${esc(e.message || String(e))}</div><button class="bt ancho" style="margin-top:12px" id="fhNo">Cerrar</button>`;
+    $('#fhNo', h).addEventListener('click', cerrarHoja);
+  }
+}
+
 function pegarHorario(){
   const h = hoja('Pegar desde Excel', `<p style="color:var(--suave);margin-bottom:10px">Copia tu horario en Excel o Sheets (con los días arriba y la hora a la izquierda, tipo «7:00-7:50») y pégalo aquí.</p>
     <textarea class="campo" id="pTxt" style="min-height:160px" placeholder="Hora&#9;Lunes&#9;Martes…"></textarea><button class="bt fuerte ancho" style="margin-top:12px" id="pListo">Usar este horario</button>`);
@@ -1329,6 +1392,8 @@ function pintarPerfil(){
       <button data-nuevo-plan>${ico('plus')}<span>Crear un plan</span></button></div>
     <div class="seccion-t">Tú</div>
     <label class="ajuste">${ico('pencil')}<span>Tu nombre en el ranking</span><input id="pNombre" class="campo" style="max-width:150px;min-height:40px" value="${esc(perfil.nombre || '')}" aria-label="Tu nombre en el ranking"></label>
+    <div class="seccion-t">Tu compañero</div>
+    <div class="elige-masc" role="radiogroup" aria-label="Tu compañero">${[['tigre', 'Tigre'], ['paloma', 'Paloma'], ['no', 'Ninguno']].map(([k, t]) => `<button role="radio" aria-checked="${ajustes.mascota === k}" data-masc="${k}">${k === 'no' ? ico('x') : `<img src="mascotas/${k}-${k === 'tigre' ? 'parado' : 'parada'}.webp" alt="">`}<span>${t}</span></button>`).join('')}</div>
     <div class="seccion-t">La voz que te explica</div>
     <div class="ajuste voz-aj">${ico('mic')}<span>Voz del pizarrón<small style="display:block;color:var(--tenue);font-weight:500">Las «de estudio» suenan como persona</small></span>
       <select id="pVoz" class="campo" style="max-width:170px;min-height:40px" aria-label="Voz del pizarrón">${opcionesVoz()}</select>
@@ -1343,6 +1408,7 @@ $('#vPerfil').addEventListener('click', (e) => {
   const p = e.target.closest('[data-abrir-plan]'); if(p){ actualId = p.dataset.abrirPlan; guardarLocal(); vista = 'plan'; pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 }); return; }
   if(e.target.closest('[data-nuevo-plan]')) alta();
   if(e.target.closest('[data-probar-voz]')) probarVoz();
+  const mb = e.target.closest('[data-masc]'); if(mb){ ajustes.mascota = mb.dataset.masc; guarda.poner('est.ajustes', ajustes); tono(SON.pop); pintarPerfil(); pintarPlan.saludo = false; }
 });
 $('#vPerfil').addEventListener('change', (e) => {
   if(e.target.id === 'pVoz'){ const v = e.target.value; guarda.poner('explica.voz', v); if(v !== 'no') guarda.poner('explica.vozAntes', v); tono(SON.toque); probarVoz(); return; }
@@ -1361,4 +1427,4 @@ document.addEventListener('visibilitychange', () => { if(!document.hidden) sincr
 pintar();
 sincronizar();
 /* para las pruebas */
-window.__estudio = { estado: () => ({ planes, actualId, perfil, ranking, cola, vista }), avanceDe, normalizarLeccion, normalizarPlan, leerHorarioPegado };
+window.__estudio = { estado: () => ({ planes, actualId, perfil, ranking, cola, vista }), avanceDe, normalizarLeccion, normalizarPlan, leerHorarioPegado, normalizarHorarioFoto };
