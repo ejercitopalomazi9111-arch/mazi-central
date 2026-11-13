@@ -575,6 +575,9 @@ dependemos.
 
    | un tope de tiempo para toda la lista de modelos protege a los respaldos | el primero que se cuelga se come el tope entero: Gemini se quedaba 90 s pensando y ya no quedaba tiempo para el siguiente modelo ni para otra compañía | CARYMO decía «la IA no contestó» con la llave buena. Ahora cada modelo trae su propio tope, el colgado queda castigado 10 min (`ENFERMOS` en `sala/servidor/modelos.js`) y se baja a otras compañías (`sala/servidor/respaldos.js`) |
 
+   | a la voz de Google (Gemini TTS) se le puede poner «Dilo como una maestra clara: …» delante del texto para darle estilo | a veces **lee la instrucción en voz alta** junto con el texto | Carlos: «asegúrate que JAMÁS la voz lea el prompt». A la voz va SÓLO lo que se dice (`generarVoz` ignora `estilo`) y todo pasa por `paraDecir` en `sala/voces.js`, que tira renglones con pinta de instrucción y pedazos de JSON |
+   | rellenar el fondo blanco desde la orilla separa a un personaje blanco de su fondo blanco | sólo si su contorno está CERRADO: en un JPEG suave el relleno se cuela por huequitos de un pixel y se come la panza del tigre | se engorda el contorno 2-3 px antes de rellenar y se regresa después; con contorno muy tenue, además, se llena lo que el contorno cerrado a lo bruto encierra (`FUERTE` en el recorte de `carymo/mascotas/`). rembg tampoco sirvió: borde borroso y se comió el corazón |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---
