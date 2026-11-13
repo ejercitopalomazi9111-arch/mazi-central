@@ -725,6 +725,26 @@ export function armarFijo(caja, z, n, w){
 
 /* ══ 5 · FOTOS DE WIKIPEDIA ═══════════════════════════════════════════════ */
 const fotosVistas = new Map();
+/* ── ¿LA FOTO SÍ ES DEL TEMA? (relevo de Sylcred, 13 nov) ──
+   En «Elige la imagen», la de «Corazón» salió una bodega: se aceptaba la primera página que contestara
+   Wikipedia, fuera de lo que fuera. Ahora una página sirve sólo si:
+   · no es de desambiguación;
+   · su título comparte al menos una palabra importante con lo que se buscó;
+   · no es una película, canción, álbum, empresa, pueblo, equipo… (salvo que eso se haya buscado).
+   Si no pasa, no hay foto: se queda el dibujo. */
+const VACIAS_IMG = new Set('el la los las un una unos unas de del al a y e o u en con por para que como su sus se lo le es son humano humana humanos humanas sistema tipo tipos'.split(' '));
+const sinAcento = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+const palabrasImg = (t) => sinAcento(t).replace(/\(.*?\)/g, ' ').split(/[^a-z0-9ñ]+/).filter((w) => w.length > 2 && !VACIAS_IMG.has(w));
+const NO_ES_TEMA = /\b(pelicula|film|cancion|sencillo|album|banda|grupo musical|cantante|actor|actriz|serie de television|telenovela|programa de|videojuego|novela|libro de|revista|empresa|compania|marca|tienda|restaurante|equipo de|club de|municipio|localidad|ciudad|pueblo|barrio|distrito|provincia|estado de|rio|lago|isla|monte|estacion|aeropuerto|edificio|estadio|templo|iglesia|personaje ficticio|episodio)\b/;
+export function pertinente(buscado, j){
+  if(!j || j.type === 'disambiguation' || j.type === 'no-extract') return false;
+  const q = palabrasImg(buscado), t = palabrasImg(j.title);
+  if(q.length && !q.some((w) => t.some((x) => x === w || (w.length > 4 && x.startsWith(w.slice(0, w.length - 1))) || (x.length > 4 && w.startsWith(x.slice(0, x.length - 1)))))) return false;
+  const desc = sinAcento(j.description || '');
+  const m = NO_ES_TEMA.exec(desc);
+  if(m && !sinAcento(buscado).includes(m[1])) return false;
+  return true;
+}
 export function buscarImagen(titulo){
   if(!titulo) return Promise.resolve(null);
   if(fotosVistas.has(titulo)) return fotosVistas.get(titulo);
@@ -734,6 +754,7 @@ export function buscarImagen(titulo){
       if(!r.ok) return null;
       const j = await r.json(), mini = j.thumbnail, orig = j.originalimage;
       if(!(mini && mini.source) && !(orig && orig.source)) return null;
+      if(!pertinente(titulo, j)) return null;   /* en duda, mejor el dibujo que una foto equivocada */
       /* varias direcciones, de la mejor a la más segura: la de 640 px SÓLO si el original es más grande
          (si no, Wikimedia no la genera y la foto sale rota), luego la miniatura tal cual, luego el original */
       const fuentes = [];

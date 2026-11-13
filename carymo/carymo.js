@@ -161,7 +161,7 @@ Reglas:
 - La lección se lee en el teléfono UNA IDEA POR PANTALLA: de 3 a 4 "ideas", cortas de verdad. Nada de párrafos largos.
 - "icono": escoge el dibujo que mejor ilustre cada idea, SÓLO de esta lista: ${DIBUJOS_LISTA}
 - De 8 a 9 preguntas MUY VARIADAS: 2 de "opcion" y una de cada uno de los demás tipos (hueco, escribir, unir, imagen, error, ordenar, clasificar). Si el tema de plano no tiene un proceso para "error" u "ordenar", cámbialo por otro tipo, pero usa al menos 6 tipos distintos. Que todo se conteste con lo que dice la lección.
-- "imagen": 4 opciones de cosas que se puedan VER (órganos, animales, lugares, objetos, personajes históricos…); cada una con su "buscar" de Wikipedia y su "icono" de la lista por si no hay foto.
+- "imagen": 4 opciones de cosas que se puedan VER (órganos, animales, lugares, objetos, personajes históricos…); cada una con su "buscar" = el título EXACTO del artículo de Wikipedia en español de ESA cosa concreta (ej. «Corazón», no «Corazón humano» ni «el corazón»; «Mitocondria», «Benito Juárez»), o "" si no hay artículo claro y su "icono" de la lista por si no hay foto.
 - "error": de 4 a 6 pasos de un proceso real con UNO cambiado para que esté mal; "error" es su número (empieza en 0).
 - "ordenar": de 4 a 6 pasos de un proceso en su orden correcto (la app los revuelve).
 - "clasificar": 2 o 3 grupos con 2 a 3 elementos cada uno.
