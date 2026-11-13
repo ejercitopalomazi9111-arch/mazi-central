@@ -29,6 +29,9 @@
   // Cloudflare Workers AI: el respaldo de las IAs SIN llave (sala/servidor/respaldos.js).
   "ai": { "binding": "AI" },
 
+  // Los avisos de CARYMO (avisos-estudio.js): cada 15 min se revisa a quién le toca recordarle algo.
+  "triggers": { "crons": ["*/15 * * * *"] },
+
   // SQLite porque es lo que está incluido en el plan gratis; los de
   // key-value no. Igual que la Cooperativa de Fadori y que Puercos.
   "durable_objects": {

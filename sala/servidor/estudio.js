@@ -24,6 +24,7 @@
 
    Sin `cloudflare:workers`: las pruebas cargan esto en Node.
    ═════════════════════════════════════════════════════════════════════════ */
+import { atenderAvisos, avisoDePrueba } from './avisos-estudio.js';
 import { conEconomia, premiar, premiarUnaVez, cobrarNivel, estudioAnima, comprar, cuidar, PREMIOS, TIENDA, nivelDe, animoDe } from './palomium.js';
 export const MAX_PLAN = 1_500_000;
 const kPerfil = (c) => `est:perfil:${c}`;
@@ -260,7 +261,7 @@ async function atenderSesion(storage, c, cuenta, perfil, ahora){
   return null;
 }
 
-export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.now()){
+export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.now(), { vapid, enviar } = {}){
   cuenta = limpio(cuenta || 'invitado', 40).toLowerCase() || 'invitado';
   const hoy = diaMexico(ahora);
   const perfil = conEconomia((await storage.get(kPerfil(cuenta))) || perfilNuevo(cuenta), ahora);
@@ -290,6 +291,13 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
   if(['responder', 'salirSesion'].includes(c.accion)){
     const r = await atenderSesion(storage, c, cuenta, perfil, ahora);
     if(r) return Response.json(r, { status: r.estado || 200 });
+  }
+  /* ── los avisos con notificación (avisos-estudio.js) ── */
+  if(c.accion === 'avisos'){
+    const r = c.que === 'probar'
+      ? (enviar ? await avisoDePrueba(storage, cuenta, enviar) : { error: 'Los avisos no están encendidos en el servidor.', estado: 503 })
+      : await atenderAvisos(storage, c, cuenta, { publica: vapid ? (await vapid()).publica : '' }, ahora);
+    return Response.json(r, { status: r.estado || 200 });
   }
   /* ── cómo te fue en el examen: al historial, y los amigos se enteran para felicitar ── */
   if(c.accion === 'examen'){

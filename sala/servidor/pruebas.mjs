@@ -2100,6 +2100,14 @@ console.log('\n· Avisar con la sala cerrada');
   ok('dos aparatos de la misma persona no se pisan',
      Object.keys(await s.ctx.storage.get('avisos')).length === 3);
 
+  /* ⚠ LAS LLAVES SE GUARDAN. Se tiraban: se guardaba sólo `endpoint`, y sin `keys` el aviso no se
+     puede cifrar, así que llegaba «Escribieron en la sala» sin quién ni qué (13 nov). */
+  await pedir(s, 'POST', 'suscribir',
+    { de:'ana-telefono', suscripcion:{ endpoint:'https://push.test/ana2', keys:{ p256dh:'BPxyz', auth:'auth1' } } });
+  const conLlaves = (await s.ctx.storage.get('avisos'))['ana-telefono'];
+  ok('la suscripción guarda sus llaves, para que el aviso lleve el texto',
+     !!conLlaves.keys && conLlaves.keys.p256dh === 'BPxyz' && conLlaves.keys.auth === 'auth1');
+
   /* A QUIÉN SE LE AVISA. Se sustituye el que envía para no salir a internet. */
   let aQuienes = null;
   s._enviarPush = async (subs) => { aQuienes = subs.map(x => x.endpoint); return { enviados: subs.length, muertas: [] }; };

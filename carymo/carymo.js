@@ -29,6 +29,7 @@ import { iniciarApuntes } from './apuntes.js';
 import { iniciarSesionEstudio } from './sesion.js';
 import { pedirSala, conAcceso } from '../sala/acceso.js';
 import { entrada } from './entrada.js';
+import { iniciarAvisos } from './avisos.js';
 
 const $ = (s, d = document) => d.querySelector(s);
 const $$ = (s, d = document) => [...d.querySelectorAll(s)];
@@ -100,6 +101,7 @@ encenderSonidos(ajustes.sonido !== false);
 let vista = 'plan';
 let amigos = null;   /* amigos.js; se arranca al final, cuando ya existe todo */
 let companero = null;   /* companero.js: el cuarto, el cuidado y la tienda de palomium */
+let avisos = null;   /* avisos.js: los recordatorios con notificación */
 let cuentaUI = null, apuntes = null, sesionEst = null;   /* sesion.js: varios cursos y el pomodoro */   /* apuntes.js: la pestaña de Apuntes con el lápiz */   /* cuenta.js: crear cuenta y entrar, sin la llave de La Sala */
 const plan = () => planes[actualId] || null;
 const guardarLocal = () => { guarda.poner('est.planes', planes); guarda.poner('est.actual', actualId); };
@@ -1539,12 +1541,14 @@ function pintarPerfil(){
     <div class="ajuste voz-aj">${ico('mic')}<span>Voz del pizarrón<small style="display:block;color:var(--tenue);font-weight:500">Las «de estudio» suenan como persona</small></span>
       <select id="pVoz" class="campo" style="max-width:170px;min-height:40px" aria-label="Voz del pizarrón">${opcionesVoz()}</select>
       <button class="bt redondo" data-probar-voz aria-label="Oír la voz">${ico('play')}</button></div>
+    <div class="seccion-t">Avisos</div><div id="pAvisos"></div>
     <div class="seccion-t">App</div>
     <div class="ajuste">${ico('volume-2')}<span>Efectos de sonido</span><button class="interruptor" role="switch" data-aj="sonido" aria-checked="${!!ajustes.sonido}" aria-label="Efectos de sonido"></button></div>
     <div class="ajuste">${ico('vibrate')}<span>Vibración</span><button class="interruptor" role="switch" data-aj="vibrar" aria-checked="${!!ajustes.vibrar}" aria-label="Vibración"></button></div>
     <p class="version">${esc(VERSION_ESTUDIO)} · ${cola.length ? `${cola.length} logros por mandar a La Sala` : 'todo guardado en La Sala'}</p>`;
   /* el selector de compañero con las mascotas vivas (sin imágenes recortadas) */
   $$('[data-mini]', v).forEach((d) => crearMascota(d, { personaje: d.dataset.mini, tam: 62 }));
+  avisos?.pintar(v.querySelector('#pAvisos'));
 }
 $('#vPerfil').addEventListener('click', (e) => {
   const a = e.target.closest('[data-aj]'); if(a){ ajustes[a.dataset.aj] = !ajustes[a.dataset.aj]; guarda.poner('est.ajustes', ajustes); a.setAttribute('aria-checked', ajustes[a.dataset.aj]); encenderSonidos(ajustes.sonido !== false); tono(SON.toque); return; }
@@ -1611,6 +1615,9 @@ sesionEst = iniciarSesionEstudio({ $, esc, ico, hoja, cerrarHoja, brindis, tono,
 companero = iniciarCompanero({ sala, capa, cerrarCapa, hoja, cerrarHoja, esc, ico, tono, SON, vibrar, crearMascota, $, brindis, ponerPerfil,
   perfil: () => perfil, ajustes: () => ajustes, alCerrar: () => pintar() });
 companero.pintarPastilla();
+/* tocar un aviso abre lo que dice: el cuarto del compañero o el plan del examen */
+avisos = iniciarAvisos({ sala, esc, ico, brindis, tono, SON,
+  alAbrir: ({ plan: id, abrir }) => { if(abrir === 'companero'){ companero.abrir(); return; } if(id && planes[id]){ actualId = id; guardarLocal(); vista = 'plan'; pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 }); } } });
 /* la primera pintada fue antes de que existieran la fila de cursos y la pastilla: otra vez, ya con todo */
 pintar();
 /* la entrada animada (una vez por visita; el telón ya está en el HTML) */
@@ -1618,4 +1625,4 @@ entrada({ personaje: ajustes.mascota });
 $('#pCubos').addEventListener('click', () => companero.abrir());
 { const cod = codigoDe(location.search); if(cod){ history.replaceState(null, '', location.pathname); setTimeout(() => anadirCurso(cod), 3400); } }
 /* para las pruebas */
-window.__estudio = { companero: () => companero, amigos: () => amigos, estado: () => ({ planes, actualId, perfil, ranking, cola, vista }), avanceDe, normalizarLeccion, normalizarPlan, leerHorarioPegado, normalizarHorarioFoto };
+window.__estudio = { avisos: () => avisos, companero: () => companero, amigos: () => amigos, estado: () => ({ planes, actualId, perfil, ranking, cola, vista }), avanceDe, normalizarLeccion, normalizarPlan, leerHorarioPegado, normalizarHorarioFoto };

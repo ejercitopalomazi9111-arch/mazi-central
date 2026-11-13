@@ -83,6 +83,12 @@ async function usuarioDeToken(env, tok){
 }
 
 export default {
+  /* La tarea programada (wrangler.jsonc → triggers.crons, cada 15 min): los avisos de CARYMO.
+     Va a la sala GRUPAZ por dentro, con el host «interno» (sala.js, «/carymo-avisos»). */
+  async scheduled(evento, env, ctx){
+    if(!env.SALA) return;
+    ctx.waitUntil(env.SALA.get(env.SALA.idFromName('GRUPAZ')).fetch(new Request('https://interno/carymo-avisos')).catch(() => {}));
+  },
   async fetch(pedido, env, ctx){
     const url = new URL(pedido.url);
 

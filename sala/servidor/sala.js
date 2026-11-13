@@ -383,6 +383,7 @@ import { atenderElementos } from './elementos.js';
 import { atenderPizarron } from './pizarron.js';
 import { RESPALDOS, ORDEN_RESPALDO, respaldosVivos, respaldosApagados, preguntarRespaldo, probarLlaveRespaldo } from './respaldos.js';
 import { atenderEstudio, diaMexico } from './estudio.js';
+import { revisarAvisos } from './avisos-estudio.js';
 import { atenderSecre } from './secre.js';
 import { MOTORES, preguntar, motoresVivos, motoresApagados, motorDe,
          PAPEL_SILLA, PAPEL_RESUMEN, PAPEL_LIGUE, generarImagen, generarVoz } from './modelos.js';
@@ -730,6 +731,14 @@ export class Sala {
     if(letras.length > 120) texto = letras.slice(0, 119).join('') + '…';
     else texto = letras.join('');
     return JSON.stringify({ titulo: quien, texto, sala: this._codigo || '' });
+  }
+
+  /* los de CARYMO: mismo par de llaves y mismo envío que los del chat, con 12 h de vida
+     (un «estudia» que llega tarde sigue sirviendo; uno de chat de hace media hora, no) */
+  async empujarEstudio(suscripciones, mensaje){
+    const vapid = await this.llavesDeAviso();
+    const enviar = this._enviarPush || empujarATodos;
+    return enviar(suscripciones, vapid, { mensaje, ttl: 12 * 3600 });
   }
 
   async avisarCerrados(evento){
@@ -1775,6 +1784,12 @@ export class Sala {
     if(new URL(pedido.url).hostname === 'interno' && new URL(pedido.url).pathname === '/llaves-ia-crudas'){
       return Response.json(Object.fromEntries(NOMBRES_LLAVE_IA.map(n => [n, (this.env && this.env[n]) || null])));
     }
+    /* Los avisos de CARYMO (avisos-estudio.js): la tarea programada del worker pide esto cada 15 min.
+       Mismo candado que arriba: sólo con el host «interno», que de fuera nadie puede poner. */
+    if(new URL(pedido.url).hostname === 'interno' && new URL(pedido.url).pathname === '/carymo-avisos'){
+      const r = await revisarAvisos(this.ctx.storage, ahora(), (subs, mensaje) => this.empujarEstudio(subs, mensaje));
+      return Response.json({ bien: true, ...r });
+    }
     /* Antes de contestar nada: que las sillas con llave estén en el censo.
        Va aquí y no en el arranque porque el censo lo leen media docena de
        endpoints y ninguno debería tener que acordarse. */
@@ -2341,7 +2356,7 @@ export class Sala {
     /* ── /pizarron · los pendientes por proyecto (pizarron.js) ── */
     if(ruta === 'pizarron') return atenderPizarron(this.ctx.storage, pedido, url, cuenta);
     /* ── /estudio · planes de examen, XP, racha y ranking (estudio.js) ── */
-    if(ruta === 'estudio') return atenderEstudio(this.ctx.storage, pedido, url, cuenta);
+    if(ruta === 'estudio') return atenderEstudio(this.ctx.storage, pedido, url, cuenta, ahora(), { vapid: () => this.llavesDeAviso(), enviar: (subs, mensaje) => this.empujarEstudio(subs, mensaje) });
     /* ── /secre · el cajón cifrado de Secre (secre.js). Sólo la cuenta dueña ── */
     if(ruta === 'secre'){
       if(cuenta !== (this.dueno || 'carlos')) return Response.json({ error: 'Esto es sólo de la cuenta dueña de la sala.' }, { status: 403 });
@@ -2601,7 +2616,11 @@ export class Sala {
           error:'Falta `suscripcion` con un `endpoint` https del navegador.' },
           { status:400 });
       }
-      this.avisos[quien.id] = { endpoint: sus.endpoint };
+      /* ⚠ CON SUS LLAVES. Antes se guardaba sólo `endpoint`, y sin `keys` el aviso no se puede cifrar:
+         todos llegaban «Escribieron en la sala», sin quién ni qué, aunque el cifrado ya existía. */
+      const llaves = sus.keys && typeof sus.keys.p256dh === 'string' && typeof sus.keys.auth === 'string'
+        ? { p256dh: sus.keys.p256dh.slice(0, 200), auth: sus.keys.auth.slice(0, 100) } : null;
+      this.avisos[quien.id] = llaves ? { endpoint: sus.endpoint, keys: llaves } : { endpoint: sus.endpoint };
       await this.ctx.storage.put({ avisos: this.avisos });
       return Response.json({ bien:true, apuntados: Object.keys(this.avisos).length });
     }
