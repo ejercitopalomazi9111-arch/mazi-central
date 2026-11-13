@@ -21,7 +21,7 @@ import { sonar, encender as encenderSonidos } from '../sala/sonidos/sonidos.js';
 import { llave, ponerLlave, llamar, SERVIDOR, SALA } from '../presentaciones/ia.js';
 import { CURSOS, MATERIAL, HECHOS, planDeCurso } from './academia.js';
 import { crearVoz, todas as todasLasVoces, VOZ_DE_FABRICA, despertar } from '../sala/voces.js';
-import { crearMascota } from './mascota.js';
+import { crearMascota, PERSONAJES, NOMBRE_PERSONAJE } from './mascota.js';
 import { iniciarAmigos } from './amigos.js';
 
 const $ = (s, d = document) => d.querySelector(s);
@@ -1430,7 +1430,7 @@ function pintarPerfil(){
     <div class="seccion-t">Tú</div>
     <label class="ajuste">${ico('pencil')}<span>Tu nombre en el ranking</span><input id="pNombre" class="campo" style="max-width:150px;min-height:40px" value="${esc(perfil.nombre || '')}" aria-label="Tu nombre en el ranking"></label>
     <div class="seccion-t">Tu compañero</div>
-    <div class="elige-masc" role="radiogroup" aria-label="Tu compañero">${[['tigre', 'Tigre'], ['paloma', 'Paloma'], ['no', 'Ninguno']].map(([k, t]) => `<button role="radio" aria-checked="${ajustes.mascota === k}" data-masc="${k}">${k === 'no' ? ico('x') : `<span class="masc-mini" data-mini="${k}"></span>`}<span>${t}</span></button>`).join('')}</div>
+    <div class="elige-masc" role="radiogroup" aria-label="Tu compañero">${[...PERSONAJES.map((k) => [k, NOMBRE_PERSONAJE[k]]), ['no', 'Ninguno']].map(([k, t]) => `<button role="radio" aria-checked="${ajustes.mascota === k}" data-masc="${k}">${k === 'no' ? ico('x') : `<span class="masc-mini" data-mini="${k}"></span>`}<span>${t}</span></button>`).join('')}</div>
     <div class="seccion-t">La voz que te explica</div>
     <div class="ajuste voz-aj">${ico('mic')}<span>Voz del pizarrón<small style="display:block;color:var(--tenue);font-weight:500">Las «de estudio» suenan como persona</small></span>
       <select id="pVoz" class="campo" style="max-width:170px;min-height:40px" aria-label="Voz del pizarrón">${opcionesVoz()}</select>
