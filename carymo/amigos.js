@@ -104,12 +104,12 @@ export function iniciarAmigos(h){
     if(!s){ s = document.createElement('section'); s.id = 'secAmigos'; s.className = 'sec-amigos'; v.prepend(s); }
     const enLinea = estado.enLinea || [], amigos = estado.amigos || [], pide = estado.pide || [];
     const ses = estado.sesion && (estado.sesion.estado === 'activa' || estado.sesion.estado === 'invitada');
-    s.innerHTML = `<div class="seccion-t">En línea ahora ${enLinea.length ? `<small>· ${enLinea.length}</small>` : ''}</div>
+    s.innerHTML = `<div class="seccion-t">Personas conectadas ${enLinea.length ? `<small>· ${enLinea.length}</small>` : ''}</div>
       ${enLinea.length ? enLinea.map((x) => fila({ ...x, enLinea: true }, (ses ? '' : btn('invitar', x.cuenta, 'timer', 'Estudiar juntos')) + btn('saludo', x.cuenta, 'hand', 'Saludar') + (x.amigo ? '' : btn('amistad', x.cuenta, 'user-plus', 'Agregar')))).join('')
-        : '<p class="vacio-am">Nadie más tiene la app abierta ahorita. Cuando alguien entre, aquí sale y lo puedes invitar a estudiar juntos.</p>'}
+        : '<p class="vacio-am">Nadie conectado en este momento.</p>'}
       ${pide.length ? `<div class="seccion-t">Te quieren agregar</div>${pide.map((x) => fila(x, btn('amistad', x.cuenta, 'check', 'Aceptar'))).join('')}` : ''}
-      <div class="seccion-t">Tus amigos ${amigos.length ? `<small>· ${amigos.length}</small>` : ''}</div>
-      ${amigos.length ? amigos.map((x) => fila(x, btn('felicita', x.cuenta, 'party-popper', 'Felicitar') + btn('saludo', x.cuenta, 'hand', 'Saludar'))).join('') : '<p class="vacio-am">Todavía no tienes amigos aquí. Agrégalos por su usuario (lo ven en su perfil, con @).</p>'}
+      <div class="seccion-t">Amigos ${amigos.length ? `<small>· ${amigos.length}</small>` : ''}</div>
+      ${amigos.length ? amigos.map((x) => fila(x, btn('felicita', x.cuenta, 'party-popper', 'Felicitar') + btn('saludo', x.cuenta, 'hand', 'Saludar'))).join('') : '<p class="vacio-am">No hay nadie por aquí.</p>'}
       <form class="agregar-am" id="fAgregar"><input class="campo" id="amUsuario" placeholder="Usuario de tu amigo" autocomplete="off" autocapitalize="none" aria-label="Usuario de tu amigo"><button class="bt fuerte">${ico('user-plus')}Agregar</button></form>
       <div class="seccion-t" style="margin-top:22px">Ranking de la semana</div>`;
   }

@@ -1215,21 +1215,55 @@ const DIAS_ESC = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
 const horario = () => (perfil.horario && Array.isArray(perfil.horario.clases)) ? perfil.horario : { clases: [] };
 const aMin = (h) => { const m = /^(\d{1,2}):(\d{2})/.exec(h || ''); return m ? +m[1] * 60 + +m[2] : null; };
 function colorMateria(nombre){ const m = listaMaterias().find((x) => quitarAcentos(x.nombre) === quitarAcentos(nombre) || quitarAcentos(x.corto) === quitarAcentos(nombre)); if(m) return m.color; let h = 0; for(const ch of String(nombre)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return COLOR_UNIDAD[h % COLOR_UNIDAD.length]; }
+/* Carlos, 13 nov: «el horario se ve espantoso y atascadísimo. Que se guarden cada día por subcategorías, por si lo quieren
+   abrir, y que salga en qué hora estás para que sepas en qué clase estás y cuál te toca». Arriba: la clase de ahorita
+   (con lo que falta) y la que sigue. Abajo: cada día plegado; sólo hoy viene abierto. Quitar clases va en «Editar». */
+let horarioEditando = false, relojHorario = 0;
+const hhmm = (m) => `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`;
+const faltaTexto = (m) => m < 60 ? `${m} min` : `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ''}`;
 function pintarHorario(){
   const v = $('#vHorario'), hz = horario(), d = new Date(), hoyI = d.getDay() - 1, ahora = d.getHours() * 60 + d.getMinutes();
-  const deHoy = hz.clases.filter((x) => x.dia === hoyI).sort((a, b) => aMin(a.inicio) - aMin(b.inicio));
+  const deDia = (i) => hz.clases.filter((x) => x.dia === i).sort((a, b) => aMin(a.inicio) - aMin(b.inicio));
+  const deHoy = deDia(hoyI);
   const enCurso = deHoy.find((x) => aMin(x.inicio) <= ahora && ahora < aMin(x.fin)), sig = deHoy.find((x) => aMin(x.inicio) > ahora);
   const examenes = Object.values(planes).filter((p) => p.fecha && diasHasta(p.fecha) >= 0).sort((a, b) => a.fecha.localeCompare(b.fecha));
-  v.innerHTML = `<h1 class="titulo-vista">Tu horario</h1><p class="sub-vista">${hz.clases.length ? 'Toca una clase para quitarla.' : 'Agrégalo una vez y listo, siempre lo vas a tener. Tarda 30 segundos.'}</p>
-    ${enCurso || sig ? `<div class="ahora-banner entra"><small>${enCurso ? 'Ahora' : 'Sigue'}</small><b>${esc((enCurso || sig).materia)}</b><span style="opacity:.85">${esc((enCurso || sig).inicio)} a ${esc((enCurso || sig).fin)}</span></div>` : ''}
+  /* el «ahora»: una tarjeta grande con la clase de este momento y la que sigue */
+  let ahoraHtml = '';
+  if(hz.clases.length){
+    if(enCurso){
+      const ini = aMin(enCurso.inicio), fin = aMin(enCurso.fin), pct = Math.round((ahora - ini) / Math.max(1, fin - ini) * 100);
+      ahoraHtml = `<div class="hz-ahora entra" style="--c:${colorMateria(enCurso.materia)}"><small>Ahora estás en</small><b>${esc(enCurso.materia)}</b>
+        <span class="hz-hr">${esc(enCurso.inicio)} a ${esc(enCurso.fin)} · faltan ${faltaTexto(fin - ahora)}</span><i class="hz-barra"><i style="width:${pct}%"></i></i>
+        ${sig ? `<span class="hz-sig">${ico('chevron-right')}<span>Te toca <b>${esc(sig.materia)}</b> a las ${esc(sig.inicio)}</span></span>` : '<span class="hz-sig">Es tu última clase de hoy</span>'}</div>`;
+    } else if(sig){
+      ahoraHtml = `<div class="hz-ahora libre entra" style="--c:${colorMateria(sig.materia)}"><small>Ahorita no tienes clase</small><b>Te toca ${esc(sig.materia)}</b>
+        <span class="hz-hr">a las ${esc(sig.inicio)} · en ${faltaTexto(aMin(sig.inicio) - ahora)}</span></div>`;
+    } else {
+      ahoraHtml = `<div class="hz-ahora libre entra"><small>${deHoy.length ? 'Ya acabaste por hoy' : 'Hoy no hay clases'}</small><b>${(() => { for(let k = 1; k <= 7; k++){ const di = (hoyI + k + 7) % 7; const c = deDia(di)[0]; if(c) return `Lo que sigue: ${esc(c.materia)}`; } return 'Descansa'; })()}</b>
+        <span class="hz-hr">${(() => { for(let k = 1; k <= 7; k++){ const di = (hoyI + k + 7) % 7; const c = deDia(di)[0]; if(c) return `${k === 1 ? 'Mañana' : 'El ' + DIAS_ESC[di].toLowerCase()} a las ${esc(c.inicio)}`; } return ''; })()}</span></div>`;
+    }
+  }
+  const dias = DIAS_ESC.map((n, i) => {
+    const cl = deDia(i), hoy = i === hoyI;
+    const resumen = cl.length ? `${cl.length} ${cl.length === 1 ? 'clase' : 'clases'} · ${esc(cl[0].inicio)} a ${esc(cl[cl.length - 1].fin)}` : 'Sin clases';
+    return `<details class="hz-dia${hoy ? ' hoy' : ''}"${hoy ? ' open' : ''}><summary><span class="hz-n">${n}${hoy ? '<em>hoy</em>' : ''}</span><small>${resumen}</small>${ico('chevron-right', 'hz-flecha')}</summary>
+      <div class="hz-clases">${cl.map((x) => { const pasada = hoy && aMin(x.fin) <= ahora;
+        return `<div class="clase-h${hoy && x === enCurso ? ' ahora' : ''}${pasada ? ' pasada' : ''}" style="--c:${colorMateria(x.materia)}"><span class="hr">${esc(x.inicio)}<small>${esc(x.fin)}</small></span><b>${esc(x.materia)}</b>${hoy && x === enCurso ? '<span class="hz-chip">ahora</span>' : hoy && x === sig ? '<span class="hz-chip sig">sigue</span>' : ''}<button data-quitar-clase="${hz.clases.indexOf(x)}" aria-label="Quitar ${esc(x.materia)} del ${n.toLowerCase()}">${ico('x')}</button></div>`; }).join('') || '<p class="hz-vacio">Sin clases este día</p>'}</div></details>`;
+  }).join('');
+  v.innerHTML = `<h1 class="titulo-vista">Tu horario</h1>${hz.clases.length ? '' : '<p class="sub-vista">Agrégalo una vez y listo, siempre lo vas a tener. Tarda 30 segundos.</p>'}
+    ${ahoraHtml}
     ${examenes.length ? `<div class="seccion-t">Próximos exámenes</div><div class="examenes"><ul>${examenes.map((p) => { const f = new Date(p.fecha + 'T12:00:00'); return `<li><span class="fecha-mini"><small>${MESES[f.getMonth()].slice(0, 3)}</small><b>${f.getDate()}</b></span><span style="flex:1"><b>${esc(p.titulo)}</b><br><small style="color:var(--suave)">${esc(cuandoTexto(p.fecha))} · ${avanceDe(p).pct} % listo</small></span></li>`; }).join('')}</ul></div>` : ''}
-    <div class="seccion-t">La semana</div>
-    <div class="horario">${DIAS_ESC.map((n, i) => { const cl = hz.clases.filter((x) => x.dia === i).sort((a, b) => aMin(a.inicio) - aMin(b.inicio));
-      return `<div class="dia-h"><h4 class="${i === hoyI ? 'hoy' : ''}">${n}${i === hoyI ? ' · hoy' : ''}</h4>${cl.map((x) => `<div class="clase-h ${x === enCurso ? 'ahora' : ''}" style="--c:${colorMateria(x.materia)}"><span class="hr">${esc(x.inicio)}<br>${esc(x.fin)}</span><b>${esc(x.materia)}</b><button data-quitar-clase="${hz.clases.indexOf(x)}" aria-label="Quitar ${esc(x.materia)} del ${n.toLowerCase()}">${ico('x')}</button></div>`).join('') || '<p style="color:var(--tenue);font-size:14px">Sin clases</p>'}</div>`; }).join('')}</div>
+    ${hz.clases.length ? `<div class="seccion-t hz-cab">La semana<button class="bt mini" id="bEditarHorario" aria-pressed="${horarioEditando}">${ico(horarioEditando ? 'check' : 'pencil')}${horarioEditando ? 'Listo' : 'Editar'}</button></div>
+    <div class="horario${horarioEditando ? ' editando' : ''}">${dias}</div>` : ''}
     <div style="display:grid;gap:10px;margin:22px 0 30px"><button class="bt fuerte ancho" id="bAgregarClase">${ico('plus')}Agregar una clase</button><label class="bt ancho" id="bFotoHorario">${ico('camera')}Subir foto de mi horario<input type="file" accept="image/*" hidden id="fFotoHorario"></label><button class="bt ancho" id="bPegarHorario">${ico('clipboard-paste')}Pegar desde Excel</button></div>`;
   $('#bAgregarClase').addEventListener('click', agregarClase);
   $('#bPegarHorario').addEventListener('click', pegarHorario);
   $('#fFotoHorario').addEventListener('change', (e) => { const f = e.target.files[0]; e.target.value = ''; if(f) fotoHorario(f); });
+  const be = $('#bEditarHorario'); if(be) be.addEventListener('click', () => { horarioEditando = !horarioEditando; pintarHorario(); });
+  /* el «ahora» se pone al día solo cada minuto mientras estés viendo el horario */
+  clearInterval(relojHorario);
+  relojHorario = setInterval(() => { if(!v.isConnected || v.hidden || getComputedStyle(v).display === 'none'){ clearInterval(relojHorario); return; }
+    const abiertos = $$('details.hz-dia', v).map((x) => x.open); pintarHorario(); $$('details.hz-dia', v).forEach((x, k) => { x.open = abiertos[k]; }); }, 60_000);
 }
 $('#vHorario').addEventListener('click', (e) => { const b = e.target.closest('[data-quitar-clase]'); if(!b) return; const hz = horario(); hz.clases.splice(+b.dataset.quitarClase, 1); guardarHorario(hz); });
 function guardarHorario(hz){ perfil.horario = hz; guarda.poner('est.perfil', perfil); pintarHorario(); sala({ accion: 'perfil', horario: hz }).catch(() => {}); }
