@@ -41,3 +41,11 @@ Carlos: «Publica todo funcionando y pasa batuta a Luna».
 - Las mascotas, por piezas y animadas como Duolingo.
 - Sin emojis.
 - Todo en español mexicano.
+
+## Lo que hizo Luna con esto (13 nov, noche)
+
+1. ✅ **Sonido:** arriba se pasea por la pentatónica alta sin repetir nota ni bajar al piso (`sala/sonidos/sonidos.js`, `node sala/pruebas-sonidos.mjs`).
+2. ⏳ **Ligas con trofeos:** es lo siguiente.
+3. ✅ **Fotos del tema:** `pertinente` en `sala/lienzo.js` tira desambiguaciones, títulos que no coinciden y películas, empresas, pueblos… En duda, se queda el dibujo. Además se le pide a la IA el título exacto del artículo. Prueba: `node sala/pruebas-fotos.mjs`.
+4. ✅ **Paloma:** cuerpo de campana, panza ancha, ojos juntos y alas DETRÁS del cuerpo (`carymo/zoo.js`).
+5. ✅ **Logo:** `carymo/marca/logo-512.webp` y `logo-1024.png` dicen CARYMO. Es su misma imagen con la palabra recompuesta en Montserrat y la estrellita en la O. Va como imagen al compartir links (og:image).
