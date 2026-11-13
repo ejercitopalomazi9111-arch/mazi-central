@@ -23,7 +23,7 @@
    - colores sólidos de la casa;
    - títulos grandes;
    - iconos en círculos de color.
-4. **Sin internet, desde que abres la app**
+4. **Sin internet, desde que abres la app** — ✅ hecho en la rama (13 nov): `carymo/sw.js` «primero la red», el pizarrón como `carymo/pizarron.html`, el plan entero se precarga (lecciones y cátedras con `?preparar=1`, guardadas en `sala/clases-guardadas.js`) y sin red y sin cátedra sale una básica de las ideas de la lección. Prueba: `node carymo/pruebas-sinred.mjs` (14/14).
    - Un trabajador de fondo «primero la red, si no, lo guardado» (nunca «primero lo guardado»: ver la neurona de INKWELL), que guarda la app entera.
    - Lo que ya está en el teléfono funciona sin red: el plan, las lecciones, las cátedras ya hechas, los apuntes y el cuarto de la mascota. Lo que se hace sin red se manda cuando vuelve.
    - **Cátedras hechas de antemano**: al crear un plan, en segundo plano, se preparan las clases del pizarrón (al menos la base) y se guardan en el teléfono. Si el alumno le cambia algo, eso ya gasta.

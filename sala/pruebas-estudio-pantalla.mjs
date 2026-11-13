@@ -81,7 +81,8 @@ export async function correr({ ok, almacen, atenderEstudio }){
       res.writeHead(r.status, { 'content-type': 'application/json' }); res.end(Buffer.from(await r.arrayBuffer())); return;
     }
     if(u.pathname.endsWith('/ia-texto')){
-      iaVeces++;
+      /* las cátedras que CARYMO prepara sola en segundo plano no cuentan: aquí se mide lo que pide la LECCIÓN */
+      if(!/CLASE que se DIBUJA/.test(cuerpo)) iaVeces++;
       if(iaLenta) await new Promise((r) => setTimeout(r, iaLenta));
       res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(contestarIA(JSON.parse(cuerpo)))); return;
     }
@@ -311,10 +312,11 @@ export async function correr({ ok, almacen, atenderEstudio }){
     await pagina.click('[data-continuar]'); await pagina.waitForSelector('.camino');
 
     /* 5 · tarjetas de la unidad 1 (salen de las preguntas: no gastan IA) */
-    const antesIA = pedidosIA.length;
+    const deLecciones = () => pedidosIA.filter((c) => !/CLASE que se DIBUJA/.test(c.sistema || '')).length;
+    const antesIA = deLecciones();
     await pagina.click('.siguiente [data-nodo]');
     await pagina.waitForSelector('#tarjeta');
-    ok(pedidosIA.length === antesIA, 'las tarjetas no le piden nada a la IA');
+    ok(deLecciones() === antesIA, 'las tarjetas no le piden nada a la IA');
     ok(await pagina.isDisabled('[data-se]'), '«Me la sé» espera a que voltees la tarjeta');
     await pagina.click('#tarjeta'); await espera(600);
     await foto('10-tarjeta');

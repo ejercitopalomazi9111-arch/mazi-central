@@ -31,6 +31,7 @@ import { entrada } from './entrada.js';
 import { iniciarAvisos } from './avisos.js';
 import { iniciarVestidor } from './vestidor.js';
 import { iniciarYo, SUBVISTAS } from './yo.js';
+import { leerClase, guardarClase, hayClase } from '../sala/clases-guardadas.js';
 
 const $ = (s, d = document) => d.querySelector(s);
 const $$ = (s, d = document) => [...d.querySelectorAll(s)];
@@ -57,7 +58,10 @@ const NOMBRE_NODO = { quiz: 'Nivel: lección y cuestionario', tarjetas: 'Tarjeta
 const tipoVisto = (n) => n.tipo === 'pizarra' && n.alcance === 'unidad' ? 'panorama' : n.tipo;
 
 /* Explica (el pizarrón) vive en La Sala y es el mismo para las dos: CARYMO lo abre desde allá */
-const EXPLICA = new URL('../sala/explica.html', import.meta.url).href;
+const EXPLICA_SALA = new URL('../sala/explica.html', import.meta.url).href;
+/* con el trabajador de fondo puesto, el pizarrón se abre DENTRO de CARYMO (sw.js lo arma con la página de
+   Explica): así lo que pide pasa por el trabajador, queda guardado y abre sin internet */
+const explica = () => (typeof navigator !== 'undefined' && navigator.serviceWorker && navigator.serviceWorker.controller) ? new URL('./pizarron.html', import.meta.url).href : EXPLICA_SALA;
 
 /* ══ ESTADO ═══════════════════════════════════════════════════════════════ */
 let planes = guarda.leer('est.planes', {});                 /* id → plan completo */
@@ -399,7 +403,7 @@ function pintar(){
   /* abajo sólo hay tres: lo de «Tú» enciende «Tú», con su barrita para regresar */
   const pestana = SUBVISTAS[vista] ? 'yo' : vista;
   $('#subBarra').hidden = !SUBVISTAS[vista]; if(SUBVISTAS[vista]) $('#subTitulo').textContent = SUBVISTAS[vista];
-  if(vista === 'pizarron' && !$('#vPizarron iframe')){ const f = document.createElement('iframe'); f.title = 'El pizarrón'; f.allow = 'autoplay; clipboard-write'; f.src = EXPLICA + (location.search ? location.search + '&' : '?') + 'nombre=' + encodeURIComponent(perfil.nombre || ''); $('#vPizarron').append(f); }
+  if(vista === 'pizarron' && !$('#vPizarron iframe')){ const f = document.createElement('iframe'); f.title = 'El pizarrón'; f.allow = 'autoplay; clipboard-write'; f.src = explica() + (location.search ? location.search + '&' : '?') + 'nombre=' + encodeURIComponent(perfil.nombre || ''); $('#vPizarron').append(f); }
   $$('#nav button').forEach((b) => { if(b.dataset.ir === pestana) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
   pintarCabeza();
   if(vista === 'plan') pintarPlan();
@@ -671,9 +675,54 @@ function contenidoDe(p, temaId){
   pidiendo.set(temaId, pr); pr.finally(() => pidiendo.delete(temaId)).catch(() => {});
   return pr;
 }
+/* TODO EL PLAN SE PREPARA SOLO (Carlos, 13 nov: «todo tu plan ya debería estar precargado», para estudiar
+   sin internet). Primero las dos lecciones que siguen, juntas; luego las demás de una en una y sin prisa,
+   para no ahogar a la IA; y al final, las cátedras del pizarrón (prepararCatedras). Se para sola sin red. */
+const precargando = new Set();
 function precargar(p){
-  const sig = todosLosNodos(p).filter((n) => !hecho(p, n) && n.tipo === 'quiz').slice(0, 2);
-  for(const n of sig) if(!(p.contenido || {})[n.tema]) contenidoDe(p, n.tema).catch(() => {});
+  if(!p || !p.unidades) return;
+  const sig = todosLosNodos(p).filter((n) => !hecho(p, n) && n.tipo === 'quiz');
+  const falta = (n) => !(planes[p.id] || p).contenido?.[n.tema];
+  for(const n of sig.slice(0, 2)) if(falta(n)) contenidoDe(p, n.tema).catch(() => {});
+  if(precargando.has(p.id)) return;
+  precargando.add(p.id);
+  (async () => {
+    try{
+      for(const n of sig.slice(2)){
+        if(navigator.onLine === false || !planes[p.id]) return;
+        if(!falta(n)) continue;
+        await contenidoDe(planes[p.id], n.tema).catch(() => {});
+        await espera(1500);
+      }
+      await prepararCatedras(planes[p.id]);
+    }finally{ precargando.delete(p.id); }
+  })();
+}
+/* LAS CÁTEDRAS HECHAS DE ANTEMANO: Explica en un marco escondido (?preparar=1) arma cada clase del camino,
+   la guarda en el teléfono (sala/clases-guardadas.js) y avisa «listo». De una en una; la que ya está, se salta. */
+async function prepararCatedras(p){
+  if(!p || !p.unidades || typeof document === 'undefined') return;
+  for(const n of todosLosNodos(p).filter((x) => x.tipo === 'pizarra' && !hecho(p, x))){
+    if(navigator.onLine === false || !planes[p.id]) return;
+    const { q, nivelB } = pizarraDe(planes[p.id], n);
+    if(await hayClase(q.get('tema'), nivelB, { basicaCuenta: false })) continue;
+    const ok = await prepararUna(q);
+    if(!ok) await espera(5000);   /* si la IA no contestó, se le da aire antes de la siguiente */
+  }
+}
+function prepararUna(q){
+  return new Promise((listo) => {
+    const f = document.createElement('iframe');
+    f.title = 'Preparando una clase'; f.setAttribute('aria-hidden', 'true'); f.tabIndex = -1;
+    f.style.cssText = 'position:fixed;width:1px;height:1px;left:-9999px;top:0;border:0;opacity:0;pointer-events:none';
+    const tema = q.get('tema');
+    const fin = (ok) => { clearTimeout(t); removeEventListener('message', oir); f.remove(); listo(ok); };
+    const oir = (e) => { if(e.origin === location.origin && e.data && e.data.explica === 'listo' && e.data.tema === tema) fin(!!e.data.ok); };
+    const t = setTimeout(() => fin(false), 180000);
+    addEventListener('message', oir);
+    f.src = explica() + '?' + q + '&preparar=1';
+    document.body.append(f);
+  });
 }
 
 async function abrirNodo(id, repaso = false){
@@ -1111,9 +1160,9 @@ async function abrirSimulacro(p, n, _repaso){
   cuestionario(pp, n, elegidas, { simulacro: true });
 }
 /* la clase en el pizarrón: Explica, la misma de la mesa, dentro de una capa */
-function abrirPizarra(p, n){
-  const c = capa('pizarra');
-  const q = new URLSearchParams(location.search); q.set('nivel', 'prepa');
+/* lo que se le pide a Explica para la cátedra de un nodo: lo usan abrirla y prepararla de antemano */
+function pizarraDe(p, n){
+  const q = new URLSearchParams(); q.set('nivel', 'prepa');
   const unidad = n.alcance === 'unidad' && p.unidades ? p.unidades.find((u) => u.nodos.some((x) => x.id === n.id)) : null;
   if(unidad){ q.set('tema', `Panorama general de «${unidad.titulo}» (${p.materia}): de qué trata y cómo se conectan ${unidad.temas.map((t) => t.titulo).join(', ')}. Explica la idea general; cada tema se verá a fondo después.`); q.set('largo', 'normal'); }
   else { q.set('tema', `${n.titulo} (${p.materia})`); q.set('largo', 'corta'); }
@@ -1131,8 +1180,32 @@ function abrirPizarra(p, n){
     q.set('contexto', [`Prepara su ${p.titulo} (${cuandoTexto(p.fecha).toLowerCase()}).`, t && t.resumen ? `Este tema trata de: ${t.resumen}` : '', p.notas ? `Sus apuntes dicen: ${p.notas.slice(0, 400)}` : '',
       vistos.length ? `Ya estudió: ${vistos.join(', ')}.` : '', costo.length ? `Le costó trabajo: ${costo.join(', ')}: refuérzalo con ejemplos.` : ''].filter(Boolean).join(' '));
   }
+  /* lo demás de la dirección de CARYMO pasa igual (?servidor=, ?sala=: con qué sala habla) */
+  for(const [k, v] of new URLSearchParams(location.search)) if(!q.has(k) && !['ir', 'abrir', 'plan'].includes(k)) q.set(k, v);
+  return { q, unidad, nivelB: `${q.get('nivel')}-${q.get('largo')}` };
+}
+/* SIN INTERNET Y SIN CLASE GUARDADA: una básica con las ideas de la lección del tema (la que ya está en
+   el teléfono). Se marca «basica»: en cuanto haya red, Explica pide la de verdad y la pisa. */
+function claseBasica(p, n){
+  const temas = n.alcance === 'unidad' && p.unidades ? ((p.unidades.find((u) => u.nodos.some((x) => x.id === n.id)) || {}).temas || []).map((t) => t.id) : [n.tema];
+  const lecciones = temas.map((t) => (p.contenido || {})[t]).filter((x) => x && x.leccion);
+  if(!lecciones.length) return null;
+  const pasos = [{ voz: `Vamos a ver ${n.titulo}. Hoy sin internet, con lo que ya tienes guardado.`, pizarra: { tipo: 'titulo', texto: n.titulo, sub: p.materia || '' } }];
+  for(const { leccion: l } of lecciones){
+    if(lecciones.length > 1 && l.titulo) pasos.push({ voz: l.titulo + '.', pizarra: { tipo: 'titulo', texto: l.titulo, sub: '' } });
+    for(const i of l.ideas || []) pasos.push({ voz: i.texto, pizarra: i.titulo ? { tipo: 'definicion', termino: i.titulo, texto: i.texto } : { tipo: 'texto', texto: i.texto } });
+    if(l.dato) pasos.push({ voz: l.dato, pizarra: { tipo: 'dato', texto: l.dato } });
+  }
+  const ideas = lecciones.flatMap(({ leccion: l }) => (l.ideas || []).map((i) => i.titulo || i.texto.split(/[.:,]/)[0])).filter(Boolean).slice(0, 5);
+  pasos.push({ voz: 'Repasemos lo más importante.', pizarra: { tipo: 'resumen', puntos: ideas } });
+  return { titulo: n.titulo, visual: 'pizarron', pasos, referencias: [], repaso: [], motor: 'groq', basica: true };
+}
+function abrirPizarra(p, n){
+  const c = capa('pizarra');
+  const { q, unidad, nivelB } = pizarraDe(p, n);
+  if(navigator.onLine === false) hayClase(q.get('tema'), nivelB).then((ya) => { if(!ya){ const b = claseBasica(p, n); if(b) guardarClase(q.get('tema'), nivelB, b); } });
   c.innerHTML = `<button class="piz-abrir" data-plegar aria-label="Ver título y opciones de la clase" aria-expanded="false">${ico('chevron-down')}</button><div class="arriba"><button class="bt redondo fantasma" data-cerrar aria-label="Cerrar la clase">${ico('x')}</button><div style="flex:1;min-width:0"><small style="display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--claro-txt)">${unidad ? 'Panorama de la unidad' : n.id ? 'Cátedra' : 'Explícame'}</small><b style="font:800 16px/1.2 Titulo">${esc(n.titulo)}</b></div>${n.id ? `<button class="bt fuerte" data-vista>${ico('check')}Ya la vi</button>` : ''}<button class="bt redondo fantasma" data-plegar aria-label="Esconder esta barra" aria-expanded="true">${ico('chevron-up')}</button></div>
-    <iframe title="Clase en el pizarrón" src="${EXPLICA}?${q}&en=capa&nombre=${encodeURIComponent(perfil.nombre || '')}" allow="autoplay; clipboard-write"></iframe>`;
+    <iframe title="Clase en el pizarrón" src="${explica()}?${q}&en=capa&nombre=${encodeURIComponent(perfil.nombre || '')}" allow="autoplay; clipboard-write"></iframe>`;
   /* LA CABECERA SE DOBLA (Carlos, 13 nov: «el de "sí, ya la vi"… que se pueda guardar como un menú desplegable… me quita espacio
      preciado en teléfono»). Se dobla sola a los 4 s; la flechita de arriba la vuelve a abrir; al terminar la clase se abre sola. */
   const plegar = (si) => { c.classList.toggle('plegada', si); $$('[data-plegar]', c).forEach((b) => b.setAttribute('aria-expanded', String(!si))); };
@@ -1589,7 +1662,20 @@ document.addEventListener('click', (e) => {
   else cambia();
   if(vista === 'ranking') mandarCola()?.then?.(() => {});
 });
-addEventListener('online', () => { mandarCola(); subirPlanes(); });
+addEventListener('online', () => { mandarCola(); subirPlanes(); const p = plan(); if(p && conAcceso()) setTimeout(() => precargar(p), 3000); });
+/* SIN INTERNET DESDE QUE ABRES LA APP (sw.js): el trabajador de fondo se pone al arrancar —ya no sólo al
+   prender los avisos— y se le pasa la lista de lo que esta visita cargó, para que lo guarde todo */
+if(typeof navigator !== 'undefined' && 'serviceWorker' in navigator && !/[?&]sinsw\b/.test(location.search)){
+  navigator.serviceWorker.register(new URL('sw.js', import.meta.url), { scope: new URL('./', import.meta.url).pathname })
+    .then(() => navigator.serviceWorker.ready)
+    .then((reg) => setTimeout(() => {
+      const mismo = performance.getEntriesByType('resource').map((r) => r.name).filter((u) => u.startsWith(location.origin) && !u.includes('/api/'));
+      (reg.active || navigator.serviceWorker.controller)?.postMessage({ guardar: [...new Set(mismo)] });
+    }, 4000))
+    .catch(() => {});
+}
+/* lo que falte del plan se sigue preparando al volver a abrir la app */
+setTimeout(() => { const p = plan(); if(p && conAcceso() && navigator.onLine !== false) precargar(p); }, 8000);
 document.addEventListener('visibilitychange', () => { if(!document.hidden) sincronizar(); });
 /* amigos, estudiar juntos y «¿cómo te fue?» (amigos.js) */
 amigos = iniciarAmigos({ sala, brindis, hoja, cerrarHoja, esc, ico, tono, SON, vibrar, mascotaEn, $, guardarPlan, colorDe: colorMateria,
