@@ -36,7 +36,9 @@
 
   /* botones */
   .bt{ display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:48px; padding:0 18px; border-radius:14px; border:0;
-    background:var(--sup); color:var(--hueso); font-weight:700; transition:transform .12s, background .2s, opacity .2s }
+    background:var(--sup); color:var(--hueso); font-weight:700; transition:transform .28s cubic-bezier(.3,1.6,.4,1), box-shadow .2s, background .2s, opacity .2s; -webkit-tap-highlight-color:transparent }
+  /* al soltar, el botón rebota tantito (13 nov, «más smooth»); al apretar baja rápido */
+  .bt:active, .nodo:active{ transition-duration:.07s }
   .bt:active{ transform:scale(.97) }
   .bt.fuerte{ background:var(--vino); color:#fff; box-shadow:0 4px 0 var(--vino-osc) }
   .bt.fuerte:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--vino-osc) }
@@ -86,7 +88,7 @@
   .nodos svg.senda path{ fill:none; stroke:#2C173F; stroke-width:30; stroke-linecap:round }
   .nodos svg.senda path.hecha{ stroke:#3A1D55 }
   .nodo{ position:absolute; width:78px; height:78px; margin:-39px 0 0 -39px; border-radius:50%; border:0; display:grid; place-items:center; color:#fff;
-    background:var(--color, var(--vino)); box-shadow:0 7px 0 #00000059, inset 0 -6px 0 #0003, inset 0 3px 0 #ffffff2a; transition:transform .15s, filter .3s }
+    background:var(--color, var(--vino)); box-shadow:0 7px 0 #00000059, inset 0 -6px 0 #0003, inset 0 3px 0 #ffffff2a; transition:transform .3s cubic-bezier(.3,1.6,.4,1), box-shadow .2s, filter .3s; -webkit-tap-highlight-color:transparent }
   .nodo .i{ width:32px; height:32px; stroke-width:2.2 }
   .nodo:active{ transform:translateY(4px); box-shadow:0 3px 0 #00000059, inset 0 -6px 0 #0003 }
   .nodo.cerrado{ background:#2E1A44; color:#5E4B75; box-shadow:0 7px 0 #0000004d, inset 0 -6px 0 #0002 }
