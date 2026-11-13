@@ -42,5 +42,12 @@ r = await preguntar('gemini', { GEMINI_API_KEY: 'k' }, 'sis', msj, { tope: 100, 
 globalThis.fetch = fetchViejo;
 ok(r.bien && r.texto === 'del respaldo' && Date.now() - t0 < 5000, `un modelo colgado no se come todo el tiempo (${Date.now() - t0} ms)`);
 
+/* el que se colgó se queda castigado: la siguiente pregunta ya no lo espera */
+const pedidosG = [];
+globalThis.fetch = (u, o) => { pedidosG.push(u); return Promise.resolve(new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: 'ok' }] } }] }))); };
+r = await preguntar('gemini', { GEMINI_API_KEY: 'k' }, 'sis', msj, { tope: 100, esperaMs: 60_000 });
+globalThis.fetch = fetchViejo;
+ok(r.bien && !/gemini-3\.8-flash:/.test(pedidosG[0]), 'la siguiente pregunta se salta el modelo que se colgó');
+
 console.log(`\n${bien} pasan · ${mal} fallan`);
 process.exit(mal ? 1 : 0);

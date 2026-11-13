@@ -171,6 +171,9 @@ export function motoresApagados(env) {
  * NUNCA lanza. Un modelo caído no puede tumbar la sala: quien llama recibe
  * `{bien:false, error}` y decide. Ésa es la mitad del punto del adaptador.
  */
+/* modelo → hasta cuándo se le considera caído (vive en la memoria del objeto). */
+export const ENFERMOS = new Map();
+
 export async function preguntar(id, env, sistema, mensajes, op = {}) {
   const M = MOTORES[id];
   if (!M) return { bien: false, motor: id, error: `No conozco el motor "${id}".` };
@@ -192,7 +195,12 @@ export async function preguntar(id, env, sistema, mensajes, op = {}) {
   if (imagenes.length && id !== 'gemini') {
     return { bien: false, motor: id, error: `${M.nombre} no ve imágenes. Para describirlas usa a Paulina (Gemini).` };
   }
-  const modelos = [M.modelo, ...(M.respaldo || [])];
+  /* Los modelos que se colgaron o se saturaron hace poco van al final: no se
+     les vuelve a esperar 20 s en cada pregunta (13 nov, Paulina: 3.8, 3.6 y
+     3.5 colgados y sólo flash-lite contestando). */
+  const todos = [M.modelo, ...(M.respaldo || [])];
+  const ahora = Date.now();
+  const modelos = [...todos.filter((m) => !(ENFERMOS.get(id + '|' + m) > ahora)), ...todos.filter((m) => ENFERMOS.get(id + '|' + m) > ahora)];
   /* ── CADA MODELO CON SU PROPIO RELOJ (13 nov) ──────────────────────────────
      Paulina se quedó colgada 90 s con una pregunta de tres palabras: el primer
      modelo se comía TODO el tiempo y los de respaldo nunca llegaban a probarse.
@@ -214,6 +222,8 @@ export async function preguntar(id, env, sistema, mensajes, op = {}) {
       res = await preguntarA(M, modelos[i], k, sistema, mensajes, tope, imagenes, { ...op, _sinPensar: true }, mio, relojMio);
     clearTimeout(relojMio); corta.signal.removeEventListener('abort', unir);
     if (res.tardo) res.otro = true;
+    if (res.otro && !corta.signal.aborted) ENFERMOS.set(id + '|' + modelos[i], Date.now() + 10 * 60_000);
+    if (res.bien) ENFERMOS.delete(id + '|' + modelos[i]);
     /* Se pasa al siguiente sólo si el tropiezo es del modelo (saturado,
        caído, retirado, colgado). Una llave mala o una respuesta vacía no
        mejoran con otro modelo. */
