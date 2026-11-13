@@ -1,0 +1,18 @@
+{
+  "titulo": "CARYMO · el tigre y la paloma te lo explican",
+  "voces": { "Tigre": "google:Puck", "Paloma": "google:Kore" },
+  "lento": { "Tigre": 1.04, "Paloma": 1.04 },
+  "voz_de_la_casa": "Voces de Google por La Sala (Chris no tiene saldo en ElevenLabs). Cuando haya, el narrador puede ser Chris; las mascotas se quedan con sus voces.",
+  "lineas": [
+    { "id": "01", "voz": "Tigre", "txt": "¿Examen mañana… *y ni has abierto el cuaderno?*" },
+    { "id": "02", "voz": "Paloma", "txt": "Tranqui. *Para eso estamos nosotros.*" },
+    { "id": "03", "voz": "Tigre", "txt": "Dile a CARYMO de qué es tu examen, y te arma el plan, *tema por tema.*", "dice": "Dile a Carimo de qué es tu examen, y te arma el plan, tema por tema." },
+    { "id": "04", "voz": "Paloma", "txt": "Yo te lo explico en un pizarrón *que se dibuja solito.*" },
+    { "id": "05", "voz": "Tigre", "txt": "Y practicas como juego: *combos, rachas y premios.*" },
+    { "id": "06", "voz": "Paloma", "txt": "Cada semana compites en tu liga, *por tu trofeo.*" },
+    { "id": "07", "voz": "Tigre", "txt": "Con tus amigos, entre todos *le bajan la vida al jefe del examen.*" },
+    { "id": "08", "voz": "Paloma", "txt": "Y a nosotros nos cuidas: nos das de comer, nos vistes… *y crecemos contigo.*" },
+    { "id": "09", "voz": "Tigre", "txt": "Funciona *hasta sin internet.*" },
+    { "id": "10", "voz": "Paloma", "txt": "CARYMO. *Estudiar ya no da flojera.*", "dice": "Carimo. Estudiar ya no da flojera." }
+  ]
+}

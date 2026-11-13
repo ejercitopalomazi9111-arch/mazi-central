@@ -9,7 +9,7 @@
 import { createRequire } from 'module'; import fs from 'fs'; import path from 'path'; import http from 'http';
 const require = createRequire('/opt/node22/lib/node_modules/'); const { chromium } = require('playwright');
 import { grabar, dedo, tocar, deslizar, mover, lento } from '../../fadori-campana/grabar/comun.mjs';
-import { atenderEstudio } from '../../sala/servidor/estudio.js';
+import { atenderEstudio, semanaDe, diaMexico } from '../../sala/servidor/estudio.js';
 const AQUI = path.dirname(new URL(import.meta.url).pathname), RAIZ = path.resolve(AQUI, '../..');
 const TOMA = process.argv[2] || 'crear', K = Number(process.env.LENTO || 5);
 
@@ -90,7 +90,20 @@ await ctx.addInitScript(({ toma, plan }) => {
     if(toma !== 'entrada') sessionStorage.setItem('carymo.entrada', '1');
     if(plan){ localStorage.setItem('est.planes', JSON.stringify({ [plan.id]: plan })); localStorage.setItem('est.actual', JSON.stringify(plan.id)); }
   }catch{}
-}, { toma: TOMA, plan: ['leccion', 'juntos'].includes(TOMA) ? planListo() : null });
+}, { toma: TOMA, plan: ['leccion', 'juntos', 'cuarto', 'ligas'].includes(TOMA) ? planListo() : null });
+/* las tomas nuevas del anuncio 2 (Carlos, 14 nov: «muestra los elementos más chingones»): el cuarto con las mascotas que
+   crecen y se visten, y la tabla de la liga. Lo que «ya tiene» Ana se siembra en el servidor de mentiras. Nombres inventados. */
+{
+  const ahora = Date.now(), sem = semanaDe(diaMexico(ahora));
+  mem.set('est:perfil:ana', { cuenta: 'ana', nombre: 'Ana', xp: 340, racha: 6, mejorRacha: 6, ultimoDia: diaMexico(ahora), ids: [], t: ahora, cubos: 240, liga: 2, ligaMax: 2,
+    mascota: 'tigre', armario: ['corona', 'lentesSol', 'dorado', 'galaxia', 'bufanda'],
+    mascotas: { tigre: { xp: 700, nacio: ahora - 9e8, skin: 'normal', acc: ['bufanda'] }, paloma: { xp: 0, nacio: ahora - 3e7, skin: 'normal', acc: [] }, conejo: { xp: 2100, nacio: ahora - 5e8, skin: 'galaxia', acc: ['corona'] } },
+    cuidado: { hambre: 72, limpieza: 88, animo: 55, t: ahora }, inv: { croquetas: 3, jabon: 2 } });
+  const gente = ['Sofi', 'Diego R.', 'Vale', 'Emi', 'Santi', 'Regina', 'Mateo', 'Xime', 'Leo', 'Cami', 'Iker', 'Renata', 'Pau', 'Toño'];
+  const tabla = { ana: { xp: 340, nombre: 'Ana', liga: 2 } }, miembros = { ana: { nombre: 'Ana', liga: 2 } };
+  gente.forEach((n, i) => { const k = 'g' + i; tabla[k] = { xp: [520, 410, 380, 300, 290, 260, 230, 200, 180, 150, 120, 90, 60, 40][i], nombre: n, liga: 2 }; miembros[k] = { nombre: n, liga: 2 }; });
+  mem.set('est:sem:' + sem, tabla); mem.set('est:miembros', miembros);
+}
 const pg = await ctx.newPage(); await dedo(pg);
 const errores = []; pg.on('pageerror', (e) => errores.push(e.message));
 const marcas = {}; let t0 = 0;
@@ -137,6 +150,34 @@ if(TOMA === 'pizarron'){
       await pg.evaluate(() => document.querySelectorAll('[data-anuncio]').forEach((x) => x.removeAttribute('data-anuncio')));
     }
     await espera(1.8); marca('fin');
+  }
+  if(TOMA === 'cuarto'){
+    await espera(1.2); marca('camino');
+    await tocar(pg, '#pCubos', K); await pg.waitForSelector('#capa.companero #mascCuarto .masc'); await espera(1.4); marca('cuarto');
+    /* acariciarlo: el dedo talla encima */
+    const m = await pg.locator('#mascCuarto .masc').boundingBox();
+    await mover(pg, m.x + m.width * .35, m.y + m.height * .35, K); await pg.mouse.down();
+    for(let k = 0; k < 7; k++) await mover(pg, m.x + m.width * (k % 2 ? .35 : .65), m.y + m.height * (.32 + (k % 3) * .03), K, 200);
+    await pg.mouse.up(); marca('caricia'); await espera(1.2);
+    /* la pelota: sale, se avienta y la persigue */
+    await tocar(pg, '[data-cuidar="jugar"]', K); await espera(0.9); marca('pelota');
+    const b = await pg.locator('.pelota').boundingBox();
+    await mover(pg, b.x + 18, b.y + 18, K); await pg.mouse.down(); await mover(pg, b.x + 120, b.y - 60, K, 140); await pg.mouse.up();
+    await espera(3.2); marca('atrapa');
+    await tocar(pg, '[data-cuidar="jugar"]', K); await espera(0.4);
+    /* cambiar de mascota: un toque */
+    await pg.evaluate(() => scrollTo({ top: 0 })); await pg.locator('#capa').evaluate((c) => c.scrollTo({ top: 0 }));
+    await tocar(pg, '#misMasc [data-elegir="conejo"]', K); await espera(1.4); marca('cambia');
+    /* vestirlo */
+    await tocar(pg, '[data-vestir]', K); await pg.waitForSelector('#vestirG .prenda'); await espera(1.0); marca('vestir');
+    await tocar(pg, '#vestirG [data-prenda="lentesSol"]', K); await espera(0.9);
+    await tocar(pg, '[data-tab="color"]', K); await espera(0.5); await tocar(pg, '#vestirG [data-prenda="dorado"]', K); await espera(1.0);
+    await tocar(pg, '[data-vestir-listo]', K); await espera(1.8); marca('fin');
+  }
+  if(TOMA === 'ligas'){
+    await espera(1.0); marca('camino');
+    await tocar(pg, 'nav [data-ir="ranking"]', K); await espera(1.8); marca('tabla');
+    await deslizar(pg, 360, 1500); await espera(1.4); marca('fin');
   }
   if(TOMA === 'juntos'){
     await espera(1.2); marca('camino');

@@ -181,6 +181,8 @@ const ACCIONES = {
   piensa: { dura: 0, f(u, t, q){ return { cabezaGiro: 8 + 2 * onda(t, 2600), miraX: -3, miraY: -3.5, brazoD: q === 'paloma' ? -28 : -70, boca: .25, curva: .2, ancho: .6, cejas: .7, cejaAng: .3, cejaY: -1 }; } },
   amor: { dura: 2200, f(u, t){ return { giro: 5 * onda(t, 900), feliz: 1, cachetes: 1, abierta: .3, curva: 1.2, brazoI: 30, brazoD: -30, sy: 1 + .03 * onda(t, 450) }; } },
   duerme: { dura: 0, f(u, t){ const b = onda(t, 3200); return { cerrados: 1, sy: 1 + .035 * b, sx: 1 - .02 * b, cabezaY: 4, cabezaGiro: 7, boca: .2, curva: .5, abierta: .12 + .1 * (b + 1) / 2, ancho: .5, orejaI: 14, orejaD: -14, cachetes: .5 }; } },
+  /* habla: la boca (o el pico) se abre y se cierra a destiempo, con la cabeza acompañando; para los anuncios y para cuando narra */
+  habla: { dura: 0, f(u, t){ const k = Math.abs(Math.sin(t / 95)) * (.55 + .45 * Math.abs(Math.sin(t / 310))); return { abierta: .1 + .55 * k, picoAbre: .7 * k, curva: .7, ancho: .9 + .2 * k, cachetes: .45, cabezaGiro: 3 * Math.sin(t / 700), cejas: .35, cejaY: -1.5 * k }; } },
   calma: { dura: 0, f(u, t){ return { feliz: .85, curva: 1, abierta: .05, cachetes: .55, giro: 2 * onda(t, 2400) }; } },
   estudia: { dura: 0, f(u, t){ return { miraY: 3, cabezaY: 3, cabezaGiro: -4 + 2 * onda(t, 3000), boca: .2, curva: .4, brazoI: 25, brazoD: -25, cejas: .5, cejaAng: .2 }; } },
   juega: { dura: 1500, f(u, t){ return { giro: 10 * onda(t, 500), y: -8 * Math.abs(onda(t, 500)), feliz: 1, abierta: .6, curva: 1.2, cola: 30 * onda(t, 250), brazoI: 50 * Math.max(0, onda(t, 500)), brazoD: -50 * Math.max(0, -onda(t, 500)) }; } },
