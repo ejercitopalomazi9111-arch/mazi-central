@@ -22,6 +22,7 @@ import { llave, ponerLlave, llamar, SERVIDOR, SALA } from '../presentaciones/ia.
 import { CURSOS, MATERIAL, HECHOS, planDeCurso } from './academia.js';
 import { crearVoz, todas as todasLasVoces, VOZ_DE_FABRICA, despertar } from '../sala/voces.js';
 import { crearMascota } from './mascota.js';
+import { iniciarAmigos } from './amigos.js';
 
 const $ = (s, d = document) => d.querySelector(s);
 const $$ = (s, d = document) => [...d.querySelectorAll(s)];
@@ -63,6 +64,7 @@ if(!ajustes.mascota) ajustes.mascota = 'tigre';
 const mascotaEn = (caja, op = {}) => (ajustes.mascota === 'no' || !caja) ? null : crearMascota(caja, { personaje: ajustes.mascota, ...op });
 encenderSonidos(ajustes.sonido !== false);
 let vista = 'plan';
+let amigos = null;   /* amigos.js; se arranca al final, cuando ya existe todo */
 const plan = () => planes[actualId] || null;
 const guardarLocal = () => { guarda.poner('est.planes', planes); guarda.poner('est.actual', actualId); };
 
@@ -1361,6 +1363,7 @@ function pintarRanking(){
     $$('.fila-rank', v).forEach((el) => { const antes = ordenAnterior.indexOf(el.dataset.cuenta), hoy = ahora.indexOf(el.dataset.cuenta); if(antes >= 0 && antes !== hoy) el.animate([{ transform: `translateY(${(antes - hoy) * 66}px)` }, { transform: 'none' }], { duration: 700, easing: 'cubic-bezier(.2,.9,.3,1)' }); });
   }
   ordenAnterior = ahora;
+  amigos?.pintarSeccion();
 }
 
 /* ══ 16 · PERFIL Y AJUSTES ════════════════════════════════════════════════ */
@@ -1421,10 +1424,25 @@ $('#vPerfil').addEventListener('change', (e) => {
 /* ══ 17 · ARRANQUE ════════════════════════════════════════════════════════ */
 if(migrarAlArrancar){ for(const p of Object.values(planes)) if(migrarCamino(p)) porGuardar.add(p.id); guardarLocal(); }
 $$('[data-ico]').forEach((s) => { s.outerHTML = ico(s.dataset.ico); });
-$('#nav').addEventListener('click', (e) => { const b = e.target.closest('[data-ir]'); if(!b) return; vista = b.dataset.ir; tono(SON.toque); pintar(); scrollTo({ top: 0 }); if(vista === 'ranking') mandarCola()?.then?.(() => {}); });
+/* cambiar de pestaña se desliza hacia el lado de la pestaña nueva (View Transitions donde existan) */
+const ORDEN_VISTAS = ['plan', 'horario', 'pizarron', 'buscar', 'ranking', 'perfil'];
+$('#nav').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-ir]'); if(!b || b.dataset.ir === vista) return;
+  const dir = ORDEN_VISTAS.indexOf(b.dataset.ir) > ORDEN_VISTAS.indexOf(vista) ? 1 : -1;
+  vista = b.dataset.ir; tono(SON.toque); vibrar(8);
+  b.animate([{ transform: 'scale(1)' }, { transform: 'scale(.86)' }, { transform: 'scale(1.08)' }, { transform: 'scale(1)' }], { duration: 380, easing: 'cubic-bezier(.3,1.5,.4,1)' });
+  const cambia = () => { pintar(); scrollTo({ top: 0 }); };
+  if(document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches){ document.documentElement.style.setProperty('--dir', dir); document.startViewTransition(cambia); }
+  else cambia();
+  if(vista === 'ranking') mandarCola()?.then?.(() => {});
+});
 addEventListener('online', () => { mandarCola(); subirPlanes(); });
 document.addEventListener('visibilitychange', () => { if(!document.hidden) sincronizar(); });
+/* amigos, estudiar juntos y «¿cómo te fue?» (amigos.js) */
+amigos = iniciarAmigos({ sala, brindis, hoja, cerrarHoja, esc, ico, tono, SON, vibrar, mascotaEn, $, guardarPlan, colorDe: colorMateria,
+  perfil: () => perfil, planes: () => planes, actual: () => actualId, vista: () => vista, cuenta: () => perfil.cuenta, estudiando: () => !!$('#capa') });
 pintar();
 sincronizar();
+if(llave()){ amigos.arrancar(); setTimeout(() => { if(vista === 'plan' && !$('#capa')) amigos.preguntarExamen(); }, 2500); }
 /* para las pruebas */
-window.__estudio = { estado: () => ({ planes, actualId, perfil, ranking, cola, vista }), avanceDe, normalizarLeccion, normalizarPlan, leerHorarioPegado, normalizarHorarioFoto };
+window.__estudio = { amigos: () => amigos, estado: () => ({ planes, actualId, perfil, ranking, cola, vista }), avanceDe, normalizarLeccion, normalizarPlan, leerHorarioPegado, normalizarHorarioFoto };

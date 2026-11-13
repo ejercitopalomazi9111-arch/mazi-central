@@ -103,6 +103,57 @@ console.log('El servidor');
   ok(r.error, 'algo gigante no entra a la biblioteca');
   r = await llamar(s, 'carlos', 'POST', '', { accion: 'biblioteca' });
   ok(r.leccion.cuantos === 1 && r.leccion.usos >= 2, `la biblioteca cuenta lo guardado y cuántas veces se reusó (${r.leccion.cuantos}, ${r.leccion.usos})`);
+
+  console.log('Amigos y estudiar juntos');
+  const T0 = Date.UTC(2026, 10, 13, 18);
+  const pide = (q, c, cuerpo, t = T0) => atenderEstudio(s, new Request('http://x/estudio', { method: 'POST', body: JSON.stringify(cuerpo) }), new URL('http://x/estudio'), q, t).then((x) => x.json().then((j) => ({ ...j, _st: x.status })));
+  for(const q of ['ana', 'beto', 'cami']) await pide(q, 0, { accion: 'perfil', nombre: q[0].toUpperCase() + q.slice(1) });
+  r = await pide('ana', 0, { accion: 'latido', estado: 'libre' });
+  await pide('beto', 0, { accion: 'latido', estado: 'estudiando', materia: 'Química' });
+  r = await pide('ana', 0, { accion: 'latido' });
+  ok(r.enLinea.some((x) => x.cuenta === 'beto' && x.estado === 'estudiando' && x.materia === 'Química') && !r.enLinea.some((x) => x.cuenta === 'ana'), 'veo quién más tiene la app abierta (y qué estudia), sin verme a mí');
+  r = await pide('ana', 0, { accion: 'latido' }, T0 + 60_000);
+  ok(!r.enLinea.some((x) => x.cuenta === 'beto'), 'quien cerró la app hace más de 45 s ya no sale en línea');
+  r = await pide('ana', 0, { accion: 'amistad', a: 'beto' });
+  ok(r.pedida, 'mando solicitud de amistad');
+  r = await pide('beto', 0, { accion: 'latido' });
+  ok(r.pide.some((x) => x.cuenta === 'ana') && r.buzon.some((m) => m.tipo === 'amistad' && m.de === 'ana'), 'a Beto le llega la solicitud de Ana');
+  r = await pide('beto', 0, { accion: 'amistad', a: 'ana' });
+  ok(r.amigos, 'al aceptarla ya son amigos');
+  r = await pide('ana', 0, { accion: 'latido' });
+  ok(r.amigos.some((x) => x.cuenta === 'beto' && x.nombre === 'Beto' && x.enLinea), 'los dos se ven en su lista de amigos, con nombre y si están en línea');
+  r = await pide('ana', 0, { accion: 'mandar', a: 'beto', tipo: 'felicita', texto: '¡Bien ahí!' });
+  r = await pide('beto', 0, { accion: 'latido', desde: T0 - 1 });
+  ok(r.buzon.some((m) => m.tipo === 'felicita' && m.texto === '¡Bien ahí!' && m.nombre === 'Ana'), 'las felicitaciones llegan al buzón');
+  r = await pide('ana', 0, { accion: 'amistad', a: 'nadie' });
+  ok(r._st === 404, 'no se puede agregar a alguien que no usa CARYMO');
+  /* estudiar juntos */
+  await pide('beto', 0, { accion: 'latido' });
+  r = await pide('ana', 0, { accion: 'invitar', a: 'beto', minutos: 25 });
+  ok(r.bien && r.sesion.estado === 'invitada' && r.sesion.minutos === 25, 'invito a Beto a estudiar 25 minutos juntos');
+  r = await pide('cami', 0, { accion: 'latido' }); await pide('beto', 0, { accion: 'latido' });
+  r = await pide('cami', 0, { accion: 'invitar', a: 'beto', minutos: 10 });
+  ok(r._st === 409, 'a quien ya tiene una invitación no le llueven otras');
+  r = await pide('beto', 0, { accion: 'latido' });
+  ok(r.sesion && r.sesion.estado === 'invitada' && r.buzon.some((m) => m.tipo === 'invita' && m.sesion === r.sesion.id), 'a Beto le llega la invitación');
+  r = await pide('beto', 0, { accion: 'responder', si: true }, T0 + 1000);
+  ok(r.sesion.estado === 'activa' && r.sesion.fin - r.sesion.inicio === 25 * 60_000, 'al aceptar arranca el cronómetro de 25 minutos para los dos');
+  await pide('ana', 0, { accion: 'xp', eventos: [{ id: 'sx1', xp: 15, dia: '2026-11-13' }] }, T0 + 60_000);
+  await pide('beto', 0, { accion: 'xp', eventos: [{ id: 'sx2', xp: 22, dia: '2026-11-13' }] }, T0 + 90_000);
+  r = await pide('ana', 0, { accion: 'latido' }, T0 + 100_000);
+  ok(r.sesion.xp.ana === 15 && r.sesion.xp.beto === 22, `lo que estudia cada quien durante la sesión va al marcador (${JSON.stringify(r.sesion.xp)})`);
+  r = await pide('ana', 0, { accion: 'latido' }, T0 + 26 * 60_000);
+  ok(r.sesion && r.sesion.estado === 'terminada', 'al acabarse el tiempo la sesión termina sola');
+  r = await pide('ana', 0, { accion: 'salirSesion' }, T0 + 26 * 60_000);
+  r = await pide('ana', 0, { accion: 'latido' }, T0 + 26 * 60_000 + 1);
+  ok(!r.sesion, 'y ya se puede empezar otra');
+  /* cómo te fue en el examen */
+  r = await pide('beto', 0, { accion: 'examen', plan: 'p9', titulo: 'Examen de Química', materia: 'Química', fecha: '2026-11-12', como: 'bien', calif: 8.6 }, T0 + 26.5 * 60_000);
+  ok(r.bien && r.historial.length === 1 && r.historial[0].calif === 8.6, 'cómo te fue en el examen se guarda en tu historial');
+  r = await pide('ana', 0, { accion: 'latido', desde: T0 + 26 * 60_000 }, T0 + 27 * 60_000);
+  ok(r.buzon.some((m) => m.tipo === 'examen' && /Química: le fue bien/.test(m.texto)), 'y a tus amigos les llega para que te feliciten');
+  r = await pide('beto', 0, { accion: 'examen', plan: 'p9', como: 'excelente', calif: 9.5, materia: 'Química' });
+  ok(r.historial.length === 1 && r.historial[0].como === 'excelente', 'corregirlo no lo duplica');
 }
 
 if(process.env.SOLO !== 'servidor') await (await import('./pruebas-estudio-pantalla.mjs')).correr({ ok, almacen, atenderEstudio });

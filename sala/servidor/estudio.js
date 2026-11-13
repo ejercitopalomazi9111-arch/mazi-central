@@ -140,6 +140,119 @@ export async function guardarEnMemoria(storage, { tipo, materia, titulo, nivel, 
   return { bien: true, clave };
 }
 
+/* ══ AMIGOS · estudiar juntos, saludos, felicitaciones y cómo te fue en el examen ══
+   Carlos, 13 nov: «un sistema de amigos para machear a otra persona que esté con la app abierta
+   y ofrecerle jugar juntos… se ponga un timer y los dos tengamos que estudiar durante ese tiempo…
+   para dar saludos, felicitaciones cuando estudien, y cuando sea su examen una retroalimentación
+   de cómo le fue, y guardar esos datos en su historial».
+
+     est:pres                  { <cuenta>: { nombre, t, estado, materia } }      quién tiene la app abierta
+     est:amigos:<cuenta>       { amigos: [cuenta], pide: [cuenta] }               «pide» = quién me mandó solicitud
+     est:buzon:<cuenta>        [{ id, de, nombre, tipo, texto, t, sesion? }]       los últimos 60
+     est:ses:<id>              { id, de, a, nombres, minutos, estado, inicio, fin, xp: { cuenta: n } }
+     est:sesactual:<cuenta>    id de la sesión invitada o activa
+     est:examenes:<cuenta>     [{ plan, titulo, materia, fecha, como, calif, nota, t }]
+   «En línea» = mandó latido hace menos de 45 s (la app lo manda cada 20 s mientras está abierta). */
+export const EN_LINEA_MS = 45_000;
+const kAmigos = (c) => `est:amigos:${c}`, kBuzon = (c) => `est:buzon:${c}`, kSes = (id) => `est:ses:${id}`, kSesAct = (c) => `est:sesactual:${c}`, kExam = (c) => `est:examenes:${c}`;
+const TIPOS_MSG = { saludo: 'te saludó', felicita: 'te felicitó', invita: 'te invita a estudiar juntos', acepta: 'aceptó estudiar contigo', rechaza: 'ahorita no puede estudiar',
+  amistad: 'quiere ser tu amigo', amigos: 'ya es tu amigo', examen: 'ya hizo su examen', fin: 'terminó la sesión contigo', estudio: 'acaba de estudiar' };
+async function amigosDe(storage, c){ return (await storage.get(kAmigos(c))) || { amigos: [], pide: [] }; }
+async function alBuzon(storage, para, m, ahora){
+  const b = (await storage.get(kBuzon(para))) || [];
+  b.push({ id: ahora.toString(36) + Math.random().toString(36).slice(2, 6), t: ahora, ...m });
+  await storage.put(kBuzon(para), b.slice(-60));
+}
+async function sesionDe(storage, c, ahora){
+  const id = await storage.get(kSesAct(c)); if(!id) return null;
+  const x = await storage.get(kSes(id)); if(!x) return null;
+  /* una invitación sin contestar se vence a los 2 minutos; una sesión activa, al acabarse su tiempo */
+  if(x.estado === 'invitada' && ahora - x.creada > 120_000){ x.estado = 'vencida'; await storage.put(kSes(id), x); }
+  if(x.estado === 'activa' && ahora >= x.fin){ x.estado = 'terminada'; await storage.put(kSes(id), x); }
+  return x;
+}
+async function soltarSesion(storage, x){ for(const c of [x.de, x.a]){ if((await storage.get(kSesAct(c))) === x.id) await storage.delete(kSesAct(c)); } }
+
+async function atenderAmigos(storage, c, cuenta, perfil, ahora){
+  const yo = { cuenta, nombre: perfil.nombre };
+  const otro = limpio(c.a || c.de || '', 40).toLowerCase();
+  if(c.accion === 'latido'){
+    if(!(await storage.get(kPerfil(cuenta)))){ perfil.t = ahora; await storage.put(kPerfil(cuenta), perfil); }
+    const pres = (await storage.get('est:pres')) || {};
+    pres[cuenta] = { nombre: perfil.nombre, t: ahora, estado: ['estudiando', 'libre'].includes(c.estado) ? c.estado : 'libre', materia: limpio(c.materia, 60) };
+    for(const k of Object.keys(pres)) if(ahora - pres[k].t > 10 * 60_000) delete pres[k];
+    await storage.put('est:pres', pres);
+    const mis = await amigosDe(storage, cuenta);
+    const enLinea = Object.entries(pres).filter(([k, v]) => k !== cuenta && ahora - v.t < EN_LINEA_MS)
+      .map(([k, v]) => ({ cuenta: k, nombre: v.nombre, estado: v.estado, materia: v.materia, amigo: mis.amigos.includes(k) }));
+    const desde = Number(c.desde) || 0, buzon = ((await storage.get(kBuzon(cuenta))) || []).filter((m) => m.t > desde);
+    const ses = await sesionDe(storage, cuenta, ahora);
+    const nombres = {}; for(const k of mis.amigos.concat(mis.pide)){ const p = await storage.get(kPerfil(k)); nombres[k] = p ? p.nombre : k; }
+    return { bien: true, enLinea, amigos: mis.amigos.map((k) => ({ cuenta: k, nombre: nombres[k], enLinea: !!(pres[k] && ahora - pres[k].t < EN_LINEA_MS), estado: pres[k]?.estado || '' })),
+      pide: mis.pide.map((k) => ({ cuenta: k, nombre: nombres[k] })), buzon, sesion: ses, hora: ahora };
+  }
+  if(!idValido(otro) || otro === cuenta) return { error: 'Falta a quién.', estado: 400 };
+  const suPerfil = await storage.get(kPerfil(otro));
+  if(!suPerfil) return { error: 'Esa persona todavía no usa CARYMO.', estado: 404 };
+  const mis = await amigosDe(storage, cuenta), suyos = await amigosDe(storage, otro);
+  const sonAmigos = mis.amigos.includes(otro);
+
+  if(c.accion === 'amistad'){
+    if(sonAmigos) return { bien: true, amigos: true };
+    if(mis.pide.includes(otro)){                      /* ya me la había pedido: con esto ya somos amigos */
+      mis.pide = mis.pide.filter((x) => x !== otro); mis.amigos.push(otro); suyos.amigos.push(cuenta); suyos.pide = suyos.pide.filter((x) => x !== cuenta);
+      await storage.put(kAmigos(cuenta), mis); await storage.put(kAmigos(otro), suyos);
+      await alBuzon(storage, otro, { de: cuenta, nombre: perfil.nombre, tipo: 'amigos' }, ahora);
+      return { bien: true, amigos: true };
+    }
+    if(!suyos.pide.includes(cuenta)){ suyos.pide.push(cuenta); suyos.pide = suyos.pide.slice(-50); await storage.put(kAmigos(otro), suyos); await alBuzon(storage, otro, { de: cuenta, nombre: perfil.nombre, tipo: 'amistad' }, ahora); }
+    return { bien: true, pedida: true };
+  }
+  if(c.accion === 'quitarAmigo'){
+    mis.amigos = mis.amigos.filter((x) => x !== otro); mis.pide = mis.pide.filter((x) => x !== otro); suyos.amigos = suyos.amigos.filter((x) => x !== cuenta);
+    await storage.put(kAmigos(cuenta), mis); await storage.put(kAmigos(otro), suyos);
+    return { bien: true };
+  }
+  /* saludos y felicitaciones: con tope, para que nadie llene el buzón de otro */
+  if(c.accion === 'mandar'){
+    const tipo = ['saludo', 'felicita'].includes(c.tipo) ? c.tipo : 'saludo';
+    const k = `est:tope:${cuenta}:${new Date(ahora).toISOString().slice(0, 13)}`, n = (await storage.get(k)) || 0;
+    if(n >= 30) return { error: 'Ya mandaste muchos esta hora. Al rato.', estado: 429 };
+    await storage.put(k, n + 1);
+    await alBuzon(storage, otro, { de: cuenta, nombre: perfil.nombre, tipo, texto: limpio(c.texto, 120) }, ahora);
+    return { bien: true };
+  }
+  /* estudiar juntos: se invita a alguien en línea (amigo o no) por N minutos */
+  if(c.accion === 'invitar'){
+    const pres = (await storage.get('est:pres')) || {};
+    if(!pres[otro] || ahora - pres[otro].t > EN_LINEA_MS) return { error: 'Esa persona ya no está en línea.', estado: 409 };
+    for(const q of [cuenta, otro]){ const x = await sesionDe(storage, q, ahora); if(x && (x.estado === 'activa' || x.estado === 'invitada')) return { error: q === cuenta ? 'Ya tienes una sesión.' : 'Esa persona ya está estudiando con alguien.', estado: 409 }; }
+    const minutos = [10, 15, 25, 45].includes(Number(c.minutos)) ? Number(c.minutos) : 25;
+    const x = { id: 's' + ahora.toString(36) + Math.random().toString(36).slice(2, 6), de: cuenta, a: otro, nombres: { [cuenta]: perfil.nombre, [otro]: suPerfil.nombre }, minutos, estado: 'invitada', creada: ahora, xp: { [cuenta]: 0, [otro]: 0 } };
+    await storage.put(kSes(x.id), x); await storage.put(kSesAct(cuenta), x.id); await storage.put(kSesAct(otro), x.id);
+    await alBuzon(storage, otro, { de: cuenta, nombre: perfil.nombre, tipo: 'invita', texto: `${minutos} minutos`, sesion: x.id }, ahora);
+    return { bien: true, sesion: x };
+  }
+  return null;
+}
+async function atenderSesion(storage, c, cuenta, perfil, ahora){
+  const x = await sesionDe(storage, cuenta, ahora);
+  if(!x || (c.sesion && x.id !== c.sesion)) return { error: 'Esa sesión ya no existe.', estado: 404 };
+  const el = x.de === cuenta ? x.a : x.de;
+  if(c.accion === 'responder'){
+    if(x.a !== cuenta || x.estado !== 'invitada') return { error: 'Esa invitación ya no está.', estado: 409 };
+    if(c.si){ x.estado = 'activa'; x.inicio = ahora; x.fin = ahora + x.minutos * 60_000; await storage.put(kSes(x.id), x); await alBuzon(storage, el, { de: cuenta, nombre: perfil.nombre, tipo: 'acepta', sesion: x.id }, ahora); }
+    else { x.estado = 'rechazada'; await storage.put(kSes(x.id), x); await soltarSesion(storage, x); await alBuzon(storage, el, { de: cuenta, nombre: perfil.nombre, tipo: 'rechaza' }, ahora); }
+    return { bien: true, sesion: x };
+  }
+  if(c.accion === 'salirSesion'){
+    if(x.estado === 'activa' || x.estado === 'invitada'){ x.estado = x.estado === 'activa' ? 'terminada' : 'cancelada'; x.fin = Math.min(x.fin || ahora, ahora); await storage.put(kSes(x.id), x); await alBuzon(storage, el, { de: cuenta, nombre: perfil.nombre, tipo: 'fin', sesion: x.id }, ahora); }
+    await soltarSesion(storage, x);
+    return { bien: true, sesion: x };
+  }
+  return null;
+}
+
 export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.now()){
   cuenta = limpio(cuenta || 'invitado', 40).toLowerCase() || 'invitado';
   const hoy = diaMexico(ahora);
@@ -160,6 +273,29 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
   const crudo = await pedido.text().catch(() => '');
   if(crudo.length > MAX_PLAN + 50_000) return Response.json({ error: 'El plan es demasiado grande para guardarlo.' }, { status: 413 });
   let c; try{ c = JSON.parse(crudo || '{}'); }catch{ return Response.json({ error: 'No entendí la petición.' }, { status: 400 }); }
+
+  /* ── amigos y estudiar juntos ── */
+  if(['latido', 'amistad', 'quitarAmigo', 'mandar', 'invitar'].includes(c.accion)){
+    const r = await atenderAmigos(storage, c, cuenta, perfil, ahora);
+    if(r) return Response.json(r, { status: r.estado || 200 });
+  }
+  if(['responder', 'salirSesion'].includes(c.accion)){
+    const r = await atenderSesion(storage, c, cuenta, perfil, ahora);
+    if(r) return Response.json(r, { status: r.estado || 200 });
+  }
+  /* ── cómo te fue en el examen: al historial, y los amigos se enteran para felicitar ── */
+  if(c.accion === 'examen'){
+    const como = ['excelente', 'bien', 'regular', 'mal'].includes(c.como) ? c.como : '';
+    if(!como) return Response.json({ error: 'Dime cómo te fue.' }, { status: 400 });
+    const calif = c.calif == null || c.calif === '' ? null : Math.max(0, Math.min(10, Math.round(Number(c.calif) * 10) / 10));
+    const h = (await storage.get(kExam(cuenta))) || [];
+    const e = { plan: idValido(c.plan) ? c.plan : '', titulo: limpio(c.titulo, 120), materia: limpio(c.materia, 60), fecha: valeDia(c.fecha) ? c.fecha : hoy, como, calif: Number.isFinite(calif) ? calif : null, nota: limpio(c.nota, 400), t: ahora };
+    const i = e.plan ? h.findIndex((x) => x.plan === e.plan) : -1; if(i >= 0) h[i] = e; else h.push(e);
+    await storage.put(kExam(cuenta), h.slice(-200));
+    if(c.avisar !== false){ const mis = await amigosDe(storage, cuenta); for(const a of mis.amigos) await alBuzon(storage, a, { de: cuenta, nombre: perfil.nombre, tipo: 'examen', texto: `${e.materia || e.titulo}: ${{ excelente: 'le fue excelente', bien: 'le fue bien', regular: 'le fue regular', mal: 'no le fue tan bien' }[como]}` }, ahora); }
+    return Response.json({ bien: true, examen: e, historial: h.slice(-50) });
+  }
+  if(c.accion === 'historialExamenes') return Response.json({ bien: true, historial: ((await storage.get(kExam(cuenta))) || []).slice(-50) });
 
   /* ── la biblioteca compartida ── */
   if(c.accion === 'memoria'){
@@ -202,6 +338,8 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
     if(c.nombre) perfil.nombre = limpio(c.nombre, 30) || perfil.nombre;
     perfil.t = ahora;
     await storage.put(kPerfil(cuenta), perfil);
+    /* si estás en una sesión con alguien, lo que estudias cuenta para su marcador */
+    if(suma > 0){ const x = await sesionDe(storage, cuenta, ahora); if(x && x.estado === 'activa'){ x.xp[cuenta] = (x.xp[cuenta] || 0) + suma; await storage.put(kSes(x.id), x); } }
     return Response.json({ bien: true, sumado: suma, eventos: [...new Set(dijo)], perfil: publico(perfil), ranking: await ranking(storage, semanaDe(hoy), { [cuenta]: perfil.nombre }) });
   }
 
