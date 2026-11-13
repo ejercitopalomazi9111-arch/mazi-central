@@ -100,6 +100,14 @@
   #vApuntes .campo[type=search]{ margin-bottom:10px }
   .ap-filtro{ margin-bottom:12px }
   .ap-lista{ display:grid; gap:10px; margin:14px 0 30px }
+  /* las carpetas de Apuntes: tipo → materia */
+  .ap-arriba{ display:grid; grid-template-columns:minmax(0, 1fr) 48px; gap:8px; margin-bottom:14px } .ap-arriba .bt.redondo{ width:48px; height:48px }
+  .ap-carpetas{ display:grid; gap:8px; margin-bottom:6px }
+  .ap-carpeta{ display:grid; grid-template-columns:44px minmax(0, 1fr) auto 18px; gap:12px; align-items:center; padding:12px 14px 12px 12px; border-radius:18px; border:1px solid var(--borde); background:var(--fondo-2); color:inherit; font:inherit; text-align:left; min-height:68px }
+  .ap-carpeta .ap-txt b{ display:block; font:800 16px/1.2 Titulo } .ap-carpeta .ap-txt small{ display:block; color:var(--tenue); font-size:13px; margin-top:2px }
+  .ap-c-ico{ width:44px; height:44px; display:grid; place-items:center; border-radius:13px; background:#AC27FF22; color:var(--claro-txt) } .ap-c-ico .i{ width:22px; height:22px }
+  .ap-n{ min-width:28px; padding:3px 8px; border-radius:99px; background:var(--sup); font:800 13px/1.2 Titulo; text-align:center; font-variant-numeric:tabular-nums } .ap-carpeta > .i{ width:18px; height:18px; color:var(--tenue) }
+  .ap-migas{ display:flex; align-items:center; gap:10px; margin:2px 0 12px } .ap-migas b{ font:800 18px/1.2 Titulo; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
   .ap-card{ display:grid; grid-template-columns:64px minmax(0, 1fr); gap:12px; align-items:start; text-align:left; padding:12px; border-radius:18px; border:1px solid var(--borde); background:var(--fondo-2); color:inherit; font:inherit; min-height:64px }
   .ap-card img, .ap-ico{ width:64px; height:64px; border-radius:12px; object-fit:cover; background:#fff }
   .ap-ico{ display:grid; place-items:center; background:var(--sup); color:var(--claro-txt) } .ap-ico .i{ width:26px; height:26px }
@@ -613,6 +621,21 @@
   .hz-sig{ display:flex; align-items:center; gap:6px; font-size:14px; color:#fff } .hz-sig .i{ width:16px; height:16px }
   .ahora-banner{ padding:16px; border-radius:18px; background:var(--vino); margin-bottom:16px }
   .ahora-banner small{ font-size:12px; letter-spacing:.08em; text-transform:uppercase; opacity:.8 } .ahora-banner b{ display:block; font:800 20px/1.2 Titulo }
+  /* la línea de cada examen: de hoy a la fecha, un puntito por día */
+  .cuentas-ex{ display:grid; gap:10px; margin-bottom:6px }
+  .cuenta-ex{ padding:14px 16px 12px; border-radius:18px; background:var(--fondo-2); border:1px solid var(--borde) }
+  .cuenta-ex.urge{ border-color:color-mix(in srgb, var(--c) 70%, transparent); background:color-mix(in srgb, var(--c) 14%, var(--fondo-2)) }
+  .cx-cab{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-bottom:14px } .cx-cab > b{ font:800 16px/1.2 Titulo; min-width:0 }
+  .cx-cab span{ flex:none; color:var(--suave); font-size:14px } .cx-cab span b{ color:var(--hueso); font:900 18px/1 Titulo; font-variant-numeric:tabular-nums }
+  .cx-linea{ position:relative; height:28px; margin:0 14px 0 8px }
+  .cx-riel{ position:absolute; left:0; right:0; top:50%; height:4px; margin-top:-2px; border-radius:2px; background:linear-gradient(90deg, var(--c), color-mix(in srgb, var(--c) 35%, #ffffff22)) }
+  .cx-dia{ position:absolute; top:50%; width:6px; height:6px; margin:-3px 0 0 -3px; border-radius:50%; background:#ffffff55 }
+  .cx-hoy{ position:absolute; left:0; top:50%; width:16px; height:16px; margin:-8px 0 0 -8px; border-radius:50%; background:var(--hueso); box-shadow:0 0 0 4px color-mix(in srgb, var(--c) 45%, transparent); animation:cxLate 1.8s ease-in-out infinite }
+  @keyframes cxLate{ 50%{ box-shadow:0 0 0 8px color-mix(in srgb, var(--c) 18%, transparent) } }
+  .cx-meta{ position:absolute; right:-14px; top:50%; width:28px; height:28px; margin-top:-14px; display:grid; place-items:center; border-radius:50%; background:var(--c); color:#fff } .cx-meta .i{ width:16px; height:16px }
+  .cx-pie{ display:flex; justify-content:space-between; gap:10px; margin-top:8px; color:var(--tenue); font-size:12.5px }
+  .hz-n .hz-ex{ background:#AC27FF; color:#fff; margin-left:6px }
+  @media (prefers-reduced-motion:reduce){ .cx-hoy{ animation:none } }
   .examenes li{ list-style:none; display:flex; gap:12px; align-items:center; padding:12px; border-radius:14px; background:var(--fondo-2); margin-bottom:8px }
   .examenes .fecha-mini{ width:48px; text-align:center; border-radius:10px; overflow:hidden; background:#fff; color:#1B0D2A; flex:none }
   .examenes .fecha-mini small{ display:block; background:var(--vino); color:#fff; font-size:10px; padding:2px 0; text-transform:uppercase; font-weight:700 }

@@ -1322,6 +1322,17 @@ function colorMateria(nombre){ const m = listaMaterias().find((x) => quitarAcent
 let horarioEditando = false, relojHorario = 0;
 const hhmm = (m) => `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`;
 const faltaTexto = (m) => m < 60 ? `${m} min` : `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ''}`;
+/* LA LÍNEA DEL EXAMEN (Carlos, 13 nov: «que aparezca una línea en el horario que te marque cuánto falta para tu examen»):
+   de hoy (izquierda) al examen (derecha), un puntito por día; hoy late. Con más de 21 días, la línea va sin puntitos. */
+function lineaExamen(p){
+  const d = diasHasta(p.fecha), f = new Date(p.fecha + 'T12:00:00'), c = colorMateria(p.materia || p.titulo), listo = avanceDe(p).pct;
+  const falta = d === 0 ? '<b>Es HOY</b>' : d === 1 ? 'Es <b>mañana</b>' : `Faltan <b>${d}</b> días`;
+  const puntos = d > 0 && d <= 21 ? Array.from({ length: d - 1 }, (_, k) => `<i class="cx-dia" style="left:${((k + 1) / d * 100).toFixed(2)}%"></i>`).join('') : '';
+  return `<div class="cuenta-ex${d <= 1 ? ' urge' : ''}" style="--c:${c}" role="img" aria-label="${esc(p.titulo)}: ${d === 0 ? 'es hoy' : d === 1 ? 'es mañana' : `faltan ${d} días`}">
+    <div class="cx-cab"><b>${esc(p.titulo)}</b><span>${falta}</span></div>
+    <div class="cx-linea"><i class="cx-riel"></i>${puntos}${d > 0 ? '<span class="cx-hoy"></span>' : ''}<span class="cx-meta">${ico('graduation-cap')}</span></div>
+    <div class="cx-pie"><small>Hoy</small><small>${DIAS[f.getDay()]} ${f.getDate()} de ${MESES[f.getMonth()]} · ${listo} % listo</small></div></div>`;
+}
 function pintarHorario(){
   const v = $('#vHorario'), hz = horario(), d = new Date(), hoyI = d.getDay() - 1, ahora = d.getHours() * 60 + d.getMinutes();
   const deDia = (i) => hz.clases.filter((x) => x.dia === i).sort((a, b) => aMin(a.inicio) - aMin(b.inicio));
@@ -1347,13 +1358,15 @@ function pintarHorario(){
   const dias = DIAS_ESC.map((n, i) => {
     const cl = deDia(i), hoy = i === hoyI;
     const resumen = cl.length ? `${cl.length} ${cl.length === 1 ? 'clase' : 'clases'} · ${esc(cl[0].inicio)} a ${esc(cl[cl.length - 1].fin)}` : 'Sin clases';
-    return `<details class="hz-dia${hoy ? ' hoy' : ''}"${hoy ? ' open' : ''}><summary><span class="hz-n">${n}${hoy ? '<em>hoy</em>' : ''}</span><small>${resumen}</small>${ico('chevron-right', 'hz-flecha')}</summary>
+    /* si un examen cae en este día de esta semana, el día lo dice */
+    const exDia = examenes.filter((p) => { const k = diasHasta(p.fecha); return k <= 6 && (hoyI + k) % 7 === i; });
+    return `<details class="hz-dia${hoy ? ' hoy' : ''}"${hoy ? ' open' : ''}><summary><span class="hz-n">${n}${hoy ? '<em>hoy</em>' : ''}${exDia.length ? '<em class="hz-ex">examen</em>' : ''}</span><small>${resumen}</small>${ico('chevron-right', 'hz-flecha')}</summary>
       <div class="hz-clases">${cl.map((x) => { const pasada = hoy && aMin(x.fin) <= ahora;
         return `<div class="clase-h${hoy && x === enCurso ? ' ahora' : ''}${pasada ? ' pasada' : ''}" style="--c:${colorMateria(x.materia)}"><span class="hr">${esc(x.inicio)}<small>${esc(x.fin)}</small></span><b>${esc(x.materia)}</b>${hoy && x === enCurso ? '<span class="hz-chip">ahora</span>' : hoy && x === sig ? '<span class="hz-chip sig">sigue</span>' : ''}<button data-quitar-clase="${hz.clases.indexOf(x)}" aria-label="Quitar ${esc(x.materia)} del ${n.toLowerCase()}">${ico('x')}</button></div>`; }).join('') || '<p class="hz-vacio">Sin clases este día</p>'}</div></details>`;
   }).join('');
   v.innerHTML = `<h1 class="titulo-vista">Tu horario</h1>${hz.clases.length ? '' : '<p class="sub-vista">Agrégalo una vez y listo, siempre lo vas a tener. Tarda 30 segundos.</p>'}
     ${ahoraHtml}
-    ${examenes.length ? `<div class="seccion-t">Próximos exámenes</div><div class="examenes"><ul>${examenes.map((p) => { const f = new Date(p.fecha + 'T12:00:00'); return `<li><span class="fecha-mini"><small>${MESES[f.getMonth()].slice(0, 3)}</small><b>${f.getDate()}</b></span><span style="flex:1"><b>${esc(p.titulo)}</b><br><small style="color:var(--suave)">${esc(cuandoTexto(p.fecha))} · ${avanceDe(p).pct} % listo</small></span></li>`; }).join('')}</ul></div>` : ''}
+    ${examenes.length ? `<div class="seccion-t">Cuánto falta para tus exámenes</div><div class="cuentas-ex">${examenes.slice(0, 4).map(lineaExamen).join('')}</div>` : ''}
     ${hz.clases.length ? `<div class="seccion-t hz-cab">La semana<button class="bt mini" id="bEditarHorario" aria-pressed="${horarioEditando}">${ico(horarioEditando ? 'check' : 'pencil')}${horarioEditando ? 'Listo' : 'Editar'}</button></div>
     <div class="horario${horarioEditando ? ' editando' : ''}">${dias}</div>` : ''}
     <div style="display:grid;gap:10px;margin:22px 0 30px"><button class="bt fuerte ancho" id="bAgregarClase">${ico('plus')}Agregar una clase</button><label class="bt ancho" id="bFotoHorario">${ico('camera')}Subir foto de mi horario<input type="file" accept="image/*" hidden id="fFotoHorario"></label><button class="bt ancho" id="bPegarHorario">${ico('clipboard-paste')}Pegar desde Excel</button></div>`;
