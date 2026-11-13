@@ -36,6 +36,8 @@
   .caja{ background:var(--sup); border-radius:20px; padding:14px; border:1px solid #ffffff12 }
   .caja textarea{ width:100%; min-height:110px; resize:vertical; background:transparent; border:0; outline:0; color:#fff; line-height:1.45 }
   .caja textarea::placeholder{ color:#8A7C9A }
+  .caja .extra{ width:100%; margin:4px 0 10px; padding:12px 14px; border-radius:14px; border:1.5px dashed #AC27FF88; background:#AC27FF14; color:#fff; outline:0 }
+  .caja .extra::placeholder{ color:#C9B8DA } .caja .extra:focus{ border-style:solid; border-color:#C77DFF }
   .fila{ display:flex; gap:8px; flex-wrap:wrap; align-items:center }
   .opciones{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; margin-top:12px }
   .opciones label{ display:block; font-size:12px; color:var(--suave); margin-bottom:4px }
@@ -227,10 +229,12 @@
   <p class="sub">Escribe el tema o sube una foto de tus apuntes. Te lo explico en voz alta mientras lo dibujo en el pizarrón.</p>
   <div class="caja">
     <textarea id="tema" placeholder="Ej. «Explícame la Revolución Mexicana», «cómo se saca la derivada de un producto», «qué es la NOM-251»…"></textarea>
+    <input id="extra" class="extra" type="text" autocomplete="off" placeholder="Escribe aquí si quieres agregarle algo (ej. «sólo lo básico», «con ejemplos de fútbol»)…" aria-label="Algo que quieras agregar a lo que se te va a explicar">
     <div class="fotos" id="fotos"></div>
     <div class="opciones">
       <div><label for="motor">Quién explica</label><select id="motor"><option value="groq">Negro · rápido</option><option value="gemini">Paulina · lee fotos, ~2 min</option></select></div>
-      <div><label for="nivel">Nivel</label><select id="nivel"><option value="prepa">Prepa</option><option value="uni">Universidad</option><option value="facil">Muy fácil</option></select></div>
+      <div><label for="nivel">Nivel</label><select id="nivel"><option value="kids">Kids · kínder y primaria</option><option value="secu">Secundaria</option><option value="prepa" selected>Prepa</option><option value="uni">Universidad</option><option value="facil">Muy fácil</option></select></div>
+      <div><label for="profundidad">Qué tan a fondo</label><select id="profundidad"><option value="general">Lo general (para el examen)</option><option value="normal" selected>Normal</option><option value="detalle">A detalle</option></select></div>
       <div><label for="largo">Largo</label><select id="largo"><option value="corta">Corta</option><option value="normal" selected>Normal</option><option value="fondo">A fondo</option></select></div>
       <div><label for="cursores">Cursores que dibujan</label><select id="cursores"><option value="monton">Un montón</option><option value="varios">Unos cuantos</option><option value="uno">Sólo uno</option></select></div>
       <div><label for="vozSel">Voz</label><select id="vozSel"></select></div>
